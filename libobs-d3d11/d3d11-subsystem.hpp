@@ -779,6 +779,9 @@ struct gs_vertex_shader : gs_shader {
 struct gs_duplicator : gs_obj {
 	ComPtr<IDXGIOutputDuplication> duplicator;
 	gs_texture_2d *texture;
+	bool hdr = false;
+	enum gs_color_space color_space = GS_CS_SRGB;
+	float sdr_white_nits = 80.f;
 	int idx;
 	long refs;
 	bool updated;
@@ -982,9 +985,13 @@ struct mat4float {
 struct gs_monitor_color_info {
 	bool hdr;
 	UINT bits_per_color;
+	ULONG sdr_white_nits;
 
-	gs_monitor_color_info(bool hdr, int bits_per_color)
-		: hdr(hdr), bits_per_color(bits_per_color)
+	gs_monitor_color_info(bool hdr, int bits_per_color,
+			      ULONG sdr_white_nits)
+		: hdr(hdr),
+		  bits_per_color(bits_per_color),
+		  sdr_white_nits(sdr_white_nits)
 	{
 	}
 };
@@ -1061,9 +1068,9 @@ struct gs_device {
 
 	void LoadVertexBufferData();
 
-	inline void CopyTex(ID3D11Texture2D *dst, uint32_t dst_x,
-			    uint32_t dst_y, gs_texture_t *src, uint32_t src_x,
-			    uint32_t src_y, uint32_t src_w, uint32_t src_h);
+	void CopyTex(ID3D11Texture2D *dst, uint32_t dst_x, uint32_t dst_y,
+		     gs_texture_t *src, uint32_t src_x, uint32_t src_y,
+		     uint32_t src_w, uint32_t src_h);
 
 	void UpdateViewProjMatrix();
 
@@ -1072,6 +1079,8 @@ struct gs_device {
 	void RebuildDevice();
 
 	bool HasBadNV12Output();
+
+	gs_monitor_color_info GetMonitorColorInfo(HMONITOR hMonitor);
 
 	gs_device(uint32_t adapterIdx);
 	~gs_device();

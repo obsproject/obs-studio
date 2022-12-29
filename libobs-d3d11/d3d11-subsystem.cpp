@@ -67,53 +67,6 @@ gs_obj::~gs_obj()
 		next->prev_next = prev_next;
 }
 
-static gs_monitor_color_info get_monitor_color_info(gs_device_t *device,
-						    HMONITOR hMonitor)
-{
-	IDXGIFactory1 *factory1 = device->factory;
-	if (!factory1->IsCurrent()) {
-		device->InitFactory();
-		factory1 = device->factory;
-		device->monitor_to_hdr.clear();
-	}
-
-	for (const std::pair<HMONITOR, gs_monitor_color_info> &pair :
-	     device->monitor_to_hdr) {
-		if (pair.first == hMonitor)
-			return pair.second;
-	}
-
-	ComPtr<IDXGIAdapter> adapter;
-	ComPtr<IDXGIOutput> output;
-	ComPtr<IDXGIOutput6> output6;
-	for (UINT adapterIndex = 0;
-	     SUCCEEDED(factory1->EnumAdapters(adapterIndex, &adapter));
-	     ++adapterIndex) {
-		for (UINT outputIndex = 0;
-		     SUCCEEDED(adapter->EnumOutputs(outputIndex, &output));
-		     ++outputIndex) {
-			if (SUCCEEDED(output->QueryInterface(&output6))) {
-				DXGI_OUTPUT_DESC1 desc1;
-				if (SUCCEEDED(output6->GetDesc1(&desc1)) &&
-				    (desc1.Monitor == hMonitor)) {
-					const bool hdr =
-						desc1.ColorSpace ==
-						DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020;
-					return device->monitor_to_hdr
-						.emplace_back(
-							hMonitor,
-							gs_monitor_color_info(
-								hdr,
-								desc1.BitsPerColor))
-						.second;
-				}
-			}
-		}
-	}
-
-	return gs_monitor_color_info(false, 8);
-}
-
 static enum gs_color_space get_next_space(gs_device_t *device, HWND hwnd,
 					  DXGI_SWAP_EFFECT effect)
 {
@@ -123,7 +76,7 @@ static enum gs_color_space get_next_space(gs_device_t *device, HWND hwnd,
 			MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
 		if (hMonitor) {
 			const gs_monitor_color_info info =
-				get_monitor_color_info(device, hMonitor);
+				device->GetMonitorColorInfo(hMonitor);
 			if (info.hdr)
 				next_space = GS_CS_709_SCRGB;
 			else if (info.bits_per_color > 8)
@@ -1170,9 +1123,9 @@ static HRESULT GetPathInfo(HMONITOR hMonitor,
 	return hr;
 }
 
-static ULONG GetSdrWhiteNits(HMONITOR monitor)
+static ULONG GetSdrMaxNits(HMONITOR monitor)
 {
-	ULONG nits = 0;
+	ULONG nits = 80;
 
 	DISPLAYCONFIG_PATH_INFO info;
 	if (SUCCEEDED(GetPathInfo(monitor, &info))) {
@@ -1190,6 +1143,51 @@ static ULONG GetSdrWhiteNits(HMONITOR monitor)
 	}
 
 	return nits;
+}
+
+gs_monitor_color_info gs_device::GetMonitorColorInfo(HMONITOR hMonitor)
+{
+	IDXGIFactory1 *factory1 = factory;
+	if (!factory1->IsCurrent()) {
+		InitFactory();
+		factory1 = factory;
+		monitor_to_hdr.clear();
+	}
+
+	for (const std::pair<HMONITOR, gs_monitor_color_info> &pair :
+	     monitor_to_hdr) {
+		if (pair.first == hMonitor)
+			return pair.second;
+	}
+
+	ComPtr<IDXGIAdapter> adapter;
+	ComPtr<IDXGIOutput> output;
+	ComPtr<IDXGIOutput6> output6;
+	for (UINT adapterIndex = 0;
+	     SUCCEEDED(factory1->EnumAdapters(adapterIndex, &adapter));
+	     ++adapterIndex) {
+		for (UINT outputIndex = 0;
+		     SUCCEEDED(adapter->EnumOutputs(outputIndex, &output));
+		     ++outputIndex) {
+			DXGI_OUTPUT_DESC1 desc1;
+			if (SUCCEEDED(output->QueryInterface(&output6)) &&
+			    SUCCEEDED(output6->GetDesc1(&desc1)) &&
+			    (desc1.Monitor == hMonitor)) {
+				const bool hdr =
+					desc1.ColorSpace ==
+					DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020;
+				const UINT bits = desc1.BitsPerColor;
+				const ULONG nits = GetSdrMaxNits(desc1.Monitor);
+				return monitor_to_hdr
+					.emplace_back(hMonitor,
+						      gs_monitor_color_info(
+							      hdr, bits, nits))
+					.second;
+			}
+		}
+	}
+
+	return gs_monitor_color_info(false, 8, 80);
 }
 
 static void PopulateMonitorIds(HMONITOR handle, char *id, char *alt_id,
@@ -1286,7 +1284,7 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 		}
 
 		const RECT &rect = desc.DesktopCoordinates;
-		const ULONG nits = GetSdrWhiteNits(desc.Monitor);
+		const ULONG nits = GetSdrMaxNits(desc.Monitor);
 
 		char *friendly_name;
 		os_wcs_to_utf8_ptr(target.monitorFriendlyDeviceName, 0,
@@ -2098,10 +2096,9 @@ bool device_framebuffer_srgb_enabled(gs_device_t *device)
 	return device->curFramebufferSrgb;
 }
 
-inline void gs_device::CopyTex(ID3D11Texture2D *dst, uint32_t dst_x,
-			       uint32_t dst_y, gs_texture_t *src,
-			       uint32_t src_x, uint32_t src_y, uint32_t src_w,
-			       uint32_t src_h)
+void gs_device::CopyTex(ID3D11Texture2D *dst, uint32_t dst_x, uint32_t dst_y,
+			gs_texture_t *src, uint32_t src_x, uint32_t src_y,
+			uint32_t src_w, uint32_t src_h)
 {
 	if (src->type != GS_TEXTURE_2D)
 		throw "Source texture must be a 2D texture";
@@ -3090,7 +3087,7 @@ extern "C" EXPORT bool device_p010_available(gs_device_t *device)
 extern "C" EXPORT bool device_is_monitor_hdr(gs_device_t *device, void *monitor)
 {
 	const HMONITOR hMonitor = static_cast<HMONITOR>(monitor);
-	return get_monitor_color_info(device, hMonitor).hdr;
+	return device->GetMonitorColorInfo(hMonitor).hdr;
 }
 
 extern "C" EXPORT void device_debug_marker_begin(gs_device_t *,
