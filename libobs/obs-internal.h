@@ -341,8 +341,6 @@ struct obs_core_video {
 	pthread_mutex_t task_mutex;
 	struct circlebuf tasks;
 
-	uint32_t adapter_index;
-
 	pthread_mutex_t mixes_mutex;
 	DARRAY(struct obs_core_video_mix *) mixes;
 	struct obs_core_video_mix *main_mix;
