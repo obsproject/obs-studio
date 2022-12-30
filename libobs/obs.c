@@ -477,6 +477,8 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 		}
 	}
 
+	ovi->adapter = video->adapter_index;
+
 	gs_enter_context(video->graphics);
 
 	char *filename = obs_find_data_file("default.effect");
@@ -1410,8 +1412,6 @@ int obs_reset_video(struct obs_video_info *ovi)
 			return errorcode;
 		}
 	}
-
-	ovi->adapter = obs->video.adapter_index;
 
 	const char *scale_type_name = "";
 	switch (ovi->scale_type) {
