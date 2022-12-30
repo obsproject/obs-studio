@@ -1049,7 +1049,6 @@ struct gs_device {
 
 	void InitCompiler();
 	void InitFactory();
-	void ReorderAdapters(uint32_t &adapterIdx);
 	void InitAdapter(uint32_t adapterIdx);
 	void InitDevice(uint32_t adapterIdx);
 

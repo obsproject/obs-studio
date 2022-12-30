@@ -364,45 +364,6 @@ void gs_device::InitFactory()
 		throw UnsupportedHWError("Failed to create DXGIFactory", hr);
 }
 
-#define VENDOR_ID_INTEL 0x8086
-#define IGPU_MEM (512 * 1024 * 1024)
-
-void gs_device::ReorderAdapters(uint32_t &adapterIdx)
-{
-	std::vector<uint32_t> adapterOrder;
-	ComPtr<IDXGIAdapter> adapter;
-	DXGI_ADAPTER_DESC desc;
-	uint32_t iGPUIndex = 0;
-	bool hasIGPU = false;
-	bool hasDGPU = false;
-	int idx = 0;
-
-	while (SUCCEEDED(factory->EnumAdapters(idx, &adapter))) {
-		if (SUCCEEDED(adapter->GetDesc(&desc))) {
-			if (desc.VendorId == VENDOR_ID_INTEL) {
-				if (desc.DedicatedVideoMemory <= IGPU_MEM) {
-					hasIGPU = true;
-					iGPUIndex = (uint32_t)idx;
-				} else {
-					hasDGPU = true;
-				}
-			}
-		}
-
-		adapterOrder.push_back((uint32_t)idx++);
-	}
-
-	/* Intel specific adapter check for Intel integrated and Intel
-	 * dedicated. If both exist, then change adapter priority so that the
-	 * integrated comes first for the sake of improving overall
-	 * performance */
-	if (hasIGPU && hasDGPU) {
-		adapterOrder.erase(adapterOrder.begin() + iGPUIndex);
-		adapterOrder.insert(adapterOrder.begin(), iGPUIndex);
-		adapterIdx = adapterOrder[adapterIdx];
-	}
-}
-
 void gs_device::InitAdapter(uint32_t adapterIdx)
 {
 	HRESULT hr = factory->EnumAdapters1(adapterIdx, &adapter);
@@ -941,7 +902,6 @@ gs_device::gs_device(uint32_t adapterIdx)
 
 	InitCompiler();
 	InitFactory();
-	ReorderAdapters(adapterIdx);
 	InitAdapter(adapterIdx);
 	InitDevice(adapterIdx);
 	device_set_render_target(this, NULL, NULL);
