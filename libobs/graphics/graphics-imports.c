@@ -234,7 +234,7 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT_OPTIONAL(device_stagesurface_create_p010);
 	GRAPHICS_IMPORT_OPTIONAL(device_register_loss_callbacks);
 	GRAPHICS_IMPORT_OPTIONAL(device_unregister_loss_callbacks);
-#elif __linux__
+#elif defined(__linux__) || defined(__FreeBSD__) || defined(__DragonFly__)
 	GRAPHICS_IMPORT(device_texture_create_from_dmabuf);
 	GRAPHICS_IMPORT(device_query_dmabuf_capabilities);
 	GRAPHICS_IMPORT(device_query_dmabuf_modifiers_for_format);
