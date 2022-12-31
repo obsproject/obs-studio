@@ -348,7 +348,7 @@ struct gs_exports {
 		gs_device_t *device, const struct gs_device_loss *callbacks);
 	void (*device_unregister_loss_callbacks)(gs_device_t *device,
 						 void *data);
-#elif __linux__
+#elif defined(__linux__) || defined(__FreeBSD__) || defined(__DragonFly__)
 	struct gs_texture *(*device_texture_create_from_dmabuf)(
 		gs_device_t *device, unsigned int width, unsigned int height,
 		uint32_t drm_format, enum gs_color_format color_format,
