@@ -1009,7 +1009,7 @@ Texture Functions
 
 .. function:: gs_texture_t *gs_texture_create_from_dmabuf(unsigned int width, unsigned int height, uint32_t drm_format, enum gs_color_format color_format, uint32_t n_planes, const int *fds, const uint32_t *strides, const uint32_t *offsets, const uint64_t *modifiers)
 
-   **Linux only:** Creates a texture from DMA-BUF metadata.
+   **only Linux, FreeBSD, DragonFly:** Creates a texture from DMA-BUF metadata.
 
    Exchanging DMA-BUFs is a verbose process because of its multiplanar nature.
    For example, YUV can have each plane as a color channel, or a monitor buffer
@@ -1049,7 +1049,7 @@ Texture Functions
 
 .. function:: bool *gs_query_dmabuf_capabilities(enum gs_dmabuf_flags *dmabuf_flags, uint32_t **drm_formats, size_t *n_formats)
 
-   **Linux only:** Queries the capabilities for DMA-BUFs.
+   **only Linux, FreeBSD, DragonFly:** Queries the capabilities for DMA-BUFs.
 
    Graphics cards can optimize frame buffers by storing them in custom layouts,
    depending on their hardware features. These layouts can make these frame
@@ -1068,7 +1068,7 @@ Texture Functions
 
 .. function:: bool *gs_query_dmabuf_modifiers_for_format(uint32_t drm_format, uint64_t **modifiers, size_t *n_modifiers)
 
-   **Linux only:** Queries the supported DMA-BUF modifiers for a given format.
+   **only Linux, FreeBSD, DragonFly:** Queries the supported DMA-BUF modifiers for a given format.
 
    This function queries all supported explicit modifiers for a format,
    stores them as an array and returns the number of supported modifiers.
