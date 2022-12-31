@@ -178,7 +178,7 @@ EXPORT void device_debug_marker_begin(gs_device_t *device,
 				      const float color[4]);
 EXPORT void device_debug_marker_end(gs_device_t *device);
 
-#if __linux__
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__DragonFly__)
 
 EXPORT gs_texture_t *device_texture_create_from_dmabuf(
 	gs_device_t *device, unsigned int width, unsigned int height,

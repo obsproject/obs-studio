@@ -1387,7 +1387,7 @@ gs_texture_t *gs_texture_create(uint32_t width, uint32_t height,
 						       levels, data, flags);
 }
 
-#if __linux__
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__DragonFly__)
 
 gs_texture_t *gs_texture_create_from_dmabuf(
 	unsigned int width, unsigned int height, uint32_t drm_format,
