@@ -17,6 +17,7 @@ task:
     mesa-libs lua52 pkgconf
     srt
     qt5-svg qt5-qmake qt5-buildtools qt5-x11extras qt5-xml
+    pipewire
   script:
   - mkdir build
   - cd build
