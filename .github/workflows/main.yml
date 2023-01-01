@@ -370,7 +370,7 @@ jobs:
           path: '${{ env.FILE_NAME }}'
 
   linux_package:
-    name: '02 - Flatpak Bundle'
+    name: '02 - Flatpak'
     runs-on: [ubuntu-latest]
     needs: [clang_check]
     if: always()
@@ -393,13 +393,11 @@ jobs:
 
       - name: 'Checkout'
         uses: actions/checkout@v3
-        if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
         with:
           submodules: 'recursive'
           fetch-depth: 0
 
       - name: 'Setup build environment'
-        if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
         run: |
           git config --global --add safe.directory $GITHUB_WORKSPACE
           echo "OBS_GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_ENV
@@ -408,8 +406,8 @@ jobs:
 
       - name: Build Flatpak Manifest
         uses: flatpak/flatpak-github-actions/flatpak-builder@v5
-        if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
         with:
+          build-bundle: ${{ github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1' }}
           bundle: obs-studio-flatpak-${{ env.OBS_GIT_HASH }}.flatpak
           manifest-path: CI/flatpak/com.obsproject.Studio.json
           cache-key: flatpak-builder-${{ hashFiles('CI/flatpak/com.obsproject.Studio.json') }}
