@@ -37,11 +37,22 @@ bool nv_failed2(obs_encoder_t *encoder, void *session, NVENCSTATUS err,
 		const char *func, const char *call)
 {
 	struct dstr error_message = {0};
+	const char *nvenc_error = NULL;
 
-	switch (err) {
-	case NV_ENC_SUCCESS:
+	if (err == NV_ENC_SUCCESS)
 		return false;
 
+	if (session) {
+		nvenc_error = nv.nvEncGetLastErrorString(session);
+		if (nvenc_error) {
+			// Some NVENC errors begin with :: which looks
+			// odd to users. Strip it off.
+			while (*nvenc_error == ':')
+				nvenc_error++;
+		}
+	}
+
+	switch (err) {
 	case NV_ENC_ERR_OUT_OF_MEMORY:
 		obs_encoder_set_last_error(
 			encoder, obs_module_text("NVENC.TooManySessions"));
@@ -58,17 +69,23 @@ bool nv_failed2(obs_encoder_t *encoder, void *session, NVENCSTATUS err,
 		break;
 
 	default:
-		dstr_printf(&error_message,
-			    "NVENC Error: %s: %s failed: %d (%s)", func, call,
-			    (int)err, nv_error_name(err));
+		if (nvenc_error && *nvenc_error) {
+			dstr_printf(&error_message, "NVENC Error: %s (%s)",
+				    nvenc_error, nv_error_name(err));
+		} else {
+
+			dstr_printf(&error_message,
+				    "NVENC Error: %s: %s failed: %d (%s)", func,
+				    call, (int)err, nv_error_name(err));
+		}
 		obs_encoder_set_last_error(encoder, error_message.array);
 		dstr_free(&error_message);
 		break;
 	}
 
-	if (session) {
+	if (nvenc_error && *nvenc_error) {
 		error("%s: %s failed: %d (%s): %s", func, call, (int)err,
-		      nv_error_name(err), nv.nvEncGetLastErrorString(session));
+		      nv_error_name(err), nvenc_error);
 	} else {
 		error("%s: %s failed: %d (%s)", func, call, (int)err,
 		      nv_error_name(err));
