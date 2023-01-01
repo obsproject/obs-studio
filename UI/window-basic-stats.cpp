@@ -452,9 +452,15 @@ void OBSBasicStats::ResetRecTimeLeft()
 
 void OBSBasicStats::RecordingTimeLeft()
 {
+	if (bitrates.empty())
+		return;
+
 	long double averageBitrate =
 		accumulate(bitrates.begin(), bitrates.end(), 0.0) /
 		(long double)bitrates.size();
+	if (averageBitrate == 0)
+		return;
+
 	long double bytesPerSec = (averageBitrate / 8.0l) * 1000.0l;
 	long double secondsUntilFull = (long double)num_bytes / bytesPerSec;
 
