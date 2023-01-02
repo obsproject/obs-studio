@@ -316,8 +316,13 @@ static void log_security_products_by_type(IWSCProductList *prod_list, int type)
 			continue;
 		}
 
-		blog(LOG_INFO, "\t%S: %s (%s)", name,
+		char *product_name;
+		os_wcs_to_utf8_ptr(name, 0, &product_name);
+
+		blog(LOG_INFO, "\t%s: %s (%s)", product_name,
 		     get_str_for_state(prod_state), get_str_for_type(type));
+
+		bfree(product_name);
 
 		SysFreeString(name);
 		prod->lpVtbl->Release(prod);
