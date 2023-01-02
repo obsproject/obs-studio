@@ -21,8 +21,8 @@ try {
 		IsApiContractPresent(L"Windows.Foundation.UniversalApiContract",
 				     8);
 } catch (const winrt::hresult_error &err) {
-	blog(LOG_ERROR, "winrt_capture_supported (0x%08X): %ls",
-	     err.code().value, err.message().c_str());
+	blog(LOG_ERROR, "winrt_capture_supported (0x%08X): %s",
+	     err.code().value, winrt::to_string(err.message()).c_str());
 	return false;
 } catch (...) {
 	blog(LOG_ERROR, "winrt_capture_supported (0x%08X)",
@@ -37,8 +37,8 @@ try {
 			L"Windows.Graphics.Capture.GraphicsCaptureSession",
 			L"IsCursorCaptureEnabled");
 } catch (const winrt::hresult_error &err) {
-	blog(LOG_ERROR, "winrt_capture_cursor_toggle_supported (0x%08X): %ls",
-	     err.code().value, err.message().c_str());
+	blog(LOG_ERROR, "winrt_capture_cursor_toggle_supported (0x%08X): %s",
+	     err.code().value, winrt::to_string(err.message()).c_str());
 	return false;
 } catch (...) {
 	blog(LOG_ERROR, "winrt_capture_cursor_toggle_supported (0x%08X)",
@@ -274,8 +274,8 @@ static void winrt_capture_device_loss_release(void *data)
 		capture->frame_pool.Close();
 	} catch (winrt::hresult_error &err) {
 		blog(LOG_ERROR,
-		     "Direct3D11CaptureFramePool::Close (0x%08X): %ls",
-		     err.code().value, err.message().c_str());
+		     "Direct3D11CaptureFramePool::Close (0x%08X): %s",
+		     err.code().value, winrt::to_string(err.message()).c_str());
 	} catch (...) {
 		blog(LOG_ERROR, "Direct3D11CaptureFramePool::Close (0x%08X)",
 		     winrt::to_hresult().value);
@@ -284,8 +284,8 @@ static void winrt_capture_device_loss_release(void *data)
 	try {
 		capture->session.Close();
 	} catch (winrt::hresult_error &err) {
-		blog(LOG_ERROR, "GraphicsCaptureSession::Close (0x%08X): %ls",
-		     err.code().value, err.message().c_str());
+		blog(LOG_ERROR, "GraphicsCaptureSession::Close (0x%08X): %s",
+		     err.code().value, winrt::to_string(err.message()).c_str());
 	} catch (...) {
 		blog(LOG_ERROR, "GraphicsCaptureSession::Close (0x%08X)",
 		     winrt::to_hresult().value);
@@ -305,8 +305,8 @@ try {
 			L"Windows.Graphics.Capture.GraphicsCaptureSession",
 			L"IsBorderRequired");
 } catch (const winrt::hresult_error &err) {
-	blog(LOG_ERROR, "winrt_capture_border_toggle_supported (0x%08X): %ls",
-	     err.code().value, err.message().c_str());
+	blog(LOG_ERROR, "winrt_capture_border_toggle_supported (0x%08X): %s",
+	     err.code().value, winrt::to_string(err.message()).c_str());
 	return false;
 } catch (...) {
 	blog(LOG_ERROR, "winrt_capture_border_toggle_supported (0x%08X)",
@@ -330,8 +330,9 @@ winrt_capture_create_item(IGraphicsCaptureItemInterop *const interop_factory,
 			if (FAILED(hr))
 				blog(LOG_ERROR, "CreateForWindow (0x%08X)", hr);
 		} catch (winrt::hresult_error &err) {
-			blog(LOG_ERROR, "CreateForWindow (0x%08X): %ls",
-			     err.code().value, err.message().c_str());
+			blog(LOG_ERROR, "CreateForWindow (0x%08X): %s",
+			     err.code().value,
+			     winrt::to_string(err.message()).c_str());
 		} catch (...) {
 			blog(LOG_ERROR, "CreateForWindow (0x%08X)",
 			     winrt::to_hresult().value);
@@ -350,8 +351,9 @@ winrt_capture_create_item(IGraphicsCaptureItemInterop *const interop_factory,
 				blog(LOG_ERROR, "CreateForMonitor (0x%08X)",
 				     hr);
 		} catch (winrt::hresult_error &err) {
-			blog(LOG_ERROR, "CreateForMonitor (0x%08X): %ls",
-			     err.code().value, err.message().c_str());
+			blog(LOG_ERROR, "CreateForMonitor (0x%08X): %s",
+			     err.code().value,
+			     winrt::to_string(err.message()).c_str());
 		} catch (...) {
 			blog(LOG_ERROR, "CreateForMonitor (0x%08X)",
 			     winrt::to_hresult().value);
@@ -425,8 +427,8 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 		session.StartCapture();
 		capture->active = TRUE;
 	} catch (winrt::hresult_error &err) {
-		blog(LOG_ERROR, "StartCapture (0x%08X): %ls", err.code().value,
-		     err.message().c_str());
+		blog(LOG_ERROR, "StartCapture (0x%08X): %s", err.code().value,
+		     winrt::to_string(err.message()).c_str());
 	} catch (...) {
 		blog(LOG_ERROR, "StartCapture (0x%08X)",
 		     winrt::to_hresult().value);
@@ -528,8 +530,8 @@ try {
 	return capture;
 
 } catch (const winrt::hresult_error &err) {
-	blog(LOG_ERROR, "winrt_capture_init (0x%08X): %ls", err.code().value,
-	     err.message().c_str());
+	blog(LOG_ERROR, "winrt_capture_init (0x%08X): %s", err.code().value,
+	     winrt::to_string(err.message()).c_str());
 	return nullptr;
 } catch (...) {
 	blog(LOG_ERROR, "winrt_capture_init (0x%08X)",
@@ -581,8 +583,9 @@ extern "C" EXPORT void winrt_capture_free(struct winrt_capture *capture)
 				capture->frame_pool.Close();
 		} catch (winrt::hresult_error &err) {
 			blog(LOG_ERROR,
-			     "Direct3D11CaptureFramePool::Close (0x%08X): %ls",
-			     err.code().value, err.message().c_str());
+			     "Direct3D11CaptureFramePool::Close (0x%08X): %s",
+			     err.code().value,
+			     winrt::to_string(err.message()).c_str());
 		} catch (...) {
 			blog(LOG_ERROR,
 			     "Direct3D11CaptureFramePool::Close (0x%08X)",
@@ -594,8 +597,9 @@ extern "C" EXPORT void winrt_capture_free(struct winrt_capture *capture)
 				capture->session.Close();
 		} catch (winrt::hresult_error &err) {
 			blog(LOG_ERROR,
-			     "GraphicsCaptureSession::Close (0x%08X): %ls",
-			     err.code().value, err.message().c_str());
+			     "GraphicsCaptureSession::Close (0x%08X): %s",
+			     err.code().value,
+			     winrt::to_string(err.message()).c_str());
 		} catch (...) {
 			blog(LOG_ERROR,
 			     "GraphicsCaptureSession::Close (0x%08X)",
@@ -628,8 +632,8 @@ extern "C" EXPORT BOOL winrt_capture_show_cursor(struct winrt_capture *capture,
 		success = TRUE;
 	} catch (winrt::hresult_error &err) {
 		blog(LOG_ERROR,
-		     "GraphicsCaptureSession::IsCursorCaptureEnabled (0x%08X): %ls",
-		     err.code().value, err.message().c_str());
+		     "GraphicsCaptureSession::IsCursorCaptureEnabled (0x%08X): %s",
+		     err.code().value, winrt::to_string(err.message()).c_str());
 	} catch (...) {
 		blog(LOG_ERROR,
 		     "GraphicsCaptureSession::IsCursorCaptureEnabled (0x%08X)",
