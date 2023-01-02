@@ -1287,9 +1287,14 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 
 		const RECT &rect = desc.DesktopCoordinates;
 		const ULONG nits = GetSdrWhiteNits(desc.Monitor);
+
+		char *friendly_name;
+		os_wcs_to_utf8_ptr(target.monitorFriendlyDeviceName, 0,
+				   &friendly_name);
+
 		blog(LOG_INFO,
 		     "\t  output %u:\n"
-		     "\t    name=%ls\n"
+		     "\t    name=%s\n"
 		     "\t    pos={%d, %d}\n"
 		     "\t    size={%d, %d}\n"
 		     "\t    attached=%s\n"
@@ -1301,11 +1306,12 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 		     "\t    dpi=%u (%u%%)\n"
 		     "\t    id=%s\n"
 		     "\t    alt_id=%s",
-		     i, target.monitorFriendlyDeviceName, rect.left, rect.top,
+		     i, friendly_name, rect.left, rect.top,
 		     rect.right - rect.left, rect.bottom - rect.top,
 		     desc.AttachedToDesktop ? "true" : "false", refresh,
 		     bits_per_color, space, nits, min_luminance, max_luminance,
 		     max_full_frame_luminance, dpiX, scaling, id, alt_id);
+		bfree(friendly_name);
 	}
 }
 
