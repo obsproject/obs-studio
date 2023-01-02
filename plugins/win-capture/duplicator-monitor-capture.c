@@ -100,7 +100,7 @@ struct duplicator_monitor_info {
 	char device_id[128];
 	char id[128];
 	char alt_id[128];
-	char name[64];
+	char name[128];
 	RECT rect;
 	HMONITOR handle;
 };
@@ -182,7 +182,12 @@ static void GetMonitorName(HMONITOR handle, char *name, size_t count)
 	mi.cbSize = sizeof(mi);
 	if (GetMonitorInfoW(handle, (LPMONITORINFO)&mi) &&
 	    GetMonitorTarget(mi.szDevice, &target)) {
-		snprintf(name, count, "%ls", target.monitorFriendlyDeviceName);
+		char *friendly_name;
+		os_wcs_to_utf8_ptr(target.monitorFriendlyDeviceName, 0,
+				   &friendly_name);
+
+		strcpy_s(name, count, friendly_name);
+		bfree(friendly_name);
 	} else {
 		strcpy_s(name, count, "[OBS: Unknown]");
 	}
