@@ -439,7 +439,7 @@ void obs_transition_set(obs_source_t *transition, obs_source_t *source)
 	obs_source_t *s[2];
 	bool active[2];
 
-	if (!transition_valid(transition, "obs_transition_clear"))
+	if (!transition_valid(transition, "obs_transition_set"))
 		return;
 
 	source = obs_source_get_ref(source);
@@ -892,6 +892,9 @@ bool obs_transition_video_render_direct(obs_source_t *transition,
 	if (t >= 1.0f && transition->transitioning_video) {
 		transition->transitioning_video = false;
 		video_stopped = true;
+
+		if (!obs_source_active(transition))
+			transition->transitioning_audio = false;
 
 		if (!transition->transitioning_audio) {
 			obs_transition_stop(transition);
