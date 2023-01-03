@@ -1363,9 +1363,9 @@ static void process_all_audio_actions(struct obs_scene_item *item,
 static void mix_audio_with_buf(float *p_out, float *p_in, float *buf_in,
 			       size_t pos, size_t count)
 {
-	register float *out = p_out;
-	register float *buf = buf_in + pos;
-	register float *in = p_in + pos;
+	register float *out = p_out + pos;
+	register float *buf = buf_in;
+	register float *in = p_in;
 	register float *end = in + count;
 
 	while (in < end)
@@ -1375,8 +1375,8 @@ static void mix_audio_with_buf(float *p_out, float *p_in, float *buf_in,
 static inline void mix_audio(float *p_out, float *p_in, size_t pos,
 			     size_t count)
 {
-	register float *out = p_out;
-	register float *in = p_in + pos;
+	register float *out = p_out + pos;
+	register float *in = p_in;
 	register float *end = in + count;
 
 	while (in < end)
