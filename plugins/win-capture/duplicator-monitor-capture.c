@@ -526,9 +526,9 @@ static void duplicator_capture_tick(void *data, float seconds)
 									capture->handle);
 						}
 					}
-
-					capture->reset_timeout = 0.0f;
 				}
+
+				capture->reset_timeout = 0.0f;
 			}
 		}
 	} else {
@@ -563,10 +563,10 @@ static void duplicator_capture_tick(void *data, float seconds)
 						capture->duplicator =
 							gs_duplicator_create(
 								dxgi_index);
-
-						capture->reset_timeout = 0.0f;
 					}
 				}
+
+				capture->reset_timeout = 0.0f;
 			}
 		}
 
