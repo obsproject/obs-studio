@@ -17,6 +17,7 @@ jobs:
   schema:
     name: Schema
     runs-on: [ubuntu-20.04]
+    if: ${{ github.repository_owner == 'obsproject' || github.event_name != 'schedule' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -46,7 +47,7 @@ jobs:
     name: Service Check
     runs-on: ubuntu-20.04
     needs: schema
-    if: ${{ github.repository_owner == 'obsproject' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
+    if: ${{ github.repository_owner == 'obsproject' && github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
 
     steps:
       - name: Checkout
