@@ -90,6 +90,7 @@ QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL &impl, mfxVersion &version,
 	m_bIsWindows8OrGreater = IsWindows8OrGreater();
 	m_bUseD3D11 = false;
 	m_bD3D9HACK = true;
+	m_bUseTexAlloc = (m_bUseD3D11 || m_bD3D9HACK);
 
 	if (m_bIsWindows8OrGreater) {
 		tempImpl = impl | MFX_IMPL_VIA_D3D11;
@@ -425,7 +426,7 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 	m_mfxEncParams.mfx.FrameInfo.Width = MSDK_ALIGN16(pParams->nWidth);
 	m_mfxEncParams.mfx.FrameInfo.Height = MSDK_ALIGN16(pParams->nHeight);
 
-	if (m_bUseD3D11 || m_bD3D9HACK)
+	if (m_bUseTexAlloc)
 		m_mfxEncParams.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
 	else
 		m_mfxEncParams.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
@@ -480,7 +481,7 @@ mfxStatus QSV_Encoder_Internal::AllocateSurfaces()
 	EncRequest.NumFrameSuggested += m_mfxEncParams.AsyncDepth;
 
 	// Allocate required surfaces
-	if (m_bUseD3D11 || m_bD3D9HACK) {
+	if (m_bUseTexAlloc) {
 		sts = m_mfxAllocator.Alloc(m_mfxAllocator.pthis, &EncRequest,
 					   &m_mfxResponse);
 		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -757,7 +758,7 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY,
 	}
 
 	mfxFrameSurface1 *pSurface = m_pmfxSurfaces[nSurfIdx];
-	if (m_bUseD3D11 || m_bD3D9HACK) {
+	if (m_bUseTexAlloc) {
 		sts = m_mfxAllocator.Lock(m_mfxAllocator.pthis,
 					  pSurface->Data.MemId,
 					  &(pSurface->Data));
@@ -771,7 +772,7 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY,
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 	pSurface->Data.TimeStamp = ts;
 
-	if (m_bUseD3D11 || m_bD3D9HACK) {
+	if (m_bUseTexAlloc) {
 		sts = m_mfxAllocator.Unlock(m_mfxAllocator.pthis,
 					    pSurface->Data.MemId,
 					    &(pSurface->Data));
@@ -836,7 +837,7 @@ mfxStatus QSV_Encoder_Internal::Encode_tex(uint64_t ts, uint32_t tex_handle,
 	mfxFrameSurface1 *pSurface = m_pmfxSurfaces[nSurfIdx];
 	//copy to default surface directly
 	pSurface->Data.TimeStamp = ts;
-	if (m_bUseD3D11 || m_bD3D9HACK) {
+	if (m_bUseTexAlloc) {
 		sts = simple_copytex(m_mfxAllocator.pthis, pSurface->Data.MemId,
 				     tex_handle, lock_key, next_key);
 		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -893,12 +894,12 @@ mfxStatus QSV_Encoder_Internal::ClearData()
 		m_pmfxENC = NULL;
 	}
 
-	if (m_bUseD3D11 || m_bD3D9HACK)
+	if (m_bUseTexAlloc)
 		m_mfxAllocator.Free(m_mfxAllocator.pthis, &m_mfxResponse);
 
 	if (m_pmfxSurfaces) {
 		for (int i = 0; i < m_nSurfNum; i++) {
-			if (!m_bUseD3D11 && !m_bD3D9HACK)
+			if (!m_bUseTexAlloc)
 				delete m_pmfxSurfaces[i]->Data.Y;
 
 			delete m_pmfxSurfaces[i];
@@ -921,7 +922,7 @@ mfxStatus QSV_Encoder_Internal::ClearData()
 		g_numEncodersOpen--;
 	}
 
-	if ((m_bUseD3D11 || m_bD3D9HACK) && (g_numEncodersOpen <= 0)) {
+	if ((m_bUseTexAlloc) && (g_numEncodersOpen <= 0)) {
 		Release();
 		g_DX_Handle = NULL;
 	}
