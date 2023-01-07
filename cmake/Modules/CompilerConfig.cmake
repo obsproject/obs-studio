@@ -109,10 +109,16 @@ else()
     "$<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wnull-conversion;-fcolor-diagnostics;-Wno-error=shorten-64-to-32>"
     "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:-Wconversion-null>")
 
-  # GCC on aarch64 emits type-limits warnings that do not appear on x86_64
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_SYSTEM_PROCESSOR STREQUAL
-                                              "aarch64")
-    add_compile_options(-Wno-error=type-limits)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    # GCC on aarch64 emits type-limits warnings that do not appear on x86_64
+    if(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+      add_compile_options(-Wno-error=type-limits)
+    endif()
+
+    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105562
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL "12.1.0")
+      add_compile_options(-Wno-error=maybe-uninitialized)
+    endif()
   endif()
 
   if(OBS_CODESIGN_LINKER)
