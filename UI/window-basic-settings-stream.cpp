@@ -1583,7 +1583,7 @@ void OBSBasicSettings::ResetEncoders(bool streamOnly)
 
 #define ENCODER_STR(str) QTStr("Basic.Settings.Output.Simple.Encoder." str)
 
-	ui->simpleOutStrEncoder->addItem(ENCODER_STR("Software"),
+	ui->simpleOutStrEncoder->addItem(ENCODER_STR("Software.X264.H264"),
 					 QString(SIMPLE_ENCODER_X264));
 	if (service_supports_encoder(vcodecs, "obs_qsv11"))
 		ui->simpleOutStrEncoder->addItem(

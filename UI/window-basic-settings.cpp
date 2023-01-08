@@ -5218,10 +5218,11 @@ void OBSBasicSettings::FillSimpleRecordingValues()
 	ADD_QUALITY("HQ");
 	ADD_QUALITY("Lossless");
 
-	ui->simpleOutRecEncoder->addItem(ENCODER_STR("Software"),
+	ui->simpleOutRecEncoder->addItem(ENCODER_STR("Software.X264.H264"),
 					 QString(SIMPLE_ENCODER_X264));
-	ui->simpleOutRecEncoder->addItem(ENCODER_STR("SoftwareLowCPU"),
-					 QString(SIMPLE_ENCODER_X264_LOWCPU));
+	ui->simpleOutRecEncoder->addItem(
+		ENCODER_STR("SoftwareLowCPU.X264.H264"),
+		QString(SIMPLE_ENCODER_X264_LOWCPU));
 	if (EncoderAvailable("obs_qsv11"))
 		ui->simpleOutRecEncoder->addItem(
 			ENCODER_STR("Hardware.QSV.H264"),
