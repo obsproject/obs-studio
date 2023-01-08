@@ -64,6 +64,23 @@ jobs:
         run: |
           ./CI/check-cmake.sh
 
+  config:
+    name: '01 - Configure Build Jobs'
+    runs-on: [ubuntu-22.04]
+    outputs:
+      create_artifacts: ${{ steps.config.outputs.create_artifacts }}
+      cache_date: ${{ steps.config.outputs.cache_date }}
+    steps:
+      - name: 'Configure Build Jobs'
+        id: config
+        run: |
+          if [[ "${{ github.event_name == 'pull_request' }}" == "true" ]]; then
+            echo "create_artifacts=${{ contains(github.event.pull_request.labels.*.name, 'Seeking Testers') }}" >> $GITHUB_OUTPUT
+          else
+            echo 'create_artifacts=true' >> $GITHUB_OUTPUT
+          fi
+          echo "cache_date=$(date +"%Y-%m-%d")" >> $GITHUB_OUTPUT
+
   macos_build:
     name: '02 - macOS'
     runs-on: [macos-12]
@@ -71,7 +88,7 @@ jobs:
       matrix:
         arch: ['x86_64', 'arm64']
     if: always()
-    needs: [clang_check]
+    needs: [config, clang_check]
     env:
       MACOSX_DEPLOYMENT_TARGET_X86_64: '10.15'
       MACOSX_DEPLOYMENT_TARGET_ARM64: '11.0'
@@ -92,17 +109,6 @@ jobs:
           path: 'obs-studio'
           fetch-depth: 0
 
-      - name: 'Check for Github Labels'
-        if: github.event_name == 'pull_request'
-        run: |
-          if test -n "$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -s "${{ github.event.pull_request.url }}" | jq -e '.labels[] | select(.name == "Seeking Testers")')"; then
-            echo "SEEKING_TESTERS=1" >> $GITHUB_ENV
-          else
-            echo "SEEKING_TESTERS=0" >> $GITHUB_ENV
-          fi
-
-          echo "CACHE_DATE=$(date +"%Y-%m-%d")" >> $GITHUB_ENV
-
       - name: 'Restore ccache from cache'
         id: ccache-cache
         uses: actions/cache@v3
@@ -110,7 +116,7 @@ jobs:
           CACHE_NAME: 'ccache-cache'
         with:
           path: ${{ github.workspace }}/.ccache
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ matrix.arch }}-${{ env.CACHE_DATE }}
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ matrix.arch }}-${{ needs.config.outputs.cache_date }}
 
       - name: 'Restore Chromium Embedded Framework from cache'
         id: cef-cache
@@ -186,14 +192,14 @@ jobs:
         run: cmake --build build -t test
 
       - name: 'Create build artifact'
-        if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
+        if: ${{ success() && fromJSON(needs.config.outputs.create_artifacts) }}
         run: |
           CI/macos/03_package_obs.sh --codesign --architecture "${{ matrix.arch }}"
           ARTIFACT_NAME=$(basename $(/usr/bin/find build -type f -name "obs-studio-*.dmg" -depth 1 | head -1))
           echo "FILE_NAME=${ARTIFACT_NAME}" >> $GITHUB_ENV
 
       - name: 'Upload build Artifact'
-        if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
+        if: ${{ success() && fromJSON(needs.config.outputs.create_artifacts) }}
         uses: actions/upload-artifact@v3
         with:
           name: 'obs-studio-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
@@ -206,7 +212,7 @@ jobs:
       matrix:
         ubuntu: ['ubuntu-20.04', 'ubuntu-22.04']
     if: always()
-    needs: [clang_check]
+    needs: [config, clang_check]
     defaults:
       run:
         shell: bash
@@ -221,17 +227,6 @@ jobs:
           path: 'obs-studio'
           fetch-depth: 0
 
-      - name: 'Check for Github Labels'
-        if: github.event_name == 'pull_request'
-        run: |
-          if test -n "$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -s "${{ github.event.pull_request.url }}" | jq -e '.labels[] | select(.name == "Seeking Testers")')"; then
-            echo "SEEKING_TESTERS=1" >> $GITHUB_ENV
-          else
-            echo "SEEKING_TESTERS=0" >> $GITHUB_ENV
-          fi
-
-          echo "CACHE_DATE=$(date +"%Y-%m-%d")" >> $GITHUB_ENV
-
       - name: 'Restore ccache from cache'
         id: ccache-cache
         uses: actions/cache@v3
@@ -239,7 +234,7 @@ jobs:
           CACHE_NAME: 'ccache-cache'
         with:
           path: ${{ github.workspace }}/.ccache
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ matrix.ubuntu }}-${{ env.CACHE_DATE }}
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ matrix.ubuntu }}-${{ needs.config.outputs.cache_date }}
 
       - name: 'Restore Chromium Embedded Framework from cache'
         id: cef-cache
@@ -268,7 +263,7 @@ jobs:
         run: cmake --build build -t test
 
       - name: 'Create build artifact'
-        if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
+        if: ${{ success() && fromJSON(needs.config.outputs.create_artifacts) }}
         run: |
           CI/linux/03_package_obs.sh
           ARTIFACT_NAME=$(basename $(/usr/bin/find build  -maxdepth 1 -type f -name "obs-studio-*.deb" | sort -rn | head -1))
@@ -276,14 +271,14 @@ jobs:
           echo "DEBUG_FILE_NAME=${ARTIFACT_NAME//.deb/-dbgsym.ddeb}" >> $GITHUB_ENV
 
       - name: 'Upload build Artifact'
-        if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
+        if: ${{ success() && fromJSON(needs.config.outputs.create_artifacts) }}
         uses: actions/upload-artifact@v3
         with:
           name: 'obs-studio-${{ matrix.ubuntu }}-${{ steps.setup.outputs.commitHash }}'
           path: '${{ github.workspace }}/obs-studio/build/${{ env.FILE_NAME }}'
 
       - name: 'Upload debug symbol Artifact'
-        if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
+        if: ${{ success() && fromJSON(needs.config.outputs.create_artifacts) }}
         uses: actions/upload-artifact@v3
         with:
           name: 'obs-studio-${{ matrix.ubuntu }}-${{ steps.setup.outputs.commitHash }}-dbgsym'
@@ -292,7 +287,7 @@ jobs:
   windows_build:
     name: '02 - Windows'
     runs-on: [windows-2022]
-    needs: [clang_check]
+    needs: [config, clang_check]
     if: always()
     strategy:
       matrix:
@@ -315,12 +310,6 @@ jobs:
 
       - name: 'Add msbuild to PATH'
         uses: microsoft/setup-msbuild@v1.1
-
-      - name: 'Check for Github Labels'
-        if: github.event_name == 'pull_request'
-        run: |
-          $LabelFound = try { (Invoke-RestMethod -Authentication 'Bearer' -Token (ConvertTo-SecureString '${{ secrets.GITHUB_TOKEN }}' -AsPlainText) -Uri "${{ github.event.pull_request.url }}" -UseBasicParsing).labels.name.contains("Seeking Testers") } catch { $false }
-          Write-Output "SEEKING_TESTERS=$(if( $LabelFound -eq $true ) { 1 } else { 0 })" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: 'Restore VLC dependency from cache'
         id: vlc-cache
@@ -356,14 +345,14 @@ jobs:
         run: CI/windows/02_build_obs.ps1 -BuildArch ${{ matrix.arch }}
 
       - name: 'Create build artifact'
-        if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
+        if: ${{ success() && fromJSON(needs.config.outputs.create_artifacts) }}
         run: |
           CI/windows/03_package_obs.ps1 -BuildArch ${{ matrix.arch }} -Package
           $ArtifactName = Get-ChildItem -filter "obs-studio-*-windows-${{ matrix.arch }}.zip" -File
           Write-Output "FILE_NAME=${ArtifactName}" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: 'Upload build artifact'
-        if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
+        if: ${{ success() && fromJSON(needs.config.outputs.create_artifacts) }}
         uses: actions/upload-artifact@v3
         with:
           name: 'obs-studio-windows-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
@@ -372,8 +361,7 @@ jobs:
   linux_package:
     name: '02 - Flatpak'
     runs-on: [ubuntu-latest]
-    needs: [clang_check]
-    if: always()
+    needs: [config, clang_check]
     defaults:
       run:
         shell: bash
@@ -381,15 +369,6 @@ jobs:
       image: bilelmoussaoui/flatpak-github-actions:kde-6.4
       options: --privileged
     steps:
-      - name: 'Check for Github Labels'
-        if: github.event_name == 'pull_request'
-        run: |
-          if ! /usr/bin/command -v "jq" >/dev/null 2>&1; then sudo dnf install -y -q jq; fi
-          if test -n "$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -s "${{ github.event.pull_request.url }}" | jq -e '.labels[] | select(.name == "Seeking Testers")')"; then
-            echo "SEEKING_TESTERS=1" >> $GITHUB_ENV
-          else
-            echo "SEEKING_TESTERS=0" >> $GITHUB_ENV
-          fi
 
       - name: 'Checkout'
         uses: actions/checkout@v3
@@ -407,7 +386,7 @@ jobs:
       - name: Build Flatpak Manifest
         uses: flatpak/flatpak-github-actions/flatpak-builder@v5
         with:
-          build-bundle: ${{ github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1' }}
+          build-bundle: ${{ fromJSON(needs.config.outputs.create_artifacts) }}
           bundle: obs-studio-flatpak-${{ env.OBS_GIT_HASH }}.flatpak
           manifest-path: CI/flatpak/com.obsproject.Studio.json
           cache-key: flatpak-builder-${{ hashFiles('CI/flatpak/com.obsproject.Studio.json') }}
