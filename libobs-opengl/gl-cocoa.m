@@ -265,6 +265,8 @@ void device_leave_context(gs_device_t *device)
 {
 	glFlush();
 	[NSOpenGLContext clearCurrentContext];
+	device->cur_vertex_buffer = NULL;
+	device->cur_index_buffer = NULL;
 	device->cur_render_target = NULL;
 	device->cur_zstencil_buffer = NULL;
 	device->cur_swap = NULL;
