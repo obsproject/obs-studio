@@ -123,6 +123,12 @@ static void log_processor_cores(void)
 	     os_get_physical_cores(), os_get_logical_cores());
 }
 
+static void log_emulation_status(void)
+{
+	blog(LOG_INFO, "Rosetta translation used: %s",
+	     os_get_emulation_status() ? "true" : "false");
+}
+
 static void log_available_memory(void)
 {
 	size_t size;
@@ -162,6 +168,7 @@ void log_system_info(void)
 	log_processor_cores();
 	log_available_memory();
 	log_os();
+	log_emulation_status();
 	log_kernel_version();
 }
 

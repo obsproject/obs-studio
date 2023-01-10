@@ -530,6 +530,10 @@ QToolButton:pressed {
     qproperty-icon: url(./Dark/media-pause.svg);
 }
 
+* [themeID="filtersIcon"] {
+    qproperty-icon: url(./Dark/filter.svg);
+}
+
 QToolBarExtension {
     background: palette(button);
     min-width: 12px;
@@ -812,7 +816,7 @@ QPushButton:pressed {
     background-color: rgb(240,98,146);
 }
 
-QPushButton:disabled {
+QPushButton:disabled, QToolButton:disabled {
     background-color: rgb(0,139,163);
 }
 
@@ -1509,5 +1513,10 @@ QDialogButtonBox {
 
 /* Stats dialog */
 OBSBasicStats {
+    background: palette(dark);
+}
+
+/* Advanced audio dialog */
+OBSBasicAdvAudio #scrollAreaWidgetContents {
     background: palette(dark);
 }

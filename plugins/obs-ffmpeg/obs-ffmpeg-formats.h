@@ -1,6 +1,7 @@
 #pragma once
 
 #include <libavcodec/avcodec.h>
+#include <libavutil/pixdesc.h>
 
 static inline int64_t rescale_ts(int64_t val, AVCodecContext *context,
 				 AVRational new_base)
@@ -47,11 +48,9 @@ obs_to_ffmpeg_video_format(enum video_format format)
 		return AV_PIX_FMT_YUVA422P;
 	case VIDEO_FORMAT_YUVA:
 		return AV_PIX_FMT_YUVA444P;
-	case VIDEO_FORMAT_YA2L:
 #if LIBAVUTIL_BUILD >= AV_VERSION_INT(56, 31, 100)
+	case VIDEO_FORMAT_YA2L:
 		return AV_PIX_FMT_YUVA444P12LE;
-#else
-		return AV_PIX_FMT_NONE;
 #endif
 	case VIDEO_FORMAT_I010:
 		return AV_PIX_FMT_YUV420P10LE;
@@ -59,11 +58,41 @@ obs_to_ffmpeg_video_format(enum video_format format)
 		return AV_PIX_FMT_P010LE;
 	case VIDEO_FORMAT_NONE:
 	case VIDEO_FORMAT_AYUV:
-		/* not supported by FFmpeg */
+	default:
 		return AV_PIX_FMT_NONE;
 	}
+}
 
-	return AV_PIX_FMT_NONE;
+static enum AVChromaLocation
+determine_chroma_location(enum AVPixelFormat pix_fmt,
+			  enum AVColorSpace colorspace)
+{
+	const AVPixFmtDescriptor *const desc = av_pix_fmt_desc_get(pix_fmt);
+	if (desc) {
+		const unsigned log_chroma_w = desc->log2_chroma_w;
+		const unsigned log_chroma_h = desc->log2_chroma_h;
+		switch (log_chroma_h) {
+		case 0:
+			switch (log_chroma_w) {
+			case 0:
+				/* 4:4:4 */
+				return AVCHROMA_LOC_CENTER;
+			case 1:
+				/* 4:2:2 */
+				return AVCHROMA_LOC_LEFT;
+			}
+			break;
+		case 1:
+			if (log_chroma_w == 1) {
+				/* 4:2:0 */
+				return (colorspace == AVCOL_SPC_BT2020_NCL)
+					       ? AVCHROMA_LOC_TOPLEFT
+					       : AVCHROMA_LOC_LEFT;
+			}
+		}
+	}
+
+	return AVCHROMA_LOC_UNSPECIFIED;
 }
 
 static inline enum audio_format

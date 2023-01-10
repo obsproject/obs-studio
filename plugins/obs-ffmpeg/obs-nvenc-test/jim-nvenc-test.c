@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 #include "../external/nvEncodeAPI.h"
@@ -21,6 +22,8 @@ struct nvenc_info {
 };
 
 #define MAX_CAPS 10
+static uint32_t luid_count = 0;
+static uint64_t luid_order[MAX_CAPS] = {0};
 static struct nvenc_info adapter_info[MAX_CAPS] = {0};
 
 bool load_nvenc_lib(void)
@@ -37,11 +40,21 @@ static inline void *load_nv_func(const char *func)
 	return func_ptr;
 }
 
+static inline uint32_t get_adapter_idx(uint32_t adapter_idx, LUID luid)
+{
+	for (uint32_t i = 0; i < luid_count; i++) {
+		if (luid_order[i] == *(uint64_t *)&luid) {
+			return i;
+		}
+	}
+
+	return adapter_idx;
+}
+
 static bool get_adapter_caps(IDXGIFactory *factory, uint32_t adapter_idx)
 {
-	struct nvenc_info *caps = &adapter_info[adapter_idx];
+	struct nvenc_info *caps;
 	IDXGIAdapter *adapter = NULL;
-	IDXGIOutput *output = NULL;
 	ID3D11Device *device = NULL;
 	ID3D11DeviceContext *context = NULL;
 	GUID *guids = NULL;
@@ -58,14 +71,11 @@ static bool get_adapter_caps(IDXGIFactory *factory, uint32_t adapter_idx)
 	DXGI_ADAPTER_DESC desc;
 	adapter->lpVtbl->GetDesc(adapter, &desc);
 
+	caps = &adapter_info[get_adapter_idx(adapter_idx, desc.AdapterLuid)];
 	if (desc.VendorId != NVIDIA_VENDOR_ID)
 		return true;
 
 	caps->is_nvidia = true;
-
-	hr = adapter->lpVtbl->EnumOutputs(adapter, 0, &output);
-	if (FAILED(hr))
-		goto finish;
 
 	hr = D3D11CreateDevice(adapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, 0, NULL,
 			       0, D3D11_SDK_VERSION, &device, NULL, &context);
@@ -111,8 +121,6 @@ finish:
 		context->lpVtbl->Release(context);
 	if (device)
 		device->lpVtbl->Release(device);
-	if (output)
-		output->lpVtbl->Release(output);
 	if (adapter)
 		adapter->lpVtbl->Release(adapter);
 	return true;
@@ -172,7 +180,7 @@ DWORD WINAPI TimeoutThread(LPVOID param)
 	return 0;
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
 	IDXGIFactory *factory = NULL;
 	HRESULT hr;
@@ -192,6 +200,17 @@ int main(void)
 
 	if (!init_nvenc_internal())
 		return 0;
+
+	/* --------------------------------------------------------- */
+	/* parse expected LUID order                                 */
+
+	luid_count = argc - 1;
+	for (int i = 1; i < argc; i++) {
+		luid_order[i - 1] = strtoull(argv[i], NULL, 16);
+	}
+
+	/* --------------------------------------------------------- */
+	/* obtain adapter compatibility information                  */
 
 	hr = CreateDXGIFactory1(&IID_IDXGIFactory1, (void **)&factory);
 	if (FAILED(hr))

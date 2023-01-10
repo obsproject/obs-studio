@@ -55,6 +55,7 @@
 #include <curl/curl.h>
 
 #ifdef _WIN32
+#include <json11.hpp>
 #include <windows.h>
 #include <filesystem>
 #else
@@ -80,6 +81,7 @@ static string lastLogFile;
 static string lastCrashLogFile;
 
 bool portable_mode = false;
+bool steam = false;
 static bool multi = false;
 static bool log_verbose = false;
 static bool unfiltered_log = false;
@@ -375,7 +377,7 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 	va_copy(args2, args);
 #endif
 
-	vsnprintf(str, 4095, msg, args);
+	vsnprintf(str, sizeof(str), msg, args);
 
 #ifdef _WIN32
 	if (IsDebuggerPresent()) {
@@ -1261,6 +1263,112 @@ bool OBSApp::InitTheme()
 		return true;
 
 	return SetTheme("System");
+}
+
+#ifdef _WIN32
+void ParseBranchesJson(const std::string &jsonString, vector<UpdateBranch> &out,
+		       std::string &error)
+{
+	json11::Json root;
+	root = json11::Json::parse(jsonString, error);
+	if (!error.empty() || !root.is_array())
+		return;
+
+	for (const json11::Json &item : root.array_items()) {
+#ifdef _WIN32
+		if (!item["windows"].bool_value())
+			continue;
+#endif
+
+		UpdateBranch branch = {
+			QString::fromStdString(item["name"].string_value()),
+			QString::fromStdString(
+				item["display_name"].string_value()),
+			QString::fromStdString(
+				item["description"].string_value()),
+			item["enabled"].bool_value(),
+			item["visible"].bool_value(),
+		};
+		out.push_back(branch);
+	}
+}
+
+bool LoadBranchesFile(vector<UpdateBranch> &out)
+{
+	string error;
+	string branchesText;
+
+	BPtr<char> branchesFilePath =
+		GetConfigPathPtr("obs-studio/updates/branches.json");
+
+	QFile branchesFile(branchesFilePath.Get());
+	if (!branchesFile.open(QIODevice::ReadOnly)) {
+		error = "Opening file failed.";
+		goto fail;
+	}
+
+	branchesText = branchesFile.readAll();
+	if (branchesText.empty()) {
+		error = "File empty.";
+		goto fail;
+	}
+
+	ParseBranchesJson(branchesText, out, error);
+	if (error.empty())
+		return !out.empty();
+
+fail:
+	blog(LOG_WARNING, "Loading branches from file failed: %s",
+	     error.c_str());
+	return false;
+}
+#endif
+
+void OBSApp::SetBranchData(const string &data)
+{
+#ifdef _WIN32
+	string error;
+	vector<UpdateBranch> result;
+
+	ParseBranchesJson(data, result, error);
+
+	if (!error.empty()) {
+		blog(LOG_WARNING, "Reading branches JSON response failed: %s",
+		     error.c_str());
+		return;
+	}
+
+	if (!result.empty())
+		updateBranches = result;
+
+	branches_loaded = true;
+#else
+	UNUSED_PARAMETER(data);
+#endif
+}
+
+std::vector<UpdateBranch> OBSApp::GetBranches()
+{
+	vector<UpdateBranch> out;
+	/* Always ensure the default branch exists */
+	out.push_back(UpdateBranch{"stable", "", "", true, true});
+
+#ifdef _WIN32
+	if (!branches_loaded) {
+		vector<UpdateBranch> result;
+		if (LoadBranchesFile(result))
+			updateBranches = result;
+
+		branches_loaded = true;
+	}
+#endif
+
+	/* Copy additional branches to result (if any) */
+	if (!updateBranches.empty())
+		out.insert(out.end(), updateBranches.begin(),
+			   updateBranches.end());
+
+	return out;
 }
 
 OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
@@ -2194,14 +2302,25 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 	setenv("QT_STYLE_OVERRIDE", "Fusion", false);
 
+#if OBS_QT_VERSION == 6
+	/* NOTE: Users blindly set this, but this theme is incompatble with Qt6 and
+	 * crashes loading saved geometry. Just turn off this theme and let users complain OBS
+	 * looks ugly instead of crashing. */
+	const char *platform_theme = getenv("QT_QPA_PLATFORMTHEME");
+	if (platform_theme && strcmp(platform_theme, "qt5ct") == 0)
+		unsetenv("QT_QPA_PLATFORMTHEME");
+#endif
+
 #if defined(ENABLE_WAYLAND) && defined(USE_XDG)
 	/* NOTE: Qt doesn't use the Wayland platform on GNOME, so we have to
 	 * force it using the QT_QPA_PLATFORM env var. It's still possible to
 	 * use other QPA platforms using this env var, or the -platform command
-	 * line option. */
+	 * line option. Remove after Qt 6.3 is everywhere. */
 
+	const char *desktop = getenv("XDG_CURRENT_DESKTOP");
 	const char *session_type = getenv("XDG_SESSION_TYPE");
-	if (session_type && strcmp(session_type, "wayland") == 0)
+	if (session_type && desktop && strcmp(desktop, "GNOME") == 0 &&
+	    strcmp(session_type, "wayland") == 0)
 		setenv("QT_QPA_PLATFORM", "wayland", false);
 #endif
 #endif
@@ -2315,10 +2434,6 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 				audio_permission, accessibility_permission);
 			check->exec();
 		}
-
-		bool rosettaTranslated = os_get_emulation_status();
-		blog(LOG_INFO, "Rosetta translation used: %s",
-		     rosettaTranslated ? "true" : "false");
 #endif
 
 #ifdef _WIN32
@@ -2661,16 +2776,16 @@ static void move_to_xdg(void)
 	if (!home)
 		return;
 
-	if (snprintf(old_path, 512, "%s/.obs-studio", home) <= 0)
+	if (snprintf(old_path, sizeof(old_path), "%s/.obs-studio", home) <= 0)
 		return;
 
 	/* make base xdg path if it doesn't already exist */
-	if (GetConfigPath(new_path, 512, "") <= 0)
+	if (GetConfigPath(new_path, sizeof(new_path), "") <= 0)
 		return;
 	if (os_mkdirs(new_path) == MKDIR_ERROR)
 		return;
 
-	if (GetConfigPath(new_path, 512, "obs-studio") <= 0)
+	if (GetConfigPath(new_path, sizeof(new_path), "obs-studio") <= 0)
 		return;
 
 	if (os_file_exists(old_path) && !os_file_exists(new_path)) {
@@ -2811,6 +2926,122 @@ static void convert_14_2_encoder_setting(const char *encoder, const char *file)
 	obs_data_item_release(&cbr_item);
 }
 
+static void convert_nvenc_h264_presets(obs_data_t *data)
+{
+	const char *preset = obs_data_get_string(data, "preset");
+	const char *rc = obs_data_get_string(data, "rate_control");
+
+	// If already using SDK10+ preset, return early.
+	if (astrcmpi_n(preset, "p", 1) == 0) {
+		obs_data_set_string(data, "preset2", preset);
+		return;
+	}
+
+	if (astrcmpi(rc, "lossless") == 0 && astrcmpi(preset, "mq")) {
+		obs_data_set_string(data, "preset2", "p3");
+		obs_data_set_string(data, "tune", "lossless");
+		obs_data_set_string(data, "multipass", "disabled");
+
+	} else if (astrcmpi(rc, "lossless") == 0 && astrcmpi(preset, "hp")) {
+		obs_data_set_string(data, "preset2", "p2");
+		obs_data_set_string(data, "tune", "lossless");
+		obs_data_set_string(data, "multipass", "disabled");
+
+	} else if (astrcmpi(preset, "mq") == 0) {
+		obs_data_set_string(data, "preset2", "p5");
+		obs_data_set_string(data, "tune", "hq");
+		obs_data_set_string(data, "multipass", "qres");
+
+	} else if (astrcmpi(preset, "hq") == 0) {
+		obs_data_set_string(data, "preset2", "p5");
+		obs_data_set_string(data, "tune", "hq");
+		obs_data_set_string(data, "multipass", "disabled");
+
+	} else if (astrcmpi(preset, "default") == 0) {
+		obs_data_set_string(data, "preset2", "p3");
+		obs_data_set_string(data, "tune", "hq");
+		obs_data_set_string(data, "multipass", "disabled");
+
+	} else if (astrcmpi(preset, "hp") == 0) {
+		obs_data_set_string(data, "preset2", "p1");
+		obs_data_set_string(data, "tune", "hq");
+		obs_data_set_string(data, "multipass", "disabled");
+
+	} else if (astrcmpi(preset, "ll") == 0) {
+		obs_data_set_string(data, "preset2", "p3");
+		obs_data_set_string(data, "tune", "ll");
+		obs_data_set_string(data, "multipass", "disabled");
+
+	} else if (astrcmpi(preset, "llhq") == 0) {
+		obs_data_set_string(data, "preset2", "p4");
+		obs_data_set_string(data, "tune", "ll");
+		obs_data_set_string(data, "multipass", "disabled");
+
+	} else if (astrcmpi(preset, "llhp") == 0) {
+		obs_data_set_string(data, "preset2", "p2");
+		obs_data_set_string(data, "tune", "ll");
+		obs_data_set_string(data, "multipass", "disabled");
+	}
+}
+
+static void convert_nvenc_hevc_presets(obs_data_t *data)
+{
+	const char *preset = obs_data_get_string(data, "preset");
+	const char *rc = obs_data_get_string(data, "rate_control");
+
+	// If already using SDK10+ preset, return early.
+	if (astrcmpi_n(preset, "p", 1) == 0) {
+		obs_data_set_string(data, "preset2", preset);
+		return;
+	}
+
+	if (astrcmpi(rc, "lossless") == 0 && astrcmpi(preset, "mq")) {
+		obs_data_set_string(data, "preset2", "p5");
+		obs_data_set_string(data, "tune", "lossless");
+		obs_data_set_string(data, "multipass", "disabled");
+
+	} else if (astrcmpi(rc, "lossless") == 0 && astrcmpi(preset, "hp")) {
+		obs_data_set_string(data, "preset2", "p3");
+		obs_data_set_string(data, "tune", "lossless");
+		obs_data_set_string(data, "multipass", "disabled");
+
+	} else if (astrcmpi(preset, "mq") == 0) {
+		obs_data_set_string(data, "preset2", "p6");
+		obs_data_set_string(data, "tune", "hq");
+		obs_data_set_string(data, "multipass", "qres");
+
+	} else if (astrcmpi(preset, "hq") == 0) {
+		obs_data_set_string(data, "preset2", "p6");
+		obs_data_set_string(data, "tune", "hq");
+		obs_data_set_string(data, "multipass", "disabled");
+
+	} else if (astrcmpi(preset, "default") == 0) {
+		obs_data_set_string(data, "preset2", "p5");
+		obs_data_set_string(data, "tune", "hq");
+		obs_data_set_string(data, "multipass", "disabled");
+
+	} else if (astrcmpi(preset, "hp") == 0) {
+		obs_data_set_string(data, "preset2", "p1");
+		obs_data_set_string(data, "tune", "hq");
+		obs_data_set_string(data, "multipass", "disabled");
+
+	} else if (astrcmpi(preset, "ll") == 0) {
+		obs_data_set_string(data, "preset2", "p3");
+		obs_data_set_string(data, "tune", "ll");
+		obs_data_set_string(data, "multipass", "disabled");
+
+	} else if (astrcmpi(preset, "llhq") == 0) {
+		obs_data_set_string(data, "preset2", "p4");
+		obs_data_set_string(data, "tune", "ll");
+		obs_data_set_string(data, "multipass", "disabled");
+
+	} else if (astrcmpi(preset, "llhp") == 0) {
+		obs_data_set_string(data, "preset2", "p2");
+		obs_data_set_string(data, "tune", "ll");
+		obs_data_set_string(data, "multipass", "disabled");
+	}
+}
+
 static void convert_28_1_encoder_setting(const char *encoder, const char *file)
 {
 	OBSDataAutoRelease data =
@@ -2818,48 +3049,20 @@ static void convert_28_1_encoder_setting(const char *encoder, const char *file)
 	bool modified = false;
 
 	if (astrcmpi(encoder, "jim_nvenc") == 0 ||
-	    astrcmpi(encoder, "jim_hevc_nvenc") == 0 ||
-	    astrcmpi(encoder, "ffmpeg_nvenc") == 0 ||
-	    astrcmpi(encoder, "ffmpeg_hevc_nvenc") == 0) {
+	    astrcmpi(encoder, "ffmpeg_nvenc") == 0) {
 
 		if (obs_data_has_user_value(data, "preset") &&
 		    !obs_data_has_user_value(data, "preset2")) {
-			const char *preset =
-				obs_data_get_string(data, "preset");
+			convert_nvenc_h264_presets(data);
 
-			if (astrcmpi(preset, "mq") == 0) {
-				obs_data_set_string(data, "preset2", "p6");
-				obs_data_set_string(data, "tune", "hq");
-				obs_data_set_string(data, "multipass", "qres");
+			modified = true;
+		}
+	} else if (astrcmpi(encoder, "jim_hevc_nvenc") == 0 ||
+		   astrcmpi(encoder, "ffmpeg_hevc_nvenc") == 0) {
 
-			} else if (astrcmpi(preset, "hq") == 0) {
-				obs_data_set_string(data, "preset2", "p5");
-				obs_data_set_string(data, "tune", "hq");
-				obs_data_set_string(data, "multipass", "qres");
-
-			} else if (astrcmpi(preset, "hp") == 0) {
-				obs_data_set_string(data, "preset2", "p1");
-				obs_data_set_string(data, "tune", "hq");
-				obs_data_set_string(data, "multipass",
-						    "disabled");
-
-			} else if (astrcmpi(preset, "ll") == 0) {
-				obs_data_set_string(data, "preset2", "p3");
-				obs_data_set_string(data, "tune", "ll");
-				obs_data_set_string(data, "multipass",
-						    "disabled");
-
-			} else if (astrcmpi(preset, "llhq") == 0) {
-				obs_data_set_string(data, "preset2", "p4");
-				obs_data_set_string(data, "tune", "ll");
-				obs_data_set_string(data, "multipass", "qres");
-
-			} else if (astrcmpi(preset, "llhp") == 0) {
-				obs_data_set_string(data, "preset2", "p2");
-				obs_data_set_string(data, "tune", "ll");
-				obs_data_set_string(data, "multipass",
-						    "disabled");
-			}
+		if (obs_data_has_user_value(data, "preset") &&
+		    !obs_data_has_user_value(data, "preset2")) {
+			convert_nvenc_hevc_presets(data);
 
 			modified = true;
 		}
@@ -2867,6 +3070,32 @@ static void convert_28_1_encoder_setting(const char *encoder, const char *file)
 
 	if (modified)
 		obs_data_save_json_safe(data, file, "tmp", "bak");
+}
+
+bool update_nvenc_presets(ConfigFile &config)
+{
+	if (config_has_user_value(config, "SimpleOutput", "NVENCPreset2") ||
+	    !config_has_user_value(config, "SimpleOutput", "NVENCPreset"))
+		return false;
+
+	const char *streamEncoder =
+		config_get_string(config, "SimpleOutput", "StreamEncoder");
+	const char *nvencPreset =
+		config_get_string(config, "SimpleOutput", "NVENCPreset");
+
+	OBSDataAutoRelease data = obs_data_create();
+	obs_data_set_string(data, "preset", nvencPreset);
+
+	if (astrcmpi(streamEncoder, "nvenc_hevc") == 0) {
+		convert_nvenc_hevc_presets(data);
+	} else {
+		convert_nvenc_h264_presets(data);
+	}
+
+	config_set_string(config, "SimpleOutput", "NVENCPreset2",
+			  obs_data_get_string(data, "preset2"));
+
+	return true;
 }
 
 static void upgrade_settings(void)
@@ -3046,6 +3275,9 @@ int main(int argc, char *argv[])
 				  nullptr)) {
 			opt_disable_missing_files_check = true;
 
+		} else if (arg_is(argv[i], "--steam", nullptr)) {
+			steam = true;
+
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 		} else if (arg_is(argv[i], "--disable-high-dpi-scaling",
 				  nullptr)) {
@@ -3064,7 +3296,9 @@ int main(int argc, char *argv[])
 				"--scene <string>: Start with specific scene.\n\n"
 				"--studio-mode: Enable studio mode.\n"
 				"--minimize-to-tray: Minimize to system tray.\n"
+#if ALLOW_PORTABLE_MODE
 				"--portable, -p: Use portable mode.\n"
+#endif
 				"--multi, -m: Don't warn when launching multiple instances.\n\n"
 				"--verbose: Make log more verbose.\n"
 				"--always-on-top: Start in 'always on top' mode.\n\n"

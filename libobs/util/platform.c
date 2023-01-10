@@ -559,7 +559,8 @@ static inline void from_locale(char *buffer)
 double os_strtod(const char *str)
 {
 	char buf[64];
-	snprintf(buf, 64, "%s", str);
+	strncpy(buf, str, sizeof(buf) - 1);
+	buf[sizeof(buf) - 1] = 0;
 	to_locale(buf);
 	return strtod(buf, NULL);
 }
@@ -760,23 +761,25 @@ char *os_generate_formatted_filename(const char *extension, bool space,
 		if (!convert[0]) {
 			if (astrcmp_n(cmp, "%FPS", 4) == 0) {
 				if (ovi.fps_den <= 1) {
-					sprintf(convert, "%u", ovi.fps_num);
+					snprintf(convert, sizeof(convert), "%u",
+						 ovi.fps_num);
 				} else {
 					const double obsFPS =
 						(double)ovi.fps_num /
 						(double)ovi.fps_den;
-					sprintf(convert, "%.2f", obsFPS);
+					snprintf(convert, sizeof(convert),
+						 "%.2f", obsFPS);
 				}
 				replace_text(&sf, pos, 4, convert);
 
 			} else if (astrcmp_n(cmp, "%CRES", 5) == 0) {
-				sprintf(convert, "%ux%u", ovi.base_width,
-					ovi.base_height);
+				snprintf(convert, sizeof(convert), "%ux%u",
+					 ovi.base_width, ovi.base_height);
 				replace_text(&sf, pos, 5, convert);
 
 			} else if (astrcmp_n(cmp, "%ORES", 5) == 0) {
-				sprintf(convert, "%ux%u", ovi.output_width,
-					ovi.output_height);
+				snprintf(convert, sizeof(convert), "%ux%u",
+					 ovi.output_width, ovi.output_height);
 				replace_text(&sf, pos, 5, convert);
 
 			} else if (astrcmp_n(cmp, "%VF", 3) == 0) {
@@ -785,7 +788,8 @@ char *os_generate_formatted_filename(const char *extension, bool space,
 				replace_text(&sf, pos, 3, convert);
 
 			} else if (astrcmp_n(cmp, "%s", 2) == 0) {
-				sprintf(convert, "%" PRId64, (int64_t)now);
+				snprintf(convert, sizeof(convert), "%" PRId64,
+					 (int64_t)now);
 				replace_text(&sf, pos, 2, convert);
 			}
 		}

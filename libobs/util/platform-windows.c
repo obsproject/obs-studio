@@ -1088,9 +1088,26 @@ bool is_64_bit_windows(void)
 #endif
 }
 
+bool is_arm64_windows(void)
+{
+#if defined(_M_ARM64) || defined(_M_ARM64EC)
+	return true;
+#else
+	USHORT processMachine;
+	USHORT nativeMachine;
+	bool result = IsWow64Process2(GetCurrentProcess(), &processMachine,
+				      &nativeMachine);
+	return (result && (nativeMachine == IMAGE_FILE_MACHINE_ARM64));
+#endif
+}
+
 bool os_get_emulation_status(void)
 {
+#if defined(_M_ARM64) || defined(_M_ARM64EC)
 	return false;
+#else
+	return is_arm64_windows();
+#endif
 }
 
 void get_reg_dword(HKEY hkey, LPCWSTR sub_key, LPCWSTR value_name,
@@ -1187,7 +1204,9 @@ static inline void get_reg_ver(struct win_version_info *ver)
 		ver->build = wcstol(str, NULL, 10);
 	}
 
-	if (get_reg_sz(key, L"ReleaseId", str, sizeof(str))) {
+	const wchar_t *release_key = ver->build > 19041 ? L"DisplayVersion"
+							: L"ReleaseId";
+	if (get_reg_sz(key, release_key, str, sizeof(str))) {
 		os_wcs_to_utf8(str, 0, win_release_id, MAX_SZ_LEN);
 	}
 
@@ -1388,6 +1407,28 @@ uint64_t os_get_sys_free_size(void)
 	if (!os_get_sys_memory_usage_internal(&msex))
 		return 0;
 	return msex.ullAvailPhys;
+}
+
+static uint64_t total_memory = 0;
+static bool total_memory_initialized = false;
+
+static void os_get_sys_total_size_internal()
+{
+	total_memory_initialized = true;
+
+	MEMORYSTATUSEX msex = {sizeof(MEMORYSTATUSEX)};
+	if (!os_get_sys_memory_usage_internal(&msex))
+		return;
+
+	total_memory = msex.ullTotalPhys;
+}
+
+uint64_t os_get_sys_total_size(void)
+{
+	if (!total_memory_initialized)
+		os_get_sys_total_size_internal();
+
+	return total_memory;
 }
 
 static inline bool

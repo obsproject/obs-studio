@@ -53,6 +53,9 @@
 #else
 #include <sys/resource.h>
 #endif
+#if !defined(__OpenBSD__)
+#include <sys/sysinfo.h>
+#endif
 #include <spawn.h>
 #endif
 
@@ -1100,6 +1103,30 @@ uint64_t os_get_proc_virtual_size(void)
 	return (uint64_t)statm.virtual_size;
 }
 #endif
+
+static uint64_t total_memory = 0;
+static bool total_memory_initialized = false;
+
+static void os_get_sys_total_size_internal()
+{
+	total_memory_initialized = true;
+
+#ifndef __OpenBSD__
+	struct sysinfo info;
+	if (sysinfo(&info) < 0)
+		return;
+
+	total_memory = (uint64_t)info.totalram * info.mem_unit;
+#endif
+}
+
+uint64_t os_get_sys_total_size(void)
+{
+	if (!total_memory_initialized)
+		os_get_sys_total_size_internal();
+
+	return total_memory;
+}
 #endif
 
 uint64_t os_get_free_disk_space(const char *dir)

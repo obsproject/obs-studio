@@ -31,8 +31,8 @@
 #include <libavutil/mastering_display_metadata.h>
 
 /* ------------------------------------------------------------------------- */
-#define do_log(level, format, ...)                             \
-	blog(level, "[obs-ffmpeg mpegts muxer: '%s'] " format, \
+#define do_log(level, format, ...)                              \
+	blog(level, "[obs-ffmpeg mpegts muxer: '%s']: " format, \
 	     obs_output_get_name(stream->output), ##__VA_ARGS__)
 
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
@@ -151,7 +151,7 @@ static bool create_video_stream(struct ffmpeg_output *stream,
 	const char *name = data->config.video_encoder;
 	const AVCodecDescriptor *codec = avcodec_descriptor_get_by_name(name);
 	if (!codec) {
-		error("Couldn't find codec '%s'\n", name);
+		error("Couldn't find codec '%s'", name);
 		return false;
 	}
 	if (!new_stream(data, &data->video, name))
@@ -206,10 +206,8 @@ static bool create_video_stream(struct ffmpeg_output *stream,
 	context->color_primaries = data->config.color_primaries;
 	context->color_trc = data->config.color_trc;
 	context->colorspace = data->config.colorspace;
-	context->chroma_sample_location =
-		(data->config.colorspace == AVCOL_SPC_BT2020_NCL)
-			? AVCHROMA_LOC_TOPLEFT
-			: AVCHROMA_LOC_LEFT;
+	context->chroma_sample_location = determine_chroma_location(
+		data->config.format, data->config.colorspace);
 	context->thread_count = 0;
 
 	data->video->time_base = context->time_base;
@@ -235,10 +233,11 @@ static bool create_audio_stream(struct ffmpeg_output *stream,
 	void *extradata = NULL;
 	struct obs_audio_info aoi;
 	const char *name = data->config.audio_encoder;
+	int channels;
 
 	const AVCodecDescriptor *codec = avcodec_descriptor_get_by_name(name);
 	if (!codec) {
-		warn("Couldn't find codec '%s'\n", name);
+		warn("Couldn't find codec '%s'", name);
 		return false;
 	}
 
@@ -255,14 +254,24 @@ static bool create_audio_stream(struct ffmpeg_output *stream,
 	context->codec_id = codec->id;
 	context->bit_rate = (int64_t)data->config.audio_bitrate * 1000;
 	context->time_base = (AVRational){1, aoi.samples_per_sec};
+	channels = get_audio_channels(aoi.speakers);
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(57, 24, 100)
 	context->channels = get_audio_channels(aoi.speakers);
+#endif
 	context->sample_rate = aoi.samples_per_sec;
+
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(59, 24, 100)
 	context->channel_layout =
 		av_get_default_channel_layout(context->channels);
 
 	//avutil default channel layout for 5 channels is 5.0 ; fix for 4.1
 	if (aoi.speakers == SPEAKERS_4POINT1)
 		context->channel_layout = av_get_channel_layout("4.1");
+#else
+	av_channel_layout_default(&context->ch_layout, channels);
+	if (aoi.speakers == SPEAKERS_4POINT1)
+		context->ch_layout = (AVChannelLayout)AV_CHANNEL_LAYOUT_4POINT1;
+#endif
 
 	context->sample_fmt = AV_SAMPLE_FMT_S16;
 	context->frame_size = data->config.frame_size;
@@ -316,14 +325,14 @@ static inline int connect_mpegts_url(struct ffmpeg_output *stream, bool is_rist)
 	const char *url = stream->ff_data.config.url;
 	if (!ff_network_init()) {
 		ffmpeg_mpegts_log_error(LOG_ERROR, &stream->ff_data,
-					"Can not initialize network.");
+					"Couldn't initialize network");
 		return AVERROR(EIO);
 	}
 
 	URLContext *uc = av_mallocz(sizeof(URLContext) + strlen(url) + 1);
 	if (!uc) {
 		ffmpeg_mpegts_log_error(LOG_ERROR, &stream->ff_data,
-					"Can not allocate memory.");
+					"Couldn't allocate memory");
 		goto fail;
 	}
 	uc->url = (char *)url;
@@ -333,14 +342,53 @@ static inline int connect_mpegts_url(struct ffmpeg_output *stream, bool is_rist)
 				: av_mallocz(sizeof(SRTContext));
 	if (!uc->priv_data) {
 		ffmpeg_mpegts_log_error(LOG_ERROR, &stream->ff_data,
-					"Can not allocate memory.");
+					"Couldn't allocate memory");
 		goto fail;
+	}
+	/* For SRT, pass streamid & passphrase; for RIST, pass passphrase, username
+	 * & password.
+	 */
+	if (!is_rist) {
+		SRTContext *context = (SRTContext *)uc->priv_data;
+		context->streamid = NULL;
+		if (stream->ff_data.config.key != NULL) {
+			if (strlen(stream->ff_data.config.key))
+				context->streamid =
+					av_strdup(stream->ff_data.config.key);
+		}
+		context->passphrase = NULL;
+		if (stream->ff_data.config.password != NULL) {
+			if (strlen(stream->ff_data.config.password))
+				context->passphrase = av_strdup(
+					stream->ff_data.config.password);
+		}
+	} else {
+		RISTContext *context = (RISTContext *)uc->priv_data;
+		context->secret = NULL;
+		if (stream->ff_data.config.key != NULL) {
+			if (strlen(stream->ff_data.config.key))
+				context->secret =
+					bstrdup(stream->ff_data.config.key);
+		}
+		context->username = NULL;
+		if (stream->ff_data.config.username != NULL) {
+			if (strlen(stream->ff_data.config.username))
+				context->username = bstrdup(
+					stream->ff_data.config.username);
+		}
+		context->password = NULL;
+		if (stream->ff_data.config.password != NULL) {
+			if (strlen(stream->ff_data.config.password))
+				context->password = bstrdup(
+					stream->ff_data.config.password);
+		}
 	}
 	stream->h = uc;
 	if (is_rist)
 		err = librist_open(uc, uc->url);
 	else
 		err = libsrt_open(uc, uc->url);
+
 	if (err < 0)
 		goto fail;
 	return 0;
@@ -408,9 +456,9 @@ static inline int open_output_file(struct ffmpeg_output *stream,
 						"=", " ", 0))) {
 			ffmpeg_mpegts_log_error(
 				LOG_WARNING, data,
-				"Failed to parse protocol settings: %s\n%s",
-				av_err2str(ret),
-				data->config.protocol_settings);
+				"Failed to parse protocol settings: %s, %s",
+				data->config.protocol_settings,
+				av_err2str(ret));
 
 			av_dict_free(&dict);
 			return OBS_OUTPUT_INVALID_STREAM;
@@ -444,7 +492,7 @@ static inline int open_output_file(struct ffmpeg_output *stream,
 		ret = avio_open2(&data->output->pb, data->config.url,
 				 AVIO_FLAG_WRITE, NULL, &dict);
 	} else {
-		info("[ffmpeg mpegts muxer:] Invalid protocol: %s",
+		info("[ffmpeg mpegts muxer]: Invalid protocol: %s",
 		     data->config.url);
 		return OBS_OUTPUT_BAD_PATH;
 	}
@@ -452,7 +500,7 @@ static inline int open_output_file(struct ffmpeg_output *stream,
 	if (ret < 0) {
 		if ((rist || srt) && (ret == OBS_OUTPUT_CONNECT_FAILED ||
 				      ret == OBS_OUTPUT_INVALID_STREAM)) {
-			error("failed to open the url or invalid stream");
+			error("Failed to open the url or invalid stream");
 		} else {
 			ffmpeg_mpegts_log_error(LOG_WARNING, data,
 						"Couldn't open '%s', %s",
@@ -477,7 +525,7 @@ static inline int open_output_file(struct ffmpeg_output *stream,
 				dstr_catf(&str, "\n\t%s=%s", entry->key,
 					  entry->value);
 
-			info("[ffmpeg mpegts muxer:]Invalid protocol settings: %s",
+			info("[ffmpeg mpegts muxer]: Invalid protocol settings: %s",
 			     str.array);
 			dstr_free(&str);
 		}
@@ -485,7 +533,7 @@ static inline int open_output_file(struct ffmpeg_output *stream,
 	} else {
 		ret = allocate_custom_aviocontext(stream, rist);
 		if (ret < 0) {
-			info("Couldn't allocate custom avio_context for rist or srt'%s', %s\n",
+			info("Couldn't allocate custom avio_context for url: '%s', %s",
 			     data->config.url, av_err2str(ret));
 			return OBS_OUTPUT_INVALID_STREAM;
 		}
@@ -541,7 +589,7 @@ static void close_mpegts_url(struct ffmpeg_output *stream, bool is_rist)
 	avio_context_free(&stream->s);
 
 	if (err)
-		info("[ffmpeg mpegts muxer:] Error closing URL %s",
+		info("[ffmpeg mpegts muxer]: Error closing URL %s",
 		     stream->ff_data.config.url);
 }
 
@@ -615,7 +663,7 @@ bool ffmpeg_mpegts_data_init(struct ffmpeg_output *stream,
 					"Couldn't set output format to mpegts");
 		goto fail;
 	} else {
-		info("info: Output format name and long_name: %s, %s\n",
+		info("Output format name and long_name: %s, %s",
 		     output_format->name ? output_format->name : "unknown",
 		     output_format->long_name ? output_format->long_name
 					      : "unknown");
@@ -828,13 +876,15 @@ static bool set_config(struct ffmpeg_output *stream)
 	int ret;
 	int code;
 
-	/* 1. Get URL from service & set format + mime-type. */
+	/* 1. Get URL/username/password from service & set format + mime-type. */
 	obs_service_t *service;
 	service = obs_output_get_service(stream->output);
 	if (!service)
 		return false;
 	config.url = obs_service_get_url(service);
-
+	config.username = obs_service_get_username(service);
+	config.password = obs_service_get_password(service);
+	config.key = obs_service_get_key(service);
 	config.format_name = "mpegts";
 	config.format_mime_type = "video/M2PT";
 
@@ -845,7 +895,8 @@ static bool set_config(struct ffmpeg_output *stream)
 		obs_to_ffmpeg_video_format(video_output_get_format(video));
 
 	if (config.format == AV_PIX_FMT_NONE) {
-		blog(LOG_DEBUG, "invalid pixel format used for mpegts output");
+		blog(LOG_WARNING,
+		     "Invalid pixel format used for mpegts output");
 		return false;
 	}
 
@@ -960,7 +1011,7 @@ static bool set_config(struct ffmpeg_output *stream)
 		}
 		code = open_output_file(stream, ff_data);
 		if (code != 0) {
-			error("failed to open the url");
+			error("Failed to open the url");
 			goto fail;
 		}
 		av_dump_format(ff_data->output, 0, NULL, 1);
@@ -974,7 +1025,7 @@ static bool set_config(struct ffmpeg_output *stream)
 	if (ret != 0) {
 		ffmpeg_mpegts_log_error(
 			LOG_WARNING, &stream->ff_data,
-			"ffmpeg_output_start: failed to create write "
+			"ffmpeg_output_start: Failed to create write "
 			"thread.");
 		code = OBS_OUTPUT_ERROR;
 		goto fail;
@@ -1104,7 +1155,7 @@ void mpegts_write_packet(struct ffmpeg_output *stream,
 
 	packet->data = av_memdup(encpacket->data, (int)encpacket->size);
 	if (packet->data == NULL) {
-		error("couldn't allocate packet data");
+		error("Couldn't allocate packet data");
 		goto fail;
 	}
 	packet->size = (int)encpacket->size;
@@ -1132,8 +1183,8 @@ static bool write_header(struct ffmpeg_output *stream, struct ffmpeg_data *data)
 					" ", 0))) {
 		ffmpeg_mpegts_log_error(
 			LOG_WARNING, data,
-			"Failed to parse muxer settings: %s\n%s",
-			av_err2str(ret), data->config.muxer_settings);
+			"Failed to parse muxer settings: %s, %s",
+			data->config.muxer_settings, av_err2str(ret));
 
 		av_dict_free(&dict);
 		return false;
@@ -1170,7 +1221,7 @@ static bool write_header(struct ffmpeg_output *stream, struct ffmpeg_data *data)
 					    AV_DICT_IGNORE_SUFFIX)))
 			dstr_catf(&str, "\n\t%s=%s", entry->key, entry->value);
 
-		info("[ffmpeg mpegts muxer:] Invalid mpegts muxer settings: %s",
+		info("[ffmpeg mpegts muxer]: Invalid mpegts muxer settings: %s",
 		     str.array);
 		dstr_free(&str);
 	}
@@ -1188,12 +1239,12 @@ static void ffmpeg_mpegts_data(void *data, struct encoder_packet *packet)
 		if (get_extradata(stream)) {
 			stream->got_headers = true;
 		} else {
-			warn("failed to retrieve headers");
+			warn("Failed to retrieve headers");
 			code = OBS_OUTPUT_INVALID_STREAM;
 			goto fail;
 		}
 		if (!write_header(stream, ff_data)) {
-			error("failed to write headers");
+			error("Failed to write headers");
 			code = OBS_OUTPUT_INVALID_STREAM;
 			goto fail;
 		}

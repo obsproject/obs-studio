@@ -26,6 +26,14 @@ float3 rec709_to_rec2020(float3 v)
 	return float3(r, g, b);
 }
 
+float3 d65p3_to_rec709(float3 v)
+{
+	float r = dot(v, float3(1.2249401762805598, -0.22494017628055996, 0.));
+	float g = dot(v, float3(-0.042056954709688163, 1.0420569547096881, 0.));
+	float b = dot(v, float3(-0.019637554590334432, -0.078636045550631889, 1.0982736001409663));
+	return float3(r, g, b);
+}
+
 float3 rec2020_to_rec709(float3 v)
 {
 	float r = dot(v, float3(1.6604910021084345, -0.58764113878854951, -0.072849863319884883));

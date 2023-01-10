@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <util/platform.h>
 #include <dxgitype.h>
+#include <util/windows/win-version.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,7 +39,7 @@ extern "C" {
 #define CUDARTAPI
 
 #ifdef LIBNVVFX_ENABLED
-// allows for future loading of a second fx
+#define MIN_VFX_SDK_VERSION 0 << 24 | 7 << 16 | 1 << 8 | 0 << 0
 static HMODULE nv_videofx = NULL;
 static HMODULE nv_cvimage = NULL;
 static HMODULE nv_cudart = NULL;
@@ -139,8 +140,14 @@ typedef enum NvCV_Status {
 #define NVVFX_CUDA_STREAM "CudaStream" //!< The CUDA stream to use
 #define NVVFX_CUDA_GRAPH "CudaGraph"   //!< Enable CUDA graph to use
 #define NVVFX_INFO "Info"              //!< Get info about the effects
-#define NVVFX_SCALE "Scale"            //!< Scale factor
-#define NVVFX_STRENGTH "Strength"      //!< Strength for different filters
+#define NVVFX_MAX_INPUT_WIDTH \
+	"MaxInputWidth" //!< Maximum width of the input supported
+#define NVVFX_MAX_INPUT_HEIGHT \
+	"MaxInputHeight" //!< Maximum height of the input supported
+#define NVVFX_MAX_NUMBER_STREAMS \
+	"MaxNumberStreams"  //!< Maximum number of concurrent input streams
+#define NVVFX_SCALE "Scale" //!< Scale factor
+#define NVVFX_STRENGTH "Strength" //!< Strength for different filters
 #define NVVFX_STRENGTH_LEVELS "StrengthLevels" //!< Number of strength levels
 #define NVVFX_MODE "Mode"                      //!< Mode for different filters
 #define NVVFX_TEMPORAL "Temporal"    //!< Temporal mode: 0=image, 1=video
@@ -149,6 +156,8 @@ typedef enum NvCV_Status {
 #define NVVFX_MODEL_BATCH "ModelBatch"
 #define NVVFX_STATE "State"          //!< State variable
 #define NVVFX_STATE_SIZE "StateSize" //!< Number of bytes needed to store state
+#define NVVFX_STATE_COUNT \
+	"NumStateObjects" //!< Number of active state object handles
 
 //! The format of pixels in an image.
 typedef enum NvCVImage_PixelFormat {
@@ -324,6 +333,8 @@ typedef struct CUstream_st *CUstream;
 typedef const char *NvVFX_EffectSelector;
 typedef const char *NvVFX_ParameterSelector;
 typedef void *NvVFX_Handle;
+/* requires sdk version >= 0.7.0 */
+typedef void *NvVFX_StateObjectHandle;
 
 /* nvvfx functions */
 typedef NvCV_Status NvVFX_API (*NvVFX_GetVersion_t)(unsigned int *version);
@@ -346,6 +357,11 @@ typedef NvCV_Status
 				    unsigned long long val);
 typedef NvCV_Status NvVFX_API (*NvVFX_SetObject_t)(
 	NvVFX_Handle effect, NvVFX_ParameterSelector param_name, void *ptr);
+/* requires sdk version >= 0.7.0 */
+typedef NvCV_Status NvVFX_API (*NvVFX_SetStateObjectHandleArray_t)(
+	NvVFX_Handle effect, NvVFX_ParameterSelector param_name,
+	NvVFX_StateObjectHandle *handle);
+/* ----------------------------- */
 typedef NvCV_Status
 	NvVFX_API (*NvVFX_SetCudaStream_t)(NvVFX_Handle effect,
 					   NvVFX_ParameterSelector param_name,
@@ -386,6 +402,17 @@ typedef NvCV_Status NvVFX_API (*NvVFX_Run_t)(NvVFX_Handle effect, int async);
 typedef NvCV_Status NvVFX_API (*NvVFX_Load_t)(NvVFX_Handle effect);
 typedef NvCV_Status NvVFX_API (*NvVFX_CudaStreamCreate_t)(CUstream *stream);
 typedef NvCV_Status NvVFX_API (*NvVFX_CudaStreamDestroy_t)(CUstream stream);
+
+/* requires sdk version >= 0.7.0 */
+typedef NvCV_Status
+	NvVFX_API (*NvVFX_AllocateState_t)(NvVFX_Handle effect,
+					   NvVFX_StateObjectHandle *handle);
+typedef NvCV_Status
+	NvVFX_API (*NvVFX_DeallocateState_t)(NvVFX_Handle effect,
+					     NvVFX_StateObjectHandle handle);
+typedef NvCV_Status
+	NvVFX_API (*NvVFX_ResetState_t)(NvVFX_Handle effect,
+					NvVFX_StateObjectHandle handle);
 
 /* NvCVImage functions */
 typedef NvCV_Status NvCV_API (*NvCVImage_Init_t)(
@@ -643,6 +670,12 @@ static NvVFX_Load_t NvVFX_Load = NULL;
 static NvVFX_CudaStreamCreate_t NvVFX_CudaStreamCreate = NULL;
 static NvVFX_CudaStreamDestroy_t NvVFX_CudaStreamDestroy = NULL;
 
+/* nvvfx sdk >= 0.7.0 */
+static NvVFX_SetStateObjectHandleArray_t NvVFX_SetStateObjectHandleArray = NULL;
+static NvVFX_AllocateState_t NvVFX_AllocateState = NULL;
+static NvVFX_DeallocateState_t NvVFX_DeallocateState = NULL;
+static NvVFX_ResetState_t NvVFX_ResetState = NULL;
+
 /*nvcvimage */
 static NvCVImage_Init_t NvCVImage_Init = NULL;
 static NvCVImage_InitView_t NvCVImage_InitView = NULL;
@@ -707,6 +740,10 @@ static inline void release_nv_vfx()
 	NvVFX_SetString = NULL;
 	NvVFX_SetU32 = NULL;
 	NvVFX_SetU64 = NULL;
+	NvVFX_SetStateObjectHandleArray = NULL;
+	NvVFX_AllocateState = NULL;
+	NvVFX_DeallocateState = NULL;
+	NvVFX_ResetState = NULL;
 	if (nv_videofx) {
 		FreeLibrary(nv_videofx);
 		nv_videofx = NULL;
@@ -761,8 +798,7 @@ static inline void nvvfx_get_sdk_path(char *buffer, const size_t len)
 
 		size_t max_len = sizeof(path) / sizeof(char);
 		snprintf(buffer, max_len,
-			 "%s\\NVIDIA Corporation\\NVIDIA Video Effects\\",
-			 path);
+			 "%s\\NVIDIA Corporation\\NVIDIA Video Effects", path);
 	}
 }
 
@@ -771,6 +807,7 @@ static inline bool load_nv_vfx_libs()
 	char fullPath[MAX_PATH];
 	nvvfx_get_sdk_path(fullPath, MAX_PATH);
 	SetDllDirectoryA(fullPath);
+
 	nv_videofx = LoadLibrary(L"NVVideoEffects.dll");
 	nv_cvimage = LoadLibrary(L"NVCVImage.dll");
 	nv_cudart = LoadLibrary(L"cudart64_110.dll");
@@ -778,6 +815,18 @@ static inline bool load_nv_vfx_libs()
 	return !!nv_videofx && !!nv_cvimage && !!nv_cudart;
 }
 
+static unsigned int get_lib_version(void)
+{
+	char path[MAX_PATH];
+	nvvfx_get_sdk_path(path, sizeof(path));
+
+	SetDllDirectoryA(path);
+	struct win_version_info nto_ver = {0};
+	get_dll_ver(L"NVVideoEffects.dll", &nto_ver);
+	unsigned int version = nto_ver.major << 24 | nto_ver.minor << 16 |
+			       nto_ver.build << 8 | nto_ver.revis << 0;
+	return version;
+}
 #endif
 
 #ifdef __cplusplus

@@ -111,7 +111,20 @@ static void vst_update(void *data, obs_data_t *settings)
 
 	const char *path = obs_data_get_string(settings, "plugin_path");
 
-	if (strcmp(path, "") == 0) {
+#ifdef __linux__
+	// Migrate freedesktop.org Flatpak runtime 21.08 VST paths to 22.08.
+	if (QFile::exists("/.flatpak-info") &&
+	    QString(path).startsWith("/app/extensions/Plugins/lxvst")) {
+		QString newPath(path);
+		newPath.replace("/app/extensions/Plugins/lxvst",
+				"/app/extensions/Plugins/vst");
+		obs_data_set_string(settings, "plugin_path",
+				    newPath.toStdString().c_str());
+		path = obs_data_get_string(settings, "plugin_path");
+	}
+#endif
+
+	if (!*path) {
 		vstPlugin->unloadEffect();
 		return;
 	}
@@ -121,10 +134,10 @@ static void vst_update(void *data, obs_data_t *settings)
 	const char *chunkHash = obs_data_get_string(settings, "chunk_hash");
 	const char *chunkData = obs_data_get_string(settings, "chunk_data");
 
-	bool chunkHashesMatch = chunkHash && strlen(chunkHash) > 0 &&
+	bool chunkHashesMatch = chunkHash && *chunkHash &&
 				hash.compare(chunkHash) == 0;
-	if (chunkData && strlen(chunkData) > 0 &&
-	    (chunkHashesMatch || !chunkHash || strlen(chunkHash) == 0)) {
+	if (chunkData && *chunkData &&
+	    (chunkHashesMatch || !chunkHash || !*chunkHash)) {
 		vstPlugin->setChunk(std::string(chunkData));
 	}
 }

@@ -35,6 +35,10 @@ Script Function Exports
 There are a number of global functions that scripts can optionally
 provide:
 
+.. py:function:: script_description()
+   Called to retrieve a description string to be displayed to the user
+   in the Scripts window.
+
 .. py:function:: script_load(settings)
 
    Called on script startup with specific settings associated with the

@@ -1,6 +1,6 @@
 {
-    "$schema": "schema/service-schema-v3.json",
-    "format_version": 3,
+    "$schema": "schema/service-schema-v4.json",
+    "format_version": 4,
     "services": [
         {
             "name": "Twitch",
@@ -2072,29 +2072,6 @@
             }
         },
         {
-            "name": "Brime Live",
-            "stream_key_link": "https://brime.tv/studio",
-            "servers": [
-                {
-                    "name": "North America - Ashburn, VA",
-                    "url": "rtmp://ingest-us-ashburn.brime.tv/live"
-                },
-                {
-                    "name": "North America - San Jose, CA",
-                    "url": "rtmp://ingest-us-sanjose.brime.tv/live"
-                },
-                {
-                    "name": "Europe / EMEA - Germany (Frankfurt)",
-                    "url": "rtmp://ingest-eu-frankfurt.brime.tv/live"
-                }
-            ],
-            "recommended": {
-                "max video bitrate": 30000,
-                "max audio bitrate": 320,
-                "x264opts": "scenecut=0"
-            }
-        },
-        {
             "name": "Bilibili Live - RTMP | 哔哩哔哩直播 - RTMP",
             "more_info_link": "https://link.bilibili.com/p/help/index#/tools-tutorial?id=9",
             "stream_key_link": "https://link.bilibili.com/p/center/index#/my-room/start-live",
@@ -2524,6 +2501,92 @@
             "recommended": {
                 "keyint": 2,
                 "max video bitrate": 16000
+            }
+        },
+        {
+            "name": "Vindral",
+            "more_info_link": "https://docs.vindral.com/docs/vindral-cdn/",
+            "servers": [
+                {
+                    "name": "eu-north",
+                    "url": "rtmps://rtmp.eu-north.cdn.vindral.com/publish"
+                },
+                {
+                    "name": "eu-west",
+                    "url": "rtmps://rtmp.eu-west.cdn.vindral.com/publish"
+                }
+            ],
+            "recommended": {
+                "keyint": 1,
+                "profile": "high",
+                "bframes": 0,
+                "max video bitrate": 20000,
+                "max audio bitrate": 192
+            }
+        },
+        {
+            "name": "Whowatch (ふわっち)",
+            "more_info_link": "https://whowatch.tv/help/encoder",
+            "stream_key_link": "https://whowatch.tv/publish",
+            "servers": [
+                {
+                    "name": "default",
+                    "url": "rtmp://live.whowatch.tv/live/"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 1800,
+                "max audio bitrate": 192
+            }
+        },
+        {
+            "name": "IRLToolkit",
+            "stream_key_link": "https://irl.run/settings/ingest/",
+            "servers": [
+                {
+                    "name": "Global (Recommended)",
+                    "url": "rtmp://stream.global.irl.run/ingest"
+                },
+                {
+                    "name": "Los Angeles, US",
+                    "url": "rtmp://stream.lax.irl.run/ingest"
+                },
+                {
+                    "name": "New York, US",
+                    "url": "rtmp://stream.ewr.irl.run/ingest"
+                },
+                {
+                    "name": "Rotterdam, NL",
+                    "url": "rtmp://stream.rtm.irl.run/ingest"
+                },
+                {
+                    "name": "Singapore",
+                    "url": "rtmp://stream.sin.irl.run/ingest"
+                },
+                {
+                    "name": "Tokyo, JP",
+                    "url": "rtmp://stream.tyo.irl.run/ingest"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "bframes": 2,
+                "max video bitrate": 20000
+            }
+        },
+        {
+            "name": "Bitmovin",
+            "more_info_link": "https://developer.bitmovin.com/docs/overview",
+            "stream_key_link": "https://bitmovin.com/dashboard/streams?streamsTab=LIVE",
+            "servers": [
+                {
+                    "name": "Streams Live",
+                    "url": "rtmp://live-input.bitmovin.com/streams"
+                }
+            ],
+            "recommended": {
+                "keyint": 2
             }
         }
     ]

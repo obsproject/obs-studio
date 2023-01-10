@@ -312,7 +312,7 @@ convert_color_space(enum AVColorSpace s, enum AVColorTransferCharacteristic trc,
 }
 
 bool ffmpeg_decode_video(struct ffmpeg_decode *decode, uint8_t *data,
-			 size_t size, long long *ts,
+			 size_t size, long long *ts, enum video_colorspace cs,
 			 enum video_range_type range,
 			 struct obs_source_frame2 *frame, bool *got_output)
 {
@@ -396,9 +396,11 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode, uint8_t *data,
 				: VIDEO_RANGE_PARTIAL;
 	}
 
-	const enum video_colorspace cs = convert_color_space(
-		decode->frame->colorspace, decode->frame->color_trc,
-		decode->frame->color_primaries);
+	if (cs == VIDEO_CS_DEFAULT) {
+		cs = convert_color_space(decode->frame->colorspace,
+					 decode->frame->color_trc,
+					 decode->frame->color_primaries);
+	}
 
 	const bool success = video_format_get_parameters_for_format(
 		cs, range, format, frame->color_matrix, frame->color_range_min,

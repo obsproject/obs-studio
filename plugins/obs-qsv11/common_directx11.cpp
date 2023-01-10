@@ -169,6 +169,8 @@ mfxStatus _simple_alloc(mfxFrameAllocRequest *request,
 		 request->Info
 			 .FourCC) //|| MFX_FOURCC_P8_TEXTURE == request->Info.FourCC
 		format = DXGI_FORMAT_P8;
+	else if (MFX_FOURCC_P010 == request->Info.FourCC)
+		format = DXGI_FORMAT_P010;
 	else
 		format = DXGI_FORMAT_UNKNOWN;
 
@@ -388,6 +390,14 @@ mfxStatus simple_lock(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
 		ptr->Y = (mfxU8 *)lockedRect.pData;
 		ptr->U = 0;
 		ptr->V = 0;
+		break;
+	case DXGI_FORMAT_P010:
+		ptr->Pitch = (mfxU16)lockedRect.RowPitch;
+		ptr->PitchHigh = 0;
+		ptr->Y = (mfxU8 *)lockedRect.pData;
+		ptr->U = (mfxU8 *)lockedRect.pData +
+			 desc.Height * lockedRect.RowPitch;
+		ptr->V = ptr->U + 2;
 		break;
 	default:
 		return MFX_ERR_LOCK_MEMORY;

@@ -71,9 +71,9 @@ bool import_python(const char *python_path, python_version_t *python_version)
 
 	char temp[PATH_MAX];
 
-	sprintf(cur_version, VERSION_PATTERN, PY_MAJOR_VERSION_MAX,
-		PY_MINOR_VERSION_MAX);
-	sprintf(temp, FILE_PATTERN, cur_version);
+	snprintf(cur_version, sizeof(cur_version), VERSION_PATTERN,
+		 PY_MAJOR_VERSION_MAX, PY_MINOR_VERSION_MAX);
+	snprintf(temp, sizeof(temp), FILE_PATTERN, cur_version);
 
 	dstr_cat(&lib_candidate_path, temp);
 
@@ -87,10 +87,10 @@ bool import_python(const char *python_path, python_version_t *python_version)
 			break;
 		}
 
-		sprintf(cur_version, VERSION_PATTERN, PY_MAJOR_VERSION_MAX,
-			minor_version);
-		sprintf(next_version, VERSION_PATTERN, PY_MAJOR_VERSION_MAX,
-			--minor_version);
+		snprintf(cur_version, sizeof(cur_version), VERSION_PATTERN,
+			 PY_MAJOR_VERSION_MAX, minor_version);
+		snprintf(next_version, sizeof(next_version), VERSION_PATTERN,
+			 PY_MAJOR_VERSION_MAX, --minor_version);
 		dstr_replace(&lib_candidate_path, cur_version, next_version);
 	} while (minor_version > 5);
 

@@ -107,14 +107,19 @@ static inline uint8_t *copy_from_mask(ICONINFO *ii, uint32_t *width,
 	bottom = bmp.bmWidthBytes * bmp.bmHeight;
 
 	for (long i = 0; i < pixels; i++) {
-		uint8_t alpha = bit_to_alpha(mask, i, false);
-		uint8_t color = bit_to_alpha(mask + bottom, i, true);
+		uint8_t andMask = bit_to_alpha(mask, i, true);
+		uint8_t xorMask = bit_to_alpha(mask + bottom, i, true);
 
-		if (!alpha) {
-			output[i * 4 + 3] = color;
+		if (!andMask) {
+			// black in the AND mask
+			*(uint32_t *)&output[i * 4] =
+				!!xorMask ? 0x00FFFFFF /*always white*/
+					  : 0xFF000000 /*always black*/;
 		} else {
-			*(uint32_t *)&output[i * 4] = !!color ? 0xFFFFFFFF
-							      : 0xFF000000;
+			// white in the AND mask
+			*(uint32_t *)&output[i * 4] =
+				!!xorMask ? 0xFFFFFFFF /*source inverted*/
+					  : 0 /*transparent*/;
 		}
 	}
 
@@ -126,13 +131,16 @@ static inline uint8_t *copy_from_mask(ICONINFO *ii, uint32_t *width,
 }
 
 static inline uint8_t *cursor_capture_icon_bitmap(ICONINFO *ii, uint32_t *width,
-						  uint32_t *height)
+						  uint32_t *height,
+						  bool *monochrome)
 {
 	uint8_t *output;
-
+	*monochrome = false;
 	output = copy_from_color(ii, width, height);
-	if (!output)
+	if (!output) {
+		*monochrome = true;
 		output = copy_from_mask(ii, width, height);
+	}
 
 	return output;
 }
@@ -170,7 +178,8 @@ static inline bool cursor_capture_icon(struct cursor_data *data, HICON icon)
 		return false;
 	}
 
-	bitmap = cursor_capture_icon_bitmap(&ii, &width, &height);
+	bitmap = cursor_capture_icon_bitmap(&ii, &width, &height,
+					    &data->monochrome);
 	if (bitmap) {
 		if (data->last_cx != width || data->last_cy != height) {
 			data->texture = get_cached_texture(data, width, height);
@@ -228,9 +237,13 @@ void cursor_draw(struct cursor_data *data, long x_offset, long y_offset,
 
 	if (data->visible && !!data->texture) {
 		gs_blend_state_push();
-		gs_blend_function_separate(GS_BLEND_SRCALPHA,
-					   GS_BLEND_INVSRCALPHA, GS_BLEND_ONE,
-					   GS_BLEND_INVSRCALPHA);
+		enum gs_blend_type blendMode = data->monochrome
+						       ? GS_BLEND_INVDSTCOLOR
+						       : GS_BLEND_SRCALPHA;
+		gs_blend_function_separate(blendMode, /*src_color*/
+					   GS_BLEND_INVSRCALPHA /*dest_color*/,
+					   GS_BLEND_ONE /*src_alpha*/,
+					   GS_BLEND_INVSRCALPHA /*dest_alpha*/);
 
 		gs_matrix_push();
 		obs_source_draw(data->texture, x_draw, y_draw, 0, 0, false);

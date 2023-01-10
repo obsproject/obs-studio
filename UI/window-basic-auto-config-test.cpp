@@ -894,6 +894,8 @@ void AutoConfigTestPage::TestStreamEncoderThread()
 			wiz->streamingEncoder = AutoConfig::Encoder::NVENC;
 		else if (wiz->qsvAvailable)
 			wiz->streamingEncoder = AutoConfig::Encoder::QSV;
+		else if (wiz->appleAvailable)
+			wiz->streamingEncoder = AutoConfig::Encoder::Apple;
 		else
 			wiz->streamingEncoder = AutoConfig::Encoder::AMD;
 	} else {
@@ -927,6 +929,8 @@ void AutoConfigTestPage::TestRecordingEncoderThread()
 			wiz->recordingEncoder = AutoConfig::Encoder::NVENC;
 		else if (wiz->qsvAvailable)
 			wiz->recordingEncoder = AutoConfig::Encoder::QSV;
+		else if (wiz->appleAvailable)
+			wiz->recordingEncoder = AutoConfig::Encoder::Apple;
 		else
 			wiz->recordingEncoder = AutoConfig::Encoder::AMD;
 	} else {
@@ -948,6 +952,7 @@ void AutoConfigTestPage::TestRecordingEncoderThread()
 #define ENCODER_NVENC ENCODER_TEXT("Hardware.NVENC.H264")
 #define ENCODER_QSV ENCODER_TEXT("Hardware.QSV.H264")
 #define ENCODER_AMD ENCODER_TEXT("Hardware.AMD.H264")
+#define ENCODER_APPLE ENCODER_TEXT("Hardware.Apple.H264")
 
 #define QUALITY_SAME "Basic.Settings.Output.Simple.RecordingQuality.Stream"
 #define QUALITY_HIGH "Basic.Settings.Output.Simple.RecordingQuality.Small"
@@ -990,6 +995,8 @@ void AutoConfigTestPage::FinalizeResults()
 			return QTStr(ENCODER_QSV);
 		case AutoConfig::Encoder::AMD:
 			return QTStr(ENCODER_AMD);
+		case AutoConfig::Encoder::Apple:
+			return QTStr(ENCODER_APPLE);
 		case AutoConfig::Encoder::Stream:
 			return QTStr(QUALITY_SAME);
 		}

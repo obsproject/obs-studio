@@ -345,7 +345,7 @@ General Output Functions
 .. function:: obs_output_t *obs_output_get_ref(obs_output_t *output)
 
    Returns an incremented reference if still valid, otherwise returns
-   *NULL*.
+   *NULL*. Release with :c:func:`obs_output_release()`.
 
 ---------------------
 
@@ -443,7 +443,8 @@ General Output Functions
 
 .. function:: obs_data_t *obs_output_defaults(const char *id)
 
-   :return: An incremented reference to the output's default settings
+   :return: An incremented reference to the output's default settings.
+            Release with :c:func:`obs_data_release()`.
 
 ---------------------
 
@@ -488,19 +489,22 @@ General Output Functions
 
 .. function:: obs_data_t *obs_output_get_settings(const obs_output_t *output)
 
-   :return: An incremented reference to the output's settings
+   :return: An incremented reference to the output's settings. Release with
+            :c:func:`obs_data_release()`.
 
 ---------------------
 
 .. function:: signal_handler_t *obs_output_get_signal_handler(const obs_output_t *output)
 
-   :return: The signal handler of the output
+   :return: The signal handler of the output. Should not be manually freed,
+            as its lifecycle is managed by libobs.
 
 ---------------------
 
 .. function:: proc_handler_t *obs_output_get_proc_handler(const obs_output_t *output)
 
-   :return: The procedure handler of the output
+   :return: The procedure handler of the output. Should not be manually freed,
+            as its lifecycle is managed by libobs.
 
 ---------------------
 

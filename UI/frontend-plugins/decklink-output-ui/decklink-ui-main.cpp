@@ -21,6 +21,8 @@ bool preview_output_running = false;
 
 obs_output_t *output;
 
+constexpr size_t STAGE_BUFFER_COUNT = 3;
+
 struct preview_output {
 	bool enabled;
 	obs_source_t *current_source;
@@ -28,7 +30,9 @@ struct preview_output {
 
 	video_t *video_queue;
 	gs_texrender_t *texrender;
-	gs_stagesurf_t *stagesurface;
+	gs_stagesurf_t *stagesurfaces[STAGE_BUFFER_COUNT];
+	bool surf_written[STAGE_BUFFER_COUNT];
+	size_t stage_index;
 	uint8_t *video_data;
 	uint32_t video_linesize;
 
@@ -131,7 +135,8 @@ void preview_output_stop()
 	obs_source_release(context.current_source);
 
 	obs_enter_graphics();
-	gs_stagesurface_destroy(context.stagesurface);
+	for (gs_stagesurf_t *surf : context.stagesurfaces)
+		gs_stagesurface_destroy(surf);
 	gs_texrender_destroy(context.texrender);
 	obs_leave_graphics();
 
@@ -161,9 +166,14 @@ void preview_output_start()
 
 		obs_enter_graphics();
 		context.texrender = gs_texrender_create(GS_BGRA, GS_ZS_NONE);
-		context.stagesurface =
-			gs_stagesurface_create(width, height, GS_BGRA);
+		for (gs_stagesurf_t *&surf : context.stagesurfaces)
+			surf = gs_stagesurface_create(width, height, GS_BGRA);
 		obs_leave_graphics();
+
+		for (bool &written : context.surf_written)
+			written = false;
+
+		context.stage_index = 0;
 
 		const video_output_info *mainVOI =
 			video_output_get_info(obs_get_video());
@@ -266,34 +276,47 @@ void render_preview_source(void *param, uint32_t cx, uint32_t cy)
 		gs_blend_state_pop();
 		gs_texrender_end(ctx->texrender);
 
-		struct video_frame output_frame;
-		if (video_output_lock_frame(ctx->video_queue, &output_frame, 1,
-					    os_gettime_ns())) {
-			gs_stage_texture(
-				ctx->stagesurface,
-				gs_texrender_get_texture(ctx->texrender));
+		const size_t write_stage_index = ctx->stage_index;
+		gs_stage_texture(ctx->stagesurfaces[write_stage_index],
+				 gs_texrender_get_texture(ctx->texrender));
+		ctx->surf_written[write_stage_index] = true;
 
-			if (gs_stagesurface_map(ctx->stagesurface,
-						&ctx->video_data,
-						&ctx->video_linesize)) {
-				uint32_t linesize = output_frame.linesize[0];
-				for (uint32_t i = 0; i < ctx->ovi.base_height;
-				     i++) {
-					uint32_t dst_offset = linesize * i;
-					uint32_t src_offset =
-						ctx->video_linesize * i;
-					memcpy(output_frame.data[0] +
-						       dst_offset,
-					       ctx->video_data + src_offset,
-					       linesize);
+		const size_t read_stage_index =
+			(write_stage_index + 1) % STAGE_BUFFER_COUNT;
+		if (ctx->surf_written[read_stage_index]) {
+			struct video_frame output_frame;
+			if (video_output_lock_frame(ctx->video_queue,
+						    &output_frame, 1,
+						    os_gettime_ns())) {
+				gs_stagesurf_t *const read_surf =
+					ctx->stagesurfaces[read_stage_index];
+				if (gs_stagesurface_map(read_surf,
+							&ctx->video_data,
+							&ctx->video_linesize)) {
+					uint32_t linesize =
+						output_frame.linesize[0];
+					for (uint32_t i = 0;
+					     i < ctx->ovi.base_height; i++) {
+						uint32_t dst_offset =
+							linesize * i;
+						uint32_t src_offset =
+							ctx->video_linesize * i;
+						memcpy(output_frame.data[0] +
+							       dst_offset,
+						       ctx->video_data +
+							       src_offset,
+						       linesize);
+					}
+
+					gs_stagesurface_unmap(read_surf);
+					ctx->video_data = nullptr;
 				}
 
-				gs_stagesurface_unmap(ctx->stagesurface);
-				ctx->video_data = nullptr;
+				video_output_unlock_frame(ctx->video_queue);
 			}
-
-			video_output_unlock_frame(ctx->video_queue);
 		}
+
+		ctx->stage_index = read_stage_index;
 	}
 }
 

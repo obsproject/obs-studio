@@ -27,6 +27,7 @@ env:
   STEAM_NIGHTLY_BRANCH: nightly
   STEAM_STABLE_BRANCH: staging
   STEAM_BETA_BRANCH: beta_staging
+  STEAM_PLAYTEST_BRANCH: staging
   SEVENZIP_HASH: 5290409e7bbe2f133d0bd7e7482548678157ea2be276b0f9cb440600f4be9a2d
 
 jobs:
@@ -145,8 +146,14 @@ jobs:
       run: |
         if [[ '${{ steps.build-info.outputs.type }}' == 'release' || '${{ steps.cache.outputs.cache-hit }}' != 'true' ]]; then
             echo "result=true" >> $GITHUB_OUTPUT
+            if [[ '${{ steps.build-info.outputs.branch }}' == '${{ env.STEAM_BETA_BRANCH }}' ]]; then
+                echo "result_playtest=true" >> $GITHUB_OUTPUT
+            else
+                echo "result_playtest=false" >> $GITHUB_OUTPUT
+            fi
         else
             echo "result=false" >> $GITHUB_OUTPUT
+            echo "result_playtest=false" >> $GITHUB_OUTPUT
         fi
 
     - name: Download and prepare builds
@@ -254,6 +261,26 @@ jobs:
         echo "::endgroup::"
         echo "::group::Upload to Steam"
         steamcmd +login '${{ secrets.STEAM_USER }}' '${{ secrets.STEAM_PASSWORD }}' '${{ steps.steam-totp.outputs.code }}' +run_app_build "$(pwd)/build.vdf" +quit
+        echo "::endgroup::"
+
+    - name: Generate Steam auth code (Playtest)
+      if: steps.should-run.outputs.result_playtest == 'true'
+      id: steam-totp-playtest
+      uses: CyberAndrii/steam-totp@0fc9e59dc5bbf4368d23d5a33956f104248da31a
+      with:
+        shared_secret: ${{ secrets.STEAM_SHARED_SECRET }}
+
+    - name: Upload to Steam (Playtest)
+      if: steps.should-run.outputs.result_playtest == 'true'
+      run: |
+        cd steam
+        echo "::group::Prepare Steam build script"
+        sed 's/@@DESC@@/${{ steps.build-info.outputs.branch }}-${{ steps.build-info.outputs.desc }}/;s/@@BRANCH@@/${{ env.STEAM_PLAYTEST_BRANCH }}/' ../source/CI/steam/obs_playtest_build.vdf > build_playtest.vdf
+        echo "Generated file:"
+        cat build_playtest.vdf
+        echo "::endgroup::"
+        echo "::group::Upload to Steam"
+        steamcmd +login '${{ secrets.STEAM_USER }}' '${{ secrets.STEAM_PASSWORD }}' '${{ steps.steam-totp-playtest.outputs.code }}' +run_app_build "$(pwd)/build_playtest.vdf" +quit
         echo "::endgroup::"
 
     - name: Upload Steam build logs

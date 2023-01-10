@@ -122,7 +122,7 @@
    <item>
     <widget class="QLabel" name="keyerLabel">
      <property name="text">
-      <string>Keyer output requires RGB mode in advanced settings.</string>
+      <string>Keyer output requires BGRA mode in advanced settings.</string>
      </property>
     </widget>
    </item>

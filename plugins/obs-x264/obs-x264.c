@@ -361,7 +361,7 @@ static void log_x264(void *param, int level, const char *format, va_list args)
 	struct obs_x264 *obsx264 = param;
 	char str[1024];
 
-	vsnprintf(str, 1024, format, args);
+	vsnprintf(str, sizeof(str), format, args);
 	info("%s", str);
 
 	UNUSED_PARAMETER(level);

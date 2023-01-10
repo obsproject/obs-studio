@@ -87,7 +87,13 @@ def check_rtmp_server(uri) -> bool:
     """Try connecting and sending a RTMP handshake (with SSL if necessary)"""
     parsed = urlparse(uri)
     hostname, port = parsed.netloc.partition(':')[::2]
-    port = int(port) if port else 1935
+
+    if port:
+        port = int(port)
+    elif parsed.scheme == 'rtmps':
+        port = 443
+    else:
+        port = 1935
 
     try:
         recv = b''

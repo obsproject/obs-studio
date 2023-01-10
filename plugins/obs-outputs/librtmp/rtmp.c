@@ -488,7 +488,7 @@ RTMP_Reset(RTMP *r)
     r->Link.curStreamIdx = 0;
     r->Link.nStreams = 0;
     r->Link.receiveTimeout = 30;
-    r->Link.sendTimeout = 6;
+    r->Link.sendTimeout = 15;
     r->Link.swfAge = 30;
 }
 
@@ -781,7 +781,7 @@ add_addr_info(struct sockaddr_storage *service, socklen_t *addrlen, AVal *host, 
 
     char portStr[8];
 
-    sprintf(portStr, "%d", port);
+    snprintf(portStr, sizeof(portStr), "%d", port);
 
     int err = getaddrinfo(hostname, portStr, &hints, &result);
 
@@ -2623,12 +2623,12 @@ typedef struct md5_ctx	MD5_CTX;
 static const AVal av_authmod_adobe = AVC("authmod=adobe");
 static const AVal av_authmod_llnw  = AVC("authmod=llnw");
 
-static void hexenc(unsigned char *inbuf, int len, char *dst)
+static void hexenc(unsigned char *inbuf, int len, char *dst, size_t size)
 {
     char *ptr = dst;
     while(len--)
     {
-        sprintf(ptr, "%02x", *inbuf++);
+        snprintf(ptr, size, "%02x", *inbuf++);
         ptr += 2;
     }
     *ptr = '\0';
@@ -2676,8 +2676,9 @@ PublisherAuth(RTMP *r, AVal *description)
             }
             else if(r->Link.pubUser.av_len && r->Link.pubPasswd.av_len)
             {
-                pubToken.av_val = malloc(r->Link.pubUser.av_len + av_authmod_adobe.av_len + 8);
-                pubToken.av_len = sprintf(pubToken.av_val, "?%s&user=%s",
+                size_t val_size = r->Link.pubUser.av_len + av_authmod_adobe.av_len + 8;
+                pubToken.av_val = malloc(val_size);
+                pubToken.av_len = snprintf(pubToken.av_val, val_size, "?%s&user=%s",
                                           av_authmod_adobe.av_val,
                                           r->Link.pubUser.av_val);
                 RTMP_Log(RTMP_LOGDEBUG, "%s, pubToken1: %s", __FUNCTION__, pubToken.av_val);
@@ -2777,8 +2778,9 @@ PublisherAuth(RTMP *r, AVal *description)
             RTMP_Log(RTMP_LOGDEBUG, "%s, b64(md5_2) = %s", __FUNCTION__, response);
 
             /* have all hashes, create auth token for the end of app */
-            pubToken.av_val = malloc(32 + B64INT_LEN + B64DIGEST_LEN + opaque.av_len);
-            pubToken.av_len = sprintf(pubToken.av_val,
+            size_t val_size = 32 + B64INT_LEN + B64DIGEST_LEN + opaque.av_len;
+            pubToken.av_val = malloc(val_size);
+            pubToken.av_len = snprintf(pubToken.av_val, val_size,
                                       "&challenge=%s&response=%s&opaque=%s",
                                       challenge2,
                                       response,
@@ -2845,8 +2847,9 @@ PublisherAuth(RTMP *r, AVal *description)
             }
             else if(r->Link.pubUser.av_len && r->Link.pubPasswd.av_len)
             {
-                pubToken.av_val = malloc(r->Link.pubUser.av_len + av_authmod_llnw.av_len + 8);
-                pubToken.av_len = sprintf(pubToken.av_val, "?%s&user=%s",
+                size_t val_size = r->Link.pubUser.av_len + av_authmod_llnw.av_len + 8;
+                pubToken.av_val = malloc(val_size);
+                pubToken.av_len = snprintf(pubToken.av_val, val_size, "?%s&user=%s",
                                           av_authmod_llnw.av_val,
                                           r->Link.pubUser.av_val);
                 RTMP_Log(RTMP_LOGDEBUG, "%s, pubToken1: %s", __FUNCTION__, pubToken.av_val);
@@ -2923,8 +2926,8 @@ PublisherAuth(RTMP *r, AVal *description)
 
             /* FIXME: handle case where user==NULL or nonce==NULL */
 
-            sprintf(nchex, "%08x", nc);
-            sprintf(cnonce, "%08x", rand());
+            snprintf(nchex, sizeof(nchex), "%08x", nc);
+            snprintf(cnonce, sizeof(cnonce), "%08x", rand());
 
             /* hash1 = hexenc(md5(user + ":" + realm + ":" + password)) */
             MD5_Init(&md5ctx);
@@ -2937,7 +2940,7 @@ PublisherAuth(RTMP *r, AVal *description)
             RTMP_Log(RTMP_LOGDEBUG, "%s, md5(%s:%s:%s) =>", __FUNCTION__,
                      user.av_val, realm, r->Link.pubPasswd.av_val);
             RTMP_LogHexString(RTMP_LOGDEBUG, md5sum_val, MD5_DIGEST_LENGTH);
-            hexenc(md5sum_val, MD5_DIGEST_LENGTH, hash1);
+            hexenc(md5sum_val, MD5_DIGEST_LENGTH, hash1, sizeof(hash1));
 
             /* hash2 = hexenc(md5(method + ":/" + app + "/" + appInstance)) */
             /* Extract appname + appinstance without query parameters */
@@ -2956,7 +2959,7 @@ PublisherAuth(RTMP *r, AVal *description)
             RTMP_Log(RTMP_LOGDEBUG, "%s, md5(%s:/%.*s) =>", __FUNCTION__,
                      method, apptmp.av_len, apptmp.av_val);
             RTMP_LogHexString(RTMP_LOGDEBUG, md5sum_val, MD5_DIGEST_LENGTH);
-            hexenc(md5sum_val, MD5_DIGEST_LENGTH, hash2);
+            hexenc(md5sum_val, MD5_DIGEST_LENGTH, hash2, sizeof(hash2));
 
             /* hash3 = hexenc(md5(hash1 + ":" + nonce + ":" + nchex + ":" + cnonce + ":" + qop + ":" + hash2)) */
             MD5_Init(&md5ctx);
@@ -2975,13 +2978,14 @@ PublisherAuth(RTMP *r, AVal *description)
             RTMP_Log(RTMP_LOGDEBUG, "%s, md5(%s:%s:%s:%s:%s:%s) =>", __FUNCTION__,
                      hash1, nonce.av_val, nchex, cnonce, qop, hash2);
             RTMP_LogHexString(RTMP_LOGDEBUG, md5sum_val, MD5_DIGEST_LENGTH);
-            hexenc(md5sum_val, MD5_DIGEST_LENGTH, hash3);
+            hexenc(md5sum_val, MD5_DIGEST_LENGTH, hash3, sizeof(hash3));
 
             /* pubToken = &authmod=<authmod>&user=<username>&nonce=<nonce>&cnonce=<cnonce>&nc=<nchex>&response=<hash3> */
             /* Append nonces and response to query string which already contains
              * user + authmod */
-            pubToken.av_val = malloc(64 + sizeof(authmod)-1 + user.av_len + nonce.av_len + sizeof(cnonce)-1 + sizeof(nchex)-1 + HEXHASH_LEN);
-            sprintf(pubToken.av_val,
+            size_t token_size = 64 + sizeof(authmod)-1 + user.av_len + nonce.av_len + sizeof(cnonce)-1 + sizeof(nchex)-1 + HEXHASH_LEN;
+            pubToken.av_val = malloc(token_size);
+            snprintf(pubToken.av_val, token_size,
                     "&nonce=%s&cnonce=%s&nc=%s&response=%s",
                     nonce.av_val, cnonce, nchex, hash3);
             pubToken.av_len = (int)strlen(pubToken.av_val);
@@ -3487,23 +3491,23 @@ DumpMetaData(AMFObject *obj)
             DumpMetaData(&prop->p_vu.p_object);
             break;
         case AMF_NUMBER:
-            snprintf(str, 255, "%.2f", prop->p_vu.p_number);
+            snprintf(str, sizeof(str), "%.2f", prop->p_vu.p_number);
             break;
         case AMF_BOOLEAN:
-            snprintf(str, 255, "%s",
+            snprintf(str, sizeof(str), "%s",
                      prop->p_vu.p_number != 0. ? "TRUE" : "FALSE");
             break;
         case AMF_STRING:
-            len = snprintf(str, 255, "%.*s", prop->p_vu.p_aval.av_len,
+            len = snprintf(str, sizeof(str), "%.*s", prop->p_vu.p_aval.av_len,
                            prop->p_vu.p_aval.av_val);
             if (len >= 1 && str[len-1] == '\n')
                 str[len-1] = '\0';
             break;
         case AMF_DATE:
-            snprintf(str, 255, "timestamp:%.2f", prop->p_vu.p_number);
+            snprintf(str, sizeof(str), "timestamp:%.2f", prop->p_vu.p_number);
             break;
         default:
-            snprintf(str, 255, "INVALID TYPE 0x%02x",
+            snprintf(str, sizeof(str), "INVALID TYPE 0x%02x",
                      (unsigned char)prop->p_type);
         }
         if (str[0] && prop->p_name.av_len)

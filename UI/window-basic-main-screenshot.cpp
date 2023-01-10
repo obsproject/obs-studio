@@ -53,6 +53,12 @@ ScreenshotObj::~ScreenshotObj()
 			main->ShowStatusBarMessage(
 				QTStr("Basic.StatusBar.ScreenshotSavedTo")
 					.arg(QT_UTF8(path.c_str())));
+
+			main->lastScreenshot = path;
+
+			if (main->api)
+				main->api->on_event(
+					OBS_FRONTEND_EVENT_SCREENSHOT_TAKEN);
 		}
 	}
 }

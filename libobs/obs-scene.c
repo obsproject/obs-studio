@@ -1265,13 +1265,21 @@ static void scene_save(void *data, obs_data_t *settings)
 static uint32_t scene_getwidth(void *data)
 {
 	obs_scene_t *scene = data;
-	return scene->custom_size ? scene->cx : obs->video.base_width;
+	if (scene->custom_size)
+		return scene->cx;
+	if (obs->video.main_mix)
+		return obs->video.main_mix->ovi.base_width;
+	return 0;
 }
 
 static uint32_t scene_getheight(void *data)
 {
 	obs_scene_t *scene = data;
-	return scene->custom_size ? scene->cy : obs->video.base_height;
+	if (scene->custom_size)
+		return scene->cy;
+	if (obs->video.main_mix)
+		return obs->video.main_mix->ovi.base_height;
+	return 0;
 }
 
 static void apply_scene_item_audio_actions(struct obs_scene_item *item,
@@ -1642,6 +1650,7 @@ static inline void duplicate_item_data(struct obs_scene_item *dst,
 	dst->last_height = src->last_height;
 	dst->output_scale = src->output_scale;
 	dst->scale_filter = src->scale_filter;
+	dst->blend_method = src->blend_method;
 	dst->blend_type = src->blend_type;
 	dst->box_transform = src->box_transform;
 	dst->box_scale = src->box_scale;

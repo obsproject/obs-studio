@@ -80,12 +80,24 @@ typedef struct SRTContext {
 
 static int libsrt_neterrno(URLContext *h)
 {
+	SRTContext *s = (SRTContext *)h->priv_data;
 	int os_errno;
 	int err = srt_getlasterror(&os_errno);
-	blog(LOG_ERROR, "[obs-ffmpeg mpegts muxer / libsrt] : %s\n",
+	blog(LOG_ERROR, "[obs-ffmpeg mpegts muxer / libsrt]: %s",
 	     srt_getlasterror_str());
 	if (err == SRT_EASYNCRCV || err == SRT_EASYNCSND)
 		return AVERROR(EAGAIN);
+	if (err == SRT_ECONNREJ) {
+		int errj = srt_getrejectreason(s->fd);
+		if (errj == SRT_REJ_BADSECRET)
+			blog(LOG_ERROR,
+			     "[obs-ffmpeg mpegts muxer / libsrt]: Wrong password");
+		else
+			blog(LOG_ERROR,
+			     "[obs-ffmpeg mpegts muxer / libsrt]: Connection rejected, %s",
+			     srt_rejectreason_str(errj));
+	}
+
 	return os_errno ? AVERROR(os_errno) : AVERROR_UNKNOWN;
 }
 
@@ -94,7 +106,7 @@ static int libsrt_getsockopt(URLContext *h, SRTSOCKET fd, SRT_SOCKOPT optname,
 {
 	if (srt_getsockopt(fd, 0, optname, optval, optlen) < 0) {
 		blog(LOG_INFO,
-		     "[obs-ffmpeg mpegts muxer / libsrt] : failed to get option %s on socket: %s\n",
+		     "[obs-ffmpeg mpegts muxer / libsrt]: Failed to get option %s on socket: %s",
 		     optnamestr, srt_getlasterror_str());
 		return AVERROR(EIO);
 	}
@@ -138,6 +150,21 @@ static int libsrt_network_wait_fd(URLContext *h, int eid, int write)
 	} else {
 		ret = srt_epoll_wait(eid, ready, &len, error, &errlen,
 				     POLLING_TIME, 0, 0, 0, 0);
+	}
+	if (len == 1 && errlen == 1) {
+		/* Socket reported in wsock AND rsock signifies an error. */
+		int reason = srt_getrejectreason(*ready);
+
+		if (reason == SRT_REJ_BADSECRET || reason == SRT_REJ_UNSECURE ||
+		    reason == SRT_REJ_TIMEOUT) {
+			blog(LOG_ERROR,
+			     "[obs-ffmpeg mpegts muxer / libsrt]: Connection rejected, wrong password or invalid URL");
+			return OBS_OUTPUT_INVALID_STREAM;
+		} else {
+			blog(LOG_ERROR,
+			     "[obs-ffmpeg mpegts muxer / libsrt]: Connection rejected, %s",
+			     srt_rejectreason_str(reason));
+		}
 	}
 	if (ret < 0) {
 		if (srt_getlasterror(NULL) == SRT_ETIMEOUT)
@@ -190,7 +217,7 @@ static int libsrt_listen(int eid, SRTSOCKET fd, const struct sockaddr *addr,
 	if (srt_setsockopt(fd, SOL_SOCKET, SRTO_REUSEADDR, &reuse,
 			   sizeof(reuse))) {
 		blog(LOG_WARNING,
-		     "[obs-ffmpeg mpegts muxer / libsrt] : setsockopt(SRTO_REUSEADDR) failed\n");
+		     "[obs-ffmpeg mpegts muxer / libsrt]: setsockopt(SRTO_REUSEADDR) failed");
 	}
 	if (srt_bind(fd, addr, addrlen))
 		return libsrt_neterrno(h);
@@ -208,12 +235,12 @@ static int libsrt_listen(int eid, SRTSOCKET fd, const struct sockaddr *addr,
 		return libsrt_neterrno(h);
 	if (libsrt_socket_nonblock(ret, 1) < 0)
 		blog(LOG_DEBUG,
-		     "[obs-ffmpeg mpegts muxer / libsrt] : libsrt_socket_nonblock failed\n");
+		     "[obs-ffmpeg mpegts muxer / libsrt]: libsrt_socket_nonblock failed");
 	if (!libsrt_getsockopt(h, ret, SRTO_STREAMID, "SRTO_STREAMID", streamid,
 			       &streamid_len))
 		/* Note: returned streamid_len doesn't count the terminating null character */
 		blog(LOG_INFO,
-		     "[obs-ffmpeg mpegts muxer / libsrt] : accept streamid [%s], length %d\n",
+		     "[obs-ffmpeg mpegts muxer / libsrt]: Accept streamid [%s], length %d",
 		     streamid, streamid_len);
 
 	return ret;
@@ -233,11 +260,11 @@ static int libsrt_listen_connect(int eid, SRTSOCKET fd,
 	if (ret < 0) {
 		if (will_try_next) {
 			blog(LOG_WARNING,
-			     "[obs-ffmpeg mpegts muxer / libsrt] : Connection to %s failed (%s), trying next address\n",
+			     "[obs-ffmpeg mpegts muxer / libsrt]: Connection to %s failed (%s), trying next address",
 			     h->url, av_err2str(ret));
 		} else {
 			blog(LOG_ERROR,
-			     "[obs-ffmpeg mpegts muxer / libsrt] : Connection to %s failed: %s\n",
+			     "[obs-ffmpeg mpegts muxer / libsrt]: Connection to %s failed: %s",
 			     h->url, av_err2str(ret));
 		}
 	}
@@ -250,7 +277,7 @@ static int libsrt_setsockopt(URLContext *h, SRTSOCKET fd, SRT_SOCKOPT optname,
 {
 	if (srt_setsockopt(fd, 0, optname, optval, optlen) < 0) {
 		blog(LOG_ERROR,
-		     "[obs-ffmpeg mpegts muxer / libsrt] : failed to set option %s on socket: %s\n",
+		     "[obs-ffmpeg mpegts muxer / libsrt]: Failed to set option %s on socket: %s",
 		     optnamestr, srt_getlasterror_str());
 		return AVERROR(EIO);
 	}
@@ -434,7 +461,7 @@ static int libsrt_setup(URLContext *h, const char *uri)
 		return AVERROR(EINVAL);
 	if (port <= 0 || port >= 65536) {
 		blog(LOG_ERROR,
-		     "[obs-ffmpeg mpegts muxer / libsrt] : Port missing in uri\n");
+		     "[obs-ffmpeg mpegts muxer / libsrt]: Port missing in uri");
 		return OBS_OUTPUT_CONNECT_FAILED;
 	}
 	p = strchr(uri, '?');
@@ -457,7 +484,7 @@ static int libsrt_setup(URLContext *h, const char *uri)
 	ret = getaddrinfo(hostname[0] ? hostname : NULL, portstr, &hints, &ai);
 	if (ret) {
 		blog(LOG_ERROR,
-		     "[obs-ffmpeg mpegts muxer / libsrt] : Failed to resolve hostname %s: %s\n",
+		     "[obs-ffmpeg mpegts muxer / libsrt]: Failed to resolve hostname %s: %s",
 		     hostname, gai_strerror(ret));
 		return OBS_OUTPUT_CONNECT_FAILED;
 	}
@@ -490,7 +517,7 @@ restart:
 	}
 	if (libsrt_socket_nonblock(fd, 1) < 0)
 		blog(LOG_DEBUG,
-		     "[obs-ffmpeg mpegts muxer / libsrt] : libsrt_socket_nonblock failed\n");
+		     "[obs-ffmpeg mpegts muxer / libsrt]: libsrt_socket_nonblock failed");
 
 	ret = write_eid = libsrt_epoll_create(h, fd, 1);
 	if (ret < 0)
@@ -574,7 +601,6 @@ static void libsrt_set_defaults(SRTContext *s)
 	s->payload_size = SRT_LIVE_DEFAULT_PAYLOAD_SIZE;
 	s->maxbw = -1;
 	s->pbkeylen = -1;
-	s->passphrase = NULL;
 	s->mss = -1;
 	s->ffs = -1;
 	s->ipttl = -1;
@@ -592,7 +618,6 @@ static void libsrt_set_defaults(SRTContext *s)
 	s->rcvbuf = -1;
 	s->lossmaxttl = -1;
 	s->minversion = -1;
-	s->streamid = NULL;
 	s->smoother = NULL;
 	s->messageapi = -1;
 	s->transtype = SRTT_LIVE;
@@ -609,11 +634,11 @@ static int libsrt_open(URLContext *h, const char *uri)
 
 	if (srt_startup() < 0) {
 		blog(LOG_ERROR,
-		     "[obs-ffmpeg mpegts muxer / libsrt] : libsrt failed to load.\n");
+		     "[obs-ffmpeg mpegts muxer / libsrt]: libsrt failed to load");
 		return OBS_OUTPUT_CONNECT_FAILED;
 	} else {
 		blog(LOG_INFO,
-		     "[obs-ffmpeg mpegts muxer / libsrt] : libsrt v.%s loaded.\n",
+		     "[obs-ffmpeg mpegts muxer / libsrt]: libsrt version %s loaded",
 		     SRT_VERSION_STRING);
 	}
 	libsrt_set_defaults(s);
@@ -801,8 +826,8 @@ static int libsrt_write(URLContext *h, const uint8_t *buf, int size)
 #endif
 		if (time > (s->time + 60.0)) {
 			srt_bistats(s->fd, &perf, 0, 1);
-			blog(LOG_INFO,
-			     "[obs-ffmpeg mpegts muxer / libsrt] : rtt [%.2f ms], link bandwidth [%.1f Mbps]\n",
+			blog(LOG_DEBUG,
+			     "[obs-ffmpeg mpegts muxer / libsrt]: RTT [%.2f ms], Link Bandwidth [%.1f Mbps]",
 			     perf.msRTT, perf.mbpsBandwidth);
 			s->time = time;
 		}
@@ -814,15 +839,21 @@ static int libsrt_write(URLContext *h, const uint8_t *buf, int size)
 static int libsrt_close(URLContext *h)
 {
 	SRTContext *s = (SRTContext *)h->priv_data;
-
+	if (s->streamid)
+		av_freep(&s->streamid);
+	if (s->passphrase)
+		av_freep(&s->passphrase);
 	/* Log stream stats. */
 	SRT_TRACEBSTATS perf;
 	srt_bstats(s->fd, &perf, 1);
+	blog(LOG_INFO, "---------------------------------");
 	blog(LOG_INFO,
-	     "[obs-ffmpeg mpegts muxer / libsrt] : Stream stats\n\n"
-	     "time elapsed [%.1f sec]\nmean speed [%.1f Mbp]\n"
-	     "total bytes sent [%.1f MB]\nbytes retransmitted [%.1f %%]\n"
-	     "bytes dropped [%.1f %%]\n\n",
+	     "[obs-ffmpeg mpegts muxer / libsrt]: Session Summary\n"
+	     "\ttime elapsed [%.1f sec]\n"
+	     "\tmean speed [%.1f Mbp]\n"
+	     "\ttotal bytes sent [%.1f MB]\n"
+	     "\tbytes retransmitted [%.1f %%]\n"
+	     "\tbytes dropped [%.1f %%]\n",
 	     (double)perf.msTimeStamp / 1000.0, perf.mbpsSendRate,
 	     (double)perf.byteSentTotal / 1000000.0,
 	     perf.byteSentTotal
@@ -835,13 +866,14 @@ static int libsrt_close(URLContext *h)
 	srt_epoll_release(s->eid);
 	int err = srt_close(s->fd);
 	if (err < 0) {
-		blog(LOG_ERROR, "[obs-ffmpeg mpegts muxer / libsrt] : %s\n",
+		blog(LOG_ERROR, "[obs-ffmpeg mpegts muxer / libsrt]: %s",
 		     srt_getlasterror_str());
 		return -1;
 	}
 
 	srt_cleanup();
-	blog(LOG_INFO, "[obs-ffmpeg mpegts muxer / libsrt] : closing srt");
+	blog(LOG_INFO,
+	     "[obs-ffmpeg mpegts muxer / libsrt]: SRT connection closed");
 
 	return 0;
 }

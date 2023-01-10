@@ -272,14 +272,14 @@ OBSBasic::OBSBasic(QWidget *parent)
 	setAcceptDrops(true);
 
 	setContextMenuPolicy(Qt::CustomContextMenu);
-	connect(this, SIGNAL(customContextMenuRequested(const QPoint &)), this,
-		SLOT(on_customContextMenuRequested(const QPoint &)));
 
 	api = InitializeAPIInterface(this);
 
 	ui->setupUi(this);
 	ui->previewDisabledWidget->setVisible(false);
-	ui->contextContainer->setStyle(new OBSContextBarProxyStyle);
+	QStyle *contextBarStyle = new OBSContextBarProxyStyle();
+	contextBarStyle->setParent(ui->contextContainer);
+	ui->contextContainer->setStyle(contextBarStyle);
 	ui->broadcastButton->setVisible(false);
 
 	startingDockLayout = saveState();
@@ -1398,8 +1398,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 				false);
 	config_set_default_string(basicConfig, "SimpleOutput", "Preset",
 				  "veryfast");
-	config_set_default_string(basicConfig, "SimpleOutput", "NVENCPreset",
-				  "hq");
+	config_set_default_string(basicConfig, "SimpleOutput", "NVENCPreset2",
+				  "p5");
 	config_set_default_string(basicConfig, "SimpleOutput", "RecQuality",
 				  "Stream");
 	config_set_default_bool(basicConfig, "SimpleOutput", "RecRB", false);
@@ -1536,6 +1536,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 }
 
 extern bool EncoderAvailable(const char *encoder);
+extern bool update_nvenc_presets(ConfigFile &config);
 
 void OBSBasic::InitBasicConfigDefaults2()
 {
@@ -1549,6 +1550,9 @@ void OBSBasic::InitBasicConfigDefaults2()
 	config_set_default_string(basicConfig, "SimpleOutput", "RecEncoder",
 				  useNV ? SIMPLE_ENCODER_NVENC
 					: SIMPLE_ENCODER_X264);
+
+	if (update_nvenc_presets(basicConfig))
+		config_save_safe(basicConfig, "tmp", nullptr);
 }
 
 bool OBSBasic::InitBasicConfig()
@@ -1878,7 +1882,6 @@ void OBSBasic::OBSInit()
 		disableSaving++;
 	}
 
-	TimedCheckForUpdates();
 	loaded = true;
 
 	previewEnabled = config_get_bool(App()->GlobalConfig(), "BasicWindow",
@@ -1888,15 +1891,6 @@ void OBSBasic::OBSInit()
 		QMetaObject::invokeMethod(this, "EnablePreviewDisplay",
 					  Qt::QueuedConnection,
 					  Q_ARG(bool, previewEnabled));
-
-#ifdef _WIN32
-	uint32_t winVer = GetWindowsVersion();
-	if (winVer > 0 && winVer < 0x602) {
-		bool disableAero =
-			config_get_bool(basicConfig, "Video", "DisableAero");
-		SetAeroEnabled(!disableAero);
-	}
-#endif
 
 	RefreshSceneCollections();
 	RefreshProfiles();
@@ -2031,6 +2025,19 @@ void OBSBasic::OBSInit()
 	if (!first_run && !has_last_version && !Active())
 		QMetaObject::invokeMethod(this, "on_autoConfigure_triggered",
 					  Qt::QueuedConnection);
+
+#if defined(_WIN32) && (OBS_RELEASE_CANDIDATE > 0 || OBS_BETA > 0)
+	/* Automatically set branch to "beta" the first time a pre-release build is run. */
+	if (!config_get_bool(App()->GlobalConfig(), "General",
+			     "AutoBetaOptIn")) {
+		config_set_string(App()->GlobalConfig(), "General",
+				  "UpdateBranch", "beta");
+		config_set_bool(App()->GlobalConfig(), "General",
+				"AutoBetaOptIn", true);
+		config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+	}
+#endif
+	TimedCheckForUpdates();
 
 	ToggleMixerLayout(config_get_bool(App()->GlobalConfig(), "BasicWindow",
 					  "VerticalVolControl"));
@@ -2697,12 +2704,10 @@ OBSBasic::~OBSBasic()
 		       OBS_BETA_VER);
 #endif
 
-	bool alwaysOnTop = IsAlwaysOnTop(this);
-
 	config_set_bool(App()->GlobalConfig(), "BasicWindow", "PreviewEnabled",
 			previewEnabled);
 	config_set_bool(App()->GlobalConfig(), "BasicWindow", "AlwaysOnTop",
-			alwaysOnTop);
+			ui->actionAlwaysOnTop->isChecked());
 	config_set_bool(App()->GlobalConfig(), "BasicWindow",
 			"SceneDuplicationMode", sceneDuplicationMode);
 	config_set_bool(App()->GlobalConfig(), "BasicWindow", "SwapScenesMode",
@@ -2714,17 +2719,6 @@ OBSBasic::~OBSBasic()
 	config_set_bool(App()->GlobalConfig(), "BasicWindow", "DocksLocked",
 			ui->lockDocks->isChecked());
 	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
-
-#ifdef _WIN32
-	uint32_t winVer = GetWindowsVersion();
-	if (winVer > 0 && winVer < 0x602) {
-		bool disableAero =
-			config_get_bool(basicConfig, "Video", "DisableAero");
-		if (disableAero) {
-			SetAeroEnabled(true);
-		}
-	}
-#endif
 
 #ifdef BROWSER_AVAILABLE
 	DestroyPanelCookieManager();
@@ -3095,12 +3089,25 @@ void OBSBasic::UpdateContextBarDeferred(bool force)
 				  Qt::QueuedConnection, Q_ARG(bool, force));
 }
 
+void OBSBasic::SourceToolBarActionsSetEnabled(bool enable)
+{
+	ui->actionRemoveSource->setEnabled(enable);
+	ui->actionSourceProperties->setEnabled(enable);
+	ui->actionSourceUp->setEnabled(enable);
+	ui->actionSourceDown->setEnabled(enable);
+
+	RefreshToolBarStyling(ui->sourcesToolbar);
+}
+
 void OBSBasic::UpdateContextBar(bool force)
 {
+	OBSSceneItem item = GetCurrentSceneItem();
+	bool enable = item != nullptr;
+
+	SourceToolBarActionsSetEnabled(enable);
+
 	if (!ui->contextContainer->isVisible() && !force)
 		return;
-
-	OBSSceneItem item = GetCurrentSceneItem();
 
 	if (item) {
 		obs_source_t *source = obs_sceneitem_get_source(item);
@@ -5054,13 +5061,13 @@ void OBSBasic::AddProjectorMenuMonitors(QMenu *parent, QObject *target,
 		QRect screenGeometry = screen->geometry();
 		qreal ratio = screen->devicePixelRatio();
 		QString name = "";
-#ifdef _WIN32
+#if defined(_WIN32) && QT_VERSION < QT_VERSION_CHECK(6, 4, 0)
 		QTextStream fullname(&name);
 		fullname << GetMonitorName(screen->name());
 		fullname << " (";
 		fullname << (i + 1);
 		fullname << ")";
-#elif defined(__APPLE__)
+#elif defined(__APPLE__) || defined(_WIN32)
 		name = screen->name();
 #else
 		name = screen->model().simplified();
@@ -7164,7 +7171,16 @@ void OBSBasic::AutoRemux(QString input, bool no_show)
 
 	QString output = input;
 	output.resize(output.size() - suffix.size());
-	output += "mp4";
+
+	const obs_encoder_t *videoEncoder =
+		obs_output_get_video_encoder(outputHandler->fileOutput);
+	const char *codecName = obs_encoder_get_codec(videoEncoder);
+
+	if (strcmp(codecName, "prores") == 0) {
+		output += "mov";
+	} else {
+		output += "mp4";
+	}
 
 	OBSRemux *remux = new OBSRemux(QT_TO_UTF8(path), this, true);
 	if (!no_show)
@@ -7476,15 +7492,17 @@ void OBSBasic::ReplayBufferSaved()
 	proc_handler_t *ph =
 		obs_output_get_proc_handler(outputHandler->replayBuffer);
 	proc_handler_call(ph, "get_last_replay", &cd);
-	QString path = QT_UTF8(calldata_string(&cd, "path"));
-	QString msg = QTStr("Basic.StatusBar.ReplayBufferSavedTo").arg(path);
+	std::string path = calldata_string(&cd, "path");
+	QString msg = QTStr("Basic.StatusBar.ReplayBufferSavedTo")
+			      .arg(QT_UTF8(path.c_str()));
 	ShowStatusBarMessage(msg);
+	lastReplay = path;
 	calldata_free(&cd);
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED);
 
-	AutoRemux(path);
+	AutoRemux(QT_UTF8(path.c_str()));
 }
 
 void OBSBasic::ReplayBufferStop(int code)
@@ -10149,7 +10167,7 @@ void OBSBasic::ResetStatsHotkey()
 	foreach(OBSBasicStats * s, list) s->Reset();
 }
 
-void OBSBasic::on_customContextMenuRequested(const QPoint &pos)
+void OBSBasic::on_OBSBasic_customContextMenuRequested(const QPoint &pos)
 {
 	QWidget *widget = childAt(pos);
 	const char *className = nullptr;
@@ -10202,6 +10220,14 @@ void OBSBasic::on_sourcePropertiesButton_clicked()
 void OBSBasic::on_sourceFiltersButton_clicked()
 {
 	OpenFilters();
+}
+
+void OBSBasic::on_actionSceneFilters_triggered()
+{
+	OBSSource sceneSource = GetCurrentSceneSource();
+
+	if (sceneSource)
+		OpenFilters(sceneSource);
 }
 
 void OBSBasic::on_sourceInteractButton_clicked()
