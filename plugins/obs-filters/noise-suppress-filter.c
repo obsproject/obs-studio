@@ -466,7 +466,7 @@ static void noise_suppress_update(void *data, obs_data_t *s)
 		strcmp(method, S_METHOD_NVAFX_DEREVERB) == 0 ||
 		strcmp(method, S_METHOD_NVAFX_DEREVERB_DENOISER) == 0;
 #ifdef LIBNVAFX_ENABLED
-	if (nvafx_requested)
+	if (nvafx_requested && ng->nvafx_enabled)
 		set_model(ng, method);
 	float intensity = (float)obs_data_get_double(s, S_NVAFX_INTENSITY);
 	if (ng->use_nvafx && ng->nvafx_initialized) {
