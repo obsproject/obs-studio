@@ -2381,8 +2381,8 @@
             "stream_key_link": "https://www.mildom.com/creator/live",
             "servers": [
                 {
-                    "name": "Asia: Tokyo, Japan",
-                    "url": "rtmp://live-tyo-tct.mildom.tv/live"
+                    "name": "Global",
+                    "url": "rtmp://txlvb-push.mildom.tv/live"
                 }
             ],
             "recommended": {
