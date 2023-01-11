@@ -47,6 +47,8 @@ private:
 	void ButtonClicked();
 
 	void TogglePasswordText(bool checked);
+	void EditableListArrayPushBack(obs_data_array_t *array,
+				       const char *text);
 
 public:
 	inline WidgetInfo(OBSPropertiesView *view_, obs_property_t *prop,
@@ -79,6 +81,10 @@ public slots:
 	void EditListEdit();
 	void EditListUp();
 	void EditListDown();
+	void EditListReordered(const QModelIndex &sourceParent, int sourceStart,
+			       int sourceEnd,
+			       const QModelIndex &destinationParent,
+			       int destinationRow);
 };
 
 /* ------------------------------------------------------------------------- */

@@ -723,6 +723,11 @@ void OBSPropertiesView::AddEditableList(obs_property_t *prop,
 {
 	const char *name = obs_property_name(prop);
 	OBSDataArrayAutoRelease array = obs_data_get_array(settings, name);
+	if (array == NULL) {
+		array = obs_data_array_create();
+		obs_data_set_array(settings, name, array);
+	}
+
 	QListWidget *list = new QListWidget();
 	size_t count = obs_data_array_count(array);
 
@@ -745,8 +750,8 @@ void OBSPropertiesView::AddEditableList(obs_property_t *prop,
 	WidgetInfo *info = new WidgetInfo(this, prop, list);
 
 	list->setDragDropMode(QAbstractItemView::InternalMove);
-	connect(list->model(), &QAbstractItemModel::rowsMoved,
-		[info]() { info->EditableListChanged(); });
+	connect(list->model(), &QAbstractItemModel::rowsMoved, info,
+		&WidgetInfo::EditListReordered);
 
 	QVBoxLayout *sideLayout = new QVBoxLayout();
 	NewButton(sideLayout, info, "addIconSmall", &WidgetInfo::EditListAdd);
@@ -2013,23 +2018,51 @@ void WidgetInfo::GroupChanged(const char *setting)
 						  : true);
 }
 
+void WidgetInfo::EditListReordered(const QModelIndex &sourceParent,
+				   int sourceStart, int sourceEnd,
+				   const QModelIndex &destinationParent,
+				   int destinationRow)
+{
+	UNUSED_PARAMETER(sourceParent);
+	UNUSED_PARAMETER(destinationParent);
+
+	const char *setting = obs_property_name(property);
+	OBSDataArrayAutoRelease array =
+		obs_data_get_array(view->settings, setting);
+
+	for (int i = sourceStart; i <= sourceEnd; i++) {
+		OBSDataAutoRelease arrayItem = obs_data_array_item(array, i);
+		obs_data_array_insert(array, destinationRow, arrayItem);
+		// if moved to top, destination row increases
+		obs_data_array_erase(array, (i > destinationRow) ? i + 1 : i);
+		++destinationRow;
+	}
+	EditableListChanged();
+}
+
+void WidgetInfo::EditableListArrayPushBack(obs_data_array_t *array,
+					   const char *text)
+{
+	OBSDataAutoRelease arrayItem = obs_data_create();
+	obs_data_set_string(arrayItem, "value", text);
+	obs_data_set_bool(arrayItem, "selected", false);
+	obs_data_set_bool(arrayItem, "hidden", false);
+	obs_data_array_push_back(array, arrayItem);
+}
+
 void WidgetInfo::EditableListChanged()
 {
 	const char *setting = obs_property_name(property);
 	QListWidget *list = reinterpret_cast<QListWidget *>(widget);
-	OBSDataArrayAutoRelease array = obs_data_array_create();
+	OBSDataArrayAutoRelease array =
+		obs_data_get_array(view->settings, setting);
 
 	for (int i = 0; i < list->count(); i++) {
 		QListWidgetItem *item = list->item(i);
-		OBSDataAutoRelease arrayItem = obs_data_create();
-		obs_data_set_string(arrayItem, "value",
-				    QT_TO_UTF8(item->text()));
+		OBSDataAutoRelease arrayItem = obs_data_array_item(array, i);
 		obs_data_set_bool(arrayItem, "selected", item->isSelected());
 		obs_data_set_bool(arrayItem, "hidden", item->isHidden());
-		obs_data_array_push_back(array, arrayItem);
 	}
-
-	obs_data_set_array(view->settings, setting, array);
 
 	ControlChanged();
 }
@@ -2281,6 +2314,9 @@ void WidgetInfo::EditListAddText()
 {
 	QListWidget *list = reinterpret_cast<QListWidget *>(widget);
 	const char *desc = obs_property_description(property);
+	const char *setting = obs_property_name(property);
+	OBSDataArrayAutoRelease array =
+		obs_data_get_array(view->settings, setting);
 
 	EditableItemDialog dialog(widget->window(), QString(), false);
 	auto title = tr("Basic.PropertiesWindow.AddEditableListEntry")
@@ -2294,6 +2330,7 @@ void WidgetInfo::EditListAddText()
 		return;
 
 	list->addItem(text);
+	EditableListArrayPushBack(array, QT_TO_UTF8(text));
 	EditableListChanged();
 }
 
@@ -2304,6 +2341,9 @@ void WidgetInfo::EditListAddFiles()
 	const char *filter = obs_property_editable_list_filter(property);
 	const char *default_path =
 		obs_property_editable_list_default_path(property);
+	const char *setting = obs_property_name(property);
+	OBSDataArrayAutoRelease array =
+		obs_data_get_array(view->settings, setting);
 
 	QString title = tr("Basic.PropertiesWindow.AddEditableListFiles")
 				.arg(QT_UTF8(desc));
@@ -2319,6 +2359,9 @@ void WidgetInfo::EditListAddFiles()
 		return;
 
 	list->addItems(files);
+	for (QString &file : files) {
+		EditableListArrayPushBack(array, QT_TO_UTF8(file));
+	}
 	EditableListChanged();
 }
 
@@ -2328,6 +2371,9 @@ void WidgetInfo::EditListAddDir()
 	const char *desc = obs_property_description(property);
 	const char *default_path =
 		obs_property_editable_list_default_path(property);
+	const char *setting = obs_property_name(property);
+	OBSDataArrayAutoRelease array =
+		obs_data_get_array(view->settings, setting);
 
 	QString title = tr("Basic.PropertiesWindow.AddEditableListDir")
 				.arg(QT_UTF8(desc));
@@ -2342,6 +2388,7 @@ void WidgetInfo::EditListAddDir()
 		return;
 
 	list->addItem(dir);
+	EditableListArrayPushBack(array, QT_TO_UTF8(dir));
 	EditableListChanged();
 }
 
@@ -2349,9 +2396,15 @@ void WidgetInfo::EditListRemove()
 {
 	QListWidget *list = reinterpret_cast<QListWidget *>(widget);
 	QList<QListWidgetItem *> items = list->selectedItems();
+	const char *setting = obs_property_name(property);
+	OBSDataArrayAutoRelease array =
+		obs_data_get_array(view->settings, setting);
 
-	for (QListWidgetItem *item : items)
+	for (qsizetype i = items.size() - 1; i >= 0; i--) {
+		QListWidgetItem *item = items.at(i);
+		obs_data_array_erase(array, list->row(item));
 		delete item;
+	}
 	EditableListChanged();
 }
 
@@ -2360,6 +2413,7 @@ void WidgetInfo::EditListEdit()
 	QListWidget *list = reinterpret_cast<QListWidget *>(widget);
 	enum obs_editable_list_type type =
 		obs_property_editable_list_type(property);
+	const char *setting = obs_property_name(property);
 	const char *desc = obs_property_description(property);
 	const char *filter = obs_property_editable_list_filter(property);
 	QList<QListWidgetItem *> selectedItems = list->selectedItems();
@@ -2368,6 +2422,10 @@ void WidgetInfo::EditListEdit()
 		return;
 
 	QListWidgetItem *item = selectedItems[0];
+	int row = list->row(item);
+	OBSDataArrayAutoRelease array =
+		obs_data_get_array(view->settings, setting);
+	OBSDataAutoRelease arrayItem = obs_data_array_item(array, row);
 
 	if (type == OBS_EDITABLE_LIST_TYPE_FILES) {
 		QDir pathDir(item->text());
@@ -2384,6 +2442,7 @@ void WidgetInfo::EditListEdit()
 			return;
 
 		item->setText(path);
+		obs_data_set_string(arrayItem, "value", QT_TO_UTF8(path));
 		EditableListChanged();
 		return;
 	}
@@ -2402,6 +2461,7 @@ void WidgetInfo::EditListEdit()
 		return;
 
 	item->setText(text);
+	obs_data_set_string(arrayItem, "value", QT_TO_UTF8(text));
 	EditableListChanged();
 }
 
@@ -2409,6 +2469,9 @@ void WidgetInfo::EditListUp()
 {
 	QListWidget *list = reinterpret_cast<QListWidget *>(widget);
 	int lastItemRow = -1;
+	const char *setting = obs_property_name(property);
+	OBSDataArrayAutoRelease array =
+		obs_data_get_array(view->settings, setting);
 
 	for (int i = 0; i < list->count(); i++) {
 		QListWidgetItem *item = list->item(i);
@@ -2422,6 +2485,11 @@ void WidgetInfo::EditListUp()
 			list->takeItem(row);
 			list->insertItem(lastItemRow, item);
 			item->setSelected(true);
+
+			OBSDataAutoRelease arrayItem =
+				obs_data_array_item(array, row);
+			obs_data_array_insert(array, lastItemRow, arrayItem);
+			obs_data_array_erase(array, row + 1);
 		} else {
 			lastItemRow = row;
 		}
@@ -2434,6 +2502,9 @@ void WidgetInfo::EditListDown()
 {
 	QListWidget *list = reinterpret_cast<QListWidget *>(widget);
 	int lastItemRow = list->count();
+	const char *setting = obs_property_name(property);
+	OBSDataArrayAutoRelease array =
+		obs_data_get_array(view->settings, setting);
 
 	for (int i = list->count() - 1; i >= 0; i--) {
 		QListWidgetItem *item = list->item(i);
@@ -2447,6 +2518,12 @@ void WidgetInfo::EditListDown()
 			list->takeItem(row);
 			list->insertItem(lastItemRow, item);
 			item->setSelected(true);
+
+			OBSDataAutoRelease arrayItem =
+				obs_data_array_item(array, row);
+			obs_data_array_insert(array, lastItemRow + 1,
+					      arrayItem);
+			obs_data_array_erase(array, row);
 		} else {
 			lastItemRow = row;
 		}
