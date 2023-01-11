@@ -93,6 +93,8 @@
 
 - (void)handlePortMessage:(NSPortMessage *)message
 {
+	__strong id<MachClientDelegate> strongDelegate = self.delegate;
+
 	VLogFunc(@"");
 	NSArray *components = message.components;
 	switch (message.msgid) {
@@ -113,57 +115,60 @@
 
 			IOSurfaceRef surface = IOSurfaceLookupFromMachPort(
 				[framePort machPort]);
+
+			if (surface) {
+				/*
+                 * IOSurfaceLocks are only necessary on non Apple Silicon devices, as those have
+                 * unified memory. On Intel machines, the lock ensures that the IOSurface is copied back
+                 * from GPU memory to CPU memory so we can process the pixel buffer.
+                 */
+#ifndef __aarch64__
+				IOSurfaceLock(surface, kIOSurfaceLockReadOnly,
+					      NULL);
+#endif
+				CVPixelBufferRef frame;
+				CVPixelBufferCreateWithIOSurface(
+					kCFAllocatorDefault, surface, NULL,
+					&frame);
+#ifndef __aarch64__
+				IOSurfaceUnlock(surface, kIOSurfaceLockReadOnly,
+						NULL);
+#endif
+				CFRelease(surface);
+
+				uint64_t timestamp;
+				[components[1] getBytes:&timestamp
+						 length:sizeof(timestamp)];
+
+				VLog(@"Received frame data: %zux%zu (%llu)",
+				     CVPixelBufferGetWidth(frame),
+				     CVPixelBufferGetHeight(frame), timestamp);
+
+				uint32_t fpsNumerator;
+				[components[2] getBytes:&fpsNumerator
+						 length:sizeof(fpsNumerator)];
+				uint32_t fpsDenominator;
+				[components[3] getBytes:&fpsDenominator
+						 length:sizeof(fpsDenominator)];
+
+				[strongDelegate
+					receivedPixelBuffer:frame
+						  timestamp:timestamp
+					       fpsNumerator:fpsNumerator
+					     fpsDenominator:fpsDenominator];
+
+				CVPixelBufferRelease(frame);
+			} else {
+				ELog(@"Failed to obtain IOSurface from Mach port");
+			}
 			[framePort invalidate];
 			mach_port_deallocate(mach_task_self(),
 					     [framePort machPort]);
-
-			if (!surface) {
-				ELog(@"Failed to obtain IOSurface from Mach port");
-				return;
-			}
-
-			/*
-			 * IOSurfaceLocks are only necessary on non Apple Silicon devices, as those have
-			 * unified memory. On Intel machines, the lock ensures that the IOSurface is copied back
-			 * from GPU memory to CPU memory so we can process the pixel buffer.
-			 */
-#ifndef __aarch64__
-			IOSurfaceLock(surface, kIOSurfaceLockReadOnly, NULL);
-#endif
-			CVPixelBufferRef frame;
-			CVPixelBufferCreateWithIOSurface(kCFAllocatorDefault,
-							 surface, NULL, &frame);
-#ifndef __aarch64__
-			IOSurfaceUnlock(surface, kIOSurfaceLockReadOnly, NULL);
-#endif
-			CFRelease(surface);
-
-			uint64_t timestamp;
-			[components[1] getBytes:&timestamp
-					 length:sizeof(timestamp)];
-
-			VLog(@"Received frame data: %zux%zu (%llu)",
-			     CVPixelBufferGetWidth(frame),
-			     CVPixelBufferGetHeight(frame), timestamp);
-
-			uint32_t fpsNumerator;
-			[components[2] getBytes:&fpsNumerator
-					 length:sizeof(fpsNumerator)];
-			uint32_t fpsDenominator;
-			[components[3] getBytes:&fpsDenominator
-					 length:sizeof(fpsDenominator)];
-
-			[self.delegate receivedPixelBuffer:frame
-						 timestamp:timestamp
-					      fpsNumerator:fpsNumerator
-					    fpsDenominator:fpsDenominator];
-
-			CVPixelBufferRelease(frame);
 		}
 		break;
 	case MachMsgIdStop:
 		DLog(@"Received stop message");
-		[self.delegate receivedStop];
+		[strongDelegate receivedStop];
 		break;
 	default:
 		ELog(@"Received unexpected response msgid %u",
