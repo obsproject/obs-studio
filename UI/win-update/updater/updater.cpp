@@ -24,6 +24,7 @@
 #include <vector>
 #include <string>
 #include <mutex>
+#include <unordered_set>
 
 using namespace std;
 using namespace json11;
@@ -246,6 +247,7 @@ enum state_t {
 	STATE_PENDING_DOWNLOAD,
 	STATE_DOWNLOADING,
 	STATE_DOWNLOADED,
+	STATE_ALREADY_DOWNLOADED,
 	STATE_INSTALL_FAILED,
 	STATE_INSTALLED,
 };
@@ -1562,6 +1564,24 @@ static bool Update(wchar_t *cmdLine)
 
 		UpdateWithPatchIfAvailable(name.c_str(), hash.c_str(),
 					   source.c_str(), size);
+	}
+
+	/* ------------------------------------- *
+	 * Deduplicate Downloads                 */
+
+	unordered_set<wstring> tempFiles;
+	for (update_t &update : updates) {
+		if (update.patchable)
+			continue;
+
+		if (tempFiles.count(update.tempPath)) {
+			update.state = STATE_ALREADY_DOWNLOADED;
+			totalFileSize -= update.fileSize;
+			completedUpdates++;
+			continue;
+		}
+
+		tempFiles.insert(update.tempPath);
 	}
 
 	/* ------------------------------------- *
