@@ -1734,7 +1734,7 @@ static void CancelUpdate(bool quit)
 	}
 }
 
-static void LaunchOBS()
+static void LaunchOBS(bool portable)
 {
 	wchar_t cwd[MAX_PATH];
 	wchar_t newCwd[MAX_PATH];
@@ -1773,6 +1773,9 @@ static void LaunchOBS()
 	execInfo.lpFile = obsPath;
 	execInfo.lpDirectory = newCwd;
 	execInfo.nShow = SW_SHOWNORMAL;
+
+	if (portable)
+		execInfo.lpParameters = L"--portable";
 
 	ShellExecuteEx(&execInfo);
 }
@@ -1887,6 +1890,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int)
 	GetCurrentDirectoryW(_countof(cwd) - 1, cwd);
 
 	is32bit = wcsstr(cwd, L"bin\\32bit") != nullptr;
+	bool isPortable = wcsstr(lpCmdLine, L"Portable") != nullptr ||
+			  wcsstr(lpCmdLine, L"--portable") != nullptr;
 
 	if (!IsWindows10OrGreater()) {
 		MessageBox(
@@ -1922,7 +1927,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int)
 					nullptr);
 			SetCurrentDirectory(newPath);
 
-			LaunchOBS();
+			LaunchOBS(isPortable);
 		}
 
 		if (hLowMutex) {
@@ -1970,7 +1975,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int)
 		WinHandle hMutex = OpenMutex(
 			SYNCHRONIZE, false, L"OBSUpdaterRunningAsNonAdminUser");
 		if (msg.wParam == 1 && !hMutex) {
-			LaunchOBS();
+			LaunchOBS(isPortable);
 		}
 
 		return (int)msg.wParam;
