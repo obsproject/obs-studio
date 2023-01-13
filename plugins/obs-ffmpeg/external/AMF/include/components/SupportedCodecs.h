@@ -9,7 +9,7 @@
 // 
 // MIT license 
 // 
-// Copyright (c) 2018 Advanced Micro Devices, Inc. All rights reserved.
+// Copyright (c) 2017 Advanced Micro Devices, Inc. All rights reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,20 +30,32 @@
 // THE SOFTWARE.
 //
 
-#ifndef __D3D12AMF_h__
-#define __D3D12AMF_h__
-#pragma once 
-#include "Platform.h"
-#if defined(_WIN32)||(defined(__linux) && defined(AMF_WSL))
-// syncronization properties set via SetPrivateData()
-AMF_WEAK GUID  AMFResourceStateGUID = { 0x452da9bf, 0x4ad7, 0x47a5, { 0xa6, 0x9b, 0x96, 0xd3, 0x23, 0x76, 0xf2, 0xf3 } };   // Current resource state value (D3D12_RESOURCE_STATES ), sizeof(UINT), set on ID3D12Resource 
-AMF_WEAK GUID  AMFFenceGUID         = { 0x910a7928, 0x57bd, 0x4b04, { 0x91, 0xa3, 0xe7, 0xb8, 0x04, 0x12, 0xcd, 0xa5 } };   // IUnknown (ID3D12Fence), set on ID3D12Resource  syncronization fence for this resource
-AMF_WEAK GUID  AMFFenceValueGUID    = { 0x62a693d3, 0xbb4a, 0x46c9, { 0xa5, 0x04, 0x9a, 0x8e, 0x97, 0xbf, 0xf0, 0x56 } };   // The last value to wait on the fence from AMFFenceGUID; sizeof(UINT64), set on ID3D12Fence 
+//-------------------------------------------------------------------------------------------------
+// An interface available on some components to provide information on supported input and output codecs 
+//-------------------------------------------------------------------------------------------------
+#ifndef AMF_SupportedCodecs_h
+#define AMF_SupportedCodecs_h
 
-AMF_WEAK GUID  AMFFenceD3D11GUID    = { 0xdffdf6e0, 0x85e0, 0x4645, { 0x9d, 0x7, 0xe6, 0x4a, 0x19, 0x6b, 0xc9, 0xbf } };   // IUnknown (ID3D11Fence) OpenSharedFence for interop
-AMF_WEAK GUID  AMFFenceValueD3D11GUID    = { 0x86581b71, 0x699f, 0x484b, { 0xb8, 0x75, 0x24, 0xda, 0x49, 0x8a, 0x74, 0xcf } };   // last value to wait on in d3d11
-AMF_WEAK GUID  AMFSharedHandleFenceGUID = { 0xca60dcc8, 0x76d1, 0x4088, 0xad, 0xd, 0x97, 0x71, 0xe7, 0xb0, 0x92, 0x49 };   // ID3D12Fence shared handle for D3D11 interop
+#pragma once
+
+#include "public/include/core/Interface.h"
+
+//properties on the returned AMFPropertyStorage
+#define SUPPORTEDCODEC_ID L"CodecId" //amf_int64
+#define SUPPORTEDCODEC_SAMPLERATE L"SampleRate" //amf_int32
+
+namespace amf
+{
+    class AMFSupportedCodecs : public AMFInterface
+    {
+    public:
+        AMF_DECLARE_IID(0xc1003a83, 0x7934, 0x408a, 0x95, 0x5b, 0xc4, 0xdd, 0x85, 0x9d, 0xf5, 0x61)
+
+        //call with increasing values until it returns AMF_OUT_OF_RANGE
+        virtual AMF_RESULT     AMF_STD_CALL GetInputCodecAt(amf_size index, AMFPropertyStorage** codec) const = 0;
+        virtual AMF_RESULT     AMF_STD_CALL GetOutputCodecAt(amf_size index, AMFPropertyStorage** codec) const = 0;
+    };
+    typedef AMFInterfacePtr_T<AMFSupportedCodecs> AMFSupportedCodecsPtr;
+}
 
 #endif
-
-#endif // __D3D12AMF_h__

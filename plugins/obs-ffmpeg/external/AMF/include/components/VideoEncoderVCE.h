@@ -66,6 +66,29 @@ enum AMF_VIDEO_ENCODER_PROFILE_ENUM
     AMF_VIDEO_ENCODER_PROFILE_CONSTRAINED_HIGH = 257
 };
 
+enum AMF_VIDEO_ENCODER_H264_LEVEL_ENUM
+{
+    AMF_H264_LEVEL__1   = 10,
+    AMF_H264_LEVEL__1_1 = 11,
+    AMF_H264_LEVEL__1_2 = 12,
+    AMF_H264_LEVEL__1_3 = 13,
+    AMF_H264_LEVEL__2   = 20,
+    AMF_H264_LEVEL__2_1 = 21,
+    AMF_H264_LEVEL__2_2 = 22,
+    AMF_H264_LEVEL__3   = 30,
+    AMF_H264_LEVEL__3_1 = 31,
+    AMF_H264_LEVEL__3_2 = 32,
+    AMF_H264_LEVEL__4   = 40,
+    AMF_H264_LEVEL__4_1 = 41,
+    AMF_H264_LEVEL__4_2 = 42,
+    AMF_H264_LEVEL__5   = 50,
+    AMF_H264_LEVEL__5_1 = 51,
+    AMF_H264_LEVEL__5_2 = 52,
+    AMF_H264_LEVEL__6   = 60,
+    AMF_H264_LEVEL__6_1 = 61,
+    AMF_H264_LEVEL__6_2 = 62
+};
+
 enum AMF_VIDEO_ENCODER_SCANTYPE_ENUM
 {
     AMF_VIDEO_ENCODER_SCANTYPE_PROGRESSIVE = 0,
@@ -151,7 +174,7 @@ enum AMF_VIDEO_ENCODER_LTR_MODE_ENUM
 #define AMF_VIDEO_ENCODER_EXTRADATA                             L"ExtraData"                // AMFInterface* - > AMFBuffer*; SPS/PPS buffer in Annex B format - read-only
 #define AMF_VIDEO_ENCODER_USAGE                                 L"Usage"                    // amf_int64(AMF_VIDEO_ENCODER_USAGE_ENUM); default = N/A; Encoder usage type. fully configures parameter set.
 #define AMF_VIDEO_ENCODER_PROFILE                               L"Profile"                  // amf_int64(AMF_VIDEO_ENCODER_PROFILE_ENUM) ; default = AMF_VIDEO_ENCODER_PROFILE_MAIN;  H264 profile
-#define AMF_VIDEO_ENCODER_PROFILE_LEVEL                         L"ProfileLevel"             // amf_int64; default = 42; H264 profile level
+#define AMF_VIDEO_ENCODER_PROFILE_LEVEL                         L"ProfileLevel"             // amf_int64(AMF_VIDEO_ENCODER_H264_LEVEL_ENUM); default = AMF_H264_LEVEL__4_2; H264 level
 #define AMF_VIDEO_ENCODER_MAX_LTR_FRAMES                        L"MaxOfLTRFrames"           // amf_int64; default = 0; Max number of LTR frames
 #define AMF_VIDEO_ENCODER_LTR_MODE                              L"LTRMode"                  // amf_int64(AMF_VIDEO_ENCODER_LTR_MODE_ENUM); default = AMF_VIDEO_ENCODER_LTR_MODE_RESET_UNUSED; remove/keep unused LTRs (not specified in property AMF_VIDEO_ENCODER_FORCE_LTR_REFERENCE_BITFIELD)
 #define AMF_VIDEO_ENCODER_SCANTYPE                              L"ScanType"                 // amf_int64(AMF_VIDEO_ENCODER_SCANTYPE_ENUM); default = AMF_VIDEO_ENCODER_SCANTYPE_PROGRESSIVE; indicates input stream type
@@ -325,5 +348,7 @@ enum AMF_VIDEO_ENCODER_LTR_MODE_ENUM
 
 // properties set on AMFComponent to control component creation
 #define AMF_VIDEO_ENCODER_MEMORY_TYPE                           L"EncoderMemoryType"        // amf_int64(AMF_MEMORY_TYPE) , default is AMF_MEMORY_UNKNOWN, Values : AMF_MEMORY_DX11, AMF_MEMORY_DX9, AMF_MEMORY_VULKAN or AMF_MEMORY_UNKNOWN (auto)
+
+#define AMF_VIDEO_ENCODER_ENABLE_SMART_ACCESS_VIDEO             L"EnableEncoderSmartAccessVideo"         // amf_bool; default = false; true = enables smart access video feature
 
 #endif //#ifndef AMF_VideoEncoderVCE_h
