@@ -106,7 +106,7 @@ enum AMF_TIMESTAMP_MODE_ENUM
 
 // properties to be set on decoder if internal converter is used
 #define AMF_VIDEO_DECODER_OUTPUT_TRANSFER_CHARACTERISTIC        L"OutColorTransferChar"     // amf_int64(AMF_COLOR_TRANSFER_CHARACTERISTIC_ENUM); default = AMF_COLOR_TRANSFER_CHARACTERISTIC_UNDEFINED, ISO/IEC 23001-8_2013   7.2 See VideoDecoderUVD.h for enum 
-#define AMF_VIDEO_DECODER_OUTPUT_COLOR_PRIMARIES                L"OutputColorPrimaries"       // amf_int64(AMF_COLOR_PRIMARIES_ENUM); default = AMF_COLOR_PRIMARIES_UNDEFINED, ISO/IEC 23001-8_2013   7.1 See ColorSpace.h for enum 
+#define AMF_VIDEO_DECODER_OUTPUT_COLOR_PRIMARIES                L"OutputColorPrimaries"     // amf_int64(AMF_COLOR_PRIMARIES_ENUM); default = AMF_COLOR_PRIMARIES_UNDEFINED, ISO/IEC 23001-8_2013   7.1 See ColorSpace.h for enum 
 #define AMF_VIDEO_DECODER_OUTPUT_HDR_METADATA                   L"OutHDRMetadata"           // AMFBuffer containing AMFHDRMetadata; default NULL
 
 #define AMF_VIDEO_DECODER_LOW_LATENCY                           L"LowLatencyDecode"         // amf_bool; default = false; true = low latency decode, false = regular decode
@@ -119,5 +119,8 @@ enum AMF_TIMESTAMP_MODE_ENUM
 #if defined(__APPLE__)
 #define AMF_VIDEO_DECODER_NATIVEWINDOW                  L"AppleNativeWindow"  // amf_int64; default = 0; pointer to native window
 #endif //__APPLE__
+
+#define AMF_VIDEO_DECODER_ENABLE_SMART_ACCESS_VIDEO             L"EnableDecoderSmartAccessVideo"     // amf_bool; default = false; true = enables smart access video feature
+#define AMF_VIDEO_DECODER_SKIP_TRANSFER_SMART_ACCESS_VIDEO      L"SkipTransferSmartAccessVideo"      // amf_bool; default = false; true = keeps output on GPU where it ran
 
 #endif //#ifndef AMF_VideoDecoderUVD_h

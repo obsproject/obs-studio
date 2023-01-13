@@ -120,8 +120,8 @@ enum AMF_VIDEO_ENCODER_AV1_OUTPUT_FRAME_TYPE_ENUM
 
 enum AMF_VIDEO_ENCODER_AV1_QUALITY_PRESET_ENUM
 {
-    AMF_VIDEO_ENCODER_AV1_QUALITY_PRESET_HIGH_QUALITY   = 0,
-    AMF_VIDEO_ENCODER_AV1_QUALITY_PRESET_QUALITY        = 30,
+    AMF_VIDEO_ENCODER_AV1_QUALITY_PRESET_HIGH_QUALITY   = 0,    
+    AMF_VIDEO_ENCODER_AV1_QUALITY_PRESET_QUALITY        = 30,    
     AMF_VIDEO_ENCODER_AV1_QUALITY_PRESET_BALANCED       = 70,
     AMF_VIDEO_ENCODER_AV1_QUALITY_PRESET_SPEED          = 100
 };
@@ -163,13 +163,18 @@ enum AMF_VIDEO_ENCODER_AV1_INTRA_REFRESH_MODE_ENUM
     AMF_VIDEO_ENCODER_AV1_INTRA_REFRESH_MODE__GOP_ALIGNED = 1,
     AMF_VIDEO_ENCODER_AV1_INTRA_REFRESH_MODE__CONTINUOUS = 2
 };
+enum AMF_VIDEO_ENCODER_AV1_LTR_MODE_ENUM
+{
+    AMF_VIDEO_ENCODER_AV1_LTR_MODE_RESET_UNUSED     = 0,
+    AMF_VIDEO_ENCODER_AV1_LTR_MODE_KEEP_UNUSED      = 1
+};
 
 
-// *** Static properties - can be set only before Init() ***
+// *** Static properties - can be set only before Init() *** 
 
 // Encoder Engine Settings
 #define AMF_VIDEO_ENCODER_AV1_ENCODER_INSTANCE_INDEX                L"Av1EncoderInstanceIndex"          // amf_int64; default = 0; selected HW instance idx. The number of instances is queried by using AMF_VIDEO_ENCODER_AV1_CAP_NUM_OF_HW_INSTANCES
-#define AMF_VIDEO_ENCODER_AV1_ENCODING_LATENCY_MODE                 L"Av1EncodingLatencyMode"           // amf_int64(AMF_VIDEO_ENCODER_AV1_ENCODING_LATENCY_MODE_ENUM); default = depends on USAGE; The encoding latency mode.
+#define AMF_VIDEO_ENCODER_AV1_ENCODING_LATENCY_MODE                 L"Av1EncodingLatencyMode"           // amf_int64(AMF_VIDEO_ENCODER_AV1_ENCODING_LATENCY_MODE_ENUM); default = depends on USAGE; The encoding latency mode. 
 #define AMF_VIDEO_ENCODER_AV1_QUERY_TIMEOUT                         L"Av1QueryTimeout"                  // amf_int64; default = 0 (no wait); timeout for QueryOutput call in ms.
 
 // Usage Settings
@@ -184,7 +189,7 @@ enum AMF_VIDEO_ENCODER_AV1_INTRA_REFRESH_MODE_ENUM
 #define AMF_VIDEO_ENCODER_AV1_QUALITY_PRESET                        L"Av1QualityPreset"                 // amf_int64(AMF_VIDEO_ENCODER_AV1_QUALITY_PRESET_ENUM); default = depends on USAGE; Quality Preset
 
 // Codec Configuration
-#define AMF_VIDEO_ENCODER_AV1_SCREEN_CONTENT_TOOLS                  L"Av1ScreenContentTools"            // bool; default = depends on USAGE; If true, allow enabling screen content tools by AMF_VIDEO_ENCODER_AV1_PALETTE_MODE_ENABLE and AMF_VIDEO_ENCODER_AV1_FORCE_INTEGER_MV; if false, all screen content tools are disabled.
+#define AMF_VIDEO_ENCODER_AV1_SCREEN_CONTENT_TOOLS                  L"Av1ScreenContentTools"            // bool; default = depends on USAGE; If true, allow enabling screen content tools by AMF_VIDEO_ENCODER_AV1_PALETTE_MODE and AMF_VIDEO_ENCODER_AV1_FORCE_INTEGER_MV; if false, all screen content tools are disabled.
 #define AMF_VIDEO_ENCODER_AV1_ORDER_HINT                            L"Av1OrderHint"                     // bool; default = depends on USAGE; If true, code order hint; if false, don't code order hint
 #define AMF_VIDEO_ENCODER_AV1_FRAME_ID                              L"Av1FrameId"                       // bool; default = depends on USAGE; If true, code frame id; if false, don't code frame id
 #define AMF_VIDEO_ENCODER_AV1_TILE_GROUP_OBU                        L"Av1TileGroupObu"                  // bool; default = depends on USAGE; If true, code FrameHeaderObu + TileGroupObu and each TileGroupObu contains one tile; if false, code FrameObu.
@@ -207,6 +212,7 @@ enum AMF_VIDEO_ENCODER_AV1_INTRA_REFRESH_MODE_ENUM
 // Picture Management Configuration
 #define AMF_VIDEO_ENCODER_AV1_MAX_NUM_TEMPORAL_LAYERS               L"Av1MaxNumOfTemporalLayers"        // amf_int64; default = depends on USAGE; Max number of temporal layers might be enabled. The maximum value can be queried from AMF_VIDEO_ENCODER_AV1_CAP_MAX_NUM_TEMPORAL_LAYERS
 #define AMF_VIDEO_ENCODER_AV1_MAX_LTR_FRAMES                        L"Av1MaxNumLTRFrames"               // amf_int64; default = depends on USAGE; Max number of LTR frames. The maximum value can be queried from AMF_VIDEO_ENCODER_AV1_CAP_MAX_NUM_LTR_FRAMES
+#define AMF_VIDEO_ENCODER_AV1_LTR_MODE                              L"Av1LTRMode"                       // amf_int64(AMF_VIDEO_ENCODER_AV1_LTR_MODE_ENUM); default = AMF_VIDEO_ENCODER_AV1_LTR_MODE_RESET_UNUSED; remove/keep unused LTRs (not specified in property AMF_VIDEO_ENCODER_AV1_FORCE_LTR_REFERENCE_BITFIELD)
 #define AMF_VIDEO_ENCODER_AV1_MAX_NUM_REFRAMES                      L"Av1MaxNumRefFrames"               // amf_int64; default = 1; Maximum number of reference frames
 
 // color conversion
@@ -216,7 +222,7 @@ enum AMF_VIDEO_ENCODER_AV1_INTRA_REFRESH_MODE_ENUM
 #define AMF_VIDEO_ENCODER_AV1_EXTRA_DATA                            L"Av1ExtraData"                     // AMFInterface* - > AMFBuffer*; buffer to retrieve coded sequence header
 
 
-// *** Dynamic properties - can be set anytime ***
+// *** Dynamic properties - can be set anytime *** 
 
 // Codec Configuration
 #define AMF_VIDEO_ENCODER_AV1_PALETTE_MODE                          L"Av1PaletteMode"                   // bool; default = depends on USAGE; If true, enable palette mode; if false, disable palette mode. Valid only when AMF_VIDEO_ENCODER_AV1_SCREEN_CONTENT_TOOLS is true.
@@ -288,5 +294,7 @@ enum AMF_VIDEO_ENCODER_AV1_INTRA_REFRESH_MODE_ENUM
 #define AMF_VIDEO_ENCODER_AV1_CAP_MAX_LEVEL                         L"Av1MaxLevel"                      // amf_int64(AMF_VIDEO_ENCODER_AV1_LEVEL_ENUM); default = N/A; max value of codec level
 #define AMF_VIDEO_ENCODER_AV1_CAP_MAX_NUM_TEMPORAL_LAYERS           L"Av1CapMaxNumTemporalLayers"       // amf_int64; default = N/A; The cap of maximum number of temporal layers
 #define AMF_VIDEO_ENCODER_AV1_CAP_MAX_NUM_LTR_FRAMES                L"Av1CapMaxNumLTRFrames"            // amf_int64; default = N/A; The cap of maximum number of LTR frames. This value is calculated based on current value of AMF_VIDEO_ENCODER_AV1_MAX_NUM_TEMPORAL_LAYERS.
+
+#define AMF_VIDEO_ENCODER_AV1_ENABLE_SMART_ACCESS_VIDEO             L"Av1EnableEncoderSmartAccessVideo" // amf_bool; default = false; true = enables smart access video feature
 
 #endif //#ifndef AMF_VideoEncoderAV1_h
