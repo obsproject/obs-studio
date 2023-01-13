@@ -640,9 +640,7 @@ bool ffmpeg_data_init(struct ffmpeg_data *data, struct ffmpeg_cfg *config)
 	}
 #else
 	if (is_rtmp) {
-		data->config.audio_encoder = "aac";
 		data->config.audio_encoder_id = AV_CODEC_ID_AAC;
-		data->config.video_encoder = "libx264";
 		data->config.video_encoder_id = AV_CODEC_ID_H264;
 	}
 #endif
