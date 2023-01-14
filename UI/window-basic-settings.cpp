@@ -1993,6 +1993,53 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	SimpleStreamingEncoderChanged();
 }
 
+static inline QString makeFormatToolTip()
+{
+	static const char *format_list[][2] = {
+		{"CCYY", "FilenameFormatting.TT.CCYY"},
+		{"YY", "FilenameFormatting.TT.YY"},
+		{"MM", "FilenameFormatting.TT.MM"},
+		{"DD", "FilenameFormatting.TT.DD"},
+		{"hh", "FilenameFormatting.TT.hh"},
+		{"mm", "FilenameFormatting.TT.mm"},
+		{"ss", "FilenameFormatting.TT.ss"},
+		{"%", "FilenameFormatting.TT.Percent"},
+		{"a", "FilenameFormatting.TT.a"},
+		{"A", "FilenameFormatting.TT.A"},
+		{"b", "FilenameFormatting.TT.b"},
+		{"B", "FilenameFormatting.TT.B"},
+		{"d", "FilenameFormatting.TT.d"},
+		{"H", "FilenameFormatting.TT.H"},
+		{"I", "FilenameFormatting.TT.I"},
+		{"m", "FilenameFormatting.TT.m"},
+		{"M", "FilenameFormatting.TT.M"},
+		{"p", "FilenameFormatting.TT.p"},
+		{"s", "FilenameFormatting.TT.s"},
+		{"S", "FilenameFormatting.TT.S"},
+		{"y", "FilenameFormatting.TT.y"},
+		{"Y", "FilenameFormatting.TT.Y"},
+		{"z", "FilenameFormatting.TT.z"},
+		{"Z", "FilenameFormatting.TT.Z"},
+		{"FPS", "FilenameFormatting.TT.FPS"},
+		{"CRES", "FilenameFormatting.TT.CRES"},
+		{"ORES", "FilenameFormatting.TT.ORES"},
+		{"VF", "FilenameFormatting.TT.VF"},
+	};
+
+	QString html = "<table>";
+
+	for (auto f : format_list) {
+		html += "<tr><th align='left'>%";
+		html += f[0];
+		html += "</th><td>";
+		html += QTStr(f[1]);
+		html += "</td></tr>";
+	}
+
+	html += "</table>";
+	return html;
+}
+
 void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 {
 	bool rescale = config_get_bool(main->Config(), "AdvOut", "Rescale");
@@ -2010,7 +2057,7 @@ void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 	specCompleter->setCaseSensitivity(Qt::CaseSensitive);
 	specCompleter->setFilterMode(Qt::MatchContains);
 	ui->filenameFormatting->setCompleter(specCompleter);
-	ui->filenameFormatting->setToolTip(QTStr("FilenameFormatting.TT"));
+	ui->filenameFormatting->setToolTip(makeFormatToolTip());
 
 	switch (trackIndex) {
 	case 1:
