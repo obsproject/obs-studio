@@ -153,14 +153,17 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 		av_dict_copy(&out_stream->metadata, in_stream->metadata, 0);
 
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
-		if (in_stream->codecpar->codec_tag != 0) {
-			out_stream->codecpar->codec_tag =
-				in_stream->codecpar->codec_tag;
-		} else if (in_stream->codecpar->codec_id == AV_CODEC_ID_HEVC) {
+		if (in_stream->codecpar->codec_id == AV_CODEC_ID_HEVC &&
+		    job->ofmt_ctx->oformat->codec_tag &&
+		    av_codec_get_id(job->ofmt_ctx->oformat->codec_tag,
+				    MKTAG('h', 'v', 'c', '1')) ==
+			    out_stream->codecpar->codec_id) {
 			// Tag HEVC files with industry standard HVC1 tag for wider device compatibility
+			// when HVC1 tag is supported by out stream codec
 			out_stream->codecpar->codec_tag =
 				MKTAG('h', 'v', 'c', '1');
 		} else {
+			// Otherwise tag 0 to let FFmpeg automatically select the appropriate tag
 			out_stream->codecpar->codec_tag = 0;
 		}
 #else
