@@ -16,6 +16,8 @@
 ******************************************************************************/
 
 #include "gl-nix.h"
+
+#include "gl-drm.h"
 #include "gl-x11-egl.h"
 
 #ifdef ENABLE_WAYLAND
@@ -38,6 +40,10 @@ static void init_winsys(void)
 		blog(LOG_INFO, "Using EGL/Wayland");
 		break;
 #endif
+	case OBS_NIX_PLATFORM_DRM:
+		gl_vtable = gl_drm_get_winsys_vtable();
+		blog(LOG_INFO, "Using DRM");
+		break;
 	}
 
 	assert(gl_vtable != NULL);
@@ -54,12 +60,11 @@ extern void gl_windowinfo_destroy(struct gl_windowinfo *info)
 	gl_vtable->windowinfo_destroy(info);
 }
 
-extern struct gl_platform *gl_platform_create(gs_device_t *device,
-					      uint32_t adapter)
+extern struct gl_platform *gl_platform_create(uint32_t adapter)
 {
 	init_winsys();
 
-	return gl_vtable->platform_create(device, adapter);
+	return gl_vtable->platform_create(adapter);
 }
 
 extern void gl_platform_destroy(struct gl_platform *plat)

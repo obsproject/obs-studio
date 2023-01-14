@@ -27,8 +27,7 @@ struct gl_winsys_vtable {
 		const struct gs_init_data *info);
 	void (*windowinfo_destroy)(struct gl_windowinfo *info);
 
-	struct gl_platform *(*platform_create)(gs_device_t *device,
-					       uint32_t adapter);
+	struct gl_platform *(*platform_create)(uint32_t adapter);
 
 	void (*platform_destroy)(struct gl_platform *plat);
 
