@@ -14,6 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <ctype.h>
 #include "dstr.h"
 #include "text-lookup.h"
 #include "lexer.h"
@@ -158,11 +159,6 @@ static void lookup_addstring(const char *lookup_val, struct text_leaf *leaf,
 		for (len = 0; len < child->str.len; len++) {
 			char val1 = child->str.array[len],
 			     val2 = lookup_val[len];
-
-			if (val1 >= 'A' && val1 <= 'Z')
-				val1 += 0x20;
-			if (val2 >= 'A' && val2 <= 'Z')
-				val2 += 0x20;
 
 			if (val1 != val2)
 				break;
@@ -322,6 +318,9 @@ static void lookup_addfiledata(struct text_lookup *lookup,
 		leaf = bmalloc(sizeof(struct text_leaf));
 		leaf->lookup = bstrdup_n(name.array, name.len);
 		leaf->value = convert_string(value.array, value.len);
+
+		for (size_t i = 0; i < name.len; i++)
+			leaf->lookup[i] = toupper(leaf->lookup[i]);
 
 		lookup_addstring(leaf->lookup, leaf, lookup->top);
 
