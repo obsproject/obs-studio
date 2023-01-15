@@ -2209,7 +2209,7 @@ EXPORT uint32_t obs_output_get_width2(const obs_output_t *output, size_t idx);
 EXPORT uint32_t obs_output_get_height(const obs_output_t *output);
 
 /**
- * For video outputs, returns the height of the encoded image for encoder idx
+ * For video outputs, returns the height of the encoded image
  *
  * The idx parameter specifies the video encoder index.
  * Only used with outputs that have multiple video outputs,
