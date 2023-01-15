@@ -24,6 +24,8 @@
 extern "C" {
 #endif
 
+#define MAX_VIDEO_ENCODERS 4
+
 struct video_frame;
 
 /* Base video output component.  Use this to create a video output track. */
