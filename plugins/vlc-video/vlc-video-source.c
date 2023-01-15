@@ -401,8 +401,8 @@ static void calculate_display_size(struct vlc_source *c, unsigned *width,
 			if (track->i_type != libvlc_track_video)
 				continue;
 
-			int display_width = track->video->i_width;
-			int display_height = track->video->i_height;
+			unsigned display_width = track->video->i_width;
+			unsigned display_height = track->video->i_height;
 
 			if (display_width == 0 || display_height == 0)
 				continue;
@@ -410,9 +410,9 @@ static void calculate_display_size(struct vlc_source *c, unsigned *width,
 			/* Adjust for Sample Aspect Ratio (SAR) */
 			if (track->video->i_sar_num > 0 &&
 			    track->video->i_sar_den > 0) {
-				display_width = display_width *
-						track->video->i_sar_num /
-						track->video->i_sar_den;
+				display_width = (unsigned)util_mul_div64(
+					display_width, track->video->i_sar_num,
+					track->video->i_sar_den);
 			}
 
 			switch (track->video->i_orientation) {
