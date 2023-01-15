@@ -1143,7 +1143,7 @@ static inline size_t num_video_encoders(const struct obs_output *output)
 	return encoder_count;
 }
 
-size_t obs_output_video_encoder_count(const struct obs_output *output)
+size_t obs_output_get_video_encoder_count(const struct obs_output *output)
 {
 	return num_video_encoders(output);
 }
@@ -1164,6 +1164,11 @@ static inline size_t num_audio_mixes(const struct obs_output *output)
 	}
 
 	return mix_count;
+}
+
+size_t obs_output_get_audio_mix_count(const struct obs_output *output)
+{
+	return num_audio_mixes(output);
 }
 
 static inline bool video_valid(const struct obs_output *output, bool encoded)

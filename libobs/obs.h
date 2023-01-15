@@ -2105,6 +2105,14 @@ EXPORT size_t obs_output_get_mixers(const obs_output_t *output);
 EXPORT void obs_output_set_video_encoder(obs_output_t *output,
 					 obs_encoder_t *encoder);
 
+/**
+ * Sets the current video encoder associated with this output,
+ * required for encoded outputs
+ *
+ * The idx parameter specifies the video encoder index to set the encoder to.
+ * Only used with outputs that have multiple video outputs,
+ * otherwise the parameter is ignored.
+ */
 EXPORT void obs_output_set_video_encoder2(obs_output_t *output,
 					  obs_encoder_t *encoder, size_t idx);
 
@@ -2122,6 +2130,13 @@ EXPORT void obs_output_set_audio_encoder(obs_output_t *output,
 /** Returns the current video encoder associated with this output */
 EXPORT obs_encoder_t *obs_output_get_video_encoder(const obs_output_t *output);
 
+/**
+ * Returns the current video encoder at index idx associated with this output
+ *
+ * The idx parameter specifies the video encoder index.
+ * Only used with outputs that have multiple video outputs,
+ * otherwise the parameter is ignored.
+ */
 EXPORT obs_encoder_t *obs_output_get_video_encoder2(const obs_output_t *output,
 						    size_t idx);
 
@@ -2168,8 +2183,12 @@ EXPORT void obs_output_set_preferred_size(obs_output_t *output, uint32_t width,
  * to 0 to disable scaling.
  *
  * If this output uses an encoder, it will call obs_encoder_set_scaled_size on
- * the encoder before the stream is started.  If the encoder is already active,
- * then this function will trigger a warning and do nothing.
+ * the encoder at before the stream is started.  If the encoder is
+ * already active, then this function will trigger a warning and do nothing.
+ *
+ * The idx parameter specifies the video encoder index.
+ * Only used with outputs that have multiple video outputs,
+ * otherwise the parameter is ignored.
  */
 EXPORT void obs_output_set_preferred_size2(obs_output_t *output, uint32_t width,
 					   uint32_t height, size_t idx);
@@ -2177,13 +2196,25 @@ EXPORT void obs_output_set_preferred_size2(obs_output_t *output, uint32_t width,
 /** For video outputs, returns the width of the encoded image */
 EXPORT uint32_t obs_output_get_width(const obs_output_t *output);
 
-/** For video outputs, returns the width of the encoded image */
+/**
+ * For video outputs, returns the width of the encoded image for encoder
+ *
+ * The idx parameter specifies the video encoder index.
+ * Only used with outputs that have multiple video outputs,
+ * otherwise the parameter is ignored.
+ */
 EXPORT uint32_t obs_output_get_width2(const obs_output_t *output, size_t idx);
 
 /** For video outputs, returns the height of the encoded image */
 EXPORT uint32_t obs_output_get_height(const obs_output_t *output);
 
-/** For video outputs, returns the height of the encoded image */
+/**
+ * For video outputs, returns the height of the encoded image for encoder idx
+ *
+ * The idx parameter specifies the video encoder index.
+ * Only used with outputs that have multiple video outputs,
+ * otherwise the parameter is ignored.
+ */
 EXPORT uint32_t obs_output_get_height2(const obs_output_t *output, size_t idx);
 
 EXPORT const char *obs_output_get_id(const obs_output_t *output);
@@ -2227,7 +2258,12 @@ EXPORT void
 obs_output_set_audio_conversion(obs_output_t *output,
 				const struct audio_convert_info *conversion);
 
-EXPORT size_t obs_output_video_encoder_count(const struct obs_output *output);
+/** Returns the number of video encoders associated with this output */
+EXPORT size_t
+obs_output_get_video_encoder_count(const struct obs_output *output);
+
+/** Returns the number of audio mixes associated with this output */
+EXPORT size_t obs_output_get_audio_mix_count(const struct obs_output *output);
 
 /** Returns whether data capture can begin with the specified flags */
 EXPORT bool obs_output_can_begin_data_capture(const obs_output_t *output,
