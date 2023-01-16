@@ -774,13 +774,16 @@ void obs_free_video_mix(struct obs_core_video_mix *video)
 static void obs_free_video(void)
 {
 	pthread_mutex_lock(&obs->video.mixes_mutex);
-	size_t num = obs->video.mixes.num;
-	if (num)
-		blog(LOG_WARNING, "%zu views remain at shutdown", num);
-	for (size_t i = 0; i < num; i++) {
-		obs_free_video_mix(obs->video.mixes.array[i]);
+	size_t num_views = 0;
+	for (size_t i = 0; i < obs->video.mixes.num; i++) {
+		struct obs_core_video_mix *video = obs->video.mixes.array[i];
+		if (video && video->view)
+			num_views++;
+		obs_free_video_mix(video);
 		obs->video.mixes.array[i] = NULL;
 	}
+	if (num_views > 0)
+		blog(LOG_WARNING, "Number of remaining views: %ld", num_views);
 	pthread_mutex_unlock(&obs->video.mixes_mutex);
 
 	pthread_mutex_destroy(&obs->video.mixes_mutex);
