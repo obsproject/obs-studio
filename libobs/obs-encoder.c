@@ -800,14 +800,16 @@ void obs_encoder_set_video(obs_encoder_t *encoder, video_t *video)
 		return;
 	}
 
-	if (!video)
-		return;
-
-	voi = video_output_get_info(video);
-
-	encoder->media = video;
-	encoder->timebase_num = voi->fps_den;
-	encoder->timebase_den = voi->fps_num;
+	if (video) {
+		voi = video_output_get_info(video);
+		encoder->media = video;
+		encoder->timebase_num = voi->fps_den;
+		encoder->timebase_den = voi->fps_num;
+	} else {
+		encoder->media = NULL;
+		encoder->timebase_num = 0;
+		encoder->timebase_den = 0;
+	}
 }
 
 void obs_encoder_set_audio(obs_encoder_t *encoder, audio_t *audio)
@@ -829,12 +831,15 @@ void obs_encoder_set_audio(obs_encoder_t *encoder, audio_t *audio)
 		return;
 	}
 
-	if (!audio)
-		return;
-
-	encoder->media = audio;
-	encoder->timebase_num = 1;
-	encoder->timebase_den = audio_output_get_sample_rate(audio);
+	if (audio) {
+		encoder->media = audio;
+		encoder->timebase_num = 1;
+		encoder->timebase_den = audio_output_get_sample_rate(audio);
+	} else {
+		encoder->media = NULL;
+		encoder->timebase_num = 0;
+		encoder->timebase_den = 0;
+	}
 }
 
 video_t *obs_encoder_video(const obs_encoder_t *encoder)
