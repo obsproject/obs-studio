@@ -443,6 +443,13 @@ static THREAD_LOCAL bool can_reroute = false;
 
 static inline bool obs_encoder_initialize_internal(obs_encoder_t *encoder)
 {
+	if (!encoder->media) {
+		blog(LOG_ERROR,
+		     "obs_encoder_initialize_internal: encoder '%s' has no media set",
+		     encoder->context.name);
+		return false;
+	}
+
 	if (encoder_active(encoder))
 		return true;
 	if (encoder->initialized)
@@ -552,7 +559,7 @@ static inline void obs_encoder_start_internal(
 	struct encoder_callback cb = {false, new_packet, param};
 	bool first = false;
 
-	if (!encoder->context.data)
+	if (!encoder->context.data || !encoder->media)
 		return;
 
 	pthread_mutex_lock(&encoder->callbacks_mutex);
