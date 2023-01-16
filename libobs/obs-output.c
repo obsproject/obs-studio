@@ -792,10 +792,10 @@ size_t obs_output_get_mixers(const obs_output_t *output)
 		       : 0;
 }
 
-void obs_output_remove_encoder(struct obs_output *output,
-			       struct obs_encoder *encoder)
+void obs_output_remove_encoder_internal(struct obs_output *output,
+					struct obs_encoder *encoder)
 {
-	if (!obs_output_valid(output, "obs_output_remove_encoder"))
+	if (!obs_output_valid(output, "obs_output_remove_encoder_internal"))
 		return;
 
 	if (output->video_encoder == encoder) {
@@ -806,6 +806,18 @@ void obs_output_remove_encoder(struct obs_output *output,
 				output->audio_encoders[i] = NULL;
 		}
 	}
+}
+
+void obs_output_remove_encoder(struct obs_output *output,
+			       struct obs_encoder *encoder)
+{
+	if (!obs_output_valid(output, "obs_output_remove_encoder"))
+		return;
+	if (active(output)) {
+		return;
+	}
+
+	obs_output_remove_encoder_internal(output, encoder);
 }
 
 void obs_output_set_video_encoder(obs_output_t *output, obs_encoder_t *encoder)

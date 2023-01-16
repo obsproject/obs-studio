@@ -1265,3 +1265,6 @@ extern bool obs_service_initialize(struct obs_service *service,
 				   struct obs_output *output);
 
 void obs_service_destroy(obs_service_t *service);
+
+void obs_output_remove_encoder_internal(struct obs_output *output,
+					struct obs_encoder *encoder);
