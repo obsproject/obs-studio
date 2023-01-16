@@ -1007,7 +1007,7 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 	else
 		lastError = string();
 
-	const char *type = obs_service_get_output_type(service);
+	const char *type = obs_output_get_id(streamOutput);
 	blog(LOG_WARNING, "Stream output type '%s' failed to start!%s%s", type,
 	     hasLastError ? "  Last Error: " : "", hasLastError ? error : "");
 	return false;
@@ -1906,7 +1906,7 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 	else
 		lastError = string();
 
-	const char *type = obs_service_get_output_type(service);
+	const char *type = obs_output_get_id(streamOutput);
 	blog(LOG_WARNING, "Stream output type '%s' failed to start!%s%s", type,
 	     hasLastError ? "  Last Error: " : "", hasLastError ? error : "");
 	return false;
