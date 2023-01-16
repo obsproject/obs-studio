@@ -143,7 +143,7 @@ ConvertGSTextureFormatViewLinear(gs_color_format format)
 
 static inline gs_color_format ConvertDXGITextureFormat(DXGI_FORMAT format)
 {
-	switch ((unsigned long)format) {
+	switch (format) {
 	case DXGI_FORMAT_A8_UNORM:
 		return GS_A8;
 	case DXGI_FORMAT_R8_UNORM:

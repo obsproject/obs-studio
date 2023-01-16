@@ -56,7 +56,7 @@ static inline void calc_gpu_conversion_sizes(struct obs_core_video_mix *video)
 	video->conversion_width_i = 0.f;
 	video->conversion_height_i = 0.f;
 
-	switch ((uint32_t)info->format) {
+	switch (info->format) {
 	case VIDEO_FORMAT_I420:
 		video->conversion_needed = true;
 		video->conversion_techs[0] = "Planar_Y";

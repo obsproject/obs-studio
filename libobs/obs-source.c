@@ -2498,8 +2498,7 @@ static inline void obs_source_render_async_video(obs_source_t *source)
 			}
 			break;
 		case GS_CS_SRGB_16F:
-			switch (current_space) {
-			case GS_CS_709_SCRGB:
+			if (current_space == GS_CS_709_SCRGB) {
 				tech_name = "DrawMultiply";
 				multiplier =
 					obs_get_video_sdr_white_level() / 80.0f;

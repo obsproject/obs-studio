@@ -617,7 +617,7 @@ void gs_free_image_deps(void) {}
 
 static inline enum gs_color_format convert_format(enum AVPixelFormat format)
 {
-	switch ((int)format) {
+	switch (format) {
 	case AV_PIX_FMT_RGBA:
 		return GS_RGBA;
 	case AV_PIX_FMT_BGRA:

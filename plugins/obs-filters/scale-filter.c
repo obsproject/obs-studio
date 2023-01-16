@@ -281,16 +281,9 @@ get_tech_name_and_multiplier(const struct scale_filter_data *filter,
 	switch (source_space) {
 	case GS_CS_SRGB:
 	case GS_CS_SRGB_16F:
-		switch (current_space) {
-		case GS_CS_709_SCRGB:
-			*multiplier = obs_get_video_sdr_white_level() / 80.f;
-		}
-		break;
 	case GS_CS_709_EXTENDED:
-		switch (current_space) {
-		case GS_CS_709_SCRGB:
+		if (current_space == GS_CS_709_SCRGB)
 			*multiplier = obs_get_video_sdr_white_level() / 80.f;
-		}
 		break;
 	case GS_CS_709_SCRGB:
 		switch (current_space) {
@@ -307,10 +300,8 @@ get_tech_name_and_multiplier(const struct scale_filter_data *filter,
 		switch (source_space) {
 		case GS_CS_SRGB:
 		case GS_CS_SRGB_16F:
-			switch (current_space) {
-			case GS_CS_709_SCRGB:
+			if (current_space == GS_CS_709_SCRGB)
 				tech_name = "DrawUndistortMultiply";
-			}
 			break;
 		case GS_CS_709_EXTENDED:
 			switch (current_space) {
@@ -337,10 +328,8 @@ get_tech_name_and_multiplier(const struct scale_filter_data *filter,
 		switch (source_space) {
 		case GS_CS_SRGB:
 		case GS_CS_SRGB_16F:
-			switch (current_space) {
-			case GS_CS_709_SCRGB:
+			if (current_space == GS_CS_709_SCRGB)
 				tech_name = "DrawUpscaleMultiply";
-			}
 			break;
 		case GS_CS_709_EXTENDED:
 			switch (current_space) {
@@ -366,10 +355,8 @@ get_tech_name_and_multiplier(const struct scale_filter_data *filter,
 		switch (source_space) {
 		case GS_CS_SRGB:
 		case GS_CS_SRGB_16F:
-			switch (current_space) {
-			case GS_CS_709_SCRGB:
+			if (current_space == GS_CS_709_SCRGB)
 				tech_name = "DrawMultiply";
-			}
 			break;
 		case GS_CS_709_EXTENDED:
 			switch (current_space) {

@@ -98,7 +98,7 @@ determine_chroma_location(enum AVPixelFormat pix_fmt,
 static inline enum audio_format
 convert_ffmpeg_sample_format(enum AVSampleFormat format)
 {
-	switch ((uint32_t)format) {
+	switch (format) {
 	case AV_SAMPLE_FMT_U8:
 		return AUDIO_FORMAT_U8BIT;
 	case AV_SAMPLE_FMT_S16:
