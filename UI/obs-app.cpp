@@ -3222,12 +3222,14 @@ int main(int argc, char *argv[])
 	obs_set_cmdline_args(argc, argv);
 
 	for (int i = 1; i < argc; i++) {
-		if (arg_is(argv[i], "--portable", "-p")) {
-			portable_mode = true;
-
-		} else if (arg_is(argv[i], "--multi", "-m")) {
+		if (arg_is(argv[i], "--multi", "-m")) {
 			multi = true;
 
+#if ALLOW_PORTABLE_MODE
+		} else if (arg_is(argv[i], "--portable", "-p")) {
+			portable_mode = true;
+
+#endif
 		} else if (arg_is(argv[i], "--verbose", nullptr)) {
 			log_verbose = true;
 
