@@ -792,6 +792,14 @@ void obs_encoder_set_video(obs_encoder_t *encoder, video_t *video)
 		     obs_encoder_get_name(encoder));
 		return;
 	}
+	if (encoder_active(encoder)) {
+		blog(LOG_WARNING,
+		     "encoder '%s': Cannot apply a new video_t "
+		     "object while the encoder is active",
+		     obs_encoder_get_name(encoder));
+		return;
+	}
+
 	if (!video)
 		return;
 
@@ -813,6 +821,14 @@ void obs_encoder_set_audio(obs_encoder_t *encoder, audio_t *audio)
 		     obs_encoder_get_name(encoder));
 		return;
 	}
+	if (encoder_active(encoder)) {
+		blog(LOG_WARNING,
+		     "encoder '%s': Cannot apply a new audio_t "
+		     "object while the encoder is active",
+		     obs_encoder_get_name(encoder));
+		return;
+	}
+
 	if (!audio)
 		return;
 
@@ -1316,7 +1332,7 @@ end:
 void obs_encoder_add_output(struct obs_encoder *encoder,
 			    struct obs_output *output)
 {
-	if (!encoder)
+	if (!encoder || !output)
 		return;
 
 	pthread_mutex_lock(&encoder->outputs_mutex);
@@ -1327,7 +1343,7 @@ void obs_encoder_add_output(struct obs_encoder *encoder,
 void obs_encoder_remove_output(struct obs_encoder *encoder,
 			       struct obs_output *output)
 {
-	if (!encoder)
+	if (!encoder || !output)
 		return;
 
 	pthread_mutex_lock(&encoder->outputs_mutex);
