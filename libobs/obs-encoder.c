@@ -245,7 +245,9 @@ static void obs_encoder_actually_destroy(obs_encoder_t *encoder)
 		pthread_mutex_lock(&encoder->outputs_mutex);
 		for (size_t i = 0; i < encoder->outputs.num; i++) {
 			struct obs_output *output = encoder->outputs.array[i];
-			obs_output_remove_encoder(output, encoder);
+			// This happens while the output is still "active", so
+			// remove without checking active
+			obs_output_remove_encoder_internal(output, encoder);
 		}
 		da_free(encoder->outputs);
 		pthread_mutex_unlock(&encoder->outputs_mutex);
