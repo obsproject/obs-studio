@@ -373,9 +373,23 @@ General Output Functions
 
 ---------------------
 
+.. function:: bool obs_weak_output_references_output(obs_weak_output_t *weak, obs_output_t *output)
+
+   Compares a weak output reference with an output.
+
+   :return: Whether the weak output reference ties back to the specified output
+
+---------------------
+
 .. function:: const char *obs_output_get_name(const obs_output_t *output)
 
    :return: The name of the output
+
+---------------------
+
+.. function:: const char *obs_output_get_id(const obs_output_t *output)
+
+   :return: The output's type identifier string
 
 ---------------------
 
@@ -618,6 +632,18 @@ General Output Functions
               uint32_t obs_output_get_height(const obs_output_t *output)
 
    :return: The width/height of the output
+
+---------------------
+
+.. function:: void obs_output_output_caption_text1(obs_output_t *output, const char *text)
+              void obs_output_output_caption_text2(obs_output_t *output, const char *text, double display_duration)
+
+   Outputs captions from the specified text input. *text1* is the same as
+   *text2*, except that the *display_duration* is hardcoded to 2.0 seconds.
+
+   *display_duration* represents the minimum quantity of time that a given
+   caption can be displayed for before moving onto the next caption in the
+   queue.
 
 ---------------------
 
