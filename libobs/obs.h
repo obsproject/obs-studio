@@ -2133,6 +2133,17 @@ EXPORT void obs_output_set_video_encoder(obs_output_t *output,
 					 obs_encoder_t *encoder);
 
 /**
+ * Sets the current video encoder associated with this output,
+ * required for encoded outputs.
+ *
+ * The idx parameter specifies the video encoder index.
+ * Only used with outputs that have multiple video outputs (FFmpeg typically),
+ * otherwise the parameter is ignored.
+ */
+EXPORT void obs_output_set_video_encoder2(obs_output_t *output,
+					  obs_encoder_t *encoder, size_t idx);
+
+/**
  * Sets the current audio encoder associated with this output,
  * required for encoded outputs.
  *
@@ -2145,6 +2156,16 @@ EXPORT void obs_output_set_audio_encoder(obs_output_t *output,
 
 /** Returns the current video encoder associated with this output */
 EXPORT obs_encoder_t *obs_output_get_video_encoder(const obs_output_t *output);
+
+/**
+ * Returns the current video encoder associated with this output.
+ *
+ * The idx parameter specifies the video encoder index.
+ * Only used with outputs that have multiple video outputs (FFmpeg typically),
+ * otherwise specifying an idx > 0 returns a NULL.
+ * */
+EXPORT obs_encoder_t *obs_output_get_video_encoder2(const obs_output_t *output,
+						    size_t idx);
 
 /**
  * Returns the current audio encoder associated with this output
@@ -2184,11 +2205,44 @@ EXPORT int obs_output_get_total_frames(const obs_output_t *output);
 EXPORT void obs_output_set_preferred_size(obs_output_t *output, uint32_t width,
 					  uint32_t height);
 
+/**
+ * Sets the preferred scaled resolution for this output.  Set width and height
+ * to 0 to disable scaling.
+ *
+ * If this output uses an encoder, it will call obs_encoder_set_scaled_size on
+ * the encoder before the stream is started.  If the encoder is already active,
+ * then this function will trigger a warning and do nothing.
+ *
+ * The idx parameter specifies the video encoder index to apply the scaling to.
+ * Only used with outputs that have multiple video outputs (FFmpeg typically),
+ * otherwise the parameter is ignored.
+ */
+EXPORT void obs_output_set_preferred_size2(obs_output_t *output, uint32_t width,
+					   uint32_t height, size_t idx);
+
 /** For video outputs, returns the width of the encoded image */
 EXPORT uint32_t obs_output_get_width(const obs_output_t *output);
 
+/**
+ * For video outputs, returns the width of the encoded image.
+ *
+ * The idx parameter specifies the video encoder index.
+ * Only used with outputs that have multiple video outputs (FFmpeg typically),
+ * otherwise the parameter is ignored and returns 0.
+ */
+EXPORT uint32_t obs_output_get_width2(const obs_output_t *output, size_t idx);
+
 /** For video outputs, returns the height of the encoded image */
 EXPORT uint32_t obs_output_get_height(const obs_output_t *output);
+
+/**
+ * For video outputs, returns the height of the encoded image.
+ *
+ * The idx parameter specifies the video encoder index.
+ * Only used with outputs that have multiple video outputs (FFmpeg typically),
+ * otherwise the parameter is ignored and returns 0.
+ */
+EXPORT uint32_t obs_output_get_height2(const obs_output_t *output, size_t idx);
 
 EXPORT const char *obs_output_get_id(const obs_output_t *output);
 
