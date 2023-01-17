@@ -3,8 +3,6 @@ if(OS_WINDOWS)
     add_subdirectory(w32-pthreads)
   endif()
   add_subdirectory(ipc-util)
-
-  add_subdirectory(lzma)
 endif()
 
 add_subdirectory(blake2)
