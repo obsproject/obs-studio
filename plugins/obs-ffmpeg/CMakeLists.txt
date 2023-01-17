@@ -92,12 +92,15 @@ set_target_properties(obs-ffmpeg PROPERTIES FOLDER "plugins/obs-ffmpeg" PREFIX
                                                                         "")
 
 if(OS_WINDOWS)
+  find_package(AMF 1.4.29 REQUIRED)
+
   add_subdirectory(obs-amf-test)
   add_subdirectory(obs-nvenc-test)
 
   if(MSVC)
     target_link_libraries(obs-ffmpeg PRIVATE OBS::w32-pthreads)
   endif()
+  target_link_libraries(obs-ffmpeg PRIVATE AMF::AMF)
 
   set(MODULE_DESCRIPTION "OBS FFmpeg module")
   configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
