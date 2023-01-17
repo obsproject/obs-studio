@@ -528,6 +528,11 @@ QMenu *OBSBasicFilters::CreateAddFilterPopupMenu(bool async)
 			: type(type_), name(name_)
 		{
 		}
+
+		bool operator<(const FilterInfo &r) const
+		{
+			return name < r.name;
+		}
 	};
 
 	vector<FilterInfo> types;
@@ -542,14 +547,10 @@ QMenu *OBSBasicFilters::CreateAddFilterPopupMenu(bool async)
 		if ((caps & OBS_SOURCE_CAP_OBSOLETE) != 0)
 			continue;
 
-		auto it = types.begin();
-		for (; it != types.end(); ++it) {
-			if (it->name >= name)
-				break;
-		}
-
-		types.emplace(it, type_str, name);
+		types.emplace_back(type_str, name);
 	}
+
+	sort(types.begin(), types.end());
 
 	QMenu *popup = new QMenu(QTStr("Add"), this);
 	for (FilterInfo &type : types) {
