@@ -1,17 +1,29 @@
-OBS Studio <https://obsproject.com>
+OBS Studio HTTP REST API<https://obsproject.com>
 ===================================
 
-.. image:: https://github.com/obsproject/obs-studio/actions/workflows/main.yml/badge.svg?branch=master&event=push
-   :alt: OBS Studio Build Status - GitHub Actions
-   :target: https://github.com/obsproject/obs-studio/actions/workflows/main.yml?query=event%3Apush+branch%3Amaster
+REST API
+=======
 
-.. image:: https://badges.crowdin.net/obs-studio/localized.svg
-   :alt: OBS Studio Translation Project Progress
-   :target: https://crowdin.com/project/obs-studio
+Request
+-------
+``POST URL : http://ip_address:9028``
 
-.. image:: https://img.shields.io/discord/348973006581923840.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2
-   :alt: OBS Studio Discord Server
-   :target: https://obsproject.com/discord
+
+* Body JSON
+
+``{"streamUrl" : "rtmp://12.32.11.99/sstted", "streamKey" : "23SDD2sss" }``
+
+
+Response
+--------
+
+* Success
+``{ "result" : "0" , "streamUrl" : "rtmp://111.222.333.444/sjiSJd91" , "streamKey" : "123qwer" }``
+
+* Error
+``{ "result" : "1" }``
+
+
 
 What is OBS Studio?
 -------------------
