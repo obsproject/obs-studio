@@ -1024,7 +1024,7 @@ struct obs_output {
 	volatile bool data_active;
 	volatile bool end_data_capture_thread_active;
 	int64_t video_offset;
-	int64_t audio_offsets[MAX_AUDIO_MIXES];
+	int64_t audio_offsets[MAX_OUTPUT_AUDIO_ENCODERS];
 	int64_t highest_audio_ts;
 	int64_t highest_video_ts;
 	pthread_t end_data_capture_thread;
@@ -1054,7 +1054,7 @@ struct obs_output {
 	video_t *video;
 	audio_t *audio;
 	obs_encoder_t *video_encoder;
-	obs_encoder_t *audio_encoders[MAX_AUDIO_MIXES];
+	obs_encoder_t *audio_encoders[MAX_OUTPUT_AUDIO_ENCODERS];
 	obs_service_t *service;
 	size_t mixer_mask;
 
