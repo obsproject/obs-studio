@@ -1066,14 +1066,14 @@ struct obs_output {
 	/* indicates ownership of the info.id buffer */
 	bool owns_info_id;
 
-	bool received_video;
+	bool received_video[MAX_OUTPUT_VIDEO_ENCODERS];
 	bool received_audio;
 	volatile bool data_active;
 	volatile bool end_data_capture_thread_active;
-	int64_t video_offset;
+	int64_t video_offsets[MAX_OUTPUT_VIDEO_ENCODERS];
 	int64_t audio_offsets[MAX_OUTPUT_AUDIO_ENCODERS];
 	int64_t highest_audio_ts;
-	int64_t highest_video_ts;
+	int64_t highest_video_ts[MAX_OUTPUT_VIDEO_ENCODERS];
 	pthread_t end_data_capture_thread;
 	os_event_t *stopping_event;
 	pthread_mutex_t interleaved_mutex;
@@ -1100,7 +1100,7 @@ struct obs_output {
 	volatile bool paused;
 	video_t *video;
 	audio_t *audio;
-	obs_encoder_t *video_encoder;
+	obs_encoder_t *video_encoders[MAX_OUTPUT_VIDEO_ENCODERS];
 	obs_encoder_t *audio_encoders[MAX_OUTPUT_AUDIO_ENCODERS];
 	obs_service_t *service;
 	size_t mixer_mask;

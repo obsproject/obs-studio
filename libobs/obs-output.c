@@ -274,9 +274,11 @@ void obs_output_destroy(obs_output_t *output)
 
 		free_packets(output);
 
-		if (output->video_encoder) {
-			obs_encoder_remove_output(output->video_encoder,
-						  output);
+		for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+			if (output->video_encoders[i]) {
+				obs_encoder_remove_output(
+					output->video_encoders[i], output);
+			}
 		}
 
 		for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
@@ -627,18 +629,55 @@ static inline bool pause_can_stop(struct pause_data *pause)
 	return !!pause->ts_start && !pause->ts_end;
 }
 
+static bool get_first_audio_encoder_index(const struct obs_output *output,
+					  size_t *index)
+{
+	if (!index)
+		return false;
+
+	for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
+		if (output->audio_encoders[i]) {
+			*index = i;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static bool get_first_video_encoder_index(const struct obs_output *output,
+					  size_t *index)
+{
+	if (!index)
+		return false;
+
+	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+		if (output->video_encoders[i]) {
+			*index = i;
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static bool obs_encoded_output_pause(obs_output_t *output, bool pause)
 {
-	obs_encoder_t *venc;
+	obs_encoder_t *venc[MAX_OUTPUT_VIDEO_ENCODERS];
 	obs_encoder_t *aenc[MAX_OUTPUT_AUDIO_ENCODERS];
 	uint64_t closest_v_ts;
 	bool success = false;
 
-	venc = output->video_encoder;
+	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++)
+		venc[i] = output->video_encoders[i];
 	for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++)
 		aenc[i] = output->audio_encoders[i];
 
-	pthread_mutex_lock(&venc->pause.mutex);
+	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+		if (venc[i]) {
+			pthread_mutex_lock(&venc[i]->pause.mutex);
+		}
+	}
 	for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
 		if (aenc[i]) {
 			pthread_mutex_lock(&aenc[i]->pause.mutex);
@@ -647,11 +686,17 @@ static bool obs_encoded_output_pause(obs_output_t *output, bool pause)
 
 	/* ---------------------------- */
 
-	closest_v_ts = get_closest_v_ts(&venc->pause);
+	size_t first_venc_index;
+	if (!get_first_video_encoder_index(output, &first_venc_index))
+		goto fail;
+
+	closest_v_ts = get_closest_v_ts(&venc[first_venc_index]->pause);
 
 	if (pause) {
-		if (!pause_can_start(&venc->pause)) {
-			goto fail;
+		for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+			if (venc[i] && !pause_can_start(&venc[i]->pause)) {
+				goto fail;
+			}
 		}
 		for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
 			if (aenc[i] && !pause_can_start(&aenc[i]->pause)) {
@@ -659,9 +704,12 @@ static bool obs_encoded_output_pause(obs_output_t *output, bool pause)
 			}
 		}
 
-		os_atomic_set_bool(&venc->paused, true);
-		venc->pause.ts_start = closest_v_ts;
-
+		for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+			if (venc[i]) {
+				os_atomic_set_bool(&venc[i]->paused, true);
+				venc[i]->pause.ts_start = closest_v_ts;
+			}
+		}
 		for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
 			if (aenc[i]) {
 				os_atomic_set_bool(&aenc[i]->paused, true);
@@ -669,8 +717,10 @@ static bool obs_encoded_output_pause(obs_output_t *output, bool pause)
 			}
 		}
 	} else {
-		if (!pause_can_stop(&venc->pause)) {
-			goto fail;
+		for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+			if (venc[i] && !pause_can_stop(&venc[i]->pause)) {
+				goto fail;
+			}
 		}
 		for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
 			if (aenc[i] && !pause_can_stop(&aenc[i]->pause)) {
@@ -678,9 +728,12 @@ static bool obs_encoded_output_pause(obs_output_t *output, bool pause)
 			}
 		}
 
-		os_atomic_set_bool(&venc->paused, false);
-		end_pause(&venc->pause, closest_v_ts);
-
+		for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+			if (venc[i]) {
+				os_atomic_set_bool(&venc[i]->paused, false);
+				end_pause(&venc[i]->pause, closest_v_ts);
+			}
+		}
 		for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
 			if (aenc[i]) {
 				os_atomic_set_bool(&aenc[i]->paused, false);
@@ -699,7 +752,11 @@ fail:
 			pthread_mutex_unlock(&aenc[i - 1]->pause.mutex);
 		}
 	}
-	pthread_mutex_unlock(&venc->pause.mutex);
+	for (size_t i = MAX_OUTPUT_VIDEO_ENCODERS; i > 0; i--) {
+		if (venc[i - 1]) {
+			pthread_mutex_unlock(&venc[i - 1]->pause.mutex);
+		}
+	}
 
 	return success;
 }
@@ -866,9 +923,13 @@ void obs_output_remove_encoder_internal(struct obs_output *output,
 	if (!obs_output_valid(output, "obs_output_remove_encoder_internal"))
 		return;
 
-	if (output->video_encoder == encoder) {
-		output->video_encoder = NULL;
-	} else {
+	if (encoder->info.type == OBS_ENCODER_VIDEO) {
+		for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+			obs_encoder_t *video = output->video_encoders[i];
+			if (video == encoder)
+				output->video_encoders[i] = NULL;
+		}
+	} else if (encoder->info.type == OBS_ENCODER_AUDIO) {
 		for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
 			obs_encoder_t *audio = output->audio_encoders[i];
 			if (audio == encoder)
@@ -888,9 +949,10 @@ void obs_output_remove_encoder(struct obs_output *output,
 	obs_output_remove_encoder_internal(output, encoder);
 }
 
-void obs_output_set_video_encoder(obs_output_t *output, obs_encoder_t *encoder)
+void obs_output_set_video_encoder2(obs_output_t *output, obs_encoder_t *encoder,
+				   size_t idx)
 {
-	if (!obs_output_valid(output, "obs_output_set_video_encoder"))
+	if (!obs_output_valid(output, "obs_output_set_video_encoder2"))
 		return;
 	if (!log_flag_encoded(output, __FUNCTION__, false) ||
 	    !log_flag_video(output, __FUNCTION__))
@@ -908,18 +970,39 @@ void obs_output_set_video_encoder(obs_output_t *output, obs_encoder_t *encoder)
 		return;
 	}
 
-	if (output->video_encoder == encoder)
+	if ((output->info.flags & OBS_OUTPUT_MULTI_TRACK_VIDEO) != 0) {
+		if (idx >= MAX_OUTPUT_VIDEO_ENCODERS) {
+			return;
+		}
+	} else {
+		if (idx > 0) {
+			return;
+		}
+	}
+
+	if (output->video_encoders[idx] == encoder)
 		return;
 
-	obs_encoder_remove_output(output->video_encoder, output);
+	obs_encoder_remove_output(output->video_encoders[idx], output);
 	obs_encoder_add_output(encoder, output);
-	output->video_encoder = encoder;
+	output->video_encoders[idx] = encoder;
 
-	/* set the preferred resolution on the encoder */
-	if (output->scaled_width && output->scaled_height)
-		obs_encoder_set_scaled_size(output->video_encoder,
-					    output->scaled_width,
-					    output->scaled_height);
+	// Set preferred resolution on the default index to preserve old behavior
+	if (idx == 0) {
+		/* set the preferred resolution on the encoder */
+		if (output->scaled_width && output->scaled_height)
+			obs_encoder_set_scaled_size(output->video_encoders[idx],
+						    output->scaled_width,
+						    output->scaled_height);
+	}
+}
+
+void obs_output_set_video_encoder(obs_output_t *output, obs_encoder_t *encoder)
+{
+	if (!obs_output_valid(output, "obs_output_set_video_encoder"))
+		return;
+
+	obs_output_set_video_encoder2(output, encoder, 0);
 }
 
 void obs_output_set_audio_encoder(obs_output_t *output, obs_encoder_t *encoder,
@@ -943,7 +1026,7 @@ void obs_output_set_audio_encoder(obs_output_t *output, obs_encoder_t *encoder,
 		return;
 	}
 
-	if ((output->info.flags & OBS_OUTPUT_MULTI_TRACK) != 0) {
+	if ((output->info.flags & OBS_OUTPUT_MULTI_TRACK_AUDIO) != 0) {
 		if (idx >= MAX_OUTPUT_AUDIO_ENCODERS) {
 			return;
 		}
@@ -961,11 +1044,28 @@ void obs_output_set_audio_encoder(obs_output_t *output, obs_encoder_t *encoder,
 	output->audio_encoders[idx] = encoder;
 }
 
+obs_encoder_t *obs_output_get_video_encoder2(const obs_output_t *output,
+					     size_t idx)
+{
+	if (!obs_output_valid(output, "obs_output_get_video_encoder2"))
+		return NULL;
+
+	if (idx >= MAX_OUTPUT_VIDEO_ENCODERS)
+		return NULL;
+
+	return output->video_encoders[idx];
+}
+
 obs_encoder_t *obs_output_get_video_encoder(const obs_output_t *output)
 {
-	return obs_output_valid(output, "obs_output_get_video_encoder")
-		       ? output->video_encoder
-		       : NULL;
+	if (!obs_output_valid(output, "obs_output_get_video_encoder"))
+		return NULL;
+
+	size_t first_venc_idx;
+	if (get_first_video_encoder_index(output, &first_venc_idx))
+		return obs_output_get_video_encoder2(output, first_venc_idx);
+	else
+		return NULL;
 }
 
 obs_encoder_t *obs_output_get_audio_encoder(const obs_output_t *output,
@@ -1042,12 +1142,14 @@ int obs_output_get_total_frames(const obs_output_t *output)
 		       : 0;
 }
 
-void obs_output_set_preferred_size(obs_output_t *output, uint32_t width,
-				   uint32_t height)
+void obs_output_set_preferred_size2(obs_output_t *output, uint32_t width,
+				    uint32_t height, size_t idx)
 {
-	if (!obs_output_valid(output, "obs_output_set_preferred_size"))
+	if (!obs_output_valid(output, "obs_output_set_preferred_size2"))
 		return;
 	if (!log_flag_video(output, __FUNCTION__))
+		return;
+	if (idx >= MAX_OUTPUT_VIDEO_ENCODERS)
 		return;
 
 	if (active(output)) {
@@ -1058,14 +1160,49 @@ void obs_output_set_preferred_size(obs_output_t *output, uint32_t width,
 		return;
 	}
 
-	output->scaled_width = width;
-	output->scaled_height = height;
+	// Used for raw video output
+	if (idx == 0) {
+		output->scaled_width = width;
+		output->scaled_height = height;
+	}
 
 	if (flag_encoded(output)) {
-		if (output->video_encoder)
-			obs_encoder_set_scaled_size(output->video_encoder,
+		if (output->video_encoders[idx])
+			obs_encoder_set_scaled_size(output->video_encoders[idx],
 						    width, height);
 	}
+}
+
+void obs_output_set_preferred_size(obs_output_t *output, uint32_t width,
+				   uint32_t height)
+{
+	if (!obs_output_valid(output, "obs_output_set_preferred_size"))
+		return;
+	if (!log_flag_video(output, __FUNCTION__))
+		return;
+
+	obs_output_set_preferred_size2(output, width, height, 0);
+}
+
+uint32_t obs_output_get_width2(const obs_output_t *output, size_t idx)
+{
+	if (!obs_output_valid(output, "obs_output_get_width2"))
+		return 0;
+	if (!log_flag_video(output, __FUNCTION__))
+		return 0;
+	if (idx >= MAX_OUTPUT_VIDEO_ENCODERS)
+		return 0;
+
+	if (flag_encoded(output)) {
+		if (output->video_encoders[idx])
+			return obs_encoder_get_width(
+				output->video_encoders[idx]);
+		else
+			return 0;
+	} else
+		return output->scaled_width != 0
+			       ? output->scaled_width
+			       : video_output_get_width(output->video);
 }
 
 uint32_t obs_output_get_width(const obs_output_t *output)
@@ -1075,12 +1212,28 @@ uint32_t obs_output_get_width(const obs_output_t *output)
 	if (!log_flag_video(output, __FUNCTION__))
 		return 0;
 
-	if (flag_encoded(output))
-		return obs_encoder_get_width(output->video_encoder);
-	else
-		return output->scaled_width != 0
-			       ? output->scaled_width
-			       : video_output_get_width(output->video);
+	return obs_output_get_width2(output, 0);
+}
+
+uint32_t obs_output_get_height2(const obs_output_t *output, size_t idx)
+{
+	if (!obs_output_valid(output, "obs_output_get_height2"))
+		return 0;
+	if (!log_flag_video(output, __FUNCTION__))
+		return 0;
+	if (idx >= MAX_OUTPUT_VIDEO_ENCODERS)
+		return 0;
+
+	if (flag_encoded(output)) {
+		if (output->video_encoders[idx])
+			return obs_encoder_get_width(
+				output->video_encoders[idx]);
+		else
+			return 0;
+	} else
+		return output->scaled_height != 0
+			       ? output->scaled_height
+			       : video_output_get_height(output->video);
 }
 
 uint32_t obs_output_get_height(const obs_output_t *output)
@@ -1090,12 +1243,7 @@ uint32_t obs_output_get_height(const obs_output_t *output)
 	if (!log_flag_video(output, __FUNCTION__))
 		return 0;
 
-	if (flag_encoded(output))
-		return obs_encoder_get_height(output->video_encoder);
-	else
-		return output->scaled_height != 0
-			       ? output->scaled_height
-			       : video_output_get_height(output->video);
+	return obs_output_get_height2(output, 0);
 }
 
 void obs_output_set_video_conversion(obs_output_t *output,
@@ -1128,6 +1276,20 @@ void obs_output_set_audio_conversion(
 	output->audio_conversion_set = true;
 }
 
+static inline bool video_valid(const struct obs_output *output)
+{
+	if (flag_encoded(output)) {
+		for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+			if (output->video_encoders[i]) {
+				return true;
+			}
+		}
+		return false;
+	} else {
+		return output->video != NULL;
+	}
+}
+
 static inline bool audio_valid(const struct obs_output *output)
 {
 	if (flag_encoded(output)) {
@@ -1144,12 +1306,8 @@ static inline bool audio_valid(const struct obs_output *output)
 
 static bool can_begin_data_capture(const struct obs_output *output)
 {
-	if (flag_video(output)) {
-		if (flag_encoded(output) && !output->video_encoder)
-			return false;
-		else if (!output->video)
-			return false;
-	}
+	if (flag_video(output) && !video_valid(output))
+		return false;
 
 	if (flag_audio(output) && !audio_valid(output))
 		return false;
@@ -1205,14 +1363,23 @@ get_audio_conversion(struct obs_output *output)
 	return output->audio_conversion_set ? &output->audio_conversion : NULL;
 }
 
-static size_t get_track_index(const struct obs_output *output,
-			      struct encoder_packet *pkt)
+static size_t get_encoder_index(const struct obs_output *output,
+				struct encoder_packet *pkt)
 {
-	for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
-		struct obs_encoder *encoder = output->audio_encoders[i];
+	if (pkt->type == OBS_ENCODER_VIDEO) {
+		for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+			struct obs_encoder *encoder = output->video_encoders[i];
 
-		if (encoder && pkt->encoder == encoder)
-			return i;
+			if (encoder && pkt->encoder == encoder)
+				return i;
+		}
+	} else if (pkt->type == OBS_ENCODER_AUDIO) {
+		for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
+			struct obs_encoder *encoder = output->audio_encoders[i];
+
+			if (encoder && pkt->encoder == encoder)
+				return i;
+		}
 	}
 
 	assert(false);
@@ -1223,8 +1390,8 @@ static inline void check_received(struct obs_output *output,
 				  struct encoder_packet *out)
 {
 	if (out->type == OBS_ENCODER_VIDEO) {
-		if (!output->received_video)
-			output->received_video = true;
+		if (!output->received_video[out->track_idx])
+			output->received_video[out->track_idx] = true;
 	} else {
 		if (!output->received_audio)
 			output->received_audio = true;
@@ -1241,7 +1408,7 @@ static inline void apply_interleaved_packet_offset(struct obs_output *output,
 	 * current dts as offset and subtract that value from the dts/pts
 	 * of the output packet. */
 	offset = (out->type == OBS_ENCODER_VIDEO)
-			 ? output->video_offset
+			 ? output->video_offsets[out->track_idx]
 			 : output->audio_offsets[out->track_idx];
 
 	out->dts -= offset;
@@ -1259,10 +1426,21 @@ static inline void apply_interleaved_packet_offset(struct obs_output *output,
 static inline bool has_higher_opposing_ts(struct obs_output *output,
 					  struct encoder_packet *packet)
 {
-	if (packet->type == OBS_ENCODER_VIDEO)
-		return output->highest_audio_ts > packet->dts_usec;
-	else
-		return output->highest_video_ts > packet->dts_usec;
+	bool has_higher = true;
+
+	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+		if (!output->video_encoders[i] ||
+		    (packet->type == OBS_ENCODER_VIDEO &&
+		     i == packet->track_idx))
+			continue;
+		has_higher = has_higher &&
+			     output->highest_video_ts[i] > packet->dts_usec;
+	}
+
+	return packet->type == OBS_ENCODER_AUDIO
+		       ? has_higher
+		       : (has_higher &&
+			  output->highest_audio_ts > packet->dts_usec);
 }
 
 static const uint8_t nal_start[4] = {0, 0, 0, 1};
@@ -1415,8 +1593,10 @@ static inline void set_higher_ts(struct obs_output *output,
 				 struct encoder_packet *packet)
 {
 	if (packet->type == OBS_ENCODER_VIDEO) {
-		if (output->highest_video_ts < packet->dts_usec)
-			output->highest_video_ts = packet->dts_usec;
+		if (output->highest_video_ts[packet->track_idx] <
+		    packet->dts_usec)
+			output->highest_video_ts[packet->track_idx] =
+				packet->dts_usec;
 	} else {
 		if (output->highest_audio_ts < packet->dts_usec)
 			output->highest_audio_ts = packet->dts_usec;
@@ -1477,10 +1657,8 @@ static int prune_premature_packets(struct obs_output *output)
 	int audio_encoders = 0;
 
 	video_idx = find_first_packet_type_idx(output, OBS_ENCODER_VIDEO, 0);
-	if (video_idx == -1) {
-		output->received_video = false;
+	if (video_idx == -1)
 		return -1;
-	}
 
 	max_idx = video_idx;
 	video = &output->interleaved_packets.array[video_idx];
@@ -1574,42 +1752,28 @@ static bool prune_interleaved_packets(struct obs_output *output)
 }
 
 static int find_first_packet_type_idx(struct obs_output *output,
-				      enum obs_encoder_type type,
-				      size_t audio_idx)
+				      enum obs_encoder_type type, size_t idx)
 {
 	for (size_t i = 0; i < output->interleaved_packets.num; i++) {
 		struct encoder_packet *packet =
 			&output->interleaved_packets.array[i];
 
-		if (packet->type == type) {
-			if (type == OBS_ENCODER_AUDIO &&
-			    packet->track_idx != audio_idx) {
-				continue;
-			}
-
+		if (packet->type == type && packet->track_idx == idx)
 			return (int)i;
-		}
 	}
 
 	return -1;
 }
 
 static int find_last_packet_type_idx(struct obs_output *output,
-				     enum obs_encoder_type type,
-				     size_t audio_idx)
+				     enum obs_encoder_type type, size_t idx)
 {
 	for (size_t i = output->interleaved_packets.num; i > 0; i--) {
 		struct encoder_packet *packet =
 			&output->interleaved_packets.array[i - 1];
 
-		if (packet->type == type) {
-			if (type == OBS_ENCODER_AUDIO &&
-			    packet->track_idx != audio_idx) {
-				continue;
-			}
-
+		if (packet->type == type && packet->track_idx == idx)
 			return (int)(i - 1);
-		}
 	}
 
 	return -1;
@@ -1635,9 +1799,19 @@ static bool get_audio_and_video_packets(struct obs_output *output,
 					struct encoder_packet **video,
 					struct encoder_packet **audio)
 {
-	*video = find_first_packet_type(output, OBS_ENCODER_VIDEO, 0);
-	if (!*video)
-		output->received_video = false;
+	bool found_video = false;
+	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+		if (output->video_encoders[i]) {
+			video[i] = find_first_packet_type(output,
+							  OBS_ENCODER_VIDEO, i);
+			if (!video[i]) {
+				output->received_video[i] = false;
+				return false;
+			} else {
+				found_video = true;
+			}
+		}
+	}
 
 	for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
 		if (output->audio_encoders[i]) {
@@ -1650,41 +1824,24 @@ static bool get_audio_and_video_packets(struct obs_output *output,
 		}
 	}
 
-	if (!*video) {
-		return false;
-	}
-
-	return true;
-}
-
-static bool get_first_audio_encoder_index(const struct obs_output *output,
-					  size_t *index)
-{
-	if (!index)
-		return false;
-
-	for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
-		if (output->audio_encoders[i]) {
-			*index = i;
-			return true;
-		}
-	}
-
-	return false;
+	return found_video;
 }
 
 static bool initialize_interleaved_packets(struct obs_output *output)
 {
-	struct encoder_packet *video;
+	struct encoder_packet *video[MAX_OUTPUT_VIDEO_ENCODERS];
 	struct encoder_packet *audio[MAX_OUTPUT_AUDIO_ENCODERS];
 	struct encoder_packet *last_audio[MAX_OUTPUT_AUDIO_ENCODERS];
 	size_t start_idx;
 	size_t first_audio_idx;
+	size_t first_video_idx;
 
 	if (!get_first_audio_encoder_index(output, &first_audio_idx))
 		return false;
+	if (!get_first_video_encoder_index(output, &first_video_idx))
+		return false;
 
-	if (!get_audio_and_video_packets(output, &video, audio))
+	if (!get_audio_and_video_packets(output, video, audio))
 		return false;
 
 	for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
@@ -1697,7 +1854,8 @@ static bool initialize_interleaved_packets(struct obs_output *output)
 	/* ensure that there is audio past the first video packet */
 	for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
 		if (output->audio_encoders[i]) {
-			if (last_audio[i]->dts_usec < video->dts_usec) {
+			if (last_audio[i]->dts_usec <
+			    video[first_video_idx]->dts_usec) {
 				output->received_audio = false;
 				return false;
 			}
@@ -1708,19 +1866,23 @@ static bool initialize_interleaved_packets(struct obs_output *output)
 	start_idx = get_interleaved_start_idx(output);
 	if (start_idx) {
 		discard_to_idx(output, start_idx);
-		if (!get_audio_and_video_packets(output, &video, audio))
+		if (!get_audio_and_video_packets(output, video, audio))
 			return false;
 	}
 
 	/* get new offsets */
-	output->video_offset = video->pts;
+	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+		if (output->video_encoders[i]) {
+			output->video_offsets[i] = video[i]->pts;
+		}
+	}
 	for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
 		if (output->audio_encoders[i]) {
 			output->audio_offsets[i] = audio[i]->dts;
 		}
 	}
 #if DEBUG_STARTING_PACKETS == 1
-	int64_t v = video->dts_usec;
+	int64_t v = video[first_video_idx]->dts_usec;
 	int64_t a = audio[first_audio_idx]->dts_usec;
 	int64_t diff = v - a;
 
@@ -1732,7 +1894,10 @@ static bool initialize_interleaved_packets(struct obs_output *output)
 
 	/* subtract offsets from highest TS offset variables */
 	output->highest_audio_ts -= audio[first_audio_idx]->dts_usec;
-	output->highest_video_ts -= video->dts_usec;
+
+	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+		output->highest_video_ts[i] -= video[i]->dts_usec;
+	}
 
 	/* apply new offsets to all existing packet DTS/PTS values */
 	for (size_t i = 0; i < output->interleaved_packets.num; i++) {
@@ -1751,6 +1916,15 @@ static inline void insert_interleaved_packet(struct obs_output *output,
 	for (idx = 0; idx < output->interleaved_packets.num; idx++) {
 		struct encoder_packet *cur_packet;
 		cur_packet = output->interleaved_packets.array + idx;
+
+		// sort video packets with same DTS by track index,
+		// to prevent the pruning logic from removing additional
+		// video tracks
+		if (out->dts_usec == cur_packet->dts_usec &&
+		    out->type == OBS_ENCODER_VIDEO &&
+		    cur_packet->type == OBS_ENCODER_VIDEO &&
+		    out->track_idx > cur_packet->track_idx)
+			continue;
 
 		if (out->dts_usec == cur_packet->dts_usec &&
 		    out->type == OBS_ENCODER_VIDEO) {
@@ -1799,18 +1973,18 @@ static void interleave_packets(void *data, struct encoder_packet *packet)
 	struct obs_output *output = data;
 	struct encoder_packet out;
 	bool was_started;
+	bool received_video;
 
 	if (!active(output))
 		return;
 
-	if (packet->type == OBS_ENCODER_AUDIO)
-		packet->track_idx = get_track_index(output, packet);
+	packet->track_idx = get_encoder_index(output, packet);
 
 	pthread_mutex_lock(&output->interleaved_mutex);
 
 	/* if first video frame is not a keyframe, discard until received */
-	if (!output->received_video && packet->type == OBS_ENCODER_VIDEO &&
-	    !packet->keyframe) {
+	if (packet->type == OBS_ENCODER_VIDEO &&
+	    !output->received_video[packet->track_idx] && !packet->keyframe) {
 		discard_unused_audio_packets(output, packet->dts_usec);
 		pthread_mutex_unlock(&output->interleaved_mutex);
 
@@ -1819,7 +1993,14 @@ static void interleave_packets(void *data, struct encoder_packet *packet)
 		return;
 	}
 
-	was_started = output->received_audio && output->received_video;
+	received_video = true;
+	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+		if (output->video_encoders[i])
+			received_video = received_video &&
+					 output->received_video[i];
+	}
+
+	was_started = output->received_audio && received_video;
 
 	if (output->active_delay_ns)
 		out = *packet;
@@ -1834,9 +2015,16 @@ static void interleave_packets(void *data, struct encoder_packet *packet)
 	insert_interleaved_packet(output, &out);
 	set_higher_ts(output, &out);
 
+	received_video = true;
+	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+		if (output->video_encoders[i])
+			received_video = received_video &&
+					 output->received_video[i];
+	}
+
 	/* when both video and audio have been received, we're ready
 	 * to start sending out packets (one at a time) */
-	if (output->received_audio && output->received_video) {
+	if (output->received_audio && received_video) {
 		if (!was_started) {
 			if (prune_interleaved_packets(output)) {
 				if (initialize_interleaved_packets(output)) {
@@ -1857,8 +2045,7 @@ static void default_encoded_callback(void *param, struct encoder_packet *packet)
 	struct obs_output *output = param;
 
 	if (data_active(output)) {
-		if (packet->type == OBS_ENCODER_AUDIO)
-			packet->track_idx = get_track_index(output, packet);
+		packet->track_idx = get_encoder_index(output, packet);
 
 		output->info.encoded_packet(output->context.data, packet);
 
@@ -1988,6 +2175,17 @@ static inline void start_audio_encoders(struct obs_output *output,
 	}
 }
 
+static inline void start_video_encoders(struct obs_output *output,
+					encoded_callback_t encoded_callback)
+{
+	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+		if (output->video_encoders[i]) {
+			obs_encoder_start(output->video_encoders[i],
+					  encoded_callback, output);
+		}
+	}
+}
+
 static inline void start_raw_audio(obs_output_t *output)
 {
 	if (output->info.raw_audio2) {
@@ -2009,11 +2207,13 @@ static inline void start_raw_audio(obs_output_t *output)
 static void reset_packet_data(obs_output_t *output)
 {
 	output->received_audio = false;
-	output->received_video = false;
 	output->highest_audio_ts = 0;
-	output->highest_video_ts = 0;
-	output->video_offset = 0;
 
+	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+		output->received_video[i] = false;
+		output->video_offsets[i] = 0;
+		output->highest_video_ts[i] = 0;
+	}
 	for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++)
 		output->audio_offsets[i] = 0;
 
@@ -2058,8 +2258,7 @@ static void hook_data_capture(struct obs_output *output)
 		if (has_audio)
 			start_audio_encoders(output, encoded_callback);
 		if (has_video)
-			obs_encoder_start(output->video_encoder,
-					  encoded_callback, output);
+			start_video_encoders(output, encoded_callback);
 	} else {
 		if (has_video)
 			start_raw_video(output->video,
@@ -2141,6 +2340,21 @@ static inline bool initialize_audio_encoders(obs_output_t *output)
 	return true;
 }
 
+static inline bool initialize_video_encoders(obs_output_t *output)
+{
+	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+		obs_encoder_t *video = output->video_encoders[i];
+
+		if (video && !obs_encoder_initialize(video)) {
+			obs_output_set_last_error(
+				output, obs_encoder_get_last_error(video));
+			return false;
+		}
+	}
+
+	return true;
+}
+
 static inline obs_encoder_t *find_inactive_audio_encoder(obs_output_t *output)
 {
 	for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
@@ -2155,7 +2369,10 @@ static inline obs_encoder_t *find_inactive_audio_encoder(obs_output_t *output)
 
 static inline void pair_encoders(obs_output_t *output)
 {
-	struct obs_encoder *video = output->video_encoder;
+	size_t first_venc_idx;
+	if (!get_first_video_encoder_index(output, &first_venc_idx))
+		return;
+	struct obs_encoder *video = output->video_encoders[first_venc_idx];
 	struct obs_encoder *audio = find_inactive_audio_encoder(output);
 
 	if (video && audio) {
@@ -2186,13 +2403,8 @@ bool obs_output_initialize_encoders(obs_output_t *output, uint32_t flags)
 	if (active(output))
 		return delay_active(output);
 
-	if (flag_video(output) &&
-	    !obs_encoder_initialize(output->video_encoder)) {
-		obs_output_set_last_error(
-			output,
-			obs_encoder_get_last_error(output->video_encoder));
+	if (flag_video(output) && !initialize_video_encoders(output))
 		return false;
-	}
 	if (flag_audio(output) && !initialize_audio_encoders(output))
 		return false;
 
@@ -2311,6 +2523,16 @@ static inline void stop_audio_encoders(obs_output_t *output,
 	}
 }
 
+static inline void stop_video_encoders(obs_output_t *output,
+				       encoded_callback_t encoded_callback)
+{
+	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+		obs_encoder_t *video = output->video_encoders[i];
+		if (video)
+			obs_encoder_stop(video, encoded_callback, output);
+	}
+}
+
 static inline void stop_raw_audio(obs_output_t *output)
 {
 	if (output->info.raw_audio2) {
@@ -2343,8 +2565,7 @@ static void *end_data_capture_thread(void *data)
 						   : default_encoded_callback;
 
 		if (has_video)
-			obs_encoder_stop(output->video_encoder,
-					 encoded_callback, output);
+			stop_video_encoders(output, encoded_callback);
 		if (has_audio)
 			stop_audio_encoders(output, encoded_callback);
 	} else {
@@ -2706,9 +2927,11 @@ const char *obs_output_get_last_error(obs_output_t *output)
 	if (output->last_error_message) {
 		return output->last_error_message;
 	} else {
-		obs_encoder_t *vencoder = output->video_encoder;
-		if (vencoder && vencoder->last_error_message) {
-			return vencoder->last_error_message;
+		for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+			obs_encoder_t *vencoder = output->video_encoders[i];
+			if (vencoder && vencoder->last_error_message) {
+				return vencoder->last_error_message;
+			}
 		}
 
 		for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
