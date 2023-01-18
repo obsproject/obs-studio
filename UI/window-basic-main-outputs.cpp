@@ -1482,7 +1482,6 @@ inline void AdvancedOutput::SetupStreaming()
 
 	obs_output_set_audio_encoder(streamOutput, streamAudioEnc, 0);
 	obs_encoder_set_scaled_size(videoStreaming, cx, cy);
-	obs_encoder_set_video(videoStreaming, obs_get_video());
 
 	const char *id = obs_service_get_id(main->GetService());
 	if (strcmp(id, "rtmp_custom") == 0) {
@@ -1536,7 +1535,6 @@ inline void AdvancedOutput::SetupRecording()
 		}
 
 		obs_encoder_set_scaled_size(videoRecording, cx, cy);
-		obs_encoder_set_video(videoRecording, obs_get_video());
 		obs_output_set_video_encoder(fileOutput, videoRecording);
 		if (replayBuffer)
 			obs_output_set_video_encoder(replayBuffer,
