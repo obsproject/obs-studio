@@ -178,6 +178,9 @@ static void AddExtraModulePaths()
 				    data_path_with_module_suffix.c_str());
 	}
 
+	if (portable_mode)
+		return;
+
 	char base_module_dir[512];
 #if defined(_WIN32)
 	int ret = GetProgramDataPath(base_module_dir, sizeof(base_module_dir),
