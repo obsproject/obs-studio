@@ -53,6 +53,7 @@ struct ffmpeg_source {
 	bool close_when_inactive;
 	bool seekable;
 	bool is_stinger;
+	bool log_changes;
 
 	pthread_t reconnect_thread;
 	pthread_mutex_t reconnect_mutex;
@@ -127,6 +128,7 @@ static void ffmpeg_source_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "reconnect_delay_sec", 10);
 	obs_data_set_default_int(settings, "buffering_mb", 2);
 	obs_data_set_default_int(settings, "speed_percent", 100);
+	obs_data_set_default_bool(settings, "log_changes", true);
 }
 
 static const char *media_filter =
@@ -245,6 +247,8 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 static void dump_source_info(struct ffmpeg_source *s, const char *input,
 			     const char *input_format)
 {
+	if (!s->log_changes)
+		return;
 	FF_BLOG(LOG_INFO,
 		"settings:\n"
 		"\tinput:                   %s\n"
@@ -487,6 +491,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	s->seekable = obs_data_get_bool(settings, "seekable");
 	s->ffmpeg_options = ffmpeg_options ? bstrdup(ffmpeg_options) : NULL;
 	s->is_stinger = is_stinger;
+	s->log_changes = obs_data_get_bool(settings, "log_changes");
 
 	if (s->speed_percent < 1 || s->speed_percent > 200)
 		s->speed_percent = 100;
