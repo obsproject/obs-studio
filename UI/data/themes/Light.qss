@@ -201,6 +201,10 @@ SceneTree::item {
     padding: 6px;
 }
 
+QMenu::item {
+    padding-right: 20px;
+}
+
 QListWidget::item,
 SourceTreeItem,
 QMenu::item,
