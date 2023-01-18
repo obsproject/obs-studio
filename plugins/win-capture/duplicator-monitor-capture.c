@@ -94,7 +94,7 @@ struct duplicator_capture {
 	struct winrt_capture *capture_winrt;
 };
 
-struct wgc_monitor_info {
+struct duplicator_monitor_info {
 	char device_id[128];
 	char name[64];
 	RECT rect;
@@ -189,7 +189,8 @@ static BOOL CALLBACK enum_monitor(HMONITOR handle, HDC hdc, LPRECT rect,
 {
 	UNUSED_PARAMETER(hdc);
 
-	struct wgc_monitor_info *monitor = (struct wgc_monitor_info *)param;
+	struct duplicator_monitor_info *monitor =
+		(struct duplicator_monitor_info *)param;
 
 	bool match = false;
 
@@ -200,14 +201,39 @@ static BOOL CALLBACK enum_monitor(HMONITOR handle, HDC hdc, LPRECT rect,
 		device.cb = sizeof(device);
 		if (EnumDisplayDevicesA(mi.szDevice, 0, &device,
 					EDD_GET_DEVICE_INTERFACE_NAME)) {
-			const bool match = strcmp(monitor->device_id,
-						  device.DeviceID) == 0;
+			match = strcmp(monitor->device_id, device.DeviceID) ==
+				0;
 			if (match) {
 				monitor->rect = *rect;
 				monitor->handle = handle;
 				GetMonitorName(handle, monitor->name,
 					       _countof(monitor->name));
 			}
+		}
+	}
+
+	return !match;
+}
+
+static BOOL CALLBACK enum_monitor_fallback(HMONITOR handle, HDC hdc,
+					   LPRECT rect, LPARAM param)
+{
+	UNUSED_PARAMETER(hdc);
+
+	struct duplicator_monitor_info *monitor =
+		(struct duplicator_monitor_info *)param;
+
+	bool match = false;
+
+	MONITORINFOEXA mi;
+	mi.cbSize = sizeof(mi);
+	if (GetMonitorInfoA(handle, (LPMONITORINFO)&mi)) {
+		match = strcmp(monitor->device_id, mi.szDevice) == 0;
+		if (match) {
+			monitor->rect = *rect;
+			monitor->handle = handle;
+			GetMonitorName(handle, monitor->name,
+				       _countof(monitor->name));
 		}
 	}
 
@@ -259,15 +285,26 @@ choose_method(enum display_capture_method method, bool wgc_supported,
 
 extern bool wgc_supported;
 
+static struct duplicator_monitor_info find_monitor(const char *monitor_id)
+{
+	struct duplicator_monitor_info monitor = {0};
+	strcpy_s(monitor.device_id, _countof(monitor.device_id), monitor_id);
+	EnumDisplayMonitors(NULL, NULL, &enum_monitor, (LPARAM)&monitor);
+	if (monitor.handle == NULL) {
+		EnumDisplayMonitors(NULL, NULL, &enum_monitor_fallback,
+				    (LPARAM)&monitor);
+	}
+
+	return monitor;
+}
+
 static inline void update_settings(struct duplicator_capture *capture,
 				   obs_data_t *settings)
 {
 	pthread_mutex_lock(&capture->update_mutex);
 
-	struct wgc_monitor_info monitor = {0};
-	strcpy_s(monitor.device_id, _countof(monitor.device_id),
-		 obs_data_get_string(settings, "monitor_id"));
-	EnumDisplayMonitors(NULL, NULL, enum_monitor, (LPARAM)&monitor);
+	struct duplicator_monitor_info monitor =
+		find_monitor(obs_data_get_string(settings, "monitor_id"));
 
 	capture->method =
 		choose_method((int)obs_data_get_int(settings, "method"),
@@ -467,11 +504,7 @@ static void free_capture_data(struct duplicator_capture *capture)
 
 static void update_monitor_handle(struct duplicator_capture *capture)
 {
-	struct wgc_monitor_info monitor = {0};
-	strcpy_s(monitor.device_id, _countof(monitor.device_id),
-		 capture->monitor_id);
-	EnumDisplayMonitors(NULL, NULL, enum_monitor, (LPARAM)&monitor);
-	capture->handle = monitor.handle;
+	capture->handle = find_monitor(capture->monitor_id).handle;
 }
 
 static void duplicator_capture_tick(void *data, float seconds)
@@ -733,40 +766,41 @@ static BOOL CALLBACK enum_monitor_props(HMONITOR handle, HDC hdc, LPRECT rect,
 	UNUSED_PARAMETER(hdc);
 	UNUSED_PARAMETER(rect);
 
+	char monitor_name[64];
+	GetMonitorName(handle, monitor_name, sizeof(monitor_name));
+
 	MONITORINFOEXA mi;
 	mi.cbSize = sizeof(mi);
 	if (GetMonitorInfoA(handle, (LPMONITORINFO)&mi)) {
+		obs_property_t *monitor_list = (obs_property_t *)param;
+		struct dstr monitor_desc = {0};
+		dstr_printf(&monitor_desc, "%s: %dx%d @ %d,%d", monitor_name,
+			    mi.rcMonitor.right - mi.rcMonitor.left,
+			    mi.rcMonitor.bottom - mi.rcMonitor.top,
+			    mi.rcMonitor.left, mi.rcMonitor.top);
+		if (mi.dwFlags == MONITORINFOF_PRIMARY)
+			dstr_catf(&monitor_desc, " (%s)", TEXT_PRIMARY_MONITOR);
+
 		DISPLAY_DEVICEA device;
 		device.cb = sizeof(device);
 		if (EnumDisplayDevicesA(mi.szDevice, 0, &device,
 					EDD_GET_DEVICE_INTERFACE_NAME)) {
-			obs_property_t *monitor_list = (obs_property_t *)param;
-			struct dstr monitor_desc = {0};
-			struct dstr resolution = {0};
-
-			dstr_catf(&resolution, "%dx%d @ %d,%d",
-				  mi.rcMonitor.right - mi.rcMonitor.left,
-				  mi.rcMonitor.bottom - mi.rcMonitor.top,
-				  mi.rcMonitor.left, mi.rcMonitor.top);
-
-			char monitor_name[64];
-			GetMonitorName(handle, monitor_name,
-				       sizeof(monitor_name));
-			dstr_catf(&monitor_desc, "%s: %s", monitor_name,
-				  resolution.array);
-
-			if (mi.dwFlags == MONITORINFOF_PRIMARY) {
-				dstr_catf(&monitor_desc, " (%s)",
-					  TEXT_PRIMARY_MONITOR);
-			}
-
 			obs_property_list_add_string(monitor_list,
 						     monitor_desc.array,
 						     device.DeviceID);
-
-			dstr_free(&monitor_desc);
-			dstr_free(&resolution);
+		} else {
+			blog(LOG_WARNING,
+			     "[duplicator-monitor-capture] EnumDisplayDevices failed for monitor (%s), falling back to szDevice",
+			     monitor_name);
+			obs_property_list_add_string(
+				monitor_list, monitor_desc.array, mi.szDevice);
 		}
+
+		dstr_free(&monitor_desc);
+	} else {
+		blog(LOG_WARNING,
+		     "[duplicator-monitor-capture] GetMonitorInfo failed for monitor: %s",
+		     monitor_name);
 	}
 
 	return TRUE;
