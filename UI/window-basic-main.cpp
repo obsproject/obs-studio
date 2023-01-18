@@ -4830,6 +4830,9 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 
 	closing = true;
 
+	if (outputHandler->VirtualCamActive())
+		outputHandler->StopVirtualCam();
+
 	if (introCheckThread)
 		introCheckThread->wait();
 	if (whatsNewInitThread)
