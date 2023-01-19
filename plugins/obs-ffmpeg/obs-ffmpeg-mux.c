@@ -193,8 +193,7 @@ static void add_video_encoder_params(struct ffmpeg_muxer *stream,
 			? (int)obs_get_video_hdr_nominal_peak_level()
 			: ((trc == AVCOL_TRC_ARIB_STD_B67) ? 1000 : 0);
 
-	dstr_catf(cmd, "%s %d %d %d %d %d %d %d %d %d %d %d %d ",
-		  obs_encoder_get_codec(vencoder), bitrate,
+	dstr_catf(cmd, "%d %d %d %d %d %d %d %d %d %d %d %d ", bitrate,
 		  obs_output_get_width(stream->output),
 		  obs_output_get_height(stream->output), (int)pri, (int)trc,
 		  (int)spc, (int)range,
@@ -285,18 +284,27 @@ static void add_muxer_params(struct dstr *cmd, struct ffmpeg_muxer *stream)
 static void build_command_line(struct ffmpeg_muxer *stream, struct dstr *cmd,
 			       const char *path)
 {
-	obs_encoder_t *vencoder = obs_output_get_video_encoder(stream->output);
-	obs_encoder_t *aencoders[MAX_AUDIO_MIXES];
-	int num_tracks = 0;
+	obs_encoder_t *vencoders[MAX_OUTPUT_VIDEO_ENCODERS];
+	obs_encoder_t *aencoders[MAX_OUTPUT_AUDIO_ENCODERS];
+	int video_tracks = 0;
+	int audio_tracks = 0;
 
-	for (;;) {
-		obs_encoder_t *aencoder = obs_output_get_audio_encoder(
-			stream->output, num_tracks);
-		if (!aencoder)
-			break;
+	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+		obs_encoder_t *vencoder =
+			obs_output_get_video_encoder2(stream->output, i);
+		if (vencoder) {
+			video_tracks |= (size_t)1 << i;
+			vencoders[i] = vencoder;
+		}
+	}
 
-		aencoders[num_tracks] = aencoder;
-		num_tracks++;
+	for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
+		obs_encoder_t *aencoder =
+			obs_output_get_audio_encoder(stream->output, i);
+		if (aencoder) {
+			audio_tracks |= (size_t)1 << i;
+			aencoders[i] = aencoder;
+		}
 	}
 
 	dstr_init_move_array(cmd, os_get_executable_path_ptr(FFMPEG_MUX));
@@ -307,16 +315,28 @@ static void build_command_line(struct ffmpeg_muxer *stream, struct dstr *cmd,
 	dstr_replace(&stream->path, "\"", "\"\"");
 	dstr_cat_dstr(cmd, &stream->path);
 
-	dstr_catf(cmd, "\" %d %d ", vencoder ? 1 : 0, num_tracks);
+	dstr_catf(cmd, "\" %d %d ", video_tracks, audio_tracks);
 
-	if (vencoder)
-		add_video_encoder_params(stream, cmd, vencoder);
+	if (video_tracks != 0) {
+		obs_encoder_t *first_venc =
+			obs_output_get_video_encoder(stream->output);
 
-	if (num_tracks) {
+		// Assume all encoders are the same codec type
+		dstr_catf(cmd, "%s ", obs_encoder_get_codec(first_venc));
+
+		for (int i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
+			if ((video_tracks & ((size_t)1 << i)) != 0)
+				add_video_encoder_params(stream, cmd,
+							 vencoders[i]);
+		}
+	}
+
+	if (audio_tracks != 0) {
 		dstr_cat(cmd, "aac ");
 
-		for (int i = 0; i < num_tracks; i++) {
-			add_audio_encoder_params(cmd, aencoders[i]);
+		for (int i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
+			if ((audio_tracks & ((size_t)1 << i)) != 0)
+				add_audio_encoder_params(cmd, aencoders[i]);
 		}
 	}
 
@@ -355,10 +375,11 @@ static void set_file_not_readable_error(struct ffmpeg_muxer *stream,
 
 inline static void ts_offset_clear(struct ffmpeg_muxer *stream)
 {
-	stream->found_video = false;
-	stream->video_pts_offset = 0;
-
-	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++) {
+	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+		stream->found_video[i] = false;
+		stream->video_pts_offsets[i] = 0;
+	}
+	for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
 		stream->found_audio[i] = false;
 		stream->audio_dts_offsets[i] = 0;
 	}
@@ -373,9 +394,10 @@ inline static void ts_offset_update(struct ffmpeg_muxer *stream,
 				    struct encoder_packet *packet)
 {
 	if (packet->type == OBS_ENCODER_VIDEO) {
-		if (!stream->found_video) {
-			stream->video_pts_offset = packet->pts;
-			stream->found_video = true;
+		if (!stream->found_video[packet->track_idx]) {
+			stream->video_pts_offsets[packet->track_idx] =
+				packet->pts;
+			stream->found_video[packet->track_idx] = true;
 		}
 		return;
 	}
@@ -650,8 +672,8 @@ bool write_packet(struct ffmpeg_muxer *stream, struct encoder_packet *packet)
 
 	if (stream->split_file) {
 		if (is_video) {
-			info.dts -= stream->video_pts_offset;
-			info.pts -= stream->video_pts_offset;
+			info.dts -= stream->video_pts_offsets[info.index];
+			info.pts -= stream->video_pts_offsets[info.index];
 		} else {
 			info.dts -= stream->audio_dts_offsets[info.index];
 			info.pts -= stream->audio_dts_offsets[info.index];
@@ -681,46 +703,39 @@ bool write_packet(struct ffmpeg_muxer *stream, struct encoder_packet *packet)
 	return true;
 }
 
-static bool send_audio_headers(struct ffmpeg_muxer *stream,
-			       obs_encoder_t *aencoder, size_t idx)
+static bool send_header(struct ffmpeg_muxer *stream, obs_encoder_t *encoder,
+			size_t idx)
 {
-	struct encoder_packet packet = {
-		.type = OBS_ENCODER_AUDIO, .timebase_den = 1, .track_idx = idx};
+	struct encoder_packet packet = {.type = obs_encoder_get_type(encoder),
+					.timebase_den = 1,
+					.track_idx = idx};
 
-	if (!obs_encoder_get_extra_data(aencoder, &packet.data, &packet.size))
-		return false;
-	return write_packet(stream, &packet);
-}
-
-static bool send_video_headers(struct ffmpeg_muxer *stream)
-{
-	obs_encoder_t *vencoder = obs_output_get_video_encoder(stream->output);
-
-	struct encoder_packet packet = {.type = OBS_ENCODER_VIDEO,
-					.timebase_den = 1};
-
-	if (!obs_encoder_get_extra_data(vencoder, &packet.data, &packet.size))
+	if (!obs_encoder_get_extra_data(encoder, &packet.data, &packet.size))
 		return false;
 	return write_packet(stream, &packet);
 }
 
 bool send_headers(struct ffmpeg_muxer *stream)
 {
-	obs_encoder_t *aencoder;
-	size_t idx = 0;
-
-	if (!send_video_headers(stream))
-		return false;
-
-	do {
-		aencoder = obs_output_get_audio_encoder(stream->output, idx);
-		if (aencoder) {
-			if (!send_audio_headers(stream, aencoder, idx)) {
+	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+		obs_encoder_t *video =
+			obs_output_get_video_encoder2(stream->output, i);
+		if (video) {
+			if (!send_header(stream, video, i)) {
 				return false;
 			}
-			idx++;
 		}
-	} while (aencoder);
+	}
+
+	for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
+		obs_encoder_t *audio =
+			obs_output_get_audio_encoder(stream->output, i);
+		if (audio) {
+			if (!send_header(stream, audio, i)) {
+				return false;
+			}
+		}
+	}
 
 	return true;
 }
@@ -807,7 +822,13 @@ static bool prepare_split_file(struct ffmpeg_muxer *stream,
 
 static inline bool has_audio(struct ffmpeg_muxer *stream)
 {
-	return !!obs_output_get_audio_encoder(stream->output, 0);
+	for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
+		if (!!obs_output_get_audio_encoder(stream->output, i)) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 static void push_back_packet(struct darray *packets,
@@ -913,8 +934,8 @@ uint64_t ffmpeg_mux_total_bytes(void *data)
 
 struct obs_output_info ffmpeg_muxer = {
 	.id = "ffmpeg_muxer",
-	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_MULTI_TRACK |
-		 OBS_OUTPUT_CAN_PAUSE,
+	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED |
+		 OBS_OUTPUT_MULTI_TRACK_AV | OBS_OUTPUT_CAN_PAUSE,
 	.get_name = ffmpeg_mux_getname,
 	.create = ffmpeg_mux_create,
 	.destroy = ffmpeg_mux_destroy,
@@ -942,8 +963,8 @@ static int ffmpeg_mpegts_mux_connect_time(void *data)
 
 struct obs_output_info ffmpeg_mpegts_muxer = {
 	.id = "ffmpeg_mpegts_muxer",
-	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_MULTI_TRACK |
-		 OBS_OUTPUT_SERVICE,
+	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED |
+		 OBS_OUTPUT_MULTI_TRACK_AV | OBS_OUTPUT_SERVICE,
 	.encoded_video_codecs = "h264;av1",
 	.encoded_audio_codecs = "aac",
 	.get_name = ffmpeg_mpegts_mux_getname,
@@ -1210,11 +1231,11 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 	/* reorder packets */
 
 	bool found_video = false;
-	bool found_audio[MAX_AUDIO_MIXES] = {0};
+	bool found_audio[MAX_OUTPUT_AUDIO_ENCODERS] = {0};
 	int64_t video_offset = 0;
 	int64_t video_pts_offset = 0;
-	int64_t audio_offsets[MAX_AUDIO_MIXES] = {0};
-	int64_t audio_dts_offsets[MAX_AUDIO_MIXES] = {0};
+	int64_t audio_offsets[MAX_OUTPUT_AUDIO_ENCODERS] = {0};
+	int64_t audio_dts_offsets[MAX_OUTPUT_AUDIO_ENCODERS] = {0};
 
 	for (size_t i = 0; i < num_packets; i++) {
 		struct encoder_packet *pkt;
@@ -1324,8 +1345,8 @@ static void replay_buffer_defaults(obs_data_t *s)
 
 struct obs_output_info replay_buffer = {
 	.id = "replay_buffer",
-	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_MULTI_TRACK |
-		 OBS_OUTPUT_CAN_PAUSE,
+	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED |
+		 OBS_OUTPUT_MULTI_TRACK_AV | OBS_OUTPUT_CAN_PAUSE,
 	.get_name = replay_buffer_getname,
 	.create = replay_buffer_create,
 	.destroy = replay_buffer_destroy,
