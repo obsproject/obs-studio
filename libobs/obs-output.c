@@ -571,7 +571,7 @@ static inline bool pause_can_stop(struct pause_data *pause)
 	return !!pause->ts_start && !pause->ts_end;
 }
 
-static bool get_first_audio_encoder_index(struct obs_output *output,
+static bool get_first_audio_encoder_index(const struct obs_output *output,
 					  size_t *index)
 {
 	if (!index)
@@ -587,7 +587,7 @@ static bool get_first_audio_encoder_index(struct obs_output *output,
 	return false;
 }
 
-static bool get_first_video_encoder_index(struct obs_output *output,
+static bool get_first_video_encoder_index(const struct obs_output *output,
 					  size_t *index)
 {
 	if (!index)
