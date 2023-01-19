@@ -1134,10 +1134,18 @@ static bool init_connect(struct rtmp_stream *stream)
 	stream->got_first_video = false;
 
 	settings = obs_output_get_settings(stream->output);
-	dstr_copy(&stream->path, obs_service_get_url(service));
-	dstr_copy(&stream->key, obs_service_get_key(service));
-	dstr_copy(&stream->username, obs_service_get_username(service));
-	dstr_copy(&stream->password, obs_service_get_password(service));
+	dstr_copy(&stream->path,
+		  obs_service_get_connect_info(
+			  service, OBS_SERVICE_CONNECT_INFO_SERVER_URL));
+	dstr_copy(&stream->key,
+		  obs_service_get_connect_info(
+			  service, OBS_SERVICE_CONNECT_INFO_STREAM_KEY));
+	dstr_copy(&stream->username,
+		  obs_service_get_connect_info(
+			  service, OBS_SERVICE_CONNECT_INFO_USERNAME));
+	dstr_copy(&stream->password,
+		  obs_service_get_connect_info(
+			  service, OBS_SERVICE_CONNECT_INFO_PASSWORD));
 	dstr_depad(&stream->path);
 	dstr_depad(&stream->key);
 	drop_b = (int64_t)obs_data_get_int(settings, OPT_DROP_THRESHOLD);

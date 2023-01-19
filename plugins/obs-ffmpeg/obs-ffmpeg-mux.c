@@ -419,7 +419,8 @@ static inline bool ffmpeg_mux_start_internal(struct ffmpeg_muxer *stream,
 		service = obs_output_get_service(stream->output);
 		if (!service)
 			return false;
-		path = obs_service_get_url(service);
+		path = obs_service_get_connect_info(
+			service, OBS_SERVICE_CONNECT_INFO_SERVER_URL);
 		stream->split_file = false;
 	} else {
 

@@ -349,24 +349,26 @@ static inline int connect_mpegts_url(struct ffmpeg_output *stream, bool is_rist)
 	if (!is_rist) {
 		SRTContext *context = (SRTContext *)uc->priv_data;
 		context->streamid = NULL;
-		if (stream->ff_data.config.key != NULL) {
-			if (strlen(stream->ff_data.config.key))
-				context->streamid =
-					av_strdup(stream->ff_data.config.key);
+		if (stream->ff_data.config.stream_id != NULL) {
+			if (strlen(stream->ff_data.config.stream_id))
+				context->streamid = av_strdup(
+					stream->ff_data.config.stream_id);
 		}
 		context->passphrase = NULL;
-		if (stream->ff_data.config.password != NULL) {
-			if (strlen(stream->ff_data.config.password))
-				context->passphrase = av_strdup(
-					stream->ff_data.config.password);
+		if (stream->ff_data.config.encrypt_passphrase != NULL) {
+			if (strlen(stream->ff_data.config.encrypt_passphrase))
+				context->passphrase =
+					av_strdup(stream->ff_data.config
+							  .encrypt_passphrase);
 		}
 	} else {
 		RISTContext *context = (RISTContext *)uc->priv_data;
 		context->secret = NULL;
-		if (stream->ff_data.config.key != NULL) {
-			if (strlen(stream->ff_data.config.key))
+		if (stream->ff_data.config.encrypt_passphrase != NULL) {
+			if (strlen(stream->ff_data.config.encrypt_passphrase))
 				context->secret =
-					bstrdup(stream->ff_data.config.key);
+					bstrdup(stream->ff_data.config
+							.encrypt_passphrase);
 		}
 		context->username = NULL;
 		if (stream->ff_data.config.username != NULL) {
@@ -879,10 +881,16 @@ static bool set_config(struct ffmpeg_output *stream)
 	service = obs_output_get_service(stream->output);
 	if (!service)
 		return false;
-	config.url = obs_service_get_url(service);
-	config.username = obs_service_get_username(service);
-	config.password = obs_service_get_password(service);
-	config.key = obs_service_get_key(service);
+	config.url = obs_service_get_connect_info(
+		service, OBS_SERVICE_CONNECT_INFO_SERVER_URL);
+	config.username = obs_service_get_connect_info(
+		service, OBS_SERVICE_CONNECT_INFO_USERNAME);
+	config.password = obs_service_get_connect_info(
+		service, OBS_SERVICE_CONNECT_INFO_PASSWORD);
+	config.stream_id = obs_service_get_connect_info(
+		service, OBS_SERVICE_CONNECT_INFO_STREAM_ID);
+	config.encrypt_passphrase = obs_service_get_connect_info(
+		service, OBS_SERVICE_CONNECT_INFO_ENCRYPT_PASSPHRASE);
 	config.format_name = "mpegts";
 	config.format_mime_type = "video/M2PT";
 
