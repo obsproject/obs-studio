@@ -1062,6 +1062,20 @@ static const char *rtmp_common_get_connect_info(void *data, uint32_t type)
 	return NULL;
 }
 
+static bool rtmp_common_can_try_to_connect(void *data)
+{
+	struct rtmp_common *service = data;
+	const char *key = rtmp_common_key(data);
+
+	if (service->service && strcmp(service->service, "Dacast") == 0)
+		return (key != NULL && key[0] != '\0');
+
+	const char *url = rtmp_common_url(data);
+
+	return (url != NULL && url[0] != '\0') &&
+	       (key != NULL && key[0] != '\0');
+}
+
 struct obs_service_info rtmp_common_service = {
 	.id = "rtmp_common",
 	.get_name = rtmp_common_getname,
@@ -1081,4 +1095,5 @@ struct obs_service_info rtmp_common_service = {
 	.get_max_bitrate = rtmp_common_get_max_bitrate,
 	.get_supported_video_codecs = rtmp_common_get_supported_video_codecs,
 	.get_supported_audio_codecs = rtmp_common_get_supported_audio_codecs,
+	.can_try_to_connect = rtmp_common_can_try_to_connect,
 };

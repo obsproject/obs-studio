@@ -174,6 +174,13 @@ static const char *rtmp_custom_get_connect_info(void *data, uint32_t type)
 	return NULL;
 }
 
+static bool rtmp_custom_can_try_to_connect(void *data)
+{
+	struct rtmp_custom *service = data;
+
+	return (service->server != NULL && service->server[0] != '\0');
+}
+
 struct obs_service_info rtmp_custom_service = {
 	.id = "rtmp_custom",
 	.get_name = rtmp_custom_name,
@@ -188,4 +195,5 @@ struct obs_service_info rtmp_custom_service = {
 	.get_username = rtmp_custom_username,
 	.get_password = rtmp_custom_password,
 	.apply_encoder_settings = rtmp_custom_apply_settings,
+	.can_try_to_connect = rtmp_custom_can_try_to_connect,
 };
