@@ -634,7 +634,7 @@ bool load_nvafx(void)
 		blog(LOG_INFO,
 		     "[noise suppress]: NVIDIA AUDIO FX version: %i.%i.%i.%i",
 		     major, minor, build, revision);
-		if (version < (MIN_AFX_SDK_VERSION)) {
+		if (version < MIN_AFX_SDK_VERSION) {
 			blog(LOG_INFO,
 			     "[noise suppress]: NVIDIA AUDIO Effects SDK is outdated. Please update both audio & video SDK.");
 		}
@@ -1227,7 +1227,7 @@ static obs_properties_t *noise_suppress_properties(void *data)
 						1.0f, 0.01f);
 	}
 	unsigned int version = get_lib_version();
-	if (version < (MIN_AFX_SDK_VERSION)) {
+	if (version && version < MIN_AFX_SDK_VERSION) {
 		obs_property_t *warning = obs_properties_add_text(
 			ppts, "deprecation", NULL, OBS_TEXT_INFO);
 		obs_property_text_set_info_type(warning, OBS_TEXT_INFO_WARNING);

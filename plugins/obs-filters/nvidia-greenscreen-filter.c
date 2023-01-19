@@ -479,7 +479,7 @@ static void *nv_greenscreen_filter_create(obs_data_t *settings,
 		uint8_t build = (filter->version >> 8) & 0x0000ff;
 		uint8_t revision = (filter->version >> 0) & 0x000000ff;
 		// sanity check
-		nvvfx_new_sdk = filter->version >= (MIN_VFX_SDK_VERSION) &&
+		nvvfx_new_sdk = filter->version >= MIN_VFX_SDK_VERSION &&
 				nvvfx_new_sdk;
 	}
 
@@ -551,7 +551,7 @@ static obs_properties_t *nv_greenscreen_filter_properties(void *data)
 		props, S_PROCESSING, TEXT_PROCESSING, 1, 4, 1);
 	obs_property_set_long_description(partial, TEXT_PROCESSING_HINT);
 	unsigned int version = get_lib_version();
-	if (version < (MIN_VFX_SDK_VERSION)) {
+	if (version && version < MIN_VFX_SDK_VERSION) {
 		obs_property_t *warning = obs_properties_add_text(
 			props, "deprecation", NULL, OBS_TEXT_INFO);
 		obs_property_text_set_info_type(warning, OBS_TEXT_INFO_WARNING);
@@ -895,7 +895,7 @@ bool load_nvvfx(void)
 		blog(LOG_INFO,
 		     "[NVIDIA VIDEO FX]: NVIDIA VIDEO FX version: %i.%i.%i.%i",
 		     major, minor, build, revision);
-		if (version < (MIN_VFX_SDK_VERSION)) {
+		if (version < MIN_VFX_SDK_VERSION) {
 			blog(LOG_INFO,
 			     "[NVIDIA VIDEO FX]: NVIDIA VIDEO Effects SDK is outdated. Please update both audio & video SDK.");
 		}
