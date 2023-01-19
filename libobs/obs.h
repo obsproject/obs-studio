@@ -2566,6 +2566,8 @@ obs_service_get_preferred_output_type(const obs_service_t *service);
 EXPORT const char *obs_service_get_connect_info(const obs_service_t *service,
 						uint32_t type);
 
+EXPORT bool obs_service_can_try_to_connect(const obs_service_t *service);
+
 /* ------------------------------------------------------------------------- */
 /* Source frame allocation functions */
 EXPORT void obs_source_frame_init(struct obs_source_frame *frame,

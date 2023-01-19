@@ -512,3 +512,13 @@ const char *obs_service_get_connect_info(const obs_service_t *service,
 		return NULL;
 	return service->info.get_connect_info(service->context.data, type);
 }
+
+bool obs_service_can_try_to_connect(const obs_service_t *service)
+{
+	if (!obs_service_valid(service, "obs_service_can_connect"))
+		return false;
+
+	if (!service->info.can_try_to_connect)
+		return true;
+	return service->info.can_try_to_connect(service->context.data);
+}

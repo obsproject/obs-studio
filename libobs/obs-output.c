@@ -290,7 +290,8 @@ bool obs_output_start(obs_output_t *output)
 		return false;
 
 	has_service = (output->info.flags & OBS_OUTPUT_SERVICE) != 0;
-	if (has_service && !obs_service_initialize(output->service, output))
+	if (has_service && !(obs_service_can_try_to_connect(output->service) &&
+			     obs_service_initialize(output->service, output)))
 		return false;
 
 	encoded = (output->info.flags & OBS_OUTPUT_ENCODED) != 0;

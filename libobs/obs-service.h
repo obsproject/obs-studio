@@ -106,6 +106,8 @@ struct obs_service_info {
 	const char **(*get_supported_audio_codecs)(void *data);
 
 	const char *(*get_connect_info)(void *data, uint32_t type);
+
+	bool (*can_try_to_connect)(void *data);
 };
 
 EXPORT void obs_register_service_s(const struct obs_service_info *info,

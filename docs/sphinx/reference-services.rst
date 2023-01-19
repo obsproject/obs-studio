@@ -184,6 +184,14 @@ Service Definition Structure
 
    Irrelevant or unused types can return `NULL`.
 
+.. member:: bool (*obs_service_info.can_try_to_connect)(void *data)
+
+   :return: If the service has all the needed connection info to be
+            able to connect.
+
+   NOTE: If not set, :c:func:`obs_service_can_try_to_connect()`
+   returns *true* by default.
+
 General Service Functions
 -------------------------
 
@@ -377,6 +385,12 @@ General Service Functions
    :param type: Check :c:member:`obs_service_info.get_connect_info` for
                 type values.
    :return: Connection info related to the type value.
+
+.. function:: bool obs_service_can_try_to_connect(const obs_service_t *service)
+
+   :return: If the service has all the needed connection info to be
+            able to connect. Returns `true` if
+            :c:member:`obs_service_info.can_try_to_connect` is not set.
 
 .. ---------------------------------------------------------------------------
 
