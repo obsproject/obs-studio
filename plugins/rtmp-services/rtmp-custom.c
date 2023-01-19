@@ -148,6 +148,32 @@ static void rtmp_custom_apply_settings(void *data, obs_data_t *video_settings,
 	}
 }
 
+static const char *rtmp_custom_get_connect_info(void *data, uint32_t type)
+{
+	switch ((enum obs_service_connect_info)type) {
+	case OBS_SERVICE_CONNECT_INFO_SERVER_URL:
+		return rtmp_custom_url(data);
+	case OBS_SERVICE_CONNECT_INFO_STREAM_ID:
+		return rtmp_custom_key(data);
+	case OBS_SERVICE_CONNECT_INFO_USERNAME:
+		return rtmp_custom_username(data);
+	case OBS_SERVICE_CONNECT_INFO_PASSWORD:
+		return rtmp_custom_password(data);
+	case OBS_SERVICE_CONNECT_INFO_ENCRYPT_PASSPHRASE: {
+		const char *protocol = rtmp_custom_get_protocol(data);
+
+		if ((strcmp(protocol, "SRT") == 0))
+			return rtmp_custom_password(data);
+		else if ((strcmp(protocol, "RIST") == 0))
+			return rtmp_custom_key(data);
+
+		break;
+	}
+	}
+
+	return NULL;
+}
+
 struct obs_service_info rtmp_custom_service = {
 	.id = "rtmp_custom",
 	.get_name = rtmp_custom_name,
@@ -158,6 +184,7 @@ struct obs_service_info rtmp_custom_service = {
 	.get_protocol = rtmp_custom_get_protocol,
 	.get_url = rtmp_custom_url,
 	.get_key = rtmp_custom_key,
+	.get_connect_info = rtmp_custom_get_connect_info,
 	.get_username = rtmp_custom_username,
 	.get_password = rtmp_custom_password,
 	.apply_encoder_settings = rtmp_custom_apply_settings,

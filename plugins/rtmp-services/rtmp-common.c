@@ -1036,6 +1036,32 @@ static const char *rtmp_common_get_protocol(void *data)
 	return service->protocol ? service->protocol : "RTMP";
 }
 
+static const char *rtmp_common_get_connect_info(void *data, uint32_t type)
+{
+	switch ((enum obs_service_connect_info)type) {
+	case OBS_SERVICE_CONNECT_INFO_SERVER_URL:
+		return rtmp_common_url(data);
+	case OBS_SERVICE_CONNECT_INFO_STREAM_ID:
+		return rtmp_common_key(data);
+	case OBS_SERVICE_CONNECT_INFO_USERNAME:
+		return rtmp_common_username(data);
+	case OBS_SERVICE_CONNECT_INFO_PASSWORD:
+		return rtmp_common_password(data);
+	case OBS_SERVICE_CONNECT_INFO_ENCRYPT_PASSPHRASE: {
+		const char *protocol = rtmp_common_get_protocol(data);
+
+		if ((strcmp(protocol, "SRT") == 0))
+			return rtmp_common_password(data);
+		else if ((strcmp(protocol, "RIST") == 0))
+			return rtmp_common_key(data);
+
+		break;
+	}
+	}
+
+	return NULL;
+}
+
 struct obs_service_info rtmp_common_service = {
 	.id = "rtmp_common",
 	.get_name = rtmp_common_getname,
@@ -1048,6 +1074,7 @@ struct obs_service_info rtmp_common_service = {
 	.get_key = rtmp_common_key,
 	.get_username = rtmp_common_username,
 	.get_password = rtmp_common_password,
+	.get_connect_info = rtmp_common_get_connect_info,
 	.apply_encoder_settings = rtmp_common_apply_settings,
 	.get_supported_resolutions = rtmp_common_get_supported_resolutions,
 	.get_max_fps = rtmp_common_get_max_fps,
