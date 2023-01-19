@@ -9,7 +9,7 @@
 #define NVAFX_API
 
 #ifdef LIBNVAFX_ENABLED
-#define MIN_AFX_SDK_VERSION 1 << 24 | 2 << 16 | 13 << 0
+#define MIN_AFX_SDK_VERSION (1 << 24 | 2 << 16 | 13 << 0)
 static HMODULE nv_audiofx = NULL;
 static HMODULE nv_cuda = NULL;
 
@@ -312,15 +312,26 @@ static bool load_lib(void)
 
 static unsigned int get_lib_version(void)
 {
+	static unsigned int version = 0;
+	static bool version_checked = false;
+
+	if (version_checked)
+		return version;
+
+	version_checked = true;
+
 	char path[MAX_PATH];
 	if (!nvafx_get_sdk_path(path, sizeof(path)))
 		return 0;
 
 	SetDllDirectoryA(path);
+
 	struct win_version_info nto_ver = {0};
-	get_dll_ver(L"NVAudioEffects.dll", &nto_ver);
-	unsigned int version = nto_ver.major << 24 | nto_ver.minor << 16 |
-			       nto_ver.build << 8 | nto_ver.revis << 0;
+	if (get_dll_ver(L"NVAudioEffects.dll", &nto_ver))
+		version = nto_ver.major << 24 | nto_ver.minor << 16 |
+			  nto_ver.build << 8 | nto_ver.revis << 0;
+
+	SetDllDirectoryA(NULL);
 	return version;
 }
 #endif
