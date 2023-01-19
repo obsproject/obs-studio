@@ -1,7 +1,17 @@
 #include <windows.h>
 #include <obs-module.h>
+#include <util/dstr.h>
 #include <util/windows/win-version.h>
 #include <util/platform.h>
+
+#include <file-updater/file-updater.h>
+
+#include "compat-helpers.h"
+#include "compat-format-ver.h"
+#include "compat-config.h"
+
+#define WIN_CAPTURE_LOG_STRING "[win-capture plugin] "
+#define WIN_CAPTURE_VER_STRING "win-capture plugin (libobs " OBS_VERSION ")"
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("win-capture", "en-US")
@@ -16,6 +26,7 @@ extern struct obs_source_info window_capture_info;
 extern struct obs_source_info game_capture_info;
 
 static HANDLE init_hooks_thread = NULL;
+static update_info_t *update_info = NULL;
 
 extern bool cached_versions_match(void);
 extern bool load_cached_graphics_offsets(bool is32bit, const char *config_path);
@@ -66,6 +77,27 @@ void wait_for_hook_initialization(void)
 	}
 }
 
+static bool confirm_compat_file(void *param, struct file_download_data *file)
+{
+	if (astrcmpi(file->name, "compatibility.json") == 0) {
+		obs_data_t *data;
+		int format_version;
+
+		data = obs_data_create_from_json((char *)file->buffer.array);
+		if (!data)
+			return false;
+
+		format_version = (int)obs_data_get_int(data, "format_version");
+		obs_data_release(data);
+
+		if (format_version != COMPAT_FORMAT_VERSION)
+			return false;
+	}
+
+	UNUSED_PARAMETER(param);
+	return true;
+}
+
 void init_hook_files(void);
 
 bool graphics_uses_d3d11 = false;
@@ -75,16 +107,30 @@ bool obs_module_load(void)
 {
 	struct win_version_info ver;
 	bool win8_or_above = false;
+	char *local_dir;
 	char *config_dir;
+
+	char update_url[128];
+	snprintf(update_url, sizeof(update_url), "%s/v%d", COMPAT_URL,
+		 COMPAT_FORMAT_VERSION);
 
 	struct win_version_info win1903 = {
 		.major = 10, .minor = 0, .build = 18362, .revis = 0};
 
+	local_dir = obs_module_file(NULL);
 	config_dir = obs_module_config_path(NULL);
 	if (config_dir) {
 		os_mkdirs(config_dir);
-		bfree(config_dir);
+
+		if (local_dir) {
+			update_info = update_info_create(
+				WIN_CAPTURE_LOG_STRING, WIN_CAPTURE_VER_STRING,
+				update_url, local_dir, config_dir,
+				confirm_compat_file, NULL);
+		}
 	}
+	bfree(config_dir);
+	bfree(local_dir);
 
 	get_win_ver(&ver);
 
@@ -117,4 +163,6 @@ bool obs_module_load(void)
 void obs_module_unload(void)
 {
 	wait_for_hook_initialization();
+	update_info_destroy(update_info);
+	compat_json_free();
 }
