@@ -501,3 +501,14 @@ const char *obs_service_get_preferred_output_type(const obs_service_t *service)
 		return service->info.get_output_type(service->context.data);
 	return NULL;
 }
+
+const char *obs_service_get_connect_info(const obs_service_t *service,
+					 uint32_t type)
+{
+	if (!obs_service_valid(service, "obs_service_get_info"))
+		return NULL;
+
+	if (!service->info.get_connect_info)
+		return NULL;
+	return service->info.get_connect_info(service->context.data, type);
+}

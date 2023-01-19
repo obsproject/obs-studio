@@ -2508,16 +2508,20 @@ EXPORT void obs_service_update(obs_service_t *service, obs_data_t *settings);
 EXPORT obs_data_t *obs_service_get_settings(const obs_service_t *service);
 
 /** Returns the URL for this service context */
-EXPORT const char *obs_service_get_url(const obs_service_t *service);
+OBS_DEPRECATED EXPORT const char *
+obs_service_get_url(const obs_service_t *service);
 
 /** Returns the stream key (if any) for this service context */
-EXPORT const char *obs_service_get_key(const obs_service_t *service);
+OBS_DEPRECATED EXPORT const char *
+obs_service_get_key(const obs_service_t *service);
 
 /** Returns the username (if any) for this service context */
-EXPORT const char *obs_service_get_username(const obs_service_t *service);
+OBS_DEPRECATED EXPORT const char *
+obs_service_get_username(const obs_service_t *service);
 
 /** Returns the password (if any) for this service context */
-EXPORT const char *obs_service_get_password(const obs_service_t *service);
+OBS_DEPRECATED EXPORT const char *
+obs_service_get_password(const obs_service_t *service);
 
 /**
  * Applies service-specific video encoder settings.
@@ -2558,6 +2562,9 @@ EXPORT const char *obs_service_get_protocol(const obs_service_t *service);
 
 EXPORT const char *
 obs_service_get_preferred_output_type(const obs_service_t *service);
+
+EXPORT const char *obs_service_get_connect_info(const obs_service_t *service,
+						uint32_t type);
 
 /* ------------------------------------------------------------------------- */
 /* Source frame allocation functions */

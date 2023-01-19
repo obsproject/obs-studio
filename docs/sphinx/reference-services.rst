@@ -161,6 +161,28 @@ Service Definition Structure
 
    :return: The protocol used by the service
 
+.. member:: const char *(*obs_service_info.get_connect_info)(void *data, uint32_t type)
+
+   Output a service connection info related to a given type value:
+
+   - **OBS_SERVICE_CONNECT_INFO_SERVER_URL** - Server URL (0)
+
+   - **OBS_SERVICE_CONNECT_INFO_STREAM_ID** - Stream ID (2)
+
+   - **OBS_SERVICE_CONNECT_INFO_STREAM_KEY** - Stream key (alias of **OBS_SERVICE_CONNECT_INFO_STREAM_ID**)
+
+   - **OBS_SERVICE_CONNECT_INFO_USERNAME** - Username (4)
+
+   - **OBS_SERVICE_CONNECT_INFO_PASSWORD** - Password (6)
+
+   - **OBS_SERVICE_CONNECT_INFO_ENCRYPT_PASSPHRASE** - Encryption passphrase (8)
+
+   - Odd values as types are reserved for third-party protocols
+
+   Depending on the protocol, the service will have to provide information
+   to the output to be able to connect.
+
+   Irrelevant or unused types can return `NULL`.
 
 General Service Functions
 -------------------------
@@ -283,11 +305,17 @@ General Service Functions
 
   :return: The URL currently used for this service
 
+.. deprecated:: 29.1.0
+   Use :c:func:`obs_service_get_connect_info()` instead.
+
 ---------------------
 
 .. function:: const char *obs_service_get_key(const obs_service_t *service)
 
   :return: Stream key (if any) currently used for this service
+
+.. deprecated:: 29.1.0
+   Use :c:func:`obs_service_get_connect_info()` instead.
 
 ---------------------
 
@@ -295,11 +323,17 @@ General Service Functions
 
    :return: User name (if any) currently used for this service
 
+.. deprecated:: 29.1.0
+   Use :c:func:`obs_service_get_connect_info()` instead.
+
 ---------------------
 
 .. function:: const char *obs_service_get_password(const obs_service_t *service)
 
    :return: Password (if any) currently used for this service
+
+.. deprecated:: 29.1.0
+   Use :c:func:`obs_service_get_connect_info()` instead.
 
 ---------------------
 
@@ -337,6 +371,12 @@ General Service Functions
 .. function:: const char *obs_service_get_preferred_output_type(const obs_service_t *service)
 
    :return: The output type that should be preferred with this service
+
+.. function:: const char *obs_service_get_connect_info(const obs_service_t *service, uint32_t type)
+
+   :param type: Check :c:member:`obs_service_info.get_connect_info` for
+                type values.
+   :return: Connection info related to the type value.
 
 .. ---------------------------------------------------------------------------
 
