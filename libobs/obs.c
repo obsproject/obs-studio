@@ -1686,7 +1686,8 @@ int obs_remove_video_info(struct obs_video_info *ovi)
 		}
 	}
 	da_erase_item(obs->video.canvases, ovi);
-	blog(LOG_DEBUG, "[VIDEO_CANVAS] video canvases left after resize %d from before resize %d",
+	blog(LOG_DEBUG,
+	     "[VIDEO_CANVAS] video canvases left after resize %d from before resize %d",
 	     obs->video.canvases.num, num);
 	pthread_mutex_unlock(&obs->video.canvases_mutex);
 
