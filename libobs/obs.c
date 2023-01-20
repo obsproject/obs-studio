@@ -1682,8 +1682,8 @@ int obs_remove_video_info(struct obs_video_info *ovi)
 	size_t num = obs->video.canvases.num;
 	for (size_t i = 0; i < num; i++) {
 		if (obs->video.canvases.array[i] == ovi) {
-			da_erase(obs->video.canvases, i);
 			bfree(obs->video.canvases.array[i]);
+			da_erase(obs->video.canvases, i);
 			break;
 		}
 	}
