@@ -32,14 +32,14 @@ jobs:
 
           case ${GITHUB_REF##*/} in
             +([0-9]).+([0-9]).+([0-9]) )
-              echo 'valid_tag=${{ toJSON(true) }}' >> $GITHUB_OUTPUT
+              echo 'valid_tag=true' >> $GITHUB_OUTPUT
               echo 'matrix=["beta", "stable"]' >> $GITHUB_OUTPUT
               ;;
             +([0-9]).+([0-9]).+([0-9])-@(beta|rc)*([0-9]) )
-              echo 'valid_tag=${{ toJSON(true) }}' >> $GITHUB_OUTPUT
+              echo 'valid_tag=true' >> $GITHUB_OUTPUT
               echo 'matrix=["beta"]' >> $GITHUB_OUTPUT
               ;;
-            * ) echo 'valid_tag=${{ toJSON(false) }}' >> $GITHUB_OUTPUT ;;
+            * ) echo 'valid_tag=false' >> $GITHUB_OUTPUT ;;
           esac
 
   publish:
