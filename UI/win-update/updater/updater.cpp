@@ -1648,6 +1648,7 @@ static bool Update(wchar_t *cmdLine)
 	};
 
 	if (!bIsPortable) {
+		Status(L"Installing Virtual Camera...");
 		wchar_t regsvr[MAX_PATH];
 		wchar_t src[MAX_PATH];
 		wchar_t tmp[MAX_PATH];
@@ -1681,11 +1682,13 @@ static bool Update(wchar_t *cmdLine)
 	/* ------------------------------------- *
 	 * Update hook files and vulkan registry */
 
+	Status(L"Updating Game Capture hooks...");
 	UpdateHookFiles();
 
 	/* ------------------------------------- *
 	 * Finish                                */
 
+	Status(L"Cleaning up...");
 	/* If we get here, all updates installed successfully so we can purge
 	 * the old versions */
 	for (update_t &update : updates) {
