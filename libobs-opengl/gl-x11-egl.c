@@ -82,6 +82,7 @@ struct gl_platform {
 	EGLConfig config;
 	EGLContext context;
 	EGLSurface pbuffer;
+	bool close_xdisplay;
 };
 
 /* The following utility function is copied verbatim from GLX code. */
@@ -269,15 +270,19 @@ static void gl_x11_egl_windowinfo_destroy(struct gl_windowinfo *info)
 	bfree(info);
 }
 
-static Display *open_windowless_display(Display *platform_display)
+static Display *open_windowless_display(bool *should_close)
 {
+	Display *platform_display = obs_get_nix_platform_display();
 	Display *display;
 	xcb_connection_t *xcb_conn;
 
-	if (platform_display)
+	if (platform_display) {
 		display = platform_display;
-	else
+		*should_close = false;
+	} else {
 		display = XOpenDisplay(NULL);
+		*should_close = true;
+	}
 
 	if (!display) {
 		blog(LOG_ERROR, "Unable to open new X connection!");
@@ -298,7 +303,8 @@ static Display *open_windowless_display(Display *platform_display)
 	return display;
 
 error:
-	XCloseDisplay(display);
+	if (*should_close)
+		XCloseDisplay(display);
 	return NULL;
 }
 
@@ -325,8 +331,7 @@ static struct gl_platform *gl_x11_egl_platform_create(gs_device_t *device,
 	   For an explanation see here: http://xcb.freedesktop.org/MixingCalls/
 	   Essentially, EGL requires Xlib. Everything else we use xcb. */
 	struct gl_platform *plat = bmalloc(sizeof(struct gl_platform));
-	Display *platform_display = obs_get_nix_platform_display();
-	Display *display = open_windowless_display(platform_display);
+	Display *display = open_windowless_display(&plat->close_xdisplay);
 
 	if (!display) {
 		goto fail_display_open;
@@ -363,7 +368,8 @@ fail_make_current:
 	gl_context_destroy(plat);
 fail_context_create:
 fail_load_gl:
-	XCloseDisplay(display);
+	if (plat->close_xdisplay)
+		XCloseDisplay(plat->xdisplay);
 fail_display_open:
 	bfree(plat);
 	plat = NULL;
