@@ -25,6 +25,7 @@
 #include <string>
 #include <mutex>
 #include <unordered_set>
+#include <queue>
 
 using namespace std;
 using namespace json11;
@@ -356,6 +357,7 @@ struct deletion_t {
 	}
 };
 
+static unordered_map<string, wstring> hashes;
 static vector<update_t> updates;
 static vector<deletion_t> deletions;
 static mutex updateMutex;
@@ -594,6 +596,72 @@ static inline bool WideToUTF8(char *utf8, int utf8Size, const wchar_t *wide)
 				     nullptr, nullptr);
 }
 
+#define UTF8ToWideBuf(wide, utf8) UTF8ToWide(wide, _countof(wide), utf8)
+#define WideToUTF8Buf(utf8, wide) WideToUTF8(utf8, _countof(utf8), wide)
+
+/* ----------------------------------------------------------------------- */
+
+queue<string> hashQueue;
+
+void HasherThread()
+{
+	bool hasherThreadFailure = false;
+	unique_lock<mutex> ulock(updateMutex, defer_lock);
+
+	while (true) {
+		ulock.lock();
+		if (hashQueue.empty())
+			return;
+
+		auto fileName = hashQueue.front();
+		hashQueue.pop();
+
+		ulock.unlock();
+
+		wchar_t updateFileName[MAX_PATH];
+
+		if (!UTF8ToWideBuf(updateFileName, fileName.c_str()))
+			continue;
+		if (!IsSafeFilename(updateFileName))
+			continue;
+
+		BYTE existingHash[BLAKE2_HASH_LENGTH];
+		wchar_t fileHashStr[BLAKE2_HASH_STR_LENGTH];
+
+		if (CalculateFileHash(updateFileName, existingHash)) {
+			HashToString(existingHash, fileHashStr);
+			ulock.lock();
+			hashes.emplace(fileName, fileHashStr);
+			ulock.unlock();
+		}
+	}
+}
+
+static void RunHasherWorkers(int num, const Json &packages)
+try {
+
+	for (const Json &package : packages.array_items()) {
+		for (const Json &file : package["files"].array_items()) {
+			if (!file["name"].is_string())
+				continue;
+			hashQueue.push(file["name"].string_value());
+		}
+	}
+
+	vector<future<void>> futures;
+	futures.resize(num);
+
+	for (auto &result : futures) {
+		result = async(launch::async, HasherThread);
+	}
+	for (auto &result : futures) {
+		result.wait();
+	}
+} catch (...) {
+}
+
+/* ----------------------------------------------------------------------- */
+
 static inline bool FileExists(const wchar_t *path)
 {
 	WIN32_FIND_DATAW wfd;
@@ -647,9 +715,6 @@ static inline bool is_64bit_file(const char *file)
 	       strstr(file, "64.dll") != nullptr ||
 	       strstr(file, "64.exe") != nullptr;
 }
-
-#define UTF8ToWideBuf(wide, utf8) UTF8ToWide(wide, _countof(wide), utf8)
-#define WideToUTF8Buf(utf8, wide) WideToUTF8(utf8, _countof(utf8), wide)
 
 #define UPDATE_URL L"https://cdn-fastly.obsproject.com/update_studio"
 
@@ -737,16 +802,14 @@ static bool AddPackageUpdateFiles(const Json &root, size_t idx,
 
 		/* Check file hash */
 
-		BYTE existingHash[BLAKE2_HASH_LENGTH];
-		wchar_t fileHashStr[BLAKE2_HASH_STR_LENGTH];
+		wstring fileHashStr;
 		bool has_hash;
 
 		/* We don't really care if this fails, it's just to avoid
 		 * wasting bandwidth by downloading unmodified files */
-		if (CalculateFileHash(updateFileName, existingHash)) {
-
-			HashToString(existingHash, fileHashStr);
-			if (wcscmp(fileHashStr, updateHashStr) == 0)
+		if (hashes.count(fileUTF8)) {
+			fileHashStr = hashes[fileUTF8];
+			if (fileHashStr == updateHashStr)
 				continue;
 
 			has_hash = true;
@@ -771,7 +834,7 @@ static bool AddPackageUpdateFiles(const Json &root, size_t idx,
 
 		update.has_hash = has_hash;
 		if (has_hash)
-			StringToHash(fileHashStr, update.my_hash);
+			StringToHash(fileHashStr.data(), update.my_hash);
 
 		updates.push_back(move(update));
 
@@ -1402,6 +1465,11 @@ static bool Update(wchar_t *cmdLine)
 		Status(L"Update failed: Invalid update manifest");
 		return false;
 	}
+
+	/* ------------------------------------- *
+	 * Hash local files listed in manifest   */
+
+	RunHasherWorkers(4, root["packages"]);
 
 	/* ------------------------------------- *
 	 * Parse current manifest update files   */
