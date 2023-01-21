@@ -34,6 +34,7 @@
 #define S_OUTPUT_GAIN                   "output_gain"
 #define S_DETECTOR                      "detector"
 #define S_PRESETS                       "presets"
+#define S_KNEE                          "knee_width"
 
 #define MT_ obs_module_text
 #define TEXT_RATIO                      MT_("expander.Ratio")
@@ -48,6 +49,7 @@
 #define TEXT_PRESETS                    MT_("expander.Presets")
 #define TEXT_PRESETS_EXP                MT_("expander.Presets.Expander")
 #define TEXT_PRESETS_GATE               MT_("expander.Presets.Gate")
+#define TEXT_KNEE                       MT_("expander.Knee.Width")
 
 #define MIN_RATIO                       1.0f
 #define MAX_RATIO                       20.0f
@@ -95,6 +97,7 @@ struct expander_data {
 	float *env_in;
 	size_t env_in_len;
 	bool is_upwcomp;
+	float knee;
 };
 
 enum {
@@ -179,6 +182,7 @@ static void upward_compressor_defaults(obs_data_t *s)
 	obs_data_set_default_int(s, S_RELEASE_TIME, 50);
 	obs_data_set_default_double(s, S_OUTPUT_GAIN, 0.0);
 	obs_data_set_default_string(s, S_DETECTOR, "RMS");
+	obs_data_set_default_int(s, S_KNEE, 10);
 }
 
 static void expander_update(void *data, obs_data_t *s)
@@ -208,6 +212,8 @@ static void expander_update(void *data, obs_data_t *s)
 		(float)obs_data_get_int(s, S_RELEASE_TIME);
 	const float output_gain_db =
 		(float)obs_data_get_double(s, S_OUTPUT_GAIN);
+	const float knee = cd->is_upwcomp ? (float)obs_data_get_int(s, S_KNEE)
+					  : 0.0f;
 
 	cd->ratio = (float)obs_data_get_double(s, S_RATIO);
 
@@ -220,6 +226,7 @@ static void expander_update(void *data, obs_data_t *s)
 	cd->num_channels = num_channels;
 	cd->sample_rate = sample_rate;
 	cd->slope = 1.0f - cd->ratio;
+	cd->knee = knee;
 
 	const char *detect_mode = obs_data_get_string(s, S_DETECTOR);
 	if (strcmp(detect_mode, "RMS") == 0)
@@ -343,7 +350,8 @@ static inline void process_sample(size_t idx, float *samples, float *env_buf,
 				  float channel_gain, float threshold,
 				  float slope, float attack_gain,
 				  float inv_attack_gain, float release_gain,
-				  float inv_release_gain, float output_gain)
+				  float inv_release_gain, float output_gain,
+				  float knee)
 {
 	/* --------------------------------- */
 	/* gain stage of expansion           */
@@ -354,27 +362,33 @@ static inline void process_sample(size_t idx, float *samples, float *env_buf,
 	if (is_upwcomp && env_db <= (threshold - 60.0f) / 2)
 		diff = env_db + 60.0f;
 
-	float gain = diff > 0.0f ? fmaxf(slope * diff, -60.0f) : 0.0f;
-	float prev_gain = gain_db[idx - 1];
+	float gain = 0.0f;
+	// Note that the gain is always >= 0 for the upward compressor
+	// but is always <=0 for the expander.
+	if (is_upwcomp) {
+		// gain above knee (included for clarity):
+		if (env_db >= threshold + knee / 2)
+			gain = 0.0f;
+		// gain below knee:
+		if (threshold - knee / 2 >= env_db)
+			gain = slope * diff;
+		// gain in knee:
+		if (env_db > threshold - knee / 2 &&
+		    threshold + knee / 2 > env_db)
+			gain = slope * powf(diff + knee / 2, 2) / (2.0f * knee);
+	} else {
+		gain = diff > 0.0f ? fmaxf(slope * diff, -60.0f) : 0.0f;
+	}
+	float prev_gain = idx > 0 ? gain_db[idx - 1] : channel_gain;
 
 	/* --------------------------------- */
 	/* ballistics (attack/release)       */
 
-	if (idx > 0) {
-		if (gain > prev_gain)
-			gain_db[idx] = attack_gain * prev_gain +
-				       inv_attack_gain * gain;
-		else
-			gain_db[idx] = release_gain * prev_gain +
-				       inv_release_gain * gain;
-	} else {
-		if (gain > channel_gain)
-			gain_db[idx] = attack_gain * channel_gain +
-				       inv_attack_gain * gain;
-		else
-			gain_db[idx] = release_gain * channel_gain +
-				       inv_release_gain * gain;
-	}
+	if (gain > prev_gain)
+		gain_db[idx] = attack_gain * prev_gain + inv_attack_gain * gain;
+	else
+		gain_db[idx] =
+			release_gain * prev_gain + inv_release_gain * gain;
 
 	/* --------------------------------- */
 	/* output                            */
@@ -400,6 +414,7 @@ static inline void process_expansion(struct expander_data *cd, float **samples,
 	const float slope = cd->slope;
 	const float output_gain = cd->output_gain;
 	const bool is_upwcomp = cd->is_upwcomp;
+	const float knee = cd->knee;
 
 	if (cd->gain_db_len < num_samples)
 		resize_gain_db_buffer(cd, num_samples);
@@ -419,7 +434,7 @@ static inline void process_expansion(struct expander_data *cd, float **samples,
 				       is_upwcomp, channel_gain, threshold,
 				       slope, attack_gain, inv_attack_gain,
 				       release_gain, inv_release_gain,
-				       output_gain);
+				       output_gain, knee);
 		}
 		cd->gain_db_buf[chan] = gain_db[num_samples - 1];
 	}
@@ -484,6 +499,10 @@ static obs_properties_t *expander_properties(void *data)
 			OBS_COMBO_FORMAT_STRING);
 		obs_property_list_add_string(detect, TEXT_RMS, "RMS");
 		obs_property_list_add_string(detect, TEXT_PEAK, "peak");
+	} else {
+		p = obs_properties_add_int_slider(props, S_KNEE, TEXT_KNEE, 0,
+						  20, 1);
+		obs_property_float_set_suffix(p, " dB");
 	}
 	return props;
 }
