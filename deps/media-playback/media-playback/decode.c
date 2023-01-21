@@ -439,7 +439,7 @@ bool mp_decode_next(struct mp_decode *d)
 					     d->stream->time_base,
 					     (AVRational){1, 1000000000});
 
-		int64_t duration = d->in_frame->pkt_duration;
+		int64_t duration = d->in_frame->duration;
 		if (!duration)
 			duration = get_estimated_duration(d, last_pts);
 		else
