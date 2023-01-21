@@ -144,6 +144,41 @@ static void update_pw_versions(obs_pipewire *obs_pw, const char *version)
 		blog(LOG_WARNING, "[pipewire] failed to parse server version");
 }
 
+static uint32_t calc_spa_enumformat_buffer_size(obs_pipewire *obs_pw)
+{
+	// from spa/pod/pod.h
+	uint32_t spa_pod_object_size = sizeof(struct spa_pod_object);
+	uint32_t spa_pod_prop_size = sizeof(struct spa_pod_prop);
+	uint32_t spa_pod_value_size = 1 * sizeof(uint64_t);
+	uint32_t spa_pod_choice_size = 2 * sizeof(uint64_t);
+	// This is counted from the build_format function
+	uint32_t n_objects = 0;
+	uint32_t n_props = 0;
+	uint32_t n_values = 0;
+	uint32_t n_choices = 0;
+	uint32_t size;
+
+	for (size_t i = 0; i < obs_pw->format_info.num; i++) {
+		if (obs_pw->format_info.array[i].modifiers.num == 0)
+			continue;
+		n_objects += 1;
+		n_props += 5 + 1;
+		n_values += 9 + 2 + obs_pw->format_info.array[i].modifiers.num;
+		n_choices += 2 + 1;
+	}
+	for (size_t i = 0; i < obs_pw->format_info.num; i++) {
+		n_objects += 1;
+		n_props += 5;
+		n_values += 9;
+		n_choices += 2;
+	}
+	size = n_objects * spa_pod_object_size + n_props * spa_pod_prop_size +
+	       n_values * spa_pod_value_size + n_choices * spa_pod_choice_size;
+	blog(LOG_DEBUG, "[pipewire]: calculated spa enumFormat buffer size %u",
+	     size);
+	return size;
+}
+
 static void teardown_pipewire(obs_pipewire *obs_pw)
 {
 	if (obs_pw->thread_loop) {
@@ -408,6 +443,10 @@ static bool build_format_params(obs_pipewire *obs_pw,
 			obs_pw->format_info.array[i].spa_format,
 			obs_pw->format_info.array[i].modifiers.array,
 			obs_pw->format_info.array[i].modifiers.num);
+		if (!params[params_count - 1]) {
+			blog(LOG_ERROR, "[pipewire] Failed to format param");
+			return false;
+		}
 	}
 
 build_shm:
@@ -415,6 +454,10 @@ build_shm:
 		params[params_count++] = build_format(
 			pod_builder, &obs_pw->video_info,
 			obs_pw->format_info.array[i].spa_format, NULL, 0);
+		if (!params[params_count - 1]) {
+			blog(LOG_ERROR, "[pipewire] Failed to format param");
+			return false;
+		}
 	}
 	*param_list = params;
 	*n_params = params_count;
@@ -521,7 +564,7 @@ static void renegotiate_format(void *data, uint64_t expirations)
 
 	pw_thread_loop_lock(obs_pw->thread_loop);
 
-	uint8_t params_buffer[2048];
+	uint8_t params_buffer[calc_spa_enumformat_buffer_size(obs_pw)];
 	struct spa_pod_builder pod_builder =
 		SPA_POD_BUILDER_INIT(params_buffer, sizeof(params_buffer));
 	uint32_t n_params;
@@ -970,7 +1013,7 @@ void obs_pipewire_connect_stream(obs_pipewire *obs_pw, int pipewire_node,
 	struct spa_pod_builder pod_builder;
 	const struct spa_pod **params = NULL;
 	uint32_t n_params;
-	uint8_t params_buffer[2048];
+	uint8_t params_buffer[calc_spa_enumformat_buffer_size(obs_pw)];
 
 	pw_thread_loop_lock(obs_pw->thread_loop);
 
