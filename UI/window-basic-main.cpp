@@ -3243,6 +3243,8 @@ void OBSBasic::UpdateContextBar(bool force)
 		ui->sourceFiltersButton->setEnabled(true);
 		ui->sourcePropertiesButton->setEnabled(
 			obs_source_configurable(source));
+		ui->sourceScreenshotButton->setEnabled(flags &
+						       OBS_SOURCE_VIDEO);
 	} else {
 		ClearContextBar();
 		ui->contextSourceIcon->hide();
@@ -3253,16 +3255,19 @@ void OBSBasic::UpdateContextBar(bool force)
 		ui->sourceFiltersButton->setEnabled(false);
 		ui->sourcePropertiesButton->setEnabled(false);
 		ui->sourceInteractButton->setVisible(false);
+		ui->sourceScreenshotButton->setEnabled(false);
 	}
 
 	if (contextBarSize == ContextBarSize_Normal) {
 		ui->sourcePropertiesButton->setText(QTStr("Properties"));
 		ui->sourceFiltersButton->setText(QTStr("Filters"));
 		ui->sourceInteractButton->setText(QTStr("Interact"));
+		ui->sourceScreenshotButton->setText(QTStr("Screenshot"));
 	} else {
 		ui->sourcePropertiesButton->setText("");
 		ui->sourceFiltersButton->setText("");
 		ui->sourceInteractButton->setText("");
+		ui->sourceScreenshotButton->setText("");
 	}
 }
 
@@ -10233,6 +10238,11 @@ void OBSBasic::on_actionSceneFilters_triggered()
 void OBSBasic::on_sourceInteractButton_clicked()
 {
 	on_actionInteract_triggered();
+}
+
+void OBSBasic::on_sourceScreenshotButton_clicked()
+{
+	ScreenshotSelectedSource();
 }
 
 void OBSBasic::ShowStatusBarMessage(const QString &message)

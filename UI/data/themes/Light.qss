@@ -526,6 +526,10 @@ QToolButton:pressed {
     qproperty-icon: url(./Light/filter.svg);
 }
 
+* [themeID="cameraIcon"] {
+    qproperty-icon: url(./Dark/sources/camera.svg);
+}
+
 QToolBarExtension {
     background: palette(button);
     min-width: 12px;

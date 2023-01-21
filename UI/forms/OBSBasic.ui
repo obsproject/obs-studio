@@ -434,6 +434,32 @@
            </widget>
           </item>
           <item>
+           <widget class="QPushButton" name="sourceScreenshotButton">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>22</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Screenshot</string>
+            </property>
+            <property name="toolTip">
+             <string>Screenshot.Source</string>
+            </property>
+            <property name="icon">
+             <iconset resource="obs.qrc">
+              <normaloff>:/res/images/sources/camera.svg</normaloff>:/res/images/sources/camera.svg</iconset>
+            </property>
+            <property name="themeID" stdset="0">
+             <string>cameraIcon</string>
+            </property>
+            <property name="themeID2" stdset="0">
+             <string>contextBarButton</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="Line" name="line">
             <property name="orientation">
              <enum>Qt::Vertical</enum>

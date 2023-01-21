@@ -332,6 +332,10 @@ QToolButton:pressed {
     qproperty-icon: url(./Dark/filter.svg);
 }
 
+* [themeID="cameraIcon"] {
+    qproperty-icon: url(./Dark/sources/camera.svg);
+}
+
 /* Tab Widget */
 
 QTabWidget::pane { /* The tab widget frame */
