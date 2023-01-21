@@ -385,6 +385,8 @@ static void gl_x11_egl_platform_destroy(struct gl_platform *plat)
 
 	gl_context_destroy(plat);
 	eglTerminate(plat->edisplay);
+	if (plat->close_xdisplay)
+		XCloseDisplay(plat->xdisplay);
 	bfree(plat);
 }
 
