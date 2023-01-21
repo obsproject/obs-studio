@@ -5689,8 +5689,12 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		popup.addMenu(sourceProjector);
 		popup.addAction(QTStr("SourceWindow"), this,
 				SLOT(OpenSourceWindow()));
-		popup.addAction(QTStr("Screenshot.Source"), this,
-				SLOT(ScreenshotSelectedSource()));
+
+		QAction *screenshotAction =
+			popup.addAction(QTStr("Screenshot.Source"), this,
+					SLOT(ScreenshotSelectedSource()));
+		screenshotAction->setEnabled(flags & OBS_SOURCE_VIDEO);
+
 		popup.addSeparator();
 
 		if (flags & OBS_SOURCE_INTERACTION)
