@@ -36,8 +36,6 @@ static bool source_name_exists(const Json::array &sources, const string &name)
 #define translate_int(in_key, in, out_key, out, off) \
 	out[out_key] = in[in_key].int_value() + off;
 #define translate_string(in_key, in, out_key, out) out[out_key] = in[in_key];
-#define translate_double(in_key, in, out_key, out) \
-	translate_string(in_key, in, out_key, out);
 #define translate_bool(in_key, in, out_key, out) \
 	out[out_key] = in[in_key].int_value() == 1;
 
@@ -271,7 +269,6 @@ static Json::object translate_source(const Json &in, const Json &sources)
 
 #undef translate_int
 #undef translate_string
-#undef translate_double
 #undef translate_bool
 
 static void translate_sc(const Json &in, Json &out)
