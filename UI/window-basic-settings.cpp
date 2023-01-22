@@ -4444,16 +4444,6 @@ void RestrictResetBitrates(initializer_list<QComboBox *> boxes, int maxbitrate)
 	}
 }
 
-void OBSBasicSettings::VideoChangedRestart()
-{
-	if (!loading) {
-		videoChanged = true;
-		ui->videoMsg->setText(QTStr("Basic.Settings.ProgramRestart"));
-		sender()->setProperty("changed", QVariant(true));
-		EnableApplyButton(true);
-	}
-}
-
 void OBSBasicSettings::AdvancedChangedRestart()
 {
 	if (!loading) {
