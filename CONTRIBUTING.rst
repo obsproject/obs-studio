@@ -7,14 +7,14 @@ Quick Links for Contributing
 - `Compiling and building OBS Studio <https://github.com/obsproject/obs-studio/wiki/Install-Instructions>`_.
   
 
-- `Bug tracker <https://github.com/obsproject/obs-studio/issues>`_.
+- `Bug tracker <https://github.com/obsproject/obs-studio/issues>`_
   
 
-- `Discord Server <https://obsproject.com/discord>`_, (Development chat: #development).
+- `Discord Server <https://obsproject.com/discord>`_ (Development chat: #development)
  
-- `Development forum <https://obsproject.com/forum/list/general-development.21/>`_.
+- `Development forum <https://obsproject.com/forum/list/general-development.21/>`_
  
-- `Developer/API Documentation <https://obsproject.com/docs>`_.
+- `Developer/API Documentation <https://obsproject.com/docs>`_
 
 - To contribute language translations, **do not make pull requests**.
   Instead, use **Crowdin**.  `Read here <https://obsproject.com/forum/threads/how-to-contribute-translations-for-obs.16327/>`_ for more information.
@@ -55,7 +55,7 @@ Commit Guidelines
   and a space (unless modifying a file in the base directory).  After
   that, the first word should be capitalized.
 
-  So for example, if you are modifying the obs-ffmpeg plugin, write in this format::
+  So for example, if you are modifying the obs-ffmpeg plugin::
 
     obs-ffmpeg: Fix bug with audio output
 
