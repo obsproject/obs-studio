@@ -328,7 +328,7 @@ void SourceTreeItem::mouseDoubleClickEvent(QMouseEvent *event)
 		obs_source_t *source = obs_sceneitem_get_source(sceneitem);
 		OBSBasic *main =
 			reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
-		if (source) {
+		if (obs_source_configurable(source)) {
 			main->CreatePropertiesWindow(source);
 		}
 	}
