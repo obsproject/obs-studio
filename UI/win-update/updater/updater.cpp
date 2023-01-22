@@ -141,8 +141,8 @@ try {
 	WinHandle hSrc;
 	WinHandle hDest;
 
-	hSrc = CreateFile(src, GENERIC_READ, 0, nullptr, OPEN_EXISTING,
-			  FILE_FLAG_SEQUENTIAL_SCAN, nullptr);
+	hSrc = CreateFile(src, GENERIC_READ, FILE_SHARE_READ, nullptr,
+			  OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, nullptr);
 	if (!hSrc.Valid())
 		throw LastError();
 
@@ -1137,6 +1137,69 @@ static bool UpdateFile(update_t &file)
 	return true;
 }
 
+queue<reference_wrapper<update_t>> updateQueue;
+static int lastPosition = 0;
+static int installed = 0;
+static bool updateThreadFailed = false;
+
+static bool UpdateWorker()
+{
+	unique_lock<mutex> ulock(updateMutex, defer_lock);
+
+	while (true) {
+		ulock.lock();
+
+		if (updateThreadFailed)
+			return false;
+		if (updateQueue.empty())
+			break;
+
+		auto update = updateQueue.front();
+		updateQueue.pop();
+		ulock.unlock();
+
+		if (!UpdateFile(update)) {
+			updateThreadFailed = true;
+			return false;
+		} else {
+			int position = (int)(((float)++installed /
+					      (float)completedUpdates) *
+					     100.0f);
+			if (position > lastPosition) {
+				lastPosition = position;
+				SendDlgItemMessage(hwndMain, IDC_PROGRESS,
+						   PBM_SETPOS, position, 0);
+			}
+		}
+	}
+
+	return true;
+}
+
+static bool RunUpdateWorkers(int num)
+try {
+	for (update_t &update : updates) {
+		updateQueue.push(update);
+	}
+
+	vector<future<bool>> thread_success_results;
+	thread_success_results.resize(num);
+
+	for (future<bool> &result : thread_success_results) {
+		result = async(launch::async, UpdateWorker);
+	}
+	for (future<bool> &result : thread_success_results) {
+		if (!result.get()) {
+			return false;
+		}
+	}
+
+	return true;
+
+} catch (...) {
+	return false;
+}
+
 #define PATCH_MANIFEST_URL \
 	L"https://obsproject.com/update_studio/getpatchmanifest"
 #define HASH_NULL L"0000000000000000000000000000000000000000"
@@ -1659,21 +1722,8 @@ static bool Update(wchar_t *cmdLine)
 
 	SendDlgItemMessage(hwndMain, IDC_PROGRESS, PBM_SETPOS, 0, 0);
 
-	for (update_t &update : updates) {
-		if (!UpdateFile(update)) {
-			return false;
-		} else {
-			updatesInstalled++;
-			int position = (int)(((float)updatesInstalled /
-					      (float)completedUpdates) *
-					     100.0f);
-			if (position > lastPosition) {
-				lastPosition = position;
-				SendDlgItemMessage(hwndMain, IDC_PROGRESS,
-						   PBM_SETPOS, position, 0);
-			}
-		}
-	}
+	if (!RunUpdateWorkers(4))
+		return false;
 
 	for (deletion_t &deletion : deletions) {
 		if (!RenameRemovedFile(deletion)) {
