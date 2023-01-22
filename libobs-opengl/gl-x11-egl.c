@@ -590,7 +590,7 @@ static bool gl_x11_egl_device_query_dmabuf_capabilities(
 {
 	struct gl_platform *plat = device->plat;
 
-	return gl_egl_query_dmabuf_capabilities(plat->xdisplay, dmabuf_flags,
+	return gl_egl_query_dmabuf_capabilities(plat->edisplay, dmabuf_flags,
 						drm_formats, n_formats);
 }
 
@@ -601,7 +601,7 @@ static bool gl_x11_egl_device_query_dmabuf_modifiers_for_format(
 	struct gl_platform *plat = device->plat;
 
 	return gl_egl_query_dmabuf_modifiers_for_format(
-		plat->xdisplay, drm_format, modifiers, n_modifiers);
+		plat->edisplay, drm_format, modifiers, n_modifiers);
 }
 
 static const struct gl_winsys_vtable egl_x11_winsys_vtable = {
