@@ -428,10 +428,6 @@ static const char *display_capture_getname(void *unused)
 	return obs_module_text("DisplayCapture");
 }
 
-#define CROPPED_LENGTH(rect, origin_, length)                       \
-	fabs((rect##.size.##length - dc->crop_rect.size.##length) - \
-	     (rect##.origin.##origin_ + dc->crop_rect.origin.##origin_))
-
 static uint32_t display_capture_getwidth(void *data)
 {
 	struct display_capture *dc = data;
