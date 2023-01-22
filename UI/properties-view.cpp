@@ -1750,6 +1750,11 @@ bool WidgetInfo::PathChanged(const char *setting)
 		path = SaveFile(view, QT_UTF8(desc), QT_UTF8(default_path),
 				QT_UTF8(filter));
 
+#ifdef __APPLE__
+	// TODO: Revisit when QTBUG-42661 is fixed
+	widget->window()->raise();
+#endif
+
 	if (path.isEmpty())
 		return false;
 
@@ -2217,6 +2222,10 @@ void WidgetInfo::EditListAddFiles()
 
 	QStringList files = OpenFiles(App()->GetMainWindow(), title,
 				      QT_UTF8(default_path), QT_UTF8(filter));
+#ifdef __APPLE__
+	// TODO: Revisit when QTBUG-42661 is fixed
+	widget->window()->raise();
+#endif
 
 	if (files.count() == 0)
 		return;
@@ -2237,6 +2246,10 @@ void WidgetInfo::EditListAddDir()
 
 	QString dir = SelectDirectory(App()->GetMainWindow(), title,
 				      QT_UTF8(default_path));
+#ifdef __APPLE__
+	// TODO: Revisit when QTBUG-42661 is fixed
+	widget->window()->raise();
+#endif
 
 	if (dir.isEmpty())
 		return;
