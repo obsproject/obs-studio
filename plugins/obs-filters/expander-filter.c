@@ -351,8 +351,8 @@ static inline void process_sample(size_t idx, float *samples, float *env_buf,
 	float env_db = mul_to_db(env_buf[idx]);
 	float diff = threshold - env_db;
 
-	if (is_upwcomp && env_db <= -60.0f)
-		diff = 0.0f;
+	if (is_upwcomp && env_db <= (threshold - 60.0f) / 2)
+		diff = env_db + 60.0f;
 
 	float gain = diff > 0.0f ? fmaxf(slope * diff, -60.0f) : 0.0f;
 	float prev_gain = gain_db[idx - 1];
