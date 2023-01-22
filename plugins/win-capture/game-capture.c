@@ -30,7 +30,6 @@
 
 #define SETTING_MODE                 "capture_mode"
 #define SETTING_CAPTURE_WINDOW       "window"
-#define SETTING_ACTIVE_WINDOW        "active_window"
 #define SETTING_WINDOW_PRIORITY      "priority"
 #define SETTING_COMPATIBILITY        "sli_compatibility"
 #define SETTING_CURSOR               "capture_cursor"
@@ -1323,9 +1322,6 @@ static inline enum capture_result init_capture_data(struct game_capture *gc)
 
 	return CAPTURE_SUCCESS;
 }
-
-#define PIXEL_16BIT_SIZE 2
-#define PIXEL_32BIT_SIZE 4
 
 static inline uint32_t convert_5_to_8bit(uint16_t val)
 {
