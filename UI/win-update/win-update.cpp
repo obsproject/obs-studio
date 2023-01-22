@@ -70,8 +70,6 @@ typedef struct {
 #define BLAKE2_HASH_LENGTH 20
 #define BLAKE2_HASH_STR_LENGTH ((BLAKE2_HASH_LENGTH * 2) + 1)
 
-#define TEST_BUILD
-
 // Hard coded 4096 bit RSA public key for obsproject.com in PEM format
 static const unsigned char obs_pub[] = {
 	0x2d, 0x2d, 0x2d, 0x2d, 0x2d, 0x42, 0x45, 0x47, 0x49, 0x4e, 0x20, 0x50,
