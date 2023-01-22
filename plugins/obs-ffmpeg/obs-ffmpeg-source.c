@@ -23,8 +23,6 @@
 
 #include <media-playback/media.h>
 
-#define FF_LOG(level, format, ...) \
-	blog(level, "[Media Source]: " format, ##__VA_ARGS__)
 #define FF_LOG_S(source, level, format, ...)        \
 	blog(level, "[Media Source '%s']: " format, \
 	     obs_source_get_name(source), ##__VA_ARGS__)
