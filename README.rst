@@ -1,22 +1,25 @@
 .. figure:: https://obsproject.com/assets/images/new_icon_small-r.png
-   :alt: OBS Logo
    :align: center
-
+   :alt: OBS Logo
+   :figclass: align-center
+   
 **Open Broadcaster Software®️**
-
-OBS Studio <https://obsproject.com>
+******************************
 
 .. image:: https://github.com/obsproject/obs-studio/actions/workflows/main.yml/badge.svg?branch=master&event=push
    :alt: OBS Studio Build Status - GitHub Actions
+   :align: center
    :target: https://github.com/obsproject/obs-studio/actions/workflows/main.yml?query=event%3Apush+branch%3Amaster
+   
+.. image:: https://img.shields.io/discord/348973006581923840.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2
+   :alt: OBS Studio Discord Server
+   :target: https://obsproject.com/discord
 
 .. image:: https://badges.crowdin.net/obs-studio/localized.svg
    :alt: OBS Studio Translation Project Progress
    :target: https://crowdin.com/project/obs-studio
 
-.. image:: https://img.shields.io/discord/348973006581923840.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2
-   :alt: OBS Studio Discord Server
-   :target: https://obsproject.com/discord
+
 
 What is OBS Studio?
 -------------------
@@ -25,24 +28,24 @@ OBS Studio is a software designed for capturing, compositing, encoding,
 recording, and streaming video content efficiently.
 
 It's distributed under the GNU General Public License v2 (or any later
-version) - see the accompanying `COPYING <https://github.com/obsproject/obs-studio/blob/master/COPYING>`_ file for more details.
+version). For more details, see the accompanying `file <https://github.com/obsproject/obs-studio/blob/master/COPYING>`_. 
 
 Quick Links
 -----------
 
-- `Website <https://obsproject.com>`_.
+- `Official Website <https://obsproject.com>`_
 
-- `Help/Documentation/Guides <https://github.com/obsproject/obs-studio/wiki>`_.
+- `Help/Documentation/Guides <https://github.com/obsproject/obs-studio/wiki>`_
 
-- `Forums <https://obsproject.com/forum/>`_.
+- `Forums <https://obsproject.com/forum/>`_
 
-- `Build Instructions <https://github.com/obsproject/obs-studio/wiki/Install-Instructions>`_.
+- `Build Instructions <https://github.com/obsproject/obs-studio/wiki/Install-Instructions>`_
 
-- `Developer/API Documentation <https://obsproject.com/docs>`_.
+- `Developer/API Documentation <https://obsproject.com/docs>`_
 
-- `Donating/backing/sponsoring <https://obsproject.com/contribute>`_.
+- `Donating/backing/sponsoring <https://obsproject.com/contribute>`_
 
-- `Bug Tracker <https://github.com/obsproject/obs-studio/issues>`_.
+- `Bug Tracker <https://github.com/obsproject/obs-studio/issues>`_
 
 Contributing
 ------------
