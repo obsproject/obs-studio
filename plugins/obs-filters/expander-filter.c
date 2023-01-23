@@ -379,14 +379,11 @@ static inline void process_sample(size_t idx, float *samples, float *env_buf,
 	/* --------------------------------- */
 	/* output                            */
 
-	float min_val =
-		is_upwcomp ? fminf(diff, threshold - mul_to_db(samples[idx]))
-			   : 0.0f;
-	gain = db_to_mul(fminf(min_val, gain_db[idx]));
-
-	// above threshold, don't process expander nor upward compressor
-	if (threshold - env_db <= 0)
-		gain = 1.0f;
+	if (!is_upwcomp) {
+		gain = db_to_mul(fminf(0, gain_db[idx]));
+	} else {
+		gain = db_to_mul(gain_db[idx]);
+	}
 
 	samples[idx] *= gain * output_gain;
 }
