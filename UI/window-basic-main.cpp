@@ -3130,7 +3130,7 @@ void OBSBasic::AddScene(OBSSource source)
 
 	QListWidgetItem *item = new QListWidgetItem(QT_UTF8(name));
 	SetOBSRef(item, OBSScene(scene));
-	ui->scenes->addItem(item);
+	ui->scenes->insertItem(ui->scenes->currentRow() + 1, item);
 
 	obs_hotkey_register_source(
 		source, "OBSBasic.SelectScene",
