@@ -456,6 +456,7 @@ private:
 	obs_data_array_t *SaveTransitions();
 	void LoadTransitions(obs_data_array_t *transitions,
 			     obs_load_source_cb cb, void *private_data);
+	void UpdateOverrideTransitions();
 
 	obs_source_t *fadeTransition;
 	obs_source_t *cutTransition;
@@ -1136,6 +1137,8 @@ private slots:
 	void on_transitionRemove_clicked();
 	void on_transitionProps_clicked();
 	void on_transitionDuration_valueChanged();
+	void on_trOverride_currentIndexChanged(int index);
+	void on_trOverrideDuration_valueChanged(int value);
 
 	void ShowTransitionProperties();
 	void HideTransitionProperties();

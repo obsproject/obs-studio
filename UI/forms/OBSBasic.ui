@@ -1201,7 +1201,7 @@
     <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable|QDockWidget::DockWidgetFloatable</set>
    </property>
    <property name="windowTitle">
-    <string>Basic.SceneTransitions</string>
+    <string>Transitions</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>8</number>
@@ -1247,6 +1247,19 @@
         <property name="bottomMargin">
          <number>4</number>
         </property>
+        <item>
+         <widget class="QLabel" name="label_4">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>DefaultTransition</string>
+          </property>
+         </widget>
+        </item>
         <item>
          <widget class="QComboBox" name="transitions">
           <property name="minimumSize">
@@ -1419,6 +1432,61 @@
             </property>
             <property name="toolButton" stdset="0">
              <string notr="true">true</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_3">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>TransitionOverride</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="trOverride">
+          <item>
+           <property name="text">
+            <string>None</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_8">
+          <item>
+           <widget class="QLabel" name="label_2">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>Basic.TransitionDuration</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="trOverrideDuration">
+            <property name="suffix">
+             <string> ms</string>
+            </property>
+            <property name="minimum">
+             <number>50</number>
+            </property>
+            <property name="maximum">
+             <number>20000</number>
+            </property>
+            <property name="value">
+             <number>300</number>
             </property>
            </widget>
           </item>
