@@ -90,6 +90,7 @@ else()
     set(CMAKE_CUDA_COMPILER_LAUNCHER "${CCACHE_PROGRAM}") # CMake 3.9+
   endif()
 
+  option(CALM_DEPRECATION "Keep deprecated-declarations as warnings" OFF)
   add_compile_options(
     -Werror
     -Wextra
@@ -107,7 +108,8 @@ else()
     "$<$<CONFIG:DEBUG>:-DDEBUG=1;-D_DEBUG=1>"
     "$<$<COMPILE_LANG_AND_ID:CXX,AppleClang,Clang>:-Wnull-conversion;-fcolor-diagnostics;-Wno-error=shorten-64-to-32>"
     "$<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wnull-conversion;-fcolor-diagnostics;-Wno-error=shorten-64-to-32>"
-    "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:-Wconversion-null>")
+    "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:-Wconversion-null>"
+    "$<$<BOOL:${CALM_DEPRECATION}>:-Wno-error=deprecated-declarations>")
 
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     # GCC on aarch64 emits type-limits warnings that do not appear on x86_64
