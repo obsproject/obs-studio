@@ -3762,10 +3762,13 @@ void OBSBasic::updateCheckFinished()
 
 void OBSBasic::DuplicateSelectedScene()
 {
-	OBSScene curScene = GetCurrentScene();
+	DuplicateScene(GetCurrentScene());
+}
 
+bool OBSBasic::DuplicateScene(OBSScene curScene)
+{
 	if (!curScene)
-		return;
+		return false;
 
 	OBSSource curSceneSource = obs_scene_get_source(curScene);
 	QString format{obs_source_get_name(curSceneSource)};
@@ -3785,7 +3788,7 @@ void OBSBasic::DuplicateSelectedScene()
 			QTStr("Basic.Main.AddSceneDlg.Text"), name,
 			placeHolderText);
 		if (!accepted)
-			return;
+			return false;
 
 		if (name.empty()) {
 			OBSMessageBox::warning(this,
@@ -3832,6 +3835,8 @@ void OBSBasic::DuplicateSelectedScene()
 
 		break;
 	}
+
+	return true;
 }
 
 static bool save_undo_source_enum(obs_scene_t *scene, obs_sceneitem_t *item,
@@ -5215,60 +5220,7 @@ void OBSBasic::GridActionClicked()
 
 void OBSBasic::on_actionAddScene_triggered()
 {
-	string name;
-	QString format{QTStr("Basic.Main.DefaultSceneName.Text")};
-
-	int i = 2;
-	QString placeHolderText = format.arg(i);
-	OBSSourceAutoRelease source = nullptr;
-	while ((source = obs_get_source_by_name(QT_TO_UTF8(placeHolderText)))) {
-		placeHolderText = format.arg(++i);
-	}
-
-	bool accepted = NameDialog::AskForName(
-		this, QTStr("Basic.Main.AddSceneDlg.Title"),
-		QTStr("Basic.Main.AddSceneDlg.Text"), name, placeHolderText);
-
-	if (accepted) {
-		if (name.empty()) {
-			OBSMessageBox::warning(this,
-					       QTStr("NoNameEntered.Title"),
-					       QTStr("NoNameEntered.Text"));
-			on_actionAddScene_triggered();
-			return;
-		}
-
-		OBSSourceAutoRelease source =
-			obs_get_source_by_name(name.c_str());
-		if (source) {
-			OBSMessageBox::warning(this, QTStr("NameExists.Title"),
-					       QTStr("NameExists.Text"));
-
-			on_actionAddScene_triggered();
-			return;
-		}
-
-		auto undo_fn = [](const std::string &data) {
-			obs_source_t *t = obs_get_source_by_name(data.c_str());
-			if (t) {
-				obs_source_release(t);
-				obs_source_remove(t);
-			}
-		};
-
-		auto redo_fn = [this](const std::string &data) {
-			OBSSceneAutoRelease scene =
-				obs_scene_create(data.c_str());
-			obs_source_t *source = obs_scene_get_source(scene);
-			SetCurrentScene(source, true);
-		};
-		undo_s.add_action(QTStr("Undo.Add").arg(QString(name.c_str())),
-				  undo_fn, redo_fn, name, name);
-
-		OBSSceneAutoRelease scene = obs_scene_create(name.c_str());
-		obs_source_t *scene_source = obs_scene_get_source(scene);
-		SetCurrentScene(scene_source);
-	}
+	AddSource("scene", true);
 }
 
 void OBSBasic::on_actionRemoveScene_triggered()
@@ -5746,10 +5698,10 @@ static inline bool should_show_properties(obs_source_t *source, const char *id)
 	return true;
 }
 
-void OBSBasic::AddSource(const char *id)
+void OBSBasic::AddSource(const char *id, bool sceneList)
 {
 	if (id && *id) {
-		OBSBasicSourceSelect sourceSelect(this, id, undo_s);
+		OBSBasicSourceSelect sourceSelect(this, id, undo_s, sceneList);
 		sourceSelect.exec();
 		if (should_show_properties(sourceSelect.newSource, id)) {
 			CreatePropertiesWindow(sourceSelect.newSource);

@@ -485,7 +485,6 @@ private:
 
 	void SetPreviewProgramMode(bool enabled);
 	void ResizeProgram(uint32_t cx, uint32_t cy);
-	void SetCurrentScene(obs_scene_t *scene, bool force = false);
 	static void RenderProgram(void *data, uint32_t cx, uint32_t cy);
 
 	std::vector<QuickTransition> quickTransitions;
@@ -832,7 +831,7 @@ private:
 
 	void ResizePreview(uint32_t cx, uint32_t cy);
 
-	void AddSource(const char *id);
+	void AddSource(const char *id, bool sceneList = false);
 	QMenu *CreateAddSourcePopupMenu();
 	void AddSourcePopupMenu(const QPoint &pos);
 	void copyActionsDynamicProperties();
@@ -988,6 +987,9 @@ public:
 	void SetDisplayAffinity(QWindow *window);
 
 	QColor GetSelectionColor() const;
+
+	bool DuplicateScene(OBSScene scene);
+	void SetCurrentScene(obs_scene_t *scene, bool force = false);
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;

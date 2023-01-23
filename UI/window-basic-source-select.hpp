@@ -33,6 +33,7 @@ private:
 	std::unique_ptr<Ui::OBSBasicSourceSelect> ui;
 	const char *id;
 	undo_stack &undo_s;
+	bool sceneList = false;
 
 	static bool EnumSources(void *data, obs_source_t *source);
 	static bool EnumGroups(void *data, obs_source_t *source);
@@ -49,7 +50,7 @@ private slots:
 
 public:
 	OBSBasicSourceSelect(OBSBasic *parent, const char *id,
-			     undo_stack &undo_s);
+			     undo_stack &undo_s, bool sceneList_);
 
 	OBSSource newSource;
 

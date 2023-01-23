@@ -194,6 +194,7 @@ static void AddExisting(const char *name, bool visible, bool duplicate,
 			obs_blending_type *blend_mode)
 {
 	OBSSourceAutoRelease source = obs_get_source_by_name(name);
+
 	if (source) {
 		AddExisting(source.Get(), visible, duplicate, transform, crop,
 			    blend_method, blend_mode);
@@ -215,29 +216,58 @@ bool AddNew(QWidget *parent, const char *id, const char *name,
 					   QTStr("NameExists.Text"));
 
 	} else {
-		const char *v_id = obs_get_latest_input_type_id(id);
-		source = obs_source_create(v_id, name, NULL, nullptr);
+		if (strcmp(id, "scene") == 0) {
+			auto undo_fn = [](const std::string &data) {
+				obs_source_t *t =
+					obs_get_source_by_name(data.c_str());
+				if (t) {
+					obs_source_release(t);
+					obs_source_remove(t);
+				}
+			};
 
-		if (source) {
-			AddSourceData data;
-			data.source = source;
-			data.visible = visible;
+			auto redo_fn = [](const std::string &data) {
+				OBSSceneAutoRelease scene =
+					obs_scene_create(data.c_str());
+				obs_source_t *source =
+					obs_scene_get_source(scene);
+				OBSBasic::Get()->SetCurrentScene(source, true);
+			};
+			OBSBasic::Get()->undo_s.add_action(
+				QTStr("Undo.Add").arg(QString(name)), undo_fn,
+				redo_fn, name, name);
 
-			obs_enter_graphics();
-			obs_scene_atomic_update(scene, AddSource, &data);
-			obs_leave_graphics();
-
-			newSource = source;
-
-			/* set monitoring if source monitors by default */
-			uint32_t flags = obs_source_get_output_flags(source);
-			if ((flags & OBS_SOURCE_MONITOR_BY_DEFAULT) != 0) {
-				obs_source_set_monitoring_type(
-					source,
-					OBS_MONITORING_TYPE_MONITOR_ONLY);
-			}
-
+			OBSSceneAutoRelease scene = obs_scene_create(name);
+			OBSBasic::Get()->SetCurrentScene(scene);
 			success = true;
+		} else {
+			const char *v_id = obs_get_latest_input_type_id(id);
+			source = obs_source_create(v_id, name, NULL, nullptr);
+
+			if (source) {
+				AddSourceData data;
+				data.source = source;
+				data.visible = visible;
+
+				obs_enter_graphics();
+				obs_scene_atomic_update(scene, AddSource,
+							&data);
+				obs_leave_graphics();
+
+				newSource = source;
+
+				/* set monitoring if source monitors by default */
+				uint32_t flags =
+					obs_source_get_output_flags(source);
+				if ((flags & OBS_SOURCE_MONITOR_BY_DEFAULT) !=
+				    0) {
+					obs_source_set_monitoring_type(
+						source,
+						OBS_MONITORING_TYPE_MONITOR_ONLY);
+				}
+
+				success = true;
+			}
 		}
 	}
 
@@ -254,12 +284,22 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 		if (!item)
 			return;
 
+		OBSBasic *main = OBSBasic::Get();
 		QString source_name = item->text();
-		AddExisting(QT_TO_UTF8(source_name), visible, false, nullptr,
-			    nullptr, nullptr, nullptr);
 
-		OBSBasic *main =
-			reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+		if (sceneList) {
+			OBSSourceAutoRelease source =
+				obs_get_source_by_name(QT_TO_UTF8(source_name));
+			bool accepted = main->DuplicateScene(
+				obs_scene_from_source(source));
+
+			if (!accepted)
+				return;
+		} else {
+			AddExisting(QT_TO_UTF8(source_name), visible, false,
+				    nullptr, nullptr, nullptr, nullptr);
+		}
+
 		const char *scene_name =
 			obs_source_get_name(main->GetCurrentSceneSource());
 
@@ -297,8 +337,9 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 				    nullptr, nullptr, nullptr, nullptr);
 		};
 
-		undo_s.add_action(QTStr("Undo.Add").arg(source_name), undo,
-				  redo, "", "");
+		if (!sceneList)
+			undo_s.add_action(QTStr("Undo.Add").arg(source_name),
+					  undo, redo, "", "");
 	} else {
 		if (ui->sourceName->text().isEmpty()) {
 			OBSMessageBox::warning(this,
@@ -352,10 +393,14 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 			obs_sceneitem_set_id(item, (int64_t)obs_data_get_int(
 							   dat, "item_id"));
 		};
-		undo_s.add_action(QTStr("Undo.Add").arg(ui->sourceName->text()),
-				  undo, redo,
-				  std::string(obs_source_get_name(newSource)),
-				  std::string(obs_data_get_json(wrapper)));
+
+		if (!sceneList) {
+			undo_s.add_action(
+				QTStr("Undo.Add").arg(ui->sourceName->text()),
+				undo, redo,
+				std::string(obs_source_get_name(newSource)),
+				std::string(obs_data_get_json(wrapper)));
+		}
 	}
 
 	done(DialogCode::Accepted);
@@ -382,17 +427,24 @@ template<typename T> static inline T GetOBSRef(QListWidgetItem *item)
 }
 
 OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_,
-					   undo_stack &undo_s)
+					   undo_stack &undo_s, bool sceneList_)
 	: QDialog(parent),
 	  ui(new Ui::OBSBasicSourceSelect),
 	  id(id_),
-	  undo_s(undo_s)
+	  undo_s(undo_s),
+	  sceneList(sceneList_)
 {
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
 	ui->setupUi(this);
 
 	ui->sourceList->setAttribute(Qt::WA_MacShowFocusRect, false);
+
+	if (sceneList) {
+		setWindowTitle(QTStr("Basic.SourceSelect.Scene"));
+		ui->selectExisting->setText(QTStr("Duplicate"));
+		ui->sourceVisible->hide();
+	}
 
 	QString placeHolderText{QT_UTF8(GetSourceDisplayName(id))};
 
@@ -414,10 +466,12 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_,
 			reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 		OBSSource curSceneSource = main->GetCurrentSceneSource();
 
-		ui->selectExisting->setChecked(true);
-		ui->createNew->setChecked(false);
-		ui->createNew->setEnabled(false);
-		ui->sourceName->setEnabled(false);
+		if (!sceneList) {
+			ui->selectExisting->setChecked(true);
+			ui->createNew->setChecked(false);
+			ui->createNew->setEnabled(false);
+			ui->sourceName->setEnabled(false);
+		}
 
 		int count = main->ui->scenes->count();
 		for (int i = 0; i < count; i++) {
@@ -425,7 +479,7 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_,
 			OBSScene scene = GetOBSRef<OBSScene>(item);
 			OBSSource sceneSource = obs_scene_get_source(scene);
 
-			if (curSceneSource == sceneSource)
+			if (!sceneList && (curSceneSource == sceneSource))
 				continue;
 
 			const char *name = obs_source_get_name(sceneSource);
