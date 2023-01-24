@@ -1224,6 +1224,7 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 			target.monitorFriendlyDeviceName[0] = 0;
 		}
 
+		UINT bits_per_color = 8;
 		DXGI_COLOR_SPACE_TYPE type =
 			DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
 		FLOAT min_luminance = 0.f;
@@ -1231,6 +1232,7 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 		FLOAT max_full_frame_luminance = 0.f;
 		DXGI_OUTPUT_DESC1 desc1;
 		if (GetOutputDesc1(output, &desc1)) {
+			bits_per_color = desc1.BitsPerColor;
 			type = desc1.ColorSpace;
 			min_luminance = desc1.MinLuminance;
 			max_luminance = desc1.MaxLuminance;
@@ -1260,13 +1262,14 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 		     "\t    size={%d, %d}\n"
 		     "\t    attached=%s\n"
 		     "\t    refresh=%u\n"
+		     "\t    bits_per_color=%u\n"
 		     "\t    space=%s\n"
 		     "\t    sdr_white_nits=%lu\n"
 		     "\t    nit_range=[min=%f, max=%f, max_full_frame=%f]",
 		     i, target.monitorFriendlyDeviceName, rect.left, rect.top,
 		     rect.right - rect.left, rect.bottom - rect.top,
-		     desc.AttachedToDesktop ? "true" : "false", refresh, space,
-		     nits, min_luminance, max_luminance,
+		     desc.AttachedToDesktop ? "true" : "false", refresh,
+		     bits_per_color, space, nits, min_luminance, max_luminance,
 		     max_full_frame_luminance);
 	}
 }
