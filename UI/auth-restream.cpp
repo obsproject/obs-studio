@@ -200,7 +200,9 @@ void RestreamAuth::LoadUI()
 			main->Config(), service(), "DockState");
 		QByteArray dockState =
 			QByteArray::fromBase64(QByteArray(dockStateStr));
-		main->restoreState(dockState);
+
+		if (main->isVisible() || !main->isMaximized())
+			main->restoreState(dockState);
 	}
 
 	uiLoaded = true;
