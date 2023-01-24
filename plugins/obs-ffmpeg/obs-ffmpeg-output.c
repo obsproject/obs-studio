@@ -241,8 +241,10 @@ static bool create_video_stream(struct ffmpeg_data *data)
 
 	closest_format = data->config.format;
 	if (data->vcodec->pix_fmts) {
+		const int has_alpha = closest_format == AV_PIX_FMT_BGRA;
 		closest_format = avcodec_find_best_pix_fmt_of_list(
-			data->vcodec->pix_fmts, data->config.format, 0, NULL);
+			data->vcodec->pix_fmts, closest_format, has_alpha,
+			NULL);
 	}
 
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
