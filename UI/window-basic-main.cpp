@@ -5626,6 +5626,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		bool isAsyncVideo = (flags & OBS_SOURCE_ASYNC_VIDEO) ==
 				    OBS_SOURCE_ASYNC_VIDEO;
 		bool hasAudio = (flags & OBS_SOURCE_AUDIO) == OBS_SOURCE_AUDIO;
+		bool hasVideo = (flags & OBS_SOURCE_VIDEO) == OBS_SOURCE_VIDEO;
 
 		colorMenu = new QMenu(QTStr("ChangeBG"));
 		colorWidgetAction = new QWidgetAction(colorMenu);
@@ -5639,7 +5640,9 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		popup.addSeparator();
 
 		popup.addMenu(ui->orderMenu);
-		popup.addMenu(ui->transformMenu);
+
+		if (hasVideo)
+			popup.addMenu(ui->transformMenu);
 
 		popup.addSeparator();
 
@@ -5652,48 +5655,51 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 			popup.addSeparator();
 		}
 
-		QAction *resizeOutput =
-			popup.addAction(QTStr("ResizeOutputSizeOfSource"), this,
-					SLOT(ResizeOutputSizeOfSource()));
+		if (hasVideo) {
+			QAction *resizeOutput = popup.addAction(
+				QTStr("ResizeOutputSizeOfSource"), this,
+				SLOT(ResizeOutputSizeOfSource()));
 
-		int width = obs_source_get_width(source);
-		int height = obs_source_get_height(source);
+			int width = obs_source_get_width(source);
+			int height = obs_source_get_height(source);
 
-		resizeOutput->setEnabled(!obs_video_active());
+			resizeOutput->setEnabled(!obs_video_active());
 
-		if (width < 8 || height < 8)
-			resizeOutput->setEnabled(false);
+			if (width < 8 || height < 8)
+				resizeOutput->setEnabled(false);
 
-		scaleFilteringMenu = new QMenu(QTStr("ScaleFiltering"));
-		popup.addMenu(
-			AddScaleFilteringMenu(scaleFilteringMenu, sceneItem));
-		blendingModeMenu = new QMenu(QTStr("BlendingMode"));
-		popup.addMenu(AddBlendingModeMenu(blendingModeMenu, sceneItem));
-		blendingMethodMenu = new QMenu(QTStr("BlendingMethod"));
-		popup.addMenu(
-			AddBlendingMethodMenu(blendingMethodMenu, sceneItem));
-		if (isAsyncVideo) {
-			deinterlaceMenu = new QMenu(QTStr("Deinterlacing"));
-			popup.addMenu(
-				AddDeinterlacingMenu(deinterlaceMenu, source));
-		}
-		popup.addSeparator();
+			scaleFilteringMenu = new QMenu(QTStr("ScaleFiltering"));
+			popup.addMenu(AddScaleFilteringMenu(scaleFilteringMenu,
+							    sceneItem));
+			blendingModeMenu = new QMenu(QTStr("BlendingMode"));
+			popup.addMenu(AddBlendingModeMenu(blendingModeMenu,
+							  sceneItem));
+			blendingMethodMenu = new QMenu(QTStr("BlendingMethod"));
+			popup.addMenu(AddBlendingMethodMenu(blendingMethodMenu,
+							    sceneItem));
+			if (isAsyncVideo) {
+				deinterlaceMenu =
+					new QMenu(QTStr("Deinterlacing"));
+				popup.addMenu(AddDeinterlacingMenu(
+					deinterlaceMenu, source));
+			}
 
-		popup.addMenu(CreateVisibilityTransitionMenu(true));
-		popup.addMenu(CreateVisibilityTransitionMenu(false));
-		popup.addSeparator();
+			popup.addSeparator();
 
-		sourceProjector = new QMenu(QTStr("SourceProjector"));
-		AddProjectorMenuMonitors(sourceProjector, this,
-					 SLOT(OpenSourceProjector()));
-		popup.addMenu(sourceProjector);
-		popup.addAction(QTStr("SourceWindow"), this,
-				SLOT(OpenSourceWindow()));
+			popup.addMenu(CreateVisibilityTransitionMenu(true));
+			popup.addMenu(CreateVisibilityTransitionMenu(false));
+			popup.addSeparator();
 
-		QAction *screenshotAction =
+			sourceProjector = new QMenu(QTStr("SourceProjector"));
+			AddProjectorMenuMonitors(sourceProjector, this,
+						 SLOT(OpenSourceProjector()));
+			popup.addMenu(sourceProjector);
+			popup.addAction(QTStr("SourceWindow"), this,
+					SLOT(OpenSourceWindow()));
+
 			popup.addAction(QTStr("Screenshot.Source"), this,
 					SLOT(ScreenshotSelectedSource()));
-		screenshotAction->setEnabled(flags & OBS_SOURCE_VIDEO);
+		}
 
 		popup.addSeparator();
 
