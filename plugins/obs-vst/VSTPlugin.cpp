@@ -24,7 +24,6 @@ intptr_t VSTPlugin::hostCallback_static(AEffect *effect, int32_t opcode,
 					void *ptr, float opt)
 {
 	UNUSED_PARAMETER(opt);
-	UNUSED_PARAMETER(ptr);
 
 	VSTPlugin *plugin = nullptr;
 	if (effect && effect->user) {
@@ -47,6 +46,10 @@ intptr_t VSTPlugin::hostCallback_static(AEffect *effect, int32_t opcode,
 			return (intptr_t)plugin->GetSampleRate();
 		}
 		return 0;
+
+	case audioMasterGetVendorString:
+		strncpy((char *)ptr, "OBS Studio", 11);
+		return 1;
 
 	case audioMasterGetTime:
 		if (plugin) {
