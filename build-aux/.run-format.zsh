@@ -51,7 +51,7 @@ invoke_formatter() {
       fi
 
       local -a source_files=((libobs|libobs-*|UI|plugins|deps)/**/*.(c|cpp|h|hpp|m|mm)(.N))
-      source_files=(${source_files:#*/(obs-websocket/deps|decklink/*/decklink-sdk|enc-amf|mac-syphon/syphon-framework|obs-outputs/ftl-sdk|win-dshow/libdshowcapture)/*})
+      source_files=(${source_files:#*/(obs-websocket/deps|decklink/*/decklink-sdk|mac-syphon/syphon-framework|obs-outputs/ftl-sdk|win-dshow/libdshowcapture)/*})
 
       local -a format_args=(-style=file -fallback-style=none)
       if (( _loglevel > 2 )) format_args+=(--verbose)
@@ -71,7 +71,7 @@ invoke_formatter() {
       }
 
       local -a source_files=((libobs|libobs-*|UI|plugins|deps|cmake)/**/(CMakeLists.txt|*.cmake)(.N))
-      source_files=(${source_files:#*/(obs-outputs/ftl-sdk|jansson|decklink/*/decklink-sdk|enc-amf|obs-websocket|obs-browser|win-dshow/libdshowcapture)/*})
+      source_files=(${source_files:#*/(obs-outputs/ftl-sdk|jansson|decklink/*/decklink-sdk|obs-websocket|obs-browser|win-dshow/libdshowcapture)/*})
 
       local -a format_args=()
       if (( _loglevel > 2 )) format_args+=(--log-level debug)
