@@ -9721,7 +9721,8 @@ void OBSBasic::ColorChange()
 				obs_data_get_string(curPrivData, "color");
 			const char *customColor = *oldColor != 0 ? oldColor
 								 : "#55FF0000";
-#ifndef _WIN32
+#ifdef __linux__
+			// TODO: Revisit hang on Ubuntu with native dialog
 			options |= QColorDialog::DontUseNativeDialog;
 #endif
 
