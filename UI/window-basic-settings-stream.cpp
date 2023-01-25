@@ -1481,6 +1481,7 @@ void OBSBasicSettings::ResetEncoders(bool streamOnly)
 		}
 
 		idx = ui->advOutEncoder->findData(lastAdvEnc);
+		s2.unblock();
 		ui->advOutEncoder->setCurrentIndex(idx);
 	}
 
@@ -1494,6 +1495,7 @@ void OBSBasicSettings::ResetEncoders(bool streamOnly)
 		}
 
 		idx = ui->simpleOutStrEncoder->findData(lastEnc);
+		s1.unblock();
 		ui->simpleOutStrEncoder->setCurrentIndex(idx);
 	}
 }
