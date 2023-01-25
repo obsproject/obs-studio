@@ -48,6 +48,7 @@ int completedFileSize = 0;
 static int completedUpdates = 0;
 
 static wchar_t tempPath[MAX_PATH];
+static wchar_t obs_base_directory[MAX_PATH];
 
 struct LastError {
 	DWORD code;
@@ -516,6 +517,8 @@ static inline DWORD WaitIfOBS(DWORD id, const wchar_t *expected)
 {
 	wchar_t path[MAX_PATH];
 	wchar_t *name;
+	DWORD path_len = _countof(path);
+
 	*path = 0;
 
 	WinHandle proc = OpenProcess(PROCESS_QUERY_INFORMATION |
@@ -524,7 +527,12 @@ static inline DWORD WaitIfOBS(DWORD id, const wchar_t *expected)
 	if (!proc.Valid())
 		return WAITIFOBS_WRONG_PROCESS;
 
-	if (!GetProcessImageFileName(proc, path, _countof(path)))
+	if (!QueryFullProcessImageNameW(proc, 0, path, &path_len))
+		return WAITIFOBS_WRONG_PROCESS;
+
+	// check it's actually our exe that's running
+	size_t len = wcslen(obs_base_directory);
+	if (wcsncmp(path, obs_base_directory, len))
 		return WAITIFOBS_WRONG_PROCESS;
 
 	name = wcsrchr(path, L'\\');
@@ -1386,7 +1394,8 @@ static bool Update(wchar_t *cmdLine)
 	lpAppDataPath[0] = 0;
 
 	if (bIsPortable) {
-		GetCurrentDirectory(_countof(lpAppDataPath), lpAppDataPath);
+		StringCbCopy(lpAppDataPath, sizeof(lpAppDataPath),
+			     obs_base_directory);
 		StringCbCat(lpAppDataPath, sizeof(lpAppDataPath), L"\\config");
 	} else {
 		if (!appdata.empty()) {
@@ -1712,7 +1721,7 @@ static bool Update(wchar_t *cmdLine)
 				 SHGFP_TYPE_CURRENT, regsvr);
 		StringCbCat(regsvr, sizeof(regsvr), L"\\regsvr32.exe");
 
-		GetCurrentDirectoryW(_countof(src), src);
+		StringCbCopy(src, sizeof(src), obs_base_directory);
 		StringCbCat(src, sizeof(src),
 			    L"\\data\\obs-plugins\\win-dshow\\");
 
@@ -1811,13 +1820,10 @@ static void CancelUpdate(bool quit)
 
 static void LaunchOBS(bool portable)
 {
-	wchar_t cwd[MAX_PATH];
 	wchar_t newCwd[MAX_PATH];
 	wchar_t obsPath[MAX_PATH];
 
-	GetCurrentDirectory(_countof(cwd) - 1, cwd);
-
-	StringCbCopy(obsPath, sizeof(obsPath), cwd);
+	StringCbCopy(obsPath, sizeof(obsPath), obs_base_directory);
 	StringCbCat(obsPath, sizeof(obsPath), L"\\bin\\64bit");
 	SetCurrentDirectory(obsPath);
 	StringCbCopy(newCwd, sizeof(newCwd), obsPath);
@@ -1955,7 +1961,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int)
 	INITCOMMONCONTROLSEX icce;
 
 	wchar_t cwd[MAX_PATH];
-	wchar_t newPath[MAX_PATH];
 	GetCurrentDirectoryW(_countof(cwd) - 1, cwd);
 
 	bool isPortable = wcsstr(lpCmdLine, L"Portable") != nullptr ||
@@ -1991,9 +1996,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int)
 		/* return code 1 =  user wanted to launch OBS */
 		if (RestartAsAdmin(lpCmdLine, cwd) == 1) {
 			StringCbCat(cwd, sizeof(cwd), L"\\..\\..");
-			GetFullPathName(cwd, _countof(newPath), newPath,
-					nullptr);
-			SetCurrentDirectory(newPath);
+			GetFullPathName(cwd, _countof(obs_base_directory),
+					obs_base_directory, nullptr);
+			SetCurrentDirectory(obs_base_directory);
 
 			LaunchOBS(isPortable);
 		}
@@ -2006,8 +2011,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int)
 		return 0;
 	} else {
 		StringCbCat(cwd, sizeof(cwd), L"\\..\\..");
-		GetFullPathName(cwd, _countof(newPath), newPath, nullptr);
-		SetCurrentDirectory(newPath);
+		GetFullPathName(cwd, _countof(obs_base_directory),
+				obs_base_directory, nullptr);
+		SetCurrentDirectory(obs_base_directory);
 
 		hinstMain = hInstance;
 
