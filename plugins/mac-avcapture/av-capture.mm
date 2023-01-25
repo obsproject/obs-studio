@@ -208,7 +208,7 @@ static bool get_input_format(obs_data_t *settings, FourCharCode &fourcc)
 	if (!item)
 		return false;
 
-	fourcc = obs_data_item_get_int(item.get());
+	fourcc = (FourCharCode)obs_data_item_get_int(item.get());
 	return true;
 }
 
@@ -584,7 +584,7 @@ static inline bool update_frame(av_capture *capture, obs_source_frame *frame,
 	CVPixelBufferLockBaseAddress(img, kCVPixelBufferLock_ReadOnly);
 
 	if (!CVPixelBufferIsPlanar(img)) {
-		frame->linesize[0] = CVPixelBufferGetBytesPerRow(img);
+		frame->linesize[0] = (uint32_t)CVPixelBufferGetBytesPerRow(img);
 		frame->data[0] = static_cast<uint8_t *>(
 			CVPixelBufferGetBaseAddress(img));
 		return true;
@@ -592,7 +592,8 @@ static inline bool update_frame(av_capture *capture, obs_source_frame *frame,
 
 	size_t count = CVPixelBufferGetPlaneCount(img);
 	for (size_t i = 0; i < count; i++) {
-		frame->linesize[i] = CVPixelBufferGetBytesPerRowOfPlane(img, i);
+		frame->linesize[i] =
+			(uint32_t)CVPixelBufferGetBytesPerRowOfPlane(img, i);
 		frame->data[i] = static_cast<uint8_t *>(
 			CVPixelBufferGetBaseAddressOfPlane(img, i));
 	}
@@ -634,12 +635,12 @@ static inline bool update_audio(obs_source_audio *audio,
 	for (size_t i = 0; i < list->mNumberBuffers; i++)
 		audio->data[i] = (uint8_t *)list->mBuffers[i].mData;
 
-	audio->frames = CMSampleBufferGetNumSamples(sample_buffer);
+	audio->frames = (uint32_t)CMSampleBufferGetNumSamples(sample_buffer);
 	CMFormatDescriptionRef desc =
 		CMSampleBufferGetFormatDescription(sample_buffer);
 	const AudioStreamBasicDescription *asbd =
 		CMAudioFormatDescriptionGetStreamBasicDescription(desc);
-	audio->samples_per_sec = asbd->mSampleRate;
+	audio->samples_per_sec = (uint32_t)asbd->mSampleRate;
 	audio->speakers = (enum speaker_layout)asbd->mChannelsPerFrame;
 	switch (asbd->mBitsPerChannel) {
 	case 8:
@@ -1071,7 +1072,7 @@ static bool init_manual(av_capture *capture, AVCaptureDevice *dev,
 	clear_capture(capture);
 
 	auto input_format = obs_data_get_int(settings, "input_format");
-	FourCharCode actual_format = input_format;
+	FourCharCode actual_format = (FourCharCode)input_format;
 
 	SCOPE_EXIT
 	{
@@ -1094,7 +1095,7 @@ static bool init_manual(av_capture *capture, AVCaptureDevice *dev,
 	};
 
 	capture->requested_colorspace =
-		obs_data_get_int(settings, "color_space");
+		(int)obs_data_get_int(settings, "color_space");
 	if (!color_space_valid(capture->requested_colorspace)) {
 		AVLOG(LOG_WARNING, "Unsupported color space: %d",
 		      capture->requested_colorspace);
@@ -1102,7 +1103,7 @@ static bool init_manual(av_capture *capture, AVCaptureDevice *dev,
 	}
 
 	capture->requested_video_range =
-		obs_data_get_int(settings, "video_range");
+		(int)obs_data_get_int(settings, "video_range");
 	if (!video_range_valid(capture->requested_video_range)) {
 		AVLOG(LOG_WARNING, "Unsupported color range: %d",
 		      capture->requested_video_range);
@@ -1146,9 +1147,10 @@ static bool init_manual(av_capture *capture, AVCaptureDevice *dev,
 	if (!lock_device(capture, dev))
 		return false;
 
-	const char *if_name = input_format == INPUT_FORMAT_AUTO
-				      ? "Auto"
-				      : fourcc_subtype_name(input_format);
+	const char *if_name =
+		input_format == INPUT_FORMAT_AUTO
+			? "Auto"
+			: fourcc_subtype_name((FourCharCode)input_format);
 
 #define IF_AUTO(x) (input_format != INPUT_FORMAT_AUTO ? "" : x)
 	AVLOG(LOG_INFO,
@@ -1818,7 +1820,8 @@ static bool input_format_property_needs_update(
 
 	auto num = obs_property_list_item_count(p);
 	for (size_t i = 1; i < num; i++) { // skip auto entry
-		FourCharCode fourcc = obs_property_list_item_int(p, i);
+		FourCharCode fourcc =
+			(FourCharCode)obs_property_list_item_int(p, i);
 		fourcc_found = fourcc_found || fourcc == *fourcc_;
 
 		auto pos = find_if(begin(formats), end(formats),
@@ -1926,7 +1929,7 @@ update_int_list_property(const char *prop_name, const char *localization_name,
 	if (!p)
 		p = obs_properties_get(props, prop_name);
 
-	int val = obs_data_get_int(conf.settings, prop_name);
+	int val = (int)obs_data_get_int(conf.settings, prop_name);
 
 	av_video_info vi;
 	if (ref)
