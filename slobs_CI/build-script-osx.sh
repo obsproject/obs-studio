@@ -2,9 +2,9 @@ export PATH=/usr/local/opt/ccache/libexec:$PATH
 set -e
 set -v
 
-mkdir packed_build
-PACKED_BUILD=$PWD/packed_build
-mkdir build
+mkdir ${InstallPath}
+PACKED_BUILD=$PWD/${InstallPath}
+mkdir ${BUILD_DIRECTORY}
 
 GENERATOR="Xcode"
 
@@ -12,7 +12,7 @@ CHECKOUT_DIR="$(/usr/bin/git rev-parse --show-toplevel)"
 source "${CHECKOUT_DIR}/slobs_CI/01_install_dependencies.sh"
 cd "${CHECKOUT_DIR}"
 DEPS_BUILD_DIR="${CHECKOUT_DIR}/../obs-build-dependencies"
-BUILD_DIR="${CHECKOUT_DIR}/build"
+BUILD_DIR="${CHECKOUT_DIR}/${BUILD_DIRECTORY}"
 
 # Fetch and unzip prebuilt WEBRTC deps
 wget --quiet --retry-connrefused --waitretry=1 https://obs-studio-deployment.s3.us-west-2.amazonaws.com/webrtc_dist_m94_mac.zip

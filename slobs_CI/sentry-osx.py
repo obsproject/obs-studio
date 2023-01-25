@@ -12,4 +12,4 @@ def process_sentry(directory):
                 os.system("sentry-cli --auth-token ${SENTRY_AUTH_TOKEN} upload-dif --org streamlabs-desktop --project obs-server-preview " + path + ".dSYM/Contents/Resources/DWARF/" + file)
 
 # Upload obs debug files
-process_sentry(os.path.join(os.environ['PWD'], 'build'))
+process_sentry(os.path.join(os.environ['PWD'], os.environ['InstallPath']))
