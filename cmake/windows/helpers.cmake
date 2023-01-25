@@ -34,8 +34,6 @@ function(set_target_properties_obs target)
       # cmake-format: off
       _target_install_obs(${target} DESTINATION ${OBS_EXECUTABLE_DESTINATION} 32BIT)
       # cmake-format: on
-    elseif(target STREQUAL enc-amf-test)
-      set(OBS_EXECUTABLE_DESTINATION "${OBS_DATA_DESTINATION}/obs-plugins/enc-amf")
     endif()
 
     # cmake-format: off
