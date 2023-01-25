@@ -82,6 +82,7 @@ static bool process_audio_delay(struct audio_monitor *monitor, float **data,
 			*frames, 1000000000ULL, monitor->sample_rate);
 	} else {
 		monitor->time_since_prev = 0;
+		monitor->prev_video_ts = last_frame_ts;
 	}
 
 	while (monitor->delay_buffer.size != 0) {
