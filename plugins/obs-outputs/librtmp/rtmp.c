@@ -1972,6 +1972,8 @@ SendFCUnpublish(RTMP *r, int streamIdx)
 
     packet.m_nBodySize = enc - packet.m_body;
 
+    RTMP_Log(RTMP_LOGDEBUG, "Sending FCUnpublish packet");
+
     return RTMP_SendPacket(r, &packet, FALSE);
 }
 
@@ -2035,6 +2037,8 @@ SendDeleteStream(RTMP *r, double dStreamId)
     enc = AMF_EncodeNumber(enc, pend, dStreamId);
 
     packet.m_nBodySize = enc - packet.m_body;
+
+	RTMP_Log(RTMP_LOGDEBUG, "Sending DeleteStream packet");
 
     /* no response expected */
     return RTMP_SendPacket(r, &packet, FALSE);
