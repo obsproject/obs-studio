@@ -46,8 +46,9 @@ static const char *rtmp_stream_getname(void *unused)
 
 static void log_rtmp(int level, const char *format, va_list args)
 {
-	if (level > RTMP_LOGWARNING)
-		return;
+	// Filter temporary disabled
+	//if (level > RTMP_LOGWARNING)
+	//	return;
 
 	blogva(LOG_INFO, format, args);
 }
