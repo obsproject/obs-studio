@@ -79,12 +79,15 @@ static void GetWASAPIAudioDevices_(vector<AudioDeviceInfo> &devices, bool input,
 		info.id.resize(size);
 		os_wcs_to_utf8(w_id, len, &info.id[0], size);
 
-		if (!searchbyName.empty() && info.name == searchbyName) {
-			info.device = device;
+		if (!searchbyName.empty()) {
+			if (info.name == searchbyName) {
+				info.device = device;
+				devices.push_back(info);
+				return;
+			}
+		} else {
 			devices.push_back(info);
-			return;
 		}
-		devices.push_back(info);
 	}
 }
 
