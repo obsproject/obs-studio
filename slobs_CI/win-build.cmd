@@ -33,7 +33,6 @@ cmake -H. ^
          -DGPU_PRIORITY_VAL="%GPUPriority%" ^
          -DBUILD_CAPTIONS=false ^
          -DCOMPILE_D3D12_HOOK=true ^
-         -DBUILD_BROWSER=true ^
          -DENABLE_BROWSER=true ^
          -DENABLE_BROWSER_PANELS=false ^
          -DENABLE_BROWSER_QT_LOOP=false ^
