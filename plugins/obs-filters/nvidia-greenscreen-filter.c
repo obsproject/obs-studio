@@ -256,14 +256,14 @@ static void init_images_greenscreen(struct nv_greenscreen_data *filter)
 	filter->render = gs_texrender_create(
 		gs_get_format_from_space(filter->space), GS_ZS_NONE);
 	if (!filter->render) {
-		error("Failed to create render texrenderer", vfxErr);
+		error("Failed to create render texrenderer");
 		goto fail;
 	}
 	if (filter->render_unorm)
 		gs_texrender_destroy(filter->render_unorm);
 	filter->render_unorm = gs_texrender_create(GS_BGRA_UNORM, GS_ZS_NONE);
 	if (!filter->render_unorm) {
-		error("Failed to create render_unorm texrenderer", vfxErr);
+		error("Failed to create render_unorm texrenderer");
 		goto fail;
 	}
 
