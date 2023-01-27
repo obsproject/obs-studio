@@ -713,9 +713,9 @@ WASAPISource::_InitDevice(IMMDeviceEnumerator *enumerator, bool isDefaultDevice,
 			  string &device_id, string &device_name)
 {
 	ComPtr<IMMDevice> device;
+	isInputDevice = type == SourceType::Input;
 
 	if (isDefaultDevice) {
-		isInputDevice = type == SourceType::Input;
 		HRESULT res = enumerator->GetDefaultAudioEndpoint(
 			isInputDevice ? eCapture : eRender,
 			isInputDevice ? eCommunications : eConsole,
@@ -733,8 +733,28 @@ WASAPISource::_InitDevice(IMMDeviceEnumerator *enumerator, bool isDefaultDevice,
 
 		bfree(w_id);
 
-		if (FAILED(res))
-			throw HRError("Failed to enumerate device", res);
+		if (FAILED(res)) {
+			if (!device_name.empty()) {
+				std::vector<AudioDeviceInfo> devices;
+				GetWASAPIAudioDevices(devices, isInputDevice,
+						      device_name);
+				if (devices.size()) {
+					blog(LOG_INFO,
+					     "[WASAPISource::InitDevice]: Use device from GetWASAPIAudioDevices, for a name '%s'",
+					     device_name.c_str());
+
+					device = devices[0].device;
+					device_id = devices[0].id;
+				} else {
+					throw HRError(
+						"Failed to init device by id and no device found by name",
+						res);
+				}
+			} else {
+				throw HRError("Failed to init device by id",
+					      res);
+			}
+		}
 	}
 
 	return device;
@@ -746,32 +766,13 @@ ComPtr<IMMDevice> WASAPISource::InitDevice(IMMDeviceEnumerator *enumerator,
 					   string &device_name)
 {
 	ComPtr<IMMDevice> device;
-	std::vector<AudioDeviceInfo> devices;
+
 	bool input = false;
 	device = _InitDevice(enumerator, isDefaultDevice, type, input,
 			     device_id, device_name);
 
 	if (device_name.empty())
 		device_name = GetDeviceName(device);
-
-	if (device)
-		return device;
-
-	if (!device_name.empty()) {
-		blog(LOG_INFO,
-		     "[WASAPISource::InitDevice]: Failed to init device and device name not empty '%s'",
-		     device_name.c_str());
-		devices.clear();
-		GetWASAPIAudioDevices(devices, input, device_name);
-		if (devices.size()) {
-			blog(LOG_INFO,
-			     "[WASAPISource::InitDevice]: Use divice from GetWASAPIAudioDevices, name '%s'",
-			     device_name.c_str());
-
-			device = devices[0].device;
-			device_id = devices[0].id;
-		}
-	}
 
 	return device;
 }
