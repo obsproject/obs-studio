@@ -43,7 +43,7 @@ cmake \
     -DBROWSER_FRONTEND_API_SUPPORT=false \
     -DENABLE_BROWSER_PANELS=false \
     -DUSE_UI_LOOP=true \
-    -DCHECK_FOR_SERVICE_UPDATES=true \
+    -DENABLE_SERVICE_UPDATES=true \
     -DOBS_CODESIGN_LINKER=true \
     -DWEBRTC_INCLUDE_PATH=$PWD/webrtc_dist \
     -DWEBRTC_LIB_PATH=$PWD/webrtc_dist/libwebrtc.a \
