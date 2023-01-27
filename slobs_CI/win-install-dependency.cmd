@@ -31,8 +31,24 @@ set MEDIASOUPCLIENT=libmediasoupclient_dist_8b36a915
 set MEDIASOUPCLIENT_DIR=%CD%\%SUBDIR%\libmediasoupclient_dist\libmediasoupclient_dist
 set MEDIASOUPCLIENT_URL=https://obs-studio-deployment.s3-us-west-2.amazonaws.com/%MEDIASOUPCLIENT%.7z
 
+if defined ENABLE_OBS_UI (
+    set QT_VERSION_WIN=6.3.1
+    set QT_VERSION=2022-08-02
+    set QT_URL=https://github.com/obsproject/obs-deps/releases/download/%QT_VERSION%/windows-deps-qt6-%QT_VERSION%-x64.zip
+    set QT_PATH=%CD%\%SUBDIR%\qt_dist
+)
+
 mkdir %SUBDIR%
 cd %SUBDIR%
+
+if defined ENABLE_OBS_UI (
+if exist qt_dist\ (
+    echo "qt already installed"
+) else (
+    if exist windows-deps-qt6-%QT_VERSION%-x64.zip (curl -kLO %QT_URL% -f --retry 5 -z windows-deps-qt6-%QT_VERSION%-x64.zip) else (curl -kLO %QT_URL% -f --retry 5 -C -)
+    7z x windows-deps-qt6-%QT_VERSION%-x64.zip -aoa -oqt_dist
+)
+)
 
 if exist libmediasoupclient_dist\ (
     echo "media soup client already installed"

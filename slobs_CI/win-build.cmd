@@ -18,6 +18,14 @@ call slobs_CI\win-install-dependency.cmd
 
 cd "%MAIN_DIR%"
 
+if defined ENABLE_OBS_UI (
+    set ENABLE_UI=true
+    set PREFIX_PATH=%DEPS_DIR%;%QT_PATH%
+) else (
+    set ENABLE_UI=false
+    set PREFIX_PATH=%DEPS_DIR%
+)
+
 cmake -H. ^
          -B"%CD%\%BUILD_DIRECTORY%" ^
          -G"%CmakeGenerator%" -A x64 ^
@@ -26,7 +34,7 @@ cmake -H. ^
          -DVLCPath="%VLC_DIR%" ^
          -DCEF_ROOT_DIR="%CEFPATH%" ^
          -DUSE_UI_LOOP=false ^
-         -DENABLE_UI=false ^
+         -DENABLE_UI=%ENABLE_UI% ^
          -DCOPIED_DEPENDENCIES=false ^
          -DCOPY_DEPENDENCIES=true ^
          -DENABLE_SCRIPTING=false ^
@@ -51,7 +59,7 @@ cmake -H. ^
          -DProtobuf_DIR="%GRPC_DIST%\cmake" ^
          -Dabsl_DIR="%GRPC_DIST%\lib\cmake\absl" ^
          -DgRPC_DIR="%GRPC_DIST%\lib\cmake\grpc" ^
-         -DCMAKE_PREFIX_PATH=%DEPS_DIR% ^
+         -DCMAKE_PREFIX_PATH:PATH=%PREFIX_PATH% ^
          -DCMAKE_BUILD_TYPE=%BuildConfig% ^
          -DBUILD_FOR_DISTRIBUTION=true ^
          -DCURL_INCLUDE_DIR=%DEPS_DIR%/ ^
