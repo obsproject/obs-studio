@@ -489,7 +489,13 @@ static int libsrt_setup(URLContext *h, const char *uri)
 	if (ret) {
 		blog(LOG_ERROR,
 		     "[obs-ffmpeg mpegts muxer / libsrt]: Failed to resolve hostname %s: %s",
-		     hostname, gai_strerror(ret));
+		     hostname,
+#ifdef _WIN32
+		     gai_strerrorA(ret)
+#else
+		     gai_strerror(ret)
+#endif
+		);
 		return OBS_OUTPUT_CONNECT_FAILED;
 	}
 
