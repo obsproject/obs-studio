@@ -103,7 +103,7 @@
 	if (_queue == NULL) {
 		// Allocate a one-second long queue, which we can use our FPS constant for.
 		OSStatus err = CMSimpleQueueCreate(kCFAllocatorDefault,
-						   self.fps, &_queue);
+						   (int32_t)self.fps, &_queue);
 		if (err != noErr) {
 			DLog(@"Err %d in CMSimpleQueueCreate", err);
 		}
@@ -131,9 +131,9 @@
 	if (NSEqualSizes(_testCardSize, NSZeroSize)) {
 		NSUserDefaults *defaults =
 			[NSUserDefaults standardUserDefaults];
-		int width = [[defaults objectForKey:kTestCardWidthKey]
+		NSInteger width = [[defaults objectForKey:kTestCardWidthKey]
 			integerValue];
-		int height = [[defaults objectForKey:kTestCardHeightKey]
+		NSInteger height = [[defaults objectForKey:kTestCardHeightKey]
 			integerValue];
 		if (width == 0 || height == 0) {
 			_testCardSize =
@@ -183,8 +183,10 @@
 
 		NSBitmapImageRep *rep = [[NSBitmapImageRep alloc]
 			initWithBitmapDataPlanes:NULL
-				      pixelsWide:self.testCardSize.width
-				      pixelsHigh:self.testCardSize.height
+				      pixelsWide:(NSInteger)
+							 self.testCardSize.width
+				      pixelsHigh:(NSInteger)self.testCardSize
+							 .height
 				   bitsPerSample:8
 				 samplesPerPixel:4
 					hasAlpha:YES
@@ -194,18 +196,18 @@
 				    bitsPerPixel:0];
 		rep.size = self.testCardSize;
 
-		float hScale =
+		double hScale =
 			placeholderImage.size.width / self.testCardSize.width;
-		float vScale =
+		double vScale =
 			placeholderImage.size.height / self.testCardSize.height;
 
-		float scaling = fmax(hScale, vScale);
+		double scaling = fmax(hScale, vScale);
 
-		float newWidth = placeholderImage.size.width / scaling;
-		float newHeight = placeholderImage.size.height / scaling;
+		double newWidth = placeholderImage.size.width / scaling;
+		double newHeight = placeholderImage.size.height / scaling;
 
-		float leftOffset = (self.testCardSize.width - newWidth) / 2;
-		float topOffset = (self.testCardSize.height - newHeight) / 2;
+		double leftOffset = (self.testCardSize.width - newWidth) / 2;
+		double topOffset = (self.testCardSize.height - newHeight) / 2;
 
 		[NSGraphicsContext saveGraphicsState];
 		[NSGraphicsContext
@@ -249,8 +251,8 @@
 
 - (CVPixelBufferRef)createPixelBufferWithTestAnimation
 {
-	int width = self.testCardSize.width;
-	int height = self.testCardSize.height;
+	int width = (int)self.testCardSize.width;
+	int height = (int)self.testCardSize.height;
 
 	NSDictionary *options = [NSDictionary
 		dictionaryWithObjectsAndKeys:
@@ -316,7 +318,7 @@
 
 	uint64_t hostTime = mach_absolute_time();
 	CMSampleTimingInfo timingInfo =
-		CMSampleTimingInfoForTimestamp(hostTime, self.fps, 1);
+		CMSampleTimingInfoForTimestamp(hostTime, (uint32_t)self.fps, 1);
 
 	OSStatus err = CMIOStreamClockPostTimingEvent(
 		timingInfo.presentationTimeStamp, hostTime, true, self.clock);
@@ -418,8 +420,8 @@
 	OSStatus err = CMVideoFormatDescriptionCreate(
 		kCFAllocatorDefault,
 		kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange,
-		self.testCardSize.width, self.testCardSize.height, NULL,
-		&formatDescription);
+		(int32_t)self.testCardSize.width,
+		(int32_t)self.testCardSize.height, NULL, &formatDescription);
 	if (err != noErr) {
 		DLog(@"Error %d from CMVideoFormatDescriptionCreate", err);
 	}
