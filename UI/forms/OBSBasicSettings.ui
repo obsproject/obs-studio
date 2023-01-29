@@ -1888,36 +1888,15 @@
                        </item>
                        <item row="3" column="1">
                         <widget class="QComboBox" name="simpleOutRecFormat">
-                         <item>
-                          <property name="text">
-                           <string notr="true">flv</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string notr="true">mp4</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string notr="true">mov</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string notr="true">mkv</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string notr="true">ts</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string notr="true">m3u8</string>
-                          </property>
-                         </item>
+                         <property name="toolTip">
+                          <string>Basic.Settings.Output.Format.TT</string>
+                         </property>
+                         <property name="editable">
+                          <bool>false</bool>
+                         </property>
+                         <property name="currentText">
+                          <string/>
+                         </property>
                         </widget>
                        </item>
                        <item row="4" column="0">
@@ -2652,42 +2631,21 @@
                                </item>
                                <item row="2" column="1">
                                 <widget class="QComboBox" name="advOutRecFormat">
+                                 <property name="toolTip">
+                                  <string>Basic.Settings.Output.Format.TT</string>
+                                 </property>
                                  <property name="sizePolicy">
                                   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                                    <horstretch>0</horstretch>
                                    <verstretch>0</verstretch>
                                   </sizepolicy>
                                  </property>
-                                 <item>
-                                  <property name="text">
-                                   <string notr="true">flv</string>
-                                  </property>
-                                 </item>
-                                 <item>
-                                  <property name="text">
-                                   <string notr="true">mp4</string>
-                                  </property>
-                                 </item>
-                                 <item>
-                                  <property name="text">
-                                   <string notr="true">mov</string>
-                                  </property>
-                                 </item>
-                                 <item>
-                                  <property name="text">
-                                   <string notr="true">mkv</string>
-                                  </property>
-                                 </item>
-                                 <item>
-                                  <property name="text">
-                                   <string notr="true">ts</string>
-                                  </property>
-                                 </item>
-                                 <item>
-                                  <property name="text">
-                                   <string notr="true">m3u8</string>
-                                  </property>
-                                 </item>
+                                 <property name="editable">
+                                  <bool>false</bool>
+                                 </property>
+                                 <property name="currentText">
+                                  <string/>
+                                 </property>
                                 </widget>
                                </item>
                                <item row="3" column="0">
