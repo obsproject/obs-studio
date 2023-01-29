@@ -1637,9 +1637,6 @@ static bool Update(wchar_t *cmdLine)
 
 	unordered_set<wstring> tempFiles;
 	for (update_t &update : updates) {
-		if (update.patchable)
-			continue;
-
 		if (tempFiles.count(update.tempPath)) {
 			update.state = STATE_ALREADY_DOWNLOADED;
 			totalFileSize -= update.fileSize;
