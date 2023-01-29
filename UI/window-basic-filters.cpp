@@ -1184,6 +1184,17 @@ void OBSBasicFilters::EffectFilterNameEdited(
 	UNUSED_PARAMETER(endHint);
 }
 
+static bool ConfirmReset(QWidget *parent)
+{
+	QMessageBox::StandardButton button;
+
+	button = OBSMessageBox::question(parent, QTStr("ConfirmReset.Title"),
+					 QTStr("ConfirmReset.Text"),
+					 QMessageBox::Yes | QMessageBox::No);
+
+	return button == QMessageBox::Yes;
+}
+
 void OBSBasicFilters::ResetFilters()
 {
 	QListWidget *list = isAsync ? ui->asyncFilters : ui->effectFilters;
@@ -1192,6 +1203,9 @@ void OBSBasicFilters::ResetFilters()
 	OBSSource filter = GetFilter(row, isAsync);
 
 	if (!filter)
+		return;
+
+	if (!ConfirmReset(this))
 		return;
 
 	OBSDataAutoRelease settings = obs_source_get_settings(filter);
