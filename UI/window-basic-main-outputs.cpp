@@ -1149,8 +1149,14 @@ bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
 	int rbSize =
 		config_get_int(main->Config(), "SimpleOutput", "RecRBSize");
 
+	bool is_fragmented = strcmp(format, "fmp4") == 0 ||
+			     strcmp(format, "fmov") == 0;
+
 	string f;
 	string strPath;
+
+	if (is_fragmented)
+		++format;
 
 	OBSDataAutoRelease settings = obs_data_create();
 	if (updateReplayBuffer) {
@@ -1175,7 +1181,23 @@ bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
 				    strPath.c_str());
 	}
 
-	obs_data_set_string(settings, "muxer_settings", mux);
+	// Use fragmented MOV/MP4 if user has not already specified custom movflags
+	if (is_fragmented && (!mux || strstr(mux, "movflags") == NULL)) {
+		string mux_frag =
+			"movflags=frag_keyframe+empty_moov+delay_moov";
+		if (mux) {
+			mux_frag += " ";
+			mux_frag += mux;
+		}
+		obs_data_set_string(settings, "muxer_settings",
+				    mux_frag.c_str());
+	} else {
+		if (is_fragmented)
+			blog(LOG_WARNING,
+			     "User enabled fragmented recording, "
+			     "but custom muxer settings contained movflags.");
+		obs_data_set_string(settings, "muxer_settings", mux);
+	}
 
 	if (updateReplayBuffer)
 		obs_output_update(replayBuffer, settings);
@@ -1592,6 +1614,9 @@ inline void AdvancedOutput::SetupRecording()
 	const char *recFormat =
 		config_get_string(main->Config(), "AdvOut", "RecFormat");
 
+	bool is_fragmented = strcmp(recFormat, "fmp4") == 0 ||
+			     strcmp(recFormat, "fmov") == 0;
+
 	bool flv = strcmp(recFormat, "flv") == 0;
 
 	if (flv)
@@ -1647,8 +1672,25 @@ inline void AdvancedOutput::SetupRecording()
 						     aacTrack[tracks - 1], idx);
 	}
 
+	// Use fragmented MOV/MP4 if user has not already specified custom movflags
+	if (is_fragmented && (!mux || strstr(mux, "movflags") == NULL)) {
+		string mux_fmp4 =
+			"movflags=frag_keyframe+empty_moov+delay_moov";
+		if (mux) {
+			mux_fmp4 += " ";
+			mux_fmp4 += mux;
+		}
+		obs_data_set_string(settings, "muxer_settings",
+				    mux_fmp4.c_str());
+	} else {
+		if (is_fragmented)
+			blog(LOG_WARNING,
+			     "User enabled fragmented recording, "
+			     "but custom muxer settings contained movflags.");
+		obs_data_set_string(settings, "muxer_settings", mux);
+	}
+
 	obs_data_set_string(settings, "path", path);
-	obs_data_set_string(settings, "muxer_settings", mux);
 	obs_output_update(fileOutput, settings);
 	if (replayBuffer)
 		obs_output_update(replayBuffer, settings);
@@ -2038,6 +2080,11 @@ bool AdvancedOutput::StartRecording()
 						  : "RecFileNameWithoutSpace");
 		splitFile = config_get_bool(main->Config(), "AdvOut",
 					    "RecSplitFile");
+
+		// Strip leading "f" in case fragmented format was selected
+		if (strcmp(recFormat, "fmp4") == 0 ||
+		    strcmp(recFormat, "fmov") == 0)
+			++recFormat;
 
 		string strPath = GetRecordingFilename(path, recFormat, noSpace,
 						      overwriteIfExists,
