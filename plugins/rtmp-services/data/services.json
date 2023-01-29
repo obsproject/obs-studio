@@ -387,88 +387,134 @@
             ]
         },
         {
-            "name": "Vaughn Live / iNSTAGIB",
+            "name": "Vaughn Live",
             "servers": [
                 {
-                    "name": "US: Chicago, IL",
-                    "url": "rtmp://live-ord.vaughnsoft.net/live"
+                    "name": "US: Primary",
+                    "url": "rtmp://live.vaughnsoft.net/live"
                 },
                 {
-                    "name": "US: Vint Hill, VA",
+                    "name": "US: Virginia",
                     "url": "rtmp://live-iad.vaughnsoft.net/live"
                 },
                 {
-                    "name": "US: Denver, CO",
+                    "name": "US: Virginia #2",
+                    "url": "rtmp://live-iad2.vaughnsoft.net/live"
+                },
+                {
+                    "name": "US: Denver",
                     "url": "rtmp://live-den.vaughnsoft.net/live"
                 },
                 {
-                    "name": "US: New York, NY",
+                    "name": "US: Los Angeles",
+                    "url": "rtmp://live-lax.vaughnsoft.net/live"
+                },
+                {
+                    "name": "US: Los Angeles #2",
+                    "url": "rtmp://live-lax2.vaughnsoft.net/live"
+                },
+                {
+                    "name": "US: New York",
                     "url": "rtmp://live-nyc.vaughnsoft.net/live"
                 },
                 {
-                    "name": "US: Miami, FL",
-                    "url": "rtmp://live-mia.vaughnsoft.net/live"
+                    "name": "US: New York #2",
+                    "url": "rtmp://live-nyc.vaughnsoft.net/live"
                 },
                 {
-                    "name": "US: Seattle, WA",
+                    "name": "US: Seattle",
                     "url": "rtmp://live-sea.vaughnsoft.net/live"
                 },
                 {
-                    "name": "EU: Amsterdam, NL",
+                    "name": "US: Miami",
+                    "url": "rtmp://live-mia.vaughnsoft.net/live"
+                },
+                {
+                    "name": "CA: Toronto",
+                    "url": "rtmp://live-tor.vaughnsoft.net/live"
+                },
+                {
+                    "name": "EU: Amsterdam",
                     "url": "rtmp://live-ams.vaughnsoft.net/live"
                 },
                 {
-                    "name": "EU: London, UK",
+                    "name": "EU: London",
                     "url": "rtmp://live-lhr.vaughnsoft.net/live"
+                },
+                {
+                    "name": "FR: Paris",
+                    "url": "rtmp://live-cdg.vaughnsoft.net/live"
+                },
+                {
+                    "name": "JP: Tokyo",
+                    "url": "rtmp://live-tyo.vaughnsoft.net/live"
                 }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 15000,
-                "max audio bitrate": 320
-            }
+            ]
         },
         {
             "name": "Breakers.TV",
             "servers": [
                 {
-                    "name": "US: Chicago, IL",
-                    "url": "rtmp://live-ord.vaughnsoft.net/live"
+                    "name": "US: Primary",
+                    "url": "rtmp://live.vaughnsoft.net/live"
                 },
                 {
-                    "name": "US: Vint Hill, VA",
+                    "name": "US: Virginia",
                     "url": "rtmp://live-iad.vaughnsoft.net/live"
                 },
                 {
-                    "name": "US: Denver, CO",
+                    "name": "US: Virginia #2",
+                    "url": "rtmp://live-iad2.vaughnsoft.net/live"
+                },
+                {
+                    "name": "US: Denver",
                     "url": "rtmp://live-den.vaughnsoft.net/live"
                 },
                 {
-                    "name": "US: New York, NY",
+                    "name": "US: Los Angeles",
+                    "url": "rtmp://live-lax.vaughnsoft.net/live"
+                },
+                {
+                    "name": "US: Los Angeles #2",
+                    "url": "rtmp://live-lax2.vaughnsoft.net/live"
+                },
+                {
+                    "name": "US: New York",
                     "url": "rtmp://live-nyc.vaughnsoft.net/live"
                 },
                 {
-                    "name": "US: Miami, FL",
-                    "url": "rtmp://live-mia.vaughnsoft.net/live"
+                    "name": "US: New York #2",
+                    "url": "rtmp://live-nyc.vaughnsoft.net/live"
                 },
                 {
-                    "name": "US: Seattle, WA",
+                    "name": "US: Seattle",
                     "url": "rtmp://live-sea.vaughnsoft.net/live"
                 },
                 {
-                    "name": "EU: Amsterdam, NL",
+                    "name": "US: Miami",
+                    "url": "rtmp://live-mia.vaughnsoft.net/live"
+                },
+                {
+                    "name": "CA: Toronto",
+                    "url": "rtmp://live-tor.vaughnsoft.net/live"
+                },
+                {
+                    "name": "EU: Amsterdam",
                     "url": "rtmp://live-ams.vaughnsoft.net/live"
                 },
                 {
-                    "name": "EU: London, UK",
+                    "name": "EU: London",
                     "url": "rtmp://live-lhr.vaughnsoft.net/live"
+                },
+                {
+                    "name": "FR: Paris",
+                    "url": "rtmp://live-cdg.vaughnsoft.net/live"
+                },
+                {
+                    "name": "JP: Tokyo",
+                    "url": "rtmp://live-tyo.vaughnsoft.net/live"
                 }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 15000,
-                "max audio bitrate": 320
-            }
+            ]
         },
         {
             "name": "Facebook Live",
