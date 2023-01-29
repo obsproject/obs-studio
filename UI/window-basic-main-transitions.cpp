@@ -109,7 +109,7 @@ void OBSBasic::AddQuickTransitionHotkey(QuickTransition *qt)
 						  (void *)(uintptr_t)qt->id);
 }
 
-void QuickTransition::SourceRenamed(void *param, calldata_t *data)
+void QuickTransition::SourceRenamed(void *param, calldata_t *)
 {
 	QuickTransition *qt = reinterpret_cast<QuickTransition *>(param);
 
@@ -117,8 +117,6 @@ void QuickTransition::SourceRenamed(void *param, calldata_t *data)
 				     .arg(MakeQuickTransitionText(qt));
 
 	obs_hotkey_set_description(qt->hotkey, QT_TO_UTF8(hotkeyName));
-
-	UNUSED_PARAMETER(data);
 }
 
 void OBSBasic::TriggerQuickTransition(int id)
@@ -630,13 +628,11 @@ void OBSBasic::on_transitionProps_clicked()
 	menu.exec(QCursor::pos());
 }
 
-void OBSBasic::on_transitionDuration_valueChanged(int value)
+void OBSBasic::on_transitionDuration_valueChanged()
 {
 	if (api) {
 		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_DURATION_CHANGED);
 	}
-
-	UNUSED_PARAMETER(value);
 }
 
 QuickTransition *OBSBasic::GetQuickTransition(int id)
@@ -1696,7 +1692,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 	UpdateTitleBar();
 }
 
-void OBSBasic::RenderProgram(void *data, uint32_t cx, uint32_t cy)
+void OBSBasic::RenderProgram(void *data, uint32_t, uint32_t)
 {
 	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_DEFAULT, "RenderProgram");
 
@@ -1727,9 +1723,6 @@ void OBSBasic::RenderProgram(void *data, uint32_t cx, uint32_t cy)
 	gs_viewport_pop();
 
 	GS_DEBUG_MARKER_END();
-
-	UNUSED_PARAMETER(cx);
-	UNUSED_PARAMETER(cy);
 }
 
 void OBSBasic::ResizeProgram(uint32_t cx, uint32_t cy)

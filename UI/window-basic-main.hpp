@@ -1099,9 +1099,9 @@ private slots:
 	void on_actionWebsite_triggered();
 	void on_actionDiscord_triggered();
 
-	void on_preview_customContextMenuRequested(const QPoint &pos);
-	void ProgramViewContextMenuRequested(const QPoint &pos);
-	void PreviewDisabledMenu(const QPoint &pos);
+	void on_preview_customContextMenuRequested();
+	void ProgramViewContextMenuRequested();
+	void on_previewDisabledWidget_customContextMenuRequested();
 
 	void on_actionNewSceneCollection_triggered();
 	void on_actionDupSceneCollection_triggered();
@@ -1131,7 +1131,7 @@ private slots:
 	void on_transitionAdd_clicked();
 	void on_transitionRemove_clicked();
 	void on_transitionProps_clicked();
-	void on_transitionDuration_valueChanged(int value);
+	void on_transitionDuration_valueChanged();
 
 	void ShowTransitionProperties();
 	void HideTransitionProperties();
@@ -1167,8 +1167,7 @@ private slots:
 	void EditSceneName();
 	void EditSceneItemName();
 
-	void SceneNameEdited(QWidget *editor,
-			     QAbstractItemDelegate::EndEditHint endHint);
+	void SceneNameEdited(QWidget *editor);
 
 	void OpenSceneFilters();
 	void OpenFilters(OBSSource source = nullptr);

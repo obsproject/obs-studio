@@ -88,18 +88,12 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 	installEventFilter(CreateShortcutFilter());
 
 	connect(ui->asyncFilters->itemDelegate(),
-		SIGNAL(closeEditor(QWidget *,
-				   QAbstractItemDelegate::EndEditHint)),
-		this,
-		SLOT(AsyncFilterNameEdited(
-			QWidget *, QAbstractItemDelegate::EndEditHint)));
+		SIGNAL(closeEditor(QWidget *)), this,
+		SLOT(AsyncFilterNameEdited(QWidget *)));
 
 	connect(ui->effectFilters->itemDelegate(),
-		SIGNAL(closeEditor(QWidget *,
-				   QAbstractItemDelegate::EndEditHint)),
-		this,
-		SLOT(EffectFilterNameEdited(
-			QWidget *, QAbstractItemDelegate::EndEditHint)));
+		SIGNAL(closeEditor(QWidget *)), this,
+		SLOT(EffectFilterNameEdited(QWidget *)));
 
 	QPushButton *close = ui->buttonBox->button(QDialogButtonBox::Close);
 	connect(close, SIGNAL(clicked()), this, SLOT(close()));
@@ -754,18 +748,14 @@ void OBSBasicFilters::OBSSourceFilterRemoved(void *param, calldata_t *data)
 				  Q_ARG(OBSSource, OBSSource(filter)));
 }
 
-void OBSBasicFilters::OBSSourceReordered(void *param, calldata_t *data)
+void OBSBasicFilters::OBSSourceReordered(void *param, calldata_t *)
 {
 	QMetaObject::invokeMethod(reinterpret_cast<OBSBasicFilters *>(param),
 				  "ReorderFilters");
-
-	UNUSED_PARAMETER(data);
 }
 
-void OBSBasicFilters::SourceRemoved(void *param, calldata_t *data)
+void OBSBasicFilters::SourceRemoved(void *param, calldata_t *)
 {
-	UNUSED_PARAMETER(data);
-
 	QMetaObject::invokeMethod(static_cast<OBSBasicFilters *>(param),
 				  "close");
 }
@@ -1171,18 +1161,14 @@ void OBSBasicFilters::FilterNameEdited(QWidget *editor, QListWidget *list)
 	editActive = false;
 }
 
-void OBSBasicFilters::AsyncFilterNameEdited(
-	QWidget *editor, QAbstractItemDelegate::EndEditHint endHint)
+void OBSBasicFilters::AsyncFilterNameEdited(QWidget *editor)
 {
 	FilterNameEdited(editor, ui->asyncFilters);
-	UNUSED_PARAMETER(endHint);
 }
 
-void OBSBasicFilters::EffectFilterNameEdited(
-	QWidget *editor, QAbstractItemDelegate::EndEditHint endHint)
+void OBSBasicFilters::EffectFilterNameEdited(QWidget *editor)
 {
 	FilterNameEdited(editor, ui->effectFilters);
-	UNUSED_PARAMETER(endHint);
 }
 
 static bool ConfirmReset(QWidget *parent)

@@ -49,7 +49,7 @@ MissingFilesPathItemDelegate::MissingFilesPathItemDelegate(
 
 QWidget *MissingFilesPathItemDelegate::createEditor(
 	QWidget *parent, const QStyleOptionViewItem & /* option */,
-	const QModelIndex &index) const
+	const QModelIndex &) const
 {
 	QSizePolicy buttonSizePolicy(QSizePolicy::Policy::Minimum,
 				     QSizePolicy::Policy::Expanding,
@@ -98,8 +98,6 @@ QWidget *MissingFilesPathItemDelegate::createEditor(
 
 	container->setLayout(layout);
 	container->setFocusProxy(text);
-
-	UNUSED_PARAMETER(index);
 
 	return container;
 }
