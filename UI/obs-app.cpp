@@ -1873,8 +1873,8 @@ skip:
 	return QApplication::notify(receiver, e);
 }
 
-QString OBSTranslator::translate(const char *context, const char *sourceText,
-				 const char *disambiguation, int n) const
+QString OBSTranslator::translate(const char *, const char *sourceText,
+				 const char *, int) const
 {
 	const char *out = nullptr;
 	QString str(sourceText);
@@ -1882,9 +1882,6 @@ QString OBSTranslator::translate(const char *context, const char *sourceText,
 	if (!App()->TranslateString(QT_TO_UTF8(str), &out))
 		return QString(sourceText);
 
-	UNUSED_PARAMETER(context);
-	UNUSED_PARAMETER(disambiguation);
-	UNUSED_PARAMETER(n);
 	return QT_UTF8(out);
 }
 
@@ -2531,7 +2528,8 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	"Woops, OBS has crashed!\n\nWould you like to copy the crash log " \
 	"to the clipboard? The crash log will still be saved to:\n\n%s"
 
-static void main_crash_handler(const char *format, va_list args, void *param)
+static void main_crash_handler(const char *format, va_list args,
+			       void * /* param */)
 {
 	char *text = new char[MAX_CRASH_REPORT_SIZE];
 
@@ -2597,8 +2595,6 @@ static void main_crash_handler(const char *format, va_list args, void *param)
 	}
 
 	exit(-1);
-
-	UNUSED_PARAMETER(param);
 }
 
 static void load_debug_privilege(void)

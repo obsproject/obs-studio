@@ -4351,7 +4351,7 @@ void OBSBasicSettings::on_advOutFFPathBrowse_clicked()
 	ui->advOutFFRecPath->setText(dir);
 }
 
-void OBSBasicSettings::on_advOutEncoder_currentIndexChanged(int idx)
+void OBSBasicSettings::on_advOutEncoder_currentIndexChanged()
 {
 	QString encoder = GetComboData(ui->advOutEncoder);
 	if (!loading) {
@@ -4368,8 +4368,6 @@ void OBSBasicSettings::on_advOutEncoder_currentIndexChanged(int idx)
 
 	ui->advOutUseRescale->setVisible(true);
 	ui->advOutRescale->setVisible(true);
-
-	UNUSED_PARAMETER(idx);
 }
 
 void OBSBasicSettings::on_advOutRecEncoder_currentIndexChanged(int idx)

@@ -171,10 +171,8 @@ OBSData load_preview_settings()
 
 void on_preview_scene_changed(enum obs_frontend_event event, void *param);
 
-static void decklink_ui_tick(void *param, float sec)
+static void decklink_ui_tick(void *param, float /* sec */)
 {
-	UNUSED_PARAMETER(sec);
-
 	auto ctx = (struct decklink_ui_output *)param;
 
 	if (ctx->texrender_premultiplied)

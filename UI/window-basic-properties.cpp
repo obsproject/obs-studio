@@ -278,12 +278,10 @@ static void CreateTransitionScene(OBSSource scene, const char *text,
 	obs_sceneitem_set_bounds_type(item, OBS_BOUNDS_SCALE_INNER);
 }
 
-void OBSBasicProperties::SourceRemoved(void *data, calldata_t *params)
+void OBSBasicProperties::SourceRemoved(void *data, calldata_t *)
 {
 	QMetaObject::invokeMethod(static_cast<OBSBasicProperties *>(data),
 				  "close");
-
-	UNUSED_PARAMETER(params);
 }
 
 void OBSBasicProperties::SourceRenamed(void *data, calldata_t *params)

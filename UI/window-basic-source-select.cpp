@@ -263,8 +263,7 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 		const char *scene_name =
 			obs_source_get_name(main->GetCurrentSceneSource());
 
-		auto undo = [scene_name, main](const std::string &data) {
-			UNUSED_PARAMETER(data);
+		auto undo = [scene_name, main](const std::string &) {
 			obs_source_t *scene_source =
 				obs_get_source_by_name(scene_name);
 			main->SetCurrentScene(scene_source, true);
@@ -272,9 +271,8 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 
 			obs_scene_t *scene = obs_get_scene_by_name(scene_name);
 			OBSSceneItem item;
-			auto cb = [](obs_scene_t *scene,
-				     obs_sceneitem_t *sceneitem, void *data) {
-				UNUSED_PARAMETER(scene);
+			auto cb = [](obs_scene_t *, obs_sceneitem_t *sceneitem,
+				     void *data) {
 				OBSSceneItem &last =
 					*reinterpret_cast<OBSSceneItem *>(data);
 				last = sceneitem;
@@ -287,8 +285,7 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 		};
 
 		auto redo = [scene_name, main, source_name,
-			     visible](const std::string &data) {
-			UNUSED_PARAMETER(data);
+			     visible](const std::string &) {
 			obs_source_t *scene_source =
 				obs_get_source_by_name(scene_name);
 			main->SetCurrentScene(scene_source, true);

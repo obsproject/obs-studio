@@ -208,11 +208,10 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 	endRegion();
 }
 
-void OBSProjector::OBSSourceDestroyed(void *data, calldata_t *params)
+void OBSProjector::OBSSourceDestroyed(void *data, calldata_t *)
 {
 	OBSProjector *window = reinterpret_cast<OBSProjector *>(data);
 	QMetaObject::invokeMethod(window, "EscapeTriggered");
-	UNUSED_PARAMETER(params);
 }
 
 void OBSProjector::mouseDoubleClickEvent(QMouseEvent *event)
