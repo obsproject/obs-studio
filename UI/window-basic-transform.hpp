@@ -48,7 +48,7 @@ private slots:
 	void on_resetButton_clicked();
 
 public:
-	OBSBasicTransform(OBSBasic *parent);
+	OBSBasicTransform(OBSSceneItem item, OBSBasic *parent);
 	~OBSBasicTransform();
 
 public slots:

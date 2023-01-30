@@ -226,6 +226,7 @@ EXPORT void obs_frontend_reset_video(void);
 EXPORT void obs_frontend_open_source_properties(obs_source_t *source);
 EXPORT void obs_frontend_open_source_filters(obs_source_t *source);
 EXPORT void obs_frontend_open_source_interaction(obs_source_t *source);
+EXPORT void obs_frontend_open_sceneitem_edit_transform(obs_sceneitem_t *item);
 
 EXPORT char *obs_frontend_get_current_record_output_path(void);
 EXPORT const char *obs_frontend_get_locale_string(const char *string);

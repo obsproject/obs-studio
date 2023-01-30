@@ -6391,6 +6391,15 @@ void OBSBasic::OpenInteraction(OBSSource source)
 	CreateInteractionWindow(source);
 }
 
+void OBSBasic::OpenEditTransform(OBSSceneItem item)
+{
+	if (!item)
+		item = GetCurrentSceneItem();
+	if (!item)
+		return;
+	CreateEditTransformWindow(item);
+}
+
 void OBSBasic::OpenSceneFilters()
 {
 	OBSScene scene = GetCurrentScene();
@@ -8058,13 +8067,17 @@ void OBSBasic::UpdateEditMenu()
 
 void OBSBasic::on_actionEditTransform_triggered()
 {
+	const auto item = GetCurrentSceneItem();
+	if (!item)
+		return;
+	CreateEditTransformWindow(item);
+}
+
+void OBSBasic::CreateEditTransformWindow(obs_sceneitem_t *item)
+{
 	if (transformWindow)
 		transformWindow->close();
-
-	if (!GetCurrentSceneItem())
-		return;
-
-	transformWindow = new OBSBasicTransform(this);
+	transformWindow = new OBSBasicTransform(item, this);
 	connect(ui->scenes, &QListWidget::currentItemChanged, transformWindow,
 		&OBSBasicTransform::OnSceneChanged);
 	transformWindow->show();
