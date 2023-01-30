@@ -1388,14 +1388,21 @@ static size_t get_interleaved_start_idx(struct obs_output *output)
 	return video_idx < idx ? video_idx : idx;
 }
 
+static int64_t get_encoder_duration(struct obs_encoder *encoder)
+{
+	return (encoder->timebase_num * 1000000LL / encoder->timebase_den) *
+	       encoder->framesize;
+}
+
 static int prune_premature_packets(struct obs_output *output)
 {
 	struct encoder_packet *video;
 	int video_idx;
 	int max_idx;
-	int64_t duration_usec;
+	int64_t duration_usec, max_audio_duration_usec = 0;
 	int64_t max_diff = 0;
 	int64_t diff = 0;
+	int audio_encoders = 0;
 
 	video_idx = find_first_packet_type_idx(output, OBS_ENCODER_VIDEO, 0);
 	if (video_idx == -1) {
@@ -1410,9 +1417,11 @@ static int prune_premature_packets(struct obs_output *output)
 	for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
 		struct encoder_packet *audio;
 		int audio_idx;
+		int64_t audio_duration_usec = 0;
 
 		if (!output->audio_encoders[i])
 			continue;
+		audio_encoders++;
 
 		audio_idx = find_first_packet_type_idx(output,
 						       OBS_ENCODER_AUDIO, i);
@@ -1428,6 +1437,21 @@ static int prune_premature_packets(struct obs_output *output)
 		diff = audio->dts_usec - video->dts_usec;
 		if (diff > max_diff)
 			max_diff = diff;
+
+		audio_duration_usec =
+			get_encoder_duration(output->audio_encoders[i]);
+		if (audio_duration_usec > max_audio_duration_usec)
+			max_audio_duration_usec = audio_duration_usec;
+	}
+
+	/* Once multiple audio encoders are running they are almost always out
+	 * of phase by ~Xms. If users change their video to > 100fps then it
+	 * becomes probable that this phase difference will be larger than the
+	 * video duration preventing us from ever finding a synchronization
+	 * point due to their larger frame duration. Instead give up on a tight
+	 * video sync. */
+	if (audio_encoders > 1 && duration_usec < max_audio_duration_usec) {
+		duration_usec = max_audio_duration_usec;
 	}
 
 	return diff > duration_usec ? max_idx + 1 : 0;
