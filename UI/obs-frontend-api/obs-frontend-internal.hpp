@@ -141,6 +141,8 @@ struct obs_frontend_callbacks {
 	virtual void obs_frontend_open_source_filters(obs_source_t *source) = 0;
 	virtual void
 	obs_frontend_open_source_interaction(obs_source_t *source) = 0;
+	virtual void
+	obs_frontend_open_sceneitem_edit_transform(obs_sceneitem_t *item) = 0;
 
 	virtual char *obs_frontend_get_current_record_output_path(void) = 0;
 	virtual const char *

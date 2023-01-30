@@ -40,7 +40,7 @@ void OBSBasicTransform::HookWidget(QWidget *widget, const char *signal,
 #define ISCROLL_CHANGED SIGNAL(valueChanged(int))
 #define DSCROLL_CHANGED SIGNAL(valueChanged(double))
 
-OBSBasicTransform::OBSBasicTransform(OBSBasic *parent)
+OBSBasicTransform::OBSBasicTransform(OBSSceneItem item, OBSBasic *parent)
 	: QDialog(parent), ui(new Ui::OBSBasicTransform), main(parent)
 {
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
@@ -69,7 +69,6 @@ OBSBasicTransform::OBSBasicTransform(OBSBasic *parent)
 
 	installEventFilter(CreateShortcutFilter());
 
-	OBSSceneItem item = FindASelectedItem(main->GetCurrentScene());
 	OBSScene scene = obs_sceneitem_get_scene(item);
 	SetScene(scene);
 	SetItem(item);

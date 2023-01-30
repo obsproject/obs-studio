@@ -559,6 +559,12 @@ void obs_frontend_open_source_interaction(obs_source_t *source)
 		c->obs_frontend_open_source_interaction(source);
 }
 
+void obs_frontend_open_sceneitem_edit_transform(obs_sceneitem_t *item)
+{
+	if (callbacks_valid())
+		c->obs_frontend_open_sceneitem_edit_transform(item);
+}
+
 char *obs_frontend_get_current_record_output_path(void)
 {
 	return !!callbacks_valid()

@@ -630,6 +630,14 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 					  Q_ARG(OBSSource, OBSSource(source)));
 	}
 
+	void obs_frontend_open_sceneitem_edit_transform(
+		obs_sceneitem_t *item) override
+	{
+		QMetaObject::invokeMethod(main, "OpenEditTransform",
+					  Q_ARG(OBSSceneItem,
+						OBSSceneItem(item)));
+	}
+
 	char *obs_frontend_get_current_record_output_path(void) override
 	{
 		const char *recordOutputPath = main->GetCurrentOutputPath();

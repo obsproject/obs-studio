@@ -794,6 +794,14 @@ Functions
 
 ---------------------------------------
 
+.. function:: void *obs_frontend_open_sceneitem_edit_transform(obs_sceneitem_t *item)
+
+   Opens the edit transform window of the specified sceneitem.
+
+   :param item: The sceneitem to open the edit transform window of
+
+---------------------------------------
+
 .. function:: char *obs_frontend_get_current_record_output_path(void)
 
    :return: A new pointer to the current record output path.  Free
