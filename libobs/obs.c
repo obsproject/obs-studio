@@ -1190,7 +1190,10 @@ bool obs_remove_data_path(const char *path)
 
 		if (result == 0) {
 			dstr_free(&core_module_paths.array[i]);
-			da_erase(core_module_paths, i);
+			if (core_module_paths.num == 1)
+				da_free(core_module_paths);
+			else
+				da_erase(core_module_paths, i);
 			return true;
 		}
 	}
