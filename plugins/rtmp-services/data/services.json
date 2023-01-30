@@ -1107,51 +1107,17 @@
             ],
             "servers": [
                 {
-                    "name": "Global Zone (geo based)",
+                    "name": "Global - Recommended",
+                    "url": "rtmps://live.sb.zone:443/live"
+                },
+                {
+                    "name": "Global - Legacy",
                     "url": "rtmp://ingest-global.switchboard.zone/live"
-                },
-                {
-                    "name": "US Zone (geo based)",
-                    "url": "rtmp://ingest-us.switchboard.zone/live"
-                },
-                {
-                    "name": "US West",
-                    "url": "rtmp://ingest-us-west.switchboard.zone/live"
-                },
-                {
-                    "name": "US East",
-                    "url": "rtmp://ingest-us-east.switchboard.zone/live"
-                },
-                {
-                    "name": "US Central",
-                    "url": "rtmp://ingest-us-central.switchboard.zone/live"
-                },
-                {
-                    "name": "South America",
-                    "url": "rtmp://ingest-sa.switchboard.zone/live"
-                },
-                {
-                    "name": "EU (auto)",
-                    "url": "rtmp://ingest-eu.switchboard.zone/live"
-                },
-                {
-                    "name": "Australia",
-                    "url": "rtmp://ingest-au.switchboard.zone/live"
-                },
-                {
-                    "name": "APAC (auto)",
-                    "url": "rtmp://ingest-asia.switchboard.zone/live"
-                },
-                {
-                    "name": "UK",
-                    "url": "rtmp://ingest-uk.switchboard.zone/live"
-                }
+                }                            
             ],
             "recommended": {
                 "keyint": 2,
-                "profile": "high",
-                "max audio bitrate": 160,
-                "max video bitrate": 6000
+                "profile": "high"               
             }
         },
         {
