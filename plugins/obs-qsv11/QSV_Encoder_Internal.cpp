@@ -58,7 +58,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "QSV_Encoder.h"
 #include "mfxastructures.h"
 #include "mfxvideo++.h"
-#include <VersionHelpers.h>
 #include <obs-module.h>
 
 #define do_log(level, format, ...) \
@@ -87,50 +86,25 @@ QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL &impl, mfxVersion &version,
 	mfxIMPL tempImpl;
 	mfxStatus sts;
 
-	m_bIsWindows8OrGreater = IsWindows8OrGreater();
-	m_bUseD3D11 = false;
+	m_bUseD3D11 = true;
 	m_bD3D9HACK = true;
-	m_bUseTexAlloc = (m_bUseD3D11 || m_bD3D9HACK);
+	m_bUseTexAlloc = true;
 
-	if (m_bIsWindows8OrGreater) {
-		tempImpl = impl | MFX_IMPL_VIA_D3D11;
-		sts = m_session.Init(tempImpl, &version);
-		if (sts == MFX_ERR_NONE) {
-			m_session.QueryVersion(&version);
-			m_session.Close();
+	tempImpl = impl | MFX_IMPL_VIA_D3D11;
+	sts = m_session.Init(tempImpl, &version);
+	if (sts == MFX_ERR_NONE) {
+		m_session.QueryVersion(&version);
+		m_session.Close();
 
-			// Use D3D11 surface
-			// m_bUseD3D11 = ((version.Major > 1) ||
-			//	(version.Major == 1 && version.Minor >= 8));
-			m_bUseD3D11 = true;
-			if (m_bUseD3D11)
-				blog(LOG_INFO, "\timpl:           D3D11\n"
-					       "\tsurf:           D3D11");
-			else
-				blog(LOG_INFO, "\timpl:           D3D11\n"
-					       "\tsurf:           SysMem");
+		blog(LOG_INFO, "\timpl:           D3D11\n"
+			       "\tsurf:           D3D11");
 
-			m_impl = tempImpl;
-			m_ver = version;
-			return;
-		}
-	} else if (m_bD3D9HACK) {
-		tempImpl = impl | MFX_IMPL_VIA_D3D9;
-		sts = m_session.Init(tempImpl, &version);
-		if (sts == MFX_ERR_NONE) {
-			m_session.QueryVersion(&version);
-			m_session.Close();
-
-			blog(LOG_INFO, "\timpl:           D3D09\n"
-				       "\tsurf:           Hack");
-
-			m_impl = tempImpl;
-			m_ver = version;
-			return;
-		}
+		m_impl = tempImpl;
+		m_ver = version;
+		return;
 	}
 
-	// Either windows 7 or D3D11 failed at this point.
+	// D3D11 failed at this point.
 	tempImpl = impl | MFX_IMPL_VIA_D3D9;
 	sts = m_session.Init(tempImpl, &version);
 	if (sts == MFX_ERR_NONE) {
@@ -142,6 +116,7 @@ QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL &impl, mfxVersion &version,
 
 		m_impl = tempImpl;
 		m_ver = version;
+		m_bUseD3D11 = false;
 	}
 }
 
