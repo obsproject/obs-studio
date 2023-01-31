@@ -454,11 +454,12 @@ static void on_process_cb(void *user_data)
 	obs_pipewire_data *obs_pw = user_data;
 	struct spa_meta_cursor *cursor;
 	uint32_t drm_format;
+	struct spa_meta_header *header;
 	struct spa_meta_region *region;
 	struct spa_buffer *buffer;
 	struct pw_buffer *b;
 	bool swap_red_blue = false;
-	bool has_buffer;
+	bool has_buffer = true;
 
 	/* Find the most recent buffer */
 	b = NULL;
@@ -478,10 +479,19 @@ static void on_process_cb(void *user_data)
 	}
 
 	buffer = b->buffer;
-	has_buffer = buffer->datas[0].chunk->size != 0;
+	header = spa_buffer_find_meta_data(buffer, SPA_META_Header,
+					   sizeof(*header));
+	if (header && (header->flags & SPA_META_HEADER_FLAG_CORRUPTED) > 0) {
+		blog(LOG_ERROR, "[pipewire] buffer is corrupt");
+		pw_stream_queue_buffer(obs_pw->stream, b);
+		return;
+	} else if (!header) {
+		has_buffer = buffer->datas[0].chunk->size != 0;
+	}
 
 	obs_enter_graphics();
 
+	// Workaround for mutter behaviour pre GNOME 43
 	if (!has_buffer)
 		goto read_metadata;
 
@@ -492,6 +502,7 @@ static void on_process_cb(void *user_data)
 		uint64_t modifiers[planes];
 		int fds[planes];
 		bool use_modifiers;
+		bool corrupt = false;
 
 		blog(LOG_DEBUG,
 		     "[pipewire] DMA-BUF info: fd:%ld, stride:%d, offset:%u, size:%dx%d",
@@ -514,6 +525,14 @@ static void on_process_cb(void *user_data)
 			offsets[plane] = buffer->datas[plane].chunk->offset;
 			strides[plane] = buffer->datas[plane].chunk->stride;
 			modifiers[plane] = obs_pw->format.info.raw.modifier;
+			corrupt |= (buffer->datas[plane].chunk->flags &
+				    SPA_CHUNK_FLAG_CORRUPTED) > 0;
+		}
+
+		if (corrupt) {
+			blog(LOG_ERROR,
+			     "[pipewire] buffer contains corrupted data");
+			goto read_metadata;
 		}
 
 		g_clear_pointer(&obs_pw->texture, gs_texture_destroy);
@@ -544,6 +563,19 @@ static void on_process_cb(void *user_data)
 			blog(LOG_ERROR,
 			     "[pipewire] unsupported DMA buffer format: %d",
 			     obs_pw->format.info.raw.format);
+			goto read_metadata;
+		}
+
+		if ((buffer->datas[0].chunk->flags & SPA_CHUNK_FLAG_CORRUPTED) >
+		    0) {
+			blog(LOG_ERROR,
+			     "[pipewire] buffer contains corrupted data");
+			goto read_metadata;
+		}
+
+		if (buffer->datas[0].chunk->size == 0) {
+			blog(LOG_ERROR,
+			     "[pipewire] buffer contains empty data");
 			goto read_metadata;
 		}
 
@@ -626,7 +658,7 @@ static void on_param_changed_cb(void *user_data, uint32_t id,
 {
 	obs_pipewire_data *obs_pw = user_data;
 	struct spa_pod_builder pod_builder;
-	const struct spa_pod *params[3];
+	const struct spa_pod *params[4];
 	uint32_t buffer_types;
 	uint8_t params_buffer[1024];
 	int result;
@@ -695,7 +727,14 @@ static void on_param_changed_cb(void *user_data, uint32_t id,
 		&pod_builder, SPA_TYPE_OBJECT_ParamBuffers, SPA_PARAM_Buffers,
 		SPA_PARAM_BUFFERS_dataType, SPA_POD_Int(buffer_types));
 
-	pw_stream_update_params(obs_pw->stream, params, 3);
+	/* Meta header */
+	params[3] = spa_pod_builder_add_object(
+		&pod_builder, SPA_TYPE_OBJECT_ParamMeta, SPA_PARAM_Meta,
+		SPA_PARAM_META_type, SPA_POD_Id(SPA_META_Header),
+		SPA_PARAM_META_size,
+		SPA_POD_Int(sizeof(struct spa_meta_header)));
+
+	pw_stream_update_params(obs_pw->stream, params, 4);
 
 	obs_pw->negotiated = true;
 }

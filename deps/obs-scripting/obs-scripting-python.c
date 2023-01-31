@@ -1702,7 +1702,10 @@ bool obs_scripting_load_python(const char *python_path)
 	wchar_t *argv[] = {L"", NULL};
 	int argc = sizeof(argv) / sizeof(wchar_t *) - 1;
 
+	PRAGMA_WARN_PUSH
+	PRAGMA_WARN_DEPRECATION
 	PySys_SetArgv(argc, argv);
+	PRAGMA_WARN_POP
 
 #ifdef DEBUG_PYTHON_STARTUP
 	/* ---------------------------------------------- */
