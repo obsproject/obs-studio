@@ -289,11 +289,9 @@ target_compile_features(obs PRIVATE cxx_std_17)
 target_include_directories(obs PRIVATE ${CMAKE_SOURCE_DIR}/deps/json11
                                        ${CMAKE_SOURCE_DIR}/deps/libff)
 
-if(ENABLE_UI)
-  target_link_libraries(
-    obs PRIVATE CURL::libcurl FFmpeg::avcodec FFmpeg::avutil FFmpeg::avformat
-                OBS::libobs OBS::frontend-api)
-endif()
+target_link_libraries(
+  obs PRIVATE CURL::libcurl FFmpeg::avcodec FFmpeg::avutil FFmpeg::avformat
+              OBS::libobs OBS::frontend-api)
 
 set_target_properties(obs PROPERTIES FOLDER "frontend")
 

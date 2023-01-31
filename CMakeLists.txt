@@ -89,10 +89,8 @@ endif()
 add_subdirectory(libobs)
 add_subdirectory(plugins)
 
-if(ENABLE_UI)
-  # OBS main app
-  add_subdirectory(UI)
-endif()
+# OBS main app
+add_subdirectory(UI)
 
 # Tests
 if(ENABLE_UNIT_TESTS)
