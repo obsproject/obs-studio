@@ -116,6 +116,7 @@ bool import_python(const char *python_path, python_version_t *python_version)
 	} while (false)
 
 	IMPORT_FUNC(PyType_Ready);
+	IMPORT_FUNC(PyType_Modified);
 	IMPORT_FUNC(PyObject_GenericGetAttr);
 	IMPORT_FUNC(PyObject_IsTrue);
 	IMPORT_FUNC(Py_DecRef);
