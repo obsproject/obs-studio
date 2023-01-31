@@ -9,6 +9,8 @@
 #include "common_directx9.h"
 #endif
 
+#include <intrin.h>
+
 /* =======================================================
  * Windows implementation of OS-specific utility functions
  */
@@ -116,6 +118,11 @@ double TimeDiffMsec(mfxTime tfinish, mfxTime tstart)
 	double freq = (double)tFreq.QuadPart;
 	return 1000.0 * ((double)tfinish.QuadPart - (double)tstart.QuadPart) /
 	       freq;
+}
+
+void util_cpuid(int cpuinfo[4], int flags)
+{
+	return __cpuid(cpuinfo, flags);
 }
 
 /* (Lain) Functions currently unused */

@@ -55,21 +55,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <stdio.h>
+#include <inttypes.h>
 #include <util/dstr.h>
 #include <util/darray.h>
 #include <util/platform.h>
+#include <util/threading.h>
 #include <obs-module.h>
 #include <obs-hevc.h>
 #include <obs-avc.h>
-#include <d3d11.h>
-#include <dxgi1_2.h>
-
-#ifndef _STDINT_H_INCLUDED
-#define _STDINT_H_INCLUDED
-#endif
 
 #include "QSV_Encoder.h"
-#include <Windows.h>
 
 #define do_log(level, format, ...)                 \
 	blog(level, "[qsv encoder: '%s'] " format, \
@@ -103,7 +98,7 @@ struct obs_qsv {
 
 /* ------------------------------------------------------------------------- */
 
-static SRWLOCK g_QsvLock = SRWLOCK_INIT;
+static pthread_mutex_t g_QsvLock = PTHREAD_MUTEX_INITIALIZER;
 static unsigned short g_verMajor;
 static unsigned short g_verMinor;
 static int64_t g_pts2dtsShift;
@@ -139,10 +134,10 @@ static void obs_qsv_stop(void *data);
 static void clear_data(struct obs_qsv *obsqsv)
 {
 	if (obsqsv->context) {
-		AcquireSRWLockExclusive(&g_QsvLock);
+		pthread_mutex_lock(&g_QsvLock);
 		qsv_encoder_close(obsqsv->context);
 		obsqsv->context = NULL;
-		ReleaseSRWLockExclusive(&g_QsvLock);
+		pthread_mutex_unlock(&g_QsvLock);
 
 		// bfree(obsqsv->sei);
 		bfree(obsqsv->extra_data);
@@ -885,9 +880,9 @@ static void *obs_qsv_create(enum qsv_codec codec, obs_data_t *settings,
 	}
 
 	if (update_settings(obsqsv, settings)) {
-		AcquireSRWLockExclusive(&g_QsvLock);
+		pthread_mutex_lock(&g_QsvLock);
 		obsqsv->context = qsv_encoder_open(&obsqsv->params, codec);
-		ReleaseSRWLockExclusive(&g_QsvLock);
+		pthread_mutex_unlock(&g_QsvLock);
 
 		if (obsqsv->context == NULL)
 			warn("qsv failed to load");
@@ -918,9 +913,9 @@ static void *obs_qsv_create(enum qsv_codec codec, obs_data_t *settings,
 			GopPicSize - (GopPicSize / interval) * interval;
 
 		blog(LOG_INFO,
-		     "\tinterval:       %d\n"
-		     "\tGopPictSize:    %d\n"
-		     "\tg_pts2dtsShift: %d",
+		     "\tinterval:       %" PRId64 "\n"
+		     "\tGopPictSize:    %" PRId64 "\n"
+		     "\tg_pts2dtsShift: %" PRId64,
 		     interval, GopPicSize, g_pts2dtsShift);
 	} else
 		g_pts2dtsShift = -1;
@@ -951,20 +946,6 @@ static void *obs_qsv_create_hevc(obs_data_t *settings, obs_encoder_t *encoder)
 {
 	return obs_qsv_create(QSV_CODEC_HEVC, settings, encoder);
 }
-
-static HANDLE get_lib(const char *lib)
-{
-	HMODULE mod = GetModuleHandleA(lib);
-	if (mod)
-		return mod;
-
-	mod = LoadLibraryA(lib);
-	if (!mod)
-		blog(LOG_INFO, "Failed to load %s", lib);
-	return mod;
-}
-
-typedef HRESULT(WINAPI *CREATEDXGIFACTORY1PROC)(REFIID, void **);
 
 static void *obs_qsv_create_tex(enum qsv_codec codec, obs_data_t *settings,
 				obs_encoder_t *encoder, const char *fallback_id)
@@ -1376,7 +1357,7 @@ static bool obs_qsv_encode(void *data, struct encoder_frame *frame,
 	if (!frame || !packet || !received_packet)
 		return false;
 
-	AcquireSRWLockExclusive(&g_QsvLock);
+	pthread_mutex_lock(&g_QsvLock);
 
 	video_t *video = obs_encoder_video(obsqsv->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
@@ -1400,7 +1381,7 @@ static bool obs_qsv_encode(void *data, struct encoder_frame *frame,
 
 	if (ret < 0) {
 		warn("encode failed");
-		ReleaseSRWLockExclusive(&g_QsvLock);
+		pthread_mutex_unlock(&g_QsvLock);
 		return false;
 	}
 
@@ -1411,7 +1392,7 @@ static bool obs_qsv_encode(void *data, struct encoder_frame *frame,
 	else if (obsqsv->codec == QSV_CODEC_HEVC)
 		parse_packet_hevc(obsqsv, packet, pBS, voi, received_packet);
 
-	ReleaseSRWLockExclusive(&g_QsvLock);
+	pthread_mutex_unlock(&g_QsvLock);
 
 	return true;
 }
@@ -1432,7 +1413,7 @@ static bool obs_qsv_encode_tex(void *data, uint32_t handle, int64_t pts,
 	if (!packet || !received_packet)
 		return false;
 
-	AcquireSRWLockExclusive(&g_QsvLock);
+	pthread_mutex_lock(&g_QsvLock);
 
 	video_t *video = obs_encoder_video(obsqsv->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
@@ -1448,7 +1429,7 @@ static bool obs_qsv_encode_tex(void *data, uint32_t handle, int64_t pts,
 
 	if (ret < 0) {
 		warn("encode failed");
-		ReleaseSRWLockExclusive(&g_QsvLock);
+		pthread_mutex_unlock(&g_QsvLock);
 		return false;
 	}
 
@@ -1459,7 +1440,7 @@ static bool obs_qsv_encode_tex(void *data, uint32_t handle, int64_t pts,
 	else if (obsqsv->codec == QSV_CODEC_HEVC)
 		parse_packet_hevc(obsqsv, packet, pBS, voi, received_packet);
 
-	ReleaseSRWLockExclusive(&g_QsvLock);
+	pthread_mutex_unlock(&g_QsvLock);
 
 	return true;
 }
