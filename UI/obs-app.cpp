@@ -1242,6 +1242,10 @@ bool OBSApp::SetTheme(std::string name, std::string path)
 		themeDarkMode = !(color.redF() < 0.5);
 	}
 
+#ifdef __APPLE__
+	SetMacOSDarkMode(themeDarkMode);
+#endif
+
 	emit StyleChanged();
 	return true;
 }
