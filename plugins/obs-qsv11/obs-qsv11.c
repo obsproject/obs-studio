@@ -75,6 +75,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
 #define debug(format, ...) do_log(LOG_DEBUG, format, ##__VA_ARGS__)
 
+#ifndef GS_INVALID_HANDLE
+#define GS_INVALID_HANDLE (uint32_t) - 1
+#endif
+
 /* ------------------------------------------------------------------------- */
 
 struct obs_qsv {

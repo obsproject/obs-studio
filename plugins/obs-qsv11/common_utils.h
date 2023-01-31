@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 
-#include "mfxvideo++.h"
+#include <mfxvideo++.h>
 
 // =================================================================
 // OS-specific definitions of types, macro, etc...
