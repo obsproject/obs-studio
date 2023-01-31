@@ -1,10 +1,6 @@
-.. figure:: https://obsproject.com/assets/images/new_icon_small-r.png
-   :align: center
-   :alt: OBS Logo
-   :figclass: align-center
-   
-**Open Broadcaster Software®️**
-******************************
+
+**Open Broadcaster Software®**
+------------------------------ 
 
 .. image:: https://github.com/obsproject/obs-studio/actions/workflows/main.yml/badge.svg?branch=master&event=push
    :alt: OBS Studio Build Status - GitHub Actions
@@ -19,7 +15,7 @@
    :alt: OBS Studio Translation Project Progress
    :target: https://crowdin.com/project/obs-studio
 
-
+----------------------------------------------------------
 
 What is OBS Studio?
 -------------------
