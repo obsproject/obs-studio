@@ -410,6 +410,59 @@
       ]
     },
     {
+      "name": "nlohmann-json",
+      "buildsystem": "cmake-ninja",
+      "builddir": true,
+      "config-opts": [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DJSON_BuildTests=OFF"
+      ],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/nlohmann/json.git",
+          "tag": "v3.11.2",
+          "commit": "bc889afb4c5bf1c0d8ee29ef35eaaf4c8bef8a5d"
+        }
+      ]
+    },
+    {
+      "name": "websocketpp",
+      "buildsystem": "cmake-ninja",
+      "builddir": true,
+      "config-opts": [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DENABLE_CPP11=ON",
+        "-DBUILD_EXAMPLES=OFF",
+        "-DBUILD_TESTS=OFF"
+      ],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/zaphoyd/websocketpp.git",
+          "tag": "0.8.2",
+          "commit": "56123c87598f8b1dd471be83ca841ceae07f95ba"
+        }
+      ]
+    },
+    {
+      "name": "asio",
+      "buildsystem": "simple",
+      "build-commands": [
+        "mkdir -p /app/include",
+        "cp asio/include/asio.hpp /app/include/",
+        "cp -R asio/include/asio /app/include/"
+      ],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/chriskohlhoff/asio.git",
+          "tag": "asio-1-12-1",
+          "commit": "b73dc1d2c0ecb9452a87c26544d7f71e24342df6"
+        }
+      ]
+    },
+    {
       "name": "cef",
       "buildsystem": "cmake-ninja",
       "config-opts": [
