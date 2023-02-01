@@ -1242,6 +1242,10 @@ bool OBSApp::SetTheme(std::string name, std::string path)
 		themeDarkMode = !(color.redF() < 0.5);
 	}
 
+#ifdef __APPLE__
+	SetMacOSDarkMode(themeDarkMode);
+#endif
+
 	emit StyleChanged();
 	return true;
 }
@@ -1249,7 +1253,7 @@ bool OBSApp::SetTheme(std::string name, std::string path)
 bool OBSApp::InitTheme()
 {
 	defaultPalette = palette();
-	setStyle(new OBSIgnoreWheelProxyStyle());
+	setStyle(new OBSProxyStyle());
 
 	const char *themeName =
 		config_get_string(globalConfig, "General", "CurrentTheme3");

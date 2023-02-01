@@ -384,6 +384,17 @@ void OpenMacOSPrivacyPreferences(const char *tab)
 	[[NSWorkspace sharedWorkspace] openURL:url];
 }
 
+void SetMacOSDarkMode(bool dark)
+{
+	if (dark) {
+		NSApp.appearance =
+			[NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
+	} else {
+		NSApp.appearance =
+			[NSAppearance appearanceNamed:NSAppearanceNameAqua];
+	}
+}
+
 void TaskbarOverlayInit() {}
 void TaskbarOverlaySetStatus(TaskbarOverlayStatus status)
 {
