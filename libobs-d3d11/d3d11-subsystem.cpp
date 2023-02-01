@@ -25,6 +25,7 @@
 #include <winternl.h>
 #include <d3d9.h>
 #include "d3d11-subsystem.hpp"
+#include <shellscalingapi.h>
 
 struct UnsupportedHWError : HRError {
 	inline UnsupportedHWError(const char *str, HRESULT hr)
@@ -1253,6 +1254,16 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 			     (unsigned)type);
 		}
 
+		// These are always identical, but you still have to supply both, thanks Microsoft!
+		UINT dpiX, dpiY;
+		unsigned scaling = 100;
+		if (GetDpiForMonitor(desc.Monitor, MDT_EFFECTIVE_DPI, &dpiX,
+				     &dpiY) == S_OK) {
+			scaling = (unsigned)(dpiX * 100.0f / 96.0f);
+		} else {
+			dpiX = 0;
+		}
+
 		const RECT &rect = desc.DesktopCoordinates;
 		const ULONG nits = GetSdrWhiteNits(desc.Monitor);
 		blog(LOG_INFO,
@@ -1265,12 +1276,13 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 		     "\t    bits_per_color=%u\n"
 		     "\t    space=%s\n"
 		     "\t    sdr_white_nits=%lu\n"
-		     "\t    nit_range=[min=%f, max=%f, max_full_frame=%f]",
+		     "\t    nit_range=[min=%f, max=%f, max_full_frame=%f]\n"
+		     "\t    dpi=%u (%u%%)",
 		     i, target.monitorFriendlyDeviceName, rect.left, rect.top,
 		     rect.right - rect.left, rect.bottom - rect.top,
 		     desc.AttachedToDesktop ? "true" : "false", refresh,
 		     bits_per_color, space, nits, min_luminance, max_luminance,
-		     max_full_frame_luminance);
+		     max_full_frame_luminance, dpiX, scaling);
 	}
 }
 
