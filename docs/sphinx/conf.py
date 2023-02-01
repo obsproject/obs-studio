@@ -143,6 +143,7 @@ html_sidebars = {
     ]
 }
 
+html_link_suffix = None
 
 # -- Options for HTMLHelp output ------------------------------------------
 

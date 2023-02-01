@@ -18,6 +18,8 @@ jobs:
       commitHash: ${{ steps.setup.outputs.commitHash }}
       commitBranch: ${{ steps.setup.outputs.commitBranch }}
       fullCommitHash: ${{ steps.setup.outputs.fullCommitHash }}
+    env:
+      BUILD_CF_ARTIFACT: ${{ startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -63,12 +65,37 @@ jobs:
           target_path: '../home/_build'
           pre_build_commands: 'pip install -Iv sphinx==5.1.1'
 
+      - name: Disable link extensions
+        shell: bash
+        if: ${{ env.BUILD_CF_ARTIFACT == 'true' }}
+        run: |
+          SOPT="html_link_suffix = None"
+          ROPT="html_link_suffix = ''"
+          sed -i -e "s/${SOPT}/${ROPT}/g" docs/sphinx/conf.py
+
+      - uses: totaldebug/sphinx-publish-action@1.2.0
+        if: ${{ env.BUILD_CF_ARTIFACT == 'true' }}
+        with:
+          sphinx_src: 'docs/sphinx'
+          build_only: True
+          target_branch: 'master'
+          target_path: '../home/_build_cf'
+          pre_build_commands: 'pip install -Iv sphinx==5.1.1'
+
       - uses: actions/upload-artifact@v3
         with:
           name: 'OBS Studio Docs ${{ steps.setup.outputs.commitHash }}'
           path: |
             ${{ runner.temp }}/_github_home/_build
             !${{ runner.temp }}/_github_home/_build/.doctrees
+
+      - uses: actions/upload-artifact@v3
+        if: ${{ env.BUILD_CF_ARTIFACT == 'true' }}
+        with:
+          name: 'CF Pages ${{ steps.setup.outputs.commitHash }}'
+          path: |
+            ${{ runner.temp }}/_github_home/_build_cf
+            !${{ runner.temp }}/_github_home/_build_cf/.doctrees
 
   deploy:
     runs-on: ubuntu-latest
@@ -82,7 +109,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v3
         with:
-          name: 'OBS Studio Docs ${{ needs.docs.outputs.commitHash }}'
+          name: 'CF Pages ${{ needs.docs.outputs.commitHash }}'
           path: docs
 
       - name: Setup redirects
