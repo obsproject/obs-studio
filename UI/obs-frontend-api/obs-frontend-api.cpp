@@ -600,3 +600,14 @@ char *obs_frontend_get_last_replay(void)
 	return !!callbacks_valid() ? c->obs_frontend_get_last_replay()
 				   : nullptr;
 }
+
+void obs_frontend_add_undo_redo_action(const char *name,
+				       const undo_redo_cb undo,
+				       const undo_redo_cb redo,
+				       const char *undo_data,
+				       const char *redo_data, bool repeatable)
+{
+	if (callbacks_valid())
+		c->obs_frontend_add_undo_redo_action(
+			name, undo, redo, undo_data, redo_data, repeatable);
+}

@@ -237,6 +237,11 @@ EXPORT char *obs_frontend_get_last_recording(void);
 EXPORT char *obs_frontend_get_last_screenshot(void);
 EXPORT char *obs_frontend_get_last_replay(void);
 
+typedef void (*undo_redo_cb)(const char *data);
+EXPORT void obs_frontend_add_undo_redo_action(
+	const char *name, const undo_redo_cb undo, const undo_redo_cb redo,
+	const char *undo_data, const char *redo_data, bool repeatable);
+
 /* ------------------------------------------------------------------------- */
 
 #ifdef __cplusplus

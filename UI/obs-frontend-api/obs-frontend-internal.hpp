@@ -153,6 +153,13 @@ struct obs_frontend_callbacks {
 	virtual char *obs_frontend_get_last_recording(void) = 0;
 	virtual char *obs_frontend_get_last_screenshot(void) = 0;
 	virtual char *obs_frontend_get_last_replay(void) = 0;
+
+	virtual void obs_frontend_add_undo_redo_action(const char *name,
+						       const undo_redo_cb undo,
+						       const undo_redo_cb redo,
+						       const char *undo_data,
+						       const char *redo_data,
+						       bool repeatable) = 0;
 };
 
 EXPORT void

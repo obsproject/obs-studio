@@ -670,6 +670,20 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		return bstrdup(main->lastReplay.c_str());
 	}
 
+	void obs_frontend_add_undo_redo_action(const char *name,
+					       const undo_redo_cb undo,
+					       const undo_redo_cb redo,
+					       const char *undo_data,
+					       const char *redo_data,
+					       bool repeatable) override
+	{
+		main->undo_s.add_action(
+			name,
+			[undo](const std::string &data) { undo(data.c_str()); },
+			[redo](const std::string &data) { redo(data.c_str()); },
+			undo_data, redo_data, repeatable);
+	}
+
 	void on_load(obs_data_t *settings) override
 	{
 		for (size_t i = saveCallbacks.size(); i > 0; i--) {

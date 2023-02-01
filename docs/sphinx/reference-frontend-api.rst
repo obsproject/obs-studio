@@ -226,6 +226,10 @@ Structures/Enumerations
 
    Translation callback
 
+.. type::  void (*undo_redo_cb)(const char *data)
+
+   Undo redo callback
+
 
 Functions
 ---------
@@ -846,3 +850,15 @@ Functions
             :c:func:`bfree()`
 
    .. versionadded:: 29.0.0
+
+---------------------------------------
+
+.. function:: void obs_frontend_add_undo_redo_action(const char *name, const undo_redo_cb undo, const undo_redo_cb redo, const char *undo_data, const char *redo_data, bool repeatable)
+
+   :param name: The name of the undo redo action
+   :param undo: Callback to use for undo
+   :param redo: Callback to use for redo
+   :param undo_data: String with data for the undo callback
+   :param redo_data: String with data for the redo callback
+   :param repeatable: Allow multiple actions with the same name to be merged to 1 undo redo action.
+                      This uses the undo action from the first and the redo action from the last action.
