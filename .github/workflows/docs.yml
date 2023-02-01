@@ -34,7 +34,7 @@ jobs:
 
       - name: Bump Version Number
         shell: bash
-        if: github.event_name == 'push'
+        if: github.event_name != 'pull_request'
         run: |
           VERTEST="\#define\sLIBOBS_API_\w+_VER\s([0-9]{1,2})"
           VER=""
@@ -91,6 +91,7 @@ jobs:
           echo "/previous/:major.:minor https://:major-:minor.${{ vars.CF_PAGES_PROJECT }}.pages.dev 302" >> docs/_redirects
 
       - name: Publish to live page
+        if: ${{ !contains(needs.docs.outputs.commitBranch, 'beta') && !contains(needs.docs.outputs.commitBranch, 'rc') }}
         uses: cloudflare/wrangler-action@4c10c1822abba527d820b29e6333e7f5dac2cabd
         with:
           workingDirectory: docs
