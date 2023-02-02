@@ -1711,6 +1711,7 @@ struct obs_video_info *obs_create_video_info()
 	ovi->output_height = 720;
 	ovi->fps_num = 30;
 	ovi->fps_den = 1;
+	ovi->fps_type = 1;
 
 	ovi->output_format = VIDEO_FORMAT_I420;
 	ovi->colorspace = VIDEO_CS_DEFAULT;

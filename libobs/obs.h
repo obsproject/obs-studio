@@ -199,6 +199,7 @@ struct obs_video_info {
 
 	uint32_t fps_num; /**< Output FPS numerator */
 	uint32_t fps_den; /**< Output FPS denominator */
+	uint32_t fps_type; /**< Output FPS type */
 
 	uint32_t base_width;  /**< Base compositing width */
 	uint32_t base_height; /**< Base compositing height */
