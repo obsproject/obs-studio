@@ -1,0 +1,7 @@
+if (( _loglevel > 1 )) {
+  xcodebuild ${@}
+} else {
+  local -a xcbeautify_opts=()
+  if (( _loglevel == 0 )) xcbeautify_opts+=(--quiet)
+  xcodebuild ${@} 2>&1 | xcbeautify ${xcbeautify_opts}
+}

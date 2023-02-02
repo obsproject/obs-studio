@@ -1,0 +1,62 @@
+autoload -Uz log_debug log_error log_info log_status log_group log_output
+
+local -r _usage="Usage: %B${0}%b <source> <volume name> <output_name>
+
+Create macOS disk image <volume name> <output_name> with contents of <source>"
+
+if (( ! # )) {
+  log_error 'Called without arguments.'
+  log_output ${_usage}
+  return 2
+}
+
+local source=${1}
+local volume_name=${2}
+local output_name=${3}
+
+log_group "Create macOS disk image"
+
+local _hdiutil_flags
+if (( _loglevel < 1 )) _hdiutil_flags='-quiet'
+
+trap "hdiutil detach ${_hdiutil_flags} /Volumes/${output_name}; rm temp.dmg; log_group return 2" ERR
+
+hdiutil create ${_hdiutil_flags} \
+    -volname "${volume_name}" \
+    -srcfolder ${source} \
+    -ov \
+    -fs APFS \
+    -format UDRW \
+    temp.dmg
+hdiutil attach ${_hdiutil_flags} \
+    -noverify \
+    -readwrite \
+    -mountpoint /Volumes/${output_name} \
+    temp.dmg
+
+log_info "Waiting 2 seconds to ensure mounted volume is available..."
+sleep 2
+log_status "Done"
+log_info "Setting up disk volume..."
+log_status "Volume icon"
+SetFile -c icnC /Volumes/${output_name}/.VolumeIcon.icns
+log_status "Icon positions"
+osascript package.applescript ${output_name}
+log_status "File permissions"
+chmod -Rf go-w /Volumes/${output_name}
+SetFile -a C /Volumes/${output_name}
+rm -rf -- /Volumes/${output_name}/.fseventsd(N)
+log_info "Converting disk image..."
+hdiutil detach ${_hdiutil_flags} /Volumes/${output_name}
+hdiutil convert ${_hdiutil_flags} \
+    -format ULMO \
+    -ov \
+    -o ${output_name}.dmg temp.dmg
+
+rm temp.dmg
+
+trap '' ERR
+
+log_group
+
+return 0

@@ -1,0 +1,42 @@
+autoload -Uz log_debug log_warning log_error
+
+if (( ! ${+project_root} )) {
+  log_error "'project_root' not set. Please set before running ${0}."
+  return 2
+}
+
+if (( ${+commands[ccache]} )) {
+  log_debug "Found ccache at ${commands[ccache]}"
+
+  typeset -gx CCACHE_CONFIGPATH="${project_root}/.ccache.conf"
+
+  ccache --set-config=run_second_cpp=true
+  ccache --set-config=direct_mode=true
+  ccache --set-config=inode_cache=true
+  ccache --set-config=compiler_check=content
+  ccache --set-config=file_clone=true
+
+  local -a sloppiness=(
+    include_file_mtime
+    include_file_ctime
+    file_stat_matches
+    system_headers
+  )
+
+  if [[ ${host_os} == macos ]] {
+    sloppiness+=(
+      modules
+      clang_index_store
+    )
+
+    ccache --set-config=sloppiness=${(j:,:)sloppiness}
+  }
+
+  if (( ${+CI} )) {
+    ccache --set-config=cache_dir="${GITHUB_WORKSPACE:-${HOME}}/.ccache"
+    ccache --set-config=max_size="${CCACHE_SIZE:-1G}"
+    ccache -z > /dev/null
+  }
+} else {
+  log_warning "No ccache found on the system"
+}
