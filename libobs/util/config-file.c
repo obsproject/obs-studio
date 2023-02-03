@@ -579,6 +579,16 @@ unlock:
 	pthread_mutex_unlock(&config->mutex);
 }
 
+static void config_set_item_default(config_t *config, const char *section,
+				    const char *name, char *value)
+{
+	config_set_item(config, &config->defaults, section, name, value);
+
+	if (!config_has_user_value(config, section, name))
+		config_set_item(config, &config->sections, section, name,
+				bstrdup(value));
+}
+
 void config_set_string(config_t *config, const char *section, const char *name,
 		       const char *value)
 {
@@ -626,8 +636,7 @@ void config_set_default_string(config_t *config, const char *section,
 {
 	if (!value)
 		value = "";
-	config_set_item(config, &config->defaults, section, name,
-			bstrdup(value));
+	config_set_item_default(config, section, name, bstrdup(value));
 }
 
 void config_set_default_int(config_t *config, const char *section,
@@ -636,7 +645,7 @@ void config_set_default_int(config_t *config, const char *section,
 	struct dstr str;
 	dstr_init(&str);
 	dstr_printf(&str, "%" PRId64, value);
-	config_set_item(config, &config->defaults, section, name, str.array);
+	config_set_item_default(config, section, name, str.array);
 }
 
 void config_set_default_uint(config_t *config, const char *section,
@@ -645,14 +654,14 @@ void config_set_default_uint(config_t *config, const char *section,
 	struct dstr str;
 	dstr_init(&str);
 	dstr_printf(&str, "%" PRIu64, value);
-	config_set_item(config, &config->defaults, section, name, str.array);
+	config_set_item_default(config, section, name, str.array);
 }
 
 void config_set_default_bool(config_t *config, const char *section,
 			     const char *name, bool value)
 {
 	char *str = bstrdup(value ? "true" : "false");
-	config_set_item(config, &config->defaults, section, name, str);
+	config_set_item_default(config, section, name, str);
 }
 
 void config_set_default_double(config_t *config, const char *section,
@@ -661,7 +670,7 @@ void config_set_default_double(config_t *config, const char *section,
 	struct dstr str;
 	dstr_init(&str);
 	dstr_printf(&str, "%g", value);
-	config_set_item(config, &config->defaults, section, name, str.array);
+	config_set_item_default(config, section, name, str.array);
 }
 
 const char *config_get_string(config_t *config, const char *section,
