@@ -34,12 +34,6 @@ struct ffmpeg_source {
 	bool media_valid;
 	bool destroy_media;
 
-	struct SwsContext *sws_ctx;
-	int sws_width;
-	int sws_height;
-	enum AVPixelFormat sws_format;
-	uint8_t *sws_data;
-	int sws_linesize;
 	enum video_range_type range;
 	bool is_linear_alpha;
 	obs_source_t *source;
@@ -651,9 +645,6 @@ static void ffmpeg_source_destroy(void *data)
 	if (s->media_valid)
 		mp_media_free(&s->media);
 
-	if (s->sws_ctx != NULL)
-		sws_freeContext(s->sws_ctx);
-	bfree(s->sws_data);
 	bfree(s->input);
 	bfree(s->input_format);
 	bfree(s->ffmpeg_options);
