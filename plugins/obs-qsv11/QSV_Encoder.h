@@ -162,7 +162,7 @@ void qsv_encoder_add_roi(qsv_t *, const struct obs_encoder_roi *roi);
 void qsv_encoder_clear_roi(qsv_t *pContext);
 int qsv_encoder_encode(qsv_t *, uint64_t, uint8_t *, uint8_t *, uint32_t,
 		       uint32_t, mfxBitstream **pBS);
-int qsv_encoder_encode_tex(qsv_t *, uint64_t, uint32_t, uint64_t, uint64_t *,
+int qsv_encoder_encode_tex(qsv_t *, uint64_t, void *, uint64_t, uint64_t *,
 			   mfxBitstream **pBS);
 int qsv_encoder_headers(qsv_t *, uint8_t **pSPS, uint8_t **pPPS,
 			uint16_t *pnSPS, uint16_t *pnPPS);
