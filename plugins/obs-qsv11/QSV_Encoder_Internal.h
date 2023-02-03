@@ -74,9 +74,8 @@ public:
 	mfxStatus Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pDataUV,
 			 uint32_t strideY, uint32_t strideUV,
 			 mfxBitstream **pBS);
-	mfxStatus Encode_tex(uint64_t ts, uint32_t tex_handle,
-			     uint64_t lock_key, uint64_t *next_key,
-			     mfxBitstream **pBS);
+	mfxStatus Encode_tex(uint64_t ts, void *tex, uint64_t lock_key,
+			     uint64_t *next_key, mfxBitstream **pBS);
 	mfxStatus ClearData();
 	mfxStatus Reset(qsv_param_t *pParams, enum qsv_codec codec);
 	mfxStatus ReconfigureEncoder();
@@ -134,7 +133,7 @@ private:
 	bool m_bUseTexAlloc;
 	static mfxU16 g_numEncodersOpen;
 	static mfxHDL
-		g_DX_Handle; // we only want one handle for all instances to use;
+		g_GFX_Handle; // we only want one handle for all instances to use;
 
 	mfxEncodeCtrl m_ctrl;
 	mfxExtEncoderROI m_roi;

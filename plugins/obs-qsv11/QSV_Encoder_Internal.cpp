@@ -68,7 +68,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
 #define debug(format, ...) do_log(LOG_DEBUG, format, ##__VA_ARGS__)
 
-mfxHDL QSV_Encoder_Internal::g_DX_Handle = NULL;
+mfxHDL QSV_Encoder_Internal::g_GFX_Handle = NULL;
 mfxU16 QSV_Encoder_Internal::g_numEncodersOpen = 0;
 
 QSV_Encoder_Internal::QSV_Encoder_Internal(mfxVersion &version)
@@ -109,7 +109,7 @@ QSV_Encoder_Internal::QSV_Encoder_Internal(mfxVersion &version)
 		cfg, (const mfxU8 *)"mfxImplDescription.AccelerationMode",
 		tempImpl);
 #else
-	m_bUseTexAlloc = false;
+	m_bUseTexAlloc = true;
 	tempImpl.Type = MFX_VARIANT_TYPE_U32;
 	tempImpl.Data.U32 = MFX_ACCEL_MODE_VIA_VAAPI;
 	MFXSetConfigFilterProperty(
@@ -140,18 +140,13 @@ mfxStatus QSV_Encoder_Internal::Open(qsv_param_t *pParams, enum qsv_codec codec)
 {
 	mfxStatus sts = MFX_ERR_NONE;
 
-#if defined(_WIN32)
-	if (m_bUseD3D11)
-		// Use D3D11 surface
+	if (m_bUseD3D11 | m_bUseTexAlloc)
+		// Use texture surface
 		sts = Initialize(m_ver, &m_session, &m_mfxAllocator,
-				 &g_DX_Handle, false, codec, &m_sessionData);
+				 &g_GFX_Handle, false, codec, &m_sessionData);
 	else
-		sts = Initialize(m_ver, &m_session, NULL, NULL, NULL, codec,
+		sts = Initialize(m_ver, &m_session, NULL, NULL, false, codec,
 				 &m_sessionData);
-#else
-	sts = Initialize(m_ver, &m_session, NULL, NULL, false, codec,
-			 &m_sessionData);
-#endif
 
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -801,7 +796,7 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY,
 	return sts;
 }
 
-mfxStatus QSV_Encoder_Internal::Encode_tex(uint64_t ts, uint32_t tex_handle,
+mfxStatus QSV_Encoder_Internal::Encode_tex(uint64_t ts, void *tex,
 					   uint64_t lock_key,
 					   uint64_t *next_key,
 					   mfxBitstream **pBS)
@@ -838,7 +833,7 @@ mfxStatus QSV_Encoder_Internal::Encode_tex(uint64_t ts, uint32_t tex_handle,
 	if (m_bUseTexAlloc) {
 		// mfxU64 isn't consistent with stdint, requiring a cast to be multi-platform.
 		sts = simple_copytex(m_mfxAllocator.pthis, pSurface->Data.MemId,
-				     tex_handle, lock_key, (mfxU64 *)next_key);
+				     tex, lock_key, (mfxU64 *)next_key);
 		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 	}
 
@@ -923,7 +918,7 @@ mfxStatus QSV_Encoder_Internal::ClearData()
 
 	if ((m_bUseTexAlloc) && (g_numEncodersOpen <= 0)) {
 		Release();
-		g_DX_Handle = NULL;
+		g_GFX_Handle = NULL;
 	}
 	MFXVideoENCODE_Close(m_session);
 	ReleaseSessionData(m_sessionData);
