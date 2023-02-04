@@ -70,6 +70,8 @@ struct duplicator_capture {
 	obs_source_t *source;
 	pthread_mutex_t update_mutex;
 	char monitor_id[128];
+	char id[128];
+	char alt_id[128];
 	char monitor_name[64];
 	enum display_capture_method method;
 	bool reset_wgc;
@@ -96,6 +98,8 @@ struct duplicator_capture {
 
 struct duplicator_monitor_info {
 	char device_id[128];
+	char id[128];
+	char alt_id[128];
 	char name[64];
 	RECT rect;
 	HMONITOR handle;
@@ -204,10 +208,15 @@ static BOOL CALLBACK enum_monitor(HMONITOR handle, HDC hdc, LPRECT rect,
 			match = strcmp(monitor->device_id, device.DeviceID) ==
 				0;
 			if (match) {
-				monitor->rect = *rect;
-				monitor->handle = handle;
+				strcpy_s(monitor->id, _countof(monitor->id),
+					 device.DeviceID);
+				strcpy_s(monitor->alt_id,
+					 _countof(monitor->alt_id),
+					 mi.szDevice);
 				GetMonitorName(handle, monitor->name,
 					       _countof(monitor->name));
+				monitor->rect = *rect;
+				monitor->handle = handle;
 			}
 		}
 	}
@@ -230,10 +239,12 @@ static BOOL CALLBACK enum_monitor_fallback(HMONITOR handle, HDC hdc,
 	if (GetMonitorInfoA(handle, (LPMONITORINFO)&mi)) {
 		match = strcmp(monitor->device_id, mi.szDevice) == 0;
 		if (match) {
-			monitor->rect = *rect;
-			monitor->handle = handle;
+			strcpy_s(monitor->alt_id, _countof(monitor->alt_id),
+				 mi.szDevice);
 			GetMonitorName(handle, monitor->name,
 				       _countof(monitor->name));
+			monitor->rect = *rect;
+			monitor->handle = handle;
 		}
 	}
 
@@ -246,9 +257,13 @@ static void log_settings(struct duplicator_capture *capture,
 	info("update settings:\n"
 	     "\tdisplay: %s (%ldx%ld)\n"
 	     "\tcursor: %s\n"
-	     "\tmethod: %s",
+	     "\tmethod: %s\n"
+	     "\tid: %s\n"
+	     "\talt_id: %s\n"
+	     "\tsetting_id: %s",
 	     monitor, width, height, capture->capture_cursor ? "true" : "false",
-	     get_method_name(capture->method));
+	     get_method_name(capture->method), capture->id, capture->alt_id,
+	     capture->monitor_id);
 }
 
 static enum display_capture_method
@@ -312,6 +327,8 @@ static inline void update_settings(struct duplicator_capture *capture,
 
 	strcpy_s(capture->monitor_id, _countof(capture->monitor_id),
 		 monitor.device_id);
+	strcpy_s(capture->id, _countof(capture->id), monitor.id);
+	strcpy_s(capture->alt_id, _countof(capture->alt_id), monitor.alt_id);
 	strcpy_s(capture->monitor_name, _countof(capture->monitor_name),
 		 monitor.name);
 	capture->handle = monitor.handle;
