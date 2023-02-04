@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   ubuntu64:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -13,7 +13,7 @@ jobs:
 
       - name: Install clang format
         run: |
-          sudo apt-get install -y clang-format-10
+          sudo apt-get install -y clang-format-11
 
       - name: Check the Formatting
         run: |
