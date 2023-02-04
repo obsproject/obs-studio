@@ -38,10 +38,6 @@ extern "C" {
 #pragma warning(pop)
 #endif
 
-typedef void (*mp_video_cb)(void *opaque, struct obs_source_frame *frame);
-typedef void (*mp_audio_cb)(void *opaque, struct obs_source_audio *audio);
-typedef void (*mp_stop_cb)(void *opaque);
-
 struct mp_media {
 	AVFormatContext *fmt;
 
@@ -66,6 +62,7 @@ struct mp_media {
 	DARRAY(AVPacket *) packet_pool;
 	struct mp_decode v;
 	struct mp_decode a;
+	bool request_preload;
 	bool is_local_file;
 	bool reconnecting;
 	bool has_video;
@@ -85,11 +82,13 @@ struct mp_media {
 	uint64_t next_ns;
 	int64_t start_ts;
 	int64_t base_ts;
+	bool full_decode;
 
 	uint64_t interrupt_poll_ts;
 
 	pthread_mutex_t mutex;
 	os_sem_t *sem;
+	bool preload_frame;
 	bool stopping;
 	bool looping;
 	bool active;
@@ -108,35 +107,17 @@ struct mp_media {
 
 typedef struct mp_media mp_media_t;
 
-struct mp_media_info {
-	void *opaque;
-
-	mp_video_cb v_cb;
-	mp_video_cb v_preload_cb;
-	mp_video_cb v_seek_cb;
-	mp_audio_cb a_cb;
-	mp_stop_cb stop_cb;
-
-	const char *path;
-	const char *format;
-	char *ffmpeg_options;
-	int buffering;
-	int speed;
-	enum video_range_type force_range;
-	bool is_linear_alpha;
-	bool hardware_decoding;
-	bool is_local_file;
-	bool reconnecting;
-};
-
 extern bool mp_media_init(mp_media_t *media, const struct mp_media_info *info);
 extern void mp_media_free(mp_media_t *media);
 
 extern void mp_media_play(mp_media_t *media, bool loop, bool reconnecting);
 extern void mp_media_stop(mp_media_t *media);
 extern void mp_media_play_pause(mp_media_t *media, bool pause);
-extern int64_t mp_get_current_time(mp_media_t *m);
-extern void mp_media_seek_to(mp_media_t *m, int64_t pos);
+extern void mp_media_preload_frame(mp_media_t *media);
+extern int64_t mp_media_get_current_time(mp_media_t *m);
+extern int64_t mp_media_get_frames(mp_media_t *m);
+extern int64_t mp_media_get_duration(mp_media_t *m);
+extern void mp_media_seek(mp_media_t *m, int64_t pos);
 
 /* #define DETAILED_DEBUG_INFO */
 

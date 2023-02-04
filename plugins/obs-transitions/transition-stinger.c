@@ -69,11 +69,14 @@ static void stinger_update(void *data, obs_data_t *settings)
 	struct stinger_info *s = data;
 	const char *path = obs_data_get_string(settings, "path");
 	bool hw_decode = obs_data_get_bool(settings, "hw_decode");
+	bool preload = obs_data_get_bool(settings, "preload");
 
 	obs_data_t *media_settings = obs_data_create();
 	obs_data_set_string(media_settings, "local_file", path);
 	obs_data_set_bool(media_settings, "hw_decode", hw_decode);
 	obs_data_set_bool(media_settings, "looping", false);
+	obs_data_set_bool(media_settings, "full_decode", preload);
+	obs_data_set_bool(media_settings, "is_stinger", true);
 
 	obs_source_release(s->media_source);
 	struct dstr name;
@@ -635,6 +638,11 @@ static void stinger_transition_stop(void *data)
 	if (s->matte_source)
 		obs_source_remove_active_child(s->source, s->matte_source);
 
+	proc_handler_t *ph = obs_source_get_proc_handler(s->media_source);
+
+	calldata_t cd = {0};
+	proc_handler_call(ph, "preload_first_frame", &cd);
+
 	s->transitioning = false;
 }
 
@@ -742,6 +750,8 @@ static obs_properties_t *stinger_properties(void *data)
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_properties_add_bool(ppts, "hw_decode",
 				obs_module_text("HardwareDecode"));
+	obs_properties_add_bool(ppts, "preload",
+				obs_module_text("PreloadVideoToRam"));
 	obs_property_list_add_int(p, obs_module_text("TransitionPointTypeTime"),
 				  TIMING_TIME);
 	obs_property_list_add_int(
