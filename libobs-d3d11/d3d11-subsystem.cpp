@@ -1192,6 +1192,22 @@ static ULONG GetSdrWhiteNits(HMONITOR monitor)
 	return nits;
 }
 
+static void PopulateMonitorIds(HMONITOR handle, char *id, char *alt_id,
+			       size_t capacity)
+{
+	MONITORINFOEXA mi;
+	mi.cbSize = sizeof(mi);
+	if (GetMonitorInfoA(handle, (LPMONITORINFO)&mi)) {
+		strcpy_s(alt_id, capacity, mi.szDevice);
+		DISPLAY_DEVICEA device;
+		device.cb = sizeof(device);
+		if (EnumDisplayDevicesA(mi.szDevice, 0, &device,
+					EDD_GET_DEVICE_INTERFACE_NAME)) {
+			strcpy_s(id, capacity, device.DeviceID);
+		}
+	}
+}
+
 static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 {
 	UINT i;
@@ -1206,6 +1222,11 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 
 		bool target_found = false;
 		DISPLAYCONFIG_TARGET_DEVICE_NAME target;
+
+		constexpr size_t id_capacity = 128;
+		char id[id_capacity]{};
+		char alt_id[id_capacity]{};
+		PopulateMonitorIds(desc.Monitor, id, alt_id, id_capacity);
 
 		MONITORINFOEX info;
 		info.cbSize = sizeof(info);
@@ -1277,12 +1298,14 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 		     "\t    space=%s\n"
 		     "\t    sdr_white_nits=%lu\n"
 		     "\t    nit_range=[min=%f, max=%f, max_full_frame=%f]\n"
-		     "\t    dpi=%u (%u%%)",
+		     "\t    dpi=%u (%u%%)\n"
+		     "\t    id=%s\n"
+		     "\t    alt_id=%s",
 		     i, target.monitorFriendlyDeviceName, rect.left, rect.top,
 		     rect.right - rect.left, rect.bottom - rect.top,
 		     desc.AttachedToDesktop ? "true" : "false", refresh,
 		     bits_per_color, space, nits, min_luminance, max_luminance,
-		     max_full_frame_luminance, dpiX, scaling);
+		     max_full_frame_luminance, dpiX, scaling, id, alt_id);
 	}
 }
 
