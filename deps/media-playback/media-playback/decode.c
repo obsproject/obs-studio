@@ -16,6 +16,7 @@
 
 #include "decode.h"
 
+#include "media-playback.h"
 #include "media.h"
 #include <libavutil/mastering_display_metadata.h>
 

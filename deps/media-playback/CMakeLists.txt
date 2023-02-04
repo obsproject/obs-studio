@@ -9,8 +9,14 @@ add_library(OBS::media-playback ALIAS media-playback)
 
 target_sources(
   media-playback
-  INTERFACE media-playback/media.c media-playback/media.h
-            media-playback/decode.c media-playback/decode.h
+  INTERFACE media-playback/media.c
+            media-playback/media.h
+            media-playback/cache.c
+            media-playback/cache.h
+            media-playback/decode.c
+            media-playback/decode.h
+            media-playback/media-playback.c
+            media-playback/media-playback.h
             media-playback/closest-format.h)
 
 target_link_libraries(media-playback INTERFACE FFmpeg::avcodec FFmpeg::avdevice
