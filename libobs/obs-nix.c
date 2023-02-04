@@ -369,10 +369,19 @@ static void log_flatpak_info(void)
 
 static void log_desktop_session_info(void)
 {
-	char *session_ptr = getenv("XDG_SESSION_TYPE");
-	if (session_ptr) {
-		blog(LOG_INFO, "Session Type: %s", session_ptr);
-	}
+	char *current_desktop = getenv("XDG_CURRENT_DESKTOP");
+	char *session_desktop = getenv("XDG_SESSION_DESKTOP");
+	char *session_type = getenv("XDG_SESSION_TYPE");
+
+	if (current_desktop && session_desktop)
+		blog(LOG_INFO, "Desktop Environment: %s (%s)", current_desktop,
+		     session_desktop);
+	else if (current_desktop || session_desktop)
+		blog(LOG_INFO, "Desktop Environment: %s",
+		     current_desktop ? current_desktop : session_desktop);
+
+	if (session_type)
+		blog(LOG_INFO, "Session Type: %s", session_type);
 }
 #endif
 
