@@ -360,12 +360,15 @@ static inline void process_sample(size_t idx, float *samples, float *env_buf,
 	float diff = threshold - env_db;
 
 	if (is_upwcomp && env_db <= (threshold - 60.0f) / 2)
-		diff = env_db + 60.0f;
+		diff = env_db + 60.0f > 0 ? env_db + 60.0f : 0.0f;
 
 	float gain = 0.0f;
+	float prev_gain = 0.0f;
 	// Note that the gain is always >= 0 for the upward compressor
 	// but is always <=0 for the expander.
 	if (is_upwcomp) {
+		prev_gain = idx > 0 ? fmaxf(gain_db[idx - 1], 0)
+				    : fmaxf(channel_gain, 0);
 		// gain above knee (included for clarity):
 		if (env_db >= threshold + knee / 2)
 			gain = 0.0f;
@@ -377,9 +380,9 @@ static inline void process_sample(size_t idx, float *samples, float *env_buf,
 		    threshold + knee / 2 > env_db)
 			gain = slope * powf(diff + knee / 2, 2) / (2.0f * knee);
 	} else {
+		prev_gain = idx > 0 ? gain_db[idx - 1] : channel_gain;
 		gain = diff > 0.0f ? fmaxf(slope * diff, -60.0f) : 0.0f;
 	}
-	float prev_gain = idx > 0 ? gain_db[idx - 1] : channel_gain;
 
 	/* --------------------------------- */
 	/* ballistics (attack/release)       */
