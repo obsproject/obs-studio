@@ -21,6 +21,8 @@
 #include "obs-nix-platform.h"
 #include "obs-nix-x11.h"
 
+#include "util/config-file.h"
+
 #ifdef ENABLE_WAYLAND
 #include "obs-nix-wayland.h"
 #endif
@@ -305,6 +307,66 @@ static void log_distribution_info(void)
 	free(line);
 }
 
+static void log_flatpak_extensions(const char *extensions)
+{
+	if (!extensions)
+		return;
+
+	char **exts_list = strlist_split(extensions, ';', false);
+	for (char **ext = exts_list; *ext != NULL; ext++) {
+		// Log the extension name without its commit hash
+		char **name = strlist_split(*ext, '=', false);
+		blog(LOG_INFO, " - %s", *name);
+		strlist_free(name);
+	}
+	strlist_free(exts_list);
+}
+
+static void log_flatpak_info(void)
+{
+	config_t *fp_info = NULL;
+
+	if (config_open(&fp_info, "/.flatpak-info", CONFIG_OPEN_EXISTING) !=
+	    CONFIG_SUCCESS) {
+		blog(LOG_ERROR, "Unable to open .flatpak-info file");
+		return;
+	}
+
+	const char *branch = config_get_string(fp_info, "Instance", "branch");
+	const char *arch = config_get_string(fp_info, "Instance", "arch");
+
+	const char *runtime =
+		config_get_string(fp_info, "Application", "runtime");
+
+	const char *app_exts =
+		config_get_string(fp_info, "Instance", "app-extensions");
+	const char *runtime_exts =
+		config_get_string(fp_info, "Instance", "runtime-extensions");
+
+	const char *fp_version =
+		config_get_string(fp_info, "Instance", "flatpak-version");
+
+	blog(LOG_INFO, "Flatpak Branch: %s", branch ? branch : "none");
+	blog(LOG_INFO, "Flatpak Arch: %s", arch ? arch : "unknown");
+
+	blog(LOG_INFO, "Flatpak Runtime: %s", runtime ? runtime : "none");
+
+	if (app_exts) {
+		blog(LOG_INFO, "App Extensions:");
+		log_flatpak_extensions(app_exts);
+	}
+
+	if (runtime_exts) {
+		blog(LOG_INFO, "Runtime Extensions:");
+		log_flatpak_extensions(runtime_exts);
+	}
+
+	blog(LOG_INFO, "Flatpak Framework Version: %s",
+	     fp_version ? fp_version : "unknown");
+
+	config_close(fp_info);
+}
+
 static void log_desktop_session_info(void)
 {
 	char *session_ptr = getenv("XDG_SESSION_TYPE");
@@ -323,7 +385,11 @@ void log_system_info(void)
 	log_memory_info();
 	log_kernel_version();
 #if defined(__linux__) || defined(__FreeBSD__)
-	log_distribution_info();
+	if (access("/.flatpak-info", F_OK) == 0)
+		log_flatpak_info();
+	else
+		log_distribution_info();
+
 	log_desktop_session_info();
 #endif
 	if (obs_get_nix_platform() == OBS_NIX_PLATFORM_X11_EGL)
