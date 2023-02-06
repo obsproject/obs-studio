@@ -29,6 +29,9 @@ function(setup_binary_target target)
   endif()
 
   if(MSVC)
+    target_link_options(${target} PRIVATE
+                        /PDBALTPATH:$<TARGET_PDB_FILE_NAME:${target}>)
+
     install(
       FILES $<TARGET_PDB_FILE:${target}>
       CONFIGURATIONS "RelWithDebInfo" "Debug"
@@ -56,6 +59,9 @@ function(setup_plugin_target target)
   _setup_plugin_target(${ARGV})
 
   if(MSVC)
+    target_link_options(${target} PRIVATE
+                        /PDBALTPATH:$<TARGET_PDB_FILE_NAME:${target}>)
+
     install(
       FILES $<TARGET_PDB_FILE:${target}>
       CONFIGURATIONS "RelWithDebInfo" "Debug"
@@ -97,6 +103,9 @@ function(setup_script_plugin_target target)
   _setup_script_plugin_target(${ARGV})
 
   if(MSVC)
+    target_link_options(${target} PRIVATE
+                        /PDBALTPATH:$<TARGET_PDB_FILE_NAME:${target}>)
+
     install(
       FILES $<TARGET_PDB_FILE:${target}>
       CONFIGURATIONS "RelWithDebInfo" "Debug"
