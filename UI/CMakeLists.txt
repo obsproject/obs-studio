@@ -82,6 +82,10 @@ set_target_properties(
              AUTORCC ON
              AUTOUIC_SEARCH_PATHS "forms;forms/source-toolbar")
 
+if(_QT_VERSION EQUAL 6 AND OS_WINDOWS)
+  set_target_properties(obs PROPERTIES AUTORCC_OPTIONS "--format-version;1")
+endif()
+
 target_include_directories(obs PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
                                        ${CMAKE_CURRENT_BINARY_DIR})
 
