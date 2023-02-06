@@ -18,6 +18,11 @@ set_target_properties(
              AUTORCC ON
              AUTOUIC_SEARCH_PATHS "forms")
 
+if(_QT_VERSION EQUAL 6 AND OS_WINDOWS)
+  set_target_properties(decklink-captions PROPERTIES AUTORCC_OPTIONS
+                                                     "--format-version;1")
+endif()
+
 target_compile_features(decklink-captions PRIVATE cxx_std_17)
 
 target_sources(decklink-captions PRIVATE forms/captions.ui)

@@ -16,6 +16,11 @@ set_target_properties(
              AUTORCC ON
              AUTOUIC_SEARCH_PATHS "forms")
 
+if(_QT_VERSION EQUAL 6 AND OS_WINDOWS)
+  set_target_properties(decklink-output-ui PROPERTIES AUTORCC_OPTIONS
+                                                      "--format-version;1")
+endif()
+
 target_sources(decklink-output-ui PRIVATE forms/output.ui)
 
 target_sources(
