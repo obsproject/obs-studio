@@ -17,8 +17,11 @@
 
 #include "obs-internal.h"
 
-static void *gpu_encode_thread(struct obs_core_video_mix *video)
+#define NBSP "\xC2\xA0"
+static const char *gpu_encode_frame_name = "gpu_encode_frame";
+static void *gpu_encode_thread(void *data)
 {
+	struct obs_core_video_mix *video = data;
 	uint64_t interval = video_output_get_frame_time(video->video);
 	DARRAY(obs_encoder_t *) encoders;
 	int wait_frames = NUM_ENCODE_TEXTURE_FRAMES_TO_WAIT;
@@ -26,6 +29,10 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 	da_init(encoders);
 
 	os_set_thread_name("obs gpu encode thread");
+	const char *gpu_encode_thread_name = profile_store_name(
+		obs_get_profiler_name_store(),
+		"obs_gpu_encode_thread(%g" NBSP "ms)", interval / 1000000.);
+	profile_register_root(gpu_encode_thread_name, interval);
 
 	while (os_sem_wait(video->gpu_encode_semaphore) == 0) {
 		struct obs_tex_frame tf;
@@ -41,6 +48,8 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 			wait_frames--;
 			continue;
 		}
+
+		profile_start(gpu_encode_thread_name);
 
 		os_event_reset(video->gpu_encode_inactive);
 
@@ -125,6 +134,7 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 			else
 				next_key++;
 
+			profile_start(gpu_encode_frame_name);
 			if (encoder->info.encode_texture2) {
 				struct encoder_texture tex = {0};
 
@@ -142,6 +152,8 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 					encoder->cur_pts, lock_key, &next_key,
 					&pkt, &received);
 			}
+			profile_end(gpu_encode_frame_name);
+
 			send_off_encoder_packet(encoder, success, received,
 						&pkt);
 
@@ -178,6 +190,9 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 			obs_encoder_release(encoders.array[i]);
 
 		da_resize(encoders, 0);
+
+		profile_end(gpu_encode_thread_name);
+		profile_reenable_thread();
 	}
 
 	da_free(encoders);
@@ -186,7 +201,6 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 
 bool init_gpu_encoding(struct obs_core_video_mix *video)
 {
-#ifdef _WIN32
 	const struct video_output_info *info =
 		video_output_get_info(video->video);
 
@@ -210,7 +224,11 @@ bool init_gpu_encoding(struct obs_core_video_mix *video)
 			return false;
 		}
 
+#ifdef _WIN32
 		uint32_t handle = gs_texture_get_shared_handle(tex);
+#else
+		uint32_t handle = (uint32_t)-1;
+#endif
 
 		struct obs_tex_frame frame = {.tex = tex,
 					      .tex_uv = tex_uv,
@@ -233,10 +251,6 @@ bool init_gpu_encoding(struct obs_core_video_mix *video)
 
 	video->gpu_encode_thread_initialized = true;
 	return true;
-#else
-	UNUSED_PARAMETER(video);
-	return false;
-#endif
 }
 
 void stop_gpu_encoding_thread(struct obs_core_video_mix *video)

@@ -273,6 +273,16 @@ struct gs_exports {
 
 	bool (*device_nv12_available)(gs_device_t *device);
 	bool (*device_p010_available)(gs_device_t *device);
+	bool (*device_texture_create_nv12)(gs_device_t *device,
+					   gs_texture_t **tex_y,
+					   gs_texture_t **tex_uv,
+					   uint32_t width, uint32_t height,
+					   uint32_t flags);
+	bool (*device_texture_create_p010)(gs_device_t *device,
+					   gs_texture_t **tex_y,
+					   gs_texture_t **tex_uv,
+					   uint32_t width, uint32_t height,
+					   uint32_t flags);
 
 	bool (*device_is_monitor_hdr)(gs_device_t *device, void *monitor);
 
@@ -331,16 +341,6 @@ struct gs_exports {
 	int (*device_texture_acquire_sync)(gs_texture_t *tex, uint64_t key,
 					   uint32_t ms);
 	int (*device_texture_release_sync)(gs_texture_t *tex, uint64_t key);
-	bool (*device_texture_create_nv12)(gs_device_t *device,
-					   gs_texture_t **tex_y,
-					   gs_texture_t **tex_uv,
-					   uint32_t width, uint32_t height,
-					   uint32_t flags);
-	bool (*device_texture_create_p010)(gs_device_t *device,
-					   gs_texture_t **tex_y,
-					   gs_texture_t **tex_uv,
-					   uint32_t width, uint32_t height,
-					   uint32_t flags);
 
 	gs_stagesurf_t *(*device_stagesurface_create_nv12)(gs_device_t *device,
 							   uint32_t width,
