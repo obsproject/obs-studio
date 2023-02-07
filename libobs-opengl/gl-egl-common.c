@@ -186,7 +186,7 @@ struct gs_texture *gl_egl_create_texture_from_eglimage(
 
 	struct gs_texture *texture = NULL;
 	texture = gs_texture_create(width, height, color_format, 1, NULL,
-				    GS_GL_DUMMYTEX);
+				    GS_GL_DUMMYTEX | GS_RENDER_TARGET);
 	const GLuint gltex = *(GLuint *)gs_texture_get_obj(texture);
 
 	gl_bind_texture(GL_TEXTURE_2D, gltex);
