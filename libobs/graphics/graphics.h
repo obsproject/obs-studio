@@ -857,6 +857,12 @@ EXPORT bool gs_timer_range_get_data(gs_timer_range_t *range, bool *disjoint,
 
 EXPORT bool gs_nv12_available(void);
 EXPORT bool gs_p010_available(void);
+EXPORT bool gs_texture_create_nv12(gs_texture_t **tex_y, gs_texture_t **tex_uv,
+				   uint32_t width, uint32_t height,
+				   uint32_t flags);
+EXPORT bool gs_texture_create_p010(gs_texture_t **tex_y, gs_texture_t **tex_uv,
+				   uint32_t width, uint32_t height,
+				   uint32_t flags);
 
 EXPORT bool gs_is_monitor_hdr(void *monitor);
 
@@ -955,13 +961,6 @@ EXPORT int gs_texture_acquire_sync(gs_texture_t *tex, uint64_t key,
  * return 0 on success, -1 on error
  */
 EXPORT int gs_texture_release_sync(gs_texture_t *tex, uint64_t key);
-
-EXPORT bool gs_texture_create_nv12(gs_texture_t **tex_y, gs_texture_t **tex_uv,
-				   uint32_t width, uint32_t height,
-				   uint32_t flags);
-EXPORT bool gs_texture_create_p010(gs_texture_t **tex_y, gs_texture_t **tex_uv,
-				   uint32_t width, uint32_t height,
-				   uint32_t flags);
 
 EXPORT gs_stagesurf_t *gs_stagesurface_create_nv12(uint32_t width,
 						   uint32_t height);

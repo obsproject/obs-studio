@@ -179,7 +179,6 @@ static bool obs_init_gpu_conversion(struct obs_core_video_mix *video)
 	video->convert_textures[0] = NULL;
 	video->convert_textures[1] = NULL;
 	video->convert_textures[2] = NULL;
-#ifdef _WIN32
 	video->convert_textures_encode[0] = NULL;
 	video->convert_textures_encode[1] = NULL;
 	video->convert_textures_encode[2] = NULL;
@@ -200,7 +199,6 @@ static bool obs_init_gpu_conversion(struct obs_core_video_mix *video)
 			return false;
 		}
 	}
-#endif
 
 	bool success = true;
 
@@ -297,13 +295,11 @@ static bool obs_init_gpu_conversion(struct obs_core_video_mix *video)
 				gs_texture_destroy(video->convert_textures[c]);
 				video->convert_textures[c] = NULL;
 			}
-#ifdef _WIN32
 			if (video->convert_textures_encode[c]) {
 				gs_texture_destroy(
 					video->convert_textures_encode[c]);
 				video->convert_textures_encode[c] = NULL;
 			}
-#endif
 		}
 	}
 
@@ -830,12 +826,10 @@ static void obs_free_render_textures(struct obs_core_video_mix *video)
 			gs_texture_destroy(video->convert_textures[c]);
 			video->convert_textures[c] = NULL;
 		}
-#ifdef _WIN32
 		if (video->convert_textures_encode[c]) {
 			gs_texture_destroy(video->convert_textures_encode[c]);
 			video->convert_textures_encode[c] = NULL;
 		}
-#endif
 	}
 
 	gs_texture_destroy(video->output_texture);
