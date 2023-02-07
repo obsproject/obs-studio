@@ -269,9 +269,9 @@ struct obs_core_video_mix {
 	gs_stagesurf_t *active_copy_surfaces[NUM_TEXTURES][NUM_CHANNELS];
 	gs_stagesurf_t *copy_surfaces[NUM_TEXTURES][NUM_CHANNELS];
 	gs_texture_t *convert_textures[NUM_CHANNELS];
+	gs_texture_t *convert_textures_encode[NUM_CHANNELS];
 #ifdef _WIN32
 	gs_stagesurf_t *copy_surfaces_encode[NUM_TEXTURES];
-	gs_texture_t *convert_textures_encode[NUM_CHANNELS];
 #endif
 	gs_texture_t *render_texture;
 	gs_texture_t *output_texture;
