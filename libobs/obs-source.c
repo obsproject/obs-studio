@@ -3034,6 +3034,10 @@ void obs_source_filter_add(obs_source_t *source, obs_source_t *filter)
 
 	blog(LOG_DEBUG, "- filter '%s' (%s) added to source '%s'",
 	     filter->context.name, filter->info.id, source->context.name);
+
+	if (filter->info.filter_add)
+		filter->info.filter_add(filter->context.data,
+					filter->filter_parent);
 }
 
 static bool obs_source_filter_remove_refless(obs_source_t *source,
