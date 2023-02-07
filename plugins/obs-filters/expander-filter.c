@@ -459,6 +459,15 @@ expander_filter_audio(void *data, struct obs_audio_data *audio)
 	return audio;
 }
 
+static bool presets_changed(obs_properties_t *props, obs_property_t *prop,
+			    obs_data_t *settings)
+{
+	UNUSED_PARAMETER(props);
+	UNUSED_PARAMETER(prop);
+	UNUSED_PARAMETER(settings);
+	return true;
+}
+
 static obs_properties_t *expander_properties(void *data)
 {
 	struct expander_data *cd = data;
@@ -472,6 +481,7 @@ static obs_properties_t *expander_properties(void *data)
 					     "expander");
 		obs_property_list_add_string(presets, TEXT_PRESETS_GATE,
 					     "gate");
+		obs_property_set_modified_callback(presets, presets_changed);
 	}
 
 	p = obs_properties_add_float_slider(
