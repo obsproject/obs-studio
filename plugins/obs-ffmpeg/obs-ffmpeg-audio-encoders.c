@@ -235,6 +235,9 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 	if (aoi->speakers == SPEAKERS_4POINT1)
 		enc->context->ch_layout =
 			(AVChannelLayout)AV_CHANNEL_LAYOUT_4POINT1;
+	if (aoi->speakers == SPEAKERS_2POINT1)
+		enc->context->ch_layout =
+			(AVChannelLayout)AV_CHANNEL_LAYOUT_SURROUND;
 #endif
 
 	enc->context->sample_rate = audio_output_get_sample_rate(audio);
