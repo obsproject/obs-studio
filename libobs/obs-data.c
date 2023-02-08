@@ -20,6 +20,7 @@
 #include "util/dstr.h"
 #include "util/darray.h"
 #include "util/platform.h"
+#include "util/uthash.h"
 #include "graphics/vec2.h"
 #include "graphics/vec3.h"
 #include "graphics/vec4.h"
@@ -32,7 +33,7 @@ struct obs_data_item {
 	volatile long ref;
 	const char *name;
 	struct obs_data *parent;
-	struct obs_data_item *next;
+	UT_hash_handle hh;
 	enum obs_data_type type;
 	size_t name_len;
 	size_t data_len;
@@ -46,7 +47,7 @@ struct obs_data_item {
 struct obs_data {
 	volatile long ref;
 	char *json;
-	struct obs_data_item *first_item;
+	struct obs_data_item *items;
 };
 
 struct obs_data_array {
@@ -306,45 +307,21 @@ static struct obs_data_item *obs_data_item_create(const char *name,
 	return item;
 }
 
-static struct obs_data_item **get_item_prev_next(struct obs_data *data,
-						 struct obs_data_item *current)
-{
-	if (!current || !data)
-		return NULL;
-
-	struct obs_data_item **prev_next = &data->first_item;
-	struct obs_data_item *item = data->first_item;
-
-	while (item) {
-		if (item == current)
-			return prev_next;
-
-		prev_next = &item->next;
-		item = item->next;
-	}
-
-	return NULL;
-}
-
 static inline void obs_data_item_detach(struct obs_data_item *item)
 {
-	struct obs_data_item **prev_next =
-		get_item_prev_next(item->parent, item);
-
-	if (prev_next) {
-		*prev_next = item->next;
-		item->next = NULL;
+	if (item->parent) {
+		HASH_DEL(item->parent->items, item);
+		item->parent = NULL;
 	}
 }
 
-static inline void obs_data_item_reattach(struct obs_data_item *old_ptr,
-					  struct obs_data_item *new_ptr)
+static inline void obs_data_item_reattach(struct obs_data *parent,
+					  struct obs_data_item *item)
 {
-	struct obs_data_item **prev_next =
-		get_item_prev_next(new_ptr->parent, old_ptr);
-
-	if (prev_next)
-		*prev_next = new_ptr;
+	if (parent) {
+		HASH_ADD_STR(parent->items, name, item);
+		item->parent = parent;
+	}
 }
 
 static struct obs_data_item *
@@ -356,16 +333,23 @@ obs_data_item_ensure_capacity(struct obs_data_item *item)
 	if (item->capacity >= new_size)
 		return item;
 
+	struct obs_data *parent = item->parent;
+	obs_data_item_detach(item);
+
 	new_item = brealloc(item, new_size);
 	new_item->capacity = new_size;
 	new_item->name = get_item_name(new_item);
 
-	obs_data_item_reattach(item, new_item);
+	obs_data_item_reattach(parent, new_item);
+
 	return new_item;
 }
 
 static inline void obs_data_item_destroy(struct obs_data_item *item)
 {
+	if (item->parent)
+		HASH_DEL(item->parent->items, item);
+
 	item_data_release(item);
 	item_default_data_release(item);
 	item_autoselect_data_release(item);
@@ -601,9 +585,11 @@ static inline void set_json_array(json_t *json, const char *name,
 static json_t *obs_data_to_json(obs_data_t *data)
 {
 	json_t *json = json_object();
-	obs_data_item_t *item = NULL;
 
-	for (item = obs_data_first(data); item; obs_data_item_next(&item)) {
+	obs_data_item_t *item = NULL;
+	obs_data_item_t *temp = NULL;
+
+	HASH_ITER (hh, data->items, item, temp) {
 		enum obs_data_type type = obs_data_item_gettype(item);
 		const char *name = get_item_name(item);
 
@@ -709,12 +695,11 @@ void obs_data_addref(obs_data_t *data)
 
 static inline void obs_data_destroy(struct obs_data *data)
 {
-	struct obs_data_item *item = data->first_item;
+	struct obs_data_item *item, *temp;
 
-	while (item) {
-		struct obs_data_item *next = item->next;
+	HASH_ITER (hh, data->items, item, temp) {
+		obs_data_item_detach(item);
 		obs_data_item_release(&item);
-		item = next;
 	}
 
 	/* NOTE: don't use bfree for json text, allocated by json */
@@ -824,9 +809,9 @@ obs_data_t *obs_data_get_defaults(obs_data_t *data)
 	if (!data)
 		return defaults;
 
-	struct obs_data_item *item = data->first_item;
+	struct obs_data_item *item, *temp;
 
-	while (item) {
+	HASH_ITER (hh, data->items, item, temp) {
 		const char *name = get_item_name(item);
 		switch (item->type) {
 		case OBS_DATA_NULL:
@@ -892,8 +877,6 @@ obs_data_t *obs_data_get_defaults(obs_data_t *data)
 			break;
 		}
 		}
-
-		item = item->next;
 	}
 
 	return defaults;
@@ -904,16 +887,9 @@ static struct obs_data_item *get_item(struct obs_data *data, const char *name)
 	if (!data)
 		return NULL;
 
-	struct obs_data_item *item = data->first_item;
-
-	while (item) {
-		if (strcmp(get_item_name(item), name) == 0)
-			return item;
-
-		item = item->next;
-	}
-
-	return NULL;
+	struct obs_data_item *item;
+	HASH_FIND_STR(data->items, name, item);
+	return item;
 }
 
 static void set_item_data(struct obs_data *data, struct obs_data_item **item,
@@ -926,31 +902,8 @@ static void set_item_data(struct obs_data *data, struct obs_data_item **item,
 	if ((!item || !*item) && data) {
 		new_item = obs_data_item_create(name, ptr, size, type,
 						default_data, autoselect_data);
-
-		obs_data_item_t *prev = obs_data_first(data);
-		obs_data_item_t *next = obs_data_first(data);
-		obs_data_item_next(&next);
-		for (; prev && next;
-		     obs_data_item_next(&prev), obs_data_item_next(&next)) {
-			if (strcmp(get_item_name(next), name) > 0)
-				break;
-		}
-
 		new_item->parent = data;
-		if (prev && strcmp(get_item_name(prev), name) < 0) {
-			prev->next = new_item;
-			new_item->next = next;
-
-		} else {
-			data->first_item = new_item;
-			new_item->next = prev;
-		}
-
-		if (!prev)
-			data->first_item = new_item;
-
-		obs_data_item_release(&prev);
-		obs_data_item_release(&next);
+		HASH_ADD_STR(data->items, name, new_item);
 
 	} else if (default_data) {
 		obs_data_item_set_default_data(item, ptr, size, type);
@@ -1077,16 +1030,13 @@ static inline void copy_item(struct obs_data *data, struct obs_data_item *item)
 
 void obs_data_apply(obs_data_t *target, obs_data_t *apply_data)
 {
-	struct obs_data_item *item;
-
 	if (!target || !apply_data || target == apply_data)
 		return;
 
-	item = apply_data->first_item;
+	struct obs_data_item *item, *temp;
 
-	while (item) {
+	HASH_ITER (hh, apply_data->items, item, temp) {
 		copy_item(target, item);
-		item = item->next;
 	}
 }
 
@@ -1130,16 +1080,12 @@ static inline void clear_item(struct obs_data_item *item)
 
 void obs_data_clear(obs_data_t *target)
 {
-	struct obs_data_item *item;
-
 	if (!target)
 		return;
 
-	item = target->first_item;
-
-	while (item) {
+	struct obs_data_item *item, *temp;
+	HASH_ITER (hh, target->items, item, temp) {
 		clear_item(item);
-		item = item->next;
 	}
 }
 
@@ -1600,9 +1546,9 @@ obs_data_item_t *obs_data_first(obs_data_t *data)
 	if (!data)
 		return NULL;
 
-	if (data->first_item)
-		os_atomic_inc_long(&data->first_item->ref);
-	return data->first_item;
+	if (data->items)
+		os_atomic_inc_long(&data->items->ref);
+	return data->items;
 }
 
 obs_data_item_t *obs_data_item_byname(obs_data_t *data, const char *name)
@@ -1619,7 +1565,7 @@ obs_data_item_t *obs_data_item_byname(obs_data_t *data, const char *name)
 bool obs_data_item_next(obs_data_item_t **item)
 {
 	if (item && *item) {
-		obs_data_item_t *next = (*item)->next;
+		obs_data_item_t *next = (*item)->hh.next;
 		obs_data_item_release(item);
 
 		*item = next;
