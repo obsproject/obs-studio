@@ -854,7 +854,7 @@ static int libsrt_close(URLContext *h)
 	if (s->passphrase)
 		av_freep(&s->passphrase);
 	/* Log stream stats. */
-	SRT_TRACEBSTATS perf;
+	SRT_TRACEBSTATS perf = {0};
 	srt_bstats(s->fd, &perf, 1);
 	blog(LOG_INFO, "---------------------------------");
 	blog(LOG_INFO,
