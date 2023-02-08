@@ -20,8 +20,8 @@
  * Text Lookup interface
  *
  *   Used for storing and looking up localized strings.  Stores localization
- * strings in a radix/trie tree to efficiently look up associated strings via a
- * unique string identifier name.
+ *   strings in a hashmap to efficiently look up associated strings via a
+ *   unique string identifier name.
  */
 
 #include "c99defs.h"
