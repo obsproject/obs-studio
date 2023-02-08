@@ -108,6 +108,7 @@ enum obs_group_type {
 	OBS_COMBO_INVALID,
 	OBS_GROUP_NORMAL,
 	OBS_GROUP_CHECKABLE,
+	OBS_GROUP_HORIZONTAL_LAYOUT,
 };
 
 enum obs_button_type {

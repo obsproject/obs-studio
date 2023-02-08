@@ -8,7 +8,7 @@
 #include <vector>
 #include <memory>
 
-class QFormLayout;
+class QLayout;
 class OBSPropertiesView;
 class QLabel;
 
@@ -111,29 +111,26 @@ private:
 			   const char *signal);
 
 	QWidget *AddCheckbox(obs_property_t *prop);
-	QWidget *AddText(obs_property_t *prop, QFormLayout *layout,
-			 QLabel *&label);
-	void AddPath(obs_property_t *prop, QFormLayout *layout, QLabel **label);
-	void AddInt(obs_property_t *prop, QFormLayout *layout, QLabel **label);
-	void AddFloat(obs_property_t *prop, QFormLayout *layout,
-		      QLabel **label);
+	QWidget *AddText(obs_property_t *prop, QLayout *layout, QLabel *&label);
+	void AddPath(obs_property_t *prop, QLayout *layout, QLabel **label);
+	void AddInt(obs_property_t *prop, QLayout *layout, QLabel **label);
+	void AddFloat(obs_property_t *prop, QLayout *layout, QLabel **label);
 	QWidget *AddList(obs_property_t *prop, bool &warning);
-	void AddEditableList(obs_property_t *prop, QFormLayout *layout,
+	void AddEditableList(obs_property_t *prop, QLayout *layout,
 			     QLabel *&label);
 	QWidget *AddButton(obs_property_t *prop);
-	void AddColorInternal(obs_property_t *prop, QFormLayout *layout,
+	void AddColorInternal(obs_property_t *prop, QLayout *layout,
 			      QLabel *&label, bool supportAlpha);
-	void AddColor(obs_property_t *prop, QFormLayout *layout,
-		      QLabel *&label);
-	void AddColorAlpha(obs_property_t *prop, QFormLayout *layout,
+	void AddColor(obs_property_t *prop, QLayout *layout, QLabel *&label);
+	void AddColorAlpha(obs_property_t *prop, QLayout *layout,
 			   QLabel *&label);
-	void AddFont(obs_property_t *prop, QFormLayout *layout, QLabel *&label);
-	void AddFrameRate(obs_property_t *prop, bool &warning,
-			  QFormLayout *layout, QLabel *&label);
+	void AddFont(obs_property_t *prop, QLayout *layout, QLabel *&label);
+	void AddFrameRate(obs_property_t *prop, bool &warning, QLayout *layout,
+			  QLabel *&label);
 
-	void AddGroup(obs_property_t *prop, QFormLayout *layout);
+	void AddGroup(obs_property_t *prop, QLayout *layout);
 
-	void AddProperty(obs_property_t *property, QFormLayout *layout);
+	void AddProperty(obs_property_t *property, QLayout *layout);
 
 	void resizeEvent(QResizeEvent *event) override;
 

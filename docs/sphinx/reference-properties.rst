@@ -330,6 +330,7 @@ Property Object Functions
 
                           - **OBS_GROUP_NORMAL** - A normal group with just a name and content.
                           - **OBS_GROUP_CHECKABLE** - A checkable group with a checkbox, name and content.
+                          - **OBS_GROUP_HORIZONTAL_LAYOUT** - A group that lays out widgets in a horizontal layout. It can be used with any property type.
 
    :param    group:       Group to add
 
@@ -569,6 +570,7 @@ Property Enumeration Functions
             - OBS_COMBO_INVALID
             - OBS_GROUP_NORMAL
             - OBS_GROUP_CHECKABLE
+            - OBS_GROUP_HORIZONTAL_LAYOUT
 
 ---------------------
 
