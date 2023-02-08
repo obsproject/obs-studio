@@ -11,6 +11,18 @@ if(NOT DEFINED APPDATA_RELEASE_DATE)
   endif()
 endif()
 
+if(NOT DEFINED GIT_HASH)
+  if(EXISTS "${CMAKE_SOURCE_DIR}/.git")
+    execute_process(
+      COMMAND git rev-parse HEAD
+      OUTPUT_VARIABLE GIT_HASH
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+  else()
+    set(GIT_HASH "master")
+  endif()
+endif()
+
 configure_file(com.obsproject.Studio.appdata.xml.in
                com.obsproject.Studio.appdata.xml)
 
