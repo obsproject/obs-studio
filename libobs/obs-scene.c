@@ -1472,6 +1472,12 @@ static bool scene_audio_render(void *data, uint64_t *ts_out,
 
 		pos = (size_t)ns_to_audio_frames(sample_rate,
 						 source_ts - timestamp);
+
+		if (pos >= AUDIO_OUTPUT_FRAMES) {
+			item = item->next;
+			continue;
+		}
+
 		count = AUDIO_OUTPUT_FRAMES - pos;
 
 		if (!apply_buf && !item->visible &&
