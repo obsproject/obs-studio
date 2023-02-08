@@ -34,6 +34,7 @@
 #include <QSizePolicy>
 #include <QScrollBar>
 #include <QTextStream>
+#include <QActionGroup>
 
 #include <util/dstr.h>
 #include <util/util.hpp>
@@ -352,6 +353,11 @@ OBSBasic::OBSBasic(QWidget *parent)
 					 "gridMode");
 	ui->scenes->SetGridMode(sceneGrid);
 
+	if (sceneGrid)
+		ui->actionSceneGridMode->setChecked(true);
+	else
+		ui->actionSceneListMode->setChecked(true);
+
 	ui->scenes->setItemDelegate(new SceneRenameDelegate(ui->scenes));
 
 	auto displayResize = [this]() {
@@ -516,6 +522,10 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	connect(App(), &OBSApp::StyleChanged, this,
 		&OBSBasic::ResetProxyStyleSliders);
+
+	QActionGroup *actionGroup = new QActionGroup(this);
+	actionGroup->addAction(ui->actionSceneListMode);
+	actionGroup->addAction(ui->actionSceneGridMode);
 
 	UpdatePreviewSafeAreas();
 	UpdatePreviewSpacingHelpers();
@@ -5464,10 +5474,25 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 	popup.exec(QCursor::pos());
 }
 
+void OBSBasic::on_actionSceneListMode_triggered()
+{
+	ui->scenes->SetGridMode(false);
+}
+
+void OBSBasic::on_actionSceneGridMode_triggered()
+{
+	ui->scenes->SetGridMode(true);
+}
+
 void OBSBasic::GridActionClicked()
 {
 	bool gridMode = !ui->scenes->GetGridMode();
 	ui->scenes->SetGridMode(gridMode);
+
+	if (gridMode)
+		ui->actionSceneGridMode->setChecked(true);
+	else
+		ui->actionSceneListMode->setChecked(true);
 }
 
 void OBSBasic::on_actionAddScene_triggered()
@@ -9346,6 +9371,8 @@ void OBSBasic::on_resetUI_triggered()
 	ui->toggleContextBar->setChecked(true);
 	ui->toggleSourceIcons->setChecked(true);
 	ui->toggleStatusBar->setChecked(true);
+	ui->scenes->SetGridMode(false);
+	ui->actionSceneListMode->setChecked(true);
 }
 
 void OBSBasic::on_multiviewProjectorWindowed_triggered()

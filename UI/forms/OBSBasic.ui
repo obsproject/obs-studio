@@ -667,6 +667,13 @@
     <property name="title">
      <string>Basic.MainMenu.View</string>
     </property>
+    <widget class="QMenu" name="sceneListModeMenu">
+     <property name="title">
+      <string>Basic.MainMenu.View.SceneListMode</string>
+     </property>
+     <addaction name="actionSceneListMode"/>
+     <addaction name="actionSceneGridMode"/>
+    </widget>
     <action name="resetUI">
      <property name="text">
       <string>Basic.MainMenu.View.ResetUI</string>
@@ -683,6 +690,7 @@
     <addaction name="resetUI"/>
     <addaction name="actionFullscreenInterface"/>
     <addaction name="separator"/>
+    <addaction name="sceneListModeMenu"/>
     <addaction name="toggleListboxToolbars"/>
     <addaction name="toggleContextBar"/>
     <addaction name="toggleSourceIcons"/>
@@ -2298,6 +2306,22 @@
    </property>
    <property name="themeID" stdset="0">
     <string>filtersIcon</string>
+   </property>
+  </action>
+  <action name="actionSceneGridMode">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Grid</string>
+   </property>
+  </action>
+  <action name="actionSceneListMode">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>List</string>
    </property>
   </action>
  </widget>
