@@ -345,10 +345,13 @@ if(OS_WINDOWS)
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/obs.rc.in
                  ${CMAKE_BINARY_DIR}/obs.rc)
 
+  find_package(Detours REQUIRED)
+
   target_sources(
     obs
     PRIVATE obs.manifest
             platform-windows.cpp
+            win-dll-blocklist.c
             update/update-window.cpp
             update/update-window.hpp
             update/win-update.cpp
@@ -367,13 +370,14 @@ if(OS_WINDOWS)
   endif()
 
   find_package(MbedTLS)
-  target_link_libraries(obs PRIVATE Mbedtls::Mbedtls OBS::blake2)
+  target_link_libraries(obs PRIVATE Mbedtls::Mbedtls OBS::blake2
+                                    Detours::Detours)
 
   target_compile_features(obs PRIVATE cxx_std_17)
 
   target_compile_definitions(
     obs PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS
-                _CRT_NONSTDC_NO_WARNINGS)
+                _CRT_NONSTDC_NO_WARNINGS PSAPI_VERSION=2)
 
   if(MSVC)
     target_link_options(obs PRIVATE "LINKER:/IGNORE:4098" "LINKER:/IGNORE:4099")

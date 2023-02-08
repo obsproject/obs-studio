@@ -3210,6 +3210,9 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef _WIN32
+	// Try to keep this as early as possible
+	install_dll_blocklist_hook();
+
 	obs_init_win32_crash_handler();
 	SetErrorMode(SEM_FAILCRITICALERRORS);
 	load_debug_privilege();
@@ -3380,6 +3383,8 @@ int main(int argc, char *argv[])
 		func();
 		FreeLibrary(hRtwq);
 	}
+
+	log_blocked_dlls();
 #endif
 
 	blog(LOG_INFO, "Number of memory leaks: %ld", bnum_allocs());
