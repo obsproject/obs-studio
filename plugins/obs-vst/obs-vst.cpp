@@ -263,7 +263,9 @@ static void fill_out_plugins(obs_property_t *list)
 	for (int a = 0; a < dir_list.size(); ++a) {
 		QDir search_dir(dir_list[a]);
 		search_dir.setNameFilters(filters);
-		QDirIterator it(search_dir, QDirIterator::Subdirectories);
+		QDirIterator it(search_dir,
+				QDirIterator::Subdirectories |
+					QDirIterator::FollowSymlinks);
 		while (it.hasNext()) {
 			QString path = it.next();
 			QString name = it.fileName();
