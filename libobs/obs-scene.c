@@ -960,7 +960,7 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 {
 	const char *name = obs_data_get_string(item_data, "name");
 	const char *src_uuid = obs_data_get_string(item_data, "source_uuid");
-	obs_source_t *source;
+	obs_source_t *source = NULL;
 	const char *scale_filter_str;
 	const char *blend_method_str;
 	const char *blend_str;
@@ -973,7 +973,9 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 
 	if (src_uuid && strlen(src_uuid) == UUID_STR_LENGTH)
 		source = obs_get_source_by_uuid(src_uuid);
-	else
+
+	/* Fall back to name if UUID was not found or is not set. */
+	if (!source)
 		source = obs_get_source_by_name(name);
 
 	if (!source) {

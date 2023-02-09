@@ -351,6 +351,15 @@ Libobs Objects
 
 ---------------------
 
+.. function:: obs_source_t *obs_get_transition_by_uuid(const char *uuid)
+
+   Gets a transition by its UUID.
+
+   Increments the source reference counter, use
+   :c:func:`obs_source_release()` to release it when complete.
+
+---------------------
+
 .. function:: obs_scene_t *obs_get_scene_by_name(const char *name)
 
    Gets a scene by its name.
