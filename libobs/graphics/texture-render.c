@@ -34,6 +34,7 @@ struct gs_texture_render {
 	enum gs_zstencil_format zsformat;
 
 	bool rendered;
+	bool shared;
 };
 
 gs_texrender_t *gs_texrender_create(enum gs_color_format format,
@@ -43,6 +44,18 @@ gs_texrender_t *gs_texrender_create(enum gs_color_format format,
 	texrender = bzalloc(sizeof(struct gs_texture_render));
 	texrender->format = format;
 	texrender->zsformat = zsformat;
+
+	return texrender;
+}
+
+gs_texrender_t *gs_texrender_create2(enum gs_color_format format,
+				     enum gs_zstencil_format zsformat)
+{
+	struct gs_texture_render *texrender;
+	texrender = bzalloc(sizeof(struct gs_texture_render));
+	texrender->format = format;
+	texrender->zsformat = zsformat;
+	texrender->shared = true;
 
 	return texrender;
 }
@@ -70,8 +83,11 @@ static bool texrender_resetbuffer(gs_texrender_t *texrender, uint32_t cx,
 	texrender->cx = cx;
 	texrender->cy = cy;
 
-	texrender->target = gs_texture_create(cx, cy, texrender->format, 1,
-					      NULL, GS_RENDER_TARGET);
+	uint32_t flags = GS_RENDER_TARGET |
+			 (texrender->shared ? GS_SHARED_TEX : 0);
+
+	texrender->target =
+		gs_texture_create(cx, cy, texrender->format, 1, NULL, flags);
 	if (!texrender->target)
 		return false;
 
@@ -156,4 +172,9 @@ gs_texture_t *gs_texrender_get_texture(const gs_texrender_t *texrender)
 enum gs_color_format gs_texrender_get_format(const gs_texrender_t *texrender)
 {
 	return texrender->format;
+}
+
+EXPORT bool gs_texrender_has_shared_texture(const gs_texrender_t *texrender)
+{
+	return texrender ? texrender->shared : false;
 }

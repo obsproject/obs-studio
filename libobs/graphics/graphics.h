@@ -465,6 +465,8 @@ EXPORT void gs_effect_set_color(gs_eparam_t *param, uint32_t argb);
 
 EXPORT gs_texrender_t *gs_texrender_create(enum gs_color_format format,
 					   enum gs_zstencil_format zsformat);
+EXPORT gs_texrender_t *gs_texrender_create2(enum gs_color_format format,
+					    enum gs_zstencil_format zsformat);
 EXPORT void gs_texrender_destroy(gs_texrender_t *texrender);
 EXPORT bool gs_texrender_begin(gs_texrender_t *texrender, uint32_t cx,
 			       uint32_t cy);
@@ -476,6 +478,7 @@ EXPORT void gs_texrender_reset(gs_texrender_t *texrender);
 EXPORT gs_texture_t *gs_texrender_get_texture(const gs_texrender_t *texrender);
 EXPORT enum gs_color_format
 gs_texrender_get_format(const gs_texrender_t *texrender);
+EXPORT bool gs_texrender_has_shared_texture(const gs_texrender_t *texrender);
 
 /* ---------------------------------------------------
  * graphics subsystem
