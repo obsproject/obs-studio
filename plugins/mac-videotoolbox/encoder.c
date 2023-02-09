@@ -1477,8 +1477,23 @@ compare_encoder_list(const void *left_val, const void *right_val, void *unused)
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("mac-videotoolbox", "en-US")
+dispatch_group_t encoder_list_dispatch_group;
+CFArrayRef encoder_list_const;
 
 bool obs_module_load(void)
+{
+	dispatch_queue_t queue =
+		dispatch_queue_create("Encoder list load queue", NULL);
+	encoder_list_dispatch_group = dispatch_group_create();
+	dispatch_group_async(encoder_list_dispatch_group, queue, ^{
+		VTCopyVideoEncoderList(NULL, &encoder_list_const);
+	});
+	// The group dispatch keeps a reference until it's finished
+	dispatch_release(queue);
+	return true;
+}
+
+void obs_module_post_load(void)
 {
 	struct obs_encoder_info info = {
 		.type = OBS_ENCODER_VIDEO,
@@ -1496,8 +1511,8 @@ bool obs_module_load(void)
 	da_init(vt_prores_hardware_encoder_list);
 	da_init(vt_prores_software_encoder_list);
 
-	CFArrayRef encoder_list_const;
-	VTCopyVideoEncoderList(NULL, &encoder_list_const);
+	dispatch_group_wait(encoder_list_dispatch_group, DISPATCH_TIME_FOREVER);
+	dispatch_release(encoder_list_dispatch_group);
 	CFIndex size = CFArrayGetCount(encoder_list_const);
 
 	CFMutableArrayRef encoder_list = CFArrayCreateMutableCopy(
@@ -1582,9 +1597,7 @@ bool obs_module_load(void)
 
 	CFRelease(encoder_list);
 
-	VT_LOG(LOG_INFO, "Adding VideoToolbox encoders");
-
-	return true;
+	VT_LOG(LOG_INFO, "Added VideoToolbox encoders");
 }
 
 void obs_module_unload(void)
