@@ -413,7 +413,7 @@ void SourceTreeItem::ExitEditModeInternal(bool save)
 	editor = nullptr;
 	setFocusPolicy(Qt::NoFocus);
 	boxLayout->insertWidget(index, label);
-	label->setFocus();
+	setFocus();
 
 	/* ----------------------------------------- */
 	/* check for empty string                    */
