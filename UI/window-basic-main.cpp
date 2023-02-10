@@ -587,6 +587,9 @@ void OBSBasic::copyActionsDynamicProperties()
 	for (QAction *x : ui->scenesToolbar->actions()) {
 		QWidget *temp = ui->scenesToolbar->widgetForAction(x);
 
+		if (!temp)
+			continue;
+
 		for (QByteArray &y : x->dynamicPropertyNames()) {
 			temp->setProperty(y, x->property(y));
 		}
@@ -595,6 +598,9 @@ void OBSBasic::copyActionsDynamicProperties()
 	for (QAction *x : ui->sourcesToolbar->actions()) {
 		QWidget *temp = ui->sourcesToolbar->widgetForAction(x);
 
+		if (!temp)
+			continue;
+
 		for (QByteArray &y : x->dynamicPropertyNames()) {
 			temp->setProperty(y, x->property(y));
 		}
@@ -602,6 +608,9 @@ void OBSBasic::copyActionsDynamicProperties()
 
 	for (QAction *x : ui->mixerToolbar->actions()) {
 		QWidget *temp = ui->mixerToolbar->widgetForAction(x);
+
+		if (!temp)
+			continue;
 
 		for (QByteArray &y : x->dynamicPropertyNames()) {
 			temp->setProperty(y, x->property(y));
