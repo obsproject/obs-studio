@@ -124,7 +124,7 @@ print_usage() {
             "-h, --help                     : Print this help\n" \
             "-q, --quiet                    : Suppress most build process output\n" \
             "-v, --verbose                  : Enable more verbose build process output\n" \
-            "--disable-pipewire             : Disable building with Pipewire support (default: off)\n"
+            "--disable-pipewire             : Disable building with PipeWire support (default: off)\n"
 }
 
 install-dependencies-main() {

@@ -53,7 +53,7 @@ print_usage() {
             "-d, --skip-dependency-checks   : Skip dependency checks (default: off)\n" \
             "-p, --portable                 : Create portable build (default: off)\n" \
             "-pkg, --package                : Create distributable disk image (default: off)\n" \
-            "--disable-pipewire             : Disable building with Pipewire support (default: off)\n" \
+            "--disable-pipewire             : Disable building with PipeWire support (default: off)\n" \
             "--build-dir                    : Specify alternative build directory (default: build)\n"
 }
 
