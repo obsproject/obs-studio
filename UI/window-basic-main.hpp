@@ -643,6 +643,8 @@ private:
 	std::string lastScreenshot;
 	std::string lastReplay;
 
+	void UpdatePreviewOverflowSettings();
+
 public slots:
 	void DeferSaveBegin();
 	void DeferSaveEnd();

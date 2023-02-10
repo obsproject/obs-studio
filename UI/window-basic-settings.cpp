@@ -3170,18 +3170,20 @@ void OBSBasicSettings::SaveGeneralSettings()
 	if (WidgetChanged(ui->snapDistance))
 		config_set_double(GetGlobalConfig(), "BasicWindow",
 				  "SnapDistance", ui->snapDistance->value());
-	if (WidgetChanged(ui->overflowAlwaysVisible))
+	if (WidgetChanged(ui->overflowAlwaysVisible) ||
+	    WidgetChanged(ui->overflowHide) ||
+	    WidgetChanged(ui->overflowSelectionHide)) {
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"OverflowAlwaysVisible",
 				ui->overflowAlwaysVisible->isChecked());
-	if (WidgetChanged(ui->overflowHide))
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"OverflowHidden",
 				ui->overflowHide->isChecked());
-	if (WidgetChanged(ui->overflowSelectionHide))
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"OverflowSelectionHidden",
 				ui->overflowSelectionHide->isChecked());
+		main->UpdatePreviewOverflowSettings();
+	}
 	if (WidgetChanged(ui->previewSafeAreas)) {
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"ShowSafeAreas",
