@@ -412,6 +412,10 @@ void RefreshToolBarStyling(QToolBar *toolBar)
 {
 	for (QAction *action : toolBar->actions()) {
 		QWidget *widget = toolBar->widgetForAction(action);
+
+		if (!widget)
+			continue;
+
 		widget->style()->unpolish(widget);
 		widget->style()->polish(widget);
 	}
