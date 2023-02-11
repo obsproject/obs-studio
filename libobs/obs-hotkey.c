@@ -549,10 +549,11 @@ static inline void load_bindings(obs_hotkey_t *hotkey, obs_data_array_t *data)
 		obs_data_release(item);
 	}
 
-	hotkey_signal("hotkey_bindings_changed", hotkey);
+	if (count)
+		hotkey_signal("hotkey_bindings_changed", hotkey);
 }
 
-static inline void remove_bindings(obs_hotkey_id id);
+static inline bool remove_bindings(obs_hotkey_id id);
 
 void obs_hotkey_load_bindings(obs_hotkey_id id,
 			      obs_key_combination_t *combinations, size_t num)
@@ -563,12 +564,14 @@ void obs_hotkey_load_bindings(obs_hotkey_id id,
 	obs_hotkey_t *hotkey;
 	HASH_FIND_HKEY(obs->hotkeys.hotkeys, id, hotkey);
 	if (hotkey) {
-		remove_bindings(id);
+		bool changed = remove_bindings(id);
 		for (size_t i = 0; i < num; i++)
 			create_binding(hotkey, combinations[i]);
 
-		hotkey_signal("hotkey_bindings_changed", hotkey);
+		if (num || changed)
+			hotkey_signal("hotkey_bindings_changed", hotkey);
 	}
+
 	unlock();
 }
 
@@ -858,8 +861,9 @@ static inline bool find_binding(obs_hotkey_id id, size_t *idx)
 
 static inline void release_pressed_binding(obs_hotkey_binding_t *binding);
 
-static inline void remove_bindings(obs_hotkey_id id)
+static inline bool remove_bindings(obs_hotkey_id id)
 {
+	bool removed = false;
 	size_t idx;
 	while (find_binding(id, &idx)) {
 		obs_hotkey_binding_t *binding =
@@ -869,7 +873,10 @@ static inline void remove_bindings(obs_hotkey_id id)
 			release_pressed_binding(binding);
 
 		da_erase(obs->hotkeys.bindings, idx);
+		removed = true;
 	}
+
+	return removed;
 }
 
 static void release_registerer(obs_hotkey_t *hotkey)
