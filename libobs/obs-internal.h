@@ -154,6 +154,8 @@ struct obs_hotkey {
 	void *registerer;
 
 	obs_hotkey_id pair_partner_id;
+
+	UT_hash_handle hh;
 };
 
 struct obs_hotkey_pair {
@@ -163,6 +165,8 @@ struct obs_hotkey_pair {
 	bool pressed0;
 	bool pressed1;
 	void *data[2];
+
+	UT_hash_handle hh;
 };
 
 typedef struct obs_hotkey_pair obs_hotkey_pair_t;
@@ -412,9 +416,9 @@ struct obs_core_data {
 /* user hotkeys */
 struct obs_core_hotkeys {
 	pthread_mutex_t mutex;
-	DARRAY(obs_hotkey_t) hotkeys;
+	obs_hotkey_t *hotkeys;
 	obs_hotkey_id next_id;
-	DARRAY(obs_hotkey_pair_t) hotkey_pairs;
+	obs_hotkey_pair_t *hotkey_pairs;
 	obs_hotkey_pair_id next_pair_id;
 
 	pthread_t hotkey_thread;

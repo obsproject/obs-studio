@@ -1132,7 +1132,8 @@ static inline bool obs_init_hotkeys(void)
 
 	assert(hotkeys != NULL);
 
-	da_init(hotkeys->hotkeys);
+	hotkeys->hotkeys = NULL;
+	hotkeys->hotkey_pairs = NULL;
 	hotkeys->signals = obs->signals;
 	hotkeys->name_map_init_token = obs_pthread_once_init_token;
 	hotkeys->mute = bstrdup("Mute");
