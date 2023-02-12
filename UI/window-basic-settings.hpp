@@ -125,6 +125,7 @@ private:
 	int sampleRateIndex = 0;
 	int channelIndex = 0;
 	bool llBufferingEnabled = false;
+	bool hotkeysLoaded = false;
 
 	int lastSimpleRecQualityIdx = 0;
 	int lastServiceIdx = -1;

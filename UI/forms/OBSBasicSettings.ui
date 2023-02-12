@@ -5692,6 +5692,25 @@
              <property name="bottomMargin">
               <number>9</number>
              </property>
+             <item row="0" column="0" colspan="2">
+              <widget class="QLabel" name="pleaseWaitLabel">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>Basic.Settings.Hotkeys.PleaseWait</string>
+               </property>
+               <property name="scaledContents">
+                <bool>false</bool>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+              </widget>
+             </item>
             </layout>
            </widget>
           </widget>
