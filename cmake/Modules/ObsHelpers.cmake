@@ -57,9 +57,9 @@ function(setup_binary_target target)
     TARGET ${target}
     POST_BUILD
     COMMAND
-      "${CMAKE_COMMAND}" --install .. --config $<CONFIG> --prefix
-      ${OBS_OUTPUT_DIR}/$<CONFIG> --component obs_${target} >
-      "$<IF:$<PLATFORM_ID:Windows>,nul,/dev/null>"
+      "${CMAKE_COMMAND}" -E env DESTDIR= "${CMAKE_COMMAND}" --install ..
+      --config $<CONFIG> --prefix ${OBS_OUTPUT_DIR}/$<CONFIG> --component
+      obs_${target} > "$<IF:$<PLATFORM_ID:Windows>,nul,/dev/null>"
     COMMENT "Installing OBS rundir"
     VERBATIM)
 
@@ -91,9 +91,9 @@ function(setup_plugin_target target)
     TARGET ${target}
     POST_BUILD
     COMMAND
-      "${CMAKE_COMMAND}" --install .. --config $<CONFIG> --prefix
-      ${OBS_OUTPUT_DIR}/$<CONFIG> --component obs_${target} >
-      "$<IF:$<PLATFORM_ID:Windows>,nul,/dev/null>"
+      "${CMAKE_COMMAND}" -E env DESTDIR= "${CMAKE_COMMAND}" --install ..
+      --config $<CONFIG> --prefix ${OBS_OUTPUT_DIR}/$<CONFIG> --component
+      obs_${target} > "$<IF:$<PLATFORM_ID:Windows>,nul,/dev/null>"
     COMMENT "Installing ${target} to OBS rundir"
     VERBATIM)
 
@@ -131,9 +131,9 @@ function(setup_script_plugin_target target)
     TARGET ${target}
     POST_BUILD
     COMMAND
-      "${CMAKE_COMMAND}" --install .. --config $<CONFIG> --prefix
-      ${OBS_OUTPUT_DIR}/$<CONFIG> --component obs_${target} >
-      "$<IF:$<PLATFORM_ID:Windows>,nul,/dev/null>"
+      "${CMAKE_COMMAND}" -E env DESTDIR= "${CMAKE_COMMAND}" --install ..
+      --config $<CONFIG> --prefix ${OBS_OUTPUT_DIR}/$<CONFIG> --component
+      obs_${target} > "$<IF:$<PLATFORM_ID:Windows>,nul,/dev/null>"
     COMMENT "Installing ${target} to OBS rundir"
     VERBATIM)
 
@@ -189,17 +189,6 @@ function(setup_obs_app target)
     add_dependencies(${target} ${OBS_SCRIPTING_MODULE_LIST})
   endif()
 
-  # detect outdated obs-browser submodule
-  if(NOT TARGET OBS::browser AND TARGET obs-browser)
-    target_compile_features(obs-browser-page PRIVATE cxx_std_17)
-
-    add_library(OBS::browser ALIAS obs-browser)
-
-    if(NOT TARGET OBS::browser-panels AND BROWSER_PANEL_SUPPORT_ENABLED)
-      add_library(OBS::browser-panels ALIAS obs-browser)
-    endif()
-  endif()
-
   if(TARGET OBS::browser)
     setup_target_browser(${target})
   endif()
@@ -212,9 +201,9 @@ function(setup_obs_app target)
     TARGET ${target}
     POST_BUILD
     COMMAND
-      "${CMAKE_COMMAND}" --install .. --config $<CONFIG> --prefix
-      ${OBS_OUTPUT_DIR}/$<CONFIG> --component obs_rundir >
-      "$<IF:$<PLATFORM_ID:Windows>,nul,/dev/null>"
+      "${CMAKE_COMMAND}" -E env DESTDIR= "${CMAKE_COMMAND}" --install ..
+      --config $<CONFIG> --prefix ${OBS_OUTPUT_DIR}/$<CONFIG> --component
+      obs_rundir > "$<IF:$<PLATFORM_ID:Windows>,nul,/dev/null>"
     COMMENT "Installing OBS rundir"
     VERBATIM)
 endfunction()
@@ -249,24 +238,29 @@ endfunction()
 function(export_target target)
   set(CMAKE_EXPORT_PACKAGE_REGISTRY OFF)
 
+  if(OS_LINUX OR OS_FREEBSD)
+    set(_EXCLUDE "")
+  else()
+    set(_EXCLUDE "EXCLUDE_FROM_ALL")
+  endif()
   install(
     TARGETS ${target}
     EXPORT ${target}Targets
     RUNTIME DESTINATION ${OBS_EXECUTABLE_DESTINATION}
             COMPONENT obs_libraries
-            EXCLUDE_FROM_ALL
+            ${_EXCLUDE}
     LIBRARY DESTINATION ${OBS_LIBRARY_DESTINATION}
             COMPONENT obs_libraries
-            EXCLUDE_FROM_ALL
+            ${_EXCLUDE}
     ARCHIVE DESTINATION ${OBS_LIBRARY_DESTINATION}
             COMPONENT obs_libraries
-            EXCLUDE_FROM_ALL
+            ${_EXCLUDE}
     INCLUDES
     DESTINATION ${OBS_INCLUDE_DESTINATION}
     PUBLIC_HEADER
       DESTINATION ${OBS_INCLUDE_DESTINATION}
       COMPONENT obs_libraries
-      EXCLUDE_FROM_ALL)
+      ${_EXCLUDE})
 
   include(GenerateExportHeader)
   generate_export_header(${target} EXPORT_FILE_NAME
@@ -301,14 +295,14 @@ function(export_target target)
     NAMESPACE OBS::
     DESTINATION ${OBS_CMAKE_DESTINATION}/${target}
     COMPONENT obs_libraries
-    EXCLUDE_FROM_ALL)
+    ${_EXCLUDE})
 
   install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/${target}Config.cmake
           ${CMAKE_CURRENT_BINARY_DIR}/${target}ConfigVersion.cmake
     DESTINATION ${OBS_CMAKE_DESTINATION}/${target}
     COMPONENT obs_libraries
-    EXCLUDE_FROM_ALL)
+    ${_EXCLUDE})
 endfunction()
 
 # Helper function to define available graphics modules for targets
@@ -546,9 +540,9 @@ function(_install_obs_datatarget target destination)
     TARGET ${target}
     POST_BUILD
     COMMAND
-      "${CMAKE_COMMAND}" --install .. --config $<CONFIG> --prefix
-      ${OBS_OUTPUT_DIR}/$<CONFIG> --component obs_${target} >
-      "$<IF:$<PLATFORM_ID:Windows>,nul,/dev/null>"
+      "${CMAKE_COMMAND}" -E env DESTDIR= "${CMAKE_COMMAND}" --install ..
+      --config $<CONFIG> --prefix ${OBS_OUTPUT_DIR}/$<CONFIG> --component
+      obs_${target} > "$<IF:$<PLATFORM_ID:Windows>,nul,/dev/null>"
     COMMENT "Installing ${target} to OBS rundir"
     VERBATIM)
 endfunction()

@@ -88,16 +88,17 @@ class VSTPlugin : public QObject {
 public:
 	VSTPlugin(obs_source_t *sourceContext);
 	~VSTPlugin();
-	void loadEffectFromPath(std::string path);
+	void loadEffectFromPath(const std::string &path);
 	void unloadEffect();
 	std::string getEffectPath();
 	std::string getChunk();
-	void setChunk(std::string data);
+	void setChunk(const std::string &data);
 	void setProgram(const int programNumber);
 	int getProgram();
 	void getSourceNames();
 	obs_audio_data *process(struct obs_audio_data *audio);
 	bool openInterfaceWhenActive = false;
+	bool vstLoaded();
 
 	bool isEditorOpen();
 	void onEditorClosed();

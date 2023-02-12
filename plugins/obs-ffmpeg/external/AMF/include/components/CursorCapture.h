@@ -43,6 +43,7 @@ namespace amf
     class AMFCursorCapture : public AMFInterface
     {
     public:
+        AMF_DECLARE_IID(0x166efa1a, 0x19b8, 0x42f2, 0x86, 0x0f, 0x56, 0x69, 0xca, 0x7a, 0x85, 0x4c)
         virtual AMF_RESULT AMF_STD_CALL AcquireCursor(amf::AMFSurface** pSurface) = 0;
         virtual AMF_RESULT AMF_STD_CALL Reset() = 0;
     };

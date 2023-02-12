@@ -4,8 +4,6 @@ function(setup_binary_target target)
     ${target}
     PROPERTIES XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER
                "com.obsproject.${target}"
-               XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY
-               "${OBS_BUNDLE_CODESIGN_IDENTITY}"
                XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS
                "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/entitlements.plist")
 
@@ -50,12 +48,15 @@ function(setup_framework_target target)
   install(
     TARGETS ${target}
     EXPORT "${target}Targets"
-    FRAMEWORK DESTINATION "Frameworks" COMPONENT obs_libraries
+    FRAMEWORK DESTINATION "Frameworks"
+              COMPONENT obs_libraries
+              EXCLUDE_FROM_ALL
     INCLUDES
     DESTINATION Frameworks/$<TARGET_FILE_BASE_NAME:${target}>.framework/Headers
     PUBLIC_HEADER
       DESTINATION
         Frameworks/$<TARGET_FILE_BASE_NAME:${target}>.framework/Headers
+      COMPONENT obs_libraries
       EXCLUDE_FROM_ALL)
 endfunction()
 
@@ -89,8 +90,6 @@ function(setup_plugin_target target)
                "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/Plugin-Info.plist.in"
                XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER
                "com.obsproject.${target}"
-               XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY
-               "${OBS_BUNDLE_CODESIGN_IDENTITY}"
                XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS
                "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/entitlements.plist")
 
@@ -106,8 +105,6 @@ function(setup_script_plugin_target target)
     ${target}
     PROPERTIES XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER
                "com.obsproject.${target}"
-               XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY
-               "${OBS_BUNDLE_CODESIGN_IDENTITY}"
                XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS
                "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/entitlements.plist")
 
@@ -150,18 +147,11 @@ function(setup_obs_app target)
   set_target_properties(
     ${target}
     PROPERTIES BUILD_WITH_INSTALL_RPATH OFF
-               XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY
-               "${OBS_BUNDLE_CODESIGN_IDENTITY}"
                XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS
                "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/entitlements.plist"
                XCODE_SCHEME_ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1")
 
   install(TARGETS ${target} BUNDLE DESTINATION "." COMPONENT obs_app)
-
-  # detect outdated obs-browser submodule
-  if(TARGET obs-browser-page OR TARGET obs-browser-page_gpu)
-    add_library(OBS::browser ALIAS obs-browser)
-  endif()
 
   if(TARGET OBS::browser)
     setup_target_browser(${target})
@@ -205,12 +195,6 @@ function(setup_target_browser target)
     EXCLUDE_FROM_ALL)
 
   foreach(_SUFFIX IN ITEMS "_gpu" "_plugin" "_renderer" "")
-    if(TARGET obs-browser-page${_SUFFIX})
-      add_executable(OBS::browser-helper${_SUFFIX} ALIAS
-                     obs-browser-page${_SUFFIX})
-      target_compile_features(obs-browser-page${_SUFFIX} PRIVATE cxx_std_17)
-    endif()
-
     if(TARGET OBS::browser-helper${_SUFFIX})
       add_dependencies(${target} OBS::browser-helper${_SUFFIX})
 
@@ -221,14 +205,16 @@ function(setup_target_browser target)
         COMPONENT obs_browser_dev
         EXCLUDE_FROM_ALL)
 
-      set(_COMMAND
-          "/usr/bin/codesign --force --sign \\\"${OBS_BUNDLE_CODESIGN_IDENTITY}\\\" $<$<BOOL:${OBS_CODESIGN_LINKER}>:--options linker-signed > \\\"\${CMAKE_INSTALL_PREFIX}/Frameworks/$<TARGET_FILE_NAME:OBS::browser-helper${_SUFFIX}>.app\\\" > /dev/null"
-      )
+      if(NOT XCODE)
+        set(_COMMAND
+            "/usr/bin/codesign --force --sign \\\"${OBS_BUNDLE_CODESIGN_IDENTITY}\\\" $<$<BOOL:${OBS_CODESIGN_LINKER}>:--options linker-signed > \\\"\${CMAKE_INSTALL_PREFIX}/Frameworks/$<TARGET_FILE_NAME:OBS::browser-helper${_SUFFIX}>.app\\\" > /dev/null"
+        )
 
-      install(
-        CODE "execute_process(COMMAND /bin/sh -c \"${_COMMAND}\")"
-        COMPONENT obs_browser_dev
-        EXCLUDE_FROM_ALL)
+        install(
+          CODE "execute_process(COMMAND /bin/sh -c \"${_COMMAND}\")"
+          COMPONENT obs_browser_dev
+          EXCLUDE_FROM_ALL)
+      endif()
     endif()
   endforeach()
 
@@ -257,8 +243,10 @@ function(setup_obs_frameworks target)
     FRAMEWORK
       DESTINATION "$<TARGET_FILE_BASE_NAME:${target}>.app/Contents/Frameworks/"
       COMPONENT obs_frameworks
-    PUBLIC_HEADER DESTINATION "${OBS_INCLUDE_DESTINATION}"
-                  COMPONENT obs_libraries)
+    PUBLIC_HEADER
+      DESTINATION "${OBS_INCLUDE_DESTINATION}"
+      COMPONENT obs_libraries
+      EXCLUDE_FROM_ALL)
 endfunction()
 
 # Helper function to set-up OBS plugins and helper binaries for macOS bundling
@@ -367,7 +355,6 @@ function(setup_obs_bundle target)
     COMPONENT obs_resources)
 
   if(ENABLE_SPARKLE_UPDATER)
-
     add_custom_command(
       TARGET ${target}
       POST_BUILD
@@ -397,8 +384,20 @@ function(setup_obs_bundle target)
     install(
       DIRECTORY ${SPARKLE}
       DESTINATION $<TARGET_FILE_BASE_NAME:${target}>.app/Contents/Frameworks
+      USE_SOURCE_PERMISSIONS
       COMPONENT obs_frameworks)
   endif()
+
+  add_custom_command(
+    TARGET ${target}
+    POST_BUILD
+    COMMAND
+      /usr/bin/sed -i '' 's/font-size: 10pt\;/font-size: 12pt\;/'
+      "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/themes/Acri.qss"
+      "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/themes/Grey.qss"
+      "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/themes/Light.qss"
+      "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/themes/Rachni.qss"
+      "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/themes/Yami.qss")
 
   install(SCRIPT "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/bundleutils.cmake"
           COMPONENT obs_resources)

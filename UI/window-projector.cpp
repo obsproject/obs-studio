@@ -11,17 +11,17 @@
 #include "multiview.hpp"
 
 static QList<OBSProjector *> multiviewProjectors;
-static QList<OBSProjector *> allProjectors;
 
 static bool updatingMultiview = false, mouseSwitching, transitionOnDoubleClick;
 
 OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 			   ProjectorType type_)
-	: OBSQTDisplay(widget, Qt::Window),
-	  source(source_),
-	  removedSignal(obs_source_get_signal_handler(source), "remove",
-			OBSSourceRemoved, this)
+	: OBSQTDisplay(widget, Qt::Window), weakSource(OBSGetWeakRef(source_))
 {
+	OBSSource source = GetSource();
+	destroyedSignal.Connect(obs_source_get_signal_handler(source),
+				"destroy", OBSSourceDestroyed, this);
+
 	isAlwaysOnTop = config_get_bool(GetGlobalConfig(), "BasicWindow",
 					"ProjectorAlwaysOnTop");
 
@@ -89,8 +89,6 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 	if (source)
 		obs_source_inc_showing(source);
 
-	allProjectors.push_back(this);
-
 	ready = true;
 
 	show();
@@ -106,14 +104,14 @@ OBSProjector::~OBSProjector()
 		GetDisplay(), isMultiview ? OBSRenderMultiview : OBSRender,
 		this);
 
+	OBSSource source = GetSource();
 	if (source)
 		obs_source_dec_showing(source);
 
-	if (isMultiview)
+	if (isMultiview) {
 		delete multiview;
-
-	if (type == ProjectorType::Multiview)
 		multiviewProjectors.removeAll(this);
+	}
 
 	App()->DecrementSleepInhibition();
 
@@ -161,7 +159,7 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 		return;
 
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
-	OBSSource source = window->source;
+	OBSSource source = window->GetSource();
 
 	uint32_t targetCX;
 	uint32_t targetCY;
@@ -195,11 +193,11 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 			obs_source_dec_showing(source);
 			obs_source_inc_showing(curSource);
 			source = curSource;
-			window->source = source;
+			window->weakSource = OBSGetWeakRef(source);
 		}
 	} else if (window->type == ProjectorType::Preview &&
 		   !main->IsPreviewProgramMode()) {
-		window->source = nullptr;
+		window->weakSource = nullptr;
 	}
 
 	if (source)
@@ -210,7 +208,7 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 	endRegion();
 }
 
-void OBSProjector::OBSSourceRemoved(void *data, calldata_t *params)
+void OBSProjector::OBSSourceDestroyed(void *data, calldata_t *params)
 {
 	OBSProjector *window = reinterpret_cast<OBSProjector *>(data);
 	QMetaObject::invokeMethod(window, "EscapeTriggered");
@@ -266,8 +264,8 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 					this, SLOT(ResizeToContent()));
 		}
 
-		QAction *alwaysOnTopButton =
-			new QAction(QTStr("Basic.MainMenu.AlwaysOnTop"), this);
+		QAction *alwaysOnTopButton = new QAction(
+			QTStr("Basic.MainMenu.View.AlwaysOnTop"), this);
 		alwaysOnTopButton->setCheckable(true);
 		alwaysOnTopButton->setChecked(isAlwaysOnTop);
 
@@ -278,12 +276,14 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 
 		popup.addAction(QTStr("Close"), this, SLOT(EscapeTriggered()));
 		popup.exec(QCursor::pos());
-	}
+	} else if (event->button() == Qt::LeftButton) {
+		// Only MultiView projectors handle left click
+		if (this->type != ProjectorType::Multiview)
+			return;
 
-	if (!mouseSwitching)
-		return;
+		if (!mouseSwitching)
+			return;
 
-	if (event->button() == Qt::LeftButton) {
 		QPoint pos = event->pos();
 		OBSSource src =
 			multiview->GetSourceByPosition(pos.x(), pos.y());
@@ -300,8 +300,6 @@ void OBSProjector::EscapeTriggered()
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 	main->DeleteProjector(this);
-
-	allProjectors.removeAll(this);
 }
 
 void OBSProjector::UpdateMultiview()
@@ -371,7 +369,7 @@ void OBSProjector::UpdateProjectorTitle(QString name)
 
 OBSSource OBSProjector::GetSource()
 {
-	return source;
+	return OBSGetStrongRef(weakSource);
 }
 
 ProjectorType OBSProjector::GetProjectorType()
@@ -414,6 +412,7 @@ void OBSProjector::OpenFullScreenProjector()
 	int monitor = sender()->property("monitor").toInt();
 	SetMonitor(monitor);
 
+	OBSSource source = GetSource();
 	UpdateProjectorTitle(QT_UTF8(obs_source_get_name(source)));
 }
 
@@ -430,6 +429,7 @@ void OBSProjector::OpenWindowedProjector()
 
 	savedMonitor = -1;
 
+	OBSSource source = GetSource();
 	UpdateProjectorTitle(QT_UTF8(obs_source_get_name(source)));
 	screen = nullptr;
 }

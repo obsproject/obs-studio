@@ -13,6 +13,9 @@
   <property name="windowTitle">
    <string>Properties</string>
   </property>
+  <property name="sizeGripEnabled">
+   <bool>true</bool>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QSplitter" name="windowSplitter">

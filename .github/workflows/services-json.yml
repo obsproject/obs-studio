@@ -16,7 +16,8 @@ on:
 jobs:
   schema:
     name: Schema
-    runs-on: [ubuntu-latest]
+    runs-on: [ubuntu-20.04]
+    if: ${{ github.repository_owner == 'obsproject' || github.event_name != 'schedule' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -46,7 +47,7 @@ jobs:
     name: Service Check
     runs-on: ubuntu-20.04
     needs: schema
-    if: ${{ github.repository_owner == 'obsproject' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
+    if: ${{ github.repository_owner == 'obsproject' && github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
 
     steps:
       - name: Checkout
@@ -58,7 +59,10 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{ github.workspace }}/other
-          key: service-check
+          # Workaround to create a new cache every time, since a cache key is immutable:
+          # https://github.com/actions/cache/blob/main/workarounds.md#update-a-cache
+          key: service-check-${{ github.run_id }}
+          restore-keys: service-check
 
       - name: Install & Configure Python
         run: |

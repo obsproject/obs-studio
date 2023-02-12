@@ -90,14 +90,10 @@ endif()
 
 set_target_properties(obs-ffmpeg PROPERTIES FOLDER "plugins/obs-ffmpeg" PREFIX
                                                                         "")
-target_compile_options(
-  obs-ffmpeg
-  PRIVATE
-    $<$<OR:$<C_COMPILER_ID:Clang>,$<C_COMPILER_ID:AppleClang>,$<C_COMPILER_ID:GNU>>:-Wno-switch>
-)
 
 if(OS_WINDOWS)
   add_subdirectory(obs-amf-test)
+  add_subdirectory(obs-nvenc-test)
 
   if(MSVC)
     target_link_libraries(obs-ffmpeg PRIVATE OBS::w32-pthreads)
@@ -108,13 +104,21 @@ if(OS_WINDOWS)
                  obs-ffmpeg.rc)
 
   target_sources(
-    obs-ffmpeg PRIVATE texture-amf.cpp texture-amf-opts.hpp jim-nvenc.c
-                       jim-nvenc.h jim-nvenc-helpers.c obs-ffmpeg.rc)
+    obs-ffmpeg
+    PRIVATE texture-amf.cpp
+            texture-amf-opts.hpp
+            jim-nvenc.c
+            jim-nvenc.h
+            jim-nvenc-helpers.c
+            jim-nvenc-ver.h
+            obs-ffmpeg.rc)
 
 elseif(OS_POSIX AND NOT OS_MACOS)
+  find_package(Libva REQUIRED)
   find_package(Libpci REQUIRED)
-  target_sources(obs-ffmpeg PRIVATE obs-ffmpeg-vaapi.c)
-  target_link_libraries(obs-ffmpeg PRIVATE LIBPCI::LIBPCI)
+  target_sources(obs-ffmpeg PRIVATE obs-ffmpeg-vaapi.c vaapi-utils.c
+                                    vaapi-utils.h)
+  target_link_libraries(obs-ffmpeg PRIVATE Libva::va Libva::drm LIBPCI::LIBPCI)
 endif()
 
 setup_plugin_target(obs-ffmpeg)

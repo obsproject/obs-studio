@@ -59,8 +59,8 @@ bool CalculateFileHash(const wchar_t *path, BYTE *hash)
 
 	for (;;) {
 		DWORD read = 0;
-		if (!ReadFile(handle, &hashBuffer[0], hashBuffer.size(), &read,
-			      nullptr))
+		if (!ReadFile(handle, &hashBuffer[0], (DWORD)hashBuffer.size(),
+			      &read, nullptr))
 			return false;
 
 		if (!read)

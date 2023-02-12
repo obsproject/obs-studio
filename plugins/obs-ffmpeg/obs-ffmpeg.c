@@ -1,3 +1,4 @@
+#include <util/dstr.h>
 #include <obs-module.h>
 #include <util/platform.h>
 #include <libavutil/avutil.h>
@@ -8,8 +9,16 @@
 
 #ifdef _WIN32
 #include <dxgi.h>
-#include <util/dstr.h>
 #include <util/windows/win-version.h>
+
+#include "jim-nvenc.h"
+#endif
+
+#if !defined(_WIN32) && !defined(__APPLE__) && \
+	LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(55, 27, 100)
+#include "vaapi-utils.h"
+
+#define LIBAVUTIL_VAAPI_AVAILABLE
 #endif
 
 OBS_DECLARE_MODULE()
@@ -33,10 +42,6 @@ extern struct obs_encoder_info hevc_nvenc_encoder_info;
 #endif
 extern struct obs_encoder_info svt_av1_encoder_info;
 extern struct obs_encoder_info aom_av1_encoder_info;
-
-#if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(55, 27, 100)
-#define LIBAVUTIL_VAAPI_AVAILABLE
-#endif
 
 #ifdef LIBAVUTIL_VAAPI_AVAILABLE
 extern struct obs_encoder_info vaapi_encoder_info;
@@ -226,6 +231,35 @@ static bool nvenc_device_available(void)
 
 #ifdef _WIN32
 extern bool load_nvenc_lib(void);
+extern uint32_t get_nvenc_ver();
+#endif
+
+/* please remove this annoying garbage and the associated garbage in
+ * obs-ffmpeg-nvenc.c when ubuntu 20.04 is finally gone for good. */
+
+#ifdef __linux__
+bool ubuntu_20_04_nvenc_fallback = false;
+
+static void do_nvenc_check_for_ubuntu_20_04(void)
+{
+	FILE *fp;
+	char *line = NULL;
+	size_t linecap = 0;
+
+	fp = fopen("/etc/os-release", "r");
+	if (!fp) {
+		return;
+	}
+
+	while (getline(&line, &linecap, fp) != -1) {
+		if (strncmp(line, "VERSION_CODENAME=focal", 22) == 0) {
+			ubuntu_20_04_nvenc_fallback = true;
+		}
+	}
+
+	fclose(fp);
+	free(line);
+}
 #endif
 
 static bool nvenc_codec_exists(const char *name, const char *fallback)
@@ -237,7 +271,7 @@ static bool nvenc_codec_exists(const char *name, const char *fallback)
 	return nvenc != NULL;
 }
 
-static bool nvenc_supported(bool *out_h264, bool *out_hevc)
+static bool nvenc_supported(bool *out_h264, bool *out_hevc, bool *out_av1)
 {
 	profile_start(nvenc_check_name);
 
@@ -252,10 +286,14 @@ static bool nvenc_supported(bool *out_h264, bool *out_hevc)
 	const bool hevc = false;
 #endif
 
+	bool av1 = false;
+
 	bool success = h264 || hevc;
 	if (success) {
 #if defined(_WIN32)
 		success = nvenc_device_available() && load_nvenc_lib();
+		av1 = success && (get_nvenc_ver() >= ((12 << 4) | 0));
+
 #elif defined(__linux__)
 		success = nvenc_device_available();
 		if (success) {
@@ -274,6 +312,7 @@ static bool nvenc_supported(bool *out_h264, bool *out_hevc)
 		if (success) {
 			*out_h264 = h264;
 			*out_hevc = hevc;
+			*out_av1 = av1;
 		}
 	}
 
@@ -284,15 +323,21 @@ static bool nvenc_supported(bool *out_h264, bool *out_hevc)
 #endif
 
 #ifdef LIBAVUTIL_VAAPI_AVAILABLE
-static bool vaapi_supported(void)
+static bool h264_vaapi_supported(void)
 {
 	const AVCodec *vaenc = avcodec_find_encoder_by_name("h264_vaapi");
-	return !!vaenc;
+
+	if (!vaenc)
+		return false;
+
+	/* NOTE: If default device is NULL, it means there is no device
+	 * that support H264. */
+	return vaapi_get_h264_default_device() != NULL;
 }
 #endif
 
 #ifdef _WIN32
-extern void jim_nvenc_load(bool h264, bool hevc);
+extern void jim_nvenc_load(bool h264, bool hevc, bool av1);
 extern void jim_nvenc_unload(void);
 extern void amf_load(void);
 extern void amf_unload(void);
@@ -327,11 +372,18 @@ bool obs_module_load(void)
 #ifndef __APPLE__
 	bool h264 = false;
 	bool hevc = false;
-	if (nvenc_supported(&h264, &hevc)) {
+	bool av1 = false;
+	if (nvenc_supported(&h264, &hevc, &av1)) {
 		blog(LOG_INFO, "NVENC supported");
+
+#ifdef __linux__
+		/* why are we here? just to suffer? */
+		do_nvenc_check_for_ubuntu_20_04();
+#endif
+
 #ifdef _WIN32
 		if (get_win_ver_int() > 0x0601) {
-			jim_nvenc_load(h264, hevc);
+			jim_nvenc_load(h264, hevc, av1);
 		} else {
 			// if on Win 7, new nvenc isn't available so there's
 			// no nvenc encoder for the user to select, expose
@@ -360,10 +412,18 @@ bool obs_module_load(void)
 	amf_load();
 #endif
 
-#if !defined(_WIN32) && defined(LIBAVUTIL_VAAPI_AVAILABLE)
-	if (vaapi_supported()) {
-		blog(LOG_INFO, "FFMPEG VAAPI supported");
+#ifdef LIBAVUTIL_VAAPI_AVAILABLE
+	const char *libva_env = getenv("LIBVA_DRIVER_NAME");
+	if (!!libva_env)
+		blog(LOG_WARNING,
+		     "LIBVA_DRIVER_NAME variable is set,"
+		     " this could prevent FFmpeg VAAPI from working correctly");
+
+	if (h264_vaapi_supported()) {
+		blog(LOG_INFO, "FFmpeg VAAPI H264 encoding supported");
 		obs_register_encoder(&vaapi_encoder_info);
+	} else {
+		blog(LOG_INFO, "FFmpeg VAAPI H264 encoding not supported");
 	}
 #endif
 #endif

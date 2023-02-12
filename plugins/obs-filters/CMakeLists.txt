@@ -74,6 +74,11 @@ else()
 
     target_compile_definitions(obs-rnnoise INTERFACE COMPILE_OPUS)
 
+    target_compile_options(
+      obs-rnnoise
+      INTERFACE
+        "$<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wno-null-dereference>")
+
     if(OS_LINUX)
       set_property(SOURCE ${_RNNOISE_SOURCES} PROPERTY COMPILE_FLAGS
                                                        -fvisibility=hidden)
@@ -121,6 +126,7 @@ target_sources(
           color-correction-filter.c
           async-delay-filter.c
           gpu-delay.c
+          hdr-tonemap-filter.c
           crop-filter.c
           scale-filter.c
           scroll-filter.c
@@ -128,6 +134,7 @@ target_sources(
           color-key-filter.c
           color-grade-filter.c
           sharpness-filter.c
+          eq-filter.c
           gain-filter.c
           noise-gate-filter.c
           mask-filter.c
@@ -145,11 +152,13 @@ if(NOT OS_MACOS)
             data/blend_sub_filter.effect
             data/chroma_key_filter.effect
             data/chroma_key_filter_v2.effect
+            data/color.effect
             data/color_correction_filter.effect
             data/color_grade_filter.effect
             data/color_key_filter.effect
             data/color_key_filter_v2.effect
             data/crop_filter.effect
+            data/hdr_tonemap_filter.effect
             data/luma_key_filter.effect
             data/luma_key_filter_v2.effect
             data/mask_alpha_filter.effect
@@ -179,12 +188,6 @@ target_include_directories(
   obs-filters PRIVATE $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/config>)
 
 target_link_libraries(obs-filters PRIVATE OBS::libobs)
-
-target_compile_options(
-  obs-filters
-  PRIVATE
-    $<$<OR:$<C_COMPILER_ID:Clang>,$<C_COMPILER_ID:AppleClang>,$<C_COMPILER_ID:GNU>>:-Wno-switch>
-)
 
 set_target_properties(obs-filters PROPERTIES FOLDER "plugins" PREFIX "")
 

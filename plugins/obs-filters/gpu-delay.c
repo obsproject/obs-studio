@@ -199,8 +199,7 @@ get_tech_name_and_multiplier(enum gs_color_space current_space,
 	switch (source_space) {
 	case GS_CS_SRGB:
 	case GS_CS_SRGB_16F:
-		switch (current_space) {
-		case GS_CS_709_SCRGB:
+		if (current_space == GS_CS_709_SCRGB) {
 			tech_name = "DrawMultiply";
 			*multiplier = obs_get_video_sdr_white_level() / 80.0f;
 		}
@@ -286,7 +285,7 @@ static void gpu_delay_filter_render(void *data, gs_effect_t *effect)
 		GS_CS_709_EXTENDED,
 	};
 	const enum gs_color_space space = obs_source_get_color_space(
-		parent, OBS_COUNTOF(preferred_spaces), preferred_spaces);
+		target, OBS_COUNTOF(preferred_spaces), preferred_spaces);
 	const enum gs_color_format format = gs_get_format_from_space(space);
 	if (gs_texrender_get_format(frame.render) != format) {
 		gs_texrender_destroy(frame.render);

@@ -65,11 +65,15 @@ class OBSBasicStats;
 #define SIMPLE_ENCODER_X264 "x264"
 #define SIMPLE_ENCODER_X264_LOWCPU "x264_lowcpu"
 #define SIMPLE_ENCODER_QSV "qsv"
+#define SIMPLE_ENCODER_QSV_AV1 "qsv_av1"
 #define SIMPLE_ENCODER_NVENC "nvenc"
+#define SIMPLE_ENCODER_NVENC_AV1 "nvenc_av1"
 #define SIMPLE_ENCODER_NVENC_HEVC "nvenc_hevc"
 #define SIMPLE_ENCODER_AMD "amd"
 #define SIMPLE_ENCODER_AMD_HEVC "amd_hevc"
+#define SIMPLE_ENCODER_AMD_AV1 "amd_av1"
 #define SIMPLE_ENCODER_APPLE_H264 "apple_h264"
+#define SIMPLE_ENCODER_APPLE_HEVC "apple_hevc"
 
 #define PREVIEW_EDGE_SIZE 10
 
@@ -178,7 +182,7 @@ class OBSBasic : public OBSMainWindow {
 	friend class AutoConfig;
 	friend class AutoConfigStreamPage;
 	friend class RecordButton;
-	friend class ReplayBufferButton;
+	friend class ControlsSplitButton;
 	friend class ExtraBrowsersModel;
 	friend class ExtraBrowsersDelegate;
 	friend class DeviceCaptureToolbar;
@@ -188,6 +192,7 @@ class OBSBasic : public OBSMainWindow {
 	friend class OBSPermissions;
 	friend struct BasicOutputHandler;
 	friend struct OBSStudioAPI;
+	friend class ScreenshotObj;
 
 	enum class MoveDir { Up, Down, Left, Right };
 
@@ -299,12 +304,10 @@ private:
 	QPointer<QMenu> startStreamMenu;
 
 	QPointer<QPushButton> transitionButton;
-	QPointer<QPushButton> replayBufferButton;
-	QPointer<QHBoxLayout> replayLayout;
+	QPointer<ControlsSplitButton> replayBufferButton;
 	QScopedPointer<QPushButton> pause;
-	QScopedPointer<QPushButton> replay;
 
-	QPointer<QPushButton> vcamButton;
+	QPointer<ControlsSplitButton> vcamButton;
 	bool vcamEnabled = false;
 
 	QScopedPointer<QSystemTrayIcon> trayIcon;
@@ -317,7 +320,6 @@ private:
 	QPointer<QMenu> trayMenu;
 	QPointer<QMenu> previewProjector;
 	QPointer<QMenu> studioProgramProjector;
-	QPointer<QMenu> multiviewProjectorMenu;
 	QPointer<QMenu> previewProjectorSource;
 	QPointer<QMenu> previewProjectorMain;
 	QPointer<QMenu> sceneProjectorMenu;
@@ -636,6 +638,12 @@ private:
 	bool drawSpacingHelpers = true;
 
 	float GetDevicePixelRatio();
+	void SourceToolBarActionsSetEnabled();
+
+	std::string lastScreenshot;
+	std::string lastReplay;
+
+	void UpdatePreviewOverflowSettings();
 
 public slots:
 	void DeferSaveBegin();
@@ -808,6 +816,7 @@ private slots:
 	void TBarReleased();
 
 	void LockVolumeControl(bool lock);
+	void ResetProxyStyleSliders();
 
 private:
 	/* OBS Callbacks */
@@ -938,6 +947,7 @@ public:
 	void CreateInteractionWindow(obs_source_t *source);
 	void CreatePropertiesWindow(obs_source_t *source);
 	void CreateFiltersWindow(obs_source_t *source);
+	void CreateEditTransformWindow(obs_sceneitem_t *item);
 
 	QAction *AddDockWidget(QDockWidget *dock);
 
@@ -1027,8 +1037,9 @@ private slots:
 	void on_actionCenterToScreen_triggered();
 	void on_actionVerticalCenter_triggered();
 	void on_actionHorizontalCenter_triggered();
+	void on_actionSceneFilters_triggered();
 
-	void on_customContextMenuRequested(const QPoint &pos);
+	void on_OBSBasic_customContextMenuRequested(const QPoint &pos);
 
 	void on_scenes_currentItemChanged(QListWidgetItem *current,
 					  QListWidgetItem *prev);
@@ -1062,6 +1073,7 @@ private slots:
 	void on_streamButton_clicked();
 	void on_recordButton_clicked();
 	void VCamButtonClicked();
+	void VCamConfigButtonClicked();
 	void on_settingsButton_clicked();
 	void Screenshot(OBSSource source_ = nullptr);
 	void ScreenshotSelectedSource();
@@ -1107,8 +1119,8 @@ private slots:
 	void on_transitionDuration_valueChanged(int value);
 	void on_tbar_position_valueChanged(int value);
 
-	void on_actionShowTransitionProperties_triggered();
-	void on_actionHideTransitionProperties_triggered();
+	void ShowTransitionProperties();
+	void HideTransitionProperties();
 
 	void on_modeSwitch_clicked();
 
@@ -1123,6 +1135,7 @@ private slots:
 	void on_resetUI_triggered();
 	void on_resetDocks_triggered(bool force = false);
 	void on_lockDocks_toggled(bool lock);
+	void on_multiviewProjectorWindowed_triggered();
 
 	void PauseToggled();
 
@@ -1147,6 +1160,7 @@ private slots:
 	void OpenFilters(OBSSource source = nullptr);
 	void OpenProperties(OBSSource source = nullptr);
 	void OpenInteraction(OBSSource source = nullptr);
+	void OpenEditTransform(OBSSceneItem item = nullptr);
 
 	void EnablePreviewDisplay(bool enable);
 	void TogglePreview();
@@ -1169,10 +1183,11 @@ private slots:
 	void OpenStudioProgramWindow();
 	void OpenPreviewWindow();
 	void OpenSourceWindow();
-	void OpenMultiviewWindow();
 	void OpenSceneWindow();
 
 	void StackedMixerAreaContextMenuRequested();
+
+	void ResizeOutputSizeOfSource();
 
 public slots:
 	void on_actionResetTransform_triggered();

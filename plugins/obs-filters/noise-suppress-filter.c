@@ -59,6 +59,8 @@ bool nvafx_loaded = false;
 #define TEXT_METHOD_NVAFX_DEREVERB MT_("NoiseSuppress.Method.Nvafx.Dereverb")
 #define TEXT_METHOD_NVAFX_DEREVERB_DENOISER \
 	MT_("NoiseSuppress.Method.Nvafx.DenoiserPlusDereverb")
+#define TEXT_METHOD_NVAFX_DEPRECATION \
+	MT_("NoiseSuppress.Method.Nvafx.Deprecation")
 
 #define MAX_PREPROC_CHANNELS 8
 
@@ -119,6 +121,7 @@ struct noise_suppress_data {
 	char *model;
 	bool nvafx_initialized;
 	const char *fx;
+	char *sdk_path;
 
 	/* Resampler */
 	audio_resampler_t *nvafx_resampler;
@@ -217,6 +220,7 @@ static void noise_suppress_destroy(void *data)
 		audio_resampler_destroy(ng->nvafx_resampler_back);
 	}
 	bfree(ng->model);
+	bfree(ng->sdk_path);
 	bfree((void *)ng->fx);
 	if (ng->nvafx_enabled) {
 		if (ng->use_nvafx)
@@ -425,7 +429,25 @@ static inline enum speaker_layout convert_speaker_layout(uint8_t channels)
 		return SPEAKERS_UNKNOWN;
 	}
 }
+#ifdef LIBNVAFX_ENABLED
+static void set_model(void *data, const char *method)
+{
+	struct noise_suppress_data *ng = data;
+	const char *file;
+	if (strcmp(NVAFX_EFFECT_DEREVERB, method) == 0)
+		file = NVAFX_EFFECT_DEREVERB_MODEL;
+	else if (strcmp(NVAFX_EFFECT_DEREVERB_DENOISER, method) == 0)
+		file = NVAFX_EFFECT_DEREVERB_DENOISER_MODEL;
+	else
+		file = NVAFX_EFFECT_DENOISER_MODEL;
+	size_t size = strlen(ng->sdk_path) + strlen(file) + 1;
+	char *buffer = (char *)bmalloc(size);
 
+	strcpy(buffer, ng->sdk_path);
+	strcat(buffer, file);
+	ng->model = buffer;
+}
+#endif
 static void noise_suppress_update(void *data, obs_data_t *s)
 {
 	struct noise_suppress_data *ng = data;
@@ -444,6 +466,8 @@ static void noise_suppress_update(void *data, obs_data_t *s)
 		strcmp(method, S_METHOD_NVAFX_DEREVERB) == 0 ||
 		strcmp(method, S_METHOD_NVAFX_DEREVERB_DENOISER) == 0;
 #ifdef LIBNVAFX_ENABLED
+	if (nvafx_requested && ng->nvafx_enabled)
+		set_model(ng, method);
 	float intensity = (float)obs_data_get_double(s, S_NVAFX_INTENSITY);
 	if (ng->use_nvafx && ng->nvafx_initialized) {
 		if (intensity != ng->intensity_ratio &&
@@ -469,6 +493,7 @@ static void noise_suppress_update(void *data, obs_data_t *s)
 			bfree((void *)ng->fx);
 			ng->fx = bstrdup(method);
 			ng->intensity_ratio = intensity;
+			set_model(ng, method);
 			os_atomic_set_bool(&ng->reinit_done, false);
 			pthread_mutex_lock(&ng->nvafx_mutex);
 			for (int i = 0; i < (int)ng->channels; i++) {
@@ -600,9 +625,23 @@ static void noise_suppress_update(void *data, obs_data_t *s)
 bool load_nvafx(void)
 {
 #ifdef LIBNVAFX_ENABLED
+	unsigned int version = get_lib_version();
+	uint8_t major = (version >> 24) & 0xff;
+	uint8_t minor = (version >> 16) & 0x00ff;
+	uint8_t build = (version >> 8) & 0x0000ff;
+	uint8_t revision = (version >> 0) & 0x000000ff;
+	if (version) {
+		blog(LOG_INFO,
+		     "[noise suppress]: NVIDIA AUDIO FX version: %i.%i.%i.%i",
+		     major, minor, build, revision);
+		if (version < MIN_AFX_SDK_VERSION) {
+			blog(LOG_INFO,
+			     "[noise suppress]: NVIDIA AUDIO Effects SDK is outdated. Please update both audio & video SDK.");
+		}
+	}
 	if (!load_lib()) {
 		blog(LOG_INFO,
-		     "[noise suppress]: NVIDIA RTX denoiser disabled, redistributable not found");
+		     "[noise suppress]: NVIDIA denoiser disabled, redistributable not found or could not be loaded.");
 		return false;
 	}
 
@@ -676,10 +715,10 @@ bool load_nvafx(void)
 	if (err != NVAFX_STATUS_SUCCESS) {
 		if (err == NVAFX_STATUS_GPU_UNSUPPORTED) {
 			blog(LOG_INFO,
-			     "[noise suppress]: NVIDIA RTX AUDIO FX disabled: unsupported GPU");
+			     "[noise suppress]: NVIDIA AUDIO FX disabled: unsupported GPU");
 		} else {
 			blog(LOG_ERROR,
-			     "[noise suppress]: NVIDIA RTX AUDIO FX disabled, error %i",
+			     "[noise suppress]: NVIDIA AUDIO FX disabled, error %i",
 			     err);
 		}
 		goto unload_everything;
@@ -688,18 +727,18 @@ bool load_nvafx(void)
 	err = NvAFX_DestroyEffect(h);
 	if (err != NVAFX_STATUS_SUCCESS) {
 		blog(LOG_ERROR,
-		     "[noise suppress]: NVIDIA RTX AUDIO FX disabled, error %i",
+		     "[noise suppress]: NVIDIA AUDIO FX disabled, error %i",
 		     err);
 		goto unload_everything;
 	}
 
 	nvafx_loaded = true;
-	blog(LOG_INFO, "[noise suppress]: NVIDIA RTX AUDIO FX enabled");
+	blog(LOG_INFO, "[noise suppress]: NVIDIA AUDIO FX enabled");
 	return true;
 
 cuda_errors:
 	blog(LOG_ERROR,
-	     "[noise suppress]: NVIDIA RTX AUDIO FX disabled, CUDA error %i",
+	     "[noise suppress]: NVIDIA AUDIO FX disabled, CUDA error %i",
 	     cudaerr);
 unload_everything:
 	release_lib();
@@ -736,13 +775,9 @@ static void *noise_suppress_create(obs_data_t *settings, obs_source_t *filter)
 		ng->nvafx_enabled = false;
 		do_log(LOG_ERROR, "NVAFX redist is not installed.");
 	} else {
-		const char *file = "\\models\\denoiser_48k.trtpkg";
-		size_t size = strlen(sdk_path) + strlen(file) + 1;
-		char *buffer = (char *)bmalloc(size);
-
-		strcpy(buffer, sdk_path);
-		strcat(buffer, file);
-		ng->model = buffer;
+		size_t size = sizeof(sdk_path) + 1;
+		ng->sdk_path = bmalloc(size);
+		strcpy(ng->sdk_path, sdk_path);
 		ng->nvafx_enabled = true;
 		ng->nvafx_initialized = false;
 		ng->nvafx_loading = false;
@@ -1027,8 +1062,6 @@ noise_suppress_filter_audio(void *data, struct obs_audio_data *audio)
 	size_t segment_size = ng->frames * sizeof(float);
 	size_t out_size;
 	obs_source_t *parent = obs_filter_get_parent(ng->context);
-	const char *name = obs_source_get_name(parent);
-	const char *id = obs_source_get_id(parent);
 	enum speaker_layout layout = obs_source_get_speaker_layout(parent);
 	ng->has_mono_src = layout == SPEAKERS_MONO && ng->channels == 2;
 
@@ -1188,10 +1221,19 @@ static obs_properties_t *noise_suppress_properties(void *data)
 #endif
 
 #ifdef LIBNVAFX_ENABLED
-	obs_properties_add_float_slider(ppts, S_NVAFX_INTENSITY,
-					TEXT_NVAFX_INTENSITY, 0.0f, 1.0f,
-					0.01f);
-
+	if (ng->nvafx_enabled) {
+		obs_properties_add_float_slider(ppts, S_NVAFX_INTENSITY,
+						TEXT_NVAFX_INTENSITY, 0.0f,
+						1.0f, 0.01f);
+	}
+	unsigned int version = get_lib_version();
+	if (version && version < MIN_AFX_SDK_VERSION) {
+		obs_property_t *warning = obs_properties_add_text(
+			ppts, "deprecation", NULL, OBS_TEXT_INFO);
+		obs_property_text_set_info_type(warning, OBS_TEXT_INFO_WARNING);
+		obs_property_set_long_description(
+			warning, TEXT_METHOD_NVAFX_DEPRECATION);
+	}
 #if defined(LIBRNNOISE_ENABLED) && defined(LIBSPEEXDSP_ENABLED)
 	if (!nvafx_loaded) {
 		obs_property_list_item_disable(method, 2, true);

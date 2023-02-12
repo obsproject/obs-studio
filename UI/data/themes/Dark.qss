@@ -121,6 +121,13 @@ SourceTree QLineEdit {
     border-radius: none;
 }
 
+/* macOS Separator Fix */
+QMainWindow::separator {
+    background: transparent;
+    width: 4px;
+    height: 4px;
+}
+
 /* Dock Widget */
 
 QDockWidget {
@@ -225,9 +232,12 @@ QScrollBar::left-arrow:horizontal, QScrollBar::right-arrow:horizontal, QScrollBa
 }
 
 /* Source Context */
+#contextContainer QPushButton {
+    padding: 4px 10px;
+}
+
 #contextContainer QPushButton[themeID2=contextBarButton] {
-    padding: 3px;
-    margin: 0px;
+    padding: 4px 6px;
 }
 
 #contextContainer QPushButton#sourcePropertiesButton {
@@ -282,6 +292,10 @@ QToolButton:pressed {
     qproperty-icon: url(./Dark/minus.svg);
 }
 
+* [themeID="clearIconSmall"] {
+    qproperty-icon: url(./Dark/entry-clear.svg);
+}
+
 * [themeID="propertiesIconSmall"] {
     qproperty-icon: url(./Dark/settings/general.svg);
 }
@@ -312,6 +326,10 @@ QToolButton:pressed {
 
 * [themeID="cogsIcon"] {
     qproperty-icon: url(./Dark/cogs.svg);
+}
+
+* [themeID="filtersIcon"] {
+    qproperty-icon: url(./Dark/filter.svg);
 }
 
 /* Tab Widget */
@@ -516,7 +534,7 @@ QPushButton:pressed {
     background-color: palette(base);
 }
 
-QPushButton:disabled {
+QPushButton:disabled, QToolButton:disabled {
     background-color: rgb(46,45,46);
 }
 
@@ -656,19 +674,6 @@ OBSHotkeyLabel[hotkeyPairHover=true] {
     color: red;
 }
 
-/* Pause */
-PauseCheckBox {
-    outline: none;
-}
-
-PauseCheckBox::indicator:checked {
-    image: url(:/res/images/media-pause.svg);
-}
-
-PauseCheckBox::indicator:unchecked {
-    image: url(:/res/images/media-play.svg);
-}
-
 /* Group Collapse Checkbox */
 
 SourceTreeSubItemCheckBox {
@@ -797,10 +802,6 @@ VisibilityCheckBox::indicator:checked {
 
 VisibilityCheckBox::indicator:unchecked {
     image: url(:res/images/invisible.svg);
-}
-
-* [themeID="trashIcon"] {
-    qproperty-icon: url(./Dark/trash.svg);
 }
 
 * [themeID="revertIcon"] {
@@ -1041,4 +1042,9 @@ QCalendarWidget QAbstractItemView:enabled {
 
 QCalendarWidget QAbstractItemView:disabled {
     color: rgb(122,121,122);
+}
+
+/* Disable icons on QDialogButtonBox */
+QDialogButtonBox {
+    dialogbuttonbox-buttons-have-icons: 0;
 }

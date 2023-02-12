@@ -612,7 +612,7 @@ static void color_correction_filter_render_v2(void *data, gs_effect_t *effect)
 	};
 
 	const enum gs_color_space source_space = obs_source_get_color_space(
-		obs_filter_get_parent(filter->context),
+		obs_filter_get_target(filter->context),
 		OBS_COUNTOF(preferred_spaces), preferred_spaces);
 	if (source_space == GS_CS_709_EXTENDED) {
 		obs_source_skip_video_filter(filter->context);
@@ -730,6 +730,9 @@ static void color_correction_filter_defaults_v2(obs_data_t *settings)
 static enum gs_color_space color_correction_filter_get_color_space(
 	void *data, size_t count, const enum gs_color_space *preferred_spaces)
 {
+	UNUSED_PARAMETER(count);
+	UNUSED_PARAMETER(preferred_spaces);
+
 	const enum gs_color_space potential_spaces[] = {
 		GS_CS_SRGB,
 		GS_CS_SRGB_16F,
@@ -738,7 +741,7 @@ static enum gs_color_space color_correction_filter_get_color_space(
 
 	struct color_correction_filter_data_v2 *const filter = data;
 	const enum gs_color_space source_space = obs_source_get_color_space(
-		obs_filter_get_parent(filter->context),
+		obs_filter_get_target(filter->context),
 		OBS_COUNTOF(potential_spaces), potential_spaces);
 
 	return source_space;

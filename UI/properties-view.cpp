@@ -14,7 +14,6 @@
 #include <QStandardItem>
 #include <QFileDialog>
 #include <QColorDialog>
-#include <QPlainTextEdit>
 #include <QDialogButtonBox>
 #include <QMenu>
 #include <QMessageBox>
@@ -29,6 +28,7 @@
 #include "qt-wrappers.hpp"
 #include "properties-view.hpp"
 #include "properties-view.moc.hpp"
+#include "plain-text-edit.hpp"
 #include "obs-app.hpp"
 
 #include <cstdlib>
@@ -116,6 +116,7 @@ void OBSPropertiesView::RefreshProperties()
 		widget->deleteLater();
 
 	widget = new QWidget();
+	widget->setObjectName("PropertiesContainer");
 
 	QFormLayout *layout = new QFormLayout;
 	layout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
@@ -137,6 +138,7 @@ void OBSPropertiesView::RefreshProperties()
 	setWidget(widget);
 	SetScrollPos(h, v);
 	setSizePolicy(mainPolicy);
+	adjustSize();
 
 	lastFocused.clear();
 	if (lastWidget) {
@@ -264,17 +266,13 @@ QWidget *OBSPropertiesView::AddText(obs_property_t *prop, QFormLayout *layout,
 {
 	const char *name = obs_property_name(prop);
 	const char *val = obs_data_get_string(settings, name);
-	const bool monospace = obs_property_text_monospace(prop);
+	bool monospace = obs_property_text_monospace(prop);
 	obs_text_type type = obs_property_text_type(prop);
 
 	if (type == OBS_TEXT_MULTILINE) {
-		QPlainTextEdit *edit = new QPlainTextEdit(QT_UTF8(val));
+		OBSPlainTextEdit *edit = new OBSPlainTextEdit(this, monospace);
+		edit->setPlainText(QT_UTF8(val));
 		edit->setTabStopDistance(40);
-		if (monospace) {
-			QFont f("Courier");
-			f.setStyleHint(QFont::Monospace);
-			edit->setFont(f);
-		}
 		return NewWidget(prop, edit, SIGNAL(textChanged()));
 
 	} else if (type == OBS_TEXT_PASSWORD) {
@@ -639,8 +637,7 @@ static void NewButton(QLayout *layout, WidgetInfo *info, const char *themeIcon,
 	QPushButton *button = new QPushButton();
 	button->setProperty("themeID", themeIcon);
 	button->setFlat(true);
-	button->setMaximumSize(22, 22);
-	button->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+	button->setProperty("toolButton", true);
 
 	QObject::connect(button, &QPushButton::clicked, info, method);
 
@@ -661,6 +658,7 @@ void OBSPropertiesView::AddEditableList(obs_property_t *prop,
 	list->setSortingEnabled(false);
 	list->setSelectionMode(QAbstractItemView::ExtendedSelection);
 	list->setToolTip(QT_UTF8(obs_property_long_description(prop)));
+	list->setSpacing(1);
 
 	for (size_t i = 0; i < count; i++) {
 		OBSDataAutoRelease item = obs_data_array_item(array, i);
@@ -899,7 +897,7 @@ static bool matches_ranges(media_frames_per_second &best_match,
 	for (auto &pair : fps_ranges) {
 		auto max_ = convert_fn(pair.first);
 		auto min_ = convert_fn(pair.second);
-		/*blog(LOG_INFO, "%lg ≤ %lg ≤ %lg? %s %s %s",
+		/*blog(LOG_INFO, "%lg <= %lg <= %lg? %s %s %s",
 				min_, val, max_,
 				fabsl(min_ - val) < epsilon ? "true" : "false",
 				min_ <= val && val <= max_  ? "true" : "false",
@@ -1724,7 +1722,8 @@ void WidgetInfo::TextChanged(const char *setting)
 	obs_text_type type = obs_property_text_type(property);
 
 	if (type == OBS_TEXT_MULTILINE) {
-		QPlainTextEdit *edit = static_cast<QPlainTextEdit *>(widget);
+		OBSPlainTextEdit *edit =
+			static_cast<OBSPlainTextEdit *>(widget);
 		obs_data_set_string(view->settings, setting,
 				    QT_TO_UTF8(edit->toPlainText()));
 		return;
@@ -1751,6 +1750,11 @@ bool WidgetInfo::PathChanged(const char *setting)
 	else if (type == OBS_PATH_FILE_SAVE)
 		path = SaveFile(view, QT_UTF8(desc), QT_UTF8(default_path),
 				QT_UTF8(filter));
+
+#ifdef __APPLE__
+	// TODO: Revisit when QTBUG-42661 is fixed
+	widget->window()->raise();
+#endif
 
 	if (path.isEmpty())
 		return false;
@@ -2219,6 +2223,10 @@ void WidgetInfo::EditListAddFiles()
 
 	QStringList files = OpenFiles(App()->GetMainWindow(), title,
 				      QT_UTF8(default_path), QT_UTF8(filter));
+#ifdef __APPLE__
+	// TODO: Revisit when QTBUG-42661 is fixed
+	widget->window()->raise();
+#endif
 
 	if (files.count() == 0)
 		return;
@@ -2239,6 +2247,10 @@ void WidgetInfo::EditListAddDir()
 
 	QString dir = SelectDirectory(App()->GetMainWindow(), title,
 				      QT_UTF8(default_path));
+#ifdef __APPLE__
+	// TODO: Revisit when QTBUG-42661 is fixed
+	widget->window()->raise();
+#endif
 
 	if (dir.isEmpty())
 		return;

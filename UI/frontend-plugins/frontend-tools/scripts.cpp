@@ -2,9 +2,9 @@
 #include "scripts.hpp"
 #include "../../properties-view.hpp"
 #include "../../qt-wrappers.hpp"
+#include "../../plain-text-edit.hpp"
 
 #include <QFileDialog>
-#include <QPlainTextEdit>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QScrollBar>
@@ -81,18 +81,14 @@ struct ScriptData {
 static ScriptData *scriptData = nullptr;
 static ScriptsTool *scriptsWindow = nullptr;
 static ScriptLogWindow *scriptLogWindow = nullptr;
-static QPlainTextEdit *scriptLogWidget = nullptr;
+static OBSPlainTextEdit *scriptLogWidget = nullptr;
 
 /* ----------------------------------------------------------------- */
 
-ScriptLogWindow::ScriptLogWindow() : QWidget(nullptr)
+ScriptLogWindow::ScriptLogWindow() : QDialog(nullptr)
 {
-	const QFont fixedFont =
-		QFontDatabase::systemFont(QFontDatabase::FixedFont);
-
-	QPlainTextEdit *edit = new QPlainTextEdit();
+	OBSPlainTextEdit *edit = new OBSPlainTextEdit();
 	edit->setReadOnly(true);
-	edit->setFont(fixedFont);
 	edit->setWordWrapMode(QTextOption::NoWrap);
 
 	QHBoxLayout *buttonLayout = new QHBoxLayout();
@@ -112,6 +108,8 @@ ScriptLogWindow::ScriptLogWindow() : QWidget(nullptr)
 
 	setLayout(layout);
 	scriptLogWidget = edit;
+
+	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
 	resize(600, 400);
 
@@ -183,8 +181,10 @@ void ScriptLogWindow::Clear()
 
 /* ----------------------------------------------------------------- */
 
-ScriptsTool::ScriptsTool() : QWidget(nullptr), ui(new Ui_ScriptsTool)
+ScriptsTool::ScriptsTool() : QDialog(nullptr), ui(new Ui_ScriptsTool)
 {
+	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
 	ui->setupUi(this);
 	RefreshLists();
 
@@ -194,6 +194,7 @@ ScriptsTool::ScriptsTool() : QWidget(nullptr), ui(new Ui_ScriptsTool)
 		config_get_string(config, "Python", "Path" ARCH_NAME);
 	ui->pythonPath->setText(path);
 	ui->pythonPathLabel->setText(obs_module_text(PYTHONPATH_LABEL_TEXT));
+	updatePythonVersionLabel();
 #else
 	delete ui->pythonSettingsTab;
 	ui->pythonSettingsTab = nullptr;
@@ -217,6 +218,20 @@ ScriptsTool::~ScriptsTool()
 	config_t *global_config = obs_frontend_get_global_config();
 	config_set_int(global_config, "scripts-tool", "prevScriptRow",
 		       ui->scripts->currentRow());
+}
+
+void ScriptsTool::updatePythonVersionLabel()
+{
+	QString label;
+	if (obs_scripting_python_loaded()) {
+		char version[8];
+		obs_scripting_python_version(version, sizeof(version));
+		label = QString(obs_module_text("PythonSettings.PythonVersion"))
+				.arg(version);
+	} else {
+		label = obs_module_text("PythonSettings.PythonNotLoaded");
+	}
+	ui->pythonVersionLabel->setText(label);
 }
 
 void ScriptsTool::RemoveScript(const char *path)
@@ -455,10 +470,28 @@ void ScriptsTool::on_pythonPathBrowse_clicked()
 
 	ui->pythonPath->setText(newPath);
 
-	if (obs_scripting_python_loaded())
+	bool loaded = obs_scripting_python_loaded();
+
+	if (loaded && !newPath.isEmpty() && curPath.compare(newPath) != 0) {
+		char version[8];
+		obs_scripting_python_version(version, sizeof(version));
+		QString message =
+			QString(obs_module_text(
+					"PythonSettings.AlreadyLoaded.Message"))
+				.arg(version);
+		OBSMessageBox::information(
+			this,
+			obs_module_text("PythonSettings.AlreadyLoaded.Title"),
+			message);
 		return;
+	} else if (loaded) {
+		return;
+	}
+
 	if (!obs_scripting_load_python(path))
 		return;
+
+	updatePythonVersionLabel();
 
 	for (OBSScript &script : scriptData->scripts) {
 		enum obs_script_lang lang = obs_script_get_lang(script);

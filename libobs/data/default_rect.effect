@@ -27,6 +27,14 @@ float4 PSDrawBare(VertInOut vert_in) : TARGET
 	return image.Sample(def_sampler, vert_in.uv);
 }
 
+float4 PSDrawD65P3(VertInOut vert_in) : TARGET
+{
+	float4 rgba = image.Sample(def_sampler, vert_in.uv);
+	rgba.rgb = srgb_nonlinear_to_linear(rgba.rgb);
+	rgba.rgb = d65p3_to_rec709(rgba.rgb);
+	return rgba;
+}
+
 float4 PSDrawOpaque(VertInOut vert_in) : TARGET
 {
 	return float4(image.Sample(def_sampler, vert_in.uv).rgb, 1.0);
@@ -45,6 +53,15 @@ technique Draw
 	{
 		vertex_shader = VSDefault(vert_in);
 		pixel_shader  = PSDrawBare(vert_in);
+	}
+}
+
+technique DrawD65P3
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawD65P3(vert_in);
 	}
 }
 

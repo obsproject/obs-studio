@@ -6,8 +6,6 @@ DeckLinkDeviceMode::DeckLinkDeviceMode(IDeckLinkDisplayMode *mode, long long id)
 	if (mode == nullptr)
 		return;
 
-	mode->AddRef();
-
 	decklink_string_t decklinkStringName;
 	if (mode->GetName(&decklinkStringName) == S_OK)
 		DeckLinkStringToStdString(decklinkStringName, name);

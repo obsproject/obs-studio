@@ -89,3 +89,8 @@ void VSTPlugin::unloadLibrary()
 		dllHandle = nullptr;
 	}
 }
+
+bool VSTPlugin::vstLoaded()
+{
+	return (dllHandle != nullptr);
+}

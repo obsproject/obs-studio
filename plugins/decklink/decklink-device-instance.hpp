@@ -13,6 +13,7 @@ class DecklinkBase;
 
 class DeckLinkDeviceInstance : public IDeckLinkInputCallback {
 protected:
+	ComPtr<IDeckLinkConfiguration> deckLinkConfiguration;
 	struct obs_source_frame2 currentFrame;
 	struct obs_source_audio currentPacket;
 	struct obs_source_cea_708 currentCaptions;

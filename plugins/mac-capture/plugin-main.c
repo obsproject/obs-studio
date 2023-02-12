@@ -22,8 +22,12 @@ bool obs_module_load(void)
 	if (is_screen_capture_available()) {
 		extern struct obs_source_info screen_capture_info;
 		obs_register_source(&screen_capture_info);
-		display_capture_info.output_flags |= OBS_SOURCE_DEPRECATED;
-		window_capture_info.output_flags |= OBS_SOURCE_DEPRECATED;
+		if (__builtin_available(macOS 13.0, *)) {
+			display_capture_info.output_flags |=
+				OBS_SOURCE_DEPRECATED;
+			window_capture_info.output_flags |=
+				OBS_SOURCE_DEPRECATED;
+		}
 	}
 #endif
 	obs_register_source(&display_capture_info);

@@ -98,7 +98,6 @@ install_dependencies() {
          libpulse-dev libsndio-dev libspeexdsp-dev libudev-dev libv4l-dev libva-dev libvlc-dev libdrm-dev"
     )
 
-    sudo dpkg --add-architecture amd64
     sudo apt-get -qq update
 
     for DEPENDENCY in "${BUILD_DEPS[@]}"; do

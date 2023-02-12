@@ -314,7 +314,7 @@ static int get_nr_channels_from_audio_data(const struct audio_data *data)
 	} while (false)
 
 /* Calculate the true peak over a set of samples.
- * The algorithm implements 5x oversampling by using Whittaker–Shannon
+ * The algorithm implements 5x oversampling by using Whittaker-Shannon
  * interpolation over four samples.
  *
  * The four samples have location t=-1.5, -0.5, +0.5, +1.5

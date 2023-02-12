@@ -21,14 +21,6 @@ OBSLogViewer::OBSLogViewer(QWidget *parent)
 
 	ui->setupUi(this);
 
-	const QFont fixedFont =
-		QFontDatabase::systemFont(QFontDatabase::FixedFont);
-
-	ui->textArea->setFont(fixedFont);
-	// Fix display of tabs & multiple spaces
-	ui->textArea->document()->setDefaultStyleSheet(
-		"font { white-space: pre; }");
-
 	bool showLogViewerOnStartup = config_get_bool(
 		App()->GlobalConfig(), "LogViewer", "ShowLogStartup");
 

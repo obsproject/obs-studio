@@ -93,23 +93,20 @@ function(install_headers target)
       FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/audio-monitoring/pulse/pulseaudio-wrapper.h"
       DESTINATION "${OBS_INCLUDE_DESTINATION}/audio-monitoring/pulse/"
-      COMPONENT obs_libraries
-      EXCLUDE_FROM_ALL)
+      COMPONENT obs_libraries)
   endif()
 
   if(ENABLE_HEVC)
     install(
       FILES "${CMAKE_CURRENT_SOURCE_DIR}/obs-hevc.h"
       DESTINATION "${OBS_INCLUDE_DESTINATION}"
-      COMPONENT obs_libraries
-      EXCLUDE_FROM_ALL)
+      COMPONENT obs_libraries)
   endif()
 
   if(NOT EXISTS "${OBS_INCLUDE_DESTINATION}/obsconfig.h")
     install(
       FILES "${CMAKE_BINARY_DIR}/config/obsconfig.h"
       DESTINATION "${OBS_INCLUDE_DESTINATION}"
-      COMPONENT obs_libraries
-      EXCLUDE_FROM_ALL)
+      COMPONENT obs_libraries)
   endif()
 endfunction()

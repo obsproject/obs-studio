@@ -32,14 +32,14 @@ jobs:
 
           case ${GITHUB_REF##*/} in
             +([0-9]).+([0-9]).+([0-9]) )
-              echo '::set-output name=valid_tag::${{ toJSON(true) }}'
-              echo '::set-output name=matrix::["beta", "stable"]'
+              echo 'valid_tag=${{ toJSON(true) }}' >> $GITHUB_OUTPUT
+              echo 'matrix=["beta", "stable"]' >> $GITHUB_OUTPUT
               ;;
             +([0-9]).+([0-9]).+([0-9])-@(beta|rc)*([0-9]) )
-              echo '::set-output name=valid_tag::${{ toJSON(true) }}'
-              echo '::set-output name=matrix::["beta"]'
+              echo 'valid_tag=${{ toJSON(true) }}' >> $GITHUB_OUTPUT
+              echo 'matrix=["beta"]' >> $GITHUB_OUTPUT
               ;;
-            * ) echo '::set-output name=valid_tag::${{ toJSON(false) }}' ;;
+            * ) echo 'valid_tag=${{ toJSON(false) }}' >> $GITHUB_OUTPUT ;;
           esac
 
   publish:
@@ -50,7 +50,7 @@ jobs:
     env:
       FLATPAK_BUILD_PATH: flatpak_app/files/share
     container:
-      image: bilelmoussaoui/flatpak-github-actions:kde-5.15-21.08
+      image: bilelmoussaoui/flatpak-github-actions:kde-6.4
       options: --privileged
     strategy:
       matrix:
@@ -65,10 +65,10 @@ jobs:
         id: setup
         run: |
           git config --global --add safe.directory $GITHUB_WORKSPACE
-          echo "::set-output name=commitHash::$(git rev-parse --short=9 HEAD)"
+          echo "commitHash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
 
       - name: Build Flatpak Manifest
-        uses: bilelmoussaoui/flatpak-github-actions/flatpak-builder@master
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v5
         with:
           bundle: obs-studio-${{ steps.setup.outputs.commitHash }}.flatpak
           manifest-path: CI/flatpak/com.obsproject.Studio.json
@@ -94,7 +94,7 @@ jobs:
           ostree commit --repo=repo --canonical-permissions --branch=screenshots/x86_64 flatpak_app/screenshots
 
       - name: Publish to Flathub Beta
-        uses: bilelmoussaoui/flatpak-github-actions/flat-manager@v4
+        uses: flatpak/flatpak-github-actions/flat-manager@v5
         if: matrix.branch == 'beta'
         with:
           flat-manager-url: https://hub.flathub.org/
@@ -102,7 +102,7 @@ jobs:
           token: ${{ secrets.FLATHUB_BETA_TOKEN }}
 
       - name: Publish to Flathub
-        uses: bilelmoussaoui/flatpak-github-actions/flat-manager@v4
+        uses: flatpak/flatpak-github-actions/flat-manager@v5
         if: matrix.branch == 'stable'
         with:
           flat-manager-url: https://hub.flathub.org/

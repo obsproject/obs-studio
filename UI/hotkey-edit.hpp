@@ -98,6 +98,7 @@ public:
 
 	void UpdateDuplicationState();
 	bool hasDuplicate = false;
+	QVariant inputMethodQuery(Qt::InputMethodQuery) const override;
 
 protected:
 	OBSSignal layoutChanged;

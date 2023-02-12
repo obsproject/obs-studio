@@ -428,10 +428,6 @@ static const char *display_capture_getname(void *unused)
 	return obs_module_text("DisplayCapture");
 }
 
-#define CROPPED_LENGTH(rect, origin_, length)                       \
-	fabs((rect##.size.##length - dc->crop_rect.size.##length) - \
-	     (rect##.origin.##origin_ + dc->crop_rect.origin.##origin_))
-
 static uint32_t display_capture_getwidth(void *data)
 {
 	struct display_capture *dc = data;
@@ -605,19 +601,20 @@ static obs_properties_t *display_capture_properties(void *unused)
 				    __attribute__((unused))) {
 		char dimension_buffer[4][12];
 		char name_buffer[256];
-		sprintf(dimension_buffer[0], "%u",
-			(uint32_t)[screen frame].size.width);
-		sprintf(dimension_buffer[1], "%u",
-			(uint32_t)[screen frame].size.height);
-		sprintf(dimension_buffer[2], "%d",
-			(int32_t)[screen frame].origin.x);
-		sprintf(dimension_buffer[3], "%d",
-			(int32_t)[screen frame].origin.y);
+		snprintf(dimension_buffer[0], sizeof(dimension_buffer[0]), "%u",
+			 (uint32_t)[screen frame].size.width);
+		snprintf(dimension_buffer[1], sizeof(dimension_buffer[0]), "%u",
+			 (uint32_t)[screen frame].size.height);
+		snprintf(dimension_buffer[2], sizeof(dimension_buffer[0]), "%d",
+			 (int32_t)[screen frame].origin.x);
+		snprintf(dimension_buffer[3], sizeof(dimension_buffer[0]), "%d",
+			 (int32_t)[screen frame].origin.y);
 
-		sprintf(name_buffer, "%.200s: %.12sx%.12s @ %.12s,%.12s",
-			[[screen localizedName] UTF8String],
-			dimension_buffer[0], dimension_buffer[1],
-			dimension_buffer[2], dimension_buffer[3]);
+		snprintf(name_buffer, sizeof(name_buffer),
+			 "%.200s: %.12sx%.12s @ %.12s,%.12s",
+			 [[screen localizedName] UTF8String],
+			 dimension_buffer[0], dimension_buffer[1],
+			 dimension_buffer[2], dimension_buffer[3]);
 
 		obs_property_list_add_int(list, name_buffer, index);
 	}];

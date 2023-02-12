@@ -64,6 +64,10 @@ elseif(OS_WINDOWS)
   target_link_options(aja PRIVATE "LINKER:/IGNORE:4099")
 endif()
 
+if(NOT MSVC)
+  target_compile_options(aja PRIVATE -Wno-error=deprecated-declarations)
+endif()
+
 set_target_properties(aja PROPERTIES FOLDER "plugins/aja" PREFIX "")
 
 setup_plugin_target(aja)

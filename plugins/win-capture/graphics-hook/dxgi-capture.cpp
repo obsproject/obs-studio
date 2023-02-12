@@ -290,8 +290,6 @@ hook_present1(IDXGISwapChain1 *swap, UINT sync_interval, UINT flags,
 		IUnknown *backbuffer = get_dxgi_backbuffer(swap);
 
 		if (backbuffer) {
-			DXGI_SWAP_CHAIN_DESC1 desc;
-			swap->GetDesc1(&desc);
 			data.capture(swap, backbuffer);
 			backbuffer->Release();
 		}

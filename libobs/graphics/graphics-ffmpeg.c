@@ -183,7 +183,7 @@ static inline size_t get_dst_position(const size_t w, const size_t h,
 
 	} else if (orient == 3) {
 		/*
-		 * Orientation 3: 180°
+		 * Orientation 3: 180 degree
 		 *
 		 *     88        888888
 		 *     88   ->   88
@@ -225,7 +225,7 @@ static inline size_t get_dst_position(const size_t w, const size_t h,
 
 	} else if (orient == 5) {
 		/*
-		 * Orientation 5: Flip Y + 90° CW
+		 * Orientation 5: Flip Y + 90 degree CW
 		 *
 		 * 8888888888        888888
 		 * 88  88       ->   88
@@ -246,7 +246,7 @@ static inline size_t get_dst_position(const size_t w, const size_t h,
 
 	} else if (orient == 6) {
 		/*
-		 * Orientation 6: 90° CW
+		 * Orientation 6: 90 degree CW
 		 *
 		 * 88                888888
 		 * 88  88       ->   88
@@ -267,7 +267,7 @@ static inline size_t get_dst_position(const size_t w, const size_t h,
 
 	} else if (orient == 7) {
 		/*
-		 * Orientation 7: Flip Y + 90° CCW
+		 * Orientation 7: Flip Y + 90 degree CCW
 		 *
 		 *         88        888888
 		 *     88  88   ->   88
@@ -288,7 +288,7 @@ static inline size_t get_dst_position(const size_t w, const size_t h,
 
 	} else if (orient == 8) {
 		/*
-		 * Orientation 8: 90° CCW
+		 * Orientation 8: 90 degree CCW
 		 *
 		 * 8888888888        888888
 		 *     88  88   ->   88
@@ -617,7 +617,7 @@ void gs_free_image_deps(void) {}
 
 static inline enum gs_color_format convert_format(enum AVPixelFormat format)
 {
-	switch ((int)format) {
+	switch (format) {
 	case AV_PIX_FMT_RGBA:
 		return GS_RGBA;
 	case AV_PIX_FMT_BGRA:
@@ -678,15 +678,15 @@ static void convert_pq_to_cccs(const BYTE *intermediate,
 		const float red2020 = pq_to_linear(red);
 		const float green2020 = pq_to_linear(green);
 		const float blue2020 = pq_to_linear(blue);
-		const float red709 = 1.6604910f * red2020 -
-				     0.5876411f * green2020 -
-				     0.0728499f * blue2020;
-		const float green709 = -0.1245505f * red2020 +
-				       1.1328999f * green2020 -
-				       0.0083494f * blue2020;
-		const float blue709 = -0.0181508f * red2020 -
-				      0.1005789f * green2020 +
-				      1.1187297f * blue2020;
+		const float red709 = 1.6604910021084345f * red2020 -
+				     0.58764113878854951f * green2020 -
+				     0.072849863319884883f * blue2020;
+		const float green709 = -0.12455047452159074f * red2020 +
+				       1.1328998971259603f * green2020 -
+				       0.0083494226043694768f * blue2020;
+		const float blue709 = -0.018150763354905303f * red2020 -
+				      0.10057889800800739f * green2020 +
+				      1.1187296613629127f * blue2020;
 		rgba16[0] = half_from_float(red709 * 125.f);
 		rgba16[1] = half_from_float(green709 * 125.f);
 		rgba16[2] = half_from_float(blue709 * 125.f);

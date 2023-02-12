@@ -281,16 +281,9 @@ get_tech_name_and_multiplier(const struct scale_filter_data *filter,
 	switch (source_space) {
 	case GS_CS_SRGB:
 	case GS_CS_SRGB_16F:
-		switch (current_space) {
-		case GS_CS_709_SCRGB:
-			*multiplier = obs_get_video_sdr_white_level() / 80.f;
-		}
-		break;
 	case GS_CS_709_EXTENDED:
-		switch (current_space) {
-		case GS_CS_709_SCRGB:
+		if (current_space == GS_CS_709_SCRGB)
 			*multiplier = obs_get_video_sdr_white_level() / 80.f;
-		}
 		break;
 	case GS_CS_709_SCRGB:
 		switch (current_space) {
@@ -307,10 +300,8 @@ get_tech_name_and_multiplier(const struct scale_filter_data *filter,
 		switch (source_space) {
 		case GS_CS_SRGB:
 		case GS_CS_SRGB_16F:
-			switch (current_space) {
-			case GS_CS_709_SCRGB:
+			if (current_space == GS_CS_709_SCRGB)
 				tech_name = "DrawUndistortMultiply";
-			}
 			break;
 		case GS_CS_709_EXTENDED:
 			switch (current_space) {
@@ -337,10 +328,8 @@ get_tech_name_and_multiplier(const struct scale_filter_data *filter,
 		switch (source_space) {
 		case GS_CS_SRGB:
 		case GS_CS_SRGB_16F:
-			switch (current_space) {
-			case GS_CS_709_SCRGB:
+			if (current_space == GS_CS_709_SCRGB)
 				tech_name = "DrawUpscaleMultiply";
-			}
 			break;
 		case GS_CS_709_EXTENDED:
 			switch (current_space) {
@@ -366,10 +355,8 @@ get_tech_name_and_multiplier(const struct scale_filter_data *filter,
 		switch (source_space) {
 		case GS_CS_SRGB:
 		case GS_CS_SRGB_16F:
-			switch (current_space) {
-			case GS_CS_709_SCRGB:
+			if (current_space == GS_CS_709_SCRGB)
 				tech_name = "DrawMultiply";
-			}
 			break;
 		case GS_CS_709_EXTENDED:
 			switch (current_space) {
@@ -414,7 +401,7 @@ static void scale_filter_render(void *data, gs_effect_t *effect)
 	};
 
 	const enum gs_color_space source_space = obs_source_get_color_space(
-		obs_filter_get_parent(filter->context),
+		obs_filter_get_target(filter->context),
 		OBS_COUNTOF(preferred_spaces), preferred_spaces);
 	float multiplier;
 	const char *technique = get_tech_name_and_multiplier(
@@ -540,7 +527,8 @@ static obs_properties_t *scale_filter_properties(void *data)
 
 	for (size_t i = 0; i < NUM_DOWNSCALES; i++) {
 		char str[32];
-		snprintf(str, 32, "%dx%d", downscales[i].cx, downscales[i].cy);
+		snprintf(str, sizeof(str), "%dx%d", downscales[i].cx,
+			 downscales[i].cy);
 		obs_property_list_add_string(p, str, str);
 	}
 
@@ -583,7 +571,7 @@ scale_filter_get_color_space(void *data, size_t count,
 
 	struct scale_filter_data *const filter = data;
 	const enum gs_color_space source_space = obs_source_get_color_space(
-		obs_filter_get_parent(filter->context),
+		obs_filter_get_target(filter->context),
 		OBS_COUNTOF(potential_spaces), potential_spaces);
 
 	enum gs_color_space space = source_space;

@@ -5,8 +5,6 @@
 #include "qt-wrappers.hpp"
 #include <QColorDialog>
 
-#define I18nStr(str) QTStr(str).toStdString().c_str()
-
 enum ColorPreset {
 	COLOR_PRESET_DEFAULT,
 	COLOR_PRESET_COLOR_BLIND_1,

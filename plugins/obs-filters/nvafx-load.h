@@ -4,10 +4,12 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <util/platform.h>
+#include <util/windows/win-version.h>
 
 #define NVAFX_API
 
 #ifdef LIBNVAFX_ENABLED
+#define MIN_AFX_SDK_VERSION (1 << 24 | 2 << 16 | 13 << 0)
 static HMODULE nv_audiofx = NULL;
 static HMODULE nv_cuda = NULL;
 
@@ -17,6 +19,12 @@ static HMODULE nv_cuda = NULL;
 #define NVAFX_EFFECT_DEREVERB_DENOISER "dereverb_denoiser"
 #define NVAFX_EFFECT_AEC "aec"
 #define NVAFX_EFFECT_SUPERRES "superres"
+
+/** Model paths */
+#define NVAFX_EFFECT_DENOISER_MODEL "\\models\\denoiser_48k.trtpkg"
+#define NVAFX_EFFECT_DEREVERB_MODEL "\\models\\dereverb_48k.trtpkg"
+#define NVAFX_EFFECT_DEREVERB_DENOISER_MODEL \
+	"\\models\\dereverb_denoiser_48k.trtpkg"
 
 #define NVAFX_CHAINED_EFFECT_DENOISER_16k_SUPERRES_16k_TO_48k \
 	"denoiser16k_superres16kto48k"
@@ -300,5 +308,30 @@ static bool load_lib(void)
 	SetDllDirectoryA(NULL);
 	nv_cuda = LoadLibrary(L"nvcuda.dll");
 	return !!nv_audiofx && !!nv_cuda;
+}
+
+static unsigned int get_lib_version(void)
+{
+	static unsigned int version = 0;
+	static bool version_checked = false;
+
+	if (version_checked)
+		return version;
+
+	version_checked = true;
+
+	char path[MAX_PATH];
+	if (!nvafx_get_sdk_path(path, sizeof(path)))
+		return 0;
+
+	SetDllDirectoryA(path);
+
+	struct win_version_info nto_ver = {0};
+	if (get_dll_ver(L"NVAudioEffects.dll", &nto_ver))
+		version = nto_ver.major << 24 | nto_ver.minor << 16 |
+			  nto_ver.build << 8 | nto_ver.revis << 0;
+
+	SetDllDirectoryA(NULL);
+	return version;
 }
 #endif

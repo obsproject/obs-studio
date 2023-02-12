@@ -99,9 +99,11 @@ struct main_params {
 	int color_trc;
 	int colorspace;
 	int color_range;
+	int chroma_sample_location;
 	int max_luminance;
 	char *acodec;
 	char *muxer_settings;
+	int codec_tag;
 };
 
 struct audio_params {
@@ -368,6 +370,9 @@ static bool init_params(int *argc, char ***argv, struct main_params *params,
 		if (!get_opt_int(argc, argv, &params->color_range,
 				 "video color range"))
 			return false;
+		if (!get_opt_int(argc, argv, &params->chroma_sample_location,
+				 "video chroma sample location"))
+			return false;
 		if (!get_opt_int(argc, argv, &params->max_luminance,
 				 "video max luminance"))
 			return false;
@@ -375,6 +380,9 @@ static bool init_params(int *argc, char ***argv, struct main_params *params,
 			return false;
 		if (!get_opt_int(argc, argv, &params->fps_den, "video fps den"))
 			return false;
+		if (!get_opt_int(argc, argv, &params->codec_tag,
+				 "video codec tag"))
+			params->codec_tag = 0;
 	}
 
 	if (params->tracks) {
@@ -445,6 +453,7 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 	context = avcodec_alloc_context3(NULL);
 	context->codec_type = codec->type;
 	context->codec_id = codec->id;
+	context->codec_tag = ffm->params.codec_tag;
 	context->bit_rate = (int64_t)ffm->params.vbitrate * 1000;
 	context->width = ffm->params.width;
 	context->height = ffm->params.height;
@@ -454,10 +463,7 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 	context->color_trc = ffm->params.color_trc;
 	context->colorspace = ffm->params.colorspace;
 	context->color_range = ffm->params.color_range;
-	context->chroma_sample_location =
-		(ffm->params.colorspace == AVCOL_SPC_BT2020_NCL)
-			? AVCHROMA_LOC_TOPLEFT
-			: AVCHROMA_LOC_LEFT;
+	context->chroma_sample_location = ffm->params.chroma_sample_location;
 	context->extradata = extradata;
 	context->extradata_size = ffm->video_header.size;
 	context->time_base =
@@ -466,7 +472,10 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 	ffm->video_stream->time_base = context->time_base;
 #if LIBAVFORMAT_VERSION_MAJOR < 59
 	// codec->time_base may still be used if LIBAVFORMAT_VERSION_MAJOR < 59
+	PRAGMA_WARN_PUSH
+	PRAGMA_WARN_DEPRECATION
 	ffm->video_stream->codec->time_base = context->time_base;
+	PRAGMA_WARN_POP
 #endif
 	ffm->video_stream->avg_frame_rate = av_inv_q(context->time_base);
 
@@ -515,6 +524,7 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 	AVStream *stream;
 	void *extradata = NULL;
 	const char *name = ffm->params.acodec;
+	int channels;
 
 	const AVCodecDescriptor *codec = avcodec_descriptor_get_by_name(name);
 	if (!codec) {
@@ -538,7 +548,10 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 	context->codec_type = codec->type;
 	context->codec_id = codec->id;
 	context->bit_rate = (int64_t)ffm->audio[idx].abitrate * 1000;
-	context->channels = ffm->audio[idx].channels;
+	channels = ffm->audio[idx].channels;
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(57, 24, 100)
+	context->channels = channels;
+#endif
 	context->sample_rate = ffm->audio[idx].sample_rate;
 	context->frame_size = ffm->audio[idx].frame_size;
 	context->sample_fmt = AV_SAMPLE_FMT_S16;
@@ -546,15 +559,14 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 	context->extradata = extradata;
 	context->extradata_size = ffm->audio_header[idx].size;
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(59, 24, 100)
-	context->channel_layout =
-		av_get_default_channel_layout(context->channels);
+	context->channel_layout = av_get_default_channel_layout(channels);
 	//avutil default channel layout for 5 channels is 5.0 ; fix for 4.1
-	if (context->channels == 5)
+	if (channels == 5)
 		context->channel_layout = av_get_channel_layout("4.1");
 #else
-	av_channel_layout_default(&context->ch_layout, context->channels);
+	av_channel_layout_default(&context->ch_layout, channels);
 	//avutil default channel layout for 5 channels is 5.0 ; fix for 4.1
-	if (context->channels == 5)
+	if (channels == 5)
 		context->ch_layout = (AVChannelLayout)AV_CHANNEL_LAYOUT_4POINT1;
 #endif
 	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
@@ -780,7 +792,12 @@ static void *ffmpeg_mux_io_thread(void *data)
 			if (want_seek) {
 				os_fseeki64(ffm->io.output_file,
 					    next_seek_position, SEEK_SET);
-				current_seek_position = next_seek_position;
+
+				// Update the next virtual position, making sure to take
+				// into account the size of the chunk we're about to write.
+				current_seek_position =
+					next_seek_position + chunk_used;
+
 				want_seek = false;
 			}
 
@@ -1159,14 +1176,14 @@ static inline bool ffmpeg_mux_packet(struct ffmpeg_mux *ffm, uint8_t *buf,
 
 	int ret = av_interleaved_write_frame(ffm->output, ffm->packet);
 
-	if (ret < 0) {
-		fprintf(stderr, "av_interleaved_write_frame failed: %d: %s\n",
-			ret, av_err2str(ret));
-	}
-
 	/* Treat "Invalid data found when processing input" and "Invalid argument" as non-fatal */
 	if (ret == AVERROR_INVALIDDATA || ret == -EINVAL) {
 		return true;
+	}
+
+	if (ret < 0) {
+		fprintf(stderr, "av_interleaved_write_frame failed: %d: %s\n",
+			ret, av_err2str(ret));
 	}
 
 	return ret >= 0;

@@ -193,6 +193,14 @@ static inline size_t get_audio_size(enum audio_format format,
 	       get_audio_bytes_per_channel(format) * frames;
 }
 
+static inline size_t get_total_audio_size(enum audio_format format,
+					  enum speaker_layout speakers,
+					  uint32_t frames)
+{
+	return get_audio_channels(speakers) *
+	       get_audio_bytes_per_channel(format) * frames;
+}
+
 static inline uint64_t audio_frames_to_ns(size_t sample_rate, uint64_t frames)
 {
 	return util_mul_div64(frames, 1000000000ULL, sample_rate);

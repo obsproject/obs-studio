@@ -189,6 +189,7 @@ EXPORT int os_get_physical_cores(void);
 EXPORT int os_get_logical_cores(void);
 
 EXPORT uint64_t os_get_sys_free_size(void);
+EXPORT uint64_t os_get_sys_total_size(void);
 
 struct os_proc_memory_usage {
 	uint64_t resident_size;

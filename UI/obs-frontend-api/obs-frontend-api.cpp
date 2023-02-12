@@ -559,6 +559,12 @@ void obs_frontend_open_source_interaction(obs_source_t *source)
 		c->obs_frontend_open_source_interaction(source);
 }
 
+void obs_frontend_open_sceneitem_edit_transform(obs_sceneitem_t *item)
+{
+	if (callbacks_valid())
+		c->obs_frontend_open_sceneitem_edit_transform(item);
+}
+
 char *obs_frontend_get_current_record_output_path(void)
 {
 	return !!callbacks_valid()
@@ -570,4 +576,38 @@ const char *obs_frontend_get_locale_string(const char *string)
 {
 	return !!callbacks_valid() ? c->obs_frontend_get_locale_string(string)
 				   : nullptr;
+}
+
+bool obs_frontend_is_theme_dark(void)
+{
+	return !!callbacks_valid() ? c->obs_frontend_is_theme_dark() : false;
+}
+
+char *obs_frontend_get_last_recording(void)
+{
+	return !!callbacks_valid() ? c->obs_frontend_get_last_recording()
+				   : nullptr;
+}
+
+char *obs_frontend_get_last_screenshot(void)
+{
+	return !!callbacks_valid() ? c->obs_frontend_get_last_screenshot()
+				   : nullptr;
+}
+
+char *obs_frontend_get_last_replay(void)
+{
+	return !!callbacks_valid() ? c->obs_frontend_get_last_replay()
+				   : nullptr;
+}
+
+void obs_frontend_add_undo_redo_action(const char *name,
+				       const undo_redo_cb undo,
+				       const undo_redo_cb redo,
+				       const char *undo_data,
+				       const char *redo_data, bool repeatable)
+{
+	if (callbacks_valid())
+		c->obs_frontend_add_undo_redo_action(
+			name, undo, redo, undo_data, redo_data, repeatable);
 }

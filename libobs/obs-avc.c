@@ -55,16 +55,12 @@ static int compute_avc_keyframe_priority(const uint8_t *nal_start,
 					 bool *is_keyframe, int priority)
 {
 	const int type = nal_start[0] & 0x1F;
-
-	switch (type) {
-	case OBS_NAL_SLICE:
-		if (priority < OBS_NAL_PRIORITY_HIGH)
-			priority = OBS_NAL_PRIORITY_HIGH;
-		break;
-	case OBS_NAL_SLICE_IDR:
+	if (type == OBS_NAL_SLICE_IDR)
 		*is_keyframe = true;
-		priority = OBS_NAL_PRIORITY_HIGHEST;
-	}
+
+	const int new_priority = nal_start[0] >> 5;
+	if (priority < new_priority)
+		priority = new_priority;
 
 	return priority;
 }

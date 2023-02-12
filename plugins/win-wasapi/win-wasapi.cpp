@@ -182,7 +182,7 @@ class WASAPISource {
 	std::atomic<bool> isDefaultDevice = false;
 
 	bool previouslyFailed = false;
-	WinHandle reconnectThread;
+	WinHandle reconnectThread = NULL;
 
 	class CallbackStartCapture : public ARtwqAsyncCallback {
 	public:
@@ -238,6 +238,7 @@ class WASAPISource {
 	WinHandle stopSignal;
 	WinHandle receiveSignal;
 	WinHandle restartSignal;
+	WinHandle reconnectExitSignal;
 	WinHandle exitSignal;
 	WinHandle initSignal;
 	DWORD reconnectDuration = 0;
@@ -297,6 +298,9 @@ public:
 
 	void Update(obs_data_t *settings);
 	void OnWindowChanged(obs_data_t *settings);
+
+	void Activate();
+	void Deactivate();
 
 	void SetDefaultDevice(EDataFlow flow, ERole role, LPCWSTR id);
 
@@ -390,6 +394,10 @@ WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
 	if (!restartSignal.Valid())
 		throw "Could not create restart signal";
 
+	reconnectExitSignal = CreateEvent(nullptr, true, false, nullptr);
+	if (!reconnectExitSignal.Valid())
+		throw "Could not create reconnect exit signal";
+
 	exitSignal = CreateEvent(nullptr, true, false, nullptr);
 	if (!exitSignal.Valid())
 		throw "Could not create exit signal";
@@ -401,11 +409,6 @@ WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
 	reconnectSignal = CreateEvent(nullptr, false, false, nullptr);
 	if (!reconnectSignal.Valid())
 		throw "Could not create reconnect signal";
-
-	reconnectThread = CreateThread(
-		nullptr, 0, WASAPISource::ReconnectThread, this, 0, nullptr);
-	if (!reconnectThread.Valid())
-		throw "Failed to create reconnect thread";
 
 	notify = new WASAPINotify(this);
 	if (!notify)
@@ -532,11 +535,19 @@ void WASAPISource::Stop()
 	if (rtwq_supported)
 		SetEvent(receiveSignal);
 
-	WaitForSingleObject(idleSignal, INFINITE);
+	if (reconnectThread.Valid()) {
+		WaitForSingleObject(idleSignal, INFINITE);
+	} else {
+		const HANDLE sigs[] = {reconnectSignal, idleSignal};
+		WaitForMultipleObjects(_countof(sigs), sigs, false, INFINITE);
+	}
 
 	SetEvent(exitSignal);
 
-	WaitForSingleObject(reconnectThread, INFINITE);
+	if (reconnectThread.Valid()) {
+		SetEvent(reconnectExitSignal);
+		WaitForSingleObject(reconnectThread, INFINITE);
+	}
 
 	if (rtwq_supported)
 		rtwq_unlock_work_queue(sampleReady.GetQueueId());
@@ -655,6 +666,25 @@ void WASAPISource::OnWindowChanged(obs_data_t *settings)
 
 	if (restart)
 		SetEvent(restartSignal);
+}
+
+void WASAPISource::Activate()
+{
+	if (!reconnectThread.Valid()) {
+		ResetEvent(reconnectExitSignal);
+		reconnectThread = CreateThread(nullptr, 0,
+					       WASAPISource::ReconnectThread,
+					       this, 0, nullptr);
+	}
+}
+
+void WASAPISource::Deactivate()
+{
+	if (reconnectThread.Valid()) {
+		SetEvent(reconnectExitSignal);
+		WaitForSingleObject(reconnectThread, INFINITE);
+		reconnectThread = NULL;
+	}
 }
 
 ComPtr<IMMDevice> WASAPISource::InitDevice(IMMDeviceEnumerator *enumerator,
@@ -1005,8 +1035,13 @@ DWORD WINAPI WASAPISource::ReconnectThread(LPVOID param)
 	WASAPISource *source = (WASAPISource *)param;
 
 	const HANDLE sigs[] = {
-		source->exitSignal,
+		source->reconnectExitSignal,
 		source->reconnectSignal,
+	};
+
+	const HANDLE reconnect_sigs[] = {
+		source->reconnectExitSignal,
+		source->stopSignal,
 	};
 
 	bool exit = false;
@@ -1020,8 +1055,10 @@ DWORD WINAPI WASAPISource::ReconnectThread(LPVOID param)
 		default:
 			assert(ret == (WAIT_OBJECT_0 + 1));
 			if (source->reconnectDuration > 0) {
-				WaitForSingleObject(source->stopSignal,
-						    source->reconnectDuration);
+				WaitForMultipleObjects(
+					_countof(reconnect_sigs),
+					reconnect_sigs, false,
+					source->reconnectDuration);
 			}
 			source->Start();
 		}
@@ -1426,6 +1463,16 @@ static void UpdateWASAPISource(void *obj, obs_data_t *settings)
 	static_cast<WASAPISource *>(obj)->Update(settings);
 }
 
+static void ActivateWASAPISource(void *obj)
+{
+	static_cast<WASAPISource *>(obj)->Activate();
+}
+
+static void DeactivateWASAPISource(void *obj)
+{
+	static_cast<WASAPISource *>(obj)->Deactivate();
+}
+
 static bool UpdateWASAPIMethod(obs_properties_t *props, obs_property_t *,
 			       obs_data_t *settings)
 {
@@ -1542,6 +1589,8 @@ void RegisterWASAPIInput()
 	info.create = CreateWASAPIInput;
 	info.destroy = DestroyWASAPISource;
 	info.update = UpdateWASAPISource;
+	info.activate = ActivateWASAPISource;
+	info.deactivate = DeactivateWASAPISource;
 	info.get_defaults = GetWASAPIDefaultsInput;
 	info.get_properties = GetWASAPIPropertiesInput;
 	info.icon_type = OBS_ICON_TYPE_AUDIO_INPUT;
@@ -1559,6 +1608,8 @@ void RegisterWASAPIDeviceOutput()
 	info.create = CreateWASAPIDeviceOutput;
 	info.destroy = DestroyWASAPISource;
 	info.update = UpdateWASAPISource;
+	info.activate = ActivateWASAPISource;
+	info.deactivate = DeactivateWASAPISource;
 	info.get_defaults = GetWASAPIDefaultsDeviceOutput;
 	info.get_properties = GetWASAPIPropertiesDeviceOutput;
 	info.icon_type = OBS_ICON_TYPE_AUDIO_OUTPUT;
@@ -1576,6 +1627,8 @@ void RegisterWASAPIProcessOutput()
 	info.create = CreateWASAPIProcessOutput;
 	info.destroy = DestroyWASAPISource;
 	info.update = UpdateWASAPISource;
+	info.activate = ActivateWASAPISource;
+	info.deactivate = DeactivateWASAPISource;
 	info.get_defaults = GetWASAPIDefaultsProcessOutput;
 	info.get_properties = GetWASAPIPropertiesProcessOutput;
 	info.icon_type = OBS_ICON_TYPE_PROCESS_AUDIO_OUTPUT;

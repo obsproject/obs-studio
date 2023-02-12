@@ -754,10 +754,10 @@ EXPORT void obs_render_main_texture_src_color_only(void);
 EXPORT gs_texture_t *obs_get_main_texture(void);
 
 /** Sets the master user volume */
-EXPORT void obs_set_master_volume(float volume);
+OBS_DEPRECATED EXPORT void obs_set_master_volume(float volume);
 
 /** Gets the master user volume */
-EXPORT float obs_get_master_volume(void);
+OBS_DEPRECATED EXPORT float obs_get_master_volume(void);
 
 /** Saves a source to settings data */
 EXPORT obs_data_t *obs_save_source(obs_source_t *source);
@@ -908,6 +908,15 @@ EXPORT obs_source_t *obs_view_get_source(obs_view_t *view, uint32_t channel);
 
 /** Renders the sources of this view context */
 EXPORT void obs_view_render(obs_view_t *view);
+
+/** Adds a view to the main render loop, with current obs_get_video_info state */
+EXPORT video_t *obs_view_add(obs_view_t *view);
+
+/** Adds a view to the main render loop, with custom video settings */
+EXPORT video_t *obs_view_add2(obs_view_t *view, struct obs_video_info *ovi);
+
+/** Removes a view from the main render loop */
+EXPORT void obs_view_remove(obs_view_t *view);
 
 /* ------------------------------------------------------------------------- */
 /* Display context */
@@ -2406,6 +2415,8 @@ EXPORT bool obs_encoder_paused(const obs_encoder_t *output);
 EXPORT const char *obs_encoder_get_last_error(obs_encoder_t *encoder);
 EXPORT void obs_encoder_set_last_error(obs_encoder_t *encoder,
 				       const char *message);
+
+EXPORT uint64_t obs_encoder_get_pause_offset(const obs_encoder_t *encoder);
 
 /* ------------------------------------------------------------------------- */
 /* Stream Services */

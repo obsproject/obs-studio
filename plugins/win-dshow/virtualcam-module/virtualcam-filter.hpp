@@ -10,10 +10,6 @@
 #include "../../../libobs/util/windows/WinHandle.hpp"
 #include "../../../libobs/util/threading-windows.h"
 
-#define DEFAULT_CX 1920
-#define DEFAULT_CY 1080
-#define DEFAULT_INTERVAL 333333ULL
-
 typedef struct {
 	int cx;
 	int cy;
@@ -30,10 +26,12 @@ class VCamFilter : public DShow::OutputFilter {
 	bool in_obs = false;
 	enum queue_state prev_state = SHARED_QUEUE_STATE_INVALID;
 	placeholder_t placeholder;
-	uint32_t cx = DEFAULT_CX;
-	uint32_t cy = DEFAULT_CY;
+	uint32_t obs_cx = 0;
+	uint32_t obs_cy = 0;
+	uint64_t obs_interval = 0;
+	uint32_t filter_cx = 0;
+	uint32_t filter_cy = 0;
 	DShow::VideoFormat format;
-	uint64_t interval = DEFAULT_INTERVAL;
 	WinHandle thread_start;
 	WinHandle thread_stop;
 	volatile bool active = false;

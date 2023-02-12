@@ -59,6 +59,15 @@ void OBSHotkeyEdit::keyPressEvent(QKeyEvent *event)
 	HandleNewKey(new_key);
 }
 
+QVariant OBSHotkeyEdit::inputMethodQuery(Qt::InputMethodQuery query) const
+{
+	if (query == Qt::ImEnabled) {
+		return false;
+	} else {
+		return QLineEdit::inputMethodQuery(query);
+	}
+}
+
 #ifdef __APPLE__
 void OBSHotkeyEdit::keyReleaseEvent(QKeyEvent *event)
 {
@@ -283,7 +292,7 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 	revert->setEnabled(false);
 
 	auto clear = new QPushButton;
-	clear->setProperty("themeID", "trashIcon");
+	clear->setProperty("themeID", "clearIconSmall");
 	clear->setToolTip(QTStr("Clear"));
 	clear->setEnabled(!obs_key_combination_is_empty(combo));
 

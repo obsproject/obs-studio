@@ -43,10 +43,8 @@ typedef enum {
 struct screen_capture {
 	obs_source_t *source;
 
-	gs_samplerstate_t *sampler;
 	gs_effect_t *effect;
 	gs_texture_t *tex;
-	gs_vertbuffer_t *vertbuf;
 
 	NSRect frame;
 	bool hide_cursor;
@@ -70,6 +68,8 @@ struct screen_capture {
 	CGWindowID window;
 	NSString *application_id;
 };
+
+#pragma mark -
 
 static void destroy_screen_stream(struct screen_capture *sc)
 {
@@ -129,11 +129,6 @@ static void screen_capture_destroy(void *data)
 	obs_enter_graphics();
 
 	destroy_screen_stream(sc);
-
-	if (sc->sampler)
-		gs_samplerstate_destroy(sc->sampler);
-	if (sc->vertbuf)
-		gs_vertexbuffer_destroy(sc->vertbuf);
 
 	obs_leave_graphics();
 
@@ -372,15 +367,9 @@ static bool init_screen_stream(struct screen_capture *sc)
 	case ScreenCaptureDisplayStream: {
 		SCDisplay *target_display = get_target_display();
 
-		if (@available(macOS 13.0, *)) {
-			content_filter = [[SCContentFilter alloc]
-				 initWithDisplay:target_display
-				excludingWindows:[[NSArray alloc] init]];
-		} else {
-			content_filter = [[SCContentFilter alloc]
-				 initWithDisplay:target_display
-				includingWindows:sc->shareable_content.windows];
-		}
+		content_filter = [[SCContentFilter alloc]
+			 initWithDisplay:target_display
+			excludingWindows:[[NSArray alloc] init]];
 
 		set_display_mode(sc, target_display);
 	} break;
@@ -445,25 +434,30 @@ static bool init_screen_stream(struct screen_capture *sc)
 			includingApplications:target_application_array
 			     exceptingWindows:[[NSArray alloc] init]];
 
-		if (@available(macOS 13.0, *))
-			[sc->stream_properties
-				setBackgroundColor:CGColorGetConstantColor(
-							   kCGColorClear)];
-
 		set_display_mode(sc, target_display);
 	} break;
 	}
 	os_sem_post(sc->shareable_content_available);
 	[sc->stream_properties setQueueDepth:8];
 	[sc->stream_properties setShowsCursor:!sc->hide_cursor];
-	[sc->stream_properties setPixelFormat:'BGRA'];
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
+	[sc->stream_properties setColorSpaceName:kCGColorSpaceDisplayP3];
+	[sc->stream_properties setPixelFormat:'l10r'];
+
 	if (@available(macOS 13.0, *)) {
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
 		[sc->stream_properties setCapturesAudio:TRUE];
 		[sc->stream_properties setExcludesCurrentProcessAudio:TRUE];
 		[sc->stream_properties setChannelCount:2];
-	}
 #endif
+	} else {
+		if (sc->capture_type != ScreenCaptureWindowStream) {
+			sc->disp = NULL;
+			os_event_init(&sc->disp_finished, OS_EVENT_TYPE_MANUAL);
+			os_event_init(&sc->stream_start_completed,
+				      OS_EVENT_TYPE_MANUAL);
+			return true;
+		}
+	}
 
 	sc->disp = [[SCStream alloc] initWithFilter:content_filter
 				      configuration:sc->stream_properties
@@ -484,7 +478,7 @@ static bool init_screen_stream(struct screen_capture *sc)
 	}
 
 #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
-	if (__builtin_available(macOS 13.0, *)) {
+	if (@available(macOS 13.0, *)) {
 		did_add_output = [sc->disp
 			   addStreamOutput:sc->capture_delegate
 				      type:SCStreamOutputTypeAudio
@@ -525,30 +519,8 @@ static bool init_screen_stream(struct screen_capture *sc)
 	return did_stream_start;
 }
 
-bool init_vertbuf_screen_capture(struct screen_capture *sc)
-{
-	struct gs_vb_data *vb_data = gs_vbdata_create();
-	vb_data->num = 4;
-	vb_data->points = bzalloc(sizeof(struct vec3) * 4);
-	if (!vb_data->points)
-		return false;
-
-	vb_data->num_tex = 1;
-	vb_data->tvarray = bzalloc(sizeof(struct gs_tvertarray));
-	if (!vb_data->tvarray)
-		return false;
-
-	vb_data->tvarray[0].width = 2;
-	vb_data->tvarray[0].array = bzalloc(sizeof(struct vec2) * 4);
-	if (!vb_data->tvarray[0].array)
-		return false;
-
-	sc->vertbuf = gs_vertexbuffer_create(vb_data, GS_DYNAMIC);
-	return sc->vertbuf != NULL;
-}
-
 static void screen_capture_build_content_list(struct screen_capture *sc,
-					      bool excludingDesktopWindows)
+					      bool display_capture)
 {
 	typedef void (^shareable_content_callback)(SCShareableContent *,
 						   NSError *);
@@ -575,9 +547,12 @@ static void screen_capture_build_content_list(struct screen_capture *sc,
 	os_sem_wait(sc->shareable_content_available);
 	[sc->shareable_content release];
 	[SCShareableContent
-		getShareableContentExcludingDesktopWindows:excludingDesktopWindows
-				       onScreenWindowsOnly:!sc->show_hidden_windows
-					 completionHandler:new_content_received];
+		getShareableContentExcludingDesktopWindows:TRUE
+				       onScreenWindowsOnly:
+					       (display_capture
+							? FALSE
+							: !sc->show_hidden_windows)
+				       completionHandler:new_content_received];
 }
 
 static void *screen_capture_create(obs_data_t *settings, obs_source_t *source)
@@ -589,12 +564,12 @@ static void *screen_capture_create(obs_data_t *settings, obs_source_t *source)
 	sc->show_empty_names = obs_data_get_bool(settings, "show_empty_names");
 	sc->show_hidden_windows =
 		obs_data_get_bool(settings, "show_hidden_windows");
-	sc->window = obs_data_get_int(settings, "window");
-	sc->capture_type = obs_data_get_int(settings, "type");
+	sc->window = (CGWindowID)obs_data_get_int(settings, "window");
+	sc->capture_type = (unsigned int)obs_data_get_int(settings, "type");
 
 	os_sem_init(&sc->shareable_content_available, 1);
 	screen_capture_build_content_list(
-		sc, sc->capture_type == ScreenCaptureWindowStream);
+		sc, sc->capture_type == ScreenCaptureDisplayStream);
 
 	sc->capture_delegate = [[ScreenCaptureDelegate alloc] init];
 	sc->capture_delegate.sc = sc;
@@ -603,25 +578,7 @@ static void *screen_capture_create(obs_data_t *settings, obs_source_t *source)
 	if (!sc->effect)
 		goto fail;
 
-	obs_enter_graphics();
-
-	struct gs_sampler_info info = {
-		.filter = GS_FILTER_LINEAR,
-		.address_u = GS_ADDRESS_CLAMP,
-		.address_v = GS_ADDRESS_CLAMP,
-		.address_w = GS_ADDRESS_CLAMP,
-		.max_anisotropy = 1,
-	};
-	sc->sampler = gs_samplerstate_create(&info);
-	if (!sc->sampler)
-		goto fail;
-
-	if (!init_vertbuf_screen_capture(sc))
-		goto fail;
-
-	obs_leave_graphics();
-
-	sc->display = obs_data_get_int(settings, "display");
+	sc->display = (CGDirectDisplayID)obs_data_get_int(settings, "display");
 	sc->application_id = [[NSString alloc]
 		initWithUTF8String:obs_data_get_string(settings,
 						       "application")];
@@ -636,27 +593,6 @@ fail:
 	obs_leave_graphics();
 	screen_capture_destroy(sc);
 	return NULL;
-}
-
-static void build_sprite(struct gs_vb_data *data, float fcx, float fcy,
-			 float start_u, float end_u, float start_v, float end_v)
-{
-	struct vec2 *tvarray = data->tvarray[0].array;
-
-	vec3_set(data->points + 1, fcx, 0.0f, 0.0f);
-	vec3_set(data->points + 2, 0.0f, fcy, 0.0f);
-	vec3_set(data->points + 3, fcx, fcy, 0.0f);
-	vec2_set(tvarray, start_u, start_v);
-	vec2_set(tvarray + 1, end_u, start_v);
-	vec2_set(tvarray + 2, start_u, end_v);
-	vec2_set(tvarray + 3, end_u, end_v);
-}
-
-static inline void build_sprite_rect(struct gs_vb_data *data, float origin_x,
-				     float origin_y, float end_x, float end_y)
-{
-	build_sprite(data, fabs(end_x - origin_x), fabs(end_y - origin_y),
-		     origin_x, end_x, origin_y, end_y);
 }
 
 static void screen_capture_video_tick(void *data,
@@ -679,13 +615,7 @@ static void screen_capture_video_tick(void *data,
 	if (prev_prev == sc->prev)
 		return;
 
-	CGPoint origin = {0.f, 0.f};
-	CGPoint end = {sc->frame.size.width, sc->frame.size.height};
-
 	obs_enter_graphics();
-	build_sprite_rect(gs_vertexbuffer_get_data(sc->vertbuf), origin.x,
-			  origin.y, end.x, end.y);
-
 	if (sc->tex)
 		gs_texture_rebind_iosurface(sc->tex, sc->prev);
 	else
@@ -706,35 +636,24 @@ static void screen_capture_video_render(void *data, gs_effect_t *effect
 	if (!sc->tex)
 		return;
 
-	const bool linear_srgb = gs_get_linear_srgb();
-
 	const bool previous = gs_framebuffer_srgb_enabled();
-	gs_enable_framebuffer_srgb(linear_srgb);
+	gs_enable_framebuffer_srgb(true);
 
-	gs_vertexbuffer_flush(sc->vertbuf);
-	gs_load_vertexbuffer(sc->vertbuf);
-	gs_load_indexbuffer(NULL);
-	gs_load_samplerstate(sc->sampler, 0);
-	gs_technique_t *tech = gs_effect_get_technique(sc->effect, "Draw");
 	gs_eparam_t *param = gs_effect_get_param_by_name(sc->effect, "image");
-	if (linear_srgb)
-		gs_effect_set_texture_srgb(param, sc->tex);
-	else
-		gs_effect_set_texture(param, sc->tex);
-	gs_technique_begin(tech);
-	gs_technique_begin_pass(tech, 0);
+	gs_effect_set_texture(param, sc->tex);
 
-	gs_draw(GS_TRISTRIP, 0, 4);
-
-	gs_technique_end_pass(tech);
-	gs_technique_end(tech);
+	while (gs_effect_loop(sc->effect, "DrawD65P3"))
+		gs_draw_sprite(sc->tex, 0, 0, 0);
 
 	gs_enable_framebuffer_srgb(previous);
 }
 
 static const char *screen_capture_getname(void *unused __attribute__((unused)))
 {
-	return obs_module_text("SCK.Name");
+	if (@available(macOS 13.0, *))
+		return obs_module_text("SCK.Name");
+	else
+		return obs_module_text("SCK.Name.Beta");
 }
 
 static uint32_t screen_capture_getwidth(void *data)
@@ -767,10 +686,11 @@ static void screen_capture_defaults(obs_data_t *settings)
 		}
 	}
 
-	obs_data_set_default_int(settings, "type", 0);
 	obs_data_set_default_int(settings, "display", initial_display);
-	obs_data_set_default_int(settings, "window", kCGNullWindowID);
+
 	obs_data_set_default_obj(settings, "application", NULL);
+	obs_data_set_default_int(settings, "type", ScreenCaptureDisplayStream);
+	obs_data_set_default_int(settings, "window", kCGNullWindowID);
 	obs_data_set_default_bool(settings, "show_cursor", true);
 	obs_data_set_default_bool(settings, "show_empty_names", false);
 	obs_data_set_default_bool(settings, "show_hidden_windows", false);
@@ -781,7 +701,8 @@ static void screen_capture_update(void *data, obs_data_t *settings)
 	struct screen_capture *sc = data;
 
 	CGWindowID old_window_id = sc->window;
-	CGWindowID new_window_id = obs_data_get_int(settings, "window");
+	CGWindowID new_window_id =
+		(CGWindowID)obs_data_get_int(settings, "window");
 
 	if (new_window_id > 0 && new_window_id != old_window_id)
 		sc->window = new_window_id;
@@ -834,6 +755,8 @@ static void screen_capture_update(void *data, obs_data_t *settings)
 	obs_leave_graphics();
 }
 
+#pragma mark - obs_properties
+
 static bool build_display_list(struct screen_capture *sc,
 			       obs_properties_t *props)
 {
@@ -868,19 +791,20 @@ static bool build_display_list(struct screen_capture *sc,
 
 		char dimension_buffer[4][12] = {};
 		char name_buffer[256] = {};
-		sprintf(dimension_buffer[0], "%u",
-			(uint32_t)screen.frame.size.width);
-		sprintf(dimension_buffer[1], "%u",
-			(uint32_t)screen.frame.size.height);
-		sprintf(dimension_buffer[2], "%d",
-			(int32_t)screen.frame.origin.x);
-		sprintf(dimension_buffer[3], "%d",
-			(int32_t)screen.frame.origin.y);
+		snprintf(dimension_buffer[0], sizeof(dimension_buffer[0]), "%u",
+			 (uint32_t)screen.frame.size.width);
+		snprintf(dimension_buffer[1], sizeof(dimension_buffer[0]), "%u",
+			 (uint32_t)screen.frame.size.height);
+		snprintf(dimension_buffer[2], sizeof(dimension_buffer[0]), "%d",
+			 (int32_t)screen.frame.origin.x);
+		snprintf(dimension_buffer[3], sizeof(dimension_buffer[0]), "%d",
+			 (int32_t)screen.frame.origin.y);
 
-		sprintf(name_buffer, "%.200s: %.12sx%.12s @ %.12s,%.12s",
-			screen.localizedName.UTF8String, dimension_buffer[0],
-			dimension_buffer[1], dimension_buffer[2],
-			dimension_buffer[3]);
+		snprintf(name_buffer, sizeof(name_buffer),
+			 "%.200s: %.12sx%.12s @ %.12s,%.12s",
+			 screen.localizedName.UTF8String, dimension_buffer[0],
+			 dimension_buffer[1], dimension_buffer[2],
+			 dimension_buffer[3]);
 
 		obs_property_list_add_int(display_list, name_buffer,
 					  display.displayID);
@@ -961,13 +885,17 @@ static bool content_settings_changed(void *data, obs_properties_t *props,
 {
 	struct screen_capture *sc = data;
 
-	unsigned int capture_type_id = obs_data_get_int(settings, "type");
+	unsigned int capture_type_id =
+		(unsigned int)obs_data_get_int(settings, "type");
 	obs_property_t *display_list = obs_properties_get(props, "display");
 	obs_property_t *window_list = obs_properties_get(props, "window");
 	obs_property_t *app_list = obs_properties_get(props, "application");
 	obs_property_t *empty = obs_properties_get(props, "show_empty_names");
 	obs_property_t *hidden =
 		obs_properties_get(props, "show_hidden_windows");
+
+	obs_property_t *capture_type_error =
+		obs_properties_get(props, "capture_type_info");
 
 	if (sc->capture_type != capture_type_id) {
 		switch (capture_type_id) {
@@ -977,6 +905,11 @@ static bool content_settings_changed(void *data, obs_properties_t *props,
 			obs_property_set_visible(app_list, false);
 			obs_property_set_visible(empty, false);
 			obs_property_set_visible(hidden, false);
+
+			if (capture_type_error) {
+				obs_property_set_visible(capture_type_error,
+							 true);
+			}
 			break;
 		}
 		case 1: {
@@ -985,6 +918,11 @@ static bool content_settings_changed(void *data, obs_properties_t *props,
 			obs_property_set_visible(app_list, false);
 			obs_property_set_visible(empty, true);
 			obs_property_set_visible(hidden, true);
+
+			if (capture_type_error) {
+				obs_property_set_visible(capture_type_error,
+							 false);
+			}
 			break;
 		}
 		case 2: {
@@ -993,20 +931,25 @@ static bool content_settings_changed(void *data, obs_properties_t *props,
 			obs_property_set_visible(window_list, false);
 			obs_property_set_visible(empty, false);
 			obs_property_set_visible(hidden, true);
+
+			if (capture_type_error) {
+				obs_property_set_visible(capture_type_error,
+							 true);
+			}
 			break;
 		}
 		}
 	}
 
-	sc->show_empty_names = obs_data_get_bool(settings, "show_empty_names");
-	sc->show_hidden_windows =
-		obs_data_get_bool(settings, "show_hidden_windows");
-
 	screen_capture_build_content_list(
-		sc, capture_type_id == ScreenCaptureWindowStream);
+		sc, capture_type_id == ScreenCaptureDisplayStream);
 	build_display_list(sc, props);
 	build_window_list(sc, props);
 	build_application_list(sc, props);
+
+	sc->show_empty_names = obs_data_get_bool(settings, "show_empty_names");
+	sc->show_hidden_windows =
+		obs_data_get_bool(settings, "show_hidden_windows");
 
 	return true;
 }
@@ -1016,9 +959,11 @@ static obs_properties_t *screen_capture_properties(void *data)
 	struct screen_capture *sc = data;
 
 	obs_properties_t *props = obs_properties_create();
+
 	obs_property_t *capture_type = obs_properties_add_list(
 		props, "type", obs_module_text("SCK.Method"),
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+
 	obs_property_list_add_int(capture_type,
 				  obs_module_text("DisplayCapture"), 0);
 	obs_property_list_add_int(capture_type,
@@ -1049,51 +994,111 @@ static obs_properties_t *screen_capture_properties(void *data)
 		props, "show_hidden_windows",
 		obs_module_text("WindowUtils.ShowHidden"));
 
-	obs_property_set_modified_callback2(hidden, content_settings_changed,
-					    sc);
+	if (sc) {
+		obs_property_set_modified_callback2(
+			hidden, content_settings_changed, sc);
+
+		switch (sc->capture_type) {
+		case 0: {
+			obs_property_set_visible(display_list, true);
+			obs_property_set_visible(window_list, false);
+			obs_property_set_visible(app_list, false);
+			obs_property_set_visible(empty, false);
+			obs_property_set_visible(hidden, false);
+			break;
+		}
+		case 1: {
+			obs_property_set_visible(display_list, false);
+			obs_property_set_visible(window_list, true);
+			obs_property_set_visible(app_list, false);
+			obs_property_set_visible(empty, true);
+			obs_property_set_visible(hidden, true);
+			break;
+		}
+		case 2: {
+			obs_property_set_visible(display_list, true);
+			obs_property_set_visible(app_list, true);
+			obs_property_set_visible(window_list, false);
+			obs_property_set_visible(empty, false);
+			obs_property_set_visible(hidden, true);
+			break;
+		}
+		}
+
+		obs_property_set_modified_callback2(
+			empty, content_settings_changed, sc);
+	}
 
 	obs_properties_add_bool(props, "show_cursor",
 				obs_module_text("DisplayCapture.ShowCursor"));
 
-	switch (sc->capture_type) {
-	case 0: {
-		obs_property_set_visible(display_list, true);
-		obs_property_set_visible(window_list, false);
-		obs_property_set_visible(app_list, false);
-		obs_property_set_visible(empty, false);
-		obs_property_set_visible(hidden, false);
-		break;
-	}
-	case 1: {
-		obs_property_set_visible(display_list, false);
-		obs_property_set_visible(window_list, true);
-		obs_property_set_visible(app_list, false);
-		obs_property_set_visible(empty, true);
-		obs_property_set_visible(hidden, true);
-		break;
-	}
-	case 2: {
-		obs_property_set_visible(display_list, true);
-		obs_property_set_visible(app_list, true);
-		obs_property_set_visible(window_list, false);
-		obs_property_set_visible(empty, false);
-		obs_property_set_visible(hidden, true);
-		break;
-	}
-	}
-
-	obs_property_set_modified_callback2(empty, content_settings_changed,
-					    sc);
-
 	if (@available(macOS 13.0, *))
 		;
-	else
-		obs_properties_add_text(props, "audio_info",
-					obs_module_text("SCK.AudioUnavailable"),
-					OBS_TEXT_INFO);
+	else {
+		obs_property_t *audio_warning = obs_properties_add_text(
+			props, "audio_info",
+			obs_module_text("SCK.AudioUnavailable"), OBS_TEXT_INFO);
+		obs_property_text_set_info_type(audio_warning,
+						OBS_TEXT_INFO_WARNING);
+
+		obs_property_t *capture_type_error = obs_properties_add_text(
+			props, "capture_type_info",
+			obs_module_text("SCK.CaptureTypeUnavailable"),
+			OBS_TEXT_INFO);
+
+		obs_property_text_set_info_type(capture_type_error,
+						OBS_TEXT_INFO_ERROR);
+
+		if (sc) {
+			switch (sc->capture_type) {
+			case ScreenCaptureDisplayStream: {
+				obs_property_set_visible(capture_type_error,
+							 true);
+				break;
+			}
+			case ScreenCaptureWindowStream: {
+				obs_property_set_visible(capture_type_error,
+							 false);
+				break;
+			}
+			case ScreenCaptureApplicationStream: {
+				obs_property_set_visible(capture_type_error,
+							 true);
+				break;
+			}
+			}
+		} else {
+			obs_property_set_visible(capture_type_error, false);
+		}
+	}
 
 	return props;
 }
+
+enum gs_color_space screen_capture_video_get_color_space(
+	void *data, size_t count, const enum gs_color_space *preferred_spaces)
+{
+	UNUSED_PARAMETER(data);
+
+	for (size_t i = 0; i < count; ++i) {
+		if (preferred_spaces[i] == GS_CS_SRGB_16F)
+			return GS_CS_SRGB_16F;
+	}
+
+	for (size_t i = 0; i < count; ++i) {
+		if (preferred_spaces[i] == GS_CS_709_EXTENDED)
+			return GS_CS_709_EXTENDED;
+	}
+
+	for (size_t i = 0; i < count; ++i) {
+		if (preferred_spaces[i] == GS_CS_SRGB)
+			return GS_CS_SRGB;
+	}
+
+	return GS_CS_SRGB_16F;
+}
+
+#pragma mark - obs_source_info
 
 struct obs_source_info screen_capture_info = {
 	.id = "screen_capture",
@@ -1116,7 +1121,10 @@ struct obs_source_info screen_capture_info = {
 	.get_properties = screen_capture_properties,
 	.update = screen_capture_update,
 	.icon_type = OBS_ICON_TYPE_DESKTOP_CAPTURE,
+	.video_get_color_space = screen_capture_video_get_color_space,
 };
+
+#pragma mark - ScreenCaptureDelegate
 
 @implementation ScreenCaptureDelegate
 

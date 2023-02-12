@@ -49,5 +49,6 @@
 #define FFMPEG_MUXER_ENABLE_AUDIO             L"EnableAudio"              // bool (default = false)
 #define FFMPEG_MUXER_CURRENT_TIME_INTERFACE   L"CurrentTimeInterface"
 #define FFMPEG_MUXER_VIDEO_ROTATION           L"VideoRotation"            // amf_int64 (0, 90, 180, 270, default = 0)
+#define FFMPEG_MUXER_USAGE_IS_TRIM            L"UsageIsTrim"              // bool (default = false)
 
 #endif //#ifndef AMF_FileMuxerFFMPEG_h

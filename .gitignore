@@ -42,6 +42,7 @@ GeneratedFiles/
 /UI/obs.rc
 .vscode/
 /CI/include/*.lock.json
+install_temp/
 
 /other/
 

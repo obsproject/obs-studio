@@ -21,6 +21,7 @@
 #include <QMessageBox>
 #include <util/dstr.hpp>
 #include "window-basic-main.hpp"
+#include "window-basic-vcam-config.hpp"
 #include "display-helpers.hpp"
 #include "window-namedialog.hpp"
 #include "menu-button.hpp"
@@ -283,6 +284,9 @@ void OBSBasic::OverrideTransition(OBSSource transition)
 		obs_transition_swap_begin(transition, oldTransition);
 		obs_set_output_source(0, transition);
 		obs_transition_swap_end(transition, oldTransition);
+
+		// Transition overrides don't raise an event so we need to call update directly
+		OBSBasicVCamConfig::UpdateOutputSource();
 	}
 }
 
@@ -451,7 +455,7 @@ void OBSBasic::AddTransition()
 	obs_source_t *source = nullptr;
 	int i = 1;
 
-	while ((source = FindTransition(QT_TO_UTF8(placeHolderText)))) {
+	while ((FindTransition(QT_TO_UTF8(placeHolderText)))) {
 		placeHolderText = format.arg(++i);
 	}
 
@@ -1049,7 +1053,7 @@ QMenu *OBSBasic::CreatePerSceneTransitionMenu()
 	return menu;
 }
 
-void OBSBasic::on_actionShowTransitionProperties_triggered()
+void OBSBasic::ShowTransitionProperties()
 {
 	OBSSceneItem item = GetCurrentSceneItem();
 	OBSSource source = obs_sceneitem_get_transition(item, true);
@@ -1058,7 +1062,7 @@ void OBSBasic::on_actionShowTransitionProperties_triggered()
 		CreatePropertiesWindow(source);
 }
 
-void OBSBasic::on_actionHideTransitionProperties_triggered()
+void OBSBasic::HideTransitionProperties()
 {
 	OBSSceneItem item = GetCurrentSceneItem();
 	OBSSource source = obs_sceneitem_get_transition(item, false);
@@ -1243,10 +1247,9 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 	menu->addAction(durationAction);
 	if (curId && obs_is_source_configurable(curId)) {
 		menu->addSeparator();
-		menu->addAction(
-			QTStr("Properties"), this,
-			visible ? SLOT(on_actionShowTransitionProperties_triggered())
-				: SLOT(on_actionHideTransitionProperties_triggered()));
+		menu->addAction(QTStr("Properties"), this,
+				visible ? SLOT(ShowTransitionProperties())
+					: SLOT(HideTransitionProperties()));
 	}
 
 	auto copyTransition = [this](QAction *, bool visible) {

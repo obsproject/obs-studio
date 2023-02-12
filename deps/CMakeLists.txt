@@ -4,10 +4,10 @@ if(OS_WINDOWS)
   endif()
   add_subdirectory(ipc-util)
 
-  add_subdirectory(blake2)
   add_subdirectory(lzma)
 endif()
 
+add_subdirectory(blake2)
 add_subdirectory(glad)
 add_subdirectory(media-playback)
 add_subdirectory(file-updater)

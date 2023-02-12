@@ -84,9 +84,6 @@ using namespace Gdiplus;
 #define S_TRANSFORM_LOWERCASE           2
 #define S_TRANSFORM_STARTCASE           3
 
-#define S_ANTIALIASING_NONE             0
-#define S_ANTIALIASING_STANDARD         1
-
 #define T_(v)                           obs_module_text(v)
 #define T_FONT                          T_("Font")
 #define T_USE_FILE                      T_("ReadFromFile")

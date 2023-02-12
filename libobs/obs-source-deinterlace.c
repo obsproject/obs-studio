@@ -148,7 +148,6 @@ static inline uint64_t uint64_diff(uint64_t ts1, uint64_t ts2)
 static inline void deinterlace_get_closest_frames(obs_source_t *s,
 						  uint64_t sys_time)
 {
-	const struct video_output_info *info;
 	uint64_t half_interval;
 
 	if (s->async_unbuffered && s->deinterlace_offset) {
@@ -169,9 +168,7 @@ static inline void deinterlace_get_closest_frames(obs_source_t *s,
 	if (!s->async_frames.num)
 		return;
 
-	info = video_output_get_info(obs->video.video);
-	half_interval = (uint64_t)info->fps_den * 500000000ULL /
-			(uint64_t)info->fps_num;
+	half_interval = obs->video.video_half_frame_interval_ns;
 
 	if (first_frame(s) || ready_deinterlace_frames(s, sys_time)) {
 		uint64_t offset;
@@ -253,40 +250,24 @@ void set_deinterlace_texture_size(obs_source_t *source)
 	}
 }
 
-static inline struct obs_source_frame *get_prev_frame(obs_source_t *source,
-						      bool *updated)
-{
-	struct obs_source_frame *frame = NULL;
-
-	pthread_mutex_lock(&source->async_mutex);
-
-	*updated = source->cur_async_frame != NULL;
-	frame = source->prev_async_frame;
-	source->prev_async_frame = NULL;
-
-	if (frame)
-		os_atomic_inc_long(&frame->refs);
-
-	pthread_mutex_unlock(&source->async_mutex);
-
-	return frame;
-}
-
 void deinterlace_update_async_video(obs_source_t *source)
 {
-	struct obs_source_frame *frame;
-	bool updated;
-
 	if (source->deinterlace_rendered)
 		return;
 
-	frame = get_prev_frame(source, &updated);
-
 	source->deinterlace_rendered = true;
-	if (frame)
-		frame = filter_async_video(source, frame);
+
+	pthread_mutex_lock(&source->async_mutex);
+
+	const bool updated = source->cur_async_frame != NULL;
+	struct obs_source_frame *frame = source->prev_async_frame;
+	source->prev_async_frame = NULL;
+
+	pthread_mutex_unlock(&source->async_mutex);
 
 	if (frame) {
+		os_atomic_inc_long(&frame->refs);
+
 		if (set_async_texture_size(source, frame)) {
 			update_async_textures(source, frame,
 					      source->async_prev_textures,
@@ -405,8 +386,7 @@ void deinterlace_render(obs_source_t *s)
 	switch (source_space) {
 	case GS_CS_SRGB:
 	case GS_CS_SRGB_16F:
-		switch (current_space) {
-		case GS_CS_709_SCRGB:
+		if (current_space == GS_CS_709_SCRGB) {
 			tech_name = "DrawMultiply";
 			multiplier = obs_get_video_sdr_white_level() / 80.0f;
 		}

@@ -42,7 +42,7 @@
 #define NUM_TEXTURES 2
 #define NUM_CHANNELS 3
 #define MICROSECOND_DEN 1000000
-#define NUM_ENCODE_TEXTURES 3
+#define NUM_ENCODE_TEXTURES 10
 #define NUM_ENCODE_TEXTURE_FRAMES_TO_WAIT 1
 
 static inline int64_t packet_dts_usec(struct encoder_packet *packet)
@@ -213,6 +213,7 @@ struct obs_display {
 	pthread_mutex_t draw_callbacks_mutex;
 	pthread_mutex_t draw_info_mutex;
 	DARRAY(struct draw_callback) draw_callbacks;
+	bool use_clear_workaround;
 
 	struct obs_display *next;
 	struct obs_display **prev_next;
@@ -245,8 +246,9 @@ struct obs_task_info {
 	void *param;
 };
 
-struct obs_core_video {
-	graphics_t *graphics;
+struct obs_core_video_mix {
+	struct obs_view *view;
+
 	gs_stagesurf_t *active_copy_surfaces[NUM_TEXTURES][NUM_CHANNELS];
 	gs_stagesurf_t *copy_surfaces[NUM_TEXTURES][NUM_CHANNELS];
 	gs_texture_t *convert_textures[NUM_CHANNELS];
@@ -264,6 +266,41 @@ struct obs_core_video {
 	bool using_p010_tex;
 	struct circlebuf vframe_info_buffer;
 	struct circlebuf vframe_info_buffer_gpu;
+	gs_stagesurf_t *mapped_surfaces[NUM_CHANNELS];
+	int cur_texture;
+	volatile long raw_active;
+	volatile long gpu_encoder_active;
+	bool gpu_was_active;
+	bool raw_was_active;
+	bool was_active;
+	pthread_mutex_t gpu_encoder_mutex;
+	struct circlebuf gpu_encoder_queue;
+	struct circlebuf gpu_encoder_avail_queue;
+	DARRAY(obs_encoder_t *) gpu_encoders;
+	os_sem_t *gpu_encode_semaphore;
+	os_event_t *gpu_encode_inactive;
+	pthread_t gpu_encode_thread;
+	bool gpu_encode_thread_initialized;
+	volatile bool gpu_encode_stop;
+
+	video_t *video;
+	struct obs_video_info ovi;
+
+	bool gpu_conversion;
+	const char *conversion_techs[NUM_CHANNELS];
+	bool conversion_needed;
+	float conversion_width_i;
+	float conversion_height_i;
+
+	float color_matrix[16];
+};
+
+extern struct obs_core_video_mix *
+obs_create_video_mix(struct obs_video_info *ovi);
+extern void obs_free_video_mix(struct obs_core_video_mix *video);
+
+struct obs_core_video {
+	graphics_t *graphics;
 	gs_effect_t *default_effect;
 	gs_effect_t *default_rect_effect;
 	gs_effect_t *opaque_effect;
@@ -276,42 +313,16 @@ struct obs_core_video {
 	gs_effect_t *bilinear_lowres_effect;
 	gs_effect_t *premultiplied_alpha_effect;
 	gs_samplerstate_t *point_sampler;
-	gs_stagesurf_t *mapped_surfaces[NUM_CHANNELS];
-	int cur_texture;
-	volatile long raw_active;
-	volatile long gpu_encoder_active;
-	pthread_mutex_t gpu_encoder_mutex;
-	struct circlebuf gpu_encoder_queue;
-	struct circlebuf gpu_encoder_avail_queue;
-	DARRAY(obs_encoder_t *) gpu_encoders;
-	os_sem_t *gpu_encode_semaphore;
-	os_event_t *gpu_encode_inactive;
-	pthread_t gpu_encode_thread;
-	bool gpu_encode_thread_initialized;
-	volatile bool gpu_encode_stop;
 
 	uint64_t video_time;
 	uint64_t video_frame_interval_ns;
+	uint64_t video_half_frame_interval_ns;
 	uint64_t video_avg_frame_time_ns;
 	double video_fps;
-	video_t *video;
 	pthread_t video_thread;
 	uint32_t total_frames;
 	uint32_t lagged_frames;
 	bool thread_initialized;
-
-	bool gpu_conversion;
-	const char *conversion_techs[NUM_CHANNELS];
-	bool conversion_needed;
-	float conversion_width_i;
-	float conversion_height_i;
-
-	uint32_t output_width;
-	uint32_t output_height;
-	uint32_t base_width;
-	uint32_t base_height;
-	float color_matrix[16];
-	enum obs_scale_type scale_type;
 
 	gs_texture_t *transparent_texture;
 
@@ -324,12 +335,15 @@ struct obs_core_video {
 	gs_effect_t *deinterlace_yadif_effect;
 	gs_effect_t *deinterlace_yadif_2x_effect;
 
-	struct obs_video_info ovi;
 	float sdr_white_level;
 	float hdr_nominal_peak_level;
 
 	pthread_mutex_t task_mutex;
 	struct circlebuf tasks;
+
+	pthread_mutex_t mixes_mutex;
+	DARRAY(struct obs_core_video_mix *) mixes;
+	struct obs_core_video_mix *main_mix;
 };
 
 struct audio_monitor;
@@ -346,8 +360,6 @@ struct obs_core_audio {
 	int total_buffering_ticks;
 	int max_buffering_ticks;
 	bool fixed_buffer;
-
-	float user_volume;
 
 	pthread_mutex_t monitoring_mutex;
 	DARRAY(struct audio_monitor *) monitors;
@@ -463,11 +475,6 @@ struct obs_graphics_context {
 	uint64_t frame_time_total_ns;
 	uint64_t fps_total_ns;
 	uint32_t fps_total_frames;
-#ifdef _WIN32
-	bool gpu_was_active;
-#endif
-	bool raw_was_active;
-	bool was_active;
 	const char *video_thread_name;
 };
 
@@ -484,6 +491,8 @@ extern gs_effect_t *obs_load_effect(gs_effect_t **effect, const char *file);
 extern bool audio_callback(void *param, uint64_t start_ts_in,
 			   uint64_t end_ts_in, uint64_t *out_ts,
 			   uint32_t mixers, struct audio_output_data *mixes);
+
+extern struct obs_core_video_mix *get_mix_for_video(video_t *video);
 
 extern void
 start_raw_video(video_t *video, const struct video_scale_info *conversion,
@@ -1015,7 +1024,7 @@ struct obs_output {
 	volatile bool data_active;
 	volatile bool end_data_capture_thread_active;
 	int64_t video_offset;
-	int64_t audio_offsets[MAX_AUDIO_MIXES];
+	int64_t audio_offsets[MAX_OUTPUT_AUDIO_ENCODERS];
 	int64_t highest_audio_ts;
 	int64_t highest_video_ts;
 	pthread_t end_data_capture_thread;
@@ -1045,7 +1054,7 @@ struct obs_output {
 	video_t *video;
 	audio_t *audio;
 	obs_encoder_t *video_encoder;
-	obs_encoder_t *audio_encoders[MAX_AUDIO_MIXES];
+	obs_encoder_t *audio_encoders[MAX_OUTPUT_AUDIO_ENCODERS];
 	obs_service_t *service;
 	size_t mixer_mask;
 
@@ -1256,3 +1265,6 @@ extern bool obs_service_initialize(struct obs_service *service,
 				   struct obs_output *output);
 
 void obs_service_destroy(obs_service_t *service);
+
+void obs_output_remove_encoder_internal(struct obs_output *output,
+					struct obs_encoder *encoder);

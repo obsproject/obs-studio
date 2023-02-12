@@ -25,8 +25,8 @@ ManifestDPIAware true
 !define APPNAME "OBS Studio"
 
 !ifndef APPVERSION
-!define APPVERSION "25.0.8"
-!define SHORTVERSION "25.0.8"
+!define APPVERSION "28.0.0"
+!define SHORTVERSION "28.0.0"
 !endif
 
 !define APPNAMEANDVERSION "${APPNAME} ${SHORTVERSION}"
@@ -110,16 +110,17 @@ Function PreReqCheck
 		IfSilent +1 +3
 			SetErrorLevel 3
 			Quit
-		MessageBox MB_OK|MB_ICONSTOP "This version of ${APPNAME} is not compatible with your system. Please use the 32bit (x86) installer."
+		MessageBox MB_OK|MB_ICONSTOP "${APPNAME} is not compatible with your operating system's architecture."
 	${EndIf}
-	; Abort on XP or lower
+	; Abort on 8.1 or lower
 !endif
 
-	${If} ${AtMostWinVista}
+	${If} ${AtLeastWin10}
+	${Else}
 		IfSilent +1 +3
 			SetErrorLevel 3
 			Quit
-		MessageBox MB_OK|MB_ICONSTOP "Due to extensive use of DirectX 10 features, ${APPNAME} requires Windows 7 or higher and cannot be installed on this version of Windows."
+		MessageBox MB_OK|MB_ICONSTOP "${APPNAME} requires Windows 10 or higher and cannot be installed on this version of Windows."
 		Quit
 	${EndIf}
 
@@ -216,11 +217,11 @@ Var dllFilesInUse
 Function checkDLLs
 	OBSInstallerUtils::ResetInUseFileChecks
 !ifdef INSTALL64
-	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\bin\64bit\avutil-56.dll"
-	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\bin\64bit\swscale-5.dll"
+	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\bin\64bit\avutil-57.dll"
+	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\bin\64bit\swscale-6.dll"
 !else
-	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\bin\32bit\avutil-56.dll"
-	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\bin\32bit\swscale-5.dll"
+	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\bin\32bit\avutil-57.dll"
+	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\bin\32bit\swscale-6.dll"
 !endif
 	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\data\obs-plugins\win-capture\graphics-hook32.dll"
 	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\data\obs-plugins\win-capture\graphics-hook64.dll"
@@ -265,8 +266,6 @@ Section "OBS Studio" SecCore
 
 	; Set Section Files and Shortcuts
 	SetOutPath "$INSTDIR"
-	OBSInstallerUtils::KillProcess "obs-plugins\32bit\cef-bootstrap.exe"
-	OBSInstallerUtils::KillProcess "obs-plugins\64bit\cef-bootstrap.exe"
 
 	File /r "new\core\data"
 
@@ -319,10 +318,8 @@ Section "OBS Studio" SecCore
 	SetOutPath "$INSTDIR"
 	File /r "new\obs-browser\data"
 	SetOutPath "$INSTDIR\obs-plugins"
-	OBSInstallerUtils::KillProcess "32bit\cef-bootstrap.exe"
 	OBSInstallerUtils::KillProcess "32bit\obs-browser-page.exe"
 	${if} ${RunningX64}
-		OBSInstallerUtils::KillProcess "64bit\cef-bootstrap.exe"
 		OBSInstallerUtils::KillProcess "64bit\obs-browser-page.exe"
 	${endif}
 !ifdef INSTALL64

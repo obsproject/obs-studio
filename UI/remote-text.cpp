@@ -208,7 +208,9 @@ bool GetRemoteFile(const char *url, std::string &str, std::string &error,
 		} else if (signature) {
 			for (string &h : header_in_list) {
 				string name = h.substr(0, 13);
-				if (name == "X-Signature: ") {
+				// HTTP headers are technically case-insensitive
+				if (name == "X-Signature: " ||
+				    name == "x-signature: ") {
 					*signature = h.substr(13);
 					break;
 				}

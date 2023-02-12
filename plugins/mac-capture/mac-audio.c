@@ -22,8 +22,6 @@
 #define BUS_OUTPUT 0
 #define BUS_INPUT 1
 
-#define MAX_DEVICES 20
-
 #define set_property AudioUnitSetProperty
 #define get_property AudioUnitGetProperty
 
@@ -629,7 +627,8 @@ static bool coreaudio_init(struct coreaudio_data *ca)
 	if (!coreaudio_start(ca))
 		goto fail;
 
-	blog(LOG_INFO, "coreaudio: device '%s' initialized", ca->device_name);
+	blog(LOG_INFO, "coreaudio: Device '%s' [%" PRIu32 " Hz] initialized",
+	     ca->device_name, ca->sample_rate);
 	return ca->au_initialized;
 
 fail:

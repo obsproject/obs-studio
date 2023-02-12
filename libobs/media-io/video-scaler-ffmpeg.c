@@ -19,6 +19,7 @@
 #include "video-scaler.h"
 
 #include <libavutil/imgutils.h>
+#include <libavutil/opt.h>
 #include <libswscale/swscale.h>
 
 struct video_scaler {
@@ -188,13 +189,24 @@ int video_scaler_create(video_scaler_t **scaler_out,
 		goto fail;
 	}
 
-	scaler->swscale = sws_getCachedContext(NULL, src->width, src->height,
-					       format_src, dst->width,
-					       dst->height, format_dst,
-					       scale_type, NULL, NULL, NULL);
+	scaler->swscale = sws_alloc_context();
 	if (!scaler->swscale) {
 		blog(LOG_ERROR, "video_scaler_create: Could not create "
 				"swscale");
+		goto fail;
+	}
+
+	av_opt_set_int(scaler->swscale, "sws_flags", scale_type, 0);
+	av_opt_set_int(scaler->swscale, "srcw", src->width, 0);
+	av_opt_set_int(scaler->swscale, "srch", src->height, 0);
+	av_opt_set_int(scaler->swscale, "dstw", dst->width, 0);
+	av_opt_set_int(scaler->swscale, "dsth", dst->height, 0);
+	av_opt_set_int(scaler->swscale, "src_format", format_src, 0);
+	av_opt_set_int(scaler->swscale, "dst_format", format_dst, 0);
+	av_opt_set_int(scaler->swscale, "src_range", range_src, 0);
+	av_opt_set_int(scaler->swscale, "dst_range", range_dst, 0);
+	if (sws_init_context(scaler->swscale, NULL, NULL) < 0) {
+		blog(LOG_ERROR, "video_scaler_create: sws_init_context failed");
 		goto fail;
 	}
 

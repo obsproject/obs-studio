@@ -142,8 +142,6 @@ static void calc_crop_dimensions(struct crop_filter_data *filter,
 	uint32_t height;
 
 	if (!target) {
-		width = 0;
-		height = 0;
 		return;
 	} else {
 		width = obs_source_get_base_width(target);
@@ -196,8 +194,7 @@ get_tech_name_and_multiplier(enum gs_color_space current_space,
 	switch (source_space) {
 	case GS_CS_SRGB:
 	case GS_CS_SRGB_16F:
-		switch (current_space) {
-		case GS_CS_709_SCRGB:
+		if (current_space == GS_CS_709_SCRGB) {
 			tech_name = "DrawMultiply";
 			*multiplier = obs_get_video_sdr_white_level() / 80.0f;
 		}
@@ -242,7 +239,7 @@ static void crop_filter_render(void *data, gs_effect_t *effect)
 	};
 
 	const enum gs_color_space source_space = obs_source_get_color_space(
-		obs_filter_get_parent(filter->context),
+		obs_filter_get_target(filter->context),
 		OBS_COUNTOF(preferred_spaces), preferred_spaces);
 	float multiplier;
 	const char *technique = get_tech_name_and_multiplier(
@@ -292,7 +289,7 @@ crop_filter_get_color_space(void *data, size_t count,
 
 	struct crop_filter_data *const filter = data;
 	const enum gs_color_space source_space = obs_source_get_color_space(
-		obs_filter_get_parent(filter->context),
+		obs_filter_get_target(filter->context),
 		OBS_COUNTOF(potential_spaces), potential_spaces);
 
 	enum gs_color_space space = source_space;

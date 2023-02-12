@@ -13,6 +13,9 @@
   <property name="windowTitle">
    <string>Basic.Filters</string>
   </property>
+  <property name="sizeGripEnabled">
+   <bool>true</bool>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,10">
@@ -65,6 +68,9 @@
             </property>
             <property name="contextMenuPolicy">
              <enum>Qt::CustomContextMenu</enum>
+            </property>
+            <property name="spacing">
+             <number>1</number>
             </property>
            </widget>
           </item>
@@ -275,6 +281,9 @@
             </property>
             <property name="contextMenuPolicy">
              <enum>Qt::CustomContextMenu</enum>
+            </property>
+            <property name="spacing">
+             <number>1</number>
             </property>
            </widget>
           </item>

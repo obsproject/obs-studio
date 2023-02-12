@@ -29,6 +29,8 @@ extern "C" {
 #define OBS_OUTPUT_MULTI_TRACK (1 << 4)
 #define OBS_OUTPUT_CAN_PAUSE (1 << 5)
 
+#define MAX_OUTPUT_AUDIO_ENCODERS 6
+
 struct encoder_packet;
 
 struct obs_output_info {

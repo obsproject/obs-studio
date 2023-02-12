@@ -30,7 +30,6 @@
 
 #define SETTING_MODE                 "capture_mode"
 #define SETTING_CAPTURE_WINDOW       "window"
-#define SETTING_ACTIVE_WINDOW        "active_window"
 #define SETTING_WINDOW_PRIORITY      "priority"
 #define SETTING_COMPATIBILITY        "sli_compatibility"
 #define SETTING_CURSOR               "capture_cursor"
@@ -823,7 +822,7 @@ static void pipe_log(void *param, uint8_t *data, size_t size)
 static inline bool init_pipe(struct game_capture *gc)
 {
 	char name[64];
-	sprintf(name, "%s%lu", PIPE_NAME, gc->process_id);
+	snprintf(name, sizeof(name), "%s%lu", PIPE_NAME, gc->process_id);
 
 	if (!ipc_pipe_server_start(&gc->pipe, name, pipe_log, gc)) {
 		warn("init_pipe: failed to start pipe");
@@ -1323,9 +1322,6 @@ static inline enum capture_result init_capture_data(struct game_capture *gc)
 
 	return CAPTURE_SUCCESS;
 }
-
-#define PIXEL_16BIT_SIZE 2
-#define PIXEL_32BIT_SIZE 4
 
 static inline uint32_t convert_5_to_8bit(uint16_t val)
 {
@@ -2194,13 +2190,13 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 static uint32_t game_capture_width(void *data)
 {
 	struct game_capture *gc = data;
-	return gc->active ? gc->cx : 0;
+	return (gc->active && gc->capturing) ? gc->cx : 0;
 }
 
 static uint32_t game_capture_height(void *data)
 {
 	struct game_capture *gc = data;
-	return gc->active ? gc->cy : 0;
+	return (gc->active && gc->capturing) ? gc->cy : 0;
 }
 
 static const char *game_capture_name(void *unused)

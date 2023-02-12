@@ -35,8 +35,9 @@ configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
 target_sources(obs-virtualcam-module PRIVATE virtualcam-module.rc)
 
 target_link_libraries(
-  obs-virtualcam-module PRIVATE OBS::libdshowcapture setupapi winmm strmiids
-                                gdiplus)
+  obs-virtualcam-module
+  PRIVATE OBS::libdshowcapture OBS::libdshowcapture-external setupapi winmm
+          strmiids gdiplus)
 
 target_link_options(obs-virtualcam-module PRIVATE "LINKER:/ignore:4104")
 
@@ -61,19 +62,6 @@ if(MSVC)
                       "obs-plugins/win-dshow/" OPTIONAL)
 
 endif()
-
-get_target_property(_LIBDSHOW_SOURCES OBS::libdshowcapture INTERFACE_SOURCES)
-
-foreach(_LIBDSHOW_SOURCE ${_LIBDSHOW_SOURCES})
-  get_filename_component(_EXT ${_LIBDSHOW_SOURCE} EXT)
-  if(${_EXT} STREQUAL "hpp" OR ${_EXT} STREQUAL "h")
-    source_group("libdshowcapture\\Header Files" FILES ${_LIBDSHOW_SOURCE})
-  elseif(${_EXT} STREQUAL "cpp" OR ${_EXT} STREQUAL "c")
-    source_group("libdshowcapture\\Source Files" FILES ${_LIBDSHOW_SOURCE})
-  endif()
-endforeach()
-unset(_LIBDSHOW_SOURCE)
-unset(_LIBDSHOW_SOURCES)
 
 set_target_properties(obs-virtualcam-module PROPERTIES FOLDER
                                                        "plugins/win-dshow")

@@ -186,7 +186,14 @@ static void free_files(struct darray *array)
 
 static inline size_t random_file(struct slideshow *ss)
 {
-	return (size_t)rand() % ss->files.num;
+	size_t next = ss->cur_item;
+
+	if (ss->files.num > 1) {
+		while (next == ss->cur_item)
+			next = (size_t)rand() % ss->files.num;
+	}
+
+	return next;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -241,7 +248,11 @@ static bool valid_extension(const char *ext)
 		return false;
 	return astrcmpi(ext, ".bmp") == 0 || astrcmpi(ext, ".tga") == 0 ||
 	       astrcmpi(ext, ".png") == 0 || astrcmpi(ext, ".jpeg") == 0 ||
-	       astrcmpi(ext, ".jpg") == 0 || astrcmpi(ext, ".gif") == 0;
+	       astrcmpi(ext, ".jpg") == 0 ||
+#ifdef _WIN32
+	       astrcmpi(ext, ".jxr") == 0 ||
+#endif
+	       astrcmpi(ext, ".gif") == 0;
 }
 
 static inline bool item_valid(struct slideshow *ss)
@@ -338,6 +349,11 @@ static void ss_update(void *data, obs_data_t *settings)
 		obs_data_t *item = obs_data_array_item(array, i);
 		const char *path = obs_data_get_string(item, "value");
 		os_dir_t *dir = os_opendir(path);
+
+		if (!path || !*path) {
+			obs_data_release(item);
+			continue;
+		}
 
 		if (dir) {
 			struct dstr dir_path = {0};
@@ -535,7 +551,9 @@ static void ss_next_slide(void *data)
 	if (!ss->files.num || obs_transition_get_time(ss->transition) < 1.0f)
 		return;
 
-	if (++ss->cur_item >= ss->files.num)
+	if (ss->randomize)
+		ss->cur_item = random_file(ss);
+	else if (++ss->cur_item >= ss->files.num)
 		ss->cur_item = 0;
 
 	do_transition(ss, false);
@@ -548,7 +566,9 @@ static void ss_previous_slide(void *data)
 	if (!ss->files.num || obs_transition_get_time(ss->transition) < 1.0f)
 		return;
 
-	if (ss->cur_item == 0)
+	if (ss->randomize)
+		ss->cur_item = random_file(ss);
+	else if (ss->cur_item == 0)
 		ss->cur_item = ss->files.num - 1;
 	else
 		--ss->cur_item;
@@ -622,6 +642,18 @@ static void previous_slide_hotkey(void *data, obs_hotkey_id id,
 		obs_source_media_previous(ss->source);
 }
 
+static void current_slide_proc(void *data, calldata_t *cd)
+{
+	struct slideshow *ss = data;
+	calldata_set_int(cd, "current_index", ss->cur_item);
+}
+
+static void total_slides_proc(void *data, calldata_t *cd)
+{
+	struct slideshow *ss = data;
+	calldata_set_int(cd, "total_files", ss->files.num);
+}
+
 static void ss_destroy(void *data)
 {
 	struct slideshow *ss = data;
@@ -635,6 +667,7 @@ static void ss_destroy(void *data)
 static void *ss_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct slideshow *ss = bzalloc(sizeof(*ss));
+	proc_handler_t *ph = obs_source_get_proc_handler(source);
 
 	ss->source = source;
 
@@ -662,6 +695,9 @@ static void *ss_create(obs_data_t *settings, obs_source_t *source)
 		source, "SlideShow.PreviousSlide",
 		obs_module_text("SlideShow.PreviousSlide"),
 		previous_slide_hotkey, ss);
+
+	proc_handler_add(ph, "int current_index()", current_slide_proc, ss);
+	proc_handler_add(ph, "int total_files()", total_slides_proc, ss);
 
 	pthread_mutex_init_value(&ss->mutex);
 	if (pthread_mutex_init(&ss->mutex, NULL) != 0)
@@ -738,20 +774,7 @@ static void ss_video_tick(void *data, float seconds)
 			return;
 		}
 
-		if (ss->randomize) {
-			size_t next = ss->cur_item;
-			if (ss->files.num > 1) {
-				while (next == ss->cur_item)
-					next = random_file(ss);
-			}
-			ss->cur_item = next;
-
-		} else if (++ss->cur_item >= ss->files.num) {
-			ss->cur_item = 0;
-		}
-
-		if (ss->files.num)
-			do_transition(ss, false);
+		obs_source_media_next(ss->source);
 	}
 }
 
@@ -845,8 +868,11 @@ static void ss_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, S_LOOP, true);
 }
 
-static const char *file_filter =
-	"Image files (*.bmp *.tga *.png *.jpeg *.jpg *.gif *.webp)";
+static const char *file_filter = "Image files (*.bmp *.tga *.png *.jpeg *.jpg"
+#ifdef _WIN32
+				 " *.jxr"
+#endif
+				 " *.gif *.webp)";
 
 static const char *aspects[] = {"16:9", "16:10", "4:3", "1:1"};
 
@@ -915,7 +941,7 @@ static obs_properties_t *ss_properties(void *data)
 		obs_property_list_add_string(p, aspects[i], aspects[i]);
 
 	char str[32];
-	snprintf(str, 32, "%dx%d", cx, cy);
+	snprintf(str, sizeof(str), "%dx%d", cx, cy);
 	obs_property_list_add_string(p, str, str);
 
 	if (ss) {
@@ -948,8 +974,10 @@ static void ss_activate(void *data)
 	if (ss->behavior == BEHAVIOR_STOP_RESTART) {
 		ss->restart_on_activate = true;
 		ss->use_cut = true;
+		set_media_state(ss, OBS_MEDIA_STATE_PLAYING);
 	} else if (ss->behavior == BEHAVIOR_PAUSE_UNPAUSE) {
 		ss->pause_on_deactivate = false;
+		set_media_state(ss, OBS_MEDIA_STATE_PLAYING);
 	}
 }
 
@@ -957,8 +985,10 @@ static void ss_deactivate(void *data)
 {
 	struct slideshow *ss = data;
 
-	if (ss->behavior == BEHAVIOR_PAUSE_UNPAUSE)
+	if (ss->behavior == BEHAVIOR_PAUSE_UNPAUSE) {
 		ss->pause_on_deactivate = true;
+		set_media_state(ss, OBS_MEDIA_STATE_PAUSED);
+	}
 }
 
 static void missing_file_callback(void *src, const char *new_path, void *data)
@@ -976,7 +1006,10 @@ static void missing_file_callback(void *src, const char *new_path, void *data)
 		const char *path = obs_data_get_string(file, "value");
 
 		if (strcmp(path, orig_path) == 0) {
-			obs_data_set_string(file, "value", new_path);
+			if (new_path && *new_path)
+				obs_data_set_string(file, "value", new_path);
+			else
+				obs_data_array_erase(files, i);
 
 			obs_data_release(file);
 			break;
@@ -1026,6 +1059,23 @@ static obs_missing_files_t *ss_missingfiles(void *data)
 	return missing_files;
 }
 
+static enum gs_color_space
+ss_video_get_color_space(void *data, size_t count,
+			 const enum gs_color_space *preferred_spaces)
+{
+	enum gs_color_space space = GS_CS_SRGB;
+
+	struct slideshow *ss = data;
+	obs_source_t *transition = get_transition(ss);
+	if (transition) {
+		space = obs_source_get_color_space(transition, count,
+						   preferred_spaces);
+		obs_source_release(transition);
+	}
+
+	return space;
+}
+
 struct obs_source_info slideshow_info = {
 	.id = "slideshow",
 	.type = OBS_SOURCE_TYPE_INPUT,
@@ -1053,4 +1103,5 @@ struct obs_source_info slideshow_info = {
 	.media_next = ss_next_slide,
 	.media_previous = ss_previous_slide,
 	.media_get_state = ss_get_state,
+	.video_get_color_space = ss_video_get_color_space,
 };

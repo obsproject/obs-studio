@@ -128,7 +128,6 @@ static void luma_wipe_destroy(void *data)
 static obs_properties_t *luma_wipe_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
-	struct luma_wipe_info *lwipe = data;
 
 	obs_property_t *p;
 
@@ -136,12 +135,17 @@ static obs_properties_t *luma_wipe_properties(void *data)
 				    OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
 
-	obs_data_item_t *item = obs_data_first(lwipe->wipes_list);
+	if (data) {
+		struct luma_wipe_info *lwipe = data;
 
-	for (; item != NULL; obs_data_item_next(&item)) {
-		const char *name = obs_data_item_get_name(item);
-		const char *path = obs_data_item_get_string(item);
-		obs_property_list_add_string(p, obs_module_text(name), path);
+		obs_data_item_t *item = obs_data_first(lwipe->wipes_list);
+
+		for (; item != NULL; obs_data_item_next(&item)) {
+			const char *name = obs_data_item_get_name(item);
+			const char *path = obs_data_item_get_string(item);
+			obs_property_list_add_string(p, obs_module_text(name),
+						     path);
+		}
 	}
 
 	obs_properties_add_float(props, S_LUMA_SOFT, T_LUMA_SOFT, 0.0, 1.0,

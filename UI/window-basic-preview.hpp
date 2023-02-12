@@ -73,6 +73,9 @@ private:
 	bool scrollMode = false;
 	bool fixedScaling = false;
 	bool selectionBox = false;
+	bool overflowHidden = false;
+	bool overflowSelectionHidden = false;
+	bool overflowAlwaysVisible = false;
 	int32_t scalingLevel = 0;
 	float scalingAmount = 1.0f;
 	float groupRot = 0.0f;
@@ -161,6 +164,25 @@ public:
 	}
 	inline float GetScrollX() const { return scrollingOffset.x; }
 	inline float GetScrollY() const { return scrollingOffset.y; }
+
+	inline void SetOverflowHidden(bool hidden) { overflowHidden = hidden; }
+	inline void SetOverflowSelectionHidden(bool hidden)
+	{
+		overflowSelectionHidden = hidden;
+	}
+	inline void SetOverflowAlwaysVisible(bool visible)
+	{
+		overflowAlwaysVisible = visible;
+	}
+
+	inline bool GetOverflowSelectionHidden() const
+	{
+		return overflowSelectionHidden;
+	}
+	inline bool GetOverflowAlwaysVisible() const
+	{
+		return overflowAlwaysVisible;
+	}
 
 	/* use libobs allocator for alignment because the matrices itemToScreen
 	 * and screenToItem may contain SSE data, which will cause SSE

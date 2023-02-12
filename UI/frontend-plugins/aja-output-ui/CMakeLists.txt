@@ -44,6 +44,8 @@ target_sources(
           ${CMAKE_SOURCE_DIR}/plugins/aja/aja-widget-io.hpp
           ${CMAKE_SOURCE_DIR}/UI/double-slider.cpp
           ${CMAKE_SOURCE_DIR}/UI/double-slider.hpp
+          ${CMAKE_SOURCE_DIR}/UI/plain-text-edit.hpp
+          ${CMAKE_SOURCE_DIR}/UI/plain-text-edit.cpp
           ${CMAKE_SOURCE_DIR}/UI/properties-view.hpp
           ${CMAKE_SOURCE_DIR}/UI/properties-view.cpp
           ${CMAKE_SOURCE_DIR}/UI/properties-view.moc.hpp
@@ -79,6 +81,11 @@ elseif(OS_WINDOWS)
 else()
   find_package(X11 REQUIRED)
   target_link_libraries(aja-output-ui PRIVATE X11::X11 Qt::GuiPrivate)
+endif()
+
+if(NOT MSVC)
+  target_compile_options(aja-output-ui
+                         PRIVATE -Wno-error=deprecated-declarations)
 endif()
 
 set_target_properties(aja-output-ui PROPERTIES FOLDER "frontend" PREFIX "")

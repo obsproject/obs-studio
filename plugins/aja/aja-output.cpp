@@ -15,6 +15,7 @@
 
 #include <atomic>
 #include <stdlib.h>
+#include <inttypes.h>
 
 // Log AJA Output video/audio delay/sync
 // #define AJA_OUTPUT_STATS
@@ -839,7 +840,9 @@ void AJAOutput::OutputThread(AJAThread *thread, void *ctx)
 	uint32_t audioSize = props.audioNumChannels / props.audioSampleSize;
 	if (audioSize > 0) {
 		blog(LOG_INFO,
-		     "AJAOutput::OutputThread: Thread stopped\n[Video] qf: %lu wf: %lu pf: %lu\n[Audio] qs: %lu ws: %lu ps: %lu",
+		     "AJAOutput::OutputThread: Thread stopped\n[Video] qf: %" PRIu64
+		     " wf: %" PRIu64 " pf: %" PRIu64 "\n[Audio] qs: %" PRIu64
+		     " ws: %" PRIu64 " ps: %" PRIu64,
 		     ajaOutput->mVideoQueueFrames, ajaOutput->mVideoWriteFrames,
 		     ajaOutput->mVideoPlayFrames,
 		     ajaOutput->mAudioQueueBytes / audioSize,

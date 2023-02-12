@@ -45,7 +45,7 @@ else()
                          GPU_PRIORITY_VAL=${GPU_PRIORITY_VAL})
 endif()
 
-target_link_libraries(libobs-d3d11 PRIVATE OBS::libobs d3d9 d3d11 dxgi)
+target_link_libraries(libobs-d3d11 PRIVATE OBS::libobs d3d9 d3d11 dxgi shcore)
 
 set_target_properties(
   libobs-d3d11
