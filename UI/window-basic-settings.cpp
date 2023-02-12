@@ -3074,6 +3074,13 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 	AddHotkeys(*hotkeysLayout, obs_service_get_name, services);
 
 	ScanDuplicateHotkeys(hotkeysLayout);
+
+	/* After this function returns the UI can still be unresponsive for a bit.
+	 * So by deferring the call to unsetCursor() to the Qt event loop it will
+	 * take until it has actually finished processing the created widgets
+	 * before the cursor is reset. */
+	QTimer::singleShot(1, this, &OBSBasicSettings::unsetCursor);
+	hotkeysLoaded = true;
 }
 
 void OBSBasicSettings::LoadSettings(bool changedOnly)
@@ -3088,8 +3095,6 @@ void OBSBasicSettings::LoadSettings(bool changedOnly)
 		LoadAudioSettings();
 	if (!changedOnly || videoChanged)
 		LoadVideoSettings();
-	if (!changedOnly || hotkeysChanged)
-		LoadHotkeySettings();
 	if (!changedOnly || a11yChanged)
 		LoadA11ySettings();
 	if (!changedOnly || advancedChanged)
@@ -3996,6 +4001,20 @@ void OBSBasicSettings::on_listWidget_itemSelectionChanged()
 	if (loading || row == pageIndex)
 		return;
 
+	if (!hotkeysLoaded && row == 5) {
+		setCursor(Qt::BusyCursor);
+		/* Look, I know this /feels/ wrong, but the specific issue we're dealing with
+		 * here means that the UI locks up immediately even when using "invokeMethod".
+		 * So the only way for the user to see the loading message on the page is to
+		 * give the Qt event loop a tiny bit of time to switch to the hotkey page,
+		 * and only then start loading. This could maybe be done by subclassing QWidget
+		 * for the hotkey page and then using showEvent() but I *really* don't want
+		 * to deal with that right now. I've got better things to do with my life
+		 * than to work around this god damn stupid issue for something we'll remove
+		 * soon enough anyway. So this solution it is. */
+		QTimer::singleShot(1, this, [&]() { LoadHotkeySettings(); });
+	}
+
 	pageIndex = row;
 }
 
@@ -4629,6 +4648,8 @@ bool OBSBasicSettings::ScanDuplicateHotkeys(QFormLayout *layout)
 
 void OBSBasicSettings::ReloadHotkeys(obs_hotkey_id ignoreKey)
 {
+	if (!hotkeysLoaded)
+		return;
 	LoadHotkeySettings(ignoreKey);
 }
 
