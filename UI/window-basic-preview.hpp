@@ -18,7 +18,9 @@ class QMouseEvent;
 #define ITEM_BOTTOM (1 << 3)
 #define ITEM_ROT (1 << 4)
 
-#define ZOOM_SENSITIVITY 1.125f
+#define MAX_SCALING_LEVEL 20
+#define MAX_SCALING_AMOUNT 10.0f
+#define ZOOM_SENSITIVITY pow(MAX_SCALING_AMOUNT, 1.0f / MAX_SCALING_LEVEL)
 
 #define SPACER_LABEL_MARGIN 6.0f
 
