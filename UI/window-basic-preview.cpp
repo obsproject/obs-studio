@@ -13,6 +13,8 @@
 #define HANDLE_RADIUS 4.0f
 #define HANDLE_SEL_RADIUS (HANDLE_RADIUS * 1.5f)
 #define HELPER_ROT_BREAKPONT 45.0f
+#define MOVE_PIXELS 20
+#define MAX_SCALE_LEVEL 20
 
 /* TODO: make C++ math classes and clean up code here later */
 
@@ -21,6 +23,45 @@ OBSBasicPreview::OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags)
 {
 	ResetScrollingOffset();
 	setMouseTracking(true);
+
+	QAction *zoomInAction = new QAction(this);
+	connect(zoomInAction, SIGNAL(triggered()), this, SLOT(ZoomIn()));
+	QList<QKeySequence> shortcuts;
+	shortcuts << QKeySequence("Ctrl+=") << QKeySequence("Ctrl++");
+	zoomInAction->setShortcuts(shortcuts);
+	addAction(zoomInAction);
+
+	QAction *action;
+
+	action = new QAction(this);
+	connect(action, SIGNAL(triggered()), this, SLOT(ZoomOut()));
+	action->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Minus));
+	addAction(action);
+
+	action = new QAction(this);
+	connect(action, SIGNAL(triggered()), this, SLOT(ZoomReset()));
+	action->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_0));
+	addAction(action);
+
+	action = new QAction(this);
+	connect(action, SIGNAL(triggered()), this, SLOT(MoveUp()));
+	action->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Up));
+	addAction(action);
+
+	action = new QAction(this);
+	connect(action, SIGNAL(triggered()), this, SLOT(MoveDown()));
+	action->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Down));
+	addAction(action);
+
+	action = new QAction(this);
+	connect(action, SIGNAL(triggered()), this, SLOT(MoveLeft()));
+	action->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Left));
+	addAction(action);
+
+	action = new QAction(this);
+	connect(action, SIGNAL(triggered()), this, SLOT(MoveRight()));
+	action->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Right));
+	addAction(action);
 }
 
 OBSBasicPreview::~OBSBasicPreview()
@@ -555,10 +596,9 @@ void OBSBasicPreview::wheelEvent(QWheelEvent *event)
 		const int delta = event->angleDelta().y();
 		if (delta != 0) {
 			if (delta > 0)
-				SetScalingLevel(scalingLevel + 1);
+				ZoomIn();
 			else
-				SetScalingLevel(scalingLevel - 1);
-			emit DisplayResized();
+				ZoomOut();
 		}
 	}
 
@@ -2255,6 +2295,8 @@ void OBSBasicPreview::ResetScrollingOffset()
 
 void OBSBasicPreview::SetScalingLevel(int32_t newScalingLevelVal)
 {
+	newScalingLevelVal = std::clamp(
+		newScalingLevelVal, -MAX_SCALE_LEVEL - 1, MAX_SCALE_LEVEL - 1);
 	float newScalingAmountVal =
 		pow(ZOOM_SENSITIVITY, float(newScalingLevelVal));
 	scalingLevel = newScalingLevelVal;
@@ -2266,6 +2308,70 @@ void OBSBasicPreview::SetScalingAmount(float newScalingAmountVal)
 	scrollingOffset.x *= newScalingAmountVal / scalingAmount;
 	scrollingOffset.y *= newScalingAmountVal / scalingAmount;
 	scalingAmount = newScalingAmountVal;
+}
+
+void OBSBasicPreview::ZoomIn()
+{
+	if (!IsFixedScaling())
+		return;
+
+	SetScalingLevel(scalingLevel + 1);
+	emit DisplayResized();
+}
+
+void OBSBasicPreview::ZoomOut()
+{
+	if (!IsFixedScaling())
+		return;
+
+	SetScalingLevel(scalingLevel - 1);
+	emit DisplayResized();
+}
+
+void OBSBasicPreview::ZoomReset()
+{
+	if (!IsFixedScaling())
+		return;
+
+	ResetScrollingOffset();
+	SetScalingLevel(0);
+	emit DisplayResized();
+}
+
+void OBSBasicPreview::MoveUp()
+{
+	if (!IsFixedScaling())
+		return;
+
+	scrollingOffset.y += MOVE_PIXELS;
+	emit DisplayResized();
+}
+
+void OBSBasicPreview::MoveDown()
+{
+	if (!IsFixedScaling())
+		return;
+
+	scrollingOffset.y -= MOVE_PIXELS;
+	emit DisplayResized();
+}
+
+void OBSBasicPreview::MoveLeft()
+{
+	if (!IsFixedScaling())
+		return;
+
+	scrollingOffset.x += MOVE_PIXELS;
+	emit DisplayResized();
+}
+
+void OBSBasicPreview::MoveRight()
+{
+	if (!IsFixedScaling())
+		return;
+
+	scrollingOffset.x -= MOVE_PIXELS;
+	emit DisplayResized();
 }
 
 OBSBasicPreview *OBSBasicPreview::Get()

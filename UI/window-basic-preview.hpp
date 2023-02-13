@@ -122,6 +122,15 @@ private:
 	OBSDataAutoRelease wrapper = nullptr;
 	bool changed;
 
+private slots:
+	void ZoomIn();
+	void ZoomOut();
+	void ZoomReset();
+	void MoveUp();
+	void MoveDown();
+	void MoveLeft();
+	void MoveRight();
+
 public:
 	OBSBasicPreview(QWidget *parent,
 			Qt::WindowFlags flags = Qt::WindowFlags());
