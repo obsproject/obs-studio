@@ -349,7 +349,7 @@ bool RemuxQueueModel::setData(const QModelIndex &index, const QVariant &value,
 				endRemoveRows();
 			}
 		} else {
-			if (pathList.size() > 1 &&
+			if (pathList.size() >= 1 &&
 			    index.row() < queue.length()) {
 				queue[index.row()].sourcePath = pathList[0];
 				checkInputPath(index.row());
