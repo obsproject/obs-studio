@@ -134,8 +134,6 @@ target_sources(
           api-interface.cpp
           auth-base.cpp
           auth-base.hpp
-          crash-report.cpp
-          crash-report.hpp
           display-helpers.hpp
           platform.hpp
           qt-display.cpp

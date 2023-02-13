@@ -47,7 +47,6 @@
 #include "window-permissions.hpp"
 #endif
 #include "window-basic-settings.hpp"
-#include "crash-report.hpp"
 #include "platform.hpp"
 
 #include <fstream>
