@@ -1722,11 +1722,6 @@ string OBSApp::GetVersionString() const
 	ver << " (";
 
 #ifdef _WIN32
-	if (sizeof(void *) == 8)
-		ver << "64-bit, ";
-	else
-		ver << "32-bit, ";
-
 	ver << "windows)";
 #elif __APPLE__
 	ver << "mac)";
