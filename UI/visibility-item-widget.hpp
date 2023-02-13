@@ -29,7 +29,6 @@ private:
 	static void OBSSourceRenamed(void *param, calldata_t *data);
 
 private slots:
-	void VisibilityClicked(bool visible);
 	void SourceEnabled(bool enabled);
 	void SourceRenamed(QString name);
 

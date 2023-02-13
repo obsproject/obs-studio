@@ -34,8 +34,9 @@ VisibilityItemWidget::VisibilityItemWidget(obs_source_t *source_)
 	setLayout(itemLayout);
 	setStyleSheet("background-color: rgba(255, 255, 255, 0);");
 
-	connect(vis, SIGNAL(clicked(bool)), this,
-		SLOT(VisibilityClicked(bool)));
+	connect(vis, &VisibilityCheckBox::clicked, [this](bool visible) {
+		obs_source_set_enabled(source, visible);
+	});
 }
 
 void VisibilityItemWidget::OBSSourceEnabled(void *param, calldata_t *data)
@@ -56,11 +57,6 @@ void VisibilityItemWidget::OBSSourceRenamed(void *param, calldata_t *data)
 
 	QMetaObject::invokeMethod(window, "SourceRenamed",
 				  Q_ARG(QString, QT_UTF8(name)));
-}
-
-void VisibilityItemWidget::VisibilityClicked(bool visible)
-{
-	obs_source_set_enabled(source, visible);
 }
 
 void VisibilityItemWidget::SourceEnabled(bool enabled)

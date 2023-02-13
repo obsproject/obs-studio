@@ -94,9 +94,6 @@ class VolumeMeter : public QWidget {
 
 	friend class VolControl;
 
-private slots:
-	void ClipEnding();
-
 private:
 	obs_volmeter_t *obs_volmeter;
 	static QWeakPointer<VolumeMeterTimer> updateTimer;
