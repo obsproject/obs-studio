@@ -15,13 +15,7 @@ OBSAbout::OBSAbout(QWidget *parent) : QDialog(parent), ui(new Ui::OBSAbout)
 
 	ui->setupUi(this);
 
-	QString bitness;
 	QString ver;
-
-	if (sizeof(void *) == 4)
-		bitness = " (32 bit)";
-	else if (sizeof(void *) == 8)
-		bitness = " (64 bit)";
 
 #ifdef HAVE_OBSCONFIG_H
 	ver += OBS_VERSION;
@@ -30,7 +24,7 @@ OBSAbout::OBSAbout(QWidget *parent) : QDialog(parent), ui(new Ui::OBSAbout)
 	       LIBOBS_API_PATCH_VER;
 #endif
 
-	ui->version->setText(ver + bitness);
+	ui->version->setText(ver);
 
 	ui->contribute->setText(QTStr("About.Contribute"));
 
