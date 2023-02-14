@@ -228,6 +228,10 @@ void gl_update(gs_device_t *device)
 	NSOpenGLContext *parent = device->plat->context;
 	NSOpenGLContext *context = swap->wi->context;
 	dispatch_async(dispatch_get_main_queue(), ^() {
+		if (!swap || !swap->wi) {
+			return;
+		}
+
 		CGLContextObj parent_obj = [parent CGLContextObj];
 		CGLLockContext(parent_obj);
 
