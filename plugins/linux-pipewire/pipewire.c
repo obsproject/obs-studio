@@ -567,13 +567,13 @@ static void on_process_cb(void *user_data)
 
 		if ((buffer->datas[0].chunk->flags & SPA_CHUNK_FLAG_CORRUPTED) >
 		    0) {
-			blog(LOG_ERROR,
+			blog(LOG_DEBUG,
 			     "[pipewire] buffer contains corrupted data");
 			goto read_metadata;
 		}
 
 		if (buffer->datas[0].chunk->size == 0) {
-			blog(LOG_ERROR,
+			blog(LOG_DEBUG,
 			     "[pipewire] buffer contains empty data");
 			goto read_metadata;
 		}
