@@ -13,22 +13,11 @@ on:
 
 env:
   CACHE_REVISION: '006'
-  CEF_BUILD_VERSION_MAC: '5060'
-  CEF_HASH_MAC_X86_64: '88b950aa0bfc001061c35e7f1f3fefba856a6afb35e38b2b7b42ddd8dd239182'
-  CEF_HASH_MAC_ARM64: '98679b92eea6ea9959ac5aa54f46ca60681d8a86c768c35f496dbdd409bf0642'
   CEF_BUILD_VERSION_LINUX: '5060'
   CEF_BUILD_VERSION_WIN: '5060'
   QT_VERSION_MAC: '6.4.3'
-  QT_HASH_MAC_X86_64: '8f5e1a865310898635d34b92e6d93c99c62f39289a17d6db140e776ba9b2e455'
-  QT_HASH_MAC_ARM64: '0011e2395afbb02aaa5e8641c4486680e30decc60e063ca5a73d6faf3649e723'
-  QT_HASH_MAC_UNIVERSAL: '5bcbb8fee4b70a26912e04a62960c615153828eac66b9f0bcb0b30529193ca6e'
   QT_VERSION_WIN: '6.4.3'
-  DEPS_VERSION_MAC: '2023-03-20'
-  DEPS_HASH_MAC_X86_64: 'bd4d3866c2e4b630410ff29b3f31a2553844af60b30fa0306d35d80a70f903ba'
-  DEPS_HASH_MAC_ARM64: '90078e2141818a37def7ebdceb3dcde71dc4adc1ce81d6e31ba21916f85c77bf'
   DEPS_VERSION_WIN: '2023-03-20'
-  VLC_VERSION_MAC: '3.0.8'
-  VLC_HASH_MAC: 'e0149ef4a20a19b9ecd87309c2d27787ee3f47dfd47c6639644bc1f6fd95bdf6'
   VLC_VERSION_WIN: '3.0.0-git'
   TWITCH_CLIENTID: ${{ secrets.TWITCH_CLIENT_ID }}
   TWITCH_HASH: ${{ secrets.TWITCH_HASH }}
@@ -38,6 +27,10 @@ env:
   YOUTUBE_CLIENTID_HASH: ${{ secrets.YOUTUBE_CLIENTID_HASH }}
   YOUTUBE_SECRET: ${{ secrets.YOUTUBE_SECRET }}
   YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
+
+concurrency:
+  group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  cancel-in-progress: true
 
 jobs:
   clang_check:
@@ -90,12 +83,6 @@ jobs:
     if: always()
     needs: [config, clang_check]
     env:
-      MACOSX_DEPLOYMENT_TARGET_X86_64: '10.15'
-      MACOSX_DEPLOYMENT_TARGET_ARM64: '11.0'
-      SPARKLE_VERSION: '2.3.2'
-      SPARKLE_HASH: '2b3fe6918ca20a83729aad34f8f693a678b714a17d33b5f13ca2d25edfa7eed3'
-      SPARKLE_APPCAST_URL: 'https://obsproject.com/osx_update/updates_${{ matrix.arch }}_v2.xml'
-      SPARKLE_PUBLIC_KEY: 'HQ5/Ba9VHOuEWaM0jtVjZzgHKFJX9YTl+HNVpgNF0iM='
       BLOCKED_FORMULAS: 'speexdsp curl php composer'
       CODESIGN_IDENT: '-'
       HAVE_CODESIGN_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY != '' && secrets.MACOS_SIGNING_CERT != '' }}
@@ -111,41 +98,22 @@ jobs:
           path: 'obs-studio'
           fetch-depth: 0
 
+      - name: 'Check for GitHub Labels'
+        id: github-check
+        if: github.event_name == 'pull_request'
+        run: |
+          if [[ '${{ contains(github.event.pull_request.labels.*.name, 'Seeking Testers') }}' == 'true' ]]; then
+            echo "generator=Xcode" >> $GITHUB_OUTPUT
+          else
+            echo "generator=Ninja" >> $GITHUB_OUTPUT
+          fi
+
       - name: 'Restore ccache from cache'
         id: ccache-cache
         uses: actions/cache@v3
-        env:
-          CACHE_NAME: 'ccache-cache'
         with:
           path: ${{ github.workspace }}/.ccache
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ matrix.arch }}-${{ needs.config.outputs.cache_date }}
-
-      - name: 'Restore Chromium Embedded Framework from cache'
-        id: cef-cache
-        uses: actions/cache@v3
-        env:
-          CACHE_NAME: 'cef-cache'
-        with:
-          path: ${{ github.workspace }}/obs-build-dependencies/cef_binary_${{ env.CEF_BUILD_VERSION_MAC }}_macos_${{ matrix.arch }}
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_BUILD_VERSION_MAC }}-${{ matrix.arch }}-${{ env.CACHE_REVISION }}
-
-      - name: 'Restore VLC dependency from cache'
-        id: vlc-cache
-        uses: actions/cache@v3
-        env:
-          CACHE_NAME: 'vlc-cache'
-        with:
-          path: ${{ github.workspace }}/obs-build-dependencies/vlc-${{ env.VLC_VERSION_MAC }}
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.VLC_VERSION_MAC }}-${{ env.CACHE_REVISION }}
-
-      - name: 'Restore Sparkle dependency from cache'
-        id: sparkle-cache
-        uses: actions/cache@v3
-        env:
-          CACHE_NAME: 'sparkle-cache'
-        with:
-          path: ${{ github.workspace }}/obs-build-dependencies/obs-deps/lib/Sparkle.framework
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.SPARKLE_VERSION }}-${{ env.CACHE_REVISION }}
+          key: ${{ runner.os }}-${{ github.ref_name }}-${{ steps.github-check.outputs.generator }}-ccache-${{ matrix.arch }}-${{ needs.config.outputs.cache_date }}
 
       - name: 'Setup build environment'
         id: setup
@@ -164,10 +132,6 @@ jobs:
           echo "commitHash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
 
       - name: 'Install dependencies'
-        env:
-          RESTORED_VLC: ${{ steps.vlc-cache.outputs.cache-hit }}
-          RESTORED_SPARKLE: ${{ steps.sparkle-cache.outputs.cache-hit }}
-          RESTORED_CEF: ${{ steps.cef-cache.outputs.cache-hit }}
         run: CI/macos/01_install_dependencies.sh --architecture "${{ matrix.arch }}"
 
       - name: 'Install Apple Developer Certificate'
@@ -184,13 +148,18 @@ jobs:
           echo "BUILD_FOR_DISTRIBUTION=ON" >> $GITHUB_ENV
 
       - name: 'Build OBS'
-        run: CI/macos/02_build_obs.sh --codesign --architecture "${{ matrix.arch }}"
+        run: |
+          if [[ '${{ steps.github-check.outputs.generator }}' == 'Xcode' ]]; then
+            SEEKING_TESTERS=1 CI/macos/02_build_obs.sh --codesign --architecture "${{ matrix.arch }}"
+          else
+            CI/macos/02_build_obs.sh --codesign --architecture "${{ matrix.arch }}"
+          fi
 
       - name: 'Create build artifact'
         if: ${{ success() && fromJSON(needs.config.outputs.create_artifacts) }}
         run: |
           CI/macos/03_package_obs.sh --codesign --architecture "${{ matrix.arch }}"
-          ARTIFACT_NAME=$(basename $(/usr/bin/find build -type f -name "obs-studio-*.dmg" -depth 1 | head -1))
+          ARTIFACT_NAME=$(basename $(/usr/bin/find build_${{ matrix.arch }} -type f -name "obs-studio-*.dmg" -depth 1 | head -1))
           echo "FILE_NAME=${ARTIFACT_NAME}" >> $GITHUB_ENV
 
       - name: 'Upload build Artifact'
@@ -198,7 +167,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: 'obs-studio-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
-          path: '${{ github.workspace }}/obs-studio/build/${{ env.FILE_NAME }}'
+          path: '${{ github.workspace }}/obs-studio/build_${{ matrix.arch }}/${{ env.FILE_NAME }}'
 
   linux_build:
     name: '02 - Linux'
