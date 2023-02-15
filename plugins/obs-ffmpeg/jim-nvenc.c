@@ -645,8 +645,7 @@ static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings,
 	/* rate control               */
 
 	enc->can_change_bitrate =
-		nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_DYN_BITRATE_CHANGE) &&
-		!lookahead;
+		nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_DYN_BITRATE_CHANGE);
 
 	config->rcParams.rateControlMode = NV_ENC_PARAMS_RC_VBR;
 
