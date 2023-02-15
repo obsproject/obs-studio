@@ -52,10 +52,6 @@ if(OS_WINDOWS)
     "Build a multiarch installer (needs to run independently after both archs have compiled) (Windows)"
     OFF)
 
-elseif(OS_MACOS)
-  option(ENABLE_SPARKLE_UPDATER "Enable Sparkle framework for updates (macOS)"
-         OFF)
-
 elseif(OS_POSIX)
   option(LINUX_PORTABLE "Build portable version (Linux)" OFF)
   option(USE_XDG "Utilize XDG Base Directory Specification (Linux)" ON)

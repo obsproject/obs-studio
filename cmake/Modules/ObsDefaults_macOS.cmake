@@ -141,10 +141,6 @@ macro(setup_obs_project)
     set_option(ENABLE_RTMPS ON)
   endif()
 
-  if(DEFINED SPARKLE_APPCAST_URL AND DEFINED SPARKLE_PUBLIC_KEY)
-    set_option(ENABLE_SPARKLE_UPDATER ON)
-  endif()
-
   set(CPACK_PACKAGE_NAME "OBS")
   set(CPACK_PACKAGE_VENDOR "${OBS_WEBSITE}")
   set(CPACK_GENERATOR "DragNDrop")

@@ -354,7 +354,7 @@ function(setup_obs_bundle target)
     set(_CODESIGN_ENTITLEMENTS \"${CMAKE_SOURCE_DIR}/cmake/bundle/macOS\")"
     COMPONENT obs_resources)
 
-  if(ENABLE_SPARKLE_UPDATER)
+  if(DEFINED SPARKLE_APPCAST_URL AND DEFINED SPARKLE_PUBLIC_KEY)
     add_custom_command(
       TARGET ${target}
       POST_BUILD
