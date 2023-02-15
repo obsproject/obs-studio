@@ -477,6 +477,8 @@ bool OBSApp::InitGlobalConfigDefaults()
 				true);
 	config_set_default_bool(globalConfig, "BasicWindow",
 				"ShowContextToolbars", true);
+	config_set_default_bool(globalConfig, "BasicWindow", "ShowMainToolbar",
+				true);
 	config_set_default_bool(globalConfig, "BasicWindow", "StudioModeLabels",
 				true);
 

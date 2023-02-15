@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QPushButton>
+#include <QToolButton>
 
 class MenuButton : public QPushButton {
 	Q_OBJECT

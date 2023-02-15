@@ -64,6 +64,10 @@
     <file>images/expand.svg</file>
     <file>images/collapse.svg</file>
     <file>images/entry-clear.svg</file>
+    <file>images/undo.svg</file>
+    <file>images/redo.svg</file>
+    <file>images/copy.svg</file>
+    <file>images/paste.svg</file>
   </qresource>
   <qresource prefix="/settings">
     <file>images/settings/output.svg</file>

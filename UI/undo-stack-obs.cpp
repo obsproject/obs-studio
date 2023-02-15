@@ -28,6 +28,8 @@ void undo_stack::clear()
 
 	ui->actionMainUndo->setDisabled(true);
 	ui->actionMainRedo->setDisabled(true);
+
+	emit changed();
 }
 
 void undo_stack::add_action(const QString &name, const undo_redo_cb &undo,
@@ -64,6 +66,8 @@ void undo_stack::add_action(const QString &name, const undo_redo_cb &undo,
 
 	ui->actionMainRedo->setText(QTStr("Undo.Redo"));
 	ui->actionMainRedo->setDisabled(true);
+
+	emit changed();
 }
 
 void undo_stack::undo()
@@ -88,6 +92,8 @@ void undo_stack::undo()
 		ui->actionMainUndo->setText(
 			QTStr("Undo.Item.Undo").arg(undo_items.front().name));
 	}
+
+	emit changed();
 }
 
 void undo_stack::redo()
@@ -112,6 +118,8 @@ void undo_stack::redo()
 		ui->actionMainRedo->setText(
 			QTStr("Undo.Item.Redo").arg(redo_items.front().name));
 	}
+
+	emit changed();
 }
 
 void undo_stack::enable_internal()
@@ -121,6 +129,8 @@ void undo_stack::enable_internal()
 	ui->actionMainUndo->setDisabled(false);
 	if (redo_items.size() > 0)
 		ui->actionMainRedo->setDisabled(false);
+
+	emit changed();
 }
 
 void undo_stack::disable_internal()
@@ -129,6 +139,8 @@ void undo_stack::disable_internal()
 
 	ui->actionMainUndo->setDisabled(true);
 	ui->actionMainRedo->setDisabled(true);
+
+	emit changed();
 }
 
 void undo_stack::enable()

@@ -51,6 +51,7 @@ class QMessageBox;
 class QListWidgetItem;
 class VolControl;
 class OBSBasicStats;
+class MainToolBar;
 
 #include "ui_OBSBasic.h"
 #include "ui_ColorSelect.h"
@@ -193,6 +194,7 @@ class OBSBasic : public OBSMainWindow {
 	friend struct BasicOutputHandler;
 	friend struct OBSStudioAPI;
 	friend class ScreenshotObj;
+	friend class MainToolBar;
 
 	enum class MoveDir { Up, Down, Left, Right };
 
@@ -335,6 +337,7 @@ private:
 	QPointer<QObject> shortcutFilter;
 	QPointer<QAction> renameScene;
 	QPointer<QAction> renameSource;
+	QPointer<MainToolBar> mainToolBar;
 
 	QPointer<QWidget> programWidget;
 	QPointer<QVBoxLayout> programLayout;
@@ -1111,6 +1114,7 @@ private slots:
 	void on_toggleContextBar_toggled(bool visible);
 	void on_toggleStatusBar_toggled(bool visible);
 	void on_toggleSourceIcons_toggled(bool visible);
+	void on_toggleMainToolBar_toggled(bool visible);
 
 	void on_transitions_currentIndexChanged(int index);
 	void on_transitionAdd_clicked();

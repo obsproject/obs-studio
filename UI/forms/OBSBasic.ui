@@ -682,6 +682,7 @@
     <addaction name="resetUI"/>
     <addaction name="actionFullscreenInterface"/>
     <addaction name="separator"/>
+    <addaction name="toggleMainToolBar"/>
     <addaction name="toggleListboxToolbars"/>
     <addaction name="toggleContextBar"/>
     <addaction name="toggleSourceIcons"/>
@@ -1641,6 +1642,26 @@
     </layout>
    </widget>
   </widget>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <property name="movable">
+    <bool>false</bool>
+   </property>
+   <property name="allowedAreas">
+    <set>Qt::TopToolBarArea</set>
+   </property>
+   <property name="floatable">
+    <bool>false</bool>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+  </widget>
   <action name="actionAddScene">
    <property name="icon">
     <iconset>
@@ -2364,6 +2385,17 @@
    </property>
    <property name="themeID" stdset="0">
     <string>filtersIcon</string>
+   </property>
+  </action>
+  <action name="toggleMainToolBar">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Basic.MainMenu.View.MainToolbar</string>
    </property>
   </action>
  </widget>

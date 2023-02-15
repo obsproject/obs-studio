@@ -58,4 +58,7 @@ public:
 			const std::string &redo_data, bool repeatable = false);
 	void undo();
 	void redo();
+
+signals:
+	void changed();
 };

@@ -73,6 +73,7 @@
 #include "ui-validation.hpp"
 #include "media-controls.hpp"
 #include "undo-stack-obs.hpp"
+#include "main-toolbar.hpp"
 #include <fstream>
 #include <sstream>
 
@@ -1151,6 +1152,8 @@ retryScene:
 	bool previewLocked = obs_data_get_bool(data, "preview_locked");
 	ui->preview->SetLocked(previewLocked);
 	ui->actionLockPreview->setChecked(previewLocked);
+	mainToolBar->ui->previewLock->setToolTip(
+		previewLocked ? QTStr("UnlockPreview") : QTStr("LockPreview"));
 
 	/* ---------------------- */
 
@@ -1745,6 +1748,9 @@ void OBSBasic::OBSInit()
 {
 	ProfileScope("OBSBasic::OBSInit");
 
+	mainToolBar = new MainToolBar(this);
+	ui->toolBar->addWidget(mainToolBar);
+
 	const char *sceneCollection = config_get_string(
 		App()->GlobalConfig(), "Basic", "SceneCollectionFile");
 	char savePath[1024];
@@ -1876,6 +1882,10 @@ void OBSBasic::OBSInit()
 	bool sourceIconsVisible = config_get_bool(
 		GetGlobalConfig(), "BasicWindow", "ShowSourceIcons");
 	ui->toggleSourceIcons->setChecked(sourceIconsVisible);
+
+	bool mainToolBarVisible = config_get_bool(
+		GetGlobalConfig(), "BasicWindow", "ShowMainToolbar");
+	ui->toggleMainToolBar->setChecked(mainToolBarVisible);
 
 	bool contextVisible = config_get_bool(
 		App()->GlobalConfig(), "BasicWindow", "ShowContextToolbars");
@@ -8056,6 +8066,7 @@ void OBSBasic::UpdateEditMenu()
 	}
 
 	ui->actionCopySource->setEnabled(count > 0);
+	mainToolBar->ui->copyButton->setEnabled(count > 0);
 	ui->actionEditTransform->setEnabled(count == 1);
 	ui->actionCopyTransform->setEnabled(count == 1);
 	ui->actionPasteTransform->setEnabled(hasCopiedTransform && count > 0);
@@ -8064,6 +8075,7 @@ void OBSBasic::UpdateEditMenu()
 		!obs_weak_source_expired(copyFiltersSource) && count > 0);
 	ui->actionPasteRef->setEnabled(!!clipboard.size());
 	ui->actionPasteDup->setEnabled(allowPastingDuplicate);
+	mainToolBar->ui->pasteButton->setEnabled(allowPastingDuplicate);
 
 	ui->actionMoveUp->setEnabled(count > 0);
 	ui->actionMoveDown->setEnabled(count > 0);
@@ -8612,6 +8624,10 @@ void OBSBasic::EnablePreviewDisplay(bool enable)
 	obs_display_set_enabled(ui->preview->GetDisplay(), enable);
 	ui->preview->setVisible(enable);
 	ui->previewDisabledWidget->setVisible(!enable);
+	mainToolBar->ui->previewVis->setChecked(enable);
+	mainToolBar->ui->previewVis->setToolTip(
+		enable ? QTStr("Basic.Main.PreviewContextMenu.Disable")
+		       : QTStr("Basic.Main.PreviewConextMenu.Enable"));
 }
 
 void OBSBasic::TogglePreview()
@@ -9081,6 +9097,7 @@ void OBSBasic::on_resetUI_triggered()
 	ui->toggleContextBar->setChecked(true);
 	ui->toggleSourceIcons->setChecked(true);
 	ui->toggleStatusBar->setChecked(true);
+	ui->toggleMainToolBar->setChecked(true);
 }
 
 void OBSBasic::on_multiviewProjectorWindowed_triggered()
@@ -9133,10 +9150,23 @@ void OBSBasic::on_toggleSourceIcons_toggled(bool visible)
 			visible);
 }
 
+void OBSBasic::on_toggleMainToolBar_toggled(bool visible)
+{
+	ui->toolBar->setVisible(visible);
+
+	config_set_bool(App()->GlobalConfig(), "BasicWindow", "ShowMainToolbar",
+			visible);
+}
+
 void OBSBasic::on_actionLockPreview_triggered()
 {
 	ui->preview->ToggleLocked();
-	ui->actionLockPreview->setChecked(ui->preview->Locked());
+
+	bool locked = ui->preview->Locked();
+	ui->actionLockPreview->setChecked(locked);
+	mainToolBar->ui->previewLock->setChecked(locked);
+	mainToolBar->ui->previewLock->setToolTip(locked ? QTStr("UnlockPreview")
+							: QTStr("LockPreview"));
 }
 
 void OBSBasic::on_scalingMenu_aboutToShow()

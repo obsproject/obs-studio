@@ -332,6 +332,26 @@ QToolButton:pressed {
     qproperty-icon: url(./Dark/filter.svg);
 }
 
+* [themeID="screenshotIcon"] {
+    qproperty-icon: url(./Dark/sources/camera.svg);
+}
+
+* [themeID="undoIcon"] {
+    qproperty-icon: url(./Dark/undo.svg);
+}
+
+* [themeID="redoIcon"] {
+    qproperty-icon: url(./Dark/redo.svg);
+}
+
+* [themeID="copyIcon"] {
+    qproperty-icon: url(./Dark/copy.svg);
+}
+
+* [themeID="pasteIcon"] {
+    qproperty-icon: url(./Dark/paste.svg);
+}
+
 /* Tab Widget */
 
 QTabWidget::pane { /* The tab widget frame */
@@ -1047,4 +1067,11 @@ QCalendarWidget QAbstractItemView:disabled {
 /* Disable icons on QDialogButtonBox */
 QDialogButtonBox {
     dialogbuttonbox-buttons-have-icons: 0;
+}
+
+/* Main Toolbar */
+MainToolBar #previewVis {
+    padding: 1px;
+    margin: 1px;
+    padding-right: 0px;
 }

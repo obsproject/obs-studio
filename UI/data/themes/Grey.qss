@@ -526,6 +526,26 @@ QToolButton:pressed {
     qproperty-icon: url(./Dark/filter.svg);
 }
 
+* [themeID="screenshotIcon"] {
+    qproperty-icon: url(./Dark/sources/camera.svg);
+}
+
+* [themeID="undoIcon"] {
+    qproperty-icon: url(./Dark/undo.svg);
+}
+
+* [themeID="redoIcon"] {
+    qproperty-icon: url(./Dark/redo.svg);
+}
+
+* [themeID="copyIcon"] {
+    qproperty-icon: url(./Dark/copy.svg);
+}
+
+* [themeID="pasteIcon"] {
+    qproperty-icon: url(./Dark/paste.svg);
+}
+
 QToolBarExtension {
     background: palette(button);
     min-width: 12px;
@@ -1515,4 +1535,15 @@ OBSBasicStats {
 /* Advanced audio dialog */
 OBSBasicAdvAudio #scrollAreaWidgetContents {
     background: palette(dark);
+}
+
+/* Main Toolbar */
+MainToolBar #previewVis {
+    padding: 4px 6px;
+    margin: 0px 2px;
+    padding-right: 0px;
+}
+
+MainToolBar #mainToolBarFrame {
+    padding: 4px;
 }

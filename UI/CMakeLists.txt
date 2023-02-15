@@ -95,6 +95,7 @@ target_sources(
           forms/AutoConfigTestPage.ui
           forms/AutoConfigVideoPage.ui
           forms/ColorSelect.ui
+          forms/MainToolBar.ui
           forms/OBSAbout.ui
           forms/OBSAdvAudio.ui
           forms/OBSBasic.ui
@@ -177,6 +178,8 @@ target_sources(
           locked-checkbox.hpp
           log-viewer.cpp
           log-viewer.hpp
+          main-toolbar.cpp
+          main-toolbar.hpp
           media-controls.cpp
           media-controls.hpp
           media-slider.cpp

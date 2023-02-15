@@ -27,6 +27,7 @@
 #include "menu-button.hpp"
 #include "slider-ignorewheel.hpp"
 #include "qt-wrappers.hpp"
+#include "main-toolbar.hpp"
 
 #include "obs-hotkey.h"
 
@@ -1583,6 +1584,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 	if (IsPreviewProgramMode() == enabled)
 		return;
 
+	mainToolBar->ui->previewVis->setHidden(enabled);
 	ui->modeSwitch->setChecked(enabled);
 	os_atomic_set_bool(&previewProgramMode, enabled);
 
