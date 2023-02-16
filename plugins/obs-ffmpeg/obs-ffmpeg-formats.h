@@ -115,6 +115,8 @@ convert_ffmpeg_sample_format(enum AVSampleFormat format)
 		return AUDIO_FORMAT_32BIT_PLANAR;
 	case AV_SAMPLE_FMT_FLTP:
 		return AUDIO_FORMAT_FLOAT_PLANAR;
+	default:
+		return AUDIO_FORMAT_16BIT;
 	}
 
 	/* shouldn't get here */
