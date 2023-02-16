@@ -2516,6 +2516,9 @@ static inline void obs_source_render_async_video(obs_source_t *source)
 				tech_name = "DrawMultiply";
 				multiplier =
 					obs_get_video_sdr_white_level() / 80.0f;
+				break;
+			case GS_CS_709_EXTENDED:
+				break;
 			}
 			break;
 		case GS_CS_709_SCRGB:
@@ -2531,6 +2534,9 @@ static inline void obs_source_render_async_video(obs_source_t *source)
 				tech_name = "DrawMultiply";
 				multiplier =
 					80.0f / obs_get_video_sdr_white_level();
+				break;
+			case GS_CS_709_SCRGB:
+				break;
 			}
 		}
 
@@ -2655,6 +2661,11 @@ static void source_render(obs_source_t *source, gs_effect_t *effect)
 		case GS_CS_709_SCRGB:
 			convert_tech = "DrawMultiply";
 			multiplier = obs_get_video_sdr_white_level() / 80.0f;
+			break;
+		case GS_CS_SRGB:
+			break;
+		case GS_CS_SRGB_16F:
+			break;
 		}
 		break;
 	case GS_CS_709_EXTENDED:
@@ -2666,6 +2677,9 @@ static void source_render(obs_source_t *source, gs_effect_t *effect)
 		case GS_CS_709_SCRGB:
 			convert_tech = "DrawMultiply";
 			multiplier = obs_get_video_sdr_white_level() / 80.0f;
+			break;
+		case GS_CS_709_EXTENDED:
+			break;
 		}
 		break;
 	case GS_CS_709_SCRGB:
@@ -2678,6 +2692,9 @@ static void source_render(obs_source_t *source, gs_effect_t *effect)
 		case GS_CS_709_EXTENDED:
 			convert_tech = "DrawMultiply";
 			multiplier = 80.0f / obs_get_video_sdr_white_level();
+			break;
+		case GS_CS_709_SCRGB:
+			break;
 		}
 	}
 

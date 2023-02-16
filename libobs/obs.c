@@ -108,6 +108,9 @@ static inline void calc_gpu_conversion_sizes(struct obs_core_video_mix *video)
 			video->conversion_techs[0] = "P010_SRGB_Y";
 			video->conversion_techs[1] = "P010_SRGB_UV";
 		}
+		break;
+	default:
+		break;
 	}
 }
 
@@ -234,6 +237,8 @@ static bool obs_init_gpu_conversion(struct obs_core_video_mix *video)
 		if (!video->convert_textures[0] || !video->convert_textures[1])
 			success = false;
 		break;
+	default:
+		break;
 	}
 
 	if (!success) {
@@ -345,6 +350,9 @@ static bool obs_init_textures(struct obs_core_video_mix *video)
 	case VIDEO_FORMAT_I412:
 	case VIDEO_FORMAT_YA2L:
 		format = GS_RGBA16F;
+		break;
+	default:
+		break;
 	}
 
 	for (size_t i = 0; i < NUM_TEXTURES; i++) {
@@ -390,11 +398,10 @@ static bool obs_init_textures(struct obs_core_video_mix *video)
 		space = GS_CS_709_EXTENDED;
 		break;
 	default:
-		switch (info->format) {
-		case VIDEO_FORMAT_I010:
-		case VIDEO_FORMAT_P010:
+		if (info->format == VIDEO_FORMAT_I010 ||
+		    info->format == VIDEO_FORMAT_P010)
 			space = GS_CS_SRGB_16F;
-		}
+		break;
 	}
 
 	video->render_texture =
@@ -2051,6 +2058,9 @@ static void obs_render_main_texture_internal(enum gs_blend_type src_c,
 	case GS_CS_709_SCRGB:
 		tech_name = "DrawMultiply";
 		multiplier = obs_get_video_sdr_white_level() / 80.f;
+		break;
+	case GS_CS_709_EXTENDED:
+		break;
 	}
 
 	const bool previous = gs_framebuffer_srgb_enabled();

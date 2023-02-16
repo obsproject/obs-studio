@@ -309,6 +309,9 @@ static enum video_colorspace collapse_space(enum video_colorspace cs)
 		break;
 	case VIDEO_CS_2100_HLG:
 		cs = VIDEO_CS_2100_PQ;
+		break;
+	default:
+		break;
 	}
 
 	return cs;
