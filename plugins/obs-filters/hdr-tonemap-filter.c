@@ -215,9 +215,8 @@ hdr_tonemap_filter_get_color_space(void *data, size_t count,
 		OBS_COUNTOF(potential_spaces), potential_spaces);
 
 	enum gs_color_space space = source_space;
-	switch (source_space) {
-	case GS_CS_709_EXTENDED:
-	case GS_CS_709_SCRGB:
+
+	if (source_space == GS_CS_709_EXTENDED || source_space == GS_CS_SRGB) {
 		if (filter->transform == TRANSFORM_SDR_REINHARD) {
 			space = GS_CS_SRGB;
 			for (size_t i = 0; i < count; ++i) {
