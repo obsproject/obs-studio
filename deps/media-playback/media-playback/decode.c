@@ -142,9 +142,14 @@ static uint16_t get_max_luminance(const AVStream *stream)
 
 			break;
 		}
-		case AV_PKT_DATA_CONTENT_LIGHT_LEVEL:
-			return (uint16_t)((AVContentLightMetadata *)sd->data)
-				->MaxCLL;
+		case AV_PKT_DATA_CONTENT_LIGHT_LEVEL: {
+			const AVContentLightMetadata *const md =
+				(AVContentLightMetadata *)&sd->data;
+			max_luminance = md->MaxCLL;
+			break;
+		}
+		default:
+			break;
 		}
 	}
 
