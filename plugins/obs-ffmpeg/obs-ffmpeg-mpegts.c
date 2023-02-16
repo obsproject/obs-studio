@@ -141,7 +141,6 @@ static bool create_video_stream(struct ffmpeg_output *stream,
 				struct ffmpeg_data *data)
 {
 	AVCodecContext *context;
-	void *extradata = NULL;
 	struct obs_video_info ovi;
 
 	if (!obs_get_video_info(&ovi)) {
@@ -230,7 +229,6 @@ static bool create_audio_stream(struct ffmpeg_output *stream,
 {
 	AVCodecContext *context;
 	AVStream *avstream;
-	void *extradata = NULL;
 	struct obs_audio_info aoi;
 	const char *name = data->config.audio_encoder;
 	int channels;
