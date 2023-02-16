@@ -2317,7 +2317,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 	const char *desktop = getenv("XDG_CURRENT_DESKTOP");
 	const char *session_type = getenv("XDG_SESSION_TYPE");
-	if (session_type && desktop && strcmp(desktop, "GNOME") == 0 &&
+	if (session_type && desktop && strstr(desktop, "GNOME") != nullptr &&
 	    strcmp(session_type, "wayland") == 0)
 		setenv("QT_QPA_PLATFORM", "wayland", false);
 #endif
