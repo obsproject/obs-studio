@@ -242,12 +242,10 @@ bool video_format_get_parameters(enum video_colorspace color_space,
 				 enum video_range_type range, float matrix[16],
 				 float range_min[3], float range_max[3])
 {
-	uint32_t bpc = 8;
-	switch (color_space) {
-	case VIDEO_CS_2100_PQ:
-	case VIDEO_CS_2100_HLG:
-		bpc = 10;
-	}
+	uint32_t bpc = (color_space == VIDEO_CS_2100_PQ ||
+			color_space == VIDEO_CS_2100_HLG)
+			       ? 10
+			       : 8;
 
 	return video_format_get_parameters_for_bpc(color_space, range, matrix,
 						   range_min, range_max, bpc);
@@ -260,7 +258,7 @@ bool video_format_get_parameters_for_format(enum video_colorspace color_space,
 					    float range_min[3],
 					    float range_max[3])
 {
-	uint32_t bpc = 8;
+	uint32_t bpc;
 	switch (format) {
 	case VIDEO_FORMAT_I010:
 	case VIDEO_FORMAT_P010:
@@ -270,6 +268,9 @@ bool video_format_get_parameters_for_format(enum video_colorspace color_space,
 	case VIDEO_FORMAT_I412:
 	case VIDEO_FORMAT_YA2L:
 		bpc = 12;
+		break;
+	default:
+		bpc = 8;
 		break;
 	}
 

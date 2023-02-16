@@ -642,24 +642,19 @@ static void render_item_texture(struct obs_scene_item *item,
 				tech_name = "DrawUpscaleMultiply";
 			break;
 		case GS_CS_709_EXTENDED:
-			switch (current_space) {
-			case GS_CS_SRGB:
-			case GS_CS_SRGB_16F:
+			if (current_space == GS_CS_SRGB ||
+			    current_space == GS_CS_SRGB_16F)
 				tech_name = "DrawUpscaleTonemap";
-				break;
-			case GS_CS_709_SCRGB:
+			else if (current_space == GS_CS_709_SCRGB)
 				tech_name = "DrawUpscaleMultiply";
-			}
 			break;
 		case GS_CS_709_SCRGB:
-			switch (current_space) {
-			case GS_CS_SRGB:
-			case GS_CS_SRGB_16F:
+			if (current_space == GS_CS_SRGB ||
+			    current_space == GS_CS_SRGB_16F)
 				tech_name = "DrawUpscaleMultiplyTonemap";
-				break;
-			case GS_CS_709_EXTENDED:
+			else if (current_space == GS_CS_709_EXTENDED)
 				tech_name = "DrawUpscaleMultiply";
-			}
+			break;
 		}
 	} else {
 		switch (source_space) {
@@ -669,24 +664,19 @@ static void render_item_texture(struct obs_scene_item *item,
 				tech_name = "DrawMultiply";
 			break;
 		case GS_CS_709_EXTENDED:
-			switch (current_space) {
-			case GS_CS_SRGB:
-			case GS_CS_SRGB_16F:
+			if (current_space == GS_CS_SRGB ||
+			    current_space == GS_CS_SRGB_16F)
 				tech_name = "DrawTonemap";
-				break;
-			case GS_CS_709_SCRGB:
+			else if (current_space == GS_CS_709_SCRGB)
 				tech_name = "DrawMultiply";
-			}
 			break;
 		case GS_CS_709_SCRGB:
-			switch (current_space) {
-			case GS_CS_SRGB:
-			case GS_CS_SRGB_16F:
+			if (current_space == GS_CS_SRGB ||
+			    current_space == GS_CS_SRGB_16F)
 				tech_name = "DrawMultiplyTonemap";
-				break;
-			case GS_CS_709_EXTENDED:
+			else if (current_space == GS_CS_709_EXTENDED)
 				tech_name = "DrawMultiply";
-			}
+			break;
 		}
 	}
 
@@ -1524,11 +1514,9 @@ scene_video_get_color_space(void *data, size_t count,
 	enum gs_color_space space = GS_CS_SRGB;
 	struct obs_video_info ovi;
 	if (obs_get_video_info(&ovi)) {
-		switch (ovi.colorspace) {
-		case VIDEO_CS_2100_PQ:
-		case VIDEO_CS_2100_HLG:
+		if (ovi.colorspace == VIDEO_CS_2100_PQ ||
+		    ovi.colorspace == VIDEO_CS_2100_HLG)
 			space = GS_CS_709_EXTENDED;
-		}
 	}
 
 	return space;
