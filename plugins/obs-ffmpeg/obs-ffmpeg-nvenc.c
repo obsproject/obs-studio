@@ -343,16 +343,15 @@ static void *h264_nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 		return NULL;
 	}
 	default:
-		switch (voi->colorspace) {
-		case VIDEO_CS_2100_PQ:
-		case VIDEO_CS_2100_HLG: {
+		if (voi->colorspace == VIDEO_CS_2100_PQ ||
+		    voi->colorspace == VIDEO_CS_2100_HLG) {
 			const char *const text =
 				obs_module_text("NVENC.8bitUnsupportedHdr");
 			obs_encoder_set_last_error(encoder, text);
 			blog(LOG_ERROR, "[NVENC encoder] %s", text);
 			return NULL;
 		}
-		}
+		break;
 	}
 
 	bool psycho_aq = obs_data_get_bool(settings, "psycho_aq");
@@ -383,16 +382,15 @@ static void *hevc_nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 	case VIDEO_FORMAT_P010:
 		break;
 	default:
-		switch (voi->colorspace) {
-		case VIDEO_CS_2100_PQ:
-		case VIDEO_CS_2100_HLG: {
+		if (voi->colorspace == VIDEO_CS_2100_PQ ||
+		    voi->colorspace == VIDEO_CS_2100_HLG) {
 			const char *const text =
 				obs_module_text("NVENC.8bitUnsupportedHdr");
 			obs_encoder_set_last_error(encoder, text);
 			blog(LOG_ERROR, "[NVENC encoder] %s", text);
 			return NULL;
 		}
-		}
+		break;
 	}
 
 	bool psycho_aq = obs_data_get_bool(settings, "psycho_aq");
