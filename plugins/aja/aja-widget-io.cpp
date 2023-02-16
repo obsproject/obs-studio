@@ -28,7 +28,6 @@ static const char *kBlackNickname = "black";
 static const char *kCompressionNickname = "comp";
 static const char *kFrameSyncNickname = "fsync";
 static const char *kTestPatternNickname = "pat";
-static const char *kOENickname = "oe";
 
 // Table of firmware widget's input crosspoint/id/channel/name/datastream index
 // clang-format off
@@ -341,11 +340,6 @@ static WidgetOutputSocket kWidgetOutputSockets[] = {
 	{ NTV2_XptHDMIIn4RGB,            NTV2_WgtHDMIIn4v4,                   kHDMINickname,                 0},
 };
 // clang-format on
-
-static const size_t kNumWidgetInputSockets =
-	(sizeof(kWidgetInputSockets) / sizeof(WidgetInputSocket));
-static const size_t kNumWidgetOutputSockets =
-	(sizeof(kWidgetOutputSockets) / sizeof(WidgetOutputSocket));
 
 bool WidgetInputSocket::Find(const std::string &name, NTV2Channel channel,
 			     int32_t datastream, WidgetInputSocket &inp)
