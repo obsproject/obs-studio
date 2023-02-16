@@ -35,6 +35,7 @@ struct nvenc_encoder {
 #ifdef ENABLE_HEVC
 	bool hevc;
 #endif
+	int gpu;
 	DARRAY(uint8_t) header;
 	DARRAY(uint8_t) sei;
 };
@@ -178,6 +179,10 @@ static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
 	av_opt_set(enc->ffve.context->priv_data, "level", "auto", 0);
 	av_opt_set_int(enc->ffve.context->priv_data, "gpu", gpu, 0);
 
+	// This is ugly but ffmpeg wipes priv_data on error and we need
+	// to know this to show a proper error message.
+	enc->gpu = gpu;
+
 	set_psycho_aq(enc, psycho_aq);
 
 	enc->ffve.context->max_b_frames = bf;
@@ -243,20 +248,15 @@ static void on_init_error(void *data, int ret)
 	struct nvenc_encoder *enc = data;
 	struct dstr error_message = {0};
 
-	int64_t gpu;
-	if (av_opt_get_int(enc->ffve.context->priv_data, "gpu", 0, &gpu) < 0) {
-		gpu = -1;
-	}
-
 	dstr_copy(&error_message, obs_module_text("NVENC.Error"));
 	dstr_replace(&error_message, "%1", av_err2str(ret));
 	dstr_cat(&error_message, "\r\n\r\n");
 
-	if (gpu > 0) {
+	if (enc->gpu > 0) {
 		// if a non-zero GPU failed, almost always
 		// user error. tell then to fix it.
 		char gpu_str[16];
-		snprintf(gpu_str, sizeof(gpu_str) - 1, "%d", (int)gpu);
+		snprintf(gpu_str, sizeof(gpu_str) - 1, "%d", enc->gpu);
 		gpu_str[sizeof(gpu_str) - 1] = 0;
 
 		dstr_cat(&error_message, obs_module_text("NVENC.BadGPUIndex"));
