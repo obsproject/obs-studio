@@ -213,6 +213,9 @@ get_tech_name_and_multiplier(enum gs_color_space current_space,
 		case GS_CS_709_SCRGB:
 			tech_name = "DrawMultiply";
 			*multiplier = obs_get_video_sdr_white_level() / 80.0f;
+			break;
+		default:
+			break;
 		}
 		break;
 	case GS_CS_709_SCRGB:
@@ -225,6 +228,9 @@ get_tech_name_and_multiplier(enum gs_color_space current_space,
 		case GS_CS_709_EXTENDED:
 			tech_name = "DrawMultiply";
 			*multiplier = 80.0f / obs_get_video_sdr_white_level();
+			break;
+		default:
+			break;
 		}
 	}
 

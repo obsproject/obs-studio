@@ -291,6 +291,9 @@ get_tech_name_and_multiplier(const struct scale_filter_data *filter,
 		case GS_CS_SRGB_16F:
 		case GS_CS_709_EXTENDED:
 			*multiplier = 80.f / obs_get_video_sdr_white_level();
+			break;
+		case GS_CS_709_SCRGB:
+			break;
 		}
 	}
 
@@ -311,6 +314,9 @@ get_tech_name_and_multiplier(const struct scale_filter_data *filter,
 				break;
 			case GS_CS_709_SCRGB:
 				tech_name = "DrawUndistortMultiply";
+				break;
+			case GS_CS_709_EXTENDED:
+				break;
 			}
 			break;
 		case GS_CS_709_SCRGB:
@@ -321,6 +327,9 @@ get_tech_name_and_multiplier(const struct scale_filter_data *filter,
 				break;
 			case GS_CS_709_EXTENDED:
 				tech_name = "DrawUndistortMultiply";
+				break;
+			case GS_CS_709_SCRGB:
+				break;
 			}
 		}
 	} else if (filter->upscale) {
@@ -339,6 +348,9 @@ get_tech_name_and_multiplier(const struct scale_filter_data *filter,
 				break;
 			case GS_CS_709_SCRGB:
 				tech_name = "DrawUpscaleMultiply";
+				break;
+			case GS_CS_709_EXTENDED:
+				break;
 			}
 			break;
 		case GS_CS_709_SCRGB:
@@ -349,6 +361,9 @@ get_tech_name_and_multiplier(const struct scale_filter_data *filter,
 				break;
 			case GS_CS_709_EXTENDED:
 				tech_name = "DrawUpscaleMultiply";
+				break;
+			case GS_CS_709_SCRGB:
+				break;
 			}
 		}
 	} else {
@@ -366,6 +381,9 @@ get_tech_name_and_multiplier(const struct scale_filter_data *filter,
 				break;
 			case GS_CS_709_SCRGB:
 				tech_name = "DrawMultiply";
+				break;
+			case GS_CS_709_EXTENDED:
+				break;
 			}
 			break;
 		case GS_CS_709_SCRGB:
@@ -376,6 +394,9 @@ get_tech_name_and_multiplier(const struct scale_filter_data *filter,
 				break;
 			case GS_CS_709_EXTENDED:
 				tech_name = "DrawMultiply";
+				break;
+			case GS_CS_709_SCRGB:
+				break;
 			}
 		}
 	}
