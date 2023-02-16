@@ -59,7 +59,6 @@ void OBSBasicVCamConfig::OutputTypeChanged(int type)
 	case VCamOutputType::Scene: {
 		// Scenes in default order
 		BPtr<char *> scenes = obs_frontend_get_scene_names();
-		int idx = 0;
 		for (char **temp = scenes; *temp; temp++) {
 			list->addItem(*temp);
 
@@ -74,7 +73,6 @@ void OBSBasicVCamConfig::OutputTypeChanged(int type)
 		std::vector<std::string> sources;
 		auto AddSource = [&](obs_source_t *source) {
 			auto name = obs_source_get_name(source);
-			auto flags = obs_source_get_output_flags(source);
 
 			if (!(obs_source_get_output_flags(source) &
 			      OBS_SOURCE_VIDEO))
