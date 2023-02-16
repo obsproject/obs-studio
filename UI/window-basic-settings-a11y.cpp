@@ -51,15 +51,15 @@ void OBSBasicSettings::LoadA11ySettings(bool presetChange)
 	config_t *config = GetGlobalConfig();
 
 	if (!presetChange) {
-		preset = config_get_int(config, "Accessibility", "ColorPreset");
+		preset = GetInt(config, "Accessibility", "ColorPreset");
 
 		bool block = ui->colorPreset->blockSignals(true);
 		ui->colorPreset->setCurrentIndex(std::min(
 			preset, (uint32_t)ui->colorPreset->count() - 1));
 		ui->colorPreset->blockSignals(block);
 
-		bool checked = config_get_bool(config, "Accessibility",
-					       "OverrideColors");
+		bool checked =
+			GetBool(config, "Accessibility", "OverrideColors");
 
 		ui->colorsGroupBox->setChecked(checked);
 	}
@@ -85,25 +85,20 @@ void OBSBasicSettings::LoadA11ySettings(bool presetChange)
 	} else if (preset == COLOR_PRESET_CUSTOM) {
 		SetDefaultColors();
 
-		selectRed =
-			config_get_int(config, "Accessibility", "SelectRed");
-		selectGreen =
-			config_get_int(config, "Accessibility", "SelectGreen");
-		selectBlue =
-			config_get_int(config, "Accessibility", "SelectBlue");
+		selectRed = GetInt(config, "Accessibility", "SelectRed");
+		selectGreen = GetInt(config, "Accessibility", "SelectGreen");
+		selectBlue = GetInt(config, "Accessibility", "SelectBlue");
 
-		mixerGreen =
-			config_get_int(config, "Accessibility", "MixerGreen");
-		mixerYellow =
-			config_get_int(config, "Accessibility", "MixerYellow");
-		mixerRed = config_get_int(config, "Accessibility", "MixerRed");
+		mixerGreen = GetInt(config, "Accessibility", "MixerGreen");
+		mixerYellow = GetInt(config, "Accessibility", "MixerYellow");
+		mixerRed = GetInt(config, "Accessibility", "MixerRed");
 
-		mixerGreenActive = config_get_int(config, "Accessibility",
-						  "MixerGreenActive");
-		mixerYellowActive = config_get_int(config, "Accessibility",
-						   "MixerYellowActive");
-		mixerRedActive = config_get_int(config, "Accessibility",
-						"MixerRedActive");
+		mixerGreenActive =
+			GetInt(config, "Accessibility", "MixerGreenActive");
+		mixerYellowActive =
+			GetInt(config, "Accessibility", "MixerYellowActive");
+		mixerRedActive =
+			GetInt(config, "Accessibility", "MixerRedActive");
 	}
 
 	UpdateA11yColors();

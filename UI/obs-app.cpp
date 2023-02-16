@@ -424,6 +424,8 @@ bool OBSApp::InitGlobalConfigDefaults()
 {
 	config_set_default_string(globalConfig, "General", "Language",
 				  DEFAULT_LANG);
+	config_set_default_string(globalConfig, "General", "CurrentTheme3",
+				  DEFAULT_THEME);
 	config_set_default_uint(globalConfig, "General", "MaxLogs", 10);
 	config_set_default_int(globalConfig, "General", "InfoIncrement", -1);
 	config_set_default_string(globalConfig, "General", "ProcessPriority",

@@ -117,6 +117,7 @@ private:
 	bool hotkeysChanged = false;
 	bool a11yChanged = false;
 	bool advancedChanged = false;
+	bool resetDefaults = false;
 	int pageIndex = 0;
 	bool loading = true;
 	bool forceAuthReload = false;
@@ -375,6 +376,10 @@ private:
 	bool ServiceAndCodecCompatible();
 	bool ServiceSupportsCodecCheck();
 
+	void ResetHotkeys();
+	bool ConfirmReset(int index);
+	void ResetToDefaults();
+
 private slots:
 	void on_theme_activated(int idx);
 
@@ -476,4 +481,13 @@ public:
 	{
 		return hotkeyConflictIcon;
 	}
+
+	const char *GetString(config_t *config, const char *section,
+			      const char *name);
+	int GetInt(config_t *config, const char *section, const char *name);
+	uint32_t GetUint(config_t *config, const char *section,
+			 const char *name);
+	bool GetBool(config_t *config, const char *section, const char *name);
+	double GetDouble(config_t *config, const char *section,
+			 const char *name);
 };

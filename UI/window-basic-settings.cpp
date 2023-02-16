@@ -330,7 +330,7 @@ void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
 #define COMBO_CHANGED   SIGNAL(currentIndexChanged(int))
 #define EDIT_CHANGED    SIGNAL(textChanged(const QString &))
 #define CBEDIT_CHANGED  SIGNAL(editTextChanged(const QString &))
-#define CHECK_CHANGED   SIGNAL(clicked(bool))
+#define CHECK_CHANGED   SIGNAL(toggled(bool))
 #define SCROLL_CHANGED  SIGNAL(valueChanged(int))
 #define DSCROLL_CHANGED SIGNAL(valueChanged(double))
 
@@ -905,6 +905,10 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	channelIndex = ui->channelSetup->currentIndex();
 	sampleRateIndex = ui->sampleRate->currentIndex();
 	llBufferingEnabled = ui->lowLatencyBuffering->isChecked();
+	prevLangIndex = ui->language->currentIndex();
+#if defined(_WIN32) || defined(__APPLE__)
+	prevBrowserAccel = ui->browserHWAccel->isChecked();
+#endif
 
 	QRegularExpression rx("\\d{1,5}x\\d{1,5}");
 	QValidator *validator = new QRegularExpressionValidator(rx, this);
@@ -919,6 +923,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	UpdateAudioWarnings();
 	UpdateAdvNetworkGroup();
+
+	ui->buttonBox->button(QDialogButtonBox::RestoreDefaults)
+		->setDisabled(obs_video_active());
 }
 
 OBSBasicSettings::~OBSBasicSettings()
@@ -1139,7 +1146,10 @@ void OBSBasicSettings::ReloadCodecs(const ff_format_desc *formatDesc)
 
 void OBSBasicSettings::LoadLanguageList()
 {
-	const char *currentLang = App()->GetLocale();
+	const char *currentLang =
+		resetDefaults ? config_get_default_string(GetGlobalConfig(),
+							  "General", "Language")
+			      : App()->GetLocale();
 
 	ui->language->clear();
 
@@ -1159,46 +1169,58 @@ void OBSBasicSettings::LoadLanguageList()
 void OBSBasicSettings::LoadThemeList()
 {
 	/* Save theme if user presses Cancel */
-	savedTheme = string(App()->GetTheme());
+	const char *theme =
+		resetDefaults
+			? config_get_default_string(GetGlobalConfig(),
+						    "General", "CurrentTheme3")
+			: App()->GetTheme();
 
-	ui->theme->clear();
-	QSet<QString> uniqueSet;
-	string themeDir;
-	char userThemeDir[512];
-	int ret = GetConfigPath(userThemeDir, sizeof(userThemeDir),
-				"obs-studio/themes/");
-	GetDataFilePath("themes/", themeDir);
+	if (!resetDefaults) {
+		savedTheme = theme;
+		ui->theme->clear();
+		QSet<QString> uniqueSet;
+		string themeDir;
+		char userThemeDir[512];
+		int ret = GetConfigPath(userThemeDir, sizeof(userThemeDir),
+					"obs-studio/themes/");
+		GetDataFilePath("themes/", themeDir);
 
-	/* Check user dir first. */
-	if (ret > 0) {
-		QDirIterator it(QString(userThemeDir), QStringList() << "*.qss",
-				QDir::Files);
-		while (it.hasNext()) {
-			it.next();
-			QString name = it.fileInfo().completeBaseName();
-			ui->theme->addItem(name, name);
-			uniqueSet.insert(name);
+		/* Check user dir first. */
+		if (ret > 0) {
+			QDirIterator it(QString(userThemeDir),
+					QStringList() << "*.qss", QDir::Files);
+			while (it.hasNext()) {
+				it.next();
+				QString name = it.fileInfo().completeBaseName();
+				ui->theme->addItem(name, name);
+				uniqueSet.insert(name);
+			}
+		}
+
+		/* Check shipped themes. */
+		QDirIterator uIt(QString(themeDir.c_str()),
+				 QStringList() << "*.qss", QDir::Files);
+		while (uIt.hasNext()) {
+			uIt.next();
+			QString name = uIt.fileInfo().completeBaseName();
+			QString value = name;
+
+			if (name == DEFAULT_THEME)
+				name += " " + QTStr("Default");
+
+			if (!uniqueSet.contains(value) && name != "Default")
+				ui->theme->addItem(name, value);
 		}
 	}
 
-	/* Check shipped themes. */
-	QDirIterator uIt(QString(themeDir.c_str()), QStringList() << "*.qss",
-			 QDir::Files);
-	while (uIt.hasNext()) {
-		uIt.next();
-		QString name = uIt.fileInfo().completeBaseName();
-		QString value = name;
-
-		if (name == DEFAULT_THEME)
-			name += " " + QTStr("Default");
-
-		if (!uniqueSet.contains(value) && name != "Default")
-			ui->theme->addItem(name, value);
-	}
-
-	int idx = ui->theme->findData(QT_UTF8(App()->GetTheme()));
-	if (idx != -1)
+	int idx = ui->theme->findData(theme);
+	if (idx != -1) {
 		ui->theme->setCurrentIndex(idx);
+
+		if (resetDefaults &&
+		    (theme && *theme && strcmp(theme, App()->GetTheme()) != 0))
+			on_theme_activated(idx);
+	}
 }
 
 #if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
@@ -1222,7 +1244,7 @@ void OBSBasicSettings::LoadBranchesList()
 #if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 	bool configBranchRemoved = true;
 	QString configBranch =
-		config_get_string(GetGlobalConfig(), "General", "UpdateBranch");
+		GetString(GetGlobalConfig(), "General", "UpdateBranch");
 
 	for (const UpdateBranch &branch : App()->GetBranches()) {
 		if (branch.name == configBranch)
@@ -1276,23 +1298,23 @@ void OBSBasicSettings::LoadGeneralSettings()
 	LoadThemeList();
 
 #if defined(_WIN32) || defined(__APPLE__)
-	bool enableAutoUpdates = config_get_bool(GetGlobalConfig(), "General",
-						 "EnableAutoUpdates");
+	bool enableAutoUpdates =
+		GetBool(GetGlobalConfig(), "General", "EnableAutoUpdates");
 	ui->enableAutoUpdates->setChecked(enableAutoUpdates);
 
 #if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 	LoadBranchesList();
 #endif
 #endif
-	bool openStatsOnStartup = config_get_bool(main->Config(), "General",
-						  "OpenStatsOnStartup");
+	bool openStatsOnStartup =
+		GetBool(main->Config(), "General", "OpenStatsOnStartup");
 	ui->openStatsOnStartup->setChecked(openStatsOnStartup);
 
 #if defined(_WIN32)
 	if (ui->hideOBSFromCapture) {
 		bool hideWindowFromCapture =
-			config_get_bool(GetGlobalConfig(), "BasicWindow",
-					"HideOBSWindowsFromCapture");
+			GetBool(GetGlobalConfig(), "BasicWindow",
+				"HideOBSWindowsFromCapture");
 		ui->hideOBSFromCapture->setChecked(hideWindowFromCapture);
 
 		connect(ui->hideOBSFromCapture, SIGNAL(stateChanged(int)), this,
@@ -1300,130 +1322,128 @@ void OBSBasicSettings::LoadGeneralSettings()
 	}
 #endif
 
-	bool recordWhenStreaming = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "RecordWhenStreaming");
+	bool recordWhenStreaming = GetBool(GetGlobalConfig(), "BasicWindow",
+					   "RecordWhenStreaming");
 	ui->recordWhenStreaming->setChecked(recordWhenStreaming);
 
-	bool keepRecordStreamStops =
-		config_get_bool(GetGlobalConfig(), "BasicWindow",
-				"KeepRecordingWhenStreamStops");
+	bool keepRecordStreamStops = GetBool(GetGlobalConfig(), "BasicWindow",
+					     "KeepRecordingWhenStreamStops");
 	ui->keepRecordStreamStops->setChecked(keepRecordStreamStops);
 
-	bool replayWhileStreaming = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "ReplayBufferWhileStreaming");
+	bool replayWhileStreaming = GetBool(GetGlobalConfig(), "BasicWindow",
+					    "ReplayBufferWhileStreaming");
 	ui->replayWhileStreaming->setChecked(replayWhileStreaming);
 
-	bool keepReplayStreamStops =
-		config_get_bool(GetGlobalConfig(), "BasicWindow",
-				"KeepReplayBufferStreamStops");
+	bool keepReplayStreamStops = GetBool(GetGlobalConfig(), "BasicWindow",
+					     "KeepReplayBufferStreamStops");
 	ui->keepReplayStreamStops->setChecked(keepReplayStreamStops);
 
-	bool systemTrayEnabled = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "SysTrayEnabled");
+	bool systemTrayEnabled =
+		GetBool(GetGlobalConfig(), "BasicWindow", "SysTrayEnabled");
 	ui->systemTrayEnabled->setChecked(systemTrayEnabled);
 
-	bool systemTrayWhenStarted = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "SysTrayWhenStarted");
+	bool systemTrayWhenStarted =
+		GetBool(GetGlobalConfig(), "BasicWindow", "SysTrayWhenStarted");
 	ui->systemTrayWhenStarted->setChecked(systemTrayWhenStarted);
 
-	bool systemTrayAlways = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "SysTrayMinimizeToTray");
+	bool systemTrayAlways = GetBool(GetGlobalConfig(), "BasicWindow",
+					"SysTrayMinimizeToTray");
 	ui->systemTrayAlways->setChecked(systemTrayAlways);
 
-	bool saveProjectors = config_get_bool(GetGlobalConfig(), "BasicWindow",
-					      "SaveProjectors");
+	bool saveProjectors =
+		GetBool(GetGlobalConfig(), "BasicWindow", "SaveProjectors");
 	ui->saveProjectors->setChecked(saveProjectors);
 
-	bool closeProjectors = config_get_bool(GetGlobalConfig(), "BasicWindow",
-					       "CloseExistingProjectors");
+	bool closeProjectors = GetBool(GetGlobalConfig(), "BasicWindow",
+				       "CloseExistingProjectors");
 	ui->closeProjectors->setChecked(closeProjectors);
 
-	bool snappingEnabled = config_get_bool(GetGlobalConfig(), "BasicWindow",
-					       "SnappingEnabled");
+	bool snappingEnabled =
+		GetBool(GetGlobalConfig(), "BasicWindow", "SnappingEnabled");
 	ui->snappingEnabled->setChecked(snappingEnabled);
 
-	bool screenSnapping = config_get_bool(GetGlobalConfig(), "BasicWindow",
-					      "ScreenSnapping");
+	bool screenSnapping =
+		GetBool(GetGlobalConfig(), "BasicWindow", "ScreenSnapping");
 	ui->screenSnapping->setChecked(screenSnapping);
 
-	bool centerSnapping = config_get_bool(GetGlobalConfig(), "BasicWindow",
-					      "CenterSnapping");
+	bool centerSnapping =
+		GetBool(GetGlobalConfig(), "BasicWindow", "CenterSnapping");
 	ui->centerSnapping->setChecked(centerSnapping);
 
-	bool sourceSnapping = config_get_bool(GetGlobalConfig(), "BasicWindow",
-					      "SourceSnapping");
+	bool sourceSnapping =
+		GetBool(GetGlobalConfig(), "BasicWindow", "SourceSnapping");
 	ui->sourceSnapping->setChecked(sourceSnapping);
 
-	double snapDistance = config_get_double(GetGlobalConfig(),
-						"BasicWindow", "SnapDistance");
+	double snapDistance =
+		GetDouble(GetGlobalConfig(), "BasicWindow", "SnapDistance");
 	ui->snapDistance->setValue(snapDistance);
 
-	bool warnBeforeStreamStart = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "WarnBeforeStartingStream");
+	bool warnBeforeStreamStart = GetBool(GetGlobalConfig(), "BasicWindow",
+					     "WarnBeforeStartingStream");
 	ui->warnBeforeStreamStart->setChecked(warnBeforeStreamStart);
 
-	bool spacingHelpersEnabled = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "SpacingHelpersEnabled");
+	bool spacingHelpersEnabled = GetBool(GetGlobalConfig(), "BasicWindow",
+					     "SpacingHelpersEnabled");
 	ui->previewSpacingHelpers->setChecked(spacingHelpersEnabled);
 
-	bool warnBeforeStreamStop = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "WarnBeforeStoppingStream");
+	bool warnBeforeStreamStop = GetBool(GetGlobalConfig(), "BasicWindow",
+					    "WarnBeforeStoppingStream");
 	ui->warnBeforeStreamStop->setChecked(warnBeforeStreamStop);
 
-	bool warnBeforeRecordStop = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "WarnBeforeStoppingRecord");
+	bool warnBeforeRecordStop = GetBool(GetGlobalConfig(), "BasicWindow",
+					    "WarnBeforeStoppingRecord");
 	ui->warnBeforeRecordStop->setChecked(warnBeforeRecordStop);
 
-	bool hideProjectorCursor = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "HideProjectorCursor");
+	bool hideProjectorCursor = GetBool(GetGlobalConfig(), "BasicWindow",
+					   "HideProjectorCursor");
 	ui->hideProjectorCursor->setChecked(hideProjectorCursor);
 
-	bool projectorAlwaysOnTop = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "ProjectorAlwaysOnTop");
+	bool projectorAlwaysOnTop = GetBool(GetGlobalConfig(), "BasicWindow",
+					    "ProjectorAlwaysOnTop");
 	ui->projectorAlwaysOnTop->setChecked(projectorAlwaysOnTop);
 
-	bool overflowHide = config_get_bool(GetGlobalConfig(), "BasicWindow",
-					    "OverflowHidden");
+	bool overflowHide =
+		GetBool(GetGlobalConfig(), "BasicWindow", "OverflowHidden");
 	ui->overflowHide->setChecked(overflowHide);
 
-	bool overflowAlwaysVisible = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "OverflowAlwaysVisible");
+	bool overflowAlwaysVisible = GetBool(GetGlobalConfig(), "BasicWindow",
+					     "OverflowAlwaysVisible");
 	ui->overflowAlwaysVisible->setChecked(overflowAlwaysVisible);
 
-	bool overflowSelectionHide = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "OverflowSelectionHidden");
+	bool overflowSelectionHide = GetBool(GetGlobalConfig(), "BasicWindow",
+					     "OverflowSelectionHidden");
 	ui->overflowSelectionHide->setChecked(overflowSelectionHide);
 
-	bool safeAreas = config_get_bool(GetGlobalConfig(), "BasicWindow",
-					 "ShowSafeAreas");
+	bool safeAreas =
+		GetBool(GetGlobalConfig(), "BasicWindow", "ShowSafeAreas");
 	ui->previewSafeAreas->setChecked(safeAreas);
 
-	bool automaticSearch = config_get_bool(GetGlobalConfig(), "General",
-					       "AutomaticCollectionSearch");
+	bool automaticSearch = GetBool(GetGlobalConfig(), "General",
+				       "AutomaticCollectionSearch");
 	ui->automaticSearch->setChecked(automaticSearch);
 
-	bool doubleClickSwitch = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "TransitionOnDoubleClick");
+	bool doubleClickSwitch = GetBool(GetGlobalConfig(), "BasicWindow",
+					 "TransitionOnDoubleClick");
 	ui->doubleClickSwitch->setChecked(doubleClickSwitch);
 
-	bool studioPortraitLayout = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "StudioPortraitLayout");
+	bool studioPortraitLayout = GetBool(GetGlobalConfig(), "BasicWindow",
+					    "StudioPortraitLayout");
 	ui->studioPortraitLayout->setChecked(studioPortraitLayout);
 
-	bool prevProgLabels = config_get_bool(GetGlobalConfig(), "BasicWindow",
-					      "StudioModeLabels");
+	bool prevProgLabels =
+		GetBool(GetGlobalConfig(), "BasicWindow", "StudioModeLabels");
 	ui->prevProgLabelToggle->setChecked(prevProgLabels);
 
-	bool multiviewMouseSwitch = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "MultiviewMouseSwitch");
+	bool multiviewMouseSwitch = GetBool(GetGlobalConfig(), "BasicWindow",
+					    "MultiviewMouseSwitch");
 	ui->multiviewMouseSwitch->setChecked(multiviewMouseSwitch);
 
-	bool multiviewDrawNames = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "MultiviewDrawNames");
+	bool multiviewDrawNames =
+		GetBool(GetGlobalConfig(), "BasicWindow", "MultiviewDrawNames");
 	ui->multiviewDrawNames->setChecked(multiviewDrawNames);
 
-	bool multiviewDrawAreas = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "MultiviewDrawAreas");
+	bool multiviewDrawAreas =
+		GetBool(GetGlobalConfig(), "BasicWindow", "MultiviewDrawAreas");
 	ui->multiviewDrawAreas->setChecked(multiviewDrawAreas);
 
 	ui->multiviewLayout->addItem(
@@ -1458,10 +1478,8 @@ void OBSBasicSettings::LoadGeneralSettings()
 		static_cast<int>(MultiviewLayout::SCENES_ONLY_25_SCENES));
 
 	ui->multiviewLayout->setCurrentIndex(ui->multiviewLayout->findData(
-		QVariant::fromValue(config_get_int(
-			GetGlobalConfig(), "BasicWindow", "MultiviewLayout"))));
-
-	prevLangIndex = ui->language->currentIndex();
+		QVariant::fromValue(GetInt(GetGlobalConfig(), "BasicWindow",
+					   "MultiviewLayout"))));
 
 	if (obs_video_active())
 		ui->language->setEnabled(false);
@@ -1473,7 +1491,7 @@ void OBSBasicSettings::LoadRendererList()
 {
 #ifdef _WIN32
 	const char *renderer =
-		config_get_string(GetGlobalConfig(), "Video", "Renderer");
+		GetString(GetGlobalConfig(), "Video", "Renderer");
 
 	ui->renderer->addItem(QT_UTF8("Direct3D 11"));
 	if (opt_allow_opengl || strcmp(renderer, "OpenGL") == 0)
@@ -1625,9 +1643,9 @@ void OBSBasicSettings::ResetDownscales(uint32_t cx, uint32_t cy,
 void OBSBasicSettings::LoadDownscaleFilters()
 {
 	QString downscaleFilter = ui->downscaleFilter->currentData().toString();
-	if (downscaleFilter.isEmpty())
+	if (downscaleFilter.isEmpty() || resetDefaults)
 		downscaleFilter =
-			config_get_string(main->Config(), "Video", "ScaleType");
+			GetString(main->Config(), "Video", "ScaleType");
 
 	ui->downscaleFilter->clear();
 	if (ui->baseResolution->currentText() ==
@@ -1664,10 +1682,10 @@ void OBSBasicSettings::LoadDownscaleFilters()
 
 void OBSBasicSettings::LoadResolutionLists()
 {
-	uint32_t cx = config_get_uint(main->Config(), "Video", "BaseCX");
-	uint32_t cy = config_get_uint(main->Config(), "Video", "BaseCY");
-	uint32_t out_cx = config_get_uint(main->Config(), "Video", "OutputCX");
-	uint32_t out_cy = config_get_uint(main->Config(), "Video", "OutputCY");
+	uint32_t cx = GetUint(main->Config(), "Video", "BaseCX");
+	uint32_t cy = GetUint(main->Config(), "Video", "BaseCY");
+	uint32_t out_cx = GetUint(main->Config(), "Video", "OutputCX");
+	uint32_t out_cy = GetUint(main->Config(), "Video", "OutputCY");
 
 	ui->baseResolution->clear();
 
@@ -1710,10 +1728,11 @@ void OBSBasicSettings::LoadResolutionLists()
 			     QString::number(std::get<1>(aspect))));
 }
 
-static inline void LoadFPSCommon(OBSBasic *main, Ui::OBSBasicSettings *ui)
+static inline void LoadFPSCommon(OBSBasicSettings *settings, OBSBasic *main,
+				 Ui::OBSBasicSettings *ui)
 {
 	const char *val =
-		config_get_string(main->Config(), "Video", "FPSCommon");
+		settings->GetString(main->Config(), "Video", "FPSCommon");
 
 	int idx = ui->fpsCommon->findText(val);
 	if (idx == -1)
@@ -1721,16 +1740,18 @@ static inline void LoadFPSCommon(OBSBasic *main, Ui::OBSBasicSettings *ui)
 	ui->fpsCommon->setCurrentIndex(idx);
 }
 
-static inline void LoadFPSInteger(OBSBasic *main, Ui::OBSBasicSettings *ui)
+static inline void LoadFPSInteger(OBSBasicSettings *settings, OBSBasic *main,
+				  Ui::OBSBasicSettings *ui)
 {
-	uint32_t val = config_get_uint(main->Config(), "Video", "FPSInt");
+	uint32_t val = settings->GetUint(main->Config(), "Video", "FPSInt");
 	ui->fpsInteger->setValue(val);
 }
 
-static inline void LoadFPSFraction(OBSBasic *main, Ui::OBSBasicSettings *ui)
+static inline void LoadFPSFraction(OBSBasicSettings *settings, OBSBasic *main,
+				   Ui::OBSBasicSettings *ui)
 {
-	uint32_t num = config_get_uint(main->Config(), "Video", "FPSNum");
-	uint32_t den = config_get_uint(main->Config(), "Video", "FPSDen");
+	uint32_t num = settings->GetUint(main->Config(), "Video", "FPSNum");
+	uint32_t den = settings->GetUint(main->Config(), "Video", "FPSDen");
 
 	ui->fpsNumerator->setValue(num);
 	ui->fpsDenominator->setValue(den);
@@ -1738,11 +1759,11 @@ static inline void LoadFPSFraction(OBSBasic *main, Ui::OBSBasicSettings *ui)
 
 void OBSBasicSettings::LoadFPSData()
 {
-	LoadFPSCommon(main, ui.get());
-	LoadFPSInteger(main, ui.get());
-	LoadFPSFraction(main, ui.get());
+	LoadFPSCommon(this, main, ui.get());
+	LoadFPSInteger(this, main, ui.get());
+	LoadFPSFraction(this, main, ui.get());
 
-	uint32_t fpsType = config_get_uint(main->Config(), "Video", "FPSType");
+	uint32_t fpsType = GetUint(main->Config(), "Video", "FPSType");
 	if (fpsType > 2)
 		fpsType = 0;
 
@@ -1788,43 +1809,37 @@ static inline bool IsSurround(const char *speakers)
 void OBSBasicSettings::LoadSimpleOutputSettings()
 {
 	const char *path =
-		config_get_string(main->Config(), "SimpleOutput", "FilePath");
-	bool noSpace = config_get_bool(main->Config(), "SimpleOutput",
-				       "FileNameWithoutSpace");
+		GetString(main->Config(), "SimpleOutput", "FilePath");
+	bool noSpace =
+		GetBool(main->Config(), "SimpleOutput", "FileNameWithoutSpace");
 	const char *format =
-		config_get_string(main->Config(), "SimpleOutput", "RecFormat");
-	int videoBitrate =
-		config_get_uint(main->Config(), "SimpleOutput", "VBitrate");
-	const char *streamEnc = config_get_string(
-		main->Config(), "SimpleOutput", "StreamEncoder");
-	int audioBitrate =
-		config_get_uint(main->Config(), "SimpleOutput", "ABitrate");
-	bool advanced =
-		config_get_bool(main->Config(), "SimpleOutput", "UseAdvanced");
+		GetString(main->Config(), "SimpleOutput", "RecFormat");
+	int videoBitrate = GetUint(main->Config(), "SimpleOutput", "VBitrate");
+	const char *streamEnc =
+		GetString(main->Config(), "SimpleOutput", "StreamEncoder");
+	int audioBitrate = GetUint(main->Config(), "SimpleOutput", "ABitrate");
+	bool advanced = GetBool(main->Config(), "SimpleOutput", "UseAdvanced");
 	const char *preset =
-		config_get_string(main->Config(), "SimpleOutput", "Preset");
+		GetString(main->Config(), "SimpleOutput", "Preset");
 	const char *qsvPreset =
-		config_get_string(main->Config(), "SimpleOutput", "QSVPreset");
-	const char *nvPreset = config_get_string(main->Config(), "SimpleOutput",
-						 "NVENCPreset2");
+		GetString(main->Config(), "SimpleOutput", "QSVPreset");
+	const char *nvPreset =
+		GetString(main->Config(), "SimpleOutput", "NVENCPreset2");
 	const char *amdPreset =
-		config_get_string(main->Config(), "SimpleOutput", "AMDPreset");
-	const char *amdAV1Preset = config_get_string(
-		main->Config(), "SimpleOutput", "AMDAV1Preset");
-	const char *custom = config_get_string(main->Config(), "SimpleOutput",
-					       "x264Settings");
+		GetString(main->Config(), "SimpleOutput", "AMDPreset");
+	const char *amdAV1Preset =
+		GetString(main->Config(), "SimpleOutput", "AMDAV1Preset");
+	const char *custom =
+		GetString(main->Config(), "SimpleOutput", "x264Settings");
 	const char *recQual =
-		config_get_string(main->Config(), "SimpleOutput", "RecQuality");
+		GetString(main->Config(), "SimpleOutput", "RecQuality");
 	const char *recEnc =
-		config_get_string(main->Config(), "SimpleOutput", "RecEncoder");
-	const char *muxCustom = config_get_string(
-		main->Config(), "SimpleOutput", "MuxerCustom");
-	bool replayBuf =
-		config_get_bool(main->Config(), "SimpleOutput", "RecRB");
-	int rbTime =
-		config_get_int(main->Config(), "SimpleOutput", "RecRBTime");
-	int rbSize =
-		config_get_int(main->Config(), "SimpleOutput", "RecRBSize");
+		GetString(main->Config(), "SimpleOutput", "RecEncoder");
+	const char *muxCustom =
+		GetString(main->Config(), "SimpleOutput", "MuxerCustom");
+	bool replayBuf = GetBool(main->Config(), "SimpleOutput", "RecRB");
+	int rbTime = GetInt(main->Config(), "SimpleOutput", "RecRBTime");
+	int rbSize = GetInt(main->Config(), "SimpleOutput", "RecRBSize");
 
 	curPreset = preset;
 	curQSVPreset = qsvPreset;
@@ -1842,7 +1857,7 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	ui->simpleOutRecFormat->setCurrentIndex(idx);
 
 	const char *speakers =
-		config_get_string(main->Config(), "Audio", "ChannelSetup");
+		GetString(main->Config(), "Audio", "ChannelSetup");
 
 	// restrict list of bitrates when multichannel is OFF
 	if (!IsSurround(speakers))
@@ -1880,10 +1895,10 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 
 void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 {
-	bool rescale = config_get_bool(main->Config(), "AdvOut", "Rescale");
+	bool rescale = GetBool(main->Config(), "AdvOut", "Rescale");
 	const char *rescaleRes =
-		config_get_string(main->Config(), "AdvOut", "RescaleRes");
-	int trackIndex = config_get_int(main->Config(), "AdvOut", "TrackIndex");
+		GetString(main->Config(), "AdvOut", "RescaleRes");
+	int trackIndex = GetInt(main->Config(), "AdvOut", "TrackIndex");
 
 	ui->advOutUseRescale->setChecked(rescale);
 	ui->advOutRescale->setEnabled(rescale);
@@ -1951,8 +1966,7 @@ OBSBasicSettings::CreateEncoderPropertyView(const char *encoder,
 
 void OBSBasicSettings::LoadAdvOutputStreamingEncoderProperties()
 {
-	const char *type =
-		config_get_string(main->Config(), "AdvOut", "Encoder");
+	const char *type = GetString(main->Config(), "AdvOut", "Encoder");
 
 	delete streamEncoderProps;
 	streamEncoderProps =
@@ -1984,29 +1998,25 @@ void OBSBasicSettings::LoadAdvOutputStreamingEncoderProperties()
 
 void OBSBasicSettings::LoadAdvOutputRecordingSettings()
 {
-	const char *type =
-		config_get_string(main->Config(), "AdvOut", "RecType");
-	const char *format =
-		config_get_string(main->Config(), "AdvOut", "RecFormat");
-	const char *path =
-		config_get_string(main->Config(), "AdvOut", "RecFilePath");
-	bool noSpace = config_get_bool(main->Config(), "AdvOut",
-				       "RecFileNameWithoutSpace");
-	bool rescale = config_get_bool(main->Config(), "AdvOut", "RecRescale");
+	const char *type = GetString(main->Config(), "AdvOut", "RecType");
+	const char *format = GetString(main->Config(), "AdvOut", "RecFormat");
+	const char *path = GetString(main->Config(), "AdvOut", "RecFilePath");
+	bool noSpace =
+		GetBool(main->Config(), "AdvOut", "RecFileNameWithoutSpace");
+	bool rescale = GetBool(main->Config(), "AdvOut", "RecRescale");
 	const char *rescaleRes =
-		config_get_string(main->Config(), "AdvOut", "RecRescaleRes");
+		GetString(main->Config(), "AdvOut", "RecRescaleRes");
 	const char *muxCustom =
-		config_get_string(main->Config(), "AdvOut", "RecMuxerCustom");
-	int tracks = config_get_int(main->Config(), "AdvOut", "RecTracks");
-	int flvTrack = config_get_int(main->Config(), "AdvOut", "FLVTrack");
-	bool splitFile =
-		config_get_bool(main->Config(), "AdvOut", "RecSplitFile");
+		GetString(main->Config(), "AdvOut", "RecMuxerCustom");
+	int tracks = GetInt(main->Config(), "AdvOut", "RecTracks");
+	int flvTrack = GetInt(main->Config(), "AdvOut", "FLVTrack");
+	bool splitFile = GetBool(main->Config(), "AdvOut", "RecSplitFile");
 	const char *splitFileType =
-		config_get_string(main->Config(), "AdvOut", "RecSplitFileType");
+		GetString(main->Config(), "AdvOut", "RecSplitFileType");
 	int splitFileTime =
-		config_get_int(main->Config(), "AdvOut", "RecSplitFileTime");
+		GetInt(main->Config(), "AdvOut", "RecSplitFileTime");
 	int splitFileSize =
-		config_get_int(main->Config(), "AdvOut", "RecSplitFileSize");
+		GetInt(main->Config(), "AdvOut", "RecSplitFileSize");
 
 	int typeIndex = (astrcmpi(type, "FFmpeg") == 0) ? 1 : 0;
 	ui->advOutRecType->setCurrentIndex(typeIndex);
@@ -2064,8 +2074,7 @@ void OBSBasicSettings::LoadAdvOutputRecordingSettings()
 
 void OBSBasicSettings::LoadAdvOutputRecordingEncoderProperties()
 {
-	const char *type =
-		config_get_string(main->Config(), "AdvOut", "RecEncoder");
+	const char *type = GetString(main->Config(), "AdvOut", "RecEncoder");
 
 	delete recordEncoderProps;
 	recordEncoderProps = nullptr;
@@ -2122,43 +2131,34 @@ static void SelectEncoder(QComboBox *combo, const char *name, int id)
 
 void OBSBasicSettings::LoadAdvOutputFFmpegSettings()
 {
-	bool saveFile =
-		config_get_bool(main->Config(), "AdvOut", "FFOutputToFile");
-	const char *path =
-		config_get_string(main->Config(), "AdvOut", "FFFilePath");
-	bool noSpace = config_get_bool(main->Config(), "AdvOut",
-				       "FFFileNameWithoutSpace");
-	const char *url = config_get_string(main->Config(), "AdvOut", "FFURL");
-	const char *format =
-		config_get_string(main->Config(), "AdvOut", "FFFormat");
+	bool saveFile = GetBool(main->Config(), "AdvOut", "FFOutputToFile");
+	const char *path = GetString(main->Config(), "AdvOut", "FFFilePath");
+	bool noSpace =
+		GetBool(main->Config(), "AdvOut", "FFFileNameWithoutSpace");
+	const char *url = GetString(main->Config(), "AdvOut", "FFURL");
+	const char *format = GetString(main->Config(), "AdvOut", "FFFormat");
 	const char *mimeType =
-		config_get_string(main->Config(), "AdvOut", "FFFormatMimeType");
+		GetString(main->Config(), "AdvOut", "FFFormatMimeType");
 	const char *muxCustom =
-		config_get_string(main->Config(), "AdvOut", "FFMCustom");
-	int videoBitrate =
-		config_get_int(main->Config(), "AdvOut", "FFVBitrate");
-	int gopSize = config_get_int(main->Config(), "AdvOut", "FFVGOPSize");
-	bool rescale = config_get_bool(main->Config(), "AdvOut", "FFRescale");
-	bool codecCompat =
-		config_get_bool(main->Config(), "AdvOut", "FFIgnoreCompat");
+		GetString(main->Config(), "AdvOut", "FFMCustom");
+	int videoBitrate = GetInt(main->Config(), "AdvOut", "FFVBitrate");
+	int gopSize = GetInt(main->Config(), "AdvOut", "FFVGOPSize");
+	bool rescale = GetBool(main->Config(), "AdvOut", "FFRescale");
+	bool codecCompat = GetBool(main->Config(), "AdvOut", "FFIgnoreCompat");
 	const char *rescaleRes =
-		config_get_string(main->Config(), "AdvOut", "FFRescaleRes");
+		GetString(main->Config(), "AdvOut", "FFRescaleRes");
 	const char *vEncoder =
-		config_get_string(main->Config(), "AdvOut", "FFVEncoder");
-	int vEncoderId =
-		config_get_int(main->Config(), "AdvOut", "FFVEncoderId");
+		GetString(main->Config(), "AdvOut", "FFVEncoder");
+	int vEncoderId = GetInt(main->Config(), "AdvOut", "FFVEncoderId");
 	const char *vEncCustom =
-		config_get_string(main->Config(), "AdvOut", "FFVCustom");
-	int audioBitrate =
-		config_get_int(main->Config(), "AdvOut", "FFABitrate");
-	int audioMixes =
-		config_get_int(main->Config(), "AdvOut", "FFAudioMixes");
+		GetString(main->Config(), "AdvOut", "FFVCustom");
+	int audioBitrate = GetInt(main->Config(), "AdvOut", "FFABitrate");
+	int audioMixes = GetInt(main->Config(), "AdvOut", "FFAudioMixes");
 	const char *aEncoder =
-		config_get_string(main->Config(), "AdvOut", "FFAEncoder");
-	int aEncoderId =
-		config_get_int(main->Config(), "AdvOut", "FFAEncoderId");
+		GetString(main->Config(), "AdvOut", "FFAEncoder");
+	int aEncoderId = GetInt(main->Config(), "AdvOut", "FFAEncoderId");
 	const char *aEncCustom =
-		config_get_string(main->Config(), "AdvOut", "FFACustom");
+		GetString(main->Config(), "AdvOut", "FFACustom");
 
 	ui->advOutFFType->setCurrentIndex(saveFile ? 0 : 1);
 	ui->advOutFFRecPath->setText(QT_UTF8(path));
@@ -2188,30 +2188,18 @@ void OBSBasicSettings::LoadAdvOutputFFmpegSettings()
 
 void OBSBasicSettings::LoadAdvOutputAudioSettings()
 {
-	int track1Bitrate =
-		config_get_uint(main->Config(), "AdvOut", "Track1Bitrate");
-	int track2Bitrate =
-		config_get_uint(main->Config(), "AdvOut", "Track2Bitrate");
-	int track3Bitrate =
-		config_get_uint(main->Config(), "AdvOut", "Track3Bitrate");
-	int track4Bitrate =
-		config_get_uint(main->Config(), "AdvOut", "Track4Bitrate");
-	int track5Bitrate =
-		config_get_uint(main->Config(), "AdvOut", "Track5Bitrate");
-	int track6Bitrate =
-		config_get_uint(main->Config(), "AdvOut", "Track6Bitrate");
-	const char *name1 =
-		config_get_string(main->Config(), "AdvOut", "Track1Name");
-	const char *name2 =
-		config_get_string(main->Config(), "AdvOut", "Track2Name");
-	const char *name3 =
-		config_get_string(main->Config(), "AdvOut", "Track3Name");
-	const char *name4 =
-		config_get_string(main->Config(), "AdvOut", "Track4Name");
-	const char *name5 =
-		config_get_string(main->Config(), "AdvOut", "Track5Name");
-	const char *name6 =
-		config_get_string(main->Config(), "AdvOut", "Track6Name");
+	int track1Bitrate = GetUint(main->Config(), "AdvOut", "Track1Bitrate");
+	int track2Bitrate = GetUint(main->Config(), "AdvOut", "Track2Bitrate");
+	int track3Bitrate = GetUint(main->Config(), "AdvOut", "Track3Bitrate");
+	int track4Bitrate = GetUint(main->Config(), "AdvOut", "Track4Bitrate");
+	int track5Bitrate = GetUint(main->Config(), "AdvOut", "Track5Bitrate");
+	int track6Bitrate = GetUint(main->Config(), "AdvOut", "Track6Bitrate");
+	const char *name1 = GetString(main->Config(), "AdvOut", "Track1Name");
+	const char *name2 = GetString(main->Config(), "AdvOut", "Track2Name");
+	const char *name3 = GetString(main->Config(), "AdvOut", "Track3Name");
+	const char *name4 = GetString(main->Config(), "AdvOut", "Track4Name");
+	const char *name5 = GetString(main->Config(), "AdvOut", "Track5Name");
+	const char *name6 = GetString(main->Config(), "AdvOut", "Track6Name");
 
 	track1Bitrate = FindClosestAvailableAACBitrate(track1Bitrate);
 	track2Bitrate = FindClosestAvailableAACBitrate(track2Bitrate);
@@ -2222,7 +2210,7 @@ void OBSBasicSettings::LoadAdvOutputAudioSettings()
 
 	// restrict list of bitrates when multichannel is OFF
 	const char *speakers =
-		config_get_string(main->Config(), "Audio", "ChannelSetup");
+		GetString(main->Config(), "Audio", "ChannelSetup");
 
 	// restrict list of bitrates when multichannel is OFF
 	if (!IsSurround(speakers)) {
@@ -2260,7 +2248,7 @@ void OBSBasicSettings::LoadOutputSettings()
 
 	ResetEncoders();
 
-	const char *mode = config_get_string(main->Config(), "Output", "Mode");
+	const char *mode = GetString(main->Config(), "Output", "Mode");
 
 	int modeIdx = astrcmpi(mode, "Advanced") == 0 ? 1 : 0;
 	ui->outputMode->setCurrentIndex(modeIdx);
@@ -2294,7 +2282,7 @@ void OBSBasicSettings::SetAdvOutputFFmpegEnablement(ff_codec_type encoderType,
 						    bool enabled,
 						    bool enableEncoder)
 {
-	bool rescale = config_get_bool(main->Config(), "AdvOut", "FFRescale");
+	bool rescale = GetBool(main->Config(), "AdvOut", "FFRescale");
 
 	switch (encoderType) {
 	case FF_CODEC_VIDEO:
@@ -2329,6 +2317,7 @@ static inline void LoadListValue(QComboBox *widget, const char *text,
 void OBSBasicSettings::LoadListValues(QComboBox *widget, obs_property_t *prop,
 				      int index)
 {
+	widget->clear();
 	size_t count = obs_property_list_item_count(prop);
 
 	OBSSourceAutoRelease source = obs_get_output_source(index);
@@ -2338,7 +2327,11 @@ void OBSBasicSettings::LoadListValues(QComboBox *widget, obs_property_t *prop,
 	if (source) {
 		settings = obs_source_get_settings(source);
 		if (settings)
-			deviceId = obs_data_get_string(settings, "device_id");
+			deviceId = resetDefaults
+					   ? obs_data_get_default_string(
+						     settings, "device_id")
+					   : obs_data_get_string(settings,
+								 "device_id");
 	}
 
 	widget->addItem(QTStr("Basic.Settings.Audio.Disabled"), "disabled");
@@ -2359,6 +2352,7 @@ void OBSBasicSettings::LoadListValues(QComboBox *widget, obs_property_t *prop,
 					   QTStr("Basic.Settings.Audio."
 						 "UnknownAudioDevice"),
 					   var);
+
 			widget->setCurrentIndex(0);
 			HighlightGroupBoxLabel(ui->audioDevicesGroupBox, widget,
 					       "errorLabel");
@@ -2539,16 +2533,15 @@ void OBSBasicSettings::LoadAudioSources()
 
 void OBSBasicSettings::LoadAudioSettings()
 {
-	uint32_t sampleRate =
-		config_get_uint(main->Config(), "Audio", "SampleRate");
+	uint32_t sampleRate = GetUint(main->Config(), "Audio", "SampleRate");
 	const char *speakers =
-		config_get_string(main->Config(), "Audio", "ChannelSetup");
+		GetString(main->Config(), "Audio", "ChannelSetup");
 	double meterDecayRate =
-		config_get_double(main->Config(), "Audio", "MeterDecayRate");
+		GetDouble(main->Config(), "Audio", "MeterDecayRate");
 	uint32_t peakMeterTypeIdx =
-		config_get_uint(main->Config(), "Audio", "PeakMeterType");
-	bool enableLLAudioBuffering = config_get_bool(
-		GetGlobalConfig(), "Audio", "LowLatencyAudioBuffering");
+		GetUint(main->Config(), "Audio", "PeakMeterType");
+	bool enableLLAudioBuffering =
+		GetBool(GetGlobalConfig(), "Audio", "LowLatencyAudioBuffering");
 
 	loading = true;
 
@@ -2590,6 +2583,19 @@ void OBSBasicSettings::LoadAudioSettings()
 	LoadAudioDevices();
 	LoadAudioSources();
 
+	QString monDevName;
+	QString monDevId;
+	if (obs_audio_monitoring_available()) {
+		monDevName = GetString(main->Config(), "Audio",
+				       "MonitoringDeviceName");
+		monDevId = GetString(main->Config(), "Audio",
+				     "MonitoringDeviceId");
+
+		if (!SetComboByValue(ui->monitoringDevice, monDevId.toUtf8()))
+			SetInvalidValue(ui->monitoringDevice,
+					monDevName.toUtf8(), monDevId.toUtf8());
+	}
+
 	loading = false;
 }
 
@@ -2625,63 +2631,46 @@ void OBSBasicSettings::UpdateColorFormatSpaceWarning()
 void OBSBasicSettings::LoadAdvancedSettings()
 {
 	const char *videoColorFormat =
-		config_get_string(main->Config(), "Video", "ColorFormat");
+		GetString(main->Config(), "Video", "ColorFormat");
 	const char *videoColorSpace =
-		config_get_string(main->Config(), "Video", "ColorSpace");
+		GetString(main->Config(), "Video", "ColorSpace");
 	const char *videoColorRange =
-		config_get_string(main->Config(), "Video", "ColorRange");
-	uint32_t sdrWhiteLevel = (uint32_t)config_get_uint(
-		main->Config(), "Video", "SdrWhiteLevel");
-	uint32_t hdrNominalPeakLevel = (uint32_t)config_get_uint(
+		GetString(main->Config(), "Video", "ColorRange");
+	uint32_t sdrWhiteLevel =
+		(uint32_t)GetUint(main->Config(), "Video", "SdrWhiteLevel");
+	uint32_t hdrNominalPeakLevel = (uint32_t)GetUint(
 		main->Config(), "Video", "HdrNominalPeakLevel");
 
-	QString monDevName;
-	QString monDevId;
-	if (obs_audio_monitoring_available()) {
-		monDevName = config_get_string(main->Config(), "Audio",
-					       "MonitoringDeviceName");
-		monDevId = config_get_string(main->Config(), "Audio",
-					     "MonitoringDeviceId");
-	}
-	bool enableDelay =
-		config_get_bool(main->Config(), "Output", "DelayEnable");
-	int delaySec = config_get_int(main->Config(), "Output", "DelaySec");
-	bool preserveDelay =
-		config_get_bool(main->Config(), "Output", "DelayPreserve");
-	bool reconnect = config_get_bool(main->Config(), "Output", "Reconnect");
-	int retryDelay = config_get_int(main->Config(), "Output", "RetryDelay");
-	int maxRetries = config_get_int(main->Config(), "Output", "MaxRetries");
-	const char *filename = config_get_string(main->Config(), "Output",
-						 "FilenameFormatting");
+	bool enableDelay = GetBool(main->Config(), "Output", "DelayEnable");
+	int delaySec = GetInt(main->Config(), "Output", "DelaySec");
+	bool preserveDelay = GetBool(main->Config(), "Output", "DelayPreserve");
+	bool reconnect = GetBool(main->Config(), "Output", "Reconnect");
+	int retryDelay = GetInt(main->Config(), "Output", "RetryDelay");
+	int maxRetries = GetInt(main->Config(), "Output", "MaxRetries");
+	const char *filename =
+		GetString(main->Config(), "Output", "FilenameFormatting");
 	bool overwriteIfExists =
-		config_get_bool(main->Config(), "Output", "OverwriteIfExists");
-	const char *bindIP =
-		config_get_string(main->Config(), "Output", "BindIP");
-	const char *rbPrefix = config_get_string(main->Config(), "SimpleOutput",
-						 "RecRBPrefix");
-	const char *rbSuffix = config_get_string(main->Config(), "SimpleOutput",
-						 "RecRBSuffix");
-	bool replayBuf = config_get_bool(main->Config(), "AdvOut", "RecRB");
-	int rbTime = config_get_int(main->Config(), "AdvOut", "RecRBTime");
-	int rbSize = config_get_int(main->Config(), "AdvOut", "RecRBSize");
-	bool autoRemux = config_get_bool(main->Config(), "Video", "AutoRemux");
-	const char *hotkeyFocusType = config_get_string(
-		App()->GlobalConfig(), "General", "HotkeyFocusType");
-	bool dynBitrate =
-		config_get_bool(main->Config(), "Output", "DynamicBitrate");
+		GetBool(main->Config(), "Output", "OverwriteIfExists");
+	const char *bindIP = GetString(main->Config(), "Output", "BindIP");
+	const char *rbPrefix =
+		GetString(main->Config(), "SimpleOutput", "RecRBPrefix");
+	const char *rbSuffix =
+		GetString(main->Config(), "SimpleOutput", "RecRBSuffix");
+	bool replayBuf = GetBool(main->Config(), "AdvOut", "RecRB");
+	int rbTime = GetInt(main->Config(), "AdvOut", "RecRBTime");
+	int rbSize = GetInt(main->Config(), "AdvOut", "RecRBSize");
+	bool autoRemux = GetBool(main->Config(), "Video", "AutoRemux");
+	const char *hotkeyFocusType =
+		GetString(App()->GlobalConfig(), "General", "HotkeyFocusType");
+	bool dynBitrate = GetBool(main->Config(), "Output", "DynamicBitrate");
 
 	bool confirmOnExit =
-		config_get_bool(GetGlobalConfig(), "General", "ConfirmOnExit");
+		GetBool(GetGlobalConfig(), "General", "ConfirmOnExit");
 	ui->confirmOnExit->setChecked(confirmOnExit);
 
 	loading = true;
 
 	LoadRendererList();
-
-	if (obs_audio_monitoring_available() &&
-	    !SetComboByValue(ui->monitoringDevice, monDevId.toUtf8()))
-		SetInvalidValue(ui->monitoringDevice, monDevName.toUtf8(),
-				monDevId.toUtf8());
 
 	ui->filenameFormatting->setText(filename);
 	ui->overwriteIfExists->setChecked(overwriteIfExists);
@@ -2716,24 +2705,24 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	}
 
 #ifdef __APPLE__
-	bool disableOSXVSync = config_get_bool(App()->GlobalConfig(), "Video",
-					       "DisableOSXVSync");
-	bool resetOSXVSync = config_get_bool(App()->GlobalConfig(), "Video",
-					     "ResetOSXVSyncOnExit");
+	bool disableOSXVSync =
+		GetBool(App()->GlobalConfig(), "Video", "DisableOSXVSync");
+	bool resetOSXVSync =
+		GetBool(App()->GlobalConfig(), "Video", "ResetOSXVSyncOnExit");
 	ui->disableOSXVSync->setChecked(disableOSXVSync);
 	ui->resetOSXVSync->setChecked(resetOSXVSync);
 	ui->resetOSXVSync->setEnabled(disableOSXVSync);
 #elif _WIN32
-	bool disableAudioDucking = config_get_bool(
-		App()->GlobalConfig(), "Audio", "DisableAudioDucking");
+	bool disableAudioDucking =
+		GetBool(App()->GlobalConfig(), "Audio", "DisableAudioDucking");
 	ui->disableAudioDucking->setChecked(disableAudioDucking);
 
-	const char *processPriority = config_get_string(
-		App()->GlobalConfig(), "General", "ProcessPriority");
-	bool enableNewSocketLoop = config_get_bool(main->Config(), "Output",
-						   "NewSocketLoopEnable");
+	const char *processPriority =
+		GetString(App()->GlobalConfig(), "General", "ProcessPriority");
+	bool enableNewSocketLoop =
+		GetBool(main->Config(), "Output", "NewSocketLoopEnable");
 	bool enableLowLatencyMode =
-		config_get_bool(main->Config(), "Output", "LowLatencyEnable");
+		GetBool(main->Config(), "Output", "LowLatencyEnable");
 
 	int idx = ui->processPriority->findData(processPriority);
 	if (idx == -1)
@@ -2746,10 +2735,9 @@ void OBSBasicSettings::LoadAdvancedSettings()
 		QTStr("Basic.Settings.Advanced.Network.TCPPacing.Tooltip"));
 #endif
 #if defined(_WIN32) || defined(__APPLE__)
-	bool browserHWAccel = config_get_bool(App()->GlobalConfig(), "General",
-					      "BrowserHWAccel");
+	bool browserHWAccel =
+		GetBool(App()->GlobalConfig(), "General", "BrowserHWAccel");
 	ui->browserHWAccel->setChecked(browserHWAccel);
-	prevBrowserAccel = ui->browserHWAccel->isChecked();
 #endif
 
 	SetComboByValue(ui->hotkeyFocusType, hotkeyFocusType);
@@ -3364,8 +3352,8 @@ void OBSBasicSettings::SaveVideoSettings()
 
 void OBSBasicSettings::SaveAdvancedSettings()
 {
-	QString lastMonitoringDevice = config_get_string(
-		main->Config(), "Audio", "MonitoringDeviceId");
+	QString lastMonitoringDevice =
+		GetString(main->Config(), "Audio", "MonitoringDeviceId");
 
 #ifdef _WIN32
 	if (WidgetChanged(ui->renderer))
@@ -3993,7 +3981,7 @@ void OBSBasicSettings::on_listWidget_itemSelectionChanged()
 {
 	int row = ui->listWidget->currentRow();
 
-	if (loading || row == pageIndex)
+	if ((loading && !resetDefaults) || row == pageIndex)
 		return;
 
 	if (!hotkeysLoaded && row == 5) {
@@ -4016,6 +4004,11 @@ void OBSBasicSettings::on_listWidget_itemSelectionChanged()
 void OBSBasicSettings::on_buttonBox_clicked(QAbstractButton *button)
 {
 	QDialogButtonBox::ButtonRole val = ui->buttonBox->buttonRole(button);
+
+	if (val == QDialogButtonBox::ResetRole) {
+		ResetToDefaults();
+		return;
+	}
 
 	if (val == QDialogButtonBox::ApplyRole ||
 	    val == QDialogButtonBox::AcceptRole) {
@@ -4070,7 +4063,7 @@ void OBSBasicSettings::on_advOutFFPathBrowse_clicked()
 void OBSBasicSettings::on_advOutEncoder_currentIndexChanged(int idx)
 {
 	QString encoder = GetComboData(ui->advOutEncoder);
-	if (!loading) {
+	if (!loading || resetDefaults) {
 		bool loadSettings = encoder == curAdvStreamEncoder;
 
 		delete streamEncoderProps;
@@ -4090,7 +4083,7 @@ void OBSBasicSettings::on_advOutEncoder_currentIndexChanged(int idx)
 
 void OBSBasicSettings::on_advOutRecEncoder_currentIndexChanged(int idx)
 {
-	if (!loading) {
+	if (!loading || resetDefaults) {
 		delete recordEncoderProps;
 		recordEncoderProps = nullptr;
 	}
@@ -4106,7 +4099,7 @@ void OBSBasicSettings::on_advOutRecEncoder_currentIndexChanged(int idx)
 	QString encoder = GetComboData(ui->advOutRecEncoder);
 	bool loadSettings = encoder == curAdvRecordEncoder;
 
-	if (!loading) {
+	if (!loading || resetDefaults) {
 		recordEncoderProps = CreateEncoderPropertyView(
 			QT_TO_UTF8(encoder),
 			loadSettings ? "recordEncoder.json" : nullptr, true);
@@ -4282,7 +4275,7 @@ void OBSBasicSettings::on_filenameFormatting_textEdited(const QString &text)
 
 void OBSBasicSettings::on_outputResolution_editTextChanged(const QString &text)
 {
-	if (!loading) {
+	if (!loading || resetDefaults) {
 		RecalcOutputResPixels(QT_TO_UTF8(text));
 		LoadDownscaleFilters();
 	}
@@ -4290,7 +4283,7 @@ void OBSBasicSettings::on_outputResolution_editTextChanged(const QString &text)
 
 void OBSBasicSettings::on_baseResolution_editTextChanged(const QString &text)
 {
-	if (!loading && ValidResolutions(ui.get())) {
+	if ((!loading || resetDefaults) && ValidResolutions(ui.get())) {
 		QString baseResolution = text;
 		uint32_t cx, cy;
 
@@ -4309,7 +4302,7 @@ void OBSBasicSettings::on_baseResolution_editTextChanged(const QString &text)
 
 void OBSBasicSettings::GeneralChanged()
 {
-	if (!loading) {
+	if (!loading || resetDefaults) {
 		generalChanged = true;
 		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
@@ -4318,7 +4311,7 @@ void OBSBasicSettings::GeneralChanged()
 
 void OBSBasicSettings::Stream1Changed()
 {
-	if (!loading) {
+	if (!loading || resetDefaults) {
 		stream1Changed = true;
 		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
@@ -4327,7 +4320,7 @@ void OBSBasicSettings::Stream1Changed()
 
 void OBSBasicSettings::OutputsChanged()
 {
-	if (!loading) {
+	if (!loading || resetDefaults) {
 		outputsChanged = true;
 		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
@@ -4336,7 +4329,7 @@ void OBSBasicSettings::OutputsChanged()
 
 void OBSBasicSettings::AudioChanged()
 {
-	if (!loading) {
+	if (!loading || resetDefaults) {
 		audioChanged = true;
 		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
@@ -4345,7 +4338,7 @@ void OBSBasicSettings::AudioChanged()
 
 void OBSBasicSettings::AudioChangedRestart()
 {
-	if (!loading) {
+	if (!loading || resetDefaults) {
 		int currentChannelIndex = ui->channelSetup->currentIndex();
 		int currentSampleRateIndex = ui->sampleRate->currentIndex();
 		bool currentLLAudioBufVal =
@@ -4416,11 +4409,11 @@ void OBSBasicSettings::SpeakerLayoutChanged(int idx)
 
 void OBSBasicSettings::HideOBSWindowWarning(int state)
 {
-	if (loading || state == Qt::Unchecked)
+	if ((loading && !resetDefaults) || state == Qt::Unchecked)
 		return;
 
-	if (config_get_bool(GetGlobalConfig(), "General",
-			    "WarnedAboutHideOBSFromCapture"))
+	if (GetBool(GetGlobalConfig(), "General",
+		    "WarnedAboutHideOBSFromCapture"))
 		return;
 
 	OBSMessageBox::information(
@@ -4465,7 +4458,7 @@ void RestrictResetBitrates(initializer_list<QComboBox *> boxes, int maxbitrate)
 
 void OBSBasicSettings::AdvancedChangedRestart()
 {
-	if (!loading) {
+	if (!loading || resetDefaults) {
 		advancedChanged = true;
 		ui->advancedMsg->setText(
 			QTStr("Basic.Settings.ProgramRestart"));
@@ -4476,7 +4469,7 @@ void OBSBasicSettings::AdvancedChangedRestart()
 
 void OBSBasicSettings::VideoChangedResolution()
 {
-	if (!loading && ValidResolutions(ui.get())) {
+	if ((!loading || resetDefaults) && ValidResolutions(ui.get())) {
 		videoChanged = true;
 		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
@@ -4485,7 +4478,7 @@ void OBSBasicSettings::VideoChangedResolution()
 
 void OBSBasicSettings::VideoChanged()
 {
-	if (!loading) {
+	if (!loading || resetDefaults) {
 		videoChanged = true;
 		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
@@ -4495,7 +4488,7 @@ void OBSBasicSettings::VideoChanged()
 void OBSBasicSettings::HotkeysChanged()
 {
 	using namespace std;
-	if (loading)
+	if (loading && !resetDefaults)
 		return;
 
 	hotkeysChanged =
@@ -4653,7 +4646,7 @@ void OBSBasicSettings::ReloadHotkeys(obs_hotkey_id ignoreKey)
 
 void OBSBasicSettings::A11yChanged()
 {
-	if (!loading) {
+	if (!loading || resetDefaults) {
 		a11yChanged = true;
 		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
@@ -4662,7 +4655,7 @@ void OBSBasicSettings::A11yChanged()
 
 void OBSBasicSettings::AdvancedChanged()
 {
-	if (!loading) {
+	if (!loading || resetDefaults) {
 		advancedChanged = true;
 		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
@@ -4797,7 +4790,7 @@ void OBSBasicSettings::UpdateAdvOutStreamDelayEstimate()
 		return;
 
 	OBSData settings = streamEncoderProps->GetSettings();
-	int trackIndex = config_get_int(main->Config(), "AdvOut", "TrackIndex");
+	int trackIndex = GetInt(main->Config(), "AdvOut", "TrackIndex");
 	QString aBitrateText;
 
 	switch (trackIndex) {
@@ -5334,7 +5327,7 @@ void OBSBasicSettings::SurroundWarning(int idx)
 	if (idx == lastChannelSetupIdx || idx == -1)
 		return;
 
-	if (loading) {
+	if (loading && !resetDefaults) {
 		lastChannelSetupIdx = idx;
 		return;
 	}
@@ -5427,7 +5420,7 @@ void OBSBasicSettings::SimpleRecordingQualityLosslessWarning(int idx)
 
 	QString qual = ui->simpleOutRecQuality->itemData(idx).toString();
 
-	if (loading) {
+	if (loading && !resetDefaults) {
 		lastSimpleRecQualityIdx = idx;
 		return;
 	}
@@ -5458,7 +5451,7 @@ void OBSBasicSettings::SimpleRecordingQualityLosslessWarning(int idx)
 void OBSBasicSettings::on_disableOSXVSync_clicked()
 {
 #ifdef __APPLE__
-	if (!loading) {
+	if (!loading || resetDefaults) {
 		bool disable = ui->disableOSXVSync->isChecked();
 		ui->resetOSXVSync->setEnabled(disable);
 	}
@@ -5607,4 +5600,133 @@ void OBSBasicSettings::UpdateAdvNetworkGroup()
 	ui->enableNewSocketLoop->setVisible(enabled);
 	ui->enableLowLatencyMode->setVisible(enabled);
 #endif
+}
+
+const char *OBSBasicSettings::GetString(config_t *config, const char *section,
+					const char *name)
+{
+	return resetDefaults ? config_get_default_string(config, section, name)
+			     : config_get_string(config, section, name);
+}
+
+int OBSBasicSettings::GetInt(config_t *config, const char *section,
+			     const char *name)
+{
+	return resetDefaults ? config_get_default_int(config, section, name)
+			     : config_get_int(config, section, name);
+}
+
+uint32_t OBSBasicSettings::GetUint(config_t *config, const char *section,
+				   const char *name)
+{
+	return resetDefaults ? config_get_default_uint(config, section, name)
+			     : config_get_uint(config, section, name);
+}
+
+bool OBSBasicSettings::GetBool(config_t *config, const char *section,
+			       const char *name)
+{
+	return resetDefaults ? config_get_default_bool(config, section, name)
+			     : config_get_bool(config, section, name);
+}
+
+double OBSBasicSettings::GetDouble(config_t *config, const char *section,
+				   const char *name)
+{
+	return resetDefaults ? config_get_default_double(config, section, name)
+			     : config_get_double(config, section, name);
+}
+
+void OBSBasicSettings::ResetHotkeys()
+{
+	QList<OBSHotkeyEdit *> list = findChildren<OBSHotkeyEdit *>();
+
+	foreach(OBSHotkeyEdit * h, list) h->ClearKey();
+}
+
+bool OBSBasicSettings::ConfirmReset(int index)
+{
+	QString title, text;
+
+	switch (index) {
+	case 0: // General
+		title = QTStr("Basic.Settings.General.Reset.Title");
+		text = QTStr("Basic.Settings.General.Reset.Text");
+		break;
+	case 1: // Stream
+		title = QTStr("Basic.Settings.Stream.Reset.Title");
+		text = QTStr("Basic.Settings.Stream.Reset.Text");
+		break;
+	case 2: // Outputs
+		title = QTStr("Basic.Settings.Output.Reset.Title");
+		text = QTStr("Basic.Settings.Output.Reset.Text");
+		break;
+	case 3: // Audio
+		title = QTStr("Basic.Settings.Audio.Reset.Title");
+		text = QTStr("Basic.Settings.Audio.Reset.Text");
+		break;
+	case 4: // Video
+		title = QTStr("Basic.Settings.Video.Reset.Title");
+		text = QTStr("Basic.Settings.Video.Reset.Text");
+		break;
+	case 5: // Hotkeys
+		title = QTStr("Basic.Settings.Hotkeys.Reset.Title");
+		text = QTStr("Basic.Settings.Hotkeys.Reset.Text");
+		break;
+	case 6: // Accessiblity
+		title = QTStr("Basic.Settings.Accessibility.Reset.Title");
+		text = QTStr("Basic.Settings.Accessibility.Reset.Text");
+		break;
+	case 7: // Advanced
+		title = QTStr("Basic.Settings.Advanced.Reset.Title");
+		text = QTStr("Basic.Settings.Advanced.Reset.Text");
+		break;
+	}
+
+	QMessageBox::StandardButton button =
+		OBSMessageBox::question(this, title, text);
+
+	if (button == QMessageBox::No)
+		return false;
+
+	return true;
+}
+
+void OBSBasicSettings::ResetToDefaults()
+{
+	int index = ui->listWidget->currentRow();
+
+	if (!ConfirmReset(index))
+		return;
+
+	resetDefaults = true;
+
+	switch (index) {
+	case 0: // General
+		LoadGeneralSettings();
+		break;
+	case 1: // Stream
+		LoadStream1Settings();
+		break;
+	case 2: // Outputs
+		LoadOutputSettings();
+		break;
+	case 3: // Audio
+		LoadAudioSettings();
+		break;
+	case 4: // Video
+		LoadVideoSettings();
+		break;
+	case 5: // Hotkeys
+		ResetHotkeys();
+		break;
+	case 6: // Accessiblity
+		LoadA11ySettings();
+		break;
+	case 7: // Advanced
+		LoadAdvancedSettings();
+		break;
+	}
+
+	resetDefaults = false;
 }

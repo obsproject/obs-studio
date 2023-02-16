@@ -106,7 +106,7 @@ void OBSBasicSettings::InitStreamPage()
 void OBSBasicSettings::LoadStream1Settings()
 {
 	bool ignoreRecommended =
-		config_get_bool(main->Config(), "Stream1", "IgnoreRecommended");
+		GetBool(main->Config(), "Stream1", "IgnoreRecommended");
 
 	obs_service_t *service_obj = main->GetService();
 	const char *type = obs_service_get_type(service_obj);
@@ -168,7 +168,7 @@ void OBSBasicSettings::LoadStream1Settings()
 		bool bw_test = obs_data_get_bool(settings, "bwtest");
 		ui->bandwidthTestEnable->setChecked(bw_test);
 
-		idx = config_get_int(main->Config(), "Twitch", "AddonChoice");
+		idx = GetInt(main->Config(), "Twitch", "AddonChoice");
 		ui->twitchAddonDropdown->setCurrentIndex(idx);
 	}
 
@@ -198,6 +198,13 @@ void OBSBasicSettings::LoadStream1Settings()
 	ui->streamPage->setEnabled(!streamActive);
 
 	ui->ignoreRecommended->setChecked(ignoreRecommended);
+
+	if (resetDefaults) {
+		int idx = ui->service->findText("Twitch");
+
+		if (idx != -1)
+			ui->service->setCurrentIndex(idx);
+	}
 
 	loading = false;
 
@@ -240,7 +247,7 @@ void OBSBasicSettings::SaveStream1Settings()
 		bool choiceExists = config_has_user_value(
 			main->Config(), "Twitch", "AddonChoice");
 		int currentChoice =
-			config_get_int(main->Config(), "Twitch", "AddonChoice");
+			GetInt(main->Config(), "Twitch", "AddonChoice");
 		int newChoice = ui->twitchAddonDropdown->currentIndex();
 
 		config_set_int(main->Config(), "Twitch", "AddonChoice",
@@ -437,10 +444,11 @@ static void reset_service_ui_fields(Ui::OBSBasicSettings *ui,
 }
 
 #if YOUTUBE_ENABLED
-static void get_yt_ch_title(Ui::OBSBasicSettings *ui)
+static void get_yt_ch_title(OBSBasicSettings *settings,
+			    Ui::OBSBasicSettings *ui)
 {
-	const char *name = config_get_string(OBSBasic::Get()->Config(),
-					     "YouTube", "ChannelName");
+	const char *name = settings->GetString(OBSBasic::Get()->Config(),
+					       "YouTube", "ChannelName");
 	if (name) {
 		ui->connectedAccountText->setText(name);
 	} else {
@@ -634,7 +642,7 @@ void OBSBasicSettings::OnOAuthStreamKeyConnected()
 			ui->connectedAccountText->setText(
 				QTStr("Auth.LoadingChannel.Title"));
 
-			get_yt_ch_title(ui.get());
+			get_yt_ch_title(this, ui.get());
 		}
 #endif
 	}
@@ -731,8 +739,8 @@ void OBSBasicSettings::on_useAuth_toggled()
 
 void OBSBasicSettings::UpdateVodTrackSetting()
 {
-	bool enableForCustomServer = config_get_bool(
-		GetGlobalConfig(), "General", "EnableCustomServerVodTrack");
+	bool enableForCustomServer = GetBool(GetGlobalConfig(), "General",
+					     "EnableCustomServerVodTrack");
 	bool enableVodTrack = ui->service->currentText() == "Twitch";
 	bool wasEnabled = !!vodTrackCheckbox;
 
@@ -753,8 +761,8 @@ void OBSBasicSettings::UpdateVodTrackSetting()
 	/* simple output mode vod track widgets   */
 
 	bool simpleAdv = ui->simpleOutAdvanced->isChecked();
-	bool vodTrackEnabled = config_get_bool(main->Config(), "SimpleOutput",
-					       "VodTrackEnabled");
+	bool vodTrackEnabled =
+		GetBool(main->Config(), "SimpleOutput", "VodTrackEnabled");
 
 	simpleVodTrack = new QCheckBox(this);
 	simpleVodTrack->setText(
@@ -800,16 +808,14 @@ void OBSBasicSettings::UpdateVodTrackSetting()
 
 	ui->advOutTopLayout->insertRow(2, vodTrackCheckbox, vodTrackContainer);
 
-	vodTrackEnabled =
-		config_get_bool(main->Config(), "AdvOut", "VodTrackEnabled");
+	vodTrackEnabled = GetBool(main->Config(), "AdvOut", "VodTrackEnabled");
 	vodTrackCheckbox->setChecked(vodTrackEnabled);
 	vodTrackContainer->setEnabled(vodTrackEnabled);
 
 	connect(vodTrackCheckbox, SIGNAL(clicked(bool)), vodTrackContainer,
 		SLOT(setEnabled(bool)));
 
-	int trackIndex =
-		config_get_int(main->Config(), "AdvOut", "VodTrackIndex");
+	int trackIndex = GetInt(main->Config(), "AdvOut", "VodTrackIndex");
 	for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
 		vodTrack[i]->setChecked((i + 1) == trackIndex);
 	}
