@@ -972,3 +972,29 @@ Functions
                       This uses the undo action from the first and the redo action from the last action.
 
    .. versionadded:: 29.1
+
+---------------------------------------
+
+.. function:: void obs_frontend_copy_sceneitem(obs_sceneitem_t *item)
+
+   :param item: The scene item to copy
+
+   .. versionadded:: 32.0
+
+---------------------------------------
+
+.. function:: bool obs_frontend_can_paste_sceneitem(bool duplicate)
+
+   :param duplicate: Check if the copied source allows duplication.
+   :return: Whether there is a scene item copied and can be pasted
+
+   .. versionadded:: 32.0
+
+---------------------------------------
+
+.. function:: void obs_frontend_paste_sceneitem(obs_scene_t *scene, bool duplicate)
+
+   :param scene: The scene to paste on
+   :param duplicate: *true* for paste duplicate, *false* for paste reference
+
+   .. versionadded:: 32.0

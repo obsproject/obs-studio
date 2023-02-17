@@ -258,6 +258,10 @@ EXPORT void obs_frontend_get_canvases(struct obs_frontend_canvas_list *canvas_li
 EXPORT obs_canvas_t *obs_frontend_add_canvas(const char *name, struct obs_video_info *ovi, int flags);
 EXPORT bool obs_frontend_remove_canvas(obs_canvas_t *canvas);
 
+EXPORT void obs_frontend_copy_sceneitem(obs_sceneitem_t *item);
+EXPORT bool obs_frontend_can_paste_sceneitem(bool duplicate);
+EXPORT void obs_frontend_paste_sceneitem(obs_scene_t *scene, bool duplicate);
+
 /* ------------------------------------------------------------------------- */
 
 #ifdef __cplusplus
