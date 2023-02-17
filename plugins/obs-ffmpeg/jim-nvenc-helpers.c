@@ -58,6 +58,7 @@ bool nv_failed2(obs_encoder_t *encoder, void *session, NVENCSTATUS err,
 			encoder, obs_module_text("NVENC.TooManySessions"));
 		break;
 
+	case NV_ENC_ERR_NO_ENCODE_DEVICE:
 	case NV_ENC_ERR_UNSUPPORTED_DEVICE:
 		obs_encoder_set_last_error(
 			encoder, obs_module_text("NVENC.UnsupportedDevice"));
