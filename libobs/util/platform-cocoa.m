@@ -408,20 +408,12 @@ uint64_t os_get_sys_total_size(void)
 	return total_memory;
 }
 
-#ifndef MACH_TASK_BASIC_INFO
-typedef task_basic_info_data_t mach_task_basic_info_data_t;
-#endif
-
 static inline bool
 os_get_proc_memory_usage_internal(mach_task_basic_info_data_t *taskinfo)
 {
-#ifdef MACH_TASK_BASIC_INFO
 	const task_flavor_t flavor = MACH_TASK_BASIC_INFO;
 	mach_msg_type_number_t out_count = MACH_TASK_BASIC_INFO_COUNT;
-#else
-	const task_flavor_t flavor = TASK_BASIC_INFO;
-	mach_msg_type_number_t out_count = TASK_BASIC_INFO_COUNT;
-#endif
+
 	if (task_info(mach_task_self(), flavor, (task_info_t)taskinfo,
 		      &out_count) != KERN_SUCCESS)
 		return false;
