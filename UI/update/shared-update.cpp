@@ -15,10 +15,12 @@
 #include <QByteArray>
 #include <QString>
 
+#ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
 
 struct QCef;
 extern QCef *cef;
+#endif
 
 #ifndef MAC_WHATSNEW_URL
 #define MAC_WHATSNEW_URL "https://obsproject.com/update_studio/whatsnew.json"
