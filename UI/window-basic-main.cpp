@@ -2197,6 +2197,20 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 	/* check to see if there's an info page for this version */
 	const Json::array &items = json.array_items();
 	for (const Json &item : items) {
+		if (item["os"].is_object()) {
+			Json::object platforms = item["os"].object_items();
+#ifdef _WIN32
+			if (!platforms["windows"].bool_value())
+				continue;
+#elif defined(__APPLE__)
+			if (!platforms["macos"].bool_value())
+				continue;
+#else
+			if (!platforms["linux"].bool_value())
+				continue;
+#endif
+		}
+
 		const std::string &version = item["version"].string_value();
 		const std::string &url = item["url"].string_value();
 		int increment = item["increment"].int_value();
