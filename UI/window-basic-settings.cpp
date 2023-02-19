@@ -577,14 +577,11 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	ui->advOutFFABitrate->setSuffix(" Kbps");
 
 #if !defined(_WIN32) && !defined(__APPLE__)
-	delete ui->enableAutoUpdates;
-	ui->enableAutoUpdates = nullptr;
-	delete ui->updateChannelBox;
-	ui->updateChannelBox = nullptr;
 	delete ui->updateSettingsGroupBox;
 	ui->updateSettingsGroupBox = nullptr;
-	delete ui->updateChannelLabel;
 	ui->updateChannelLabel = nullptr;
+	ui->updateChannelBox = nullptr;
+	ui->enableAutoUpdates = nullptr;
 #else
 	// Hide update section if disabled
 	if (App()->IsUpdaterDisabled())
