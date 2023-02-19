@@ -27,7 +27,23 @@ target_sources(
           rtmp-helpers.h
           rtmp-stream.c
           rtmp-stream.h
-          rtmp-windows.c)
+          rtmp-windows.c
+          librtmp/amf.c
+          librtmp/amf.h
+          librtmp/bytes.h
+          librtmp/cencode.c
+          librtmp/cencode.h
+          librtmp/handshake.h
+          librtmp/hashswf.c
+          librtmp/http.h
+          librtmp/log.c
+          librtmp/log.h
+          librtmp/md5.c
+          librtmp/md5.h
+          librtmp/parseurl.c
+          librtmp/rtmp.c
+          librtmp/rtmp.h
+          librtmp/rtmp_sys.h)
 
 target_link_libraries(obs-outputs PRIVATE OBS::libobs)
 
@@ -64,25 +80,6 @@ if(ENABLE_RTMPS STREQUAL "AUTO" OR ENABLE_RTMPS STREQUAL "ON")
       target_compile_definitions(obs-outputs PRIVATE NO_CRYPTO)
     endif()
   else()
-    target_sources(
-      obs-outputs
-      PRIVATE librtmp/amf.c
-              librtmp/amf.h
-              librtmp/bytes.h
-              librtmp/cencode.c
-              librtmp/cencode.h
-              librtmp/handshake.h
-              librtmp/hashswf.c
-              librtmp/http.h
-              librtmp/log.c
-              librtmp/log.h
-              librtmp/md5.c
-              librtmp/md5.h
-              librtmp/parseurl.c
-              librtmp/rtmp.c
-              librtmp/rtmp.h
-              librtmp/rtmp_sys.h)
-
     target_compile_definitions(obs-outputs PRIVATE USE_MBEDTLS CRYPTO)
 
     target_link_libraries(obs-outputs PRIVATE Mbedtls::Mbedtls ZLIB::ZLIB)
