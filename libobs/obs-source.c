@@ -3887,6 +3887,9 @@ static void copy_audio_data(obs_source_t *source, const uint8_t *const data[],
 		if (resize) {
 			bfree(source->audio_data.data[i]);
 			source->audio_data.data[i] = bmalloc(size);
+			// memory allocation checking
+			if(!source->audio_data.data[i])
+				fprintf(stderr, "Error: malloc() failed to allocate memory.\n");
 		}
 
 		memcpy(source->audio_data.data[i], data[i], size);
