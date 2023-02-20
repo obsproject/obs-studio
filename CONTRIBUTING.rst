@@ -27,6 +27,18 @@ Quick Links for Contributing
 - To add a new service to OBS Studio please see the service submission guidelines:
   https://github.com/obsproject/obs-studio/wiki/Service-Submission-Guidelines
 
+General Guidelines
+------------------
+
+- The OBS Project uses English as a common language. Please ensure that any
+  submissions have at least machine-translated English descriptions and titles.
+
+- Templates for Pull Requests and Issues must be properly filled out. Failure
+  to do so may result in your PR or Issue being closed. The templates request
+  the bare minimum amount of information required for us to process them.
+
+- Contributors to the OBS Project are expected to abide by the OBS Project Code of Conduct: https://github.com/obsproject/obs-studio/blob/master/COC.rst
+
 Coding Guidelines
 -----------------
 
@@ -43,6 +55,8 @@ Coding Guidelines
   columns wide.
 
 - 80 columns max
+
+- Comments and names of variables/functions/etc. must be in English
 
 Commit Guidelines
 -----------------
@@ -71,10 +85,7 @@ Commit Guidelines
 
 - If you still need examples, please view the commit history.
 
-Conduct Guidelines
-------------------
-
-- Contributors to the OBS Project are expected to abide by the OBS Project Code of Conduct: https://github.com/obsproject/obs-studio/blob/master/COC.rst
+- Commit titles and descriptions must be in English
 
 AI/Machine Learning Policy
 --------------------------
