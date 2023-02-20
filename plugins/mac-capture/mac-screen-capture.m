@@ -63,7 +63,7 @@ struct screen_capture {
 
 	pthread_mutex_t mutex;
 
-	unsigned capture_type;
+	ScreenCaptureStreamType capture_type;
 	CGDirectDisplayID display;
 	CGWindowID window;
 	NSString *application_id;
@@ -142,6 +142,7 @@ static void screen_capture_destroy(void *data)
 	if (sc->capture_delegate) {
 		[sc->capture_delegate release];
 	}
+	[sc->application_id release];
 
 	pthread_mutex_destroy(&sc->mutex);
 	bfree(sc);
@@ -370,9 +371,11 @@ static bool init_screen_stream(struct screen_capture *sc)
 	case ScreenCaptureDisplayStream: {
 		SCDisplay *target_display = get_target_display();
 
+		NSArray *empty = [[NSArray alloc] init];
 		content_filter = [[SCContentFilter alloc]
 			 initWithDisplay:target_display
-			excludingWindows:[[NSArray alloc] init]];
+			excludingWindows:empty];
+		[empty release];
 
 		set_display_mode(sc, target_display);
 	} break;
@@ -433,10 +436,13 @@ static bool init_screen_stream(struct screen_capture *sc)
 		NSArray *target_application_array = [[NSArray alloc]
 			initWithObjects:target_application, nil];
 
+		NSArray *empty_array = [[NSArray alloc] init];
 		content_filter = [[SCContentFilter alloc]
 			      initWithDisplay:target_display
 			includingApplications:target_application_array
-			     exceptingWindows:[[NSArray alloc] init]];
+			     exceptingWindows:empty_array];
+		[target_application_array release];
+		[empty_array release];
 
 		set_display_mode(sc, target_display);
 	} break;
@@ -458,6 +464,7 @@ static bool init_screen_stream(struct screen_capture *sc)
 	} else {
 		if (sc->capture_type != ScreenCaptureWindowStream) {
 			sc->disp = NULL;
+			[content_filter release];
 			os_event_init(&sc->disp_finished, OS_EVENT_TYPE_MANUAL);
 			os_event_init(&sc->stream_start_completed,
 				      OS_EVENT_TYPE_MANUAL);
@@ -468,6 +475,8 @@ static bool init_screen_stream(struct screen_capture *sc)
 	sc->disp = [[SCStream alloc] initWithFilter:content_filter
 				      configuration:sc->stream_properties
 					   delegate:nil];
+
+	[content_filter release];
 
 	NSError *addStreamOutputError = nil;
 	BOOL did_add_output = [sc->disp addStreamOutput:sc->capture_delegate
@@ -728,20 +737,26 @@ static void screen_capture_update(void *data, obs_data_t *settings)
 		switch (sc->capture_type) {
 		case ScreenCaptureDisplayStream: {
 			if (sc->display == display &&
-			    sc->hide_cursor != show_cursor)
+			    sc->hide_cursor != show_cursor) {
+				[application_id release];
 				return;
+			}
 		} break;
 		case ScreenCaptureWindowStream: {
 			if (old_window_id == sc->window &&
-			    sc->hide_cursor != show_cursor)
+			    sc->hide_cursor != show_cursor) {
+				[application_id release];
 				return;
+			}
 		} break;
 		case ScreenCaptureApplicationStream: {
 			if (sc->display == display &&
 			    [application_id
 				    isEqualToString:sc->application_id] &&
-			    sc->hide_cursor != show_cursor)
+			    sc->hide_cursor != show_cursor) {
+				[application_id release];
 				return;
+			}
 		} break;
 		}
 	}
@@ -751,6 +766,7 @@ static void screen_capture_update(void *data, obs_data_t *settings)
 	destroy_screen_stream(sc);
 	sc->capture_type = capture_type;
 	sc->display = display;
+	[sc->application_id release];
 	sc->application_id = application_id;
 	sc->hide_cursor = !show_cursor;
 	sc->show_empty_names = show_empty_names;
