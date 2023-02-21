@@ -36,6 +36,12 @@ struct vt_prores_encoder_data {
 static DARRAY(struct vt_prores_encoder_data) vt_prores_hardware_encoder_list;
 static DARRAY(struct vt_prores_encoder_data) vt_prores_software_encoder_list;
 
+#ifdef __aarch64__
+bool is_apple_silicon = true;
+#else
+bool is_apple_silicon = false;
+#endif
+
 struct vt_encoder {
 	obs_encoder_t *encoder;
 
@@ -50,7 +56,7 @@ struct vt_encoder {
 	float quality;
 	bool limit_bitrate;
 	uint32_t rc_max_bitrate;
-	float rc_max_bitrate_window;
+	double rc_max_bitrate_window;
 	const char *profile;
 	CMVideoCodecType codec_type;
 	bool bframes;
@@ -215,7 +221,7 @@ static CFDataRef obs_to_vt_masteringdisplay(uint32_t hdr_nominal_peak_level)
 
 	UInt8 bytes[sizeof(struct mastering_display_colour_volume)];
 	memcpy(bytes, &mdcv, sizeof(bytes));
-	return CFDataCreate(NULL, bytes, sizeof(bytes));
+	return CFDataCreate(kCFAllocatorDefault, bytes, sizeof(bytes));
 }
 
 /* Adapted from Chromium GenerateContentLightLevelInfo */
@@ -237,19 +243,8 @@ obs_to_vt_contentlightlevelinfo(uint16_t hdr_nominal_peak_level)
 
 	UInt8 bytes[sizeof(struct content_light_level_info)];
 	memcpy(bytes, &clli, sizeof(bytes));
-	return CFDataCreate(NULL, bytes, sizeof(bytes));
+	return CFDataCreate(kCFAllocatorDefault, bytes, sizeof(bytes));
 }
-
-#define STATUS_CHECK(c)                                 \
-	code = c;                                       \
-	if (code) {                                     \
-		log_osstatus(LOG_ERROR, enc, #c, code); \
-		goto fail;                              \
-	}
-
-#define SESSION_CHECK(x)           \
-	if ((code = (x)) != noErr) \
-		return code;
 
 static OSStatus session_set_prop_float(VTCompressionSessionRef session,
 				       CFStringRef key, float val)
@@ -290,7 +285,7 @@ static OSStatus session_set_prop(VTCompressionSessionRef session,
 static OSStatus session_set_bitrate(VTCompressionSessionRef session,
 				    const char *rate_control, int new_bitrate,
 				    float quality, bool limit_bitrate,
-				    int max_bitrate, float max_bitrate_window)
+				    int max_bitrate, double max_bitrate_window)
 {
 	OSStatus code;
 
@@ -304,11 +299,7 @@ static OSStatus session_set_bitrate(VTCompressionSessionRef session,
 
 		if (__builtin_available(macOS 13.0, *)) {
 #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
-#ifdef __aarch64__
-			if (true) {
-#else
-			if (os_get_emulation_status() == true) {
-#endif
+			if (is_apple_silicon) {
 				compressionPropertyKey =
 					kVTCompressionPropertyKey_ConstantBitRate;
 				can_limit_bitrate = false;
@@ -332,15 +323,14 @@ static OSStatus session_set_bitrate(VTCompressionSessionRef session,
 			kVTCompressionPropertyKey_AverageBitRate;
 		can_limit_bitrate = true;
 	} else if (strcmp(rate_control, "CRF") == 0) {
-#ifdef __aarch64__
-		if (true) {
-#else
-		if (os_get_emulation_status() == true) {
-#endif
+		if (is_apple_silicon) {
 			compressionPropertyKey =
 				kVTCompressionPropertyKey_Quality;
-			SESSION_CHECK(session_set_prop_float(
-				session, compressionPropertyKey, quality));
+			code = session_set_prop_float(
+				session, compressionPropertyKey, quality);
+			if (code != noErr) {
+				return code;
+			}
 		} else {
 			VT_LOG(LOG_WARNING,
 			       "CRF support for VideoToolbox encoder requires Apple Silicon. "
@@ -357,31 +347,34 @@ static OSStatus session_set_bitrate(VTCompressionSessionRef session,
 	}
 
 	if (compressionPropertyKey != kVTCompressionPropertyKey_Quality) {
-		SESSION_CHECK(session_set_prop_int(
-			session, compressionPropertyKey, new_bitrate * 1000));
+		code = session_set_prop_int(session, compressionPropertyKey,
+					    new_bitrate * 1000);
+		if (code != noErr) {
+			return code;
+		}
 	}
 
 	if (limit_bitrate && can_limit_bitrate) {
-		int32_t cpb_size = max_bitrate * 125 * max_bitrate_window;
+		double cpb_size = max_bitrate * 125 * max_bitrate_window;
 
-		CFNumberRef cf_cpb_size =
-			CFNumberCreate(NULL, kCFNumberIntType, &cpb_size);
-		CFNumberRef cf_cpb_window_s = CFNumberCreate(
-			NULL, kCFNumberFloatType, &max_bitrate_window);
+		CFNumberRef cf_cpb_size = CFNumberCreate(
+			kCFAllocatorDefault, kCFNumberIntType, &cpb_size);
+		CFNumberRef cf_cpb_window_size =
+			CFNumberCreate(kCFAllocatorDefault, kCFNumberFloatType,
+				       &max_bitrate_window);
 
-		CFMutableArrayRef rate_control = CFArrayCreateMutable(
-			kCFAllocatorDefault, 2, &kCFTypeArrayCallBacks);
+		CFTypeRef values[2] = {cf_cpb_size, cf_cpb_window_size};
 
-		CFArrayAppendValue(rate_control, cf_cpb_size);
-		CFArrayAppendValue(rate_control, cf_cpb_window_s);
+		CFArrayRef rate_control_data = CFArrayCreate(
+			kCFAllocatorDefault, values, 2, &kCFTypeArrayCallBacks);
 
 		code = session_set_prop(
 			session, kVTCompressionPropertyKey_DataRateLimits,
-			rate_control);
+			rate_control_data);
 
 		CFRelease(cf_cpb_size);
-		CFRelease(cf_cpb_window_s);
-		CFRelease(rate_control);
+		CFRelease(cf_cpb_window_size);
+		CFRelease(rate_control_data);
 
 		if (code == kVTPropertyNotSupportedErr) {
 			log_osstatus(LOG_WARNING, NULL,
@@ -397,43 +390,73 @@ static OSStatus session_set_colorspace(VTCompressionSessionRef session,
 				       enum video_colorspace cs)
 {
 	OSStatus code;
-	SESSION_CHECK(session_set_prop(session,
-				       kVTCompressionPropertyKey_ColorPrimaries,
-				       obs_to_vt_primaries(cs)));
-	SESSION_CHECK(session_set_prop(
-		session, kVTCompressionPropertyKey_TransferFunction,
-		obs_to_vt_transfer(cs)));
-	SESSION_CHECK(session_set_prop(session,
-				       kVTCompressionPropertyKey_YCbCrMatrix,
-				       obs_to_vt_colorspace(cs)));
-	const bool pq = cs == VIDEO_CS_2100_PQ;
-	const bool hlg = cs == VIDEO_CS_2100_HLG;
-	if (pq || hlg) {
+
+	CFTypeRef keys[5] = {kVTCompressionPropertyKey_ColorPrimaries,
+			     kVTCompressionPropertyKey_TransferFunction,
+			     kVTCompressionPropertyKey_YCbCrMatrix, NULL, NULL};
+
+	CFTypeRef values[5] = {obs_to_vt_primaries(cs), obs_to_vt_transfer(cs),
+			       obs_to_vt_colorspace(cs), NULL, NULL};
+
+	CFDataRef masteringDisplayColorVolume = NULL;
+	CFDataRef contentLightLevel = NULL;
+
+	if (cs == VIDEO_CS_2100_PQ) {
 		const uint16_t hdr_nominal_peak_level =
-			pq ? (uint16_t)obs_get_video_hdr_nominal_peak_level()
-			   : (hlg ? 1000 : 0);
-		SESSION_CHECK(session_set_prop(
-			session,
-			kVTCompressionPropertyKey_MasteringDisplayColorVolume,
-			obs_to_vt_masteringdisplay(hdr_nominal_peak_level)));
-		SESSION_CHECK(session_set_prop(
-			session,
-			kVTCompressionPropertyKey_ContentLightLevelInfo,
-			obs_to_vt_contentlightlevelinfo(
-				hdr_nominal_peak_level)));
+			(uint16_t)obs_get_video_hdr_nominal_peak_level();
+
+		masteringDisplayColorVolume =
+			obs_to_vt_masteringdisplay(hdr_nominal_peak_level);
+		contentLightLevel =
+			obs_to_vt_contentlightlevelinfo(hdr_nominal_peak_level);
+
+		keys[3] = kVTCompressionPropertyKey_MasteringDisplayColorVolume;
+		keys[4] = kVTCompressionPropertyKey_ContentLightLevelInfo;
+		values[3] = masteringDisplayColorVolume;
+		values[4] = contentLightLevel;
+	} else if (cs == VIDEO_CS_2100_HLG) {
+		masteringDisplayColorVolume = obs_to_vt_masteringdisplay(1000);
+		contentLightLevel = obs_to_vt_contentlightlevelinfo(1000);
+
+		keys[3] = kVTCompressionPropertyKey_MasteringDisplayColorVolume;
+		keys[4] = kVTCompressionPropertyKey_ContentLightLevelInfo;
+		values[3] = masteringDisplayColorVolume;
+		values[4] = contentLightLevel;
 	}
 
-	return noErr;
-}
+	CFDictionaryRef session_properties =
+		CFDictionaryCreate(kCFAllocatorDefault, keys, values, 5,
+				   &kCFTypeDictionaryKeyCallBacks,
+				   &kCFTypeDictionaryValueCallBacks);
 
-#undef SESSION_CHECK
+	code = VTSessionSetProperties(session, session_properties);
+
+	CFRelease(session_properties);
+
+	if (masteringDisplayColorVolume != NULL) {
+		CFRelease(masteringDisplayColorVolume);
+	}
+
+	if (contentLightLevel != NULL) {
+		CFRelease(contentLightLevel);
+	}
+
+	return code;
+}
 
 void sample_encoded_callback(void *data, void *source, OSStatus status,
 			     VTEncodeInfoFlags info_flags,
 			     CMSampleBufferRef buffer)
 {
-	UNUSED_PARAMETER(status);
-	UNUSED_PARAMETER(info_flags);
+
+	if (status != noErr) {
+		log_osstatus(LOG_ERROR, NULL, "encoder callback", status);
+		return;
+	}
+
+	if (info_flags == kVTEncodeInfo_FrameDropped) {
+		VT_LOG(LOG_INFO, "Frame dropped by encoder");
+	}
 
 	CMSimpleQueueRef queue = data;
 	CVPixelBufferRef pixbuf = source;
@@ -443,23 +466,26 @@ void sample_encoded_callback(void *data, void *source, OSStatus status,
 	}
 	CFRelease(pixbuf);
 }
-#define ENCODER_ID kVTVideoEncoderSpecification_EncoderID
-static inline CFMutableDictionaryRef
-create_encoder_spec(const char *vt_encoder_id)
-{
-	CFMutableDictionaryRef encoder_spec = CFDictionaryCreateMutable(
-		kCFAllocatorDefault, 3, &kCFTypeDictionaryKeyCallBacks,
-		&kCFTypeDictionaryValueCallBacks);
 
+static inline CFDictionaryRef create_encoder_spec(const char *vt_encoder_id)
+{
 	CFStringRef id =
 		CFStringCreateWithFileSystemRepresentation(NULL, vt_encoder_id);
-	CFDictionaryAddValue(encoder_spec, ENCODER_ID, id);
+
+	CFTypeRef keys[1] = {kVTVideoEncoderSpecification_EncoderID};
+	CFTypeRef values[1] = {id};
+
+	CFDictionaryRef encoder_spec =
+		CFDictionaryCreate(kCFAllocatorDefault, keys, values, 1,
+				   &kCFTypeDictionaryKeyCallBacks,
+				   &kCFTypeDictionaryValueCallBacks);
+
 	CFRelease(id);
 
 	return encoder_spec;
 }
 
-static inline CFMutableDictionaryRef
+static inline CFDictionaryRef
 create_prores_encoder_spec(CMVideoCodecType target_codec_type,
 			   bool hardware_accelerated)
 {
@@ -481,34 +507,38 @@ create_prores_encoder_spec(CMVideoCodecType target_codec_type,
 		}
 	}
 
-	CFMutableDictionaryRef encoder_spec = CFDictionaryCreateMutable(
-		kCFAllocatorDefault, 1, &kCFTypeDictionaryKeyCallBacks,
-		&kCFTypeDictionaryValueCallBacks);
+	CFTypeRef keys[1] = {kVTVideoEncoderSpecification_EncoderID};
+	CFTypeRef values[1] = {encoder_id};
 
-	CFDictionaryAddValue(encoder_spec, ENCODER_ID, encoder_id);
+	CFDictionaryRef encoder_spec =
+		CFDictionaryCreate(kCFAllocatorDefault, keys, values, 1,
+				   &kCFTypeDictionaryKeyCallBacks,
+				   &kCFTypeDictionaryValueCallBacks);
 
 	return encoder_spec;
 }
-#undef ENCODER_ID
 
-static inline CFMutableDictionaryRef create_pixbuf_spec(struct vt_encoder *enc)
+static inline CFDictionaryRef create_pixbuf_spec(struct vt_encoder *enc)
 {
-	CFMutableDictionaryRef pixbuf_spec = CFDictionaryCreateMutable(
-		kCFAllocatorDefault, 3, &kCFTypeDictionaryKeyCallBacks,
-		&kCFTypeDictionaryValueCallBacks);
+	CFNumberRef PixelFormat = CFNumberCreate(
+		kCFAllocatorDefault, kCFNumberSInt32Type, &enc->vt_pix_fmt);
+	CFNumberRef Width = CFNumberCreate(kCFAllocatorDefault,
+					   kCFNumberSInt32Type, &enc->width);
+	CFNumberRef Height = CFNumberCreate(kCFAllocatorDefault,
+					    kCFNumberSInt32Type, &enc->height);
 
-	CFNumberRef n =
-		CFNumberCreate(NULL, kCFNumberSInt32Type, &enc->vt_pix_fmt);
-	CFDictionaryAddValue(pixbuf_spec, kCVPixelBufferPixelFormatTypeKey, n);
-	CFRelease(n);
+	CFTypeRef keys[3] = {kCVPixelBufferPixelFormatTypeKey,
+			     kCVPixelBufferWidthKey, kCVPixelBufferHeightKey};
+	CFTypeRef values[3] = {PixelFormat, Width, Height};
 
-	n = CFNumberCreate(NULL, kCFNumberSInt32Type, &enc->width);
-	CFDictionaryAddValue(pixbuf_spec, kCVPixelBufferWidthKey, n);
-	CFRelease(n);
+	CFDictionaryRef pixbuf_spec =
+		CFDictionaryCreate(kCFAllocatorDefault, keys, values, 3,
+				   &kCFTypeDictionaryKeyCallBacks,
+				   &kCFTypeDictionaryValueCallBacks);
 
-	n = CFNumberCreate(NULL, kCFNumberSInt32Type, &enc->height);
-	CFDictionaryAddValue(pixbuf_spec, kCVPixelBufferHeightKey, n);
-	CFRelease(n);
+	CFRelease(PixelFormat);
+	CFRelease(Width);
+	CFRelease(Height);
 
 	return pixbuf_spec;
 }
@@ -534,10 +564,16 @@ static bool create_encoder(struct vt_encoder *enc)
 
 	CFDictionaryRef pixbuf_spec = create_pixbuf_spec(enc);
 
-	STATUS_CHECK(VTCompressionSessionCreate(
-		kCFAllocatorDefault, enc->width, enc->height, enc->codec_type,
-		encoder_spec, pixbuf_spec, NULL, &sample_encoded_callback,
-		enc->queue, &s));
+	code = VTCompressionSessionCreate(kCFAllocatorDefault, enc->width,
+					  enc->height, enc->codec_type,
+					  encoder_spec, pixbuf_spec, NULL,
+					  &sample_encoded_callback, enc->queue,
+					  &s);
+
+	if (code != noErr) {
+		log_osstatus(LOG_ERROR, enc, "VTCompressionSessionCreate",
+			     code);
+	}
 
 	CFRelease(encoder_spec);
 	CFRelease(pixbuf_spec);
@@ -571,27 +607,59 @@ static bool create_encoder(struct vt_encoder *enc)
 				"keyframe interval might be incorrect",
 				code);
 
-		STATUS_CHECK(session_set_prop_int(
-			s, kVTCompressionPropertyKey_MaxKeyFrameInterval,
-			enc->keyint * ((float)enc->fps_num / enc->fps_den)));
-		STATUS_CHECK(session_set_prop_float(
-			s, kVTCompressionPropertyKey_ExpectedFrameRate,
-			(float)enc->fps_num / enc->fps_den));
-		STATUS_CHECK(session_set_prop(
-			s, kVTCompressionPropertyKey_AllowFrameReordering,
-			enc->bframes ? kCFBooleanTrue : kCFBooleanFalse));
+		CFTypeRef session_keys[4] = {
+			kVTCompressionPropertyKey_MaxKeyFrameInterval,
+			kVTCompressionPropertyKey_ExpectedFrameRate,
+			kVTCompressionPropertyKey_AllowFrameReordering,
+			kVTCompressionPropertyKey_ProfileLevel};
+
+		float key_frame_interval =
+			enc->keyint * ((float)enc->fps_num / enc->fps_den);
+		float expected_framerate = (float)enc->fps_num / enc->fps_den;
+		CFNumberRef MaxKeyFrameInterval =
+			CFNumberCreate(kCFAllocatorDefault, kCFNumberSInt32Type,
+				       &key_frame_interval);
+		CFNumberRef ExpectedFrameRate = CFNumberCreate(
+			kCFAllocatorDefault, kCFNumberFloat32Type,
+			&expected_framerate);
+		CFTypeRef AllowFrameReordering = enc->bframes ? kCFBooleanTrue
+							      : kCFBooleanFalse;
 
 		video_t *video = obs_encoder_video(enc->encoder);
 		const struct video_output_info *voi =
 			video_output_get_info(video);
-		STATUS_CHECK(session_set_prop(
-			s, kVTCompressionPropertyKey_ProfileLevel,
-			obs_to_vt_profile(enc->codec_type, enc->profile,
-					  voi->format)));
-		STATUS_CHECK(session_set_bitrate(
-			s, enc->rate_control, enc->bitrate, enc->quality,
-			enc->limit_bitrate, enc->rc_max_bitrate,
-			enc->rc_max_bitrate_window));
+		CFTypeRef ProfileLevel = obs_to_vt_profile(
+			enc->codec_type, enc->profile, voi->format);
+
+		CFTypeRef session_values[4] = {MaxKeyFrameInterval,
+					       ExpectedFrameRate,
+					       AllowFrameReordering,
+					       ProfileLevel};
+
+		CFDictionaryRef session_properties = CFDictionaryCreate(
+			kCFAllocatorDefault, session_keys, session_values, 4,
+			&kCFTypeDictionaryKeyCallBacks,
+			&kCFTypeDictionaryValueCallBacks);
+
+		code = VTSessionSetProperties(s, session_properties);
+
+		CFRelease(MaxKeyFrameInterval);
+		CFRelease(ExpectedFrameRate);
+		CFRelease(AllowFrameReordering);
+		CFRelease(ProfileLevel);
+		CFRelease(session_properties);
+
+		if (code != noErr) {
+			return code;
+		}
+
+		code = session_set_bitrate(s, enc->rate_control, enc->bitrate,
+					   enc->quality, enc->limit_bitrate,
+					   enc->rc_max_bitrate,
+					   enc->rc_max_bitrate_window);
+		if (code != noErr) {
+			return code;
+		}
 	}
 
 	// This can fail depending on hardware configuration
@@ -604,9 +672,15 @@ static bool create_encoder(struct vt_encoder *enc)
 			"frame delay might be increased",
 			code);
 
-	STATUS_CHECK(session_set_colorspace(s, enc->colorspace));
+	code = session_set_colorspace(s, enc->colorspace);
+	if (code != noErr) {
+		return code;
+	}
 
-	STATUS_CHECK(VTCompressionSessionPrepareToEncodeFrames(s));
+	code = VTCompressionSessionPrepareToEncodeFrames(s);
+	if (code != noErr) {
+		return code;
+	}
 
 	enc->session = s;
 
@@ -748,7 +822,8 @@ static bool update_params(struct vt_encoder *enc, obs_data_t *settings)
 	enc->quality = ((float)obs_data_get_int(settings, "quality")) / 100;
 	enc->profile = obs_data_get_string(settings, "profile");
 	enc->limit_bitrate = obs_data_get_bool(settings, "limit_bitrate");
-	enc->rc_max_bitrate = obs_data_get_int(settings, "max_bitrate");
+	enc->rc_max_bitrate =
+		(uint32_t)obs_data_get_int(settings, "max_bitrate");
 	enc->rc_max_bitrate_window =
 		obs_data_get_double(settings, "max_bitrate_window");
 	enc->bframes = obs_data_get_bool(settings, "bframes");
@@ -793,7 +868,10 @@ static void *vt_create(obs_data_t *settings, obs_encoder_t *encoder)
 	if (!update_params(enc, settings))
 		goto fail;
 
-	STATUS_CHECK(CMSimpleQueueCreate(NULL, 100, &enc->queue));
+	code = CMSimpleQueueCreate(NULL, 100, &enc->queue);
+	if (code != noErr) {
+		goto fail;
+	}
 
 	if (!create_encoder(enc))
 		goto fail;
@@ -1092,7 +1170,10 @@ bool get_cached_pixel_buffer(struct vt_encoder *enc, CVPixelBufferRef *buf)
 		return kCVReturnError;
 
 	CVPixelBufferRef pixbuf;
-	STATUS_CHECK(CVPixelBufferPoolCreatePixelBuffer(NULL, pool, &pixbuf));
+	code = CVPixelBufferPoolCreatePixelBuffer(NULL, pool, &pixbuf);
+	if (code != noErr) {
+		goto fail;
+	}
 
 	// Why aren't these already set on the pixel buffer?
 	// I would have expected pixel buffers from the session's
@@ -1114,14 +1195,22 @@ bool get_cached_pixel_buffer(struct vt_encoder *enc, CVPixelBufferRef *buf)
 		const uint16_t hdr_nominal_peak_level =
 			pq ? (uint16_t)obs_get_video_hdr_nominal_peak_level()
 			   : (hlg ? 1000 : 0);
+		CFDataRef masteringDisplayColorVolume =
+			obs_to_vt_masteringdisplay(hdr_nominal_peak_level);
+		CFDataRef contentLightLevel =
+			obs_to_vt_contentlightlevelinfo(hdr_nominal_peak_level);
+
 		CVBufferSetAttachment(
 			pixbuf, kCVImageBufferMasteringDisplayColorVolumeKey,
-			obs_to_vt_masteringdisplay(hdr_nominal_peak_level),
+			masteringDisplayColorVolume,
 			kCVAttachmentMode_ShouldPropagate);
-		CVBufferSetAttachment(
-			pixbuf, kCVImageBufferContentLightLevelInfoKey,
-			obs_to_vt_contentlightlevelinfo(hdr_nominal_peak_level),
-			kCVAttachmentMode_ShouldPropagate);
+		CVBufferSetAttachment(pixbuf,
+				      kCVImageBufferContentLightLevelInfoKey,
+				      contentLightLevel,
+				      kCVAttachmentMode_ShouldPropagate);
+
+		CFRelease(masteringDisplayColorVolume);
+		CFRelease(contentLightLevel);
 	}
 
 	*buf = pixbuf;
@@ -1149,7 +1238,10 @@ static bool vt_encode(void *data, struct encoder_frame *frame,
 		goto fail;
 	}
 
-	STATUS_CHECK(CVPixelBufferLockBaseAddress(pixbuf, 0));
+	code = CVPixelBufferLockBaseAddress(pixbuf, 0);
+	if (code != noErr) {
+		goto fail;
+	}
 
 	for (int i = 0; i < MAX_AV_PLANES; i++) {
 		if (frame->data[i] == NULL)
@@ -1168,10 +1260,16 @@ static bool vt_encode(void *data, struct encoder_frame *frame,
 		}
 	}
 
-	STATUS_CHECK(CVPixelBufferUnlockBaseAddress(pixbuf, 0));
+	code = CVPixelBufferUnlockBaseAddress(pixbuf, 0);
+	if (code != noErr) {
+		goto fail;
+	}
 
-	STATUS_CHECK(VTCompressionSessionEncodeFrame(enc->session, pixbuf, pts,
-						     dur, NULL, pixbuf, NULL));
+	code = VTCompressionSessionEncodeFrame(enc->session, pixbuf, pts, dur,
+					       NULL, pixbuf, NULL);
+	if (code != noErr) {
+		goto fail;
+	}
 
 	CMSampleBufferRef buffer =
 		(CMSampleBufferRef)CMSimpleQueueDequeue(enc->queue);
@@ -1186,9 +1284,6 @@ static bool vt_encode(void *data, struct encoder_frame *frame,
 fail:
 	return false;
 }
-
-#undef STATUS_CHECK
-#undef CFNUM_INT
 
 static bool vt_extra_data(void *data, uint8_t **extra_data, size_t *size)
 {
@@ -1221,17 +1316,6 @@ static const char *vt_getname(void *data)
 	}
 	return type_data->disp_name;
 }
-
-#define TEXT_BITRATE obs_module_text("Bitrate")
-#define TEXT_QUALITY obs_module_text("Quality")
-#define TEXT_USE_MAX_BITRATE obs_module_text("UseMaxBitrate")
-#define TEXT_MAX_BITRATE obs_module_text("MaxBitrate")
-#define TEXT_MAX_BITRATE_WINDOW obs_module_text("MaxBitrateWindow")
-#define TEXT_KEYINT_SEC obs_module_text("KeyframeIntervalSec")
-#define TEXT_PROFILE obs_module_text("Profile")
-#define TEXT_BFRAMES obs_module_text("UseBFrames")
-#define TEXT_RATE_CONTROL obs_module_text("RateControl")
-#define TEXT_PRORES_CODEC obs_module_text("ProResCodec")
 
 static bool rate_control_limit_bitrate_modified(obs_properties_t *ppts,
 						obs_property_t *p,
@@ -1268,69 +1352,72 @@ static bool rate_control_limit_bitrate_modified(obs_properties_t *ppts,
 	return true;
 }
 
-static obs_properties_t *vt_properties_h26x(void *unused, void *data)
+static obs_properties_t *vt_properties_h26x(void *data __unused,
+					    void *type_data)
 {
-	UNUSED_PARAMETER(unused);
-	struct vt_encoder_type_data *type_data = data;
+	struct vt_encoder_type_data *encoder_type_data = type_data;
 
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *p;
 
-	p = obs_properties_add_list(props, "rate_control", TEXT_RATE_CONTROL,
+	p = obs_properties_add_list(props, "rate_control",
+				    obs_module_text("RateControl"),
 				    OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
 
-	if (__builtin_available(macOS 13.0, *))
-		if (type_data->hardware_accelerated
-#ifndef __aarch64__
-		    && (os_get_emulation_status() == true)
-#endif
-		)
+	if (__builtin_available(macOS 13.0, *)) {
+		if (encoder_type_data->hardware_accelerated &&
+		    is_apple_silicon) {
 			obs_property_list_add_string(p, "CBR", "CBR");
+		}
+	}
+
 	obs_property_list_add_string(p, "ABR", "ABR");
-	if (type_data->hardware_accelerated
-#ifndef __aarch64__
-	    && (os_get_emulation_status() == true)
-#endif
-	)
+
+	if (encoder_type_data->hardware_accelerated && is_apple_silicon) {
 		obs_property_list_add_string(p, "CRF", "CRF");
+	}
+
 	obs_property_set_modified_callback(p,
 					   rate_control_limit_bitrate_modified);
 
-	p = obs_properties_add_int(props, "bitrate", TEXT_BITRATE, 50, 10000000,
-				   50);
+	p = obs_properties_add_int(props, "bitrate", obs_module_text("Bitrate"),
+				   50, 10000000, 50);
 	obs_property_int_set_suffix(p, " Kbps");
-	obs_properties_add_int_slider(props, "quality", TEXT_QUALITY, 0, 100,
-				      1);
+	obs_properties_add_int_slider(props, "quality",
+				      obs_module_text("Quality"), 0, 100, 1);
 
 	p = obs_properties_add_bool(props, "limit_bitrate",
-				    TEXT_USE_MAX_BITRATE);
+				    obs_module_text("UseMaxBitrate"));
 	obs_property_set_modified_callback(p,
 					   rate_control_limit_bitrate_modified);
 
-	p = obs_properties_add_int(props, "max_bitrate", TEXT_MAX_BITRATE, 50,
-				   10000000, 50);
+	p = obs_properties_add_int(props, "max_bitrate",
+				   obs_module_text("MaxBitrate"), 50, 10000000,
+				   50);
 	obs_property_int_set_suffix(p, " Kbps");
 
 	p = obs_properties_add_float(props, "max_bitrate_window",
-				     TEXT_MAX_BITRATE_WINDOW, 0.10f, 10.0f,
-				     0.25f);
+				     obs_module_text("MaxBitrateWindow"), 0.10f,
+				     10.0f, 0.25f);
 	obs_property_float_set_suffix(p, " s");
 
-	p = obs_properties_add_int(props, "keyint_sec", TEXT_KEYINT_SEC, 0, 20,
-				   1);
+	p = obs_properties_add_int(props, "keyint_sec",
+				   obs_module_text("KeyframeIntervalSec"), 0,
+				   20, 1);
 	obs_property_int_set_suffix(p, " s");
 
-	p = obs_properties_add_list(props, "profile", TEXT_PROFILE,
+	p = obs_properties_add_list(props, "profile",
+				    obs_module_text("Profile"),
 				    OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
 
-	if (type_data->codec_type == kCMVideoCodecType_H264) {
+	if (encoder_type_data->codec_type == kCMVideoCodecType_H264) {
 		obs_property_list_add_string(p, "baseline", "baseline");
 		obs_property_list_add_string(p, "main", "main");
 		obs_property_list_add_string(p, "high", "high");
 #ifdef ENABLE_HEVC
-	} else if (type_data->codec_type == kCMVideoCodecType_HEVC) {
+	} else if (encoder_type_data->codec_type == kCMVideoCodecType_HEVC) {
 		obs_property_list_add_string(p, "main", "main");
 		obs_property_list_add_string(p, "main10", "main10");
 		if (__builtin_available(macOS 12.3, *)) {
@@ -1340,27 +1427,29 @@ static obs_properties_t *vt_properties_h26x(void *unused, void *data)
 #endif
 	}
 
-	obs_properties_add_bool(props, "bframes", TEXT_BFRAMES);
+	obs_properties_add_bool(props, "bframes",
+				obs_module_text("UseBFrames"));
 
 	return props;
 }
 
-static obs_properties_t *vt_properties_prores(void *unused, void *data)
+static obs_properties_t *vt_properties_prores(void *data __unused,
+					      void *type_data)
 {
-	UNUSED_PARAMETER(unused);
-	struct vt_encoder_type_data *type_data = data;
+	struct vt_encoder_type_data *encoder_type_data = type_data;
 
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *p;
 
-	p = obs_properties_add_list(props, "codec_type", TEXT_PRORES_CODEC,
+	p = obs_properties_add_list(props, "codec_type",
+				    obs_module_text("ProResCodec"),
 				    OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
 	uint32_t codec_availability_flags = 0;
 
 	size_t size = 0;
 	struct vt_prores_encoder_data *encoder_list = NULL;
-	if (type_data->hardware_accelerated) {
+	if (encoder_type_data->hardware_accelerated) {
 		size = vt_prores_hardware_encoder_list.num;
 		encoder_list = vt_prores_hardware_encoder_list.array;
 	} else {
@@ -1420,14 +1509,12 @@ static void vt_defaults(obs_data_t *settings, void *data)
 	struct vt_encoder_type_data *type_data = data;
 
 	obs_data_set_default_string(settings, "rate_control", "ABR");
-	if (__builtin_available(macOS 13.0, *))
-		if (type_data->hardware_accelerated
-#ifndef __aarch64__
-		    && (os_get_emulation_status() == true)
-#endif
-		)
+	if (__builtin_available(macOS 13.0, *)) {
+		if (type_data->hardware_accelerated && is_apple_silicon) {
 			obs_data_set_default_string(settings, "rate_control",
 						    "CBR");
+		}
+	}
 	obs_data_set_default_int(settings, "bitrate", 2500);
 	obs_data_set_default_int(settings, "quality", 60);
 	obs_data_set_default_bool(settings, "limit_bitrate", false);
@@ -1473,11 +1560,10 @@ vt_add_prores_encoder_data_to_list(CFDictionaryRef encoder_dict,
 	encoder_data->codec_type = codec_type;
 }
 
-static CFComparisonResult
-compare_encoder_list(const void *left_val, const void *right_val, void *unused)
+static CFComparisonResult compare_encoder_list(const void *left_val,
+					       const void *right_val,
+					       void *context __unused)
 {
-	UNUSED_PARAMETER(unused);
-
 	CFDictionaryRef left = (CFDictionaryRef)left_val;
 	CFDictionaryRef right = (CFDictionaryRef)right_val;
 
@@ -1519,6 +1605,10 @@ bool obs_module_load(void)
 	});
 	// The group dispatch keeps a reference until it's finished
 	dispatch_release(queue);
+
+#ifndef __aarch64__
+	is_apple_silicon = os_get_emulation_status();
+#endif
 	return true;
 }
 
@@ -1554,13 +1644,6 @@ void obs_module_post_load(void)
 	for (CFIndex i = 0; i < size; i++) {
 		CFDictionaryRef encoder_dict =
 			CFArrayGetValueAtIndex(encoder_list, i);
-
-#define VT_DICTSTR(key, name)                                                 \
-	CFStringRef name##_ref = CFDictionaryGetValue(encoder_dict, key);     \
-	CFIndex name##_len =                                                  \
-		CFStringGetMaximumSizeOfFileSystemRepresentation(name##_ref); \
-	char *name = bzalloc(name##_len + 1);                                 \
-	CFStringGetFileSystemRepresentation(name##_ref, name, name##_len);
 
 		CMVideoCodecType codec_type = 0;
 		{
@@ -1602,8 +1685,23 @@ void obs_module_post_load(void)
 		default:
 			continue;
 		}
-		VT_DICTSTR(kVTVideoEncoderList_EncoderID, id);
-		VT_DICTSTR(kVTVideoEncoderList_DisplayName, disp_name);
+
+		CFStringRef EncoderID = CFDictionaryGetValue(
+			encoder_dict, kVTVideoEncoderList_EncoderID);
+		CFIndex id_len =
+			CFStringGetMaximumSizeOfFileSystemRepresentation(
+				EncoderID);
+		char *id = bzalloc(id_len + 1);
+		CFStringGetFileSystemRepresentation(EncoderID, id, id_len);
+
+		CFStringRef DisplayName = CFDictionaryGetValue(
+			encoder_dict, kVTVideoEncoderList_DisplayName);
+		CFIndex disp_name_len =
+			CFStringGetMaximumSizeOfFileSystemRepresentation(
+				DisplayName);
+		char *disp_name = bzalloc(disp_name_len + 1);
+		CFStringGetFileSystemRepresentation(DisplayName, disp_name,
+						    disp_name_len);
 
 		CFBooleanRef hardware_ref = CFDictionaryGetValue(
 			encoder_dict,
@@ -1623,7 +1721,6 @@ void obs_module_post_load(void)
 		info.type_data = type_data;
 
 		obs_register_encoder(&info);
-#undef VT_DICTSTR
 	}
 
 	CFRelease(encoder_list);
