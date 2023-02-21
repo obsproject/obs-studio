@@ -198,6 +198,8 @@ public:
 	void UpdateIcons();
 	void SetIconsVisible(bool visible);
 
+	QModelIndex FindIndexByItem(OBSSceneItem item);
+
 public slots:
 	inline void ReorderItems() { GetStm()->ReorderItems(); }
 	inline void RefreshItems() { GetStm()->SceneChanged(); }

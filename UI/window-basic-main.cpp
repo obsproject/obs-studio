@@ -3000,8 +3000,16 @@ void OBSBasic::AddSceneItem(OBSSceneItem item)
 {
 	obs_scene_t *scene = obs_sceneitem_get_scene(item);
 
-	if (GetCurrentScene() == scene)
+	if (GetCurrentScene() == scene) {
 		ui->sources->Add(item);
+
+		if (!disableSaving) {
+			QModelIndex idx = ui->sources->FindIndexByItem(item);
+
+			if (idx.isValid())
+				ui->sources->scrollTo(idx);
+		}
+	}
 
 	SaveProject();
 

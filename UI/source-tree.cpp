@@ -1160,6 +1160,19 @@ void SourceTree::SelectItem(obs_sceneitem_t *sceneitem, bool select)
 				      : QItemSelectionModel::Deselect);
 }
 
+QModelIndex SourceTree::FindIndexByItem(OBSSceneItem item)
+{
+	SourceTreeModel *stm = GetStm();
+	int i = 0;
+
+	for (; i < stm->items.count(); i++) {
+		if (stm->items[i] == item)
+			break;
+	}
+
+	return stm->createIndex(i, 0);
+}
+
 Q_DECLARE_METATYPE(OBSSceneItem);
 
 void SourceTree::mouseDoubleClickEvent(QMouseEvent *event)
