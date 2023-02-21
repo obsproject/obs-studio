@@ -36,10 +36,13 @@ jobs:
       MACOSX_DEPLOYMENT_TARGET_X86_64: '10.15'
       MACOSX_DEPLOYMENT_TARGET_ARM64: '11.0'
       CEF_BUILD_VERSION_MAC: '5060'
-      DEPS_VERSION_MAC: '2022-08-02'
+      DEPS_VERSION_MAC: '2022-08-02-b230130'
+      QT_DEPS_VERSION_MAC: '2022-08-02'
       VLC_VERSION_MAC: '3.0.8'
       QT_VERSION_MAC: '6.3.1'
       SPARKLE_VERSION: '1.26.0'
+      WEBRTC_VERSION_MAC: 'm94-b230130'
+      LIBMEDIASOUPCLIENT_VERSION_MAC: '55d724f-b230130'
 
     steps:
       - name: 'Checkout'
@@ -73,6 +76,7 @@ jobs:
           ReleaseName: ${{matrix.ReleaseName}}
           BuildConfig: ${{matrix.BuildConfig}}
           CefBuildConfig: ${{matrix.CefBuildConfig}}
+          ARCH: ${{matrix.arch}}
       - name: Tar artifact for deployment
         if: startsWith(github.ref, 'refs/tags/')
         run: cd ${{env.InstallPath}} && 7z a -r ../${{env.TARGET_ARTIFACT}}.7z *

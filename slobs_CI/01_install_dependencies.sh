@@ -36,8 +36,8 @@ install_qt-deps() {
     else
         _ARCH="${ARCH:-x86_64}"
     fi
-    _ARCH="x86_64"
-    wget --quiet --retry-connrefused --waitretry=1 "https://github.com/obsproject/obs-deps/releases/download/${1}/macos-deps-qt6-${1}-${ARCH:-x86_64}.tar.xz"
+
+    wget --quiet --retry-connrefused --waitretry=1 "https://github.com/obsproject/obs-deps/releases/download/${1}/macos-deps-qt6-${1}-${_ARCH:-x86_64}.tar.xz"
     mkdir -p obs-deps
     step "Unpack..."
     /usr/bin/tar -xf "./macos-deps-qt6-${1}-${_ARCH}.tar.xz" -C ./obs-deps
@@ -130,15 +130,49 @@ install_cef() {
     fi
 }
 
+install_webrtc() {
+    WEBRTC_DIST_FOLDER=webrtc-dist-osx-${1}-${ARCH:-x86_64}
+    WEBRTC_DIST_FILENAME=${WEBRTC_DIST_FOLDER}.zip
+    WEBRTC_DIST_URL=https://obs-studio-deployment.s3-us-west-2.amazonaws.com/${WEBRTC_DIST_FILENAME}
+    WEBRTC_DIST_FINAL_FOLDER=webrtc-dist
+
+    echo "${WEBRTC_DIST_URL}"
+    status "Set up precompiled macOS WebRTC ${1}"
+    ensure_dir "${DEPS_BUILD_DIR}"
+    step "Download..."
+    wget --quiet --retry-connrefused --waitretry=1 "${WEBRTC_DIST_URL}"
+    step "Unpack..."
+    /usr/bin/tar -xf "./${WEBRTC_DIST_FILENAME}" && mv "${WEBRTC_DIST_FOLDER}" "${WEBRTC_DIST_FINAL_FOLDER}"
+    /usr/bin/xattr -r -d com.apple.quarantine "./${WEBRTC_DIST_FINAL_FOLDER}"
+}
+
+install_libmediasoupclient() {
+    LIBMEDIASOUPCLIENT_DIST_FOLDER=libmediasoupclient-dist-osx-${1}-${ARCH:-x86_64}
+    LIBMEDIASOUPCLIENT_DIST_FILENAME=${LIBMEDIASOUPCLIENT_DIST_FOLDER}.zip
+    LIBMEDIASOUPCLIENT_DIST_URL=https://obs-studio-deployment.s3-us-west-2.amazonaws.com/${LIBMEDIASOUPCLIENT_DIST_FILENAME}
+    LIBMEDIASOUPCLIENT_DIST_FINAL_FOLDER=libmediasoupclient-dist
+
+    echo "${LIBMEDIASOUPCLIENT_DIST_URL}"
+    status "Set up precompiled macOS libmediasoupclient ${1}"
+    ensure_dir "${DEPS_BUILD_DIR}"
+    step "Download..."
+    wget --quiet --retry-connrefused --waitretry=1 "${LIBMEDIASOUPCLIENT_DIST_URL}"
+    step "Unpack..."
+    /usr/bin/tar -xf "./${LIBMEDIASOUPCLIENT_DIST_FILENAME}" && mv "${LIBMEDIASOUPCLIENT_DIST_FOLDER}" "${LIBMEDIASOUPCLIENT_DIST_FINAL_FOLDER}"
+    /usr/bin/xattr -r -d com.apple.quarantine "./${LIBMEDIASOUPCLIENT_DIST_FINAL_FOLDER}"
+}
+
 install_dependencies() {
     status "Install Homebrew dependencies"
     trap "caught_error 'install_dependencies'" ERR
 
     BUILD_DEPS=(
         "obs-deps ${MACOS_DEPS_VERSION:-${CI_DEPS_VERSION}} ${MACOS_DEPS_HASH:-${CI_DEPS_HASH}}"
-        "qt-deps ${MACOS_DEPS_VERSION:-${CI_DEPS_VERSION}} ${QT_HASH:-${CI_QT_HASH}}"
+        "qt-deps ${MACOS_QT_DEPS_VERSION:-${CI_QT_DEPS_VERSION}} ${QT_HASH:-${CI_QT_HASH}}"
         "cef ${MACOS_CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}} ${CEF_HASH:-${CI_CEF_HASH}}"
         "vlc ${VLC_VERSION:-${CI_VLC_VERSION}} ${VLC_HASH:-${CI_VLC_HASH}}"
+        "webrtc ${WEBRTC_VERSION:-${CI_WEBRTC_VERSION}} ${MACOS_WEBRTC_HASH:-${CI_WEBRTC_HASH}}"
+        "libmediasoupclient ${LIBMEDIASOUPCLIENT_VERSION:-${CI_LIBMEDIASOUPCLIENT_VERSION}} ${MACOS_LIBMEDIASOUPCLIENT_HASH:-${CI_LIBMEDIASOUPCLIENT_HASH}}"
     )
 
     install_homebrew_deps
