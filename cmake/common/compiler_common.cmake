@@ -2,6 +2,9 @@
 
 include_guard(GLOBAL)
 
+option(OBS_COMPILE_DEPRECATION_AS_WARNING "Downgrade deprecation warnings to actual warnings" FALSE)
+mark_as_advanced(OBS_COMPILE_DEPRECATION_AS_WARNING)
+
 # Set C and C++ language standards to C17 and C++17
 if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.21)
   set(CMAKE_C_STANDARD 17)
@@ -57,7 +60,8 @@ set(_obs_clang_common_options
     -Wno-semicolon-before-method-body
     -Wformat-security
     -Wvla
-    -Wno-error=shorten-64-to-32)
+    -Wno-error=shorten-64-to-32
+    $<$<BOOL:${OBS_COMPILE_DEPRECATION_AS_WARNING}>:-Wno-error=deprecated-declarations>)
 
 # clang options for C
 set(_obs_clang_c_options ${_obs_clang_common_options} -Wno-shadow -Wno-float-conversion)
