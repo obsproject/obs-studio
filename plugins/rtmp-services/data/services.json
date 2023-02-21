@@ -2523,6 +2523,24 @@
             "recommended": {
                 "keyint": 2
             }
+        },
+        {
+            "name": "Enchant.events",
+            "more_info_link": "https://docs.enchant.events/knowledge-base-y4pOb",
+            "supported video codecs": ["h264"],
+            "supported audio codecs": ["aac"],
+            "servers": [
+                {
+                    "name": "Primary RTMPS",
+                    "url": "rtmps://stream.enchant.cloud:443/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "high",
+                "max video bitrate": 9000,
+                "max audio bitrate": 192
+            }
         }
     ]
 }
