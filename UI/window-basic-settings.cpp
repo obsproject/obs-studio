@@ -4604,6 +4604,8 @@ static bool MarkHotkeyConflicts(OBSHotkeyLabel *item1, OBSHotkeyLabel *item2)
 			bool isDupe =
 				!obs_key_combination_is_empty(edit1->key) &&
 				edit1->key == edit2->key;
+			if (!isDupe)
+				continue;
 
 			hasDupes |= isDupe;
 			edit1->hasDuplicate |= isDupe;
