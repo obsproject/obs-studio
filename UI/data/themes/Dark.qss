@@ -89,7 +89,7 @@ QWidget {
 /* Misc */
 
 QWidget::disabled {
-    color: 2px solid palette(bright-text);
+    color: rgb(165,164,165); /* disabledText */
 }
 
 QAbstractItemView, QStackedWidget#stackedMixerArea QWidget {
