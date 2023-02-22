@@ -129,11 +129,11 @@ Scene Signals
 
 **item_remove** (ptr scene, ptr item)
 
-   Called when a scene item has been removed from the scen.
+   Called when a scene item has been removed from the scene.
 
 **reorder** (ptr scene)
 
-   Called when scene items have been reoredered in the scene.
+   Called when scene items have been reordered in the scene.
 
 **refresh** (ptr scene)
 
@@ -149,6 +149,7 @@ Scene Signals
    Called when a scene item has been locked or unlocked.
 
 **item_select** (ptr scene, ptr item)
+
 **item_deselect** (ptr scene, ptr item)
 
    Called when a scene item has been selected/deselected.
@@ -353,7 +354,7 @@ Scene Item Functions
 .. function:: obs_data_t *obs_scene_save_transform_states(obs_scene_t *scene, bool all_items)
 .. function:: void obs_scene_load_transform_states(const char *states)
 
-   Saves all the transformation states for the sceneitms in scene. When all_items is false, it
+   Saves all the transformation states for the sceneitems in scene. When all_items is false, it
    will only save selected items
 
    :return: Data containing transformation states for all* sceneitems in scene

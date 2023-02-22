@@ -493,7 +493,7 @@ Source Definition Structure (obs_source_info)
 
    Called to get the current time of the media.
 
-.. member:: void (*obs_source_info.media_set_time)(void *data, int64_t miliseconds)
+.. member:: void (*obs_source_info.media_set_time)(void *data, int64_t milliseconds)
 
    Called to set the media time.
 

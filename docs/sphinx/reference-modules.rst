@@ -176,7 +176,7 @@ plugin modules.
                       | MODULE_FILE_NOT_FOUND   - The module was not found
                       | MODULE_MISSING_EXPORTS  - Required exports are missing
                       | MODULE_INCOMPATIBLE_VER - Incompatible version
-                      | MODULE_HARDCODED_SKIP   - Skipped by harcoded rules
+                      | MODULE_HARDCODED_SKIP   - Skipped by hardcoded rules
                                                   (e.g. obsolete obs-browser macOS plugin)
 
 ---------------------

@@ -52,7 +52,7 @@ Initialization, Shutdown, and Information
 .. function:: void obs_set_locale(const char *locale)
 
    Sets a new locale to use for modules.  This will call
-   obs_module_set_locale for each module with the new locale.
+   :c:func:`obs_module_set_locale()` for each module with the new locale.
   
    :param  locale: The locale to use for modules
 
@@ -67,8 +67,8 @@ Initialization, Shutdown, and Information
 .. function:: profiler_name_store_t *obs_get_profiler_name_store(void)
 
    :return: The profiler name store (see util/profiler.h) used by OBS,
-            which is either a name store passed to obs_startup, an
-            internal name store, or NULL in case obs_initialized()
+            which is either a name store passed to :c:func:`obs_startup()`, an
+            internal name store, or NULL in case :c:func:`obs_initialized()`
             returns false.
 
 ---------------------
@@ -462,7 +462,7 @@ Video, Audio, and Graphics
 
 .. function:: gs_effect_t *obs_get_base_effect(enum obs_base_effect effect)
 
-   Returns a commoinly used base effect.
+   Returns a commonly used base effect.
 
    :param effect: | Can be one of the following values:
                   | OBS_EFFECT_DEFAULT             - RGB/YUV
