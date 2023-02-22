@@ -184,7 +184,13 @@ void OBSHotkeyEdit::ClearKey()
 
 void OBSHotkeyEdit::UpdateDuplicationState()
 {
-	if (dupeIcon && dupeIcon->isVisible() != hasDuplicate) {
+	if (!dupeIcon && !hasDuplicate)
+		return;
+
+	if (!dupeIcon)
+		CreateDupeIcon();
+
+	if (dupeIcon->isVisible() != hasDuplicate) {
 		dupeIcon->setVisible(hasDuplicate);
 		update();
 	}
