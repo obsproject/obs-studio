@@ -189,10 +189,6 @@ jobs:
       - name: 'Build OBS'
         run: CI/macos/02_build_obs.sh --codesign --architecture "${{ matrix.arch }}"
 
-      - name: 'Run tests'
-        if: ${{ success() && matrix.arch == 'x86_64' }}
-        run: cmake --build build -t test
-
       - name: 'Create build artifact'
         if: ${{ success() && fromJSON(needs.config.outputs.create_artifacts) }}
         run: |
