@@ -2329,6 +2329,13 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 #endif
 #endif
 
+	/* NOTE: This disables an optimisation in Qt that attempts to determine if
+	 * any "siblings" intersect with a widget when determining the approximate
+	 * visible/unobscured area. However, by Qt's own admission this is slow
+	 * and in the case of OBS it significantly slows down lists with many
+	 * elements (e.g. Hotkeys) and it is actually faster to disable it. */
+	qputenv("QT_NO_SUBTRACTOPAQUESIBLINGS", "1");
+
 	OBSApp program(argc, argv, profilerNameStore.get());
 	try {
 		QAccessible::installFactory(accessibleFactory);
