@@ -22,6 +22,7 @@
 #include <graphics/math-defs.h>
 #include <initializer_list>
 #include <sstream>
+#include <unordered_map>
 #include <QCompleter>
 #include <QGuiApplication>
 #include <QLineEdit>
@@ -4590,32 +4591,27 @@ void OBSBasicSettings::on_hotkeyFilterInput_KeyChanged(
 	SearchHotkeys(ui->hotkeyFilterSearch->text(), combo);
 }
 
-static bool MarkHotkeyConflicts(OBSHotkeyLabel *item1, OBSHotkeyLabel *item2)
-{
-	if (item1->pairPartner == item2)
-		return false;
-
-	auto &edits1 = item1->widget->edits;
-	auto &edits2 = item2->widget->edits;
-	bool hasDupes = false;
-
-	for (auto &edit1 : edits1) {
-		for (auto &edit2 : edits2) {
-			bool isDupe =
-				!obs_key_combination_is_empty(edit1->key) &&
-				edit1->key == edit2->key;
-
-			hasDupes |= isDupe;
-			edit1->hasDuplicate |= isDupe;
-			edit2->hasDuplicate |= isDupe;
-		}
+namespace std {
+template<> struct hash<obs_key_combination_t> {
+	size_t operator()(obs_key_combination_t value) const
+	{
+		size_t h1 = hash<uint32_t>{}(value.modifiers);
+		size_t h2 = hash<int>{}(value.key);
+		// Same as boost::hash_combine()
+		h2 ^= h1 + 0x9e3779b9 + (h2 << 6) + (h2 >> 2);
+		return h2;
 	}
-
-	return hasDupes;
 };
+}
 
 bool OBSBasicSettings::ScanDuplicateHotkeys(QFormLayout *layout)
 {
+	typedef struct assignment {
+		OBSHotkeyLabel *label;
+		OBSHotkeyEdit *edit;
+	} assignment;
+
+	unordered_map<obs_key_combination_t, vector<assignment>> assignments;
 	vector<OBSHotkeyLabel *> items;
 	bool hasDupes = false;
 
@@ -4630,22 +4626,28 @@ bool OBSBasicSettings::ScanDuplicateHotkeys(QFormLayout *layout)
 
 		items.push_back(item);
 
-		for (auto &edit : item->widget->edits)
-			edit->hasDuplicate = false;
-	}
-
-	for (size_t i = 0; i < items.size(); i++) {
-		OBSHotkeyLabel *item1 = items[i];
-
-		for (size_t j = i + 1; j < items.size(); j++)
-			hasDupes |= MarkHotkeyConflicts(item1, items[j]);
-	}
-
-	for (auto *item : items) {
 		for (auto &edit : item->widget->edits) {
-			edit->UpdateDuplicationState();
+			edit->hasDuplicate = false;
+
+			if (obs_key_combination_is_empty(edit->key))
+				continue;
+
+			for (assignment &assign : assignments[edit->key]) {
+				if (item->pairPartner == assign.label)
+					continue;
+
+				assign.edit->hasDuplicate = true;
+				edit->hasDuplicate = true;
+				hasDupes = true;
+			}
+
+			assignments[edit->key].push_back({item, edit});
 		}
 	}
+
+	for (auto *item : items)
+		for (auto &edit : item->widget->edits)
+			edit->UpdateDuplicationState();
 
 	return hasDupes;
 }
