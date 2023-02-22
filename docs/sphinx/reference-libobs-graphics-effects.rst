@@ -174,7 +174,7 @@ HLSL format.
 
 ---------------------
 
-.. function:: gs_eparam_t *gs_param_get_annotation_by_name(const gs_eparam_t *pardam, const char *annotation)
+.. function:: gs_eparam_t *gs_param_get_annotation_by_name(const gs_eparam_t *param, const char *annotation)
 
    Gets parameter of an effect by its name.
 

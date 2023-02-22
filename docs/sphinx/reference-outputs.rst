@@ -674,7 +674,7 @@ General Output Functions
               const char *obs_output_get_supported_audio_codecs(const obs_output_t *output)
 
    :return: Supported video/audio codecs of an encoded output, separated
-            by semicolen
+            by semicolon
 
 ---------------------
 

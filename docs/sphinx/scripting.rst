@@ -36,6 +36,7 @@ There are a number of global functions that scripts can optionally
 provide:
 
 .. py:function:: script_description()
+
    Called to retrieve a description string to be displayed to the user
    in the Scripts window.
 
@@ -119,7 +120,7 @@ without necessarily having to lock scripts/interpreters every frame.
 
 .. py:function:: timer_add(callback, milliseconds)
 
-    Adds an timer callback which triggers every *millseconds*.
+    Adds an timer callback which triggers every *milliseconds*.
 
 .. py:function:: timer_remove(callback)
 
