@@ -1638,6 +1638,11 @@ static inline enum convert_type get_convert_type(enum video_format format,
 
 	case VIDEO_FORMAT_P010:
 		return CONVERT_P010;
+
+	case VIDEO_FORMAT_P216:
+	case VIDEO_FORMAT_P416:
+		/* Unimplemented */
+		break;
 	}
 
 	return CONVERT_NONE;
@@ -2207,6 +2212,11 @@ static const char *select_conversion_technique(enum video_format format,
 			assert(false && "No conversion requested");
 		else
 			return "RGB_Limited";
+		break;
+
+	case VIDEO_FORMAT_P216:
+	case VIDEO_FORMAT_P416:
+		/* Unimplemented */
 		break;
 	}
 	return NULL;
@@ -3374,6 +3384,11 @@ static void copy_frame_data(struct obs_source_frame *dst,
 		copy_frame_data_plane(dst, src, 1, dst->height);
 		copy_frame_data_plane(dst, src, 2, dst->height);
 		copy_frame_data_plane(dst, src, 3, dst->height);
+		break;
+
+	case VIDEO_FORMAT_P216:
+	case VIDEO_FORMAT_P416:
+		/* Unimplemented */
 		break;
 	}
 }
