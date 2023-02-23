@@ -797,7 +797,7 @@ void OBSBasic::CreateProgramOptions()
 	mainButtonLayout->addWidget(transitionButton);
 	mainButtonLayout->addWidget(configTransitions);
 
-	tBar = new SliderIgnoreScroll(Qt::Horizontal);
+	tBar = new SliderIgnoreClick(Qt::Horizontal);
 	tBar->setMinimum(0);
 	tBar->setMaximum(T_BAR_PRECISION - 1);
 
