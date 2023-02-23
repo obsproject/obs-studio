@@ -146,6 +146,8 @@ target_sources(
           qt-display.hpp
           qt-wrappers.cpp
           qt-wrappers.hpp
+          scene-collections-util.cpp
+          scene-collections-util.hpp
           ui-validation.cpp
           ui-validation.hpp
           multiview.cpp
