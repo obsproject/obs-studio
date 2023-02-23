@@ -80,4 +80,7 @@
     <file>fonts/OpenSans-Bold.ttf</file>
     <file>fonts/OpenSans-Italic.ttf</file>
   </qresource>
+  <qresource prefix="/qt/etc/">
+	<file>qt.conf</file>
+  </qresource>
 </RCC>
