@@ -26,66 +26,9 @@
 #include "window-basic-main.hpp"
 #include "window-importer.hpp"
 #include "window-namedialog.hpp"
+#include "scene-collections-util.hpp"
 
 using namespace std;
-
-void EnumSceneCollections(std::function<bool(const char *, const char *)> &&cb)
-{
-	char path[512];
-	os_glob_t *glob;
-
-	int ret = GetConfigPath(path, sizeof(path),
-				"obs-studio/basic/scenes/*.json");
-	if (ret <= 0) {
-		blog(LOG_WARNING, "Failed to get config path for scene "
-				  "collections");
-		return;
-	}
-
-	if (os_glob(path, 0, &glob) != 0) {
-		blog(LOG_WARNING, "Failed to glob scene collections");
-		return;
-	}
-
-	for (size_t i = 0; i < glob->gl_pathc; i++) {
-		const char *filePath = glob->gl_pathv[i].path;
-
-		if (glob->gl_pathv[i].directory)
-			continue;
-
-		OBSDataAutoRelease data =
-			obs_data_create_from_json_file_safe(filePath, "bak");
-		std::string name = obs_data_get_string(data, "name");
-
-		/* if no name found, use the file name as the name
-		 * (this only happens when switching to the new version) */
-		if (name.empty()) {
-			name = strrchr(filePath, '/') + 1;
-			name.resize(name.size() - 5);
-		}
-
-		if (!cb(name.c_str(), filePath))
-			break;
-	}
-
-	os_globfree(glob);
-}
-
-bool SceneCollectionExists(const char *findName)
-{
-	bool found = false;
-	auto func = [&](const char *name, const char *) {
-		if (strcmp(name, findName) == 0) {
-			found = true;
-			return false;
-		}
-
-		return true;
-	};
-
-	EnumSceneCollections(func);
-	return found;
-}
 
 static bool GetSceneCollectionName(QWidget *parent, std::string &name,
 				   std::string &file,

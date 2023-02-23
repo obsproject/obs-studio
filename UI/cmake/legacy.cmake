@@ -169,6 +169,8 @@ target_sources(
           platform.hpp
           qt-display.cpp
           qt-display.hpp
+          scene-collections-util.cpp
+          scene-collections-util.hpp
           ui-validation.cpp
           ui-validation.hpp
           multiview.cpp

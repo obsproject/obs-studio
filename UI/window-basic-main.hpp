@@ -447,8 +447,6 @@ private:
 	void ChangeProfile();
 	void CheckForSimpleModeX264Fallback();
 
-	void SaveProjectNow();
-
 	int GetTopSelectedSourceItem();
 
 	QModelIndexList GetAllSelectedSourceItems();
@@ -941,6 +939,7 @@ public:
 		cy = previewCY;
 	}
 
+	void SaveProjectNow();
 	inline bool SavingDisabled() const { return disableSaving; }
 
 	inline double GetCPUUsage() const

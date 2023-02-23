@@ -3,6 +3,7 @@
 #include "obs-app.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-main-outputs.hpp"
+#include "scene-collections-util.hpp"
 
 #include <functional>
 
@@ -17,7 +18,6 @@ template<typename T> static T GetOBSRef(QListWidgetItem *item)
 }
 
 void EnumProfiles(function<bool(const char *, const char *)> &&cb);
-void EnumSceneCollections(function<bool(const char *, const char *)> &&cb);
 
 extern volatile bool streaming_active;
 extern volatile bool recording_active;
