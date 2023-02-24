@@ -284,7 +284,8 @@ Libobs Objects
 
 .. function:: void obs_enum_scenes(bool (*enum_proc)(void*, obs_source_t*), void *param)
 
-   Enumerates all scenes.
+   Enumerates all scenes. Use :c:func:`obs_scene_from_source()` if the scene is
+   needed as an :c:type:`obs_scene_t`.
   
    Callback function returns true to continue enumeration, or false to end
    enumeration.
