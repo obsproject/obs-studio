@@ -139,7 +139,6 @@ static void PopulateBitrateMap()
 	call_once(once, []() {
 		const string encoders[] = {
 			"ffmpeg_aac",
-			"mf_aac",
 			"libfdk_aac",
 			"CoreAudio_AAC",
 		};
@@ -173,10 +172,6 @@ static void PopulateBitrateMap()
 				continue;
 
 			if (strcmp(GetCodec(encoder.c_str()), "AAC") != 0)
-				continue;
-
-			// disable mf_aac if audio output is not stereo nor mono
-			if (output_channels >= 3 && encoder == "mf_aac")
 				continue;
 
 			HandleEncoderProperties(encoder.c_str());
