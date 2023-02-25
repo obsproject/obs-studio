@@ -694,6 +694,18 @@ void obs_encoder_set_scaled_size(obs_encoder_t *encoder, uint32_t width,
 		return;
 	}
 
+	const struct video_output_info *voi;
+	voi = video_output_get_info(encoder->media);
+	if (voi && voi->width == width && voi->height == height) {
+		blog(LOG_WARNING,
+		     "encoder '%s': Scaled resolution "
+		     "matches output resolution, scaling "
+		     "disabled",
+		     obs_encoder_get_name(encoder));
+		encoder->scaled_width = encoder->scaled_height = 0;
+		return;
+	}
+
 	encoder->scaled_width = width;
 	encoder->scaled_height = height;
 }
