@@ -27,6 +27,7 @@ struct ffmpeg_cfg {
 	const char *audio_settings;
 	int audio_mix_count;
 	int audio_tracks;
+	const char *audio_stream_names[MAX_AUDIO_MIXES];
 	enum AVPixelFormat format;
 	enum AVColorRange color_range;
 	enum AVColorPrimaries color_primaries;

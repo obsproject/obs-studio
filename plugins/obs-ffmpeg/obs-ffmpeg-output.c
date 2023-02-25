@@ -409,6 +409,11 @@ static bool create_audio_stream(struct ffmpeg_data *data, int idx)
 	data->audio_infos[idx].stream = stream;
 	data->audio_infos[idx].ctx = context;
 
+	if (data->config.audio_stream_names[idx] &&
+	    *data->config.audio_stream_names[idx] != '\0')
+		av_dict_set(&stream->metadata, "title",
+			    data->config.audio_stream_names[idx], 0);
+
 	return open_audio_codec(data, idx);
 }
 
@@ -1168,6 +1173,27 @@ static bool try_connect(struct ffmpeg_output *output)
 		config.scale_width = config.width;
 	if (!config.scale_height)
 		config.scale_height = config.height;
+
+	obs_data_array_t *audioNames =
+		obs_data_get_array(settings, "audio_names");
+	if (audioNames) {
+		for (size_t i = 0, idx = 0; i < MAX_AUDIO_MIXES; i++) {
+			if ((config.audio_tracks & (1 << i)) == 0)
+				continue;
+
+			obs_data_t *item_data =
+				obs_data_array_item(audioNames, i);
+			config.audio_stream_names[idx] =
+				obs_data_get_string(item_data, "name");
+			obs_data_release(item_data);
+
+			idx++;
+		}
+		obs_data_array_release(audioNames);
+	} else {
+		for (int idx = 0; idx < config.audio_mix_count; idx++)
+			config.audio_stream_names[idx] = NULL;
+	}
 
 	success = ffmpeg_data_init(&output->ff_data, &config);
 	obs_data_release(settings);
