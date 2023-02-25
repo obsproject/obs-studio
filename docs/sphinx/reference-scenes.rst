@@ -265,7 +265,8 @@ General Scene Functions
 
 .. function:: void obs_scene_enum_items(obs_scene_t *scene, bool (*callback)(obs_scene_t*, obs_sceneitem_t*, void*), void *param)
 
-   Enumerates scene items within a scene.
+   Enumerates scene items within a scene in order of the bottommost scene item
+   to the topmost scene item.
 
    Callback function returns true to continue enumeration, or false to end
    enumeration.
