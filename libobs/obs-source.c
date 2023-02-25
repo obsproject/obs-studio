@@ -118,11 +118,11 @@ static const char *source_signals[] = {
 };
 
 bool obs_source_init_context(struct obs_source *source, obs_data_t *settings,
-			     const char *name, obs_data_t *hotkey_data,
-			     bool private)
+			     const char *name, const char *uuid,
+			     obs_data_t *hotkey_data, bool private)
 {
 	if (!obs_context_data_init(&source->context, OBS_OBJ_TYPE_SOURCE,
-				   settings, name, hotkey_data, private))
+				   settings, name, uuid, hotkey_data, private))
 		return false;
 
 	return signal_handler_add_array(source->context.signals,
@@ -340,7 +340,7 @@ static void obs_source_init_audio_hotkeys(struct obs_source *source)
 }
 
 static obs_source_t *
-obs_source_create_internal(const char *id, const char *name,
+obs_source_create_internal(const char *id, const char *name, const char *uuid,
 			   obs_data_t *settings, obs_data_t *hotkey_data,
 			   bool private, uint32_t last_obs_ver)
 {
@@ -370,7 +370,7 @@ obs_source_create_internal(const char *id, const char *name,
 	source->push_to_talk_key = OBS_INVALID_HOTKEY_ID;
 	source->last_obs_ver = last_obs_ver;
 
-	if (!obs_source_init_context(source, settings, name, hotkey_data,
+	if (!obs_source_init_context(source, settings, name, uuid, hotkey_data,
 				     private))
 		goto fail;
 
@@ -420,24 +420,25 @@ fail:
 obs_source_t *obs_source_create(const char *id, const char *name,
 				obs_data_t *settings, obs_data_t *hotkey_data)
 {
-	return obs_source_create_internal(id, name, settings, hotkey_data,
+	return obs_source_create_internal(id, name, NULL, settings, hotkey_data,
 					  false, LIBOBS_API_VER);
 }
 
 obs_source_t *obs_source_create_private(const char *id, const char *name,
 					obs_data_t *settings)
 {
-	return obs_source_create_internal(id, name, settings, NULL, true,
+	return obs_source_create_internal(id, name, NULL, settings, NULL, true,
 					  LIBOBS_API_VER);
 }
 
 obs_source_t *obs_source_create_set_last_ver(const char *id, const char *name,
+					     const char *uuid,
 					     obs_data_t *settings,
 					     obs_data_t *hotkey_data,
 					     uint32_t last_obs_ver,
 					     bool is_private)
 {
-	return obs_source_create_internal(id, name, settings, hotkey_data,
+	return obs_source_create_internal(id, name, uuid, settings, hotkey_data,
 					  is_private, last_obs_ver);
 }
 
@@ -4239,6 +4240,13 @@ const char *obs_source_get_name(const obs_source_t *source)
 {
 	return obs_source_valid(source, "obs_source_get_name")
 		       ? source->context.name
+		       : NULL;
+}
+
+const char *obs_source_get_uuid(const obs_source_t *source)
+{
+	return obs_source_valid(source, "obs_source_get_uuid")
+		       ? source->context.uuid
 		       : NULL;
 }
 

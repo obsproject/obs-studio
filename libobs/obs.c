@@ -2019,6 +2019,26 @@ obs_source_t *obs_get_source_by_name(const char *name)
 				   obs_source_addref_safe_);
 }
 
+obs_source_t *obs_get_source_by_uuid(const char *uuid)
+{
+	struct obs_source **first = &obs->data.first_source;
+	struct obs_source *source;
+
+	pthread_mutex_lock(&obs->data.sources_mutex);
+
+	source = *first;
+	while (source) {
+		if (strcmp(source->context.uuid, uuid) == 0) {
+			source = obs_source_get_ref(source);
+			break;
+		}
+		source = (struct obs_source *)source->context.next;
+	}
+
+	pthread_mutex_unlock(&obs->data.sources_mutex);
+	return source;
+}
+
 obs_source_t *obs_get_transition_by_name(const char *name)
 {
 	struct obs_source **first = &obs->data.first_source;
@@ -2203,6 +2223,7 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data,
 	obs_data_array_t *filters = obs_data_get_array(source_data, "filters");
 	obs_source_t *source;
 	const char *name = obs_data_get_string(source_data, "name");
+	const char *uuid = obs_data_get_string(source_data, "uuid");
 	const char *id = obs_data_get_string(source_data, "id");
 	const char *v_id = obs_data_get_string(source_data, "versioned_id");
 	obs_data_t *settings = obs_data_get_obj(source_data, "settings");
@@ -2223,8 +2244,9 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data,
 	if (!*v_id)
 		v_id = id;
 
-	source = obs_source_create_set_last_ver(v_id, name, settings, hotkeys,
-						prev_ver, is_private);
+	source = obs_source_create_set_last_ver(v_id, name, uuid, settings,
+						hotkeys, prev_ver, is_private);
+
 	if (source->owns_info_id) {
 		bfree((void *)source->info.unversioned_id);
 		source->info.unversioned_id = bstrdup(id);
@@ -2398,6 +2420,7 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	int64_t sync = obs_source_get_sync_offset(source);
 	uint32_t flags = obs_source_get_flags(source);
 	const char *name = obs_source_get_name(source);
+	const char *uuid = obs_source_get_uuid(source);
 	const char *id = source->info.unversioned_id;
 	const char *v_id = source->info.id;
 	bool enabled = obs_source_enabled(source);
@@ -2422,6 +2445,7 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	obs_data_set_int(source_data, "prev_ver", LIBOBS_API_VER);
 
 	obs_data_set_string(source_data, "name", name);
+	obs_data_set_string(source_data, "uuid", uuid);
 	obs_data_set_string(source_data, "id", id);
 	obs_data_set_string(source_data, "versioned_id", v_id);
 	obs_data_set_obj(source_data, "settings", settings);
@@ -2528,12 +2552,11 @@ static inline char *dup_name(const char *name, bool private)
 	}
 }
 
-static inline bool obs_context_data_init_wrap(struct obs_context_data *context,
-					      enum obs_obj_type type,
-					      obs_data_t *settings,
-					      const char *name,
-					      obs_data_t *hotkey_data,
-					      bool private)
+static inline bool
+obs_context_data_init_wrap(struct obs_context_data *context,
+			   enum obs_obj_type type, obs_data_t *settings,
+			   const char *name, const char *uuid,
+			   obs_data_t *hotkey_data, bool private)
 {
 	assert(context);
 	memset(context, 0, sizeof(*context));
@@ -2552,6 +2575,12 @@ static inline bool obs_context_data_init_wrap(struct obs_context_data *context,
 	if (!context->procs)
 		return false;
 
+	if (uuid && strlen(uuid) == UUID_STR_LENGTH)
+		context->uuid = bstrdup(uuid);
+	/* Only automatically generate UUIDs for sources */
+	else if (type == OBS_OBJ_TYPE_SOURCE)
+		context->uuid = os_generate_uuid();
+
 	context->name = dup_name(name, private);
 	context->settings = obs_data_newref(settings);
 	context->hotkey_data = obs_data_newref(hotkey_data);
@@ -2560,10 +2589,10 @@ static inline bool obs_context_data_init_wrap(struct obs_context_data *context,
 
 bool obs_context_data_init(struct obs_context_data *context,
 			   enum obs_obj_type type, obs_data_t *settings,
-			   const char *name, obs_data_t *hotkey_data,
-			   bool private)
+			   const char *name, const char *uuid,
+			   obs_data_t *hotkey_data, bool private)
 {
-	if (obs_context_data_init_wrap(context, type, settings, name,
+	if (obs_context_data_init_wrap(context, type, settings, name, uuid,
 				       hotkey_data, private)) {
 		return true;
 	} else {
@@ -2581,6 +2610,7 @@ void obs_context_data_free(struct obs_context_data *context)
 	obs_context_data_remove(context);
 	pthread_mutex_destroy(&context->rename_cache_mutex);
 	bfree(context->name);
+	bfree((void *)context->uuid);
 
 	for (size_t i = 0; i < context->rename_cache.num; i++)
 		bfree(context->rename_cache.array[i]);
