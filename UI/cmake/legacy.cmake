@@ -188,6 +188,7 @@ target_sources(
           double-slider.hpp
           horizontal-scroll-area.cpp
           horizontal-scroll-area.hpp
+          icon-label.hpp
           item-widget-helpers.cpp
           item-widget-helpers.hpp
           context-bar-controls.cpp

@@ -41,6 +41,7 @@ target_sources(
           focus-list.hpp
           hotkey-edit.cpp
           hotkey-edit.hpp
+          icon-label.hpp
           idian/obs-actionrow.cpp
           idian/obs-actionrow.hpp
           idian/obs-controls.cpp
