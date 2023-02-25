@@ -941,6 +941,12 @@ General Source Functions
 
 ---------------------
 
+.. function:: const char *obs_source_get_uuid(const obs_source_t *source)
+
+   :return: The UUID of the source
+
+---------------------
+
 .. function:: void obs_source_set_name(obs_source_t *source, const char *name)
 
    Sets the name of a source.  If the source is not private and the name

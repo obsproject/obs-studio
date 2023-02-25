@@ -94,7 +94,7 @@ static bool init_output_handlers(struct obs_output *output, const char *name,
 				 obs_data_t *settings, obs_data_t *hotkey_data)
 {
 	if (!obs_context_data_init(&output->context, OBS_OBJ_TYPE_OUTPUT,
-				   settings, name, hotkey_data, false))
+				   settings, name, NULL, hotkey_data, false))
 		return false;
 
 	signal_handler_add_array(output->context.signals, output_signals);
