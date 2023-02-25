@@ -259,7 +259,8 @@ Functions
    :return: The scene name list, ending with NULL.  The list is stored
             within one contiguous segment of memory, so freeing the
             returned pointer with :c:func:`bfree()` will free the entire
-            list.
+            list. The order is same as the way the frontend displays it in
+            the Scenes dock.
 
 ---------------------------------------
 
@@ -268,7 +269,8 @@ Functions
    :param sources: Pointer to a :c:type:`obs_frontend_source_list`
                    structure to receive the list of
                    reference-incremented scenes.  Release with
-                   :c:func:`obs_frontend_source_list_free`
+                   :c:func:`obs_frontend_source_list_free`. The order is same as
+                   the way the frontend displays it in the Scenes dock.
 
 ---------------------------------------
 
