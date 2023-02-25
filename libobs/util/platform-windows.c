@@ -21,6 +21,7 @@
 #include <intrin.h>
 #include <psapi.h>
 #include <math.h>
+#include <rpc.h>
 
 #include "base.h"
 #include "platform.h"
@@ -1478,4 +1479,22 @@ uint64_t os_get_free_disk_space(const char *dir)
 	bfree(wdir);
 
 	return success ? free.QuadPart : 0;
+}
+
+char *os_generate_uuid(void)
+{
+	UUID uuid;
+
+	RPC_STATUS res = UuidCreate(&uuid);
+	if (res != RPC_S_OK && res != RPC_S_UUID_LOCAL_ONLY)
+		bcrash("Failed to get UUID, RPC_STATUS: %l", res);
+
+	struct dstr uuid_str = {0};
+	dstr_printf(&uuid_str,
+		    "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+		    uuid.Data1, uuid.Data2, uuid.Data3, uuid.Data4[0],
+		    uuid.Data4[1], uuid.Data4[2], uuid.Data4[3], uuid.Data4[4],
+		    uuid.Data4[5], uuid.Data4[6], uuid.Data4[7]);
+
+	return uuid_str.array;
 }

@@ -307,7 +307,7 @@ if(OS_WINDOWS)
     libobs PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS
                    _CRT_NONSTDC_NO_WARNINGS)
 
-  target_link_libraries(libobs PRIVATE dxgi Avrt Dwmapi winmm)
+  target_link_libraries(libobs PRIVATE dxgi Avrt Dwmapi winmm Rpcrt4)
 
   if(MSVC)
     target_link_libraries(libobs PUBLIC OBS::w32-pthreads)
@@ -374,6 +374,7 @@ elseif(OS_POSIX)
     target_compile_definitions(libobs PRIVATE ENABLE_DARRAY_TYPE_TEST)
   endif()
 
+  find_package(LibUUID REQUIRED)
   find_package(X11 REQUIRED)
   find_package(
     XCB
@@ -393,7 +394,7 @@ elseif(OS_POSIX)
             util/pipe-posix.c
             util/platform-nix.c)
 
-  target_link_libraries(libobs PRIVATE X11::X11_xcb XCB::XCB)
+  target_link_libraries(libobs PRIVATE X11::X11_xcb XCB::XCB LibUUID::LibUUID)
 
   if(USE_XDG)
     target_compile_definitions(libobs PRIVATE USE_XDG)
