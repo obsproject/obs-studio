@@ -79,8 +79,27 @@ function(set_target_properties_obs target)
           COMMENT "Copy ${executable} to application bundle")
       endforeach()
 
-      _check_entitlements()
-      configure_file(cmake/macos/exportOptions.plist.in ${CMAKE_BINARY_DIR}/exportOptions.plist)
+      if(VIRTUALCAM_DEVICE_UUID
+         AND VIRTUALCAM_SOURCE_UUID
+         AND VIRTUALCAM_SINK_UUID)
+        set(entitlements_file "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/entitlements-extension.plist")
+      else()
+        set(entitlements_file "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/entitlements.plist")
+      endif()
+
+      if(NOT EXISTS "${entitlements_file}")
+        message(FATAL_ERROR "Target ${target} is missing an entitlements file in its cmake directory.")
+      endif()
+
+      set_target_properties(${target} PROPERTIES XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS "${entitlements_file}")
+
+      if(NOT CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE STREQUAL "Automatic")
+        set_target_properties(${target} PROPERTIES XCODE_ATTRIBUTE_PROVISIONING_PROFILE_SPECIFIER
+                                                   "${OBS_PROVISIONING_PROFILE}")
+        configure_file(cmake/macos/exportOptions-extension.plist.in ${CMAKE_BINARY_DIR}/exportOptions.plist)
+      else()
+        configure_file(cmake/macos/exportOptions.plist.in ${CMAKE_BINARY_DIR}/exportOptions.plist)
+      endif()
 
       add_custom_command(
         TARGET ${target}
@@ -126,16 +145,28 @@ function(set_target_properties_obs target)
           COMMENT "Add OBS::python import module")
       endif()
 
+      if(TARGET mac-camera-extension)
+        add_custom_command(
+          TARGET ${target}
+          POST_BUILD
+          COMMAND
+            "${CMAKE_COMMAND}" -E copy_directory "$<TARGET_BUNDLE_DIR:mac-camera-extension>"
+            "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Library/SystemExtensions/$<TARGET_BUNDLE_DIR_NAME:mac-camera-extension>"
+          COMMENT "Add Camera Extension to application bundle")
+      endif()
+
       _bundle_dependencies(${target})
 
       install(TARGETS ${target} BUNDLE DESTINATION "." COMPONENT Application)
+    elseif(${target} STREQUAL mac-camera-extension)
+      set_target_properties(${target} PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
+      set_property(GLOBAL APPEND PROPERTY _OBS_DEPENDENCIES ${target})
     else()
       set_property(TARGET ${target} PROPERTY XCODE_ATTRIBUTE_SKIP_INSTALL NO)
       set_property(GLOBAL APPEND PROPERTY _OBS_EXECUTABLES ${target})
       set_property(GLOBAL APPEND PROPERTY _OBS_DEPENDENCIES ${target})
+      _add_entitlements()
     endif()
-
-    _add_entitlements()
   elseif(target_type STREQUAL SHARED_LIBRARY)
     set_target_properties(
       ${target}
