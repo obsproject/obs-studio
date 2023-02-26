@@ -1150,8 +1150,7 @@ static bool try_connect(struct ffmpeg_output *output)
 
 	config.color_range = voi->range == VIDEO_RANGE_FULL ? AVCOL_RANGE_JPEG
 							    : AVCOL_RANGE_MPEG;
-	config.colorspace = format_is_yuv(voi->format) ? AVCOL_SPC_BT709
-						       : AVCOL_SPC_RGB;
+
 	switch (voi->colorspace) {
 	case VIDEO_CS_601:
 		config.color_primaries = AVCOL_PRI_SMPTE170M;
@@ -1180,6 +1179,9 @@ static bool try_connect(struct ffmpeg_output *output)
 		config.colorspace = AVCOL_SPC_BT2020_NCL;
 		break;
 	}
+
+	if (!format_is_yuv(voi->format))
+		config.colorspace = AVCOL_SPC_RGB;
 
 	if (config.format == AV_PIX_FMT_NONE) {
 		blog(LOG_DEBUG, "invalid pixel format used for FFmpeg output");
