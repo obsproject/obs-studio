@@ -216,6 +216,7 @@ target_sources(
           basic-controls.cpp
           basic-controls.hpp
           clickable-label.hpp
+          doubleclick-eventfilter.hpp
           horizontal-scroll-area.cpp
           horizontal-scroll-area.hpp
           item-widget-helpers.cpp

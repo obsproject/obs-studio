@@ -34,6 +34,7 @@ target_sources(
           clickable-label.hpp
           context-bar-controls.cpp
           context-bar-controls.hpp
+          doubleclick-eventfilter.hpp
           focus-list.cpp
           focus-list.hpp
           horizontal-scroll-area.cpp
