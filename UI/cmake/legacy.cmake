@@ -184,6 +184,7 @@ target_sources(
           audio-encoders.hpp
           balance-slider.hpp
           clickable-label.hpp
+          doubleclick-eventfilter.hpp
           double-slider.cpp
           double-slider.hpp
           horizontal-scroll-area.cpp
