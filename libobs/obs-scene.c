@@ -959,6 +959,7 @@ static void scene_load(void *data, obs_data_t *settings);
 static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 {
 	const char *name = obs_data_get_string(item_data, "name");
+	const char *src_uuid = obs_data_get_string(item_data, "source_uuid");
 	obs_source_t *source;
 	const char *scale_filter_str;
 	const char *blend_method_str;
@@ -970,7 +971,11 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 	if (obs_data_get_bool(item_data, "group_item_backup"))
 		return;
 
-	source = obs_get_source_by_name(name);
+	if (src_uuid && strlen(src_uuid) == UUID_STR_LENGTH)
+		source = obs_get_source_by_uuid(src_uuid);
+	else
+		source = obs_get_source_by_name(name);
+
 	if (!source) {
 		blog(LOG_WARNING,
 		     "[scene_load_item] Source %s not "
@@ -1124,6 +1129,7 @@ static void scene_save_item(obs_data_array_t *array,
 {
 	obs_data_t *item_data = obs_data_create();
 	const char *name = obs_source_get_name(item->source);
+	const char *src_uuid = obs_source_get_uuid(item->source);
 	const char *scale_filter;
 	const char *blend_method;
 	const char *blend_type;
@@ -1136,6 +1142,7 @@ static void scene_save_item(obs_data_array_t *array,
 	}
 
 	obs_data_set_string(item_data, "name", name);
+	obs_data_set_string(item_data, "source_uuid", src_uuid);
 	obs_data_set_bool(item_data, "visible", item->user_visible);
 	obs_data_set_bool(item_data, "locked", item->locked);
 	obs_data_set_double(item_data, "rot", rot);
