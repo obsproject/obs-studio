@@ -147,7 +147,6 @@ static void PopulateBitrateMap()
 
 		struct obs_audio_info aoi;
 		obs_get_audio_info(&aoi);
-		uint32_t output_channels = get_audio_channels(aoi.speakers);
 
 		HandleEncoderProperties(fallbackEncoder.c_str());
 
