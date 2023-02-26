@@ -238,6 +238,7 @@ static void dump_source_info(struct ffmpeg_source *s, const char *input,
 		"\tis_clear_on_media_end:   %s\n"
 		"\trestart_on_activate:     %s\n"
 		"\tclose_when_inactive:     %s\n"
+		"\tfull_decode:             %s\n"
 		"\tffmpeg_options:          %s",
 		input ? input : "(null)",
 		input_format ? input_format : "(null)", s->speed_percent,
@@ -245,7 +246,8 @@ static void dump_source_info(struct ffmpeg_source *s, const char *input,
 		s->is_hw_decoding ? "yes" : "no",
 		s->is_clear_on_media_end ? "yes" : "no",
 		s->restart_on_activate ? "yes" : "no",
-		s->close_when_inactive ? "yes" : "no", s->ffmpeg_options);
+		s->close_when_inactive ? "yes" : "no",
+		s->full_decode ? "yes" : "no", s->ffmpeg_options);
 }
 
 static void get_frame(void *opaque, struct obs_source_frame *f)
