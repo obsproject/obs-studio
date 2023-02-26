@@ -163,9 +163,6 @@ jobs:
 
           echo "commitHash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
 
-      - name: 'Switch to Xcode 14.1'
-        run: sudo xcode-select -switch /Applications/Xcode_14.1.app
-
       - name: 'Install dependencies'
         env:
           RESTORED_VLC: ${{ steps.vlc-cache.outputs.cache-hit }}
