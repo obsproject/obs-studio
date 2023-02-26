@@ -51,7 +51,8 @@ if(NOT XCODE)
     add_link_options(LINKER:-dead_strip)
   endif()
 
-  add_compile_options("$<$<COMPILE_LANGUAGE:C>:${_obs_c_options}>" "$<$<COMPILE_LANGUAGE:CXX>:${_obs_c_options}>")
+  add_compile_options("$<$<COMPILE_LANGUAGE:C>:${_obs_c_options}>" "$<$<COMPILE_LANGUAGE:CXX>:${_obs_c_options}>"
+                      "$<$<AND:$<COMPILE_LANGUAGE:Swift>,$<CONFIG:DEBUG>>:-Onone>")
 
   option(ENABLE_COMPILER_TRACE "Enable clang time-trace (requires Ninja)" OFF)
   mark_as_advanced(ENABLE_COMPILER_TRACE)
@@ -69,4 +70,4 @@ if(NOT XCODE)
   set(CMAKE_COLOR_DIAGNOSTICS ON)
 endif()
 
-add_compile_definitions($<$<CONFIG:DEBUG>:DEBUG> $<$<CONFIG:DEBUG>:_DEBUG>)
+add_compile_definitions("$<$<AND:$<COMPILE_LANGUAGE:C,CXX>,$<CONFIG:DEBUG>>:DEBUG;_DEBUG>")
