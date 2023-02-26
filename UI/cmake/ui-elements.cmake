@@ -7,6 +7,7 @@ target_sources(
             clickable-label.hpp
             double-slider.cpp
             double-slider.hpp
+            doubleclick-eventfilter.hpp
             horizontal-scroll-area.cpp
             horizontal-scroll-area.hpp
             plain-text-edit.cpp
