@@ -176,12 +176,15 @@ static void LoadPublicKey(std::string &pubkey)
 static bool CheckDataSignature(const char *name, const std::string &data,
 			       const std::string &hexSig)
 try {
+	static std::mutex pubkey_mutex;
+	static std::string obsPubKey;
+
 	if (hexSig.empty() || hexSig.length() > 0xFFFF ||
 	    (hexSig.length() & 1) != 0)
 		throw strprintf("Missing or invalid signature for %s: %s", name,
 				hexSig.c_str());
 
-	static std::string obsPubKey;
+	std::scoped_lock lock(pubkey_mutex);
 	if (obsPubKey.empty())
 		LoadPublicKey(obsPubKey);
 
