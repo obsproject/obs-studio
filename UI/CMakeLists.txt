@@ -446,7 +446,7 @@ elseif(OS_MACOS)
               update/shared-update.cpp update/shared-update.hpp
               update/update-helpers.cpp update/update-helpers.hpp)
 
-    if(DEFINED SPARKLE_APPCAST_URL AND DEFINED SPARKLE_PUBLIC_KEY)
+    if(SPARKLE_APPCAST_URL AND SPARKLE_PUBLIC_KEY)
       find_library(SPARKLE Sparkle)
       mark_as_advanced(SPARKLE)
 
