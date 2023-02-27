@@ -416,6 +416,8 @@ bool obs_hotkeys_platform_init(struct obs_core_hotkeys *hotkeys)
 		hotkeys_vtable = obs_nix_wayland_get_hotkeys_vtable();
 		break;
 #endif
+	default:
+		break;
 	}
 
 	return hotkeys_vtable->init(hotkeys);
