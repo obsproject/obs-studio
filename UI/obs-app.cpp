@@ -277,14 +277,17 @@ string CurrentDateTimeString()
 	return buf;
 }
 
-static inline void LogString(fstream &logFile, const char *timeString,
-			     char *str, int log_level)
+static void LogString(fstream &logFile, const char *timeString, char *str,
+		      int log_level)
 {
+	static mutex logfile_mutex;
 	string msg;
 	msg += timeString;
 	msg += str;
 
+	logfile_mutex.lock();
 	logFile << msg << endl;
+	logfile_mutex.unlock();
 
 	if (!!obsLogViewer)
 		QMetaObject::invokeMethod(obsLogViewer.data(), "AddLine",
