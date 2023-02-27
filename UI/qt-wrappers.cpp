@@ -135,14 +135,18 @@ bool QTToGSWindow(QWindow *window, gs_window &gswindow)
 		gswindow.display = obs_get_nix_platform_display();
 		break;
 #ifdef ENABLE_WAYLAND
-	case OBS_NIX_PLATFORM_WAYLAND:
+	case OBS_NIX_PLATFORM_WAYLAND: {
 		QPlatformNativeInterface *native =
 			QGuiApplication::platformNativeInterface();
 		gswindow.display =
 			native->nativeResourceForWindow("surface", window);
 		success = gswindow.display != nullptr;
 		break;
+	}
 #endif
+	default:
+		success = false;
+		break;
 	}
 #endif
 	return success;
