@@ -1567,6 +1567,7 @@ static int
 WriteN(RTMP *r, const char *buffer, int n)
 {
     const char *ptr = buffer;
+    struct linger l;
 
     while (n > 0)
     {
@@ -1590,6 +1591,15 @@ WriteN(RTMP *r, const char *buffer, int n)
                 continue;
 
             r->last_error_code = sockerr;
+
+            // Force-close the socket. Sometimes a send() error isn't fatal, so
+            // we could end up writing an unpublish message which some services
+            // treat as a clean shutdown. We need to disable lingering too so
+            // the remote side sees an abortive shutdown (RST).
+            l.l_onoff = 1;
+            l.l_linger = 0;
+            setsockopt(r->m_sb.sb_socket, SOL_SOCKET, SO_LINGER, (char *)&l, sizeof(l));
+            RTMPSockBuf_Close(&r->m_sb);
 
             RTMP_Close(r);
             n = 1;
