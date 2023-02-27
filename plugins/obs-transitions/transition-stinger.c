@@ -748,16 +748,19 @@ static obs_properties_t *stinger_properties(void *data)
 	obs_property_t *p = obs_properties_add_list(
 		ppts, "tp_type", obs_module_text("TransitionPointType"),
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_properties_add_bool(ppts, "hw_decode",
-				obs_module_text("HardwareDecode"));
-	obs_properties_add_bool(ppts, "preload",
-				obs_module_text("PreloadVideoToRam"));
 	obs_property_list_add_int(p, obs_module_text("TransitionPointTypeTime"),
 				  TIMING_TIME);
 	obs_property_list_add_int(
 		p, obs_module_text("TransitionPointTypeFrame"), TIMING_FRAME);
 
 	obs_property_set_modified_callback(p, transition_point_type_modified);
+
+	obs_properties_add_bool(ppts, "hw_decode",
+				obs_module_text("HardwareDecode"));
+	p = obs_properties_add_bool(ppts, "preload",
+				    obs_module_text("PreloadVideoToRam"));
+	obs_property_set_long_description(
+		p, obs_module_text("PreloadVideoToRam.Description"));
 
 	obs_properties_add_int(ppts, "transition_point",
 			       obs_module_text("TransitionPoint"), 0, 120000,
