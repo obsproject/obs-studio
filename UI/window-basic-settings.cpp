@@ -603,20 +603,21 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		ui->hideOBSFromCapture = nullptr;
 	}
 
-#define PROCESS_PRIORITY(val)                                                \
-	{                                                                    \
-		"Basic.Settings.Advanced.General.ProcessPriority."##val, val \
-	}
-
 	static struct ProcessPriority {
 		const char *name;
 		const char *val;
-	} processPriorities[] = {PROCESS_PRIORITY("High"),
-				 PROCESS_PRIORITY("AboveNormal"),
-				 PROCESS_PRIORITY("Normal"),
-				 PROCESS_PRIORITY("BelowNormal"),
-				 PROCESS_PRIORITY("Idle")};
-#undef PROCESS_PRIORITY
+	} processPriorities[] = {
+		{"Basic.Settings.Advanced.General.ProcessPriority.High",
+		 "High"},
+		{"Basic.Settings.Advanced.General.ProcessPriority.AboveNormal",
+		 "AboveNormal"},
+		{"Basic.Settings.Advanced.General.ProcessPriority.Normal",
+		 "Normal"},
+		{"Basic.Settings.Advanced.General.ProcessPriority.BelowNormal",
+		 "BelowNormal"},
+		{"Basic.Settings.Advanced.General.ProcessPriority.Idle",
+		 "Idle"},
+	};
 
 	for (ProcessPriority pri : processPriorities)
 		ui->processPriority->addItem(QTStr(pri.name), pri.val);
