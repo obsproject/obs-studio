@@ -230,8 +230,10 @@ bool mp_decode_init(mp_media_t *m, enum AVMediaType type, bool hw)
 		d->in_frame = d->sw_frame;
 	}
 
+#if LIBAVCODEC_VERSION_MAJOR < 60
 	if (d->codec->capabilities & CODEC_CAP_TRUNC)
 		d->decoder->flags |= CODEC_FLAG_TRUNC;
+#endif
 
 	d->orig_pkt = av_packet_alloc();
 	d->pkt = av_packet_alloc();
