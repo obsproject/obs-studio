@@ -29,6 +29,9 @@ void OBSBasicStats::OBSFrontendEvent(enum obs_frontend_event event, void *ptr)
 	case OBS_FRONTEND_EVENT_RECORDING_STOPPED:
 		stats->ResetRecTimeLeft();
 		break;
+	case OBS_FRONTEND_EVENT_EXIT:
+		obs_frontend_remove_event_callback(OBSFrontendEvent, stats);
+		break;
 	default:
 		break;
 	}
@@ -234,8 +237,6 @@ void OBSBasicStats::closeEvent(QCloseEvent *event)
 
 OBSBasicStats::~OBSBasicStats()
 {
-	obs_frontend_remove_event_callback(OBSFrontendEvent, this);
-
 	delete shortcutFilter;
 	os_cpu_usage_info_destroy(cpu_info);
 }

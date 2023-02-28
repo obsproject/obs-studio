@@ -4896,6 +4896,10 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_EXIT);
 
+	// Destroys the frontend API so plugins can't continue calling it
+	obs_frontend_set_callbacks_internal(nullptr);
+	api = nullptr;
+
 	QMetaObject::invokeMethod(App(), "quit", Qt::QueuedConnection);
 }
 

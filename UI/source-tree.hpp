@@ -136,7 +136,6 @@ class SourceTreeModel : public QAbstractListModel {
 
 public:
 	explicit SourceTreeModel(SourceTree *st);
-	~SourceTreeModel();
 
 	virtual int rowCount(const QModelIndex &parent) const override;
 	virtual QVariant data(const QModelIndex &index,
