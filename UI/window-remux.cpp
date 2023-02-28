@@ -114,8 +114,8 @@ QWidget *RemuxEntryPathItemDelegate::createEditor(
 				    QSizePolicy::ControlType::LineEdit));
 		layout->addWidget(text);
 
-		QObject::connect(text, SIGNAL(editingFinished()), this,
-				 SLOT(updateText()));
+		QObject::connect(text, &QLineEdit::editingFinished, this,
+				 &RemuxEntryPathItemDelegate::updateText);
 
 		QToolButton *browseButton = new QToolButton();
 		browseButton->setText("...");
@@ -700,35 +700,30 @@ OBSRemux::OBSRemux(const char *path, QWidget *parent, bool autoRemux_)
 		->setText(QTStr("Remux.ClearAll"));
 	ui->buttonBox->button(QDialogButtonBox::Reset)->setDisabled(true);
 
-	connect(ui->buttonBox->button(QDialogButtonBox::Ok), SIGNAL(clicked()),
-		this, SLOT(beginRemux()));
+	connect(ui->buttonBox->button(QDialogButtonBox::Ok),
+		&QPushButton::clicked, this, &OBSRemux::beginRemux);
 	connect(ui->buttonBox->button(QDialogButtonBox::Reset),
-		SIGNAL(clicked()), this, SLOT(clearFinished()));
+		&QPushButton::clicked, this, &OBSRemux::clearFinished);
 	connect(ui->buttonBox->button(QDialogButtonBox::RestoreDefaults),
-		SIGNAL(clicked()), this, SLOT(clearAll()));
+		&QPushButton::clicked, this, &OBSRemux::clearAll);
 	connect(ui->buttonBox->button(QDialogButtonBox::Close),
-		SIGNAL(clicked()), this, SLOT(close()));
+		&QPushButton::clicked, this, &OBSRemux::close);
 
 	worker->moveToThread(&remuxer);
 	remuxer.start();
 
-	//gcc-4.8 can't use QPointer<RemuxWorker> below
-	RemuxWorker *worker_ = worker;
-	connect(worker_, &RemuxWorker::updateProgress, this,
+	connect(worker.data(), &RemuxWorker::updateProgress, this,
 		&OBSRemux::updateProgress);
-	connect(&remuxer, &QThread::finished, worker_, &QObject::deleteLater);
-	connect(worker_, &RemuxWorker::remuxFinished, this,
+	connect(&remuxer, &QThread::finished, worker.data(),
+		&QObject::deleteLater);
+	connect(worker.data(), &RemuxWorker::remuxFinished, this,
 		&OBSRemux::remuxFinished);
-	connect(this, &OBSRemux::remux, worker_, &RemuxWorker::remux);
+	connect(this, &OBSRemux::remux, worker.data(), &RemuxWorker::remux);
 
-	// Guessing the GCC bug mentioned above would also affect
-	// QPointer<RemuxQueueModel>? Unsure.
-	RemuxQueueModel *queueModel_ = queueModel;
-	connect(queueModel_,
-		SIGNAL(rowsInserted(const QModelIndex &, int, int)), this,
-		SLOT(rowCountChanged(const QModelIndex &, int, int)));
-	connect(queueModel_, SIGNAL(rowsRemoved(const QModelIndex &, int, int)),
-		this, SLOT(rowCountChanged(const QModelIndex &, int, int)));
+	connect(queueModel.data(), &RemuxQueueModel::rowsInserted, this,
+		&OBSRemux::rowCountChanged);
+	connect(queueModel.data(), &RemuxQueueModel::rowsRemoved, this,
+		&OBSRemux::rowCountChanged);
 
 	QModelIndex index = queueModel->createIndex(0, 1);
 	QMetaObject::invokeMethod(ui->tableView, "setCurrentIndex",
@@ -945,7 +940,7 @@ void OBSRemux::remuxFinished(bool success)
 	queueModel->finishEntry(success);
 
 	if (autoRemux && autoRemuxFile != "") {
-		QTimer::singleShot(3000, this, SLOT(close()));
+		QTimer::singleShot(3000, this, &OBSRemux::close);
 
 		OBSBasic *main = OBSBasic::Get();
 		main->ShowStatusBarMessage(
