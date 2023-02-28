@@ -487,7 +487,7 @@
      <x>0</x>
      <y>0</y>
      <width>1079</width>
-     <height>21</height>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -666,6 +666,11 @@
     <property name="title">
      <string>Basic.MainMenu.View</string>
     </property>
+    <widget class="QMenu" name="multiviewProjectorMenu">
+     <property name="title">
+      <string>MultiviewProjector</string>
+     </property>
+    </widget>
     <action name="resetUI">
      <property name="text">
       <string>Basic.MainMenu.View.ResetUI</string>
@@ -693,11 +698,6 @@
     <addaction name="multiviewProjectorWindowed"/>
     <addaction name="separator"/>
     <addaction name="actionAlwaysOnTop"/>
-   </widget>
-   <widget class="QMenu" name="multiviewProjectorMenu">
-    <property name="title">
-     <string>MultiviewProjector</string>
-    </property>
    </widget>
    <widget class="QMenu" name="menuTools">
     <property name="title">
@@ -732,7 +732,7 @@
   <widget class="OBSBasicStatusBar" name="statusbar"/>
   <widget class="OBSDock" name="scenesDock">
    <property name="features">
-    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable|QDockWidget::DockWidgetFloatable</set>
+    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
    </property>
    <property name="windowTitle">
     <string>Basic.Main.Scenes</string>
@@ -801,9 +801,6 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
-          <property name="spacing">
-           <number>0</number>
-          </property>
           <property name="contextMenuPolicy">
            <enum>Qt::CustomContextMenu</enum>
           </property>
@@ -824,6 +821,9 @@
           </property>
           <property name="defaultDropAction">
            <enum>Qt::TargetMoveAction</enum>
+          </property>
+          <property name="spacing">
+           <number>0</number>
           </property>
           <addaction name="actionRemoveScene"/>
          </widget>
@@ -872,7 +872,7 @@
   </widget>
   <widget class="OBSDock" name="sourcesDock">
    <property name="features">
-    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable|QDockWidget::DockWidgetFloatable</set>
+    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
    </property>
    <property name="windowTitle">
     <string>Basic.Main.Sources</string>
@@ -941,9 +941,6 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
-          <property name="spacing">
-           <number>0</number>
-          </property>
           <property name="contextMenuPolicy">
            <enum>Qt::CustomContextMenu</enum>
           </property>
@@ -964,6 +961,9 @@
           </property>
           <property name="selectionMode">
            <enum>QAbstractItemView::ExtendedSelection</enum>
+          </property>
+          <property name="spacing">
+           <number>0</number>
           </property>
           <addaction name="actionRemoveSource"/>
          </widget>
@@ -1012,7 +1012,7 @@
   </widget>
   <widget class="OBSDock" name="mixerDock">
    <property name="features">
-    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable|QDockWidget::DockWidgetFloatable</set>
+    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
    </property>
    <property name="windowTitle">
     <string>Mixer</string>
@@ -1087,7 +1087,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>74</width>
+              <width>77</width>
               <height>16</height>
              </rect>
             </property>
@@ -1195,7 +1195,7 @@
   </widget>
   <widget class="OBSDock" name="transitionsDock">
    <property name="features">
-    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable|QDockWidget::DockWidgetFloatable</set>
+    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
    </property>
    <property name="windowTitle">
     <string>Basic.SceneTransitions</string>
@@ -1405,7 +1405,7 @@
              <string notr="true"/>
             </property>
             <property name="icon">
-             <iconset>
+             <iconset resource="obs.qrc">
               <normaloff>:/settings/images/settings/general.svg</normaloff>:/settings/images/settings/general.svg</iconset>
             </property>
             <property name="flat">
@@ -1442,7 +1442,7 @@
   </widget>
   <widget class="OBSDock" name="controlsDock">
    <property name="features">
-    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable|QDockWidget::DockWidgetFloatable</set>
+    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
    </property>
    <property name="windowTitle">
     <string>Basic.Main.Controls</string>
@@ -1643,7 +1643,7 @@
   </widget>
   <action name="actionAddScene">
    <property name="icon">
-    <iconset>
+    <iconset resource="obs.qrc">
      <normaloff>:/res/images/plus.svg</normaloff>:/res/images/plus.svg</iconset>
    </property>
    <property name="text">
@@ -1658,7 +1658,7 @@
   </action>
   <action name="actionAddSource">
    <property name="icon">
-    <iconset>
+    <iconset resource="obs.qrc">
      <normaloff>:/res/images/plus.svg</normaloff>:/res/images/plus.svg</iconset>
    </property>
    <property name="text">
@@ -1673,7 +1673,7 @@
   </action>
   <action name="actionRemoveScene">
    <property name="icon">
-    <iconset>
+    <iconset resource="obs.qrc">
      <normaloff>:/res/images/minus.svg</normaloff>:/res/images/minus.svg</iconset>
    </property>
    <property name="text">
@@ -1694,7 +1694,7 @@
   </action>
   <action name="actionRemoveSource">
    <property name="icon">
-    <iconset>
+    <iconset resource="obs.qrc">
      <normaloff>:/res/images/minus.svg</normaloff>:/res/images/minus.svg</iconset>
    </property>
    <property name="text">
@@ -1718,7 +1718,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="obs.qrc">
      <normaloff>:/settings/images/settings/general.svg</normaloff>:/settings/images/settings/general.svg</iconset>
    </property>
    <property name="text">
@@ -1733,7 +1733,7 @@
   </action>
   <action name="actionSceneUp">
    <property name="icon">
-    <iconset>
+    <iconset resource="obs.qrc">
      <normaloff>:/res/images/up.svg</normaloff>:/res/images/up.svg</iconset>
    </property>
    <property name="text">
@@ -1751,7 +1751,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="obs.qrc">
      <normaloff>:/res/images/up.svg</normaloff>:/res/images/up.svg</iconset>
    </property>
    <property name="text">
@@ -1766,7 +1766,7 @@
   </action>
   <action name="actionSceneDown">
    <property name="icon">
-    <iconset>
+    <iconset resource="obs.qrc">
      <normaloff>:/res/images/down.svg</normaloff>:/res/images/down.svg</iconset>
    </property>
    <property name="text">
@@ -1784,7 +1784,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="obs.qrc">
      <normaloff>:/res/images/down.svg</normaloff>:/res/images/down.svg</iconset>
    </property>
    <property name="text">
