@@ -10,13 +10,9 @@
 
 /* ------------------------------------------------------------------------ */
 
-#ifndef MAC_BRANCHES_URL
-#define MAC_BRANCHES_URL "https://obsproject.com/update_studio/branches.json"
-#endif
-
-#ifndef MAC_DEFAULT_BRANCH
-#define MAC_DEFAULT_BRANCH "stable"
-#endif
+static const char *MAC_BRANCHES_URL =
+	"https://obsproject.com/update_studio/branches.json";
+static const char *MAC_DEFAULT_BRANCH = "stable";
 
 /* ------------------------------------------------------------------------ */
 
