@@ -131,7 +131,7 @@ struct nv_bitstream {
 	void *ptr;
 };
 
-#define NV_FAIL(format, ...) nv_fail(enc->encoder, format, __VA_ARGS__)
+#define NV_FAIL(format, ...) nv_fail(enc->encoder, format, ##__VA_ARGS__)
 #define NV_FAILED(x) nv_failed(enc->encoder, x, __FUNCTION__, #x)
 
 static bool nv_bitstream_init(struct nvenc_data *enc, struct nv_bitstream *bs)
