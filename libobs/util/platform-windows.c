@@ -1469,7 +1469,8 @@ uint64_t os_get_proc_virtual_size(void)
 uint64_t os_get_free_disk_space(const char *dir)
 {
 	wchar_t *wdir = NULL;
-	if (!os_utf8_to_wcs_ptr(dir, 0, &wdir))
+	os_utf8_to_wcs_ptr(dir, 0, &wdir);
+	if (!wdir)
 		return 0;
 
 	ULARGE_INTEGER free;
