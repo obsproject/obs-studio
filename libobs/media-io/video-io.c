@@ -392,6 +392,8 @@ bool video_output_connect(
 			input.conversion.format = video->info.format;
 			input.conversion.width = video->info.width;
 			input.conversion.height = video->info.height;
+			input.conversion.range = video->info.range;
+			input.conversion.colorspace = video->info.colorspace;
 		}
 
 		if (input.conversion.width == 0)
