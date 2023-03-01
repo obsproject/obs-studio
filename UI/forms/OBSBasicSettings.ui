@@ -7550,9 +7550,10 @@
   <tabstop>scrollArea_2</tabstop>
   <tabstop>language</tabstop>
   <tabstop>theme</tabstop>
+  <tabstop>openStatsOnStartup</tabstop>
+  <tabstop>hideOBSFromCapture</tabstop>
   <tabstop>updateChannelBox</tabstop>
   <tabstop>enableAutoUpdates</tabstop>
-  <tabstop>openStatsOnStartup</tabstop>
   <tabstop>warnBeforeStreamStart</tabstop>
   <tabstop>warnBeforeStreamStop</tabstop>
   <tabstop>warnBeforeRecordStop</tabstop>
@@ -7713,7 +7714,6 @@
   <tabstop>enableLowLatencyMode</tabstop>
   <tabstop>browserHWAccel</tabstop>
   <tabstop>hotkeyFocusType</tabstop>
-  <tabstop>hideOBSFromCapture</tabstop>
   <tabstop>ignoreRecommended</tabstop>
   <tabstop>useStreamKeyAdv</tabstop>
   <tabstop>hotkeyFilterSearch</tabstop>
