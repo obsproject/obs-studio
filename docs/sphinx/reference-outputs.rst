@@ -285,6 +285,10 @@ Output Signals
 
    Called when the output deactivates (stops capturing data).
 
+**update** (ptr output)
+
+   Called when the output settings have been updated.
+
 **reconnect** (ptr output)
 
    Called when the output is reconnecting.

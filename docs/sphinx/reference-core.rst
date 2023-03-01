@@ -714,6 +714,10 @@ Core OBS Signals
 
    Called when an output has been destroyed.
 
+**output_update** (ptr output)
+
+   Called when output settings have been updated.
+
 **encoder_create** (ptr encoder)
 
    Called when an encoder has been created.
