@@ -1020,43 +1020,51 @@ void obs_pipewire_hide(obs_pipewire *obs_pw)
 
 uint32_t obs_pipewire_get_width(obs_pipewire *obs_pw)
 {
+	bool has_crop;
+
 	if (!obs_pw->negotiated)
 		return 0;
+
+	has_crop = has_effective_crop(obs_pw);
 
 	switch (obs_pw->transform) {
 	case SPA_META_TRANSFORMATION_Flipped:
 	case SPA_META_TRANSFORMATION_None:
 	case SPA_META_TRANSFORMATION_Flipped180:
 	case SPA_META_TRANSFORMATION_180:
-		return obs_pw->crop.valid ? obs_pw->crop.width
-					  : obs_pw->format.info.raw.size.width;
+		return has_crop ? obs_pw->crop.width
+				: obs_pw->format.info.raw.size.width;
 	case SPA_META_TRANSFORMATION_Flipped90:
 	case SPA_META_TRANSFORMATION_90:
 	case SPA_META_TRANSFORMATION_Flipped270:
 	case SPA_META_TRANSFORMATION_270:
-		return obs_pw->crop.valid ? obs_pw->crop.height
-					  : obs_pw->format.info.raw.size.height;
+		return has_crop ? obs_pw->crop.height
+				: obs_pw->format.info.raw.size.height;
 	}
 }
 
 uint32_t obs_pipewire_get_height(obs_pipewire *obs_pw)
 {
+	bool has_crop;
+
 	if (!obs_pw->negotiated)
 		return 0;
+
+	has_crop = has_effective_crop(obs_pw);
 
 	switch (obs_pw->transform) {
 	case SPA_META_TRANSFORMATION_Flipped:
 	case SPA_META_TRANSFORMATION_None:
 	case SPA_META_TRANSFORMATION_Flipped180:
 	case SPA_META_TRANSFORMATION_180:
-		return obs_pw->crop.valid ? obs_pw->crop.height
-					  : obs_pw->format.info.raw.size.height;
+		return has_crop ? obs_pw->crop.height
+				: obs_pw->format.info.raw.size.height;
 	case SPA_META_TRANSFORMATION_Flipped90:
 	case SPA_META_TRANSFORMATION_90:
 	case SPA_META_TRANSFORMATION_Flipped270:
 	case SPA_META_TRANSFORMATION_270:
-		return obs_pw->crop.valid ? obs_pw->crop.width
-					  : obs_pw->format.info.raw.size.width;
+		return has_crop ? obs_pw->crop.width
+				: obs_pw->format.info.raw.size.width;
 	}
 }
 
