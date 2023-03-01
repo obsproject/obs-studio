@@ -47,7 +47,6 @@
 #include "window-permissions.hpp"
 #endif
 #include "window-basic-settings.hpp"
-#include "crash-report.hpp"
 #include "platform.hpp"
 
 #include <fstream>
@@ -55,12 +54,15 @@
 #include <curl/curl.h>
 
 #ifdef _WIN32
-#include <json11.hpp>
 #include <windows.h>
 #include <filesystem>
 #else
 #include <signal.h>
 #include <pthread.h>
+#endif
+
+#if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
+#include <json11.hpp>
 #endif
 
 #if !defined(_WIN32) && !defined(__APPLE__)
@@ -1242,6 +1244,10 @@ bool OBSApp::SetTheme(std::string name, std::string path)
 		themeDarkMode = !(color.redF() < 0.5);
 	}
 
+#ifdef __APPLE__
+	SetMacOSDarkMode(themeDarkMode);
+#endif
+
 	emit StyleChanged();
 	return true;
 }
@@ -1249,7 +1255,7 @@ bool OBSApp::SetTheme(std::string name, std::string path)
 bool OBSApp::InitTheme()
 {
 	defaultPalette = palette();
-	setStyle(new OBSIgnoreWheelProxyStyle());
+	setStyle(new OBSProxyStyle());
 
 	const char *themeName =
 		config_get_string(globalConfig, "General", "CurrentTheme3");
@@ -1265,7 +1271,7 @@ bool OBSApp::InitTheme()
 	return SetTheme("System");
 }
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 void ParseBranchesJson(const std::string &jsonString, vector<UpdateBranch> &out,
 		       std::string &error)
 {
@@ -1277,6 +1283,9 @@ void ParseBranchesJson(const std::string &jsonString, vector<UpdateBranch> &out,
 	for (const json11::Json &item : root.array_items()) {
 #ifdef _WIN32
 		if (!item["windows"].bool_value())
+			continue;
+#elif defined(__APPLE__)
+		if (!item["macos"].bool_value())
 			continue;
 #endif
 
@@ -1326,7 +1335,7 @@ fail:
 
 void OBSApp::SetBranchData(const string &data)
 {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 	string error;
 	vector<UpdateBranch> result;
 
@@ -1353,7 +1362,7 @@ std::vector<UpdateBranch> OBSApp::GetBranches()
 	/* Always ensure the default branch exists */
 	out.push_back(UpdateBranch{"stable", "", "", true, true});
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 	if (!branches_loaded) {
 		vector<UpdateBranch> result;
 		if (LoadBranchesFile(result))
@@ -1719,11 +1728,6 @@ string OBSApp::GetVersionString() const
 	ver << " (";
 
 #ifdef _WIN32
-	if (sizeof(void *) == 8)
-		ver << "64-bit, ";
-	else
-		ver << "32-bit, ";
-
 	ver << "windows)";
 #elif __APPLE__
 	ver << "mac)";
@@ -2302,17 +2306,35 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 	setenv("QT_STYLE_OVERRIDE", "Fusion", false);
 
+#if OBS_QT_VERSION == 6
+	/* NOTE: Users blindly set this, but this theme is incompatble with Qt6 and
+	 * crashes loading saved geometry. Just turn off this theme and let users complain OBS
+	 * looks ugly instead of crashing. */
+	const char *platform_theme = getenv("QT_QPA_PLATFORMTHEME");
+	if (platform_theme && strcmp(platform_theme, "qt5ct") == 0)
+		unsetenv("QT_QPA_PLATFORMTHEME");
+#endif
+
 #if defined(ENABLE_WAYLAND) && defined(USE_XDG)
 	/* NOTE: Qt doesn't use the Wayland platform on GNOME, so we have to
 	 * force it using the QT_QPA_PLATFORM env var. It's still possible to
 	 * use other QPA platforms using this env var, or the -platform command
-	 * line option. */
+	 * line option. Remove after Qt 6.3 is everywhere. */
 
+	const char *desktop = getenv("XDG_CURRENT_DESKTOP");
 	const char *session_type = getenv("XDG_SESSION_TYPE");
-	if (session_type && strcmp(session_type, "wayland") == 0)
+	if (session_type && desktop && strstr(desktop, "GNOME") != nullptr &&
+	    strcmp(session_type, "wayland") == 0)
 		setenv("QT_QPA_PLATFORM", "wayland", false);
 #endif
 #endif
+
+	/* NOTE: This disables an optimisation in Qt that attempts to determine if
+	 * any "siblings" intersect with a widget when determining the approximate
+	 * visible/unobscured area. However, by Qt's own admission this is slow
+	 * and in the case of OBS it significantly slows down lists with many
+	 * elements (e.g. Hotkeys) and it is actually faster to disable it. */
+	qputenv("QT_NO_SUBTRACTOPAQUESIBLINGS", "1");
 
 	OBSApp program(argc, argv, profilerNameStore.get());
 	try {
@@ -2347,8 +2369,6 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		}
 
 		if (!multi) {
-			QMessageBox::StandardButtons buttons(
-				QMessageBox::Yes | QMessageBox::Cancel);
 			QMessageBox mb(QMessageBox::Question,
 				       QTStr("AlreadyRunning.Title"),
 				       QTStr("AlreadyRunning.Text"));
@@ -3209,12 +3229,14 @@ int main(int argc, char *argv[])
 	obs_set_cmdline_args(argc, argv);
 
 	for (int i = 1; i < argc; i++) {
-		if (arg_is(argv[i], "--portable", "-p")) {
-			portable_mode = true;
-
-		} else if (arg_is(argv[i], "--multi", "-m")) {
+		if (arg_is(argv[i], "--multi", "-m")) {
 			multi = true;
 
+#if ALLOW_PORTABLE_MODE
+		} else if (arg_is(argv[i], "--portable", "-p")) {
+			portable_mode = true;
+
+#endif
 		} else if (arg_is(argv[i], "--verbose", nullptr)) {
 			log_verbose = true;
 

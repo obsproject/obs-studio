@@ -139,7 +139,6 @@ static void PopulateBitrateMap()
 	call_once(once, []() {
 		const string encoders[] = {
 			"ffmpeg_aac",
-			"mf_aac",
 			"libfdk_aac",
 			"CoreAudio_AAC",
 		};
@@ -148,7 +147,6 @@ static void PopulateBitrateMap()
 
 		struct obs_audio_info aoi;
 		obs_get_audio_info(&aoi);
-		uint32_t output_channels = get_audio_channels(aoi.speakers);
 
 		HandleEncoderProperties(fallbackEncoder.c_str());
 
@@ -173,10 +171,6 @@ static void PopulateBitrateMap()
 				continue;
 
 			if (strcmp(GetCodec(encoder.c_str()), "AAC") != 0)
-				continue;
-
-			// disable mf_aac if audio output is not stereo nor mono
-			if (output_channels >= 3 && encoder == "mf_aac")
 				continue;
 
 			HandleEncoderProperties(encoder.c_str());

@@ -221,7 +221,6 @@ static const char *render_output_texture_name = "render_output_texture";
 static inline gs_texture_t *
 render_output_texture(struct obs_core_video_mix *mix)
 {
-	struct obs_core_video *video = &obs->video;
 	gs_texture_t *texture = mix->render_texture;
 	gs_texture_t *target = mix->output_texture;
 	uint32_t width = gs_texture_get_width(target);
@@ -730,6 +729,33 @@ static void set_gpu_converted_data(struct video_frame *output,
 
 		break;
 	}
+	case VIDEO_FORMAT_P216: {
+		const uint32_t width_x2 = info->width * 2;
+		const uint32_t height = info->height;
+
+		set_gpu_converted_plane(width_x2, height, input->linesize[0],
+					output->linesize[0], input->data[0],
+					output->data[0]);
+
+		set_gpu_converted_plane(width_x2, height, input->linesize[1],
+					output->linesize[1], input->data[1],
+					output->data[1]);
+
+		break;
+	}
+	case VIDEO_FORMAT_P416: {
+		const uint32_t height = info->height;
+
+		set_gpu_converted_plane(info->width * 2, height,
+					input->linesize[0], output->linesize[0],
+					input->data[0], output->data[0]);
+
+		set_gpu_converted_plane(info->width * 4, height,
+					input->linesize[1], output->linesize[1],
+					input->data[1], output->data[1]);
+
+		break;
+	}
 
 	case VIDEO_FORMAT_NONE:
 	case VIDEO_FORMAT_YVYU:
@@ -1055,7 +1081,6 @@ static inline void update_active_state(struct obs_core_video_mix *video)
 		os_atomic_load_long(&video->gpu_encoder_active) > 0;
 	const bool active = raw_active || gpu_active;
 #else
-	const bool gpu_active = 0;
 	const bool active = raw_active;
 #endif
 

@@ -74,6 +74,11 @@ else()
 
     target_compile_definitions(obs-rnnoise INTERFACE COMPILE_OPUS)
 
+    target_compile_options(
+      obs-rnnoise
+      INTERFACE
+        "$<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wno-null-dereference>")
+
     if(OS_LINUX)
       set_property(SOURCE ${_RNNOISE_SOURCES} PROPERTY COMPILE_FLAGS
                                                        -fvisibility=hidden)
@@ -183,12 +188,6 @@ target_include_directories(
   obs-filters PRIVATE $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/config>)
 
 target_link_libraries(obs-filters PRIVATE OBS::libobs)
-
-target_compile_options(
-  obs-filters
-  PRIVATE
-    $<$<OR:$<C_COMPILER_ID:Clang>,$<C_COMPILER_ID:AppleClang>,$<C_COMPILER_ID:GNU>>:-Wno-switch>
-)
 
 set_target_properties(obs-filters PROPERTIES FOLDER "plugins" PREFIX "")
 

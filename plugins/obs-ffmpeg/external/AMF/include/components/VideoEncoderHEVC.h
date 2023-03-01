@@ -302,4 +302,6 @@ enum AMF_VIDEO_ENCODER_HEVC_LTR_MODE_ENUM
 // properties set on AMFComponent to control component creation
 #define AMF_VIDEO_ENCODER_HEVC_MEMORY_TYPE                          L"HevcEncoderMemoryType"        // amf_int64(AMF_MEMORY_TYPE) , default is AMF_MEMORY_UNKNOWN, Values : AMF_MEMORY_DX11, AMF_MEMORY_DX9, AMF_MEMORY_UNKNOWN (auto)
 
+#define AMF_VIDEO_ENCODER_HEVC_ENABLE_SMART_ACCESS_VIDEO            L"HevcEnableEncoderSmartAccessVideo"         // amf_bool; default = false; true = enables smart access video feature
+
 #endif //#ifndef AMF_VideoEncoderHEVC_h

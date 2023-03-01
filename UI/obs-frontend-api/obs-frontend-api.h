@@ -226,6 +226,7 @@ EXPORT void obs_frontend_reset_video(void);
 EXPORT void obs_frontend_open_source_properties(obs_source_t *source);
 EXPORT void obs_frontend_open_source_filters(obs_source_t *source);
 EXPORT void obs_frontend_open_source_interaction(obs_source_t *source);
+EXPORT void obs_frontend_open_sceneitem_edit_transform(obs_sceneitem_t *item);
 
 EXPORT char *obs_frontend_get_current_record_output_path(void);
 EXPORT const char *obs_frontend_get_locale_string(const char *string);
@@ -235,6 +236,11 @@ EXPORT bool obs_frontend_is_theme_dark(void);
 EXPORT char *obs_frontend_get_last_recording(void);
 EXPORT char *obs_frontend_get_last_screenshot(void);
 EXPORT char *obs_frontend_get_last_replay(void);
+
+typedef void (*undo_redo_cb)(const char *data);
+EXPORT void obs_frontend_add_undo_redo_action(
+	const char *name, const undo_redo_cb undo, const undo_redo_cb redo,
+	const char *undo_data, const char *redo_data, bool repeatable);
 
 /* ------------------------------------------------------------------------- */
 

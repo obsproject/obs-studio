@@ -1342,7 +1342,7 @@ bool OBSBasicSettings::ServiceSupportsCodecCheck()
 
 void OBSBasicSettings::ResetEncoders(bool streamOnly)
 {
-	QString lastAdvEnc = ui->advOutRecEncoder->currentData().toString();
+	QString lastAdvEnc = ui->advOutEncoder->currentData().toString();
 	QString lastEnc = ui->simpleOutStrEncoder->currentData().toString();
 	OBSService service = SpawnTempService();
 	const char **codecs = obs_service_get_supported_video_codecs(service);
@@ -1481,6 +1481,7 @@ void OBSBasicSettings::ResetEncoders(bool streamOnly)
 		}
 
 		idx = ui->advOutEncoder->findData(lastAdvEnc);
+		s2.unblock();
 		ui->advOutEncoder->setCurrentIndex(idx);
 	}
 
@@ -1494,6 +1495,7 @@ void OBSBasicSettings::ResetEncoders(bool streamOnly)
 		}
 
 		idx = ui->simpleOutStrEncoder->findData(lastEnc);
+		s1.unblock();
 		ui->simpleOutStrEncoder->setCurrentIndex(idx);
 	}
 }

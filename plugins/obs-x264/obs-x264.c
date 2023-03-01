@@ -495,6 +495,9 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 		colorprim = bt709;
 		transfer = "iec61966-2-1";
 		colmatrix = bt709;
+		break;
+	default:
+		break;
 	}
 
 	obsx264->params.vui.i_sar_height = 1;
@@ -697,9 +700,8 @@ static void *obs_x264_create(obs_data_t *settings, obs_encoder_t *encoder)
 			 "OBS does not support using x264 with 10-bit formats");
 		return NULL;
 	default:
-		switch (voi->colorspace) {
-		case VIDEO_CS_2100_PQ:
-		case VIDEO_CS_2100_HLG:
+		if (voi->colorspace == VIDEO_CS_2100_PQ ||
+		    voi->colorspace == VIDEO_CS_2100_HLG) {
 			obs_encoder_set_last_error(
 				encoder, obs_module_text("HdrUnsupported"));
 			warn_enc(
@@ -707,6 +709,7 @@ static void *obs_x264_create(obs_data_t *settings, obs_encoder_t *encoder)
 				"OBS does not support using x264 with Rec. 2100");
 			return NULL;
 		}
+		break;
 	}
 
 	struct obs_x264 *obsx264 = bzalloc(sizeof(struct obs_x264));

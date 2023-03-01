@@ -68,7 +68,11 @@ if(OS_WINDOWS AND MSVC)
     /D_UNICODE
     /D_CRT_SECURE_NO_WARNINGS
     /D_CRT_NONSTDC_NO_WARNINGS
-    /utf-8)
+    /utf-8
+    /permissive-
+    /Zc:__cplusplus
+    /Zc:preprocessor
+    /std:c17)
 
   add_link_options(
     "LINKER:/OPT:REF"
@@ -90,17 +94,38 @@ else()
     set(CMAKE_CUDA_COMPILER_LAUNCHER "${CCACHE_PROGRAM}") # CMake 3.9+
   endif()
 
+  option(CALM_DEPRECATION "Keep deprecated-declarations as warnings" OFF)
   add_compile_options(
+    -Werror
     -Wextra
     -Wvla
+    -Wswitch
+    -Wno-error=switch
+    -Wformat
+    -Wformat-security
+    -Wunused-parameter
     -Wno-unused-function
     -Wno-missing-field-initializers
     -fno-strict-aliasing
     "$<$<COMPILE_LANGUAGE:C>:-Werror-implicit-function-declaration;-Wno-missing-braces>"
     "$<$<BOOL:${USE_LIBCXX}>:-stdlib=libc++>"
     "$<$<CONFIG:DEBUG>:-DDEBUG=1;-D_DEBUG=1>"
-    "$<$<COMPILE_LANG_AND_ID:CXX,AppleClang,Clang>:-fcolor-diagnostics>"
-    "$<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-fcolor-diagnostics>")
+    "$<$<COMPILE_LANG_AND_ID:CXX,AppleClang,Clang>:-Wnull-conversion;-fcolor-diagnostics;-Wno-error=shorten-64-to-32>"
+    "$<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wnull-conversion;-fcolor-diagnostics;-Wno-error=shorten-64-to-32>"
+    "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:-Wconversion-null>"
+    "$<$<BOOL:${CALM_DEPRECATION}>:-Wno-error=deprecated-declarations>")
+
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    # GCC on aarch64 emits type-limits warnings that do not appear on x86_64
+    if(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+      add_compile_options(-Wno-error=type-limits)
+    endif()
+
+    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105562
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL "12.1.0")
+      add_compile_options(-Wno-error=maybe-uninitialized)
+    endif()
+  endif()
 
   if(OBS_CODESIGN_LINKER)
     add_link_options("LINKER:$<$<PLATFORM_ID:Darwin>:-adhoc_codesign>")

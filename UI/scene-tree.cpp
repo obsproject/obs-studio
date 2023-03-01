@@ -248,6 +248,7 @@ void SceneTree::rowsInserted(const QModelIndex &parent, int start, int end)
 	QListWidget::rowsInserted(parent, start, end);
 }
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 4, 3)
 // Workaround for QTBUG-105870. Remove once that is solved upstream.
 void SceneTree::selectionChanged(const QItemSelection &selected,
 				 const QItemSelection &deselected)
@@ -256,3 +257,4 @@ void SceneTree::selectionChanged(const QItemSelection &selected,
 	    !property("clearing").toBool())
 		setCurrentRow(deselected.indexes().front().row());
 }
+#endif

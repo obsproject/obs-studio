@@ -41,7 +41,10 @@ target_sources(
           aja-widget-io.cpp
           aja-widget-io.hpp
           aja-card-manager.hpp
-          aja-ui-props.hpp)
+          aja-ui-props.hpp
+          audio-repack.c
+          audio-repack.h
+          audio-repack.hpp)
 
 target_link_libraries(aja PRIVATE OBS::libobs AJA::LibAJANTV2)
 
@@ -62,6 +65,10 @@ elseif(OS_WINDOWS)
   target_link_libraries(aja PRIVATE ws2_32.lib setupapi.lib Winmm.lib
                                     netapi32.lib Shlwapi.lib)
   target_link_options(aja PRIVATE "LINKER:/IGNORE:4099")
+endif()
+
+if(NOT MSVC)
+  target_compile_options(aja PRIVATE -Wno-error=deprecated-declarations)
 endif()
 
 set_target_properties(aja PROPERTIES FOLDER "plugins/aja" PREFIX "")

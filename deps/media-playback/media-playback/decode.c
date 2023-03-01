@@ -16,6 +16,7 @@
 
 #include "decode.h"
 
+#include "media-playback.h"
 #include "media.h"
 #include <libavutil/mastering_display_metadata.h>
 
@@ -142,9 +143,14 @@ static uint16_t get_max_luminance(const AVStream *stream)
 
 			break;
 		}
-		case AV_PKT_DATA_CONTENT_LIGHT_LEVEL:
-			return (uint16_t)((AVContentLightMetadata *)sd->data)
-				->MaxCLL;
+		case AV_PKT_DATA_CONTENT_LIGHT_LEVEL: {
+			const AVContentLightMetadata *const md =
+				(AVContentLightMetadata *)&sd->data;
+			max_luminance = md->MaxCLL;
+			break;
+		}
+		default:
+			break;
 		}
 	}
 
@@ -224,8 +230,10 @@ bool mp_decode_init(mp_media_t *m, enum AVMediaType type, bool hw)
 		d->in_frame = d->sw_frame;
 	}
 
+#if LIBAVCODEC_VERSION_MAJOR < 60
 	if (d->codec->capabilities & CODEC_CAP_TRUNC)
 		d->decoder->flags |= CODEC_FLAG_TRUNC;
+#endif
 
 	d->orig_pkt = av_packet_alloc();
 	d->pkt = av_packet_alloc();
@@ -438,8 +446,11 @@ bool mp_decode_next(struct mp_decode *d)
 				av_rescale_q(d->in_frame->best_effort_timestamp,
 					     d->stream->time_base,
 					     (AVRational){1, 1000000000});
-
+#if LIBAVUTIL_VERSION_MAJOR >= 57 && LIBAVUTIL_VERSION_MINOR >= 30
+		int64_t duration = d->in_frame->duration;
+#else
 		int64_t duration = d->in_frame->pkt_duration;
+#endif
 		if (!duration)
 			duration = get_estimated_duration(d, last_pts);
 		else

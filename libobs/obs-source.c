@@ -1638,6 +1638,11 @@ static inline enum convert_type get_convert_type(enum video_format format,
 
 	case VIDEO_FORMAT_P010:
 		return CONVERT_P010;
+
+	case VIDEO_FORMAT_P216:
+	case VIDEO_FORMAT_P416:
+		/* Unimplemented */
+		break;
 	}
 
 	return CONVERT_NONE;
@@ -2134,7 +2139,14 @@ static const char *select_conversion_technique(enum video_format format,
 		return "I444_Reverse";
 
 	case VIDEO_FORMAT_I412:
-		return "I412_Reverse";
+		switch (trc) {
+		case VIDEO_TRC_PQ:
+			return "I412_PQ_Reverse";
+		case VIDEO_TRC_HLG:
+			return "I412_HLG_Reverse";
+		default:
+			return "I412_Reverse";
+		}
 
 	case VIDEO_FORMAT_Y800:
 		return full_range ? "Y800_Full" : "Y800_Limited";
@@ -2146,7 +2158,14 @@ static const char *select_conversion_technique(enum video_format format,
 		return "I422_Reverse";
 
 	case VIDEO_FORMAT_I210:
-		return "I210_Reverse";
+		switch (trc) {
+		case VIDEO_TRC_PQ:
+			return "I210_PQ_Reverse";
+		case VIDEO_TRC_HLG:
+			return "I210_HLG_Reverse";
+		default:
+			return "I210_Reverse";
+		}
 
 	case VIDEO_FORMAT_I40A:
 		return "I40A_Reverse";
@@ -2193,6 +2212,11 @@ static const char *select_conversion_technique(enum video_format format,
 			assert(false && "No conversion requested");
 		else
 			return "RGB_Limited";
+		break;
+
+	case VIDEO_FORMAT_P216:
+	case VIDEO_FORMAT_P416:
+		/* Unimplemented */
 		break;
 	}
 	return NULL;
@@ -2478,6 +2502,8 @@ static inline void obs_source_render_async_video(obs_source_t *source)
 		bool nonlinear_alpha = false;
 		switch (source_space) {
 		case GS_CS_SRGB:
+			linear_srgb = linear_srgb ||
+				      (current_space != GS_CS_SRGB);
 			nonlinear_alpha = linear_srgb &&
 					  !source->async_linear_alpha;
 			switch (current_space) {
@@ -2492,14 +2518,12 @@ static inline void obs_source_render_async_video(obs_source_t *source)
 					nonlinear_alpha
 						? "DrawNonlinearAlphaMultiply"
 						: "DrawMultiply";
-				linear_srgb = true;
 				multiplier =
 					obs_get_video_sdr_white_level() / 80.0f;
 			}
 			break;
 		case GS_CS_SRGB_16F:
-			switch (current_space) {
-			case GS_CS_709_SCRGB:
+			if (current_space == GS_CS_709_SCRGB) {
 				tech_name = "DrawMultiply";
 				multiplier =
 					obs_get_video_sdr_white_level() / 80.0f;
@@ -2516,6 +2540,9 @@ static inline void obs_source_render_async_video(obs_source_t *source)
 				tech_name = "DrawMultiply";
 				multiplier =
 					obs_get_video_sdr_white_level() / 80.0f;
+				break;
+			case GS_CS_709_EXTENDED:
+				break;
 			}
 			break;
 		case GS_CS_709_SCRGB:
@@ -2531,6 +2558,9 @@ static inline void obs_source_render_async_video(obs_source_t *source)
 				tech_name = "DrawMultiply";
 				multiplier =
 					80.0f / obs_get_video_sdr_white_level();
+				break;
+			case GS_CS_709_SCRGB:
+				break;
 			}
 		}
 
@@ -2655,6 +2685,11 @@ static void source_render(obs_source_t *source, gs_effect_t *effect)
 		case GS_CS_709_SCRGB:
 			convert_tech = "DrawMultiply";
 			multiplier = obs_get_video_sdr_white_level() / 80.0f;
+			break;
+		case GS_CS_SRGB:
+			break;
+		case GS_CS_SRGB_16F:
+			break;
 		}
 		break;
 	case GS_CS_709_EXTENDED:
@@ -2666,6 +2701,9 @@ static void source_render(obs_source_t *source, gs_effect_t *effect)
 		case GS_CS_709_SCRGB:
 			convert_tech = "DrawMultiply";
 			multiplier = obs_get_video_sdr_white_level() / 80.0f;
+			break;
+		case GS_CS_709_EXTENDED:
+			break;
 		}
 		break;
 	case GS_CS_709_SCRGB:
@@ -2678,6 +2716,9 @@ static void source_render(obs_source_t *source, gs_effect_t *effect)
 		case GS_CS_709_EXTENDED:
 			convert_tech = "DrawMultiply";
 			multiplier = 80.0f / obs_get_video_sdr_white_level();
+			break;
+		case GS_CS_709_SCRGB:
+			break;
 		}
 	}
 
@@ -3343,6 +3384,11 @@ static void copy_frame_data(struct obs_source_frame *dst,
 		copy_frame_data_plane(dst, src, 1, dst->height);
 		copy_frame_data_plane(dst, src, 2, dst->height);
 		copy_frame_data_plane(dst, src, 3, dst->height);
+		break;
+
+	case VIDEO_FORMAT_P216:
+	case VIDEO_FORMAT_P416:
+		/* Unimplemented */
 		break;
 	}
 }

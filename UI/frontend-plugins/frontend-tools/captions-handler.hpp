@@ -25,8 +25,8 @@ public:
 
 typedef std::function<void(const std::string &)> captions_cb;
 
-#define captions_error(s) std::string(obs_module_text("Captions.Error."##s))
-#define CAPTIONS_ERROR_GENERIC_FAIL captions_error("GenericFail")
+#define CAPTIONS_ERROR_GENERIC_FAIL \
+	std::string(obs_module_text("Captions.Error.GenericFail"))
 
 /* ------------------------------------------------------------------------- */
 

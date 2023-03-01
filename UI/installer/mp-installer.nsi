@@ -469,11 +469,6 @@ Section "un.${APPNAME} App Files" UninstallSection1
 	${endif}
 	SetShellVarContext current
 
-	IfFileExists "$INSTDIR\data\obs-plugins\win-ivcam\seg_service.exe" UnregisterSegService SkipUnreg
-	UnregisterSegService:
-	ExecWait '"$INSTDIR\data\obs-plugins\win-ivcam\seg_service.exe" /UnregServer'
-	SkipUnreg:
-
 	; Clean up OBS Studio
 	RMDir /r "$INSTDIR\bin"
 	RMDir /r "$INSTDIR\data"

@@ -65,8 +65,8 @@ _configure_obs() {
         GENERATOR="Ninja"
     fi
 
-    if [ "${CI}" -a "${ARCH}" = "x86_64" ]; then
-        UNITTEST_OPTIONS="-DENABLE_UNIT_TESTS=ON"
+    if [ "${SPARKLE_APPCAST_URL}" -a "${SPARKLE_PUBLIC_KEY}" ]; then
+        SPARKLE_OPTIONS="-DSPARKLE_APPCAST_URL=\"${SPARKLE_APPCAST_URL}\" -DSPARKLE_PUBLIC_KEY=\"${SPARKLE_PUBLIC_KEY}\""
     fi
 
     cmake -S . -B ${BUILD_DIR} -G ${GENERATOR} \
@@ -85,7 +85,7 @@ _configure_obs() {
         ${YOUTUBE_OPTIONS} \
         ${TWITCH_OPTIONS} \
         ${RESTREAM_OPTIONS} \
-        ${UNITTEST_OPTIONS} \
+        ${SPARKLE_OPTIONS} \
         ${CI:+-DBUILD_FOR_DISTRIBUTION=${BUILD_FOR_DISTRIBUTION} -DOBS_BUILD_NUMBER=${GITHUB_RUN_ID}} \
         ${QUIET:+-Wno-deprecated -Wno-dev --log-level=ERROR}
 }

@@ -39,7 +39,7 @@ extern "C" {
 #define CUDARTAPI
 
 #ifdef LIBNVVFX_ENABLED
-#define MIN_VFX_SDK_VERSION 0 << 24 | 7 << 16 | 1 << 8 | 0 << 0
+#define MIN_VFX_SDK_VERSION (0 << 24 | 7 << 16 | 1 << 8 | 0 << 0)
 static HMODULE nv_videofx = NULL;
 static HMODULE nv_cvimage = NULL;
 static HMODULE nv_cudart = NULL;
@@ -817,14 +817,25 @@ static inline bool load_nv_vfx_libs()
 
 static unsigned int get_lib_version(void)
 {
+	static unsigned int version = 0;
+	static bool version_checked = false;
+
+	if (version_checked)
+		return version;
+
+	version_checked = true;
+
 	char path[MAX_PATH];
 	nvvfx_get_sdk_path(path, sizeof(path));
 
 	SetDllDirectoryA(path);
+
 	struct win_version_info nto_ver = {0};
-	get_dll_ver(L"NVVideoEffects.dll", &nto_ver);
-	unsigned int version = nto_ver.major << 24 | nto_ver.minor << 16 |
-			       nto_ver.build << 8 | nto_ver.revis << 0;
+	if (get_dll_ver(L"NVVideoEffects.dll", &nto_ver))
+		version = nto_ver.major << 24 | nto_ver.minor << 16 |
+			  nto_ver.build << 8 | nto_ver.revis << 0;
+
+	SetDllDirectoryA(NULL);
 	return version;
 }
 #endif

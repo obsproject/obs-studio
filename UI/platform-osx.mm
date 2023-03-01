@@ -207,7 +207,7 @@ void EnableOSXDockIcon(bool enable)
 
 @interface DockView : NSView {
 @private
-	QIcon icon;
+	QIcon _icon;
 }
 @end
 
@@ -215,7 +215,7 @@ void EnableOSXDockIcon(bool enable)
 - (id)initWithIcon:(QIcon)icon
 {
 	self = [super init];
-	self->icon = icon;
+	_icon = icon;
 	return self;
 }
 - (void)drawRect:(NSRect)dirtyRect
@@ -230,7 +230,7 @@ void EnableOSXDockIcon(bool enable)
 	/* Draw small icon on top */
 	float iconSize = 0.45;
 	CGImageRef image =
-		icon.pixmap(size.width, size.height).toImage().toCGImage();
+		_icon.pixmap(size.width, size.height).toImage().toCGImage();
 	CGContextRef context = [[NSGraphicsContext currentContext] CGContext];
 	CGContextDrawImage(context,
 			   CGRectMake(size.width * (1 - iconSize), 0,
@@ -382,6 +382,17 @@ void OpenMacOSPrivacyPreferences(const char *tab)
 					@"x-apple.systempreferences:com.apple.preference.security?Privacy_%s",
 					tab]];
 	[[NSWorkspace sharedWorkspace] openURL:url];
+}
+
+void SetMacOSDarkMode(bool dark)
+{
+	if (dark) {
+		NSApp.appearance =
+			[NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
+	} else {
+		NSApp.appearance =
+			[NSAppearance appearanceNamed:NSAppearanceNameAqua];
+	}
 }
 
 void TaskbarOverlayInit() {}

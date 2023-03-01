@@ -608,23 +608,27 @@ static void render_item_texture(struct obs_scene_item *item,
 
 	float multiplier = 1.f;
 
-	switch (current_space) {
-	case GS_CS_709_SCRGB:
+	if (current_space == GS_CS_709_SCRGB) {
 		switch (source_space) {
 		case GS_CS_SRGB:
 		case GS_CS_SRGB_16F:
 		case GS_CS_709_EXTENDED:
 			multiplier = obs_get_video_sdr_white_level() / 80.f;
+			break;
+		case GS_CS_709_SCRGB:
+			break;
 		}
 	}
 
-	switch (source_space) {
-	case GS_CS_709_SCRGB:
+	if (source_space == GS_CS_709_SCRGB) {
 		switch (current_space) {
 		case GS_CS_SRGB:
 		case GS_CS_SRGB_16F:
 		case GS_CS_709_EXTENDED:
 			multiplier = 80.f / obs_get_video_sdr_white_level();
+			break;
+		case GS_CS_709_SCRGB:
+			break;
 		}
 	}
 
@@ -634,59 +638,45 @@ static void render_item_texture(struct obs_scene_item *item,
 		switch (source_space) {
 		case GS_CS_SRGB:
 		case GS_CS_SRGB_16F:
-			switch (current_space) {
-			case GS_CS_709_SCRGB:
+			if (current_space == GS_CS_709_SCRGB)
 				tech_name = "DrawUpscaleMultiply";
-			}
 			break;
 		case GS_CS_709_EXTENDED:
-			switch (current_space) {
-			case GS_CS_SRGB:
-			case GS_CS_SRGB_16F:
+			if (current_space == GS_CS_SRGB ||
+			    current_space == GS_CS_SRGB_16F)
 				tech_name = "DrawUpscaleTonemap";
-				break;
-			case GS_CS_709_SCRGB:
+			else if (current_space == GS_CS_709_SCRGB)
 				tech_name = "DrawUpscaleMultiply";
-			}
 			break;
 		case GS_CS_709_SCRGB:
-			switch (current_space) {
-			case GS_CS_SRGB:
-			case GS_CS_SRGB_16F:
+			if (current_space == GS_CS_SRGB ||
+			    current_space == GS_CS_SRGB_16F)
 				tech_name = "DrawUpscaleMultiplyTonemap";
-				break;
-			case GS_CS_709_EXTENDED:
+			else if (current_space == GS_CS_709_EXTENDED)
 				tech_name = "DrawUpscaleMultiply";
-			}
+			break;
 		}
 	} else {
 		switch (source_space) {
 		case GS_CS_SRGB:
 		case GS_CS_SRGB_16F:
-			switch (current_space) {
-			case GS_CS_709_SCRGB:
+			if (current_space == GS_CS_709_SCRGB)
 				tech_name = "DrawMultiply";
-			}
 			break;
 		case GS_CS_709_EXTENDED:
-			switch (current_space) {
-			case GS_CS_SRGB:
-			case GS_CS_SRGB_16F:
+			if (current_space == GS_CS_SRGB ||
+			    current_space == GS_CS_SRGB_16F)
 				tech_name = "DrawTonemap";
-				break;
-			case GS_CS_709_SCRGB:
+			else if (current_space == GS_CS_709_SCRGB)
 				tech_name = "DrawMultiply";
-			}
 			break;
 		case GS_CS_709_SCRGB:
-			switch (current_space) {
-			case GS_CS_SRGB:
-			case GS_CS_SRGB_16F:
+			if (current_space == GS_CS_SRGB ||
+			    current_space == GS_CS_SRGB_16F)
 				tech_name = "DrawMultiplyTonemap";
-				break;
-			case GS_CS_709_EXTENDED:
+			else if (current_space == GS_CS_709_EXTENDED)
 				tech_name = "DrawMultiply";
-			}
+			break;
 		}
 	}
 
@@ -1103,6 +1093,12 @@ static void scene_load(void *data, obs_data_t *settings)
 
 	remove_all_items(scene);
 
+	if (obs_data_get_bool(settings, "custom_size")) {
+		scene->cx = (uint32_t)obs_data_get_int(settings, "cx");
+		scene->cy = (uint32_t)obs_data_get_int(settings, "cy");
+		scene->custom_size = true;
+	}
+
 	if (!items)
 		return;
 
@@ -1116,12 +1112,6 @@ static void scene_load(void *data, obs_data_t *settings)
 
 	if (obs_data_has_user_value(settings, "id_counter"))
 		scene->id_counter = obs_data_get_int(settings, "id_counter");
-
-	if (obs_data_get_bool(settings, "custom_size")) {
-		scene->cx = (uint32_t)obs_data_get_int(settings, "cx");
-		scene->cy = (uint32_t)obs_data_get_int(settings, "cy");
-		scene->custom_size = true;
-	}
 
 	obs_data_array_release(items);
 }
@@ -1373,9 +1363,9 @@ static void process_all_audio_actions(struct obs_scene_item *item,
 static void mix_audio_with_buf(float *p_out, float *p_in, float *buf_in,
 			       size_t pos, size_t count)
 {
-	register float *out = p_out;
-	register float *buf = buf_in + pos;
-	register float *in = p_in + pos;
+	register float *out = p_out + pos;
+	register float *buf = buf_in;
+	register float *in = p_in;
 	register float *end = in + count;
 
 	while (in < end)
@@ -1385,8 +1375,8 @@ static void mix_audio_with_buf(float *p_out, float *p_in, float *buf_in,
 static inline void mix_audio(float *p_out, float *p_in, size_t pos,
 			     size_t count)
 {
-	register float *out = p_out;
-	register float *in = p_in + pos;
+	register float *out = p_out + pos;
+	register float *in = p_in;
 	register float *end = in + count;
 
 	while (in < end)
@@ -1472,6 +1462,12 @@ static bool scene_audio_render(void *data, uint64_t *ts_out,
 
 		pos = (size_t)ns_to_audio_frames(sample_rate,
 						 source_ts - timestamp);
+
+		if (pos >= AUDIO_OUTPUT_FRAMES) {
+			item = item->next;
+			continue;
+		}
+
 		count = AUDIO_OUTPUT_FRAMES - pos;
 
 		if (!apply_buf && !item->visible &&
@@ -1518,11 +1514,9 @@ scene_video_get_color_space(void *data, size_t count,
 	enum gs_color_space space = GS_CS_SRGB;
 	struct obs_video_info ovi;
 	if (obs_get_video_info(&ovi)) {
-		switch (ovi.colorspace) {
-		case VIDEO_CS_2100_PQ:
-		case VIDEO_CS_2100_HLG:
+		if (ovi.colorspace == VIDEO_CS_2100_PQ ||
+		    ovi.colorspace == VIDEO_CS_2100_HLG)
 			space = GS_CS_709_EXTENDED;
-		}
 	}
 
 	return space;

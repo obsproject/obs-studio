@@ -25,14 +25,13 @@ target_sources(
           updater.rc
           init-hook-files.c
           updater.manifest
-          ${CMAKE_SOURCE_DIR}/UI/win-update/win-update-helpers.cpp
-          ${CMAKE_SOURCE_DIR}/UI/win-update/win-update-helpers.hpp
+          helpers.cpp
+          helpers.hpp
           ${CMAKE_SOURCE_DIR}/deps/json11/json11.hpp
           ${CMAKE_SOURCE_DIR}/deps/json11/json11.cpp)
 
-target_include_directories(
-  updater PRIVATE ${CMAKE_SOURCE_DIR}/libobs ${CMAKE_SOURCE_DIR}/UI/win-update
-                  ${CMAKE_SOURCE_DIR}/deps/json11)
+target_include_directories(updater PRIVATE ${CMAKE_SOURCE_DIR}/libobs
+                                           ${CMAKE_SOURCE_DIR}/deps/json11)
 
 target_compile_definitions(updater PRIVATE NOMINMAX "PSAPI_VERSION=2")
 

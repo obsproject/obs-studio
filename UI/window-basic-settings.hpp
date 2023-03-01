@@ -125,6 +125,7 @@ private:
 	int sampleRateIndex = 0;
 	int channelIndex = 0;
 	bool llBufferingEnabled = false;
+	bool hotkeysLoaded = false;
 
 	int lastSimpleRecQualityIdx = 0;
 	int lastServiceIdx = -1;
@@ -425,7 +426,6 @@ private slots:
 	void Stream1Changed();
 	void VideoChanged();
 	void VideoChangedResolution();
-	void VideoChangedRestart();
 	void HotkeysChanged();
 	bool ScanDuplicateHotkeys(QFormLayout *layout);
 	void ReloadHotkeys(obs_hotkey_id ignoreKey = OBS_INVALID_HOTKEY_ID);

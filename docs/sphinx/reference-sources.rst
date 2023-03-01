@@ -493,7 +493,7 @@ Source Definition Structure (obs_source_info)
 
    Called to get the current time of the media.
 
-.. member:: void (*obs_source_info.media_set_time)(void *data, int64_t miliseconds)
+.. member:: void (*obs_source_info.media_set_time)(void *data, int64_t milliseconds)
 
    Called to set the media time.
 
@@ -789,10 +789,11 @@ General Source Functions
 .. function:: obs_weak_source_t *obs_source_get_weak_source(obs_source_t *source)
               obs_source_t *obs_weak_source_get_source(obs_weak_source_t *weak)
 
-   These functions are used to get a weak reference from a strong source
-   reference, or a strong source reference from a weak reference.  If
+   These functions are used to get an incremented weak reference from a strong source
+   reference, or an incremented strong source reference from a weak reference. If
    the source is destroyed, *obs_weak_source_get_source* will return
-   *NULL*.
+   *NULL*. Release with :c:func:`obs_weak_source_release()` or
+   :c:func:`obs_source_release()`, respectively.
 
 ---------------------
 
@@ -1425,6 +1426,21 @@ Functions used by sources
            /* planar 4:2:0 format, 10 bpp */
            VIDEO_FORMAT_I010, /* three-plane */
            VIDEO_FORMAT_P010, /* two-plane, luma and packed chroma */
+
+           /* planar 4:2:2 format, 10 bpp */
+           VIDEO_FORMAT_I210,
+
+           /* planar 4:4:4 format, 12 bpp */
+           VIDEO_FORMAT_I412,
+
+           /* planar 4:4:4:4 format, 12 bpp */
+           VIDEO_FORMAT_YA2L,
+
+           /* planar 4:2:2 format, 16 bpp */
+           VIDEO_FORMAT_P216, /* two-plane, luma and packed chroma */
+
+           /* planar 4:4:4 format, 16 bpp */
+           VIDEO_FORMAT_P416, /* two-plane, luma and packed chroma */
    };
 
    struct obs_source_frame {

@@ -102,10 +102,8 @@ void init_window(cocoa_window_t cw, obs_data_t *settings)
 		if (owner_names_match && (ids_match || window_names_match)) {
 			pthread_mutex_unlock(&cw->name_lock);
 
-			NSNumber *window_id = (NSNumber *)dict[WINDOW_NUMBER];
-			cw->window_id = window_id.intValue;
-			NSNumber *owner_pid = (NSNumber *)dict[OWNER_PID];
-			cw->owner_pid = owner_pid.intValue;
+			cw->window_id = [dict[WINDOW_NUMBER] intValue];
+			cw->owner_pid = [dict[OWNER_PID] intValue];
 
 			obs_data_set_int(settings, "window", cw->window_id);
 			obs_data_set_int(settings, "owner_pid", cw->owner_pid);
@@ -136,8 +134,8 @@ void update_window(cocoa_window_t cw, obs_data_t *settings)
 	[cw->window_name retain];
 	pthread_mutex_unlock(&cw->name_lock);
 
-	cw->owner_pid = obs_data_get_int(settings, "owner_pid");
-	cw->window_id = obs_data_get_int(settings, "window");
+	cw->owner_pid = (int)obs_data_get_int(settings, "owner_pid");
+	cw->window_id = (unsigned int)obs_data_get_int(settings, "window");
 }
 
 static inline const char *make_name(NSString *owner, NSString *name)
@@ -163,7 +161,7 @@ static inline NSDictionary *find_window_dict(NSArray *arr, int window_id)
 static inline bool window_changed_internal(obs_property_t *p,
 					   obs_data_t *settings)
 {
-	int window_id = obs_data_get_int(settings, "window");
+	int window_id = (int)obs_data_get_int(settings, "window");
 	NSString *window_owner = @(obs_data_get_string(settings, "owner_name"));
 	NSString *window_name = @(obs_data_get_string(settings, "window_name"));
 

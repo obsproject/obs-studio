@@ -730,6 +730,9 @@ static void color_correction_filter_defaults_v2(obs_data_t *settings)
 static enum gs_color_space color_correction_filter_get_color_space(
 	void *data, size_t count, const enum gs_color_space *preferred_spaces)
 {
+	UNUSED_PARAMETER(count);
+	UNUSED_PARAMETER(preferred_spaces);
+
 	const enum gs_color_space potential_spaces[] = {
 		GS_CS_SRGB,
 		GS_CS_SRGB_16F,

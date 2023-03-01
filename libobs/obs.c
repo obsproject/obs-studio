@@ -56,7 +56,7 @@ static inline void calc_gpu_conversion_sizes(struct obs_core_video_mix *video)
 	video->conversion_width_i = 0.f;
 	video->conversion_height_i = 0.f;
 
-	switch ((uint32_t)info->format) {
+	switch (info->format) {
 	case VIDEO_FORMAT_I420:
 		video->conversion_needed = true;
 		video->conversion_techs[0] = "Planar_Y";
@@ -108,6 +108,39 @@ static inline void calc_gpu_conversion_sizes(struct obs_core_video_mix *video)
 			video->conversion_techs[0] = "P010_SRGB_Y";
 			video->conversion_techs[1] = "P010_SRGB_UV";
 		}
+		break;
+	case VIDEO_FORMAT_P216:
+		video->conversion_needed = true;
+		video->conversion_width_i = 1.f / (float)info->width;
+		video->conversion_height_i = 1.f / (float)info->height;
+		if (info->colorspace == VIDEO_CS_2100_PQ) {
+			video->conversion_techs[0] = "P216_PQ_Y";
+			video->conversion_techs[1] = "P216_PQ_UV";
+		} else if (info->colorspace == VIDEO_CS_2100_HLG) {
+			video->conversion_techs[0] = "P216_HLG_Y";
+			video->conversion_techs[1] = "P216_HLG_UV";
+		} else {
+			video->conversion_techs[0] = "P216_SRGB_Y";
+			video->conversion_techs[1] = "P216_SRGB_UV";
+		}
+		break;
+	case VIDEO_FORMAT_P416:
+		video->conversion_needed = true;
+		video->conversion_width_i = 1.f / (float)info->width;
+		video->conversion_height_i = 1.f / (float)info->height;
+		if (info->colorspace == VIDEO_CS_2100_PQ) {
+			video->conversion_techs[0] = "P416_PQ_Y";
+			video->conversion_techs[1] = "P416_PQ_UV";
+		} else if (info->colorspace == VIDEO_CS_2100_HLG) {
+			video->conversion_techs[0] = "P416_HLG_Y";
+			video->conversion_techs[1] = "P416_HLG_UV";
+		} else {
+			video->conversion_techs[0] = "P416_SRGB_Y";
+			video->conversion_techs[1] = "P416_SRGB_UV";
+		}
+		break;
+	default:
+		break;
 	}
 }
 
@@ -234,6 +267,28 @@ static bool obs_init_gpu_conversion(struct obs_core_video_mix *video)
 		if (!video->convert_textures[0] || !video->convert_textures[1])
 			success = false;
 		break;
+	case VIDEO_FORMAT_P216:
+		video->convert_textures[0] =
+			gs_texture_create(info->width, info->height, GS_R16, 1,
+					  NULL, GS_RENDER_TARGET);
+		video->convert_textures[1] =
+			gs_texture_create(info->width / 2, info->height,
+					  GS_RG16, 1, NULL, GS_RENDER_TARGET);
+		if (!video->convert_textures[0] || !video->convert_textures[1])
+			success = false;
+		break;
+	case VIDEO_FORMAT_P416:
+		video->convert_textures[0] =
+			gs_texture_create(info->width, info->height, GS_R16, 1,
+					  NULL, GS_RENDER_TARGET);
+		video->convert_textures[1] =
+			gs_texture_create(info->width, info->height, GS_RG16, 1,
+					  NULL, GS_RENDER_TARGET);
+		if (!video->convert_textures[0] || !video->convert_textures[1])
+			success = false;
+		break;
+	default:
+		break;
 	}
 
 	if (!success) {
@@ -323,6 +378,26 @@ static bool obs_init_gpu_copy_surfaces(struct obs_core_video_mix *video,
 		if (!video->copy_surfaces[i][1])
 			return false;
 		break;
+	case VIDEO_FORMAT_P216:
+		video->copy_surfaces[i][0] = gs_stagesurface_create(
+			info->width, info->height, GS_R16);
+		if (!video->copy_surfaces[i][0])
+			return false;
+		video->copy_surfaces[i][1] = gs_stagesurface_create(
+			info->width / 2, info->height, GS_RG16);
+		if (!video->copy_surfaces[i][1])
+			return false;
+		break;
+	case VIDEO_FORMAT_P416:
+		video->copy_surfaces[i][0] = gs_stagesurface_create(
+			info->width, info->height, GS_R16);
+		if (!video->copy_surfaces[i][0])
+			return false;
+		video->copy_surfaces[i][1] = gs_stagesurface_create(
+			info->width, info->height, GS_RG16);
+		if (!video->copy_surfaces[i][1])
+			return false;
+		break;
 	default:
 		break;
 	}
@@ -344,7 +419,12 @@ static bool obs_init_textures(struct obs_core_video_mix *video)
 	case VIDEO_FORMAT_I210:
 	case VIDEO_FORMAT_I412:
 	case VIDEO_FORMAT_YA2L:
+	case VIDEO_FORMAT_P216:
+	case VIDEO_FORMAT_P416:
 		format = GS_RGBA16F;
+		break;
+	default:
+		break;
 	}
 
 	for (size_t i = 0; i < NUM_TEXTURES; i++) {
@@ -393,8 +473,15 @@ static bool obs_init_textures(struct obs_core_video_mix *video)
 		switch (info->format) {
 		case VIDEO_FORMAT_I010:
 		case VIDEO_FORMAT_P010:
+		case VIDEO_FORMAT_P216:
+		case VIDEO_FORMAT_P416:
 			space = GS_CS_SRGB_16F;
+			break;
+		default:
+			space = GS_CS_SRGB;
+			break;
 		}
+		break;
 	}
 
 	video->render_texture =
@@ -461,8 +548,6 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 	struct gs_sampler_info point_sampler = {0};
 	bool success = true;
 	int errorcode;
-
-	video->adapter_index = ovi->adapter;
 
 	errorcode =
 		gs_create(&video->graphics, ovi->graphics_module, ovi->adapter);
@@ -776,13 +861,16 @@ void obs_free_video_mix(struct obs_core_video_mix *video)
 static void obs_free_video(void)
 {
 	pthread_mutex_lock(&obs->video.mixes_mutex);
-	size_t num = obs->video.mixes.num;
-	if (num)
-		blog(LOG_WARNING, "%zu views remain at shutdown", num);
-	for (size_t i = 0; i < num; i++) {
-		obs_free_video_mix(obs->video.mixes.array[i]);
+	size_t num_views = 0;
+	for (size_t i = 0; i < obs->video.mixes.num; i++) {
+		struct obs_core_video_mix *video = obs->video.mixes.array[i];
+		if (video && video->view)
+			num_views++;
+		obs_free_video_mix(video);
 		obs->video.mixes.array[i] = NULL;
 	}
+	if (num_views > 0)
+		blog(LOG_WARNING, "Number of remaining views: %ld", num_views);
 	pthread_mutex_unlock(&obs->video.mixes_mutex);
 
 	pthread_mutex_destroy(&obs->video.mixes_mutex);
@@ -1410,8 +1498,6 @@ int obs_reset_video(struct obs_video_info *ovi)
 			return errorcode;
 		}
 	}
-
-	ovi->adapter = obs->video.adapter_index;
 
 	const char *scale_type_name = "";
 	switch (ovi->scale_type) {
@@ -2052,6 +2138,9 @@ static void obs_render_main_texture_internal(enum gs_blend_type src_c,
 	case GS_CS_709_SCRGB:
 		tech_name = "DrawMultiply";
 		multiplier = obs_get_video_sdr_white_level() / 80.f;
+		break;
+	case GS_CS_709_EXTENDED:
+		break;
 	}
 
 	const bool previous = gs_framebuffer_srgb_enabled();
@@ -3103,13 +3192,4 @@ bool obs_weak_object_references_object(obs_weak_object_t *weak,
 				       obs_object_t *object)
 {
 	return weak && object && weak->object == object;
-}
-
-/* this function is a hack for the annoying intel igpu + dgpu situation. I
- * guess. I don't care anymore. */
-EXPORT void obs_internal_set_adapter_idx_this_is_dumb(uint32_t adapter_idx)
-{
-	if (!obs)
-		return;
-	obs->video.adapter_index = adapter_idx;
 }

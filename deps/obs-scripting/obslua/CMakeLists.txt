@@ -61,4 +61,8 @@ elseif(OS_MACOS)
                                           MACHO_COMPATIBILITY_VERSION 0)
 endif()
 
+if(CMAKE_C_COMPILER_ID STREQUAL "GNU" AND SWIG_VERSION VERSION_LESS "4.1")
+  target_compile_options(obslua PRIVATE -Wno-maybe-uninitialized)
+endif()
+
 setup_script_plugin_target(obslua)

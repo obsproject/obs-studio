@@ -878,7 +878,7 @@
             "servers": [
                 {
                     "name": "Auto",
-                    "url": "rtmp://s-sd.doppiocdn.com/ext"
+                    "url": "rtmp://live.doppiocdn.com/ext"
                 }
             ],
             "recommended": {
@@ -1107,51 +1107,17 @@
             ],
             "servers": [
                 {
-                    "name": "Global Zone (geo based)",
+                    "name": "Global - Recommended",
+                    "url": "rtmps://live.sb.zone:443/live"
+                },
+                {
+                    "name": "Global - Legacy",
                     "url": "rtmp://ingest-global.switchboard.zone/live"
-                },
-                {
-                    "name": "US Zone (geo based)",
-                    "url": "rtmp://ingest-us.switchboard.zone/live"
-                },
-                {
-                    "name": "US West",
-                    "url": "rtmp://ingest-us-west.switchboard.zone/live"
-                },
-                {
-                    "name": "US East",
-                    "url": "rtmp://ingest-us-east.switchboard.zone/live"
-                },
-                {
-                    "name": "US Central",
-                    "url": "rtmp://ingest-us-central.switchboard.zone/live"
-                },
-                {
-                    "name": "South America",
-                    "url": "rtmp://ingest-sa.switchboard.zone/live"
-                },
-                {
-                    "name": "EU (auto)",
-                    "url": "rtmp://ingest-eu.switchboard.zone/live"
-                },
-                {
-                    "name": "Australia",
-                    "url": "rtmp://ingest-au.switchboard.zone/live"
-                },
-                {
-                    "name": "APAC (auto)",
-                    "url": "rtmp://ingest-asia.switchboard.zone/live"
-                },
-                {
-                    "name": "UK",
-                    "url": "rtmp://ingest-uk.switchboard.zone/live"
-                }
+                }                            
             ],
             "recommended": {
                 "keyint": 2,
-                "profile": "high",
-                "max audio bitrate": 160,
-                "max video bitrate": 6000
+                "profile": "high"               
             }
         },
         {
@@ -2297,71 +2263,6 @@
             }
         },
         {
-            "name": "Shareplay",
-            "more_info_link": "https://shareplay.tv",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://shareplay.tv:833/live"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "profile": "main",
-                "supported resolutions": [
-                    "1920x1080",
-                    "1280x720",
-                    "852x480",
-                    "640x360"
-                ],
-                "bitrate matrix": [
-                    {
-                        "res": "640x360",
-                        "fps": 30,
-                        "max bitrate": 1000
-                    },
-                    {
-                        "res": "640x360",
-                        "fps": 60,
-                        "max bitrate": 1500
-                    },
-                    {
-                        "res": "852x480",
-                        "fps": 30,
-                        "max bitrate": 2000
-                    },
-                    {
-                        "res": "852x480",
-                        "fps": 60,
-                        "max bitrate": 3000
-                    },
-                    {
-                        "res": "1280x720",
-                        "fps": 30,
-                        "max bitrate": 4000
-                    },
-                    {
-                        "res": "1280x720",
-                        "fps": 60,
-                        "max bitrate": 6000
-                    },
-                    {
-                        "res": "1920x1080",
-                        "fps": 30,
-                        "max bitrate": 6000
-                    },
-                    {
-                        "res": "1920x1080",
-                        "fps": 60,
-                        "max bitrate": 9000
-                    }
-                ],
-                "max fps": 60,
-                "max video bitrate": 9000,
-                "max audio bitrate": 128
-            }
-        },
-        {
             "name": "Sympla",
             "servers": [
                 {
@@ -2377,12 +2278,12 @@
         },
         {
             "name": "Mildom",
-            "more_info_link": "https://www.mildom.com/course/pc",
+            "more_info_link": "https://support.mildom.com/hc/ja/articles/360056569954",
             "stream_key_link": "https://www.mildom.com/creator/live",
             "servers": [
                 {
-                    "name": "Asia: Tokyo, Japan",
-                    "url": "rtmp://live-tyo-tct.mildom.tv/live"
+                    "name": "Global",
+                    "url": "rtmp://txlvb-push.mildom.tv/live"
                 }
             ],
             "recommended": {
@@ -2591,6 +2492,21 @@
             ],
             "recommended": {
                 "keyint": 2
+            }
+        },
+        {
+            "name": "Live Streamer Cafe",
+            "more_info_link": "https://livestreamercafe.com/help.php",
+            "stream_key_link": "https://livestreamercafe.com/profile.php",
+            "servers": [
+                {
+                    "name": "Live Streamer Cafe Server",
+                    "url": "rtmp://tophicles.com/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+		"max video bitrate": 6000
             }
         }
     ]

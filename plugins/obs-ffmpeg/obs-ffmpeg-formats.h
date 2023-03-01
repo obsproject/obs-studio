@@ -56,6 +56,12 @@ obs_to_ffmpeg_video_format(enum video_format format)
 		return AV_PIX_FMT_YUV420P10LE;
 	case VIDEO_FORMAT_P010:
 		return AV_PIX_FMT_P010LE;
+#if LIBAVUTIL_BUILD >= AV_VERSION_INT(57, 17, 100)
+	case VIDEO_FORMAT_P216:
+		return AV_PIX_FMT_P216LE;
+	case VIDEO_FORMAT_P416:
+		return AV_PIX_FMT_P416LE;
+#endif
 	case VIDEO_FORMAT_NONE:
 	case VIDEO_FORMAT_AYUV:
 	default:
@@ -98,7 +104,7 @@ determine_chroma_location(enum AVPixelFormat pix_fmt,
 static inline enum audio_format
 convert_ffmpeg_sample_format(enum AVSampleFormat format)
 {
-	switch ((uint32_t)format) {
+	switch (format) {
 	case AV_SAMPLE_FMT_U8:
 		return AUDIO_FORMAT_U8BIT;
 	case AV_SAMPLE_FMT_S16:
@@ -115,6 +121,8 @@ convert_ffmpeg_sample_format(enum AVSampleFormat format)
 		return AUDIO_FORMAT_32BIT_PLANAR;
 	case AV_SAMPLE_FMT_FLTP:
 		return AUDIO_FORMAT_FLOAT_PLANAR;
+	default:
+		return AUDIO_FORMAT_16BIT;
 	}
 
 	/* shouldn't get here */

@@ -264,12 +264,7 @@ target_compile_definitions(
 
 target_compile_features(libobs PRIVATE cxx_alias_templates)
 
-target_compile_options(
-  libobs
-  PUBLIC ${ARCH_SIMD_FLAGS}
-  PRIVATE
-    $<$<OR:$<C_COMPILER_ID:Clang>,$<C_COMPILER_ID:AppleClang>,$<C_COMPILER_ID:GNU>>:-Wno-switch>
-)
+target_compile_options(libobs PUBLIC ${ARCH_SIMD_FLAGS})
 
 target_include_directories(
   libobs PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
@@ -290,6 +285,8 @@ if(OS_WINDOWS)
             util/threading-windows.h
             util/pipe-windows.c
             util/platform-windows.c
+            util/windows/device-enum.c
+            util/windows/device-enum.h
             util/windows/obfuscate.c
             util/windows/obfuscate.h
             util/windows/win-registry.h
@@ -310,7 +307,7 @@ if(OS_WINDOWS)
     libobs PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS
                    _CRT_NONSTDC_NO_WARNINGS)
 
-  target_link_libraries(libobs PRIVATE Avrt Dwmapi winmm)
+  target_link_libraries(libobs PRIVATE dxgi Avrt Dwmapi winmm)
 
   if(MSVC)
     target_link_libraries(libobs PUBLIC OBS::w32-pthreads)

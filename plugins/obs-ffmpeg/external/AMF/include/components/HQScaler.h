@@ -43,9 +43,10 @@ enum  AMF_HQ_SCALER_ALGORITHM_ENUM
 {
     AMF_HQ_SCALER_ALGORITHM_BILINEAR = 0,
     AMF_HQ_SCALER_ALGORITHM_BICUBIC = 1,
-    AMF_HQ_SCALER_ALGORITHM_FSR = 2,
+    AMF_HQ_SCALER_ALGORITHM_FSR = 2, // deprecated
+    AMF_HQ_SCALER_ALGORITHM_VIDEOSR1_0 = 2,
     AMF_HQ_SCALER_ALGORITHM_POINT = 3,
-    AMF_HQ_SCALER_ALGORITHM_FSR1_1 = 4,
+    AMF_HQ_SCALER_ALGORITHM_VIDEOSR1_1 = 4,
 
 };
 
@@ -63,5 +64,6 @@ enum  AMF_HQ_SCALER_ALGORITHM_ENUM
 #define AMF_HQ_SCALER_FROM_SRGB          L"FromSRGB"                   //  bool (default=true) Convert to SRGB. 
 
 #define AMF_HQ_SCALER_SHARPNESS          L"HQScalerSharpness"   // Float in the range of [0.0, 2.0]
+#define AMF_HQ_SCALER_FRAME_RATE         L"HQScalerFrameRate"   // Frame rate (off, 15, 30, 60)
 
 #endif //#ifndef AMFHQScaler_h

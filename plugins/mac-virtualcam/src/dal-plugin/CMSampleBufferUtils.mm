@@ -22,7 +22,8 @@ CMSampleTimingInfo CMSampleTimingInfoForTimestamp(uint64_t timestampNanos,
 	timing.duration =
 		CMTimeMake(fpsDenominator * scale, fpsNumerator * scale);
 	timing.presentationTimeStamp = CMTimeMake(
-		(timestampNanos / (double)NSEC_PER_SEC) * scale, scale);
+		((int64_t)(timestampNanos / (double)NSEC_PER_SEC) * scale),
+		scale);
 	timing.decodeTimeStamp = kCMTimeInvalid;
 	return timing;
 }

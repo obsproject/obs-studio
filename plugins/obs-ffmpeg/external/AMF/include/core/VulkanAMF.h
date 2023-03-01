@@ -52,9 +52,9 @@ namespace amf
 
     typedef struct AMFVulkanSync
     {
-        amf_size            cbSizeof;           // sizeof(AMFVulkanSemaphore)
+        amf_size            cbSizeof;           // sizeof(AMFVulkanSync)
         void*               pNext;              // reserved for extensions
-        VkSemaphore         hSemaphore;
+        VkSemaphore         hSemaphore;         // VkSemaphore; can be nullptr
         bool                bSubmitted;         // if true - wait for hSemaphore. re-submit hSemaphore if not synced by other ways and set to true
         VkFence             hFence;             // To sync on CPU; can be nullptr. Submitted in vkQueueSubmit. If waited for hFence, null it, do not delete or reset.
     } AMFVulkanSync;
@@ -78,12 +78,12 @@ namespace amf
         amf_size            cbSizeof;           // sizeof(AMFVulkanSurface)
         void*               pNext;              // reserved for extensions
         // surface properties
-        VkImage             hImage;
-        VkDeviceMemory      hMemory;
+        VkImage             hImage;             // vulkan native image for which the surface is created
+        VkDeviceMemory      hMemory;            // memory for hImage, can be nullptr
         amf_int64           iSize;              // memory size
         amf_uint32          eFormat;            // VkFormat
-        amf_int32           iWidth;
-        amf_int32           iHeight;
+        amf_int32           iWidth;             // image width
+        amf_int32           iHeight;            // image height
         amf_uint32          eCurrentLayout;     // VkImageLayout
         amf_uint32          eUsage;             // AMF_SURFACE_USAGE
         amf_uint32          eAccess;            // AMF_MEMORY_CPU_ACCESS
@@ -92,7 +92,7 @@ namespace amf
 
     typedef struct AMFVulkanView
     {
-        amf_size            cbSizeof;           // sizeof(AMFVulkanSurface)
+        amf_size            cbSizeof;           // sizeof(AMFVulkanView)
         void*               pNext;              // reserved for extensions
         // surface properties
         AMFVulkanSurface    *pSurface;
@@ -102,6 +102,9 @@ namespace amf
         amf_int32           iPlaneWidthPitch;
         amf_int32           iPlaneHeightPitch;
     } AMFVulkanView;
+
+#define AMF_CONTEXT_VULKAN_COMPUTE_QUEUE  L"VulkanComputeQueue" // amf_int64; default=0; Compute queue index in range [0, (VkQueueFamilyProperties.queueCount-1)] of the compute queue family.
+
 #if defined(__cplusplus)
 } // namespace amf
 #endif

@@ -209,20 +209,16 @@ static void *av1_create_internal(obs_data_t *settings, obs_encoder_t *encoder,
 {
 	video_t *video = obs_encoder_video(encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
-	switch (voi->format) {
-	case VIDEO_FORMAT_I010:
-	case VIDEO_FORMAT_P010:
-		break;
-	default:
-		switch (voi->colorspace) {
-		case VIDEO_CS_2100_PQ:
-		case VIDEO_CS_2100_HLG: {
+
+	if (voi->format != VIDEO_FORMAT_P010 &&
+	    voi->format != VIDEO_FORMAT_I010) {
+		if (voi->colorspace == VIDEO_CS_2100_PQ ||
+		    voi->colorspace == VIDEO_CS_2100_HLG) {
 			const char *const text =
 				obs_module_text("AV1.8bitUnsupportedHdr");
 			obs_encoder_set_last_error(encoder, text);
 			blog(LOG_ERROR, "[AV1 encoder] %s", text);
 			return NULL;
-		}
 		}
 	}
 

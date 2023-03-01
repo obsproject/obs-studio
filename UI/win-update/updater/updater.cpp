@@ -24,6 +24,8 @@
 #include <vector>
 #include <string>
 #include <mutex>
+#include <unordered_set>
+#include <queue>
 
 using namespace std;
 using namespace json11;
@@ -139,8 +141,8 @@ try {
 	WinHandle hSrc;
 	WinHandle hDest;
 
-	hSrc = CreateFile(src, GENERIC_READ, 0, nullptr, OPEN_EXISTING,
-			  FILE_FLAG_SEQUENTIAL_SCAN, nullptr);
+	hSrc = CreateFile(src, GENERIC_READ, FILE_SHARE_READ, nullptr,
+			  OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, nullptr);
 	if (!hSrc.Valid())
 		throw LastError();
 
@@ -246,6 +248,7 @@ enum state_t {
 	STATE_PENDING_DOWNLOAD,
 	STATE_DOWNLOADING,
 	STATE_DOWNLOADED,
+	STATE_ALREADY_DOWNLOADED,
 	STATE_INSTALL_FAILED,
 	STATE_INSTALLED,
 };
@@ -354,6 +357,7 @@ struct deletion_t {
 	}
 };
 
+static unordered_map<string, wstring> hashes;
 static vector<update_t> updates;
 static vector<deletion_t> deletions;
 static mutex updateMutex;
@@ -592,6 +596,72 @@ static inline bool WideToUTF8(char *utf8, int utf8Size, const wchar_t *wide)
 				     nullptr, nullptr);
 }
 
+#define UTF8ToWideBuf(wide, utf8) UTF8ToWide(wide, _countof(wide), utf8)
+#define WideToUTF8Buf(utf8, wide) WideToUTF8(utf8, _countof(utf8), wide)
+
+/* ----------------------------------------------------------------------- */
+
+queue<string> hashQueue;
+
+void HasherThread()
+{
+	bool hasherThreadFailure = false;
+	unique_lock<mutex> ulock(updateMutex, defer_lock);
+
+	while (true) {
+		ulock.lock();
+		if (hashQueue.empty())
+			return;
+
+		auto fileName = hashQueue.front();
+		hashQueue.pop();
+
+		ulock.unlock();
+
+		wchar_t updateFileName[MAX_PATH];
+
+		if (!UTF8ToWideBuf(updateFileName, fileName.c_str()))
+			continue;
+		if (!IsSafeFilename(updateFileName))
+			continue;
+
+		BYTE existingHash[BLAKE2_HASH_LENGTH];
+		wchar_t fileHashStr[BLAKE2_HASH_STR_LENGTH];
+
+		if (CalculateFileHash(updateFileName, existingHash)) {
+			HashToString(existingHash, fileHashStr);
+			ulock.lock();
+			hashes.emplace(fileName, fileHashStr);
+			ulock.unlock();
+		}
+	}
+}
+
+static void RunHasherWorkers(int num, const Json &packages)
+try {
+
+	for (const Json &package : packages.array_items()) {
+		for (const Json &file : package["files"].array_items()) {
+			if (!file["name"].is_string())
+				continue;
+			hashQueue.push(file["name"].string_value());
+		}
+	}
+
+	vector<future<void>> futures;
+	futures.resize(num);
+
+	for (auto &result : futures) {
+		result = async(launch::async, HasherThread);
+	}
+	for (auto &result : futures) {
+		result.wait();
+	}
+} catch (...) {
+}
+
+/* ----------------------------------------------------------------------- */
+
 static inline bool FileExists(const wchar_t *path)
 {
 	WIN32_FIND_DATAW wfd;
@@ -606,20 +676,13 @@ static inline bool FileExists(const wchar_t *path)
 
 static bool NonCorePackageInstalled(const char *name)
 {
-	if (is32bit) {
-		if (strcmp(name, "obs-browser") == 0) {
+	if (strcmp(name, "obs-browser") == 0) {
+		if (is32bit)
 			return FileExists(
 				L"obs-plugins\\32bit\\obs-browser.dll");
-		} else if (strcmp(name, "realsense") == 0) {
-			return FileExists(L"obs-plugins\\32bit\\win-ivcam.dll");
-		}
-	} else {
-		if (strcmp(name, "obs-browser") == 0) {
+		else
 			return FileExists(
 				L"obs-plugins\\64bit\\obs-browser.dll");
-		} else if (strcmp(name, "realsense") == 0) {
-			return FileExists(L"obs-plugins\\64bit\\win-ivcam.dll");
-		}
 	}
 
 	return false;
@@ -645,9 +708,6 @@ static inline bool is_64bit_file(const char *file)
 	       strstr(file, "64.dll") != nullptr ||
 	       strstr(file, "64.exe") != nullptr;
 }
-
-#define UTF8ToWideBuf(wide, utf8) UTF8ToWide(wide, _countof(wide), utf8)
-#define WideToUTF8Buf(utf8, wide) WideToUTF8(utf8, _countof(utf8), wide)
 
 #define UPDATE_URL L"https://cdn-fastly.obsproject.com/update_studio"
 
@@ -735,16 +795,14 @@ static bool AddPackageUpdateFiles(const Json &root, size_t idx,
 
 		/* Check file hash */
 
-		BYTE existingHash[BLAKE2_HASH_LENGTH];
-		wchar_t fileHashStr[BLAKE2_HASH_STR_LENGTH];
+		wstring fileHashStr;
 		bool has_hash;
 
 		/* We don't really care if this fails, it's just to avoid
 		 * wasting bandwidth by downloading unmodified files */
-		if (CalculateFileHash(updateFileName, existingHash)) {
-
-			HashToString(existingHash, fileHashStr);
-			if (wcscmp(fileHashStr, updateHashStr) == 0)
+		if (hashes.count(fileUTF8)) {
+			fileHashStr = hashes[fileUTF8];
+			if (fileHashStr == updateHashStr)
 				continue;
 
 			has_hash = true;
@@ -769,7 +827,7 @@ static bool AddPackageUpdateFiles(const Json &root, size_t idx,
 
 		update.has_hash = has_hash;
 		if (has_hash)
-			StringToHash(fileHashStr, update.my_hash);
+			StringToHash(fileHashStr.data(), update.my_hash);
 
 		updates.push_back(move(update));
 
@@ -887,16 +945,12 @@ static void UpdateWithPatchIfAvailable(const char *name, const char *hash,
 		update.fileSize = size;
 		update.patchable = true;
 
-		/* ensure the filename is unique */
-		static long increment = 0;
-
 		/* Since the patch depends on the previous version, we can
 		 * no longer rely on the temp name being unique to the
 		 * new file's hash */
 		update.tempPath = tempPath;
 		update.tempPath += L"\\";
 		update.tempPath += patchHashStr;
-		update.tempPath += std::to_wstring(increment++);
 		break;
 	}
 }
@@ -1081,6 +1135,69 @@ static bool UpdateFile(update_t &file)
 	}
 
 	return true;
+}
+
+queue<reference_wrapper<update_t>> updateQueue;
+static int lastPosition = 0;
+static int installed = 0;
+static bool updateThreadFailed = false;
+
+static bool UpdateWorker()
+{
+	unique_lock<mutex> ulock(updateMutex, defer_lock);
+
+	while (true) {
+		ulock.lock();
+
+		if (updateThreadFailed)
+			return false;
+		if (updateQueue.empty())
+			break;
+
+		auto update = updateQueue.front();
+		updateQueue.pop();
+		ulock.unlock();
+
+		if (!UpdateFile(update)) {
+			updateThreadFailed = true;
+			return false;
+		} else {
+			int position = (int)(((float)++installed /
+					      (float)completedUpdates) *
+					     100.0f);
+			if (position > lastPosition) {
+				lastPosition = position;
+				SendDlgItemMessage(hwndMain, IDC_PROGRESS,
+						   PBM_SETPOS, position, 0);
+			}
+		}
+	}
+
+	return true;
+}
+
+static bool RunUpdateWorkers(int num)
+try {
+	for (update_t &update : updates) {
+		updateQueue.push(update);
+	}
+
+	vector<future<bool>> thread_success_results;
+	thread_success_results.resize(num);
+
+	for (future<bool> &result : thread_success_results) {
+		result = async(launch::async, UpdateWorker);
+	}
+	for (future<bool> &result : thread_success_results) {
+		if (!result.get()) {
+			return false;
+		}
+	}
+
+	return true;
+
+} catch (...) {
+	return false;
 }
 
 #define PATCH_MANIFEST_URL \
@@ -1287,6 +1404,7 @@ static bool Update(wchar_t *cmdLine)
 
 	bool bIsPortable = false;
 	wstring branch = L"stable";
+	wstring appdata;
 
 	if (cmdLine[0]) {
 		int argc;
@@ -1301,6 +1419,9 @@ static bool Update(wchar_t *cmdLine)
 				} else if (wcsncmp(argv[i], L"--branch=", 9) ==
 					   0) {
 					branch = argv[i] + 9;
+				} else if (wcsncmp(argv[i], L"--appdata=",
+						   10) == 0) {
+					appdata = argv[i] + 10;
 				} else if (wcscmp(argv[i], L"--portable") ==
 					   0) {
 					bIsPortable = true;
@@ -1320,18 +1441,16 @@ static bool Update(wchar_t *cmdLine)
 		GetCurrentDirectory(_countof(lpAppDataPath), lpAppDataPath);
 		StringCbCat(lpAppDataPath, sizeof(lpAppDataPath), L"\\config");
 	} else {
-		DWORD ret;
-		ret = GetEnvironmentVariable(L"OBS_USER_APPDATA_PATH",
-					     lpAppDataPath,
-					     _countof(lpAppDataPath));
-
-		if (ret >= _countof(lpAppDataPath)) {
-			Status(L"Update failed: Could not determine AppData "
-			       L"location");
-			return false;
-		}
-
-		if (!ret) {
+		if (!appdata.empty()) {
+			HRESULT hr = StringCbCopy(lpAppDataPath,
+						  sizeof(lpAppDataPath),
+						  appdata.c_str());
+			if (hr != S_OK) {
+				Status(L"Update failed: Could not determine AppData "
+				       L"location");
+				return false;
+			}
+		} else {
 			CoTaskMemPtr<wchar_t> pOut;
 			HRESULT hr = SHGetKnownFolderPath(
 				FOLDERID_RoamingAppData, KF_FLAG_DEFAULT,
@@ -1400,6 +1519,11 @@ static bool Update(wchar_t *cmdLine)
 		Status(L"Update failed: Invalid update manifest");
 		return false;
 	}
+
+	/* ------------------------------------- *
+	 * Hash local files listed in manifest   */
+
+	RunHasherWorkers(4, root["packages"]);
 
 	/* ------------------------------------- *
 	 * Parse current manifest update files   */
@@ -1565,6 +1689,21 @@ static bool Update(wchar_t *cmdLine)
 	}
 
 	/* ------------------------------------- *
+	 * Deduplicate Downloads                 */
+
+	unordered_set<wstring> tempFiles;
+	for (update_t &update : updates) {
+		if (tempFiles.count(update.tempPath)) {
+			update.state = STATE_ALREADY_DOWNLOADED;
+			totalFileSize -= update.fileSize;
+			completedUpdates++;
+			continue;
+		}
+
+		tempFiles.insert(update.tempPath);
+	}
+
+	/* ------------------------------------- *
 	 * Download Updates                      */
 
 	if (!RunDownloadWorkers(4))
@@ -1583,21 +1722,8 @@ static bool Update(wchar_t *cmdLine)
 
 	SendDlgItemMessage(hwndMain, IDC_PROGRESS, PBM_SETPOS, 0, 0);
 
-	for (update_t &update : updates) {
-		if (!UpdateFile(update)) {
-			return false;
-		} else {
-			updatesInstalled++;
-			int position = (int)(((float)updatesInstalled /
-					      (float)completedUpdates) *
-					     100.0f);
-			if (position > lastPosition) {
-				lastPosition = position;
-				SendDlgItemMessage(hwndMain, IDC_PROGRESS,
-						   PBM_SETPOS, position, 0);
-			}
-		}
-	}
+	if (!RunUpdateWorkers(4))
+		return false;
 
 	for (deletion_t &deletion : deletions) {
 		if (!RenameRemovedFile(deletion)) {
@@ -1628,6 +1754,7 @@ static bool Update(wchar_t *cmdLine)
 	};
 
 	if (!bIsPortable) {
+		Status(L"Installing Virtual Camera...");
 		wchar_t regsvr[MAX_PATH];
 		wchar_t src[MAX_PATH];
 		wchar_t tmp[MAX_PATH];
@@ -1661,11 +1788,13 @@ static bool Update(wchar_t *cmdLine)
 	/* ------------------------------------- *
 	 * Update hook files and vulkan registry */
 
+	Status(L"Updating Game Capture hooks...");
 	UpdateHookFiles();
 
 	/* ------------------------------------- *
 	 * Finish                                */
 
+	Status(L"Cleaning up...");
 	/* If we get here, all updates installed successfully so we can purge
 	 * the old versions */
 	for (update_t &update : updates) {
@@ -1734,7 +1863,7 @@ static void CancelUpdate(bool quit)
 	}
 }
 
-static void LaunchOBS()
+static void LaunchOBS(bool portable)
 {
 	wchar_t cwd[MAX_PATH];
 	wchar_t newCwd[MAX_PATH];
@@ -1773,6 +1902,9 @@ static void LaunchOBS()
 	execInfo.lpFile = obsPath;
 	execInfo.lpDirectory = newCwd;
 	execInfo.nShow = SW_SHOWNORMAL;
+
+	if (portable)
+		execInfo.lpParameters = L"--portable";
 
 	ShellExecuteEx(&execInfo);
 }
@@ -1822,13 +1954,26 @@ static int RestartAsAdmin(LPCWSTR lpCmdLine, LPCWSTR cwd)
 		return 0;
 	}
 
+	/* If the admin is a different user, add the path to the user's
+	 * AppData to the command line so we can load the correct manifest. */
+	wstring elevatedCmdLine(lpCmdLine);
+	CoTaskMemPtr<wchar_t> pOut;
+	HRESULT hr = SHGetKnownFolderPath(FOLDERID_RoamingAppData,
+					  KF_FLAG_DEFAULT, nullptr, &pOut);
+	if (hr == S_OK) {
+		elevatedCmdLine += L" \"--appdata=";
+		elevatedCmdLine += pOut;
+		elevatedCmdLine += L"\"";
+	}
+
 	SHELLEXECUTEINFO shExInfo = {0};
 	shExInfo.cbSize = sizeof(shExInfo);
 	shExInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
 	shExInfo.hwnd = 0;
-	shExInfo.lpVerb = L"runas";        /* Operation to perform */
-	shExInfo.lpFile = myPath;          /* Application to start */
-	shExInfo.lpParameters = lpCmdLine; /* Additional parameters */
+	shExInfo.lpVerb = L"runas"; /* Operation to perform */
+	shExInfo.lpFile = myPath;   /* Application to start */
+	shExInfo.lpParameters =
+		elevatedCmdLine.c_str(); /* Additional parameters */
 	shExInfo.lpDirectory = cwd;
 	shExInfo.nShow = SW_NORMAL;
 	shExInfo.hInstApp = 0;
@@ -1836,14 +1981,6 @@ static int RestartAsAdmin(LPCWSTR lpCmdLine, LPCWSTR cwd)
 	/* annoyingly the actual elevated updater will disappear behind other
 	 * windows :( */
 	AllowSetForegroundWindow(ASFW_ANY);
-
-	/* if the admin is a different user, save the path to the user's
-	 * appdata so we can load the correct manifest */
-	CoTaskMemPtr<wchar_t> pOut;
-	HRESULT hr = SHGetKnownFolderPath(FOLDERID_RoamingAppData,
-					  KF_FLAG_DEFAULT, nullptr, &pOut);
-	if (hr == S_OK)
-		SetEnvironmentVariable(L"OBS_USER_APPDATA_PATH", pOut);
 
 	if (ShellExecuteEx(&shExInfo)) {
 		DWORD exitCode;
@@ -1887,6 +2024,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int)
 	GetCurrentDirectoryW(_countof(cwd) - 1, cwd);
 
 	is32bit = wcsstr(cwd, L"bin\\32bit") != nullptr;
+	bool isPortable = wcsstr(lpCmdLine, L"Portable") != nullptr ||
+			  wcsstr(lpCmdLine, L"--portable") != nullptr;
 
 	if (!IsWindows10OrGreater()) {
 		MessageBox(
@@ -1922,7 +2061,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int)
 					nullptr);
 			SetCurrentDirectory(newPath);
 
-			LaunchOBS();
+			LaunchOBS(isPortable);
 		}
 
 		if (hLowMutex) {
@@ -1970,7 +2109,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int)
 		WinHandle hMutex = OpenMutex(
 			SYNCHRONIZE, false, L"OBSUpdaterRunningAsNonAdminUser");
 		if (msg.wParam == 1 && !hMutex) {
-			LaunchOBS();
+			LaunchOBS(isPortable);
 		}
 
 		return (int)msg.wParam;

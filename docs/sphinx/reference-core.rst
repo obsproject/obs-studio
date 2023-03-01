@@ -52,7 +52,7 @@ Initialization, Shutdown, and Information
 .. function:: void obs_set_locale(const char *locale)
 
    Sets a new locale to use for modules.  This will call
-   obs_module_set_locale for each module with the new locale.
+   :c:func:`obs_module_set_locale()` for each module with the new locale.
   
    :param  locale: The locale to use for modules
 
@@ -67,8 +67,8 @@ Initialization, Shutdown, and Information
 .. function:: profiler_name_store_t *obs_get_profiler_name_store(void)
 
    :return: The profiler name store (see util/profiler.h) used by OBS,
-            which is either a name store passed to obs_startup, an
-            internal name store, or NULL in case obs_initialized()
+            which is either a name store passed to :c:func:`obs_startup()`, an
+            internal name store, or NULL in case :c:func:`obs_initialized()`
             returns false.
 
 ---------------------
@@ -284,7 +284,10 @@ Libobs Objects
 
 .. function:: void obs_enum_scenes(bool (*enum_proc)(void*, obs_source_t*), void *param)
 
-   Enumerates all scenes.
+   Enumerates all scenes. Use :c:func:`obs_scene_from_source()` if the scene is
+   needed as an :c:type:`obs_scene_t`. The order that they are enumerated should
+   not be relied on. If one intends to enumerate the scenes in the order
+   presented by the OBS Studio Frontend, use :c:func:`obs_frontend_get_scenes()`.
   
    Callback function returns true to continue enumeration, or false to end
    enumeration.
@@ -299,11 +302,25 @@ Libobs Objects
 
    Enumerates outputs.
 
+   Callback function returns true to continue enumeration, or false to end
+   enumeration.
+
+   Use :c:func:`obs_output_get_ref()` or
+   :c:func:`obs_output_get_weak_output()` if you want to retain a
+   reference after obs_enum_outputs finishes.
+
 ---------------------
 
 .. function:: void obs_enum_encoders(bool (*enum_proc)(void*, obs_encoder_t*), void *param)
 
    Enumerates encoders.
+
+   Callback function returns true to continue enumeration, or false to end
+   enumeration.
+
+   Use :c:func:`obs_encoder_get_ref()` or
+   :c:func:`obs_encoder_get_weak_encoder()` if you want to retain a
+   reference after obs_enum_encoders finishes.
 
 ---------------------
 
@@ -448,7 +465,7 @@ Video, Audio, and Graphics
 
 .. function:: gs_effect_t *obs_get_base_effect(enum obs_base_effect effect)
 
-   Returns a commoinly used base effect.
+   Returns a commonly used base effect.
 
    :param effect: | Can be one of the following values:
                   | OBS_EFFECT_DEFAULT             - RGB/YUV
@@ -504,6 +521,9 @@ Video, Audio, and Graphics
 .. function:: void obs_enum_audio_monitoring_devices(obs_enum_audio_device_cb cb, void *data)
 
    Enumerates audio devices which can be used for audio monitoring.
+
+   Callback function returns true to continue enumeration, or false to end
+   enumeration.
 
    Relevant data types used with this function:
 

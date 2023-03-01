@@ -21,6 +21,7 @@
 #include <QMessageBox>
 #include <util/dstr.hpp>
 #include "window-basic-main.hpp"
+#include "window-basic-main-outputs.hpp"
 #include "window-basic-vcam-config.hpp"
 #include "display-helpers.hpp"
 #include "window-namedialog.hpp"
@@ -286,7 +287,8 @@ void OBSBasic::OverrideTransition(OBSSource transition)
 		obs_transition_swap_end(transition, oldTransition);
 
 		// Transition overrides don't raise an event so we need to call update directly
-		OBSBasicVCamConfig::UpdateOutputSource();
+		if (vcamEnabled)
+			outputHandler->UpdateVirtualCamOutputSource();
 	}
 }
 
@@ -427,6 +429,9 @@ void OBSBasic::SetTransition(OBSSource transition)
 	bool configurable = obs_source_configurable(transition);
 	ui->transitionRemove->setEnabled(configurable);
 	ui->transitionProps->setEnabled(configurable);
+
+	if (vcamEnabled && vcamConfig.internal == VCamInternalType::Default)
+		outputHandler->UpdateVirtualCamOutputSource();
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_CHANGED);
@@ -695,6 +700,13 @@ void OBSBasic::SetCurrentScene(OBSSource scene, bool force)
 				currentScene = itemScene.Get();
 				ui->scenes->setCurrentItem(item);
 				ui->scenes->blockSignals(false);
+
+				if (vcamEnabled &&
+				    vcamConfig.internal ==
+					    VCamInternalType::Preview)
+					outputHandler
+						->UpdateVirtualCamOutputSource();
+
 				if (api)
 					api->on_event(
 						OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
@@ -793,9 +805,7 @@ void OBSBasic::CreateProgramOptions()
 
 	tBar->setProperty("themeID", "tBarSlider");
 
-	connect(tBar, SIGNAL(sliderMoved(int)), this, SLOT(TBarChanged(int)));
-	connect(tBar, SIGNAL(valueChanged(int)), this,
-		SLOT(on_tbar_position_valueChanged(int)));
+	connect(tBar, &QSlider::valueChanged, this, &OBSBasic::TBarChanged);
 	connect(tBar, SIGNAL(sliderReleased()), this, SLOT(TBarReleased()));
 
 	layout->addStretch(0);
@@ -918,8 +928,6 @@ void OBSBasic::TBarChanged(int value)
 {
 	OBSSourceAutoRelease transition = obs_get_output_source(0);
 
-	tBar->setValue(value);
-
 	if (!tBarActive) {
 		OBSSource sceneSource = GetCurrentSceneSource();
 		OBSSource tBarTr = GetOverrideTransition(sceneSource);
@@ -945,6 +953,9 @@ void OBSBasic::TBarChanged(int value)
 
 	obs_transition_set_manual_time(transition,
 				       (float)value / T_BAR_PRECISION_F);
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_TBAR_VALUE_CHANGED);
 }
 
 int OBSBasic::GetTbarPosition()
@@ -952,14 +963,6 @@ int OBSBasic::GetTbarPosition()
 	return tBar->value();
 }
 
-void OBSBasic::on_tbar_position_valueChanged(int value)
-{
-	if (api) {
-		api->on_event(OBS_FRONTEND_EVENT_TBAR_VALUE_CHANGED);
-	}
-
-	UNUSED_PARAMETER(value);
-}
 void OBSBasic::on_modeSwitch_clicked()
 {
 	SetPreviewProgramMode(!IsPreviewProgramMode());

@@ -352,7 +352,7 @@ static bool xshm_server_changed(obs_properties_t *props, obs_property_t *p,
 
 	for (int_fast32_t i = 0; i < count; ++i) {
 		char *name;
-		char name_tmp[12];
+		char name_tmp[20];
 		int_fast32_t x, y, w, h;
 		x = y = w = h = 0;
 
@@ -367,7 +367,7 @@ static bool xshm_server_changed(obs_properties_t *props, obs_property_t *p,
 		if (name == NULL) {
 			int ret = snprintf(name_tmp, sizeof(name_tmp),
 					   "%" PRIuFAST32, i);
-			if (ret >= sizeof(name_tmp))
+			if (ret >= (int)sizeof(name_tmp))
 				blog(LOG_DEBUG,
 				     "linux-capture: A format truncation may have occurred."
 				     " This can be ignored since it is quite improbable.");

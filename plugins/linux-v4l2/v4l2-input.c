@@ -419,7 +419,7 @@ static void v4l2_device_list(obs_property_t *prop, obs_data_t *settings)
 		int ret = snprintf(unique_device_name,
 				   sizeof(unique_device_name), "%s (%s)",
 				   video_cap.card, video_cap.bus_info);
-		if (ret >= sizeof(unique_device_name))
+		if (ret >= (int)sizeof(unique_device_name))
 			blog(LOG_DEBUG,
 			     "linux-v4l2: A format truncation may have occurred."
 			     " This can be ignored since it is quite improbable.");

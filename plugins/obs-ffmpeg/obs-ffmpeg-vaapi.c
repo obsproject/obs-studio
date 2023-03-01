@@ -277,6 +277,8 @@ static bool vaapi_update(void *data, obs_data_t *settings)
 		enc->context->color_primaries = AVCOL_PRI_BT709;
 		colorspace = AVCOL_SPC_BT709;
 		break;
+	default:
+		break;
 	}
 
 	enc->context->colorspace = colorspace;

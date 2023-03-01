@@ -54,6 +54,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <obs-module.h>
+#include <util/windows/device-enum.h>
 #include <util/config-file.h>
 #include <util/platform.h>
 #include <util/pipe.h>
@@ -81,14 +82,26 @@ extern bool av1_supported(mfxIMPL impl);
 struct adapter_info adapters[MAX_ADAPTERS] = {0};
 size_t adapter_count = 0;
 
+static bool enum_luids(void *param, uint32_t idx, uint64_t luid)
+{
+	struct dstr *cmd = param;
+	dstr_catf(cmd, " %llX", luid);
+	UNUSED_PARAMETER(idx);
+	return true;
+}
+
 bool obs_module_load(void)
 {
 	char *test_exe = os_get_executable_path_ptr("obs-qsv-test.exe");
+	struct dstr cmd = {0};
 	struct dstr caps_str = {0};
 	os_process_pipe_t *pp = NULL;
 	config_t *config = NULL;
 
-	pp = os_process_pipe_create(test_exe, "r");
+	dstr_copy(&cmd, test_exe);
+	enum_graphics_device_luids(enum_luids, &cmd);
+
+	pp = os_process_pipe_create(cmd.array, "r");
 	if (!pp) {
 		blog(LOG_INFO, "Failed to launch the QSV test process I guess");
 		goto fail;
@@ -168,6 +181,7 @@ bool obs_module_load(void)
 fail:
 	config_close(config);
 	dstr_free(&caps_str);
+	dstr_free(&cmd);
 	os_process_pipe_destroy(pp);
 	bfree(test_exe);
 

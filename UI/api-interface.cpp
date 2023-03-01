@@ -630,6 +630,14 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 					  Q_ARG(OBSSource, OBSSource(source)));
 	}
 
+	void obs_frontend_open_sceneitem_edit_transform(
+		obs_sceneitem_t *item) override
+	{
+		QMetaObject::invokeMethod(main, "OpenEditTransform",
+					  Q_ARG(OBSSceneItem,
+						OBSSceneItem(item)));
+	}
+
 	char *obs_frontend_get_current_record_output_path(void) override
 	{
 		const char *recordOutputPath = main->GetCurrentOutputPath();
@@ -660,6 +668,20 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	char *obs_frontend_get_last_replay(void) override
 	{
 		return bstrdup(main->lastReplay.c_str());
+	}
+
+	void obs_frontend_add_undo_redo_action(const char *name,
+					       const undo_redo_cb undo,
+					       const undo_redo_cb redo,
+					       const char *undo_data,
+					       const char *redo_data,
+					       bool repeatable) override
+	{
+		main->undo_s.add_action(
+			name,
+			[undo](const std::string &data) { undo(data.c_str()); },
+			[redo](const std::string &data) { redo(data.c_str()); },
+			undo_data, redo_data, repeatable);
 	}
 
 	void on_load(obs_data_t *settings) override

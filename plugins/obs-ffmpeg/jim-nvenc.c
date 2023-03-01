@@ -131,7 +131,7 @@ struct nv_bitstream {
 	void *ptr;
 };
 
-#define NV_FAIL(format, ...) nv_fail(enc->encoder, format, __VA_ARGS__)
+#define NV_FAIL(format, ...) nv_fail(enc->encoder, format, ##__VA_ARGS__)
 #define NV_FAILED(x) nv_failed(enc->encoder, x, __FUNCTION__, #x)
 
 static bool nv_bitstream_init(struct nvenc_data *enc, struct nv_bitstream *bs)
@@ -645,8 +645,7 @@ static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings,
 	/* rate control               */
 
 	enc->can_change_bitrate =
-		nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_DYN_BITRATE_CHANGE) &&
-		!lookahead;
+		nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_DYN_BITRATE_CHANGE);
 
 	config->rcParams.rateControlMode = NV_ENC_PARAMS_RC_VBR;
 

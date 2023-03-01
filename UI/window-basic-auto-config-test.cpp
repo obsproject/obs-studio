@@ -91,7 +91,6 @@ public:
 #define TEST_BW_CONNECTING TEST_STR("TestingBandwidth.Connecting")
 #define TEST_BW_CONNECT_FAIL TEST_STR("TestingBandwidth.ConnectFailed")
 #define TEST_BW_SERVER TEST_STR("TestingBandwidth.Server")
-#define TEST_RES TEST_STR("TestingRes")
 #define TEST_RES_VAL TEST_STR("TestingRes.Resolution")
 #define TEST_RES_FAIL TEST_STR("TestingRes.Fail")
 #define TEST_SE TEST_STR("TestingStreamEncoder")

@@ -1,4 +1,4 @@
-//
+// 
 // Notice Regarding Standards.  AMD does not provide a license or sublicense to
 // any Intellectual Property Rights relating to any standards, including but not
 // limited to any audio and/or video codec technologies such as MPEG-2, MPEG-4;
@@ -6,9 +6,9 @@
 // (collectively, the "Media Technologies"). For clarity, you will pay any
 // royalties due for such third party technologies, which may include the Media
 // Technologies that are owed as a result of AMD providing the Software to you.
-//
-// MIT license
-//
+// 
+// MIT license 
+// 
 // Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -40,8 +40,9 @@
 #define AMFVQEnhancer L"AMFVQEnhancer"
 
 #define AMF_VIDEO_ENHANCER_ENGINE_TYPE       L"AMF_VIDEI_ENHANCER_ENGINE_TYPE"        // AMF_MEMORY_TYPE (DX11, DX12, OPENCL, VULKAN default : DX11)"                    - determines how the object is initialized and what kernels to use
-#define AMF_VIDEO_ENHANCER_OUTPUT_SIZE       L"AMF_VIDEO_ENHANCER_OUTPUT_SIZE"        // AMFSize
+#define AMF_VIDEO_ENHANCER_OUTPUT_SIZE       L"AMF_VIDEO_ENHANCER_OUTPUT_SIZE"        // AMFSize                       
 #define AMF_VE_FCR_ATTENUATION               L"AMF_VE_FCR_ATTENUATION"                // Float in the range of [0.02, 0.4], default : 0.1
 #define AMF_VE_FCR_RADIUS                    L"AMF_VE_FCR_RADIUS"                     // int  in the range of [1, 4]
+#define AMF_VE_FCR_SPLIT_VIEW                L"AMF_VE_FCR_SPLIT_VIEW"                 // FCR View split window
 
 #endif //#ifndef AMFVQEnhancer_h

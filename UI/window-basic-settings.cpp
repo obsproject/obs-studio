@@ -22,6 +22,7 @@
 #include <graphics/math-defs.h>
 #include <initializer_list>
 #include <sstream>
+#include <unordered_map>
 #include <QCompleter>
 #include <QGuiApplication>
 #include <QLineEdit>
@@ -333,14 +334,12 @@ void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
 #define CHECK_CHANGED   SIGNAL(clicked(bool))
 #define SCROLL_CHANGED  SIGNAL(valueChanged(int))
 #define DSCROLL_CHANGED SIGNAL(valueChanged(double))
-#define TOGGLE_CHANGED  SIGNAL(toggled(bool))
 
 #define GENERAL_CHANGED SLOT(GeneralChanged())
 #define STREAM1_CHANGED SLOT(Stream1Changed())
 #define OUTPUTS_CHANGED SLOT(OutputsChanged())
 #define AUDIO_RESTART   SLOT(AudioChangedRestart())
 #define AUDIO_CHANGED   SLOT(AudioChanged())
-#define VIDEO_RESTART   SLOT(VideoChangedRestart())
 #define VIDEO_RES       SLOT(VideoChangedResolution())
 #define VIDEO_CHANGED   SLOT(VideoChanged())
 #define A11Y_CHANGED    SLOT(A11yChanged())
@@ -579,17 +578,11 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	ui->advOutFFABitrate->setSuffix(" Kbps");
 
 #if !defined(_WIN32) && !defined(__APPLE__)
-	delete ui->enableAutoUpdates;
-	ui->enableAutoUpdates = nullptr;
-	delete ui->updateChannelBox;
-	ui->updateChannelBox = nullptr;
 	delete ui->updateSettingsGroupBox;
 	ui->updateSettingsGroupBox = nullptr;
-#elif defined(__APPLE__)
-	delete ui->updateChannelBox;
-	ui->updateChannelBox = nullptr;
-	delete ui->updateChannelLabel;
 	ui->updateChannelLabel = nullptr;
+	ui->updateChannelBox = nullptr;
+	ui->enableAutoUpdates = nullptr;
 #else
 	// Hide update section if disabled
 	if (App()->IsUpdaterDisabled())
@@ -610,20 +603,21 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		ui->hideOBSFromCapture = nullptr;
 	}
 
-#define PROCESS_PRIORITY(val)                                                \
-	{                                                                    \
-		"Basic.Settings.Advanced.General.ProcessPriority."##val, val \
-	}
-
 	static struct ProcessPriority {
 		const char *name;
 		const char *val;
-	} processPriorities[] = {PROCESS_PRIORITY("High"),
-				 PROCESS_PRIORITY("AboveNormal"),
-				 PROCESS_PRIORITY("Normal"),
-				 PROCESS_PRIORITY("BelowNormal"),
-				 PROCESS_PRIORITY("Idle")};
-#undef PROCESS_PRIORITY
+	} processPriorities[] = {
+		{"Basic.Settings.Advanced.General.ProcessPriority.High",
+		 "High"},
+		{"Basic.Settings.Advanced.General.ProcessPriority.AboveNormal",
+		 "AboveNormal"},
+		{"Basic.Settings.Advanced.General.ProcessPriority.Normal",
+		 "Normal"},
+		{"Basic.Settings.Advanced.General.ProcessPriority.BelowNormal",
+		 "BelowNormal"},
+		{"Basic.Settings.Advanced.General.ProcessPriority.Idle",
+		 "Idle"},
+	};
 
 	for (ProcessPriority pri : processPriorities)
 		ui->processPriority->addItem(QTStr(pri.name), pri.val);
@@ -918,6 +912,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	QValidator *validator = new QRegularExpressionValidator(rx, this);
 	ui->baseResolution->lineEdit()->setValidator(validator);
 	ui->outputResolution->lineEdit()->setValidator(validator);
+	ui->advOutRescale->lineEdit()->setValidator(validator);
+	ui->advOutRecRescale->lineEdit()->setValidator(validator);
+	ui->advOutFFRescale->lineEdit()->setValidator(validator);
 
 	connect(ui->useStreamKeyAdv, SIGNAL(clicked()), this,
 		SLOT(UseStreamKeyAdvClicked()));
@@ -1011,6 +1008,8 @@ void OBSBasicSettings::LoadColorSpaces()
 #define CF_I444_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.I444")
 #define CF_P010_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.P010")
 #define CF_I010_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.I010")
+#define CF_P216_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.P216")
+#define CF_P416_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.P416")
 #define CF_BGRA_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.BGRA")
 
 void OBSBasicSettings::LoadColorFormats()
@@ -1020,6 +1019,8 @@ void OBSBasicSettings::LoadColorFormats()
 	ui->colorFormat->addItem(CF_I444_STR, "I444");
 	ui->colorFormat->addItem(CF_P010_STR, "P010");
 	ui->colorFormat->addItem(CF_I010_STR, "I010");
+	ui->colorFormat->addItem(CF_P216_STR, "P216");
+	ui->colorFormat->addItem(CF_P416_STR, "P416");
 	ui->colorFormat->addItem(CF_BGRA_STR, "RGB"); // Avoid config break
 }
 
@@ -1206,7 +1207,7 @@ void OBSBasicSettings::LoadThemeList()
 		ui->theme->setCurrentIndex(idx);
 }
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 void TranslateBranchInfo(const QString &name, QString &displayName,
 			 QString &description)
 {
@@ -1224,7 +1225,7 @@ void TranslateBranchInfo(const QString &name, QString &displayName,
 
 void OBSBasicSettings::LoadBranchesList()
 {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 	bool configBranchRemoved = true;
 	QString configBranch =
 		config_get_string(GetGlobalConfig(), "General", "UpdateBranch");
@@ -1285,7 +1286,7 @@ void OBSBasicSettings::LoadGeneralSettings()
 						 "EnableAutoUpdates");
 	ui->enableAutoUpdates->setChecked(enableAutoUpdates);
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 	LoadBranchesList();
 #endif
 #endif
@@ -2604,7 +2605,8 @@ void OBSBasicSettings::UpdateColorFormatSpaceWarning()
 	switch (ui->colorSpace->currentIndex()) {
 	case 3: /* Rec.2100 (PQ) */
 	case 4: /* Rec.2100 (HLG) */
-		if (format == "P010") {
+		if ((format == "P010") || (format == "P216") ||
+		    (format == "P416")) {
 			ui->advancedMsg2->clear();
 		} else if (format == "I010") {
 			ui->advancedMsg2->setText(
@@ -2617,9 +2619,10 @@ void OBSBasicSettings::UpdateColorFormatSpaceWarning()
 	default:
 		if (format == "NV12") {
 			ui->advancedMsg2->clear();
-		} else if ((format == "I010") || (format == "P010")) {
+		} else if ((format == "I010") || (format == "P010") ||
+			   (format == "P216") || (format == "P416")) {
 			ui->advancedMsg2->setText(QTStr(
-				"Basic.Settings.Advanced.FormatWarning10BitSdr"));
+				"Basic.Settings.Advanced.FormatWarningPreciseSdr"));
 		} else {
 			ui->advancedMsg2->setText(
 				QTStr("Basic.Settings.Advanced.FormatWarning"));
@@ -3073,6 +3076,13 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 	AddHotkeys(*hotkeysLayout, obs_service_get_name, services);
 
 	ScanDuplicateHotkeys(hotkeysLayout);
+
+	/* After this function returns the UI can still be unresponsive for a bit.
+	 * So by deferring the call to unsetCursor() to the Qt event loop it will
+	 * take until it has actually finished processing the created widgets
+	 * before the cursor is reset. */
+	QTimer::singleShot(1, this, &OBSBasicSettings::unsetCursor);
+	hotkeysLoaded = true;
 }
 
 void OBSBasicSettings::LoadSettings(bool changedOnly)
@@ -3087,8 +3097,6 @@ void OBSBasicSettings::LoadSettings(bool changedOnly)
 		LoadAudioSettings();
 	if (!changedOnly || videoChanged)
 		LoadVideoSettings();
-	if (!changedOnly || hotkeysChanged)
-		LoadHotkeySettings();
 	if (!changedOnly || a11yChanged)
 		LoadA11ySettings();
 	if (!changedOnly || advancedChanged)
@@ -3120,7 +3128,7 @@ void OBSBasicSettings::SaveGeneralSettings()
 				"EnableAutoUpdates",
 				ui->enableAutoUpdates->isChecked());
 #endif
-#ifdef _WIN32
+#if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 	int branchIdx = ui->updateChannelBox->currentIndex();
 	QString branchName =
 		ui->updateChannelBox->itemData(branchIdx).toString();
@@ -3130,7 +3138,8 @@ void OBSBasicSettings::SaveGeneralSettings()
 				  QT_TO_UTF8(branchName));
 		forceUpdateCheck = true;
 	}
-
+#endif
+#ifdef _WIN32
 	if (ui->hideOBSFromCapture && WidgetChanged(ui->hideOBSFromCapture)) {
 		bool hide_window = ui->hideOBSFromCapture->isChecked();
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
@@ -3169,18 +3178,20 @@ void OBSBasicSettings::SaveGeneralSettings()
 	if (WidgetChanged(ui->snapDistance))
 		config_set_double(GetGlobalConfig(), "BasicWindow",
 				  "SnapDistance", ui->snapDistance->value());
-	if (WidgetChanged(ui->overflowAlwaysVisible))
+	if (WidgetChanged(ui->overflowAlwaysVisible) ||
+	    WidgetChanged(ui->overflowHide) ||
+	    WidgetChanged(ui->overflowSelectionHide)) {
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"OverflowAlwaysVisible",
 				ui->overflowAlwaysVisible->isChecked());
-	if (WidgetChanged(ui->overflowHide))
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"OverflowHidden",
 				ui->overflowHide->isChecked());
-	if (WidgetChanged(ui->overflowSelectionHide))
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"OverflowSelectionHidden",
 				ui->overflowSelectionHide->isChecked());
+		main->UpdatePreviewOverflowSettings();
+	}
 	if (WidgetChanged(ui->previewSafeAreas)) {
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"ShowSafeAreas",
@@ -3993,6 +4004,20 @@ void OBSBasicSettings::on_listWidget_itemSelectionChanged()
 	if (loading || row == pageIndex)
 		return;
 
+	if (!hotkeysLoaded && row == 5) {
+		setCursor(Qt::BusyCursor);
+		/* Look, I know this /feels/ wrong, but the specific issue we're dealing with
+		 * here means that the UI locks up immediately even when using "invokeMethod".
+		 * So the only way for the user to see the loading message on the page is to
+		 * give the Qt event loop a tiny bit of time to switch to the hotkey page,
+		 * and only then start loading. This could maybe be done by subclassing QWidget
+		 * for the hotkey page and then using showEvent() but I *really* don't want
+		 * to deal with that right now. I've got better things to do with my life
+		 * than to work around this god damn stupid issue for something we'll remove
+		 * soon enough anyway. So this solution it is. */
+		QTimer::singleShot(1, this, [&]() { LoadHotkeySettings(); });
+	}
+
 	pageIndex = row;
 }
 
@@ -4446,16 +4471,6 @@ void RestrictResetBitrates(initializer_list<QComboBox *> boxes, int maxbitrate)
 	}
 }
 
-void OBSBasicSettings::VideoChangedRestart()
-{
-	if (!loading) {
-		videoChanged = true;
-		ui->videoMsg->setText(QTStr("Basic.Settings.ProgramRestart"));
-		sender()->setProperty("changed", QVariant(true));
-		EnableApplyButton(true);
-	}
-}
-
 void OBSBasicSettings::AdvancedChangedRestart()
 {
 	if (!loading) {
@@ -4512,7 +4527,6 @@ void OBSBasicSettings::SearchHotkeys(const QString &text,
 	std::vector<obs_key_combination_t> combos;
 	bool showHotkey;
 	ui->hotkeyScrollArea->ensureVisible(0, 0);
-	ui->hotkeyScrollArea->setUpdatesEnabled(false);
 
 	QLayoutItem *hotkeysItem = ui->hotkeyFormLayout->itemAt(0);
 	QWidget *hotkeys = hotkeysItem->widget();
@@ -4521,6 +4535,9 @@ void OBSBasicSettings::SearchHotkeys(const QString &text,
 
 	QFormLayout *hotkeysLayout =
 		qobject_cast<QFormLayout *>(hotkeys->layout());
+	hotkeysLayout->setEnabled(false);
+
+	QString needle = text.toLower();
 
 	for (int i = 0; i < hotkeysLayout->rowCount(); i++) {
 		auto label = hotkeysLayout->itemAt(i, QFormLayout::LabelRole);
@@ -4532,18 +4549,19 @@ void OBSBasicSettings::SearchHotkeys(const QString &text,
 		if (!item)
 			continue;
 
-		item->widget->GetCombinations(combos);
 		QString fullname = item->property("fullName").value<QString>();
 
-		showHotkey = text.isEmpty() ||
-			     fullname.toLower().contains(text.toLower());
+		showHotkey = needle.isEmpty() ||
+			     fullname.toLower().contains(needle);
 
 		if (showHotkey && !obs_key_combination_is_empty(filterCombo)) {
 			showHotkey = false;
+
+			item->widget->GetCombinations(combos);
 			for (auto combo : combos) {
 				if (combo == filterCombo) {
 					showHotkey = true;
-					continue;
+					break;
 				}
 			}
 		}
@@ -4554,7 +4572,7 @@ void OBSBasicSettings::SearchHotkeys(const QString &text,
 		if (field)
 			field->widget()->setVisible(showHotkey);
 	}
-	ui->hotkeyScrollArea->setUpdatesEnabled(true);
+	hotkeysLayout->setEnabled(true);
 }
 
 void OBSBasicSettings::on_hotkeyFilterReset_clicked()
@@ -4574,32 +4592,27 @@ void OBSBasicSettings::on_hotkeyFilterInput_KeyChanged(
 	SearchHotkeys(ui->hotkeyFilterSearch->text(), combo);
 }
 
-static bool MarkHotkeyConflicts(OBSHotkeyLabel *item1, OBSHotkeyLabel *item2)
-{
-	if (item1->pairPartner == item2)
-		return false;
-
-	auto &edits1 = item1->widget->edits;
-	auto &edits2 = item2->widget->edits;
-	bool hasDupes = false;
-
-	for (auto &edit1 : edits1) {
-		for (auto &edit2 : edits2) {
-			bool isDupe =
-				!obs_key_combination_is_empty(edit1->key) &&
-				edit1->key == edit2->key;
-
-			hasDupes |= isDupe;
-			edit1->hasDuplicate |= isDupe;
-			edit2->hasDuplicate |= isDupe;
-		}
+namespace std {
+template<> struct hash<obs_key_combination_t> {
+	size_t operator()(obs_key_combination_t value) const
+	{
+		size_t h1 = hash<uint32_t>{}(value.modifiers);
+		size_t h2 = hash<int>{}(value.key);
+		// Same as boost::hash_combine()
+		h2 ^= h1 + 0x9e3779b9 + (h2 << 6) + (h2 >> 2);
+		return h2;
 	}
-
-	return hasDupes;
 };
+}
 
 bool OBSBasicSettings::ScanDuplicateHotkeys(QFormLayout *layout)
 {
+	typedef struct assignment {
+		OBSHotkeyLabel *label;
+		OBSHotkeyEdit *edit;
+	} assignment;
+
+	unordered_map<obs_key_combination_t, vector<assignment>> assignments;
 	vector<OBSHotkeyLabel *> items;
 	bool hasDupes = false;
 
@@ -4614,28 +4627,36 @@ bool OBSBasicSettings::ScanDuplicateHotkeys(QFormLayout *layout)
 
 		items.push_back(item);
 
-		for (auto &edit : item->widget->edits)
-			edit->hasDuplicate = false;
-	}
-
-	for (size_t i = 0; i < items.size(); i++) {
-		OBSHotkeyLabel *item1 = items[i];
-
-		for (size_t j = i + 1; j < items.size(); j++)
-			hasDupes |= MarkHotkeyConflicts(item1, items[j]);
-	}
-
-	for (auto *item : items) {
 		for (auto &edit : item->widget->edits) {
-			edit->UpdateDuplicationState();
+			edit->hasDuplicate = false;
+
+			if (obs_key_combination_is_empty(edit->key))
+				continue;
+
+			for (assignment &assign : assignments[edit->key]) {
+				if (item->pairPartner == assign.label)
+					continue;
+
+				assign.edit->hasDuplicate = true;
+				edit->hasDuplicate = true;
+				hasDupes = true;
+			}
+
+			assignments[edit->key].push_back({item, edit});
 		}
 	}
+
+	for (auto *item : items)
+		for (auto &edit : item->widget->edits)
+			edit->UpdateDuplicationState();
 
 	return hasDupes;
 }
 
 void OBSBasicSettings::ReloadHotkeys(obs_hotkey_id ignoreKey)
 {
+	if (!hotkeysLoaded)
+		return;
 	LoadHotkeySettings(ignoreKey);
 }
 
@@ -5071,8 +5092,10 @@ void OBSBasicSettings::UpdateAutomaticReplayBufferCheckboxes()
 		break;
 	case 1:
 		state = ui->advReplayBuf->isChecked();
+		bool customFFmpeg = ui->advOutRecType->currentIndex() == 1;
 		ui->advReplayBuf->setEnabled(
-			!obs_frontend_replay_buffer_active());
+			!obs_frontend_replay_buffer_active() && !customFFmpeg);
+		ui->advReplayBufCustomFFmpeg->setVisible(customFFmpeg);
 		break;
 	}
 	ui->replayWhileStreaming->setEnabled(state);

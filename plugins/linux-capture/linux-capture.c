@@ -31,16 +31,9 @@ bool obs_module_load(void)
 {
 	enum obs_nix_platform_type platform = obs_get_nix_platform();
 
-	switch (platform) {
-	case OBS_NIX_PLATFORM_X11_EGL:
+	if (platform == OBS_NIX_PLATFORM_X11_EGL) {
 		obs_register_source(&xshm_input);
 		xcomposite_load();
-		break;
-
-#ifdef ENABLE_WAYLAND
-	case OBS_NIX_PLATFORM_WAYLAND:
-		break;
-#endif
 	}
 
 	return true;

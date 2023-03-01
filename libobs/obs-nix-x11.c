@@ -878,6 +878,7 @@ static void obs_nix_x11_hotkeys_platform_free(struct obs_core_hotkeys *hotkeys)
 		da_free(context->keycodes[i].list);
 
 	bfree(context->keysyms);
+	XCloseDisplay(context->display);
 	bfree(context);
 
 	hotkeys->platform_context = NULL;

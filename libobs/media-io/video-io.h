@@ -74,14 +74,20 @@ enum video_format {
 	VIDEO_FORMAT_I010, /* three-plane */
 	VIDEO_FORMAT_P010, /* two-plane, luma and packed chroma */
 
-	/* planar 4:2:2 10 bits */
-	VIDEO_FORMAT_I210, // Little Endian
+	/* planar 4:2:2 format, 10 bpp */
+	VIDEO_FORMAT_I210,
 
-	/* planar 4:4:4 12 bits */
-	VIDEO_FORMAT_I412, // Little Endian
+	/* planar 4:4:4 format, 12 bpp */
+	VIDEO_FORMAT_I412,
 
-	/* planar 4:4:4 12 bits with alpha */
-	VIDEO_FORMAT_YA2L, // Little Endian
+	/* planar 4:4:4:4 format, 12 bpp */
+	VIDEO_FORMAT_YA2L,
+
+	/* planar 4:2:2 format, 16 bpp */
+	VIDEO_FORMAT_P216, /* two-plane, luma and packed chroma */
+
+	/* planar 4:4:4 format, 16 bpp */
+	VIDEO_FORMAT_P416, /* two-plane, luma and packed chroma */
 };
 
 enum video_trc {
@@ -145,6 +151,8 @@ static inline bool format_is_yuv(enum video_format format)
 	case VIDEO_FORMAT_AYUV:
 	case VIDEO_FORMAT_I010:
 	case VIDEO_FORMAT_P010:
+	case VIDEO_FORMAT_P216:
+	case VIDEO_FORMAT_P416:
 		return true;
 	case VIDEO_FORMAT_NONE:
 	case VIDEO_FORMAT_RGBA:
@@ -203,6 +211,10 @@ static inline const char *get_video_format_name(enum video_format format)
 		return "I010";
 	case VIDEO_FORMAT_P010:
 		return "P010";
+	case VIDEO_FORMAT_P216:
+		return "P216";
+	case VIDEO_FORMAT_P416:
+		return "P416";
 	case VIDEO_FORMAT_NONE:;
 	}
 

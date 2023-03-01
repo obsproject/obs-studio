@@ -1868,10 +1868,9 @@ bool OBSBasicPreview::DrawSelectedOverflow(obs_scene_t *scene,
 	if (!SceneItemHasVideo(item))
 		return true;
 
-	bool select = config_get_bool(GetGlobalConfig(), "BasicWindow",
-				      "OverflowSelectionHidden");
+	OBSBasicPreview *prev = reinterpret_cast<OBSBasicPreview *>(param);
 
-	if (!select && !obs_sceneitem_visible(item))
+	if (!prev->GetOverflowSelectionHidden() && !obs_sceneitem_visible(item))
 		return true;
 
 	if (obs_sceneitem_is_group(item)) {
@@ -1885,13 +1884,8 @@ bool OBSBasicPreview::DrawSelectedOverflow(obs_scene_t *scene,
 		gs_matrix_pop();
 	}
 
-	bool always = config_get_bool(GetGlobalConfig(), "BasicWindow",
-				      "OverflowAlwaysVisible");
-
-	if (!always && !obs_sceneitem_selected(item))
+	if (!prev->GetOverflowAlwaysVisible() && !obs_sceneitem_selected(item))
 		return true;
-
-	OBSBasicPreview *prev = reinterpret_cast<OBSBasicPreview *>(param);
 
 	matrix4 boxTransform;
 	matrix4 invBoxTransform;
@@ -2177,10 +2171,7 @@ void OBSBasicPreview::DrawOverflow()
 	if (locked)
 		return;
 
-	bool hidden = config_get_bool(GetGlobalConfig(), "BasicWindow",
-				      "OverflowHidden");
-
-	if (hidden)
+	if (overflowHidden)
 		return;
 
 	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_DEFAULT, "DrawOverflow");

@@ -38,9 +38,11 @@ protected:
 	virtual void dragLeaveEvent(QDragLeaveEvent *event) override;
 	virtual void rowsInserted(const QModelIndex &parent, int start,
 				  int end) override;
+#if QT_VERSION < QT_VERSION_CHECK(6, 4, 3)
 	virtual void
 	selectionChanged(const QItemSelection &selected,
 			 const QItemSelection &deselected) override;
+#endif
 
 signals:
 	void scenesReordered();

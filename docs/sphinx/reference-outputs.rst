@@ -373,9 +373,23 @@ General Output Functions
 
 ---------------------
 
+.. function:: bool obs_weak_output_references_output(obs_weak_output_t *weak, obs_output_t *output)
+
+   Compares a weak output reference with an output.
+
+   :return: Whether the weak output reference ties back to the specified output
+
+---------------------
+
 .. function:: const char *obs_output_get_name(const obs_output_t *output)
 
    :return: The name of the output
+
+---------------------
+
+.. function:: const char *obs_output_get_id(const obs_output_t *output)
+
+   :return: The output's type identifier string
 
 ---------------------
 
@@ -621,6 +635,18 @@ General Output Functions
 
 ---------------------
 
+.. function:: void obs_output_output_caption_text1(obs_output_t *output, const char *text)
+              void obs_output_output_caption_text2(obs_output_t *output, const char *text, double display_duration)
+
+   Outputs captions from the specified text input. *text1* is the same as
+   *text2*, except that the *display_duration* is hardcoded to 2.0 seconds.
+
+   *display_duration* represents the minimum quantity of time that a given
+   caption can be displayed for before moving onto the next caption in the
+   queue.
+
+---------------------
+
 .. function:: float obs_output_get_congestion(obs_output_t *output)
 
    :return: The congestion value.  This value is used to visualize the
@@ -648,7 +674,7 @@ General Output Functions
               const char *obs_output_get_supported_audio_codecs(const obs_output_t *output)
 
    :return: Supported video/audio codecs of an encoded output, separated
-            by semicolen
+            by semicolon
 
 ---------------------
 
@@ -721,6 +747,21 @@ Functions used by outputs
            /* planar 4:2:0 format, 10 bpp */
            VIDEO_FORMAT_I010, /* three-plane */
            VIDEO_FORMAT_P010, /* two-plane, luma and packed chroma */
+
+           /* planar 4:2:2 format, 10 bpp */
+           VIDEO_FORMAT_I210,
+
+           /* planar 4:4:4 format, 12 bpp */
+           VIDEO_FORMAT_I412,
+
+           /* planar 4:4:4:4 format, 12 bpp */
+           VIDEO_FORMAT_YA2L,
+
+           /* planar 4:2:2 format, 16 bpp */
+           VIDEO_FORMAT_P216, /* two-plane, luma and packed chroma */
+
+           /* planar 4:4:4 format, 16 bpp */
+           VIDEO_FORMAT_P416, /* two-plane, luma and packed chroma */
    };
 
    enum video_colorspace {

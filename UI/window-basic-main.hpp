@@ -28,6 +28,7 @@
 #include <memory>
 #include "window-main.hpp"
 #include "window-basic-interaction.hpp"
+#include "window-basic-vcam.hpp"
 #include "window-basic-properties.hpp"
 #include "window-basic-transform.hpp"
 #include "window-basic-adv-audio.hpp"
@@ -51,6 +52,7 @@ class QMessageBox;
 class QListWidgetItem;
 class VolControl;
 class OBSBasicStats;
+class OBSBasicVCamConfig;
 
 #include "ui_OBSBasic.h"
 #include "ui_ColorSelect.h"
@@ -309,6 +311,7 @@ private:
 
 	QPointer<ControlsSplitButton> vcamButton;
 	bool vcamEnabled = false;
+	VCamConfig vcamConfig;
 
 	QScopedPointer<QSystemTrayIcon> trayIcon;
 	QPointer<QAction> sysTrayStream;
@@ -541,6 +544,7 @@ private:
 	obs_data_array_t *SaveProjectors();
 	void LoadSavedProjectors(obs_data_array_t *savedProjectors);
 
+	void MacBranchesFetched(const QString &branch, bool manualUpdate);
 	void ReceivedIntroJson(const QString &text);
 	void ShowWhatsNew(const QString &url);
 
@@ -638,10 +642,12 @@ private:
 	bool drawSpacingHelpers = true;
 
 	float GetDevicePixelRatio();
-	void SourceToolBarActionsSetEnabled(bool enable);
+	void SourceToolBarActionsSetEnabled();
 
 	std::string lastScreenshot;
 	std::string lastReplay;
+
+	void UpdatePreviewOverflowSettings();
 
 public slots:
 	void DeferSaveBegin();
@@ -816,6 +822,8 @@ private slots:
 	void LockVolumeControl(bool lock);
 	void ResetProxyStyleSliders();
 
+	void UpdateVirtualCamConfig(const VCamConfig &config);
+
 private:
 	/* OBS Callbacks */
 	static void SceneReordered(void *data, calldata_t *params);
@@ -945,6 +953,7 @@ public:
 	void CreateInteractionWindow(obs_source_t *source);
 	void CreatePropertiesWindow(obs_source_t *source);
 	void CreateFiltersWindow(obs_source_t *source);
+	void CreateEditTransformWindow(obs_sceneitem_t *item);
 
 	QAction *AddDockWidget(QDockWidget *dock);
 
@@ -1114,7 +1123,6 @@ private slots:
 	void on_transitionRemove_clicked();
 	void on_transitionProps_clicked();
 	void on_transitionDuration_valueChanged(int value);
-	void on_tbar_position_valueChanged(int value);
 
 	void ShowTransitionProperties();
 	void HideTransitionProperties();
@@ -1157,18 +1165,10 @@ private slots:
 	void OpenFilters(OBSSource source = nullptr);
 	void OpenProperties(OBSSource source = nullptr);
 	void OpenInteraction(OBSSource source = nullptr);
+	void OpenEditTransform(OBSSceneItem item = nullptr);
 
 	void EnablePreviewDisplay(bool enable);
 	void TogglePreview();
-
-	void NudgeUp();
-	void NudgeDown();
-	void NudgeLeft();
-	void NudgeRight();
-	void NudgeUpFar();
-	void NudgeDownFar();
-	void NudgeLeftFar();
-	void NudgeRightFar();
 
 	void OpenStudioProgramProjector();
 	void OpenPreviewProjector();

@@ -466,7 +466,7 @@ static void noise_suppress_update(void *data, obs_data_t *s)
 		strcmp(method, S_METHOD_NVAFX_DEREVERB) == 0 ||
 		strcmp(method, S_METHOD_NVAFX_DEREVERB_DENOISER) == 0;
 #ifdef LIBNVAFX_ENABLED
-	if (nvafx_requested)
+	if (nvafx_requested && ng->nvafx_enabled)
 		set_model(ng, method);
 	float intensity = (float)obs_data_get_double(s, S_NVAFX_INTENSITY);
 	if (ng->use_nvafx && ng->nvafx_initialized) {
@@ -630,11 +630,14 @@ bool load_nvafx(void)
 	uint8_t minor = (version >> 16) & 0x00ff;
 	uint8_t build = (version >> 8) & 0x0000ff;
 	uint8_t revision = (version >> 0) & 0x000000ff;
-	blog(LOG_INFO, "[noise suppress]: NVIDIA AUDIO FX version: %i.%i.%i.%i",
-	     major, minor, build, revision);
-	if (version < (MIN_AFX_SDK_VERSION)) {
+	if (version) {
 		blog(LOG_INFO,
-		     "[noise suppress]: NVIDIA AUDIO Effects SDK is outdated; please update both audio & video SDK.");
+		     "[noise suppress]: NVIDIA AUDIO FX version: %i.%i.%i.%i",
+		     major, minor, build, revision);
+		if (version < MIN_AFX_SDK_VERSION) {
+			blog(LOG_INFO,
+			     "[noise suppress]: NVIDIA AUDIO Effects SDK is outdated. Please update both audio & video SDK.");
+		}
 	}
 	if (!load_lib()) {
 		blog(LOG_INFO,
@@ -1224,7 +1227,7 @@ static obs_properties_t *noise_suppress_properties(void *data)
 						1.0f, 0.01f);
 	}
 	unsigned int version = get_lib_version();
-	if (version < (MIN_AFX_SDK_VERSION)) {
+	if (version && version < MIN_AFX_SDK_VERSION) {
 		obs_property_t *warning = obs_properties_add_text(
 			ppts, "deprecation", NULL, OBS_TEXT_INFO);
 		obs_property_text_set_info_type(warning, OBS_TEXT_INFO_WARNING);

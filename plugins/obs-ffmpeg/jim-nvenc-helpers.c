@@ -2,6 +2,7 @@
 #include <util/platform.h>
 #include <util/threading.h>
 #include <util/config-file.h>
+#include <util/windows/device-enum.h>
 #include <util/dstr.h>
 #include <util/pipe.h>
 
@@ -36,16 +37,28 @@ bool nv_failed2(obs_encoder_t *encoder, void *session, NVENCSTATUS err,
 		const char *func, const char *call)
 {
 	struct dstr error_message = {0};
+	const char *nvenc_error = NULL;
 
-	switch (err) {
-	case NV_ENC_SUCCESS:
+	if (err == NV_ENC_SUCCESS)
 		return false;
 
+	if (session) {
+		nvenc_error = nv.nvEncGetLastErrorString(session);
+		if (nvenc_error) {
+			// Some NVENC errors begin with :: which looks
+			// odd to users. Strip it off.
+			while (*nvenc_error == ':')
+				nvenc_error++;
+		}
+	}
+
+	switch (err) {
 	case NV_ENC_ERR_OUT_OF_MEMORY:
 		obs_encoder_set_last_error(
 			encoder, obs_module_text("NVENC.TooManySessions"));
 		break;
 
+	case NV_ENC_ERR_NO_ENCODE_DEVICE:
 	case NV_ENC_ERR_UNSUPPORTED_DEVICE:
 		obs_encoder_set_last_error(
 			encoder, obs_module_text("NVENC.UnsupportedDevice"));
@@ -57,17 +70,23 @@ bool nv_failed2(obs_encoder_t *encoder, void *session, NVENCSTATUS err,
 		break;
 
 	default:
-		dstr_printf(&error_message,
-			    "NVENC Error: %s: %s failed: %d (%s)", func, call,
-			    (int)err, nv_error_name(err));
+		if (nvenc_error && *nvenc_error) {
+			dstr_printf(&error_message, "NVENC Error: %s (%s)",
+				    nvenc_error, nv_error_name(err));
+		} else {
+
+			dstr_printf(&error_message,
+				    "NVENC Error: %s: %s failed: %d (%s)", func,
+				    call, (int)err, nv_error_name(err));
+		}
 		obs_encoder_set_last_error(encoder, error_message.array);
 		dstr_free(&error_message);
 		break;
 	}
 
-	if (session) {
+	if (nvenc_error && *nvenc_error) {
 		error("%s: %s failed: %d (%s): %s", func, call, (int)err,
-		      nv_error_name(err), nv.nvEncGetLastErrorString(session));
+		      nv_error_name(err), nvenc_error);
 	} else {
 		error("%s: %s failed: %d (%s)", func, call, (int)err,
 		      nv_error_name(err));
@@ -222,14 +241,26 @@ extern struct obs_encoder_info hevc_nvenc_info;
 #endif
 extern struct obs_encoder_info av1_nvenc_info;
 
+static bool enum_luids(void *param, uint32_t idx, uint64_t luid)
+{
+	struct dstr *cmd = param;
+	dstr_catf(cmd, " %llX", luid);
+	UNUSED_PARAMETER(idx);
+	return true;
+}
+
 static bool av1_supported(void)
 {
 	char *test_exe = os_get_executable_path_ptr("obs-nvenc-test.exe");
+	struct dstr cmd = {0};
 	struct dstr caps_str = {0};
 	bool av1_supported = false;
 	config_t *config = NULL;
 
-	os_process_pipe_t *pp = os_process_pipe_create(test_exe, "r");
+	dstr_copy(&cmd, test_exe);
+	enum_graphics_device_luids(enum_luids, &cmd);
+
+	os_process_pipe_t *pp = os_process_pipe_create(cmd.array, "r");
 	if (!pp) {
 		blog(LOG_WARNING, "[NVENC] Failed to launch the NVENC "
 				  "test process I guess");
@@ -278,6 +309,7 @@ fail:
 	if (config)
 		config_close(config);
 	dstr_free(&caps_str);
+	dstr_free(&cmd);
 	if (test_exe)
 		bfree(test_exe);
 

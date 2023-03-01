@@ -138,6 +138,7 @@ void OBSPropertiesView::RefreshProperties()
 	setWidget(widget);
 	SetScrollPos(h, v);
 	setSizePolicy(mainPolicy);
+	adjustSize();
 
 	lastFocused.clear();
 	if (lastWidget) {
@@ -1750,6 +1751,11 @@ bool WidgetInfo::PathChanged(const char *setting)
 		path = SaveFile(view, QT_UTF8(desc), QT_UTF8(default_path),
 				QT_UTF8(filter));
 
+#ifdef __APPLE__
+	// TODO: Revisit when QTBUG-42661 is fixed
+	widget->window()->raise();
+#endif
+
 	if (path.isEmpty())
 		return false;
 
@@ -1807,15 +1813,18 @@ bool WidgetInfo::ColorChangedInternal(const char *setting, bool supportAlpha)
 		options |= QColorDialog::ShowAlphaChannel;
 	}
 
-	/* The native dialog on OSX has all kinds of problems, like closing
-	 * other open QDialogs on exit, and
-	 * https://bugreports.qt-project.org/browse/QTBUG-34532
-	 */
-#ifndef _WIN32
+#ifdef __linux__
+	// TODO: Revisit hang on Ubuntu with native dialog
 	options |= QColorDialog::DontUseNativeDialog;
 #endif
 
 	color = QColorDialog::getColor(color, view, QT_UTF8(desc), options);
+
+#ifdef __APPLE__
+	// TODO: Revisit when QTBUG-42661 is fixed
+	widget->window()->raise();
+#endif
+
 	if (!color.isValid())
 		return false;
 
@@ -1965,13 +1974,12 @@ void WidgetInfo::ButtonClicked()
 		}
 		return;
 	}
-	if (view->rawObj || view->weakObj) {
-		OBSObject strongObj = view->GetObject();
-		void *obj = strongObj ? strongObj.Get() : view->rawObj;
-		if (obs_property_button_clicked(property, obj)) {
-			QMetaObject::invokeMethod(view, "RefreshProperties",
-						  Qt::QueuedConnection);
-		}
+
+	OBSObject strongObj = view->GetObject();
+	void *obj = strongObj ? strongObj.Get() : view->rawObj;
+	if (obs_property_button_clicked(property, obj)) {
+		QMetaObject::invokeMethod(view, "RefreshProperties",
+					  Qt::QueuedConnection);
 	}
 }
 
@@ -2217,6 +2225,10 @@ void WidgetInfo::EditListAddFiles()
 
 	QStringList files = OpenFiles(App()->GetMainWindow(), title,
 				      QT_UTF8(default_path), QT_UTF8(filter));
+#ifdef __APPLE__
+	// TODO: Revisit when QTBUG-42661 is fixed
+	widget->window()->raise();
+#endif
 
 	if (files.count() == 0)
 		return;
@@ -2237,6 +2249,10 @@ void WidgetInfo::EditListAddDir()
 
 	QString dir = SelectDirectory(App()->GetMainWindow(), title,
 				      QT_UTF8(default_path));
+#ifdef __APPLE__
+	// TODO: Revisit when QTBUG-42661 is fixed
+	widget->window()->raise();
+#endif
 
 	if (dir.isEmpty())
 		return;
