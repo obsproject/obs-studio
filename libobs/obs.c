@@ -1113,6 +1113,13 @@ static const char *obs_signals[] = {
 	"void hotkey_unregister(ptr hotkey)",
 	"void hotkey_bindings_changed(ptr hotkey)",
 
+	"void output_create(ptr output)",
+	"void output_destroy(ptr output)",
+	"void encoder_create(ptr encoder)",
+	"void encoder_destroy(ptr encoder)",
+	"void service_create(ptr service)",
+	"void service_destroy(ptr service)",
+
 	NULL,
 };
 
