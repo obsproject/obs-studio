@@ -69,8 +69,6 @@ struct video_output {
 	volatile long skipped_frames;
 	volatile long total_frames;
 
-	bool initialized;
-
 	pthread_mutex_t input_mutex;
 	DARRAY(struct video_input) inputs;
 
@@ -236,7 +234,6 @@ int video_output_open(video_t **video, struct video_output_info *info)
 	memcpy(&out->info, info, sizeof(struct video_output_info));
 	out->frame_time =
 		util_mul_div64(1000000000ULL, info->fps_den, info->fps_num);
-	out->initialized = false;
 
 	if (pthread_mutex_init_recursive(&out->data_mutex) != 0)
 		goto fail0;
@@ -249,7 +246,6 @@ int video_output_open(video_t **video, struct video_output_info *info)
 
 	init_cache(out);
 
-	out->initialized = true;
 	*video = out;
 	return VIDEO_OUTPUT_SUCCESS;
 
@@ -260,7 +256,7 @@ fail2:
 fail1:
 	pthread_mutex_destroy(&out->data_mutex);
 fail0:
-	video_output_close(out);
+	bfree(out);
 	return VIDEO_OUTPUT_FAIL;
 }
 
@@ -271,12 +267,19 @@ void video_output_close(video_t *video)
 
 	video_output_stop(video);
 
+	pthread_mutex_lock(&video->input_mutex);
+
 	for (size_t i = 0; i < video->inputs.num; i++)
 		video_input_free(&video->inputs.array[i]);
 	da_free(video->inputs);
 
 	for (size_t i = 0; i < video->info.cache_size; i++)
 		video_frame_free((struct video_frame *)&video->cache[i]);
+
+	pthread_mutex_unlock(&video->input_mutex);
+	os_sem_destroy(video->update_semaphore);
+	pthread_mutex_destroy(&video->data_mutex);
+	pthread_mutex_destroy(&video->input_mutex);
 
 	bfree(video);
 }
@@ -535,14 +538,10 @@ void video_output_stop(video_t *video)
 	if (!video)
 		return;
 
-	if (video->initialized) {
-		video->initialized = false;
+	if (!video->stop) {
 		video->stop = true;
 		os_sem_post(video->update_semaphore);
 		pthread_join(video->thread, &thread_ret);
-		os_sem_destroy(video->update_semaphore);
-		pthread_mutex_destroy(&video->data_mutex);
-		pthread_mutex_destroy(&video->input_mutex);
 	}
 }
 
