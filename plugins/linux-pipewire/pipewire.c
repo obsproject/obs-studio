@@ -550,7 +550,7 @@ static void on_process_cb(void *user_data)
 		}
 
 		if (corrupt) {
-			blog(LOG_ERROR,
+			blog(LOG_DEBUG,
 			     "[pipewire] buffer contains corrupted data");
 			goto read_metadata;
 		}
