@@ -294,8 +294,8 @@ static void pulseaudio_server_info(pa_context *c, const pa_server_info *i,
 	pulseaudio_signal(0);
 }
 
-static void pulseaudio_source_info(pa_context *c, const pa_source_info *i,
-				   int eol, void *userdata)
+static void pulseaudio_sink_info(pa_context *c, const pa_sink_info *i, int eol,
+				 void *userdata)
 {
 	UNUSED_PARAMETER(c);
 	PULSE_DATA(userdata);
@@ -409,9 +409,9 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 		return false;
 	}
 
-	if (pulseaudio_get_source_info(pulseaudio_source_info, monitor->device,
-				       (void *)monitor) < 0) {
-		blog(LOG_ERROR, "Unable to get source info !");
+	if (pulseaudio_get_sink_info(pulseaudio_sink_info, monitor->device,
+				     (void *)monitor) < 0) {
+		blog(LOG_ERROR, "Unable to get sink info !");
 		return false;
 	}
 	if (monitor->format == PA_SAMPLE_INVALID) {
