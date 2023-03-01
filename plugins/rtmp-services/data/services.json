@@ -878,7 +878,7 @@
             "servers": [
                 {
                     "name": "Auto",
-                    "url": "rtmp://s-sd.doppiocdn.com/ext"
+                    "url": "rtmp://live.doppiocdn.com/ext"
                 }
             ],
             "recommended": {
