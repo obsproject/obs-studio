@@ -1071,7 +1071,6 @@ uint32_t obs_pipewire_get_height(obs_pipewire *obs_pw)
 void obs_pipewire_video_render(obs_pipewire *obs_pw, gs_effect_t *effect)
 {
 	bool rotated;
-	bool has_crop;
 	int flip = 0;
 
 	gs_eparam_t *image;
@@ -1082,12 +1081,10 @@ void obs_pipewire_video_render(obs_pipewire *obs_pw, gs_effect_t *effect)
 	image = gs_effect_get_param_by_name(effect, "image");
 	gs_effect_set_texture(image, obs_pw->texture);
 
-	has_crop = has_effective_crop(obs_pw);
-
 	rotated = push_rotation(obs_pw);
 
 	flip = get_buffer_flip(obs_pw);
-	if (has_crop) {
+	if (has_effective_crop(obs_pw)) {
 		gs_draw_sprite_subregion(obs_pw->texture, flip, obs_pw->crop.x,
 					 obs_pw->crop.y, obs_pw->crop.width,
 					 obs_pw->crop.height);
