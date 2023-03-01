@@ -581,7 +581,7 @@ static void on_process_cb(void *user_data)
 			    obs_pw->format.info.raw.format, NULL, &gs_format,
 			    &swap_red_blue)) {
 			blog(LOG_ERROR,
-			     "[pipewire] unsupported DMA buffer format: %d",
+			     "[pipewire] unsupported buffer format: %d",
 			     obs_pw->format.info.raw.format);
 			goto read_metadata;
 		}
