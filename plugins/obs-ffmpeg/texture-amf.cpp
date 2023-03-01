@@ -1068,11 +1068,12 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 {
 	const char *rc = obs_data_get_string(settings, "rate_control");
 	bool cqp = astrcmpi(rc, "CQP") == 0;
+	bool qvbr = astrcmpi(rc, "QVBR") == 0;
 
 	p = obs_properties_get(ppts, "bitrate");
-	obs_property_set_visible(p, !cqp);
+	obs_property_set_visible(p, !cqp && !qvbr);
 	p = obs_properties_get(ppts, "cqp");
-	obs_property_set_visible(p, cqp);
+	obs_property_set_visible(p, cqp || qvbr);
 	return true;
 }
 
@@ -1225,7 +1226,8 @@ static inline int get_avc_profile(obs_data_t *settings)
 static void amf_avc_update_data(amf_base *enc, int rc, int64_t bitrate,
 				int64_t qp)
 {
-	if (rc != AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTANT_QP) {
+	if (rc != AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTANT_QP &&
+	    rc != AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_QUALITY_VBR) {
 		set_avc_property(enc, TARGET_BITRATE, bitrate);
 		set_avc_property(enc, PEAK_BITRATE, bitrate);
 		set_avc_property(enc, VBV_BUFFER_SIZE, bitrate);
@@ -1237,6 +1239,7 @@ static void amf_avc_update_data(amf_base *enc, int rc, int64_t bitrate,
 		set_avc_property(enc, QP_I, qp);
 		set_avc_property(enc, QP_P, qp);
 		set_avc_property(enc, QP_B, qp);
+		set_avc_property(enc, QVBR_QUALITY_LEVEL, qp);
 	}
 }
 
@@ -1544,7 +1547,8 @@ static inline int get_hevc_rate_control(const char *rc_str)
 static void amf_hevc_update_data(amf_base *enc, int rc, int64_t bitrate,
 				 int64_t qp)
 {
-	if (rc != AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTANT_QP) {
+	if (rc != AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CONSTANT_QP &&
+	    rc != AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_QUALITY_VBR) {
 		set_hevc_property(enc, TARGET_BITRATE, bitrate);
 		set_hevc_property(enc, PEAK_BITRATE, bitrate);
 		set_hevc_property(enc, VBV_BUFFER_SIZE, bitrate);
@@ -1555,6 +1559,7 @@ static void amf_hevc_update_data(amf_base *enc, int rc, int64_t bitrate,
 	} else {
 		set_hevc_property(enc, QP_I, qp);
 		set_hevc_property(enc, QP_P, qp);
+		set_hevc_property(enc, QVBR_QUALITY_LEVEL, qp);
 	}
 }
 
@@ -1896,7 +1901,8 @@ static inline int get_av1_profile(obs_data_t *settings)
 static void amf_av1_update_data(amf_base *enc, int rc, int64_t bitrate,
 				int64_t cq_value)
 {
-	if (rc != AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_CONSTANT_QP) {
+	if (rc != AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_CONSTANT_QP &&
+	    rc != AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_QUALITY_VBR) {
 		set_av1_property(enc, TARGET_BITRATE, bitrate);
 		set_av1_property(enc, PEAK_BITRATE, bitrate);
 		set_av1_property(enc, VBV_BUFFER_SIZE, bitrate);
@@ -1910,6 +1916,7 @@ static void amf_av1_update_data(amf_base *enc, int rc, int64_t bitrate,
 		}
 	} else {
 		int64_t qp = cq_value * 4;
+		set_av1_property(enc, QVBR_QUALITY_LEVEL, qp / 4);
 		set_av1_property(enc, Q_INDEX_INTRA, qp);
 		set_av1_property(enc, Q_INDEX_INTER, qp);
 	}
