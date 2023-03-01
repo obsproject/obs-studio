@@ -115,6 +115,9 @@ create_encoder(const char *id, enum obs_encoder_type type, const char *name,
 				&obs->data.first_encoder);
 
 	blog(LOG_DEBUG, "encoder '%s' (%s) created", name, id);
+	if (!private) {
+		obs_encoder_dosignal(encoder, "encoder_create", NULL);
+	}
 	return encoder;
 }
 
@@ -277,6 +280,8 @@ static void obs_encoder_actually_destroy(obs_encoder_t *encoder)
 
 		blog(LOG_DEBUG, "encoder '%s' destroyed",
 		     encoder->context.name);
+
+		obs_encoder_dosignal(encoder, "encoder_destroy", NULL);
 
 		free_audio_buffers(encoder);
 

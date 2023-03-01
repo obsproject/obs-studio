@@ -159,6 +159,9 @@ static obs_output_t *obs_output_create_internal(const char *id,
 		blog(LOG_ERROR, "Failed to create output '%s'!", name);
 
 	blog(LOG_DEBUG, "output '%s' (%s) created", name, id);
+	if (!private) {
+		obs_output_dosignal(output, "output_create", NULL);
+	}
 	return output;
 
 fail:
@@ -209,6 +212,8 @@ void obs_output_destroy(obs_output_t *output)
 		os_event_wait(output->stopping_event);
 		if (data_capture_ending(output))
 			pthread_join(output->end_data_capture_thread, NULL);
+
+		obs_output_dosignal(output, "output_destroy", NULL);
 
 		if (output->service)
 			output->service->output = NULL;
