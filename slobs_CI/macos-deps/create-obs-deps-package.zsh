@@ -204,14 +204,34 @@ package_obs_deps() {
         exit 1
     fi
 
-    FFPROBE=${GIT_FOLDER}/macos_build_temp/FFmpeg-5.0.1/build_${ARCHITECTURE}/ffprobe
-    cp "${FFPROBE}" "${PACKAGE_FOLDER}/lib"
+    FINAL_FFMPEG_PATH=${PACKAGE_FOLDER}/lib/ffmpeg
+    install_name_tool -rpath "${OBS_FFMPEG_ARCH_FOLDER}lib" "@executable_path/" "${FINAL_FFMPEG_PATH}"
+    install_name_tool -change "${OBS_FFMPEG_ARCH_FOLDER}lib/libavdevice.59.dylib" "@rpath/libavdevice.59.dylib" "${FINAL_FFMPEG_PATH}"
+    install_name_tool -change "${OBS_FFMPEG_ARCH_FOLDER}lib/libavfilter.8.dylib" "@rpath/libavfilter.8.dylib" "${FINAL_FFMPEG_PATH}"
+    install_name_tool -change "${OBS_FFMPEG_ARCH_FOLDER}lib/libavformat.59.dylib" "@rpath/libavformat.59.dylib" "${FINAL_FFMPEG_PATH}"
+    install_name_tool -change "${OBS_FFMPEG_ARCH_FOLDER}lib/libavcodec.59.dylib" "@rpath/libavcodec.59.dylib" "${FINAL_FFMPEG_PATH}"
+    install_name_tool -change "${OBS_FFMPEG_ARCH_FOLDER}lib/libswresample.4.dylib" "@rpath/libswresample.4.dylib" "${FINAL_FFMPEG_PATH}"
+    install_name_tool -change "${OBS_FFMPEG_ARCH_FOLDER}lib/libswscale.6.dylib" "@rpath/libswscale.6.dylib" "${FINAL_FFMPEG_PATH}"
+    install_name_tool -change "${OBS_FFMPEG_ARCH_FOLDER}lib/libavutil.57.dylib" "@rpath/libavutil.57.dylib" "${FINAL_FFMPEG_PATH}"
+
+    FFPROBE_PATH=${GIT_FOLDER}/macos_build_temp/FFmpeg-5.0.1/build_${ARCHITECTURE}/ffprobe
+    cp "${FFPROBE_PATH}" "${PACKAGE_FOLDER}/lib"
     if [ $? -ne 0 ]
     then
-        echo "### Could not copy the file: ${FFPROBE}"
+        echo "### Could not copy the file: ${FFPROBE_PATH}"
         cd "${INITIAL_WORKING_FOLDER}"
         exit 1
     fi
+
+    FINAL_FFPROBE_PATH=${PACKAGE_FOLDER}/lib/ffprobe
+    install_name_tool -rpath "${OBS_FFMPEG_ARCH_FOLDER}lib" "@executable_path/" "${FINAL_FFPROBE_PATH}"
+    install_name_tool -change "${OBS_FFMPEG_ARCH_FOLDER}lib/libavdevice.59.dylib" "@rpath/libavdevice.59.dylib" "${FINAL_FFPROBE_PATH}"
+    install_name_tool -change "${OBS_FFMPEG_ARCH_FOLDER}lib/libavfilter.8.dylib" "@rpath/libavfilter.8.dylib" "${FINAL_FFPROBE_PATH}"
+    install_name_tool -change "${OBS_FFMPEG_ARCH_FOLDER}lib/libavformat.59.dylib" "@rpath/libavformat.59.dylib" "${FINAL_FFPROBE_PATH}"
+    install_name_tool -change "${OBS_FFMPEG_ARCH_FOLDER}lib/libavcodec.59.dylib" "@rpath/libavcodec.59.dylib" "${FINAL_FFPROBE_PATH}"
+    install_name_tool -change "${OBS_FFMPEG_ARCH_FOLDER}lib/libswresample.4.dylib" "@rpath/libswresample.4.dylib" "${FINAL_FFPROBE_PATH}"
+    install_name_tool -change "${OBS_FFMPEG_ARCH_FOLDER}lib/libswscale.6.dylib" "@rpath/libswscale.6.dylib" "${FINAL_FFPROBE_PATH}"
+    install_name_tool -change "${OBS_FFMPEG_ARCH_FOLDER}lib/libavutil.57.dylib" "@rpath/libavutil.57.dylib" "${FINAL_FFPROBE_PATH}"
 
     cp "${SCRIPT_PATH}" "${PACKAGE_FOLDER}"
 
