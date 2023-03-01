@@ -181,6 +181,76 @@ static inline bool has_effective_crop(obs_pipewire *obs_pw)
 		obs_pw->crop.height < obs_pw->format.info.raw.size.height);
 }
 
+static int get_buffer_flip(obs_pipewire *obs_pw)
+{
+	int flip = 0;
+
+	switch (obs_pw->transform) {
+	case SPA_META_TRANSFORMATION_Flipped:
+	case SPA_META_TRANSFORMATION_Flipped180:
+		flip = GS_FLIP_U;
+		break;
+	case SPA_META_TRANSFORMATION_Flipped90:
+	case SPA_META_TRANSFORMATION_Flipped270:
+		flip = GS_FLIP_V;
+		break;
+	case SPA_META_TRANSFORMATION_None:
+	case SPA_META_TRANSFORMATION_90:
+	case SPA_META_TRANSFORMATION_180:
+	case SPA_META_TRANSFORMATION_270:
+		break;
+	}
+
+	return flip;
+}
+
+static bool push_rotation(obs_pipewire *obs_pw)
+{
+	double offset_x = 0;
+	double offset_y = 0;
+	double rotation = 0;
+	bool has_crop;
+
+	has_crop = has_effective_crop(obs_pw);
+
+	switch (obs_pw->transform) {
+	case SPA_META_TRANSFORMATION_Flipped:
+	case SPA_META_TRANSFORMATION_None:
+		rotation = 0;
+		break;
+	case SPA_META_TRANSFORMATION_Flipped90:
+	case SPA_META_TRANSFORMATION_90:
+		rotation = 90;
+		offset_x = 0;
+		offset_y = has_crop ? obs_pw->crop.height
+				    : obs_pw->format.info.raw.size.height;
+		break;
+	case SPA_META_TRANSFORMATION_Flipped180:
+	case SPA_META_TRANSFORMATION_180:
+		rotation = 180;
+		offset_x = has_crop ? obs_pw->crop.width
+				    : obs_pw->format.info.raw.size.width;
+		offset_y = has_crop ? obs_pw->crop.height
+				    : obs_pw->format.info.raw.size.height;
+		break;
+	case SPA_META_TRANSFORMATION_Flipped270:
+	case SPA_META_TRANSFORMATION_270:
+		rotation = 270;
+		offset_x = has_crop ? obs_pw->crop.width
+				    : obs_pw->format.info.raw.size.width;
+		offset_y = 0;
+		break;
+	}
+
+	if (rotation != 0) {
+		gs_matrix_push();
+		gs_matrix_rotaa4f(0.0f, 0.0f, 1.0f, RAD(rotation));
+		gs_matrix_translate3f(-offset_x, -offset_y, 0.0f);
+	}
+
+	return rotation != 0;
+}
+
 static const struct {
 	uint32_t spa_format;
 	uint32_t drm_format;
@@ -992,11 +1062,9 @@ uint32_t obs_pipewire_get_height(obs_pipewire *obs_pw)
 
 void obs_pipewire_video_render(obs_pipewire *obs_pw, gs_effect_t *effect)
 {
-	double rot = 0;
-	int flip = 0;
-	double offset_x = 0;
-	double offset_y = 0;
+	bool rotated;
 	bool has_crop;
+	int flip = 0;
 
 	gs_eparam_t *image;
 
@@ -1008,47 +1076,9 @@ void obs_pipewire_video_render(obs_pipewire *obs_pw, gs_effect_t *effect)
 
 	has_crop = has_effective_crop(obs_pw);
 
-	switch (obs_pw->transform) {
-	case SPA_META_TRANSFORMATION_Flipped:
-		flip = GS_FLIP_U;
-		/* fallthrough */
-	case SPA_META_TRANSFORMATION_None:
-		rot = 0;
-		break;
-	case SPA_META_TRANSFORMATION_Flipped90:
-		flip = GS_FLIP_V;
-		/* fallthrough */
-	case SPA_META_TRANSFORMATION_90:
-		rot = 90;
-		offset_x = 0;
-		offset_y = has_crop ? obs_pw->crop.height
-				    : obs_pw->format.info.raw.size.height;
-		break;
-	case SPA_META_TRANSFORMATION_Flipped180:
-		flip = GS_FLIP_U;
-		/* fallthrough */
-	case SPA_META_TRANSFORMATION_180:
-		rot = 180;
-		offset_x = has_crop ? obs_pw->crop.width
-				    : obs_pw->format.info.raw.size.width;
-		offset_y = has_crop ? obs_pw->crop.height
-				    : obs_pw->format.info.raw.size.height;
-		break;
-	case SPA_META_TRANSFORMATION_Flipped270:
-		flip = GS_FLIP_V;
-		/* fallthrough */
-	case SPA_META_TRANSFORMATION_270:
-		rot = 270;
-		offset_x = has_crop ? obs_pw->crop.width
-				    : obs_pw->format.info.raw.size.width;
-		offset_y = 0;
-		break;
-	}
-	if (rot != 0) {
-		gs_matrix_push();
-		gs_matrix_rotaa4f(0.0f, 0.0f, 1.0f, RAD(rot));
-		gs_matrix_translate3f(-offset_x, -offset_y, 0.0f);
-	}
+	rotated = push_rotation(obs_pw);
+
+	flip = get_buffer_flip(obs_pw);
 	if (has_crop) {
 		gs_draw_sprite_subregion(obs_pw->texture, flip, obs_pw->crop.x,
 					 obs_pw->crop.y, obs_pw->crop.width,
@@ -1056,7 +1086,8 @@ void obs_pipewire_video_render(obs_pipewire *obs_pw, gs_effect_t *effect)
 	} else {
 		gs_draw_sprite(obs_pw->texture, flip, 0, 0);
 	}
-	if (rot != 0)
+
+	if (rotated)
 		gs_matrix_pop();
 
 	if (obs_pw->cursor.visible && obs_pw->cursor.valid &&
