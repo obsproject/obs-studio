@@ -85,6 +85,7 @@ static const char *output_signals[] = {
 	"void stopping(ptr output)",
 	"void activate(ptr output)",
 	"void deactivate(ptr output)",
+	"void update(ptr output)",
 	"void reconnect(ptr output)",
 	"void reconnect_success(ptr output)",
 	NULL,
@@ -536,6 +537,8 @@ void obs_output_update(obs_output_t *output, obs_data_t *settings)
 	if (output->info.update)
 		output->info.update(output->context.data,
 				    output->context.settings);
+
+	obs_output_dosignal(output, "output_update", "update");
 }
 
 obs_data_t *obs_output_get_settings(const obs_output_t *output)

@@ -1115,6 +1115,7 @@ static const char *obs_signals[] = {
 
 	"void output_create(ptr output)",
 	"void output_destroy(ptr output)",
+	"void output_update(ptr output)",
 	"void encoder_create(ptr encoder)",
 	"void encoder_destroy(ptr encoder)",
 	"void service_create(ptr service)",
