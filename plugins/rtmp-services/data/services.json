@@ -2325,12 +2325,16 @@
                     "url": "rtmp://live-default.streamvi.ru/live"
                 },
                 {
-                    "name": "Russia (Moscow)",
+                    "name": "Russia: Moscow",
                     "url": "rtmp://live-msk.streamvi.ru/live"
                 },
                 {
                     "name": "EU Central: Germany",
-                    "url": "rtmp://live1.streamvi.ru/live"
+                    "url": "rtmp://live-germany.streamvi.ru/live"
+                },
+                {
+                    "name": "Russia: Novosibirsk",
+                    "url": "rtmp://live-novosib.streamvi.ru/live"
                 }
             ]
         },
