@@ -2511,28 +2511,28 @@
             }
         },
 	{
-		"name": "Bitmovin",
-		"more_info_link": "https://developer.bitmovin.com/docs/overview",
-		"stream_key_link": "https://bitmovin.com/dashboard/streams?streamsTab=LIVE",
-		"servers": [
-			{
-				"name": "Streams Live",
-				"url": "rtmp://live-input.bitmovin.com/streams"
-			}
-		],
-		"recommended": {
-			"keyint": 2
+	    "name": "Bitmovin",
+	    "more_info_link": "https://developer.bitmovin.com/docs/overview",
+	    "stream_key_link": "https://bitmovin.com/dashboard/streams?streamsTab=LIVE",
+	    "servers": [
+                {
+		    "name": "Streams Live",
+		    "url": "rtmp://live-input.bitmovin.com/streams"
 		}
+	    ],
+	    "recommended": {
+	    "keyint": 2
+	    }
 	},
 	{
-		"name": "MAVENX.GG",
-		"more_info_link": "https://mavenx.gg",
-		"servers": [
-			{
-				"name": "MAVEN X Streaming",
-				"url": "rtmp://rtmp.mavenx.tv/live"
-			}
-		]
+	    "name": "MAVENX.GG",
+	    "more_info_link": "https://mavenx.gg",
+	    "servers": [
+	        {
+		    "name": "MAVEN X Streaming",
+		    "url": "rtmp://rtmp.mavenx.tv/live"
+		}
+	    ]
 	}
     ]
 }
