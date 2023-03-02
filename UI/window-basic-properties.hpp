@@ -38,7 +38,8 @@ private:
 	std::unique_ptr<Ui::OBSBasicProperties> ui;
 	bool acceptClicked;
 
-	OBSSource source;
+	OBSSource origSource;
+	OBSSourceAutoRelease source;
 	OBSSignal removedSignal;
 	OBSSignal renamedSignal;
 	OBSSignal updatePropertiesSignal;
@@ -51,6 +52,7 @@ private:
 	OBSSourceAutoRelease sourceB;
 	OBSSourceAutoRelease sourceClone;
 	bool direction = true;
+	bool isDefaults = false;
 
 	static void SourceRemoved(void *data, calldata_t *params);
 	static void SourceRenamed(void *data, calldata_t *params);
@@ -61,10 +63,12 @@ private:
 	bool ConfirmQuit();
 	int CheckSettings();
 	void Cleanup();
+	void UpdateOriginalSource(bool reject = false);
 
 private slots:
 	void on_buttonBox_clicked(QAbstractButton *button);
 	void AddPreviewButton();
+	void EnableApplyButton(bool enable = true);
 
 public:
 	OBSBasicProperties(QWidget *parent, OBSSource source_);
