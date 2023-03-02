@@ -1113,11 +1113,11 @@
                 {
                     "name": "Global - Legacy",
                     "url": "rtmp://ingest-global.switchboard.zone/live"
-                }                            
+                }
             ],
             "recommended": {
                 "keyint": 2,
-                "profile": "high"               
+                "profile": "high"
             }
         },
         {
@@ -2506,7 +2506,7 @@
             ],
             "recommended": {
                 "keyint": 2,
-		"max video bitrate": 6000
+                "max video bitrate": 6000
             }
         }
     ]
