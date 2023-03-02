@@ -234,7 +234,9 @@ bool AddNew(QWidget *parent, const char *id, const char *name,
 			if ((flags & OBS_SOURCE_MONITOR_BY_DEFAULT) != 0) {
 				obs_source_set_monitoring_type(
 					source,
-					OBS_MONITORING_TYPE_MONITOR_ONLY);
+					(obs_monitoring_type)config_get_uint(
+						main->Config(), "Audio",
+						"DefaultSourceMonitoring"));
 			}
 
 			success = true;

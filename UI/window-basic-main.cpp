@@ -1582,6 +1582,10 @@ bool OBSBasic::InitBasicConfigDefaults()
 				  VOLUME_METER_DECAY_FAST);
 	config_set_default_uint(basicConfig, "Audio", "PeakMeterType", 0);
 
+	config_set_default_uint(
+		basicConfig, "Audio", "DefaultSourceMonitoring",
+		obs_monitoring_type::OBS_MONITORING_TYPE_MONITOR_ONLY);
+
 	CheckExistingCookieId();
 
 	return true;

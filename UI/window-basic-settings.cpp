@@ -533,8 +533,10 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->hdrNominalPeakLevel,  SCROLL_CHANGED, ADV_CHANGED);
 	HookWidget(ui->disableOSXVSync,      CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->resetOSXVSync,        CHECK_CHANGED,  ADV_CHANGED);
-	if (obs_audio_monitoring_available())
+	if (obs_audio_monitoring_available()) {
 		HookWidget(ui->monitoringDevice,     COMBO_CHANGED,  ADV_CHANGED);
+		HookWidget(ui->defaultSourceMonitoring,  COMBO_CHANGED,  ADV_CHANGED);
+	}
 #ifdef _WIN32
 	HookWidget(ui->disableAudioDucking,  CHECK_CHANGED,  ADV_CHANGED);
 #endif
@@ -595,6 +597,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		ui->monitoringDeviceLabel = nullptr;
 		delete ui->monitoringDevice;
 		ui->monitoringDevice = nullptr;
+		delete ui->defaultSourceMonitoring;
+		ui->defaultSourceMonitoring = nullptr;
 	}
 
 #ifdef _WIN32
@@ -2645,11 +2649,14 @@ void OBSBasicSettings::LoadAdvancedSettings()
 
 	QString monDevName;
 	QString monDevId;
+	uint32_t defaultSourceMonitoringIdx = 0;
 	if (obs_audio_monitoring_available()) {
 		monDevName = config_get_string(main->Config(), "Audio",
 					       "MonitoringDeviceName");
 		monDevId = config_get_string(main->Config(), "Audio",
 					     "MonitoringDeviceId");
+		defaultSourceMonitoringIdx = config_get_uint(
+			main->Config(), "Audio", "DefaultSourceMonitoring");
 	}
 	bool enableDelay =
 		config_get_bool(main->Config(), "Output", "DelayEnable");
@@ -2686,10 +2693,14 @@ void OBSBasicSettings::LoadAdvancedSettings()
 
 	LoadRendererList();
 
-	if (obs_audio_monitoring_available() &&
-	    !SetComboByValue(ui->monitoringDevice, monDevId.toUtf8()))
-		SetInvalidValue(ui->monitoringDevice, monDevName.toUtf8(),
-				monDevId.toUtf8());
+	if (obs_audio_monitoring_available()) {
+		ui->defaultSourceMonitoring->setCurrentIndex(
+			defaultSourceMonitoringIdx);
+
+		if (!SetComboByValue(ui->monitoringDevice, monDevId.toUtf8()))
+			SetInvalidValue(ui->monitoringDevice,
+					monDevName.toUtf8(), monDevId.toUtf8());
+	}
 
 	ui->filenameFormatting->setText(filename);
 	ui->overwriteIfExists->setChecked(overwriteIfExists);
@@ -3425,6 +3436,15 @@ void OBSBasicSettings::SaveAdvancedSettings()
 			  "MonitoringDeviceName");
 		SaveComboData(ui->monitoringDevice, "Audio",
 			      "MonitoringDeviceId");
+
+		if (WidgetChanged(ui->defaultSourceMonitoring)) {
+			uint32_t defaultSourceMonitoringIdx =
+				ui->defaultSourceMonitoring->currentIndex();
+
+			config_set_uint(main->Config(), "Audio",
+					"DefaultSourceMonitoring",
+					defaultSourceMonitoringIdx);
+		}
 	}
 
 #ifdef _WIN32

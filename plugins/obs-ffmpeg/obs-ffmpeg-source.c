@@ -777,7 +777,8 @@ struct obs_source_info ffmpeg_source = {
 	.type = OBS_SOURCE_TYPE_INPUT,
 	.output_flags = OBS_SOURCE_ASYNC_VIDEO | OBS_SOURCE_AUDIO |
 			OBS_SOURCE_DO_NOT_DUPLICATE |
-			OBS_SOURCE_CONTROLLABLE_MEDIA,
+			OBS_SOURCE_CONTROLLABLE_MEDIA |
+			OBS_SOURCE_MONITOR_BY_DEFAULT,
 	.get_name = ffmpeg_source_getname,
 	.create = ffmpeg_source_create,
 	.destroy = ffmpeg_source_destroy,

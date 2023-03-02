@@ -1217,7 +1217,8 @@ struct obs_source_info vlc_source_info = {
 	.type = OBS_SOURCE_TYPE_INPUT,
 	.output_flags = OBS_SOURCE_ASYNC_VIDEO | OBS_SOURCE_AUDIO |
 			OBS_SOURCE_DO_NOT_DUPLICATE |
-			OBS_SOURCE_CONTROLLABLE_MEDIA,
+			OBS_SOURCE_CONTROLLABLE_MEDIA |
+			OBS_SOURCE_MONITOR_BY_DEFAULT,
 	.get_name = vlcs_get_name,
 	.create = vlcs_create,
 	.destroy = vlcs_destroy,

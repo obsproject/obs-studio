@@ -7428,6 +7428,41 @@
                      </property>
                     </widget>
                    </item>
+                   <item row="1" column="0">
+                    <widget class="QLabel" name="label_66">
+                     <property name="toolTip">
+                      <string>Basic.AdvAudio.DefaultSourceMonitoring.Tooltip</string>
+                     </property>
+                     <property name="text">
+                      <string>Basic.AdvAudio.DefaultSourceMonitoring</string>
+                     </property>
+                     <property name="buddy">
+                      <cstring>defaultSourceMonitoring</cstring>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QComboBox" name="defaultSourceMonitoring">
+                     <property name="currentIndex">
+                      <number>1</number>
+                     </property>
+                     <item>
+                      <property name="text">
+                       <string>Basic.AdvAudio.Monitoring.None</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>Basic.AdvAudio.Monitoring.MonitorOnly</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>Basic.AdvAudio.Monitoring.Both</string>
+                      </property>
+                     </item>
+                    </widget>
+		   </item>                   
                   </layout>
                  </widget>
                 </item>
@@ -7713,6 +7748,7 @@
   <tabstop>enableNewSocketLoop</tabstop>
   <tabstop>enableLowLatencyMode</tabstop>
   <tabstop>browserHWAccel</tabstop>
+  <tabstop>defaultSourceMonitoring</tabstop> 
   <tabstop>hotkeyFocusType</tabstop>
   <tabstop>ignoreRecommended</tabstop>
   <tabstop>useStreamKeyAdv</tabstop>

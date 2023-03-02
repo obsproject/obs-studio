@@ -192,6 +192,20 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 		OBSScene scene = main->GetCurrentScene();
 		const char *sceneName =
 			obs_source_get_name(obs_scene_get_source(scene));
+		/* set monitoring if source monitors by default */
+		uint32_t flags = obs_source_get_output_flags(source);
+		obs_monitoring_type monitoring_type =
+			obs_monitoring_type::OBS_MONITORING_TYPE_NONE;
+		if ((flags & OBS_SOURCE_MONITOR_BY_DEFAULT) != 0) {
+			monitoring_type = (obs_monitoring_type)config_get_uint(
+				main->Config(), "Audio",
+				"DefaultSourceMonitoring");
+
+			obs_source_set_monitoring_type(source, monitoring_type);
+		}
+
+		// save monitoring type for undo/redo
+		obs_data_set_int(settings, "monitoring", monitoring_type);
 		auto undo = [sceneName, sourceName](const std::string &) {
 			OBSSourceAutoRelease source =
 				obs_get_source_by_name(sourceName.c_str());
@@ -209,6 +223,10 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 				obs_data_create_from_json(data.c_str());
 			OBSSourceAutoRelease source = obs_source_create(
 				type, sourceName.c_str(), settings, nullptr);
+			// recover monitoring when redoing
+			obs_source_set_monitoring_type(
+				source, (obs_monitoring_type)obs_data_get_int(
+						settings, "monitoring"));
 			obs_scene_add(obs_scene_from_source(scene),
 				      source.Get());
 		};
