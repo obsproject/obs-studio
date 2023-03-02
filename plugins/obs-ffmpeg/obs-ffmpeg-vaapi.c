@@ -186,11 +186,11 @@ static const rc_mode_t *get_rc_mode(const char *name)
 		{.name = "CBR", .qp = false, .bitrate = true, .maxrate = false},
 		{.name = "CQP", .qp = true, .bitrate = false, .maxrate = false},
 		{.name = "VBR", .qp = false, .bitrate = true, .maxrate = true},
-		NULL};
+		{0}};
 
 	const rc_mode_t *rc_mode = RC_MODES;
 
-	while (!!rc_mode && strcmp(rc_mode->name, name) != 0)
+	while (!!rc_mode->name && strcmp(rc_mode->name, name) != 0)
 		rc_mode++;
 
 	return rc_mode ? rc_mode : RC_MODES;
