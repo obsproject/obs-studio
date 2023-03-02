@@ -1311,6 +1311,12 @@ typedef void (*obs_source_audio_capture_t)(void *param, obs_source_t *source,
 					   const struct audio_data *audio_data,
 					   bool muted);
 
+EXPORT void obs_source_add_audio_pause_callback(obs_source_t *source,
+						signal_callback_t callback,
+						void *param);
+EXPORT void obs_source_remove_audio_pause_callback(obs_source_t *source,
+						   signal_callback_t callback,
+						   void *param);
 EXPORT void obs_source_add_audio_capture_callback(
 	obs_source_t *source, obs_source_audio_capture_t callback, void *param);
 EXPORT void obs_source_remove_audio_capture_callback(
