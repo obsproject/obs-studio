@@ -1636,8 +1636,7 @@ static inline obs_source_t *new_ref(obs_source_t *source)
 static inline void duplicate_item_data(struct obs_scene_item *dst,
 				       struct obs_scene_item *src,
 				       bool defer_texture_update,
-				       bool duplicate_hotkeys,
-				       bool duplicate_private_data)
+				       bool duplicate_hotkeys)
 {
 	struct obs_scene *dst_scene = dst->parent;
 
@@ -1697,9 +1696,7 @@ static inline void duplicate_item_data(struct obs_scene_item *dst,
 		os_atomic_set_bool(&dst->update_transform, true);
 	}
 
-	if (duplicate_private_data) {
-		obs_data_apply(dst->private_settings, src->private_settings);
-	}
+	obs_data_apply(dst->private_settings, src->private_settings);
 }
 
 obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name,
@@ -1760,8 +1757,7 @@ obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name,
 				continue;
 			}
 
-			duplicate_item_data(new_item, item, false, false,
-					    false);
+			duplicate_item_data(new_item, item, false, false);
 
 			obs_source_release(source);
 		}
@@ -3425,7 +3421,7 @@ void obs_sceneitem_group_ungroup(obs_sceneitem_t *item)
 
 		remove_group_transform(item, last);
 		dst = obs_scene_add_internal(scene, last->source, insert_after);
-		duplicate_item_data(dst, last, true, true, true);
+		duplicate_item_data(dst, last, true, true);
 		apply_group_transform(last, item);
 
 		if (!last->next)
