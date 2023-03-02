@@ -2525,14 +2525,14 @@
 	    }
 	},
 	{
-	    "name": "MAVENX.GG",
-	    "more_info_link": "https://mavenx.gg",
-	    "servers": [
-	        {
-		    "name": "MAVEN X Streaming",
-		    "url": "rtmp://rtmp.mavenx.tv/live"
-		}
-	    ]
+		"name": "MAVENX.GG",
+		"more_info_link": "https://mavenx.gg/eSportsTV/Streams/Tools",
+		"servers": [
+			{
+				"name": "MAVEN X Streaming",
+				"url": "rtmp://rtmp.mavenx.tv/live"
+			}
+		]
 	}
     ]
 }
