@@ -40,7 +40,6 @@ HCRYPTPROV hProvider = 0;
 
 static bool bExiting = false;
 static bool updateFailed = false;
-static bool is32bit = false;
 
 static bool downloadThreadFailure = false;
 
@@ -62,18 +61,14 @@ void FreeWinHttpHandle(HINTERNET handle)
 
 /* ----------------------------------------------------------------------- */
 
-static inline bool is_64bit_windows(void);
-
 static inline bool HasVS2019Redist2()
 {
 	wchar_t base[MAX_PATH];
 	wchar_t path[MAX_PATH];
 	WIN32_FIND_DATAW wfd;
 	HANDLE handle;
-	int folder = (is32bit && is_64bit_windows()) ? CSIDL_SYSTEMX86
-						     : CSIDL_SYSTEM;
 
-	SHGetFolderPathW(NULL, folder, NULL, SHGFP_TYPE_CURRENT, base);
+	SHGetFolderPathW(NULL, CSIDL_SYSTEM, NULL, SHGFP_TYPE_CURRENT, base);
 
 #define check_dll_installed(dll)                                    \
 	do {                                                        \
@@ -89,9 +84,7 @@ static inline bool HasVS2019Redist2()
 
 	check_dll_installed(L"msvcp140");
 	check_dll_installed(L"vcruntime140");
-	if (!is32bit) {
-		check_dll_installed(L"vcruntime140_1");
-	}
+	check_dll_installed(L"vcruntime140_1");
 
 #undef check_dll_installed
 
@@ -141,8 +134,8 @@ try {
 	WinHandle hSrc;
 	WinHandle hDest;
 
-	hSrc = CreateFile(src, GENERIC_READ, 0, nullptr, OPEN_EXISTING,
-			  FILE_FLAG_SEQUENTIAL_SCAN, nullptr);
+	hSrc = CreateFile(src, GENERIC_READ, FILE_SHARE_READ, nullptr,
+			  OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, nullptr);
 	if (!hSrc.Valid())
 		throw LastError();
 
@@ -558,7 +551,6 @@ static inline DWORD WaitIfOBS(DWORD id, const wchar_t *expected)
 static bool WaitForOBS()
 {
 	DWORD proc_ids[1024], needed, count;
-	const wchar_t *name = is32bit ? L"obs32" : L"obs64";
 
 	if (!EnumProcesses(proc_ids, sizeof(proc_ids), &needed)) {
 		return true;
@@ -569,7 +561,7 @@ static bool WaitForOBS()
 	for (DWORD i = 0; i < count; i++) {
 		DWORD id = proc_ids[i];
 		if (id != 0) {
-			switch (WaitIfOBS(id, name)) {
+			switch (WaitIfOBS(id, L"obs64")) {
 			case WAITIFOBS_SUCCESS:
 				return true;
 			case WAITIFOBS_WRONG_PROCESS:
@@ -676,37 +668,10 @@ static inline bool FileExists(const wchar_t *path)
 
 static bool NonCorePackageInstalled(const char *name)
 {
-	if (strcmp(name, "obs-browser") == 0) {
-		if (is32bit)
-			return FileExists(
-				L"obs-plugins\\32bit\\obs-browser.dll");
-		else
-			return FileExists(
-				L"obs-plugins\\64bit\\obs-browser.dll");
-	}
+	if (strcmp(name, "obs-browser") == 0)
+		return FileExists(L"obs-plugins\\64bit\\obs-browser.dll");
 
 	return false;
-}
-
-static inline bool is_64bit_windows(void)
-{
-#ifdef _WIN64
-	return true;
-#else
-	BOOL x86 = false;
-	bool success = !!IsWow64Process(GetCurrentProcess(), &x86);
-	return success && !!x86;
-#endif
-}
-
-static inline bool is_64bit_file(const char *file)
-{
-	if (!file)
-		return false;
-
-	return strstr(file, "64bit") != nullptr ||
-	       strstr(file, "64.dll") != nullptr ||
-	       strstr(file, "64.exe") != nullptr;
 }
 
 #define UPDATE_URL L"https://cdn-fastly.obsproject.com/update_studio"
@@ -718,8 +683,6 @@ static bool AddPackageUpdateFiles(const Json &root, size_t idx,
 	const Json &package = root[idx];
 	const Json &name = package["name"];
 	const Json &files = package["files"];
-
-	bool isWin64 = is_64bit_windows();
 
 	if (!files.is_array())
 		return true;
@@ -755,15 +718,6 @@ static bool AddPackageUpdateFiles(const Json &root, size_t idx,
 		int fileSize = size.int_value();
 
 		if (hashUTF8.size() != BLAKE2_HASH_LENGTH * 2)
-			continue;
-
-		if (!isWin64 && is_64bit_file(fileUTF8.c_str()))
-			continue;
-
-		/* ignore update files of opposite arch to reduce download */
-
-		if ((is32bit && fileUTF8.find("/64bit/") != string::npos) ||
-		    (!is32bit && fileUTF8.find("/32bit/") != string::npos))
 			continue;
 
 		/* convert strings to wide */
@@ -1137,6 +1091,69 @@ static bool UpdateFile(update_t &file)
 	return true;
 }
 
+queue<reference_wrapper<update_t>> updateQueue;
+static int lastPosition = 0;
+static int installed = 0;
+static bool updateThreadFailed = false;
+
+static bool UpdateWorker()
+{
+	unique_lock<mutex> ulock(updateMutex, defer_lock);
+
+	while (true) {
+		ulock.lock();
+
+		if (updateThreadFailed)
+			return false;
+		if (updateQueue.empty())
+			break;
+
+		auto update = updateQueue.front();
+		updateQueue.pop();
+		ulock.unlock();
+
+		if (!UpdateFile(update)) {
+			updateThreadFailed = true;
+			return false;
+		} else {
+			int position = (int)(((float)++installed /
+					      (float)completedUpdates) *
+					     100.0f);
+			if (position > lastPosition) {
+				lastPosition = position;
+				SendDlgItemMessage(hwndMain, IDC_PROGRESS,
+						   PBM_SETPOS, position, 0);
+			}
+		}
+	}
+
+	return true;
+}
+
+static bool RunUpdateWorkers(int num)
+try {
+	for (update_t &update : updates) {
+		updateQueue.push(update);
+	}
+
+	vector<future<bool>> thread_success_results;
+	thread_success_results.resize(num);
+
+	for (future<bool> &result : thread_success_results) {
+		result = async(launch::async, UpdateWorker);
+	}
+	for (future<bool> &result : thread_success_results) {
+		if (!result.get()) {
+			return false;
+		}
+	}
+
+	return true;
+
+} catch (...) {
+	return false;
+}
+
 #define PATCH_MANIFEST_URL \
 	L"https://obsproject.com/update_studio/getpatchmanifest"
 #define HASH_NULL L"0000000000000000000000000000000000000000"
@@ -1178,19 +1195,14 @@ static bool UpdateVS2019Redists(const Json &root)
 	/* ------------------------------------------ *
 	 * Download redist                            */
 
-	Status(L"Downloading %s", L"Visual C++ 2019 Redistributable");
+	Status(L"Downloading Visual C++ 2019 Redistributable");
 
-	const wchar_t *file = (is32bit) ? L"VC_redist.x86.exe"
-					: L"VC_redist.x64.exe";
-
-	wstring sourceURL;
-	sourceURL += L"https://cdn-fastly.obsproject.com/downloads/";
-	sourceURL += file;
+	wstring sourceURL =
+		L"https://cdn-fastly.obsproject.com/downloads/VC_redist.x64.exe";
 
 	wstring destPath;
 	destPath += tempPath;
-	destPath += L"\\";
-	destPath += file;
+	destPath += L"\\VC_redist.x64.exe";
 
 	if (!HTTPGetFile(hConnect, sourceURL.c_str(), destPath.c_str(),
 			 L"Accept-Encoding: gzip", &responseCode)) {
@@ -1205,8 +1217,7 @@ static bool UpdateVS2019Redists(const Json &root)
 	/* ------------------------------------------ *
 	 * Get expected hash                          */
 
-	const char *which = is32bit ? "vc2019_redist_x86" : "vc2019_redist_x64";
-	const Json &redistJson = root[which];
+	const Json &redistJson = root["vc2019_redist_x64"];
 	if (!redistJson.is_string()) {
 		Status(L"Update failed: Could not parse VC2019 redist json");
 		return false;
@@ -1659,21 +1670,8 @@ static bool Update(wchar_t *cmdLine)
 
 	SendDlgItemMessage(hwndMain, IDC_PROGRESS, PBM_SETPOS, 0, 0);
 
-	for (update_t &update : updates) {
-		if (!UpdateFile(update)) {
-			return false;
-		} else {
-			updatesInstalled++;
-			int position = (int)(((float)updatesInstalled /
-					      (float)completedUpdates) *
-					     100.0f);
-			if (position > lastPosition) {
-				lastPosition = position;
-				SendDlgItemMessage(hwndMain, IDC_PROGRESS,
-						   PBM_SETPOS, position, 0);
-			}
-		}
-	}
+	if (!RunUpdateWorkers(4))
+		return false;
 
 	for (deletion_t &deletion : deletions) {
 		if (!RenameRemovedFile(deletion)) {
@@ -1728,11 +1726,9 @@ static bool Update(wchar_t *cmdLine)
 		StringCbCat(tmp2, sizeof(tmp2), L"32.dll\"");
 		runcommand(tmp2);
 
-		if (is_64bit_windows()) {
-			StringCbCopy(tmp2, sizeof(tmp2), tmp);
-			StringCbCat(tmp2, sizeof(tmp2), L"64.dll\"");
-			runcommand(tmp2);
-		}
+		StringCbCopy(tmp2, sizeof(tmp2), tmp);
+		StringCbCat(tmp2, sizeof(tmp2), L"64.dll\"");
+		runcommand(tmp2);
 	}
 
 	/* ------------------------------------- *
@@ -1822,26 +1818,15 @@ static void LaunchOBS(bool portable)
 	GetCurrentDirectory(_countof(cwd) - 1, cwd);
 
 	StringCbCopy(obsPath, sizeof(obsPath), cwd);
-	StringCbCat(obsPath, sizeof(obsPath),
-		    is32bit ? L"\\bin\\32bit" : L"\\bin\\64bit");
+	StringCbCat(obsPath, sizeof(obsPath), L"\\bin\\64bit");
 	SetCurrentDirectory(obsPath);
 	StringCbCopy(newCwd, sizeof(newCwd), obsPath);
 
-	StringCbCat(obsPath, sizeof(obsPath),
-		    is32bit ? L"\\obs32.exe" : L"\\obs64.exe");
+	StringCbCat(obsPath, sizeof(obsPath), L"\\obs64.exe");
 
 	if (!FileExists(obsPath)) {
-		StringCbCopy(obsPath, sizeof(obsPath), cwd);
-		StringCbCat(obsPath, sizeof(obsPath), L"\\bin\\32bit");
-		SetCurrentDirectory(obsPath);
-		StringCbCopy(newCwd, sizeof(newCwd), obsPath);
-
-		StringCbCat(obsPath, sizeof(obsPath), L"\\obs32.exe");
-
-		if (!FileExists(obsPath)) {
-			/* TODO: give user a message maybe? */
-			return;
-		}
+		/* TODO: give user a message maybe? */
+		return;
 	}
 
 	SHELLEXECUTEINFO execInfo;
@@ -1973,7 +1958,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int)
 	wchar_t newPath[MAX_PATH];
 	GetCurrentDirectoryW(_countof(cwd) - 1, cwd);
 
-	is32bit = wcsstr(cwd, L"bin\\32bit") != nullptr;
 	bool isPortable = wcsstr(lpCmdLine, L"Portable") != nullptr ||
 			  wcsstr(lpCmdLine, L"--portable") != nullptr;
 

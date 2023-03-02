@@ -165,6 +165,12 @@ public:
 		unk->QueryInterface(__uuidof(T), (void **)&this->ptr);
 	}
 
+	template<class U> inline ComQIPtr(const ComPtr<U> &c)
+	{
+		this->ptr = nullptr;
+		c->QueryInterface(__uuidof(T), (void **)&this->ptr);
+	}
+
 	inline ComPtr<T> &operator=(IUnknown *unk)
 	{
 		ComPtr<T>::Clear();

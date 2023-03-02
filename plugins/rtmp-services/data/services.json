@@ -878,7 +878,7 @@
             "servers": [
                 {
                     "name": "Auto",
-                    "url": "rtmp://s-sd.doppiocdn.com/ext"
+                    "url": "rtmp://live.doppiocdn.com/ext"
                 }
             ],
             "recommended": {
@@ -1107,51 +1107,17 @@
             ],
             "servers": [
                 {
-                    "name": "Global Zone (geo based)",
+                    "name": "Global - Recommended",
+                    "url": "rtmps://live.sb.zone:443/live"
+                },
+                {
+                    "name": "Global - Legacy",
                     "url": "rtmp://ingest-global.switchboard.zone/live"
-                },
-                {
-                    "name": "US Zone (geo based)",
-                    "url": "rtmp://ingest-us.switchboard.zone/live"
-                },
-                {
-                    "name": "US West",
-                    "url": "rtmp://ingest-us-west.switchboard.zone/live"
-                },
-                {
-                    "name": "US East",
-                    "url": "rtmp://ingest-us-east.switchboard.zone/live"
-                },
-                {
-                    "name": "US Central",
-                    "url": "rtmp://ingest-us-central.switchboard.zone/live"
-                },
-                {
-                    "name": "South America",
-                    "url": "rtmp://ingest-sa.switchboard.zone/live"
-                },
-                {
-                    "name": "EU (auto)",
-                    "url": "rtmp://ingest-eu.switchboard.zone/live"
-                },
-                {
-                    "name": "Australia",
-                    "url": "rtmp://ingest-au.switchboard.zone/live"
-                },
-                {
-                    "name": "APAC (auto)",
-                    "url": "rtmp://ingest-asia.switchboard.zone/live"
-                },
-                {
-                    "name": "UK",
-                    "url": "rtmp://ingest-uk.switchboard.zone/live"
-                }
+                }                            
             ],
             "recommended": {
                 "keyint": 2,
-                "profile": "high",
-                "max audio bitrate": 160,
-                "max video bitrate": 6000
+                "profile": "high"               
             }
         },
         {
@@ -2312,7 +2278,7 @@
         },
         {
             "name": "Mildom",
-            "more_info_link": "https://www.mildom.com/course/pc",
+            "more_info_link": "https://support.mildom.com/hc/ja/articles/360056569954",
             "stream_key_link": "https://www.mildom.com/creator/live",
             "servers": [
                 {
@@ -2359,12 +2325,16 @@
                     "url": "rtmp://live-default.streamvi.ru/live"
                 },
                 {
-                    "name": "Russia (Moscow)",
+                    "name": "Russia: Moscow",
                     "url": "rtmp://live-msk.streamvi.ru/live"
                 },
                 {
                     "name": "EU Central: Germany",
-                    "url": "rtmp://live1.streamvi.ru/live"
+                    "url": "rtmp://live-germany.streamvi.ru/live"
+                },
+                {
+                    "name": "Russia: Novosibirsk",
+                    "url": "rtmp://live-novosib.streamvi.ru/live"
                 }
             ]
         },
@@ -2510,29 +2480,44 @@
                 "max video bitrate": 20000
             }
         },
-	{
-	    "name": "Bitmovin",
-	    "more_info_link": "https://developer.bitmovin.com/docs/overview",
-	    "stream_key_link": "https://bitmovin.com/dashboard/streams?streamsTab=LIVE",
-	    "servers": [
+        {
+          "name": "MAVENX.GG",
+          "more_info_link": "https://mavenx.gg/eSportsTV/Streams/Tools",
+          "servers": [
+            {
+              "name": "MAVEN X Streaming",
+              "url": "rtmp://rtmp.mavenx.tv/live"
+            }
+          ]
+        },
+        {
+            "name": "Bitmovin",
+            "more_info_link": "https://developer.bitmovin.com/docs/overview",
+            "stream_key_link": "https://bitmovin.com/dashboard/streams?streamsTab=LIVE",
+            "servers": [
                 {
-		    "name": "Streams Live",
-		    "url": "rtmp://live-input.bitmovin.com/streams"
-		}
-	    ],
-	    "recommended": {
-	    "keyint": 2
-	    }
-	},
-	{
-		"name": "MAVENX.GG",
-		"more_info_link": "https://mavenx.gg/eSportsTV/Streams/Tools",
-		"servers": [
-			{
-				"name": "MAVEN X Streaming",
-				"url": "rtmp://rtmp.mavenx.tv/live"
-			}
-		]
-	}
+                    "name": "Streams Live",
+                    "url": "rtmp://live-input.bitmovin.com/streams"
+                }
+            ],
+            "recommended": {
+                "keyint": 2
+            }
+        },
+        {
+            "name": "Live Streamer Cafe",
+            "more_info_link": "https://livestreamercafe.com/help.php",
+            "stream_key_link": "https://livestreamercafe.com/profile.php",
+            "servers": [
+                {
+                    "name": "Live Streamer Cafe Server",
+                    "url": "rtmp://tophicles.com/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+		            "max video bitrate": 6000
+            }
+        }
     ]
 }
