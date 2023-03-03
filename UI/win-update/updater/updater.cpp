@@ -378,6 +378,8 @@ bool DownloadWorkerThread()
 
 	const DWORD enableHTTP2Flag = WINHTTP_PROTOCOL_FLAG_HTTP2;
 
+	const DWORD compressionFlags = WINHTTP_DECOMPRESSION_FLAG_ALL;
+
 	HttpHandle hSession = WinHttpOpen(L"OBS Studio Updater/2.2",
 					  WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
 					  WINHTTP_NO_PROXY_NAME,
@@ -393,6 +395,9 @@ bool DownloadWorkerThread()
 
 	WinHttpSetOption(hSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL,
 			 (LPVOID)&enableHTTP2Flag, sizeof(enableHTTP2Flag));
+
+	WinHttpSetOption(hSession, WINHTTP_OPTION_DECOMPRESSION,
+			 (LPVOID)&compressionFlags, sizeof(compressionFlags));
 
 	HttpHandle hConnect = WinHttpConnect(hSession,
 					     L"cdn-fastly.obsproject.com",
@@ -1215,6 +1220,8 @@ static bool UpdateVS2019Redists(const Json &root)
 
 	const DWORD tlsProtocols = WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2;
 
+	const DWORD compressionFlags = WINHTTP_DECOMPRESSION_FLAG_ALL;
+
 	HttpHandle hSession = WinHttpOpen(L"OBS Studio Updater/2.2",
 					  WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
 					  WINHTTP_NO_PROXY_NAME,
@@ -1226,6 +1233,9 @@ static bool UpdateVS2019Redists(const Json &root)
 
 	WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS,
 			 (LPVOID)&tlsProtocols, sizeof(tlsProtocols));
+
+	WinHttpSetOption(hSession, WINHTTP_OPTION_DECOMPRESSION,
+			 (LPVOID)&compressionFlags, sizeof(compressionFlags));
 
 	HttpHandle hConnect = WinHttpConnect(hSession,
 					     L"cdn-fastly.obsproject.com",
