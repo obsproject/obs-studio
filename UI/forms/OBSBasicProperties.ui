@@ -44,7 +44,7 @@
       <property name="frameShadow">
        <enum>QFrame::Plain</enum>
       </property>
-      <layout class="QVBoxLayout" name="verticalLayout_7">
+      <layout class="QHBoxLayout" name="previewLayout">
        <property name="spacing">
         <number>0</number>
        </property>

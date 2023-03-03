@@ -26,6 +26,7 @@
 
 class OBSPropertiesView;
 class OBSBasic;
+class VolControl;
 
 #include "ui_OBSBasicProperties.h"
 
@@ -42,10 +43,13 @@ private:
 	OBSSignal removedSignal;
 	OBSSignal renamedSignal;
 	OBSSignal updatePropertiesSignal;
+	OBSSignal audioActivated;
+	OBSSignal audioDeactivated;
 	OBSData oldSettings;
 	OBSPropertiesView *view;
 	QDialogButtonBox *buttonBox;
 	QSplitter *windowSplitter;
+	VolControl *vol = nullptr;
 
 	OBSSourceAutoRelease sourceA;
 	OBSSourceAutoRelease sourceB;
@@ -57,6 +61,8 @@ private:
 	static void UpdateProperties(void *data, calldata_t *params);
 	static void DrawPreview(void *data, uint32_t cx, uint32_t cy);
 	static void DrawTransitionPreview(void *data, uint32_t cx, uint32_t cy);
+	static void AudioActivated(void *data, calldata_t *params);
+	static void AudioDeactivated(void *data, calldata_t *params);
 	void UpdateCallback(void *obj, obs_data_t *settings);
 	bool ConfirmQuit();
 	int CheckSettings();
@@ -65,6 +71,8 @@ private:
 private slots:
 	void on_buttonBox_clicked(QAbstractButton *button);
 	void AddPreviewButton();
+	void ShowVolumeControls();
+	void HideVolumeControls();
 
 public:
 	OBSBasicProperties(QWidget *parent, OBSSource source_);

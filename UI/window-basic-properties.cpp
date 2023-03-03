@@ -21,6 +21,7 @@
 #include "qt-wrappers.hpp"
 #include "display-helpers.hpp"
 #include "properties-view.hpp"
+#include "volume-control.hpp"
 
 #include <QCloseEvent>
 #include <QScreen>
@@ -51,6 +52,12 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 			OBSBasicProperties::SourceRemoved, this),
 	  renamedSignal(obs_source_get_signal_handler(source), "rename",
 			OBSBasicProperties::SourceRenamed, this),
+	  audioActivated(obs_source_get_signal_handler(source),
+			 "audio_activate", OBSBasicProperties::AudioActivated,
+			 this),
+	  audioDeactivated(obs_source_get_signal_handler(source),
+			   "audio_deactivate",
+			   OBSBasicProperties::AudioDeactivated, this),
 	  oldSettings(obs_data_create())
 {
 	int cx = (int)config_get_int(App()->GlobalConfig(), "PropertiesWindow",
@@ -114,6 +121,7 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	bool drawable_type = type == OBS_SOURCE_TYPE_INPUT ||
 			     type == OBS_SOURCE_TYPE_SCENE;
 	bool drawable_preview = (caps & OBS_SOURCE_VIDEO) != 0;
+	bool verticalMixer = true;
 
 	if (drawable_preview && drawable_type) {
 		ui->preview->show();
@@ -166,7 +174,30 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 
 	} else {
 		ui->preview->hide();
+		verticalMixer = false;
 	}
+
+	if ((caps & OBS_SOURCE_AUDIO) == OBS_SOURCE_AUDIO) {
+		vol = new VolControl(source, false, verticalMixer);
+		vol->nameLabel->hide();
+
+		if (!verticalMixer) {
+			QVBoxLayout *mainLayout =
+				qobject_cast<QVBoxLayout *>(vol->layout());
+
+			if (mainLayout)
+				mainLayout->addStretch();
+		} else {
+			ui->previewLayout->addSpacing(9);
+		}
+
+		ui->previewLayout->addWidget(vol);
+	}
+
+	if (obs_source_audio_active(source))
+		ShowVolumeControls();
+	else
+		HideVolumeControls();
 }
 
 OBSBasicProperties::~OBSBasicProperties()
@@ -299,6 +330,30 @@ void OBSBasicProperties::UpdateProperties(void *data, calldata_t *)
 {
 	QMetaObject::invokeMethod(static_cast<OBSBasicProperties *>(data)->view,
 				  "ReloadProperties");
+}
+
+void OBSBasicProperties::AudioActivated(void *data, calldata_t *)
+{
+	QMetaObject::invokeMethod(static_cast<OBSBasicProperties *>(data),
+				  "ShowVolumeControls");
+}
+
+void OBSBasicProperties::AudioDeactivated(void *data, calldata_t *)
+{
+	QMetaObject::invokeMethod(static_cast<OBSBasicProperties *>(data),
+				  "HideVolumeControls");
+}
+
+void OBSBasicProperties::ShowVolumeControls()
+{
+	if (vol)
+		vol->show();
+}
+
+void OBSBasicProperties::HideVolumeControls()
+{
+	if (vol)
+		vol->hide();
 }
 
 static bool ConfirmReset(QWidget *parent)

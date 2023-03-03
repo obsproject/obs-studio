@@ -280,6 +280,8 @@ class MuteCheckBox;
 class VolControl : public QWidget {
 	Q_OBJECT
 
+	friend class OBSBasicProperties;
+
 private:
 	OBSSource source;
 	QLabel *nameLabel;
