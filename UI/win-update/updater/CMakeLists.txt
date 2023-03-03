@@ -43,13 +43,7 @@ if(MSVC)
 endif()
 
 target_link_libraries(
-  updater
-  PRIVATE OBS::blake2
-          OBS::lzma
-          zstd::libzstd_static
-          ${STATIC_ZLIB_PATH}
-          comctl32
-          shell32
-          winhttp)
+  updater PRIVATE OBS::blake2 zstd::libzstd_static ${STATIC_ZLIB_PATH} comctl32
+                  shell32 winhttp)
 
 set_target_properties(updater PROPERTIES FOLDER "frontend")

@@ -992,7 +992,7 @@ static bool MoveInUseFileAway(update_t &file)
 	return false;
 }
 
-static bool UpdateFile(update_t &file)
+static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 {
 	wchar_t oldFileRenamedPath[MAX_PATH];
 
@@ -1049,7 +1049,7 @@ static bool UpdateFile(update_t &file)
 	retryAfterMovingFile:
 
 		if (file.patchable) {
-			error_code = ApplyPatch(file.tempPath.c_str(),
+			error_code = ApplyPatch(ctx, file.tempPath.c_str(),
 						file.outputPath.c_str());
 			installed_ok = (error_code == 0);
 
@@ -1099,9 +1099,10 @@ static bool UpdateFile(update_t &file)
 				       L"programs and try again.",
 				       curFileName);
 			} else {
+				DWORD err = GetLastError();
 				Status(L"Update failed: Couldn't update %s "
 				       L"(error %d)",
-				       curFileName, GetLastError());
+				       curFileName, err ? err : error_code);
 			}
 
 			file.state = STATE_INSTALL_FAILED;
@@ -1147,6 +1148,7 @@ static bool updateThreadFailed = false;
 static bool UpdateWorker()
 {
 	unique_lock<mutex> ulock(updateMutex, defer_lock);
+	ZSTDDCtx zCtx;
 
 	while (true) {
 		ulock.lock();
@@ -1160,7 +1162,7 @@ static bool UpdateWorker()
 		updateQueue.pop();
 		ulock.unlock();
 
-		if (!UpdateFile(update)) {
+		if (!UpdateFile(zCtx, update)) {
 			updateThreadFailed = true;
 			return false;
 		} else {
