@@ -37,6 +37,7 @@
 #include <zlib.h>
 #include <ctype.h>
 #include <blake2.h>
+#include <zstd.h>
 
 #include <string>
 
@@ -91,6 +92,7 @@ void StringToHash(const wchar_t *in, BYTE *out);
 bool CalculateFileHash(const wchar_t *path, BYTE *hash);
 
 int ApplyPatch(LPCTSTR patchFile, LPCTSTR targetFile);
+int DecompressFile(ZSTD_DCtx *ctx, LPCTSTR tempFile, size_t newSize);
 
 extern HWND hwndMain;
 extern HCRYPTPROV hProvider;
@@ -109,3 +111,15 @@ typedef struct {
 
 void FreeWinHttpHandle(HINTERNET handle);
 using HttpHandle = CustomHandle<HINTERNET, FreeWinHttpHandle>;
+
+/* ------------------------------------------------------------------------ */
+
+class ZSTDDCtx {
+	ZSTD_DCtx *ctx = nullptr;
+
+public:
+	inline ZSTDDCtx() { ctx = ZSTD_createDCtx(); }
+	inline ~ZSTDDCtx() { ZSTD_freeDCtx(ctx); }
+	inline operator ZSTD_DCtx *() const { return ctx; }
+	inline ZSTD_DCtx *get() const { return ctx; }
+};
