@@ -746,6 +746,31 @@ QToolBar {
     qproperty-icon: url(theme:Dark/filter.svg);
 }
 
+* [themeID="selectAllIcon"] {
+    qproperty-icon: url(theme:Dark/check_round_outline.svg);
+}
+
+* [themeID="sortIcon"] {
+    qproperty-icon: url(theme:Dark/vertical_arrows_updown.svg);
+}
+
+* [themeID="checkmarkIcon"] {
+    qproperty-icon: url(theme:Dark/checkmark.svg);
+}
+
+* [errorColor="true"] {
+    background-color: var(--danger);
+}
+
+/* TODO: Decide whether we want something like danger-hover and danger-disabled as a var */
+* [errorColor="true"]:hover {
+    background-color: var(--red2);
+}
+
+* [errorColor="true"]:disabled {
+    background-color: var(--red5);
+}
+
 QToolBarExtension {
     background: var(--button_bg);
     min-width: 12px;

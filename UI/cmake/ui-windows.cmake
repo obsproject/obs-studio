@@ -57,4 +57,6 @@ target_sources(
           window-projector.cpp
           window-projector.hpp
           window-remux.cpp
-          window-remux.hpp)
+          window-remux.hpp
+          window-scene-collections.cpp
+          window-scene-collections.hpp)

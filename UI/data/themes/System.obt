@@ -64,6 +64,30 @@
     qproperty-icon: url(:/res/images/filter.svg);
 }
 
+* [themeID="selectAllIcon"] {
+    qproperty-icon: url(:/res/images/check_round_outline.svg);
+}
+
+* [themeID="sortIcon"] {
+    qproperty-icon: url(:/res/images/vertical_arrows_updown.svg);
+}
+
+* [themeID="checkmarkIcon"] {
+    qproperty-icon: url(:/res/images/checkmark.svg);
+}
+
+* [errorColor="true"] {
+    background-color: rgb(189,47,73);
+}
+
+* [errorColor="true"]:hover {
+    background-color: rgb(206, 51, 74);
+}
+
+* [errorColor="true"]:disabled {
+    background-color: rgb(112,39,53);
+}
+
 MuteCheckBox {
     outline: none;
 }

@@ -118,6 +118,18 @@ QPushButton#sourceFiltersButton {
     qproperty-icon: url(theme:Light/filter.svg);
 }
 
+* [themeID="selectAllIcon"] {
+    qproperty-icon: url(theme:Light/check_round_outline.svg);
+}
+
+* [themeID="sortIcon"] {
+    qproperty-icon: url(theme:Light/vertical_arrows_updown.svg);
+}
+
+* [themeID="checkmarkIcon"] {
+    qproperty-icon: url(theme:Light/checkmark.svg);
+}
+
 QToolBarExtension {
     qproperty-icon: url(theme:Light/dots-vert.svg);
 }

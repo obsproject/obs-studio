@@ -137,6 +137,7 @@ target_sources(
           forms/OBSLogViewer.ui
           forms/OBSMissingFiles.ui
           forms/OBSRemux.ui
+          forms/OBSSceneCollections.ui
           forms/OBSUpdate.ui
           forms/OBSYoutubeActions.ui
           forms/StatusBarWidget.ui
@@ -315,7 +316,9 @@ target_sources(
           window-projector.cpp
           window-projector.hpp
           window-remux.cpp
-          window-remux.hpp)
+          window-remux.hpp
+          window-scene-collections.cpp
+          window-scene-collections.hpp)
 
 target_sources(
   obs

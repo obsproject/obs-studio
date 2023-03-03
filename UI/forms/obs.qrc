@@ -71,6 +71,9 @@
     <file>images/network-bad.svg</file>
     <file>images/network-disconnected.svg</file>
     <file>images/network-inactive.svg</file>
+    <file>images/check_round_outline.svg</file>
+    <file>images/vertical_arrows_updown.svg</file>
+    <file>images/checkmark.svg</file>
   </qresource>
   <qresource prefix="/settings">
     <file>images/settings/output.svg</file>
