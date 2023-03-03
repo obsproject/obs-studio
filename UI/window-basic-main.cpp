@@ -2159,7 +2159,7 @@ void OBSBasic::OBSInit()
 					  Qt::QueuedConnection,
 					  Q_ARG(bool, true));
 
-	RefreshSceneCollections();
+	RefreshSceneCollections(true);
 	RefreshProfiles();
 	disableSaving--;
 
@@ -2971,6 +2971,7 @@ OBSBasic::~OBSBasic()
 	delete transformWindow;
 	delete advAudioWindow;
 	delete about;
+	delete sceneCollectionsDialog;
 	delete remux;
 
 	obs_display_remove_draw_callback(ui->preview->GetDisplay(),
@@ -4916,7 +4917,9 @@ void OBSBasic::CloseDialogs()
 	QList<QDialog *> childDialogs = this->findChildren<QDialog *>();
 	if (!childDialogs.isEmpty()) {
 		for (int i = 0; i < childDialogs.size(); ++i) {
-			childDialogs.at(i)->close();
+			QDialog *dialog = childDialogs.at(i);
+			if (dialog != sceneCollectionsDialog.data())
+				dialog->close();
 		}
 	}
 

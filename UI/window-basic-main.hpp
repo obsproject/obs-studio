@@ -36,6 +36,7 @@
 #include "window-missing-files.hpp"
 #include "window-projector.hpp"
 #include "window-basic-about.hpp"
+#include "window-scene-collections.hpp"
 #ifdef YOUTUBE_ENABLED
 #include "window-dock-youtube-app.hpp"
 #endif
@@ -193,6 +194,7 @@ class OBSBasic : public OBSMainWindow {
 	friend class DeviceCaptureToolbar;
 	friend class DeviceToolbarPropertiesThread;
 	friend class OBSBasicSourceSelect;
+	friend class OBSSceneCollections;
 	friend class OBSYoutubeActions;
 	friend class OBSPermissions;
 	friend struct BasicOutputHandler;
@@ -273,6 +275,7 @@ private:
 	QPointer<OBSAbout> about;
 	QPointer<OBSMissingFiles> missDialog;
 	QPointer<OBSLogViewer> logView;
+	QPointer<OBSSceneCollections> sceneCollectionsDialog;
 
 	QPointer<QTimer> cpuUsageTimer;
 	QPointer<QTimer> diskFullTimer;
@@ -436,7 +439,7 @@ private:
 	void ToggleVolControlLayout();
 	void ToggleMixerLayout(bool vertical);
 
-	void RefreshSceneCollections();
+	void RefreshSceneCollections(bool refreshDialog);
 	void ActionChangeSceneCollection();
 	void ChangeSceneCollection(const std::string &fileName);
 	void LogScenes();
@@ -728,9 +731,6 @@ public slots:
 			       int quickDuration = 0, bool black = false,
 			       bool manual = false);
 	void SetCurrentScene(OBSSource scene, bool force = false);
-
-	bool AddSceneCollection(bool create_new,
-				const QString &name = QString());
 
 	bool NewProfile(const QString &name);
 	bool DuplicateProfile(const QString &name);
@@ -1140,12 +1140,7 @@ private slots:
 	void ProgramViewContextMenuRequested();
 	void on_previewDisabledWidget_customContextMenuRequested();
 
-	void on_actionNewSceneCollection_triggered();
-	void on_actionDupSceneCollection_triggered();
-	void on_actionRenameSceneCollection_triggered();
-	void on_actionRemoveSceneCollection_triggered();
-	void on_actionImportSceneCollection_triggered();
-	void on_actionExportSceneCollection_triggered();
+	void on_actionManageSceneCollections_triggered();
 
 	void on_actionNewProfile_triggered();
 	void on_actionDupProfile_triggered();
