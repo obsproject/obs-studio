@@ -318,3 +318,74 @@ try {
 } catch (int code) {
 	return code;
 }
+
+int DecompressFile(ZSTD_DCtx *ctx, const wchar_t *tempFile, size_t newSize)
+try {
+	WinHandle hTemp;
+
+	hTemp = CreateFile(tempFile, GENERIC_READ, 0, nullptr, OPEN_EXISTING, 0,
+			   nullptr);
+	if (!hTemp.Valid())
+		throw int(GetLastError());
+
+	/* --------------------------------- *
+	 * read compressed data              */
+
+	DWORD read;
+	DWORD compressedFileSize;
+
+	compressedFileSize = GetFileSize(hTemp, nullptr);
+	if (compressedFileSize == INVALID_FILE_SIZE)
+		throw int(GetLastError());
+
+	vector<uint8_t> oldData;
+	try {
+		oldData.resize(compressedFileSize);
+	} catch (...) {
+		throw int(-1);
+	}
+
+	if (!ReadFile(hTemp, &oldData[0], compressedFileSize, &read, nullptr))
+		throw int(GetLastError());
+	if (read != compressedFileSize)
+		throw int(-1);
+
+	/* --------------------------------- *
+	 * decompress data                   */
+
+	vector<uint8_t> newData;
+	try {
+		newData.resize((size_t)newSize);
+	} catch (...) {
+		throw int(-1);
+	}
+
+	size_t result = ZSTD_decompressDCtx(ctx, &newData[0], newData.size(),
+					    oldData.data(), oldData.size());
+
+	if (result != newSize)
+		throw int(-9);
+	if (ZSTD_isError(result))
+		throw int(-10);
+
+	/* --------------------------------- *
+	 * overwrite temp file with new data */
+
+	hTemp = nullptr;
+	hTemp = CreateFile(tempFile, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS,
+			   0, nullptr);
+	if (!hTemp.Valid())
+		throw int(GetLastError());
+
+	bool success;
+	DWORD written;
+
+	success = !!WriteFile(hTemp, newData.data(), (DWORD)newSize, &written,
+			      nullptr);
+	if (!success || written != newSize)
+		throw int(GetLastError());
+
+	return 0;
+} catch (int code) {
+	return code;
+}
