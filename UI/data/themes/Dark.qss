@@ -333,6 +333,30 @@ QToolButton:pressed {
     qproperty-icon: url(theme:Dark/filter.svg);
 }
 
+* [themeID="selectAllIcon"] {
+    qproperty-icon: url(./Dark/check_round_outline.svg);
+}
+
+* [themeID="sortIcon"] {
+    qproperty-icon: url(./Dark/vertical_arrows_updown.svg);
+}
+
+* [themeID="checkmarkIcon"] {
+    qproperty-icon: url(./Dark/checkmark.svg);
+}
+
+* [errorColor="true"] {
+    background-color: rgb(189,47,73);
+}
+
+* [errorColor="true"]:hover {
+    background-color: rgb(206, 51, 74);
+}
+
+* [errorColor="true"]:disabled {
+    background-color: rgb(112,39,53);
+}
+
 /* Tab Widget */
 
 QTabWidget::pane { /* The tab widget frame */
