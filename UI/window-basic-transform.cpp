@@ -144,7 +144,9 @@ void OBSBasicTransform::SetItemQt(OBSSceneItem newItem)
 	if (item)
 		RefreshControls();
 
-	setEnabled(!!item);
+	bool enable = !!item;
+	ui->container->setEnabled(enable);
+	ui->buttonBox->button(QDialogButtonBox::Reset)->setEnabled(enable);
 }
 
 void OBSBasicTransform::OBSChannelChanged(void *param, calldata_t *data)
