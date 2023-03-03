@@ -380,7 +380,7 @@ bool DownloadWorkerThread()
 
 	const DWORD compressionFlags = WINHTTP_DECOMPRESSION_FLAG_ALL;
 
-	HttpHandle hSession = WinHttpOpen(L"OBS Studio Updater/2.2",
+	HttpHandle hSession = WinHttpOpen(L"OBS Studio Updater/3.0",
 					  WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
 					  WINHTTP_NO_PROXY_NAME,
 					  WINHTTP_NO_PROXY_BYPASS, 0);
@@ -1222,7 +1222,7 @@ static bool UpdateVS2019Redists(const Json &root)
 
 	const DWORD compressionFlags = WINHTTP_DECOMPRESSION_FLAG_ALL;
 
-	HttpHandle hSession = WinHttpOpen(L"OBS Studio Updater/2.2",
+	HttpHandle hSession = WinHttpOpen(L"OBS Studio Updater/3.0",
 					  WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
 					  WINHTTP_NO_PROXY_NAME,
 					  WINHTTP_NO_PROXY_BYPASS, 0);
