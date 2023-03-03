@@ -167,6 +167,15 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	} else {
 		ui->preview->hide();
 	}
+
+	ui->nameEdit->setText(QT_UTF8(name));
+	origName = ui->nameEdit->text();
+
+	if (obs_obj_is_private(source)) {
+		ui->nameEdit->hide();
+		ui->revertNameButton->hide();
+		ui->nameLabel->hide();
+	}
 }
 
 OBSBasicProperties::~OBSBasicProperties()
@@ -317,6 +326,8 @@ void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 	QDialogButtonBox::ButtonRole val = ui->buttonBox->buttonRole(button);
 
 	if (val == QDialogButtonBox::AcceptRole) {
+		if (!CheckSourceName())
+			return;
 
 		std::string scene_name =
 			obs_source_get_name(main->GetCurrentSceneSource());
@@ -531,7 +542,8 @@ int OBSBasicProperties::CheckSettings()
 	const char *oldSettingsJson = obs_data_get_json(oldSettings);
 	const char *currentSettingsJson = obs_data_get_json(currentSettings);
 
-	return strcmp(currentSettingsJson, oldSettingsJson);
+	return origName != ui->nameEdit->text() ||
+	       strcmp(currentSettingsJson, oldSettingsJson);
 }
 
 bool OBSBasicProperties::ConfirmQuit()
@@ -561,5 +573,42 @@ bool OBSBasicProperties::ConfirmQuit()
 		 * saving the settings. */
 		break;
 	}
+
+	if (!CheckSourceName())
+		return false;
+
 	return true;
+}
+
+bool OBSBasicProperties::CheckSourceName()
+{
+	QString name = ui->nameEdit->text();
+
+	if (name != origName) {
+		if (name.isEmpty()) {
+			OBSMessageBox::warning(this,
+					       QTStr("NoNameEntered.Title"),
+					       QTStr("NoNameEntered.Text"));
+			return false;
+		}
+
+		OBSSourceAutoRelease existingSource =
+			obs_get_source_by_name(QT_TO_UTF8(name));
+
+		if (existingSource) {
+			OBSMessageBox::warning(this, QTStr("NameExists.Title"),
+					       QTStr("NameExists.Text"));
+			return false;
+		}
+
+		obs_source_set_name(source, QT_TO_UTF8(name));
+	}
+
+	return true;
+}
+
+void OBSBasicProperties::on_revertNameButton_clicked()
+{
+	ui->nameEdit->setText(origName);
+	ui->nameEdit->setFocus();
 }

@@ -46,6 +46,7 @@ private:
 	OBSPropertiesView *view;
 	QDialogButtonBox *buttonBox;
 	QSplitter *windowSplitter;
+	QString origName;
 
 	OBSSourceAutoRelease sourceA;
 	OBSSourceAutoRelease sourceB;
@@ -61,9 +62,11 @@ private:
 	bool ConfirmQuit();
 	int CheckSettings();
 	void Cleanup();
+	bool CheckSourceName();
 
 private slots:
 	void on_buttonBox_clicked(QAbstractButton *button);
+	void on_revertNameButton_clicked();
 	void AddPreviewButton();
 
 public:

@@ -18,6 +18,49 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="QLabel" name="nameLabel">
+       <property name="text">
+        <string>Name</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="nameEdit"/>
+     </item>
+     <item>
+      <widget class="QPushButton" name="revertNameButton">
+       <property name="toolTip">
+        <string>Revert</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="obs.qrc">
+         <normaloff>:/res/images/revert.svg</normaloff>:/res/images/revert.svg</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>20</width>
+         <height>20</height>
+        </size>
+       </property>
+       <property name="toolButton" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="themeID" stdset="0">
+        <string>revertIcon</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
     <widget class="QSplitter" name="windowSplitter">
      <property name="minimumSize">
       <size>
