@@ -1606,14 +1606,20 @@ static bool Update(wchar_t *cmdLine)
 		int responseCode;
 
 		int len = (int)post_body.size();
-		uLong compressSize = compressBound(len);
+		size_t compressSize = ZSTD_compressBound(len);
 		string compressedJson;
 
 		compressedJson.resize(compressSize);
-		compress2((Bytef *)&compressedJson[0], &compressSize,
-			  (const Bytef *)post_body.c_str(), len,
-			  Z_BEST_COMPRESSION);
-		compressedJson.resize(compressSize);
+
+		size_t result =
+			ZSTD_compress(&compressedJson[0], compressedJson.size(),
+				      post_body.data(), post_body.size(),
+				      ZSTD_CLEVEL_DEFAULT);
+
+		if (ZSTD_isError(result))
+			return false;
+
+		compressedJson.resize(result);
 
 		wstring manifestUrl(PATCH_MANIFEST_URL);
 		if (branch != L"stable")
