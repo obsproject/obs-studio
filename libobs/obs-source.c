@@ -1225,11 +1225,11 @@ static void async_tick(obs_source_t *source)
 		filter_frame(source, &source->prev_async_frame);
 	filter_frame(source, &source->cur_async_frame);
 
-	pthread_mutex_unlock(&source->async_mutex);
-
 	if (source->cur_async_frame)
 		source->async_update_texture =
 			set_async_texture_size(source, source->cur_async_frame);
+
+	pthread_mutex_unlock(&source->async_mutex);
 }
 
 void obs_source_video_tick(obs_source_t *source, float seconds)
