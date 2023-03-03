@@ -91,7 +91,7 @@ void StringToHash(const wchar_t *in, BYTE *out);
 
 bool CalculateFileHash(const wchar_t *path, BYTE *hash);
 
-int ApplyPatch(LPCTSTR patchFile, LPCTSTR targetFile);
+int ApplyPatch(ZSTD_DCtx *ctx, LPCTSTR patchFile, LPCTSTR targetFile);
 int DecompressFile(ZSTD_DCtx *ctx, LPCTSTR tempFile, size_t newSize);
 
 extern HWND hwndMain;
