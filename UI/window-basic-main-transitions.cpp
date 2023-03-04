@@ -309,8 +309,6 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force,
 	if (!scene)
 		return;
 
-	OBSWeakSource lastProgramScene;
-
 	if (usingPreviewProgram) {
 		if (!tBarActive)
 			lastProgramScene = programScene;
@@ -906,6 +904,7 @@ void OBSBasic::TBarReleased()
 		tBar->blockSignals(false);
 		tBarActive = false;
 		EnableTransitionWidgets(true);
+		programScene = lastProgramScene;
 	}
 
 	tBar->clearFocus();
