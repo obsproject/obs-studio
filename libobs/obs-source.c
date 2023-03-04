@@ -4011,7 +4011,7 @@ static void process_audio(obs_source_t *source,
 	mono_output = audio_output_get_channels(obs->audio.audio) == 1;
 
 	if (!mono_output && source->sample_info.speakers == SPEAKERS_STEREO &&
-	    (source->balance > 0.51f || source->balance < 0.49f)) {
+	    !close_float(source->balance, 0.5f, LARGE_EPSILON)) {
 		process_audio_balancing(source, frames, source->balance,
 					OBS_BALANCE_TYPE_SINE_LAW);
 	}
