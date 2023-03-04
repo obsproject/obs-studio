@@ -1941,6 +1941,10 @@ void OBSBasic::OBSInit()
 		QMetaObject::invokeMethod(this, "EnablePreviewDisplay",
 					  Qt::QueuedConnection,
 					  Q_ARG(bool, previewEnabled));
+	else if (!previewEnabled && IsPreviewProgramMode())
+		QMetaObject::invokeMethod(this, "EnablePreviewDisplay",
+					  Qt::QueuedConnection,
+					  Q_ARG(bool, true));
 
 	RefreshSceneCollections();
 	RefreshProfiles();
