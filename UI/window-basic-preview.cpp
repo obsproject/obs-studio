@@ -2506,6 +2506,23 @@ void OBSBasicPreview::DrawSpacingHelpers()
 				    groupOti.pos.x, groupOti.pos.y, 0.0f);
 	}
 
+	// Switch top/bottom or right/left if scale is negative
+	if (oti.scale.x < 0.0f) {
+		vec3 l = left;
+		vec3 r = right;
+
+		vec3_copy(&left, &r);
+		vec3_copy(&right, &l);
+	}
+
+	if (oti.scale.y < 0.0f) {
+		vec3 t = top;
+		vec3 b = bottom;
+
+		vec3_copy(&top, &b);
+		vec3_copy(&bottom, &t);
+	}
+
 	if (rot >= HELPER_ROT_BREAKPONT) {
 		for (float i = HELPER_ROT_BREAKPONT; i <= 360.0f; i += 90.0f) {
 			if (rot < i)
@@ -2537,23 +2554,6 @@ void OBSBasicPreview::DrawSpacingHelpers()
 			vec3_copy(&bottom, &l);
 			vec3_copy(&left, &t);
 		}
-	}
-
-	// Switch top/bottom or right/left if scale is negative
-	if (oti.scale.x < 0.0f) {
-		vec3 l = left;
-		vec3 r = right;
-
-		vec3_copy(&left, &r);
-		vec3_copy(&right, &l);
-	}
-
-	if (oti.scale.y < 0.0f) {
-		vec3 t = top;
-		vec3 b = bottom;
-
-		vec3_copy(&top, &b);
-		vec3_copy(&bottom, &t);
 	}
 
 	// Get sides of box transform
