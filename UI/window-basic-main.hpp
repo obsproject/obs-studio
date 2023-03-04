@@ -497,6 +497,7 @@ private:
 	OBSWeakSource lastScene;
 	OBSWeakSource swapScene;
 	OBSWeakSource programScene;
+	OBSWeakSource lastProgramScene;
 	bool editPropertiesMode = false;
 	bool sceneDuplicationMode = true;
 	bool swapScenesMode = true;
