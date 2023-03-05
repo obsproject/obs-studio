@@ -6271,8 +6271,8 @@ void OBSBasic::UploadLog(const char *subdir, const char *file, const bool crash)
 #endif
 
 	stringstream ss;
-	ss << "OBS " << App()->GetVersionString() << " log file uploaded at "
-	   << CurrentDateTimeString() << "\n\n"
+	ss << "OBS " << App()->GetVersionString(false)
+	   << " log file uploaded at " << CurrentDateTimeString() << "\n\n"
 	   << fileString;
 
 	if (logUploadThread) {
@@ -9011,7 +9011,7 @@ void OBSBasic::UpdateTitleBar()
 	if (previewProgramMode)
 		name << "Studio ";
 
-	name << App()->GetVersionString();
+	name << App()->GetVersionString(false);
 	if (App()->IsPortableMode())
 		name << " - Portable Mode";
 

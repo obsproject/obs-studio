@@ -1717,7 +1717,7 @@ bool OBSApp::OBSInit()
 	return true;
 }
 
-string OBSApp::GetVersionString() const
+string OBSApp::GetVersionString(bool platform) const
 {
 	stringstream ver;
 
@@ -1728,19 +1728,21 @@ string OBSApp::GetVersionString() const
 	    << LIBOBS_API_PATCH_VER;
 
 #endif
-	ver << " (";
 
+	if (platform) {
+		ver << " (";
 #ifdef _WIN32
-	ver << "windows)";
+		ver << "windows)";
 #elif __APPLE__
-	ver << "mac)";
+		ver << "mac)";
 #elif __OpenBSD__
-	ver << "openbsd)";
+		ver << "openbsd)";
 #elif __FreeBSD__
-	ver << "freebsd)";
+		ver << "freebsd)";
 #else /* assume linux for the time being */
-	ver << "linux)";
+		ver << "linux)";
 #endif
+	}
 
 	return ver.str();
 }
@@ -3335,7 +3337,7 @@ int main(int argc, char *argv[])
 
 		} else if (arg_is(argv[i], "--version", "-V")) {
 			std::cout << "OBS Studio - "
-				  << App()->GetVersionString() << "\n";
+				  << App()->GetVersionString(false) << "\n";
 			exit(0);
 		}
 	}
