@@ -174,7 +174,7 @@ public:
 
 	const char *GetLastCrashLog() const;
 
-	std::string GetVersionString() const;
+	std::string GetVersionString(bool platform = true) const;
 	bool IsPortableMode();
 	bool IsUpdaterDisabled();
 	bool IsMissingFilesCheckDisabled();
