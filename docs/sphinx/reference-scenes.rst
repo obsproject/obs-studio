@@ -482,6 +482,15 @@ Scene Item Functions
 
 ---------------------
 
+.. function:: void obs_sceneitem_select(obs_sceneitem_t *item, bool select)
+              bool obs_sceneitem_selected(const obs_sceneitem_t *item)
+
+   Sets/gets the selection state of the scene item. Note that toggling
+   the selected state will not affect the selected state of other scene items,
+   as multiple scene items can be selected.
+
+---------------------
+
 .. function:: bool obs_sceneitem_set_visible(obs_sceneitem_t *item, bool visible)
               bool obs_sceneitem_visible(const obs_sceneitem_t *item)
 
@@ -562,10 +571,33 @@ Scene Item Functions
 
 ---------------------
 
+.. function:: void obs_sceneitem_set_transition(obs_sceneitem_t *item, bool show, obs_source_t *transition)
+
+   Sets a transition for showing or hiding a scene item.
+
+   :param item:       The target scene item
+   :param show:       If *true*, this will set the show transition.
+                      If *false*, this will set the hide transition.
+   :param transition: The transition to set. Pass *NULL* to remove the transition.
+
+---------------------
+
 .. function:: void obs_sceneitem_set_show_transition(obs_sceneitem_t *item, obs_source_t *transition)
               void obs_sceneitem_set_hide_transition(obs_sceneitem_t *item, obs_source_t *transition)
 
-   Set a transition for showing or hiding a scene item. Set *NULL* to remove the transition.
+   Sets a transition for showing or hiding a scene item. Set *NULL* to remove the transition.
+
+.. deprecated:: 27.2.4
+   Use :c:func:`obs_sceneitem_set_transition()` instead.
+
+---------------------
+
+.. function:: obs_source_t *obs_sceneitem_get_transition(obs_sceneitem_t *item, bool show)
+
+   :param item: The target scene item
+   :param show: If *true*, this will return the show transition.
+                If *false*, this will return the hide transition.
+   :return:     The transition for showing or hiding a scene item. *NULL* if no transition is set.
 
 ---------------------
 
@@ -574,12 +606,40 @@ Scene Item Functions
 
    :return: The transition for showing or hiding a scene item. *NULL* if no transition is set.
 
+.. deprecated:: 27.2.4
+   Use :c:func:`obs_sceneitem_get_transition()` instead.
+
+---------------------
+
+.. function:: void obs_sceneitem_set_transition_duration(obs_sceneitem_t *item, bool show, uint32_t duration_ms)
+
+   Sets the transition duration for showing or hiding a scene item.
+
+   :param item:        The target scene item
+   :param show:        If *true*, this will set the duration of the show transition.
+                       If *false*, this will set the duration of the hide transition.
+   :param duration_ms: The transition duration in milliseconds
+
 ---------------------
 
 .. function:: void obs_sceneitem_set_show_transition_duration(obs_sceneitem_t *item, uint32_t duration_ms)
               void obs_sceneitem_set_hide_transition_duration(obs_sceneitem_t *item, uint32_t duration_ms)
 
-   Set transition duration for showing or hiding a scene item.
+   Sets the transition duration for showing or hiding a scene item.
+
+.. deprecated:: 27.2.4
+   Use :c:func:`obs_sceneitem_set_transition_duration()` instead.
+
+---------------------
+
+.. function:: uint32_t obs_sceneitem_get_transition_duration(obs_sceneitem_t *item, bool show)
+
+   Gets the transition duration for showing or hiding a scene item.
+
+   :param item: The target scene item
+   :param show: If *true*, this will return the duration of the show transition.
+                If *false*, this will return the duration of the hide transition.
+   :return:     The transition duration in milliseconds
 
 ---------------------
 
@@ -587,6 +647,9 @@ Scene Item Functions
               uint32_t obs_sceneitem_get_hide_transition_duration(obs_sceneitem_t *item)
 
    :return: The transition duration in ms for showing or hiding a scene item.
+
+.. deprecated:: 27.2.4
+   Use :c:func:`obs_sceneitem_get_transition_duration()` instead.
 
 ---------------------
 
