@@ -2790,6 +2790,28 @@
             "supported video codecs": [
                 "h264"
             ]
+        },
+        {
+            "name": "Joystick.TV",
+            "more_info_link": "https://support.joystick.tv/support/creator-support/setting-up-your-stream/",
+            "stream_key_link": "https://joystick.tv/stream-settings",
+            "servers": [
+                {
+                    "name": "RTMP",
+                    "url": "rtmp://live.joystick.tv/live/"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 7500,
+                "max audio bitrate": 192,
+                "profile": "main",
+                "bframes": 0,
+                "x264opts": "tune=zerolatency"
+            },
+            "supported video codecs": [
+                "h264"
+            ]
         }
     ]
 }
