@@ -262,7 +262,7 @@ inline QString QTStr(const char *lookupVal)
 
 bool GetFileSafeName(const char *name, std::string &file);
 bool GetClosestUnusedFileName(std::string &path, const char *extension);
-bool GetUnusedSceneCollectionFile(std::string &name, std::string &file);
+bool GetUnusedSceneCollectionFile(const std::string &name, std::string &file);
 
 bool WindowPositionValid(QRect rect);
 
