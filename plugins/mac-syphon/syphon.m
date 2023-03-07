@@ -432,8 +432,6 @@ static inline void syphon_destroy_internal(syphon_t s)
 	stop_listener(s->new_server_listener);
 	stop_listener(s->retire_listener);
 
-	NSWorkspace *ws = [NSWorkspace sharedWorkspace];
-
 	obs_enter_graphics();
 	stop_client(s);
 
@@ -674,7 +672,7 @@ static inline void build_sprite(struct gs_vb_data *data, float fcx, float fcy,
 static inline void build_sprite_rect(struct gs_vb_data *data, float origin_x,
 				     float origin_y, float end_x, float end_y)
 {
-	build_sprite(data, fabs(end_x - origin_x), fabs(end_y - origin_y),
+	build_sprite(data, fabsf(end_x - origin_x), fabsf(end_y - origin_y),
 		     origin_x, end_x, origin_y, end_y);
 }
 
@@ -694,8 +692,10 @@ static void syphon_video_tick(void *data, float seconds)
 
 	obs_enter_graphics();
 	build_sprite_rect(gs_vertexbuffer_get_data(s->vertbuffer),
-			  crop->origin.x, s->height - crop->origin.y,
-			  s->width - crop->size.width, crop->size.height);
+			  (float)crop->origin.x,
+			  s->height - (float)crop->origin.y,
+			  s->width - (float)crop->size.width,
+			  (float)crop->size.height);
 	obs_leave_graphics();
 }
 
@@ -730,8 +730,8 @@ static uint32_t syphon_get_width(void *data)
 	syphon_t s = (syphon_t)data;
 	if (!s->crop)
 		return s->width;
-	int32_t width =
-		s->width - s->crop_rect.origin.x - s->crop_rect.size.width;
+	int32_t width = s->width - (int)s->crop_rect.origin.x -
+			(int)s->crop_rect.size.width;
 	return MAX(0, width);
 }
 
@@ -740,8 +740,8 @@ static uint32_t syphon_get_height(void *data)
 	syphon_t s = (syphon_t)data;
 	if (!s->crop)
 		return s->height;
-	int32_t height =
-		s->height - s->crop_rect.origin.y - s->crop_rect.size.height;
+	int32_t height = s->height - (int)s->crop_rect.origin.y -
+			 (int)s->crop_rect.size.height;
 	return MAX(0, height);
 }
 
