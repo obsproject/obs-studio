@@ -2469,7 +2469,7 @@ bool GetClosestUnusedFileName(std::string &path, const char *extension)
 	return true;
 }
 
-bool GetUnusedSceneCollectionFile(std::string &name, std::string &file)
+bool GetUnusedSceneCollectionFile(const std::string &name, std::string &file)
 {
 	char path[512];
 	int ret;
