@@ -379,6 +379,8 @@ struct obs_core_data {
 	struct obs_encoder *first_encoder;
 	struct obs_service *first_service;
 
+        struct os_file_watchinfo *file_watchinfo;
+
 	pthread_mutex_t sources_mutex;
 	pthread_mutex_t displays_mutex;
 	pthread_mutex_t outputs_mutex;

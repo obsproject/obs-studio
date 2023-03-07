@@ -189,12 +189,18 @@ static obs_properties_t *ft2_source_properties(void *unused)
 	obs_properties_add_bool(props, "word_wrap",
 				obs_module_text("WordWrap"));
 
+	obs_properties_add_bool(props, "polling_watch",
+				obs_module_text("Network file"));
+
+
 	return props;
 }
 
 static void ft2_source_destroy(void *data)
 {
 	struct ft2_source *srcdata = data;
+
+        os_remove_file_watch(srcdata->file_watch);
 
 	if (srcdata->font_face != NULL) {
 		FT_Done_Face(srcdata->font_face);
@@ -272,26 +278,15 @@ static void ft2_video_tick(void *data, float seconds)
 	if (!srcdata->from_file || !srcdata->text_file)
 		return;
 
-	if (os_gettime_ns() - srcdata->last_checked >= 1000000000) {
-		time_t t = get_modified_timestamp(srcdata->text_file);
-		srcdata->last_checked = os_gettime_ns();
-
-		if (srcdata->update_file) {
-			if (srcdata->log_mode)
-				read_from_end(srcdata, srcdata->text_file);
-			else
-				load_text_from_file(srcdata,
-						    srcdata->text_file);
-			cache_glyphs(srcdata, srcdata->text);
-			set_up_vertex_buffer(srcdata);
-			srcdata->update_file = false;
-		}
-
-		if (srcdata->m_timestamp != t) {
-			srcdata->m_timestamp = t;
-			srcdata->update_file = true;
-		}
-	}
+        if (os_check_watch_for_updates(srcdata->file_watch)) {
+                if (srcdata->log_mode)
+                        read_from_end(srcdata, srcdata->text_file);
+                else
+                        load_text_from_file(srcdata,
+                                            srcdata->text_file);
+                cache_glyphs(srcdata, srcdata->text);
+                set_up_vertex_buffer(srcdata);
+        }
 
 	UNUSED_PARAMETER(seconds);
 }
@@ -326,6 +321,8 @@ static void ft2_source_update(void *data, obs_data_t *settings)
 	const char *font_style = obs_data_get_string(font_obj, "style");
 	uint16_t font_size = (uint16_t)obs_data_get_int(font_obj, "size");
 	uint32_t font_flags = (uint32_t)obs_data_get_int(font_obj, "flags");
+
+        os_file_watch_t uninit_watch = UNINITIALIZED_WATCH;
 
 	if (!font_obj)
 		return;
@@ -457,6 +454,8 @@ static void ft2_source_update(void *data, obs_data_t *settings)
 
 skip_font_load:
 	if (from_file) {
+                srcdata->polling_watch = obs_data_get_bool(settings,
+                                                           "polling_watch");
 		const char *tmp = obs_data_get_string(settings, "text_file");
 
 		if (!tmp || !*tmp || !os_file_exists(tmp)) {
@@ -479,12 +478,18 @@ skip_font_load:
 
 			bfree(srcdata->text_file);
 
+                        os_remove_file_watch(srcdata->file_watch);
+                        srcdata->file_watch = uninit_watch;
+
 			srcdata->text_file = bstrdup(tmp);
 			if (chat_log_mode)
 				read_from_end(srcdata, tmp);
 			else
 				load_text_from_file(srcdata, tmp);
-			srcdata->last_checked = os_gettime_ns();
+
+                        srcdata->file_watch = srcdata->polling_watch ?
+                                os_watch_file_polling(srcdata->text_file) :
+                                os_watch_file(srcdata->text_file);
 		}
 	} else {
 		const char *tmp = obs_data_get_string(settings, "text");
@@ -519,9 +524,11 @@ error:
 static void *ft2_source_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct ft2_source *srcdata = bzalloc(sizeof(struct ft2_source));
+        os_file_watch_t uninit_watch = UNINITIALIZED_WATCH;
 	srcdata->src = source;
 
 	init_plugin();
+        srcdata->file_watch = uninit_watch;
 
 	obs_source_update(source, NULL);
 
@@ -585,6 +592,8 @@ static void ft2_source_defaults(obs_data_t *settings, int ver)
 	obs_data_set_default_bool(settings, "word_wrap", false);
 	obs_data_set_default_bool(settings, "outline", false);
 	obs_data_set_default_bool(settings, "drop_shadow", false);
+
+	obs_data_set_default_bool(settings, "polling_watch", false);
 
 	obs_data_set_default_int(settings, "log_lines", 6);
 

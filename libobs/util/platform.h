@@ -137,6 +137,36 @@ EXPORT os_dir_t *os_opendir(const char *path);
 EXPORT struct os_dirent *os_readdir(os_dir_t *dir);
 EXPORT void os_closedir(os_dir_t *dir);
 
+/* File Watching */
+struct os_file_watchinfo;
+typedef struct os_file_watchinfo os_file_watchinfo_t;
+
+#define INVALID_WATCH 0
+#define POLLING_WATCH 1
+#define INOTIFY_WATCH 2
+// TODO: Kqueue and whatever windows uses
+// Kqueue shouldn't be too hard, I would probably
+// add it myself if I had a BSD machine to test on
+
+struct os_file_watch {
+        long watch_id;
+        char watch_flags;
+};
+
+#define UNINITIALIZED_WATCH { .watch_id=(-1), .watch_flags=INVALID_WATCH }
+
+typedef struct os_file_watch os_file_watch_t;
+
+EXPORT void os_initialize_file_watching(void);
+EXPORT void os_destroy_file_watchinfo(os_file_watchinfo_t *info);
+
+EXPORT os_file_watch_t os_watch_file(const char *path);
+// We should always be able to fall back to polling for, eg, NFS
+EXPORT os_file_watch_t os_watch_file_polling(const char *path);
+EXPORT void os_remove_file_watch(os_file_watch_t watch);
+EXPORT bool os_check_watch_for_updates(os_file_watch_t watch);
+
+
 struct os_globent {
 	char *path;
 	bool directory;

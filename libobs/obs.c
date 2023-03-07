@@ -982,6 +982,8 @@ static bool obs_init_data(void)
 	pthread_mutex_init_value(&obs->data.displays_mutex);
 	pthread_mutex_init_value(&obs->data.draw_callbacks_mutex);
 
+        os_initialize_file_watching();
+
 	if (pthread_mutex_init_recursive(&data->sources_mutex) != 0)
 		goto fail;
 	if (pthread_mutex_init_recursive(&data->audio_sources_mutex) != 0)
@@ -1047,6 +1049,9 @@ static void obs_free_data(void)
 	FREE_OBS_LINKED_LIST(encoder);
 	FREE_OBS_LINKED_LIST(display);
 	FREE_OBS_LINKED_LIST(service);
+
+        os_destroy_file_watchinfo(data->file_watchinfo);
+        data->file_watchinfo = NULL;
 
 	os_task_queue_wait(obs->destruction_task_thread);
 

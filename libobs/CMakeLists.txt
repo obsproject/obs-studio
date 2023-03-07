@@ -187,6 +187,7 @@ target_sources(
           util/lexer.c
           util/lexer.h
           util/platform.c
+          util/platform-filewatch.c
           util/platform.h
           util/profiler.c
           util/profiler.h

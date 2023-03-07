@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <obs-module.h>
 #include <ft2build.h>
+#include <util/platform.h>
 
 #define num_cache_slots 65535
 #define src_glyph srcdata->cacheglyphs[glyph_index]
@@ -40,9 +41,9 @@ struct ft2_source {
 	bool antialiasing;
 	char *text_file;
 	wchar_t *text;
-	time_t m_timestamp;
-	bool update_file;
-	uint64_t last_checked;
+
+        os_file_watch_t file_watch;
+        bool polling_watch;
 
 	uint32_t cx, cy, max_h, custom_width;
 	uint32_t outline_width;

@@ -4,6 +4,13 @@
 #include <util/dstr.h>
 #include <sys/stat.h>
 
+#if defined(__linux__)
+#include <errno.h>
+#include <fcntl.h>
+#include <sys/file.h>
+#include <unistd.h>
+#endif
+
 #define blog(log_level, format, ...)                    \
 	blog(log_level, "[image_source: '%s'] " format, \
 	     obs_source_get_name(context->source), ##__VA_ARGS__)
@@ -18,22 +25,18 @@ struct image_source {
 	char *file;
 	bool persistent;
 	bool linear_alpha;
-	time_t file_timestamp;
-	float update_time_elapsed;
+
+        os_file_watch_t file_watch;
+        bool polling_watch;
+#if defined(__linux__)
+        bool nonblocking_file_lock;
+#endif
 	uint64_t last_time;
 	bool active;
 	bool restart_gif;
 
 	gs_image_file4_t if4;
 };
-
-static time_t get_modified_timestamp(const char *filename)
-{
-	struct stat stats;
-	if (os_stat(filename, &stats) != 0)
-		return -1;
-	return stats.st_mtime;
-}
 
 static const char *image_source_get_name(void *unused)
 {
@@ -44,6 +47,11 @@ static const char *image_source_get_name(void *unused)
 static void image_source_load(struct image_source *context)
 {
 	char *file = context->file;
+        int tmp_lock_fd = -1;
+
+#if defined(__linux__)
+        int lock_nonblock = context->nonblocking_file_lock;
+#endif
 
 	obs_enter_graphics();
 	gs_image_file4_free(&context->if4);
@@ -51,12 +59,34 @@ static void image_source_load(struct image_source *context)
 
 	if (file && *file) {
 		debug("loading texture '%s'", file);
-		context->file_timestamp = get_modified_timestamp(file);
+
+#if defined(__linux__)
+		tmp_lock_fd = open(file, O_RDONLY);
+		if (tmp_lock_fd > -1) {
+			if (flock(tmp_lock_fd,
+                                  LOCK_EX | (lock_nonblock ? LOCK_NB : 0 )
+                            == -1)) {
+                                warn("Skipping update - failed to issue"
+                                     "advisory lock for file"
+                                     "%s: %s",
+                                     file,
+                                     strerror(errno));
+                                return;
+                        }
+		}
+#endif
+
 		gs_image_file4_init(&context->if4, file,
 				    context->linear_alpha
 					    ? GS_IMAGE_ALPHA_PREMULTIPLY_SRGB
 					    : GS_IMAGE_ALPHA_PREMULTIPLY);
-		context->update_time_elapsed = 0;
+
+#if defined(__linux__)
+		if (tmp_lock_fd > -1) {
+			flock(tmp_lock_fd, LOCK_UN);
+			close(tmp_lock_fd);
+		}
+#endif
 
 		obs_enter_graphics();
 		gs_image_file4_init_texture(&context->if4);
@@ -80,12 +110,26 @@ static void image_source_update(void *data, obs_data_t *settings)
 	const char *file = obs_data_get_string(settings, "file");
 	const bool unload = obs_data_get_bool(settings, "unload");
 	const bool linear_alpha = obs_data_get_bool(settings, "linear_alpha");
+        const bool polling_watch = obs_data_get_bool(settings, "polling_watch");
+#if defined(__linux__)
+        const bool nonblocking_file_lock = obs_data_get_bool(settings, "nonblock");
+#endif
 
 	if (context->file)
 		bfree(context->file);
+        context->polling_watch = polling_watch;
 	context->file = bstrdup(file);
 	context->persistent = !unload;
 	context->linear_alpha = linear_alpha;
+#if defined(__linux__)
+	context->nonblocking_file_lock = nonblocking_file_lock;
+#endif
+
+        os_remove_file_watch(context->file_watch);
+
+        context->file_watch = context->polling_watch ?
+                              os_watch_file_polling(file) :
+                              os_watch_file(file);
 
 	/* Load the image if the source is persistent or showing */
 	if (context->persistent || obs_source_showing(context->source))
@@ -98,6 +142,10 @@ static void image_source_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_bool(settings, "unload", false);
 	obs_data_set_default_bool(settings, "linear_alpha", false);
+        obs_data_set_default_bool(settings, "polling_watch", false);
+#if defined(__linux__)
+        obs_data_set_default_bool(settings, "nonblock", false);
+#endif
 }
 
 static void image_source_show(void *data)
@@ -142,7 +190,13 @@ static void image_source_activate(void *data)
 static void *image_source_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct image_source *context = bzalloc(sizeof(struct image_source));
+        os_file_watch_t uninit_watch = UNINITIALIZED_WATCH;
 	context->source = source;
+
+#if defined(__linux__)
+        context->nonblocking_file_lock = 0;
+#endif
+        context->file_watch = uninit_watch;
 
 	image_source_update(context, settings);
 	return context;
@@ -151,6 +205,8 @@ static void *image_source_create(obs_data_t *settings, obs_source_t *source)
 static void image_source_destroy(void *data)
 {
 	struct image_source *context = data;
+
+        os_remove_file_watch(context->file_watch);
 
 	image_source_unload(context);
 
@@ -201,18 +257,9 @@ static void image_source_tick(void *data, float seconds)
 	struct image_source *context = data;
 	uint64_t frame_time = obs_get_video_frame_time();
 
-	context->update_time_elapsed += seconds;
-
-	if (obs_source_showing(context->source)) {
-		if (context->update_time_elapsed >= 1.0f) {
-			time_t t = get_modified_timestamp(context->file);
-			context->update_time_elapsed = 0.0f;
-
-			if (context->file_timestamp != t) {
-				image_source_load(context);
-			}
-		}
-	}
+        if (os_check_watch_for_updates(context->file_watch)) {
+                image_source_load(context);
+        }
 
 	if (obs_source_showing(context->source)) {
 		if (!context->active) {
@@ -246,6 +293,8 @@ static void image_source_tick(void *data, float seconds)
 	}
 
 	context->last_time = frame_time;
+
+        UNUSED_PARAMETER(seconds);
 }
 
 static const char *image_filter =
@@ -289,6 +338,14 @@ static obs_properties_t *image_source_properties(void *data)
 				obs_module_text("UnloadWhenNotShowing"));
 	obs_properties_add_bool(props, "linear_alpha",
 				obs_module_text("LinearAlpha"));
+
+        obs_properties_add_bool(props, "polling_watch",
+                                obs_module_text("Network file"));
+
+#if defined(__linux__)
+        obs_properties_add_bool(props, "nonblock",
+                                obs_module_text("Nonblocking file lock"));
+#endif
 	dstr_free(&path);
 
 	return props;
