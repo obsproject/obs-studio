@@ -434,7 +434,8 @@ private:
 	void ToggleMixerLayout(bool vertical);
 
 	void RefreshSceneCollections();
-	void ChangeSceneCollection();
+	void ActionChangeSceneCollection();
+	void ChangeSceneCollection(const std::string &fileName);
 	void LogScenes();
 
 	void ResetProfileData();

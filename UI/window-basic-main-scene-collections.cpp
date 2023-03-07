@@ -151,7 +151,7 @@ void OBSBasic::RefreshSceneCollections()
 		QAction *action = new QAction(QT_UTF8(name), this);
 		action->setProperty("file_name", QT_UTF8(path));
 		connect(action, &QAction::triggered, this,
-			&OBSBasic::ChangeSceneCollection);
+			&OBSBasic::ActionChangeSceneCollection);
 		action->setCheckable(true);
 
 		action->setChecked(strcmp(name, cur_name) == 0);
@@ -384,7 +384,7 @@ void OBSBasic::on_actionExportSceneCollection_triggered()
 	}
 }
 
-void OBSBasic::ChangeSceneCollection()
+void OBSBasic::ActionChangeSceneCollection()
 {
 	QAction *action = reinterpret_cast<QAction *>(sender());
 	std::string fileName;
@@ -404,6 +404,11 @@ void OBSBasic::ChangeSceneCollection()
 		return;
 	}
 
+	ChangeSceneCollection(fileName);
+}
+
+void OBSBasic::ChangeSceneCollection(const std::string &fileName)
+{
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING);
 
