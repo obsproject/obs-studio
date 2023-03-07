@@ -930,6 +930,10 @@ EXPORT video_t *obs_view_add2(obs_view_t *view, struct obs_video_info *ovi);
 /** Removes a view from the main render loop */
 EXPORT void obs_view_remove(obs_view_t *view);
 
+/** Gets the video settings currently in use for this view context, returns false if no video */
+EXPORT bool obs_view_get_video_info(obs_view_t *view,
+				    struct obs_video_info *ovi);
+
 /* ------------------------------------------------------------------------- */
 /* Display context */
 
