@@ -151,71 +151,97 @@ static OSStatus session_set_bitrate(VTCompressionSessionRef session,
 {
 	OSStatus code;
 
+	bool cbr_failed = false;
 	bool can_limit_bitrate;
 	CFStringRef compressionPropertyKey;
 
-	if (strcmp(rate_control, "CBR") == 0) {
-		compressionPropertyKey =
-			kVTCompressionPropertyKey_AverageBitRate;
-		can_limit_bitrate = true;
+	// It is possible we may need more than one attempt to choose a correct mode.
+	while (true) {
+		if (strcmp(rate_control, "CBR") == 0) {
+			compressionPropertyKey =
+				kVTCompressionPropertyKey_AverageBitRate;
+			can_limit_bitrate = true;
 
-		if (__builtin_available(macOS 13.0, *)) {
+			if (cbr_failed) {
+				VT_LOG(LOG_WARNING,
+				       "CBR configuration failed. Probably it is not suppported. "
+				       "Will use ABR instead.");
+			} else if (__builtin_available(macOS 13.0, *)) {
 #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
+#ifdef __aarch64__
+				if (true) {
+#else
+				if (os_get_emulation_status() == true) {
+#endif
+					compressionPropertyKey =
+						kVTCompressionPropertyKey_ConstantBitRate;
+					can_limit_bitrate = false;
+				} else {
+					VT_LOG(LOG_WARNING,
+					       "CBR support for VideoToolbox encoder requires Apple Silicon. "
+					       "Will use ABR instead.");
+				}
+#else
+				VT_LOG(LOG_WARNING,
+				       "CBR support for VideoToolbox not available in this build of OBS. "
+				       "Will use ABR instead.");
+#endif
+			} else {
+				VT_LOG(LOG_WARNING,
+				       "CBR support for VideoToolbox encoder requires macOS 13 or newer. "
+				       "Will use ABR instead.");
+			}
+		} else if (strcmp(rate_control, "ABR") == 0) {
+			compressionPropertyKey =
+				kVTCompressionPropertyKey_AverageBitRate;
+			can_limit_bitrate = true;
+		} else if (strcmp(rate_control, "CRF") == 0) {
 #ifdef __aarch64__
 			if (true) {
 #else
 			if (os_get_emulation_status() == true) {
 #endif
 				compressionPropertyKey =
-					kVTCompressionPropertyKey_ConstantBitRate;
-				can_limit_bitrate = false;
+					kVTCompressionPropertyKey_Quality;
+				SESSION_CHECK(session_set_prop_float(
+					session, compressionPropertyKey,
+					quality));
 			} else {
 				VT_LOG(LOG_WARNING,
-				       "CBR support for VideoToolbox encoder requires Apple Silicon. "
+				       "CRF support for VideoToolbox encoder requires Apple Silicon. "
 				       "Will use ABR instead.");
+				compressionPropertyKey =
+					kVTCompressionPropertyKey_AverageBitRate;
 			}
-#else
-			VT_LOG(LOG_WARNING,
-			       "CBR support for VideoToolbox not available in this build of OBS. "
-			       "Will use ABR instead.");
-#endif
+			can_limit_bitrate = true;
 		} else {
-			VT_LOG(LOG_WARNING,
-			       "CBR support for VideoToolbox encoder requires macOS 13 or newer. "
-			       "Will use ABR instead.");
+			VT_LOG(LOG_ERROR,
+			       "Selected rate control method is not supported: %s",
+			       rate_control);
+			return kVTParameterErr;
 		}
-	} else if (strcmp(rate_control, "ABR") == 0) {
-		compressionPropertyKey =
-			kVTCompressionPropertyKey_AverageBitRate;
-		can_limit_bitrate = true;
-	} else if (strcmp(rate_control, "CRF") == 0) {
-#ifdef __aarch64__
-		if (true) {
-#else
-		if (os_get_emulation_status() == true) {
-#endif
-			compressionPropertyKey =
-				kVTCompressionPropertyKey_Quality;
-			SESSION_CHECK(session_set_prop_float(
-				session, compressionPropertyKey, quality));
-		} else {
-			VT_LOG(LOG_WARNING,
-			       "CRF support for VideoToolbox encoder requires Apple Silicon. "
-			       "Will use ABR instead.");
-			compressionPropertyKey =
-				kVTCompressionPropertyKey_AverageBitRate;
-		}
-		can_limit_bitrate = true;
-	} else {
-		VT_LOG(LOG_ERROR,
-		       "Selected rate control method is not supported: %s",
-		       rate_control);
-		return kVTParameterErr;
-	}
 
-	if (compressionPropertyKey != kVTCompressionPropertyKey_Quality) {
-		SESSION_CHECK(session_set_prop_int(
-			session, compressionPropertyKey, new_bitrate * 1000));
+		if (compressionPropertyKey !=
+		    kVTCompressionPropertyKey_Quality) {
+			code = session_set_prop_int(session,
+						    compressionPropertyKey,
+						    new_bitrate * 1000);
+			if (code != noErr) {
+				if (compressionPropertyKey ==
+					    kVTCompressionPropertyKey_ConstantBitRate &&
+				    code == kVTPropertyNotSupportedErr &&
+				    !cbr_failed) {
+					cbr_failed = true;
+					code = noErr;
+					continue; // try to switch to ABR
+				}
+				return code;
+			} else {
+				break; // leave the loop
+			}
+		} else {
+			break; // leave the loop
+		}
 	}
 
 	if (limit_bitrate && can_limit_bitrate) {
