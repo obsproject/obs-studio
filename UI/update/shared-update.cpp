@@ -68,7 +68,7 @@ try {
 
 static bool QuickReadFile(const char *file, std::string &data)
 try {
-	std::ifstream fileStream(file);
+	std::ifstream fileStream(file, std::ifstream::binary);
 	if (!fileStream.is_open() || fileStream.fail())
 		throw strprintf("Failed to open file '%s': %s", file,
 				strerror(errno));
