@@ -50,6 +50,7 @@ set_target_properties(win-capture PROPERTIES FOLDER "plugins/win-capture")
 
 if(MSVC)
   target_link_libraries(win-capture PRIVATE OBS::w32-pthreads)
+  target_link_options(win-capture PRIVATE "LINKER:/IGNORE:4098")
 endif()
 
 target_compile_definitions(
