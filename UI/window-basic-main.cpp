@@ -4665,6 +4665,7 @@ void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)
 	obs_get_video_info(&ovi);
 
 	if (isFixedScaling) {
+		ui->preview->ClampScrollingOffsets();
 		previewScale = ui->preview->GetScalingAmount();
 		GetCenterPosFromFixedScale(
 			int(cx), int(cy),

@@ -197,4 +197,5 @@ public:
 	int spacerPx[4] = {0};
 
 	void DrawSpacingHelpers();
+	void ClampScrollingOffsets();
 };
