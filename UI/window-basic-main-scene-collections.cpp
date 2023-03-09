@@ -44,7 +44,11 @@ void OBSBasic::RefreshSceneCollections(bool refreshDialog)
 	const char *cur_name = config_get_string(App()->GlobalConfig(), "Basic",
 						 "SceneCollection");
 
-	auto addCollection = [&](const char *name, const char *path) {
+	auto addCollection = [&](const char *name, const char *path, time_t) {
+		// Only show the 10 most recent collections
+		if (count >= 10)
+			return false;
+
 		std::string file = strrchr(path, '/') + 1;
 		file.erase(file.size() - 5, 5);
 
@@ -63,7 +67,8 @@ void OBSBasic::RefreshSceneCollections(bool refreshDialog)
 		return true;
 	};
 
-	EnumSceneCollections(addCollection);
+	EnumSceneCollectionsOrdered(kSceneCollectionOrderLastUsed,
+				    addCollection);
 
 	/* force saving of first scene collection on first run, otherwise
 	 * no scene collections will show up */
@@ -74,7 +79,8 @@ void OBSBasic::RefreshSceneCollections(bool refreshDialog)
 		SaveProjectNow();
 		disableSaving = prevDisableVal;
 
-		EnumSceneCollections(addCollection);
+		EnumSceneCollectionsOrdered(kSceneCollectionOrderLastUsed,
+					    addCollection);
 	}
 
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
