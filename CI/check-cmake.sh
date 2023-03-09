@@ -42,7 +42,7 @@ find . -type d \( \
     -path ./plugins/enc-amf -o \
     -path ./plugins/mac-syphon/syphon-framework -o \
     -path ./plugins/obs-outputs/ftl-sdk -o \
-    -path ./plugins/obs-vst -o \
+    -path ./plugins/sl-vst -o \
     -path ./plugins/obs-browser -o \
     -path ./plugins/win-dshow/libdshowcapture -o \
     -path ./plugins/obs-websocket/deps \
