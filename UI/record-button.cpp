@@ -67,7 +67,7 @@ static QWidget *getNextWidget(QBoxLayout *container, QLayoutItem *item)
 ControlsSplitButton::ControlsSplitButton(const QString &text,
 					 const QVariant &themeID,
 					 void (OBSBasic::*clicked)())
-	: QHBoxLayout(OBSBasic::Get())
+	: QHBoxLayout()
 {
 	button.reset(new QPushButton(text));
 	button->setCheckable(true);
