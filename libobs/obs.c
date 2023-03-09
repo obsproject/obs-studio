@@ -2535,6 +2535,21 @@ obs_data_array_t *obs_save_sources(void)
 	return obs_save_sources_filtered(save_source_filter, NULL);
 }
 
+void obs_reset_source_uuids()
+{
+	pthread_mutex_lock(&obs->data.sources_mutex);
+
+	struct obs_source *source = obs->data.first_source;
+	while (source) {
+		bfree((void *)source->context.uuid);
+		source->context.uuid = os_generate_uuid();
+
+		source = (struct obs_source *)source->context.next;
+	}
+
+	pthread_mutex_unlock(&obs->data.sources_mutex);
+}
+
 /* ensures that names are never blank */
 static inline char *dup_name(const char *name, bool private)
 {
