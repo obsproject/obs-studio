@@ -157,9 +157,13 @@ bool OBSBasic::AddSceneCollection(bool create_new, const QString &qname)
 				  "SceneCollection", name.c_str());
 		config_set_string(App()->GlobalConfig(), "Basic",
 				  "SceneCollectionFile", file.c_str());
+
 		if (create_new) {
 			CreateDefaultScene(false);
+		} else {
+			obs_reset_source_uuids();
 		}
+
 		SaveProjectNow();
 		RefreshSceneCollections();
 	};
