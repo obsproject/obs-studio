@@ -785,37 +785,6 @@ QPushButton[themeID="replayBufferButton"],
     padding: 10px;
 }
 
-/* Primary Control Button Checked Coloring */
-#streamButton:!hover:!pressed:checked,
-#recordButton:!hover:!pressed:checked,
-QPushButton[themeID="replayBufferButton"]:!hover:!pressed:checked,
-QPushButton[themeID="vcamButton"]:!hover:!pressed:checked,
-#modeSwitch:!hover:!pressed:checked,
-#broadcastButton:!hover:!pressed:checked {
-    background: rgb(88,22,36);
-}
-
-/* Primary Control Button Hover Coloring */
-#streamButton:hover:!pressed:checked,
-#recordButton:hover:!pressed:checked,
-QPushButton[themeID="replayBufferButton"]:!pressed:checked,
-QPushButton[themeID="vcamButton"]:!pressed:checked,
-#modeSwitch:hover:!pressed:checked,
-#broadcastButton:hover:!pressed:checked {
-    background: rgb(116,32,49);
-    color: palette(text);
-}
-
-/* Primary Control Button Checked Coloring */
-#streamButton:pressed:checked,
-#recordButton:pressed:checked,
-QPushButton[themeID="replayBufferButton"]:pressed:checked,
-QPushButton[themeID="vcamButton"]:pressed:checked,
-#modeSwitch:pressed:checked,
-#broadcastButton:pressed:checked {
-    background: rgb(63,21,30);
-}
-
 /* Buttons */
 
 QPushButton {
@@ -832,11 +801,15 @@ QPushButton::flat {
 }
 
 QPushButton:checked {
-    background-color: rgb(19,26,48);
+    background-color: rgb(63,21,30);
 }
 
 QPushButton:hover {
     background-color: rgb(42,58,117);
+}
+
+QPushButton:checked:!pressed:hover {
+    background-color: rgb(116,32,49);
 }
 
 QPushButton:pressed {
