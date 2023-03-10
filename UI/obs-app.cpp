@@ -2442,10 +2442,10 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 				       "MacOSPermissionsDialogLastShown");
 		if (permissionsDialogLastShown <
 		    MACOS_PERMISSIONS_DIALOG_VERSION) {
-			OBSPermissions *check = new OBSPermissions(
-				nullptr, screen_permission, video_permission,
-				audio_permission, accessibility_permission);
-			check->exec();
+			OBSPermissions check(nullptr, screen_permission,
+					     video_permission, audio_permission,
+					     accessibility_permission);
+			check.exec();
 		}
 #endif
 
