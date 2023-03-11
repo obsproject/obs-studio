@@ -1181,6 +1181,7 @@ private slots:
 
 	void on_autoConfigure_triggered();
 	void on_stats_triggered();
+	void on_widgetPlayground_triggered();
 
 	void on_resetUI_triggered();
 	void on_resetDocks_triggered(bool force = false);
