@@ -577,7 +577,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	ui->advOutFFVBitrate->setSuffix(" Kbps");
 	ui->advOutFFABitrate->setSuffix(" Kbps");
 
-#if !defined(_WIN32) && !defined(__APPLE__)
+#if !defined(_WIN32) && !defined(ENABLE_SPARKLE_UPDATER)
 	delete ui->updateSettingsGroupBox;
 	ui->updateSettingsGroupBox = nullptr;
 	ui->updateChannelLabel = nullptr;
@@ -1301,14 +1301,12 @@ void OBSBasicSettings::LoadGeneralSettings()
 	LoadLanguageList();
 	LoadThemeList();
 
-#if defined(_WIN32) || defined(__APPLE__)
+#if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 	bool enableAutoUpdates = config_get_bool(GetGlobalConfig(), "General",
 						 "EnableAutoUpdates");
 	ui->enableAutoUpdates->setChecked(enableAutoUpdates);
 
-#if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 	LoadBranchesList();
-#endif
 #endif
 	bool openStatsOnStartup = config_get_bool(main->Config(), "General",
 						  "OpenStatsOnStartup");
