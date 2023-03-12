@@ -806,3 +806,66 @@ Displays
 .. function:: void obs_display_set_background_color(obs_display_t *display, uint32_t color)
 
    Sets the background (clear) color for the display context.
+
+.. _view_reference:
+
+Views
+----------------
+
+.. function:: obs_view_t *obs_view_create(void)
+
+   :return: A view context
+
+---------------------
+
+.. function:: void obs_view_destroy(obs_view_t *view)
+
+   Destroys a view context.
+
+---------------------
+
+.. function:: void obs_view_render(obs_view_t *view)
+
+   Renders the sources of this view context.
+
+---------------------
+
+.. function:: video_t *obs_view_add(obs_view_t *view)
+
+   Renders the sources of this view context.
+
+   :return: The main video output handler for the view context
+
+---------------------
+
+.. function:: video_t *obs_view_add2(obs_view_t *view, struct obs_video_info *ovi)
+
+   Adds a view to the main render loop, with custom video settings.
+
+   :return: The main video output handler for the view context
+
+---------------------
+
+.. function:: void obs_view_remove(obs_view_t *view)
+
+   Removes a view from the main render loop.
+
+---------------------
+
+.. function:: void obs_view_set_source(obs_view_t *view, uint32_t channel, obs_source_t *source)
+
+   Sets the source to be used for this view context.
+
+---------------------
+
+.. function:: obs_source_t *obs_view_get_source(obs_view_t *view, uint32_t channel)
+
+   :return: The source currently in use for this view context
+
+---------------------
+
+.. function:: bool obs_view_get_video_info(obs_view_t *view, struct obs_video_info *ovi)
+
+   Gets the video settings currently in use for this view context.
+
+   :return: *false* if no video
