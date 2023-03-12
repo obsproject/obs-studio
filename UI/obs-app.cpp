@@ -1403,8 +1403,8 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 	/* Handle SIGINT properly */
 	socketpair(AF_UNIX, SOCK_STREAM, 0, sigintFd);
 	snInt = new QSocketNotifier(sigintFd[1], QSocketNotifier::Read, this);
-	connect(snInt, SIGNAL(activated(QSocketDescriptor)), this,
-		SLOT(ProcessSigInt()));
+	connect(snInt, &QSocketNotifier::activated, this,
+		&OBSApp::ProcessSigInt);
 #endif
 
 	sleepInhibitor = os_inhibit_sleep_create("OBS Video/audio");
@@ -1720,7 +1720,7 @@ bool OBSApp::OBSInit()
 	mainWindow = new OBSBasic();
 
 	mainWindow->setAttribute(Qt::WA_DeleteOnClose, true);
-	connect(mainWindow, SIGNAL(destroyed()), this, SLOT(quit()));
+	connect(mainWindow, &OBSBasic::destroyed, this, &OBSApp::quit);
 
 	mainWindow->OBSInit();
 
