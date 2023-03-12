@@ -106,6 +106,7 @@
       "name": "srt",
       "buildsystem": "cmake-ninja",
       "config-opts": [
+        "-DCMAKE_BUILD_TYPE=Release",
         "-DENABLE_STATIC=OFF",
         "-DENABLE_APPS=OFF",
         "-DENABLE_LOGGING=OFF"
@@ -389,6 +390,7 @@
       "buildsystem": "cmake-ninja",
       "builddir": true,
       "config-opts": [
+        "-DCMAKE_BUILD_TYPE=Release",
         "-DJANSSON_EXAMPLES=OFF",
         "-DJANSSON_BUILD_DOCS=OFF",
         "-DJANSSON_BUILD_SHARED_LIBS=ON",
@@ -410,6 +412,9 @@
     {
       "name": "cef",
       "buildsystem": "cmake-ninja",
+      "config-opts": [
+        "-DCMAKE_BUILD_TYPE=Release"
+      ],
       "no-make-install": true,
       "make-args": [
         "libcef_dll_wrapper"
