@@ -1441,6 +1441,10 @@ void obs_shutdown(void)
 		free_module_path(obs->module_paths.array + i);
 	da_free(obs->module_paths);
 
+	for (size_t i = 0; i < obs->safe_modules.num; i++)
+		bfree(obs->safe_modules.array[i]);
+	da_free(obs->safe_modules);
+
 	if (obs->name_store_owned)
 		profiler_name_store_free(obs->name_store);
 
