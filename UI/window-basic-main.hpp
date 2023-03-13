@@ -231,6 +231,8 @@ private:
 	QList<QPointer<QDockWidget>> oldExtraDocks;
 	QStringList oldExtraDockNames;
 
+	OBSDataAutoRelease safeModeModuleData;
+
 	bool loaded = false;
 	long disableSaving = 1;
 	bool projectChanged = false;
@@ -1044,6 +1046,7 @@ private slots:
 	void on_actionCheckForUpdates_triggered();
 	void on_actionRepair_triggered();
 	void on_actionShowWhatsNew_triggered();
+	void on_actionRestartSafe_triggered();
 
 	void on_actionShowCrashLogs_triggered();
 	void on_actionUploadLastCrashLog_triggered();

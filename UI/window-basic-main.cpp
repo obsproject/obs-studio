@@ -21,6 +21,7 @@
 #include <cstddef>
 #include <ctime>
 #include <functional>
+#include <unordered_set>
 #include <obs-data.h>
 #include <obs.h>
 #include <obs.hpp>
@@ -229,6 +230,30 @@ static void AddExtraModulePaths()
 	obs_add_module_path((path + "/bin/32bit").c_str(),
 			    (path + "/data").c_str());
 #endif
+#endif
+}
+
+/* First-party modules considered to be potentially unsafe to load in Safe Mode
+ * due to them allowing external code (e.g. scripts) to modify OBS's state. */
+static const unordered_set<string> unsafe_modules = {
+	"frontend-tools", // Scripting
+	"obs-websocket",  // Allows outside modifications
+};
+
+static void SetSafeModuleNames()
+{
+#ifndef SAFE_MODULES
+	return;
+#else
+	string module;
+	stringstream modules(SAFE_MODULES);
+
+	while (getline(modules, module, '|')) {
+		/* When only disallowing third-party plugins, still add
+		 * "unsafe" bundled modules to the safe list. */
+		if (disable_3p_plugins || !unsafe_modules.count(module))
+			obs_add_safe_module(module.c_str());
+	}
 #endif
 }
 
@@ -801,9 +826,18 @@ void OBSBasic::Save(const char *file)
 	}
 
 	if (api) {
-		OBSDataAutoRelease moduleObj = obs_data_create();
-		api->on_save(moduleObj);
-		obs_data_set_obj(saveData, "modules", moduleObj);
+		if (safeModeModuleData) {
+			/* If we're in Safe Mode and have retained unloaded
+			 * plugin data, update the existing data object instead
+			 * of creating a new one. */
+			api->on_save(safeModeModuleData);
+			obs_data_set_obj(saveData, "modules",
+					 safeModeModuleData);
+		} else {
+			OBSDataAutoRelease moduleObj = obs_data_create();
+			api->on_save(moduleObj);
+			obs_data_set_obj(saveData, "modules", moduleObj);
+		}
 	}
 
 	if (!obs_data_save_json_safe(saveData, file, "tmp", "bak"))
@@ -1084,6 +1118,12 @@ void OBSBasic::LoadData(obs_data_t *data, const char *file)
 	if (api)
 		api->on_preload(modulesObj);
 
+	if (safe_mode || disable_3p_plugins) {
+		/* Keep a reference to "modules" data so plugins that are not
+		 * loaded do not have their collection specific data lost. */
+		safeModeModuleData = obs_data_get_obj(data, "modules");
+	}
+
 	OBSDataArrayAutoRelease sceneOrder =
 		obs_data_get_array(data, "scene_order");
 	OBSDataArrayAutoRelease sources = obs_data_get_array(data, "sources");
@@ -1259,14 +1299,14 @@ retryScene:
 	if (!opt_starting_scene.empty())
 		opt_starting_scene.clear();
 
-	if (opt_start_streaming) {
+	if (opt_start_streaming && !safe_mode) {
 		blog(LOG_INFO, "Starting stream due to command line parameter");
 		QMetaObject::invokeMethod(this, "StartStreaming",
 					  Qt::QueuedConnection);
 		opt_start_streaming = false;
 	}
 
-	if (opt_start_recording) {
+	if (opt_start_recording && !safe_mode) {
 		blog(LOG_INFO,
 		     "Starting recording due to command line parameter");
 		QMetaObject::invokeMethod(this, "StartRecording",
@@ -1274,13 +1314,13 @@ retryScene:
 		opt_start_recording = false;
 	}
 
-	if (opt_start_replaybuffer) {
+	if (opt_start_replaybuffer && !safe_mode) {
 		QMetaObject::invokeMethod(this, "StartReplayBuffer",
 					  Qt::QueuedConnection);
 		opt_start_replaybuffer = false;
 	}
 
-	if (opt_start_virtualcam) {
+	if (opt_start_virtualcam && !safe_mode) {
 		QMetaObject::invokeMethod(this, "StartVirtualCam",
 					  Qt::QueuedConnection);
 		opt_start_virtualcam = false;
@@ -1961,7 +2001,14 @@ void OBSBasic::OBSInit()
 #endif
 	struct obs_module_failure_info mfi;
 
-	AddExtraModulePaths();
+	/* Safe Mode disables third-party plugins so we don't need to add earch
+	 * paths outside the OBS bundle/installation. */
+	if (safe_mode || disable_3p_plugins) {
+		SetSafeModuleNames();
+	} else {
+		AddExtraModulePaths();
+	}
+
 	blog(LOG_INFO, "---------------------------------");
 	obs_load_all_modules2(&mfi);
 	blog(LOG_INFO, "---------------------------------");
@@ -2273,6 +2320,11 @@ void OBSBasic::OBSInit()
 	delete ui->actionShowWhatsNew;
 	ui->actionShowWhatsNew = nullptr;
 #endif
+
+	if (safe_mode) {
+		ui->actionRestartSafe->setText(
+			QTStr("Basic.MainMenu.Help.RestartNormal"));
+	}
 
 	UpdatePreviewProgramIndicators();
 	OnFirstLoad();
@@ -4904,6 +4956,7 @@ void OBSBasic::ClearSceneData()
 		outputHandler->UpdateVirtualCamOutputSource();
 	}
 
+	safeModeModuleData = nullptr;
 	lastScene = nullptr;
 	swapScene = nullptr;
 	programScene = nullptr;
@@ -6561,6 +6614,20 @@ void OBSBasic::on_actionRepair_triggered()
 	updateCheckThread.reset(new AutoUpdateThread(false, true));
 	updateCheckThread->start();
 #endif
+}
+
+void OBSBasic::on_actionRestartSafe_triggered()
+{
+	QMessageBox::StandardButton button = OBSMessageBox::question(
+		this, QTStr("Restart"),
+		safe_mode ? QTStr("SafeMode.RestartNormal")
+			  : QTStr("SafeMode.Restart"));
+
+	if (button == QMessageBox::Yes) {
+		restart = safe_mode;
+		restart_safe = !safe_mode;
+		close();
+	}
 }
 
 void OBSBasic::logUploadFinished(const QString &text, const QString &error)
@@ -9270,6 +9337,8 @@ void OBSBasic::UpdateTitleBar()
 		name << "Studio ";
 
 	name << App()->GetVersionString(false);
+	if (safe_mode)
+		name << " (SAFE MODE)";
 	if (App()->IsPortableMode())
 		name << " - " << Str("TitleBar.PortableMode");
 

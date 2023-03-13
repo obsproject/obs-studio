@@ -532,9 +532,11 @@
     <addaction name="separator"/>
     <addaction name="actionRepair"/>
     <addaction name="actionCheckForUpdates"/>
+    <addaction name="actionRestartSafe"/>
+    <addaction name="actionShowMacPermissions"/>
+    <addaction name="separator"/>
     <addaction name="actionShowWhatsNew"/>
     <addaction name="actionShowAbout"/>
-    <addaction name="actionShowMacPermissions"/>
     <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuBasic_MainMenu_Edit">
@@ -2002,6 +2004,11 @@
   <action name="actionRepair">
    <property name="text">
     <string>Basic.MainMenu.Help.Repair</string>
+   </property>
+  </action>
+  <action name="actionRestartSafe">
+   <property name="text">
+    <string>Basic.MainMenu.Help.RestartSafeMode</string>
    </property>
   </action>
   <action name="actionInteract">
