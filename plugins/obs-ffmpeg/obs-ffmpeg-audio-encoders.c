@@ -263,9 +263,6 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 			enc->context->sample_rate = closest;
 	}
 
-	if (strcmp(enc->codec->name, "aac") == 0) {
-	}
-
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(59, 24, 100)
 	info("bitrate: %" PRId64 ", channels: %d, channel_layout: %x\n",
 	     (int64_t)enc->context->bit_rate / 1000,
