@@ -333,9 +333,6 @@ MacPermissionStatus CheckPermissionWithPrompt(MacPermissionType type,
 			if (stream) {
 				permissionResponse = kPermissionAuthorized;
 				CFRelease(stream);
-
-				if (prompt_for_permission) {
-				}
 			} else {
 				permissionResponse = kPermissionDenied;
 			}
