@@ -425,8 +425,6 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 
 bool OBSApp::InitGlobalConfigDefaults()
 {
-	config_set_default_string(globalConfig, "General", "Language",
-				  DEFAULT_LANG);
 	config_set_default_uint(globalConfig, "General", "MaxLogs", 10);
 	config_set_default_int(globalConfig, "General", "InfoIncrement", -1);
 	config_set_default_string(globalConfig, "General", "ProcessPriority",
@@ -832,8 +830,13 @@ bool OBSApp::InitGlobalConfig()
 bool OBSApp::InitLocale()
 {
 	ProfileScope("OBSApp::InitLocale");
+
 	const char *lang =
 		config_get_string(globalConfig, "General", "Language");
+	bool userLocale =
+		config_has_user_value(globalConfig, "General", "Language");
+	if (!userLocale || !lang || lang[0] == '\0')
+		lang = DEFAULT_LANG;
 
 	locale = lang;
 
@@ -855,8 +858,6 @@ bool OBSApp::InitLocale()
 		return false;
 	}
 
-	bool userLocale =
-		config_has_user_value(globalConfig, "General", "Language");
 	bool defaultLang = astrcmpi(lang, DEFAULT_LANG) == 0;
 
 	if (userLocale && defaultLang)
@@ -2441,10 +2442,10 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 				       "MacOSPermissionsDialogLastShown");
 		if (permissionsDialogLastShown <
 		    MACOS_PERMISSIONS_DIALOG_VERSION) {
-			OBSPermissions *check = new OBSPermissions(
-				nullptr, screen_permission, video_permission,
-				audio_permission, accessibility_permission);
-			check->exec();
+			OBSPermissions check(nullptr, screen_permission,
+					     video_permission, audio_permission,
+					     accessibility_permission);
+			check.exec();
 		}
 #endif
 
@@ -3209,6 +3210,9 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef _WIN32
+	// Try to keep this as early as possible
+	install_dll_blocklist_hook();
+
 	obs_init_win32_crash_handler();
 	SetErrorMode(SEM_FAILCRITICALERRORS);
 	load_debug_privilege();
@@ -3379,6 +3383,8 @@ int main(int argc, char *argv[])
 		func();
 		FreeLibrary(hRtwq);
 	}
+
+	log_blocked_dlls();
 #endif
 
 	blog(LOG_INFO, "Number of memory leaks: %ld", bnum_allocs());

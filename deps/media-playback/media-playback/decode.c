@@ -446,7 +446,7 @@ bool mp_decode_next(struct mp_decode *d)
 				av_rescale_q(d->in_frame->best_effort_timestamp,
 					     d->stream->time_base,
 					     (AVRational){1, 1000000000});
-#if LIBAVUTIL_VERSION_MAJOR >= 57 && LIBAVUTIL_VERSION_MINOR >= 30
+#if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(57, 30, 100)
 		int64_t duration = d->in_frame->duration;
 #else
 		int64_t duration = d->in_frame->pkt_duration;

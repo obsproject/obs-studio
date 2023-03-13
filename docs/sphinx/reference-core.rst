@@ -333,6 +333,15 @@ Libobs Objects
 
 ---------------------
 
+.. function:: obs_source_t *obs_get_source_by_uuid(const char *uuid)
+
+   Gets a source by its UUID.
+  
+   Increments the source reference counter, use
+   :c:func:`obs_source_release()` to release it when complete.
+
+---------------------
+
 .. function:: obs_source_t *obs_get_transition_by_name(const char *name)
 
    Gets a transition by its name.

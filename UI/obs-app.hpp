@@ -268,3 +268,8 @@ extern bool opt_disable_high_dpi_scaling;
 #endif
 extern std::string opt_starting_scene;
 extern bool restart;
+
+#ifdef _WIN32
+extern "C" void install_dll_blocklist_hook(void);
+extern "C" void log_blocked_dlls(void);
+#endif

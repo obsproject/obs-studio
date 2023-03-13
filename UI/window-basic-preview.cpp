@@ -9,6 +9,7 @@
 #include "window-basic-main.hpp"
 #include "obs-app.hpp"
 #include "platform.hpp"
+#include "display-helpers.hpp"
 
 #define HANDLE_RADIUS 4.0f
 #define HANDLE_SEL_RADIUS (HANDLE_RADIUS * 1.5f)
@@ -2605,4 +2606,27 @@ void OBSBasicPreview::DrawSpacingHelpers()
 	vec3_set(&start, 1.0f - right.x, right.y, 1.0f);
 	vec3_set(&end, 1.0f, right.y, 1.0f);
 	RenderSpacingHelper(3, start, end, viewport, pixelRatio);
+}
+
+void OBSBasicPreview::ClampScrollingOffsets()
+{
+	obs_video_info ovi;
+	obs_get_video_info(&ovi);
+
+	QSize targetSize = GetPixelSize(this);
+
+	vec3 target, offset;
+	vec3_set(&target, (float)targetSize.width(), (float)targetSize.height(),
+		 1.0f);
+
+	vec3_set(&offset, (float)ovi.base_width, (float)ovi.base_height, 1.0f);
+	vec3_mulf(&offset, &offset, scalingAmount);
+
+	vec3_sub(&offset, &offset, &target);
+
+	vec3_mulf(&offset, &offset, 0.5f);
+	vec3_maxf(&offset, &offset, 0.0f);
+
+	scrollingOffset.x = std::clamp(scrollingOffset.x, -offset.x, offset.x);
+	scrollingOffset.y = std::clamp(scrollingOffset.y, -offset.y, offset.y);
 }

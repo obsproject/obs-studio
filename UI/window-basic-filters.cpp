@@ -505,8 +505,9 @@ static bool filter_compatible(bool async, uint32_t sourceFlags,
 	bool audioOnly = (sourceFlags & OBS_SOURCE_VIDEO) == 0;
 	bool asyncSource = (sourceFlags & OBS_SOURCE_ASYNC) != 0;
 
-	if (async && ((audioOnly && filterVideo) || (!audio && !asyncSource) ||
-		      (filterAudio && !audio)))
+	if (async &&
+	    ((audioOnly && filterVideo) || (!audio && !asyncSource) ||
+	     (filterAudio && !audio) || (!asyncSource && !filterAudio)))
 		return false;
 
 	return (async && (filterAudio || filterAsync)) ||

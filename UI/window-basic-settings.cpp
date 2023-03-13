@@ -577,7 +577,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	ui->advOutFFVBitrate->setSuffix(" Kbps");
 	ui->advOutFFABitrate->setSuffix(" Kbps");
 
-#if !defined(_WIN32) && !defined(__APPLE__)
+#if !defined(_WIN32) && !defined(ENABLE_SPARKLE_UPDATER)
 	delete ui->updateSettingsGroupBox;
 	ui->updateSettingsGroupBox = nullptr;
 	ui->updateChannelLabel = nullptr;
@@ -1031,6 +1031,7 @@ void OBSBasicSettings::LoadColorFormats()
 
 void OBSBasicSettings::LoadFormats()
 {
+#define FORMAT_STR(str) QTStr("Basic.Settings.Output.Format." str)
 	ui->advOutFFFormat->blockSignals(true);
 
 	formats.reset(ff_format_supported());
@@ -1059,6 +1060,25 @@ void OBSBasicSettings::LoadFormats()
 	ui->advOutFFFormat->insertItem(0, AV_FORMAT_DEFAULT_STR);
 
 	ui->advOutFFFormat->blockSignals(false);
+
+	ui->simpleOutRecFormat->addItem(FORMAT_STR("FLV"), "flv");
+	ui->simpleOutRecFormat->addItem(FORMAT_STR("MKV"), "mkv");
+	ui->simpleOutRecFormat->addItem(FORMAT_STR("MP4"), "mp4");
+	ui->simpleOutRecFormat->addItem(FORMAT_STR("MOV"), "mov");
+	ui->simpleOutRecFormat->addItem(FORMAT_STR("fMP4"), "fmp4");
+	ui->simpleOutRecFormat->addItem(FORMAT_STR("fMOV"), "fmov");
+	ui->simpleOutRecFormat->addItem(FORMAT_STR("TS"), "ts");
+
+	ui->advOutRecFormat->addItem(FORMAT_STR("FLV"), "flv");
+	ui->advOutRecFormat->addItem(FORMAT_STR("MKV"), "mkv");
+	ui->advOutRecFormat->addItem(FORMAT_STR("MP4"), "mp4");
+	ui->advOutRecFormat->addItem(FORMAT_STR("MOV"), "mov");
+	ui->advOutRecFormat->addItem(FORMAT_STR("fMP4"), "fmp4");
+	ui->advOutRecFormat->addItem(FORMAT_STR("fMOV"), "fmov");
+	ui->advOutRecFormat->addItem(FORMAT_STR("TS"), "ts");
+	ui->advOutRecFormat->addItem(FORMAT_STR("HLS"), "m3u8");
+
+#undef FORMAT_STR
 }
 
 static void AddCodec(QComboBox *combo, const ff_codec_desc *codec_desc)
@@ -1281,14 +1301,12 @@ void OBSBasicSettings::LoadGeneralSettings()
 	LoadLanguageList();
 	LoadThemeList();
 
-#if defined(_WIN32) || defined(__APPLE__)
+#if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 	bool enableAutoUpdates = config_get_bool(GetGlobalConfig(), "General",
 						 "EnableAutoUpdates");
 	ui->enableAutoUpdates->setChecked(enableAutoUpdates);
 
-#if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 	LoadBranchesList();
-#endif
 #endif
 	bool openStatsOnStartup = config_get_bool(main->Config(), "General",
 						  "OpenStatsOnStartup");
@@ -1844,7 +1862,7 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	ui->simpleNoSpace->setChecked(noSpace);
 	ui->simpleOutputVBitrate->setValue(videoBitrate);
 
-	int idx = ui->simpleOutRecFormat->findText(format);
+	int idx = ui->simpleOutRecFormat->findData(format);
 	ui->simpleOutRecFormat->setCurrentIndex(idx);
 
 	const char *speakers =
@@ -2022,7 +2040,7 @@ void OBSBasicSettings::LoadAdvOutputRecordingSettings()
 	ui->advOutRecRescale->setCurrentText(rescaleRes);
 	ui->advOutMuxCustom->setText(muxCustom);
 
-	int idx = ui->advOutRecFormat->findText(format);
+	int idx = ui->advOutRecFormat->findData(format);
 	ui->advOutRecFormat->setCurrentIndex(idx);
 
 	ui->advOutRecTrack1->setChecked(tracks & (1 << 0));
@@ -3621,7 +3639,7 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveCombo(ui->simpleOutputABitrate, "SimpleOutput", "ABitrate");
 	SaveEdit(ui->simpleOutputPath, "SimpleOutput", "FilePath");
 	SaveCheckBox(ui->simpleNoSpace, "SimpleOutput", "FileNameWithoutSpace");
-	SaveCombo(ui->simpleOutRecFormat, "SimpleOutput", "RecFormat");
+	SaveComboData(ui->simpleOutRecFormat, "SimpleOutput", "RecFormat");
 	SaveCheckBox(ui->simpleOutAdvanced, "SimpleOutput", "UseAdvanced");
 	SaveComboData(ui->simpleOutPreset, "SimpleOutput", presetType);
 	SaveEdit(ui->simpleOutCustom, "SimpleOutput", "x264Settings");
@@ -3648,7 +3666,7 @@ void OBSBasicSettings::SaveOutputSettings()
 
 	SaveEdit(ui->advOutRecPath, "AdvOut", "RecFilePath");
 	SaveCheckBox(ui->advOutNoSpace, "AdvOut", "RecFileNameWithoutSpace");
-	SaveCombo(ui->advOutRecFormat, "AdvOut", "RecFormat");
+	SaveComboData(ui->advOutRecFormat, "AdvOut", "RecFormat");
 	SaveComboData(ui->advOutRecEncoder, "AdvOut", "RecEncoder");
 	SaveCheckBox(ui->advOutRecUseRescale, "AdvOut", "RecRescale");
 	SaveCombo(ui->advOutRecRescale, "AdvOut", "RecRescaleRes");
@@ -4709,7 +4727,9 @@ void OBSBasicSettings::AdvOutRecCheckWarnings()
 		warningMsg += QTStr("OutputWarnings.CannotPause");
 	}
 
-	if (ui->advOutRecFormat->currentText().compare("flv") == 0) {
+	QString recFormat = ui->advOutRecFormat->currentData().toString();
+
+	if (recFormat == "flv") {
 		ui->advRecTrackWidget->setCurrentWidget(ui->flvTracks);
 	} else {
 		ui->advRecTrackWidget->setCurrentWidget(ui->recTracks);
@@ -4718,20 +4738,18 @@ void OBSBasicSettings::AdvOutRecCheckWarnings()
 			errorMsg = QTStr("OutputWarnings.NoTracksSelected");
 	}
 
-	QString recFormat = ui->advOutRecFormat->currentText();
 	QString recEncoder = ui->advOutRecEncoder->currentText();
 
 	if (recEncoder.contains("ProRes")) {
-		if (recFormat.compare("mkv") == 0) {
+		if (recFormat == "mkv") {
 			ui->autoRemux->setText(
 				QTStr("Basic.Settings.Advanced.AutoRemux")
 					.arg("mov"));
-		} else if (recFormat.compare("mov") == 0) {
-			if (!warningMsg.isEmpty()) {
+		} else if (recFormat == "mov") {
+			if (!warningMsg.isEmpty())
 				warningMsg += "\n\n";
-			}
-
 			warningMsg += QTStr("OutputWarnings.MP4Recording");
+
 			ui->autoRemux->setText(
 				QTStr("Basic.Settings.Advanced.AutoRemux")
 					.arg("mov") +
@@ -4746,11 +4764,9 @@ void OBSBasicSettings::AdvOutRecCheckWarnings()
 					    .arg(recFormat);
 		}
 	} else {
-		if (recFormat.compare("mp4") == 0 ||
-		    recFormat.compare("mov") == 0) {
-			if (!warningMsg.isEmpty()) {
+		if (recFormat == "mp4" || recFormat == "mov") {
+			if (!warningMsg.isEmpty())
 				warningMsg += "\n\n";
-			}
 
 			warningMsg += QTStr("OutputWarnings.MP4Recording");
 			ui->autoRemux->setText(
@@ -5317,9 +5333,9 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 		warning += SIMPLE_OUTPUT_WARNING("CannotPause");
 	}
 
-	if (qual != "Lossless" &&
-	    (ui->simpleOutRecFormat->currentText().compare("mp4") == 0 ||
-	     ui->simpleOutRecFormat->currentText().compare("mov") == 0)) {
+	QString format = ui->simpleOutRecFormat->currentData().toString();
+
+	if (qual != "Lossless" && (format == "mp4" || format == "mov")) {
 		if (!warning.isEmpty())
 			warning += "\n\n";
 		warning += QTStr("OutputWarnings.MP4Recording");

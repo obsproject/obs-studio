@@ -697,6 +697,14 @@ EXPORT void obs_enum_services(bool (*enum_proc)(void *, obs_service_t *),
  */
 EXPORT obs_source_t *obs_get_source_by_name(const char *name);
 
+/**
+ * Gets a source by its UUID.
+ *
+ *   Increments the source reference counter, use obs_source_release to
+ * release it when complete.
+ */
+EXPORT obs_source_t *obs_get_source_by_uuid(const char *uuid);
+
 /** Get a transition source by its name. */
 EXPORT obs_source_t *obs_get_transition_by_name(const char *name);
 
@@ -789,6 +797,10 @@ EXPORT obs_data_array_t *obs_save_sources(void);
 typedef bool (*obs_save_source_filter_cb)(void *data, obs_source_t *source);
 EXPORT obs_data_array_t *obs_save_sources_filtered(obs_save_source_filter_cb cb,
 						   void *data);
+
+/** Reset source UUIDs. NOTE: this function is only to be used by the UI and
+ *  will be removed in a future version! */
+EXPORT void obs_reset_source_uuids(void);
 
 enum obs_obj_type {
 	OBS_OBJ_TYPE_INVALID,
@@ -1114,6 +1126,9 @@ EXPORT const char *obs_source_get_name(const obs_source_t *source);
 
 /** Sets the name of a source */
 EXPORT void obs_source_set_name(obs_source_t *source, const char *name);
+
+/** Gets the UUID of a source */
+EXPORT const char *obs_source_get_uuid(const obs_source_t *source);
 
 /** Gets the source type */
 EXPORT enum obs_source_type obs_source_get_type(const obs_source_t *source);

@@ -21,9 +21,12 @@ set_target_properties(
              AUTOUIC ON
              AUTORCC ON)
 
-target_include_directories(
-  obs-vst PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-                  ${CMAKE_CURRENT_BINARY_DIR})
+if(_QT_VERSION EQUAL 6 AND OS_WINDOWS)
+  set_target_properties(obs-vst PROPERTIES AUTORCC_OPTIONS "--format-version;1")
+endif()
+
+target_include_directories(obs-vst PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+                                           ${CMAKE_CURRENT_BINARY_DIR})
 
 target_sources(
   obs-vst
@@ -33,8 +36,7 @@ target_sources(
 
 target_link_libraries(obs-vst PRIVATE OBS::libobs Qt::Widgets)
 
-target_include_directories(
-  obs-vst PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/headers)
+target_include_directories(obs-vst PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/headers)
 
 target_compile_features(obs-vst PRIVATE cxx_std_17)
 

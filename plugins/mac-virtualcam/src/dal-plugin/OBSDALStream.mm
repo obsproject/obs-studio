@@ -316,7 +316,7 @@
 	CVPixelBufferRef pixelBuffer =
 		[self createPixelBufferWithTestAnimation];
 
-	uint64_t hostTime = mach_absolute_time();
+	uint64_t hostTime = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
 	CMSampleTimingInfo timingInfo =
 		CMSampleTimingInfoForTimestamp(hostTime, (uint32_t)self.fps, 1);
 
@@ -365,9 +365,9 @@
 	CMSampleTimingInfo timingInfo = CMSampleTimingInfoForTimestamp(
 		timestamp, fpsNumerator, fpsDenominator);
 
-	err = CMIOStreamClockPostTimingEvent(timingInfo.presentationTimeStamp,
-					     mach_absolute_time(), true,
-					     self.clock);
+	err = CMIOStreamClockPostTimingEvent(
+		timingInfo.presentationTimeStamp,
+		clock_gettime_nsec_np(CLOCK_UPTIME_RAW), true, self.clock);
 	if (err != noErr) {
 		DLog(@"CMIOStreamClockPostTimingEvent err %d", err);
 	}

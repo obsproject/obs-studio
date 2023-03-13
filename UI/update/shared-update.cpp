@@ -68,7 +68,7 @@ try {
 
 static bool QuickReadFile(const char *file, std::string &data)
 try {
-	std::ifstream fileStream(file);
+	std::ifstream fileStream(file, std::ifstream::binary);
 	if (!fileStream.is_open() || fileStream.fail())
 		throw strprintf("Failed to open file '%s': %s", file,
 				strerror(errno));
@@ -176,12 +176,15 @@ static void LoadPublicKey(std::string &pubkey)
 static bool CheckDataSignature(const char *name, const std::string &data,
 			       const std::string &hexSig)
 try {
+	static std::mutex pubkey_mutex;
+	static std::string obsPubKey;
+
 	if (hexSig.empty() || hexSig.length() > 0xFFFF ||
 	    (hexSig.length() & 1) != 0)
 		throw strprintf("Missing or invalid signature for %s: %s", name,
 				hexSig.c_str());
 
-	static std::string obsPubKey;
+	std::scoped_lock lock(pubkey_mutex);
 	if (obsPubKey.empty())
 		LoadPublicKey(obsPubKey);
 

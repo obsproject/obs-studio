@@ -12,6 +12,11 @@ set_target_properties(
              AUTORCC ON
              AUTOUIC_SEARCH_PATHS "forms")
 
+if(_QT_VERSION EQUAL 6 AND OS_WINDOWS)
+  set_target_properties(frontend-tools PROPERTIES AUTORCC_OPTIONS
+                                                  "--format-version;1")
+endif()
+
 target_sources(
   frontend-tools PRIVATE forms/auto-scene-switcher.ui forms/captions.ui
                          forms/output-timer.ui forms/scripts.ui)
