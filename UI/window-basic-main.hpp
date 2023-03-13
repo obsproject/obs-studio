@@ -1218,6 +1218,26 @@ public:
 				   const char *file) const override;
 
 	static void InitBrowserPanelSafeBlock();
+
+private slots:
+	void on_actionExportDockset_triggered();
+	void on_actionImportDockset_triggered();
+	void on_actionBrowseDocksets_triggered();
+	void on_actionRefreshDocksets_triggered();
+	void OnClickRecentDockset();
+
+public:
+	int GetConfigPathDockset(char *path, int maxlen);
+	bool ExportDockstateToFileUserChooses();
+	bool ImportDockstateFromFileUserChooses();
+	bool ExportDockstateToFile(QString filepath);
+	bool ImportDockstateFromFile(QString filepath);
+	bool ImportDockstateFromCharp(const char *dockStateStr);
+
+public:
+	void RefreshDocksetRecentMenu();
+	void
+	EnumDocksetFiles(std::function<bool(const char *, const char *)> &&cb);
 };
 
 class SceneRenameDelegate : public QStyledItemDelegate {
