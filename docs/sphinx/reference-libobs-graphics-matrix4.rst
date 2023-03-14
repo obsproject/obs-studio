@@ -21,9 +21,9 @@ Matrix
 
    Z component vector
 
-.. member:: struct vec4 matrix4.t
+.. member:: struct vec4 matrix4.w
 
-   T component vector
+   W component vector
 
 ---------------------
 
