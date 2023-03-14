@@ -2176,6 +2176,11 @@ void OBSBasic::OBSInit()
 	}
 #endif
 
+#ifndef WHATSNEW_ENABLED
+	delete ui->actionShowWhatsNew;
+	ui->actionShowWhatsNew = nullptr;
+#endif
+
 	UpdatePreviewProgramIndicators();
 	OnFirstLoad();
 
@@ -7962,6 +7967,25 @@ void OBSBasic::on_actionDiscord_triggered()
 {
 	QUrl url = QUrl("https://obsproject.com/discord", QUrl::TolerantMode);
 	QDesktopServices::openUrl(url);
+}
+
+void OBSBasic::on_actionShowWhatsNew_triggered()
+{
+#ifdef WHATSNEW_ENABLED
+	if (introCheckThread && introCheckThread->isRunning())
+		return;
+	if (!cef)
+		return;
+
+	config_set_int(App()->GlobalConfig(), "General", "InfoIncrement", -1);
+
+	WhatsNewInfoThread *wnit = new WhatsNewInfoThread();
+	connect(wnit, &WhatsNewInfoThread::Result, this,
+		&OBSBasic::ReceivedIntroJson, Qt::QueuedConnection);
+
+	introCheckThread.reset(wnit);
+	introCheckThread->start();
+#endif
 }
 
 void OBSBasic::on_actionShowSettingsFolder_triggered()

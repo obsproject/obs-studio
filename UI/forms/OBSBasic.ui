@@ -532,6 +532,7 @@
     <addaction name="separator"/>
     <addaction name="actionRepair"/>
     <addaction name="actionCheckForUpdates"/>
+    <addaction name="actionShowWhatsNew"/>
     <addaction name="actionShowAbout"/>
     <addaction name="actionShowMacPermissions"/>
     <addaction name="separator"/>
@@ -2199,6 +2200,11 @@
   <action name="actionDiscord">
    <property name="text">
     <string>Basic.MainMenu.Help.Discord</string>
+   </property>
+  </action>
+  <action name="actionShowWhatsNew">
+   <property name="text">
+    <string>Basic.MainMenu.Help.WhatsNew</string>
    </property>
   </action>
   <action name="actionShowAbout">
