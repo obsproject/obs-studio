@@ -609,24 +609,6 @@ static void *send_thread(void *data)
 	os_set_thread_name("rtmp-stream: send_thread");
 
 #if defined(_WIN32)
-	// Despite MSDN claiming otherwise, send buffer auto tuning on
-	// Windows 7 doesn't seem to work very well.
-	if (get_win_ver_int() == 0x601) {
-		DWORD cur_sendbuf_size;
-		DWORD desired_sendbuf_size = 524288;
-		socklen_t int_size = sizeof(int);
-
-		if (!getsockopt(stream->rtmp.m_sb.sb_socket, SOL_SOCKET,
-				SO_SNDBUF, (char *)&cur_sendbuf_size,
-				&int_size) &&
-		    cur_sendbuf_size < desired_sendbuf_size) {
-
-			setsockopt(stream->rtmp.m_sb.sb_socket, SOL_SOCKET,
-				   SO_SNDBUF, (char *)&desired_sendbuf_size,
-				   sizeof(desired_sendbuf_size));
-		}
-	}
-
 	log_sndbuf_size(stream);
 #endif
 
