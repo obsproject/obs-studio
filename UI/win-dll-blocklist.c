@@ -157,6 +157,13 @@ static blocked_module_t blocked_modules[] = {
 
 	// VSeeFace capture filter < v1.13.38b3 without above fix implemented
 	{L"\\vseefacecamera64bit.dll", 0, 1666993098, TS_LESS_THAN},
+
+	// VTuber Maker capture filter < 2023-03-13 without above fix implemented
+	{L"\\live3dvirtualcam\\lib64_new2.dll", 0, 1678695956, TS_LESS_THAN},
+
+	// Obsolete unfixed versions of VTuber Maker capture filter
+	{L"\\live3dvirtualcam\\lib64_new.dll", 0, 0, TS_IGNORE},
+	{L"\\live3dvirtualcam\\lib64.dll", 0, 0, TS_IGNORE},
 };
 
 static bool is_module_blocked(wchar_t *dll, uint32_t timestamp)
