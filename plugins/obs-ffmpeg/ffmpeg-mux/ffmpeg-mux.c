@@ -1051,6 +1051,11 @@ static int ffmpeg_mux_init_context(struct ffmpeg_mux *ffm)
 	ffm->output->oformat->audio_codec = AV_CODEC_ID_NONE;
 #endif
 
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(60, 0, 100)
+	/* Allow FLAC/OPUS in MP4 */
+	ffm->output->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
+#endif
+
 	if (!init_streams(ffm)) {
 		free_avformat(ffm);
 		return FFM_ERROR;
