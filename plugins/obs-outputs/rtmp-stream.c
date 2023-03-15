@@ -1185,6 +1185,7 @@ static bool init_connect(struct rtmp_stream *stream)
 	bind_ip = obs_data_get_string(settings, OPT_BIND_IP);
 	dstr_copy(&stream->bind_ip, bind_ip);
 
+#ifdef _WIN32
 	stream->new_socket_loop =
 		obs_data_get_bool(settings, OPT_NEWSOCKETLOOP_ENABLED);
 	stream->low_latency_mode =
@@ -1196,6 +1197,10 @@ static bool init_connect(struct rtmp_stream *stream)
 		warn("Disabling network optimizations, not compatible with RTMPS");
 		stream->new_socket_loop = false;
 	}
+#else
+	stream->new_socket_loop = false;
+	stream->low_latency_mode = false;
+#endif
 
 	obs_data_release(settings);
 	return true;
@@ -1561,8 +1566,10 @@ static void rtmp_stream_defaults(obs_data_t *defaults)
 	obs_data_set_default_int(defaults, OPT_PFRAME_DROP_THRESHOLD, 900);
 	obs_data_set_default_int(defaults, OPT_MAX_SHUTDOWN_TIME_SEC, 30);
 	obs_data_set_default_string(defaults, OPT_BIND_IP, "default");
+#ifdef _WIN32
 	obs_data_set_default_bool(defaults, OPT_NEWSOCKETLOOP_ENABLED, false);
 	obs_data_set_default_bool(defaults, OPT_LOWLATENCY_ENABLED, false);
+#endif
 }
 
 static obs_properties_t *rtmp_stream_properties(void *unused)
@@ -1592,10 +1599,12 @@ static obs_properties_t *rtmp_stream_properties(void *unused)
 	}
 	netif_saddr_data_free(&addrs);
 
+#ifdef _WIN32
 	obs_properties_add_bool(props, OPT_NEWSOCKETLOOP_ENABLED,
 				obs_module_text("RTMPStream.NewSocketLoop"));
 	obs_properties_add_bool(props, OPT_LOWLATENCY_ENABLED,
 				obs_module_text("RTMPStream.LowLatencyMode"));
+#endif
 
 	return props;
 }
