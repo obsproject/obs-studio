@@ -107,6 +107,12 @@ static const char *pcm24_getname(void *unused)
 	return obs_module_text("FFmpegPCM24Bit");
 }
 
+static const char *pcm32_getname(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return obs_module_text("FFmpegPCM32BitFloat");
+}
+
 static const char *alac_getname(void *unused)
 {
 	UNUSED_PARAMETER(unused);
@@ -347,6 +353,11 @@ static void *pcm24_create(obs_data_t *settings, obs_encoder_t *encoder)
 	return enc_create(settings, encoder, "pcm_s24le", NULL);
 }
 
+static void *pcm32_create(obs_data_t *settings, obs_encoder_t *encoder)
+{
+	return enc_create(settings, encoder, "pcm_f32le", NULL);
+}
+
 static void *alac_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
 	return enc_create(settings, encoder, "alac", NULL);
@@ -475,6 +486,12 @@ static void enc_audio_info(void *data, struct audio_convert_info *info)
 		info->speakers = SPEAKERS_UNKNOWN;
 }
 
+static void enc_audio_info_float(void *data, struct audio_convert_info *info)
+{
+	enc_audio_info(data, info);
+	info->allow_clipping = true;
+}
+
 static size_t enc_frame_size(void *data)
 {
 	struct enc_encoder *enc = data;
@@ -539,6 +556,21 @@ struct obs_encoder_info pcm24_encoder_info = {
 	.get_properties = enc_properties,
 	.get_extra_data = enc_extra_data,
 	.get_audio_info = enc_audio_info,
+};
+
+struct obs_encoder_info pcm32_encoder_info = {
+	.id = "ffmpeg_pcm_f32le",
+	.type = OBS_ENCODER_AUDIO,
+	.codec = "pcm_f32le",
+	.get_name = pcm32_getname,
+	.create = pcm32_create,
+	.destroy = enc_destroy,
+	.encode = enc_encode,
+	.get_frame_size = enc_frame_size,
+	.get_defaults = enc_defaults,
+	.get_properties = enc_properties,
+	.get_extra_data = enc_extra_data,
+	.get_audio_info = enc_audio_info_float,
 };
 
 struct obs_encoder_info alac_encoder_info = {
