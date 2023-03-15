@@ -39,6 +39,7 @@ extern struct obs_encoder_info opus_encoder_info;
 extern struct obs_encoder_info pcm_encoder_info;
 extern struct obs_encoder_info pcm24_encoder_info;
 extern struct obs_encoder_info alac_encoder_info;
+extern struct obs_encoder_info flac_encoder_info;
 extern struct obs_encoder_info h264_nvenc_encoder_info;
 #ifdef ENABLE_HEVC
 extern struct obs_encoder_info hevc_nvenc_encoder_info;
@@ -393,6 +394,7 @@ bool obs_module_load(void)
 	obs_register_encoder(&pcm_encoder_info);
 	obs_register_encoder(&pcm24_encoder_info);
 	obs_register_encoder(&alac_encoder_info);
+	obs_register_encoder(&flac_encoder_info);
 #ifndef __APPLE__
 	bool h264 = false;
 	bool hevc = false;

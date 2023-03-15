@@ -113,6 +113,12 @@ static const char *alac_getname(void *unused)
 	return obs_module_text("FFmpegALAC");
 }
 
+static const char *flac_getname(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return obs_module_text("FFmpegFLAC");
+}
+
 static void enc_destroy(void *data)
 {
 	struct enc_encoder *enc = data;
@@ -346,6 +352,11 @@ static void *alac_create(obs_data_t *settings, obs_encoder_t *encoder)
 	return enc_create(settings, encoder, "alac", NULL);
 }
 
+static void *flac_create(obs_data_t *settings, obs_encoder_t *encoder)
+{
+	return enc_create(settings, encoder, "flac", NULL);
+}
+
 static bool do_encode(struct enc_encoder *enc, struct encoder_packet *packet,
 		      bool *received_packet)
 {
@@ -536,6 +547,21 @@ struct obs_encoder_info alac_encoder_info = {
 	.codec = "alac",
 	.get_name = alac_getname,
 	.create = alac_create,
+	.destroy = enc_destroy,
+	.encode = enc_encode,
+	.get_frame_size = enc_frame_size,
+	.get_defaults = enc_defaults,
+	.get_properties = enc_properties,
+	.get_extra_data = enc_extra_data,
+	.get_audio_info = enc_audio_info,
+};
+
+struct obs_encoder_info flac_encoder_info = {
+	.id = "ffmpeg_flac",
+	.type = OBS_ENCODER_AUDIO,
+	.codec = "flac",
+	.get_name = flac_getname,
+	.create = flac_create,
 	.destroy = enc_destroy,
 	.encode = enc_encode,
 	.get_frame_size = enc_frame_size,
