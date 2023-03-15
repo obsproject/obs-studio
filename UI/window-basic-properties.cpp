@@ -84,8 +84,8 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	ui->propertiesLayout->addWidget(view);
 
 	if (type == OBS_SOURCE_TYPE_TRANSITION) {
-		connect(view, SIGNAL(PropertiesRefreshed()), this,
-			SLOT(AddPreviewButton()));
+		connect(view, &OBSPropertiesView::PropertiesRefreshed, this,
+			&OBSBasicProperties::AddPreviewButton);
 	}
 
 	view->show();

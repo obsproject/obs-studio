@@ -79,7 +79,6 @@ public slots:
 	void EditListEdit();
 	void EditListUp();
 	void EditListDown();
-	void EditListReordered();
 };
 
 /* ------------------------------------------------------------------------- */
@@ -109,8 +108,9 @@ private:
 	QWidget *lastWidget = nullptr;
 	bool deferUpdate;
 
-	QWidget *NewWidget(obs_property_t *prop, QWidget *widget,
-			   const char *signal);
+	template<typename Sender, typename SenderParent, typename... Args>
+	QWidget *NewWidget(obs_property_t *prop, Sender *widget,
+			   void (SenderParent::*signal)(Args...));
 
 	QWidget *AddCheckbox(obs_property_t *prop);
 	QWidget *AddText(obs_property_t *prop, QFormLayout *layout,
