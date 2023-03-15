@@ -13,8 +13,8 @@
             "game_capture": true,
             "window_capture": false,
             "window_capture_wgc": false,
-            "message": "CS:GO may require the <code>--allow_third_party_software</code> launch option to use Game Capture.",
-            "url": "https://help.steampowered.com/en/faqs/view/09A0-4879-4353-EF95#whitelist"
+            "message": "CS:GO may require the <code>-allow_third_party_software</code> launch option to use Game Capture.",
+            "url": "https://help.steampowered.com/faqs/view/09A0-4879-4353-EF95#whitelist"
         },
         {
             "name": "Electron",
