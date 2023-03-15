@@ -28,7 +28,7 @@ target_sources(
           rtmp-services-main.c
           rtmp-format-ver.h)
 
-target_compile_definitions(rtmp-services PRIVATE RTMP_SERVICES_URL="${RTMP_SERVICES_URL}"
+target_compile_definitions(rtmp-services PRIVATE SERVICES_URL="${RTMP_SERVICES_URL}"
                                                  $<$<BOOL:${ENABLE_SERVICE_UPDATES}>:ENABLE_SERVICE_UPDATES>)
 
 target_include_directories(rtmp-services PRIVATE ${CMAKE_BINARY_DIR}/config)
