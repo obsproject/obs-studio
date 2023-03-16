@@ -1219,7 +1219,7 @@ void OBSBasicFilters::ResetFilters()
 	if (!view->DeferUpdate())
 		obs_source_update(filter, nullptr);
 
-	view->RefreshProperties();
+	view->ReloadProperties();
 }
 
 void OBSBasicFilters::CopyFilter()
