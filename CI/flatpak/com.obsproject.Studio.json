@@ -58,7 +58,7 @@
         {
           "type": "git",
           "url": "https://code.videolan.org/videolan/x264.git",
-          "commit": "b093bbe7d9bc642c8f24067cbdcc73bb43562eab"
+          "commit": "eaa68fad9e5d201d42fde51665f2d137ae96baf0"
         }
       ]
     },
@@ -97,8 +97,8 @@
         {
           "type": "git",
           "url": "https://github.com/FFmpeg/nv-codec-headers.git",
-          "tag": "n11.1.5.1",
-          "commit": "84483da70d903239d4536763fde8c7e6c4e80784"
+          "tag": "n12.0.16.0",
+          "commit": "c5e4af74850a616c42d39ed45b9b8568b71bf8bf"
         }
       ]
     },
@@ -192,8 +192,8 @@
         {
           "type": "git",
           "url": "https://aomedia.googlesource.com/aom.git",
-          "commit": "bcfe6fbfed315f83ee8a95465c654ee8078dbff9",
-          "tag": "v3.5.0"
+          "tag": "v3.6.0",
+          "commit": "3c65175b1972da4a1992c1dae2365b48d13f9a8d"
         }
       ]
     },
@@ -217,8 +217,8 @@
         {
           "type": "git",
           "url": "https://gitlab.com/AOMediaCodec/SVT-AV1.git",
-          "tag": "v1.3.0",
-          "commit": "91b94efb2809e83d9bf041d8575b32f234dfef27"
+          "tag": "v1.4.1",
+          "commit": "018276d714ce65d9b586f6205ee016cbd8d5425d"
         }
       ]
     },
@@ -249,20 +249,21 @@
         {
           "type": "git",
           "url": "https://github.com/FFmpeg/FFmpeg.git",
-          "commit": "eacfcbae690f914a4b1b4ad06999f138540cc3d8",
+          "tag": "n6.0",
+          "commit": "ea3d24bbe3c58b171e55fe2151fc7ffaca3ab3d2",
           "disable-shallow-clone": true
         },
         {
           "type": "git",
           "dest": "obs-deps",
           "url": "https://github.com/obsproject/obs-deps.git",
-          "tag": "2022-11-21",
-          "commit": "ba56d64e4cbcc0aec4fa0efcef5f5a1e6a1ba91d"
+          "tag": "2023-03-26",
+          "commit": "4aa7eeff06a522db6f5e1c1a73075bbb4c83b147"
         },
         {
           "type": "shell",
           "commands": [
-            "patch -Np1 -i obs-deps/deps.ffmpeg/patches/FFmpeg/0001-FFmpeg-5.1.2-OBS.patch"
+            "patch -Np1 -i obs-deps/deps.ffmpeg/patches/FFmpeg/0001-FFmpeg-6.0-OBS.patch"
           ]
         }
       ]
@@ -280,7 +281,7 @@
         {
           "type": "git",
           "url": "https://luajit.org/git/luajit-2.0.git",
-          "commit": "7a0cf5fd4c6c841d0455a51271af4fd4390c7884",
+          "commit": "505e2c03de35e2718eef0d2d3660712e06dadf1f",
           "disable-shallow-clone": true
         },
         {
