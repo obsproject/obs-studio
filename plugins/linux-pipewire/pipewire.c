@@ -719,6 +719,10 @@ read_metadata:
 			bitmap = SPA_MEMBER(cursor, cursor->bitmap_offset,
 					    struct spa_meta_bitmap);
 
+		if (bitmap)
+			g_clear_pointer(&obs_pw->cursor.texture,
+					gs_texture_destroy);
+
 		if (bitmap && bitmap->size.width > 0 &&
 		    bitmap->size.height > 0 &&
 		    lookup_format_info_from_spa_format(
@@ -732,8 +736,7 @@ read_metadata:
 			obs_pw->cursor.width = bitmap->size.width;
 			obs_pw->cursor.height = bitmap->size.height;
 
-			g_clear_pointer(&obs_pw->cursor.texture,
-					gs_texture_destroy);
+			assert(obs_pw->cursor.texture == NULL);
 			obs_pw->cursor.texture = gs_texture_create(
 				obs_pw->cursor.width, obs_pw->cursor.height,
 				gs_format, 1, &bitmap_data, GS_DYNAMIC);
