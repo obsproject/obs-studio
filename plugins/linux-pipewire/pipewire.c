@@ -794,7 +794,7 @@ static void on_param_changed_cb(void *user_data, uint32_t id,
 				      obs_pw->format.info.raw.format));
 
 	if (has_modifier) {
-		blog(LOG_INFO, "[pipewire]     Modifier: %" PRIu64,
+		blog(LOG_INFO, "[pipewire]     Modifier: 0x%" PRIx64,
 		     obs_pw->format.info.raw.modifier);
 	}
 
