@@ -3140,13 +3140,11 @@ void OBSBasicSettings::SaveGeneralSettings()
 				  QT_TO_UTF8(themeData));
 	}
 
-#if defined(_WIN32) || defined(__APPLE__)
+#if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 	if (WidgetChanged(ui->enableAutoUpdates))
 		config_set_bool(GetGlobalConfig(), "General",
 				"EnableAutoUpdates",
 				ui->enableAutoUpdates->isChecked());
-#endif
-#if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 	int branchIdx = ui->updateChannelBox->currentIndex();
 	QString branchName =
 		ui->updateChannelBox->itemData(branchIdx).toString();
