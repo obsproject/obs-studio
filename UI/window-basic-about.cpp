@@ -61,9 +61,12 @@ OBSAbout::OBSAbout(QWidget *parent) : QDialog(parent), ui(new Ui::OBSAbout)
 	ui->license->setProperty("themeID", "aboutHLayout");
 	ui->info->setProperty("themeID", "aboutInfo");
 
-	connect(ui->about, SIGNAL(clicked()), this, SLOT(ShowAbout()));
-	connect(ui->authors, SIGNAL(clicked()), this, SLOT(ShowAuthors()));
-	connect(ui->license, SIGNAL(clicked()), this, SLOT(ShowLicense()));
+	connect(ui->about, &ClickableLabel::clicked, this,
+		&OBSAbout::ShowAbout);
+	connect(ui->authors, &ClickableLabel::clicked, this,
+		&OBSAbout::ShowAuthors);
+	connect(ui->license, &ClickableLabel::clicked, this,
+		&OBSAbout::ShowLicense);
 
 	QPointer<OBSAbout> about(this);
 
@@ -74,10 +77,8 @@ OBSAbout::OBSAbout(QWidget *parent) : QDialog(parent), ui(new Ui::OBSAbout)
 			"application/json");
 		QObject::connect(thread, &RemoteTextThread::Result, main,
 				 &OBSBasic::UpdatePatronJson);
-		QObject::connect(
-			thread,
-			SIGNAL(Result(const QString &, const QString &)), this,
-			SLOT(ShowAbout()));
+		QObject::connect(thread, &RemoteTextThread::Result, this,
+				 &OBSAbout::ShowAbout);
 		main->patronJsonThread.reset(thread);
 		thread->start();
 	} else {
