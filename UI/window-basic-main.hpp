@@ -756,8 +756,8 @@ private slots:
 
 	void ProcessHotkey(obs_hotkey_id id, bool pressed);
 
-	void AddTransition();
-	void RenameTransition();
+	void AddTransition(const char *id);
+	void RenameTransition(OBSSource transition);
 	void TransitionClicked();
 	void TransitionStopped();
 	void TransitionFullyStopped();

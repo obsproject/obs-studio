@@ -464,14 +464,10 @@ void OBSBasic::on_transitions_currentIndexChanged(int)
 	SetTransition(transition);
 }
 
-void OBSBasic::AddTransition()
+void OBSBasic::AddTransition(const char *id)
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	QString idStr = action->property("id").toString();
-
 	string name;
-	QString placeHolderText =
-		QT_UTF8(obs_source_get_display_name(QT_TO_UTF8(idStr)));
+	QString placeHolderText = QT_UTF8(obs_source_get_display_name(id));
 	QString format = placeHolderText + " (%1)";
 	obs_source_t *source = nullptr;
 	int i = 1;
@@ -490,7 +486,7 @@ void OBSBasic::AddTransition()
 			OBSMessageBox::warning(this,
 					       QTStr("NoNameEntered.Title"),
 					       QTStr("NoNameEntered.Text"));
-			AddTransition();
+			AddTransition(id);
 			return;
 		}
 
@@ -499,12 +495,11 @@ void OBSBasic::AddTransition()
 			OBSMessageBox::warning(this, QTStr("NameExists.Title"),
 					       QTStr("NameExists.Text"));
 
-			AddTransition();
+			AddTransition(id);
 			return;
 		}
 
-		source = obs_source_create_private(QT_TO_UTF8(idStr),
-						   name.c_str(), NULL);
+		source = obs_source_create_private(id, name.c_str(), NULL);
 		InitTransition(source);
 		ui->transitions->addItem(
 			QT_UTF8(name.c_str()),
@@ -533,10 +528,9 @@ void OBSBasic::on_transitionAdd_clicked()
 		if (obs_is_source_configurable(id)) {
 			const char *name = obs_source_get_display_name(id);
 			QAction *action = new QAction(name, this);
-			action->setProperty("id", id);
 
-			connect(action, SIGNAL(triggered()), this,
-				SLOT(AddTransition()));
+			connect(action, &QAction::triggered,
+				[this, id]() { AddTransition(id); });
 
 			menu.addAction(action);
 			foundConfigurableTransitions = true;
@@ -578,12 +572,8 @@ void OBSBasic::on_transitionRemove_clicked()
 	RefreshQuickTransitions();
 }
 
-void OBSBasic::RenameTransition()
+void OBSBasic::RenameTransition(OBSSource transition)
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	QVariant variant = action->property("transition");
-	OBSSource transition = variant.value<OBSSource>();
-
 	string name;
 	QString placeHolderText = QT_UTF8(obs_source_get_name(transition));
 	obs_source_t *source = nullptr;
@@ -598,7 +588,7 @@ void OBSBasic::RenameTransition()
 	if (name.empty()) {
 		OBSMessageBox::warning(this, QTStr("NoNameEntered.Title"),
 				       QTStr("NoNameEntered.Text"));
-		RenameTransition();
+		RenameTransition(transition);
 		return;
 	}
 
@@ -607,12 +597,12 @@ void OBSBasic::RenameTransition()
 		OBSMessageBox::warning(this, QTStr("NameExists.Title"),
 				       QTStr("NameExists.Text"));
 
-		RenameTransition();
+		RenameTransition(transition);
 		return;
 	}
 
 	obs_source_set_name(transition, name.c_str());
-	int idx = ui->transitions->findData(variant);
+	int idx = ui->transitions->findData(QVariant::fromValue(transition));
 	if (idx != -1) {
 		ui->transitions->setItemText(idx, QT_UTF8(name.c_str()));
 
@@ -639,8 +629,8 @@ void OBSBasic::on_transitionProps_clicked()
 	QMenu menu(this);
 
 	QAction *action = new QAction(QTStr("Rename"), &menu);
-	connect(action, SIGNAL(triggered()), this, SLOT(RenameTransition()));
-	action->setProperty("transition", QVariant::fromValue(source));
+	connect(action, &QAction::triggered,
+		[this, source]() { RenameTransition(source); });
 	menu.addAction(action);
 
 	action = new QAction(QTStr("Properties"), &menu);
@@ -822,7 +812,7 @@ void OBSBasic::CreateProgramOptions()
 	tBar->setProperty("themeID", "tBarSlider");
 
 	connect(tBar, &QSlider::valueChanged, this, &OBSBasic::TBarChanged);
-	connect(tBar, SIGNAL(sliderReleased()), this, SLOT(TBarReleased()));
+	connect(tBar, &QSlider::sliderReleased, this, &OBSBasic::TBarReleased);
 
 	layout->addStretch(0);
 	layout->addLayout(mainButtonLayout);
@@ -1274,8 +1264,8 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 	if (curId && obs_is_source_configurable(curId)) {
 		menu->addSeparator();
 		menu->addAction(QTStr("Properties"), this,
-				visible ? SLOT(ShowTransitionProperties())
-					: SLOT(HideTransitionProperties()));
+				visible ? &OBSBasic::ShowTransitionProperties
+					: &OBSBasic::HideTransitionProperties);
 	}
 
 	auto copyTransition = [this](QAction *, bool visible) {
