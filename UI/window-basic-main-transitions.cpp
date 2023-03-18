@@ -564,7 +564,7 @@ void OBSBasic::RenameTransition()
 {
 	QAction *action = reinterpret_cast<QAction *>(sender());
 	QVariant variant = action->property("transition");
-	obs_source_t *transition = variant.value<OBSSource>();
+	OBSSource transition = variant.value<OBSSource>();
 
 	string name;
 	QString placeHolderText = QT_UTF8(obs_source_get_name(transition));

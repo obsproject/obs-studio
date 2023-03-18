@@ -733,7 +733,7 @@ obs_data_array_t *OBSBasic::SaveProjectors()
 		switch (type) {
 		case ProjectorType::Scene:
 		case ProjectorType::Source: {
-			obs_source_t *source = projector->GetSource();
+			OBSSource source = projector->GetSource();
 			const char *name = obs_source_get_name(source);
 			obs_data_set_string(data, "name", name);
 			break;
@@ -5393,8 +5393,8 @@ void OBSBasic::on_actionAddScene_triggered()
 		auto undo_fn = [](const std::string &data) {
 			obs_source_t *t = obs_get_source_by_name(data.c_str());
 			if (t) {
-				obs_source_release(t);
 				obs_source_remove(t);
+				obs_source_release(t);
 			}
 		};
 
