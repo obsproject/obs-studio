@@ -96,7 +96,7 @@
       "sources": [
         {
           "type": "git",
-          "url": "https://git.videolan.org/git/ffmpeg/nv-codec-headers.git",
+          "url": "https://github.com/FFmpeg/nv-codec-headers.git",
           "tag": "n11.1.5.1",
           "commit": "84483da70d903239d4536763fde8c7e6c4e80784"
         }
