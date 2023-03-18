@@ -260,8 +260,22 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 					SLOT(OpenWindowedProjector()));
 
 		} else if (!this->isMaximized()) {
-			popup.addAction(QTStr("ResizeProjectorWindowToContent"),
-					this, SLOT(ResizeToContent()));
+			QMenu *resizeMenu =
+				new QMenu(QTStr("ResizeProjectorWindow"));
+			resizeMenu->addAction(
+				QTStr("ResizeProjectorWindowToContent"), this,
+				SLOT(ResizeToContent()));
+			resizeMenu->addAction("1280x720 (720p)", this,
+					      [this] { resize(1280, 720); });
+			resizeMenu->addAction("1920x1080 (1080p)", this,
+					      [this] { resize(1920, 1080); });
+			resizeMenu->addAction("2560x1440 (1440p)", this,
+					      [this] { resize(2560, 1440); });
+			resizeMenu->addAction("3840x2160 (4K)", this,
+					      [this] { resize(3840, 2160); });
+			resizeMenu->addAction("7680x4320 (8K)", this,
+					      [this] { resize(7680, 4320); });
+			popup.addMenu(resizeMenu);
 		}
 
 		QAction *alwaysOnTopButton = new QAction(
