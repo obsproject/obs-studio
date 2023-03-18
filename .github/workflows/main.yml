@@ -373,18 +373,31 @@ jobs:
 
       - name: 'Setup build environment'
         run: |
+          dnf install -y -q gh
+          gh extension install actions/gh-actions-cache
+
           git config --global --add safe.directory $GITHUB_WORKSPACE
-          echo "OBS_GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_ENV
-          echo "OBS_GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-          echo "OBS_GIT_TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
+
+          CACHE_KEY="flatpak-builder-${{ hashFiles('CI/flatpak/com.obsproject.Studio.json') }}"
+          DEFAULT_BRANCH=$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name)
+
+          KEY="$CACHE_KEY-x86_64"
+          CACHE_HIT=$(gh actions-cache list -B $DEFAULT_BRANCH --key $KEY | grep -q $KEY && echo 'true' || echo 'false')
+
+          echo "$KEY | $DEFAULT_BRANCH | $CACHE_HIT"
+
+          echo "git_hash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
+          echo "cache_key=$CACHE_KEY" >> $GITHUB_OUTPUT
+          echo "cache_hit=$CACHE_HIT" >> $GITHUB_OUTPUT
 
       - name: Build Flatpak Manifest
-        uses: flatpak/flatpak-github-actions/flatpak-builder@v5
+        uses: tytan652/flatpak-github-actions/flatpak-builder@789ccb48e4b85317d9032e1bff60a69c11cb762f
         with:
           build-bundle: ${{ fromJSON(needs.config.outputs.create_artifacts) }}
-          bundle: obs-studio-flatpak-${{ env.OBS_GIT_HASH }}.flatpak
+          bundle: obs-studio-flatpak-${{ steps.setup.outputs.git_hash }}.flatpak
           manifest-path: CI/flatpak/com.obsproject.Studio.json
-          cache-key: flatpak-builder-${{ hashFiles('CI/flatpak/com.obsproject.Studio.json') }}
+          cache: ${{ fromJSON(steps.setup.outputs.cache_hit) || github.event_name == 'push' }}
+          cache-key: ${{ steps.setup.outputs.cache_key }}
 
   windows_package:
     name: '03 - Windows Installer'
