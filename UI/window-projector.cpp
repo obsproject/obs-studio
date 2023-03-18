@@ -276,6 +276,14 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 			resizeMenu->addAction("7680x4320 (8K)", this,
 					      [this] { resize(7680, 4320); });
 			popup.addMenu(resizeMenu);
+
+			QAction *frameHidingButton = new QAction(
+				QTStr("ToggleProjectorWindowFrame"), this);
+			frameHidingButton->setCheckable(true);
+			frameHidingButton->setChecked(isFrameHidden);
+			connect(frameHidingButton, &QAction::toggled, this,
+				&OBSProjector::FrameHiddenToggled);
+			popup.addAction(frameHidingButton);
 		}
 
 		QAction *alwaysOnTopButton = new QAction(
@@ -473,6 +481,16 @@ void OBSProjector::ResizeToContent()
 	newX = size.width() - (x * 2);
 	newY = size.height() - (y * 2);
 	resize(newX, newY);
+}
+
+void OBSProjector::FrameHiddenToggled(bool frameHidden)
+{
+	this->isFrameHidden = frameHidden;
+	if (this->isFrameHidden)
+		setWindowFlags(Qt::FramelessWindowHint);
+	else
+		setWindowFlags(windowFlags() & ~Qt::FramelessWindowHint);
+	showNormal();
 }
 
 void OBSProjector::AlwaysOnTopToggled(bool isAlwaysOnTop)

@@ -29,6 +29,7 @@ private:
 	void mouseDoubleClickEvent(QMouseEvent *event) override;
 	void closeEvent(QCloseEvent *event) override;
 
+	bool isFrameHidden;
 	bool isAlwaysOnTop;
 	bool isAlwaysOnTopOverridden = false;
 	int savedMonitor = -1;
@@ -51,6 +52,7 @@ private slots:
 	void OpenFullScreenProjector();
 	void ResizeToContent();
 	void OpenWindowedProjector();
+	void FrameHiddenToggled(bool frameHidden);
 	void AlwaysOnTopToggled(bool alwaysOnTop);
 	void ScreenRemoved(QScreen *screen_);
 
