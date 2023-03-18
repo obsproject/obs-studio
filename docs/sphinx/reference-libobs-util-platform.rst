@@ -245,7 +245,7 @@ Other Path/File Functions
 
 .. function:: const char *os_get_path_extension(const char *path)
 
-   Returns the extension portion of a path string.
+   Returns the extension portion of a path string, including the dot (.).
 
 ---------------------
 
