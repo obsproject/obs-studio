@@ -5156,12 +5156,10 @@ void OBSBasic::on_actionMixerToolbarMenu_triggered()
 void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current,
 					    QListWidgetItem *prev)
 {
-	obs_source_t *source = NULL;
+	OBSSource source;
 
 	if (current) {
-		obs_scene_t *scene;
-
-		scene = GetOBSRef<OBSScene>(current);
+		OBSScene scene = GetOBSRef<OBSScene>(current);
 		source = obs_scene_get_source(scene);
 
 		currentScene = scene;
@@ -8342,7 +8340,7 @@ static bool reset_tr(obs_scene_t *scene, obs_sceneitem_t *item, void *param)
 
 void OBSBasic::on_actionResetTransform_triggered()
 {
-	obs_scene_t *scene = GetCurrentScene();
+	OBSScene scene = GetCurrentScene();
 
 	OBSDataAutoRelease wrapper =
 		obs_scene_save_transform_states(scene, false);
