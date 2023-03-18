@@ -354,6 +354,6 @@ void OBSBasicTransform::OnSceneChanged(QListWidgetItem *current,
 	if (!current)
 		return;
 
-	obs_scene_t *scene = GetOBSRef<OBSScene>(current);
+	OBSScene scene = GetOBSRef<OBSScene>(current);
 	this->SetScene(scene);
 }
