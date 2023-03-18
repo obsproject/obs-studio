@@ -114,8 +114,8 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		struct obs_frontend_source_list *sources) override
 	{
 		for (int i = 0; i < main->ui->transitions->count(); i++) {
-			obs_source_t *tr = main->ui->transitions->itemData(i)
-						   .value<OBSSource>();
+			OBSSource tr = main->ui->transitions->itemData(i)
+					       .value<OBSSource>();
 
 			if (!tr)
 				continue;
