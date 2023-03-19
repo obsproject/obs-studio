@@ -2252,7 +2252,16 @@ static bool window_changed_callback(obs_properties_t *ppts, obs_property_t *p,
 	bool modified = ms_check_window_property_setting(
 		ppts, p, settings, SETTING_CAPTURE_WINDOW, 1);
 
-	if (obs_data_get_bool(settings, SETTING_ANY_FULLSCREEN))
+	bool capture_any;
+	if (using_older_non_mode_format(settings)) {
+		capture_any =
+			obs_data_get_bool(settings, SETTING_ANY_FULLSCREEN);
+	} else {
+		const char *mode = obs_data_get_string(settings, SETTING_MODE);
+		capture_any = strcmp(mode, SETTING_MODE_ANY) == 0;
+	}
+
+	if (capture_any)
 		return modified;
 
 	const char *window =
