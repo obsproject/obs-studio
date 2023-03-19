@@ -352,19 +352,32 @@ jobs:
           fetch-depth: 0
 
       - name: 'Setup build environment'
+        id: setup
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CACHE_KEY: flatpak-builder-${{ hashFiles('CI/flatpak/com.obsproject.Studio.json') }}
         run: |
+          dnf install -y -q gh
+          gh extension install actions/gh-actions-cache
+
           git config --global --add safe.directory $GITHUB_WORKSPACE
-          echo "OBS_GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_ENV
-          echo "OBS_GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-          echo "OBS_GIT_TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
+
+          KEY="$CACHE_KEY-x86_64"
+          CACHE_HIT=$(gh actions-cache list -B master --key $KEY | grep -q $KEY && echo 'true' || echo 'false')
+
+          echo "git_hash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
+          echo "cache_key=$CACHE_KEY" >> $GITHUB_OUTPUT
+          echo "cache_hit=$CACHE_HIT" >> $GITHUB_OUTPUT
 
       - name: Build Flatpak Manifest
-        uses: flatpak/flatpak-github-actions/flatpak-builder@v5
+        uses: flatpak/flatpak-github-actions/flatpak-builder@83ec7c1998a152b7d47507a2da5d7a4b21e612ff
         with:
           build-bundle: ${{ fromJSON(needs.config.outputs.create_artifacts) }}
-          bundle: obs-studio-flatpak-${{ env.OBS_GIT_HASH }}.flatpak
+          bundle: obs-studio-flatpak-${{ steps.setup.outputs.git_hash }}.flatpak
           manifest-path: CI/flatpak/com.obsproject.Studio.json
-          cache-key: flatpak-builder-${{ hashFiles('CI/flatpak/com.obsproject.Studio.json') }}
+          cache: ${{ fromJSON(steps.setup.outputs.cache_hit) || (github.event_name == 'push' && github.ref == 'refs/heads/master') }}
+          restore-cache: ${{ fromJSON(steps.setup.outputs.cache_hit) }}
+          cache-key: ${{ steps.setup.outputs.cache_key }}
 
   windows_package:
     name: '03 - Windows Installer'
