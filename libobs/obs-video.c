@@ -60,7 +60,7 @@ static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 
 	pthread_mutex_lock(&data->sources_mutex);
 
-	source = data->first_source;
+	source = data->sources;
 	while (source) {
 		obs_source_t *s = obs_source_get_ref(source);
 
@@ -69,7 +69,7 @@ static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 			obs_source_release(s);
 		}
 
-		source = (struct obs_source *)source->context.next;
+		source = (struct obs_source *)source->context.hh_uuid.next;
 	}
 
 	pthread_mutex_unlock(&data->sources_mutex);

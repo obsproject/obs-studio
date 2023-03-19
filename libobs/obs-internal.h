@@ -25,6 +25,7 @@
 #include "util/platform.h"
 #include "util/profiler.h"
 #include "util/task.h"
+#include "util/uthash.h"
 #include "callback/signal.h"
 #include "callback/proc.h"
 
@@ -38,6 +39,12 @@
 #include "obs.h"
 
 #include <caption/caption.h>
+
+/* Custom helpers for the UUID hash table */
+#define HASH_FIND_UUID(head, uuid, out) \
+	HASH_FIND(hh_uuid, head, uuid, UUID_STR_LENGTH, out)
+#define HASH_ADD_UUID(head, uuid_field, add) \
+	HASH_ADD(hh_uuid, head, uuid_field[0], UUID_STR_LENGTH, add)
 
 #define NUM_TEXTURES 2
 #define NUM_CHANNELS 3
@@ -147,6 +154,8 @@ struct obs_hotkey {
 	void *registerer;
 
 	obs_hotkey_id pair_partner_id;
+
+	UT_hash_handle hh;
 };
 
 struct obs_hotkey_pair {
@@ -156,6 +165,8 @@ struct obs_hotkey_pair {
 	bool pressed0;
 	bool pressed1;
 	void *data[2];
+
+	UT_hash_handle hh;
 };
 
 typedef struct obs_hotkey_pair obs_hotkey_pair_t;
@@ -186,7 +197,7 @@ struct obs_hotkey_binding {
 	obs_hotkey_t *hotkey;
 };
 
-struct obs_hotkey_name_map;
+struct obs_hotkey_name_map_item;
 void obs_hotkey_name_map_free(void);
 
 /* ------------------------------------------------------------------------- */
@@ -372,7 +383,11 @@ struct obs_core_audio {
 
 /* user sources, output channels, and displays */
 struct obs_core_data {
-	struct obs_source *first_source;
+	/* Hash tables (uthash) */
+	struct obs_source *sources;        /* Lookup by UUID (hh_uuid) */
+	struct obs_source *public_sources; /* Lookup by name (hh) */
+
+	/* Linked lists */
 	struct obs_source *first_audio_source;
 	struct obs_display *first_display;
 	struct obs_output *first_output;
@@ -401,9 +416,9 @@ struct obs_core_data {
 /* user hotkeys */
 struct obs_core_hotkeys {
 	pthread_mutex_t mutex;
-	DARRAY(obs_hotkey_t) hotkeys;
+	obs_hotkey_t *hotkeys;
 	obs_hotkey_id next_id;
-	DARRAY(obs_hotkey_pair_t) hotkey_pairs;
+	obs_hotkey_pair_t *hotkey_pairs;
 	obs_hotkey_pair_id next_pair_id;
 
 	pthread_t hotkey_thread;
@@ -420,7 +435,7 @@ struct obs_core_hotkeys {
 	obs_hotkeys_platform_t *platform_context;
 
 	pthread_once_t name_map_init_token;
-	struct obs_hotkey_name_map *name_map;
+	struct obs_hotkey_name_map_item *name_map;
 
 	signal_handler_t *signals;
 
@@ -541,6 +556,9 @@ struct obs_context_data {
 	struct obs_context_data *next;
 	struct obs_context_data **prev_next;
 
+	UT_hash_handle hh;
+	UT_hash_handle hh_uuid;
+
 	bool private;
 };
 
@@ -554,11 +572,24 @@ extern void obs_context_data_free(struct obs_context_data *context);
 
 extern void obs_context_data_insert(struct obs_context_data *context,
 				    pthread_mutex_t *mutex, void *first);
+extern void obs_context_data_insert_name(struct obs_context_data *context,
+					 pthread_mutex_t *mutex, void *first);
+extern void obs_context_data_insert_uuid(struct obs_context_data *context,
+					 pthread_mutex_t *mutex,
+					 void *first_uuid);
+
 extern void obs_context_data_remove(struct obs_context_data *context);
+extern void obs_context_data_remove_name(struct obs_context_data *context,
+					 void *phead);
+extern void obs_context_data_remove_uuid(struct obs_context_data *context,
+					 void *puuid_head);
+
 extern void obs_context_wait(struct obs_context_data *context);
 
 extern void obs_context_data_setname(struct obs_context_data *context,
 				     const char *name);
+extern void obs_context_data_setname_ht(struct obs_context_data *context,
+					const char *name, void *phead);
 
 /* ------------------------------------------------------------------------- */
 /* ref-counting  */

@@ -244,8 +244,13 @@ static void obs_source_init_finalize(struct obs_source *source)
 		pthread_mutex_unlock(&obs->data.audio_sources_mutex);
 	}
 
-	obs_context_data_insert(&source->context, &obs->data.sources_mutex,
-				&obs->data.first_source);
+	if (!source->context.private) {
+		obs_context_data_insert_name(&source->context,
+					     &obs->data.sources_mutex,
+					     &obs->data.public_sources);
+	}
+	obs_context_data_insert_uuid(&source->context, &obs->data.sources_mutex,
+				     &obs->data.sources);
 }
 
 static bool obs_source_hotkey_mute(void *data, obs_hotkey_pair_id id,
@@ -662,7 +667,10 @@ void obs_source_destroy(struct obs_source *source)
 	while (source->filters.num)
 		obs_source_filter_remove(source, source->filters.array[0]);
 
-	obs_context_data_remove(&source->context);
+	obs_context_data_remove_uuid(&source->context, &obs->data.sources);
+	if (!source->context.private)
+		obs_context_data_remove_name(&source->context,
+					     &obs->data.public_sources);
 
 	/* defer source destroy */
 	os_task_queue_queue_task(obs->destruction_task_thread,
@@ -4259,7 +4267,13 @@ void obs_source_set_name(obs_source_t *source, const char *name)
 	    strcmp(name, source->context.name) != 0) {
 		struct calldata data;
 		char *prev_name = bstrdup(source->context.name);
-		obs_context_data_setname(&source->context, name);
+
+		if (!source->context.private) {
+			obs_context_data_setname_ht(&source->context, name,
+						    &obs->data.public_sources);
+		} else {
+			obs_context_data_setname(&source->context, name);
+		}
 
 		calldata_init(&data);
 		calldata_set_ptr(&data, "source", source);
