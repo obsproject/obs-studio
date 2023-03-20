@@ -533,11 +533,14 @@ void OBSBasicSettings::ServiceChanged()
 
 QString OBSBasicSettings::FindProtocol()
 {
-	if (IsCustomService() && !ui->customServer->text().isEmpty()) {
+	if (IsCustomService()) {
+		if (ui->customServer->text().isEmpty())
+			return QString("RTMP");
 
 		QString server = ui->customServer->text();
 
-		if (server.startsWith("rtmps://"))
+		if (obs_is_output_protocol_registered("RTMPS") &&
+		    server.startsWith("rtmps://"))
 			return QString("RTMPS");
 
 		if (server.startsWith("ftl://"))
