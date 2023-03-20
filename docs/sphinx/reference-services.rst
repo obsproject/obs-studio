@@ -137,7 +137,7 @@ Service Definition Structure
 
    (Optional)
 
-   :return: The output type that should be used with this service
+   :return: The output type that should be preferred with this service
 
 .. member:: const char **(*get_supported_video_codecs)(void *data)
 
@@ -148,6 +148,49 @@ Service Definition Structure
             the data manually (typically best to use strlist_split to
             generate this)
 
+.. member:: const char **(*get_supported_audio_codecs)(void *data)
+
+   (Optional)
+
+   :return: A string pointer array of the supported audio codecs, should
+            be stored by the plugin so the caller does not need to free
+            the data manually (typically best to use strlist_split to
+            generate this)
+
+.. member:: const char *(*obs_service_info.get_protocol)(void *data)
+
+   :return: The protocol used by the service
+
+.. member:: const char *(*obs_service_info.get_connect_info)(void *data, uint32_t type)
+
+   Output a service connection info related to a given type value:
+
+   - **OBS_SERVICE_CONNECT_INFO_SERVER_URL** - Server URL (0)
+
+   - **OBS_SERVICE_CONNECT_INFO_STREAM_ID** - Stream ID (2)
+
+   - **OBS_SERVICE_CONNECT_INFO_STREAM_KEY** - Stream key (alias of **OBS_SERVICE_CONNECT_INFO_STREAM_ID**)
+
+   - **OBS_SERVICE_CONNECT_INFO_USERNAME** - Username (4)
+
+   - **OBS_SERVICE_CONNECT_INFO_PASSWORD** - Password (6)
+
+   - **OBS_SERVICE_CONNECT_INFO_ENCRYPT_PASSPHRASE** - Encryption passphrase (8)
+
+   - Odd values as types are reserved for third-party protocols
+
+   Depending on the protocol, the service will have to provide information
+   to the output to be able to connect.
+
+   Irrelevant or unused types can return `NULL`.
+
+.. member:: bool (*obs_service_info.can_try_to_connect)(void *data)
+
+   :return: If the service has all the needed connection info to be
+            able to connect.
+
+   NOTE: If not set, :c:func:`obs_service_can_try_to_connect()`
+   returns *true* by default.
 
 General Service Functions
 -------------------------
@@ -270,11 +313,17 @@ General Service Functions
 
   :return: The URL currently used for this service
 
+.. deprecated:: 29.1.0
+   Use :c:func:`obs_service_get_connect_info()` instead.
+
 ---------------------
 
 .. function:: const char *obs_service_get_key(const obs_service_t *service)
 
   :return: Stream key (if any) currently used for this service
+
+.. deprecated:: 29.1.0
+   Use :c:func:`obs_service_get_connect_info()` instead.
 
 ---------------------
 
@@ -282,11 +331,17 @@ General Service Functions
 
    :return: User name (if any) currently used for this service
 
+.. deprecated:: 29.1.0
+   Use :c:func:`obs_service_get_connect_info()` instead.
+
 ---------------------
 
 .. function:: const char *obs_service_get_password(const obs_service_t *service)
 
    :return: Password (if any) currently used for this service
+
+.. deprecated:: 29.1.0
+   Use :c:func:`obs_service_get_connect_info()` instead.
 
 ---------------------
 
@@ -301,9 +356,41 @@ General Service Functions
 
 .. function:: const char **obs_service_get_supported_video_codecs(const obs_service_t *service)
 
-   :return: An array of string pointers containing the supported codecs
-            for the service, terminated with a *NULL* pointer. Does not
-            need to be freed
+   :return: An array of string pointers containing the supported video
+            codecs for the service, terminated with a *NULL* pointer.
+            Does not need to be freed
+
+---------------------
+
+.. function:: const char **obs_service_get_supported_audio_codecs(const obs_service_t *service)
+
+   :return: An array of string pointers containing the supported audio
+            codecs for the service, terminated with a *NULL* pointer.
+            Does not need to be freed
+
+---------------------
+
+.. function:: const char *obs_service_get_protocol(const obs_service_t *service)
+
+   :return: Protocol currently used for this service
+
+---------------------
+
+.. function:: const char *obs_service_get_preferred_output_type(const obs_service_t *service)
+
+   :return: The output type that should be preferred with this service
+
+.. function:: const char *obs_service_get_connect_info(const obs_service_t *service, uint32_t type)
+
+   :param type: Check :c:member:`obs_service_info.get_connect_info` for
+                type values.
+   :return: Connection info related to the type value.
+
+.. function:: bool obs_service_can_try_to_connect(const obs_service_t *service)
+
+   :return: If the service has all the needed connection info to be
+            able to connect. Returns `true` if
+            :c:member:`obs_service_info.can_try_to_connect` is not set.
 
 .. ---------------------------------------------------------------------------
 

@@ -16,6 +16,18 @@
                         "description": "Name of the streaming service. Will be displayed in the Service dropdown.",
                         "minLength": 1
                     },
+                    "protocol" : {
+                        "type": "string",
+                        "description": "Protocol used by the service. If missing the service is considered using RTMP or RTMPS.",
+                        "enum": [
+                            "RTMP",
+                            "RTMPS",
+                            "HLS",
+                            "FTL",
+                            "SRT",
+                            "RIST"
+                        ]
+                    },
                     "common": {
                         "type": "boolean",
                         "description": "Whether or not the service is shown in the list before it is expanded to all services by the user.",
@@ -106,7 +118,7 @@
                             },
                             "output": {
                                 "type": "string",
-                                "description": "OBS output module used.",
+                                "description": "OBS output module used. Unused since OBS Studio 30, kept for backward compatibility.",
                                 "enum": [
                                     "rtmp_output",
                                     "ffmpeg_hls_muxer",
@@ -200,6 +212,18 @@
                 "required": [
                     "name",
                     "servers"
+		],
+                "allOf": [
+                    {
+                        "$comment": "Require protocol field if not an RTMP(S) URL",
+                        "if": { "not": { "properties": { "servers": { "items": { "properties": { "url": { "format": "uri", "pattern": "^rtmps?://" } } } } } } },
+                        "then": { "required": ["protocol"] }
+                    },
+                    {
+                        "$comment": "Require recommended output field if protocol field is not RTMP(S)",
+                        "if": { "required": ["protocol"], "properties": { "protocol": { "pattern": "^(HLS|SRT|RIST|FTL)$" } } },
+                        "then": { "properties": { "recommended": { "required": ["output"] } } }
+                    }
                 ]
             },
             "additionalItems": true

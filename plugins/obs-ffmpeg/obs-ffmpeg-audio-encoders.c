@@ -427,7 +427,7 @@ static size_t enc_frame_size(void *data)
 struct obs_encoder_info aac_encoder_info = {
 	.id = "ffmpeg_aac",
 	.type = OBS_ENCODER_AUDIO,
-	.codec = "AAC",
+	.codec = "aac",
 	.get_name = aac_getname,
 	.create = aac_create,
 	.destroy = enc_destroy,

@@ -1485,6 +1485,10 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_int(basicConfig, "SimpleOutput", "RecRBSize", 512);
 	config_set_default_string(basicConfig, "SimpleOutput", "RecRBPrefix",
 				  "Replay");
+	config_set_default_string(basicConfig, "SimpleOutput",
+				  "StreamAudioEncoder", "aac");
+	config_set_default_string(basicConfig, "SimpleOutput",
+				  "RecAudioEncoder", "aac");
 
 	config_set_default_bool(basicConfig, "AdvOut", "ApplyServiceSettings",
 				true);
@@ -1501,6 +1505,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_bool(basicConfig, "AdvOut", "RecUseRescale", false);
 	config_set_default_uint(basicConfig, "AdvOut", "RecTracks", (1 << 0));
 	config_set_default_string(basicConfig, "AdvOut", "RecEncoder", "none");
+	config_set_default_string(basicConfig, "AdvOut", "RecAudioEncoder",
+				  "none");
 	config_set_default_uint(basicConfig, "AdvOut", "FLVTrack", 1);
 
 	config_set_default_bool(basicConfig, "AdvOut", "FFOutputToFile", true);
@@ -1628,6 +1634,15 @@ void OBSBasic::InitBasicConfigDefaults2()
 	config_set_default_string(basicConfig, "SimpleOutput", "RecEncoder",
 				  useNV ? SIMPLE_ENCODER_NVENC
 					: SIMPLE_ENCODER_X264);
+
+	const char *aac_default = "ffmpeg_aac";
+	if (EncoderAvailable("CoreAudio_AAC"))
+		aac_default = "CoreAudio_AAC";
+	else if (EncoderAvailable("libfdk_aac"))
+		aac_default = "libfdk_aac";
+
+	config_set_default_string(basicConfig, "AdvOut", "AudioEncoder",
+				  aac_default);
 
 	if (update_nvenc_presets(basicConfig))
 		config_save_safe(basicConfig, "tmp", nullptr);

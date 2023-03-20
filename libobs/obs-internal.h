@@ -411,6 +411,8 @@ struct obs_core_data {
 	obs_data_t *private_data;
 
 	volatile bool valid;
+
+	DARRAY(char *) protocols;
 };
 
 /* user hotkeys */

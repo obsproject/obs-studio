@@ -290,7 +290,8 @@ bool obs_output_start(obs_output_t *output)
 		return false;
 
 	has_service = (output->info.flags & OBS_OUTPUT_SERVICE) != 0;
-	if (has_service && !obs_service_initialize(output->service, output))
+	if (has_service && !(obs_service_can_try_to_connect(output->service) &&
+			     obs_service_initialize(output->service, output)))
 		return false;
 
 	encoded = (output->info.flags & OBS_OUTPUT_ENCODED) != 0;
@@ -2712,4 +2713,54 @@ const char *obs_output_get_supported_audio_codecs(const obs_output_t *output)
 	return obs_output_valid(output, __FUNCTION__)
 		       ? output->info.encoded_audio_codecs
 		       : NULL;
+}
+
+const char *obs_output_get_protocols(const obs_output_t *output)
+{
+	if (!obs_output_valid(output, "obs_output_get_protocols"))
+		return NULL;
+
+	return (output->info.flags & OBS_OUTPUT_SERVICE)
+		       ? output->info.protocols
+		       : NULL;
+}
+
+void obs_enum_output_types_with_protocol(const char *protocol, void *data,
+					 bool (*enum_cb)(void *data,
+							 const char *id))
+{
+	if (!obs_is_output_protocol_registered(protocol))
+		return;
+
+	size_t protocol_len = strlen(protocol);
+	for (size_t i = 0; i < obs->output_types.num; i++) {
+		if (!(obs->output_types.array[i].flags & OBS_OUTPUT_SERVICE))
+			continue;
+
+		const char *substr = obs->output_types.array[i].protocols;
+		while (substr && substr[0] != '\0') {
+			const char *next = strchr(substr, ';');
+			size_t len = next ? (size_t)(next - substr)
+					  : strlen(substr);
+			if (protocol_len == len &&
+			    strncmp(substr, protocol, len) == 0) {
+				if (!enum_cb(data,
+					     obs->output_types.array[i].id))
+					return;
+			}
+			substr = next ? next + 1 : NULL;
+		}
+	}
+}
+
+const char *obs_get_output_supported_video_codecs(const char *id)
+{
+	const struct obs_output_info *info = find_output(id);
+	return info ? info->encoded_video_codecs : NULL;
+}
+
+const char *obs_get_output_supported_audio_codecs(const char *id)
+{
+	const struct obs_output_info *info = find_output(id);
+	return info ? info->encoded_audio_codecs : NULL;
 }

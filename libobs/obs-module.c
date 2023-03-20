@@ -836,6 +836,9 @@ void obs_register_output_s(const struct obs_output_info *info, size_t size)
 	CHECK_REQUIRED_VAL_(info, start, obs_register_output);
 	CHECK_REQUIRED_VAL_(info, stop, obs_register_output);
 
+	if (info->flags & OBS_OUTPUT_SERVICE)
+		CHECK_REQUIRED_VAL_(info, protocols, obs_register_output);
+
 	if (info->flags & OBS_OUTPUT_ENCODED) {
 		CHECK_REQUIRED_VAL_(info, encoded_packet, obs_register_output);
 	} else {
@@ -856,6 +859,24 @@ void obs_register_output_s(const struct obs_output_info *info, size_t size)
 #undef CHECK_REQUIRED_VAL_
 
 	REGISTER_OBS_DEF(size, obs_output_info, obs->output_types, info);
+
+	if (info->flags & OBS_OUTPUT_SERVICE) {
+		char **protocols = strlist_split(info->protocols, ';', false);
+		for (char **protocol = protocols; *protocol; ++protocol) {
+			bool skip = false;
+			for (size_t i = 0; i < obs->data.protocols.num; i++) {
+				if (strcmp(*protocol,
+					   obs->data.protocols.array[i]) == 0)
+					skip = true;
+			}
+
+			if (skip)
+				continue;
+			char *new_prtcl = bstrdup(*protocol);
+			da_push_back(obs->data.protocols, &new_prtcl);
+		}
+		strlist_free(protocols);
+	}
 	return;
 
 error:
@@ -907,6 +928,7 @@ void obs_register_service_s(const struct obs_service_info *info, size_t size)
 	CHECK_REQUIRED_VAL_(info, get_name, obs_register_service);
 	CHECK_REQUIRED_VAL_(info, create, obs_register_service);
 	CHECK_REQUIRED_VAL_(info, destroy, obs_register_service);
+	CHECK_REQUIRED_VAL_(info, get_protocol, obs_register_service);
 #undef CHECK_REQUIRED_VAL_
 
 	REGISTER_OBS_DEF(size, obs_service_info, obs->service_types, info);

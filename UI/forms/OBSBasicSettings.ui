@@ -1731,7 +1731,7 @@
                        <item row="2" column="0">
                         <widget class="QLabel" name="simpleOutStrEncoderLabel">
                          <property name="text">
-                          <string>Basic.Settings.Output.Encoder</string>
+                          <string>Basic.Settings.Output.Encoder.Video</string>
                          </property>
                          <property name="buddy">
                           <cstring>simpleOutRecEncoder</cstring>
@@ -1779,6 +1779,19 @@
                        </item>
                        <item row="5" column="1">
                         <widget class="QLineEdit" name="simpleOutCustom"/>
+                       </item>
+                       <item row="6" column="0">
+                        <widget class="QLabel" name="simpleOutStrAEncoderLabel">
+                         <property name="text">
+                          <string>Basic.Settings.Output.Encoder.Audio</string>
+                         </property>
+                         <property name="buddy">
+                          <cstring>simpleOutStrAEncoder</cstring>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="6" column="1">
+                        <widget class="QComboBox" name="simpleOutStrAEncoder"/>
                        </item>
                       </layout>
                      </widget>
@@ -1902,7 +1915,7 @@
                        <item row="4" column="0">
                         <widget class="QLabel" name="simpleOutRecEncoderLabel">
                          <property name="text">
-                          <string>Basic.Settings.Output.Encoder</string>
+                          <string>Basic.Settings.Output.Encoder.Video</string>
                          </property>
                          <property name="buddy">
                           <cstring>simpleOutRecEncoder</cstring>
@@ -1913,6 +1926,19 @@
                         <widget class="QComboBox" name="simpleOutRecEncoder"/>
                        </item>
                        <item row="5" column="0">
+                        <widget class="QLabel" name="simpleOutRecAEncoderLabel">
+                         <property name="text">
+                          <string>Basic.Settings.Output.Encoder.Audio</string>
+                         </property>
+                         <property name="buddy">
+                          <cstring>simpleOutRecAEncoder</cstring>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="5" column="1">
+                        <widget class="QComboBox" name="simpleOutRecAEncoder"/>
+                       </item>
+                       <item row="6" column="0">
                         <widget class="QLabel" name="label_420">
                          <property name="text">
                           <string>Basic.Settings.Output.CustomMuxerSettings</string>
@@ -1922,10 +1948,10 @@
                          </property>
                         </widget>
                        </item>
-                       <item row="5" column="1">
+                       <item row="6" column="1">
                         <widget class="QLineEdit" name="simpleOutMuxCustom"/>
                        </item>
-                       <item row="6" column="1">
+                       <item row="7" column="1">
                         <widget class="QCheckBox" name="simpleReplayBuf">
                          <property name="text">
                           <string>Basic.Settings.Output.UseReplayBuffer</string>
@@ -2268,16 +2294,26 @@
                             </widget>
                            </item>
                            <item row="2" column="0">
-                            <widget class="QLabel" name="advOutEncLabel">
+                            <widget class="QLabel" name="advOutAEncLabel">
                              <property name="text">
-                              <string>Basic.Settings.Output.Encoder</string>
+                              <string>Basic.Settings.Output.Encoder.Audio</string>
                              </property>
                             </widget>
                            </item>
                            <item row="2" column="1">
-                            <widget class="QComboBox" name="advOutEncoder"/>
+                            <widget class="QComboBox" name="advOutAEncoder"/>
                            </item>
                            <item row="3" column="0">
+                            <widget class="QLabel" name="advOutEncLabel">
+                             <property name="text">
+                              <string>Basic.Settings.Output.Encoder.Video</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="3" column="1">
+                            <widget class="QComboBox" name="advOutEncoder"/>
+                           </item>
+                           <item row="4" column="0">
                             <widget class="QCheckBox" name="advOutUseRescale">
                              <property name="sizePolicy">
                               <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
@@ -2293,7 +2329,7 @@
                              </property>
                             </widget>
                            </item>
-                           <item row="3" column="1">
+                           <item row="4" column="1">
                             <widget class="QComboBox" name="advOutRescale">
                              <property name="enabled">
                               <bool>false</bool>
@@ -2856,15 +2892,15 @@
                                  </widget>
                                 </widget>
                                </item>
-                               <item row="4" column="0">
-                                <widget class="QLabel" name="advOutRecEncLabel">
+															 <item row="4" column="0">
+                                <widget class="QLabel" name="advOutRecAEncLabel">
                                  <property name="text">
-                                  <string>Basic.Settings.Output.Encoder</string>
+                                  <string>Basic.Settings.Output.Encoder.Audio</string>
                                  </property>
                                 </widget>
                                </item>
                                <item row="4" column="1">
-                                <widget class="QComboBox" name="advOutRecEncoder">
+                                <widget class="QComboBox" name="advOutRecAEncoder">
                                  <property name="sizePolicy">
                                   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                                    <horstretch>0</horstretch>
@@ -2874,6 +2910,23 @@
                                 </widget>
                                </item>
                                <item row="5" column="0">
+                                <widget class="QLabel" name="advOutRecEncLabel">
+                                 <property name="text">
+                                  <string>Basic.Settings.Output.Encoder.Video</string>
+                                 </property>
+                                </widget>
+                               </item>
+                               <item row="5" column="1">
+                                <widget class="QComboBox" name="advOutRecEncoder">
+                                 <property name="sizePolicy">
+                                  <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                                   <horstretch>0</horstretch>
+                                   <verstretch>0</verstretch>
+                                  </sizepolicy>
+                                 </property>
+                                </widget>
+                               </item>
+                               <item row="6" column="0">
                                 <widget class="QCheckBox" name="advOutRecUseRescale">
                                  <property name="sizePolicy">
                                   <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
@@ -2889,7 +2942,7 @@
                                  </property>
                                 </widget>
                                </item>
-                               <item row="5" column="1">
+                               <item row="6" column="1">
                                 <widget class="QFrame" name="advOutRecRescaleContainer">
                                  <layout class="QHBoxLayout" name="horizontalLayout_4">
                                   <property name="leftMargin">
@@ -2923,14 +2976,14 @@
                                  </layout>
                                 </widget>
                                </item>
-                               <item row="6" column="0">
+                               <item row="7" column="0">
                                 <widget class="QLabel" name="label_9001">
                                  <property name="text">
                                   <string>Basic.Settings.Output.CustomMuxerSettings</string>
                                  </property>
                                 </widget>
                                </item>
-                               <item row="6" column="1">
+                               <item row="7" column="1">
                                 <widget class="QLineEdit" name="advOutMuxCustom">
                                  <property name="sizePolicy">
                                   <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
@@ -2940,7 +2993,7 @@
                                  </property>
                                 </widget>
                                </item>
-                               <item row="7" column="0">
+                               <item row="8" column="0">
                                 <widget class="QCheckBox" name="advOutSplitFile">
                                  <property name="sizePolicy">
                                   <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
@@ -2956,7 +3009,7 @@
                                  </property>
                                 </widget>
                                </item>
-                               <item row="7" column="1">
+                               <item row="8" column="1">
                                 <widget class="QComboBox" name="advOutSplitFileType">
                                  <property name="enabled">
                                   <bool>false</bool>
@@ -2978,14 +3031,14 @@
                                  </item>
                                 </widget>
                                </item>
-                               <item row="8" column="0">
+                               <item row="9" column="0">
                                 <widget class="QLabel" name="advOutSplitFileTimeLabel">
                                  <property name="text">
                                   <string>Basic.Settings.Output.SplitFile.Time</string>
                                  </property>
                                 </widget>
                                </item>
-                               <item row="8" column="1">
+                               <item row="9" column="1">
                                 <widget class="QSpinBox" name="advOutSplitFileTime">
                                  <property name="suffix">
                                   <string> min</string>
@@ -3001,14 +3054,14 @@
                                  </property>
                                 </widget>
                                </item>
-                               <item row="9" column="0">
+                               <item row="10" column="0">
                                 <widget class="QLabel" name="advOutSplitFileSizeLabel">
                                  <property name="text">
                                   <string>Basic.Settings.Output.SplitFile.Size</string>
                                  </property>
                                 </widget>
                                </item>
-                               <item row="9" column="1">
+                               <item row="10" column="1">
                                 <widget class="QSpinBox" name="advOutSplitFileSize">
                                  <property name="suffix">
                                   <string> MB</string>
