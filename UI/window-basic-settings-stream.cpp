@@ -1432,8 +1432,7 @@ bool OBSBasicSettings::ServiceSupportsCodecCheck()
 
 		cur_audio_name = ui->simpleOutStrAEncoder->itemText(
 			ui->simpleOutStrAEncoder->findData(cur_enc));
-		fb_audio_name = ui->simpleOutStrAEncoder->itemText(
-			ui->simpleOutStrAEncoder->findData(fb_enc));
+		fb_audio_name = (cur_enc == "opus") ? "AAC" : "Opus";
 	} else {
 		QString cur_enc = ui->advOutEncoder->currentData().toString();
 		QString fb_enc = get_adv_fallback(cur_enc);
