@@ -823,6 +823,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		SLOT(SimpleRecordingEncoderChanged()));
 	connect(ui->simpleOutRecEncoder, SIGNAL(currentIndexChanged(int)), this,
 		SLOT(SimpleRecordingEncoderChanged()));
+	connect(ui->simpleOutRecAEncoder, SIGNAL(currentIndexChanged(int)),
+		this, SLOT(SimpleRecordingEncoderChanged()));
 	connect(ui->simpleOutputVBitrate, SIGNAL(valueChanged(int)), this,
 		SLOT(SimpleRecordingEncoderChanged()));
 	connect(ui->simpleOutputABitrate, SIGNAL(currentIndexChanged(int)),
@@ -956,13 +958,32 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		SLOT(AdvOutRecCheckWarnings()));
 	connect(ui->advOutRecTrack6, SIGNAL(clicked()), this,
 		SLOT(AdvOutRecCheckWarnings()));
-	connect(ui->advOutRecFormat, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(AdvOutRecCheckWarnings()));
 	connect(ui->advOutRecEncoder, SIGNAL(currentIndexChanged(int)), this,
 		SLOT(AdvOutRecCheckWarnings()));
+	connect(ui->advOutRecAEncoder, SIGNAL(currentIndexChanged(int)), this,
+		SLOT(AdvOutRecCheckWarnings()));
+
+	// Check codec compatibility when format (container) changes
+	connect(ui->advOutRecFormat, SIGNAL(currentIndexChanged(int)), this,
+		SLOT(AdvOutRecCheckCodecs()));
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+	// Set placeholder used when selection was reset due to incompatibilities
+	ui->advOutRecEncoder->setPlaceholderText(
+		QTStr("CodecCompat.CodecPlaceholder"));
+	ui->advOutRecAEncoder->setPlaceholderText(
+		QTStr("CodecCompat.CodecPlaceholder"));
+	ui->simpleOutRecEncoder->setPlaceholderText(
+		QTStr("CodecCompat.CodecPlaceholder"));
+	ui->simpleOutRecAEncoder->setPlaceholderText(
+		QTStr("CodecCompat.CodecPlaceholder"));
+	ui->simpleOutRecFormat->setPlaceholderText(
+		QTStr("CodecCompat.ContainerPlaceholder"));
+#endif
 
 	SimpleRecordingQualityChanged();
 	AdvOutSplitFileChanged();
+	AdvOutRecCheckCodecs();
 	AdvOutRecCheckWarnings();
 
 	UpdateAutomaticReplayBufferCheckboxes();
@@ -1975,13 +1996,9 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	ui->simpleOutStrAEncoder->setCurrentIndex(idx);
 
 	idx = ui->simpleOutRecEncoder->findData(QString(recEnc));
-	if (idx == -1)
-		idx = 0;
 	ui->simpleOutRecEncoder->setCurrentIndex(idx);
 
 	idx = ui->simpleOutRecAEncoder->findData(QString(recAudioEnc));
-	if (idx == -1)
-		idx = 0;
 	ui->simpleOutRecAEncoder->setCurrentIndex(idx);
 
 	ui->simpleOutMuxCustom->setText(muxCustom);
@@ -2253,6 +2270,8 @@ void OBSBasicSettings::LoadAdvOutputRecordingEncoderProperties()
 			ui->advOutRecEncoder->insertItem(1, QT_UTF8(name),
 							 QT_UTF8(type));
 			SetComboByValue(ui->advOutRecEncoder, type);
+		} else {
+			ui->advOutRecEncoder->setCurrentIndex(-1);
 		}
 	}
 }
@@ -2457,7 +2476,8 @@ void OBSBasicSettings::LoadOutputSettings()
 	LoadAdvOutputRecordingSettings();
 	LoadAdvOutputRecordingEncoderProperties();
 	type = config_get_string(main->Config(), "AdvOut", "RecAudioEncoder");
-	SetComboByValue(ui->advOutRecAEncoder, type);
+	if (!SetComboByValue(ui->advOutRecAEncoder, type))
+		ui->advOutRecAEncoder->setCurrentIndex(-1);
 	LoadAdvOutputFFmpegSettings();
 	LoadAdvOutputAudioSettings();
 
@@ -4890,6 +4910,116 @@ void OBSBasicSettings::AdvOutSplitFileChanged()
 	ui->advOutSplitFileSize->setVisible(splitFileType == 1);
 }
 
+static void DisableIncompatibleCodecs(QComboBox *cbox, const string &format,
+				      const QString &streamEncoder)
+{
+	QString strEncLabel =
+		QTStr("Basic.Settings.Output.Adv.Recording.UseStreamEncoder");
+	QString formatUpper = QString::fromStdString(format).toUpper();
+	QString recEncoder = cbox->currentData().toString();
+
+	/* Check if selected encoders and output format are compatible, disable incompatible items. */
+	bool currentCompatible = true;
+	for (int idx = 0; idx < cbox->count(); idx++) {
+		QString encName = cbox->itemData(idx).toString();
+		string encoderId = (encName == "none")
+					   ? streamEncoder.toStdString()
+					   : encName.toStdString();
+		QString encDisplayName = (encName == "none")
+						 ? strEncLabel
+						 : obs_encoder_get_display_name(
+							   encoderId.c_str());
+		const char *codec = obs_get_encoder_codec(encoderId.c_str());
+
+		bool is_compatible = false;
+		/* FFmpeg's check does not work for MPEG-TS and MKV. */
+		if (format == "ts") {
+			is_compatible = strcmp(codec, "aac") == 0 ||
+					strcmp(codec, "opus") == 0 ||
+					strcmp(codec, "hevc") == 0 ||
+					strcmp(codec, "h264") == 0;
+		} else if (format == "mkv") {
+			/* MKV eats everything. */
+			is_compatible = true;
+		} else {
+			is_compatible = ff_format_codec_compatible(
+				codec, format.c_str());
+		}
+
+		QStandardItemModel *model =
+			dynamic_cast<QStandardItemModel *>(cbox->model());
+		QStandardItem *item = model->item(idx);
+
+		if (is_compatible) {
+			item->setFlags(Qt::ItemIsSelectable |
+				       Qt::ItemIsEnabled);
+		} else {
+			if (recEncoder == encName)
+				currentCompatible = false;
+
+			item->setFlags(Qt::NoItemFlags);
+			encDisplayName += " ";
+			encDisplayName += QTStr("CodecCompat.Incompatible")
+						  .arg(formatUpper);
+		}
+
+		item->setText(encDisplayName);
+	}
+
+	// Set to invalid entry if encoder was incompatible
+	if (!currentCompatible)
+		cbox->setCurrentIndex(-1);
+}
+
+void OBSBasicSettings::AdvOutRecCheckCodecs()
+{
+	QString recFormat = ui->advOutRecFormat->currentData().toString();
+
+	string format = recFormat.toStdString();
+	/* Remove leading "f" for fragmented MP4/MOV */
+	if (format == "fmp4" || format == "fmov")
+		format = format.erase(0, 1);
+	else if (format == "m3u8")
+		format = "hls";
+
+	QString streamEncoder = ui->advOutEncoder->currentData().toString();
+
+	QString streamAudioEncoder =
+		ui->advOutAEncoder->currentData().toString();
+
+	/* Disable the signals to prevent AdvOutRecCheckWarnings to be called here. */
+	ui->advOutRecEncoder->blockSignals(true);
+	ui->advOutRecAEncoder->blockSignals(true);
+	DisableIncompatibleCodecs(ui->advOutRecEncoder, format, streamEncoder);
+	DisableIncompatibleCodecs(ui->advOutRecAEncoder, format,
+				  streamAudioEncoder);
+	ui->advOutRecEncoder->blockSignals(false);
+	ui->advOutRecAEncoder->blockSignals(false);
+
+	AdvOutRecCheckWarnings();
+}
+
+#ifdef __APPLE__
+static void ResetInvalidSelection(QComboBox *cbox)
+{
+	int idx = cbox->currentIndex();
+	if (idx < 0)
+		return;
+
+	QStandardItemModel *model =
+		dynamic_cast<QStandardItemModel *>(cbox->model());
+	QStandardItem *item = model->item(idx);
+
+	if (item->isEnabled())
+		return;
+
+	// Reset to "invalid" state if item was disabled
+	cbox->blockSignals(true);
+	cbox->setCurrentIndex(-1);
+	cbox->blockSignals(false);
+}
+#endif
+
 void OBSBasicSettings::AdvOutRecCheckWarnings()
 {
 	auto Checked = [](QCheckBox *box) { return box->isChecked() ? 1 : 0; };
@@ -4930,6 +5060,21 @@ void OBSBasicSettings::AdvOutRecCheckWarnings()
 	} else {
 		ui->autoRemux->setText(
 			QTStr("Basic.Settings.Advanced.AutoRemux").arg("mp4"));
+	}
+
+#ifdef __APPLE__
+	// Workaround for QTBUG-56064 on macOS
+	ResetInvalidSelection(ui->advOutRecEncoder);
+	ResetInvalidSelection(ui->advOutRecAEncoder);
+#endif
+
+	// Show warning if codec selection was reset to an invalid state
+	if (ui->advOutRecEncoder->currentIndex() == -1 ||
+	    ui->advOutRecAEncoder->currentIndex() == -1) {
+		if (!warningMsg.isEmpty())
+			warningMsg += "\n\n";
+
+		warningMsg += QTStr("OutputWarnings.CodecIncompatible");
 	}
 
 	delete advOutRecWarning;
@@ -5436,6 +5581,106 @@ void OBSBasicSettings::AdvReplayBufferChanged()
 #define SIMPLE_OUTPUT_WARNING(str) \
 	QTStr("Basic.Settings.Output.Simple.Warn." str)
 
+static void DisableIncompatibleSimpleCodecs(QComboBox *cbox,
+					    const QString &format)
+{
+	/* Unlike in advanced mode the available simple mode encoders are
+	 * hardcoded, so this check is also a simpler, hardcoded one. */
+	QString formatUpper = QString(format).toUpper();
+	QString encoder = cbox->currentData().toString();
+
+	bool currentCompatible = true;
+	for (int idx = 0; idx < cbox->count(); idx++) {
+		QString encName = cbox->itemData(idx).toString();
+		QString codec;
+
+		/* Simple mode does not expose audio encoder variants directly,
+		 * so we have to simply set the codec to the internal name. */
+		if (encName == "opus" || encName == "aac") {
+			codec = encName;
+		} else {
+			const char *encoder_id =
+				get_simple_output_encoder(QT_TO_UTF8(encName));
+			codec = obs_get_encoder_codec(encoder_id);
+		}
+
+		bool is_compatible = true;
+		if (format == "flv") {
+			/* If FLV, only H.264 and AAC are compatible */
+			is_compatible = codec == "aac" || codec == "h264";
+		} else if (format == "mov" || format == "fmov") {
+			/* If MOV, Opus is not compatible */
+			is_compatible = codec != "opus";
+		} else if (format == "ts") {
+			/* If MPEG-TS, AV1 is incompatible */
+			is_compatible = codec != "av1";
+		}
+
+		QStandardItemModel *model =
+			dynamic_cast<QStandardItemModel *>(cbox->model());
+		QStandardItem *item = model->item(idx);
+
+		if (is_compatible) {
+			item->setFlags(Qt::ItemIsSelectable |
+				       Qt::ItemIsEnabled);
+		} else {
+			if (encoder == encName)
+				currentCompatible = false;
+
+			item->setFlags(Qt::NoItemFlags);
+		}
+	}
+
+	if (!currentCompatible)
+		cbox->setCurrentIndex(-1);
+}
+
+static void DisableIncompatibleSimpleContainer(QComboBox *cbox,
+					       const QString &currentFormat,
+					       const QString &vEncoder,
+					       const QString &aEncoder)
+{
+	/* Similar to above, but works in reverse to disable incompatible formats
+	 * based on the encoder selection. */
+	QString aCodec = aEncoder;
+	QString vCodec = obs_get_encoder_codec(
+		get_simple_output_encoder(QT_TO_UTF8(vEncoder)));
+
+	bool currentCompatible = true;
+	for (int idx = 0; idx < cbox->count(); idx++) {
+		QString format = cbox->itemData(idx).toString();
+
+		bool is_compatible = true;
+		if (format == "flv") {
+			/* If flv, ónly H.264 and AAC are compatible */
+			is_compatible = aCodec == "aac" && vCodec == "h264";
+		} else if (format == "mov" || format == "fmov") {
+			/* If MOV, Opus is not compatible */
+			is_compatible = aCodec != "opus";
+		} else if (format == "ts") {
+			/* If MPEG-TS, AV1 is incompatible */
+			is_compatible = vCodec != "av1";
+		}
+
+		QStandardItemModel *model =
+			dynamic_cast<QStandardItemModel *>(cbox->model());
+		QStandardItem *item = model->item(idx);
+
+		if (is_compatible) {
+			item->setFlags(Qt::ItemIsSelectable |
+				       Qt::ItemIsEnabled);
+		} else {
+			if (format == currentFormat)
+				currentCompatible = false;
+
+			item->setFlags(Qt::NoItemFlags);
+		}
+	}
+
+	if (!currentCompatible)
+		cbox->setCurrentIndex(-1);
+}
+
 void OBSBasicSettings::SimpleRecordingEncoderChanged()
 {
 	QString qual = ui->simpleOutRecQuality->currentData().toString();
@@ -5471,6 +5716,8 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 		}
 	}
 
+	QString format = ui->simpleOutRecFormat->currentData().toString();
+
 	if (qual == "Lossless") {
 		if (!warning.isEmpty())
 			warning += "\n\n";
@@ -5490,13 +5737,46 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 				warning += "\n\n";
 			warning += SIMPLE_OUTPUT_WARNING("Encoder");
 		}
+
+		/* Prevent function being called recursively if changes happen. */
+		ui->simpleOutRecEncoder->blockSignals(true);
+		ui->simpleOutRecAEncoder->blockSignals(true);
+		DisableIncompatibleSimpleCodecs(ui->simpleOutRecEncoder,
+						format);
+		DisableIncompatibleSimpleCodecs(ui->simpleOutRecAEncoder,
+						format);
+		ui->simpleOutRecAEncoder->blockSignals(false);
+		ui->simpleOutRecEncoder->blockSignals(false);
+
+		if (ui->simpleOutRecEncoder->currentIndex() == -1 ||
+		    ui->simpleOutRecAEncoder->currentIndex() == -1) {
+			if (!warning.isEmpty())
+				warning += "\n\n";
+			warning += QTStr("OutputWarnings.CodecIncompatible");
+		}
 	} else {
+		/* When using stream encoders do the reverse; Disable containers that are incompatible. */
+		QString streamEnc =
+			ui->simpleOutStrEncoder->currentData().toString();
+		QString streamAEnc =
+			ui->simpleOutStrAEncoder->currentData().toString();
+
+		ui->simpleOutRecFormat->blockSignals(true);
+		DisableIncompatibleSimpleContainer(
+			ui->simpleOutRecFormat, format, streamEnc, streamAEnc);
+		ui->simpleOutRecFormat->blockSignals(false);
+
+		if (ui->simpleOutRecFormat->currentIndex() == -1) {
+			if (!warning.isEmpty())
+				warning += "\n\n";
+			warning +=
+				SIMPLE_OUTPUT_WARNING("IncompatibleContainer");
+		}
+
 		if (!warning.isEmpty())
 			warning += "\n\n";
 		warning += SIMPLE_OUTPUT_WARNING("CannotPause");
 	}
-
-	QString format = ui->simpleOutRecFormat->currentData().toString();
 
 	if (qual != "Lossless" && (format == "mp4" || format == "mov")) {
 		if (!warning.isEmpty())

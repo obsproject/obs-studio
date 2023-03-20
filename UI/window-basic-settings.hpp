@@ -446,6 +446,7 @@ private slots:
 
 	void AdvOutSplitFileChanged();
 	void AdvOutRecCheckWarnings();
+	void AdvOutRecCheckCodecs();
 
 	void SimpleRecordingQualityChanged();
 	void SimpleRecordingEncoderChanged();
