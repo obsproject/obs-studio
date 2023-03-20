@@ -1336,7 +1336,25 @@ bool OBSBasic::LoadService()
 				     hotkey_data);
 	obs_service_release(service);
 
-	return !!service;
+	if (!service)
+		return false;
+
+	/* Enforce Opus on FTL if needed */
+	if (strcmp(obs_service_get_protocol(service), "FTL") == 0) {
+		const char *option = config_get_string(
+			basicConfig, "SimpleOutput", "StreamAudioEncoder");
+		if (strcmp(option, "opus") != 0)
+			config_set_string(basicConfig, "SimpleOutput",
+					  "StreamAudioEncoder", "opus");
+
+		option = config_get_string(basicConfig, "AdvOut",
+					   "AudioEncoder");
+		if (strcmp(obs_get_encoder_codec(option), "opus") != 0)
+			config_set_string(basicConfig, "AdvOut", "AudioEncoder",
+					  "ffmpeg_opus");
+	}
+
+	return true;
 }
 
 bool OBSBasic::InitService()
