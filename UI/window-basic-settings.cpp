@@ -4919,47 +4919,17 @@ void OBSBasicSettings::AdvOutRecCheckWarnings()
 			errorMsg = QTStr("OutputWarnings.NoTracksSelected");
 	}
 
-	QString recEncoder = ui->advOutRecEncoder->currentText();
+	if (recFormat == "mp4" || recFormat == "mov") {
+		if (!warningMsg.isEmpty())
+			warningMsg += "\n\n";
 
-	if (recEncoder.contains("ProRes")) {
-		if (recFormat == "mkv") {
-			ui->autoRemux->setText(
-				QTStr("Basic.Settings.Advanced.AutoRemux")
-					.arg("mov"));
-		} else if (recFormat == "mov") {
-			if (!warningMsg.isEmpty())
-				warningMsg += "\n\n";
-			warningMsg += QTStr("OutputWarnings.MP4Recording");
-
-			ui->autoRemux->setText(
-				QTStr("Basic.Settings.Advanced.AutoRemux")
-					.arg("mov") +
-				" " +
-				QTStr("Basic.Settings.Advanced.AutoRemux.MP4"));
-		} else {
-			if (!errorMsg.isEmpty()) {
-				errorMsg += "\n\n";
-			}
-
-			errorMsg += QTStr("OutputWarnings.ProResRecording")
-					    .arg(recFormat);
-		}
+		warningMsg += QTStr("OutputWarnings.MP4Recording");
+		ui->autoRemux->setText(
+			QTStr("Basic.Settings.Advanced.AutoRemux").arg("mp4") +
+			" " + QTStr("Basic.Settings.Advanced.AutoRemux.MP4"));
 	} else {
-		if (recFormat == "mp4" || recFormat == "mov") {
-			if (!warningMsg.isEmpty())
-				warningMsg += "\n\n";
-
-			warningMsg += QTStr("OutputWarnings.MP4Recording");
-			ui->autoRemux->setText(
-				QTStr("Basic.Settings.Advanced.AutoRemux")
-					.arg("mp4") +
-				" " +
-				QTStr("Basic.Settings.Advanced.AutoRemux.MP4"));
-		} else {
-			ui->autoRemux->setText(
-				QTStr("Basic.Settings.Advanced.AutoRemux")
-					.arg("mp4"));
-		}
+		ui->autoRemux->setText(
+			QTStr("Basic.Settings.Advanced.AutoRemux").arg("mp4"));
 	}
 
 	delete advOutRecWarning;
