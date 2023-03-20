@@ -1505,8 +1505,6 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_bool(basicConfig, "AdvOut", "RecUseRescale", false);
 	config_set_default_uint(basicConfig, "AdvOut", "RecTracks", (1 << 0));
 	config_set_default_string(basicConfig, "AdvOut", "RecEncoder", "none");
-	config_set_default_string(basicConfig, "AdvOut", "RecAudioEncoder",
-				  "none");
 	config_set_default_uint(basicConfig, "AdvOut", "FLVTrack", 1);
 
 	config_set_default_bool(basicConfig, "AdvOut", "FFOutputToFile", true);
@@ -1642,6 +1640,8 @@ void OBSBasic::InitBasicConfigDefaults2()
 		aac_default = "libfdk_aac";
 
 	config_set_default_string(basicConfig, "AdvOut", "AudioEncoder",
+				  aac_default);
+	config_set_default_string(basicConfig, "AdvOut", "RecAudioEncoder",
 				  aac_default);
 
 	if (update_nvenc_presets(basicConfig))
