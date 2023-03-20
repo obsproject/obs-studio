@@ -741,9 +741,10 @@ Functions used by outputs
 ---------------------
 
 .. function:: void obs_output_set_video_conversion(obs_output_t *output, const struct video_scale_info *conversion)
+              const struct video_scale_info *obs_output_get_video_conversion(obs_output_t *output)
 
-   Optionally sets the video conversion information.  Only used by raw
-   outputs.
+   Optionally sets/gets the video conversion information.  Only used by
+   raw outputs.
 
    Relevant data types used with this function:
 

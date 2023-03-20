@@ -25,6 +25,22 @@ static void *decklink_output_create(obs_data_t *settings, obs_output_t *output)
 	decklinkOutput->modeID = obs_data_get_int(settings, MODE_ID);
 	decklinkOutput->keyerMode = (int)obs_data_get_int(settings, KEYER);
 
+	ComPtr<DeckLinkDevice> device;
+	device.Set(deviceEnum->FindByHash(decklinkOutput->deviceHash));
+	if (device) {
+		DeckLinkDeviceMode *mode =
+			device->FindOutputMode(decklinkOutput->modeID);
+
+		struct video_scale_info to = {};
+		to.format = VIDEO_FORMAT_BGRA;
+		to.width = mode->GetWidth();
+		to.height = mode->GetHeight();
+		to.range = VIDEO_RANGE_FULL;
+		to.colorspace = VIDEO_CS_709;
+
+		obs_output_set_video_conversion(output, &to);
+	}
+
 	return decklinkOutput;
 }
 
@@ -79,15 +95,6 @@ static bool decklink_output_start(void *data)
 	}
 
 	decklink->SetSize(mode->GetWidth(), mode->GetHeight());
-
-	struct video_scale_info to = {};
-	to.format = VIDEO_FORMAT_BGRA;
-	to.width = mode->GetWidth();
-	to.height = mode->GetHeight();
-	to.range = VIDEO_RANGE_FULL;
-	to.colorspace = VIDEO_CS_709;
-
-	obs_output_set_video_conversion(decklink->GetOutput(), &to);
 
 	device->SetKeyerMode(decklink->keyerMode);
 

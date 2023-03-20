@@ -2230,6 +2230,10 @@ EXPORT const char *obs_get_output_supported_audio_codecs(const char *id);
 
 EXPORT void *obs_output_get_type_data(obs_output_t *output);
 
+/** Gets the video conversion info.  Used only for raw output */
+EXPORT const struct video_scale_info *
+obs_output_get_video_conversion(obs_output_t *output);
+
 /** Optionally sets the video conversion info.  Used only for raw output */
 EXPORT void
 obs_output_set_video_conversion(obs_output_t *output,
