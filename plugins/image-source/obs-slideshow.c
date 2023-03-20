@@ -94,6 +94,7 @@ struct slideshow {
 	uint32_t tr_speed;
 	const char *tr_name;
 	obs_source_t *transition;
+	calldata_t cd;
 
 	float elapsed;
 	size_t cur_item;
@@ -279,6 +280,16 @@ static void do_transition(void *data, bool to_null)
 				     ss->tr_speed, NULL);
 		set_media_state(ss, OBS_MEDIA_STATE_ENDED);
 		obs_source_media_ended(ss->source);
+	}
+
+	if (valid && !to_null) {
+		calldata_set_int(&ss->cd, "index", ss->cur_item);
+		calldata_set_string(&ss->cd, "path",
+				    ss->files.array[ss->cur_item].path);
+
+		signal_handler_t *sh =
+			obs_source_get_signal_handler(ss->source);
+		signal_handler_signal(sh, "slide_changed", &ss->cd);
 	}
 }
 
@@ -661,6 +672,7 @@ static void ss_destroy(void *data)
 	obs_source_release(ss->transition);
 	free_files(&ss->files.da);
 	pthread_mutex_destroy(&ss->mutex);
+	calldata_free(&ss->cd);
 	bfree(ss);
 }
 
@@ -698,6 +710,9 @@ static void *ss_create(obs_data_t *settings, obs_source_t *source)
 
 	proc_handler_add(ph, "int current_index()", current_slide_proc, ss);
 	proc_handler_add(ph, "int total_files()", total_slides_proc, ss);
+
+	signal_handler_t *sh = obs_source_get_signal_handler(ss->source);
+	signal_handler_add(sh, "void slide_changed(int index, string path)");
 
 	pthread_mutex_init_value(&ss->mutex);
 	if (pthread_mutex_init(&ss->mutex, NULL) != 0)
