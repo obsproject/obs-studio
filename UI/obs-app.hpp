@@ -20,6 +20,9 @@
 #include <QApplication>
 #include <QTranslator>
 #include <QPointer>
+#ifndef _WIN32
+#include <QSocketNotifier>
+#endif
 #include <obs.hpp>
 #include <util/lexer.h>
 #include <util/profiler.h>
@@ -125,6 +128,11 @@ private:
 
 	bool notify(QObject *receiver, QEvent *e) override;
 
+#ifndef _WIN32
+	static int sigintFd[2];
+	QSocketNotifier *snInt = nullptr;
+#endif
+
 public:
 	OBSApp(int &argc, char **argv, profiler_name_store_t *store);
 	~OBSApp();
@@ -208,9 +216,13 @@ public:
 	}
 
 	inline void PopUITranslation() { translatorHooks.pop_front(); }
+#ifndef _WIN32
+	static void SigIntSignalHandler(int);
+#endif
 
 public slots:
 	void Exec(VoidFunc func);
+	void ProcessSigInt();
 
 signals:
 	void StyleChanged();

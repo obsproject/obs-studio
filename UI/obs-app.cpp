@@ -59,6 +59,9 @@
 #else
 #include <signal.h>
 #include <pthread.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <unistd.h>
 #endif
 
 #if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
@@ -107,6 +110,10 @@ string opt_starting_scene;
 bool restart = false;
 
 QPointer<OBSLogViewer> obsLogViewer;
+
+#ifndef _WIN32
+int OBSApp::sigintFd[2];
+#endif
 
 // GPU hint exports for AMD/NVIDIA laptops
 #ifdef _MSC_VER
@@ -1391,6 +1398,14 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 		blog(LOG_WARNING, "Failed to set LC_NUMERIC to C locale");
 #endif
 
+#ifndef _WIN32
+	/* Handle SIGINT properly */
+	socketpair(AF_UNIX, SOCK_STREAM, 0, sigintFd);
+	snInt = new QSocketNotifier(sigintFd[1], QSocketNotifier::Read, this);
+	connect(snInt, SIGNAL(activated(QSocketDescriptor)), this,
+		SLOT(ProcessSigInt()));
+#endif
+
 	sleepInhibitor = os_inhibit_sleep_create("OBS Video/audio");
 
 #ifndef __APPLE__
@@ -1407,6 +1422,10 @@ OBSApp::~OBSApp()
 		config_get_bool(globalConfig, "Audio", "DisableAudioDucking");
 	if (disableAudioDucking)
 		DisableAudioDucking(false);
+#else
+	delete snInt;
+	close(sigintFd[0]);
+	close(sigintFd[1]);
 #endif
 
 #ifdef __APPLE__
@@ -3176,12 +3195,31 @@ static void upgrade_settings(void)
 	os_closedir(dir);
 }
 
-void ctrlc_handler(int s)
+#ifndef _WIN32
+void OBSApp::SigIntSignalHandler(int s)
 {
+	/* Handles SIGINT and writes to a socket. Qt will read
+	 * from the socket in the main thread event loop and trigger
+	 * a call to the ProcessSigInt slot, where we can safely run
+	 * shutdown code without signal safety issues. */
 	UNUSED_PARAMETER(s);
 
-	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+	char a = 1;
+	send(sigintFd[0], &a, sizeof(a), 0);
+}
+#endif
+
+void OBSApp::ProcessSigInt(void)
+{
+	/* This looks weird, but we can't ifdef a Qt slot function so
+	 * the SIGINT handler simply does nothing on Windows. */
+#ifndef _WIN32
+	char tmp;
+	recv(sigintFd[1], &tmp, sizeof(tmp), 0);
+
+	OBSBasic *main = reinterpret_cast<OBSBasic *>(GetMainWindow());
 	main->close();
+#endif
 }
 
 int main(int argc, char *argv[])
@@ -3191,7 +3229,7 @@ int main(int argc, char *argv[])
 
 	struct sigaction sig_handler;
 
-	sig_handler.sa_handler = ctrlc_handler;
+	sig_handler.sa_handler = OBSApp::SigIntSignalHandler;
 	sigemptyset(&sig_handler.sa_mask);
 	sig_handler.sa_flags = 0;
 
