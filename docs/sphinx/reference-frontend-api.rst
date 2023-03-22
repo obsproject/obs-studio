@@ -661,6 +661,8 @@ Functions
 
    :param service: The streaming service to set
 
+.. deprecated:: 29.1
+
 ---------------------------------------
 
 .. function:: obs_service_t *obs_frontend_get_streaming_service(void)
@@ -673,6 +675,8 @@ Functions
 .. function:: void obs_frontend_save_streaming_service(void)
 
    Saves the current streaming service data.
+
+.. deprecated:: 29.1
 
 ---------------------------------------
 
