@@ -102,6 +102,8 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 			else
 				next_key++;
 
+			encoder->cur_timestamp = timestamp;
+
 			success = encoder->info.encode_texture(
 				encoder->context.data, tf.handle,
 				encoder->cur_pts, lock_key, &next_key, &pkt,

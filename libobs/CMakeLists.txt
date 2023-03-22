@@ -186,6 +186,8 @@ target_sources(
           util/file-serializer.h
           util/lexer.c
           util/lexer.h
+          util/misp-precision-timestamp.c
+          util/misp-precision-timestamp.h
           util/platform.c
           util/platform.h
           util/profiler.c
