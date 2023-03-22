@@ -201,6 +201,7 @@ void OBSBasicSettings::SaveStream1Settings()
 	if (!customServer) {
 		obs_data_set_string(settings, "service",
 				    QT_TO_UTF8(ui->service->currentText()));
+		obs_data_set_string(settings, "protocol", QT_TO_UTF8(protocol));
 		obs_data_set_string(
 			settings, "server",
 			QT_TO_UTF8(ui->server->currentData().toString()));
