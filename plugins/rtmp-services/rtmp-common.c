@@ -108,6 +108,31 @@ static void update_recommendations(struct rtmp_common *service, json_t *rec)
 	service->max_fps = get_int_val(rec, "max fps");
 }
 
+#define RTMP_PREFIX "rtmp://"
+#define RTMPS_PREFIX "rtmps://"
+
+static const char *get_protocol(json_t *service, obs_data_t *settings)
+{
+	const char *protocol = get_string_val(service, "protocol");
+	if (protocol) {
+		return protocol;
+	}
+
+	json_t *servers = json_object_get(service, "servers");
+	if (!json_is_array(servers))
+		return "RTMP";
+
+	json_t *server = json_array_get(servers, 0);
+	const char *url = get_string_val(server, "url");
+
+	if (strncmp(url, RTMPS_PREFIX, strlen(RTMPS_PREFIX)) == 0) {
+		obs_data_set_string(settings, "protocol", "RTMPS");
+		return "RTMPS";
+	}
+
+	return "RTMP";
+}
+
 static void rtmp_common_update(void *data, obs_data_t *settings)
 {
 	struct rtmp_common *service = data;
@@ -141,6 +166,13 @@ static void rtmp_common_update(void *data, obs_data_t *settings)
 		if (new_name) {
 			bfree(service->service);
 			service->service = bstrdup(new_name);
+		}
+
+		if ((service->protocol == NULL ||
+		     service->protocol[0] == '\0')) {
+			bfree(service->protocol);
+			service->protocol =
+				bstrdup(get_protocol(serv, settings));
 		}
 
 		if (serv) {
@@ -208,9 +240,6 @@ static inline bool get_bool_val(json_t *service, const char *key)
 
 	return json_is_true(bool_val);
 }
-
-#define RTMP_PREFIX "rtmp://"
-#define RTMPS_PREFIX "rtmps://"
 
 static bool is_protocol_available(json_t *service)
 {
