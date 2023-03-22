@@ -2722,6 +2722,10 @@
                 {
                     "name": "Tokyo, JP",
                     "url": "rtmp://stream.tyo.irl.run/ingest"
+                },
+                {
+                    "name": "Sydney, AU",
+                    "url": "rtmp://stream.syd.irl.run/ingest"
                 }
             ],
             "recommended": {
