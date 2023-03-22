@@ -1577,7 +1577,7 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 		config_get_int(main->Config(), "AdvOut", "VodTrackIndex") - 1;
 	streamArchiveEnc = obs_audio_encoder_create(streamAudioEncoder,
 						    ADV_ARCHIVE_NAME, nullptr,
-						    streamTrack, nullptr);
+						    vodTrack, nullptr);
 	if (!streamArchiveEnc)
 		throw "Failed to create archive audio encoder "
 		      "(advanced output)";
