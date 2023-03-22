@@ -141,7 +141,6 @@ static void PopulateBitrateLists()
 	call_once(once, []() {
 		struct obs_audio_info aoi;
 		obs_get_audio_info(&aoi);
-		uint32_t output_channels = get_audio_channels(aoi.speakers);
 
 		/* NOTE: ffmpeg_aac and ffmpeg_opus have the same properties
 		 * their bitrates will also be used as a fallback */
@@ -275,7 +274,6 @@ static void PopulateSimpleOpusBitrateMap()
 	call_once(once, []() {
 		struct obs_audio_info aoi;
 		obs_get_audio_info(&aoi);
-		uint32_t output_channels = get_audio_channels(aoi.speakers);
 
 		for (auto &bitrate : fallbackBitrates)
 			simpleOpusBitrateMap[bitrate] = "ffmpeg_opus";
