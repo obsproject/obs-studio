@@ -1432,7 +1432,10 @@ bool OBSBasicSettings::ServiceSupportsCodecCheck()
 
 		cur_audio_name = ui->simpleOutStrAEncoder->itemText(
 			ui->simpleOutStrAEncoder->findData(cur_enc));
-		fb_audio_name = (cur_enc == "opus") ? "AAC" : "Opus";
+		fb_audio_name =
+			(cur_enc == "opus")
+				? QTStr("Basic.Settings.Output.Simple.Codec.AAC")
+				: QTStr("Basic.Settings.Output.Simple.Codec.Opus");
 	} else {
 		QString cur_enc = ui->advOutEncoder->currentData().toString();
 		QString fb_enc = get_adv_fallback(cur_enc);
@@ -1643,9 +1646,13 @@ void OBSBasicSettings::ResetEncoders(bool streamOnly)
 	if (service_supports_encoder(acodecs, "CoreAudio_AAC") ||
 	    service_supports_encoder(acodecs, "libfdk_aac") ||
 	    service_supports_encoder(acodecs, "ffmpeg_aac"))
-		ui->simpleOutStrAEncoder->addItem("AAC", "aac");
+		ui->simpleOutStrAEncoder->addItem(
+			QTStr("Basic.Settings.Output.Simple.Codec.AAC.Default"),
+			"aac");
 	if (service_supports_encoder(acodecs, "ffmpeg_opus"))
-		ui->simpleOutStrAEncoder->addItem("Opus", "opus");
+		ui->simpleOutStrAEncoder->addItem(
+			QTStr("Basic.Settings.Output.Simple.Codec.Opus"),
+			"opus");
 #undef ENCODER_STR
 
 	/* ------------------------------------------------- */

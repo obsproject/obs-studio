@@ -5130,9 +5130,13 @@ void OBSBasicSettings::FillSimpleRecordingValues()
 
 	if (EncoderAvailable("CoreAudio_AAC") ||
 	    EncoderAvailable("libfdk_aac") || EncoderAvailable("ffmpeg_aac"))
-		ui->simpleOutRecAEncoder->addItem("AAC", "aac");
+		ui->simpleOutRecAEncoder->addItem(
+			QTStr("Basic.Settings.Output.Simple.Codec.AAC.Default"),
+			"aac");
 	if (EncoderAvailable("ffmpeg_opus"))
-		ui->simpleOutRecAEncoder->addItem("Opus", "opus");
+		ui->simpleOutRecAEncoder->addItem(
+			QTStr("Basic.Settings.Output.Simple.Codec.Opus"),
+			"opus");
 
 #undef ADD_QUALITY
 #undef ENCODER_STR
