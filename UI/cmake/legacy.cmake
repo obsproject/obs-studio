@@ -247,6 +247,7 @@ target_sources(
           window-basic-main-profiles.cpp
           window-basic-main-scene-collections.cpp
           window-basic-main-screenshot.cpp
+          window-basic-main-service.cpp
           window-basic-main-transitions.cpp
           window-basic-preview.cpp
           window-basic-properties.cpp
