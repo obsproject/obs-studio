@@ -37,19 +37,19 @@
 #define S_KNEE                          "knee_width"
 
 #define MT_ obs_module_text
-#define TEXT_RATIO                      MT_("expander.Ratio")
-#define TEXT_THRESHOLD                  MT_("expander.Threshold")
-#define TEXT_ATTACK_TIME                MT_("expander.AttackTime")
-#define TEXT_RELEASE_TIME               MT_("expander.ReleaseTime")
-#define TEXT_OUTPUT_GAIN                MT_("expander.OutputGain")
-#define TEXT_DETECTOR                   MT_("expander.Detector")
-#define TEXT_PEAK                       MT_("expander.Peak")
-#define TEXT_RMS                        MT_("expander.RMS")
-#define TEXT_NONE                       MT_("expander.None")
-#define TEXT_PRESETS                    MT_("expander.Presets")
-#define TEXT_PRESETS_EXP                MT_("expander.Presets.Expander")
-#define TEXT_PRESETS_GATE               MT_("expander.Presets.Gate")
-#define TEXT_KNEE                       MT_("expander.Knee.Width")
+#define TEXT_RATIO                      MT_("Expander.Ratio")
+#define TEXT_THRESHOLD                  MT_("Expander.Threshold")
+#define TEXT_ATTACK_TIME                MT_("Expander.AttackTime")
+#define TEXT_RELEASE_TIME               MT_("Expander.ReleaseTime")
+#define TEXT_OUTPUT_GAIN                MT_("Expander.OutputGain")
+#define TEXT_DETECTOR                   MT_("Expander.Detector")
+#define TEXT_PEAK                       MT_("Expander.Peak")
+#define TEXT_RMS                        MT_("Expander.RMS")
+#define TEXT_NONE                       MT_("Expander.None")
+#define TEXT_PRESETS                    MT_("Expander.Presets")
+#define TEXT_PRESETS_EXP                MT_("Expander.Presets.Expander")
+#define TEXT_PRESETS_GATE               MT_("Expander.Presets.Gate")
+#define TEXT_KNEE                       MT_("Expander.Knee.Width")
 
 #define MIN_RATIO                       1.0f
 #define MAX_RATIO                       20.0f
