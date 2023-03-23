@@ -27,7 +27,7 @@
 #define T_(text) obs_module_text(text)
 #define T_PLAYLIST                     T_("Playlist")
 #define T_LOOP                         T_("LoopPlaylist")
-#define T_SHUFFLE                      T_("shuffle")
+#define T_SHUFFLE                      T_("Shuffle")
 #define T_BEHAVIOR                     T_("PlaybackBehavior")
 #define T_BEHAVIOR_STOP_RESTART        T_("PlaybackBehavior.StopRestart")
 #define T_BEHAVIOR_PAUSE_UNPAUSE       T_("PlaybackBehavior.PauseUnpause")
