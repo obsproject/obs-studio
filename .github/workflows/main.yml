@@ -206,6 +206,9 @@ jobs:
     strategy:
       matrix:
         ubuntu: ['ubuntu-20.04', 'ubuntu-22.04']
+        include:
+          - ubuntu: 'ubuntu-20.04'
+            script_options: '--disable-pipewire'
     if: always()
     needs: [config, clang_check]
     defaults:
@@ -248,10 +251,10 @@ jobs:
       - name: 'Install dependencies'
         env:
           RESTORED_CEF: ${{ steps.cef-cache.outputs.cache-hit }}
-        run: CI/linux/01_install_dependencies.sh --disable-pipewire
+        run: CI/linux/01_install_dependencies.sh ${{ matrix.script_options }}
 
       - name: 'Build OBS'
-        run: CI/linux/02_build_obs.sh --disable-pipewire
+        run: CI/linux/02_build_obs.sh ${{ matrix.script_options }}
 
       - name: 'Run tests'
         if: success()
