@@ -1205,7 +1205,7 @@ bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
 	const char *path =
 		config_get_string(main->Config(), "SimpleOutput", "FilePath");
 	const char *format =
-		config_get_string(main->Config(), "SimpleOutput", "RecFormat");
+		config_get_string(main->Config(), "SimpleOutput", "RecFormat2");
 	const char *mux = config_get_string(main->Config(), "SimpleOutput",
 					    "MuxerCustom");
 	bool noSpace = config_get_bool(main->Config(), "SimpleOutput",
@@ -1703,7 +1703,7 @@ inline void AdvancedOutput::SetupRecording()
 	int tracks;
 
 	const char *recFormat =
-		config_get_string(main->Config(), "AdvOut", "RecFormat");
+		config_get_string(main->Config(), "AdvOut", "RecFormat2");
 
 	bool is_fragmented = strcmp(recFormat, "fmp4") == 0 ||
 			     strcmp(recFormat, "fmov") == 0;
@@ -2124,7 +2124,7 @@ bool AdvancedOutput::StartRecording()
 							 : "RecFilePath");
 		recFormat = config_get_string(main->Config(), "AdvOut",
 					      ffmpegRecording ? "FFExtension"
-							      : "RecFormat");
+							      : "RecFormat2");
 		filenameFormat = config_get_string(main->Config(), "Output",
 						   "FilenameFormatting");
 		overwriteIfExists = config_get_bool(main->Config(), "Output",
@@ -2227,7 +2227,7 @@ bool AdvancedOutput::StartReplayBuffer()
 							 : "RecFilePath");
 		recFormat = config_get_string(main->Config(), "AdvOut",
 					      ffmpegRecording ? "FFExtension"
-							      : "RecFormat");
+							      : "RecFormat2");
 		filenameFormat = config_get_string(main->Config(), "Output",
 						   "FilenameFormatting");
 		overwriteIfExists = config_get_bool(main->Config(), "Output",

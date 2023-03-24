@@ -1378,6 +1378,13 @@ static const double scaled_vals[] = {1.0,         1.25, (1.0 / 0.75), 1.5,
 				     2.5,         2.75, 3.0,          0.0};
 
 extern void CheckExistingCookieId();
+#if OBS_RELEASE_CANDIDATE == 0 && OBS_BETA == 0
+#define DEFAULT_CONTAINER "mkv"
+#elif defined(__APPLE__)
+#define DEFAULT_CONTAINER "fmov"
+#else
+#define DEFAULT_CONTAINER "fmp4"
+#endif
 
 bool OBSBasic::InitBasicConfigDefaults()
 {
@@ -1473,6 +1480,26 @@ bool OBSBasic::InitBasicConfigDefaults()
 	}
 
 	/* ----------------------------------------------------- */
+	/* Migrate old container selection (if any) to new key.  */
+	if (!config_has_user_value(basicConfig, "SimpleOutput", "RecFormat2") &&
+	    config_has_user_value(basicConfig, "SimpleOutput", "RecFormat")) {
+		const char *old_format = config_get_string(
+			basicConfig, "SimpleOutput", "RecFormat");
+		config_set_string(basicConfig, "SimpleOutput", "RecFormat2",
+				  old_format);
+		changed = true;
+	}
+
+	if (!config_has_user_value(basicConfig, "AdvOut", "RecFormat2") &&
+	    config_has_user_value(basicConfig, "AdvOut", "RecFormat")) {
+		const char *old_format =
+			config_get_string(basicConfig, "AdvOut", "RecFormat");
+		config_set_string(basicConfig, "AdvOut", "RecFormat2",
+				  old_format);
+		changed = true;
+	}
+
+	/* ----------------------------------------------------- */
 
 	if (changed)
 		config_save_safe(basicConfig, "tmp", nullptr);
@@ -1486,8 +1513,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 
 	config_set_default_string(basicConfig, "SimpleOutput", "FilePath",
 				  GetDefaultVideoSavePath().c_str());
-	config_set_default_string(basicConfig, "SimpleOutput", "RecFormat",
-				  "mkv");
+	config_set_default_string(basicConfig, "SimpleOutput", "RecFormat2",
+				  DEFAULT_CONTAINER);
 	config_set_default_uint(basicConfig, "SimpleOutput", "VBitrate", 2500);
 	config_set_default_uint(basicConfig, "SimpleOutput", "ABitrate", 160);
 	config_set_default_bool(basicConfig, "SimpleOutput", "UseAdvanced",
@@ -1519,7 +1546,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 
 	config_set_default_string(basicConfig, "AdvOut", "RecFilePath",
 				  GetDefaultVideoSavePath().c_str());
-	config_set_default_string(basicConfig, "AdvOut", "RecFormat", "mkv");
+	config_set_default_string(basicConfig, "AdvOut", "RecFormat2",
+				  DEFAULT_CONTAINER);
 	config_set_default_bool(basicConfig, "AdvOut", "RecUseRescale", false);
 	config_set_default_uint(basicConfig, "AdvOut", "RecTracks", (1 << 0));
 	config_set_default_string(basicConfig, "AdvOut", "RecEncoder", "none");
