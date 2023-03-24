@@ -978,6 +978,10 @@ MuteCheckBox::indicator:checked {
     image: url(./Dark/mute.svg);
 }
 
+MuteCheckBox::indicator:indeterminate {
+    image: url(./Dark/unassigned.svg);
+}
+
 MuteCheckBox::indicator:unchecked {
     image: url(./Dark/settings/audio.svg);
 }
