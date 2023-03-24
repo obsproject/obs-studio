@@ -1909,7 +1909,7 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	bool noSpace = config_get_bool(main->Config(), "SimpleOutput",
 				       "FileNameWithoutSpace");
 	const char *format =
-		config_get_string(main->Config(), "SimpleOutput", "RecFormat");
+		config_get_string(main->Config(), "SimpleOutput", "RecFormat2");
 	int videoBitrate =
 		config_get_uint(main->Config(), "SimpleOutput", "VBitrate");
 	const char *streamEnc = config_get_string(
@@ -2166,7 +2166,7 @@ void OBSBasicSettings::LoadAdvOutputRecordingSettings()
 	const char *type =
 		config_get_string(main->Config(), "AdvOut", "RecType");
 	const char *format =
-		config_get_string(main->Config(), "AdvOut", "RecFormat");
+		config_get_string(main->Config(), "AdvOut", "RecFormat2");
 	const char *path =
 		config_get_string(main->Config(), "AdvOut", "RecFilePath");
 	bool noSpace = config_get_bool(main->Config(), "AdvOut",
@@ -3825,7 +3825,7 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveCombo(ui->simpleOutputABitrate, "SimpleOutput", "ABitrate");
 	SaveEdit(ui->simpleOutputPath, "SimpleOutput", "FilePath");
 	SaveCheckBox(ui->simpleNoSpace, "SimpleOutput", "FileNameWithoutSpace");
-	SaveComboData(ui->simpleOutRecFormat, "SimpleOutput", "RecFormat");
+	SaveComboData(ui->simpleOutRecFormat, "SimpleOutput", "RecFormat2");
 	SaveCheckBox(ui->simpleOutAdvanced, "SimpleOutput", "UseAdvanced");
 	SaveComboData(ui->simpleOutPreset, "SimpleOutput", presetType);
 	SaveEdit(ui->simpleOutCustom, "SimpleOutput", "x264Settings");
@@ -3855,7 +3855,7 @@ void OBSBasicSettings::SaveOutputSettings()
 
 	SaveEdit(ui->advOutRecPath, "AdvOut", "RecFilePath");
 	SaveCheckBox(ui->advOutNoSpace, "AdvOut", "RecFileNameWithoutSpace");
-	SaveComboData(ui->advOutRecFormat, "AdvOut", "RecFormat");
+	SaveComboData(ui->advOutRecFormat, "AdvOut", "RecFormat2");
 	SaveComboData(ui->advOutRecEncoder, "AdvOut", "RecEncoder");
 	SaveComboData(ui->advOutRecAEncoder, "AdvOut", "RecAudioEncoder");
 	SaveCheckBox(ui->advOutRecUseRescale, "AdvOut", "RecRescale");
