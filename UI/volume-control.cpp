@@ -25,6 +25,43 @@ using namespace std;
 
 QWeakPointer<VolumeMeterTimer> VolumeMeter::updateTimer;
 
+static inline Qt::CheckState GetCheckState(bool muted, bool unassigned)
+{
+	if (muted)
+		return Qt::Checked;
+	else if (unassigned)
+		return Qt::PartiallyChecked;
+	else
+		return Qt::Unchecked;
+}
+
+static void ShowUnassignedWarning(const char *name)
+{
+	auto msgBox = [=]() {
+		QMessageBox msgbox(App()->GetMainWindow());
+		msgbox.setWindowTitle(
+			QTStr("VolControl.UnassignedWarning.Title"));
+		msgbox.setText(
+			QTStr("VolControl.UnassignedWarning.Text").arg(name));
+		msgbox.setIcon(QMessageBox::Icon::Information);
+		msgbox.addButton(QMessageBox::Ok);
+
+		QCheckBox *cb = new QCheckBox(QTStr("DoNotShowAgain"));
+		msgbox.setCheckBox(cb);
+
+		msgbox.exec();
+
+		if (cb->isChecked()) {
+			config_set_bool(App()->GlobalConfig(), "General",
+					"WarnedAboutUnassignedSources", true);
+			config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+		}
+	};
+
+	QMetaObject::invokeMethod(App(), "Exec", Qt::QueuedConnection,
+				  Q_ARG(VoidFunc, msgBox));
+}
+
 void VolControl::OBSVolumeChanged(void *data, float db)
 {
 	Q_UNUSED(db);
@@ -64,16 +101,50 @@ void VolControl::VolumeChanged()
 
 void VolControl::VolumeMuted(bool muted)
 {
-	if (mute->isChecked() != muted)
-		mute->setChecked(muted);
+	bool unassigned = obs_source_get_audio_mixers(source) == 0;
 
-	volMeter->muted = muted;
+	auto newState = GetCheckState(muted, unassigned);
+	if (mute->checkState() != newState)
+		mute->setCheckState(newState);
+
+	volMeter->muted = muted || unassigned;
 }
 
-void VolControl::SetMuted(bool checked)
+void VolControl::OBSMixersChanged(void *data, calldata_t *calldata)
 {
+	VolControl *volControl = static_cast<VolControl *>(data);
+	bool unassigned = calldata_int(calldata, "mixers") == 0;
+
+	QMetaObject::invokeMethod(volControl, "AssignmentChanged",
+				  Q_ARG(bool, unassigned));
+}
+
+void VolControl::AssignmentChanged(bool unassigned)
+{
+	bool muted = obs_source_muted(source);
+	auto newState = GetCheckState(muted, unassigned);
+	if (mute->checkState() != newState)
+		mute->setCheckState(newState);
+
+	volMeter->muted = muted || unassigned;
+}
+
+void VolControl::SetMuted(bool)
+{
+	bool checked = mute->checkState() == Qt::Checked;
 	bool prev = obs_source_muted(source);
 	obs_source_set_muted(source, checked);
+	bool unassigned = obs_source_get_audio_mixers(source) == 0;
+
+	if (!checked && unassigned) {
+		mute->setCheckState(Qt::PartiallyChecked);
+		/* Show notice about the source no being assigned to any tracks */
+		bool has_shown_warning =
+			config_get_bool(App()->GlobalConfig(), "General",
+					"WarnedAboutUnassignedSources");
+		if (!has_shown_warning)
+			ShowUnassignedWarning(obs_source_get_name(source));
+	}
 
 	auto undo_redo = [](const std::string &name, bool val) {
 		OBSSourceAutoRelease source =
@@ -289,19 +360,22 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	slider->setMaximum(int(FADER_PRECISION));
 
 	bool muted = obs_source_muted(source);
-	mute->setChecked(muted);
-	volMeter->muted = muted;
+	bool unassigned = obs_source_get_audio_mixers(source) == 0;
+	mute->setCheckState(GetCheckState(muted, unassigned));
+	volMeter->muted = muted || unassigned;
 	mute->setAccessibleName(QTStr("VolControl.Mute").arg(sourceName));
 	obs_fader_add_callback(obs_fader, OBSVolumeChanged, this);
 	obs_volmeter_add_callback(obs_volmeter, OBSVolumeLevel, this);
 
 	signal_handler_connect(obs_source_get_signal_handler(source), "mute",
 			       OBSVolumeMuted, this);
+	signal_handler_connect(obs_source_get_signal_handler(source),
+			       "audio_mixers", OBSMixersChanged, this);
 
 	QWidget::connect(slider, SIGNAL(valueChanged(int)), this,
 			 SLOT(SliderChanged(int)));
-	QWidget::connect(mute, SIGNAL(clicked(bool)), this,
-			 SLOT(SetMuted(bool)));
+	QWidget::connect(mute, &MuteCheckBox::clicked, this,
+			 &VolControl::SetMuted);
 
 	obs_fader_attach_source(obs_fader, source);
 	obs_volmeter_attach_source(obs_volmeter, source);
@@ -334,6 +408,8 @@ VolControl::~VolControl()
 
 	signal_handler_disconnect(obs_source_get_signal_handler(source), "mute",
 				  OBSVolumeMuted, this);
+	signal_handler_disconnect(obs_source_get_signal_handler(source),
+				  "audio_mixers", OBSMixersChanged, this);
 
 	obs_fader_destroy(obs_fader);
 	obs_volmeter_destroy(obs_volmeter);
