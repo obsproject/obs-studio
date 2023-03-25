@@ -1008,7 +1008,7 @@ static const char **rtmp_common_get_supported_audio_codecs(void *data)
 
 	json_t *json_audio_codecs =
 		json_object_get(json_service, "supported audio codecs");
-	if (json_is_array(json_audio_codecs)) {
+	if (!json_is_array(json_audio_codecs)) {
 		goto fail;
 	}
 
