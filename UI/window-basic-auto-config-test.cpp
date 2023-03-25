@@ -85,8 +85,8 @@ public:
 /* ------------------------------------------------------------------------- */
 
 #define TEST_STR(x) "Basic.AutoConfig.TestPage." x
-#define SUBTITLE_TESTING TEST_STR("Subtitle.Testing")
-#define SUBTITLE_COMPLETE TEST_STR("Subtitle.Complete")
+#define SUBTITLE_TESTING TEST_STR("SubTitle.Testing")
+#define SUBTITLE_COMPLETE TEST_STR("SubTitle.Complete")
 #define TEST_BW TEST_STR("TestingBandwidth")
 #define TEST_BW_NO_OUTPUT TEST_STR("TestingBandwidth.NoOutput")
 #define TEST_BW_CONNECTING TEST_STR("TestingBandwidth.Connecting")
