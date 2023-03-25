@@ -170,7 +170,7 @@ void OBSBasicSettings::LoadStream1Settings()
 	ui->key->setText(key);
 
 	lastService.clear();
-	on_service_currentIndexChanged(0);
+	ServiceChanged();
 
 	UpdateKeyLink();
 	UpdateMoreInfoLink();
