@@ -526,7 +526,14 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 	const char *name = ffm->params.acodec;
 	int channels;
 
-	const AVCodecDescriptor *codec = avcodec_descriptor_get_by_name(name);
+	const AVCodecDescriptor *codec_desc =
+		avcodec_descriptor_get_by_name(name);
+	if (!codec_desc) {
+		fprintf(stderr, "Couldn't find codec descriptor '%s'\n", name);
+		return;
+	}
+
+	const AVCodec *codec = avcodec_find_encoder(codec_desc->id);
 	if (!codec) {
 		fprintf(stderr, "Couldn't find codec '%s'\n", name);
 		return;
@@ -547,14 +554,17 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 	context = avcodec_alloc_context3(NULL);
 	context->codec_type = codec->type;
 	context->codec_id = codec->id;
-	context->bit_rate = (int64_t)ffm->audio[idx].abitrate * 1000;
+	if (!(codec_desc->props & AV_CODEC_PROP_LOSSLESS))
+		context->bit_rate = (int64_t)ffm->audio[idx].abitrate * 1000;
+
 	channels = ffm->audio[idx].channels;
 #if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(57, 24, 100)
 	context->channels = channels;
 #endif
 	context->sample_rate = ffm->audio[idx].sample_rate;
-	context->frame_size = ffm->audio[idx].frame_size;
-	context->sample_fmt = AV_SAMPLE_FMT_S16;
+	if (!(codec->capabilities & AV_CODEC_CAP_VARIABLE_FRAME_SIZE))
+		context->frame_size = ffm->audio[idx].frame_size;
+
 	context->time_base = stream->time_base;
 	context->extradata = extradata;
 	context->extradata_size = ffm->audio_header[idx].size;

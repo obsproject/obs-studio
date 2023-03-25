@@ -36,6 +36,11 @@ extern struct obs_output_info replay_buffer;
 extern struct obs_output_info ffmpeg_hls_muxer;
 extern struct obs_encoder_info aac_encoder_info;
 extern struct obs_encoder_info opus_encoder_info;
+extern struct obs_encoder_info pcm_encoder_info;
+extern struct obs_encoder_info pcm24_encoder_info;
+extern struct obs_encoder_info pcm32_encoder_info;
+extern struct obs_encoder_info alac_encoder_info;
+extern struct obs_encoder_info flac_encoder_info;
 extern struct obs_encoder_info h264_nvenc_encoder_info;
 #ifdef ENABLE_HEVC
 extern struct obs_encoder_info hevc_nvenc_encoder_info;
@@ -387,6 +392,11 @@ bool obs_module_load(void)
 	register_encoder_if_available(&svt_av1_encoder_info, "libsvtav1");
 	register_encoder_if_available(&aom_av1_encoder_info, "libaom-av1");
 	obs_register_encoder(&opus_encoder_info);
+	obs_register_encoder(&pcm_encoder_info);
+	obs_register_encoder(&pcm24_encoder_info);
+	obs_register_encoder(&pcm32_encoder_info);
+	obs_register_encoder(&alac_encoder_info);
+	obs_register_encoder(&flac_encoder_info);
 #ifndef __APPLE__
 	bool h264 = false;
 	bool hevc = false;
