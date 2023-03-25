@@ -239,7 +239,9 @@
                 "YouTube - RTMPS (Beta)"
             ],
             "supported video codecs": [
-                "h264"
+                "h264",
+                "hevc",
+                "av1"
             ],
             "servers": [
                 {
