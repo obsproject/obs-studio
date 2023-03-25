@@ -1422,6 +1422,20 @@ static void *connect_thread(void *data)
 		stream->start_dts_offset = get_ms_time(&packet, packet.dts);
 	}
 
+	// HDR streaming disabled for AV1 and HEVC
+	if (stream->video_codec != CODEC_H264) {
+		video_t *video = obs_get_video();
+		const struct video_output_info *info =
+			video_output_get_info(video);
+
+		if (info->colorspace == VIDEO_CS_2100_HLG ||
+		    info->colorspace == VIDEO_CS_2100_PQ) {
+			obs_output_signal_stop(stream->output,
+					       OBS_OUTPUT_HDR_DISABLED);
+			return NULL;
+		}
+	}
+
 	ret = try_connect(stream);
 
 	if (ret != OBS_OUTPUT_SUCCESS) {
