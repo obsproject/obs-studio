@@ -28,6 +28,9 @@ target_sources(
           rtmp-stream.c
           rtmp-stream.h
           rtmp-windows.c
+          rtmp-av1.c
+          rtmp-av1.h
+          utils.h
           librtmp/amf.c
           librtmp/amf.h
           librtmp/bytes.h
@@ -44,6 +47,10 @@ target_sources(
           librtmp/rtmp.c
           librtmp/rtmp.h
           librtmp/rtmp_sys.h)
+
+if(ENABLE_HEVC)
+  target_sources(obs-outputs PRIVATE rtmp-hevc.c rtmp-hevc.h)
+endif()
 
 target_link_libraries(obs-outputs PRIVATE OBS::libobs)
 
