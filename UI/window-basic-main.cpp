@@ -7282,6 +7282,10 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 		encode_error = true;
 		break;
 
+	case OBS_OUTPUT_HDR_DISABLED:
+		errorDescription = Str("Output.ConnectFail.HdrDisabled");
+		break;
+
 	default:
 	case OBS_OUTPUT_ERROR:
 		use_last_error = true;
