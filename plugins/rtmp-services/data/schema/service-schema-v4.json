@@ -46,7 +46,8 @@
                             "minLength": 1,
                             "enum": [
                                 "h264",
-                                "hevc"
+                                "hevc",
+                                "av1"
                             ]
                         }
                     },
