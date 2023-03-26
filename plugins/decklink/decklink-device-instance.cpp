@@ -22,10 +22,10 @@ static inline enum video_format ConvertPixelFormat(BMDPixelFormat format)
 	switch (format) {
 	case bmdFormat8BitBGRA:
 		return VIDEO_FORMAT_BGRX;
-
+	case bmdFormat10BitYUV:
+		return VIDEO_FORMAT_V210;
 	default:
 	case bmdFormat8BitYUV:
-	case bmdFormat10BitYUV:;
 		return VIDEO_FORMAT_UYVY;
 	}
 }
@@ -190,6 +190,32 @@ void DeckLinkDeviceInstance::HandleVideoFrame(
 	if (currentFrame.width == 0 || currentFrame.height == 0)
 		return;
 
+	enum video_trc trc = VIDEO_TRC_DEFAULT;
+	if (frame->GetFlags() & bmdFrameContainsHDRMetadata) {
+		ComPtr<IDeckLinkVideoFrameMetadataExtensions> metadata;
+		if (SUCCEEDED(videoFrame->QueryInterface(
+			    IID_IDeckLinkVideoFrameMetadataExtensions,
+			    (void **)&metadata))) {
+			int64_t range;
+			if (SUCCEEDED(metadata->GetInt(
+				    bmdDeckLinkFrameMetadataHDRElectroOpticalTransferFunc,
+				    &range))) {
+				switch (range) {
+				case 2:
+					trc = VIDEO_TRC_PQ;
+					break;
+				case 3:
+					trc = VIDEO_TRC_HLG;
+					break;
+				default:
+					trc = VIDEO_TRC_DEFAULT;
+					break;
+				}
+			}
+		}
+	}
+	currentFrame.trc = trc;
+
 	obs_source_output_video2(
 		static_cast<DeckLinkInput *>(decklink)->GetSource(),
 		&currentFrame);
@@ -314,7 +340,10 @@ void DeckLinkDeviceInstance::SetupVideoFormat(DeckLinkDeviceMode *mode_)
 	colorSpace = static_cast<DeckLinkInput *>(decklink)->GetColorSpace();
 	if (colorSpace == VIDEO_CS_DEFAULT) {
 		const BMDDisplayModeFlags flags = mode_->GetDisplayModeFlags();
-		if (flags & bmdDisplayModeColorspaceRec709)
+		/* 2020 wasn't set when testing but maybe it will be someday */
+		if (flags & bmdDisplayModeColorspaceRec2020)
+			activeColorSpace = VIDEO_CS_2100_PQ;
+		else if (flags & bmdDisplayModeColorspaceRec709)
 			activeColorSpace = VIDEO_CS_709;
 		else if (flags & bmdDisplayModeColorspaceRec601)
 			activeColorSpace = VIDEO_CS_601;
@@ -336,10 +365,10 @@ void DeckLinkDeviceInstance::SetupVideoFormat(DeckLinkDeviceMode *mode_)
 	BMDPixelFormat convertFormat;
 	switch (pixelFormat) {
 	case bmdFormat8BitBGRA:
-		convertFormat = bmdFormat8BitBGRA;
+	case bmdFormat10BitYUV:
+		convertFormat = pixelFormat;
 		break;
 	default:
-	case bmdFormat10BitYUV:
 	case bmdFormat8BitYUV:;
 		convertFormat = bmdFormat8BitYUV;
 		break;
@@ -409,7 +438,7 @@ bool DeckLinkDeviceInstance::StartCapture(DeckLinkDeviceMode *mode_,
 	bool isauto = mode_->GetName() == "Auto";
 	if (isauto) {
 		displayMode = bmdModeNTSC;
-		if (allow10Bit) {
+		if (allow10Bit_) {
 			pixelFormat = bmdFormat10BitYUV;
 		} else {
 			pixelFormat = bmdFormat8BitYUV;
@@ -635,7 +664,6 @@ HRESULT STDMETHODCALLTYPE DeckLinkDeviceInstance::VideoInputFormatChanged(
 	BMDVideoInputFormatChangedEvents events, IDeckLinkDisplayMode *newMode,
 	BMDDetectedVideoInputFormatFlags detectedSignalFlags)
 {
-
 	if (events & bmdVideoInputColorspaceChanged) {
 		if (detectedSignalFlags & bmdDetectedVideoInputRGB444) {
 			pixelFormat = bmdFormat8BitBGRA;
