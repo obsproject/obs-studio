@@ -359,7 +359,8 @@ void flv_packet_frames(struct encoder_packet *packet, enum video_id_t codec,
 		      (codec == CODEC_HEVC) ? PACKETTYPE_FRAMESX
 					    : PACKETTYPE_FRAMES);
 #else
-	flv_packet_ex(packet, dts_offset, output, size, PACKETTYPE_FRAMES);
+	flv_packet_ex(packet, codec, dts_offset, output, size,
+		      PACKETTYPE_FRAMES);
 #endif
 }
 
