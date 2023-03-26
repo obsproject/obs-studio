@@ -58,6 +58,8 @@ Video Handler
 
    - VIDEO_FORMAT_P416
 
+   - VIDEO_FORMAT_V210
+
 ---------------------
 
 .. enum:: video_trc

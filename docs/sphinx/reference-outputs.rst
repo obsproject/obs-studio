@@ -807,6 +807,9 @@ Functions used by outputs
 
            /* planar 4:4:4 format, 16 bpp */
            VIDEO_FORMAT_P416, /* two-plane, luma and packed chroma */
+
+           /* packed 4:2:2 format, 10 bpp */
+           VIDEO_FORMAT_V210,
    };
 
    enum video_colorspace {

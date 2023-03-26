@@ -1591,6 +1591,7 @@ enum convert_type {
 	CONVERT_BGR3,
 	CONVERT_I010,
 	CONVERT_P010,
+	CONVERT_V210,
 };
 
 static inline enum convert_type get_convert_type(enum video_format format,
@@ -1647,6 +1648,9 @@ static inline enum convert_type get_convert_type(enum video_format format,
 
 	case VIDEO_FORMAT_P010:
 		return CONVERT_P010;
+
+	case VIDEO_FORMAT_V210:
+		return CONVERT_V210;
 
 	case VIDEO_FORMAT_P216:
 	case VIDEO_FORMAT_P416:
@@ -1942,6 +1946,19 @@ static inline bool set_p010_sizes(struct obs_source *source,
 	return true;
 }
 
+static inline bool set_v210_sizes(struct obs_source *source,
+				  const struct obs_source_frame *frame)
+{
+	const uint32_t width = frame->width;
+	const uint32_t height = frame->height;
+	const uint32_t adjusted_width = ((width + 5) / 6) * 4;
+	source->async_convert_width[0] = adjusted_width;
+	source->async_convert_height[0] = height;
+	source->async_texture_formats[0] = GS_R10G10B10A2;
+	source->async_channel_count = 1;
+	return true;
+}
+
 static inline bool init_gpu_conversion(struct obs_source *source,
 				       const struct obs_source_frame *frame)
 {
@@ -1998,6 +2015,9 @@ static inline bool init_gpu_conversion(struct obs_source *source,
 
 	case CONVERT_P010:
 		return set_p010_sizes(source, frame);
+
+	case CONVERT_V210:
+		return set_v210_sizes(source, frame);
 
 	case CONVERT_NONE:
 		assert(false && "No conversion requested");
@@ -2091,6 +2111,7 @@ static void upload_raw_frame(gs_texture_t *tex[MAX_AV_PLANES],
 	case CONVERT_444_A_PACK:
 	case CONVERT_I010:
 	case CONVERT_P010:
+	case CONVERT_V210:
 		for (size_t c = 0; c < MAX_AV_PLANES; c++) {
 			if (tex[c])
 				gs_texture_set_image(tex[c], frame->data[c],
@@ -2210,6 +2231,17 @@ static const char *select_conversion_technique(enum video_format format,
 			return "P010_HLG_2020_709_Reverse";
 		default:
 			return "P010_SRGB_Reverse";
+		}
+	}
+
+	case VIDEO_FORMAT_V210: {
+		switch (trc) {
+		case VIDEO_TRC_PQ:
+			return "V210_PQ_2020_709_Reverse";
+		case VIDEO_TRC_HLG:
+			return "V210_HLG_2020_709_Reverse";
+		default:
+			return "V210_SRGB_Reverse";
 		}
 	}
 
@@ -3373,6 +3405,7 @@ static void copy_frame_data(struct obs_source_frame *dst,
 	case VIDEO_FORMAT_Y800:
 	case VIDEO_FORMAT_BGR3:
 	case VIDEO_FORMAT_AYUV:
+	case VIDEO_FORMAT_V210:
 		copy_frame_data_plane(dst, src, 0, dst->height);
 		break;
 

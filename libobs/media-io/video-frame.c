@@ -330,6 +330,15 @@ void video_frame_init(struct video_frame *frame, enum video_format format,
 		frame->linesize[1] = width * 4;
 		break;
 	}
+
+	case VIDEO_FORMAT_V210: {
+		const uint32_t adjusted_width = ((width + 5) / 6) * 16;
+		size = adjusted_width * height;
+		ALIGN_SIZE(size, alignment);
+		frame->data[0] = bmalloc(size);
+		frame->linesize[0] = adjusted_width;
+		break;
+	}
 	}
 }
 
