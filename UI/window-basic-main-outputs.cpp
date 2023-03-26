@@ -834,7 +834,7 @@ void SimpleOutput::UpdateRecordingAudioSettings()
 	int tracks =
 		config_get_int(main->Config(), "SimpleOutput", "RecTracks");
 	const char *recFormat =
-		config_get_string(main->Config(), "SimpleOutput", "RecFormat");
+		config_get_string(main->Config(), "SimpleOutput", "RecFormat2");
 	const char *quality =
 		config_get_string(main->Config(), "SimpleOutput", "RecQuality");
 	bool flv = strcmp(recFormat, "flv") == 0;
@@ -1024,7 +1024,7 @@ inline void SimpleOutput::SetupOutputs()
 	int tracks =
 		config_get_int(main->Config(), "SimpleOutput", "RecTracks");
 	const char *recFormat =
-		config_get_string(main->Config(), "SimpleOutput", "RecFormat");
+		config_get_string(main->Config(), "SimpleOutput", "RecFormat2");
 	bool flv = strcmp(recFormat, "flv") == 0;
 
 	if (usingRecordingPreset) {
@@ -1228,7 +1228,7 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 void SimpleOutput::UpdateRecording()
 {
 	const char *recFormat =
-		config_get_string(main->Config(), "SimpleOutput", "RecFormat");
+		config_get_string(main->Config(), "SimpleOutput", "RecFormat2");
 	bool flv = strcmp(recFormat, "flv") == 0;
 	int tracks =
 		config_get_int(main->Config(), "SimpleOutput", "RecTracks");
@@ -1308,8 +1308,6 @@ bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
 		config_get_int(main->Config(), "SimpleOutput", "RecRBSize");
 	int tracks =
 		config_get_int(main->Config(), "SimpleOutput", "RecTracks");
-	const char *recFormat =
-		config_get_string(main->Config(), "SimpleOutput", "RecFormat");
 
 	bool is_fragmented = strcmp(format, "fmp4") == 0 ||
 			     strcmp(format, "fmov") == 0;
