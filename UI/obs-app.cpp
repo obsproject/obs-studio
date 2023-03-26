@@ -410,8 +410,12 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 	}
 #endif
 
+#if !defined(_WIN32) && defined(_DEBUG)
+	def_log_handler(log_level, msg, args2, nullptr);
+#endif
+
 	if (log_level <= LOG_INFO || log_verbose) {
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(_DEBUG)
 		def_log_handler(log_level, msg, args2, nullptr);
 #endif
 		if (!too_many_repeated_entries(logFile, msg, str))
