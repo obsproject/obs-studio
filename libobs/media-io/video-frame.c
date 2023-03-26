@@ -371,6 +371,7 @@ void video_frame_copy(struct video_frame *dst, const struct video_frame *src,
 	case VIDEO_FORMAT_BGRX:
 	case VIDEO_FORMAT_BGR3:
 	case VIDEO_FORMAT_AYUV:
+	case VIDEO_FORMAT_V210:
 		memcpy(dst->data[0], src->data[0], src->linesize[0] * cy);
 		break;
 
