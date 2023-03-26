@@ -1901,9 +1901,6 @@
                        </item>
                        <item row="3" column="1">
                         <widget class="QComboBox" name="simpleOutRecFormat">
-                         <property name="toolTip">
-                          <string>Basic.Settings.Output.Format.TT</string>
-                         </property>
                          <property name="editable">
                           <bool>false</bool>
                          </property>
@@ -2878,9 +2875,6 @@
                                </item>
                                <item row="2" column="1">
                                 <widget class="QComboBox" name="advOutRecFormat">
-                                 <property name="toolTip">
-                                  <string>Basic.Settings.Output.Format.TT</string>
-                                 </property>
                                  <property name="sizePolicy">
                                   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                                    <horstretch>0</horstretch>

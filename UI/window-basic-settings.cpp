@@ -4998,6 +4998,15 @@ void OBSBasicSettings::AdvOutRecCheckCodecs()
 {
 	QString recFormat = ui->advOutRecFormat->currentData().toString();
 
+	/* Set tooltip if available */
+	QString tooltip =
+		QTStr("Basic.Settings.Output.Format.TT." + recFormat.toUtf8());
+
+	if (!tooltip.startsWith("Basic.Settings.Output"))
+		ui->advOutRecFormat->setToolTip(tooltip);
+	else
+		ui->advOutRecFormat->setToolTip(nullptr);
+
 	string format = recFormat.toStdString();
 	/* Remove leading "f" for fragmented MP4/MOV */
 	if (format == "fmp4" || format == "fmov")
@@ -5759,6 +5768,14 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 	}
 
 	QString format = ui->simpleOutRecFormat->currentData().toString();
+	/* Set tooltip if available */
+	QString tooltip =
+		QTStr("Basic.Settings.Output.Format.TT." + format.toUtf8());
+
+	if (!tooltip.startsWith("Basic.Settings.Output"))
+		ui->simpleOutRecFormat->setToolTip(tooltip);
+	else
+		ui->simpleOutRecFormat->setToolTip(nullptr);
 
 	if (qual == "Lossless") {
 		if (!warning.isEmpty())
