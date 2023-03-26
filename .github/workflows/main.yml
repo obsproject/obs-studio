@@ -156,14 +156,22 @@ jobs:
           fi
 
       - name: 'Create build artifact'
-        if: ${{ success() && fromJSON(needs.config.outputs.create_artifacts) }}
+        if: ${{ fromJSON(needs.config.outputs.create_artifacts) }}
         run: |
-          CI/macos/03_package_obs.sh --codesign --architecture "${{ matrix.arch }}"
-          ARTIFACT_NAME=$(basename $(/usr/bin/find build_${{ matrix.arch }} -type f -name "obs-studio-*.dmg" -depth 1 | head -1))
-          echo "FILE_NAME=${ARTIFACT_NAME}" >> $GITHUB_ENV
+          : ${PACKAGE:=}
+          case "${GITHUB_EVENT_NAME}" in
+              push) if [[ ${GITHUB_REF_NAME} =~ [0-9]+.[0-9]+.[0-9]+(-(rc|beta).+)? ]]; then PACKAGE=1; fi ;;
+              pull_request) PACKAGE=1 ;;
+          esac
+
+          if [[ "${PACKAGE}" ]]; then
+            CI/macos/03_package_obs.sh --codesign --architecture "${{ matrix.arch }}"
+            ARTIFACT_NAME=$(basename $(/usr/bin/find build_${{ matrix.arch }} -type f -name "obs-studio-*.dmg" -depth 1 | head -1))
+            echo "FILE_NAME=${ARTIFACT_NAME}" >> $GITHUB_ENV
+          fi
 
       - name: 'Upload build Artifact'
-        if: ${{ success() && fromJSON(needs.config.outputs.create_artifacts) }}
+        if: ${{ fromJSON(needs.config.outputs.create_artifacts) && env.FILE_NAME != '' }}
         uses: actions/upload-artifact@v3
         with:
           name: 'obs-studio-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
