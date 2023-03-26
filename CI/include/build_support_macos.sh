@@ -10,22 +10,6 @@
 
 # Setup build environment
 WORKFLOW_CONTENT=$(/bin/cat "${CI_WORKFLOW}")
-CI_DEPS_VERSION=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+DEPS_VERSION_MAC: '([0-9\-]+)'/\1/p")
-CI_DEPS_HASH_X86_64=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+DEPS_HASH_MAC_X86_64: '([0-9a-f]+)'/\1/p")
-CI_DEPS_HASH_ARM64=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+DEPS_HASH_MAC_ARM64: '([0-9a-f]+)'/\1/p")
-CI_VLC_VERSION=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+VLC_VERSION_MAC: '([0-9\.]+)'/\1/p")
-CI_VLC_HASH=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+VLC_HASH_MAC: '([0-9a-f]+)'/\1/p")
-CI_SPARKLE_VERSION=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+SPARKLE_VERSION: '([0-9\.]+)'/\1/p")
-CI_SPARKLE_HASH=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+SPARKLE_HASH: '([0-9a-f]+)'/\1/p")
-CI_QT_VERSION=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+QT_VERSION_MAC: '([0-9\.]+)'/\1/p" | /usr/bin/head -1)
-CI_QT_HASH_X86_64=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+QT_HASH_MAC_X86_64: '([0-9a-f]+)'/\1/p")
-CI_QT_HASH_ARM64=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+QT_HASH_MAC_ARM64: '([0-9a-f]+)'/\1/p")
-CI_QT_HASH_UNIVERSAL=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+QT_HASH_MAC_UNIVERSAL: '([0-9a-f]+)'/\1/p")
-CI_MACOSX_DEPLOYMENT_TARGET_X86_64=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+MACOSX_DEPLOYMENT_TARGET_X86_64: '([0-9\.]+)'/\1/p")
-CI_MACOSX_DEPLOYMENT_TARGET_ARM64=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+MACOSX_DEPLOYMENT_TARGET_ARM64: '([0-9\.]+)'/\1/p")
-CI_MACOS_CEF_VERSION=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+CEF_BUILD_VERSION_MAC: '([0-9]+)'/\1/p")
-CI_CEF_HASH_X86_64=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+CEF_HASH_MAC_X86_64: '([0-9a-f]+)'/\1/p")
-CI_CEF_HASH_ARM64=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+CEF_HASH_MAC_ARM64: '([0-9a-f]+)'/\1/p")
 
 MACOS_VERSION="$(/usr/bin/sw_vers -productVersion)"
 MACOS_MAJOR="$(echo ${MACOS_VERSION} | /usr/bin/cut -d '.' -f 1)"
@@ -48,22 +32,15 @@ fi
 ## DEFINE UTILITIES ##
 check_macos_version() {
     ARCH="${ARCH:-${CURRENT_ARCH}}"
-    if [ "${ARCH}" = "x86_64" ]; then
-        CI_MACOSX_DEPLOYMENT_TARGET="${CI_MACOSX_DEPLOYMENT_TARGET_X86_64}"
-        CI_CEF_HASH="${CI_CEF_HASH_X86_64}"
-        CI_QT_HASH="${CI_QT_HASH_X86_64}"
-        CI_DEPS_HASH="${CI_DEPS_HASH_X86_64}"
-    elif [ "${ARCH}" = "arm64" ]; then
-        CI_MACOSX_DEPLOYMENT_TARGET="${CI_MACOSX_DEPLOYMENT_TARGET_ARM64}"
-        CI_CEF_HASH="${CI_CEF_HASH_ARM64}"
-        CI_QT_HASH="${CI_QT_HASH_ARM64}"
-        CI_DEPS_HASH="${CI_DEPS_HASH_ARM64}"
-    else
-        caught_error "Unsupported architecture '${ARCH}' provided"
-    fi
+
+    case "${ARCH}" in
+        x86_64) ;;
+        arm64) ;;
+        *) caught_error "Unsupported architecture '${ARCH}' provided" ;;
+    esac
 
     step "Check macOS version..."
-    MIN_VERSION=${MACOSX_DEPLOYMENT_TARGET:-${CI_MACOSX_DEPLOYMENT_TARGET}}
+    MIN_VERSION="11.0"
     MIN_MAJOR=$(echo ${MIN_VERSION} | /usr/bin/cut -d '.' -f 1)
     MIN_MINOR=$(echo ${MIN_VERSION} | /usr/bin/cut -d '.' -f 2)
 
@@ -71,9 +48,7 @@ check_macos_version() {
         error "ERROR: Minimum required macOS version is ${MIN_VERSION}, but running on ${MACOS_VERSION}"
     fi
 
-    if [ "${MACOS_MAJOR}" -ge "11" ]; then
-        export CODESIGN_LINKER="ON"
-    fi
+    export CODESIGN_LINKER="ON"
 }
 
 install_homebrew_deps() {
