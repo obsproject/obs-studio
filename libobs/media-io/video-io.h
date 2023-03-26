@@ -88,6 +88,9 @@ enum video_format {
 
 	/* planar 4:4:4 format, 16 bpp */
 	VIDEO_FORMAT_P416, /* two-plane, luma and packed chroma */
+
+	/* packed 4:2:2 format, 10 bpp */
+	VIDEO_FORMAT_V210,
 };
 
 enum video_trc {
@@ -153,6 +156,7 @@ static inline bool format_is_yuv(enum video_format format)
 	case VIDEO_FORMAT_P010:
 	case VIDEO_FORMAT_P216:
 	case VIDEO_FORMAT_P416:
+	case VIDEO_FORMAT_V210:
 		return true;
 	case VIDEO_FORMAT_NONE:
 	case VIDEO_FORMAT_RGBA:
@@ -215,6 +219,8 @@ static inline const char *get_video_format_name(enum video_format format)
 		return "P216";
 	case VIDEO_FORMAT_P416:
 		return "P416";
+	case VIDEO_FORMAT_V210:
+		return "V210";
 	case VIDEO_FORMAT_NONE:;
 	}
 
