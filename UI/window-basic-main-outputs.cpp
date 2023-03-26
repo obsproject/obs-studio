@@ -1310,7 +1310,6 @@ bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
 		config_get_int(main->Config(), "SimpleOutput", "RecTracks");
 	const char *recFormat =
 		config_get_string(main->Config(), "SimpleOutput", "RecFormat");
-	bool flv = strcmp(recFormat, "flv") == 0;
 
 	bool is_fragmented = strcmp(format, "fmp4") == 0 ||
 			     strcmp(format, "fmov") == 0;
