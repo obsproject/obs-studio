@@ -1,7 +1,8 @@
-project(uthash)
+cmake_minimum_required(VERSION 3.16...3.25)
 
 add_library(uthash INTERFACE)
 add_library(OBS::uthash ALIAS uthash)
-set_target_properties(uthash PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                        "${CMAKE_CURRENT_SOURCE_DIR}")
-set_target_properties(uthash PROPERTIES FOLDER "deps")
+
+target_sources(uthash INTERFACE uthash/uthash.h)
+
+set_target_properties(uthash PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}")

@@ -53,19 +53,11 @@ find_path(
 if(PC_Asio_VERSION VERSION_GREATER 0)
   set(Asio_VERSION ${PC_Asio_VERSION})
 elseif(EXISTS "${Asio_INCLUDE_DIR}/asio/version.hpp")
-  file(
-    STRINGS "${Asio_INCLUDE_DIR}/asio/version.hpp" _version_string
-    REGEX
-      "#define[ \t]+ASIO_VERSION[ \t]+[0-9]+[ \t]+\/\/[ \t][0-9]+\.[0-9]+\.[0-9]+"
-  )
+  file(STRINGS "${Asio_INCLUDE_DIR}/asio/version.hpp" _version_string
+       REGEX "#define[ \t]+ASIO_VERSION[ \t]+[0-9]+[ \t]+\/\/[ \t][0-9]+\.[0-9]+\.[0-9]+")
 
-  string(
-    REGEX
-    REPLACE
-      "#define[ \t]+ASIO_VERSION[ \t]+[0-9]+[ \t]+\/\/[ \t]([0-9]+\.[0-9]+\.[0-9]+)"
-      "\\1"
-      Asio_VERSION
-      "${_version_string}")
+  string(REGEX REPLACE "#define[ \t]+ASIO_VERSION[ \t]+[0-9]+[ \t]+\/\/[ \t]([0-9]+\.[0-9]+\.[0-9]+)" "\\1"
+                       Asio_VERSION "${_version_string}")
 else()
   if(NOT Asio_FIND_QUIETLY)
     message(AUTHOR_WARNING "Failed to find Asio version.")
@@ -74,11 +66,9 @@ else()
 endif()
 
 if(CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin|Windows")
-  set(Asio_ERROR_REASON
-      "Ensure that obs-deps is provided as part of CMAKE_PREFIX_PATH.")
+  set(Asio_ERROR_REASON "Ensure that obs-deps is provided as part of CMAKE_PREFIX_PATH.")
 elseif(CMAKE_HOST_SYSTEM_NAME MATCHES "Linux|FreeBSD")
-  set(Asio_ERROR_REASON
-      "Ensure Asio library is available in local include paths.")
+  set(Asio_ERROR_REASON "Ensure Asio library is available in local include paths.")
 endif()
 
 find_package_handle_standard_args(
@@ -91,8 +81,7 @@ unset(Asio_ERROR_REASON)
 if(Asio_FOUND)
   if(NOT TARGET Asio::Asio)
     add_library(Asio::Asio INTERFACE IMPORTED)
-    set_target_properties(Asio::Asio PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                                "${Asio_INCLUDE_DIR}")
+    set_target_properties(Asio::Asio PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${Asio_INCLUDE_DIR}")
   endif()
 endif()
 

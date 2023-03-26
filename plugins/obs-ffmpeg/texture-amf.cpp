@@ -3,8 +3,6 @@
 #include <obs-module.h>
 #include <obs-avc.h>
 
-#include "obs-ffmpeg-config.h"
-
 #include <unordered_map>
 #include <cstdlib>
 #include <memory>

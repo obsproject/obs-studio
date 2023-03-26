@@ -28,19 +28,15 @@ target_sources(
 
 target_include_directories(graphics-hook PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
-target_link_libraries(graphics-hook PRIVATE OBS::ipc-util Detours::Detours
-                                            dxguid)
+target_link_libraries(graphics-hook PRIVATE OBS::ipc-util Detours::Detours dxguid)
 target_link_options(graphics-hook PRIVATE "LINKER:/IGNORE:4099")
 
 if(MSVC)
   target_compile_options(graphics-hook PRIVATE "$<IF:$<CONFIG:Debug>,/MTd,/MT>")
 endif()
 
-set_target_properties(
-  graphics-hook
-  PROPERTIES FOLDER "plugins/win-capture"
-             OUTPUT_NAME
-             "graphics-hook$<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>,64,32>")
+set_target_properties(graphics-hook PROPERTIES FOLDER "plugins/win-capture"
+                                               OUTPUT_NAME "graphics-hook$<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>,64,32>")
 
 target_compile_definitions(graphics-hook PRIVATE COMPILE_D3D12_HOOK)
 
@@ -51,12 +47,8 @@ if(TARGET Vulkan::Vulkan)
 
   target_compile_definitions(graphics-hook PRIVATE COMPILE_VULKAN_HOOK)
 
-  add_target_resource(
-    graphics-hook "${CMAKE_CURRENT_SOURCE_DIR}/obs-vulkan64.json"
-    "obs-plugins/win-capture/")
-  add_target_resource(
-    graphics-hook "${CMAKE_CURRENT_SOURCE_DIR}/obs-vulkan32.json"
-    "obs-plugins/win-capture/")
+  add_target_resource(graphics-hook "${CMAKE_CURRENT_SOURCE_DIR}/obs-vulkan64.json" "obs-plugins/win-capture/")
+  add_target_resource(graphics-hook "${CMAKE_CURRENT_SOURCE_DIR}/obs-vulkan32.json" "obs-plugins/win-capture/")
 endif()
 
 set(OBS_PLUGIN_DESTINATION "${OBS_DATA_DESTINATION}/obs-plugins/win-capture/")

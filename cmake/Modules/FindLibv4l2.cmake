@@ -30,16 +30,12 @@ if(LIBV4L2_FOUND)
   if(NOT TARGET LIB4L2::LIB4L2)
     if(IS_ABSOLUTE "${LIBV4L2_LIBRARIES}")
       add_library(LIB4L2::LIB4L2 UNKNOWN IMPORTED)
-      set_target_properties(LIB4L2::LIB4L2 PROPERTIES IMPORTED_LOCATION
-                                                      "${LIBV4L2_LIBRARIES}")
+      set_target_properties(LIB4L2::LIB4L2 PROPERTIES IMPORTED_LOCATION "${LIBV4L2_LIBRARIES}")
     else()
       add_library(LIB4L2::LIB4L2 INTERFACE IMPORTED)
-      set_target_properties(LIB4L2::LIB4L2 PROPERTIES IMPORTED_LIBNAME
-                                                      "${LIBV4L2_LIBRARIES}")
+      set_target_properties(LIB4L2::LIB4L2 PROPERTIES IMPORTED_LIBNAME "${LIBV4L2_LIBRARIES}")
     endif()
 
-    set_target_properties(
-      LIB4L2::LIB4L2 PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                "${LIBV4L2_INCLUDE_DIRS}")
+    set_target_properties(LIB4L2::LIB4L2 PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${LIBV4L2_INCLUDE_DIRS}")
   endif()
 endif()

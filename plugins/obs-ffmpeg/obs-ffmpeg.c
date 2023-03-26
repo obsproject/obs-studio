@@ -5,8 +5,6 @@
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 
-#include "obs-ffmpeg-config.h"
-
 #ifdef _WIN32
 #include <dxgi.h>
 #include <util/windows/win-version.h>

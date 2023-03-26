@@ -6,7 +6,6 @@
 #include <file-updater/file-updater.h>
 
 #include "rtmp-format-ver.h"
-#include "lookup-config.h"
 
 #include "service-specific/showroom.h"
 #include "service-specific/dacast.h"

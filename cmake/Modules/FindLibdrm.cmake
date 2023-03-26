@@ -20,8 +20,7 @@ find_library(
   PATHS /usr/lib /usr/local/lib /opt/local/lib)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Libdrm DEFAULT_MSG LIBDRM_LIB
-                                  LIBDRM_INCLUDE_DIR)
+find_package_handle_standard_args(Libdrm DEFAULT_MSG LIBDRM_LIB LIBDRM_INCLUDE_DIR)
 mark_as_advanced(LIBDRM_INCLUDE_DIR LIBDRM_LIB)
 
 if(LIBDRM_FOUND)
@@ -30,8 +29,6 @@ if(LIBDRM_FOUND)
 
   if(NOT TARGET Libdrm::Libdrm)
     add_library(Libdrm::Libdrm INTERFACE IMPORTED)
-    set_target_properties(
-      Libdrm::Libdrm PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                "${LIBDRM_INCLUDE_DIRS}")
+    set_target_properties(Libdrm::Libdrm PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${LIBDRM_INCLUDE_DIRS}")
   endif()
 endif()

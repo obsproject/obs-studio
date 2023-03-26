@@ -23,7 +23,6 @@
 #include <util/bmem.h>
 #include <util/base.h>
 #include "cstrcache.h"
-#include "obs-scripting-config.h"
 #include <util/platform.h>
 
 #if defined(ENABLE_UI)
@@ -92,7 +91,6 @@ static inline void wrap_blog(int log_level, const char *message)
 %include "graphics/matrix3.h"
 %include "graphics/quat.h"
 %include "graphics/image-file.h"
-%include "obs-scripting-config.h"
 %include "obs-data.h"
 %include "obs-source.h"
 %include "obs-properties.h"

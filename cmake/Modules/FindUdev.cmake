@@ -30,15 +30,12 @@ if(UDEV_FOUND)
   if(NOT TARGET Udev::Udev)
     if(IS_ABSOLUTE "${UDEV_LIBRARIES}")
       add_library(Udev::Udev UNKNOWN IMPORTED)
-      set_target_properties(Udev::Udev PROPERTIES IMPORTED_LOCATION
-                                                  "${UDEV_LIBRARIES}")
+      set_target_properties(Udev::Udev PROPERTIES IMPORTED_LOCATION "${UDEV_LIBRARIES}")
     else()
       add_library(Udev::Udev INTERFACE IMPORTED)
-      set_target_properties(Udev::Udev PROPERTIES IMPORTED_LIBNAME
-                                                  "${UDEV_LIBRARIES}")
+      set_target_properties(Udev::Udev PROPERTIES IMPORTED_LIBNAME "${UDEV_LIBRARIES}")
     endif()
 
-    set_target_properties(Udev::Udev PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                                "${UDEV_INCLUDE_DIRS}")
+    set_target_properties(Udev::Udev PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${UDEV_INCLUDE_DIRS}")
   endif()
 endif()
