@@ -2467,6 +2467,32 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		if (!created_log)
 			create_log_file(logFile);
 
+		qInstallMessageHandler([](QtMsgType type,
+					  const QMessageLogContext &,
+					  const QString &message) {
+			switch (type) {
+#ifdef _DEBUG
+			case QtDebugMsg:
+				blog(LOG_DEBUG, "%s", QT_TO_UTF8(message));
+				break;
+			case QtInfoMsg:
+				blog(LOG_INFO, "%s", QT_TO_UTF8(message));
+				break;
+#else
+			case QtDebugMsg:
+			case QtInfoMsg:
+				break;
+#endif
+			case QtWarningMsg:
+				blog(LOG_WARNING, "%s", QT_TO_UTF8(message));
+				break;
+			case QtCriticalMsg:
+			case QtFatalMsg:
+				blog(LOG_ERROR, "%s", QT_TO_UTF8(message));
+				break;
+			}
+		});
+
 #ifdef __APPLE__
 		MacPermissionStatus audio_permission =
 			CheckPermission(kAudioDeviceAccess);
