@@ -1,3 +1,4 @@
+# cmake-format: off
 # Try to find XCB on a Unix system
 #
 # This will define:
@@ -33,6 +34,7 @@
 #
 # Redistribution and use is allowed according to the terms of the BSD license.
 # For details see the accompanying COPYING-CMAKE-SCRIPTS file.
+# cmake-format: on
 
 set(knownComponents
     XCB
@@ -68,8 +70,7 @@ else()
   set(comps ${knownComponents})
 endif()
 
-# iterate through the list of requested components, and check that we know them
-# all. If not, fail.
+# iterate through the list of requested components, and check that we know them all. If not, fail.
 foreach(comp ${comps})
   list(FIND knownComponents ${comp} index)
   if("${index}" STREQUAL "-1")
@@ -221,8 +222,7 @@ macro(_XCB_HANDLE_COMPONENT _comp)
 endmacro()
 
 if(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-  # Use pkg-config to get the directories and then use these values in the
-  # FIND_PATH() and FIND_LIBRARY() calls
+  # Use pkg-config to get the directories and then use these values in the FIND_PATH() and FIND_LIBRARY() calls
   find_package(PkgConfig)
   pkg_check_modules(PKG_XCB QUIET ${pkgConfigModules})
 
@@ -253,19 +253,14 @@ if(XCB_FOUND AND NOT TARGET XCB::XCB)
       if(XCB_${component_u}_FOUND)
         if(IS_ABSOLUTE "${XCB_${component_u}_LIBRARY}")
           add_library(XCB::${component} UNKNOWN IMPORTED)
-          set_target_properties(
-            XCB::${component} PROPERTIES IMPORTED_LOCATION
-                                         "${XCB_${component_u}_LIBRARY}")
+          set_target_properties(XCB::${component} PROPERTIES IMPORTED_LOCATION "${XCB_${component_u}_LIBRARY}")
         else()
           add_library(XCB::${component} INTERFACE IMPORTED)
-          set_target_properties(
-            XCB::${component} PROPERTIES IMPORTED_LIBNAME
-                                         "${XCB_${component_u}_LIBRARY}")
+          set_target_properties(XCB::${component} PROPERTIES IMPORTED_LIBNAME "${XCB_${component_u}_LIBRARY}")
         endif()
 
-        set_target_properties(
-          XCB::${component} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                       "${XCB_${component_u}_INCLUDE_DIR}")
+        set_target_properties(XCB::${component} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+                                                           "${XCB_${component_u}_INCLUDE_DIR}")
       endif()
     endif()
   endforeach()

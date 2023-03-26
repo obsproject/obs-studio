@@ -7,6 +7,7 @@
 
 #include <util/dstr.h>
 #include <util/darray.h>
+#include <util/c99defs.h>
 
 struct font_path_info {
 	char *face_and_style;

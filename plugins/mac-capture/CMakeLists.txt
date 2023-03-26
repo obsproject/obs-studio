@@ -1,4 +1,6 @@
-project(mac-capture)
+cmake_minimum_required(VERSION 3.22...3.25)
+
+legacy_check()
 
 find_library(COREAUDIO CoreAudio)
 find_library(AUDIOUNIT AudioUnit)
@@ -24,18 +26,20 @@ target_sources(
           window-utils.m
           window-utils.h)
 
-target_link_libraries(mac-capture PRIVATE OBS::libobs ${COREAUDIO} ${AUDIOUNIT}
-                                          ${COREFOUNDATION} ${IOSURF} ${COCOA})
+target_link_libraries(mac-capture PRIVATE OBS::libobs ${COREAUDIO} ${AUDIOUNIT} ${COREFOUNDATION} ${IOSURF} ${COCOA})
 
 if(SCREENCAPTUREKIT)
-  target_link_libraries(mac-capture PRIVATE OBS::libobs ${COREVIDEO}
-                                            ${COREMEDIA})
-
-  target_link_options(mac-capture PRIVATE SHELL:-weak_framework
-                      ScreenCaptureKit)
-  target_link_options(libobs PRIVATE SHELL:-weak_framework ScreenCaptureKit)
+  target_link_libraries(mac-capture PRIVATE OBS::libobs ${COREVIDEO} ${COREMEDIA}
+                                            "$<LINK_LIBRARY:WEAK_FRAMEWORK,${SCREENCAPTUREKIT}>")
 endif()
 
-set_target_properties(mac-capture PROPERTIES FOLDER "plugins" PREFIX "")
+set_target_properties_obs(
+  mac-capture
+  PROPERTIES FOLDER plugins
+             PREFIX ""
+             XCODE_ATTRIBUTE_CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION YES
+             XCODE_ATTRIBUTE_GCC_WARN_SHADOW YES)
 
-setup_plugin_target(mac-capture)
+if(CMAKE_VERSION VERSION_LESS_EQUAL 3.25.0)
+  set_property(TARGET mac-capture PROPERTY XCODE_LINK_BUILD_PHASE_MODE BUILT_ONLY)
+endif()

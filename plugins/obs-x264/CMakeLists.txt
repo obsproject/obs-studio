@@ -1,31 +1,24 @@
-project(obs-x264)
+cmake_minimum_required(VERSION 3.16...3.25)
+
+legacy_check()
 
 find_package(Libx264 REQUIRED)
 
-add_library(obs-x264 MODULE)
-add_library(OBS::x264 ALIAS obs-x264)
-add_executable(obs-x264-test)
-
-target_sources(obs-x264-test PRIVATE obs-x264-test.c)
-
-target_link_libraries(obs-x264-test PRIVATE OBS::opts-parser)
-
-target_sources(obs-x264 PRIVATE obs-x264.c obs-x264-plugin-main.c)
-
-target_link_libraries(obs-x264 PRIVATE LIBX264::LIBX264 OBS::opts-parser)
-
-set_target_properties(obs-x264 PROPERTIES FOLDER "plugins" PREFIX "")
-
-if(OS_WINDOWS)
-  set(MODULE_DESCRIPTION "OBS x264 encoder")
-  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
-                 obs-x264.rc)
-
-  target_sources(obs-x264 PRIVATE obs-x264.rc)
-
+if(NOT TARGET OBS::opts-parser)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/deps/opts-parser" "${CMAKE_BINARY_DIR}/deps/opts-parser")
 endif()
 
-set_target_properties(obs-x264-test PROPERTIES FOLDER "plugins")
-add_test(NAME obs-x264-test COMMAND obs-x264-test)
+add_library(obs-x264 MODULE)
+add_library(OBS::x264 ALIAS obs-x264)
 
-setup_plugin_target(obs-x264)
+target_sources(obs-x264 PRIVATE obs-x264.c obs-x264-plugin-main.c)
+target_link_libraries(obs-x264 PRIVATE Libx264::Libx264 OBS::opts-parser)
+
+if(OS_WINDOWS)
+  configure_file(cmake/windows/obs-module.rc.in obs-x264.rc)
+  target_sources(obs-x264 PRIVATE obs-x264.rc)
+endif()
+
+set_target_properties_obs(obs-x264 PROPERTIES FOLDER plugins/obs-x264 PREFIX "")
+
+include(cmake/x264-test.cmake)

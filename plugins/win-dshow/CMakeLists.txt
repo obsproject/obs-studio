@@ -1,8 +1,5 @@
 if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/libdshowcapture/dshowcapture.hpp")
-  obs_status(
-    FATAL_ERROR
-    "libdshowcapture submodule not found! Please fetch submodules. win-dshow plugin disabled."
-  )
+  obs_status(FATAL_ERROR "libdshowcapture submodule not found! Please fetch submodules. win-dshow plugin disabled.")
   return()
 endif()
 
@@ -26,9 +23,8 @@ find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil)
 add_library(win-dshow MODULE)
 add_library(OBS::dshow ALIAS win-dshow)
 
-target_sources(
-  win-dshow PRIVATE encode-dstr.hpp win-dshow.cpp win-dshow-encoder.cpp
-                    dshow-plugin.cpp ffmpeg-decode.c ffmpeg-decode.h)
+target_sources(win-dshow PRIVATE encode-dstr.hpp win-dshow.cpp win-dshow-encoder.cpp dshow-plugin.cpp ffmpeg-decode.c
+                                 ffmpeg-decode.h)
 
 add_library(libdshowcapture-external INTERFACE)
 add_library(libdshowcapture INTERFACE)
@@ -37,12 +33,10 @@ add_library(OBS::libdshowcapture ALIAS libdshowcapture)
 
 target_sources(
   libdshowcapture-external
-  INTERFACE
-    libdshowcapture/external/capture-device-support/Library/EGAVResult.cpp
-    libdshowcapture/external/capture-device-support/Library/ElgatoUVCDevice.cpp
-    libdshowcapture/external/capture-device-support/Library/win/EGAVHIDImplementation.cpp
-    libdshowcapture/external/capture-device-support/SampleCode/DriverInterface.cpp
-)
+  INTERFACE libdshowcapture/external/capture-device-support/Library/EGAVResult.cpp
+            libdshowcapture/external/capture-device-support/Library/ElgatoUVCDevice.cpp
+            libdshowcapture/external/capture-device-support/Library/win/EGAVHIDImplementation.cpp
+            libdshowcapture/external/capture-device-support/SampleCode/DriverInterface.cpp)
 
 target_sources(
   libdshowcapture
@@ -75,11 +69,8 @@ target_sources(
             libdshowcapture/source/external/IVideoCaptureFilter.h)
 
 target_include_directories(
-  libdshowcapture
-  INTERFACE
-    ${CMAKE_CURRENT_SOURCE_DIR}/libdshowcapture
-    ${CMAKE_CURRENT_SOURCE_DIR}/libdshowcapture/external/capture-device-support/Library
-)
+  libdshowcapture INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/libdshowcapture
+                            ${CMAKE_CURRENT_SOURCE_DIR}/libdshowcapture/external/capture-device-support/Library)
 
 target_compile_definitions(libdshowcapture-external INTERFACE _UP_WINDOWS=1)
 target_compile_definitions(libdshowcapture INTERFACE _UP_WINDOWS=1)
@@ -87,22 +78,16 @@ target_compile_options(libdshowcapture-external INTERFACE /wd4018)
 
 set(MODULE_DESCRIPTION "OBS DirectShow module")
 
-configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
-               win-dshow.rc)
+configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in win-dshow.rc)
 
 target_sources(win-dshow PRIVATE win-dshow.rc)
 
-target_compile_definitions(
-  win-dshow PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS
-                    _CRT_NONSTDC_NO_WARNINGS)
+target_compile_definitions(win-dshow PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_WARNINGS)
 
 set(VIRTUALCAM_AVAILABLE OFF)
 if(ENABLE_VIRTUALCAM)
   if(VIRTUALCAM_GUID STREQUAL "")
-    obs_status(
-      WARNING
-      "Windows Virtual Camera - GUID not set - specify as 'VIRTUALCAM_GUID' to enable."
-    )
+    obs_status(WARNING "Windows Virtual Camera - GUID not set. Specify as 'VIRTUALCAM_GUID' to enable.")
   else()
     set(INVALID_GUID ON)
 
@@ -167,12 +152,10 @@ target_link_libraries(
 
 source_group(
   "libdshowcapture-external\\Source Files"
-  FILES
-    libdshowcapture/external/capture-device-support/Library/EGAVResult.cpp
-    libdshowcapture/external/capture-device-support/Library/ElgatoUVCDevice.cpp
-    libdshowcapture/external/capture-device-support/Library/win/EGAVHIDImplementation.cpp
-    libdshowcapture/external/capture-device-support/SampleCode/DriverInterface.cpp
-)
+  FILES libdshowcapture/external/capture-device-support/Library/EGAVResult.cpp
+        libdshowcapture/external/capture-device-support/Library/ElgatoUVCDevice.cpp
+        libdshowcapture/external/capture-device-support/Library/win/EGAVHIDImplementation.cpp
+        libdshowcapture/external/capture-device-support/SampleCode/DriverInterface.cpp)
 source_group(
   "libdshowcapture\\Source Files"
   FILES libdshowcapture/source/capture-filter.cpp
@@ -210,33 +193,23 @@ set_target_properties(win-dshow PROPERTIES FOLDER "plugins/win-dshow")
 setup_plugin_target(win-dshow)
 
 if(ENABLE_VIRTUALCAM AND VIRTUALCAM_AVAILABLE)
-  target_sources(
-    win-dshow PRIVATE tiny-nv12-scale.c tiny-nv12-scale.h shared-memory-queue.c
-                      shared-memory-queue.h virtualcam.c)
+  target_sources(win-dshow PRIVATE tiny-nv12-scale.c tiny-nv12-scale.h shared-memory-queue.c shared-memory-queue.h
+                                   virtualcam.c)
 
   target_compile_definitions(win-dshow PRIVATE VIRTUALCAM_AVAILABLE)
 
-  target_include_directories(win-dshow
-                             PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/config)
+  target_include_directories(win-dshow PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/config)
 
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/virtualcam-guid.h.in
-                 ${CMAKE_CURRENT_BINARY_DIR}/config/virtualcam-guid.h)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/virtualcam-guid.h.in ${CMAKE_CURRENT_BINARY_DIR}/config/virtualcam-guid.h)
 
-  target_sources(win-dshow
-                 PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/config/virtualcam-guid.h)
+  target_sources(win-dshow PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/config/virtualcam-guid.h)
 
-  configure_file(virtualcam-install.bat.in
-                 "${CMAKE_CURRENT_BINARY_DIR}/virtualcam-install.bat")
+  configure_file(virtualcam-install.bat.in "${CMAKE_CURRENT_BINARY_DIR}/virtualcam-install.bat")
 
-  configure_file(virtualcam-uninstall.bat.in
-                 "${CMAKE_CURRENT_BINARY_DIR}/virtualcam-uninstall.bat")
+  configure_file(virtualcam-uninstall.bat.in "${CMAKE_CURRENT_BINARY_DIR}/virtualcam-uninstall.bat")
 
-  add_target_resource(
-    win-dshow "${CMAKE_CURRENT_BINARY_DIR}/virtualcam-install.bat"
-    "obs-plugins/win-dshow/")
-  add_target_resource(
-    win-dshow "${CMAKE_CURRENT_BINARY_DIR}/virtualcam-uninstall.bat"
-    "obs-plugins/win-dshow/")
+  add_target_resource(win-dshow "${CMAKE_CURRENT_BINARY_DIR}/virtualcam-install.bat" "obs-plugins/win-dshow/")
+  add_target_resource(win-dshow "${CMAKE_CURRENT_BINARY_DIR}/virtualcam-uninstall.bat" "obs-plugins/win-dshow/")
 
   add_subdirectory(virtualcam-module)
 endif()

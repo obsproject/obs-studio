@@ -11,21 +11,17 @@ if(OS_WINDOWS AND MSVC)
     file(
       GENERATE
       OUTPUT "${CMAKE_BINARY_DIR}/ALL_BUILD.vcxproj.user"
-      INPUT "${CMAKE_SOURCE_DIR}/cmake/bundle/windows/ALL_BUILD.vcxproj.user.in"
-    )
+      INPUT "${CMAKE_SOURCE_DIR}/cmake/bundle/windows/ALL_BUILD.vcxproj.user.in")
   endif()
 
-  # CMake 3.24 introduces a bug mistakenly interpreting MSVC as supporting
-  # `-pthread`
+  # CMake 3.24 introduces a bug mistakenly interpreting MSVC as supporting `-pthread`
   if(${CMAKE_VERSION} VERSION_EQUAL "3.24.0")
     set(THREADS_HAVE_PTHREAD_ARG OFF)
   endif()
 
   # Check for Win SDK version 10.0.20348 or above
-  obs_status(
-    STATUS "Windows API version is ${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}")
-  string(REPLACE "." ";" WINAPI_VER
-                 "${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}")
+  obs_status(STATUS "Windows API version is ${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}")
+  string(REPLACE "." ";" WINAPI_VER "${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}")
 
   list(GET WINAPI_VER 0 WINAPI_VER_MAJOR)
   list(GET WINAPI_VER 1 WINAPI_VER_MINOR)
@@ -45,10 +41,8 @@ if(OS_WINDOWS AND MSVC)
   endif()
 
   if(NOT WINAPI_COMPATIBLE)
-    obs_status(
-      FATAL_ERROR
-      "OBS requires Windows 10 SDK version 10.0.20348.0 and above to compile.\n"
-      "Please download the most recent Windows 10 SDK in order to compile.")
+    obs_status(FATAL_ERROR "OBS requires Windows 10 SDK version 10.0.20348.0 and above to compile.\n"
+               "Please download the most recent Windows 10 SDK in order to compile.")
   endif()
 
   add_compile_options(
@@ -76,12 +70,8 @@ if(OS_WINDOWS AND MSVC)
     /std:c17)
 
   add_link_options(
-    "LINKER:/Brepro"
-    "LINKER:/OPT:REF"
-    "LINKER:/WX"
-    "$<$<NOT:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>>:LINKER\:/SAFESEH\:NO>"
-    "$<$<CONFIG:DEBUG>:LINKER\:/INCREMENTAL\:NO>"
-    "$<$<CONFIG:RELWITHDEBINFO>:LINKER\:/INCREMENTAL\:NO;/OPT:ICF>")
+    "LINKER:/Brepro" "LINKER:/OPT:REF" "LINKER:/WX" "$<$<NOT:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>>:LINKER\:/SAFESEH\:NO>"
+    "$<$<CONFIG:DEBUG>:LINKER\:/INCREMENTAL\:NO>" "$<$<CONFIG:RELWITHDEBINFO>:LINKER\:/INCREMENTAL\:NO;/OPT:ICF>")
 else()
   find_program(CCACHE_PROGRAM "ccache")
   set(CCACHE_SUPPORT
@@ -147,8 +137,7 @@ else()
   string(TOLOWER ${CMAKE_SYSTEM_PROCESSOR} LOWERCASE_CMAKE_SYSTEM_PROCESSOR)
 endif()
 
-if(LOWERCASE_CMAKE_SYSTEM_PROCESSOR MATCHES
-   "(i[3-6]86|x86|x64|x86_64|amd64|e2k)")
+if(LOWERCASE_CMAKE_SYSTEM_PROCESSOR MATCHES "(i[3-6]86|x86|x64|x86_64|amd64|e2k)")
   if(NOT MSVC AND NOT CMAKE_OSX_ARCHITECTURES STREQUAL "arm64")
     set(ARCH_SIMD_FLAGS -mmmx -msse -msse2)
   endif()
@@ -156,15 +145,12 @@ elseif(LOWERCASE_CMAKE_SYSTEM_PROCESSOR MATCHES "^(powerpc|ppc)64(le)?")
   set(ARCH_SIMD_DEFINES -DNO_WARN_X86_INTRINSICS)
   set(ARCH_SIMD_FLAGS -mvsx)
 else()
-  if(CMAKE_C_COMPILER_ID MATCHES "^(Apple)?Clang|GNU"
-     OR CMAKE_CXX_COMPILER_ID MATCHES "^(Apple)?Clang|GNU")
+  if(CMAKE_C_COMPILER_ID MATCHES "^(Apple)?Clang|GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "^(Apple)?Clang|GNU")
     check_c_compiler_flag("-fopenmp-simd" C_COMPILER_SUPPORTS_OPENMP_SIMD)
     check_cxx_compiler_flag("-fopenmp-simd" CXX_COMPILER_SUPPORTS_OPENMP_SIMD)
     set(ARCH_SIMD_FLAGS
-        -DSIMDE_ENABLE_OPENMP
-        "$<$<AND:$<COMPILE_LANGUAGE:C>,$<BOOL:C_COMPILER_SUPPORTS_OPENMP_SIMD>>:-fopenmp-simd>"
-        "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<BOOL:CXX_COMPILER_SUPPORTS_OPENMP_SIMD>>:-fopenmp-simd>"
-    )
+        -DSIMDE_ENABLE_OPENMP "$<$<AND:$<COMPILE_LANGUAGE:C>,$<BOOL:C_COMPILER_SUPPORTS_OPENMP_SIMD>>:-fopenmp-simd>"
+        "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<BOOL:CXX_COMPILER_SUPPORTS_OPENMP_SIMD>>:-fopenmp-simd>")
   endif()
 endif()
 
@@ -178,15 +164,13 @@ if(LOWERCASE_CMAKE_SYSTEM_PROCESSOR MATCHES "e2k")
     "-Wno-sign-compare"
     "-Wno-bad-return-value-type"
     "-Wno-maybe-uninitialized")
-    check_c_compiler_flag(${TEST_C_FLAG}
-                          C_COMPILER_SUPPORTS_FLAG_${TEST_C_FLAG})
+    check_c_compiler_flag(${TEST_C_FLAG} C_COMPILER_SUPPORTS_FLAG_${TEST_C_FLAG})
     if(C_COMPILER_SUPPORTS_FLAG_${TEST_C_FLAG})
       set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} ${TEST_C_FLAG})
     endif()
   endforeach()
   foreach(TEST_CXX_FLAG "-Wno-invalid-offsetof" "-Wno-maybe-uninitialized")
-    check_cxx_compiler_flag(${TEST_CXX_FLAG}
-                            CXX_COMPILER_SUPPORTS_FLAG_${TEST_CXX_FLAG})
+    check_cxx_compiler_flag(${TEST_CXX_FLAG} CXX_COMPILER_SUPPORTS_FLAG_${TEST_CXX_FLAG})
     if(CXX_COMPILER_SUPPORTS_FLAG_${TEST_CXX_FLAG})
       set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} ${TEST_CXX_FLAG})
     endif()

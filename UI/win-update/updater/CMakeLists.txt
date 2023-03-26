@@ -1,44 +1,42 @@
-project(updater)
+cmake_minimum_required(VERSION 3.24...3.25)
+
+legacy_check()
 
 option(ENABLE_UPDATER "Build with Windows updater" ON)
 
 if(NOT ENABLE_UPDATER)
-  message(STATUS "OBS:  DISABLED   Windows updater")
+  target_disable_feature(obs "Windows updater")
   return()
 endif()
 
 find_package(zstd)
 
+if(NOT TARGET OBS::json11)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/deps/json11" "${CMAKE_BINARY_DIR}/deps/json11")
+endif()
+
 add_executable(updater WIN32)
 
 target_sources(
   updater
-  PRIVATE updater.cpp
-          updater.hpp
-          patch.cpp
-          http.cpp
-          hash.cpp
-          resource.h
-          updater.rc
-          init-hook-files.c
-          updater.manifest
+  PRIVATE hash.cpp
           helpers.cpp
           helpers.hpp
-          ${CMAKE_SOURCE_DIR}/deps/json11/json11.hpp
-          ${CMAKE_SOURCE_DIR}/deps/json11/json11.cpp)
+          http.cpp
+          init-hook-files.c
+          patch.cpp
+          resource.h
+          updater.cpp
+          updater.hpp
+          updater.manifest
+          updater.rc)
 
-target_include_directories(updater PRIVATE ${CMAKE_SOURCE_DIR}/libobs
-                                           ${CMAKE_SOURCE_DIR}/deps/json11)
-
+target_compile_options(updater PRIVATE $<IF:$<CONFIG:DEBUG>,/MTd,/MT> "/utf-8")
 target_compile_definitions(updater PRIVATE NOMINMAX "PSAPI_VERSION=2")
 
-if(MSVC)
-  target_compile_options(updater PRIVATE $<IF:$<CONFIG:DEBUG>,/MTd,/MT>)
-  target_compile_options(updater PRIVATE "/utf-8")
-  target_link_options(updater PRIVATE "LINKER:/IGNORE:4098")
-endif()
+target_include_directories(updater PRIVATE "${CMAKE_SOURCE_DIR}/libobs" "${CMAKE_SOURCE_DIR}/UI/win-update")
 
-target_link_libraries(updater PRIVATE OBS::blake2 zstd::libzstd_static comctl32
-                                      shell32 winhttp)
+target_link_libraries(updater PRIVATE OBS::blake2 OBS::json11 zstd::libzstd_static comctl32 shell32 winhttp)
+target_link_options(updater PRIVATE /IGNORE:4098)
 
-set_target_properties(updater PROPERTIES FOLDER "frontend")
+set_target_properties_obs(updater PROPERTIES FOLDER frontend OUTPUT_NAME updater)

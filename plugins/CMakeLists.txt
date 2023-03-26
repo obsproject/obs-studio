@@ -1,4 +1,100 @@
+cmake_minimum_required(VERSION 3.16...3.25)
+
 option(ENABLE_PLUGINS "Enable building OBS plugins" ON)
+
+if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
+
+  if(NOT ENABLE_PLUGINS)
+    set_property(GLOBAL APPEND PROPERTY OBS_FEATURES_DISABLED "Plugin Support")
+  endif()
+
+  set_property(GLOBAL APPEND PROPERTY OBS_FEATURES_ENABLED "Plugin Support")
+
+  macro(check_obs_browser)
+    if(NOT (OS_WINDOWS AND NOT CMAKE_GENERATOR_PLATFORM MATCHES "(Win32|x64)"))
+      if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/obs-browser/cmake/macos/Info.plist.in")
+        add_subdirectory(obs-browser)
+      elseif(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/obs-browser/CMakeLists.txt")
+        message(FATAL_ERROR "Required submodule 'obs-browser' not available.")
+      endif()
+    endif()
+  endmacro()
+
+  macro(check_obs_websocket)
+    if(OS_WINDOWS
+       OR OS_MACOS
+       OR OS_LINUX)
+      if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/obs-websocket/cmake/macos/Info.plist.in")
+        add_subdirectory(obs-websocket)
+      elseif(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/obs-websocket/CMakeLists.txt")
+        message(FATAL_ERROR "Required submodule 'obs-websocket' not available.")
+      endif()
+    endif()
+  endmacro()
+
+  # Add plugins in alphabetical order to retain order in IDE projects
+  add_subdirectory(aja)
+  if(OS_WINDOWS OR OS_MACOS)
+    add_subdirectory(coreaudio-encoder)
+  endif()
+  if(OS_WINDOWS
+     OR OS_MACOS
+     OR OS_LINUX)
+    add_subdirectory(decklink)
+  endif()
+  if(OS_WINDOWS)
+    add_subdirectory(enc-amf)
+  endif()
+  add_subdirectory(image-source)
+  if(OS_LINUX)
+    add_subdirectory(linux-alsa)
+    add_subdirectory(linux-capture)
+    add_subdirectory(linux-jack)
+    add_subdirectory(linux-pipewire)
+    add_subdirectory(linux-pulseaudio)
+    add_subdirectory(linux-v4l2)
+  endif()
+  if(OS_MACOS)
+    add_subdirectory(mac-avcapture)
+    add_subdirectory(mac-capture)
+    add_subdirectory(mac-syphon)
+    add_subdirectory(mac-videotoolbox)
+    add_subdirectory(mac-virtualcam)
+  endif()
+  check_obs_browser()
+  add_subdirectory(obs-ffmpeg)
+  add_subdirectory(obs-filters)
+  add_subdirectory(obs-outputs)
+  if(OS_WINDOWS)
+    add_subdirectory(obs-qsv11)
+    add_subdirectory(obs-text)
+  endif()
+  add_subdirectory(obs-transitions)
+  if(OS_WINDOWS
+     OR OS_MACOS
+     OR OS_LINUX)
+    add_subdirectory(obs-vst)
+  endif()
+  check_obs_websocket()
+  add_subdirectory(obs-x264)
+  add_subdirectory(rtmp-services)
+  if(OS_LINUX)
+    add_subdirectory(sndio)
+  endif()
+  add_subdirectory(text-freetype2)
+  if(OS_WINDOWS
+     OR OS_MACOS
+     OR OS_LINUX)
+    add_subdirectory(vlc-video)
+  endif()
+  if(OS_WINDOWS)
+    add_subdirectory(win-capture)
+    add_subdirectory(win-dshow)
+    add_subdirectory(win-wasapi)
+  endif()
+  return()
+endif()
+
 if(NOT ENABLE_PLUGINS)
   obs_status(STATUS "Building with plugins disabled.")
   return()
@@ -12,8 +108,7 @@ function(check_obs_browser)
   endif()
 endfunction()
 
-# APPLE/WIN32/UNIX are soft-deprecated:
-# https://discourse.cmake.org/t/platform-id-vs-win32-vs-cmake-system-name/1226/2
+# APPLE/WIN32/UNIX are soft-deprecated: https://discourse.cmake.org/t/platform-id-vs-win32-vs-cmake-system-name/1226/2
 if(OS_WINDOWS)
   add_subdirectory(coreaudio-encoder)
   add_subdirectory(win-wasapi)

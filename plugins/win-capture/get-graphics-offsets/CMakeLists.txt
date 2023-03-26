@@ -12,23 +12,17 @@ target_sources(
           ../graphics-hook-info.h
           ../hook-helpers.h)
 
-target_include_directories(get-graphics-offsets
-                           PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
+target_include_directories(get-graphics-offsets PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 target_link_libraries(get-graphics-offsets d3d9.lib dxgi.lib d3d11.lib)
 
 if(MSVC)
-  target_compile_options(get-graphics-offsets
-                         PRIVATE "$<IF:$<CONFIG:Debug>,/MTd,/MT>")
+  target_compile_options(get-graphics-offsets PRIVATE "$<IF:$<CONFIG:Debug>,/MTd,/MT>")
 endif()
 
-set_target_properties(get-graphics-offsets PROPERTIES FOLDER
-                                                      "plugins/win-capture")
-set_target_properties(
-  get-graphics-offsets
-  PROPERTIES OUTPUT_NAME
-             "get-graphics-offsets$<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>,64,32>"
-)
+set_target_properties(get-graphics-offsets PROPERTIES FOLDER "plugins/win-capture")
+set_target_properties(get-graphics-offsets
+                      PROPERTIES OUTPUT_NAME "get-graphics-offsets$<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>,64,32>")
 
 set(OBS_PLUGIN_DESTINATION "${OBS_DATA_DESTINATION}/obs-plugins/win-capture/")
 setup_plugin_target(get-graphics-offsets)

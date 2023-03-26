@@ -20,7 +20,6 @@
 
 #define NO_REDEFS
 #include "obs-scripting-python-import.h"
-#include "obs-scripting-config.h"
 
 #ifdef _MSC_VER
 #pragma warning(disable : 4152)

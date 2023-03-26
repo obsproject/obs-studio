@@ -33,8 +33,6 @@ extern "C" {
 
 typedef void* (* GLADloadproc)(const char *name);
 
-#define GLAD_GLAPI_EXPORT
-
 #ifndef GLAPI
 # if defined(GLAD_GLAPI_EXPORT)
 #  if defined(WIN32) || defined(__CYGWIN__)

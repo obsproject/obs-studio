@@ -45,19 +45,14 @@ find_path(
   DOC "WebSocket++ include directory")
 
 if(EXISTS "${Websocketpp_INCLUDE_DIR}/websocketpp/version.hpp")
-  file(STRINGS "${Websocketpp_INCLUDE_DIR}/websocketpp/version.hpp"
-       _version_string
+  file(STRINGS "${Websocketpp_INCLUDE_DIR}/websocketpp/version.hpp" _version_string
        REGEX "^.*(major|minor|patch)_version[ \t]+=[ \t]+[0-9]+")
 
-  string(REGEX REPLACE ".*major_version[ \t]+=[ \t]+([0-9]+).*" "\\1"
-                       _version_major "${_version_string}")
-  string(REGEX REPLACE ".*minor_version[ \t]+=[ \t]+([0-9]+).*" "\\1"
-                       _version_minor "${_version_string}")
-  string(REGEX REPLACE ".*patch_version[ \t]+=[ \t]+([0-9]+).*" "\\1"
-                       _version_patch "${_version_string}")
+  string(REGEX REPLACE ".*major_version[ \t]+=[ \t]+([0-9]+).*" "\\1" _version_major "${_version_string}")
+  string(REGEX REPLACE ".*minor_version[ \t]+=[ \t]+([0-9]+).*" "\\1" _version_minor "${_version_string}")
+  string(REGEX REPLACE ".*patch_version[ \t]+=[ \t]+([0-9]+).*" "\\1" _version_patch "${_version_string}")
 
-  set(Websocketpp_VERSION
-      "${_version_major}.${_version_minor}.${_version_patch}")
+  set(Websocketpp_VERSION "${_version_major}.${_version_minor}.${_version_patch}")
   unset(_version_major)
   unset(_version_minor)
   unset(_version_patch)
@@ -69,27 +64,23 @@ else()
 endif()
 
 if(CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin|Windows")
-  set(Websocketpp_ERROR_REASON
-      "Ensure that obs-deps is provided as part of CMAKE_PREFIX_PATH.")
+  set(Websocketpp_ERROR_REASON "Ensure that obs-deps is provided as part of CMAKE_PREFIX_PATH.")
 elseif(CMAKE_HOST_SYSTEM_NAME MATCHES "Linux|FreeBSD")
-  set(Websocketpp_ERROR_REASON
-      "Ensure WebSocket++ library is available in local include paths.")
+  set(Websocketpp_ERROR_REASON "Ensure WebSocket++ library is available in local include paths.")
 endif()
 
 find_package_handle_standard_args(
   Websocketpp
   REQUIRED_VARS Websocketpp_INCLUDE_DIR
-  VERSION_VAR Websocketpp_VERSION REASON_FAILURE_MESSAGE
-                                  "${Websocketpp_ERROR_REASON}")
+  VERSION_VAR Websocketpp_VERSION REASON_FAILURE_MESSAGE "${Websocketpp_ERROR_REASON}")
 mark_as_advanced(Websocketpp_INCLUDE_DIR)
 unset(Websocketpp_ERROR_REASON)
 
 if(Websocketpp_FOUND)
   if(NOT TARGET Websocketpp::Websocketpp)
     add_library(Websocketpp::Websocketpp INTERFACE IMPORTED)
-    set_target_properties(
-      Websocketpp::Websocketpp PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                          "${Websocketpp_INCLUDE_DIR}")
+    set_target_properties(Websocketpp::Websocketpp PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+                                                              "${Websocketpp_INCLUDE_DIR}")
   endif()
 endif()
 
@@ -97,6 +88,4 @@ include(FeatureSummary)
 set_package_properties(
   Websocketpp PROPERTIES
   URL "https://www.zaphoyd.com/websocketpp/"
-  DESCRIPTION
-    "WebSocket++ is a header only C++ library that implements RFC6455 The WebSocket Protocol."
-)
+  DESCRIPTION "WebSocket++ is a header only C++ library that implements RFC6455 The WebSocket Protocol.")

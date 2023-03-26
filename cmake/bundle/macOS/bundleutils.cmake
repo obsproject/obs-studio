@@ -9,8 +9,7 @@ if(POLICY CMP0011)
 endif()
 
 # Add additional search paths for dylibbundler
-list(APPEND _FIXUP_BUNDLES
-     "-s \"${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/Frameworks\"")
+list(APPEND _FIXUP_BUNDLES "-s \"${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/Frameworks\"")
 list(APPEND _FIXUP_BUNDLES "-s \"${CMAKE_INSTALL_PREFIX}/lib\"")
 list(APPEND _FIXUP_BUNDLES "-s \"${CMAKE_INSTALL_PREFIX}/Frameworks\"")
 
@@ -27,25 +26,17 @@ endforeach()
 # Unlinked modules need to be supplied manually to dylibbundler
 
 # Find all modules (plugin and standalone)
-file(GLOB _OBS_PLUGINS
-     "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/PlugIns/*.plugin")
-file(GLOB _OBS_SCRIPTING_PLUGINS
-     "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/PlugIns/*.so")
+file(GLOB _OBS_PLUGINS "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/PlugIns/*.plugin")
+file(GLOB _OBS_SCRIPTING_PLUGINS "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/PlugIns/*.so")
 
 # Add modules to fixups
 foreach(_OBS_PLUGIN IN LISTS _OBS_PLUGINS)
   get_filename_component(PLUGIN_NAME "${_OBS_PLUGIN}" NAME_WLE)
-  list(APPEND _FIXUP_BUNDLES
-       "-x \"${_OBS_PLUGIN}/Contents/MacOS/${PLUGIN_NAME}\"")
+  list(APPEND _FIXUP_BUNDLES "-x \"${_OBS_PLUGIN}/Contents/MacOS/${PLUGIN_NAME}\"")
 endforeach()
 
-if(EXISTS
-   "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/MacOS/obs-ffmpeg-mux")
-  list(
-    APPEND
-    _FIXUP_BUNDLES
-    "-x \"${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/MacOS/obs-ffmpeg-mux\""
-  )
+if(EXISTS "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/MacOS/obs-ffmpeg-mux")
+  list(APPEND _FIXUP_BUNDLES "-x \"${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/MacOS/obs-ffmpeg-mux\"")
 endif()
 
 # Add scripting modules to fixups
@@ -72,27 +63,16 @@ execute_process(
     ${_QUIET_FLAG})
 
 # Find all dylibs, frameworks and other code elements inside bundle
-file(GLOB _DYLIBS
-     "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/Frameworks/*.dylib")
-file(GLOB _FRAMEWORKS
-     "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/Frameworks/*.framework")
-file(GLOB_RECURSE _QT_PLUGINS
-     "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/PlugIns/*.dylib")
+file(GLOB _DYLIBS "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/Frameworks/*.dylib")
+file(GLOB _FRAMEWORKS "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/Frameworks/*.framework")
+file(GLOB_RECURSE _QT_PLUGINS "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/PlugIns/*.dylib")
 
-if(EXISTS
-   "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/MacOS/obs-ffmpeg-mux")
-  list(APPEND _OTHER_BINARIES
-       "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/MacOS/obs-ffmpeg-mux")
+if(EXISTS "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/MacOS/obs-ffmpeg-mux")
+  list(APPEND _OTHER_BINARIES "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/MacOS/obs-ffmpeg-mux")
 endif()
 
-if(EXISTS
-   "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/Resources/obs-mac-virtualcam.plugin"
-)
-  list(
-    APPEND
-    _OTHER_BINARIES
-    "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/Resources/obs-mac-virtualcam.plugin"
-  )
+if(EXISTS "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/Resources/obs-mac-virtualcam.plugin")
+  list(APPEND _OTHER_BINARIES "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/Resources/obs-mac-virtualcam.plugin")
 endif()
 
 # Create libobs symlink for legacy plugin support
@@ -102,21 +82,16 @@ execute_process(
     "cd \"${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/Frameworks\" && ln -fs libobs.framework/Versions/Current/libobs libobs.0.dylib && ln -fsv libobs.framework/Versions/Current/libobs libobs.dylib"
     ${_QUIET_FLAG})
 
-# Python potentially leaves __pycache__ directories inside the bundle which will
-# break codesigning
+# Python potentially leaves __pycache__ directories inside the bundle which will break codesigning
 if(EXISTS "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/PlugIns/__pycache__")
-  file(REMOVE_RECURSE
-       "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/PlugIns/__pycache__")
+  file(REMOVE_RECURSE "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/PlugIns/__pycache__")
 endif()
 
 # Codesign all binaries inside-out
 message(STATUS "OBS: Codesign dependencies")
-if(EXISTS
-   "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/Frameworks/Chromium Embedded Framework.framework"
-)
+if(EXISTS "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/Frameworks/Chromium Embedded Framework.framework")
   set(CEF_HELPER_OUTPUT_NAME "OBS Helper")
-  set(CEF_HELPER_APP_SUFFIXES ":" " (GPU):.gpu" " (Plugin):.plugin"
-                              " (Renderer):.renderer")
+  set(CEF_HELPER_APP_SUFFIXES ":" " (GPU):.gpu" " (Plugin):.plugin" " (Renderer):.renderer")
 
   foreach(_SUFFIXES ${CEF_HELPER_APP_SUFFIXES})
     string(REPLACE ":" ";" _SUFFIXES ${_SUFFIXES})
@@ -129,38 +104,31 @@ if(EXISTS
     execute_process(
       COMMAND
         /usr/bin/codesign --remove-signature
-        "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/Frameworks/OBS Helper${_NAME_SUFFIX}.app"
-        ${_VERBOSE_FLAG} ${_QUIET_FLAG})
+        "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/Frameworks/OBS Helper${_NAME_SUFFIX}.app" ${_VERBOSE_FLAG}
+        ${_QUIET_FLAG})
     execute_process(
       COMMAND
-        /usr/bin/codesign --force --sign "${_CODESIGN_IDENTITY}" --deep
-        --options runtime --entitlements
+        /usr/bin/codesign --force --sign "${_CODESIGN_IDENTITY}" --deep --options runtime --entitlements
         "${_CODESIGN_ENTITLEMENTS}/entitlements-helper${_PLIST_SUFFIX}.plist"
-        "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/Frameworks/OBS Helper${_NAME_SUFFIX}.app"
-        ${_VERBOSE_FLAG} ${_QUIET_FLAG})
+        "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/Frameworks/OBS Helper${_NAME_SUFFIX}.app" ${_VERBOSE_FLAG}
+        ${_QUIET_FLAG})
   endforeach()
 endif()
-foreach(_DEPENDENCY IN LISTS _OTHER_BINARIES _DYLIBS _FRAMEWORKS _OBS_PLUGINS
-                             _OBS_SCRIPTING_PLUGINS _QT_PLUGINS)
+foreach(_DEPENDENCY IN LISTS _OTHER_BINARIES _DYLIBS _FRAMEWORKS _OBS_PLUGINS _OBS_SCRIPTING_PLUGINS _QT_PLUGINS)
   if(NOT IS_SYMLINK "${_DEPENDENCY}")
-    execute_process(COMMAND /usr/bin/codesign --remove-signature
-                            "${_DEPENDENCY}" ${_VERBOSE_FLAG} ${_QUIET_FLAG})
+    execute_process(COMMAND /usr/bin/codesign --remove-signature "${_DEPENDENCY}" ${_VERBOSE_FLAG} ${_QUIET_FLAG})
     execute_process(
-      COMMAND
-        /usr/bin/codesign --force --sign "${_CODESIGN_IDENTITY}" --options
-        runtime --entitlements "${_CODESIGN_ENTITLEMENTS}/entitlements.plist"
-        "${_DEPENDENCY}" ${_VERBOSE_FLAG} ${_QUIET_FLAG})
+      COMMAND /usr/bin/codesign --force --sign "${_CODESIGN_IDENTITY}" --options runtime --entitlements
+              "${_CODESIGN_ENTITLEMENTS}/entitlements.plist" "${_DEPENDENCY}" ${_VERBOSE_FLAG} ${_QUIET_FLAG})
   endif()
 endforeach()
 
 # Codesign main app
 message(STATUS "OBS: Codesign main app")
+execute_process(COMMAND /usr/bin/codesign --remove-signature "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}" ${_VERBOSE_FLAG}
+                        ${_QUIET_FLAG})
 execute_process(
   COMMAND
-    /usr/bin/codesign --remove-signature
-    "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}" ${_VERBOSE_FLAG} ${_QUIET_FLAG})
-execute_process(
-  COMMAND
-    /usr/bin/codesign --force --sign "${_CODESIGN_IDENTITY}" --options runtime
-    --entitlements "${_CODESIGN_ENTITLEMENTS}/entitlements.plist"
-    "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}" ${_VERBOSE_FLAG} ${_QUIET_FLAG})
+    /usr/bin/codesign --force --sign "${_CODESIGN_IDENTITY}" --options runtime --entitlements
+    "${_CODESIGN_ENTITLEMENTS}/entitlements.plist" "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}" ${_VERBOSE_FLAG}
+    ${_QUIET_FLAG})

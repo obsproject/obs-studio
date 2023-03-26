@@ -23,7 +23,6 @@
 
 #include "obs-scripting-internal.h"
 #include "obs-scripting-callback.h"
-#include "obs-scripting-config.h"
 
 #if defined(LUAJIT_FOUND)
 extern obs_script_t *obs_lua_script_create(const char *path,

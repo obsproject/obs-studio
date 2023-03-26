@@ -1,3 +1,4 @@
+# cmake-format: off
 # Try to find Wayland on a Unix system
 #
 # This will define:
@@ -21,9 +22,10 @@
 
 # Use pkg-config to get the directories and then use these values in the
 # find_path() and find_library() calls
+# cmake-format: on
+
 find_package(PkgConfig)
-pkg_check_modules(PKG_WAYLAND QUIET wayland-client wayland-server wayland-egl
-                  wayland-cursor)
+pkg_check_modules(PKG_WAYLAND QUIET wayland-client wayland-server wayland-egl wayland-cursor)
 
 set(WAYLAND_COMPILE_FLAGS ${PKG_WAYLAND_CFLAGS})
 
@@ -87,11 +89,10 @@ else()
 endif()
 mark_as_advanced(WAYLAND_SERVER_INCLUDE_DIRS WAYLAND_SERVER_LIBRARIES)
 
-set(WAYLAND_INCLUDE_DIRS
-    ${WAYLAND_CLIENT_INCLUDE_DIRS} ${WAYLAND_SERVER_INCLUDE_DIRS}
-    ${WAYLAND_EGL_INCLUDE_DIRS} ${WAYLAND_CURSOR_INCLUDE_DIRS})
-set(WAYLAND_LIBRARIES ${WAYLAND_CLIENT_LIBRARIES} ${WAYLAND_SERVER_LIBRARIES}
-                      ${WAYLAND_EGL_LIBRARIES} ${WAYLAND_CURSOR_LIBRARIES})
+set(WAYLAND_INCLUDE_DIRS ${WAYLAND_CLIENT_INCLUDE_DIRS} ${WAYLAND_SERVER_INCLUDE_DIRS} ${WAYLAND_EGL_INCLUDE_DIRS}
+                         ${WAYLAND_CURSOR_INCLUDE_DIRS})
+set(WAYLAND_LIBRARIES ${WAYLAND_CLIENT_LIBRARIES} ${WAYLAND_SERVER_LIBRARIES} ${WAYLAND_EGL_LIBRARIES}
+                      ${WAYLAND_CURSOR_LIBRARIES})
 mark_as_advanced(WAYLAND_INCLUDE_DIRS WAYLAND_LIBRARIES)
 
 list(REMOVE_DUPLICATES WAYLAND_INCLUDE_DIRS)
@@ -109,24 +110,16 @@ foreach(component "Client" "Server" "EGL" "Cursor")
     if(Wayland_${component}_FOUND)
       if(IS_ABSOLUTE "${WAYLAND_${component_u}_LIBRARIES}")
         add_library(Wayland::${component} UNKNOWN IMPORTED)
-        set_target_properties(
-          Wayland::${component}
-          PROPERTIES IMPORTED_LOCATION "${WAYLAND_${component_u}_LIBRARIES}")
+        set_target_properties(Wayland::${component} PROPERTIES IMPORTED_LOCATION "${WAYLAND_${component_u}_LIBRARIES}")
       else()
         add_library(Wayland::${component} INTERFACE IMPORTED)
-        set_target_properties(
-          Wayland::${component}
-          PROPERTIES IMPORTED_LIBNAME "${WAYLAND_${component_u}_LIBRARIES}")
+        set_target_properties(Wayland::${component} PROPERTIES IMPORTED_LIBNAME "${WAYLAND_${component_u}_LIBRARIES}")
       endif()
 
-      set_target_properties(
-        Wayland::${component}
-        PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                   "${WAYLAND_${component_u}_INCLUDE_DIRS}")
+      set_target_properties(Wayland::${component} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+                                                             "${WAYLAND_${component_u}_INCLUDE_DIRS}")
 
-      set_target_properties(
-        Wayland::${component} PROPERTIES INTERFACE_COMPILE_OPTIONS
-                                         "${WAYLAND_COMPILE_FLAGS}")
+      set_target_properties(Wayland::${component} PROPERTIES INTERFACE_COMPILE_OPTIONS "${WAYLAND_COMPILE_FLAGS}")
     endif()
   endif()
 endforeach()
