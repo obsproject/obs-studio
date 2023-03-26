@@ -24,9 +24,13 @@ package_obs() {
     ensure_dir "${CHECKOUT_DIR}"
 
     step "Package OBS..."
-    cmake --build ${BUILD_DIR} -t package
+    BUILD_DIR="build_${ARCH}"
 
-    DMG_NAME=$(/usr/bin/find "${BUILD_DIR}" -type f -name "OBS-*.dmg" -depth 1 | sort -rn | head -1)
+    pushd "${BUILD_DIR}" > /dev/null > /dev/null
+    cpack -C ${BUILD_CONFIG:-RelWithDebInfo}
+    popd > /dev/null
+
+    DMG_NAME=$(/usr/bin/find "${BUILD_DIR}" -type f -name "obs-studio-*.dmg" -depth 1 | sort -rn | head -1)
 
     if [ "${DMG_NAME}" ]; then
         mv "${DMG_NAME}" "${BUILD_DIR}/${FILE_NAME}"

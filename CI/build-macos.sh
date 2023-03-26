@@ -24,16 +24,6 @@
 #   -c, --codesign                 : Codesign OBS and all libraries
 #                                    (default: ad-hoc only)
 #   -n, --notarize                 : Notarize OBS (default: off)
-#   --xcode                        : Create Xcode build environment instead
-#                                    of Ninja
-#   --build-dir                    : Specify alternative build directory
-#                                    (default: build)"
-# Environment Variables (optional):
-#
-#   MACOS_DEPS_VERSION        : Precompiled macOS dependencies version
-#   MACOS_CEF_BUILD_VERSION   : Chromium Embedded Framework version
-#   VLC_VERSION               : VLC version
-#   SPARKLE_VERSION           : Sparkle Framework version
 #
 ##############################################################################
 
@@ -70,9 +60,7 @@ print_usage() {
             "-b, --bundle                   : Create relocatable application bundle (default: off)\n" \
             "-p, --package                  : Create distributable disk image (default: off)\n" \
             "-c, --codesign                 : Codesign OBS and all libraries (default: ad-hoc only)\n" \
-            "-n, --notarize                 : Notarize OBS (default: off)\n" \
-            "--xcode                        : Create Xcode build environment instead of Ninja\n" \
-            "--build-dir                    : Specify alternative build directory (default: build)\n"
+            "-n, --notarize                 : Notarize OBS (default: off)\n"
 }
 
 print_deprecation() {
@@ -101,8 +89,6 @@ obs-build-main() {
             -c | --codesign ) CODESIGN=TRUE; shift ;;
             -n | --notarize ) NOTARIZE=TRUE; PACKAGE=TRUE CODESIGN=TRUE; shift ;;
             -b | --bundle ) BUNDLE=TRUE; shift ;;
-            --xcode ) XCODE=TRUE; shift ;;
-            --build-dir ) BUILD_DIR="${2}"; shift 2 ;;
             -s ) print_deprecation ${1}; exit 1 ;;
             -- ) shift; break ;;
             * ) break ;;
