@@ -36,6 +36,7 @@ static bool load_ingests(const char *json, bool write_file)
 	json_t *root;
 	json_t *ingests;
 	bool success = false;
+	bool rtmps_available = false;
 	char *cache_old;
 	char *cache_new;
 	size_t count;
@@ -54,10 +55,14 @@ static bool load_ingests(const char *json, bool write_file)
 
 	free_ingests();
 
+	rtmps_available = obs_is_output_protocol_registered("RTMPS");
 	for (size_t i = 0; i < count; i++) {
 		json_t *item = json_array_get(ingests, i);
 		json_t *item_name = json_object_get(item, "name");
-		json_t *item_url = json_object_get(item, "url_template");
+		json_t *item_url = json_object_get(item, "url_template_secure");
+		if (!item_url || !rtmps_available)
+			item_url = json_object_get(item, "url_template");
+
 		struct ingest ingest = {0};
 		struct dstr url = {0};
 
