@@ -251,8 +251,7 @@ function(find_dependencies)
         else()
           continue()
         endif()
-      elseif(library MATCHES "\\$<.*Qt6::EntryPointPrivate>" OR library MATCHES
-                                                                "\\$<.*Qt6::QDarwinBluetoothPermissionPlugin>")
+      elseif(library MATCHES "\\$<.*Qt6::EntryPointPrivate>" OR library MATCHES "\\$<.*Qt6::QDarwin.+PermissionPlugin>")
         # Known Qt6-specific generator expression, ignored.
         continue()
       else()
