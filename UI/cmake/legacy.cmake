@@ -445,7 +445,8 @@ elseif(OS_POSIX)
   target_sources(obs PRIVATE platform-x11.cpp)
   target_link_libraries(obs PRIVATE Qt::GuiPrivate)
 
-  target_compile_definitions(obs PRIVATE OBS_INSTALL_PREFIX="${OBS_INSTALL_PREFIX}")
+  target_compile_definitions(obs PRIVATE OBS_INSTALL_PREFIX="${OBS_INSTALL_PREFIX}"
+                                         "$<$<BOOL:${LINUX_PORTABLE}>:LINUX_PORTABLE>")
   if(TARGET obspython)
     find_package(Python REQUIRED COMPONENTS Interpreter Development)
     target_link_libraries(obs PRIVATE Python::Python)
