@@ -19,18 +19,21 @@
 #include "obs.h"
 #include "obs-internal.h"
 
-#if defined(__APPLE__)
-/* Apple Silicon GL driver doesn't seem to track SRGB clears correctly */
-#define OBS_USE_CLEAR_WORKAROUND 1
-#else
-#define OBS_USE_CLEAR_WORKAROUND 0
-#endif
-
 bool obs_display_init(struct obs_display *display,
 		      const struct gs_init_data *graphics_data)
 {
 	pthread_mutex_init_value(&display->draw_callbacks_mutex);
 	pthread_mutex_init_value(&display->draw_info_mutex);
+
+#if defined(_WIN32)
+	/* Conservative test for NVIDIA flickering in multi-GPU setups */
+	display->use_clear_workaround = gs_get_adapter_count() > 1;
+#elif defined(__APPLE__)
+	/* Apple Silicon GL driver doesn't seem to track SRGB clears correctly */
+	display->use_clear_workaround = true;
+#else
+	display->use_clear_workaround = false;
+#endif
 
 	if (graphics_data) {
 		display->swap = gs_swapchain_create(graphics_data);
@@ -200,12 +203,11 @@ static inline bool render_display_begin(struct obs_display *display,
 					    display->background_color);
 		clear_color.w = 1.0f;
 
-#if OBS_USE_CLEAR_WORKAROUND
-		const uint32_t clear_flags = GS_CLEAR_DEPTH | GS_CLEAR_STENCIL;
-#else
-		const uint32_t clear_flags = GS_CLEAR_COLOR | GS_CLEAR_DEPTH |
-					     GS_CLEAR_STENCIL;
-#endif
+		const bool use_clear_workaround = display->use_clear_workaround;
+
+		uint32_t clear_flags = GS_CLEAR_DEPTH | GS_CLEAR_STENCIL;
+		if (!use_clear_workaround)
+			clear_flags |= GS_CLEAR_COLOR;
 		gs_clear(clear_flags, &clear_color, 1.0f, 0);
 
 		gs_enable_depth_test(false);
@@ -215,14 +217,15 @@ static inline bool render_display_begin(struct obs_display *display,
 		gs_ortho(0.0f, (float)cx, 0.0f, (float)cy, -100.0f, 100.0f);
 		gs_set_viewport(0, 0, cx, cy);
 
-#if OBS_USE_CLEAR_WORKAROUND
-		gs_effect_t *const solid_effect = obs->video.solid_effect;
-		gs_effect_set_vec4(gs_effect_get_param_by_name(solid_effect,
-							       "color"),
-				   &clear_color);
-		while (gs_effect_loop(solid_effect, "Solid"))
-			gs_draw_sprite(NULL, 0, cx, cy);
-#endif
+		if (use_clear_workaround) {
+			gs_effect_t *const solid_effect =
+				obs->video.solid_effect;
+			gs_effect_set_vec4(gs_effect_get_param_by_name(
+						   solid_effect, "color"),
+					   &clear_color);
+			while (gs_effect_loop(solid_effect, "Solid"))
+				gs_draw_sprite(NULL, 0, cx, cy);
+		}
 	}
 
 	return success;
