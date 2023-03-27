@@ -1964,11 +1964,11 @@ void OBSBasic::OBSInit()
 
 	blog(LOG_INFO, STARTUP_SEPARATOR);
 
-	ResetOutputs();
-	CreateHotkeys();
-
 	if (!InitService())
 		throw "Failed to initialize service";
+
+	ResetOutputs();
+	CreateHotkeys();
 
 	InitPrimitives();
 
