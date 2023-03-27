@@ -1284,6 +1284,9 @@ char *obs_find_data_file(const char *file)
 			return path.array;
 	}
 
+	blog(LOG_ERROR, "Failed to find file '%s' in libobs data directory",
+	     file);
+
 	dstr_free(&path);
 	return NULL;
 }
