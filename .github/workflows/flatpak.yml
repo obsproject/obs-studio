@@ -42,6 +42,67 @@ jobs:
             * ) echo 'valid_tag=false' >> $GITHUB_OUTPUT ;;
           esac
 
+  prepare:
+    name: Build Dependencies
+    runs-on: [ubuntu-latest]
+    needs: check_tag
+    if: fromJSON(needs.check_tag.outputs.valid_tag)
+    env:
+      FLATPAK_BUILD_PATH: flatpak_app/files/share
+    container:
+      image: bilelmoussaoui/flatpak-github-actions:kde-6.4
+      options: --privileged
+    strategy:
+      matrix:
+        arch: [x86_64, aarch64]
+      output:
+        cache_key: ${{ steps.setup.outputs.cache_key }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+
+      - name: 'Setup build environment'
+        id: setup
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SKIP_MODULE: 5
+        run: |
+          if [[ "${{ matrix.arch }}" != "x86_64" ]]; then
+            dnf install -y -q gh jq docker
+          else
+            dnf install -y -q gh jq
+          fi
+          gh extension install actions/gh-actions-cache
+
+          git config --global --add safe.directory $GITHUB_WORKSPACE
+
+          # Generating the key without skipped modules and cleanup objects
+          CACHE_KEY=flatpak-builder-$(jq "del(.cleanup) | del(.modules[].cleanup) | del(.modules[-$SKIP_MODULE:])" CI/flatpak/com.obsproject.Studio.json | sha256sum | cut -d " " -f 1)
+
+          KEY="$CACHE_KEY-${{ matrix.arch }}"
+          CACHE_HIT=$(gh actions-cache list -B master --key $KEY | grep -q $KEY && echo 'true' || echo 'false')
+
+          echo "cache_key=$CACHE_KEY" >> $GITHUB_OUTPUT
+          echo "cache_hit=$CACHE_HIT" >> $GITHUB_OUTPUT
+          echo "stop_at_module=$(jq ".modules[-$SKIP_MODULE].name" CI/flatpak/com.obsproject.Studio.json | tr -d '"')" >> $GITHUB_OUTPUT
+
+      - name: Setup QEMU
+        if: ${{ (matrix.arch != 'x86_64') && !fromJSON(steps.setup.outputs.cache_hit) }}
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: arm64
+
+      - name: Build Flatpak Manifest
+        if: ${{ !fromJSON(steps.setup.outputs.cache_hit) }}
+        uses: flatpak/flatpak-github-actions/flatpak-builder@83ec7c1998a152b7d47507a2da5d7a4b21e612ff
+        with:
+          stop-at-module: ${{ steps.setup.outputs.stop_at_module }}
+          manifest-path: CI/flatpak/com.obsproject.Studio.json
+          cache-key: ${{ steps.setup.outputs.cache_key }}
+          arch: ${ {matrix.arch }}
+
   publish:
     name: Publish to Flathub
     runs-on: [ubuntu-latest]
@@ -55,6 +116,7 @@ jobs:
     strategy:
       matrix:
         branch: ${{ fromJSON(needs.check_tag.outputs.matrix) }}
+        arch: [x86_64, aarch64]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -67,27 +129,27 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CACHE_KEY: flatpak-builder-${{ hashFiles('CI/flatpak/com.obsproject.Studio.json') }}
         run: |
-          dnf install -y -q gh
-          gh extension install actions/gh-actions-cache
+          [[ "${{ matrix.arch }}" != "x86_64" ]] && dnf install -y -q docker
 
           git config --global --add safe.directory $GITHUB_WORKSPACE
 
-          KEY="$CACHE_KEY-x86_64"
-          CACHE_HIT=$(gh actions-cache list -B master --key $KEY | grep -q $KEY && echo 'true' || echo 'false')
-
           echo "git_hash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
-          echo "cache_key=$CACHE_KEY" >> $GITHUB_OUTPUT
-          echo "cache_hit=$CACHE_HIT" >> $GITHUB_OUTPUT
+
+      - name: Setup QEMU
+        if: ${{ matrix.arch != 'x86_64' }}
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: arm64
 
       - name: Build Flatpak Manifest
         uses: flatpak/flatpak-github-actions/flatpak-builder@83ec7c1998a152b7d47507a2da5d7a4b21e612ff
         with:
           bundle: obs-studio-${{ steps.setup.outputs.git_hash }}.flatpak
           manifest-path: CI/flatpak/com.obsproject.Studio.json
-          cache: ${{ fromJSON(steps.setup.outputs.cache_hit) }}
-          cache-key: ${{ steps.setup.outputs.cache_key }}
+          cache-key: ${{ needs.prepare.outputs.cache_key }}
           mirror-screenshots-url: https://dl.flathub.org/repo/screenshots
           branch: ${{ matrix.branch }}
+          arch: ${{ matrix.arch }}
 
       - name: Validate AppStream
         shell: bash
@@ -104,7 +166,7 @@ jobs:
 
       - name: Commit screenshots to the OSTree repository
         run: |
-          ostree commit --repo=repo --canonical-permissions --branch=screenshots/x86_64 flatpak_app/screenshots
+          ostree commit --repo=repo --canonical-permissions --branch=screenshots/${{ matrix.arch }} flatpak_app/screenshots
 
       - name: Publish to Flathub Beta
         uses: flatpak/flatpak-github-actions/flat-manager@v5
