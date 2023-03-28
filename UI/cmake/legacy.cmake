@@ -303,10 +303,12 @@ if(TARGET OBS::browser-panels)
                              window-extra-browsers.hpp)
 
   if(TWITCH_ENABLED)
+    target_compile_definitions(obs PRIVATE TWITCH_ENABLED)
     target_sources(obs PRIVATE auth-twitch.cpp auth-twitch.hpp)
   endif()
 
   if(RESTREAM_ENABLED)
+    target_compile_definitions(obs PRIVATE RESTREAM_ENABLED)
     target_sources(obs PRIVATE auth-restream.cpp auth-restream.hpp)
   endif()
 
@@ -324,6 +326,7 @@ if(TARGET OBS::browser-panels)
 endif()
 
 if(YOUTUBE_ENABLED)
+  target_compile_definitions(obs PRIVATE YOUTUBE_ENABLED)
   target_sources(obs PRIVATE auth-youtube.cpp auth-youtube.hpp youtube-api-wrappers.cpp youtube-api-wrappers.hpp
                              window-youtube-actions.cpp window-youtube-actions.hpp)
 endif()
