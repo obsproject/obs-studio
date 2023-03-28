@@ -192,17 +192,16 @@ QDataStream &operator>>(QDataStream &in,
 
 QDataStream &operator<<(QDataStream &out, const OBSScene &scene)
 {
-	return out << QString(obs_source_get_name(obs_scene_get_source(scene)));
+	return out << QString(obs_source_get_uuid(obs_scene_get_source(scene)));
 }
 
 QDataStream &operator>>(QDataStream &in, OBSScene &scene)
 {
-	QString sceneName;
+	QString uuid;
 
-	in >> sceneName;
+	in >> uuid;
 
-	OBSSourceAutoRelease source =
-		obs_get_source_by_name(QT_TO_UTF8(sceneName));
+	OBSSourceAutoRelease source = obs_get_source_by_uuid(QT_TO_UTF8(uuid));
 	scene = obs_scene_from_source(source);
 
 	return in;
