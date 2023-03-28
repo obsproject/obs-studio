@@ -1354,12 +1354,14 @@ bool OBSBasicSettings::ServiceAndACodecCompatible()
 /* we really need a way to find fallbacks in a less hardcoded way. maybe. */
 static QString get_adv_fallback(const QString &enc)
 {
-	if (enc == "jim_hevc_nvenc")
+	if (enc == "jim_hevc_nvenc" || enc == "jim_av1_nvenc")
 		return "jim_nvenc";
-	if (enc == "h265_texture_amf")
+	if (enc == "h265_texture_amf" || enc == "av1_texture_amf")
 		return "h264_texture_amf";
 	if (enc == "com.apple.videotoolbox.videoencoder.ave.hevc")
 		return "com.apple.videotoolbox.videoencoder.ave.avc";
+	if (enc == "obs_qsv11_av1")
+		return "obs_qsv11";
 	return "obs_x264";
 }
 
@@ -1381,14 +1383,14 @@ static QString get_adv_audio_fallback(const QString &enc)
 
 static QString get_simple_fallback(const QString &enc)
 {
-	if (enc == SIMPLE_ENCODER_NVENC_HEVC)
+	if (enc == SIMPLE_ENCODER_NVENC_HEVC || enc == SIMPLE_ENCODER_NVENC_AV1)
 		return SIMPLE_ENCODER_NVENC;
-	if (enc == SIMPLE_ENCODER_NVENC_AV1)
-		return SIMPLE_ENCODER_NVENC;
-	if (enc == SIMPLE_ENCODER_AMD_HEVC)
+	if (enc == SIMPLE_ENCODER_AMD_HEVC || enc == SIMPLE_ENCODER_AMD_AV1)
 		return SIMPLE_ENCODER_AMD;
 	if (enc == SIMPLE_ENCODER_APPLE_HEVC)
 		return SIMPLE_ENCODER_APPLE_H264;
+	if (enc == SIMPLE_ENCODER_QSV_AV1)
+		return SIMPLE_ENCODER_QSV;
 	return SIMPLE_ENCODER_X264;
 }
 
