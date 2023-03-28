@@ -7,9 +7,36 @@
 #include <media-io/video-scaler.h>
 #include "decklink-device.hpp"
 #include "OBSVideoFrame.h"
+#include <atomic>
+#include <mutex>
+#include <vector>
 
 class AudioRepacker;
 class DecklinkBase;
+
+template<typename T>
+class RenderDelegate : public IDeckLinkVideoOutputCallback {
+private:
+	std::atomic<unsigned long> m_refCount = 1;
+	T *m_pOwner;
+
+	~RenderDelegate();
+
+public:
+	RenderDelegate(T *pOwner);
+
+	// IUnknown
+	virtual HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid,
+							 LPVOID *ppv);
+	virtual ULONG STDMETHODCALLTYPE AddRef();
+	virtual ULONG STDMETHODCALLTYPE Release();
+
+	// IDeckLinkVideoOutputCallback
+	virtual HRESULT STDMETHODCALLTYPE
+	ScheduledFrameCompleted(IDeckLinkVideoFrame *completedFrame,
+				BMDOutputFrameCompletionResult result);
+	virtual HRESULT STDMETHODCALLTYPE ScheduledPlaybackHasStopped();
+};
 
 class DeckLinkDeviceInstance : public IDeckLinkInputCallback {
 protected:
@@ -39,7 +66,12 @@ protected:
 	bool allow10Bit;
 
 	OBSVideoFrame *convertFrame = nullptr;
-	ComPtr<IDeckLinkMutableVideoFrame> decklinkOutputFrame;
+	std::mutex frameDataMutex;
+	std::vector<uint8_t> frameData;
+	BMDTimeValue frameDuration;
+	BMDTimeScale frameTimescale;
+	size_t totalFramesScheduled;
+	ComPtr<RenderDelegate<DeckLinkDeviceInstance>> renderDelegate;
 
 	void FinalizeStream();
 	void SetupVideoFormat(DeckLinkDeviceMode *mode_);
@@ -107,7 +139,8 @@ public:
 	HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid, LPVOID *ppv);
 	ULONG STDMETHODCALLTYPE Release(void);
 
-	void DisplayVideoFrame(video_data *frame);
+	void UpdateVideoFrame(video_data *frame);
+	void ScheduleVideoFrame(IDeckLinkVideoFrame *frame);
 	void WriteAudio(audio_data *frames);
 	void HandleCaptionPacket(IDeckLinkAncillaryPacket *packet,
 				 const uint64_t timestamp);

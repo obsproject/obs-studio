@@ -28,7 +28,7 @@ public:
 	obs_output_t *GetOutput(void) const;
 	bool Activate(DeckLinkDevice *device, long long modeId) override;
 	void Deactivate() override;
-	void DisplayVideoFrame(video_data *pData);
+	void UpdateVideoFrame(video_data *pData);
 	void WriteAudio(audio_data *frames);
 	void SetSize(int width, int height);
 	int GetWidth();
