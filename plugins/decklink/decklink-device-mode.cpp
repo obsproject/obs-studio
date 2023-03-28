@@ -42,6 +42,15 @@ int DeckLinkDeviceMode::GetHeight()
 	return 0;
 }
 
+bool DeckLinkDeviceMode::GetFrameRate(BMDTimeValue *frameDuration,
+				      BMDTimeScale *timeScale)
+{
+	if (mode != nullptr)
+		return SUCCEEDED(mode->GetFrameRate(frameDuration, timeScale));
+
+	return false;
+}
+
 BMDDisplayModeFlags DeckLinkDeviceMode::GetDisplayModeFlags(void) const
 {
 	if (mode != nullptr)

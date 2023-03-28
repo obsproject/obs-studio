@@ -17,6 +17,50 @@
 #include <caption/caption.h>
 #include <util/bitstream.h>
 
+template<typename T> RenderDelegate<T>::RenderDelegate(T *pOwner)
+{
+	m_pOwner = pOwner;
+}
+
+template<typename T> RenderDelegate<T>::~RenderDelegate() {}
+
+template<typename T>
+HRESULT RenderDelegate<T>::QueryInterface(REFIID, LPVOID *ppv)
+{
+	*ppv = NULL;
+	return E_NOINTERFACE;
+}
+
+template<typename T> ULONG RenderDelegate<T>::AddRef()
+{
+	return ++m_refCount;
+}
+
+template<typename T> ULONG RenderDelegate<T>::Release()
+{
+	const ULONG newRefValue = --m_refCount;
+	if (newRefValue == 0) {
+		delete this;
+		return 0;
+	}
+
+	return newRefValue;
+}
+
+template<typename T>
+HRESULT
+RenderDelegate<T>::ScheduledFrameCompleted(IDeckLinkVideoFrame *completedFrame,
+					   BMDOutputFrameCompletionResult)
+{
+	m_pOwner->ScheduleVideoFrame(completedFrame);
+	return S_OK;
+}
+
+template<typename T> HRESULT RenderDelegate<T>::ScheduledPlaybackHasStopped()
+{
+	return S_OK;
+}
+
 static inline enum video_format ConvertPixelFormat(BMDPixelFormat format)
 {
 	switch (format) {
@@ -528,19 +572,24 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 	if (mode_ == nullptr)
 		return false;
 
-	LOG(LOG_INFO, "Starting output...");
-
-	if (!device->GetOutput(&output))
+	auto decklinkOutput = dynamic_cast<DeckLinkOutput *>(decklink);
+	if (decklinkOutput == nullptr)
 		return false;
 
-	const HRESULT videoResult = output->EnableVideoOutput(
+	LOG(LOG_INFO, "Starting output...");
+
+	ComPtr<IDeckLinkOutput> output_;
+	if (!device->GetOutput(&output_))
+		return false;
+
+	const HRESULT videoResult = output_->EnableVideoOutput(
 		mode_->GetDisplayMode(), bmdVideoOutputFlagDefault);
 	if (videoResult != S_OK) {
 		LOG(LOG_ERROR, "Failed to enable video output");
 		return false;
 	}
 
-	const HRESULT audioResult = output->EnableAudioOutput(
+	const HRESULT audioResult = output_->EnableAudioOutput(
 		bmdAudioSampleRate48kHz, bmdAudioSampleType16bitInteger, 2,
 		bmdAudioOutputStreamTimestamped);
 	if (audioResult != S_OK) {
@@ -548,7 +597,10 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 		return false;
 	}
 
-	mode = mode_;
+	if (!mode_->GetFrameRate(&frameDuration, &frameTimescale)) {
+		LOG(LOG_ERROR, "Failed to get frame rate");
+		return false;
+	}
 
 	ComPtr<IDeckLinkKeyer> deckLinkKeyer;
 	if (device->GetKeyer(&deckLinkKeyer)) {
@@ -561,19 +613,37 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 		}
 	}
 
-	auto decklinkOutput = dynamic_cast<DeckLinkOutput *>(decklink);
-	if (decklinkOutput == nullptr)
-		return false;
+	frameData.clear();
+	size_t i = 0;
+	for (; i < 3; ++i) {
+		ComPtr<IDeckLinkMutableVideoFrame> decklinkOutputFrame;
+		HRESULT result = output_->CreateVideoFrame(
+			decklinkOutput->GetWidth(), decklinkOutput->GetHeight(),
+			decklinkOutput->GetWidth() * 4, bmdFormat8BitBGRA,
+			bmdFrameFlagDefault, &decklinkOutputFrame);
+		if (result != S_OK) {
+			blog(LOG_ERROR, "failed to create video frame 0x%X",
+			     result);
+			return false;
+		}
 
-	HRESULT result;
-	result = output->CreateVideoFrame(
-		decklinkOutput->GetWidth(), decklinkOutput->GetHeight(),
-		decklinkOutput->GetWidth() * 4, bmdFormat8BitBGRA,
-		bmdFrameFlagDefault, &decklinkOutputFrame);
-	if (result != S_OK) {
-		blog(LOG_ERROR, "failed to make frame 0x%X", result);
-		return false;
+		const long size = decklinkOutputFrame->GetRowBytes() *
+				  decklinkOutputFrame->GetHeight();
+		frameData.resize(size);
+		output_->ScheduleVideoFrame(decklinkOutputFrame,
+					    (i * frameDuration), frameDuration,
+					    frameTimescale);
 	}
+	totalFramesScheduled = i;
+
+	*renderDelegate.Assign() =
+		new RenderDelegate<DeckLinkDeviceInstance>(this);
+	output_->SetScheduledFrameCompletionCallback(renderDelegate);
+
+	output_->StartScheduledPlayback(0, 100, 1.0);
+
+	mode = mode_;
+	output = std::move(output_);
 
 	return true;
 }
@@ -586,31 +656,43 @@ bool DeckLinkDeviceInstance::StopOutput()
 	LOG(LOG_INFO, "Stopping output of '%s'...",
 	    GetDevice()->GetDisplayName().c_str());
 
+	output->SetScheduledFrameCompletionCallback(NULL);
 	output->DisableVideoOutput();
 	output->DisableAudioOutput();
-
-	decklinkOutputFrame.Clear();
+	output.Clear();
+	renderDelegate.Clear();
 
 	return true;
 }
 
-void DeckLinkDeviceInstance::DisplayVideoFrame(video_data *frame)
+void DeckLinkDeviceInstance::UpdateVideoFrame(video_data *frame)
 {
 	auto decklinkOutput = dynamic_cast<DeckLinkOutput *>(decklink);
 	if (decklinkOutput == nullptr)
 		return;
 
-	uint8_t *destData;
-	decklinkOutputFrame->GetBytes((void **)&destData);
+	std::lock_guard lock(frameDataMutex);
+	const uint8_t *const outData = frame->data[0];
+	frameData.assign(outData,
+			 outData + decklinkOutput->GetWidth() *
+					   decklinkOutput->GetHeight() * 4);
+}
 
-	uint8_t *outData = frame->data[0];
+void DeckLinkDeviceInstance::ScheduleVideoFrame(IDeckLinkVideoFrame *frame)
+{
+	void *bytes;
+	if (SUCCEEDED(frame->GetBytes(&bytes))) {
+		{
+			std::lock_guard lock(frameDataMutex);
+			memcpy(bytes, frameData.data(),
+			       frame->GetRowBytes() * frame->GetHeight());
+		}
 
-	std::copy(outData,
-		  outData + (decklinkOutput->GetWidth() *
-			     decklinkOutput->GetHeight() * 4),
-		  destData);
-
-	output->DisplayVideoFrameSync(decklinkOutputFrame);
+		output->ScheduleVideoFrame(
+			frame, (totalFramesScheduled * frameDuration),
+			frameDuration, frameTimescale);
+		++totalFramesScheduled;
+	}
 }
 
 void DeckLinkDeviceInstance::WriteAudio(audio_data *frames)

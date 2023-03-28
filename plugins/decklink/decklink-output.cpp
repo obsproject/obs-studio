@@ -130,7 +130,7 @@ static void decklink_output_raw_video(void *data, struct video_data *frame)
 	if (!decklink->start_timestamp)
 		decklink->start_timestamp = frame->timestamp;
 
-	decklink->DisplayVideoFrame(frame);
+	decklink->UpdateVideoFrame(frame);
 }
 
 static bool prepare_audio(DeckLinkOutput *decklink,
