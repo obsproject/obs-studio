@@ -1,62 +1,87 @@
-project(win-capture)
+cmake_minimum_required(VERSION 3.24...3.25)
+
+if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
+  add_library(hook-config INTERFACE)
+  add_library(OBS::hook-config ALIAS hook-config)
+  target_sources(hook-config INTERFACE graphics-hook-ver.h graphics-hook-info.h hook-helpers.h)
+  target_include_directories(hook-config INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
+
+  add_library(inject-library INTERFACE)
+  add_library(OBS::inject-library ALIAS inject-library)
+  target_sources(inject-library INTERFACE inject-library.c inject-library.h)
+  target_include_directories(inject-library INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
+
+  add_library(d3d8-api INTERFACE)
+  add_library(OBS::d3d8-api ALIAS d3d8-api)
+  target_sources(d3d8-api INTERFACE d3d8-api/d3d8.h d3d8-api/d3d8caps.h d3d8-api/d3d8types.h)
+  target_include_directories(d3d8-api INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/d3d8-api")
+endif()
+
+legacy_check()
 
 option(ENABLE_COMPAT_UPDATES "Checks for service updates" OFF)
 
-set(COMPAT_URL
-    "https://obsproject.com/obs2_update/win-capture"
-    CACHE STRING "Default services package URL")
-
+# cmake-format: off
+set(COMPAT_URL "https://obsproject.com/obs2_update/win-capture" CACHE STRING "Default services package URL")
 mark_as_advanced(COMPAT_URL)
+# cmake-format: on
+
+if(NOT TARGET OBS::ipc-util)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/deps/ipc-util" "${CMAKE_BINARY_DIR}/deps/ipc-util")
+endif()
+
+if(NOT TARGET OBS::file-updater)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/deps/file-updater" "${CMAKE_BINARY_DIR}/deps/file-updater")
+endif()
+
+find_package(jansson REQUIRED)
 
 add_library(win-capture MODULE)
 add_library(OBS::capture ALIAS win-capture)
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/compat-config.h.in ${CMAKE_BINARY_DIR}/config/compat-config.h)
-
 target_sources(
   win-capture
-  PRIVATE plugin-main.c
+  PRIVATE # cmake-format: sortable
           app-helpers.c
           app-helpers.h
+          compat-format-ver.h
+          compat-helpers.c
+          compat-helpers.h
           cursor-capture.c
           cursor-capture.h
           dc-capture.c
           dc-capture.h
           duplicator-monitor-capture.c
-          game-capture.c
           game-capture-file-init.c
-          graphics-hook-info.h
-          graphics-hook-ver.h
-          hook-helpers.h
-          inject-library.c
-          inject-library.h
+          game-capture.c
           load-graphics-offsets.c
           monitor-capture.c
           nt-stuff.c
           nt-stuff.h
-          window-capture.c
-          compat-helpers.c
-          compat-helpers.h
-          compat-format-ver.h
-          ../../libobs/util/windows/obfuscate.c
-          ../../libobs/util/windows/obfuscate.h
-          ${CMAKE_BINARY_DIR}/config/compat-config.h)
+          plugin-main.c
+          window-capture.c)
 
-target_link_libraries(win-capture PRIVATE OBS::libobs OBS::ipc-util OBS::file-updater Jansson::Jansson)
+target_compile_definitions(
+  win-capture PRIVATE COMPAT_URL="${COMPAT_URL}" "$<$<BOOL:${ENABLE_COMPAT_UPDATES}>:ENABLE_COMPAT_UPDATES>"
+                      OBS_VERSION="${OBS_VERSION_CANONICAL}")
 
-set_target_properties(win-capture PROPERTIES FOLDER "plugins/win-capture")
+target_link_libraries(
+  win-capture
+  PRIVATE OBS::file-updater
+          OBS::hook-config
+          OBS::inject-library
+          OBS::ipc-util
+          OBS::libobs
+          OBS::obfuscate
+          OBS::w32-pthreads
+          OBS::winrt-headers
+          jansson::jansson)
 
-if(MSVC)
-  target_link_libraries(win-capture PRIVATE OBS::w32-pthreads)
-  target_link_options(win-capture PRIVATE "LINKER:/IGNORE:4098")
-endif()
+target_link_options(win-capture PRIVATE /NODEFAULTLIB:msvcrtd.lib)
 
-target_compile_definitions(win-capture PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_WARNINGS
-                                               OBS_VERSION="${OBS_VERSION_CANONICAL}")
-
-set_property(GLOBAL APPEND PROPERTY OBS_MODULE_LIST "win-capture")
-
-setup_plugin_target(win-capture)
+# cmake-format: off
+set_target_properties_obs(win-capture PROPERTIES FOLDER plugins/win-capture PREFIX "")
+# cmake-format: on
 
 add_subdirectory(graphics-hook)
 add_subdirectory(get-graphics-offsets)

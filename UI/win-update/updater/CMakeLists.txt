@@ -2,13 +2,6 @@ cmake_minimum_required(VERSION 3.24...3.25)
 
 legacy_check()
 
-option(ENABLE_UPDATER "Build with Windows updater" ON)
-
-if(NOT ENABLE_UPDATER)
-  target_disable_feature(obs "Windows updater")
-  return()
-endif()
-
 find_package(zstd)
 
 if(NOT TARGET OBS::json11)
@@ -39,4 +32,4 @@ target_include_directories(updater PRIVATE "${CMAKE_SOURCE_DIR}/libobs" "${CMAKE
 target_link_libraries(updater PRIVATE OBS::blake2 OBS::json11 zstd::libzstd_static comctl32 shell32 winhttp)
 target_link_options(updater PRIVATE /IGNORE:4098)
 
-set_target_properties_obs(updater PROPERTIES FOLDER frontend OUTPUT_NAME updater)
+set_target_properties(updater PROPERTIES FOLDER frontend OUTPUT_NAME updater)

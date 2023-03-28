@@ -45,11 +45,10 @@ include(cmake/feature-importers.cmake)
 include(cmake/feature-browserpanels.cmake)
 
 if(NOT OAUTH_BASE_URL)
-  set(OAUTH_BASE_URL
-      "https://auth.obsproject.com/"
-      CACHE STRING "Default OAuth base URL")
-
+  # cmake-format: off
+  set(OAUTH_BASE_URL "https://auth.obsproject.com/" CACHE STRING "Default OAuth base URL")
   mark_as_advanced(OAUTH_BASE_URL)
+  # cmake-format: on
 endif()
 include(cmake/feature-twitch.cmake)
 include(cmake/feature-restream.cmake)
@@ -109,4 +108,6 @@ foreach(graphics_library IN ITEMS opengl metal d3d11)
   endif()
 endforeach()
 
-set_target_properties_obs(obs-studio PROPERTIES FOLDER frontend OUTPUT_NAME obs)
+# cmake-format: off
+set_target_properties_obs(obs-studio PROPERTIES FOLDER frontend OUTPUT_NAME "$<IF:$<PLATFORM_ID:Windows>,obs64,obs>")
+# cmake-format: on

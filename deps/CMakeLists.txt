@@ -1,7 +1,3 @@
-if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
-  return()
-endif()
-
 if(OS_WINDOWS)
   if(NOT MINGW)
     add_subdirectory(w32-pthreads)

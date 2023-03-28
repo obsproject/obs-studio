@@ -1,11 +1,16 @@
-project(libobs-d3d11)
+cmake_minimum_required(VERSION 3.24...3.25)
+
+legacy_check()
 
 add_library(libobs-d3d11 MODULE)
 add_library(OBS::libobs-d3d11 ALIAS libobs-d3d11)
 
 target_sources(
   libobs-d3d11
-  PRIVATE d3d11-indexbuffer.cpp
+  PRIVATE # cmake-format: sortable
+          d3d11-duplicator.cpp
+          d3d11-indexbuffer.cpp
+          d3d11-rebuild.cpp
           d3d11-samplerstate.cpp
           d3d11-shader.cpp
           d3d11-shaderprocessor.cpp
@@ -16,35 +21,23 @@ target_sources(
           d3d11-texture2d.cpp
           d3d11-texture3d.cpp
           d3d11-vertexbuffer.cpp
-          d3d11-duplicator.cpp
-          d3d11-rebuild.cpp
           d3d11-zstencilbuffer.cpp)
 
-set(MODULE_DESCRIPTION "OBS Library D3D11 wrapper")
-configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in libobs-d3d11.rc)
-
-target_include_directories(libobs-d3d11 PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-
+configure_file(cmake/windows/obs-module.rc.in libobs-d3d11.rc)
 target_sources(libobs-d3d11 PRIVATE libobs-d3d11.rc)
-
-target_compile_features(libobs-d3d11 PRIVATE cxx_std_17)
-
-target_compile_definitions(libobs-d3d11 PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_WARNINGS)
-
-if(NOT DEFINED GPU_PRIORITY_VAL
-   OR "x${GPU_PRIORITY_VAL}x" STREQUAL "xx"
-   OR "${GPU_PRIORITY_VAL}" STREQUAL "0")
-  target_compile_definitions(libobs-d3d11 PRIVATE USE_GPU_PRIORITY=FALSE GPU_PRIORITY_VAL=0)
-else()
-  target_compile_definitions(libobs-d3d11 PRIVATE USE_GPU_PRIORITY=TRUE GPU_PRIORITY_VAL=${GPU_PRIORITY_VAL})
-endif()
+target_compile_options(libobs-d3d11 PRIVATE /wd4595)
+target_compile_definitions(
+  libobs-d3d11 PRIVATE "$<$<BOOL:${GPU_PRIORITY_VAL}>:USE_GPU_PRIORITY>"
+                       "$<IF:$<BOOL:${GPU_PRIORITY_VAL}>,GPU_PRIORITY_VAL=${GPU_PRIORITY_VAL},GPU_PRIORITY_VAL=0>")
 
 target_link_libraries(libobs-d3d11 PRIVATE OBS::libobs d3d9 d3d11 dxgi shcore)
 
-set_target_properties(
-  libobs-d3d11
-  PROPERTIES OUTPUT_NAME libobs-d3d11
-             FOLDER "core"
-             PREFIX "")
+target_enable_feature(libobs "Direct3D 11 renderer")
 
-setup_binary_target(libobs-d3d11)
+# cmake-format: off
+set_target_properties_obs(
+  libobs-d3d11
+  PROPERTIES FOLDER core
+             VERSION 0
+             SOVERSION ${OBS_VERSION_MAJOR})
+# cmake-format: on
