@@ -6632,21 +6632,20 @@ static void RenameListItem(OBSBasic *parent, QListWidget *listWidget,
 		auto undo = [prev = std::string(prevName)](
 				    const std::string &data) {
 			OBSSourceAutoRelease source =
-				obs_get_source_by_name(data.c_str());
+				obs_get_source_by_uuid(data.c_str());
 			obs_source_set_name(source, prev.c_str());
 		};
 
 		auto redo = [name](const std::string &data) {
 			OBSSourceAutoRelease source =
-				obs_get_source_by_name(data.c_str());
+				obs_get_source_by_uuid(data.c_str());
 			obs_source_set_name(source, name.c_str());
 		};
 
-		std::string undo_data(name);
-		std::string redo_data(prevName);
+		std::string source_uuid(obs_source_get_uuid(source));
 		parent->undo_s.add_action(
 			QTStr("Undo.Rename").arg(name.c_str()), undo, redo,
-			undo_data, redo_data);
+			source_uuid, source_uuid);
 
 		listItem->setText(QT_UTF8(name.c_str()));
 		obs_source_set_name(source, name.c_str());
@@ -8482,7 +8481,7 @@ void undo_redo(const std::string &data)
 {
 	OBSDataAutoRelease dat = obs_data_create_from_json(data.c_str());
 	OBSSourceAutoRelease source =
-		obs_get_source_by_name(obs_data_get_string(dat, "scene_name"));
+		obs_get_source_by_uuid(obs_data_get_string(dat, "scene_uuid"));
 	reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
 		->SetCurrentScene(source.Get(), true);
 
@@ -9948,8 +9947,8 @@ void OBSBasic::CreateFilterPasteUndoRedoAction(const QString &text,
 			obs_data_create_from_json(json.c_str());
 		OBSDataArrayAutoRelease array =
 			obs_data_get_array(data, "array");
-		const char *name = obs_data_get_string(data, "name");
-		OBSSourceAutoRelease source = obs_get_source_by_name(name);
+		OBSSourceAutoRelease source = obs_get_source_by_uuid(
+			obs_data_get_string(data, "uuid"));
 
 		obs_source_restore_filters(source, array);
 
@@ -9957,14 +9956,14 @@ void OBSBasic::CreateFilterPasteUndoRedoAction(const QString &text,
 			filters->UpdateSource(source);
 	};
 
-	const char *name = obs_source_get_name(source);
+	const char *uuid = obs_source_get_uuid(source);
 
 	OBSDataAutoRelease undo_data = obs_data_create();
 	OBSDataAutoRelease redo_data = obs_data_create();
 	obs_data_set_array(undo_data, "array", undo_array);
 	obs_data_set_array(redo_data, "array", redo_array);
-	obs_data_set_string(undo_data, "name", name);
-	obs_data_set_string(redo_data, "name", name);
+	obs_data_set_string(undo_data, "uuid", uuid);
+	obs_data_set_string(redo_data, "uuid", uuid);
 
 	undo_s.add_action(text, undo_redo, undo_redo,
 			  obs_data_get_json(undo_data),

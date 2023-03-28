@@ -1066,13 +1066,13 @@ void OBSBasic::PasteShowHideTransition(obs_sceneitem_t *item, bool show,
 				       obs_source_t *tr)
 {
 	int64_t sceneItemId = obs_sceneitem_get_id(item);
-	std::string sceneName = obs_source_get_name(
+	std::string sceneUUID = obs_source_get_uuid(
 		obs_scene_get_source(obs_sceneitem_get_scene(item)));
 
-	auto undo_redo = [sceneName, sceneItemId,
+	auto undo_redo = [sceneUUID, sceneItemId,
 			  show](const std::string &data) {
 		OBSSourceAutoRelease source =
-			obs_get_source_by_name(sceneName.c_str());
+			obs_get_source_by_uuid(sceneUUID.c_str());
 		obs_scene_t *scene = obs_scene_from_source(source);
 		obs_sceneitem_t *i =
 			obs_scene_find_sceneitem_by_id(scene, sceneItemId);
@@ -1136,14 +1136,14 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 		QString id = action->property("transition_id").toString();
 		OBSSceneItem sceneItem = main->GetCurrentSceneItem();
 		int64_t sceneItemId = obs_sceneitem_get_id(sceneItem);
-		std::string sceneName =
-			obs_source_get_name(obs_scene_get_source(
+		std::string sceneUUID =
+			obs_source_get_uuid(obs_scene_get_source(
 				obs_sceneitem_get_scene(sceneItem)));
 
-		auto undo_redo = [sceneName, sceneItemId,
+		auto undo_redo = [sceneUUID, sceneItemId,
 				  visible](const std::string &data) {
 			OBSSourceAutoRelease source =
-				obs_get_source_by_name(sceneName.c_str());
+				obs_get_source_by_uuid(sceneUUID.c_str());
 			obs_scene_t *scene = obs_scene_from_source(source);
 			obs_sceneitem_t *i = obs_scene_find_sceneitem_by_id(
 				scene, sceneItemId);
