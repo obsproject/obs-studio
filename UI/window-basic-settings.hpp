@@ -224,6 +224,7 @@ private:
 	void HookWidget(QWidget *widget, const char *signal, const char *slot);
 
 	bool QueryChanges();
+	bool QueryAllowedToClose();
 
 	void ResetEncoders(bool streamOnly = false);
 	void LoadColorRanges();

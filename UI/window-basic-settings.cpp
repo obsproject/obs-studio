@@ -4197,6 +4197,9 @@ bool OBSBasicSettings::QueryChanges()
 	if (button == QMessageBox::Cancel) {
 		return false;
 	} else if (button == QMessageBox::Yes) {
+		if (!QueryAllowedToClose())
+			return false;
+
 		SaveSettings();
 	} else {
 		if (savedTheme != App()->GetTheme())
@@ -4207,6 +4210,44 @@ bool OBSBasicSettings::QueryChanges()
 	}
 
 	ClearChanged();
+	return true;
+}
+
+bool OBSBasicSettings::QueryAllowedToClose()
+{
+	bool simple = (ui->outputMode->currentIndex() == 0);
+
+	bool invalidEncoder = false;
+	bool invalidFormat = false;
+	if (simple) {
+		if (ui->simpleOutRecEncoder->currentIndex() == -1 ||
+		    ui->simpleOutStrEncoder->currentIndex() == -1 ||
+		    ui->simpleOutRecAEncoder->currentIndex() == -1 ||
+		    ui->simpleOutStrAEncoder->currentIndex() == -1)
+			invalidEncoder = true;
+
+		if (ui->simpleOutRecFormat->currentIndex() == -1)
+			invalidFormat = true;
+	} else {
+		if (ui->advOutRecEncoder->currentIndex() == -1 ||
+		    ui->advOutEncoder->currentIndex() == -1 ||
+		    ui->advOutRecAEncoder->currentIndex() == -1 ||
+		    ui->advOutAEncoder->currentIndex() == -1)
+			invalidEncoder = true;
+	}
+
+	if (invalidEncoder) {
+		OBSMessageBox::warning(
+			this, QTStr("CodecCompat.CodecMissingOnExit.Title"),
+			QTStr("CodecCompat.CodecMissingOnExit.Text"));
+		return false;
+	} else if (invalidFormat) {
+		OBSMessageBox::warning(
+			this, QTStr("CodecCompat.ContainerMissingOnExit.Title"),
+			QTStr("CodecCompat.ContainerMissingOnExit.Text"));
+		return false;
+	}
+
 	return true;
 }
 
@@ -4259,6 +4300,9 @@ void OBSBasicSettings::on_buttonBox_clicked(QAbstractButton *button)
 
 	if (val == QDialogButtonBox::ApplyRole ||
 	    val == QDialogButtonBox::AcceptRole) {
+		if (!QueryAllowedToClose())
+			return;
+
 		SaveSettings();
 		ClearChanged();
 	}
