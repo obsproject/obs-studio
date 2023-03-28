@@ -1433,6 +1433,12 @@ static bool Update(wchar_t *cmdLine)
 				} else if (wcscmp(argv[i], L"--portable") ==
 					   0) {
 					bIsPortable = true;
+				} else if (wcsncmp(argv[i],
+						   L"--portable--branch=",
+						   19) == 0) {
+					/* Versions pre-29.1 beta 2 produce broken parameters :( */
+					bIsPortable = true;
+					branch = argv[i] + 19;
 				}
 			}
 			LocalFree((HLOCAL)argv);
