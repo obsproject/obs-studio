@@ -1012,7 +1012,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		SLOT(UseStreamKeyAdvClicked()));
 
 	connect(ui->simpleOutStrAEncoder, SIGNAL(currentIndexChanged(int)),
-		this, SLOT(SimpleStreamAudioEncoderChanged));
+		this, SLOT(SimpleStreamAudioEncoderChanged()));
 	connect(ui->advOutAEncoder, SIGNAL(currentIndexChanged(int)), this,
 		SLOT(AdvAudioEncodersChanged()));
 	connect(ui->advOutRecAEncoder, SIGNAL(currentIndexChanged(int)), this,
