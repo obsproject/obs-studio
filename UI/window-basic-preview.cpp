@@ -395,10 +395,18 @@ static bool FindHandleAtPos(obs_scene_t *scene, obs_sceneitem_t *item,
 	RotatePos(&rotHandleOffset, atan2(transform.x.y, transform.x.x));
 	RotatePos(&rotHandleOffset, RAD(data.angleOffset));
 
-	vec3 handlePos = GetTransformedPos(0.5f, 0.0f, transform);
+	vec2 scale;
+	obs_sceneitem_get_scale(item, &scale);
+	bool invert = scale.y < 0.0f;
+	vec3 handlePos =
+		GetTransformedPos(0.5f, invert ? 1.0f : 0.0f, transform);
 	vec3_transform(&handlePos, &handlePos, &data.parent_xform);
 	handlePos.x -= rotHandleOffset.x;
-	handlePos.y -= rotHandleOffset.y;
+
+	if (scale.x < 0.0f)
+		handlePos.y += rotHandleOffset.y;
+	else
+		handlePos.y -= rotHandleOffset.y;
 
 	float dist = vec3_dist(&handlePos, &pos3);
 	if (dist < data.radius) {
@@ -1740,10 +1748,10 @@ static void DrawSquareAtPos(float x, float y, float pixelRatio)
 }
 
 static void DrawRotationHandle(gs_vertbuffer_t *circle, float rot,
-			       float pixelRatio)
+			       float pixelRatio, bool invert)
 {
 	struct vec3 pos;
-	vec3_set(&pos, 0.5f, 0.0f, 0.0f);
+	vec3_set(&pos, 0.5f, invert ? 1.0f : 0.0f, 0.0f);
 
 	struct matrix4 matrix;
 	gs_matrix_get(&matrix);
@@ -2113,8 +2121,9 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 			prev->circleFill = gs_render_save();
 		}
 
+		bool invert = info.scale.y < 0.0f;
 		DrawRotationHandle(prev->circleFill, info.rot + prev->groupRot,
-				   pixelRatio);
+				   pixelRatio, invert);
 	}
 
 	gs_matrix_pop();
