@@ -18,8 +18,6 @@ on:
       mac_arm_url_override:
         description: 'Mac ARM build to use (.dmg only)'
         required: false
-  schedule:
-  - cron: 0 0 * * *
 
 env:
   WORKFLOW_ID: 583765
