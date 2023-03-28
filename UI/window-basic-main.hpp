@@ -810,8 +810,6 @@ private slots:
 	void CheckDiskSpaceRemaining();
 	void OpenSavedProjector(SavedProjectorInfo *info);
 
-	void ScenesReordered();
-
 	void ResetStatsHotkey();
 
 	void SetImageIcon(const QIcon &icon);
@@ -1170,8 +1168,6 @@ private slots:
 	void openLogDialog(const QString &text, const bool crash);
 
 	void updateCheckFinished();
-
-	void AddSourceFromAction();
 
 	void MoveSceneToTop();
 	void MoveSceneToBottom();

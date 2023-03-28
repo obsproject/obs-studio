@@ -87,11 +87,13 @@ private:
 	static void OBSOutputReconnect(void *data, calldata_t *params);
 	static void OBSOutputReconnectSuccess(void *data, calldata_t *params);
 
+public slots:
+	void UpdateCPUUsage();
+
 private slots:
 	void Reconnect(int seconds);
 	void ReconnectSuccess();
 	void UpdateStatusBar();
-	void UpdateCPUUsage();
 	void UpdateCurrentFPS();
 	void UpdateIcons();
 

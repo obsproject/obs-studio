@@ -67,8 +67,8 @@ void OBSBasicStatusBar::Activate()
 {
 	if (!active) {
 		refreshTimer = new QTimer(this);
-		connect(refreshTimer, SIGNAL(timeout()), this,
-			SLOT(UpdateStatusBar()));
+		connect(refreshTimer, &QTimer::timeout, this,
+			&OBSBasicStatusBar::UpdateStatusBar);
 
 		int skipped = video_output_get_skipped_frames(obs_get_video());
 		int total = video_output_get_total_frames(obs_get_video());
