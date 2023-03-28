@@ -1570,6 +1570,9 @@ static obs_properties_t *GetWASAPIPropertiesProcessOutput(void *data)
 				  obs_module_text("Priority.Title"),
 				  WINDOW_PRIORITY_TITLE);
 	obs_property_list_add_int(priority_prop,
+				  obs_module_text("Priority.TitleStart"),
+				  WINDOW_PRIORITY_TITLE_START);
+	obs_property_list_add_int(priority_prop,
 				  obs_module_text("Priority.Class"),
 				  WINDOW_PRIORITY_CLASS);
 	obs_property_list_add_int(priority_prop,

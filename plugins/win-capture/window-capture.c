@@ -9,20 +9,21 @@
 
 /* clang-format off */
 
-#define TEXT_WINDOW_CAPTURE obs_module_text("WindowCapture")
-#define TEXT_WINDOW         obs_module_text("WindowCapture.Window")
-#define TEXT_METHOD         obs_module_text("WindowCapture.Method")
-#define TEXT_METHOD_AUTO    obs_module_text("WindowCapture.Method.Auto")
-#define TEXT_METHOD_BITBLT  obs_module_text("WindowCapture.Method.BitBlt")
-#define TEXT_METHOD_WGC     obs_module_text("WindowCapture.Method.WindowsGraphicsCapture")
-#define TEXT_MATCH_PRIORITY obs_module_text("WindowCapture.Priority")
-#define TEXT_MATCH_TITLE    obs_module_text("WindowCapture.Priority.Title")
-#define TEXT_MATCH_CLASS    obs_module_text("WindowCapture.Priority.Class")
-#define TEXT_MATCH_EXE      obs_module_text("WindowCapture.Priority.Exe")
-#define TEXT_CAPTURE_CURSOR obs_module_text("CaptureCursor")
-#define TEXT_COMPATIBILITY  obs_module_text("Compatibility")
-#define TEXT_CLIENT_AREA    obs_module_text("ClientArea")
-#define TEXT_FORCE_SDR      obs_module_text("ForceSdr")
+#define TEXT_WINDOW_CAPTURE	obs_module_text("WindowCapture")
+#define TEXT_WINDOW		obs_module_text("WindowCapture.Window")
+#define TEXT_METHOD		obs_module_text("WindowCapture.Method")
+#define TEXT_METHOD_AUTO	obs_module_text("WindowCapture.Method.Auto")
+#define TEXT_METHOD_BITBLT	obs_module_text("WindowCapture.Method.BitBlt")
+#define TEXT_METHOD_WGC		obs_module_text("WindowCapture.Method.WindowsGraphicsCapture")
+#define TEXT_MATCH_PRIORITY	obs_module_text("WindowCapture.Priority")
+#define TEXT_MATCH_TITLE	obs_module_text("WindowCapture.Priority.Title")
+#define TEXT_MATCH_TITLE_START  obs_module_text("WindowCapture.Priority.TitleStart")
+#define TEXT_MATCH_CLASS	obs_module_text("WindowCapture.Priority.Class")
+#define TEXT_MATCH_EXE		obs_module_text("WindowCapture.Priority.Exe")
+#define TEXT_CAPTURE_CURSOR	obs_module_text("CaptureCursor")
+#define TEXT_COMPATIBILITY	obs_module_text("Compatibility")
+#define TEXT_CLIENT_AREA	obs_module_text("ClientArea")
+#define TEXT_FORCE_SDR		obs_module_text("ForceSdr")
 
 /* clang-format on */
 
@@ -492,6 +493,7 @@ static obs_properties_t *wc_properties(void *data)
 	p = obs_properties_add_list(ppts, "priority", TEXT_MATCH_PRIORITY,
 				    OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(p, TEXT_MATCH_TITLE, WINDOW_PRIORITY_TITLE);
+	obs_property_list_add_int(p, TEXT_MATCH_TITLE_START, WINDOW_PRIORITY_TITLE_START);
 	obs_property_list_add_int(p, TEXT_MATCH_CLASS, WINDOW_PRIORITY_CLASS);
 	obs_property_list_add_int(p, TEXT_MATCH_EXE, WINDOW_PRIORITY_EXE);
 

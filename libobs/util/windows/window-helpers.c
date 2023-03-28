@@ -469,6 +469,13 @@ static int window_rating(HWND window, enum window_priority priority,
 	} else if (priority == WINDOW_PRIORITY_TITLE) {
 		val = title_val == 0 ? 0 : 0x7FFFFFFF;
 
+	} else if (priority == WINDOW_PRIORITY_TITLE_START) {
+		int count = 0;
+		while (title[count] && cur_title.array[count] &&
+		       title[count] == cur_title.array[count]) {
+			count++;
+		}
+		val = 0x7FFFFFFF - count;
 	} else if (priority == WINDOW_PRIORITY_EXE) {
 		val = exe_matches ? title_val : 0x7FFFFFFF;
 	}

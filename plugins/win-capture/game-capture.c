@@ -60,6 +60,7 @@
 #define TEXT_WINDOW                obs_module_text("WindowCapture.Window")
 #define TEXT_MATCH_PRIORITY        obs_module_text("WindowCapture.Priority")
 #define TEXT_MATCH_TITLE           obs_module_text("WindowCapture.Priority.Title")
+#define TEXT_MATCH_TITLE_START     obs_module_text("WindowCapture.Priority.TitleStart")
 #define TEXT_MATCH_CLASS           obs_module_text("WindowCapture.Priority.Class")
 #define TEXT_MATCH_EXE             obs_module_text("WindowCapture.Priority.Exe")
 #define TEXT_CAPTURE_CURSOR        obs_module_text("CaptureCursor")
@@ -2374,6 +2375,7 @@ static obs_properties_t *game_capture_properties(void *data)
 				    TEXT_MATCH_PRIORITY, OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(p, TEXT_MATCH_TITLE, WINDOW_PRIORITY_TITLE);
+	obs_property_list_add_int(p, TEXT_MATCH_TITLE_START, WINDOW_PRIORITY_TITLE_START);
 	obs_property_list_add_int(p, TEXT_MATCH_CLASS, WINDOW_PRIORITY_CLASS);
 	obs_property_list_add_int(p, TEXT_MATCH_EXE, WINDOW_PRIORITY_EXE);
 
