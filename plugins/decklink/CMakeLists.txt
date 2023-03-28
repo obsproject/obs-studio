@@ -49,6 +49,7 @@ target_link_libraries(decklink PRIVATE OBS::libobs OBS::caption Decklink::SDK)
 
 if(OS_WINDOWS)
   configure_file(cmake/windows/obs-module.rc.in win-decklink.rc)
+  target_compile_definitions(decklink PRIVATE NOMINMAX)
   target_sources(decklink PRIVATE win/platform.cpp win-decklink.rc)
 
   include(idlfilehelper)

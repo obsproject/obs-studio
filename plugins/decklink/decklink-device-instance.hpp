@@ -70,7 +70,7 @@ protected:
 	std::vector<uint8_t> frameData;
 	BMDTimeValue frameDuration;
 	BMDTimeScale frameTimescale;
-	size_t totalFramesScheduled;
+	BMDTimeScale totalFramesScheduled;
 	ComPtr<RenderDelegate<DeckLinkDeviceInstance>> renderDelegate;
 
 	void FinalizeStream();

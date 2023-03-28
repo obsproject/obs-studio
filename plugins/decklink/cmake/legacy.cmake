@@ -58,6 +58,7 @@ if(OS_WINDOWS)
   set(MODULE_DESCRIPTION "OBS DeckLink Windows module")
   configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in win-decklink.rc)
 
+  target_compile_definitions(decklink PRIVATE NOMINMAX)
   target_sources(decklink PRIVATE win/platform.cpp win-decklink.rc)
 
   target_sources(decklink-sdk INTERFACE win/decklink-sdk/DeckLinkAPIVersion.h ${win-decklink-sdk_GENERATED_FILES})
