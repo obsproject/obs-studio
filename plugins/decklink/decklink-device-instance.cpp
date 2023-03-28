@@ -614,8 +614,9 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 	}
 
 	frameData.clear();
-	size_t i = 0;
-	for (; i < 3; ++i) {
+	const int64_t minimumPrerollFrames =
+		std::max(device->GetMinimumPrerollFrames(), INT64_C(3));
+	for (int64_t i = 0; i < minimumPrerollFrames; ++i) {
 		ComPtr<IDeckLinkMutableVideoFrame> decklinkOutputFrame;
 		HRESULT result = output_->CreateVideoFrame(
 			decklinkOutput->GetWidth(), decklinkOutput->GetHeight(),
@@ -630,11 +631,18 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 		const long size = decklinkOutputFrame->GetRowBytes() *
 				  decklinkOutputFrame->GetHeight();
 		frameData.resize(size);
-		output_->ScheduleVideoFrame(decklinkOutputFrame,
-					    (i * frameDuration), frameDuration,
-					    frameTimescale);
+		result = output_->ScheduleVideoFrame(decklinkOutputFrame,
+						     i * frameDuration,
+						     frameDuration,
+						     frameTimescale);
+		if (result != S_OK) {
+			blog(LOG_ERROR,
+			     "failed to schedule video frame for preroll 0x%X",
+			     result);
+			return false;
+		}
 	}
-	totalFramesScheduled = i;
+	totalFramesScheduled = minimumPrerollFrames;
 
 	*renderDelegate.Assign() =
 		new RenderDelegate<DeckLinkDeviceInstance>(this);

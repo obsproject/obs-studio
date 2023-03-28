@@ -21,6 +21,7 @@ class DeckLinkDevice {
 	decklink_bool_t supportsInternalKeyer = false;
 	int64_t subDeviceIndex = 0;
 	int64_t numSubDevices = 0;
+	int64_t minimumPrerollFrames = 3;
 	int64_t supportedVideoInputConnections = -1;
 	int64_t supportedVideoOutputConnections = -1;
 	int64_t supportedAudioInputConnections = -1;
@@ -49,6 +50,7 @@ public:
 	bool GetSupportsInternalKeyer(void) const;
 	int64_t GetSubDeviceCount();
 	int64_t GetSubDeviceIndex();
+	int64_t GetMinimumPrerollFrames();
 	int GetKeyerMode(void);
 	void SetKeyerMode(int newKeyerMode);
 	const std::string &GetName(void) const;
