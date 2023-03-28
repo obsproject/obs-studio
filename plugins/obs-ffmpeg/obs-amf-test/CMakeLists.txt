@@ -1,14 +1,15 @@
-project(obs-amf-test)
+cmake_minimum_required(VERSION 3.24...3.25)
 
-add_executable(obs-amf-test)
+legacy_check()
 
 find_package(AMF 1.4.29 REQUIRED)
 
-target_include_directories(obs-amf-test PRIVATE ${CMAKE_SOURCE_DIR}/libobs)
+add_executable(obs-amf-test)
+add_executable(OBS::amf-test ALIAS obs-amf-test)
 
 target_sources(obs-amf-test PRIVATE obs-amf-test.cpp)
-target_link_libraries(obs-amf-test d3d11 dxgi dxguid AMF::AMF)
+target_link_libraries(obs-amf-test PRIVATE OBS::COMutils AMF::AMF d3d11 dxgi dxguid)
 
-set_target_properties(obs-amf-test PROPERTIES FOLDER "plugins/obs-ffmpeg")
-
-setup_binary_target(obs-amf-test)
+# cmake-format: off
+set_target_properties_obs(obs-amf-test PROPERTIES FOLDER plugins/obs-ffmpeg)
+# cmake-format: on

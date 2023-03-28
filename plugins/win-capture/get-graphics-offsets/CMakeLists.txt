@@ -1,30 +1,22 @@
-project(get-graphics-offsets)
+cmake_minimum_required(VERSION 3.24...3.25)
+
+add_library(_get-graphics-offsets INTERFACE)
+target_sources(_get-graphics-offsets INTERFACE d3d8-offsets.cpp d3d9-offsets.cpp dxgi-offsets.cpp
+                                               get-graphics-offsets.c get-graphics-offsets.h)
+
+target_compile_options(_get-graphics-offsets INTERFACE $<IF:$<CONFIG:Debug>,/MTd,/MT>)
+
+target_link_libraries(_get-graphics-offsets INTERFACE OBS::hook-config OBS::d3d8-api d3d9.lib dxgi.lib d3d11.lib)
+
+legacy_check()
 
 add_executable(get-graphics-offsets)
+target_link_libraries(get-graphics-offsets PRIVATE _get-graphics-offsets)
 
-target_sources(
-  get-graphics-offsets
-  PRIVATE get-graphics-offsets.c
-          get-graphics-offsets.h
-          dxgi-offsets.cpp
-          d3d8-offsets.cpp
-          d3d9-offsets.cpp
-          ../graphics-hook-info.h
-          ../hook-helpers.h)
+include(cmake/32bit.cmake)
 
-target_include_directories(get-graphics-offsets PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
-
-target_link_libraries(get-graphics-offsets d3d9.lib dxgi.lib d3d11.lib)
-
-if(MSVC)
-  target_compile_options(get-graphics-offsets PRIVATE "$<IF:$<CONFIG:Debug>,/MTd,/MT>")
-endif()
-
-set_target_properties(get-graphics-offsets PROPERTIES FOLDER "plugins/win-capture")
-set_target_properties(get-graphics-offsets
-                      PROPERTIES OUTPUT_NAME "get-graphics-offsets$<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>,64,32>")
-
-set(OBS_PLUGIN_DESTINATION "${OBS_DATA_DESTINATION}/obs-plugins/win-capture/")
-setup_plugin_target(get-graphics-offsets)
+# cmake-format: off
+set_target_properties_obs(get-graphics-offsets PROPERTIES FOLDER plugins/win-capture OUTPUT_NAME get-graphics-offsets64)
+# cmake-format: on
 
 add_dependencies(win-capture get-graphics-offsets)

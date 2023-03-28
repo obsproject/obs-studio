@@ -17,10 +17,7 @@ target_sources(coreaudio-encoder PRIVATE encoder.cpp)
 target_link_libraries(coreaudio-encoder PRIVATE OBS::libobs)
 
 if(OS_WINDOWS)
-  target_compile_definitions(coreaudio-encoder PRIVATE UNICODE _UNICODE)
-
   configure_file(cmake/windows/obs-module.rc.in coreaudio-encoder.rc)
-
   target_sources(coreaudio-encoder PRIVATE coreaudio-encoder.rc windows-imports.h)
 elseif(OS_MACOS)
   # cmake-format: off

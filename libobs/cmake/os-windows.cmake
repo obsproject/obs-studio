@@ -57,4 +57,4 @@ target_link_libraries(
 
 target_link_options(libobs PRIVATE /IGNORE:4098 /SAFESEH:NO)
 
-set_target_properties(libobs PROPERTIES PREFIX "")
+set_target_properties(libobs PROPERTIES PREFIX "" OUTPUT_NAME "obs")

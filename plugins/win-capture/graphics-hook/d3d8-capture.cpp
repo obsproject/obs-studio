@@ -1,6 +1,10 @@
 #include <dxgi.h>
 
+#ifdef OBS_LEGACY
 #include "../d3d8-api/d3d8.h"
+#else
+#include <d3d8.h>
+#endif
 #include "graphics-hook.h"
 
 #include <detours.h>
