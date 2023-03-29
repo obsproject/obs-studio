@@ -35,6 +35,12 @@ static inline Qt::CheckState GetCheckState(bool muted, bool unassigned)
 		return Qt::Unchecked;
 }
 
+static inline bool IsSourceUnassigned(obs_source_t *source)
+{
+	return (obs_source_get_audio_mixers(source) &
+		((1 << MAX_AUDIO_MIXES) - 1)) == 0;
+}
+
 static void ShowUnassignedWarning(const char *name)
 {
 	auto msgBox = [=]() {
@@ -101,7 +107,7 @@ void VolControl::VolumeChanged()
 
 void VolControl::VolumeMuted(bool muted)
 {
-	bool unassigned = obs_source_get_audio_mixers(source) == 0;
+	bool unassigned = IsSourceUnassigned(source);
 
 	auto newState = GetCheckState(muted, unassigned);
 	if (mute->checkState() != newState)
@@ -134,7 +140,7 @@ void VolControl::SetMuted(bool)
 	bool checked = mute->checkState() == Qt::Checked;
 	bool prev = obs_source_muted(source);
 	obs_source_set_muted(source, checked);
-	bool unassigned = obs_source_get_audio_mixers(source) == 0;
+	bool unassigned = IsSourceUnassigned(source);
 
 	if (!checked && unassigned) {
 		mute->setCheckState(Qt::PartiallyChecked);
@@ -360,7 +366,7 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	slider->setMaximum(int(FADER_PRECISION));
 
 	bool muted = obs_source_muted(source);
-	bool unassigned = obs_source_get_audio_mixers(source) == 0;
+	bool unassigned = IsSourceUnassigned(source);
 	mute->setCheckState(GetCheckState(muted, unassigned));
 	volMeter->muted = muted || unassigned;
 	mute->setAccessibleName(QTStr("VolControl.Mute").arg(sourceName));
