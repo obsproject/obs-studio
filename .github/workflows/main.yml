@@ -401,7 +401,7 @@ jobs:
         with:
           stop-at-module: ${{ steps.setup.outputs.stop_at_module }}
           manifest-path: CI/flatpak/com.obsproject.Studio.json
-          cache: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          cache: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/master') || matrix.arch != 'x86_64' }}
           restore-cache: false
           cache-key: ${{ steps.setup.outputs.cache_key }}
           arch: ${{ matrix.arch }}
