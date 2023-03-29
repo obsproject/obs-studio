@@ -132,6 +132,29 @@ void OBSBasicSettings::LoadStream1Settings()
 		ui->authUsername->setText(QT_UTF8(username));
 		ui->authPw->setText(QT_UTF8(password));
 		ui->useAuth->setChecked(use_auth);
+
+		/* add tooltips for stream key, user, password fields */
+		QString file = !App()->IsThemeDark()
+				       ? ":/res/images/help.svg"
+				       : ":/res/images/help_light.svg";
+		QString lStr = "<html>%1 <img src='%2' style=' \
+				vertical-align: bottom;  \
+				' /></html>";
+
+		ui->streamKeyLabel->setText(
+			lStr.arg(ui->streamKeyLabel->text(), file));
+		ui->streamKeyLabel->setToolTip(
+			QTStr("Basic.AutoConfig.StreamPage.StreamKey.ToolTip"));
+
+		ui->authUsernameLabel->setText(
+			lStr.arg(ui->authUsernameLabel->text(), file));
+		ui->authUsernameLabel->setToolTip(
+			QTStr("Basic.Settings.Stream.Custom.Username.ToolTip"));
+
+		ui->authPwLabel->setText(
+			lStr.arg(ui->authPwLabel->text(), file));
+		ui->authPwLabel->setToolTip(
+			QTStr("Basic.Settings.Stream.Custom.Password.ToolTip"));
 	} else {
 		int idx = ui->service->findText(service);
 		if (idx == -1) {
@@ -305,7 +328,7 @@ void OBSBasicSettings::UpdateKeyLink()
 	if (serviceName == "Dacast") {
 		ui->streamKeyLabel->setText(
 			QTStr("Basic.AutoConfig.StreamPage.EncoderKey"));
-	} else {
+	} else if (!IsCustomService()) {
 		ui->streamKeyLabel->setText(
 			QTStr("Basic.AutoConfig.StreamPage.StreamKey"));
 	}
@@ -405,6 +428,7 @@ static void reset_service_ui_fields(Ui::OBSBasicSettings *ui,
 	} else {
 		ui->connectAccount2->setVisible(false);
 		ui->useStreamKeyAdv->setVisible(false);
+		ui->streamStackWidget->setCurrentIndex((int)Section::StreamKey);
 	}
 
 	ui->connectedAccountLabel->setVisible(false);
@@ -1243,6 +1267,8 @@ static QString get_adv_fallback(const QString &enc)
 		return "jim_nvenc";
 	if (enc == "h265_texture_amf")
 		return "h264_texture_amf";
+	if (enc == "com.apple.videotoolbox.videoencoder.ave.hevc")
+		return "com.apple.videotoolbox.videoencoder.ave.avc";
 	return "obs_x264";
 }
 
@@ -1250,8 +1276,12 @@ static QString get_simple_fallback(const QString &enc)
 {
 	if (enc == SIMPLE_ENCODER_NVENC_HEVC)
 		return SIMPLE_ENCODER_NVENC;
+	if (enc == SIMPLE_ENCODER_NVENC_AV1)
+		return SIMPLE_ENCODER_NVENC;
 	if (enc == SIMPLE_ENCODER_AMD_HEVC)
 		return SIMPLE_ENCODER_AMD;
+	if (enc == SIMPLE_ENCODER_APPLE_HEVC)
+		return SIMPLE_ENCODER_APPLE_H264;
 	return SIMPLE_ENCODER_X264;
 }
 
@@ -1312,7 +1342,7 @@ bool OBSBasicSettings::ServiceSupportsCodecCheck()
 
 void OBSBasicSettings::ResetEncoders(bool streamOnly)
 {
-	QString lastAdvEnc = ui->advOutRecEncoder->currentData().toString();
+	QString lastAdvEnc = ui->advOutEncoder->currentData().toString();
 	QString lastEnc = ui->simpleOutStrEncoder->currentData().toString();
 	OBSService service = SpawnTempService();
 	const char **codecs = obs_service_get_supported_video_codecs(service);
@@ -1381,10 +1411,18 @@ void OBSBasicSettings::ResetEncoders(bool streamOnly)
 		ui->simpleOutStrEncoder->addItem(
 			ENCODER_STR("Hardware.QSV.H264"),
 			QString(SIMPLE_ENCODER_QSV));
+	if (service_supports_encoder(codecs, "obs_qsv11_av1"))
+		ui->simpleOutStrEncoder->addItem(
+			ENCODER_STR("Hardware.QSV.AV1"),
+			QString(SIMPLE_ENCODER_QSV_AV1));
 	if (service_supports_encoder(codecs, "ffmpeg_nvenc"))
 		ui->simpleOutStrEncoder->addItem(
 			ENCODER_STR("Hardware.NVENC.H264"),
 			QString(SIMPLE_ENCODER_NVENC));
+	if (service_supports_encoder(codecs, "jim_av1_nvenc"))
+		ui->simpleOutStrEncoder->addItem(
+			ENCODER_STR("Hardware.NVENC.AV1"),
+			QString(SIMPLE_ENCODER_NVENC_AV1));
 #ifdef ENABLE_HEVC
 	if (service_supports_encoder(codecs, "h265_texture_amf"))
 		ui->simpleOutStrEncoder->addItem(
@@ -1413,6 +1451,20 @@ void OBSBasicSettings::ResetEncoders(bool streamOnly)
 				QString(SIMPLE_ENCODER_APPLE_H264));
 		}
 	}
+#ifdef ENABLE_HEVC
+	if (service_supports_encoder(
+		    codecs, "com.apple.videotoolbox.videoencoder.ave.hevc")
+#ifndef __aarch64__
+	    && os_get_emulation_status() == true
+#endif
+	) {
+		if (__builtin_available(macOS 13.0, *)) {
+			ui->simpleOutStrEncoder->addItem(
+				ENCODER_STR("Hardware.Apple.HEVC"),
+				QString(SIMPLE_ENCODER_APPLE_HEVC));
+		}
+	}
+#endif
 #endif
 #undef ENCODER_STR
 
@@ -1429,6 +1481,7 @@ void OBSBasicSettings::ResetEncoders(bool streamOnly)
 		}
 
 		idx = ui->advOutEncoder->findData(lastAdvEnc);
+		s2.unblock();
 		ui->advOutEncoder->setCurrentIndex(idx);
 	}
 
@@ -1442,6 +1495,7 @@ void OBSBasicSettings::ResetEncoders(bool streamOnly)
 		}
 
 		idx = ui->simpleOutStrEncoder->findData(lastEnc);
+		s1.unblock();
 		ui->simpleOutStrEncoder->setCurrentIndex(idx);
 	}
 }

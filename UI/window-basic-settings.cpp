@@ -259,13 +259,6 @@ static CodecDesc GetDefaultCodecDesc(const ff_format_desc *formatDesc,
 			 id);
 }
 
-#ifdef _WIN32
-void OBSBasicSettings::ToggleDisableAero(bool checked)
-{
-	SetAeroEnabled(!checked);
-}
-#endif
-
 static void PopulateAACBitrates(initializer_list<QComboBox *> boxes)
 {
 	auto &bitrateMap = GetAACEncoderBitrateMap();
@@ -380,6 +373,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	/* clang-format off */
 	HookWidget(ui->language,             COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->theme, 		     COMBO_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->updateChannelBox,     COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->enableAutoUpdates,    CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->openStatsOnStartup,   CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->hideOBSFromCapture,   CHECK_CHANGED,  GENERAL_CHANGED);
@@ -587,6 +581,19 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 #if !defined(_WIN32) && !defined(__APPLE__)
 	delete ui->enableAutoUpdates;
 	ui->enableAutoUpdates = nullptr;
+	delete ui->updateChannelBox;
+	ui->updateChannelBox = nullptr;
+	delete ui->updateSettingsGroupBox;
+	ui->updateSettingsGroupBox = nullptr;
+#elif defined(__APPLE__)
+	delete ui->updateChannelBox;
+	ui->updateChannelBox = nullptr;
+	delete ui->updateChannelLabel;
+	ui->updateChannelLabel = nullptr;
+#else
+	// Hide update section if disabled
+	if (App()->IsUpdaterDisabled())
+		ui->updateSettingsGroupBox->hide();
 #endif
 
 	// Remove the Advanced Audio section if monitoring is not supported, as the monitoring device selection is the only item in the group box.
@@ -598,20 +605,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	}
 
 #ifdef _WIN32
-	uint32_t winVer = GetWindowsVersion();
-	if (winVer > 0 && winVer < 0x602) {
-		// Older than Windows 8
-		toggleAero = new QCheckBox(
-			QTStr("Basic.Settings.Video.DisableAero"), this);
-		QFormLayout *videoLayout = reinterpret_cast<QFormLayout *>(
-			ui->videoPage->layout());
-		videoLayout->addRow(nullptr, toggleAero);
-
-		HookWidget(toggleAero, CHECK_CHANGED, VIDEO_CHANGED);
-		connect(toggleAero, &QAbstractButton::toggled, this,
-			&OBSBasicSettings::ToggleDisableAero);
-	}
-
 	if (!SetDisplayAffinitySupported()) {
 		delete ui->hideOBSFromCapture;
 		ui->hideOBSFromCapture = nullptr;
@@ -823,8 +816,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		SLOT(AdvReplayBufferChanged()));
 	connect(ui->advRBSecMax, SIGNAL(valueChanged(int)), this,
 		SLOT(AdvReplayBufferChanged()));
-	connect(ui->listWidget, SIGNAL(currentRowChanged(int)), this,
-		SLOT(SimpleRecordingEncoderChanged()));
 
 	// Get Bind to IP Addresses
 	obs_properties_t *ppts = obs_get_output_properties("rtmp_output");
@@ -910,10 +901,10 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		SLOT(AdvOutRecCheckWarnings()));
 	connect(ui->advOutRecEncoder, SIGNAL(currentIndexChanged(int)), this,
 		SLOT(AdvOutRecCheckWarnings()));
-	AdvOutRecCheckWarnings();
 
 	SimpleRecordingQualityChanged();
 	AdvOutSplitFileChanged();
+	AdvOutRecCheckWarnings();
 
 	UpdateAutomaticReplayBufferCheckboxes();
 
@@ -1020,7 +1011,7 @@ void OBSBasicSettings::LoadColorSpaces()
 #define CF_I444_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.I444")
 #define CF_P010_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.P010")
 #define CF_I010_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.I010")
-#define CF_RGB_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.RGB")
+#define CF_BGRA_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.BGRA")
 
 void OBSBasicSettings::LoadColorFormats()
 {
@@ -1029,7 +1020,7 @@ void OBSBasicSettings::LoadColorFormats()
 	ui->colorFormat->addItem(CF_I444_STR, "I444");
 	ui->colorFormat->addItem(CF_P010_STR, "P010");
 	ui->colorFormat->addItem(CF_I010_STR, "I010");
-	ui->colorFormat->addItem(CF_RGB_STR, "RGB");
+	ui->colorFormat->addItem(CF_BGRA_STR, "RGB"); // Avoid config break
 }
 
 #define AV_FORMAT_DEFAULT_STR \
@@ -1215,6 +1206,73 @@ void OBSBasicSettings::LoadThemeList()
 		ui->theme->setCurrentIndex(idx);
 }
 
+#ifdef _WIN32
+void TranslateBranchInfo(const QString &name, QString &displayName,
+			 QString &description)
+{
+	QString translatedName =
+		QTStr("Basic.Settings.General.ChannelName." + name.toUtf8());
+	QString translatedDesc = QTStr(
+		"Basic.Settings.General.ChannelDescription." + name.toUtf8());
+
+	if (!translatedName.startsWith("Basic.Settings."))
+		displayName = translatedName;
+	if (!translatedDesc.startsWith("Basic.Settings."))
+		description = translatedDesc;
+}
+#endif
+
+void OBSBasicSettings::LoadBranchesList()
+{
+#ifdef _WIN32
+	bool configBranchRemoved = true;
+	QString configBranch =
+		config_get_string(GetGlobalConfig(), "General", "UpdateBranch");
+
+	for (const UpdateBranch &branch : App()->GetBranches()) {
+		if (branch.name == configBranch)
+			configBranchRemoved = false;
+		if (!branch.is_visible && branch.name != configBranch)
+			continue;
+
+		QString displayName = branch.display_name;
+		QString description = branch.description;
+
+		TranslateBranchInfo(branch.name, displayName, description);
+		QString itemDesc = displayName + " - " + description;
+
+		if (!branch.is_enabled) {
+			itemDesc.prepend(" ");
+			itemDesc.prepend(QTStr(
+				"Basic.Settings.General.UpdateChannelDisabled"));
+		} else if (branch.name == "stable") {
+			itemDesc.append(" ");
+			itemDesc.append(QTStr(
+				"Basic.Settings.General.UpdateChannelDefault"));
+		}
+
+		ui->updateChannelBox->addItem(itemDesc, branch.name);
+
+		// Disable item if branch is disabled
+		if (!branch.is_enabled) {
+			QStandardItemModel *model =
+				dynamic_cast<QStandardItemModel *>(
+					ui->updateChannelBox->model());
+			QStandardItem *item =
+				model->item(ui->updateChannelBox->count() - 1);
+			item->setFlags(Qt::NoItemFlags);
+		}
+	}
+
+	// Fall back to default if not yet set or user-selected branch has been removed
+	if (configBranch.isEmpty() || configBranchRemoved)
+		configBranch = "stable";
+
+	int idx = ui->updateChannelBox->findData(configBranch);
+	ui->updateChannelBox->setCurrentIndex(idx);
+#endif
+}
+
 void OBSBasicSettings::LoadGeneralSettings()
 {
 	loading = true;
@@ -1226,6 +1284,10 @@ void OBSBasicSettings::LoadGeneralSettings()
 	bool enableAutoUpdates = config_get_bool(GetGlobalConfig(), "General",
 						 "EnableAutoUpdates");
 	ui->enableAutoUpdates->setChecked(enableAutoUpdates);
+
+#ifdef _WIN32
+	LoadBranchesList();
+#endif
 #endif
 	bool openStatsOnStartup = config_get_bool(main->Config(), "General",
 						  "OpenStatsOnStartup");
@@ -1707,16 +1769,6 @@ void OBSBasicSettings::LoadVideoSettings()
 	LoadFPSData();
 	LoadDownscaleFilters();
 
-#ifdef _WIN32
-	if (toggleAero) {
-		bool disableAero =
-			config_get_bool(main->Config(), "Video", "DisableAero");
-		toggleAero->setChecked(disableAero);
-
-		aeroWasDisabled = disableAero;
-	}
-#endif
-
 	loading = false;
 }
 
@@ -1759,9 +1811,11 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	const char *qsvPreset =
 		config_get_string(main->Config(), "SimpleOutput", "QSVPreset");
 	const char *nvPreset = config_get_string(main->Config(), "SimpleOutput",
-						 "NVENCPreset");
+						 "NVENCPreset2");
 	const char *amdPreset =
 		config_get_string(main->Config(), "SimpleOutput", "AMDPreset");
+	const char *amdAV1Preset = config_get_string(
+		main->Config(), "SimpleOutput", "AMDAV1Preset");
 	const char *custom = config_get_string(main->Config(), "SimpleOutput",
 					       "x264Settings");
 	const char *recQual =
@@ -1781,6 +1835,7 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	curQSVPreset = qsvPreset;
 	curNVENCPreset = nvPreset;
 	curAMDPreset = amdPreset;
+	curAMDAV1Preset = amdAV1Preset;
 
 	audioBitrate = FindClosestAvailableAACBitrate(audioBitrate);
 
@@ -3053,9 +3108,11 @@ void OBSBasicSettings::SaveGeneralSettings()
 	int themeIndex = ui->theme->currentIndex();
 	QString themeData = ui->theme->itemData(themeIndex).toString();
 
-	if (WidgetChanged(ui->theme))
+	if (WidgetChanged(ui->theme)) {
+		savedTheme = themeData.toStdString();
 		config_set_string(GetGlobalConfig(), "General", "CurrentTheme3",
 				  QT_TO_UTF8(themeData));
+	}
 
 #if defined(_WIN32) || defined(__APPLE__)
 	if (WidgetChanged(ui->enableAutoUpdates))
@@ -3064,6 +3121,16 @@ void OBSBasicSettings::SaveGeneralSettings()
 				ui->enableAutoUpdates->isChecked());
 #endif
 #ifdef _WIN32
+	int branchIdx = ui->updateChannelBox->currentIndex();
+	QString branchName =
+		ui->updateChannelBox->itemData(branchIdx).toString();
+
+	if (WidgetChanged(ui->updateChannelBox)) {
+		config_set_string(GetGlobalConfig(), "General", "UpdateBranch",
+				  QT_TO_UTF8(branchName));
+		forceUpdateCheck = true;
+	}
+
 	if (ui->hideOBSFromCapture && WidgetChanged(ui->hideOBSFromCapture)) {
 		bool hide_window = ui->hideOBSFromCapture->isChecked();
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
@@ -3290,13 +3357,6 @@ void OBSBasicSettings::SaveVideoSettings()
 	SaveSpinBox(ui->fpsNumerator, "Video", "FPSNum");
 	SaveSpinBox(ui->fpsDenominator, "Video", "FPSDen");
 	SaveComboData(ui->downscaleFilter, "Video", "ScaleType");
-
-#ifdef _WIN32
-	if (toggleAero) {
-		SaveCheckBox(toggleAero, "Video", "DisableAero");
-		aeroWasDisabled = toggleAero->isChecked();
-	}
-#endif
 }
 
 void OBSBasicSettings::SaveAdvancedSettings()
@@ -3517,17 +3577,27 @@ void OBSBasicSettings::SaveOutputSettings()
 
 	if (encoder == SIMPLE_ENCODER_QSV)
 		presetType = "QSVPreset";
+	else if (encoder == SIMPLE_ENCODER_QSV_AV1)
+		presetType = "QSVPreset";
 	else if (encoder == SIMPLE_ENCODER_NVENC)
-		presetType = "NVENCPreset";
+		presetType = "NVENCPreset2";
+	else if (encoder == SIMPLE_ENCODER_NVENC_AV1)
+		presetType = "NVENCPreset2";
 #ifdef ENABLE_HEVC
 	else if (encoder == SIMPLE_ENCODER_AMD_HEVC)
 		presetType = "AMDPreset";
 	else if (encoder == SIMPLE_ENCODER_NVENC_HEVC)
-		presetType = "NVENCPreset";
+		presetType = "NVENCPreset2";
 #endif
 	else if (encoder == SIMPLE_ENCODER_AMD)
 		presetType = "AMDPreset";
-	else if (encoder == SIMPLE_ENCODER_APPLE_H264)
+	else if (encoder == SIMPLE_ENCODER_AMD_AV1)
+		presetType = "AMDAV1Preset";
+	else if (encoder == SIMPLE_ENCODER_APPLE_H264
+#ifdef ENABLE_HEVC
+		 || encoder == SIMPLE_ENCODER_APPLE_HEVC
+#endif
+	)
 		/* The Apple encoders don't have presets like the other encoders
          do. This only exists to make sure that the x264 preset doesn't
          get overwritten with empty data. */
@@ -3890,10 +3960,6 @@ bool OBSBasicSettings::QueryChanges()
 			App()->SetTheme(savedTheme);
 
 		LoadSettings(true);
-#ifdef _WIN32
-		if (toggleAero)
-			SetAeroEnabled(!aeroWasDisabled);
-#endif
 		restart = false;
 	}
 
@@ -3945,10 +4011,6 @@ void OBSBasicSettings::on_buttonBox_clicked(QAbstractButton *button)
 		if (val == QDialogButtonBox::RejectRole) {
 			if (savedTheme != App()->GetTheme())
 				App()->SetTheme(savedTheme);
-#ifdef _WIN32
-			if (toggleAero)
-				SetAeroEnabled(!aeroWasDisabled);
-#endif
 		}
 		ClearChanged();
 		close();
@@ -4151,8 +4213,7 @@ void OBSBasicSettings::RecalcOutputResPixels(const char *resText)
 	uint32_t newCX;
 	uint32_t newCY;
 
-	ConvertResText(resText, newCX, newCY);
-	if (newCX && newCY) {
+	if (ConvertResText(resText, newCX, newCY) && newCX && newCY) {
 		outputCX = newCX;
 		outputCY = newCY;
 
@@ -4176,6 +4237,11 @@ bool OBSBasicSettings::AskIfCanCloseSettings()
 		main->auth->Save();
 		main->auth->Load();
 		forceAuthReload = false;
+	}
+
+	if (forceUpdateCheck) {
+		main->CheckForUpdates(false);
+		forceUpdateCheck = false;
 	}
 
 	return canCloseSettings;
@@ -4631,17 +4697,51 @@ void OBSBasicSettings::AdvOutRecCheckWarnings()
 			errorMsg = QTStr("OutputWarnings.NoTracksSelected");
 	}
 
-	if (ui->advOutRecFormat->currentText().compare("mp4") == 0 ||
-	    ui->advOutRecFormat->currentText().compare("mov") == 0) {
-		if (!warningMsg.isEmpty())
-			warningMsg += "\n\n";
-		warningMsg += QTStr("OutputWarnings.MP4Recording");
-		ui->autoRemux->setText(
-			QTStr("Basic.Settings.Advanced.AutoRemux") + " " +
-			QTStr("Basic.Settings.Advanced.AutoRemux.MP4"));
+	QString recFormat = ui->advOutRecFormat->currentText();
+	QString recEncoder = ui->advOutRecEncoder->currentText();
+
+	if (recEncoder.contains("ProRes")) {
+		if (recFormat.compare("mkv") == 0) {
+			ui->autoRemux->setText(
+				QTStr("Basic.Settings.Advanced.AutoRemux")
+					.arg("mov"));
+		} else if (recFormat.compare("mov") == 0) {
+			if (!warningMsg.isEmpty()) {
+				warningMsg += "\n\n";
+			}
+
+			warningMsg += QTStr("OutputWarnings.MP4Recording");
+			ui->autoRemux->setText(
+				QTStr("Basic.Settings.Advanced.AutoRemux")
+					.arg("mov") +
+				" " +
+				QTStr("Basic.Settings.Advanced.AutoRemux.MP4"));
+		} else {
+			if (!errorMsg.isEmpty()) {
+				errorMsg += "\n\n";
+			}
+
+			errorMsg += QTStr("OutputWarnings.ProResRecording")
+					    .arg(recFormat);
+		}
 	} else {
-		ui->autoRemux->setText(
-			QTStr("Basic.Settings.Advanced.AutoRemux"));
+		if (recFormat.compare("mp4") == 0 ||
+		    recFormat.compare("mov") == 0) {
+			if (!warningMsg.isEmpty()) {
+				warningMsg += "\n\n";
+			}
+
+			warningMsg += QTStr("OutputWarnings.MP4Recording");
+			ui->autoRemux->setText(
+				QTStr("Basic.Settings.Advanced.AutoRemux")
+					.arg("mp4") +
+				" " +
+				QTStr("Basic.Settings.Advanced.AutoRemux.MP4"));
+		} else {
+			ui->autoRemux->setText(
+				QTStr("Basic.Settings.Advanced.AutoRemux")
+					.arg("mp4"));
+		}
 	}
 
 	delete advOutRecWarning;
@@ -4761,10 +4861,18 @@ void OBSBasicSettings::FillSimpleRecordingValues()
 		ui->simpleOutRecEncoder->addItem(
 			ENCODER_STR("Hardware.QSV.H264"),
 			QString(SIMPLE_ENCODER_QSV));
+	if (EncoderAvailable("obs_qsv11_av1"))
+		ui->simpleOutRecEncoder->addItem(
+			ENCODER_STR("Hardware.QSV.AV1"),
+			QString(SIMPLE_ENCODER_QSV_AV1));
 	if (EncoderAvailable("ffmpeg_nvenc"))
 		ui->simpleOutRecEncoder->addItem(
 			ENCODER_STR("Hardware.NVENC.H264"),
 			QString(SIMPLE_ENCODER_NVENC));
+	if (EncoderAvailable("jim_av1_nvenc"))
+		ui->simpleOutRecEncoder->addItem(
+			ENCODER_STR("Hardware.NVENC.AV1"),
+			QString(SIMPLE_ENCODER_NVENC_AV1));
 #ifdef ENABLE_HEVC
 	if (EncoderAvailable("h265_texture_amf"))
 		ui->simpleOutRecEncoder->addItem(
@@ -4779,6 +4887,10 @@ void OBSBasicSettings::FillSimpleRecordingValues()
 		ui->simpleOutRecEncoder->addItem(
 			ENCODER_STR("Hardware.AMD.H264"),
 			QString(SIMPLE_ENCODER_AMD));
+	if (EncoderAvailable("av1_texture_amf"))
+		ui->simpleOutRecEncoder->addItem(
+			ENCODER_STR("Hardware.AMD.AV1"),
+			QString(SIMPLE_ENCODER_AMD_AV1));
 	if (EncoderAvailable("com.apple.videotoolbox.videoencoder.ave.avc")
 #ifndef __aarch64__
 	    && os_get_emulation_status() == true
@@ -4787,6 +4899,17 @@ void OBSBasicSettings::FillSimpleRecordingValues()
 		ui->simpleOutRecEncoder->addItem(
 			ENCODER_STR("Hardware.Apple.H264"),
 			QString(SIMPLE_ENCODER_APPLE_H264));
+#ifdef ENABLE_HEVC
+	if (EncoderAvailable("com.apple.videotoolbox.videoencoder.ave.hevc")
+#ifndef __aarch64__
+	    && os_get_emulation_status() == true
+#endif
+	)
+		ui->simpleOutRecEncoder->addItem(
+			ENCODER_STR("Hardware.Apple.HEVC"),
+			QString(SIMPLE_ENCODER_APPLE_HEVC));
+#endif
+
 #undef ADD_QUALITY
 #undef ENCODER_STR
 }
@@ -4824,6 +4947,8 @@ void OBSBasicSettings::SimpleRecordingQualityChanged()
 	SimpleReplayBufferChanged();
 }
 
+extern const char *get_simple_output_encoder(const char *encoder);
+
 void OBSBasicSettings::SimpleStreamingEncoderChanged()
 {
 	QString encoder = ui->simpleOutStrEncoder->currentData().toString();
@@ -4835,7 +4960,8 @@ void OBSBasicSettings::SimpleStreamingEncoderChanged()
 	ui->simpleOutPreset->setVisible(true);
 	ui->simpleOutPreset->clear();
 
-	if (encoder == SIMPLE_ENCODER_QSV) {
+	if (encoder == SIMPLE_ENCODER_QSV ||
+	    encoder == SIMPLE_ENCODER_QSV_AV1) {
 		ui->simpleOutPreset->addItem("speed", "speed");
 		ui->simpleOutPreset->addItem("balanced", "balanced");
 		ui->simpleOutPreset->addItem("quality", "quality");
@@ -4844,25 +4970,18 @@ void OBSBasicSettings::SimpleStreamingEncoderChanged()
 		preset = curQSVPreset;
 
 	} else if (encoder == SIMPLE_ENCODER_NVENC ||
-		   encoder == SIMPLE_ENCODER_NVENC_HEVC) {
-		const char *name = encoder == SIMPLE_ENCODER_NVENC
-					   ? "ffmpeg_nvenc"
-					   : "ffmpeg_hevc_nvenc";
+		   encoder == SIMPLE_ENCODER_NVENC_HEVC ||
+		   encoder == SIMPLE_ENCODER_NVENC_AV1) {
+
+		const char *name =
+			get_simple_output_encoder(QT_TO_UTF8(encoder));
 		obs_properties_t *props = obs_get_encoder_properties(name);
 
-		obs_property_t *p = obs_properties_get(props, "preset");
+		obs_property_t *p = obs_properties_get(props, "preset2");
 		size_t num = obs_property_list_item_count(p);
 		for (size_t i = 0; i < num; i++) {
 			const char *name = obs_property_list_item_name(p, i);
 			const char *val = obs_property_list_item_string(p, i);
-
-			/* bluray is for ideal bluray disc recording settings,
-			 * not streaming */
-			if (strcmp(val, "bd") == 0)
-				continue;
-			/* lossless should of course not be used to stream */
-			if (astrcmp_n(val, "lossless", 8) == 0)
-				continue;
 
 			ui->simpleOutPreset->addItem(QT_UTF8(name), val);
 		}
@@ -4880,11 +4999,24 @@ void OBSBasicSettings::SimpleStreamingEncoderChanged()
 
 		defaultPreset = "balanced";
 		preset = curAMDPreset;
-	} else if (encoder == SIMPLE_ENCODER_APPLE_H264) {
+	} else if (encoder == SIMPLE_ENCODER_APPLE_H264
+#ifdef ENABLE_HEVC
+		   || encoder == SIMPLE_ENCODER_APPLE_HEVC
+#endif
+	) {
 		ui->simpleOutAdvanced->setChecked(false);
 		ui->simpleOutAdvanced->setVisible(false);
 		ui->simpleOutPreset->setVisible(false);
 		ui->simpleOutPresetLabel->setVisible(false);
+
+	} else if (encoder == SIMPLE_ENCODER_AMD_AV1) {
+		ui->simpleOutPreset->addItem("Speed", "speed");
+		ui->simpleOutPreset->addItem("Balanced", "balanced");
+		ui->simpleOutPreset->addItem("Quality", "quality");
+		ui->simpleOutPreset->addItem("High Quality", "highQuality");
+
+		defaultPreset = "balanced";
+		preset = curAMDAV1Preset;
 	} else {
 
 #define PRESET_STR(val) \
@@ -4923,6 +5055,8 @@ void OBSBasicSettings::SimpleStreamingEncoderChanged()
 }
 
 #define ESTIMATE_STR "Basic.Settings.Output.ReplayBuffer.Estimate"
+#define ESTIMATE_TOO_LARGE_STR \
+	"Basic.Settings.Output.ReplayBuffer.EstimateTooLarge"
 #define ESTIMATE_UNKNOWN_STR \
 	"Basic.Settings.Output.ReplayBuffer.EstimateUnknown"
 
@@ -4960,17 +5094,33 @@ void OBSBasicSettings::SimpleReplayBufferChanged()
 	int abitrate = ui->simpleOutputABitrate->currentText().toInt();
 	int seconds = ui->simpleRBSecMax->value();
 
+	// Set maximum to 75% of installed memory
+	uint64_t memTotal = os_get_sys_total_size();
+	int64_t memMaxMB = memTotal ? memTotal * 3 / 4 / 1024 / 1024 : 8192;
+
 	int64_t memMB = int64_t(seconds) * int64_t(vbitrate + abitrate) * 1000 /
 			8 / 1024 / 1024;
 	if (memMB < 1)
 		memMB = 1;
 
-	if (streamQuality)
-		ui->simpleRBEstimate->setText(
-			QTStr(ESTIMATE_STR).arg(QString::number(int(memMB))));
-	else
+	ui->simpleRBEstimate->setObjectName("");
+	if (streamQuality) {
+		if (memMB <= memMaxMB) {
+			ui->simpleRBEstimate->setText(
+				QTStr(ESTIMATE_STR)
+					.arg(QString::number(int(memMB))));
+		} else {
+			ui->simpleRBEstimate->setText(
+				QTStr(ESTIMATE_TOO_LARGE_STR)
+					.arg(QString::number(int(memMB)),
+					     QString::number(int(memMaxMB))));
+			ui->simpleRBEstimate->setObjectName("warningLabel");
+		}
+	} else {
 		ui->simpleRBEstimate->setText(QTStr(ESTIMATE_UNKNOWN_STR));
+	}
 
+	ui->simpleRBEstimate->style()->polish(ui->simpleRBEstimate);
 	ui->replayBufferGroupBox->setVisible(!lossless && replayBufferEnabled);
 	ui->simpleReplayBuf->setVisible(!lossless);
 
@@ -5036,6 +5186,10 @@ void OBSBasicSettings::AdvReplayBufferChanged()
 
 	int seconds = ui->advRBSecMax->value();
 
+	// Set maximum to 75% of installed memory
+	uint64_t memTotal = os_get_sys_total_size();
+	int64_t memMaxMB = memTotal ? memTotal * 3 / 4 / 1024 / 1024 : 8192;
+
 	int64_t memMB = int64_t(seconds) * int64_t(vbitrate + abitrate) * 1000 /
 			8 / 1024 / 1024;
 	if (memMB < 1)
@@ -5047,16 +5201,31 @@ void OBSBasicSettings::AdvReplayBufferChanged()
 	if (vbitrate == 0)
 		varRateControl = false;
 
-	ui->advRBMegsMax->setVisible(!varRateControl);
-	ui->advRBMegsMaxLabel->setVisible(!varRateControl);
+	ui->advRBEstimate->setObjectName("");
+	if (varRateControl) {
+		ui->advRBMegsMax->setVisible(false);
+		ui->advRBMegsMaxLabel->setVisible(false);
 
-	if (varRateControl)
-		ui->advRBEstimate->setText(
-			QTStr(ESTIMATE_STR).arg(QString::number(int(memMB))));
-	else
+		if (memMB <= memMaxMB) {
+			ui->advRBEstimate->setText(
+				QTStr(ESTIMATE_STR)
+					.arg(QString::number(int(memMB))));
+		} else {
+			ui->advRBEstimate->setText(
+				QTStr(ESTIMATE_TOO_LARGE_STR)
+					.arg(QString::number(int(memMB)),
+					     QString::number(int(memMaxMB))));
+			ui->advRBEstimate->setObjectName("warningLabel");
+		}
+	} else {
+		ui->advRBMegsMax->setVisible(true);
+		ui->advRBMegsMaxLabel->setVisible(true);
+		ui->advRBMegsMax->setMaximum(memMaxMB);
 		ui->advRBEstimate->setText(QTStr(ESTIMATE_UNKNOWN_STR));
+	}
 
 	ui->advReplayBufferFrame->setEnabled(!lossless && replayBufferEnabled);
+	ui->advRBEstimate->style()->polish(ui->advRBEstimate);
 	ui->advReplayBuf->setEnabled(!lossless);
 
 	UpdateAutomaticReplayBufferCheckboxes();
@@ -5132,11 +5301,11 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 			warning += "\n\n";
 		warning += QTStr("OutputWarnings.MP4Recording");
 		ui->autoRemux->setText(
-			QTStr("Basic.Settings.Advanced.AutoRemux") + " " +
-			QTStr("Basic.Settings.Advanced.AutoRemux.MP4"));
+			QTStr("Basic.Settings.Advanced.AutoRemux").arg("mp4") +
+			" " + QTStr("Basic.Settings.Advanced.AutoRemux.MP4"));
 	} else {
 		ui->autoRemux->setText(
-			QTStr("Basic.Settings.Advanced.AutoRemux"));
+			QTStr("Basic.Settings.Advanced.AutoRemux").arg("mp4"));
 	}
 
 	if (warning.isEmpty())

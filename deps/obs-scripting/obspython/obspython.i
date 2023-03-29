@@ -41,6 +41,9 @@
 
 %}
 
+%feature("python:annotations", "c");
+%feature("autodoc", "2");
+
 #define DEPRECATED_START
 #define DEPRECATED_END
 #define OBS_DEPRECATED

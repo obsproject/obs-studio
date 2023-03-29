@@ -1143,6 +1143,12 @@ static void scene_load(void *data, obs_data_t *settings)
 
 	remove_all_items(scene);
 
+	if (obs_data_get_bool(settings, "custom_size")) {
+		scene->cx = (uint32_t)obs_data_get_int(settings, "cx");
+		scene->cy = (uint32_t)obs_data_get_int(settings, "cy");
+		scene->custom_size = true;
+	}
+
 	if (!items)
 		return;
 
@@ -1156,12 +1162,6 @@ static void scene_load(void *data, obs_data_t *settings)
 
 	if (obs_data_has_user_value(settings, "id_counter"))
 		scene->id_counter = obs_data_get_int(settings, "id_counter");
-
-	if (obs_data_get_bool(settings, "custom_size")) {
-		scene->cx = (uint32_t)obs_data_get_int(settings, "cx");
-		scene->cy = (uint32_t)obs_data_get_int(settings, "cy");
-		scene->custom_size = true;
-	}
 
 	obs_data_array_release(items);
 }
@@ -1770,6 +1770,7 @@ static inline void duplicate_item_data(struct obs_scene_item *dst,
 	dst->last_height = src->last_height;
 	dst->output_scale = src->output_scale;
 	dst->scale_filter = src->scale_filter;
+	dst->blend_method = src->blend_method;
 	dst->blend_type = src->blend_type;
 	dst->box_transform = src->box_transform;
 	dst->box_scale = src->box_scale;

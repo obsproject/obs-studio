@@ -94,6 +94,8 @@ target_link_libraries(
 target_compile_definitions(obs-qsv11 PRIVATE DX11_D3D)
 
 if(OS_WINDOWS)
+  add_subdirectory(obs-qsv-test)
+
   set(MODULE_DESCRIPTION "OBS QSV encoder")
   configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
                  obs-qsv11.rc)
@@ -105,7 +107,7 @@ if(OS_WINDOWS)
                       _CRT_NONSTDC_NO_WARNINGS)
 endif()
 
-set_target_properties(obs-qsv11 PROPERTIES FOLDER "plugins")
+set_target_properties(obs-qsv11 PROPERTIES FOLDER "plugins/obs-qsv11")
 
 file(GLOB _OBS_QSV11_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.c
      ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)

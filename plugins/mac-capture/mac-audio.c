@@ -629,7 +629,8 @@ static bool coreaudio_init(struct coreaudio_data *ca)
 	if (!coreaudio_start(ca))
 		goto fail;
 
-	blog(LOG_INFO, "coreaudio: device '%s' initialized", ca->device_name);
+	blog(LOG_INFO, "coreaudio: Device '%s' [%" PRIu32 " Hz] initialized",
+	     ca->device_name, ca->sample_rate);
 	return ca->au_initialized;
 
 fail:

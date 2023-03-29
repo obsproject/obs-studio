@@ -850,10 +850,10 @@ EXPORT enum obs_replay_buffer_rendering_mode
 obs_get_replay_buffer_rendering_mode(void);
 
 /** Sets the master user volume */
-EXPORT void obs_set_master_volume(float volume);
+OBS_DEPRECATED EXPORT void obs_set_master_volume(float volume);
 
 /** Gets the master user volume */
-EXPORT float obs_get_master_volume(void);
+OBS_DEPRECATED EXPORT float obs_get_master_volume(void);
 
 /** Saves a source to settings data */
 EXPORT obs_data_t *obs_save_source(obs_source_t *source);
@@ -1015,6 +1015,9 @@ EXPORT video_t *obs_stream_view_add(obs_view_t *view,
 /** Adds a view to the main render loop */
 EXPORT video_t *obs_record_view_add(obs_view_t *view,
 				    struct obs_video_info *ovi);
+
+/** Adds a view to the main render loop, with custom video settings */
+EXPORT video_t *obs_view_add2(obs_view_t *view, struct obs_video_info *ovi);
 
 /** Removes a view from the main render loop */
 EXPORT void obs_view_remove(obs_view_t *view);

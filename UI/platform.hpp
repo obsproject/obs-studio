@@ -55,7 +55,6 @@ CheckIfAlreadyRunning(bool &already_running);
 #ifdef _WIN32
 uint32_t GetWindowsVersion();
 uint32_t GetWindowsBuild();
-void SetAeroEnabled(bool enable);
 void SetProcessPriority(const char *priority);
 void SetWin32DropStyle(QWidget *window);
 bool DisableAudioDucking(bool disable);
@@ -75,7 +74,9 @@ public:
 	RunOnceMutex &operator=(RunOnceMutex &&rom);
 };
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 4, 0)
 QString GetMonitorName(const QString &id);
+#endif
 bool IsRunningOnWine();
 #endif
 

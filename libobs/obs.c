@@ -340,6 +340,16 @@ static bool obs_init_textures(struct obs_core_video_mix *video)
 
 	bool success = true;
 
+	enum gs_color_format format = GS_BGRA;
+	switch (info->format) {
+	case VIDEO_FORMAT_I010:
+	case VIDEO_FORMAT_P010:
+	case VIDEO_FORMAT_I210:
+	case VIDEO_FORMAT_I412:
+	case VIDEO_FORMAT_YA2L:
+		format = GS_RGBA16F;
+	}
+
 	for (size_t i = 0; i < NUM_TEXTURES; i++) {
 #ifdef _WIN32
 		if (video->using_nv12_tex) {
@@ -368,22 +378,12 @@ static bool obs_init_textures(struct obs_core_video_mix *video)
 			}
 		} else {
 			video->copy_surfaces[i][0] = gs_stagesurface_create(
-				info->width, info->height, GS_RGBA);
+				info->width, info->height, format);
 			if (!video->copy_surfaces[i][0]) {
 				success = false;
 				break;
 			}
 		}
-	}
-
-	enum gs_color_format format = GS_RGBA;
-	switch (info->format) {
-	case VIDEO_FORMAT_I010:
-	case VIDEO_FORMAT_P010:
-	case VIDEO_FORMAT_I210:
-	case VIDEO_FORMAT_I412:
-	case VIDEO_FORMAT_YA2L:
-		format = GS_RGBA16F;
 	}
 
 	enum gs_color_space space = GS_CS_SRGB;
@@ -590,8 +590,20 @@ static int obs_init_video_mix(struct obs_video_info *ovi,
 	pthread_mutex_init_value(&video->gpu_encoder_mutex);
 
 	make_video_info(&vi, ovi);
+	video->ovi = ovi;
+
+	/* main view graphics thread drives all frame output,
+	 * so share FPS settings for aux views */
+	pthread_mutex_lock(&obs->video.mixes_mutex);
+	size_t num = obs->video.mixes.num;
+	if (num && obs->video.main_mix) {
+		struct obs_video_info main_ovi = *obs->video.main_mix->ovi;
+		video->ovi->fps_num = main_ovi.fps_num;
+		video->ovi->fps_den = main_ovi.fps_den;
+	}
+	pthread_mutex_unlock(&obs->video.mixes_mutex);
+
 	video->gpu_conversion = ovi->gpu_conversion;
-	video->scale_type = ovi->scale_type;
 	video->gpu_was_active = false;
 	video->raw_was_active = false;
 	video->was_active = false;
@@ -794,13 +806,16 @@ void obs_free_video_mix(struct obs_core_video_mix *video)
 static void obs_free_video(bool full_clean)
 {
 	pthread_mutex_lock(&obs->video.mixes_mutex);
-	size_t num = obs->video.mixes.num;
-	if (num)
-		blog(LOG_WARNING, "%zu views remain at shutdown", num);
-	for (size_t i = 0; i < num; i++) {
-		obs_free_video_mix(obs->video.mixes.array[i]);
+	size_t num_views = 0;
+	for (size_t i = 0; i < obs->video.mixes.num; i++) {
+		struct obs_core_video_mix *video = obs->video.mixes.array[i];
+		if (video && video->view)
+			num_views++;
+		obs_free_video_mix(video);
 		obs->video.mixes.array[i] = NULL;
 	}
+	if (num_views > 0)
+		blog(LOG_WARNING, "Number of remaining views: %ld", num_views);
 	pthread_mutex_unlock(&obs->video.mixes_mutex);
 
 	pthread_mutex_destroy(&obs->video.mixes_mutex);
@@ -808,7 +823,7 @@ static void obs_free_video(bool full_clean)
 	da_free(obs->video.mixes);
 
 	if (full_clean) {
-		num = obs->video.canvases.num;
+		size_t num = obs->video.canvases.num;
 		for (size_t i = 0; i < num; i++) {
 			bfree(obs->video.canvases.array[i]);
 			obs->video.canvases.array[i] = NULL;
@@ -871,8 +886,6 @@ static bool obs_init_audio(struct audio_output_info *ai)
 
 	struct obs_task_info audio_init = {.task = set_audio_thread};
 	circlebuf_push_back(&audio->tasks, &audio_init, sizeof(audio_init));
-
-	audio->user_volume = 1.0f;
 
 	audio->monitoring_device_name = bstrdup("Default");
 	audio->monitoring_device_id = bstrdup("default");
@@ -1019,6 +1032,7 @@ static const char *obs_signals[] = {
 	"void source_create(ptr source)",
 	"void source_destroy(ptr source)",
 	"void source_remove(ptr source)",
+	"void source_update(ptr source)",
 	"void source_save(ptr source)",
 	"void source_load(ptr source)",
 	"void source_activate(ptr source)",
@@ -1036,7 +1050,6 @@ static const char *obs_signals[] = {
 	"void source_transition_stop(ptr source)",
 
 	"void channel_change(int channel, in out ptr source, ptr prev_source)",
-	"void master_volume(in out float volume)",
 
 	"void hotkey_layout_change()",
 	"void hotkey_register(ptr hotkey)",
@@ -2460,19 +2473,12 @@ enum obs_replay_buffer_rendering_mode obs_get_replay_buffer_rendering_mode(void)
 
 void obs_set_master_volume(float volume)
 {
-	struct calldata data = {0};
-
-	calldata_set_float(&data, "volume", volume);
-	signal_handler_signal(obs->signals, "master_volume", &data);
-	volume = (float)calldata_float(&data, "volume");
-	calldata_free(&data);
-
-	obs->audio.user_volume = volume;
+	UNUSED_PARAMETER(volume);
 }
 
 float obs_get_master_volume(void)
 {
-	return obs->audio.user_volume;
+	return 1.f;
 }
 
 static obs_source_t *obs_load_source_type(obs_data_t *source_data,
@@ -3194,7 +3200,7 @@ extern void free_gpu_encoding(struct obs_core_video_mix *video);
 
 bool start_gpu_encode(obs_encoder_t *encoder)
 {
-	struct obs_core_video_mix *video = encoder->video;
+	struct obs_core_video_mix *video = get_mix_for_video(encoder->media);
 	bool success = true;
 
 	obs_enter_graphics();
@@ -3220,7 +3226,7 @@ bool start_gpu_encode(obs_encoder_t *encoder)
 
 void stop_gpu_encode(obs_encoder_t *encoder)
 {
-	struct obs_core_video_mix *video = encoder->video;
+	struct obs_core_video_mix *video = get_mix_for_video(encoder->media);
 	bool call_free = false;
 
 	os_atomic_dec_long(&video->gpu_encoder_active);

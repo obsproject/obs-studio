@@ -68,8 +68,6 @@ jobs:
           fi
 
           echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
-      - name: 'Switch to Xcode 14.1'
-        run: sudo xcode-select -switch /Applications/Xcode_14.1.app
       - name: Configure / Build 
         run: ./slobs_CI/build-script-osx.sh
         env:

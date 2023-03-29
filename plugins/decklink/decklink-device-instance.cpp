@@ -521,10 +521,9 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 
 	mode = mode_;
 
-	int keyerMode = device->GetKeyerMode();
-
 	ComPtr<IDeckLinkKeyer> deckLinkKeyer;
 	if (device->GetKeyer(&deckLinkKeyer)) {
+		const int keyerMode = device->GetKeyerMode();
 		if (keyerMode) {
 			deckLinkKeyer->Enable(keyerMode == 1);
 			deckLinkKeyer->SetLevel(255);
@@ -537,21 +536,11 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 	if (decklinkOutput == nullptr)
 		return false;
 
-	int rowBytes = decklinkOutput->GetWidth() * 2;
-	if (decklinkOutput->keyerMode != 0) {
-		rowBytes = decklinkOutput->GetWidth() * 4;
-	}
-
-	BMDPixelFormat pixelFormat = bmdFormat8BitYUV;
-	if (keyerMode != 0) {
-		pixelFormat = bmdFormat8BitBGRA;
-	}
-
 	HRESULT result;
-	result = output->CreateVideoFrame(decklinkOutput->GetWidth(),
-					  decklinkOutput->GetHeight(), rowBytes,
-					  pixelFormat, bmdFrameFlagDefault,
-					  &decklinkOutputFrame);
+	result = output->CreateVideoFrame(
+		decklinkOutput->GetWidth(), decklinkOutput->GetHeight(),
+		decklinkOutput->GetWidth() * 4, bmdFormat8BitBGRA,
+		bmdFrameFlagDefault, &decklinkOutputFrame);
 	if (result != S_OK) {
 		blog(LOG_ERROR, "failed to make frame 0x%X", result);
 		return false;
@@ -571,8 +560,7 @@ bool DeckLinkDeviceInstance::StopOutput()
 	output->DisableVideoOutput();
 	output->DisableAudioOutput();
 
-	if (decklinkOutputFrame != nullptr)
-		decklinkOutputFrame = nullptr;
+	decklinkOutputFrame.Clear();
 
 	return true;
 }
@@ -588,12 +576,9 @@ void DeckLinkDeviceInstance::DisplayVideoFrame(video_data *frame)
 
 	uint8_t *outData = frame->data[0];
 
-	int rowBytes = decklinkOutput->GetWidth() * 2;
-	if (device->GetKeyerMode()) {
-		rowBytes = decklinkOutput->GetWidth() * 4;
-	}
-
-	std::copy(outData, outData + (decklinkOutput->GetHeight() * rowBytes),
+	std::copy(outData,
+		  outData + (decklinkOutput->GetWidth() *
+			     decklinkOutput->GetHeight() * 4),
 		  destData);
 
 	output->DisplayVideoFrameSync(decklinkOutputFrame);

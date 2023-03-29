@@ -178,18 +178,38 @@ void qsv_encoder_version(unsigned short *major, unsigned short *minor)
 	*minor = ver.Minor;
 }
 
-qsv_t *qsv_encoder_open(qsv_param_t *pParams)
+qsv_t *qsv_encoder_open(qsv_param_t *pParams, enum qsv_codec codec)
 {
 	mfxIMPL impl_list[4] = {MFX_IMPL_HARDWARE, MFX_IMPL_HARDWARE2,
 				MFX_IMPL_HARDWARE3, MFX_IMPL_HARDWARE4};
-	int igpu_index = -1;
-	if (prefer_current_or_igpu_enc(&igpu_index) &&
-	    (igpu_index < _countof(impl_list))) {
-		impl = impl_list[igpu_index];
+
+	obs_video_info ovi;
+	obs_get_video_info(&ovi);
+	size_t adapter_idx = ovi.adapter;
+
+	// Select current adapter - will be iGPU if exists due to adapter reordering
+	if (codec == QSV_CODEC_AV1 && !adapters[adapter_idx].supports_av1) {
+		for (size_t i = 0; i < 4; i++) {
+			if (adapters[i].supports_av1) {
+				adapter_idx = i;
+				break;
+			}
+		}
+	} else if (!adapters[adapter_idx].is_intel) {
+		for (size_t i = 0; i < 4; i++) {
+			if (adapters[i].is_intel) {
+				adapter_idx = i;
+				break;
+			}
+		}
 	}
 
-	QSV_Encoder_Internal *pEncoder = new QSV_Encoder_Internal(impl, ver);
-	mfxStatus sts = pEncoder->Open(pParams);
+	bool isDGPU = adapters[adapter_idx].is_dgpu;
+	impl = impl_list[adapter_idx];
+
+	QSV_Encoder_Internal *pEncoder =
+		new QSV_Encoder_Internal(impl, ver, isDGPU);
+	mfxStatus sts = pEncoder->Open(pParams, codec);
 	if (sts != MFX_ERR_NONE) {
 
 #define WARN_ERR_IMPL(err, str, err_name)                   \
@@ -277,6 +297,12 @@ qsv_t *qsv_encoder_open(qsv_param_t *pParams)
 	return (qsv_t *)pEncoder;
 }
 
+bool qsv_encoder_is_dgpu(qsv_t *pContext)
+{
+	QSV_Encoder_Internal *pEncoder = (QSV_Encoder_Internal *)pContext;
+	return pEncoder->IsDGPU();
+}
+
 int qsv_encoder_headers(qsv_t *pContext, uint8_t **pSPS, uint8_t **pPPS,
 			uint16_t *pnSPS, uint16_t *pnPPS)
 {
@@ -354,12 +380,12 @@ int qsv_param_apply_profile(qsv_param_t *, const char *profile)
 int qsv_encoder_reconfig(qsv_t *pContext, qsv_param_t *pParams)
 {
 	QSV_Encoder_Internal *pEncoder = (QSV_Encoder_Internal *)pContext;
-	mfxStatus sts = pEncoder->Reset(pParams);
+	pEncoder->UpdateParams(pParams);
+	mfxStatus sts = pEncoder->ReconfigureEncoder();
 
-	if (sts == MFX_ERR_NONE)
-		return 0;
-	else
-		return -1;
+	if (sts != MFX_ERR_NONE)
+		return false;
+	return true;
 }
 
 enum qsv_cpu_platform qsv_get_cpu_platform()
@@ -442,4 +468,14 @@ enum qsv_cpu_platform qsv_get_cpu_platform()
 
 	//assume newer revisions are at least as capable as Haswell
 	return QSV_CPU_PLATFORM_INTEL;
+}
+
+int qsv_hevc_encoder_headers(qsv_t *pContext, uint8_t **pVPS, uint8_t **pSPS,
+			     uint8_t **pPPS, uint16_t *pnVPS, uint16_t *pnSPS,
+			     uint16_t *pnPPS)
+{
+	QSV_Encoder_Internal *pEncoder = (QSV_Encoder_Internal *)pContext;
+	pEncoder->GetVpsSpsPps(pVPS, pSPS, pPPS, pnVPS, pnSPS, pnPPS);
+
+	return 0;
 }

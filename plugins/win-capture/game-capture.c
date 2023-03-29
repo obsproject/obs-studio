@@ -1126,7 +1126,7 @@ static void pipe_log(void *param, uint8_t *data, size_t size)
 static inline bool init_pipe(struct game_capture *gc)
 {
 	char name[64];
-	sprintf(name, "%s%lu", PIPE_NAME, gc->process_id);
+	snprintf(name, sizeof(name), "%s%lu", PIPE_NAME, gc->process_id);
 	DWORD err = 0;
 
 	if (!ipc_pipe_server_start(&gc->pipe, name, pipe_log, gc, &err)) {
@@ -2637,8 +2637,8 @@ static uint32_t game_capture_width(void *data)
 		if (!obs_get_video_info_current(&ovi))
 			return 0;
 		return ovi.base_width;
-	} else
-		return gc->active ? gc->cx : 0;
+	}
+	return (gc->active && gc->capturing) ? gc->cx : 0;
 }
 
 static uint32_t game_capture_height(void *data)
@@ -2649,8 +2649,8 @@ static uint32_t game_capture_height(void *data)
 		if (!obs_get_video_info_current(&ovi))
 			return 0;
 		return ovi.base_height;
-	} else
-		return gc->active ? gc->cy : 0;
+	}
+	return (gc->active && gc->capturing) ? gc->cy : 0;
 }
 
 static const char *game_capture_name(void *unused)

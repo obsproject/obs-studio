@@ -501,8 +501,6 @@
     <addaction name="actionShowSettingsFolder"/>
     <addaction name="actionShowProfileFolder"/>
     <addaction name="separator"/>
-    <addaction name="actionAlwaysOnTop"/>
-    <addaction name="separator"/>
     <addaction name="actionE_xit"/>
    </widget>
    <widget class="QMenu" name="menuBasic_MainMenu_Help">
@@ -690,6 +688,16 @@
     <addaction name="toggleStatusBar"/>
     <addaction name="separator"/>
     <addaction name="stats"/>
+    <addaction name="separator"/>
+    <addaction name="multiviewProjectorMenu"/>
+    <addaction name="multiviewProjectorWindowed"/>
+    <addaction name="separator"/>
+    <addaction name="actionAlwaysOnTop"/>
+   </widget>
+   <widget class="QMenu" name="multiviewProjectorMenu">
+    <property name="title">
+     <string>MultiviewProjector</string>
+    </property>
    </widget>
    <widget class="QMenu" name="menuTools">
     <property name="title">
@@ -834,6 +842,8 @@
           <addaction name="actionAddScene"/>
           <addaction name="actionRemoveScene"/>
           <addaction name="separator"/>
+          <addaction name="actionSceneFilters"/>
+          <addaction name="separator"/>
           <addaction name="actionSceneUp"/>
           <addaction name="actionSceneDown"/>
          </widget>
@@ -971,6 +981,7 @@
           </property>
           <addaction name="actionAddSource"/>
           <addaction name="actionRemoveSource"/>
+          <addaction name="separator"/>
           <addaction name="actionSourceProperties"/>
           <addaction name="separator"/>
           <addaction name="actionSourceUp"/>
@@ -2078,7 +2089,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Basic.MainMenu.AlwaysOnTop</string>
+    <string>Basic.MainMenu.View.AlwaysOnTop</string>
    </property>
   </action>
   <action name="toggleListboxToolbars">
@@ -2153,6 +2164,11 @@
   <action name="stats">
    <property name="text">
     <string>Basic.Stats</string>
+   </property>
+  </action>
+  <action name="multiviewProjectorWindowed">
+   <property name="text">
+    <string>MultiviewWindowed</string>
    </property>
   </action>
   <action name="resetDocks">
@@ -2333,6 +2349,21 @@
    </property>
    <property name="themeID" stdset="0">
     <string>menuIconSmall</string>
+   </property>
+  </action>
+  <action name="actionSceneFilters">
+   <property name="icon">
+    <iconset resource="obs.qrc">
+     <normaloff>:/res/images/filter.svg</normaloff>:/res/images/filter.svg</iconset>
+   </property>
+   <property name="text">
+    <string>SceneFilters</string>
+   </property>
+   <property name="toolTip">
+    <string>SceneFilters</string>
+   </property>
+   <property name="themeID" stdset="0">
+    <string>filtersIcon</string>
    </property>
   </action>
  </widget>

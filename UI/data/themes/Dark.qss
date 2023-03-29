@@ -328,6 +328,10 @@ QToolButton:pressed {
     qproperty-icon: url(./Dark/cogs.svg);
 }
 
+* [themeID="filtersIcon"] {
+    qproperty-icon: url(./Dark/filter.svg);
+}
+
 /* Tab Widget */
 
 QTabWidget::pane { /* The tab widget frame */
@@ -530,7 +534,7 @@ QPushButton:pressed {
     background-color: palette(base);
 }
 
-QPushButton:disabled {
+QPushButton:disabled, QToolButton:disabled {
     background-color: rgb(46,45,46);
 }
 
@@ -668,19 +672,6 @@ MuteCheckBox::indicator:unchecked {
 
 OBSHotkeyLabel[hotkeyPairHover=true] {
     color: red;
-}
-
-/* Pause */
-PauseCheckBox {
-    outline: none;
-}
-
-PauseCheckBox::indicator:checked {
-    image: url(:/res/images/media-pause.svg);
-}
-
-PauseCheckBox::indicator:unchecked {
-    image: url(:/res/images/media-play.svg);
 }
 
 /* Group Collapse Checkbox */

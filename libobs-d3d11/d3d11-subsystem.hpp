@@ -979,6 +979,16 @@ struct mat4float {
 	float mat[16];
 };
 
+struct gs_monitor_color_info {
+	bool hdr;
+	UINT bits_per_color;
+
+	gs_monitor_color_info(bool hdr, int bits_per_color)
+		: hdr(hdr), bits_per_color(bits_per_color)
+	{
+	}
+};
+
 struct gs_device {
 	ComPtr<IDXGIFactory1> factory;
 	ComPtr<IDXGIAdapter1> adapter;
@@ -1035,11 +1045,10 @@ struct gs_device {
 	vector<gs_device_loss> loss_callbacks;
 	gs_obj *first_obj = nullptr;
 
-	vector<std::pair<HMONITOR, bool>> monitor_to_hdr;
+	vector<std::pair<HMONITOR, gs_monitor_color_info>> monitor_to_hdr;
 
 	void InitCompiler();
 	void InitFactory();
-	void ReorderAdapters(uint32_t &adapterIdx);
 	void InitAdapter(uint32_t adapterIdx);
 	void InitDevice(uint32_t adapterIdx);
 

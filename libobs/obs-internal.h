@@ -293,7 +293,6 @@ struct obs_core_video_mix {
 	float conversion_height_i;
 
 	float color_matrix[16];
-	enum obs_scale_type scale_type;
 };
 
 extern struct obs_core_video_mix *
@@ -364,8 +363,6 @@ struct obs_core_audio {
 	int total_buffering_ticks;
 	int max_buffering_ticks;
 	bool fixed_buffer;
-
-	float user_volume;
 
 	pthread_mutex_t monitoring_mutex;
 	DARRAY(struct audio_monitor *) monitors;
@@ -507,6 +504,8 @@ extern bool audio_callback(void *param, uint64_t start_ts_in,
 			   uint32_t mixers, struct audio_output_data *mixes);
 extern void cache_multiple_rendering(void);
 extern bool get_cached_multiple_rendering(void);
+
+extern struct obs_core_video_mix *get_mix_for_video(video_t *video);
 
 extern void
 start_raw_video(video_t *video, const struct video_scale_info *conversion,

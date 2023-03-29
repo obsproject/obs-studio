@@ -175,7 +175,7 @@ log_to_dstr(DStr &str, ca_encoder *ca, const char *fmt, ...)
 
 	char array[4096];
 	va_start(args, fmt);
-	vsnprintf(array, 4096, fmt, args);
+	vsnprintf(array, sizeof(array), fmt, args);
 	va_end(args);
 
 	array[4095] = 0;

@@ -68,45 +68,50 @@ void ffmpeg_video_encoder_update(struct ffmpeg_video_encoder *enc, int bitrate,
 				 const char *ffmpeg_opts)
 {
 	const int rate = bitrate * 1000;
+	const enum AVPixelFormat pix_fmt =
+		obs_to_ffmpeg_video_format(info->format);
 	enc->context->bit_rate = rate;
 	enc->context->rc_buffer_size = rate;
 	enc->context->width = obs_encoder_get_width(enc->encoder);
 	enc->context->height = obs_encoder_get_height(enc->encoder);
 	enc->context->time_base = (AVRational){voi->fps_den, voi->fps_num};
-	enc->context->pix_fmt = obs_to_ffmpeg_video_format(info->format);
+	enc->context->pix_fmt = pix_fmt;
 	enc->context->color_range = info->range == VIDEO_RANGE_FULL
 					    ? AVCOL_RANGE_JPEG
 					    : AVCOL_RANGE_MPEG;
 
+	enum AVColorSpace colorspace = AVCOL_SPC_UNSPECIFIED;
 	switch (info->colorspace) {
 	case VIDEO_CS_601:
 		enc->context->color_primaries = AVCOL_PRI_SMPTE170M;
 		enc->context->color_trc = AVCOL_TRC_SMPTE170M;
-		enc->context->colorspace = AVCOL_SPC_SMPTE170M;
+		colorspace = AVCOL_SPC_SMPTE170M;
 		break;
 	case VIDEO_CS_DEFAULT:
 	case VIDEO_CS_709:
 		enc->context->color_primaries = AVCOL_PRI_BT709;
 		enc->context->color_trc = AVCOL_TRC_BT709;
-		enc->context->colorspace = AVCOL_SPC_BT709;
+		colorspace = AVCOL_SPC_BT709;
 		break;
 	case VIDEO_CS_SRGB:
 		enc->context->color_primaries = AVCOL_PRI_BT709;
 		enc->context->color_trc = AVCOL_TRC_IEC61966_2_1;
-		enc->context->colorspace = AVCOL_SPC_BT709;
+		colorspace = AVCOL_SPC_BT709;
 		break;
 	case VIDEO_CS_2100_PQ:
 		enc->context->color_primaries = AVCOL_PRI_BT2020;
 		enc->context->color_trc = AVCOL_TRC_SMPTE2084;
-		enc->context->colorspace = AVCOL_SPC_BT2020_NCL;
-		enc->context->chroma_sample_location = AVCHROMA_LOC_TOPLEFT;
+		colorspace = AVCOL_SPC_BT2020_NCL;
 		break;
 	case VIDEO_CS_2100_HLG:
 		enc->context->color_primaries = AVCOL_PRI_BT2020;
 		enc->context->color_trc = AVCOL_TRC_ARIB_STD_B67;
-		enc->context->colorspace = AVCOL_SPC_BT2020_NCL;
-		enc->context->chroma_sample_location = AVCHROMA_LOC_TOPLEFT;
+		colorspace = AVCOL_SPC_BT2020_NCL;
 	}
+
+	enc->context->colorspace = colorspace;
+	enc->context->chroma_sample_location =
+		determine_chroma_location(pix_fmt, colorspace);
 
 	if (keyint_sec)
 		enc->context->gop_size =
