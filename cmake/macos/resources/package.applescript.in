@@ -27,8 +27,8 @@ on run (volumeName)
                 set text size to @_dmg_text_size@
                 set arrangement to not arranged
             end tell
-            set background picture of opts to file ".background:@_cpack_dmg_background_filename@"
-            set position of item "@CPACK_PACKAGE_NAME@.app" to {@_dmg_obs_x@, @_dmg_obs_y@}
+            set background picture of opts to file ".background:@_dmg_background_filename@"
+            set position of item "@_dmg_package_name@.app" to {@_dmg_obs_x@, @_dmg_obs_y@}
             set position of item "Applications" to {@_dmg_app_link_x@, @_dmg_app_link_y@}
             close
             open
