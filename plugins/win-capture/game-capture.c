@@ -2258,7 +2258,8 @@ static bool window_changed_callback(obs_properties_t *ppts, obs_property_t *p,
 			obs_data_get_bool(settings, SETTING_ANY_FULLSCREEN);
 	} else {
 		const char *mode = obs_data_get_string(settings, SETTING_MODE);
-		capture_any = strcmp(mode, SETTING_MODE_ANY) == 0;
+		capture_any = strcmp(mode, SETTING_MODE_ANY) == 0 ||
+			      strcmp(mode, SETTING_MODE_HOTKEY) == 0;
 	}
 
 	if (capture_any)
