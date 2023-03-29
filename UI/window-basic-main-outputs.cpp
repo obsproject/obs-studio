@@ -1336,7 +1336,8 @@ bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
 		strPath = GetRecordingFilename(path,
 					       ffmpegOutput ? "avi" : format,
 					       noSpace, overwriteIfExists,
-					       f.c_str(), ffmpegOutput);
+					       f.c_str(), ffmpegOutput,
+					       is_fragmented);
 		obs_data_set_string(settings, ffmpegOutput ? "url" : "path",
 				    strPath.c_str());
 		if (ffmpegOutput)
@@ -2187,6 +2188,7 @@ bool AdvancedOutput::StartRecording()
 	const char *recFormat;
 	const char *filenameFormat;
 	bool noSpace = false;
+	bool fragmented = false;
 	bool overwriteIfExists = false;
 	bool splitFile;
 	const char *splitFileType;
@@ -2226,13 +2228,14 @@ bool AdvancedOutput::StartRecording()
 
 		// Strip leading "f" in case fragmented format was selected
 		if (strcmp(recFormat, "fmp4") == 0 ||
-		    strcmp(recFormat, "fmov") == 0)
+		    strcmp(recFormat, "fmov") == 0) {
 			++recFormat;
+			fragmented = true;
+		}
 
-		string strPath = GetRecordingFilename(path, recFormat, noSpace,
-						      overwriteIfExists,
-						      filenameFormat,
-						      ffmpegRecording);
+		string strPath = GetRecordingFilename(
+			path, recFormat, noSpace, overwriteIfExists,
+			filenameFormat, ffmpegRecording, fragmented);
 
 		OBSDataAutoRelease settings = obs_data_create();
 		obs_data_set_string(settings, ffmpegRecording ? "url" : "path",
@@ -2404,20 +2407,19 @@ bool AdvancedOutput::ReplayBufferActive() const
 
 /* ------------------------------------------------------------------------ */
 
-void BasicOutputHandler::SetupAutoRemux(const char *&ext)
+void BasicOutputHandler::SetupAutoRemux(const char *&ext, bool is_fragmented)
 {
 	bool autoRemux = config_get_bool(main->Config(), "Video", "AutoRemux");
-	if (autoRemux && strcmp(ext, "mp4") == 0)
+	if (autoRemux && !is_fragmented && strcmp(ext, "mp4") == 0)
 		ext = "mkv";
 }
 
-std::string
-BasicOutputHandler::GetRecordingFilename(const char *path, const char *ext,
-					 bool noSpace, bool overwrite,
-					 const char *format, bool ffmpeg)
+std::string BasicOutputHandler::GetRecordingFilename(
+	const char *path, const char *ext, bool noSpace, bool overwrite,
+	const char *format, bool ffmpeg, bool is_fragmented)
 {
 	if (!ffmpeg)
-		SetupAutoRemux(ext);
+		SetupAutoRemux(ext, is_fragmented);
 
 	string dst = GetOutputFilename(path, ext, noSpace, overwrite, format);
 	lastRecordingPath = dst;

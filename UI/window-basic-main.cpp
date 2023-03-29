@@ -7401,8 +7401,13 @@ void OBSBasic::AutoRemux(QString input, bool no_show)
 	const obs_encoder_t *videoEncoder =
 		obs_output_get_video_encoder(outputHandler->fileOutput);
 	const char *codecName = obs_encoder_get_codec(videoEncoder);
+	string format = config_get_string(
+		config, isSimpleMode ? "SimpleOutput" : "AdvOut", "RecFormat2");
 
-	if (strcmp(codecName, "prores") == 0) {
+	/* Retain original container for fMP4/fMOV */
+	if (format == "fmp4" || format == "fmov") {
+		output += "remuxed." + suffix;
+	} else if (strcmp(codecName, "prores") == 0) {
 		output += "mov";
 	} else {
 		output += "mp4";
