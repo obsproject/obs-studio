@@ -185,6 +185,14 @@ static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
 
 	set_psycho_aq(enc, psycho_aq);
 
+	/* B-Frames in FFmpeg NVENC result in pts/dts being wrong,
+	 * disable them for now. */
+	if (bf != 0) {
+		warn("B-Frames enabled, disabling as they are currently broken"
+		     " in FFmpeg NVENC.");
+		bf = 0;
+	}
+
 	enc->ffve.context->max_b_frames = bf;
 
 	const char *ffmpeg_opts = obs_data_get_string(settings, "ffmpeg_opts");
