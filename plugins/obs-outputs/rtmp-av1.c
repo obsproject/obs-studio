@@ -566,7 +566,6 @@ static void serialize_av1_data(struct serializer *s, const uint8_t *data,
 		case AV1_OBU_TEMPORAL_DELIMITER:
 		case AV1_OBU_REDUNDANT_FRAME_HEADER:
 		case AV1_OBU_TILE_LIST:
-		case AV1_OBU_PADDING:
 			if (state == START_FOUND)
 				state = END_FOUND;
 			break;
