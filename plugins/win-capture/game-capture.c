@@ -2375,7 +2375,8 @@ static obs_properties_t *game_capture_properties(void *data)
 				    TEXT_MATCH_PRIORITY, OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(p, TEXT_MATCH_TITLE, WINDOW_PRIORITY_TITLE);
-	obs_property_list_add_int(p, TEXT_MATCH_TITLE_START, WINDOW_PRIORITY_TITLE_START);
+	obs_property_list_add_int(p, TEXT_MATCH_TITLE_START,
+				  WINDOW_PRIORITY_TITLE_START);
 	obs_property_list_add_int(p, TEXT_MATCH_CLASS, WINDOW_PRIORITY_CLASS);
 	obs_property_list_add_int(p, TEXT_MATCH_EXE, WINDOW_PRIORITY_EXE);
 
