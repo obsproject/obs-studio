@@ -120,6 +120,7 @@ read_codesign_ident() {
         step "Set up code signing..."
         read -p "${COLOR_ORANGE}  + Apple developer identity: ${COLOR_RESET}" CODESIGN_IDENT
     fi
+    CODESIGN_IDENT_SHORT=$(echo "${CODESIGN_IDENT}" | /usr/bin/sed -En "s/.+\((.+)\)/\1/p")
 }
 
 ##############################################################################
@@ -149,7 +150,6 @@ read_codesign_pass() {
 
     step "Update notarization keychain..."
 
-    CODESIGN_IDENT_SHORT=$(echo "${CODESIGN_IDENT}" | /usr/bin/sed -En "s/.+\((.+)\)/\1/p")
     echo -n "${COLOR_ORANGE}"
     /usr/bin/xcrun notarytool store-credentials "OBS-Codesign-Password" --apple-id "${CODESIGN_IDENT_USER}" --team-id "${CODESIGN_IDENT_SHORT}" --password "${CODESIGN_IDENT_PASS}"
     echo -n "${COLOR_RESET}"

@@ -27,7 +27,25 @@ build_obs() {
     if [ "${PRESET}" != "macos-ci-${ARCH}" ]; then
         export NSUnbufferedIO=YES
 
-        set -o pipefail && cmake --build --preset macos-${ARCH} --parallel 2>&1 | xcbeautify
+        : "${PACKAGE:=}"
+        case "${GITHUB_EVENT_NAME}" in
+              push) if [[ ${GITHUB_REF_NAME} =~ [0-9]+.[0-9]+.[0-9]+(-(rc|beta).+)? ]]; then PACKAGE=1; fi ;;
+              pull_request) PACKAGE=1 ;;
+          esac
+
+        pushd "build_${ARCH}" > /dev/null
+
+        if [[ "${PACKAGE}" && "${CODESIGN_IDENT:--}" != '-' ]]; then
+            set -o pipefail && xcodebuild -archivePath "obs-studio.xcarchive" -scheme obs-studio -destination "generic/platform=macOS,name=Any Mac'" archive 2>&1 | xcbeautify
+            set -o pipefail && xcodebuild -exportArchive -archivePath "obs-studio.xcarchive" -exportOptionsPlist "exportOptions.plist" -exportPath "." 2>&1 | xcbeautify
+        else
+            set -o pipefail && xcodebuild -scheme obs-studio -destination "generic/platform=macOS,name=Any Mac" -configuration RelWithDebInfo 2>&1 | xcbeautify
+
+            mkdir OBS.app
+            ditto UI/RelWithDebInfo/OBS.app OBS.app
+        fi
+
+        popd > /dev/null
 
         unset NSUnbufferedIO
     else
