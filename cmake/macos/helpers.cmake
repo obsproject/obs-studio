@@ -41,7 +41,9 @@ function(set_target_properties_obs target)
                    XCODE_EMBED_PLUGINS_REMOVE_HEADERS_ON_COPY YES
                    XCODE_EMBED_PLUGINS_CODE_SIGN_ON_COPY YES
                    XCODE_ATTRIBUTE_COPY_PHASE_STRIP NO
-                   XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES)
+                   XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
+                   XCODE_ATTRIBUTE_SKIP_INSTALL NO
+                   XCODE_ATTRIBUTE_INSTALL_PATH "$(LOCAL_APPS_DIR)")
 
       get_property(obs_dependencies GLOBAL PROPERTY _OBS_DEPENDENCIES)
       add_dependencies(${target} ${obs_dependencies})
@@ -64,7 +66,11 @@ function(set_target_properties_obs target)
       endif()
 
       get_property(obs_executables GLOBAL PROPERTY _OBS_EXECUTABLES)
+      add_dependencies(${target} ${obs_executables})
       foreach(executable IN LISTS obs_executables)
+        set_property(
+          TARGET ${executable} PROPERTY XCODE_ATTRIBUTE_INSTALL_PATH
+                                        "$(LOCAL_APPS_DIR)/$<TARGET_BUNDLE_DIR_NAME:${target}>/Contents/MacOS")
         add_custom_command(
           TARGET ${target}
           POST_BUILD
@@ -74,6 +80,7 @@ function(set_target_properties_obs target)
       endforeach()
 
       _check_entitlements()
+      configure_file(cmake/macos/exportOptions.plist.in ${CMAKE_BINARY_DIR}/exportOptions.plist)
 
       add_custom_command(
         TARGET ${target}
@@ -123,6 +130,7 @@ function(set_target_properties_obs target)
 
       install(TARGETS ${target} BUNDLE DESTINATION "." COMPONENT Application)
     else()
+      set_property(TARGET ${target} PROPERTY XCODE_ATTRIBUTE_SKIP_INSTALL NO)
       set_property(GLOBAL APPEND PROPERTY _OBS_EXECUTABLES ${target})
       set_property(GLOBAL APPEND PROPERTY _OBS_DEPENDENCIES ${target})
     endif()
@@ -139,7 +147,8 @@ function(set_target_properties_obs target)
                  XCODE_ATTRIBUTE_DYLIB_COMPATIBILITY_VERSION 1.0
                  XCODE_ATTRIBUTE_DYLIB_CURRENT_VERSION ${OBS_VERSION_MAJOR}
                  XCODE_ATTRIBUTE_PRODUCT_NAME ${target}
-                 XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER com.obsproject.${target})
+                 XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER com.obsproject.${target}
+                 XCODE_ATTRIBUTE_SKIP_INSTALL YES)
 
     get_target_property(is_framework ${target} FRAMEWORK)
     if(is_framework)
@@ -148,7 +157,8 @@ function(set_target_properties_obs target)
         ${target}
         PROPERTIES FRAMEWORK_VERSION A
                    MACOSX_FRAMEWORK_IDENTIFIER com.obsproject.${target}
-                   MACOSX_FRAMEWORK_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/Info.plist.in")
+                   MACOSX_FRAMEWORK_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/Info.plist.in"
+                   XCODE_ATTRIBUTE_SKIP_INSTALL YES)
     endif()
 
     _add_entitlements()
