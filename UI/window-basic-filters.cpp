@@ -89,19 +89,21 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 	installEventFilter(CreateShortcutFilter());
 
 	connect(ui->asyncFilters->itemDelegate(),
-		SIGNAL(closeEditor(QWidget *)), this,
-		SLOT(AsyncFilterNameEdited(QWidget *)));
+		&QAbstractItemDelegate::closeEditor, [this](QWidget *editor) {
+			FilterNameEdited(editor, ui->asyncFilters);
+		});
 
 	connect(ui->effectFilters->itemDelegate(),
-		SIGNAL(closeEditor(QWidget *)), this,
-		SLOT(EffectFilterNameEdited(QWidget *)));
+		&QAbstractItemDelegate::closeEditor, [this](QWidget *editor) {
+			FilterNameEdited(editor, ui->effectFilters);
+		});
 
 	QPushButton *close = ui->buttonBox->button(QDialogButtonBox::Close);
-	connect(close, SIGNAL(clicked()), this, SLOT(close()));
+	connect(close, &QPushButton::clicked, this, &OBSBasicFilters::close);
 	close->setDefault(true);
 
 	connect(ui->buttonBox->button(QDialogButtonBox::RestoreDefaults),
-		SIGNAL(clicked()), this, SLOT(ResetFilters()));
+		&QPushButton::clicked, this, &OBSBasicFilters::ResetFilters);
 
 	connect(ui->asyncFilters->model(), &QAbstractItemModel::rowsMoved, this,
 		&OBSBasicFilters::FiltersMoved);
@@ -541,8 +543,8 @@ QMenu *OBSBasicFilters::CreateAddFilterPopupMenu(bool async)
 		QAction *popupItem =
 			new QAction(QT_UTF8(type.name.c_str()), this);
 		popupItem->setData(QT_UTF8(type.type.c_str()));
-		connect(popupItem, SIGNAL(triggered(bool)), this,
-			SLOT(AddFilterFromAction()));
+		connect(popupItem, &QAction::triggered,
+			[this, type]() { AddNewFilter(type.type.c_str()); });
 		popup->addAction(popupItem);
 
 		foundValues = true;
@@ -660,15 +662,6 @@ void OBSBasicFilters::AddNewFilter(const char *id)
 			QTStr("Undo.Add").arg(obs_source_get_name(filter)),
 			undo, redo, undo_data, redo_data, false);
 	}
-}
-
-void OBSBasicFilters::AddFilterFromAction()
-{
-	QAction *action = qobject_cast<QAction *>(sender());
-	if (!action)
-		return;
-
-	AddNewFilter(QT_TO_UTF8(action->data().toString()));
 }
 
 void OBSBasicFilters::closeEvent(QCloseEvent *event)
@@ -931,20 +924,19 @@ void OBSBasicFilters::CustomContextMenu(const QPoint &pos, bool async)
 		popup.addMenu(addMenu);
 
 	if (item) {
-		const char *dulpicateSlot =
-			async ? SLOT(DuplicateAsyncFilter())
-			      : SLOT(DuplicateEffectFilter());
-
 		popup.addSeparator();
-		popup.addAction(QTStr("Duplicate"), this, dulpicateSlot);
+		popup.addAction(QTStr("Duplicate"), this, [&]() {
+			DuplicateItem(async ? ui->asyncFilters->currentItem()
+					    : ui->effectFilters->currentItem());
+		});
 		popup.addSeparator();
 		popup.addAction(ui->actionRenameFilter);
 		popup.addAction(ui->actionRemoveFilter);
 		popup.addSeparator();
 
 		QAction *copyAction = new QAction(QTStr("Copy"));
-		connect(copyAction, SIGNAL(triggered()), this,
-			SLOT(CopyFilter()));
+		connect(copyAction, &QAction::triggered, this,
+			&OBSBasicFilters::CopyFilter);
 		copyAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_C));
 		ui->effectWidget->addAction(copyAction);
 		ui->asyncWidget->addAction(copyAction);
@@ -953,7 +945,8 @@ void OBSBasicFilters::CustomContextMenu(const QPoint &pos, bool async)
 
 	QAction *pasteAction = new QAction(QTStr("Paste"));
 	pasteAction->setEnabled(main->copyFilter);
-	connect(pasteAction, SIGNAL(triggered()), this, SLOT(PasteFilter()));
+	connect(pasteAction, &QAction::triggered, this,
+		&OBSBasicFilters::PasteFilter);
 	pasteAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_V));
 	ui->effectWidget->addAction(pasteAction);
 	ui->asyncWidget->addAction(pasteAction);
@@ -1051,16 +1044,6 @@ void OBSBasicFilters::RenameEffectFilter()
 	EditItem(ui->effectFilters->currentItem(), false);
 }
 
-void OBSBasicFilters::DuplicateAsyncFilter()
-{
-	DuplicateItem(ui->asyncFilters->currentItem());
-}
-
-void OBSBasicFilters::DuplicateEffectFilter()
-{
-	DuplicateItem(ui->effectFilters->currentItem());
-}
-
 void OBSBasicFilters::FilterNameEdited(QWidget *editor, QListWidget *list)
 {
 	QListWidgetItem *listItem = list->currentItem();
@@ -1133,16 +1116,6 @@ void OBSBasicFilters::FilterNameEdited(QWidget *editor, QListWidget *list)
 	listItem->setText(QString());
 	SetupVisibilityItem(list, listItem, filter);
 	editActive = false;
-}
-
-void OBSBasicFilters::AsyncFilterNameEdited(QWidget *editor)
-{
-	FilterNameEdited(editor, ui->asyncFilters);
-}
-
-void OBSBasicFilters::EffectFilterNameEdited(QWidget *editor)
-{
-	FilterNameEdited(editor, ui->effectFilters);
 }
 
 static bool ConfirmReset(QWidget *parent)
