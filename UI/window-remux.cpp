@@ -474,10 +474,18 @@ void RemuxQueueModel::checkInputPath(int row)
 		else
 			entry.state = RemuxEntryState::InvalidPath;
 
+		QString newExt = ".mp4";
+		QString suffix = fileInfo.suffix();
+
+		if (suffix.contains("mov", Qt::CaseInsensitive) ||
+		    suffix.contains("mp4", Qt::CaseInsensitive)) {
+			newExt = ".remuxed." + suffix;
+		}
+
 		if (entry.state == RemuxEntryState::Ready)
 			entry.targetPath = QDir::toNativeSeparators(
 				fileInfo.path() + QDir::separator() +
-				fileInfo.completeBaseName() + ".mp4");
+				fileInfo.completeBaseName() + newExt);
 	}
 
 	if (entry.state == RemuxEntryState::Ready && isProcessing)
