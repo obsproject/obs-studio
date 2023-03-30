@@ -83,19 +83,12 @@ endif()
 
 if(OS_WINDOWS)
   find_package(AMF 1.4.29 REQUIRED)
-
-  add_library(nvenc-headers INTERFACE)
-  add_library(OBS::nvenc-headers ALIAS nvenc-headers)
-
-  target_sources(nvenc-headers INTERFACE external/nvEncodeAPI.h jim-nvenc-ver.h)
-
-  target_include_directories(nvenc-headers INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}"
-                                                     "${CMAKE_CURRENT_SOURCE_DIR}/external")
+  find_package(FFnvcodec 12 REQUIRED)
 
   add_subdirectory(obs-amf-test)
   add_subdirectory(obs-nvenc-test)
 
-  target_link_libraries(obs-ffmpeg PRIVATE OBS::w32-pthreads AMF::AMF ws2_32)
+  target_link_libraries(obs-ffmpeg PRIVATE OBS::w32-pthreads AMF::AMF FFnvcodec::FFnvcodec ws2_32)
 
   configure_file(cmake/windows/obs-module.rc.in obs-ffmpeg.rc)
   target_sources(

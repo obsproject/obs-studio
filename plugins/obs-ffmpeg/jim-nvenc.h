@@ -4,7 +4,7 @@
 #include <windows.h>
 
 #include <obs-module.h>
-#include "external/nvEncodeAPI.h"
+#include <ffnvcodec/nvEncodeAPI.h>
 #include "jim-nvenc-ver.h"
 
 typedef NVENCSTATUS(NVENCAPI *NV_CREATE_INSTANCE_FUNC)(
