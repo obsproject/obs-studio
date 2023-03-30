@@ -62,7 +62,8 @@ configure_file(ui-config.h.in ui-config.h)
 
 target_sources(
   obs-studio
-  PRIVATE api-interface.cpp
+  PRIVATE # cmake-format: sortable
+          api-interface.cpp
           auth-base.cpp
           auth-base.hpp
           auth-listener.cpp

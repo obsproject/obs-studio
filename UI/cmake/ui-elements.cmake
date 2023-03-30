@@ -1,24 +1,25 @@
 target_sources(
   obs-studio
-  PRIVATE adv-audio-control.cpp
+  PRIVATE # cmake-format: sortable
+          adv-audio-control.cpp
           adv-audio-control.hpp
           audio-encoders.cpp
           audio-encoders.hpp
           balance-slider.hpp
           clickable-label.hpp
-          double-slider.cpp
-          double-slider.hpp
-          horizontal-scroll-area.cpp
-          horizontal-scroll-area.hpp
-          item-widget-helpers.cpp
-          item-widget-helpers.hpp
           context-bar-controls.cpp
           context-bar-controls.hpp
+          double-slider.cpp
+          double-slider.hpp
           expand-checkbox.hpp
           focus-list.cpp
           focus-list.hpp
+          horizontal-scroll-area.cpp
+          horizontal-scroll-area.hpp
           hotkey-edit.cpp
           hotkey-edit.hpp
+          item-widget-helpers.cpp
+          item-widget-helpers.hpp
           lineedit-autoresize.cpp
           lineedit-autoresize.hpp
           locked-checkbox.cpp
@@ -50,19 +51,19 @@ target_sources(
           slider-ignorewheel.hpp
           source-label.cpp
           source-label.hpp
-          spinbox-ignorewheel.cpp
-          spinbox-ignorewheel.hpp
           source-tree.cpp
           source-tree.hpp
-          url-push-button.cpp
-          url-push-button.hpp
+          spinbox-ignorewheel.cpp
+          spinbox-ignorewheel.hpp
           undo-stack-obs.cpp
           undo-stack-obs.hpp
-          volume-control.cpp
-          volume-control.hpp
+          url-push-button.cpp
+          url-push-button.hpp
           vertical-scroll-area.cpp
           vertical-scroll-area.hpp
           visibility-checkbox.cpp
           visibility-checkbox.hpp
           visibility-item-widget.cpp
-          visibility-item-widget.hpp)
+          visibility-item-widget.hpp
+          volume-control.cpp
+          volume-control.hpp)
