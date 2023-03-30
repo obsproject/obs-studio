@@ -613,24 +613,31 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 		}
 	}
 
-	frameData.clear();
+	frameQueueDecklinkToObs.reset();
+	frameQueueObsToDecklink.reset();
+
+	const int rowSize = decklinkOutput->GetWidth() * 4;
+	const int frameSize = rowSize * decklinkOutput->GetHeight();
+	for (std::vector<uint8_t> &blob : frameBlobs) {
+		blob.assign(frameSize, 0);
+		frameQueueDecklinkToObs.push(blob.data());
+	}
+	activeBlob = nullptr;
+
 	const int64_t minimumPrerollFrames =
 		std::max(device->GetMinimumPrerollFrames(), INT64_C(3));
 	for (int64_t i = 0; i < minimumPrerollFrames; ++i) {
 		ComPtr<IDeckLinkMutableVideoFrame> decklinkOutputFrame;
 		HRESULT result = output_->CreateVideoFrame(
 			decklinkOutput->GetWidth(), decklinkOutput->GetHeight(),
-			decklinkOutput->GetWidth() * 4, bmdFormat8BitBGRA,
-			bmdFrameFlagDefault, &decklinkOutputFrame);
+			rowSize, bmdFormat8BitBGRA, bmdFrameFlagDefault,
+			&decklinkOutputFrame);
 		if (result != S_OK) {
 			blog(LOG_ERROR, "failed to create video frame 0x%X",
 			     result);
 			return false;
 		}
 
-		const long size = decklinkOutputFrame->GetRowBytes() *
-				  decklinkOutputFrame->GetHeight();
-		frameData.resize(size);
 		result = output_->ScheduleVideoFrame(decklinkOutputFrame,
 						     i * frameDuration,
 						     frameDuration,
@@ -669,6 +676,8 @@ bool DeckLinkDeviceInstance::StopOutput()
 	output->DisableAudioOutput();
 	output.Clear();
 	renderDelegate.Clear();
+	frameQueueDecklinkToObs.reset();
+	frameQueueObsToDecklink.reset();
 
 	return true;
 }
@@ -679,26 +688,36 @@ void DeckLinkDeviceInstance::UpdateVideoFrame(video_data *frame)
 	if (decklinkOutput == nullptr)
 		return;
 
-	std::lock_guard lock(frameDataMutex);
-	const uint8_t *const outData = frame->data[0];
-	frameData.assign(outData,
-			 outData + decklinkOutput->GetWidth() *
-					   decklinkOutput->GetHeight() * 4);
+	uint8_t *const blob = frameQueueDecklinkToObs.pop();
+	if (blob) {
+		memcpy(blob, frame->data[0],
+		       frame->linesize[0] * decklinkOutput->GetHeight());
+		frameQueueObsToDecklink.push(blob);
+	}
 }
 
 void DeckLinkDeviceInstance::ScheduleVideoFrame(IDeckLinkVideoFrame *frame)
 {
 	void *bytes;
 	if (SUCCEEDED(frame->GetBytes(&bytes))) {
-		{
-			std::lock_guard lock(frameDataMutex);
-			memcpy(bytes, frameData.data(),
-			       frame->GetRowBytes() * frame->GetHeight());
+		uint8_t *blob = frameQueueObsToDecklink.pop();
+		if (blob) {
+			if (activeBlob)
+				frameQueueDecklinkToObs.push(activeBlob);
+			activeBlob = blob;
+		} else {
+			blob = activeBlob;
 		}
 
-		output->ScheduleVideoFrame(
-			frame, (totalFramesScheduled * frameDuration),
-			frameDuration, frameTimescale);
+		const int frameSize = frame->GetRowBytes() * frame->GetHeight();
+		if (blob)
+			memcpy(bytes, blob, frameSize);
+		else
+			memset(bytes, 0, frameSize);
+
+		output->ScheduleVideoFrame(frame,
+					   totalFramesScheduled * frameDuration,
+					   frameDuration, frameTimescale);
 		++totalFramesScheduled;
 	}
 }
