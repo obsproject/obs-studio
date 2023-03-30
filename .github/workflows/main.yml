@@ -68,7 +68,11 @@ jobs:
         id: config
         run: |
           if [[ "${{ github.event_name == 'pull_request' }}" == "true" ]]; then
-            echo "create_artifacts=${{ contains(github.event.pull_request.labels.*.name, 'Seeking Testers') }}" >> $GITHUB_OUTPUT
+            if test -n "$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -s "${{ github.event.pull_request.url }}" | jq -e '.labels[] | select(.name == "Seeking Testers")')"; then
+              echo 'create_artifacts=true' >> $GITHUB_OUTPUT
+            else
+              echo 'create_artifacts=false' >> $GITHUB_OUTPUT
+            fi
           else
             echo 'create_artifacts=true' >> $GITHUB_OUTPUT
           fi
@@ -102,7 +106,7 @@ jobs:
         id: github-check
         if: github.event_name == 'pull_request'
         run: |
-          if [[ '${{ contains(github.event.pull_request.labels.*.name, 'Seeking Testers') }}' == 'true' ]]; then
+          if test -n "$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -s "${{ github.event.pull_request.url }}" | jq -e '.labels[] | select(.name == "Seeking Testers")')"; then
             echo "generator=Xcode" >> $GITHUB_OUTPUT
           else
             echo "generator=Ninja" >> $GITHUB_OUTPUT
@@ -550,7 +554,7 @@ jobs:
         id: branch
         run: |
           pushd repo
-          
+
           GIT_TAG="$(git describe --tags --abbrev=0)"
           if [[ ${GIT_TAG} == *'beta'* || ${GIT_TAG} == *'rc'* ]]; then
             echo "branch=beta" >> $GITHUB_OUTPUT
