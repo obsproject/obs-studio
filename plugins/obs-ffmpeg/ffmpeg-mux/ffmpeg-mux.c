@@ -157,6 +157,21 @@ struct ffmpeg_mux {
 	struct io_buffer io;
 };
 
+#define SRT_PROTO "srt"
+#define UDP_PROTO "udp"
+#define TCP_PROTO "tcp"
+#define HTTP_PROTO "http"
+#define RIST_PROTO "rist"
+
+static bool ffmpeg_mux_is_network(struct ffmpeg_mux *ffm)
+{
+	return !strncmp(ffm->params.file, SRT_PROTO, sizeof(SRT_PROTO) - 1) ||
+	       !strncmp(ffm->params.file, UDP_PROTO, sizeof(UDP_PROTO) - 1) ||
+	       !strncmp(ffm->params.file, TCP_PROTO, sizeof(TCP_PROTO) - 1) ||
+	       !strncmp(ffm->params.file, HTTP_PROTO, sizeof(HTTP_PROTO) - 1) ||
+	       !strncmp(ffm->params.file, RIST_PROTO, sizeof(RIST_PROTO) - 1);
+}
+
 static void header_free(struct header *header)
 {
 	free(header->data);
@@ -167,8 +182,14 @@ static void free_avformat(struct ffmpeg_mux *ffm)
 	if (ffm->output) {
 		avcodec_free_context(&ffm->video_ctx);
 
-		if ((ffm->output->oformat->flags & AVFMT_NOFILE) == 0)
-			avio_close(ffm->output->pb);
+		if ((ffm->output->oformat->flags & AVFMT_NOFILE) == 0) {
+			if (!ffmpeg_mux_is_network(ffm)) {
+				av_free(ffm->output->pb->buffer);
+				avio_context_free(&ffm->output->pb);
+			} else {
+				avio_close(ffm->output->pb);
+			}
+		}
 
 		avformat_free_context(ffm->output);
 		ffm->output = NULL;
@@ -204,9 +225,6 @@ static void ffmpeg_mux_free(struct ffmpeg_mux *ffm)
 		pthread_join(ffm->io.io_thread, NULL);
 
 		// Cleanup everything else
-		av_free(ffm->output->pb->buffer);
-		avio_context_free(&ffm->output->pb);
-
 		os_event_destroy(ffm->io.new_data_available_event);
 		os_event_destroy(ffm->io.buffer_space_available_event);
 
@@ -900,21 +918,6 @@ static int ffmpeg_mux_write_av_buffer(void *opaque, uint8_t *buf, int buf_size)
 	pthread_mutex_unlock(&ffm->io.data_mutex);
 
 	return buf_size;
-}
-
-#define SRT_PROTO "srt"
-#define UDP_PROTO "udp"
-#define TCP_PROTO "tcp"
-#define HTTP_PROTO "http"
-#define RIST_PROTO "rist"
-
-static bool ffmpeg_mux_is_network(struct ffmpeg_mux *ffm)
-{
-	return !strncmp(ffm->params.file, SRT_PROTO, sizeof(SRT_PROTO) - 1) ||
-	       !strncmp(ffm->params.file, UDP_PROTO, sizeof(UDP_PROTO) - 1) ||
-	       !strncmp(ffm->params.file, TCP_PROTO, sizeof(TCP_PROTO) - 1) ||
-	       !strncmp(ffm->params.file, HTTP_PROTO, sizeof(HTTP_PROTO) - 1) ||
-	       !strncmp(ffm->params.file, RIST_PROTO, sizeof(RIST_PROTO) - 1);
 }
 
 static inline int open_output_file(struct ffmpeg_mux *ffm)
