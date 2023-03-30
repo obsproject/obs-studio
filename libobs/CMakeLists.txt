@@ -19,12 +19,9 @@ add_subdirectory("${CMAKE_SOURCE_DIR}/deps/uthash" "${CMAKE_BINARY_DIR}/deps/uth
 
 target_sources(
   libobs
-  PRIVATE obs.c
-          obs.h
-          obs.hpp
-          obs-audio.c
-          obs-audio-controls.c
+  PRIVATE obs-audio-controls.c
           obs-audio-controls.h
+          obs-audio.c
           obs-avc.c
           obs-avc.h
           obs-data.c
@@ -34,35 +31,38 @@ target_sources(
           obs-encoder.c
           obs-encoder.h
           obs-ffmpeg-compat.h
+          obs-hotkey-name-map.c
           obs-hotkey.c
           obs-hotkey.h
           obs-hotkeys.h
-          obs-missing-files.c
-          obs-missing-files.h
-          obs-nal.c
-          obs-nal.h
-          obs-hotkey-name-map.c
           obs-interaction.h
           obs-internal.h
+          obs-missing-files.c
+          obs-missing-files.h
           obs-module.c
           obs-module.h
+          obs-nal.c
+          obs-nal.h
+          obs-output-delay.c
           obs-output.c
           obs-output.h
-          obs-output-delay.c
           obs-properties.c
           obs-properties.h
-          obs-service.c
-          obs-service.h
           obs-scene.c
           obs-scene.h
-          obs-source.c
-          obs-source.h
+          obs-service.c
+          obs-service.h
           obs-source-deinterlace.c
           obs-source-transition.c
+          obs-source.c
+          obs-source.h
           obs-ui.h
-          obs-video.c
           obs-video-gpu-encode.c
+          obs-video.c
           obs-view.c
+          obs.c
+          obs.h
+          obs.hpp
           $<$<BOOL:${ENABLE_HEVC}>:obs-hevc.c>
           $<$<BOOL:${ENABLE_HEVC}>:obs-hevc.h>)
 
@@ -74,8 +74,8 @@ target_sources(
           util/base.h
           util/bitstream.c
           util/bitstream.h
-          util/bmem.h
           util/bmem.c
+          util/bmem.h
           util/c99defs.h
           util/cf-lexer.c
           util/cf-lexer.h
@@ -108,8 +108,8 @@ target_sources(
           util/threading.h
           util/utf8.c
           util/utf8.h
-          util/util.hpp
           util/uthash.h
+          util/util.hpp
           util/util_uint64.h
           util/util_uint128.h
           util/curl/curl-helper.h)
@@ -128,8 +128,8 @@ target_sources(
           util/simde/simde-features.h
           util/simde/simde-math.h
           util/simde/x86/mmx.h
-          util/simde/x86/sse2.h
-          util/simde/x86/sse.h)
+          util/simde/x86/sse.h
+          util/simde/x86/sse2.h)
 
 target_sources(
   libobs
@@ -137,21 +137,22 @@ target_sources(
           callback/calldata.h
           callback/decl.c
           callback/decl.h
-          callback/signal.c
-          callback/signal.h
           callback/proc.c
-          callback/proc.h)
+          callback/proc.h
+          callback/signal.c
+          callback/signal.h)
 
 target_sources(
   libobs
   PRIVATE media-io/audio-io.c
           media-io/audio-io.h
           media-io/audio-math.h
-          media-io/audio-resampler.h
           media-io/audio-resampler-ffmpeg.c
+          media-io/audio-resampler.h
           media-io/format-conversion.c
           media-io/format-conversion.h
           media-io/frame-rate.h
+          media-io/media-io-defs.h
           media-io/media-remux.c
           media-io/media-remux.h
           media-io/video-fourcc.c
@@ -159,7 +160,6 @@ target_sources(
           media-io/video-frame.h
           media-io/video-io.c
           media-io/video-io.h
-          media-io/media-io-defs.h
           media-io/video-matrices.c
           media-io/video-scaler-ffmpeg.c
           media-io/video-scaler.h)
@@ -171,17 +171,17 @@ target_sources(
           graphics/bounds.c
           graphics/bounds.h
           graphics/device-exports.h
-          graphics/effect.c
-          graphics/effect.h
           graphics/effect-parser.c
           graphics/effect-parser.h
-          graphics/image-file.c
-          graphics/graphics.c
-          graphics/graphics.h
+          graphics/effect.c
+          graphics/effect.h
           graphics/graphics-ffmpeg.c
           graphics/graphics-imports.c
           graphics/graphics-internal.h
+          graphics/graphics.c
+          graphics/graphics.h
           graphics/half.h
+          graphics/image-file.c
           graphics/image-file.h
           graphics/math-extra.c
           graphics/math-extra.h
