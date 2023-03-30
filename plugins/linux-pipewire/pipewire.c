@@ -1090,6 +1090,18 @@ void obs_pipewire_video_render(obs_pipewire *obs_pw, gs_effect_t *effect)
 	rotated = push_rotation(obs_pw);
 
 	flip = get_buffer_flip(obs_pw);
+
+	/* There is a SPA_VIDEO_FLAG_PREMULTIPLIED_ALPHA flag, but it does not
+	 * seem to be fully implemented nor ever set. Just assume premultiplied
+	 * always, which seems to be the default convention.
+	 *
+	 * See https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/3126
+	 *
+	 * The cursor bitmap alpha mode is also not specified, and the
+	 * convention there also seems to be premultiplied. */
+	gs_blend_state_push();
+	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+
 	if (has_effective_crop(obs_pw)) {
 		gs_draw_sprite_subregion(obs_pw->texture, flip, obs_pw->crop.x,
 					 obs_pw->crop.y, obs_pw->crop.width,
@@ -1115,6 +1127,8 @@ void obs_pipewire_video_render(obs_pipewire *obs_pw, gs_effect_t *effect)
 
 		gs_matrix_pop();
 	}
+
+	gs_blend_state_pop();
 }
 
 void obs_pipewire_set_cursor_visible(obs_pipewire *obs_pw, bool cursor_visible)
