@@ -83,7 +83,7 @@ jobs:
           path: ${{ github.workspace }}/other/*
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@f094b77505fb89581e68a1163fbd2fffece39da1
+        uses: peter-evans/create-pull-request@36a56dac0739df8d3d8ebb9e6e41026ba248ec27
         if: steps.check.outputs.make_pr == 'true'
         with:
           author: "Service Checker <commits@obsproject.com>"
