@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "../external/nvEncodeAPI.h"
+#include <ffnvcodec/nvEncodeAPI.h>
 #include "../jim-nvenc-ver.h"
 
 #include <dxgi.h>
