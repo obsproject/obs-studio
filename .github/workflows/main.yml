@@ -95,8 +95,6 @@ jobs:
     needs: [config, clang_check]
     env:
       BLOCKED_FORMULAS: 'speexdsp curl php composer'
-      CODESIGN_IDENT: '-'
-      HAVE_CODESIGN_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY != '' && secrets.MACOS_SIGNING_CERT != '' }}
     defaults:
       run:
         shell: bash
@@ -157,19 +155,68 @@ jobs:
         run: CI/macos/01_install_dependencies.sh --architecture "${{ matrix.arch }}"
 
       - name: 'Install Apple Developer Certificate'
-        if: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' && env.HAVE_CODESIGN_IDENTITY == 'true' }}
-        uses: apple-actions/import-codesign-certs@8f3fb608891dd2244cdab3d69cd68c0d37a7fe93
-        with:
-          p12-file-base64: ${{ secrets.MACOS_SIGNING_CERT }}
-          p12-password: ${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}
-
-      - name: 'Set Signing Identity'
-        if: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' && env.HAVE_CODESIGN_IDENTITY == 'true' }}
+        id: macos-codesign
+        env:
+          MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+          MACOS_SIGNING_CERT: ${{ secrets.MACOS_SIGNING_CERT }}
+          MACOS_SIGNING_CERT_PASSWORD: ${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}
+          MACOS_KEYCHAIN_PASSWORD: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
+          MACOS_PROVISIONING_PROFILE: ${{ secrets.MACOS_SIGNING_PROVISIONING_PROFILE }}
         run: |
-          echo "CODESIGN_IDENT=${{ secrets.MACOS_SIGNING_IDENTITY }}" >> $GITHUB_ENV
-          echo "BUILD_FOR_DISTRIBUTION=ON" >> $GITHUB_ENV
+          if [[ "${MACOS_SIGNING_IDENTITY}" && "${MACOS_SIGNING_CERT}" ]]; then
+            CERTIFICATE_PATH="${RUNNER_TEMP}/build_certificate.p12"
+            KEYCHAIN_PATH="${RUNNER_TEMP}/app-signing.keychain-db"
+
+            echo -n "${MACOS_SIGNING_CERT}" | base64 --decode --output "${CERTIFICATE_PATH}"
+
+            : "${MACOS_KEYCHAIN_PASSWORD:="$(echo ${RANDOM} | sha1sum | head -c 32)"}"
+
+            security create-keychain -p "${MACOS_KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+            security set-keychain-settings -lut 21600 "${KEYCHAIN_PATH}"
+            security unlock-keychain -p "${MACOS_KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+
+            security import "${CERTIFICATE_PATH}" -P "${MACOS_SIGNING_CERT_PASSWORD}" -A \
+              -t cert -f pkcs12 -k "${KEYCHAIN_PATH}" \
+              -T /usr/bin/codesign -T /usr/bin/security -T /usr/bin/xcrun
+
+            security set-key-partition-list -S 'apple-tool:,apple:' -k "${MACOS_KEYCHAIN_PASSWORD}" \
+              "${KEYCHAIN_PATH}" &> /dev/null
+            security list-keychain -d user -s "${KEYCHAIN_PATH}" 'login-keychain'
+
+            echo "CODESIGN_IDENT=${MACOS_SIGNING_IDENTITY}" >> $GITHUB_ENV
+            echo "MACOS_KEYCHAIN_PASSWORD=${MACOS_KEYCHAIN_PASSWORD}" >> $GITHUB_ENV
+            echo "haveCodesignIdent=true" >> $GITHUB_OUTPUT
+          else
+            echo "CODESIGN_IDENT=-" >> $GITHUB_ENV
+            echo "haveCodesignIdent=false" >> $GITHUB_OUTPUT
+          fi
+
+          if [[ "${MACOS_PROVISIONING_PROFILE}" ]]; then
+            PROFILE_PATH="${RUNNER_TEMP}/build_profile.provisionprofile"
+            echo -n "${MACOS_PROVISIONING_PROFILE}" | base64 --decode --output "${PROFILE_PATH}"
+
+            mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+            security cms -D -i "${PROFILE_PATH}" -o "${RUNNER_TEMP}/build_profile.plist"
+            UUID="$(plutil -extract UUID raw "${RUNNER_TEMP}/build_profile.plist")"
+            TEAM_ID="$(plutil -extract TeamIdentifier.0 raw -expect string "${RUNNER_TEMP}/build_profile.plist")"
+
+            cp "${PROFILE_PATH}" ~/Library/MobileDevice/Provisioning\ Profiles/${UUID}.provisionprofile
+            echo "provisionprofileUUID=${UUID}" >> $GITHUB_OUTPUT
+            echo "haveProvisioningProfile=true" >> $GITHUB_OUTPUT
+            echo "CODESIGN_TEAM=${TEAM_ID}" >> $GITHUB_ENV
+          else
+           echo "haveProvisioningProfile=false" >> $GITHUB_OUTPUT
+          fi
+
+          if [[ "${MACOS_NOTARIZATION_USERNAME}" && "${MACOS_NOTARIZATION_PASSWORD}" ]]; then
+            echo "haveNotarizationUser=true" >> $GITHUB_OUTPUT
+          else
+            echo "haveNotarizationUser=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: 'Build OBS'
+        env:
+          PROVISIONING_PROFILE: ${{ steps.macos-codesign.outputs.provisionprofileUUID }}
         run: |
           if [[ '${{ steps.github-check.outputs.generator }}' == 'Xcode' ]]; then
             SEEKING_TESTERS=1 CI/macos/02_build_obs.sh --codesign --architecture "${{ matrix.arch }}"
@@ -459,7 +506,6 @@ jobs:
     runs-on: [macos-12]
     needs: [macos_build]
     env:
-      HAVE_CODESIGN_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY != '' && secrets.MACOS_SIGNING_CERT != '' }}
       BUILD_FOR_DISTRIBUTION: 'ON'
       HAVE_SPARKLE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY != '' }}
     outputs:
@@ -472,11 +518,74 @@ jobs:
       run:
         shell: bash
     steps:
+      - name: 'Install Apple Developer Certificate'
+        id: macos-codesign
+        env:
+          MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+          MACOS_SIGNING_CERT: ${{ secrets.MACOS_SIGNING_CERT }}
+          MACOS_SIGNING_CERT_PASSWORD: ${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}
+          MACOS_KEYCHAIN_PASSWORD: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
+          MACOS_PROVISIONING_PROFILE: ${{ secrets.MACOS_SIGNING_PROVISIONING_PROFILE }}
+          MACOS_NOTARIZATION_USERNAME: ${{ secrets.MACOS_NOTARIZATION_USERNAME }}
+          MACOS_NOTARIZATION_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
+        run: |
+          if [[ "${MACOS_SIGNING_IDENTITY}" && "${MACOS_SIGNING_CERT}" ]]; then
+            CERTIFICATE_PATH="${RUNNER_TEMP}/build_certificate.p12"
+            KEYCHAIN_PATH="${RUNNER_TEMP}/app-signing.keychain-db"
+
+            echo -n "${MACOS_SIGNING_CERT}" | base64 --decode --output "${CERTIFICATE_PATH}"
+
+            : "${MACOS_KEYCHAIN_PASSWORD:="$(echo ${RANDOM} | sha1sum | head -c 32)"}"
+
+            security create-keychain -p "${MACOS_KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+            security set-keychain-settings -lut 21600 "${KEYCHAIN_PATH}"
+            security unlock-keychain -p "${MACOS_KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+
+            security import "${CERTIFICATE_PATH}" -P "${MACOS_SIGNING_CERT_PASSWORD}" -A \
+              -t cert -f pkcs12 -k "${KEYCHAIN_PATH}" \
+              -T /usr/bin/codesign -T /usr/bin/security -T /usr/bin/xcrun
+
+            security set-key-partition-list -S 'apple-tool:,apple:' -k "${MACOS_KEYCHAIN_PASSWORD}" \
+              "${KEYCHAIN_PATH}" &> /dev/null
+            security list-keychain -d user -s "${KEYCHAIN_PATH}" 'login-keychain'
+
+            echo "CODESIGN_IDENT=${MACOS_SIGNING_IDENTITY}" >> $GITHUB_ENV
+            echo "MACOS_KEYCHAIN_PASSWORD=${MACOS_KEYCHAIN_PASSWORD}" >> $GITHUB_ENV
+            echo "haveCodesignIdent=true" >> $GITHUB_OUTPUT
+          else
+            echo "CODESIGN_IDENT=-" >> $GITHUB_ENV
+            echo "haveCodesignIdent=false" >> $GITHUB_OUTPUT
+          fi
+
+          if [[ "${MACOS_PROVISIONING_PROFILE}" ]]; then
+            PROFILE_PATH="${RUNNER_TEMP}/build_profile.provisionprofile"
+            echo -n "${MACOS_PROVISIONING_PROFILE}" | base64 --decode --output "${PROFILE_PATH}"
+
+            mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+            security cms -D -i "${PROFILE_PATH}" -o "${RUNNER_TEMP}/build_profile.plist"
+            UUID="$(plutil -extract UUID raw "${RUNNER_TEMP}/build_profile.plist")"
+            TEAM_ID="$(plutil -extract TeamIdentifier.0 raw -expect string "${RUNNER_TEMP}/build_profile.plist")"
+
+            cp "${PROFILE_PATH}" ~/Library/MobileDevice/Provisioning\ Profiles/${UUID}.provisionprofile
+            echo "provisionprofileUUID=${UUID}" >> $GITHUB_OUTPUT
+            echo "haveProvisioningProfile=true" >> $GITHUB_OUTPUT
+            echo "CODESIGN_TEAM=${TEAM_ID}" >> $GITHUB_ENV
+          else
+           echo "haveProvisioningProfile=false" >> $GITHUB_OUTPUT
+          fi
+
+          if [[ "${MACOS_NOTARIZATION_USERNAME}" && "${MACOS_NOTARIZATION_PASSWORD}" ]]; then
+            echo "haveNotarizationUser=true" >> $GITHUB_OUTPUT
+          else
+            echo "haveNotarizationUser=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: 'Checkout'
-        if: env.HAVE_CODESIGN_IDENTITY == 'true'
+        if: ${{ fromJSON(steps.macos-codesign.outputs.haveCodesignIdent) && fromJSON(steps.macos-codesign.outputs.haveNotarizationUser) }}
         uses: actions/checkout@v3
 
       - name: 'Setup build environment'
+        if: ${{ fromJSON(steps.macos-codesign.outputs.haveCodesignIdent) && fromJSON(steps.macos-codesign.outputs.haveNotarizationUser) }}
         id: setup
         run: |
           echo "commitHash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
@@ -488,22 +597,14 @@ jobs:
           echo 'run_sparkle=${{ env.HAVE_SPARKLE_KEY }}' >> $GITHUB_OUTPUT
 
       - name: 'Download artifact'
-        if: env.HAVE_CODESIGN_IDENTITY == 'true'
+        if: ${{ fromJSON(steps.macos-codesign.outputs.haveCodesignIdent) && fromJSON(steps.macos-codesign.outputs.haveNotarizationUser) }}
         uses: actions/download-artifact@v3
         with:
           name: 'obs-studio-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
 
-      - name: 'Install Apple Developer Certificate'
-        if: env.HAVE_CODESIGN_IDENTITY == 'true'
-        uses: apple-actions/import-codesign-certs@8f3fb608891dd2244cdab3d69cd68c0d37a7fe93
-        with:
-          p12-file-base64: ${{ secrets.MACOS_SIGNING_CERT }}
-          p12-password: ${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}
-
       - name: 'Create disk image for distribution'
-        if: env.HAVE_CODESIGN_IDENTITY == 'true'
+        if: ${{ fromJSON(steps.macos-codesign.outputs.haveCodesignIdent) && fromJSON(steps.macos-codesign.outputs.haveNotarizationUser) }}
         env:
-          CODESIGN_IDENT: ${{ secrets.MACOS_SIGNING_IDENTITY }}
           CODESIGN_IDENT_USER: ${{ secrets.MACOS_NOTARIZATION_USERNAME }}
           CODESIGN_IDENT_PASS: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
         run: |
@@ -513,7 +614,7 @@ jobs:
           echo "FILE_NAME=$(basename ${ARTIFACT_NAME})" >> $GITHUB_ENV
 
       - name: 'Upload build Artifact'
-        if: env.HAVE_CODESIGN_IDENTITY == 'true'
+        if: ${{ fromJSON(steps.macos-codesign.outputs.haveCodesignIdent) && fromJSON(steps.macos-codesign.outputs.haveNotarizationUser) }}
         uses: actions/upload-artifact@v3
         with:
           name: 'obs-studio-macos-${{ matrix.arch }}-notarized'
