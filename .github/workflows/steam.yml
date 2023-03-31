@@ -80,7 +80,7 @@ jobs:
             fi
 
             ASSETS="$(curl -s "${ASSETS_URL}")"
-            WIN_ASSET_URL="$(jq -r '.[] | select(.name|test(".*x64.zip")) .browser_download_url' <<< ${ASSETS})"
+            WIN_ASSET_URL="$(jq -r '.[] | select(.name|test(".*.zip")) .browser_download_url' <<< ${ASSETS})"
             MAC_ASSET_URL="$(jq -r '.[] | select(.name|test(".*x86_64.*.dmg")) .browser_download_url' <<< ${ASSETS})"
             MAC_ARM_ASSET_URL="$(jq -r '.[] | select(.name|test(".*arm64.*.dmg")) .browser_download_url' <<< ${ASSETS})"
             TYPE='release'
