@@ -2334,6 +2334,11 @@ bool AdvancedOutput::StartReplayBuffer()
 		rbTime = config_get_int(main->Config(), "AdvOut", "RecRBTime");
 		rbSize = config_get_int(main->Config(), "AdvOut", "RecRBSize");
 
+		/* Skip leading f for fragmented formats. */
+		if (strcmp(recFormat, "fmp4") == 0 ||
+		    strcmp(recFormat, "fmov") == 0)
+			++recFormat;
+
 		string f = GetFormatString(filenameFormat, rbPrefix, rbSuffix);
 		string strPath = GetOutputFilename(
 			path, recFormat, noSpace, overwriteIfExists, f.c_str());
