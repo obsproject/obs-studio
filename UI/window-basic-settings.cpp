@@ -5052,7 +5052,8 @@ void OBSBasicSettings::AdvOutRecCheckCodecs()
 	AdvOutRecCheckWarnings();
 }
 
-#ifdef __APPLE__
+#if defined(__APPLE__) && QT_VERSION < QT_VERSION_CHECK(6, 5, 1)
+// Workaround for QTBUG-56064 on macOS
 static void ResetInvalidSelection(QComboBox *cbox)
 {
 	int idx = cbox->currentIndex();
@@ -5115,7 +5116,7 @@ void OBSBasicSettings::AdvOutRecCheckWarnings()
 			QTStr("Basic.Settings.Advanced.AutoRemux").arg("mp4"));
 	}
 
-#ifdef __APPLE__
+#if defined(__APPLE__) && QT_VERSION < QT_VERSION_CHECK(6, 5, 1)
 	// Workaround for QTBUG-56064 on macOS
 	ResetInvalidSelection(ui->advOutRecEncoder);
 	ResetInvalidSelection(ui->advOutRecAEncoder);
