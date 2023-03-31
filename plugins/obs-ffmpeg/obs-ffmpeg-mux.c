@@ -1176,7 +1176,12 @@ static void *replay_buffer_mux_thread(void *data)
 
 	for (size_t i = 0; i < stream->mux_packets.num; i++) {
 		struct encoder_packet *pkt = &stream->mux_packets.array[i];
-		write_packet(stream, pkt);
+		if (!write_packet(stream, pkt)) {
+			warn("Could not write packet for file '%s'",
+			     stream->path.array);
+			error = true;
+			goto error;
+		}
 		obs_encoder_packet_release(pkt);
 	}
 
