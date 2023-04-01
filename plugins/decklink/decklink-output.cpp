@@ -36,7 +36,9 @@ static void *decklink_output_create(obs_data_t *settings, obs_output_t *output)
 		to.width = mode->GetWidth();
 		to.height = mode->GetHeight();
 		to.range = VIDEO_RANGE_FULL;
-		to.colorspace = VIDEO_CS_709;
+		struct obs_video_info ovi;
+		to.colorspace = obs_get_video_info(&ovi) ? ovi.colorspace
+							 : VIDEO_CS_DEFAULT;
 
 		obs_output_set_video_conversion(output, &to);
 	}
