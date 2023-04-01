@@ -5,8 +5,8 @@
 //  Created by John Boiles  on 5/5/20.
 //
 
-#import <Foundation/Foundation.h>
-#import <CoreVideo/CoreVideo.h>
+@import Foundation;
+@import CoreVideo;
 
 NS_ASSUME_NONNULL_BEGIN
 

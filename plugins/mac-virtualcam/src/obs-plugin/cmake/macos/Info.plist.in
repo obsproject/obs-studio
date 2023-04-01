@@ -23,6 +23,8 @@
 	<key>LSMinimumSystemVersion</key>
 	<string>${CMAKE_OSX_DEPLOYMENT_TARGET}</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>(c) 2012-${CURRENT_YEAR} Hugh Bailey</string>
+	<string>(c) 2020-${CURRENT_YEAR} John Boiles, Patrick Heyer, Sebastian Beckmann</string>
+	<key>OBSCameraDeviceUUID</key>
+	<string>${VIRTUALCAM_DEVICE_UUID}</string>
 </dict>
 </plist>
