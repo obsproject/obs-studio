@@ -61,3 +61,9 @@ set_target_properties(
              XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER com.obsproject.obs-mac-virtualcam
              XCODE_ATTRIBUTE_CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION YES
              XCODE_ATTRIBUTE_GCC_WARN_SHADOW YES)
+
+set_target_properties_obs(
+  obs-dal-plugin
+  PROPERTIES OUTPUT_NAME obs-mac-virtualcam
+             FOLDER plugins
+             PREFIX "")

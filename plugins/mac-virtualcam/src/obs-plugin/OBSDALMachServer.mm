@@ -7,7 +7,6 @@
 
 #import "OBSDALMachServer.h"
 #include <obs-module.h>
-#include <CoreVideo/CoreVideo.h>
 #include "MachProtocol.h"
 #include "Defines.h"
 
