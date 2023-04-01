@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 Trystan Mata <tytan652@tytanium.xyz>
+#
+# SPDX-License-Identifier: MIT
+
 #[=======================================================================[.rst
 FindAMF
 ----------
