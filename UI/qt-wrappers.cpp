@@ -40,6 +40,17 @@
 #include <qpa/qplatformnativeinterface.h>
 #endif
 
+namespace {
+enum MessageBoxSeverity {
+	MessageBoxNone = 0,
+	MessageBoxInfo = 1,
+	MessageBoxWarn = 2,
+	MessageBoxCrit = 3,
+};
+
+static MessageBoxSeverity showingMessageBox = MessageBoxNone;
+}
+
 static inline void OBSErrorBoxva(QWidget *parent, const char *msg, va_list args)
 {
 	char full_message[4096];
@@ -94,30 +105,42 @@ OBSMessageBox::question(QWidget *parent, const QString &title,
 void OBSMessageBox::information(QWidget *parent, const QString &title,
 				const QString &text)
 {
+	if (showingMessageBox >= MessageBoxInfo)
+		return;
 	QMessageBox mb(QMessageBox::Information, title, text,
 		       QMessageBox::NoButton, parent);
 	mb.addButton(QTStr("OK"), QMessageBox::AcceptRole);
+	showingMessageBox = MessageBoxInfo;
 	mb.exec();
+	showingMessageBox = MessageBoxNone;
 }
 
 void OBSMessageBox::warning(QWidget *parent, const QString &title,
 			    const QString &text, bool enableRichText)
 {
+	if (showingMessageBox >= MessageBoxWarn)
+		return;
 	QMessageBox mb(QMessageBox::Warning, title, text, QMessageBox::NoButton,
 		       parent);
 	if (enableRichText)
 		mb.setTextFormat(Qt::RichText);
 	mb.addButton(QTStr("OK"), QMessageBox::AcceptRole);
+	showingMessageBox = MessageBoxWarn;
 	mb.exec();
+	showingMessageBox = MessageBoxNone;
 }
 
 void OBSMessageBox::critical(QWidget *parent, const QString &title,
 			     const QString &text)
 {
+	if (showingMessageBox >= MessageBoxCrit)
+		return;
 	QMessageBox mb(QMessageBox::Critical, title, text,
 		       QMessageBox::NoButton, parent);
 	mb.addButton(QTStr("OK"), QMessageBox::AcceptRole);
+	showingMessageBox = MessageBoxCrit;
 	mb.exec();
+	showingMessageBox = MessageBoxNone;
 }
 
 bool QTToGSWindow(QWindow *window, gs_window &gswindow)
