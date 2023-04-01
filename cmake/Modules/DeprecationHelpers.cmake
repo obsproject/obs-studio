@@ -155,16 +155,14 @@ endfunction()
 function(install_obs_plugin)
   obs_status(
     DEPRECATION
-    "The install_obs_plugin command is deprecated and will be removed soon. Use 'setup_plugin_target' instead."
-  )
+    "The install_obs_plugin command is deprecated and will be removed soon. Use 'setup_plugin_target' instead.")
   _install_obs_plugin(${ARGV})
 endfunction()
 
 function(install_obs_datatarget)
   obs_status(
     DEPRECATION
-    "The install_obs_datatarget function is deprecated and will be removed soon. Use 'setup_target_resources' instead."
-  )
+    "The install_obs_datatarget function is deprecated and will be removed soon. Use 'setup_target_resources' instead.")
   _install_obs_datatarget(${ARGV})
 endfunction()
 
@@ -176,10 +174,7 @@ endfunction()
 
 function(__deprecated_feature VAR ACCESS)
   if(ACCESS STREQUAL "UNKNOWN_READ_ACCESS")
-    obs_status(
-      DEPRECATION
-      "The feature enabled by '${VAR}' is deprecated and will soon be removed from OBS."
-    )
+    obs_status(DEPRECATION "The feature enabled by '${VAR}' is deprecated and will soon be removed from OBS.")
   endif()
 endfunction()
 

@@ -201,6 +201,10 @@ SceneTree::item {
     padding: 6px;
 }
 
+QMenu::item {
+    padding-right: 20px;
+}
+
 QListWidget::item,
 SourceTreeItem,
 QMenu::item,
@@ -968,6 +972,10 @@ QHeaderView::section {
 
 MuteCheckBox::indicator:checked {
     image: url(./Light/mute.svg);
+}
+
+MuteCheckBox::indicator:indeterminate {
+    image: url(./Dark/unassigned.svg);
 }
 
 MuteCheckBox::indicator:unchecked {

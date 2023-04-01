@@ -1,3 +1,4 @@
+# cmake-format: off
 # .rst: FindPipeWire
 # -------
 #
@@ -48,9 +49,9 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
+# cmake-format: on
 
-# Use pkg-config to get the directories and then use these values in the
-# FIND_PATH() and FIND_LIBRARY() calls
+# Use pkg-config to get the directories and then use these values in the FIND_PATH() and FIND_LIBRARY() calls
 find_package(PkgConfig QUIET)
 
 pkg_search_module(PKG_PIPEWIRE QUIET libpipewire-0.3)
@@ -87,8 +88,7 @@ if(PIPEWIRE_FOUND AND NOT TARGET PipeWire::PipeWire)
     PipeWire::PipeWire
     PROPERTIES IMPORTED_LOCATION "${PIPEWIRE_LIBRARIES}"
                INTERFACE_COMPILE_OPTIONS "${PIPEWIRE_COMPILE_FLAGS}"
-               INTERFACE_INCLUDE_DIRECTORIES
-               "${PIPEWIRE_INCLUDE_DIRS};${SPA_INCLUDE_DIRS}")
+               INTERFACE_INCLUDE_DIRECTORIES "${PIPEWIRE_INCLUDE_DIRS};${SPA_INCLUDE_DIRS}")
 endif()
 
 mark_as_advanced(PIPEWIRE_LIBRARIES PIPEWIRE_INCLUDE_DIRS)

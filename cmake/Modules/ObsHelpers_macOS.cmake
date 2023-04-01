@@ -2,10 +2,8 @@
 function(setup_binary_target target)
   set_target_properties(
     ${target}
-    PROPERTIES XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER
-               "com.obsproject.${target}"
-               XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS
-               "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/entitlements.plist")
+    PROPERTIES XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.obsproject.${target}"
+               XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/entitlements.plist")
 
   set(MACOSX_PLUGIN_BUNDLE_NAME
       "${target}"
@@ -26,8 +24,7 @@ function(setup_binary_target target)
   if(${target} STREQUAL libobs)
     setup_framework_target(${target})
     set_property(GLOBAL APPEND PROPERTY OBS_FRAMEWORK_LIST "${target}")
-  elseif(NOT ${target} STREQUAL obs-ffmpeg-mux AND NOT ${target} STREQUAL
-                                                   mac-dal-plugin)
+  elseif(NOT ${target} STREQUAL obs-ffmpeg-mux AND NOT ${target} STREQUAL mac-dal-plugin)
     set_property(GLOBAL APPEND PROPERTY OBS_FRAMEWORK_LIST "${target}")
   endif()
 endfunction()
@@ -40,10 +37,8 @@ function(setup_framework_target target)
                FRAMEWORK_VERSION A
                OUTPUT_NAME "${target}"
                MACOSX_FRAMEWORK_IDENTIFIER "com.obsproject.${target}"
-               MACOSX_FRAMEWORK_INFO_PLIST
-               "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/Plugin-Info.plist.in"
-               XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER
-               "com.obsproject.${target}")
+               MACOSX_FRAMEWORK_INFO_PLIST "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/Plugin-Info.plist.in"
+               XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.obsproject.${target}")
 
   install(
     TARGETS ${target}
@@ -54,8 +49,7 @@ function(setup_framework_target target)
     INCLUDES
     DESTINATION Frameworks/$<TARGET_FILE_BASE_NAME:${target}>.framework/Headers
     PUBLIC_HEADER
-      DESTINATION
-        Frameworks/$<TARGET_FILE_BASE_NAME:${target}>.framework/Headers
+      DESTINATION Frameworks/$<TARGET_FILE_BASE_NAME:${target}>.framework/Headers
       COMPONENT obs_libraries
       EXCLUDE_FROM_ALL)
 endfunction()
@@ -86,12 +80,9 @@ function(setup_plugin_target target)
     PROPERTIES BUNDLE ON
                BUNDLE_EXTENSION "plugin"
                OUTPUT_NAME "${target}"
-               MACOSX_BUNDLE_INFO_PLIST
-               "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/Plugin-Info.plist.in"
-               XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER
-               "com.obsproject.${target}"
-               XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS
-               "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/entitlements.plist")
+               MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/Plugin-Info.plist.in"
+               XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.obsproject.${target}"
+               XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/entitlements.plist")
 
   set_property(GLOBAL APPEND PROPERTY OBS_MODULE_LIST "${target}")
   obs_status(ENABLED "${target}")
@@ -103,10 +94,8 @@ endfunction()
 function(setup_script_plugin_target target)
   set_target_properties(
     ${target}
-    PROPERTIES XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER
-               "com.obsproject.${target}"
-               XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS
-               "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/entitlements.plist")
+    PROPERTIES XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.obsproject.${target}"
+               XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/entitlements.plist")
 
   set_property(GLOBAL APPEND PROPERTY OBS_SCRIPTING_MODULE_LIST "${target}")
   obs_status(ENABLED "${target}")
@@ -122,13 +111,10 @@ function(install_bundle_resources target)
   if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/data")
     file(GLOB_RECURSE _DATA_FILES "${CMAKE_CURRENT_SOURCE_DIR}/data/*")
     foreach(_DATA_FILE IN LISTS _DATA_FILES)
-      file(RELATIVE_PATH _RELATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/data/
-           ${_DATA_FILE})
+      file(RELATIVE_PATH _RELATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/data/ ${_DATA_FILE})
       get_filename_component(_RELATIVE_PATH "${_RELATIVE_PATH}" PATH)
       target_sources(${target} PRIVATE ${_DATA_FILE})
-      set_source_files_properties(
-        ${_DATA_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION
-                                 "Resources/${_RELATIVE_PATH}")
+      set_source_files_properties(${_DATA_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources/${_RELATIVE_PATH}")
       string(REPLACE "\\" "\\\\" _GROUP_NAME "${_RELATIVE_PATH}")
       source_group("Resources\\${_GROUP_NAME}" FILES ${_DATA_FILE})
     endforeach()
@@ -138,8 +124,7 @@ endfunction()
 # Helper function to set up specific resource files for targets
 function(add_target_resource target resource destination)
   target_sources(${target} PRIVATE ${resource})
-  set_source_files_properties(${resource} PROPERTIES MACOSX_PACKAGE_LOCATION
-                                                     Resources)
+  set_source_files_properties(${resource} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 endfunction()
 
 # Helper function to set up OBS app target
@@ -147,8 +132,7 @@ function(setup_obs_app target)
   set_target_properties(
     ${target}
     PROPERTIES BUILD_WITH_INSTALL_RPATH OFF
-               XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS
-               "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/entitlements.plist"
+               XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/entitlements.plist"
                XCODE_SCHEME_ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1")
 
   install(TARGETS ${target} BUNDLE DESTINATION "." COMPONENT obs_app)
@@ -173,21 +157,19 @@ function(setup_target_browser target)
     COMPONENT obs_browser_dev
     EXCLUDE_FROM_ALL)
 
-  foreach(_CEF_LIBRARY IN ITEMS "libEGL" "libswiftshader_libEGL" "libGLESv2"
-                                "libswiftshader_libGLESv2" "libvk_swiftshader")
+  foreach(_CEF_LIBRARY IN ITEMS "libEGL" "libswiftshader_libEGL" "libGLESv2" "libswiftshader_libGLESv2"
+                                "libvk_swiftshader")
     set(_COMMAND
         "/usr/bin/codesign --force --sign \\\"${OBS_BUNDLE_CODESIGN_IDENTITY}\\\" $<$<BOOL:${OBS_CODESIGN_LINKER}>:--options linker-signed > \\\"\${CMAKE_INSTALL_PREFIX}/Frameworks/${_CEF_FRAMEWORK_NAME}/Libraries/${_CEF_LIBRARY}.dylib\\\""
     )
-    list(APPEND _CEF_CODESIGN_COMMANDS
-         "execute_process(COMMAND /bin/sh -c \"${_COMMAND}\")")
+    list(APPEND _CEF_CODESIGN_COMMANDS "execute_process(COMMAND /bin/sh -c \"${_COMMAND}\")")
   endforeach()
 
   set(_COMMAND
       "/usr/bin/codesign --force --sign \\\"${OBS_BUNDLE_CODESIGN_IDENTITY}\\\" $<$<BOOL:${OBS_CODESIGN_LINKER}>:--options linker-signed > --deep \\\"\${CMAKE_INSTALL_PREFIX}/Frameworks/${_CEF_FRAMEWORK_NAME}/Chromium Embedded Framework\\\""
   )
 
-  list(APPEND _CEF_CODESIGN_COMMANDS
-       "execute_process(COMMAND /bin/sh -c \"${_COMMAND}\")")
+  list(APPEND _CEF_CODESIGN_COMMANDS "execute_process(COMMAND /bin/sh -c \"${_COMMAND}\")")
   string(REPLACE ";" "\n  " _CEF_CODESIGN_COMMANDS "${_CEF_CODESIGN_COMMANDS}")
   install(
     CODE "${_CEF_CODESIGN_COMMANDS}"
@@ -221,10 +203,8 @@ function(setup_target_browser target)
   add_custom_command(
     TARGET ${target}
     POST_BUILD
-    COMMAND
-      "${CMAKE_COMMAND}" --install . --config $<CONFIG> --prefix
-      $<TARGET_BUNDLE_CONTENT_DIR:${target}> --component obs_browser_dev >
-      /dev/null
+    COMMAND "${CMAKE_COMMAND}" --install . --config $<CONFIG> --prefix $<TARGET_BUNDLE_CONTENT_DIR:${target}>
+            --component obs_browser_dev > /dev/null
     COMMENT "Installing Chromium Embedded Framework for development"
     VERBATIM)
 endfunction()
@@ -234,15 +214,9 @@ function(setup_obs_frameworks target)
   get_property(OBS_FRAMEWORK_LIST GLOBAL PROPERTY OBS_FRAMEWORK_LIST)
   install(
     TARGETS ${OBS_FRAMEWORK_LIST}
-    RUNTIME
-      DESTINATION "$<TARGET_FILE_BASE_NAME:${target}>.app/Contents/Frameworks/"
-      COMPONENT obs_frameworks
-    LIBRARY
-      DESTINATION "$<TARGET_FILE_BASE_NAME:${target}>.app/Contents/Frameworks/"
-      COMPONENT obs_frameworks
-    FRAMEWORK
-      DESTINATION "$<TARGET_FILE_BASE_NAME:${target}>.app/Contents/Frameworks/"
-      COMPONENT obs_frameworks
+    RUNTIME DESTINATION "$<TARGET_FILE_BASE_NAME:${target}>.app/Contents/Frameworks/" COMPONENT obs_frameworks
+    LIBRARY DESTINATION "$<TARGET_FILE_BASE_NAME:${target}>.app/Contents/Frameworks/" COMPONENT obs_frameworks
+    FRAMEWORK DESTINATION "$<TARGET_FILE_BASE_NAME:${target}>.app/Contents/Frameworks/" COMPONENT obs_frameworks
     PUBLIC_HEADER
       DESTINATION "${OBS_INCLUDE_DESTINATION}"
       COMPONENT obs_libraries
@@ -265,14 +239,12 @@ function(setup_obs_modules target)
 
     install(
       TARGETS ${OBS_MODULE_LIST}
-      LIBRARY
-        DESTINATION $<TARGET_FILE_BASE_NAME:${target}>.app/Contents/PlugIns
-        COMPONENT obs_plugins
-        NAMELINK_COMPONENT ${target}_Development)
+      LIBRARY DESTINATION $<TARGET_FILE_BASE_NAME:${target}>.app/Contents/PlugIns
+              COMPONENT obs_plugins
+              NAMELINK_COMPONENT ${target}_Development)
   endif()
 
-  get_property(OBS_SCRIPTING_MODULE_LIST GLOBAL
-               PROPERTY OBS_SCRIPTING_MODULE_LIST)
+  get_property(OBS_SCRIPTING_MODULE_LIST GLOBAL PROPERTY OBS_SCRIPTING_MODULE_LIST)
   list(LENGTH OBS_SCRIPTING_MODULE_LIST _LEN)
   if(_LEN GREATER 0)
     add_dependencies(${target} ${OBS_SCRIPTING_MODULE_LIST})
@@ -291,18 +263,15 @@ function(setup_obs_modules target)
         EXCLUDE_FROM_ALL)
     endif()
 
-    install(
-      TARGETS ${OBS_SCRIPTING_MODULE_LIST}
-      LIBRARY DESTINATION $<TARGET_FILE_BASE_NAME:obs>.app/Contents/PlugIns
-              COMPONENT obs_scripting_plugins)
+    install(TARGETS ${OBS_SCRIPTING_MODULE_LIST} LIBRARY DESTINATION $<TARGET_FILE_BASE_NAME:obs>.app/Contents/PlugIns
+                                                         COMPONENT obs_scripting_plugins)
   endif()
 
   if(TARGET obs-ffmpeg-mux)
     add_dependencies(${target} obs-ffmpeg-mux)
 
-    install(TARGETS obs-ffmpeg-mux
-            RUNTIME DESTINATION $<TARGET_FILE_BASE_NAME:obs>.app/Contents/MacOS
-                    COMPONENT obs_plugins)
+    install(TARGETS obs-ffmpeg-mux RUNTIME DESTINATION $<TARGET_FILE_BASE_NAME:obs>.app/Contents/MacOS
+                                           COMPONENT obs_plugins)
 
     install(
       PROGRAMS $<TARGET_FILE:obs-ffmpeg-mux>
@@ -334,10 +303,8 @@ function(setup_obs_modules target)
   add_custom_command(
     TARGET ${target}
     POST_BUILD
-    COMMAND
-      "${CMAKE_COMMAND}" --install .. --config $<CONFIG> --prefix
-      $<TARGET_BUNDLE_CONTENT_DIR:${target}> --component obs_plugin_dev >
-      /dev/null
+    COMMAND "${CMAKE_COMMAND}" --install .. --config $<CONFIG> --prefix $<TARGET_BUNDLE_CONTENT_DIR:${target}>
+            --component obs_plugin_dev > /dev/null
     COMMENT "Installing OBS plugins for development"
     VERBATIM)
 endfunction()
@@ -389,12 +356,10 @@ function(setup_obs_bundle target)
       "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/themes/Rachni.qss"
       "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/themes/Yami.qss")
 
-  install(SCRIPT "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/bundleutils.cmake"
-          COMPONENT obs_resources)
+  install(SCRIPT "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/bundleutils.cmake" COMPONENT obs_resources)
 endfunction()
 
-# Helper function to export target to build and install tree Allows usage of
-# `find_package(libobs)` by other build trees
+# Helper function to export target to build and install tree Allows usage of `find_package(libobs)` by other build trees
 function(export_target target)
   get_target_property(_IS_FRAMEWORK ${target} FRAMEWORK)
 
@@ -406,9 +371,7 @@ function(export_target target)
   else()
     _export_target(${ARGV})
   endif()
-  set_target_properties(
-    ${target} PROPERTIES PUBLIC_HEADER
-                         "${CMAKE_CURRENT_BINARY_DIR}/${target}_EXPORT.h")
+  set_target_properties(${target} PROPERTIES PUBLIC_HEADER "${CMAKE_CURRENT_BINARY_DIR}/${target}_EXPORT.h")
 endfunction()
 
 # Helper function to export macOS framework targets
@@ -416,17 +379,14 @@ function(export_framework_target)
   set(CMAKE_EXPORT_PACKAGE_REGISTRY OFF)
 
   include(GenerateExportHeader)
-  generate_export_header(${target} EXPORT_FILE_NAME
-                         "${CMAKE_CURRENT_BINARY_DIR}/${target}_EXPORT.h")
+  generate_export_header(${target} EXPORT_FILE_NAME "${CMAKE_CURRENT_BINARY_DIR}/${target}_EXPORT.h")
 
-  target_sources(${target}
-                 PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/${target}_EXPORT.h")
+  target_sources(${target} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/${target}_EXPORT.h")
 
   set(TARGETS_EXPORT_NAME "${target}Targets")
   include(CMakePackageConfigHelpers)
   configure_package_config_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/${target}Config.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/${target}Config.cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/${target}Config.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/${target}Config.cmake"
     INSTALL_DESTINATION Frameworks/${target}.framework/Resources/cmake
     PATH_VARS OBS_PLUGIN_DESTINATION OBS_DATA_DESTINATION)
 
@@ -451,10 +411,8 @@ function(export_framework_target)
     EXCLUDE_FROM_ALL)
 
   install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/${target}Config.cmake
-          ${CMAKE_CURRENT_BINARY_DIR}/${target}ConfigVersion.cmake
-    DESTINATION
-      Frameworks/$<TARGET_FILE_BASE_NAME:${target}>.framework/Resources/cmake
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/${target}Config.cmake ${CMAKE_CURRENT_BINARY_DIR}/${target}ConfigVersion.cmake
+    DESTINATION Frameworks/$<TARGET_FILE_BASE_NAME:${target}>.framework/Resources/cmake
     COMPONENT obs_libraries
     EXCLUDE_FROM_ALL)
 endfunction()

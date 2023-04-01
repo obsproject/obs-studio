@@ -733,7 +733,7 @@ obs_data_array_t *OBSBasic::SaveProjectors()
 		switch (type) {
 		case ProjectorType::Scene:
 		case ProjectorType::Source: {
-			obs_source_t *source = projector->GetSource();
+			OBSSource source = projector->GetSource();
 			const char *name = obs_source_get_name(source);
 			obs_data_set_string(data, "name", name);
 			break;
@@ -1336,7 +1336,25 @@ bool OBSBasic::LoadService()
 				     hotkey_data);
 	obs_service_release(service);
 
-	return !!service;
+	if (!service)
+		return false;
+
+	/* Enforce Opus on FTL if needed */
+	if (strcmp(obs_service_get_protocol(service), "FTL") == 0) {
+		const char *option = config_get_string(
+			basicConfig, "SimpleOutput", "StreamAudioEncoder");
+		if (strcmp(option, "opus") != 0)
+			config_set_string(basicConfig, "SimpleOutput",
+					  "StreamAudioEncoder", "opus");
+
+		option = config_get_string(basicConfig, "AdvOut",
+					   "AudioEncoder");
+		if (strcmp(obs_get_encoder_codec(option), "opus") != 0)
+			config_set_string(basicConfig, "AdvOut", "AudioEncoder",
+					  "ffmpeg_opus");
+	}
+
+	return true;
 }
 
 bool OBSBasic::InitService()
@@ -1360,6 +1378,13 @@ static const double scaled_vals[] = {1.0,         1.25, (1.0 / 0.75), 1.5,
 				     2.5,         2.75, 3.0,          0.0};
 
 extern void CheckExistingCookieId();
+#if OBS_RELEASE_CANDIDATE == 0 && OBS_BETA == 0
+#define DEFAULT_CONTAINER "mkv"
+#elif defined(__APPLE__)
+#define DEFAULT_CONTAINER "fmov"
+#else
+#define DEFAULT_CONTAINER "fmp4"
+#endif
 
 bool OBSBasic::InitBasicConfigDefaults()
 {
@@ -1455,6 +1480,26 @@ bool OBSBasic::InitBasicConfigDefaults()
 	}
 
 	/* ----------------------------------------------------- */
+	/* Migrate old container selection (if any) to new key.  */
+	if (!config_has_user_value(basicConfig, "SimpleOutput", "RecFormat2") &&
+	    config_has_user_value(basicConfig, "SimpleOutput", "RecFormat")) {
+		const char *old_format = config_get_string(
+			basicConfig, "SimpleOutput", "RecFormat");
+		config_set_string(basicConfig, "SimpleOutput", "RecFormat2",
+				  old_format);
+		changed = true;
+	}
+
+	if (!config_has_user_value(basicConfig, "AdvOut", "RecFormat2") &&
+	    config_has_user_value(basicConfig, "AdvOut", "RecFormat")) {
+		const char *old_format =
+			config_get_string(basicConfig, "AdvOut", "RecFormat");
+		config_set_string(basicConfig, "AdvOut", "RecFormat2",
+				  old_format);
+		changed = true;
+	}
+
+	/* ----------------------------------------------------- */
 
 	if (changed)
 		config_save_safe(basicConfig, "tmp", nullptr);
@@ -1468,8 +1513,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 
 	config_set_default_string(basicConfig, "SimpleOutput", "FilePath",
 				  GetDefaultVideoSavePath().c_str());
-	config_set_default_string(basicConfig, "SimpleOutput", "RecFormat",
-				  "mkv");
+	config_set_default_string(basicConfig, "SimpleOutput", "RecFormat2",
+				  DEFAULT_CONTAINER);
 	config_set_default_uint(basicConfig, "SimpleOutput", "VBitrate", 2500);
 	config_set_default_uint(basicConfig, "SimpleOutput", "ABitrate", 160);
 	config_set_default_bool(basicConfig, "SimpleOutput", "UseAdvanced",
@@ -1485,6 +1530,12 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_int(basicConfig, "SimpleOutput", "RecRBSize", 512);
 	config_set_default_string(basicConfig, "SimpleOutput", "RecRBPrefix",
 				  "Replay");
+	config_set_default_string(basicConfig, "SimpleOutput",
+				  "StreamAudioEncoder", "aac");
+	config_set_default_string(basicConfig, "SimpleOutput",
+				  "RecAudioEncoder", "aac");
+	config_set_default_uint(basicConfig, "SimpleOutput", "RecTracks",
+				(1 << 0));
 
 	config_set_default_bool(basicConfig, "AdvOut", "ApplyServiceSettings",
 				true);
@@ -1497,7 +1548,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 
 	config_set_default_string(basicConfig, "AdvOut", "RecFilePath",
 				  GetDefaultVideoSavePath().c_str());
-	config_set_default_string(basicConfig, "AdvOut", "RecFormat", "mkv");
+	config_set_default_string(basicConfig, "AdvOut", "RecFormat2",
+				  DEFAULT_CONTAINER);
 	config_set_default_bool(basicConfig, "AdvOut", "RecUseRescale", false);
 	config_set_default_uint(basicConfig, "AdvOut", "RecTracks", (1 << 0));
 	config_set_default_string(basicConfig, "AdvOut", "RecEncoder", "none");
@@ -1628,6 +1680,17 @@ void OBSBasic::InitBasicConfigDefaults2()
 	config_set_default_string(basicConfig, "SimpleOutput", "RecEncoder",
 				  useNV ? SIMPLE_ENCODER_NVENC
 					: SIMPLE_ENCODER_X264);
+
+	const char *aac_default = "ffmpeg_aac";
+	if (EncoderAvailable("CoreAudio_AAC"))
+		aac_default = "CoreAudio_AAC";
+	else if (EncoderAvailable("libfdk_aac"))
+		aac_default = "libfdk_aac";
+
+	config_set_default_string(basicConfig, "AdvOut", "AudioEncoder",
+				  aac_default);
+	config_set_default_string(basicConfig, "AdvOut", "RecAudioEncoder",
+				  aac_default);
 
 	if (update_nvenc_presets(basicConfig))
 		config_save_safe(basicConfig, "tmp", nullptr);
@@ -1901,11 +1964,11 @@ void OBSBasic::OBSInit()
 
 	blog(LOG_INFO, STARTUP_SEPARATOR);
 
-	ResetOutputs();
-	CreateHotkeys();
-
 	if (!InitService())
 		throw "Failed to initialize service";
+
+	ResetOutputs();
+	CreateHotkeys();
 
 	InitPrimitives();
 
@@ -1990,7 +2053,7 @@ void OBSBasic::OBSInit()
 	/* Show the main window, unless the tray icon isn't available
 	 * or neither the setting nor flag for starting minimized is set. */
 	bool sysTrayEnabled = config_get_bool(App()->GlobalConfig(),
-					      "BasicWindow", "sysTrayEnabled");
+					      "BasicWindow", "SysTrayEnabled");
 	bool sysTrayWhenStarted = config_get_bool(
 		App()->GlobalConfig(), "BasicWindow", "SysTrayWhenStarted");
 	bool hideWindowOnStart = QSystemTrayIcon::isSystemTrayAvailable() &&
@@ -2174,6 +2237,11 @@ void OBSBasic::OBSInit()
 		ui->actionRepair->setEnabled(false);
 #endif
 	}
+#endif
+
+#ifndef WHATSNEW_ENABLED
+	delete ui->actionShowWhatsNew;
+	ui->actionShowWhatsNew = nullptr;
 #endif
 
 	UpdatePreviewProgramIndicators();
@@ -5151,12 +5219,10 @@ void OBSBasic::on_actionMixerToolbarMenu_triggered()
 void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current,
 					    QListWidgetItem *prev)
 {
-	obs_source_t *source = NULL;
+	OBSSource source;
 
 	if (current) {
-		obs_scene_t *scene;
-
-		scene = GetOBSRef<OBSScene>(current);
+		OBSScene scene = GetOBSRef<OBSScene>(current);
 		source = obs_scene_get_source(scene);
 
 		currentScene = scene;
@@ -5388,8 +5454,8 @@ void OBSBasic::on_actionAddScene_triggered()
 		auto undo_fn = [](const std::string &data) {
 			obs_source_t *t = obs_get_source_by_name(data.c_str());
 			if (t) {
-				obs_source_release(t);
 				obs_source_remove(t);
+				obs_source_release(t);
 			}
 		};
 
@@ -7216,6 +7282,10 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 		encode_error = true;
 		break;
 
+	case OBS_OUTPUT_HDR_DISABLED:
+		errorDescription = Str("Output.ConnectFail.HdrDisabled");
+		break;
+
 	default:
 	case OBS_OUTPUT_ERROR:
 		use_last_error = true;
@@ -7331,8 +7401,13 @@ void OBSBasic::AutoRemux(QString input, bool no_show)
 	const obs_encoder_t *videoEncoder =
 		obs_output_get_video_encoder(outputHandler->fileOutput);
 	const char *codecName = obs_encoder_get_codec(videoEncoder);
+	string format = config_get_string(
+		config, isSimpleMode ? "SimpleOutput" : "AdvOut", "RecFormat2");
 
-	if (strcmp(codecName, "prores") == 0) {
+	/* Retain original container for fMP4/fMOV */
+	if (format == "fmp4" || format == "fmov") {
+		output += "remuxed." + suffix;
+	} else if (strcmp(codecName, "prores") == 0) {
 		output += "mov";
 	} else {
 		output += "mp4";
@@ -7964,6 +8039,25 @@ void OBSBasic::on_actionDiscord_triggered()
 	QDesktopServices::openUrl(url);
 }
 
+void OBSBasic::on_actionShowWhatsNew_triggered()
+{
+#ifdef WHATSNEW_ENABLED
+	if (introCheckThread && introCheckThread->isRunning())
+		return;
+	if (!cef)
+		return;
+
+	config_set_int(App()->GlobalConfig(), "General", "InfoIncrement", -1);
+
+	WhatsNewInfoThread *wnit = new WhatsNewInfoThread();
+	connect(wnit, &WhatsNewInfoThread::Result, this,
+		&OBSBasic::ReceivedIntroJson, Qt::QueuedConnection);
+
+	introCheckThread.reset(wnit);
+	introCheckThread->start();
+#endif
+}
+
 void OBSBasic::on_actionShowSettingsFolder_triggered()
 {
 	char path[512];
@@ -8318,7 +8412,7 @@ static bool reset_tr(obs_scene_t *scene, obs_sceneitem_t *item, void *param)
 
 void OBSBasic::on_actionResetTransform_triggered()
 {
-	obs_scene_t *scene = GetCurrentScene();
+	OBSScene scene = GetCurrentScene();
 
 	OBSDataAutoRelease wrapper =
 		obs_scene_save_transform_states(scene, false);

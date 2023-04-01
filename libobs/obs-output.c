@@ -290,7 +290,8 @@ bool obs_output_start(obs_output_t *output)
 		return false;
 
 	has_service = (output->info.flags & OBS_OUTPUT_SERVICE) != 0;
-	if (has_service && !obs_service_initialize(output->service, output))
+	if (has_service && !(obs_service_can_try_to_connect(output->service) &&
+			     obs_service_initialize(output->service, output)))
 		return false;
 
 	encoded = (output->info.flags & OBS_OUTPUT_ENCODED) != 0;
@@ -1098,8 +1099,8 @@ static inline bool has_scaling(const struct obs_output *output)
 		video_height != output->scaled_height);
 }
 
-static inline struct video_scale_info *
-get_video_conversion(struct obs_output *output)
+const struct video_scale_info *
+obs_output_get_video_conversion(struct obs_output *output)
 {
 	if (output->video_conversion_set) {
 		if (!output->video_conversion.width)
@@ -1388,14 +1389,21 @@ static size_t get_interleaved_start_idx(struct obs_output *output)
 	return video_idx < idx ? video_idx : idx;
 }
 
+static int64_t get_encoder_duration(struct obs_encoder *encoder)
+{
+	return (encoder->timebase_num * 1000000LL / encoder->timebase_den) *
+	       encoder->framesize;
+}
+
 static int prune_premature_packets(struct obs_output *output)
 {
 	struct encoder_packet *video;
 	int video_idx;
 	int max_idx;
-	int64_t duration_usec;
+	int64_t duration_usec, max_audio_duration_usec = 0;
 	int64_t max_diff = 0;
 	int64_t diff = 0;
+	int audio_encoders = 0;
 
 	video_idx = find_first_packet_type_idx(output, OBS_ENCODER_VIDEO, 0);
 	if (video_idx == -1) {
@@ -1410,9 +1418,11 @@ static int prune_premature_packets(struct obs_output *output)
 	for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
 		struct encoder_packet *audio;
 		int audio_idx;
+		int64_t audio_duration_usec = 0;
 
 		if (!output->audio_encoders[i])
 			continue;
+		audio_encoders++;
 
 		audio_idx = find_first_packet_type_idx(output,
 						       OBS_ENCODER_AUDIO, i);
@@ -1428,6 +1438,21 @@ static int prune_premature_packets(struct obs_output *output)
 		diff = audio->dts_usec - video->dts_usec;
 		if (diff > max_diff)
 			max_diff = diff;
+
+		audio_duration_usec =
+			get_encoder_duration(output->audio_encoders[i]);
+		if (audio_duration_usec > max_audio_duration_usec)
+			max_audio_duration_usec = audio_duration_usec;
+	}
+
+	/* Once multiple audio encoders are running they are almost always out
+	 * of phase by ~Xms. If users change their video to > 100fps then it
+	 * becomes probable that this phase difference will be larger than the
+	 * video duration preventing us from ever finding a synchronization
+	 * point due to their larger frame duration. Instead give up on a tight
+	 * video sync. */
+	if (audio_encoders > 1 && duration_usec < max_audio_duration_usec) {
+		duration_usec = max_audio_duration_usec;
 	}
 
 	return diff > duration_usec ? max_idx + 1 : 0;
@@ -1966,7 +1991,7 @@ static void hook_data_capture(struct obs_output *output, bool encoded,
 	} else {
 		if (has_video)
 			start_raw_video(output->video,
-					get_video_conversion(output),
+					obs_output_get_video_conversion(output),
 					default_raw_video_callback, output);
 		if (has_audio)
 			start_raw_audio(output);
@@ -2688,4 +2713,54 @@ const char *obs_output_get_supported_audio_codecs(const obs_output_t *output)
 	return obs_output_valid(output, __FUNCTION__)
 		       ? output->info.encoded_audio_codecs
 		       : NULL;
+}
+
+const char *obs_output_get_protocols(const obs_output_t *output)
+{
+	if (!obs_output_valid(output, "obs_output_get_protocols"))
+		return NULL;
+
+	return (output->info.flags & OBS_OUTPUT_SERVICE)
+		       ? output->info.protocols
+		       : NULL;
+}
+
+void obs_enum_output_types_with_protocol(const char *protocol, void *data,
+					 bool (*enum_cb)(void *data,
+							 const char *id))
+{
+	if (!obs_is_output_protocol_registered(protocol))
+		return;
+
+	size_t protocol_len = strlen(protocol);
+	for (size_t i = 0; i < obs->output_types.num; i++) {
+		if (!(obs->output_types.array[i].flags & OBS_OUTPUT_SERVICE))
+			continue;
+
+		const char *substr = obs->output_types.array[i].protocols;
+		while (substr && substr[0] != '\0') {
+			const char *next = strchr(substr, ';');
+			size_t len = next ? (size_t)(next - substr)
+					  : strlen(substr);
+			if (protocol_len == len &&
+			    strncmp(substr, protocol, len) == 0) {
+				if (!enum_cb(data,
+					     obs->output_types.array[i].id))
+					return;
+			}
+			substr = next ? next + 1 : NULL;
+		}
+	}
+}
+
+const char *obs_get_output_supported_video_codecs(const char *id)
+{
+	const struct obs_output_info *info = find_output(id);
+	return info ? info->encoded_video_codecs : NULL;
+}
+
+const char *obs_get_output_supported_audio_codecs(const char *id)
+{
+	const struct obs_output_info *info = find_output(id);
+	return info ? info->encoded_audio_codecs : NULL;
 }

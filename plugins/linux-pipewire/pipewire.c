@@ -52,6 +52,9 @@ enum spa_meta_videotransform_value {
 
 #define SPA_META_VideoTransform 8
 
+struct spa_meta_videotransform {
+	uint32_t transform; /**< orientation transformation that was applied to the buffer */
+};
 #endif
 
 #define CURSOR_META_SIZE(width, height)                                    \

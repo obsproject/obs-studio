@@ -16,7 +16,6 @@
 ******************************************************************************/
 
 #include "obs-scripting-lua.h"
-#include "obs-scripting-config.h"
 #include <util/platform.h>
 #include <util/base.h>
 #include <util/dstr.h>
@@ -77,7 +76,7 @@ static void add_hook_functions(lua_State *script);
 static int obs_lua_remove_tick_callback(lua_State *script);
 static int obs_lua_remove_main_render_callback(lua_State *script);
 
-#if UI_ENABLED
+#ifdef ENABLE_UI
 void add_lua_frontend_funcs(lua_State *script);
 #endif
 
@@ -118,7 +117,7 @@ static bool load_lua_script(struct obs_lua_script *data)
 
 	add_lua_source_functions(script);
 	add_hook_functions(script);
-#if UI_ENABLED
+#ifdef ENABLE_UI
 	add_lua_frontend_funcs(script);
 #endif
 

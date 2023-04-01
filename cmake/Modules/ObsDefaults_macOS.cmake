@@ -17,11 +17,9 @@ endif()
 if(NOT CMAKE_OSX_ARCHITECTURES)
   set(CMAKE_OSX_ARCHITECTURES
       "${CMAKE_HOST_SYSTEM_PROCESSOR}"
-      CACHE STRING
-            "OBS build architecture for macOS - x86_64 required at least" FORCE)
+      CACHE STRING "OBS build architecture for macOS - x86_64 required at least" FORCE)
 endif()
-set_property(CACHE CMAKE_OSX_ARCHITECTURES PROPERTY STRINGS arm64 x86_64
-                                                    "x86_64;arm64")
+set_property(CACHE CMAKE_OSX_ARCHITECTURES PROPERTY STRINGS arm64 x86_64 "x86_64;arm64")
 
 if(NOT CMAKE_OSX_DEPLOYMENT_TARGET)
   set(CMAKE_XCODE_ATTRIBUTE_MACOSX_DEPLOYMENT_TARGET[arch=arm64] "11.0")
@@ -38,8 +36,7 @@ if(NOT CMAKE_OSX_DEPLOYMENT_TARGET)
       CACHE STRING "OBS deployment target for macOS - 10.15+ required" FORCE)
   unset(_MACOS_DEPLOYMENT_TARGET)
 endif()
-set_property(CACHE CMAKE_OSX_DEPLOYMENT_TARGET PROPERTY STRINGS 10.15 11.0 12.0
-                                                        13.0)
+set_property(CACHE CMAKE_OSX_DEPLOYMENT_TARGET PROPERTY STRINGS 10.15 11.0 12.0 13.0)
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX
@@ -49,22 +46,19 @@ endif()
 
 if(NOT DEFINED CMAKE_PREFIX_PATH)
   message(
-    WARNING
-      "No CMAKE_PREFIX_PATH set: OBS supplies pre-built dependencies for building on macOS.\n"
-      "While OBS can be built using packages installed via Homebrew, pre-built dependencies "
-      "contain beneficial patches and fixes for use within OBS and is the suggested source "
-      "of these dependencies.\n"
-      "You can download the appropriate obs-deps package for your "
-      "architecture and set CMAKE_PREFIX_PATH to this directory:\n"
-      "CMAKE_PREFIX_PATH=\"<PATH_TO_OBS_DEPS>\"\n"
-      "Download pre-built OBS dependencies at https://github.com/obsproject/obs-deps/releases\n"
-  )
+    WARNING "No CMAKE_PREFIX_PATH set: OBS supplies pre-built dependencies for building on macOS.\n"
+            "While OBS can be built using packages installed via Homebrew, pre-built dependencies "
+            "contain beneficial patches and fixes for use within OBS and is the suggested source "
+            "of these dependencies.\n"
+            "You can download the appropriate obs-deps package for your "
+            "architecture and set CMAKE_PREFIX_PATH to this directory:\n"
+            "CMAKE_PREFIX_PATH=\"<PATH_TO_OBS_DEPS>\"\n"
+            "Download pre-built OBS dependencies at https://github.com/obsproject/obs-deps/releases\n")
 endif()
 
-# SWIG hard codes the directory to its library directory at compile time. As
-# obs-deps need to be relocatable, we need to force SWIG to look for its files
-# in a directory relative to the PREFIX_PATH. The best way to ensure this is to
-# set the SWIG_LIB environment variable.
+# SWIG hard codes the directory to its library directory at compile time. As obs-deps need to be relocatable, we need to
+# force SWIG to look for its files in a directory relative to the PREFIX_PATH. The best way to ensure this is to set the
+# SWIG_LIB environment variable.
 
 if(NOT DEFINED ENV{SWIG_LIB} AND EXISTS "${CMAKE_PREFIX_PATH}/bin/swig")
   set(ENV{SWIG_LIB} "${CMAKE_PREFIX_PATH}/share/swig/CURRENT")
@@ -83,8 +77,7 @@ macro(setup_obs_project)
           "-"
           CACHE STRING "OBS code signing identity for macOS" FORCE)
     endif()
-    set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY
-        "${OBS_BUNDLE_CODESIGN_IDENTITY}")
+    set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "${OBS_BUNDLE_CODESIGN_IDENTITY}")
   else()
     set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic")
     set(CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${OBS_BUNDLE_CODESIGN_TEAM}")
@@ -97,9 +90,8 @@ macro(setup_obs_project)
       ON
       CACHE BOOL "Enable linker code-signing on macOS (macOS 11+ required)")
 
-  # Tell Xcode to pretend the linker signed binaries so that editing with
-  # install_name_tool preserves ad-hoc signatures. This option is supported by
-  # codesign on macOS 11 or higher. See CMake Issue 21854:
+  # Tell Xcode to pretend the linker signed binaries so that editing with install_name_tool preserves ad-hoc signatures.
+  # This option is supported by codesign on macOS 11 or higher. See CMake Issue 21854:
   # https://gitlab.kitware.com/cmake/cmake/-/issues/21854
 
   if(OBS_CODESIGN_LINKER)
@@ -154,24 +146,18 @@ macro(setup_obs_project)
     set(CPACK_ARCH_SUFFIX "Universal")
   endif()
 
-  set(CPACK_PACKAGE_FILE_NAME
-      "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-macOS-${CPACK_ARCH_SUFFIX}"
-  )
+  set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-macOS-${CPACK_ARCH_SUFFIX}")
 
-  set(CPACK_COMPONENTS_ALL obs_app obs_frameworks obs_plugins
-                           obs_scripting_plugins obs_resources)
+  set(CPACK_COMPONENTS_ALL obs_app obs_frameworks obs_plugins obs_scripting_plugins obs_resources)
   set(CPACK_COMPONENT_OBS_APP_DISPLAY_NAME "OBS Studio")
   set(CPACK_COMPONENT_OBS_FRAMEWORKS_DISPLAY_NAME "OBS Frameworks")
   set(CPACK_COMPONENT_OBS_PLUGINS_DISPLAY_NAME "OBS Plugins")
-  set(CPACK_COMPONENT_OBS_SCRIPTING_PLUGINS_DISPLAY_NAME
-      "OBS Scripting Plugins")
+  set(CPACK_COMPONENT_OBS_SCRIPTING_PLUGINS_DISPLAY_NAME "OBS Scripting Plugins")
   set(CPACK_COMPONENT_OBS_RESOURCES_DISPLAY_NAME "OBS Resources")
 
-  set(CPACK_DMG_BACKGROUND_IMAGE
-      "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/background.tiff")
+  set(CPACK_DMG_BACKGROUND_IMAGE "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/background.tiff")
   set(CPACK_PACKAGE_ICON "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/AppIcon.icns")
-  get_filename_component(CPACK_DMG_BACKGROUND_FILENAME
-                         ${CPACK_DMG_BACKGROUND_IMAGE} NAME)
+  get_filename_component(CPACK_DMG_BACKGROUND_FILENAME ${CPACK_DMG_BACKGROUND_IMAGE} NAME)
   set(CPACK_DMG_FORMAT "UDZO")
   set(CPACK_DMG_FILESYSTEM "APFS")
   set(CPACK_DMG_DS_STORE_SETUP_SCRIPT "${CMAKE_BINARY_DIR}/package.applescript")

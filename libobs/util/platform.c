@@ -654,28 +654,17 @@ int os_mkdirs(const char *dir)
 
 const char *os_get_path_extension(const char *path)
 {
-	struct dstr temp;
-	size_t pos = 0;
-	char *period;
-	char *slash;
+	for (size_t pos = strlen(path); pos > 0; pos--) {
+		switch (path[pos - 1]) {
+		case '.':
+			return path + pos - 1;
+		case '/':
+		case '\\':
+			return NULL;
+		}
+	}
 
-	if (!path[0])
-		return NULL;
-
-	dstr_init_copy(&temp, path);
-	dstr_replace(&temp, "\\", "/");
-
-	slash = strrchr(temp.array, '/');
-	period = strrchr(temp.array, '.');
-	if (period)
-		pos = (size_t)(period - temp.array);
-
-	dstr_free(&temp);
-
-	if (!period || slash > period)
-		return NULL;
-
-	return path + pos;
+	return NULL;
 }
 
 static inline bool valid_string(const char *str)

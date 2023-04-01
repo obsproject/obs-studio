@@ -16,15 +16,13 @@ endif()
 find_path(
   Jansson_INCLUDE_DIR
   NAMES jansson.h
-  HINTS ENV JANSSON_PATH ${JANSSON_PATH} ${CMAKE_SOURCE_DIR}/${JANSSON_PATH}
-        ${_JANSSON_INCLUDE_DIRS}
+  HINTS ENV JANSSON_PATH ${JANSSON_PATH} ${CMAKE_SOURCE_DIR}/${JANSSON_PATH} ${_JANSSON_INCLUDE_DIRS}
   PATHS /usr/include /usr/local/include /opt/local/include /sw/include)
 
 find_library(
   Jansson_LIB
   NAMES ${_JANSSON_LIBRARIES} jansson libjansson
-  HINTS ENV JANSSON_PATH ${JANSSON_PATH} ${CMAKE_SOURCE_DIR}/${JANSSON_PATH}
-        ${_JANSSON_LIBRARY_DIRS}
+  HINTS ENV JANSSON_PATH ${JANSSON_PATH} ${CMAKE_SOURCE_DIR}/${JANSSON_PATH} ${_JANSSON_LIBRARY_DIRS}
   PATHS /usr/lib /usr/local/lib /opt/local/lib /sw/lib
   PATH_SUFFIXES
     lib${_lib_suffix}
@@ -45,10 +43,9 @@ if(JANSSON_VERSION)
 elseif(_JANSSON_FOUND AND _JANSSON_VERSION)
   set(_JANSSON_VERSION_STRING "${_JANSSON_VERSION}")
 elseif(EXISTS "${Jansson_INCLUDE_DIR}/jansson.h")
-  file(STRINGS "${Jansson_INCLUDE_DIR}/jansson.h" _jansson_version_parse
-       REGEX "#define[ \t]+JANSSON_VERSION[ \t]+.+")
-  string(REGEX REPLACE ".*#define[ \t]+JANSSON_VERSION[ \t]+\"(.+)\".*" "\\1"
-                       _JANSSON_VERSION_STRING "${_jansson_version_parse}")
+  file(STRINGS "${Jansson_INCLUDE_DIR}/jansson.h" _jansson_version_parse REGEX "#define[ \t]+JANSSON_VERSION[ \t]+.+")
+  string(REGEX REPLACE ".*#define[ \t]+JANSSON_VERSION[ \t]+\"(.+)\".*" "\\1" _JANSSON_VERSION_STRING
+                       "${_jansson_version_parse}")
 else()
   if(NOT Jansson_FIND_QUIETLY)
     message(WARNING "Failed to find Jansson version")
@@ -72,16 +69,12 @@ if(JANSSON_FOUND)
   if(NOT TARGET Jansson::Jansson)
     if(IS_ABSOLUTE "${JANSSON_LIBRARIES}")
       add_library(Jansson::Jansson UNKNOWN IMPORTED GLOBAL)
-      set_target_properties(Jansson::Jansson PROPERTIES IMPORTED_LOCATION
-                                                        "${JANSSON_LIBRARIES}")
+      set_target_properties(Jansson::Jansson PROPERTIES IMPORTED_LOCATION "${JANSSON_LIBRARIES}")
     else()
       add_library(Jansson::Jansson INTERFACE IMPORTED GLOBAL)
-      set_target_properties(Jansson::Jansson PROPERTIES IMPORTED_LIBNAME
-                                                        "${JANSSON_LIBRARIES}")
+      set_target_properties(Jansson::Jansson PROPERTIES IMPORTED_LIBNAME "${JANSSON_LIBRARIES}")
     endif()
 
-    set_target_properties(
-      Jansson::Jansson PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                  "${JANSSON_INCLUDE_DIRS}")
+    set_target_properties(Jansson::Jansson PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${JANSSON_INCLUDE_DIRS}")
   endif()
 endif()

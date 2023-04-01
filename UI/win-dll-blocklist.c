@@ -148,6 +148,10 @@ static blocked_module_t blocked_modules[] = {
 	// Korean banking "security" software, crashes randomly
 	{L"\\t_prevent64.dll", 0, 0, TS_IGNORE},
 
+	// Bandicam, doesn't unhook cleanly and freezes preview
+	// Reference: https://github.com/obsproject/obs-studio/issues/8552
+	{L"\\bdcam64.dll", 0, 0, TS_IGNORE},
+
 	// Generic named unity capture filter. Unfortunately only a forked version
 	// has a critical fix to prevent deadlocks during enumeration. We block
 	// all versions since if someone didn't change the DLL name they likely
@@ -157,6 +161,23 @@ static blocked_module_t blocked_modules[] = {
 
 	// VSeeFace capture filter < v1.13.38b3 without above fix implemented
 	{L"\\vseefacecamera64bit.dll", 0, 1666993098, TS_LESS_THAN},
+
+	// VTuber Maker capture filter < 2023-03-13 without above fix implemented
+	{L"\\live3dvirtualcam\\lib64_new2.dll", 0, 1678695956, TS_LESS_THAN},
+
+	// Obsolete unfixed versions of VTuber Maker capture filter
+	{L"\\live3dvirtualcam\\lib64_new.dll", 0, 0, TS_IGNORE},
+	{L"\\live3dvirtualcam\\lib64.dll", 0, 0, TS_IGNORE},
+
+	// VirtualMotionCapture capture filter < 2022-12-18 without above fix
+	// Reference: https://github.com/obsproject/obs-studio/issues/8552
+	{L"\\vmc_camerafilter64bit.dll", 0, 1671349891, TS_LESS_THAN},
+
+	// HolisticMotionCapture capture filter, not yet patched. Blocking
+	// all previous versions in case an update is released.
+	// Reference: https://github.com/obsproject/obs-studio/issues/8552
+	{L"\\holisticmotioncapturefilter64bit.dll", 0, 1680044549,
+	 TS_LESS_THAN},
 };
 
 static bool is_module_blocked(wchar_t *dll, uint32_t timestamp)

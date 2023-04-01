@@ -330,6 +330,15 @@ void video_frame_init(struct video_frame *frame, enum video_format format,
 		frame->linesize[1] = width * 4;
 		break;
 	}
+
+	case VIDEO_FORMAT_V210: {
+		const uint32_t adjusted_width = ((width + 5) / 6) * 16;
+		size = adjusted_width * height;
+		ALIGN_SIZE(size, alignment);
+		frame->data[0] = bmalloc(size);
+		frame->linesize[0] = adjusted_width;
+		break;
+	}
 	}
 }
 
@@ -362,6 +371,7 @@ void video_frame_copy(struct video_frame *dst, const struct video_frame *src,
 	case VIDEO_FORMAT_BGRX:
 	case VIDEO_FORMAT_BGR3:
 	case VIDEO_FORMAT_AYUV:
+	case VIDEO_FORMAT_V210:
 		memcpy(dst->data[0], src->data[0], src->linesize[0] * cy);
 		break;
 

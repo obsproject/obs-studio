@@ -2302,10 +2302,7 @@ static obs_source_t *CreateLabel(float pixelRatio)
 	const char *text_source_id = "text_ft2_source";
 #endif
 
-	OBSSource txtSource =
-		obs_source_create_private(text_source_id, NULL, settings);
-
-	return txtSource;
+	return obs_source_create_private(text_source_id, NULL, settings);
 }
 
 static void SetLabelText(int sourceIndex, int px)

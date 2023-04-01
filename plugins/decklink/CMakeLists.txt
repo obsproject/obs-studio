@@ -1,15 +1,11 @@
-project(decklink)
+cmake_minimum_required(VERSION 3.16...3.25)
+
+legacy_check()
 
 option(ENABLE_DECKLINK "Build OBS with Decklink support" ON)
 if(NOT ENABLE_DECKLINK)
-  obs_status(DISABLED "decklink")
+  target_disable(decklink)
   return()
-endif()
-
-if(OS_WINDOWS)
-  include(IDLFileHelper)
-  add_idl_files(win-decklink-sdk_GENERATED_FILES
-                win/decklink-sdk/DeckLinkAPI.idl)
 endif()
 
 add_library(decklink MODULE)
@@ -49,27 +45,23 @@ target_sources(
           util.cpp
           util.hpp)
 
-target_include_directories(decklink-sdk INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
-
 target_link_libraries(decklink PRIVATE OBS::libobs OBS::caption Decklink::SDK)
 
-set_target_properties(decklink PROPERTIES FOLDER "plugins/decklink")
-
 if(OS_WINDOWS)
-  set(MODULE_DESCRIPTION "OBS DeckLink Windows module")
-  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
-                 win-decklink.rc)
-
+  configure_file(cmake/windows/obs-module.rc.in win-decklink.rc)
   target_sources(decklink PRIVATE win/platform.cpp win-decklink.rc)
 
-  target_sources(decklink-sdk INTERFACE win/decklink-sdk/DeckLinkAPIVersion.h
-                                        ${win-decklink-sdk_GENERATED_FILES})
+  include(idlfilehelper)
+  target_add_idl_files(decklink win/decklink-sdk/DeckLinkAPI.idl)
+
+  target_sources(decklink-sdk INTERFACE win/decklink-sdk/DeckLinkAPIVersion.h)
 
 elseif(OS_MACOS)
   find_library(COREFOUNDATION CoreFoundation)
   mark_as_advanced(COREFOUNDATION)
 
   target_sources(decklink PRIVATE mac/platform.cpp)
+  target_link_libraries(decklink PRIVATE ${COREFOUNDATION})
 
   target_sources(
     decklink-sdk
@@ -82,11 +74,7 @@ elseif(OS_MACOS)
               mac/decklink-sdk/DeckLinkAPIStreaming.h
               mac/decklink-sdk/DeckLinkAPITypes.h
               mac/decklink-sdk/DeckLinkAPIVersion.h)
-
-  target_link_libraries(decklink PRIVATE ${COREFOUNDATION})
-
-  target_compile_features(decklink PRIVATE cxx_auto_type)
-elseif(OS_POSIX)
+elseif(OS_LINUX OR OS_FREEBSD)
   target_sources(decklink PRIVATE linux/platform.cpp)
 
   target_sources(
@@ -102,5 +90,4 @@ elseif(OS_POSIX)
               linux/decklink-sdk/LinuxCOM.h)
 endif()
 
-setup_plugin_target(decklink)
-setup_target_resources(decklink "obs-plugins/decklink")
+set_target_properties_obs(decklink PROPERTIES FOLDER plugins/decklink PREFIX "")

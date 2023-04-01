@@ -367,8 +367,11 @@ try {
 	string parameters = "";
 	if (App()->IsPortableMode())
 		parameters += "--portable";
-	if (branch != WIN_DEFAULT_BRANCH)
+	if (branch != WIN_DEFAULT_BRANCH) {
+		if (!parameters.empty())
+			parameters += " ";
 		parameters += "--branch=" + branch;
+	}
 
 	BPtr<wchar_t> lpParameters;
 	size = os_utf8_to_wcs_ptr(parameters.c_str(), 0, &lpParameters);

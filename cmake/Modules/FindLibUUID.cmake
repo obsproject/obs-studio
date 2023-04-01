@@ -1,8 +1,8 @@
 # Stripped down version of
 # https://gitlab.kitware.com/cmake/cmake/blob/e1409101c99f7a3487990e9927e8bd0e275f564f/Source/Modules/FindLibUUID.cmake
 #
-# Distributed under the OSI-approved BSD 3-Clause License.  See accompanying
-# file Copyright.txt or https://cmake.org/licensing for details.
+# Distributed under the OSI-approved BSD 3-Clause License.  See accompanying file Copyright.txt or
+# https://cmake.org/licensing for details.
 #
 # Once done these will be defined:
 #
@@ -26,9 +26,7 @@ if(LibUUID_FOUND)
   set(LibUUID_LIBRARIES ${LibUUID_LIBRARY})
   if(NOT TARGET LibUUID::LibUUID)
     add_library(LibUUID::LibUUID UNKNOWN IMPORTED)
-    set_target_properties(
-      LibUUID::LibUUID
-      PROPERTIES IMPORTED_LOCATION "${LibUUID_LIBRARY}"
-                 INTERFACE_INCLUDE_DIRECTORIES "${LibUUID_INCLUDE_DIRS}")
+    set_target_properties(LibUUID::LibUUID PROPERTIES IMPORTED_LOCATION "${LibUUID_LIBRARY}"
+                                                      INTERFACE_INCLUDE_DIRECTORIES "${LibUUID_INCLUDE_DIRS}")
   endif()
 endif()

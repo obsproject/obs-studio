@@ -48,12 +48,9 @@ if(EXISTS "${AMF_INCLUDE_DIR}/AMF/core/Version.h")
   file(STRINGS "${AMF_INCLUDE_DIR}/AMF/core/Version.h" _version_string
        REGEX "^.*VERSION_(MAJOR|MINOR|RELEASE|BUILD_NUM)[ \t]+[0-9]+[ \t]*$")
 
-  string(REGEX REPLACE ".*VERSION_MAJOR[ \t]+([0-9]+).*" "\\1" _version_major
-                       "${_version_string}")
-  string(REGEX REPLACE ".*VERSION_MINOR[ \t]+([0-9]+).*" "\\1" _version_minor
-                       "${_version_string}")
-  string(REGEX REPLACE ".*VERSION_RELEASE[ \t]+([0-9]+).*" "\\1"
-                       _version_release "${_version_string}")
+  string(REGEX REPLACE ".*VERSION_MAJOR[ \t]+([0-9]+).*" "\\1" _version_major "${_version_string}")
+  string(REGEX REPLACE ".*VERSION_MINOR[ \t]+([0-9]+).*" "\\1" _version_minor "${_version_string}")
+  string(REGEX REPLACE ".*VERSION_RELEASE[ \t]+([0-9]+).*" "\\1" _version_release "${_version_string}")
 
   set(AMF_VERSION "${_version_major}.${_version_minor}.${_version_release}")
   unset(_version_major)
@@ -67,11 +64,9 @@ else()
 endif()
 
 if(CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin|Windows")
-  set(AMF_ERROR_REASON
-      "Ensure that obs-deps is provided as part of CMAKE_PREFIX_PATH.")
+  set(AMF_ERROR_REASON "Ensure that obs-deps is provided as part of CMAKE_PREFIX_PATH.")
 elseif(CMAKE_HOST_SYSTEM_NAME MATCHES "Linux|FreeBSD")
-  set(AMF_ERROR_REASON
-      "Ensure AMF headers are available in local library paths.")
+  set(AMF_ERROR_REASON "Ensure AMF headers are available in local library paths.")
 endif()
 
 find_package_handle_standard_args(
@@ -84,8 +79,7 @@ unset(AMF_ERROR_REASON)
 if(AMF_FOUND)
   if(NOT TARGET AMF::AMF)
     add_library(AMF::AMF INTERFACE IMPORTED)
-    set_target_properties(AMF::AMF PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                              "${AMF_INCLUDE_DIR}")
+    set_target_properties(AMF::AMF PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${AMF_INCLUDE_DIR}")
   endif()
 endif()
 

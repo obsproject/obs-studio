@@ -57,9 +57,8 @@ target_sources(
             libmfx/include/mfx_win_reg_key.h
             libmfx/include/mfxaudio_exposed_functions_list.h)
 
-target_include_directories(
-  libmfx INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/libmfx/include/msdk/include
-                   ${CMAKE_CURRENT_SOURCE_DIR}/libmfx/include)
+target_include_directories(libmfx INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/libmfx/include/msdk/include
+                                            ${CMAKE_CURRENT_SOURCE_DIR}/libmfx/include)
 
 target_sources(
   obs-qsv11
@@ -97,22 +96,17 @@ if(OS_WINDOWS)
   add_subdirectory(obs-qsv-test)
 
   set(MODULE_DESCRIPTION "OBS QSV encoder")
-  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
-                 obs-qsv11.rc)
+  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in obs-qsv11.rc)
 
   target_sources(obs-qsv11 PRIVATE obs-qsv11.rc)
 
-  target_compile_definitions(
-    obs-qsv11 PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS
-                      _CRT_NONSTDC_NO_WARNINGS)
+  target_compile_definitions(obs-qsv11 PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_WARNINGS)
 endif()
 
 set_target_properties(obs-qsv11 PROPERTIES FOLDER "plugins/obs-qsv11")
 
-file(GLOB _OBS_QSV11_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.c
-     ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
-file(GLOB _OBS_QSV11_HEADER_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.h
-     ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
+file(GLOB _OBS_QSV11_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.c ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+file(GLOB _OBS_QSV11_HEADER_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.h ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
 
 source_group("obs-qsv11\\Source Files" FILES ${_OBS_QSV11_SOURCE_FILES})
 source_group("obs-qsv11\\Header Files" FILES ${_OBS_QSV11_HEADER_FILES})

@@ -734,6 +734,10 @@ static bool init_encoder_h264(struct nvenc_data *enc, obs_data_t *settings,
 
 	h264_config->useBFramesAsRef = NV_ENC_BFRAME_REF_MODE_DISABLED;
 
+	/* Enable CBR padding */
+	if (config->rcParams.rateControlMode == NV_ENC_PARAMS_RC_CBR)
+		h264_config->enableFillerDataInsertion = 1;
+
 	vui_params->videoSignalTypePresentFlag = 1;
 	vui_params->videoFullRangeFlag = (voi->range == VIDEO_RANGE_FULL);
 	vui_params->colourDescriptionPresentFlag = 1;
@@ -818,6 +822,10 @@ static bool init_encoder_hevc(struct nvenc_data *enc, obs_data_t *settings,
 	hevc_config->sliceModeData = 1;
 
 	hevc_config->useBFramesAsRef = NV_ENC_BFRAME_REF_MODE_DISABLED;
+
+	/* Enable CBR padding */
+	if (config->rcParams.rateControlMode == NV_ENC_PARAMS_RC_CBR)
+		hevc_config->enableFillerDataInsertion = 1;
 
 	vui_params->videoSignalTypePresentFlag = 1;
 	vui_params->videoFullRangeFlag = (voi->range == VIDEO_RANGE_FULL);
@@ -909,6 +917,10 @@ static bool init_encoder_av1(struct nvenc_data *enc, obs_data_t *settings,
 	av1_config->useBFramesAsRef = NV_ENC_BFRAME_REF_MODE_DISABLED;
 
 	av1_config->colorRange = (voi->range == VIDEO_RANGE_FULL);
+
+	/* Enable CBR padding */
+	if (config->rcParams.rateControlMode == NV_ENC_PARAMS_RC_CBR)
+		av1_config->enableBitstreamPadding = 1;
 
 	switch (voi->colorspace) {
 	case VIDEO_CS_601:

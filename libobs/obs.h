@@ -708,6 +708,9 @@ EXPORT obs_source_t *obs_get_source_by_uuid(const char *uuid);
 /** Get a transition source by its name. */
 EXPORT obs_source_t *obs_get_transition_by_name(const char *name);
 
+/** Get a transition source by its UUID. */
+EXPORT obs_source_t *obs_get_transition_by_uuid(const char *uuid);
+
 /** Gets an output by its name. */
 EXPORT obs_output_t *obs_get_output_by_name(const char *name);
 
@@ -838,6 +841,11 @@ EXPORT void obs_add_main_render_callback(void (*draw)(void *param, uint32_t cx,
 EXPORT void obs_remove_main_render_callback(
 	void (*draw)(void *param, uint32_t cx, uint32_t cy), void *param);
 
+EXPORT void obs_add_main_rendered_callback(void (*rendered)(void *param),
+					   void *param);
+EXPORT void obs_remove_main_rendered_callback(void (*rendered)(void *param),
+					      void *param);
+
 EXPORT void obs_add_raw_video_callback(
 	const struct video_scale_info *conversion,
 	void (*callback)(void *param, struct video_data *frame), void *param);
@@ -929,6 +937,10 @@ EXPORT video_t *obs_view_add2(obs_view_t *view, struct obs_video_info *ovi);
 
 /** Removes a view from the main render loop */
 EXPORT void obs_view_remove(obs_view_t *view);
+
+/** Gets the video settings currently in use for this view context, returns false if no video */
+EXPORT bool obs_view_get_video_info(obs_view_t *view,
+				    struct obs_video_info *ovi);
 
 /* ------------------------------------------------------------------------- */
 /* Display context */
@@ -2204,10 +2216,28 @@ obs_output_get_supported_video_codecs(const obs_output_t *output);
 EXPORT const char *
 obs_output_get_supported_audio_codecs(const obs_output_t *output);
 
+EXPORT const char *obs_output_get_protocols(const obs_output_t *output);
+
+EXPORT bool obs_is_output_protocol_registered(const char *protocol);
+
+EXPORT bool obs_enum_output_protocols(size_t idx, char **protocol);
+
+EXPORT void obs_enum_output_types_with_protocol(
+	const char *protocol, void *data,
+	bool (*enum_cb)(void *data, const char *id));
+
+EXPORT const char *obs_get_output_supported_video_codecs(const char *id);
+
+EXPORT const char *obs_get_output_supported_audio_codecs(const char *id);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by outputs */
 
 EXPORT void *obs_output_get_type_data(obs_output_t *output);
+
+/** Gets the video conversion info.  Used only for raw output */
+EXPORT const struct video_scale_info *
+obs_output_get_video_conversion(obs_output_t *output);
 
 /** Optionally sets the video conversion info.  Used only for raw output */
 EXPORT void
@@ -2487,16 +2517,20 @@ EXPORT void obs_service_update(obs_service_t *service, obs_data_t *settings);
 EXPORT obs_data_t *obs_service_get_settings(const obs_service_t *service);
 
 /** Returns the URL for this service context */
-EXPORT const char *obs_service_get_url(const obs_service_t *service);
+OBS_DEPRECATED EXPORT const char *
+obs_service_get_url(const obs_service_t *service);
 
 /** Returns the stream key (if any) for this service context */
-EXPORT const char *obs_service_get_key(const obs_service_t *service);
+OBS_DEPRECATED EXPORT const char *
+obs_service_get_key(const obs_service_t *service);
 
 /** Returns the username (if any) for this service context */
-EXPORT const char *obs_service_get_username(const obs_service_t *service);
+OBS_DEPRECATED EXPORT const char *
+obs_service_get_username(const obs_service_t *service);
 
 /** Returns the password (if any) for this service context */
-EXPORT const char *obs_service_get_password(const obs_service_t *service);
+OBS_DEPRECATED EXPORT const char *
+obs_service_get_password(const obs_service_t *service);
 
 /**
  * Applies service-specific video encoder settings.
@@ -2524,9 +2558,24 @@ EXPORT void obs_service_get_max_bitrate(const obs_service_t *service,
 EXPORT const char **
 obs_service_get_supported_video_codecs(const obs_service_t *service);
 
+EXPORT const char **
+obs_service_get_supported_audio_codecs(const obs_service_t *service);
+
 /* NOTE: This function is temporary and should be removed/replaced at a later
  * date. */
-EXPORT const char *obs_service_get_output_type(const obs_service_t *service);
+OBS_DEPRECATED EXPORT const char *
+obs_service_get_output_type(const obs_service_t *service);
+
+/** Returns the protocol for this service context */
+EXPORT const char *obs_service_get_protocol(const obs_service_t *service);
+
+EXPORT const char *
+obs_service_get_preferred_output_type(const obs_service_t *service);
+
+EXPORT const char *obs_service_get_connect_info(const obs_service_t *service,
+						uint32_t type);
+
+EXPORT bool obs_service_can_try_to_connect(const obs_service_t *service);
 
 /* ------------------------------------------------------------------------- */
 /* Source frame allocation functions */

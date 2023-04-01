@@ -1,3 +1,4 @@
+# cmake-format: off
 #
 # This module defines the following variables:
 #
@@ -8,6 +9,7 @@
 
 # Use pkg-config to get the directories and then use these values in the
 # find_path() and find_library() calls
+# cmake-format: on
 
 find_package(PkgConfig QUIET)
 if(PKG_CONFIG_FOUND)
@@ -34,8 +36,7 @@ find_library(
   PATHS /usr/lib /usr/local/lib /opt/local/lib)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Libva REQUIRED_VARS LIBVA_INCLUDE_DIR
-                                                      LIBVA_LIB LIBVA_DRM_LIB)
+find_package_handle_standard_args(Libva REQUIRED_VARS LIBVA_INCLUDE_DIR LIBVA_LIB LIBVA_DRM_LIB)
 mark_as_advanced(LIBVA_INCLUDE_DIR LIBVA_LIB LIBVA_DRM_LIB)
 
 if(LIBVA_FOUND)
@@ -46,30 +47,24 @@ if(LIBVA_FOUND)
   if(NOT TARGET Libva::va)
     if(IS_ABSOLUTE "${LIBVA_LIBRARIES}")
       add_library(Libva::va UNKNOWN IMPORTED)
-      set_target_properties(Libva::va PROPERTIES IMPORTED_LOCATION
-                                                 "${LIBVA_LIBRARIES}")
+      set_target_properties(Libva::va PROPERTIES IMPORTED_LOCATION "${LIBVA_LIBRARIES}")
     else()
       add_library(Libva::va INTERFACE IMPORTED)
-      set_target_properties(Libva::va PROPERTIES IMPORTED_LIBNAME
-                                                 "${LIBVA_LIBRARIES}")
+      set_target_properties(Libva::va PROPERTIES IMPORTED_LIBNAME "${LIBVA_LIBRARIES}")
     endif()
 
-    set_target_properties(Libva::va PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                               "${LIBVA_INCLUDE_DIRS}")
+    set_target_properties(Libva::va PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${LIBVA_INCLUDE_DIRS}")
   endif()
 
   if(NOT TARGET Libva::drm)
     if(IS_ABSOLUTE "${LIBVA_DRM_LIBRARIES}")
       add_library(Libva::drm UNKNOWN IMPORTED)
-      set_target_properties(Libva::drm PROPERTIES IMPORTED_LOCATION
-                                                  "${LIBVA_DRM_LIBRARIES}")
+      set_target_properties(Libva::drm PROPERTIES IMPORTED_LOCATION "${LIBVA_DRM_LIBRARIES}")
     else()
       add_library(Libva::drm INTERFACE IMPORTED)
-      set_target_properties(Libva::drm PROPERTIES IMPORTED_LIBNAME
-                                                  "${LIBVA_DRM_LIBRARIES}")
+      set_target_properties(Libva::drm PROPERTIES IMPORTED_LIBNAME "${LIBVA_DRM_LIBRARIES}")
     endif()
 
-    set_target_properties(Libva::drm PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                                "${LIBVA_INCLUDE_DIRS}")
+    set_target_properties(Libva::drm PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${LIBVA_INCLUDE_DIRS}")
   endif()
 endif()

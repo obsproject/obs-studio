@@ -16,7 +16,6 @@
 ******************************************************************************/
 
 #include "gl-subsystem.h"
-#define GL_SILENCE_DEPRECATION
 #include <OpenGL/OpenGL.h>
 
 #import <Cocoa/Cocoa.h>

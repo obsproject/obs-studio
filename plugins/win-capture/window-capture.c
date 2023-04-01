@@ -181,9 +181,12 @@ static void log_settings(struct window_capture *wc, obs_data_t *s)
 		     "[window-capture: '%s'] update settings:\n"
 		     "\texecutable: %s\n"
 		     "\tmethod selected: %s\n"
-		     "\tmethod chosen: %s\n",
+		     "\tmethod chosen: %s\n"
+		     "\tforce SDR: %s",
 		     obs_source_get_name(wc->source), wc->executable,
-		     get_method_name(method), get_method_name(wc->method));
+		     get_method_name(method), get_method_name(wc->method),
+		     (wc->force_sdr && (wc->method == METHOD_WGC)) ? "true"
+								   : "false");
 		blog(LOG_DEBUG, "\tclass:      %s", wc->class);
 	}
 }

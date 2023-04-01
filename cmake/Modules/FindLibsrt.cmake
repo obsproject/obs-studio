@@ -20,16 +20,14 @@ endif()
 find_path(
   LIBSRT_INCLUDE_DIR
   NAMES srt.h srt/srt.h
-  HINTS ENV LIBSRT_PATH ${LIBSRT_PATH} ${CMAKE_SOURCE_DIR}/${LIBSRT_PATH}
-        ${_LIBSRT_INCLUDE_DIRS} ${DepsPath}
+  HINTS ENV LIBSRT_PATH ${LIBSRT_PATH} ${CMAKE_SOURCE_DIR}/${LIBSRT_PATH} ${_LIBSRT_INCLUDE_DIRS} ${DepsPath}
   PATHS /usr/include /usr/local/include /opt/local/include /sw/include
   PATH_SUFFIXES include)
 
 find_library(
   LIBSRT_LIB
   NAMES ${_LIBSRT_LIBRARIES} srt libsrt
-  HINTS ENV LIBSRT_PATH ${LIBSRT_PATH} ${CMAKE_SOURCE_DIR}/${LIBSRT_PATH}
-        ${_LIBSRT_LIBRARY_DIRS} ${DepsPath}
+  HINTS ENV LIBSRT_PATH ${LIBSRT_PATH} ${CMAKE_SOURCE_DIR}/${LIBSRT_PATH} ${_LIBSRT_LIBRARY_DIRS} ${DepsPath}
   PATHS /usr/lib /usr/local/lib /opt/local/lib /sw/lib
   PATH_SUFFIXES
     lib${_lib_suffix}
@@ -46,8 +44,7 @@ find_library(
     ../bin)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Libsrt DEFAULT_MSG LIBSRT_LIB
-                                  LIBSRT_INCLUDE_DIR)
+find_package_handle_standard_args(Libsrt DEFAULT_MSG LIBSRT_LIB LIBSRT_INCLUDE_DIR)
 mark_as_advanced(LIBSRT_INCLUDE_DIR LIBSRT_LIB)
 
 if(LIBSRT_FOUND)
@@ -57,17 +54,13 @@ if(LIBSRT_FOUND)
   if(NOT TARGET Libsrt::Libsrt)
     if(IS_ABSOLUTE "${LIBSRT_LIBRARIES}")
       add_library(Libsrt::Libsrt UNKNOWN IMPORTED)
-      set_target_properties(Libsrt::Libsrt PROPERTIES IMPORTED_LOCATION
-                                                      "${LIBSRT_LIBRARIES}")
+      set_target_properties(Libsrt::Libsrt PROPERTIES IMPORTED_LOCATION "${LIBSRT_LIBRARIES}")
     else()
       add_library(Libsrt::Libsrt INTERFACE IMPORTED)
-      set_target_properties(Libsrt::Libsrt PROPERTIES IMPORTED_LIBNAME
-                                                      "${LIBSRT_LIBRARIES}")
+      set_target_properties(Libsrt::Libsrt PROPERTIES IMPORTED_LIBNAME "${LIBSRT_LIBRARIES}")
     endif()
 
-    set_target_properties(
-      Libsrt::Libsrt PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                "${LIBSRT_INCLUDE_DIRS}")
+    set_target_properties(Libsrt::Libsrt PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${LIBSRT_INCLUDE_DIRS}")
   endif()
 else()
   message(STATUS "libsrt library not found")

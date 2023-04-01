@@ -37,8 +37,7 @@ find_library(
     ../bin)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(PythonWindows DEFAULT_MSG PYTHON_LIB
-                                  PYTHON_INCLUDE_DIR)
+find_package_handle_standard_args(PythonWindows DEFAULT_MSG PYTHON_LIB PYTHON_INCLUDE_DIR)
 mark_as_advanced(PYTHON_INCLUDE_DIR PYTHON_LIB)
 
 if(PYTHONWINDOWS_FOUND)
@@ -50,16 +49,12 @@ if(PYTHONWINDOWS_FOUND)
   if(NOT TARGET Python::Python)
     if(IS_ABSOLUTE "${Python_LIBRARIES}")
       add_library(Python::Python UNKNOWN IMPORTED)
-      set_target_properties(Python::Python PROPERTIES IMPORTED_LOCATION
-                                                      "${Python_LIBRARIES}")
+      set_target_properties(Python::Python PROPERTIES IMPORTED_LOCATION "${Python_LIBRARIES}")
     else()
       add_library(Python::Python INTERFACE IMPORTED)
-      set_target_properties(Python::Python PROPERTIES IMPORTED_LIBNAME
-                                                      "${Python_LIBRARIES}")
+      set_target_properties(Python::Python PROPERTIES IMPORTED_LIBNAME "${Python_LIBRARIES}")
     endif()
 
-    set_target_properties(
-      Python::Python PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                "${Python_INCLUDE_DIRS}")
+    set_target_properties(Python::Python PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${Python_INCLUDE_DIRS}")
   endif()
 endif()

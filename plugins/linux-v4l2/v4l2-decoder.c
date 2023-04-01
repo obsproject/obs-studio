@@ -116,6 +116,8 @@ int v4l2_decode_frame(struct obs_source_frame *out, uint8_t *data,
 	case AV_PIX_FMT_YUV444P:
 		out->format = VIDEO_FORMAT_I444;
 		break;
+	default:
+		break;
 	}
 
 	return 0;

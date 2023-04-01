@@ -13,22 +13,11 @@ on:
 
 env:
   CACHE_REVISION: '006'
-  CEF_BUILD_VERSION_MAC: '5060'
-  CEF_HASH_MAC_X86_64: '88b950aa0bfc001061c35e7f1f3fefba856a6afb35e38b2b7b42ddd8dd239182'
-  CEF_HASH_MAC_ARM64: '98679b92eea6ea9959ac5aa54f46ca60681d8a86c768c35f496dbdd409bf0642'
   CEF_BUILD_VERSION_LINUX: '5060'
   CEF_BUILD_VERSION_WIN: '5060'
-  QT_VERSION_MAC: '6.4.1'
-  QT_HASH_MAC_X86_64: '602239df1f8e9a870082f12e216a881175210e3ee9400101d128f15dc5dc17d7'
-  QT_HASH_MAC_ARM64: '9fafa04fbe7a972628443aab4968fe319810f707d9f3766e6a32196bae1e0c91'
-  QT_HASH_MAC_UNIVERSAL: '6173e95742c83f90d5637d3483a68fb22c7313580bcbc0686fb6fd2e804c36c2'
-  QT_VERSION_WIN: '6.3.1'
-  DEPS_VERSION_MAC: '2023-03-04'
-  DEPS_HASH_MAC_X86_64: 'd7b61b54629f4372bc42285d2575b72ec2b73fce1c0a5b64bf1fa76c2b312ef5'
-  DEPS_HASH_MAC_ARM64: 'eb1c76c64f77ea864cf10a441b9589259444967c66ec0bd270d1b58e148df95c'
-  DEPS_VERSION_WIN: '2023-03-04'
-  VLC_VERSION_MAC: '3.0.8'
-  VLC_HASH_MAC: 'e0149ef4a20a19b9ecd87309c2d27787ee3f47dfd47c6639644bc1f6fd95bdf6'
+  QT_VERSION_MAC: '6.4.3'
+  QT_VERSION_WIN: '6.4.3'
+  DEPS_VERSION_WIN: '2023-03-30'
   VLC_VERSION_WIN: '3.0.0-git'
   TWITCH_CLIENTID: ${{ secrets.TWITCH_CLIENT_ID }}
   TWITCH_HASH: ${{ secrets.TWITCH_HASH }}
@@ -38,6 +27,10 @@ env:
   YOUTUBE_CLIENTID_HASH: ${{ secrets.YOUTUBE_CLIENTID_HASH }}
   YOUTUBE_SECRET: ${{ secrets.YOUTUBE_SECRET }}
   YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
+
+concurrency:
+  group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  cancel-in-progress: true
 
 jobs:
   clang_check:
@@ -75,7 +68,11 @@ jobs:
         id: config
         run: |
           if [[ "${{ github.event_name == 'pull_request' }}" == "true" ]]; then
-            echo "create_artifacts=${{ contains(github.event.pull_request.labels.*.name, 'Seeking Testers') }}" >> $GITHUB_OUTPUT
+            if test -n "$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -s "${{ github.event.pull_request.url }}" | jq -e '.labels[] | select(.name == "Seeking Testers")')"; then
+              echo 'create_artifacts=true' >> $GITHUB_OUTPUT
+            else
+              echo 'create_artifacts=false' >> $GITHUB_OUTPUT
+            fi
           else
             echo 'create_artifacts=true' >> $GITHUB_OUTPUT
           fi
@@ -90,12 +87,6 @@ jobs:
     if: always()
     needs: [config, clang_check]
     env:
-      MACOSX_DEPLOYMENT_TARGET_X86_64: '10.15'
-      MACOSX_DEPLOYMENT_TARGET_ARM64: '11.0'
-      SPARKLE_VERSION: '2.3.2'
-      SPARKLE_HASH: '2b3fe6918ca20a83729aad34f8f693a678b714a17d33b5f13ca2d25edfa7eed3'
-      SPARKLE_APPCAST_URL: 'https://obsproject.com/osx_update/updates_${{ matrix.arch }}_v2.xml'
-      SPARKLE_PUBLIC_KEY: 'HQ5/Ba9VHOuEWaM0jtVjZzgHKFJX9YTl+HNVpgNF0iM='
       BLOCKED_FORMULAS: 'speexdsp curl php composer'
       CODESIGN_IDENT: '-'
       HAVE_CODESIGN_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY != '' && secrets.MACOS_SIGNING_CERT != '' }}
@@ -111,41 +102,22 @@ jobs:
           path: 'obs-studio'
           fetch-depth: 0
 
+      - name: 'Check for GitHub Labels'
+        id: github-check
+        if: github.event_name == 'pull_request'
+        run: |
+          if test -n "$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -s "${{ github.event.pull_request.url }}" | jq -e '.labels[] | select(.name == "Seeking Testers")')"; then
+            echo "generator=Xcode" >> $GITHUB_OUTPUT
+          else
+            echo "generator=Ninja" >> $GITHUB_OUTPUT
+          fi
+
       - name: 'Restore ccache from cache'
         id: ccache-cache
         uses: actions/cache@v3
-        env:
-          CACHE_NAME: 'ccache-cache'
         with:
           path: ${{ github.workspace }}/.ccache
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ matrix.arch }}-${{ needs.config.outputs.cache_date }}
-
-      - name: 'Restore Chromium Embedded Framework from cache'
-        id: cef-cache
-        uses: actions/cache@v3
-        env:
-          CACHE_NAME: 'cef-cache'
-        with:
-          path: ${{ github.workspace }}/obs-build-dependencies/cef_binary_${{ env.CEF_BUILD_VERSION_MAC }}_macos_${{ matrix.arch }}
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_BUILD_VERSION_MAC }}-${{ matrix.arch }}-${{ env.CACHE_REVISION }}
-
-      - name: 'Restore VLC dependency from cache'
-        id: vlc-cache
-        uses: actions/cache@v3
-        env:
-          CACHE_NAME: 'vlc-cache'
-        with:
-          path: ${{ github.workspace }}/obs-build-dependencies/vlc-${{ env.VLC_VERSION_MAC }}
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.VLC_VERSION_MAC }}-${{ env.CACHE_REVISION }}
-
-      - name: 'Restore Sparkle dependency from cache'
-        id: sparkle-cache
-        uses: actions/cache@v3
-        env:
-          CACHE_NAME: 'sparkle-cache'
-        with:
-          path: ${{ github.workspace }}/obs-build-dependencies/obs-deps/lib/Sparkle.framework
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.SPARKLE_VERSION }}-${{ env.CACHE_REVISION }}
+          key: ${{ runner.os }}-${{ github.ref_name }}-${{ steps.github-check.outputs.generator }}-ccache-${{ matrix.arch }}-${{ needs.config.outputs.cache_date }}
 
       - name: 'Setup build environment'
         id: setup
@@ -164,10 +136,6 @@ jobs:
           echo "commitHash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
 
       - name: 'Install dependencies'
-        env:
-          RESTORED_VLC: ${{ steps.vlc-cache.outputs.cache-hit }}
-          RESTORED_SPARKLE: ${{ steps.sparkle-cache.outputs.cache-hit }}
-          RESTORED_CEF: ${{ steps.cef-cache.outputs.cache-hit }}
         run: CI/macos/01_install_dependencies.sh --architecture "${{ matrix.arch }}"
 
       - name: 'Install Apple Developer Certificate'
@@ -184,21 +152,34 @@ jobs:
           echo "BUILD_FOR_DISTRIBUTION=ON" >> $GITHUB_ENV
 
       - name: 'Build OBS'
-        run: CI/macos/02_build_obs.sh --codesign --architecture "${{ matrix.arch }}"
+        run: |
+          if [[ '${{ steps.github-check.outputs.generator }}' == 'Xcode' ]]; then
+            SEEKING_TESTERS=1 CI/macos/02_build_obs.sh --codesign --architecture "${{ matrix.arch }}"
+          else
+            CI/macos/02_build_obs.sh --codesign --architecture "${{ matrix.arch }}"
+          fi
 
       - name: 'Create build artifact'
-        if: ${{ success() && fromJSON(needs.config.outputs.create_artifacts) }}
+        if: ${{ fromJSON(needs.config.outputs.create_artifacts) }}
         run: |
-          CI/macos/03_package_obs.sh --codesign --architecture "${{ matrix.arch }}"
-          ARTIFACT_NAME=$(basename $(/usr/bin/find build -type f -name "obs-studio-*.dmg" -depth 1 | head -1))
-          echo "FILE_NAME=${ARTIFACT_NAME}" >> $GITHUB_ENV
+          : ${PACKAGE:=}
+          case "${GITHUB_EVENT_NAME}" in
+              push) if [[ ${GITHUB_REF_NAME} =~ [0-9]+.[0-9]+.[0-9]+(-(rc|beta).+)? ]]; then PACKAGE=1; fi ;;
+              pull_request) PACKAGE=1 ;;
+          esac
+
+          if [[ "${PACKAGE}" ]]; then
+            CI/macos/03_package_obs.sh --codesign --architecture "${{ matrix.arch }}"
+            ARTIFACT_NAME=$(basename $(/usr/bin/find build_${{ matrix.arch }} -type f -name "obs-studio-*.dmg" -depth 1 | head -1))
+            echo "FILE_NAME=${ARTIFACT_NAME}" >> $GITHUB_ENV
+          fi
 
       - name: 'Upload build Artifact'
-        if: ${{ success() && fromJSON(needs.config.outputs.create_artifacts) }}
+        if: ${{ fromJSON(needs.config.outputs.create_artifacts) && env.FILE_NAME != '' }}
         uses: actions/upload-artifact@v3
         with:
           name: 'obs-studio-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
-          path: '${{ github.workspace }}/obs-studio/build/${{ env.FILE_NAME }}'
+          path: '${{ github.workspace }}/obs-studio/build_${{ matrix.arch }}/${{ env.FILE_NAME }}'
 
   linux_build:
     name: '02 - Linux'
@@ -206,6 +187,9 @@ jobs:
     strategy:
       matrix:
         ubuntu: ['ubuntu-20.04', 'ubuntu-22.04']
+        include:
+          - ubuntu: 'ubuntu-20.04'
+            script_options: '--disable-pipewire'
     if: always()
     needs: [config, clang_check]
     defaults:
@@ -248,10 +232,10 @@ jobs:
       - name: 'Install dependencies'
         env:
           RESTORED_CEF: ${{ steps.cef-cache.outputs.cache-hit }}
-        run: CI/linux/01_install_dependencies.sh --disable-pipewire
+        run: CI/linux/01_install_dependencies.sh ${{ matrix.script_options }}
 
       - name: 'Build OBS'
-        run: CI/linux/02_build_obs.sh --disable-pipewire
+        run: CI/linux/02_build_obs.sh ${{ matrix.script_options }}
 
       - name: 'Run tests'
         if: success()
@@ -372,19 +356,32 @@ jobs:
           fetch-depth: 0
 
       - name: 'Setup build environment'
+        id: setup
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CACHE_KEY: flatpak-builder-${{ hashFiles('CI/flatpak/com.obsproject.Studio.json') }}
         run: |
+          dnf install -y -q gh
+          gh extension install actions/gh-actions-cache
+
           git config --global --add safe.directory $GITHUB_WORKSPACE
-          echo "OBS_GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_ENV
-          echo "OBS_GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-          echo "OBS_GIT_TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
+
+          KEY="$CACHE_KEY-x86_64"
+          CACHE_HIT=$(gh actions-cache list -B master --key $KEY | grep -q $KEY && echo 'true' || echo 'false')
+
+          echo "git_hash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
+          echo "cache_key=$CACHE_KEY" >> $GITHUB_OUTPUT
+          echo "cache_hit=$CACHE_HIT" >> $GITHUB_OUTPUT
 
       - name: Build Flatpak Manifest
-        uses: flatpak/flatpak-github-actions/flatpak-builder@v5
+        uses: flatpak/flatpak-github-actions/flatpak-builder@83ec7c1998a152b7d47507a2da5d7a4b21e612ff
         with:
           build-bundle: ${{ fromJSON(needs.config.outputs.create_artifacts) }}
-          bundle: obs-studio-flatpak-${{ env.OBS_GIT_HASH }}.flatpak
+          bundle: obs-studio-flatpak-${{ steps.setup.outputs.git_hash }}.flatpak
           manifest-path: CI/flatpak/com.obsproject.Studio.json
-          cache-key: flatpak-builder-${{ hashFiles('CI/flatpak/com.obsproject.Studio.json') }}
+          cache: ${{ fromJSON(steps.setup.outputs.cache_hit) || (github.event_name == 'push' && github.ref == 'refs/heads/master') }}
+          restore-cache: ${{ fromJSON(steps.setup.outputs.cache_hit) }}
+          cache-key: ${{ steps.setup.outputs.cache_key }}
 
   windows_package:
     name: '03 - Windows Installer'
@@ -557,7 +554,7 @@ jobs:
         id: branch
         run: |
           pushd repo
-          
+
           GIT_TAG="$(git describe --tags --abbrev=0)"
           if [[ ${GIT_TAG} == *'beta'* || ${GIT_TAG} == *'rc'* ]]; then
             echo "branch=beta" >> $GITHUB_OUTPUT

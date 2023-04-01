@@ -960,7 +960,7 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 {
 	const char *name = obs_data_get_string(item_data, "name");
 	const char *src_uuid = obs_data_get_string(item_data, "source_uuid");
-	obs_source_t *source;
+	obs_source_t *source = NULL;
 	const char *scale_filter_str;
 	const char *blend_method_str;
 	const char *blend_str;
@@ -973,7 +973,9 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 
 	if (src_uuid && strlen(src_uuid) == UUID_STR_LENGTH)
 		source = obs_get_source_by_uuid(src_uuid);
-	else
+
+	/* Fall back to name if UUID was not found or is not set. */
+	if (!source)
 		source = obs_get_source_by_name(name);
 
 	if (!source) {
@@ -1634,8 +1636,7 @@ static inline obs_source_t *new_ref(obs_source_t *source)
 static inline void duplicate_item_data(struct obs_scene_item *dst,
 				       struct obs_scene_item *src,
 				       bool defer_texture_update,
-				       bool duplicate_hotkeys,
-				       bool duplicate_private_data)
+				       bool duplicate_hotkeys)
 {
 	struct obs_scene *dst_scene = dst->parent;
 
@@ -1695,9 +1696,7 @@ static inline void duplicate_item_data(struct obs_scene_item *dst,
 		os_atomic_set_bool(&dst->update_transform, true);
 	}
 
-	if (duplicate_private_data) {
-		obs_data_apply(dst->private_settings, src->private_settings);
-	}
+	obs_data_apply(dst->private_settings, src->private_settings);
 }
 
 obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name,
@@ -1758,8 +1757,7 @@ obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name,
 				continue;
 			}
 
-			duplicate_item_data(new_item, item, false, false,
-					    false);
+			duplicate_item_data(new_item, item, false, false);
 
 			obs_source_release(source);
 		}
@@ -3301,10 +3299,10 @@ obs_sceneitem_t *obs_scene_insert_group(obs_scene_t *scene, const char *name,
 	obs_sceneitem_t *item =
 		obs_scene_add_internal(scene, sub_scene->source, last_item);
 
-	obs_scene_release(sub_scene);
-
-	if (!items || !count)
+	if (!items || !count) {
+		obs_scene_release(sub_scene);
 		return item;
+	}
 
 	/* ------------------------- */
 
@@ -3345,6 +3343,7 @@ obs_sceneitem_t *obs_scene_insert_group(obs_scene_t *scene, const char *name,
 
 	/* ------------------------- */
 
+	obs_scene_release(sub_scene);
 	return item;
 }
 
@@ -3422,7 +3421,7 @@ void obs_sceneitem_group_ungroup(obs_sceneitem_t *item)
 
 		remove_group_transform(item, last);
 		dst = obs_scene_add_internal(scene, last->source, insert_after);
-		duplicate_item_data(dst, last, true, true, true);
+		duplicate_item_data(dst, last, true, true);
 		apply_group_transform(last, item);
 
 		if (!last->next)

@@ -17,7 +17,7 @@ install_build-deps() {
     status "Install OBS build dependencies"
     trap "caught_error 'install_build-deps'" ERR
 
-    sudo apt-get install -y $@
+    sudo apt-get install --no-install-recommends -y $@
 }
 
 install_obs-deps() {
@@ -26,9 +26,9 @@ install_obs-deps() {
     trap "caught_error 'install_obs-deps'" ERR
 
     if [ -z "${DISABLE_PIPEWIRE}" ]; then
-        sudo apt-get install -y $@ libpipewire-0.3-dev
+        sudo apt-get install --no-install-recommends -y $@ libpipewire-0.3-dev
     else
-        sudo apt-get install -y $@
+        sudo apt-get install --no-install-recommends -y $@
     fi
 }
 
@@ -37,7 +37,7 @@ install_qt5-deps() {
     status "Install Qt5 dependencies"
     trap "caught_error 'install_qt5-deps'" ERR
 
-    sudo apt-get install -y $@
+    sudo apt-get install --no-install-recommends -y $@
 }
 
 install_qt6-deps() {
@@ -47,7 +47,7 @@ install_qt6-deps() {
 
     _QT6_AVAILABLE="$(sudo apt-cache madison ${1})"
     if [ "${_QT6_AVAILABLE}" ]; then
-        sudo apt-get install -y $@
+        sudo apt-get install --no-install-recommends -y $@
     fi
 }
 
@@ -77,7 +77,7 @@ install_plugin-deps() {
     status "Install plugin dependencies"
     trap "caught_error 'install_plugin-deps'" ERR
 
-    sudo apt-get install -y $@
+    sudo apt-get install --no-install-recommends -y $@
 }
 
 install_dependencies() {
@@ -95,7 +95,8 @@ install_dependencies() {
         "qt6-deps qt6-base-dev qt6-base-private-dev libqt6svg6-dev qt6-wayland"
         "cef ${LINUX_CEF_BUILD_VERSION:-${CI_LINUX_CEF_VERSION}}"
         "plugin-deps libasound2-dev libfdk-aac-dev libfontconfig-dev libfreetype6-dev libjack-jackd2-dev \
-         libpulse-dev libsndio-dev libspeexdsp-dev libudev-dev libv4l-dev libva-dev libvlc-dev libdrm-dev"
+         libpulse-dev libsndio-dev libspeexdsp-dev libudev-dev libv4l-dev libva-dev libvlc-dev libdrm-dev \
+         nlohmann-json3-dev libwebsocketpp-dev libasio-dev"
     )
 
     sudo apt-get -qq update

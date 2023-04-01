@@ -32,6 +32,66 @@
 #define VIDEODATA_AVCVIDEOPACKET 7.0
 #define AUDIODATA_AAC 10.0
 
+#define VIDEO_FRAMETYPE_OFFSET 4
+enum video_frametype_t {
+	FT_KEY = 1 << VIDEO_FRAMETYPE_OFFSET,
+	FT_INTER = 2 << VIDEO_FRAMETYPE_OFFSET,
+};
+
+// Y2023 spec
+const uint8_t FRAME_HEADER_EX = 8 << VIDEO_FRAMETYPE_OFFSET;
+enum packet_type_t {
+	PACKETTYPE_SEQ_START = 0,
+	PACKETTYPE_FRAMES = 1,
+	PACKETTYPE_SEQ_END = 2,
+#ifdef ENABLE_HEVC
+	PACKETTYPE_FRAMESX = 3,
+#endif
+	PACKETTYPE_METADATA = 4
+};
+
+enum datatype_t {
+	DATA_TYPE_NUMBER = 0,
+	DATA_TYPE_STRING = 2,
+	DATA_TYPE_OBJECT = 3,
+	DATA_TYPE_OBJECT_END = 9,
+};
+
+static void s_w4cc(struct serializer *s, enum video_id_t id)
+{
+	switch (id) {
+	case CODEC_AV1:
+		s_w8(s, 'a');
+		s_w8(s, 'v');
+		s_w8(s, '0');
+		s_w8(s, '1');
+		break;
+#ifdef ENABLE_HEVC
+	case CODEC_HEVC:
+		s_w8(s, 'h');
+		s_w8(s, 'v');
+		s_w8(s, 'c');
+		s_w8(s, '1');
+		break;
+#endif
+	case CODEC_H264:
+		assert(0);
+	}
+}
+
+static void s_wstring(struct serializer *s, const char *str)
+{
+	size_t len = strlen(str);
+	s_wb16(s, (uint16_t)len);
+	s_write(s, str, len);
+}
+
+static inline void s_wtimestamp(struct serializer *s, int32_t i32)
+{
+	s_wb24(s, (uint32_t)(i32 & 0xFFFFFF));
+	s_w8(s, (uint32_t)(i32 >> 24) & 0x7F);
+}
+
 static inline double encoder_bitrate(obs_encoder_t *encoder)
 {
 	obs_data_t *settings = obs_encoder_get_settings(encoder);
@@ -189,7 +249,7 @@ static void flv_video(struct serializer *s, int32_t dts_offset,
 #endif
 
 	s_wb24(s, (uint32_t)packet->size + 5);
-	s_wb24(s, time_ms);
+	s_wb24(s, (uint32_t)time_ms);
 	s_w8(s, (time_ms >> 24) & 0x7F);
 	s_wb24(s, 0);
 
@@ -223,7 +283,7 @@ static void flv_audio(struct serializer *s, int32_t dts_offset,
 #endif
 
 	s_wb24(s, (uint32_t)packet->size + 2);
-	s_wb24(s, time_ms);
+	s_wb24(s, (uint32_t)time_ms);
 	s_w8(s, (time_ms >> 24) & 0x7F);
 	s_wb24(s, 0);
 
@@ -248,6 +308,152 @@ void flv_packet_mux(struct encoder_packet *packet, int32_t dts_offset,
 		flv_video(&s, dts_offset, packet, is_header);
 	else
 		flv_audio(&s, dts_offset, packet, is_header);
+
+	*output = data.bytes.array;
+	*size = data.bytes.num;
+}
+
+// Y2023 spec
+void flv_packet_ex(struct encoder_packet *packet, enum video_id_t codec_id,
+		   int32_t dts_offset, uint8_t **output, size_t *size, int type)
+{
+	struct array_output_data data;
+	struct serializer s;
+	array_output_serializer_init(&s, &data);
+
+	assert(packet->type == OBS_ENCODER_VIDEO);
+
+	int32_t time_ms = get_ms_time(packet, packet->dts) - dts_offset;
+
+	// packet head
+	s_w8(&s, RTMP_PACKET_TYPE_VIDEO);
+	s_wb24(&s, (uint32_t)packet->size + 5); // 5 = (w8+w4cc)
+	s_wtimestamp(&s, time_ms);
+	s_wb24(&s, 0); // always 0
+
+	// packet ext header
+	s_w8(&s, FRAME_HEADER_EX | type | (packet->keyframe ? FT_KEY : 0));
+	s_w4cc(&s, codec_id);
+	// packet data
+	s_write(&s, packet->data, packet->size);
+
+	// packet tail
+	s_wb32(&s, (uint32_t)serializer_get_pos(&s) - 1);
+
+	*output = data.bytes.array;
+	*size = data.bytes.num;
+}
+
+void flv_packet_start(struct encoder_packet *packet, enum video_id_t codec,
+		      int32_t dts_offset, uint8_t **output, size_t *size)
+{
+	flv_packet_ex(packet, codec, dts_offset, output, size,
+		      PACKETTYPE_SEQ_START);
+}
+
+void flv_packet_frames(struct encoder_packet *packet, enum video_id_t codec,
+		       int32_t dts_offset, uint8_t **output, size_t *size)
+{
+#ifdef ENABLE_HEVC
+	flv_packet_ex(packet, codec, dts_offset, output, size,
+		      (codec == CODEC_HEVC) ? PACKETTYPE_FRAMESX
+					    : PACKETTYPE_FRAMES);
+#else
+	flv_packet_ex(packet, codec, dts_offset, output, size,
+		      PACKETTYPE_FRAMES);
+#endif
+}
+
+void flv_packet_end(struct encoder_packet *packet, enum video_id_t codec,
+		    int32_t dts_offset, uint8_t **output, size_t *size)
+{
+	flv_packet_ex(packet, codec, dts_offset, output, size,
+		      PACKETTYPE_SEQ_END);
+}
+
+void flv_packet_metadata(enum video_id_t codec_id, uint8_t **output,
+			 size_t *size, int bits_per_raw_sample,
+			 uint8_t color_primaries, int color_trc,
+			 int color_space, int min_luminance, int max_luminance)
+{
+	// metadata array
+	struct array_output_data data;
+	struct array_output_data metadata;
+	struct serializer s;
+	array_output_serializer_init(&s, &data);
+
+	// metadata data array
+	{
+		struct serializer s;
+		array_output_serializer_init(&s, &metadata);
+
+		s_w8(&s, DATA_TYPE_STRING);
+		s_wstring(&s, "colorInfo");
+		s_w8(&s, DATA_TYPE_OBJECT);
+		{
+			// colorConfig:
+			s_wstring(&s, "colorConfig");
+			s_w8(&s, DATA_TYPE_OBJECT);
+			{
+				s_wstring(&s, "bitDepth");
+				s_w8(&s, DATA_TYPE_NUMBER);
+				s_wbd(&s, bits_per_raw_sample);
+
+				s_wstring(&s, "colorPrimaries");
+				s_w8(&s, DATA_TYPE_NUMBER);
+				s_wbd(&s, color_primaries);
+
+				s_wstring(&s, "transferCharacteristics");
+				s_w8(&s, DATA_TYPE_NUMBER);
+				s_wbd(&s, color_trc);
+
+				s_wstring(&s, "matrixCoefficients");
+				s_w8(&s, DATA_TYPE_NUMBER);
+				s_wbd(&s, color_space);
+			}
+			s_w8(&s, 0);
+			s_w8(&s, 0);
+			s_w8(&s, DATA_TYPE_OBJECT_END);
+
+			if (max_luminance != 0) {
+				// hdrMdcv
+				s_wstring(&s, "hdrMdcv");
+				s_w8(&s, DATA_TYPE_OBJECT);
+				{
+					s_wstring(&s, "maxLuminance");
+					s_w8(&s, DATA_TYPE_NUMBER);
+					s_wbd(&s, max_luminance);
+
+					s_wstring(&s, "minLuminance");
+					s_w8(&s, DATA_TYPE_NUMBER);
+					s_wbd(&s, min_luminance);
+				}
+				s_w8(&s, 0);
+				s_w8(&s, 0);
+				s_w8(&s, DATA_TYPE_OBJECT_END);
+			}
+		}
+		s_w8(&s, 0);
+		s_w8(&s, 0);
+		s_w8(&s, DATA_TYPE_OBJECT_END);
+	}
+
+	// packet head
+	s_w8(&s, RTMP_PACKET_TYPE_VIDEO);
+	s_wb24(&s, (uint32_t)metadata.bytes.num + 5); // 5 = (w8+w4cc)
+	s_wtimestamp(&s, 0);
+	s_wb24(&s, 0); // always 0
+
+	// packet ext header
+	// these are the 5 extra bytes mentioned above
+	s_w8(&s, FRAME_HEADER_EX | PACKETTYPE_METADATA);
+	s_w4cc(&s, codec_id);
+	// packet data
+	s_write(&s, metadata.bytes.array, metadata.bytes.num);
+	array_output_serializer_free(&metadata); // must be freed
+
+	// packet tail
+	s_wb32(&s, (uint32_t)serializer_get_pos(&s) - 1);
 
 	*output = data.bytes.array;
 	*size = data.bytes.num;
@@ -471,7 +677,7 @@ static void flv_additional_audio(struct serializer *s, int32_t dts_offset,
 #endif
 
 	s_wb24(s, (uint32_t)size);
-	s_wb24(s, time_ms);
+	s_wb24(s, (uint32_t)time_ms);
 	s_w8(s, (time_ms >> 24) & 0x7F);
 	s_wb24(s, 0);
 

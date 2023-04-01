@@ -262,7 +262,7 @@ static void mp_cache_next_video(mp_cache_t *c, bool preload)
 static void mp_cache_next_audio(mp_cache_t *c)
 {
 	/* eof check */
-	if (c->next_a_idx == c->video_frames.num) {
+	if (c->next_a_idx == c->audio_segments.num) {
 		if (mp_media_can_play_audio(c))
 			c->cur_a_idx = c->next_a_idx;
 		return;

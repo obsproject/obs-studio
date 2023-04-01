@@ -45,6 +45,8 @@ void gs_duplicator::Start()
 		throw "Invalid monitor index";
 
 	hr = output->QueryInterface(IID_PPV_ARGS(output5.Assign()));
+	hdr = false;
+	sdr_white_nits = 80.f;
 	if (SUCCEEDED(hr)) {
 		constexpr DXGI_FORMAT supportedFormats[]{
 			DXGI_FORMAT_R16G16B16A16_FLOAT,
@@ -56,6 +58,13 @@ void gs_duplicator::Start()
 					       duplicator.Assign());
 		if (FAILED(hr))
 			throw HRError("Failed to DuplicateOutput1", hr);
+		DXGI_OUTPUT_DESC desc;
+		if (SUCCEEDED(output->GetDesc(&desc))) {
+			gs_monitor_color_info info =
+				device->GetMonitorColorInfo(desc.Monitor);
+			hdr = info.hdr;
+			sdr_white_nits = (float)info.sdr_white_nits;
+		}
 	} else {
 		hr = output->QueryInterface(IID_PPV_ARGS(output1.Assign()));
 		if (FAILED(hr))
@@ -238,6 +247,11 @@ static inline void copy_texture(gs_duplicator_t *d, ID3D11Texture2D *tex)
 		delete d->texture;
 		d->texture = (gs_texture_2d *)gs_texture_create(
 			desc.Width, desc.Height, general_format, 1, nullptr, 0);
+		d->color_space = d->hdr ? GS_CS_709_SCRGB
+					: ((desc.Format ==
+					    DXGI_FORMAT_R16G16B16A16_FLOAT)
+						   ? GS_CS_SRGB_16F
+						   : GS_CS_SRGB);
 	}
 
 	if (d->texture)
@@ -293,5 +307,16 @@ EXPORT bool gs_duplicator_update_frame(gs_duplicator_t *d)
 EXPORT gs_texture_t *gs_duplicator_get_texture(gs_duplicator_t *duplicator)
 {
 	return duplicator->texture;
+}
+
+EXPORT enum gs_color_space
+gs_duplicator_get_color_space(gs_duplicator_t *duplicator)
+{
+	return duplicator->color_space;
+}
+
+EXPORT float gs_duplicator_get_sdr_white_level(gs_duplicator_t *duplicator)
+{
+	return duplicator->sdr_white_nits;
 }
 }

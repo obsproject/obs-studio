@@ -36,7 +36,8 @@ if ! type cmake-format 2> /dev/null ; then
 fi
 
 find . -type d \( \
-    -path ./\*build -o \
+    -path ./.deps -o \
+    -path ./\*build\* -o \
     -path ./deps/jansson -o \
     -path ./plugins/decklink/\*/decklink-sdk -o \
     -path ./plugins/enc-amf -o \

@@ -5,8 +5,6 @@
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 
-#include "obs-ffmpeg-config.h"
-
 #ifdef _WIN32
 #include <dxgi.h>
 #include <util/windows/win-version.h>
@@ -36,6 +34,11 @@ extern struct obs_output_info replay_buffer;
 extern struct obs_output_info ffmpeg_hls_muxer;
 extern struct obs_encoder_info aac_encoder_info;
 extern struct obs_encoder_info opus_encoder_info;
+extern struct obs_encoder_info pcm_encoder_info;
+extern struct obs_encoder_info pcm24_encoder_info;
+extern struct obs_encoder_info pcm32_encoder_info;
+extern struct obs_encoder_info alac_encoder_info;
+extern struct obs_encoder_info flac_encoder_info;
 extern struct obs_encoder_info h264_nvenc_encoder_info;
 #ifdef ENABLE_HEVC
 extern struct obs_encoder_info hevc_nvenc_encoder_info;
@@ -44,7 +47,10 @@ extern struct obs_encoder_info svt_av1_encoder_info;
 extern struct obs_encoder_info aom_av1_encoder_info;
 
 #ifdef LIBAVUTIL_VAAPI_AVAILABLE
-extern struct obs_encoder_info vaapi_encoder_info;
+extern struct obs_encoder_info h264_vaapi_encoder_info;
+#ifdef ENABLE_HEVC
+extern struct obs_encoder_info hevc_vaapi_encoder_info;
+#endif
 #endif
 
 #ifndef __APPLE__
@@ -336,6 +342,19 @@ static bool h264_vaapi_supported(void)
 	 * that support H264. */
 	return vaapi_get_h264_default_device() != NULL;
 }
+#ifdef ENABLE_HEVC
+static bool hevc_vaapi_supported(void)
+{
+	const AVCodec *vaenc = avcodec_find_encoder_by_name("hevc_vaapi");
+
+	if (!vaenc)
+		return false;
+
+	/* NOTE: If default device is NULL, it means there is no device
+	 * that support HEVC. */
+	return vaapi_get_hevc_default_device() != NULL;
+}
+#endif
 #endif
 
 #ifdef _WIN32
@@ -371,6 +390,11 @@ bool obs_module_load(void)
 	register_encoder_if_available(&svt_av1_encoder_info, "libsvtav1");
 	register_encoder_if_available(&aom_av1_encoder_info, "libaom-av1");
 	obs_register_encoder(&opus_encoder_info);
+	obs_register_encoder(&pcm_encoder_info);
+	obs_register_encoder(&pcm24_encoder_info);
+	obs_register_encoder(&pcm32_encoder_info);
+	obs_register_encoder(&alac_encoder_info);
+	obs_register_encoder(&flac_encoder_info);
 #ifndef __APPLE__
 	bool h264 = false;
 	bool hevc = false;
@@ -423,10 +447,19 @@ bool obs_module_load(void)
 
 	if (h264_vaapi_supported()) {
 		blog(LOG_INFO, "FFmpeg VAAPI H264 encoding supported");
-		obs_register_encoder(&vaapi_encoder_info);
+		obs_register_encoder(&h264_vaapi_encoder_info);
 	} else {
 		blog(LOG_INFO, "FFmpeg VAAPI H264 encoding not supported");
 	}
+
+#ifdef ENABLE_HEVC
+	if (hevc_vaapi_supported()) {
+		blog(LOG_INFO, "FFmpeg VAAPI HEVC encoding supported");
+		obs_register_encoder(&hevc_vaapi_encoder_info);
+	} else {
+		blog(LOG_INFO, "FFmpeg VAAPI HEVC encoding not supported");
+	}
+#endif
 #endif
 #endif
 

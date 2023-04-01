@@ -17,7 +17,6 @@
 ******************************************************************************/
 
 #include "obs-scripting-python.h"
-#include "obs-scripting-config.h"
 #include <util/base.h>
 #include <util/platform.h>
 #include <util/darray.h>

@@ -68,19 +68,15 @@ char *find_libobs_data_file(const char *file)
 {
 	struct dstr path;
 
-	if (is_in_bundle()) {
-		NSBundle *frameworkBundle = [NSBundle
-			bundleWithIdentifier:@"com.obsproject.libobs"];
-		NSURL *bundleURL = [frameworkBundle bundleURL];
-		NSURL *libobsDataURL =
-			[bundleURL URLByAppendingPathComponent:@"Resources/"];
-		const char *libobsDataPath = [[libobsDataURL path]
-			cStringUsingEncoding:NSUTF8StringEncoding];
-		dstr_init_copy(&path, libobsDataPath);
-		dstr_cat(&path, "/");
-	} else {
-		dstr_init_copy(&path, OBS_INSTALL_DATA_PATH "/libobs/");
-	}
+	NSBundle *frameworkBundle =
+		[NSBundle bundleWithIdentifier:@"com.obsproject.libobs"];
+	NSURL *bundleURL = [frameworkBundle bundleURL];
+	NSURL *libobsDataURL =
+		[bundleURL URLByAppendingPathComponent:@"Resources/"];
+	const char *libobsDataPath = [[libobsDataURL path]
+		cStringUsingEncoding:NSUTF8StringEncoding];
+	dstr_init_copy(&path, libobsDataPath);
+	dstr_cat(&path, "/");
 
 	dstr_cat(&path, file);
 	return path.array;
