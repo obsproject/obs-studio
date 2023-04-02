@@ -626,13 +626,24 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 	}
 	activeBlob = nullptr;
 
+	struct obs_video_info ovi;
+	const enum video_colorspace colorspace =
+		obs_get_video_info(&ovi) ? ovi.colorspace : VIDEO_CS_DEFAULT;
+	const bool source_hdr = (colorspace == VIDEO_CS_2100_PQ) ||
+				(colorspace == VIDEO_CS_2100_HLG);
+	const bool enable_hdr =
+		source_hdr &&
+		(obs_output_get_video_conversion(decklinkOutput->GetOutput())
+			 ->colorspace == VIDEO_CS_2100_PQ);
+	BMDPixelFormat pixelFormat = enable_hdr ? bmdFormat10BitRGBXLE
+						: bmdFormat8BitBGRA;
 	const int64_t minimumPrerollFrames =
 		std::max(device->GetMinimumPrerollFrames(), INT64_C(3));
 	for (int64_t i = 0; i < minimumPrerollFrames; ++i) {
 		ComPtr<IDeckLinkMutableVideoFrame> decklinkOutputFrame;
 		HRESULT result = output_->CreateVideoFrame(
 			decklinkOutput->GetWidth(), decklinkOutput->GetHeight(),
-			rowSize, bmdFormat8BitBGRA, bmdFrameFlagDefault,
+			rowSize, pixelFormat, bmdFrameFlagDefault,
 			&decklinkOutputFrame);
 		if (result != S_OK) {
 			blog(LOG_ERROR, "failed to create video frame 0x%X",
@@ -640,7 +651,15 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 			return false;
 		}
 
-		result = output_->ScheduleVideoFrame(decklinkOutputFrame,
+		IDeckLinkVideoFrame *theFrame = decklinkOutputFrame.Get();
+		ComPtr<HDRVideoFrame> decklinkOutputHDRFrame;
+		if (enable_hdr) {
+			*decklinkOutputHDRFrame.Assign() =
+				new HDRVideoFrame(decklinkOutputFrame);
+			theFrame = decklinkOutputHDRFrame.Get();
+		}
+
+		result = output_->ScheduleVideoFrame(theFrame,
 						     i * frameDuration,
 						     frameDuration,
 						     frameTimescale);
