@@ -26,7 +26,7 @@ bool ffmpeg_video_encoder_init_codec(struct ffmpeg_video_encoder *enc)
 					     enc->enc_name);
 				dstr_replace(&error_message, "%2",
 					     av_err2str(ret));
-				dstr_cat(&error_message, "\r\n\r\n");
+				dstr_cat(&error_message, "<br><br>");
 
 				obs_encoder_set_last_error(enc->encoder,
 							   error_message.array);

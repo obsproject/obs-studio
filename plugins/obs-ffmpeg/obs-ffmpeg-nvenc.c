@@ -250,7 +250,7 @@ static void on_init_error(void *data, int ret)
 
 	dstr_copy(&error_message, obs_module_text("NVENC.Error"));
 	dstr_replace(&error_message, "%1", av_err2str(ret));
-	dstr_cat(&error_message, "\r\n\r\n");
+	dstr_cat(&error_message, "<br><br>");
 
 	if (enc->gpu > 0) {
 		// if a non-zero GPU failed, almost always
