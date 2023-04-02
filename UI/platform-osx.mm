@@ -40,38 +40,22 @@ bool isInBundle()
 
 bool GetDataFilePath(const char *data, string &output)
 {
-	NSRunningApplication *app = [NSRunningApplication currentApplication];
-	NSURL *bundleURL = [app bundleURL];
-	NSString *path = [NSString
-		stringWithFormat:@"Contents/Resources/%@",
-				 [NSString stringWithUTF8String:data]];
-	NSURL *dataURL = [bundleURL URLByAppendingPathComponent:path];
-	output = [[dataURL path] UTF8String];
+	NSURL *bundleUrl = [[NSBundle mainBundle] bundleURL];
+	NSString *path = [[bundleUrl path]
+		stringByAppendingFormat:@"/%@/%s", @"Contents/Resources", data];
+	output = path.UTF8String;
 
 	return !access(output.c_str(), R_OK);
 }
 
 void CheckIfAlreadyRunning(bool &already_running)
 {
-	try {
-		NSBundle *bundle = [NSBundle mainBundle];
-		if (!bundle)
-			throw "Could not find main bundle";
+	NSString *bundleId = [[NSBundle mainBundle] bundleIdentifier];
 
-		NSString *bundleID = [bundle bundleIdentifier];
-		if (!bundleID)
-			throw "Could not find bundle identifier";
+	NSUInteger appCount = [[NSRunningApplication
+		runningApplicationsWithBundleIdentifier:bundleId] count];
 
-		int app_count =
-			[NSRunningApplication
-				runningApplicationsWithBundleIdentifier:bundleID]
-				.count;
-
-		already_running = app_count > 1;
-
-	} catch (const char *error) {
-		blog(LOG_ERROR, "CheckIfAlreadyRunning: %s", error);
-	}
+	already_running = appCount > 1;
 }
 
 string GetDefaultVideoSavePath()
@@ -143,12 +127,10 @@ void SetAlwaysOnTop(QWidget *window, bool enable)
 	Qt::WindowFlags flags = window->windowFlags();
 
 	if (enable) {
-		/* Force the level of the window high so it sits on top of
-		 * full-screen applications like Keynote */
-		NSView *nsv = (__bridge NSView *)reinterpret_cast<void *>(
+		NSView *view = (__bridge NSView *)reinterpret_cast<void *>(
 			window->winId());
-		NSWindow *nsw = nsv.window;
-		[nsw setLevel:1024];
+
+		[[view window] setLevel:NSScreenSaverWindowLevel];
 
 		flags |= Qt::WindowStaysOnTopHint;
 	} else {
