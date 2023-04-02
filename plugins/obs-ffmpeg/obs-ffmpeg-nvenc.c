@@ -38,6 +38,7 @@ struct nvenc_encoder {
 	int gpu;
 	DARRAY(uint8_t) header;
 	DARRAY(uint8_t) sei;
+	int64_t dts_offset; // Revert when FFmpeg fixes b-frame DTS calculation
 };
 
 #ifdef __linux__
@@ -292,6 +293,15 @@ static void on_first_packet(void *data, AVPacket *pkt, struct darray *da)
 					&enc->sei.array, &enc->sei.num);
 	}
 	da->capacity = da->num;
+
+	if (enc->ffve.context->max_b_frames != 0) {
+		int64_t expected_dts = -(enc->ffve.context->max_b_frames *
+					 enc->ffve.context->time_base.num);
+		if (pkt->dts != expected_dts) { // Unpatched FFmpeg
+			enc->dts_offset = expected_dts - pkt->dts;
+			info("Applying DTS value corrections");
+		}
+	}
 }
 
 static void *nvenc_create_internal(obs_data_t *settings, obs_encoder_t *encoder,
@@ -410,7 +420,12 @@ static bool nvenc_encode(void *data, struct encoder_frame *frame,
 			 struct encoder_packet *packet, bool *received_packet)
 {
 	struct nvenc_encoder *enc = data;
-	return ffmpeg_video_encode(&enc->ffve, frame, packet, received_packet);
+
+	if (!ffmpeg_video_encode(&enc->ffve, frame, packet, received_packet))
+		return false;
+
+	packet->dts += enc->dts_offset;
+	return true;
 }
 
 enum codec_type {
