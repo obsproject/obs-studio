@@ -4494,8 +4494,6 @@ void OBSBasic::RenderMain(void *data, uint32_t, uint32_t)
 		 100.0f);
 	gs_reset_viewport();
 
-	window->ui->preview->DrawSceneEditing();
-
 	uint32_t targetCX = window->previewCX;
 	uint32_t targetCY = window->previewCY;
 
@@ -4508,6 +4506,8 @@ void OBSBasic::RenderMain(void *data, uint32_t, uint32_t)
 		RenderSafeAreas(window->topLine, targetCX, targetCY);
 		RenderSafeAreas(window->rightLine, targetCX, targetCY);
 	}
+
+	window->ui->preview->DrawSceneEditing();
 
 	if (window->drawSpacingHelpers)
 		window->ui->preview->DrawSpacingHelpers();
