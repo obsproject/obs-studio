@@ -116,9 +116,6 @@ void output_start()
 
 			context.stage_index = 0;
 
-			const video_output_info *mainVOI =
-				video_output_get_info(obs_get_video());
-
 			video_output_info vi = {0};
 			vi.format = VIDEO_FORMAT_BGRA;
 			vi.width = width;
@@ -126,7 +123,7 @@ void output_start()
 			vi.fps_den = context.ovi.fps_den;
 			vi.fps_num = context.ovi.fps_num;
 			vi.cache_size = 16;
-			vi.colorspace = mainVOI->colorspace;
+			vi.colorspace = VIDEO_CS_DEFAULT;
 			vi.range = VIDEO_RANGE_FULL;
 			vi.name = "decklink_output";
 
@@ -253,9 +250,6 @@ void preview_output_start()
 
 			context.stage_index = 0;
 
-			const video_output_info *mainVOI =
-				video_output_get_info(obs_get_video());
-
 			video_output_info vi = {0};
 			vi.format = VIDEO_FORMAT_BGRA;
 			vi.width = width;
@@ -263,7 +257,7 @@ void preview_output_start()
 			vi.fps_den = context.ovi.fps_den;
 			vi.fps_num = context.ovi.fps_num;
 			vi.cache_size = 16;
-			vi.colorspace = mainVOI->colorspace;
+			vi.colorspace = VIDEO_CS_DEFAULT;
 			vi.range = VIDEO_RANGE_FULL;
 			vi.name = "decklink_preview_output";
 
@@ -386,13 +380,24 @@ static void decklink_ui_render(void *param)
 		return;
 
 	const bool previous = gs_framebuffer_srgb_enabled();
-	gs_enable_framebuffer_srgb(true);
+	const bool source_hdr = (context.ovi.colorspace == VIDEO_CS_2100_PQ) ||
+				(context.ovi.colorspace == VIDEO_CS_2100_HLG);
+	const bool target_hdr = source_hdr &&
+				(conversion->colorspace == VIDEO_CS_2100_PQ);
+	gs_enable_framebuffer_srgb(!target_hdr);
 	gs_enable_blending(false);
 
 	gs_effect_t *const effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
 	gs_effect_set_texture_srgb(gs_effect_get_param_by_name(effect, "image"),
 				   tex);
-	while (gs_effect_loop(effect, "DrawAlphaDivide")) {
+	const char *const tech_name =
+		target_hdr ? "DrawAlphaDivideR10L"
+			   : (source_hdr ? "DrawAlphaDivideTonemap"
+					 : "DrawAlphaDivide");
+	while (gs_effect_loop(effect, tech_name)) {
+		gs_effect_set_float(gs_effect_get_param_by_name(effect,
+								"multiplier"),
+				    obs_get_video_sdr_white_level() / 10000.f);
 		gs_draw_sprite(tex, 0, 0, 0);
 	}
 

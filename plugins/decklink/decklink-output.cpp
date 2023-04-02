@@ -24,6 +24,7 @@ static void *decklink_output_create(obs_data_t *settings, obs_output_t *output)
 	decklinkOutput->deviceHash = obs_data_get_string(settings, DEVICE_HASH);
 	decklinkOutput->modeID = obs_data_get_int(settings, MODE_ID);
 	decklinkOutput->keyerMode = (int)obs_data_get_int(settings, KEYER);
+	decklinkOutput->force_sdr = obs_data_get_bool(settings, FORCE_SDR);
 
 	ComPtr<DeckLinkDevice> device;
 	device.Set(deviceEnum->FindByHash(decklinkOutput->deviceHash));
@@ -36,9 +37,10 @@ static void *decklink_output_create(obs_data_t *settings, obs_output_t *output)
 		to.width = mode->GetWidth();
 		to.height = mode->GetHeight();
 		to.range = VIDEO_RANGE_FULL;
-		struct obs_video_info ovi;
-		to.colorspace = obs_get_video_info(&ovi) ? ovi.colorspace
-							 : VIDEO_CS_DEFAULT;
+		to.colorspace = (device->GetSupportsHDRMetadata() &&
+				 !decklinkOutput->force_sdr)
+					? VIDEO_CS_2100_PQ
+					: VIDEO_CS_709;
 
 		obs_output_set_video_conversion(output, &to);
 	}
@@ -53,6 +55,7 @@ static void decklink_output_update(void *data, obs_data_t *settings)
 	decklink->deviceHash = obs_data_get_string(settings, DEVICE_HASH);
 	decklink->modeID = obs_data_get_int(settings, MODE_ID);
 	decklink->keyerMode = (int)obs_data_get_int(settings, KEYER);
+	decklink->force_sdr = obs_data_get_bool(settings, FORCE_SDR);
 }
 
 static bool decklink_output_start(void *data)
@@ -272,6 +275,7 @@ static obs_properties_t *decklink_output_properties(void *unused)
 				OBS_COMBO_FORMAT_INT);
 
 	obs_properties_add_bool(props, AUTO_START, TEXT_AUTO_START);
+	obs_properties_add_bool(props, FORCE_SDR, TEXT_FORCE_SDR);
 
 	obs_properties_add_list(props, KEYER, TEXT_ENABLE_KEYER,
 				OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);

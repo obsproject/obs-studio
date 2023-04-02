@@ -110,6 +110,9 @@ bool DeckLinkDevice::Init()
 	attributes->GetFlag(BMDDeckLinkSupportsInternalKeying,
 			    &supportsInternalKeyer);
 
+	attributes->GetFlag(BMDDeckLinkSupportsHDRMetadata,
+			    &supportsHDRMetadata);
+
 	// Sub Device Counts
 	attributes->GetInt(BMDDeckLinkSubDeviceIndex, &subDeviceIndex);
 	attributes->GetInt(BMDDeckLinkNumberOfSubDevices, &numSubDevices);
@@ -248,6 +251,11 @@ bool DeckLinkDevice::GetSupportsExternalKeyer(void) const
 bool DeckLinkDevice::GetSupportsInternalKeyer(void) const
 {
 	return supportsInternalKeyer;
+}
+
+bool DeckLinkDevice::GetSupportsHDRMetadata(void) const
+{
+	return supportsHDRMetadata;
 }
 
 int64_t DeckLinkDevice::GetSubDeviceCount()
