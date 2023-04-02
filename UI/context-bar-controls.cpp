@@ -56,8 +56,8 @@ void SourceToolbar::SetUndoProperties(obs_source_t *source, bool repeatable)
 	if (!currentSceneSource)
 		return;
 	std::string scene_name = obs_source_get_name(currentSceneSource);
-	auto undo_redo = [scene_name,
-			  main = std::move(main)](const std::string &data) {
+	auto undo_redo = [scene_name = std::move(scene_name),
+			  main](const std::string &data) {
 		OBSDataAutoRelease settings =
 			obs_data_create_from_json(data.c_str());
 		OBSSourceAutoRelease source = obs_get_source_by_name(
