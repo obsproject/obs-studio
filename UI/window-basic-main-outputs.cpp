@@ -1300,14 +1300,10 @@ bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
 	bool is_fragmented = strncmp(format, "fragmented", 10) == 0;
 
 	string f;
-	string strPath;
 
 	OBSDataAutoRelease settings = obs_data_create();
 	if (updateReplayBuffer) {
 		f = GetFormatString(filenameFormat, rbPrefix, rbSuffix);
-		strPath = GetOutputFilename(path, ffmpegOutput ? "avi" : format,
-					    noSpace, overwriteIfExists,
-					    f.c_str());
 		obs_data_set_string(settings, "directory", path);
 		obs_data_set_string(settings, "format", f.c_str());
 		obs_data_set_string(settings, "extension", format);
@@ -1317,10 +1313,9 @@ bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
 				 usingRecordingPreset ? rbSize : 0);
 	} else {
 		f = GetFormatString(filenameFormat, nullptr, nullptr);
-		strPath = GetRecordingFilename(path,
-					       ffmpegOutput ? "avi" : format,
-					       noSpace, overwriteIfExists,
-					       f.c_str(), ffmpegOutput);
+		string strPath = GetRecordingFilename(
+			path, ffmpegOutput ? "avi" : format, noSpace,
+			overwriteIfExists, f.c_str(), ffmpegOutput);
 		obs_data_set_string(settings, ffmpegOutput ? "url" : "path",
 				    strPath.c_str());
 		if (ffmpegOutput)
@@ -2309,8 +2304,6 @@ bool AdvancedOutput::StartReplayBuffer()
 		rbSize = config_get_int(main->Config(), "AdvOut", "RecRBSize");
 
 		string f = GetFormatString(filenameFormat, rbPrefix, rbSuffix);
-		string strPath = GetOutputFilename(
-			path, recFormat, noSpace, overwriteIfExists, f.c_str());
 
 		OBSDataAutoRelease settings = obs_data_create();
 
