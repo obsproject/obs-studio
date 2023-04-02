@@ -1212,13 +1212,12 @@ std::string OBSApp::GetTheme(std::string name, std::string path)
 
 std::string OBSApp::SetParentTheme(std::string name)
 {
-	string path = GetTheme(name.c_str(), "");
+	string path = GetTheme(name, "");
 	if (path.empty())
 		return path;
 
 	setPalette(defaultPalette);
 
-	QString mpath = QString("file:///") + path.c_str();
 	ParseExtraThemeData(path.c_str());
 	return path;
 }

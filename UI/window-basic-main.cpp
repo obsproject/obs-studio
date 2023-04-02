@@ -6371,9 +6371,8 @@ void OBSBasic::UploadLog(const char *subdir, const char *file, const bool crash)
 		logUploadThread->wait();
 	}
 
-	RemoteTextThread *thread =
-		new RemoteTextThread("https://obsproject.com/logs/upload",
-				     "text/plain", ss.str().c_str());
+	RemoteTextThread *thread = new RemoteTextThread(
+		"https://obsproject.com/logs/upload", "text/plain", ss.str());
 
 	logUploadThread.reset(thread);
 	if (crash) {
