@@ -5752,18 +5752,23 @@ static void DisableIncompatibleSimpleContainer(QComboBox *cbox,
 
 	bool currentCompatible = true;
 	for (int idx = 0; idx < cbox->count(); idx++) {
-		QString format = cbox->itemData(idx).toString();
+		QString qFormat = cbox->itemData(idx).toString();
+
+		string format = qFormat.toStdString();
+		/* Remove leading "f" for fragmented MP4/MOV */
+		if (format == "fmp4" || format == "fmov")
+			format = format.erase(0, 1);
 
 		QStandardItemModel *model =
 			dynamic_cast<QStandardItemModel *>(cbox->model());
 		QStandardItem *item = model->item(idx);
 
-		if (ContainerSupportsCodec(QT_TO_UTF8(format),
-					   QT_TO_UTF8(vCodec))) {
+		if (ContainerSupportsCodec(format, QT_TO_UTF8(vCodec)) &&
+		    ContainerSupportsCodec(format, QT_TO_UTF8(aCodec))) {
 			item->setFlags(Qt::ItemIsSelectable |
 				       Qt::ItemIsEnabled);
 		} else {
-			if (format == currentFormat)
+			if (qFormat == currentFormat)
 				currentCompatible = false;
 
 			item->setFlags(Qt::NoItemFlags);
