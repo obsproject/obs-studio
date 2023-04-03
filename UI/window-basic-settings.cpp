@@ -5701,7 +5701,6 @@ static void DisableIncompatibleSimpleCodecs(QComboBox *cbox,
 {
 	/* Unlike in advanced mode the available simple mode encoders are
 	 * hardcoded, so this check is also a simpler, hardcoded one. */
-	QString formatUpper = QString(format).toUpper();
 	QString encoder = cbox->currentData().toString();
 
 	bool currentCompatible = true;
