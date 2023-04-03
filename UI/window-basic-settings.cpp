@@ -5748,8 +5748,8 @@ static void DisableIncompatibleSimpleContainer(QComboBox *cbox,
 {
 	/* Similar to above, but works in reverse to disable incompatible formats
 	 * based on the encoder selection. */
-	QString aCodec = aEncoder;
-	QString vCodec = obs_get_encoder_codec(
+	const char *aCodec = QT_TO_UTF8(aEncoder);
+	const char *vCodec = obs_get_encoder_codec(
 		get_simple_output_encoder(QT_TO_UTF8(vEncoder)));
 
 	bool currentCompatible = true;
@@ -5760,8 +5760,8 @@ static void DisableIncompatibleSimpleContainer(QComboBox *cbox,
 			dynamic_cast<QStandardItemModel *>(cbox->model());
 		QStandardItem *item = model->item(idx);
 
-		if (ContainerSupportsCodec(QT_TO_UTF8(format),
-					   QT_TO_UTF8(vCodec))) {
+		if (ContainerSupportsCodec(format.toStdString(), vCodec) &&
+		    ContainerSupportsCodec(format.toStdString(), aCodec)) {
 			item->setFlags(Qt::ItemIsSelectable |
 				       Qt::ItemIsEnabled);
 		} else {
