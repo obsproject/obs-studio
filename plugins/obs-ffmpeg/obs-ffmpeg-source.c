@@ -55,8 +55,9 @@ struct ffmpeg_source {
 	bool is_stinger;
 
 	pthread_t reconnect_thread;
-	bool stop_reconnect;
+	pthread_mutex_t reconnect_mutex;
 	bool reconnect_thread_valid;
+	os_event_t *reconnect_stop_event;
 	volatile bool reconnecting;
 	int reconnect_delay_sec;
 
@@ -64,6 +65,23 @@ struct ffmpeg_source {
 	obs_hotkey_pair_id play_pause_hotkey;
 	obs_hotkey_id stop_hotkey;
 };
+
+// Used to safely cancel and join any active reconnect threads
+// Use this to join any finished reconnect thread too!
+static void stop_reconnect_thread(struct ffmpeg_source *s)
+{
+	if (s->is_local_file)
+		return;
+	pthread_mutex_lock(&s->reconnect_mutex);
+	if (s->reconnect_thread_valid) {
+		os_event_signal(s->reconnect_stop_event);
+		pthread_join(s->reconnect_thread, NULL);
+		s->reconnect_thread_valid = false;
+		os_atomic_set_bool(&s->reconnecting, false);
+		os_event_reset(s->reconnect_stop_event);
+	}
+	pthread_mutex_unlock(&s->reconnect_mutex);
+}
 
 static void set_media_state(void *data, enum obs_media_state state)
 {
@@ -347,10 +365,11 @@ static void ffmpeg_source_start(struct ffmpeg_source *s)
 static void *ffmpeg_source_reconnect(void *data)
 {
 	struct ffmpeg_source *s = data;
-	os_sleep_ms(s->reconnect_delay_sec * 1000);
 
-	if (s->stop_reconnect || s->media)
-		goto finish;
+	int ret = os_event_timedwait(s->reconnect_stop_event,
+				     s->reconnect_delay_sec * 1000);
+	if (ret == 0 || s->media)
+		return NULL;
 
 	bool active = obs_source_active(s->source);
 	if (!s->close_when_inactive || active)
@@ -359,8 +378,6 @@ static void *ffmpeg_source_reconnect(void *data)
 	if (!s->restart_on_activate || active)
 		ffmpeg_source_start(s);
 
-finish:
-	s->reconnect_thread_valid = false;
 	return NULL;
 }
 
@@ -378,17 +395,25 @@ static void ffmpeg_source_tick(void *data, float seconds)
 		s->destroy_media = false;
 
 		if (!s->is_local_file) {
-			if (!os_atomic_set_bool(&s->reconnecting, true)) {
+			pthread_mutex_lock(&s->reconnect_mutex);
+			if (!os_atomic_set_bool(&s->reconnecting, true))
 				FF_BLOG(LOG_WARNING, "Disconnected. "
 						     "Reconnecting...");
+			if (s->reconnect_thread_valid) {
+				os_event_signal(s->reconnect_stop_event);
+				pthread_join(s->reconnect_thread, NULL);
+				s->reconnect_thread_valid = false;
+				os_event_reset(s->reconnect_stop_event);
 			}
 			if (pthread_create(&s->reconnect_thread, NULL,
 					   ffmpeg_source_reconnect, s) != 0) {
 				FF_BLOG(LOG_WARNING, "Could not create "
 						     "reconnect thread");
+				pthread_mutex_unlock(&s->reconnect_mutex);
 				return;
 			}
 			s->reconnect_thread_valid = true;
+			pthread_mutex_unlock(&s->reconnect_mutex);
 		}
 	}
 }
@@ -434,13 +459,9 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 						 ? 10
 						 : s->reconnect_delay_sec;
 		s->is_looping = false;
-
-		if (s->reconnect_thread_valid) {
-			s->stop_reconnect = true;
-			pthread_join(s->reconnect_thread, NULL);
-			s->stop_reconnect = false;
-		}
 	}
+
+	stop_reconnect_thread(s);
 
 	ffmpeg_options = obs_data_get_string(settings, "ffmpeg_options");
 
@@ -594,6 +615,20 @@ static void *ffmpeg_source_create(obs_data_t *settings, obs_source_t *source)
 	struct ffmpeg_source *s = bzalloc(sizeof(struct ffmpeg_source));
 	s->source = source;
 
+	// Manual type since the event can be signalled without an active thread
+	if (os_event_init(&s->reconnect_stop_event, OS_EVENT_TYPE_MANUAL)) {
+		FF_BLOG(LOG_ERROR, "Failed to initialize reconnect stop event");
+		bfree(s);
+		return NULL;
+	}
+
+	if (pthread_mutex_init(&s->reconnect_mutex, NULL)) {
+		FF_BLOG(LOG_ERROR, "Failed to initialize reconnect mutex");
+		os_event_destroy(s->reconnect_stop_event);
+		bfree(s);
+		return NULL;
+	}
+
 	s->hotkey = obs_hotkey_register_source(source, "MediaSource.Restart",
 					       obs_module_text("RestartMedia"),
 					       restart_hotkey, s);
@@ -625,16 +660,15 @@ static void ffmpeg_source_destroy(void *data)
 {
 	struct ffmpeg_source *s = data;
 
+	stop_reconnect_thread(s);
+
 	if (s->hotkey)
 		obs_hotkey_unregister(s->hotkey);
-	if (!s->is_local_file) {
-		s->stop_reconnect = true;
-		if (s->reconnect_thread_valid)
-			pthread_join(s->reconnect_thread, NULL);
-	}
 	if (s->media)
 		media_playback_destroy(s->media);
 
+	pthread_mutex_destroy(&s->reconnect_mutex);
+	os_event_destroy(s->reconnect_stop_event);
 	bfree(s->input);
 	bfree(s->input_format);
 	bfree(s->ffmpeg_options);
