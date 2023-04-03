@@ -1592,6 +1592,7 @@ enum convert_type {
 	CONVERT_I010,
 	CONVERT_P010,
 	CONVERT_V210,
+	CONVERT_R10L,
 };
 
 static inline enum convert_type get_convert_type(enum video_format format,
@@ -1651,6 +1652,9 @@ static inline enum convert_type get_convert_type(enum video_format format,
 
 	case VIDEO_FORMAT_V210:
 		return CONVERT_V210;
+
+	case VIDEO_FORMAT_R10L:
+		return CONVERT_R10L;
 
 	case VIDEO_FORMAT_P216:
 	case VIDEO_FORMAT_P416:
@@ -1959,6 +1963,16 @@ static inline bool set_v210_sizes(struct obs_source *source,
 	return true;
 }
 
+static inline bool set_r10l_sizes(struct obs_source *source,
+				  const struct obs_source_frame *frame)
+{
+	source->async_convert_width[0] = frame->width;
+	source->async_convert_height[0] = frame->height;
+	source->async_texture_formats[0] = GS_BGRA_UNORM;
+	source->async_channel_count = 1;
+	return true;
+}
+
 static inline bool init_gpu_conversion(struct obs_source *source,
 				       const struct obs_source_frame *frame)
 {
@@ -2018,6 +2032,9 @@ static inline bool init_gpu_conversion(struct obs_source *source,
 
 	case CONVERT_V210:
 		return set_v210_sizes(source, frame);
+
+	case CONVERT_R10L:
+		return set_r10l_sizes(source, frame);
 
 	case CONVERT_NONE:
 		assert(false && "No conversion requested");
@@ -2112,6 +2129,7 @@ static void upload_raw_frame(gs_texture_t *tex[MAX_AV_PLANES],
 	case CONVERT_I010:
 	case CONVERT_P010:
 	case CONVERT_V210:
+	case CONVERT_R10L:
 		for (size_t c = 0; c < MAX_AV_PLANES; c++) {
 			if (tex[c])
 				gs_texture_set_image(tex[c], frame->data[c],
@@ -2242,6 +2260,20 @@ static const char *select_conversion_technique(enum video_format format,
 			return "V210_HLG_2020_709_Reverse";
 		default:
 			return "V210_SRGB_Reverse";
+		}
+	}
+
+	case VIDEO_FORMAT_R10L: {
+		switch (trc) {
+		case VIDEO_TRC_PQ:
+			return full_range ? "R10L_PQ_2020_709_Full_Reverse"
+					  : "R10L_PQ_2020_709_Limited_Reverse";
+		case VIDEO_TRC_HLG:
+			return full_range ? "R10L_HLG_2020_709_Full_Reverse"
+					  : "R10L_HLG_2020_709_Limited_Reverse";
+		default:
+			return full_range ? "R10L_SRGB_Full_Reverse"
+					  : "R10L_SRGB_Limited_Reverse";
 		}
 	}
 
@@ -3462,6 +3494,7 @@ static void copy_frame_data(struct obs_source_frame *dst,
 	case VIDEO_FORMAT_BGR3:
 	case VIDEO_FORMAT_AYUV:
 	case VIDEO_FORMAT_V210:
+	case VIDEO_FORMAT_R10L:
 		copy_frame_data_plane(dst, src, 0, dst->height);
 		break;
 

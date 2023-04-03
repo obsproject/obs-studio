@@ -827,6 +827,9 @@ Functions used by outputs
 
            /* packed 4:2:2 format, 10 bpp */
            VIDEO_FORMAT_V210,
+
+           /* packed uncompressed 10-bit format */
+           VIDEO_FORMAT_R10L,
    };
 
    enum video_colorspace {
