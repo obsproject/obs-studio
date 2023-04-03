@@ -518,6 +518,7 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	bool cbr_override = obs_data_get_bool(settings, "cbr");
 	int bFrames = (int)obs_data_get_int(settings, "bframes");
 	bool enhancements = obs_data_get_bool(settings, "enhancements");
+	const char *codec;
 
 	if (obs_data_has_user_value(settings, "bf"))
 		bFrames = (int)obs_data_get_int(settings, "bf");
@@ -551,6 +552,7 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_7;
 
 	if (obsqsv->codec == QSV_CODEC_AVC) {
+		codec = "H.264";
 		if (astrcmpi(profile, "baseline") == 0)
 			obsqsv->params.nCodecProfile = MFX_PROFILE_AVC_BASELINE;
 		else if (astrcmpi(profile, "main") == 0)
@@ -559,6 +561,7 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 			obsqsv->params.nCodecProfile = MFX_PROFILE_AVC_HIGH;
 
 	} else if (obsqsv->codec == QSV_CODEC_HEVC) {
+		codec = "HEVC";
 		if (astrcmpi(profile, "main") == 0) {
 			obsqsv->params.nCodecProfile = MFX_PROFILE_HEVC_MAIN;
 			if (obs_p010_tex_active()) {
@@ -573,6 +576,7 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 		}
 
 	} else if (obsqsv->codec == QSV_CODEC_AV1) {
+		codec = "AV1";
 		obsqsv->params.nCodecProfile = MFX_PROFILE_AV1_MAIN;
 	}
 
@@ -721,7 +725,10 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	obsqsv->params.bMBBRC = enhancements;
 	obsqsv->params.bCQM = enhancements;
 
-	info("settings:\n\trate_control:   %s", rate_control);
+	info("settings:\n"
+	     "\tcodec:          %s\n"
+	     "\trate_control:   %s",
+	     codec, rate_control);
 
 	if (obsqsv->params.nRateControl != MFX_RATECONTROL_LA_ICQ &&
 	    obsqsv->params.nRateControl != MFX_RATECONTROL_ICQ &&
