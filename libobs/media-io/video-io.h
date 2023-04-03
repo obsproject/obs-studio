@@ -91,6 +91,9 @@ enum video_format {
 
 	/* packed 4:2:2 format, 10 bpp */
 	VIDEO_FORMAT_V210,
+
+	/* packed uncompressed 10-bit format */
+	VIDEO_FORMAT_R10L,
 };
 
 enum video_trc {
@@ -164,6 +167,7 @@ static inline bool format_is_yuv(enum video_format format)
 	case VIDEO_FORMAT_BGRX:
 	case VIDEO_FORMAT_Y800:
 	case VIDEO_FORMAT_BGR3:
+	case VIDEO_FORMAT_R10L:
 		return false;
 	}
 
@@ -221,6 +225,8 @@ static inline const char *get_video_format_name(enum video_format format)
 		return "P416";
 	case VIDEO_FORMAT_V210:
 		return "v210";
+	case VIDEO_FORMAT_R10L:
+		return "R10l";
 	case VIDEO_FORMAT_NONE:;
 	}
 

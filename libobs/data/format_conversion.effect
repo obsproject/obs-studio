@@ -1054,6 +1054,72 @@ float3 PSBGR3_Full(FragPos frag_in) : TARGET
 	return rgb;
 }
 
+float3 compute_r10l_reverse(float2 pos, bool limited)
+{
+	float4 xyzw = image.Load(int3(pos, 0)).bgra;
+	uint4 xyzw255 = uint4(mad(xyzw, 255., 0.5));
+	uint r = ((xyzw255.z & 0xC0u) >> 6) | (xyzw255.w << 2);
+	uint g = ((xyzw255.y & 0xFu) >> 4) | ((xyzw255.z & 0x3Fu) << 4);
+	uint b = (xyzw255.x >> 2) | ((xyzw255.y & 0xFu) << 6);
+	float3 rgb = float3(uint3(r, g, b));
+	if (limited)
+	{
+		rgb = mad(rgb, 1. / 876., -16. / 219.);
+	}
+	else
+	{
+		rgb /= 1023.;
+	}
+
+	return rgb;
+}
+
+float4 PSR10L_SRGB_Full_Reverse(FragPos frag_in) : TARGET
+{
+	float3 rgb = compute_r10l_reverse(frag_in.pos.xy, false);
+	rgb = srgb_nonlinear_to_linear(rgb);
+	return float4(rgb, 1.);
+}
+
+float4 PSR10L_PQ_2020_709_Full_Reverse(FragPos frag_in) : TARGET
+{
+	float3 pq = compute_r10l_reverse(frag_in.pos.xy, false);
+	float3 hdr2020 = st2084_to_linear_eetf(pq, hdr_lw, hdr_lmax) * maximum_over_sdr_white_nits;
+	float3 rgb = rec2020_to_rec709(hdr2020);
+	return float4(rgb, 1.);
+}
+
+float4 PSR10L_HLG_2020_709_Full_Reverse(FragPos frag_in) : TARGET
+{
+	float3 hlg = compute_r10l_reverse(frag_in.pos.xy, false);
+	float3 hdr2020 = hlg_to_linear(hlg, hlg_exponent) * maximum_over_sdr_white_nits;
+	float3 rgb = rec2020_to_rec709(hdr2020);
+	return float4(rgb, 1.);
+}
+
+float4 PSR10L_SRGB_Limited_Reverse(FragPos frag_in) : TARGET
+{
+	float3 rgb = compute_r10l_reverse(frag_in.pos.xy, true);
+	rgb = srgb_nonlinear_to_linear(rgb);
+	return float4(rgb, 1.);
+}
+
+float4 PSR10L_PQ_2020_709_Limited_Reverse(FragPos frag_in) : TARGET
+{
+	float3 pq = compute_r10l_reverse(frag_in.pos.xy, true);
+	float3 hdr2020 = st2084_to_linear_eetf(pq, hdr_lw, hdr_lmax) * maximum_over_sdr_white_nits;
+	float3 rgb = rec2020_to_rec709(hdr2020);
+	return float4(rgb, 1.);
+}
+
+float4 PSR10L_HLG_2020_709_Limited_Reverse(FragPos frag_in) : TARGET
+{
+	float3 hlg = compute_r10l_reverse(frag_in.pos.xy, true);
+	float3 hdr2020 = hlg_to_linear(hlg, hlg_exponent) * maximum_over_sdr_white_nits;
+	float3 rgb = rec2020_to_rec709(hdr2020);
+	return float4(rgb, 1.);
+}
+
 technique Planar_Y
 {
 	pass
@@ -1699,5 +1765,59 @@ technique BGR3_Full
 	{
 		vertex_shader = VSPos(id);
 		pixel_shader  = PSBGR3_Full(frag_in);
+	}
+}
+
+technique R10L_SRGB_Full_Reverse
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PSR10L_SRGB_Full_Reverse(frag_in);
+	}
+}
+
+technique R10L_PQ_2020_709_Full_Reverse
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PSR10L_PQ_2020_709_Full_Reverse(frag_in);
+	}
+}
+
+technique R10L_HLG_2020_709_Full_Reverse
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PSR10L_HLG_2020_709_Full_Reverse(frag_in);
+	}
+}
+
+technique R10L_SRGB_Limited_Reverse
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PSR10L_SRGB_Limited_Reverse(frag_in);
+	}
+}
+
+technique R10L_PQ_2020_709_Limited_Reverse
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PSR10L_PQ_2020_709_Limited_Reverse(frag_in);
+	}
+}
+
+technique R10L_HLG_2020_709_Limited_Reverse
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PSR10L_HLG_2020_709_Limited_Reverse(frag_in);
 	}
 }
