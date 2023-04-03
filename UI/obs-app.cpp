@@ -2130,7 +2130,22 @@ string GetFormatString(const char *format, const char *prefix,
 	return f;
 }
 
-string GetOutputFilename(const char *path, const char *ext, bool noSpace,
+string GetFormatExt(const char *container)
+{
+	string ext = container;
+	if (ext == "fragmented_mp4")
+		ext = "mp4";
+	else if (ext == "fragmented_mov")
+		ext = "mov";
+	else if (ext == "hls")
+		ext = "m3u8";
+	else if (ext == "mpegts")
+		ext = "ts";
+
+	return ext;
+}
+
+string GetOutputFilename(const char *path, const char *container, bool noSpace,
 			 bool overwrite, const char *format)
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
@@ -2157,7 +2172,8 @@ string GetOutputFilename(const char *path, const char *ext, bool noSpace,
 	if (lastChar != '/' && lastChar != '\\')
 		strPath += "/";
 
-	strPath += GenerateSpecifiedFilename(ext, noSpace, format);
+	string ext = GetFormatExt(container);
+	strPath += GenerateSpecifiedFilename(ext.c_str(), noSpace, format);
 	ensure_directory_exists(strPath);
 	if (!overwrite)
 		FindBestFilename(strPath, noSpace);

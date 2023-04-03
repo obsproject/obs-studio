@@ -72,11 +72,11 @@ struct BasicOutputHandler {
 	}
 
 protected:
-	void SetupAutoRemux(const char *&ext, bool is_fragmented);
-	std::string GetRecordingFilename(const char *path, const char *ext,
-					 bool noSpace, bool overwrite,
-					 const char *format, bool ffmpeg,
-					 bool is_fragmented);
+	void SetupAutoRemux(const char *&container);
+	std::string GetRecordingFilename(const char *path,
+					 const char *container, bool noSpace,
+					 bool overwrite, const char *format,
+					 bool ffmpeg);
 };
 
 BasicOutputHandler *CreateSimpleOutputHandler(OBSBasic *main);
