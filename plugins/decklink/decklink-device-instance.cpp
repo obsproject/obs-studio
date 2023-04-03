@@ -66,6 +66,8 @@ static inline enum video_format ConvertPixelFormat(BMDPixelFormat format)
 	switch (format) {
 	case bmdFormat8BitBGRA:
 		return VIDEO_FORMAT_BGRX;
+	case bmdFormat10BitRGBXLE:
+		return VIDEO_FORMAT_R10L;
 	case bmdFormat10BitYUV:
 		return VIDEO_FORMAT_V210;
 	default:
@@ -408,12 +410,12 @@ void DeckLinkDeviceInstance::SetupVideoFormat(DeckLinkDeviceMode *mode_)
 
 	BMDPixelFormat convertFormat;
 	switch (pixelFormat) {
-	case bmdFormat8BitBGRA:
 	case bmdFormat10BitYUV:
+	case bmdFormat8BitBGRA:
+	case bmdFormat10BitRGBXLE:
 		convertFormat = pixelFormat;
 		break;
 	default:
-	case bmdFormat8BitYUV:;
 		convertFormat = bmdFormat8BitYUV;
 		break;
 	}
@@ -774,22 +776,20 @@ HRESULT STDMETHODCALLTYPE DeckLinkDeviceInstance::VideoInputFormatChanged(
 	BMDDetectedVideoInputFormatFlags detectedSignalFlags)
 {
 	if (events & bmdVideoInputColorspaceChanged) {
+		constexpr BMDDetectedVideoInputFormatFlags highBitFlags =
+			(bmdDetectedVideoInput12BitDepth |
+			 bmdDetectedVideoInput10BitDepth);
 		if (detectedSignalFlags & bmdDetectedVideoInputRGB444) {
-			pixelFormat = bmdFormat8BitBGRA;
+			pixelFormat = ((detectedSignalFlags & highBitFlags) &&
+				       allow10Bit)
+					      ? bmdFormat10BitRGBXLE
+					      : bmdFormat8BitBGRA;
 		}
 		if (detectedSignalFlags & bmdDetectedVideoInputYCbCr422) {
-			if (detectedSignalFlags &
-			    bmdDetectedVideoInput10BitDepth) {
-				if (allow10Bit) {
-					pixelFormat = bmdFormat10BitYUV;
-				} else {
-					pixelFormat = bmdFormat8BitYUV;
-				}
-			}
-			if (detectedSignalFlags &
-			    bmdDetectedVideoInput8BitDepth) {
-				pixelFormat = bmdFormat8BitYUV;
-			}
+			pixelFormat = ((detectedSignalFlags & highBitFlags) &&
+				       allow10Bit)
+					      ? bmdFormat10BitYUV
+					      : bmdFormat8BitYUV;
 		}
 	}
 
