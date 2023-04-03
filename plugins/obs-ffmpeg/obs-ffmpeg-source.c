@@ -32,7 +32,6 @@
 
 struct ffmpeg_source {
 	media_playback_t *media;
-	bool destroy_media;
 
 	enum video_range_type range;
 	bool is_linear_alpha;
@@ -97,6 +96,11 @@ static bool is_local_file_modified(obs_properties_t *props,
 	obs_property_set_visible(reconnect_delay_sec, !enabled);
 
 	return true;
+}
+
+static void destroy_media_task(void *data)
+{
+	media_playback_destroy((media_playback_t *)data);
 }
 
 static void ffmpeg_source_defaults(obs_data_t *settings)
@@ -284,15 +288,35 @@ static void get_audio(void *opaque, struct obs_source_audio *a)
 		FF_BLOG(LOG_INFO, "Reconnected.");
 }
 
+static void *ffmpeg_source_reconnect(void *data);
 static void media_stopped(void *opaque)
 {
 	struct ffmpeg_source *s = opaque;
-	if (s->is_clear_on_media_end && !s->is_stinger) {
-		obs_source_output_video(s->source, NULL);
-	}
+	media_playback_t *old_media;
 
-	if ((s->close_when_inactive || !s->is_local_file) && s->media)
-		s->destroy_media = true;
+	if (s->is_clear_on_media_end && !s->is_stinger)
+		obs_source_output_video(s->source, NULL);
+
+	if ((s->close_when_inactive || !s->is_local_file) && s->media) {
+		old_media = s->media;
+		s->media = NULL;
+		obs_queue_task(OBS_TASK_DESTROY, destroy_media_task, old_media,
+			       false);
+
+		if (!s->is_local_file) {
+			if (!os_atomic_set_bool(&s->reconnecting, true))
+				FF_BLOG(LOG_WARNING,
+					"Disconnected. Reconnecting...");
+
+			if (pthread_create(&s->reconnect_thread, NULL,
+					   ffmpeg_source_reconnect, s) != 0) {
+				FF_BLOG(LOG_WARNING,
+					"Could not create reconnect thread");
+				return;
+			}
+			s->reconnect_thread_valid = true;
+		}
+	}
 
 	set_media_state(s, OBS_MEDIA_STATE_ENDED);
 	obs_source_media_ended(s->source);
@@ -365,35 +389,6 @@ finish:
 	return NULL;
 }
 
-static void ffmpeg_source_tick(void *data, float seconds)
-{
-	UNUSED_PARAMETER(seconds);
-
-	struct ffmpeg_source *s = data;
-	if (s->destroy_media) {
-		if (s->media) {
-			media_playback_destroy(s->media);
-			s->media = NULL;
-		}
-
-		s->destroy_media = false;
-
-		if (!s->is_local_file) {
-			if (!os_atomic_set_bool(&s->reconnecting, true)) {
-				FF_BLOG(LOG_WARNING, "Disconnected. "
-						     "Reconnecting...");
-			}
-			if (pthread_create(&s->reconnect_thread, NULL,
-					   ffmpeg_source_reconnect, s) != 0) {
-				FF_BLOG(LOG_WARNING, "Could not create "
-						     "reconnect thread");
-				return;
-			}
-			s->reconnect_thread_valid = true;
-		}
-	}
-}
-
 #define SRT_PROTO "srt"
 #define RIST_PROTO "rist"
 
@@ -406,6 +401,7 @@ static bool requires_mpegts(const char *path)
 static void ffmpeg_source_update(void *data, obs_data_t *settings)
 {
 	struct ffmpeg_source *s = data;
+	media_playback_t *old_media;
 
 	bool is_local_file = obs_data_get_bool(settings, "is_local_file");
 	bool is_stinger = obs_data_get_bool(settings, "is_stinger");
@@ -471,8 +467,10 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 		s->speed_percent = 100;
 
 	if (s->media) {
-		media_playback_destroy(s->media);
+		old_media = s->media;
 		s->media = NULL;
+		obs_queue_task(OBS_TASK_DESTROY, destroy_media_task, old_media,
+			       false);
 	}
 
 	bool active = obs_source_active(s->source);
@@ -630,6 +628,7 @@ static void *ffmpeg_source_create(obs_data_t *settings, obs_source_t *source)
 static void ffmpeg_source_destroy(void *data)
 {
 	struct ffmpeg_source *s = data;
+	media_playback_t *old_media;
 
 	if (s->hotkey)
 		obs_hotkey_unregister(s->hotkey);
@@ -638,8 +637,11 @@ static void ffmpeg_source_destroy(void *data)
 		if (s->reconnect_thread_valid)
 			pthread_join(s->reconnect_thread, NULL);
 	}
-	if (s->media)
-		media_playback_destroy(s->media);
+	if (s->media) {
+		old_media = s->media;
+		s->media = NULL;
+		media_playback_destroy(old_media);
+	}
 
 	os_event_destroy(s->reconnect_stop_event);
 	bfree(s->input);
@@ -792,7 +794,6 @@ struct obs_source_info ffmpeg_source = {
 	.get_properties = ffmpeg_source_getproperties,
 	.activate = ffmpeg_source_activate,
 	.deactivate = ffmpeg_source_deactivate,
-	.video_tick = ffmpeg_source_tick,
 	.missing_files = ffmpeg_source_missingfiles,
 	.update = ffmpeg_source_update,
 	.icon_type = OBS_ICON_TYPE_MEDIA,
