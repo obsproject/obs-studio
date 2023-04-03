@@ -10,6 +10,7 @@ on:
   pull_request:
     paths-ignore: ['**.md']
     branches: [master]
+  merge_group:
 
 env:
   CACHE_REVISION: '006'
