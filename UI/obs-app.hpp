@@ -45,8 +45,9 @@ std::string GenerateSpecifiedFilename(const char *extension, bool noSpace,
 				      const char *format);
 std::string GetFormatString(const char *format, const char *prefix,
 			    const char *suffix);
-std::string GetOutputFilename(const char *path, const char *ext, bool noSpace,
-			      bool overwrite, const char *format);
+std::string GetFormatExt(const char *container);
+std::string GetOutputFilename(const char *path, const char *container,
+			      bool noSpace, bool overwrite, const char *format);
 QObject *CreateShortcutFilter();
 
 struct BaseLexer {
