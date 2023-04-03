@@ -55,7 +55,7 @@ struct ffmpeg_source {
 	bool is_stinger;
 
 	pthread_t reconnect_thread;
-	bool stop_reconnect;
+	os_event_t *reconnect_stop_event;
 	bool reconnect_thread_valid;
 	volatile bool reconnecting;
 	int reconnect_delay_sec;
@@ -347,9 +347,10 @@ static void ffmpeg_source_start(struct ffmpeg_source *s)
 static void *ffmpeg_source_reconnect(void *data)
 {
 	struct ffmpeg_source *s = data;
-	os_sleep_ms(s->reconnect_delay_sec * 1000);
 
-	if (s->stop_reconnect || s->media)
+	int ret = os_event_timedwait(s->reconnect_stop_event,
+				     s->reconnect_delay_sec * 1000);
+	if (ret == 0 || s->media)
 		goto finish;
 
 	bool active = obs_source_active(s->source);
@@ -436,9 +437,8 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 		s->is_looping = false;
 
 		if (s->reconnect_thread_valid) {
-			s->stop_reconnect = true;
+			os_event_signal(s->reconnect_stop_event);
 			pthread_join(s->reconnect_thread, NULL);
-			s->stop_reconnect = false;
 		}
 	}
 
@@ -594,6 +594,12 @@ static void *ffmpeg_source_create(obs_data_t *settings, obs_source_t *source)
 	struct ffmpeg_source *s = bzalloc(sizeof(struct ffmpeg_source));
 	s->source = source;
 
+	if (os_event_init(&s->reconnect_stop_event, OS_EVENT_TYPE_AUTO)) {
+		FF_BLOG(LOG_ERROR, "Failed to initialize reconnect stop event");
+		bfree(s);
+		return NULL;
+	}
+
 	s->hotkey = obs_hotkey_register_source(source, "MediaSource.Restart",
 					       obs_module_text("RestartMedia"),
 					       restart_hotkey, s);
@@ -628,13 +634,14 @@ static void ffmpeg_source_destroy(void *data)
 	if (s->hotkey)
 		obs_hotkey_unregister(s->hotkey);
 	if (!s->is_local_file) {
-		s->stop_reconnect = true;
+		os_event_signal(s->reconnect_stop_event);
 		if (s->reconnect_thread_valid)
 			pthread_join(s->reconnect_thread, NULL);
 	}
 	if (s->media)
 		media_playback_destroy(s->media);
 
+	os_event_destroy(s->reconnect_stop_event);
 	bfree(s->input);
 	bfree(s->input_format);
 	bfree(s->ffmpeg_options);
