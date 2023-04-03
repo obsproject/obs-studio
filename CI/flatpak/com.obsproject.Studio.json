@@ -249,20 +249,21 @@
         {
           "type": "git",
           "url": "https://github.com/FFmpeg/FFmpeg.git",
-          "commit": "3980415627a187d188dc25669cea6b12912eb178",
+          "commit": "a6dc92968a325d331bb6dcf9b3b2248026cd1d6c",
           "disable-shallow-clone": true
         },
         {
           "type": "git",
           "dest": "obs-deps",
           "url": "https://github.com/obsproject/obs-deps.git",
-          "tag": "2023-03-30",
-          "commit": "1a977b8ac95ac2bab5e6dbfd34e029ad06933548"
+          "tag": "2023-04-03",
+          "commit": "55b333baa4c0f8a6ec6c5a7fdae34474bdfa9085"
         },
         {
           "type": "shell",
           "commands": [
-            "patch -Np1 -i obs-deps/deps.ffmpeg/patches/FFmpeg/0001-FFmpeg-6.0-OBS.patch"
+            "patch -Np1 -i obs-deps/deps.ffmpeg/patches/FFmpeg/0001-flvdec-handle-unknown.patch",
+            "patch -Np1 -i obs-deps/deps.ffmpeg/patches/FFmpeg/0002-libaomenc-presets.patch"
           ]
         }
       ]

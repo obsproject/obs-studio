@@ -1,29 +1,29 @@
 {
     "dependencies": {
         "prebuilt": {
-            "version": "2023-03-30",
+            "version": "2023-04-03",
             "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
             "label": "Pre-Built obs-deps",
             "hashes": {
-                "macos-x86_64": "2edacc4b50e5e4ba6dfb8aaa1b4402afc9fe3f1646d710f415a6a4ced83768fc",
-                "macos-arm64": "c8b76845aaee12eff02fd75e3127f2ff3c9b532a623cc6c7a4f7666ec10c9427",
-                "macos-universal": "5c0ac388817d485775f54bd84617239804bc7130fef3ad6fdee2b1d3a9580771",
-                "windows-x64": "4f7e1b43e361ac948427814e67fae7b83e49202082c31cfaf31cbe1153a28854",
-                "linux-x86_64": "28bc4487f8bd8b43c2066d6fcbf8c5dba871baa5017ba9d5fda133a19134e502"
+                "macos-x86_64": "2dfa6f7d14e576ab62abbaba60725f328e4fdcb30a07f1ac0a9d65f00825822d",
+                "macos-arm64": "761904548b31f1a06b6a2afb745fde71655d5d86802dc3b64917151c95c30f16",
+                "macos-universal": "0939339b45ad426d5649e7db945f1c479fde075418efc7789489758e7ecbc115",
+                "windows-x64": "01b863b76b8ec55d870986d0649fe5b16eff1303179b4b2465e2eb031f3e4abf",
+                "linux-x86_64": "3368b74195c31214051e92bac1ba4f99fb649d4d755e4611e9d7fc85c8375862"
             }
         },
         "qt6": {
-            "version": "2023-03-30",
+            "version": "2023-04-03",
             "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
             "label": "Pre-Built Qt6",
             "hashes": {
-                "macos-x86_64": "28c6fffee10d0651c70a5fef19421b5664c11971dc889840656c68ef4afb0745",
-                "macos-arm64": "a9192bbf56a5a1165163a15f8898abc3d00fb3c67e24be482d762f44dfd3c478",
-                "macos-universal": "b49f69fb265ff3bd54745cc555bb3e5f8d77860804b5871e03f0ea37f5a2bbf1",
-                "windows-x64": "d430ada2d053cda4a7de5389f72237de87593adf351099cecfc5bfca113b1b1a"
+                "macos-x86_64": "63939fd19e94ff04994ce42df1f39e183e327bb3860549c9372ddd1a1750787e",
+                "macos-arm64": "25978f4ca93fc06682fce44ab16d5fe7cefdc6b35687b1bbeda9edd4bcaa31e8",
+                "macos-universal": "d80227bd217b33cbe1b6629f9bcebc402f765667ace3c00e367ef0f36785fd0c",
+                "windows-x64": "433aa1421206523ad0cc277a304e664deef8c6520a813e0be4b58155785869f2"
             },
             "debugSymbols": {
-                "windows-x64": "e26b8634d45d3a924d78fcdce61fd11e1e15deec481fc954755e3a9b581b4ce5"
+                "windows-x64": "351921edc2b8a18ea80b7568c008329534d017fe5b6da9567eb09f75048a3b78"
             }
         },
         "cef": {
