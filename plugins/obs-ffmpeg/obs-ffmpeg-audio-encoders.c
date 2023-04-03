@@ -210,7 +210,8 @@ static void init_sizes(struct enc_encoder *enc, audio_t *audio)
 #endif
 
 static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
-			const char *type, const char *alt)
+			const char *type, const char *alt,
+			enum AVSampleFormat sample_format)
 {
 	struct enc_encoder *enc;
 	int bitrate = (int)obs_data_get_int(settings, "bitrate");
@@ -283,9 +284,27 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 #endif
 
 	enc->context->sample_rate = audio_output_get_sample_rate(audio);
-	enc->context->sample_fmt = enc->codec->sample_fmts
-					   ? enc->codec->sample_fmts[0]
-					   : AV_SAMPLE_FMT_FLTP;
+
+	if (enc->codec->sample_fmts) {
+		/* Check if the requested format is actually available for the specified
+		 * encoder. This may not always be the case due to FFmpeg changes or a
+		 * fallback being used (for example, when libopus is unavailable). */
+		enum AVSampleFormat fmt = enc->codec->sample_fmts[0];
+		while (fmt != AV_SAMPLE_FMT_NONE) {
+			if (fmt == sample_format) {
+				enc->context->sample_fmt = fmt;
+				break;
+			}
+			fmt++;
+		}
+
+		/* Fall back to default if requested format was not found. */
+		if (enc->context->sample_fmt == AV_SAMPLE_FMT_NONE)
+			enc->context->sample_fmt = enc->codec->sample_fmts[0];
+	} else {
+		/* Fall back to planar float if codec does not specify formats. */
+		enc->context->sample_fmt = AV_SAMPLE_FMT_FLTP;
+	}
 
 	/* check to make sure sample rate is supported */
 	if (enc->codec->supported_samplerates) {
@@ -335,37 +354,41 @@ fail:
 
 static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return enc_create(settings, encoder, "aac", NULL);
+	return enc_create(settings, encoder, "aac", NULL, AV_SAMPLE_FMT_NONE);
 }
 
 static void *opus_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return enc_create(settings, encoder, "libopus", "opus");
+	return enc_create(settings, encoder, "libopus", "opus",
+			  AV_SAMPLE_FMT_FLT);
 }
 
 static void *pcm_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return enc_create(settings, encoder, "pcm_s16le", NULL);
+	return enc_create(settings, encoder, "pcm_s16le", NULL,
+			  AV_SAMPLE_FMT_NONE);
 }
 
 static void *pcm24_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return enc_create(settings, encoder, "pcm_s24le", NULL);
+	return enc_create(settings, encoder, "pcm_s24le", NULL,
+			  AV_SAMPLE_FMT_NONE);
 }
 
 static void *pcm32_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return enc_create(settings, encoder, "pcm_f32le", NULL);
+	return enc_create(settings, encoder, "pcm_f32le", NULL,
+			  AV_SAMPLE_FMT_NONE);
 }
 
 static void *alac_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return enc_create(settings, encoder, "alac", NULL);
+	return enc_create(settings, encoder, "alac", NULL, AV_SAMPLE_FMT_S32P);
 }
 
 static void *flac_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return enc_create(settings, encoder, "flac", NULL);
+	return enc_create(settings, encoder, "flac", NULL, AV_SAMPLE_FMT_S16);
 }
 
 static bool do_encode(struct enc_encoder *enc, struct encoder_packet *packet,
