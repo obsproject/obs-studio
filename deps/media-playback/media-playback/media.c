@@ -704,14 +704,10 @@ static bool init_avformat(mp_media_t *m)
 	if (m->ffmpeg_options) {
 		int ret = av_dict_parse_string(&opts, m->ffmpeg_options, "=",
 					       " ", 0);
-		if (ret) {
+		if (ret)
 			blog(LOG_WARNING,
 			     "Failed to parse FFmpeg options: %s\n%s",
 			     av_err2str(ret), m->ffmpeg_options);
-		} else {
-			blog(LOG_INFO, "Set FFmpeg options: %s",
-			     m->ffmpeg_options);
-		}
 	}
 
 	m->fmt = avformat_alloc_context();
