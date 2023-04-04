@@ -84,7 +84,7 @@ endif()
 if(OS_WINDOWS)
   find_package(AMF 1.4.29 REQUIRED)
 
-  add_library(nvenc-headers INTERFACE EXCLUDE_FROM_ALL)
+  add_library(nvenc-headers INTERFACE)
   add_library(OBS::nvenc-headers ALIAS nvenc-headers)
 
   target_sources(nvenc-headers INTERFACE external/nvEncodeAPI.h jim-nvenc-ver.h)

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16...3.25)
 
 find_package(FFmpeg REQUIRED COMPONENTS avcodec avdevice avutil avformat)
 
-add_library(media-playback INTERFACE EXCLUDE_FROM_ALL)
+add_library(media-playback INTERFACE)
 add_library(OBS::media-playback ALIAS media-playback)
 
 target_sources(

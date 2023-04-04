@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16...3.25)
 
 find_package(CURL REQUIRED)
 
-add_library(file-updater INTERFACE EXCLUDE_FROM_ALL)
+add_library(file-updater INTERFACE)
 add_library(OBS::file-updater ALIAS file-updater)
 
 target_sources(file-updater INTERFACE file-updater/file-updater.c file-updater/file-updater.h)

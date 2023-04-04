@@ -32,7 +32,7 @@ target_link_libraries(obs-studio PRIVATE crypt32 OBS::blake2 OBS::w32-pthreads M
 target_compile_options(obs-studio PRIVATE PSAPI_VERSION=2)
 target_link_options(obs-studio PRIVATE /IGNORE:4098 /IGNORE:4099)
 
-add_library(obs-update-helpers INTERFACE EXCLUDE_FROM_ALL)
+add_library(obs-update-helpers INTERFACE)
 add_library(OBS::update-helpers ALIAS obs-update-helpers)
 
 target_sources(obs-update-helpers INTERFACE win-update/win-update-helpers.cpp win-update/win-update-helpers.hpp)
