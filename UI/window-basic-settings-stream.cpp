@@ -84,10 +84,10 @@ void OBSBasicSettings::InitStreamPage()
 	ui->twitchAddonDropdown->addItem(
 		QTStr("Basic.Settings.Stream.TTVAddon.Both"));
 
-	connect(ui->ignoreRecommended, SIGNAL(clicked(bool)), this,
-		SLOT(DisplayEnforceWarning(bool)));
-	connect(ui->ignoreRecommended, SIGNAL(toggled(bool)), this,
-		SLOT(UpdateResFPSLimits()));
+	connect(ui->ignoreRecommended, &QCheckBox::clicked, this,
+		&OBSBasicSettings::DisplayEnforceWarning);
+	connect(ui->ignoreRecommended, &QCheckBox::toggled, this,
+		&OBSBasicSettings::UpdateResFPSLimits);
 }
 
 void OBSBasicSettings::LoadStream1Settings()
@@ -873,8 +873,8 @@ void OBSBasicSettings::UpdateVodTrackSetting()
 
 	HookWidget(simpleVodTrack, SIGNAL(clicked(bool)),
 		   SLOT(OutputsChanged()));
-	connect(ui->simpleOutAdvanced, SIGNAL(toggled(bool)),
-		simpleVodTrack.data(), SLOT(setVisible(bool)));
+	connect(ui->simpleOutAdvanced, &QCheckBox::toggled,
+		simpleVodTrack.data(), &QCheckBox::setVisible);
 
 	/* -------------------------------------- */
 	/* advanced output mode vod track widgets */
@@ -909,8 +909,8 @@ void OBSBasicSettings::UpdateVodTrackSetting()
 	vodTrackCheckbox->setChecked(vodTrackEnabled);
 	vodTrackContainer->setEnabled(vodTrackEnabled);
 
-	connect(vodTrackCheckbox, SIGNAL(clicked(bool)), vodTrackContainer,
-		SLOT(setEnabled(bool)));
+	connect(vodTrackCheckbox, &QCheckBox::clicked, vodTrackContainer,
+		&QWidget::setEnabled);
 
 	int trackIndex =
 		config_get_int(main->Config(), "AdvOut", "VodTrackIndex");

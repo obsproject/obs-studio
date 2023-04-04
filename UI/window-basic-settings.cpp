@@ -735,26 +735,26 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	ui->resetOSXVSync = nullptr;
 #endif
 
-	connect(ui->streamDelaySec, SIGNAL(valueChanged(int)), this,
-		SLOT(UpdateStreamDelayEstimate()));
-	connect(ui->outputMode, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(UpdateStreamDelayEstimate()));
-	connect(ui->simpleOutputVBitrate, SIGNAL(valueChanged(int)), this,
-		SLOT(UpdateStreamDelayEstimate()));
-	connect(ui->simpleOutputABitrate, SIGNAL(currentIndexChanged(int)),
-		this, SLOT(UpdateStreamDelayEstimate()));
-	connect(ui->advOutTrack1Bitrate, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(UpdateStreamDelayEstimate()));
-	connect(ui->advOutTrack2Bitrate, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(UpdateStreamDelayEstimate()));
-	connect(ui->advOutTrack3Bitrate, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(UpdateStreamDelayEstimate()));
-	connect(ui->advOutTrack4Bitrate, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(UpdateStreamDelayEstimate()));
-	connect(ui->advOutTrack5Bitrate, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(UpdateStreamDelayEstimate()));
-	connect(ui->advOutTrack6Bitrate, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(UpdateStreamDelayEstimate()));
+	connect(ui->streamDelaySec, &QSpinBox::valueChanged, this,
+		&OBSBasicSettings::UpdateStreamDelayEstimate);
+	connect(ui->outputMode, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::UpdateStreamDelayEstimate);
+	connect(ui->simpleOutputVBitrate, &QSpinBox::valueChanged, this,
+		&OBSBasicSettings::UpdateStreamDelayEstimate);
+	connect(ui->simpleOutputABitrate, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::UpdateStreamDelayEstimate);
+	connect(ui->advOutTrack1Bitrate, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::UpdateStreamDelayEstimate);
+	connect(ui->advOutTrack2Bitrate, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::UpdateStreamDelayEstimate);
+	connect(ui->advOutTrack3Bitrate, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::UpdateStreamDelayEstimate);
+	connect(ui->advOutTrack4Bitrate, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::UpdateStreamDelayEstimate);
+	connect(ui->advOutTrack5Bitrate, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::UpdateStreamDelayEstimate);
+	connect(ui->advOutTrack6Bitrate, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::UpdateStreamDelayEstimate);
 
 	//Apply button disabled until change.
 	EnableApplyButton(false);
@@ -814,78 +814,78 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	if (obs_audio_monitoring_available())
 		FillAudioMonitoringDevices();
 
-	connect(ui->channelSetup, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(SurroundWarning(int)));
-	connect(ui->channelSetup, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(SpeakerLayoutChanged(int)));
-	connect(ui->lowLatencyBuffering, SIGNAL(clicked(bool)), this,
-		SLOT(LowLatencyBufferingChanged(bool)));
-	connect(ui->simpleOutRecQuality, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(SimpleRecordingQualityChanged()));
-	connect(ui->simpleOutRecQuality, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(SimpleRecordingQualityLosslessWarning(int)));
-	connect(ui->simpleOutRecFormat, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(SimpleRecordingEncoderChanged()));
-	connect(ui->simpleOutStrEncoder, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(SimpleStreamingEncoderChanged()));
-	connect(ui->simpleOutStrEncoder, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(SimpleRecordingEncoderChanged()));
-	connect(ui->simpleOutRecEncoder, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(SimpleRecordingEncoderChanged()));
-	connect(ui->simpleOutRecAEncoder, SIGNAL(currentIndexChanged(int)),
-		this, SLOT(SimpleRecordingEncoderChanged()));
-	connect(ui->simpleOutputVBitrate, SIGNAL(valueChanged(int)), this,
-		SLOT(SimpleRecordingEncoderChanged()));
-	connect(ui->simpleOutputABitrate, SIGNAL(currentIndexChanged(int)),
-		this, SLOT(SimpleRecordingEncoderChanged()));
-	connect(ui->simpleOutAdvanced, SIGNAL(toggled(bool)), this,
-		SLOT(SimpleRecordingEncoderChanged()));
-	connect(ui->ignoreRecommended, SIGNAL(toggled(bool)), this,
-		SLOT(SimpleRecordingEncoderChanged()));
-	connect(ui->simpleReplayBuf, SIGNAL(toggled(bool)), this,
-		SLOT(SimpleReplayBufferChanged()));
-	connect(ui->simpleOutputVBitrate, SIGNAL(valueChanged(int)), this,
-		SLOT(SimpleReplayBufferChanged()));
-	connect(ui->simpleOutputABitrate, SIGNAL(currentIndexChanged(int)),
-		this, SLOT(SimpleReplayBufferChanged()));
-	connect(ui->simpleRBSecMax, SIGNAL(valueChanged(int)), this,
-		SLOT(SimpleReplayBufferChanged()));
-	connect(ui->advOutSplitFile, SIGNAL(stateChanged(int)), this,
-		SLOT(AdvOutSplitFileChanged()));
-	connect(ui->advOutSplitFileType, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(AdvOutSplitFileChanged()));
-	connect(ui->advReplayBuf, SIGNAL(toggled(bool)), this,
-		SLOT(AdvReplayBufferChanged()));
-	connect(ui->advOutRecTrack1, SIGNAL(toggled(bool)), this,
-		SLOT(AdvReplayBufferChanged()));
-	connect(ui->advOutRecTrack2, SIGNAL(toggled(bool)), this,
-		SLOT(AdvReplayBufferChanged()));
-	connect(ui->advOutRecTrack3, SIGNAL(toggled(bool)), this,
-		SLOT(AdvReplayBufferChanged()));
-	connect(ui->advOutRecTrack4, SIGNAL(toggled(bool)), this,
-		SLOT(AdvReplayBufferChanged()));
-	connect(ui->advOutRecTrack5, SIGNAL(toggled(bool)), this,
-		SLOT(AdvReplayBufferChanged()));
-	connect(ui->advOutRecTrack6, SIGNAL(toggled(bool)), this,
-		SLOT(AdvReplayBufferChanged()));
-	connect(ui->advOutTrack1Bitrate, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(AdvReplayBufferChanged()));
-	connect(ui->advOutTrack2Bitrate, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(AdvReplayBufferChanged()));
-	connect(ui->advOutTrack3Bitrate, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(AdvReplayBufferChanged()));
-	connect(ui->advOutTrack4Bitrate, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(AdvReplayBufferChanged()));
-	connect(ui->advOutTrack5Bitrate, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(AdvReplayBufferChanged()));
-	connect(ui->advOutTrack6Bitrate, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(AdvReplayBufferChanged()));
-	connect(ui->advOutRecType, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(AdvReplayBufferChanged()));
-	connect(ui->advOutRecEncoder, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(AdvReplayBufferChanged()));
-	connect(ui->advRBSecMax, SIGNAL(valueChanged(int)), this,
-		SLOT(AdvReplayBufferChanged()));
+	connect(ui->channelSetup, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::SurroundWarning);
+	connect(ui->channelSetup, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::SpeakerLayoutChanged);
+	connect(ui->lowLatencyBuffering, &QCheckBox::clicked, this,
+		&OBSBasicSettings::LowLatencyBufferingChanged);
+	connect(ui->simpleOutRecQuality, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::SimpleRecordingQualityChanged);
+	connect(ui->simpleOutRecQuality, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::SimpleRecordingQualityLosslessWarning);
+	connect(ui->simpleOutRecFormat, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::SimpleRecordingEncoderChanged);
+	connect(ui->simpleOutStrEncoder, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::SimpleStreamingEncoderChanged);
+	connect(ui->simpleOutStrEncoder, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::SimpleRecordingEncoderChanged);
+	connect(ui->simpleOutRecEncoder, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::SimpleRecordingEncoderChanged);
+	connect(ui->simpleOutRecAEncoder, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::SimpleRecordingEncoderChanged);
+	connect(ui->simpleOutputVBitrate, &QSpinBox::valueChanged, this,
+		&OBSBasicSettings::SimpleRecordingEncoderChanged);
+	connect(ui->simpleOutputABitrate, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::SimpleRecordingEncoderChanged);
+	connect(ui->simpleOutAdvanced, &QCheckBox::toggled, this,
+		&OBSBasicSettings::SimpleRecordingEncoderChanged);
+	connect(ui->ignoreRecommended, &QCheckBox::toggled, this,
+		&OBSBasicSettings::SimpleRecordingEncoderChanged);
+	connect(ui->simpleReplayBuf, &QCheckBox::toggled, this,
+		&OBSBasicSettings::SimpleReplayBufferChanged);
+	connect(ui->simpleOutputVBitrate, &QSpinBox::valueChanged, this,
+		&OBSBasicSettings::SimpleReplayBufferChanged);
+	connect(ui->simpleOutputABitrate, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::SimpleReplayBufferChanged);
+	connect(ui->simpleRBSecMax, &QSpinBox::valueChanged, this,
+		&OBSBasicSettings::SimpleReplayBufferChanged);
+	connect(ui->advOutSplitFile, &QCheckBox::stateChanged, this,
+		&OBSBasicSettings::AdvOutSplitFileChanged);
+	connect(ui->advOutSplitFileType, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::AdvOutSplitFileChanged);
+	connect(ui->advReplayBuf, &QCheckBox::toggled, this,
+		&OBSBasicSettings::AdvReplayBufferChanged);
+	connect(ui->advOutRecTrack1, &QCheckBox::toggled, this,
+		&OBSBasicSettings::AdvReplayBufferChanged);
+	connect(ui->advOutRecTrack2, &QCheckBox::toggled, this,
+		&OBSBasicSettings::AdvReplayBufferChanged);
+	connect(ui->advOutRecTrack3, &QCheckBox::toggled, this,
+		&OBSBasicSettings::AdvReplayBufferChanged);
+	connect(ui->advOutRecTrack4, &QCheckBox::toggled, this,
+		&OBSBasicSettings::AdvReplayBufferChanged);
+	connect(ui->advOutRecTrack5, &QCheckBox::toggled, this,
+		&OBSBasicSettings::AdvReplayBufferChanged);
+	connect(ui->advOutRecTrack6, &QCheckBox::toggled, this,
+		&OBSBasicSettings::AdvReplayBufferChanged);
+	connect(ui->advOutTrack1Bitrate, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::AdvReplayBufferChanged);
+	connect(ui->advOutTrack2Bitrate, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::AdvReplayBufferChanged);
+	connect(ui->advOutTrack3Bitrate, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::AdvReplayBufferChanged);
+	connect(ui->advOutTrack4Bitrate, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::AdvReplayBufferChanged);
+	connect(ui->advOutTrack5Bitrate, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::AdvReplayBufferChanged);
+	connect(ui->advOutTrack6Bitrate, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::AdvReplayBufferChanged);
+	connect(ui->advOutRecType, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::AdvReplayBufferChanged);
+	connect(ui->advOutRecEncoder, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::AdvReplayBufferChanged);
+	connect(ui->advRBSecMax, &QSpinBox::valueChanged, this,
+		&OBSBasicSettings::AdvReplayBufferChanged);
 
 	// Get Bind to IP Addresses
 	obs_properties_t *ppts = obs_get_output_properties("rtmp_output");
@@ -955,26 +955,26 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		QTStr("Basic.Settings.Output.Reconnect"));
 
 	// Add warning checks to advanced output recording section controls
-	connect(ui->advOutRecTrack1, SIGNAL(clicked()), this,
-		SLOT(AdvOutRecCheckWarnings()));
-	connect(ui->advOutRecTrack2, SIGNAL(clicked()), this,
-		SLOT(AdvOutRecCheckWarnings()));
-	connect(ui->advOutRecTrack3, SIGNAL(clicked()), this,
-		SLOT(AdvOutRecCheckWarnings()));
-	connect(ui->advOutRecTrack4, SIGNAL(clicked()), this,
-		SLOT(AdvOutRecCheckWarnings()));
-	connect(ui->advOutRecTrack5, SIGNAL(clicked()), this,
-		SLOT(AdvOutRecCheckWarnings()));
-	connect(ui->advOutRecTrack6, SIGNAL(clicked()), this,
-		SLOT(AdvOutRecCheckWarnings()));
-	connect(ui->advOutRecEncoder, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(AdvOutRecCheckWarnings()));
-	connect(ui->advOutRecAEncoder, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(AdvOutRecCheckWarnings()));
+	connect(ui->advOutRecTrack1, &QCheckBox::clicked, this,
+		&OBSBasicSettings::AdvOutRecCheckWarnings);
+	connect(ui->advOutRecTrack2, &QCheckBox::clicked, this,
+		&OBSBasicSettings::AdvOutRecCheckWarnings);
+	connect(ui->advOutRecTrack3, &QCheckBox::clicked, this,
+		&OBSBasicSettings::AdvOutRecCheckWarnings);
+	connect(ui->advOutRecTrack4, &QCheckBox::clicked, this,
+		&OBSBasicSettings::AdvOutRecCheckWarnings);
+	connect(ui->advOutRecTrack5, &QCheckBox::clicked, this,
+		&OBSBasicSettings::AdvOutRecCheckWarnings);
+	connect(ui->advOutRecTrack6, &QCheckBox::clicked, this,
+		&OBSBasicSettings::AdvOutRecCheckWarnings);
+	connect(ui->advOutRecFormat, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::AdvOutRecCheckWarnings);
+	connect(ui->advOutRecEncoder, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::AdvOutRecCheckWarnings);
 
 	// Check codec compatibility when format (container) changes
-	connect(ui->advOutRecFormat, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(AdvOutRecCheckCodecs()));
+	connect(ui->advOutRecFormat, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::AdvOutRecCheckCodecs);
 
 	// Set placeholder used when selection was reset due to incompatibilities
 	ui->advOutRecEncoder->setPlaceholderText(
@@ -1009,15 +1009,15 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	ui->advOutRecRescale->lineEdit()->setValidator(validator);
 	ui->advOutFFRescale->lineEdit()->setValidator(validator);
 
-	connect(ui->useStreamKeyAdv, SIGNAL(clicked()), this,
-		SLOT(UseStreamKeyAdvClicked()));
+	connect(ui->useStreamKeyAdv, &QCheckBox::clicked, this,
+		&OBSBasicSettings::UseStreamKeyAdvClicked);
 
-	connect(ui->simpleOutStrAEncoder, SIGNAL(currentIndexChanged(int)),
-		this, SLOT(SimpleStreamAudioEncoderChanged()));
-	connect(ui->advOutAEncoder, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(AdvAudioEncodersChanged()));
-	connect(ui->advOutRecAEncoder, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(AdvAudioEncodersChanged()));
+	connect(ui->simpleOutStrAEncoder, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::SimpleStreamAudioEncoderChanged);
+	connect(ui->advOutAEncoder, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::AdvAudioEncodersChanged);
+	connect(ui->advOutRecAEncoder, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::AdvAudioEncodersChanged);
 
 	UpdateAudioWarnings();
 	UpdateAdvNetworkGroup();
@@ -1419,8 +1419,8 @@ void OBSBasicSettings::LoadGeneralSettings()
 					"HideOBSWindowsFromCapture");
 		ui->hideOBSFromCapture->setChecked(hideWindowFromCapture);
 
-		connect(ui->hideOBSFromCapture, SIGNAL(stateChanged(int)), this,
-			SLOT(HideOBSWindowWarning(int)));
+		connect(ui->hideOBSFromCapture, &QCheckBox::stateChanged, this,
+			&OBSBasicSettings::HideOBSWindowWarning);
 	}
 #endif
 
@@ -2139,7 +2139,8 @@ OBSBasicSettings::CreateEncoderPropertyView(const char *encoder,
 	view->setFrameShape(QFrame::NoFrame);
 	view->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
 	view->setProperty("changed", QVariant(changed));
-	QObject::connect(view, SIGNAL(Changed()), this, SLOT(OutputsChanged()));
+	QObject::connect(view, &OBSPropertiesView::Changed, this,
+			 &OBSBasicSettings::OutputsChanged);
 
 	return view;
 }
@@ -2156,10 +2157,10 @@ void OBSBasicSettings::LoadAdvOutputStreamingEncoderProperties()
 					  QSizePolicy::Minimum);
 	ui->advOutEncoderLayout->addWidget(streamEncoderProps);
 
-	connect(streamEncoderProps, SIGNAL(Changed()), this,
-		SLOT(UpdateStreamDelayEstimate()));
-	connect(streamEncoderProps, SIGNAL(Changed()), this,
-		SLOT(AdvReplayBufferChanged()));
+	connect(streamEncoderProps, &OBSPropertiesView::Changed, this,
+		&OBSBasicSettings::UpdateStreamDelayEstimate);
+	connect(streamEncoderProps, &OBSPropertiesView::Changed, this,
+		&OBSBasicSettings::AdvReplayBufferChanged);
 
 	curAdvStreamEncoder = type;
 
@@ -2272,8 +2273,8 @@ void OBSBasicSettings::LoadAdvOutputRecordingEncoderProperties()
 						  QSizePolicy::Minimum);
 		ui->advOutRecEncoderProps->layout()->addWidget(
 			recordEncoderProps);
-		connect(recordEncoderProps, SIGNAL(Changed()), this,
-			SLOT(AdvReplayBufferChanged()));
+		connect(recordEncoderProps, &OBSPropertiesView::Changed, this,
+			&OBSBasicSettings::AdvReplayBufferChanged);
 	}
 
 	curAdvRecordEncoder = type;
@@ -4403,8 +4404,8 @@ void OBSBasicSettings::on_advOutRecEncoder_currentIndexChanged(int idx)
 						  QSizePolicy::Minimum);
 		ui->advOutRecEncoderProps->layout()->addWidget(
 			recordEncoderProps);
-		connect(recordEncoderProps, SIGNAL(Changed()), this,
-			SLOT(AdvReplayBufferChanged()));
+		connect(recordEncoderProps, &OBSPropertiesView::Changed, this,
+			&OBSBasicSettings::AdvReplayBufferChanged);
 	}
 
 	ui->advOutRecUseRescale->setVisible(true);
