@@ -3139,7 +3139,7 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 		if (!encoder)
 			return true;
 
-		encoders.emplace_back(move(encoder), label, hw);
+		encoders.emplace_back(std::move(encoder), label, hw);
 		return false;
 	};
 
@@ -3151,7 +3151,7 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 		if (!output)
 			return true;
 
-		outputs.emplace_back(move(output), label, hw);
+		outputs.emplace_back(std::move(output), label, hw);
 		return false;
 	};
 
@@ -3164,7 +3164,7 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 		if (!service)
 			return true;
 
-		services.emplace_back(move(service), label, hw);
+		services.emplace_back(std::move(service), label, hw);
 		return false;
 	};
 
