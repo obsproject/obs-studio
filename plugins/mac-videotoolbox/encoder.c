@@ -148,6 +148,8 @@ static CFStringRef obs_to_vt_profile(CMVideoCodecType codec_type,
 		}
 #endif // macOS 12.3
 		return kVTProfileLevel_HEVC_Main_AutoLevel;
+#else
+		(void)format;
 #endif // ENABLE_HEVC
 	} else {
 		return kVTProfileLevel_H264_Baseline_AutoLevel;
