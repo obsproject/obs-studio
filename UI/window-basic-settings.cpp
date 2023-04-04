@@ -5013,11 +5013,11 @@ static bool ContainerSupportsCodec(const string &container, const string &codec)
 }
 
 static void DisableIncompatibleCodecs(QComboBox *cbox, const QString &format,
+				      const QString &formatName,
 				      const QString &streamEncoder)
 {
 	QString strEncLabel =
 		QTStr("Basic.Settings.Output.Adv.Recording.UseStreamEncoder");
-	QString formatUpper = format.toUpper();
 	QString recEncoder = cbox->currentData().toString();
 
 	/* Check if selected encoders and output format are compatible, disable incompatible items. */
@@ -5056,7 +5056,7 @@ static void DisableIncompatibleCodecs(QComboBox *cbox, const QString &format,
 			item->setFlags(Qt::NoItemFlags);
 			encDisplayName += " ";
 			encDisplayName += QTStr("CodecCompat.Incompatible")
-						  .arg(formatUpper);
+						  .arg(formatName);
 		}
 
 		item->setText(encDisplayName);
@@ -5070,6 +5070,7 @@ static void DisableIncompatibleCodecs(QComboBox *cbox, const QString &format,
 void OBSBasicSettings::AdvOutRecCheckCodecs()
 {
 	QString recFormat = ui->advOutRecFormat->currentData().toString();
+	QString recFormatName = ui->advOutRecFormat->currentText();
 
 	/* Set tooltip if available */
 	QString tooltip =
@@ -5088,9 +5089,9 @@ void OBSBasicSettings::AdvOutRecCheckCodecs()
 	ui->advOutRecEncoder->blockSignals(true);
 	ui->advOutRecAEncoder->blockSignals(true);
 	DisableIncompatibleCodecs(ui->advOutRecEncoder, recFormat,
-				  streamEncoder);
+				  recFormatName, streamEncoder);
 	DisableIncompatibleCodecs(ui->advOutRecAEncoder, recFormat,
-				  streamAudioEncoder);
+				  recFormatName, streamAudioEncoder);
 	ui->advOutRecEncoder->blockSignals(false);
 	ui->advOutRecAEncoder->blockSignals(false);
 
