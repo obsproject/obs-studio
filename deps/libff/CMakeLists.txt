@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16...3.25)
 
-add_library(libff-util INTERFACE EXCLUDE_FROM_ALL)
+add_library(libff-util INTERFACE)
 add_library(OBS::libff-util ALIAS libff-util)
 
 target_sources(libff-util INTERFACE libff/ff-util.c libff/ff-util.h)

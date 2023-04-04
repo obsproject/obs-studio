@@ -7,7 +7,7 @@ if(NOT ENABLE_SCRIPTING)
   return()
 endif()
 
-add_library(obs-cstrcache INTERFACE EXCLUDE_FROM_ALL)
+add_library(obs-cstrcache INTERFACE)
 add_library(OBS::cstrcache ALIAS obs-cstrcache)
 
 target_sources(obs-cstrcache INTERFACE cstrcache.cpp cstrcache.h)

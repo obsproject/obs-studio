@@ -1,7 +1,7 @@
 find_package(CURL REQUIRED)
 find_package(jansson REQUIRED)
 
-add_library(ftl-sdk INTERFACE EXCLUDE_FROM_ALL)
+add_library(ftl-sdk INTERFACE)
 add_library(OBS::ftl-sdk ALIAS ftl-sdk)
 
 target_compile_definitions(ftl-sdk INTERFACE FTL_STATIC_COMPILE FTL_FOUND)
