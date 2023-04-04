@@ -308,34 +308,15 @@ MacPermissionStatus CheckPermissionWithPrompt(MacPermissionType type,
 		break;
 	}
 	case kScreenCapture: {
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 110000
-		if (@available(macOS 11.0, *)) {
-			permissionResponse = (CGPreflightScreenCaptureAccess()
+		permissionResponse = (CGPreflightScreenCaptureAccess()
+					      ? kPermissionAuthorized
+					      : kPermissionDenied);
+
+		if (permissionResponse != kPermissionAuthorized &&
+		    prompt_for_permission) {
+			permissionResponse = (CGRequestScreenCaptureAccess()
 						      ? kPermissionAuthorized
 						      : kPermissionDenied);
-
-			if (permissionResponse != kPermissionAuthorized &&
-			    prompt_for_permission) {
-				permissionResponse =
-					(CGRequestScreenCaptureAccess()
-						 ? kPermissionAuthorized
-						 : kPermissionDenied);
-			}
-
-		} else {
-#else
-		{
-#endif
-			CGDisplayStreamRef stream = CGDisplayStreamCreate(
-				CGMainDisplayID(), 1, 1,
-				kCVPixelFormatType_32BGRA, nil, nil);
-
-			if (stream) {
-				permissionResponse = kPermissionAuthorized;
-				CFRelease(stream);
-			} else {
-				permissionResponse = kPermissionDenied;
-			}
 		}
 
 		blog(LOG_INFO, "[macOS] Permission for screen capture %s.",

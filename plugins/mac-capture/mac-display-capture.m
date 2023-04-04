@@ -4,7 +4,7 @@
 #include <pthread.h>
 
 #import <AvailabilityMacros.h>
-#import <CoreGraphics/CGDisplayStream.h>
+#import "CGDisplayStream.h"
 #import <Cocoa/Cocoa.h>
 
 #include "window-utils.h"
