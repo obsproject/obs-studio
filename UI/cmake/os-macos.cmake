@@ -15,3 +15,7 @@ target_link_libraries(obs-studio PRIVATE ${APPKIT} ${AVFOUNDATION} ${APPLICATION
 
 target_compile_options(obs-studio PRIVATE -Wno-error=float-conversion -Wno-error=implicit-int-conversion
                                           -Wno-error=shorten-64-to-32)
+
+if(CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL 14.0.3)
+  target_compile_options(obs-studio PRIVATE -Wno-error=unqualified-std-cast-call)
+endif()

@@ -16,15 +16,17 @@ add_library(OBS::capture ALIAS mac-capture)
 
 target_sources(
   mac-capture
-  PRIVATE plugin-main.c
+  PRIVATE # cmake-format: sortable
           audio-device-enum.c
           audio-device-enum.h
+          CGDisplayStream.h
           mac-audio.c
           mac-display-capture.m
           mac-screen-capture.m
           mac-window-capture.m
-          window-utils.m
-          window-utils.h)
+          plugin-main.c
+          window-utils.h
+          window-utils.m)
 
 target_link_libraries(mac-capture PRIVATE OBS::libobs ${COREAUDIO} ${AUDIOUNIT} ${COREFOUNDATION} ${IOSURF} ${COCOA})
 
