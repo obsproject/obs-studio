@@ -11,6 +11,7 @@ on:
     paths-ignore: ['**.md']
     branches: [master]
   merge_group:
+    branches: [master]
 
 env:
   CACHE_REVISION: '006'
