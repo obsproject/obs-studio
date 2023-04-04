@@ -794,25 +794,32 @@ HRESULT STDMETHODCALLTYPE DeckLinkDeviceInstance::VideoInputFormatChanged(
 	BMDVideoInputFormatChangedEvents events, IDeckLinkDisplayMode *newMode,
 	BMDDetectedVideoInputFormatFlags detectedSignalFlags)
 {
+	bool formatChanged = false;
 	if (events & bmdVideoInputColorspaceChanged) {
 		constexpr BMDDetectedVideoInputFormatFlags highBitFlags =
 			(bmdDetectedVideoInput12BitDepth |
 			 bmdDetectedVideoInput10BitDepth);
 		if (detectedSignalFlags & bmdDetectedVideoInputRGB444) {
-			pixelFormat = ((detectedSignalFlags & highBitFlags) &&
-				       allow10Bit)
-					      ? bmdFormat10BitRGBXLE
-					      : bmdFormat8BitBGRA;
+			const BMDPixelFormat nextFormat =
+				((detectedSignalFlags & highBitFlags) &&
+				 allow10Bit)
+					? bmdFormat10BitRGBXLE
+					: bmdFormat8BitBGRA;
+			formatChanged = pixelFormat != nextFormat;
+			pixelFormat = nextFormat;
 		}
 		if (detectedSignalFlags & bmdDetectedVideoInputYCbCr422) {
-			pixelFormat = ((detectedSignalFlags & highBitFlags) &&
-				       allow10Bit)
-					      ? bmdFormat10BitYUV
-					      : bmdFormat8BitYUV;
+			const BMDPixelFormat nextFormat =
+				((detectedSignalFlags & highBitFlags) &&
+				 allow10Bit)
+					? bmdFormat10BitYUV
+					: bmdFormat8BitYUV;
+			formatChanged = pixelFormat != nextFormat;
+			pixelFormat = nextFormat;
 		}
 	}
 
-	if (events & bmdVideoInputDisplayModeChanged) {
+	if (formatChanged || (events & bmdVideoInputDisplayModeChanged)) {
 		input->PauseStreams();
 		mode->SetMode(newMode);
 		displayMode = mode->GetDisplayMode();
