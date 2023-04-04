@@ -1304,9 +1304,10 @@ bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
 	OBSDataAutoRelease settings = obs_data_create();
 	if (updateReplayBuffer) {
 		f = GetFormatString(filenameFormat, rbPrefix, rbSuffix);
+		string ext = GetFormatExt(format);
 		obs_data_set_string(settings, "directory", path);
 		obs_data_set_string(settings, "format", f.c_str());
-		obs_data_set_string(settings, "extension", format);
+		obs_data_set_string(settings, "extension", ext.c_str());
 		obs_data_set_bool(settings, "allow_spaces", !noSpace);
 		obs_data_set_int(settings, "max_time_sec", rbTime);
 		obs_data_set_int(settings, "max_size_mb",
@@ -2225,9 +2226,10 @@ bool AdvancedOutput::StartRecording()
 							 "AdvOut",
 							 "RecSplitFileSize")
 					: 0;
+			string ext = GetFormatExt(recFormat);
 			obs_data_set_string(settings, "directory", path);
 			obs_data_set_string(settings, "format", filenameFormat);
-			obs_data_set_string(settings, "extension", recFormat);
+			obs_data_set_string(settings, "extension", ext.c_str());
 			obs_data_set_bool(settings, "allow_spaces", !noSpace);
 			obs_data_set_bool(settings, "allow_overwrite",
 					  overwriteIfExists);
@@ -2304,12 +2306,13 @@ bool AdvancedOutput::StartReplayBuffer()
 		rbSize = config_get_int(main->Config(), "AdvOut", "RecRBSize");
 
 		string f = GetFormatString(filenameFormat, rbPrefix, rbSuffix);
+		string ext = GetFormatExt(recFormat);
 
 		OBSDataAutoRelease settings = obs_data_create();
 
 		obs_data_set_string(settings, "directory", path);
 		obs_data_set_string(settings, "format", f.c_str());
-		obs_data_set_string(settings, "extension", recFormat);
+		obs_data_set_string(settings, "extension", ext.c_str());
 		obs_data_set_bool(settings, "allow_spaces", !noSpace);
 		obs_data_set_int(settings, "max_time_sec", rbTime);
 		obs_data_set_int(settings, "max_size_mb",
