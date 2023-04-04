@@ -17,7 +17,7 @@
 
 #pragma once
 
-#if defined(_MSC_VER) && \
+#if (defined(_MSC_VER) || defined(__MINGW32__)) && \
 	((defined(_M_X64) && !defined(_M_ARM64EC)) || defined(_M_IX86))
 #include <emmintrin.h>
 #else
