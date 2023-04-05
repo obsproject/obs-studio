@@ -30,20 +30,77 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
 
 # Add default C and C++ compiler options if Xcode generator is not used
 if(NOT XCODE)
-  list(
-    APPEND
-    _obs_c_options
-    -Werror
-    -Wextra
-    -Wvla
-    -Wswitch
-    -Wformat-security
-    -Wunused-parameter
-    -Wno-unused-function
-    -Wno-missing-field-initializers
-    -Wformat
-    -fno-strict-aliasing
-    -Wno-error=shorten-64-to-32)
+  set(_obs_c_options
+      # cmake-format: sortable
+      -fno-strict-aliasing
+      -Wbool-conversion
+      -Wcomma
+      -Wconstant-conversion
+      -Wdeprecated-declarations
+      -Wempty-body
+      -Wenum-conversion
+      -Werror
+      -Werror=block-capture-autoreleasing
+      -Werror=return-type
+      -Wextra
+      -Wformat
+      -Wformat-security
+      -Wfour-char-constants
+      -Winfinite-recursion
+      -Wint-conversion
+      -Wnewline-eof
+      -Wno-conversion
+      -Wno-float-conversion
+      -Wno-implicit-fallthrough
+      -Wno-missing-braces
+      -Wno-missing-field-initializers
+      -Wno-missing-prototypes
+      -Wno-semicolon-before-method-body
+      -Wno-shadow
+      -Wno-sign-conversion
+      -Wno-trigraphs
+      -Wno-unknown-pragmas
+      -Wno-unused-function
+      -Wno-unused-label
+      -Wnon-literal-null-conversion
+      -Wobjc-literal-conversion
+      -Wparentheses
+      -Wpointer-sign
+      -Wquoted-include-in-framework-header
+      -Wshorten-64-to-32
+      -Wsign-compare
+      -Wstrict-prototypes
+      -Wswitch
+      -Wuninitialized
+      -Wunreachable-code
+      -Wunused-parameter
+      -Wunused-value
+      -Wunused-variable
+      -Wvla)
+
+  set(_obs_cxx_options
+      # cmake-format: sortable
+      -Warc-repeated-use-of-weak
+      -Wconversion
+      -Wdeprecated-implementations
+      -Wduplicate-method-match
+      -Wfloat-conversion
+      -Wfour-char-constants
+      -Wimplicit-retain-self
+      -Winvalid-offsetof
+      -Wmove
+      -Wno-arc-maybe-repeated-use-of-weak
+      -Wno-exit-time-destructors
+      -Wno-implicit-atomic-properties
+      -Wno-non-virtual-dtor
+      -Wno-objc-interface-ivars
+      -Wno-overloaded-virtual
+      -Wno-selector
+      -Wno-strict-selector-match
+      -Wprotocol
+      -Wrange-loop-analysis
+      -Wshadow
+      -Wundeclared-selector)
 
   # Enable stripping of dead symbols when not building for Debug configuration
   set(_release_configs RelWithDebInfo Release MinSizeRel)
@@ -51,19 +108,19 @@ if(NOT XCODE)
     add_link_options(LINKER:-dead_strip)
   endif()
 
-  add_compile_options("$<$<COMPILE_LANGUAGE:C>:${_obs_c_options}>" "$<$<COMPILE_LANGUAGE:CXX>:${_obs_c_options}>"
-                      "$<$<AND:$<COMPILE_LANGUAGE:Swift>,$<CONFIG:DEBUG>>:-Onone>")
+  add_compile_options("$<$<COMPILE_LANGUAGE:C>:${_obs_c_options}>"
+                      "$<$<COMPILE_LANGUAGE:CXX>:${_obs_c_options} ${_obs_cxx_options}>")
 
   option(ENABLE_COMPILER_TRACE "Enable clang time-trace (requires Ninja)" OFF)
   mark_as_advanced(ENABLE_COMPILER_TRACE)
 
   # Add time trace option to compiler, if enabled.
   if(ENABLE_COMPILER_TRACE AND CMAKE_GENERATOR STREQUAL "Ninja")
-    add_compile_options($<$<COMPILE_LANGUAGE:C>:-ftime-trace> $<$<COMPILE_LANGUAGE:CXX>:-ftime-trace>)
+    add_compile_options($<$<NOT:$<COMPILE_LANGUAGE:Swift>>:-ftime-trace>)
   else()
     set(ENABLE_COMPILER_TRACE
         OFF
-        CACHE STRING "Enable clang time-trace (requires Ninja)" FORCE)
+        CACHE BOOL "Enable clang time-trace (requires Ninja)" FORCE)
   endif()
 
   # Enable color diagnostics for AppleClang
