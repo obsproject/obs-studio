@@ -73,7 +73,8 @@ elseif(OS_MACOS)
   find_library(APPKIT_FRAMEWORK AppKit)
 
   target_link_libraries(aja-output-ui PRIVATE ${IOKIT} ${COREFOUNDATION} ${APPKIT})
-  target_compile_options(aja-output-ui PRIVATE -Wno-error=deprecated-declarations)
+  target_compile_options(aja-output-ui PRIVATE -Wno-error=deprecated-declarations
+                                               -Wno-quoted-include-in-framework-header)
 elseif(OS_LINUX OR OS_FREEBSD)
   find_package(X11 REQUIRED)
   target_link_libraries(aja-output-ui PRIVATE X11::X11 Qt::GuiPrivate)

@@ -72,6 +72,7 @@ elseif(OS_MACOS)
   target_link_libraries(frontend-tools PRIVATE ${COCOA})
 
   target_sources(frontend-tools PRIVATE auto-scene-switcher-osx.mm)
+  target_compile_options(frontend-tools PRIVATE -Wno-quoted-include-in-framework-header -Wno-comma)
   set_target_properties(frontend-tools PROPERTIES XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES)
   if(NOT XCODE)
     set_source_files_properties(auto-scene-switcher-osx.mm PROPERTIES COMPILE_FLAGS -fobjc-arc)
