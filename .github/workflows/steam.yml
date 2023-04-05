@@ -26,12 +26,11 @@ env:
   STEAM_STABLE_BRANCH: staging
   STEAM_BETA_BRANCH: beta_staging
   STEAM_PLAYTEST_BRANCH: staging
-  SEVENZIP_HASH: 5290409e7bbe2f133d0bd7e7482548678157ea2be276b0f9cb440600f4be9a2d
 
 jobs:
   upload:
     name: Steam upload
-    runs-on: ubuntu-20.04
+    runs-on: macos-latest
     if: github.repository_owner == 'obsproject'
 
     steps:
@@ -39,20 +38,6 @@ jobs:
       uses: actions/checkout@v3
       with:
         path: source
-
-      # The 7-Zip version available in the default ubuntu repos (p7zip) is wildly out-of-date and does not properly support DMG files.
-    - name: Setup 7-Zip
-      run: |
-        mkdir 7z && cd 7z
-        curl -s https://www.7-zip.org/a/7z2200-linux-x64.tar.xz -o 7z.tar.xz
-        
-        if [[ '${{ env.SEVENZIP_HASH }}' != "$(sha256sum 7z.tar.xz | cut -d " " -f 1)" ]]; then
-            echo "7-Zip Download hash does not match!"
-            exit 1
-        fi
-        
-        tar -xJf 7z.tar.xz
-        echo "$(pwd)" >> $GITHUB_PATH
 
     - name: Get build information
       id: build-info
@@ -202,48 +187,40 @@ jobs:
         # CI builds are zipped
         if [[ -f ../mac_x86.dmg.zip ]]; then
             unzip ../mac_x86.dmg.zip
-            # 7-Zip will have an exit code of 2 due to the "unsafe" 'Applications' symlink.
-            # GitHub treats this as a failure so ignore non-zero exit codes here.
-            7zz x *.dmg -otmp_x86 || true
-            rm *.dmg
         else
-            7zz x ../mac_x86.dmg -otmp_x86 || true
+            mv ../mac_x86.dmg .
         fi
 
-        if [ -d tmp_x86/OBS.app ]; then
-            mv tmp_x86/OBS.app steam-macos/x86
-        else
-            mv tmp_x86/*/OBS.app steam-macos/x86
-        fi
+        hdiutil attach -noverify -readonly -noautoopen -mountpoint /Volumes/x86 *.dmg
+        cp -R /Volumes/x86/OBS.app steam-macos/x86
+        hdiutil unmount /Volumes/x86
+        rm *.dmg
         echo "::endgroup::"
 
         echo "::group::Extract and prepare macOS (arm64)"
         mkdir -p steam-macos/arm64
         if [[ -f ../mac_arm64.dmg.zip ]]; then
             unzip ../mac_arm64.dmg.zip
-            7zz x *.dmg -otmp_arm64 || true
-            rm *.dmg
         else
-            7zz x ../mac_arm64.dmg -otmp_arm64 || true
+            mv ../mac_arm64.dmg .
         fi
 
-        if [ -d tmp_arm64/OBS.app ]; then
-            mv tmp_arm64/OBS.app steam-macos/arm64
-        else
-            mv tmp_arm64/*/OBS.app steam-macos/arm64
-        fi
+        hdiutil attach -noverify -readonly -noautoopen -mountpoint /Volumes/arm64 *.dmg
+        cp -R /Volumes/arm64/OBS.app steam-macos/arm64
+        hdiutil unmount /Volumes/arm64
+        rm *.dmg
 
         cp ../source/CI/steam/scripts_macos/launch.sh steam-macos/launch.sh
         echo "::endgroup::"
 
     - name: Setup steamcmd
       if: steps.should-run.outputs.result == 'true'
-      uses: CyberAndrii/setup-steamcmd@e19cd1516315ce46dbfffa47193f92fe42d1419e
+      uses: CyberAndrii/setup-steamcmd@b786e0da44db3d817e66fa3910a9560cb28c9323
 
     - name: Generate Steam auth code
       if: steps.should-run.outputs.result == 'true'
       id: steam-totp
-      uses: CyberAndrii/steam-totp@0fc9e59dc5bbf4368d23d5a33956f104248da31a
+      uses: CyberAndrii/steam-totp@c7f636bc64e77f1b901e0420b7890813141508ee
       with:
         shared_secret: ${{ secrets.STEAM_SHARED_SECRET }}
 
@@ -264,7 +241,7 @@ jobs:
     - name: Generate Steam auth code (Playtest)
       if: steps.should-run.outputs.result_playtest == 'true'
       id: steam-totp-playtest
-      uses: CyberAndrii/steam-totp@0fc9e59dc5bbf4368d23d5a33956f104248da31a
+      uses: CyberAndrii/steam-totp@c7f636bc64e77f1b901e0420b7890813141508ee
       with:
         shared_secret: ${{ secrets.STEAM_SHARED_SECRET }}
 
