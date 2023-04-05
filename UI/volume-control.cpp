@@ -119,7 +119,8 @@ void VolControl::VolumeMuted(bool muted)
 void VolControl::OBSMixersChanged(void *data, calldata_t *calldata)
 {
 	VolControl *volControl = static_cast<VolControl *>(data);
-	bool unassigned = calldata_int(calldata, "mixers") == 0;
+	bool unassigned = (calldata_int(calldata, "mixers") &
+			   ((1 << MAX_AUDIO_MIXES) - 1)) == 0;
 
 	QMetaObject::invokeMethod(volControl, "AssignmentChanged",
 				  Q_ARG(bool, unassigned));
