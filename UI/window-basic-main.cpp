@@ -1861,9 +1861,6 @@ void OBSBasic::ResetOutputs()
 	}
 }
 
-static void AddProjectorMenuMonitors(QMenu *parent, QObject *target,
-				     const char *slot);
-
 #define STARTUP_SEPARATOR \
 	"==== Startup complete ==============================================="
 #define SHUTDOWN_SEPARATOR \
