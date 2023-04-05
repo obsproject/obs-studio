@@ -60,6 +60,7 @@ elseif(OS_MACOS)
   find_library(SECURITY_FRAMEWORK Security)
   mark_as_advanced(FOUNDATION_FRAMEWORK SECURITY_FRAMEWORK)
 
+  target_compile_options(obs-outputs PRIVATE -Wno-comma)
   target_link_libraries(obs-outputs PRIVATE ${FOUNDATION_FRAMEWORK} ${SECURITY_FRAMEWORK})
 endif()
 
