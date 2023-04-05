@@ -232,7 +232,7 @@ bool FetchAndVerifyFile(const char *name, const char *file, const char *url,
 						    BLAKE2_HASH_LENGTH);
 
 		QString header = "If-None-Match: " + hash.toHex();
-		headers.push_back(std::move(header.toStdString()));
+		headers.push_back(header.toStdString());
 	}
 
 	/* ----------------------------------- *
