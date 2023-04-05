@@ -560,7 +560,7 @@ jobs:
           GIT_TAG="$(git describe --tags --abbrev=0)"
           if [[ ${GIT_TAG} == *'beta'* || ${GIT_TAG} == *'rc'* ]]; then
             echo "branch=beta" >> $GITHUB_OUTPUT
-            echo "deltas=0" >> $GITHUB_OUTPUT
+            echo "deltas=1" >> $GITHUB_OUTPUT
           else
             echo "branch=stable" >> $GITHUB_OUTPUT
             echo "deltas=1" >> $GITHUB_OUTPUT
