@@ -1481,13 +1481,13 @@ static void register_avc()
 	amf_encoder_info.get_name = amf_avc_get_name;
 	amf_encoder_info.create = amf_avc_create_texencode;
 	amf_encoder_info.destroy = amf_destroy;
-	amf_encoder_info.update = amf_avc_update;
+	/* FIXME: Figure out why encoder does not survive reconfiguration
+	amf_encoder_info.update = amf_avc_update; */
 	amf_encoder_info.encode_texture = amf_encode_tex;
 	amf_encoder_info.get_defaults = amf_defaults;
 	amf_encoder_info.get_properties = amf_avc_properties;
 	amf_encoder_info.get_extra_data = amf_extra_data;
-	amf_encoder_info.caps = OBS_ENCODER_CAP_PASS_TEXTURE |
-				OBS_ENCODER_CAP_DYN_BITRATE;
+	amf_encoder_info.caps = OBS_ENCODER_CAP_PASS_TEXTURE;
 
 	obs_register_encoder(&amf_encoder_info);
 
@@ -1821,13 +1821,13 @@ static void register_hevc()
 	amf_encoder_info.get_name = amf_hevc_get_name;
 	amf_encoder_info.create = amf_hevc_create_texencode;
 	amf_encoder_info.destroy = amf_destroy;
-	amf_encoder_info.update = amf_hevc_update;
+	/* FIXME: Figure out why encoder does not survive reconfiguration
+	amf_encoder_info.update = amf_hevc_update; */
 	amf_encoder_info.encode_texture = amf_encode_tex;
 	amf_encoder_info.get_defaults = amf_defaults;
 	amf_encoder_info.get_properties = amf_hevc_properties;
 	amf_encoder_info.get_extra_data = amf_extra_data;
-	amf_encoder_info.caps = OBS_ENCODER_CAP_PASS_TEXTURE |
-				OBS_ENCODER_CAP_DYN_BITRATE;
+	amf_encoder_info.caps = OBS_ENCODER_CAP_PASS_TEXTURE;
 
 	obs_register_encoder(&amf_encoder_info);
 
@@ -2132,13 +2132,13 @@ static void register_av1()
 	amf_encoder_info.get_name = amf_av1_get_name;
 	amf_encoder_info.create = amf_av1_create_texencode;
 	amf_encoder_info.destroy = amf_destroy;
-	amf_encoder_info.update = amf_av1_update;
+	/* FIXME: Figure out why encoder does not survive reconfiguration
+	amf_encoder_info.update = amf_av1_update; */
 	amf_encoder_info.encode_texture = amf_encode_tex;
 	amf_encoder_info.get_defaults = amf_av1_defaults;
 	amf_encoder_info.get_properties = amf_av1_properties;
 	amf_encoder_info.get_extra_data = amf_extra_data;
-	amf_encoder_info.caps = OBS_ENCODER_CAP_PASS_TEXTURE |
-				OBS_ENCODER_CAP_DYN_BITRATE;
+	amf_encoder_info.caps = OBS_ENCODER_CAP_PASS_TEXTURE;
 
 	obs_register_encoder(&amf_encoder_info);
 
