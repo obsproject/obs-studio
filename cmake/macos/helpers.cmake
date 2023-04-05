@@ -196,10 +196,12 @@ function(set_target_properties_obs target)
         PROPERTIES FRAMEWORK_VERSION A
                    MACOSX_FRAMEWORK_IDENTIFIER com.obsproject.${target}
                    MACOSX_FRAMEWORK_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/Info.plist.in"
-                   XCODE_ATTRIBUTE_SKIP_INSTALL YES)
+                   XCODE_ATTRIBUTE_SKIP_INSTALL YES
+                   XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""
+                   XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "")
+    else()
+      _add_entitlements()
     endif()
-
-    _add_entitlements()
 
     set_property(GLOBAL APPEND PROPERTY _OBS_FRAMEWORKS ${target})
     set_property(GLOBAL APPEND PROPERTY _OBS_DEPENDENCIES ${target})
