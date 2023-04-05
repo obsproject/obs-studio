@@ -2396,7 +2396,7 @@ bool obs_module_load(void)
 	av_capture_info.output_flags = OBS_SOURCE_ASYNC_VIDEO |
 				       OBS_SOURCE_AUDIO |
 				       OBS_SOURCE_DO_NOT_DUPLICATE;
-	av_capture_info.get_defaults = av_capture_defaults_v2,
+	av_capture_info.get_defaults = av_capture_defaults_v2;
 
 	obs_register_source(&av_capture_info);
 	return true;
