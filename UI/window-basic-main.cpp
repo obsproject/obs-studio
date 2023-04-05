@@ -8370,8 +8370,10 @@ void OBSBasic::GetConfigFPS(uint32_t &num, uint32_t &den) const
 		GetFPSInteger(num, den);
 	else if (type == 2) //"Fraction"
 		GetFPSFraction(num, den);
-	else if (false) //"Nanoseconds", currently not implemented
-		GetFPSNanoseconds(num, den);
+	/*
+	 * 	else if (false) //"Nanoseconds", currently not implemented
+	 *		GetFPSNanoseconds(num, den);
+	 */
 	else
 		GetFPSCommon(num, den);
 }
