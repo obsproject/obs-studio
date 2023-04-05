@@ -4671,17 +4671,20 @@ void OBSBasicSettings::SpeakerLayoutChanged(int idx)
 		 */
 		PopulateSimpleBitrates(ui->simpleOutputABitrate, isOpus);
 
-		const char *encoder_id = QT_TO_UTF8(
-			ui->advOutAEncoder->currentData().toString());
-		QString rec_encoder_id =
-			ui->advOutRecAEncoder->currentData().toString();
+		string stream_encoder_id = ui->advOutAEncoder->currentData()
+						   .toString()
+						   .toStdString();
+		string record_encoder_id = ui->advOutRecAEncoder->currentData()
+						   .toString()
+						   .toStdString();
 		PopulateAdvancedBitrates(
 			{ui->advOutTrack1Bitrate, ui->advOutTrack2Bitrate,
 			 ui->advOutTrack3Bitrate, ui->advOutTrack4Bitrate,
 			 ui->advOutTrack5Bitrate, ui->advOutTrack6Bitrate},
-			encoder_id,
-			rec_encoder_id == "none" ? encoder_id
-						 : QT_TO_UTF8(rec_encoder_id));
+			stream_encoder_id.c_str(),
+			record_encoder_id == "none"
+				? stream_encoder_id.c_str()
+				: record_encoder_id.c_str());
 	} else {
 		/*
 		 * Reset audio bitrate for simple and adv mode, update list of
