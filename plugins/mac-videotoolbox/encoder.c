@@ -699,14 +699,6 @@ static bool create_encoder(struct vt_encoder *enc)
 	enc->session = s;
 
 	return true;
-
-fail:
-	if (encoder_spec != NULL)
-		CFRelease(encoder_spec);
-	if (pixbuf_spec != NULL)
-		CFRelease(pixbuf_spec);
-
-	return false;
 }
 
 static void vt_destroy(void *data)
@@ -1061,6 +1053,10 @@ static bool convert_sample_to_annexb(struct vt_encoder *enc,
 			format_desc, 0, NULL, NULL, &param_count,
 			&nal_length_bytes);
 #endif
+	} else {
+		log_osstatus(LOG_ERROR, enc, "invalid codec type",
+			     kCMFormatDescriptionError_ValueNotAvailable);
+		return false;
 	}
 	// it is not clear what errors this function can return
 	// so we check the two most reasonable
