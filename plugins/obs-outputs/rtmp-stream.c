@@ -1031,13 +1031,12 @@ static int init_send(struct rtmp_stream *stream)
 		stream->write_buf_size = ideal_buffer_size;
 		stream->write_buf = bmalloc(ideal_buffer_size);
 
-#ifdef _WIN32
-		ret = pthread_create(&stream->socket_thread, NULL,
-				     socket_thread_windows, stream);
-#else
+#ifndef _WIN32
 		warn("New socket loop not supported on this platform");
 		return OBS_OUTPUT_ERROR;
-#endif
+#else
+		ret = pthread_create(&stream->socket_thread, NULL,
+				     socket_thread_windows, stream);
 
 		if (ret != 0) {
 			RTMP_Close(&stream->rtmp);
@@ -1049,6 +1048,7 @@ static int init_send(struct rtmp_stream *stream)
 		stream->rtmp.m_bCustomSend = true;
 		stream->rtmp.m_customSendFunc = socket_queue_data;
 		stream->rtmp.m_customSendParam = stream;
+#endif
 	}
 
 	os_atomic_set_bool(&stream->active, true);
