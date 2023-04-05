@@ -93,10 +93,10 @@ typedef enum {
 - (void)startStream
 {
     dispatch_async(_stateQueue, ^{
-        if (_state == PlugInStateNotStarted) {
-            dispatch_resume(_machConnectTimer);
+        if (self->_state == PlugInStateNotStarted) {
+            dispatch_resume(self->_machConnectTimer);
             [self.stream startServingDefaultFrames];
-            _state = PlugInStateWaitingForServer;
+            self->_state = PlugInStateWaitingForServer;
         }
     });
 }
@@ -104,14 +104,14 @@ typedef enum {
 - (void)stopStream
 {
     dispatch_async(_stateQueue, ^{
-        if (_state == PlugInStateWaitingForServer) {
-            dispatch_suspend(_machConnectTimer);
+        if (self->_state == PlugInStateWaitingForServer) {
+            dispatch_suspend(self->_machConnectTimer);
             [self.stream stopServingDefaultFrames];
-        } else if (_state == PlugInStateReceivingFrames) {
+        } else if (self->_state == PlugInStateReceivingFrames) {
             // TODO: Disconnect from the mach server?
-            dispatch_suspend(_timeoutTimer);
+            dispatch_suspend(self->_timeoutTimer);
         }
-        _state = PlugInStateNotStarted;
+        self->_state = PlugInStateNotStarted;
     });
 }
 
