@@ -289,10 +289,10 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 		/* Check if the requested format is actually available for the specified
 		 * encoder. This may not always be the case due to FFmpeg changes or a
 		 * fallback being used (for example, when libopus is unavailable). */
-		enum AVSampleFormat fmt = enc->codec->sample_fmts[0];
-		while (fmt != AV_SAMPLE_FMT_NONE) {
-			if (fmt == sample_format) {
-				enc->context->sample_fmt = fmt;
+		const enum AVSampleFormat *fmt = enc->codec->sample_fmts;
+		while (*fmt != AV_SAMPLE_FMT_NONE) {
+			if (*fmt == sample_format) {
+				enc->context->sample_fmt = *fmt;
 				break;
 			}
 			fmt++;
