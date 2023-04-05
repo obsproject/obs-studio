@@ -297,37 +297,58 @@ static int add_save_callback(lua_State *script)
 
 /* ----------------------------------- */
 
+typedef struct lua_function_tuple {
+	const char *name;
+	lua_CFunction function;
+} obs_frontend_func;
+
+static const obs_frontend_func functions[] = {
+	{.name = "obs_frontend_get_scene_names", .function = get_scene_names},
+	{.name = "obs_frontend_get_scenes", .function = get_scenes},
+	{.name = "obs_frontend_get_current_scene",
+	 .function = get_current_scene},
+	{.name = "obs_frontend_set_current_scene",
+	 .function = set_current_scene},
+	{.name = "obs_frontend_get_transitions", .function = get_transitions},
+	{.name = "obs_frontend_get_current_transition",
+	 .function = get_current_transition},
+	{.name = "obs_frontend_set_current_transition",
+	 .function = set_current_transition},
+	{.name = "obs_frontend_get_transition_duration",
+	 .function = get_transition_duration},
+	{.name = "obs_frontend_set_transition_duration",
+	 .function = set_transition_duration},
+	{.name = "obs_frontend_get_scene_collections",
+	 .function = get_scene_collections},
+	{.name = "obs_frontend_get_current_scene_collection",
+	 .function = get_current_scene_collection},
+	{.name = "obs_frontend_set_current_scene_collection",
+	 .function = set_current_scene_collection},
+	{.name = "obs_frontend_get_profiles", .function = get_profiles},
+	{.name = "obs_frontend_get_current_profile",
+	 .function = get_current_profile},
+	{.name = "obs_frontend_set_current_profile",
+	 .function = set_current_profile},
+	{.name = "obs_frontend_remove_event_callback",
+	 .function = remove_event_callback},
+	{.name = "obs_frontend_add_event_callback",
+	 .function = add_event_callback},
+	{.name = "obs_frontend_remove_save_callback",
+	 .function = remove_save_callback},
+	{.name = "obs_frontend_add_save_callback",
+	 .function = add_save_callback},
+};
+
 void add_lua_frontend_funcs(lua_State *script)
 {
 	lua_getglobal(script, "obslua");
 
-#define add_func(name)                                         \
-	do {                                                   \
-		lua_pushstring(script, "obs_frontend_" #name); \
-		lua_pushcfunction(script, name);               \
-		lua_rawset(script, -3);                        \
-	} while (false)
+	size_t num_items = OBS_COUNTOF(functions);
 
-	add_func(get_scene_names);
-	add_func(get_scenes);
-	add_func(get_current_scene);
-	add_func(set_current_scene);
-	add_func(get_transitions);
-	add_func(get_current_transition);
-	add_func(set_current_transition);
-	add_func(get_transition_duration);
-	add_func(set_transition_duration);
-	add_func(get_scene_collections);
-	add_func(get_current_scene_collection);
-	add_func(set_current_scene_collection);
-	add_func(get_profiles);
-	add_func(get_current_profile);
-	add_func(set_current_profile);
-	add_func(remove_event_callback);
-	add_func(add_event_callback);
-	add_func(remove_save_callback);
-	add_func(add_save_callback);
-#undef add_func
-
+	for (size_t i = 0; i < num_items; i++) {
+		lua_pushstring(script, functions[i].name);
+		lua_pushcfunction(script, functions[i].function);
+		lua_rawset(script, -3);
+	}
 	lua_pop(script, 1);
 }
