@@ -39,5 +39,7 @@ target_sources(
           util/threading-posix.h
           util/apple/cfstring-utils.h)
 
+target_compile_options(libobs PUBLIC -Wno-strict-prototypes)
+
 set_property(SOURCE util/platform-cocoa.m obs-cocoa.m PROPERTY COMPILE_FLAGS -fobjc-arc)
 set_property(TARGET libobs PROPERTY FRAMEWORK TRUE)
