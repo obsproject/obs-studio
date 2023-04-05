@@ -220,7 +220,7 @@ static inline const char *get_video_format_name(enum video_format format)
 	case VIDEO_FORMAT_P416:
 		return "P416";
 	case VIDEO_FORMAT_V210:
-		return "V210";
+		return "v210";
 	case VIDEO_FORMAT_NONE:;
 	}
 
