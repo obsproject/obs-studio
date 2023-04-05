@@ -13,8 +13,9 @@ set_source_files_properties(platform-osx.mm PROPERTIES COMPILE_FLAGS -fobjc-arc)
 
 target_link_libraries(obs-studio PRIVATE ${APPKIT} ${AVFOUNDATION} ${APPLICATIONSERVICES})
 
-target_compile_options(obs-studio PRIVATE -Wno-error=float-conversion -Wno-error=implicit-int-conversion
-                                          -Wno-error=shorten-64-to-32)
+target_compile_options(
+  obs-studio PRIVATE -Wno-error=float-conversion -Wno-error=implicit-int-conversion -Wno-error=shorten-64-to-32
+                     -Wno-quoted-include-in-framework-header -Wno-comma)
 
 if(CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL 14.0.3)
   target_compile_options(obs-studio PRIVATE -Wno-error=unqualified-std-cast-call)
