@@ -108,15 +108,12 @@ void OBSPropertiesView::ReloadProperties()
 
 void OBSPropertiesView::RefreshProperties()
 {
-	bool firstDraw = false;
 	int h, v;
 	GetScrollPos(h, v);
 
 	children.clear();
 	if (widget)
 		widget->deleteLater();
-	else
-		firstDraw = true;
 
 	widget = new QWidget();
 	widget->setObjectName("PropertiesContainer");
@@ -141,8 +138,7 @@ void OBSPropertiesView::RefreshProperties()
 	setWidget(widget);
 	SetScrollPos(h, v);
 	setSizePolicy(mainPolicy);
-	if (firstDraw)
-		adjustSize();
+	adjustSize();
 
 	lastFocused.clear();
 	if (lastWidget) {
