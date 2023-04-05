@@ -38,6 +38,7 @@ elseif(OS_MACOS)
 
   target_sources(libobs-opengl PRIVATE gl-cocoa.m)
   target_compile_definitions(libobs-opengl PRIVATE GL_SILENCE_DEPRECATION)
+  target_compile_options(libobs-opengl PRIVATE -Wno-strict-prototypes)
 
   target_link_libraries(libobs-opengl PRIVATE ${COCOA} ${IOSURF})
 elseif(OS_LINUX OR OS_FREEBSD)

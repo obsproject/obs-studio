@@ -25,7 +25,9 @@ target_sources(
 
 target_compile_definitions(caption PRIVATE __STDC_CONSTANT_MACROS $<$<CXX_COMPILER_ID:MSVC>:_CRT_SECURE_NO_WARNINGS>)
 
-target_compile_options(caption PRIVATE $<$<CXX_COMPILER_ID:Clang,AppleClang,GNU>:-Wno-unused-but-set-parameter>)
+target_compile_options(
+  caption
+  PRIVATE "$<$<CXX_COMPILER_ID:Clang,AppleClang,GNU>:-Wno-unused-but-set-parameter;-Wno-comma;-Wno-strict-prototypes>")
 
 target_include_directories(
   caption
