@@ -367,8 +367,8 @@ static void display_capture_video_tick(void *data, float seconds)
     CGPoint origin = {0.f};
     CGPoint end = {0.f};
 
+    double x, y;
     switch (dc->crop) {
-        double x, y;
         case CROP_INVALID:
             break;
 
