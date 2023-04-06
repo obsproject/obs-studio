@@ -523,10 +523,8 @@ size_t obs_parse_av1_header(uint8_t **header, const uint8_t *data, size_t size)
 
 	struct array_output_data output;
 	struct serializer s;
-	long ref = 1;
 
 	array_output_serializer_init(&s, &output);
-	serialize(&s, &ref, sizeof(ref));
 
 	s_write(&s, av1header, sizeof(av1header));
 	if (seq_size)
@@ -534,8 +532,8 @@ size_t obs_parse_av1_header(uint8_t **header, const uint8_t *data, size_t size)
 	if (meta_size)
 		s_write(&s, meta, meta_size);
 
-	*header = output.bytes.array + sizeof(ref);
-	return output.bytes.num - sizeof(ref);
+	*header = output.bytes.array;
+	return output.bytes.num;
 }
 
 static void serialize_av1_data(struct serializer *s, const uint8_t *data,
