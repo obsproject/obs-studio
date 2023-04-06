@@ -6,6 +6,12 @@ if(SPARKLE_APPCAST_URL AND SPARKLE_PUBLIC_KEY)
   set_source_files_properties(update/sparkle-updater.mm PROPERTIES COMPILE_FLAGS -fobjc-arc)
   target_link_libraries(obs-studio PRIVATE ${SPARKLE})
 
+  if(OBS_BETA GREATER 0 OR OBS_RELEASE_CANDIDATE GREATER 0)
+    set(SPARKLE_UPDATE_INTERVAL 3600) # 1 hour
+  else()
+    set(SPARKLE_UPDATE_INTERVAL 86400) # 24 hours
+  endif()
+
   target_enable_feature(obs-studio "Sparkle updater" ENABLE_SPARKLE_UPDATER)
 else()
   target_disable_feature(obs-studio "Sparkle updater")
