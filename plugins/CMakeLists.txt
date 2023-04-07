@@ -6,6 +6,7 @@ if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
 
   if(NOT ENABLE_PLUGINS)
     set_property(GLOBAL APPEND PROPERTY OBS_FEATURES_DISABLED "Plugin Support")
+    return()
   endif()
 
   set_property(GLOBAL APPEND PROPERTY OBS_FEATURES_ENABLED "Plugin Support")
