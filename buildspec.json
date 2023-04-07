@@ -62,6 +62,11 @@
             "deploymentTarget": "11.0",
             "buildTarget": "11.0"
         },
+        "macos-universal": {
+            "qtVersion": 6,
+            "deploymentTarget": "11.0",
+            "buildTarget": "11.0"
+        },
         "windows-x64": {
             "qtVersion": 6
         },
