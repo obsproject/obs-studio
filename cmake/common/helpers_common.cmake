@@ -434,8 +434,8 @@ function(target_export target)
   message(DEBUG "Generating export header for target ${target} as ${target}_EXPORT.h...")
   include(GenerateExportHeader)
   generate_export_header(${target} EXPORT_FILE_NAME "${target}_EXPORT.h")
-  target_sources(${target} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/${target}_EXPORT.h>
-                                  $<INSTALL_INTERFACE:${target}_EXPORT.h>)
+  target_sources(${target} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/${target}_EXPORT.h>)
+
   set_property(
     TARGET ${target}
     APPEND
