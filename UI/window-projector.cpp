@@ -256,13 +256,12 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 	OBSQTDisplay::mousePressEvent(event);
 
 	if (event->button() == Qt::RightButton) {
-		OBSBasic *main =
-			reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
-		QMenu popup(this);
-
 		QMenu *projectorMenu = new QMenu(QTStr("Fullscreen"));
-		main->AddProjectorMenuMonitors(projectorMenu, this,
-					       SLOT(OpenFullScreenProjector()));
+		OBSBasic::AddProjectorMenuMonitors(
+			projectorMenu, this,
+			&OBSProjector::OpenFullScreenProjector);
+
+		QMenu popup(this);
 		popup.addMenu(projectorMenu);
 
 		if (GetMonitor() > -1) {

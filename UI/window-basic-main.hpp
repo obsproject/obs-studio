@@ -982,8 +982,19 @@ public:
 	const char *GetCurrentOutputPath();
 
 	void DeleteProjector(OBSProjector *projector);
-	void AddProjectorMenuMonitors(QMenu *parent, QObject *target,
-				      const char *slot);
+
+	static QList<QString> GetProjectorMenuMonitorsFormatted();
+	template<typename Receiver, typename... Args>
+	static void AddProjectorMenuMonitors(QMenu *parent, Receiver *target,
+					     void (Receiver::*slot)(Args...))
+	{
+		auto projectors = GetProjectorMenuMonitorsFormatted();
+		for (int i = 0; i < projectors.size(); i++) {
+			QString str = projectors[i];
+			QAction *action = parent->addAction(str, target, slot);
+			action->setProperty("monitor", i);
+		}
+	}
 
 	QIcon GetSourceIcon(const char *id) const;
 	QIcon GetGroupIcon() const;

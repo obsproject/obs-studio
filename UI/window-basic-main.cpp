@@ -2230,7 +2230,7 @@ void OBSBasic::OBSInit()
 	ui->viewMenu->addSeparator();
 
 	AddProjectorMenuMonitors(ui->multiviewProjectorMenu, this,
-				 SLOT(OpenMultiviewProjector()));
+				 &OBSBasic::OpenMultiviewProjector);
 	connect(ui->viewMenu->menuAction(), &QAction::hovered, this,
 		&OBSBasic::UpdateMultiviewProjectorMenu);
 
@@ -2490,7 +2490,7 @@ void OBSBasic::UpdateMultiviewProjectorMenu()
 {
 	ui->multiviewProjectorMenu->clear();
 	AddProjectorMenuMonitors(ui->multiviewProjectorMenu, this,
-				 SLOT(OpenMultiviewProjector()));
+				 &OBSBasic::OpenMultiviewProjector);
 }
 
 void OBSBasic::InitHotkeys()
@@ -5347,10 +5347,9 @@ void OBSBasic::EditSceneName()
 	item->setFlags(flags);
 }
 
-void OBSBasic::AddProjectorMenuMonitors(QMenu *parent, QObject *target,
-					const char *slot)
+QList<QString> OBSBasic::GetProjectorMenuMonitorsFormatted()
 {
-	QAction *action;
+	QList<QString> projectorsFormatted;
 	QList<QScreen *> screens = QGuiApplication::screens();
 	for (int i = 0; i < screens.size(); i++) {
 		QScreen *screen = screens[i];
@@ -5387,10 +5386,9 @@ void OBSBasic::AddProjectorMenuMonitors(QMenu *parent, QObject *target,
 						     ratio),
 				     QString::number(screenGeometry.x()),
 				     QString::number(screenGeometry.y()));
-
-		action = parent->addAction(str, target, slot);
-		action->setProperty("monitor", i);
+		projectorsFormatted.push_back(str);
 	}
+	return projectorsFormatted;
 }
 
 void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
@@ -5441,7 +5439,7 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 		delete sceneProjectorMenu;
 		sceneProjectorMenu = new QMenu(QTStr("SceneProjector"));
 		AddProjectorMenuMonitors(sceneProjectorMenu, this,
-					 SLOT(OpenSceneProjector()));
+					 &OBSBasic::OpenSceneProjector);
 		popup.addMenu(sceneProjectorMenu);
 
 		QAction *sceneWindow = popup.addAction(
@@ -5888,7 +5886,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 
 		previewProjectorSource = new QMenu(QTStr("PreviewProjector"));
 		AddProjectorMenuMonitors(previewProjectorSource, this,
-					 SLOT(OpenPreviewProjector()));
+					 &OBSBasic::OpenPreviewProjector);
 
 		popup.addMenu(previewProjectorSource);
 
@@ -6003,8 +6001,9 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 			popup.addSeparator();
 
 			sourceProjector = new QMenu(QTStr("SourceProjector"));
-			AddProjectorMenuMonitors(sourceProjector, this,
-						 SLOT(OpenSourceProjector()));
+			AddProjectorMenuMonitors(
+				sourceProjector, this,
+				&OBSBasic::OpenSourceProjector);
 			popup.addMenu(sourceProjector);
 			popup.addAction(QTStr("SourceWindow"), this,
 					&OBSBasic::OpenSourceWindow);
@@ -8236,7 +8235,7 @@ void OBSBasic::ProgramViewContextMenuRequested()
 
 	studioProgramProjector = new QMenu(QTStr("StudioProgramProjector"));
 	AddProjectorMenuMonitors(studioProgramProjector, this,
-				 SLOT(OpenStudioProgramProjector()));
+				 &OBSBasic::OpenStudioProgramProjector);
 
 	popup.addMenu(studioProgramProjector);
 
@@ -8265,7 +8264,7 @@ void OBSBasic::on_previewDisabledWidget_customContextMenuRequested()
 
 	previewProjectorMain = new QMenu(QTStr("PreviewProjector"));
 	AddProjectorMenuMonitors(previewProjectorMain, this,
-				 SLOT(OpenPreviewProjector()));
+				 &OBSBasic::OpenPreviewProjector);
 
 	QAction *previewWindow = popup.addAction(QTStr("PreviewWindow"), this,
 						 &OBSBasic::OpenPreviewWindow);
@@ -9669,9 +9668,9 @@ void OBSBasic::SystemTrayInit()
 	previewProjector = new QMenu(QTStr("PreviewProjector"));
 	studioProgramProjector = new QMenu(QTStr("StudioProgramProjector"));
 	AddProjectorMenuMonitors(previewProjector, this,
-				 SLOT(OpenPreviewProjector()));
+				 &OBSBasic::OpenPreviewProjector);
 	AddProjectorMenuMonitors(studioProgramProjector, this,
-				 SLOT(OpenStudioProgramProjector()));
+				 &OBSBasic::OpenStudioProgramProjector);
 	trayMenu->addAction(showHide);
 	trayMenu->addSeparator();
 	trayMenu->addMenu(previewProjector);
@@ -9714,9 +9713,9 @@ void OBSBasic::IconActivated(QSystemTrayIcon::ActivationReason reason)
 	previewProjector->clear();
 	studioProgramProjector->clear();
 	AddProjectorMenuMonitors(previewProjector, this,
-				 SLOT(OpenPreviewProjector()));
+				 &OBSBasic::OpenPreviewProjector);
 	AddProjectorMenuMonitors(studioProgramProjector, this,
-				 SLOT(OpenStudioProgramProjector()));
+				 &OBSBasic::OpenStudioProgramProjector);
 
 #ifdef __APPLE__
 	UNUSED_PARAMETER(reason);
