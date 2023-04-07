@@ -14,6 +14,20 @@ include(ccache)
 include(compiler_common)
 include(simd)
 
+# Set C17 / C++17 standards as required and disable extensions
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+set(CMAKE_C_STANDARD 17)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
+
+# Set symbols to be hidden by default for C and C++
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_C_VISIBILITY_PRESET hidden)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
+
 # Add default C and C++ compiler options if Xcode generator is not used
 if(NOT XCODE)
   list(
@@ -30,14 +44,6 @@ if(NOT XCODE)
     -Wformat
     -fno-strict-aliasing
     -Wno-error=shorten-64-to-32)
-
-  # Set symbols to be hidden by default for C and C++
-  set(CMAKE_CXX_STANDARD 17)
-  set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-  set(CMAKE_CXX_VISIBILITY_PRESET hidden)
-  set(CMAKE_C_VISIBILITY_PRESET hidden)
-  set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
 
   # Enable stripping of dead symbols when not building for Debug configuration
   set(_release_configs RelWithDebInfo Release MinSizeRel)
