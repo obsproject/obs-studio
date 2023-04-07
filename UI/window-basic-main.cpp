@@ -1369,7 +1369,8 @@ bool OBSBasic::LoadService()
 		return false;
 
 	/* Enforce Opus on FTL if needed */
-	if (strcmp(obs_service_get_protocol(service), "FTL") == 0) {
+	if (strcmp(obs_service_get_protocol(service), "FTL") == 0 ||
+	    strcmp(obs_service_get_protocol(service), "WHIP") == 0) {
 		const char *option = config_get_string(
 			basicConfig, "SimpleOutput", "StreamAudioEncoder");
 		if (strcmp(option, "opus") != 0)
