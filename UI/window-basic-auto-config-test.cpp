@@ -221,7 +221,7 @@ void AutoConfigTestPage::TestBandwidthThread()
 	OBSDataAutoRelease output_settings = obs_data_create();
 
 	std::string key = wiz->key;
-	if (wiz->service == AutoConfig::Service::Twitch) {
+	if (wiz->serviceName == "Twitch") {
 		string_depad_key(key);
 		key += "?bandwidthtest";
 	} else if (wiz->serviceName == "Restream.io" ||
@@ -265,15 +265,11 @@ void AutoConfigTestPage::TestBandwidthThread()
 	    wiz->serviceName == "Nimo TV") {
 		servers.resize(1);
 
-	} else if (wiz->service == AutoConfig::Service::Twitch &&
-		   wiz->twitchAuto) {
+	} else if (wiz->serviceName == "Twitch" && wiz->twitchAuto) {
 		/* if using Twitch and "Auto" is available, test 3 closest
 		 * server */
 		servers.erase(servers.begin() + 1);
 		servers.resize(3);
-	} else if (wiz->service == AutoConfig::Service::YouTube) {
-		/* Only test first set of primary + backup servers */
-		servers.resize(2);
 	}
 
 	/* -----------------------------------*/

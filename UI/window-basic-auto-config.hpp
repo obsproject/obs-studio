@@ -19,7 +19,6 @@ class Ui_AutoConfigStreamPage;
 class Ui_AutoConfigTestPage;
 
 class AutoConfigStreamPage;
-class Auth;
 
 class AutoConfig : public QWizard {
 	Q_OBJECT
@@ -34,12 +33,6 @@ class AutoConfig : public QWizard {
 		Streaming,
 		Recording,
 		VirtualCam,
-	};
-
-	enum class Service {
-		Twitch,
-		YouTube,
-		Other,
 	};
 
 	enum class Encoder {
@@ -68,7 +61,6 @@ class AutoConfig : public QWizard {
 
 	AutoConfigStreamPage *streamPage = nullptr;
 
-	Service service = Service::Other;
 	Quality recordingQuality = Quality::Stream;
 	Encoder recordingEncoder = Encoder::Stream;
 	Encoder streamingEncoder = Encoder::x264;
@@ -165,13 +157,6 @@ class AutoConfigStreamPage : public QWizardPage {
 
 	friend class AutoConfig;
 
-	enum class Section : int {
-		Connect,
-		StreamKey,
-	};
-
-	std::shared_ptr<Auth> auth;
-
 	std::unique_ptr<Ui_AutoConfigStreamPage> ui;
 	QString lastService;
 	bool ready = false;
@@ -187,21 +172,13 @@ public:
 	virtual int nextId() const override;
 	virtual bool validatePage() override;
 
-	void OnAuthConnected();
-	void OnOAuthStreamKeyConnected();
-
 public slots:
 	void on_show_clicked();
-	void on_connectAccount_clicked();
-	void on_disconnectAccount_clicked();
-	void on_useStreamKey_clicked();
 	void ServiceChanged();
 	void UpdateKeyLink();
 	void UpdateMoreInfoLink();
 	void UpdateServerList();
 	void UpdateCompleted();
-
-	void reset_service_ui_fields(std::string &service);
 };
 
 class AutoConfigTestPage : public QWizardPage {
