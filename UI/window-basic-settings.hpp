@@ -28,8 +28,6 @@
 
 #include <obs.hpp>
 
-#include "auth-base.hpp"
-
 class OBSBasic;
 class QAbstractButton;
 class QRadioButton;
@@ -107,8 +105,6 @@ private:
 
 	std::unique_ptr<Ui::OBSBasicSettings> ui;
 
-	std::shared_ptr<Auth> auth;
-
 	bool generalChanged = false;
 	bool stream1Changed = false;
 	bool outputsChanged = false;
@@ -119,7 +115,6 @@ private:
 	bool advancedChanged = false;
 	int pageIndex = 0;
 	bool loading = true;
-	bool forceAuthReload = false;
 	bool forceUpdateCheck = false;
 	std::string savedTheme;
 	int sampleRateIndex = 0;
@@ -259,8 +254,6 @@ private:
 	void InitStreamPage();
 	inline bool IsCustomService() const;
 	void LoadServices(bool showAll);
-	void OnOAuthStreamKeyConnected();
-	void OnAuthConnected();
 	QString lastService;
 	QString protocol;
 	QString lastCustomServer;
@@ -282,9 +275,6 @@ private slots:
 	void DisplayEnforceWarning(bool checked);
 	void on_show_clicked();
 	void on_authPwShow_clicked();
-	void on_connectAccount_clicked();
-	void on_disconnectAccount_clicked();
-	void on_useStreamKey_clicked();
 	void on_useAuth_toggled();
 
 	void on_hotkeyFilterReset_clicked();
@@ -470,8 +460,6 @@ private slots:
 	void SetHotkeysIcon(const QIcon &icon);
 	void SetAccessibilityIcon(const QIcon &icon);
 	void SetAdvancedIcon(const QIcon &icon);
-
-	void UseStreamKeyAdvClicked();
 
 	void SimpleStreamAudioEncoderChanged();
 	void AdvAudioEncodersChanged();

@@ -477,7 +477,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->customServer,         EDIT_CHANGED,   STREAM1_CHANGED);
 	HookWidget(ui->key,                  EDIT_CHANGED,   STREAM1_CHANGED);
 	HookWidget(ui->bandwidthTestEnable,  CHECK_CHANGED,  STREAM1_CHANGED);
-	HookWidget(ui->twitchAddonDropdown,  COMBO_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->useAuth,              CHECK_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->authUsername,         EDIT_CHANGED,   STREAM1_CHANGED);
 	HookWidget(ui->authPw,               EDIT_CHANGED,   STREAM1_CHANGED);
@@ -1008,9 +1007,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	ui->advOutRescale->lineEdit()->setValidator(validator);
 	ui->advOutRecRescale->lineEdit()->setValidator(validator);
 	ui->advOutFFRescale->lineEdit()->setValidator(validator);
-
-	connect(ui->useStreamKeyAdv, SIGNAL(clicked()), this,
-		SLOT(UseStreamKeyAdvClicked()));
 
 	connect(ui->simpleOutStrAEncoder, SIGNAL(currentIndexChanged(int)),
 		this, SLOT(SimpleStreamAudioEncoderChanged()));
@@ -4538,12 +4534,6 @@ bool OBSBasicSettings::AskIfCanCloseSettings()
 
 	if (!Changed() || QueryChanges())
 		canCloseSettings = true;
-
-	if (forceAuthReload) {
-		main->auth->Save();
-		main->auth->Load();
-		forceAuthReload = false;
-	}
 
 	if (forceUpdateCheck) {
 		main->CheckForUpdates(false);
