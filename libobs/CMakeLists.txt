@@ -19,7 +19,10 @@ add_subdirectory("${CMAKE_SOURCE_DIR}/deps/uthash" "${CMAKE_BINARY_DIR}/deps/uth
 
 target_sources(
   libobs
-  PRIVATE obs-audio-controls.c
+  PRIVATE # cmake-format: sortable
+          $<$<BOOL:${ENABLE_HEVC}>:obs-hevc.c>
+          $<$<BOOL:${ENABLE_HEVC}>:obs-hevc.h>
+          obs-audio-controls.c
           obs-audio-controls.h
           obs-audio.c
           obs-avc.c
@@ -62,13 +65,12 @@ target_sources(
           obs-view.c
           obs.c
           obs.h
-          obs.hpp
-          $<$<BOOL:${ENABLE_HEVC}>:obs-hevc.c>
-          $<$<BOOL:${ENABLE_HEVC}>:obs-hevc.h>)
+          obs.hpp)
 
 target_sources(
   libobs
-  PRIVATE util/array-serializer.c
+  PRIVATE # cmake-format: sortable
+          util/array-serializer.c
           util/array-serializer.h
           util/base.c
           util/base.h
@@ -86,6 +88,7 @@ target_sources(
           util/config-file.h
           util/crc32.c
           util/crc32.h
+          util/curl/curl-helper.h
           util/darray.h
           util/dstr.c
           util/dstr.h
@@ -110,13 +113,13 @@ target_sources(
           util/utf8.h
           util/uthash.h
           util/util.hpp
-          util/util_uint64.h
           util/util_uint128.h
-          util/curl/curl-helper.h)
+          util/util_uint64.h)
 
 target_sources(
   libobs
-  PRIVATE util/simde/check.h
+  PRIVATE # cmake-format: sortable
+          util/simde/check.h
           util/simde/debug-trap.h
           util/simde/hedley.h
           util/simde/simde-align.h
@@ -133,7 +136,8 @@ target_sources(
 
 target_sources(
   libobs
-  PRIVATE callback/calldata.c
+  PRIVATE # cmake-format: sortable
+          callback/calldata.c
           callback/calldata.h
           callback/decl.c
           callback/decl.h
@@ -144,7 +148,8 @@ target_sources(
 
 target_sources(
   libobs
-  PRIVATE media-io/audio-io.c
+  PRIVATE # cmake-format: sortable
+          media-io/audio-io.c
           media-io/audio-io.h
           media-io/audio-math.h
           media-io/audio-resampler-ffmpeg.c
@@ -166,7 +171,8 @@ target_sources(
 
 target_sources(
   libobs
-  PRIVATE graphics/axisang.c
+  PRIVATE # cmake-format: sortable
+          graphics/axisang.c
           graphics/axisang.h
           graphics/bounds.c
           graphics/bounds.h
@@ -183,6 +189,10 @@ target_sources(
           graphics/half.h
           graphics/image-file.c
           graphics/image-file.h
+          graphics/input.h
+          graphics/libnsgif/libnsgif.c
+          graphics/libnsgif/libnsgif.h
+          graphics/math-defs.h
           graphics/math-extra.c
           graphics/math-extra.h
           graphics/matrix3.c
@@ -202,9 +212,7 @@ target_sources(
           graphics/vec3.c
           graphics/vec3.h
           graphics/vec4.c
-          graphics/vec4.h
-          graphics/libnsgif/libnsgif.c
-          graphics/libnsgif/libnsgif.h)
+          graphics/vec4.h)
 
 target_compile_features(libobs PUBLIC $<INSTALL_INTERFACE:cxx_std_17>)
 target_compile_options(libobs PUBLIC ${ARCH_SIMD_FLAGS})
@@ -242,59 +250,70 @@ target_include_directories(libobs PUBLIC "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/
                                          "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>")
 target_compile_definitions(libobs PUBLIC HAVE_OBSCONFIG_H)
 
-list(
-  APPEND
-  public_headers
-  obs.h
-  obs-config.h
-  obs-defs.h
-  obs-data.h
-  obs-interaction.h
-  obs-internal.h
-  obs-module.h
-  obs-properties.h
-  obs-ui.h
-  callback/calldata.h
-  callback/proc.h
-  callback/signal.h
-  graphics/graphics.h
-  graphics/vec2.h
-  graphics/vec3.h
-  graphics/vec4.h
-  media-io/audio-io.h
-  media-io/frame-rate.h
-  media-io/video-io.h
-  media-io/media-io-defs.h
-  util/base.h
-  util/bmem.h
-  util/c99defs.h
-  util/darray.h
-  util/profiler.h
-  util/text-lookup.h
-  util/util_uint64.h)
+set(public_headers
+    # cmake-format: sortable
+    callback/calldata.h
+    callback/proc.h
+    callback/signal.h
+    graphics/graphics.h
+    graphics/input.h
+    graphics/math-defs.h
+    graphics/srgb.h
+    graphics/vec2.h
+    graphics/vec3.h
+    graphics/vec4.h
+    media-io/audio-io.h
+    media-io/frame-rate.h
+    media-io/media-io-defs.h
+    media-io/video-io.h
+    obs-audio-controls.h
+    obs-config.h
+    obs-data.h
+    obs-defs.h
+    obs-encoder.h
+    obs-hotkey.h
+    obs-hotkeys.h
+    obs-interaction.h
+    obs-internal.h
+    obs-missing-files.h
+    obs-module.h
+    obs-output.h
+    obs-properties.h
+    obs-service.h
+    obs-source.h
+    obs-ui.h
+    obs.h
+    util/base.h
+    util/bmem.h
+    util/c99defs.h
+    util/darray.h
+    util/profiler.h
+    util/sse-intrin.h
+    util/text-lookup.h
+    util/util_uint64.h)
 
 if(ENABLE_HEVC)
   list(APPEND public_headers obs-hevc.h)
 endif()
 
 if(ARCH_SIMD_FLAGS)
-  list(
-    APPEND
-    public_headers
-    util/simde/check.h
-    util/simde/debug-trap.h
-    util/simde/hedley.h
-    util/simde/simde-align.h
-    util/simde/simde-arch.h
-    util/simde/simde-common.h
-    util/simde/simde-constify.h
-    util/simde/simde-detect-clang.h
-    util/simde/simde-diagnostic.h
-    util/simde/simde-features.h
-    util/simde/simde-math.h
-    util/simde/x86/mmx.h
-    util/simde/x86/sse2.h
-    util/simde/x86/sse.h)
+  set(public_headers
+      # cmake-format: sortable
+      ${public_headers}
+      util/simde/check.h
+      util/simde/debug-trap.h
+      util/simde/hedley.h
+      util/simde/simde-align.h
+      util/simde/simde-arch.h
+      util/simde/simde-common.h
+      util/simde/simde-constify.h
+      util/simde/simde-detect-clang.h
+      util/simde/simde-diagnostic.h
+      util/simde/simde-features.h
+      util/simde/simde-math.h
+      util/simde/x86/mmx.h
+      util/simde/x86/sse.h
+      util/simde/x86/sse2.h)
 endif()
 
 set_property(
