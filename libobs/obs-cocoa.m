@@ -487,6 +487,9 @@ static bool code_to_str(int code, struct dstr *str)
 
 void obs_key_to_str(obs_key_t key, struct dstr *str)
 {
+	const UniCharCount max_length = 16;
+	UniChar buffer[max_length];
+
 	if (localized_key_to_str(key, str))
 		return;
 
@@ -519,9 +522,7 @@ void obs_key_to_str(obs_key_t key, struct dstr *str)
 		goto err;
 	}
 
-	const UniCharCount max_length = 16;
 	UInt32 dead_key_state = 0;
-	UniChar buffer[max_length];
 	UniCharCount len = 0;
 
 	OSStatus err =
