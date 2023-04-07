@@ -2812,6 +2812,23 @@
             "supported video codecs": [
                 "h264"
             ]
+        },
+        {
+            "name": "Ant Media - Ultra Low Latency Streaming",
+            "more_info_link": "https://antmedia.io/",
+            "stream_key_link": "https://antmedia.io/webrtc-samples/rtmp-publish-webrtc-play/",
+            "servers": [
+                {
+                    "name": "EU Central",
+                    "url": "rtmp://test.antmedia.io/WebRTCAppEE/"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "baseline",
+                "max video bitrate": 9000,
+                "max audio bitrate": 192
+            }
         }
     ]
 }
