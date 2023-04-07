@@ -85,10 +85,8 @@ set(CMAKE_XCODE_ATTRIBUTE_LINKER_DISPLAYS_MANGLED_NAMES[variant=Debug] YES)
 set(CMAKE_XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC NO)
 # Disable strict aliasing
 set(CMAKE_XCODE_ATTRIBUTE_GCC_STRICT_ALIASING NO)
-# cmake-format: off
-# Re-enable once the bad goto statements are fixed
-# set(CMAKE_XCODE_ATTRIBUTE_GCC_C_LANGUAGE_STANDARD c99)
-# cmake-format: on
+# Set C language default to C17
+set(CMAKE_XCODE_ATTRIBUTE_GCC_C_LANGUAGE_STANDARD c17)
 # Set C++ language default to c++17
 set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD c++17)
 # Enable support for module imports in ObjC
