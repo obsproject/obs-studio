@@ -14,7 +14,7 @@ macro(_check_deps_version version)
     if(EXISTS "${path}/share/obs-deps/VERSION")
       if(dependency STREQUAL qt6 AND NOT EXISTS "${path}/lib/cmake/Qt6/Qt6Config.cmake")
         set(found FALSE)
-        break()
+        continue()
       endif()
 
       file(READ "${path}/share/obs-deps/VERSION" _check_version)
