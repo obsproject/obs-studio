@@ -389,31 +389,25 @@ static inline void HighlightGroupBoxLabel(QGroupBox *gb, QWidget *widget,
 
 void RestrictResetBitrates(initializer_list<QComboBox *> boxes, int maxbitrate);
 
-void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
-				  const char *slot)
-{
-	QObject::connect(widget, signal, this, slot);
-	widget->setProperty("changed", QVariant(false));
-}
-
 /* clang-format off */
-#define COMBO_CHANGED   SIGNAL(currentIndexChanged(int))
-#define EDIT_CHANGED    SIGNAL(textChanged(const QString &))
-#define CBEDIT_CHANGED  SIGNAL(editTextChanged(const QString &))
-#define CHECK_CHANGED   SIGNAL(clicked(bool))
-#define SCROLL_CHANGED  SIGNAL(valueChanged(int))
-#define DSCROLL_CHANGED SIGNAL(valueChanged(double))
+#define COMBO_CHANGED   &QComboBox::currentIndexChanged
+#define EDIT_CHANGED    &QLineEdit::textChanged
+#define CBEDIT_CHANGED  &QComboBox::editTextChanged
+#define CHECK_CHANGED   &QCheckBox::clicked
+#define GROUP_CHANGED   &QGroupBox::clicked
+#define SCROLL_CHANGED  &QSpinBox::valueChanged
+#define DSCROLL_CHANGED &QDoubleSpinBox::valueChanged
 
-#define GENERAL_CHANGED SLOT(GeneralChanged())
-#define STREAM1_CHANGED SLOT(Stream1Changed())
-#define OUTPUTS_CHANGED SLOT(OutputsChanged())
-#define AUDIO_RESTART   SLOT(AudioChangedRestart())
-#define AUDIO_CHANGED   SLOT(AudioChanged())
-#define VIDEO_RES       SLOT(VideoChangedResolution())
-#define VIDEO_CHANGED   SLOT(VideoChanged())
-#define A11Y_CHANGED    SLOT(A11yChanged())
-#define ADV_CHANGED     SLOT(AdvancedChanged())
-#define ADV_RESTART     SLOT(AdvancedChangedRestart())
+#define GENERAL_CHANGED &OBSBasicSettings::GeneralChanged
+#define STREAM1_CHANGED &OBSBasicSettings::Stream1Changed
+#define OUTPUTS_CHANGED &OBSBasicSettings::OutputsChanged
+#define AUDIO_RESTART   &OBSBasicSettings::AudioChangedRestart
+#define AUDIO_CHANGED   &OBSBasicSettings::AudioChanged
+#define VIDEO_RES       &OBSBasicSettings::VideoChangedResolution
+#define VIDEO_CHANGED   &OBSBasicSettings::VideoChanged
+#define A11Y_CHANGED    &OBSBasicSettings::A11yChanged
+#define ADV_CHANGED     &OBSBasicSettings::AdvancedChanged
+#define ADV_RESTART     &OBSBasicSettings::AdvancedChangedRestart
 /* clang-format on */
 
 OBSBasicSettings::OBSBasicSettings(QWidget *parent)
@@ -596,7 +590,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->fpsInteger,           SCROLL_CHANGED, VIDEO_CHANGED);
 	HookWidget(ui->fpsNumerator,         SCROLL_CHANGED, VIDEO_CHANGED);
 	HookWidget(ui->fpsDenominator,       SCROLL_CHANGED, VIDEO_CHANGED);
-	HookWidget(ui->colorsGroupBox,       CHECK_CHANGED,  A11Y_CHANGED);
+	HookWidget(ui->colorsGroupBox,       GROUP_CHANGED,  A11Y_CHANGED);
 	HookWidget(ui->colorPreset,          COMBO_CHANGED,  A11Y_CHANGED);
 	HookWidget(ui->renderer,             COMBO_CHANGED,  ADV_RESTART);
 	HookWidget(ui->adapter,              COMBO_CHANGED,  ADV_RESTART);

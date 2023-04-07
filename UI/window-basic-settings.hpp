@@ -221,7 +221,15 @@ private:
 		EnableApplyButton(false);
 	}
 
-	void HookWidget(QWidget *widget, const char *signal, const char *slot);
+	template<typename Widget, typename WidgetParent, typename... SignalArgs,
+		 typename... SlotArgs>
+	void HookWidget(Widget *widget,
+			void (WidgetParent::*signal)(SignalArgs...),
+			void (OBSBasicSettings::*slot)(SlotArgs...))
+	{
+		QObject::connect(widget, signal, this, slot);
+		widget->setProperty("changed", QVariant(false));
+	}
 
 	bool QueryChanges();
 	bool QueryAllowedToClose();

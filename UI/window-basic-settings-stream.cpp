@@ -871,8 +871,8 @@ void OBSBasicSettings::UpdateVodTrackSetting()
 						     &pos, nullptr);
 	ui->simpleStreamingLayout->insertRow(pos + 1, nullptr, simpleVodTrack);
 
-	HookWidget(simpleVodTrack, SIGNAL(clicked(bool)),
-		   SLOT(OutputsChanged()));
+	HookWidget(simpleVodTrack.data(), &QCheckBox::clicked,
+		   &OBSBasicSettings::OutputsChanged);
 	connect(ui->simpleOutAdvanced, &QCheckBox::toggled,
 		simpleVodTrack.data(), &QCheckBox::setVisible);
 
@@ -890,12 +890,12 @@ void OBSBasicSettings::UpdateVodTrackSetting()
 		vodTrack[i] = new QRadioButton(QString::number(i + 1));
 		vodTrackLayout->addWidget(vodTrack[i]);
 
-		HookWidget(vodTrack[i], SIGNAL(clicked(bool)),
-			   SLOT(OutputsChanged()));
+		HookWidget(vodTrack[i].data(), &QRadioButton::clicked,
+			   &OBSBasicSettings::OutputsChanged);
 	}
 
-	HookWidget(vodTrackCheckbox, SIGNAL(clicked(bool)),
-		   SLOT(OutputsChanged()));
+	HookWidget(vodTrackCheckbox.data(), &QCheckBox::clicked,
+		   &OBSBasicSettings::OutputsChanged);
 
 	vodTrackLayout->addStretch();
 	vodTrackLayout->setContentsMargins(0, 0, 0, 0);
@@ -1219,8 +1219,8 @@ bool OBSBasicSettings::UpdateResFPSLimits()
 		ui->outputResolution->clear();
 		ui->outputResolution->setEditable(false);
 		HookWidget(ui->outputResolution,
-			   SIGNAL(currentIndexChanged(int)),
-			   SLOT(VideoChangedResolution()));
+			   &QComboBox::currentIndexChanged,
+			   &OBSBasicSettings::VideoChangedResolution);
 
 		int new_res_index = -1;
 
