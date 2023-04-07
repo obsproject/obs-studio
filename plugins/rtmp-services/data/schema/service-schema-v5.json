@@ -25,7 +25,8 @@
                             "HLS",
                             "FTL",
                             "SRT",
-                            "RIST"
+                            "RIST",
+                            "WHIP",
                         ]
                     },
                     "common": {
@@ -222,7 +223,7 @@
                     },
                     {
                         "$comment": "Require recommended output field if protocol field is not RTMP(S)",
-                        "if": { "required": ["protocol"], "properties": { "protocol": { "pattern": "^(HLS|SRT|RIST|FTL)$" } } },
+                        "if": { "required": ["protocol"], "properties": { "protocol": { "pattern": "^(HLS|SRT|RIST|FTL|WHIP)$" } } },
                         "then": { "properties": { "recommended": { "required": ["output"] } } }
                     }
                 ]
