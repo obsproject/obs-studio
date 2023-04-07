@@ -169,6 +169,8 @@ static const char *rtmp_custom_get_connect_info(void *data, uint32_t type)
 
 		break;
 	}
+	case OBS_SERVICE_CONNECT_INFO_BEARER_TOKEN:
+		return NULL;
 	}
 
 	return NULL;
