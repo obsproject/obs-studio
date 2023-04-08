@@ -207,11 +207,7 @@ static inline void *darray_push_back_new(const size_t element_size,
 	darray_ensure_capacity(element_size, dst, ++dst->num);
 
 	last = darray_end(element_size, dst);
-	PRAGMA_WARN_PUSH
-	// NOTE: Those warning could be false positive from GCC 12 with -O2
-	PRAGMA_WARN_STRINGOP_OVERFLOW
 	memset(last, 0, element_size);
-	PRAGMA_WARN_POP
 	return last;
 }
 
@@ -542,7 +538,20 @@ static inline void darray_swap(const size_t element_size, struct darray *dst,
 #define da_push_back(v, item) darray_push_back(sizeof(*v.array), &v.da, item)
 #endif
 
+#ifdef __GNUC__
+/* GCC 12 with -O2 generates a warning -Wstringop-overflow in da_push_back_new,
+ * which could be false positive. Extract the macro here to avoid the warning.
+ */
+#define da_push_back_new(v)                                                  \
+	({                                                                   \
+		__typeof__(v) *d = &(v);                                     \
+		darray_ensure_capacity(sizeof(*d->array), &d->da, ++d->num); \
+		memset(&d->array[d->num - 1], 0, sizeof(*d->array));         \
+		&d->array[d->num - 1];                                       \
+	})
+#else
 #define da_push_back_new(v) darray_push_back_new(sizeof(*v.array), &v.da)
+#endif
 
 #ifdef ENABLE_DARRAY_TYPE_TEST
 #define da_push_back_array(dst, src_array, n)                                  \
