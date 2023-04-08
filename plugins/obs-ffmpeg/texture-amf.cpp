@@ -1163,7 +1163,7 @@ static void check_texture_encode_capability(obs_encoder_t *encoder, amf_codec_ty
 static void amf_avc_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_string(settings, "rate_control", "CBR");
-	obs_data_set_default_int(settings, "bitrate", 2500);
+	obs_data_set_default_int(settings, "bitrate", 6000);
 	obs_data_set_default_int(settings, "cqp", 20);
 	obs_data_set_default_string(settings, "preset", "quality");
 	obs_data_set_default_string(settings, "profile", "high");
@@ -2492,7 +2492,7 @@ try {
  * frame rate. */
 static void amf_av1_defaults(obs_data_t *settings)
 {
-	obs_data_set_default_int(settings, "bitrate", 2500);
+	obs_data_set_default_int(settings, "bitrate", 6000);
 	obs_data_set_default_int(settings, "cqp", 20);
 	obs_data_set_default_string(settings, "rate_control", "CBR");
 	obs_data_set_default_string(settings, "preset", "highQuality");

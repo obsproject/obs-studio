@@ -99,9 +99,9 @@ static void obs_x264_destroy(void *data)
 
 static void obs_x264_defaults(obs_data_t *settings)
 {
-	obs_data_set_default_int(settings, "bitrate", 2500);
+	obs_data_set_default_int(settings, "bitrate", 6000);
 	obs_data_set_default_bool(settings, "use_bufsize", false);
-	obs_data_set_default_int(settings, "buffer_size", 2500);
+	obs_data_set_default_int(settings, "buffer_size", 6000);
 	obs_data_set_default_int(settings, "keyint_sec", 0);
 	obs_data_set_default_int(settings, "crf", 23);
 #ifdef ENABLE_VFR
