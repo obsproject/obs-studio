@@ -14,5 +14,6 @@ if(SPARKLE_APPCAST_URL AND SPARKLE_PUBLIC_KEY)
 
   target_enable_feature(obs-studio "Sparkle updater" ENABLE_SPARKLE_UPDATER)
 else()
+  set(SPARKLE_UPDATE_INTERVAL 0) # Set anything that's not an empty integer
   target_disable_feature(obs-studio "Sparkle updater")
 endif()
