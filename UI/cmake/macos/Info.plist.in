@@ -11,7 +11,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>OBS</string>
+	<string>OBS Studio</string>
 	<key>CFBundleDisplayName</key>
 	<string>OBS Studio</string>
 	<key>CFBundlePackageType</key>
