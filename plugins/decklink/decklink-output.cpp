@@ -184,65 +184,70 @@ static bool decklink_output_device_changed(obs_properties_t *props,
 					   obs_property_t *list,
 					   obs_data_t *settings)
 {
-	const char *name = obs_data_get_string(settings, DEVICE_NAME);
 	const char *hash = obs_data_get_string(settings, DEVICE_HASH);
-	const char *mode = obs_data_get_string(settings, MODE_NAME);
-	long long modeId = obs_data_get_int(settings, MODE_ID);
+	if (*hash) {
+		const char *name = obs_data_get_string(settings, DEVICE_NAME);
+		const char *mode = obs_data_get_string(settings, MODE_NAME);
+		long long modeId = obs_data_get_int(settings, MODE_ID);
 
-	size_t itemCount = obs_property_list_item_count(list);
-	bool itemFound = false;
+		size_t itemCount = obs_property_list_item_count(list);
+		bool itemFound = false;
 
-	for (size_t i = 0; i < itemCount; i++) {
-		const char *curHash = obs_property_list_item_string(list, i);
-		if (strcmp(hash, curHash) == 0) {
-			itemFound = true;
-			break;
-		}
-	}
-
-	if (!itemFound) {
-		obs_property_list_insert_string(list, 0, name, hash);
-		obs_property_list_item_disable(list, 0, true);
-	}
-
-	obs_property_t *modeList = obs_properties_get(props, MODE_ID);
-	obs_property_t *keyerList = obs_properties_get(props, KEYER);
-
-	obs_property_list_clear(modeList);
-	obs_property_list_clear(keyerList);
-
-	ComPtr<DeckLinkDevice> device;
-	device.Set(deviceEnum->FindByHash(hash));
-
-	if (!device) {
-		obs_property_list_add_int(modeList, mode, modeId);
-		obs_property_list_item_disable(modeList, 0, true);
-		obs_property_list_item_disable(keyerList, 0, true);
-	} else {
-		const std::vector<DeckLinkDeviceMode *> &modes =
-			device->GetOutputModes();
-
-		struct obs_video_info ovi;
-		if (obs_get_video_info(&ovi)) {
-			for (DeckLinkDeviceMode *mode : modes) {
-				if (mode->IsEqualFrameRate(ovi.fps_num,
-							   ovi.fps_den)) {
-					obs_property_list_add_int(
-						modeList,
-						mode->GetName().c_str(),
-						mode->GetId());
-				}
+		for (size_t i = 0; i < itemCount; i++) {
+			const char *curHash =
+				obs_property_list_item_string(list, i);
+			if (strcmp(hash, curHash) == 0) {
+				itemFound = true;
+				break;
 			}
 		}
 
-		obs_property_list_add_int(keyerList, "Disabled", 0);
-
-		if (device->GetSupportsExternalKeyer()) {
-			obs_property_list_add_int(keyerList, "External", 1);
+		if (!itemFound) {
+			obs_property_list_insert_string(list, 0, name, hash);
+			obs_property_list_item_disable(list, 0, true);
 		}
 
-		if (device->GetSupportsInternalKeyer()) {
-			obs_property_list_add_int(keyerList, "Internal", 2);
+		obs_property_t *modeList = obs_properties_get(props, MODE_ID);
+		obs_property_t *keyerList = obs_properties_get(props, KEYER);
+
+		obs_property_list_clear(modeList);
+		obs_property_list_clear(keyerList);
+
+		ComPtr<DeckLinkDevice> device;
+		device.Set(deviceEnum->FindByHash(hash));
+
+		if (!device) {
+			obs_property_list_add_int(modeList, mode, modeId);
+			obs_property_list_item_disable(modeList, 0, true);
+			obs_property_list_item_disable(keyerList, 0, true);
+		} else {
+			const std::vector<DeckLinkDeviceMode *> &modes =
+				device->GetOutputModes();
+
+			struct obs_video_info ovi;
+			if (obs_get_video_info(&ovi)) {
+				for (DeckLinkDeviceMode *mode : modes) {
+					if (mode->IsEqualFrameRate(
+						    ovi.fps_num, ovi.fps_den)) {
+						obs_property_list_add_int(
+							modeList,
+							mode->GetName().c_str(),
+							mode->GetId());
+					}
+				}
+			}
+
+			obs_property_list_add_int(keyerList, "Disabled", 0);
+
+			if (device->GetSupportsExternalKeyer()) {
+				obs_property_list_add_int(keyerList, "External",
+							  1);
+			}
+
+			if (device->GetSupportsInternalKeyer()) {
+				obs_property_list_add_int(keyerList, "Internal",
+							  2);
+			}
 		}
 	}
 
