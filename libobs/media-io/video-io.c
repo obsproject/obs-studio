@@ -329,7 +329,6 @@ static bool match_range(enum video_range_type a, enum video_range_type b)
 static enum video_colorspace collapse_space(enum video_colorspace cs)
 {
 	switch (cs) {
-	case VIDEO_CS_DEFAULT:
 	case VIDEO_CS_SRGB:
 		cs = VIDEO_CS_709;
 		break;
@@ -345,7 +344,8 @@ static enum video_colorspace collapse_space(enum video_colorspace cs)
 
 static bool match_space(enum video_colorspace a, enum video_colorspace b)
 {
-	return collapse_space(a) == collapse_space(b);
+	return (a == VIDEO_CS_DEFAULT) || (b == VIDEO_CS_DEFAULT) ||
+	       (collapse_space(a) == collapse_space(b));
 }
 
 static inline bool video_input_init(struct video_input *input,
