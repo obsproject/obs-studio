@@ -89,59 +89,68 @@ void output_start()
 	OBSData settings = load_settings();
 
 	if (settings != nullptr) {
-		obs_add_tick_callback(decklink_ui_tick, &context);
-		context.output = obs_output_create(
+		obs_output_t *const output = obs_output_create(
 			"decklink_output", "decklink_output", settings, NULL);
-
-		obs_get_video_info(&context.ovi);
-
 		const struct video_scale_info *const conversion =
-			obs_output_get_video_conversion(context.output);
-		const uint32_t width = conversion->width;
-		const uint32_t height = conversion->height;
+			obs_output_get_video_conversion(output);
+		if (conversion != nullptr) {
+			context.output = output;
+			obs_add_tick_callback(decklink_ui_tick, &context);
 
-		obs_enter_graphics();
-		context.texrender_premultiplied = nullptr;
-		context.texrender = gs_texrender_create(GS_BGRA, GS_ZS_NONE);
-		for (gs_stagesurf_t *&surf : context.stagesurfaces)
-			surf = gs_stagesurface_create(width, height, GS_BGRA);
-		obs_leave_graphics();
+			obs_get_video_info(&context.ovi);
 
-		for (bool &written : context.surf_written)
-			written = false;
+			const uint32_t width = conversion->width;
+			const uint32_t height = conversion->height;
 
-		context.stage_index = 0;
+			obs_enter_graphics();
+			context.texrender_premultiplied = nullptr;
+			context.texrender =
+				gs_texrender_create(GS_BGRA, GS_ZS_NONE);
+			for (gs_stagesurf_t *&surf : context.stagesurfaces)
+				surf = gs_stagesurface_create(width, height,
+							      GS_BGRA);
+			obs_leave_graphics();
 
-		const video_output_info *mainVOI =
-			video_output_get_info(obs_get_video());
+			for (bool &written : context.surf_written)
+				written = false;
 
-		video_output_info vi = {0};
-		vi.format = VIDEO_FORMAT_BGRA;
-		vi.width = width;
-		vi.height = height;
-		vi.fps_den = context.ovi.fps_den;
-		vi.fps_num = context.ovi.fps_num;
-		vi.cache_size = 16;
-		vi.colorspace = mainVOI->colorspace;
-		vi.range = VIDEO_RANGE_FULL;
-		vi.name = "decklink_output";
+			context.stage_index = 0;
 
-		video_output_open(&context.video_queue, &vi);
+			const video_output_info *mainVOI =
+				video_output_get_info(obs_get_video());
 
-		context.current_source = nullptr;
-		obs_add_main_rendered_callback(decklink_ui_render, &context);
+			video_output_info vi = {0};
+			vi.format = VIDEO_FORMAT_BGRA;
+			vi.width = width;
+			vi.height = height;
+			vi.fps_den = context.ovi.fps_den;
+			vi.fps_num = context.ovi.fps_num;
+			vi.cache_size = 16;
+			vi.colorspace = mainVOI->colorspace;
+			vi.range = VIDEO_RANGE_FULL;
+			vi.name = "decklink_output";
 
-		obs_output_set_media(context.output, context.video_queue,
-				     obs_get_audio());
-		bool started = obs_output_start(context.output);
+			video_output_open(&context.video_queue, &vi);
 
-		main_output_running = started;
+			context.current_source = nullptr;
+			obs_add_main_rendered_callback(decklink_ui_render,
+						       &context);
 
-		if (!shutting_down)
-			doUI->OutputStateChanged(started);
+			obs_output_set_media(context.output,
+					     context.video_queue,
+					     obs_get_audio());
+			bool started = obs_output_start(context.output);
 
-		if (!started)
-			output_stop();
+			main_output_running = started;
+
+			if (!shutting_down)
+				doUI->OutputStateChanged(started);
+
+			if (!started)
+				output_stop();
+		} else {
+			obs_output_release(output);
+		}
 	}
 }
 
@@ -216,68 +225,76 @@ void preview_output_start()
 	OBSData settings = load_preview_settings();
 
 	if (settings != nullptr) {
-		obs_add_tick_callback(decklink_ui_tick, &context);
-		context.output = obs_output_create("decklink_output",
-						   "decklink_preview_output",
-						   settings, NULL);
-
-		obs_get_video_info(&context.ovi);
-
+		obs_output_t *const output = obs_output_create(
+			"decklink_output", "decklink_output", settings, NULL);
 		const struct video_scale_info *const conversion =
-			obs_output_get_video_conversion(context.output);
-		const uint32_t width = conversion->width;
-		const uint32_t height = conversion->height;
+			obs_output_get_video_conversion(output);
+		if (conversion != nullptr) {
+			context.output = output;
+			obs_add_tick_callback(decklink_ui_tick, &context);
 
-		obs_enter_graphics();
-		context.texrender_premultiplied =
-			gs_texrender_create(GS_BGRA, GS_ZS_NONE);
-		context.texrender = gs_texrender_create(GS_BGRA, GS_ZS_NONE);
-		for (gs_stagesurf_t *&surf : context.stagesurfaces)
-			surf = gs_stagesurface_create(width, height, GS_BGRA);
-		obs_leave_graphics();
+			obs_get_video_info(&context.ovi);
 
-		for (bool &written : context.surf_written)
-			written = false;
+			const uint32_t width = conversion->width;
+			const uint32_t height = conversion->height;
 
-		context.stage_index = 0;
+			obs_enter_graphics();
+			context.texrender_premultiplied =
+				gs_texrender_create(GS_BGRA, GS_ZS_NONE);
+			context.texrender =
+				gs_texrender_create(GS_BGRA, GS_ZS_NONE);
+			for (gs_stagesurf_t *&surf : context.stagesurfaces)
+				surf = gs_stagesurface_create(width, height,
+							      GS_BGRA);
+			obs_leave_graphics();
 
-		const video_output_info *mainVOI =
-			video_output_get_info(obs_get_video());
+			for (bool &written : context.surf_written)
+				written = false;
 
-		video_output_info vi = {0};
-		vi.format = VIDEO_FORMAT_BGRA;
-		vi.width = width;
-		vi.height = height;
-		vi.fps_den = context.ovi.fps_den;
-		vi.fps_num = context.ovi.fps_num;
-		vi.cache_size = 16;
-		vi.colorspace = mainVOI->colorspace;
-		vi.range = VIDEO_RANGE_FULL;
-		vi.name = "decklink_preview_output";
+			context.stage_index = 0;
 
-		video_output_open(&context.video_queue, &vi);
+			const video_output_info *mainVOI =
+				video_output_get_info(obs_get_video());
 
-		obs_frontend_add_event_callback(on_preview_scene_changed,
-						&context);
-		if (obs_frontend_preview_program_mode_active()) {
-			context.current_source =
-				obs_frontend_get_current_preview_scene();
+			video_output_info vi = {0};
+			vi.format = VIDEO_FORMAT_BGRA;
+			vi.width = width;
+			vi.height = height;
+			vi.fps_den = context.ovi.fps_den;
+			vi.fps_num = context.ovi.fps_num;
+			vi.cache_size = 16;
+			vi.colorspace = mainVOI->colorspace;
+			vi.range = VIDEO_RANGE_FULL;
+			vi.name = "decklink_preview_output";
+
+			video_output_open(&context.video_queue, &vi);
+
+			obs_frontend_add_event_callback(
+				on_preview_scene_changed, &context);
+			if (obs_frontend_preview_program_mode_active()) {
+				context.current_source =
+					obs_frontend_get_current_preview_scene();
+			} else {
+				context.current_source =
+					obs_frontend_get_current_scene();
+			}
+			obs_add_main_rendered_callback(decklink_ui_render,
+						       &context);
+
+			obs_output_set_media(context.output,
+					     context.video_queue,
+					     obs_get_audio());
+			bool started = obs_output_start(context.output);
+
+			preview_output_running = started;
+			if (!shutting_down)
+				doUI->PreviewOutputStateChanged(started);
+
+			if (!started)
+				preview_output_stop();
 		} else {
-			context.current_source =
-				obs_frontend_get_current_scene();
+			obs_output_release(output);
 		}
-		obs_add_main_rendered_callback(decklink_ui_render, &context);
-
-		obs_output_set_media(context.output, context.video_queue,
-				     obs_get_audio());
-		bool started = obs_output_start(context.output);
-
-		preview_output_running = started;
-		if (!shutting_down)
-			doUI->PreviewOutputStateChanged(started);
-
-		if (!started)
-			preview_output_stop();
 	}
 }
 
