@@ -1,0 +1,45 @@
+name: tkinter
+buildsystem: simple
+build-commands:
+  - pip3 install --prefix=${FLATPAK_DEST} .
+sources:
+  - type: git
+    url: https://github.com/iwalton3/tkinter-standalone
+    commit: ba946536054f9d27a08aafde21aa18330ce05729
+modules:
+  - name: tcl
+    buildsystem: autotools
+    subdir: unix
+    post-install:
+      - chmod 755 /app/lib/libtcl*.so
+    cleanup:
+      - /bin
+      - /lib/pkgconfig
+      - /man
+    sources:
+      - type: archive
+        url: https://prdownloads.sourceforge.net/tcl/tcl8.6.13-src.tar.gz
+        sha256: 43a1fae7412f61ff11de2cfd05d28cfc3a73762f354a417c62370a54e2caf066
+        x-checker-data:
+          type: anitya
+          project-id: 4941
+          stable-only: true
+          url-template: https://prdownloads.sourceforge.net/tcl/tcl$version-src.tar.gz
+  - name: tk
+    buildsystem: autotools
+    subdir: unix
+    post-install:
+      - chmod 755 /app/lib/libtk*.so
+    cleanup:
+      - /bin
+      - /lib/pkgconfig
+      - /man
+    sources:
+      - type: archive
+        url: https://prdownloads.sourceforge.net/tcl/tk8.6.13-src.tar.gz
+        sha256: 2e65fa069a23365440a3c56c556b8673b5e32a283800d8d9b257e3f584ce0675
+        x-checker-data:
+          type: anitya
+          project-id: 11426
+          stable-only: true
+          url-template: https://prdownloads.sourceforge.net/tcl/tk$version-src.tar.gz

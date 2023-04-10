@@ -473,6 +473,36 @@
       ]
     },
     {
+      "name": "python3-PyWinCtl",
+      "buildsystem": "simple",
+      "build-commands": [
+          "pip3 install --verbose --exists-action=i --no-index --find-links=\"file://${PWD}\" --prefix=${FLATPAK_DEST} \"PyWinCtl\" --no-build-isolation"
+      ],
+      "sources": [
+          {
+              "type": "file",
+              "url": "https://files.pythonhosted.org/packages/cb/04/2ba023d5f771b645f7be0c281cdacdcd939fe13d1deb331fc5ed1a6b3a98/PyRect-0.2.0.tar.gz",
+              "sha256": "f65155f6df9b929b67caffbd57c0947c5ae5449d3b580d178074bffb47a09b78"
+          },
+          {
+              "type": "file",
+              "url": "https://files.pythonhosted.org/packages/1d/9d/3ab2c05cfd5a6cabaa3bafab875739b0172a64ae0e4672806daae8df8856/PyWinCtl-0.0.43-py3-none-any.whl",
+              "sha256": "c02caf9c320f3365308245ba216154d3afeddcbfcd1c34c412df632f50c2dd1f"
+          },
+          {
+              "type": "file",
+              "url": "https://files.pythonhosted.org/packages/33/e8/5f65226b2724347642b823b9fe4f35e80aad4fc69e61111977140bc9b633/ewmh-0.1.6.tar.gz",
+              "sha256": "c56b093f7d575181e979bb3a7d15c34065755f811c351ff0a31fede12b09343d"
+          },
+          {
+              "type": "file",
+              "url": "https://files.pythonhosted.org/packages/fc/b8/ff33610932e0ee81ae7f1269c890f697d56ff74b9f5b2ee5d9b7fa2c5355/python_xlib-0.33-py2.py3-none-any.whl",
+              "sha256": "c3534038d42e0df2f1392a1b30a15a4ff5fdc2b86cfa94f072bf11b10a164398"
+          }
+      ]
+    },
+    "python3-tkinter.yaml",
+    {
       "name": "obs",
       "buildsystem": "cmake-ninja",
       "builddir": true,
