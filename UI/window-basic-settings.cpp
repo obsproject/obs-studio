@@ -5088,17 +5088,18 @@ void OBSBasicSettings::AdvOutRecCheckCodecs()
 	QString streamAudioEncoder =
 		ui->advOutAEncoder->currentData().toString();
 
-	/* Disable the signals to prevent AdvOutRecCheckWarnings to be called here. */
-	ui->advOutRecEncoder->blockSignals(true);
-	ui->advOutRecAEncoder->blockSignals(true);
+	int oldVEncoderIdx = ui->advOutRecEncoder->currentIndex();
+	int oldAEncoderIdx = ui->advOutRecAEncoder->currentIndex();
 	DisableIncompatibleCodecs(ui->advOutRecEncoder, recFormat,
 				  recFormatName, streamEncoder);
 	DisableIncompatibleCodecs(ui->advOutRecAEncoder, recFormat,
 				  recFormatName, streamAudioEncoder);
-	ui->advOutRecEncoder->blockSignals(false);
-	ui->advOutRecAEncoder->blockSignals(false);
 
-	AdvOutRecCheckWarnings();
+	/* Only invoke AdvOutRecCheckWarnings() if it wouldn't already have
+	 * been triggered by one of the encoder selections being reset. */
+	if (ui->advOutRecEncoder->currentIndex() == oldVEncoderIdx &&
+	    ui->advOutRecAEncoder->currentIndex() == oldAEncoderIdx)
+		AdvOutRecCheckWarnings();
 }
 
 #if defined(__APPLE__) && QT_VERSION < QT_VERSION_CHECK(6, 5, 1)
