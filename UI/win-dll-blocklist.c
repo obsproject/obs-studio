@@ -152,6 +152,10 @@ static blocked_module_t blocked_modules[] = {
 	// Reference: https://github.com/obsproject/obs-studio/issues/8552
 	{L"\\bdcam64.dll", 0, 0, TS_IGNORE},
 
+	// "Citrix ICAService" that crashes during DShow enumeration
+	// Reference: https://obsproject.com/forum/threads/165863/
+	{L"\\ctxdsendpoints64.dll", 0, 0, TS_IGNORE},
+
 	// Generic named unity capture filter. Unfortunately only a forked version
 	// has a critical fix to prevent deadlocks during enumeration. We block
 	// all versions since if someone didn't change the DLL name they likely
