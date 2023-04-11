@@ -99,14 +99,14 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	void obs_frontend_set_current_scene(obs_source_t *scene) override
 	{
 		if (main->IsPreviewProgramMode()) {
-			QMetaObject::invokeMethod(
-				main, "TransitionToScene", WaitConnection(),
-				Q_ARG(OBSSource, OBSSource(scene)));
+			QMetaObject::invokeMethod(main, "TransitionToScene",
+						  Q_ARG(OBSSource,
+							OBSSource(scene)));
 		} else {
-			QMetaObject::invokeMethod(
-				main, "SetCurrentScene", WaitConnection(),
-				Q_ARG(OBSSource, OBSSource(scene)),
-				Q_ARG(bool, false));
+			QMetaObject::invokeMethod(main, "SetCurrentScene",
+						  Q_ARG(OBSSource,
+							OBSSource(scene)),
+						  Q_ARG(bool, false));
 		}
 	}
 
