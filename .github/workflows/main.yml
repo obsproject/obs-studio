@@ -142,7 +142,7 @@ jobs:
 
       - name: 'Install Apple Developer Certificate'
         if: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' && env.HAVE_CODESIGN_IDENTITY == 'true' }}
-        uses: apple-actions/import-codesign-certs@253ddeeac23f2bdad1646faac5c8c2832e800071
+        uses: apple-actions/import-codesign-certs@8f3fb608891dd2244cdab3d69cd68c0d37a7fe93
         with:
           p12-file-base64: ${{ secrets.MACOS_SIGNING_CERT }}
           p12-password: ${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}
@@ -477,7 +477,7 @@ jobs:
 
       - name: 'Install Apple Developer Certificate'
         if: env.HAVE_CODESIGN_IDENTITY == 'true'
-        uses: apple-actions/import-codesign-certs@253ddeeac23f2bdad1646faac5c8c2832e800071
+        uses: apple-actions/import-codesign-certs@8f3fb608891dd2244cdab3d69cd68c0d37a7fe93
         with:
           p12-file-base64: ${{ secrets.MACOS_SIGNING_CERT }}
           p12-password: ${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}
