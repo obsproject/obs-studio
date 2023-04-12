@@ -256,8 +256,8 @@
           "type": "git",
           "dest": "obs-deps",
           "url": "https://github.com/obsproject/obs-deps.git",
-          "tag": "2023-04-03",
-          "commit": "55b333baa4c0f8a6ec6c5a7fdae34474bdfa9085"
+          "tag": "2023-04-12",
+          "commit": "24e25fd83e6938cfe3cc5020230430b31ba5df59"
         },
         {
           "type": "shell",
