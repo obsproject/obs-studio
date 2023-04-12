@@ -1,0 +1,76 @@
+name: Cache Cleanup
+
+on:
+  schedule:
+  - cron: 0 0 * * *
+  workflow_dispatch:
+
+jobs:
+  purge:
+    name: Cache Cleanup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Python & Modules
+        run: |
+          sudo apt install -y python3.11
+          python3.11 -m pip install requests
+
+      - name: Clean Caches
+        shell: python3.11 {0}
+        run: |
+          import re
+          from datetime import datetime
+          import requests
+          
+          s = requests.session()
+          s.headers['Authorization'] = 'Bearer ${{ secrets.GITHUB_TOKEN }}'
+          
+          r = s.get('https://api.github.com/repos/${{ github.repository }}/actions/caches', params=dict(per_page=100))
+          r.raise_for_status()
+          caches = r.json()['actions_caches']
+          
+          print(f'There are {len(caches)} total caches.')
+          
+          # find latest flatpak cache
+          flatpak_last_ts = None
+          flatpak_key = None
+          for cache in caches:
+              if not cache['ref'] == 'refs/heads/master' or not cache['key'].startswith('flatpak-builder'):
+                  continue
+              ts = datetime.fromisoformat(cache['created_at'])
+              if not flatpak_last_ts or ts > flatpak_last_ts:
+                  flatpak_key = cache['key']
+                  flatpak_last_ts = ts
+          
+          if flatpak_key:
+              print(f'Latest flatpak cache: {flatpak_key}')
+          
+          now = datetime.utcnow()
+          to_be_removed = []
+          for cache in caches:
+              # add merge queue caches
+              if 'gh-readonly-queue' in cache['ref']:
+                  to_be_removed.append(cache)
+                  continue
+              
+              if flatpak_key and cache['key'].startswith('flatpak-builder'):
+                  # add non-master flatpak caches that match latest key
+                  if cache['key'] == flatpak_key and not cache['ref'] == 'refs/heads/master':
+                      to_be_removed.append(cache)
+                      continue
+                  # add master flatpak caches that do not match the latest key    
+                  elif cache['key'] != flatpak_key and cache['ref'] == 'refs/heads/master':
+                      to_be_removed.append(cache)
+                      continue
+              
+              # add dated caches predating today
+              if (cache_date := re.search('[0-9]{4}\-[0-9]{2}\-[0-9]{2}', cache['key'])) is not None:
+                  parsed_date = datetime.strptime(cache_date.group(), '%Y-%m-%d')
+                  if (now - parsed_date).days > 0:
+                      to_be_removed.append(cache)
+          
+          print(f'Removing {len(to_be_removed)} caches...')
+          for cache in to_be_removed:
+              print(f'Deleting cache "{cache["key"]}" with ID {cache["id"]}...', end=' ')
+              r = s.delete(f'https://api.github.com/repos/${{ github.repository }}/actions/caches/{cache["id"]}')
+              print(f'[{r.status_code}]')
