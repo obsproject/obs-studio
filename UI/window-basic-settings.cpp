@@ -5588,6 +5588,7 @@ void OBSBasicSettings::SimpleReplayBufferChanged()
 		}
 	} else {
 		ui->simpleRBEstimate->setText(QTStr(ESTIMATE_UNKNOWN_STR));
+		ui->simpleRBMegsMax->setMaximum(memMaxMB);
 	}
 
 	ui->simpleRBEstimate->style()->polish(ui->simpleRBEstimate);
