@@ -18,6 +18,7 @@
 #include <util/threading.h>
 #include <util/platform.h>
 #include <util/dstr.h>
+#include <libavformat/avformat.h>
 
 #include "obs-ffmpeg-compat.h"
 #include "obs-ffmpeg-formats.h"
@@ -53,6 +54,8 @@ struct ffmpeg_source {
 	bool close_when_inactive;
 	bool seekable;
 	bool is_stinger;
+	int video_track;
+	int audio_track;
 
 	pthread_t reconnect_thread;
 	pthread_mutex_t reconnect_mutex;
@@ -102,6 +105,7 @@ static bool is_local_file_modified(obs_properties_t *props,
 	obs_property_t *looping = obs_properties_get(props, "looping");
 	obs_property_t *buffering = obs_properties_get(props, "buffering_mb");
 	obs_property_t *seekable = obs_properties_get(props, "seekable");
+	obs_property_t *audio_track = obs_properties_get(props, "audio_track");
 	obs_property_t *speed = obs_properties_get(props, "speed_percent");
 	obs_property_t *reconnect_delay_sec =
 		obs_properties_get(props, "reconnect_delay_sec");
@@ -110,10 +114,87 @@ static bool is_local_file_modified(obs_properties_t *props,
 	obs_property_set_visible(buffering, !enabled);
 	obs_property_set_visible(local_file, enabled);
 	obs_property_set_visible(looping, enabled);
+	obs_property_set_visible(audio_track, enabled);
 	obs_property_set_visible(speed, enabled);
 	obs_property_set_visible(seekable, !enabled);
 	obs_property_set_visible(reconnect_delay_sec, !enabled);
 
+	return true;
+}
+
+static bool is_local_file_path_modified(obs_properties_t *props,
+					obs_property_t *prop,
+					obs_data_t *settings)
+{
+	UNUSED_PARAMETER(prop);
+
+	bool is_local_file = obs_data_get_bool(settings, "is_local_file");
+	if (!is_local_file) {
+		return false;
+	}
+
+	obs_property_t *audio_track = obs_properties_get(props, "audio_track");
+	long long current_audio_track_number =
+		obs_data_get_int(settings, "audio_track");
+
+	obs_property_list_clear(audio_track);
+
+	int ret = 0;
+	AVFormatContext *fmt_ctx = NULL;
+
+	const char *input;
+
+	input = obs_data_get_string(settings, "local_file");
+	ret = avformat_open_input(&fmt_ctx, input, NULL, NULL);
+
+	int best_stream_index = av_find_best_stream(fmt_ctx, AVMEDIA_TYPE_AUDIO,
+						    -1, -1, NULL, 0);
+	int track_selection = 1; //First audio track
+
+	int nb_audio_streams = 0;
+	for (int i = 0; i < (int)fmt_ctx->nb_streams;
+	     i++) { //Pour chaque stream
+		AVStream *stream = fmt_ctx->streams[i];
+		AVCodecParameters *codecpar = stream->codecpar;
+		if (codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
+			nb_audio_streams += 1;
+
+			if (best_stream_index == i) {
+				track_selection = nb_audio_streams;
+			}
+
+			char buf_str[24];
+			snprintf(buf_str, 24, "Audio Track %d",
+				 nb_audio_streams);
+
+			obs_property_list_add_int(audio_track, buf_str,
+						  nb_audio_streams);
+		}
+	}
+
+	if (nb_audio_streams == 0) {
+		obs_property_set_enabled(audio_track, false);
+		obs_property_list_add_int(
+			audio_track, obs_module_text("AudioTrack.NoAudio"), 0);
+		obs_data_set_int(settings, "audio_track", 0); //Auto
+	} else {
+		obs_property_set_enabled(audio_track, true);
+		obs_property_list_add_int(
+			audio_track, obs_module_text("AudioTrack.DisableAudio"),
+			-1);
+
+		if ((current_audio_track_number <= 0) ||
+		    (current_audio_track_number >
+		     nb_audio_streams)) { //Autoselect
+			obs_data_set_int(settings, "audio_track",
+					 track_selection);
+		} else {
+			obs_data_set_int(settings, "audio_track",
+					 current_audio_track_number);
+		}
+	}
+
+	avformat_close_input(&fmt_ctx);
 	return true;
 }
 
@@ -123,6 +204,8 @@ static void ffmpeg_source_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "looping", false);
 	obs_data_set_default_bool(settings, "clear_on_media_end", true);
 	obs_data_set_default_bool(settings, "restart_on_activate", true);
+	obs_data_set_default_int(settings, "video_track", 0);
+	obs_data_set_default_int(settings, "audio_track", 0);
 	obs_data_set_default_bool(settings, "linear_alpha", false);
 	obs_data_set_default_int(settings, "reconnect_delay_sec", 10);
 	obs_data_set_default_int(settings, "buffering_mb", 2);
@@ -171,11 +254,13 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 			dstr_resize(&path, slash - path.array + 1);
 	}
 
-	obs_properties_add_path(props, "local_file",
-				obs_module_text("LocalFile"), OBS_PATH_FILE,
-				filter.array, path.array);
+	prop = obs_properties_add_path(props, "local_file",
+				       obs_module_text("LocalFile"),
+				       OBS_PATH_FILE, filter.array, path.array);
 	dstr_free(&filter);
 	dstr_free(&path);
+
+	obs_property_set_modified_callback(prop, is_local_file_path_modified);
 
 	obs_properties_add_bool(props, "looping", obs_module_text("Looping"));
 
@@ -211,6 +296,11 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 
 	obs_property_set_long_description(
 		prop, obs_module_text("CloseFileWhenInactive.ToolTip"));
+
+	prop = obs_properties_add_list(props, "audio_track",
+				       obs_module_text("AudioTrack"),
+				       OBS_COMBO_TYPE_LIST,
+				       OBS_COMBO_FORMAT_INT);
 
 	prop = obs_properties_add_int_slider(props, "speed_percent",
 					     obs_module_text("SpeedPercentage"),
@@ -257,6 +347,8 @@ static void dump_source_info(struct ffmpeg_source *s, const char *input,
 		"\trestart_on_activate:     %s\n"
 		"\tclose_when_inactive:     %s\n"
 		"\tfull_decode:             %s\n"
+		"\tvideo_track:             %d\n"
+		"\taudio_track:             %d\n"
 		"\tffmpeg_options:          %s",
 		input ? input : "(null)",
 		input_format ? input_format : "(null)", s->speed_percent,
@@ -265,7 +357,8 @@ static void dump_source_info(struct ffmpeg_source *s, const char *input,
 		s->is_clear_on_media_end ? "yes" : "no",
 		s->restart_on_activate ? "yes" : "no",
 		s->close_when_inactive ? "yes" : "no",
-		s->full_decode ? "yes" : "no", s->ffmpeg_options);
+		s->full_decode ? "yes" : "no", s->video_track, s->audio_track,
+		s->ffmpeg_options);
 }
 
 static void get_frame(void *opaque, struct obs_source_frame *f)
@@ -338,6 +431,8 @@ static void ffmpeg_source_open(struct ffmpeg_source *s)
 			.reconnecting = s->reconnecting,
 			.request_preload = s->is_stinger,
 			.full_decode = s->full_decode,
+			.video_track = s->video_track,
+			.audio_track = s->audio_track,
 		};
 
 		s->media = media_playback_create(&info);
@@ -467,6 +562,9 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 
 	s->close_when_inactive =
 		obs_data_get_bool(settings, "close_when_inactive");
+
+	s->video_track = (int)obs_data_get_int(settings, "video_track");
+	s->audio_track = (int)obs_data_get_int(settings, "audio_track");
 
 	s->input = input ? bstrdup(input) : NULL;
 	s->input_format = input_format ? bstrdup(input_format) : NULL;

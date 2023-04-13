@@ -30,6 +30,8 @@ struct mp_media_info {
 	bool reconnecting;
 	bool request_preload;
 	bool full_decode;
+	int video_track;
+	int audio_track;
 };
 
 extern media_playback_t *

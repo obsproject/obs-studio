@@ -157,7 +157,25 @@ static uint16_t get_max_luminance(const AVStream *stream)
 	return max_luminance;
 }
 
-bool mp_decode_init(mp_media_t *m, enum AVMediaType type, bool hw)
+static int get_stream(mp_media_t *m, enum AVMediaType type, int track)
+{
+	if (track == -1) // Disable track
+		return -1;
+	int track_c = 0;
+	for (unsigned int i = 0; i < m->fmt->nb_streams; i++) {
+		if (m->fmt->streams[i]->codecpar->codec_type == type) {
+			track_c += 1;
+			if (track_c == track)
+				return i;
+		}
+	}
+	if (track > 0)
+		return -1; // not found;
+
+	return av_find_best_stream(m->fmt, type, -1, -1, NULL, 0);
+}
+
+bool mp_decode_init(mp_media_t *m, enum AVMediaType type, bool hw, int track)
 {
 	struct mp_decode *d = type == AVMEDIA_TYPE_VIDEO ? &m->v : &m->a;
 	enum AVCodecID id;
@@ -168,7 +186,7 @@ bool mp_decode_init(mp_media_t *m, enum AVMediaType type, bool hw)
 	d->m = m;
 	d->audio = type == AVMEDIA_TYPE_AUDIO;
 
-	ret = av_find_best_stream(m->fmt, type, -1, -1, NULL, 0);
+	ret = get_stream(m, type, track);
 	if (ret < 0)
 		return false;
 	stream = d->stream = m->fmt->streams[ret];
