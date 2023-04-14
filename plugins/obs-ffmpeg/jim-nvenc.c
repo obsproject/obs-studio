@@ -922,6 +922,17 @@ static bool init_encoder_av1(struct nvenc_data *enc, obs_data_t *settings,
 	if (config->rcParams.rateControlMode == NV_ENC_PARAMS_RC_CBR)
 		av1_config->enableBitstreamPadding = 1;
 
+#define FOUR_K_CX 3840
+#define FOUR_K_CY 2160
+#define PIXELCOUNT_4K (FOUR_K_CX * FOUR_K_CY)
+
+	/* If 4K+, set tiles to 2x2 uniform tiles. */
+	if ((voi->width * voi->height) >= PIXELCOUNT_4K) {
+		av1_config->enableCustomTileConfig = 0;
+		av1_config->numTileColumns = 2;
+		av1_config->numTileRows = 2;
+	}
+
 	switch (voi->colorspace) {
 	case VIDEO_CS_601:
 		av1_config->colorPrimaries = 6;
