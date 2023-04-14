@@ -163,14 +163,14 @@ void   DispatchLog::AttachSink(int nsink, IMsgHandler *pHandler)
 {
     m_DispatcherLogSink |= nsink;
     if (NULL != pHandler)
-        m_Recepients.push_back(pHandler);
+        m_Recipients.push_back(pHandler);
 }
 
 void   DispatchLog::DetachSink(int nsink, IMsgHandler *pHandler)
 {
     if (nsink & DL_SINK_IMsgHandler)
     {
-        m_Recepients.remove(pHandler);
+        m_Recipients.remove(pHandler);
     }
 
     m_DispatcherLogSink &= ~nsink;
@@ -180,10 +180,10 @@ void   DispatchLog::ExchangeSink(int nsink, IMsgHandler *oldHdl, IMsgHandler *ne
 {
     if (nsink & DL_SINK_IMsgHandler)
     {
-        std::list<IMsgHandler*> :: iterator it = std::find(m_Recepients.begin(), m_Recepients.end(), oldHdl);
+        std::list<IMsgHandler*> :: iterator it = std::find(m_Recipients.begin(), m_Recipients.end(), oldHdl);
         
         //cannot exchange in that case
-        if (m_Recepients.end() == it)
+        if (m_Recipients.end() == it)
             return;
 
         *it = newHdl;
@@ -193,7 +193,7 @@ void   DispatchLog::ExchangeSink(int nsink, IMsgHandler *oldHdl, IMsgHandler *ne
 
 void   DispatchLog::DetachAllSinks()
 {
-    m_Recepients.clear();
+    m_Recipients.clear();
     m_DispatcherLogSink = DL_SINK_NULL;
 }
 
@@ -214,17 +214,17 @@ void   DispatchLog::Write(int level, int opcode, const char * msg, va_list argpt
             
             case DL_SINK_PRINTF:
             {
-                char msg_formated[8048] = {0};
+                char msg_formatted[8048] = {0};
 
                 if (NULL != msg && level != DL_LOADED_LIBRARY)
                 {
 #if _MSC_VER >= 1400
-                    vsprintf_s(msg_formated, sizeof(msg_formated)/sizeof(msg_formated[0]), msg, argptr);
+                    vsprintf_s(msg_formatted, sizeof(msg_formatted)/sizeof(msg_formatted[0]), msg, argptr);
 #else
-                    vsnprintf(msg_formated, sizeof(msg_formated)/sizeof(msg_formated[0]), msg, argptr);
+                    vsnprintf(msg_formatted, sizeof(msg_formatted)/sizeof(msg_formatted[0]), msg, argptr);
 #endif
                     //TODO: improve this , add opcode handling
-                    printf("%s %s", CODE_TO_STRING(level, LevelStrings), msg_formated);
+                    printf("%s %s", CODE_TO_STRING(level, LevelStrings), msg_formatted);
                 }
                 break;
             }
@@ -233,7 +233,7 @@ void   DispatchLog::Write(int level, int opcode, const char * msg, va_list argpt
             {
                 std::list<IMsgHandler*>::iterator it;
 
-                for (it = m_Recepients.begin(); it != m_Recepients.end(); ++it)
+                for (it = m_Recipients.begin(); it != m_Recipients.end(); ++it)
                 {
                     (*it)->Write(level, opcode, msg, argptr);
                 }
@@ -248,7 +248,7 @@ class ETWHandler : public IMsgHandler
 {
 public:
     ETWHandler(const wchar_t * guid_str)
-      : m_bUseFormatter(DISPATCHER_LOG_USE_FORMATING)
+      : m_bUseFormatter(DISPATCHER_LOG_USE_FORMATTING)
       , m_EventHandle()
       , m_bProviderEnable()
     {
@@ -287,7 +287,7 @@ public:
             return;
         }
 
-        char msg_formated[1024];
+        char msg_formatted[1024];
         EVENT_DESCRIPTOR descriptor;
         EVENT_DATA_DESCRIPTOR data_descriptor;
 
@@ -301,18 +301,18 @@ public:
             if (NULL != msg)
             {
 #if _MSC_VER >= 1400
-                vsprintf_s(msg_formated, sizeof (msg_formated) / sizeof (msg_formated[0]), msg, argptr);
+                vsprintf_s(msg_formatted, sizeof (msg_formatted) / sizeof (msg_formatted[0]), msg, argptr);
 #else
-                vsnprintf(msg_formated, sizeof (msg_formated) / sizeof (msg_formated[0]), msg, argptr);
+                vsnprintf(msg_formatted, sizeof (msg_formatted) / sizeof (msg_formatted[0]), msg, argptr);
 #endif
-                EventDataDescCreate(&data_descriptor, msg_formated, (ULONG)(strlen(msg_formated) + 1));
+                EventDataDescCreate(&data_descriptor, msg_formatted, (ULONG)(strlen(msg_formatted) + 1));
             }else
             {
                 EventDataDescCreate(&data_descriptor, NULL, 0);
             }
         }else
         {
-            //TODO: non formated events supports under zbb 
+            //TODO: non formatted events supports under zbb
         }
 
         EventWrite(m_EventHandle, &descriptor, 1, &data_descriptor);
@@ -323,7 +323,7 @@ protected:
     //we may not use formatter in some cases described in dispatch_log macro
     //it significantly increases performance by eliminating any vsprintf operations
     bool      m_bUseFormatter;
-    //consumer is attached, dispatcher trace to reduce formating overhead 
+    //consumer is attached, dispatcher trace to reduce formatting overhead
     //submits event only if consumer attached
     bool      m_bProviderEnable;
     REGHANDLE m_EventHandle;

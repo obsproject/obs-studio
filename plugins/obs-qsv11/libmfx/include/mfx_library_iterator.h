@@ -84,7 +84,7 @@ public:
     // Return interface type on which Intel adapter was found (if any): D3D9 or D3D11
     mfxIMPL GetImplementationType();
 
-    // Retrun registry subkey name on which dll was selected after sucesfull call to selectDllVesion
+    // Return registry subkey name on which dll was selected after successful call to selectDllVersion
     bool GetSubKeyName(wchar_t *subKeyName, size_t length) const;
 
     int  GetStorageID() const { return m_StorageID; }

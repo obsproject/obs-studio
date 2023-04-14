@@ -1,4 +1,4 @@
-option(ENABLE_RNNOISE "Enable building with RNNoise noise supression filter" ON)
+option(ENABLE_RNNOISE "Enable building with RNNoise noise suppression filter" ON)
 
 if(ENABLE_RNNOISE)
   if(OS_WINDOWS OR OS_MACOS)

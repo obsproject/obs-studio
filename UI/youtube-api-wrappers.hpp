@@ -66,7 +66,7 @@ public:
 	bool SetVideoCategory(const QString &video_id,
 			      const QString &video_title,
 			      const QString &video_description,
-			      const QString &categorie_id);
+			      const QString &category_id);
 	bool SetVideoThumbnail(const QString &video_id,
 			       const QString &thumbnail_file);
 	bool StartBroadcast(const QString &broadcast_id);

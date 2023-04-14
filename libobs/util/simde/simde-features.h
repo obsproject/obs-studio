@@ -538,7 +538,7 @@ HEDLEY_DIAGNOSTIC_POP
  * floating point values are stored in IEEE 754 format, in which case
  * we can provide faster implementations of some functions.
  *
- * Luckily every vaugely modern architecture I'm aware of uses IEEE 754-
+ * Luckily every vaguely modern architecture I'm aware of uses IEEE 754-
  * so we just assume IEEE 754 for now.  There is a test which verifies
  * this, if that test fails sowewhere please let us know and we'll add
  * an exception for that platform.  Meanwhile, you can define

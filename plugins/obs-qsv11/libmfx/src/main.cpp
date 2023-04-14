@@ -694,7 +694,7 @@ mfxStatus MFXVideoUSER_Load(mfxSession session, const mfxPluginUID *uid, mfxU32 
         }
     }
 
-    // Specified UID was not found among individually registed plugins, now try load it from default sets if any
+    // Specified UID was not found among individually registered plugins, now try load it from default sets if any
     for (MFX::MFXPluginStorage::iterator i = pHandle.pluginHive.begin();i != pHandle.pluginHive.end(); i++, pluginsChecked++)
     {
         if (!i->Default)
@@ -845,7 +845,7 @@ mfxStatus MFXAudioUSER_Load(mfxSession session, const mfxPluginUID *uid, mfxU32 
         }
     }
 
-    // Specified UID was not found among individually registed plugins, now try load it from default set if any
+    // Specified UID was not found among individually registered plugins, now try load it from default set if any
     if (defaultPluginRecord.Default)
     {
         defaultPluginRecord.PluginUID = *uid;

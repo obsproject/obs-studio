@@ -85,7 +85,7 @@ enum eAudioFunc
     eAudioFuncTotal
 };
 
-// declare max buffer length for regsitry key name
+// declare max buffer length for registry key name
 enum
 {
     MFX_MAX_REGISTRY_KEY_NAME = 256

@@ -1223,9 +1223,9 @@ void OBSBasicSettings::ReloadCodecs(const ff_format_desc *formatDesc)
 	if (formatDesc == nullptr)
 		return;
 
-	bool ignore_compatability = ui->advOutFFIgnoreCompat->isChecked();
+	bool ignore_compatibility = ui->advOutFFIgnoreCompat->isChecked();
 	OBSFFCodecDesc codecDescs(
-		ff_codec_supported(formatDesc, ignore_compatability));
+		ff_codec_supported(formatDesc, ignore_compatibility));
 
 	const ff_codec_desc *codec = codecDescs.get();
 

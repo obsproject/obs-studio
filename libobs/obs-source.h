@@ -538,7 +538,7 @@ struct obs_source_info {
 	void (*media_previous)(void *data);
 	int64_t (*media_get_duration)(void *data);
 	int64_t (*media_get_time)(void *data);
-	void (*media_set_time)(void *data, int64_t miliseconds);
+	void (*media_set_time)(void *data, int64_t milliseconds);
 	enum obs_media_state (*media_get_state)(void *data);
 
 	/* version-related stuff */

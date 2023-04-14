@@ -2501,14 +2501,14 @@ enum {
     MFX_PARTIAL_BITSTREAM_NONE    = 0,     /* Don't use partial output */
     MFX_PARTIAL_BITSTREAM_SLICE   = 1,     /* Partial bitstream output will be aligned to slice granularity */
     MFX_PARTIAL_BITSTREAM_BLOCK   = 2,     /* Partial bitstream output will be aligned to user-defined block size granularity */
-    MFX_PARTIAL_BITSTREAM_ANY     = 3      /* Partial bitstream output will be return any coded data avilable at the end of SyncOperation timeout */
+    MFX_PARTIAL_BITSTREAM_ANY     = 3      /* Partial bitstream output will be return any coded data available at the end of SyncOperation timeout */
 };
 
 MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
     mfxExtBuffer    Header;
-    mfxU32          BlockSize;        /* output block granulatiry for Granularity = MFX_PARTIAL_BITSTREAM_BLOCK */
-    mfxU16          Granularity;      /* granulatiry of the partial bitstream: slice/block/any */
+    mfxU32          BlockSize;        /* output block granularity for Granularity = MFX_PARTIAL_BITSTREAM_BLOCK */
+    mfxU16          Granularity;      /* granularity of the partial bitstream: slice/block/any */
     mfxU16          reserved[8];
 } mfxExtPartialBitstreamParam;
 MFX_PACK_END()

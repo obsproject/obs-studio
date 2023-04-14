@@ -263,14 +263,14 @@ mfxStatus MFX_DISP_HANDLE::LoadSelectedDLL(const wchar_t *pPath, eMfxImplType re
 
             if (MFX_ERR_NONE != mfxRes)
             {
-                DISPATCHER_LOG_ERROR((("MFXQueryVersion returned: %d, skiped this library\n"), mfxRes))
+                DISPATCHER_LOG_ERROR((("MFXQueryVersion returned: %d, skipped this library\n"), mfxRes))
             }
             else
             {
                 DISPATCHER_LOG_INFO((("MFXQueryVersion returned API: %d.%d\n"), actualApiVersion.Major, actualApiVersion.Minor))
                 //special hook for applications that uses sink api to get loaded library path
                 DISPATCHER_LOG_LIBRARY(("%p" , hModule));
-                DISPATCHER_LOG_INFO(("library loaded succesfully\n"))
+                DISPATCHER_LOG_INFO(("library loaded successfully\n"))
             }
         }
     }

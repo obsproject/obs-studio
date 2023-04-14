@@ -297,7 +297,7 @@
 #define SIMDE_DIAGNOSTIC_DISABLE_CAST_FUNCTION_TYPE_
 #endif
 
-/* clang will emit this warning when we use C99 extensions whan not in
+/* clang will emit this warning when we use C99 extensions when not in
  * C99 mode, even though it does support this.  In such cases we check
  * the compiler and version first, so we know it's not a problem. */
 #if HEDLEY_HAS_WARNING("-Wc99-extensions")
@@ -310,10 +310,10 @@
 /* https://github.com/simd-everywhere/simde/issues/277 */
 #if defined(HEDLEY_GCC_VERSION) && HEDLEY_GCC_VERSION_CHECK(4, 6, 0) && \
 	!HEDLEY_GCC_VERSION_CHECK(6, 4, 0) && defined(__cplusplus)
-#define SIMDE_DIAGNOSTIC_DISABLE_BUGGY_UNUSED_BUT_SET_VARIBALE_ \
+#define SIMDE_DIAGNOSTIC_DISABLE_BUGGY_UNUSED_BUT_SET_VARIABLE_ \
 	_Pragma("GCC diagnostic ignored \"-Wunused-but-set-variable\"")
 #else
-#define SIMDE_DIAGNOSTIC_DISABLE_BUGGY_UNUSED_BUT_SET_VARIBALE_
+#define SIMDE_DIAGNOSTIC_DISABLE_BUGGY_UNUSED_BUT_SET_VARIABLE_
 #endif
 
 /* This is the warning that you normally define _CRT_SECURE_NO_WARNINGS
@@ -441,7 +441,7 @@
 	SIMDE_DIAGNOSTIC_DISABLE_PASS_FAILED_                        \
 	SIMDE_DIAGNOSTIC_DISABLE_CPP98_COMPAT_PEDANTIC_              \
 	SIMDE_DIAGNOSTIC_DISABLE_CPP11_LONG_LONG_                    \
-	SIMDE_DIAGNOSTIC_DISABLE_BUGGY_UNUSED_BUT_SET_VARIBALE_      \
+	SIMDE_DIAGNOSTIC_DISABLE_BUGGY_UNUSED_BUT_SET_VARIABLE_      \
 	SIMDE_DIAGNOSTIC_DISABLE_BUGGY_VECTOR_CONVERSION_
 
 #endif /* !defined(SIMDE_DIAGNOSTIC_H) */

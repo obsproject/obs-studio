@@ -338,7 +338,7 @@ interface IBMDStreamingH264NALParser;
 {
     HRESULT IsNALSequenceParameterSet ([in] IBMDStreamingH264NALPacket* nal);
     HRESULT IsNALPictureParameterSet ([in] IBMDStreamingH264NALPacket* nal);
-    HRESULT GetProfileAndLevelFromSPS ([in] IBMDStreamingH264NALPacket* nal, [out] unsigned int* profileIdc, [out] unsigned int* profileCompatability, [out] unsigned int* levelIdc);
+    HRESULT GetProfileAndLevelFromSPS ([in] IBMDStreamingH264NALPacket* nal, [out] unsigned int* profileIdc, [out] unsigned int* profileCompatibility, [out] unsigned int* levelIdc);
 };
 
 /* Coclasses */

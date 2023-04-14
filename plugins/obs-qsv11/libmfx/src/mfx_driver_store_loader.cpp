@@ -33,7 +33,7 @@ inline bool IsIntelDeviceInstanceID(const wchar_t * DeviceID)
     return wcsstr(DeviceID, L"VEN_8086") || wcsstr(DeviceID, L"ven_8086");
 }
 
-inline bool ExctractDeviceID(const wchar_t* descrString, mfxU32& deviceID)
+inline bool ExtractDeviceID(const wchar_t* descrString, mfxU32& deviceID)
 {
     const wchar_t *begin = wcsstr(descrString, L"DEV_");
 
@@ -135,7 +135,7 @@ bool DriverStoreLoader::GetDriverStorePath(wchar_t * path, DWORD dwPathSize, mfx
         if (IsIntelDeviceInstanceID(begin))
         {
             mfxU32 curDeviceID = 0;
-            if (!ExctractDeviceID(begin, curDeviceID) || curDeviceID != deviceID)
+            if (!ExtractDeviceID(begin, curDeviceID) || curDeviceID != deviceID)
             {
                 continue;
             }

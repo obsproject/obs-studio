@@ -647,7 +647,7 @@ void simde_memset_(void *s, int c, size_t len)
 #endif
 
 #if !defined(simde_memcmp)
-SIMDE_FUCTION_ATTRIBUTES
+SIMDE_FUNCTION_ATTRIBUTES
 int simde_memcmp_(const void *s1, const void *s2, size_t n)
 {
 	unsigned char *s1_ = HEDLEY_STATIC_CAST(unsigned char *, s1);

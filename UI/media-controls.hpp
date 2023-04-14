@@ -60,7 +60,7 @@ private slots:
 
 	void SeekTimerCallback();
 
-	void MoveSliderFoward(int seconds = 5);
+	void MoveSliderForward(int seconds = 5);
 	void MoveSliderBackwards(int seconds = 5);
 
 	void UpdateSlideCounter();

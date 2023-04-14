@@ -509,17 +509,17 @@ void AutoConfigStreamPage::on_connectAccount_clicked()
 	}
 }
 
-#define DISCONNECT_COMFIRM_TITLE \
+#define DISCONNECT_CONFIRM_TITLE \
 	"Basic.AutoConfig.StreamPage.DisconnectAccount.Confirm.Title"
-#define DISCONNECT_COMFIRM_TEXT \
+#define DISCONNECT_CONFIRM_TEXT \
 	"Basic.AutoConfig.StreamPage.DisconnectAccount.Confirm.Text"
 
 void AutoConfigStreamPage::on_disconnectAccount_clicked()
 {
 	QMessageBox::StandardButton button;
 
-	button = OBSMessageBox::question(this, QTStr(DISCONNECT_COMFIRM_TITLE),
-					 QTStr(DISCONNECT_COMFIRM_TEXT));
+	button = OBSMessageBox::question(this, QTStr(DISCONNECT_CONFIRM_TITLE),
+					 QTStr(DISCONNECT_CONFIRM_TEXT));
 
 	if (button == QMessageBox::No) {
 		return;

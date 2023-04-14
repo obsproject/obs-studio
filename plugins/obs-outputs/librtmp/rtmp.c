@@ -849,11 +849,11 @@ finish:
 #ifdef _WIN32
 #define E_TIMEDOUT     WSAETIMEDOUT
 #define E_CONNREFUSED  WSAECONNREFUSED
-#define E_ACCES        WSAEACCES
+#define E_ACCESS       WSAEACCES
 #else
 #define E_TIMEDOUT     ETIMEDOUT
 #define E_CONNREFUSED  ECONNREFUSED
-#define E_ACCES        EACCES
+#define E_ACCESS       EACCES
 #endif
 
 int
@@ -898,7 +898,7 @@ RTMP_Connect0(RTMP *r, struct sockaddr * service, socklen_t addrlen)
             int err = GetSockError();
             if (err == E_CONNREFUSED)
                 RTMP_Log(RTMP_LOGERROR, "%s is offline. Try a different server (ECONNREFUSED).", r->Link.hostname.av_val);
-            else if (err == E_ACCES)
+            else if (err == E_ACCESS)
                 RTMP_Log(RTMP_LOGERROR, "The connection is being blocked by a firewall or other security software (EACCES).");
             else if (err == E_TIMEDOUT)
                 RTMP_Log(RTMP_LOGERROR, "The connection timed out. Try a different server, or check that the connection is not being blocked by a firewall or other security software (ETIMEDOUT).");
@@ -3537,7 +3537,7 @@ SAVC(audio);
 static int
 HandleMetadata(RTMP *r, char *body, unsigned int len)
 {
-    /* allright we get some info here, so parse it and print it */
+    /* alright we get some info here, so parse it and print it */
     /* also keep duration or filesize to make a nice progress bar */
 
     AMFObject obj;
@@ -4810,7 +4810,7 @@ Read_1_Packet(RTMP *r, char *buf, unsigned int buflen)
                         }
                     }
 
-                    /* hande FLV streams, even though the server resends the
+                    /* handle FLV streams, even though the server resends the
                      * keyframe as an extra video packet it is also included
                      * in the first FLV stream chunk and we have to compare
                      * it and filter it out !!
@@ -5115,7 +5115,7 @@ stopKeyframeSearch:
                     {
 #ifdef _DEBUG
                         RTMP_Log(RTMP_LOGWARNING,
-                                 "Tag and data size are not consitent, writing tag size according to dataSize+11: %d",
+                                 "Tag and data size are not consistent, writing tag size according to dataSize+11: %d",
                                  dataSize + 11);
 #endif
 

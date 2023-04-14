@@ -357,7 +357,7 @@ bool YoutubeApiWrappers::GetVideoCategoriesList(
 bool YoutubeApiWrappers::SetVideoCategory(const QString &video_id,
 					  const QString &video_title,
 					  const QString &video_description,
-					  const QString &categorie_id)
+					  const QString &category_id)
 {
 	lastErrorMessage.clear();
 	lastErrorReason.clear();
@@ -368,7 +368,7 @@ bool YoutubeApiWrappers::SetVideoCategory(const QString &video_id,
 		 Json::object{
 			 {"title", QT_TO_UTF8(video_title)},
 			 {"description", QT_TO_UTF8(video_description)},
-			 {"categoryId", QT_TO_UTF8(categorie_id)},
+			 {"categoryId", QT_TO_UTF8(category_id)},
 		 }},
 	};
 	Json json_out;

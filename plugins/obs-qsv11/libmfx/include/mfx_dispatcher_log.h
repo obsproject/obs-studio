@@ -71,10 +71,10 @@ enum
 #if defined(MFX_DISPATCHER_LOG)
 
 //---------------------------setup section------------------------
-//using of formating instead of variadic macro with NULL end, 
+//using of formatting instead of variadic macro with NULL end,
 //leads to more flexibility in format, however constructing string 
 //with vsprintf_s is a time wasting
-#define DISPATCHER_LOG_USE_FORMATING 1
+#define DISPATCHER_LOG_USE_FORMATTING 1
 
 //creates unique object, event guid registration, factories on heap
 //heap reduce stack allocation and reduce reservation time at startup
@@ -102,7 +102,7 @@ public:
     virtual void Write(int level, int opcode, const char * msg, va_list argptr) = 0;
 };
 
-#if  DISPATCHER_LOG_USE_FORMATING
+#if  DISPATCHER_LOG_USE_FORMATTING
 
     #define DISPATCHER_LOG(lvl, opcode, str)\
     {\
@@ -118,7 +118,7 @@ public:
         DispatcherLogBracketsHelper wrt(lvl, opcode);\
         DISPATCHER_LOG_VA_ARGS str;\
     }
-#endif//DISPATCHER_LOG_USE_FORMATING
+#endif//DISPATCHER_LOG_USE_FORMATTING
 
 #define DISPATCHER_LOG_OPERATION(operation) operation
 
@@ -177,7 +177,7 @@ class DispatchLog
     : public DSSingleTone<DispatchLog>
 {
     friend class DSSingleTone<DispatchLog>;
-    std::list<IMsgHandler*>m_Recepients;
+    std::list<IMsgHandler*>m_Recipients;
     int m_DispatcherLogSink;
 
 public:

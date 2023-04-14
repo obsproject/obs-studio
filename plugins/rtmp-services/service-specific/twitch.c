@@ -67,10 +67,10 @@ static bool load_ingests(const char *json, bool write_file)
 		const char *url_str = json_string_value(item_url);
 		const char *name_str = json_string_value(item_name);
 
-		/* At the moment they currently mis-spell "deprecated",
+		/* At the moment they currently misspell "deprecated",
 		 * but that may change in the future, so blacklist both */
 		if (strstr(name_str, "deprecated") != NULL ||
-		    strstr(name_str, "depracated") != NULL)
+		    strstr(name_str, "depracated") != NULL) // NOTE: not a typo!
 			continue;
 
 		dstr_copy(&url, url_str);

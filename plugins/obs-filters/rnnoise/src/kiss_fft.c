@@ -39,7 +39,7 @@
 #define CUSTOM_MODES
 
 /* The guts header contains all the multiplication and addition macros that are defined for
-   complex numbers.  It also delares the kf_ internal functions.
+   complex numbers.  It also declares the kf_ internal functions.
 */
 
 static void kf_bfly2(

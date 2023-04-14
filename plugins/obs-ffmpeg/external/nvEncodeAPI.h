@@ -655,7 +655,7 @@ typedef enum _NVENCSTATUS
      * This indicates that the completion event passed in ::NvEncEncodePicture()
      * API has not been registered with encoder driver using ::NvEncRegisterAsyncEvent().
      */
-    NV_ENC_ERR_EVENT_NOT_REGISTERD,
+    NV_ENC_ERR_EVENT_NOT_REGISTERED,
 
     /**
      * This indicates that an unknown internal error has occurred.
@@ -1687,7 +1687,7 @@ typedef struct _NV_ENC_CONFIG_H264
     uint32_t                            chromaFormatIDC;            /**< [in]: Specifies the chroma format. Should be set to 1 for yuv420 input, 3 for yuv444 input.
                                                                                Check support for YUV444 encoding using ::NV_ENC_CAPS_SUPPORT_YUV444_ENCODE caps.*/
     uint32_t                            maxTemporalLayers;          /**< [in]: Specifies the max temporal layer used for temporal SVC / hierarchical coding.
-                                                                               Defaut value of this field is NV_ENC_CAPS::NV_ENC_CAPS_NUM_MAX_TEMPORAL_LAYERS. Note that the value NV_ENC_CONFIG_H264::maxNumRefFrames should
+                                                                               Default value of this field is NV_ENC_CAPS::NV_ENC_CAPS_NUM_MAX_TEMPORAL_LAYERS. Note that the value NV_ENC_CONFIG_H264::maxNumRefFrames should
                                                                                be greater than or equal to (NV_ENC_CONFIG_H264::maxTemporalLayers - 2) * 2, for NV_ENC_CONFIG_H264::maxTemporalLayers >= 2.*/
     NV_ENC_BFRAME_REF_MODE              useBFramesAsRef;            /**< [in]: Specifies the B-Frame as reference mode. Check support for useBFramesAsRef mode using ::NV_ENC_CAPS_SUPPORT_BFRAME_REF_MODE caps.*/
     NV_ENC_NUM_REF_FRAMES               numRefL0;                   /**< [in]: Specifies max number of reference frames in reference picture list L0, that can be used by hardware for prediction of a frame.
@@ -1858,12 +1858,12 @@ typedef struct _NV_ENC_CONFIG_AV1
                                                                                When enableCustomTileConfig == 0, the picture will be uniformly divided into numTileColumns tile columns. If numTileColumns is not a power of 2,
                                                                                it will be rounded down to the next power of 2 value. If numTileColumns == 0, the picture will be coded with the smallest number of vertical tiles as allowed by standard.
                                                                                When enableCustomTileConfig == 1, numTileColumns must be > 0 and <= NV_MAX_TILE_COLS_AV1 and tileWidths must point to a valid array of numTileColumns entries.
-                                                                               Entry i specifies the width in 64x64 CTU unit of tile colum i. The sum of all the entries should be equal to the picture width in 64x64 CTU units. */
+                                                                               Entry i specifies the width in 64x64 CTU unit of tile column i. The sum of all the entries should be equal to the picture width in 64x64 CTU units. */
     uint32_t numTileRows;                                           /**< [in]: This parameter in conjunction with the flag enableCustomTileConfig and the array tileHeights[] specifies the way in which the picture is divided into tiles rows
                                                                                When enableCustomTileConfig == 0, the picture will be uniformly divided into numTileRows tile rows. If numTileRows is not a power of 2,
                                                                                it will be rounded down to the next power of 2 value. If numTileRows == 0, the picture will be coded with the smallest number of horizontal tiles as allowed by standard.
                                                                                When enableCustomTileConfig == 1, numTileRows must be > 0 and <= NV_MAX_TILE_ROWS_AV1 and tileHeights must point to a valid array of numTileRows entries.
-                                                                               Entry i specifies the height in 64x64 CTU unit of tile row i. The sum of all the entries should be equal to the picture hieght in 64x64 CTU units. */
+                                                                               Entry i specifies the height in 64x64 CTU unit of tile row i. The sum of all the entries should be equal to the picture height in 64x64 CTU units. */
     uint32_t *tileWidths;                                           /**< [in]: If enableCustomTileConfig == 1, tileWidths[i] specifies the width of tile column i in 64x64 CTU unit, with 0 <= i <= numTileColumns -1. */
     uint32_t *tileHeights;                                          /**< [in]: If enableCustomTileConfig == 1, tileHeights[i] specifies the height of tile row i in 64x64 CTU unit, with 0 <= i <= numTileRows -1. */
     uint32_t maxTemporalLayersMinus1;                               /**< [in]: Specifies the max temporal layer used for hierarchical coding. */
@@ -2228,12 +2228,12 @@ typedef struct _NV_ENC_PIC_PARAMS_AV1
                                                                     When enableCustomTileConfig == 0, the picture will be uniformly divided into numTileColumns tile columns. If numTileColumns is not a power of 2,
                                                                     it will be rounded down to the next power of 2 value. If numTileColumns == 0, the picture will be coded with the smallest number of vertical tiles as allowed by standard.
                                                                     When enableCustomTileConfig == 1, numTileColumns must be > 0 and <= NV_MAX_TILE_COLS_AV1 and tileWidths must point to a valid array of numTileColumns entries.
-                                                                    Entry i specifies the width in 64x64 CTU unit of tile colum i. The sum of all the entries should be equal to the picture width in 64x64 CTU units. */
+                                                                    Entry i specifies the width in 64x64 CTU unit of tile column i. The sum of all the entries should be equal to the picture width in 64x64 CTU units. */
     uint32_t numTileRows;                                /**< [in]: This parameter in conjunction with the flag enableCustomTileConfig and the array tileHeights[] specifies the way in which the picture is divided into tiles rows
                                                                     When enableCustomTileConfig == 0, the picture will be uniformly divided into numTileRows tile rows. If numTileRows is not a power of 2,
                                                                     it will be rounded down to the next power of 2 value. If numTileRows == 0, the picture will be coded with the smallest number of horizontal tiles as allowed by standard.
                                                                     When enableCustomTileConfig == 1, numTileRows must be > 0 and <= NV_MAX_TILE_ROWS_AV1 and tileHeights must point to a valid array of numTileRows entries.
-                                                                    Entry i specifies the height in 64x64 CTU unit of tile row i. The sum of all the entries should be equal to the picture hieght in 64x64 CTU units. */
+                                                                    Entry i specifies the height in 64x64 CTU unit of tile row i. The sum of all the entries should be equal to the picture height in 64x64 CTU units. */
     uint32_t *tileWidths;                                /**< [in]: If enableCustomTileConfig == 1, tileWidths[i] specifies the width of tile column i in 64x64 CTU unit, with 0 <= i <= numTileColumns -1. */
     uint32_t *tileHeights;                               /**< [in]: If enableCustomTileConfig == 1, tileHeights[i] specifies the height of tile row i in 64x64 CTU unit, with 0 <= i <= numTileRows -1. */
     uint32_t obuPayloadArrayCnt;                         /**< [in]: Specifies the number of elements allocated in  obuPayloadArray array. */
@@ -2284,7 +2284,7 @@ typedef struct _NV_ENC_PIC_PARAMS
     void*                                       completionEvent;                /**< [in]: Specifies an event to be signaled on completion of encoding of this Frame [only if operating in Asynchronous mode]. Each output buffer should be associated with a distinct event pointer. */
     NV_ENC_BUFFER_FORMAT                        bufferFmt;                      /**< [in]: Specifies the input buffer format. */
     NV_ENC_PIC_STRUCT                           pictureStruct;                  /**< [in]: Specifies structure of the input picture. */
-    NV_ENC_PIC_TYPE                             pictureType;                    /**< [in]: Specifies input picture type. Client required to be set explicitly by the client if the client has not set NV_ENC_INITALIZE_PARAMS::enablePTD to 1 while calling NvInitializeEncoder. */
+    NV_ENC_PIC_TYPE                             pictureType;                    /**< [in]: Specifies input picture type. Client required to be set explicitly by the client if the client has not set NV_ENC_INITIALIZE_PARAMS::enablePTD to 1 while calling NvInitializeEncoder. */
     NV_ENC_CODEC_PIC_PARAMS                     codecPicParams;                 /**< [in]: Specifies the codec specific per-picture encoding parameters. */
     NVENC_EXTERNAL_ME_HINT_COUNTS_PER_BLOCKTYPE meHintCountsPerBlock[2];        /**< [in]: For H264 and Hevc, specifies the number of hint candidates per block per direction for the current frame. meHintCountsPerBlock[0] is for L0 predictors and meHintCountsPerBlock[1] is for L1 predictors.
                                                                                            The candidate count in NV_ENC_PIC_PARAMS::meHintCountsPerBlock[lx] must never exceed NV_ENC_INITIALIZE_PARAMS::maxMEHintCountsPerBlock[lx] provided during encoder initialization. */
@@ -2301,8 +2301,8 @@ typedef struct _NV_ENC_PIC_PARAMS
     uint32_t                                    qpDeltaMapSize;                  /**< [in]: Specifies the size in bytes of qpDeltaMap surface allocated by client and pointed to by NV_ENC_PIC_PARAMS::qpDeltaMap. Surface (array) should be picWidthInMbs * picHeightInMbs for H264, picWidthInCtbs * picHeightInCtbs for HEVC and 
                                                                                             picWidthInSbs * picHeightInSbs for AV1 */
     uint32_t                                    reservedBitFields;               /**< [in]: Reserved bitfields and must be set to 0 */
-    uint16_t                                    meHintRefPicDist[2];             /**< [in]: Specifies temporal distance for reference picture (NVENC_EXTERNAL_ME_HINT::refidx = 0) used during external ME with NV_ENC_INITALIZE_PARAMS::enablePTD = 1 . meHintRefPicDist[0] is for L0 hints and meHintRefPicDist[1] is for L1 hints.
-                                                                                            If not set, will internally infer distance of 1. Ignored for NV_ENC_INITALIZE_PARAMS::enablePTD = 0 */
+    uint16_t                                    meHintRefPicDist[2];             /**< [in]: Specifies temporal distance for reference picture (NVENC_EXTERNAL_ME_HINT::refidx = 0) used during external ME with NV_ENC_INITIALIZE_PARAMS::enablePTD = 1 . meHintRefPicDist[0] is for L0 hints and meHintRefPicDist[1] is for L1 hints.
+                                                                                            If not set, will internally infer distance of 1. Ignored for NV_ENC_INITIALIZE_PARAMS::enablePTD = 0 */
     NV_ENC_INPUT_PTR                            alphaBuffer;                     /**< [in]: Specifies the input alpha buffer pointer. Client must use a pointer obtained from ::NvEncCreateInputBuffer() or ::NvEncMapInputResource() APIs.
                                                                                             Applicable only when encoding hevc with alpha layer is enabled. */
     NVENC_EXTERNAL_ME_SB_HINT                  *meExternalSbHints;               /**< [in]: For AV1,Specifies the pointer to ME external SB hints for the current frame. The size of ME hint buffer should be equal to meSbHintsCount. */
@@ -2582,7 +2582,7 @@ typedef struct _NV_ENC_STAT
 
 /**
  * \struct _NV_ENC_SEQUENCE_PARAM_PAYLOAD
- * Sequence and picture paramaters payload.
+ * Sequence and picture parameters payload.
  */
 typedef struct _NV_ENC_SEQUENCE_PARAM_PAYLOAD
 {
@@ -3352,7 +3352,7 @@ NVENCSTATUS NVENCAPI NvEncDestroyBitstreamBuffer                (void* encoder, 
    The NvEncodeAPI tries to encode I2 as B frame and fails with ::NV_ENC_ERR_NEED_MORE_INPUT error code.
    The error is not fatal and it notifies client that I2 is not submitted to encoder immediately.
    The NvEncodeAPI encodes I3 as P frame and submits I3 for encoding which will be used as  backward
-   reference frame for I2. The NvEncodeAPI then submits I2 for encoding and returns ::NV_ENC_SUCESS.
+   reference frame for I2. The NvEncodeAPI then submits I2 for encoding and returns ::NV_ENC_SUCCESS.
    Both the submission are part of the same ::NvEncEncodePicture() function call.
 
   e) After returning from ::NvEncEncodePicture() call , the client must queue the output
@@ -3438,7 +3438,7 @@ NVENCSTATUS NVENCAPI NvEncDestroyBitstreamBuffer                (void* encoder, 
  The client calls ::NvEncEncodePicture() with input buffer I3 and output buffer O3.
  The NvEncodeAPI decides to encode I3 as P frame and it first submits I3 for
  encoding which will be used as backward reference frame for I2.
- The NvEncodeAPI then submits I2 for encoding and returns ::NV_ENC_SUCESS. Both
+ The NvEncodeAPI then submits I2 for encoding and returns ::NV_ENC_SUCCESS. Both
  the submission are part of the same ::NvEncEncodePicture() function call.
  The client can now read the encoded data for both the frames by locking the output
  O2 followed by  O3 ,by calling ::NvEncLockBitstream() API.

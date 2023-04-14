@@ -10,7 +10,7 @@
         <true/>
         <key>com.apple.security.cs.disable-library-validation</key>
         <true/>
-        <!-- Allows @executable_path to load libaries from within the .app bundle. -->
+        <!-- Allows @executable_path to load libraries from within the .app bundle. -->
         <key>com.apple.security.cs.allow-dyld-environment-variables</key>
         <true/>
     </dict>

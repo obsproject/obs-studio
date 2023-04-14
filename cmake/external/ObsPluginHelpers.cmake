@@ -156,7 +156,7 @@ if(OS_POSIX)
   # * DISABLE strict aliasing optimisations
   # * C ONLY - treat implicit function declarations (use before declare) as errors,
   #   https://clang.llvm.org/docs/DiagnosticsReference.html#wimplicit-function-declaration
-  # * C ONLY - DISABLE warning about missing braces around subobject initalizers,
+  # * C ONLY - DISABLE warning about missing braces around subobject initializers,
   #   https://clang.llvm.org/docs/DiagnosticsReference.html#wmissing-braces
   # * C ONLY, Clang ONLY - Warning about implicit conversion of NULL to another type,
   #   https://clang.llvm.org/docs/DiagnosticsReference.html#wnull-conversion

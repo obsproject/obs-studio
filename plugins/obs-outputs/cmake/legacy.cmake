@@ -127,7 +127,7 @@ if(FTL_FOUND)
 
 elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ftl-sdk/CMakeLists.txt")
   find_package(CURL REQUIRED)
-  obs_status(ENABLED "ftl ouputs (bundled ftl-sdk)")
+  obs_status(ENABLED "ftl outputs (bundled ftl-sdk)")
 
   target_compile_definitions(obs-outputs PRIVATE FTL_STATIC_COMPILE)
 

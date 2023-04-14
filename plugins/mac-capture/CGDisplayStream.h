@@ -22,7 +22,7 @@ CF_ASSUME_NONNULL_BEGIN
  @typedef CGDisplayStreamRef
  @abstract An opaque reference to a CGDisplayStream object
  @discussion A CGDisplayStream provides a streaming API for capturing display updates in a realtime manner.  It can also provide
- scaling and color space conversion services, as well as allow capturing sub regions of the display.   Callbacks can be targetted
+ scaling and color space conversion services, as well as allow capturing sub regions of the display.   Callbacks can be targeted
  at either a traditional CFRunLoop, or at a dispatch queue.
 */
 typedef struct CF_BRIDGED_TYPE(id) CGDisplayStream *CGDisplayStreamRef;
@@ -75,7 +75,7 @@ typedef CF_ENUM(int32_t, CGDisplayStreamFrameStatus) {
  that contains the pixel data for the new frame, as well as a CGDisplayStreamUpdateRef that contains all of the metadata associated with that IOSurface.
  @param frameSurface The IOSurfaceRef for the current frame.  May be NULL in some cases.   If you intend to hold on to the IOSurface beyond the lifetime of
  the handler call, you must CFRetain() the IOSurface until you are done with it *and* you must call IOSurfaceIncrementUseCount() to let the CGDisplayStream know
- that the frame is not ready for re-use.  Once you are finished using the IOSurfaceRef you must then call IOSurfaceDecrementUseCount().  If you are maintaing
+ that the frame is not ready for re-use.  Once you are finished using the IOSurfaceRef you must then call IOSurfaceDecrementUseCount().  If you are maintaining
  any kind of external cache of information about the IOSurface (such as a GL texture object), you must keep a CFRetain() on the IOSurface to prevent it from going
  away until you remove it from your cache.   You can not depend on the set of IOSurfaces being used by the display stream as being static, so you should implement
  some kind of age-out behavior for your cache for IOSurfaces that have not been re-used in a while.

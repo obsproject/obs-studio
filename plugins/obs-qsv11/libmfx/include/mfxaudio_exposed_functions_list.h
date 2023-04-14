@@ -20,7 +20,7 @@
 
 //
 // WARNING:
-// this file doesn't contain an include guard by intension.
+// this file doesn't contain an include guard by intention.
 // The file may be included into a source file many times.
 // That is why this header doesn't contain any include directive.
 // Please, do no try to fix it.

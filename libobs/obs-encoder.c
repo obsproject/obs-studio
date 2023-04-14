@@ -426,7 +426,7 @@ static inline void reset_audio_buffers(struct obs_encoder *encoder)
 			bmalloc(encoder->framesize_bytes);
 }
 
-static void intitialize_audio_encoder(struct obs_encoder *encoder)
+static void initialize_audio_encoder(struct obs_encoder *encoder)
 {
 	struct audio_convert_info info = {0};
 	get_audio_info(encoder, &info);
@@ -470,7 +470,7 @@ static inline bool obs_encoder_initialize_internal(obs_encoder_t *encoder)
 		return false;
 
 	if (encoder->orig_info.type == OBS_ENCODER_AUDIO)
-		intitialize_audio_encoder(encoder);
+		initialize_audio_encoder(encoder);
 
 	encoder->initialized = true;
 	return true;

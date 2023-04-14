@@ -74,12 +74,12 @@ MediaControls::MediaControls(QWidget *parent)
 	connect(restartAction, SIGNAL(triggered()), this, SLOT(RestartMedia()));
 	addAction(restartAction);
 
-	QAction *sliderFoward = new QAction(this);
-	sliderFoward->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-	connect(sliderFoward, SIGNAL(triggered()), this,
-		SLOT(MoveSliderFoward()));
-	sliderFoward->setShortcut({Qt::Key_Right});
-	addAction(sliderFoward);
+	QAction *sliderForward = new QAction(this);
+	sliderForward->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+	connect(sliderForward, SIGNAL(triggered()), this,
+		SLOT(MoveSliderForward()));
+	sliderForward->setShortcut({Qt::Key_Right});
+	addAction(sliderForward);
 
 	QAction *sliderBack = new QAction(this);
 	sliderBack->setShortcutContext(Qt::WidgetWithChildrenShortcut);
@@ -476,7 +476,7 @@ void MediaControls::on_durationLabel_clicked()
 		SetSliderPosition();
 }
 
-void MediaControls::MoveSliderFoward(int seconds)
+void MediaControls::MoveSliderForward(int seconds)
 {
 	OBSSource source = OBSGetStrongRef(weakSource);
 

@@ -362,7 +362,7 @@ class BMD_PUBLIC IBMDStreamingH264NALParser : public IUnknown
 public:
     virtual HRESULT IsNALSequenceParameterSet (/* in */ IBMDStreamingH264NALPacket* nal) = 0;
     virtual HRESULT IsNALPictureParameterSet (/* in */ IBMDStreamingH264NALPacket* nal) = 0;
-    virtual HRESULT GetProfileAndLevelFromSPS (/* in */ IBMDStreamingH264NALPacket* nal, /* out */ uint32_t* profileIdc, /* out */ uint32_t* profileCompatability, /* out */ uint32_t* levelIdc) = 0;
+    virtual HRESULT GetProfileAndLevelFromSPS (/* in */ IBMDStreamingH264NALPacket* nal, /* out */ uint32_t* profileIdc, /* out */ uint32_t* profileCompatibility, /* out */ uint32_t* levelIdc) = 0;
 
 protected:
     virtual ~IBMDStreamingH264NALParser () {} // call Release method to drop reference count
