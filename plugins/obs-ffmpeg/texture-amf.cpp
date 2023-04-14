@@ -2018,6 +2018,15 @@ static void amf_av1_create_internal(amf_base *enc, obs_data_t *settings)
 	const bool is10bit = enc->amf_format == AMF_SURFACE_P010;
 	const char *preset = obs_data_get_string(settings, "preset");
 
+	constexpr uint32_t four_k_cx = 3840;
+	constexpr uint32_t four_k_cy = 2160;
+	constexpr uint32_t pixelcount_4k = four_k_cx * four_k_cy;
+
+	/* If 4K+, set tiles per frame to 2. */
+	if ((enc->cx * enc->cy) >= pixelcount_4k) {
+		set_av1_property(enc, TILES_PER_FRAME, 2);
+	}
+
 	set_av1_property(enc, FRAMESIZE, AMFConstructSize(enc->cx, enc->cy));
 	set_av1_property(enc, USAGE, AMF_VIDEO_ENCODER_USAGE_TRANSCODING);
 	set_av1_property(enc, ALIGNMENT_MODE,
