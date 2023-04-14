@@ -1359,6 +1359,8 @@ static bool init_connect(struct rtmp_stream *stream)
 	caps = obs_encoder_get_caps(venc);
 	if ((caps & OBS_ENCODER_CAP_DYN_BITRATE) == 0) {
 		stream->dbr_enabled = false;
+		info("Dynamic bitrate disabled. "
+		     "The encoder does not support on-the-fly bitrate reconfiguration.");
 	}
 
 	if (obs_output_get_delay(stream->output) != 0) {
