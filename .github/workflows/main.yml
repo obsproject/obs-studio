@@ -376,7 +376,7 @@ jobs:
           echo "cache_hit=$CACHE_HIT" >> $GITHUB_OUTPUT
 
       - name: Build Flatpak Manifest
-        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6.1
         with:
           build-bundle: ${{ fromJSON(needs.config.outputs.create_artifacts) }}
           bundle: obs-studio-flatpak-${{ steps.setup.outputs.git_hash }}.flatpak
