@@ -19,8 +19,10 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 	: OBSQTDisplay(widget, Qt::Window), weakSource(OBSGetWeakRef(source_))
 {
 	OBSSource source = GetSource();
-	destroyedSignal.Connect(obs_source_get_signal_handler(source),
-				"destroy", OBSSourceDestroyed, this);
+	if (source) {
+		destroyedSignal.Connect(obs_source_get_signal_handler(source),
+					"destroy", OBSSourceDestroyed, this);
+	}
 
 	isAlwaysOnTop = config_get_bool(GetGlobalConfig(), "BasicWindow",
 					"ProjectorAlwaysOnTop");
@@ -50,7 +52,10 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 	else
 		SetMonitor(monitor);
 
-	UpdateProjectorTitle(QT_UTF8(obs_source_get_name(source)));
+	if (source)
+		UpdateProjectorTitle(QT_UTF8(obs_source_get_name(source)));
+	else
+		UpdateProjectorTitle(QString());
 
 	QAction *action = new QAction(this);
 	action->setShortcut(Qt::Key_Escape);
