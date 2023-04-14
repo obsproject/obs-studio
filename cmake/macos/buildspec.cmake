@@ -19,6 +19,8 @@ macro(_check_deps_version version)
 
       file(READ "${path}/share/obs-deps/VERSION" _check_version)
       string(REPLACE "\n" "" _check_version "${_check_version}")
+      string(REPLACE "-" "." _check_version "${_check_version}")
+      string(REPLACE "-" "." version "${version}")
 
       if(_check_version VERSION_EQUAL version)
         set(found TRUE)
