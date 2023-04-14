@@ -2378,6 +2378,8 @@ obs_data_t *obs_scene_save_transform_states(obs_scene_t *scene, bool all_items)
 
 	obs_data_set_string(temp, "scene_name",
 			    obs_source_get_name(obs_scene_get_source(scene)));
+	obs_data_set_string(temp, "scene_uuid",
+			    obs_source_get_uuid(obs_scene_get_source(scene)));
 	obs_data_set_bool(temp, "is_group", false);
 
 	obs_scene_enum_items(scene, save_transform_states, (void *)&pass);
