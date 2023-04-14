@@ -122,6 +122,9 @@ without necessarily having to lock scripts/interpreters every frame.
 
     Adds an timer callback which triggers every *milliseconds*.
 
+    Note: Using instance methods as callbacks is not supported. Always
+    use module methods.
+
 .. py:function:: timer_remove(callback)
 
     Removes a timer callback.  (Note: You can also use
