@@ -23,7 +23,7 @@
 
 //! PlugInMain is the entrypoint for the plugin
 extern "C" {
-void *PlugInMain(CFAllocatorRef, CFUUIDRef requestedTypeUUID)
+__exported void *PlugInMain(CFAllocatorRef, CFUUIDRef requestedTypeUUID)
 {
 	DLogFunc(@"version=%@", PLUGIN_VERSION);
 	if (!CFEqual(requestedTypeUUID, kCMIOHardwarePlugInTypeID)) {
