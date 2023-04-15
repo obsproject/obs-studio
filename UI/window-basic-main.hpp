@@ -656,6 +656,10 @@ private:
 
 	void UpdatePreviewOverflowSettings();
 
+#ifdef _WIN32
+	void ShowHAGSWarning();
+#endif
+
 public slots:
 	void DeferSaveBegin();
 	void DeferSaveEnd();

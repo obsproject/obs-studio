@@ -2280,6 +2280,15 @@ void OBSBasic::OBSInit()
 		OBSMessageBox::warning(this, QTStr("PluginsFailedToLoad.Title"),
 				       failed_msg);
 	}
+
+#ifdef _WIN32
+	obs_enter_graphics();
+	const bool hags_enabled = gs_hags_enabled();
+	obs_leave_graphics();
+	if (hags_enabled) {
+		ShowHAGSWarning();
+	}
+#endif
 }
 
 void OBSBasic::OnFirstLoad()
@@ -10733,3 +10742,34 @@ void OBSBasic::ResetProxyStyleSliders()
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_THEME_CHANGED);
 }
+
+#ifdef _WIN32
+void OBSBasic::ShowHAGSWarning()
+{
+	auto msgBox = []() {
+		QMessageBox msgbox(App()->GetMainWindow());
+		msgbox.setWindowTitle(QTStr("HAGSEnabled.Title"));
+		msgbox.setText(QTStr("HAGSEnabled.Text"));
+		msgbox.setIcon(QMessageBox::Icon::Warning);
+		msgbox.addButton(QMessageBox::Ok);
+
+		QCheckBox *cb = new QCheckBox(QTStr("DoNotShowAgain"));
+		msgbox.setCheckBox(cb);
+
+		msgbox.exec();
+
+		if (cb->isChecked()) {
+			config_set_bool(App()->GlobalConfig(), "General",
+					"WarnedAboutHAGS", true);
+			config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+		}
+	};
+
+	bool warned = config_get_bool(App()->GlobalConfig(), "General",
+				      "WarnedAboutHAGS");
+	if (!warned) {
+		QMetaObject::invokeMethod(App(), "Exec", Qt::QueuedConnection,
+					  Q_ARG(VoidFunc, msgBox));
+	}
+}
+#endif
