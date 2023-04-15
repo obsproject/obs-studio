@@ -26,6 +26,7 @@
 #include <d3d9.h>
 #include "d3d11-subsystem.hpp"
 #include <shellscalingapi.h>
+#include <d3dkmthk.h>
 
 struct UnsupportedHWError : HRError {
 	inline UnsupportedHWError(const char *str, HRESULT hr)
@@ -1313,10 +1314,15 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 	}
 }
 
+const uint32_t MAX_ADAPTERS = 16;
+
 static inline void LogD3DAdapters()
 {
+	D3DKMT_ADAPTERINFO d3dkmt_infos[MAX_ADAPTERS]{};
+	D3DKMT_ENUMADAPTERS2 d3dkmt_enum{};
 	ComPtr<IDXGIFactory1> factory;
 	ComPtr<IDXGIAdapter1> adapter;
+	NTSTATUS res;
 	HRESULT hr;
 	UINT i;
 
@@ -1325,6 +1331,16 @@ static inline void LogD3DAdapters()
 	hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
 	if (FAILED(hr))
 		throw HRError("Failed to create DXGIFactory", hr);
+
+	/* D3DKMT has its own handles that we need to enumerate */
+	d3dkmt_enum.NumAdapters = MAX_ADAPTERS;
+	d3dkmt_enum.pAdapters = d3dkmt_infos;
+	res = D3DKMTEnumAdapters2(&d3dkmt_enum);
+	if (FAILED(res)) {
+		blog(LOG_INFO,
+		     "D3DKMTEnumAdapters2 failed, HAGS information will be unavailable");
+		d3dkmt_enum.NumAdapters = 0;
+	}
 
 	for (i = 0; factory->EnumAdapters1(i, adapter.Assign()) == S_OK; ++i) {
 		DXGI_ADAPTER_DESC desc;
@@ -1347,6 +1363,41 @@ static inline void LogD3DAdapters()
 		blog(LOG_INFO, "\t  PCI ID:         %x:%x", desc.VendorId,
 		     desc.DeviceId);
 
+		/* HAGS status */
+		bool hags_supported = false;
+		bool hags_enabled = false;
+
+		for (uint32_t idx = 0; idx < d3dkmt_enum.NumAdapters; idx++) {
+			D3DKMT_ADAPTERINFO d3dkmt_info = d3dkmt_infos[idx];
+
+			if (d3dkmt_info.AdapterLuid.HighPart !=
+				    desc.AdapterLuid.HighPart ||
+			    d3dkmt_info.AdapterLuid.LowPart !=
+				    desc.AdapterLuid.LowPart) {
+				continue;
+			}
+
+			D3DKMT_WDDM_2_7_CAPS caps = {};
+			D3DKMT_QUERYADAPTERINFO args = {};
+			args.hAdapter = d3dkmt_info.hAdapter;
+			args.Type = KMTQAITYPE_WDDM_2_7_CAPS;
+			args.pPrivateDriverData = &caps;
+			args.PrivateDriverDataSize = sizeof(caps);
+			res = D3DKMTQueryAdapterInfo(&args);
+
+			/* On Windows 10 pre-2004 this will fail, but HAGS
+			 * isn't supported there anyway. */
+			if (SUCCEEDED(res)) {
+				hags_supported = caps.HwSchSupported;
+				hags_enabled = caps.HwSchEnabled;
+			}
+		}
+
+		blog(LOG_INFO, "\t  HAGS Supported: %s",
+		     hags_supported ? "true" : "false");
+		blog(LOG_INFO, "\t  HAGS Enabled:   %s",
+		     hags_enabled ? "true" : "false");
+
 		/* driver version */
 		LARGE_INTEGER umd;
 		hr = adapter->CheckInterfaceSupport(__uuidof(IDXGIDevice),
@@ -1367,6 +1418,16 @@ static inline void LogD3DAdapters()
 		}
 
 		LogAdapterMonitors(adapter);
+	}
+
+	/* Close D3DKMT adapters */
+	for (uint32_t idx = 0; i < d3dkmt_enum.NumAdapters; idx++) {
+		D3DKMT_CLOSEADAPTER args2 = {d3dkmt_infos[i].hAdapter};
+		res = D3DKMTCloseAdapter(&args2);
+		if (FAILED(res)) {
+			blog(LOG_DEBUG, "Failed closing D3DKMT adapter %x: %x",
+			     d3dkmt_infos[i].hAdapter, res);
+		}
 	}
 }
 
