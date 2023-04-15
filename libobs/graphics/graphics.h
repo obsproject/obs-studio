@@ -969,6 +969,7 @@ EXPORT gs_stagesurf_t *gs_stagesurface_create_p010(uint32_t width,
 
 EXPORT void gs_register_loss_callbacks(const struct gs_device_loss *callbacks);
 EXPORT void gs_unregister_loss_callbacks(void *data);
+EXPORT bool gs_hags_enabled(void);
 
 #elif defined(__linux__) || defined(__FreeBSD__) || defined(__DragonFly__)
 

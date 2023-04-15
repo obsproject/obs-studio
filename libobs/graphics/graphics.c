@@ -3317,4 +3317,15 @@ void gs_unregister_loss_callbacks(void *data)
 			graphics->device, data);
 }
 
+bool gs_hags_enabled(void)
+{
+	if (!gs_valid("gs_hags_enabled"))
+		return false;
+
+	if (!thread_graphics->exports.device_hags_enabled)
+		return false;
+
+	return thread_graphics->exports.device_hags_enabled(
+		thread_graphics->device);
+}
 #endif
