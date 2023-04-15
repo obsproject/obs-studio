@@ -22,7 +22,17 @@
 
 static inline uint64_t util_mul_div64(uint64_t num, uint64_t mul, uint64_t div)
 {
-#if defined(_MSC_VER) && defined(_M_X64) && (_MSC_VER >= 1920)
+#if !defined(_MSC_VER)
+#if defined(__x86_64__)
+	uint64_t rax, rdx;
+	__asm__("mulq %2" : "=a"(rax), "=d"(rdx) : "r"(num), "a"(mul));
+	__asm__("divq %1" : "=a"(rax) : "r"(div), "a"(rax), "d"(rdx));
+	return rax;
+#else
+	return (uint64_t)(((__uint128_t)num * (__uint128_t)mul) /
+			  (__uint128_t)div);
+#endif
+#elif defined(_M_X64) && (_MSC_VER >= 1920)
 	unsigned __int64 high;
 	const unsigned __int64 low = _umul128(num, mul, &high);
 	unsigned __int64 rem;
