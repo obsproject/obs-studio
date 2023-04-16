@@ -103,6 +103,7 @@ target_sources(
           forms/OBSBasic.ui
           forms/OBSBasicFilters.ui
           forms/OBSBasicInteraction.ui
+          forms/OBSBasicProperties.ui
           forms/OBSBasicSettings.ui
           forms/OBSBasicSourceSelect.ui
           forms/OBSBasicTransform.ui
@@ -110,6 +111,7 @@ target_sources(
           forms/OBSExtraBrowsers.ui
           forms/OBSImporter.ui
           forms/OBSLogReply.ui
+          forms/OBSLogViewer.ui
           forms/OBSMissingFiles.ui
           forms/OBSRemux.ui
           forms/OBSUpdate.ui
