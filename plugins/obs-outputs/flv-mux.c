@@ -339,7 +339,8 @@ void flv_packet_ex(struct encoder_packet *packet, enum video_id_t codec_id,
 	s_wb24(&s, 0); // always 0
 
 	// packet ext header
-	s_w8(&s, FRAME_HEADER_EX | type | (packet->keyframe ? FT_KEY : 0));
+	s_w8(&s,
+	     FRAME_HEADER_EX | type | (packet->keyframe ? FT_KEY : FT_INTER));
 	s_w4cc(&s, codec_id);
 
 #ifdef ENABLE_HEVC
