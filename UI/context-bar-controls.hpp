@@ -3,6 +3,9 @@
 #include <memory>
 #include <obs.hpp>
 #include <QWidget>
+#include <QFileDialog>
+#include <QColorDialog>
+#include <QFontDialog>
 
 class Ui_BrowserSourceToolbar;
 class Ui_DeviceSelectToolbar;
@@ -136,6 +139,7 @@ class ImageSourceToolbar : public SourceToolbar {
 	Q_OBJECT
 
 	std::unique_ptr<Ui_ImageSourceToolbar> ui;
+	QScopedPointer<QFileDialog> fileDialog;
 
 public:
 	ImageSourceToolbar(QWidget *parent, OBSSource source);
@@ -149,6 +153,7 @@ class ColorSourceToolbar : public SourceToolbar {
 	Q_OBJECT
 
 	std::unique_ptr<Ui_ColorSourceToolbar> ui;
+	QScopedPointer<QColorDialog> colorDialog;
 	QColor color;
 
 	void UpdateColor();
@@ -165,6 +170,8 @@ class TextSourceToolbar : public SourceToolbar {
 	Q_OBJECT
 
 	std::unique_ptr<Ui_TextSourceToolbar> ui;
+	QScopedPointer<QFontDialog> fontDialog;
+	QScopedPointer<QColorDialog> colorDialog;
 	QFont font;
 	QColor color;
 

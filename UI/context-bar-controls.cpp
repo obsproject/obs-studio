@@ -4,8 +4,6 @@
 #include "obs-app.hpp"
 
 #include <QStandardItemModel>
-#include <QColorDialog>
-#include <QFontDialog>
 
 #include "ui_browser-source-toolbar.h"
 #include "ui_device-select-toolbar.h"
@@ -498,18 +496,28 @@ void ImageSourceToolbar::on_browse_clicked()
 	const char *filter = obs_property_path_filter(p);
 	const char *default_path = obs_property_path_default_path(p);
 
-	QString path = OpenFile(this, desc, default_path, filter);
-	if (path.isEmpty()) {
-		return;
-	}
+	fileDialog.reset(new QFileDialog(this, desc, default_path, filter));
 
-	ui->path->setText(path);
+	auto finished = [this, source]() {
+		QStringList paths = fileDialog->selectedFiles();
+		fileDialog.reset();
 
-	SaveOldProperties(source);
-	OBSDataAutoRelease settings = obs_data_create();
-	obs_data_set_string(settings, "file", QT_TO_UTF8(path));
-	obs_source_update(source, settings);
-	SetUndoProperties(source);
+		if (!paths.count()) {
+			return;
+		}
+
+		ui->path->setText(paths[0]);
+
+		SaveOldProperties(source);
+		OBSDataAutoRelease settings = obs_data_create();
+		obs_data_set_string(settings, "file", QT_TO_UTF8(paths[0]));
+		obs_source_update(source, settings);
+		SetUndoProperties(source);
+	};
+
+	connect(fileDialog.data(), &QDialog::finished, this, finished);
+
+	fileDialog->open();
 }
 
 /* ========================================================================= */
@@ -578,21 +586,32 @@ void ColorSourceToolbar::on_choose_clicked()
 	options |= QColorDialog::DontUseNativeDialog;
 #endif
 
-	QColor newColor = QColorDialog::getColor(color, this, desc, options);
-	if (!newColor.isValid()) {
-		return;
-	}
+	colorDialog.reset(new QColorDialog(color, this));
+	colorDialog->setOptions(options);
+	colorDialog->setWindowTitle(QT_UTF8(desc));
 
-	color = newColor;
-	UpdateColor();
+	auto finished = [this, source]() {
+		QColor newColor = colorDialog->selectedColor();
+		colorDialog.reset();
 
-	SaveOldProperties(source);
+		if (!newColor.isValid())
+			return;
 
-	OBSDataAutoRelease settings = obs_data_create();
-	obs_data_set_int(settings, "color", color_to_int(color));
-	obs_source_update(source, settings);
+		color = newColor;
+		UpdateColor();
 
-	SetUndoProperties(source);
+		SaveOldProperties(source);
+
+		OBSDataAutoRelease settings = obs_data_create();
+		obs_data_set_int(settings, "color", color_to_int(color));
+		obs_source_update(source, settings);
+
+		SetUndoProperties(source);
+	};
+
+	connect(colorDialog.data(), &QDialog::finished, this, finished);
+
+	colorDialog->open();
 }
 
 /* ========================================================================= */
@@ -643,39 +662,51 @@ void TextSourceToolbar::on_selectFont_clicked()
 	}
 
 	QFontDialog::FontDialogOptions options;
-	uint32_t flags;
-	bool success;
 
 #ifndef _WIN32
 	options = QFontDialog::DontUseNativeDialog;
 #endif
 
-	font = QFontDialog::getFont(&success, font, this, "Pick a Font",
-				    options);
-	if (!success) {
-		return;
-	}
+	fontDialog.reset(new QFontDialog(font, this));
+	fontDialog->setOptions(options);
+	fontDialog->setWindowTitle("Pick a Font");
 
-	OBSDataAutoRelease font_obj = obs_data_create();
+	auto accepted = [this, source]() {
+		font = fontDialog->selectedFont();
+		fontDialog.reset();
 
-	obs_data_set_string(font_obj, "face", QT_TO_UTF8(font.family()));
-	obs_data_set_string(font_obj, "style", QT_TO_UTF8(font.styleName()));
-	obs_data_set_int(font_obj, "size", font.pointSize());
-	flags = font.bold() ? OBS_FONT_BOLD : 0;
-	flags |= font.italic() ? OBS_FONT_ITALIC : 0;
-	flags |= font.underline() ? OBS_FONT_UNDERLINE : 0;
-	flags |= font.strikeOut() ? OBS_FONT_STRIKEOUT : 0;
-	obs_data_set_int(font_obj, "flags", flags);
+		uint32_t flags;
 
-	SaveOldProperties(source);
+		OBSDataAutoRelease font_obj = obs_data_create();
 
-	OBSDataAutoRelease settings = obs_data_create();
+		obs_data_set_string(font_obj, "face",
+				    QT_TO_UTF8(font.family()));
+		obs_data_set_string(font_obj, "style",
+				    QT_TO_UTF8(font.styleName()));
+		obs_data_set_int(font_obj, "size", font.pointSize());
+		flags = font.bold() ? OBS_FONT_BOLD : 0;
+		flags |= font.italic() ? OBS_FONT_ITALIC : 0;
+		flags |= font.underline() ? OBS_FONT_UNDERLINE : 0;
+		flags |= font.strikeOut() ? OBS_FONT_STRIKEOUT : 0;
+		obs_data_set_int(font_obj, "flags", flags);
 
-	obs_data_set_obj(settings, "font", font_obj);
+		SaveOldProperties(source);
 
-	obs_source_update(source, settings);
+		OBSDataAutoRelease settings = obs_data_create();
 
-	SetUndoProperties(source);
+		obs_data_set_obj(settings, "font", font_obj);
+
+		obs_source_update(source, settings);
+
+		SetUndoProperties(source);
+	};
+
+	auto rejected = [this]() { fontDialog.reset(); };
+
+	connect(fontDialog.data(), &QDialog::accepted, this, accepted);
+	connect(fontDialog.data(), &QDialog::rejected, this, rejected);
+
+	fontDialog->open();
 }
 
 void TextSourceToolbar::on_selectColor_clicked()
@@ -701,25 +732,39 @@ void TextSourceToolbar::on_selectColor_clicked()
 	options |= QColorDialog::DontUseNativeDialog;
 #endif
 
-	QColor newColor = QColorDialog::getColor(color, this, desc, options);
-	if (!newColor.isValid()) {
-		return;
-	}
+	colorDialog.reset(new QColorDialog(color, this));
+	colorDialog->setOptions(options);
+	colorDialog->setWindowTitle(QT_UTF8(desc));
 
-	color = newColor;
+	auto finished = [this, source, freetype]() {
+		QColor newColor = colorDialog->selectedColor();
+		colorDialog.reset();
 
-	SaveOldProperties(source);
+		if (!newColor.isValid())
+			return;
 
-	OBSDataAutoRelease settings = obs_data_create();
-	if (freetype) {
-		obs_data_set_int(settings, "color1", color_to_int(color));
-		obs_data_set_int(settings, "color2", color_to_int(color));
-	} else {
-		obs_data_set_int(settings, "color", color_to_int(color));
-	}
-	obs_source_update(source, settings);
+		color = newColor;
 
-	SetUndoProperties(source);
+		SaveOldProperties(source);
+
+		OBSDataAutoRelease settings = obs_data_create();
+		if (freetype) {
+			obs_data_set_int(settings, "color1",
+					 color_to_int(color));
+			obs_data_set_int(settings, "color2",
+					 color_to_int(color));
+		} else {
+			obs_data_set_int(settings, "color",
+					 color_to_int(color));
+		}
+		obs_source_update(source, settings);
+
+		SetUndoProperties(source);
+	};
+
+	connect(colorDialog.data(), &QDialog::finished, this, finished);
+
+	colorDialog->open();
 }
 
 void TextSourceToolbar::on_text_textChanged()
