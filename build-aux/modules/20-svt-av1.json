@@ -1,25 +1,25 @@
 {
-  "name": "svt-av1",
-  "buildsystem": "cmake-ninja",
-  "builddir": true,
-  "config-opts": [
-    "-DCMAKE_BUILD_TYPE=Release",
-    "-DBUILD_SHARED_LIBS=ON",
-    "-DBUILD_APPS=OFF",
-    "-DBUILD_DEC=ON",
-    "-DBUILD_ENC=ON",
-    "-DBUILD_TESTING=OFF"
-  ],
-  "cleanup": [
-    "/include",
-    "/lib/pkgconfig"
-  ],
-  "sources": [
-    {
-      "type": "git",
-      "url": "https://gitlab.com/AOMediaCodec/SVT-AV1.git",
-      "tag": "v1.4.1",
-      "commit": "018276d714ce65d9b586f6205ee016cbd8d5425d"
-    }
-  ]
+    "name": "svt-av1",
+    "buildsystem": "cmake-ninja",
+    "builddir": true,
+    "config-opts": [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DBUILD_APPS=OFF",
+        "-DBUILD_DEC=ON",
+        "-DBUILD_ENC=ON",
+        "-DBUILD_TESTING=OFF"
+    ],
+    "cleanup": [
+        "/include",
+        "/lib/pkgconfig"
+    ],
+    "sources": [
+        {
+            "type": "git",
+            "url": "https://gitlab.com/AOMediaCodec/SVT-AV1.git",
+            "tag": "v1.4.1",
+            "commit": "018276d714ce65d9b586f6205ee016cbd8d5425d"
+        }
+    ]
 }
