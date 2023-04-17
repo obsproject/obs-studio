@@ -361,10 +361,9 @@ void flv_packet_ex(struct encoder_packet *packet, enum video_id_t codec_id,
 }
 
 void flv_packet_start(struct encoder_packet *packet, enum video_id_t codec,
-		      int32_t dts_offset, uint8_t **output, size_t *size)
+		      uint8_t **output, size_t *size)
 {
-	flv_packet_ex(packet, codec, dts_offset, output, size,
-		      PACKETTYPE_SEQ_START);
+	flv_packet_ex(packet, codec, 0, output, size, PACKETTYPE_SEQ_START);
 }
 
 void flv_packet_frames(struct encoder_packet *packet, enum video_id_t codec,
@@ -381,10 +380,9 @@ void flv_packet_frames(struct encoder_packet *packet, enum video_id_t codec,
 }
 
 void flv_packet_end(struct encoder_packet *packet, enum video_id_t codec,
-		    int32_t dts_offset, uint8_t **output, size_t *size)
+		    uint8_t **output, size_t *size)
 {
-	flv_packet_ex(packet, codec, dts_offset, output, size,
-		      PACKETTYPE_SEQ_END);
+	flv_packet_ex(packet, codec, 0, output, size, PACKETTYPE_SEQ_END);
 }
 
 void flv_packet_metadata(enum video_id_t codec_id, uint8_t **output,
