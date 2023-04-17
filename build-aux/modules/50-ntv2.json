@@ -1,0 +1,22 @@
+{
+  "name": "ntv2",
+  "buildsystem": "cmake-ninja",
+  "builddir": true,
+  "config-opts": [
+    "-DCMAKE_BUILD_TYPE=Release",
+    "-DAJA_BUILD_OPENSOURCE=ON",
+    "-DAJA_BUILD_APPS=OFF",
+    "-DAJA_INSTALL_HEADERS=ON"
+  ],
+  "cleanup": [
+    "/include"
+  ],
+  "sources": [
+    {
+      "type": "git",
+      "url": "https://github.com/aja-video/ntv2.git",
+      "tag": "v16.2-bugfix5",
+      "commit": "0acbac70a0b5e6509cca78cfbf69974c73c10db9"
+    }
+  ]
+}

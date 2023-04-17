@@ -9,6 +9,7 @@
 
 #cmake
 /build*/
+!/build-aux/
 /release*/
 /debug*/
 .vs/
