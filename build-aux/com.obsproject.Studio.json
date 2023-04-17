@@ -1,5 +1,5 @@
 {
-    "app-id": "com.obsproject.Studio",
+    "id": "com.obsproject.Studio",
     "runtime": "org.kde.Platform",
     "runtime-version": "6.4",
     "sdk": "org.kde.Sdk",
