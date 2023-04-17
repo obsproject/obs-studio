@@ -65,7 +65,7 @@ jobs:
         id: setup
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CACHE_KEY: flatpak-builder-${{ hashFiles('CI/flatpak/com.obsproject.Studio.json') }}
+          CACHE_KEY: flatpak-builder-${{ hashFiles('build-aux/**/*.json') }}
         run: |
           dnf install -y -q gh
           gh extension install actions/gh-actions-cache
@@ -83,7 +83,7 @@ jobs:
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6.1
         with:
           bundle: obs-studio-${{ steps.setup.outputs.git_hash }}.flatpak
-          manifest-path: CI/flatpak/com.obsproject.Studio.json
+          manifest-path: build-aux/com.obsproject.Studio.json
           cache: ${{ fromJSON(steps.setup.outputs.cache_hit) }}
           cache-key: ${{ steps.setup.outputs.cache_key }}
           mirror-screenshots-url: https://dl.flathub.org/repo/screenshots

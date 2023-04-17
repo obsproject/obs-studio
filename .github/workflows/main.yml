@@ -374,7 +374,7 @@ jobs:
         id: setup
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CACHE_KEY: flatpak-builder-${{ hashFiles('CI/flatpak/com.obsproject.Studio.json') }}
+          CACHE_KEY: flatpak-builder-${{ hashFiles('build-aux/**/*.json') }}
         run: |
           dnf install -y -q gh
           gh extension install actions/gh-actions-cache
@@ -393,7 +393,7 @@ jobs:
         with:
           build-bundle: ${{ fromJSON(needs.config.outputs.create_artifacts) }}
           bundle: obs-studio-flatpak-${{ steps.setup.outputs.git_hash }}.flatpak
-          manifest-path: CI/flatpak/com.obsproject.Studio.json
+          manifest-path: build-aux/com.obsproject.Studio.json
           cache: ${{ fromJSON(steps.setup.outputs.cache_hit) || (github.event_name == 'push' && github.ref == 'refs/heads/master') }}
           restore-cache: ${{ fromJSON(steps.setup.outputs.cache_hit) }}
           cache-key: ${{ steps.setup.outputs.cache_key }}
