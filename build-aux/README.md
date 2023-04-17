@@ -1,6 +1,8 @@
 # `build-aux` folder
 
-This folder contains only the Flatpak manifest used to build OBS Studio.
+This folder contains:
+- The Flatpak manifest used to build OBS Studio
+- The script `format-manifest.py` which format manifest JSON files
 
 ## OBS Studio Flatpak Manifest
 

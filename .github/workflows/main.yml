@@ -59,6 +59,11 @@ jobs:
         run: |
           ./CI/check-cmake.sh
 
+      - name: 'Run format-manifest.py'
+        run: |
+          python3 ./build-aux/format-manifest.py
+          ./CI/check-changes.sh
+
   config:
     name: '01 - Configure Build Jobs'
     runs-on: [ubuntu-22.04]

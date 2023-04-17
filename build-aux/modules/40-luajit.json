@@ -1,24 +1,24 @@
 {
-  "name": "luajit",
-  "no-autogen": true,
-  "cleanup": [
-    "/bin",
-    "/include",
-    "/lib/pkgconfig",
-    "*.a"
-  ],
-  "sources": [
-    {
-      "type": "git",
-      "url": "https://luajit.org/git/luajit-2.0.git",
-      "commit": "505e2c03de35e2718eef0d2d3660712e06dadf1f",
-      "disable-shallow-clone": true
-    },
-    {
-      "type": "shell",
-      "commands": [
-        "sed -i 's|/usr/local|/app|' ./Makefile"
-      ]
-    }
-  ]
+    "name": "luajit",
+    "no-autogen": true,
+    "cleanup": [
+        "/bin",
+        "/include",
+        "/lib/pkgconfig",
+        "*.a"
+    ],
+    "sources": [
+        {
+            "type": "git",
+            "url": "https://luajit.org/git/luajit-2.0.git",
+            "commit": "505e2c03de35e2718eef0d2d3660712e06dadf1f",
+            "disable-shallow-clone": true
+        },
+        {
+            "type": "shell",
+            "commands": [
+                "sed -i 's|/usr/local|/app|' ./Makefile"
+            ]
+        }
+    ]
 }
