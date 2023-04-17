@@ -2839,39 +2839,6 @@ static inline bool arg_is(const char *arg, const char *long_form,
 	       (short_form && strcmp(arg, short_form) == 0);
 }
 
-#if !defined(_WIN32) && !defined(__APPLE__)
-#define IS_UNIX 1
-#endif
-
-/* if using XDG and was previously using an older build of OBS, move config
- * files to XDG directory */
-#if defined(USE_XDG) && defined(IS_UNIX)
-static void move_to_xdg(void)
-{
-	char old_path[512];
-	char new_path[512];
-	char *home = getenv("HOME");
-	if (!home)
-		return;
-
-	if (snprintf(old_path, sizeof(old_path), "%s/.obs-studio", home) <= 0)
-		return;
-
-	/* make base xdg path if it doesn't already exist */
-	if (GetConfigPath(new_path, sizeof(new_path), "") <= 0)
-		return;
-	if (os_mkdirs(new_path) == MKDIR_ERROR)
-		return;
-
-	if (GetConfigPath(new_path, sizeof(new_path), "obs-studio") <= 0)
-		return;
-
-	if (os_file_exists(old_path) && !os_file_exists(new_path)) {
-		rename(old_path, new_path);
-	}
-}
-#endif
-
 static bool update_ffmpeg_output(ConfigFile &config)
 {
 	if (config_has_user_value(config, "AdvOut", "FFOutputToFile"))
@@ -3313,10 +3280,6 @@ int main(int argc, char *argv[])
 #endif
 
 	base_get_log_handler(&def_log_handler, nullptr);
-
-#if defined(USE_XDG) && defined(IS_UNIX)
-	move_to_xdg();
-#endif
 
 	obs_set_cmdline_args(argc, argv);
 
