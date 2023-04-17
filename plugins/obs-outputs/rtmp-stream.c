@@ -490,11 +490,9 @@ static int send_packet_ex(struct rtmp_stream *stream,
 		return -1;
 
 	if (is_header) {
-		flv_packet_start(packet, stream->video_codec,
-				 stream->start_dts_offset, &data, &size);
+		flv_packet_start(packet, stream->video_codec, &data, &size);
 	} else if (is_footer) {
-		flv_packet_end(packet, stream->video_codec,
-			       stream->start_dts_offset, &data, &size);
+		flv_packet_end(packet, stream->video_codec, &data, &size);
 	} else {
 		flv_packet_frames(packet, stream->video_codec,
 				  stream->start_dts_offset, &data, &size);
