@@ -409,11 +409,11 @@ obs_source_create_internal(const char *id, const char *name, const char *uuid,
 	source->flags = source->default_flags;
 	source->enabled = true;
 
+	obs_source_init_finalize(source);
 	if (!private) {
 		obs_source_dosignal(source, "source_create", NULL);
 	}
 
-	obs_source_init_finalize(source);
 	return source;
 
 fail:
