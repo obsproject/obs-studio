@@ -7392,14 +7392,23 @@ void OBSBasic::AutoRemux(QString input, bool no_show)
 
 	const obs_encoder_t *videoEncoder =
 		obs_output_get_video_encoder(outputHandler->fileOutput);
-	const char *codecName = obs_encoder_get_codec(videoEncoder);
+	const obs_encoder_t *audioEncoder =
+		obs_output_get_audio_encoder(outputHandler->fileOutput, 0);
+	const char *vCodecName = obs_encoder_get_codec(videoEncoder);
+	const char *aCodecName = obs_encoder_get_codec(audioEncoder);
 	const char *format = config_get_string(
 		config, isSimpleMode ? "SimpleOutput" : "AdvOut", "RecFormat2");
+
+	/* AV1+PCM cannot be remuxed into any supported format (until FFmpeg 6.1) */
+	if (strcmp(vCodecName, "av1") == 0 &&
+	    strncmp(aCodecName, "pcm", 3) == 0)
+		return;
 
 	/* Retain original container for fMP4/fMOV */
 	if (strncmp(format, "fragmented", 10) == 0) {
 		output += "remuxed." + suffix;
-	} else if (strcmp(codecName, "prores") == 0) {
+	} else if (strcmp(vCodecName, "prores") == 0 ||
+		   strncmp(aCodecName, "pcm", 3) == 0) {
 		output += "mov";
 	} else {
 		output += "mp4";
