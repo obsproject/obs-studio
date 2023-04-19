@@ -85,6 +85,7 @@ static bool load_lua_script(struct obs_lua_script *data)
 	struct dstr str = {0};
 	bool success = false;
 	int ret;
+	char *file_data;
 
 	lua_State *script = luaL_newstate();
 	if (!script) {
@@ -121,11 +122,20 @@ static bool load_lua_script(struct obs_lua_script *data)
 	add_lua_frontend_funcs(script);
 #endif
 
-	if (luaL_loadfile(script, data->base.path.array) != 0) {
-		script_warn(&data->base, "Error loading file: %s",
+	file_data = os_quick_read_utf8_file(data->base.path.array);
+	if (!file_data) {
+		script_warn(&data->base, "Error opening file: %s",
 			    lua_tostring(script, -1));
 		goto fail;
 	}
+
+	if (luaL_loadbuffer(script, file_data, strlen(file_data), NULL) != 0) {
+		script_warn(&data->base, "Error loading file: %s",
+			    lua_tostring(script, -1));
+		bfree(file_data);
+		goto fail;
+	}
+	bfree(file_data);
 
 	if (lua_pcall(script, 0, LUA_MULTRET, 0) != 0) {
 		script_warn(&data->base, "Error running file: %s",
