@@ -408,6 +408,26 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_,
 
 	installEventFilter(CreateShortcutFilter());
 
+	connect(ui->createNew, &QRadioButton::pressed, [&]() {
+		QPushButton *button =
+			ui->buttonBox->button(QDialogButtonBox::Ok);
+		if (!button->isEnabled())
+			button->setEnabled(true);
+	});
+	connect(ui->selectExisting, &QRadioButton::pressed, [&]() {
+		QPushButton *button =
+			ui->buttonBox->button(QDialogButtonBox::Ok);
+		bool enabled = ui->sourceList->selectedItems().size() != 0;
+		if (button->isEnabled() != enabled)
+			button->setEnabled(enabled);
+	});
+	connect(ui->sourceList, &QListWidget::itemSelectionChanged, [&]() {
+		QPushButton *button =
+			ui->buttonBox->button(QDialogButtonBox::Ok);
+		if (!button->isEnabled())
+			button->setEnabled(true);
+	});
+
 	if (strcmp(id_, "scene") == 0) {
 		OBSBasic *main =
 			reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
@@ -417,6 +437,7 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_,
 		ui->createNew->setChecked(false);
 		ui->createNew->setEnabled(false);
 		ui->sourceName->setEnabled(false);
+		ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
 
 		int count = main->ui->scenes->count();
 		for (int i = 0; i < count; i++) {
