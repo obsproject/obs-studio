@@ -4,7 +4,7 @@
     "properties": {
         "format_version": {
             "type": "integer",
-            "description": "Identifier for parsing this file.\n- v4 introduced 'ffmpeg_mpegts_muxer' to services/recommended/output\n - v3 introduced 'ffmpeg_hls_muxer' to services/recommended/output\n - v2 introduced 'alt_names' to services"
+            "description": "Identifier for parsing this file.\n- v5 introduced the notion of protocol and Enhanced RTMP \n- v4 introduced 'ffmpeg_mpegts_muxer' to services/recommended/output\n - v3 introduced 'ffmpeg_hls_muxer' to services/recommended/output\n - v2 introduced 'alt_names' to services"
         },
         "services": {
             "type": "array",
