@@ -1251,6 +1251,7 @@ static void vk_shtex_capture(struct vk_data *data,
 
 	if (res == VK_SUCCESS) {
 		frame_data->cmd_buffer_busy = true;
+		shtex_update_timestamp();
 		signal_frame_ready();
 	}
 }

@@ -585,10 +585,13 @@ static void d3d9_capture(IDirect3DDevice9 *device,
 			return;
 		}
 
-		if (data.using_shtex)
+		if (data.using_shtex) {
 			d3d9_shtex_capture(backbuffer);
-		else
+			shtex_update_timestamp();
+		} else {
 			d3d9_shmem_capture(backbuffer);
+			shmem_update_timestamp();
+		}
 
 		signal_frame_ready();
 	}

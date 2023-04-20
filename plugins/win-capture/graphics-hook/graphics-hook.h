@@ -110,6 +110,7 @@ extern char system_path[MAX_PATH];
 extern char process_name[MAX_PATH];
 extern wchar_t keepalive_name[64];
 extern HWND dummy_window;
+extern void *shmem_info;
 extern volatile bool active;
 
 static inline const char *get_process_name(void)
@@ -163,6 +164,27 @@ static inline bool capture_alive(void)
 static inline bool capture_active(void)
 {
 	return active;
+}
+
+static inline void update_timestamp(uint64_t *ts)
+{
+	InterlockedExchange64((LONG64 *)ts, os_gettime_ns());
+}
+
+static inline void shtex_update_timestamp()
+{
+	if (!shmem_info)
+		return;
+
+	update_timestamp(&((struct shtex_data *)shmem_info)->timestamp);
+}
+
+static inline void shmem_update_timestamp()
+{
+	if (!shmem_info)
+		return;
+
+	update_timestamp(&((struct shmem_data *)shmem_info)->timestamp);
 }
 
 static inline void signal_frame_ready()

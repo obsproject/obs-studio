@@ -245,6 +245,7 @@ static void d3d8_capture(IDirect3DDevice8 *device,
 	}
 	if (capture_ready()) {
 		d3d8_shmem_capture(device, backbuffer);
+		shmem_update_timestamp();
 		signal_frame_ready();
 	}
 }

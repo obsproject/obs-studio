@@ -226,6 +226,7 @@ static HRESULT STDMETHODCALLTYPE hook_present(IDXGISwapChain *swap,
 
 		if (backbuffer) {
 			data.capture(swap, backbuffer);
+			shtex_update_timestamp();
 			signal_frame_ready();
 			backbuffer->Release();
 		}
@@ -251,6 +252,7 @@ static HRESULT STDMETHODCALLTYPE hook_present(IDXGISwapChain *swap,
 
 			if (backbuffer) {
 				data.capture(swap, backbuffer);
+				shtex_update_timestamp();
 				signal_frame_ready();
 				backbuffer->Release();
 			}
@@ -293,6 +295,7 @@ hook_present1(IDXGISwapChain1 *swap, UINT sync_interval, UINT flags,
 
 		if (backbuffer) {
 			data.capture(swap, backbuffer);
+			shtex_update_timestamp();
 			signal_frame_ready();
 			backbuffer->Release();
 		}
@@ -311,6 +314,7 @@ hook_present1(IDXGISwapChain1 *swap, UINT sync_interval, UINT flags,
 
 			if (backbuffer) {
 				data.capture(swap, backbuffer);
+				shtex_update_timestamp();
 				signal_frame_ready();
 				backbuffer->Release();
 			}

@@ -72,10 +72,12 @@ struct shmem_data {
 	volatile int last_tex;
 	uint32_t tex1_offset;
 	uint32_t tex2_offset;
+	uint64_t timestamp;
 };
 
 struct shtex_data {
 	uint32_t tex_handle;
+	uint64_t timestamp;
 };
 
 enum capture_type {
