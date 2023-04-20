@@ -57,6 +57,7 @@
         "modules/40-usrsctp.json",
         "modules/50-jansson.json",
         "modules/50-libdatachannel.json",
+        "modules/50-libqrcodegencpp.json",
         "modules/50-ntv2.json",
         "modules/50-pipewire.json",
         "modules/50-swig.json",
