@@ -628,6 +628,8 @@ static void gl_shtex_capture(void)
 
 	jimglDXUnlockObjectsNV(data.gl_device, 1, &data.gl_dxobj);
 
+	signal_frame_ready();
+
 	IDXGISwapChain_Present(data.dxgi_swap, 0, 0);
 }
 
@@ -648,6 +650,8 @@ static void gl_shmem_capture_copy(int i)
 		if (buffer) {
 			data.texture_mapped[i] = true;
 			shmem_copy_data(i, buffer);
+
+			signal_frame_ready();
 		}
 	}
 }

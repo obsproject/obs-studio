@@ -29,6 +29,7 @@ struct thread_data {
 
 ipc_pipe_client_t pipe = {0};
 HANDLE signal_restart = NULL;
+HANDLE signal_frame = NULL;
 HANDLE signal_stop = NULL;
 HANDLE signal_ready = NULL;
 HANDLE signal_exit = NULL;
@@ -98,6 +99,11 @@ static inline bool init_signals(void)
 
 	signal_restart = init_event(EVENT_CAPTURE_RESTART, pid);
 	if (!signal_restart) {
+		return false;
+	}
+
+	signal_frame = init_event(EVENT_NEW_FRAME, pid);
+	if (!signal_frame) {
 		return false;
 	}
 
@@ -276,6 +282,7 @@ static void free_hook(void)
 	close_handle(&signal_ready);
 	close_handle(&signal_stop);
 	close_handle(&signal_restart);
+	close_handle(&signal_frame);
 	close_handle(&dup_hook_mutex);
 	ipc_pipe_client_free(&pipe);
 }

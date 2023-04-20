@@ -12,8 +12,8 @@
  * THIS IS YOUR ONLY WARNING. */
 
 #define HOOK_VER_MAJOR 1
-#define HOOK_VER_MINOR 8
-#define HOOK_VER_PATCH 1
+#define HOOK_VER_MINOR 9
+#define HOOK_VER_PATCH 0
 
 #ifndef STRINGIFY
 #define STRINGIFY(s) #s

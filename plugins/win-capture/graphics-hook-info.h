@@ -11,6 +11,8 @@
 #define EVENT_CAPTURE_RESTART L"CaptureHook_Restart"
 #define EVENT_CAPTURE_STOP L"CaptureHook_Stop"
 
+#define EVENT_NEW_FRAME L"CaptureHook_Frame"
+
 #define EVENT_HOOK_READY L"CaptureHook_HookReady"
 #define EVENT_HOOK_EXIT L"CaptureHook_Exit"
 

@@ -589,6 +589,8 @@ static void d3d9_capture(IDirect3DDevice9 *device,
 			d3d9_shtex_capture(backbuffer);
 		else
 			d3d9_shmem_capture(backbuffer);
+
+		signal_frame_ready();
 	}
 }
 
