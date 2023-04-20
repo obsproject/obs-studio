@@ -796,8 +796,11 @@ char *os_generate_formatted_filename(const char *extension, bool space,
 	if (!space)
 		dstr_replace(&sf, " ", "_");
 
-	dstr_cat_ch(&sf, '.');
-	dstr_cat(&sf, extension);
+	if (extension && *extension) {
+		dstr_cat_ch(&sf, '.');
+		dstr_cat(&sf, extension);
+	}
+
 	dstr_free(&c);
 
 	if (sf.len > 255)
