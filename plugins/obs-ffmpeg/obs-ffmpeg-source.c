@@ -496,6 +496,10 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 		s->media = NULL;
 	}
 
+	if (s->is_hw_decoding) {
+		s->is_hw_decoding = false;
+	}
+
 	bool active = obs_source_active(s->source);
 	if (!s->close_when_inactive || active)
 		ffmpeg_source_open(s);
