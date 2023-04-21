@@ -222,6 +222,11 @@ Source Definition Structure (obs_source_info)
             obs_properties_t *(*obs_source_info.get_properties2)(void *data, void *type_data)
 
    Gets the property information of this source.
+   
+   :param  data:  The implementation data associated with this source.
+                  This value can be null (e.g., when
+                  :c:func:`obs_get_source_properties()` is called on the
+                  source type), make sure to handle this gracefully.
 
    (Optional)
 
