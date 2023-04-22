@@ -345,7 +345,7 @@ Functions
 
 .. function:: char **obs_frontend_get_scene_collections(void)
 
-   :return: The list of profile names, ending with NULL.  The list is
+   :return: The list of scene collection names, ending with NULL.  The list is
             stored within one contiguous segment of memory, so freeing
             the returned pointer with :c:func:`bfree()` will free the
             entire list.
