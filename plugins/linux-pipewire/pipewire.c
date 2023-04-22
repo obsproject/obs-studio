@@ -578,13 +578,14 @@ static void on_process_cb(void *user_data)
 		blog(LOG_ERROR, "[pipewire] buffer is corrupt");
 		pw_stream_queue_buffer(obs_pw->stream, b);
 		return;
-	} else if (!header) {
-		has_buffer = buffer->datas[0].chunk->size != 0;
 	}
 
 	obs_enter_graphics();
 
+	// Workaround for kwin behaviour pre 5.27.5
 	// Workaround for mutter behaviour pre GNOME 43
+	// Only check this if !SPA_META_Header, once supported platforms update.
+	has_buffer = buffer->datas[0].chunk->size != 0;
 	if (!has_buffer)
 		goto read_metadata;
 
