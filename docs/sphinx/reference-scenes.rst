@@ -735,20 +735,6 @@ Scene Item Group Functions
 
 ---------------------
 
-.. function:: obs_sceneitem_t *obs_sceneitem_group_from_scene(obs_scene_t *scene)
-
-   :return: The group associated with the scene, or *NULL* if the
-            specified scene is not a group.
-
----------------------
-
-.. function:: obs_sceneitem_t *obs_sceneitem_group_from_source(obs_source_t *source)
-
-   :return: The group associated with the scene's source, or *NULL* if
-            the specified source is not a group.
-
----------------------
-
 .. function:: void obs_sceneitem_group_enum_items(obs_sceneitem_t *group, bool (*callback)(obs_scene_t*, obs_sceneitem_t*, void*), void *param)
 
    Enumerates scene items within a group.
