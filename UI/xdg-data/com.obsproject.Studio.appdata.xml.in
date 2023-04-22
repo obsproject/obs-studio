@@ -3,7 +3,7 @@
   <id>com.obsproject.Studio</id>
   <launchable type="desktop-id">com.obsproject.Studio.desktop</launchable>
   <metadata_license>CC0-1.0</metadata_license>
-  <project_license>GPL-2.0</project_license>
+  <project_license>GPL-2.0-or-later</project_license>
   <name>OBS Studio</name>
   <developer_name>OBS Project</developer_name>
   <summary>Live streaming and video recording software</summary>
