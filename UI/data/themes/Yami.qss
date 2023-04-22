@@ -277,6 +277,10 @@ OBSBasicSettings #PropertiesContainer {
     background-color: palette(dark);
 }
 
+#PropertiesContainer QListWidget {
+    background-color: palette(button);
+}
+
 /* Dock Widget */
 OBSDock > QWidget {
     background: palette(dark);
