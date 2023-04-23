@@ -388,6 +388,8 @@ const std::vector<int> &GetAudioEncoderBitrates(const char *id)
 
 int FindClosestAvailableAudioBitrate(const char *id, int bitrate)
 {
+	PopulateBitrateLists();
+
 	int prev = 0;
 	int next = INVALID_BITRATE;
 	std::string encoder = id;
