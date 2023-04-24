@@ -1,13 +1,4 @@
-cmake_minimum_required(VERSION 3.22...3.25)
-
-find_library(COREAUDIO CoreAudio)
-find_library(AUDIOUNIT AudioUnit)
-find_library(COREFOUNDATION CoreFoundation)
-find_library(IOSURF IOSurface)
-find_library(COCOA Cocoa)
-find_library(COREVIDEO CoreVideo)
-find_library(COREMEDIA CoreMedia)
-find_library(SCREENCAPTUREKIT ScreenCaptureKit)
+cmake_minimum_required(VERSION 3.24...3.25)
 
 add_library(mac-capture MODULE)
 add_library(OBS::capture ALIAS mac-capture)
@@ -26,12 +17,18 @@ target_sources(
           window-utils.h
           window-utils.m)
 
-target_link_libraries(mac-capture PRIVATE OBS::libobs ${COREAUDIO} ${AUDIOUNIT} ${COREFOUNDATION} ${IOSURF} ${COCOA})
-
-if(SCREENCAPTUREKIT)
-  target_link_libraries(mac-capture PRIVATE OBS::libobs ${COREVIDEO} ${COREMEDIA}
-                                            "$<LINK_LIBRARY:WEAK_FRAMEWORK,${SCREENCAPTUREKIT}>")
-endif()
+# cmake-format: off
+target_link_libraries(
+  mac-capture
+  PRIVATE OBS::libobs
+          "$<LINK_LIBRARY:FRAMEWORK,AudioUnit.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,CoreAudio.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,CoreFoundation.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,CoreMedia.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,CoreVideo.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,IOSurface.framework>"
+          "$<LINK_LIBRARY:WEAK_FRAMEWORK,ScreenCaptureKit.framework>")
 
 set_target_properties_obs(
   mac-capture
@@ -39,6 +36,7 @@ set_target_properties_obs(
              PREFIX ""
              XCODE_ATTRIBUTE_CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION YES
              XCODE_ATTRIBUTE_GCC_WARN_SHADOW YES)
+# cmake-format: on
 
 if(CMAKE_VERSION VERSION_LESS_EQUAL 3.25.0)
   set_property(TARGET mac-capture PROPERTY XCODE_LINK_BUILD_PHASE_MODE BUILT_ONLY)

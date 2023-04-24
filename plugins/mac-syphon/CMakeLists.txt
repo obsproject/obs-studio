@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22...3.25)
+cmake_minimum_required(VERSION 3.24...3.25)
 
 option(ENABLE_SYPHON "Enable Syphon sharing support" ON)
 if(NOT ENABLE_SYPHON)
@@ -18,10 +18,15 @@ add_library(OBS::syphon ALIAS mac-syphon)
 target_sources(mac-syphon PRIVATE syphon.m plugin-main.c SyphonOBSClient.h SyphonOBSClient.m)
 
 target_compile_options(mac-syphon PRIVATE -fobjc-arc)
+
+# cmake-format: off
 target_link_libraries(
   mac-syphon
-  PRIVATE OBS::libobs "$<LINK_LIBRARY:FRAMEWORK,AppKit.framework>" "$<LINK_LIBRARY:FRAMEWORK,IOSurface.framework>"
-          "$<LINK_LIBRARY:FRAMEWORK,ScriptingBridge.framework>" "$<LINK_LIBRARY:FRAMEWORK,${SYPHON}>")
+  PRIVATE OBS::libobs
+          "$<LINK_LIBRARY:FRAMEWORK,AppKit.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,IOSurface.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,ScriptingBridge.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,${SYPHON}>")
 
 set_target_properties_obs(
   mac-syphon
@@ -29,3 +34,4 @@ set_target_properties_obs(
              PREFIX ""
              XCODE_ATTRIBUTE_CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION YES
              XCODE_ATTRIBUTE_GCC_WARN_SHADOW YES)
+# cmake-format: on

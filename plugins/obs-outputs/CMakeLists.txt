@@ -56,12 +56,13 @@ if(OS_WINDOWS)
 
   target_sources(obs-outputs PRIVATE obs-outputs.rc)
 elseif(OS_MACOS)
-  find_library(FOUNDATION_FRAMEWORK Foundation)
-  find_library(SECURITY_FRAMEWORK Security)
-  mark_as_advanced(FOUNDATION_FRAMEWORK SECURITY_FRAMEWORK)
-
   target_compile_options(obs-outputs PRIVATE -Wno-comma)
-  target_link_libraries(obs-outputs PRIVATE ${FOUNDATION_FRAMEWORK} ${SECURITY_FRAMEWORK})
+  # cmake-format: off
+  target_link_libraries(
+    obs-outputs
+    PRIVATE "$<LINK_LIBRARY:FRAMEWORK,Foundation.framework>"
+            "$<LINK_LIBRARY:FRAMEWORK,Security.framework>")
+  # cmake-format: on
 endif()
 
 include(cmake/ftl.cmake)
