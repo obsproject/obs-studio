@@ -1,11 +1,4 @@
-cmake_minimum_required(VERSION 3.22...3.25)
-
-find_library(COCOA Cocoa)
-find_library(COREMEDIA CoreMedia)
-find_library(COREMEDIAIO CoreMediaIO)
-find_library(COREVIDEO CoreVideo)
-find_library(IOSURFACE IOSurface)
-mark_as_advanced(COCOA COREMEDIA COREMEDIAIO COREVIDEO IOSURFACE)
+cmake_minimum_required(VERSION 3.24...3.25)
 
 add_library(obs-dal-plugin MODULE)
 add_library(OBS::dal-plugin ALIAS obs-dal-plugin)
@@ -39,8 +32,16 @@ set(_placeholder_location "${CMAKE_CURRENT_SOURCE_DIR}/../common/data/placeholde
 set_property(SOURCE "${_placeholder_location}" PROPERTY MACOSX_PACKAGE_LOCATION "Resources")
 source_group("Resources" FILES "${_placeholder_location}")
 
-target_link_libraries(obs-dal-plugin PRIVATE OBS::mach-protocol ${COCOA} ${COREMEDIA} ${COREMEDIAIO} ${COREVIDEO}
-                                             ${IOSURFACE})
+# cmake-format: off
+target_link_libraries(
+  obs-dal-plugin
+  PRIVATE OBS::mach-protocol
+          "$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,CoreMedia.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,CoreMediaIO.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,CoreVideo.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,IOSurface.framework>")
+# cmake-format: on
 
 set_target_properties_obs(
   obs-dal-plugin
