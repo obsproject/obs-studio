@@ -2,14 +2,17 @@
 
 include_guard(GLOBAL)
 
+set(CMAKE_XCODE_GENERATE_SCHEME TRUE)
+
 # Use a compiler wrapper to enable ccache in Xcode projects
 if(ENABLE_CCACHE AND CCACHE_PROGRAM)
-  configure_file("${CMAKE_SOURCE_DIR}/cmake/macos/resources/ccache-launcher-c.in" ccache-launcher-c)
-  configure_file("${CMAKE_SOURCE_DIR}/cmake/macos/resources/ccache-launcher-cxx.in" ccache-launcher-cxx)
+  configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/resources/ccache-launcher-c.in" ccache-launcher-c)
+  configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/resources/ccache-launcher-cxx.in" ccache-launcher-cxx)
 
-  execute_process(COMMAND chmod a+rx "${CMAKE_BINARY_DIR}/ccache-launcher-c" "${CMAKE_BINARY_DIR}/ccache-launcher-cxx")
-  set(CMAKE_XCODE_ATTRIBUTE_CC "${CMAKE_BINARY_DIR}/ccache-launcher-c")
-  set(CMAKE_XCODE_ATTRIBUTE_CXX "${CMAKE_BINARY_DIR}/ccache-launcher-cxx")
+  execute_process(COMMAND chmod a+rx "${CMAKE_CURRENT_BINARY_DIR}/ccache-launcher-c"
+                          "${CMAKE_CURRENT_BINARY_DIR}/ccache-launcher-cxx")
+  set(CMAKE_XCODE_ATTRIBUTE_CC "${CMAKE_CURRENT_BINARY_DIR}/ccache-launcher-c")
+  set(CMAKE_XCODE_ATTRIBUTE_CXX "${CMAKE_CURRENT_BINARY_DIR}/ccache-launcher-cxx")
   set(CMAKE_XCODE_ATTRIBUTE_LD "${CMAKE_C_COMPILER}")
   set(CMAKE_XCODE_ATTRIBUTE_LDPLUSPLUS "${CMAKE_CXX_COMPILER}")
 endif()
@@ -71,13 +74,17 @@ set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_INJECT_BASE_ENTITLEMENTS[variant=MinSizeRel]
 # Use Swift version 5.0 by default
 set(CMAKE_XCODE_ATTRIBUTE_SWIFT_VERSION 5.0)
 
-# Use DWARF with separate dSYM files when in Release or MinSizeRel configuration
+# Use DWARF with separate dSYM files when in Release or MinSizeRel configuration.
+#
+# * Currently overruled by CMake's Xcode generator, requires adding '-g' flag to raw compiler command line for desired
+#   output configuration. Report to KitWare.
+#
 set(CMAKE_XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT[variant=Debug] dwarf)
 set(CMAKE_XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT[variant=RelWithDebInfo] dwarf)
 set(CMAKE_XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT[variant=Release] dwarf-with-dsym)
 set(CMAKE_XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT[variant=MinSizeRel] dwarf-with-dsym)
 
-# Make all symbols hidden by default
+# Make all symbols hidden by default (currently overriden by CMake's compiler flags)
 set(CMAKE_XCODE_ATTRIBUTE_GCC_SYMBOLS_PRIVATE_EXTERN YES)
 set(CMAKE_XCODE_ATTRIBUTE_GCC_INLINES_ARE_PRIVATE_EXTERN YES)
 
@@ -99,10 +106,20 @@ set(CMAKE_XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC NO)
 set(CMAKE_XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_WEAK YES)
 # Disable strict aliasing
 set(CMAKE_XCODE_ATTRIBUTE_GCC_STRICT_ALIASING NO)
-# Set C language default to C17
-set(CMAKE_XCODE_ATTRIBUTE_GCC_C_LANGUAGE_STANDARD c17)
+
+# Set C++ language default to c17
+#
+# * CMake explicitly sets the version via compiler flag when transitive dependencies require specific compiler feature
+#   set, resulting in the flag being added twice. Report to KitWare as a feature request for Xcode generator
+#
+# set(CMAKE_XCODE_ATTRIBUTE_GCC_C_LANGUAGE_STANDARD c17)
+#
 # Set C++ language default to c++17
-set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD c++17)
+#
+# * See above. Report to KitWare as a feature request for Xcode generator
+#
+# set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD c++17)
+
 # Enable support for module imports in ObjC
 set(CMAKE_XCODE_ATTRIBUTE_CLANG_ENABLE_MODULES NO)
 # Enable automatic linking of imported modules in ObjC
@@ -153,7 +170,9 @@ set(CMAKE_XCODE_ATTRIBUTE_GCC_WARN_UNUSED_VARIABLE YES)
 # Add additional warning compiler flags
 set(CMAKE_XCODE_ATTRIBUTE_WARNING_CFLAGS "-Wvla -Wformat-security -Wno-error=shorten-64-to-32")
 
-set(CMAKE_XCODE_ATTRIBUTE_GCC_TREAT_WARNINGS_AS_ERRORS YES)
+if(CMAKE_COMPILE_WARNING_AS_ERROR)
+  set(CMAKE_XCODE_ATTRIBUTE_GCC_TREAT_WARNINGS_AS_ERRORS YES)
+endif()
 
 # Enable color diagnostics
 set(CMAKE_COLOR_DIAGNOSTICS TRUE)

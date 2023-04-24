@@ -9,5 +9,6 @@ export CCACHE_DEPEND=true
 export CCACHE_DIRECT=true
 export CCACHE_FILECLONE=true
 export CCACHE_INODECACHE=true
-export CCACHE_SLOPPINESS="modules,include_file_mtime,include_file_ctime,pch_defines,clang_index_store,system_headers"
+export CCACHE_COMPILERCHECK='content'
+export CCACHE_SLOPPINESS='modules,include_file_mtime,include_file_ctime,clang_index_store,system_headers'
 exec "${CMAKE_CXX_COMPILER_LAUNCHER}" "${CMAKE_CXX_COMPILER}" "$@"
