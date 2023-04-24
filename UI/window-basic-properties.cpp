@@ -63,6 +63,7 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
 	ui->setupUi(this);
+	ui->buttonBox->button(QDialogButtonBox::Ok)->setFocus();
 
 	if (cx > 400 && cy > 400)
 		resize(cx, cy);
