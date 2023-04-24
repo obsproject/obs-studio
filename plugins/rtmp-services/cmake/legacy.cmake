@@ -1,6 +1,6 @@
 project(rtmp-services)
 
-option(ENABLE_SERVICE_UPDATES "Checks for service updates" OFF)
+option(ENABLE_SERVICE_UPDATES "Checks for service updates" ON)
 
 set(RTMP_SERVICES_URL
     "https://obsproject.com/obs2_update/rtmp-services"
