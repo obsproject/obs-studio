@@ -17,8 +17,10 @@ MODULE_EXPORT const char *obs_module_description(void)
 	return "OBS core RTMP services";
 }
 
+#if defined(ENABLE_SERVICE_UPDATES)
 static const char *RTMP_SERVICES_LOG_STR = "[rtmp-services plugin] ";
 static const char *RTMP_SERVICES_URL = (const char *)SERVICES_URL;
+#endif
 
 extern struct obs_service_info rtmp_common_service;
 extern struct obs_service_info rtmp_custom_service;
