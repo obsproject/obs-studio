@@ -41,7 +41,6 @@ target_link_libraries(
           "$<LINK_LIBRARY:FRAMEWORK,CoreMediaIO.framework>"
           "$<LINK_LIBRARY:FRAMEWORK,CoreVideo.framework>"
           "$<LINK_LIBRARY:FRAMEWORK,IOSurface.framework>")
-# cmake-format: on
 
 set_target_properties_obs(
   obs-dal-plugin
@@ -55,7 +54,7 @@ set_target_properties_obs(
 set_property(TARGET obs-dal-plugin PROPERTY OSX_ARCHITECTURES x86_64 arm64)
 
 string(TIMESTAMP CURRENT_YEAR "%Y")
-set_target_properties(
+set_target_xcode_properties(
   obs-dal-plugin
   PROPERTIES CLANG_ENABLE_OBJC_ARC YES
              CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION YES
@@ -66,6 +65,5 @@ set_target_properties(
              MARKETING_VERSION ${OBS_VERSION_CANONICAL}
              GENERATE_INFOPLIST_FILE YES
              INFOPLIST_KEY_CFBundleDisplayName obs-mac-virtualcam
-             INFOPLIST_KEY_NSHumanReadableCopyright
-             "(c) 2020-${CURRENT_YEAR} John Boiles, Patrick Heyer, Sebastian Beckmann")
+             INFOPLIST_KEY_NSHumanReadableCopyright "(c) 2020-${CURRENT_YEAR} John Boiles, Patrick Heyer, Sebastian Beckmann")
 # cmake-format: on
