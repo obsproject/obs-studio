@@ -4,81 +4,28 @@ include_guard(GLOBAL)
 
 include(ccache)
 include(compiler_common)
-include(simd)
 
-# Set C17 / C++17 standards as required and disable extensions
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+add_compile_options("$<$<NOT:$<COMPILE_LANGUAGE:Swift>>:-fopenmp-simd>")
 
-set(CMAKE_C_STANDARD 17)
-set(CMAKE_C_STANDARD_REQUIRED ON)
-set(CMAKE_C_EXTENSIONS OFF)
+# Enable selection between arm64 and x86_64 targets
+if(NOT CMAKE_OSX_ARCHITECTURES)
+  set(CMAKE_OSX_ARCHITECTURES
+      arm64
+      CACHE STRING "Build architectures for macOS" FORCE)
+endif()
+set_property(CACHE CMAKE_OSX_ARCHITECTURES PROPERTY STRINGS arm64 x86_64)
 
-# Set symbols to be hidden by default for C and C++
-set(CMAKE_CXX_VISIBILITY_PRESET hidden)
-set(CMAKE_C_VISIBILITY_PRESET hidden)
-set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
+if(XCODE)
+  # Enable dSYM generator for release builds
+  string(APPEND CMAKE_C_FLAGS_RELEASE " -g")
+  string(APPEND CMAKE_CXX_FLAGS_RELEASE " -g")
+else()
+  option(ENABLE_COMPILER_TRACE "Enable clang time-trace (requires Ninja)" OFF)
+  mark_as_advanced(ENABLE_COMPILER_TRACE)
 
-# Add default C and C++ compiler options if Xcode generator is not used
-if(NOT XCODE)
-  set(_obs_common_options
-      -fno-strict-aliasing
-      -Werror
-      -Wno-trigraphs
-      -Wno-missing-field-initializers
-      -Wno-missing-prototypes
-      -Werror=return-type
-      -Wunreachable-code
-      -Wquoted-include-in-framework-header
-      -Wno-missing-braces
-      -Wparentheses
-      -Wswitch
-      -Wno-unused-function
-      -Wno-unused-label
-      -Wunused-parameter
-      -Wunused-variable
-      -Wunused-value
-      -Wempty-body
-      -Wuninitialized
-      -Wno-unknown-pragmas
-      -Wfour-char-constants
-      -Wconstant-conversion
-      -Wno-conversion
-      -Wint-conversion
-      -Wbool-conversion
-      -Wenum-conversion
-      -Wnon-literal-null-conversion
-      -Wsign-compare
-      -Wshorten-64-to-32
-      -Wpointer-sign
-      -Wnewline-eof
-      -Wno-implicit-fallthrough
-      -Wdeprecated-declarations
-      -Wno-sign-conversion
-      -Winfinite-recursion
-      -Wcomma
-      -Wno-strict-prototypes
-      -Wno-semicolon-before-method-body
-      -Wformat-security
-      -Wvla
-      -Wno-error=shorten-64-to-32)
-
-  set(_obs_c_options ${_obs_common_options} -Wno-shadow -Wno-float-conversion)
-
-  set(_obs_cxx_options
-      ${_obs_common_options}
-      -Wno-non-virtual-dtor
-      -Wno-overloaded-virtual
-      -Wno-exit-time-destructors
-      -Wno-shadow
-      -Winvalid-offsetof
-      -Wmove
-      -Werror=block-capture-autoreleasing
-      -Wrange-loop-analysis)
-
-  set(_obs_objc_options
-      ${_obs_common_options}
+  # clang options for ObjC
+  set(_obs_clang_objc_options
+      ${_obs_clang_common_options}
       -Wno-implicit-atomic-properties
       -Wno-objc-interface-ivars
       -Warc-repeated-use-of-weak
@@ -96,7 +43,16 @@ if(NOT XCODE)
       -Werror=block-capture-autoreleasing
       -Wrange-loop-analysis)
 
-  set(_obs_objcxx_options ${_obs_objc_options} -Wno-non-virtual-dtor)
+  # clang options for ObjC++
+  set(_obs_clang_objcxx_options ${_obs_clang_objc_options} -Wno-non-virtual-dtor)
+
+  # cmake-format: off
+  add_compile_options(
+    "$<$<COMPILE_LANGUAGE:C>:${_obs_clang_c_options}>"
+    "$<$<COMPILE_LANGUAGE:CXX>:${_obs_clang_cxx_options}>"
+    "$<$<COMPILE_LANGUAGE:OBJC>:${_obs_clang_objc_options}>"
+    "$<$<COMPILE_LANGUAGE:OBJCXX>:${_obs_clang_objcxx_options}>")
+  # cmake-format: on
 
   # Enable stripping of dead symbols when not building for Debug configuration
   set(_release_configs RelWithDebInfo Release MinSizeRel)
@@ -104,12 +60,8 @@ if(NOT XCODE)
     add_link_options(LINKER:-dead_strip)
   endif()
 
-  add_compile_options(
-    "$<$<COMPILE_LANGUAGE:C>:${_obs_c_options}>" "$<$<COMPILE_LANGUAGE:CXX>:${_obs_cxx_options}>"
-    "$<$<COMPILE_LANGUAGE:OBJC>:${_obs_objc_options}>" "$<$<COMPILE_LANGUAGE:OBJCXX>:${_obs_objcxx_options}>")
-
-  option(ENABLE_COMPILER_TRACE "Enable clang time-trace (requires Ninja)" OFF)
-  mark_as_advanced(ENABLE_COMPILER_TRACE)
+  # Enable color diagnostics for AppleClang
+  set(CMAKE_COLOR_DIAGNOSTICS ON)
 
   # Add time trace option to compiler, if enabled.
   if(ENABLE_COMPILER_TRACE AND CMAKE_GENERATOR STREQUAL "Ninja")
@@ -119,9 +71,7 @@ if(NOT XCODE)
         OFF
         CACHE BOOL "Enable clang time-trace (requires Ninja)" FORCE)
   endif()
-
-  # Enable color diagnostics for AppleClang
-  set(CMAKE_COLOR_DIAGNOSTICS ON)
 endif()
 
-add_compile_definitions("$<$<AND:$<COMPILE_LANGUAGE:C,CXX,OBJC,OBJCXX>,$<CONFIG:DEBUG>>:DEBUG;_DEBUG>")
+add_compile_definitions(
+  "$<$<NOT:$<COMPILE_LANGUAGE:Swift>>:$<$<CONFIG:DEBUG>:DEBUG>;$<$<CONFIG:DEBUG>:_DEBUG>;SIMDE_ENABLE_OPENMP>")

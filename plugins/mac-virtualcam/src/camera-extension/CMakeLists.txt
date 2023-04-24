@@ -43,7 +43,7 @@ set_target_properties(
              XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS "--timestamp"
              XCODE_ATTRIBUTE_MACOSX_DEPLOYMENT_TARGET 13.0
              XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.obsproject.obs-studio.mac-camera-extension"
-             XCODE_ATTRIBUTE_SWIFT_VERSION 5
+             XCODE_ATTRIBUTE_SWIFT_VERSION 5.0
              XCODE_ATTRIBUTE_SKIP_INSTALL YES)
 
 set_target_properties_obs(mac-camera-extension PROPERTIES FOLDER plugins
