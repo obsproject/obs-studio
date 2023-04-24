@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.22...3.25)
 
-legacy_check()
-
 find_library(AVFOUNDATION AVFoundation)
 find_library(COCOA Cocoa)
 find_library(COREFOUNDATION CoreFoundation)
