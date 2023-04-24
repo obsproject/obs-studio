@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.22...3.25)
 
-legacy_check()
-
 find_library(COREAUDIO CoreAudio)
 find_library(AUDIOUNIT AudioUnit)
 find_library(COREFOUNDATION CoreFoundation)

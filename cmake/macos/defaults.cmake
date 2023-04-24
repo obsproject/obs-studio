@@ -61,5 +61,5 @@ set(_dmg_obs_y 180)
 set(_dmg_app_link_x 416)
 set(_dmg_app_link_y 180)
 
-configure_file("${CMAKE_SOURCE_DIR}/cmake/macos/resources/package.applescript.in"
-               "${CMAKE_BINARY_DIR}/package.applescript" @ONLY)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/resources/package.applescript.in"
+               "${CMAKE_CURRENT_BINARY_DIR}/package.applescript" @ONLY)

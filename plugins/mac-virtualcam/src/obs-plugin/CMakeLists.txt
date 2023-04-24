@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.22...3.25)
 
-legacy_check()
-
 add_library(mac-virtualcam MODULE)
 add_library(OBS::virtualcam ALIAS mac-virtualcam)
 
