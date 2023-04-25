@@ -19,6 +19,7 @@ SERVICES_FILE = 'plugins/rtmp-services/data/services.json'
 PACKAGE_FILE = 'plugins/rtmp-services/data/package.json'
 CACHE_FILE = 'other/timestamps.json'
 GITHUB_OUTPUT_FILE = os.environ.get('GITHUB_OUTPUT', None)
+PUBLIC_IP_ENDPOINT = 'https://ifconfig.me'
 
 DO_NOT_PING = {'jp9000'}
 PR_MESSAGE = '''This is an automatically created pull request to remove unresponsive servers and services.
@@ -58,6 +59,12 @@ GQL_QUERY = '''{
 
 context = ssl.create_default_context()
 
+def print_public_ip():
+    try:
+        resp = requests.get(PUBLIC_IP_ENDPOINT, timeout=TIMEOUT)
+        print('Detected public IP address:', resp.text)
+    except Exception as e:
+        print(f'⚠️ Could not fetch public IP via {PUBLIC_IP_ENDPOINT}: {e}')
 
 def check_ftl_server(hostname) -> bool:
     """Check if hostname resolves to a valid address - FTL handshake not implemented"""
@@ -95,7 +102,9 @@ def check_rtmp_server(uri) -> bool:
     else:
         port = 1935
 
+    ip_address = '[none]'
     try:
+        ip_address = socket.gethostbyname(hostname)
         recv = b''
         with socket.create_connection((hostname, port), timeout=TIMEOUT) as sock:
             # RTMP handshake is \x03 + 4 bytes time (can be 0) + 4 zero bytes + 1528 bytes random
@@ -119,7 +128,7 @@ def check_rtmp_server(uri) -> bool:
         if len(recv) < 1536 or recv[0] != 3:
             raise ValueError('Invalid RTMP handshake received from server')
     except Exception as e:
-        print(f'⚠️ Connection to server failed: {uri} (Exception: {e})')
+        print(f'⚠️ Connection to server failed: {uri} (IP: {ip_address}) (Exception: {e})')
         return False
     else:
         return True
@@ -237,6 +246,8 @@ def main():
             print('Fetched cache file from last run artifact.')
     else:
         print('Successfully loaded cache file:', CACHE_FILE)
+
+    print_public_ip()
 
     start_time = int(time.time())
     affected_services = dict()
