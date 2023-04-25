@@ -45,7 +45,7 @@ jobs:
 
   service_check:
     name: Service Check
-    runs-on: ubuntu-20.04
+    runs-on: macos-latest
     needs: schema
     if: ${{ github.repository_owner == 'obsproject' && github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
 
@@ -66,12 +66,11 @@ jobs:
 
       - name: Install & Configure Python
         run: |
-          sudo apt install python3.9
-          python3.9 -m pip install requests
+          python3 -m pip install requests
 
       - name: Check Services
         id: check
-        run: python3.9 -u CI/check-services.py
+        run: python3 -u CI/check-services.py
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WORKFLOW_RUN_ID: ${{ github.run_id }}
