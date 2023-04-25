@@ -2812,6 +2812,24 @@
             "supported video codecs": [
                 "h264"
             ]
+        },
+        {
+            "name": "hodots.",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://stream.hodots.com/stream"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 5000,
+                "max audio bitrate": 192,
+                "output": "ffmpeg_hls_muxer"
+            },
+            "supported video codecs": [
+                "h264"
+            ]
         }
     ]
 }
