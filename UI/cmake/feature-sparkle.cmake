@@ -13,6 +13,8 @@ if(SPARKLE_APPCAST_URL AND SPARKLE_PUBLIC_KEY)
   endif()
 
   target_enable_feature(obs-studio "Sparkle updater" ENABLE_SPARKLE_UPDATER)
+
+  include(cmake/feature-macos-update.cmake)
 else()
   set(SPARKLE_UPDATE_INTERVAL 0) # Set anything that's not an empty integer
   target_disable_feature(obs-studio "Sparkle updater")

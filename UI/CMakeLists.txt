@@ -54,6 +54,7 @@ endif()
 include(cmake/feature-twitch.cmake)
 include(cmake/feature-restream.cmake)
 include(cmake/feature-youtube.cmake)
+include(cmake/feature-sparkle.cmake)
 include(cmake/feature-whatsnew.cmake)
 
 add_subdirectory(frontend-plugins)
