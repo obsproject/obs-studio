@@ -1819,10 +1819,6 @@
                     "url": "rtmp://tor-ingest.angelthump.com:1935/live"
                 },
                 {
-                    "name": "Bangalore 1",
-                    "url": "rtmp://blr-ingest.angelthump.com:1935/live"
-                },
-                {
                     "name": "Amsterdam 3",
                     "url": "rtmp://ams-ingest.angelthump.com:1935/live"
                 }
