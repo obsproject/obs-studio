@@ -752,8 +752,15 @@ static void dump_encoder_info(struct vt_encoder *enc)
 		codec_type_to_print_fmt(enc->codec_type));
 }
 
-static bool set_video_format(struct vt_encoder *enc, enum video_format format,
-			     enum video_range_type range)
+typedef enum {
+	kResultSuccess = 0,
+	kResultColorFormatUnsupported = 1,
+	kResultFullRangeUnsupported = 2,
+} SetVideoFormatResult;
+
+static SetVideoFormatResult set_video_format(struct vt_encoder *enc,
+					     enum video_format format,
+					     enum video_range_type range)
 {
 	bool full_range = range == VIDEO_RANGE_FULL;
 	switch (format) {
@@ -762,40 +769,44 @@ static bool set_video_format(struct vt_encoder *enc, enum video_format format,
 			full_range
 				? kCVPixelFormatType_420YpCbCr8PlanarFullRange
 				: kCVPixelFormatType_420YpCbCr8Planar;
-		return true;
+		return kResultSuccess;
 	case VIDEO_FORMAT_NV12:
 		enc->vt_pix_fmt =
 			full_range
 				? kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
 				: kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange;
-		return true;
+		return kResultSuccess;
 	case VIDEO_FORMAT_P010:
 		if (enc->codec_type == kCMVideoCodecType_HEVC) {
 			enc->vt_pix_fmt =
 				full_range
 					? kCVPixelFormatType_420YpCbCr10BiPlanarFullRange
 					: kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange;
-			return true;
+			return kResultSuccess;
 		}
 		break;
 	case VIDEO_FORMAT_P216:
 		if (!full_range) {
 			enc->vt_pix_fmt =
 				kCVPixelFormatType_422YpCbCr16BiPlanarVideoRange;
-			return true;
+			return kResultSuccess;
+		} else {
+			return kResultFullRangeUnsupported;
 		}
 		break;
 	case VIDEO_FORMAT_P416:
 		if (!full_range) {
 			enc->vt_pix_fmt =
 				kCVPixelFormatType_444YpCbCr16BiPlanarVideoRange;
-			return true;
+			return kResultSuccess;
+		} else {
+			return kResultFullRangeUnsupported;
 		}
 		break;
 	default:
-		return false;
+		return kResultColorFormatUnsupported;
 	}
-	return false;
+	return kResultColorFormatUnsupported;
 }
 
 static bool update_params(struct vt_encoder *enc, obs_data_t *settings)
@@ -817,11 +828,18 @@ static bool update_params(struct vt_encoder *enc, obs_data_t *settings)
 			settings, "codec_type");
 	}
 
-	if (!set_video_format(enc, voi->format, voi->range)) {
+	SetVideoFormatResult res =
+		set_video_format(enc, voi->format, voi->range);
+	if (res == kResultColorFormatUnsupported) {
 		obs_encoder_set_last_error(
 			enc->encoder,
 			obs_module_text("ColorFormatUnsupported"));
 		VT_BLOG(LOG_WARNING, "Unsupported color format selected");
+		return false;
+	} else if (res == kResultFullRangeUnsupported) {
+		obs_encoder_set_last_error(
+			enc->encoder, obs_module_text("FullRangeUnsupported"));
+		VT_BLOG(LOG_WARNING, "Unsupported color range (full) selected");
 		return false;
 	}
 	enc->colorspace = voi->colorspace;
