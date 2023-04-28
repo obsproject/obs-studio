@@ -90,18 +90,32 @@ Q_DECLARE_METATYPE(media_frames_per_second);
 
 void OBSPropertiesView::ReloadProperties()
 {
+	deferUpdate = false;
 	if (weakObj || rawObj) {
 		OBSObject strongObj = GetObject();
 		void *obj = strongObj ? strongObj.Get() : rawObj;
-		if (obj)
+		if (obj) {
 			properties.reset(reloadCallback(obj));
+
+			if (obs_obj_get_type(obj) == OBS_OBJ_TYPE_SOURCE) {
+				enum obs_source_type type = obs_source_get_type(
+					(obs_source_t *)obj);
+				if (type == OBS_SOURCE_TYPE_INPUT ||
+				    type == OBS_SOURCE_TYPE_TRANSITION) {
+					uint32_t flags =
+						obs_properties_get_flags(
+							properties.get());
+					deferUpdate =
+						(flags &
+						 OBS_PROPERTIES_DEFER_UPDATE) !=
+						0;
+				}
+			}
+		}
 	} else {
 		properties.reset(reloadCallback((void *)type.c_str()));
 		obs_properties_apply_settings(properties.get(), settings);
 	}
-
-	uint32_t flags = obs_properties_get_flags(properties.get());
-	deferUpdate = (flags & OBS_PROPERTIES_DEFER_UPDATE) != 0;
 
 	RefreshProperties();
 }
