@@ -88,7 +88,11 @@ void StringToHash(const wchar_t *in, BYTE *out);
 
 bool CalculateFileHash(const wchar_t *path, BYTE *hash);
 
+int64_t offtin(const uint8_t *buf);
 int ApplyPatch(ZSTD_DCtx *ctx, LPCTSTR patchFile, LPCTSTR targetFile);
+int ApplyBundlePatch(ZSTD_DCtx *ctx, const char *bundle_data,
+		     size_t patch_offset, size_t patch_size,
+		     LPCTSTR targetFile);
 int DecompressFile(ZSTD_DCtx *ctx, LPCTSTR tempFile, size_t newSize);
 
 extern HWND hwndMain;

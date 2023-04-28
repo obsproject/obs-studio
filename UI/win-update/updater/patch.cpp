@@ -23,7 +23,7 @@ using namespace std;
 
 /* ------------------------------------------------------------------------ */
 
-static int64_t offtin(const uint8_t *buf)
+int64_t offtin(const uint8_t *buf)
 {
 	int64_t y;
 
@@ -150,6 +150,100 @@ try {
 	size_t result = ZSTD_decompress_usingDict(
 		zstdCtx, &newData[0], newData.size(), patchData.data(),
 		patchData.size(), oldData.data(), oldData.size());
+
+	if (result != newsize || ZSTD_isError(result))
+		throw int(-9);
+
+	/* --------------------------------- *
+	 * write new file                    */
+
+	hTarget = nullptr;
+	hTarget = CreateFile(targetFile, GENERIC_WRITE, 0, nullptr,
+			     CREATE_ALWAYS, 0, nullptr);
+	if (!hTarget.Valid())
+		throw int(GetLastError());
+
+	DWORD written;
+
+	success = !!WriteFile(hTarget, newData.data(), (DWORD)newsize, &written,
+			      nullptr);
+	if (!success || written != newsize)
+		throw int(GetLastError());
+
+	return 0;
+
+} catch (int code) {
+	return code;
+}
+
+#define HEADER_SIZE 24
+
+int ApplyBundlePatch(ZSTD_DCtx *zstdCtx, const char *bundle_data,
+		     const size_t patch_offset, const size_t patch_size,
+		     const wchar_t *targetFile)
+try {
+	int64_t newsize;
+	bool success;
+
+	WinHandle hTarget;
+
+	/* --------------------------------- *
+	 * open patch and file to patch      */
+
+	hTarget = CreateFile(targetFile, GENERIC_READ, 0, nullptr,
+			     OPEN_EXISTING, 0, nullptr);
+	if (!hTarget.Valid())
+		throw int(GetLastError());
+
+	/* --------------------------------- *
+	 * read patch header                 */
+
+	const char *patch_data = bundle_data + patch_offset;
+	if (memcmp(patch_data, "BOUF//ZSTD//DICT", 16))
+		throw int(-4);
+
+	/* --------------------------------- *
+	 * allocate new file size data       */
+
+	newsize = offtin((const uint8_t *)patch_data + 16);
+	if (newsize < 0 || newsize >= 0x7ffffffff)
+		throw int(-5);
+
+	vector<uint8_t> newData;
+	try {
+		newData.resize((size_t)newsize);
+	} catch (...) {
+		throw int(-1);
+	}
+
+	/* --------------------------------- *
+	 * read old file                     */
+
+	DWORD read;
+	DWORD targetFileSize;
+
+	targetFileSize = GetFileSize(hTarget, nullptr);
+	if (targetFileSize == INVALID_FILE_SIZE)
+		throw int(GetLastError());
+
+	vector<uint8_t> oldData;
+	try {
+		oldData.resize(targetFileSize);
+	} catch (...) {
+		throw int(-1);
+	}
+
+	if (!ReadFile(hTarget, &oldData[0], targetFileSize, &read, nullptr))
+		throw int(GetLastError());
+	if (read != targetFileSize)
+		throw int(-1);
+
+	/* --------------------------------- *
+	 * patch to new file data            */
+
+	size_t result = ZSTD_decompress_usingDict(
+		zstdCtx, &newData[0], newData.size(), patch_data + HEADER_SIZE,
+		patch_size - HEADER_SIZE, oldData.data(), oldData.size());
 
 	if (result != newsize || ZSTD_isError(result))
 		throw int(-9);

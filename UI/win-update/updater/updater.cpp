@@ -263,6 +263,8 @@ struct update_t {
 	bool has_hash = false;
 	bool patchable = false;
 	bool compressed = false;
+	bool is_bundle = false;
+	int bundle_offset = -1;
 
 	inline update_t() {}
 	inline update_t(const update_t &from)
@@ -276,7 +278,9 @@ struct update_t {
 		  state(from.state),
 		  has_hash(from.has_hash),
 		  patchable(from.patchable),
-		  compressed(from.compressed)
+		  compressed(from.compressed),
+		  is_bundle(from.is_bundle),
+		  bundle_offset(from.bundle_offset)
 	{
 		memcpy(hash, from.hash, sizeof(hash));
 		memcpy(downloadhash, from.downloadhash, sizeof(downloadhash));
@@ -294,7 +298,9 @@ struct update_t {
 		  state(from.state),
 		  has_hash(from.has_hash),
 		  patchable(from.patchable),
-		  compressed(from.compressed)
+		  compressed(from.compressed),
+		  is_bundle(from.is_bundle),
+		  bundle_offset(from.bundle_offset)
 	{
 		from.state = STATE_INVALID;
 
@@ -334,6 +340,8 @@ struct update_t {
 		has_hash = from.has_hash;
 		patchable = from.patchable;
 		compressed = from.compressed;
+		is_bundle = from.is_bundle;
+		bundle_offset = from.bundle_offset;
 
 		memcpy(hash, from.hash, sizeof(hash));
 		memcpy(downloadhash, from.downloadhash, sizeof(downloadhash));
@@ -356,6 +364,7 @@ struct deletion_t {
 };
 
 static unordered_map<string, wstring> hashes;
+static unordered_set<string> bundledPackages;
 static vector<update_t> updates;
 static vector<deletion_t> deletions;
 static mutex updateMutex;
@@ -733,6 +742,8 @@ static bool AddPackageUpdateFiles(const Json &root, size_t idx,
 	    !NonCorePackageInstalled(packageName.c_str()))
 		return true;
 
+	vector<string> old_hashes;
+
 	for (size_t j = 0; j < fileCount; j++) {
 		const Json &file = files[j];
 		const Json &fileName = file["name"];
@@ -804,6 +815,9 @@ static bool AddPackageUpdateFiles(const Json &root, size_t idx,
 			if (fileHashStr == updateHashStr)
 				continue;
 
+			char hashUTF8[BLAKE2_HASH_STR_LENGTH];
+			if (WideToUTF8Buf(hashUTF8, fileHashStr.c_str()))
+				old_hashes.push_back(hashUTF8);
 			has_hash = true;
 		} else {
 			has_hash = false;
@@ -839,6 +853,26 @@ static bool AddPackageUpdateFiles(const Json &root, size_t idx,
 		updates.push_back(move(update));
 
 		totalFileSize += fileSize;
+	}
+
+	// TODO: Clean this up a bit
+	if (!old_hashes.empty()) {
+		// Sort and concatenate all hashes of this package
+		sort(old_hashes.begin(), old_hashes.end());
+		string all_hashes;
+		all_hashes.reserve(old_hashes.size() * old_hashes[0].size());
+		for (string &hash : old_hashes)
+			all_hashes += hash;
+
+		// Calculate bundle hash
+		BYTE hash[BLAKE2_HASH_LENGTH];
+		blake2b(hash, sizeof(hash), all_hashes.c_str(),
+			all_hashes.size(), NULL, 0);
+
+		wchar_t hashStr[BLAKE2_HASH_STR_LENGTH];
+		HashToString(hash, hashStr);
+		string hMapName = "package::" + packageName;
+		hashes[hMapName] = hashStr;
 	}
 
 	return true;
@@ -912,7 +946,6 @@ static void UpdateWithPatchIfAvailable(const char *name, const char *hash,
 				       const char *source, int size)
 {
 	wchar_t widePatchableFilename[MAX_PATH];
-	wchar_t widePatchHash[MAX_PATH];
 	wchar_t sourceURL[1024];
 	wchar_t patchHashStr[BLAKE2_HASH_STR_LENGTH];
 
@@ -930,8 +963,6 @@ static void UpdateWithPatchIfAvailable(const char *name, const char *hash,
 
 	if (!UTF8ToWideBuf(widePatchableFilename, name))
 		return;
-	if (!UTF8ToWideBuf(widePatchHash, hash))
-		return;
 	if (!UTF8ToWideBuf(sourceURL, source))
 		return;
 	if (!UTF8ToWideBuf(patchHashStr, hash))
@@ -941,6 +972,8 @@ static void UpdateWithPatchIfAvailable(const char *name, const char *hash,
 		if (update.packageName != patchPackageName)
 			continue;
 		if (update.basename != widePatchableFilename)
+			continue;
+		if (update.is_bundle)
 			continue;
 
 		StringToHash(patchHashStr, update.downloadhash);
@@ -958,8 +991,150 @@ static void UpdateWithPatchIfAvailable(const char *name, const char *hash,
 		update.tempPath = tempPath;
 		update.tempPath += L"\\";
 		update.tempPath += patchHashStr;
+
+		/* If the package has an update bundle patch files don't need
+		 * to be downloaded individually, so mark it as done. */
+		if (bundledPackages.count(patchPackageName)) {
+			update.state = STATE_ALREADY_DOWNLOADED;
+			totalFileSize -= size;
+			completedUpdates++;
+		}
+
 		break;
 	}
+}
+
+static void AddPatchBundleFiles(const Json::array &patches)
+{
+	wchar_t widePatchableFilename[MAX_PATH];
+	wchar_t sourceURL[1024];
+	wchar_t patchHashStr[BLAKE2_HASH_STR_LENGTH];
+
+	for (const Json &patch : patches) {
+		const Json &name_json = patch["name"];
+		if (!name_json.is_string())
+			continue;
+
+		const char *name = name_json.string_value().c_str();
+		if (strstr(name, "/bundle") == nullptr)
+			continue;
+
+		const Json &hash_json = patch["hash"];
+		const Json &source_json = patch["source"];
+		const Json &size_json = patch["size"];
+
+		if (!hash_json.is_string())
+			continue;
+		if (!source_json.is_string())
+			continue;
+		if (!size_json.is_number())
+			continue;
+
+		const char *hash = hash_json.string_value().c_str();
+		const char *source = source_json.string_value().c_str();
+		int size = size_json.int_value();
+
+		if (strncmp(source, "https://cdn-fastly.obsproject.com/", 34) !=
+		    0)
+			return;
+
+		string patchPackageName = name;
+
+		const char *slash = strchr(name, '/');
+		if (!slash)
+			return;
+
+		patchPackageName.resize(slash - name);
+		name = slash + 1;
+
+		if (!UTF8ToWideBuf(widePatchableFilename, name))
+			return;
+		if (!UTF8ToWideBuf(sourceURL, source))
+			return;
+		if (!UTF8ToWideBuf(patchHashStr, hash))
+			return;
+
+		wchar_t tempFilePath[MAX_PATH];
+		StringCbPrintf(tempFilePath, sizeof(tempFilePath), L"%s\\%s",
+			       tempPath, patchHashStr);
+
+		/* Add "fake" update to download the bundle. */
+		update_t update;
+		update.fileSize = size;
+		update.basename = widePatchableFilename;
+		update.outputPath = widePatchableFilename;
+		update.tempPath = tempFilePath;
+		update.sourceURL = sourceURL;
+		update.packageName = patchPackageName;
+		update.state = STATE_PENDING_DOWNLOAD;
+		update.is_bundle = true;
+
+		StringToHash(patchHashStr, update.downloadhash);
+
+		updates.push_back(move(update));
+		totalFileSize += size;
+
+		/* Add package name to set so UpdateWithPatchIfAvailable skips
+	         * files that are part of a bundle */
+		bundledPackages.insert(patchPackageName);
+	}
+}
+
+static unordered_map<string, string> bundle_data;
+
+static bool UpdateWithBundledPatch(const update_t &bundle)
+{
+	/* Read bundle header + index */
+	string bundleData = QuickReadFile(bundle.tempPath.c_str());
+	const char *data = bundleData.data();
+
+	if (memcmp(data, "BOUF//BUNDLE//V1", 16)) {
+		Status(L"Update failed: Bundle file is invalid!");
+		return false;
+	}
+
+	int64_t index_size = offtin((const uint8_t *)data + 16);
+	string json_data = bundleData.substr(24, index_size);
+
+	string error;
+	Json root = Json::parse(json_data, error);
+	if (!error.empty()) {
+		Status(L"Update failed: Couldn't parse patch bundle data: %S",
+		       error.c_str());
+		return false;
+	}
+
+	/* Copy bundle data into global variable */
+	bundle_data[bundle.packageName] = bundleData.substr(index_size + 24);
+
+	/* Create map of filename => bundle entry data */
+	unordered_map<wstring, pair<int, int>> bundleEntry;
+
+	for (const Json &entry : root.array_items()) {
+		const string &filename = entry["filename"].string_value();
+		int size = entry["size"].int_value();
+		int offset = entry["offset"].int_value();
+
+		wchar_t fileNameWide[MAX_PATH];
+		if (!UTF8ToWideBuf(fileNameWide, filename.c_str()))
+			return false;
+
+		bundleEntry[fileNameWide] = {offset, size};
+	}
+
+	/* Update patches with data from bundle index */
+	for (update_t &update : updates) {
+		if (update.packageName != bundle.packageName)
+			continue;
+		if (!bundleEntry.count(update.basename))
+			continue;
+
+		auto entry = bundleEntry[update.basename];
+		update.bundle_offset = entry.first;
+		update.fileSize = entry.second;
+	}
+
+	return true;
 }
 
 static bool MoveInUseFileAway(update_t &file)
@@ -1054,8 +1229,19 @@ static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 	retryAfterMovingFile:
 
 		if (file.patchable) {
-			error_code = ApplyPatch(ctx, file.tempPath.c_str(),
-						file.outputPath.c_str());
+			if (file.bundle_offset >= 0) {
+				error_code = ApplyBundlePatch(
+					ctx,
+					bundle_data[file.packageName].data(),
+					file.bundle_offset, file.fileSize,
+					file.outputPath.c_str());
+
+			} else {
+				error_code =
+					ApplyPatch(ctx, file.tempPath.c_str(),
+						   file.outputPath.c_str());
+			}
+
 			installed_ok = (error_code == 0);
 
 			if (installed_ok) {
@@ -1188,6 +1374,9 @@ static bool UpdateWorker()
 static bool RunUpdateWorkers(int num)
 try {
 	for (update_t &update : updates) {
+		if (update.is_bundle)
+			continue;
+
 		updateQueue.push(update);
 	}
 
@@ -1610,6 +1799,24 @@ static bool Update(wchar_t *cmdLine)
 		});
 	}
 
+	// Add bundle files
+	for (const Json &package : packages) {
+		const string packageName = package["name"].string_value();
+		string hMapName = "package::" + packageName;
+		if (!hashes.count(hMapName))
+			continue;
+
+		wstring bundleHash = hashes[hMapName];
+		char hash_string[BLAKE2_HASH_STR_LENGTH];
+		if (!WideToUTF8Buf(hash_string, bundleHash.c_str()))
+			continue;
+
+		files.emplace_back(Json::object{
+			{"name", packageName + "/bundle"},
+			{"hash", hash_string},
+		});
+	}
+
 	/* ------------------------------------- *
 	 * Send file hashes                      */
 
@@ -1676,11 +1883,13 @@ static bool Update(wchar_t *cmdLine)
 		return false;
 	}
 
-	size_t packageCount = root.array_items().size();
+	const Json::array patches = root.array_items();
 
-	for (size_t i = 0; i < packageCount; i++) {
-		const Json &patch = root[i];
+	/* Pick out bundle files and prepare them for download. */
+	AddPatchBundleFiles(patches);
 
+	/* Update updates with patch/patch bundle  information. */
+	for (const Json &patch : patches) {
 		if (!patch.is_object()) {
 			Status(L"Update failed: Invalid patch manifest");
 			return false;
@@ -1714,7 +1923,8 @@ static bool Update(wchar_t *cmdLine)
 
 	unordered_set<wstring> tempFiles;
 	for (update_t &update : updates) {
-		if (tempFiles.count(update.tempPath)) {
+		if (update.state != STATE_ALREADY_DOWNLOADED &&
+		    tempFiles.count(update.tempPath)) {
 			update.state = STATE_ALREADY_DOWNLOADED;
 			totalFileSize -= update.fileSize;
 			completedUpdates++;
@@ -1733,6 +1943,17 @@ static bool Update(wchar_t *cmdLine)
 	if ((size_t)completedUpdates != updates.size()) {
 		Status(L"Update failed to download all files.");
 		return false;
+	}
+
+	/* ------------------------------------- *
+	 * Process delta patch bundles           */
+
+	for (const update_t &update : updates) {
+		if (!update.is_bundle)
+			continue;
+		/* Read bundle */
+		if (!UpdateWithBundledPatch(update))
+			return false;
 	}
 
 	/* ------------------------------------- *
