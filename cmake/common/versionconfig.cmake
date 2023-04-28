@@ -4,6 +4,8 @@
 # cmake-lint: disable=C0301
 # cmake-format: on
 
+include_guard(GLOBAL)
+
 # Attempt to automatically discover expected OBS version
 if(NOT DEFINED OBS_VERSION_OVERRIDE)
   if(DEFINED RELEASE_CANDIDATE)
@@ -23,7 +25,7 @@ if(NOT DEFINED OBS_VERSION_OVERRIDE)
     else()
       message(FATAL_ERROR "Invalid beta version supplied - must be <MAJOR>.<MINOR>.<PATCH>-beta<RELEASE>.")
     endif()
-  elseif(EXISTS "${CMAKE_SOURCE_DIR}/.git")
+  elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
     execute_process(
       COMMAND git describe --always --tags --dirty=-modified
       OUTPUT_VARIABLE _obs_version

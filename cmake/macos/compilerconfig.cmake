@@ -1,14 +1,6 @@
 # OBS CMake macOS compiler configuration module
 
-# Enable distinction between Clang and AppleClang
-if(POLICY CMP0025)
-  cmake_policy(SET CMP0025 NEW)
-endif()
-
-# Honor visibility presets for all target types (executable, shared, module, static)
-if(POLICY CMP0063)
-  cmake_policy(SET CMP0063 NEW)
-endif()
+include_guard(GLOBAL)
 
 include(ccache)
 include(compiler_common)

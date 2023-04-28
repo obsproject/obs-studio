@@ -7,6 +7,8 @@
 # cmake-lint: disable=E1126
 # cmake-format: on
 
+include_guard(GLOBAL)
+
 include(helpers_common)
 
 # set_target_properties_obs: Set target properties for use in obs-studio

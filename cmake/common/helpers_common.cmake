@@ -8,6 +8,8 @@
 # cmake-lint: disable=R0915
 # cmake-format: on
 
+include_guard(GLOBAL)
+
 # message_configuration: Function to print configuration outcome
 function(message_configuration)
   include(FeatureSummary)
@@ -31,6 +33,7 @@ function(message_configuration)
     COMPARE NATURAL
     CASE SENSITIVE
     ORDER ASCENDING)
+
   if(OBS_FEATURES_ENABLED)
     message(NOTICE "------------------------       Enabled Features           ------------------------")
     foreach(feature IN LISTS OBS_FEATURES_ENABLED)
@@ -44,6 +47,7 @@ function(message_configuration)
     COMPARE NATURAL
     CASE SENSITIVE
     ORDER ASCENDING)
+
   if(OBS_FEATURES_DISABLED)
     message(NOTICE "------------------------       Disabled Features          ------------------------")
     foreach(feature IN LISTS OBS_FEATURES_DISABLED)
@@ -58,6 +62,7 @@ function(message_configuration)
       COMPARE NATURAL
       CASE SENSITIVE
       ORDER ASCENDING)
+
     if(OBS_MODULES_ENABLED)
       message(NOTICE "------------------------        Enabled Modules           ------------------------")
       foreach(feature IN LISTS OBS_MODULES_ENABLED)
@@ -71,6 +76,7 @@ function(message_configuration)
       COMPARE NATURAL
       CASE SENSITIVE
       ORDER ASCENDING)
+
     if(OBS_MODULES_DISABLED)
       message(NOTICE "------------------------        Disabled Modules          ------------------------")
       foreach(feature IN LISTS OBS_MODULES_DISABLED)
