@@ -1,12 +1,6 @@
 # OBS CMake macOS defaults module
 
-# Enable selection between arm64 and x86_64 targets
-if(NOT CMAKE_OSX_ARCHITECTURES)
-  set(CMAKE_OSX_ARCHITECTURES
-      arm64
-      CACHE STRING "Build architectures for macOS" FORCE)
-endif()
-set_property(CACHE CMAKE_OSX_ARCHITECTURES PROPERTY STRINGS arm64 x86_64)
+include_guard(GLOBAL)
 
 # Set empty codesigning team if not specified as cache variable
 if(NOT OBS_CODESIGN_TEAM)
