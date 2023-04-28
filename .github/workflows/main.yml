@@ -108,25 +108,6 @@ jobs:
           path: 'obs-studio'
           fetch-depth: 0
 
-      - name: 'Check for GitHub Labels'
-        id: github-check
-        run: |
-          if [[ "${GITHUB_EVENT_NAME}" == 'pull_request' ]]; then
-            if test -n "$(curl -H "Authorization: Bearer ${{ github.token }}" -s "${{ github.event.pull_request.url }}" | jq -e '.labels[] | select(.name == "Seeking Testers")')"; then
-              echo "generator=Xcode" >> $GITHUB_OUTPUT
-            else
-              echo "generator=Ninja" >> $GITHUB_OUTPUT
-            fi
-          elif [[ "${GITHUB_EVENT_NAME}" == 'push' ]]; then
-            if [[ ${GITHUB_REF_NAME} =~ [0-9]+.[0-9]+.[0-9]+(-(rc|beta).+)? ]]; then
-              echo "generator=Xcode" >> $GITHUB_OUTPUT
-            else
-              echo "generator=Ninja" >> $GITHUB_OUTPUT
-            fi
-          else
-            echo "generator=Ninja" >> $GITHUB_OUTPUT
-          fi
-
       - name: 'Restore ccache from cache'
         id: ccache-cache
         uses: actions/cache@v3
@@ -236,7 +217,7 @@ jobs:
 
           if [[ "${PACKAGE}" ]]; then
             CI/macos/03_package_obs.sh --codesign --architecture "${{ matrix.arch }}"
-            ARTIFACT_NAME=$(basename $(/usr/bin/find build_${{ matrix.arch }} -type f -name "obs-studio-*.dmg" -depth 1 | head -1))
+            ARTIFACT_NAME=$(basename $(/usr/bin/find build_macos -type f -name "obs-studio-*.dmg" -depth 1 | head -1))
             echo "FILE_NAME=${ARTIFACT_NAME}" >> $GITHUB_ENV
           fi
 
@@ -245,7 +226,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: 'obs-studio-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
-          path: '${{ github.workspace }}/obs-studio/build_${{ matrix.arch }}/${{ env.FILE_NAME }}'
+          path: '${{ github.workspace }}/obs-studio/build_macos/${{ env.FILE_NAME }}'
 
   linux_build:
     name: '02 - Linux'

@@ -79,9 +79,11 @@ check_ccache() {
         CMAKE_CCACHE_OPTIONS="-DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache"
 
         if [ "${CI}" ]; then
+            ccache --set-config=compiler_check=content
             ccache --set-config=cache_dir=${GITHUB_WORKSPACE:-${HOME}}/.ccache
-            ccache --set-config=max_size=${CCACHE_SIZE:-500M}
-            ccache --set-config=compression=true
+            ccache --set-config=max_size=${CCACHE_SIZE:-1G}
+            ccache --set-config=compression=false
+            ccache --set-config=sloppiness=include_file_mtime,include_file_ctime,file_stat_matches,system_headers
             ccache -z
         fi
     else

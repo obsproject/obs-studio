@@ -89,9 +89,27 @@ function(set_target_properties_obs target)
       if(VIRTUALCAM_DEVICE_UUID
          AND VIRTUALCAM_SOURCE_UUID
          AND VIRTUALCAM_SINK_UUID)
-        set(entitlements_file "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/entitlements-extension.plist")
+        set(has_virtualcam_uuids TRUE)
       else()
-        set(entitlements_file "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/entitlements.plist")
+        set(has_virtualcam_uuids FALSE)
+      endif()
+
+      if(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE STREQUAL Automatic)
+        if(has_virtualcam_uuids)
+          set(entitlements_file "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/entitlements-extension.plist")
+        else()
+          set(entitlements_file "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/entitlements.plist")
+        endif()
+      else()
+        if(has_virtualcam_uuids AND OBS_PROVISIONING_PROFILE)
+          set(entitlements_file "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/entitlements-extension.plist")
+          set_target_properties(${target} PROPERTIES XCODE_ATTRIBUTE_PROVISIONING_PROFILE_SPECIFIER
+                                                     "${OBS_PROVISIONING_PROFILE}")
+          configure_file(cmake/macos/exportOptions-extension.plist.in ${CMAKE_BINARY_DIR}/exportOptions.plist)
+        else()
+          set(entitlements_file "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/entitlements.plist")
+          configure_file(cmake/macos/exportOptions.plist.in ${CMAKE_BINARY_DIR}/exportOptions.plist)
+        endif()
       endif()
 
       if(NOT EXISTS "${entitlements_file}")
@@ -99,14 +117,6 @@ function(set_target_properties_obs target)
       endif()
 
       set_target_properties(${target} PROPERTIES XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS "${entitlements_file}")
-
-      if(NOT CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE STREQUAL "Automatic")
-        set_target_properties(${target} PROPERTIES XCODE_ATTRIBUTE_PROVISIONING_PROFILE_SPECIFIER
-                                                   "${OBS_PROVISIONING_PROFILE}")
-        configure_file(cmake/macos/exportOptions-extension.plist.in ${CMAKE_BINARY_DIR}/exportOptions.plist)
-      else()
-        configure_file(cmake/macos/exportOptions.plist.in ${CMAKE_BINARY_DIR}/exportOptions.plist)
-      endif()
 
       add_custom_command(
         TARGET ${target}
@@ -152,7 +162,9 @@ function(set_target_properties_obs target)
           COMMENT "Add OBS::python import module")
       endif()
 
-      if(TARGET mac-camera-extension)
+      if(TARGET mac-camera-extension AND (CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE STREQUAL Automatic
+                                          OR OBS_PROVISIONING_PROFILE))
+        target_enable_feature(mac-camera-extension "macOS CMIO Camera Extension")
         add_custom_command(
           TARGET ${target}
           POST_BUILD
@@ -160,6 +172,8 @@ function(set_target_properties_obs target)
             "${CMAKE_COMMAND}" -E copy_directory "$<TARGET_BUNDLE_DIR:mac-camera-extension>"
             "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Library/SystemExtensions/$<TARGET_BUNDLE_DIR_NAME:mac-camera-extension>"
           COMMENT "Add Camera Extension to application bundle")
+      else()
+        target_disable_feature(mac-camera-extension "macOS CMIO Camera Extension")
       endif()
 
       _bundle_dependencies(${target})
@@ -395,8 +409,7 @@ function(_bundle_dependencies target)
         find_qt_plugins(COMPONENT ${library} TARGET ${target} FOUND_VAR plugins_list)
       endif()
       list(APPEND library_paths ${library_location})
-    elseif(NOT imported AND library_type STREQUAL "SHARED_LIBRARY")
-      message(TRACE "${library} is a project target")
+    elseif(NOT is_imported AND library_type STREQUAL "SHARED_LIBRARY")
       list(APPEND library_paths ${library})
     endif()
   endforeach()
