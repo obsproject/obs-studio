@@ -15,42 +15,35 @@ build_obs() {
     status "Build OBS"
     trap "caught_error 'build app'" ERR
 
-    if [ -z "${CI}" ]; then
-        _backup_artifacts
-    fi
     step "Configure OBS..."
     _configure_obs
 
     ensure_dir "${CHECKOUT_DIR}/"
     step "Build OBS targets..."
 
-    if [ "${PRESET}" != "macos-ci-${ARCH}" ]; then
-        export NSUnbufferedIO=YES
+    export NSUnbufferedIO=YES
 
-        : "${PACKAGE:=}"
-        case "${GITHUB_EVENT_NAME}" in
-              push) if [[ ${GITHUB_REF_NAME} =~ [0-9]+.[0-9]+.[0-9]+(-(rc|beta).+)? ]]; then PACKAGE=1; fi ;;
-              pull_request) PACKAGE=1 ;;
-          esac
+    : "${PACKAGE:=}"
+    case "${GITHUB_EVENT_NAME}" in
+          push) if [[ ${GITHUB_REF_NAME} =~ [0-9]+.[0-9]+.[0-9]+(-(rc|beta).+)? ]]; then PACKAGE=1; fi ;;
+          pull_request) PACKAGE=1 ;;
+      esac
 
-        pushd "build_${ARCH}" > /dev/null
+    pushd "build_macos" > /dev/null
 
-        if [[ "${PACKAGE}" && "${CODESIGN_IDENT:--}" != '-' ]]; then
-            set -o pipefail && xcodebuild -archivePath "obs-studio.xcarchive" -scheme obs-studio -destination "generic/platform=macOS,name=Any Mac'" archive 2>&1 | xcbeautify
-            set -o pipefail && xcodebuild -exportArchive -archivePath "obs-studio.xcarchive" -exportOptionsPlist "exportOptions.plist" -exportPath "." 2>&1 | xcbeautify
-        else
-            set -o pipefail && xcodebuild -scheme obs-studio -destination "generic/platform=macOS,name=Any Mac" -configuration RelWithDebInfo 2>&1 | xcbeautify
-
-            mkdir OBS.app
-            ditto UI/RelWithDebInfo/OBS.app OBS.app
-        fi
-
-        popd > /dev/null
-
-        unset NSUnbufferedIO
+    if [[ "${PACKAGE}" && "${CODESIGN_IDENT:--}" != '-' ]]; then
+        set -o pipefail && xcodebuild ONLY_ACTIVE_ARCH=NO -archivePath "obs-studio.xcarchive" -scheme obs-studio -destination "generic/platform=macOS,name=Any Mac" -parallelizeTargets -hideShellScriptEnvironment archive 2>&1 | xcbeautify
+        set -o pipefail && xcodebuild -exportArchive -archivePath "obs-studio.xcarchive" -exportOptionsPlist "exportOptions.plist" -exportPath "." 2>&1 | xcbeautify
     else
-        cmake --build --preset macos-${ARCH}
+        set -o pipefail && xcodebuild ONLY_ACTIVE_ARCH=NO -project obs-studio.xcodeproj -target obs-studio -destination "generic/platform=macOS,name=Any Mac" -parallelizeTargets -configuration RelWithDebInfo -hideShellScriptEnvironment build 2>&1 | xcbeautify
+
+        rm -rf OBS.app && mkdir OBS.app
+        ditto UI/RelWithDebInfo/OBS.app OBS.app
     fi
+
+    popd > /dev/null
+
+    unset NSUnbufferedIO
 }
 
 bundle_obs() {
@@ -61,7 +54,7 @@ bundle_obs() {
 
     step "Install OBS application bundle..."
 
-    find "build_${ARCH}/UI/${BUILD_CONFIG}" -type d -name "OBS.app" | xargs -I{} cp -r {} "build_${ARCH}"/
+    find "build_macos/UI/${BUILD_CONFIG}" -type d -name "OBS.app" | xargs -I{} cp -r {} "build_${ARCH}"/
 }
 
 # Function to configure OBS build
@@ -91,30 +84,21 @@ _configure_obs() {
         SPARKLE_OPTIONS="-DSPARKLE_APPCAST_URL=\"${SPARKLE_APPCAST_URL}\" -DSPARKLE_PUBLIC_KEY=\"${SPARKLE_PUBLIC_KEY}\""
     fi
 
-    PRESET="macos-${ARCH}"
+    PRESET="macos"
 
     if [ "${CI}" ]; then
         case "${GITHUB_EVENT_NAME}" in
-            schedule) PRESET="macos-${ARCH}" ;;
             push)
-                if [ "${GITHUB_REF_TYPE}" == 'tag' ]; then
-                    PRESET="macos-release-${ARCH}"
-                else
-                    PRESET="macos-ci-${ARCH}"
+                if [ "${GITHUB_REF_TYPE}" != 'tag' ]; then
+                    PRESET="macos-ci"
                 fi
                 ;;
-            pull_request)
-                if [ "${SEEKING_TESTERS}" == '1' ]; then
-                    PRESET="macos-${ARCH}"
-                else
-                    PRESET="macos-ci-${ARCH}"
-                fi
-                ;;
-            *) PRESET="macos-ci-${ARCH}" ;;
+            *) PRESET="macos-ci" ;;
         esac
     fi
 
     cmake -S . --preset ${PRESET} \
+        -DCMAKE_OSX_ARCHITECTURES=${ARCH} \
         -DCMAKE_INSTALL_PREFIX=${BUILD_DIR}/install \
         -DCMAKE_BUILD_TYPE=${BUILD_CONFIG} \
         -DOBS_CODESIGN_IDENTITY="${CODESIGN_IDENT:--}" \
@@ -125,32 +109,6 @@ _configure_obs() {
         ${RESTREAM_OPTIONS} \
         ${SPARKLE_OPTIONS} \
         ${QUIET:+-Wno-deprecated -Wno-dev --log-level=ERROR}
-}
-
-# Function to backup previous build artifacts
-_backup_artifacts() {
-    ensure_dir "${CHECKOUT_DIR}"
-    if [ -d "${BUILD_DIR}" ]; then
-        status "Backup old OBS build artifacts"
-
-        CUR_DATE=$(/bin/date +"%Y-%m-%d@%H%M%S")
-        NIGHTLY_DIR="${CHECKOUT_DIR}/nightly-${CUR_DATE}"
-        PACKAGE_NAME=$(/usr/bin/find "${BUILD_DIR}" -name "*.dmg" -depth 1 | sort -rn | head -1)
-
-        if [ -d "${BUILD_DIR}/install/OBS.app" ]; then
-            step "Back up OBS.app..."
-            ensure_dir "${NIGHTLY_DIR}"
-            /bin/mv "${CHECKOUT_DIR}/${BUILD_DIR}/install/OBS.app" "${NIGHTLY_DIR}/"
-            info "You can find OBS.app in ${NIGHTLY_DIR}"
-        fi
-
-        if [ "${PACKAGE_NAME}" ]; then
-            step "Back up $(basename "${PACKAGE_NAME}")..."
-            ensure_dir "${NIGHTLY_DIR}"
-            /bin/mv "../${BUILD_DIR}/$(basename "${PACKAGE_NAME}")" "${NIGHTLY_DIR}/"
-            info "You can find ${PACKAGE_NAME} in ${NIGHTLY_DIR}"
-        fi
-    fi
 }
 
 build-obs-standalone() {

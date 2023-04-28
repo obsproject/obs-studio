@@ -22,7 +22,7 @@ package_obs() {
     ensure_dir "${CHECKOUT_DIR}"
 
     step "Package OBS..."
-    BUILD_DIR="build_${ARCH}"
+    BUILD_DIR="build_macos"
 
     root_dir="$(pwd)"
 
@@ -38,6 +38,8 @@ package_obs() {
 
     hdiutil create -volname "${FILE_NAME//.dmg/}" -srcfolder "${FILE_NAME//.dmg/}" -ov -fs APFS -format UDRW temp.dmg
     hdiutil attach -noverify -readwrite temp.dmg
+    SetFile -c icnC /Volumes/"${FILE_NAME//.dmg/}"/.VolumeIcon.icns
+    SetFile -a C /Volumes/"${FILE_NAME//.dmg/}"
     osascript package.applescript "${FILE_NAME//.dmg/}"
     hdiutil detach "/Volumes/${FILE_NAME//.dmg/}"
     hdiutil convert -format ULMO -o "${FILE_NAME}" temp.dmg

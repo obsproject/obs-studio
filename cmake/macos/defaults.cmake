@@ -28,34 +28,6 @@ endif()
 
 include(buildspec)
 
-# Set default deployment target to 11.0 if not set and enable selection in GUI up to 13.0
-if(NOT CMAKE_OSX_DEPLOYMENT_TARGET)
-  set(CMAKE_OSX_DEPLOYMENT_TARGET
-      11.0
-      CACHE STRING "Minimum macOS version to target for deployment (at runtime). Newer APIs will be weak-linked." FORCE)
-endif()
-set_property(CACHE CMAKE_OSX_DEPLOYMENT_TARGET PROPERTY STRINGS 13.0 12.0 11.0)
-
-# Use Applications directory as default install destination
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  set(CMAKE_INSTALL_PREFIX
-      "/Applications"
-      CACHE STRING "Directory to install OBS after building" FORCE)
-endif()
-
-# Show warning about missing CMAKE_PREFIX_PATH, usually required for successful builds
-if(NOT DEFINED CMAKE_PREFIX_PATH)
-  message(
-    WARNING "No CMAKE_PREFIX_PATH set: OBS supplies pre-built dependencies for building on macOS.\n"
-            "While OBS can be built using packages installed via Homebrew, pre-built dependencies "
-            "contain beneficial patches and fixes for use within OBS and is the suggested source "
-            "of these dependencies.\n"
-            "You can download the appropriate obs-deps package for your "
-            "architecture and set CMAKE_PREFIX_PATH to this directory:\n"
-            "CMAKE_PREFIX_PATH=\"<PATH_TO_OBS_DEPS>\"\n"
-            "Download pre-built OBS dependencies at https://github.com/obsproject/obs-deps/releases\n")
-endif()
-
 # SWIG hard codes the directory to its library directory at compile time. As obs-deps need to be relocatable, we need to
 # force SWIG to look for its files in a directory relative to the PREFIX_PATH. The best way to ensure this is to set the
 # SWIG_LIB environment variable.
