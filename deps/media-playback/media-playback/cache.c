@@ -560,6 +560,9 @@ bool mp_cache_init(mp_cache_t *c, const struct mp_media_info *info)
 	info2.full_decode = true;
 
 	mp_media_t *m = &c->m;
+
+	pthread_mutex_init_value(&c->mutex);
+
 	if (!mp_media_init(m, &info2)) {
 		mp_cache_free(c);
 		return false;
@@ -569,7 +572,6 @@ bool mp_cache_init(mp_cache_t *c, const struct mp_media_info *info)
 		return false;
 	}
 
-	pthread_mutex_init_value(&c->mutex);
 	c->opaque = info->opaque;
 	c->v_cb = info->v_cb;
 	c->a_cb = info->a_cb;
