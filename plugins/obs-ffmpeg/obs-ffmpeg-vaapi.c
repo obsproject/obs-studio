@@ -35,6 +35,7 @@
 #include <libavutil/opt.h>
 #include <libavutil/pixdesc.h>
 #include <libavutil/hwcontext.h>
+#include <libavutil/hwcontext_vaapi.h>
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libavfilter/avfilter.h>
@@ -43,6 +44,9 @@
 
 #include "vaapi-utils.h"
 #include "obs-ffmpeg-formats.h"
+
+#include <va/va_drmcommon.h>
+#include <libdrm/drm_fourcc.h>
 
 #define do_log(level, format, ...)                          \
 	blog(level, "[FFmpeg VAAPI encoder: '%s'] " format, \
@@ -58,12 +62,19 @@ enum codec_type {
 	CODEC_AV1,
 };
 
+struct vaapi_surface {
+	AVFrame *frame;
+	gs_texture_t *textures[4];
+	uint32_t num_textures;
+};
+
 struct vaapi_encoder {
 	obs_encoder_t *encoder;
 	enum codec_type codec;
 
 	AVBufferRef *vadevice_ref;
 	AVBufferRef *vaframes_ref;
+	VADisplay va_dpy;
 
 	const AVCodec *vaapi;
 	AVCodecContext *context;
@@ -146,6 +157,11 @@ static bool vaapi_init_codec(struct vaapi_encoder *enc, const char *path)
 		return false;
 	}
 
+	AVHWDeviceContext *vahwctx =
+		(AVHWDeviceContext *)enc->vadevice_ref->data;
+	AVVAAPIDeviceContext *vadevctx = vahwctx->hwctx;
+	enc->va_dpy = vadevctx->display;
+
 	enc->vaframes_ref = av_hwframe_ctx_alloc(enc->vadevice_ref);
 	if (!enc->vaframes_ref) {
 		warn("Failed to alloc HW frames context");
@@ -158,7 +174,6 @@ static bool vaapi_init_codec(struct vaapi_encoder *enc, const char *path)
 	frames_ctx->sw_format = enc->context->pix_fmt;
 	frames_ctx->width = enc->context->width;
 	frames_ctx->height = enc->context->height;
-	frames_ctx->initial_pool_size = 20;
 
 	ret = av_hwframe_ctx_init(enc->vaframes_ref);
 	if (ret < 0) {
@@ -376,6 +391,117 @@ static bool vaapi_update(void *data, obs_data_t *settings)
 	return vaapi_init_codec(enc, device);
 }
 
+static inline enum gs_color_format drm_to_gs_color_format(int format)
+{
+	switch (format) {
+	case DRM_FORMAT_R8:
+		return GS_R8;
+	case DRM_FORMAT_R16:
+		return GS_R16;
+	case DRM_FORMAT_GR88:
+		return GS_R8G8;
+	case DRM_FORMAT_GR1616:
+		return GS_RG16;
+	default:
+		blog(LOG_ERROR, "Unsupported DRM format %d", format);
+		return GS_UNKNOWN;
+	}
+}
+
+static void vaapi_destroy_surface(struct vaapi_surface *out)
+{
+	obs_enter_graphics();
+
+	for (uint32_t i = 0; i < out->num_textures; ++i) {
+		if (out->textures[i]) {
+			gs_texture_destroy(out->textures[i]);
+			out->textures[i] = NULL;
+		}
+	}
+
+	obs_leave_graphics();
+
+	av_frame_free(&out->frame);
+}
+
+static bool vaapi_create_surface(struct vaapi_encoder *enc,
+				 struct vaapi_surface *out)
+{
+	int ret;
+	VAStatus vas;
+	VADRMPRIMESurfaceDescriptor desc;
+	const AVPixFmtDescriptor *fmt_desc;
+	bool ok = true;
+
+	memset(out, 0, sizeof(*out));
+
+	fmt_desc = av_pix_fmt_desc_get(enc->context->pix_fmt);
+	if (!fmt_desc) {
+		warn("Failed to get pix fmt descriptor");
+		return false;
+	}
+
+	out->frame = av_frame_alloc();
+	if (!out->frame) {
+		warn("Failed to allocate hw frame");
+		return false;
+	}
+
+	ret = av_hwframe_get_buffer(enc->vaframes_ref, out->frame, 0);
+	if (ret < 0) {
+		warn("Failed to get hw frame buffer: %s", av_err2str(ret));
+		goto fail;
+	}
+
+	vas = vaExportSurfaceHandle(enc->va_dpy, (uintptr_t)out->frame->data[3],
+				    VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_2,
+				    VA_EXPORT_SURFACE_WRITE_ONLY |
+					    VA_EXPORT_SURFACE_SEPARATE_LAYERS,
+				    &desc);
+	if (vas != VA_STATUS_SUCCESS) {
+		warn("Failed to export VA surface handle: %s", vaErrorStr(vas));
+		goto fail;
+	}
+
+	obs_enter_graphics();
+
+	for (uint32_t i = 0; i < desc.num_layers; ++i) {
+		unsigned int width = desc.width;
+		unsigned int height = desc.height;
+		if (i) {
+			width /= 1 << fmt_desc->log2_chroma_w;
+			height /= 1 << fmt_desc->log2_chroma_h;
+		}
+
+		out->textures[i] = gs_texture_create_from_dmabuf(
+			width, height, desc.layers[i].drm_format,
+			drm_to_gs_color_format(desc.layers[i].drm_format), 1,
+			&desc.objects[desc.layers[i].object_index[0]].fd,
+			&desc.layers[i].pitch[0], &desc.layers[i].offset[0],
+			&desc.objects[desc.layers[i].object_index[0]]
+				 .drm_format_modifier);
+
+		if (!out->textures[i]) {
+			warn("Failed to import VA surface texture");
+			ok = false;
+		}
+
+		out->num_textures++;
+	}
+
+	obs_leave_graphics();
+
+	for (uint32_t i = 0; i < desc.num_objects; ++i)
+		close(desc.objects[i].fd);
+
+	if (ok)
+		return true;
+
+fail:
+	vaapi_destroy_surface(out);
+	return false;
+}
+
 static inline void flush_remaining_packets(struct vaapi_encoder *enc)
 {
 	int r_pkt = 1;
@@ -457,9 +583,48 @@ fail:
 	return NULL;
 }
 
+static inline bool vaapi_test_texencode(struct vaapi_encoder *enc)
+{
+	struct vaapi_surface surface;
+
+	if (obs_encoder_scaling_enabled(enc->encoder) &&
+	    !obs_encoder_gpu_scaling_enabled(enc->encoder))
+		return false;
+
+	if (!vaapi_create_surface(enc, &surface))
+		return false;
+
+	vaapi_destroy_surface(&surface);
+	return true;
+}
+
+static void *vaapi_create_tex_internal(obs_data_t *settings,
+				       obs_encoder_t *encoder,
+				       enum codec_type codec,
+				       const char *fallback)
+{
+	void *enc = vaapi_create_internal(settings, encoder, codec);
+	if (!enc) {
+		return NULL;
+	}
+	if (!vaapi_test_texencode(enc)) {
+		vaapi_destroy(enc);
+		blog(LOG_WARNING, "VAAPI: Falling back to %s encoder",
+		     fallback);
+		return obs_encoder_create_rerouted(encoder, fallback);
+	}
+	return enc;
+}
+
 static void *h264_vaapi_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
 	return vaapi_create_internal(settings, encoder, CODEC_H264);
+}
+
+static void *h264_vaapi_create_tex(obs_data_t *settings, obs_encoder_t *encoder)
+{
+	return vaapi_create_tex_internal(settings, encoder, CODEC_H264,
+					 "ffmpeg_vaapi");
 }
 
 static void *av1_vaapi_create(obs_data_t *settings, obs_encoder_t *encoder)
@@ -467,10 +632,22 @@ static void *av1_vaapi_create(obs_data_t *settings, obs_encoder_t *encoder)
 	return vaapi_create_internal(settings, encoder, CODEC_AV1);
 }
 
+static void *av1_vaapi_create_tex(obs_data_t *settings, obs_encoder_t *encoder)
+{
+	return vaapi_create_tex_internal(settings, encoder, CODEC_AV1,
+					 "av1_ffmpeg_vaapi");
+}
+
 #ifdef ENABLE_HEVC
 static void *hevc_vaapi_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
 	return vaapi_create_internal(settings, encoder, CODEC_HEVC);
+}
+
+static void *hevc_vaapi_create_tex(obs_data_t *settings, obs_encoder_t *encoder)
+{
+	return vaapi_create_tex_internal(settings, encoder, CODEC_HEVC,
+					 "hevc_ffmpeg_vaapi");
 }
 #endif
 
@@ -500,49 +677,14 @@ static inline void copy_data(AVFrame *pic, const struct encoder_frame *frame,
 	}
 }
 
-static bool vaapi_encode(void *data, struct encoder_frame *frame,
-			 struct encoder_packet *packet, bool *received_packet)
+static bool vaapi_encode_internal(struct vaapi_encoder *enc, AVFrame *frame,
+				  struct encoder_packet *packet,
+				  bool *received_packet)
 {
-	struct vaapi_encoder *enc = data;
-	AVFrame *hwframe = NULL;
 	int got_packet;
 	int ret;
 
-	hwframe = av_frame_alloc();
-	if (!hwframe) {
-		warn("vaapi_encode: failed to allocate hw frame");
-		return false;
-	}
-
-	ret = av_hwframe_get_buffer(enc->vaframes_ref, hwframe, 0);
-	if (ret < 0) {
-		warn("vaapi_encode: failed to get buffer for hw frame: %s",
-		     av_err2str(ret));
-		goto fail;
-	}
-
-	copy_data(enc->vframe, frame, enc->height, enc->context->pix_fmt);
-
-	enc->vframe->pts = frame->pts;
-	hwframe->pts = frame->pts;
-	hwframe->width = enc->vframe->width;
-	hwframe->height = enc->vframe->height;
-
-	ret = av_hwframe_transfer_data(hwframe, enc->vframe, 0);
-	if (ret < 0) {
-		warn("vaapi_encode: failed to upload hw frame: %s",
-		     av_err2str(ret));
-		goto fail;
-	}
-
-	ret = av_frame_copy_props(hwframe, enc->vframe);
-	if (ret < 0) {
-		warn("vaapi_encode: failed to copy props to hw frame: %s",
-		     av_err2str(ret));
-		goto fail;
-	}
-
-	ret = avcodec_send_frame(enc->context, hwframe);
+	ret = avcodec_send_frame(enc->context, frame);
 	if (ret == 0 || ret == AVERROR(EAGAIN))
 		ret = avcodec_receive_packet(enc->context, enc->packet);
 
@@ -619,16 +761,121 @@ static bool vaapi_encode(void *data, struct encoder_frame *frame,
 				obs_av1_keyframe(packet->data, packet->size);
 		}
 		*received_packet = true;
-	} else {
-		*received_packet = false;
 	}
 
 	av_packet_unref(enc->packet);
+	return true;
+
+fail:
+	av_packet_unref(enc->packet);
+	return false;
+}
+
+static bool vaapi_encode_copy(void *data, struct encoder_frame *frame,
+			      struct encoder_packet *packet,
+			      bool *received_packet)
+{
+	struct vaapi_encoder *enc = data;
+	AVFrame *hwframe = NULL;
+	int ret;
+
+	*received_packet = false;
+
+	hwframe = av_frame_alloc();
+	if (!hwframe) {
+		warn("vaapi_encode_copy: failed to allocate hw frame");
+		return false;
+	}
+
+	ret = av_hwframe_get_buffer(enc->vaframes_ref, hwframe, 0);
+	if (ret < 0) {
+		warn("vaapi_encode_copy: failed to get buffer for hw frame: %s",
+		     av_err2str(ret));
+		goto fail;
+	}
+
+	copy_data(enc->vframe, frame, enc->height, enc->context->pix_fmt);
+
+	enc->vframe->pts = frame->pts;
+	hwframe->pts = frame->pts;
+	hwframe->width = enc->vframe->width;
+	hwframe->height = enc->vframe->height;
+
+	ret = av_hwframe_transfer_data(hwframe, enc->vframe, 0);
+	if (ret < 0) {
+		warn("vaapi_encode_copy: failed to upload hw frame: %s",
+		     av_err2str(ret));
+		goto fail;
+	}
+
+	ret = av_frame_copy_props(hwframe, enc->vframe);
+	if (ret < 0) {
+		warn("vaapi_encode_copy: failed to copy props to hw frame: %s",
+		     av_err2str(ret));
+		goto fail;
+	}
+
+	if (!vaapi_encode_internal(enc, hwframe, packet, received_packet))
+		goto fail;
+
 	av_frame_free(&hwframe);
 	return true;
 
 fail:
 	av_frame_free(&hwframe);
+	return false;
+}
+
+static bool vaapi_encode_tex(void *data, struct encoder_texture *texture,
+			     int64_t pts, uint64_t lock_key, uint64_t *next_key,
+			     struct encoder_packet *packet,
+			     bool *received_packet)
+{
+	UNUSED_PARAMETER(lock_key);
+	UNUSED_PARAMETER(next_key);
+
+	struct vaapi_encoder *enc = data;
+	struct vaapi_surface surface;
+	int ret;
+
+	*received_packet = false;
+
+	if (!vaapi_create_surface(enc, &surface)) {
+		warn("vaapi_encode_tex: failed to create texture hw frame");
+		return false;
+	}
+
+	obs_enter_graphics();
+
+	for (uint32_t i = 0; i < surface.num_textures; ++i) {
+		if (!texture->tex[i]) {
+			warn("vaapi_encode_tex: unexpected number of textures");
+			goto fail;
+		}
+		gs_copy_texture(surface.textures[i], texture->tex[i]);
+	}
+
+	gs_flush();
+
+	obs_leave_graphics();
+
+	enc->vframe->pts = pts;
+
+	ret = av_frame_copy_props(surface.frame, enc->vframe);
+	if (ret < 0) {
+		warn("vaapi_encode_tex: failed to copy props to hw frame: %s",
+		     av_err2str(ret));
+		goto fail;
+	}
+
+	if (!vaapi_encode_internal(enc, surface.frame, packet, received_packet))
+		goto fail;
+
+	vaapi_destroy_surface(&surface);
+	return true;
+
+fail:
+	vaapi_destroy_surface(&surface);
 	return false;
 }
 
@@ -1047,12 +1294,29 @@ struct obs_encoder_info h264_vaapi_encoder_info = {
 	.get_name = h264_vaapi_getname,
 	.create = h264_vaapi_create,
 	.destroy = vaapi_destroy,
-	.encode = vaapi_encode,
+	.encode = vaapi_encode_copy,
 	.get_defaults = h264_vaapi_defaults,
 	.get_properties = h264_vaapi_properties,
 	.get_extra_data = vaapi_extra_data,
 	.get_sei_data = vaapi_sei_data,
 	.get_video_info = vaapi_video_info,
+	.caps = OBS_ENCODER_CAP_INTERNAL,
+};
+
+struct obs_encoder_info h264_vaapi_encoder_tex_info = {
+	.id = "ffmpeg_vaapi_tex",
+	.type = OBS_ENCODER_VIDEO,
+	.codec = "h264",
+	.get_name = h264_vaapi_getname,
+	.create = h264_vaapi_create_tex,
+	.destroy = vaapi_destroy,
+	.encode_texture2 = vaapi_encode_tex,
+	.get_defaults = h264_vaapi_defaults,
+	.get_properties = h264_vaapi_properties,
+	.get_extra_data = vaapi_extra_data,
+	.get_sei_data = vaapi_sei_data,
+	.get_video_info = vaapi_video_info,
+	.caps = OBS_ENCODER_CAP_PASS_TEXTURE,
 };
 
 struct obs_encoder_info av1_vaapi_encoder_info = {
@@ -1062,12 +1326,29 @@ struct obs_encoder_info av1_vaapi_encoder_info = {
 	.get_name = av1_vaapi_getname,
 	.create = av1_vaapi_create,
 	.destroy = vaapi_destroy,
-	.encode = vaapi_encode,
+	.encode = vaapi_encode_copy,
 	.get_defaults = av1_vaapi_defaults,
 	.get_properties = av1_vaapi_properties,
 	.get_extra_data = vaapi_extra_data,
 	.get_sei_data = vaapi_sei_data,
 	.get_video_info = vaapi_video_info,
+	.caps = OBS_ENCODER_CAP_INTERNAL,
+};
+
+struct obs_encoder_info av1_vaapi_encoder_tex_info = {
+	.id = "av1_ffmpeg_vaapi_tex",
+	.type = OBS_ENCODER_VIDEO,
+	.codec = "av1",
+	.get_name = av1_vaapi_getname,
+	.create = av1_vaapi_create_tex,
+	.destroy = vaapi_destroy,
+	.encode_texture2 = vaapi_encode_tex,
+	.get_defaults = av1_vaapi_defaults,
+	.get_properties = av1_vaapi_properties,
+	.get_extra_data = vaapi_extra_data,
+	.get_sei_data = vaapi_sei_data,
+	.get_video_info = vaapi_video_info,
+	.caps = OBS_ENCODER_CAP_PASS_TEXTURE,
 };
 
 #ifdef ENABLE_HEVC
@@ -1078,11 +1359,28 @@ struct obs_encoder_info hevc_vaapi_encoder_info = {
 	.get_name = hevc_vaapi_getname,
 	.create = hevc_vaapi_create,
 	.destroy = vaapi_destroy,
-	.encode = vaapi_encode,
+	.encode = vaapi_encode_copy,
 	.get_defaults = hevc_vaapi_defaults,
 	.get_properties = hevc_vaapi_properties,
 	.get_extra_data = vaapi_extra_data,
 	.get_sei_data = vaapi_sei_data,
 	.get_video_info = vaapi_video_info,
+	.caps = OBS_ENCODER_CAP_INTERNAL,
+};
+
+struct obs_encoder_info hevc_vaapi_encoder_tex_info = {
+	.id = "hevc_ffmpeg_vaapi_tex",
+	.type = OBS_ENCODER_VIDEO,
+	.codec = "hevc",
+	.get_name = hevc_vaapi_getname,
+	.create = hevc_vaapi_create_tex,
+	.destroy = vaapi_destroy,
+	.encode_texture2 = vaapi_encode_tex,
+	.get_defaults = hevc_vaapi_defaults,
+	.get_properties = hevc_vaapi_properties,
+	.get_extra_data = vaapi_extra_data,
+	.get_sei_data = vaapi_sei_data,
+	.get_video_info = vaapi_video_info,
+	.caps = OBS_ENCODER_CAP_PASS_TEXTURE,
 };
 #endif

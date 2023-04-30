@@ -33,6 +33,7 @@ elseif(
   OR OS_OPENBSD)
   find_package(Libva REQUIRED)
   find_package(Libpci REQUIRED)
+  find_package(Libdrm REQUIRED)
 endif()
 
 if(OS_WINDOWS OR (OS_LINUX AND ENABLE_NATIVE_NVENC))

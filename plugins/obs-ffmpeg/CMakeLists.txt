@@ -66,6 +66,7 @@ target_link_libraries(
           $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:Libva::va>
           $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:Libva::drm>
           $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:Libpci::pci>
+          $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:Libdrm::Libdrm>
           $<$<BOOL:${ENABLE_NEW_MPEGTS_OUTPUT}>:Librist::Librist>
           $<$<BOOL:${ENABLE_NEW_MPEGTS_OUTPUT}>:Libsrt::Libsrt>)
 
