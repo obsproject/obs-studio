@@ -633,7 +633,39 @@ static void *screen_capture_create(obs_data_t *settings, obs_source_t *source)
 	if (!sc->effect)
 		goto fail;
 
-	sc->display = (CGDirectDisplayID)obs_data_get_int(settings, "display");
+	bool legacy_display_id = obs_data_has_user_value(settings, "display");
+	if (legacy_display_id) {
+		CGDirectDisplayID display_id =
+			(CGDirectDisplayID)obs_data_get_int(settings,
+							    "display");
+		CFUUIDRef display_uuid =
+			CGDisplayCreateUUIDFromDisplayID(display_id);
+		CFStringRef uuid_string =
+			CFUUIDCreateString(kCFAllocatorDefault, display_uuid);
+		obs_data_set_string(
+			settings, "display_uuid",
+			CFStringGetCStringPtr(uuid_string,
+					      kCFStringEncodingUTF8));
+		obs_data_erase(settings, "display");
+		CFRelease(uuid_string);
+		CFRelease(display_uuid);
+	}
+
+	const char *display_uuid =
+		obs_data_get_string(settings, "display_uuid");
+	if (display_uuid) {
+		CFStringRef uuid_string = CFStringCreateWithCString(
+			kCFAllocatorDefault, display_uuid,
+			kCFStringEncodingUTF8);
+		CFUUIDRef uuid_ref = CFUUIDCreateFromString(kCFAllocatorDefault,
+							    uuid_string);
+		sc->display = CGDisplayGetDisplayIDFromUUID(uuid_ref);
+		CFRelease(uuid_string);
+		CFRelease(uuid_ref);
+	} else {
+		sc->display = CGMainDisplayID();
+	}
+
 	sc->application_id = [[NSString alloc]
 		initWithUTF8String:obs_data_get_string(settings,
 						       "application")];
@@ -740,7 +772,15 @@ static void screen_capture_defaults(obs_data_t *settings)
 		}
 	}
 
-	obs_data_set_default_int(settings, "display", initial_display);
+	CFUUIDRef display_uuid =
+		CGDisplayCreateUUIDFromDisplayID(initial_display);
+	CFStringRef uuid_string =
+		CFUUIDCreateString(kCFAllocatorDefault, display_uuid);
+	obs_data_set_default_string(
+		settings, "display_uuid",
+		CFStringGetCStringPtr(uuid_string, kCFStringEncodingUTF8));
+	CFRelease(uuid_string);
+	CFRelease(display_uuid);
 
 	obs_data_set_default_obj(settings, "application", NULL);
 	obs_data_set_default_int(settings, "type", ScreenCaptureDisplayStream);
@@ -764,8 +804,17 @@ static void screen_capture_update(void *data, obs_data_t *settings)
 
 	ScreenCaptureStreamType capture_type =
 		(ScreenCaptureStreamType)obs_data_get_int(settings, "type");
-	CGDirectDisplayID display =
-		(CGDirectDisplayID)obs_data_get_int(settings, "display");
+
+	CFStringRef uuid_string = CFStringCreateWithCString(
+		kCFAllocatorDefault,
+		obs_data_get_string(settings, "display_uuid"),
+		kCFStringEncodingUTF8);
+	CFUUIDRef display_uuid =
+		CFUUIDCreateFromString(kCFAllocatorDefault, uuid_string);
+	CGDirectDisplayID display = CGDisplayGetDisplayIDFromUUID(display_uuid);
+	CFRelease(uuid_string);
+	CFRelease(display_uuid);
+
 	NSString *application_id = [[NSString alloc]
 		initWithUTF8String:obs_data_get_string(settings,
 						       "application")];
@@ -827,7 +876,8 @@ static bool build_display_list(struct screen_capture *sc,
 {
 	os_sem_wait(sc->shareable_content_available);
 
-	obs_property_t *display_list = obs_properties_get(props, "display");
+	obs_property_t *display_list =
+		obs_properties_get(props, "display_uuid");
 	obs_property_list_clear(display_list);
 
 	[sc->shareable_content.displays enumerateObjectsUsingBlock:^(
@@ -869,8 +919,16 @@ static bool build_display_list(struct screen_capture *sc,
 			 dimension_buffer[1], dimension_buffer[2],
 			 dimension_buffer[3]);
 
-		obs_property_list_add_int(display_list, name_buffer,
-					  display.displayID);
+		CFUUIDRef display_uuid =
+			CGDisplayCreateUUIDFromDisplayID(display.displayID);
+		CFStringRef uuid_string =
+			CFUUIDCreateString(kCFAllocatorDefault, display_uuid);
+		obs_property_list_add_string(
+			display_list, name_buffer,
+			CFStringGetCStringPtr(uuid_string,
+					      kCFStringEncodingUTF8));
+		CFRelease(uuid_string);
+		CFRelease(display_uuid);
 	}];
 
 	os_sem_post(sc->shareable_content_available);
@@ -946,7 +1004,8 @@ static bool content_settings_changed(void *data, obs_properties_t *props,
 
 	unsigned int capture_type_id =
 		(unsigned int)obs_data_get_int(settings, "type");
-	obs_property_t *display_list = obs_properties_get(props, "display");
+	obs_property_t *display_list =
+		obs_properties_get(props, "display_uuid");
 	obs_property_t *window_list = obs_properties_get(props, "window");
 	obs_property_t *app_list = obs_properties_get(props, "application");
 	obs_property_t *empty = obs_properties_get(props, "show_empty_names");
@@ -1037,8 +1096,9 @@ static obs_properties_t *screen_capture_properties(void *data)
 				  obs_module_text("ApplicationCapture"), 2);
 
 	obs_property_t *display_list = obs_properties_add_list(
-		props, "display", obs_module_text("DisplayCapture.Display"),
-		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+		props, "display_uuid",
+		obs_module_text("DisplayCapture.Display"), OBS_COMBO_TYPE_LIST,
+		OBS_COMBO_FORMAT_STRING);
 
 	obs_property_t *app_list = obs_properties_add_list(
 		props, "application", obs_module_text("Application"),

@@ -182,10 +182,24 @@ static inline void display_stream_update(struct display_capture *dc,
 
 static bool init_display_stream(struct display_capture *dc)
 {
-	if (dc->display >= [NSScreen screens].count)
-		return false;
+	[[NSScreen screens]
+		enumerateObjectsUsingBlock:^(NSScreen *_Nonnull screen,
+					     NSUInteger index __unused,
+					     BOOL *_Nonnull stop __unused) {
+			NSNumber *screenNumber =
+				screen.deviceDescription[@"NSScreenNumber"];
+			CGDirectDisplayID display_id =
+				(CGDirectDisplayID)screenNumber.intValue;
 
-	dc->screen = [[NSScreen screens][dc->display] retain];
+			if (display_id == dc->display) {
+				dc->screen = [screen retain];
+				*stop = YES;
+			}
+		}];
+
+	if (!dc->screen) {
+		return false;
+	}
 
 	dc->frame = [dc->screen convertRectToBacking:dc->screen.frame];
 
@@ -283,7 +297,39 @@ static void *display_capture_create(obs_data_t *settings, obs_source_t *source)
 	init_window(&dc->window, settings);
 	load_crop(dc, settings);
 
-	dc->display = (unsigned int)obs_data_get_int(settings, "display");
+	bool legacy_display_id = obs_data_has_user_value(settings, "display");
+	if (legacy_display_id) {
+		CGDirectDisplayID display_id =
+			(CGDirectDisplayID)obs_data_get_int(settings,
+							    "display");
+		CFUUIDRef display_uuid =
+			CGDisplayCreateUUIDFromDisplayID(display_id);
+		CFStringRef uuid_string =
+			CFUUIDCreateString(kCFAllocatorDefault, display_uuid);
+		obs_data_set_string(
+			settings, "display_uuid",
+			CFStringGetCStringPtr(uuid_string,
+					      kCFStringEncodingUTF8));
+		obs_data_erase(settings, "display");
+		CFRelease(uuid_string);
+		CFRelease(display_uuid);
+	}
+
+	const char *display_uuid =
+		obs_data_get_string(settings, "display_uuid");
+	if (display_uuid) {
+		CFStringRef uuid_string = CFStringCreateWithCString(
+			kCFAllocatorDefault, display_uuid,
+			kCFStringEncodingUTF8);
+		CFUUIDRef uuid_ref = CFUUIDCreateFromString(kCFAllocatorDefault,
+							    uuid_string);
+		dc->display = CGDisplayGetDisplayIDFromUUID(uuid_ref);
+		CFRelease(uuid_string);
+		CFRelease(uuid_ref);
+	} else {
+		dc->display = CGMainDisplayID();
+	}
+
 	pthread_mutex_init(&dc->mutex, NULL);
 
 	if (!init_display_stream(dc))
@@ -482,7 +528,18 @@ static uint32_t display_capture_getheight(void *data)
 
 static void display_capture_defaults(obs_data_t *settings)
 {
-	obs_data_set_default_int(settings, "display", 0);
+	NSNumber *screen =
+		[[NSScreen mainScreen] deviceDescription][@"NSScreenNumber"];
+
+	CFUUIDRef display_uuid = CGDisplayCreateUUIDFromDisplayID(
+		(CGDirectDisplayID)screen.intValue);
+	CFStringRef uuid_string =
+		CFUUIDCreateString(kCFAllocatorDefault, display_uuid);
+	obs_data_set_default_string(
+		settings, "display_uuid",
+		CFStringGetCStringPtr(uuid_string, kCFStringEncodingUTF8));
+	CFRelease(uuid_string);
+	CFRelease(display_uuid);
 	obs_data_set_default_bool(settings, "show_cursor", true);
 	obs_data_set_default_int(settings, "crop_mode", CROP_NONE);
 
@@ -536,7 +593,16 @@ static void display_capture_update(void *data, obs_data_t *settings)
 	if (requires_window(dc->crop))
 		update_window(&dc->window, settings);
 
-	unsigned display = (unsigned int)obs_data_get_int(settings, "display");
+	CFStringRef uuid_string = CFStringCreateWithCString(
+		kCFAllocatorDefault,
+		obs_data_get_string(settings, "display_uuid"),
+		kCFStringEncodingUTF8);
+	CFUUIDRef display_uuid =
+		CFUUIDCreateFromString(kCFAllocatorDefault, uuid_string);
+	CGDirectDisplayID display = CGDisplayGetDisplayIDFromUUID(display_uuid);
+	CFRelease(uuid_string);
+	CFRelease(display_uuid);
+
 	bool show_cursor = obs_data_get_bool(settings, "show_cursor");
 	if (dc->display == display && dc->hide_cursor != show_cursor)
 		return;
@@ -596,13 +662,14 @@ static obs_properties_t *display_capture_properties(void *unused)
 	obs_properties_t *props = obs_properties_create();
 
 	obs_property_t *list = obs_properties_add_list(
-		props, "display", obs_module_text("DisplayCapture.Display"),
-		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+		props, "display_uuid",
+		obs_module_text("DisplayCapture.Display"), OBS_COMBO_TYPE_LIST,
+		OBS_COMBO_FORMAT_STRING);
 
 	[[NSScreen screens] enumerateObjectsUsingBlock:^(
-				    NSScreen *_Nonnull screen, NSUInteger index,
-				    BOOL *_Nonnull stop
-				    __attribute__((unused))) {
+				    NSScreen *_Nonnull screen,
+				    NSUInteger index __unused,
+				    BOOL *_Nonnull stop __unused) {
 		char dimension_buffer[4][12];
 		char name_buffer[256];
 		snprintf(dimension_buffer[0], sizeof(dimension_buffer[0]), "%u",
@@ -620,7 +687,21 @@ static obs_properties_t *display_capture_properties(void *unused)
 			 dimension_buffer[0], dimension_buffer[1],
 			 dimension_buffer[2], dimension_buffer[3]);
 
-		obs_property_list_add_int(list, name_buffer, index);
+		NSNumber *screenNumber =
+			screen.deviceDescription[@"NSScreenNumber"];
+
+		CGDirectDisplayID display_id =
+			(CGDirectDisplayID)screenNumber.intValue;
+		CFUUIDRef display_uuid =
+			CGDisplayCreateUUIDFromDisplayID(display_id);
+		CFStringRef uuid_string =
+			CFUUIDCreateString(kCFAllocatorDefault, display_uuid);
+		obs_property_list_add_string(
+			list, name_buffer,
+			CFStringGetCStringPtr(uuid_string,
+					      kCFStringEncodingUTF8));
+		CFRelease(uuid_string);
+		CFRelease(display_uuid);
 	}];
 
 	obs_properties_add_bool(props, "show_cursor",
