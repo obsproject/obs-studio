@@ -106,10 +106,19 @@ jobs:
 
       - name: 'Check for GitHub Labels'
         id: github-check
-        if: github.event_name == 'pull_request'
         run: |
-          if test -n "$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -s "${{ github.event.pull_request.url }}" | jq -e '.labels[] | select(.name == "Seeking Testers")')"; then
-            echo "generator=Xcode" >> $GITHUB_OUTPUT
+          if [[ "${GITHUB_EVENT_NAME}" == 'pull_request' ]]; then
+            if test -n "$(curl -H "Authorization: Bearer ${{ github.token }}" -s "${{ github.event.pull_request.url }}" | jq -e '.labels[] | select(.name == "Seeking Testers")')"; then
+              echo "generator=Xcode" >> $GITHUB_OUTPUT
+            else
+              echo "generator=Ninja" >> $GITHUB_OUTPUT
+            fi
+          elif [[ "${GITHUB_EVENT_NAME}" == 'push' ]]; then
+            if [[ ${GITHUB_REF_NAME} =~ [0-9]+.[0-9]+.[0-9]+(-(rc|beta).+)? ]]; then
+              echo "generator=Xcode" >> $GITHUB_OUTPUT
+            else
+              echo "generator=Ninja" >> $GITHUB_OUTPUT
+            fi
           else
             echo "generator=Ninja" >> $GITHUB_OUTPUT
           fi
@@ -119,7 +128,9 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{ github.workspace }}/.ccache
-          key: ${{ runner.os }}-${{ github.ref_name }}-${{ steps.github-check.outputs.generator }}-ccache-${{ matrix.arch }}-${{ needs.config.outputs.cache_date }}
+          key: ${{ runner.os }}-ccache-${{ steps.github-check.outputs.generator }}-${{ matrix.arch }}-${{ github.event_name }}-${{ github.head_ref }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-${{ steps.github-check.outputs.generator }}-${{ matrix.arch }}-push-
 
       - name: 'Setup build environment'
         id: setup
@@ -215,7 +226,9 @@ jobs:
           CACHE_NAME: 'ccache-cache'
         with:
           path: ${{ github.workspace }}/.ccache
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ matrix.ubuntu }}-${{ needs.config.outputs.cache_date }}
+          key: ${{ runner.os }}-ccache-${{ matrix.ubuntu }}-${{ github.event_name }}-${{ github.head_ref }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-${{ matrix.ubuntu }}-push-
 
       - name: 'Restore Chromium Embedded Framework from cache'
         id: cef-cache
