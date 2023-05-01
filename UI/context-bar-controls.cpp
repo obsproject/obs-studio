@@ -311,15 +311,13 @@ void DisplayCaptureToolbar::Init()
 	const char *device_str =
 		get_os_text(mod, "Monitor", "DisplayCapture.Display", "Screen");
 	ui->deviceLabel->setText(device_str);
-#ifndef _WIN32
-	is_int = true;
-#endif
 
 #ifdef _WIN32
 	prop_name = "monitor_id";
 #elif __APPLE__
-	prop_name = "display";
+	prop_name = "display_uuid";
 #else
+	is_int = true;
 	prop_name = "screen";
 #endif
 
