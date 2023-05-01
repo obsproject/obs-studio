@@ -164,6 +164,11 @@ void MissingFilesPathItemDelegate::handleBrowse(QWidget *container)
 			container, QTStr("MissingFiles.SelectFile"),
 			currentPath, nullptr);
 
+#ifdef __APPLE__
+		// TODO: Revisit when QTBUG-42661 is fixed
+		container->window()->raise();
+#endif
+
 		if (!newPath.isEmpty()) {
 			container->setProperty(PATH_LIST_PROP,
 					       QStringList() << newPath);
