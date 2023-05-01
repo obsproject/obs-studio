@@ -549,25 +549,14 @@ static void show_syphon_license_internal(void)
 
 	NSWorkspace *ws = [NSWorkspace sharedWorkspace];
 
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 110000
-	if (@available(macOS 11.0, *)) {
-		NSURL *url = [NSURL
-			URLWithString:
-				[@"file://"
-					stringByAppendingString:
-						[NSString
-							stringWithCString:path
-								 encoding:NSUTF8StringEncoding]]];
-		[ws openURL:url];
-	} else {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-		[ws openFile:@(path)];
-#pragma clang diagnostic pop
-	}
-#else
-	[ws openFile:@(path)];
-#endif
+	NSURL *url = [NSURL
+		URLWithString:
+			[@"file://"
+				stringByAppendingString:
+					[NSString
+						stringWithCString:path
+							 encoding:NSUTF8StringEncoding]]];
+	[ws openURL:url];
 	bfree(path);
 }
 
