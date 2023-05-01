@@ -1447,6 +1447,13 @@ try {
 		obs_encoder_set_last_error(encoder, text);
 		throw text;
 	}
+	case VIDEO_FORMAT_P216:
+	case VIDEO_FORMAT_P416: {
+		const char *const text =
+			obs_module_text("AMF.16bitUnsupported");
+		obs_encoder_set_last_error(encoder, text);
+		throw text;
+	}
 	default:
 		switch (voi->colorspace) {
 		case VIDEO_CS_2100_PQ:
@@ -1787,6 +1794,13 @@ try {
 	case VIDEO_FORMAT_I010:
 	case VIDEO_FORMAT_P010:
 		break;
+	case VIDEO_FORMAT_P216:
+	case VIDEO_FORMAT_P416: {
+		const char *const text =
+			obs_module_text("AMF.16bitUnsupported");
+		obs_encoder_set_last_error(encoder, text);
+		throw text;
+	}
 	default:
 		switch (voi->colorspace) {
 		case VIDEO_CS_2100_PQ:
@@ -2088,6 +2102,13 @@ try {
 	case VIDEO_FORMAT_I010:
 	case VIDEO_FORMAT_P010: {
 		break;
+	}
+	case VIDEO_FORMAT_P216:
+	case VIDEO_FORMAT_P416: {
+		const char *const text =
+			obs_module_text("AMF.16bitUnsupported");
+		obs_encoder_set_last_error(encoder, text);
+		throw text;
 	}
 	default:
 		switch (voi->colorspace) {
