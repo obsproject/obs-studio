@@ -862,6 +862,14 @@ static void *obs_qsv_create(enum qsv_codec codec, obs_data_t *settings,
 		}
 		obsqsv->params.video_fmt_10bit = true;
 		break;
+	case VIDEO_FORMAT_P216:
+	case VIDEO_FORMAT_P416: {
+		const char *const text = obs_module_text("16bitUnsupported");
+		obs_encoder_set_last_error(encoder, text);
+		error("%s", text);
+		bfree(obsqsv);
+		return NULL;
+	}
 	default:
 		switch (voi->colorspace) {
 		case VIDEO_CS_2100_PQ:
