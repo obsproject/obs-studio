@@ -297,6 +297,13 @@ static inline void screen_stream_audio_update(struct screen_capture *sc,
 		CMAudioFormatDescriptionGetStreamBasicDescription(
 			format_description);
 
+	if (audio_description->mChannelsPerFrame < 1) {
+		MACCAP_ERR(
+			"screen_stream_audio_update: Received sample buffer has less than 1 channel per frame (mChannelsPerFrame set to '%d')\n",
+			audio_description->mChannelsPerFrame);
+		return;
+	}
+
 	char *_Nullable bytes = NULL;
 	CMBlockBufferRef data_buffer =
 		CMSampleBufferGetDataBuffer(sample_buffer);
