@@ -51,136 +51,12 @@ int64_t offtin(const uint8_t *buf)
 
 /* ------------------------------------------------------------------------ */
 
-int ApplyPatch(ZSTD_DCtx *zstdCtx, const wchar_t *patchFile,
-	       const wchar_t *targetFile)
-try {
-	uint8_t header[24];
-	int64_t newsize;
-	bool success;
+constexpr const char *kDeltaMagic = "BOUF//ZSTD//DICT";
+constexpr int kMagicSize = 16;
+constexpr int kHeaderSize = kMagicSize + 8; // magic + int64_t delta size
 
-	WinHandle hPatch;
-	WinHandle hTarget;
-
-	/* --------------------------------- *
-	 * open patch and file to patch      */
-
-	hPatch = CreateFile(patchFile, GENERIC_READ, 0, nullptr, OPEN_EXISTING,
-			    0, nullptr);
-	if (!hPatch.Valid())
-		throw int(GetLastError());
-
-	hTarget = CreateFile(targetFile, GENERIC_READ, 0, nullptr,
-			     OPEN_EXISTING, 0, nullptr);
-	if (!hTarget.Valid())
-		throw int(GetLastError());
-
-	/* --------------------------------- *
-	 * read patch header                 */
-
-	DWORD read;
-	DWORD patchFileSize;
-
-	patchFileSize = GetFileSize(hPatch, nullptr);
-	if (patchFileSize == INVALID_FILE_SIZE)
-		throw int(GetLastError());
-
-	success = !!ReadFile(hPatch, header, sizeof(header), &read, nullptr);
-	if (success && read == sizeof(header)) {
-		if (memcmp(header, "BOUF//ZSTD//DICT", 16))
-			throw int(-4);
-	} else {
-		throw int(GetLastError());
-	}
-
-	/* --------------------------------- *
-	 * allocate new file size data       */
-
-	newsize = offtin(header + 16);
-	if (newsize < 0 || newsize >= 0x7ffffffff)
-		throw int(-5);
-
-	vector<uint8_t> newData;
-	try {
-		newData.resize((size_t)newsize);
-	} catch (...) {
-		throw int(-1);
-	}
-
-	/* --------------------------------- *
-	 * read remainder of patch file     */
-
-	vector<uint8_t> patchData;
-	try {
-		patchData.resize(patchFileSize - sizeof(header));
-	} catch (...) {
-		throw int(-1);
-	}
-
-	if (!ReadFile(hPatch, &patchData[0], patchFileSize - sizeof(header),
-		      &read, nullptr))
-		throw int(GetLastError());
-
-	if (read != (patchFileSize - sizeof(header)))
-		throw int(-1);
-
-	/* --------------------------------- *
-	 * read old file                     */
-
-	DWORD targetFileSize;
-
-	targetFileSize = GetFileSize(hTarget, nullptr);
-	if (targetFileSize == INVALID_FILE_SIZE)
-		throw int(GetLastError());
-
-	vector<uint8_t> oldData;
-	try {
-		oldData.resize(targetFileSize);
-	} catch (...) {
-		throw int(-1);
-	}
-
-	if (!ReadFile(hTarget, &oldData[0], targetFileSize, &read, nullptr))
-		throw int(GetLastError());
-	if (read != targetFileSize)
-		throw int(-1);
-
-	/* --------------------------------- *
-	 * patch to new file data            */
-
-	size_t result = ZSTD_decompress_usingDict(
-		zstdCtx, &newData[0], newData.size(), patchData.data(),
-		patchData.size(), oldData.data(), oldData.size());
-
-	if (result != newsize || ZSTD_isError(result))
-		throw int(-9);
-
-	/* --------------------------------- *
-	 * write new file                    */
-
-	hTarget = nullptr;
-	hTarget = CreateFile(targetFile, GENERIC_WRITE, 0, nullptr,
-			     CREATE_ALWAYS, 0, nullptr);
-	if (!hTarget.Valid())
-		throw int(GetLastError());
-
-	DWORD written;
-
-	success = !!WriteFile(hTarget, newData.data(), (DWORD)newsize, &written,
-			      nullptr);
-	if (!success || written != newsize)
-		throw int(GetLastError());
-
-	return 0;
-
-} catch (int code) {
-	return code;
-}
-
-#define HEADER_SIZE 24
-
-int ApplyBundlePatch(ZSTD_DCtx *zstdCtx, const char *bundle_data,
-		     const size_t patch_offset, const size_t patch_size,
-		     const wchar_t *targetFile)
+int ApplyPatch(ZSTD_DCtx *zstdCtx, std::byte *buffer, const size_t patch_offset,
+	       const size_t patch_size, const wchar_t *targetFile)
 try {
 	int64_t newsize;
 	bool success;
@@ -198,18 +74,18 @@ try {
 	/* --------------------------------- *
 	 * read patch header                 */
 
-	const char *patch_data = bundle_data + patch_offset;
-	if (memcmp(patch_data, "BOUF//ZSTD//DICT", 16))
+	std::byte *patch_data = buffer + patch_offset;
+	if (memcmp(patch_data, kDeltaMagic, kMagicSize))
 		throw int(-4);
 
 	/* --------------------------------- *
 	 * allocate new file size data       */
 
-	newsize = offtin((const uint8_t *)patch_data + 16);
+	newsize = offtin((const uint8_t *)patch_data + kMagicSize);
 	if (newsize < 0 || newsize >= 0x7ffffffff)
 		throw int(-5);
 
-	vector<uint8_t> newData;
+	vector<std::byte> newData;
 	try {
 		newData.resize((size_t)newsize);
 	} catch (...) {
@@ -220,30 +96,30 @@ try {
 	 * read old file                     */
 
 	DWORD read;
-	DWORD targetFileSize;
+	DWORD oldFileSize;
 
-	targetFileSize = GetFileSize(hTarget, nullptr);
-	if (targetFileSize == INVALID_FILE_SIZE)
+	oldFileSize = GetFileSize(hTarget, nullptr);
+	if (oldFileSize == INVALID_FILE_SIZE)
 		throw int(GetLastError());
 
-	vector<uint8_t> oldData;
+	vector<std::byte> oldData;
 	try {
-		oldData.resize(targetFileSize);
+		oldData.resize(oldFileSize);
 	} catch (...) {
 		throw int(-1);
 	}
 
-	if (!ReadFile(hTarget, &oldData[0], targetFileSize, &read, nullptr))
+	if (!ReadFile(hTarget, &oldData[0], oldFileSize, &read, nullptr))
 		throw int(GetLastError());
-	if (read != targetFileSize)
+	if (read != oldFileSize)
 		throw int(-1);
 
 	/* --------------------------------- *
 	 * patch to new file data            */
 
 	size_t result = ZSTD_decompress_usingDict(
-		zstdCtx, &newData[0], newData.size(), patch_data + HEADER_SIZE,
-		patch_size - HEADER_SIZE, oldData.data(), oldData.size());
+		zstdCtx, &newData[0], newData.size(), patch_data + kHeaderSize,
+		patch_size - kHeaderSize, oldData.data(), oldData.size());
 
 	if (result != newsize || ZSTD_isError(result))
 		throw int(-9);
@@ -266,77 +142,6 @@ try {
 
 	return 0;
 
-} catch (int code) {
-	return code;
-}
-
-int DecompressFile(ZSTD_DCtx *ctx, const wchar_t *tempFile, size_t newSize)
-try {
-	WinHandle hTemp;
-
-	hTemp = CreateFile(tempFile, GENERIC_READ, 0, nullptr, OPEN_EXISTING, 0,
-			   nullptr);
-	if (!hTemp.Valid())
-		throw int(GetLastError());
-
-	/* --------------------------------- *
-	 * read compressed data              */
-
-	DWORD read;
-	DWORD compressedFileSize;
-
-	compressedFileSize = GetFileSize(hTemp, nullptr);
-	if (compressedFileSize == INVALID_FILE_SIZE)
-		throw int(GetLastError());
-
-	vector<uint8_t> oldData;
-	try {
-		oldData.resize(compressedFileSize);
-	} catch (...) {
-		throw int(-1);
-	}
-
-	if (!ReadFile(hTemp, &oldData[0], compressedFileSize, &read, nullptr))
-		throw int(GetLastError());
-	if (read != compressedFileSize)
-		throw int(-1);
-
-	/* --------------------------------- *
-	 * decompress data                   */
-
-	vector<uint8_t> newData;
-	try {
-		newData.resize((size_t)newSize);
-	} catch (...) {
-		throw int(-1);
-	}
-
-	size_t result = ZSTD_decompressDCtx(ctx, &newData[0], newData.size(),
-					    oldData.data(), oldData.size());
-
-	if (result != newSize)
-		throw int(-9);
-	if (ZSTD_isError(result))
-		throw int(-10);
-
-	/* --------------------------------- *
-	 * overwrite temp file with new data */
-
-	hTemp = nullptr;
-	hTemp = CreateFile(tempFile, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS,
-			   0, nullptr);
-	if (!hTemp.Valid())
-		throw int(GetLastError());
-
-	bool success;
-	DWORD written;
-
-	success = !!WriteFile(hTemp, newData.data(), (DWORD)newSize, &written,
-			      nullptr);
-	if (!success || written != newSize)
-		throw int(GetLastError());
-
-	return 0;
 } catch (int code) {
 	return code;
 }

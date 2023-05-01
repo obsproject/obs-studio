@@ -21,33 +21,33 @@
 
 using namespace std;
 
-void HashToString(const uint8_t *in, wchar_t *out)
+void HashToString(const B2Hash &in, string &out)
 {
-	const wchar_t alphabet[] = L"0123456789abcdef";
+	const char alphabet[] = "0123456789abcdef";
+	out.resize(kBlake2StrLength);
 
-	for (int i = 0; i != BLAKE2_HASH_LENGTH; ++i) {
-		out[2 * i] = alphabet[in[i] / 16];
-		out[2 * i + 1] = alphabet[in[i] % 16];
+	for (int i = 0; i != kBlake2HashLength; ++i) {
+		out[2 * i] = alphabet[(uint8_t)in[i] / 16];
+		out[2 * i + 1] = alphabet[(uint8_t)in[i] % 16];
 	}
-
-	out[BLAKE2_HASH_LENGTH * 2] = 0;
 }
 
-void StringToHash(const wchar_t *in, BYTE *out)
+void StringToHash(const string &in, B2Hash &out)
 {
 	unsigned int temp;
+	const char *str = in.c_str();
 
-	for (int i = 0; i < BLAKE2_HASH_LENGTH; i++) {
-		swscanf_s(in + i * 2, L"%02x", &temp);
-		out[i] = (BYTE)temp;
+	for (int i = 0; i < kBlake2HashLength; i++) {
+		sscanf_s(str + i * 2, "%02x", &temp);
+		out[i] = (std::byte)temp;
 	}
 }
 
-bool CalculateFileHash(const wchar_t *path, BYTE *hash)
+bool CalculateFileHash(const wchar_t *path, B2Hash &hash)
 {
 	static __declspec(thread) vector<BYTE> hashBuffer;
 	blake2b_state blake2;
-	if (blake2b_init(&blake2, BLAKE2_HASH_LENGTH) != 0)
+	if (blake2b_init(&blake2, kBlake2HashLength) != 0)
 		return false;
 
 	hashBuffer.resize(1048576);
@@ -70,7 +70,7 @@ bool CalculateFileHash(const wchar_t *path, BYTE *hash)
 			return false;
 	}
 
-	if (blake2b_final(&blake2, hash, BLAKE2_HASH_LENGTH) != 0)
+	if (blake2b_final(&blake2, &hash[0], hash.size()) != 0)
 		return false;
 
 	return true;

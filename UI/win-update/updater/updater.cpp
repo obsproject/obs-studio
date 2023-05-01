@@ -21,14 +21,23 @@
 #include <util/windows/CoTaskMemPtr.hpp>
 
 #include <future>
-#include <vector>
 #include <string>
+#include <string_view>
 #include <mutex>
 #include <unordered_set>
 #include <queue>
 
 using namespace std;
 using namespace json11;
+
+/* ----------------------------------------------------------------------- */
+
+constexpr const string_view kCDNUrl = "https://cdn-fastly.obsproject.com/";
+constexpr const wchar_t *kCDNHostname = L"cdn-fastly.obsproject.com";
+constexpr const wchar_t *kCDNUpdateBaseUrl =
+	L"https://cdn-fastly.obsproject.com/update_studio";
+constexpr const wchar_t *kPatchManifestURL =
+	L"https://obsproject.com/update_studio/getpatchmanifest";
 
 /* ----------------------------------------------------------------------- */
 
@@ -235,7 +244,38 @@ static string QuickReadFile(const wchar_t *path)
 	return data;
 }
 
+static bool QuickWriteFile(const wchar_t *file, const void *data, size_t size)
+try {
+	WinHandle handle = CreateFile(file, GENERIC_WRITE, 0, nullptr,
+				      CREATE_ALWAYS, FILE_FLAG_WRITE_THROUGH,
+				      nullptr);
+
+	if (handle == INVALID_HANDLE_VALUE)
+		throw GetLastError();
+
+	DWORD written;
+	if (!WriteFile(handle, data, (DWORD)size, &written, nullptr))
+		throw GetLastError();
+
+	return true;
+
+} catch (LastError error) {
+	SetLastError(error.code);
+	return false;
+}
+
 /* ----------------------------------------------------------------------- */
+
+/* Extend std::hash for B2Hash */
+namespace std {
+template<> struct hash<B2Hash> {
+	size_t operator()(B2Hash value) const
+	{
+		return hash<string_view>{}(
+			string_view((const char *)value.data(), value.size()));
+	}
+};
+}
 
 enum state_t {
 	STATE_INVALID,
@@ -250,30 +290,31 @@ enum state_t {
 struct update_t {
 	wstring sourceURL;
 	wstring outputPath;
-	wstring tempPath;
 	wstring previousFile;
-	wstring basename;
 	string packageName;
 
+	B2Hash hash;
+	B2Hash my_hash;
+	B2Hash downloadHash;
+
 	DWORD fileSize = 0;
-	BYTE hash[BLAKE2_HASH_LENGTH];
-	BYTE downloadhash[BLAKE2_HASH_LENGTH];
-	BYTE my_hash[BLAKE2_HASH_LENGTH];
 	state_t state = STATE_INVALID;
 	bool has_hash = false;
 	bool patchable = false;
 	bool compressed = false;
 	bool is_bundle = false;
-	int bundle_offset = -1;
+	uint32_t bundle_offset = 0;
 
 	inline update_t() {}
+
 	inline update_t(const update_t &from)
 		: sourceURL(from.sourceURL),
 		  outputPath(from.outputPath),
-		  tempPath(from.tempPath),
 		  previousFile(from.previousFile),
-		  basename(from.basename),
 		  packageName(from.packageName),
+		  hash(from.hash),
+		  my_hash(from.my_hash),
+		  downloadHash(from.downloadHash),
 		  fileSize(from.fileSize),
 		  state(from.state),
 		  has_hash(from.has_hash),
@@ -282,18 +323,16 @@ struct update_t {
 		  is_bundle(from.is_bundle),
 		  bundle_offset(from.bundle_offset)
 	{
-		memcpy(hash, from.hash, sizeof(hash));
-		memcpy(downloadhash, from.downloadhash, sizeof(downloadhash));
-		memcpy(my_hash, from.my_hash, sizeof(my_hash));
 	}
 
 	inline update_t(update_t &&from)
 		: sourceURL(std::move(from.sourceURL)),
 		  outputPath(std::move(from.outputPath)),
-		  tempPath(std::move(from.tempPath)),
 		  previousFile(std::move(from.previousFile)),
-		  basename(std::move(from.basename)),
 		  packageName(std::move(from.packageName)),
+		  hash(from.hash),
+		  my_hash(from.my_hash),
+		  downloadHash(std::move(from.downloadHash)),
 		  fileSize(from.fileSize),
 		  state(from.state),
 		  has_hash(from.has_hash),
@@ -303,10 +342,6 @@ struct update_t {
 		  bundle_offset(from.bundle_offset)
 	{
 		from.state = STATE_INVALID;
-
-		memcpy(hash, from.hash, sizeof(hash));
-		memcpy(downloadhash, from.downloadhash, sizeof(downloadhash));
-		memcpy(my_hash, from.my_hash, sizeof(my_hash));
 	}
 
 	void CleanPartialUpdate()
@@ -320,10 +355,6 @@ struct update_t {
 			} else {
 				DeleteFile(outputPath.c_str());
 			}
-			if (state == STATE_INSTALL_FAILED)
-				DeleteFile(tempPath.c_str());
-		} else if (state == STATE_DOWNLOADED) {
-			DeleteFile(tempPath.c_str());
 		}
 	}
 
@@ -331,10 +362,11 @@ struct update_t {
 	{
 		sourceURL = from.sourceURL;
 		outputPath = from.outputPath;
-		tempPath = from.tempPath;
 		previousFile = from.previousFile;
-		basename = from.basename;
 		packageName = from.packageName;
+		hash = from.hash;
+		my_hash = from.my_hash;
+		downloadHash = from.downloadHash;
 		fileSize = from.fileSize;
 		state = from.state;
 		has_hash = from.has_hash;
@@ -342,10 +374,6 @@ struct update_t {
 		compressed = from.compressed;
 		is_bundle = from.is_bundle;
 		bundle_offset = from.bundle_offset;
-
-		memcpy(hash, from.hash, sizeof(hash));
-		memcpy(downloadhash, from.downloadhash, sizeof(downloadhash));
-		memcpy(my_hash, from.my_hash, sizeof(my_hash));
 
 		return *this;
 	}
@@ -363,8 +391,9 @@ struct deletion_t {
 	}
 };
 
-static unordered_map<string, wstring> hashes;
-static unordered_set<string> bundledPackages;
+static unordered_map<B2Hash, vector<std::byte>> download_data;
+static unordered_map<string, B2Hash> packageBundles;
+static unordered_map<string, B2Hash> hashes;
 static vector<update_t> updates;
 static vector<deletion_t> deletions;
 static mutex updateMutex;
@@ -379,6 +408,29 @@ static inline void CleanupPartialUpdates()
 }
 
 /* ----------------------------------------------------------------------- */
+
+static int Decompress(ZSTD_DCtx *ctx, std::vector<std::byte> &buf, size_t size)
+{
+	// Copy compressed data
+	vector<std::byte> comp(buf.begin(), buf.end());
+
+	try {
+		buf.resize(size);
+	} catch (...) {
+		return -1;
+	}
+
+	// Overwrite buffer with decompressed data
+	size_t result = ZSTD_decompressDCtx(ctx, &buf[0], buf.size(),
+					    comp.data(), comp.size());
+
+	if (result != size)
+		return -9;
+	if (ZSTD_isError(result))
+		return -10;
+
+	return 0;
+}
 
 bool DownloadWorkerThread()
 {
@@ -408,12 +460,11 @@ bool DownloadWorkerThread()
 	WinHttpSetOption(hSession, WINHTTP_OPTION_DECOMPRESSION,
 			 (LPVOID)&compressionFlags, sizeof(compressionFlags));
 
-	HttpHandle hConnect = WinHttpConnect(hSession,
-					     L"cdn-fastly.obsproject.com",
+	HttpHandle hConnect = WinHttpConnect(hSession, kCDNHostname,
 					     INTERNET_DEFAULT_HTTPS_PORT, 0);
 	if (!hConnect) {
 		downloadThreadFailure = true;
-		Status(L"Update failed: Couldn't connect to cdn-fastly.obsproject.com");
+		Status(L"Update failed: Couldn't connect to %S", kCDNHostname);
 		return false;
 	}
 
@@ -448,13 +499,14 @@ bool DownloadWorkerThread()
 
 			Status(L"Downloading %s", update.outputPath.c_str());
 
-			if (!HTTPGetFile(hConnect, update.sourceURL.c_str(),
-					 update.tempPath.c_str(),
-					 L"Accept-Encoding: gzip",
-					 &responseCode)) {
+			auto &buf = download_data[update.downloadHash];
+			/* Reserve required memory */
+			buf.reserve(update.fileSize);
 
+			if (!HTTPGetBuffer(hConnect, update.sourceURL.c_str(),
+					   L"Accept-Encoding: gzip", buf,
+					   &responseCode)) {
 				downloadThreadFailure = true;
-				DeleteFile(update.tempPath.c_str());
 				Status(L"Update failed: Could not download "
 				       L"%s (error code %d)",
 				       update.outputPath.c_str(), responseCode);
@@ -463,40 +515,31 @@ bool DownloadWorkerThread()
 
 			if (responseCode != 200) {
 				downloadThreadFailure = true;
-				DeleteFile(update.tempPath.c_str());
 				Status(L"Update failed: Could not download "
 				       L"%s (error code %d)",
 				       update.outputPath.c_str(), responseCode);
 				return 1;
 			}
 
-			BYTE downloadHash[BLAKE2_HASH_LENGTH];
-			if (!CalculateFileHash(update.tempPath.c_str(),
-					       downloadHash)) {
-				downloadThreadFailure = true;
-				DeleteFile(update.tempPath.c_str());
-				Status(L"Update failed: Couldn't verify "
-				       L"integrity of %s",
-				       update.outputPath.c_str());
-				return 1;
-			}
+			/* Validate hash of downloaded data. */
+			B2Hash dataHash;
+			blake2b(&dataHash[0], dataHash.size(), buf.data(),
+				buf.size(), NULL, 0);
 
-			if (memcmp(update.downloadhash, downloadHash, 20)) {
+			if (dataHash != update.downloadHash) {
 				downloadThreadFailure = true;
-				DeleteFile(update.tempPath.c_str());
 				Status(L"Update failed: Integrity check "
 				       L"failed on %s",
 				       update.outputPath.c_str());
 				return 1;
 			}
 
+			/* Decompress data in compressed buffer. */
 			if (update.compressed && !update.patchable) {
-				int res = DecompressFile(
-					zCtx, update.tempPath.c_str(),
-					update.fileSize);
+				int res =
+					Decompress(zCtx, buf, update.fileSize);
 				if (res) {
 					downloadThreadFailure = true;
-					DeleteFile(update.tempPath.c_str());
 					Status(L"Update failed: Decompression "
 					       L"failed on %s (error code %d)",
 					       update.outputPath.c_str(), res);
@@ -659,13 +702,10 @@ void HasherThread()
 		if (!IsSafeFilename(updateFileName))
 			continue;
 
-		BYTE existingHash[BLAKE2_HASH_LENGTH];
-		wchar_t fileHashStr[BLAKE2_HASH_STR_LENGTH];
-
+		B2Hash existingHash;
 		if (CalculateFileHash(updateFileName, existingHash)) {
-			HashToString(existingHash, fileHashStr);
 			ulock.lock();
-			hashes.emplace(fileName, fileHashStr);
+			hashes.emplace(fileName, existingHash);
 			ulock.unlock();
 		}
 	}
@@ -716,13 +756,9 @@ static bool NonCorePackageInstalled(const char *name)
 	return false;
 }
 
-#define UPDATE_URL L"https://cdn-fastly.obsproject.com/update_studio"
-
-static bool AddPackageUpdateFiles(const Json &root, size_t idx,
-				  const wchar_t *tempPath,
+static bool AddPackageUpdateFiles(const Json &package, const wchar_t *tempPath,
 				  const wchar_t *branch)
 {
-	const Json &package = root[idx];
 	const Json &name = package["name"];
 	const Json &files = package["files"];
 
@@ -763,29 +799,21 @@ static bool AddPackageUpdateFiles(const Json &root, size_t idx,
 		const string &dlHashUTF8 = dlHash.string_value();
 		int fileSize = size.int_value();
 
-		if (hashUTF8.size() != BLAKE2_HASH_LENGTH * 2)
+		if (hashUTF8.size() != kBlake2StrLength)
 			continue;
 
 		/* The download hash may not exist if a file is uncompressed */
 
 		bool compressed = false;
-		if (dlHashUTF8.size() == BLAKE2_HASH_LENGTH * 2)
+		if (dlHashUTF8.size() == kBlake2StrLength)
 			compressed = true;
 
 		/* convert strings to wide */
 
 		wchar_t sourceURL[1024];
 		wchar_t updateFileName[MAX_PATH];
-		wchar_t updateHashStr[BLAKE2_HASH_STR_LENGTH];
-		wchar_t downloadHashStr[BLAKE2_HASH_STR_LENGTH];
-		wchar_t tempFilePath[MAX_PATH];
 
 		if (!UTF8ToWideBuf(updateFileName, fileUTF8.c_str()))
-			continue;
-		if (!UTF8ToWideBuf(updateHashStr, hashUTF8.c_str()))
-			continue;
-		if (compressed &&
-		    !UTF8ToWideBuf(downloadHashStr, dlHashUTF8.c_str()))
 			continue;
 
 		/* make sure paths are safe */
@@ -798,64 +826,59 @@ static bool AddPackageUpdateFiles(const Json &root, size_t idx,
 		}
 
 		StringCbPrintf(sourceURL, sizeof(sourceURL), L"%s/%s/%s/%s",
-			       UPDATE_URL, branch, wPackageName,
+			       kCDNUpdateBaseUrl, branch, wPackageName,
 			       updateFileName);
-		StringCbPrintf(tempFilePath, sizeof(tempFilePath), L"%s\\%s",
-			       tempPath, updateHashStr);
 
-		/* Check file hash */
-
-		wstring fileHashStr;
-		bool has_hash;
+		/* Convert hashes */
+		B2Hash updateHash;
+		StringToHash(hashUTF8, updateHash);
 
 		/* We don't really care if this fails, it's just to avoid
 		 * wasting bandwidth by downloading unmodified files */
+		B2Hash localFileHash;
+		bool has_hash;
+
 		if (hashes.count(fileUTF8)) {
-			fileHashStr = hashes[fileUTF8];
-			if (fileHashStr == updateHashStr)
+			localFileHash = hashes[fileUTF8];
+			string fileHash;
+			HashToString(localFileHash, fileHash);
+
+			if (fileHash == hashUTF8)
 				continue;
 
-			char hashUTF8[BLAKE2_HASH_STR_LENGTH];
-			if (WideToUTF8Buf(hashUTF8, fileHashStr.c_str()))
-				old_hashes.push_back(hashUTF8);
+			old_hashes.push_back(fileHash);
 			has_hash = true;
 		} else {
 			has_hash = false;
 		}
 
 		/* Add update file */
-
 		update_t update;
 		update.fileSize = fileSize;
-		update.basename = updateFileName;
 		update.outputPath = updateFileName;
-		update.tempPath = tempFilePath;
 		update.sourceURL = sourceURL;
 		update.packageName = packageName;
 		update.state = STATE_PENDING_DOWNLOAD;
 		update.patchable = false;
 		update.compressed = compressed;
-
-		StringToHash(updateHashStr, update.hash);
+		update.hash = updateHash;
 
 		if (compressed) {
 			update.sourceURL += L".zst";
-			StringToHash(downloadHashStr, update.downloadhash);
+			StringToHash(dlHashUTF8, update.downloadHash);
 		} else {
-			memcpy(update.downloadhash, update.hash,
-			       sizeof(update.downloadhash));
+			update.downloadHash = updateHash;
 		}
 
 		update.has_hash = has_hash;
 		if (has_hash)
-			StringToHash(fileHashStr.data(), update.my_hash);
+			update.my_hash = localFileHash;
 
 		updates.push_back(move(update));
 
 		totalFileSize += fileSize;
 	}
 
-	// TODO: Clean this up a bit
 	if (!old_hashes.empty()) {
 		// Sort and concatenate all hashes of this package
 		sort(old_hashes.begin(), old_hashes.end());
@@ -865,14 +888,12 @@ static bool AddPackageUpdateFiles(const Json &root, size_t idx,
 			all_hashes += hash;
 
 		// Calculate bundle hash
-		BYTE hash[BLAKE2_HASH_LENGTH];
-		blake2b(hash, sizeof(hash), all_hashes.c_str(),
+		B2Hash hash;
+		blake2b(&hash[0], hash.size(), all_hashes.c_str(),
 			all_hashes.size(), NULL, 0);
 
-		wchar_t hashStr[BLAKE2_HASH_STR_LENGTH];
-		HashToString(hash, hashStr);
 		string hMapName = "package::" + packageName;
-		hashes[hMapName] = hashStr;
+		hashes[hMapName] = hash;
 	}
 
 	return true;
@@ -919,11 +940,16 @@ static bool RenameRemovedFile(deletion_t &deletion)
 	_TCHAR randomStr[MAX_PATH];
 
 	BYTE junk[40];
-	BYTE hash[BLAKE2_HASH_LENGTH];
+	B2Hash hash;
+	string temp;
 
 	CryptGenRandom(hProvider, sizeof(junk), junk);
-	blake2b(hash, sizeof(hash), junk, sizeof(junk), NULL, 0);
-	HashToString(hash, randomStr);
+	blake2b(&hash[0], hash.size(), junk, sizeof(junk), NULL, 0);
+	HashToString(hash, temp);
+
+	if (!UTF8ToWideBuf(randomStr, temp.c_str()))
+		return false;
+
 	randomStr[8] = 0;
 
 	StringCbCopy(deleteMeName, sizeof(deleteMeName),
@@ -942,62 +968,68 @@ static bool RenameRemovedFile(deletion_t &deletion)
 	return false;
 }
 
-static void UpdateWithPatchIfAvailable(const char *name, const char *hash,
-				       const char *source, int size)
+static void UpdateWithPatchIfAvailable(const Json &patch)
 {
+	const Json &name_json = patch["name"];
+	const Json &hash_json = patch["hash"];
+	const Json &source_json = patch["source"];
+	const Json &size_json = patch["size"];
+
+	if (!name_json.is_string())
+		return;
+	if (!hash_json.is_string())
+		return;
+	if (!source_json.is_string())
+		return;
+	if (!size_json.is_number())
+		return;
+
+	const string &name = name_json.string_value();
+	const string &hash = hash_json.string_value();
+	const string &source = source_json.string_value();
+	int size = size_json.int_value();
+
 	wchar_t widePatchableFilename[MAX_PATH];
 	wchar_t sourceURL[1024];
-	wchar_t patchHashStr[BLAKE2_HASH_STR_LENGTH];
 
-	if (strncmp(source, "https://cdn-fastly.obsproject.com/", 34) != 0)
+	if (source.compare(0, kCDNUrl.size(), kCDNUrl) != 0)
 		return;
 
-	string patchPackageName = name;
-
-	const char *slash = strchr(name, '/');
-	if (!slash)
+	if (name.find("/") == string::npos)
 		return;
 
-	patchPackageName.resize(slash - name);
-	name = slash + 1;
+	string patchPackageName(name, 0, name.find("/"));
+	string fileName(name, name.find("/") + 1);
 
-	if (!UTF8ToWideBuf(widePatchableFilename, name))
+	if (!UTF8ToWideBuf(widePatchableFilename, fileName.c_str()))
 		return;
-	if (!UTF8ToWideBuf(sourceURL, source))
-		return;
-	if (!UTF8ToWideBuf(patchHashStr, hash))
+	if (!UTF8ToWideBuf(sourceURL, source.c_str()))
 		return;
 
 	for (update_t &update : updates) {
 		if (update.packageName != patchPackageName)
 			continue;
-		if (update.basename != widePatchableFilename)
+		if (update.outputPath != widePatchableFilename)
 			continue;
 		if (update.is_bundle)
 			continue;
 
-		StringToHash(patchHashStr, update.downloadhash);
-
-		/* Replace the source URL with the patch file, mark it as
-		 * patchable, and re-calculate download size */
-		totalFileSize -= (update.fileSize - size);
-		update.sourceURL = sourceURL;
-		update.fileSize = size;
 		update.patchable = true;
 
-		/* Since the patch depends on the previous version, we can
-		 * no longer rely on the temp name being unique to the
-		 * new file's hash */
-		update.tempPath = tempPath;
-		update.tempPath += L"\\";
-		update.tempPath += patchHashStr;
-
-		/* If the package has an update bundle patch files don't need
-		 * to be downloaded individually, so mark it as done. */
-		if (bundledPackages.count(patchPackageName)) {
+		if (packageBundles.count(patchPackageName)) {
+			/* If the package uses an update bundle, set the status
+			 * to completed and set bundle hash */
 			update.state = STATE_ALREADY_DOWNLOADED;
-			totalFileSize -= size;
+			update.downloadHash = packageBundles[patchPackageName];
+			totalFileSize -= update.fileSize;
 			completedUpdates++;
+		} else {
+			/* Replace the source URL with the patch file, update
+			 * the download hash, and re-calculate download size */
+			StringToHash(hash, update.downloadHash);
+			update.sourceURL = sourceURL;
+			totalFileSize -= (update.fileSize - size);
+			update.fileSize = size;
 		}
 
 		break;
@@ -1008,15 +1040,14 @@ static void AddPatchBundleFiles(const Json::array &patches)
 {
 	wchar_t widePatchableFilename[MAX_PATH];
 	wchar_t sourceURL[1024];
-	wchar_t patchHashStr[BLAKE2_HASH_STR_LENGTH];
 
 	for (const Json &patch : patches) {
 		const Json &name_json = patch["name"];
 		if (!name_json.is_string())
 			continue;
 
-		const char *name = name_json.string_value().c_str();
-		if (strstr(name, "/bundle") == nullptr)
+		const string &name = name_json.string_value();
+		if (name.find("/bundle") == string::npos)
 			continue;
 
 		const Json &hash_json = patch["hash"];
@@ -1030,71 +1061,59 @@ static void AddPatchBundleFiles(const Json::array &patches)
 		if (!size_json.is_number())
 			continue;
 
-		const char *hash = hash_json.string_value().c_str();
-		const char *source = source_json.string_value().c_str();
+		string hash = hash_json.string_value();
+		string source = source_json.string_value();
 		int size = size_json.int_value();
 
-		if (strncmp(source, "https://cdn-fastly.obsproject.com/", 34) !=
-		    0)
+		if (source.compare(0, kCDNUrl.size(), kCDNUrl) != 0)
 			return;
 
-		string patchPackageName = name;
+		string patchPackageName(name, 0, name.find("/"));
+		string fileName(name, name.find("/") + 1);
 
-		const char *slash = strchr(name, '/');
-		if (!slash)
+		if (!UTF8ToWideBuf(widePatchableFilename, fileName.c_str()))
 			return;
-
-		patchPackageName.resize(slash - name);
-		name = slash + 1;
-
-		if (!UTF8ToWideBuf(widePatchableFilename, name))
+		if (!UTF8ToWideBuf(sourceURL, source.c_str()))
 			return;
-		if (!UTF8ToWideBuf(sourceURL, source))
-			return;
-		if (!UTF8ToWideBuf(patchHashStr, hash))
-			return;
-
-		wchar_t tempFilePath[MAX_PATH];
-		StringCbPrintf(tempFilePath, sizeof(tempFilePath), L"%s\\%s",
-			       tempPath, patchHashStr);
 
 		/* Add "fake" update to download the bundle. */
 		update_t update;
 		update.fileSize = size;
-		update.basename = widePatchableFilename;
 		update.outputPath = widePatchableFilename;
-		update.tempPath = tempFilePath;
 		update.sourceURL = sourceURL;
 		update.packageName = patchPackageName;
 		update.state = STATE_PENDING_DOWNLOAD;
 		update.is_bundle = true;
 
-		StringToHash(patchHashStr, update.downloadhash);
+		StringToHash(hash, update.downloadHash);
 
 		updates.push_back(move(update));
 		totalFileSize += size;
 
-		/* Add package name to set so UpdateWithPatchIfAvailable skips
-	         * files that are part of a bundle */
-		bundledPackages.insert(patchPackageName);
+		/* UpdateWithPatchIfAvailable uses this to check if a file is
+		 * in a bundle and to update its bundle hash. */
+		packageBundles[patchPackageName] = update.downloadHash;
 	}
 }
 
-static unordered_map<string, string> bundle_data;
+constexpr const char *kBundleMagic = "BOUF//BUNDLE//V1";
+constexpr int kBundleMagicSize = 16;
+constexpr int kBundleHeaderSize = kBundleMagicSize + 8; // 8 = json length
 
 static bool UpdateWithBundledPatch(const update_t &bundle)
 {
-	/* Read bundle header + index */
-	string bundleData = QuickReadFile(bundle.tempPath.c_str());
-	const char *data = bundleData.data();
+	vector<std::byte> bundleData = download_data[bundle.downloadHash];
+	const std::byte *data = bundleData.data();
 
-	if (memcmp(data, "BOUF//BUNDLE//V1", 16)) {
+	/* Read bundle header + index */
+	if (memcmp(data, kBundleMagic, kBundleMagicSize)) {
 		Status(L"Update failed: Bundle file is invalid!");
 		return false;
 	}
 
-	int64_t index_size = offtin((const uint8_t *)data + 16);
-	string json_data = bundleData.substr(24, index_size);
+	size_t index_size =
+		(size_t)offtin((const uint8_t *)data + kBundleMagicSize);
+	string json_data((const char *)data + kBundleHeaderSize, index_size);
 
 	string error;
 	Json root = Json::parse(json_data, error);
@@ -1104,11 +1123,9 @@ static bool UpdateWithBundledPatch(const update_t &bundle)
 		return false;
 	}
 
-	/* Copy bundle data into global variable */
-	bundle_data[bundle.packageName] = bundleData.substr(index_size + 24);
-
 	/* Create map of filename => bundle entry data */
 	unordered_map<wstring, pair<int, int>> bundleEntry;
+	int root_offset = kBundleHeaderSize + (int)index_size;
 
 	for (const Json &entry : root.array_items()) {
 		const string &filename = entry["filename"].string_value();
@@ -1119,17 +1136,17 @@ static bool UpdateWithBundledPatch(const update_t &bundle)
 		if (!UTF8ToWideBuf(fileNameWide, filename.c_str()))
 			return false;
 
-		bundleEntry[fileNameWide] = {offset, size};
+		bundleEntry[fileNameWide] = {offset + root_offset, size};
 	}
 
 	/* Update patches with data from bundle index */
 	for (update_t &update : updates) {
 		if (update.packageName != bundle.packageName)
 			continue;
-		if (!bundleEntry.count(update.basename))
+		if (!bundleEntry.count(update.outputPath))
 			continue;
 
-		auto entry = bundleEntry[update.basename];
+		auto entry = bundleEntry[update.outputPath];
 		update.bundle_offset = entry.first;
 		update.fileSize = entry.second;
 	}
@@ -1143,11 +1160,16 @@ static bool MoveInUseFileAway(update_t &file)
 	_TCHAR randomStr[MAX_PATH];
 
 	BYTE junk[40];
-	BYTE hash[BLAKE2_HASH_LENGTH];
+	B2Hash hash;
+	string temp;
 
 	CryptGenRandom(hProvider, sizeof(junk), junk);
-	blake2b(hash, sizeof(hash), junk, sizeof(junk), NULL, 0);
-	HashToString(hash, randomStr);
+	blake2b(&hash[0], hash.size(), junk, sizeof(junk), NULL, 0);
+	HashToString(hash, temp);
+
+	if (!UTF8ToWideBuf(randomStr, temp.c_str()))
+		return false;
+
 	randomStr[8] = 0;
 
 	StringCbCopy(deleteMeName, sizeof(deleteMeName),
@@ -1180,6 +1202,9 @@ static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 		Status(L"Updating %s...", file.outputPath.c_str());
 	else
 		Status(L"Installing %s...", file.outputPath.c_str());
+
+	/* Grab the patch/file data from the global cache. */
+	vector<std::byte> &patch_data = download_data[file.downloadHash];
 
 	/* Check if we're replacing an existing file or just installing a new
 	 * one */
@@ -1229,23 +1254,15 @@ static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 	retryAfterMovingFile:
 
 		if (file.patchable) {
-			if (file.bundle_offset >= 0) {
-				error_code = ApplyBundlePatch(
-					ctx,
-					bundle_data[file.packageName].data(),
-					file.bundle_offset, file.fileSize,
-					file.outputPath.c_str());
-
-			} else {
-				error_code =
-					ApplyPatch(ctx, file.tempPath.c_str(),
-						   file.outputPath.c_str());
-			}
+			error_code = ApplyPatch(ctx, patch_data.data(),
+						file.bundle_offset,
+						file.fileSize,
+						file.outputPath.c_str());
 
 			installed_ok = (error_code == 0);
 
 			if (installed_ok) {
-				BYTE patchedFileHash[BLAKE2_HASH_LENGTH];
+				B2Hash patchedFileHash;
 				if (!CalculateFileHash(file.outputPath.c_str(),
 						       patchedFileHash)) {
 					Status(L"Update failed: Couldn't "
@@ -1256,8 +1273,7 @@ static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 					return false;
 				}
 
-				if (memcmp(file.hash, patchedFileHash,
-					   BLAKE2_HASH_LENGTH) != 0) {
+				if (file.hash != patchedFileHash) {
 					Status(L"Update failed: Integrity "
 					       L"check of patched "
 					       L"%s failed",
@@ -1268,8 +1284,8 @@ static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 				}
 			}
 		} else {
-			installed_ok = MyCopyFile(file.tempPath.c_str(),
-						  file.outputPath.c_str());
+			QuickWriteFile(file.outputPath.c_str(),
+				       patch_data.data(), patch_data.size());
 			error_code = GetLastError();
 		}
 
@@ -1316,8 +1332,9 @@ static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 
 		file.previousFile = L"";
 
-		bool success = !!MyCopyFile(file.tempPath.c_str(),
-					    file.outputPath.c_str());
+		bool success = !!QuickWriteFile(file.outputPath.c_str(),
+						patch_data.data(),
+						patch_data.size());
 		if (!success) {
 			Status(L"Update failed: Couldn't install %s (error %d)",
 			       file.outputPath.c_str(), GetLastError());
@@ -1398,10 +1415,6 @@ try {
 	return false;
 }
 
-#define PATCH_MANIFEST_URL \
-	L"https://obsproject.com/update_studio/getpatchmanifest"
-#define HASH_NULL L"0000000000000000000000000000000000000000"
-
 static bool UpdateVS2019Redists(const Json &root)
 {
 	/* ------------------------------------------ *
@@ -1426,11 +1439,10 @@ static bool UpdateVS2019Redists(const Json &root)
 	WinHttpSetOption(hSession, WINHTTP_OPTION_DECOMPRESSION,
 			 (LPVOID)&compressionFlags, sizeof(compressionFlags));
 
-	HttpHandle hConnect = WinHttpConnect(hSession,
-					     L"cdn-fastly.obsproject.com",
+	HttpHandle hConnect = WinHttpConnect(hSession, kCDNHostname,
 					     INTERNET_DEFAULT_HTTPS_PORT, 0);
 	if (!hConnect) {
-		Status(L"Update failed: Couldn't connect to cdn-fastly.obsproject.com");
+		Status(L"Update failed: Couldn't connect to %S", kCDNHostname);
 		return false;
 	}
 
@@ -1473,23 +1485,14 @@ static bool UpdateVS2019Redists(const Json &root)
 	}
 
 	const string &expectedHashUTF8 = redistJson.string_value();
-	wchar_t expectedHashWide[BLAKE2_HASH_STR_LENGTH];
-	BYTE expectedHash[BLAKE2_HASH_LENGTH];
+	B2Hash expectedHash;
 
-	if (!UTF8ToWideBuf(expectedHashWide, expectedHashUTF8.c_str())) {
-		DeleteFile(destPath.c_str());
-		Status(L"Update failed: Couldn't convert Json for redist hash");
-		return false;
-	}
-
-	StringToHash(expectedHashWide, expectedHash);
-
-	wchar_t downloadHashWide[BLAKE2_HASH_STR_LENGTH];
-	BYTE downloadHash[BLAKE2_HASH_LENGTH];
+	StringToHash(expectedHashUTF8, expectedHash);
 
 	/* ------------------------------------------ *
 	 * Get download hash                          */
 
+	B2Hash downloadHash;
 	if (!CalculateFileHash(destPath.c_str(), downloadHash)) {
 		DeleteFile(destPath.c_str());
 		Status(L"Update failed: Couldn't verify integrity of %s",
@@ -1500,8 +1503,7 @@ static bool UpdateVS2019Redists(const Json &root)
 	/* ------------------------------------------ *
 	 * If hashes do not match, integrity failed   */
 
-	HashToString(downloadHash, downloadHashWide);
-	if (wcscmp(expectedHashWide, downloadHashWide) != 0) {
+	if (downloadHash == expectedHash) {
 		DeleteFile(destPath.c_str());
 		Status(L"Update failed: Couldn't verify integrity of %s",
 		       L"Visual C++ 2019 Redistributable");
@@ -1733,15 +1735,14 @@ static bool Update(wchar_t *cmdLine)
 	 * Parse current manifest update files   */
 
 	const Json::array &packages = root["packages"].array_items();
-	for (size_t i = 0; i < packages.size(); i++) {
-		if (!AddPackageUpdateFiles(packages, i, tempPath,
-					   branch.c_str())) {
+	for (const Json &package : packages) {
+		if (!AddPackageUpdateFiles(package, tempPath, branch.c_str())) {
 			Status(L"Update failed: Failed to process update packages");
 			return false;
 		}
 
 		/* Add removed files to deletion queue (if any) */
-		AddPackageRemovedFiles(packages[i]);
+		AddPackageRemovedFiles(package);
 	}
 
 	SendDlgItemMessage(hwndMain, IDC_PROGRESS, PBM_SETMARQUEE, 0, 0);
@@ -1771,22 +1772,15 @@ static bool Update(wchar_t *cmdLine)
 	Json::array files;
 
 	for (update_t &update : updates) {
-		wchar_t whash_string[BLAKE2_HASH_STR_LENGTH];
-		char hash_string[BLAKE2_HASH_STR_LENGTH];
-		char outputPath[MAX_PATH];
-
 		if (!update.has_hash)
 			continue;
 
-		/* check hash */
-		HashToString(update.my_hash, whash_string);
-		if (wcscmp(whash_string, HASH_NULL) == 0)
+		char outputPath[MAX_PATH];
+		if (!WideToUTF8Buf(outputPath, update.outputPath.c_str()))
 			continue;
 
-		if (!WideToUTF8Buf(hash_string, whash_string))
-			continue;
-		if (!WideToUTF8Buf(outputPath, update.basename.c_str()))
-			continue;
+		string hash_string;
+		HashToString(update.my_hash, hash_string);
 
 		string package_path;
 		package_path = update.packageName;
@@ -1801,15 +1795,13 @@ static bool Update(wchar_t *cmdLine)
 
 	// Add bundle files
 	for (const Json &package : packages) {
-		const string packageName = package["name"].string_value();
+		const string &packageName = package["name"].string_value();
 		string hMapName = "package::" + packageName;
 		if (!hashes.count(hMapName))
 			continue;
 
-		wstring bundleHash = hashes[hMapName];
-		char hash_string[BLAKE2_HASH_STR_LENGTH];
-		if (!WideToUTF8Buf(hash_string, bundleHash.c_str()))
-			continue;
+		string hash_string;
+		HashToString(hashes[hMapName], hash_string);
 
 		files.emplace_back(Json::object{
 			{"name", packageName + "/bundle"},
@@ -1844,7 +1836,7 @@ static bool Update(wchar_t *cmdLine)
 
 		compressedJson.resize(result);
 
-		wstring manifestUrl(PATCH_MANIFEST_URL);
+		wstring manifestUrl(kPatchManifestURL);
 		if (branch != L"stable")
 			manifestUrl += L"?branch=" + branch;
 
@@ -1895,43 +1887,25 @@ static bool Update(wchar_t *cmdLine)
 			return false;
 		}
 
-		const Json &name_json = patch["name"];
-		const Json &hash_json = patch["hash"];
-		const Json &source_json = patch["source"];
-		const Json &size_json = patch["size"];
-
-		if (!name_json.is_string())
-			continue;
-		if (!hash_json.is_string())
-			continue;
-		if (!source_json.is_string())
-			continue;
-		if (!size_json.is_number())
-			continue;
-
-		const string &name = name_json.string_value();
-		const string &hash = hash_json.string_value();
-		const string &source = source_json.string_value();
-		int size = size_json.int_value();
-
-		UpdateWithPatchIfAvailable(name.c_str(), hash.c_str(),
-					   source.c_str(), size);
+		UpdateWithPatchIfAvailable(patch);
 	}
 
 	/* ------------------------------------- *
 	 * Deduplicate Downloads                 */
 
-	unordered_set<wstring> tempFiles;
+	unordered_set<B2Hash> downloadHashes;
 	for (update_t &update : updates) {
-		if (update.state != STATE_ALREADY_DOWNLOADED &&
-		    tempFiles.count(update.tempPath)) {
+		if (update.state == STATE_ALREADY_DOWNLOADED)
+			continue;
+
+		if (downloadHashes.count(update.downloadHash)) {
 			update.state = STATE_ALREADY_DOWNLOADED;
 			totalFileSize -= update.fileSize;
 			completedUpdates++;
 			continue;
+		} else {
+			downloadHashes.insert(update.downloadHash);
 		}
-
-		tempFiles.insert(update.tempPath);
 	}
 
 	/* ------------------------------------- *
@@ -2040,10 +2014,6 @@ static bool Update(wchar_t *cmdLine)
 	for (update_t &update : updates) {
 		if (!update.previousFile.empty())
 			DeleteFile(update.previousFile.c_str());
-
-		/* We delete here not above in case of duplicate hashes */
-		if (!update.tempPath.empty())
-			DeleteFile(update.tempPath.c_str());
 	}
 
 	/* Delete all removed files mentioned in the manifest */
