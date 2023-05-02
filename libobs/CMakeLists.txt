@@ -33,6 +33,8 @@ target_sources(
           obs-audio-controls.c
           obs-audio-controls.h
           obs-audio.c
+          obs-av1.c
+          obs-av1.h
           obs-avc.c
           obs-avc.h
           obs-data.c
