@@ -46,6 +46,7 @@ extern struct obs_encoder_info aom_av1_encoder_info;
 
 #ifdef LIBAVUTIL_VAAPI_AVAILABLE
 extern struct obs_encoder_info h264_vaapi_encoder_info;
+extern struct obs_encoder_info av1_vaapi_encoder_info;
 #ifdef ENABLE_HEVC
 extern struct obs_encoder_info hevc_vaapi_encoder_info;
 #endif
@@ -307,6 +308,19 @@ static bool h264_vaapi_supported(void)
 	 * that support H264. */
 	return vaapi_get_h264_default_device() != NULL;
 }
+
+static bool av1_vaapi_supported(void)
+{
+	const AVCodec *vaenc = avcodec_find_encoder_by_name("av1_vaapi");
+
+	if (!vaenc)
+		return false;
+
+	/* NOTE: If default device is NULL, it means there is no device
+	 * that support AV1. */
+	return vaapi_get_av1_default_device() != NULL;
+}
+
 #ifdef ENABLE_HEVC
 static bool hevc_vaapi_supported(void)
 {
@@ -394,6 +408,13 @@ bool obs_module_load(void)
 		obs_register_encoder(&h264_vaapi_encoder_info);
 	} else {
 		blog(LOG_INFO, "FFmpeg VAAPI H264 encoding not supported");
+	}
+
+	if (av1_vaapi_supported()) {
+		blog(LOG_INFO, "FFmpeg VAAPI AV1 encoding supported");
+		obs_register_encoder(&av1_vaapi_encoder_info);
+	} else {
+		blog(LOG_INFO, "FFmpeg VAAPI AV1 encoding not supported");
 	}
 
 #ifdef ENABLE_HEVC

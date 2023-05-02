@@ -292,6 +292,61 @@ const char *vaapi_get_h264_default_device()
 	return default_h264_device;
 }
 
+bool vaapi_display_av1_supported(VADisplay dpy, const char *device_path)
+{
+	bool ret = false;
+
+	CHECK_PROFILE(ret, VAProfileAV1Profile0, dpy, device_path);
+
+	if (!ret) {
+		CHECK_PROFILE_LP(ret, VAProfileAV1Profile0, dpy, device_path);
+	}
+
+	return ret;
+}
+
+bool vaapi_device_av1_supported(const char *device_path)
+{
+	bool ret = false;
+	VADisplay va_dpy;
+
+	int drm_fd = -1;
+
+	va_dpy = vaapi_open_device(&drm_fd, device_path,
+				   "vaapi_device_av1_supported");
+	if (!va_dpy)
+		return false;
+
+	ret = vaapi_display_av1_supported(va_dpy, device_path);
+
+	vaapi_close_device(&drm_fd, va_dpy);
+
+	return ret;
+}
+
+const char *vaapi_get_av1_default_device()
+{
+	static const char *default_av1_device = NULL;
+
+	if (!default_av1_device) {
+		bool ret = false;
+		char path[32] = "/dev/dri/renderD1";
+		for (int i = 28;; i++) {
+			sprintf(path, "/dev/dri/renderD1%d", i);
+			if (access(path, F_OK) != 0)
+				break;
+
+			ret = vaapi_device_av1_supported(path);
+			if (ret) {
+				default_av1_device = strdup(path);
+				break;
+			}
+		}
+	}
+
+	return default_av1_device;
+}
+
 #ifdef ENABLE_HEVC
 
 bool vaapi_display_hevc_supported(VADisplay dpy, const char *device_path)
