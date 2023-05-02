@@ -124,8 +124,9 @@ static blocked_module_t blocked_modules[] = {
 	// Wacom / Other tablet driver, locks up UI
 	{L"\\wintab32.dll", 0, 0, TS_IGNORE},
 
-	// Adobe Dynamic Link (Adobe CC), crashes in its own thread
-	{L"\\mc_trans_video_imagescaler.dll", 0, 0, TS_IGNORE},
+	// MainConcept Image Scaler, crashes in its own thread. Block versions
+	// older than the one Elgato uses (2016-02-15).
+	{L"\\mc_trans_video_imagescaler.dll", 0, 1455495131, TS_LESS_THAN},
 
 	// Weird Polish banking "security" software, breaks UI
 	{L"\\wslbscr64.dll", 0, 0, TS_IGNORE},
