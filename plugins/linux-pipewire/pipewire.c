@@ -36,6 +36,8 @@
 #include <spa/param/video/type-info.h>
 #include <spa/utils/result.h>
 
+//#define DEBUG_PIPEWIRE
+
 #if !PW_CHECK_VERSION(0, 3, 62)
 enum spa_meta_videotransform_value {
 	SPA_META_TRANSFORMATION_None = 0, /**< no transform */
@@ -598,12 +600,14 @@ static void on_process_cb(void *user_data)
 		bool use_modifiers;
 		bool corrupt = false;
 
+#ifdef DEBUG_PIPEWIRE
 		blog(LOG_DEBUG,
 		     "[pipewire] DMA-BUF info: fd:%ld, stride:%d, offset:%u, size:%dx%d",
 		     buffer->datas[0].fd, buffer->datas[0].chunk->stride,
 		     buffer->datas[0].chunk->offset,
 		     obs_pw->format.info.raw.size.width,
 		     obs_pw->format.info.raw.size.height);
+#endif
 
 		if (!lookup_format_info_from_spa_format(
 			    obs_pw->format.info.raw.format, &drm_format, NULL,
@@ -687,10 +691,12 @@ static void on_process_cb(void *user_data)
 	region = spa_buffer_find_meta_data(buffer, SPA_META_VideoCrop,
 					   sizeof(*region));
 	if (region && spa_meta_region_is_valid(region)) {
+#ifdef DEBUG_PIPEWIRE
 		blog(LOG_DEBUG,
 		     "[pipewire] Crop Region available (%dx%d+%d+%d)",
 		     region->region.position.x, region->region.position.y,
 		     region->region.size.width, region->region.size.height);
+#endif
 
 		obs_pw->crop.x = region->region.position.x;
 		obs_pw->crop.y = region->region.position.y;
