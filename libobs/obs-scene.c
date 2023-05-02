@@ -927,6 +927,11 @@ static void scene_video_render(void *data, gs_effect_t *effect)
 
 	item = scene->first_item;
 	while (item) {
+		if (obs_get_video_rendering_canvas() != item->canvas &&
+		    item->canvas != NULL) {
+			item = item->next;
+			continue;
+		}
 		if (obs_get_multiple_rendering()) {
 			switch (obs_get_video_rendering_mode()) {
 			case OBS_MAIN_VIDEO_RENDERING: {
@@ -1303,13 +1308,29 @@ static void scene_save(void *data, obs_data_t *settings)
 static uint32_t scene_getwidth(void *data)
 {
 	obs_scene_t *scene = data;
-	return scene->custom_size ? scene->cx : obs->video.base_width;
+	if (scene->custom_size) {
+		return scene->cx;
+	} else {
+		struct obs_video_info ovi;
+		if (obs_get_video_info_current(&ovi)) {
+			return ovi.base_width;
+		}
+	}
+	return 0;
 }
 
 static uint32_t scene_getheight(void *data)
 {
 	obs_scene_t *scene = data;
-	return scene->custom_size ? scene->cy : obs->video.base_height;
+	if (scene->custom_size) {
+		return scene->cy;
+	} else {
+		struct obs_video_info ovi;
+		if (obs_get_video_info_current(&ovi)) {
+			return ovi.base_height;
+		}
+	}
+	return 0;
 }
 
 static void apply_scene_item_audio_actions(struct obs_scene_item *item,
@@ -1616,7 +1637,7 @@ scene_video_get_color_space(void *data, size_t count,
 
 	enum gs_color_space space = GS_CS_SRGB;
 	struct obs_video_info ovi;
-	if (obs_get_video_info(&ovi)) {
+	if (obs_get_video_info_current(&ovi)) {
 		switch (ovi.colorspace) {
 		case VIDEO_CS_2100_PQ:
 		case VIDEO_CS_2100_HLG:
@@ -2936,6 +2957,17 @@ static bool group_item_transition(obs_scene_t *scene, obs_sceneitem_t *item,
 		obs_sceneitem_do_transition(item, visible);
 	UNUSED_PARAMETER(scene);
 	return true;
+}
+
+void obs_sceneitem_set_canvas(obs_sceneitem_t *item,
+			      struct obs_video_info *canvas)
+{
+	item->canvas = canvas;
+}
+
+struct obs_video_info *obs_sceneitem_get_canvas(obs_sceneitem_t *item)
+{
+	return item->canvas;
 }
 
 bool obs_sceneitem_set_visible(obs_sceneitem_t *item, bool visible)

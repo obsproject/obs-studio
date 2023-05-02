@@ -614,7 +614,9 @@ static void generate_filename(struct ffmpeg_muxer *stream, struct dstr *dst,
 	const char *ext = obs_data_get_string(settings, "extension");
 	bool space = obs_data_get_bool(settings, "allow_spaces");
 
-	char *filename = os_generate_formatted_filename(ext, space, fmt);
+	struct obs_video_info ovi;
+	obs_get_video_info_for_output(stream->output, &ovi);
+	char *filename = os_generate_formatted_filename(ext, space, fmt, &ovi);
 
 	dstr_copy(dst, dir);
 	dstr_replace(dst, "\\", "/");

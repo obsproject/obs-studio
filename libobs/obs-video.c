@@ -124,9 +124,6 @@ static inline void unmap_last_surface(struct obs_core_video_mix *video)
 static const char *render_main_texture_name = "render_main_texture";
 static inline void render_main_texture(struct obs_core_video_mix *video)
 {
-	uint32_t base_width = obs->video.base_width;
-	uint32_t base_height = obs->video.base_height;
-
 	profile_start(render_main_texture_name);
 	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_MAIN_TEXTURE,
 			      render_main_texture_name);
@@ -138,7 +135,7 @@ static inline void render_main_texture(struct obs_core_video_mix *video)
 					      video->render_space);
 	gs_clear(GS_CLEAR_COLOR, &clear_color, 1.0f, 0);
 
-	set_render_size(base_width, base_height);
+	set_render_size(video->ovi->base_width, video->ovi->base_height);
 
 	pthread_mutex_lock(&obs->data.draw_callbacks_mutex);
 
@@ -146,7 +143,8 @@ static inline void render_main_texture(struct obs_core_video_mix *video)
 		struct draw_callback *callback;
 		callback = obs->data.draw_callbacks.array + (i - 1);
 
-		callback->draw(callback->param, base_width, base_height);
+		callback->draw(callback->param, video->ovi->base_width,
+			       video->ovi->base_height);
 	}
 
 	pthread_mutex_unlock(&obs->data.draw_callbacks_mutex);
@@ -169,8 +167,8 @@ get_scale_effect_internal(struct obs_core_video_mix *mix)
 	/* if the dimension is under half the size of the original image,
 	 * bicubic/lanczos can't sample enough pixels to create an accurate
 	 * image, so use the bilinear low resolution effect instead */
-	if (info->width < (video->base_width / 2) &&
-	    info->height < (video->base_height / 2)) {
+	if (info->width < (mix->ovi->base_width / 2) &&
+	    info->height < (mix->ovi->base_height / 2)) {
 		return video->bilinear_lowres_effect;
 	}
 
@@ -188,11 +186,11 @@ get_scale_effect_internal(struct obs_core_video_mix *mix)
 	return video->bicubic_effect;
 }
 
-static inline bool resolution_close(struct obs_core_video *video,
+static inline bool resolution_close(struct obs_core_video_mix *video,
 				    uint32_t width, uint32_t height)
 {
-	long width_cmp = (long)video->base_width - (long)width;
-	long height_cmp = (long)video->base_height - (long)height;
+	long width_cmp = (long)video->ovi->base_width - (long)width;
+	long height_cmp = (long)video->ovi->base_height - (long)height;
 
 	return labs(width_cmp) <= 16 && labs(height_cmp) <= 16;
 }
@@ -202,7 +200,7 @@ static inline gs_effect_t *get_scale_effect(struct obs_core_video_mix *mix,
 {
 	struct obs_core_video *video = &obs->video;
 
-	if (resolution_close(video, width, height)) {
+	if (resolution_close(mix, width, height)) {
 		return video->default_effect;
 	} else {
 		/* if the scale method couldn't be loaded, use either bicubic
@@ -225,15 +223,14 @@ render_output_texture(struct obs_core_video_mix *mix)
 	gs_texture_t *target = mix->output_texture;
 	uint32_t width = gs_texture_get_width(target);
 	uint32_t height = gs_texture_get_height(target);
-
 	gs_effect_t *effect = get_scale_effect(mix, width, height);
 	gs_technique_t *tech;
 
 	if (video_output_get_format(mix->video) == VIDEO_FORMAT_RGBA) {
 		tech = gs_effect_get_technique(effect, "DrawAlphaDivide");
 	} else {
-		if ((width == video->base_width) &&
-		    (height == video->base_height))
+		if ((width == mix->ovi->base_width) &&
+		    (height == mix->ovi->base_height))
 			return texture;
 
 		tech = gs_effect_get_technique(effect, "Draw");
@@ -253,15 +250,15 @@ render_output_texture(struct obs_core_video_mix *mix)
 
 	if (bres) {
 		struct vec2 base;
-		vec2_set(&base, (float)video->base_width,
-			 (float)video->base_height);
+		vec2_set(&base, (float)mix->ovi->base_width,
+			 (float)mix->ovi->base_height);
 		gs_effect_set_vec2(bres, &base);
 	}
 
 	if (bres_i) {
 		struct vec2 base_i;
-		vec2_set(&base_i, 1.0f / (float)video->base_width,
-			 1.0f / (float)video->base_height);
+		vec2_set(&base_i, 1.0f / (float)mix->ovi->base_width,
+			 1.0f / (float)mix->ovi->base_height);
 		gs_effect_set_vec2(bres_i, &base_i);
 	}
 
@@ -850,24 +847,18 @@ static const char *output_frame_gs_flush_name = "gs_flush";
 static const char *output_frame_output_video_data_name = "output_video_data";
 static inline void output_frame(struct obs_core_video_mix *video)
 {
-	if (obs_get_multiple_rendering()) {
-		if (video == obs->video.main_mix)
-			obs_set_video_rendering_mode(OBS_MAIN_VIDEO_RENDERING);
-		else if (video == obs->video.stream_mix)
-			obs_set_video_rendering_mode(
-				OBS_STREAMING_VIDEO_RENDERING);
-		else if (video == obs->video.record_mix)
-			obs_set_video_rendering_mode(
-				OBS_RECORDING_VIDEO_RENDERING);
-		else
-			return;
-	} else {
-		if (video == obs->video.stream_mix ||
-		    video == obs->video.record_mix)
-			return;
-		else
+	if (video->rendering_mode == OBS_MAIN_VIDEO_RENDERING) {
+		if (obs_get_multiple_rendering())
 			obs_set_video_rendering_mode(OBS_MAIN_VIDEO_RENDERING);
 	}
+
+	if (obs_get_multiple_rendering() ||
+	    video->rendering_mode == OBS_MAIN_VIDEO_RENDERING)
+		obs_set_video_rendering_mode(video->rendering_mode);
+	else
+		return;
+
+	obs_set_video_rendering_canvas(video->ovi);
 
 	const bool raw_active = video->raw_was_active;
 	const bool gpu_active = video->gpu_was_active;
@@ -1117,7 +1108,9 @@ bool obs_graphics_thread_loop(struct obs_graphics_context *context)
 {
 	/* defer loop break to clean up sources */
 	const bool stop_requested =
-		video_output_stopped(obs->video.main_mix->video);
+		!obs->video.main_mix
+			? true
+			: video_output_stopped(obs->video.main_mix->video);
 
 	uint64_t frame_start = os_gettime_ns();
 	uint64_t frame_time_ns;

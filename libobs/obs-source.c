@@ -676,12 +676,12 @@ static void obs_source_destroy_defer(struct obs_source *source)
 	 * a video tick call */
 	obs_context_wait(&source->context);
 
-	obs_source_dosignal(source, "source_destroy", "destroy");
-
 	if (source->context.data) {
 		source->info.destroy(source->context.data);
 		source->context.data = NULL;
 	}
+
+	obs_source_dosignal(source, "source_destroy", "destroy");
 
 #ifdef WIN32
 	blog(LOG_DEBUG, "%ssource '%s' destroyed (0x%I64X) (Thread %d)",

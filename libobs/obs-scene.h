@@ -36,6 +36,7 @@ struct obs_scene_item {
 	bool update_group_resize;
 
 	int64_t id;
+	struct obs_video_info *canvas;
 
 	struct obs_scene *parent;
 	struct obs_source *source;
