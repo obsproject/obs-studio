@@ -1,0 +1,150 @@
+name: Publish
+run-name: Publish Repository Actions 🛫
+on:
+  release:
+    types:
+      - published
+    branches:
+      - master
+      - 'release/**'
+permissions:
+  contents: read
+concurrency:
+  group: '${{ github.workflow }} @ ${{ github.head_ref || github.ref }}'
+  cancel-in-progress: true
+jobs:
+  check-tag:
+    name: Check Release Tag
+    if: github.repository_owner == 'obsproject'
+    runs-on: ubuntu-22.04
+    outputs:
+      validTag: ${{ steps.check.outputs.validTag }}
+      flatpakMatrix: ${{ steps.check.outputs.flatpakMatrix }}
+    steps:
+      - name: Check Release Tag ☑️
+        id: check
+        run: |
+          : Check Release Tag ☑️
+          if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
+          shopt -s extglob
+
+          case "${GITHUB_REF_NAME}" in
+            +([0-9]).+([0-9]).+([0-9]) )
+              echo 'validTag=true' >> $GITHUB_OUTPUT
+              echo 'flatpakMatrix=["beta", "stable"]' >> $GITHUB_OUTPUT
+              ;;
+            +([0-9]).+([0-9]).+([0-9])-@(beta|rc)*([0-9]) )
+              echo 'validTag=true' >> $GITHUB_OUTPUT
+              echo 'flatpakMatrix=["beta"]' >> $GITHUB_OUTPUT
+              ;;
+            *) echo 'validTag=false' >> $GITHUB_OUTPUT ;;
+          esac
+
+  flatpak-publish:
+    name: Publish to Flathub 📦
+    needs: check-tag
+    if: github.repository_owner == 'obsproject' && fromJSON(needs.check-tag.outputs.validTag)
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        shell: bash
+    env:
+      FLATPAK_BUILD_PATH: flatpak_app/files/share
+    container:
+      image: bilelmoussaoui/flatpak-github-actions:kde-6.4
+      options: --privileged
+    strategy:
+      matrix:
+        branch: ${{ fromJSON(needs.check-tag.outputs.flatpakMatrix) }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          fetch-depth: 0
+          set-safe-directory: ${{ github.workspace }}
+
+      - name: Set Up Environment 🔧
+        id: setup
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          : Set Up Environment 🔧
+          if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
+
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+
+          dnf install -y -q gh
+          gh extension install actions/gh-actions-cache
+
+          cache_key='flatpak-builder-${{ hashFiles('build-aux/**/*.json') }}'
+          cache_ref='master'
+          read -r key size unit _ ref _ <<< \
+            "$(gh actions-cache list -B ${cache_ref} --key "${cache_key}-x86_64" | head -1)"
+
+          if [[ "${key}" ]]; then
+            echo "cacheKey=${cache_key}" >> $GITHUB_OUTPUT
+            echo "cacheHit=true" >> $GITHUB_OUTPUT
+          else
+            echo "cacheHit=false" >> $GITHUB_OUTPUT
+          fi
+
+          echo "commitHash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Build Flatpak Manifest
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v5
+        with:
+          bundle: obs-studio-${{ steps.setup.outputs.commitHash }}.flatpak
+          manifest-path: ${{ github.workspace }}/build-aux/com.obsproject.Studio.json
+          cache: ${{ fromJSON(steps.setup.outputs.cacheHit) }}
+          cache-key: ${{ steps.setup.outputs.cacheKey }}
+          mirror-screenshots-url: https://dl.flathub.org/repo/screenshots
+          branch: ${{ matrix.branch }}
+
+      - name: Validate AppStream
+        working-directory: ${{ env.FLATPAK_BUILD_PATH }}
+        run: |
+          : Validate AppStream
+          appstream-util validate appdata/com.obsproject.Studio.appdata.xml
+
+      - name: Verify Icon and Metadata in app-info
+        working-directory: ${{ env.FLATPAK_BUILD_PATH }}
+        run: |
+          : Verify Icon and Metadata in app-info
+          test -f app-info/icons/flatpak/128x128/com.obsproject.Studio.png || { echo "Missing 128x128 icon in app-info!"; exit 1; }
+          test -f app-info/xmls/com.obsproject.Studio.xml.gz || { echo "Missing com.obsproject.Studio.xml.gz in app-info!"; exit 1; }
+
+      - name: Commit Screenshots to OSTree Repository
+        run: |
+          : Commit Screenshots to OSTree Repository
+          ostree commit --repo=repo --canonical-permissions --branch=screenshots/x86_64 flatpak_app/screenshots
+
+      - name: Publish to Flathub Beta
+        uses: flatpak/flatpak-github-actions/flat-manager@v5
+        if: ${{ matrix.branch == 'beta' }}
+        with:
+          flat-manager-url: https://hub.flathub.org/
+          repository: beta
+          token: ${{ secrets.FLATHUB_BETA_TOKEN }}
+
+      - name: Publish to Flathub
+        uses: flatpak/flatpak-github-actions/flat-manager@v5
+        if: ${{ matrix.branch == 'stable' }}
+        with:
+          flat-manager-url: https://hub.flathub.org/
+          repository: stable
+          token: ${{ secrets.FLATHUB_TOKEN }}
+
+  steam-upload:
+    name: Upload Steam Builds 🚂
+    needs: check-tag
+    if: github.repository_owner == 'obsproject' && fromJSON(needs.check-tag.outputs.validTag)
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/steam-upload
+        with:
+          steamSecret: ${{ secrets.STEAM_SHARED_SECRET }}
+          steamUser: ${{ secrets.STEAM_USER }}
+          steamPassword: ${{ secrets.STEAM_PASSWORD }}
+          workflowSecret: ${{ github.token }}
+          preview: false

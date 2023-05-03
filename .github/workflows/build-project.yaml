@@ -1,0 +1,346 @@
+name: Build Project
+on:
+  workflow_call:
+jobs:
+  check-event:
+    name: Check GitHub Event Data 📡
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        shell: bash
+    outputs:
+      package: ${{ steps.setup.outputs.package }}
+      codesign: ${{ steps.setup.outputs.codesign }}
+      notarize: ${{ steps.setup.outputs.notarize }}
+      config: ${{ steps.setup.outputs.config }}
+      commitHash: ${{ steps.setup.outputs.commitHash }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Check Event Data ☑️
+        id: setup
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          : Check Event Data ☑️
+          if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
+
+          case "${GITHUB_EVENT_NAME}" in
+            pull_request)
+              config_data=('codesign:false' 'notarize:false' 'package:false' 'config:RelWithDebInfo')
+              if gh pr view --json labels \
+                | jq -e -r '.labels[] | select(.name == "Seeking Testers")' > /dev/null; then
+                config_data[0]='codesign:true'
+                config_data[2]='package:true'
+              fi
+              ;;
+            push)
+              config_data=('codesign:true' 'notarize:false' 'package:true' 'config:RelWithDebInfo')
+              if [[ ${GITHUB_REF_NAME} =~ [0-9]+.[0-9]+.[0-9]+(-(rc|beta).+)? ]]; then
+                config_data[1]='notarize:true'
+                config_data[3]='config:Release'
+              fi
+              ;;
+            workflow_dispatch)
+              config_data=('codesign:true' 'notarize:false' 'package:false' 'config:RelWithDebInfo')
+              ;;
+            schedule)
+              config_data=('codesign:true' 'notarize:false' 'package:true' 'config:RelWithDebInfo')
+              ;;
+            *) ;;
+          esac
+
+          for config in "${config_data[@]}"; do
+            IFS=':' read -r key value <<< "${config}"
+            echo "${key}=${value}" >> $GITHUB_OUTPUT
+          done
+          echo "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
+
+  macos-build:
+    name: Build for macOS 🍏
+    runs-on: macos-13
+    needs: check-event
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [arm64, x86_64]
+    defaults:
+      run:
+        shell: zsh --no-rcs --errexit --pipefail {0}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Set Up Environment 🔧
+        id: setup
+        run: |
+          : Set Up Environment 🔧
+          if (( ${+RUNNER_DEBUG} )) setopt XTRACE
+
+          print '::group::Enable Xcode 14.3.1 and AppleScript'
+          sudo xcode-select --switch /Applications/Xcode_14.3.1.app/Contents/Developer
+          sudo sqlite3 $HOME/Library/Application\ Support/com.apple.TCC/TCC.db \
+            "INSERT OR REPLACE INTO access VALUES('kTCCServiceAppleEvents','/usr/local/opt/runner/provisioner/provisioner',1,2,3,1,NULL,NULL,0,'com.apple.finder',X'fade0c000000002c00000001000000060000000200000010636f6d2e6170706c652e66696e64657200000003',NULL,1592919552);"
+          sudo sqlite3 /Library/Application\ Support/com.apple.TCC/TCC.db \
+            "INSERT OR REPLACE INTO access VALUES('kTCCServiceAppleEvents','/usr/local/opt/runner/provisioner/provisioner',1,2,3,1,NULL,NULL,0,'com.apple.finder',X'fade0c000000002c00000001000000060000000200000010636f6d2e6170706c652e66696e64657200000003',NULL,1592919552);"
+          print '::endgroup::'
+
+          print '::group::Clean Homebrew Environment'
+          local -a to_remove=()
+
+          for formula (curl) {
+            if [[ -d ${HOMEBREW_PREFIX}/opt/${formula} ]] to_remove+=(${formula})
+          }
+
+          if (( #to_remove )) brew uninstall --ignore-dependencies ${to_remove}
+          print '::endgroup::'
+
+          local -A arch_names=(x86_64 intel arm64 apple)
+          print "cpuName=${arch_names[${{ matrix.target }}]}" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache/restore@v3
+        id: ccache-cache
+        with:
+          path: ${{ github.workspace }}/.ccache
+          key: ${{ runner.os }}-ccache-${{ matrix.target }}-${{ needs.check-event.outputs.config }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-${{ matrix.target }}-
+
+      - name: Set Up Code Signing 🔑
+        uses: ./.github/actions/setup-macos-codesigning
+        if: fromJSON(needs.check-event.outputs.codesign)
+        id: codesign
+        with:
+          codesignIdentity: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+          codesignCertificate: ${{ secrets.MACOS_SIGNING_CERT }}
+          certificatePassword: ${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}
+          keychainPassword: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
+          provisioningProfile: ${{ secrets.MACOS_SIGNING_PROVISIONING_PROFILE }}
+          notarizationUser: ${{ secrets.MACOS_NOTARIZATION_USERNAME }}
+          notarizationPassword: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
+
+      - name: Build OBS Studio 🧱
+        uses: ./.github/actions/build-obs
+        env:
+          TWITCH_CLIENTID: ${{ secrets.TWITCH_CLIENT_ID }}
+          TWITCH_HASH: ${{ secrets.TWITCH_HASH }}
+          RESTREAM_CLIENTID: ${{ secrets.RESTREAM_CLIENTID }}
+          RESTREAM_HASH: ${{ secrets.RESTREAM_HASH }}
+          YOUTUBE_CLIENTID: ${{ secrets.YOUTUBE_CLIENTID }}
+          YOUTUBE_CLIENTID_HASH: ${{ secrets.YOUTUBE_CLIENTID_HASH }}
+          YOUTUBE_SECRET: ${{ secrets.YOUTUBE_SECRET }}
+          YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
+        with:
+          target: ${{ matrix.target }}
+          config: ${{ needs.check-event.outputs.config }}
+          codesign: ${{ fromJSON(needs.check-event.outputs.codesign) }}
+          codesignIdent: ${{ steps.codesign.outputs.codesignIdent }}
+          codesignTeam: ${{ steps.codesign.outputs.codesignTeam }}
+
+      - name: Package OBS Studio 📀
+        uses: ./.github/actions/package-obs
+        with:
+          target: ${{ matrix.target }}
+          config: ${{ needs.check-event.outputs.config }}
+          package: ${{ fromJSON(needs.check-event.outputs.package) }}
+          codesign: ${{ fromJSON(needs.check-event.outputs.codesign) && fromJSON(steps.codesign.outputs.haveCodesignIdent) }}
+          codesignIdent: ${{ steps.codesign.outputs.codesignIdent }}
+          notarize: ${{ fromJSON(needs.check-event.outputs.notarize) && fromJSON(steps.codesign.outputs.haveNotarizationUser) }}
+          codesignUser: ${{ secrets.MACOS_NOTARIZATION_USERNAME }}
+          codesignPass: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
+
+      - name: Upload Artifacts 📡
+        uses: actions/upload-artifact@v3
+        with:
+          name: obs-studio-macos-${{ matrix.target }}-${{ needs.check-event.outputs.commitHash }}
+          path: ${{ github.workspace }}/build_macos/obs-studio-*-macos-${{ steps.setup.outputs.cpuName }}.*
+
+      - name: Upload Debug Symbol Artifacts 🪲
+        uses: actions/upload-artifact@v3
+        if: ${{ needs.check-event.outputs.config == 'Release' }}
+        with:
+          name: obs-studio-macos-${{ matrix.target }}-${{ needs.check-event.outputs.commitHash }}-dSYMs
+          path: ${{ github.workspace }}/build_macos/obs-studio-*-macos-${{ steps.setup.outputs.cpuName }}-dSYMs.tar.xz
+
+      - uses: actions/cache/save@v3
+        if: github.event_name != 'pull_request' && steps.ccache-cache.outputs.cache-hit != 'true'
+        with:
+          path: ${{ github.workspace }}/.ccache
+          key: ${{ runner.os }}-ccache-${{ matrix.target }}-${{ needs.check-event.outputs.config }}
+
+  ubuntu-build:
+    name: Build for Ubuntu 🐧
+    runs-on: ubuntu-22.04
+    needs: check-event
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - uses: actions/cache/restore@v3
+        id: ccache-cache
+        with:
+          path: ${{ github.workspace }}/.ccache
+          key: ${{ runner.os }}-ccache-x86_64-${{ needs.check-event.outputs.config }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-x86_64-
+
+      - name: Build OBS Studio 🧱
+        uses: ./.github/actions/build-obs
+        env:
+          TWITCH_CLIENTID: ${{ secrets.TWITCH_CLIENT_ID }}
+          TWITCH_HASH: ${{ secrets.TWITCH_HASH }}
+          RESTREAM_CLIENTID: ${{ secrets.RESTREAM_CLIENTID }}
+          RESTREAM_HASH: ${{ secrets.RESTREAM_HASH }}
+          YOUTUBE_CLIENTID: ${{ secrets.YOUTUBE_CLIENTID }}
+          YOUTUBE_CLIENTID_HASH: ${{ secrets.YOUTUBE_CLIENTID_HASH }}
+          YOUTUBE_SECRET: ${{ secrets.YOUTUBE_SECRET }}
+          YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
+        with:
+          target: x86_64
+          config: ${{ needs.check-event.outputs.config }}
+
+      - name: Package OBS Studio 📀
+        uses: ./.github/actions/package-obs
+        with:
+          target: x86_64
+          config: ${{ needs.check-event.outputs.config }}
+          package: ${{ fromJSON(needs.check-event.outputs.package) }}
+
+      - name: Upload Source Tarball 🗜️
+        uses: actions/upload-artifact@v3
+        if: ${{ ! always() }}
+        with:
+          name: obs-studio-*-sources-${{ needs.check-event.outputs.commitHash }}
+          path: ${{ github.workspace }}/build_x86_64/obs-studio-*-sources.*
+
+      - name: Upload Artifacts 📡
+        uses: actions/upload-artifact@v3
+        with:
+          name: obs-studio-ubuntu-22.04-x86_64-${{ needs.check-event.outputs.commitHash }}
+          path: ${{ github.workspace }}/build_x86_64/obs-studio-*-x86_64-linux-gnu.*
+
+      - name: Upload Debug Symbol Artifacts 🪲
+        uses: actions/upload-artifact@v3
+        if: ${{ fromJSON(needs.check-event.outputs.package) }}
+        with:
+          name: obs-studio-ubuntu-22.04-x86_64-${{ needs.check-event.outputs.commitHash }}-dbgsym
+          path: ${{ github.workspace }}/build_x86_64/obs-studio-*-x86_64-linux-gnu-dbgsym.ddeb
+
+      - uses: actions/cache/save@v3
+        if: github.event_name != 'pull_request' && steps.ccache-cache.outputs.cache-hit != 'true'
+        with:
+          path: ${{ github.workspace }}/.ccache
+          key: ${{ runner.os }}-ccache-x86_64-${{ needs.check-event.outputs.config }}
+
+  flatpak-build:
+    name: Build Application for Flatpak 📦
+    runs-on: ubuntu-22.04
+    needs: check-event
+    defaults:
+      run:
+        shell: bash
+    container:
+      image: bilelmoussaoui/flatpak-github-actions:kde-6.4
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          fetch-depth: 0
+          set-safe-directory: ${{ env.GITHUB_WORKSPACE }}
+
+      - name: Set Up Environment 🔧
+        id: setup
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          : Set Up Environment 🔧
+          if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
+
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+
+          echo '::group::Install GitHub CLI tool'
+          dnf install -y -q gh
+          gh extension install actions/gh-actions-cache
+          echo '::endgroup::'
+
+          cache_key='flatpak-builder-${{ hashFiles('build-aux/**/*.json') }}'
+          cache_ref='master'
+          read -r key size unit _ ref _ <<< \
+            "$(gh actions-cache list -B ${cache_ref} --key "${cache_key}-x86_64" | head -1)"
+
+          if [[ "${key}" ]]; then
+            echo "cacheKey=${cache_key}" >> $GITHUB_OUTPUT
+            echo "cacheHit=true" >> $GITHUB_OUTPUT
+          else
+            echo "cacheHit=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build Flatpak Manifest 🧾
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v5
+        with:
+          build-bundle: ${{ fromJSON(needs.check-event.outputs.package) }}
+          bundle: obs-studio-flatpak-${{ needs.check-event.outputs.commitHash }}.flatpak
+          manifest-path: ${{ github.workspace }}/build-aux/com.obsproject.Studio.json
+          cache: ${{ fromJSON(steps.setup.outputs.cacheHit) || (github.event_name == 'push' && github.ref_name == 'master')}}
+          restore-cache: ${{ fromJSON(steps.setup.outputs.cacheHit) }}
+          cache-key: ${{ steps.setup.outputs.cacheKey }}
+
+  windows-build:
+    name: Build for Windows 🪟
+    runs-on: windows-2022
+    needs: check-event
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - uses: actions/cache@v3
+        id: ccache-cache
+        if: github.event_name == 'pull_request'
+        with:
+          path: ${{ github.workspace }}/.ccache
+          key: ${{ runner.os }}-ccache-x86_64-${{ needs.check-event.outputs.config }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-x86_64-
+
+      - name: Build OBS Studio 🧱
+        uses: ./.github/actions/build-obs
+        env:
+          TWITCH_CLIENTID: ${{ secrets.TWITCH_CLIENT_ID }}
+          TWITCH_HASH: ${{ secrets.TWITCH_HASH }}
+          RESTREAM_CLIENTID: ${{ secrets.RESTREAM_CLIENTID }}
+          RESTREAM_HASH: ${{ secrets.RESTREAM_HASH }}
+          YOUTUBE_CLIENTID: ${{ secrets.YOUTUBE_CLIENTID }}
+          YOUTUBE_CLIENTID_HASH: ${{ secrets.YOUTUBE_CLIENTID_HASH }}
+          YOUTUBE_SECRET: ${{ secrets.YOUTUBE_SECRET }}
+          YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
+          GPU_PRIORITY_VAL: ${{ secrets.GPU_PRIORITY_VAL }}
+        with:
+          target: x64
+          config: ${{ needs.check-event.outputs.config }}
+
+      - name: Package OBS Studio 📀
+        uses: ./.github/actions/package-obs
+        with:
+          target: x64
+          config: ${{ needs.check-event.outputs.config }}
+          package: ${{ fromJSON(needs.check-event.outputs.package) }}
+
+      - name: Upload Artifacts 📡
+        uses: actions/upload-artifact@v3
+        with:
+          name: obs-studio-windows-x64-${{ needs.check-event.outputs.commitHash }}
+          path: ${{ github.workspace }}/build_x64/obs-studio-*-windows-x64.zip

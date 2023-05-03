@@ -1,0 +1,63 @@
+name: Check Code Formatting 🛠️
+on:
+  workflow_call:
+jobs:
+  clang-format:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: clang-format Check 🐉
+        id: clang-format
+        uses: ./.github/actions/run-clang-format
+        with:
+          failCondition: error
+
+  swift-format:
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: swift-format Check 🔥
+        id: swift-format
+        uses: ./.github/actions/run-swift-format
+        with:
+          failCondition: error
+
+  cmake-format:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: cmake-format Check 🎛️
+        id: cmake-format
+        uses: ./.github/actions/run-cmake-format
+        with:
+          failCondition: error
+
+  flatpak-validator:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Flatpak Manifest Check 📦
+        id: flatpak-check
+        uses: ./.github/actions/flatpak-manifest-validator
+        with:
+          failCondition: error
+
+  qt-xml-validator:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Qt XML Check 🖼️
+        id: qt-xml-check
+        uses: ./.github/actions/qt-xml-validator
+        with:
+          failCondition: error
