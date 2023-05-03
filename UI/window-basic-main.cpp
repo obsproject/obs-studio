@@ -9127,7 +9127,7 @@ void OBSBasic::UpdateTitleBar()
 
 	name << App()->GetVersionString(false);
 	if (App()->IsPortableMode())
-		name << " - Portable Mode";
+		name << " - " << Str("TitleBar.PortableMode");
 
 	name << " - " << Str("TitleBar.Profile") << ": " << profile;
 	name << " - " << Str("TitleBar.Scenes") << ": " << sceneCollection;
