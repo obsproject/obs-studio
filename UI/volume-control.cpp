@@ -37,8 +37,11 @@ static inline Qt::CheckState GetCheckState(bool muted, bool unassigned)
 
 static inline bool IsSourceUnassigned(obs_source_t *source)
 {
-	return (obs_source_get_audio_mixers(source) &
-		((1 << MAX_AUDIO_MIXES) - 1)) == 0;
+	uint32_t mixes = (obs_source_get_audio_mixers(source) &
+			  ((1 << MAX_AUDIO_MIXES) - 1));
+	obs_monitoring_type mt = obs_source_get_monitoring_type(source);
+
+	return mixes == 0 && mt != OBS_MONITORING_TYPE_MONITOR_ONLY;
 }
 
 static void ShowUnassignedWarning(const char *name)
@@ -116,19 +119,19 @@ void VolControl::VolumeMuted(bool muted)
 	volMeter->muted = muted || unassigned;
 }
 
-void VolControl::OBSMixersChanged(void *data, calldata_t *calldata)
+void VolControl::OBSMixersOrMonitoringChanged(void *data, calldata_t *)
 {
-	VolControl *volControl = static_cast<VolControl *>(data);
-	bool unassigned = (calldata_int(calldata, "mixers") &
-			   ((1 << MAX_AUDIO_MIXES) - 1)) == 0;
 
-	QMetaObject::invokeMethod(volControl, "AssignmentChanged",
-				  Q_ARG(bool, unassigned));
+	VolControl *volControl = static_cast<VolControl *>(data);
+	QMetaObject::invokeMethod(volControl, "MixersOrMonitoringChanged",
+				  Qt::QueuedConnection);
 }
 
-void VolControl::AssignmentChanged(bool unassigned)
+void VolControl::MixersOrMonitoringChanged()
 {
 	bool muted = obs_source_muted(source);
+	bool unassigned = IsSourceUnassigned(source);
+
 	auto newState = GetCheckState(muted, unassigned);
 	if (mute->checkState() != newState)
 		mute->setCheckState(newState);
@@ -377,7 +380,11 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	signal_handler_connect(obs_source_get_signal_handler(source), "mute",
 			       OBSVolumeMuted, this);
 	signal_handler_connect(obs_source_get_signal_handler(source),
-			       "audio_mixers", OBSMixersChanged, this);
+			       "audio_mixers", OBSMixersOrMonitoringChanged,
+			       this);
+	signal_handler_connect(obs_source_get_signal_handler(source),
+			       "audio_monitoring", OBSMixersOrMonitoringChanged,
+			       this);
 
 	QWidget::connect(slider, SIGNAL(valueChanged(int)), this,
 			 SLOT(SliderChanged(int)));
@@ -416,7 +423,11 @@ VolControl::~VolControl()
 	signal_handler_disconnect(obs_source_get_signal_handler(source), "mute",
 				  OBSVolumeMuted, this);
 	signal_handler_disconnect(obs_source_get_signal_handler(source),
-				  "audio_mixers", OBSMixersChanged, this);
+				  "audio_mixers", OBSMixersOrMonitoringChanged,
+				  this);
+	signal_handler_disconnect(obs_source_get_signal_handler(source),
+				  "audio_monitoring",
+				  OBSMixersOrMonitoringChanged, this);
 
 	obs_fader_destroy(obs_fader);
 	obs_volmeter_destroy(obs_volmeter);
