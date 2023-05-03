@@ -1065,8 +1065,17 @@ static inline void AddMissingFiles(void *data, obs_source_t *source)
 void OBSBasic::LoadData(obs_data_t *data, const char *file)
 {
 	ClearSceneData();
-	InitDefaultTransitions();
 	ClearContextBar();
+
+	/* Exit OBS if clearing scene data failed for some reason. */
+	if (clearingFailed) {
+		OBSMessageBox::critical(this, QTStr("SourceLeak.Title"),
+					QTStr("SourceLeak.Text"));
+		close();
+		return;
+	}
+
+	InitDefaultTransitions();
 
 	if (devicePropertiesThread && devicePropertiesThread->isRunning()) {
 		devicePropertiesThread->wait();
@@ -4880,10 +4889,45 @@ void OBSBasic::ClearSceneData()
 
 	unsetCursor();
 
-	disableSaving--;
+	/* If scene data wasn't actually cleared, e.g. faulty plugin holding a
+	 * reference, they will still be in the hash table, enumerate them and
+	 * store the names for logging purposes. */
+	auto cb2 = [](void *param, obs_source_t *source) {
+		auto orphans = static_cast<vector<string> *>(param);
+		orphans->push_back(obs_source_get_name(source));
+		return true;
+	};
 
-	blog(LOG_INFO, "All scene data cleared");
-	blog(LOG_INFO, "------------------------------------------------");
+	vector<string> orphan_sources;
+	obs_enum_sources(cb2, &orphan_sources);
+
+	if (!orphan_sources.empty()) {
+		/* Avoid logging list twice in case it gets called after
+		 * setting the flag the first time. */
+		if (!clearingFailed) {
+			/* This ugly mess exists to join a vector of strings
+			 * with a user-defined delimiter. */
+			string orphan_names = std::accumulate(
+				orphan_sources.begin(), orphan_sources.end(),
+				string(""), [](string a, string b) {
+					return std::move(a) + "\n- " + b;
+				});
+
+			blog(LOG_ERROR,
+			     "Not all sources were cleared when clearing scene data:\n%s\n",
+			     orphan_names.c_str());
+		}
+
+		/* We do not decrement disableSaving here to avoid OBS
+		 * overwriting user data with garbage. */
+		clearingFailed = true;
+	} else {
+		disableSaving--;
+
+		blog(LOG_INFO, "All scene data cleared");
+		blog(LOG_INFO,
+		     "------------------------------------------------");
+	}
 }
 
 void OBSBasic::closeEvent(QCloseEvent *event)
@@ -4914,7 +4958,8 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	bool confirmOnExit =
 		config_get_bool(GetGlobalConfig(), "General", "ConfirmOnExit");
 
-	if (confirmOnExit && outputHandler && outputHandler->Active()) {
+	if (confirmOnExit && outputHandler && outputHandler->Active() &&
+	    !clearingFailed) {
 		SetShowing(true);
 
 		QMessageBox::StandardButton button = OBSMessageBox::question(
