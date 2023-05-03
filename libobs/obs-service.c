@@ -533,3 +533,16 @@ obs_service_get_audio_track_cap(const obs_service_t *service)
 		return OBS_SERVICE_AUDIO_SINGLE_TRACK;
 	return service->info.get_audio_track_cap(service->context.data);
 }
+
+uint32_t obs_get_service_flags(const char *id)
+{
+	const struct obs_service_info *info = find_service(id);
+	return info ? info->flags : 0;
+}
+
+uint32_t obs_service_get_flags(const obs_service_t *service)
+{
+	return obs_service_valid(service, "obs_service_get_flags")
+		       ? service->info.flags
+		       : 0;
+}

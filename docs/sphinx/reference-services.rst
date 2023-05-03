@@ -213,6 +213,19 @@ Service Definition Structure
 
    - **OBS_SERVICE_AUDIO_MULTI_TRACK** - Supports multiple audio tracks
 
+.. member:: uint32_t obs_service_info.flags
+
+   Service feature flags (Optional).
+
+   A bitwise OR combination of one or more of the following values:
+
+   - **OBS_SERVICE_DEPRECATED** - Service is deprecrated.
+
+   - **OBS_SERVICE_INTERNAL** - Service is not user-facing in a UI context.
+
+   - **OBS_SERVICE_UNCOMMON** - Service can be hidden behind an option in a UI
+     context.
+
 General Service Functions
 -------------------------
 
@@ -432,6 +445,13 @@ General Service Functions
 .. function:: enum obs_service_audio_track_cap obs_service_get_audio_track_cap(const obs_service_t *service)
 
    :return: The audio track capability of the service
+
+---------------------
+
+.. function:: uint32_t obs_get_service_flags(const char *id)
+              uint32_t obs_service_get_flags(const obs_service_t *service)
+
+   :return: The service feature flags
 
 .. ---------------------------------------------------------------------------
 

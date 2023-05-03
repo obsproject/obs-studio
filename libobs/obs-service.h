@@ -28,6 +28,12 @@
 extern "C" {
 #endif
 
+enum obs_service_info_flag {
+	OBS_SERVICE_DEPRECATED = (1 << 0),
+	OBS_SERVICE_INTERNAL = (1 << 1),
+	OBS_SERVICE_UNCOMMON = (1 << 2),
+};
+
 struct obs_service_resolution {
 	int cx;
 	int cy;
@@ -117,6 +123,8 @@ struct obs_service_info {
 	bool (*can_try_to_connect)(void *data);
 
 	enum obs_service_audio_track_cap (*get_audio_track_cap)(void *data);
+
+	uint32_t flags;
 };
 
 EXPORT void obs_register_service_s(const struct obs_service_info *info,
