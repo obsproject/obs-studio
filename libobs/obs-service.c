@@ -126,8 +126,11 @@ const char *obs_service_get_name(const obs_service_t *service)
 static inline obs_data_t *get_defaults(const struct obs_service_info *info)
 {
 	obs_data_t *settings = obs_data_create();
-	if (info->get_defaults)
+	if (info->get_defaults2) {
+		info->get_defaults2(info->type_data, settings);
+	} else if (info->get_defaults) {
 		info->get_defaults(settings);
+	}
 	return settings;
 }
 
@@ -140,11 +143,17 @@ obs_data_t *obs_service_defaults(const char *id)
 obs_properties_t *obs_get_service_properties(const char *id)
 {
 	const struct obs_service_info *info = find_service(id);
-	if (info && info->get_properties) {
+	if (info && (info->get_properties || info->get_properties2)) {
 		obs_data_t *defaults = get_defaults(info);
 		obs_properties_t *properties;
 
-		properties = info->get_properties(NULL);
+		if (info->get_properties2) {
+			properties =
+				info->get_properties2(NULL, info->type_data);
+		} else {
+			properties = info->get_properties(NULL);
+		}
+
 		obs_properties_apply_settings(properties, defaults);
 		obs_data_release(defaults);
 		return properties;
@@ -157,8 +166,13 @@ obs_properties_t *obs_service_properties(const obs_service_t *service)
 	if (!obs_service_valid(service, "obs_service_properties"))
 		return NULL;
 
-	if (service->info.get_properties) {
-		obs_properties_t *props;
+	obs_properties_t *props;
+	if (service->info.get_properties2) {
+		props = service->info.get_properties2(service->context.settings,
+						      service->info.type_data);
+		obs_properties_apply_settings(props, service->context.settings);
+		return props;
+	} else if (service->info.get_properties) {
 		props = service->info.get_properties(service->context.data);
 		obs_properties_apply_settings(props, service->context.settings);
 		return props;
