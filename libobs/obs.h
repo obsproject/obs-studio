@@ -2676,6 +2676,8 @@ obs_service_get_audio_track_cap(const obs_service_t *service);
 EXPORT uint32_t obs_get_service_flags(const char *id);
 EXPORT uint32_t obs_service_get_flags(const obs_service_t *service);
 
+EXPORT const char *obs_get_service_supported_protocols(const char *id);
+
 /* ------------------------------------------------------------------------- */
 /* Source frame allocation functions */
 EXPORT void obs_source_frame_init(struct obs_source_frame *frame,

@@ -125,6 +125,8 @@ struct obs_service_info {
 	enum obs_service_audio_track_cap (*get_audio_track_cap)(void *data);
 
 	uint32_t flags;
+
+	const char *supported_protocols;
 };
 
 EXPORT void obs_register_service_s(const struct obs_service_info *info,

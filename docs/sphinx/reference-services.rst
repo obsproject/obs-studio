@@ -226,6 +226,11 @@ Service Definition Structure
    - **OBS_SERVICE_UNCOMMON** - Service can be hidden behind an option in a UI
      context.
 
+.. member:: const char *obs_service_info.supported_protocols
+
+   This variable specifies which protocol are supported by the service,
+   separated by semicolon.
+
 General Service Functions
 -------------------------
 
@@ -452,6 +457,12 @@ General Service Functions
               uint32_t obs_service_get_flags(const obs_service_t *service)
 
    :return: The service feature flags
+
+---------------------
+
+.. function:: const char *obs_get_service_supported_protocols(const char *id)
+
+   :return: Supported protocol of the service, separated by semicolon
 
 .. ---------------------------------------------------------------------------
 

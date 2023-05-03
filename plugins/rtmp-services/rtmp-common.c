@@ -1138,4 +1138,5 @@ struct obs_service_info rtmp_common_service = {
 	.get_supported_audio_codecs = rtmp_common_get_supported_audio_codecs,
 	.can_try_to_connect = rtmp_common_can_try_to_connect,
 	.get_audio_track_cap = rtmp_common_audio_track_cap,
+	.supported_protocols = "RTMP;RTMPS;HLS;FTL;SRT;RIST",
 };

@@ -546,3 +546,9 @@ uint32_t obs_service_get_flags(const obs_service_t *service)
 		       ? service->info.flags
 		       : 0;
 }
+
+const char *obs_get_service_supported_protocols(const char *id)
+{
+	const struct obs_service_info *info = find_service(id);
+	return info ? info->supported_protocols : NULL;
+}
