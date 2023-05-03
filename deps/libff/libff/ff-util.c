@@ -473,3 +473,12 @@ bool ff_format_codec_compatible(const char *codec, const char *format)
 	return avformat_query_codec(output_format, codec_desc->id, FF_COMPLIANCE_NORMAL) == 1;
 #endif
 }
+
+bool ff_supports_pcm_in_mp4()
+{
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(60, 5, 100)
+	return false;
+#else
+	return true;
+#endif
+}
