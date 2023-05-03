@@ -301,14 +301,14 @@ private:
 				   const float peak[MAX_AUDIO_CHANNELS],
 				   const float inputPeak[MAX_AUDIO_CHANNELS]);
 	static void OBSVolumeMuted(void *data, calldata_t *calldata);
-	static void OBSMixersChanged(void *data, calldata_t *alldata);
+	static void OBSMixersOrMonitoringChanged(void *data, calldata_t *);
 
 	void EmitConfigClicked();
 
 private slots:
 	void VolumeChanged();
 	void VolumeMuted(bool muted);
-	void AssignmentChanged(bool unassigned);
+	void MixersOrMonitoringChanged();
 
 	void SetMuted(bool checked);
 	void SliderChanged(int vol);
