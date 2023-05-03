@@ -4996,15 +4996,18 @@ static const unordered_map<string, unordered_set<string>> codec_compat = {
 	{"mpegts", {"h264", "hevc", "aac", "opus"}},
 	{"hls",
 	 {"h264", "hevc", "aac"}}, // Also using MPEG-TS, but no Opus support
+	{"mp4",
+	 {"h264", "hevc", "av1", "aac", "opus", "alac", "flac", "pcm_s16le",
+	  "pcm_s24le", "pcm_f32le"}},
+	{"fragmented_mp4",
+	 {"h264", "hevc", "av1", "aac", "opus", "alac", "flac", "pcm_s16le",
+	  "pcm_s24le", "pcm_f32le"}},
 	{"mov",
 	 {"h264", "hevc", "prores", "aac", "alac", "pcm_s16le", "pcm_s24le",
 	  "pcm_f32le"}},
-	{"mp4", {"h264", "hevc", "av1", "aac", "opus", "alac", "flac"}},
 	{"fragmented_mov",
 	 {"h264", "hevc", "prores", "aac", "alac", "pcm_s16le", "pcm_s24le",
 	  "pcm_f32le"}},
-	{"fragmented_mp4",
-	 {"h264", "hevc", "av1", "aac", "opus", "alac", "flac"}},
 	// MKV supports everything
 	{"mkv", {}},
 };
@@ -5019,6 +5022,12 @@ static bool ContainerSupportsCodec(const string &container, const string &codec)
 	// Assume everything is supported
 	if (codecs.empty())
 		return true;
+
+	// PCM in MP4 is only supported in FFmpeg > 6.0
+	if ((container == "mp4" || container == "fragmented_mp4") &&
+	    !ff_supports_pcm_in_mp4() && codec.find("pcm_") != string::npos)
+		return false;
+
 	return codecs.count(codec) > 0;
 }
 
