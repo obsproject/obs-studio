@@ -186,6 +186,8 @@ Service Definition Structure
 
 .. member:: bool (*obs_service_info.can_try_to_connect)(void *data)
 
+   (Optional)
+
    :return: If the service has all the needed connection info to be
             able to connect.
 
@@ -380,11 +382,15 @@ General Service Functions
 
    :return: The output type that should be preferred with this service
 
+---------------------
+
 .. function:: const char *obs_service_get_connect_info(const obs_service_t *service, uint32_t type)
 
    :param type: Check :c:member:`obs_service_info.get_connect_info` for
                 type values.
    :return: Connection info related to the type value.
+
+---------------------
 
 .. function:: bool obs_service_can_try_to_connect(const obs_service_t *service)
 
