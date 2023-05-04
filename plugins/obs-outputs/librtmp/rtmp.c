@@ -4556,6 +4556,7 @@ DecodeTEA(AVal *key, AVal *text)
     /* prep text: hex2bin, multiples of 4 */
     n = (text->av_len + 7) / 8;
     out = malloc(n * 8);
+    memset(out, 0, n * 8);
     ptr = (unsigned char *)text->av_val;
     v = (uint32_t *) out;
     for (i = 0; i < n; i++)
