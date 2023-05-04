@@ -153,12 +153,12 @@ VertTexTexPos VSPacked422Left_Reverse(uint id : VERTEXID)
 	float x = idHigh * 4. - 1.;
 	float y = idLow * 4. - 1.;
 
-	float u = idHigh * 2. + width_x2_i;
+	float u = idHigh * 2.;
 	float v = idLow * 2.;
 	v = obs_glsl_compile ? v : (1. - v);
 
 	VertTexTexPos vert_out;
-	vert_out.uvuv = float4(width_d2 * u, height * v, u, v);
+	vert_out.uvuv = float4(width_d2 * u, height * v, u + width_x2_i, v);
 	vert_out.pos = float4(x, y, 0., 1.);
 	return vert_out;
 }
