@@ -100,6 +100,13 @@ else()
   endif()
 
   option(CALM_DEPRECATION "Keep deprecated-declarations as warnings" OFF)
+  #[[
+    Note about -Wmaybe-uninitialized on GCC, this warning seems to be subject of various regressions and false positives. This
+    warning is set to not turn into an error.
+
+    - https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105562 for 12.1.0
+    - https://github.com/obsproject/obs-studio/issues/8850 for 13.1.1
+  ]]
   add_compile_options(
     -Werror
     -Wextra
@@ -117,19 +124,13 @@ else()
     "$<$<CONFIG:DEBUG>:-DDEBUG=1;-D_DEBUG=1>"
     "$<$<COMPILE_LANG_AND_ID:CXX,AppleClang,Clang>:-Wnull-conversion;-fcolor-diagnostics;-Wno-error=shorten-64-to-32>"
     "$<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wnull-conversion;-fcolor-diagnostics;-Wno-error=shorten-64-to-32>"
-    "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:-Wconversion-null>"
+    "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:-Wconversion-null;-Wno-error=maybe-uninitialized>"
+    "$<$<COMPILE_LANG_AND_ID:C,GNU>:-Wno-error=maybe-uninitialized>"
     "$<$<BOOL:${CALM_DEPRECATION}>:-Wno-error=deprecated-declarations>")
 
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    # GCC on aarch64 emits type-limits warnings that do not appear on x86_64
-    if(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
-      add_compile_options(-Wno-error=type-limits)
-    endif()
-
-    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105562
-    if(CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL "12.1.0")
-      add_compile_options(-Wno-error=maybe-uninitialized)
-    endif()
+  # GCC on aarch64 emits type-limits warnings that do not appear on x86_64
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+    add_compile_options(-Wno-error=type-limits)
   endif()
 
   if(OBS_CODESIGN_LINKER)
