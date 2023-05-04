@@ -1165,6 +1165,11 @@ reroute:
 	case CODEC_HEVC:
 		return obs_encoder_create_rerouted(encoder,
 						   "ffmpeg_hevc_nvenc");
+	case CODEC_AV1:
+		obs_encoder_set_last_error(
+			encoder,
+			obs_module_text("NVENC.NoAV1FallbackPossible"));
+		break;
 	}
 
 	return NULL;
