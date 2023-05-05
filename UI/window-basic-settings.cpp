@@ -4980,8 +4980,8 @@ void OBSBasicSettings::AdvOutSplitFileChanged()
 }
 
 static const unordered_set<string> builtin_codecs = {
-	"h264", "hevc", "av1",       "prores",    "aac",
-	"opus", "alac", "pcm_s16le", "pcm_s24le", "pcm_f32le"};
+	"h264", "hevc", "av1",       "prores",    "aac",      "opus",
+	"alac", "flac", "pcm_s16le", "pcm_s24le", "pcm_f32le"};
 
 static const unordered_map<string, unordered_set<string>> codec_compat = {
 	// Technically our muxer supports HEVC and AV1 as well, but nothing else does
