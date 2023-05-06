@@ -512,6 +512,11 @@ static void DeleteCookies()
 
 void RegisterTwitchAuth()
 {
+#if !defined(__APPLE__) && !defined(_WIN32)
+	if (QApplication::platformName().contains("wayland"))
+		return;
+#endif
+
 	OAuth::RegisterOAuth(twitchDef, CreateTwitchAuth, TwitchAuth::Login,
 			     DeleteCookies);
 }
