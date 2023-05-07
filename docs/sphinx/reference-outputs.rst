@@ -74,6 +74,26 @@ Output Definition Structure (obs_output_info)
      frame.  Audio data will be correctly truncated down to the exact
      audio sample according to that video frame timing.
 
+   - **OBS_OUTPUT_OPTIONAL_VIDEO** - Output supports video optionally.
+
+     When this capability flag is used, the output supports audio-only
+     operation in addition to video-and-audio operation. Disabling video
+     is as simple as setting a *NULL* :c:type:`video_t` or video encoder on the
+     output.
+
+   - **OBS_OUTPUT_OPTIONAL_AUDIO** - Output supports audio optionally.
+
+     When this capability flag is used, the output supports video-only
+     operation in addition to video-and-audio operation. Disabling audio
+     is as simple as a *NULL* :c:type:`audio_t` or audio encoder on the
+     output.
+
+   - **OBS_OUTPUT_OPTIONAL_AV** - Combines OBS_OUTPUT_OPTIONAL_VIDEO and OBS_OUTPUT_OPTIONAL_AUDIO.
+
+     Be aware that for obvious reasons, using outputs with this
+     capability must have either audio or video assigned at the time
+     of starting.
+
 .. member:: const char *(*obs_output_info.get_name)(void *type_data)
 
    Get the translated name of the output type.

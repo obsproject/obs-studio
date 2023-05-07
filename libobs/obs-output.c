@@ -1083,6 +1083,9 @@ static bool can_begin_data_capture(const struct obs_output *output,
 		}
 	}
 
+	if (!has_video && !has_audio)
+		return false;
+
 	if (has_service && !output->service)
 		return false;
 
@@ -2045,8 +2048,24 @@ static inline void convert_flags(const struct obs_output *output,
 	else
 		flags &= output->info.flags;
 
-	*has_video = (flags & OBS_OUTPUT_VIDEO) != 0;
-	*has_audio = (flags & OBS_OUTPUT_AUDIO) != 0;
+	if ((flags & OBS_OUTPUT_VIDEO) != 0) {
+		if ((flags & OBS_OUTPUT_OPTIONAL_VIDEO) != 0)
+			*has_video = output->video_encoder != NULL;
+		else
+			*has_video = true;
+	} else {
+		*has_video = false;
+	}
+
+	if ((flags & OBS_OUTPUT_AUDIO) != 0) {
+		if ((flags & OBS_OUTPUT_OPTIONAL_AUDIO) != 0)
+			*has_audio = audio_valid(output, *encoded);
+		else
+			*has_audio = true;
+	} else {
+		*has_audio = false;
+	}
+
 	*has_service = (flags & OBS_OUTPUT_SERVICE) != 0;
 }
 
