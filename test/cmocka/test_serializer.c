@@ -20,6 +20,10 @@ static void serialize_test(void **state)
 	assert_int_equal(output.bytes.num, 3);
 	uint8_t expected[3] = {0x01, 0xff, 0xe1};
 	assert_memory_equal(output.bytes.array, expected, 3);
+
+	assert_true(serializer_get_pos(&s) == 3);
+
+	array_output_serializer_free(&output);
 }
 
 int main()
