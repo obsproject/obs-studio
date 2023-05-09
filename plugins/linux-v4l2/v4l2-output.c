@@ -173,7 +173,7 @@ static bool try_connect(void *data, const char *device)
 	}
 
 	blog(LOG_INFO, "Virtual camera started");
-	obs_output_begin_data_capture(vcam->output, 0);
+	obs_output_begin_data_capture2(vcam->output);
 
 	return true;
 

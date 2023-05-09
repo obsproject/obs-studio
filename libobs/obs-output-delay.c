@@ -157,10 +157,10 @@ bool obs_output_delay_start(obs_output_t *output)
 	};
 
 	if (!delay_active(output)) {
-		bool can_begin = obs_output_can_begin_data_capture(output, 0);
+		bool can_begin = obs_output_can_begin_data_capture2(output);
 		if (!can_begin)
 			return false;
-		if (!obs_output_initialize_encoders(output, 0))
+		if (!obs_output_initialize_encoders2(output))
 			return false;
 	}
 
@@ -175,7 +175,7 @@ bool obs_output_delay_start(obs_output_t *output)
 		return true;
 	}
 
-	if (!obs_output_begin_data_capture(output, 0)) {
+	if (!obs_output_begin_data_capture2(output)) {
 		obs_output_cleanup_delay(output);
 		return false;
 	}
