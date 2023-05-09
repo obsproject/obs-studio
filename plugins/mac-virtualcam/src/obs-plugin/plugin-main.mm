@@ -523,7 +523,7 @@ static bool virtualcam_output_start(void *data)
 		[vcam->machServer run];
 	}
 
-	if (!obs_output_begin_data_capture(vcam->output, 0)) {
+	if (!obs_output_begin_data_capture2(vcam->output)) {
 		return false;
 	}
 

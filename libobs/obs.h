@@ -2250,26 +2250,24 @@ obs_output_set_audio_conversion(obs_output_t *output,
 				const struct audio_convert_info *conversion);
 
 /** Returns whether data capture can begin with the specified flags */
-EXPORT bool obs_output_can_begin_data_capture(const obs_output_t *output,
-					      uint32_t flags);
+EXPORT bool obs_output_can_begin_data_capture2(const obs_output_t *output);
+OBS_DEPRECATED EXPORT bool
+obs_output_can_begin_data_capture(const obs_output_t *output, uint32_t flags);
 
 /** Initializes encoders (if any) */
-EXPORT bool obs_output_initialize_encoders(obs_output_t *output,
-					   uint32_t flags);
+EXPORT bool obs_output_initialize_encoders2(obs_output_t *output);
+OBS_DEPRECATED EXPORT bool obs_output_initialize_encoders(obs_output_t *output,
+							  uint32_t flags);
 
 /**
  * Begins data capture from media/encoders.
  *
  * @param  output  Output context
- * @param  flags   Set this to 0 to use default output flags set in the
- *                 obs_output_info structure, otherwise set to a either
- *                 OBS_OUTPUT_VIDEO or OBS_OUTPUT_AUDIO to specify whether to
- *                 connect audio or video.  This is useful for things like
- *                 ffmpeg which may or may not always want to use both audio
- *                 and video.
  * @return         true if successful, false otherwise.
  */
-EXPORT bool obs_output_begin_data_capture(obs_output_t *output, uint32_t flags);
+EXPORT bool obs_output_begin_data_capture2(obs_output_t *output);
+OBS_DEPRECATED EXPORT bool obs_output_begin_data_capture(obs_output_t *output,
+							 uint32_t flags);
 
 /** Ends data capture from media/encoders */
 EXPORT void obs_output_end_data_capture(obs_output_t *output);

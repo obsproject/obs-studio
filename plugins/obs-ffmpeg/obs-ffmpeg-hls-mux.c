@@ -118,9 +118,9 @@ bool ffmpeg_hls_mux_start(void *data)
 	obs_data_t *settings;
 	int keyint_sec;
 
-	if (!obs_output_can_begin_data_capture(stream->output, 0))
+	if (!obs_output_can_begin_data_capture2(stream->output))
 		return false;
-	if (!obs_output_initialize_encoders(stream->output, 0))
+	if (!obs_output_initialize_encoders2(stream->output))
 		return false;
 
 	service = obs_output_get_service(stream->output);
@@ -170,7 +170,7 @@ bool ffmpeg_hls_mux_start(void *data)
 	stream->dropped_frames = 0;
 	stream->min_priority = 0;
 
-	obs_output_begin_data_capture(stream->output, 0);
+	obs_output_begin_data_capture2(stream->output);
 
 	dstr_copy(&stream->printable_path, path_str);
 	info("Writing to path '%s'...", stream->printable_path.array);

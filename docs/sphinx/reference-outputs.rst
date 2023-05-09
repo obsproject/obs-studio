@@ -882,44 +882,35 @@ Functions used by outputs
 
 ---------------------
 
-.. function:: bool obs_output_can_begin_data_capture(const obs_output_t *output, uint32_t flags)
+.. function:: bool obs_output_can_begin_data_capture2(const obs_output_t *output)
 
    Determines whether video/audio capture (encoded or raw) is able to
-   start.  Call this before initializing any output data to ensure that
+   start.  Call this before initializing any output state to ensure that
    the output can start.
 
-   :param flags: Set to 0 to initialize both audio/video, otherwise a
-                 bitwise OR combination of OBS_OUTPUT_VIDEO and/or
-                 OBS_OUTPUT_AUDIO
    :return:      *true* if data capture can begin
 
 ---------------------
 
-.. function:: bool obs_output_initialize_encoders(obs_output_t *output, uint32_t flags)
+.. function:: bool obs_output_initialize_encoders2(obs_output_t *output)
 
    Initializes any encoders/services associated with the output.  This
    must be called for encoded outputs before calling
-   :c:func:`obs_output_begin_data_capture()`.
+   :c:func:`obs_output_begin_data_capture2()`.
 
-   :param flags: Set to 0 to initialize both audio/video, otherwise a
-                 bitwise OR combination of OBS_OUTPUT_VIDEO and/or
-                 OBS_OUTPUT_AUDIO
    :return:      *true* if successful, *false* otherwise
 
 ---------------------
 
-.. function:: bool obs_output_begin_data_capture(obs_output_t *output, uint32_t flags)
+.. function:: bool obs_output_begin_data_capture2(obs_output_t *output)
 
    Begins data capture from raw media or encoders.  This is typically
    when the output actually activates (starts) internally.  Video/audio
    data will start being sent to the callbacks of the output.
 
-   :param flags: Set to 0 to initialize both audio/video, otherwise a
-                 bitwise OR combination of OBS_OUTPUT_VIDEO and/or
-                 OBS_OUTPUT_AUDIO
    :return:      *true* if successful, *false* otherwise.  Typically the
                  return value does not need to be checked if
-                 :c:func:`obs_output_can_begin_data_capture()` was
+                 :c:func:`obs_output_can_begin_data_capture2()` was
                  called
 
 ---------------------

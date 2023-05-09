@@ -1128,9 +1128,9 @@ void obs_output_set_audio_conversion(
 	output->audio_conversion_set = true;
 }
 
-static inline bool audio_valid(const struct obs_output *output, bool encoded)
+static inline bool audio_valid(const struct obs_output *output)
 {
-	if (encoded) {
+	if (flag_encoded(output)) {
 		for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
 			if (output->audio_encoders[i]) {
 				return true;
@@ -1142,27 +1142,19 @@ static inline bool audio_valid(const struct obs_output *output, bool encoded)
 	return output->audio != NULL;
 }
 
-static bool can_begin_data_capture(const struct obs_output *output,
-				   bool encoded, bool has_video, bool has_audio,
-				   bool has_service)
+static bool can_begin_data_capture(const struct obs_output *output)
 {
-	if (has_video) {
-		if (encoded) {
-			if (!output->video_encoder)
-				return false;
-		} else {
-			if (!output->video)
-				return false;
-		}
-	}
-
-	if (has_audio) {
-		if (!audio_valid(output, encoded)) {
+	if (flag_video(output)) {
+		if (flag_encoded(output) && !output->video_encoder)
 			return false;
-		}
+		else if (!output->video)
+			return false;
 	}
 
-	if (has_service && !output->service)
+	if (flag_audio(output) && !audio_valid(output))
+		return false;
+
+	if (flag_service(output) && !output->service)
 		return false;
 
 	return true;
@@ -2033,12 +2025,13 @@ static inline bool preserve_active(struct obs_output *output)
 	return (output->delay_flags & OBS_OUTPUT_DELAY_PRESERVE) != 0;
 }
 
-static void hook_data_capture(struct obs_output *output, bool encoded,
-			      bool has_video, bool has_audio)
+static void hook_data_capture(struct obs_output *output)
 {
 	encoded_callback_t encoded_callback;
+	bool has_video = flag_video(output);
+	bool has_audio = flag_audio(output);
 
-	if (encoded) {
+	if (flag_encoded(output)) {
 		pthread_mutex_lock(&output->interleaved_mutex);
 		reset_packet_data(output);
 		pthread_mutex_unlock(&output->interleaved_mutex);
@@ -2114,26 +2107,8 @@ static inline void signal_stop(struct obs_output *output)
 	calldata_free(&params);
 }
 
-static inline void convert_flags(const struct obs_output *output,
-				 uint32_t flags, bool *encoded, bool *has_video,
-				 bool *has_audio, bool *has_service)
+bool obs_output_can_begin_data_capture2(const obs_output_t *output)
 {
-	*encoded = (output->info.flags & OBS_OUTPUT_ENCODED) != 0;
-	if (!flags)
-		flags = output->info.flags;
-	else
-		flags &= output->info.flags;
-
-	*has_video = (flags & OBS_OUTPUT_VIDEO) != 0;
-	*has_audio = (flags & OBS_OUTPUT_AUDIO) != 0;
-	*has_service = (flags & OBS_OUTPUT_SERVICE) != 0;
-}
-
-bool obs_output_can_begin_data_capture(const obs_output_t *output,
-				       uint32_t flags)
-{
-	bool encoded, has_video, has_audio, has_service;
-
 	if (!obs_output_valid(output, "obs_output_can_begin_data_capture"))
 		return false;
 
@@ -2145,11 +2120,14 @@ bool obs_output_can_begin_data_capture(const obs_output_t *output,
 	if (data_capture_ending(output))
 		pthread_join(output->end_data_capture_thread, NULL);
 
-	convert_flags(output, flags, &encoded, &has_video, &has_audio,
-		      &has_service);
+	return can_begin_data_capture(output);
+}
 
-	return can_begin_data_capture(output, encoded, has_video, has_audio,
-				      has_service);
+bool obs_output_can_begin_data_capture(const obs_output_t *output,
+				       uint32_t flags)
+{
+	UNUSED_PARAMETER(flags);
+	return obs_output_can_begin_data_capture2(output);
 }
 
 static inline bool initialize_audio_encoders(obs_output_t *output)
@@ -2201,31 +2179,32 @@ static inline void pair_encoders(obs_output_t *output)
 	}
 }
 
-bool obs_output_initialize_encoders(obs_output_t *output, uint32_t flags)
+bool obs_output_initialize_encoders2(obs_output_t *output)
 {
-	bool encoded, has_video, has_audio, has_service;
-
 	if (!obs_output_valid(output, "obs_output_initialize_encoders"))
 		return false;
-
+	if (!log_flag_encoded(output, __FUNCTION__, false))
+		return false;
 	if (active(output))
 		return delay_active(output);
 
-	convert_flags(output, flags, &encoded, &has_video, &has_audio,
-		      &has_service);
-
-	if (!encoded)
-		return false;
-	if (has_video && !obs_encoder_initialize(output->video_encoder)) {
+	if (flag_video(output) &&
+	    !obs_encoder_initialize(output->video_encoder)) {
 		obs_output_set_last_error(
 			output,
 			obs_encoder_get_last_error(output->video_encoder));
 		return false;
 	}
-	if (has_audio && !initialize_audio_encoders(output))
+	if (flag_audio(output) && !initialize_audio_encoders(output))
 		return false;
 
 	return true;
+}
+
+bool obs_output_initialize_encoders(obs_output_t *output, uint32_t flags)
+{
+	UNUSED_PARAMETER(flags);
+	return obs_output_initialize_encoders2(output);
 }
 
 static bool begin_delayed_capture(obs_output_t *output)
@@ -2284,10 +2263,8 @@ static void reset_raw_output(obs_output_t *output)
 	pause_reset(&output->pause);
 }
 
-bool obs_output_begin_data_capture(obs_output_t *output, uint32_t flags)
+bool obs_output_begin_data_capture2(obs_output_t *output)
 {
-	bool encoded, has_video, has_audio, has_service;
-
 	if (!obs_output_valid(output, "obs_output_begin_data_capture"))
 		return false;
 
@@ -2298,23 +2275,19 @@ bool obs_output_begin_data_capture(obs_output_t *output, uint32_t flags)
 
 	output->total_frames = 0;
 
-	convert_flags(output, flags, &encoded, &has_video, &has_audio,
-		      &has_service);
-
-	if (!encoded)
+	if (!log_flag_encoded(output, __FUNCTION__, false))
 		reset_raw_output(output);
 
-	if (!can_begin_data_capture(output, encoded, has_video, has_audio,
-				    has_service))
+	if (!can_begin_data_capture(output))
 		return false;
 
-	if (has_video && has_audio)
+	if (flag_video(output) && flag_audio(output))
 		pair_encoders(output);
 
 	os_atomic_set_bool(&output->data_active, true);
-	hook_data_capture(output, encoded, has_video, has_audio);
+	hook_data_capture(output);
 
-	if (has_service)
+	if (flag_service(output))
 		obs_service_activate(output->service);
 
 	do_output_signal(output, "activate");
@@ -2332,6 +2305,12 @@ bool obs_output_begin_data_capture(obs_output_t *output, uint32_t flags)
 	}
 
 	return true;
+}
+
+bool obs_output_begin_data_capture(obs_output_t *output, uint32_t flags)
+{
+	UNUSED_PARAMETER(flags);
+	return obs_output_begin_data_capture2(output);
 }
 
 static inline void stop_audio_encoders(obs_output_t *output,
@@ -2362,14 +2341,12 @@ static inline void stop_raw_audio(obs_output_t *output)
 
 static void *end_data_capture_thread(void *data)
 {
-	bool encoded, has_video, has_audio, has_service;
 	encoded_callback_t encoded_callback;
 	obs_output_t *output = data;
+	bool has_video = flag_video(output);
+	bool has_audio = flag_audio(output);
 
-	convert_flags(output, 0, &encoded, &has_video, &has_audio,
-		      &has_service);
-
-	if (encoded) {
+	if (flag_encoded(output)) {
 		if (output->active_delay_ns)
 			encoded_callback = process_delay;
 		else
@@ -2390,7 +2367,7 @@ static void *end_data_capture_thread(void *data)
 			stop_raw_audio(output);
 	}
 
-	if (has_service)
+	if (flag_service(output))
 		obs_service_deactivate(output->service, false);
 
 	if (output->active_delay_ns)
