@@ -294,12 +294,14 @@ void gs_device::InitCompiler()
 		if (module) {
 			d3dCompile = (pD3DCompile)GetProcAddress(module,
 								 "D3DCompile");
+			d3dCreateBlob = (pD3DCreateBlob)GetProcAddress(
+				module, "D3DCreateBlob");
 
 #ifdef DISASSEMBLE_SHADERS
 			d3dDisassemble = (pD3DDisassemble)GetProcAddress(
 				module, "D3DDisassemble");
 #endif
-			if (d3dCompile) {
+			if (d3dCompile && d3dCreateBlob) {
 				return;
 			}
 

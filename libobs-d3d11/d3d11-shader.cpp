@@ -21,6 +21,11 @@
 #include <graphics/vec3.h>
 #include <graphics/matrix3.h>
 #include <graphics/matrix4.h>
+#include <util/platform.h>
+#include <util/util.hpp>
+
+#include <filesystem>
+#include <fstream>
 
 void gs_vertex_shader::GetBuffersExpected(
 	const vector<D3D11_INPUT_ELEMENT_DESC> &inputs)
@@ -200,24 +205,63 @@ void gs_shader::BuildConstantBuffer()
 		gs_shader_set_default(&params[i]);
 }
 
+static uint64_t fnv1a_hash(const char *str)
+{
+	const uint64_t FNV_OFFSET = 14695981039346656037ULL;
+	const uint64_t FNV_PRIME = 1099511628211ULL;
+	uint64_t hash = FNV_OFFSET;
+	while (*str) {
+		hash ^= (uint64_t)*str++;
+		hash *= FNV_PRIME;
+	}
+	return hash;
+}
+
 void gs_shader::Compile(const char *shaderString, const char *file,
 			const char *target, ID3D10Blob **shader)
 {
 	ComPtr<ID3D10Blob> errorsBlob;
 	HRESULT hr;
 
+	char hashstr[20];
+
 	if (!shaderString)
 		throw "No shader string specified";
 
-	hr = device->d3dCompile(shaderString, strlen(shaderString), file, NULL,
-				NULL, "main", target,
-				D3D10_SHADER_OPTIMIZATION_LEVEL1, 0, shader,
-				errorsBlob.Assign());
-	if (FAILED(hr)) {
-		if (errorsBlob != NULL && errorsBlob->GetBufferSize())
-			throw ShaderError(errorsBlob, hr);
-		else
-			throw HRError("Failed to compile shader", hr);
+	uint64_t hash = fnv1a_hash(shaderString);
+	snprintf(hashstr, sizeof(hashstr), "%02llx", hash);
+
+	BPtr program_data =
+		os_get_program_data_path_ptr("obs-studio/shader-cache");
+	auto cachePath = filesystem::u8path(program_data.Get()) / hashstr;
+
+	std::fstream cacheFile;
+	if (filesystem::exists(cachePath) && !filesystem::is_empty(cachePath))
+		cacheFile.open(cachePath, ios::in | ios::binary | ios::ate);
+
+	if (cacheFile.is_open()) {
+		streampos len = cacheFile.tellg();
+		cacheFile.seekg(0, ios::beg);
+
+		device->d3dCreateBlob(len, shader);
+		cacheFile.read((char *)(*shader)->GetBufferPointer(), len);
+	} else {
+		hr = device->d3dCompile(shaderString, strlen(shaderString),
+					file, NULL, NULL, "main", target,
+					D3D10_SHADER_OPTIMIZATION_LEVEL3, 0,
+					shader, errorsBlob.Assign());
+		if (FAILED(hr)) {
+			if (errorsBlob != NULL && errorsBlob->GetBufferSize())
+				throw ShaderError(errorsBlob, hr);
+			else
+				throw HRError("Failed to compile shader", hr);
+		}
+
+		cacheFile.open(cachePath, ios::out | ios::binary);
+		if (cacheFile.is_open()) {
+			cacheFile.write((char *)(*shader)->GetBufferPointer(),
+					(*shader)->GetBufferSize());
+		}
 	}
 
 #ifdef DISASSEMBLE_SHADERS
