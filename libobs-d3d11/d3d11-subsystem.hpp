@@ -38,6 +38,9 @@
 
 // #define DISASSEMBLE_SHADERS
 
+typedef HRESULT(WINAPI *pD3DCreateBlob)(_In_ SIZE_T Size,
+					_Out_ ID3DBlob **ppBlob);
+
 struct shader_var;
 struct shader_sampler;
 struct gs_vertex_shader;
@@ -1052,6 +1055,7 @@ struct gs_device {
 	D3D11_PRIMITIVE_TOPOLOGY curToplogy;
 
 	pD3DCompile d3dCompile = nullptr;
+	pD3DCreateBlob d3dCreateBlob = nullptr;
 #ifdef DISASSEMBLE_SHADERS
 	pD3DDisassemble d3dDisassemble = nullptr;
 #endif
