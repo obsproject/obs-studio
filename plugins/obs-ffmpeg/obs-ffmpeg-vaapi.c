@@ -287,6 +287,8 @@ static bool vaapi_update(void *data, obs_data_t *settings, bool hevc)
 
 		hevc_vaapi_video_info(enc, &info);
 	} else
+#else
+	UNUSED_PARAMETER(hevc);
 #endif
 	{
 		h264_vaapi_video_info(enc, &info);
@@ -564,6 +566,8 @@ static bool vaapi_encode_internal(void *data, struct encoder_frame *frame,
 					&enc->header_size, &enc->sei,
 					&enc->sei_size);
 			} else
+#else
+			UNUSED_PARAMETER(hevc);
 #endif
 			{
 				obs_extract_avc_headers(
@@ -649,6 +653,8 @@ static void vaapi_defaults_internal(obs_data_t *settings, bool hevc)
 					 FF_PROFILE_HEVC_MAIN);
 
 	} else
+#else
+	UNUSED_PARAMETER(hevc);
 #endif
 	{
 		obs_data_set_default_int(settings, "profile",
