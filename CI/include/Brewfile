@@ -1,4 +1,0 @@
-brew "cmake"
-brew "ccache"
-brew "coreutils"
-brew "xcbeautify"
