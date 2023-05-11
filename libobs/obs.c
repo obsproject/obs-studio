@@ -652,12 +652,24 @@ static int obs_init_video()
 		}
 	}
 
+	uint32_t max_fps_den = 0;
+	uint32_t max_fps_num = 1;
+	for (size_t i = 0, num = obs->video.canvases.num; i < num; i++) {
+		struct obs_video_info *ovi = obs->video.canvases.array[i];
+
+		if (!ovi->initialized)
+			continue;
+
+		if (ovi->fps_den / ovi->fps_den > max_fps_den / max_fps_num) {
+			max_fps_den = ovi->fps_den;
+			max_fps_num = ovi->fps_num;
+		}
+	}
+
 	video->video_frame_interval_ns =
-		util_mul_div64(1000000000ULL, video->canvases.array[0]->fps_den,
-			       video->canvases.array[0]->fps_num);
+		util_mul_div64(1000000000ULL, max_fps_den, max_fps_num);
 	video->video_half_frame_interval_ns =
-		util_mul_div64(500000000ULL, video->canvases.array[0]->fps_den,
-			       video->canvases.array[0]->fps_num);
+		util_mul_div64(500000000ULL, max_fps_den, max_fps_num);
 
 	if (pthread_mutex_init(&video->task_mutex, NULL) < 0)
 		return OBS_VIDEO_FAIL;
@@ -666,19 +678,18 @@ static int obs_init_video()
 	blog(LOG_INFO, "[VIDEO_CANVAS] init with canvases %d",
 	     obs->video.canvases.num);
 	for (size_t i = 0, num = obs->video.canvases.num; i < num; i++) {
-		if (!obs->video.canvases.array[i]->initialized)
+		struct obs_video_info *ovi = obs->video.canvases.array[i];
+
+		if (!ovi->initialized)
 			continue;
 
-		if (!obs_view_add(&obs->data.main_view,
-				  obs->video.canvases.array[i]))
+		if (!obs_view_add(&obs->data.main_view, ovi))
 			return OBS_VIDEO_FAIL;
 
-		if (!obs_stream_view_add(&obs->data.stream_view,
-					 obs->video.canvases.array[i]))
+		if (!obs_stream_view_add(&obs->data.stream_view, ovi))
 			return OBS_VIDEO_FAIL;
 
-		if (!obs_record_view_add(&obs->data.record_view,
-					 obs->video.canvases.array[i]))
+		if (!obs_record_view_add(&obs->data.record_view, ovi))
 			return OBS_VIDEO_FAIL;
 	}
 
