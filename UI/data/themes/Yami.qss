@@ -1328,15 +1328,19 @@ SceneTree {
 }
 
 *[gridMode="true"] SceneTree::item:selected {
-    background-color: rgb(51,69,163);
+    background-color: rgb(40,76,184);
 }
 
 *[gridMode="true"] SceneTree::item:checked {
-    background-color: rgb(51,69,163);
+    background-color: rgb(40,76,184);
 }
 
 *[gridMode="true"] SceneTree::item:hover {
     background-color: rgb(79,83,94);
+}
+
+*[gridMode="true"] SceneTree::item:selected:hover {
+    background-color: rgb(54,92,192);
 }
 
 /* Save icon */
