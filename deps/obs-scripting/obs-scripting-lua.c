@@ -129,7 +129,8 @@ static bool load_lua_script(struct obs_lua_script *data)
 		goto fail;
 	}
 
-	if (luaL_loadbuffer(script, file_data, strlen(file_data), NULL) != 0) {
+	if (luaL_loadbuffer(script, file_data, strlen(file_data),
+			    data->base.path.array) != 0) {
 		script_warn(&data->base, "Error loading file: %s",
 			    lua_tostring(script, -1));
 		bfree(file_data);
