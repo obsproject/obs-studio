@@ -229,6 +229,10 @@ void OBSProjector::mouseDoubleClickEvent(QMouseEvent *event)
 	if (!transitionOnDoubleClick)
 		return;
 
+	// Only MultiView projectors handle double click
+	if (this->type != ProjectorType::Multiview)
+		return;
+
 	OBSBasic *main = (OBSBasic *)obs_frontend_get_main_window();
 	if (!main->IsPreviewProgramMode())
 		return;
