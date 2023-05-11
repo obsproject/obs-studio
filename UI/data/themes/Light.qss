@@ -36,7 +36,7 @@ OBSTheme {
     alternateBase: rgb(11,10,11);
 
     text: rgb(2,2,2);
-    
+
     button: rgb(243,243,243);
     buttonText: rgb(2,2,2);
 
@@ -62,14 +62,14 @@ OBSTheme::disabled {
     windowText: rgb(74,74,74);
     text: rgb(74,74,74);
     button: rgb(27,29,34);
-    
+
     buttonText: rgb(43,46,56);
     brightText: rgb(43,46,56);
 }
 
 OBSTheme::inactive {
     text: rgb(255,254,255);
-    
+
     highlight: rgb(25,28,34);
     highlightText: rgb(255,255,255);
 }
@@ -171,11 +171,11 @@ QMenu::right-arrow {
 
 /* Top Menu Bar Items */
 QMenuBar::item {
-	background-color: transparent;
+    background-color: transparent;
 }
 
 QMenuBar::item:selected {
-	background: rgb(140,181,255);
+    background: rgb(140,181,255);
 }
 
 /* Item Lists */
@@ -212,7 +212,7 @@ SceneTree::item,
 SourceTree::item {
     border-radius: 4px;
     color: palette(text);
-	border: 0px solid transparent;
+    border: 0px solid transparent;
 }
 
 QMenu::item:selected,
@@ -420,7 +420,7 @@ QScrollBar::handle:pressed {
 }
 
 QScrollBar::handle:vertical {
-    min-height: 20px;   
+    min-height: 20px;
 }
 
 QScrollBar::handle:horizontal {
@@ -880,7 +880,7 @@ QSlider::handle:vertical:pressed {
 }
 
 QSlider::add-page:vertical {
-    background-color: palette(highlight); 
+    background-color: palette(highlight);
     border-radius: 2px;
 }
 
@@ -1095,44 +1095,44 @@ QCheckBox {
 
 QCheckBox::indicator,
 QGroupBox::indicator {
-	width: 18px;
-	height: 18px;
+    width: 18px;
+    height: 18px;
 }
 
 QGroupBox::indicator {
-	margin-left: 2px;
+    margin-left: 2px;
 }
 
 QCheckBox::indicator:unchecked,
 QGroupBox::indicator:unchecked {
-	image: url(./Light/checkbox_unchecked.svg);
+    image: url(./Light/checkbox_unchecked.svg);
 }
 
 QCheckBox::indicator:unchecked:hover,
 QGroupBox::indicator:unchecked:hover {
-	border: none;
-	image: url(./Light/checkbox_unchecked_focus.svg);
+    border: none;
+    image: url(./Light/checkbox_unchecked_focus.svg);
 }
 
 QCheckBox::indicator:checked,
 QGroupBox::indicator:checked {
-	image: url(./Light/checkbox_checked.svg);
+    image: url(./Light/checkbox_checked.svg);
 }
 
 QCheckBox::indicator:checked:hover,
 QGroupBox::indicator:checked:hover {
-	border: none;
-	image: url(./Light/checkbox_checked_focus.svg);
+    border: none;
+    image: url(./Light/checkbox_checked_focus.svg);
 }
 
 QCheckBox::indicator:checked:disabled,
 QGroupBox::indicator:checked:disabled {
-	image: url(./Light/checkbox_checked_disabled.svg);
+    image: url(./Light/checkbox_checked_disabled.svg);
 }
 
 QCheckBox::indicator:unchecked:disabled,
 QGroupBox::indicator:unchecked:disabled {
-	image: url(./Light/checkbox_unchecked_disabled.svg);
+    image: url(./Light/checkbox_unchecked_disabled.svg);
 }
 
 /* Locked CheckBox */
@@ -1200,7 +1200,7 @@ QPushButton#extraPanelDelete:pressed {
 /* Mute CheckBox */
 
 MuteCheckBox {
-	outline: none;
+    outline: none;
 }
 
 MuteCheckBox::indicator {
@@ -1209,35 +1209,35 @@ MuteCheckBox::indicator {
 }
 
 MuteCheckBox::indicator:checked {
-	image: url(./Light/mute.svg);
+    image: url(./Light/mute.svg);
 }
 
 MuteCheckBox::indicator:unchecked {
-	image: url(./Light/settings/audio.svg);
+    image: url(./Light/settings/audio.svg);
 }
 
 MuteCheckBox::indicator:unchecked:hover {
-	image: url(./Light/settings/audio.svg);
+    image: url(./Light/settings/audio.svg);
 }
 
 MuteCheckBox::indicator:unchecked:focus {
-	image: url(./Light/settings/audio.svg);
+    image: url(./Light/settings/audio.svg);
 }
 
 MuteCheckBox::indicator:checked:hover {
-	image: url(./Light/mute.svg);
+    image: url(./Light/mute.svg);
 }
 
 MuteCheckBox::indicator:checked:focus {
-	image: url(./Light/mute.svg);
+    image: url(./Light/mute.svg);
 }
 
 MuteCheckBox::indicator:checked:disabled {
-	image: url(./Light/mute.svg);
+    image: url(./Light/mute.svg);
 }
 
 MuteCheckBox::indicator:unchecked:disabled {
-	image: url(./Light/settings/audio.svg);
+    image: url(./Light/settings/audio.svg);
 }
 
 #hotkeyFilterReset {
@@ -1254,7 +1254,7 @@ OBSHotkeyLabel {
 }
 
 OBSHotkeyLabel[hotkeyPairHover=true] {
-	color: rgb(53,82,222);
+    color: rgb(53,82,222);
 }
 
 OBSHotkeyWidget QPushButton {
@@ -1350,25 +1350,25 @@ SceneTree {
 /* Studio Mode T-Bar */
 
 QSlider[themeID="tBarSlider"] {
-	height: 24px;
+    height: 24px;
 }
 
 QSlider::groove:horizontal[themeID="tBarSlider"] {
-	border: 1px solid #4c4c4c;
-	height: 5px;
-	background: palette(dark);
+    border: 1px solid #4c4c4c;
+    height: 5px;
+    background: palette(dark);
 }
 
 QSlider::sub-page:horizontal[themeID="tBarSlider"] {
-	background: palette(dark);
-	border: 1px solid #4c4c4c;
+    background: palette(dark);
+    border: 1px solid #4c4c4c;
 }
 
 QSlider::handle:horizontal[themeID="tBarSlider"] {
-	background-color: palette(text);
-	width: 12px;
-	height: 24px;
-	margin: -24px 0px;
+    background-color: palette(text);
+    width: 12px;
+    height: 24px;
+    margin: -24px 0px;
 }
 
 /* Media icons */
@@ -1481,7 +1481,7 @@ QCalendarWidget QToolButton:pressed {
 
 /* Month Dropdown Menu */
 QCalendarWidget QMenu {
-    
+
 }
 /* Year spinbox */
 QCalendarWidget QSpinBox {

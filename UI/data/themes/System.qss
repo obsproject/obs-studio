@@ -174,13 +174,13 @@ QMainWindow::separator {
 }
 
 * [themeID="aboutHLayout"] {
-	background-color: #DCD9D7;
+    background-color: #DCD9D7;
 }
 
 /* Preview background color */
 
 OBSQTDisplay {
-	qproperty-displayBackgroundColor: rgb(76, 76, 76);
+    qproperty-displayBackgroundColor: rgb(76, 76, 76);
 }
 
 /* Preview/Program labels */
@@ -244,7 +244,7 @@ VisibilityCheckBox::indicator:unchecked {
 }
 
 OBSMissingFiles {
-	qproperty-warningIcon: url(:res/images/alert.svg);
+    qproperty-warningIcon: url(:res/images/alert.svg);
 }
 
 /* Source Icons */
@@ -272,7 +272,7 @@ OBSBasic {
 
 SceneTree {
     qproperty-gridItemWidth: 150;
-	qproperty-gridItemHeight: 24;
+    qproperty-gridItemHeight: 24;
 }
 
 /* Save icon */
@@ -284,25 +284,25 @@ SceneTree {
 /* Studio Mode T-Bar */
 
 QSlider[themeID="tBarSlider"] {
-	height: 24px;
+    height: 24px;
 }
 
 QSlider::groove:horizontal[themeID="tBarSlider"] {
-	border: 1px solid #4c4c4c;
-	height: 5px;
-	background: #DCD9D7;
+    border: 1px solid #4c4c4c;
+    height: 5px;
+    background: #DCD9D7;
 }
 
 QSlider::sub-page:horizontal[themeID="tBarSlider"] {
-	background: #DCD9D7;
-	border: 1px solid #4c4c4c;
+    background: #DCD9D7;
+    border: 1px solid #4c4c4c;
 }
 
 QSlider::handle:horizontal[themeID="tBarSlider"] {
-	background-color: #4c4c4c;
-	width: 12px;
-	height: 24px;
-	margin: -24px 0px;
+    background-color: #4c4c4c;
+    width: 12px;
+    height: 24px;
+    margin: -24px 0px;
 }
 
 /* Source Context */
@@ -358,18 +358,18 @@ OBSYoutubeActions {
 }
 
 #ytEventList QLabel {
-	background-color: #e1e1e1;
-	border: 1px solid #ddd;
+    background-color: #e1e1e1;
+    border: 1px solid #ddd;
 }
 
 #ytEventList QLabel:hover {
     background-color: #eee;
-	border: 1px solid #777;
+    border: 1px solid #777;
 }
 
 #ytEventList QLabel[isSelectedEvent=true] {
     background-color: #ccc;
-	border: 1px solid #444;
+    border: 1px solid #444;
 }
 
 /* Calendar Widget */

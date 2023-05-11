@@ -132,8 +132,8 @@ QMainWindow::separator {
 /* Dock Widget */
 
 QDockWidget {
-	titlebar-close-icon: url('./Dark/close.svg');
-	titlebar-normal-icon: url('./Dark/popout.svg');
+    titlebar-close-icon: url('./Dark/close.svg');
+    titlebar-normal-icon: url('./Dark/popout.svg');
 }
 
 QDockWidget::title {
@@ -262,8 +262,8 @@ QToolBar {
 
 QPushButton[toolButton="true"],
 QToolButton {
-	background: transparent;
-	border: none;
+    background: transparent;
+    border: none;
     padding: 1px;
     margin: 1px;
 }
@@ -750,7 +750,7 @@ QLabel#errorLabel {
 /* Preview background color */
 
 OBSQTDisplay {
-	qproperty-displayBackgroundColor: rgb(76,76,76);
+    qproperty-displayBackgroundColor: rgb(76,76,76);
 }
 
 /* Preview/Program labels */
@@ -826,7 +826,7 @@ QPushButton#extraPanelDelete:pressed {
 }
 
 OBSMissingFiles {
-	qproperty-warningIcon: url(./Dark/alert.svg);
+    qproperty-warningIcon: url(./Dark/alert.svg);
 }
 
 /* Source Icons */
@@ -854,7 +854,7 @@ OBSBasic {
 
 SceneTree {
     qproperty-gridItemWidth: 150;
-	qproperty-gridItemHeight: 27;
+    qproperty-gridItemHeight: 27;
 }
 
 *[gridMode="true"] SceneTree::item {
@@ -863,9 +863,9 @@ SceneTree {
     border: none;
     border-radius: 3px;
     padding: 4px;
-	padding-left: 10px;
-	padding-right: 10px;
-	margin: 1px;
+    padding-left: 10px;
+    padding-right: 10px;
+    margin: 1px;
 }
 
 *[gridMode="true"] SceneTree::item:selected {
@@ -893,25 +893,25 @@ SceneTree {
 /* Studio Mode T-Bar */
 
 QSlider[themeID="tBarSlider"] {
-	height: 24px;
+    height: 24px;
 }
 
 QSlider::groove:horizontal[themeID="tBarSlider"] {
-	border: 1px solid rgb(76,76,76);
-	height: 5px;
-	background: palette(base);
+    border: 1px solid rgb(76,76,76);
+    height: 5px;
+    background: palette(base);
 }
 
 QSlider::sub-page:horizontal[themeID="tBarSlider"] {
-	background: palette(base);;
-	border: 1px solid rgb(76,76,76);
+    background: palette(base);;
+    border: 1px solid rgb(76,76,76);
 }
 
 QSlider::handle:horizontal[themeID="tBarSlider"] {
-	background-color: rgb(210,210,210);
-	width: 12px;
-	height: 24px;
-	margin: -24px 0px;
+    background-color: rgb(210,210,210);
+    width: 12px;
+    height: 24px;
+    margin: -24px 0px;
 }
 
 /* Media icons */
