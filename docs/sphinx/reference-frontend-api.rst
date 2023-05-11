@@ -913,3 +913,13 @@ Functions
                       This uses the undo action from the first and the redo action from the last action.
 
    .. versionadded:: 29.1
+
+---------------------------------------
+
+.. function:: void obs_frontend_exit(bool force)
+
+   Closes the program
+
+   :param force: If set to true, the confirm on exit dialogs are not shown
+
+   .. versionadded:: 30.0.0

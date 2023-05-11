@@ -280,6 +280,8 @@ private:
 	bool recordingStopping = false;
 	bool replayBufferStopping = false;
 
+	bool ignoreConfirmOnExit = false;
+
 	gs_vertbuffer_t *box = nullptr;
 	gs_vertbuffer_t *boxLeft = nullptr;
 	gs_vertbuffer_t *boxTop = nullptr;
@@ -1233,6 +1235,12 @@ public slots:
 	void UpdateContextBar(bool force = false);
 	void UpdateContextBarDeferred(bool force = false);
 	void UpdateContextBarVisibility();
+
+	inline void CloseApp(bool force)
+	{
+		ignoreConfirmOnExit = force;
+		close();
+	}
 
 private:
 	std::unique_ptr<Ui::OBSBasic> ui;

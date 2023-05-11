@@ -5077,8 +5077,11 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 				  "geometry",
 				  saveGeometry().toBase64().constData());
 
-	bool confirmOnExit =
-		config_get_bool(GetGlobalConfig(), "General", "ConfirmOnExit");
+	bool confirmOnExit = false;
+
+	if (!ignoreConfirmOnExit)
+		confirmOnExit = config_get_bool(GetGlobalConfig(), "General",
+						"ConfirmOnExit");
 
 	if (confirmOnExit && outputHandler && outputHandler->Active() &&
 	    !clearingFailed) {
