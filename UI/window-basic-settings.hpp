@@ -375,6 +375,7 @@ private:
 	QIcon GetAdvancedIcon() const;
 
 	int CurrentFLVTrack();
+	int SimpleOutGetSelectedAudioTracks();
 
 	OBSService GetStream1Service();
 
