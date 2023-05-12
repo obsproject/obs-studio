@@ -3853,14 +3853,8 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveCheckBox(ui->simpleReplayBuf, "SimpleOutput", "RecRB");
 	SaveSpinBox(ui->simpleRBSecMax, "SimpleOutput", "RecRBTime");
 	SaveSpinBox(ui->simpleRBMegsMax, "SimpleOutput", "RecRBSize");
-	config_set_int(
-		main->Config(), "SimpleOutput", "RecTracks",
-		(ui->simpleOutRecTrack1->isChecked() ? (1 << 0) : 0) |
-			(ui->simpleOutRecTrack2->isChecked() ? (1 << 1) : 0) |
-			(ui->simpleOutRecTrack3->isChecked() ? (1 << 2) : 0) |
-			(ui->simpleOutRecTrack4->isChecked() ? (1 << 3) : 0) |
-			(ui->simpleOutRecTrack5->isChecked() ? (1 << 4) : 0) |
-			(ui->simpleOutRecTrack6->isChecked() ? (1 << 5) : 0));
+	config_set_int(main->Config(), "SimpleOutput", "RecTracks",
+		       SimpleOutGetSelectedAudioTracks());
 
 	curAdvStreamEncoder = GetComboData(ui->advOutEncoder);
 
@@ -4219,6 +4213,7 @@ bool OBSBasicSettings::QueryAllowedToClose()
 
 	bool invalidEncoder = false;
 	bool invalidFormat = false;
+	bool invalidTracks = false;
 	if (simple) {
 		if (ui->simpleOutRecEncoder->currentIndex() == -1 ||
 		    ui->simpleOutStrEncoder->currentIndex() == -1 ||
@@ -4228,6 +4223,14 @@ bool OBSBasicSettings::QueryAllowedToClose()
 
 		if (ui->simpleOutRecFormat->currentIndex() == -1)
 			invalidFormat = true;
+
+		QString qual =
+			ui->simpleOutRecQuality->currentData().toString();
+		QString format =
+			ui->simpleOutRecFormat->currentData().toString();
+		if (SimpleOutGetSelectedAudioTracks() == 0 &&
+		    qual != "Stream" && format != "flv")
+			invalidTracks = true;
 	} else {
 		if (ui->advOutRecEncoder->currentIndex() == -1 ||
 		    ui->advOutEncoder->currentIndex() == -1 ||
@@ -4245,6 +4248,12 @@ bool OBSBasicSettings::QueryAllowedToClose()
 		OBSMessageBox::warning(
 			this, QTStr("CodecCompat.ContainerMissingOnExit.Title"),
 			QTStr("CodecCompat.ContainerMissingOnExit.Text"));
+		return false;
+	} else if (invalidTracks) {
+		OBSMessageBox::warning(
+			this,
+			QTStr("OutputWarnings.NoTracksSelectedOnExit.Title"),
+			QTStr("OutputWarnings.NoTracksSelectedOnExit.Text"));
 		return false;
 	}
 
@@ -6155,6 +6164,17 @@ int OBSBasicSettings::CurrentFLVTrack()
 		return 6;
 
 	return 0;
+}
+
+int OBSBasicSettings::SimpleOutGetSelectedAudioTracks()
+{
+	int tracks = (ui->simpleOutRecTrack1->isChecked() ? (1 << 0) : 0) |
+		     (ui->simpleOutRecTrack2->isChecked() ? (1 << 1) : 0) |
+		     (ui->simpleOutRecTrack3->isChecked() ? (1 << 2) : 0) |
+		     (ui->simpleOutRecTrack4->isChecked() ? (1 << 3) : 0) |
+		     (ui->simpleOutRecTrack5->isChecked() ? (1 << 4) : 0) |
+		     (ui->simpleOutRecTrack6->isChecked() ? (1 << 5) : 0);
+	return tracks;
 }
 
 /* Using setEditable(true) on a QComboBox when there's a custom style in use
