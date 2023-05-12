@@ -1806,6 +1806,10 @@ inline void AdvancedOutput::SetupRecording()
 	unsigned int cy = 0;
 	int idx = 0;
 
+	/* Hack to allow recordings without any audio tracks selected. It is no
+	 * longer possible to select such a configuration in settings, but legacy
+	 * configurations might still have this configured and we don't want to
+	 * just break them. */
 	if (tracks == 0)
 		tracks = config_get_int(main->Config(), "AdvOut", "TrackIndex");
 
