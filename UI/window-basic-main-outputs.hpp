@@ -64,6 +64,7 @@ struct BasicOutputHandler {
 
 	virtual void UpdateVirtualCamOutputSource();
 	virtual void DestroyVirtualCamView();
+	virtual void DestroyVirtualCameraScene();
 
 	inline bool Active() const
 	{
