@@ -2048,6 +2048,9 @@
                           </layout>
                          </widget>
                          <widget class="QWidget" name="simpleFlvTracks">
+                          <property name="enabled">
+                           <bool>false</bool>
+                          </property>
                           <layout class="QHBoxLayout" name="horizontalLayoutSimpleFLVTracks">
                            <property name="leftMargin">
                             <number>0</number>
