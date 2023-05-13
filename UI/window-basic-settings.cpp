@@ -5902,14 +5902,12 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 
 	if (qual == "Stream") {
 		ui->simpleRecTrackWidget->setCurrentWidget(ui->simpleFlvTracks);
-		ui->simpleFlvTracks->setEnabled(false);
 	} else if (qual == "Lossless") {
 		ui->simpleRecTrackWidget->setCurrentWidget(ui->simpleRecTracks);
 	} else {
 		if (format == "flv") {
 			ui->simpleRecTrackWidget->setCurrentWidget(
 				ui->simpleFlvTracks);
-			ui->simpleFlvTracks->setEnabled(false);
 		} else {
 			ui->simpleRecTrackWidget->setCurrentWidget(
 				ui->simpleRecTracks);
