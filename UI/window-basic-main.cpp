@@ -4895,6 +4895,11 @@ void OBSBasic::ClearSceneData()
 		QApplication::sendPostedEvents(nullptr);
 	} while (obs_wait_for_destroy_queue());
 
+	/* Pump Qt events one final time to give remaining signals time to be
+	 * processed (since this happens after the destroy thread finishes and
+	 * the audio/video threads have processed their tasks). */
+	QApplication::sendPostedEvents(nullptr);
+
 	unsetCursor();
 
 	/* If scene data wasn't actually cleared, e.g. faulty plugin holding a
