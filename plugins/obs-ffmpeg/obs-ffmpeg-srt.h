@@ -73,6 +73,8 @@ typedef struct SRTContext {
 	char *smoother;
 	int messageapi;
 	SRT_TRANSTYPE transtype;
+	char *localip;
+	char *localport;
 	int linger;
 	int tsbpd;
 	double time; // time in s in order to post logs at definite intervals
@@ -458,6 +460,7 @@ static int libsrt_setup(URLContext *h, const char *uri)
 	char portstr[10];
 	int64_t open_timeout = 0;
 	int eid, write_eid;
+	struct sockaddr_in la;
 
 	av_url_split(proto, sizeof(proto), NULL, 0, hostname, sizeof(hostname),
 		     &port, path, sizeof(path), uri);
@@ -500,7 +503,24 @@ static int libsrt_setup(URLContext *h, const char *uri)
 	}
 
 	cur_ai = ai;
-
+	if (s->mode == SRT_MODE_RENDEZVOUS) {
+		if (s->localip == NULL || s->localport == NULL) {
+			blog(LOG_ERROR, "Invalid adapter configuration\n");
+			return OBS_OUTPUT_CONNECT_FAILED;
+		}
+		blog(LOG_DEBUG,
+		     "[obs-ffmpeg mpegts muxer / libsrt]: Adapter options %s:%s\n",
+		     s->localip, s->localport);
+		int lp = strtol(s->localport, NULL, 10);
+		if (lp <= 0 || lp >= 65536) {
+			blog(LOG_ERROR,
+			     "[obs-ffmpeg mpegts muxer / libsrt]: Local port missing in URL\n");
+			return OBS_OUTPUT_CONNECT_FAILED;
+		}
+		la.sin_family = AF_INET;
+		la.sin_port = htons(port);
+		inet_pton(AF_INET, s->localip, &la.sin_addr.s_addr);
+	}
 restart:
 
 	fd = srt_create_socket();
@@ -544,8 +564,8 @@ restart:
 		fd = ret;
 	} else {
 		if (s->mode == SRT_MODE_RENDEZVOUS) {
-			if (srt_bind(fd, cur_ai->ai_addr,
-				     (int)(cur_ai->ai_addrlen))) {
+			if (srt_bind(fd, (struct sockaddr *)&la,
+				     sizeof(struct sockaddr_in))) {
 				ret = libsrt_neterrno(h);
 				srt_epoll_release(write_eid);
 				goto fail1;
@@ -779,6 +799,12 @@ static int libsrt_open(URLContext *h, const char *uri)
 		}
 		if (av_find_info_tag(buf, sizeof(buf), "linger", p)) {
 			s->linger = strtol(buf, NULL, 10);
+		}
+		if (av_find_info_tag(buf, sizeof(buf), "localip", p)) {
+			s->localip = av_strndup(buf, strlen(buf));
+		}
+		if (av_find_info_tag(buf, sizeof(buf), "localport", p)) {
+			s->localport = av_strndup(buf, strlen(buf));
 		}
 	}
 	ret = libsrt_setup(h, uri);
