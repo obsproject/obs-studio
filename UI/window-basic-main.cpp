@@ -1280,7 +1280,7 @@ retryScene:
 
 	disableSaving--;
 
-	if (vcamEnabled && vcamConfig.internal == VCamInternalType::Preview)
+	if (vcamEnabled)
 		outputHandler->UpdateVirtualCamOutputSource();
 
 	if (api) {
@@ -4856,6 +4856,14 @@ void OBSBasic::ClearSceneData()
 
 	for (int i = 0; i < MAX_CHANNELS; i++)
 		obs_set_output_source(i, nullptr);
+
+	/* Reset VCam to default to clear its private scene and any references
+	 * it holds. It will be reconfigured during loading. */
+	if (vcamEnabled) {
+		vcamConfig.type = VCamOutputType::InternalOutput;
+		vcamConfig.internal = VCamInternalType::Default;
+		outputHandler->UpdateVirtualCamOutputSource();
+	}
 
 	lastScene = nullptr;
 	swapScene = nullptr;
