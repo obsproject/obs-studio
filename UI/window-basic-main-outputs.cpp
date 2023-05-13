@@ -1141,8 +1141,6 @@ bool SimpleOutput::SetupStreaming(obs_service_t *service)
 	return true;
 }
 
-static inline bool ServiceSupportsVodTrack(const char *service);
-
 static void clear_archive_encoder(obs_output_t *output,
 				  const char *expected_name)
 {
@@ -1170,13 +1168,13 @@ void SimpleOutput::SetupVodTrack(obs_service_t *service)
 		GetGlobalConfig(), "General", "EnableCustomServerVodTrack");
 
 	OBSDataAutoRelease settings = obs_service_get_settings(service);
-	const char *name = obs_data_get_string(settings, "service");
-
 	const char *id = obs_service_get_id(service);
 	if (strcmp(id, "rtmp_custom") == 0)
 		enable = enableForCustomServer ? enable : false;
 	else
-		enable = advanced && enable && ServiceSupportsVodTrack(name);
+		enable = advanced && enable &&
+			 (obs_service_get_audio_track_cap(service) ==
+			  OBS_SERVICE_AUDIO_ARCHIVE_TRACK);
 
 	if (enable)
 		obs_output_set_audio_encoder(streamOutput, audioArchive, 1);
@@ -1754,18 +1752,6 @@ void AdvancedOutput::Update()
 	UpdateAudioSettings();
 }
 
-static inline bool ServiceSupportsVodTrack(const char *service)
-{
-	static const char *vodTrackServices[] = {"Twitch"};
-
-	for (const char *vodTrackService : vodTrackServices) {
-		if (astrcmpi(vodTrackService, service) == 0)
-			return true;
-	}
-
-	return false;
-}
-
 inline void AdvancedOutput::SetupStreaming()
 {
 	bool rescale = config_get_bool(main->Config(), "AdvOut", "Rescale");
@@ -2062,9 +2048,8 @@ inline void AdvancedOutput::SetupVodTrack(obs_service_t *service)
 		vodTrackEnabled = enableForCustomServer ? vodTrackEnabled
 							: false;
 	} else {
-		OBSDataAutoRelease settings = obs_service_get_settings(service);
-		const char *service = obs_data_get_string(settings, "service");
-		if (!ServiceSupportsVodTrack(service))
+		if (obs_service_get_audio_track_cap(service) !=
+		    OBS_SERVICE_AUDIO_ARCHIVE_TRACK)
 			vodTrackEnabled = false;
 	}
 

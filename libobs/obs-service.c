@@ -522,3 +522,14 @@ bool obs_service_can_try_to_connect(const obs_service_t *service)
 		return true;
 	return service->info.can_try_to_connect(service->context.data);
 }
+
+enum obs_service_audio_track_cap
+obs_service_get_audio_track_cap(const obs_service_t *service)
+{
+	if (!obs_service_valid(service, "obs_service_get_audio_track_cap"))
+		return OBS_SERVICE_AUDIO_SINGLE_TRACK;
+
+	if (!service->info.get_audio_track_cap)
+		return OBS_SERVICE_AUDIO_SINGLE_TRACK;
+	return service->info.get_audio_track_cap(service->context.data);
+}

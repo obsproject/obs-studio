@@ -202,6 +202,17 @@ Service Definition Structure
 
    .. versionadded:: 29.1
 
+.. member:: enum obs_service_audio_track_cap (*get_audio_track_cap)(void *data)
+
+   Return the audio track capability of the service:
+
+   - **OBS_SERVICE_AUDIO_SINGLE_TRACK** - Only a single audio track is used by the service
+
+   - **OBS_SERVICE_AUDIO_ARCHIVE_TRACK** - A second audio track is accepted and
+     is meant to become the archive/VOD audio
+
+   - **OBS_SERVICE_AUDIO_MULTI_TRACK** - Supports multiple audio tracks
+
 General Service Functions
 -------------------------
 
@@ -415,6 +426,12 @@ General Service Functions
             :c:member:`obs_service_info.can_try_to_connect` is not set.
 
    .. versionadded:: 29.1
+
+---------------------
+
+.. function:: enum obs_service_audio_track_cap obs_service_get_audio_track_cap(const obs_service_t *service)
+
+   :return: The audio track capability of the service
 
 .. ---------------------------------------------------------------------------
 

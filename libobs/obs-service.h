@@ -45,6 +45,12 @@ enum obs_service_connect_info {
 	OBS_SERVICE_CONNECT_INFO_BEARER_TOKEN = 10,
 };
 
+enum obs_service_audio_track_cap {
+	OBS_SERVICE_AUDIO_SINGLE_TRACK = 0,
+	OBS_SERVICE_AUDIO_ARCHIVE_TRACK = 1,
+	OBS_SERVICE_AUDIO_MULTI_TRACK = 2,
+};
+
 struct obs_service_info {
 	/* required */
 	const char *id;
@@ -109,6 +115,8 @@ struct obs_service_info {
 	const char *(*get_connect_info)(void *data, uint32_t type);
 
 	bool (*can_try_to_connect)(void *data);
+
+	enum obs_service_audio_track_cap (*get_audio_track_cap)(void *data);
 };
 
 EXPORT void obs_register_service_s(const struct obs_service_info *info,

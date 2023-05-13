@@ -2670,6 +2670,9 @@ EXPORT const char *obs_service_get_connect_info(const obs_service_t *service,
 
 EXPORT bool obs_service_can_try_to_connect(const obs_service_t *service);
 
+EXPORT enum obs_service_audio_track_cap
+obs_service_get_audio_track_cap(const obs_service_t *service);
+
 /* ------------------------------------------------------------------------- */
 /* Source frame allocation functions */
 EXPORT void obs_source_frame_init(struct obs_source_frame *frame,

@@ -1107,6 +1107,16 @@ static bool rtmp_common_can_try_to_connect(void *data)
 	       (key != NULL && key[0] != '\0');
 }
 
+static enum obs_service_audio_track_cap rtmp_common_audio_track_cap(void *data)
+{
+	struct rtmp_common *service = data;
+
+	if (service->service && strcmp(service->service, "Twitch") == 0)
+		return OBS_SERVICE_AUDIO_ARCHIVE_TRACK;
+
+	return OBS_SERVICE_AUDIO_SINGLE_TRACK;
+}
+
 struct obs_service_info rtmp_common_service = {
 	.id = "rtmp_common",
 	.get_name = rtmp_common_getname,
@@ -1127,4 +1137,5 @@ struct obs_service_info rtmp_common_service = {
 	.get_supported_video_codecs = rtmp_common_get_supported_video_codecs,
 	.get_supported_audio_codecs = rtmp_common_get_supported_audio_codecs,
 	.can_try_to_connect = rtmp_common_can_try_to_connect,
+	.get_audio_track_cap = rtmp_common_audio_track_cap,
 };
