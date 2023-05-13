@@ -426,7 +426,8 @@ void OBSBasic::SetTransition(OBSSource transition)
 	ui->transitionRemove->setEnabled(configurable);
 	ui->transitionProps->setEnabled(configurable);
 
-	if (vcamEnabled && vcamConfig.internal == VCamInternalType::Default)
+	if (vcamEnabled && vcamConfig.type == VCamOutputType::InternalOutput &&
+	    vcamConfig.internal == VCamInternalType::Default)
 		outputHandler->UpdateVirtualCamOutputSource();
 
 	if (api)
