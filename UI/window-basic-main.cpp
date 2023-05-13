@@ -5282,7 +5282,8 @@ void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current,
 
 	SetCurrentScene(source);
 
-	if (vcamEnabled && vcamConfig.internal == VCamInternalType::Preview)
+	if (vcamEnabled && vcamConfig.type == VCamOutputType::InternalOutput &&
+	    vcamConfig.internal == VCamInternalType::Preview)
 		outputHandler->UpdateVirtualCamOutputSource();
 
 	if (api)
