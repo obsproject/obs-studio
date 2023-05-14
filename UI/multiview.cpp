@@ -1,8 +1,8 @@
 #include "multiview.hpp"
-#include "window-basic-main.hpp"
-#include "obs-app.hpp"
-#include "platform.hpp"
+#include "obs-frontend-api.h"
 #include "display-helpers.hpp"
+
+#include <QApplication>
 
 Multiview::Multiview()
 {
@@ -86,10 +86,10 @@ void Multiview::Update(MultiviewLayout multiviewLayout, bool drawLabel,
 	struct obs_frontend_source_list scenes = {};
 	obs_frontend_get_scenes(&scenes);
 
-	multiviewLabels.emplace_back(
-		CreateLabel(Str("StudioMode.Preview"), h / 2));
-	multiviewLabels.emplace_back(
-		CreateLabel(Str("StudioMode.Program"), h / 2));
+	multiviewLabels.emplace_back(CreateLabel(
+		obs_frontend_get_locale_string("StudioMode.Preview"), h / 2));
+	multiviewLabels.emplace_back(CreateLabel(
+		obs_frontend_get_locale_string("StudioMode.Program"), h / 2));
 
 	switch (multiviewLayout) {
 	case MultiviewLayout::HORIZONTAL_TOP_18_SCENES:
@@ -211,8 +211,6 @@ static inline uint32_t labelOffset(MultiviewLayout multiviewLayout,
 
 void Multiview::Render(uint32_t cx, uint32_t cy)
 {
-	OBSBasic *main = (OBSBasic *)obs_frontend_get_main_window();
-
 	uint32_t targetCX, targetCY;
 	int x, y;
 	float scale;
@@ -222,9 +220,10 @@ void Multiview::Render(uint32_t cx, uint32_t cy)
 
 	GetScaleAndCenterPos(targetCX, targetCY, cx, cy, x, y, scale);
 
-	OBSSource previewSrc = main->GetCurrentSceneSource();
-	OBSSource programSrc = main->GetProgramSource();
-	bool studioMode = main->IsPreviewProgramMode();
+	OBSSourceAutoRelease previewSrc =
+		obs_frontend_get_current_preview_scene();
+	OBSSourceAutoRelease programSrc = obs_frontend_get_current_scene();
+	bool studioMode = obs_frontend_preview_program_mode_active();
 
 	auto drawBox = [&](float cx, float cy, uint32_t colorVal) {
 		gs_effect_t *solid = obs_get_base_effect(OBS_EFFECT_SOLID);

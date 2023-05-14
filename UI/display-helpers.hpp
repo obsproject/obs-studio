@@ -20,6 +20,8 @@
 #include <graphics/vec4.h>
 #include <graphics/matrix4.h>
 
+#include <QWidget>
+
 static inline void GetScaleAndCenterPos(int baseCX, int baseCY, int windowCX,
 					int windowCY, int &x, int &y,
 					float &scale)
