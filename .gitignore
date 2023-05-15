@@ -19,6 +19,7 @@
 .dirstamp
 /cmake/.CMakeBuildNumber
 .deps
+CMakeUserPresets.json
 
 #xcode
 *.xcodeproj/
