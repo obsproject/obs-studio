@@ -61,9 +61,14 @@ void get_default_id(char **id)
 	pulseaudio_unref();
 }
 
+/**
+ * Checks whether a sound source (id1) is the .monitor device for the
+ * selected monitoring output (id2).
+ */
 bool devices_match(const char *id1, const char *id2)
 {
 	bool match;
+	char *name_default = NULL;
 	char *name1 = NULL;
 	char *name2 = NULL;
 
@@ -71,18 +76,28 @@ bool devices_match(const char *id1, const char *id2)
 		return false;
 
 	if (strcmp(id1, "default") == 0) {
-		get_default_id(&name1);
-		id1 = name1;
+		get_default_id(&name_default);
+		name1 = bzalloc(strlen(name_default) + 9);
+		strcat(name1, name_default);
+		strcat(name1, ".monitor");
+	} else {
+		name1 = bstrdup(id1);
 	}
+
 	if (strcmp(id2, "default") == 0) {
-		get_default_id(&name2);
+		if (!name_default)
+			get_default_id(&name_default);
+		name2 = bzalloc(strlen(name_default) + 9);
+		strcat(name2, name_default);
+		strcat(name2, ".monitor");
 	} else {
 		name2 = bzalloc(strlen(id2) + 9);
 		strcat(name2, id2);
 		strcat(name2, ".monitor");
 	}
 
-	match = strcmp(id1, name2) == 0;
+	match = strcmp(name1, name2) == 0;
+	bfree(name_default);
 	bfree(name1);
 	bfree(name2);
 	return match;
