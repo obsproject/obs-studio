@@ -283,6 +283,7 @@ set(public_headers
     obs-source.h
     obs-ui.h
     obs.h
+    obs.hpp
     util/base.h
     util/bmem.h
     util/c99defs.h
