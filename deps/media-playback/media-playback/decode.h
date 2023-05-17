@@ -78,7 +78,7 @@ struct mp_decode {
 };
 
 extern bool mp_decode_init(struct mp_media *media, enum AVMediaType type,
-			   bool hw);
+			   bool hw, int track);
 extern void mp_decode_free(struct mp_decode *decode);
 
 extern void mp_decode_clear_packets(struct mp_decode *decode);

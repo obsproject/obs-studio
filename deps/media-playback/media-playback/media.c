@@ -739,8 +739,10 @@ static bool init_avformat(mp_media_t *m)
 	}
 
 	m->reconnecting = false;
-	m->has_video = mp_decode_init(m, AVMEDIA_TYPE_VIDEO, m->hw);
-	m->has_audio = mp_decode_init(m, AVMEDIA_TYPE_AUDIO, m->hw);
+	m->has_video =
+		mp_decode_init(m, AVMEDIA_TYPE_VIDEO, m->hw, m->video_track);
+	m->has_audio =
+		mp_decode_init(m, AVMEDIA_TYPE_AUDIO, m->hw, m->audio_track);
 
 	if (!m->has_video && !m->has_audio) {
 		blog(LOG_WARNING,
@@ -920,6 +922,8 @@ bool mp_media_init(mp_media_t *media, const struct mp_media_info *info)
 	media->speed = info->speed;
 	media->request_preload = info->request_preload;
 	media->is_local_file = info->is_local_file;
+	media->video_track = info->video_track;
+	media->audio_track = info->audio_track;
 	da_init(media->packet_pool);
 
 	if (!info->is_local_file || media->speed < 1 || media->speed > 200)

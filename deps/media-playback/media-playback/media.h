@@ -67,6 +67,8 @@ struct mp_media {
 	bool reconnecting;
 	bool has_video;
 	bool has_audio;
+	int video_track;
+	int audio_track;
 	bool is_file;
 	bool eof;
 	bool hw;
