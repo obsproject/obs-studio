@@ -507,7 +507,7 @@ static PyObject *obs_python_remove_tick_callback(PyObject *self, PyObject *args)
 
 	if (!parse_args(args, "O", &py_cb))
 		return python_none();
-	if (!py_cb || !PyFunction_Check(py_cb))
+	if (!py_cb || (!PyFunction_Check(py_cb) && !PyMethod_Check(py_cb)))
 		return python_none();
 
 	struct python_obs_callback *cb =
@@ -532,7 +532,7 @@ static PyObject *obs_python_add_tick_callback(PyObject *self, PyObject *args)
 
 	if (!parse_args(args, "O", &py_cb))
 		return python_none();
-	if (!py_cb || !PyFunction_Check(py_cb))
+	if (!py_cb || (!PyFunction_Check(py_cb) && !PyMethod_Check(py_cb)))
 		return python_none();
 
 	struct python_obs_callback *cb = add_python_obs_callback(script, py_cb);
@@ -590,7 +590,7 @@ static PyObject *obs_python_signal_handler_disconnect(PyObject *self,
 
 	if (!py_to_libobs(signal_handler_t, py_sh, &handler))
 		return python_none();
-	if (!py_cb || !PyFunction_Check(py_cb))
+	if (!py_cb || (!PyFunction_Check(py_cb) && !PyMethod_Check(py_cb)))
 		return python_none();
 
 	struct python_obs_callback *cb =
@@ -635,7 +635,7 @@ static PyObject *obs_python_signal_handler_connect(PyObject *self,
 		return python_none();
 	if (!py_to_libobs(signal_handler_t, py_sh, &handler))
 		return python_none();
-	if (!py_cb || !PyFunction_Check(py_cb))
+	if (!py_cb || (!PyFunction_Check(py_cb) && !PyMethod_Check(py_cb)))
 		return python_none();
 
 	struct python_obs_callback *cb = add_python_obs_callback(script, py_cb);
@@ -695,7 +695,7 @@ static PyObject *obs_python_signal_handler_disconnect_global(PyObject *self,
 
 	if (!py_to_libobs(signal_handler_t, py_sh, &handler))
 		return python_none();
-	if (!py_cb || !PyFunction_Check(py_cb))
+	if (!py_cb || (!PyFunction_Check(py_cb) && !PyMethod_Check(py_cb)))
 		return python_none();
 
 	struct python_obs_callback *cb =
@@ -737,7 +737,7 @@ static PyObject *obs_python_signal_handler_connect_global(PyObject *self,
 
 	if (!py_to_libobs(signal_handler_t, py_sh, &handler))
 		return python_none();
-	if (!py_cb || !PyFunction_Check(py_cb))
+	if (!py_cb || (!PyFunction_Check(py_cb) && !PyMethod_Check(py_cb)))
 		return python_none();
 
 	struct python_obs_callback *cb = add_python_obs_callback(script, py_cb);
@@ -828,7 +828,7 @@ static PyObject *hotkey_unregister(PyObject *self, PyObject *args)
 
 	if (!parse_args(args, "O", &py_cb))
 		return python_none();
-	if (!py_cb || !PyFunction_Check(py_cb))
+	if (!py_cb || (!PyFunction_Check(py_cb) && !PyMethod_Check(py_cb)))
 		return python_none();
 
 	struct python_obs_callback *cb =
@@ -850,7 +850,7 @@ static PyObject *hotkey_register_frontend(PyObject *self, PyObject *args)
 
 	if (!parse_args(args, "ssO", &name, &desc, &py_cb))
 		return py_invalid_hotkey_id();
-	if (!py_cb || !PyFunction_Check(py_cb))
+	if (!py_cb || (!PyFunction_Check(py_cb) && !PyMethod_Check(py_cb)))
 		return py_invalid_hotkey_id();
 
 	struct python_obs_callback *cb = add_python_obs_callback(script, py_cb);
@@ -915,7 +915,7 @@ static PyObject *properties_add_button(PyObject *self, PyObject *args)
 		return python_none();
 	if (!py_to_libobs(obs_properties_t, py_props, &props))
 		return python_none();
-	if (!py_cb || !PyFunction_Check(py_cb))
+	if (!py_cb || (!PyFunction_Check(py_cb) && !PyMethod_Check(py_cb)))
 		return python_none();
 
 	struct python_obs_callback *cb = add_python_obs_callback(script, py_cb);
@@ -979,7 +979,7 @@ static PyObject *property_set_modified_callback(PyObject *self, PyObject *args)
 		return python_none();
 	if (!py_to_libobs(obs_property_t, py_p, &p))
 		return python_none();
-	if (!py_cb || !PyFunction_Check(py_cb))
+	if (!py_cb || (!PyFunction_Check(py_cb) && !PyMethod_Check(py_cb)))
 		return python_none();
 
 	struct python_obs_callback *cb = add_python_obs_callback(script, py_cb);

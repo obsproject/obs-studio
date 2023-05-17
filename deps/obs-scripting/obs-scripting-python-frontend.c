@@ -319,7 +319,7 @@ static PyObject *remove_save_callback(PyObject *self, PyObject *args)
 
 	if (!parse_args(args, "O", &py_cb))
 		return python_none();
-	if (!py_cb || !PyFunction_Check(py_cb))
+	if (!py_cb || (!PyFunction_Check(py_cb) && !PyMethod_Check(py_cb)))
 		return python_none();
 
 	struct python_obs_callback *cb =
@@ -343,7 +343,7 @@ static PyObject *add_save_callback(PyObject *self, PyObject *args)
 
 	if (!parse_args(args, "O", &py_cb))
 		return python_none();
-	if (!py_cb || !PyFunction_Check(py_cb))
+	if (!py_cb || (!PyFunction_Check(py_cb) && !PyMethod_Check(py_cb)))
 		return python_none();
 
 	struct python_obs_callback *cb = add_python_obs_callback(script, py_cb);
@@ -389,7 +389,7 @@ static PyObject *remove_event_callback(PyObject *self, PyObject *args)
 
 	if (!parse_args(args, "O", &py_cb))
 		return python_none();
-	if (!py_cb || !PyFunction_Check(py_cb))
+	if (!py_cb || (!PyFunction_Check(py_cb) && !PyMethod_Check(py_cb)))
 		return python_none();
 
 	struct python_obs_callback *cb =
@@ -413,7 +413,7 @@ static PyObject *add_event_callback(PyObject *self, PyObject *args)
 
 	if (!parse_args(args, "O", &py_cb))
 		return python_none();
-	if (!py_cb || !PyFunction_Check(py_cb))
+	if (!py_cb || (!PyFunction_Check(py_cb) && !PyMethod_Check(py_cb)))
 		return python_none();
 
 	struct python_obs_callback *cb = add_python_obs_callback(script, py_cb);
