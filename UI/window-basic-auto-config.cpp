@@ -281,14 +281,6 @@ AutoConfigStreamPage::AutoConfigStreamPage(QWidget *parent)
 
 	connect(ui->key, SIGNAL(textChanged(const QString &)), this,
 		SLOT(UpdateCompleted()));
-	connect(ui->regionUS, SIGNAL(toggled(bool)), this,
-		SLOT(UpdateCompleted()));
-	connect(ui->regionEU, SIGNAL(toggled(bool)), this,
-		SLOT(UpdateCompleted()));
-	connect(ui->regionAsia, SIGNAL(toggled(bool)), this,
-		SLOT(UpdateCompleted()));
-	connect(ui->regionOther, SIGNAL(toggled(bool)), this,
-		SLOT(UpdateCompleted()));
 }
 
 AutoConfigStreamPage::~AutoConfigStreamPage() {}
@@ -349,10 +341,6 @@ bool AutoConfigStreamPage::validatePage()
 	wiz->bandwidthTest = ui->doBandwidthTest->isChecked();
 	wiz->startingBitrate = (int)obs_data_get_int(settings, "bitrate");
 	wiz->idealBitrate = wiz->startingBitrate;
-	wiz->regionUS = ui->regionUS->isChecked();
-	wiz->regionEU = ui->regionEU->isChecked();
-	wiz->regionAsia = ui->regionAsia->isChecked();
-	wiz->regionOther = ui->regionOther->isChecked();
 	wiz->serviceName = QT_TO_UTF8(ui->service->currentText());
 	if (ui->preferHardware)
 		wiz->preferHardware = ui->preferHardware->isChecked();
@@ -391,13 +379,8 @@ void AutoConfigStreamPage::ServiceChanged()
 		return;
 
 	std::string service = QT_TO_UTF8(ui->service->currentText());
-	bool regionBased = service == "Twitch";
 	bool testBandwidth = ui->doBandwidthTest->isChecked();
 	bool custom = IsCustomService();
-
-	/* Test three closest servers if "Auto" is available for Twitch */
-	if (service == "Twitch" && wiz->twitchAuto)
-		regionBased = false;
 
 	ui->streamkeyPageLayout->removeWidget(ui->serverLabel);
 	ui->streamkeyPageLayout->removeWidget(ui->serverStackedWidget);
@@ -406,7 +389,6 @@ void AutoConfigStreamPage::ServiceChanged()
 		ui->streamkeyPageLayout->insertRow(1, ui->serverLabel,
 						   ui->serverStackedWidget);
 
-		ui->region->setVisible(false);
 		ui->serverStackedWidget->setCurrentIndex(1);
 		ui->serverStackedWidget->setVisible(true);
 		ui->serverLabel->setVisible(true);
@@ -415,13 +397,10 @@ void AutoConfigStreamPage::ServiceChanged()
 			ui->streamkeyPageLayout->insertRow(
 				2, ui->serverLabel, ui->serverStackedWidget);
 
-		ui->region->setVisible(regionBased && testBandwidth);
 		ui->serverStackedWidget->setCurrentIndex(0);
 		ui->serverStackedWidget->setHidden(testBandwidth);
 		ui->serverLabel->setHidden(testBandwidth);
 	}
-
-	wiz->testRegions = regionBased && testBandwidth;
 
 	ui->bitrateLabel->setHidden(testBandwidth);
 	ui->bitrate->setHidden(testBandwidth);
@@ -591,11 +570,7 @@ void AutoConfigStreamPage::UpdateCompleted()
 		if (custom) {
 			ready = !ui->customServer->text().isEmpty();
 		} else {
-			ready = !wiz->testRegions ||
-				ui->regionUS->isChecked() ||
-				ui->regionEU->isChecked() ||
-				ui->regionAsia->isChecked() ||
-				ui->regionOther->isChecked();
+			ready = true;
 		}
 	}
 	emit completeChanged();
@@ -765,30 +740,6 @@ void AutoConfig::TestHardwareEncoding()
 					true;
 #endif
 	}
-}
-
-bool AutoConfig::CanTestServer(const char *server)
-{
-	if (!testRegions || (regionUS && regionEU && regionAsia && regionOther))
-		return true;
-
-	if (serviceName == "Twitch") {
-		if (astrcmp_n(server, "US West:", 8) == 0 ||
-		    astrcmp_n(server, "US East:", 8) == 0 ||
-		    astrcmp_n(server, "US Central:", 11) == 0) {
-			return regionUS;
-		} else if (astrcmp_n(server, "EU:", 3) == 0) {
-			return regionEU;
-		} else if (astrcmp_n(server, "Asia:", 5) == 0) {
-			return regionAsia;
-		} else if (regionOther) {
-			return true;
-		}
-	} else {
-		return true;
-	}
-
-	return false;
 }
 
 void AutoConfig::done(int result)

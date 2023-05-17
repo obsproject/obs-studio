@@ -261,6 +261,19 @@
        </property>
       </widget>
      </item>
+     <item row="3" column="0">
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
      <item row="3" column="1">
       <widget class="QCheckBox" name="preferHardware">
        <property name="toolTip">
@@ -284,43 +297,6 @@
        </property>
       </widget>
      </item>
-     <item row="6" column="1">
-      <widget class="QGroupBox" name="region">
-       <property name="title">
-        <string>BandwidthTest.Region</string>
-       </property>
-       <layout class="QGridLayout" name="gridLayout">
-        <item row="2" column="0">
-         <widget class="QCheckBox" name="regionAsia">
-          <property name="text">
-           <string>BandwidthTest.Region.Asia</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="0">
-         <widget class="QCheckBox" name="regionUS">
-          <property name="text">
-           <string>BandwidthTest.Region.US</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QCheckBox" name="regionEU">
-          <property name="text">
-           <string>BandwidthTest.Region.EU</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="1">
-         <widget class="QCheckBox" name="regionOther">
-          <property name="text">
-           <string>BandwidthTest.Region.Other</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-     </item>
      <item row="5" column="1">
       <spacer name="verticalSpacer_2">
        <property name="orientation">
@@ -330,19 +306,6 @@
         <size>
          <width>6</width>
          <height>6</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item row="6" column="0">
-      <spacer name="horizontalSpacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
         </size>
        </property>
       </spacer>

@@ -87,19 +87,13 @@ class AutoConfig : public QWizard {
 	int startingBitrate = 2500;
 	bool customServer = false;
 	bool bandwidthTest = false;
-	bool testRegions = true;
 	bool twitchAuto = false;
-	bool regionUS = true;
-	bool regionEU = true;
-	bool regionAsia = true;
-	bool regionOther = true;
 	bool preferHighFPS = false;
 	bool preferHardware = false;
 	int specificFPSNum = 0;
 	int specificFPSDen = 0;
 
 	void TestHardwareEncoding();
-	bool CanTestServer(const char *server);
 
 	virtual void done(int result) override;
 

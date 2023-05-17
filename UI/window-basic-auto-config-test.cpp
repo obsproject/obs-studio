@@ -134,10 +134,8 @@ void AutoConfigTestPage::GetServers(std::vector<ServerInfo> &servers)
 		const char *name = obs_property_list_item_name(p, i);
 		const char *server = obs_property_list_item_string(p, i);
 
-		if (wiz->CanTestServer(name)) {
-			ServerInfo info(name, server);
-			servers.push_back(info);
-		}
+		ServerInfo info(name, server);
+		servers.push_back(info);
 	}
 
 	obs_properties_destroy(ppts);
