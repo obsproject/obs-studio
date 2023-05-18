@@ -26,6 +26,7 @@
 #include <d3d9.h>
 #include "d3d11-subsystem.hpp"
 #include <shellscalingapi.h>
+#include <d3dkmthk.h>
 
 struct UnsupportedHWError : HRError {
 	inline UnsupportedHWError(const char *str, HRESULT hr)
@@ -524,6 +525,44 @@ static bool set_priority(ID3D11Device *device)
 
 #endif
 
+
+static bool adapter_hags_enabled(DXGI_ADAPTER_DESC *desc)
+{
+	D3DKMT_OPENADAPTERFROMLUID d3dkmt_openluid{};
+	bool hags_enabled = false;
+	NTSTATUS res;
+
+	d3dkmt_openluid.AdapterLuid = desc->AdapterLuid;
+
+	res = D3DKMTOpenAdapterFromLuid(&d3dkmt_openluid);
+	if (FAILED(res)) {
+		blog(LOG_DEBUG, "Failed opening D3DKMT adapter: %x", res);
+		return hags_enabled;
+	}
+
+	D3DKMT_WDDM_2_7_CAPS caps = {};
+	D3DKMT_QUERYADAPTERINFO args = {};
+	args.hAdapter = d3dkmt_openluid.hAdapter;
+	args.Type = KMTQAITYPE_WDDM_2_7_CAPS;
+	args.pPrivateDriverData = &caps;
+	args.PrivateDriverDataSize = sizeof(caps);
+	res = D3DKMTQueryAdapterInfo(&args);
+
+	/* On Windows 10 pre-2004 this will fail, but HAGS isn't supported
+	 * there anyway. */
+	if (SUCCEEDED(res))
+		hags_enabled = caps.HwSchEnabled;
+
+	D3DKMT_CLOSEADAPTER d3dkmt_close = {d3dkmt_openluid.hAdapter};
+	res = D3DKMTCloseAdapter(&d3dkmt_close);
+	if (FAILED(res)) {
+		blog(LOG_DEBUG, "Failed closing D3DKMT adapter %x: %x",
+		     d3dkmt_openluid.hAdapter, res);
+	}
+
+	return hags_enabled;
+}
+
 static bool CheckFormat(ID3D11Device *device, DXGI_FORMAT format)
 {
 	constexpr UINT required = D3D11_FORMAT_SUPPORT_TEXTURE2D |
@@ -571,6 +610,13 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	/* prevent stalls sometimes seen in Present calls */
 	if (!increase_maximum_frame_latency(device)) {
 		blog(LOG_INFO, "DXGI increase maximum frame latency failed");
+	}
+
+	/* Log HAGS status */
+	bool hags_enabled = adapter_hags_enabled(&desc);
+	if (hags_enabled) {
+		blog(LOG_WARNING,
+		     "Hardware-Accelerated GPU Scheduling enabled on adapter!");
 	}
 
 	/* adjust gpu thread priority on non-intel GPUs */
