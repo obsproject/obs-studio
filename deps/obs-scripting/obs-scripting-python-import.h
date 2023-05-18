@@ -129,6 +129,7 @@ PY_EXTERN void *(*Import_PyCapsule_GetPointer)(PyObject *capsule,
 					       const char *name);
 PY_EXTERN int (*Import_PyArg_ParseTuple)(PyObject *, const char *, ...);
 PY_EXTERN PyTypeObject(*Import_PyFunction_Type);
+PY_EXTERN PyTypeObject(*Import_PyMethod_Type);
 PY_EXTERN int (*Import_PyObject_SetAttr)(PyObject *, PyObject *, PyObject *);
 PY_EXTERN PyObject *(*Import__PyObject_New)(PyTypeObject *);
 PY_EXTERN void *(*Import_PyCapsule_Import)(const char *name, int no_block);
@@ -217,6 +218,7 @@ extern bool import_python(const char *python_path,
 #define PyCapsule_GetPointer Import_PyCapsule_GetPointer
 #define PyArg_ParseTuple Import_PyArg_ParseTuple
 #define PyFunction_Type (*Import_PyFunction_Type)
+#define PyMethod_Type (*Import_PyMethod_Type)
 #define PyObject_SetAttr Import_PyObject_SetAttr
 #define _PyObject_New Import__PyObject_New
 #define PyCapsule_Import Import_PyCapsule_Import

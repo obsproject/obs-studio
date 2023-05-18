@@ -182,6 +182,7 @@ bool import_python(const char *python_path, python_version_t *python_version)
 	IMPORT_FUNC(PyCapsule_GetPointer);
 	IMPORT_FUNC(PyArg_ParseTuple);
 	IMPORT_FUNC(PyFunction_Type);
+	IMPORT_FUNC(PyMethod_Type);
 	IMPORT_FUNC(PyObject_SetAttr);
 	IMPORT_FUNC(_PyObject_New);
 	IMPORT_FUNC(PyCapsule_Import);
