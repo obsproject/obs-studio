@@ -473,7 +473,7 @@ static bool increase_maximum_frame_latency(ID3D11Device *device)
 }
 
 #if USE_GPU_PRIORITY
-static bool set_priority(ID3D11Device *device)
+static bool set_priority(ID3D11Device *device, bool hags_enabled)
 {
 	ComQIPtr<IDXGIDevice> dxgiDevice(device);
 	if (!dxgiDevice) {
@@ -482,7 +482,9 @@ static bool set_priority(ID3D11Device *device)
 	}
 
 	NTSTATUS status = D3DKMTSetProcessSchedulingPriorityClass(
-		GetCurrentProcess(), D3DKMT_SCHEDULINGPRIORITYCLASS_REALTIME);
+		GetCurrentProcess(),
+		hags_enabled ? D3DKMT_SCHEDULINGPRIORITYCLASS_HIGH
+			     : D3DKMT_SCHEDULINGPRIORITYCLASS_REALTIME);
 	if (status != 0) {
 		blog(LOG_DEBUG, "%s: Failed to set process priority class: %d",
 		     __FUNCTION__, (int)status);
@@ -596,7 +598,7 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 
 	/* adjust gpu thread priority on non-intel GPUs */
 #if USE_GPU_PRIORITY
-	if (desc.VendorId != 0x8086 && !set_priority(device)) {
+	if (desc.VendorId != 0x8086 && !set_priority(device, hags_enabled)) {
 		blog(LOG_INFO, "D3D11 GPU priority setup "
 			       "failed (not admin?)");
 	}
