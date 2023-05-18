@@ -475,37 +475,14 @@ static bool increase_maximum_frame_latency(ID3D11Device *device)
 #if USE_GPU_PRIORITY
 static bool set_priority(ID3D11Device *device)
 {
-	typedef enum _D3DKMT_SCHEDULINGPRIORITYCLASS {
-		D3DKMT_SCHEDULINGPRIORITYCLASS_IDLE,
-		D3DKMT_SCHEDULINGPRIORITYCLASS_BELOW_NORMAL,
-		D3DKMT_SCHEDULINGPRIORITYCLASS_NORMAL,
-		D3DKMT_SCHEDULINGPRIORITYCLASS_ABOVE_NORMAL,
-		D3DKMT_SCHEDULINGPRIORITYCLASS_HIGH,
-		D3DKMT_SCHEDULINGPRIORITYCLASS_REALTIME
-	} D3DKMT_SCHEDULINGPRIORITYCLASS;
-
 	ComQIPtr<IDXGIDevice> dxgiDevice(device);
 	if (!dxgiDevice) {
 		blog(LOG_DEBUG, "%s: Failed to get IDXGIDevice", __FUNCTION__);
 		return false;
 	}
 
-	HMODULE gdi32 = GetModuleHandleW(L"GDI32");
-	if (!gdi32) {
-		blog(LOG_DEBUG, "%s: Failed to get GDI32", __FUNCTION__);
-		return false;
-	}
-
-	NTSTATUS(WINAPI * d3dkmt_spspc)(HANDLE, D3DKMT_SCHEDULINGPRIORITYCLASS);
-	d3dkmt_spspc = (decltype(d3dkmt_spspc))GetProcAddress(
-		gdi32, "D3DKMTSetProcessSchedulingPriorityClass");
-	if (!d3dkmt_spspc) {
-		blog(LOG_DEBUG, "%s: Failed to get d3dkmt_spspc", __FUNCTION__);
-		return false;
-	}
-
-	NTSTATUS status = d3dkmt_spspc(GetCurrentProcess(),
-				       D3DKMT_SCHEDULINGPRIORITYCLASS_REALTIME);
+	NTSTATUS status = D3DKMTSetProcessSchedulingPriorityClass(
+		GetCurrentProcess(), D3DKMT_SCHEDULINGPRIORITYCLASS_REALTIME);
 	if (status != 0) {
 		blog(LOG_DEBUG, "%s: Failed to set process priority class: %d",
 		     __FUNCTION__, (int)status);
@@ -522,9 +499,7 @@ static bool set_priority(ID3D11Device *device)
 	blog(LOG_INFO, "D3D11 GPU priority setup success");
 	return true;
 }
-
 #endif
-
 
 static bool adapter_hags_enabled(DXGI_ADAPTER_DESC *desc)
 {
