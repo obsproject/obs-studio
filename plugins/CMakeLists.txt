@@ -55,6 +55,7 @@ if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
   add_obs_plugin(mac-syphon PLATFORMS MACOS)
   add_obs_plugin(mac-videotoolbox PLATFORMS MACOS)
   add_obs_plugin(mac-virtualcam PLATFORMS MACOS)
+  add_obs_plugin(nv-filters PLATFORMS WINDOWS)
 
   check_obs_browser()
 
@@ -114,6 +115,7 @@ if(OS_WINDOWS)
   add_subdirectory(obs-text)
   add_subdirectory(vlc-video)
   add_subdirectory(obs-vst)
+  add_subdirectory(nv-filters)
 
   check_obs_browser()
 elseif(OS_MACOS)

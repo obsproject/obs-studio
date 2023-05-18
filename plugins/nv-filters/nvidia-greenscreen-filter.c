@@ -30,13 +30,13 @@
 #define S_PROCESSING "processing_interval"
 
 #define MT_ obs_module_text
-#define TEXT_MODE MT_("Greenscreen.Mode")
-#define TEXT_MODE_QUALITY MT_("Greenscreen.Quality")
-#define TEXT_MODE_PERF MT_("Greenscreen.Performance")
-#define TEXT_MODE_THRESHOLD MT_("Greenscreen.Threshold")
-#define TEXT_DEPRECATION MT_("Greenscreen.Deprecation")
-#define TEXT_PROCESSING MT_("Greenscreen.Processing")
-#define TEXT_PROCESSING_HINT MT_("Greenscreen.Processing.Hint")
+#define TEXT_MODE MT_("Nvvfx.Method.Greenscreen.Mode")
+#define TEXT_MODE_QUALITY MT_("Nvvfx.Method.Greenscreen.Quality")
+#define TEXT_MODE_PERF MT_("Nvvfx.Method.Greenscreen.Performance")
+#define TEXT_MODE_THRESHOLD MT_("Nvvfx.Method.Greenscreen.Threshold")
+#define TEXT_DEPRECATION MT_("Nvvfx.OutdatedSDK")
+#define TEXT_PROCESSING MT_("Nvvfx.Method.Greenscreen.Processing")
+#define TEXT_PROCESSING_HINT MT_("Nvvfx.Method.Greenscreen.Processing.Hint")
 
 bool nvvfx_loaded = false;
 bool nvvfx_new_sdk = false;
@@ -87,7 +87,7 @@ struct nv_greenscreen_data {
 static const char *nv_greenscreen_filter_name(void *unused)
 {
 	UNUSED_PARAMETER(unused);
-	return obs_module_text("NvidiaGreenscreenFilter");
+	return obs_module_text("Nvvfx.Method.Greenscreen");
 }
 
 static void nv_greenscreen_filter_update(void *data, obs_data_t *settings)
@@ -883,7 +883,7 @@ static void nv_greenscreen_filter_render(void *data, gs_effect_t *effect)
 	UNUSED_PARAMETER(effect);
 }
 
-bool load_nvvfx(void)
+bool load_nvidia_vfx(void)
 {
 	bool old_sdk_loaded = false;
 	unsigned int version = get_lib_version();
@@ -1032,7 +1032,7 @@ unload_everything:
 }
 
 #ifdef LIBNVVFX_ENABLED
-void unload_nvvfx(void)
+void unload_nvidia_vfx(void)
 {
 	release_nv_vfx();
 }

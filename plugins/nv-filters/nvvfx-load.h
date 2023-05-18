@@ -7,6 +7,7 @@
 #include <util/platform.h>
 #include <dxgitype.h>
 #include <util/windows/win-version.h>
+#include "nv_sdk_versions.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,7 +40,6 @@ extern "C" {
 #define CUDARTAPI
 
 #ifdef LIBNVVFX_ENABLED
-#define MIN_VFX_SDK_VERSION (0 << 24 | 7 << 16 | 2 << 8 | 0 << 0)
 static HMODULE nv_videofx = NULL;
 static HMODULE nv_cvimage = NULL;
 static HMODULE nv_cudart = NULL;
