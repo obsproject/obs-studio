@@ -29,6 +29,7 @@ env:
   YOUTUBE_CLIENTID_HASH: ${{ secrets.YOUTUBE_CLIENTID_HASH }}
   YOUTUBE_SECRET: ${{ secrets.YOUTUBE_SECRET }}
   YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
+  GPU_PRIORITY_VAL: ${{ secrets.GPU_PRIORITY_VAL }}
 
 concurrency:
   group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
