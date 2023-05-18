@@ -201,6 +201,8 @@ target_sources(
           scene-tree.cpp
           scene-tree.hpp
           screenshot-obj.hpp
+          service-sort-filter.cpp
+          service-sort-filter.hpp
           slider-absoluteset-style.cpp
           slider-absoluteset-style.hpp
           slider-ignorewheel.cpp

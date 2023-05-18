@@ -1,11 +1,13 @@
 #include <QMessageBox>
 #include <QUrl>
+#include <QStandardItemModel>
 
 #include "window-basic-settings.hpp"
 #include "obs-frontend-api.h"
 #include "obs-app.hpp"
 #include "window-basic-main.hpp"
 #include "qt-wrappers.hpp"
+#include "service-sort-filter.hpp"
 
 constexpr int SHOW_ALL = 1;
 constexpr const char *TEMP_SERVICE_NAME = "temp_service";
@@ -114,6 +116,7 @@ void OBSBasicSettings::LoadServices(bool showAll)
 	QSignalBlocker sb(ui->service);
 
 	ui->service->clear();
+	ui->service->setModel(new QStandardItemModel(0, 1, ui->service));
 
 	while (obs_enum_service_types(idx++, &id)) {
 		uint32_t flags = obs_get_service_flags(id);
@@ -164,6 +167,17 @@ void OBSBasicSettings::LoadServices(bool showAll)
 			QTStr("Basic.AutoConfig.StreamPage.Service.ShowAll"),
 			QVariant(SHOW_ALL));
 	}
+
+	QSortFilterProxyModel *model =
+		new ServiceSortFilterProxyModel(ui->service);
+	model->setSourceModel(ui->service->model());
+	// Combo's current model must be reparented,
+	// Otherwise QComboBox::setModel() will delete it
+	ui->service->model()->setParent(model);
+
+	ui->service->setModel(model);
+
+	ui->service->model()->sort(0);
 }
 
 void OBSBasicSettings::on_service_currentIndexChanged(int)
