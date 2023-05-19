@@ -9,7 +9,7 @@
 #include <dxgi.h>
 #include <util/windows/win-version.h>
 
-#include "jim-nvenc.h"
+#include "obs-nvenc.h"
 #endif
 
 #if !defined(_WIN32) && !defined(__APPLE__) && \
@@ -358,8 +358,8 @@ static bool hevc_vaapi_supported(void)
 #endif
 
 #ifdef _WIN32
-extern void jim_nvenc_load(bool h264, bool hevc, bool av1);
-extern void jim_nvenc_unload(void);
+extern void obs_nvenc_load(bool h264, bool hevc, bool av1);
+extern void obs_nvenc_unload(void);
 extern void amf_load(void);
 extern void amf_unload(void);
 #endif
@@ -409,7 +409,7 @@ bool obs_module_load(void)
 
 #ifdef _WIN32
 		if (get_win_ver_int() > 0x0601) {
-			jim_nvenc_load(h264, hevc, av1);
+			obs_nvenc_load(h264, hevc, av1);
 		} else {
 			// if on Win 7, new nvenc isn't available so there's
 			// no nvenc encoder for the user to select, expose
@@ -477,6 +477,6 @@ void obs_module_unload(void)
 
 #ifdef _WIN32
 	amf_unload();
-	jim_nvenc_unload();
+	obs_nvenc_unload();
 #endif
 }

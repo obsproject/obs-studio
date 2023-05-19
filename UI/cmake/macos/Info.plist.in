@@ -35,7 +35,7 @@
  	<key>NSMicrophoneUsageDescription</key>
  	<string>OBS needs to access the microphone to enable audio input.</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>(c) 2012-${CURRENT_YEAR} Hugh Bailey</string>
+	<string>(c) 2012-${CURRENT_YEAR} Lain Bailey</string>
 	<key>SUFeedURL</key>
 	<string>${SPARKLE_APPCAST_URL}</string>
 	<key>SUPublicEDKey</key>

@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013-2014 by Hugh Bailey <jim@obsproject.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -1811,7 +1811,7 @@ EXPORT obs_scene_t *obs_sceneitem_get_scene(const obs_sceneitem_t *item);
 EXPORT obs_source_t *obs_sceneitem_get_source(const obs_sceneitem_t *item);
 
 /* FIXME: The following functions should be deprecated and replaced with a way
- * to specify saveable private user data. -Jim */
+ * to specify saveable private user data. -Lain */
 EXPORT void obs_sceneitem_select(obs_sceneitem_t *item, bool select);
 EXPORT bool obs_sceneitem_selected(const obs_sceneitem_t *item);
 EXPORT bool obs_sceneitem_locked(const obs_sceneitem_t *item);

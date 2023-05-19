@@ -1,7 +1,7 @@
 /******************************************************************************
-    Copyright (C) 2013-2015 by Hugh Bailey <obs.jim@gmail.com>
-                               Zachary Lund <admin@computerquip.com>
-                               Philippe Groarke <philippe.groarke@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
+                          Zachary Lund <admin@computerquip.com>
+                          Philippe Groarke <philippe.groarke@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -6725,7 +6725,7 @@ void OBSBasic::YoutubeStreamCheck(const std::string &key)
 	YoutubeApiWrappers *apiYouTube(
 		dynamic_cast<YoutubeApiWrappers *>(GetAuth()));
 	if (!apiYouTube) {
-		/* technically we should never get here -Jim */
+		/* technically we should never get here -Lain */
 		QMetaObject::invokeMethod(this, "ForceStopStreaming",
 					  Qt::QueuedConnection);
 		youtubeStreamCheckThread->deleteLater();

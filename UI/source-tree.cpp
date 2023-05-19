@@ -1525,7 +1525,7 @@ void SourceTree::NewGroupEdit(int row)
 				  "theoretically, it should be\nimpossible "
 				  "for this code to be reached. But if this "
 				  "code is reached,\nfeel free to laugh at "
-				  "Jim, because apparently it is, in fact, "
+				  "Lain, because apparently it is, in fact, "
 				  "actually\npossible for this code to be "
 				  "reached. But I mean, again, theoretically\n"
 				  "it should be impossible. So if you see "

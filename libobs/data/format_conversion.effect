@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -596,7 +596,7 @@ float4 PSYUY2_PQ_Reverse(FragTexTex frag_in) : TARGET
 	float2 cbcr = image.Sample(def_sampler, frag_in.uvuv.zw, 0).yw;
 	float leftover = frac(frag_in.uvuv.x);
 	float y = (leftover < 0.5) ? y01.x : y01.y;
-	float3 yuv = float3(y, cbcr);	
+	float3 yuv = float3(y, cbcr);
 	float3 pq = YUV_to_RGB(yuv);
 	float3 hdr2020 = st2084_to_linear_eetf(pq, hdr_lw, hdr_lmax) * maximum_over_sdr_white_nits;
 	float3 rgb = rec2020_to_rec709(hdr2020);

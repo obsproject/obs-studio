@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -156,7 +156,7 @@ static inline void cf_def_free(struct cf_def *cfd)
  *   Still left to implement (TODO):
  *   + #if/#elif
  *   + "defined" preprocessor keyword
- *   + system includes 
+ *   + system includes
  *   + variadic macros
  *   + custom callbacks (for things like pragma)
  *   + option to exclude features such as #import, variadic macros, and other

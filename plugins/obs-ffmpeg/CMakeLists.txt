@@ -95,10 +95,10 @@ if(OS_WINDOWS)
     obs-ffmpeg
     PRIVATE texture-amf.cpp
             texture-amf-opts.hpp
-            jim-nvenc.c
-            jim-nvenc.h
-            jim-nvenc-helpers.c
-            jim-nvenc-ver.h
+            obs-nvenc.c
+            obs-nvenc.h
+            obs-nvenc-helpers.c
+            obs-nvenc-ver.h
             obs-ffmpeg.rc)
 elseif(OS_LINUX OR OS_FREEBSD)
   find_package(Libva REQUIRED)

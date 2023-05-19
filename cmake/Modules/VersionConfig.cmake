@@ -2,7 +2,7 @@ set(OBS_COMPANY_NAME "OBS Project")
 set(OBS_PRODUCT_NAME "OBS Studio")
 set(OBS_WEBSITE "https://www.obsproject.com")
 set(OBS_COMMENTS "Free and open source software for video recording and live streaming")
-set(OBS_LEGAL_COPYRIGHT "(C) Hugh Bailey")
+set(OBS_LEGAL_COPYRIGHT "(C) Lain Bailey")
 
 # Configure default version strings
 set(_OBS_DEFAULT_VERSION "0" "0" "1")

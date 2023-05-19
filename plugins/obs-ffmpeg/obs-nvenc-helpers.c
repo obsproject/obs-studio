@@ -1,4 +1,4 @@
-#include "jim-nvenc.h"
+#include "obs-nvenc.h"
 #include <util/platform.h>
 #include <util/threading.h>
 #include <util/config-file.h>
@@ -11,7 +11,7 @@ static pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
 NV_ENCODE_API_FUNCTION_LIST nv = {NV_ENCODE_API_FUNCTION_LIST_VER};
 NV_CREATE_INSTANCE_FUNC nv_create_instance = NULL;
 
-#define error(format, ...) blog(LOG_ERROR, "[jim-nvenc] " format, ##__VA_ARGS__)
+#define error(format, ...) blog(LOG_ERROR, "[obs-nvenc] " format, ##__VA_ARGS__)
 
 bool nv_fail2(obs_encoder_t *encoder, void *session, const char *format, ...)
 {
@@ -316,7 +316,7 @@ fail:
 	return av1_supported;
 }
 
-void jim_nvenc_load(bool h264, bool hevc, bool av1)
+void obs_nvenc_load(bool h264, bool hevc, bool av1)
 {
 	pthread_mutex_init(&init_mutex, NULL);
 	if (h264)
@@ -331,7 +331,7 @@ void jim_nvenc_load(bool h264, bool hevc, bool av1)
 		blog(LOG_WARNING, "[NVENC] AV1 is not supported");
 }
 
-void jim_nvenc_unload(void)
+void obs_nvenc_unload(void)
 {
 	pthread_mutex_destroy(&init_mutex);
 }

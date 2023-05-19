@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 #include <ffnvcodec/nvEncodeAPI.h>
-#include "../jim-nvenc-ver.h"
+#include "../obs-nvenc-ver.h"
 
 #include <dxgi.h>
 #include <d3d11.h>

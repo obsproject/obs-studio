@@ -23,6 +23,6 @@
 	<key>LSMinimumSystemVersion</key>
 	<string>${CMAKE_OSX_DEPLOYMENT_TARGET}</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>(c) 2012-${CURRENT_YEAR} Hugh Bailey</string>
+	<string>(c) 2012-${CURRENT_YEAR} Lain Bailey</string>
 </dict>
 </plist>

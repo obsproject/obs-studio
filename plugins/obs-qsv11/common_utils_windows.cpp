@@ -17,8 +17,8 @@ mfxStatus Initialize(mfxIMPL impl, mfxVersion ver, MFXVideoSession *pSession,
 		     mfxFrameAllocator *pmfxAllocator, mfxHDL *deviceHandle,
 		     bool bCreateSharedHandles, bool dx9hack)
 {
-	bCreateSharedHandles; // (Hugh) Currently unused
-	pmfxAllocator;        // (Hugh) Currently unused
+	bCreateSharedHandles; // (Lain) Currently unused
+	pmfxAllocator;        // (Lain) Currently unused
 
 	mfxStatus sts = MFX_ERR_NONE;
 
@@ -118,7 +118,7 @@ double TimeDiffMsec(mfxTime tfinish, mfxTime tstart)
 	       freq;
 }
 
-/* (Hugh) Functions currently unused */
+/* (Lain) Functions currently unused */
 #if 0
 void ClearYUVSurfaceVMem(mfxMemId memId)
 {

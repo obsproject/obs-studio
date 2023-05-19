@@ -33,6 +33,6 @@
  	<key>NSMicrophoneUsageDescription</key>
  	<string>OBS needs to access the microphone to enable audio input.</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>(c) 2012-${CURRENT_YEAR} Hugh Bailey</string>
+	<string>(c) 2012-${CURRENT_YEAR} Lain Bailey</string>
 </dict>
 </plist>

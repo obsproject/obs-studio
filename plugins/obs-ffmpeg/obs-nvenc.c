@@ -1,4 +1,4 @@
-#include "jim-nvenc.h"
+#include "obs-nvenc.h"
 #include <util/circlebuf.h>
 #include <util/darray.h>
 #include <util/dstr.h>
@@ -41,7 +41,7 @@
 #define EXTRA_BUFFERS 5
 
 #define do_log(level, format, ...)               \
-	blog(level, "[jim-nvenc: '%s'] " format, \
+	blog(level, "[obs-nvenc: '%s'] " format, \
 	     obs_encoder_get_name(enc->encoder), ##__VA_ARGS__)
 
 #define error(format, ...) do_log(LOG_ERROR, format, ##__VA_ARGS__)
@@ -879,7 +879,7 @@ static bool init_encoder_hevc(struct nvenc_data *enc, obs_data_t *settings,
 	if (astrcmpi(profile, "main10") == 0) {
 		config->profileGUID = NV_ENC_HEVC_PROFILE_MAIN10_GUID;
 	} else if (obs_p010_tex_active()) {
-		blog(LOG_WARNING, "[jim-nvenc] Forcing main10 for P010");
+		blog(LOG_WARNING, "[obs-nvenc] Forcing main10 for P010");
 		config->profileGUID = NV_ENC_HEVC_PROFILE_MAIN10_GUID;
 	} else {
 		config->profileGUID = NV_ENC_HEVC_PROFILE_MAIN_GUID;
@@ -1048,14 +1048,14 @@ static bool init_encoder(struct nvenc_data *enc, enum codec_type codec,
 
 	if (bf > bf_max) {
 		blog(LOG_WARNING,
-		     "[jim-nvenc] Max B-frames setting (%d) is more than encoder supports (%d).\n"
+		     "[obs-nvenc] Max B-frames setting (%d) is more than encoder supports (%d).\n"
 		     "Setting B-frames to %d",
 		     bf, bf_max, bf_max);
 		bf = bf_max;
 	}
 
 	if (!init_specific_encoder(enc, settings, bf, false)) {
-		blog(LOG_WARNING, "[jim-nvenc] init_specific_encoder failed, "
+		blog(LOG_WARNING, "[obs-nvenc] init_specific_encoder failed, "
 				  "trying again with compatibility options");
 
 		nv.nvEncDestroyEncoder(enc->session);
@@ -1135,19 +1135,19 @@ static void *nvenc_create_base(enum codec_type codec, obs_data_t *settings,
 	const int gpu = (int)obs_data_get_int(settings, "gpu");
 	if (gpu != 0) {
 		blog(LOG_INFO,
-		     "[jim-nvenc] different GPU selected by user, falling back to ffmpeg");
+		     "[obs-nvenc] different GPU selected by user, falling back to ffmpeg");
 		goto reroute;
 	}
 
 	if (obs_encoder_scaling_enabled(encoder)) {
 		blog(LOG_INFO,
-		     "[jim-nvenc] scaling enabled, falling back to ffmpeg");
+		     "[obs-nvenc] scaling enabled, falling back to ffmpeg");
 		goto reroute;
 	}
 
 	if (!obs_p010_tex_active() && !obs_nv12_tex_active()) {
 		blog(LOG_INFO,
-		     "[jim-nvenc] nv12/p010 not active, falling back to ffmpeg");
+		     "[obs-nvenc] nv12/p010 not active, falling back to ffmpeg");
 		goto reroute;
 	}
 
