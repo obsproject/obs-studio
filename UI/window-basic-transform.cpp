@@ -246,8 +246,10 @@ void OBSBasicTransform::RefreshControls()
 	obs_sceneitem_get_crop(item, &crop);
 
 	obs_source_t *source = obs_sceneitem_get_source(item);
-	float width = float(obs_source_get_width(source));
-	float height = float(obs_source_get_height(source));
+	uint32_t source_cx = obs_source_get_width(source);
+	uint32_t source_cy = obs_source_get_height(source);
+	float width = float(source_cx);
+	float height = float(source_cy);
 
 	int alignIndex = AlignToList(osi.alignment);
 	int boundsAlignIndex = AlignToList(osi.bounds_alignment);
@@ -259,6 +261,10 @@ void OBSBasicTransform::RefreshControls()
 	ui->sizeX->setValue(osi.scale.x * width);
 	ui->sizeY->setValue(osi.scale.y * height);
 	ui->align->setCurrentIndex(alignIndex);
+
+	bool valid_size = source_cx != 0 && source_cy != 0;
+	ui->sizeX->setEnabled(valid_size);
+	ui->sizeY->setEnabled(valid_size);
 
 	ui->boundsType->setCurrentIndex(int(osi.bounds_type));
 	ui->boundsAlign->setCurrentIndex(boundsAlignIndex);
@@ -308,15 +314,23 @@ void OBSBasicTransform::OnControlChanged()
 		return;
 
 	obs_source_t *source = obs_sceneitem_get_source(item);
-	double width = double(obs_source_get_width(source));
-	double height = double(obs_source_get_height(source));
+	uint32_t source_cx = obs_source_get_width(source);
+	uint32_t source_cy = obs_source_get_height(source);
+	double width = double(source_cx);
+	double height = double(source_cy);
 
 	obs_transform_info oti;
+	obs_sceneitem_get_info(item, &oti);
+
+	/* do not scale a source if it has 0 width/height */
+	if (source_cx != 0 && source_cy != 0) {
+		oti.scale.x = float(ui->sizeX->value() / width);
+		oti.scale.y = float(ui->sizeY->value() / height);
+	}
+
 	oti.pos.x = float(ui->positionX->value());
 	oti.pos.y = float(ui->positionY->value());
 	oti.rot = float(ui->rotation->value());
-	oti.scale.x = float(ui->sizeX->value() / width);
-	oti.scale.y = float(ui->sizeY->value() / height);
 	oti.alignment = listToAlign[ui->align->currentIndex()];
 
 	oti.bounds_type = (obs_bounds_type)ui->boundsType->currentIndex();
