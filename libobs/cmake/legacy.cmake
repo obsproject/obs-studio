@@ -4,6 +4,15 @@ endif()
 
 project(libobs)
 
+# cmake-format: off
+add_library(libobs-version STATIC EXCLUDE_FROM_ALL)
+add_library(OBS::libobs-version ALIAS libobs-version)
+# cmake-format: on
+configure_file(obsversion.c.in obsversion.c @ONLY)
+target_sources(libobs-version PRIVATE obsversion.c obsversion.h)
+target_include_directories(libobs-version PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+set_property(TARGET libobs-version PROPERTY FOLDER core)
+
 find_package(Threads REQUIRED)
 find_package(
   FFmpeg REQUIRED
@@ -249,6 +258,7 @@ target_link_libraries(
           Jansson::Jansson
           OBS::caption
           OBS::uthash
+          OBS::libobs-version
           ZLIB::ZLIB
   PUBLIC Threads::Threads)
 
@@ -304,7 +314,8 @@ if(OS_WINDOWS)
             audio-monitoring/win32/wasapi-monitoring-available.c)
 
   target_compile_definitions(libobs PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_WARNINGS)
-
+  set_source_files_properties(obs-win-crash-handler.c PROPERTIES COMPILE_DEFINITIONS
+                                                                 OBS_VERSION="${OBS_VERSION_CANONICAL}")
   target_link_libraries(libobs PRIVATE dxgi Avrt Dwmapi winmm Rpcrt4)
 
   if(MSVC)

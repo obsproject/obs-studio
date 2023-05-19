@@ -136,7 +136,7 @@ bool ffmpeg_hls_mux_start(void *data)
 	dstr_copy(&stream->muxer_settings,
 		  "method=PUT http_persistent=1 ignore_io_errors=1 ");
 	dstr_catf(&stream->muxer_settings, "http_user_agent=libobs/%s",
-		  OBS_VERSION);
+		  obs_get_version_string());
 
 	vencoder = obs_output_get_video_encoder(stream->output);
 	settings = obs_encoder_get_settings(vencoder);

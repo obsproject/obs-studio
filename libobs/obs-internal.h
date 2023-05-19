@@ -38,6 +38,7 @@
 
 #include "obs.h"
 
+#include <obsversion.h>
 #include <caption/caption.h>
 
 /* Custom helpers for the UUID hash table */

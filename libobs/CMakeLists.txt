@@ -2,6 +2,14 @@ cmake_minimum_required(VERSION 3.16...3.25)
 
 legacy_check()
 
+# cmake-format: off
+add_library(libobs-version STATIC EXCLUDE_FROM_ALL)
+add_library(OBS::libobs-version ALIAS libobs-version)
+# cmake-format: on
+configure_file(obsversion.c.in obsversion.c @ONLY)
+target_sources(libobs-version PRIVATE obsversion.c obsversion.h)
+set_property(TARGET libobs-version PROPERTY FOLDER core)
+
 add_library(libobs SHARED)
 add_library(OBS::libobs ALIAS libobs)
 
@@ -226,6 +234,7 @@ target_link_libraries(
   libobs
   PRIVATE OBS::caption
           OBS::uthash
+          OBS::libobs-version
           FFmpeg::avcodec
           FFmpeg::avformat
           FFmpeg::avutil

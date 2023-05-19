@@ -37,6 +37,7 @@ add_library(OBS::update-helpers ALIAS obs-update-helpers)
 
 target_sources(obs-update-helpers INTERFACE win-update/win-update-helpers.cpp win-update/win-update-helpers.hpp)
 target_include_directories(obs-update-helpers INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/win-update")
+set_source_files_properties(update/win-update.cpp PROPERTIES COMPILE_DEFINITIONS OBS_COMMIT="${OBS_COMMIT}")
 
 add_subdirectory(win-update/updater)
 
