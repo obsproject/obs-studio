@@ -329,7 +329,7 @@ bool BasicOutputHandler::StartVirtualCam()
 		}
 
 		QMessageBox::critical(main,
-				      QTStr("Output.StartVirtualCameraFailed"),
+				      QTStr("Output.StartVirtualCamFailed"),
 				      errorReason);
 
 		DestroyVirtualCamView();
