@@ -40,6 +40,8 @@ target_sources(
           util/windows/window-helpers.h)
 
 target_compile_options(libobs PRIVATE $<$<COMPILE_LANGUAGE:C,CXX>:/EHc->)
+set_source_files_properties(obs-win-crash-handler.c PROPERTIES COMPILE_DEFINITIONS
+                                                               OBS_VERSION="${OBS_VERSION_CANONICAL}")
 
 target_link_libraries(
   libobs

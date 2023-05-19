@@ -370,6 +370,7 @@ if(OS_WINDOWS)
   target_compile_definitions(obs PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_WARNINGS
                                          PSAPI_VERSION=2)
 
+  set_source_files_properties(update/win-update.cpp PROPERTIES COMPILE_DEFINITIONS OBS_COMMIT="${OBS_COMMIT}")
   if(MSVC)
     target_link_options(obs PRIVATE "LINKER:/IGNORE:4098" "LINKER:/IGNORE:4099")
     target_link_libraries(obs PRIVATE OBS::w32-pthreads)
