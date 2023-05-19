@@ -2732,7 +2732,9 @@ void obs_sceneitem_set_info(obs_sceneitem_t *item,
 	if (item && info) {
 		item->pos = info->pos;
 		item->rot = info->rot;
-		item->scale = info->scale;
+		if (isfinite(info->scale.x) && isfinite(info->scale.y)) {
+			item->scale = info->scale;
+		}
 		item->align = info->alignment;
 		item->bounds_type = info->bounds_type;
 		item->bounds_align = info->bounds_alignment;
