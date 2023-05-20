@@ -644,6 +644,22 @@ QStatusBar::item {
     border: none;
 }
 
+/* Qt enforces a padding inside its status bar, so we
+ * oversize it and use margin to crunch it back down
+ */
+OBSBasicStatusBar {
+    margin-top: 4px;
+    border-top: 1px solid palette(dark);
+    background: palette(window);
+}
+
+StatusBarWidget > QFrame {
+    margin-top: 2px;
+    border: 0px solid palette(dark);
+    border-left-width: 1px;
+    padding: 0px 12px 4px;
+}
+
 /* Table View */
 
 QTableView {

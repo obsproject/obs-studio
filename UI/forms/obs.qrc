@@ -64,6 +64,12 @@
     <file>images/expand.svg</file>
     <file>images/collapse.svg</file>
     <file>images/entry-clear.svg</file>
+    <file>images/network-excellent.svg</file>
+    <file>images/network-good.svg</file>
+    <file>images/network-mediocre.svg</file>
+    <file>images/network-bad.svg</file>
+    <file>images/network-disconnected.svg</file>
+    <file>images/network-inactive.svg</file>
   </qresource>
   <qresource prefix="/settings">
     <file>images/settings/output.svg</file>
