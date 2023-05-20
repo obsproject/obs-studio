@@ -228,7 +228,7 @@ static inline void add_strings(obs_property_t *list, const char *const *strings)
 #define TEXT_CONVERGENCE obs_module_text("Convergence")
 #define TEXT_ICQ_QUALITY obs_module_text("ICQQuality")
 #define TEXT_KEYINT_SEC obs_module_text("KeyframeIntervalSec")
-#define TEXT_BFRAMES obs_module_text("B Frames")
+#define TEXT_BFRAMES obs_module_text("BFrames")
 #define TEXT_PERCEPTUAL_ENHANCEMENTS \
 	obs_module_text("SubjectiveVideoEnhancements")
 
