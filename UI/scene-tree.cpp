@@ -1,6 +1,4 @@
-#include "obs.hpp"
 #include "scene-tree.hpp"
-#include "obs-app.hpp"
 
 #include <QSizePolicy>
 #include <QScrollBar>
@@ -18,7 +16,6 @@ SceneTree::SceneTree(QWidget *parent_) : QListWidget(parent_)
 
 void SceneTree::SetGridMode(bool grid)
 {
-	config_set_bool(App()->GlobalConfig(), "BasicWindow", "gridMode", grid);
 	parent()->setProperty("gridMode", grid);
 	gridMode = grid;
 

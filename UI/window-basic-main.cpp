@@ -5493,6 +5493,9 @@ void OBSBasic::GridActionClicked()
 		ui->actionSceneGridMode->setChecked(true);
 	else
 		ui->actionSceneListMode->setChecked(true);
+
+	config_set_bool(App()->GlobalConfig(), "BasicWindow", "gridMode",
+			gridMode);
 }
 
 void OBSBasic::on_actionAddScene_triggered()
