@@ -1,0 +1,20 @@
+{
+    "name": "libdatachannel",
+    "buildsystem": "cmake-ninja",
+    "config-opts": [
+        "-DNO_EXAMPLES=ON",
+        "-DNO_TESTS=ON",
+        "-DNO_WEBSOCKET=ON",
+        "-DUSE_NICE=ON",
+        "-DPREFER_SYSTEM_LIB=ON"
+    ],
+    "sources": [
+        {
+            "type": "git",
+            "url": "https://github.com/paullouisageneau/libdatachannel.git",
+            "disable-submodules": true,
+            "tag": "v0.19.0-alpha.1",
+            "commit": "f66f2813c11acaea3b20d9a5f115823777426e63"
+        }
+    ]
+}
