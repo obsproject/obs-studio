@@ -3264,7 +3264,8 @@ void OBSApp::ProcessSigInt(void)
 	recv(sigintFd[1], &tmp, sizeof(tmp), 0);
 
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(GetMainWindow());
-	main->close();
+	if (main)
+		main->close();
 #endif
 }
 
