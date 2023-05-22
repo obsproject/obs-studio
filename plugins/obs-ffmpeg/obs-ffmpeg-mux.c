@@ -962,6 +962,7 @@ static void *replay_buffer_create(obs_data_t *settings, obs_output_t *output)
 
 	signal_handler_t *sh = obs_output_get_signal_handler(output);
 	signal_handler_add(sh, "void saved()");
+	signal_handler_add(sh, "void saving(ptr output)");
 
 	return stream;
 }
@@ -1152,6 +1153,12 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 	int64_t video_pts_offset = 0;
 	int64_t audio_offsets[MAX_AUDIO_MIXES] = {0};
 	int64_t audio_dts_offsets[MAX_AUDIO_MIXES] = {0};
+
+	calldata_t cd = {0};
+	calldata_set_ptr(&cd, "output", stream->output);
+	signal_handler_t *sh = obs_output_get_signal_handler(stream->output);
+	signal_handler_signal(sh, "saving", &cd);
+	calldata_free(&cd);
 
 	for (size_t i = 0; i < num_packets; i++) {
 		struct encoder_packet *pkt;
