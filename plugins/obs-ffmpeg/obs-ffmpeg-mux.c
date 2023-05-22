@@ -913,30 +913,20 @@ static const char *replay_buffer_getname(void *type)
 	return obs_module_text("ReplayBuffer");
 }
 
-static void replay_buffer_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey, bool pressed)
+static void save_replay_proc(void *data, calldata_t *cd)
 {
-	UNUSED_PARAMETER(id);
-	UNUSED_PARAMETER(hotkey);
-
-	if (!pressed)
-		return;
 
 	struct ffmpeg_muxer *stream = data;
 
 	if (os_atomic_load_bool(&stream->active)) {
 		obs_encoder_t *vencoder = obs_output_get_video_encoder(stream->output);
 		if (obs_encoder_paused(vencoder)) {
-			info("Could not save buffer because encoders paused");
+			info("Could not save buffer because the encoder is paused");
 			return;
 		}
 
 		stream->save_ts = os_gettime_ns() / 1000LL;
 	}
-}
-
-static void save_replay_proc(void *data, calldata_t *cd)
-{
-	replay_buffer_hotkey(data, 0, NULL, true);
 	UNUSED_PARAMETER(cd);
 }
 
@@ -953,9 +943,6 @@ static void *replay_buffer_create(obs_data_t *settings, obs_output_t *output)
 	struct ffmpeg_muxer *stream = bzalloc(sizeof(*stream));
 	stream->output = output;
 
-	stream->hotkey = obs_hotkey_register_output(output, "ReplayBuffer.Save", obs_module_text("ReplayBuffer.Save"),
-						    replay_buffer_hotkey, stream);
-
 	proc_handler_t *ph = obs_output_get_proc_handler(output);
 	proc_handler_add(ph, "void save()", save_replay_proc, stream);
 	proc_handler_add(ph, "void get_last_replay(out string path)", get_last_replay, stream);
@@ -969,9 +956,6 @@ static void *replay_buffer_create(obs_data_t *settings, obs_output_t *output)
 
 static void replay_buffer_destroy(void *data)
 {
-	struct ffmpeg_muxer *stream = data;
-	if (stream->hotkey)
-		obs_hotkey_unregister(stream->hotkey);
 	ffmpeg_mux_destroy(data);
 }
 
