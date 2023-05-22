@@ -140,11 +140,10 @@ void OBSBasicSettings::LoadStream1Settings()
 			QTStr("Basic.Settings.Stream.Custom.Password.ToolTip"));
 	} else {
 		int idx = ui->service->findText(service);
-		if (idx == -1) {
-			if (service && *service)
-				ui->service->insertItem(1, service);
-			idx = 1;
-		}
+		/* 29.1 crash workaround: Fall back to "Custom" if service not found. */
+		if (idx == -1)
+			idx = 0;
+
 		ui->service->setCurrentIndex(idx);
 		lastServiceIdx = idx;
 
