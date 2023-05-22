@@ -293,9 +293,7 @@ void TwitchAuth::LoadUI()
 			main->Config(), service(), "DockState");
 		QByteArray dockState =
 			QByteArray::fromBase64(QByteArray(dockStateStr));
-
-		if (main->isVisible() || !main->isMaximized())
-			main->restoreState(dockState);
+		main->restoreState(dockState);
 	}
 
 	TryLoadSecondaryUIPanes();
@@ -421,9 +419,7 @@ void TwitchAuth::LoadSecondaryUIPanes()
 			main->Config(), service(), "DockState");
 		QByteArray dockState =
 			QByteArray::fromBase64(QByteArray(dockStateStr));
-
-		if (main->isVisible() || !main->isMaximized())
-			main->restoreState(dockState);
+		main->restoreState(dockState);
 	}
 }
 
