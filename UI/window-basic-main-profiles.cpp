@@ -321,6 +321,17 @@ bool OBSBasic::CreateProfile(const std::string &newName, bool create_new,
 		DuplicateCurrentCookieProfile(config);
 	}
 
+	if (!rename) {
+		/* Save dock state before saving */
+		config_set_string(basicConfig, "BasicWindow", "DockState",
+				  saveState().toBase64().constData());
+
+		/* Save dock state on the new profile if duplication */
+		if (!create_new)
+			config_set_string(config, "BasicWindow", "DockState",
+					  saveState().toBase64().constData());
+	}
+
 	config_set_string(config, "General", "Name", newName.c_str());
 	basicConfig.SaveSafe("tmp");
 	config.SaveSafe("tmp");
@@ -351,9 +362,24 @@ bool OBSBasic::CreateProfile(const std::string &newName, bool create_new,
 		wizard.exec();
 	}
 
-	if (api && !rename) {
+	if (rename)
+		return true;
+
+	if (api) {
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
+	}
+
+	if (create_new) {
+		on_resetDocks_triggered(true);
+	} else {
+		/* Restore dock state post duplication
+		 * Plugins might have removed and added back docks */
+		const char *dockStateStr = config_get_string(
+			basicConfig, "BasicWindow", "DockState");
+
+		QByteArray dockState = QByteArray::fromBase64(dockStateStr);
+		restoreState(dockState);
 	}
 	return true;
 }
@@ -638,6 +664,21 @@ void OBSBasic::on_actionRemoveProfile_triggered(bool skipConfirmation)
 			close();
 		}
 	}
+
+	/* Recover DockState from global config if profile has none */
+	const char *dockStateStr = config_get_string(
+		config_has_user_value(basicConfig, "BasicWindow", "DockState")
+			? basicConfig
+			: App()->GlobalConfig(),
+		"BasicWindow", "DockState");
+
+	if (!dockStateStr)
+		on_resetDocks_triggered(true);
+	else {
+		QByteArray dockState = QByteArray::fromBase64(dockStateStr);
+		if (!restoreState(dockState))
+			on_resetDocks_triggered(true);
+	}
 }
 
 void OBSBasic::on_actionImportProfile_triggered()
@@ -755,6 +796,11 @@ void OBSBasic::ChangeProfile()
 		return;
 	}
 
+	/* Save dock state before the changing event is emitted */
+	config_set_string(basicConfig, "BasicWindow", "DockState",
+			  saveState().toBase64().constData());
+	basicConfig.SaveSafe("tmp");
+
 	size_t path_len = path.size();
 	path += "/basic.ini";
 
@@ -812,6 +858,21 @@ void OBSBasic::ChangeProfile()
 			restart = true;
 			close();
 		}
+	}
+
+	/* Recover DockState from global config if profile has none */
+	const char *dockStateStr = config_get_string(
+		config_has_user_value(basicConfig, "BasicWindow", "DockState")
+			? basicConfig
+			: App()->GlobalConfig(),
+		"BasicWindow", "DockState");
+
+	if (!dockStateStr)
+		on_resetDocks_triggered(true);
+	else {
+		QByteArray dockState = QByteArray::fromBase64(dockStateStr);
+		if (!restoreState(dockState))
+			on_resetDocks_triggered(true);
 	}
 }
 

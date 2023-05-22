@@ -168,10 +168,6 @@ void TwitchAuth::SaveInternal()
 	config_set_string(main->Config(), service(), "Name", name.c_str());
 	config_set_string(main->Config(), service(), "UUID", uuid.c_str());
 
-	if (uiLoaded) {
-		config_set_string(main->Config(), service(), "DockState",
-				  main->saveState().toBase64().constData());
-	}
 	OAuthStreamKey::SaveInternal();
 }
 
@@ -288,12 +284,13 @@ void TwitchAuth::LoadUI()
 
 	if (firstLoad) {
 		chat->setVisible(true);
-	} else {
+	} else if (!config_has_user_value(main->Config(), "BasicWindow",
+					  "DockState")) {
 		const char *dockStateStr = config_get_string(
 			main->Config(), service(), "DockState");
-		QByteArray dockState =
-			QByteArray::fromBase64(QByteArray(dockStateStr));
-		main->restoreState(dockState);
+
+		config_set_string(main->Config(), "BasicWindow", "DockState",
+				  dockStateStr);
 	}
 
 	TryLoadSecondaryUIPanes();
@@ -416,7 +413,7 @@ void TwitchAuth::LoadSecondaryUIPanes()
 		}
 
 		const char *dockStateStr = config_get_string(
-			main->Config(), service(), "DockState");
+			main->Config(), "BasicWindow", "DockState");
 		QByteArray dockState =
 			QByteArray::fromBase64(QByteArray(dockStateStr));
 		main->restoreState(dockState);

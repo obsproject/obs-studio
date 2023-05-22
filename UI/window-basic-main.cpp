@@ -2137,46 +2137,6 @@ void OBSBasic::OBSInit()
 	}
 #endif
 
-	const char *dockStateStr = config_get_string(
-		App()->GlobalConfig(), "BasicWindow", "DockState");
-
-	if (!dockStateStr) {
-		on_resetDocks_triggered(true);
-	} else {
-		QByteArray dockState =
-			QByteArray::fromBase64(QByteArray(dockStateStr));
-		if (!restoreState(dockState))
-			on_resetDocks_triggered(true);
-	}
-
-	bool pre23Defaults = config_get_bool(App()->GlobalConfig(), "General",
-					     "Pre23Defaults");
-	if (pre23Defaults) {
-		bool resetDockLock23 = config_get_bool(
-			App()->GlobalConfig(), "General", "ResetDockLock23");
-		if (!resetDockLock23) {
-			config_set_bool(App()->GlobalConfig(), "General",
-					"ResetDockLock23", true);
-			config_remove_value(App()->GlobalConfig(),
-					    "BasicWindow", "DocksLocked");
-			config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
-		}
-	}
-
-	bool docksLocked = config_get_bool(App()->GlobalConfig(), "BasicWindow",
-					   "DocksLocked");
-	on_lockDocks_toggled(docksLocked);
-	ui->lockDocks->blockSignals(true);
-	ui->lockDocks->setChecked(docksLocked);
-	ui->lockDocks->blockSignals(false);
-
-	bool sideDocks = config_get_bool(App()->GlobalConfig(), "BasicWindow",
-					 "SideDocks");
-	on_sideDocks_toggled(sideDocks);
-	ui->sideDocks->blockSignals(true);
-	ui->sideDocks->setChecked(sideDocks);
-	ui->sideDocks->blockSignals(false);
-
 	SystemTray(true);
 
 	TaskbarOverlayInit();
@@ -2323,6 +2283,50 @@ void OBSBasic::OnFirstLoad()
 
 	if (showLogViewerOnStartup)
 		on_actionViewCurrentLog_triggered();
+
+	/* Recover DockState from global config if profile has none */
+	const char *dockStateStr = config_get_string(
+		config_has_user_value(basicConfig, "BasicWindow", "DockState")
+			? basicConfig
+			: App()->GlobalConfig(),
+		"BasicWindow", "DockState");
+
+	if (!dockStateStr) {
+		on_resetDocks_triggered(true);
+	} else {
+		QByteArray dockState =
+			QByteArray::fromBase64(QByteArray(dockStateStr));
+		if (!restoreState(dockState))
+			on_resetDocks_triggered(true);
+	}
+
+	bool pre23Defaults = config_get_bool(App()->GlobalConfig(), "General",
+					     "Pre23Defaults");
+	if (pre23Defaults) {
+		bool resetDockLock23 = config_get_bool(
+			App()->GlobalConfig(), "General", "ResetDockLock23");
+		if (!resetDockLock23) {
+			config_set_bool(App()->GlobalConfig(), "General",
+					"ResetDockLock23", true);
+			config_remove_value(App()->GlobalConfig(),
+					    "BasicWindow", "DocksLocked");
+			config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+		}
+	}
+
+	bool docksLocked = config_get_bool(App()->GlobalConfig(), "BasicWindow",
+					   "DocksLocked");
+	on_lockDocks_toggled(docksLocked);
+	ui->lockDocks->blockSignals(true);
+	ui->lockDocks->setChecked(docksLocked);
+	ui->lockDocks->blockSignals(false);
+
+	bool sideDocks = config_get_bool(App()->GlobalConfig(), "BasicWindow",
+					 "SideDocks");
+	on_sideDocks_toggled(sideDocks);
+	ui->sideDocks->blockSignals(true);
+	ui->sideDocks->setChecked(sideDocks);
+	ui->sideDocks->blockSignals(false);
 }
 
 #if defined(OBS_RELEASE_CANDIDATE) && OBS_RELEASE_CANDIDATE > 0
@@ -5068,8 +5072,9 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	if (program)
 		program->DestroyDisplay();
 
-	config_set_string(App()->GlobalConfig(), "BasicWindow", "DockState",
+	config_set_string(basicConfig, "BasicWindow", "DockState",
 			  saveState().toBase64().constData());
+	config_save_safe(basicConfig, "tmp", nullptr);
 
 #ifdef BROWSER_AVAILABLE
 	if (cef)

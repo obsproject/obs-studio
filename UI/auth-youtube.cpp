@@ -95,8 +95,6 @@ bool YoutubeAuth::RetryLogin()
 void YoutubeAuth::SaveInternal()
 {
 	OBSBasic *main = OBSBasic::Get();
-	config_set_string(main->Config(), service(), "DockState",
-			  main->saveState().toBase64().constData());
 
 	const char *section_name = section.c_str();
 	config_set_string(main->Config(), section_name, "RefreshToken",
@@ -174,12 +172,13 @@ void YoutubeAuth::LoadUI()
 
 	if (firstLoad) {
 		chat->setVisible(true);
-	} else {
+	} else if (!config_has_user_value(main->Config(), "BasicWindow",
+					  "DockState")) {
 		const char *dockStateStr = config_get_string(
 			main->Config(), service(), "DockState");
-		QByteArray dockState =
-			QByteArray::fromBase64(QByteArray(dockStateStr));
-		main->restoreState(dockState);
+
+		config_set_string(main->Config(), "BasicWindow", "DockState",
+				  dockStateStr);
 	}
 #endif
 
