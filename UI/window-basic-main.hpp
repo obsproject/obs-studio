@@ -544,6 +544,7 @@ private:
 	QList<QPoint> visDlgPositions;
 
 	QByteArray startingDockLayout;
+	QByteArray dockStateToRestore;
 
 	obs_data_array_t *SaveProjectors();
 	void LoadSavedProjectors(obs_data_array_t *savedProjectors);
@@ -1019,6 +1020,8 @@ public:
 	void SetDisplayAffinity(QWindow *window);
 
 	QColor GetSelectionColor() const;
+
+	void RestoreState(const QByteArray &state);
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;

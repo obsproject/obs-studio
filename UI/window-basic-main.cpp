@@ -2296,8 +2296,7 @@ void OBSBasic::OnFirstLoad()
 	} else {
 		QByteArray dockState =
 			QByteArray::fromBase64(QByteArray(dockStateStr));
-		if (!restoreState(dockState))
-			on_resetDocks_triggered(true);
+		RestoreState(dockState);
 	}
 
 	bool pre23Defaults = config_get_bool(App()->GlobalConfig(), "General",
@@ -5146,6 +5145,20 @@ void OBSBasic::changeEvent(QEvent *event)
 			if (previewEnabled)
 				EnablePreviewDisplay(true);
 		}
+
+		if (!dockStateToRestore.isEmpty() &&
+		    (isVisible() || !isMaximized())) {
+			if (!restoreState(dockStateToRestore))
+				on_resetDocks_triggered(true);
+
+			dockStateToRestore.clear();
+		}
+	} else if ((event->type() == QEvent::Show) &&
+		   !dockStateToRestore.isEmpty()) {
+		if (!restoreState(dockStateToRestore))
+			on_resetDocks_triggered(true);
+
+		dockStateToRestore.clear();
 	}
 }
 
@@ -10929,4 +10942,14 @@ void OBSBasic::ThemeChanged()
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_THEME_CHANGED);
+}
+
+void OBSBasic::RestoreState(const QByteArray &state)
+{
+	if (isVisible() || !isMaximized()) {
+		if (!restoreState(state))
+			on_resetDocks_triggered(true);
+	} else {
+		dockStateToRestore = state;
+	}
 }

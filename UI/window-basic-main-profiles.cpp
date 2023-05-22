@@ -379,7 +379,7 @@ bool OBSBasic::CreateProfile(const std::string &newName, bool create_new,
 			basicConfig, "BasicWindow", "DockState");
 
 		QByteArray dockState = QByteArray::fromBase64(dockStateStr);
-		restoreState(dockState);
+		RestoreState(dockState);
 	}
 	return true;
 }
@@ -676,8 +676,7 @@ void OBSBasic::on_actionRemoveProfile_triggered(bool skipConfirmation)
 		on_resetDocks_triggered(true);
 	else {
 		QByteArray dockState = QByteArray::fromBase64(dockStateStr);
-		if (!restoreState(dockState))
-			on_resetDocks_triggered(true);
+		RestoreState(dockState);
 	}
 }
 
@@ -871,8 +870,7 @@ void OBSBasic::ChangeProfile()
 		on_resetDocks_triggered(true);
 	else {
 		QByteArray dockState = QByteArray::fromBase64(dockStateStr);
-		if (!restoreState(dockState))
-			on_resetDocks_triggered(true);
+		RestoreState(dockState);
 	}
 }
 
