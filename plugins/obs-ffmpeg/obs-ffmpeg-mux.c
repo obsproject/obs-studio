@@ -963,6 +963,7 @@ static void *replay_buffer_create(obs_data_t *settings, obs_output_t *output)
 
 	signal_handler_t *sh = obs_output_get_signal_handler(output);
 	signal_handler_add(sh, "void saved()");
+	signal_handler_add(sh, "void saving(ptr output)");
 
 	return stream;
 }
@@ -1175,6 +1176,12 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 		insert_packet(&stream->mux_packets, pkt, video_offset, audio_offsets, video_pts_offset,
 			      audio_dts_offsets);
 	}
+
+	calldata_t cd = {0};
+	calldata_set_ptr(&cd, "output", stream->output);
+	signal_handler_t *sh = obs_output_get_signal_handler(stream->output);
+	signal_handler_signal(sh, "saving", &cd);
+	calldata_free(&cd);
 
 	generate_filename(stream, &stream->path, true);
 
