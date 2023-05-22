@@ -206,6 +206,30 @@ void OBSBasic::CreateHotkeys()
 						  this, this);
 	LoadHotkeyPair(replayBufHotkeys, "OBSBasic.StartReplayBuffer", "OBSBasic.StopReplayBuffer");
 
+	auto replayBufferCallback = [](void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed) {
+		OBSBasic *basic = static_cast<OBSBasic *>(data);
+		if (basic->outputHandler->ReplayBufferActive() && pressed) {
+			blog(LOG_INFO, "Saving replay buffer due to hotkey");
+			basic->ReplayBufferSave();
+		}
+	};
+
+	replayBufSaveHotkey = obs_hotkey_register_frontend("OBSBasic.SaveReplayBuffer", Str("Basic.Main.SaveReplay"),
+							   replayBufferCallback, this);
+
+	const char *exists = config_get_string(activeConfiguration, "Hotkeys", "OBSBasic.SaveReplayBuffer");
+	if (exists) {
+		LoadHotkey(replayBufSaveHotkey, "OBSBasic.SaveReplayBuffer");
+	} else {
+		OBSDataArrayAutoRelease array = obs_data_get_array(LoadHotkeyData("ReplayBuffer"), "ReplayBuffer.Save");
+		obs_hotkey_load(replayBufSaveHotkey, array);
+
+		OBSDataAutoRelease newData = obs_data_create();
+		obs_data_set_array(newData, "bindings", array);
+		config_set_string(activeConfiguration, "Hotkeys", "OBSBasic.SaveReplayBuffer",
+				  obs_data_get_json(newData));
+	}
+
 	if (vcamEnabled) {
 		vcamHotkeys = obs_hotkey_pair_register_frontend(
 			"OBSBasic.StartVirtualCam", Str("Basic.Main.StartVirtualCam"), "OBSBasic.StopVirtualCam",
