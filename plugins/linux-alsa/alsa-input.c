@@ -271,7 +271,8 @@ obs_properties_t *alsa_get_properties(void *unused)
 					  OBS_COMBO_TYPE_LIST,
 					  OBS_COMBO_FORMAT_STRING);
 
-	obs_property_list_add_string(devices, "Default", "default");
+	obs_property_list_add_string(devices, obs_module_text("Default"),
+				     "default");
 
 	obs_properties_add_text(props, "custom_pcm", obs_module_text("PCM"),
 				OBS_TEXT_DEFAULT);
@@ -327,7 +328,8 @@ obs_properties_t *alsa_get_properties(void *unused)
 
 		++hint;
 	}
-	obs_property_list_add_string(devices, "Custom", "__custom__");
+	obs_property_list_add_string(devices, obs_module_text("Custom"),
+				     "__custom__");
 
 	snd_device_name_free_hint(hints);
 
