@@ -138,7 +138,8 @@ void OBSPropertiesView::RefreshProperties()
 	layout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
 	widget->setLayout(layout);
 
-	QSizePolicy mainPolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+	QSizePolicy mainPolicy(QSizePolicy::MinimumExpanding,
+			       QSizePolicy::MinimumExpanding);
 
 	layout->setLabelAlignment(Qt::AlignRight);
 
