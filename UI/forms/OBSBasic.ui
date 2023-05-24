@@ -1989,7 +1989,7 @@
   </action>
   <action name="actionShowMacPermissions">
    <property name="text">
-    <string>MacPermissions.Title</string>
+    <string>MacPermissions.MenuAction</string>
    </property>
   </action>
   <action name="actionRepair">
