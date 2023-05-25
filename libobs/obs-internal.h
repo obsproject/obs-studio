@@ -526,6 +526,7 @@ extern struct obs_core_video_mix *get_mix_for_video(video_t *video);
 
 extern void
 start_raw_video(video_t *video, const struct video_scale_info *conversion,
+		uint32_t frame_rate_divisor,
 		void (*callback)(void *param, struct video_data *frame),
 		void *param);
 extern void stop_raw_video(video_t *video,
@@ -1227,6 +1228,17 @@ struct obs_encoder {
 
 	uint32_t timebase_num;
 	uint32_t timebase_den;
+
+	// allow outputting at fractions of main composition FPS,
+	// e.g. 60 FPS with frame_rate_divisor = 1 turns into 30 FPS
+	//
+	// a separate counter is used in favor of using remainder calculations
+	// to allow "inputs" started at the same time to start on the same frame
+	// whereas with remainder calculation the frame alignment would depend on
+	// the total frame count at the time the encoder was started
+	uint32_t frame_rate_divisor;
+	uint32_t frame_rate_divisor_counter; // only used for GPU encoders
+	video_t *fps_override;
 
 	int64_t cur_pts;
 
