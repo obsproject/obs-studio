@@ -199,7 +199,8 @@ static void add_connection(struct obs_encoder *encoder)
 		if (gpu_encode_available(encoder)) {
 			start_gpu_encode(encoder);
 		} else {
-			start_raw_video(encoder->media, &info, receive_video,
+			start_raw_video(encoder->media, &info,
+					encoder->fps_skip_frames, receive_video,
 					encoder);
 		}
 	}
@@ -269,6 +270,8 @@ static void obs_encoder_actually_destroy(obs_encoder_t *encoder)
 			bfree((void *)encoder->info.id);
 		if (encoder->last_error_message)
 			bfree(encoder->last_error_message);
+		if (encoder->fps_override)
+			video_output_free_skip_frames(encoder->fps_override);
 		bfree(encoder);
 	}
 }
@@ -523,6 +526,7 @@ void obs_encoder_shutdown(obs_encoder_t *encoder)
 		encoder->first_received = false;
 		encoder->offset_usec = 0;
 		encoder->start_ts = 0;
+		encoder->fps_skipped_frames = 0;
 	}
 	obs_encoder_set_last_error(encoder, NULL);
 	pthread_mutex_unlock(&encoder->init_mutex);
@@ -710,6 +714,36 @@ void obs_encoder_set_scaled_size(obs_encoder_t *encoder, uint32_t width,
 	encoder->scaled_height = height;
 }
 
+bool obs_encoder_set_skip_frames(obs_encoder_t *encoder, uint32_t skip_frames)
+{
+	if (!obs_encoder_valid(encoder, "obs_encoder_set_skip_frames"))
+		return false;
+
+	if (encoder->info.type != OBS_ENCODER_VIDEO) {
+		blog(LOG_WARNING,
+		     "obs_encoder_set_skip_frames: "
+		     "encoder '%s' is not a video encoder",
+		     obs_encoder_get_name(encoder));
+		return false;
+	}
+	if (encoder_active(encoder)) {
+		blog(LOG_WARNING,
+		     "encoder '%s': Cannot set skip frames "
+		     "while the encoder is active",
+		     obs_encoder_get_name(encoder));
+		return false;
+	}
+
+	encoder->fps_skip_frames = skip_frames;
+
+	if (encoder->media) {
+		encoder->fps_override = video_output_create_with_skip_frames(
+			encoder->media, encoder->fps_skip_frames);
+	}
+
+	return false;
+}
+
 bool obs_encoder_scaling_enabled(const obs_encoder_t *encoder)
 {
 	if (!obs_encoder_valid(encoder, "obs_encoder_scaling_enabled"))
@@ -754,6 +788,22 @@ uint32_t obs_encoder_get_height(const obs_encoder_t *encoder)
 	return encoder->scaled_height != 0
 		       ? encoder->scaled_height
 		       : video_output_get_height(encoder->media);
+}
+
+uint32_t obs_encoder_get_skip_frames(const obs_encoder_t *encoder)
+{
+	if (!obs_encoder_valid(encoder, "obs_encoder_set_skip_frames"))
+		return 0;
+
+	if (encoder->info.type != OBS_ENCODER_VIDEO) {
+		blog(LOG_WARNING,
+		     "obs_encoder_set_skip_frames: "
+		     "encoder '%s' is not a video encoder",
+		     obs_encoder_get_name(encoder));
+		return 0;
+	}
+
+	return encoder->fps_skip_frames;
 }
 
 uint32_t obs_encoder_get_sample_rate(const obs_encoder_t *encoder)
@@ -816,6 +866,17 @@ void obs_encoder_set_video(obs_encoder_t *encoder, video_t *video)
 		encoder->media = video;
 		encoder->timebase_num = voi->fps_den;
 		encoder->timebase_den = voi->fps_num;
+
+		if (encoder->fps_override) {
+			video_output_free_skip_frames(encoder->fps_override);
+			encoder->fps_override = NULL;
+		}
+
+		if (encoder->fps_skip_frames) {
+			encoder->fps_override =
+				video_output_create_with_skip_frames(
+					video, encoder->fps_skip_frames);
+		}
 	} else {
 		encoder->media = NULL;
 		encoder->timebase_num = 0;
@@ -865,7 +926,7 @@ video_t *obs_encoder_video(const obs_encoder_t *encoder)
 		return NULL;
 	}
 
-	return encoder->media;
+	return encoder->fps_override ? encoder->fps_override : encoder->media;
 }
 
 audio_t *obs_encoder_audio(const obs_encoder_t *encoder)
@@ -1027,7 +1088,8 @@ bool do_encode(struct obs_encoder *encoder, struct encoder_frame *frame)
 				     encoder->context.settings);
 	}
 
-	pkt.timebase_num = encoder->timebase_num;
+	pkt.timebase_num =
+		encoder->timebase_num * (encoder->fps_skip_frames + 1);
 	pkt.timebase_den = encoder->timebase_den;
 	pkt.encoder = encoder;
 
