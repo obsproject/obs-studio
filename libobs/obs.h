@@ -849,6 +849,9 @@ EXPORT void obs_remove_main_rendered_callback(void (*rendered)(void *param),
 EXPORT void obs_add_raw_video_callback(
 	const struct video_scale_info *conversion,
 	void (*callback)(void *param, struct video_data *frame), void *param);
+EXPORT void obs_add_raw_video_callback2(
+	const struct video_scale_info *conversion, uint32_t frame_rate_divisor,
+	void (*callback)(void *param, struct video_data *frame), void *param);
 EXPORT void obs_remove_raw_video_callback(
 	void (*callback)(void *param, struct video_data *frame), void *param);
 
@@ -2420,6 +2423,16 @@ EXPORT void obs_encoder_set_scaled_size(obs_encoder_t *encoder, uint32_t width,
 EXPORT void obs_encoder_set_gpu_scale_type(obs_encoder_t *encoder,
 					   enum obs_scale_type gpu_scale_type);
 
+/**
+ * Set frame rate divisor for a video encoder. This allows recording at
+ * a partial frame rate compared to the base frame rate, e.g. 60 FPS with
+ * divisor = 2 will record at 30 FPS, with divisor = 3 at 20, etc.
+ *
+ * Can only be called on stopped encoders, changing this on the fly is not supported
+ */
+EXPORT bool obs_encoder_set_frame_rate_divisor(obs_encoder_t *encoder,
+					       uint32_t divisor);
+
 /** For video encoders, returns true if pre-encode scaling is enabled */
 EXPORT bool obs_encoder_scaling_enabled(const obs_encoder_t *encoder);
 
@@ -2434,6 +2447,9 @@ EXPORT bool obs_encoder_gpu_scaling_enabled(obs_encoder_t *encoder);
 
 /** For video encoders, returns GPU scaling type */
 EXPORT enum obs_scale_type obs_encoder_get_scale_type(obs_encoder_t *encoder);
+
+/** For video encoders, returns the frame rate divisor (default is 1) */
+EXPORT uint32_t obs_encoder_get_frame_rate_divisor(const obs_encoder_t *encoder);
 
 /** For audio encoders, returns the sample rate of the audio */
 EXPORT uint32_t obs_encoder_get_sample_rate(const obs_encoder_t *encoder);
