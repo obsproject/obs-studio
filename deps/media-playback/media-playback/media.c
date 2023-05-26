@@ -299,7 +299,7 @@ bool mp_media_prepare_frames(mp_media_t *m)
 		 * these pointers to signify they're not valid. (the obsframe
 		 * structure is only used in the media thread, so this isn't a
 		 * threading issue) */
-		memset(&m->obsframe, 0, sizeof(m->obsframe));
+		m->obsframe.data[0] = NULL;
 
 		if (m->has_video && !mp_decode_frame(&m->v))
 			return false;
