@@ -2793,6 +2793,9 @@ OBSBasic::~OBSBasic()
 	if (updateCheckThread && updateCheckThread->isRunning())
 		updateCheckThread->wait();
 
+	if (patronJsonThread && patronJsonThread->isRunning())
+		patronJsonThread->wait();
+
 	delete screenshotData;
 	delete previewProjector;
 	delete studioProgramProjector;
