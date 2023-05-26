@@ -293,6 +293,14 @@ bool mp_media_prepare_frames(mp_media_t *m)
 			}
 		}
 
+		/* kind of a cheap fix, but because a stinger might be
+		 * interrupted and restart playback, the request_preload signal
+		 * might happen when the current frame is invalid, so clear out
+		 * these pointers to signify they're not valid. (the obsframe
+		 * structure is only used in the media thread, so this isn't a
+		 * threading issue) */
+		memset(&m->obsframe, 0, sizeof(m->obsframe));
+
 		if (m->has_video && !mp_decode_frame(&m->v))
 			return false;
 		if (m->has_audio && !mp_decode_frame(&m->a))
@@ -840,8 +848,11 @@ static inline bool mp_media_thread(mp_media_t *m)
 		if (pause)
 			continue;
 
-		if (preload_frame)
+		/* see note in mp_media_prepare_frames() for context on the
+		 * pointer check */
+		if (preload_frame && m->obsframe.data[0]) {
 			m->v_preload_cb(m->opaque, &m->obsframe);
+		}
 
 		/* frames are ready */
 		if (is_active && !timeout) {
