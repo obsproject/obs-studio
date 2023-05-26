@@ -850,7 +850,7 @@ static inline bool mp_media_thread(mp_media_t *m)
 
 		/* see note in mp_media_prepare_frames() for context on the
 		 * pointer check */
-		if (preload_frame && m->obsframe.data[0]) {
+		if (preload_frame && m->obsframe.data[0] && !is_active) {
 			m->v_preload_cb(m->opaque, &m->obsframe);
 		}
 
