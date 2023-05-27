@@ -48,22 +48,25 @@ set_target_properties_obs(
   obs-dal-plugin
   PROPERTIES OUTPUT_NAME obs-mac-virtualcam
              FOLDER plugins
-             PREFIX "")
+             PREFIX ""
+             BUNDLE TRUE BUNDLE_EXTENSION plugin MACOSX_BUNDLE_INFO_PLIST
+                         "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/Info.plist.in"
+             LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../../")
 
+set_property(TARGET obs-dal-plugin PROPERTY OSX_ARCHITECTURES x86_64 arm64)
+
+string(TIMESTAMP CURRENT_YEAR "%Y")
 set_target_properties(
   obs-dal-plugin
-  PROPERTIES BUNDLE ON
-             BUNDLE_EXTENSION plugin
-             OSX_ARCHITECTURES "x86_64;arm64;arm64e"
-             LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../../"
-             MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/Info.plist.in"
-             XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
-             XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER com.obsproject.obs-mac-virtualcam
-             XCODE_ATTRIBUTE_CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION YES
-             XCODE_ATTRIBUTE_GCC_WARN_SHADOW YES)
-
-set_target_properties_obs(
-  obs-dal-plugin
-  PROPERTIES OUTPUT_NAME obs-mac-virtualcam
-             FOLDER plugins
-             PREFIX "")
+  PROPERTIES CLANG_ENABLE_OBJC_ARC YES
+             CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION YES
+             GCC_WARN_SHADOW YES
+             PRODUCT_NAME obs-mac-virtualcam
+             PRODUCT_BUNDLE_IDENTIFIER com.obsproject.obs-mac-virtualcam
+             CURRENT_PROJECT_VERSION ${OBS_BUILD_NUMBER}
+             MARKETING_VERSION ${OBS_VERSION_CANONICAL}
+             GENERATE_INFOPLIST_FILE YES
+             INFOPLIST_KEY_CFBundleDisplayName obs-mac-virtualcam
+             INFOPLIST_KEY_NSHumanReadableCopyright
+             "(c) 2020-${CURRENT_YEAR} John Boiles, Patrick Heyer, Sebastian Beckmann")
+# cmake-format: on
