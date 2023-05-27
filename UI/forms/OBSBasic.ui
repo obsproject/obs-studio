@@ -1683,6 +1683,9 @@
    <property name="shortcutContext">
     <enum>Qt::WidgetWithChildrenShortcut</enum>
    </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
    <property name="themeID" stdset="0">
     <string notr="true">removeIconSmall</string>
    </property>
@@ -1703,6 +1706,9 @@
    </property>
    <property name="shortcutContext">
     <enum>Qt::WidgetWithChildrenShortcut</enum>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
    </property>
    <property name="themeID" stdset="0">
     <string notr="true">removeIconSmall</string>
