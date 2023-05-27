@@ -398,12 +398,12 @@ OBSBasic::OBSBasic(QWidget *parent)
 	connect(diskFullTimer, SIGNAL(timeout()), this,
 		SLOT(CheckDiskSpaceRemaining()));
 
-	renameScene = new QAction(ui->scenesDock);
+	renameScene = new QAction(QTStr("Rename"), ui->scenesDock);
 	renameScene->setShortcutContext(Qt::WidgetWithChildrenShortcut);
 	connect(renameScene, SIGNAL(triggered()), this, SLOT(EditSceneName()));
 	ui->scenesDock->addAction(renameScene);
 
-	renameSource = new QAction(ui->sourcesDock);
+	renameSource = new QAction(QTStr("Rename"), ui->sourcesDock);
 	renameSource->setShortcutContext(Qt::WidgetWithChildrenShortcut);
 	connect(renameSource, SIGNAL(triggered()), this,
 		SLOT(EditSceneItemName()));
@@ -5395,9 +5395,8 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 		popup.addAction(copyFilters);
 		popup.addAction(pasteFilters);
 		popup.addSeparator();
-		popup.addAction(QTStr("Rename"), this, SLOT(EditSceneName()));
-		popup.addAction(QTStr("Remove"), this,
-				SLOT(RemoveSelectedScene()));
+		popup.addAction(renameScene);
+		popup.addAction(ui->actionRemoveScene);
 		popup.addSeparator();
 
 		order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveUp"), this,
@@ -5921,10 +5920,8 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		colorSelect = new ColorSelect(colorMenu);
 		popup.addMenu(AddBackgroundColorMenu(
 			colorMenu, colorWidgetAction, colorSelect, sceneItem));
-		popup.addAction(QTStr("Rename"), this,
-				SLOT(EditSceneItemName()));
-		popup.addAction(QTStr("Remove"), this,
-				SLOT(on_actionRemoveSource_triggered()));
+		popup.addAction(renameSource);
+		popup.addAction(ui->actionRemoveSource);
 		popup.addSeparator();
 
 		popup.addMenu(ui->orderMenu);
