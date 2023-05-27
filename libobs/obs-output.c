@@ -2275,7 +2275,7 @@ bool obs_output_begin_data_capture2(obs_output_t *output)
 
 	output->total_frames = 0;
 
-	if (!log_flag_encoded(output, __FUNCTION__, false))
+	if (!flag_encoded(output))
 		reset_raw_output(output);
 
 	if (!can_begin_data_capture(output))
