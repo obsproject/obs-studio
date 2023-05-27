@@ -540,10 +540,10 @@ static void virtualcam_output_stop(void *data, uint64_t ts)
 	if (cmio_extension_supported()) {
 		CMIODeviceStopStream(vcam->deviceID, vcam->streamID);
 		CFRelease(vcam->formatDescription);
-		CVPixelBufferPoolRelease(vcam->pool);
 	} else {
 		[vcam->machServer stop];
 	}
+	CVPixelBufferPoolRelease(vcam->pool);
 }
 
 static void virtualcam_output_raw_video(void *data, struct video_data *frame)
