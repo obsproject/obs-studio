@@ -19,6 +19,7 @@ set_target_properties_obs(
   mac-virtualcam
   PROPERTIES FOLDER plugins
              PREFIX ""
+             MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/Info.plist.in"
              LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../../"
              XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
              XCODE_ATTRIBUTE_CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION YES

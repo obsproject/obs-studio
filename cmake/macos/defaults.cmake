@@ -25,23 +25,12 @@ include(buildspec)
 # SWIG hard codes the directory to its library directory at compile time. As obs-deps need to be relocatable, we need to
 # force SWIG to look for its files in a directory relative to the PREFIX_PATH. The best way to ensure this is to set the
 # SWIG_LIB environment variable.
-
 foreach(path IN LISTS CMAKE_PREFIX_PATH)
   if(NOT DEFINED ENV{SWIG_LIB} AND EXISTS "${path}/bin/swig")
     set(ENV{SWIG_LIB} "${path}/share/swig/CURRENT")
     break()
   endif()
 endforeach()
-
-# Set default values for CMake's bundle generator and created Info.plist files
-set(MACOSX_BUNDLE_EXECUTABLE_NAME OBS)
-set(MACOSX_BUNDLE_BUNDLE_NAME "${OBS_PRODUCT_NAME}")
-set(MACOSX_BUNDLE_BUNDLE_VERSION ${OBS_BUILD_NUMBER})
-set(MACOSX_BUNDLE_COPYRIGHT "${OBS_LEGAL_COPYRIGHT}")
-set(MACOSX_BUNDLE_GUI_IDENTIFIER com.obsproject.obs-studio)
-set(MACOSX_BUNDLE_ICON_FILE AppIcon)
-set(MACOSX_BUNDLE_SHORT_VERSION_STRING ${OBS_VERSION_CANONICAL})
-string(TIMESTAMP CURRENT_YEAR "%Y")
 
 # Enable find_package targets to become globally available targets
 set(CMAKE_FIND_PACKAGE_TARGETS_GLOBAL TRUE)

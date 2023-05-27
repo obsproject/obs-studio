@@ -26,26 +26,36 @@ function(set_target_properties_obs target)
   endwhile()
   get_target_property(target_type ${target} TYPE)
 
+  string(TIMESTAMP CURRENT_YEAR "%Y")
+
   # Target is a GUI or CLI application
   if(target_type STREQUAL EXECUTABLE)
     if(target STREQUAL obs-studio)
-      _check_info_plist()
       set_target_properties(
         ${target}
         PROPERTIES OUTPUT_NAME OBS
                    MACOSX_BUNDLE TRUE
                    MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/Info.plist.in"
-                   XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER com.obsproject.obs-studio
-                   XCODE_ATTRIBUTE_PRODUCT_NAME OBS
-                   XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME AppIcon
                    XCODE_EMBED_FRAMEWORKS_REMOVE_HEADERS_ON_COPY YES
                    XCODE_EMBED_FRAMEWORKS_CODE_SIGN_ON_COPY YES
                    XCODE_EMBED_PLUGINS_REMOVE_HEADERS_ON_COPY YES
                    XCODE_EMBED_PLUGINS_CODE_SIGN_ON_COPY YES
+                   XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER com.obsproject.obs-studio
+                   XCODE_ATTRIBUTE_PRODUCT_NAME OBS
+                   XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME AppIcon
+                   XCODE_ATTRIBUTE_CURRENT_PROJECT_VERSION ${OBS_BUILD_NUMBER}
+                   XCODE_ATTRIBUTE_MARKETING_VERSION ${OBS_VERSION_CANONICAL}
+                   XCODE_ATTRIBUTE_GENERATE_INFOPLIST_FILE YES
                    XCODE_ATTRIBUTE_COPY_PHASE_STRIP NO
                    XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
                    XCODE_ATTRIBUTE_SKIP_INSTALL NO
-                   XCODE_ATTRIBUTE_INSTALL_PATH "$(LOCAL_APPS_DIR)")
+                   XCODE_ATTRIBUTE_INSTALL_PATH "$(LOCAL_APPS_DIR)"
+                   XCODE_ATTRIBUTE_INFOPLIST_KEY_CFBundleDisplayName "OBS Studio"
+                   XCODE_ATTRIBUTE_INFOPLIST_KEY_NSHumanReadableCopyright "(c) 2012-${CURRENT_YEAR} Lain Bailey"
+                   XCODE_ATTRIBUTE_INFOPLIST_KEY_NSCameraUsageDescription
+                   "OBS needs to access the camera to enable camera sources to work."
+                   XCODE_ATTRIBUTE_INFOPLIST_KEY_NSMicrophoneUsageDescription
+                   "OBS needs to access the microphone to enable audio input.")
 
       get_property(obs_dependencies GLOBAL PROPERTY _OBS_DEPENDENCIES)
       add_dependencies(${target} ${obs_dependencies})
@@ -206,17 +216,21 @@ function(set_target_properties_obs target)
 
     get_target_property(is_framework ${target} FRAMEWORK)
     if(is_framework)
-      _check_info_plist()
       set_target_properties(
         ${target}
         PROPERTIES FRAMEWORK_VERSION A
                    MACOSX_FRAMEWORK_IDENTIFIER com.obsproject.${target}
-                   MACOSX_FRAMEWORK_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/Info.plist.in"
-                   XCODE_ATTRIBUTE_SKIP_INSTALL YES
                    XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""
-                   XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "")
-    else()
-      _add_entitlements()
+                   XCODE_ATTRIBUTE_DEVELOPMENT_TEAM ""
+                   XCODE_ATTRIBUTE_SKIP_INSTALL YES
+                   XCODE_ATTRIBUTE_PRODUCT_NAME ${target}
+                   XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER com.obsproject.${target}
+                   XCODE_ATTRIBUTE_CURRENT_PROJECT_VERSION ${OBS_BUILD_NUMBER}
+                   XCODE_ATTRIBUTE_MARKETING_VERSION ${OBS_VERSION_CANONICAL}
+                   XCODE_ATTRIBUTE_GENERATE_INFOPLIST_FILE YES
+                   XCODE_ATTRIBUTE_INFOPLIST_FILE ""
+                   XCODE_ATTRIBUTE_INFOPLIST_KEY_CFBundleDisplayName ${target}
+                   XCODE_ATTRIBUTE_INFOPLIST_KEY_NSHumanReadableCopyright "(c) 2012-${CURRENT_YEAR} Lain Bailey")
     endif()
 
     set_property(GLOBAL APPEND PROPERTY _OBS_FRAMEWORKS ${target})
@@ -233,14 +247,17 @@ function(set_target_properties_obs target)
       set_property(GLOBAL APPEND PROPERTY _OBS_DEPENDENCIES ${target})
       return()
     else()
-      _check_info_plist()
       set_target_properties(
         ${target}
         PROPERTIES BUNDLE TRUE
                    BUNDLE_EXTENSION plugin
-                   MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/Info.plist.in"
                    XCODE_ATTRIBUTE_PRODUCT_NAME ${target}
-                   XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER com.obsproject.${target})
+                   XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER com.obsproject.${target}
+                   XCODE_ATTRIBUTE_CURRENT_PROJECT_VERSION ${OBS_BUILD_NUMBER}
+                   XCODE_ATTRIBUTE_MARKETING_VERSION ${OBS_VERSION_CANONICAL}
+                   XCODE_ATTRIBUTE_GENERATE_INFOPLIST_FILE YES
+                   XCODE_ATTRIBUTE_INFOPLIST_KEY_CFBundleDisplayName ${target}
+                   XCODE_ATTRIBUTE_INFOPLIST_KEY_NSHumanReadableCopyright "(c) 2012-${CURRENT_YEAR} Lain Bailey")
 
       if(target STREQUAL obs-browser)
         # Good-enough for now as there are no other variants - in _theory_ we should only add the appropriate variant,
@@ -291,13 +308,6 @@ function(set_target_properties_obs target)
       FILES ${target_header_files})
   endif()
 endfunction()
-
-# _check_info_plist: Macro to check if project ships with Info.plist template
-macro(_check_info_plist)
-  if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/Info.plist.in")
-    message(FATAL_ERROR "Target ${target} is missing an Info.plist template in its cmake directory.")
-  endif()
-endmacro()
 
 # _check_entitlements: Macro to check if project ships with entitlements plist
 macro(_check_entitlements)
