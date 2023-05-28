@@ -64,8 +64,10 @@
     <file>images/expand.svg</file>
     <file>images/collapse.svg</file>
     <file>images/entry-clear.svg</file>
-  </qresource>
-  <qresource prefix="/settings">
+    <file>images/trash.svg</file>
+    <file>images/close.svg</file>
+    <file>images/popout.svg</file>
+    <file>images/updown.svg</file>
     <file>images/settings/output.svg</file>
     <file>images/settings/stream.svg</file>
     <file>images/settings/advanced.svg</file>
