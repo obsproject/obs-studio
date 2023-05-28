@@ -27,11 +27,11 @@ OBSThemeMeta {
 }
 
 * [themeID="propertiesIconSmall"] {
-    qproperty-icon: url(:/settings/images/settings/general.svg);
+    qproperty-icon: url(:/res/images/settings/general.svg);
 }
 
 * [themeID="configIconSmall"] {
-    qproperty-icon: url(:/settings/images/settings/general.svg);
+    qproperty-icon: url(:/res/images/settings/general.svg);
 }
 
 * [themeID="upArrowIconSmall"] {
@@ -75,7 +75,7 @@ MuteCheckBox::indicator:indeterminate {
 }
 
 MuteCheckBox::indicator:unchecked {
-    image: url(:/settings/images/settings/audio.svg);
+    image: url(:/res/images/settings/audio.svg);
 }
 
 SourceTreeSubItemCheckBox {
@@ -194,14 +194,14 @@ OBSQTDisplay {
 /* Settings Icons */
 
 OBSBasicSettings {
-    qproperty-generalIcon: url(:settings/images/settings/general.svg);
-    qproperty-streamIcon: url(:settings/images/settings/stream.svg);
-    qproperty-outputIcon: url(:settings/images/settings/output.svg);
-    qproperty-audioIcon: url(:settings/images/settings/audio.svg);
-    qproperty-videoIcon: url(:settings/images/settings/video.svg);
-    qproperty-hotkeysIcon: url(:settings/images/settings/hotkeys.svg);
-    qproperty-accessibilityIcon: url(:settings/images/settings/accessibility.svg);
-    qproperty-advancedIcon: url(:settings/images/settings/advanced.svg);
+    qproperty-generalIcon: url(:/res/images/settings/general.svg);
+    qproperty-streamIcon: url(:/res/images/settings/stream.svg);
+    qproperty-outputIcon: url(:/res/images/settings/output.svg);
+    qproperty-audioIcon: url(:/res/images/settings/audio.svg);
+    qproperty-videoIcon: url(:/res/images/settings/video.svg);
+    qproperty-hotkeysIcon: url(:/res/images/settings/hotkeys.svg);
+    qproperty-accessibilityIcon: url(:/res/images/settings/accessibility.svg);
+    qproperty-advancedIcon: url(:/res/images/settings/advanced.svg);
 }
 
 OBSBasicSettings QListWidget::item {
@@ -254,8 +254,8 @@ OBSBasic {
     qproperty-colorIcon: url(:res/images/sources/brush.svg);
     qproperty-slideshowIcon: url(:res/images/sources/slideshow.svg);
     qproperty-audioInputIcon: url(:res/images/sources/microphone.svg);
-    qproperty-audioOutputIcon: url(:settings/images/settings/audio.svg);
-    qproperty-desktopCapIcon: url(:settings/images/settings/video.svg);
+    qproperty-audioOutputIcon: url(:/res/images/settings/audio.svg);
+    qproperty-desktopCapIcon: url(:/res/images/settings/video.svg);
     qproperty-windowCapIcon: url(:res/images/sources/window.svg);
     qproperty-gameCapIcon: url(:res/images/sources/gamepad.svg);
     qproperty-cameraIcon: url(:res/images/sources/camera.svg);
@@ -315,7 +315,7 @@ QSlider::handle:horizontal[themeID="tBarSlider"] {
 }
 
 #contextContainer QPushButton#sourcePropertiesButton {
-    qproperty-icon: url(:/settings/images/settings/general.svg);
+    qproperty-icon: url(:/res/images/settings/general.svg);
 }
 
 #contextContainer QPushButton#sourceFiltersButton {

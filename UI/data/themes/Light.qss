@@ -166,7 +166,7 @@ QMenu::item:disabled {
 }
 
 QMenu::right-arrow {
-    image: url(./Light/expand.svg);
+    image: url(:/res/images/expand.svg);
 }
 
 /* Top Menu Bar Items */
@@ -304,8 +304,8 @@ QDockWidget {
     font-size: 10.5pt;
     font-weight: bold;
 
-    titlebar-close-icon: url('./Light/close.svg');
-    titlebar-normal-icon: url('./Light/popout.svg');
+    titlebar-close-icon: url(':/res/images/close.svg');
+    titlebar-normal-icon: url(':/res/images/popout.svg');
 }
 
 QDockWidget::title {
@@ -441,11 +441,11 @@ QScrollBar::handle:horizontal {
 }
 
 QPushButton#sourcePropertiesButton {
-    qproperty-icon: url(./Light/settings/general.svg);
+    qproperty-icon: url(:/res/images/settings/general.svg);
 }
 
 QPushButton#sourceFiltersButton {
-    qproperty-icon: url(./Light/filter.svg);
+    qproperty-icon: url(:/res/images/filter.svg);
 }
 
 /* Scenes and Sources toolbar */
@@ -479,55 +479,55 @@ QToolButton:pressed {
 }
 
 * [themeID="addIconSmall"] {
-    qproperty-icon: url(./Light/plus.svg);
+    qproperty-icon: url(:/res/images/plus.svg);
 }
 
 * [themeID="removeIconSmall"] {
-    qproperty-icon: url(./Light/trash.svg);
+    qproperty-icon: url(:/res/images/trash.svg);
 }
 
 * [themeID="clearIconSmall"] {
-    qproperty-icon: url(./Light/entry-clear.svg);
+    qproperty-icon: url(:/res/images/entry-clear.svg);
 }
 
 * [themeID="propertiesIconSmall"] {
-    qproperty-icon: url(./Light/settings/general.svg);
+    qproperty-icon: url(:/res/images/settings/general.svg);
 }
 
 * [themeID="configIconSmall"] {
-    qproperty-icon: url(./Light/settings/general.svg);
+    qproperty-icon: url(:/res/images/settings/general.svg);
 }
 
 * [themeID="menuIconSmall"] {
-    qproperty-icon: url(./Light/dots-vert.svg);
+    qproperty-icon: url(:/res/images/dots-vert.svg);
 }
 
 * [themeID="refreshIconSmall"] {
-    qproperty-icon: url(./Light/refresh.svg);
+    qproperty-icon: url(:/res/images/refresh.svg);
 }
 
 * [themeID="cogsIcon"] {
-    qproperty-icon: url(./Light/cogs.svg);
+    qproperty-icon: url(:/res/images/cogs.svg);
 }
 
 #sourceInteractButton {
-    qproperty-icon: url(./Light/interact.svg);
+    qproperty-icon: url(:/res/images/interact.svg);
 }
 
 * [themeID="upArrowIconSmall"] {
-    qproperty-icon: url(./Light/up.svg);
+    qproperty-icon: url(:/res/images/up.svg);
 }
 
 * [themeID="downArrowIconSmall"] {
-    qproperty-icon: url(./Light/down.svg);
+    qproperty-icon: url(:/res/images/down.svg);
 }
 
 * [themeID="pauseIconSmall"] {
-    qproperty-icon: url(./Light/media-pause.svg);
+    qproperty-icon: url(:/res/images/media-pause.svg);
 }
 
 * [themeID="filtersIcon"] {
-    qproperty-icon: url(./Light/filter.svg);
+    qproperty-icon: url(:/res/images/filter.svg);
 }
 
 QToolBarExtension {
@@ -537,7 +537,7 @@ QToolBarExtension {
     padding: 4px 0px;
     margin-left: 0px;
 
-    qproperty-icon: url(./Light/dots-vert.svg);
+    qproperty-icon: url(:/res/images/dots-vert.svg);
 }
 
 
@@ -633,7 +633,7 @@ QDateTimeEdit::drop-down {
 QComboBox::down-arrow,
 QDateTimeEdit::down-arrow {
     qproperty-alignment: AlignTop;
-    image: url(./Light/updown.svg);
+    image: url(:/res/images/updown.svg);
     width: 100%;
 }
 
@@ -655,7 +655,7 @@ QDateTimeEdit::drop-down:editable {
 QComboBox::down-arrow:editable,
 QDateTimeEdit::down-arrow:editable {
     qproperty-alignment: AlignTop;
-    image: url(./Light/down.svg);
+    image: url(:/res/images/down.svg);
     width: 8%;
 }
 
@@ -743,13 +743,13 @@ QDoubleSpinBox::up-button:disabled, QDoubleSpinBox::up-button:off, QDoubleSpinBo
 }
 
 QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {
-    image: url(./Light/up.svg);
+    image: url(:/res/images/up.svg);
     width: 100%;
     margin: 2px;
 }
 
 QSpinBox::down-arrow, QDoubleSpinBox::down-arrow {
-    image: url(./Light/down.svg);
+    image: url(:/res/images/down.svg);
     width: 100%;
     padding: 2px;
 }
@@ -821,7 +821,7 @@ QPushButton:disabled, QToolButton:disabled {
 }
 
 QPushButton::menu-indicator {
-    image: url(./Light/down.svg);
+    image: url(:/res/images/down.svg);
     subcontrol-position: right;
     subcontrol-origin: padding;
     width: 25px;
@@ -971,7 +971,7 @@ QHeaderView::section {
 /* Mute CheckBox */
 
 MuteCheckBox::indicator:checked {
-    image: url(./Light/mute.svg);
+    image: url(:/res/images/mute.svg);
 }
 
 MuteCheckBox::indicator:indeterminate {
@@ -979,7 +979,7 @@ MuteCheckBox::indicator:indeterminate {
 }
 
 MuteCheckBox::indicator:unchecked {
-    image: url(./Light/settings/audio.svg);
+    image: url(:/res/images/settings/audio.svg);
 }
 
 OBSHotkeyLabel[hotkeyPairHover=true] {
@@ -1078,14 +1078,14 @@ OBSBasicFilters #widget_2 QPushButton {
 /* Settings Icons */
 
 OBSBasicSettings {
-    qproperty-generalIcon: url(./Light/settings/general.svg);
-    qproperty-streamIcon: url(./Light/settings/stream.svg);
-    qproperty-outputIcon: url(./Light/settings/output.svg);
-    qproperty-audioIcon: url(./Light/settings/audio.svg);
-    qproperty-videoIcon: url(./Light/settings/video.svg);
-    qproperty-hotkeysIcon: url(./Light/settings/hotkeys.svg);
-    qproperty-accessibilityIcon: url(./Light/settings/accessibility.svg);
-    qproperty-advancedIcon: url(./Light/settings/advanced.svg);
+    qproperty-generalIcon: url(:/res/images/settings/general.svg);
+    qproperty-streamIcon: url(:/res/images/settings/stream.svg);
+    qproperty-outputIcon: url(:/res/images/settings/output.svg);
+    qproperty-audioIcon: url(:/res/images/settings/audio.svg);
+    qproperty-videoIcon: url(:/res/images/settings/video.svg);
+    qproperty-hotkeysIcon: url(:/res/images/settings/hotkeys.svg);
+    qproperty-accessibilityIcon: url(:/res/images/settings/accessibility.svg);
+    qproperty-advancedIcon: url(:/res/images/settings/advanced.svg);
 }
 
 /* Checkboxes */
@@ -1149,7 +1149,7 @@ LockedCheckBox::indicator {
 
 LockedCheckBox::indicator:checked,
 LockedCheckBox::indicator:checked:hover {
-    image: url(./Light/locked.svg);
+    image: url(:/res/images/locked.svg);
 }
 
 LockedCheckBox::indicator:unchecked,
@@ -1171,7 +1171,7 @@ VisibilityCheckBox::indicator {
 
 VisibilityCheckBox::indicator:checked,
 VisibilityCheckBox::indicator:checked:hover {
-    image: url(./Light/visible.svg);
+    image: url(:/res/images/visible.svg);
 }
 
 VisibilityCheckBox::indicator:unchecked,
@@ -1180,7 +1180,7 @@ VisibilityCheckBox::indicator:unchecked:hover {
 }
 
 * [themeID="revertIcon"] {
-    qproperty-icon: url(./Light/revert.svg);
+    qproperty-icon: url(:/res/images/revert.svg);
 }
 
 QPushButton#extraPanelDelete {
@@ -1209,35 +1209,35 @@ MuteCheckBox::indicator {
 }
 
 MuteCheckBox::indicator:checked {
-    image: url(./Light/mute.svg);
+    image: url(:/res/images/mute.svg);
 }
 
 MuteCheckBox::indicator:unchecked {
-    image: url(./Light/settings/audio.svg);
+    image: url(:/res/images/settings/audio.svg);
 }
 
 MuteCheckBox::indicator:unchecked:hover {
-    image: url(./Light/settings/audio.svg);
+    image: url(:/res/images/settings/audio.svg);
 }
 
 MuteCheckBox::indicator:unchecked:focus {
-    image: url(./Light/settings/audio.svg);
+    image: url(:/res/images/settings/audio.svg);
 }
 
 MuteCheckBox::indicator:checked:hover {
-    image: url(./Light/mute.svg);
+    image: url(:/res/images/mute.svg);
 }
 
 MuteCheckBox::indicator:checked:focus {
-    image: url(./Light/mute.svg);
+    image: url(:/res/images/mute.svg);
 }
 
 MuteCheckBox::indicator:checked:disabled {
-    image: url(./Light/mute.svg);
+    image: url(:/res/images/mute.svg);
 }
 
 MuteCheckBox::indicator:unchecked:disabled {
-    image: url(./Light/settings/audio.svg);
+    image: url(:/res/images/settings/audio.svg);
 }
 
 #hotkeyFilterReset {
@@ -1280,33 +1280,33 @@ SourceTreeSubItemCheckBox::indicator {
 
 SourceTreeSubItemCheckBox::indicator:checked,
 SourceTreeSubItemCheckBox::indicator:checked:hover {
-    image: url(./Light/expand.svg);
+    image: url(:/res/images/expand.svg);
 }
 
 SourceTreeSubItemCheckBox::indicator:unchecked,
 SourceTreeSubItemCheckBox::indicator:unchecked:hover {
-    image: url(./Light/collapse.svg);
+    image: url(:/res/images/collapse.svg);
 }
 
 /* Source Icons */
 
 OBSBasic {
-    qproperty-imageIcon: url(./Light/sources/image.svg);
-    qproperty-colorIcon: url(./Light/sources/brush.svg);
-    qproperty-slideshowIcon: url(./Light/sources/slideshow.svg);
-    qproperty-audioInputIcon: url(./Light/sources/microphone.svg);
-    qproperty-audioOutputIcon: url(./Light/settings/audio.svg);
-    qproperty-desktopCapIcon: url(./Light/settings/video.svg);
-    qproperty-windowCapIcon: url(./Light/sources/window.svg);
-    qproperty-gameCapIcon: url(./Light/sources/gamepad.svg);
-    qproperty-cameraIcon: url(./Light/sources/camera.svg);
-    qproperty-textIcon: url(./Light/sources/text.svg);
-    qproperty-mediaIcon: url(./Light/sources/media.svg);
-    qproperty-browserIcon: url(./Light/sources/globe.svg);
-    qproperty-groupIcon: url(./Light/sources/group.svg);
-    qproperty-sceneIcon: url(./Light/sources/scene.svg);
-    qproperty-defaultIcon: url(./Light/sources/default.svg);
-    qproperty-audioProcessOutputIcon: url(./Light/sources/windowaudio.svg);
+    qproperty-imageIcon: url(:/res/images/sources/image.svg);
+    qproperty-colorIcon: url(:/res/images/sources/brush.svg);
+    qproperty-slideshowIcon: url(:/res/images/sources/slideshow.svg);
+    qproperty-audioInputIcon: url(:/res/images/sources/microphone.svg);
+    qproperty-audioOutputIcon: url(:/res/images/settings/audio.svg);
+    qproperty-desktopCapIcon: url(:/res/images/settings/video.svg);
+    qproperty-windowCapIcon: url(:/res/images/sources/window.svg);
+    qproperty-gameCapIcon: url(:/res/images/sources/gamepad.svg);
+    qproperty-cameraIcon: url(:/res/images/sources/camera.svg);
+    qproperty-textIcon: url(:/res/images/sources/text.svg);
+    qproperty-mediaIcon: url(:/res/images/sources/media.svg);
+    qproperty-browserIcon: url(:/res/images/sources/globe.svg);
+    qproperty-groupIcon: url(:/res/images/sources/group.svg);
+    qproperty-sceneIcon: url(:/res/images/sources/scene.svg);
+    qproperty-defaultIcon: url(:/res/images/sources/default.svg);
+    qproperty-audioProcessOutputIcon: url(:/res/images/sources/windowaudio.svg);
 }
 
 /* Scene Tree Grid Mode */
@@ -1342,7 +1342,7 @@ SceneTree {
 /* Save icon */
 
 * [themeID="replayIconSmall"] {
-    qproperty-icon: url(./Light/save.svg);
+    qproperty-icon: url(:/res/images/save.svg);
 }
 
 /* Studio Mode Labels */
@@ -1378,32 +1378,32 @@ QSlider::handle:horizontal[themeID="tBarSlider"] {
 /* Media icons */
 
 * [themeID="playIcon"] {
-    qproperty-icon: url(./Light/media/media_play.svg);
+    qproperty-icon: url(:/res/images/media/media_play.svg);
 }
 
 * [themeID="pauseIcon"] {
-    qproperty-icon: url(./Light/media/media_pause.svg);
+    qproperty-icon: url(:/res/images/media/media_pause.svg);
 }
 
 * [themeID="restartIcon"] {
-    qproperty-icon: url(./Light/media/media_restart.svg);
+    qproperty-icon: url(:/res/images/media/media_restart.svg);
 }
 
 * [themeID="stopIcon"] {
-    qproperty-icon: url(./Light/media/media_stop.svg);
+    qproperty-icon: url(:/res/images/media/media_stop.svg);
 }
 
 * [themeID="nextIcon"] {
-    qproperty-icon: url(./Light/media/media_next.svg);
+    qproperty-icon: url(:/res/images/media/media_next.svg);
 }
 
 * [themeID="previousIcon"] {
-    qproperty-icon: url(./Light/media/media_previous.svg);
+    qproperty-icon: url(:/res/images/media/media_previous.svg);
 }
 
 /* YouTube Integration */
 OBSYoutubeActions {
-    qproperty-thumbPlaceholder: url(./Light/sources/image.svg);
+    qproperty-thumbPlaceholder: url(:/res/images/sources/image.svg);
 }
 
 #ytEventList QLabel {
@@ -1431,7 +1431,7 @@ OBSYoutubeActions {
 /* Calendar Widget */
 QDateTimeEdit::down-arrow {
     qproperty-alignment: AlignTop;
-    image: url(./Light/down.svg);
+    image: url(:/res/images/down.svg);
     width: 100%;
 }
 
@@ -1454,7 +1454,7 @@ QCalendarWidget QToolButton {
 }
 
 #qt_calendar_monthbutton::menu-indicator {
-    image: url(./Light/down.svg);
+    image: url(:/res/images/down.svg);
     subcontrol-position: right;
     padding-top: 2px;
     padding-right: 6px;
@@ -1464,13 +1464,13 @@ QCalendarWidget QToolButton {
 
 QCalendarWidget #qt_calendar_prevmonth {
     padding: 2px;
-    qproperty-icon: url(./Light/left.svg);
+    qproperty-icon: url(:/res/images/left.svg);
     icon-size: 16px, 16px;
 }
 
 QCalendarWidget #qt_calendar_nextmonth {
     padding: 2px;
-    qproperty-icon: url(./Light/right.svg);
+    qproperty-icon: url(:/res/images/right.svg);
     icon-size: 16px, 16px;
 }
 
