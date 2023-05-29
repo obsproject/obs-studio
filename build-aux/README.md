@@ -3,6 +3,7 @@
 This folder contains:
 - The Flatpak manifest used to build OBS Studio
 - The script `format-manifest.py` which format manifest JSON files
+- JSON Schemas related to plugins
 
 ## OBS Studio Flatpak Manifest
 

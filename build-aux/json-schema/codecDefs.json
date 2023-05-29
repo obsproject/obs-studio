@@ -1,0 +1,17 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://obsproject.com/schemas/codecDefs.json",
+    "title": "Codec Enums, Patterns and Properties",
+    "description": "Codec-related enums, patterns and properties used in OBS JSON Schemas",
+    "$comment": "Made to allow an easy way to add codec to schemas",
+    "$defs": {
+        "videoCodecEnum": {
+            "$comment": "Enumeration of video codecs",
+            "enum": ["h264","hevc","av1"]
+        },
+        "audioCodecEnum": {
+            "$comment": "Enumeration of audio codecs",
+            "enum": ["aac","opus"]
+        }
+    }
+}

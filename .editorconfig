@@ -45,3 +45,11 @@ indent_size = 4
 [*.py]
 indent_style = space
 indent_size = 4
+
+[json-schema/*.json]
+indent_style = space
+indent_size = 4
+
+[plugins/obs-services/json/**/*.json]
+indent_style = space
+indent_size = 4

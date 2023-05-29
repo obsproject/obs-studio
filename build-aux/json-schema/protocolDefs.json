@@ -1,0 +1,59 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://obsproject.com/schemas/protocolDefs.json",
+    "title": "Protocol Enums, Patterns and Properties",
+    "description": "Protocol-related enums, patterns and properties used in OBS JSON Schemas",
+    "$comment": "Made to allow an easy way to add protocol to schemas",
+    "$defs": {
+        "protocolEnum": {
+            "$comment": "Enumeration of protocols",
+            "enum": ["RTMP","RTMPS","HLS","SRT","RIST"]
+        },
+        "protocolMapEnum": {
+            "$comment": "Enumeration of protocols (with '*' as any) that have various compatible codecs",
+            "enum": ["*","RTMP","RTMPS","HLS","SRT","RIST"]
+        },
+        "serverPattern": {
+            "$comment": "Pattern to enforce a supported server URL",
+            "pattern": "^(rtmps?|https?|srt|rist)://"
+        },
+        "protocolProperties": {
+            "$comment": "Per-protocol properties meant for obs-services schema",
+            "type": "object",
+            "properties": {
+                "SRT": {
+                    "type": "object",
+                    "title": "SRT Properties",
+                    "description": "Properties related to the SRT protocol",
+                    "properties": {
+                        "stream_id": {
+                            "type": "boolean",
+                            "default": true
+                        },
+                        "encrypt_passphrase": {
+                            "type": "boolean",
+                            "default": false
+                        }
+                    },
+                    "required": ["stream_id", "encrypt_passphrase"]
+                },
+                "RIST": {
+                    "type": "object",
+                    "title": "RIST Properties",
+                    "description": "Properties related to the RIST protocol",
+                    "properties": {
+                        "encrypt_passphrase": {
+                            "type": "boolean",
+                            "default": true
+                        },
+                        "srp_username_password": {
+                            "type": "boolean",
+                            "default": false
+                        }
+                    },
+                    "required": ["encrypt_passphrase", "srp_username_password"]
+                }
+            }
+        }
+    }
+}

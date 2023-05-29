@@ -1,0 +1,139 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://obsproject.com/schemas/service.json",
+    "title": "OBS Service Object Schema",
+    "type": "object",
+    "properties": {
+        "more_info_link": {
+            "type": "string",
+            "description": "Link that provides additional info about the service, presented in the UI as a button next to the services dropdown.",
+            "format": "uri",
+            "$ref": "#/$defs/httpPattern",
+            "minLength": 1
+        },
+        "stream_key_link": {
+            "type": "string",
+            "description": "Link where a logged-in user can find the 'stream key', presented as a button alongside the stream key field.",
+            "format": "uri",
+            "$ref": "#/$defs/httpPattern",
+            "minLength": 1
+        },
+        "servers": {
+            "type": "array",
+            "description": "Array of server objects",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Name of the server (e.g. location, primary/backup), displayed in the Server dropdown.",
+                        "minLength": 1
+                    },
+                    "protocol": {
+                        "type": "string",
+                        "title": "Server Protocol",
+                        "description": "Protocol used by the server. Required if the URI scheme can't help identify the streaming protocol (e.g. HLS).",
+                        "$ref": "protocolDefs.json#/$defs/protocolEnum"
+                    },
+                    "url": {
+                        "type": "string",
+                        "title": "Server URL",
+                        "description": "URL of the ingest server.",
+                        "format": "uri",
+                        "$ref": "protocolDefs.json#/$defs/serverPattern",
+                        "minLength": 1
+                    }
+                },
+                "required": ["name","url","protocol"],
+                "unevaluatedProperties": false
+            },
+            "minItems": 1,
+            "uniqueItems": true,
+            "additionalItems": false
+        },
+        "supported_codecs": {
+            "type": "object",
+            "title": "Supported Codecs",
+            "description": "Codecs that are supported by the service.",
+            "properties": {
+                "video": {
+                    "type": "object",
+                    "title": "Supported Video Codecs",
+                    "description": "Video codecs that are supported by the service.",
+                    "propertyNames": { "$ref": "protocolDefs.json#/$defs/protocolMapEnum" },
+                    "properties": {
+                        "*": {
+                            "type": "array",
+                            "title": "Any Protocol Supported Video Codec",
+                            "description": "Video codecs that are supported by the service and any supported protocol.",
+                            "items": {
+                                "type": "string",
+                                "$ref": "codecDefs.json#/$defs/videoCodecEnum"
+                            },
+                            "minItems": 1,
+                            "uniqueItems": true,
+                            "additionalItems": false
+                        }
+                    },
+                    "additionalProperties": {
+                        "type": "array",
+                        "title": "Protocol Supported Video Codec",
+                        "description": "Video codecs that are supported by the service on this protocol.",
+                        "items": {
+                            "type": "string",
+                            "$ref": "codecDefs.json#/$defs/videoCodecEnum"
+                        },
+                        "minItems": 1,
+                        "uniqueItems": true,
+                        "additionalItems": false
+                    },
+                    "minProperties": 1,
+                    "unevaluatedProperties": false
+                },
+                "audio": {
+                    "type": "object",
+                    "title": "Supported Audio Codecs",
+                    "description": "Audio codecs that are supported by the service.",
+                    "propertyNames": { "$ref": "protocolDefs.json#/$defs/protocolMapEnum" },
+                    "properties": {
+                        "*": {
+                            "type": "array",
+                            "title": "Any Protocol Supported Audio Codec",
+                            "description": "Audio codecs that are supported by the service and any supported protocol.",
+                            "items": {
+                                "type": "string",
+                                "$ref": "codecDefs.json#/$defs/audioCodecEnum"
+                            },
+                            "minItems": 1,
+                            "uniqueItems": true,
+                            "additionalItems": false
+                        }
+                    },
+                    "additionalProperties": {
+                        "type": "array",
+                        "title": "Protocol Supported Audio Codec",
+                        "description": "Audio codecs that are supported by the service on this protocol.",
+                        "items": {
+                            "type": "string",
+                            "$ref": "codecDefs.json#/$defs/audioCodecEnum"
+                        },
+                        "minItems": 1,
+                        "uniqueItems": true,
+                        "additionalItems": false
+                    },
+                    "minProperties": 1,
+                    "unevaluatedProperties": false
+                }
+            },
+            "minProperties": 1,
+            "unevaluatedProperties": false
+        }
+    },
+    "required": ["servers"],
+    "$defs": {
+        "httpPattern": {
+            "$comment": "Pattern to enforce HTTP(S) links",
+            "pattern": "^https?://"
+        }
+    }
+}

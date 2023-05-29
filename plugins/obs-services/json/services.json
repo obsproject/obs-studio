@@ -1,0 +1,2425 @@
+{
+    "$schema": "schema/obs-services.json",
+    "services": [
+        {
+            "id": "loola",
+            "name": "Loola.tv",
+            "servers": [
+                {
+                    "name": "US East: Virginia",
+                    "protocol": "RTMP",
+                    "url": "rtmp://rtmp.loola.tv/push"
+                },
+                {
+                    "name": "EU Central: Germany",
+                    "protocol": "RTMP",
+                    "url": "rtmp://rtmp-eu.loola.tv/push"
+                },
+                {
+                    "name": "South America: Brazil",
+                    "protocol": "RTMP",
+                    "url": "rtmp://rtmp-sa.loola.tv/push"
+                },
+                {
+                    "name": "Asia/Pacific: Singapore",
+                    "protocol": "RTMP",
+                    "url": "rtmp://rtmp-sg.loola.tv/push"
+                },
+                {
+                    "name": "Middle East: Bahrain",
+                    "protocol": "RTMP",
+                    "url": "rtmp://rtmp-me.loola.tv/push"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "lovecast",
+            "name": "Lovecast",
+            "servers": [
+                {
+                    "name": "Default",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-a.lovecastapp.com:5222/app"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "luzento",
+            "name": "Luzento.com - RTMP",
+            "stream_key_link": "https://cms.luzento.com/dashboard/stream-key?from=OBS",
+            "servers": [
+                {
+                    "name": "Primary",
+                    "protocol": "RTMP",
+                    "url": "rtmp://ingest.luzento.com/live"
+                },
+                {
+                    "name": "Primary (Test)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://ingest.luzento.com/test"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "vimm",
+            "name": "VIMM",
+            "servers": [
+                {
+                    "name": "Europe: Frankfurt",
+                    "protocol": "RTMP",
+                    "url": "rtmp://eu.vimm.tv/live"
+                },
+                {
+                    "name": "North America: Montreal",
+                    "protocol": "RTMP",
+                    "url": "rtmp://us.vimm.tv/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "web_tv",
+            "name": "Web.TV",
+            "servers": [
+                {
+                    "name": "Primary",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live3.origins.web.tv/liveext"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "goodgame",
+            "name": "GoodGame.ru",
+            "servers": [
+                {
+                    "name": "Моscow",
+                    "protocol": "RTMP",
+                    "url": "rtmp://msk.goodgame.ru:1940/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "youstreamer",
+            "name": "YouStreamer",
+            "stream_key_link": "https://www.app.youstreamer.com/stream/",
+            "servers": [
+                {
+                    "name": "Moscow",
+                    "protocol": "RTMP",
+                    "url": "rtmp://push.youstreamer.com/in/"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "vaughn_live",
+            "name": "Vaughn Live / iNSTAGIB",
+            "servers": [
+                {
+                    "name": "US: Chicago, IL",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-ord.vaughnsoft.net/live"
+                },
+                {
+                    "name": "US: Vint Hill, VA",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-iad.vaughnsoft.net/live"
+                },
+                {
+                    "name": "US: Denver, CO",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-den.vaughnsoft.net/live"
+                },
+                {
+                    "name": "US: New York, NY",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-nyc.vaughnsoft.net/live"
+                },
+                {
+                    "name": "US: Miami, FL",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-mia.vaughnsoft.net/live"
+                },
+                {
+                    "name": "US: Seattle, WA",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-sea.vaughnsoft.net/live"
+                },
+                {
+                    "name": "EU: Amsterdam, NL",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-ams.vaughnsoft.net/live"
+                },
+                {
+                    "name": "EU: London, UK",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-lhr.vaughnsoft.net/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "breakers_tv",
+            "name": "Breakers.TV",
+            "servers": [
+                {
+                    "name": "US: Chicago, IL",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-ord.vaughnsoft.net/live"
+                },
+                {
+                    "name": "US: Vint Hill, VA",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-iad.vaughnsoft.net/live"
+                },
+                {
+                    "name": "US: Denver, CO",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-den.vaughnsoft.net/live"
+                },
+                {
+                    "name": "US: New York, NY",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-nyc.vaughnsoft.net/live"
+                },
+                {
+                    "name": "US: Miami, FL",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-mia.vaughnsoft.net/live"
+                },
+                {
+                    "name": "US: Seattle, WA",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-sea.vaughnsoft.net/live"
+                },
+                {
+                    "name": "EU: Amsterdam, NL",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-ams.vaughnsoft.net/live"
+                },
+                {
+                    "name": "EU: London, UK",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-lhr.vaughnsoft.net/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "facebook",
+            "name": "Facebook Live",
+            "common": true,
+            "stream_key_link": "https://www.facebook.com/live/producer?ref=OBS",
+            "servers": [
+                {
+                    "name": "Default",
+                    "protocol": "RTMPS",
+                    "url": "rtmps://rtmp-api.facebook.com:443/rtmp/"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMPS": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "castr",
+            "name": "Castr.io",
+            "servers": [
+                {
+                    "name": "US-East (Chicago, IL)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://cg.castr.io/static"
+                },
+                {
+                    "name": "US-East (New York, NY)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://ny.castr.io/static"
+                },
+                {
+                    "name": "US-East (Miami, FL)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://mi.castr.io/static"
+                },
+                {
+                    "name": "US-West (Seattle, WA)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://se.castr.io/static"
+                },
+                {
+                    "name": "US-West (Los Angeles, CA)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://la.castr.io/static"
+                },
+                {
+                    "name": "US-Central (Dallas, TX)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://da.castr.io/static"
+                },
+                {
+                    "name": "NA-East (Toronto, CA)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://qc.castr.io/static"
+                },
+                {
+                    "name": "SA (Sao Paulo, BR)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://br.castr.io/static"
+                },
+                {
+                    "name": "EU-West (London, UK)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://uk.castr.io/static"
+                },
+                {
+                    "name": "EU-Central (Frankfurt, DE)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://fr.castr.io/static"
+                },
+                {
+                    "name": "Russia (Moscow)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://ru.castr.io/static"
+                },
+                {
+                    "name": "Asia (Singapore)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://sg.castr.io/static"
+                },
+                {
+                    "name": "Asia (India)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://in.castr.io/static"
+                },
+                {
+                    "name": "Australia (Sydney)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://au.castr.io/static"
+                },
+                {
+                    "name": "US Central",
+                    "protocol": "RTMP",
+                    "url": "rtmp://us-central.castr.io/static"
+                },
+                {
+                    "name": "US West",
+                    "protocol": "RTMP",
+                    "url": "rtmp://us-west.castr.io/static"
+                },
+                {
+                    "name": "US East",
+                    "protocol": "RTMP",
+                    "url": "rtmp://us-east.castr.io/static"
+                },
+                {
+                    "name": "US South",
+                    "protocol": "RTMP",
+                    "url": "rtmp://us-south.castr.io/static"
+                },
+                {
+                    "name": "South America",
+                    "protocol": "RTMP",
+                    "url": "rtmp://south-am.castr.io/static"
+                },
+                {
+                    "name": "EU Central",
+                    "protocol": "RTMP",
+                    "url": "rtmp://eu-central.castr.io/static"
+                },
+                {
+                    "name": "Singapore",
+                    "protocol": "RTMP",
+                    "url": "rtmp://sg-central.castr.io/static"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "boomstream",
+            "name": "Boomstream",
+            "servers": [
+                {
+                    "name": "Default",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live.boomstream.com/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "meridix",
+            "name": "Meridix Live Sports Platform",
+            "servers": [
+                {
+                    "name": "Primary",
+                    "protocol": "RTMP",
+                    "url": "rtmp://publish.meridix.com/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "afreecatv",
+            "name": "AfreecaTV",
+            "servers": [
+                {
+                    "name": "Asia : Korea",
+                    "protocol": "RTMP",
+                    "url": "rtmp://rtmpmanager-freecat.afreeca.tv/app"
+                },
+                {
+                    "name": "North America : US East",
+                    "protocol": "RTMP",
+                    "url": "rtmp://rtmp-esu.afreecatv.com/app"
+                },
+                {
+                    "name": "North America : US West",
+                    "protocol": "RTMP",
+                    "url": "rtmp://rtmp-wsu.afreecatv.com/app"
+                },
+                {
+                    "name": "South America : Brazil",
+                    "protocol": "RTMP",
+                    "url": "rtmp://rtmp-brz.afreecatv.com/app"
+                },
+                {
+                    "name": "Europe : UK",
+                    "protocol": "RTMP",
+                    "url": "rtmp://rtmp-uk.afreecatv.com/app"
+                },
+                {
+                    "name": "Asia : Singapore",
+                    "protocol": "RTMP",
+                    "url": "rtmp://rtmp-sgp.afreecatv.com/app"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "cam4",
+            "name": "CAM4",
+            "servers": [
+                {
+                    "name": "CAM4",
+                    "protocol": "RTMP",
+                    "url": "rtmp://origin.cam4.com/cam4-origin-live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "eplay",
+            "name": "ePlay",
+            "servers": [
+                {
+                    "name": "ePlay Primary",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live.eplay.link/origin"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "picarto",
+            "name": "Picarto",
+            "servers": [
+                {
+                    "name": "Autoselect closest server",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live.us.picarto.tv/golive"
+                },
+                {
+                    "name": "Los Angeles, USA",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live.us-losangeles.picarto.tv/golive"
+                },
+                {
+                    "name": "Dallas, USA",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live.us-dallas.picarto.tv/golive"
+                },
+                {
+                    "name": "Miami, USA",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live.us-miami.picarto.tv/golive"
+                },
+                {
+                    "name": "New York, USA",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live.us-newyork.picarto.tv/golive"
+                },
+                {
+                    "name": "Europe",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live.eu-west1.picarto.tv/golive"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "livestream",
+            "name": "Livestream",
+            "servers": [
+                {
+                    "name": "Primary",
+                    "protocol": "RTMP",
+                    "url": "rtmp://rtmpin.livestreamingest.com/rtmpin"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "uscreen",
+            "name": "Uscreen",
+            "servers": [
+                {
+                    "name": "Default",
+                    "protocol": "RTMP",
+                    "url": "rtmp://global-live.uscreen.app:5222/app"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "stripchat",
+            "name": "Stripchat",
+            "servers": [
+                {
+                    "name": "Auto",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live.doppiocdn.com/ext"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "camsoda",
+            "name": "CamSoda",
+            "servers": [
+                {
+                    "name": "North America",
+                    "protocol": "RTMP",
+                    "url": "rtmp://obs-ingest-na.livemediahost.com/cam_obs"
+                },
+                {
+                    "name": "South America",
+                    "protocol": "RTMP",
+                    "url": "rtmp://obs-ingest-sa.livemediahost.com/cam_obs"
+                },
+                {
+                    "name": "Asia",
+                    "protocol": "RTMP",
+                    "url": "rtmp://obs-ingest-as.livemediahost.com/cam_obs"
+                },
+                {
+                    "name": "Europe",
+                    "protocol": "RTMP",
+                    "url": "rtmp://obs-ingest-eu.livemediahost.com/cam_obs"
+                },
+                {
+                    "name": "Oceania",
+                    "protocol": "RTMP",
+                    "url": "rtmp://obs-ingest-oc.livemediahost.com/cam_obs"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "chartubate",
+            "name": "Chaturbate",
+            "servers": [
+                {
+                    "name": "Global Main Fastest - Recommended",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "Global Backup",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-backup.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "US West: Seattle, WA",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-sea.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "US West: Phoenix, AZ",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-phx.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "US Central: Salt Lake City, UT",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-slc.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "US Central: Chicago, IL",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-chi.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "US East: Atlanta, GA",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-atl.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "US East: Ashburn, VA",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-ash.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "South America: Sao Paulo, Brazil",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-gru.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "EU: Amsterdam, NL",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-nld.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "EU: Alblasserdam, NL",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-alb.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "EU: Frankfurt, DE",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-fra.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "EU: Belgrade, Serbia",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-srb.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "Asia: Singapore",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-sin.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "Asia: Tokyo, Japan",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-nrt.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "Australia: Sydney",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-syd.stream.highwebmedia.com/live-origin"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "wpstream",
+            "name": "WpStream",
+            "more_info_link": "https://wpstream.net/obs-more-info",
+            "stream_key_link": "https://wpstream.net/obs-get-stream-key",
+            "servers": [
+                {
+                    "name": "Closest server - Automatic",
+                    "protocol": "RTMP",
+                    "url": "rtmp://ingest.wpstream.net/golive"
+                },
+                {
+                    "name": "North America",
+                    "protocol": "RTMP",
+                    "url": "rtmp://ingest-na.wpstream.net/golive"
+                },
+                {
+                    "name": "Europe",
+                    "protocol": "RTMP",
+                    "url": "rtmp://ingest-eu.wpstream.net/golive"
+                },
+                {
+                    "name": "Asia",
+                    "protocol": "RTMP",
+                    "url": "rtmp://ingest-as.wpstream.net/golive"
+                },
+                {
+                    "name": "South America",
+                    "protocol": "RTMP",
+                    "url": "rtmp://ingest-sa.wpstream.net/golive"
+                },
+                {
+                    "name": "Australia & Oceania",
+                    "protocol": "RTMP",
+                    "url": "rtmp://ingest-au.wpstream.net/golive"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "twitter",
+            "name": "Twitter",
+            "common": true,
+            "stream_key_link": "https://studio.twitter.com/producer/sources",
+            "servers": [
+                {
+                    "name": "US West: California",
+                    "protocol": "RTMP",
+                    "url": "rtmp://ca.pscp.tv:80/x"
+                },
+                {
+                    "name": "US West: Oregon",
+                    "protocol": "RTMP",
+                    "url": "rtmp://or.pscp.tv:80/x"
+                },
+                {
+                    "name": "US East: Virginia",
+                    "protocol": "RTMP",
+                    "url": "rtmp://va.pscp.tv:80/x"
+                },
+                {
+                    "name": "South America: Brazil",
+                    "protocol": "RTMP",
+                    "url": "rtmp://br.pscp.tv:80/x"
+                },
+                {
+                    "name": "EU West: France",
+                    "protocol": "RTMP",
+                    "url": "rtmp://fr.pscp.tv:80/x"
+                },
+                {
+                    "name": "EU West: Ireland",
+                    "protocol": "RTMP",
+                    "url": "rtmp://ie.pscp.tv:80/x"
+                },
+                {
+                    "name": "EU Central: Germany",
+                    "protocol": "RTMP",
+                    "url": "rtmp://de.pscp.tv:80/x"
+                },
+                {
+                    "name": "Asia/Pacific: Australia",
+                    "protocol": "RTMP",
+                    "url": "rtmp://au.pscp.tv:80/x"
+                },
+                {
+                    "name": "Asia/Pacific: India",
+                    "protocol": "RTMP",
+                    "url": "rtmp://in.pscp.tv:80/x"
+                },
+                {
+                    "name": "Asia/Pacific: Japan",
+                    "protocol": "RTMP",
+                    "url": "rtmp://jp.pscp.tv:80/x"
+                },
+                {
+                    "name": "Asia/Pacific: Korea",
+                    "protocol": "RTMP",
+                    "url": "rtmp://kr.pscp.tv:80/x"
+                },
+                {
+                    "name": "Asia/Pacific: Singapore",
+                    "protocol": "RTMP",
+                    "url": "rtmp://sg.pscp.tv:80/x"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "switchboard_live",
+            "name": "Switchboard Live",
+            "servers": [
+                {
+                    "name": "Global - Recommended",
+                    "protocol": "RTMPS",
+                    "url": "rtmps://live.sb.zone:443/live"
+                },
+                {
+                    "name": "Global - Legacy",
+                    "protocol": "RTMP",
+                    "url": "rtmp://ingest-global.switchboard.zone/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ],
+                    "RTMPS": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "looch",
+            "name": "Looch",
+            "servers": [
+                {
+                    "name": "Primary Looch ingest server",
+                    "protocol": "RTMP",
+                    "url": "rtmp://ingest.looch.tv/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "eventials",
+            "name": "Eventials",
+            "servers": [
+                {
+                    "name": "Default",
+                    "protocol": "RTMP",
+                    "url": "rtmp://transmission.eventials.com/eventialsLiveOrigin"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "eventlive",
+            "name": "EventLive.pro",
+            "servers": [
+                {
+                    "name": "Default",
+                    "protocol": "RTMP",
+                    "url": "rtmp://go.eventlive.pro/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "lahzenegar",
+            "name": "Lahzenegar - StreamG | لحظه‌نگار - استریمجی",
+            "servers": [
+                {
+                    "name": "Primary",
+                    "protocol": "RTMP",
+                    "url": "rtmp://rtmp.lahzecdn.com/pro"
+                },
+                {
+                    "name": "Iran",
+                    "protocol": "RTMP",
+                    "url": "rtmp://rtmp-iran.lahzecdn.com/pro"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "mylive",
+            "name": "MyLive",
+            "servers": [
+                {
+                    "name": "Default",
+                    "protocol": "RTMP",
+                    "url": "rtmp://stream.mylive.in.th/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "trovo",
+            "name": "Trovo",
+            "stream_key_link": "https://studio.trovo.live/mychannel/stream",
+            "servers": [
+                {
+                    "name": "Default",
+                    "protocol": "RTMP",
+                    "url": "rtmp://livepush.trovo.live/live/"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "mixcloud",
+            "name": "Mixcloud",
+            "servers": [
+                {
+                    "name": "Default",
+                    "protocol": "RTMP",
+                    "url": "rtmp://rtmp.mixcloud.com/broadcast"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "sermonaudio",
+            "name": "SermonAudio Cloud",
+            "servers": [
+                {
+                    "name": "Primary",
+                    "protocol": "RTMP",
+                    "url": "rtmp://webcast.sermonaudio.com/sa"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "vimeo",
+            "name": "Vimeo",
+            "servers": [
+                {
+                    "name": "Default",
+                    "protocol": "RTMP",
+                    "url": "rtmp://rtmp.cloud.vimeo.com/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "aparat",
+            "name": "Aparat",
+            "servers": [
+                {
+                    "name": "Default",
+                    "protocol": "RTMP",
+                    "url": "rtmp://rtmp.cdn.asset.aparat.com:443/event"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "kakaotv",
+            "name": "KakaoTV",
+            "servers": [
+                {
+                    "name": "Default",
+                    "protocol": "RTMP",
+                    "url": "rtmp://rtmp.play.kakao.com/kakaotv"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "piczel_tv",
+            "name": "Piczel.tv",
+            "servers": [
+                {
+                    "name": "Default",
+                    "protocol": "RTMP",
+                    "url": "rtmp://piczel.tv:1935/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "stage_ten",
+            "name": "STAGE TEN",
+            "servers": [
+                {
+                    "name": "STAGE TEN",
+                    "protocol": "RTMPS",
+                    "url": "rtmps://app-rtmp.stageten.tv:443/stageten"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMPS": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "dlive",
+            "name": "DLive",
+            "servers": [
+                {
+                    "name": "Default",
+                    "protocol": "RTMP",
+                    "url": "rtmp://stream.dlive.tv/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "lightcast_com",
+            "name": "Lightcast.com",
+            "servers": [
+                {
+                    "name": "North America / East",
+                    "protocol": "RTMP",
+                    "url": "rtmp://us-east.live.lightcast.com/202E1F/default"
+                },
+                {
+                    "name": "North America / West",
+                    "protocol": "RTMP",
+                    "url": "rtmp://us-west.live.lightcast.com/202E1F/default"
+                },
+                {
+                    "name": "Europe / Amsterdam",
+                    "protocol": "RTMP",
+                    "url": "rtmp://europe.live.lightcast.com/202E1F/default"
+                },
+                {
+                    "name": "Europe / Frankfurt",
+                    "protocol": "RTMP",
+                    "url": "rtmp://europe-fra.live.lightcast.com/202E1F/default"
+                },
+                {
+                    "name": "Europe / Stockholm",
+                    "protocol": "RTMP",
+                    "url": "rtmp://europe-sto.live.lightcast.com/202E1F/default"
+                },
+                {
+                    "name": "Asia / Hong Kong",
+                    "protocol": "RTMP",
+                    "url": "rtmp://asia.live.lightcast.com/202E1F/default"
+                },
+                {
+                    "name": "Australia / Sydney",
+                    "protocol": "RTMP",
+                    "url": "rtmp://australia.live.lightcast.com/202E1F/default"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "bongacams",
+            "name": "Bongacams",
+            "servers": [
+                {
+                    "name": "Automatic / Default",
+                    "protocol": "RTMP",
+                    "url": "rtmp://auto.origin.gnsbc.com:1934/live"
+                },
+                {
+                    "name": "Automatic / Backup",
+                    "protocol": "RTMP",
+                    "url": "rtmp://origin.bcvidorigin.com:1934/live"
+                },
+                {
+                    "name": "Europe",
+                    "protocol": "RTMP",
+                    "url": "rtmp://z-eu.origin.gnsbc.com:1934/live"
+                },
+                {
+                    "name": "North America",
+                    "protocol": "RTMP",
+                    "url": "rtmp://z-us.origin.gnsbc.com:1934/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "chathostess",
+            "name": "Chathostess",
+            "servers": [
+                {
+                    "name": "Chathostess - Backup",
+                    "protocol": "RTMP",
+                    "url": "rtmp://wowza05.foobarweb.com/cmschatsys_video"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "onlyfans",
+            "name": "OnlyFans.com",
+            "servers": [
+                {
+                    "name": "USA",
+                    "protocol": "RTMP",
+                    "url": "rtmp://route0.onlyfans.com/live"
+                },
+                {
+                    "name": "Europe",
+                    "protocol": "RTMP",
+                    "url": "rtmp://route0-dc2.onlyfans.com/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "steam",
+            "name": "Steam",
+            "servers": [
+                {
+                    "name": "Default",
+                    "protocol": "RTMP",
+                    "url": "rtmp://ingest-rtmp.broadcast.steamcontent.com/app"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "konduit",
+            "name": "Konduit.live",
+            "servers": [
+                {
+                    "name": "Default",
+                    "protocol": "RTMP",
+                    "url": "rtmp://rtmp.konduit.live/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "loco",
+            "name": "LOCO",
+            "servers": [
+                {
+                    "name": "Default",
+                    "protocol": "RTMP",
+                    "url": "rtmp://ivory-ingest.getloconow.com:1935/stream"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "niconico-premium",
+            "name": "niconico, premium member (ニコニコ生放送 プレミアム会員)",
+            "servers": [
+                {
+                    "name": "Default",
+                    "protocol": "RTMP",
+                    "url": "rtmp://aliveorigin.dmc.nico/named_input"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "niconico-free",
+            "name": "niconico, free member (ニコニコ生放送 一般会員)",
+            "servers": [
+                {
+                    "name": "Default",
+                    "protocol": "RTMP",
+                    "url": "rtmp://aliveorigin.dmc.nico/named_input"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "wasd_tv",
+            "name": "WASD.TV",
+            "servers": [
+                {
+                    "name": "Automatic",
+                    "protocol": "RTMP",
+                    "url": "rtmp://push.rtmp.wasd.tv/live"
+                },
+                {
+                    "name": "Russia, Moscow",
+                    "protocol": "RTMP",
+                    "url": "rtmp://ru-moscow.rtmp.wasd.tv/live"
+                },
+                {
+                    "name": "Germany, Frankfurt",
+                    "protocol": "RTMP",
+                    "url": "rtmp://de-frankfurt.rtmp.wasd.tv/live"
+                },
+                {
+                    "name": "Finland, Helsinki",
+                    "protocol": "RTMP",
+                    "url": "rtmp://fi-helsinki.rtmp.wasd.tv/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "xlovecam",
+            "name": "XLoveCam.com",
+            "servers": [
+                {
+                    "name": "Europe(main)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://nl.eu.stream.xlove.com/performer-origin"
+                },
+                {
+                    "name": "Europe(Romania)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://ro.eu.stream.xlove.com/performer-origin"
+                },
+                {
+                    "name": "Europe(Russia)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://ru.eu.stream.xlove.com/performer-origin"
+                },
+                {
+                    "name": "North America(US East)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://usec.na.stream.xlove.com/performer-origin"
+                },
+                {
+                    "name": "North America(US West)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://uswc.na.stream.xlove.com/performer-origin"
+                },
+                {
+                    "name": "North America(Canada)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://ca.na.stream.xlove.com/performer-origin"
+                },
+                {
+                    "name": "South America",
+                    "protocol": "RTMP",
+                    "url": "rtmp://co.sa.stream.xlove.com/performer-origin"
+                },
+                {
+                    "name": "Asia",
+                    "protocol": "RTMP",
+                    "url": "rtmp://sg.as.stream.xlove.com/performer-origin"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "angelthump",
+            "name": "AngelThump",
+            "servers": [
+                {
+                    "name": "Auto",
+                    "protocol": "RTMP",
+                    "url": "rtmp://ingest.angelthump.com/live"
+                },
+                {
+                    "name": "New York 3",
+                    "protocol": "RTMP",
+                    "url": "rtmp://nyc-ingest.angelthump.com:1935/live"
+                },
+                {
+                    "name": "San Francisco 2",
+                    "protocol": "RTMP",
+                    "url": "rtmp://sfo-ingest.angelthump.com:1935/live"
+                },
+                {
+                    "name": "Singapore 1",
+                    "protocol": "RTMP",
+                    "url": "rtmp://sgp-ingest.angelthump.com:1935/live"
+                },
+                {
+                    "name": "London 1",
+                    "protocol": "RTMP",
+                    "url": "rtmp://lon-ingest.angelthump.com:1935/live"
+                },
+                {
+                    "name": "Frankfurt 1",
+                    "protocol": "RTMP",
+                    "url": "rtmp://fra-ingest.angelthump.com:1935/live"
+                },
+                {
+                    "name": "Toronto 1",
+                    "protocol": "RTMP",
+                    "url": "rtmp://tor-ingest.angelthump.com:1935/live"
+                },
+                {
+                    "name": "Amsterdam 3",
+                    "protocol": "RTMP",
+                    "url": "rtmp://ams-ingest.angelthump.com:1935/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "api_video",
+            "name": "api.video",
+            "servers": [
+                {
+                    "name": "Default",
+                    "protocol": "RTMP",
+                    "url": "rtmp://broadcast.api.video/s"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "mux",
+            "name": "Mux",
+            "servers": [
+                {
+                    "name": "Global (RTMPS)",
+                    "protocol": "RTMPS",
+                    "url": "rtmps://global-live.mux.com:443/app"
+                },
+                {
+                    "name": "Global (RTMP)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://global-live.mux.com:5222/app"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ],
+                    "RTMPS": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "viloud",
+            "name": "Viloud",
+            "servers": [
+                {
+                    "name": "Default",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live.viloud.tv:5222/app"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "myfreecams",
+            "name": "MyFreeCams",
+            "servers": [
+                {
+                    "name": "Automatic",
+                    "protocol": "RTMP",
+                    "url": "rtmp://publish.myfreecams.com/NxServer"
+                },
+                {
+                    "name": "Australia",
+                    "protocol": "RTMP",
+                    "url": "rtmp://publish-syd.myfreecams.com/NxServer"
+                },
+                {
+                    "name": "East Asia",
+                    "protocol": "RTMP",
+                    "url": "rtmp://publish-tyo.myfreecams.com/NxServer"
+                },
+                {
+                    "name": "Europe (East)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://publish-buh.myfreecams.com/NxServer"
+                },
+                {
+                    "name": "Europe (West)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://publish-ams.myfreecams.com/NxServer"
+                },
+                {
+                    "name": "North America (East Coast)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://publish-ord.myfreecams.com/NxServer"
+                },
+                {
+                    "name": "North America (West Coast)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://publish-tuk.myfreecams.com/NxServer"
+                },
+                {
+                    "name": "South America",
+                    "protocol": "RTMP",
+                    "url": "rtmp://publish-sao.myfreecams.com/NxServer"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "polystreamer",
+            "name": "PolyStreamer.com",
+            "servers": [
+                {
+                    "name": "Auto-select closest server",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live.polystreamer.com/live"
+                },
+                {
+                    "name": "United States - West",
+                    "protocol": "RTMP",
+                    "url": "rtmp://us-west.live.polystreamer.com/live"
+                },
+                {
+                    "name": "United States - East",
+                    "protocol": "RTMP",
+                    "url": "rtmp://us-east.live.polystreamer.com/live"
+                },
+                {
+                    "name": "Australia",
+                    "protocol": "RTMP",
+                    "url": "rtmp://aus.live.polystreamer.com/live"
+                },
+                {
+                    "name": "India",
+                    "protocol": "RTMP",
+                    "url": "rtmp://ind.live.polystreamer.com/live"
+                },
+                {
+                    "name": "Germany",
+                    "protocol": "RTMP",
+                    "url": "rtmp://deu.live.polystreamer.com/live"
+                },
+                {
+                    "name": "Japan",
+                    "protocol": "RTMP",
+                    "url": "rtmp://jpn.live.polystreamer.com/live"
+                },
+                {
+                    "name": "Singapore",
+                    "protocol": "RTMP",
+                    "url": "rtmp://sgp.live.polystreamer.com/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "openrec_tv",
+            "name": "OPENREC.tv - Premium member (プレミアム会員)",
+            "stream_key_link": "https://www.openrec.tv/login?keep_login=true&url=https://www.openrec.tv/dashboard/live?from=obs",
+            "servers": [
+                {
+                    "name": "Default",
+                    "protocol": "RTMP",
+                    "url": "rtmp://a.station.openrec.tv:1935/live1"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "nanostream",
+            "name": "nanoStream Cloud / bintu",
+            "more_info_link": "https://www.nanocosmos.de/obs",
+            "stream_key_link": "https://bintu-cloud-frontend.nanocosmos.de/organisation",
+            "servers": [
+                {
+                    "name": "bintu-stream global ingest (rtmp)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://bintu-stream.nanocosmos.de/live"
+                },
+                {
+                    "name": "bintu-stream global ingest (rtmps)",
+                    "protocol": "RTMPS",
+                    "url": "rtmps://bintu-stream.nanocosmos.de:1937/live"
+                },
+                {
+                    "name": "bintu-vtrans global ingest with transcoding/ABR (rtmp)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://bintu-vtrans.nanocosmos.de/live"
+                },
+                {
+                    "name": "bintu-vtrans global ingest with transcoding/ABR (rtmps)",
+                    "protocol": "RTMPS",
+                    "url": "rtmps://bintu-vtrans.nanocosmos.de:1937/live"
+                },
+                {
+                    "name": "bintu-stream Europe (EU)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://bintu-stream-eu.nanocosmos.de/live"
+                },
+                {
+                    "name": "bintu-stream USA West (USW)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://bintu-stream-usw.nanocosmos.de/live"
+                },
+                {
+                    "name": "bintu-stream US East (USE)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://bintu-stream-use.nanocosmos.de/live"
+                },
+                {
+                    "name": "bintu-stream Asia South (ASS)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://bintu-stream-ass.nanocosmos.de/live"
+                },
+                {
+                    "name": "bintu-stream Australia (AU)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://bintu-stream-au.nanocosmos.de/live"
+                },
+                {
+                    "name": "bintu-vtrans Europe (EU)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://bintu-vtrans-eu.nanocosmos.de/live"
+                },
+                {
+                    "name": "bintu-vtrans USA West (USW)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://bintu-vtrans-usw.nanocosmos.de/live"
+                },
+                {
+                    "name": "bintu-vtrans US East (USE)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://bintu-vtrans-use.nanocosmos.de/live"
+                },
+                {
+                    "name": "bintu-vtrans Asia South (ASS)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://bintu-vtrans-ass.nanocosmos.de/live"
+                },
+                {
+                    "name": "bintu-vtrans Australia (AU)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://bintu-vtrans-au.nanocosmos.de/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ],
+                    "RTMPS": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "bilibili",
+            "name": "Bilibili Live - RTMP | 哔哩哔哩直播 - RTMP",
+            "more_info_link": "https://link.bilibili.com/p/help/index?id=4#/tools-tutorial",
+            "stream_key_link": "https://link.bilibili.com/p/center/index#/my-room/start-live",
+            "servers": [
+                {
+                    "name": "Global - Primary | 全球 - 主要",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-push.bilivideo.com/live-bvc/"
+                },
+                {
+                    "name": "Non Chinese Mainland - Primary | 非中国大陆地区 - 主要",
+                    "protocol": "RTMP",
+                    "url": "rtmp://bdy.live-push.bilivideo.com/live-bvc/"
+                },
+                {
+                    "name": "Chinese Mainland - Backup | 中国大陆地区 - 备用",
+                    "protocol": "RTMP",
+                    "url": "rtmp://txy2.live-push.bilivideo.com/live-bvc/"
+                },
+                {
+                    "name": "Non Chinese Mainland - Backup | 非中国大陆地区 - 备用",
+                    "protocol": "RTMP",
+                    "url": "rtmp://txy.live-push.bilivideo.com/live-bvc/"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "volume_com",
+            "name": "Volume.com",
+            "stream_key_link": "https://volume.com/b?show_key=1&webrtc=0",
+            "servers": [
+                {
+                    "name": "Default - Recommended",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live.volume.com/live-origin"
+                },
+                {
+                    "name": "US - West",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-pdx.volume.com/live-origin"
+                },
+                {
+                    "name": "US - East",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-ash.volume.com/live-origin"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "boxcast",
+            "name": "BoxCast",
+            "stream_key_link": "https://dashboard.boxcast.com/#/sources",
+            "servers": [
+                {
+                    "name": "BoxCast",
+                    "protocol": "RTMP",
+                    "url": "rtmp://rtmp.boxcast.com/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "disciple",
+            "name": "Disciple Media",
+            "servers": [
+                {
+                    "name": "Default",
+                    "protocol": "RTMP",
+                    "url": "rtmp://rtmp.disciplemedia.com/b-fme"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "jio_games",
+            "name": "Jio Games",
+            "servers": [
+                {
+                    "name": "Primary",
+                    "protocol": "RTMP",
+                    "url": "rtmp://livepub1.api.engageapps.jio/live"
+                },
+                {
+                    "name": "Secondary",
+                    "protocol": "RTMP",
+                    "url": "rtmp://livepub2.api.engageapps.jio/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "kuaishou",
+            "name": "Kuaishou Live",
+            "stream_key_link": "https://studio.kuaishou.com/live/list",
+            "servers": [
+                {
+                    "name": "Default",
+                    "protocol": "RTMP",
+                    "url": "rtmp://open-push.voip.yximgs.com/gifshow/"
+                },
+                {
+                    "name": "North America",
+                    "protocol": "RTMP",
+                    "url": "rtmp://tx.push.yximgs.com/live/"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "ultreon",
+            "name": "Utreon",
+            "servers": [
+                {
+                    "name": "Default",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live.utreon.com:5222/app"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "autistici_org",
+            "name": "Autistici.org Live",
+            "servers": [
+                {
+                    "name": "Default",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live.autistici.org/ingest"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "phonelivestreaming",
+            "name": "PhoneLiveStreaming",
+            "stream_key_link": "https://app.phonelivestreaming.com/media/rtmp",
+            "servers": [
+                {
+                    "name": "PhoneLiveStreaming",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live.phonelivestreaming.com/live/"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "manyvids",
+            "name": "ManyVids",
+            "servers": [
+                {
+                    "name": "Default",
+                    "protocol": "RTMP",
+                    "url": "rtmp://rtmp.str.manyvids.com:1935/live_stream/"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "fantasy_club",
+            "name": "Fantasy.Club",
+            "more_info_link": "https://help.fantasy.club/",
+            "stream_key_link": "https://fantasy.club/app/create-content/stream-now",
+            "servers": [
+                {
+                    "name": "US: East",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-east.fantasy.club/live"
+                },
+                {
+                    "name": "US: West",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-west.fantasy.club/live"
+                },
+                {
+                    "name": "Europe",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-eu.fantasy.club/live"
+                },
+                {
+                    "name": "South America",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-sa.fantasy.club/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "sympla",
+            "name": "Sympla",
+            "servers": [
+                {
+                    "name": "Sympla RTMP",
+                    "protocol": "RTMP",
+                    "url": "rtmp://rtmp.sympla.com.br:5222/app"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "mildom",
+            "name": "Mildom",
+            "more_info_link": "https://support.mildom.com/hc/ja/articles/360056569954",
+            "stream_key_link": "https://www.mildom.com/creator/live",
+            "servers": [
+                {
+                    "name": "Global",
+                    "protocol": "RTMP",
+                    "url": "rtmp://txlvb-push.mildom.tv/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "nonolive",
+            "name": "Nonolive",
+            "more_info_link": "https://wia.nonolive.com/views/obs_assistant_tutorial.html",
+            "stream_key_link": "https://www.nonolive.com/room_setting",
+            "servers": [
+                {
+                    "name": "Asia: Hong Kong, China",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-hk-zl.nonolive.tv/live"
+                },
+                {
+                    "name": "Asia: Jakarta, Indonesia",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-jkt-zl.nonolive.tv/live"
+                },
+                {
+                    "name": "EU: Frankfurt, DE",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-fra-zl.nonolive.tv/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "streamvi",
+            "name": "StreamVi",
+            "stream_key_link": "https://streamvi.ru/settings",
+            "servers": [
+                {
+                    "name": "Default",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-default.streamvi.ru/live"
+                },
+                {
+                    "name": "Russia: Moscow",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-msk.streamvi.ru/live"
+                },
+                {
+                    "name": "EU Central: Germany",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-germany.streamvi.ru/live"
+                },
+                {
+                    "name": "Russia: Novosibirsk",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-novosib.streamvi.ru/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "livepush",
+            "name": "Livepush",
+            "more_info_link": "https://docs.livepush.io/en/articles/5065323-how-to-stream-live-from-obs-to-livepush",
+            "servers": [
+                {
+                    "name": "Livepush Global (Default)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://dc-global.livepush.io/live"
+                },
+                {
+                    "name": "Chicago, US",
+                    "protocol": "RTMP",
+                    "url": "rtmp://us-central-ch.livepush.io/live"
+                },
+                {
+                    "name": "New York, US",
+                    "protocol": "RTMP",
+                    "url": "rtmp://us-east-ny.livepush.io/live"
+                },
+                {
+                    "name": "Los Angeles, US",
+                    "protocol": "RTMP",
+                    "url": "rtmp://us-west-la.livepush.io/live"
+                },
+                {
+                    "name": "Miami, US",
+                    "protocol": "RTMP",
+                    "url": "rtmp://us-south-mia.livepush.io/live"
+                },
+                {
+                    "name": "Dallas, US",
+                    "protocol": "RTMP",
+                    "url": "rtmp://us-central-dal.livepush.io/live"
+                },
+                {
+                    "name": "Montreal, CA",
+                    "protocol": "RTMP",
+                    "url": "rtmp://ca-central-mon.livepush.io/live"
+                },
+                {
+                    "name": "Toronto, CA",
+                    "protocol": "RTMP",
+                    "url": "rtmp://ca-south-tor.livepush.io/live"
+                },
+                {
+                    "name": "Sydney, AU",
+                    "protocol": "RTMP",
+                    "url": "rtmp://au-east-syd.livepush.io/live"
+                },
+                {
+                    "name": "London, UK",
+                    "protocol": "RTMP",
+                    "url": "rtmp://uk-central-ldn.livepush.io/live"
+                },
+                {
+                    "name": "Milan, Italy",
+                    "protocol": "RTMP",
+                    "url": "rtmp://it-north-mln.livepush.io/live"
+                },
+                {
+                    "name": "Paris, FR",
+                    "protocol": "RTMP",
+                    "url": "rtmp://fr-central-par.livepush.io/live"
+                },
+                {
+                    "name": "Singapore",
+                    "protocol": "RTMP",
+                    "url": "rtmp://as-southeast-sg.livepush.io/live"
+                },
+                {
+                    "name": "Bangalore, IN",
+                    "protocol": "RTMP",
+                    "url": "rtmp://in-south-blr.livepush.io/live"
+                },
+                {
+                    "name": "Turkiye",
+                    "protocol": "RTMP",
+                    "url": "rtmp://tr-north-ist.livepush.io/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "vindral",
+            "name": "Vindral",
+            "more_info_link": "https://docs.vindral.com/docs/vindral-cdn/",
+            "stream_key_link": "https://portal.cdn.vindral.com/channels",
+            "servers": [
+                {
+                    "name": "Global",
+                    "protocol": "RTMPS",
+                    "url": "rtmps://rtmp.global.cdn.vindral.com/publish"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMPS": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "whowhatch",
+            "name": "Whowatch (ふわっち)",
+            "more_info_link": "https://whowatch.tv/help/encoder",
+            "stream_key_link": "https://whowatch.tv/publish",
+            "servers": [
+                {
+                    "name": "default",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live.whowatch.tv/live/"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "irltoolkit",
+            "name": "IRLToolkit",
+            "stream_key_link": "https://irl.run/settings/ingest/",
+            "servers": [
+                {
+                    "name": "Global (Recommended)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://stream.global.irl.run/ingest"
+                },
+                {
+                    "name": "Los Angeles, US",
+                    "protocol": "RTMP",
+                    "url": "rtmp://stream.lax.irl.run/ingest"
+                },
+                {
+                    "name": "New York, US",
+                    "protocol": "RTMP",
+                    "url": "rtmp://stream.ewr.irl.run/ingest"
+                },
+                {
+                    "name": "Rotterdam, NL",
+                    "protocol": "RTMP",
+                    "url": "rtmp://stream.rtm.irl.run/ingest"
+                },
+                {
+                    "name": "Singapore",
+                    "protocol": "RTMP",
+                    "url": "rtmp://stream.sin.irl.run/ingest"
+                },
+                {
+                    "name": "Tokyo, JP",
+                    "protocol": "RTMP",
+                    "url": "rtmp://stream.tyo.irl.run/ingest"
+                },
+                {
+                    "name": "Sydney, AU",
+                    "protocol": "RTMP",
+                    "url": "rtmp://stream.syd.irl.run/ingest"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "bitmovin",
+            "name": "Bitmovin",
+            "more_info_link": "https://developer.bitmovin.com/docs/overview",
+            "stream_key_link": "https://bitmovin.com/dashboard/streams?streamsTab=LIVE",
+            "servers": [
+                {
+                    "name": "Streams Live",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live-input.bitmovin.com/streams"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "live_streamer_cafe",
+            "name": "Live Streamer Cafe",
+            "more_info_link": "https://livestreamercafe.com/help.php",
+            "stream_key_link": "https://livestreamercafe.com/profile.php",
+            "servers": [
+                {
+                    "name": "Live Streamer Cafe Server",
+                    "protocol": "RTMP",
+                    "url": "rtmp://tophicles.com/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "enchant_events",
+            "name": "Enchant.events",
+            "more_info_link": "https://docs.enchant.events/knowledge-base-y4pOb",
+            "servers": [
+                {
+                    "name": "Primary RTMPS",
+                    "protocol": "RTMPS",
+                    "url": "rtmps://stream.enchant.cloud:443/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMPS": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "joystick_tv",
+            "name": "Joystick.TV",
+            "more_info_link": "https://support.joystick.tv/support/creator-support/setting-up-your-stream/",
+            "stream_key_link": "https://joystick.tv/stream-settings",
+            "servers": [
+                {
+                    "name": "RTMP",
+                    "protocol": "RTMP",
+                    "url": "rtmp://live.joystick.tv/live/"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "livepeer_studio",
+            "name": "Livepeer Studio",
+            "more_info_link": "https://docs.livepeer.org/guides/developing/stream-via-obs",
+            "stream_key_link": "https://livepeer.studio/dashboard/streams",
+            "servers": [
+                {
+                    "name": "Global (RTMP)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://rtmp.livepeer.com/live"
+                },
+                {
+                    "name": "Global (RTMP Primary)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://rtmp-a.livepeer.com/live"
+                },
+                {
+                    "name": "Global (RTMP Backup)",
+                    "protocol": "RTMP",
+                    "url": "rtmp://rtmp-b.livepeer.com/live"
+                }
+            ],
+            "supported_codecs": {
+                "video": {
+                    "RTMP": [
+                        "h264"
+                    ]
+                }
+            }
+        }
+    ]
+}

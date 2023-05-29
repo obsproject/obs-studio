@@ -1,0 +1,60 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://obsproject.com/schemas/obs-service.json",
+    "title": "OBS Services Plugin JSON Schema",
+    "type": "object",
+    "properties": {
+        "services": {
+            "type": "array",
+            "items": {
+                "allOf": [
+                    {
+                        "title": "Service",
+                        "properties": {
+                            "id": {
+                                "type": "string",
+                                "title": "Service ID",
+                                "description": "Human readable identifier used to register the service in OBS\nMaking it human readable is meant to allow users to use it through scripts and plugins",
+                                "pattern": "^[a-z0-9_\\-]+$",
+                                "minLength": 1
+                            },
+                            "name": {
+                                "type": "string",
+                                "title": "Service Name",
+                                "description": "Name of the streaming service. Will be displayed in the Service dropdown.",
+                                "minLength": 1
+                            },
+                            "common": {
+                                "type": "boolean",
+                                "title": "Property reserved to OBS Project developers",
+                                "description": "Whether or not the service is shown in the list before it is expanded to all services by the user.",
+                                "default": false
+                            }
+                        },
+                        "$commit": "Forbid 'common' being set if false",
+                        "if": { "properties": { "common": { "const": false } } },
+                        "then": { "properties": { "common": { "description": "This property is unneeded if set to false" , "const": true } } },
+                        "required": ["id","name"]
+                    },
+                    {
+                        "$comment": "Add base service JSON schema",
+                        "$ref": "service.json"
+                    },
+                    {
+                        "$comment": "Add protocol properties",
+                        "$ref": "protocolDefs.json#/$defs/protocolProperties"
+                    }
+                ],
+                "unevaluatedProperties": false
+            },
+            "minItems": 1,
+            "uniqueItems": true,
+            "additionalItems": false
+        }
+    },
+    "$comment": "Support '$schema' without making it a proper property",
+    "if": { "not": { "maxProperties": 1 } },
+    "then": { "properties": { "$schema": { "type": "string" } } },
+    "required": ["services"],
+    "unevaluatedProperties": false
+}
