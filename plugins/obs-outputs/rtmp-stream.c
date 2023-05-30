@@ -1695,4 +1695,5 @@ struct obs_output_info rtmp_output_info = {
 	.get_connect_time_ms = rtmp_stream_connect_time,
 	.get_dropped_frames = rtmp_stream_dropped_frames,
 	.is_ready_to_update = rtmp_stream_is_ready_to_update,
+	.connecting = connecting,
 };
