@@ -843,7 +843,7 @@ void obs_volmeter_detach_source(obs_volmeter_t *volmeter)
 	volmeter->source = NULL;
 	pthread_mutex_unlock(&volmeter->mutex);
 
-	if (!source)
+	if (!source || obs_source_removed(source))
 		return;
 
 	sh = obs_source_get_signal_handler(source);
