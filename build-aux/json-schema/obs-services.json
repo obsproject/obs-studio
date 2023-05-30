@@ -4,6 +4,10 @@
     "title": "OBS Services Plugin JSON Schema",
     "type": "object",
     "properties": {
+        "format_version": {
+            "type": "integer",
+            "const": 1
+        },
         "services": {
             "type": "array",
             "items": {
@@ -53,8 +57,8 @@
         }
     },
     "$comment": "Support '$schema' without making it a proper property",
-    "if": { "not": { "maxProperties": 1 } },
+    "if": { "not": { "maxProperties": 2 } },
     "then": { "properties": { "$schema": { "type": "string" } } },
-    "required": ["services"],
+    "required": ["format_version", "services"],
     "unevaluatedProperties": false
 }

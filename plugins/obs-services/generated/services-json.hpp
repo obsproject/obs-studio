@@ -186,6 +186,7 @@ namespace OBSServices {
     };
 
     struct ServicesJson {
+        int64_t formatVersion;
         std::vector<Service> services;
     };
 }
@@ -290,11 +291,13 @@ namespace OBSServices {
     }
 
     inline void from_json(const json & j, ServicesJson& x) {
+        x.formatVersion = j.at("format_version").get<int64_t>();
         x.services = j.at("services").get<std::vector<Service>>();
     }
 
     inline void to_json(json & j, const ServicesJson & x) {
         j = json::object();
+        j["format_version"] = x.formatVersion;
         j["services"] = x.services;
     }
 

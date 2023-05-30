@@ -26,6 +26,11 @@ target_sources(
 
 target_link_libraries(obs-services PRIVATE OBS::libobs nlohmann_json::nlohmann_json)
 
+file(STRINGS json/services.json _format_version REGEX "^.*\"format_version\":[ \t]+[0-9]+,$")
+string(REGEX REPLACE "^.*\"format_version\":[ \t]+([0-9]+),$" "\\1" JSON_FORMAT_VER "${_format_version}")
+
+target_compile_definitions(obs-services PRIVATE JSON_FORMAT_VER=${JSON_FORMAT_VER})
+
 if(OS_WINDOWS)
   configure_file(cmake/windows/obs-module.rc.in obs-services.rc)
   target_sources(obs-services PRIVATE obs-services.rc)

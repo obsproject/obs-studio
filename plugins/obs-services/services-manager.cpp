@@ -5,6 +5,9 @@
 #include "services-manager.hpp"
 
 #include <fstream>
+#include <inttypes.h>
+
+constexpr int OBS_SERVICES_FORMAT_VER = JSON_FORMAT_VER;
 
 std::shared_ptr<ServicesManager> manager = nullptr;
 
@@ -24,6 +27,15 @@ bool ServicesManager::RegisterServices()
 			blog(LOG_WARNING, "[obs-services] %s", e.what());
 			blog(LOG_WARNING,
 			     "[obs-services] [RegisterServices] config path services file could not be parsed");
+			fallback = true;
+		}
+
+		if (json.formatVersion != OBS_SERVICES_FORMAT_VER) {
+			blog(LOG_WARNING,
+			     "[obs-services] [RegisterServices] "
+			     "config path services file format version mismatch (file: %" PRId64
+			     ", plugin: %d)",
+			     json.formatVersion, OBS_SERVICES_FORMAT_VER);
 			fallback = true;
 		}
 	} else {
@@ -49,6 +61,15 @@ bool ServicesManager::RegisterServices()
 			blog(LOG_ERROR, "[obs-services] %s", e.what());
 			blog(LOG_ERROR, "[obs-services] [RegisterServices] "
 					"services file could not be parsed");
+			return false;
+		}
+
+		if (json.formatVersion != OBS_SERVICES_FORMAT_VER) {
+			blog(LOG_ERROR,
+			     "[obs-services] [RegisterServices] "
+			     "services file format version mismatch (file: %" PRId64
+			     ", plugin: %d)",
+			     json.formatVersion, OBS_SERVICES_FORMAT_VER);
 			return false;
 		}
 	}

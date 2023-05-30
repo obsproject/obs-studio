@@ -1,5 +1,6 @@
 {
     "$schema": "schema/obs-services.json",
+    "format_version": 1,
     "services": [
         {
             "id": "loola",
