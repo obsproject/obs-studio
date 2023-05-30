@@ -1254,13 +1254,17 @@ try {
 	int64_t qp = obs_data_get_int(settings, "cqp");
 	const char *rc_str = obs_data_get_string(settings, "rate_control");
 	int rc = get_avc_rate_control(rc_str);
-	AMF_RESULT res;
+	AMF_RESULT res = AMF_OK;
 
 	amf_avc_update_data(enc, rc, bitrate * 1000, qp);
 
+	res = enc->amf_encoder->Flush();
+	if (res != AMF_OK)
+		throw amf_error("AMFComponent::Flush failed", res);
+
 	res = enc->amf_encoder->ReInit(enc->cx, enc->cy);
 	if (res != AMF_OK)
-		throw amf_error("AMFComponent::Init failed", res);
+		throw amf_error("AMFComponent::ReInit failed", res);
 
 	return true;
 
@@ -1488,8 +1492,7 @@ static void register_avc()
 	amf_encoder_info.get_name = amf_avc_get_name;
 	amf_encoder_info.create = amf_avc_create_texencode;
 	amf_encoder_info.destroy = amf_destroy;
-	/* FIXME: Figure out why encoder does not survive reconfiguration
-	amf_encoder_info.update = amf_avc_update; */
+	amf_encoder_info.update = amf_avc_update;
 	amf_encoder_info.encode_texture = amf_encode_tex;
 	amf_encoder_info.get_defaults = amf_defaults;
 	amf_encoder_info.get_properties = amf_avc_properties;
@@ -1581,13 +1584,17 @@ try {
 	int64_t qp = obs_data_get_int(settings, "cqp");
 	const char *rc_str = obs_data_get_string(settings, "rate_control");
 	int rc = get_hevc_rate_control(rc_str);
-	AMF_RESULT res;
+	AMF_RESULT res = AMF_OK;
 
 	amf_hevc_update_data(enc, rc, bitrate * 1000, qp);
 
+	res = enc->amf_encoder->Flush();
+	if (res != AMF_OK)
+		throw amf_error("AMFComponent::Flush failed", res);
+
 	res = enc->amf_encoder->ReInit(enc->cx, enc->cy);
 	if (res != AMF_OK)
-		throw amf_error("AMFComponent::Init failed", res);
+		throw amf_error("AMFComponent::ReInit failed", res);
 
 	return true;
 
@@ -1835,8 +1842,7 @@ static void register_hevc()
 	amf_encoder_info.get_name = amf_hevc_get_name;
 	amf_encoder_info.create = amf_hevc_create_texencode;
 	amf_encoder_info.destroy = amf_destroy;
-	/* FIXME: Figure out why encoder does not survive reconfiguration
-	amf_encoder_info.update = amf_hevc_update; */
+	amf_encoder_info.update = amf_hevc_update;
 	amf_encoder_info.encode_texture = amf_encode_tex;
 	amf_encoder_info.get_defaults = amf_defaults;
 	amf_encoder_info.get_properties = amf_hevc_properties;
@@ -1947,12 +1953,17 @@ try {
 	int64_t cq_level = obs_data_get_int(settings, "cqp");
 	const char *rc_str = obs_data_get_string(settings, "rate_control");
 	int rc = get_av1_rate_control(rc_str);
+	AMF_RESULT res = AMF_OK;
 
 	amf_av1_update_data(enc, rc, bitrate * 1000, cq_level);
 
-	AMF_RESULT res = enc->amf_encoder->ReInit(enc->cx, enc->cy);
+	res = enc->amf_encoder->Flush();
 	if (res != AMF_OK)
-		throw amf_error("AMFComponent::Init failed", res);
+		throw amf_error("AMFComponent::Flush failed", res);
+
+	res = enc->amf_encoder->ReInit(enc->cx, enc->cy);
+	if (res != AMF_OK)
+		throw amf_error("AMFComponent::ReInit failed", res);
 
 	return true;
 
@@ -2153,8 +2164,7 @@ static void register_av1()
 	amf_encoder_info.get_name = amf_av1_get_name;
 	amf_encoder_info.create = amf_av1_create_texencode;
 	amf_encoder_info.destroy = amf_destroy;
-	/* FIXME: Figure out why encoder does not survive reconfiguration
-	amf_encoder_info.update = amf_av1_update; */
+	amf_encoder_info.update = amf_av1_update;
 	amf_encoder_info.encode_texture = amf_encode_tex;
 	amf_encoder_info.get_defaults = amf_av1_defaults;
 	amf_encoder_info.get_properties = amf_av1_properties;
