@@ -668,6 +668,7 @@ static void on_process_cb(void *user_data)
 			pw_loop_signal_event(
 				pw_thread_loop_get_loop(obs_pw->thread_loop),
 				obs_pw->reneg);
+			goto read_metadata;
 		}
 	} else {
 		blog(LOG_DEBUG, "[pipewire] Buffer has memory texture");
