@@ -1119,6 +1119,7 @@ static enum obs_service_audio_track_cap rtmp_common_audio_track_cap(void *data)
 
 struct obs_service_info rtmp_common_service = {
 	.id = "rtmp_common",
+	.flags = OBS_SERVICE_DEPRECATED | OBS_SERVICE_INTERNAL,
 	.get_name = rtmp_common_getname,
 	.create = rtmp_common_create,
 	.destroy = rtmp_common_destroy,
