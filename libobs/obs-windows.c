@@ -1197,18 +1197,21 @@ void reset_win32_symbol_paths(void)
 
 		*path_end = 0;
 
-		for (size_t i = 0; i < paths.num; i++) {
-			const char *existing_path = paths.array[i];
-			if (astrcmpi(path.array, existing_path) == 0) {
-				found = true;
-				break;
+		abspath = os_get_abs_path_ptr(path.array);
+		if (abspath) {
+			for (size_t i = 0; i < paths.num; i++) {
+				const char *existing_path = paths.array[i];
+				if (astrcmpi(abspath, existing_path) == 0) {
+					found = true;
+					break;
+				}
 			}
-		}
 
-		if (!found) {
-			abspath = os_get_abs_path_ptr(path.array);
-			if (abspath)
+			if (!found) {
 				da_push_back(paths, &abspath);
+			} else {
+				bfree(abspath);
+			}
 		}
 
 		dstr_free(&path);
