@@ -38,6 +38,7 @@ if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
   if(OS_WINDOWS OR OS_MACOS)
     add_subdirectory(coreaudio-encoder)
   endif()
+  add_subdirectory(custom-services)
   if(OS_WINDOWS
      OR OS_MACOS
      OR OS_LINUX)
@@ -198,3 +199,4 @@ add_subdirectory(text-freetype2)
 add_subdirectory(aja)
 add_subdirectory(obs-webrtc)
 add_subdirectory(obs-services)
+add_subdirectory(custom-services)
