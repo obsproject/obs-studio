@@ -48,6 +48,9 @@ class ServiceInstance {
 	static void InfoGetDefault2(void *type_data, obs_data_t *settings);
 	static obs_properties_t *InfoGetProperties2(void *data, void *typeData);
 
+	static void InfoApplySettings(void *data, obs_data_t *videoSettings,
+				      obs_data_t *audioSettings);
+
 public:
 	ServiceInstance(const OBSServices::Service &service);
 	inline ~ServiceInstance(){};

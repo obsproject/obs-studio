@@ -112,3 +112,11 @@ obs_properties_t *ServiceInstance::InfoGetProperties2(void * /* data */,
 			->GetProperties();
 	return nullptr;
 }
+
+void ServiceInstance::InfoApplySettings(void *data, obs_data_t *videoSettings,
+					obs_data_t *audioSettings)
+{
+	ServiceConfig *priv = reinterpret_cast<ServiceConfig *>(data);
+	if (priv)
+		priv->ApplySettings(videoSettings, audioSettings);
+}

@@ -158,6 +158,23 @@ bool custom_service_can_try_to_connect(void *data)
 	return true;
 }
 
+static void custom_service_apply_settings(void *data,
+					  obs_data_t *video_settings,
+					  obs_data_t *audio_settings)
+{
+	struct custom_service *service = data;
+	if ((strcmp(service->protocol, "SRT") != 0) &&
+	    (strcmp(service->protocol, "RIST") != 0)) {
+		return;
+	}
+
+	if (video_settings != NULL)
+		obs_data_set_bool(video_settings, "repeat_headers", true);
+
+	if (audio_settings != NULL)
+		obs_data_set_bool(audio_settings, "set_to_ADTS", true);
+}
+
 bool update_protocol_cb(obs_properties_t *props, obs_property_t *prop,
 			obs_data_t *settings)
 {
@@ -337,4 +354,5 @@ const struct obs_service_info custom_service = {
 	.get_connect_info = custom_service_connect_info,
 	.can_try_to_connect = custom_service_can_try_to_connect,
 	.get_audio_track_cap = custom_service_audio_track_cap,
+	.apply_encoder_settings = custom_service_apply_settings,
 };

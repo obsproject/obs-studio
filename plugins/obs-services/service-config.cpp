@@ -138,3 +138,25 @@ int ServiceConfig::GetMaxVideoBitrate(const char *codec,
 {
 	return service->GetMaxVideoBitrate(codec, resolution);
 }
+
+void ServiceConfig::ApplySettings(obs_data_t *videoSettings,
+				  obs_data_t *audioSettings)
+{
+	switch (StdStringToServerProtocol(protocol)) {
+	case OBSServices::ServerProtocol::RIST:
+	case OBSServices::ServerProtocol::SRT: {
+		if (videoSettings != NULL)
+			obs_data_set_bool(videoSettings, "repeat_headers",
+					  true);
+
+		if (audioSettings != NULL)
+			obs_data_set_bool(audioSettings, "set_to_ADTS", true);
+		break;
+	}
+	case OBSServices::ServerProtocol::RTMP:
+	case OBSServices::ServerProtocol::RTMPS:
+	case OBSServices::ServerProtocol::HLS:
+	case OBSServices::ServerProtocol::WHIP:
+		break;
+	}
+}
