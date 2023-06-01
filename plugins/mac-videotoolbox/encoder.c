@@ -1592,40 +1592,10 @@ vt_add_prores_encoder_data_to_list(CFDictionaryRef encoder_dict,
 	encoder_data->codec_type = codec_type;
 }
 
-static CFComparisonResult compare_encoder_list(const void *left_val,
-					       const void *right_val,
-					       void *context __unused)
-{
-	CFDictionaryRef left = (CFDictionaryRef)left_val;
-	CFDictionaryRef right = (CFDictionaryRef)right_val;
-
-	CFNumberRef left_codec_num =
-		CFDictionaryGetValue(left, kVTVideoEncoderList_CodecType);
-	CFNumberRef right_codec_num =
-		CFDictionaryGetValue(right, kVTVideoEncoderList_CodecType);
-	CFComparisonResult result =
-		CFNumberCompare(left_codec_num, right_codec_num, NULL);
-
-	if (result != kCFCompareEqualTo)
-		return result;
-
-	CFBooleanRef left_hardware_accel = CFDictionaryGetValue(
-		left, kVTVideoEncoderList_IsHardwareAccelerated);
-	CFBooleanRef right_hardware_accel = CFDictionaryGetValue(
-		right, kVTVideoEncoderList_IsHardwareAccelerated);
-
-	if (left_hardware_accel == right_hardware_accel)
-		return kCFCompareEqualTo;
-	else if (left_hardware_accel == kCFBooleanTrue)
-		return kCFCompareGreaterThan;
-	else
-		return kCFCompareLessThan;
-}
-
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("mac-videotoolbox", "en-US")
 dispatch_group_t encoder_list_dispatch_group;
-CFArrayRef encoder_list_const;
+CFArrayRef encoder_list;
 
 bool obs_module_load(void)
 {
@@ -1633,7 +1603,7 @@ bool obs_module_load(void)
 		dispatch_queue_create("Encoder list load queue", NULL);
 	encoder_list_dispatch_group = dispatch_group_create();
 	dispatch_group_async(encoder_list_dispatch_group, queue, ^{
-		VTCopyVideoEncoderList(NULL, &encoder_list_const);
+		VTCopyVideoEncoderList(NULL, &encoder_list);
 	});
 	// The group dispatch keeps a reference until it's finished
 	dispatch_release(queue);
@@ -1664,14 +1634,7 @@ void obs_module_post_load(void)
 
 	dispatch_group_wait(encoder_list_dispatch_group, DISPATCH_TIME_FOREVER);
 	dispatch_release(encoder_list_dispatch_group);
-	CFIndex size = CFArrayGetCount(encoder_list_const);
-
-	CFMutableArrayRef encoder_list = CFArrayCreateMutableCopy(
-		kCFAllocatorDefault, size, encoder_list_const);
-	CFRelease(encoder_list_const);
-
-	CFArraySortValues(encoder_list, CFRangeMake(0, size),
-			  &compare_encoder_list, NULL);
+	CFIndex size = CFArrayGetCount(encoder_list);
 
 	for (CFIndex i = 0; i < size; i++) {
 		CFDictionaryRef encoder_dict =
