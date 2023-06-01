@@ -1,0 +1,8 @@
+// SPDX-FileCopyrightText: 2023 tytan652 <tytan652@tytanium.xyz>
+//
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#pragma once
+
+void load_showroom(void);
+void unload_showroom(void);
