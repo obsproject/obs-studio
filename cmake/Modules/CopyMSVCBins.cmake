@@ -87,7 +87,9 @@ file(
   "${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/libbz2*.dll"
   "${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/zlib*.dll"
   "${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/libbz2*.dll"
-  "${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/zlib*.dll")
+  "${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/zlib*.dll"
+  "${FFMPEG_avcodec_INCLUDE_DIR}/../bin/libdatachannel*.dll"
+  "${FFMPEG_avcodec_INCLUDE_DIR}/bin/libdatachannel*.dll")
 
 file(GLOB X264_BIN_FILES "${X264_INCLUDE_DIR}/../bin${_bin_suffix}/libx264-*.dll"
      "${X264_INCLUDE_DIR}/../bin/libx264-*.dll" "${X264_INCLUDE_DIR}/bin/libx264-*.dll"
