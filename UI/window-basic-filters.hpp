@@ -113,6 +113,8 @@ private slots:
 	void on_actionMoveUp_triggered();
 	void on_actionMoveDown_triggered();
 
+	void on_actionRenameFilter_triggered();
+
 	void AsyncFilterNameEdited(QWidget *editor);
 	void EffectFilterNameEdited(QWidget *editor);
 
