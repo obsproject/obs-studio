@@ -597,6 +597,9 @@
    <property name="shortcut">
     <string>Del</string>
    </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
   </action>
   <action name="actionMoveUp">
    <property name="icon">
@@ -620,6 +623,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Down</string>
+   </property>
+  </action>
+  <action name="actionRenameFilter">
+   <property name="text">
+    <string>Rename</string>
    </property>
   </action>
  </widget>
