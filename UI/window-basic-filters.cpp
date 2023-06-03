@@ -81,6 +81,7 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 		QApplication::translate("OBSBasicFilters", "Del", nullptr));
 #endif // QT_NO_SHORTCUT
 
+	addAction(ui->actionRenameFilter);
 	addAction(ui->actionRemoveFilter);
 	addAction(ui->actionMoveUp);
 	addAction(ui->actionMoveDown);
@@ -154,24 +155,10 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 		ui->preview->hide();
 	}
 
-	QAction *renameAsync = new QAction(ui->asyncWidget);
-	renameAsync->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-	connect(renameAsync, SIGNAL(triggered()), this,
-		SLOT(RenameAsyncFilter()));
-	ui->asyncWidget->addAction(renameAsync);
-
-	QAction *renameEffect = new QAction(ui->effectWidget);
-	renameEffect->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-	connect(renameEffect, SIGNAL(triggered()), this,
-		SLOT(RenameEffectFilter()));
-	ui->effectWidget->addAction(renameEffect);
-
 #ifdef __APPLE__
-	renameAsync->setShortcut({Qt::Key_Return});
-	renameEffect->setShortcut({Qt::Key_Return});
+	ui->actionRenameFilter->setShortcut({Qt::Key_Return});
 #else
-	renameAsync->setShortcut({Qt::Key_F2});
-	renameEffect->setShortcut({Qt::Key_F2});
+	ui->actionRenameFilter->setShortcut({Qt::Key_F2});
 #endif
 
 	UpdateFilters();
@@ -932,6 +919,14 @@ void OBSBasicFilters::on_actionMoveDown_triggered()
 		on_moveEffectFilterDown_clicked();
 }
 
+void OBSBasicFilters::on_actionRenameFilter_triggered()
+{
+	if (ui->asyncFilters->hasFocus())
+		RenameAsyncFilter();
+	else if (ui->effectFilters->hasFocus())
+		RenameEffectFilter();
+}
+
 void OBSBasicFilters::CustomContextMenu(const QPoint &pos, bool async)
 {
 	QListWidget *list = async ? ui->asyncFilters : ui->effectFilters;
@@ -948,17 +943,11 @@ void OBSBasicFilters::CustomContextMenu(const QPoint &pos, bool async)
 			async ? SLOT(DuplicateAsyncFilter())
 			      : SLOT(DuplicateEffectFilter());
 
-		const char *renameSlot = async ? SLOT(RenameAsyncFilter())
-					       : SLOT(RenameEffectFilter());
-		const char *removeSlot =
-			async ? SLOT(on_removeAsyncFilter_clicked())
-			      : SLOT(on_removeEffectFilter_clicked());
-
 		popup.addSeparator();
 		popup.addAction(QTStr("Duplicate"), this, dulpicateSlot);
 		popup.addSeparator();
-		popup.addAction(QTStr("Rename"), this, renameSlot);
-		popup.addAction(QTStr("Remove"), this, removeSlot);
+		popup.addAction(ui->actionRenameFilter);
+		popup.addAction(ui->actionRemoveFilter);
 		popup.addSeparator();
 
 		QAction *copyAction = new QAction(QTStr("Copy"));
