@@ -983,7 +983,7 @@ static bool build_window_list(struct screen_capture *sc,
 				return NSOrderedAscending;
 			}
 		}];
-  
+
 	[sortedWindows enumerateObjectsUsingBlock:^(
 			       SCWindow *_Nonnull window,
 			       NSUInteger idx __unused,
