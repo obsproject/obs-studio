@@ -363,9 +363,9 @@ void obs_properties_apply_settings_internal(obs_properties_t *props,
 					    obs_data_t *settings,
 					    obs_properties_t *realprops)
 {
-	struct obs_property *p, *tmp;
+	struct obs_property *p = props->properties;
 
-	HASH_ITER (hh, props->properties, p, tmp) {
+	while (p) {
 		if (p->type == OBS_PROPERTY_GROUP) {
 			obs_properties_apply_settings_internal(
 				obs_property_group_content(p), settings,
@@ -375,6 +375,8 @@ void obs_properties_apply_settings_internal(obs_properties_t *props,
 			p->modified(realprops, p, settings);
 		else if (p->modified2)
 			p->modified2(p->priv, realprops, p, settings);
+
+		p = p->hh.next;
 	}
 }
 
