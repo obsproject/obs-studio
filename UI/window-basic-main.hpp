@@ -847,6 +847,9 @@ private slots:
 	void LockVolumeControl(bool lock);
 	void ThemeChanged();
 
+	void EnableAudioTrackMonitor(bool checked);
+	void ResetAudioTrackControls();
+
 	void UpdateVirtualCamConfig(const VCamConfig &config);
 	void RestartVirtualCam(const VCamConfig &config);
 	void RestartingVirtualCam();

@@ -1069,6 +1069,9 @@ static void obs_free_data(void)
 	obs_view_remove(&data->main_view);
 	obs_main_view_free(&data->main_view);
 
+	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++)
+		obs_source_release(data->tracks[i]);
+
 	blog(LOG_INFO, "Freeing OBS context data");
 
 	FREE_OBS_LINKED_LIST(output);
@@ -1232,6 +1235,20 @@ const struct obs_source_info audio_line_info = {
 	.get_name = submix_name,
 };
 
+static const char *audio_track_name(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return "Audio track (internal use only)";
+}
+
+const struct obs_source_info audio_track_info = {
+	.id = "audio_track",
+	.type = OBS_SOURCE_TYPE_INPUT,
+	.output_flags = OBS_SOURCE_AUDIO | OBS_SOURCE_CAP_DISABLED |
+			OBS_SOURCE_AUDIO_TRACK,
+	.get_name = audio_track_name,
+};
+
 extern void log_system_info(void);
 
 static bool obs_init(const char *locale, const char *module_config_path,
@@ -1270,6 +1287,7 @@ static bool obs_init(const char *locale, const char *module_config_path,
 	obs_register_source(&scene_info);
 	obs_register_source(&group_info);
 	obs_register_source(&audio_line_info);
+	obs_register_source(&audio_track_info);
 	add_default_module_paths();
 	return true;
 }
@@ -1899,6 +1917,50 @@ void obs_set_output_source(uint32_t channel, obs_source_t *source)
 	view->channels[channel] = source;
 
 	pthread_mutex_unlock(&view->channels_mutex);
+
+	if (source)
+		obs_source_activate(source, MAIN_VIEW);
+
+	if (prev_source) {
+		obs_source_deactivate(prev_source, MAIN_VIEW);
+		obs_source_release(prev_source);
+	}
+}
+
+obs_source_t *obs_get_audio_track_source(uint32_t track)
+{
+	obs_source_t *source;
+	assert(track < MAX_AUDIO_MIXES);
+
+	if (track >= MAX_AUDIO_MIXES)
+		return NULL;
+
+	pthread_mutex_lock(&obs->data.audio_sources_mutex);
+	source = obs_source_get_ref(obs->data.tracks[track]);
+	pthread_mutex_unlock(&obs->data.audio_sources_mutex);
+
+	return source;
+}
+
+void obs_set_audio_track_source(uint32_t track, obs_source_t *source)
+{
+	assert(track < MAX_AUDIO_MIXES);
+
+	if (track >= MAX_AUDIO_MIXES)
+		return;
+
+	if (source && (source->info.output_flags & OBS_SOURCE_AUDIO_TRACK) == 0)
+		return;
+
+	struct obs_source *prev_source;
+
+	pthread_mutex_lock(&obs->data.audio_sources_mutex);
+
+	source = obs_source_get_ref(source);
+	prev_source = obs->data.tracks[track];
+	obs->data.tracks[track] = source;
+
+	pthread_mutex_unlock(&obs->data.audio_sources_mutex);
 
 	if (source)
 		obs_source_activate(source, MAIN_VIEW);

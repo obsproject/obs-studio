@@ -2715,6 +2715,11 @@ EXPORT void obs_source_frame_copy(struct obs_source_frame *dst,
 				  const struct obs_source_frame *src);
 
 /* ------------------------------------------------------------------------- */
+/* Audio track sources */
+EXPORT void obs_set_audio_track_source(uint32_t track, obs_source_t *source);
+EXPORT obs_source_t *obs_get_audio_track_source(uint32_t track);
+
+/* ------------------------------------------------------------------------- */
 /* Get source icon type */
 EXPORT enum obs_icon_type obs_source_get_icon_type(const char *id);
 

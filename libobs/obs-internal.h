@@ -424,6 +424,8 @@ struct obs_core_data {
 
 	DARRAY(char *) protocols;
 	DARRAY(obs_source_t *) sources_to_tick;
+
+	struct obs_source *tracks[MAX_AUDIO_MIXES];
 };
 
 /* user hotkeys */
@@ -524,6 +526,10 @@ extern bool audio_callback(void *param, uint64_t start_ts_in,
 			   uint32_t mixers, struct audio_output_data *mixes);
 
 extern struct obs_core_video_mix *get_mix_for_video(video_t *video);
+
+extern struct obs_audio_data *
+obs_source_get_output_audio_data(obs_source_t *source,
+				 const struct obs_source_audio *audio);
 
 extern void
 start_raw_video(video_t *video, const struct video_scale_info *conversion,
@@ -898,6 +904,7 @@ extern void obs_transition_load(obs_source_t *source, obs_data_t *data);
 struct audio_monitor *audio_monitor_create(obs_source_t *source);
 void audio_monitor_reset(struct audio_monitor *monitor);
 extern void audio_monitor_destroy(struct audio_monitor *monitor);
+extern bool devices_match(const char *id1, const char *id2);
 
 extern obs_source_t *
 obs_source_create_set_last_ver(const char *id, const char *name,
