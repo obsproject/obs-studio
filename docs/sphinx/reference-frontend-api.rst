@@ -450,7 +450,7 @@ Functions
    :param dock: QDockWidget to add/create
    :return: A pointer to the added QAction
 
-.. deprecated:: 29.1
+.. deprecated:: 30.0
    Prefer :c:func:`obs_frontend_add_dock_by_id()` or
    :c:func:`obs_frontend_add_custom_qdock()` instead.
 
