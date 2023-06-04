@@ -259,6 +259,12 @@ static void SetSafeModuleNames()
 #endif
 }
 
+static bool IsAudioTrack(OBSSource source)
+{
+	uint32_t flags = obs_source_get_output_flags(source);
+	return (flags & OBS_SOURCE_AUDIO_TRACK) != 0;
+}
+
 extern obs_frontend_callbacks *InitializeAPIInterface(OBSBasic *main);
 
 void assignDockToggle(QDockWidget *dock, QAction *action)
@@ -479,6 +485,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	SETUP_DOCK(ui->transitionsDock);
 	SETUP_DOCK(ui->controlsDock);
 	SETUP_DOCK(statsDock);
+	SETUP_DOCK(ui->audioTrackMixerDock);
 #undef SETUP_DOCK
 
 	// Register shortcuts for Undo/Redo
@@ -551,9 +558,11 @@ OBSBasic::OBSBasic(QWidget *parent)
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent,
-			    vector<OBSSource> &audioSources)
+			    vector<OBSSource> &audioSources, bool audioTrack)
 {
-	OBSSourceAutoRelease source = obs_get_output_source(channel);
+	OBSSourceAutoRelease source =
+		audioTrack ? obs_get_audio_track_source(channel)
+			   : obs_get_output_source(channel);
 	if (!source)
 		return;
 
@@ -574,14 +583,20 @@ static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder,
 	obs_data_t *saveData = obs_data_create();
 
 	vector<OBSSource> audioSources;
-	audioSources.reserve(6);
+	audioSources.reserve(12);
 
-	SaveAudioDevice(DESKTOP_AUDIO_1, 1, saveData, audioSources);
-	SaveAudioDevice(DESKTOP_AUDIO_2, 2, saveData, audioSources);
-	SaveAudioDevice(AUX_AUDIO_1, 3, saveData, audioSources);
-	SaveAudioDevice(AUX_AUDIO_2, 4, saveData, audioSources);
-	SaveAudioDevice(AUX_AUDIO_3, 5, saveData, audioSources);
-	SaveAudioDevice(AUX_AUDIO_4, 6, saveData, audioSources);
+	SaveAudioDevice(DESKTOP_AUDIO_1, 1, saveData, audioSources, false);
+	SaveAudioDevice(DESKTOP_AUDIO_2, 2, saveData, audioSources, false);
+	SaveAudioDevice(AUX_AUDIO_1, 3, saveData, audioSources, false);
+	SaveAudioDevice(AUX_AUDIO_2, 4, saveData, audioSources, false);
+	SaveAudioDevice(AUX_AUDIO_3, 5, saveData, audioSources, false);
+	SaveAudioDevice(AUX_AUDIO_4, 6, saveData, audioSources, false);
+	SaveAudioDevice("audioTrack1", 0, saveData, audioSources, true);
+	SaveAudioDevice("audioTrack2", 1, saveData, audioSources, true);
+	SaveAudioDevice("audioTrack3", 2, saveData, audioSources, true);
+	SaveAudioDevice("audioTrack4", 3, saveData, audioSources, true);
+	SaveAudioDevice("audioTrack5", 4, saveData, audioSources, true);
+	SaveAudioDevice("audioTrack6", 5, saveData, audioSources, true);
 
 	/* -------------------------------- */
 	/* save non-group sources           */
@@ -671,6 +686,14 @@ void OBSBasic::copyActionsDynamicProperties()
 
 		if (!temp)
 			continue;
+
+		for (QByteArray &y : x->dynamicPropertyNames()) {
+			temp->setProperty(y, x->property(y));
+		}
+	}
+
+	for (QAction *x : ui->audioTrackMixerToolbar->actions()) {
+		QWidget *temp = ui->audioTrackMixerToolbar->widgetForAction(x);
 
 		for (QByteArray &y : x->dynamicPropertyNames()) {
 			temp->setProperty(y, x->property(y));
@@ -866,17 +889,27 @@ void OBSBasic::DeferSaveEnd()
 
 static void LogFilter(obs_source_t *, obs_source_t *filter, void *v_val);
 
-static void LoadAudioDevice(const char *name, int channel, obs_data_t *parent)
+static void LoadAudioDevice(const char *name, int channel, obs_data_t *parent,
+			    bool audioTrack)
 {
 	OBSDataAutoRelease data = obs_data_get_obj(parent, name);
-	if (!data)
+	if (!data) {
+		if (audioTrack)
+			OBSBasic::Get()->ResetAudioTrack(channel);
 		return;
+	}
 
 	OBSSourceAutoRelease source = obs_load_source(data);
-	if (!source)
+	if (!source) {
+		if (audioTrack)
+			OBSBasic::Get()->ResetAudioTrack(channel);
 		return;
+	}
 
-	obs_set_output_source(channel, source);
+	if (audioTrack)
+		obs_set_audio_track_source(channel, source);
+	else
+		obs_set_output_source(channel, source);
 
 	const char *source_name = obs_source_get_name(source);
 	blog(LOG_INFO, "[Loaded global audio device]: '%s'", source_name);
@@ -938,6 +971,9 @@ void OBSBasic::CreateDefaultScene(bool firstStart)
 
 	if (firstStart)
 		CreateFirstRunSources();
+
+	for (int i = 0; i < MAX_AUDIO_MIXES; i++)
+		ResetAudioTrack(i);
 
 	SetCurrentScene(scene, true);
 
@@ -1169,12 +1205,18 @@ void OBSBasic::LoadData(obs_data_t *data, const char *file)
 	if (!name || !*name)
 		name = curSceneCollection;
 
-	LoadAudioDevice(DESKTOP_AUDIO_1, 1, data);
-	LoadAudioDevice(DESKTOP_AUDIO_2, 2, data);
-	LoadAudioDevice(AUX_AUDIO_1, 3, data);
-	LoadAudioDevice(AUX_AUDIO_2, 4, data);
-	LoadAudioDevice(AUX_AUDIO_3, 5, data);
-	LoadAudioDevice(AUX_AUDIO_4, 6, data);
+	LoadAudioDevice(DESKTOP_AUDIO_1, 1, data, false);
+	LoadAudioDevice(DESKTOP_AUDIO_2, 2, data, false);
+	LoadAudioDevice(AUX_AUDIO_1, 3, data, false);
+	LoadAudioDevice(AUX_AUDIO_2, 4, data, false);
+	LoadAudioDevice(AUX_AUDIO_3, 5, data, false);
+	LoadAudioDevice(AUX_AUDIO_4, 6, data, false);
+	LoadAudioDevice("audioTrack1", 0, data, true);
+	LoadAudioDevice("audioTrack2", 1, data, true);
+	LoadAudioDevice("audioTrack3", 2, data, true);
+	LoadAudioDevice("audioTrack4", 3, data, true);
+	LoadAudioDevice("audioTrack5", 4, data, true);
+	LoadAudioDevice("audioTrack6", 5, data, true);
 
 	if (!sources) {
 		sources = std::move(groups);
@@ -2283,6 +2325,9 @@ void OBSBasic::OBSInit()
 
 	ToggleMixerLayout(config_get_bool(App()->GlobalConfig(), "BasicWindow",
 					  "VerticalVolControl"));
+	ToggleAudioTrackMixerLayout(
+		config_get_bool(App()->GlobalConfig(), "BasicWindow",
+				"VerticalAudioTrackControls"));
 
 	if (config_get_bool(basicConfig, "General", "OpenStatsOnStartup"))
 		on_stats_triggered();
@@ -3596,17 +3641,22 @@ void OBSBasic::HideAudioControl()
 	}
 }
 
-void OBSBasic::UnhideAllAudioControls()
+static void UnhideAll(bool audioTrack)
 {
-	auto UnhideAudioMixer = [this](obs_source_t *source) /* -- */
+	auto UnhideAudioMixer = [audioTrack](obs_source_t *source) /* -- */
 	{
+		if (audioTrack && !IsAudioTrack(source))
+			return true;
+		else if (!audioTrack && IsAudioTrack(source))
+			return true;
+
 		if (!obs_source_active(source))
 			return true;
 		if (!SourceMixerHidden(source))
 			return true;
 
 		SetSourceMixerHidden(source, false);
-		ActivateAudioSource(source);
+		OBSBasic::Get()->ActivateAudioSource(source);
 		return true;
 	};
 
@@ -3618,6 +3668,16 @@ void OBSBasic::UnhideAllAudioControls()
 	};
 
 	obs_enum_sources(PreEnum, &UnhideAudioMixer);
+}
+
+void OBSBasic::UnhideAllAudioControls()
+{
+	UnhideAll(false);
+}
+
+void OBSBasic::UnhideAllAudioTrackControls()
+{
+	UnhideAll(true);
 }
 
 void OBSBasic::ToggleHideMixer()
@@ -3697,12 +3757,14 @@ void OBSBasic::LockVolumeControl(bool lock)
 void OBSBasic::VolControlContextMenu()
 {
 	VolControl *vol = reinterpret_cast<VolControl *>(sender());
+	OBSSource source = vol->GetSource();
+	bool audioTrack = IsAudioTrack(source);
 
 	/* ------------------- */
 
 	QAction lockAction(QTStr("LockVolume"), this);
 	lockAction.setCheckable(true);
-	lockAction.setChecked(SourceVolumeLocked(vol->GetSource()));
+	lockAction.setChecked(SourceVolumeLocked(source));
 
 	QAction hideAction(QTStr("Hide"), this);
 	QAction unhideAllAction(QTStr("UnhideAll"), this);
@@ -3725,7 +3787,9 @@ void OBSBasic::VolControlContextMenu()
 	connect(&hideAction, &QAction::triggered, this,
 		&OBSBasic::HideAudioControl, Qt::DirectConnection);
 	connect(&unhideAllAction, &QAction::triggered, this,
-		&OBSBasic::UnhideAllAudioControls, Qt::DirectConnection);
+		audioTrack ? &OBSBasic::UnhideAllAudioTrackControls
+			   : &OBSBasic::UnhideAllAudioControls,
+		Qt::DirectConnection);
 	connect(&lockAction, &QAction::toggled, this,
 		&OBSBasic::LockVolumeControl, Qt::DirectConnection);
 	connect(&mixerRenameAction, &QAction::triggered, this,
@@ -3747,7 +3811,9 @@ void OBSBasic::VolControlContextMenu()
 	/* ------------------- */
 
 	connect(&toggleControlLayoutAction, &QAction::changed, this,
-		&OBSBasic::ToggleVolControlLayout, Qt::DirectConnection);
+		audioTrack ? &OBSBasic::ToggleAudioTrackLayout
+			   : &OBSBasic::ToggleVolControlLayout,
+		Qt::DirectConnection);
 
 	/* ------------------- */
 
@@ -3770,12 +3836,11 @@ void OBSBasic::VolControlContextMenu()
 
 	/* ------------------- */
 
-	copyFiltersAction.setEnabled(obs_source_filter_count(vol->GetSource()) >
-				     0);
+	copyFiltersAction.setEnabled(obs_source_filter_count(source) > 0);
 
-	OBSSourceAutoRelease source =
+	OBSSourceAutoRelease filterSource =
 		obs_weak_source_get_source(copyFiltersSource);
-	if (source) {
+	if (filterSource) {
 		pasteFiltersAction.setEnabled(true);
 	} else {
 		pasteFiltersAction.setEnabled(false);
@@ -3783,11 +3848,15 @@ void OBSBasic::VolControlContextMenu()
 
 	QMenu popup;
 	vol->SetContextMenu(&popup);
+
 	popup.addAction(&lockAction);
 	popup.addSeparator();
 	popup.addAction(&unhideAllAction);
 	popup.addAction(&hideAction);
-	popup.addAction(&mixerRenameAction);
+
+	if (!audioTrack)
+		popup.addAction(&mixerRenameAction);
+
 	popup.addSeparator();
 	popup.addAction(&copyFiltersAction);
 	popup.addAction(&pasteFiltersAction);
@@ -3795,8 +3864,11 @@ void OBSBasic::VolControlContextMenu()
 	popup.addAction(&toggleControlLayoutAction);
 	popup.addSeparator();
 	popup.addAction(&filtersAction);
-	popup.addAction(&propertiesAction);
-	popup.addAction(&advPropAction);
+
+	if (!audioTrack) {
+		popup.addAction(&propertiesAction);
+		popup.addAction(&advPropAction);
+	}
 
 	// toggleControlLayoutAction deletes and re-creates the volume controls
 	// meaning that "vol" would be pointing to freed memory.
@@ -3814,7 +3886,18 @@ void OBSBasic::on_vMixerScrollArea_customContextMenuRequested()
 	StackedMixerAreaContextMenuRequested();
 }
 
-void OBSBasic::StackedMixerAreaContextMenuRequested()
+void OBSBasic::on_hAudioTrackMixerScrollArea_customContextMenuRequested()
+{
+	StackedMixerAreaContextMenuRequested(true);
+}
+
+void OBSBasic::on_vAudioTrackMixerScrollArea_customContextMenuRequested()
+{
+	StackedMixerAreaContextMenuRequested(true);
+}
+
+void OBSBasic::StackedMixerAreaContextMenuRequested(bool audioTrack,
+						    bool menuButton)
 {
 	QAction unhideAllAction(QTStr("UnhideAll"), this);
 
@@ -3822,13 +3905,17 @@ void OBSBasic::StackedMixerAreaContextMenuRequested()
 
 	QAction toggleControlLayoutAction(QTStr("VerticalLayout"), this);
 	toggleControlLayoutAction.setCheckable(true);
-	toggleControlLayoutAction.setChecked(config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "VerticalVolControl"));
+	toggleControlLayoutAction.setChecked(
+		config_get_bool(GetGlobalConfig(), "BasicWindow",
+				audioTrack ? "VerticalAudioTrackControls"
+					   : "VerticalVolControl"));
 
 	/* ------------------- */
 
 	connect(&unhideAllAction, &QAction::triggered, this,
-		&OBSBasic::UnhideAllAudioControls, Qt::DirectConnection);
+		audioTrack ? &OBSBasic::UnhideAllAudioTrackControls
+			   : &OBSBasic::UnhideAllAudioControls,
+		Qt::DirectConnection);
 
 	connect(&advPropAction, &QAction::triggered, this,
 		&OBSBasic::on_actionAdvAudioProperties_triggered,
@@ -3837,7 +3924,9 @@ void OBSBasic::StackedMixerAreaContextMenuRequested()
 	/* ------------------- */
 
 	connect(&toggleControlLayoutAction, &QAction::changed, this,
-		&OBSBasic::ToggleVolControlLayout, Qt::DirectConnection);
+		audioTrack ? &OBSBasic::ToggleAudioTrackLayout
+			   : &OBSBasic::ToggleVolControlLayout,
+		Qt::DirectConnection);
 
 	/* ------------------- */
 
@@ -3845,8 +3934,12 @@ void OBSBasic::StackedMixerAreaContextMenuRequested()
 	popup.addAction(&unhideAllAction);
 	popup.addSeparator();
 	popup.addAction(&toggleControlLayoutAction);
-	popup.addSeparator();
-	popup.addAction(&advPropAction);
+
+	if (!menuButton && !audioTrack) {
+		popup.addSeparator();
+		popup.addAction(&advPropAction);
+	}
+
 	popup.exec(QCursor::pos());
 }
 
@@ -3861,6 +3954,17 @@ void OBSBasic::ToggleMixerLayout(bool vertical)
 	}
 }
 
+void OBSBasic::ToggleAudioTrackMixerLayout(bool vertical)
+{
+	if (vertical) {
+		ui->stackedAudioTrackMixerArea->setMinimumSize(0, 220);
+		ui->stackedAudioTrackMixerArea->setCurrentIndex(1);
+	} else {
+		ui->stackedAudioTrackMixerArea->setMinimumSize(220, 0);
+		ui->stackedAudioTrackMixerArea->setCurrentIndex(0);
+	}
+}
+
 void OBSBasic::ToggleVolControlLayout()
 {
 	bool vertical = !config_get_bool(GetGlobalConfig(), "BasicWindow",
@@ -3869,29 +3973,52 @@ void OBSBasic::ToggleVolControlLayout()
 			vertical);
 	ToggleMixerLayout(vertical);
 
-	// We need to store it so we can delete current and then add
-	// at the right order
-	vector<OBSSource> sources;
-	for (size_t i = 0; i != volumes.size(); i++)
-		sources.emplace_back(volumes[i]->GetSource());
+	for (size_t i = 0; i != volumes.size(); i++) {
+		if (IsAudioTrack(volumes[i]->GetSource()))
+			continue;
 
-	ClearVolumeControls();
-
-	for (const auto &source : sources)
+		OBSSource source = volumes[i]->GetSource();
+		DeactivateAudioSource(source);
 		ActivateAudioSource(source);
+	}
+}
+
+void OBSBasic::ToggleAudioTrackLayout()
+{
+	bool vertical = !config_get_bool(GetGlobalConfig(), "BasicWindow",
+					 "VerticalAudioTrackControls");
+	config_set_bool(GetGlobalConfig(), "BasicWindow",
+			"VerticalAudioTrackControls", vertical);
+	ToggleAudioTrackMixerLayout(vertical);
+
+	for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
+		OBSSourceAutoRelease source = obs_get_audio_track_source(i);
+
+		if (source) {
+			DeactivateAudioSource(source.Get());
+			ActivateAudioSource(source.Get());
+		}
+	}
 }
 
 void OBSBasic::ActivateAudioSource(OBSSource source)
 {
-	if (SourceMixerHidden(source))
-		return;
 	if (!obs_source_active(source))
 		return;
 	if (!obs_source_audio_active(source))
 		return;
 
+	printf("fffffffffffffffffffffff\n");
+
+	bool audioTrack = IsAudioTrack(source);
+
+	if (SourceMixerHidden(source))
+		return;
+
 	bool vertical = config_get_bool(GetGlobalConfig(), "BasicWindow",
-					"VerticalVolControl");
+					audioTrack
+						? "VerticalAudioTrackControls"
+						: "VerticalVolControl");
 	VolControl *vol = new VolControl(source, true, vertical);
 
 	vol->EnableSlider(!SourceVolumeLocked(source));
@@ -3928,10 +4055,22 @@ void OBSBasic::ActivateAudioSource(OBSSource source)
 	InsertQObjectByName(volumes, vol);
 
 	for (auto volume : volumes) {
-		if (vertical)
-			ui->vVolControlLayout->addWidget(volume);
-		else
-			ui->hVolControlLayout->addWidget(volume);
+		if (audioTrack && !IsAudioTrack(volume->GetSource()))
+			continue;
+		else if (!audioTrack && IsAudioTrack(volume->GetSource()))
+			continue;
+
+		if (vertical) {
+			if (!audioTrack)
+				ui->vVolControlLayout->addWidget(volume);
+			else
+				ui->vAudioTrackLayout->addWidget(volume);
+		} else {
+			if (!audioTrack)
+				ui->hVolControlLayout->addWidget(volume);
+			else
+				ui->hAudioTrackLayout->addWidget(volume);
+		}
 	}
 }
 
@@ -4832,6 +4971,33 @@ void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceId,
 	}
 }
 
+static QString GetAudioTrackName(int track)
+{
+	track += 1;
+	OBSBasic *main = OBSBasic::Get();
+
+	QString trackStr = "Track";
+	trackStr += QString::number(track);
+	trackStr += "Name";
+
+	QString name = config_get_string(main->Config(), "AdvOut",
+					 QT_TO_UTF8(trackStr));
+
+	if (name.isEmpty())
+		name = QTStr("Track").arg(track);
+
+	return name;
+}
+
+void OBSBasic::ResetAudioTrack(int track)
+{
+	OBSSourceAutoRelease source = obs_source_create(
+		"audio_track", QT_TO_UTF8(GetAudioTrackName(track)), nullptr,
+		nullptr);
+
+	obs_set_audio_track_source(track, source);
+}
+
 void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)
 {
 	QSize targetSize;
@@ -4942,6 +5108,10 @@ void OBSBasic::ClearSceneData()
 	}
 
 	safeModeModuleData = nullptr;
+
+	for (int i = 0; i < MAX_AUDIO_MIXES; i++)
+		obs_set_audio_track_source(i, nullptr);
+
 	lastScene = nullptr;
 	swapScene = nullptr;
 	programScene = nullptr;
@@ -5254,6 +5424,8 @@ void OBSBasic::on_action_Settings_triggered()
 
 	settings_already_executing = false;
 
+	ResetAudioTrackControls();
+
 	if (restart) {
 		QMessageBox::StandardButton button = OBSMessageBox::question(
 			this, QTStr("Restart"), QTStr("NeedsRestart"));
@@ -5336,22 +5508,12 @@ void OBSBasic::on_actionMixerToolbarAdvAudio_triggered()
 
 void OBSBasic::on_actionMixerToolbarMenu_triggered()
 {
-	QAction unhideAllAction(QTStr("UnhideAll"), this);
-	connect(&unhideAllAction, &QAction::triggered, this,
-		&OBSBasic::UnhideAllAudioControls, Qt::DirectConnection);
+	StackedMixerAreaContextMenuRequested(false, true);
+}
 
-	QAction toggleControlLayoutAction(QTStr("VerticalLayout"), this);
-	toggleControlLayoutAction.setCheckable(true);
-	toggleControlLayoutAction.setChecked(config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "VerticalVolControl"));
-	connect(&toggleControlLayoutAction, &QAction::changed, this,
-		&OBSBasic::ToggleVolControlLayout, Qt::DirectConnection);
-
-	QMenu popup;
-	popup.addAction(&unhideAllAction);
-	popup.addSeparator();
-	popup.addAction(&toggleControlLayoutAction);
-	popup.exec(QCursor::pos());
+void OBSBasic::on_actionAudioTrackMixerToolbarMenu_triggered()
+{
+	StackedMixerAreaContextMenuRequested(true, true);
 }
 
 void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current,
@@ -9511,15 +9673,16 @@ void OBSBasic::on_resetDocks_triggered(bool force)
 
 	int mixerSize = cx - (cx22_5 * 2 + cx5 + cx21);
 
-	QList<QDockWidget *> docks{ui->scenesDock, ui->sourcesDock,
-				   ui->mixerDock, ui->transitionsDock,
-				   ui->controlsDock};
+	QList<QDockWidget *> docks{ui->scenesDock,      ui->sourcesDock,
+				   ui->mixerDock,       ui->audioTrackMixerDock,
+				   ui->transitionsDock, ui->controlsDock};
 
-	QList<int> sizes{cx22_5, cx22_5, mixerSize, cx5, cx21};
+	QList<int> sizes{cx22_5, cx22_5, mixerSize, cx5 * 3, cx5, cx21};
 
 	ui->scenesDock->setVisible(true);
 	ui->sourcesDock->setVisible(true);
 	ui->mixerDock->setVisible(true);
+	ui->audioTrackMixerDock->setVisible(false);
 	ui->transitionsDock->setVisible(true);
 	ui->controlsDock->setVisible(true);
 	statsDock->setVisible(false);
@@ -9545,6 +9708,7 @@ void OBSBasic::on_lockDocks_toggled(bool lock)
 	ui->scenesDock->setFeatures(mainFeatures);
 	ui->sourcesDock->setFeatures(mainFeatures);
 	ui->mixerDock->setFeatures(mainFeatures);
+	ui->audioTrackMixerDock->setFeatures(mainFeatures);
 	ui->transitionsDock->setFeatures(mainFeatures);
 	ui->controlsDock->setFeatures(mainFeatures);
 	statsDock->setFeatures(features);
@@ -9607,6 +9771,7 @@ void OBSBasic::on_toggleListboxToolbars_toggled(bool visible)
 	ui->sourcesToolbar->setVisible(visible);
 	ui->scenesToolbar->setVisible(visible);
 	ui->mixerToolbar->setVisible(visible);
+	ui->audioTrackMixerToolbar->setVisible(visible);
 
 	config_set_bool(App()->GlobalConfig(), "BasicWindow",
 			"ShowListboxToolbars", visible);
@@ -10889,6 +11054,8 @@ void OBSBasic::on_OBSBasic_customContextMenuRequested(const QPoint &pos)
 			ui->sources->customContextMenuRequested(globalPos);
 		} else if (objName.compare("mixerDock") == 0) {
 			StackedMixerAreaContextMenuRequested();
+		} else if (objName.compare("audioTrackMixerDock") == 0) {
+			StackedMixerAreaContextMenuRequested(true);
 		}
 	} else if (!className) {
 		ui->menuDocks->exec(globalPos);
@@ -11062,4 +11229,12 @@ void OBSBasic::ThemeChanged()
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_THEME_CHANGED);
+}
+
+void OBSBasic::ResetAudioTrackControls()
+{
+	for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
+		OBSSourceAutoRelease source = obs_get_audio_track_source(i);
+		obs_source_set_name(source, QT_TO_UTF8(GetAudioTrackName(i)));
+	}
 }

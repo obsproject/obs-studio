@@ -511,6 +511,8 @@ void OBSBasic::ResetProfileData()
 		blog(LOG_INFO, "Audio monitoring device:\n\tname: %s\n\tid: %s",
 		     device_name, device_id);
 	}
+
+	ResetAudioTrackControls();
 }
 
 void OBSBasic::on_actionNewProfile_triggered()
