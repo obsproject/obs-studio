@@ -997,8 +997,6 @@ static bool build_window_list(struct screen_capture *sc,
 		obs_property_list_add_int(window_list, list_text,
 					  window.windowID);
 	}];
-	[sortedWindows release];
-	[filteredWindows release];
 
 	os_sem_post(sc->shareable_content_available);
 	return true;
@@ -1046,8 +1044,6 @@ static bool build_application_list(struct screen_capture *sc,
 			[application.bundleIdentifier UTF8String];
 		obs_property_list_add_string(application_list, name, bundle_id);
 	}];
-	[sortedApplications release];
-	[filteredWindows release];
 
 	os_sem_post(sc->shareable_content_available);
 	return true;
