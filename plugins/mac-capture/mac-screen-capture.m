@@ -943,21 +943,53 @@ static bool build_window_list(struct screen_capture *sc,
 	obs_property_t *window_list = obs_properties_get(props, "window");
 	obs_property_list_clear(window_list);
 
-	[sc->shareable_content.windows enumerateObjectsUsingBlock:^(
-					       SCWindow *_Nonnull window,
-					       NSUInteger idx __unused,
-					       BOOL *_Nonnull stop __unused) {
+	NSArray<SCWindow *> *filteredWindows;
+	filteredWindows = [sc->shareable_content.windows
+		filteredArrayUsingPredicate:
+			[NSPredicate predicateWithBlock:^BOOL(
+					     SCWindow *window,
+					     NSDictionary *bindings __unused) {
+				NSString *app_name =
+					window.owningApplication.applicationName;
+				NSString *title = window.title;
+				if (!sc->show_empty_names) {
+					if (app_name == NULL || title == NULL) {
+						return false;
+					} else if ([app_name
+							   isEqualToString:@""] ||
+						   [title isEqualToString:@""]) {
+						return false;
+					}
+				}
+				return true;
+			}]];
+
+	NSArray<SCWindow *> *sortedWindows;
+	sortedWindows =
+		[filteredWindows sortedArrayUsingComparator:^NSComparisonResult(
+					 SCWindow *window, SCWindow *other) {
+			NSComparisonResult appNameCmp =
+				[window.owningApplication.applicationName
+					compare:other.owningApplication
+							.applicationName
+					options:NSCaseInsensitiveSearch];
+			if (appNameCmp == NSOrderedAscending) {
+				return NSOrderedAscending;
+			} else if (appNameCmp == NSOrderedSame) {
+				return [window.title
+					compare:other.title
+					options:NSCaseInsensitiveSearch];
+			} else {
+				return NSOrderedDescending;
+			}
+		}];
+
+	[sortedWindows enumerateObjectsUsingBlock:^(
+			       SCWindow *_Nonnull window,
+			       NSUInteger idx __unused,
+			       BOOL *_Nonnull stop __unused) {
 		NSString *app_name = window.owningApplication.applicationName;
 		NSString *title = window.title;
-
-		if (!sc->show_empty_names) {
-			if (app_name == NULL || title == NULL) {
-				return;
-			} else if ([app_name isEqualToString:@""] ||
-				   [title isEqualToString:@""]) {
-				return;
-			}
-		}
 
 		const char *list_text =
 			[[NSString stringWithFormat:@"[%@] %@", app_name, title]
@@ -979,18 +1011,39 @@ static bool build_application_list(struct screen_capture *sc,
 		obs_properties_get(props, "application");
 	obs_property_list_clear(application_list);
 
-	[sc->shareable_content.applications
-		enumerateObjectsUsingBlock:^(
-			SCRunningApplication *_Nonnull application,
-			NSUInteger idx __unused, BOOL *_Nonnull stop __unused) {
-			const char *name =
-				[application.applicationName UTF8String];
-			const char *bundle_id =
-				[application.bundleIdentifier UTF8String];
-			if (strcmp(name, "") != 0)
-				obs_property_list_add_string(application_list,
-							     name, bundle_id);
+	NSArray<SCRunningApplication *> *filteredApplications;
+	filteredApplications = [sc->shareable_content.applications
+		filteredArrayUsingPredicate:
+			[NSPredicate predicateWithBlock:^BOOL(
+					     SCRunningApplication *app,
+					     NSDictionary *bindings __unused) {
+				const char *name =
+					[app.applicationName UTF8String];
+				if (strcmp(name, "") == 0) {
+					return false;
+				}
+				return true;
+			}]];
+
+	NSArray<SCRunningApplication *> *sortedApplications;
+	sortedApplications = [filteredApplications
+		sortedArrayUsingComparator:^NSComparisonResult(
+			SCRunningApplication *app,
+			SCRunningApplication *other) {
+			return [app.applicationName
+				compare:other.applicationName
+				options:NSCaseInsensitiveSearch];
 		}];
+
+	[sortedApplications enumerateObjectsUsingBlock:^(
+				    SCRunningApplication *_Nonnull application,
+				    NSUInteger idx __unused,
+				    BOOL *_Nonnull stop __unused) {
+		const char *name = [application.applicationName UTF8String];
+		const char *bundle_id =
+			[application.bundleIdentifier UTF8String];
+		obs_property_list_add_string(application_list, name, bundle_id);
+	}];
 
 	os_sem_post(sc->shareable_content_available);
 	return true;
