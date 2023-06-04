@@ -67,11 +67,9 @@ void DecklinkCaptionsUI::on_source_currentIndexChanged(int)
 	captions->start();
 }
 
-static void caption_callback(void *param, obs_source_t *source,
+static void caption_callback(void * /* param */, obs_source_t * /* source */,
 			     const struct obs_source_cea_708 *captions)
 {
-	UNUSED_PARAMETER(param);
-	UNUSED_PARAMETER(source);
 	obs_output *output = obs_frontend_get_streaming_output();
 	if (output) {
 		if (obs_frontend_streaming_active() &&

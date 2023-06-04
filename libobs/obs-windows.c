@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -108,6 +108,13 @@ static void log_processor_cores(void)
 	     os_get_physical_cores(), os_get_logical_cores());
 }
 
+static void log_emulation_status(void)
+{
+	if (os_get_emulation_status()) {
+		blog(LOG_WARNING, "Windows ARM64: Running with x64 emulation");
+	}
+}
+
 static void log_available_memory(void)
 {
 	MEMORYSTATUSEX ms;
@@ -138,10 +145,13 @@ static void log_windows_version(void)
 	bool b64 = is_64_bit_windows();
 	const char *windows_bitness = b64 ? "64" : "32";
 
+	bool arm64 = is_arm64_windows();
+	const char *arm64_windows = arm64 ? "ARM " : "";
+
 	blog(LOG_INFO,
-	     "Windows Version: %d.%d Build %d (release: %s; revision: %d; %s-bit)",
+	     "Windows Version: %d.%d Build %d (release: %s; revision: %d; %s%s-bit)",
 	     ver.major, ver.minor, ver.build, release_id, ver.revis,
-	     windows_bitness);
+	     arm64_windows, windows_bitness);
 }
 
 static void log_admin_status(void)
@@ -164,44 +174,12 @@ static void log_admin_status(void)
 	     success ? "true" : "false");
 }
 
-typedef HRESULT(WINAPI *dwm_is_composition_enabled_t)(BOOL *);
-
-static void log_aero(void)
-{
-	dwm_is_composition_enabled_t composition_enabled = NULL;
-
-	const char *aeroMessage =
-		win_ver >= 0x602
-			? " (Aero is always on for windows 8 and above)"
-			: "";
-
-	HMODULE dwm = LoadLibraryW(L"dwmapi");
-	BOOL bComposition = true;
-
-	if (!dwm) {
-		return;
-	}
-
-	composition_enabled = (dwm_is_composition_enabled_t)GetProcAddress(
-		dwm, "DwmIsCompositionEnabled");
-	if (!composition_enabled) {
-		FreeLibrary(dwm);
-		return;
-	}
-
-	composition_enabled(&bComposition);
-	blog(LOG_INFO, "Aero is %s%s", bComposition ? "Enabled" : "Disabled",
-	     aeroMessage);
-}
-
 #define WIN10_GAME_BAR_REG_KEY \
 	L"Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR"
 #define WIN10_GAME_DVR_POLICY_REG_KEY \
 	L"SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR"
 #define WIN10_GAME_DVR_REG_KEY L"System\\GameConfigStore"
 #define WIN10_GAME_MODE_REG_KEY L"Software\\Microsoft\\GameBar"
-#define WIN10_HAGS_REG_KEY \
-	L"SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers"
 
 static void log_gaming_features(void)
 {
@@ -213,7 +191,6 @@ static void log_gaming_features(void)
 	struct reg_dword game_dvr_enabled;
 	struct reg_dword game_dvr_bg_recording;
 	struct reg_dword game_mode_enabled;
-	struct reg_dword hags_enabled;
 
 	get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_BAR_REG_KEY,
 		      L"AppCaptureEnabled", &game_bar_enabled);
@@ -225,8 +202,6 @@ static void log_gaming_features(void)
 		      L"HistoricalCaptureEnabled", &game_dvr_bg_recording);
 	get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_MODE_REG_KEY,
 		      L"AutoGameModeEnabled", &game_mode_enabled);
-	get_reg_dword(HKEY_LOCAL_MACHINE, WIN10_HAGS_REG_KEY, L"HwSchMode",
-		      &hags_enabled);
 
 	if (game_mode_enabled.status != ERROR_SUCCESS) {
 		get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_MODE_REG_KEY,
@@ -260,15 +235,6 @@ static void log_gaming_features(void)
 	} else if (win_build >= 19042) {
 		// On by default in newer Windows 10 builds (no registry key set)
 		blog(LOG_INFO, "\tGame Mode: Probably On (no reg key set)");
-	}
-
-	if (hags_enabled.status == ERROR_SUCCESS) {
-		blog(LOG_INFO, "\tHardware GPU Scheduler: %s",
-		     (hags_enabled.return_value == 2) ? "On" : "Off");
-	} else if (win_build >= 22000) {
-		// On by default in Windows 11 (no registry key set)
-		blog(LOG_INFO,
-		     "\tHardware GPU Scheduler: Probably On (no reg key set)");
 	}
 }
 
@@ -336,8 +302,13 @@ static void log_security_products_by_type(IWSCProductList *prod_list, int type)
 			continue;
 		}
 
-		blog(LOG_INFO, "\t%S: %s (%s)", name,
+		char *product_name;
+		os_wcs_to_utf8_ptr(name, 0, &product_name);
+
+		blog(LOG_INFO, "\t%s: %s (%s)", product_name,
 		     get_str_for_state(prod_state), get_str_for_type(type));
+
+		bfree(product_name);
 
 		SysFreeString(name);
 		prod->lpVtbl->Release(prod);
@@ -407,8 +378,8 @@ void log_system_info(void)
 	log_processor_cores();
 	log_available_memory();
 	log_windows_version();
+	log_emulation_status();
 	log_admin_status();
-	log_aero();
 	log_gaming_features();
 	log_security_products();
 }

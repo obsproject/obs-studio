@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2015 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -113,10 +113,10 @@ private slots:
 	void on_actionMoveUp_triggered();
 	void on_actionMoveDown_triggered();
 
-	void AsyncFilterNameEdited(QWidget *editor,
-				   QAbstractItemDelegate::EndEditHint endHint);
-	void EffectFilterNameEdited(QWidget *editor,
-				    QAbstractItemDelegate::EndEditHint endHint);
+	void on_actionRenameFilter_triggered();
+
+	void AsyncFilterNameEdited(QWidget *editor);
+	void EffectFilterNameEdited(QWidget *editor);
 
 	void CopyFilter();
 	void PasteFilter();

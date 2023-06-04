@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -154,9 +154,9 @@ static bool flv_output_start(void *data)
 	obs_data_t *settings;
 	const char *path;
 
-	if (!obs_output_can_begin_data_capture(stream->output, 0))
+	if (!obs_output_can_begin_data_capture2(stream->output))
 		return false;
-	if (!obs_output_initialize_encoders(stream->output, 0))
+	if (!obs_output_initialize_encoders2(stream->output))
 		return false;
 
 	stream->got_first_video = false;
@@ -177,7 +177,7 @@ static bool flv_output_start(void *data)
 
 	/* write headers and start capture */
 	os_atomic_set_bool(&stream->active, true);
-	obs_output_begin_data_capture(stream->output, 0);
+	obs_output_begin_data_capture2(stream->output);
 
 	info("Writing FLV file '%s'...", stream->path.array);
 	return true;

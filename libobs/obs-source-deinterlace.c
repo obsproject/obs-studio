@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2016 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -250,40 +250,24 @@ void set_deinterlace_texture_size(obs_source_t *source)
 	}
 }
 
-static inline struct obs_source_frame *get_prev_frame(obs_source_t *source,
-						      bool *updated)
-{
-	struct obs_source_frame *frame = NULL;
-
-	pthread_mutex_lock(&source->async_mutex);
-
-	*updated = source->cur_async_frame != NULL;
-	frame = source->prev_async_frame;
-	source->prev_async_frame = NULL;
-
-	if (frame)
-		os_atomic_inc_long(&frame->refs);
-
-	pthread_mutex_unlock(&source->async_mutex);
-
-	return frame;
-}
-
 void deinterlace_update_async_video(obs_source_t *source)
 {
-	struct obs_source_frame *frame;
-	bool updated;
-
 	if (source->deinterlace_rendered)
 		return;
 
-	frame = get_prev_frame(source, &updated);
-
 	source->deinterlace_rendered = true;
-	if (frame)
-		frame = filter_async_video(source, frame);
+
+	pthread_mutex_lock(&source->async_mutex);
+
+	const bool updated = source->cur_async_frame != NULL;
+	struct obs_source_frame *frame = source->prev_async_frame;
+	source->prev_async_frame = NULL;
+
+	pthread_mutex_unlock(&source->async_mutex);
 
 	if (frame) {
+		os_atomic_inc_long(&frame->refs);
+
 		if (set_async_texture_size(source, frame)) {
 			update_async_textures(source, frame,
 					      source->async_prev_textures,
@@ -402,8 +386,7 @@ void deinterlace_render(obs_source_t *s)
 	switch (source_space) {
 	case GS_CS_SRGB:
 	case GS_CS_SRGB_16F:
-		switch (current_space) {
-		case GS_CS_709_SCRGB:
+		if (current_space == GS_CS_709_SCRGB) {
 			tech_name = "DrawMultiply";
 			multiplier = obs_get_video_sdr_white_level() / 80.0f;
 		}
@@ -417,6 +400,9 @@ void deinterlace_render(obs_source_t *s)
 		case GS_CS_709_SCRGB:
 			tech_name = "DrawMultiply";
 			multiplier = obs_get_video_sdr_white_level() / 80.0f;
+			break;
+		case GS_CS_709_EXTENDED:
+			break;
 		}
 		break;
 	case GS_CS_709_SCRGB:
@@ -429,6 +415,9 @@ void deinterlace_render(obs_source_t *s)
 		case GS_CS_709_EXTENDED:
 			tech_name = "DrawMultiply";
 			multiplier = 80.0f / obs_get_video_sdr_white_level();
+			break;
+		case GS_CS_709_SCRGB:
+			break;
 		}
 	}
 

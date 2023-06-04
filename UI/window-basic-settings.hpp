@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
                           Philippe Groarke <philippe.groarke@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
@@ -120,10 +120,12 @@ private:
 	int pageIndex = 0;
 	bool loading = true;
 	bool forceAuthReload = false;
+	bool forceUpdateCheck = false;
 	std::string savedTheme;
 	int sampleRateIndex = 0;
 	int channelIndex = 0;
 	bool llBufferingEnabled = false;
+	bool hotkeysLoaded = false;
 
 	int lastSimpleRecQualityIdx = 0;
 	int lastServiceIdx = -1;
@@ -146,6 +148,7 @@ private:
 	QString curQSVPreset;
 	QString curNVENCPreset;
 	QString curAMDPreset;
+	QString curAMDAV1Preset;
 
 	QString curAdvStreamEncoder;
 	QString curAdvRecordEncoder;
@@ -218,15 +221,10 @@ private:
 		EnableApplyButton(false);
 	}
 
-#ifdef _WIN32
-	bool aeroWasDisabled = false;
-	QCheckBox *toggleAero = nullptr;
-	void ToggleDisableAero(bool checked);
-#endif
-
 	void HookWidget(QWidget *widget, const char *signal, const char *slot);
 
 	bool QueryChanges();
+	bool QueryAllowedToClose();
 
 	void ResetEncoders(bool streamOnly = false);
 	void LoadColorRanges();
@@ -255,6 +253,7 @@ private:
 	/* general */
 	void LoadLanguageList();
 	void LoadThemeList();
+	void LoadBranchesList();
 
 	/* stream */
 	void InitStreamPage();
@@ -263,16 +262,23 @@ private:
 	void OnOAuthStreamKeyConnected();
 	void OnAuthConnected();
 	QString lastService;
+	QString protocol;
+	QString lastCustomServer;
 	int prevLangIndex;
 	bool prevBrowserAccel;
-private slots:
+
+	void ServiceChanged();
+	QString FindProtocol();
 	void UpdateServerList();
 	void UpdateKeyLink();
 	void UpdateVodTrackSetting();
 	void UpdateServiceRecommendations();
-	void RecreateOutputResolutionWidget();
-	void UpdateResFPSLimits();
 	void UpdateMoreInfoLink();
+	void UpdateAdvNetworkGroup();
+
+private slots:
+	void RecreateOutputResolutionWidget();
+	bool UpdateResFPSLimits();
 	void DisplayEnforceWarning(bool checked);
 	void on_show_clicked();
 	void on_authPwShow_clicked();
@@ -369,12 +375,13 @@ private:
 	QIcon GetAdvancedIcon() const;
 
 	int CurrentFLVTrack();
+	int SimpleOutGetSelectedAudioTracks();
+	int AdvOutGetSelectedAudioTracks();
 
 	OBSService GetStream1Service();
 
-	bool IsServiceOutputHasNetworkFeatures();
-
-	bool ServiceAndCodecCompatible();
+	bool ServiceAndVCodecCompatible();
+	bool ServiceAndACodecCompatible();
 	bool ServiceSupportsCodecCheck();
 
 private slots:
@@ -384,10 +391,11 @@ private slots:
 	void on_buttonBox_clicked(QAbstractButton *button);
 
 	void on_service_currentIndexChanged(int idx);
+	void on_customServer_textChanged(const QString &text);
 	void on_simpleOutputBrowse_clicked();
 	void on_advOutRecPathBrowse_clicked();
 	void on_advOutFFPathBrowse_clicked();
-	void on_advOutEncoder_currentIndexChanged(int idx);
+	void on_advOutEncoder_currentIndexChanged();
 	void on_advOutRecEncoder_currentIndexChanged(int idx);
 	void on_advOutFFIgnoreCompat_stateChanged(int state);
 	void on_advOutFFFormat_currentIndexChanged(int idx);
@@ -428,7 +436,6 @@ private slots:
 	void Stream1Changed();
 	void VideoChanged();
 	void VideoChangedResolution();
-	void VideoChangedRestart();
 	void HotkeysChanged();
 	bool ScanDuplicateHotkeys(QFormLayout *layout);
 	void ReloadHotkeys(obs_hotkey_id ignoreKey = OBS_INVALID_HOTKEY_ID);
@@ -438,12 +445,11 @@ private slots:
 
 	void UpdateStreamDelayEstimate();
 
-	void UpdateAdvNetworkGroup();
-
 	void UpdateAutomaticReplayBufferCheckboxes();
 
 	void AdvOutSplitFileChanged();
 	void AdvOutRecCheckWarnings();
+	void AdvOutRecCheckCodecs();
 
 	void SimpleRecordingQualityChanged();
 	void SimpleRecordingEncoderChanged();
@@ -466,6 +472,9 @@ private slots:
 	void SetAdvancedIcon(const QIcon &icon);
 
 	void UseStreamKeyAdvClicked();
+
+	void SimpleStreamAudioEncoderChanged();
+	void AdvAudioEncodersChanged();
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;

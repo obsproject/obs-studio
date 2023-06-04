@@ -114,8 +114,8 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		struct obs_frontend_source_list *sources) override
 	{
 		for (int i = 0; i < main->ui->transitions->count(); i++) {
-			obs_source_t *tr = main->ui->transitions->itemData(i)
-						   .value<OBSSource>();
+			OBSSource tr = main->ui->transitions->itemData(i)
+					       .value<OBSSource>();
 
 			if (!tr)
 				continue;
@@ -379,7 +379,70 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	void *obs_frontend_add_dock(void *dock) override
 	{
-		return (void *)main->AddDockWidget((QDockWidget *)dock);
+		QDockWidget *d = reinterpret_cast<QDockWidget *>(dock);
+
+		QString name = d->objectName();
+		if (name.isEmpty() || main->IsDockObjectNameUsed(name)) {
+			blog(LOG_WARNING,
+			     "The object name of the added dock is empty or already used,"
+			     " a temporary one will be set to avoid conflicts");
+
+			char *uuid = os_generate_uuid();
+			name = QT_UTF8(uuid);
+			bfree(uuid);
+			name.append("_oldExtraDock");
+
+			d->setObjectName(name);
+		}
+
+		return (void *)main->AddDockWidget(d);
+	}
+
+	bool obs_frontend_add_dock_by_id(const char *id, const char *title,
+					 void *widget) override
+	{
+		if (main->IsDockObjectNameUsed(QT_UTF8(id))) {
+			blog(LOG_WARNING,
+			     "Dock id '%s' already used!  "
+			     "Duplicate library?",
+			     id);
+			return false;
+		}
+
+		OBSDock *dock = new OBSDock(main);
+		dock->setWidget((QWidget *)widget);
+		dock->setWindowTitle(QT_UTF8(title));
+		dock->setObjectName(QT_UTF8(id));
+
+		main->AddDockWidget(dock, Qt::RightDockWidgetArea);
+
+		dock->setFloating(true);
+		dock->setVisible(false);
+
+		return true;
+	}
+
+	void obs_frontend_remove_dock(const char *id) override
+	{
+		main->RemoveDockWidget(QT_UTF8(id));
+	}
+
+	bool obs_frontend_add_custom_qdock(const char *id, void *dock) override
+	{
+		if (main->IsDockObjectNameUsed(QT_UTF8(id))) {
+			blog(LOG_WARNING,
+			     "Dock id '%s' already used!  "
+			     "Duplicate library?",
+			     id);
+			return false;
+		}
+
+		QDockWidget *d = reinterpret_cast<QDockWidget *>(dock);
+		d->setObjectName(QT_UTF8(id));
+
+		main->AddCustomDockWidget(d);
+
+		return true;
 	}
 
 	void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
@@ -630,6 +693,14 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 					  Q_ARG(OBSSource, OBSSource(source)));
 	}
 
+	void obs_frontend_open_sceneitem_edit_transform(
+		obs_sceneitem_t *item) override
+	{
+		QMetaObject::invokeMethod(main, "OpenEditTransform",
+					  Q_ARG(OBSSceneItem,
+						OBSSceneItem(item)));
+	}
+
 	char *obs_frontend_get_current_record_output_path(void) override
 	{
 		const char *recordOutputPath = main->GetCurrentOutputPath();
@@ -660,6 +731,20 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	char *obs_frontend_get_last_replay(void) override
 	{
 		return bstrdup(main->lastReplay.c_str());
+	}
+
+	void obs_frontend_add_undo_redo_action(const char *name,
+					       const undo_redo_cb undo,
+					       const undo_redo_cb redo,
+					       const char *undo_data,
+					       const char *redo_data,
+					       bool repeatable) override
+	{
+		main->undo_s.add_action(
+			name,
+			[undo](const std::string &data) { undo(data.c_str()); },
+			[redo](const std::string &data) { redo(data.c_str()); },
+			undo_data, redo_data, repeatable);
 	}
 
 	void on_load(obs_data_t *settings) override

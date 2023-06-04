@@ -447,7 +447,8 @@ static obs_properties_t *chroma_key_properties_v1(void *data)
 	obs_property_list_add_string(p, obs_module_text("Green"), "green");
 	obs_property_list_add_string(p, obs_module_text("Blue"), "blue");
 	obs_property_list_add_string(p, obs_module_text("Magenta"), "magenta");
-	obs_property_list_add_string(p, obs_module_text("Custom"), "custom");
+	obs_property_list_add_string(p, obs_module_text("CustomColor"),
+				     "custom");
 
 	obs_property_set_modified_callback(p, key_type_changed);
 
@@ -486,7 +487,8 @@ static obs_properties_t *chroma_key_properties_v2(void *data)
 	obs_property_list_add_string(p, obs_module_text("Green"), "green");
 	obs_property_list_add_string(p, obs_module_text("Blue"), "blue");
 	obs_property_list_add_string(p, obs_module_text("Magenta"), "magenta");
-	obs_property_list_add_string(p, obs_module_text("Custom"), "custom");
+	obs_property_list_add_string(p, obs_module_text("CustomColor"),
+				     "custom");
 
 	obs_property_set_modified_callback(p, key_type_changed);
 
@@ -541,6 +543,9 @@ static enum gs_color_space
 chroma_key_get_color_space(void *data, size_t count,
 			   const enum gs_color_space *preferred_spaces)
 {
+	UNUSED_PARAMETER(count);
+	UNUSED_PARAMETER(preferred_spaces);
+
 	const enum gs_color_space potential_spaces[] = {
 		GS_CS_SRGB,
 		GS_CS_SRGB_16F,

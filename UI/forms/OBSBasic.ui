@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <author>Jim</author>
+ <author>Lain</author>
  <class>OBSBasic</class>
  <widget class="QMainWindow" name="OBSBasic">
   <property name="geometry">
@@ -532,6 +532,7 @@
     <addaction name="separator"/>
     <addaction name="actionRepair"/>
     <addaction name="actionCheckForUpdates"/>
+    <addaction name="actionShowWhatsNew"/>
     <addaction name="actionShowAbout"/>
     <addaction name="actionShowMacPermissions"/>
     <addaction name="separator"/>
@@ -666,6 +667,13 @@
     <property name="title">
      <string>Basic.MainMenu.View</string>
     </property>
+    <widget class="QMenu" name="sceneListModeMenu">
+     <property name="title">
+      <string>Basic.MainMenu.View.SceneListMode</string>
+     </property>
+     <addaction name="actionSceneListMode"/>
+     <addaction name="actionSceneGridMode"/>
+    </widget>
     <action name="resetUI">
      <property name="text">
       <string>Basic.MainMenu.View.ResetUI</string>
@@ -682,6 +690,7 @@
     <addaction name="resetUI"/>
     <addaction name="actionFullscreenInterface"/>
     <addaction name="separator"/>
+    <addaction name="sceneListModeMenu"/>
     <addaction name="toggleListboxToolbars"/>
     <addaction name="toggleContextBar"/>
     <addaction name="toggleSourceIcons"/>
@@ -711,14 +720,9 @@
      <string>Basic.MainMenu.Docks</string>
     </property>
     <addaction name="lockDocks"/>
+    <addaction name="sideDocks"/>
     <addaction name="resetDocks"/>
     <addaction name="separator"/>
-    <addaction name="toggleScenes"/>
-    <addaction name="toggleSources"/>
-    <addaction name="toggleMixer"/>
-    <addaction name="toggleTransitions"/>
-    <addaction name="toggleControls"/>
-    <addaction name="toggleStats"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menuBasic_MainMenu_Edit"/>
@@ -841,6 +845,8 @@
           </property>
           <addaction name="actionAddScene"/>
           <addaction name="actionRemoveScene"/>
+          <addaction name="separator"/>
+          <addaction name="actionSceneFilters"/>
           <addaction name="separator"/>
           <addaction name="actionSceneUp"/>
           <addaction name="actionSceneDown"/>
@@ -979,6 +985,7 @@
           </property>
           <addaction name="actionAddSource"/>
           <addaction name="actionRemoveSource"/>
+          <addaction name="separator"/>
           <addaction name="actionSourceProperties"/>
           <addaction name="separator"/>
           <addaction name="actionSourceUp"/>
@@ -1685,6 +1692,9 @@
    <property name="shortcutContext">
     <enum>Qt::WidgetWithChildrenShortcut</enum>
    </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
    <property name="themeID" stdset="0">
     <string notr="true">removeIconSmall</string>
    </property>
@@ -1705,6 +1715,9 @@
    </property>
    <property name="shortcutContext">
     <enum>Qt::WidgetWithChildrenShortcut</enum>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
    </property>
    <property name="themeID" stdset="0">
     <string notr="true">removeIconSmall</string>
@@ -1983,7 +1996,7 @@
   </action>
   <action name="actionShowMacPermissions">
    <property name="text">
-    <string>MacPermissions.Title</string>
+    <string>MacPermissions.MenuAction</string>
    </property>
   </action>
   <action name="actionRepair">
@@ -2184,59 +2197,15 @@
     <string>Basic.MainMenu.Docks.LockDocks</string>
    </property>
   </action>
-  <action name="toggleScenes">
+  <action name="sideDocks">
    <property name="checkable">
     <bool>true</bool>
    </property>
    <property name="checked">
-    <bool>true</bool>
+    <bool>false</bool>
    </property>
    <property name="text">
-    <string>Basic.Main.Scenes</string>
-   </property>
-  </action>
-  <action name="toggleSources">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Basic.Main.Sources</string>
-   </property>
-  </action>
-  <action name="toggleMixer">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Mixer</string>
-   </property>
-  </action>
-  <action name="toggleTransitions">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Basic.SceneTransitions</string>
-   </property>
-  </action>
-  <action name="toggleControls">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Basic.Main.Controls</string>
+    <string>Basic.MainMenu.Docks.SideDocks</string>
    </property>
   </action>
   <action name="actionHelpPortal">
@@ -2259,15 +2228,9 @@
     <string>Basic.MainMenu.Help.Discord</string>
    </property>
   </action>
-  <action name="toggleStats">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
+  <action name="actionShowWhatsNew">
    <property name="text">
-    <string>Basic.Stats</string>
+    <string>Basic.MainMenu.Help.WhatsNew</string>
    </property>
   </action>
   <action name="actionShowAbout">
@@ -2346,6 +2309,37 @@
    </property>
    <property name="themeID" stdset="0">
     <string>menuIconSmall</string>
+   </property>
+  </action>
+  <action name="actionSceneFilters">
+   <property name="icon">
+    <iconset resource="obs.qrc">
+     <normaloff>:/res/images/filter.svg</normaloff>:/res/images/filter.svg</iconset>
+   </property>
+   <property name="text">
+    <string>SceneFilters</string>
+   </property>
+   <property name="toolTip">
+    <string>SceneFilters</string>
+   </property>
+   <property name="themeID" stdset="0">
+    <string>filtersIcon</string>
+   </property>
+  </action>
+  <action name="actionSceneGridMode">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Grid</string>
+   </property>
+  </action>
+  <action name="actionSceneListMode">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>List</string>
    </property>
   </action>
  </widget>

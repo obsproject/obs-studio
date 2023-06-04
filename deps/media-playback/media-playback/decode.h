@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -37,8 +37,10 @@ extern "C" {
 #endif
 
 #if LIBAVCODEC_VERSION_MAJOR >= 58
+#if LIBAVCODEC_VERSION_MAJOR < 60
 #define CODEC_CAP_TRUNC AV_CODEC_CAP_TRUNCATED
 #define CODEC_FLAG_TRUNC AV_CODEC_FLAG_TRUNCATED
+#endif
 #else
 #define CODEC_CAP_TRUNC CODEC_CAP_TRUNCATED
 #define CODEC_FLAG_TRUNC CODEC_FLAG_TRUNCATED

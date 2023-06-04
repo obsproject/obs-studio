@@ -1,0 +1,5 @@
+#include <obsversion.h>
+
+const char *OBS_VERSION = "@OBS_VERSION@";
+const char *OBS_VERSION_CANONICAL = "@OBS_VERSION_CANONICAL@";
+const char *OBS_COMMIT = "@OBS_COMMIT@";

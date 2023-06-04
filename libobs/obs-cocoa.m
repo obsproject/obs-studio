@@ -43,47 +43,28 @@ const char *get_module_extension(void)
 
 void add_default_module_paths(void)
 {
-	struct dstr plugin_path;
+	NSURL *pluginURL = [[NSBundle mainBundle] builtInPlugInsURL];
+	NSString *pluginModulePath = [[pluginURL path]
+		stringByAppendingString:@"/%module%.plugin/Contents/MacOS/"];
+	NSString *pluginDataPath = [[pluginURL path]
+		stringByAppendingString:@"/%module%.plugin/Contents/Resources/"];
 
-	dstr_init_move_array(&plugin_path, os_get_executable_path_ptr(""));
-	dstr_cat(&plugin_path, "../PlugIns");
-	char *abs_plugin_path = os_get_abs_path_ptr(plugin_path.array);
-
-	if (abs_plugin_path != NULL) {
-		dstr_move_array(&plugin_path, abs_plugin_path);
-		struct dstr plugin_data;
-		dstr_init_copy_dstr(&plugin_data, &plugin_path);
-		dstr_cat(&plugin_path, "/%module%.plugin/Contents/MacOS/");
-		dstr_cat(&plugin_data, "/%module%.plugin/Contents/Resources/");
-
-		obs_add_module_path(plugin_path.array, plugin_data.array);
-
-		dstr_free(&plugin_data);
-	}
-
-	dstr_free(&plugin_path);
+	obs_add_module_path(pluginModulePath.UTF8String,
+			    pluginDataPath.UTF8String);
 }
 
 char *find_libobs_data_file(const char *file)
 {
-	struct dstr path;
+	NSBundle *frameworkBundle =
+		[NSBundle bundleWithIdentifier:@"com.obsproject.libobs"];
+	NSString *libobsDataPath = [[[frameworkBundle bundleURL] path]
+		stringByAppendingFormat:@"/%@/%s", @"Resources", file];
+	size_t path_length = strlen(libobsDataPath.UTF8String);
 
-	if (is_in_bundle()) {
-		NSBundle *frameworkBundle = [NSBundle
-			bundleWithIdentifier:@"com.obsproject.libobs"];
-		NSURL *bundleURL = [frameworkBundle bundleURL];
-		NSURL *libobsDataURL =
-			[bundleURL URLByAppendingPathComponent:@"Resources/"];
-		const char *libobsDataPath = [[libobsDataURL path]
-			cStringUsingEncoding:NSUTF8StringEncoding];
-		dstr_init_copy(&path, libobsDataPath);
-		dstr_cat(&path, "/");
-	} else {
-		dstr_init_copy(&path, OBS_INSTALL_DATA_PATH "/libobs/");
-	}
+	char *path = bmalloc(path_length + 1);
+	snprintf(path, (path_length + 1), "%s", libobsDataPath.UTF8String);
 
-	dstr_cat(&path, file);
-	return path.array;
+	return path;
 }
 
 static void log_processor_name(void)
@@ -121,6 +102,12 @@ static void log_processor_cores(void)
 {
 	blog(LOG_INFO, "Physical Cores: %d, Logical Cores: %d",
 	     os_get_physical_cores(), os_get_logical_cores());
+}
+
+static void log_emulation_status(void)
+{
+	blog(LOG_INFO, "Rosetta translation used: %s",
+	     os_get_emulation_status() ? "true" : "false");
 }
 
 static void log_available_memory(void)
@@ -162,6 +149,7 @@ void log_system_info(void)
 	log_processor_cores();
 	log_available_memory();
 	log_os();
+	log_emulation_status();
 	log_kernel_version();
 }
 
@@ -484,6 +472,9 @@ static bool code_to_str(int code, struct dstr *str)
 
 void obs_key_to_str(obs_key_t key, struct dstr *str)
 {
+	const UniCharCount max_length = 16;
+	UniChar buffer[max_length];
+
 	if (localized_key_to_str(key, str))
 		return;
 
@@ -516,9 +507,7 @@ void obs_key_to_str(obs_key_t key, struct dstr *str)
 		goto err;
 	}
 
-	const UniCharCount max_length = 16;
 	UInt32 dead_key_state = 0;
-	UniChar buffer[max_length];
 	UniCharCount len = 0;
 
 	OSStatus err =

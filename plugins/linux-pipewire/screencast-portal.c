@@ -49,7 +49,7 @@ struct screencast_portal_capture {
 	uint32_t pipewire_node;
 	bool cursor_visible;
 
-	obs_pipewire_data *obs_pw;
+	obs_pipewire *obs_pw;
 };
 
 /* ------------------------------------------------- */
@@ -245,8 +245,16 @@ static void on_pipewire_remote_opened_cb(GObject *source, GAsyncResult *res,
 		return;
 	}
 
-	capture->obs_pw =
-		obs_pipewire_create(pipewire_fd, capture->pipewire_node);
+	capture->obs_pw = obs_pipewire_create(pipewire_fd);
+
+	if (!capture->obs_pw)
+		return;
+
+	obs_pipewire_connect_stream(
+		capture->obs_pw, capture->pipewire_node, "OBS Studio",
+		pw_properties_new(PW_KEY_MEDIA_TYPE, "Video",
+				  PW_KEY_MEDIA_CATEGORY, "Capture",
+				  PW_KEY_MEDIA_ROLE, "Screen", NULL));
 	obs_pipewire_set_cursor_visible(capture->obs_pw,
 					capture->cursor_visible);
 }
@@ -879,4 +887,9 @@ void screencast_portal_load(void)
 	};
 	if (window_capture_available)
 		obs_register_source(&screencast_portal_window_capture_info);
+}
+
+void screencast_portal_unload(void)
+{
+	g_clear_object(&screencast_proxy);
 }

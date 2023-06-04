@@ -1,6 +1,6 @@
 /******************************************************************************
     Copyright (C) 2015 by Andrew Skinner <obs@theandyroid.com>
-    Copyright (C) 2017 by Hugh Bailey <jim@obsproject.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,6 @@
 ******************************************************************************/
 
 #include "obs-scripting-python.h"
-#include "obs-scripting-config.h"
 #include <util/base.h>
 #include <util/platform.h>
 #include <util/darray.h>
@@ -500,7 +499,7 @@ static PyObject *obs_python_remove_tick_callback(PyObject *self, PyObject *args)
 
 	if (!script) {
 		PyErr_SetString(PyExc_RuntimeError,
-				"No active script, report this to Jim");
+				"No active script, report this to Lain");
 		return NULL;
 	}
 
@@ -525,7 +524,7 @@ static PyObject *obs_python_add_tick_callback(PyObject *self, PyObject *args)
 
 	if (!script) {
 		PyErr_SetString(PyExc_RuntimeError,
-				"No active script, report this to Jim");
+				"No active script, report this to Lain");
 		return NULL;
 	}
 
@@ -578,7 +577,7 @@ static PyObject *obs_python_signal_handler_disconnect(PyObject *self,
 
 	if (!script) {
 		PyErr_SetString(PyExc_RuntimeError,
-				"No active script, report this to Jim");
+				"No active script, report this to Lain");
 		return NULL;
 	}
 
@@ -624,7 +623,7 @@ static PyObject *obs_python_signal_handler_connect(PyObject *self,
 
 	if (!script) {
 		PyErr_SetString(PyExc_RuntimeError,
-				"No active script, report this to Jim");
+				"No active script, report this to Lain");
 		return NULL;
 	}
 
@@ -683,7 +682,7 @@ static PyObject *obs_python_signal_handler_disconnect_global(PyObject *self,
 
 	if (!script) {
 		PyErr_SetString(PyExc_RuntimeError,
-				"No active script, report this to Jim");
+				"No active script, report this to Lain");
 		return NULL;
 	}
 
@@ -725,7 +724,7 @@ static PyObject *obs_python_signal_handler_connect_global(PyObject *self,
 
 	if (!script) {
 		PyErr_SetString(PyExc_RuntimeError,
-				"No active script, report this to Jim");
+				"No active script, report this to Lain");
 		return NULL;
 	}
 
@@ -823,7 +822,7 @@ static PyObject *hotkey_unregister(PyObject *self, PyObject *args)
 
 	if (!script) {
 		PyErr_SetString(PyExc_RuntimeError,
-				"No active script, report this to Jim");
+				"No active script, report this to Lain");
 		return NULL;
 	}
 
@@ -1538,7 +1537,7 @@ static void python_tick(void *param, float seconds)
 	 * the cur_python_script state variable. Use the busy_script variable
 	 * to save and restore the value if not null.
 	 */
-	struct obs_python_script *busy_script;
+	struct obs_python_script *busy_script = NULL;
 	bool valid;
 	uint64_t ts = obs_get_video_frame_time();
 
@@ -1666,8 +1665,8 @@ bool obs_scripting_load_python(const char *python_path)
 	if (python_path && *python_path) {
 #ifdef __APPLE__
 		char temp[PATH_MAX];
-		sprintf(temp, "%s/Python.framework/Versions/Current",
-			python_path);
+		snprintf(temp, sizeof(temp),
+			 "%s/Python.framework/Versions/Current", python_path);
 		os_utf8_to_wcs(temp, 0, home_path, PATH_MAX);
 		Py_SetPythonHome(home_path);
 #else
@@ -1686,15 +1685,15 @@ bool obs_scripting_load_python(const char *python_path)
 
 #if RUNTIME_LINK
 	if (python_version.major == 3 && python_version.minor < 7) {
-#elif PY_VERSION_HEX < 0x030700b0
-	if (true) {
-#else
-	if (false) {
-#endif
 		PyEval_InitThreads();
 		if (!PyEval_ThreadsInitialized())
 			return false;
 	}
+#elif PY_VERSION_HEX < 0x03070000
+	PyEval_InitThreads();
+	if (!PyEval_ThreadsInitialized())
+		return false;
+#endif
 
 	/* ---------------------------------------------- */
 	/* Must set arguments for guis to work            */
@@ -1702,7 +1701,10 @@ bool obs_scripting_load_python(const char *python_path)
 	wchar_t *argv[] = {L"", NULL};
 	int argc = sizeof(argv) / sizeof(wchar_t *) - 1;
 
+	PRAGMA_WARN_PUSH
+	PRAGMA_WARN_DEPRECATION
 	PySys_SetArgv(argc, argv);
+	PRAGMA_WARN_POP
 
 #ifdef DEBUG_PYTHON_STARTUP
 	/* ---------------------------------------------- */

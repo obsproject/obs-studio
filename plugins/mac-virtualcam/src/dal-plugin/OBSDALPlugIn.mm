@@ -81,13 +81,15 @@ typedef enum {
 		uint64_t intervalTime = (int64_t)(1 * NSEC_PER_SEC);
 		dispatch_source_set_timer(_machConnectTimer, startTime,
 					  intervalTime, 0);
+
 		dispatch_source_set_event_handler(_machConnectTimer, ^{
-			if (![[weakSelf machClient] isServerAvailable]) {
+			__strong __typeof(weakSelf) strongSelf = weakSelf;
+			if (![[strongSelf machClient] isServerAvailable]) {
 				DLog(@"Server is not available");
-			} else if (weakSelf.state ==
+			} else if (strongSelf.state ==
 				   PlugInStateWaitingForServer) {
 				DLog(@"Attempting connection");
-				[[weakSelf machClient] connectToServer];
+				[[strongSelf machClient] connectToServer];
 			}
 		});
 	}
@@ -233,8 +235,8 @@ typedef enum {
 	// Add 5 more seconds onto the timeout timer
 	dispatch_source_set_timer(
 		_timeoutTimer,
-		dispatch_time(DISPATCH_TIME_NOW, 5.0 * NSEC_PER_SEC),
-		5.0 * NSEC_PER_SEC, (1ull * NSEC_PER_SEC) / 10);
+		dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5.0 * NSEC_PER_SEC)),
+		(uint64_t)(5.0 * NSEC_PER_SEC), (1ull * NSEC_PER_SEC) / 10);
 
 	[self.stream queuePixelBuffer:frame
 			    timestamp:timestamp

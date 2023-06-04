@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -68,8 +68,6 @@ struct video_output {
 	uint64_t frame_time;
 	volatile long skipped_frames;
 	volatile long total_frames;
-
-	bool initialized;
 
 	pthread_mutex_t input_mutex;
 	DARRAY(struct video_input) inputs;
@@ -236,7 +234,6 @@ int video_output_open(video_t **video, struct video_output_info *info)
 	memcpy(&out->info, info, sizeof(struct video_output_info));
 	out->frame_time =
 		util_mul_div64(1000000000ULL, info->fps_den, info->fps_num);
-	out->initialized = false;
 
 	if (pthread_mutex_init_recursive(&out->data_mutex) != 0)
 		goto fail0;
@@ -249,7 +246,6 @@ int video_output_open(video_t **video, struct video_output_info *info)
 
 	init_cache(out);
 
-	out->initialized = true;
 	*video = out;
 	return VIDEO_OUTPUT_SUCCESS;
 
@@ -260,7 +256,7 @@ fail2:
 fail1:
 	pthread_mutex_destroy(&out->data_mutex);
 fail0:
-	video_output_close(out);
+	bfree(out);
 	return VIDEO_OUTPUT_FAIL;
 }
 
@@ -271,12 +267,19 @@ void video_output_close(video_t *video)
 
 	video_output_stop(video);
 
+	pthread_mutex_lock(&video->input_mutex);
+
 	for (size_t i = 0; i < video->inputs.num; i++)
 		video_input_free(&video->inputs.array[i]);
 	da_free(video->inputs);
 
 	for (size_t i = 0; i < video->info.cache_size; i++)
 		video_frame_free((struct video_frame *)&video->cache[i]);
+
+	pthread_mutex_unlock(&video->input_mutex);
+	os_sem_destroy(video->update_semaphore);
+	pthread_mutex_destroy(&video->data_mutex);
+	pthread_mutex_destroy(&video->input_mutex);
 
 	bfree(video);
 }
@@ -309,6 +312,9 @@ static enum video_colorspace collapse_space(enum video_colorspace cs)
 		break;
 	case VIDEO_CS_2100_HLG:
 		cs = VIDEO_CS_2100_PQ;
+		break;
+	default:
+		break;
 	}
 
 	return cs;
@@ -389,6 +395,8 @@ bool video_output_connect(
 			input.conversion.format = video->info.format;
 			input.conversion.width = video->info.width;
 			input.conversion.height = video->info.height;
+			input.conversion.range = video->info.range;
+			input.conversion.colorspace = video->info.colorspace;
 		}
 
 		if (input.conversion.width == 0)
@@ -530,14 +538,10 @@ void video_output_stop(video_t *video)
 	if (!video)
 		return;
 
-	if (video->initialized) {
-		video->initialized = false;
+	if (!video->stop) {
 		video->stop = true;
 		os_sem_post(video->update_semaphore);
 		pthread_join(video->thread, &thread_ret);
-		os_sem_destroy(video->update_semaphore);
-		pthread_mutex_destroy(&video->data_mutex);
-		pthread_mutex_destroy(&video->input_mutex);
 	}
 }
 

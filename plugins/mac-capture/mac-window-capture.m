@@ -61,10 +61,10 @@ static inline void capture_frame(struct window_capture *wc)
 
 	struct obs_source_frame frame = {
 		.format = VIDEO_FORMAT_BGRA,
-		.width = width,
-		.height = height,
+		.width = (uint32_t)width,
+		.height = (uint32_t)height,
 		.data[0] = (uint8_t *)CFDataGetBytePtr(data),
-		.linesize[0] = CGImageGetBytesPerRow(img),
+		.linesize[0] = (uint32_t)CGImageGetBytesPerRow(img),
 		.timestamp = ts,
 	};
 

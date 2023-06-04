@@ -1,0 +1,79 @@
+{
+    "dependencies": {
+        "prebuilt": {
+            "version": "2023-04-12",
+            "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
+            "label": "Pre-Built obs-deps",
+            "hashes": {
+                "macos-x86_64": "81120ffa33bb050c6c5fcd236e5cedfd7b80f7053fdba271fead5af20be0b5f5",
+                "macos-arm64": "b9bab79611774c4651d084e14259abe889d2b8d1653787a843d08cf3f0db881c",
+                "macos-universal": "9535c6e1ad96f7d49960251e85a245774088d48da1d602bb82f734b10219125a",
+                "windows-x64": "c13a14a1acc4224b21304d97b63da4121de1ed6981297e50496fbc474abc0503",
+                "linux-x86_64": "056425a8a7a4a0c242ed5ab9c1eba4dd6b004386877de4304524e7bea11c0ee2"
+            }
+        },
+        "qt6": {
+            "version": "2023-04-12",
+            "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
+            "label": "Pre-Built Qt6",
+            "hashes": {
+                "macos-x86_64": "2622d6ecd484a596da12b6a45b709fe563821eda558d0bbb27335c8c2f63945c",
+                "macos-arm64": "4f72aa1103d88a00d90c01bb3650276ffa1408e16ef40579177605483b986dc9",
+                "macos-universal": "eb7614544ab4f3d2c6052c797635602280ca5b028a6b987523d8484222ce45d1",
+                "windows-x64": "4d39364b8a8dee5aa24fcebd8440d5c22bb4551c6b440ffeacce7d61f2ed1add"
+            },
+            "debugSymbols": {
+                "windows-x64": "f34ee5067be19ed370268b15c53684b7b8aaa867dc800b68931df905d679e31f"
+            }
+        },
+        "cef": {
+            "version": "5060",
+            "baseUrl": "https://cdn-fastly.obsproject.com/downloads",
+            "label": "Chromium Embedded Framework",
+            "hashes": {
+                "macos-x86_64": "7ef71717ff2e4ff4212274c33f0993729f47c109c464e499544fd3f63586a069",
+                "macos-arm64": "a9da8909202aefc8f35509d03eff9a7c837b5d3b2ed3afb39b67121cb16d457b",
+                "linux-x86_64": "bf4aa9388bab7e94fa945cc3bba16b6da63b6a30f9c0342d42235468b39d84bf",
+                "linux-aarch64": "68d915c9ba2639cba762a54cd3430fce2527aa6355d831d3cfcb6157664206b0",
+                "windows-x64": "c1b47beb7ee42e98f1a41b6d694c26842a4a3d452e44bdf6f758c9785696533d"
+            },
+            "revision": {
+                "macos-x86_64": 2,
+                "macos-arm64": 2
+            }
+        },
+        "vlc": {
+            "version": "3.0.8",
+            "baseUrl": "https://downloads.videolan.org/vlc",
+            "label": "VLC",
+            "hashes": {
+                "windows-x64": "91f589ef69fce51645a3ecbb215b405c98db7b891479474ec3b5ed3b63c25e4a"
+            }
+        }
+    },
+    "platformConfig": {
+        "macos-x86_64": {
+            "qtVersion": 6,
+            "deploymentTarget": "11.0",
+            "buildTarget": "11.0"
+        },
+        "macos-arm64": {
+            "qtVersion": 6,
+            "deploymentTarget": "11.0",
+            "buildTarget": "11.0"
+        },
+        "macos-universal": {
+            "qtVersion": 6,
+            "deploymentTarget": "11.0",
+            "buildTarget": "11.0"
+        },
+        "windows-x64": {
+            "qtVersion": 6
+        },
+        "linux-x86_64": {
+            "qtVersion": 6,
+            "generator": "Ninja"
+        }
+    },
+    "name": "obs-studio"
+}

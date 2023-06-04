@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2017 by Hugh Bailey <jim@obsproject.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 
 #define NO_REDEFS
 #include "obs-scripting-python-import.h"
-#include "obs-scripting-config.h"
 
 #ifdef _MSC_VER
 #pragma warning(disable : 4152)
@@ -40,7 +39,7 @@
 #endif
 
 #define PY_MAJOR_VERSION_MAX 3
-#define PY_MINOR_VERSION_MAX 10
+#define PY_MINOR_VERSION_MAX 11
 
 bool import_python(const char *python_path, python_version_t *python_version)
 {
@@ -71,9 +70,9 @@ bool import_python(const char *python_path, python_version_t *python_version)
 
 	char temp[PATH_MAX];
 
-	sprintf(cur_version, VERSION_PATTERN, PY_MAJOR_VERSION_MAX,
-		PY_MINOR_VERSION_MAX);
-	sprintf(temp, FILE_PATTERN, cur_version);
+	snprintf(cur_version, sizeof(cur_version), VERSION_PATTERN,
+		 PY_MAJOR_VERSION_MAX, PY_MINOR_VERSION_MAX);
+	snprintf(temp, sizeof(temp), FILE_PATTERN, cur_version);
 
 	dstr_cat(&lib_candidate_path, temp);
 
@@ -87,10 +86,10 @@ bool import_python(const char *python_path, python_version_t *python_version)
 			break;
 		}
 
-		sprintf(cur_version, VERSION_PATTERN, PY_MAJOR_VERSION_MAX,
-			minor_version);
-		sprintf(next_version, VERSION_PATTERN, PY_MAJOR_VERSION_MAX,
-			--minor_version);
+		snprintf(cur_version, sizeof(cur_version), VERSION_PATTERN,
+			 PY_MAJOR_VERSION_MAX, minor_version);
+		snprintf(next_version, sizeof(next_version), VERSION_PATTERN,
+			 PY_MAJOR_VERSION_MAX, --minor_version);
 		dstr_replace(&lib_candidate_path, cur_version, next_version);
 	} while (minor_version > 5);
 
@@ -116,6 +115,7 @@ bool import_python(const char *python_path, python_version_t *python_version)
 	} while (false)
 
 	IMPORT_FUNC(PyType_Ready);
+	IMPORT_FUNC(PyType_Modified);
 	IMPORT_FUNC(PyObject_GenericGetAttr);
 	IMPORT_FUNC(PyObject_IsTrue);
 	IMPORT_FUNC(Py_DecRef);

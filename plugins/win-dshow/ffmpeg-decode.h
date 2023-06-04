@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -59,6 +59,7 @@ extern bool ffmpeg_decode_audio(struct ffmpeg_decode *decode, uint8_t *data,
 
 extern bool ffmpeg_decode_video(struct ffmpeg_decode *decode, uint8_t *data,
 				size_t size, long long *ts,
+				enum video_colorspace cs,
 				enum video_range_type range,
 				struct obs_source_frame2 *frame,
 				bool *got_output);

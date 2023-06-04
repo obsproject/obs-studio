@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -39,6 +39,7 @@ class QLayout;
 class QString;
 struct gs_window;
 class QLabel;
+class QToolBar;
 
 class OBSMessageBox {
 public:
@@ -122,3 +123,5 @@ QStringList OpenFiles(QWidget *parent, QString title, QString path,
 
 void TruncateLabel(QLabel *label, QString newText,
 		   int length = MAX_LABEL_LENGTH);
+
+void RefreshToolBarStyling(QToolBar *toolBar);

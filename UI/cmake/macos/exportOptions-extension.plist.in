@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>method</key>
+	<string>developer-id</string>
+	<key>provisioningProfiles</key>
+	<dict>
+		<key>com.obsproject.obs-studio</key>
+		<string>${OBS_PROVISIONING_PROFILE}</string>
+	</dict>
+	<key>signingCertificate</key>
+	<string>${OBS_CODESIGN_IDENTITY}</string>
+	<key>signingStyle</key>
+	<string>manual</string>
+</dict>
+</plist>

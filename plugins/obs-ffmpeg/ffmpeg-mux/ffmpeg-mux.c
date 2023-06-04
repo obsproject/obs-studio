@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -99,9 +99,11 @@ struct main_params {
 	int color_trc;
 	int colorspace;
 	int color_range;
+	int chroma_sample_location;
 	int max_luminance;
 	char *acodec;
 	char *muxer_settings;
+	int codec_tag;
 };
 
 struct audio_params {
@@ -155,6 +157,21 @@ struct ffmpeg_mux {
 	struct io_buffer io;
 };
 
+#define SRT_PROTO "srt"
+#define UDP_PROTO "udp"
+#define TCP_PROTO "tcp"
+#define HTTP_PROTO "http"
+#define RIST_PROTO "rist"
+
+static bool ffmpeg_mux_is_network(struct ffmpeg_mux *ffm)
+{
+	return !strncmp(ffm->params.file, SRT_PROTO, sizeof(SRT_PROTO) - 1) ||
+	       !strncmp(ffm->params.file, UDP_PROTO, sizeof(UDP_PROTO) - 1) ||
+	       !strncmp(ffm->params.file, TCP_PROTO, sizeof(TCP_PROTO) - 1) ||
+	       !strncmp(ffm->params.file, HTTP_PROTO, sizeof(HTTP_PROTO) - 1) ||
+	       !strncmp(ffm->params.file, RIST_PROTO, sizeof(RIST_PROTO) - 1);
+}
+
 static void header_free(struct header *header)
 {
 	free(header->data);
@@ -165,8 +182,14 @@ static void free_avformat(struct ffmpeg_mux *ffm)
 	if (ffm->output) {
 		avcodec_free_context(&ffm->video_ctx);
 
-		if ((ffm->output->oformat->flags & AVFMT_NOFILE) == 0)
-			avio_close(ffm->output->pb);
+		if ((ffm->output->oformat->flags & AVFMT_NOFILE) == 0) {
+			if (!ffmpeg_mux_is_network(ffm)) {
+				av_free(ffm->output->pb->buffer);
+				avio_context_free(&ffm->output->pb);
+			} else {
+				avio_close(ffm->output->pb);
+			}
+		}
 
 		avformat_free_context(ffm->output);
 		ffm->output = NULL;
@@ -202,9 +225,6 @@ static void ffmpeg_mux_free(struct ffmpeg_mux *ffm)
 		pthread_join(ffm->io.io_thread, NULL);
 
 		// Cleanup everything else
-		av_free(ffm->output->pb->buffer);
-		avio_context_free(&ffm->output->pb);
-
 		os_event_destroy(ffm->io.new_data_available_event);
 		os_event_destroy(ffm->io.buffer_space_available_event);
 
@@ -368,6 +388,9 @@ static bool init_params(int *argc, char ***argv, struct main_params *params,
 		if (!get_opt_int(argc, argv, &params->color_range,
 				 "video color range"))
 			return false;
+		if (!get_opt_int(argc, argv, &params->chroma_sample_location,
+				 "video chroma sample location"))
+			return false;
 		if (!get_opt_int(argc, argv, &params->max_luminance,
 				 "video max luminance"))
 			return false;
@@ -375,6 +398,9 @@ static bool init_params(int *argc, char ***argv, struct main_params *params,
 			return false;
 		if (!get_opt_int(argc, argv, &params->fps_den, "video fps den"))
 			return false;
+		if (!get_opt_int(argc, argv, &params->codec_tag,
+				 "video codec tag"))
+			params->codec_tag = 0;
 	}
 
 	if (params->tracks) {
@@ -445,6 +471,7 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 	context = avcodec_alloc_context3(NULL);
 	context->codec_type = codec->type;
 	context->codec_id = codec->id;
+	context->codec_tag = ffm->params.codec_tag;
 	context->bit_rate = (int64_t)ffm->params.vbitrate * 1000;
 	context->width = ffm->params.width;
 	context->height = ffm->params.height;
@@ -454,10 +481,7 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 	context->color_trc = ffm->params.color_trc;
 	context->colorspace = ffm->params.colorspace;
 	context->color_range = ffm->params.color_range;
-	context->chroma_sample_location =
-		(ffm->params.colorspace == AVCOL_SPC_BT2020_NCL)
-			? AVCHROMA_LOC_TOPLEFT
-			: AVCHROMA_LOC_LEFT;
+	context->chroma_sample_location = ffm->params.chroma_sample_location;
 	context->extradata = extradata;
 	context->extradata_size = ffm->video_header.size;
 	context->time_base =
@@ -466,7 +490,10 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 	ffm->video_stream->time_base = context->time_base;
 #if LIBAVFORMAT_VERSION_MAJOR < 59
 	// codec->time_base may still be used if LIBAVFORMAT_VERSION_MAJOR < 59
+	PRAGMA_WARN_PUSH
+	PRAGMA_WARN_DEPRECATION
 	ffm->video_stream->codec->time_base = context->time_base;
+	PRAGMA_WARN_POP
 #endif
 	ffm->video_stream->avg_frame_rate = av_inv_q(context->time_base);
 
@@ -515,8 +542,16 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 	AVStream *stream;
 	void *extradata = NULL;
 	const char *name = ffm->params.acodec;
+	int channels;
 
-	const AVCodecDescriptor *codec = avcodec_descriptor_get_by_name(name);
+	const AVCodecDescriptor *codec_desc =
+		avcodec_descriptor_get_by_name(name);
+	if (!codec_desc) {
+		fprintf(stderr, "Couldn't find codec descriptor '%s'\n", name);
+		return;
+	}
+
+	const AVCodec *codec = avcodec_find_encoder(codec_desc->id);
 	if (!codec) {
 		fprintf(stderr, "Couldn't find codec '%s'\n", name);
 		return;
@@ -537,24 +572,29 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 	context = avcodec_alloc_context3(NULL);
 	context->codec_type = codec->type;
 	context->codec_id = codec->id;
-	context->bit_rate = (int64_t)ffm->audio[idx].abitrate * 1000;
-	context->channels = ffm->audio[idx].channels;
+	if (!(codec_desc->props & AV_CODEC_PROP_LOSSLESS))
+		context->bit_rate = (int64_t)ffm->audio[idx].abitrate * 1000;
+
+	channels = ffm->audio[idx].channels;
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(57, 24, 100)
+	context->channels = channels;
+#endif
 	context->sample_rate = ffm->audio[idx].sample_rate;
-	context->frame_size = ffm->audio[idx].frame_size;
-	context->sample_fmt = AV_SAMPLE_FMT_S16;
+	if (!(codec->capabilities & AV_CODEC_CAP_VARIABLE_FRAME_SIZE))
+		context->frame_size = ffm->audio[idx].frame_size;
+
 	context->time_base = stream->time_base;
 	context->extradata = extradata;
 	context->extradata_size = ffm->audio_header[idx].size;
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(59, 24, 100)
-	context->channel_layout =
-		av_get_default_channel_layout(context->channels);
+	context->channel_layout = av_get_default_channel_layout(channels);
 	//avutil default channel layout for 5 channels is 5.0 ; fix for 4.1
-	if (context->channels == 5)
+	if (channels == 5)
 		context->channel_layout = av_get_channel_layout("4.1");
 #else
-	av_channel_layout_default(&context->ch_layout, context->channels);
+	av_channel_layout_default(&context->ch_layout, channels);
 	//avutil default channel layout for 5 channels is 5.0 ; fix for 4.1
-	if (context->channels == 5)
+	if (channels == 5)
 		context->ch_layout = (AVChannelLayout)AV_CHANNEL_LAYOUT_4POINT1;
 #endif
 	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
@@ -880,21 +920,6 @@ static int ffmpeg_mux_write_av_buffer(void *opaque, uint8_t *buf, int buf_size)
 	return buf_size;
 }
 
-#define SRT_PROTO "srt"
-#define UDP_PROTO "udp"
-#define TCP_PROTO "tcp"
-#define HTTP_PROTO "http"
-#define RIST_PROTO "rist"
-
-static bool ffmpeg_mux_is_network(struct ffmpeg_mux *ffm)
-{
-	return !strncmp(ffm->params.file, SRT_PROTO, sizeof(SRT_PROTO) - 1) ||
-	       !strncmp(ffm->params.file, UDP_PROTO, sizeof(UDP_PROTO) - 1) ||
-	       !strncmp(ffm->params.file, TCP_PROTO, sizeof(TCP_PROTO) - 1) ||
-	       !strncmp(ffm->params.file, HTTP_PROTO, sizeof(HTTP_PROTO) - 1) ||
-	       !strncmp(ffm->params.file, RIST_PROTO, sizeof(RIST_PROTO) - 1);
-}
-
 static inline int open_output_file(struct ffmpeg_mux *ffm)
 {
 #if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
@@ -1037,6 +1062,11 @@ static int ffmpeg_mux_init_context(struct ffmpeg_mux *ffm)
 #if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
 	ffm->output->oformat->video_codec = AV_CODEC_ID_NONE;
 	ffm->output->oformat->audio_codec = AV_CODEC_ID_NONE;
+#endif
+
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(60, 0, 100)
+	/* Allow FLAC/OPUS in MP4 */
+	ffm->output->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
 #endif
 
 	if (!init_streams(ffm)) {

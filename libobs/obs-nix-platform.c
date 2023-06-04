@@ -25,7 +25,10 @@ static void *obs_nix_platform_display = NULL;
 
 void obs_set_nix_platform(enum obs_nix_platform_type platform)
 {
+	PRAGMA_WARN_PUSH
+	PRAGMA_WARN_DEPRECATION
 	assert(platform != OBS_NIX_PLATFORM_X11_GLX);
+	PRAGMA_WARN_POP
 	obs_nix_platform = platform;
 }
 

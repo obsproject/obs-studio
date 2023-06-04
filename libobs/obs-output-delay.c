@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2015 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -26,6 +26,22 @@ static inline bool delay_active(const struct obs_output *output)
 static inline bool delay_capturing(const struct obs_output *output)
 {
 	return os_atomic_load_bool(&output->delay_capturing);
+}
+
+static inline bool flag_encoded(const struct obs_output *output)
+{
+	return (output->info.flags & OBS_OUTPUT_ENCODED) != 0;
+}
+
+static inline bool log_flag_encoded(const struct obs_output *output,
+				    const char *func_name, bool inverse_log)
+{
+	const char *prefix = inverse_log ? "n encoded" : " raw";
+	bool ret = flag_encoded(output);
+	if ((!inverse_log && !ret) || (inverse_log && ret))
+		blog(LOG_WARNING, "Output '%s': Tried to use %s on a%s output",
+		     output->context.name, func_name, prefix);
+	return ret;
 }
 
 static inline void push_packet(struct obs_output *output,
@@ -141,10 +157,10 @@ bool obs_output_delay_start(obs_output_t *output)
 	};
 
 	if (!delay_active(output)) {
-		bool can_begin = obs_output_can_begin_data_capture(output, 0);
+		bool can_begin = obs_output_can_begin_data_capture2(output);
 		if (!can_begin)
 			return false;
-		if (!obs_output_initialize_encoders(output, 0))
+		if (!obs_output_initialize_encoders2(output))
 			return false;
 	}
 
@@ -159,7 +175,7 @@ bool obs_output_delay_start(obs_output_t *output)
 		return true;
 	}
 
-	if (!obs_output_begin_data_capture(output, 0)) {
+	if (!obs_output_begin_data_capture2(output)) {
 		obs_output_cleanup_delay(output);
 		return false;
 	}
@@ -186,14 +202,8 @@ void obs_output_set_delay(obs_output_t *output, uint32_t delay_sec,
 {
 	if (!obs_output_valid(output, "obs_output_set_delay"))
 		return;
-
-	if ((output->info.flags & OBS_OUTPUT_ENCODED) == 0) {
-		blog(LOG_WARNING,
-		     "Output '%s': Tried to set a delay "
-		     "value on a non-encoded output",
-		     output->context.name);
+	if (!log_flag_encoded(output, __FUNCTION__, false))
 		return;
-	}
 
 	output->delay_sec = delay_sec;
 	output->delay_flags = flags;

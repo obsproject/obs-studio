@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -21,6 +21,7 @@
 #include <intrin.h>
 #include <psapi.h>
 #include <math.h>
+#include <rpc.h>
 
 #include "base.h"
 #include "platform.h"
@@ -1088,9 +1089,26 @@ bool is_64_bit_windows(void)
 #endif
 }
 
+bool is_arm64_windows(void)
+{
+#if defined(_M_ARM64) || defined(_M_ARM64EC)
+	return true;
+#else
+	USHORT processMachine;
+	USHORT nativeMachine;
+	bool result = IsWow64Process2(GetCurrentProcess(), &processMachine,
+				      &nativeMachine);
+	return (result && (nativeMachine == IMAGE_FILE_MACHINE_ARM64));
+#endif
+}
+
 bool os_get_emulation_status(void)
 {
+#if defined(_M_ARM64) || defined(_M_ARM64EC)
 	return false;
+#else
+	return is_arm64_windows();
+#endif
 }
 
 void get_reg_dword(HKEY hkey, LPCWSTR sub_key, LPCWSTR value_name,
@@ -1187,7 +1205,9 @@ static inline void get_reg_ver(struct win_version_info *ver)
 		ver->build = wcstol(str, NULL, 10);
 	}
 
-	if (get_reg_sz(key, L"ReleaseId", str, sizeof(str))) {
+	const wchar_t *release_key = ver->build > 19041 ? L"DisplayVersion"
+							: L"ReleaseId";
+	if (get_reg_sz(key, release_key, str, sizeof(str))) {
 		os_wcs_to_utf8(str, 0, win_release_id, MAX_SZ_LEN);
 	}
 
@@ -1390,6 +1410,28 @@ uint64_t os_get_sys_free_size(void)
 	return msex.ullAvailPhys;
 }
 
+static uint64_t total_memory = 0;
+static bool total_memory_initialized = false;
+
+static void os_get_sys_total_size_internal()
+{
+	total_memory_initialized = true;
+
+	MEMORYSTATUSEX msex = {sizeof(MEMORYSTATUSEX)};
+	if (!os_get_sys_memory_usage_internal(&msex))
+		return;
+
+	total_memory = msex.ullTotalPhys;
+}
+
+uint64_t os_get_sys_total_size(void)
+{
+	if (!total_memory_initialized)
+		os_get_sys_total_size_internal();
+
+	return total_memory;
+}
+
 static inline bool
 os_get_proc_memory_usage_internal(PROCESS_MEMORY_COUNTERS *pmc)
 {
@@ -1428,7 +1470,8 @@ uint64_t os_get_proc_virtual_size(void)
 uint64_t os_get_free_disk_space(const char *dir)
 {
 	wchar_t *wdir = NULL;
-	if (!os_utf8_to_wcs_ptr(dir, 0, &wdir))
+	os_utf8_to_wcs_ptr(dir, 0, &wdir);
+	if (!wdir)
 		return 0;
 
 	ULARGE_INTEGER free;
@@ -1436,4 +1479,22 @@ uint64_t os_get_free_disk_space(const char *dir)
 	bfree(wdir);
 
 	return success ? free.QuadPart : 0;
+}
+
+char *os_generate_uuid(void)
+{
+	UUID uuid;
+
+	RPC_STATUS res = UuidCreate(&uuid);
+	if (res != RPC_S_OK && res != RPC_S_UUID_LOCAL_ONLY)
+		bcrash("Failed to get UUID, RPC_STATUS: %l", res);
+
+	struct dstr uuid_str = {0};
+	dstr_printf(&uuid_str,
+		    "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+		    uuid.Data1, uuid.Data2, uuid.Data3, uuid.Data4[0],
+		    uuid.Data4[1], uuid.Data4[2], uuid.Data4[3], uuid.Data4[4],
+		    uuid.Data4[5], uuid.Data4[6], uuid.Data4[7]);
+
+	return uuid_str.array;
 }

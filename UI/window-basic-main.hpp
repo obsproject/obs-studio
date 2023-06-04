@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
 #include <memory>
 #include "window-main.hpp"
 #include "window-basic-interaction.hpp"
+#include "window-basic-vcam.hpp"
 #include "window-basic-properties.hpp"
 #include "window-basic-transform.hpp"
 #include "window-basic-adv-audio.hpp"
@@ -51,6 +52,7 @@ class QMessageBox;
 class QListWidgetItem;
 class VolControl;
 class OBSBasicStats;
+class OBSBasicVCamConfig;
 
 #include "ui_OBSBasic.h"
 #include "ui_ColorSelect.h"
@@ -65,12 +67,15 @@ class OBSBasicStats;
 #define SIMPLE_ENCODER_X264 "x264"
 #define SIMPLE_ENCODER_X264_LOWCPU "x264_lowcpu"
 #define SIMPLE_ENCODER_QSV "qsv"
+#define SIMPLE_ENCODER_QSV_AV1 "qsv_av1"
 #define SIMPLE_ENCODER_NVENC "nvenc"
 #define SIMPLE_ENCODER_NVENC_AV1 "nvenc_av1"
 #define SIMPLE_ENCODER_NVENC_HEVC "nvenc_hevc"
 #define SIMPLE_ENCODER_AMD "amd"
 #define SIMPLE_ENCODER_AMD_HEVC "amd_hevc"
+#define SIMPLE_ENCODER_AMD_AV1 "amd_av1"
 #define SIMPLE_ENCODER_APPLE_H264 "apple_h264"
+#define SIMPLE_ENCODER_APPLE_HEVC "apple_hevc"
 
 #define PREVIEW_EDGE_SIZE 10
 
@@ -223,7 +228,8 @@ private:
 
 	std::vector<OBSSignal> signalHandlers;
 
-	QList<QPointer<QDockWidget>> extraDocks;
+	QList<QPointer<QDockWidget>> oldExtraDocks;
+	QStringList oldExtraDockNames;
 
 	bool loaded = false;
 	long disableSaving = 1;
@@ -240,6 +246,8 @@ private:
 	OBSWeakSourceAutoRelease copySourceTransition;
 
 	bool closing = false;
+	bool clearingFailed = false;
+
 	QScopedPointer<QThread> devicePropertiesThread;
 	QScopedPointer<QThread> whatsNewInitThread;
 	QScopedPointer<QThread> updateCheckThread;
@@ -306,6 +314,7 @@ private:
 
 	QPointer<ControlsSplitButton> vcamButton;
 	bool vcamEnabled = false;
+	VCamConfig vcamConfig;
 
 	QScopedPointer<QSystemTrayIcon> trayIcon;
 	QPointer<QAction> sysTrayStream;
@@ -491,6 +500,7 @@ private:
 	OBSWeakSource lastScene;
 	OBSWeakSource swapScene;
 	OBSWeakSource programScene;
+	OBSWeakSource lastProgramScene;
 	bool editPropertiesMode = false;
 	bool sceneDuplicationMode = true;
 	bool swapScenesMode = true;
@@ -538,14 +548,22 @@ private:
 	obs_data_array_t *SaveProjectors();
 	void LoadSavedProjectors(obs_data_array_t *savedProjectors);
 
+	void MacBranchesFetched(const QString &branch, bool manualUpdate);
 	void ReceivedIntroJson(const QString &text);
 	void ShowWhatsNew(const QString &url);
 
 	void UpdatePreviewProgramIndicators();
 
+	QStringList extraDockNames;
+	QList<QSharedPointer<QDockWidget>> extraDocks;
+
+	QStringList extraCustomDockNames;
+	QList<QPointer<QDockWidget>> extraCustomDocks;
+
 #ifdef BROWSER_AVAILABLE
+	QPointer<QAction> extraBrowserMenuDocksSeparator;
+
 	QList<QSharedPointer<QDockWidget>> extraBrowserDocks;
-	QList<QSharedPointer<QAction>> extraBrowserDockActions;
 	QStringList extraBrowserDockTargets;
 
 	void ClearExtraBrowserDocks();
@@ -635,9 +653,14 @@ private:
 	bool drawSpacingHelpers = true;
 
 	float GetDevicePixelRatio();
+	void SourceToolBarActionsSetEnabled();
 
 	std::string lastScreenshot;
 	std::string lastReplay;
+
+	void UpdatePreviewOverflowSettings();
+
+	bool restartingVCam = false;
 
 public slots:
 	void DeferSaveBegin();
@@ -812,6 +835,10 @@ private slots:
 	void LockVolumeControl(bool lock);
 	void ResetProxyStyleSliders();
 
+	void UpdateVirtualCamConfig(const VCamConfig &config);
+	void RestartVirtualCam(const VCamConfig &config);
+	void RestartingVirtualCam();
+
 private:
 	/* OBS Callbacks */
 	static void SceneReordered(void *data, calldata_t *params);
@@ -941,8 +968,14 @@ public:
 	void CreateInteractionWindow(obs_source_t *source);
 	void CreatePropertiesWindow(obs_source_t *source);
 	void CreateFiltersWindow(obs_source_t *source);
+	void CreateEditTransformWindow(obs_sceneitem_t *item);
 
 	QAction *AddDockWidget(QDockWidget *dock);
+	void AddDockWidget(QDockWidget *dock, Qt::DockWidgetArea area,
+			   bool extraBrowser = false);
+	void RemoveDockWidget(const QString &name);
+	bool IsDockObjectNameUsed(const QString &name);
+	void AddCustomDockWidget(QDockWidget *dock);
 
 	static OBSBasic *Get();
 
@@ -1013,6 +1046,7 @@ private slots:
 	void on_actionViewCurrentLog_triggered();
 	void on_actionCheckForUpdates_triggered();
 	void on_actionRepair_triggered();
+	void on_actionShowWhatsNew_triggered();
 
 	void on_actionShowCrashLogs_triggered();
 	void on_actionUploadLastCrashLog_triggered();
@@ -1030,13 +1064,16 @@ private slots:
 	void on_actionCenterToScreen_triggered();
 	void on_actionVerticalCenter_triggered();
 	void on_actionHorizontalCenter_triggered();
+	void on_actionSceneFilters_triggered();
 
-	void on_customContextMenuRequested(const QPoint &pos);
+	void on_OBSBasic_customContextMenuRequested(const QPoint &pos);
 
 	void on_scenes_currentItemChanged(QListWidgetItem *current,
 					  QListWidgetItem *prev);
 	void on_scenes_customContextMenuRequested(const QPoint &pos);
 	void GridActionClicked();
+	void on_actionSceneListMode_triggered();
+	void on_actionSceneGridMode_triggered();
 	void on_actionAddScene_triggered();
 	void on_actionRemoveScene_triggered();
 	void on_actionSceneUp_triggered();
@@ -1076,9 +1113,9 @@ private slots:
 	void on_actionWebsite_triggered();
 	void on_actionDiscord_triggered();
 
-	void on_preview_customContextMenuRequested(const QPoint &pos);
-	void ProgramViewContextMenuRequested(const QPoint &pos);
-	void PreviewDisabledMenu(const QPoint &pos);
+	void on_preview_customContextMenuRequested();
+	void ProgramViewContextMenuRequested();
+	void on_previewDisabledWidget_customContextMenuRequested();
 
 	void on_actionNewSceneCollection_triggered();
 	void on_actionDupSceneCollection_triggered();
@@ -1108,11 +1145,10 @@ private slots:
 	void on_transitionAdd_clicked();
 	void on_transitionRemove_clicked();
 	void on_transitionProps_clicked();
-	void on_transitionDuration_valueChanged(int value);
-	void on_tbar_position_valueChanged(int value);
+	void on_transitionDuration_valueChanged();
 
-	void on_actionShowTransitionProperties_triggered();
-	void on_actionHideTransitionProperties_triggered();
+	void ShowTransitionProperties();
+	void HideTransitionProperties();
 
 	void on_modeSwitch_clicked();
 
@@ -1128,6 +1164,7 @@ private slots:
 	void on_resetDocks_triggered(bool force = false);
 	void on_lockDocks_toggled(bool lock);
 	void on_multiviewProjectorWindowed_triggered();
+	void on_sideDocks_toggled(bool side);
 
 	void PauseToggled();
 
@@ -1145,25 +1182,16 @@ private slots:
 	void EditSceneName();
 	void EditSceneItemName();
 
-	void SceneNameEdited(QWidget *editor,
-			     QAbstractItemDelegate::EndEditHint endHint);
+	void SceneNameEdited(QWidget *editor);
 
 	void OpenSceneFilters();
 	void OpenFilters(OBSSource source = nullptr);
 	void OpenProperties(OBSSource source = nullptr);
 	void OpenInteraction(OBSSource source = nullptr);
+	void OpenEditTransform(OBSSceneItem item = nullptr);
 
 	void EnablePreviewDisplay(bool enable);
 	void TogglePreview();
-
-	void NudgeUp();
-	void NudgeDown();
-	void NudgeLeft();
-	void NudgeRight();
-	void NudgeUpFar();
-	void NudgeDownFar();
-	void NudgeLeftFar();
-	void NudgeRightFar();
 
 	void OpenStudioProgramProjector();
 	void OpenPreviewProjector();
@@ -1179,6 +1207,9 @@ private slots:
 	void StackedMixerAreaContextMenuRequested();
 
 	void ResizeOutputSizeOfSource();
+
+	void RepairOldExtraDockName();
+	void RepairCustomExtraDockName();
 
 public slots:
 	void on_actionResetTransform_triggered();

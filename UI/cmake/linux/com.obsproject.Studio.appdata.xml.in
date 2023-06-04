@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop">
+  <id>com.obsproject.Studio</id>
+  <launchable type="desktop-id">com.obsproject.Studio.desktop</launchable>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-2.0</project_license>
+  <name>OBS Studio</name>
+  <developer_name>OBS Project</developer_name>
+  <summary>Live streaming and video recording software</summary>
+  <description>
+    <p>Free and open source software for video capturing, recording, and live streaming.</p>
+    <p>Features:</p>
+    <ul>
+      <li>High performance real time video/audio capturing and mixing. Create scenes made up of multiple sources including window captures, images, text, browser windows, webcams, capture cards and more.</li>
+      <li>Set up an unlimited number of scenes you can switch between seamlessly via custom transitions.</li>
+      <li>Intuitive audio mixer with per-source filters such as noise gate, noise suppression, and gain. Take full control with VST plugin support.</li>
+      <li>Powerful and easy to use configuration options. Add new Sources, duplicate existing ones, and adjust their properties effortlessly.</li>
+      <li>Streamlined Settings panel gives you access to a wide array of configuration options to tweak every aspect of your broadcast or recording.</li>
+      <li>Modular 'Dock' UI allows you to rearrange the layout exactly as you like. You can even pop out each individual Dock to its own window.</li>
+    </ul>
+    <p>Create Professional Productions:</p>
+    <ul>
+      <li>Choose from a number of different and customizable transitions for when you switch between your scenes or add your own stinger video files.</li>
+      <li>Set hotkeys for nearly every sort of action, such as switching between scenes, starting/stopping streams or recordings, muting audio sources, push to talk, and more.</li>
+      <li>Studio Mode lets you preview your scenes and sources before pushing them live. Adjust your scenes and sources or create new ones and ensure they're perfect before your viewers ever see them.</li>
+      <li>Get a high level view of your production using the Multiview. Monitor 8 different scenes and easily cue or transition to any of them with merely a single or double click.</li>
+    </ul>
+  </description>
+  <url type="homepage">https://obsproject.com</url>
+  <url type="bugtracker">https://github.com/obsproject/obs-studio/issues</url>
+  <url type="donation">https://obsproject.com/contribute</url>
+  <url type="translate">https://crowdin.com/project/obs-studio</url>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://obsproject.com/assets/images/OBSDemoApp2610.png</image>
+    </screenshot>
+  </screenshots>
+  <content_rating type="oars-1.1"/>
+  <kudos>
+    <kudo>ModernToolkit</kudo>
+    <kudo>HiDpiIcon</kudo>
+  </kudos>
+  <releases>
+    <release version="@OBS_VERSION@" date="@APPDATA_RELEASE_DATE@"/>
+  </releases>
+</component>

@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@
 #include "util/platform.h"
 #include "util/profiler.h"
 #include "util/task.h"
+#include "util/uthash.h"
 #include "callback/signal.h"
 #include "callback/proc.h"
 
@@ -37,7 +38,14 @@
 
 #include "obs.h"
 
+#include <obsversion.h>
 #include <caption/caption.h>
+
+/* Custom helpers for the UUID hash table */
+#define HASH_FIND_UUID(head, uuid, out) \
+	HASH_FIND(hh_uuid, head, uuid, UUID_STR_LENGTH, out)
+#define HASH_ADD_UUID(head, uuid_field, add) \
+	HASH_ADD(hh_uuid, head, uuid_field[0], UUID_STR_LENGTH, add)
 
 #define NUM_TEXTURES 2
 #define NUM_CHANNELS 3
@@ -57,6 +65,11 @@ struct tick_callback {
 
 struct draw_callback {
 	void (*draw)(void *param, uint32_t cx, uint32_t cy);
+	void *param;
+};
+
+struct rendered_callback {
+	void (*rendered)(void *param);
 	void *param;
 };
 
@@ -147,6 +160,8 @@ struct obs_hotkey {
 	void *registerer;
 
 	obs_hotkey_id pair_partner_id;
+
+	UT_hash_handle hh;
 };
 
 struct obs_hotkey_pair {
@@ -156,6 +171,8 @@ struct obs_hotkey_pair {
 	bool pressed0;
 	bool pressed1;
 	void *data[2];
+
+	UT_hash_handle hh;
 };
 
 typedef struct obs_hotkey_pair obs_hotkey_pair_t;
@@ -186,7 +203,7 @@ struct obs_hotkey_binding {
 	obs_hotkey_t *hotkey;
 };
 
-struct obs_hotkey_name_map;
+struct obs_hotkey_name_map_item;
 void obs_hotkey_name_map_free(void);
 
 /* ------------------------------------------------------------------------- */
@@ -284,6 +301,7 @@ struct obs_core_video_mix {
 	volatile bool gpu_encode_stop;
 
 	video_t *video;
+	struct obs_video_info ovi;
 
 	bool gpu_conversion;
 	const char *conversion_techs[NUM_CHANNELS];
@@ -292,7 +310,6 @@ struct obs_core_video_mix {
 	float conversion_height_i;
 
 	float color_matrix[16];
-	enum obs_scale_type scale_type;
 };
 
 extern struct obs_core_video_mix *
@@ -324,9 +341,6 @@ struct obs_core_video {
 	uint32_t lagged_frames;
 	bool thread_initialized;
 
-	uint32_t base_width;
-	uint32_t base_height;
-
 	gs_texture_t *transparent_texture;
 
 	gs_effect_t *deinterlace_discard_effect;
@@ -338,7 +352,6 @@ struct obs_core_video {
 	gs_effect_t *deinterlace_yadif_effect;
 	gs_effect_t *deinterlace_yadif_2x_effect;
 
-	struct obs_video_info ovi;
 	float sdr_white_level;
 	float hdr_nominal_peak_level;
 
@@ -365,8 +378,6 @@ struct obs_core_audio {
 	int max_buffering_ticks;
 	bool fixed_buffer;
 
-	float user_volume;
-
 	pthread_mutex_t monitoring_mutex;
 	DARRAY(struct audio_monitor *) monitors;
 	char *monitoring_device_name;
@@ -378,7 +389,11 @@ struct obs_core_audio {
 
 /* user sources, output channels, and displays */
 struct obs_core_data {
-	struct obs_source *first_source;
+	/* Hash tables (uthash) */
+	struct obs_source *sources;        /* Lookup by UUID (hh_uuid) */
+	struct obs_source *public_sources; /* Lookup by name (hh) */
+
+	/* Linked lists */
 	struct obs_source *first_audio_source;
 	struct obs_display *first_display;
 	struct obs_output *first_output;
@@ -393,6 +408,7 @@ struct obs_core_data {
 	pthread_mutex_t audio_sources_mutex;
 	pthread_mutex_t draw_callbacks_mutex;
 	DARRAY(struct draw_callback) draw_callbacks;
+	DARRAY(struct rendered_callback) rendered_callbacks;
 	DARRAY(struct tick_callback) tick_callbacks;
 
 	struct obs_view main_view;
@@ -402,14 +418,16 @@ struct obs_core_data {
 	obs_data_t *private_data;
 
 	volatile bool valid;
+
+	DARRAY(char *) protocols;
 };
 
 /* user hotkeys */
 struct obs_core_hotkeys {
 	pthread_mutex_t mutex;
-	DARRAY(obs_hotkey_t) hotkeys;
+	obs_hotkey_t *hotkeys;
 	obs_hotkey_id next_id;
-	DARRAY(obs_hotkey_pair_t) hotkey_pairs;
+	obs_hotkey_pair_t *hotkey_pairs;
 	obs_hotkey_pair_id next_pair_id;
 
 	pthread_t hotkey_thread;
@@ -426,7 +444,7 @@ struct obs_core_hotkeys {
 	obs_hotkeys_platform_t *platform_context;
 
 	pthread_once_t name_map_init_token;
-	struct obs_hotkey_name_map *name_map;
+	struct obs_hotkey_name_map_item *name_map;
 
 	signal_handler_t *signals;
 
@@ -498,6 +516,8 @@ extern bool audio_callback(void *param, uint64_t start_ts_in,
 			   uint64_t end_ts_in, uint64_t *out_ts,
 			   uint32_t mixers, struct audio_output_data *mixes);
 
+extern struct obs_core_video_mix *get_mix_for_video(video_t *video);
+
 extern void
 start_raw_video(video_t *video, const struct video_scale_info *conversion,
 		void (*callback)(void *param, struct video_data *frame),
@@ -524,6 +544,7 @@ typedef void (*obs_destroy_cb)(void *obj);
 
 struct obs_context_data {
 	char *name;
+	const char *uuid;
 	void *data;
 	obs_data_t *settings;
 	signal_handler_t *signals;
@@ -544,24 +565,40 @@ struct obs_context_data {
 	struct obs_context_data *next;
 	struct obs_context_data **prev_next;
 
+	UT_hash_handle hh;
+	UT_hash_handle hh_uuid;
+
 	bool private;
 };
 
 extern bool obs_context_data_init(struct obs_context_data *context,
 				  enum obs_obj_type type, obs_data_t *settings,
-				  const char *name, obs_data_t *hotkey_data,
-				  bool private);
+				  const char *name, const char *uuid,
+				  obs_data_t *hotkey_data, bool private);
 extern void obs_context_init_control(struct obs_context_data *context,
 				     void *object, obs_destroy_cb destroy);
 extern void obs_context_data_free(struct obs_context_data *context);
 
 extern void obs_context_data_insert(struct obs_context_data *context,
 				    pthread_mutex_t *mutex, void *first);
+extern void obs_context_data_insert_name(struct obs_context_data *context,
+					 pthread_mutex_t *mutex, void *first);
+extern void obs_context_data_insert_uuid(struct obs_context_data *context,
+					 pthread_mutex_t *mutex,
+					 void *first_uuid);
+
 extern void obs_context_data_remove(struct obs_context_data *context);
+extern void obs_context_data_remove_name(struct obs_context_data *context,
+					 void *phead);
+extern void obs_context_data_remove_uuid(struct obs_context_data *context,
+					 void *puuid_head);
+
 extern void obs_context_wait(struct obs_context_data *context);
 
 extern void obs_context_data_setname(struct obs_context_data *context,
 				     const char *name);
+extern void obs_context_data_setname_ht(struct obs_context_data *context,
+					const char *name, void *phead);
 
 /* ------------------------------------------------------------------------- */
 /* ref-counting  */
@@ -838,7 +875,8 @@ extern struct obs_source_info *get_source_info2(const char *unversioned_id,
 						uint32_t ver);
 extern bool obs_source_init_context(struct obs_source *source,
 				    obs_data_t *settings, const char *name,
-				    obs_data_t *hotkey_data, bool private);
+				    const char *uuid, obs_data_t *hotkey_data,
+				    bool private);
 
 extern bool obs_transition_init(obs_source_t *transition);
 extern void obs_transition_free(obs_source_t *transition);
@@ -855,8 +893,9 @@ extern void audio_monitor_destroy(struct audio_monitor *monitor);
 
 extern obs_source_t *
 obs_source_create_set_last_ver(const char *id, const char *name,
-			       obs_data_t *settings, obs_data_t *hotkey_data,
-			       uint32_t last_obs_ver, bool is_private);
+			       const char *uuid, obs_data_t *settings,
+			       obs_data_t *hotkey_data, uint32_t last_obs_ver,
+			       bool is_private);
 extern void obs_source_destroy(struct obs_source *source);
 
 enum view_type {
@@ -913,6 +952,9 @@ convert_video_format(enum video_format format, enum video_trc trc)
 		case VIDEO_FORMAT_I210:
 		case VIDEO_FORMAT_I412:
 		case VIDEO_FORMAT_YA2L:
+		case VIDEO_FORMAT_P216:
+		case VIDEO_FORMAT_P416:
+		case VIDEO_FORMAT_V210:
 			return GS_RGBA16F;
 		default:
 			return GS_BGRX;
@@ -1028,7 +1070,7 @@ struct obs_output {
 	volatile bool data_active;
 	volatile bool end_data_capture_thread_active;
 	int64_t video_offset;
-	int64_t audio_offsets[MAX_AUDIO_MIXES];
+	int64_t audio_offsets[MAX_OUTPUT_AUDIO_ENCODERS];
 	int64_t highest_audio_ts;
 	int64_t highest_video_ts;
 	pthread_t end_data_capture_thread;
@@ -1058,7 +1100,7 @@ struct obs_output {
 	video_t *video;
 	audio_t *audio;
 	obs_encoder_t *video_encoder;
-	obs_encoder_t *audio_encoders[MAX_AUDIO_MIXES];
+	obs_encoder_t *audio_encoders[MAX_OUTPUT_AUDIO_ENCODERS];
 	obs_service_t *service;
 	size_t mixer_mask;
 
@@ -1269,3 +1311,6 @@ extern bool obs_service_initialize(struct obs_service *service,
 				   struct obs_output *output);
 
 void obs_service_destroy(obs_service_t *service);
+
+void obs_output_remove_encoder_internal(struct obs_output *output,
+					struct obs_encoder *encoder);

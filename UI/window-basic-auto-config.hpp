@@ -47,6 +47,7 @@ class AutoConfig : public QWizard {
 		NVENC,
 		QSV,
 		AMD,
+		Apple,
 		Stream,
 	};
 
@@ -89,6 +90,7 @@ class AutoConfig : public QWizard {
 	bool nvencAvailable = false;
 	bool qsvAvailable = false;
 	bool vceAvailable = false;
+	bool appleAvailable = false;
 
 	int startingBitrate = 2500;
 	bool customServer = false;

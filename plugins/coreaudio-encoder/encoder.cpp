@@ -175,7 +175,7 @@ log_to_dstr(DStr &str, ca_encoder *ca, const char *fmt, ...)
 
 	char array[4096];
 	va_start(args, fmt);
-	vsnprintf(array, 4096, fmt, args);
+	vsnprintf(array, sizeof(array), fmt, args);
 	va_end(args);
 
 	array[4095] = 0;
@@ -1409,7 +1409,7 @@ bool obs_module_load(void)
 	};
 	aac_info.id = "CoreAudio_AAC";
 	aac_info.type = OBS_ENCODER_AUDIO;
-	aac_info.codec = "AAC";
+	aac_info.codec = "aac";
 	aac_info.get_name = aac_get_name;
 	aac_info.destroy = aac_destroy;
 	aac_info.create = aac_create;

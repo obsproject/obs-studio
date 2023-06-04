@@ -31,6 +31,14 @@ Source Definition Structure (obs_source_info)
 
    Unique string identifier for the source (required).
 
+.. member:: uint32_t version
+
+   Source version (optional).
+
+   This is used when a source's implementation is significantly
+   modified and the previous version is deprecated, but is kept to
+   prevent old sources from breaking.
+
 .. member:: enum obs_source_type obs_source_info.type
 
    Type of source.
@@ -214,6 +222,11 @@ Source Definition Structure (obs_source_info)
             obs_properties_t *(*obs_source_info.get_properties2)(void *data, void *type_data)
 
    Gets the property information of this source.
+   
+   :param  data:  The implementation data associated with this source.
+                  This value can be null (e.g., when
+                  :c:func:`obs_get_source_properties()` is called on the
+                  source type), make sure to handle this gracefully.
 
    (Optional)
 
@@ -485,7 +498,7 @@ Source Definition Structure (obs_source_info)
 
    Called to get the current time of the media.
 
-.. member:: void (*obs_source_info.media_set_time)(void *data, int64_t miliseconds)
+.. member:: void (*obs_source_info.media_set_time)(void *data, int64_t milliseconds)
 
    Called to set the media time.
 
@@ -501,6 +514,10 @@ Source Definition Structure (obs_source_info)
    - **OBS_MEDIA_STATE_STOPPED**   - Stopped
    - **OBS_MEDIA_STATE_ENDED**     - Ended
    - **OBS_MEDIA_STATE_ERROR**     - Error
+
+.. member:: obs_missing_files_t *(*missing_files)(void *data)
+
+   Called to get the missing files of the source.
 
 .. member:: enum gs_color_space (*obs_source_info.video_get_color_space)(void *data, size_t count, const enum gs_color_space *preferred_spaces)
 
@@ -530,6 +547,12 @@ Source Signals
 
    Called when the :c:func:`obs_source_remove()` function is called on
    the source.
+
+**update** (ptr source)
+
+   Called when the source's settings have been updated.
+
+   .. versionadded:: 29.0.0
 
 **save** (ptr source)
 
@@ -593,7 +616,11 @@ Source Signals
 
 **update_properties** (ptr source)
 
-   Called when the properties of the source have been updated.
+   Called to signal to any properties view (or other users of the source's
+   obs_properties_t) that the presentable properties of the source have changed
+   and should be re-queried via obs_source_properties.
+   Does not mean that the source's *settings* (as configured by the user) have
+   changed. For that, use the `update` signal instead.
 
 **update_flags** (ptr source, int flags)
 
@@ -692,7 +719,7 @@ General Source Functions
    Creates a source of the specified type with the specified settings.
 
    The "source" context is used for anything related to presenting
-   or modifying video/audio.  Use obs_source_release to release it.
+   or modifying video/audio.  Use :c:func:`obs_source_release` to release it.
 
    :param   id:             The source type string identifier
    :param   name:           The desired name of the source.  If this is
@@ -732,7 +759,8 @@ General Source Functions
 
    Duplicates a source.  If the source has the
    OBS_SOURCE_DO_NOT_DUPLICATE output flag set, this only returns a
-   new reference to the same source.
+   new reference to the same source. Either way,
+   release with :c:func:`obs_source_release`.
 
    :param source:         The source to duplicate
    :param desired_name:   The desired name of the new source.  If this is
@@ -756,7 +784,7 @@ General Source Functions
 .. function:: obs_source_t *obs_source_get_ref(obs_source_t *source)
 
    Returns an incremented reference if still valid, otherwise returns
-   *NULL*.
+   *NULL*. Use :c:func:`obs_source_release` to release it.
 
 ---------------------
 
@@ -770,10 +798,11 @@ General Source Functions
 .. function:: obs_weak_source_t *obs_source_get_weak_source(obs_source_t *source)
               obs_source_t *obs_weak_source_get_source(obs_weak_source_t *weak)
 
-   These functions are used to get a weak reference from a strong source
-   reference, or a strong source reference from a weak reference.  If
+   These functions are used to get an incremented weak reference from a strong source
+   reference, or an incremented strong source reference from a weak reference. If
    the source is destroyed, *obs_weak_source_get_source* will return
-   *NULL*.
+   *NULL*. Release with :c:func:`obs_weak_source_release()` or
+   :c:func:`obs_source_release()`, respectively.
 
 ---------------------
 
@@ -921,6 +950,12 @@ General Source Functions
 
 ---------------------
 
+.. function:: const char *obs_source_get_uuid(const obs_source_t *source)
+
+   :return: The UUID of the source
+
+---------------------
+
 .. function:: void obs_source_set_name(obs_source_t *source, const char *name)
 
    Sets the name of a source.  If the source is not private and the name
@@ -937,15 +972,35 @@ General Source Functions
 
 ---------------------
 
+.. function:: bool obs_source_is_scene(const obs_source_t *source)
+
+   :return: *true* if the source is a scene
+
+---------------------
+
+.. function:: bool obs_source_is_group(const obs_source_t *source)
+
+   :return: *true* if the source is a group
+
+---------------------
+
 .. function:: const char *obs_source_get_id(const obs_source_t *source)
 
-   :return: The source's type identifier string
+   :return: The source's type identifier string. If the source is versioned,
+            "_vN" is appended at the end, where "N" is the source's version.
+
+ ---------------------
+
+.. function:: const char *obs_source_get_unversioned_id(const obs_source_t *source)
+
+   :return: The source's unversioned type identifier string.
 
 ---------------------
 
 .. function:: signal_handler_t *obs_source_get_signal_handler(const obs_source_t *source)
 
-   :return: The source's signal handler
+   :return: The source's signal handler. Should not be manually freed,
+            as its lifecycle is managed by libobs.
 
    See the :ref:`source_signal_handler_reference` for more information
    on signals that are available for sources.
@@ -954,7 +1009,8 @@ General Source Functions
 
 .. function:: proc_handler_t *obs_source_get_proc_handler(const obs_source_t *source)
 
-   :return: The procedure handler for a source
+   :return: The procedure handler for a source. Should not be manually freed,
+            as its lifecycle is managed by libobs.
 
 ---------------------
 
@@ -995,7 +1051,7 @@ General Source Functions
 .. function:: void obs_source_set_audio_mixers(obs_source_t *source, uint32_t mixers)
               uint32_t obs_source_get_audio_mixers(const obs_source_t *source)
 
-   Sets/gets the audio mixer channels that a source outputs to,
+   Sets/gets the audio mixer channels (i.e. audio tracks) that a source outputs to,
    depending on what bits are set.  Audio mixers allow filtering
    specific using multiple audio encoders to mix different sources
    together depending on what mixer channel they're set to.
@@ -1116,6 +1172,14 @@ General Source Functions
 
 ---------------------
 
+.. function:: void obs_source_copy_single_filter(obs_source_t *dst, obs_source_t *filter)
+
+   Copies the filter from the source to the destination. If a filter by the
+   same name already exists in the destination source, the newer filter
+   will be given a unique name.
+
+---------------------
+
 .. function:: size_t obs_source_filter_count(const obs_source_t *source)
 
    Returns the number of filters the source has.
@@ -1182,7 +1246,8 @@ General Source Functions
 .. function:: obs_data_t *obs_source_get_private_settings(obs_source_t *item)
 
    Gets private front-end settings data.  This data is saved/loaded
-   automatically.  Returns an incremented reference.
+   automatically.  Returns an incremented reference. Use :c:func:`obs_data_release()`
+   to release it.
 
 ---------------------
 
@@ -1218,6 +1283,77 @@ General Source Functions
 
    Used for interacting with sources:  sends a key up/down event to a
    source.
+
+---------------------
+
+.. function:: enum obs_icon_type obs_source_get_icon_type(const char *id)
+
+   Calls the :c:member:`obs_source_info.icon_type` to get the icon type.
+
+---------------------
+
+.. function:: void obs_source_media_play_pause(obs_source_t *source, bool pause)
+
+   Calls the :c:member:`obs_source_info.media_play_pause` to pause or play media.
+
+---------------------
+
+.. function:: void obs_source_media_restart(obs_source_t *source)
+
+   Calls the :c:member:`obs_source_info.media_restart` to restart the media.
+
+---------------------
+
+.. function:: void obs_source_media_stop(obs_source_t *source)
+
+   Calls the :c:member:`obs_source_info.media_stop` to stop the media.
+
+---------------------
+
+.. function:: void obs_source_media_next(obs_source_t *source)
+
+   Calls the :c:member:`obs_source_info.media_next` to go to the next media.
+
+---------------------
+
+.. function:: void obs_source_media_previous(obs_source_t *source)
+
+   Calls the :c:member:`obs_source_info.media_previous` to go to the previous media.
+
+---------------------
+
+.. function:: int64_t obs_source_media_get_duration(obs_source_t *source)
+
+   Calls the :c:member:`obs_source_info.media_get_duration` to
+   get the media duration in milliseconds.
+
+---------------------
+
+.. function:: int64_t obs_source_media_get_time(obs_source_t *source)
+              void obs_source_media_set_time(obs_source_t *source, int64_t ms)
+
+   Calls the :c:member:`obs_source_info.media_get_time` or
+   :c:member:`obs_source_info.media_set_time` to get/set the
+   current time (in milliseconds) of the media. Will return 0
+   for non-media sources.
+
+---------------------
+
+.. function:: enum obs_media_state obs_source_media_get_state(obs_source_t *source)
+
+   Calls the :c:member:`obs_source_info.media_get_state` to get the state of the media.
+
+---------------------
+
+.. function:: void obs_source_media_started(obs_source_t *source)
+
+   Emits a **media_started** signal.
+
+---------------------
+
+.. function:: void obs_source_media_ended(obs_source_t *source)
+
+   Emits a **media_ended** signal.
 
 ---------------------
 
@@ -1305,6 +1441,24 @@ Functions used by sources
            /* planar 4:2:0 format, 10 bpp */
            VIDEO_FORMAT_I010, /* three-plane */
            VIDEO_FORMAT_P010, /* two-plane, luma and packed chroma */
+
+           /* planar 4:2:2 format, 10 bpp */
+           VIDEO_FORMAT_I210,
+
+           /* planar 4:4:4 format, 12 bpp */
+           VIDEO_FORMAT_I412,
+
+           /* planar 4:4:4:4 format, 12 bpp */
+           VIDEO_FORMAT_YA2L,
+
+           /* planar 4:2:2 format, 16 bpp */
+           VIDEO_FORMAT_P216, /* two-plane, luma and packed chroma */
+
+           /* planar 4:4:4 format, 16 bpp */
+           VIDEO_FORMAT_P416, /* two-plane, luma and packed chroma */
+
+           /* packed 4:2:2 format, 10 bpp */
+           VIDEO_FORMAT_V210,
    };
 
    struct obs_source_frame {
@@ -1356,7 +1510,9 @@ Functions used by sources
 
 .. function:: void obs_source_update_properties(obs_source_t *source)
 
-   Signal an update to any currently used properties.
+   Signals to any currently opened properties views (or other users of the
+   source's obs_properties_t) that the source's presentable properties have
+   changed and that the view should be updated.
 
 ---------------------
 
@@ -1493,7 +1649,8 @@ Transitions
    :param target: | OBS_TRANSITION_SOURCE_A - Source being transitioned from, or the current source if not transitioning
                   | OBS_TRANSITION_SOURCE_B - Source being transitioned to
    :return:       An incremented reference to the source or destination
-                  sources of the transition
+                  sources of the transition. Use :c:func:`obs_source_release`
+                  to release it.
 
 ---------------------
 
@@ -1506,7 +1663,7 @@ Transitions
 .. function:: obs_source_t *obs_transition_get_active_source(obs_source_t *transition)
 
    :return: An incremented reference to the currently active source of
-            the transition
+            the transition. Use :c:func:`obs_source_release` to release it.
 
 ---------------------
 

@@ -416,7 +416,7 @@ static void color_correction_filter_update_v2(void *data, obs_data_t *settings)
 
 /*
  * Since this is C we have to be careful when destroying/removing items from
- * OBS. Jim has added several useful functions to help keep memory leaks to
+ * OBS. Lain has added several useful functions to help keep memory leaks to
  * a minimum, and handle the destruction and construction of these filters.
  */
 static void color_correction_filter_destroy_v1(void *data)
@@ -730,6 +730,9 @@ static void color_correction_filter_defaults_v2(obs_data_t *settings)
 static enum gs_color_space color_correction_filter_get_color_space(
 	void *data, size_t count, const enum gs_color_space *preferred_spaces)
 {
+	UNUSED_PARAMETER(count);
+	UNUSED_PARAMETER(preferred_spaces);
+
 	const enum gs_color_space potential_spaces[] = {
 		GS_CS_SRGB,
 		GS_CS_SRGB_16F,

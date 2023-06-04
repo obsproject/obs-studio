@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -25,6 +25,8 @@
 #include <winternl.h>
 #include <d3d9.h>
 #include "d3d11-subsystem.hpp"
+#include <shellscalingapi.h>
+#include <d3dkmthk.h>
 
 struct UnsupportedHWError : HRError {
 	inline UnsupportedHWError(const char *str, HRESULT hr)
@@ -66,47 +68,6 @@ gs_obj::~gs_obj()
 		next->prev_next = prev_next;
 }
 
-static bool screen_supports_hdr(gs_device_t *device, HMONITOR hMonitor)
-{
-	IDXGIFactory1 *factory1 = device->factory;
-	if (!factory1->IsCurrent()) {
-		device->InitFactory();
-		factory1 = device->factory;
-		device->monitor_to_hdr.clear();
-	}
-
-	for (const std::pair<HMONITOR, bool> &pair : device->monitor_to_hdr) {
-		if (pair.first == hMonitor)
-			return pair.second;
-	}
-
-	ComPtr<IDXGIAdapter> adapter;
-	ComPtr<IDXGIOutput> output;
-	ComPtr<IDXGIOutput6> output6;
-	for (UINT adapterIndex = 0;
-	     SUCCEEDED(factory1->EnumAdapters(adapterIndex, &adapter));
-	     ++adapterIndex) {
-		for (UINT outputIndex = 0;
-		     SUCCEEDED(adapter->EnumOutputs(outputIndex, &output));
-		     ++outputIndex) {
-			if (SUCCEEDED(output->QueryInterface(&output6))) {
-				DXGI_OUTPUT_DESC1 desc1;
-				if (SUCCEEDED(output6->GetDesc1(&desc1)) &&
-				    (desc1.Monitor == hMonitor)) {
-					const bool hdr =
-						desc1.ColorSpace ==
-						DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020;
-					device->monitor_to_hdr.emplace_back(
-						hMonitor, hdr);
-					return hdr;
-				}
-			}
-		}
-	}
-
-	return false;
-}
-
 static enum gs_color_space get_next_space(gs_device_t *device, HWND hwnd,
 					  DXGI_SWAP_EFFECT effect)
 {
@@ -115,8 +76,12 @@ static enum gs_color_space get_next_space(gs_device_t *device, HWND hwnd,
 		const HMONITOR hMonitor =
 			MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
 		if (hMonitor) {
-			if (screen_supports_hdr(device, hMonitor))
+			const gs_monitor_color_info info =
+				device->GetMonitorColorInfo(hMonitor);
+			if (info.hdr)
 				next_space = GS_CS_709_SCRGB;
+			else if (info.bits_per_color > 8)
+				next_space = GS_CS_SRGB_16F;
 		}
 	}
 
@@ -126,7 +91,14 @@ static enum gs_color_space get_next_space(gs_device_t *device, HWND hwnd,
 static enum gs_color_format
 get_swap_format_from_space(gs_color_space space, gs_color_format sdr_format)
 {
-	return (space == GS_CS_709_SCRGB) ? GS_RGBA16F : sdr_format;
+	gs_color_format format = sdr_format;
+	switch (space) {
+	case GS_CS_SRGB_16F:
+	case GS_CS_709_SCRGB:
+		format = GS_RGBA16F;
+	}
+
+	return format;
 }
 
 static inline enum gs_color_space
@@ -313,7 +285,8 @@ void gs_device::InitCompiler()
 	int ver = 49;
 
 	while (ver > 30) {
-		sprintf(d3dcompiler, "D3DCompiler_%02d.dll", ver);
+		snprintf(d3dcompiler, sizeof(d3dcompiler),
+			 "D3DCompiler_%02d.dll", ver);
 
 		HMODULE module = LoadLibraryA(d3dcompiler);
 		if (module) {
@@ -344,45 +317,6 @@ void gs_device::InitFactory()
 	HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
 	if (FAILED(hr))
 		throw UnsupportedHWError("Failed to create DXGIFactory", hr);
-}
-
-#define VENDOR_ID_INTEL 0x8086
-#define IGPU_MEM (512 * 1024 * 1024)
-
-void gs_device::ReorderAdapters(uint32_t &adapterIdx)
-{
-	std::vector<uint32_t> adapterOrder;
-	ComPtr<IDXGIAdapter> adapter;
-	DXGI_ADAPTER_DESC desc;
-	uint32_t iGPUIndex = 0;
-	bool hasIGPU = false;
-	bool hasDGPU = false;
-	int idx = 0;
-
-	while (SUCCEEDED(factory->EnumAdapters(idx, &adapter))) {
-		if (SUCCEEDED(adapter->GetDesc(&desc))) {
-			if (desc.VendorId == VENDOR_ID_INTEL) {
-				if (desc.DedicatedVideoMemory <= IGPU_MEM) {
-					hasIGPU = true;
-					iGPUIndex = (uint32_t)idx;
-				} else {
-					hasDGPU = true;
-				}
-			}
-		}
-
-		adapterOrder.push_back((uint32_t)idx++);
-	}
-
-	/* Intel specific adapter check for Intel integrated and Intel
-	 * dedicated. If both exist, then change adapter priority so that the
-	 * integrated comes first for the sake of improving overall
-	 * performance */
-	if (hasIGPU && hasDGPU) {
-		adapterOrder.erase(adapterOrder.begin() + iGPUIndex);
-		adapterOrder.insert(adapterOrder.begin(), iGPUIndex);
-		adapterIdx = adapterOrder[adapterIdx];
-	}
 }
 
 void gs_device::InitAdapter(uint32_t adapterIdx)
@@ -539,39 +473,18 @@ static bool increase_maximum_frame_latency(ID3D11Device *device)
 }
 
 #if USE_GPU_PRIORITY
-static bool set_priority(ID3D11Device *device)
+static bool set_priority(ID3D11Device *device, bool hags_enabled)
 {
-	typedef enum _D3DKMT_SCHEDULINGPRIORITYCLASS {
-		D3DKMT_SCHEDULINGPRIORITYCLASS_IDLE,
-		D3DKMT_SCHEDULINGPRIORITYCLASS_BELOW_NORMAL,
-		D3DKMT_SCHEDULINGPRIORITYCLASS_NORMAL,
-		D3DKMT_SCHEDULINGPRIORITYCLASS_ABOVE_NORMAL,
-		D3DKMT_SCHEDULINGPRIORITYCLASS_HIGH,
-		D3DKMT_SCHEDULINGPRIORITYCLASS_REALTIME
-	} D3DKMT_SCHEDULINGPRIORITYCLASS;
-
 	ComQIPtr<IDXGIDevice> dxgiDevice(device);
 	if (!dxgiDevice) {
 		blog(LOG_DEBUG, "%s: Failed to get IDXGIDevice", __FUNCTION__);
 		return false;
 	}
 
-	HMODULE gdi32 = GetModuleHandleW(L"GDI32");
-	if (!gdi32) {
-		blog(LOG_DEBUG, "%s: Failed to get GDI32", __FUNCTION__);
-		return false;
-	}
-
-	NTSTATUS(WINAPI * d3dkmt_spspc)(HANDLE, D3DKMT_SCHEDULINGPRIORITYCLASS);
-	d3dkmt_spspc = (decltype(d3dkmt_spspc))GetProcAddress(
-		gdi32, "D3DKMTSetProcessSchedulingPriorityClass");
-	if (!d3dkmt_spspc) {
-		blog(LOG_DEBUG, "%s: Failed to get d3dkmt_spspc", __FUNCTION__);
-		return false;
-	}
-
-	NTSTATUS status = d3dkmt_spspc(GetCurrentProcess(),
-				       D3DKMT_SCHEDULINGPRIORITYCLASS_REALTIME);
+	NTSTATUS status = D3DKMTSetProcessSchedulingPriorityClass(
+		GetCurrentProcess(),
+		hags_enabled ? D3DKMT_SCHEDULINGPRIORITYCLASS_HIGH
+			     : D3DKMT_SCHEDULINGPRIORITYCLASS_REALTIME);
 	if (status != 0) {
 		blog(LOG_DEBUG, "%s: Failed to set process priority class: %d",
 		     __FUNCTION__, (int)status);
@@ -588,8 +501,44 @@ static bool set_priority(ID3D11Device *device)
 	blog(LOG_INFO, "D3D11 GPU priority setup success");
 	return true;
 }
-
 #endif
+
+static bool adapter_hags_enabled(DXGI_ADAPTER_DESC *desc)
+{
+	D3DKMT_OPENADAPTERFROMLUID d3dkmt_openluid{};
+	bool hags_enabled = false;
+	NTSTATUS res;
+
+	d3dkmt_openluid.AdapterLuid = desc->AdapterLuid;
+
+	res = D3DKMTOpenAdapterFromLuid(&d3dkmt_openluid);
+	if (FAILED(res)) {
+		blog(LOG_DEBUG, "Failed opening D3DKMT adapter: %x", res);
+		return hags_enabled;
+	}
+
+	D3DKMT_WDDM_2_7_CAPS caps = {};
+	D3DKMT_QUERYADAPTERINFO args = {};
+	args.hAdapter = d3dkmt_openluid.hAdapter;
+	args.Type = KMTQAITYPE_WDDM_2_7_CAPS;
+	args.pPrivateDriverData = &caps;
+	args.PrivateDriverDataSize = sizeof(caps);
+	res = D3DKMTQueryAdapterInfo(&args);
+
+	/* On Windows 10 pre-2004 this will fail, but HAGS isn't supported
+	 * there anyway. */
+	if (SUCCEEDED(res))
+		hags_enabled = caps.HwSchEnabled;
+
+	D3DKMT_CLOSEADAPTER d3dkmt_close = {d3dkmt_openluid.hAdapter};
+	res = D3DKMTCloseAdapter(&d3dkmt_close);
+	if (FAILED(res)) {
+		blog(LOG_DEBUG, "Failed closing D3DKMT adapter %x: %x",
+		     d3dkmt_openluid.hAdapter, res);
+	}
+
+	return hags_enabled;
+}
 
 static bool CheckFormat(ID3D11Device *device, DXGI_FORMAT format)
 {
@@ -640,9 +589,16 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 		blog(LOG_INFO, "DXGI increase maximum frame latency failed");
 	}
 
+	/* Log HAGS status */
+	bool hags_enabled = adapter_hags_enabled(&desc);
+	if (hags_enabled) {
+		blog(LOG_WARNING,
+		     "Hardware-Accelerated GPU Scheduling enabled on adapter!");
+	}
+
 	/* adjust gpu thread priority on non-intel GPUs */
 #if USE_GPU_PRIORITY
-	if (desc.VendorId != 0x8086 && !set_priority(device)) {
+	if (desc.VendorId != 0x8086 && !set_priority(device, hags_enabled)) {
 		blog(LOG_INFO, "D3D11 GPU priority setup "
 			       "failed (not admin?)");
 	}
@@ -923,7 +879,6 @@ gs_device::gs_device(uint32_t adapterIdx)
 
 	InitCompiler();
 	InitFactory();
-	ReorderAdapters(adapterIdx);
 	InitAdapter(adapterIdx);
 	InitDevice(adapterIdx);
 	device_set_render_target(this, NULL, NULL);
@@ -1191,9 +1146,9 @@ static HRESULT GetPathInfo(HMONITOR hMonitor,
 	return hr;
 }
 
-static ULONG GetSdrWhiteNits(HMONITOR monitor)
+static ULONG GetSdrMaxNits(HMONITOR monitor)
 {
-	ULONG nits = 0;
+	ULONG nits = 80;
 
 	DISPLAYCONFIG_PATH_INFO info;
 	if (SUCCEEDED(GetPathInfo(monitor, &info))) {
@@ -1213,6 +1168,67 @@ static ULONG GetSdrWhiteNits(HMONITOR monitor)
 	return nits;
 }
 
+gs_monitor_color_info gs_device::GetMonitorColorInfo(HMONITOR hMonitor)
+{
+	IDXGIFactory1 *factory1 = factory;
+	if (!factory1->IsCurrent()) {
+		InitFactory();
+		factory1 = factory;
+		monitor_to_hdr.clear();
+	}
+
+	for (const std::pair<HMONITOR, gs_monitor_color_info> &pair :
+	     monitor_to_hdr) {
+		if (pair.first == hMonitor)
+			return pair.second;
+	}
+
+	ComPtr<IDXGIAdapter> adapter;
+	ComPtr<IDXGIOutput> output;
+	ComPtr<IDXGIOutput6> output6;
+	for (UINT adapterIndex = 0;
+	     SUCCEEDED(factory1->EnumAdapters(adapterIndex, &adapter));
+	     ++adapterIndex) {
+		for (UINT outputIndex = 0;
+		     SUCCEEDED(adapter->EnumOutputs(outputIndex, &output));
+		     ++outputIndex) {
+			DXGI_OUTPUT_DESC1 desc1;
+			if (SUCCEEDED(output->QueryInterface(&output6)) &&
+			    SUCCEEDED(output6->GetDesc1(&desc1)) &&
+			    (desc1.Monitor == hMonitor)) {
+				const bool hdr =
+					desc1.ColorSpace ==
+					DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020;
+				const UINT bits = desc1.BitsPerColor;
+				const ULONG nits = GetSdrMaxNits(desc1.Monitor);
+				return monitor_to_hdr
+					.emplace_back(hMonitor,
+						      gs_monitor_color_info(
+							      hdr, bits, nits))
+					.second;
+			}
+		}
+	}
+
+	return gs_monitor_color_info(false, 8, 80);
+}
+
+static void PopulateMonitorIds(HMONITOR handle, char *id, char *alt_id,
+			       size_t capacity)
+{
+	MONITORINFOEXA mi;
+	mi.cbSize = sizeof(mi);
+	if (GetMonitorInfoA(handle, (LPMONITORINFO)&mi)) {
+		strcpy_s(alt_id, capacity, mi.szDevice);
+		DISPLAY_DEVICEA device;
+		device.cb = sizeof(device);
+		if (EnumDisplayDevicesA(mi.szDevice, 0, &device,
+					EDD_GET_DEVICE_INTERFACE_NAME)) {
+			strcpy_s(id, capacity, device.DeviceID);
+		}
+	}
+}
+
 static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 {
 	UINT i;
@@ -1227,6 +1243,11 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 
 		bool target_found = false;
 		DISPLAYCONFIG_TARGET_DEVICE_NAME target;
+
+		constexpr size_t id_capacity = 128;
+		char id[id_capacity]{};
+		char alt_id[id_capacity]{};
+		PopulateMonitorIds(desc.Monitor, id, alt_id, id_capacity);
 
 		MONITORINFOEX info;
 		info.cbSize = sizeof(info);
@@ -1246,6 +1267,7 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 			target.monitorFriendlyDeviceName[0] = 0;
 		}
 
+		UINT bits_per_color = 8;
 		DXGI_COLOR_SPACE_TYPE type =
 			DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
 		FLOAT min_luminance = 0.f;
@@ -1253,6 +1275,7 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 		FLOAT max_full_frame_luminance = 0.f;
 		DXGI_OUTPUT_DESC1 desc1;
 		if (GetOutputDesc1(output, &desc1)) {
+			bits_per_color = desc1.BitsPerColor;
 			type = desc1.ColorSpace;
 			min_luminance = desc1.MinLuminance;
 			max_luminance = desc1.MaxLuminance;
@@ -1273,23 +1296,43 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 			     (unsigned)type);
 		}
 
+		// These are always identical, but you still have to supply both, thanks Microsoft!
+		UINT dpiX, dpiY;
+		unsigned scaling = 100;
+		if (GetDpiForMonitor(desc.Monitor, MDT_EFFECTIVE_DPI, &dpiX,
+				     &dpiY) == S_OK) {
+			scaling = (unsigned)(dpiX * 100.0f / 96.0f);
+		} else {
+			dpiX = 0;
+		}
+
 		const RECT &rect = desc.DesktopCoordinates;
-		const ULONG nits = GetSdrWhiteNits(desc.Monitor);
+		const ULONG nits = GetSdrMaxNits(desc.Monitor);
+
+		char *friendly_name;
+		os_wcs_to_utf8_ptr(target.monitorFriendlyDeviceName, 0,
+				   &friendly_name);
+
 		blog(LOG_INFO,
 		     "\t  output %u:\n"
-		     "\t    name=%ls\n"
+		     "\t    name=%s\n"
 		     "\t    pos={%d, %d}\n"
 		     "\t    size={%d, %d}\n"
 		     "\t    attached=%s\n"
 		     "\t    refresh=%u\n"
+		     "\t    bits_per_color=%u\n"
 		     "\t    space=%s\n"
 		     "\t    sdr_white_nits=%lu\n"
-		     "\t    nit_range=[min=%f, max=%f, max_full_frame=%f]",
-		     i, target.monitorFriendlyDeviceName, rect.left, rect.top,
+		     "\t    nit_range=[min=%f, max=%f, max_full_frame=%f]\n"
+		     "\t    dpi=%u (%u%%)\n"
+		     "\t    id=%s\n"
+		     "\t    alt_id=%s",
+		     i, friendly_name, rect.left, rect.top,
 		     rect.right - rect.left, rect.bottom - rect.top,
-		     desc.AttachedToDesktop ? "true" : "false", refresh, space,
-		     nits, min_luminance, max_luminance,
-		     max_full_frame_luminance);
+		     desc.AttachedToDesktop ? "true" : "false", refresh,
+		     bits_per_color, space, nits, min_luminance, max_luminance,
+		     max_full_frame_luminance, dpiX, scaling, id, alt_id);
+		bfree(friendly_name);
 	}
 }
 
@@ -1320,9 +1363,9 @@ static inline void LogD3DAdapters()
 
 		os_wcs_to_utf8(desc.Description, 0, name, sizeof(name));
 		blog(LOG_INFO, "\tAdapter %u: %s", i, name);
-		blog(LOG_INFO, "\t  Dedicated VRAM: %u",
+		blog(LOG_INFO, "\t  Dedicated VRAM: %" PRIu64,
 		     desc.DedicatedVideoMemory);
-		blog(LOG_INFO, "\t  Shared VRAM:    %u",
+		blog(LOG_INFO, "\t  Shared VRAM:    %" PRIu64,
 		     desc.SharedSystemMemory);
 		blog(LOG_INFO, "\t  PCI ID:         %x:%x", desc.VendorId,
 		     desc.DeviceId);
@@ -2076,10 +2119,9 @@ bool device_framebuffer_srgb_enabled(gs_device_t *device)
 	return device->curFramebufferSrgb;
 }
 
-inline void gs_device::CopyTex(ID3D11Texture2D *dst, uint32_t dst_x,
-			       uint32_t dst_y, gs_texture_t *src,
-			       uint32_t src_x, uint32_t src_y, uint32_t src_w,
-			       uint32_t src_h)
+void gs_device::CopyTex(ID3D11Texture2D *dst, uint32_t dst_x, uint32_t dst_y,
+			gs_texture_t *src, uint32_t src_x, uint32_t src_y,
+			uint32_t src_w, uint32_t src_h)
 {
 	if (src->type != GS_TEXTURE_2D)
 		throw "Source texture must be a 2D texture";
@@ -3068,7 +3110,7 @@ extern "C" EXPORT bool device_p010_available(gs_device_t *device)
 extern "C" EXPORT bool device_is_monitor_hdr(gs_device_t *device, void *monitor)
 {
 	const HMONITOR hMonitor = static_cast<HMONITOR>(monitor);
-	return screen_supports_hdr(device, hMonitor);
+	return device->GetMonitorColorInfo(hMonitor).hdr;
 }
 
 extern "C" EXPORT void device_debug_marker_begin(gs_device_t *,

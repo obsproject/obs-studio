@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2013-2018 Ruwen Hahn <palana@stunned.de>
- *                         Hugh "Jim" Bailey <obs.jim@gmail.com>
- *                         Marvin Scholz <epirat07@gmail.com>
+ * Copyright (c) 2023 Ruwen Hahn <palana@stunned.de>
+ *                    Lain Bailey <lain@obsproject.com>
+ *                    Marvin Scholz <epirat07@gmail.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -386,20 +386,34 @@ uint64_t os_get_sys_free_size(void)
 	return vmstat.free_count * vm_page_size;
 }
 
-#ifndef MACH_TASK_BASIC_INFO
-typedef task_basic_info_data_t mach_task_basic_info_data_t;
-#endif
+static uint64_t total_memory = 0;
+static bool total_memory_initialized = false;
+
+static void os_get_sys_total_size_internal()
+{
+	total_memory_initialized = true;
+
+	size_t size;
+	int ret;
+
+	size = sizeof(total_memory);
+	ret = sysctlbyname("hw.memsize", &total_memory, &size, NULL, 0);
+}
+
+uint64_t os_get_sys_total_size(void)
+{
+	if (!total_memory_initialized)
+		os_get_sys_total_size_internal();
+
+	return total_memory;
+}
 
 static inline bool
 os_get_proc_memory_usage_internal(mach_task_basic_info_data_t *taskinfo)
 {
-#ifdef MACH_TASK_BASIC_INFO
 	const task_flavor_t flavor = MACH_TASK_BASIC_INFO;
 	mach_msg_type_number_t out_count = MACH_TASK_BASIC_INFO_COUNT;
-#else
-	const task_flavor_t flavor = TASK_BASIC_INFO;
-	mach_msg_type_number_t out_count = TASK_BASIC_INFO_COUNT;
-#endif
+
 	if (task_info(mach_task_self(), flavor, (task_info_t)taskinfo,
 		      &out_count) != KERN_SUCCESS)
 		return false;

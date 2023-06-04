@@ -69,11 +69,14 @@ static void stinger_update(void *data, obs_data_t *settings)
 	struct stinger_info *s = data;
 	const char *path = obs_data_get_string(settings, "path");
 	bool hw_decode = obs_data_get_bool(settings, "hw_decode");
+	bool preload = obs_data_get_bool(settings, "preload");
 
 	obs_data_t *media_settings = obs_data_create();
 	obs_data_set_string(media_settings, "local_file", path);
 	obs_data_set_bool(media_settings, "hw_decode", hw_decode);
 	obs_data_set_bool(media_settings, "looping", false);
+	obs_data_set_bool(media_settings, "full_decode", preload);
+	obs_data_set_bool(media_settings, "is_stinger", true);
 
 	obs_source_release(s->media_source);
 	struct dstr name;
@@ -343,8 +346,7 @@ get_tech_name_and_multiplier(enum gs_color_space current_space,
 	switch (source_space) {
 	case GS_CS_SRGB:
 	case GS_CS_SRGB_16F:
-		switch (current_space) {
-		case GS_CS_709_SCRGB:
+		if (current_space == GS_CS_709_SCRGB) {
 			tech_name = "DrawMultiply";
 			*multiplier = obs_get_video_sdr_white_level() / 80.0f;
 		}
@@ -358,6 +360,9 @@ get_tech_name_and_multiplier(enum gs_color_space current_space,
 		case GS_CS_709_SCRGB:
 			tech_name = "DrawMultiply";
 			*multiplier = obs_get_video_sdr_white_level() / 80.0f;
+			break;
+		case GS_CS_709_EXTENDED:
+			break;
 		}
 		break;
 	case GS_CS_709_SCRGB:
@@ -370,6 +375,9 @@ get_tech_name_and_multiplier(enum gs_color_space current_space,
 		case GS_CS_709_EXTENDED:
 			tech_name = "DrawMultiply";
 			*multiplier = 80.0f / obs_get_video_sdr_white_level();
+			break;
+		case GS_CS_709_SCRGB:
+			break;
 		}
 	}
 
@@ -630,6 +638,11 @@ static void stinger_transition_stop(void *data)
 	if (s->matte_source)
 		obs_source_remove_active_child(s->source, s->matte_source);
 
+	proc_handler_t *ph = obs_source_get_proc_handler(s->media_source);
+
+	calldata_t cd = {0};
+	proc_handler_call(ph, "preload_first_frame", &cd);
+
 	s->transitioning = false;
 }
 
@@ -735,14 +748,19 @@ static obs_properties_t *stinger_properties(void *data)
 	obs_property_t *p = obs_properties_add_list(
 		ppts, "tp_type", obs_module_text("TransitionPointType"),
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_properties_add_bool(ppts, "hw_decode",
-				obs_module_text("HardwareDecode"));
 	obs_property_list_add_int(p, obs_module_text("TransitionPointTypeTime"),
 				  TIMING_TIME);
 	obs_property_list_add_int(
 		p, obs_module_text("TransitionPointTypeFrame"), TIMING_FRAME);
 
 	obs_property_set_modified_callback(p, transition_point_type_modified);
+
+	obs_properties_add_bool(ppts, "hw_decode",
+				obs_module_text("HardwareDecode"));
+	p = obs_properties_add_bool(ppts, "preload",
+				    obs_module_text("PreloadVideoToRam"));
+	obs_property_set_long_description(
+		p, obs_module_text("PreloadVideoToRam.Description"));
 
 	obs_properties_add_int(ppts, "transition_point",
 			       obs_module_text("TransitionPoint"), 0, 120000,

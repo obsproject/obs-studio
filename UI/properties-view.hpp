@@ -77,8 +77,7 @@ public slots:
 	void EditListEdit();
 	void EditListUp();
 	void EditListDown();
-	void EditListReordered(const QModelIndex &parent, int start, int end,
-			       const QModelIndex &destination, int row);
+	void EditListReordered();
 };
 
 /* ------------------------------------------------------------------------- */
@@ -138,12 +137,14 @@ private:
 
 	void resizeEvent(QResizeEvent *event) override;
 
-	void GetScrollPos(int &h, int &v);
-	void SetScrollPos(int h, int v);
+	void GetScrollPos(int &h, int &v, int &hend, int &vend);
+	void SetScrollPos(int h, int v, int old_hend, int old_vend);
+
+private slots:
+	void RefreshProperties();
 
 public slots:
 	void ReloadProperties();
-	void RefreshProperties();
 	void SignalChanged();
 
 signals:

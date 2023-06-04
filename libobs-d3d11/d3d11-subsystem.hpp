@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -143,7 +143,7 @@ ConvertGSTextureFormatViewLinear(gs_color_format format)
 
 static inline gs_color_format ConvertDXGITextureFormat(DXGI_FORMAT format)
 {
-	switch ((unsigned long)format) {
+	switch (format) {
 	case DXGI_FORMAT_A8_UNORM:
 		return GS_A8;
 	case DXGI_FORMAT_R8_UNORM:
@@ -779,6 +779,9 @@ struct gs_vertex_shader : gs_shader {
 struct gs_duplicator : gs_obj {
 	ComPtr<IDXGIOutputDuplication> duplicator;
 	gs_texture_2d *texture;
+	bool hdr = false;
+	enum gs_color_space color_space = GS_CS_SRGB;
+	float sdr_white_nits = 80.f;
 	int idx;
 	long refs;
 	bool updated;
@@ -979,6 +982,20 @@ struct mat4float {
 	float mat[16];
 };
 
+struct gs_monitor_color_info {
+	bool hdr;
+	UINT bits_per_color;
+	ULONG sdr_white_nits;
+
+	gs_monitor_color_info(bool hdr, int bits_per_color,
+			      ULONG sdr_white_nits)
+		: hdr(hdr),
+		  bits_per_color(bits_per_color),
+		  sdr_white_nits(sdr_white_nits)
+	{
+	}
+};
+
 struct gs_device {
 	ComPtr<IDXGIFactory1> factory;
 	ComPtr<IDXGIAdapter1> adapter;
@@ -1035,11 +1052,10 @@ struct gs_device {
 	vector<gs_device_loss> loss_callbacks;
 	gs_obj *first_obj = nullptr;
 
-	vector<std::pair<HMONITOR, bool>> monitor_to_hdr;
+	vector<std::pair<HMONITOR, gs_monitor_color_info>> monitor_to_hdr;
 
 	void InitCompiler();
 	void InitFactory();
-	void ReorderAdapters(uint32_t &adapterIdx);
 	void InitAdapter(uint32_t adapterIdx);
 	void InitDevice(uint32_t adapterIdx);
 
@@ -1052,9 +1068,9 @@ struct gs_device {
 
 	void LoadVertexBufferData();
 
-	inline void CopyTex(ID3D11Texture2D *dst, uint32_t dst_x,
-			    uint32_t dst_y, gs_texture_t *src, uint32_t src_x,
-			    uint32_t src_y, uint32_t src_w, uint32_t src_h);
+	void CopyTex(ID3D11Texture2D *dst, uint32_t dst_x, uint32_t dst_y,
+		     gs_texture_t *src, uint32_t src_x, uint32_t src_y,
+		     uint32_t src_w, uint32_t src_h);
 
 	void UpdateViewProjMatrix();
 
@@ -1063,6 +1079,8 @@ struct gs_device {
 	void RebuildDevice();
 
 	bool HasBadNV12Output();
+
+	gs_monitor_color_info GetMonitorColorInfo(HMONITOR hMonitor);
 
 	gs_device(uint32_t adapterIdx);
 	~gs_device();

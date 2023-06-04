@@ -7,7 +7,6 @@
 
 #import "OBSDALMachServer.h"
 #include <obs-module.h>
-#include <CoreVideo/CoreVideo.h>
 #include "MachProtocol.h"
 #include "Defines.h"
 
@@ -148,6 +147,9 @@
 			       length:sizeof(fpsDenominator)];
 
 		IOSurfaceRef surface = CVPixelBufferGetIOSurface(frame);
+#ifndef __aarch64__
+		IOSurfaceLock(surface, 0, NULL);
+#endif
 
 		if (!surface) {
 			blog(LOG_ERROR,
@@ -174,6 +176,10 @@
 					 ]];
 
 		mach_port_deallocate(mach_task_self(), framePort);
+
+#ifndef __aarch64__
+		IOSurfaceUnlock(surface, 0, NULL);
+#endif
 	}
 }
 

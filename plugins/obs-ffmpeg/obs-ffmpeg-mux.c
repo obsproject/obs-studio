@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2015 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
 ******************************************************************************/
 #include "ffmpeg-mux/ffmpeg-mux.h"
 #include "obs-ffmpeg-mux.h"
+#include "obs-ffmpeg-formats.h"
 
 #ifdef _WIN32
 #include "util/windows/win-version.h"
@@ -142,6 +143,14 @@ static void add_video_encoder_params(struct ffmpeg_muxer *stream,
 	video_t *video = obs_get_video();
 	const struct video_output_info *info = video_output_get_info(video);
 
+	int codec_tag = (int)obs_data_get_int(settings, "codec_type");
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	codec_tag = ((codec_tag >> 24) & 0x000000FF) |
+		    ((codec_tag << 8) & 0x00FF0000) |
+		    ((codec_tag >> 8) & 0x0000FF00) |
+		    ((codec_tag << 24) & 0xFF000000);
+#endif
+
 	obs_data_release(settings);
 
 	enum AVColorPrimaries pri = AVCOL_PRI_UNSPECIFIED;
@@ -184,12 +193,15 @@ static void add_video_encoder_params(struct ffmpeg_muxer *stream,
 			? (int)obs_get_video_hdr_nominal_peak_level()
 			: ((trc == AVCOL_TRC_ARIB_STD_B67) ? 1000 : 0);
 
-	dstr_catf(cmd, "%s %d %d %d %d %d %d %d %d %d %d ",
+	dstr_catf(cmd, "%s %d %d %d %d %d %d %d %d %d %d %d %d ",
 		  obs_encoder_get_codec(vencoder), bitrate,
 		  obs_output_get_width(stream->output),
 		  obs_output_get_height(stream->output), (int)pri, (int)trc,
-		  (int)spc, (int)range, max_luminance, (int)info->fps_num,
-		  (int)info->fps_den);
+		  (int)spc, (int)range,
+		  (int)determine_chroma_location(
+			  obs_to_ffmpeg_video_format(info->format), spc),
+		  max_luminance, (int)info->fps_num, (int)info->fps_den,
+		  (int)codec_tag);
 }
 
 static void add_audio_encoder_params(struct dstr *cmd, obs_encoder_t *aencoder)
@@ -301,7 +313,9 @@ static void build_command_line(struct ffmpeg_muxer *stream, struct dstr *cmd,
 		add_video_encoder_params(stream, cmd, vencoder);
 
 	if (num_tracks) {
-		dstr_cat(cmd, "aac ");
+		const char *codec = obs_encoder_get_codec(aencoders[0]);
+		dstr_cat(cmd, codec);
+		dstr_cat(cmd, " ");
 
 		for (int i = 0; i < num_tracks; i++) {
 			add_audio_encoder_params(cmd, aencoders[i]);
@@ -397,9 +411,9 @@ static inline bool ffmpeg_mux_start_internal(struct ffmpeg_muxer *stream,
 
 	update_encoder_settings(stream, path);
 
-	if (!obs_output_can_begin_data_capture(stream->output, 0))
+	if (!obs_output_can_begin_data_capture2(stream->output))
 		return false;
-	if (!obs_output_initialize_encoders(stream->output, 0))
+	if (!obs_output_initialize_encoders2(stream->output))
 		return false;
 
 	if (stream->is_network) {
@@ -407,7 +421,8 @@ static inline bool ffmpeg_mux_start_internal(struct ffmpeg_muxer *stream,
 		service = obs_output_get_service(stream->output);
 		if (!service)
 			return false;
-		path = obs_service_get_url(service);
+		path = obs_service_get_connect_info(
+			service, OBS_SERVICE_CONNECT_INFO_SERVER_URL);
 		stream->split_file = false;
 	} else {
 
@@ -453,7 +468,7 @@ static inline bool ffmpeg_mux_start_internal(struct ffmpeg_muxer *stream,
 	os_atomic_set_bool(&stream->active, true);
 	os_atomic_set_bool(&stream->capturing, true);
 	stream->total_bytes = 0;
-	obs_output_begin_data_capture(stream->output, 0);
+	obs_output_begin_data_capture2(stream->output);
 
 	info("Writing file '%s'...", stream->path.array);
 	return true;
@@ -932,8 +947,9 @@ struct obs_output_info ffmpeg_mpegts_muxer = {
 	.id = "ffmpeg_mpegts_muxer",
 	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_MULTI_TRACK |
 		 OBS_OUTPUT_SERVICE,
-	.encoded_video_codecs = "h264;av1",
-	.encoded_audio_codecs = "aac",
+	.protocols = "SRT;RIST",
+	.encoded_video_codecs = "h264",
+	.encoded_audio_codecs = "aac;opus",
 	.get_name = ffmpeg_mpegts_mux_getname,
 	.create = ffmpeg_mux_create,
 	.destroy = ffmpeg_mux_destroy,
@@ -1023,9 +1039,9 @@ static bool replay_buffer_start(void *data)
 {
 	struct ffmpeg_muxer *stream = data;
 
-	if (!obs_output_can_begin_data_capture(stream->output, 0))
+	if (!obs_output_can_begin_data_capture2(stream->output))
 		return false;
-	if (!obs_output_initialize_encoders(stream->output, 0))
+	if (!obs_output_initialize_encoders2(stream->output))
 		return false;
 
 	obs_data_t *s = obs_output_get_settings(stream->output);
@@ -1036,7 +1052,7 @@ static bool replay_buffer_start(void *data)
 	os_atomic_set_bool(&stream->active, true);
 	os_atomic_set_bool(&stream->capturing, true);
 	stream->total_bytes = 0;
-	obs_output_begin_data_capture(stream->output, 0);
+	obs_output_begin_data_capture2(stream->output);
 
 	return true;
 }
@@ -1160,7 +1176,12 @@ static void *replay_buffer_mux_thread(void *data)
 
 	for (size_t i = 0; i < stream->mux_packets.num; i++) {
 		struct encoder_packet *pkt = &stream->mux_packets.array[i];
-		write_packet(stream, pkt);
+		if (!write_packet(stream, pkt)) {
+			warn("Could not write packet for file '%s'",
+			     stream->path.array);
+			error = true;
+			goto error;
+		}
 		obs_encoder_packet_release(pkt);
 	}
 

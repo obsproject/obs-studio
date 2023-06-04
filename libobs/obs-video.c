@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -60,7 +60,7 @@ static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 
 	pthread_mutex_lock(&data->sources_mutex);
 
-	source = data->first_source;
+	source = data->sources;
 	while (source) {
 		obs_source_t *s = obs_source_get_ref(source);
 
@@ -69,7 +69,7 @@ static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 			obs_source_release(s);
 		}
 
-		source = (struct obs_source *)source->context.next;
+		source = (struct obs_source *)source->context.hh_uuid.next;
 	}
 
 	pthread_mutex_unlock(&data->sources_mutex);
@@ -125,8 +125,8 @@ static inline void unmap_last_surface(struct obs_core_video_mix *video)
 static const char *render_main_texture_name = "render_main_texture";
 static inline void render_main_texture(struct obs_core_video_mix *video)
 {
-	uint32_t base_width = obs->video.base_width;
-	uint32_t base_height = obs->video.base_height;
+	uint32_t base_width = video->ovi.base_width;
+	uint32_t base_height = video->ovi.base_height;
 
 	profile_start(render_main_texture_name);
 	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_MAIN_TEXTURE,
@@ -144,9 +144,8 @@ static inline void render_main_texture(struct obs_core_video_mix *video)
 	pthread_mutex_lock(&obs->data.draw_callbacks_mutex);
 
 	for (size_t i = obs->data.draw_callbacks.num; i > 0; i--) {
-		struct draw_callback *callback;
-		callback = obs->data.draw_callbacks.array + (i - 1);
-
+		struct draw_callback *const callback =
+			obs->data.draw_callbacks.array + (i - 1);
 		callback->draw(callback->param, base_width, base_height);
 	}
 
@@ -155,6 +154,16 @@ static inline void render_main_texture(struct obs_core_video_mix *video)
 	obs_view_render(video->view);
 
 	video->texture_rendered = true;
+
+	pthread_mutex_lock(&obs->data.draw_callbacks_mutex);
+
+	for (size_t i = 0; i < obs->data.rendered_callbacks.num; ++i) {
+		struct rendered_callback *const callback =
+			&obs->data.rendered_callbacks.array[i];
+		callback->rendered(callback->param);
+	}
+
+	pthread_mutex_unlock(&obs->data.draw_callbacks_mutex);
 
 	GS_DEBUG_MARKER_END();
 	profile_end(render_main_texture_name);
@@ -170,12 +179,12 @@ get_scale_effect_internal(struct obs_core_video_mix *mix)
 	/* if the dimension is under half the size of the original image,
 	 * bicubic/lanczos can't sample enough pixels to create an accurate
 	 * image, so use the bilinear low resolution effect instead */
-	if (info->width < (video->base_width / 2) &&
-	    info->height < (video->base_height / 2)) {
+	if (info->width < (mix->ovi.base_width / 2) &&
+	    info->height < (mix->ovi.base_height / 2)) {
 		return video->bilinear_lowres_effect;
 	}
 
-	switch (mix->scale_type) {
+	switch (mix->ovi.scale_type) {
 	case OBS_SCALE_BILINEAR:
 		return video->default_effect;
 	case OBS_SCALE_LANCZOS:
@@ -189,11 +198,11 @@ get_scale_effect_internal(struct obs_core_video_mix *mix)
 	return video->bicubic_effect;
 }
 
-static inline bool resolution_close(struct obs_core_video *video,
+static inline bool resolution_close(struct obs_core_video_mix *mix,
 				    uint32_t width, uint32_t height)
 {
-	long width_cmp = (long)video->base_width - (long)width;
-	long height_cmp = (long)video->base_height - (long)height;
+	long width_cmp = (long)mix->ovi.base_width - (long)width;
+	long height_cmp = (long)mix->ovi.base_height - (long)height;
 
 	return labs(width_cmp) <= 16 && labs(height_cmp) <= 16;
 }
@@ -203,7 +212,7 @@ static inline gs_effect_t *get_scale_effect(struct obs_core_video_mix *mix,
 {
 	struct obs_core_video *video = &obs->video;
 
-	if (resolution_close(video, width, height)) {
+	if (resolution_close(mix, width, height)) {
 		return video->default_effect;
 	} else {
 		/* if the scale method couldn't be loaded, use either bicubic
@@ -221,26 +230,18 @@ static const char *render_output_texture_name = "render_output_texture";
 static inline gs_texture_t *
 render_output_texture(struct obs_core_video_mix *mix)
 {
-	struct obs_core_video *video = &obs->video;
+	struct obs_video_info *const ovi = &mix->ovi;
 	gs_texture_t *texture = mix->render_texture;
 	gs_texture_t *target = mix->output_texture;
-	uint32_t width = gs_texture_get_width(target);
-	uint32_t height = gs_texture_get_height(target);
-
-	gs_effect_t *effect = get_scale_effect(mix, width, height);
-	gs_technique_t *tech;
-
-	if (video_output_get_format(mix->video) == VIDEO_FORMAT_BGRA) {
-		tech = gs_effect_get_technique(effect, "DrawAlphaDivide");
-	} else {
-		if ((width == video->base_width) &&
-		    (height == video->base_height))
-			return texture;
-
-		tech = gs_effect_get_technique(effect, "Draw");
-	}
+	const uint32_t width = gs_texture_get_width(target);
+	const uint32_t height = gs_texture_get_height(target);
+	if ((width == ovi->base_width) && (height == ovi->base_height))
+		return texture;
 
 	profile_start(render_output_texture_name);
+
+	gs_effect_t *effect = get_scale_effect(mix, width, height);
+	gs_technique_t *tech = gs_effect_get_technique(effect, "Draw");
 
 	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
 	gs_eparam_t *bres =
@@ -254,15 +255,15 @@ render_output_texture(struct obs_core_video_mix *mix)
 
 	if (bres) {
 		struct vec2 base;
-		vec2_set(&base, (float)video->base_width,
-			 (float)video->base_height);
+		vec2_set(&base, (float)mix->ovi.base_width,
+			 (float)mix->ovi.base_height);
 		gs_effect_set_vec2(bres, &base);
 	}
 
 	if (bres_i) {
 		struct vec2 base_i;
-		vec2_set(&base_i, 1.0f / (float)video->base_width,
-			 1.0f / (float)video->base_height);
+		vec2_set(&base_i, 1.0f / (float)mix->ovi.base_width,
+			 1.0f / (float)mix->ovi.base_height);
 		gs_effect_set_vec2(bres_i, &base_i);
 	}
 
@@ -391,6 +392,7 @@ static const char *stage_output_texture_name = "stage_output_texture";
 static inline void
 stage_output_texture(struct obs_core_video_mix *video, int cur_texture,
 		     gs_texture_t *const *const convert_textures,
+		     gs_texture_t *output_texture,
 		     gs_stagesurf_t *const *const copy_surfaces,
 		     size_t channel_count)
 {
@@ -401,7 +403,7 @@ stage_output_texture(struct obs_core_video_mix *video, int cur_texture,
 	if (!video->gpu_conversion) {
 		gs_stagesurf_t *copy = copy_surfaces[0];
 		if (copy)
-			gs_stage_texture(copy, video->output_texture);
+			gs_stage_texture(copy, output_texture);
 		video->active_copy_surfaces[cur_texture][0] = copy;
 
 		for (size_t i = 1; i < NUM_CHANNELS; ++i)
@@ -536,7 +538,7 @@ static inline void render_video(struct obs_core_video_mix *video,
 		gs_stagesurf_t *const *copy_surfaces =
 			video->copy_surfaces[cur_texture];
 		size_t channel_count = NUM_CHANNELS;
-		gs_texture_t *texture = render_output_texture(video);
+		gs_texture_t *output_texture = render_output_texture(video);
 
 #ifdef _WIN32
 		if (gpu_active) {
@@ -547,9 +549,10 @@ static inline void render_video(struct obs_core_video_mix *video,
 		}
 #endif
 
-		if (video->gpu_conversion)
+		if (video->gpu_conversion) {
 			render_convert_texture(video, convert_textures,
-					       texture);
+					       output_texture);
+		}
 
 #ifdef _WIN32
 		if (gpu_active) {
@@ -558,10 +561,11 @@ static inline void render_video(struct obs_core_video_mix *video,
 		}
 #endif
 
-		if (raw_active)
+		if (raw_active) {
 			stage_output_texture(video, cur_texture,
-					     convert_textures, copy_surfaces,
-					     channel_count);
+					     convert_textures, output_texture,
+					     copy_surfaces, channel_count);
+		}
 	}
 
 	gs_set_render_target(NULL, NULL);
@@ -730,6 +734,33 @@ static void set_gpu_converted_data(struct video_frame *output,
 
 		break;
 	}
+	case VIDEO_FORMAT_P216: {
+		const uint32_t width_x2 = info->width * 2;
+		const uint32_t height = info->height;
+
+		set_gpu_converted_plane(width_x2, height, input->linesize[0],
+					output->linesize[0], input->data[0],
+					output->data[0]);
+
+		set_gpu_converted_plane(width_x2, height, input->linesize[1],
+					output->linesize[1], input->data[1],
+					output->data[1]);
+
+		break;
+	}
+	case VIDEO_FORMAT_P416: {
+		const uint32_t height = info->height;
+
+		set_gpu_converted_plane(info->width * 2, height,
+					input->linesize[0], output->linesize[0],
+					input->data[0], output->data[0]);
+
+		set_gpu_converted_plane(info->width * 4, height,
+					input->linesize[1], output->linesize[1],
+					input->data[1], output->data[1]);
+
+		break;
+	}
 
 	case VIDEO_FORMAT_NONE:
 	case VIDEO_FORMAT_YVYU:
@@ -748,6 +779,7 @@ static void set_gpu_converted_data(struct video_frame *output,
 	case VIDEO_FORMAT_YUVA:
 	case VIDEO_FORMAT_YA2L:
 	case VIDEO_FORMAT_AYUV:
+	case VIDEO_FORMAT_V210:
 		/* unimplemented */
 		;
 	}
@@ -1055,7 +1087,6 @@ static inline void update_active_state(struct obs_core_video_mix *video)
 		os_atomic_load_long(&video->gpu_encoder_active) > 0;
 	const bool active = raw_active || gpu_active;
 #else
-	const bool gpu_active = 0;
 	const bool active = raw_active;
 #endif
 

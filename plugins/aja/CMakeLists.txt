@@ -1,16 +1,11 @@
-project(aja)
+cmake_minimum_required(VERSION 3.16...3.25)
+
+legacy_check()
 
 option(ENABLE_AJA "Build OBS with aja support" ON)
-if(NOT ENABLE_AJA)
-  obs_status(DISABLED "aja")
-  return()
-endif()
 
-if(NOT OS_MACOS AND NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
-  obs_status(STATUS "aja support not enabled (32-bit not supported).")
-  set(ENABLE_AJA
-      OFF
-      CACHE BOOL "Build OBS with aja support" FORCE)
+if(NOT ENABLE_AJA)
+  set_property(GLOBAL APPEND PROPERTY OBS_MODULES_DISABLED aja)
   return()
 endif()
 
@@ -41,29 +36,31 @@ target_sources(
           aja-widget-io.cpp
           aja-widget-io.hpp
           aja-card-manager.hpp
-          aja-ui-props.hpp)
+          aja-ui-props.hpp
+          audio-repack.c
+          audio-repack.h
+          audio-repack.hpp)
 
 target_link_libraries(aja PRIVATE OBS::libobs AJA::LibAJANTV2)
 
-if(OS_MACOS)
+if(OS_WINDOWS)
+  configure_file(cmake/windows/obs-module.rc.in win-aja.rc)
+  target_sources(aja PRIVATE win-aja.rc)
+
+  target_compile_options(aja PRIVATE /wd4996)
+
+  target_link_libraries(aja PRIVATE ws2_32.lib setupapi.lib Winmm.lib netapi32.lib Shlwapi.lib)
+  target_link_options(aja PRIVATE /IGNORE:4099)
+
+elseif(OS_MACOS)
   find_library(IOKIT IOKit)
   find_library(COREFOUNDATION CoreFoundation)
   find_library(APPKIT AppKit)
 
   target_link_libraries(aja PRIVATE ${IOKIT} ${COREFOUNDATION} ${APPKIT})
-elseif(OS_WINDOWS)
-  set(MODULE_DESCRIPTION "OBS AJA Windows module")
-  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
-                 win-aja.rc)
-
-  target_sources(aja PRIVATE win-aja.rc)
-
-  target_compile_options(aja PRIVATE /wd4996)
-  target_link_libraries(aja PRIVATE ws2_32.lib setupapi.lib Winmm.lib
-                                    netapi32.lib Shlwapi.lib)
-  target_link_options(aja PRIVATE "LINKER:/IGNORE:4099")
+  target_compile_options(aja PRIVATE -Wno-error=deprecated-declarations)
+elseif(OS_LINUX OR OS_FREEBSD)
+  target_compile_options(aja PRIVATE -Wno-error=deprecated-declarations)
 endif()
 
-set_target_properties(aja PROPERTIES FOLDER "plugins/aja" PREFIX "")
-
-setup_plugin_target(aja)
+set_target_properties_obs(aja PROPERTIES FOLDER plugins PREFIX "")

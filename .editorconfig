@@ -29,3 +29,19 @@ indent_size = 2
 [cmake/**/*.cmake]
 indent_style = space
 indent_size = 2
+
+[plugins/rtmp-services/data/**/*.json]
+indent_style = space
+indent_size = 4
+
+[*.qss]
+indent_style = space
+indent_size = 4
+
+[build-aux/**/*.json]
+indent_style = space
+indent_size = 4
+
+[*.py]
+indent_style = space
+indent_size = 4

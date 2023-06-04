@@ -14,17 +14,10 @@ extern volatile long locks;
 
 /* ========================================================================= */
 
-VCamFilter::VCamFilter()
-	: OutputFilter(VideoFormat::NV12, DEFAULT_CX, DEFAULT_CY,
-		       DEFAULT_INTERVAL)
+VCamFilter::VCamFilter() : OutputFilter()
 {
 	thread_start = CreateEvent(nullptr, true, false, nullptr);
 	thread_stop = CreateEvent(nullptr, true, false, nullptr);
-
-	AddVideoFormat(VideoFormat::I420, DEFAULT_CX, DEFAULT_CY,
-		       DEFAULT_INTERVAL);
-	AddVideoFormat(VideoFormat::YUY2, DEFAULT_CX, DEFAULT_CY,
-		       DEFAULT_INTERVAL);
 
 	format = VideoFormat::NV12;
 
@@ -146,7 +139,7 @@ STDMETHODIMP VCamFilter::Pause()
 		return hr;
 	}
 
-	os_atomic_set_bool(&active, false);
+	os_atomic_set_bool(&active, true);
 	SetEvent(thread_start);
 	return S_OK;
 }
@@ -270,6 +263,11 @@ void VCamFilter::Frame(uint64_t ts)
 			   the format we present to match */
 			SetVideoFormat(GetVideoFormat(), new_obs_cx, new_obs_cy,
 				       new_obs_interval);
+
+			/* Update the new filter size immediately since we
+			   know it just changed above */
+			new_filter_cx = new_obs_cx;
+			new_filter_cy = new_obs_cy;
 		}
 
 		/* Re-initialize the main scaler to use the new resolution */

@@ -129,11 +129,11 @@ Scene Signals
 
 **item_remove** (ptr scene, ptr item)
 
-   Called when a scene item has been removed from the scen.
+   Called when a scene item has been removed from the scene.
 
 **reorder** (ptr scene)
 
-   Called when scene items have been reoredered in the scene.
+   Called when scene items have been reordered in the scene.
 
 **refresh** (ptr scene)
 
@@ -149,6 +149,7 @@ Scene Signals
    Called when a scene item has been locked or unlocked.
 
 **item_select** (ptr scene, ptr item)
+
 **item_deselect** (ptr scene, ptr item)
 
    Called when a scene item has been selected/deselected.
@@ -208,7 +209,7 @@ General Scene Functions
 .. function:: obs_scene_t *obs_scene_get_ref(obs_scene_t *scene)
 
    Returns an incremented reference if still valid, otherwise returns
-   *NULL*.
+   *NULL*. Release with :c:func:`obs_scene_release()`.
 
 ---------------------
 
@@ -264,7 +265,14 @@ General Scene Functions
 
 .. function:: void obs_scene_enum_items(obs_scene_t *scene, bool (*callback)(obs_scene_t*, obs_sceneitem_t*, void*), void *param)
 
-   Enumerates scene items within a scene.
+   Enumerates scene items within a scene in order of the bottommost scene item
+   to the topmost scene item.
+
+   Callback function returns true to continue enumeration, or false to end
+   enumeration.
+
+   Use :c:func:`obs_sceneitem_addref()` if you want to retain a
+   reference after obs_scene_enum_items finishes.
 
    For scripting, use :py:func:`obs_scene_enum_items`.
 
@@ -347,7 +355,7 @@ Scene Item Functions
 .. function:: obs_data_t *obs_scene_save_transform_states(obs_scene_t *scene, bool all_items)
 .. function:: void obs_scene_load_transform_states(const char *states)
 
-   Saves all the transformation states for the sceneitms in scene. When all_items is false, it
+   Saves all the transformation states for the sceneitems in scene. When all_items is false, it
    will only save selected items
 
    :return: Data containing transformation states for all* sceneitems in scene
@@ -549,7 +557,8 @@ Scene Item Functions
 
    :return: An incremented reference to the private settings of the
             scene item.  Allows the front-end to set custom information
-            which is saved with the scene item
+            which is saved with the scene item. Release with
+            :c:func:`obs_data_release()`.
 
 ---------------------
 
@@ -726,23 +735,16 @@ Scene Item Group Functions
 
 ---------------------
 
-.. function:: obs_sceneitem_t *obs_sceneitem_group_from_scene(obs_scene_t *scene)
-
-   :return: The group associated with the scene, or *NULL* if the
-            specified scene is not a group.
-
----------------------
-
-.. function:: obs_sceneitem_t *obs_sceneitem_group_from_source(obs_source_t *source)
-
-   :return: The group associated with the scene's source, or *NULL* if
-            the specified source is not a group.
-
----------------------
-
 .. function:: void obs_sceneitem_group_enum_items(obs_sceneitem_t *group, bool (*callback)(obs_scene_t*, obs_sceneitem_t*, void*), void *param)
 
    Enumerates scene items within a group.
+
+   Callback function returns true to continue enumeration, or false to end
+   enumeration.
+
+   Use :c:func:`obs_sceneitem_addref()` if you want to retain a
+   reference after obs_sceneitem_group_enum_items finishes.
+
 
 ---------------------
 

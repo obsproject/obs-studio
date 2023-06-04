@@ -12,6 +12,7 @@
 #include <ipc-util/pipe.h>
 #include <util/windows/obfuscate.h>
 #include "inject-library.h"
+#include "compat-helpers.h"
 #include "graphics-hook-info.h"
 #include "graphics-hook-ver.h"
 #include "cursor-capture.h"
@@ -30,7 +31,6 @@
 
 #define SETTING_MODE                 "capture_mode"
 #define SETTING_CAPTURE_WINDOW       "window"
-#define SETTING_ACTIVE_WINDOW        "active_window"
 #define SETTING_WINDOW_PRIORITY      "priority"
 #define SETTING_COMPATIBILITY        "sli_compatibility"
 #define SETTING_CURSOR               "capture_cursor"
@@ -40,6 +40,7 @@
 #define SETTING_ANTI_CHEAT_HOOK      "anti_cheat_hook"
 #define SETTING_HOOK_RATE            "hook_rate"
 #define SETTING_RGBA10A2_SPACE       "rgb10a2_space"
+#define SETTINGS_COMPAT_INFO         "compat_info"
 
 /* deprecated */
 #define SETTING_ANY_FULLSCREEN   "capture_any_fullscreen"
@@ -823,7 +824,7 @@ static void pipe_log(void *param, uint8_t *data, size_t size)
 static inline bool init_pipe(struct game_capture *gc)
 {
 	char name[64];
-	sprintf(name, "%s%lu", PIPE_NAME, gc->process_id);
+	snprintf(name, sizeof(name), "%s%lu", PIPE_NAME, gc->process_id);
 
 	if (!ipc_pipe_server_start(&gc->pipe, name, pipe_log, gc)) {
 		warn("init_pipe: failed to start pipe");
@@ -1323,9 +1324,6 @@ static inline enum capture_result init_capture_data(struct game_capture *gc)
 
 	return CAPTURE_SUCCESS;
 }
-
-#define PIXEL_16BIT_SIZE 2
-#define PIXEL_32BIT_SIZE 4
 
 static inline uint32_t convert_5_to_8bit(uint16_t val)
 {
@@ -2251,8 +2249,50 @@ static bool mode_callback(obs_properties_t *ppts, obs_property_t *p,
 static bool window_changed_callback(obs_properties_t *ppts, obs_property_t *p,
 				    obs_data_t *settings)
 {
-	return ms_check_window_property_setting(ppts, p, settings,
-						SETTING_CAPTURE_WINDOW, 1);
+	bool modified = ms_check_window_property_setting(
+		ppts, p, settings, SETTING_CAPTURE_WINDOW, 1);
+
+	bool capture_any;
+	if (using_older_non_mode_format(settings)) {
+		capture_any =
+			obs_data_get_bool(settings, SETTING_ANY_FULLSCREEN);
+	} else {
+		const char *mode = obs_data_get_string(settings, SETTING_MODE);
+		capture_any = strcmp(mode, SETTING_MODE_ANY) == 0 ||
+			      strcmp(mode, SETTING_MODE_HOTKEY) == 0;
+	}
+
+	if (capture_any)
+		return modified;
+
+	const char *window =
+		obs_data_get_string(settings, SETTING_CAPTURE_WINDOW);
+
+	char *class;
+	char *exe;
+	char *title;
+	ms_build_window_strings(window, &class, &title, &exe);
+	struct compat_result *compat =
+		check_compatibility(title, class, exe, GAME_CAPTURE);
+	bfree(title);
+	bfree(exe);
+	bfree(class);
+
+	obs_property_t *p_warn = obs_properties_get(ppts, SETTINGS_COMPAT_INFO);
+
+	if (!compat) {
+		modified = obs_property_visible(p_warn) || modified;
+		obs_property_set_visible(p_warn, false);
+		return modified;
+	}
+
+	obs_property_set_long_description(p_warn, compat->message);
+	obs_property_text_set_info_type(p_warn, compat->severity);
+	obs_property_set_visible(p_warn, true);
+
+	compat_result_free(compat);
+
+	return true;
 }
 
 static BOOL CALLBACK EnumFirstMonitor(HMONITOR monitor, HDC hdc, LPRECT rc,
@@ -2336,6 +2376,10 @@ static obs_properties_t *game_capture_properties(void *data)
 	obs_property_list_add_int(p, TEXT_MATCH_TITLE, WINDOW_PRIORITY_TITLE);
 	obs_property_list_add_int(p, TEXT_MATCH_CLASS, WINDOW_PRIORITY_CLASS);
 	obs_property_list_add_int(p, TEXT_MATCH_EXE, WINDOW_PRIORITY_EXE);
+
+	p = obs_properties_add_text(ppts, SETTINGS_COMPAT_INFO, NULL,
+				    OBS_TEXT_INFO);
+	obs_property_set_enabled(p, false);
 
 	obs_properties_add_bool(ppts, SETTING_COMPATIBILITY,
 				TEXT_SLI_COMPATIBILITY);

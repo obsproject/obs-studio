@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2017 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -51,15 +51,15 @@ static bool null_output_start(void *data)
 {
 	struct null_output *context = data;
 
-	if (!obs_output_can_begin_data_capture(context->output, 0))
+	if (!obs_output_can_begin_data_capture2(context->output))
 		return false;
-	if (!obs_output_initialize_encoders(context->output, 0))
+	if (!obs_output_initialize_encoders2(context->output))
 		return false;
 
 	if (context->stop_thread_active)
 		pthread_join(context->stop_thread, NULL);
 
-	obs_output_begin_data_capture(context->output, 0);
+	obs_output_begin_data_capture2(context->output);
 	return true;
 }
 

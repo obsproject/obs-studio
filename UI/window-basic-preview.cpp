@@ -9,6 +9,7 @@
 #include "window-basic-main.hpp"
 #include "obs-app.hpp"
 #include "platform.hpp"
+#include "display-helpers.hpp"
 
 #define HANDLE_RADIUS 4.0f
 #define HANDLE_SEL_RADIUS (HANDLE_RADIUS * 1.5f)
@@ -110,7 +111,7 @@ static bool CloseFloat(float a, float b, float epsilon = 0.01)
 	return abs(a - b) <= epsilon;
 }
 
-static bool FindItemAtPos(obs_scene_t *scene, obs_sceneitem_t *item,
+static bool FindItemAtPos(obs_scene_t * /* scene */, obs_sceneitem_t *item,
 			  void *param)
 {
 	SceneFindData *data = reinterpret_cast<SceneFindData *>(param);
@@ -146,7 +147,6 @@ static bool FindItemAtPos(obs_scene_t *scene, obs_sceneitem_t *item,
 		data->item = item;
 	}
 
-	UNUSED_PARAMETER(scene);
 	return true;
 }
 
@@ -237,7 +237,7 @@ OBSSceneItem OBSBasicPreview::GetItemAtPos(const vec2 &pos, bool selectBelow)
 	return data.item;
 }
 
-static bool CheckItemSelected(obs_scene_t *scene, obs_sceneitem_t *item,
+static bool CheckItemSelected(obs_scene_t * /* scene */, obs_sceneitem_t *item,
 			      void *param)
 {
 	SceneFindData *data = reinterpret_cast<SceneFindData *>(param);
@@ -279,7 +279,6 @@ static bool CheckItemSelected(obs_scene_t *scene, obs_sceneitem_t *item,
 		}
 	}
 
-	UNUSED_PARAMETER(scene);
 	return true;
 }
 
@@ -334,7 +333,7 @@ struct HandleFindData {
 	}
 };
 
-static bool FindHandleAtPos(obs_scene_t *scene, obs_sceneitem_t *item,
+static bool FindHandleAtPos(obs_scene_t * /* scene */, obs_sceneitem_t *item,
 			    void *param)
 {
 	HandleFindData &data = *reinterpret_cast<HandleFindData *>(param);
@@ -394,10 +393,18 @@ static bool FindHandleAtPos(obs_scene_t *scene, obs_sceneitem_t *item,
 	RotatePos(&rotHandleOffset, atan2(transform.x.y, transform.x.x));
 	RotatePos(&rotHandleOffset, RAD(data.angleOffset));
 
-	vec3 handlePos = GetTransformedPos(0.5f, 0.0f, transform);
+	vec2 scale;
+	obs_sceneitem_get_scale(item, &scale);
+	bool invert = scale.y < 0.0f;
+	vec3 handlePos =
+		GetTransformedPos(0.5f, invert ? 1.0f : 0.0f, transform);
 	vec3_transform(&handlePos, &handlePos, &data.parent_xform);
 	handlePos.x -= rotHandleOffset.x;
-	handlePos.y -= rotHandleOffset.y;
+
+	if (scale.x < 0.0f)
+		handlePos.y += rotHandleOffset.y;
+	else
+		handlePos.y -= rotHandleOffset.y;
 
 	float dist = vec3_dist(&handlePos, &pos3);
 	if (dist < data.radius) {
@@ -422,7 +429,6 @@ static bool FindHandleAtPos(obs_scene_t *scene, obs_sceneitem_t *item,
 		}
 	}
 
-	UNUSED_PARAMETER(scene);
 	return true;
 }
 
@@ -670,7 +676,8 @@ void OBSBasicPreview::UpdateCursor(uint32_t &flags)
 		setCursor(Qt::OpenHandCursor);
 }
 
-static bool select_one(obs_scene_t *scene, obs_sceneitem_t *item, void *param)
+static bool select_one(obs_scene_t * /* scene */, obs_sceneitem_t *item,
+		       void *param)
 {
 	obs_sceneitem_t *selectedItem =
 		reinterpret_cast<obs_sceneitem_t *>(param);
@@ -679,7 +686,6 @@ static bool select_one(obs_scene_t *scene, obs_sceneitem_t *item, void *param)
 
 	obs_sceneitem_select(item, (selectedItem == item));
 
-	UNUSED_PARAMETER(scene);
 	return true;
 }
 
@@ -815,7 +821,7 @@ struct SelectedItemBounds {
 	vec3 tl, br;
 };
 
-static bool AddItemBounds(obs_scene_t *scene, obs_sceneitem_t *item,
+static bool AddItemBounds(obs_scene_t * /* scene */, obs_sceneitem_t *item,
 			  void *param)
 {
 	SelectedItemBounds *data =
@@ -866,7 +872,6 @@ static bool AddItemBounds(obs_scene_t *scene, obs_sceneitem_t *item,
 	t[3] = GetTransformedPos(1.0f, 1.0f, boxTransform);
 	add_bounds();
 
-	UNUSED_PARAMETER(scene);
 	return true;
 }
 
@@ -875,8 +880,8 @@ struct OffsetData {
 	vec3 tl, br, offset;
 };
 
-static bool GetSourceSnapOffset(obs_scene_t *scene, obs_sceneitem_t *item,
-				void *param)
+static bool GetSourceSnapOffset(obs_scene_t * /* scene */,
+				obs_sceneitem_t *item, void *param)
 {
 	OffsetData *data = reinterpret_cast<OffsetData *>(param);
 
@@ -924,7 +929,6 @@ static bool GetSourceSnapOffset(obs_scene_t *scene, obs_sceneitem_t *item,
 	EDGE_SNAP(br, tl, y, x);
 #undef EDGE_SNAP
 
-	UNUSED_PARAMETER(scene);
 	return true;
 }
 
@@ -978,7 +982,8 @@ void OBSBasicPreview::SnapItemMovement(vec2 &offset)
 	}
 }
 
-static bool move_items(obs_scene_t *scene, obs_sceneitem_t *item, void *param)
+static bool move_items(obs_scene_t * /* scene */, obs_sceneitem_t *item,
+		       void *param)
 {
 	if (obs_sceneitem_locked(item))
 		return true;
@@ -1005,7 +1010,6 @@ static bool move_items(obs_scene_t *scene, obs_sceneitem_t *item, void *param)
 		obs_sceneitem_set_pos(item, &pos);
 	}
 
-	UNUSED_PARAMETER(scene);
 	return true;
 }
 
@@ -1095,7 +1099,7 @@ static bool IntersectBox(matrix4 transform, float x1, float x2, float y1,
 }
 #undef PI
 
-bool OBSBasicPreview::FindSelected(obs_scene_t *scene, obs_sceneitem_t *item,
+bool OBSBasicPreview::FindSelected(obs_scene_t *, obs_sceneitem_t *item,
 				   void *param)
 {
 	SceneFindBoxData *data = reinterpret_cast<SceneFindBoxData *>(param);
@@ -1103,11 +1107,10 @@ bool OBSBasicPreview::FindSelected(obs_scene_t *scene, obs_sceneitem_t *item,
 	if (obs_sceneitem_selected(item))
 		data->sceneItems.push_back(item);
 
-	UNUSED_PARAMETER(scene);
 	return true;
 }
 
-static bool FindItemsInBox(obs_scene_t *scene, obs_sceneitem_t *item,
+static bool FindItemsInBox(obs_scene_t * /* scene */, obs_sceneitem_t *item,
 			   void *param)
 {
 	SceneFindBoxData *data = reinterpret_cast<SceneFindBoxData *>(param);
@@ -1197,7 +1200,6 @@ static bool FindItemsInBox(obs_scene_t *scene, obs_sceneitem_t *item,
 		return true;
 	}
 
-	UNUSED_PARAMETER(scene);
 	return true;
 }
 
@@ -1490,9 +1492,17 @@ void OBSBasicPreview::StretchItem(const vec2 &pos)
 
 	obs_source_t *source = obs_sceneitem_get_source(stretchItem);
 
+	uint32_t source_cx = obs_source_get_width(source);
+	uint32_t source_cy = obs_source_get_height(source);
+
+	/* if the source's internal size has been set to 0 for whatever reason
+	 * while resizing, do not update transform, otherwise source will be
+	 * stuck invisible until a complete transform reset */
+	if (!source_cx || !source_cy)
+		return;
+
 	vec2 baseSize;
-	vec2_set(&baseSize, float(obs_source_get_width(source)),
-		 float(obs_source_get_height(source)));
+	vec2_set(&baseSize, float(source_cx), float(source_cy));
 
 	vec2 size;
 	vec2_set(&size, br.x - tl.x, br.y - tl.y);
@@ -1739,10 +1749,10 @@ static void DrawSquareAtPos(float x, float y, float pixelRatio)
 }
 
 static void DrawRotationHandle(gs_vertbuffer_t *circle, float rot,
-			       float pixelRatio)
+			       float pixelRatio, bool invert)
 {
 	struct vec3 pos;
-	vec3_set(&pos, 0.5f, 0.0f, 0.0f);
+	vec3_set(&pos, 0.5f, invert ? 1.0f : 0.0f, 0.0f);
 
 	struct matrix4 matrix;
 	gs_matrix_get(&matrix);
@@ -1859,8 +1869,8 @@ static inline bool crop_enabled(const obs_sceneitem_crop *crop)
 	       crop->bottom > 0;
 }
 
-bool OBSBasicPreview::DrawSelectedOverflow(obs_scene_t *scene,
-					   obs_sceneitem_t *item, void *param)
+bool OBSBasicPreview::DrawSelectedOverflow(obs_scene_t *, obs_sceneitem_t *item,
+					   void *param)
 {
 	if (obs_sceneitem_locked(item))
 		return true;
@@ -1868,10 +1878,9 @@ bool OBSBasicPreview::DrawSelectedOverflow(obs_scene_t *scene,
 	if (!SceneItemHasVideo(item))
 		return true;
 
-	bool select = config_get_bool(GetGlobalConfig(), "BasicWindow",
-				      "OverflowSelectionHidden");
+	OBSBasicPreview *prev = reinterpret_cast<OBSBasicPreview *>(param);
 
-	if (!select && !obs_sceneitem_visible(item))
+	if (!prev->GetOverflowSelectionHidden() && !obs_sceneitem_visible(item))
 		return true;
 
 	if (obs_sceneitem_is_group(item)) {
@@ -1885,13 +1894,8 @@ bool OBSBasicPreview::DrawSelectedOverflow(obs_scene_t *scene,
 		gs_matrix_pop();
 	}
 
-	bool always = config_get_bool(GetGlobalConfig(), "BasicWindow",
-				      "OverflowAlwaysVisible");
-
-	if (!always && !obs_sceneitem_selected(item))
+	if (!prev->GetOverflowAlwaysVisible() && !obs_sceneitem_selected(item))
 		return true;
-
-	OBSBasicPreview *prev = reinterpret_cast<OBSBasicPreview *>(param);
 
 	matrix4 boxTransform;
 	matrix4 invBoxTransform;
@@ -1945,12 +1949,11 @@ bool OBSBasicPreview::DrawSelectedOverflow(obs_scene_t *scene,
 
 	GS_DEBUG_MARKER_END();
 
-	UNUSED_PARAMETER(scene);
 	return true;
 }
 
-bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
-				       obs_sceneitem_t *item, void *param)
+bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *, obs_sceneitem_t *item,
+				       void *param)
 {
 	if (obs_sceneitem_locked(item))
 		return true;
@@ -2118,15 +2121,15 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 			prev->circleFill = gs_render_save();
 		}
 
+		bool invert = info.scale.y < 0.0f;
 		DrawRotationHandle(prev->circleFill, info.rot + prev->groupRot,
-				   pixelRatio);
+				   pixelRatio, invert);
 	}
 
 	gs_matrix_pop();
 
 	GS_DEBUG_MARKER_END();
 
-	UNUSED_PARAMETER(scene);
 	return true;
 }
 
@@ -2177,10 +2180,7 @@ void OBSBasicPreview::DrawOverflow()
 	if (locked)
 		return;
 
-	bool hidden = config_get_bool(GetGlobalConfig(), "BasicWindow",
-				      "OverflowHidden");
-
-	if (hidden)
+	if (overflowHidden)
 		return;
 
 	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_DEFAULT, "DrawOverflow");
@@ -2264,6 +2264,8 @@ void OBSBasicPreview::ResetScrollingOffset()
 
 void OBSBasicPreview::SetScalingLevel(int32_t newScalingLevelVal)
 {
+	newScalingLevelVal = std::clamp(newScalingLevelVal, -MAX_SCALING_LEVEL,
+					MAX_SCALING_LEVEL);
 	float newScalingAmountVal =
 		pow(ZOOM_SENSITIVITY, float(newScalingLevelVal));
 	scalingLevel = newScalingLevelVal;
@@ -2308,10 +2310,7 @@ static obs_source_t *CreateLabel(float pixelRatio)
 	const char *text_source_id = "text_ft2_source";
 #endif
 
-	OBSSource txtSource =
-		obs_source_create_private(text_source_id, NULL, settings);
-
-	return txtSource;
+	return obs_source_create_private(text_source_id, NULL, settings);
 }
 
 static void SetLabelText(int sourceIndex, int px)
@@ -2515,6 +2514,23 @@ void OBSBasicPreview::DrawSpacingHelpers()
 				    groupOti.pos.x, groupOti.pos.y, 0.0f);
 	}
 
+	// Switch top/bottom or right/left if scale is negative
+	if (oti.scale.x < 0.0f) {
+		vec3 l = left;
+		vec3 r = right;
+
+		vec3_copy(&left, &r);
+		vec3_copy(&right, &l);
+	}
+
+	if (oti.scale.y < 0.0f) {
+		vec3 t = top;
+		vec3 b = bottom;
+
+		vec3_copy(&top, &b);
+		vec3_copy(&bottom, &t);
+	}
+
 	if (rot >= HELPER_ROT_BREAKPONT) {
 		for (float i = HELPER_ROT_BREAKPONT; i <= 360.0f; i += 90.0f) {
 			if (rot < i)
@@ -2546,23 +2562,6 @@ void OBSBasicPreview::DrawSpacingHelpers()
 			vec3_copy(&bottom, &l);
 			vec3_copy(&left, &t);
 		}
-	}
-
-	// Switch top/bottom or right/left if scale is negative
-	if (oti.scale.x < 0.0f) {
-		vec3 l = left;
-		vec3 r = right;
-
-		vec3_copy(&left, &r);
-		vec3_copy(&right, &l);
-	}
-
-	if (oti.scale.y < 0.0f) {
-		vec3 t = top;
-		vec3 b = bottom;
-
-		vec3_copy(&top, &b);
-		vec3_copy(&bottom, &t);
 	}
 
 	// Get sides of box transform
@@ -2612,4 +2611,27 @@ void OBSBasicPreview::DrawSpacingHelpers()
 	vec3_set(&start, 1.0f - right.x, right.y, 1.0f);
 	vec3_set(&end, 1.0f, right.y, 1.0f);
 	RenderSpacingHelper(3, start, end, viewport, pixelRatio);
+}
+
+void OBSBasicPreview::ClampScrollingOffsets()
+{
+	obs_video_info ovi;
+	obs_get_video_info(&ovi);
+
+	QSize targetSize = GetPixelSize(this);
+
+	vec3 target, offset;
+	vec3_set(&target, (float)targetSize.width(), (float)targetSize.height(),
+		 1.0f);
+
+	vec3_set(&offset, (float)ovi.base_width, (float)ovi.base_height, 1.0f);
+	vec3_mulf(&offset, &offset, scalingAmount);
+
+	vec3_sub(&offset, &offset, &target);
+
+	vec3_mulf(&offset, &offset, 0.5f);
+	vec3_maxf(&offset, &offset, 0.0f);
+
+	scrollingOffset.x = std::clamp(scrollingOffset.x, -offset.x, offset.x);
+	scrollingOffset.y = std::clamp(scrollingOffset.y, -offset.y, offset.y);
 }

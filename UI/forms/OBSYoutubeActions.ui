@@ -646,6 +646,9 @@
         <property name="sizeConstraint">
          <enum>QLayout::SetNoConstraint</enum>
         </property>
+        <property name="spacing">
+         <number>10</number>
+        </property>
         <item>
          <widget class="QPushButton" name="cancelButton">
           <property name="text">

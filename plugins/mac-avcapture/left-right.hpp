@@ -23,7 +23,7 @@ template<typename T> struct left_right {
 			std::this_thread::yield();
 
 		f(data[next]);
-		current = next;
+		current = (std::uint_fast8_t)next;
 
 		while (readers[cur] != 0)
 			std::this_thread::yield();

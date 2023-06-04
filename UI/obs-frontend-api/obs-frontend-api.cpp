@@ -330,6 +330,26 @@ void *obs_frontend_add_dock(void *dock)
 	return !!callbacks_valid() ? c->obs_frontend_add_dock(dock) : nullptr;
 }
 
+bool obs_frontend_add_dock_by_id(const char *id, const char *title,
+				 void *widget)
+{
+	return !!callbacks_valid()
+		       ? c->obs_frontend_add_dock_by_id(id, title, widget)
+		       : false;
+}
+
+void obs_frontend_remove_dock(const char *id)
+{
+	if (callbacks_valid())
+		c->obs_frontend_remove_dock(id);
+}
+
+bool obs_frontend_add_custom_qdock(const char *id, void *dock)
+{
+	return !!callbacks_valid() ? c->obs_frontend_add_custom_qdock(id, dock)
+				   : false;
+}
+
 void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
 				     void *private_data)
 {
@@ -559,6 +579,12 @@ void obs_frontend_open_source_interaction(obs_source_t *source)
 		c->obs_frontend_open_source_interaction(source);
 }
 
+void obs_frontend_open_sceneitem_edit_transform(obs_sceneitem_t *item)
+{
+	if (callbacks_valid())
+		c->obs_frontend_open_sceneitem_edit_transform(item);
+}
+
 char *obs_frontend_get_current_record_output_path(void)
 {
 	return !!callbacks_valid()
@@ -593,4 +619,15 @@ char *obs_frontend_get_last_replay(void)
 {
 	return !!callbacks_valid() ? c->obs_frontend_get_last_replay()
 				   : nullptr;
+}
+
+void obs_frontend_add_undo_redo_action(const char *name,
+				       const undo_redo_cb undo,
+				       const undo_redo_cb redo,
+				       const char *undo_data,
+				       const char *redo_data, bool repeatable)
+{
+	if (callbacks_valid())
+		c->obs_frontend_add_undo_redo_action(
+			name, undo, redo, undo_data, redo_data, repeatable);
 }

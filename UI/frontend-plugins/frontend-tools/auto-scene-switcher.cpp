@@ -128,9 +128,10 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 		SetStopped();
 
 	loading = false;
+	connect(this, &QDialog::finished, this, &SceneSwitcher::finished);
 }
 
-void SceneSwitcher::closeEvent(QCloseEvent *)
+void SceneSwitcher::finished()
 {
 	obs_frontend_save();
 }

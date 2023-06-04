@@ -30,6 +30,7 @@ AEffect *VSTPlugin::loadEffect()
 							   true);
 
 	if (bundleUrl == NULL) {
+		CFRelease(pluginPathStringRef);
 		blog(LOG_WARNING,
 		     "Couldn't make URL reference for VST plug-in");
 		return NULL;
@@ -58,6 +59,8 @@ AEffect *VSTPlugin::loadEffect()
 
 	if (mainEntryPoint == NULL) {
 		blog(LOG_WARNING, "Couldn't get a pointer to plug-in's main()");
+		CFRelease(pluginPathStringRef);
+		CFRelease(bundleUrl);
 		CFRelease(bundle);
 		bundle = NULL;
 		return NULL;
@@ -66,6 +69,8 @@ AEffect *VSTPlugin::loadEffect()
 	newEffect = mainEntryPoint(hostCallback_static);
 	if (newEffect == NULL) {
 		blog(LOG_WARNING, "VST Plug-in's main() returns null.");
+		CFRelease(pluginPathStringRef);
+		CFRelease(bundleUrl);
 		CFRelease(bundle);
 		bundle = NULL;
 		return NULL;

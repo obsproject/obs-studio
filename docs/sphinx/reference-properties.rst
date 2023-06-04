@@ -51,7 +51,9 @@ General Functions
                  - OBS_PROPERTIES_DEFER_UPDATE - A hint that tells the
                    front-end to defers updating the settings until the
                    user has finished editing all properties rather than
-                   immediately updating any settings
+                   immediately updating any settings. Currently only
+                   works for properties of input and transition sources,
+                   this flag is a no-op for other properties at this time.
 
 ---------------------
 
@@ -162,7 +164,7 @@ Property Object Functions
    Adds a 'path' property.  Can be a directory or a file.
 
    If target is a file path, the filters should be this format, separated by
-   double semi-colens, and extensions separated by space::
+   double semicolons, and extensions separated by space::
 
      "Example types 1 and 2 (*.ex1 *.ex2);;Example type 3 (*.ex3)"
 
@@ -176,7 +178,7 @@ Property Object Functions
 
    :param    filter:       If type is a file path, then describes the file filter
                            that the user can browse.  Items are separated via
-                           double semi-colens.  If multiple file types in a
+                           double semicolons.  If multiple file types in a
                            filter, separate with space.
    :param    default_path: The default path to start in, or *NULL*
    :return:                The property
@@ -194,7 +196,8 @@ Property Object Functions
 
                           - **OBS_COMBO_TYPE_EDITABLE** - Can be edited.
                             Only used with string lists.
-                          - **OBS_COMBO_TYPE_LIST** - Not editable.
+                          - **OBS_COMBO_TYPE_LIST** - Not editable. Displayed as combo box.
+                          - **OBS_COMBO_TYPE_RADIO** - Not editable. Displayed as radio buttons.
 
    :param    format:      Can be one of the following values:
 
@@ -202,6 +205,7 @@ Property Object Functions
                           - **OBS_COMBO_FORMAT_FLOAT** - Floating point
                             list
                           - **OBS_COMBO_FORMAT_STRING** - String list
+                          - **OBS_COMBO_FORMAT_BOOL** - Boolean list
 
    :return:               The property
 
@@ -220,7 +224,8 @@ Property Object Functions
 
 .. function:: obs_property_t *obs_properties_add_color(obs_properties_t *props, const char *name, const char *description)
 
-   Adds a color property without alpha.
+   Adds a color property without alpha (stored internally with an alpha value of 255).
+   The color can be retrieved from an :c:type:`obs_data_t` object by using :c:func:`obs_data_get_int()`.
 
    :param    name:        Setting identifier string
    :param    description: Localized name shown to user
@@ -230,7 +235,8 @@ Property Object Functions
 
 .. function:: obs_property_t *obs_properties_add_color_alpha(obs_properties_t *props, const char *name, const char *description)
 
-   Adds a color property with alpha.
+   Adds a color property with alpha. The color can be retrieved from an
+   :c:type:`obs_data_t` object by using :c:func:`obs_data_get_int()`.
 
    :param    name:        Setting identifier string
    :param    description: Localized name shown to user
@@ -266,7 +272,8 @@ Property Object Functions
 
 .. function:: obs_property_t *obs_properties_add_font(obs_properties_t *props, const char *name, const char *description)
 
-   Adds a font property.
+   Adds a font property. The font can be retrieved from an :c:type:`obs_data_t`
+   object by using :c:func:`obs_data_get_obj()`.
 
    :param    name:        Setting identifier string
    :param    description: Localized name shown to user
@@ -276,7 +283,8 @@ Property Object Functions
 
 .. function:: obs_property_t *obs_properties_add_editable_list(obs_properties_t *props, const char *name, const char *description, enum obs_editable_list_type type, const char *filter, const char *default_path)
 
-   Adds a list in which the user can add/insert/remove items.
+   Adds a list in which the user can add/insert/remove items. The items can be
+   retrieved from an :c:type:`obs_data_t` object by using :c:func:`obs_data_get_array()`.
 
    :param    name:         Setting identifier string
    :param    description:  Localized name shown to user
@@ -576,7 +584,9 @@ Property Modification Functions
               void obs_property_set_modified_callback2(obs_property_t *p, obs_property_modified2_t modified2, void *priv)
 
    Allows the ability to change the properties depending on what
-   settings are used by the user.
+   settings are used by the user. The callback should return ``true``
+   if the property widgets need to be refreshed due to changes to the
+   property layout.
 
    Relevant data types used with these functions:
 
@@ -649,11 +659,19 @@ Property Modification Functions
 
    Adds a string to a string list.
 
+   :param    name: Localized name shown to user
+   :param    val:  The actual string value stored and will be returned by :c:func:`obs_data_get_string`
+   :returns: The index of the list item.
+
 ---------------------
 
 .. function:: size_t obs_property_list_add_int(obs_property_t *p, const char *name, long long val)
 
    Adds an integer to a integer list.
+
+   :param    name: Localized name shown to user
+   :param    val:  The actual int value stored and will be returned by :c:func:`obs_data_get_int`
+   :returns: The index of the list item.
 
 ---------------------
 
@@ -661,11 +679,19 @@ Property Modification Functions
 
    Adds a floating point to a floating point list.
 
+   :param    name: Localized name shown to user
+   :param    val:  The actual float value stored and will be returned by :c:func:`obs_data_get_double`
+   :returns: The index of the list item.
+
 ---------------------
 
 .. function:: void obs_property_list_insert_string(obs_property_t *p, size_t idx, const char *name, const char *val)
 
    Inserts a string in to a string list.
+
+   :param    idx:  The index of the list item
+   :param    name: Localized name shown to user
+   :param    val:  The actual string value stored and will be returned by :c:func:`obs_data_get_string`
 
 ---------------------
 
@@ -673,11 +699,19 @@ Property Modification Functions
 
    Inserts an integer in to an integer list.
 
+   :param    idx:  The index of the list item
+   :param    name: Localized name shown to user
+   :param    val:  The actual int value stored and will be returned by :c:func:`obs_data_get_int`
+
 ---------------------
 
 .. function:: void obs_property_list_insert_float(obs_property_t *p, size_t idx, const char *name, double val)
 
    Inserts a floating point in to a floating point list.
+
+   :param    idx:  The index of the list item.
+   :param    name: Localized name shown to user
+   :param    val:  The actual float value stored and will be returned by :c:func:`obs_data_get_double`
 
 ---------------------
 

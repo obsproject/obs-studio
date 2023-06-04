@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -538,7 +538,20 @@ static inline void darray_swap(const size_t element_size, struct darray *dst,
 #define da_push_back(v, item) darray_push_back(sizeof(*v.array), &v.da, item)
 #endif
 
+#ifdef __GNUC__
+/* GCC 12 with -O2 generates a warning -Wstringop-overflow in da_push_back_new,
+ * which could be false positive. Extract the macro here to avoid the warning.
+ */
+#define da_push_back_new(v)                                                  \
+	({                                                                   \
+		__typeof__(v) *d = &(v);                                     \
+		darray_ensure_capacity(sizeof(*d->array), &d->da, ++d->num); \
+		memset(&d->array[d->num - 1], 0, sizeof(*d->array));         \
+		&d->array[d->num - 1];                                       \
+	})
+#else
 #define da_push_back_new(v) darray_push_back_new(sizeof(*v.array), &v.da)
+#endif
 
 #ifdef ENABLE_DARRAY_TYPE_TEST
 #define da_push_back_array(dst, src_array, n)                                  \

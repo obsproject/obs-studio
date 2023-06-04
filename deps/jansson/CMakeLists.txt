@@ -701,5 +701,11 @@ set(JANSSON_LIBRARIES
     jansson
     CACHE STRING "Jansson libraries")
 
+if (NOT MSVC)
+  target_compile_options(jansson PUBLIC
+    -Wno-format-truncation
+    -Wno-implicit-fallthrough)
+endif()
+
 target_include_directories(jansson PUBLIC src
                                           "${CMAKE_CURRENT_BINARY_DIR}/include")

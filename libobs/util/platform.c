@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2014 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -559,7 +559,8 @@ static inline void from_locale(char *buffer)
 double os_strtod(const char *str)
 {
 	char buf[64];
-	snprintf(buf, 64, "%s", str);
+	strncpy(buf, str, sizeof(buf) - 1);
+	buf[sizeof(buf) - 1] = 0;
 	to_locale(buf);
 	return strtod(buf, NULL);
 }
@@ -653,28 +654,17 @@ int os_mkdirs(const char *dir)
 
 const char *os_get_path_extension(const char *path)
 {
-	struct dstr temp;
-	size_t pos = 0;
-	char *period;
-	char *slash;
+	for (size_t pos = strlen(path); pos > 0; pos--) {
+		switch (path[pos - 1]) {
+		case '.':
+			return path + pos - 1;
+		case '/':
+		case '\\':
+			return NULL;
+		}
+	}
 
-	if (!path[0])
-		return NULL;
-
-	dstr_init_copy(&temp, path);
-	dstr_replace(&temp, "\\", "/");
-
-	slash = strrchr(temp.array, '/');
-	period = strrchr(temp.array, '.');
-	if (period)
-		pos = (size_t)(period - temp.array);
-
-	dstr_free(&temp);
-
-	if (!period || slash > period)
-		return NULL;
-
-	return path + pos;
+	return NULL;
 }
 
 static inline bool valid_string(const char *str)
@@ -760,23 +750,25 @@ char *os_generate_formatted_filename(const char *extension, bool space,
 		if (!convert[0]) {
 			if (astrcmp_n(cmp, "%FPS", 4) == 0) {
 				if (ovi.fps_den <= 1) {
-					sprintf(convert, "%u", ovi.fps_num);
+					snprintf(convert, sizeof(convert), "%u",
+						 ovi.fps_num);
 				} else {
 					const double obsFPS =
 						(double)ovi.fps_num /
 						(double)ovi.fps_den;
-					sprintf(convert, "%.2f", obsFPS);
+					snprintf(convert, sizeof(convert),
+						 "%.2f", obsFPS);
 				}
 				replace_text(&sf, pos, 4, convert);
 
 			} else if (astrcmp_n(cmp, "%CRES", 5) == 0) {
-				sprintf(convert, "%ux%u", ovi.base_width,
-					ovi.base_height);
+				snprintf(convert, sizeof(convert), "%ux%u",
+					 ovi.base_width, ovi.base_height);
 				replace_text(&sf, pos, 5, convert);
 
 			} else if (astrcmp_n(cmp, "%ORES", 5) == 0) {
-				sprintf(convert, "%ux%u", ovi.output_width,
-					ovi.output_height);
+				snprintf(convert, sizeof(convert), "%ux%u",
+					 ovi.output_width, ovi.output_height);
 				replace_text(&sf, pos, 5, convert);
 
 			} else if (astrcmp_n(cmp, "%VF", 3) == 0) {
@@ -785,7 +777,8 @@ char *os_generate_formatted_filename(const char *extension, bool space,
 				replace_text(&sf, pos, 3, convert);
 
 			} else if (astrcmp_n(cmp, "%s", 2) == 0) {
-				sprintf(convert, "%" PRId64, (int64_t)now);
+				snprintf(convert, sizeof(convert), "%" PRId64,
+					 (int64_t)now);
 				replace_text(&sf, pos, 2, convert);
 			}
 		}
@@ -803,8 +796,11 @@ char *os_generate_formatted_filename(const char *extension, bool space,
 	if (!space)
 		dstr_replace(&sf, " ", "_");
 
-	dstr_cat_ch(&sf, '.');
-	dstr_cat(&sf, extension);
+	if (extension && *extension) {
+		dstr_cat_ch(&sf, '.');
+		dstr_cat(&sf, extension);
+	}
+
 	dstr_free(&c);
 
 	if (sf.len > 255)

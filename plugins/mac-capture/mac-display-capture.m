@@ -4,7 +4,7 @@
 #include <pthread.h>
 
 #import <AvailabilityMacros.h>
-#import <CoreGraphics/CGDisplayStream.h>
+#import "CGDisplayStream.h"
 #import <Cocoa/Cocoa.h>
 
 #include "window-utils.h"
@@ -182,10 +182,24 @@ static inline void display_stream_update(struct display_capture *dc,
 
 static bool init_display_stream(struct display_capture *dc)
 {
-	if (dc->display >= [NSScreen screens].count)
-		return false;
+	[[NSScreen screens]
+		enumerateObjectsUsingBlock:^(NSScreen *_Nonnull screen,
+					     NSUInteger index __unused,
+					     BOOL *_Nonnull stop __unused) {
+			NSNumber *screenNumber =
+				screen.deviceDescription[@"NSScreenNumber"];
+			CGDirectDisplayID display_id =
+				(CGDirectDisplayID)screenNumber.intValue;
 
-	dc->screen = [[NSScreen screens][dc->display] retain];
+			if (display_id == dc->display) {
+				dc->screen = [screen retain];
+				*stop = YES;
+			}
+		}];
+
+	if (!dc->screen) {
+		return false;
+	}
 
 	dc->frame = [dc->screen convertRectToBacking:dc->screen.frame];
 
@@ -209,9 +223,12 @@ static bool init_display_stream(struct display_capture *dc)
 
 	os_event_init(&dc->disp_finished, OS_EVENT_TYPE_MANUAL);
 
+	FourCharCode bgra_code = 0;
+	bgra_code = ('B' << 24) | ('G' << 16) | ('R' << 8) | 'A';
+
 	const CGSize *size = &dc->frame.size;
 	dc->disp = CGDisplayStreamCreateWithDispatchQueue(
-		disp_id, size->width, size->height, 'BGRA',
+		disp_id, (size_t)size->width, (size_t)size->height, bgra_code,
 		(__bridge CFDictionaryRef)dict,
 		dispatch_queue_create(NULL, NULL),
 		^(CGDisplayStreamFrameStatus status, uint64_t displayTime,
@@ -280,7 +297,39 @@ static void *display_capture_create(obs_data_t *settings, obs_source_t *source)
 	init_window(&dc->window, settings);
 	load_crop(dc, settings);
 
-	dc->display = obs_data_get_int(settings, "display");
+	bool legacy_display_id = obs_data_has_user_value(settings, "display");
+	if (legacy_display_id) {
+		CGDirectDisplayID display_id =
+			(CGDirectDisplayID)obs_data_get_int(settings,
+							    "display");
+		CFUUIDRef display_uuid =
+			CGDisplayCreateUUIDFromDisplayID(display_id);
+		CFStringRef uuid_string =
+			CFUUIDCreateString(kCFAllocatorDefault, display_uuid);
+		obs_data_set_string(
+			settings, "display_uuid",
+			CFStringGetCStringPtr(uuid_string,
+					      kCFStringEncodingUTF8));
+		obs_data_erase(settings, "display");
+		CFRelease(uuid_string);
+		CFRelease(display_uuid);
+	}
+
+	const char *display_uuid =
+		obs_data_get_string(settings, "display_uuid");
+	if (display_uuid) {
+		CFStringRef uuid_string = CFStringCreateWithCString(
+			kCFAllocatorDefault, display_uuid,
+			kCFStringEncodingUTF8);
+		CFUUIDRef uuid_ref = CFUUIDCreateFromString(kCFAllocatorDefault,
+							    uuid_string);
+		dc->display = CGDisplayGetDisplayIDFromUUID(uuid_ref);
+		CFRelease(uuid_string);
+		CFRelease(uuid_ref);
+	} else {
+		dc->display = CGMainDisplayID();
+	}
+
 	pthread_mutex_init(&dc->mutex, NULL);
 
 	if (!init_display_stream(dc))
@@ -311,7 +360,7 @@ static void build_sprite(struct gs_vb_data *data, float fcx, float fcy,
 static inline void build_sprite_rect(struct gs_vb_data *data, float origin_x,
 				     float origin_y, float end_x, float end_y)
 {
-	build_sprite(data, fabs(end_x - origin_x), fabs(end_y - origin_y),
+	build_sprite(data, fabsf(end_x - origin_x), fabsf(end_y - origin_y),
 		     origin_x, end_x, origin_y, end_y);
 }
 
@@ -343,7 +392,7 @@ static void display_capture_video_tick(void *data, float seconds)
 	CGPoint end = {0.f};
 
 	switch (dc->crop) {
-		float x, y;
+		double x, y;
 	case CROP_INVALID:
 		break;
 
@@ -371,8 +420,9 @@ static void display_capture_video_tick(void *data, float seconds)
 	}
 
 	obs_enter_graphics();
-	build_sprite_rect(gs_vertexbuffer_get_data(dc->vertbuf), origin.x,
-			  origin.y, end.x, end.y);
+	build_sprite_rect(gs_vertexbuffer_get_data(dc->vertbuf),
+			  (float)origin.x, (float)origin.y, (float)end.x,
+			  (float)end.y);
 
 	if (dc->tex)
 		gs_texture_rebind_iosurface(dc->tex, dc->prev);
@@ -428,27 +478,23 @@ static const char *display_capture_getname(void *unused)
 	return obs_module_text("DisplayCapture");
 }
 
-#define CROPPED_LENGTH(rect, origin_, length)                       \
-	fabs((rect##.size.##length - dc->crop_rect.size.##length) - \
-	     (rect##.origin.##origin_ + dc->crop_rect.origin.##origin_))
-
 static uint32_t display_capture_getwidth(void *data)
 {
 	struct display_capture *dc = data;
 
-	float crop = dc->crop_rect.origin.x + dc->crop_rect.size.width;
+	double crop = dc->crop_rect.origin.x + dc->crop_rect.size.width;
 	switch (dc->crop) {
 	case CROP_NONE:
-		return dc->frame.size.width;
+		return (uint32_t)dc->frame.size.width;
 
 	case CROP_MANUAL:
-		return fabs(dc->frame.size.width - crop);
+		return (uint32_t)fabs(dc->frame.size.width - crop);
 
 	case CROP_TO_WINDOW:
-		return dc->window_rect.size.width;
+		return (uint32_t)dc->window_rect.size.width;
 
 	case CROP_TO_WINDOW_AND_MANUAL:
-		return fabs(dc->window_rect.size.width - crop);
+		return (uint32_t)fabs(dc->window_rect.size.width - crop);
 
 	case CROP_INVALID:
 		break;
@@ -460,19 +506,19 @@ static uint32_t display_capture_getheight(void *data)
 {
 	struct display_capture *dc = data;
 
-	float crop = dc->crop_rect.origin.y + dc->crop_rect.size.height;
+	double crop = dc->crop_rect.origin.y + dc->crop_rect.size.height;
 	switch (dc->crop) {
 	case CROP_NONE:
-		return dc->frame.size.height;
+		return (uint32_t)dc->frame.size.height;
 
 	case CROP_MANUAL:
-		return fabs(dc->frame.size.height - crop);
+		return (uint32_t)fabs(dc->frame.size.height - crop);
 
 	case CROP_TO_WINDOW:
-		return dc->window_rect.size.height;
+		return (uint32_t)dc->window_rect.size.height;
 
 	case CROP_TO_WINDOW_AND_MANUAL:
-		return fabs(dc->window_rect.size.height - crop);
+		return (uint32_t)fabs(dc->window_rect.size.height - crop);
 
 	case CROP_INVALID:
 		break;
@@ -482,7 +528,18 @@ static uint32_t display_capture_getheight(void *data)
 
 static void display_capture_defaults(obs_data_t *settings)
 {
-	obs_data_set_default_int(settings, "display", 0);
+	NSNumber *screen =
+		[[NSScreen mainScreen] deviceDescription][@"NSScreenNumber"];
+
+	CFUUIDRef display_uuid = CGDisplayCreateUUIDFromDisplayID(
+		(CGDirectDisplayID)screen.intValue);
+	CFStringRef uuid_string =
+		CFUUIDCreateString(kCFAllocatorDefault, display_uuid);
+	obs_data_set_default_string(
+		settings, "display_uuid",
+		CFStringGetCStringPtr(uuid_string, kCFStringEncodingUTF8));
+	CFRelease(uuid_string);
+	CFRelease(display_uuid);
 	obs_data_set_default_bool(settings, "show_cursor", true);
 	obs_data_set_default_int(settings, "crop_mode", CROP_NONE);
 
@@ -491,7 +548,7 @@ static void display_capture_defaults(obs_data_t *settings)
 
 void load_crop_mode(enum crop_mode *mode, obs_data_t *settings)
 {
-	*mode = obs_data_get_int(settings, "crop_mode");
+	*mode = (int)obs_data_get_int(settings, "crop_mode");
 	if (!crop_mode_valid(*mode))
 		*mode = CROP_NONE;
 }
@@ -536,7 +593,16 @@ static void display_capture_update(void *data, obs_data_t *settings)
 	if (requires_window(dc->crop))
 		update_window(&dc->window, settings);
 
-	unsigned display = obs_data_get_int(settings, "display");
+	CFStringRef uuid_string = CFStringCreateWithCString(
+		kCFAllocatorDefault,
+		obs_data_get_string(settings, "display_uuid"),
+		kCFStringEncodingUTF8);
+	CFUUIDRef display_uuid =
+		CFUUIDCreateFromString(kCFAllocatorDefault, uuid_string);
+	CGDirectDisplayID display = CGDisplayGetDisplayIDFromUUID(display_uuid);
+	CFRelease(uuid_string);
+	CFRelease(display_uuid);
+
 	bool show_cursor = obs_data_get_bool(settings, "show_cursor");
 	if (dc->display == display && dc->hide_cursor != show_cursor)
 		return;
@@ -596,30 +662,46 @@ static obs_properties_t *display_capture_properties(void *unused)
 	obs_properties_t *props = obs_properties_create();
 
 	obs_property_t *list = obs_properties_add_list(
-		props, "display", obs_module_text("DisplayCapture.Display"),
-		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+		props, "display_uuid",
+		obs_module_text("DisplayCapture.Display"), OBS_COMBO_TYPE_LIST,
+		OBS_COMBO_FORMAT_STRING);
 
 	[[NSScreen screens] enumerateObjectsUsingBlock:^(
-				    NSScreen *_Nonnull screen, NSUInteger index,
-				    BOOL *_Nonnull stop
-				    __attribute__((unused))) {
+				    NSScreen *_Nonnull screen,
+				    NSUInteger index __unused,
+				    BOOL *_Nonnull stop __unused) {
 		char dimension_buffer[4][12];
 		char name_buffer[256];
-		sprintf(dimension_buffer[0], "%u",
-			(uint32_t)[screen frame].size.width);
-		sprintf(dimension_buffer[1], "%u",
-			(uint32_t)[screen frame].size.height);
-		sprintf(dimension_buffer[2], "%d",
-			(int32_t)[screen frame].origin.x);
-		sprintf(dimension_buffer[3], "%d",
-			(int32_t)[screen frame].origin.y);
+		snprintf(dimension_buffer[0], sizeof(dimension_buffer[0]), "%u",
+			 (uint32_t)[screen frame].size.width);
+		snprintf(dimension_buffer[1], sizeof(dimension_buffer[0]), "%u",
+			 (uint32_t)[screen frame].size.height);
+		snprintf(dimension_buffer[2], sizeof(dimension_buffer[0]), "%d",
+			 (int32_t)[screen frame].origin.x);
+		snprintf(dimension_buffer[3], sizeof(dimension_buffer[0]), "%d",
+			 (int32_t)[screen frame].origin.y);
 
-		sprintf(name_buffer, "%.200s: %.12sx%.12s @ %.12s,%.12s",
-			[[screen localizedName] UTF8String],
-			dimension_buffer[0], dimension_buffer[1],
-			dimension_buffer[2], dimension_buffer[3]);
+		snprintf(name_buffer, sizeof(name_buffer),
+			 "%.200s: %.12sx%.12s @ %.12s,%.12s",
+			 [[screen localizedName] UTF8String],
+			 dimension_buffer[0], dimension_buffer[1],
+			 dimension_buffer[2], dimension_buffer[3]);
 
-		obs_property_list_add_int(list, name_buffer, index);
+		NSNumber *screenNumber =
+			screen.deviceDescription[@"NSScreenNumber"];
+
+		CGDirectDisplayID display_id =
+			(CGDirectDisplayID)screenNumber.intValue;
+		CFUUIDRef display_uuid =
+			CGDisplayCreateUUIDFromDisplayID(display_id);
+		CFStringRef uuid_string =
+			CFUUIDCreateString(kCFAllocatorDefault, display_uuid);
+		obs_property_list_add_string(
+			list, name_buffer,
+			CFStringGetCStringPtr(uuid_string,
+					      kCFStringEncodingUTF8));
+		CFRelease(uuid_string);
+		CFRelease(display_uuid);
 	}];
 
 	obs_properties_add_bool(props, "show_cursor",

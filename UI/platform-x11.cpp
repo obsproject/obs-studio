@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
     Copyright (C) 2014 by Zachary Lund <admin@computerquip.com>
 
     This program is free software: you can redistribute it and/or modify
@@ -178,7 +178,7 @@ static inline bool check_path(const char *data, const char *path,
 	str << path << data;
 	output = str.str();
 
-	printf("Attempted path: %s\n", output.c_str());
+	blog(LOG_DEBUG, "Attempted path: %s", output.c_str());
 
 	return (access(output.c_str(), R_OK) == 0);
 }

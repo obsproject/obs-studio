@@ -1,9 +1,8 @@
 set(OBS_COMPANY_NAME "OBS Project")
 set(OBS_PRODUCT_NAME "OBS Studio")
 set(OBS_WEBSITE "https://www.obsproject.com")
-set(OBS_COMMENTS
-    "Free and open source software for video recording and live streaming")
-set(OBS_LEGAL_COPYRIGHT "(C) Hugh Bailey")
+set(OBS_COMMENTS "Free and open source software for video recording and live streaming")
+set(OBS_LEGAL_COPYRIGHT "(C) Lain Bailey")
 
 # Configure default version strings
 set(_OBS_DEFAULT_VERSION "0" "0" "1")
@@ -32,19 +31,24 @@ if(NOT DEFINED OBS_VERSION_OVERRIDE)
         string(REPLACE "." ";" _CANONICAL_SPLIT ${_CANONICAL_SPLIT})
         list(GET _CANONICAL_SPLIT 0 1 2 _OBS_VERSION_CANONICAL)
         string(REPLACE "." ";" _OBS_VERSION ${_OBS_VERSION})
+        # Get 8-character commit hash without "g" prefix
+        foreach(VERSION_PART ${_CANONICAL_SPLIT})
+          if(VERSION_PART MATCHES "^g")
+            string(SUBSTRING ${VERSION_PART}, 1, 8, OBS_COMMIT)
+            break()
+          endif()
+        endforeach()
       endif()
     endif()
   endif()
 
-  # Set release candidate version information Must be a string in the format of
-  # "x.x.x-rcx"
+  # Set release candidate version information Must be a string in the format of "x.x.x-rcx"
   if(DEFINED RELEASE_CANDIDATE)
     string(REPLACE "-rc" "." _OBS_RELEASE_CANDIDATE ${RELEASE_CANDIDATE})
     string(REPLACE "." ";" _OBS_VERSION ${RELEASE_CANDIDATE})
     string(REPLACE "." ";" _OBS_RELEASE_CANDIDATE ${_OBS_RELEASE_CANDIDATE})
     list(GET _OBS_RELEASE_CANDIDATE 0 1 2 _OBS_VERSION_CANONICAL)
-    # Set beta version information Must be a string in the format of
-    # "x.x.x-betax"
+    # Set beta version information Must be a string in the format of "x.x.x-betax"
   elseif(DEFINED BETA)
     string(REPLACE "-beta" "." _OBS_BETA ${BETA})
     string(REPLACE "." ";" _OBS_VERSION ${BETA})
@@ -81,15 +85,13 @@ if(OBS_RELEASE_CANDIDATE GREATER 0)
     AUTHOR_WARNING
       "******************************************************************************\n"
       "  + OBS-Studio - Release candidate detected, OBS_VERSION is now: ${OBS_VERSION}\n"
-      "******************************************************************************"
-  )
+      "******************************************************************************")
 elseif(OBS_BETA GREATER 0)
   message(
     AUTHOR_WARNING
       "******************************************************************************\n"
       "  + OBS-Studio - Beta detected, OBS_VERSION is now: ${OBS_VERSION}\n"
-      "******************************************************************************"
-  )
+      "******************************************************************************")
 endif()
 
 # Define build number cache file
@@ -106,7 +108,4 @@ elseif(NOT DEFINED OBS_BUILD_NUMBER)
 endif()
 file(WRITE ${BUILD_NUMBER_CACHE} "${OBS_BUILD_NUMBER}")
 
-message(
-  STATUS
-    "OBS:  Application Version: ${OBS_VERSION} - Build Number: ${OBS_BUILD_NUMBER}"
-)
+message(STATUS "OBS:  Application Version: ${OBS_VERSION} - Build Number: ${OBS_BUILD_NUMBER}")

@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2014 by Ruwen Hahn <palana@stunned.de>
+    Copyright (C) 2023 by Ruwen Hahn <palana@stunned.de>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -32,6 +32,10 @@
 #define CODEC_FLAG_GLOBAL_H AV_CODEC_FLAG_GLOBAL_HEADER
 #else
 #define CODEC_FLAG_GLOBAL_H CODEC_FLAG_GLOBAL_HEADER
+#endif
+
+#ifndef FF_API_BUFFER_SIZE_T
+#define FF_API_BUFFER_SIZE_T (LIBAVUTIL_VERSION_MAJOR < 57)
 #endif
 
 struct media_remux_job {
@@ -149,7 +153,19 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 		av_dict_copy(&out_stream->metadata, in_stream->metadata, 0);
 
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
-		out_stream->codecpar->codec_tag = 0;
+		if (in_stream->codecpar->codec_id == AV_CODEC_ID_HEVC &&
+		    job->ofmt_ctx->oformat->codec_tag &&
+		    av_codec_get_id(job->ofmt_ctx->oformat->codec_tag,
+				    MKTAG('h', 'v', 'c', '1')) ==
+			    out_stream->codecpar->codec_id) {
+			// Tag HEVC files with industry standard HVC1 tag for wider device compatibility
+			// when HVC1 tag is supported by out stream codec
+			out_stream->codecpar->codec_tag =
+				MKTAG('h', 'v', 'c', '1');
+		} else {
+			// Otherwise tag 0 to let FFmpeg automatically select the appropriate tag
+			out_stream->codecpar->codec_tag = 0;
+		}
 #else
 		out_stream->codec->codec_tag = 0;
 		out_stream->time_base = out_stream->codec->time_base;

@@ -1,3 +1,4 @@
+# cmake-format: off
 # * Try to find Libpci Once done this will define
 #
 # * LIBPCI_FOUND - system has Libpci
@@ -7,6 +8,7 @@
 
 # Use pkg-config to get the directories and then use these values in the
 # find_path() and find_library() calls
+# cmake-format: on
 
 find_package(PkgConfig QUIET)
 if(PKG_CONFIG_FOUND)
@@ -27,8 +29,7 @@ find_library(
   PATHS /usr/lib /usr/local/lib /opt/local/lib)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Libpci REQUIRED_VARS LIBPCI_LIB
-                                                       LIBPCI_INCLUDE_DIR)
+find_package_handle_standard_args(Libpci REQUIRED_VARS LIBPCI_LIB LIBPCI_INCLUDE_DIR)
 mark_as_advanced(LIBPCI_INCLUDE_DIR LIBPCI_LIB)
 
 if(LIBPCI_FOUND)
@@ -38,12 +39,10 @@ if(LIBPCI_FOUND)
   if(NOT TARGET LIBPCI::LIBPCI)
     if(IS_ABSOLUTE "${LIBPCI_LIBRARIES}")
       add_library(LIBPCI::LIBPCI UNKNOWN IMPORTED)
-      set_target_properties(LIBPCI::LIBPCI PROPERTIES IMPORTED_LOCATION
-                                                      "${LIBPCI_LIBRARIES}")
+      set_target_properties(LIBPCI::LIBPCI PROPERTIES IMPORTED_LOCATION "${LIBPCI_LIBRARIES}")
     else()
       add_library(LIBPCI::LIBPCI INTERFACE IMPORTED)
-      set_target_properties(LIBPCI::LIBPCI PROPERTIES IMPORTED_LIBNAME
-                                                      "${LIBPCI_LIBRARIES}")
+      set_target_properties(LIBPCI::LIBPCI PROPERTIES IMPORTED_LIBNAME "${LIBPCI_LIBRARIES}")
     endif()
   endif()
 endif()

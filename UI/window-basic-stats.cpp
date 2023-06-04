@@ -22,12 +22,14 @@ void OBSBasicStats::OBSFrontendEvent(enum obs_frontend_event event, void *ptr)
 {
 	OBSBasicStats *stats = reinterpret_cast<OBSBasicStats *>(ptr);
 
-	switch ((int)event) {
+	switch (event) {
 	case OBS_FRONTEND_EVENT_RECORDING_STARTED:
 		stats->StartRecTimeLeft();
 		break;
 	case OBS_FRONTEND_EVENT_RECORDING_STOPPED:
 		stats->ResetRecTimeLeft();
+		break;
+	default:
 		break;
 	}
 }
@@ -452,9 +454,15 @@ void OBSBasicStats::ResetRecTimeLeft()
 
 void OBSBasicStats::RecordingTimeLeft()
 {
+	if (bitrates.empty())
+		return;
+
 	long double averageBitrate =
 		accumulate(bitrates.begin(), bitrates.end(), 0.0) /
 		(long double)bitrates.size();
+	if (averageBitrate == 0)
+		return;
+
 	long double bytesPerSec = (averageBitrate / 8.0l) * 1000.0l;
 	long double secondsUntilFull = (long double)num_bytes / bytesPerSec;
 

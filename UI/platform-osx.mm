@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -40,38 +40,22 @@ bool isInBundle()
 
 bool GetDataFilePath(const char *data, string &output)
 {
-	NSRunningApplication *app = [NSRunningApplication currentApplication];
-	NSURL *bundleURL = [app bundleURL];
-	NSString *path = [NSString
-		stringWithFormat:@"Contents/Resources/%@",
-				 [NSString stringWithUTF8String:data]];
-	NSURL *dataURL = [bundleURL URLByAppendingPathComponent:path];
-	output = [[dataURL path] UTF8String];
+	NSURL *bundleUrl = [[NSBundle mainBundle] bundleURL];
+	NSString *path = [[bundleUrl path]
+		stringByAppendingFormat:@"/%@/%s", @"Contents/Resources", data];
+	output = path.UTF8String;
 
 	return !access(output.c_str(), R_OK);
 }
 
 void CheckIfAlreadyRunning(bool &already_running)
 {
-	try {
-		NSBundle *bundle = [NSBundle mainBundle];
-		if (!bundle)
-			throw "Could not find main bundle";
+	NSString *bundleId = [[NSBundle mainBundle] bundleIdentifier];
 
-		NSString *bundleID = [bundle bundleIdentifier];
-		if (!bundleID)
-			throw "Could not find bundle identifier";
+	NSUInteger appCount = [[NSRunningApplication
+		runningApplicationsWithBundleIdentifier:bundleId] count];
 
-		int app_count =
-			[NSRunningApplication
-				runningApplicationsWithBundleIdentifier:bundleID]
-				.count;
-
-		already_running = app_count > 1;
-
-	} catch (const char *error) {
-		blog(LOG_ERROR, "CheckIfAlreadyRunning: %s", error);
-	}
+	already_running = appCount > 1;
 }
 
 string GetDefaultVideoSavePath()
@@ -143,12 +127,10 @@ void SetAlwaysOnTop(QWidget *window, bool enable)
 	Qt::WindowFlags flags = window->windowFlags();
 
 	if (enable) {
-		/* Force the level of the window high so it sits on top of
-		 * full-screen applications like Keynote */
-		NSView *nsv = (__bridge NSView *)reinterpret_cast<void *>(
+		NSView *view = (__bridge NSView *)reinterpret_cast<void *>(
 			window->winId());
-		NSWindow *nsw = nsv.window;
-		[nsw setLevel:1024];
+
+		[[view window] setLevel:NSScreenSaverWindowLevel];
 
 		flags |= Qt::WindowStaysOnTopHint;
 	} else {
@@ -207,7 +189,7 @@ void EnableOSXDockIcon(bool enable)
 
 @interface DockView : NSView {
 @private
-	QIcon icon;
+	QIcon _icon;
 }
 @end
 
@@ -215,7 +197,7 @@ void EnableOSXDockIcon(bool enable)
 - (id)initWithIcon:(QIcon)icon
 {
 	self = [super init];
-	self->icon = icon;
+	_icon = icon;
 	return self;
 }
 - (void)drawRect:(NSRect)dirtyRect
@@ -230,7 +212,7 @@ void EnableOSXDockIcon(bool enable)
 	/* Draw small icon on top */
 	float iconSize = 0.45;
 	CGImageRef image =
-		icon.pixmap(size.width, size.height).toImage().toCGImage();
+		_icon.pixmap(size.width, size.height).toImage().toCGImage();
 	CGContextRef context = [[NSGraphicsContext currentContext] CGContext];
 	CGContextDrawImage(context,
 			   CGRectMake(size.width * (1 - iconSize), 0,
@@ -308,37 +290,15 @@ MacPermissionStatus CheckPermissionWithPrompt(MacPermissionType type,
 		break;
 	}
 	case kScreenCapture: {
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 110000
-		if (@available(macOS 11.0, *)) {
-			permissionResponse = (CGPreflightScreenCaptureAccess()
+		permissionResponse = (CGPreflightScreenCaptureAccess()
+					      ? kPermissionAuthorized
+					      : kPermissionDenied);
+
+		if (permissionResponse != kPermissionAuthorized &&
+		    prompt_for_permission) {
+			permissionResponse = (CGRequestScreenCaptureAccess()
 						      ? kPermissionAuthorized
 						      : kPermissionDenied);
-
-			if (permissionResponse != kPermissionAuthorized &&
-			    prompt_for_permission) {
-				permissionResponse =
-					(CGRequestScreenCaptureAccess()
-						 ? kPermissionAuthorized
-						 : kPermissionDenied);
-			}
-
-		} else {
-#else
-		{
-#endif
-			CGDisplayStreamRef stream = CGDisplayStreamCreate(
-				CGMainDisplayID(), 1, 1,
-				kCVPixelFormatType_32BGRA, nil, nil);
-
-			if (stream) {
-				permissionResponse = kPermissionAuthorized;
-				CFRelease(stream);
-
-				if (prompt_for_permission) {
-				}
-			} else {
-				permissionResponse = kPermissionDenied;
-			}
 		}
 
 		blog(LOG_INFO, "[macOS] Permission for screen capture %s.",
@@ -382,6 +342,17 @@ void OpenMacOSPrivacyPreferences(const char *tab)
 					@"x-apple.systempreferences:com.apple.preference.security?Privacy_%s",
 					tab]];
 	[[NSWorkspace sharedWorkspace] openURL:url];
+}
+
+void SetMacOSDarkMode(bool dark)
+{
+	if (dark) {
+		NSApp.appearance =
+			[NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
+	} else {
+		NSApp.appearance =
+			[NSAppearance appearanceNamed:NSAppearanceNameAqua];
+	}
 }
 
 void TaskbarOverlayInit() {}

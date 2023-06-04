@@ -125,7 +125,8 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth,
 				const QImage newImage = imgReader.read();
 				ui->thumbnailPreview->setPixmap(
 					QPixmap::fromImage(newImage).scaled(
-						160, 90, Qt::KeepAspectRatio));
+						160, 90, Qt::KeepAspectRatio,
+						Qt::SmoothTransformation));
 			}
 		} else {
 			thumbnailFile.clear();
@@ -821,7 +822,8 @@ void OBSYoutubeActions::LoadSettings()
 			const QImage newImage = imgReader.read();
 			ui->thumbnailPreview->setPixmap(
 				QPixmap::fromImage(newImage).scaled(
-					160, 90, Qt::KeepAspectRatio));
+					160, 90, Qt::KeepAspectRatio,
+					Qt::SmoothTransformation));
 		}
 	}
 }
