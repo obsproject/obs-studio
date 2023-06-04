@@ -74,7 +74,7 @@ void OBSBasicSettings::LoadStream1Settings()
 	ui->ignoreRecommended->setChecked(ignoreRecommended);
 
 	delete streamServiceProps;
-	streamServiceProps = CreateServicePropertyView(id, settings);
+	streamServiceProps = CreateTempServicePropertyView(settings);
 	ui->serviceLayout->addWidget(streamServiceProps);
 
 	UpdateServiceRecommendations();
@@ -176,8 +176,8 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 		return;
 	}
 
-	const char *oldId = obs_service_get_id(tempService);
-	OBSDataAutoRelease oldSettings = obs_service_get_settings(tempService);
+	OBSServiceAutoRelease oldService =
+		obs_service_get_ref(tempService.Get());
 
 	QString service = ui->service->currentData().toString();
 	OBSDataAutoRelease newSettings =
@@ -203,11 +203,11 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 
 	if (cancelChange ||
 	    !(ServiceSupportsCodecCheck() && UpdateResFPSLimits())) {
-		tempService = obs_service_create_private(
-			oldId, TEMP_SERVICE_NAME, oldSettings);
-		uint32_t flags = obs_get_service_flags(oldId);
+		tempService = obs_service_get_ref(oldService);
+		const char *id = obs_service_get_id(tempService);
+		uint32_t flags = obs_get_service_flags(id);
 		if ((flags & OBS_SERVICE_INTERNAL) != 0) {
-			QString name(obs_service_get_display_name(oldId));
+			QString name(obs_service_get_display_name(id));
 			if ((flags & OBS_SERVICE_DEPRECATED) != 0)
 				name = QTStr("Basic.Settings.Stream.DeprecatedType")
 					       .arg(name);
@@ -217,7 +217,7 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 
 		QSignalBlocker s(ui->service);
 		ui->service->setCurrentIndex(
-			ui->service->findData(QT_UTF8(oldId)));
+			ui->service->findData(QT_UTF8(id)));
 
 		return;
 	}
@@ -225,8 +225,7 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 	ui->ignoreRecommended->setEnabled(!IsCustomOrInternalService());
 
 	delete streamServiceProps;
-	streamServiceProps =
-		CreateServicePropertyView(QT_TO_UTF8(service), nullptr, true);
+	streamServiceProps = CreateTempServicePropertyView(nullptr, true);
 	ui->serviceLayout->addWidget(streamServiceProps);
 
 	UpdateServiceRecommendations();
@@ -1140,15 +1139,17 @@ void OBSBasicSettings::ResetEncoders(bool streamOnly)
 }
 
 OBSPropertiesView *
-OBSBasicSettings::CreateServicePropertyView(const char *service,
-					    obs_data_t *settings, bool changed)
+OBSBasicSettings::CreateTempServicePropertyView(obs_data_t *settings,
+						bool changed)
 {
-	OBSDataAutoRelease defaultSettings = obs_service_defaults(service);
+	OBSDataAutoRelease defaultSettings =
+		obs_service_defaults(obs_service_get_id(tempService));
 	OBSPropertiesView *view;
 
 	view = new OBSPropertiesView(
-		settings ? settings : defaultSettings.Get(), service,
-		(PropertiesReloadCallback)obs_get_service_properties, 170);
+		settings ? settings : defaultSettings.Get(), tempService,
+		(PropertiesReloadCallback)obs_service_properties, nullptr,
+		nullptr, 170);
 	view->setFrameShape(QFrame::NoFrame);
 	view->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
 	view->setProperty("changed", QVariant(changed));
@@ -1192,7 +1193,6 @@ void OBSBasicSettings::RestoreServiceSettings(QString settingsJson)
 	bool changed = streamServiceProps->property("changed").toBool();
 
 	delete streamServiceProps;
-	streamServiceProps = CreateServicePropertyView(
-		obs_service_get_id(tempService), settings, changed);
+	streamServiceProps = CreateTempServicePropertyView(settings, changed);
 	ui->serviceLayout->addWidget(streamServiceProps);
 }

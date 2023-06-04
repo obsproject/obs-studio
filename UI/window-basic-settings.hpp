@@ -263,9 +263,8 @@ private:
 	void UpdateServiceRecommendations();
 	void UpdateAdvNetworkGroup();
 
-	OBSPropertiesView *CreateServicePropertyView(const char *service,
-						     obs_data_t *settings,
-						     bool changed = false);
+	OBSPropertiesView *CreateTempServicePropertyView(obs_data_t *settings,
+							 bool changed = false);
 
 private slots:
 	void RecreateOutputResolutionWidget();
