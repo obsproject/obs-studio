@@ -882,32 +882,38 @@ Functions used by outputs
 
 ---------------------
 
-.. function:: bool obs_output_can_begin_data_capture2(const obs_output_t *output)
+.. function:: bool obs_output_can_begin_data_capture(const obs_output_t *output, int flags)
 
    Determines whether video/audio capture (encoded or raw) is able to
    start.  Call this before initializing any output state to ensure that
    the output can start.
 
+   :param output: The output
+   :param flags: Reserved. Set this to 0.
    :return:      *true* if data capture can begin
 
 ---------------------
 
-.. function:: bool obs_output_initialize_encoders2(obs_output_t *output)
+.. function:: bool obs_output_initialize_encoders(obs_output_t *output, int flags)
 
    Initializes any encoders/services associated with the output.  This
    must be called for encoded outputs before calling
-   :c:func:`obs_output_begin_data_capture2()`.
+   :c:func:`obs_output_begin_data_capture()`.
 
+   :param output: The output
+   :param flags: Reserved. Set this to 0.
    :return:      *true* if successful, *false* otherwise
 
 ---------------------
 
-.. function:: bool obs_output_begin_data_capture2(obs_output_t *output)
+.. function:: bool obs_output_begin_data_capture(obs_output_t *output, int flags)
 
    Begins data capture from raw media or encoders.  This is typically
    when the output actually activates (starts) internally.  Video/audio
    data will start being sent to the callbacks of the output.
 
+   :param output: The output
+   :param flags: Reserved. Set this to 0.
    :return:      *true* if successful, *false* otherwise.  Typically the
                  return value does not need to be checked if
                  :c:func:`obs_output_can_begin_data_capture2()` was

@@ -2107,8 +2107,11 @@ static inline void signal_stop(struct obs_output *output)
 	calldata_free(&params);
 }
 
-bool obs_output_can_begin_data_capture2(const obs_output_t *output)
+bool obs_output_can_begin_data_capture(const obs_output_t *output,
+				       uint32_t flags)
 {
+	UNUSED_PARAMETER(flags);
+
 	if (!obs_output_valid(output, "obs_output_can_begin_data_capture"))
 		return false;
 
@@ -2121,13 +2124,6 @@ bool obs_output_can_begin_data_capture2(const obs_output_t *output)
 		pthread_join(output->end_data_capture_thread, NULL);
 
 	return can_begin_data_capture(output);
-}
-
-bool obs_output_can_begin_data_capture(const obs_output_t *output,
-				       uint32_t flags)
-{
-	UNUSED_PARAMETER(flags);
-	return obs_output_can_begin_data_capture2(output);
 }
 
 static inline bool initialize_audio_encoders(obs_output_t *output)
@@ -2179,8 +2175,10 @@ static inline void pair_encoders(obs_output_t *output)
 	}
 }
 
-bool obs_output_initialize_encoders2(obs_output_t *output)
+bool obs_output_initialize_encoders(obs_output_t *output, uint32_t flags)
 {
+	UNUSED_PARAMETER(flags);
+
 	if (!obs_output_valid(output, "obs_output_initialize_encoders"))
 		return false;
 	if (!log_flag_encoded(output, __FUNCTION__, false))
@@ -2199,12 +2197,6 @@ bool obs_output_initialize_encoders2(obs_output_t *output)
 		return false;
 
 	return true;
-}
-
-bool obs_output_initialize_encoders(obs_output_t *output, uint32_t flags)
-{
-	UNUSED_PARAMETER(flags);
-	return obs_output_initialize_encoders2(output);
 }
 
 static bool begin_delayed_capture(obs_output_t *output)
@@ -2263,8 +2255,10 @@ static void reset_raw_output(obs_output_t *output)
 	pause_reset(&output->pause);
 }
 
-bool obs_output_begin_data_capture2(obs_output_t *output)
+bool obs_output_begin_data_capture(obs_output_t *output, uint32_t flags)
 {
+	UNUSED_PARAMETER(flags);
+
 	if (!obs_output_valid(output, "obs_output_begin_data_capture"))
 		return false;
 
@@ -2305,12 +2299,6 @@ bool obs_output_begin_data_capture2(obs_output_t *output)
 	}
 
 	return true;
-}
-
-bool obs_output_begin_data_capture(obs_output_t *output, uint32_t flags)
-{
-	UNUSED_PARAMETER(flags);
-	return obs_output_begin_data_capture2(output);
 }
 
 static inline void stop_audio_encoders(obs_output_t *output,

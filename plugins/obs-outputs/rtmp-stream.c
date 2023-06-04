@@ -1071,7 +1071,7 @@ static int init_send(struct rtmp_stream *stream)
 		return OBS_OUTPUT_DISCONNECTED;
 	}
 
-	obs_output_begin_data_capture2(stream->output);
+	obs_output_begin_data_capture(stream->output, 0);
 
 	return OBS_OUTPUT_SUCCESS;
 }
@@ -1373,9 +1373,9 @@ static bool rtmp_stream_start(void *data)
 {
 	struct rtmp_stream *stream = data;
 
-	if (!obs_output_can_begin_data_capture2(stream->output))
+	if (!obs_output_can_begin_data_capture(stream->output, 0))
 		return false;
-	if (!obs_output_initialize_encoders2(stream->output))
+	if (!obs_output_initialize_encoders(stream->output, 0))
 		return false;
 
 	os_atomic_set_bool(&stream->connecting, true);

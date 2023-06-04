@@ -1209,7 +1209,7 @@ static bool try_connect(struct ffmpeg_output *output)
 
 	output->active = true;
 
-	if (!obs_output_can_begin_data_capture2(output->output))
+	if (!obs_output_can_begin_data_capture(output->output, 0))
 		return false;
 
 	ret = pthread_create(&output->write_thread, NULL, write_thread, output);
@@ -1223,7 +1223,7 @@ static bool try_connect(struct ffmpeg_output *output)
 
 	obs_output_set_video_conversion(output->output, NULL);
 	obs_output_set_audio_conversion(output->output, &aci);
-	obs_output_begin_data_capture2(output->output);
+	obs_output_begin_data_capture(output->output, 0);
 	output->write_thread_active = true;
 	return true;
 }

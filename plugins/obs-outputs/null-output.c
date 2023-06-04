@@ -51,15 +51,15 @@ static bool null_output_start(void *data)
 {
 	struct null_output *context = data;
 
-	if (!obs_output_can_begin_data_capture2(context->output))
+	if (!obs_output_can_begin_data_capture(context->output, 0))
 		return false;
-	if (!obs_output_initialize_encoders2(context->output))
+	if (!obs_output_initialize_encoders(context->output, 0))
 		return false;
 
 	if (context->stop_thread_active)
 		pthread_join(context->stop_thread, NULL);
 
-	obs_output_begin_data_capture2(context->output);
+	obs_output_begin_data_capture(context->output, 0);
 	return true;
 }
 
