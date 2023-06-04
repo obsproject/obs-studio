@@ -980,7 +980,7 @@ static bool build_window_list(struct screen_capture *sc,
 					compare:other.title
 					options:NSCaseInsensitiveSearch];
 			} else {
-				return NSOrderedAscending;
+				return NSOrderedDescending;
 			}
 		}];
 
