@@ -485,6 +485,19 @@ Video, Audio, and Graphics
 
 ---------------------
 
+.. function:: void obs_set_audio_source(uint32_t channel, obs_source_t *source)
+
+   Sets the source for an audio track.
+
+---------------------
+
+.. function:: obs_source_t *obs_get_audio_track_source(uint32_t channel)
+
+   Gets the audio track source for a track and increments the reference
+   counter for that source.  Use :c:func:`obs_source_release()` to release.
+
+---------------------
+
 .. function:: gs_effect_t *obs_get_base_effect(enum obs_base_effect effect)
 
    Returns a commonly used base effect.
