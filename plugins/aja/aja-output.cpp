@@ -1229,7 +1229,7 @@ static bool aja_output_start(void *data)
 
 	obs_output_set_audio_conversion(ajaOutput->GetOBSOutput(), &conversion);
 
-	if (!obs_output_begin_data_capture2(ajaOutput->GetOBSOutput())) {
+	if (!obs_output_begin_data_capture(ajaOutput->GetOBSOutput(), 0)) {
 		blog(LOG_ERROR,
 		     "aja_output_start: Begin OBS data capture failed!");
 		return false;

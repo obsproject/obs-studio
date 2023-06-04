@@ -110,7 +110,7 @@ static bool decklink_output_start(void *data)
 
 	obs_output_set_audio_conversion(decklink->GetOutput(), &conversion);
 
-	if (!obs_output_begin_data_capture2(decklink->GetOutput()))
+	if (!obs_output_begin_data_capture(decklink->GetOutput(), 0))
 		return false;
 
 	return true;

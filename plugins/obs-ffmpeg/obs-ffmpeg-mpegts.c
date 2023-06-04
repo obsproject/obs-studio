@@ -1025,9 +1025,9 @@ static bool set_config(struct ffmpeg_output *stream)
 		}
 		av_dump_format(ff_data->output, 0, NULL, 1);
 	}
-	if (!obs_output_can_begin_data_capture2(stream->output))
+	if (!obs_output_can_begin_data_capture(stream->output, 0))
 		return false;
-	if (!obs_output_initialize_encoders2(stream->output))
+	if (!obs_output_initialize_encoders(stream->output, 0))
 		return false;
 
 	ret = pthread_create(&stream->write_thread, NULL, write_thread, stream);
@@ -1042,7 +1042,7 @@ static bool set_config(struct ffmpeg_output *stream)
 	os_atomic_set_bool(&stream->active, true);
 	stream->write_thread_active = true;
 	stream->total_bytes = 0;
-	obs_output_begin_data_capture2(stream->output);
+	obs_output_begin_data_capture(stream->output, 0);
 
 	return true;
 fail:

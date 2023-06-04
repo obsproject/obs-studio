@@ -411,9 +411,9 @@ static inline bool ffmpeg_mux_start_internal(struct ffmpeg_muxer *stream,
 
 	update_encoder_settings(stream, path);
 
-	if (!obs_output_can_begin_data_capture2(stream->output))
+	if (!obs_output_can_begin_data_capture(stream->output, 0))
 		return false;
-	if (!obs_output_initialize_encoders2(stream->output))
+	if (!obs_output_initialize_encoders(stream->output, 0))
 		return false;
 
 	if (stream->is_network) {
@@ -468,7 +468,7 @@ static inline bool ffmpeg_mux_start_internal(struct ffmpeg_muxer *stream,
 	os_atomic_set_bool(&stream->active, true);
 	os_atomic_set_bool(&stream->capturing, true);
 	stream->total_bytes = 0;
-	obs_output_begin_data_capture2(stream->output);
+	obs_output_begin_data_capture(stream->output, 0);
 
 	info("Writing file '%s'...", stream->path.array);
 	return true;
@@ -1039,9 +1039,9 @@ static bool replay_buffer_start(void *data)
 {
 	struct ffmpeg_muxer *stream = data;
 
-	if (!obs_output_can_begin_data_capture2(stream->output))
+	if (!obs_output_can_begin_data_capture(stream->output, 0))
 		return false;
-	if (!obs_output_initialize_encoders2(stream->output))
+	if (!obs_output_initialize_encoders(stream->output, 0))
 		return false;
 
 	obs_data_t *s = obs_output_get_settings(stream->output);
@@ -1052,7 +1052,7 @@ static bool replay_buffer_start(void *data)
 	os_atomic_set_bool(&stream->active, true);
 	os_atomic_set_bool(&stream->capturing, true);
 	stream->total_bytes = 0;
-	obs_output_begin_data_capture2(stream->output);
+	obs_output_begin_data_capture(stream->output, 0);
 
 	return true;
 }

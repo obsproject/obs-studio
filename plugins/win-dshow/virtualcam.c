@@ -68,7 +68,7 @@ static bool virtualcam_start(void *data)
 	os_atomic_set_bool(&vcam->active, true);
 	os_atomic_set_bool(&vcam->stopping, false);
 	blog(LOG_INFO, "Virtual output started");
-	obs_output_begin_data_capture2(vcam->output);
+	obs_output_begin_data_capture(vcam->output, 0);
 	return true;
 }
 

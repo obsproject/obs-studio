@@ -593,7 +593,7 @@ static int init_send(struct ftl_stream *stream)
 
 	os_atomic_set_bool(&stream->active, true);
 
-	obs_output_begin_data_capture2(stream->output);
+	obs_output_begin_data_capture(stream->output, 0);
 
 	return OBS_OUTPUT_SUCCESS;
 }
@@ -649,10 +649,10 @@ static bool ftl_stream_start(void *data)
 	obs_data_set_int(video_settings, "bf", 0);
 	obs_data_release(video_settings);
 
-	if (!obs_output_can_begin_data_capture2(stream->output)) {
+	if (!obs_output_can_begin_data_capture(stream->output, 0)) {
 		return false;
 	}
-	if (!obs_output_initialize_encoders2(stream->output)) {
+	if (!obs_output_initialize_encoders(stream->output, 0)) {
 		return false;
 	}
 
