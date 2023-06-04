@@ -18,9 +18,9 @@ NS_ASSUME_NONNULL_BEGIN
  Will eventually be used for sending frames to all connected clients
  */
 - (void)sendPixelBuffer:(CVPixelBufferRef)frame
-	      timestamp:(uint64_t)timestamp
-	   fpsNumerator:(uint32_t)fpsNumerator
-	 fpsDenominator:(uint32_t)fpsDenominator;
+              timestamp:(uint64_t)timestamp
+           fpsNumerator:(uint32_t)fpsNumerator
+         fpsDenominator:(uint32_t)fpsDenominator;
 
 - (void)stop;
 
