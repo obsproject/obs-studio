@@ -833,7 +833,7 @@ private slots:
 	void TBarReleased();
 
 	void LockVolumeControl(bool lock);
-	void ResetProxyStyleSliders();
+	void ThemeChanged();
 
 	void UpdateVirtualCamConfig(const VCamConfig &config);
 	void RestartVirtualCam(const VCamConfig &config);

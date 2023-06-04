@@ -520,8 +520,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	connect(ui->broadcastButton, &QPushButton::clicked, this,
 		&OBSBasic::BroadcastButtonClicked);
 
-	connect(App(), &OBSApp::StyleChanged, this,
-		&OBSBasic::ResetProxyStyleSliders);
+	connect(App(), &OBSApp::StyleChanged, this, &OBSBasic::ThemeChanged);
 
 	QActionGroup *actionGroup = new QActionGroup(this);
 	actionGroup->addAction(ui->actionSceneListMode);
@@ -10903,7 +10902,7 @@ float OBSBasic::GetDevicePixelRatio()
 	return dpi;
 }
 
-void OBSBasic::ResetProxyStyleSliders()
+void OBSBasic::ThemeChanged()
 {
 	/* Since volume/media sliders are using QProxyStyle, they are not
 	* updated when themes are changed, so re-initialize them. */
