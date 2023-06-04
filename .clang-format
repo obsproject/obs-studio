@@ -106,3 +106,111 @@ TabWidth: 8
 UseTab: ForContinuationAndIndentation
 ---
 Language: ObjC
+AccessModifierOffset: 2
+AlignArrayOfStructures: Right
+AlignConsecutiveAssignments: None
+AlignConsecutiveBitFields: None
+AlignConsecutiveDeclarations: None
+AlignConsecutiveMacros: AcrossComments
+#AlignConsecutiveMacros:
+#  Enabled: true
+#  AcrossEmptyLines: false
+#  AcrossComments: true
+AllowShortBlocksOnASingleLine: Never
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: None
+AttributeMacros: ['__unused', '__autoreleasing', '_Nonnull', '__bridge']
+BitFieldColonSpacing: Both
+#BreakBeforeBraces: Webkit
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel: false
+  AfterClass: true
+  AfterControlStatement: Never
+  AfterEnum: false
+  AfterFunction: true
+  AfterNamespace: false
+  AfterObjCDeclaration: false
+  AfterStruct: false
+  AfterUnion: false
+  AfterExternBlock: false
+  BeforeCatch: false
+  BeforeElse: false
+  BeforeLambdaBody: false
+  BeforeWhile: false
+  IndentBraces: false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: true
+#BreakAfterAttributes: Never                                        # clang-format 16
+#BreakArrays: false                                                 # clang-format 16
+#BreakBeforeConceptDeclarations: Allowed
+BreakBeforeConceptDeclarations: true
+#BreakBeforeInlineASMColon: OnlyMultiline                           # clang-format 16
+BreakConstructorInitializers: AfterColon
+BreakInheritanceList: AfterComma
+ColumnLimit: 120
+ConstructorInitializerIndentWidth: 4
+ContinuationIndentWidth: 4
+EmptyLineAfterAccessModifier: Never
+EmptyLineBeforeAccessModifier: LogicalBlock
+ExperimentalAutoDetectBinPacking: false
+FixNamespaceComments: true
+IndentAccessModifiers: false
+IndentCaseBlocks: false
+IndentCaseLabels: true
+IndentExternBlock: Indent
+IndentGotoLabels: false
+#IndentRequiresClause: true                                         # clang-format 15
+IndentWidth: 4
+IndentWrappedFunctionNames: true
+#InsertBraces: false                                                # clang-format 15
+#InsertNewlineAtEOF: true                                           # clang-format 16
+#IntegerLiteralSeparator:                                           # clang-format 16
+#  Binary: 0
+#  Decimal: 3
+#  Hex: -1
+KeepEmptyLinesAtTheStartOfBlocks: false
+LambdaBodyIndentation: Signature
+#LineEnding: LF                                                     # clang-format 16
+NamespaceIndentation: All
+ObjCBinPackProtocolList: Auto
+ObjCBlockIndentWidth: 4
+ObjCBreakBeforeNestedBlockParam: false
+ObjCSpaceAfterProperty: true
+ObjCSpaceBeforeProtocolList: true
+PPIndentWidth: -1
+#PackConstructorInitializers: NextLine                              # clang-format 14
+#QualifierAlignment: Left                                           # clang-format 14
+#QualifierOrder: ['inline', 'static', 'type', 'const', 'volatile' ] # clang-format 14
+ReferenceAlignment: Right
+#RemoveSemicolon: false                                             # clang-format 16
+#RequiresClausePosition: WithPreceding                              # clang-format 15
+#RequiresExpressionIndentation: OuterScope                          # clang-format 16
+#SeparateDefinitionBlocks: Always                                   # clang-format 14
+ShortNamespaceLines: 1
+SortIncludes: false
+#SortUsingDeclarations: LexicographicNumeric
+SortUsingDeclarations: true
+SpaceAfterCStyleCast: true
+SpaceAfterLogicalNot: false
+SpaceAroundPointerQualifiers: Default
+SpaceBeforeCaseColon: false
+SpaceBeforeCpp11BracedList: true
+SpaceBeforeCtorInitializerColon: true
+SpaceBeforeInheritanceColon: true
+SpaceBeforeParens: ControlStatements
+SpaceBeforeRangeBasedForLoopColon: true
+SpaceBeforeSquareBrackets: false
+SpaceInEmptyBlock: false
+SpaceInEmptyParentheses: false
+SpacesBeforeTrailingComments: 2
+SpacesInConditionalStatement: false
+SpacesInLineCommentPrefix:
+  Minimum: 1
+  Maximum: -1
+Standard: c++17
+TabWidth: 4
+UseTab: Never
