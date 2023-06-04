@@ -964,7 +964,7 @@ static bool build_window_list(struct screen_capture *sc,
 				return true;
 			}]];
 
-  NSArray<SCWindow *> *sortedWindows;
+	NSArray<SCWindow *> *sortedWindows;
 	sortedWindows =
 		[filteredWindows sortedArrayUsingComparator:^NSComparisonResult(
 					 SCWindow *window, SCWindow *other) {
@@ -984,7 +984,7 @@ static bool build_window_list(struct screen_capture *sc,
 			}
 		}];
   
-  	[sortedWindows enumerateObjectsUsingBlock:^(
+	[sortedWindows enumerateObjectsUsingBlock:^(
 			       SCWindow *_Nonnull window,
 			       NSUInteger idx __unused,
 			       BOOL *_Nonnull stop __unused) {
