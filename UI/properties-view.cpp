@@ -617,7 +617,6 @@ static QVariant from_obs_data_autoselect(obs_data_t *data, const char *name,
 QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 {
 	const char *name = obs_property_name(prop);
-	QComboBox *combo = new QComboBox();
 	obs_combo_type type = obs_property_list_type(prop);
 	obs_combo_format format = obs_property_list_format(prop);
 	size_t count = obs_property_list_item_count(prop);
@@ -646,6 +645,7 @@ QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 
 	int idx = -1;
 
+	QComboBox *combo = new QComboBox();
 	for (size_t i = 0; i < count; i++)
 		AddComboItem(combo, prop, i);
 
