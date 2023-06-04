@@ -13,9 +13,9 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol MachClientDelegate
 
 - (void)receivedPixelBuffer:(CVPixelBufferRef)frame
-		  timestamp:(uint64_t)timestamp
-	       fpsNumerator:(uint32_t)fpsNumerator
-	     fpsDenominator:(uint32_t)fpsDenominator;
+                  timestamp:(uint64_t)timestamp
+               fpsNumerator:(uint32_t)fpsNumerator
+             fpsDenominator:(uint32_t)fpsDenominator;
 - (void)receivedStop;
 
 @end
