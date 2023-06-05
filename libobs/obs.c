@@ -3128,14 +3128,15 @@ struct obs_core_video_mix *get_mix_for_video(video_t *v)
 }
 
 void start_raw_video(video_t *v, const struct video_scale_info *conversion,
-		     uint32_t fps_skip_frames,
+		     uint32_t frame_rate_divisor,
 		     void (*callback)(void *param, struct video_data *frame),
 		     void *param)
 {
 	struct obs_core_video_mix *video = get_mix_for_video(v);
 	if (video)
 		os_atomic_inc_long(&video->raw_active);
-	video_output_connect2(v, conversion, fps_skip_frames, callback, param);
+	video_output_connect2(v, conversion, frame_rate_divisor, callback,
+			      param);
 }
 
 void stop_raw_video(video_t *v,
@@ -3153,15 +3154,15 @@ void obs_add_raw_video_callback(const struct video_scale_info *conversion,
 						 struct video_data *frame),
 				void *param)
 {
-	obs_add_raw_video_callback2(conversion, 0, callback, param);
+	obs_add_raw_video_callback2(conversion, 1, callback, param);
 }
 
 void obs_add_raw_video_callback2(
-	const struct video_scale_info *conversion, uint32_t fps_skip_frames,
+	const struct video_scale_info *conversion, uint32_t frame_rate_divisor,
 	void (*callback)(void *param, struct video_data *frame), void *param)
 {
 	struct obs_core_video_mix *video = obs->video.main_mix;
-	start_raw_video(video->video, conversion, fps_skip_frames, callback,
+	start_raw_video(video->video, conversion, frame_rate_divisor, callback,
 			param);
 }
 

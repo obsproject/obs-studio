@@ -47,9 +47,9 @@ struct video_input {
 	int cur_frame;
 
 	// allow outputting at fractions of main composition FPS,
-	// e.g. 60 FPS with fps_skip_frames = 1 turns into 30 FPS
-	uint32_t fps_skip_frames;
-	uint32_t fps_skipped_frames;
+	// e.g. 60 FPS with frame_rate_divisor = 1 turns into 30 FPS
+	uint32_t frame_rate_divisor;
+	uint32_t frame_rate_divisor_counter;
 
 	void (*callback)(void *param, struct video_data *frame);
 	void *param;
@@ -143,9 +143,10 @@ static inline bool video_output_cur_frame(struct video_output *video)
 		struct video_input *input = video->inputs.array + i;
 		struct video_data frame = frame_info->frame;
 
-		uint32_t skip = input->fps_skipped_frames++;
-		if (input->fps_skipped_frames > input->fps_skip_frames)
-			input->fps_skipped_frames = 0;
+		uint32_t skip = input->frame_rate_divisor_counter++;
+		if (input->frame_rate_divisor_counter ==
+		    input->frame_rate_divisor)
+			input->frame_rate_divisor_counter = 0;
 
 		if (skip)
 			continue;
@@ -408,14 +409,14 @@ bool video_output_connect(
 
 bool video_output_connect2(
 	video_t *video, const struct video_scale_info *conversion,
-	uint32_t fps_skip_frames,
+	uint32_t frame_rate_divisor,
 	void (*callback)(void *param, struct video_data *frame), void *param)
 {
 	bool success = false;
 
 	video = get_root(video);
 
-	if (!video || !callback)
+	if (!video || !callback || frame_rate_divisor == 0)
 		return false;
 
 	pthread_mutex_lock(&video->input_mutex);
@@ -427,7 +428,7 @@ bool video_output_connect2(
 		input.callback = callback;
 		input.param = param;
 
-		input.fps_skip_frames = fps_skip_frames;
+		input.frame_rate_divisor = frame_rate_divisor;
 
 		if (conversion) {
 			input.conversion = *conversion;
@@ -674,21 +675,21 @@ void video_output_inc_texture_skipped_frames(video_t *video)
 	os_atomic_inc_long(&get_root(video)->skipped_frames);
 }
 
-video_t *video_output_create_with_skip_frames(video_t *video,
-					      uint32_t skip_frames)
+video_t *video_output_create_with_frame_rate_divisor(video_t *video,
+						     uint32_t divisor)
 {
-	if (!video)
+	if (!video || divisor == 0)
 		return NULL;
 
 	video_t *new_video = bzalloc(sizeof(video_t));
 	memcpy(new_video, video, sizeof(*new_video));
 	new_video->parent = video;
-	new_video->info.fps_den *= skip_frames + 1;
+	new_video->info.fps_den *= divisor;
 
 	return new_video;
 }
 
-void video_output_free_skip_frames(video_t *video)
+void video_output_free_frame_rate_divisor(video_t *video)
 {
 	if (video && video->parent)
 		bfree(video);

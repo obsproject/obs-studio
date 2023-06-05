@@ -520,7 +520,7 @@ extern struct obs_core_video_mix *get_mix_for_video(video_t *video);
 
 extern void
 start_raw_video(video_t *video, const struct video_scale_info *conversion,
-		uint32_t fps_skip_frames,
+		uint32_t frame_rate_divisor,
 		void (*callback)(void *param, struct video_data *frame),
 		void *param);
 extern void stop_raw_video(video_t *video,
@@ -1219,8 +1219,8 @@ struct obs_encoder {
 
 	uint32_t timebase_num;
 	uint32_t timebase_den;
-	uint32_t fps_skip_frames;
-	uint32_t fps_skipped_frames; // only used for GPU encoders
+	uint32_t frame_rate_divisor;
+	uint32_t frame_rate_divisor_counter; // only used for GPU encoders
 	video_t *fps_override;
 
 	int64_t cur_pts;

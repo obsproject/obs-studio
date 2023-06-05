@@ -200,8 +200,8 @@ static void add_connection(struct obs_encoder *encoder)
 			start_gpu_encode(encoder);
 		} else {
 			start_raw_video(encoder->media, &info,
-					encoder->fps_skip_frames, receive_video,
-					encoder);
+					encoder->frame_rate_divisor,
+					receive_video, encoder);
 		}
 	}
 
@@ -271,7 +271,7 @@ static void obs_encoder_actually_destroy(obs_encoder_t *encoder)
 		if (encoder->last_error_message)
 			bfree(encoder->last_error_message);
 		if (encoder->fps_override)
-			video_output_free_skip_frames(encoder->fps_override);
+			video_output_free_frame_rate_divisor(encoder->fps_override);
 		bfree(encoder);
 	}
 }
@@ -526,7 +526,7 @@ void obs_encoder_shutdown(obs_encoder_t *encoder)
 		encoder->first_received = false;
 		encoder->offset_usec = 0;
 		encoder->start_ts = 0;
-		encoder->fps_skipped_frames = 0;
+		encoder->frame_rate_divisor_counter = 0;
 	}
 	obs_encoder_set_last_error(encoder, NULL);
 	pthread_mutex_unlock(&encoder->init_mutex);
@@ -714,31 +714,40 @@ void obs_encoder_set_scaled_size(obs_encoder_t *encoder, uint32_t width,
 	encoder->scaled_height = height;
 }
 
-bool obs_encoder_set_skip_frames(obs_encoder_t *encoder, uint32_t skip_frames)
+bool obs_encoder_set_frame_rate_divisor(obs_encoder_t *encoder,
+					uint32_t frame_rate_divisor)
 {
-	if (!obs_encoder_valid(encoder, "obs_encoder_set_skip_frames"))
+	if (!obs_encoder_valid(encoder, "obs_encoder_set_frame_rate_divisor"))
 		return false;
 
 	if (encoder->info.type != OBS_ENCODER_VIDEO) {
 		blog(LOG_WARNING,
-		     "obs_encoder_set_skip_frames: "
+		     "obs_encoder_set_frame_rate_divisor: "
 		     "encoder '%s' is not a video encoder",
 		     obs_encoder_get_name(encoder));
 		return false;
 	}
 	if (encoder_active(encoder)) {
 		blog(LOG_WARNING,
-		     "encoder '%s': Cannot set skip frames "
+		     "encoder '%s': Cannot set frame rate divisor "
 		     "while the encoder is active",
 		     obs_encoder_get_name(encoder));
 		return false;
 	}
 
-	encoder->fps_skip_frames = skip_frames;
+	if (frame_rate_divisor == 0) {
+		blog(LOG_WARNING,
+		     "encoder '%s': Cannot set frame "
+		     "rate divisor to 0",
+		     obs_encoder_get_name(encoder));
+		return false;
+	}
+
+	encoder->frame_rate_divisor = frame_rate_divisor;
 
 	if (encoder->media) {
-		encoder->fps_override = video_output_create_with_skip_frames(
-			encoder->media, encoder->fps_skip_frames);
+		encoder->fps_override = video_output_create_with_frame_rate_divisor(
+			encoder->media, encoder->frame_rate_divisor);
 	}
 
 	return true;
@@ -790,20 +799,20 @@ uint32_t obs_encoder_get_height(const obs_encoder_t *encoder)
 		       : video_output_get_height(encoder->media);
 }
 
-uint32_t obs_encoder_get_skip_frames(const obs_encoder_t *encoder)
+uint32_t obs_encoder_get_frame_rate_divisor(const obs_encoder_t *encoder)
 {
-	if (!obs_encoder_valid(encoder, "obs_encoder_set_skip_frames"))
+	if (!obs_encoder_valid(encoder, "obs_encoder_set_frame_rate_divisor"))
 		return 0;
 
 	if (encoder->info.type != OBS_ENCODER_VIDEO) {
 		blog(LOG_WARNING,
-		     "obs_encoder_set_skip_frames: "
+		     "obs_encoder_set_frame_rate_divisor: "
 		     "encoder '%s' is not a video encoder",
 		     obs_encoder_get_name(encoder));
 		return 0;
 	}
 
-	return encoder->fps_skip_frames;
+	return encoder->frame_rate_divisor;
 }
 
 uint32_t obs_encoder_get_sample_rate(const obs_encoder_t *encoder)
@@ -868,14 +877,14 @@ void obs_encoder_set_video(obs_encoder_t *encoder, video_t *video)
 		encoder->timebase_den = voi->fps_num;
 
 		if (encoder->fps_override) {
-			video_output_free_skip_frames(encoder->fps_override);
+			video_output_free_frame_rate_divisor(encoder->fps_override);
 			encoder->fps_override = NULL;
 		}
 
-		if (encoder->fps_skip_frames) {
+		if (encoder->frame_rate_divisor) {
 			encoder->fps_override =
-				video_output_create_with_skip_frames(
-					video, encoder->fps_skip_frames);
+				video_output_create_with_frame_rate_divisor(
+					video, encoder->frame_rate_divisor);
 		}
 	} else {
 		encoder->media = NULL;
@@ -1088,8 +1097,7 @@ bool do_encode(struct obs_encoder *encoder, struct encoder_frame *frame)
 				     encoder->context.settings);
 	}
 
-	pkt.timebase_num =
-		encoder->timebase_num * (encoder->fps_skip_frames + 1);
+	pkt.timebase_num = encoder->timebase_num * encoder->frame_rate_divisor;
 	pkt.timebase_den = encoder->timebase_den;
 	pkt.encoder = encoder;
 
