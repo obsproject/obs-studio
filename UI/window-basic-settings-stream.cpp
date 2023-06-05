@@ -770,6 +770,14 @@ void OBSBasicSettings::on_connectAccount_clicked()
 	auth = OAuthStreamKey::Login(this, service);
 	if (!!auth) {
 		OnAuthConnected();
+#ifdef YOUTUBE_ENABLED
+		if (IsYouTubeService(service)) {
+			if (!main->GetYouTubeAppDock()) {
+				main->NewYouTubeAppDock();
+			}
+			main->GetYouTubeAppDock()->AccountConnected();
+		}
+#endif
 
 		ui->useStreamKeyAdv->setVisible(false);
 	}
@@ -812,6 +820,16 @@ void OBSBasicSettings::on_disconnectAccount_clicked()
 
 	ui->connectedAccountLabel->setVisible(false);
 	ui->connectedAccountText->setVisible(false);
+
+#ifdef YOUTUBE_ENABLED
+	if (IsYouTubeService(service)) {
+		if (!main->GetYouTubeAppDock()) {
+			main->NewYouTubeAppDock();
+		}
+		main->GetYouTubeAppDock()->AccountDisconnected();
+		main->GetYouTubeAppDock()->Update();
+	}
+#endif
 }
 
 void OBSBasicSettings::on_useStreamKey_clicked()

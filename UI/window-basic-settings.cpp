@@ -48,6 +48,10 @@
 #include "window-basic-main-outputs.hpp"
 #include "window-projector.hpp"
 
+#ifdef YOUTUBE_ENABLED
+#include "youtube-api-wrappers.hpp"
+#endif
+
 #include <util/platform.h>
 #include <util/dstr.hpp>
 #include "ui-config.h"
@@ -4251,6 +4255,22 @@ void OBSBasicSettings::on_buttonBox_clicked(QAbstractButton *button)
 			return;
 
 		SaveSettings();
+
+#ifdef YOUTUBE_ENABLED
+		std::string service = ui->service->currentText().toStdString();
+		if (IsYouTubeService(service)) {
+			if (!main->GetYouTubeAppDock()) {
+				main->NewYouTubeAppDock();
+			}
+			main->GetYouTubeAppDock()->SettingsUpdated(
+				!IsYouTubeService(service) || stream1Changed);
+		} else {
+			if (main->GetYouTubeAppDock()) {
+				main->GetYouTubeAppDock()->AccountDisconnected();
+			}
+			main->DeleteYouTubeAppDock();
+		}
+#endif
 		ClearChanged();
 	}
 

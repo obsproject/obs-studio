@@ -9,6 +9,7 @@
 
 #include "auth-youtube.hpp"
 #include "obs-app.hpp"
+#include "window-basic-main.hpp"
 #include "qt-wrappers.hpp"
 #include "remote-text.hpp"
 #include "ui-config.h"
@@ -44,6 +45,18 @@ bool IsYouTubeService(const std::string &service)
 				  return service == yt.service;
 			  });
 	return it != youtubeServices.end();
+}
+bool IsUserSignedIntoYT()
+{
+	Auth *auth = OBSBasic::Get()->GetAuth();
+	if (auth) {
+		YoutubeApiWrappers *apiYouTube(
+			dynamic_cast<YoutubeApiWrappers *>(auth));
+		if (apiYouTube) {
+			return true;
+		}
+	}
+	return false;
 }
 
 bool YoutubeApiWrappers::GetTranslatedError(QString &error_message)
