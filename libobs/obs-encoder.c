@@ -271,7 +271,8 @@ static void obs_encoder_actually_destroy(obs_encoder_t *encoder)
 		if (encoder->last_error_message)
 			bfree(encoder->last_error_message);
 		if (encoder->fps_override)
-			video_output_free_frame_rate_divisor(encoder->fps_override);
+			video_output_free_frame_rate_divisor(
+				encoder->fps_override);
 		bfree(encoder);
 	}
 }
@@ -746,8 +747,9 @@ bool obs_encoder_set_frame_rate_divisor(obs_encoder_t *encoder,
 	encoder->frame_rate_divisor = frame_rate_divisor;
 
 	if (encoder->media) {
-		encoder->fps_override = video_output_create_with_frame_rate_divisor(
-			encoder->media, encoder->frame_rate_divisor);
+		encoder->fps_override =
+			video_output_create_with_frame_rate_divisor(
+				encoder->media, encoder->frame_rate_divisor);
 	}
 
 	return true;
@@ -877,7 +879,8 @@ void obs_encoder_set_video(obs_encoder_t *encoder, video_t *video)
 		encoder->timebase_den = voi->fps_num;
 
 		if (encoder->fps_override) {
-			video_output_free_frame_rate_divisor(encoder->fps_override);
+			video_output_free_frame_rate_divisor(
+				encoder->fps_override);
 			encoder->fps_override = NULL;
 		}
 
