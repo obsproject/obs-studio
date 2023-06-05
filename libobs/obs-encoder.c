@@ -741,7 +741,7 @@ bool obs_encoder_set_skip_frames(obs_encoder_t *encoder, uint32_t skip_frames)
 			encoder->media, encoder->fps_skip_frames);
 	}
 
-	return false;
+	return true;
 }
 
 bool obs_encoder_scaling_enabled(const obs_encoder_t *encoder)
