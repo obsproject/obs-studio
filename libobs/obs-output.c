@@ -2714,6 +2714,9 @@ void obs_output_set_last_error(obs_output_t *output, const char *message)
 
 bool obs_output_connecting(const obs_output_t *output)
 {
+	if (!obs_output_valid(output, "obs_output_connecting"))
+		return;
+
 	if (output->info.connecting == NULL || output->context.data == NULL)
 		return false;
 
