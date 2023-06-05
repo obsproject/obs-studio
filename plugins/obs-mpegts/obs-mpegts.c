@@ -863,6 +863,11 @@ static void *mpegts_create(obs_data_t *settings, obs_output_t *output)
 		goto fail;
 
 	av_log_set_callback(mpegts_log_callback);
+	proc_handler_t *ph = obs_output_get_proc_handler(output);
+	proc_handler_add(
+		ph,
+		"void get_srt_stats(out int srt_total_pkts, int srt_dropped_pkts, int srt_retransmitted_pkts, float srt_rtt, float srt_bandwidth)",
+		get_srt_stats, data);
 
 	UNUSED_PARAMETER(settings);
 	return data;
