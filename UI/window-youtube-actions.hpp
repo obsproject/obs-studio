@@ -36,14 +36,16 @@ class OBSYoutubeActions : public QDialog {
 	std::unique_ptr<Ui::OBSYoutubeActions> ui;
 
 signals:
-	void ok(const QString &id, const QString &key, bool autostart,
-		bool autostop, bool start_now);
+	void ok(const QString &broadcast_id, const QString &stream_id,
+		const QString &key, bool autostart, bool autostop,
+		bool start_now);
 
 protected:
 	void showEvent(QShowEvent *event) override;
 	void UpdateOkButtonStatus();
 
 	bool CreateEventAction(YoutubeApiWrappers *api,
+			       BroadcastDescription &broadcast,
 			       StreamDescription &stream, bool stream_later,
 			       bool ready_broadcast = false);
 	bool ChooseAnEventAction(YoutubeApiWrappers *api,

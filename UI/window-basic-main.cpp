@@ -2170,6 +2170,9 @@ void OBSBasic::OBSInit()
 
 	/* ----------------------------- */
 	/* add custom browser docks      */
+#if defined(BROWSER_AVAILABLE) && defined(YOUTUBE_ENABLED)
+	YouTubeAppDock::CleanupYouTubeUrls();
+#endif
 
 #ifdef BROWSER_AVAILABLE
 	if (cef) {
@@ -2330,6 +2333,12 @@ void OBSBasic::OBSInit()
 
 	UpdatePreviewProgramIndicators();
 	OnFirstLoad();
+
+#ifdef YOUTUBE_ENABLED
+	/* setup YouTube app dock */
+	if (YouTubeAppDock::IsYTServiceSelected())
+		youtubeAppDock = new YouTubeAppDock();
+#endif
 
 	if (!hideWindowOnStart)
 		activateWindow();
@@ -6823,9 +6832,10 @@ void OBSBasic::DisplayStreamStartError()
 }
 
 #ifdef YOUTUBE_ENABLED
-void OBSBasic::YouTubeActionDialogOk(const QString &id, const QString &key,
-				     bool autostart, bool autostop,
-				     bool start_now)
+void OBSBasic::YouTubeActionDialogOk(const QString &broadcast_id,
+				     const QString &stream_id,
+				     const QString &key, bool autostart,
+				     bool autostop, bool start_now)
 {
 	//blog(LOG_DEBUG, "Stream key: %s", QT_TO_UTF8(key));
 	obs_service_t *service_obj = GetService();
@@ -6834,8 +6844,11 @@ void OBSBasic::YouTubeActionDialogOk(const QString &id, const QString &key,
 	const std::string a_key = QT_TO_UTF8(key);
 	obs_data_set_string(settings, "key", a_key.c_str());
 
-	const std::string an_id = QT_TO_UTF8(id);
-	obs_data_set_string(settings, "stream_id", an_id.c_str());
+	const std::string b_id = QT_TO_UTF8(broadcast_id);
+	obs_data_set_string(settings, "broadcast_id", b_id.c_str());
+
+	const std::string s_id = QT_TO_UTF8(stream_id);
+	obs_data_set_string(settings, "stream_id", s_id.c_str());
 
 	obs_service_update(service_obj, settings);
 	autoStartBroadcast = autostart;
@@ -7419,6 +7432,11 @@ void OBSBasic::StreamingStart()
 
 	OnActivate();
 
+#ifdef YOUTUBE_ENABLED
+	if (YouTubeAppDock::IsYTServiceSelected())
+		youtubeAppDock->IngestionStarted();
+#endif
+
 	blog(LOG_INFO, STREAMING_START);
 }
 
@@ -7498,6 +7516,11 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 		api->on_event(OBS_FRONTEND_EVENT_STREAMING_STOPPED);
 
 	OnDeactivate();
+
+#ifdef YOUTUBE_ENABLED
+	if (YouTubeAppDock::IsYTServiceSelected())
+		youtubeAppDock->IngestionStopped();
+#endif
 
 	blog(LOG_INFO, STREAMING_STOP);
 
@@ -8461,6 +8484,27 @@ config_t *OBSBasic::Config() const
 {
 	return basicConfig;
 }
+
+#ifdef YOUTUBE_ENABLED
+YouTubeAppDock *OBSBasic::GetYouTubeAppDock()
+{
+	return youtubeAppDock;
+}
+
+void OBSBasic::NewYouTubeAppDock()
+{
+	if (youtubeAppDock)
+		delete youtubeAppDock;
+	youtubeAppDock = new YouTubeAppDock();
+}
+
+void OBSBasic::DeleteYouTubeAppDock()
+{
+	if (youtubeAppDock)
+		delete youtubeAppDock;
+	youtubeAppDock = nullptr;
+}
+#endif
 
 void OBSBasic::UpdateEditMenu()
 {

@@ -444,12 +444,12 @@ void OBSYoutubeActions::UpdateOkButtonStatus()
 	}
 }
 bool OBSYoutubeActions::CreateEventAction(YoutubeApiWrappers *api,
+					  BroadcastDescription &broadcast,
 					  StreamDescription &stream,
 					  bool stream_later,
 					  bool ready_broadcast)
 {
 	YoutubeApiWrappers *apiYouTube = api;
-	BroadcastDescription broadcast = {};
 	UiToBroadcast(broadcast);
 
 	if (stream_later) {
@@ -513,6 +513,12 @@ bool OBSYoutubeActions::CreateEventAction(YoutubeApiWrappers *api,
 		}
 	}
 
+#ifdef YOUTUBE_ENABLED
+	if (OBSBasic::Get()->GetYouTubeAppDock())
+		OBSBasic::Get()->GetYouTubeAppDock()->BroadcastCreated(
+			broadcast.id.toStdString().c_str());
+#endif
+
 	return true;
 }
 
@@ -568,6 +574,12 @@ bool OBSYoutubeActions::ChooseAnEventAction(YoutubeApiWrappers *api,
 	else
 		apiYouTube->ResetChat();
 
+#ifdef YOUTUBE_ENABLED
+	if (OBSBasic::Get()->GetYouTubeAppDock())
+		OBSBasic::Get()->GetYouTubeAppDock()->BroadcastSelected(
+			selectedBroadcast.toStdString().c_str());
+#endif
+
 	return true;
 }
 
@@ -585,6 +597,7 @@ void OBSYoutubeActions::ShowErrorDialog(QWidget *parent, QString text)
 
 void OBSYoutubeActions::InitBroadcast()
 {
+	BroadcastDescription broadcast;
 	StreamDescription stream;
 	QMessageBox msgBox(this);
 	msgBox.setWindowFlags(msgBox.windowFlags() &
@@ -597,10 +610,12 @@ void OBSYoutubeActions::InitBroadcast()
 	auto action = [&]() {
 		if (ui->tabWidget->currentIndex() == 0) {
 			success = this->CreateEventAction(
-				apiYouTube, stream,
+				apiYouTube, broadcast, stream,
 				ui->checkScheduledLater->isChecked());
 		} else {
 			success = this->ChooseAnEventAction(apiYouTube, stream);
+			if (success)
+				broadcast.id = this->selectedBroadcast;
 		};
 		QMetaObject::invokeMethod(&msgBox, "accept",
 					  Qt::QueuedConnection);
@@ -627,15 +642,17 @@ void OBSYoutubeActions::InitBroadcast()
 				// Stream now usecase.
 				blog(LOG_DEBUG, "New valid stream: %s",
 				     QT_TO_UTF8(stream.name));
-				emit ok(QT_TO_UTF8(stream.id),
+				emit ok(QT_TO_UTF8(broadcast.id),
+					QT_TO_UTF8(stream.id),
 					QT_TO_UTF8(stream.name), true, true,
 					true);
 				Accept();
 			}
 		} else {
 			// Stream to precreated broadcast usecase.
-			emit ok(QT_TO_UTF8(stream.id), QT_TO_UTF8(stream.name),
-				autostart, autostop, true);
+			emit ok(QT_TO_UTF8(broadcast.id), QT_TO_UTF8(stream.id),
+				QT_TO_UTF8(stream.name), autostart, autostop,
+				true);
 			Accept();
 		}
 	} else {
@@ -654,6 +671,7 @@ void OBSYoutubeActions::InitBroadcast()
 
 void OBSYoutubeActions::ReadyBroadcast()
 {
+	BroadcastDescription broadcast;
 	StreamDescription stream;
 	QMessageBox msgBox(this);
 	msgBox.setWindowFlags(msgBox.windowFlags() &
@@ -666,10 +684,12 @@ void OBSYoutubeActions::ReadyBroadcast()
 	auto action = [&]() {
 		if (ui->tabWidget->currentIndex() == 0) {
 			success = this->CreateEventAction(
-				apiYouTube, stream,
+				apiYouTube, broadcast, stream,
 				ui->checkScheduledLater->isChecked(), true);
 		} else {
 			success = this->ChooseAnEventAction(apiYouTube, stream);
+			if (success)
+				broadcast.id = this->selectedBroadcast;
 		};
 		QMetaObject::invokeMethod(&msgBox, "accept",
 					  Qt::QueuedConnection);
@@ -680,8 +700,8 @@ void OBSYoutubeActions::ReadyBroadcast()
 	thread->wait();
 
 	if (success) {
-		emit ok(QT_TO_UTF8(stream.id), QT_TO_UTF8(stream.name),
-			autostart, autostop, false);
+		emit ok(QT_TO_UTF8(broadcast.id), QT_TO_UTF8(stream.id),
+			QT_TO_UTF8(stream.name), autostart, autostop, false);
 		Accept();
 	} else {
 		// Fail.
