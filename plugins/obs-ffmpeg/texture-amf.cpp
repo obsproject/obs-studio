@@ -104,6 +104,7 @@ struct amf_base {
 	AMF_SURFACE_FORMAT amf_format;
 
 	amf_int64 max_throughput = 0;
+	amf_int64 requested_throughput = 0;
 	amf_int64 throughput = 0;
 	int64_t dts_offset = 0;
 	uint32_t cx;
@@ -440,6 +441,8 @@ static inline void refresh_throughput_caps(amf_base *enc, const char *&preset)
 	if (res == AMF_OK) {
 		caps->GetProperty(get_opt_name(CAP_MAX_THROUGHPUT),
 				  &enc->max_throughput);
+		caps->GetProperty(get_opt_name(CAP_REQUESTED_THROUGHPUT),
+				  &enc->requested_throughput);
 	}
 }
 
@@ -451,7 +454,8 @@ static inline void check_preset_compatibility(amf_base *enc,
 	 * throughput, switch to a lower preset. */
 
 	if (astrcmpi(preset, "highQuality") == 0) {
-		if (!enc->max_throughput) {
+		if (enc->max_throughput - enc->requested_throughput <
+		    enc->throughput) {
 			preset = "quality";
 			set_opt(QUALITY_PRESET, get_preset(enc, preset));
 		} else {
@@ -467,7 +471,8 @@ static inline void check_preset_compatibility(amf_base *enc,
 			preset = "balanced";
 			set_opt(QUALITY_PRESET, get_preset(enc, preset));
 		} else {
-			if (enc->max_throughput < enc->throughput) {
+			if (enc->max_throughput - enc->requested_throughput <
+			    enc->throughput) {
 				preset = "balanced";
 				refresh_throughput_caps(enc, preset);
 			}
@@ -476,7 +481,8 @@ static inline void check_preset_compatibility(amf_base *enc,
 
 	if (astrcmpi(preset, "balanced") == 0) {
 		if (enc->max_throughput &&
-		    enc->max_throughput < enc->throughput) {
+		    enc->max_throughput - enc->requested_throughput <
+			    enc->throughput) {
 			preset = "speed";
 			refresh_throughput_caps(enc, preset);
 		}
@@ -1368,6 +1374,8 @@ static void amf_avc_create_internal(amf_base *enc, obs_data_t *settings)
 				  &enc->bframes_supported);
 		caps->GetProperty(AMF_VIDEO_ENCODER_CAP_MAX_THROUGHPUT,
 				  &enc->max_throughput);
+		caps->GetProperty(AMF_VIDEO_ENCODER_CAP_REQUESTED_THROUGHPUT,
+				  &enc->requested_throughput);
 	}
 
 	const char *preset = obs_data_get_string(settings, "preset");
@@ -1700,6 +1708,9 @@ static void amf_hevc_create_internal(amf_base *enc, obs_data_t *settings)
 	if (res == AMF_OK) {
 		caps->GetProperty(AMF_VIDEO_ENCODER_HEVC_CAP_MAX_THROUGHPUT,
 				  &enc->max_throughput);
+		caps->GetProperty(
+			AMF_VIDEO_ENCODER_HEVC_CAP_REQUESTED_THROUGHPUT,
+			&enc->requested_throughput);
 	}
 
 	const bool is10bit = enc->amf_format == AMF_SURFACE_P010;
@@ -2038,6 +2049,9 @@ static void amf_av1_create_internal(amf_base *enc, obs_data_t *settings)
 	if (res == AMF_OK) {
 		caps->GetProperty(AMF_VIDEO_ENCODER_AV1_CAP_MAX_THROUGHPUT,
 				  &enc->max_throughput);
+		caps->GetProperty(
+			AMF_VIDEO_ENCODER_AV1_CAP_REQUESTED_THROUGHPUT,
+			&enc->requested_throughput);
 	}
 
 	const bool is10bit = enc->amf_format == AMF_SURFACE_P010;
