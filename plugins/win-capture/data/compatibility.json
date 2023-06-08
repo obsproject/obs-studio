@@ -211,6 +211,20 @@
             "window_capture_wgc": false,
             "message": "Edge may not be capturable using the selected Capture Method (BitBlt).",
             "url": ""
+        },
+        {
+            "name": "Honkai: Star Rail",
+            "translation_key": "Compatibility.GameCapture.Admin",
+            "severity": 1,
+            "executable": "StarRail.exe",
+            "window_class": "",
+            "window_title": "",
+            "match_flags": 1,
+            "game_capture": true,
+            "window_capture": false,
+            "window_capture_wgc": false,
+            "message": "Honkai: Star Rail may require OBS to be run as admin to use Game Capture.",
+            "url": "https://obsproject.com/kb/game-capture-troubleshooting"
         }
     ]
 }
