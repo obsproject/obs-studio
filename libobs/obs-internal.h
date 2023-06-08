@@ -310,6 +310,9 @@ struct obs_core_video_mix {
 	float conversion_height_i;
 
 	float color_matrix[16];
+
+	bool encoder_only_mix;
+	long encoder_refs;
 };
 
 extern struct obs_core_video_mix *
@@ -1205,6 +1208,9 @@ struct obs_encoder {
 	size_t framesize_bytes;
 
 	size_t mixer_idx;
+
+	/* OBS_SCALE_DISABLE indicates GPU scaling is disabled */
+	enum obs_scale_type gpu_scale_type;
 
 	uint32_t scaled_width;
 	uint32_t scaled_height;
