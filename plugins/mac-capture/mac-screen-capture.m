@@ -487,9 +487,12 @@ static bool init_screen_stream(struct screen_capture *sc)
 	} break;
 	}
 	os_sem_post(sc->shareable_content_available);
+
+	CGColorRef background = CGColorGetConstantColor(kCGColorClear);
 	[sc->stream_properties setQueueDepth:8];
 	[sc->stream_properties setShowsCursor:!sc->hide_cursor];
 	[sc->stream_properties setColorSpaceName:kCGColorSpaceDisplayP3];
+	[sc->stream_properties setBackgroundColor:background];
 	FourCharCode l10r_type = 0;
 	l10r_type = ('l' << 24) | ('1' << 16) | ('0' << 8) | 'r';
 	[sc->stream_properties setPixelFormat:l10r_type];
