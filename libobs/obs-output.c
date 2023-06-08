@@ -1896,7 +1896,8 @@ static bool initialize_interleaved_packets(struct obs_output *output)
 	output->highest_audio_ts -= audio[first_audio_idx]->dts_usec;
 
 	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
-		output->highest_video_ts[i] -= video[i]->dts_usec;
+		if (video[i])
+			output->highest_video_ts[i] -= video[i]->dts_usec;
 	}
 
 	/* apply new offsets to all existing packet DTS/PTS values */
