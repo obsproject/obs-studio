@@ -129,7 +129,7 @@ jobs:
         shell: powershell
       - name: Install specific version of AWS CLI
         run: |
-          $version = "2.11.19" # specify your desired version
+          $version = "2.11.25"
           $zipfile = "AWSCLIV2.zip"
           Invoke-WebRequest -OutFile $zipfile "https://awscli.amazonaws.com/AWSCLIV2-$version.msi"
           Start-Process msiexec.exe -Wait -ArgumentList "/i $zipfile /qn"
