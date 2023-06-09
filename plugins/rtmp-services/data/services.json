@@ -2808,6 +2808,35 @@
             "supported video codecs": [
                 "h264"
             ]
+        },
+        {
+            "name": "Livepeer Studio",
+            "more_info_link": "https://docs.livepeer.org/guides/developing/stream-via-obs",
+            "stream_key_link": "https://livepeer.studio/dashboard/streams",
+            "servers": [
+                {
+                    "name": "Global (RTMP)",
+                    "url": "rtmp://rtmp.livepeer.com/live"
+                },
+                {
+                    "name": "Global (RTMP Primary)",
+                    "url": "rtmp://rtmp-a.livepeer.com/live"
+                },
+                {
+                    "name": "Global (RTMP Backup)",
+                    "url": "rtmp://rtmp-b.livepeer.com/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 1,
+                "profile": "high",
+                "bframes": 0,
+                "max video bitrate": 20000,
+                "max audio bitrate": 512
+            },
+            "supported video codecs": [
+                "h264"
+            ]
         }
     ]
 }
