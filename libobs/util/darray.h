@@ -269,10 +269,11 @@ static inline void *darray_insert_new(const size_t element_size,
 	if (idx == dst->num)
 		return darray_push_back_new(element_size, dst);
 
+	darray_ensure_capacity(element_size, dst, ++dst->num);
+
 	item = darray_item(element_size, dst, idx);
 
 	move_count = dst->num - idx;
-	darray_ensure_capacity(element_size, dst, ++dst->num);
 	memmove(darray_item(element_size, dst, idx + 1), item,
 		move_count * element_size);
 
