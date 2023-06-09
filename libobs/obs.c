@@ -1083,6 +1083,7 @@ static void obs_free_data(void)
 	for (size_t i = 0; i < data->protocols.num; i++)
 		bfree(data->protocols.array[i]);
 	da_free(data->protocols);
+	da_free(data->sources_to_tick);
 }
 
 static const char *obs_signals[] = {
