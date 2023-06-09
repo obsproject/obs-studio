@@ -726,12 +726,15 @@ void TextSourceToolbar::on_text_textChanged()
 	if (!source) {
 		return;
 	}
-
+	std::string newText = QT_TO_UTF8(ui->text->text());
+	OBSDataAutoRelease settings = obs_source_get_settings(source);
+	if (newText == obs_data_get_string(settings, "text")) {
+		return;
+	}
 	SaveOldProperties(source);
 
-	OBSDataAutoRelease settings = obs_data_create();
-	obs_data_set_string(settings, "text", QT_TO_UTF8(ui->text->text()));
-	obs_source_update(source, settings);
+	obs_data_set_string(settings, "text", newText.c_str());
+	obs_source_update(source, nullptr);
 
 	SetUndoProperties(source, true);
 }
