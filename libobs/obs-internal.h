@@ -420,6 +420,7 @@ struct obs_core_data {
 	volatile bool valid;
 
 	DARRAY(char *) protocols;
+	DARRAY(obs_source_t *) sources_to_tick;
 };
 
 /* user hotkeys */
