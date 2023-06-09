@@ -236,7 +236,8 @@ dynamic array value with a reference (&) operator.  For example:
 
 .. function:: void da_erase_range(da, size_t start_idx, size_t end_idx)
 
-   Erases a range of values.
+   Erases a range of values, including the element at ``start_idx``, but
+   not the one at ``end_idx``.
 
    :param da:        The dynamic array
    :param start_idx: The starting index
