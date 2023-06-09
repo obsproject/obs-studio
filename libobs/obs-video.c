@@ -45,34 +45,41 @@ static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 	/* ------------------------------------- */
 	/* call tick callbacks                   */
 
-	pthread_mutex_lock(&obs->data.draw_callbacks_mutex);
+	pthread_mutex_lock(&data->draw_callbacks_mutex);
 
-	for (size_t i = obs->data.tick_callbacks.num; i > 0; i--) {
+	for (size_t i = data->tick_callbacks.num; i > 0; i--) {
 		struct tick_callback *callback;
-		callback = obs->data.tick_callbacks.array + (i - 1);
+		callback = data->tick_callbacks.array + (i - 1);
 		callback->tick(callback->param, seconds);
 	}
 
-	pthread_mutex_unlock(&obs->data.draw_callbacks_mutex);
+	pthread_mutex_unlock(&data->draw_callbacks_mutex);
 
 	/* ------------------------------------- */
-	/* call the tick function of each source */
+	/* get an array of all sources to tick   */
+
+	data->sources_to_tick.num = 0;
 
 	pthread_mutex_lock(&data->sources_mutex);
 
 	source = data->sources;
 	while (source) {
 		obs_source_t *s = obs_source_get_ref(source);
-
-		if (s) {
-			obs_source_video_tick(s, seconds);
-			obs_source_release(s);
-		}
-
+		if (s)
+			da_push_back(data->sources_to_tick, &s);
 		source = (struct obs_source *)source->context.hh_uuid.next;
 	}
 
 	pthread_mutex_unlock(&data->sources_mutex);
+
+	/* ------------------------------------- */
+	/* call the tick function of each source */
+
+	for (size_t i = 0; i < data->sources_to_tick.num; i++) {
+		obs_source_t *s = data->sources_to_tick.array[i];
+		obs_source_video_tick(s, seconds);
+		obs_source_release(s);
+	}
 
 	return cur_time;
 }
