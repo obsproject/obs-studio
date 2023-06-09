@@ -52,6 +52,7 @@ struct xcompcap {
 
 	float window_check_time;
 	bool window_changed;
+	bool window_hooked;
 
 	uint32_t width;
 	uint32_t height;
@@ -551,6 +552,27 @@ void watcher_unload()
 	da_free(watcher_registry);
 }
 
+static void xcompcap_get_hooked(void *data, calldata_t *cd)
+{
+	struct xcompcap *s = data;
+	if (!s)
+		return;
+
+	calldata_set_bool(cd, "hooked", s->window_hooked);
+
+	if (s->window_hooked) {
+		struct dstr wname = xcomp_window_name(conn, disp, s->win);
+		struct dstr wcls = xcomp_window_class(conn, s->win);
+		calldata_set_string(cd, "name", wname.array);
+		calldata_set_string(cd, "class", wcls.array);
+		dstr_free(&wname);
+		dstr_free(&wcls);
+	} else {
+		calldata_set_string(cd, "name", "");
+		calldata_set_string(cd, "class", "");
+	}
+}
+
 static uint32_t xcompcap_get_width(void *data)
 {
 	struct xcompcap *s = (struct xcompcap *)data;
@@ -580,10 +602,22 @@ static void *xcompcap_create(obs_data_t *settings, obs_source_t *source)
 	pthread_mutex_init(&s->lock, NULL);
 	s->show_cursor = true;
 	s->source = source;
+	s->window_hooked = false;
 
 	obs_enter_graphics();
 	s->cursor = xcb_xcursor_init(conn);
 	obs_leave_graphics();
+
+	signal_handler_t *sh = obs_source_get_signal_handler(source);
+	signal_handler_add(sh, "void unhooked(ptr source)");
+	signal_handler_add(
+		sh, "void hooked(ptr source, string name, string class)");
+
+	proc_handler_t *ph = obs_source_get_proc_handler(source);
+	proc_handler_add(
+		ph,
+		"void get_hooked(out bool hooked, out string name, out string class)",
+		xcompcap_get_hooked, s);
 
 	xcompcap_update(s, settings);
 	return s;
@@ -623,6 +657,17 @@ static void xcompcap_video_tick(void *data, float seconds)
 	while ((event = xcb_poll_for_queued_event(conn)))
 		watcher_process(event);
 
+	// Send an unhooked signal if the window isn't found anymore
+	if (s->window_hooked && !xcomp_window_exists(conn, s->win)) {
+		s->window_hooked = false;
+
+		signal_handler_t *sh = obs_source_get_signal_handler(s->source);
+		calldata_t data = {0};
+		calldata_set_ptr(&data, "source", s->source);
+		signal_handler_signal(sh, "unhooked", &data);
+		calldata_free(&data);
+	}
+
 	// Reacquire window after interval or immediately if reconfigured.
 	s->window_check_time += seconds;
 	bool window_lost = !xcomp_window_exists(conn, s->win) || !s->gltex;
@@ -633,6 +678,25 @@ static void xcompcap_video_tick(void *data, float seconds)
 		s->window_changed = false;
 		s->window_check_time = 0.0;
 		s->win = xcomp_find_window(conn, disp, s->windowName);
+
+		// Send a hooked signal if a new window has been found
+		if (!s->window_hooked && xcomp_window_exists(conn, s->win)) {
+			s->window_hooked = true;
+
+			signal_handler_t *sh =
+				obs_source_get_signal_handler(s->source);
+			calldata_t data = {0};
+			calldata_set_ptr(&data, "source", s->source);
+			struct dstr wname =
+				xcomp_window_name(conn, disp, s->win);
+			struct dstr wcls = xcomp_window_class(conn, s->win);
+			calldata_set_string(&data, "name", wname.array);
+			calldata_set_string(&data, "class", wcls.array);
+			signal_handler_signal(sh, "hooked", &data);
+			dstr_free(&wname);
+			dstr_free(&wcls);
+			calldata_free(&data);
+		}
 
 		watcher_register(conn, s);
 		xcomp_cleanup_pixmap(disp, s);
@@ -808,6 +872,7 @@ static void xcompcap_update(void *data, obs_data_t *settings)
 
 	obs_enter_graphics();
 	pthread_mutex_lock(&s->lock);
+	char *prev_name = bstrdup(s->windowName);
 
 	s->crop_top = obs_data_get_int(settings, "cut_top");
 	s->crop_left = obs_data_get_int(settings, "cut_left");
@@ -818,7 +883,34 @@ static void xcompcap_update(void *data, obs_data_t *settings)
 	s->exclude_alpha = obs_data_get_bool(settings, "exclude_alpha");
 
 	s->windowName = obs_data_get_string(settings, "capture_window");
+	if (s->window_hooked && strcmp(prev_name, s->windowName) != 0) {
+		s->window_hooked = false;
+
+		signal_handler_t *sh = obs_source_get_signal_handler(s->source);
+		calldata_t data = {0};
+		calldata_set_ptr(&data, "source", s->source);
+		signal_handler_signal(sh, "unhooked", &data);
+		calldata_free(&data);
+	}
+	bfree(prev_name);
+
 	s->win = xcomp_find_window(conn, disp, s->windowName);
+	if (!s->window_hooked && xcomp_window_exists(conn, s->win)) {
+		s->window_hooked = true;
+
+		signal_handler_t *sh = obs_source_get_signal_handler(s->source);
+		calldata_t data = {0};
+		calldata_set_ptr(&data, "source", s->source);
+		struct dstr wname = xcomp_window_name(conn, disp, s->win);
+		struct dstr wcls = xcomp_window_class(conn, s->win);
+		calldata_set_string(&data, "name", wname.array);
+		calldata_set_string(&data, "class", wcls.array);
+		signal_handler_signal(sh, "hooked", &data);
+		dstr_free(&wname);
+		dstr_free(&wcls);
+		calldata_free(&data);
+	}
+
 	if (s->win && s->windowName) {
 		struct dstr wname = xcomp_window_name(conn, disp, s->win);
 		struct dstr wcls = xcomp_window_class(conn, s->win);
