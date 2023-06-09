@@ -11,7 +11,7 @@ Dynamically resizing arrays (a C equivalent to std::vector).
 
    The base dynamic array structure.
 
-.. :c:macro:: DARRAY(type)
+.. macro:: DARRAY(type)
 
    Macro for a dynamic array based upon an actual type.  Use this with
    da_* macros.
@@ -49,6 +49,42 @@ dynamic array value with a reference (&) operator.  For example:
 
    /* free when complete */
    da_free(array_of_integers);
+
+To pass dynamic arrays to functions as parameters, create a typedef with the
+:c:macro:`DARRAY` macro and type so you can pass the dynamic array with a
+reference (&) operator. An alternative is to define a struct that will contain
+the dynamic array, and that struct will be passed to the functions, instead of
+the dynamic array directly. An example with the typedef method:
+
+.. code:: cpp
+
+   typedef DARRAY(int) int_array_t;
+
+   void generate_integers(int_array_t *integers, int start, int end)
+   {
+           for (int i = start; i < end; i++)
+                   da_push_back(*integers, &i);
+   }
+
+   [...]
+
+   int_array_t array_of_integers;
+   da_init(array_of_integers);
+
+   generate_integers(&array_of_integers, 0, 10);
+
+   /* free when complete */
+   da_free(array_of_integers);
+
+**IMPORTANT NOTE:** While it is also possible to accept the internal
+:c:struct:`darray` struct as a function parameter (via the ``da`` member
+variable of dynamic arrays) and redefine a variable with :c:macro:`DARRAY`
+inside the function, doing so is not safe and not recommended. One potential
+issue with it is having a type declaration in the function that is different
+than the type of the actual dynamic array that will be passed to the function,
+which will cause memory access issues that will not be caught by the compiler.
+As mentioned above, the recommended way is to create a typedef or a container
+struct, which will be safer in usage.
 
 .. function:: void da_init(da)
 
