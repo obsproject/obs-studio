@@ -121,6 +121,11 @@ static inline void darray_ensure_capacity(const size_t element_size,
 	dst->capacity = new_cap;
 }
 
+static inline void darray_clear(struct darray *dst)
+{
+	dst->num = 0;
+}
+
 static inline void darray_resize(const size_t element_size, struct darray *dst,
 				 const size_t size)
 {
@@ -486,6 +491,8 @@ static inline void darray_swap(const size_t element_size, struct darray *dst,
 	darray_reserve(sizeof(*v.array), &v.da, capacity)
 
 #define da_resize(v, size) darray_resize(sizeof(*v.array), &v.da, size)
+
+#define da_clear(v) darray_clear(&v.da)
 
 #define da_copy(dst, src) darray_copy(sizeof(*dst.array), &dst.da, &src.da)
 
