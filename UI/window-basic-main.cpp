@@ -271,11 +271,7 @@ void setupDockAction(QDockWidget *dock)
 	dock->connect(action, &QAction::triggered, newToggleView);
 
 	// Make the action unable to be disabled
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-	action->connect(action, &QAction::changed, neverDisable);
-#else
 	action->connect(action, &QAction::enabledChanged, neverDisable);
-#endif
 }
 
 extern void RegisterTwitchAuth();
@@ -287,11 +283,6 @@ extern void RegisterYoutubeAuth();
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow(parent), undo_s(ui), ui(new Ui::OBSBasic)
 {
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-	qRegisterMetaTypeStreamOperators<SignalContainer<OBSScene>>(
-		"SignalContainer<OBSScene>");
-#endif
-
 	setAttribute(Qt::WA_NativeWindow);
 
 #ifdef TWITCH_ENABLED
@@ -339,13 +330,6 @@ OBSBasic::OBSBasic(QWidget *parent)
 	qRegisterMetaType<OBSSource>("OBSSource");
 	qRegisterMetaType<obs_hotkey_id>("obs_hotkey_id");
 	qRegisterMetaType<SavedProjectorInfo *>("SavedProjectorInfo *");
-
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-	qRegisterMetaTypeStreamOperators<std::vector<std::shared_ptr<OBSSignal>>>(
-		"std::vector<std::shared_ptr<OBSSignal>>");
-	qRegisterMetaTypeStreamOperators<OBSScene>("OBSScene");
-	qRegisterMetaTypeStreamOperators<OBSSource>("OBSSource");
-#endif
 
 	ui->scenes->setAttribute(Qt::WA_MacShowFocusRect, false);
 	ui->sources->setAttribute(Qt::WA_MacShowFocusRect, false);
@@ -1971,11 +1955,7 @@ void OBSBasic::OBSInit()
 	/* hack to prevent elgato from loading its own QtNetwork that it tries
 	 * to ship with */
 #if defined(_WIN32) && !defined(_DEBUG)
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-	LoadLibraryW(L"Qt5Network");
-#else
 	LoadLibraryW(L"Qt6Network");
-#endif
 #endif
 	struct obs_module_failure_info mfi;
 
@@ -5094,11 +5074,7 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	QMetaObject::invokeMethod(App(), "quit", Qt::QueuedConnection);
 }
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 bool OBSBasic::nativeEvent(const QByteArray &, void *message, qintptr *)
-#else
-bool OBSBasic::nativeEvent(const QByteArray &, void *message, long *)
-#endif
 {
 #ifdef _WIN32
 	const MSG &msg = *static_cast<MSG *>(message);

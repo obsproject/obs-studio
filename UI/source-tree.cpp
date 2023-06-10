@@ -335,11 +335,7 @@ void SourceTreeItem::mouseDoubleClickEvent(QMouseEvent *event)
 	}
 }
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 void SourceTreeItem::enterEvent(QEnterEvent *event)
-#else
-void SourceTreeItem::enterEvent(QEvent *event)
-#endif
 {
 	QWidget::enterEvent(event);
 
@@ -1186,14 +1182,7 @@ void SourceTree::dropEvent(QDropEvent *event)
 	QModelIndexList indices = selectedIndexes();
 
 	DropIndicatorPosition indicator = dropIndicatorPosition();
-	int row = indexAt(
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-			  event->position().toPoint()
-#else
-			  event->pos()
-#endif
-				  )
-			  .row();
+	int row = indexAt(event->position().toPoint()).row();
 	bool emptyDrop = row == -1;
 
 	if (emptyDrop) {

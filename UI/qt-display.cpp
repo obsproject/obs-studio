@@ -195,11 +195,7 @@ void OBSQTDisplay::moveEvent(QMoveEvent *event)
 	OnMove();
 }
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 bool OBSQTDisplay::nativeEvent(const QByteArray &, void *message, qintptr *)
-#else
-bool OBSQTDisplay::nativeEvent(const QByteArray &, void *message, long *)
-#endif
 {
 #ifdef _WIN32
 	const MSG &msg = *static_cast<MSG *>(message);

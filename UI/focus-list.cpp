@@ -12,11 +12,7 @@ void FocusList::focusInEvent(QFocusEvent *event)
 
 void FocusList::dragMoveEvent(QDragMoveEvent *event)
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 	QPoint pos = event->position().toPoint();
-#else
-	QPoint pos = event->pos();
-#endif
 	int itemRow = row(itemAt(pos));
 
 	if ((itemRow == currentRow() + 1) ||
