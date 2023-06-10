@@ -58,7 +58,7 @@ static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 	/* ------------------------------------- */
 	/* get an array of all sources to tick   */
 
-	data->sources_to_tick.num = 0;
+	da_clear(data->sources_to_tick);
 
 	pthread_mutex_lock(&data->sources_mutex);
 
