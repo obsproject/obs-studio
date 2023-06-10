@@ -22,11 +22,6 @@
 #include <obs-hevc.h>
 #endif
 
-#if LIBAVCODEC_VERSION_INT > AV_VERSION_INT(58, 4, 100)
-#define USE_NEW_HARDWARE_CODEC_METHOD
-#endif
-
-#ifdef USE_NEW_HARDWARE_CODEC_METHOD
 enum AVHWDeviceType hw_priority[] = {
 	AV_HWDEVICE_TYPE_D3D11VA,
 	AV_HWDEVICE_TYPE_DXVA2,
@@ -72,16 +67,12 @@ static void init_hw_decoder(struct ffmpeg_decode *d)
 		d->hw = true;
 	}
 }
-#endif
 
 int ffmpeg_decode_init(struct ffmpeg_decode *decode, enum AVCodecID id,
 		       bool use_hw)
 {
 	int ret;
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
-	avcodec_register_all();
-#endif
 	memset(decode, 0, sizeof(*decode));
 
 	decode->codec = avcodec_find_decoder(id);
@@ -92,12 +83,8 @@ int ffmpeg_decode_init(struct ffmpeg_decode *decode, enum AVCodecID id,
 
 	decode->decoder->thread_count = 0;
 
-#ifdef USE_NEW_HARDWARE_CODEC_METHOD
 	if (use_hw)
 		init_hw_decoder(decode);
-#else
-	(void)use_hw;
-#endif
 
 	ret = avcodec_open2(decode->decoder, decode->codec, NULL);
 	if (ret < 0) {
@@ -374,14 +361,12 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode, uint8_t *data,
 	else if (!got_frame)
 		return true;
 
-#ifdef USE_NEW_HARDWARE_CODEC_METHOD
 	if (got_frame && decode->hw) {
 		ret = av_hwframe_transfer_data(decode->frame, out_frame, 0);
 		if (ret < 0) {
 			return false;
 		}
 	}
-#endif
 
 	for (size_t i = 0; i < MAX_AV_PLANES; i++) {
 		frame->data[i] = decode->frame->data[i];
