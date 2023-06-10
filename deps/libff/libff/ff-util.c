@@ -56,11 +56,6 @@ struct ff_codec_desc {
 
 void ff_init()
 {
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
-	av_register_all();
-	//avdevice_register_all();
-	avcodec_register_all();
-#endif
 	avformat_network_init();
 }
 
@@ -103,7 +98,6 @@ static bool get_codecs(const AVCodecDescriptor ***descs, unsigned int *size)
 
 static const AVCodec *next_codec_for_id(enum AVCodecID id, const AVCodec *prev)
 {
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58, 9, 100)
 	const AVCodec *cur = NULL;
 	void *i = 0;
 	bool found_prev = false;
@@ -121,12 +115,7 @@ static const AVCodec *next_codec_for_id(enum AVCodecID id, const AVCodec *prev)
 			}
 		}
 	}
-#else
-	while ((prev = av_codec_next(prev)) != NULL) {
-		if (prev->id == id && av_codec_is_encoder(prev))
-			return prev;
-	}
-#endif
+
 	return NULL;
 }
 
@@ -306,14 +295,9 @@ const struct ff_format_desc *ff_format_supported()
 	const AVOutputFormat *output_format = NULL;
 	struct ff_format_desc *desc = NULL;
 	struct ff_format_desc *current = NULL;
-
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(58, 9, 100)
+	
 	void *i = 0;
-
 	while ((output_format = av_muxer_iterate(&i)) != NULL) {
-#else
-	while ((output_format = av_oformat_next(output_format)) != NULL) {
-#endif
 		struct ff_format_desc *d;
 		if (is_output_device(output_format->priv_class))
 			continue;
