@@ -28,12 +28,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#if LIBAVCODEC_VERSION_MAJOR >= 58
-#define CODEC_FLAG_GLOBAL_H AV_CODEC_FLAG_GLOBAL_HEADER
-#else
-#define CODEC_FLAG_GLOBAL_H CODEC_FLAG_GLOBAL_HEADER
-#endif
-
 #ifndef FF_API_BUFFER_SIZE_T
 #define FF_API_BUFFER_SIZE_T (LIBAVUTIL_VERSION_MAJOR < 57)
 #endif
@@ -90,12 +84,7 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 
 	for (unsigned i = 0; i < job->ifmt_ctx->nb_streams; i++) {
 		AVStream *in_stream = job->ifmt_ctx->streams[i];
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
 		AVStream *out_stream = avformat_new_stream(job->ofmt_ctx, NULL);
-#else
-		AVStream *out_stream = avformat_new_stream(
-			job->ofmt_ctx, in_stream->codec->codec);
-#endif
 		if (!out_stream) {
 			blog(LOG_ERROR, "media_remux: Failed to allocate output"
 					" stream");
@@ -137,12 +126,8 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 			}
 		}
 
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
 		ret = avcodec_parameters_copy(out_stream->codecpar,
 					      in_stream->codecpar);
-#else
-		ret = avcodec_copy_context(out_stream->codec, in_stream->codec);
-#endif
 
 		if (ret < 0) {
 			blog(LOG_ERROR,
@@ -152,7 +137,6 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 
 		av_dict_copy(&out_stream->metadata, in_stream->metadata, 0);
 
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
 		if (in_stream->codecpar->codec_id == AV_CODEC_ID_HEVC &&
 		    job->ofmt_ctx->oformat->codec_tag &&
 		    av_codec_get_id(job->ofmt_ctx->oformat->codec_tag,
@@ -166,12 +150,6 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 			// Otherwise tag 0 to let FFmpeg automatically select the appropriate tag
 			out_stream->codecpar->codec_tag = 0;
 		}
-#else
-		out_stream->codec->codec_tag = 0;
-		out_stream->time_base = out_stream->codec->time_base;
-		if (job->ofmt_ctx->oformat->flags & AVFMT_GLOBALHEADER)
-			out_stream->codec->flags |= CODEC_FLAG_GLOBAL_H;
-#endif
 	}
 
 #ifndef NDEBUG
@@ -211,10 +189,6 @@ bool media_remux_job_create(media_remux_job_t *job, const char *in_filename,
 		return false;
 
 	init_size(*job, in_filename);
-
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
-	av_register_all();
-#endif
 
 	if (!init_input(*job, in_filename))
 		goto fail;
