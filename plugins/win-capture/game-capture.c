@@ -366,6 +366,16 @@ static void stop_capture(struct game_capture *gc)
 	if (gc->active)
 		info("capture stopped");
 
+	// if it was previously capturing, send an unhooked signal
+	if (gc->capturing) {
+		signal_handler_t *sh =
+			obs_source_get_signal_handler(gc->source);
+		calldata_t data = {0};
+		calldata_set_ptr(&data, "source", gc->source);
+		signal_handler_signal(sh, "unhooked", &data);
+		calldata_free(&data);
+	}
+
 	gc->copy_texture = NULL;
 	gc->wait_for_target_startup = false;
 	gc->active = false;
@@ -518,6 +528,25 @@ static bool hotkey_stop(void *data, obs_hotkey_pair_id id, obs_hotkey_t *hotkey,
 	return true;
 }
 
+static void game_capture_get_hooked(void *data, calldata_t *cd)
+{
+	struct game_capture *gc = data;
+	if (!gc)
+		return;
+
+	calldata_set_bool(cd, "hooked", gc->capturing);
+
+	if (gc->capturing) {
+		calldata_set_string(cd, "title", gc->title.array);
+		calldata_set_string(cd, "class", gc->class.array);
+		calldata_set_string(cd, "executable", gc->executable.array);
+	} else {
+		calldata_set_string(cd, "title", "");
+		calldata_set_string(cd, "class", "");
+		calldata_set_string(cd, "executable", "");
+	}
+}
+
 static void game_capture_update(void *data, obs_data_t *settings)
 {
 	struct game_capture *gc = data;
@@ -609,6 +638,18 @@ static void *game_capture_create(obs_data_t *settings, obs_source_t *source)
 				get_window_dpi_awareness_context;
 		}
 	}
+
+	signal_handler_t *sh = obs_source_get_signal_handler(source);
+	signal_handler_add(sh, "void unhooked(ptr source)");
+	signal_handler_add(
+		sh,
+		"void hooked(ptr source, string title, string class, string executable)");
+
+	proc_handler_t *ph = obs_source_get_proc_handler(source);
+	proc_handler_add(
+		ph,
+		"void get_hooked(out bool hooked, out string title, out string class, out string executable)",
+		game_capture_get_hooked, gc);
 
 	game_capture_update(gc, settings);
 	return gc;
@@ -1850,6 +1891,26 @@ static void game_capture_tick(void *data, float seconds)
 		else
 			debug("init_capture_data failed");
 
+		// If capture was successful, send a hooked signal
+		if (gc->capturing) {
+			if (gc->config.mode == CAPTURE_MODE_ANY) {
+				ms_get_window_exe(&gc->executable, gc->window);
+				ms_get_window_title(&gc->title, gc->window);
+				ms_get_window_class(&gc->class, gc->window);
+			}
+			signal_handler_t *sh =
+				obs_source_get_signal_handler(gc->source);
+			calldata_t data = {0};
+
+			calldata_set_ptr(&data, "source", gc->source);
+			calldata_set_string(&data, "title", gc->title.array);
+			calldata_set_string(&data, "class", gc->class.array);
+			calldata_set_string(&data, "executable",
+					    gc->executable.array);
+
+			signal_handler_signal(sh, "hooked", &data);
+			calldata_free(&data);
+		}
 		if (result != CAPTURE_RETRY && !gc->capturing) {
 			gc->retry_interval =
 				ERROR_RETRY_INTERVAL *
