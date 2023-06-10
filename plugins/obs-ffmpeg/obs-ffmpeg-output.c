@@ -163,9 +163,7 @@ static bool open_video_codec(struct ffmpeg_data *data)
 		return false;
 	}
 
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
 	avcodec_parameters_from_context(data->video->codecpar, context);
-#endif
 
 	return true;
 }
@@ -247,11 +245,7 @@ static bool create_video_stream(struct ffmpeg_data *data)
 			NULL);
 	}
 
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
 	context = avcodec_alloc_context3(data->vcodec);
-#else
-	context = data->video->codec;
-#endif
 	context->bit_rate = (int64_t)data->config.video_bitrate * 1000;
 	context->width = data->config.scale_width;
 	context->height = data->config.scale_height;
@@ -270,7 +264,7 @@ static bool create_video_stream(struct ffmpeg_data *data)
 	data->video->time_base = context->time_base;
 
 	if (data->output->oformat->flags & AVFMT_GLOBALHEADER)
-		context->flags |= CODEC_FLAG_GLOBAL_H;
+		context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
 	data->video_ctx = context;
 
@@ -338,10 +332,8 @@ static bool open_audio_codec(struct ffmpeg_data *data, int idx)
 		return false;
 	}
 
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
 	avcodec_parameters_from_context(data->audio_infos[idx].stream->codecpar,
 					context);
-#endif
 
 	return true;
 }
@@ -363,11 +355,7 @@ static bool create_audio_stream(struct ffmpeg_data *data, int idx)
 			data->config.audio_encoder))
 		return false;
 
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
 	context = avcodec_alloc_context3(data->acodec);
-#else
-	context = stream->codec;
-#endif
 	context->bit_rate = (int64_t)data->config.audio_bitrate * 1000;
 	context->time_base = (AVRational){1, aoi.samples_per_sec};
 #if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(57, 24, 100)
@@ -399,7 +387,7 @@ static bool create_audio_stream(struct ffmpeg_data *data, int idx)
 	data->audio_size = get_audio_size(data->audio_format, aoi.speakers, 1);
 
 	if (data->output->oformat->flags & AVFMT_GLOBALHEADER)
-		context->flags |= CODEC_FLAG_GLOBAL_H;
+		context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
 	data->audio_infos[idx].stream = stream;
 	data->audio_infos[idx].ctx = context;
@@ -594,9 +582,6 @@ bool ffmpeg_data_init(struct ffmpeg_data *data, struct ffmpeg_cfg *config)
 	if (!config->url || !*config->url)
 		return false;
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
-	av_register_all();
-#endif
 	avformat_network_init();
 
 	is_rtmp = (astrcmpi_n(config->url, "rtmp://", 7) == 0);
@@ -793,63 +778,43 @@ static void receive_video(void *param, struct video_data *frame)
 
 	packet = av_packet_alloc();
 
-#if LIBAVFORMAT_VERSION_MAJOR < 58
-	if (data->output->flags & AVFMT_RAWPICTURE) {
-		packet->flags |= AV_PKT_FLAG_KEY;
-		packet->stream_index = data->video->index;
-		packet->data = data->vframe->data[0];
-		packet->size = sizeof(AVPicture);
+	data->vframe->pts = data->total_frames;
+	ret = avcodec_send_frame(context, data->vframe);
+	if (ret == 0)
+		ret = avcodec_receive_packet(context, packet);
+
+	got_packet = (ret == 0);
+
+	if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN))
+		ret = 0;
+
+	if (ret < 0) {
+		blog(LOG_WARNING,
+		     "receive_video: Error encoding "
+		     "video: %s",
+		     av_err2str(ret));
+		//FIXME: stop the encode with an error
+		goto fail;
+	}
+
+	if (!ret && got_packet && packet->size) {
+		packet->pts = rescale_ts(packet->pts, context,
+					 data->video->time_base);
+		packet->dts = rescale_ts(packet->dts, context,
+					 data->video->time_base);
+		packet->duration = (int)av_rescale_q(packet->duration,
+						     context->time_base,
+						     data->video->time_base);
 
 		pthread_mutex_lock(&output->write_mutex);
 		da_push_back(output->packets, &packet);
 		packet = NULL;
 		pthread_mutex_unlock(&output->write_mutex);
 		os_sem_post(output->write_sem);
-
 	} else {
-#endif
-		data->vframe->pts = data->total_frames;
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 40, 101)
-		ret = avcodec_send_frame(context, data->vframe);
-		if (ret == 0)
-			ret = avcodec_receive_packet(context, packet);
-
-		got_packet = (ret == 0);
-
-		if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN))
-			ret = 0;
-#else
-	ret = avcodec_encode_video2(context, packet, data->vframe, &got_packet);
-#endif
-		if (ret < 0) {
-			blog(LOG_WARNING,
-			     "receive_video: Error encoding "
-			     "video: %s",
-			     av_err2str(ret));
-			//FIXME: stop the encode with an error
-			goto fail;
-		}
-
-		if (!ret && got_packet && packet->size) {
-			packet->pts = rescale_ts(packet->pts, context,
-						 data->video->time_base);
-			packet->dts = rescale_ts(packet->dts, context,
-						 data->video->time_base);
-			packet->duration = (int)av_rescale_q(
-				packet->duration, context->time_base,
-				data->video->time_base);
-
-			pthread_mutex_lock(&output->write_mutex);
-			da_push_back(output->packets, &packet);
-			packet = NULL;
-			pthread_mutex_unlock(&output->write_mutex);
-			os_sem_post(output->write_sem);
-		} else {
-			ret = 0;
-		}
-#if LIBAVFORMAT_VERSION_MAJOR < 58
+		ret = 0;
 	}
-#endif
+
 	if (ret != 0) {
 		blog(LOG_WARNING, "receive_video: Error writing video: %s",
 		     av_err2str(ret));
@@ -899,7 +864,6 @@ static void encode_audio(struct ffmpeg_output *output, int idx,
 
 	packet = av_packet_alloc();
 
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 40, 101)
 	ret = avcodec_send_frame(context, data->aframe[idx]);
 	if (ret == 0)
 		ret = avcodec_receive_packet(context, packet);
@@ -908,10 +872,7 @@ static void encode_audio(struct ffmpeg_output *output, int idx,
 
 	if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN))
 		ret = 0;
-#else
-	ret = avcodec_encode_audio2(context, packet, data->aframe[idx],
-				    &got_packet);
-#endif
+
 	if (ret < 0) {
 		blog(LOG_WARNING, "encode_audio: Error encoding audio: %s",
 		     av_err2str(ret));
