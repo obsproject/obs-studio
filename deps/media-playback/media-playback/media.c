@@ -938,10 +938,6 @@ bool mp_media_init(mp_media_t *media, const struct mp_media_info *info)
 
 	static bool initialized = false;
 	if (!initialized) {
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
-		av_register_all();
-		avcodec_register_all();
-#endif
 		avdevice_register_all();
 		avformat_network_init();
 		initialized = true;
