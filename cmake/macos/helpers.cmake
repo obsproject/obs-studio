@@ -65,6 +65,13 @@ function(set_target_properties_obs target)
           PROPERTY XCODE_EMBED_FRAMEWORKS ${SPARKLE})
       endif()
 
+      if(TARGET mac-syphon)
+        set_property(
+          TARGET ${target}
+          APPEND
+          PROPERTY XCODE_EMBED_FRAMEWORKS ${SYPHON})
+      endif()
+
       get_property(obs_executables GLOBAL PROPERTY _OBS_EXECUTABLES)
       add_dependencies(${target} ${obs_executables})
       foreach(executable IN LISTS obs_executables)
