@@ -573,11 +573,7 @@ void OBSBasicPreview::wheelEvent(QWheelEvent *event)
 
 void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 	QPointF pos = event->position();
-#else
-	QPointF pos = event->localPos();
-#endif
 
 	if (scrollMode && IsFixedScaling() &&
 	    event->button() == Qt::LeftButton) {
@@ -1595,11 +1591,7 @@ void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 	changed = true;
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 	QPointF qtPos = event->position();
-#else
-	QPointF qtPos = event->localPos();
-#endif
 
 	float pixelRatio = main->GetDevicePixelRatio();
 

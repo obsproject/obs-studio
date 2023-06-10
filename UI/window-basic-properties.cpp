@@ -490,12 +490,8 @@ void OBSBasicProperties::closeEvent(QCloseEvent *event)
 	Cleanup();
 }
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 bool OBSBasicProperties::nativeEvent(const QByteArray &, void *message,
 				     qintptr *)
-#else
-bool OBSBasicProperties::nativeEvent(const QByteArray &, void *message, long *)
-#endif
 {
 #ifdef _WIN32
 	const MSG &msg = *static_cast<MSG *>(message);
