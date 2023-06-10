@@ -37,35 +37,23 @@ static bool ffmpeg_image_open_decoder_context(struct ffmpeg_image *info)
 	}
 
 	AVStream *const stream = fmt_ctx->streams[ret];
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
 	AVCodecParameters *const codecpar = stream->codecpar;
 	const AVCodec *const decoder = avcodec_find_decoder(
 		codecpar->codec_id); // fix discarded-qualifiers
-#else
-	AVCodecContext *const decoder_ctx = stream->codec;
-	AVCodec *const decoder = avcodec_find_decoder(decoder_ctx->codec_id);
-#endif
+
 	if (!decoder) {
 		blog(LOG_WARNING, "Failed to find decoder for file '%s'",
 		     info->file);
 		return false;
 	}
 
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
 	AVCodecContext *const decoder_ctx = avcodec_alloc_context3(decoder);
 	avcodec_parameters_to_context(decoder_ctx, codecpar);
-#endif
 
 	info->decoder_ctx = decoder_ctx;
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
 	info->cx = codecpar->width;
 	info->cy = codecpar->height;
 	info->format = codecpar->format;
-#else
-	info->cx = decoder_ctx->width;
-	info->cy = decoder_ctx->height;
-	info->format = decoder_ctx->pix_fmt;
-#endif
 
 	ret = avcodec_open2(decoder_ctx, decoder, NULL);
 	if (ret < 0) {
@@ -578,7 +566,6 @@ static void *ffmpeg_image_decode(struct ffmpeg_image *info,
 	}
 
 	while (!got_frame) {
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 40, 101)
 		ret = avcodec_send_packet(info->decoder_ctx, &packet);
 		if (ret == 0)
 			ret = avcodec_receive_frame(info->decoder_ctx, frame);
@@ -587,10 +574,7 @@ static void *ffmpeg_image_decode(struct ffmpeg_image *info,
 
 		if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN))
 			ret = 0;
-#else
-		ret = avcodec_decode_video2(info->decoder_ctx, frame,
-					    &got_frame, &packet);
-#endif
+
 		if (ret < 0) {
 			blog(LOG_WARNING, "Failed to decode frame for '%s': %s",
 			     info->file, av_err2str(ret));
@@ -606,12 +590,7 @@ fail:
 	return data;
 }
 
-void gs_init_image_deps(void)
-{
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
-	av_register_all();
-#endif
-}
+void gs_init_image_deps(void) {}
 
 void gs_free_image_deps(void) {}
 
