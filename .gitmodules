@@ -1,9 +1,6 @@
 [submodule "plugins/win-dshow/libdshowcapture"]
 	path = plugins/win-dshow/libdshowcapture
 	url = https://github.com/obsproject/libdshowcapture.git
-[submodule "plugins/mac-syphon/syphon-framework"]
-	path = plugins/mac-syphon/syphon-framework
-	url = https://github.com/palana/Syphon-Framework.git
 [submodule "plugins/enc-amf"]
 	path = plugins/enc-amf
 	url = https://github.com/obsproject/obs-amd-encoder.git
