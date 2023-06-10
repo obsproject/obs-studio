@@ -45,17 +45,9 @@ bool obs_module_load(void)
 	RegisterDShowSource();
 	RegisterDShowEncoders();
 #ifdef VIRTUALCAM_AVAILABLE
-	obs_register_output(&virtualcam_info);
-
-	bool installed = vcam_installed(false);
-#else
-	bool installed = false;
+	if (vcam_installed(false))
+		obs_register_output(&virtualcam_info);
 #endif
-
-	obs_data_t *obs_settings = obs_data_create();
-	obs_data_set_bool(obs_settings, "vcamEnabled", installed);
-	obs_apply_private_data(obs_settings);
-	obs_data_release(obs_settings);
 
 	return true;
 }
