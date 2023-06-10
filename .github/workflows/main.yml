@@ -233,10 +233,7 @@ jobs:
     runs-on: ${{ matrix.ubuntu }}
     strategy:
       matrix:
-        ubuntu: ['ubuntu-20.04', 'ubuntu-22.04']
-        include:
-          - ubuntu: 'ubuntu-20.04'
-            script_options: '--disable-pipewire'
+        ubuntu: ['ubuntu-22.04']
     if: always()
     needs: [config, clang_check]
     defaults:
