@@ -47,9 +47,9 @@ bool WHIPOutput::Start()
 {
 	std::lock_guard<std::mutex> l(start_stop_mutex);
 
-	if (!obs_output_can_begin_data_capture2(output))
+	if (!obs_output_can_begin_data_capture(output, 0))
 		return false;
-	if (!obs_output_initialize_encoders2(output))
+	if (!obs_output_initialize_encoders(output, 0))
 		return false;
 
 	if (start_stop_thread.joinable())
@@ -336,7 +336,7 @@ void WHIPOutput::StartThread()
 		return;
 	}
 
-	obs_output_begin_data_capture2(output);
+	obs_output_begin_data_capture(output, 0);
 	running = true;
 }
 
