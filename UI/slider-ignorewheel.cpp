@@ -101,17 +101,7 @@ void SliderIgnoreClick::mousePressEvent(QMouseEvent *event)
 	initStyleOption(&styleOption);
 	QRect handle = style()->subControlRect(QStyle::CC_Slider, &styleOption,
 					       QStyle::SC_SliderHandle, this);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-	QPointF pointExact = event->position();
-#endif
-	if (handle.contains(
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-		    QPoint(pointExact.x(), pointExact.y())
-#else
-		    // Ubuntu 20.04. Sigh.
-		    QPoint(event->x(), event->y())
-#endif
-			    )) {
+	if (handle.contains(event->position().toPoint())) {
 		SliderIgnoreScroll::mousePressEvent(event);
 		dragging = true;
 	} else {
