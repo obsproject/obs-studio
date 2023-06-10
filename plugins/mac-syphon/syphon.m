@@ -1,13 +1,17 @@
-#import <Cocoa/Cocoa.h>
+#import <AppKit/AppKit.h>
+#import <IOSurface/IOSurface.h>
 #import <ScriptingBridge/ScriptingBridge.h>
-#import "syphon-framework/Syphon.h"
-#include <obs-module.h>
-#include <AvailabilityMacros.h>
+#import <Syphon/Syphon.h>
+
+#import <obs-module.h>
+#import <AvailabilityMacros.h>
+
+#import "SyphonOBSClient.h"
 
 #define LOG(level, message, ...) blog(level, "%s: " message, obs_source_get_name(s->source), ##__VA_ARGS__)
 
 struct syphon {
-    SYPHON_CLIENT_UNIQUE_CLASS_NAME *client;
+    SyphonOBSClient *client;
     IOSurfaceRef ref;
 
     gs_samplerstate_t *sampler;
@@ -101,10 +105,21 @@ static inline NSDictionary *find_by_uuid(NSArray *arr, NSString *uuid)
     return nil;
 }
 
+/* If you see this and think "surely these must be defined in some type of
+ * public header!": They don't. Or at least I couldnt't find anything. The
+ * definitions inside of Syphon are only in SyphonPrivate.h/m, and nowhere
+ * else. When we had Syphon as a submodule we abused this by using extern, but
+ * now that we use a prebuilt framework and as such no longer can acceess the
+ * private headers and sources directly, that's no longer possible. Other
+ * projects sometimes copy SyphonPrivate.h entirely (with the full definitions
+ * of everything), but for our purpose these strings are enough. */
+const NSString *SyphonServerDescriptionDictionaryVersionKey = @"SyphonServerDescriptionDictionaryVersionKey";
+const NSString *SyphonSurfaceType = @"SyphonSurfaceType";
+const NSString *SyphonSurfaceTypeIOSurface = @"SyphonSurfaceTypeIOSurface";
+const NSString *SyphonServerDescriptionSurfacesKey = @"SyphonServerDescriptionSurfacesKey";
+
 static inline void check_version(syphon_t s, NSDictionary *desc)
 {
-    extern const NSString *SyphonServerDescriptionDictionaryVersionKey;
-
     NSNumber *version = desc[SyphonServerDescriptionDictionaryVersionKey];
     if (!version)
         return LOG(LOG_WARNING, "Server description does not contain "
@@ -119,10 +134,6 @@ static inline void check_version(syphon_t s, NSDictionary *desc)
 
 static inline void check_description(syphon_t s, NSDictionary *desc)
 {
-    extern const NSString *SyphonSurfaceType;
-    extern const NSString *SyphonSurfaceTypeIOSurface;
-    extern const NSString *SyphonServerDescriptionSurfacesKey;
-
     NSArray *surfaces = desc[SyphonServerDescriptionSurfacesKey];
     if (!surfaces)
         return LOG(LOG_WARNING, "Server description does not contain "
@@ -145,9 +156,9 @@ static inline void check_description(syphon_t s, NSDictionary *desc)
         surfaces_string.UTF8String);
 }
 
-static inline void handle_new_frame(syphon_t s, SYPHON_CLIENT_UNIQUE_CLASS_NAME *client)
+static inline void handle_new_frame(syphon_t s, SyphonOBSClient *client)
 {
-    IOSurfaceRef ref = [client IOSurface];
+    IOSurfaceRef ref = [client newFrameImage];
 
     if (!ref)
         return;
@@ -196,11 +207,10 @@ static void create_client(syphon_t s)
     check_version(s, desc);
     check_description(s, desc);
 
-    s->client =
-        [[SYPHON_CLIENT_UNIQUE_CLASS_NAME alloc] initWithServerDescription:desc options:nil
-                                                           newFrameHandler:^(SYPHON_CLIENT_UNIQUE_CLASS_NAME *client) {
-                                                               handle_new_frame(s, client);
-                                                           }];
+    s->client = [[SyphonOBSClient alloc] initWithServerDescription:desc options:nil
+                                                   newFrameHandler:^(SyphonOBSClient *client) {
+                                                       handle_new_frame(s, client);
+                                                   }];
 
     s->active = true;
 }
@@ -254,7 +264,7 @@ static inline void handle_announce(syphon_t s, NSNotification *note)
     if (!note)
         return;
 
-    update_from_announce(s, note.object);
+    update_from_announce(s, note.userInfo);
     update_properties(s);
 }
 
@@ -278,7 +288,7 @@ static inline void handle_retire(syphon_t s, NSNotification *note)
     if (!note)
         return;
 
-    update_from_retire(s, note.object);
+    update_from_retire(s, note.userInfo);
     update_properties(s);
 }
 
