@@ -17,8 +17,6 @@
 
 #include <libavutil/avutil.h>
 
-#if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(55, 27, 100)
-
 #include <util/darray.h>
 #include <util/dstr.h>
 #include <util/base.h>
@@ -392,14 +390,8 @@ static inline void flush_remaining_packets(struct vaapi_encoder *enc)
 	int r_pkt = 1;
 
 	while (r_pkt) {
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 40, 101)
 		if (avcodec_receive_packet(enc->context, enc->packet) < 0)
 			break;
-#else
-		if (avcodec_encode_video2(enc->context, enc->packet, NULL,
-					  &r_pkt) < 0)
-			break;
-#endif
 
 		if (r_pkt)
 			av_packet_unref(enc->packet);
@@ -430,9 +422,6 @@ static void *vaapi_create_internal(obs_data_t *settings, obs_encoder_t *encoder,
 				   bool hevc)
 {
 	struct vaapi_encoder *enc;
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
-	avcodec_register_all();
-#endif
 
 	enc = bzalloc(sizeof(*enc));
 	enc->encoder = encoder;
@@ -546,7 +535,6 @@ static bool vaapi_encode_internal(void *data, struct encoder_frame *frame,
 		goto fail;
 	}
 
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 40, 101)
 	ret = avcodec_send_frame(enc->context, hwframe);
 	if (ret == 0)
 		ret = avcodec_receive_packet(enc->context, enc->packet);
@@ -555,10 +543,7 @@ static bool vaapi_encode_internal(void *data, struct encoder_frame *frame,
 
 	if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN))
 		ret = 0;
-#else
-	ret = avcodec_encode_video2(enc->context, enc->packet, hwframe,
-				    &got_packet);
-#endif
+
 	if (ret < 0) {
 		warn("vaapi_encode: Error encoding: %s", av_err2str(ret));
 		goto fail;
@@ -1026,6 +1011,4 @@ struct obs_encoder_info hevc_vaapi_encoder_info = {
 	.get_sei_data = vaapi_sei_data,
 	.get_video_info = hevc_vaapi_video_info,
 };
-#endif
-
 #endif
