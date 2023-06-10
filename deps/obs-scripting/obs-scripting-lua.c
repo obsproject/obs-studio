@@ -1228,9 +1228,12 @@ void obs_lua_script_unload(obs_script_t *s)
 	/* call script_unload           */
 
 	pthread_mutex_lock(&data->mutex);
+	current_lua_script = data;
 
 	lua_getglobal(script, "script_unload");
 	lua_pcall(script, 0, 0, 0);
+
+	current_lua_script = NULL;
 
 	/* ---------------------------- */
 	/* remove all callbacks         */
