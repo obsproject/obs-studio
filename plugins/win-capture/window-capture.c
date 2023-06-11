@@ -92,6 +92,7 @@ struct window_capture {
 	bool compatibility;
 	bool client_area;
 	bool force_sdr;
+	bool hooked;
 
 	struct dc_capture capture;
 
@@ -225,6 +226,34 @@ static void update_settings(struct window_capture *wc, obs_data_t *s)
 
 /* ------------------------------------------------------------------------- */
 
+static void wc_get_hooked(void *data, calldata_t *cd)
+{
+	struct window_capture *wc = data;
+	if (!wc)
+		return;
+
+	if (wc->hooked && wc->window) {
+		calldata_set_bool(cd, "hooked", true);
+		struct dstr title = {0};
+		struct dstr class = {0};
+		struct dstr executable = {0};
+		ms_get_window_title(&title, wc->window);
+		ms_get_window_class(&class, wc->window);
+		ms_get_window_exe(&executable, wc->window);
+		calldata_set_string(cd, "title", title.array);
+		calldata_set_string(cd, "class", class.array);
+		calldata_set_string(cd, "executable", executable.array);
+		dstr_free(&title);
+		dstr_free(&class);
+		dstr_free(&executable);
+	} else {
+		calldata_set_bool(cd, "hooked", false);
+		calldata_set_string(cd, "title", "");
+		calldata_set_string(cd, "class", "");
+		calldata_set_string(cd, "executable", "");
+	}
+}
+
 static const char *wc_getname(void *unused)
 {
 	UNUSED_PARAMETER(unused);
@@ -308,6 +337,19 @@ static void *wc_create(obs_data_t *settings, obs_source_t *source)
 				get_window_dpi_awareness_context;
 		}
 	}
+	wc->hooked = false;
+
+	signal_handler_t *sh = obs_source_get_signal_handler(source);
+	signal_handler_add(sh, "void unhooked(ptr source)");
+	signal_handler_add(
+		sh,
+		"void hooked(ptr source, string title, string class, string executable)");
+
+	proc_handler_t *ph = obs_source_get_proc_handler(source);
+	proc_handler_add(
+		ph,
+		"void get_hooked(out bool hooked, out string title, out string class, out string executable)",
+		wc_get_hooked, wc);
 
 	update_settings(wc, settings);
 	log_settings(wc, settings);
@@ -537,6 +579,17 @@ static void wc_hide(void *data)
 	}
 
 	memset(&wc->last_rect, 0, sizeof(wc->last_rect));
+
+	if (wc->hooked) {
+		wc->hooked = false;
+
+		signal_handler_t *sh =
+			obs_source_get_signal_handler(wc->source);
+		calldata_t data = {0};
+		calldata_set_ptr(&data, "source", wc->source);
+		signal_handler_signal(sh, "unhooked", &data);
+		calldata_free(&data);
+	}
 }
 
 static void wc_tick(void *data, float seconds)
@@ -549,6 +602,17 @@ static void wc_tick(void *data, float seconds)
 		return;
 
 	if (!wc->window || !IsWindow(wc->window)) {
+		if (wc->hooked) {
+			wc->hooked = false;
+
+			signal_handler_t *sh =
+				obs_source_get_signal_handler(wc->source);
+			calldata_t data = {0};
+			calldata_set_ptr(&data, "source", wc->source);
+			signal_handler_signal(sh, "unhooked", &data);
+			calldata_free(&data);
+		}
+
 		if (!wc->title && !wc->class) {
 			if (wc->capture.valid)
 				dc_capture_free(&wc->capture);
@@ -611,6 +675,17 @@ static void wc_tick(void *data, float seconds)
 		    !wc->exports.winrt_capture_show_cursor(wc->capture_winrt,
 							   !cursor_hidden)) {
 			force_reset(wc);
+			if (wc->hooked) {
+				wc->hooked = false;
+
+				signal_handler_t *sh =
+					obs_source_get_signal_handler(
+						wc->source);
+				calldata_t data = {0};
+				calldata_set_ptr(&data, "source", wc->source);
+				signal_handler_signal(sh, "unhooked", &data);
+				calldata_free(&data);
+			}
 			return;
 		}
 
@@ -655,6 +730,35 @@ static void wc_tick(void *data, float seconds)
 					rect.right - rect.left,
 					rect.bottom - rect.top, wc->cursor,
 					wc->compatibility);
+			if (!wc->hooked && wc->capture.valid) {
+				wc->hooked = true;
+
+				signal_handler_t *sh =
+					obs_source_get_signal_handler(
+						wc->source);
+				calldata_t data = {0};
+				struct dstr title = {0};
+				struct dstr class = {0};
+				struct dstr executable = {0};
+
+				ms_get_window_title(&title, wc->window);
+				ms_get_window_class(&class, wc->window);
+				ms_get_window_exe(&executable, wc->window);
+
+				calldata_set_ptr(&data, "source", wc->source);
+				calldata_set_string(&data, "title",
+						    title.array);
+				calldata_set_string(&data, "class",
+						    class.array);
+				calldata_set_string(&data, "executable",
+						    executable.array);
+				signal_handler_signal(sh, "hooked", &data);
+
+				dstr_free(&title);
+				dstr_free(&class);
+				dstr_free(&executable);
+				calldata_free(&data);
+			}
 		}
 
 		dc_capture_capture(&wc->capture, wc->window);
@@ -671,6 +775,37 @@ static void wc_tick(void *data, float seconds)
 
 				if (!wc->capture_winrt) {
 					wc->previously_failed = true;
+				} else if (!wc->hooked) {
+					wc->hooked = true;
+
+					signal_handler_t *sh =
+						obs_source_get_signal_handler(
+							wc->source);
+					calldata_t data = {0};
+					struct dstr title = {0};
+					struct dstr class = {0};
+					struct dstr executable = {0};
+
+					ms_get_window_title(&title, wc->window);
+					ms_get_window_class(&class, wc->window);
+					ms_get_window_exe(&executable,
+							  wc->window);
+
+					calldata_set_ptr(&data, "source",
+							 wc->source);
+					calldata_set_string(&data, "title",
+							    title.array);
+					calldata_set_string(&data, "class",
+							    class.array);
+					calldata_set_string(&data, "executable",
+							    executable.array);
+					signal_handler_signal(sh, "hooked",
+							      &data);
+
+					dstr_free(&title);
+					dstr_free(&class);
+					dstr_free(&executable);
+					calldata_free(&data);
 				}
 			}
 		}
