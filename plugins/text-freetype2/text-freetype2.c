@@ -138,6 +138,22 @@ static uint32_t ft2_source_get_height(void *data)
 	return srcdata->cy + srcdata->outline_width;
 }
 
+static bool from_file_modified(obs_properties_t *props, obs_property_t *prop,
+			       obs_data_t *settings)
+{
+	UNUSED_PARAMETER(prop);
+
+	bool from_file = obs_data_get_bool(settings, "from_file");
+
+	obs_property_t *text = obs_properties_get(props, "text");
+	obs_property_t *text_file = obs_properties_get(props, "text_file");
+
+	obs_property_set_visible(text, !from_file);
+	obs_property_set_visible(text_file, from_file);
+
+	return true;
+}
+
 static obs_properties_t *ft2_source_properties(void *unused)
 {
 	UNUSED_PARAMETER(unused);
@@ -153,11 +169,23 @@ static obs_properties_t *ft2_source_properties(void *unused)
 
 	obs_properties_add_font(props, "font", obs_module_text("Font"));
 
+	obs_property_t *from_file = obs_properties_add_list(
+		props, "from_file", obs_module_text("TextInputMode"),
+		OBS_COMBO_TYPE_RADIO, OBS_COMBO_FORMAT_BOOL);
+	obs_property_list_add_bool(
+		from_file, obs_module_text("TextInputMode.Manual"), false);
+	obs_property_list_add_bool(
+		from_file, obs_module_text("TextInputMode.FromFile"), true);
+	obs_property_set_modified_callback(from_file, from_file_modified);
+
+	obs_property_t *text_file = obs_properties_add_path(
+		props, "text_file", obs_module_text("TextFile"), OBS_PATH_FILE,
+		obs_module_text("TextFileFilter"), NULL);
+	obs_property_set_long_description(text_file,
+					  obs_module_text("TextFile.Encoding"));
+
 	obs_properties_add_text(props, "text", obs_module_text("Text"),
 				OBS_TEXT_MULTILINE);
-
-	obs_properties_add_bool(props, "from_file",
-				obs_module_text("ReadFromFile"));
 
 	obs_properties_add_bool(props, "antialiasing",
 				obs_module_text("Antialiasing"));
@@ -167,10 +195,6 @@ static obs_properties_t *ft2_source_properties(void *unused)
 
 	obs_properties_add_int(props, "log_lines",
 			       obs_module_text("ChatLogLines"), 1, 1000, 1);
-
-	obs_properties_add_path(props, "text_file", obs_module_text("TextFile"),
-				OBS_PATH_FILE,
-				obs_module_text("TextFileFilter"), NULL);
 
 	obs_properties_add_color_alpha(props, "color1",
 				       obs_module_text("Color1"));
