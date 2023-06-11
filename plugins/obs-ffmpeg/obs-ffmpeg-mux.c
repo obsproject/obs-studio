@@ -813,12 +813,12 @@ static inline bool has_audio(struct ffmpeg_muxer *stream)
 	return !!obs_output_get_audio_encoder(stream->output, 0);
 }
 
-static void push_back_packet(struct darray *packets,
+static void push_back_packet(mux_packets_t *packets,
 			     struct encoder_packet *packet)
 {
 	struct encoder_packet pkt;
 	obs_encoder_packet_ref(&pkt, packet);
-	darray_push_back(sizeof(pkt), packets, &pkt);
+	da_push_back(*packets, &pkt);
 }
 
 static void ffmpeg_mux_data(void *data, struct encoder_packet *packet)
@@ -841,8 +841,7 @@ static void ffmpeg_mux_data(void *data, struct encoder_packet *packet)
 
 		if (pts_usec >= first_pts_usec) {
 			if (packet->type != OBS_ENCODER_AUDIO) {
-				push_back_packet(&stream->mux_packets.da,
-						 packet);
+				push_back_packet(&stream->mux_packets, packet);
 				return;
 			}
 
@@ -852,7 +851,7 @@ static void ffmpeg_mux_data(void *data, struct encoder_packet *packet)
 		}
 	} else if (stream->split_file && should_split(stream, packet)) {
 		if (has_audio(stream)) {
-			push_back_packet(&stream->mux_packets.da, packet);
+			push_back_packet(&stream->mux_packets, packet);
 			return;
 		} else {
 			if (!prepare_split_file(stream, packet))
@@ -1123,13 +1122,11 @@ static inline void replay_buffer_purge(struct ffmpeg_muxer *stream,
 		purge(stream);
 }
 
-static void insert_packet(struct darray *array, struct encoder_packet *packet,
+static void insert_packet(mux_packets_t *packets, struct encoder_packet *packet,
 			  int64_t video_offset, int64_t *audio_offsets,
 			  int64_t video_pts_offset, int64_t *audio_dts_offsets)
 {
 	struct encoder_packet pkt;
-	DARRAY(struct encoder_packet) packets;
-	packets.da = *array;
 	size_t idx;
 
 	obs_encoder_packet_ref(&pkt, packet);
@@ -1144,14 +1141,13 @@ static void insert_packet(struct darray *array, struct encoder_packet *packet,
 		pkt.pts -= audio_dts_offsets[pkt.track_idx];
 	}
 
-	for (idx = packets.num; idx > 0; idx--) {
-		struct encoder_packet *p = packets.array + (idx - 1);
+	for (idx = packets->num; idx > 0; idx--) {
+		struct encoder_packet *p = packets->array + (idx - 1);
 		if (p->dts_usec < pkt.dts_usec)
 			break;
 	}
 
-	da_insert(packets, idx, &pkt);
-	*array = packets.da;
+	da_insert(*packets, idx, &pkt);
 }
 
 static void *replay_buffer_mux_thread(void *data)
@@ -1244,7 +1240,7 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 			}
 		}
 
-		insert_packet(&stream->mux_packets.da, pkt, video_offset,
+		insert_packet(&stream->mux_packets, pkt, video_offset,
 			      audio_offsets, video_pts_offset,
 			      audio_dts_offsets);
 	}
