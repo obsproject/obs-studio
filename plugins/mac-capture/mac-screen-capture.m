@@ -33,7 +33,7 @@ typedef enum {
     ScreenCaptureApplicationStream = 2,
 } ScreenCaptureStreamType;
 
-@interface ScreenCaptureDelegate : NSObject <SCStreamOutput>
+@interface ScreenCaptureDelegate : NSObject <SCStreamOutput, SCStreamDelegate>
 
 @property struct screen_capture *sc;
 
@@ -420,7 +420,8 @@ static bool init_screen_stream(struct screen_capture *sc)
         }
     }
 
-    sc->disp = [[SCStream alloc] initWithFilter:content_filter configuration:sc->stream_properties delegate:nil];
+    sc->disp = [[SCStream alloc] initWithFilter:content_filter configuration:sc->stream_properties
+                                       delegate:sc->capture_delegate];
 
     [content_filter release];
 
@@ -1087,6 +1088,27 @@ struct obs_source_info screen_capture_info = {
         }
 #endif
     }
+}
+
+- (void)stream:(SCStream *)stream didStopWithError:(NSError *)error
+{
+    NSString *errorMessage;
+    switch (error.code) {
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
+        case SCStreamErrorUserStopped:
+            errorMessage = @"User stopped stream.";
+            break;
+#endif
+        case SCStreamErrorNoCaptureSource:
+            errorMessage = @"Stream stopped as no capture source was not found.";
+            break;
+        default:
+            errorMessage = [NSString stringWithFormat:@"Stream stopped with error %ld (\"%s\")", error.code,
+                                                      error.localizedDescription.UTF8String];
+            break;
+    }
+
+    MACCAP_LOG(LOG_WARNING, "%s", error.domain.UTF8String);
 }
 
 @end
