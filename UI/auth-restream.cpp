@@ -13,7 +13,7 @@
 #include "window-basic-main.hpp"
 #include "remote-text.hpp"
 #include "ui-config.h"
-#include "obf.h"
+#include <obf.h>
 
 using namespace json11;
 

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2023 Lain Bailey <lain@obsproject.com>
+//
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #include "obf.h"
 #include <stdbool.h>
 

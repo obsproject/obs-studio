@@ -22,7 +22,7 @@
 #include "ui-config.h"
 #include "youtube-api-wrappers.hpp"
 #include "window-basic-main.hpp"
-#include "obf.h"
+#include <obf.h>
 
 #ifdef BROWSER_AVAILABLE
 #include "window-dock-browser.hpp"

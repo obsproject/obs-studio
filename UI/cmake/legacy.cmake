@@ -130,8 +130,6 @@ target_sources(
           auth-oauth.hpp
           auth-listener.cpp
           auth-listener.hpp
-          obf.c
-          obf.h
           obs-app.cpp
           obs-app.hpp
           obs-proxy-style.cpp
@@ -293,8 +291,19 @@ target_compile_features(obs PRIVATE cxx_std_17)
 
 target_include_directories(obs PRIVATE ${CMAKE_SOURCE_DIR}/deps/json11 ${CMAKE_SOURCE_DIR}/deps/libff)
 
-target_link_libraries(obs PRIVATE CURL::libcurl FFmpeg::avcodec FFmpeg::avutil FFmpeg::avformat OBS::libobs
-                                  OBS::frontend-api)
+if(NOT TARGET OBS::obf)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/deps/obf" "${CMAKE_BINARY_DIR}/deps/obf")
+endif()
+
+target_link_libraries(
+  obs
+  PRIVATE CURL::libcurl
+          FFmpeg::avcodec
+          FFmpeg::avutil
+          FFmpeg::avformat
+          OBS::libobs
+          OBS::frontend-api
+          OBS::obf)
 
 set_target_properties(obs PROPERTIES FOLDER "frontend")
 
