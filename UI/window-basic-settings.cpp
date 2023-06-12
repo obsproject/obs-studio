@@ -473,13 +473,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->multiviewDrawAreas,   CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->multiviewLayout,      COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->service,              COMBO_CHANGED,  STREAM1_CHANGED);
-	HookWidget(ui->server,               COMBO_CHANGED,  STREAM1_CHANGED);
-	HookWidget(ui->customServer,         EDIT_CHANGED,   STREAM1_CHANGED);
-	HookWidget(ui->key,                  EDIT_CHANGED,   STREAM1_CHANGED);
-	HookWidget(ui->bandwidthTestEnable,  CHECK_CHANGED,  STREAM1_CHANGED);
-	HookWidget(ui->useAuth,              CHECK_CHANGED,  STREAM1_CHANGED);
-	HookWidget(ui->authUsername,         EDIT_CHANGED,   STREAM1_CHANGED);
-	HookWidget(ui->authPw,               EDIT_CHANGED,   STREAM1_CHANGED);
 	HookWidget(ui->ignoreRecommended,    CHECK_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->outputMode,           COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutputPath,     EDIT_CHANGED,   OUTPUTS_CHANGED);
@@ -5794,11 +5787,10 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 	QString qual = ui->simpleOutRecQuality->currentData().toString();
 	QString warning;
 	bool enforceBitrate = !ui->ignoreRecommended->isChecked();
-	OBSService service = GetStream1Service();
 
 	delete simpleOutRecWarning;
 
-	if (enforceBitrate && service) {
+	if (enforceBitrate && tempService) {
 		OBSDataAutoRelease videoSettings = obs_data_create();
 		OBSDataAutoRelease audioSettings = obs_data_create();
 		int oldVBitrate = ui->simpleOutputVBitrate->value();
@@ -5807,7 +5799,7 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 		obs_data_set_int(videoSettings, "bitrate", oldVBitrate);
 		obs_data_set_int(audioSettings, "bitrate", oldABitrate);
 
-		obs_service_apply_encoder_settings(service, videoSettings,
+		obs_service_apply_encoder_settings(tempService, videoSettings,
 						   audioSettings);
 
 		int newVBitrate = obs_data_get_int(videoSettings, "bitrate");
@@ -6218,7 +6210,8 @@ void OBSBasicSettings::RecreateOutputResolutionWidget()
 
 void OBSBasicSettings::UpdateAdvNetworkGroup()
 {
-	bool enabled = protocol.contains("RTMP");
+	bool enabled =
+		QT_UTF8(obs_service_get_protocol(tempService)).contains("RTMP");
 
 	ui->advNetworkDisabled->setVisible(!enabled);
 

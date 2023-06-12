@@ -123,8 +123,6 @@ private:
 	bool hotkeysLoaded = false;
 
 	int lastSimpleRecQualityIdx = 0;
-	int lastServiceIdx = -1;
-	int lastIgnoreRecommended = -1;
 	int lastChannelSetupIdx = 0;
 
 	static constexpr uint32_t ENCODER_HIDE_FLAGS =
@@ -132,7 +130,8 @@ private:
 
 	OBSFFFormatDesc formats;
 
-	OBSPropertiesView *streamProperties = nullptr;
+	OBSPropertiesView *streamServiceProps = nullptr;
+
 	OBSPropertiesView *streamEncoderProps = nullptr;
 	OBSPropertiesView *recordEncoderProps = nullptr;
 
@@ -251,31 +250,30 @@ private:
 	void LoadBranchesList();
 
 	/* stream */
+	OBSServiceAutoRelease tempService;
+
 	void InitStreamPage();
-	inline bool IsCustomService() const;
+	inline bool IsCustomOrInternalService() const;
 	void LoadServices(bool showAll);
-	QString lastService;
-	QString protocol;
-	QString lastCustomServer;
 	int prevLangIndex;
 	bool prevBrowserAccel;
 
-	void ServiceChanged();
-	QString FindProtocol();
-	void UpdateServerList();
 	void UpdateKeyLink();
 	void UpdateVodTrackSetting();
 	void UpdateServiceRecommendations();
-	void UpdateMoreInfoLink();
 	void UpdateAdvNetworkGroup();
+
+	OBSPropertiesView *CreateServicePropertyView(const char *service,
+						     obs_data_t *settings,
+						     bool changed = false);
 
 private slots:
 	void RecreateOutputResolutionWidget();
 	bool UpdateResFPSLimits();
 	void DisplayEnforceWarning(bool checked);
-	void on_show_clicked();
-	void on_authPwShow_clicked();
-	void on_useAuth_toggled();
+
+	void ServicePropertyViewChanged();
+	void RestoreServiceSettings(QString settingsJson);
 
 	void on_hotkeyFilterReset_clicked();
 	void on_hotkeyFilterSearch_textChanged(const QString text);
@@ -368,8 +366,6 @@ private:
 	int SimpleOutGetSelectedAudioTracks();
 	int AdvOutGetSelectedAudioTracks();
 
-	OBSService GetStream1Service();
-
 	bool ServiceAndVCodecCompatible();
 	bool ServiceAndACodecCompatible();
 	bool ServiceSupportsCodecCheck();
@@ -381,7 +377,6 @@ private slots:
 	void on_buttonBox_clicked(QAbstractButton *button);
 
 	void on_service_currentIndexChanged(int idx);
-	void on_customServer_textChanged(const QString &text);
 	void on_simpleOutputBrowse_clicked();
 	void on_advOutRecPathBrowse_clicked();
 	void on_advOutFFPathBrowse_clicked();
@@ -449,8 +444,6 @@ private slots:
 	void AdvReplayBufferChanged();
 
 	void SimpleStreamingEncoderChanged();
-
-	OBSService SpawnTempService();
 
 	void SetGeneralIcon(const QIcon &icon);
 	void SetStreamIcon(const QIcon &icon);

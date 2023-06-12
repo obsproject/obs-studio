@@ -907,7 +907,7 @@
          <item>
           <widget class="QFrame" name="widget_5">
            <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
@@ -928,7 +928,7 @@
             <property name="bottomMargin">
              <number>0</number>
             </property>
-            <item row="2" column="0">
+            <item row="1" column="0">
              <widget class="QLabel" name="serviceLabel">
               <property name="minimumSize">
                <size>
@@ -942,43 +942,80 @@
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
               </property>
-              <property name="buddy">
-               <cstring>service</cstring>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QComboBox" name="service">
+              <property name="maxVisibleItems">
+               <number>20</number>
               </property>
              </widget>
             </item>
             <item row="2" column="1">
-             <widget class="QFrame" name="serviceWidget">
-              <layout class="QHBoxLayout" name="serviceWidgetLayout" stretch="0,0">
-               <property name="leftMargin">
-                <number>0</number>
-               </property>
-               <property name="topMargin">
-                <number>0</number>
-               </property>
-               <property name="rightMargin">
-                <number>0</number>
-               </property>
-               <property name="bottomMargin">
-                <number>0</number>
-               </property>
-               <item>
-                <widget class="QComboBox" name="service">
-                 <property name="maxVisibleItems">
-                  <number>20</number>
+             <widget class="QCheckBox" name="ignoreRecommended">
+              <property name="text">
+               <string>Basic.Settings.Stream.IgnoreRecommended</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="serviceProps">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="title">
+            <string>Basic.Settings.Stream.ServiceSettings</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_30">
+            <item>
+             <widget class="QWidget" name="servicePropsInternal" native="true">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <layout class="QVBoxLayout" name="serviceLayout"/>
+             </widget>
+            </item>
+            <item>
+             <widget class="QWidget" name="enforceSettings" native="true">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <layout class="QFormLayout" name="formLayout_15">
+               <item row="0" column="0">
+                <spacer name="horizontalSpacer_18">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
                  </property>
-                </widget>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>170</width>
+                   <height>8</height>
+                  </size>
+                 </property>
+                </spacer>
                </item>
-               <item>
-                <widget class="UrlPushButton" name="moreInfoButton">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
+               <item row="0" column="1">
+                <widget class="QLabel" name="enforceSettingsLabel">
                  <property name="text">
-                  <string>Basic.AutoConfig.StreamPage.MoreInfo</string>
+                  <string notr="true"/>
+                 </property>
+                 <property name="textFormat">
+                  <enum>Qt::RichText</enum>
+                 </property>
+                 <property name="openExternalLinks">
+                  <bool>true</bool>
                  </property>
                 </widget>
                </item>
@@ -989,238 +1026,17 @@
           </widget>
          </item>
          <item>
-          <layout class="QFormLayout" name="streamkeyPageLayout">
-           <property name="fieldGrowthPolicy">
-            <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+          <spacer name="verticalSpacer_8">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
            </property>
-           <property name="labelAlignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>10</height>
+            </size>
            </property>
-           <item row="0" column="0">
-            <widget class="QLabel" name="serverLabel">
-             <property name="text">
-              <string>Basic.AutoConfig.StreamPage.Server</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QStackedWidget" name="serverStackedWidget">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="currentIndex">
-              <number>1</number>
-             </property>
-             <widget class="QWidget" name="servicePage">
-              <layout class="QHBoxLayout" name="horizontalLayout_21">
-               <property name="leftMargin">
-                <number>0</number>
-               </property>
-               <property name="topMargin">
-                <number>0</number>
-               </property>
-               <property name="rightMargin">
-                <number>0</number>
-               </property>
-               <property name="bottomMargin">
-                <number>0</number>
-               </property>
-               <item>
-                <widget class="QComboBox" name="server"/>
-               </item>
-              </layout>
-             </widget>
-             <widget class="QWidget" name="customPage">
-              <layout class="QHBoxLayout" name="horizontalLayout_22">
-               <property name="leftMargin">
-                <number>0</number>
-               </property>
-               <property name="topMargin">
-                <number>0</number>
-               </property>
-               <property name="rightMargin">
-                <number>0</number>
-               </property>
-               <property name="bottomMargin">
-                <number>0</number>
-               </property>
-               <item>
-                <widget class="QLineEdit" name="customServer"/>
-               </item>
-              </layout>
-             </widget>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="streamKeyLabel">
-             <property name="text">
-              <string>Basic.AutoConfig.StreamPage.StreamKey</string>
-             </property>
-             <property name="openExternalLinks">
-              <bool>true</bool>
-             </property>
-             <property name="buddy">
-              <cstring>key</cstring>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QFrame" name="streamKeyWidget">
-             <layout class="QHBoxLayout" name="horizontalLayout_11">
-              <property name="leftMargin">
-               <number>0</number>
-              </property>
-              <property name="topMargin">
-               <number>0</number>
-              </property>
-              <property name="rightMargin">
-               <number>0</number>
-              </property>
-              <property name="bottomMargin">
-               <number>0</number>
-              </property>
-              <item>
-               <widget class="QLineEdit" name="key">
-                <property name="inputMask">
-                 <string notr="true"/>
-                </property>
-                <property name="text">
-                 <string notr="true"/>
-                </property>
-                <property name="echoMode">
-                 <enum>QLineEdit::Password</enum>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="show">
-                <property name="text">
-                 <string>Show</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="UrlPushButton" name="getStreamKeyButton">
-                <property name="toolTip">
-                 <string/>
-                </property>
-                <property name="toolTipDuration">
-                 <number>-4</number>
-                </property>
-                <property name="text">
-                 <string>Basic.AutoConfig.StreamPage.GetStreamKey</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <spacer name="horizontalSpacer_18">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>170</width>
-               <height>8</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item row="2" column="1">
-            <widget class="QCheckBox" name="bandwidthTestEnable">
-             <property name="text">
-              <string>Basic.Settings.Stream.BandwidthTestMode</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="1">
-            <widget class="QCheckBox" name="useAuth">
-             <property name="text">
-              <string>Basic.Settings.Stream.Custom.UseAuthentication</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="0">
-            <widget class="QLabel" name="authUsernameLabel">
-             <property name="text">
-              <string>Basic.Settings.Stream.Custom.Username</string>
-             </property>
-             <property name="buddy">
-              <cstring>authUsername</cstring>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="1">
-            <widget class="QLineEdit" name="authUsername"/>
-           </item>
-           <item row="5" column="0">
-            <widget class="QLabel" name="authPwLabel">
-             <property name="text">
-              <string>Basic.Settings.Stream.Custom.Password</string>
-             </property>
-             <property name="buddy">
-              <cstring>authPw</cstring>
-             </property>
-            </widget>
-           </item>
-           <item row="5" column="1">
-            <widget class="QFrame" name="authPwWidget">
-             <layout class="QHBoxLayout" name="horizontalLayout_25">
-              <property name="leftMargin">
-               <number>0</number>
-              </property>
-              <property name="topMargin">
-               <number>0</number>
-              </property>
-              <property name="rightMargin">
-               <number>0</number>
-              </property>
-              <property name="bottomMargin">
-               <number>0</number>
-              </property>
-              <item>
-               <widget class="QLineEdit" name="authPw">
-                <property name="echoMode">
-                 <enum>QLineEdit::Password</enum>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="authPwShow">
-                <property name="text">
-                 <string>Show</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
-           <item row="6" column="1">
-            <widget class="QCheckBox" name="ignoreRecommended">
-             <property name="text">
-              <string>Basic.Settings.Stream.IgnoreRecommended</string>
-             </property>
-            </widget>
-           </item>
-           <item row="7" column="1">
-            <widget class="QLabel" name="enforceSettingsLabel">
-             <property name="text">
-              <string notr="true"/>
-             </property>
-             <property name="textFormat">
-              <enum>Qt::RichText</enum>
-             </property>
-             <property name="openExternalLinks">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-          </layout>
+          </spacer>
          </item>
         </layout>
        </widget>
@@ -7543,11 +7359,6 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>UrlPushButton</class>
-   <extends>QPushButton</extends>
-   <header>url-push-button.hpp</header>
-  </customwidget>
-  <customwidget>
    <class>OBSHotkeyEdit</class>
    <extends>QLineEdit</extends>
    <header>hotkey-edit.hpp</header>
@@ -7595,17 +7406,6 @@
   <tabstop>multiviewDrawAreas</tabstop>
   <tabstop>multiviewLayout</tabstop>
   <tabstop>service</tabstop>
-  <tabstop>moreInfoButton</tabstop>
-  <tabstop>server</tabstop>
-  <tabstop>customServer</tabstop>
-  <tabstop>key</tabstop>
-  <tabstop>show</tabstop>
-  <tabstop>getStreamKeyButton</tabstop>
-  <tabstop>bandwidthTestEnable</tabstop>
-  <tabstop>useAuth</tabstop>
-  <tabstop>authUsername</tabstop>
-  <tabstop>authPw</tabstop>
-  <tabstop>authPwShow</tabstop>
   <tabstop>outputMode</tabstop>
   <tabstop>simpleOutputVBitrate</tabstop>
   <tabstop>simpleOutputABitrate</tabstop>
@@ -7723,7 +7523,6 @@
   <tabstop>enableLowLatencyMode</tabstop>
   <tabstop>browserHWAccel</tabstop>
   <tabstop>hotkeyFocusType</tabstop>
-  <tabstop>ignoreRecommended</tabstop>
   <tabstop>hotkeyFilterSearch</tabstop>
   <tabstop>hotkeyFilterInput</tabstop>
   <tabstop>hotkeyFilterReset</tabstop>
