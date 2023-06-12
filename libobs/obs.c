@@ -1337,8 +1337,10 @@ void obs_shutdown(void)
 		struct obs_source_info *item = &obs->source_types.array[i];
 		if (item->type_data && item->free_type_data)
 			item->free_type_data(item->type_data);
-		if (item->id)
+		if (item->id) {
 			bfree((void *)item->id);
+			item->id = NULL;
+		}
 	}
 	da_free(obs->source_types);
 
@@ -2869,6 +2871,7 @@ void obs_context_data_free(struct obs_context_data *context)
 	obs_context_data_remove(context);
 	pthread_mutex_destroy(&context->rename_cache_mutex);
 	bfree(context->name);
+	context->name = NULL;
 
 	for (size_t i = 0; i < context->rename_cache.num; i++)
 		bfree(context->rename_cache.array[i]);
