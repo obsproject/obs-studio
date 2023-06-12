@@ -164,12 +164,21 @@ static void custom_service_apply_settings(void *data,
 {
 	struct custom_service *service = data;
 	if ((strcmp(service->protocol, "SRT") != 0) &&
-	    (strcmp(service->protocol, "RIST") != 0)) {
+	    (strcmp(service->protocol, "RIST") != 0) &&
+	    (strcmp(service->protocol, "WHIP") != 0)) {
 		return;
 	}
 
-	if (video_settings != NULL)
+	if (video_settings != NULL) {
 		obs_data_set_bool(video_settings, "repeat_headers", true);
+
+		if (strcmp(service->protocol, "WHIP") == 0) {
+			obs_data_set_int(video_settings, "bf", 0);
+			obs_data_set_string(video_settings, "rate_control",
+					    "CBR");
+			return;
+		}
+	}
 
 	if (audio_settings != NULL)
 		obs_data_set_bool(audio_settings, "set_to_ADTS", true);

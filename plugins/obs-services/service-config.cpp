@@ -153,10 +153,18 @@ void ServiceConfig::ApplySettings(obs_data_t *videoSettings,
 			obs_data_set_bool(audioSettings, "set_to_ADTS", true);
 		break;
 	}
+	case OBSServices::ServerProtocol::WHIP:
+		if (videoSettings != NULL) {
+			obs_data_set_bool(videoSettings, "repeat_headers",
+					  true);
+			obs_data_set_int(videoSettings, "bf", 0);
+			obs_data_set_string(videoSettings, "rate_control",
+					    "CBR");
+		}
+		break;
 	case OBSServices::ServerProtocol::RTMP:
 	case OBSServices::ServerProtocol::RTMPS:
 	case OBSServices::ServerProtocol::HLS:
-	case OBSServices::ServerProtocol::WHIP:
 		break;
 	}
 }
