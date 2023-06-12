@@ -12,6 +12,7 @@ struct custom_service {
 	char *username;
 	char *password;
 	char *encrypt_passphrase;
+	char *bearer_token;
 };
 
 static const char *custom_service_name(void *type_data)
@@ -35,6 +36,7 @@ static void custom_service_update(void *data, obs_data_t *settings)
 	bfree(service->username);
 	bfree(service->password);
 	bfree(service->encrypt_passphrase);
+	bfree(service->bearer_token);
 
 #define GET_STRING_SETTINGS(name)                                             \
 	service->name =                                                       \
@@ -55,6 +57,8 @@ static void custom_service_update(void *data, obs_data_t *settings)
 
 	GET_STRING_SETTINGS(encrypt_passphrase);
 
+	GET_STRING_SETTINGS(bearer_token);
+
 #undef GET_STRING_SETTINGS
 }
 
@@ -68,6 +72,7 @@ static void custom_service_destroy(void *data)
 	bfree(service->username);
 	bfree(service->password);
 	bfree(service->encrypt_passphrase);
+	bfree(service->bearer_token);
 	bfree(service);
 }
 
@@ -104,7 +109,7 @@ static const char *custom_service_connect_info(void *data, uint32_t type)
 	case OBS_SERVICE_CONNECT_INFO_ENCRYPT_PASSPHRASE:
 		return service->encrypt_passphrase;
 	case OBS_SERVICE_CONNECT_INFO_BEARER_TOKEN:
-		break;
+		return service->bearer_token;
 	}
 
 	return NULL;
@@ -147,6 +152,9 @@ bool custom_service_can_try_to_connect(void *data)
 			return false;
 	}
 
+	if (strcmp(service->protocol, "WHIP") == 0 && !service->bearer_token)
+		return false;
+
 	return true;
 }
 
@@ -167,6 +175,7 @@ bool update_protocol_cb(obs_properties_t *props, obs_property_t *prop,
 	GET_AND_HIDE(username);
 	GET_AND_HIDE(password);
 	GET_AND_HIDE(encrypt_passphrase);
+	GET_AND_HIDE(bearer_token);
 
 	GET_AND_HIDE(third_party_field_manager);
 
@@ -204,6 +213,8 @@ bool update_protocol_cb(obs_properties_t *props, obs_property_t *prop,
 		SHOW(encrypt_passphrase);
 		SHOW(username);
 		SHOW(password);
+	} else if (strcmp(protocol, "WHIP") == 0) {
+		SHOW(bearer_token);
 	}
 #undef SHOW
 
@@ -216,6 +227,7 @@ bool update_protocol_cb(obs_properties_t *props, obs_property_t *prop,
 	ERASE_DATA_IF_HIDDEN(username);
 	ERASE_DATA_IF_HIDDEN(password);
 	ERASE_DATA_IF_HIDDEN(encrypt_passphrase);
+	ERASE_DATA_IF_HIDDEN(bearer_token);
 
 #undef ERASE_DATA_IF_HIDDEN
 
@@ -245,6 +257,8 @@ static obs_properties_t *custom_service_properties(void *data)
 		obs_property_list_add_string(p, "SRT", "SRT");
 	if (obs_is_output_protocol_registered("RIST"))
 		obs_property_list_add_string(p, "RIST", "RIST");
+	if (obs_is_output_protocol_registered("WHIP"))
+		obs_property_list_add_string(p, "WHIP", "WHIP");
 
 	char *string = NULL;
 	bool add_ftl = false;
@@ -303,13 +317,16 @@ static obs_properties_t *custom_service_properties(void *data)
 		ppts, "encrypt_passphrase",
 		obs_module_text("CustomServices.EncryptPassphrase.Optional"),
 		OBS_TEXT_PASSWORD);
+	obs_properties_add_text(ppts, "bearer_token",
+				obs_module_text("CustomServices.BearerToken"),
+				OBS_TEXT_PASSWORD);
 
 	return ppts;
 }
 
 const struct obs_service_info custom_service = {
 	.id = "custom_service",
-	.supported_protocols = "RTMP;RTMPS;SRT;RIST",
+	.supported_protocols = "RTMP;RTMPS;SRT;RIST;WHIP",
 	.get_name = custom_service_name,
 	.create = custom_service_create,
 	.destroy = custom_service_destroy,

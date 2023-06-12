@@ -18,6 +18,7 @@ extern struct obs_service_info custom_rtmps;
 extern struct obs_service_info custom_hls;
 extern struct obs_service_info custom_srt;
 extern struct obs_service_info custom_rist;
+extern struct obs_service_info custom_whip;
 
 bool obs_module_load(void)
 {
@@ -28,6 +29,7 @@ bool obs_module_load(void)
 	obs_register_service(&custom_hls);
 	obs_register_service(&custom_srt);
 	obs_register_service(&custom_rist);
+	obs_register_service(&custom_whip);
 
 	return true;
 }

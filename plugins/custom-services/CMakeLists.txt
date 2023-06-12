@@ -4,8 +4,15 @@ add_library(custom-services MODULE)
 add_library(OBS::custom-services ALIAS custom-services)
 
 target_sources(
-  custom-services PRIVATE # cmake-format: sortable
-                          custom-hls.c custom-rist.c custom-service.c custom-services.c custom-srt.c rtmp-services.c)
+  custom-services
+  PRIVATE # cmake-format: sortable
+          custom-hls.c
+          custom-rist.c
+          custom-service.c
+          custom-services.c
+          custom-srt.c
+          custom-whip.c
+          rtmp-services.c)
 
 target_link_libraries(custom-services PRIVATE OBS::libobs)
 
