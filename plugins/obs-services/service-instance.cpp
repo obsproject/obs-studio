@@ -197,6 +197,7 @@ bool ModifiedProtocolCb(void *service_, obs_properties_t *props,
 	ADD_TO_MAP("username");
 	ADD_TO_MAP("password");
 	ADD_TO_MAP("encrypt_passphrase");
+	ADD_TO_MAP("bearer_token");
 #undef ADD_TO_MAP
 
 	if (propGetStreamKey)
@@ -242,6 +243,9 @@ bool ModifiedProtocolCb(void *service_, obs_properties_t *props,
 			hasProps ? service->rist->srpUsernamePassword : false);
 		break;
 	}
+	case OBSServices::ServerProtocol::WHIP:
+		obs_property_set_visible(properties["bearer_token"], true);
+		break;
 	}
 
 	return true;
@@ -331,6 +335,9 @@ obs_properties_t *ServiceInstance::GetProperties()
 				OBS_TEXT_PASSWORD);
 	obs_properties_add_text(ppts, "encrypt_passphrase",
 				obs_module_text("Services.EncryptPassphrase"),
+				OBS_TEXT_PASSWORD);
+	obs_properties_add_text(ppts, "bearer_token",
+				obs_module_text("Services.BearerToken"),
 				OBS_TEXT_PASSWORD);
 
 	return ppts;

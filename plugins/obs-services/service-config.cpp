@@ -38,6 +38,8 @@ void ServiceConfig::Update(obs_data_t *settings)
 	password = obs_data_get_string(settings, "password");
 
 	encryptPassphrase = obs_data_get_string(settings, "encrypt_passphrase");
+
+	bearerToken = obs_data_get_string(settings, "bearer_token");
 }
 
 const char *ServiceConfig::ConnectInfo(uint32_t type)
@@ -64,6 +66,8 @@ const char *ServiceConfig::ConnectInfo(uint32_t type)
 			return encryptPassphrase.c_str();
 		break;
 	case OBS_SERVICE_CONNECT_INFO_BEARER_TOKEN:
+		if (!bearerToken.empty())
+			return bearerToken.c_str();
 		break;
 	}
 
@@ -108,6 +112,10 @@ bool ServiceConfig::CanTryToConnect()
 
 		break;
 	}
+	case OBSServices::ServerProtocol::WHIP:
+		if (bearerToken.empty())
+			return false;
+		break;
 	}
 
 	return true;

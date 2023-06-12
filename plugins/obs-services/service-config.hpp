@@ -25,6 +25,8 @@ class ServiceConfig {
 
 	std::string encryptPassphrase;
 
+	std::string bearerToken;
+
 public:
 	ServiceConfig(obs_data_t *settings, obs_service_t *self);
 	inline ~ServiceConfig(){};

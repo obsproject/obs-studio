@@ -92,7 +92,7 @@ namespace OBSServices {
         bool srpUsernamePassword;
     };
 
-    enum class ServerProtocol : int { HLS, RIST, RTMP, RTMPS, SRT };
+    enum class ServerProtocol : int { HLS, RIST, RTMP, RTMPS, SRT, WHIP };
 
     struct Server {
         /**
@@ -307,6 +307,7 @@ namespace OBSServices {
         else if (j == "RTMP") x = ServerProtocol::RTMP;
         else if (j == "RTMPS") x = ServerProtocol::RTMPS;
         else if (j == "SRT") x = ServerProtocol::SRT;
+        else if (j == "WHIP") x = ServerProtocol::WHIP;
         else { throw std::runtime_error("Input JSON does not conform to schema!"); }
     }
 
@@ -317,6 +318,7 @@ namespace OBSServices {
             case ServerProtocol::RTMP: j = "RTMP"; break;
             case ServerProtocol::RTMPS: j = "RTMPS"; break;
             case ServerProtocol::SRT: j = "SRT"; break;
+            case ServerProtocol::WHIP: j = "WHIP"; break;
             default: throw std::runtime_error("This should not happen");
         }
     }
