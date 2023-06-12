@@ -1209,8 +1209,8 @@ struct obs_encoder {
 
 	size_t mixer_idx;
 
-	bool gpu_scaling_enabled;
-	enum obs_scale_type scale_type;
+	/* OBS_SCALE_DISABLE indicates GPU scaling is disabled */
+	enum obs_scale_type gpu_scale_type;
 
 	uint32_t scaled_width;
 	uint32_t scaled_height;

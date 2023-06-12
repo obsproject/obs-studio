@@ -2350,11 +2350,13 @@ EXPORT void obs_encoder_set_scaled_size(obs_encoder_t *encoder, uint32_t width,
 					uint32_t height);
 
 /**
- * Enable GPU based scaling for a video encoder. If the encoder is active,
- * this function will trigger a warning, and do nothing.
+ * Enable/disable GPU based scaling for a video encoder.
+ * OBS_SCALE_DISABLE disables GPU based scaling (default),
+ * any other value enables GPU based scaling. If the encoder
+ * is active, this function will trigger a warning, and do nothing.
  */
-EXPORT void obs_encoder_enable_gpu_scaling(obs_encoder_t *encoder, bool enable,
-					   enum obs_scale_type scale_type);
+EXPORT void obs_encoder_set_gpu_scale_type(obs_encoder_t *encoder,
+					   enum obs_scale_type gpu_scale_type);
 
 /** For video encoders, returns true if pre-encode scaling is enabled */
 EXPORT bool obs_encoder_scaling_enabled(const obs_encoder_t *encoder);

@@ -196,7 +196,7 @@ static void maybe_set_gpu_video_media(struct obs_encoder *encoder)
 
 	info = video_output_get_info(encoder->media);
 
-	if (!encoder->gpu_scaling_enabled)
+	if (encoder->gpu_scale_type == OBS_SCALE_DISABLE)
 		return;
 
 	if (!encoder->scaled_height && !encoder->scaled_width)
@@ -242,7 +242,7 @@ static void maybe_set_gpu_video_media(struct obs_encoder *encoder)
 
 	ovi.output_height = encoder->scaled_height;
 	ovi.output_width = encoder->scaled_width;
-	ovi.scale_type = encoder->scale_type;
+	ovi.scale_type = encoder->gpu_scale_type;
 
 	ovi.gpu_conversion = true;
 
@@ -837,14 +837,14 @@ void obs_encoder_set_scaled_size(obs_encoder_t *encoder, uint32_t width,
 	encoder->scaled_height = height;
 }
 
-void obs_encoder_enable_gpu_scaling(obs_encoder_t *encoder, bool enable,
-				    enum obs_scale_type scale_type)
+void obs_encoder_set_gpu_scale_type(obs_encoder_t *encoder,
+				    enum obs_scale_type gpu_scale_type)
 {
-	if (!obs_encoder_valid(encoder, "obs_encoder_enable_gpu_scaling"))
+	if (!obs_encoder_valid(encoder, "obs_encoder_set_gpu_scale_type"))
 		return;
 	if (encoder->info.type != OBS_ENCODER_VIDEO) {
 		blog(LOG_WARNING,
-		     "obs_encoder_enable_gpu_scaling: "
+		     "obs_encoder_set_gpu_scale_type: "
 		     "encoder '%s' is not a video encoder",
 		     obs_encoder_get_name(encoder));
 		return;
@@ -857,8 +857,7 @@ void obs_encoder_enable_gpu_scaling(obs_encoder_t *encoder, bool enable,
 		return;
 	}
 
-	encoder->gpu_scaling_enabled = enable;
-	encoder->scale_type = scale_type;
+	encoder->gpu_scale_type = gpu_scale_type;
 }
 
 bool obs_encoder_scaling_enabled(const obs_encoder_t *encoder)
@@ -919,7 +918,7 @@ bool obs_encoder_gpu_scaling_enabled(obs_encoder_t *encoder)
 		return 0;
 	}
 
-	return encoder->gpu_scaling_enabled;
+	return encoder->gpu_scale_type != OBS_SCALE_DISABLE;
 }
 
 enum obs_scale_type obs_encoder_get_scale_type(obs_encoder_t *encoder)
@@ -934,7 +933,7 @@ enum obs_scale_type obs_encoder_get_scale_type(obs_encoder_t *encoder)
 		return 0;
 	}
 
-	return encoder->scale_type;
+	return encoder->gpu_scale_type;
 }
 
 uint32_t obs_encoder_get_sample_rate(const obs_encoder_t *encoder)
