@@ -851,7 +851,7 @@ void obs_encoder_set_gpu_scale_type(obs_encoder_t *encoder,
 	}
 	if (encoder_active(encoder)) {
 		blog(LOG_WARNING,
-		     "encoder '%s': Cannot enable GPU sclaing "
+		     "encoder '%s': Cannot enable GPU scaling "
 		     "while the encoder is active",
 		     obs_encoder_get_name(encoder));
 		return;
