@@ -144,12 +144,13 @@ dynamic array value with a reference (&) operator.  For example:
 
 ---------------------
 
-.. function:: void da_push_back(da, const void *data)
+.. function:: size_t da_push_back(da, const void *data)
 
    Pushes data to the back of the array.
 
    :param da:   The dynamic array
    :param data: Pointer to the new data to push
+   :return:     Index of the new value
 
 ---------------------
 
@@ -163,13 +164,14 @@ dynamic array value with a reference (&) operator.  For example:
 
 ---------------------
 
-.. function:: void da_push_back_array(da, const void *src_array, size_t item_count)
+.. function:: size_t da_push_back_array(da, const void *src_array, size_t item_count)
 
    Pushes an array of values to the back of the array.
 
    :param da:         The dynamic array
    :param src_array:  Pointer of the array of values
    :param item_count: Number of items to push back
+   :return:           Index of the first new value
 
 ---------------------
 
