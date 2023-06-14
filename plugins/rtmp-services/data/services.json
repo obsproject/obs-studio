@@ -2231,15 +2231,27 @@
         },
         {
             "name": "Bilibili Live - RTMP | 哔哩哔哩直播 - RTMP",
-            "more_info_link": "https://link.bilibili.com/p/help/index#/tools-tutorial?id=9",
+            "more_info_link": "https://link.bilibili.com/p/help/index?id=4#/tools-tutorial",
             "stream_key_link": "https://link.bilibili.com/p/center/index#/my-room/start-live",
             "alt_names": [
                 "Bilibili Live"
             ],
             "servers": [
                 {
-                    "name": "Default | 默认",
+                    "name": "Global - Primary | 全球 - 主要",
                     "url": "rtmp://live-push.bilivideo.com/live-bvc/"
+                },
+                {
+                    "name": "Non Chinese Mainland - Primary | 非中国大陆地区 - 主要",
+                    "url": "rtmp://bdy.live-push.bilivideo.com/live-bvc/"
+                },
+                {
+                    "name": "Chinese Mainland - Backup | 中国大陆地区 - 备用",
+                    "url": "rtmp://txy2.live-push.bilivideo.com/live-bvc/"
+                },
+                {
+                    "name": "Non Chinese Mainland - Backup | 非中国大陆地区 - 备用",
+                    "url": "rtmp://txy.live-push.bilivideo.com/live-bvc/"
                 }
             ],
             "supported video codecs": [
