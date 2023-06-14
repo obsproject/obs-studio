@@ -1829,9 +1829,9 @@ static bool get_audio_and_video_packets(struct obs_output *output,
 
 static bool initialize_interleaved_packets(struct obs_output *output)
 {
-	struct encoder_packet *video[MAX_OUTPUT_VIDEO_ENCODERS];
-	struct encoder_packet *audio[MAX_OUTPUT_AUDIO_ENCODERS];
-	struct encoder_packet *last_audio[MAX_OUTPUT_AUDIO_ENCODERS];
+	struct encoder_packet *video[MAX_OUTPUT_VIDEO_ENCODERS] = {0};
+	struct encoder_packet *audio[MAX_OUTPUT_AUDIO_ENCODERS] = {0};
+	struct encoder_packet *last_audio[MAX_OUTPUT_AUDIO_ENCODERS] = {0};
 	size_t start_idx;
 	size_t first_audio_idx;
 	size_t first_video_idx;
