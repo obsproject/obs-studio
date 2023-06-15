@@ -28,6 +28,10 @@ RequestError::RequestError(const RequestErrorType &type,
 	case RequestErrorType::UNMANAGED_HTTP_RESPONSE_CODE:
 		message = "Request returned an unexpected HTTP reponse";
 		break;
+	case RequestErrorType::MISSING_REQUIRED_OPT_PARAMETER:
+		message =
+			"Request response is missing a required (optional by spec) parameter";
+		break;
 	}
 }
 
