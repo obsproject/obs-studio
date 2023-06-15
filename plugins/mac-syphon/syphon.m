@@ -41,30 +41,6 @@ static inline void update_properties(syphon_t s)
     obs_source_update_properties(s->source);
 }
 
-@interface OBSSyphonKVObserver : NSObject
-- (void)observeValueForKeyPath:(NSString *)keyPath
-                      ofObject:(id)object
-                        change:(NSDictionary *)change
-                       context:(void *)context;
-@end
-
-@implementation OBSSyphonKVObserver
-- (void)observeValueForKeyPath:(NSString *)keyPath
-                      ofObject:(id)object
-                        change:(NSDictionary *)change
-                       context:(void *)context
-{
-    syphon_t s = context;
-    if (!s)
-        return;
-
-    if (!change[NSKeyValueChangeNewKey])
-        return;
-
-    update_properties(s);
-}
-@end
-
 static const char *syphon_get_name(void *unused __attribute((unused)))
 {
     return obs_module_text("Syphon");
