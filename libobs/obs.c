@@ -748,7 +748,10 @@ static int obs_init_video(struct obs_video_info *ovi)
 
 	int errorcode;
 #ifdef __APPLE__
-	errorcode = pthread_create(&video->video_thread, NULL,
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+	pthread_attr_set_qos_class_np(&attr, QOS_CLASS_USER_INTERACTIVE, 0);
+	errorcode = pthread_create(&video->video_thread, &attr,
 				   obs_graphics_thread_autorelease, obs);
 #else
 	errorcode = pthread_create(&video->video_thread, NULL,
