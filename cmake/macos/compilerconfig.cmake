@@ -50,6 +50,7 @@ if(NOT XCODE)
       -Wint-conversion
       -Wnewline-eof
       -Wno-conversion
+      -Wno-error=shorten-64-to-32
       -Wno-float-conversion
       -Wno-implicit-fallthrough
       -Wno-missing-braces
