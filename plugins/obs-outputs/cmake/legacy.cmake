@@ -51,7 +51,7 @@ if(ENABLE_HEVC)
   target_sources(obs-outputs PRIVATE rtmp-hevc.c rtmp-hevc.h)
 endif()
 
-target_link_libraries(obs-outputs PRIVATE OBS::libobs)
+target_link_libraries(obs-outputs PRIVATE OBS::libobs OBS::happy-eyeballs)
 
 set_target_properties(obs-outputs PROPERTIES FOLDER "plugins" PREFIX "")
 

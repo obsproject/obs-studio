@@ -488,7 +488,7 @@ extern "C"
 
     int RTMP_Connect(RTMP *r, RTMPPacket *cp);
     struct sockaddr;
-    int RTMP_Connect0(RTMP *r, struct sockaddr *svc, socklen_t addrlen);
+    int RTMP_Connect0(RTMP *r, SOCKET socket_fd);
     int RTMP_Connect1(RTMP *r, RTMPPacket *cp);
 
     int RTMP_ReadPacket(RTMP *r, RTMPPacket *packet);
