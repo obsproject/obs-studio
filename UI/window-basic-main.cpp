@@ -9475,11 +9475,13 @@ void OBSBasic::on_toggleListboxToolbars_toggled(bool visible)
 void OBSBasic::ShowContextBar()
 {
 	on_toggleContextBar_toggled(true);
+	ui->toggleContextBar->setChecked(true);
 }
 
 void OBSBasic::HideContextBar()
 {
 	on_toggleContextBar_toggled(false);
+	ui->toggleContextBar->setChecked(false);
 }
 
 void OBSBasic::on_toggleContextBar_toggled(bool visible)
