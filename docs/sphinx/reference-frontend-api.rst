@@ -361,7 +361,7 @@ Functions
 
 .. function:: void obs_frontend_set_current_scene_collection(const char *collection)
 
-   :param profile: Name of the scene collection to activate
+   :param collection: Name of the scene collection to activate
 
 ---------------------------------------
 
