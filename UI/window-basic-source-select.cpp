@@ -367,6 +367,8 @@ static inline const char *GetSourceDisplayName(const char *id)
 {
 	if (strcmp(id, "scene") == 0)
 		return Str("Basic.Scene");
+	else if (strcmp(id, "group") == 0)
+		return Str("Group");
 	const char *v_id = obs_get_latest_input_type_id(id);
 	return obs_source_get_display_name(v_id);
 }
