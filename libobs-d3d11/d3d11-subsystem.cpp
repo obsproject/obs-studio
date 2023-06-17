@@ -17,6 +17,7 @@
 
 #include <cassert>
 #include <cinttypes>
+#include <optional>
 #include <util/base.h>
 #include <util/platform.h>
 #include <util/dstr.h>
@@ -503,18 +504,87 @@ static bool set_priority(ID3D11Device *device, bool hags_enabled)
 }
 #endif
 
-static bool adapter_hags_enabled(DXGI_ADAPTER_DESC *desc)
-{
-	D3DKMT_OPENADAPTERFROMLUID d3dkmt_openluid{};
-	bool hags_enabled = false;
-	NTSTATUS res;
+struct HagsStatus {
+	enum DriverSupport {
+		ALWAYS_OFF,
+		ALWAYS_ON,
+		EXPERIMENTAL,
+		STABLE,
+		UNKNOWN
+	};
 
+	bool enabled;
+	bool enabled_by_default;
+	DriverSupport support;
+
+	explicit HagsStatus(const D3DKMT_WDDM_2_7_CAPS *caps)
+	{
+		enabled = caps->HwSchEnabled;
+		enabled_by_default = caps->HwSchEnabledByDefault;
+		support = caps->HwSchSupported ? DriverSupport::STABLE
+					       : DriverSupport::ALWAYS_OFF;
+	}
+
+	void SetDriverSupport(const UINT DXGKVal)
+	{
+		switch (DXGKVal) {
+		case DXGK_FEATURE_SUPPORT_ALWAYS_OFF:
+			support = ALWAYS_OFF;
+			break;
+		case DXGK_FEATURE_SUPPORT_ALWAYS_ON:
+			support = ALWAYS_ON;
+			break;
+		case DXGK_FEATURE_SUPPORT_EXPERIMENTAL:
+			support = EXPERIMENTAL;
+			break;
+		case DXGK_FEATURE_SUPPORT_STABLE:
+			support = STABLE;
+			break;
+		default:
+			support = UNKNOWN;
+		}
+	}
+
+	string ToString() const
+	{
+		string status = enabled ? "Enabled" : "Disabled";
+		status += " (Default: ";
+		status += enabled_by_default ? "Yes" : "No";
+		status += ", Driver status: ";
+		status += DriverSupportToString();
+		status += ")";
+
+		return status;
+	}
+
+private:
+	const char *DriverSupportToString() const
+	{
+		switch (support) {
+		case ALWAYS_OFF:
+			return "Unsupported";
+		case ALWAYS_ON:
+			return "Always On";
+		case EXPERIMENTAL:
+			return "Experimental";
+		case STABLE:
+			return "Supported";
+		default:
+			return "Unknown";
+		}
+	}
+};
+
+static optional<HagsStatus> GetAdapterHagsStatus(const DXGI_ADAPTER_DESC *desc)
+{
+	optional<HagsStatus> ret;
+	D3DKMT_OPENADAPTERFROMLUID d3dkmt_openluid{};
 	d3dkmt_openluid.AdapterLuid = desc->AdapterLuid;
 
-	res = D3DKMTOpenAdapterFromLuid(&d3dkmt_openluid);
+	NTSTATUS res = D3DKMTOpenAdapterFromLuid(&d3dkmt_openluid);
 	if (FAILED(res)) {
 		blog(LOG_DEBUG, "Failed opening D3DKMT adapter: %x", res);
-		return hags_enabled;
+		return ret;
 	}
 
 	D3DKMT_WDDM_2_7_CAPS caps = {};
@@ -525,10 +595,28 @@ static bool adapter_hags_enabled(DXGI_ADAPTER_DESC *desc)
 	args.PrivateDriverDataSize = sizeof(caps);
 	res = D3DKMTQueryAdapterInfo(&args);
 
-	/* On Windows 10 pre-2004 this will fail, but HAGS isn't supported
-	 * there anyway. */
-	if (SUCCEEDED(res))
-		hags_enabled = caps.HwSchEnabled;
+	/* If this still fails we're likely on Windows 10 pre-2004
+	 * where HAGS is not supported anyway. */
+	if (SUCCEEDED(res)) {
+		HagsStatus status(&caps);
+
+		/* Starting with Windows 10 21H2 we can query more detailed
+		 * support information (e.g. experimental status).
+		 * This Is optional and failure doesn't matter. */
+		D3DKMT_WDDM_2_9_CAPS ext_caps = {};
+		args.hAdapter = d3dkmt_openluid.hAdapter;
+		args.Type = KMTQAITYPE_WDDM_2_9_CAPS;
+		args.pPrivateDriverData = &ext_caps;
+		args.PrivateDriverDataSize = sizeof(ext_caps);
+		res = D3DKMTQueryAdapterInfo(&args);
+
+		if (SUCCEEDED(res))
+			status.SetDriverSupport(ext_caps.HwSchSupportState);
+
+		ret = status;
+	} else {
+		blog(LOG_WARNING, "Failed querying WDDM 2.7 caps: %x", res);
+	}
 
 	D3DKMT_CLOSEADAPTER d3dkmt_close = {d3dkmt_openluid.hAdapter};
 	res = D3DKMTCloseAdapter(&d3dkmt_close);
@@ -537,7 +625,7 @@ static bool adapter_hags_enabled(DXGI_ADAPTER_DESC *desc)
 		     d3dkmt_openluid.hAdapter, res);
 	}
 
-	return hags_enabled;
+	return ret;
 }
 
 static bool CheckFormat(ID3D11Device *device, DXGI_FORMAT format)
@@ -590,7 +678,10 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	}
 
 	/* Log HAGS status */
-	bool hags_enabled = adapter_hags_enabled(&desc);
+	bool hags_enabled = false;
+	if (auto hags_status = GetAdapterHagsStatus(&desc))
+		hags_enabled = hags_status->enabled;
+
 	if (hags_enabled) {
 		blog(LOG_WARNING,
 		     "Hardware-Accelerated GPU Scheduling enabled on adapter!");
@@ -1369,6 +1460,13 @@ static inline void LogD3DAdapters()
 		     desc.SharedSystemMemory);
 		blog(LOG_INFO, "\t  PCI ID:         %x:%x", desc.VendorId,
 		     desc.DeviceId);
+
+		if (auto hags_support = GetAdapterHagsStatus(&desc)) {
+			blog(LOG_INFO, "\t  HAGS Status:    %s",
+			     hags_support->ToString().c_str());
+		} else {
+			blog(LOG_WARNING, "\t  HAGS Status:    Unknown");
+		}
 
 		/* driver version */
 		LARGE_INTEGER umd;
