@@ -5,7 +5,7 @@
 #define WINDOW_NAME   ((NSString *) kCGWindowName)
 #define WINDOW_NUMBER ((NSString *) kCGWindowNumber)
 #define OWNER_NAME    ((NSString *) kCGWindowOwnerName)
-#define OWNER_PID     ((NSNumber *) kCGWindowOwnerPID)
+#define OWNER_PID     ((NSString *) kCGWindowOwnerPID)
 
 static NSComparator win_info_cmp = ^(NSDictionary *o1, NSDictionary *o2) {
     NSComparisonResult res = [o1[OWNER_NAME] compare:o2[OWNER_NAME]];
