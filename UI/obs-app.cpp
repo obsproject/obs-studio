@@ -3435,6 +3435,8 @@ int main(int argc, char *argv[])
 	log_blocked_dlls();
 #endif
 
+	obs_frontend_set_callbacks_internal(nullptr);
+
 	blog(LOG_INFO, "Number of memory leaks: %ld", bnum_allocs());
 	base_set_log_handler(nullptr, nullptr);
 	return ret;
