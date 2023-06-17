@@ -2,6 +2,9 @@
 
 #include <stdio.h>
 
+// Most of this file shouldnt be accessed from C.
+#ifdef __cplusplus
+
 #include <mfxvideo++.h>
 
 // =================================================================
@@ -143,4 +146,24 @@ void mfxGetTime(mfxTime *timestamp);
 
 //void mfxInitTime();  might need this for Windows
 double TimeDiffMsec(mfxTime tfinish, mfxTime tstart);
-extern "C" void util_cpuid(int cpuinfo[4], int flags);
+
+extern "C" {
+#endif // __cplusplus
+
+struct adapter_info {
+	bool is_intel;
+	bool is_dgpu;
+	bool supports_av1;
+	bool supports_hevc;
+};
+
+#define MAX_ADAPTERS 10
+extern struct adapter_info adapters[MAX_ADAPTERS];
+extern size_t adapter_count;
+
+void util_cpuid(int cpuinfo[4], int flags);
+void check_adapters(struct adapter_info *adapters, size_t *adapter_count);
+
+#ifdef __cplusplus
+}
+#endif
