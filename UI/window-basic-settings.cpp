@@ -4643,17 +4643,15 @@ void OBSBasicSettings::AudioChangedRestart()
 		if (currentChannelIndex != channelIndex ||
 		    currentSampleRateIndex != sampleRateIndex ||
 		    currentLLAudioBufVal != llBufferingEnabled) {
-			audioChanged = true;
 			ui->audioMsg->setText(
 				QTStr("Basic.Settings.ProgramRestart"));
-			sender()->setProperty("changed", QVariant(true));
-			EnableApplyButton(true);
 		} else {
-			audioChanged = false;
 			ui->audioMsg->setText("");
-			sender()->setProperty("changed", QVariant(false));
-			EnableApplyButton(false);
 		}
+
+		audioChanged = true;
+		sender()->setProperty("changed", QVariant(true));
+		EnableApplyButton(true);
 	}
 }
 
