@@ -233,6 +233,7 @@ static void AddExtraModulePaths()
 }
 
 extern obs_frontend_callbacks *InitializeAPIInterface(OBSBasic *main);
+extern void APIInterfaceRemoveMainWindow(obs_frontend_callbacks *api);
 
 void assignDockToggle(QDockWidget *dock, QAction *action)
 {
@@ -2932,6 +2933,8 @@ OBSBasic::~OBSBasic()
 	delete cef;
 	cef = nullptr;
 #endif
+
+	APIInterfaceRemoveMainWindow(api);
 }
 
 void OBSBasic::SaveProjectNow()
