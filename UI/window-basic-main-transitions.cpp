@@ -1476,6 +1476,7 @@ void OBSBasic::QuickTransitionChange()
 								trIdx);
 		if (tr) {
 			qt->source = tr;
+			qt->fadeToBlack = fadeToBlack;
 			ResetQuickTransitionText(qt);
 		}
 	}
