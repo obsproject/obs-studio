@@ -21,7 +21,7 @@ OBSBasicVCamConfig::OBSBasicVCamConfig(const VCamConfig &_config,
 
 	ui->outputType->addItem(QTStr("Basic.VCam.OutputType.Program"),
 				(int)VCamOutputType::ProgramView);
-	ui->outputType->addItem(QTStr("Preview"),
+	ui->outputType->addItem(QTStr("StudioMode.Preview"),
 				(int)VCamOutputType::PreviewOutput);
 	ui->outputType->addItem(QTStr("Basic.Scene"),
 				(int)VCamOutputType::SceneOutput);
