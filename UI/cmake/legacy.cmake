@@ -48,21 +48,6 @@ else()
   set(RESTREAM_ENABLED ON)
 endif()
 
-if(NOT DEFINED YOUTUBE_CLIENTID
-   OR "${YOUTUBE_CLIENTID}" STREQUAL ""
-   OR NOT DEFINED YOUTUBE_SECRET
-   OR "${YOUTUBE_SECRET}" STREQUAL ""
-   OR NOT DEFINED YOUTUBE_CLIENTID_HASH
-   OR "${YOUTUBE_CLIENTID_HASH}" STREQUAL ""
-   OR NOT DEFINED YOUTUBE_SECRET_HASH
-   OR "${YOUTUBE_SECRET_HASH}" STREQUAL "")
-  set(YOUTUBE_SECRET_HASH "0")
-  set(YOUTUBE_CLIENTID_HASH "0")
-  set(YOUTUBE_ENABLED OFF)
-else()
-  set(YOUTUBE_ENABLED ON)
-endif()
-
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ui-config.h.in ${CMAKE_CURRENT_BINARY_DIR}/ui-config.h)
 
 find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil avformat)
@@ -115,7 +100,6 @@ target_sources(
           forms/OBSMissingFiles.ui
           forms/OBSRemux.ui
           forms/OBSUpdate.ui
-          forms/OBSYoutubeActions.ui
           forms/source-toolbar/browser-source-toolbar.ui
           forms/source-toolbar/color-source-toolbar.ui
           forms/source-toolbar/device-select-toolbar.ui
@@ -337,12 +321,6 @@ if(TARGET OBS::browser-panels)
   if(ENABLE_WHATSNEW)
     target_compile_definitions(obs PRIVATE WHATSNEW_ENABLED)
   endif()
-endif()
-
-if(YOUTUBE_ENABLED)
-  target_compile_definitions(obs PRIVATE YOUTUBE_ENABLED)
-  target_sources(obs PRIVATE auth-youtube.cpp auth-youtube.hpp youtube-api-wrappers.cpp youtube-api-wrappers.hpp
-                             window-youtube-actions.cpp window-youtube-actions.hpp)
 endif()
 
 if(OS_WINDOWS)

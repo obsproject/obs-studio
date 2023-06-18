@@ -60,11 +60,6 @@
 #endif
 #include "window-projector.hpp"
 #include "window-remux.hpp"
-#ifdef YOUTUBE_ENABLED
-#include "auth-youtube.hpp"
-#include "window-youtube-actions.hpp"
-#include "youtube-api-wrappers.hpp"
-#endif
 #include "qt-wrappers.hpp"
 #include "context-bar-controls.hpp"
 #include "obs-proxy-style.hpp"
@@ -276,9 +271,6 @@ void setupDockAction(QDockWidget *dock)
 
 extern void RegisterTwitchAuth();
 extern void RegisterRestreamAuth();
-#ifdef YOUTUBE_ENABLED
-extern void RegisterYoutubeAuth();
-#endif
 
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow(parent),
@@ -292,9 +284,6 @@ OBSBasic::OBSBasic(QWidget *parent)
 #endif
 #ifdef RESTREAM_ENABLED
 	RegisterRestreamAuth();
-#endif
-#ifdef YOUTUBE_ENABLED
-	RegisterYoutubeAuth();
 #endif
 
 	setAcceptDrops(true);
