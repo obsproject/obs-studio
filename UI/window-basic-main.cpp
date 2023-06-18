@@ -3040,7 +3040,7 @@ void OBSBasic::CreateInteractionWindow(obs_source_t *source)
 	interaction->setAttribute(Qt::WA_DeleteOnClose, true);
 }
 
-void OBSBasic::CreatePropertiesWindow(obs_source_t *source)
+void OBSBasic::CreatePropertiesWindow(obs_source_t *source, bool filters)
 {
 	bool closed = true;
 	if (properties)
@@ -3049,23 +3049,14 @@ void OBSBasic::CreatePropertiesWindow(obs_source_t *source)
 	if (!closed)
 		return;
 
-	properties = new OBSBasicProperties(this, source);
+	properties = new OBSBasicProperties(this, source, filters);
 	properties->Init();
 	properties->setAttribute(Qt::WA_DeleteOnClose, true);
 }
 
 void OBSBasic::CreateFiltersWindow(obs_source_t *source)
 {
-	bool closed = true;
-	if (filters)
-		closed = filters->close();
-
-	if (!closed)
-		return;
-
-	filters = new OBSBasicFilters(this, source);
-	filters->Init();
-	filters->setAttribute(Qt::WA_DeleteOnClose, true);
+	CreatePropertiesWindow(source, true);
 }
 
 /* Qt callbacks for invokeMethod */

@@ -25,6 +25,7 @@
 #include <obs.hpp>
 
 class OBSPropertiesView;
+class OBSBasicFilters;
 class OBSBasic;
 
 #include "ui_OBSBasicProperties.h"
@@ -44,6 +45,8 @@ private:
 	OBSSignal updatePropertiesSignal;
 	OBSData oldSettings;
 	OBSPropertiesView *view;
+	OBSBasicFilters *asyncFilters;
+	OBSBasicFilters *effectFilters;
 	QDialogButtonBox *buttonBox;
 	QSplitter *windowSplitter;
 
@@ -62,12 +65,20 @@ private:
 	int CheckSettings();
 	void Cleanup();
 
+	obs_deinterlace_mode origDeinterlaceMode;
+	obs_deinterlace_field_order origDeinterlaceOrder;
+	void SetupDeinterlacing();
+
 private slots:
 	void on_buttonBox_clicked(QAbstractButton *button);
 	void AddPreviewButton();
 
+	void on_deinterlaceMode_currentIndexChanged(int index);
+	void on_deinterlaceOrder_currentIndexChanged(int index);
+
 public:
-	OBSBasicProperties(QWidget *parent, OBSSource source_);
+	OBSBasicProperties(QWidget *parent, OBSSource source_,
+			   bool openFilters = false);
 	~OBSBasicProperties();
 
 	void Init();

@@ -966,7 +966,7 @@ public:
 	void OpenSavedProjectors();
 
 	void CreateInteractionWindow(obs_source_t *source);
-	void CreatePropertiesWindow(obs_source_t *source);
+	void CreatePropertiesWindow(obs_source_t *source, bool filters = false);
 	void CreateFiltersWindow(obs_source_t *source);
 	void CreateEditTransformWindow(obs_sceneitem_t *item);
 

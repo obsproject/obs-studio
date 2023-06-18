@@ -17,6 +17,7 @@
 
 #include "obs-app.hpp"
 #include "window-basic-properties.hpp"
+#include "window-basic-filters.hpp"
 #include "window-basic-main.hpp"
 #include "qt-wrappers.hpp"
 #include "display-helpers.hpp"
@@ -41,7 +42,8 @@ using namespace std;
 static void CreateTransitionScene(OBSSource scene, const char *text,
 				  uint32_t color);
 
-OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
+OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_,
+				       bool openFilters)
 	: QDialog(parent),
 	  ui(new Ui::OBSBasicProperties),
 	  main(qobject_cast<OBSBasic *>(parent)),
@@ -65,6 +67,11 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	ui->setupUi(this);
 	ui->buttonBox->button(QDialogButtonBox::Ok)->setFocus();
 
+	SetupDeinterlacing();
+
+	if (openFilters)
+		ui->tabWidget->setCurrentWidget(ui->asyncFiltersTab);
+
 	if (cx > 400 && cy > 400)
 		resize(cx, cy);
 
@@ -81,11 +88,27 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 		(PropertiesVisualUpdateCb)obs_source_update);
 	view->setMinimumHeight(150);
 
+	asyncFilters = new OBSBasicFilters(this, source, true);
+	effectFilters = new OBSBasicFilters(this, source, false);
+
 	ui->propertiesLayout->addWidget(view);
+	ui->asyncFiltersLayout->addWidget(asyncFilters);
+	ui->effectFiltersLayout->addWidget(effectFilters);
 
 	if (type == OBS_SOURCE_TYPE_TRANSITION) {
 		connect(view, SIGNAL(PropertiesRefreshed()), this,
 			SLOT(AddPreviewButton()));
+		ui->tabWidget->removeTab(
+			ui->tabWidget->indexOf(ui->asyncFiltersTab));
+		ui->tabWidget->removeTab(
+			ui->tabWidget->indexOf(ui->effectFiltersTab));
+		ui->tabWidget->removeTab(
+			ui->tabWidget->indexOf(ui->advancedTab));
+	} else if (type == OBS_SOURCE_TYPE_SCENE) {
+		ui->tabWidget->removeTab(
+			ui->tabWidget->indexOf(ui->propertiesTab));
+		ui->tabWidget->removeTab(
+			ui->tabWidget->indexOf(ui->advancedTab));
 	}
 
 	view->show();
@@ -115,6 +138,25 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	bool drawable_type = type == OBS_SOURCE_TYPE_INPUT ||
 			     type == OBS_SOURCE_TYPE_SCENE;
 	bool drawable_preview = (caps & OBS_SOURCE_VIDEO) != 0;
+	bool async = (caps & OBS_SOURCE_ASYNC) != 0;
+	bool audio = (caps & OBS_SOURCE_AUDIO) != 0;
+	bool audioOnly = (caps & OBS_SOURCE_VIDEO) == 0;
+
+	if (!async)
+		ui->tabWidget->removeTab(
+			ui->tabWidget->indexOf(ui->advancedTab));
+
+	if (audioOnly) {
+		ui->tabWidget->removeTab(
+			ui->tabWidget->indexOf(ui->effectFiltersTab));
+		ui->tabWidget->setTabText(
+			ui->tabWidget->indexOf(ui->asyncFiltersTab),
+			QTStr("Basic.Filters.AudioFilters"));
+	}
+
+	if (!async && !audio)
+		ui->tabWidget->removeTab(
+			ui->tabWidget->indexOf(ui->asyncFiltersTab));
 
 	if (drawable_preview && drawable_type) {
 		ui->preview->show();
@@ -167,6 +209,8 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 
 	} else {
 		ui->preview->hide();
+		ui->windowSplitter->handle(1)->setEnabled(false);
+		setStyleSheet("QSplitter::handle { image: none; }");
 	}
 }
 
@@ -369,19 +413,38 @@ void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 		else
 			obs_source_update(source, oldSettings);
 
+		int index =
+			ui->deinterlaceMode->findData((int)origDeinterlaceMode);
+		ui->deinterlaceMode->setCurrentIndex(index);
+		index = ui->deinterlaceOrder->findData(
+			(int)origDeinterlaceOrder);
+		ui->deinterlaceOrder->setCurrentIndex(index);
+
 		close();
 
 	} else if (val == QDialogButtonBox::ResetRole) {
 		if (!ConfirmReset(this))
 			return;
 
-		OBSDataAutoRelease settings = obs_source_get_settings(source);
-		obs_data_clear(settings);
+		if (ui->tabWidget->currentWidget() == ui->propertiesTab) {
+			OBSDataAutoRelease settings =
+				obs_source_get_settings(source);
+			obs_data_clear(settings);
 
-		if (!view->DeferUpdate())
-			obs_source_update(source, nullptr);
+			if (!view->DeferUpdate())
+				obs_source_update(source, nullptr);
 
-		view->ReloadProperties();
+			view->ReloadProperties();
+		} else if (ui->tabWidget->currentWidget() ==
+			   ui->asyncFiltersTab) {
+			asyncFilters->ResetFilters();
+		} else if (ui->tabWidget->currentWidget() ==
+			   ui->effectFiltersTab) {
+			effectFilters->ResetFilters();
+		} else if (ui->tabWidget->currentWidget() == ui->advancedTab) {
+			ui->deinterlaceMode->setCurrentIndex(0);
+			ui->deinterlaceOrder->setCurrentIndex(0);
+		}
 	}
 }
 
@@ -561,4 +624,70 @@ bool OBSBasicProperties::ConfirmQuit()
 		break;
 	}
 	return true;
+}
+
+void OBSBasicProperties::on_deinterlaceMode_currentIndexChanged(int)
+{
+	obs_deinterlace_mode mode =
+		(obs_deinterlace_mode)ui->deinterlaceMode->currentData()
+			.value<int>();
+
+	ui->deinterlaceOrder->setEnabled(mode != OBS_DEINTERLACE_MODE_DISABLE);
+
+	obs_source_set_deinterlace_mode(source, mode);
+}
+
+void OBSBasicProperties::on_deinterlaceOrder_currentIndexChanged(int)
+{
+	obs_deinterlace_field_order order =
+		(obs_deinterlace_field_order)ui->deinterlaceOrder->currentData()
+			.value<int>();
+
+	obs_source_set_deinterlace_field_order(source, order);
+}
+
+void OBSBasicProperties::SetupDeinterlacing()
+{
+	ui->deinterlaceMode->blockSignals(true);
+	ui->deinterlaceOrder->blockSignals(true);
+
+	obs_deinterlace_mode mode = obs_source_get_deinterlace_mode(source);
+	obs_deinterlace_field_order order =
+		obs_source_get_deinterlace_field_order(source);
+
+	origDeinterlaceMode = mode;
+	origDeinterlaceOrder = order;
+
+	ui->deinterlaceOrder->setEnabled(mode != OBS_DEINTERLACE_MODE_DISABLE);
+
+#define ADD_MODE(name, mode) \
+	ui->deinterlaceMode->addItem(QTStr(name), (int)mode);
+
+	ADD_MODE("Disable", OBS_DEINTERLACE_MODE_DISABLE);
+	ADD_MODE("Deinterlacing.Discard", OBS_DEINTERLACE_MODE_DISCARD);
+	ADD_MODE("Deinterlacing.Retro", OBS_DEINTERLACE_MODE_RETRO);
+	ADD_MODE("Deinterlacing.Blend", OBS_DEINTERLACE_MODE_BLEND);
+	ADD_MODE("Deinterlacing.Blend2x", OBS_DEINTERLACE_MODE_BLEND_2X);
+	ADD_MODE("Deinterlacing.Linear", OBS_DEINTERLACE_MODE_LINEAR);
+	ADD_MODE("Deinterlacing.Linear2x", OBS_DEINTERLACE_MODE_LINEAR_2X);
+	ADD_MODE("Deinterlacing.Yadif", OBS_DEINTERLACE_MODE_YADIF);
+	ADD_MODE("Deinterlacing.Yadif2x", OBS_DEINTERLACE_MODE_YADIF_2X);
+#undef ADD_MODE
+
+#define ADD_ORDER(name, order) \
+	ui->deinterlaceOrder->addItem(QTStr(name), (int)order);
+
+	ADD_ORDER("Deinterlacing.TopFieldFirst",
+		  OBS_DEINTERLACE_FIELD_ORDER_TOP);
+	ADD_ORDER("Deinterlacing.BottomFieldFirst",
+		  OBS_DEINTERLACE_FIELD_ORDER_BOTTOM);
+#undef ADD_ORDER
+
+	int index = ui->deinterlaceMode->findData((int)mode);
+	ui->deinterlaceMode->setCurrentIndex(index);
+	index = ui->deinterlaceOrder->findData((int)order);
+	ui->deinterlaceOrder->setCurrentIndex(index);
+
+	ui->deinterlaceOrder->blockSignals(false);
+	ui->deinterlaceMode->blockSignals(false);
 }
