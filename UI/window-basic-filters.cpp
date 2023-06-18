@@ -45,8 +45,28 @@ using namespace std;
 
 Q_DECLARE_METATYPE(OBSSource);
 
-OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
-	: QDialog(parent),
+static bool filter_compatible(bool async, uint32_t sourceFlags,
+			      uint32_t filterFlags)
+{
+	bool filterVideo = (filterFlags & OBS_SOURCE_VIDEO) != 0;
+	bool filterAsync = (filterFlags & OBS_SOURCE_ASYNC) != 0;
+	bool filterAudio = (filterFlags & OBS_SOURCE_AUDIO) != 0;
+	bool audio = (sourceFlags & OBS_SOURCE_AUDIO) != 0;
+	bool audioOnly = (sourceFlags & OBS_SOURCE_VIDEO) == 0;
+	bool asyncSource = (sourceFlags & OBS_SOURCE_ASYNC) != 0;
+
+	if (async &&
+	    ((audioOnly && filterVideo) || (!audio && !asyncSource) ||
+	     (filterAudio && !audio) || (!asyncSource && !filterAudio)))
+		return false;
+
+	return (async && (filterAudio || filterAsync)) ||
+	       (!async && !filterAudio && !filterAsync);
+}
+
+OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_,
+				 bool isAsync_)
+	: QWidget(parent),
 	  ui(new Ui::OBSBasicFilters),
 	  source(source_),
 	  addSignal(obs_source_get_signal_handler(source), "filter_add",
@@ -56,22 +76,16 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 	  reorderSignal(obs_source_get_signal_handler(source),
 			"reorder_filters", OBSBasicFilters::OBSSourceReordered,
 			this),
-	  removeSourceSignal(obs_source_get_signal_handler(source), "remove",
-			     OBSBasicFilters::SourceRemoved, this),
-	  renameSourceSignal(obs_source_get_signal_handler(source), "rename",
-			     OBSBasicFilters::SourceRenamed, this),
-	  noPreviewMargin(13)
+	  isAsync(isAsync_)
 {
-	main = reinterpret_cast<OBSBasic *>(parent);
+	main = OBSBasic::Get();
 
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
 	ui->setupUi(this);
 
-	ui->asyncFilters->setItemDelegate(
-		new VisibilityItemDelegate(ui->asyncFilters));
-	ui->effectFilters->setItemDelegate(
-		new VisibilityItemDelegate(ui->effectFilters));
+	ui->filtersList->setItemDelegate(
+		new VisibilityItemDelegate(ui->filtersList));
 
 	const char *name = obs_source_get_name(source);
 	setWindowTitle(QTStr("Basic.Filters.Title").arg(QT_UTF8(name)));
@@ -88,72 +102,8 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 
 	installEventFilter(CreateShortcutFilter());
 
-	connect(ui->asyncFilters->itemDelegate(),
-		SIGNAL(closeEditor(QWidget *)), this,
-		SLOT(AsyncFilterNameEdited(QWidget *)));
-
-	connect(ui->effectFilters->itemDelegate(),
-		SIGNAL(closeEditor(QWidget *)), this,
-		SLOT(EffectFilterNameEdited(QWidget *)));
-
-	QPushButton *close = ui->buttonBox->button(QDialogButtonBox::Close);
-	connect(close, SIGNAL(clicked()), this, SLOT(close()));
-	close->setDefault(true);
-
-	connect(ui->buttonBox->button(QDialogButtonBox::RestoreDefaults),
-		SIGNAL(clicked()), this, SLOT(ResetFilters()));
-
-	uint32_t caps = obs_source_get_output_flags(source);
-	bool audio = (caps & OBS_SOURCE_AUDIO) != 0;
-	bool audioOnly = (caps & OBS_SOURCE_VIDEO) == 0;
-	bool async = (caps & OBS_SOURCE_ASYNC) != 0;
-
-	if (!async && !audio) {
-		ui->asyncWidget->setVisible(false);
-		ui->separatorLine->setVisible(false);
-	}
-	if (audioOnly) {
-		ui->effectWidget->setVisible(false);
-		ui->separatorLine->setVisible(false);
-		UpdateSplitter(false);
-	}
-
-	if (async && !audioOnly && ui->asyncFilters->count() == 0 &&
-	    ui->effectFilters->count() != 0) {
-		ui->effectFilters->setFocus();
-	}
-
-	if (audioOnly || (audio && !async))
-		ui->asyncLabel->setText(QTStr("Basic.Filters.AudioFilters"));
-
-	if (async && audio && ui->asyncFilters->count() == 0) {
-		UpdateSplitter(false);
-	} else if (!audioOnly) {
-		UpdateSplitter();
-	}
-
-	obs_source_inc_showing(source);
-
-	auto addDrawCallback = [this]() {
-		obs_display_add_draw_callback(ui->preview->GetDisplay(),
-					      OBSBasicFilters::DrawPreview,
-					      this);
-	};
-
-	enum obs_source_type type = obs_source_get_type(source);
-	bool drawable_type = type == OBS_SOURCE_TYPE_INPUT ||
-			     type == OBS_SOURCE_TYPE_SCENE;
-
-	if ((caps & OBS_SOURCE_VIDEO) != 0) {
-		ui->rightLayout->setContentsMargins(0, 0, 0, 0);
-		ui->preview->show();
-		if (drawable_type)
-			connect(ui->preview, &OBSQTDisplay::DisplayCreated,
-				addDrawCallback);
-	} else {
-		ui->rightLayout->setContentsMargins(0, noPreviewMargin, 0, 0);
-		ui->preview->hide();
-	}
+	connect(ui->filtersList->itemDelegate(), SIGNAL(closeEditor(QWidget *)),
+		this, SLOT(FilterNameEdited(QWidget *)));
 
 #ifdef __APPLE__
 	ui->actionRenameFilter->setShortcut({Qt::Key_Return});
@@ -166,23 +116,15 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 
 OBSBasicFilters::~OBSBasicFilters()
 {
-	obs_source_dec_showing(source);
-	ClearListItems(ui->asyncFilters);
-	ClearListItems(ui->effectFilters);
+	ClearListItems(ui->filtersList);
 }
 
-void OBSBasicFilters::Init()
-{
-	show();
-}
-
-inline OBSSource OBSBasicFilters::GetFilter(int row, bool async)
+inline OBSSource OBSBasicFilters::GetFilter(int row)
 {
 	if (row == -1)
 		return OBSSource();
 
-	QListWidget *list = async ? ui->asyncFilters : ui->effectFilters;
-	QListWidgetItem *item = list->item(row);
+	QListWidgetItem *item = ui->filtersList->item(row);
 	if (!item)
 		return OBSSource();
 
@@ -244,9 +186,9 @@ void FilterChangeUndoRedo(void *vp, obs_data_t *nd_old_settings,
 	obs_source_update(source, new_settings);
 }
 
-void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
+void OBSBasicFilters::UpdatePropertiesView(int row)
 {
-	OBSSource filter = GetFilter(row, async);
+	OBSSource filter = GetFilter(row);
 	if (filter && view && view->IsObject(filter)) {
 		/* do not recreate properties view if already using a view
 		 * with the same object */
@@ -255,7 +197,6 @@ void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 
 	if (view) {
 		updatePropertiesSignal.Disconnect();
-		ui->propertiesFrame->setVisible(false);
 		/* Deleting a filter will trigger a visibility change, which will also
 		 * trigger a focus change if the focus has not been on the list itself
 		 * (e.g. after interacting with the property view).
@@ -301,7 +242,6 @@ void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 				       OBSBasicFilters::UpdateProperties, this);
 
 	view->setMinimumHeight(150);
-	UpdateSplitter();
 	ui->propertiesLayout->addWidget(view);
 	view->show();
 }
@@ -314,9 +254,11 @@ void OBSBasicFilters::UpdateProperties(void *data, calldata_t *)
 
 void OBSBasicFilters::AddFilter(OBSSource filter, bool focus)
 {
-	uint32_t flags = obs_source_get_output_flags(filter);
-	bool async = (flags & OBS_SOURCE_ASYNC) != 0;
-	QListWidget *list = async ? ui->asyncFilters : ui->effectFilters;
+	uint32_t sourceFlags = obs_source_get_output_flags(source);
+	uint32_t filterFlags = obs_source_get_output_flags(filter);
+
+	if (!filter_compatible(isAsync, sourceFlags, filterFlags))
+		return;
 
 	QListWidgetItem *item = new QListWidgetItem();
 	Qt::ItemFlags itemFlags = item->flags();
@@ -324,26 +266,22 @@ void OBSBasicFilters::AddFilter(OBSSource filter, bool focus)
 	item->setFlags(itemFlags | Qt::ItemIsEditable);
 	item->setData(Qt::UserRole, QVariant::fromValue(filter));
 
-	list->addItem(item);
+	ui->filtersList->addItem(item);
 	if (focus)
-		list->setCurrentItem(item);
+		ui->filtersList->setCurrentItem(item);
 
-	SetupVisibilityItem(list, item, filter);
+	SetupVisibilityItem(ui->filtersList, item, filter);
 }
 
 void OBSBasicFilters::RemoveFilter(OBSSource filter)
 {
-	uint32_t flags = obs_source_get_output_flags(filter);
-	bool async = (flags & OBS_SOURCE_ASYNC) != 0;
-	QListWidget *list = async ? ui->asyncFilters : ui->effectFilters;
-
-	for (int i = 0; i < list->count(); i++) {
-		QListWidgetItem *item = list->item(i);
+	for (int i = 0; i < ui->filtersList->count(); i++) {
+		QListWidgetItem *item = ui->filtersList->item(i);
 		QVariant v = item->data(Qt::UserRole);
 		OBSSource curFilter = v.value<OBSSource>();
 
 		if (filter == curFilter) {
-			DeleteListItem(list, item);
+			DeleteListItem(ui->filtersList, item);
 			break;
 		}
 	}
@@ -362,8 +300,7 @@ void OBSBasicFilters::RemoveFilter(OBSSource filter)
 }
 
 struct FilterOrderInfo {
-	int asyncIdx = 0;
-	int effectIdx = 0;
+	int idx = 0;
 	OBSBasicFilters *window;
 
 	inline FilterOrderInfo(OBSBasicFilters *window_) : window(window_) {}
@@ -408,21 +345,10 @@ void OBSBasicFilters::ReorderFilters()
 		[](obs_source_t *, obs_source_t *filter, void *p) {
 			FilterOrderInfo *info =
 				reinterpret_cast<FilterOrderInfo *>(p);
-			uint32_t flags;
-			bool async;
 
-			flags = obs_source_get_output_flags(filter);
-			async = (flags & OBS_SOURCE_ASYNC) != 0;
-
-			if (async) {
-				info->window->ReorderFilter(
-					info->window->ui->asyncFilters, filter,
-					info->asyncIdx++);
-			} else {
-				info->window->ReorderFilter(
-					info->window->ui->effectFilters, filter,
-					info->effectIdx++);
-			}
+			info->window->ReorderFilter(
+				info->window->ui->filtersList, filter,
+				info->idx++);
 		},
 		&info);
 }
@@ -432,8 +358,7 @@ void OBSBasicFilters::UpdateFilters()
 	if (!source)
 		return;
 
-	ClearListItems(ui->effectFilters);
-	ClearListItems(ui->asyncFilters);
+	ClearListItems(ui->filtersList);
 
 	obs_source_enum_filters(
 		source,
@@ -445,57 +370,13 @@ void OBSBasicFilters::UpdateFilters()
 		},
 		this);
 
-	if (ui->asyncFilters->count() > 0) {
-		ui->asyncFilters->setCurrentItem(ui->asyncFilters->item(0));
-	} else if (ui->effectFilters->count() > 0) {
-		ui->effectFilters->setCurrentItem(ui->effectFilters->item(0));
-	}
+	if (ui->filtersList->count() > 0)
+		ui->filtersList->setCurrentItem(ui->filtersList->item(0));
 
 	main->SaveProject();
 }
 
-void OBSBasicFilters::UpdateSplitter()
-{
-	bool show_splitter_frame =
-		ui->asyncFilters->count() + ui->effectFilters->count() > 0;
-	UpdateSplitter(show_splitter_frame);
-}
-
-void OBSBasicFilters::UpdateSplitter(bool show_splitter_frame)
-{
-	bool show_splitter_handle = show_splitter_frame;
-	uint32_t caps = obs_source_get_output_flags(source);
-	if ((caps & OBS_SOURCE_VIDEO) == 0)
-		show_splitter_handle = false;
-
-	for (int i = 0; i < ui->rightLayout->count(); i++) {
-		QSplitterHandle *hndl = ui->rightLayout->handle(i);
-		hndl->setEnabled(show_splitter_handle);
-	}
-
-	ui->propertiesFrame->setVisible(show_splitter_frame);
-}
-
-static bool filter_compatible(bool async, uint32_t sourceFlags,
-			      uint32_t filterFlags)
-{
-	bool filterVideo = (filterFlags & OBS_SOURCE_VIDEO) != 0;
-	bool filterAsync = (filterFlags & OBS_SOURCE_ASYNC) != 0;
-	bool filterAudio = (filterFlags & OBS_SOURCE_AUDIO) != 0;
-	bool audio = (sourceFlags & OBS_SOURCE_AUDIO) != 0;
-	bool audioOnly = (sourceFlags & OBS_SOURCE_VIDEO) == 0;
-	bool asyncSource = (sourceFlags & OBS_SOURCE_ASYNC) != 0;
-
-	if (async &&
-	    ((audioOnly && filterVideo) || (!audio && !asyncSource) ||
-	     (filterAudio && !audio) || (!asyncSource && !filterAudio)))
-		return false;
-
-	return (async && (filterAudio || filterAsync)) ||
-	       (!async && !filterAudio && !filterAsync);
-}
-
-QMenu *OBSBasicFilters::CreateAddFilterPopupMenu(bool async)
+QMenu *OBSBasicFilters::CreateAddFilterPopupMenu()
 {
 	uint32_t sourceFlags = obs_source_get_output_flags(source);
 	const char *type_str;
@@ -539,7 +420,7 @@ QMenu *OBSBasicFilters::CreateAddFilterPopupMenu(bool async)
 		uint32_t filterFlags =
 			obs_get_source_output_flags(type.type.c_str());
 
-		if (!filter_compatible(async, sourceFlags, filterFlags))
+		if (!filter_compatible(isAsync, sourceFlags, filterFlags))
 			continue;
 
 		QAction *popupItem =
@@ -675,18 +556,6 @@ void OBSBasicFilters::AddFilterFromAction()
 	AddNewFilter(QT_TO_UTF8(action->data().toString()));
 }
 
-void OBSBasicFilters::closeEvent(QCloseEvent *event)
-{
-	QDialog::closeEvent(event);
-	if (!event->isAccepted())
-		return;
-
-	obs_display_remove_draw_callback(ui->preview->GetDisplay(),
-					 OBSBasicFilters::DrawPreview, this);
-
-	main->SaveProject();
-}
-
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 bool OBSBasicFilters::nativeEvent(const QByteArray &, void *message, qintptr *)
 #else
@@ -741,53 +610,6 @@ void OBSBasicFilters::OBSSourceReordered(void *param, calldata_t *)
 				  "ReorderFilters");
 }
 
-void OBSBasicFilters::SourceRemoved(void *param, calldata_t *)
-{
-	QMetaObject::invokeMethod(static_cast<OBSBasicFilters *>(param),
-				  "close");
-}
-
-void OBSBasicFilters::SourceRenamed(void *param, calldata_t *data)
-{
-	const char *name = calldata_string(data, "new_name");
-	QString title = QTStr("Basic.Filters.Title").arg(QT_UTF8(name));
-
-	QMetaObject::invokeMethod(static_cast<OBSBasicFilters *>(param),
-				  "setWindowTitle", Q_ARG(QString, title));
-}
-
-void OBSBasicFilters::DrawPreview(void *data, uint32_t cx, uint32_t cy)
-{
-	OBSBasicFilters *window = static_cast<OBSBasicFilters *>(data);
-
-	if (!window->source)
-		return;
-
-	uint32_t sourceCX = max(obs_source_get_width(window->source), 1u);
-	uint32_t sourceCY = max(obs_source_get_height(window->source), 1u);
-
-	int x, y;
-	int newCX, newCY;
-	float scale;
-
-	GetScaleAndCenterPos(sourceCX, sourceCY, cx, cy, x, y, scale);
-
-	newCX = int(scale * float(sourceCX));
-	newCY = int(scale * float(sourceCY));
-
-	gs_viewport_push();
-	gs_projection_push();
-	const bool previous = gs_set_linear_srgb(true);
-
-	gs_ortho(0.0f, float(sourceCX), 0.0f, float(sourceCY), -100.0f, 100.0f);
-	gs_set_viewport(x, y, newCX, newCY);
-	obs_source_video_render(window->source);
-
-	gs_set_linear_srgb(previous);
-	gs_projection_pop();
-	gs_viewport_pop();
-}
-
 /* Qt Slots */
 
 static bool QueryRemove(QWidget *parent, obs_source_t *source)
@@ -808,169 +630,102 @@ static bool QueryRemove(QWidget *parent, obs_source_t *source)
 	return Yes == remove_source.clickedButton();
 }
 
-void OBSBasicFilters::on_addAsyncFilter_clicked()
+void OBSBasicFilters::on_addFilter_clicked()
 {
-	ui->asyncFilters->setFocus();
-	QScopedPointer<QMenu> popup(CreateAddFilterPopupMenu(true));
+	QScopedPointer<QMenu> popup(CreateAddFilterPopupMenu());
 	if (popup)
 		popup->exec(QCursor::pos());
 }
 
-void OBSBasicFilters::on_removeAsyncFilter_clicked()
+void OBSBasicFilters::on_removeFilter_clicked()
 {
-	OBSSource filter = GetFilter(ui->asyncFilters->currentRow(), true);
+	OBSSource filter = GetFilter(ui->filtersList->currentRow());
 	if (filter) {
 		if (QueryRemove(this, filter))
 			delete_filter(filter);
 	}
 }
 
-void OBSBasicFilters::on_moveAsyncFilterUp_clicked()
+void OBSBasicFilters::on_moveFilterUp_clicked()
 {
-	OBSSource filter = GetFilter(ui->asyncFilters->currentRow(), true);
+	OBSSource filter = GetFilter(ui->filtersList->currentRow());
 	if (filter)
 		obs_source_filter_set_order(source, filter, OBS_ORDER_MOVE_UP);
 }
 
-void OBSBasicFilters::on_moveAsyncFilterDown_clicked()
+void OBSBasicFilters::on_moveFilterDown_clicked()
 {
-	OBSSource filter = GetFilter(ui->asyncFilters->currentRow(), true);
+	OBSSource filter = GetFilter(ui->filtersList->currentRow());
 	if (filter)
 		obs_source_filter_set_order(source, filter,
 					    OBS_ORDER_MOVE_DOWN);
 }
 
-void OBSBasicFilters::on_asyncFilters_GotFocus()
+void OBSBasicFilters::on_filtersList_currentRowChanged(int row)
 {
-	UpdatePropertiesView(ui->asyncFilters->currentRow(), true);
-	isAsync = true;
-}
-
-void OBSBasicFilters::on_asyncFilters_currentRowChanged(int row)
-{
-	UpdatePropertiesView(row, true);
-}
-
-void OBSBasicFilters::on_addEffectFilter_clicked()
-{
-	ui->effectFilters->setFocus();
-	QScopedPointer<QMenu> popup(CreateAddFilterPopupMenu(false));
-	if (popup)
-		popup->exec(QCursor::pos());
-}
-
-void OBSBasicFilters::on_removeEffectFilter_clicked()
-{
-	OBSSource filter = GetFilter(ui->effectFilters->currentRow(), false);
-	if (filter) {
-		if (QueryRemove(this, filter)) {
-			delete_filter(filter);
-		}
-	}
-}
-
-void OBSBasicFilters::on_moveEffectFilterUp_clicked()
-{
-	OBSSource filter = GetFilter(ui->effectFilters->currentRow(), false);
-	if (filter)
-		obs_source_filter_set_order(source, filter, OBS_ORDER_MOVE_UP);
-}
-
-void OBSBasicFilters::on_moveEffectFilterDown_clicked()
-{
-	OBSSource filter = GetFilter(ui->effectFilters->currentRow(), false);
-	if (filter)
-		obs_source_filter_set_order(source, filter,
-					    OBS_ORDER_MOVE_DOWN);
-}
-
-void OBSBasicFilters::on_effectFilters_GotFocus()
-{
-	UpdatePropertiesView(ui->effectFilters->currentRow(), false);
-	isAsync = false;
-}
-
-void OBSBasicFilters::on_effectFilters_currentRowChanged(int row)
-{
-	UpdatePropertiesView(row, false);
+	UpdatePropertiesView(row);
 }
 
 void OBSBasicFilters::on_actionRemoveFilter_triggered()
 {
-	if (ui->asyncFilters->hasFocus())
-		on_removeAsyncFilter_clicked();
-	else if (ui->effectFilters->hasFocus())
-		on_removeEffectFilter_clicked();
+	on_removeFilter_clicked();
 }
 
 void OBSBasicFilters::on_actionMoveUp_triggered()
 {
-	if (ui->asyncFilters->hasFocus())
-		on_moveAsyncFilterUp_clicked();
-	else if (ui->effectFilters->hasFocus())
-		on_moveEffectFilterUp_clicked();
+	on_moveFilterUp_clicked();
 }
 
 void OBSBasicFilters::on_actionMoveDown_triggered()
 {
-	if (ui->asyncFilters->hasFocus())
-		on_moveAsyncFilterDown_clicked();
-	else if (ui->effectFilters->hasFocus())
-		on_moveEffectFilterDown_clicked();
+	on_moveFilterDown_clicked();
 }
 
 void OBSBasicFilters::on_actionRenameFilter_triggered()
 {
-	if (ui->asyncFilters->hasFocus())
-		RenameAsyncFilter();
-	else if (ui->effectFilters->hasFocus())
-		RenameEffectFilter();
+	RenameFilter();
 }
 
-void OBSBasicFilters::CustomContextMenu(const QPoint &pos, bool async)
+void OBSBasicFilters::CustomContextMenu(const QPoint &pos)
 {
-	QListWidget *list = async ? ui->asyncFilters : ui->effectFilters;
-	QListWidgetItem *item = list->itemAt(pos);
+	QListWidgetItem *item = ui->filtersList->itemAt(pos);
 
 	QMenu popup(window());
 
-	QPointer<QMenu> addMenu = CreateAddFilterPopupMenu(async);
+	QPointer<QMenu> addMenu = CreateAddFilterPopupMenu();
 	if (addMenu)
 		popup.addMenu(addMenu);
 
 	if (item) {
-		const char *dulpicateSlot =
-			async ? SLOT(DuplicateAsyncFilter())
-			      : SLOT(DuplicateEffectFilter());
-
 		popup.addSeparator();
-		popup.addAction(QTStr("Duplicate"), this, dulpicateSlot);
+		popup.addAction(QTStr("Duplicate"), this,
+				SLOT(DuplicateFilter()));
 		popup.addSeparator();
 		popup.addAction(ui->actionRenameFilter);
 		popup.addAction(ui->actionRemoveFilter);
 		popup.addSeparator();
 
 		QAction *copyAction = new QAction(QTStr("Copy"));
+		copyAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
 		connect(copyAction, SIGNAL(triggered()), this,
 			SLOT(CopyFilter()));
 		copyAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_C));
-		ui->effectWidget->addAction(copyAction);
-		ui->asyncWidget->addAction(copyAction);
+		addAction(copyAction);
 		popup.addAction(copyAction);
 	}
 
 	QAction *pasteAction = new QAction(QTStr("Paste"));
+	pasteAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
 	pasteAction->setEnabled(main->copyFilter);
 	connect(pasteAction, SIGNAL(triggered()), this, SLOT(PasteFilter()));
 	pasteAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_V));
-	ui->effectWidget->addAction(pasteAction);
-	ui->asyncWidget->addAction(pasteAction);
+	addAction(pasteAction);
 	popup.addAction(pasteAction);
 
 	popup.exec(QCursor::pos());
 }
 
-void OBSBasicFilters::EditItem(QListWidgetItem *item, bool async)
+void OBSBasicFilters::EditItem(QListWidgetItem *item)
 {
 	if (editActive)
 		return;
@@ -978,12 +733,11 @@ void OBSBasicFilters::EditItem(QListWidgetItem *item, bool async)
 	Qt::ItemFlags flags = item->flags();
 	OBSSource filter = item->data(Qt::UserRole).value<OBSSource>();
 	const char *name = obs_source_get_name(filter);
-	QListWidget *list = async ? ui->asyncFilters : ui->effectFilters;
 
 	item->setText(QT_UTF8(name));
 	item->setFlags(flags | Qt::ItemIsEditable);
-	list->removeItemWidget(item);
-	list->editItem(item);
+	ui->filtersList->removeItemWidget(item);
+	ui->filtersList->editItem(item);
 	item->setFlags(flags);
 	editActive = true;
 }
@@ -1037,36 +791,20 @@ void OBSBasicFilters::DuplicateItem(QListWidgetItem *item)
 	}
 }
 
-void OBSBasicFilters::on_asyncFilters_customContextMenuRequested(
+void OBSBasicFilters::on_filtersList_customContextMenuRequested(
 	const QPoint &pos)
 {
-	CustomContextMenu(pos, true);
+	CustomContextMenu(pos);
 }
 
-void OBSBasicFilters::on_effectFilters_customContextMenuRequested(
-	const QPoint &pos)
+void OBSBasicFilters::RenameFilter()
 {
-	CustomContextMenu(pos, false);
+	EditItem(ui->filtersList->currentItem());
 }
 
-void OBSBasicFilters::RenameAsyncFilter()
+void OBSBasicFilters::DuplicateFilter()
 {
-	EditItem(ui->asyncFilters->currentItem(), true);
-}
-
-void OBSBasicFilters::RenameEffectFilter()
-{
-	EditItem(ui->effectFilters->currentItem(), false);
-}
-
-void OBSBasicFilters::DuplicateAsyncFilter()
-{
-	DuplicateItem(ui->asyncFilters->currentItem());
-}
-
-void OBSBasicFilters::DuplicateEffectFilter()
-{
-	DuplicateItem(ui->effectFilters->currentItem());
+	DuplicateItem(ui->filtersList->currentItem());
 }
 
 void OBSBasicFilters::FilterNameEdited(QWidget *editor, QListWidget *list)
@@ -1150,14 +888,9 @@ void OBSBasicFilters::FilterNameEdited(QWidget *editor, QListWidget *list)
 	editActive = false;
 }
 
-void OBSBasicFilters::AsyncFilterNameEdited(QWidget *editor)
+void OBSBasicFilters::FilterNameEdited(QWidget *editor)
 {
-	FilterNameEdited(editor, ui->asyncFilters);
-}
-
-void OBSBasicFilters::EffectFilterNameEdited(QWidget *editor)
-{
-	FilterNameEdited(editor, ui->effectFilters);
+	FilterNameEdited(editor, ui->filtersList);
 }
 
 static bool ConfirmReset(QWidget *parent)
@@ -1173,10 +906,9 @@ static bool ConfirmReset(QWidget *parent)
 
 void OBSBasicFilters::ResetFilters()
 {
-	QListWidget *list = isAsync ? ui->asyncFilters : ui->effectFilters;
-	int row = list->currentRow();
+	int row = ui->filtersList->currentRow();
 
-	OBSSource filter = GetFilter(row, isAsync);
+	OBSSource filter = GetFilter(row);
 
 	if (!filter)
 		return;
@@ -1199,13 +931,7 @@ void OBSBasicFilters::ResetFilters()
 
 void OBSBasicFilters::CopyFilter()
 {
-	OBSSource filter = nullptr;
-
-	if (isAsync)
-		filter = GetFilter(ui->asyncFilters->currentRow(), true);
-	else
-		filter = GetFilter(ui->effectFilters->currentRow(), false);
-
+	OBSSource filter = GetFilter(ui->filtersList->currentRow());
 	main->copyFilter = OBSGetWeakRef(filter);
 }
 
