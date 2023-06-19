@@ -2663,14 +2663,11 @@
         {
             "name": "Vindral",
             "more_info_link": "https://docs.vindral.com/docs/vindral-cdn/",
+            "stream_key_link": "https://portal.cdn.vindral.com/channels",
             "servers": [
                 {
-                    "name": "eu-north",
-                    "url": "rtmps://rtmp.eu-north.cdn.vindral.com/publish"
-                },
-                {
-                    "name": "eu-west",
-                    "url": "rtmps://rtmp.eu-west.cdn.vindral.com/publish"
+                    "name": "Global",
+                    "url": "rtmps://rtmp.global.cdn.vindral.com/publish"
                 }
             ],
             "recommended": {
