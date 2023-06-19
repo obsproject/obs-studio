@@ -678,7 +678,9 @@ void video_output_inc_texture_skipped_frames(video_t *video)
 video_t *video_output_create_with_frame_rate_divisor(video_t *video,
 						     uint32_t divisor)
 {
-	if (!video || divisor == 0)
+	// `divisor == 1` would result in the same frame rate,
+	// resulting in an unnecessary additional video output
+	if (!video || divisor == 0 || divisor == 1)
 		return NULL;
 
 	video_t *new_video = bzalloc(sizeof(video_t));
