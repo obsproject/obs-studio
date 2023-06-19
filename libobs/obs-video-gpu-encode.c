@@ -96,6 +96,9 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 						     encoder->context.settings);
 			}
 
+			// an explicit counter is used instead of remainder calculation
+			// to allow multiple encoders started at the same time to start on
+			// the same frame
 			skip = encoder->frame_rate_divisor_counter++;
 			if (encoder->frame_rate_divisor_counter ==
 			    encoder->frame_rate_divisor)
