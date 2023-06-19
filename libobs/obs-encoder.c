@@ -640,6 +640,7 @@ static void maybe_clear_encoder_core_video_mix(obs_encoder_t *encoder)
 		if (!mix->encoder_only_mix)
 			break;
 
+		obs_encoder_set_video(encoder, obs_get_video());
 		mix->encoder_refs -= 1;
 		if (mix->encoder_refs == 0) {
 			da_erase(obs->video.mixes, i);
