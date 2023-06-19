@@ -1220,7 +1220,6 @@ struct obs_encoder {
 	uint32_t timebase_num;
 	uint32_t timebase_den;
 
-	
 	// allow outputting at fractions of main composition FPS,
 	// e.g. 60 FPS with frame_rate_divisor = 1 turns into 30 FPS
 	//
