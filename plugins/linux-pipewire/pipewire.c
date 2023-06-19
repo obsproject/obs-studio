@@ -1013,6 +1013,7 @@ static void on_param_changed_cb(void *user_data, uint32_t id,
 	obs_pipewire *obs_pw = obs_pw_stream->obs_pw;
 	struct spa_pod_builder pod_builder;
 	const struct spa_pod *params[5];
+	const char *format_name;
 	uint32_t n_params = 0;
 	uint32_t buffer_types;
 	uint32_t output_flags;
@@ -1046,10 +1047,11 @@ static void on_param_changed_cb(void *user_data, uint32_t id,
 
 	blog(LOG_INFO, "[pipewire] Negotiated format:");
 
+	format_name = spa_debug_type_find_name(
+		spa_type_video_format, obs_pw_stream->format.info.raw.format);
 	blog(LOG_INFO, "[pipewire]     Format: %d (%s)",
 	     obs_pw_stream->format.info.raw.format,
-	     spa_debug_type_find_name(spa_type_video_format,
-				      obs_pw_stream->format.info.raw.format));
+	     format_name ? format_name : "unknown format");
 
 	if (has_modifier) {
 		blog(LOG_INFO, "[pipewire]     Modifier: 0x%" PRIx64,
