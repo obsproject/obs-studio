@@ -184,7 +184,13 @@ static inline bool gpu_encode_available(const struct obs_encoder *encoder)
 	       (video->using_p010_tex || video->using_nv12_tex);
 }
 
-static void maybe_set_gpu_video_media(struct obs_encoder *encoder)
+/**
+ * GPU based rescaling is currently implemented via core video mixes,
+ * i.e. a core mix with matching width/height/format/colorspace/range
+ * will be created if it doesn't exist already to generate encoder
+ * input
+ */
+static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
 {
 	struct obs_core_video_mix *mix = NULL;
 	bool create_mix = true;
@@ -563,7 +569,7 @@ static inline bool obs_encoder_initialize_internal(obs_encoder_t *encoder)
 
 	obs_encoder_shutdown(encoder);
 
-	maybe_set_gpu_video_media(encoder);
+	maybe_set_up_gpu_rescale(encoder);
 
 	if (encoder->orig_info.create) {
 		can_reroute = true;
@@ -619,7 +625,11 @@ bool obs_encoder_initialize(obs_encoder_t *encoder)
 	return success;
 }
 
-static void maybe_clear_encoder_mix(obs_encoder_t *encoder)
+/**
+ * free video mix if it's an encoder only video mix
+ * see `maybe_set_up_gpu_rescale`
+ */
+static void maybe_clear_encoder_core_video_mix(obs_encoder_t *encoder)
 {
 	pthread_mutex_lock(&obs->video.mixes_mutex);
 	for (size_t i = 0; i < obs->video.mixes.num; i++) {
@@ -649,7 +659,7 @@ void obs_encoder_shutdown(obs_encoder_t *encoder)
 		encoder->first_received = false;
 		encoder->offset_usec = 0;
 		encoder->start_ts = 0;
-		maybe_clear_encoder_mix(encoder);
+		maybe_clear_encoder_core_video_mix(encoder);
 	}
 	obs_encoder_set_last_error(encoder, NULL);
 	pthread_mutex_unlock(&encoder->init_mutex);
