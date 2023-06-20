@@ -1346,7 +1346,7 @@
             </property>
             <property name="icon">
              <iconset>
-              <normaloff>:/res/images/add.png</normaloff>:/res/images/add.png</iconset>
+              <normaloff>:/res/images/plus.svg</normaloff>:/res/images/plus.svg</iconset>
             </property>
             <property name="flat">
              <bool>false</bool>
@@ -1378,7 +1378,7 @@
             </property>
             <property name="icon">
              <iconset>
-              <normaloff>:/res/images/list_remove.png</normaloff>:/res/images/list_remove.png</iconset>
+              <normaloff>:/res/images/minus.svg</normaloff>:/res/images/minus.svg</iconset>
             </property>
             <property name="flat">
              <bool>false</bool>
