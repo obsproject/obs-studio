@@ -244,6 +244,8 @@ Output Definition Structure (obs_output_info)
 
    Required only if **OBS_OUTPUT_SERVICE** flag is set.
 
+   .. versionadded:: 29.1
+
 .. _output_signal_handler_reference:
 
 Output Signals
@@ -681,10 +683,14 @@ General Output Functions
 .. function:: const char *obs_output_get_supported_video_codecs(const obs_output_t *output)
               const char *obs_get_output_supported_video_codecs(const char *id)
               const char *obs_output_get_supported_audio_codecs(const obs_output_t *output)
-              const char *obs_get_output_supported_video_codecs(const char *id)
+              const char *obs_get_output_supported_audio_codecs(const char *id)
 
    :return: Supported video/audio codecs of an encoded output, separated
             by semicolon
+
+   .. versionadded:: 29.1
+      :c:func:`obs_get_output_supported_video_codecs` and
+      :c:func:`obs_get_output_supported_audio_codecs`
 
 ---------------------
 
@@ -700,6 +706,8 @@ General Output Functions
    :return: Supported protocols, separated by semicolon. Always NULL if the
             output is not **OBS_OUTPUT_SERVICE**.
 
+   .. versionadded:: 29.1
+
 ---------------------
 
 .. function:: bool obs_is_output_protocol_registered(const char *protocol)
@@ -709,11 +717,15 @@ General Output Functions
    :return:                 A boolean showing if an output with the given
                             protocol is registered
 
+   .. versionadded:: 29.1
+
 ---------------------
 
 .. function:: bool obs_enum_output_protocols(size_t idx, char **protocol)
 
    Enumerates all registered protocol.
+
+   .. versionadded:: 29.1
 
 ---------------------
 
@@ -726,6 +738,8 @@ General Output Functions
    :param enum_cb:  Callback used when a matching output is found, the id
                     of the output is passed to the callback
    :return:         When all outputs are enumerated or if the callback return *false*
+
+   .. versionadded:: 29.1
 
 ---------------------
 
@@ -745,6 +759,9 @@ Functions used by outputs
 
    Optionally sets/gets the video conversion information.  Only used by
    raw outputs.
+
+   .. versionadded:: 29.1
+     :c:func:`obs_output_get_video_conversion`
 
    Relevant data types used with this function:
 
