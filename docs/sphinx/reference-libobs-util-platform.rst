@@ -503,3 +503,5 @@ Other Functions
 
    Creates a version 4 UUID and returns a NULL-terminated 36-character string.
    Must be freed with :c:func:`bfree()`.
+
+   .. versionadded:: 29.1
