@@ -21,7 +21,11 @@ void ServiceBase::Setup(obs_data_t *data, bool deferUiFunction)
 	if (!data)
 		return;
 
-	SetSettings(obs_data_get_obj(data, DATA_NAME_SETTINGS));
+	if (obs_data_has_user_value(data, DATA_NAME_SETTINGS)) {
+		OBSDataAutoRelease settingsData =
+			obs_data_get_obj(data, DATA_NAME_SETTINGS);
+		SetSettings(settingsData);
+	}
 
 	OBSDataAutoRelease oauthData = obs_data_get_obj(data, DATA_NAME_OAUTH);
 	if (!oauthData)
@@ -50,7 +54,7 @@ void ServiceBase::Setup(obs_data_t *data, bool deferUiFunction)
 		blog(LOG_WARNING,
 		     "[%s][%s]: Old scope version detected, the user will be asked to re-login",
 		     PluginLogName(), __FUNCTION__);
-		ReLogin(deferUiFunction);
+		ReLogin(LoginReason::SCOPE_CHANGE, deferUiFunction);
 		return;
 	}
 
@@ -72,7 +76,8 @@ void ServiceBase::Setup(obs_data_t *data, bool deferUiFunction)
 			blog(LOG_WARNING,
 			     "[%s][%s]: Access Token has expired, the user will be asked to re-login",
 			     PluginLogName(), __FUNCTION__);
-			ReLogin(deferUiFunction);
+			ReLogin(LoginReason::REFRESH_TOKEN_FAILED,
+				deferUiFunction);
 			return;
 		}
 	}
@@ -86,12 +91,13 @@ void ServiceBase::Setup(obs_data_t *data, bool deferUiFunction)
 	}
 }
 
-void ServiceBase::ReLogin(bool deferUiFunction)
+void ServiceBase::ReLogin(const LoginReason &reason, bool deferUiFunction)
 {
 	if (deferUiFunction) {
 		defferedLogin = true;
+		defferedLoginReason = reason;
 	} else {
-		Login();
+		Login(reason);
 	}
 }
 
@@ -226,12 +232,12 @@ void ServiceBase::OBSEvent(obs_frontend_event event)
 		/* If duplication, reset token and ask to login */
 		if (duplicationMarker) {
 			DuplicationReset();
-			Login();
+			Login(LoginReason::PROFILE_DUPLICATION);
 		}
 		[[fallthrough]];
 	case OBS_FRONTEND_EVENT_FINISHED_LOADING:
 		if (defferedLogin) {
-			Login();
+			Login(defferedLoginReason);
 			defferedLogin = false;
 		}
 
@@ -275,14 +281,14 @@ void ServiceBase::RemoveBondedService(obs_service_t *service)
 	}
 }
 
-bool ServiceBase::Login()
+bool ServiceBase::Login(const LoginReason &reason)
 try {
 	if (connected)
 		return true;
 
 	std::string code;
 	std::string redirectUri;
-	if (!LoginInternal(code, redirectUri))
+	if (!LoginInternal(reason, code, redirectUri))
 		return false;
 
 	OAuth::AccessTokenResponse response;

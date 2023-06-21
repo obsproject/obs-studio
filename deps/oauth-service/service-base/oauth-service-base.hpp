@@ -12,6 +12,13 @@
 
 namespace OAuth {
 
+enum class LoginReason : int {
+	CONNECT,
+	SCOPE_CHANGE,
+	REFRESH_TOKEN_FAILED,
+	PROFILE_DUPLICATION,
+};
+
 class ServiceBase {
 	/* NOTE: To support service copy (e.g. settings) */
 	std::vector<obs_service_t *> bondedServices;
@@ -26,9 +33,10 @@ class ServiceBase {
 	std::string refreshToken;
 
 	bool defferedLogin = false;
+	LoginReason defferedLoginReason;
 	bool defferedLoadFrontend = false;
 
-	inline void ReLogin(bool deferUiFunction);
+	inline void ReLogin(const LoginReason &reason, bool deferUiFunction);
 
 	inline void ApplyNewTokens(const OAuth::AccessTokenResponse &response);
 	obs_data_t *GetOAuthData();
@@ -55,7 +63,7 @@ protected:
 
 	virtual int64_t ScopeVersion() = 0;
 
-	virtual bool LoginInternal(std::string &code,
+	virtual bool LoginInternal(const LoginReason &reason, std::string &code,
 				   std::string &redirectUri) = 0;
 	virtual bool SignOutInternal() = 0;
 
@@ -90,7 +98,7 @@ public:
 
 	bool Connected() { return connected; }
 
-	bool Login();
+	bool Login(const LoginReason &reason = LoginReason::CONNECT);
 	bool SignOut();
 };
 
