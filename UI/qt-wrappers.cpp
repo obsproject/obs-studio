@@ -207,6 +207,23 @@ QDataStream &operator>>(QDataStream &in, OBSScene &scene)
 	return in;
 }
 
+QDataStream &operator<<(QDataStream &out, const OBSSource &source)
+{
+	return out << QString(obs_source_get_uuid(source));
+}
+
+QDataStream &operator>>(QDataStream &in, OBSSource &source)
+{
+	QString uuid;
+
+	in >> uuid;
+
+	OBSSourceAutoRelease source_ = obs_get_source_by_uuid(QT_TO_UTF8(uuid));
+	source = source_;
+
+	return in;
+}
+
 void DeleteLayout(QLayout *layout)
 {
 	if (!layout)
