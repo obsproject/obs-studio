@@ -112,6 +112,10 @@ create_encoder(const char *id, enum obs_encoder_type type, const char *name,
 	obs_context_data_insert(&encoder->context, &obs->data.encoders_mutex,
 				&obs->data.first_encoder);
 
+	if (type == OBS_ENCODER_VIDEO) {
+		encoder->frame_rate_divisor = 1;
+	}
+
 	blog(LOG_DEBUG, "encoder '%s' (%s) created", name, id);
 	return encoder;
 }
@@ -527,7 +531,7 @@ void obs_encoder_shutdown(obs_encoder_t *encoder)
 		encoder->first_received = false;
 		encoder->offset_usec = 0;
 		encoder->start_ts = 0;
-		encoder->frame_rate_divisor_counter = 0;
+		encoder->frame_rate_divisor_counter = 1;
 	}
 	obs_encoder_set_last_error(encoder, NULL);
 	pthread_mutex_unlock(&encoder->init_mutex);
