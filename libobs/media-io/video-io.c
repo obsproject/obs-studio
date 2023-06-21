@@ -412,7 +412,7 @@ bool video_output_connect(
 	video_t *video, const struct video_scale_info *conversion,
 	void (*callback)(void *param, struct video_data *frame), void *param)
 {
-	return video_output_connect2(video, conversion, 0, callback, param);
+	return video_output_connect2(video, conversion, 1, callback, param);
 }
 
 bool video_output_connect2(

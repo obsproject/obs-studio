@@ -2064,7 +2064,7 @@ static void hook_data_capture(struct obs_output *output)
 		if (has_video)
 			start_raw_video(output->video,
 					obs_output_get_video_conversion(output),
-					0, default_raw_video_callback, output);
+					1, default_raw_video_callback, output);
 		if (has_audio)
 			start_raw_audio(output);
 	}
