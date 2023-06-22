@@ -192,12 +192,6 @@ static inline void effect_free(gs_effect_t *effect)
 	effect->effect_dir = NULL;
 }
 
-EXPORT void effect_upload_params(gs_effect_t *effect, bool changed_only);
-EXPORT void effect_upload_shader_params(gs_effect_t *effect,
-					gs_shader_t *shader,
-					struct darray *pass_params,
-					bool changed_only);
-
 #ifdef __cplusplus
 }
 #endif

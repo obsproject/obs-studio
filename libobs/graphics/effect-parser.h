@@ -79,8 +79,6 @@ struct ep_param {
 	ep_param_array_t annotations;
 };
 
-extern void ep_param_writevar(struct dstr *dst, struct darray *use_params);
-
 static inline void ep_param_init(struct ep_param *epp, char *type, char *name,
 				 bool is_property, bool is_const,
 				 bool is_uniform)
