@@ -1148,3 +1148,36 @@ char *os_generate_uuid(void)
 	uuid_unparse_lower(uuid, out);
 	return out;
 }
+
+#ifndef __APPLE__
+bool os_keychain_available(void)
+{
+	return false;
+}
+
+bool os_keychain_save(const char *label, const char *key, const char *data)
+{
+	/* Not implemented */
+	UNUSED_PARAMETER(label);
+	UNUSED_PARAMETER(key);
+	UNUSED_PARAMETER(data);
+	return false;
+}
+
+bool os_keychain_load(const char *label, const char *key, char **data)
+{
+	/* Not implemented */
+	UNUSED_PARAMETER(label);
+	UNUSED_PARAMETER(key);
+	UNUSED_PARAMETER(data);
+	return false;
+}
+
+bool os_keychain_delete(const char *label, const char *key)
+{
+	/* Not implemented */
+	UNUSED_PARAMETER(label);
+	UNUSED_PARAMETER(key);
+	return false;
+}
+#endif
