@@ -51,6 +51,8 @@ struct cf_token {
 	enum cf_token_type type;
 };
 
+typedef DARRAY(struct cf_token) cf_token_array_t;
+
 static inline void cf_token_clear(struct cf_token *t)
 {
 	memset(t, 0, sizeof(struct cf_token));
@@ -86,7 +88,7 @@ struct cf_lexer {
 	char *file;
 	struct lexer base_lexer;
 	char *reformatted, *write_offset;
-	DARRAY(struct cf_token) tokens;
+	cf_token_array_t tokens;
 	bool unexpected_eof; /* unexpected multi-line comment eof */
 };
 
@@ -106,8 +108,8 @@ EXPORT bool cf_lexer_lex(struct cf_lexer *lex, const char *str,
 
 struct cf_def {
 	struct cf_token name;
-	DARRAY(struct cf_token) params;
-	DARRAY(struct cf_token) tokens;
+	cf_token_array_t params;
+	cf_token_array_t tokens;
 	bool macro;
 };
 
@@ -173,7 +175,7 @@ struct cf_preprocessor {
 	DARRAY(struct cf_def) defines;
 	DARRAY(char *) sys_include_dirs;
 	DARRAY(struct cf_lexer) dependencies;
-	DARRAY(struct cf_token) tokens;
+	cf_token_array_t tokens;
 	bool ignore_state;
 };
 
