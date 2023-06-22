@@ -134,18 +134,21 @@ static const char *rtmp_custom_get_protocol(void *data)
 	return "RTMP";
 }
 
-#define RTMP_PROTOCOL "rtmp"
-
 static void rtmp_custom_apply_settings(void *data, obs_data_t *video_settings,
 				       obs_data_t *audio_settings)
 {
 	struct rtmp_custom *service = data;
-	if (service->server != NULL && video_settings != NULL &&
-	    strncmp(service->server, RTMP_PROTOCOL, strlen(RTMP_PROTOCOL)) !=
-		    0) {
+	const char *protocol = rtmp_custom_get_protocol(service);
+	bool has_mpegts = false;
+	bool is_rtmp = false;
+	if (strcmp(protocol, "SRT") == 0 || strcmp(protocol, "RIST") == 0)
+		has_mpegts = true;
+	if (strcmp(protocol, "RTMP") == 0 || strcmp(protocol, "RTMPS") == 0)
+		is_rtmp = true;
+	if (!is_rtmp && video_settings != NULL)
 		obs_data_set_bool(video_settings, "repeat_headers", true);
+	if (has_mpegts && audio_settings != NULL)
 		obs_data_set_bool(audio_settings, "set_to_ADTS", true);
-	}
 }
 
 static const char *rtmp_custom_get_connect_info(void *data, uint32_t type)
