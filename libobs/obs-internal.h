@@ -461,14 +461,16 @@ struct obs_core_hotkeys {
 	char *sceneitem_hide;
 };
 
+typedef DARRAY(struct obs_source_info) obs_source_info_array_t;
+
 struct obs_core {
 	struct obs_module *first_module;
 	DARRAY(struct obs_module_path) module_paths;
 
-	DARRAY(struct obs_source_info) source_types;
-	DARRAY(struct obs_source_info) input_types;
-	DARRAY(struct obs_source_info) filter_types;
-	DARRAY(struct obs_source_info) transition_types;
+	obs_source_info_array_t source_types;
+	obs_source_info_array_t input_types;
+	obs_source_info_array_t filter_types;
+	obs_source_info_array_t transition_types;
 	DARRAY(struct obs_output_info) output_types;
 	DARRAY(struct obs_encoder_info) encoder_types;
 	DARRAY(struct obs_service_info) service_types;
