@@ -1026,7 +1026,8 @@ static void check_texture_encode_capability(obs_encoder_t *encoder,
 	bool hevc = amf_codec_type::HEVC == codec;
 	bool av1 = amf_codec_type::AV1 == codec;
 
-	if (obs_encoder_scaling_enabled(encoder))
+	if (obs_encoder_scaling_enabled(encoder) &&
+	    !obs_encoder_gpu_scaling_enabled(encoder))
 		throw "Encoder scaling is active";
 
 	if (hevc || av1) {
