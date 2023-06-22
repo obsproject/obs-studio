@@ -39,6 +39,7 @@
 #include "auth-base.hpp"
 #include "log-viewer.hpp"
 #include "undo-stack-obs.hpp"
+#include "broadcast-flow.hpp"
 
 #include <obs-frontend-internal.hpp>
 
@@ -622,20 +623,17 @@ private:
 	void MoveSceneItem(enum obs_order_movement movement,
 			   const QString &action_name);
 
-	bool autoStartBroadcast = true;
-	bool autoStopBroadcast = true;
-	bool broadcastActive = false;
-	bool broadcastReady = false;
-	QPointer<QThread> youtubeStreamCheckThread;
-#ifdef YOUTUBE_ENABLED
-	void YoutubeStreamCheck(const std::string &key);
-	void ShowYouTubeAutoStartWarning();
-	void YouTubeActionDialogOk(const QString &id, const QString &key,
-				   bool autostart, bool autostop,
-				   bool start_now);
-#endif
-	void BroadcastButtonClicked();
-	void SetBroadcastFlowEnabled(bool enabled);
+	OBSBroadcastFlow *serviceBroadcastFlow = nullptr;
+	QList<OBSBroadcastFlow> broadcastFlows;
+	QPointer<QThread> broadcastStreamCheckThread;
+
+	void ResetServiceBroadcastFlow();
+	void LoadServiceBroadcastFlow();
+
+	void BroadcastStarted();
+	void ResetBroadcastButtonState();
+
+	void BroadcastStreamCheck();
 
 	void UpdatePreviewSafeAreas();
 	bool drawSafeAreas = false;
@@ -670,8 +668,6 @@ public slots:
 	void DeferSaveEnd();
 
 	void DisplayStreamStartError();
-
-	void SetupBroadcast();
 
 	void StartStreaming();
 	void StopStreaming();
@@ -842,6 +838,10 @@ private slots:
 	void RestartVirtualCam(const VCamConfig &config);
 	void RestartingVirtualCam();
 
+	void ManageBroadcastButtonClicked();
+	void StartBroadcastButtonClicked();
+	void StopBroadcastButtonClicked();
+
 private:
 	/* OBS Callbacks */
 	static void SceneReordered(void *data, calldata_t *params);
@@ -894,6 +894,10 @@ public:
 
 	obs_service_t *GetService();
 	void SetService(obs_service_t *service);
+
+	bool AddBroadcastFlow(const obs_service_t *service,
+			      const obs_frontend_broadcast_flow &flow);
+	void RemoveBroadcastFlow(const obs_service_t *service);
 
 	int GetTransitionDuration();
 	int GetTbarPosition();

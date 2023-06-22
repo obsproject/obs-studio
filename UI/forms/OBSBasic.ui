@@ -1516,10 +1516,13 @@
           </size>
          </property>
          <property name="text">
-          <string>Basic.Main.StartBroadcast</string>
+          <string>Basic.Main.SetupBroadcast</string>
          </property>
          <property name="checkable">
           <bool>true</bool>
+         </property>
+         <property name="visible">
+          <bool>false</bool>
          </property>
         </widget>
        </item>

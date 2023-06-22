@@ -117,7 +117,81 @@ obs_service_t *OBSBasic::GetService()
 
 void OBSBasic::SetService(obs_service_t *newService)
 {
-	if (newService) {
-		service = newService;
+	if (!newService)
+		return;
+
+	ResetServiceBroadcastFlow();
+
+	service = newService;
+
+	LoadServiceBroadcastFlow();
+}
+
+void OBSBasic::ResetServiceBroadcastFlow()
+{
+	if (!serviceBroadcastFlow)
+		return;
+
+	serviceBroadcastFlow = nullptr;
+
+	ui->broadcastButton->setVisible(false);
+	ui->broadcastButton->disconnect(SIGNAL(clicked(bool)));
+}
+
+void OBSBasic::LoadServiceBroadcastFlow()
+{
+	if (serviceBroadcastFlow)
+		return;
+
+	for (int64_t i = 0; i < broadcastFlows.size(); i++) {
+		if (broadcastFlows[i].GetBondedService() != service)
+			continue;
+
+		serviceBroadcastFlow = &broadcastFlows[i];
+		ui->broadcastButton->setVisible(true);
+
+		ui->broadcastButton->setChecked(
+			serviceBroadcastFlow->BroadcastState() !=
+			OBS_BROADCAST_NONE);
+
+		connect(ui->broadcastButton, &QPushButton::clicked, this,
+			&OBSBasic::ManageBroadcastButtonClicked);
+		break;
 	}
+}
+
+bool OBSBasic::AddBroadcastFlow(const obs_service_t *service_,
+				const obs_frontend_broadcast_flow &flow)
+{
+	for (int64_t i = 0; i < broadcastFlows.size(); i++) {
+		if (broadcastFlows[i].GetBondedService() != service_)
+			continue;
+
+		blog(LOG_WARNING,
+		     "This service already has an broadcast flow added");
+		return false;
+	}
+
+	broadcastFlows.append(OBSBroadcastFlow(service_, flow));
+
+	LoadServiceBroadcastFlow();
+
+	return true;
+}
+
+void OBSBasic::RemoveBroadcastFlow(const obs_service_t *service_)
+{
+	for (int64_t i = 0; i < broadcastFlows.size(); i++) {
+		if (broadcastFlows[i].GetBondedService() != service_)
+			continue;
+
+		broadcastFlows.removeAt(i);
+
+		if (GetService() == service_)
+			ResetServiceBroadcastFlow();
+
+		return;
+	}
+
+	blog(LOG_WARNING, "This service has no broadcast flow added to it");
 }

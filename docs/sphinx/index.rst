@@ -33,6 +33,7 @@ Welcome to OBS Studio's documentation!
    Graphics (libobs/graphics) <reference-libobs-graphics>
    Media I/O (libobs/media-io) <reference-libobs-media-io>
    reference-frontend-api
+   reference-frontend-broadcast-flow-api
 
 .. toctree::
    :caption: Additional Resources

@@ -89,6 +89,59 @@ struct obs_frontend_browser_params {
 	const char **popup_whitelist_urls;
 	bool enable_cookie;
 };
+
+enum obs_broadcast_flow_flag {
+	OBS_BROADCAST_FLOW_ALLOW_MANAGE_WHILE_STREAMING = (1 << 0),
+	OBS_BROADCAST_FLOW_ALLOW_DIFFERED_BROADCAST_START = (1 << 1),
+	OBS_BROADCAST_FLOW_ALLOW_DIFFERED_BROADCAST_STOP = (1 << 2),
+};
+
+enum obs_broadcast_state {
+	OBS_BROADCAST_NONE = 0,
+	OBS_BROADCAST_ACTIVE,
+	OBS_BROADCAST_INACTIVE,
+};
+
+enum obs_broadcast_start {
+	OBS_BROADCAST_START_WITH_STREAM = 0,
+	OBS_BROADCAST_START_WITH_STREAM_NOW,
+	OBS_BROADCAST_START_DIFFER_FROM_STREAM,
+};
+
+enum obs_broadcast_stop {
+	OBS_BROADCAST_STOP_NEVER = 0,
+	OBS_BROADCAST_STOP_WITH_STREAM,
+	OBS_BROADCAST_STOP_DIFFER_FROM_STREAM,
+};
+
+enum obs_broadcast_stream_state {
+	OBS_BROADCAST_STREAM_FAILURE = 0,
+	OBS_BROADCAST_STREAM_INACTIVE,
+	OBS_BROADCAST_STREAM_ACTIVE,
+};
+
+struct obs_frontend_broadcast_flow {
+	void *priv;
+
+	uint32_t flags;
+
+	enum obs_broadcast_state (*get_broadcast_state)(void *priv);
+	enum obs_broadcast_start (*get_broadcast_start_type)(void *priv);
+	enum obs_broadcast_stop (*get_broadcast_stop_type)(void *priv);
+
+	void (*manage_broadcast)(void *priv);
+	void (*manage_broadcast2)(void *priv, bool streaming_active);
+
+	void (*stopped_streaming)(void *priv);
+
+	void (*differed_start_broadcast)(void *priv);
+	enum obs_broadcast_stream_state (*is_broadcast_stream_active)(
+		void *priv);
+
+	bool (*differed_stop_broadcast)(void *priv);
+
+	const char *(*get_last_error)(void *priv);
+};
 #endif //!SWIG
 
 /* ------------------------------------------------------------------------- */
@@ -196,6 +249,14 @@ typedef bool (*obs_frontend_translate_ui_cb)(const char *text,
 EXPORT void
 obs_frontend_push_ui_translation(obs_frontend_translate_ui_cb translate);
 EXPORT void obs_frontend_pop_ui_translation(void);
+
+EXPORT void obs_frontend_add_broadcast_flow_s(
+	const obs_service_t *service,
+	const struct obs_frontend_broadcast_flow *flow, size_t size);
+#define obs_frontend_add_broadcast_flow(service, flow) \
+	obs_frontend_add_broadcast_flow_s(             \
+		service, flow, sizeof(struct obs_frontend_broadcast_flow))
+EXPORT void obs_frontend_remove_broadcast_flow(const obs_service_t *service);
 
 #endif //!SWIG
 

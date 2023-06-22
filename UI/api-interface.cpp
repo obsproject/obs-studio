@@ -804,6 +804,33 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 			undo_data, redo_data, repeatable);
 	}
 
+	void obs_frontend_add_broadcast_flow_s(
+		const obs_service_t *service,
+		const struct obs_frontend_broadcast_flow *flow,
+		size_t size) override
+	{
+		struct obs_frontend_broadcast_flow data = {0};
+		if (size > sizeof(data)) {
+			blog(LOG_ERROR,
+			     "Tried to add obs_frontend_broadcast_flow with size "
+			     "%llu which is more than OBS Studio currently "
+			     "supports (%llu)",
+			     (long long unsigned)size,
+			     (long long unsigned)sizeof(data));
+			return;
+		}
+
+		memcpy(&data, flow, size);
+
+		main->AddBroadcastFlow(service, data);
+	}
+
+	void obs_frontend_remove_broadcast_flow(
+		const obs_service_t *service) override
+	{
+		main->RemoveBroadcastFlow(service);
+	}
+
 	void on_load(obs_data_t *settings) override
 	{
 		for (size_t i = saveCallbacks.size(); i > 0; i--) {

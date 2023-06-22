@@ -121,6 +121,8 @@ target_sources(
           api-interface.cpp
           auth-base.cpp
           auth-base.hpp
+          broadcast-flow.cpp
+          broadcast-flow.hpp
           display-helpers.hpp
           platform.hpp
           qt-display.cpp

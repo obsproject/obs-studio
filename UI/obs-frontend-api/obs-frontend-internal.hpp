@@ -175,6 +175,13 @@ struct obs_frontend_callbacks {
 						       const char *undo_data,
 						       const char *redo_data,
 						       bool repeatable) = 0;
+
+	virtual void obs_frontend_add_broadcast_flow_s(
+		const obs_service_t *service,
+		const struct obs_frontend_broadcast_flow *flow,
+		size_t size) = 0;
+	virtual void
+	obs_frontend_remove_broadcast_flow(const obs_service_t *service) = 0;
 };
 
 EXPORT void

@@ -74,6 +74,8 @@ target_sources(
           auth-listener.hpp
           auth-oauth.cpp
           auth-oauth.hpp
+          broadcast-flow.cpp
+          broadcast-flow.hpp
           display-helpers.hpp
           multiview.cpp
           multiview.hpp

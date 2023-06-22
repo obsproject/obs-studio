@@ -35,7 +35,6 @@ public:
 		std::string service;
 		Type type;
 		bool externalOAuth;
-		bool usesBroadcastFlow;
 	};
 
 	typedef std::function<std::shared_ptr<Auth>()> create_cb;
@@ -46,7 +45,6 @@ public:
 	inline Type type() const { return def.type; }
 	inline const char *service() const { return def.service.c_str(); }
 	inline bool external() const { return def.externalOAuth; }
-	inline bool broadcastFlow() const { return def.usesBroadcastFlow; }
 
 	virtual void LoadUI() {}
 
