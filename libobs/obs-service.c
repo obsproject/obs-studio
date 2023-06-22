@@ -566,3 +566,38 @@ const char *obs_get_service_supported_protocols(const char *id)
 	const struct obs_service_info *info = find_service(id);
 	return info ? info->supported_protocols : NULL;
 }
+
+bool obs_service_can_bandwidth_test(const obs_service_t *service)
+{
+	if (!obs_service_valid(service, "obs_service_has_bandwidth_test"))
+		return false;
+
+	if (!(service->info.can_bandwidth_test &&
+	      service->info.enable_bandwidth_test &&
+	      service->info.bandwidth_test_enabled))
+		return false;
+
+	return service->info.can_bandwidth_test(service->context.data);
+}
+
+void obs_service_enable_bandwidth_test(const obs_service_t *service,
+				       bool enabled)
+{
+	if (!obs_service_valid(service, "obs_service_enable_bandwidth_test"))
+		return;
+
+	if (service->info.enable_bandwidth_test)
+		service->info.enable_bandwidth_test(service->context.data,
+						    enabled);
+}
+
+bool obs_service_bandwidth_test_enabled(const obs_service_t *service)
+{
+	if (!obs_service_valid(service, "obs_service_bandwidth_test_enabled"))
+		return false;
+
+	if (!service->info.bandwidth_test_enabled)
+		return false;
+
+	return service->info.bandwidth_test_enabled(service->context.data);
+}

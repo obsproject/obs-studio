@@ -7950,12 +7950,9 @@ void OBSBasic::on_streamButton_clicked()
 		bool confirm = config_get_bool(GetGlobalConfig(), "BasicWindow",
 					       "WarnBeforeStartingStream");
 
-		bool bwtest = false;
+		bool bwtest = obs_service_bandwidth_test_enabled(service);
 
 		if (this->auth) {
-			OBSDataAutoRelease settings =
-				obs_service_get_settings(service);
-			bwtest = obs_data_get_bool(settings, "bwtest");
 			// Disable confirmation if this is going to open broadcast setup
 			if (auth && auth->broadcastFlow() && !broadcastReady &&
 			    !broadcastActive)

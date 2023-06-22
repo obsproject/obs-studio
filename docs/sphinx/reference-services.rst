@@ -231,6 +231,23 @@ Service Definition Structure
    This variable specifies which protocol are supported by the service,
    separated by semicolon.
 
+.. member:: bool (*obs_service_info.can_bandwidth_test)(void *data)
+
+   (Optional)
+
+   :return: If the service can do bandwith test or not
+
+.. member:: void (*obs_service_info.enable_bandwidth_test)(void *data, bool enabled)
+
+   Enable/disable the bandwith test of the service.
+   (Optional)
+
+.. member:: bool (*obs_service_info.bandwidth_test_enabled)(void *data)
+
+   (Optional)
+
+   :return: If the bandwith test is enabled or not
+
 General Service Functions
 -------------------------
 
@@ -463,6 +480,24 @@ General Service Functions
 .. function:: const char *obs_get_service_supported_protocols(const char *id)
 
    :return: Supported protocol of the service, separated by semicolon
+
+---------------------
+
+.. function:: bool obs_service_can_bandwidth_test(const obs_service_t *service)
+
+   :return: If the service can do bandwidth test
+
+---------------------
+
+.. function:: void obs_service_enable_bandwidth_test(const obs_service_t *service, bool enabled)
+
+   Enable the bandwidth test has this capability
+
+---------------------
+
+.. function:: bool obs_service_bandwidth_test_enabled(const obs_service_t *service)
+
+   :return: If the service has bandwidth test enabled
 
 .. ---------------------------------------------------------------------------
 

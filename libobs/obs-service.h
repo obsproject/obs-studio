@@ -130,6 +130,10 @@ struct obs_service_info {
 
 	void (*get_defaults2)(void *type_data, obs_data_t *settings);
 	obs_properties_t *(*get_properties2)(void *data, void *type_data);
+
+	bool (*can_bandwidth_test)(void *data);
+	void (*enable_bandwidth_test)(void *data, bool enabled);
+	bool (*bandwidth_test_enabled)(void *data);
 };
 
 EXPORT void obs_register_service_s(const struct obs_service_info *info,

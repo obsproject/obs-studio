@@ -2678,6 +2678,11 @@ EXPORT uint32_t obs_service_get_flags(const obs_service_t *service);
 
 EXPORT const char *obs_get_service_supported_protocols(const char *id);
 
+EXPORT bool obs_service_can_bandwidth_test(const obs_service_t *service);
+EXPORT void obs_service_enable_bandwidth_test(const obs_service_t *service,
+					      bool enabled);
+EXPORT bool obs_service_bandwidth_test_enabled(const obs_service_t *service);
+
 /* ------------------------------------------------------------------------- */
 /* Source frame allocation functions */
 EXPORT void obs_source_frame_init(struct obs_source_frame *frame,
