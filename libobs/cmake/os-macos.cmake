@@ -6,7 +6,8 @@ target_link_libraries(
           "$<LINK_LIBRARY:FRAMEWORK,AudioUnit.framework>"
           "$<LINK_LIBRARY:FRAMEWORK,AppKit.framework>"
           "$<LINK_LIBRARY:FRAMEWORK,IOKit.framework>"
-          "$<LINK_LIBRARY:FRAMEWORK,Carbon.framework>")
+          "$<LINK_LIBRARY:FRAMEWORK,Carbon.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,Security.framework>")
 
 target_sources(
   libobs

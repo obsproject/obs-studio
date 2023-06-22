@@ -35,6 +35,7 @@
 #include <IOKit/pwr_mgt/IOPMLib.h>
 
 #import <Cocoa/Cocoa.h>
+#import <Security/SecItem.h>
 
 #include "apple/cfstring-utils.h"
 
@@ -504,4 +505,91 @@ bool cfstr_copy_dstr(CFStringRef cfstring, CFStringEncoding cfstring_encoding, s
         dstr_resize(str, max_size);
 
     return (bool) success;
+}
+
+bool os_keychain_available(void)
+{
+    return true;
+}
+
+bool os_keychain_save(const char *label, const char *key, const char *data)
+{
+    if (!label || !key || !data)
+        return false;
+
+    NSData *nsData = [NSData dataWithBytesNoCopy:(void *) data length:strlen(data) freeWhenDone:NO];
+    NSDictionary *insert = @{
+        (__bridge id) kSecAttrAccessible: (__bridge id) kSecAttrAccessibleWhenUnlocked,
+        (__bridge id) kSecClass: (__bridge id) kSecClassGenericPassword,
+        (__bridge id) kSecAttrService: @(label),
+        (__bridge id) kSecAttrAccount: @(key),
+        (__bridge id) kSecValueData: nsData,
+    };
+
+    OSStatus status = SecItemAdd((__bridge CFDictionaryRef) insert, nil);
+    /* macOS doesn't allow us to overwrite existing keychain items, so we need to do an update instead if already exists. */
+    if (status == errSecDuplicateItem) {
+        NSDictionary *query = @{
+            (__bridge id) kSecClass: (__bridge id) kSecClassGenericPassword,
+            (__bridge id) kSecAttrService: @(label),
+            (__bridge id) kSecAttrAccount: @(key),
+        };
+        status = SecItemUpdate((__bridge CFDictionaryRef) query, (__bridge CFDictionaryRef) insert);
+        if (status != errSecSuccess) {
+            blog(LOG_ERROR, "Keychain item \"%s::%s\" could not be updated: %d", label, key, status);
+        }
+    } else if (status != errSecSuccess) {
+        blog(LOG_ERROR, "Keychain item \"%s::%s\" could not be saved: %d", label, key, status);
+    }
+
+    return status == errSecSuccess;
+}
+
+bool os_keychain_load(const char *label, const char *key, char **data)
+{
+    if (!label || !key || !data)
+        return false;
+
+    NSDictionary *query = @{
+        (__bridge id) kSecAttrAccessible: (__bridge id) kSecAttrAccessibleWhenUnlocked,
+        (__bridge id) kSecClass: (__bridge id) kSecClassGenericPassword,
+        (__bridge id) kSecMatchLimit: (__bridge id) kSecMatchLimitOne,
+        (__bridge id) kSecAttrService: @(label),
+        (__bridge id) kSecAttrAccount: @(key),
+        (__bridge id) kSecReturnData: @YES,
+    };
+
+    /* The result will be a CFData holding the string we saved. */
+    CFDataRef result = NULL;
+    OSStatus status = SecItemCopyMatching((__bridge CFDictionaryRef) query, (CFTypeRef *) &result);
+    if (status != errSecSuccess || !result) {
+        blog(LOG_ERROR, "Keychain item \"%s::%s\" could not be read: %d", label, key, status);
+        return false;
+    }
+
+    *data = bstrdup_n((const char *) CFDataGetBytePtr(result), CFDataGetLength(result));
+    CFRelease(result);
+
+    return true;
+}
+
+bool os_keychain_delete(const char *label, const char *key)
+{
+    if (!label || !key)
+        return false;
+
+    NSDictionary *query = @{
+        (__bridge id) kSecAttrAccessible: (__bridge id) kSecAttrAccessibleWhenUnlocked,
+        (__bridge id) kSecClass: (__bridge id) kSecClassGenericPassword,
+        (__bridge id) kSecAttrService: @(label),
+        (__bridge id) kSecAttrAccount: @(key),
+    };
+
+    OSStatus status = SecItemDelete((__bridge CFDictionaryRef) query);
+    if (status != errSecSuccess && status != errSecItemNotFound) {
+        blog(LOG_WARNING, "Keychain item \"%s::%s\" could not be deleted: %d", label, key, status);
+        return false;
+    }
+
+    return true;
 }
