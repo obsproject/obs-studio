@@ -1,16 +1,24 @@
 #include "whip-output.h"
+#include "whip-utils.h"
+
+/*
+ * Sets the maximum size for a video fragment. Effective range is
+ * 576-1470, with a lower value equating to more packets created,
+ * but also better network compatability.
+ */
+static uint16_t MAX_VIDEO_FRAGMENT_SIZE = 1200;
 
 const int signaling_media_id_length = 16;
 const char signaling_media_id_valid_char[] = "0123456789"
 					     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 					     "abcdefghijklmnopqrstuvwxyz";
 
-const uint32_t audio_ssrc = 5002;
+const std::string user_agent = generate_user_agent();
+
 const char *audio_mid = "0";
 const uint32_t audio_clockrate = 48000;
 const uint8_t audio_payload_type = 111;
 
-const uint32_t video_ssrc = 5000;
 const char *video_mid = "1";
 const uint32_t video_clockrate = 90000;
 const uint8_t video_payload_type = 96;
@@ -23,6 +31,7 @@ WHIPOutput::WHIPOutput(obs_data_t *, obs_output_t *output)
 	  running(false),
 	  start_stop_mutex(),
 	  start_stop_thread(),
+	  base_ssrc(generate_random_u32()),
 	  peer_connection(-1),
 	  audio_track(-1),
 	  video_track(-1),
@@ -92,23 +101,28 @@ void WHIPOutput::ConfigureAudioTrack(std::string media_stream_id,
 {
 	auto media_stream_track_id = std::string(media_stream_id + "-audio");
 
+	uint32_t ssrc = base_ssrc;
+
 	rtcTrackInit track_init = {
 		RTC_DIRECTION_SENDONLY,
 		RTC_CODEC_OPUS,
 		audio_payload_type,
-		audio_ssrc,
+		ssrc,
 		audio_mid,
 		cname.c_str(),
 		media_stream_id.c_str(),
 		media_stream_track_id.c_str(),
 	};
 
-	rtcPacketizationHandlerInit packetizer_init = {audio_ssrc,
+	// Generate a random starting timestamp for the audio track
+	uint32_t rtp_audio_timestamp = generate_random_u32();
+
+	rtcPacketizationHandlerInit packetizer_init = {ssrc,
 						       cname.c_str(),
 						       audio_payload_type,
 						       audio_clockrate,
 						       0,
-						       0,
+						       rtp_audio_timestamp,
 						       RTC_NAL_SEPARATOR_LENGTH,
 						       0};
 
@@ -123,26 +137,32 @@ void WHIPOutput::ConfigureVideoTrack(std::string media_stream_id,
 {
 	auto media_stream_track_id = std::string(media_stream_id + "-video");
 
+	// More predictable SSRC values between audio and video
+	uint32_t ssrc = base_ssrc + 1;
+
 	rtcTrackInit track_init = {
 		RTC_DIRECTION_SENDONLY,
 		RTC_CODEC_H264,
 		video_payload_type,
-		video_ssrc,
+		ssrc,
 		video_mid,
 		cname.c_str(),
 		media_stream_id.c_str(),
 		media_stream_track_id.c_str(),
 	};
 
+	// Generate a random starting timestamp for the video track
+	uint32_t rtp_video_timestamp = generate_random_u32();
+
 	rtcPacketizationHandlerInit packetizer_init = {
-		video_ssrc,
+		ssrc,
 		cname.c_str(),
 		video_payload_type,
 		video_clockrate,
 		0,
-		0,
+		rtp_video_timestamp,
 		RTC_NAL_SEPARATOR_START_SEQUENCE,
-		0};
+		MAX_VIDEO_FRAGMENT_SIZE};
 
 	video_track = rtcAddTrackEx(peer_connection, &track_init);
 	rtcSetH264PacketizationHandler(video_track, &packetizer_init);
@@ -150,8 +170,19 @@ void WHIPOutput::ConfigureVideoTrack(std::string media_stream_id,
 	rtcChainRtcpNackResponder(video_track, 1000);
 }
 
-bool WHIPOutput::Setup()
+/**
+ * @brief Initialize encoders and store connect info provided by the service.
+ *
+ * @return bool
+ */
+bool WHIPOutput::Init()
 {
+	if (!obs_output_can_begin_data_capture(output, 0))
+		return false;
+
+	if (!obs_output_initialize_encoders(output, 0))
+		return false;
+
 	obs_service_t *service = obs_output_get_service(output);
 	if (!service) {
 		obs_output_signal_stop(output, OBS_OUTPUT_ERROR);
@@ -164,9 +195,20 @@ bool WHIPOutput::Setup()
 		obs_output_signal_stop(output, OBS_OUTPUT_BAD_PATH);
 		return false;
 	}
+
 	bearer_token = obs_service_get_connect_info(
 		service, OBS_SERVICE_CONNECT_INFO_BEARER_TOKEN);
 
+	return true;
+}
+
+/**
+ * @brief Set up the PeerConnection and media tracks.
+ *
+ * @return bool
+ */
+bool WHIPOutput::Setup()
+{
 	rtcConfiguration config;
 	memset(&config, 0, sizeof(config));
 
@@ -249,13 +291,22 @@ bool WHIPOutput::Connect()
 
 	std::string read_buffer;
 	std::string location_header;
+
 	char offer_sdp[4096] = {0};
 	rtcGetLocalDescription(peer_connection, offer_sdp, sizeof(offer_sdp));
+
+#ifdef DEBUG_SDP
+	do_log(LOG_DEBUG, "Offer SDP:\n%s", offer_sdp);
+#endif
+
+	// Add user-agent to our requests
+	headers = curl_slist_append(headers, user_agent.c_str());
 
 	CURL *c = curl_easy_init();
 	curl_easy_setopt(c, CURLOPT_WRITEFUNCTION, curl_writefunction);
 	curl_easy_setopt(c, CURLOPT_WRITEDATA, (void *)&read_buffer);
-	curl_easy_setopt(c, CURLOPT_HEADERFUNCTION, curl_headerfunction);
+	curl_easy_setopt(c, CURLOPT_HEADERFUNCTION,
+			 curl_header_location_function);
 	curl_easy_setopt(c, CURLOPT_HEADERDATA, (void *)&location_header);
 	curl_easy_setopt(c, CURLOPT_HTTPHEADER, headers);
 	curl_easy_setopt(c, CURLOPT_URL, endpoint_url.c_str());
@@ -318,6 +369,10 @@ bool WHIPOutput::Connect()
 		curl_url_cleanup(h);
 	}
 
+#ifdef DEBUG_SDP
+	do_log(LOG_DEBUG, "Answer SDP:\n%s", read_buffer.c_str());
+#endif
+
 	rtcSetRemoteDescription(peer_connection, read_buffer.c_str(), "answer");
 	cleanup();
 	return true;
@@ -325,6 +380,9 @@ bool WHIPOutput::Connect()
 
 void WHIPOutput::StartThread()
 {
+	if (!Init())
+		return;
+
 	if (!Setup())
 		return;
 
@@ -355,6 +413,9 @@ void WHIPOutput::SendDelete()
 		headers =
 			curl_slist_append(headers, bearer_token_header.c_str());
 	}
+
+	// Add user-agent to our requests
+	headers = curl_slist_append(headers, user_agent.c_str());
 
 	CURL *c = curl_easy_init();
 	curl_easy_setopt(c, CURLOPT_HTTPHEADER, headers);
@@ -403,12 +464,14 @@ void WHIPOutput::StopThread(bool signal)
 
 	SendDelete();
 
-	// "signal" exists because we have to preserve the "running" state
-	// across reconnect attempts. If we don't emit a signal if
-	// something calls obs_output_stop() and it's reconnecting, you'll
-	// desync the UI, as the output will be "stopped" and not
-	// "reconnecting", but the "stop" signal will have never been
-	// emitted.
+	/*
+	 * "signal" exists because we have to preserve the "running" state
+	 * across reconnect attempts. If we don't emit a signal if
+	 * something calls obs_output_stop() and it's reconnecting, you'll
+	 * desync the UI, as the output will be "stopped" and not
+	 * "reconnecting", but the "stop" signal will have never been
+	 * emitted.
+	 */
 	if (running && signal) {
 		obs_output_signal_stop(output, OBS_OUTPUT_SUCCESS);
 		running = false;
@@ -426,15 +489,15 @@ void WHIPOutput::Send(void *data, uintptr_t size, uint64_t duration, int track)
 	if (!running)
 		return;
 
-	// sample time is in us, we need to convert it to seconds
+	// Sample time is in microseconds, we need to convert it to seconds
 	auto elapsed_seconds = double(duration) / (1000.0 * 1000.0);
 
-	// get elapsed time in clock rate
+	// Get elapsed time in clock rate
 	uint32_t elapsed_timestamp = 0;
 	rtcTransformSecondsToTimestamp(track, elapsed_seconds,
 				       &elapsed_timestamp);
 
-	// set new timestamp
+	// Set new timestamp
 	uint32_t current_timestamp = 0;
 	rtcGetCurrentTrackTimestamp(track, &current_timestamp);
 	rtcSetTrackRtpTimestamp(track, current_timestamp + elapsed_timestamp);
