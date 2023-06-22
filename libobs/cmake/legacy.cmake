@@ -316,7 +316,7 @@ if(OS_WINDOWS)
   target_compile_definitions(libobs PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_WARNINGS)
   set_source_files_properties(obs-win-crash-handler.c PROPERTIES COMPILE_DEFINITIONS
                                                                  OBS_VERSION="${OBS_VERSION_CANONICAL}")
-  target_link_libraries(libobs PRIVATE dxgi Avrt Dwmapi winmm Rpcrt4)
+  target_link_libraries(libobs PRIVATE dxgi Advapi32 Avrt Dwmapi winmm Rpcrt4)
 
   if(MSVC)
     target_link_libraries(libobs PUBLIC OBS::w32-pthreads)

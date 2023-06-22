@@ -22,6 +22,7 @@
 #include <psapi.h>
 #include <math.h>
 #include <rpc.h>
+#include <wincred.h>
 
 #include "base.h"
 #include "platform.h"
@@ -1497,4 +1498,109 @@ char *os_generate_uuid(void)
 		    uuid.Data4[5], uuid.Data4[6], uuid.Data4[7]);
 
 	return uuid_str.array;
+}
+
+bool os_keychain_available(void)
+{
+	return true;
+}
+
+bool os_keychain_save(const char *label, const char *key, const char *data)
+{
+	if (!label || !key || !data)
+		return false;
+
+	struct dstr uuid_str = {0};
+	dstr_printf(&uuid_str, "%s::%s", label, key);
+
+	wchar_t *target_name = NULL;
+	os_utf8_to_wcs_ptr(uuid_str.array, 0, &target_name);
+	dstr_free(&uuid_str);
+
+	if (!target_name)
+		return false;
+
+	size_t size = strlen(data);
+
+	CREDENTIAL cred = {0};
+	cred.CredentialBlob = (LPBYTE)data;
+	cred.CredentialBlobSize = (DWORD)size;
+	cred.Persist = CRED_PERSIST_LOCAL_MACHINE;
+	cred.TargetName = target_name;
+	cred.Type = CRED_TYPE_GENERIC;
+
+	bool success = CredWriteW(&cred, 0);
+	if (!success) {
+		blog(LOG_ERROR,
+		     "Keychain item \"%s::%s\" could not be saved: %d", label,
+		     key, GetLastError());
+	}
+
+	bfree(target_name);
+
+	return success;
+}
+
+bool os_keychain_load(const char *label, const char *key, char **data)
+{
+	if (!label || !key || !data)
+		return false;
+
+	struct dstr uuid_str = {0};
+	dstr_printf(&uuid_str, "%s::%s", label, key);
+
+	wchar_t *target_name = NULL;
+	os_utf8_to_wcs_ptr(uuid_str.array, 0, &target_name);
+	dstr_free(&uuid_str);
+
+	if (!target_name)
+		return false;
+
+	PCREDENTIALW cred;
+	bool success = CredReadW(target_name, CRED_TYPE_GENERIC, 0, &cred);
+	if (success) {
+		*data = bstrdup_n((const char *)cred->CredentialBlob,
+				  cred->CredentialBlobSize);
+		CredFree(cred);
+	} else {
+		blog(LOG_ERROR,
+		     "Keychain item \"%s::%s\" could not be read: %d", label,
+		     key, GetLastError());
+	}
+
+	bfree(target_name);
+
+	return success;
+}
+
+bool os_keychain_delete(const char *label, const char *key)
+{
+	if (!label || !key)
+		return false;
+
+	struct dstr uuid_str = {0};
+	dstr_printf(&uuid_str, "%s::%s", label, key);
+
+	wchar_t *target_name = NULL;
+	os_utf8_to_wcs_ptr(uuid_str.array, 0, &target_name);
+	dstr_free(&uuid_str);
+
+	if (!target_name)
+		return false;
+
+	bool success = CredDeleteW(target_name, CRED_TYPE_GENERIC, 0);
+	if (!success) {
+		DWORD err = GetLastError();
+		if (err == ERROR_NOT_FOUND) {
+			success = true;
+		} else {
+			blog(LOG_WARNING,
+			     "Keychain item \"%s::%s\" could not be deleted: %d",
+			     label, key, err);
+		}
+	}
+
+	bfree(target_name);
+
+	return success;
 }

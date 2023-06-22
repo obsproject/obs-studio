@@ -46,6 +46,7 @@ set_source_files_properties(obs-win-crash-handler.c PROPERTIES COMPILE_DEFINITIO
 target_link_libraries(
   libobs
   PRIVATE Avrt
+          Advapi32
           Dwmapi
           Dxgi
           winmm

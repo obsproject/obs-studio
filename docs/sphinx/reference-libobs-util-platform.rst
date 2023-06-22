@@ -505,3 +505,34 @@ Other Functions
    Must be freed with :c:func:`bfree()`.
 
    .. versionadded:: 29.1
+
+---------------------
+
+.. function:: bool *os_keychain_available(void)
+
+   Indicates whether or not the keychain APIs are implemented on this platform.
+   
+   On Windows/macOS this will always return `true` and the keychain is guaranteed to be available.
+   On Linux it will return `true` if OBS is compiled with libsecret, but keychain operations may still fail if no Secret Service (e.g. kwaller or gnome-keyring) is available.
+
+---------------------
+
+.. function:: bool os_keychain_save(const char *label, const char *key, const char *data)
+
+   Saves the string `data` into the OS keychain as key `key` with user-visible name `label`.
+   
+   `label` should be a short descriptor of the kind of data being saved (e.g. "OBS Studio OAuth Credentials"), must not be translated, and must be identical when attempting to save/load/delete the same `key`.
+
+---------------------
+
+.. function:: bool os_keychain_load(const char *label, const char *key, char **data)
+
+   Attempt to read the string saved with key `key` in and with label `label` from the keychain.
+   
+   If successful, `data´ must be freed with :c:func:`bfree()`.
+
+---------------------
+
+.. function:: bool os_keychain_delete(const char *label, const char *key)
+
+   Deletes an item from the keychain.
