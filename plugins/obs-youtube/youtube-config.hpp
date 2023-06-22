@@ -7,7 +7,19 @@
 #include <obs-module.h>
 #include <string>
 
+#ifdef OAUTH_ENABLED
+#include "youtube-service.hpp"
+#endif
+
 class YouTubeConfig {
+#ifdef OAUTH_ENABLED
+	obs_service_t *serviceObj;
+	YouTubeService *typeData;
+
+	std::string uuid;
+	YouTubeApi::ServiceOAuth *oauth = nullptr;
+#endif
+
 	std::string protocol;
 	std::string serverUrl;
 
@@ -15,7 +27,7 @@ class YouTubeConfig {
 
 public:
 	YouTubeConfig(obs_data_t *settings, obs_service_t *self);
-	inline ~YouTubeConfig(){};
+	~YouTubeConfig();
 
 	void Update(obs_data_t *settings);
 

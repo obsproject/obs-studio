@@ -11,6 +11,8 @@ target_sources(
 
 target_link_libraries(obs-youtube PRIVATE OBS::libobs)
 
+include(cmake/feature-oauth.cmake)
+
 if(OS_WINDOWS)
   configure_file(cmake/windows/obs-module.rc.in obs-youtube.rc)
   target_sources(obs-youtube PRIVATE obs-youtube.rc)

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2021 Yuriy Chumak <yuriy.chumak@mail.com>
+//
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #pragma once
 
 #include <QDialog>
@@ -5,17 +9,19 @@
 #include <QThread>
 
 #include "ui_OBSYoutubeActions.h"
-#include "youtube-api-wrappers.hpp"
+#include "youtube-oauth.hpp"
 
 class WorkerThread : public QThread {
 	Q_OBJECT
 public:
-	WorkerThread(YoutubeApiWrappers *api) : QThread(), apiYouTube(api) {}
+	WorkerThread(YouTubeApi::ServiceOAuth *api) : QThread(), apiYouTube(api)
+	{
+	}
 
 	void stop() { pending = false; }
 
 protected:
-	YoutubeApiWrappers *apiYouTube;
+	YouTubeApi::ServiceOAuth *apiYouTube;
 	bool pending = true;
 
 public slots:
@@ -23,7 +29,8 @@ public slots:
 signals:
 	void ready();
 	void new_item(const QString &title, const QString &dateTimeString,
-		      const QString &broadcast, const QString &status,
+		      const QString &broadcast,
+		      const YouTubeApi::LiveBroadcastLifeCycleStatus &status,
 		      bool astart, bool astop);
 	void failed();
 };
@@ -35,6 +42,8 @@ class OBSYoutubeActions : public QDialog {
 
 	std::unique_ptr<Ui::OBSYoutubeActions> ui;
 
+	OBSYoutubeActionsSettings *settings;
+
 signals:
 	void ok(const QString &id, const QString &key, bool autostart,
 		bool autostop, bool start_now);
@@ -43,16 +52,16 @@ protected:
 	void showEvent(QShowEvent *event) override;
 	void UpdateOkButtonStatus();
 
-	bool CreateEventAction(YoutubeApiWrappers *api,
-			       StreamDescription &stream, bool stream_later,
-			       bool ready_broadcast = false);
-	bool ChooseAnEventAction(YoutubeApiWrappers *api,
-				 StreamDescription &stream);
+	bool CreateEventAction(YouTubeApi::LiveStream &stream,
+			       bool stream_later, bool ready_broadcast = false);
+	bool ChooseAnEventAction(YouTubeApi::LiveStream &stream);
 
 	void ShowErrorDialog(QWidget *parent, QString text);
 
 public:
-	explicit OBSYoutubeActions(QWidget *parent, Auth *auth,
+	explicit OBSYoutubeActions(QWidget *parent,
+				   YouTubeApi::ServiceOAuth *auth,
+				   OBSYoutubeActionsSettings *settings,
 				   bool broadcastReady);
 	virtual ~OBSYoutubeActions() override;
 
@@ -61,11 +70,11 @@ public:
 private:
 	void InitBroadcast();
 	void ReadyBroadcast();
-	void UiToBroadcast(BroadcastDescription &broadcast);
+	YouTubeApi::LiveBroadcast UiToBroadcast();
 	void OpenYouTubeDashboard();
 	void Cancel();
 	void Accept();
-	void SaveSettings(BroadcastDescription &broadcast);
+	void SaveSettings();
 	void LoadSettings();
 
 	QIcon GetPlaceholder() { return thumbPlaceholder; }
@@ -74,9 +83,10 @@ private:
 	QString selectedBroadcast;
 	bool autostart, autostop;
 	bool valid = false;
-	YoutubeApiWrappers *apiYouTube;
+	YouTubeApi::ServiceOAuth *apiYouTube;
 	WorkerThread *workerThread = nullptr;
 	bool broadcastReady = false;
-	QString thumbnailFile;
+	QString thumbnailFilePath;
+	QByteArray thumbnailData;
 	QIcon thumbPlaceholder;
 };
