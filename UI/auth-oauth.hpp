@@ -71,6 +71,11 @@ protected:
 		      const std::string &redirect_uri, int scope_ver,
 		      const std::string &auth_code, bool retry);
 
+	static const char *GetKeychainLabel()
+	{
+		return "OBS Studio OAuth Credentials";
+	}
+
 private:
 	bool GetTokenInternal(const char *url, const std::string &client_id,
 			      const std::string &secret,

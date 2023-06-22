@@ -91,22 +91,6 @@ bool YoutubeAuth::RetryLogin()
 	return true;
 }
 
-void YoutubeAuth::SaveInternal()
-{
-	OBSBasic *main = OBSBasic::Get();
-	config_set_string(main->Config(), service(), "DockState",
-			  main->saveState().toBase64().constData());
-
-	const char *section_name = section.c_str();
-	config_set_string(main->Config(), section_name, "RefreshToken",
-			  refresh_token.c_str());
-	config_set_string(main->Config(), section_name, "Token", token.c_str());
-	config_set_uint(main->Config(), section_name, "ExpireTime",
-			expire_time);
-	config_set_int(main->Config(), section_name, "ScopeVer",
-		       currentScopeVer);
-}
-
 static inline std::string get_config_str(OBSBasic *main, const char *section,
 					 const char *name)
 {
@@ -114,17 +98,94 @@ static inline std::string get_config_str(OBSBasic *main, const char *section,
 	return val ? val : "";
 }
 
+void YoutubeAuth::SaveInternal()
+{
+	OBSBasic *main = OBSBasic::Get();
+	config_set_string(main->Config(), service(), "DockState",
+			  main->saveState().toBase64().constData());
+
+	const char *section_name = section.c_str();
+	bool keychain_success = false;
+
+	if (!App()->IsPortableMode()) {
+		std::string keychain_key =
+			get_config_str(main, section_name, "KeychainItem");
+
+		if (keychain_key.empty()) {
+			QString suffix = GenerateState();
+			suffix.resize(8);
+
+			keychain_key = section_name;
+			keychain_key += "::";
+			keychain_key += QT_TO_UTF8(suffix);
+		}
+
+		Json data = Json::object{{"refresh_token", refresh_token},
+					 {"token", token},
+					 {"expire_time",
+					  static_cast<int>(expire_time)},
+					 {"scope_ver", currentScopeVer}};
+		std::string json = data.dump();
+
+		if (os_keychain_save(GetKeychainLabel(), keychain_key.c_str(),
+				     json.c_str())) {
+			config_set_string(main->Config(), section_name,
+					  "KeychainItem", keychain_key.c_str());
+			keychain_success = true;
+		}
+	}
+
+	if (!keychain_success) {
+		config_set_string(main->Config(), section_name, "RefreshToken",
+				  refresh_token.c_str());
+		config_set_string(main->Config(), section_name, "Token",
+				  token.c_str());
+		config_set_uint(main->Config(), section_name, "ExpireTime",
+				expire_time);
+		config_set_int(main->Config(), section_name, "ScopeVer",
+			       currentScopeVer);
+	}
+}
+
 bool YoutubeAuth::LoadInternal()
 {
 	OBSBasic *main = OBSBasic::Get();
+	bool keychain_success = false;
 
 	const char *section_name = section.c_str();
-	refresh_token = get_config_str(main, section_name, "RefreshToken");
-	token = get_config_str(main, section_name, "Token");
-	expire_time =
-		config_get_uint(main->Config(), section_name, "ExpireTime");
-	currentScopeVer =
-		(int)config_get_int(main->Config(), section_name, "ScopeVer");
+
+	if (!App()->IsPortableMode()) {
+		const char *keychain_key = config_get_string(
+			main->Config(), section_name, "KeychainItem");
+
+		BPtr<char> data;
+		if (keychain_key &&
+		    os_keychain_load(GetKeychainLabel(), keychain_key, &data) &&
+		    data) {
+			std::string err;
+			Json parsed = Json::parse(data, err);
+			if (err.empty()) {
+				refresh_token =
+					parsed["refresh_token"].string_value();
+				token = parsed["token"].string_value();
+				expire_time = parsed["expire_time"].int_value();
+				currentScopeVer =
+					parsed["scope_ver"].int_value();
+				keychain_success = true;
+			}
+		}
+	}
+
+	if (!keychain_success) {
+		refresh_token =
+			get_config_str(main, section_name, "RefreshToken");
+		token = get_config_str(main, section_name, "Token");
+		expire_time = config_get_uint(main->Config(), section_name,
+					      "ExpireTime");
+		currentScopeVer = (int)config_get_int(main->Config(),
+						      section_name, "ScopeVer");
+	}
+
 	firstLoad = false;
 	return implicit ? !token.empty() : !refresh_token.empty();
 }

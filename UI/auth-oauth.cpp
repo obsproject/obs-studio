@@ -3,6 +3,7 @@
 #include <QPushButton>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
+#include <QRandomGenerator>
 
 #include <qt-wrappers.hpp>
 #include <obs-app.hpp>
@@ -158,14 +159,21 @@ void OAuth::DeleteCookies(const std::string &service)
 	}
 }
 
-void OAuth::SaveInternal()
+static constexpr char hexChars[] = "abcdef0123456789";
+static constexpr int hexCount = sizeof(hexChars) - 1;
+static constexpr int kSuffixLength = 8;
+
+static std::string GetRandSuffix()
 {
-	OBSBasic *main = OBSBasic::Get();
-	config_set_string(main->Config(), service(), "RefreshToken",
-			  refresh_token.c_str());
-	config_set_string(main->Config(), service(), "Token", token.c_str());
-	config_set_uint(main->Config(), service(), "ExpireTime", expire_time);
-	config_set_int(main->Config(), service(), "ScopeVer", currentScopeVer);
+	char state[kSuffixLength + 1];
+	QRandomGenerator *rng = QRandomGenerator::system();
+	int i;
+
+	for (i = 0; i < kSuffixLength; i++)
+		state[i] = hexChars[rng->bounded(0, hexCount)];
+	state[i] = 0;
+
+	return state;
 }
 
 static inline std::string get_config_str(OBSBasic *main, const char *section,
@@ -175,14 +183,85 @@ static inline std::string get_config_str(OBSBasic *main, const char *section,
 	return val ? val : "";
 }
 
+void OAuth::SaveInternal()
+{
+	OBSBasic *main = OBSBasic::Get();
+
+	bool keychain_success = false;
+
+	if (!App()->IsPortableMode()) {
+		std::string keychain_key =
+			get_config_str(main, service(), "KeychainItem");
+
+		if (keychain_key.empty()) {
+			keychain_key = service();
+			keychain_key += "::" + GetRandSuffix();
+		}
+
+		Json data = Json::object{{"refresh_token", refresh_token},
+					 {"token", token},
+					 {"expire_time",
+					  static_cast<int>(expire_time)},
+					 {"scope_ver", currentScopeVer}};
+		std::string json = data.dump();
+
+		if (os_keychain_save(GetKeychainLabel(), keychain_key.c_str(),
+				     json.c_str())) {
+			config_set_string(main->Config(), service(),
+					  "KeychainItem", keychain_key.c_str());
+			keychain_success = true;
+		}
+	}
+
+	if (!keychain_success) {
+		config_set_string(main->Config(), service(), "RefreshToken",
+				  refresh_token.c_str());
+		config_set_string(main->Config(), service(), "Token",
+				  token.c_str());
+		config_set_uint(main->Config(), service(), "ExpireTime",
+				expire_time);
+		config_set_int(main->Config(), service(), "ScopeVer",
+			       currentScopeVer);
+	}
+}
+
 bool OAuth::LoadInternal()
 {
 	OBSBasic *main = OBSBasic::Get();
-	refresh_token = get_config_str(main, service(), "RefreshToken");
-	token = get_config_str(main, service(), "Token");
-	expire_time = config_get_uint(main->Config(), service(), "ExpireTime");
-	currentScopeVer =
-		(int)config_get_int(main->Config(), service(), "ScopeVer");
+
+	bool keychain_success = false;
+
+	if (!App()->IsPortableMode()) {
+		const char *keychain_key = config_get_string(
+			main->Config(), service(), "KeychainItem");
+
+		BPtr<char> data;
+		if (keychain_key &&
+		    os_keychain_load(GetKeychainLabel(), keychain_key, &data) &&
+		    data) {
+			std::string err;
+			Json parsed = Json::parse(data, err);
+			if (err.empty()) {
+				refresh_token =
+					parsed["refresh_token"].string_value();
+				token = parsed["token"].string_value();
+				expire_time = parsed["expire_time"].int_value();
+				currentScopeVer =
+					parsed["scope_ver"].int_value();
+				keychain_success = true;
+			}
+		}
+	}
+
+	if (!keychain_success) {
+		refresh_token = get_config_str(main, service(), "RefreshToken");
+		token = get_config_str(main, service(), "Token");
+		expire_time = config_get_uint(main->Config(), service(),
+					      "ExpireTime");
+		currentScopeVer = (int)config_get_int(main->Config(), service(),
+						      "ScopeVer");
+	}
+
 	return implicit ? !token.empty() : !refresh_token.empty();
 }
 
