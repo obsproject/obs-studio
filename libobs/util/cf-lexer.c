@@ -471,7 +471,7 @@ bool cf_lexer_lex(struct cf_lexer *lex, const char *str, const char *file)
 
 struct macro_param {
 	struct cf_token name;
-	DARRAY(struct cf_token) tokens;
+	cf_token_array_t tokens;
 };
 
 static inline void macro_param_init(struct macro_param *param)
@@ -814,7 +814,7 @@ cf_preprocess_get_def(struct cf_preprocessor *pp, const struct strref *def_name)
 static char space_filler[2] = " ";
 
 static inline void append_space(struct cf_preprocessor *pp,
-				struct darray *tokens,
+				cf_token_array_t *tokens,
 				const struct cf_token *base)
 {
 	struct cf_token token;
@@ -829,14 +829,14 @@ static inline void append_space(struct cf_preprocessor *pp,
 		strref_copy(&token.unmerged_str, &token.str);
 	}
 
-	darray_push_back(sizeof(struct cf_token), tokens, &token);
+	da_push_back(*tokens, &token);
 }
 
-static inline void append_end_token(struct darray *tokens)
+static inline void append_end_token(cf_token_array_t *tokens)
 {
 	struct cf_token end;
 	cf_token_clear(&end);
-	darray_push_back(sizeof(struct cf_token), tokens, &end);
+	da_push_back(*tokens, &end);
 }
 
 static void cf_preprocess_define(struct cf_preprocessor *pp,
@@ -859,7 +859,7 @@ static void cf_preprocess_define(struct cf_preprocessor *pp,
 		goto exit;
 	}
 
-	append_space(pp, &def.tokens.da, NULL);
+	append_space(pp, &def.tokens, NULL);
 	cf_token_copy(&def.name, cur_token);
 
 	if (!next_token(&cur_token, true))
@@ -876,8 +876,8 @@ static void cf_preprocess_define(struct cf_preprocessor *pp,
 		cf_def_addtoken(&def, cur_token++);
 
 complete:
-	append_end_token(&def.tokens.da);
-	append_space(pp, &def.tokens.da, NULL);
+	append_end_token(&def.tokens);
+	append_space(pp, &def.tokens, NULL);
 	da_push_back(pp->defines, &def);
 	goto exit;
 
@@ -1032,7 +1032,7 @@ static bool cf_preprocessor(struct cf_preprocessor *pp, bool if_block,
 }
 
 static void cf_preprocess_addtoken(struct cf_preprocessor *pp,
-				   struct darray *dst, /* struct cf_token */
+				   cf_token_array_t *dst,
 				   struct cf_token **p_cur_token,
 				   const struct cf_token *base,
 				   const struct macro_params *params);
@@ -1052,7 +1052,7 @@ static void cf_preprocess_save_macro_param(
 	struct cf_token *cur_token = *p_cur_token;
 	int brace_count = 0;
 
-	append_space(pp, &param->tokens.da, base);
+	append_space(pp, &param->tokens, base);
 
 	while (cur_token->type != CFTOKEN_NONE) {
 		if (*cur_token->str.array == '(') {
@@ -1067,15 +1067,15 @@ static void cf_preprocess_save_macro_param(
 				break;
 		}
 
-		cf_preprocess_addtoken(pp, &param->tokens.da, &cur_token, base,
+		cf_preprocess_addtoken(pp, &param->tokens, &cur_token, base,
 				       cur_params);
 	}
 
 	if (cur_token->type == CFTOKEN_NONE)
 		cf_adderror_unexpected_eof(pp, cur_token);
 
-	append_space(pp, &param->tokens.da, base);
-	append_end_token(&param->tokens.da);
+	append_space(pp, &param->tokens, base);
+	append_end_token(&param->tokens);
 
 	*p_cur_token = cur_token;
 }
@@ -1153,10 +1153,11 @@ exit:
 	*p_cur_token = cur_token;
 }
 
-static inline void cf_preprocess_unwrap_param(
-	struct cf_preprocessor *pp, struct darray *dst, /* struct cf_token */
-	struct cf_token **p_cur_token, const struct cf_token *base,
-	const struct macro_param *param)
+static inline void cf_preprocess_unwrap_param(struct cf_preprocessor *pp,
+					      cf_token_array_t *dst,
+					      struct cf_token **p_cur_token,
+					      const struct cf_token *base,
+					      const struct macro_param *param)
 {
 	struct cf_token *cur_token = *p_cur_token;
 	struct cf_token *cur_param_token = param->tokens.array;
@@ -1169,7 +1170,7 @@ static inline void cf_preprocess_unwrap_param(
 }
 
 static inline void cf_preprocess_unwrap_define(
-	struct cf_preprocessor *pp, struct darray *dst, /* struct cf_token */
+	struct cf_preprocessor *pp, cf_token_array_t *dst,
 	struct cf_token **p_cur_token, const struct cf_token *base,
 	const struct cf_def *def, const struct macro_params *cur_params)
 {
@@ -1194,7 +1195,7 @@ static inline void cf_preprocess_unwrap_define(
 }
 
 static void cf_preprocess_addtoken(struct cf_preprocessor *pp,
-				   struct darray *dst, /* struct cf_token */
+				   cf_token_array_t *dst,
 				   struct cf_token **p_cur_token,
 				   const struct cf_token *base,
 				   const struct macro_params *params)
@@ -1226,7 +1227,7 @@ static void cf_preprocess_addtoken(struct cf_preprocessor *pp,
 		}
 	}
 
-	darray_push_back(sizeof(struct cf_token), dst, cur_token);
+	da_push_back(*dst, cur_token);
 
 ignore:
 	cur_token++;
@@ -1270,8 +1271,7 @@ static void cf_preprocess_tokens(struct cf_preprocessor *pp, bool if_block,
 			break;
 		}
 
-		cf_preprocess_addtoken(pp, &pp->tokens.da, &cur_token, NULL,
-				       NULL);
+		cf_preprocess_addtoken(pp, &pp->tokens, &cur_token, NULL, NULL);
 	}
 
 	*p_cur_token = cur_token;
