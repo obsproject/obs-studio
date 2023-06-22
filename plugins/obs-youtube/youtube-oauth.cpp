@@ -151,7 +151,7 @@ bool ServiceOAuth::LoginInternal(const OAuth::LoginReason &reason,
 		QString error = login.GetLastError();
 
 		if (!error.isEmpty()) {
-			blog(LOG_ERROR, "[%s] [%s]: %s", PluginLogName(),
+			blog(LOG_ERROR, "[%s][%s]: %s", PluginLogName(),
 			     __FUNCTION__, error.toUtf8().constData());
 
 			QString title = QString::fromUtf8(

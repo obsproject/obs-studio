@@ -1,15 +1,8 @@
-if(NOT DEFINED YOUTUBE_CLIENTID
-   OR "${YOUTUBE_CLIENTID}" STREQUAL ""
-   OR NOT DEFINED YOUTUBE_SECRET
-   OR "${YOUTUBE_SECRET}" STREQUAL ""
-   OR NOT DEFINED YOUTUBE_CLIENTID_HASH
-   OR "${YOUTUBE_CLIENTID_HASH}" STREQUAL ""
-   OR NOT DEFINED YOUTUBE_SECRET_HASH
-   OR "${YOUTUBE_SECRET_HASH}" STREQUAL "")
-  if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
-    target_disable_feature(obs-youtube "YouTube OAuth connection")
-  endif()
-else()
+if(YOUTUBE_CLIENTID
+   AND YOUTUBE_SECRET
+   AND YOUTUBE_CLIENTID_HASH MATCHES "(0|[a-fA-F0-9]+)"
+   AND YOUTUBE_SECRET_HASH MATCHES "(0|[a-fA-F0-9]+)")
+
   if(NOT TARGET OBS::obf)
     add_subdirectory("${CMAKE_SOURCE_DIR}/deps/obf" "${CMAKE_BINARY_DIR}/deps/obf")
   endif()
@@ -42,8 +35,15 @@ else()
             youtube-oauth.cpp
             youtube-oauth.hpp)
 
-  target_link_libraries(obs-youtube PRIVATE OBS::frontend-api OBS::obf OBS::oauth-service-base
-                                            OBS::oauth-local-redirect Qt::Core Qt::Widgets)
+  target_link_libraries(
+    obs-youtube
+    PRIVATE OBS::frontend-api
+            OBS::obf
+            OBS::oauth-service-base
+            OBS::oauth-local-redirect
+            nlohmann_json::nlohmann_json
+            Qt::Core
+            Qt::Widgets)
 
   target_compile_definitions(
     obs-youtube
@@ -61,5 +61,9 @@ else()
     target_enable_feature(obs-youtube "YouTube OAuth connection")
   else()
     target_include_directories(obs-youtube PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+  endif()
+else()
+  if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
+    target_disable_feature(obs-youtube "YouTube OAuth connection")
   endif()
 endif()

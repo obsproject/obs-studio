@@ -10,7 +10,9 @@
 
 #include "youtube-config.hpp"
 
+#ifdef OAUTH_ENABLED
 constexpr const char *DATA_FILENAME = "obs-youtube.json";
+#endif
 
 YouTubeService::YouTubeService()
 {
@@ -36,14 +38,18 @@ YouTubeService::YouTubeService()
 	info.get_defaults = YouTubeConfig::InfoGetDefault;
 	info.get_properties = InfoGetProperties;
 
+#ifdef OAUTH_ENABLED
+	info.can_bandwidth_test = InfoCanBandwidthTest;
+	info.enable_bandwidth_test = InfoEnableBandwidthTest;
+	info.bandwidth_test_enabled = InfoBandwidthTestEnabled;
+#endif
+
 	obs_register_service(&info);
 
 #ifdef OAUTH_ENABLED
 	obs_frontend_add_event_callback(OBSEvent, this);
 #endif
 }
-
-YouTubeService::~YouTubeService() {}
 
 void YouTubeService::Register()
 {
@@ -123,10 +129,9 @@ YouTubeApi::ServiceOAuth *YouTubeService::GetOAuth(const std::string &uuid,
 							   "bak");
 
 		if (!data) {
-			blog(LOG_ERROR,
+			blog(LOG_DEBUG,
 			     "[obs-youtube][%s] Failed to open integrations data: %s",
 			     __FUNCTION__, dataPath.c_str());
-			return nullptr;
 		}
 	}
 

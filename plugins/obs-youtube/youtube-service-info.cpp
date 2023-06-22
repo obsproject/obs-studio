@@ -73,3 +73,28 @@ obs_properties_t *YouTubeService::InfoGetProperties(void *data)
 		return reinterpret_cast<YouTubeConfig *>(data)->GetProperties();
 	return nullptr;
 }
+
+#ifdef OAUTH_ENABLED
+bool YouTubeService::InfoCanBandwidthTest(void *data)
+{
+	if (data)
+		return reinterpret_cast<YouTubeConfig *>(data)
+			->CanBandwidthTest();
+	return false;
+}
+
+void YouTubeService::InfoEnableBandwidthTest(void *data, bool enabled)
+{
+	if (data)
+		return reinterpret_cast<YouTubeConfig *>(data)
+			->EnableBandwidthTest(enabled);
+}
+
+bool YouTubeService::InfoBandwidthTestEnabled(void *data)
+{
+	if (data)
+		return reinterpret_cast<YouTubeConfig *>(data)
+			->BandwidthTestEnabled();
+	return false;
+}
+#endif

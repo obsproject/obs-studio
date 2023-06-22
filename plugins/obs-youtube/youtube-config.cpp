@@ -66,6 +66,7 @@ void YouTubeConfig::Update(obs_data_t *settings)
 
 		uuid = newUuid;
 	}
+
 	if (!oauth)
 		oauth = typeData->GetOAuth(uuid, serviceObj);
 
@@ -106,6 +107,41 @@ const char *YouTubeConfig::ConnectInfo(uint32_t type)
 #ifdef OAUTH_ENABLED
 		if (oauth->Connected()) {
 			const char *streamKey = oauth->GetStreamKey();
+
+			if (bandwidthTest) {
+				/* Create throwaway stream key for bandwidth test */
+				bandwidthTestStream = {};
+				bandwidthTestStream.snippet.title =
+					"OBS Studio Test Stream";
+				bandwidthTestStream.cdn.ingestionType =
+					oauth->GetIngestionType();
+				bandwidthTestStream.cdn.resolution =
+					YouTubeApi::LiveStreamCdnResolution::
+						RESOLUTION_VARIABLE;
+				bandwidthTestStream.cdn.frameRate =
+					YouTubeApi::LiveStreamCdnFrameRate::
+						FRAMERATE_VARIABLE;
+				YouTubeApi::LiveStreamContentDetails
+					contentDetails;
+				contentDetails.isReusable = false;
+				bandwidthTestStream.contentDetails =
+					contentDetails;
+				if (!oauth->InsertLiveStream(
+					    bandwidthTestStream)) {
+					blog(LOG_ERROR,
+					     "[obs-youtube][ConnectInfo] "
+					     "Bandwidth test stream could no be created");
+					return nullptr;
+				}
+
+				if (bandwidthTestStream.cdn.ingestionInfo
+					    .streamName.empty())
+					return nullptr;
+
+				return bandwidthTestStream.cdn.ingestionInfo
+					.streamName.c_str();
+			}
+
 			if (streamKey)
 				return streamKey;
 		} else if (!streamKey.empty()) {
@@ -129,8 +165,11 @@ bool YouTubeConfig::CanTryToConnect()
 	if (serverUrl.empty())
 		return false;
 
-	return oauth->Connected() ? !!oauth->GetStreamKey()
-				  : !streamKey.empty();
+	if (oauth->Connected()) {
+		return bandwidthTest ? true : !!oauth->GetStreamKey();
+	} else {
+		return !streamKey.empty();
+	}
 #else
 	if (serverUrl.empty() || streamKey.empty())
 		return false;

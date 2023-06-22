@@ -18,6 +18,9 @@ class YouTubeConfig {
 
 	std::string uuid;
 	YouTubeApi::ServiceOAuth *oauth = nullptr;
+
+	bool bandwidthTest = false;
+	YouTubeApi::LiveStream bandwidthTestStream;
 #endif
 
 	std::string protocol;
@@ -38,6 +41,12 @@ public:
 	const char *ConnectInfo(uint32_t type);
 
 	bool CanTryToConnect();
+
+#ifdef OAUTH_ENABLED
+	bool CanBandwidthTest() { return oauth->Connected(); }
+	void EnableBandwidthTest(bool enabled) { bandwidthTest = enabled; }
+	bool BandwidthTestEnabled() { return bandwidthTest; }
+#endif
 
 	obs_properties_t *GetProperties();
 };

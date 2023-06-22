@@ -45,16 +45,16 @@ class YouTubeService {
 
 	void SaveOAuthsData();
 	static void OBSEvent(obs_frontend_event event, void *priv);
+
+	static bool InfoCanBandwidthTest(void *data);
+	static void InfoEnableBandwidthTest(void *data, bool enabled);
+	static bool InfoBandwidthTestEnabled(void *data);
 #endif
 public:
 	YouTubeService();
-	~YouTubeService();
+	inline ~YouTubeService() {}
 
 	static void Register();
-
-	void GetDefaults(obs_data_t *settings);
-
-	obs_properties_t *GetProperties();
 
 #ifdef OAUTH_ENABLED
 	YouTubeApi::ServiceOAuth *GetOAuth(const std::string &uuid,
