@@ -302,6 +302,11 @@ EXPORT bool
 video_output_connect(video_t *video, const struct video_scale_info *conversion,
 		     void (*callback)(void *param, struct video_data *frame),
 		     void *param);
+EXPORT bool
+video_output_connect2(video_t *video, const struct video_scale_info *conversion,
+		      uint32_t frame_rate_divisor,
+		      void (*callback)(void *param, struct video_data *frame),
+		      void *param);
 EXPORT void video_output_disconnect(video_t *video,
 				    void (*callback)(void *param,
 						     struct video_data *frame),
@@ -330,6 +335,10 @@ extern void video_output_inc_texture_encoders(video_t *video);
 extern void video_output_dec_texture_encoders(video_t *video);
 extern void video_output_inc_texture_frames(video_t *video);
 extern void video_output_inc_texture_skipped_frames(video_t *video);
+
+extern video_t *video_output_create_with_frame_rate_divisor(video_t *video,
+							    uint32_t divisor);
+extern void video_output_free_frame_rate_divisor(video_t *video);
 
 #ifdef __cplusplus
 }
