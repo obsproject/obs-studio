@@ -290,18 +290,14 @@ static bool init_screen_stream(struct screen_capture *sc)
     sc->stream_properties = [[SCStreamConfiguration alloc] init];
     os_sem_wait(sc->shareable_content_available);
 
-    SCDisplay * (^get_target_display)() = ^SCDisplay *()
+    SCDisplay * (^get_target_display)(void) = ^SCDisplay *
     {
-        __block SCDisplay *target_display = nil;
-        [sc->shareable_content.displays
-            indexOfObjectPassingTest:^BOOL(SCDisplay *_Nonnull display, NSUInteger idx, BOOL *_Nonnull stop) {
-                if (display.displayID == sc->display) {
-                    target_display = sc->shareable_content.displays[idx];
-                    *stop = TRUE;
-                }
-                return *stop;
-            }];
-        return target_display;
+        for (SCDisplay *display in sc->shareable_content.displays) {
+            if (display.displayID == sc->display) {
+                return display;
+            }
+        }
+        return nil;
     };
 
     void (^set_display_mode)(struct screen_capture *, SCDisplay *) =
@@ -317,19 +313,15 @@ static bool init_screen_stream(struct screen_capture *sc)
             SCDisplay *target_display = get_target_display();
 
             if (sc->hide_obs) {
-                __block SCRunningApplication *obsApp = nil;
-                [sc->shareable_content.applications
-                    indexOfObjectPassingTest:^BOOL(SCRunningApplication *_Nonnull app, NSUInteger idx __unused,
-                                                   BOOL *_Nonnull stop) {
-                        if ([app.bundleIdentifier isEqualToString:[[NSBundle mainBundle] bundleIdentifier]]) {
-                            obsApp = app;
-                            *stop = TRUE;
-                        }
-                        return *stop;
-                    }];
-
+                SCRunningApplication *obsApp = nil;
+                NSString *mainBundleIdentifier = [[NSBundle mainBundle] bundleIdentifier];
+                for (SCRunningApplication *app in sc->shareable_content.applications) {
+                    if ([app.bundleIdentifier isEqualToString:mainBundleIdentifier]) {
+                        obsApp = app;
+                        break;
+                    }
+                }
                 NSArray *exclusions = [[NSArray alloc] initWithObjects:obsApp, nil];
-
                 NSArray *empty = [[NSArray alloc] init];
                 content_filter = [[SCContentFilter alloc] initWithDisplay:target_display
                                                     excludingApplications:exclusions
@@ -345,16 +337,14 @@ static bool init_screen_stream(struct screen_capture *sc)
             set_display_mode(sc, target_display);
         } break;
         case ScreenCaptureWindowStream: {
-            __block SCWindow *target_window = nil;
+            SCWindow *target_window = nil;
             if (sc->window != 0) {
-                [sc->shareable_content.windows
-                    indexOfObjectPassingTest:^BOOL(SCWindow *_Nonnull window, NSUInteger idx, BOOL *_Nonnull stop) {
-                        if (window.windowID == sc->window) {
-                            target_window = sc->shareable_content.windows[idx];
-                            *stop = TRUE;
-                        }
-                        return *stop;
-                    }];
+                for (SCWindow *window in sc->shareable_content.windows) {
+                    if (window.windowID == sc->window) {
+                        target_window = window;
+                        break;
+                    }
+                }
             } else {
                 target_window = [sc->shareable_content.windows objectAtIndex:0];
                 sc->window = target_window.windowID;
@@ -369,20 +359,14 @@ static bool init_screen_stream(struct screen_capture *sc)
         } break;
         case ScreenCaptureApplicationStream: {
             SCDisplay *target_display = get_target_display();
-            __block SCRunningApplication *target_application = nil;
-            {
-                [sc->shareable_content.applications
-                    indexOfObjectPassingTest:^BOOL(SCRunningApplication *_Nonnull application, NSUInteger idx,
-                                                   BOOL *_Nonnull stop) {
-                        if ([application.bundleIdentifier isEqualToString:sc->application_id]) {
-                            target_application = sc->shareable_content.applications[idx];
-                            *stop = TRUE;
-                        }
-                        return *stop;
-                    }];
+            SCRunningApplication *target_application = nil;
+            for (SCRunningApplication *application in sc->shareable_content.applications) {
+                if ([application.bundleIdentifier isEqualToString:sc->application_id]) {
+                    target_application = application;
+                    break;
+                }
             }
             NSArray *target_application_array = [[NSArray alloc] initWithObjects:target_application, nil];
-
             NSArray *empty_array = [[NSArray alloc] init];
             content_filter = [[SCContentFilter alloc] initWithDisplay:target_display
                                                 includingApplications:target_application_array
@@ -406,8 +390,8 @@ static bool init_screen_stream(struct screen_capture *sc)
 
     if (@available(macOS 13.0, *)) {
 #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
-        [sc->stream_properties setCapturesAudio:TRUE];
-        [sc->stream_properties setExcludesCurrentProcessAudio:TRUE];
+        [sc->stream_properties setCapturesAudio:YES];
+        [sc->stream_properties setExcludesCurrentProcessAudio:YES];
         [sc->stream_properties setChannelCount:2];
 #endif
     } else {
@@ -452,7 +436,7 @@ static bool init_screen_stream(struct screen_capture *sc)
     os_event_init(&sc->disp_finished, OS_EVENT_TYPE_MANUAL);
     os_event_init(&sc->stream_start_completed, OS_EVENT_TYPE_MANUAL);
 
-    __block BOOL did_stream_start = false;
+    __block BOOL did_stream_start = NO;
     [sc->disp startCaptureWithCompletionHandler:^(NSError *_Nullable error) {
         did_stream_start = (BOOL) (error == nil);
         if (!did_stream_start) {
@@ -488,9 +472,9 @@ static void screen_capture_build_content_list(struct screen_capture *sc, bool di
 
     os_sem_wait(sc->shareable_content_available);
     [sc->shareable_content release];
-    [SCShareableContent getShareableContentExcludingDesktopWindows:TRUE
-                                               onScreenWindowsOnly:(display_capture ? FALSE : !sc->show_hidden_windows)
-                                               completionHandler:new_content_received];
+    BOOL onScreenWindowsOnly = (display_capture) ? NO : !sc->show_hidden_windows;
+    [SCShareableContent getShareableContentExcludingDesktopWindows:YES onScreenWindowsOnly:onScreenWindowsOnly
+                                                 completionHandler:new_content_received];
 }
 
 static void *screen_capture_create(obs_data_t *settings, obs_source_t *source)
@@ -726,27 +710,30 @@ static bool build_display_list(struct screen_capture *sc, obs_properties_t *prop
     obs_property_t *display_list = obs_properties_get(props, "display_uuid");
     obs_property_list_clear(display_list);
 
-    [sc->shareable_content.displays enumerateObjectsUsingBlock:^(SCDisplay *_Nonnull display, NSUInteger idx __unused,
-                                                                 BOOL *_Nonnull _stop __unused) {
-        NSUInteger screen_index = [NSScreen.screens
-            indexOfObjectPassingTest:^BOOL(NSScreen *_Nonnull screen, NSUInteger index __unused, BOOL *_Nonnull stop) {
-                NSNumber *screen_num = screen.deviceDescription[@"NSScreenNumber"];
-                CGDirectDisplayID screen_display_id = (CGDirectDisplayID) screen_num.intValue;
-                *stop = (screen_display_id == display.displayID);
-
-                return *stop;
-            }];
-        NSScreen *screen = [NSScreen.screens objectAtIndex:screen_index];
+    for (SCDisplay *display in sc->shareable_content.displays) {
+        NSScreen *display_screen = nil;
+        for (NSScreen *screen in NSScreen.screens) {
+            NSNumber *screen_num = screen.deviceDescription[@"NSScreenNumber"];
+            CGDirectDisplayID screen_display_id = (CGDirectDisplayID) screen_num.intValue;
+            if (screen_display_id == display.displayID) {
+                display_screen = screen;
+                break;
+            }
+        }
+        if (!display_screen) {
+            continue;
+        }
 
         char dimension_buffer[4][12] = {};
         char name_buffer[256] = {};
-        snprintf(dimension_buffer[0], sizeof(dimension_buffer[0]), "%u", (uint32_t) screen.frame.size.width);
-        snprintf(dimension_buffer[1], sizeof(dimension_buffer[0]), "%u", (uint32_t) screen.frame.size.height);
-        snprintf(dimension_buffer[2], sizeof(dimension_buffer[0]), "%d", (int32_t) screen.frame.origin.x);
-        snprintf(dimension_buffer[3], sizeof(dimension_buffer[0]), "%d", (int32_t) screen.frame.origin.y);
+        snprintf(dimension_buffer[0], sizeof(dimension_buffer[0]), "%u", (uint32_t) display_screen.frame.size.width);
+        snprintf(dimension_buffer[1], sizeof(dimension_buffer[0]), "%u", (uint32_t) display_screen.frame.size.height);
+        snprintf(dimension_buffer[2], sizeof(dimension_buffer[0]), "%d", (int32_t) display_screen.frame.origin.x);
+        snprintf(dimension_buffer[3], sizeof(dimension_buffer[0]), "%d", (int32_t) display_screen.frame.origin.y);
 
-        snprintf(name_buffer, sizeof(name_buffer), "%.200s: %.12sx%.12s @ %.12s,%.12s", screen.localizedName.UTF8String,
-                 dimension_buffer[0], dimension_buffer[1], dimension_buffer[2], dimension_buffer[3]);
+        snprintf(name_buffer, sizeof(name_buffer), "%.200s: %.12sx%.12s @ %.12s,%.12s",
+                 display_screen.localizedName.UTF8String, dimension_buffer[0], dimension_buffer[1], dimension_buffer[2],
+                 dimension_buffer[3]);
 
         CFUUIDRef display_uuid = CGDisplayCreateUUIDFromDisplayID(display.displayID);
         CFStringRef uuid_string = CFUUIDCreateString(kCFAllocatorDefault, display_uuid);
@@ -754,7 +741,7 @@ static bool build_display_list(struct screen_capture *sc, obs_properties_t *prop
                                      CFStringGetCStringPtr(uuid_string, kCFStringEncodingUTF8));
         CFRelease(uuid_string);
         CFRelease(display_uuid);
-    }];
+    }
 
     os_sem_post(sc->shareable_content_available);
     return true;
@@ -767,21 +754,18 @@ static bool build_window_list(struct screen_capture *sc, obs_properties_t *props
     obs_property_t *window_list = obs_properties_get(props, "window");
     obs_property_list_clear(window_list);
 
-    NSArray<SCWindow *> *filteredWindows;
-    filteredWindows = [sc->shareable_content.windows
-        filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(SCWindow *window,
-                                                                          NSDictionary *bindings __unused) {
+    NSPredicate *filteredWindowPredicate =
+        [NSPredicate predicateWithBlock:^BOOL(SCWindow *window, NSDictionary *bindings __unused) {
             NSString *app_name = window.owningApplication.applicationName;
             NSString *title = window.title;
             if (!sc->show_empty_names) {
-                if (app_name == NULL || title == NULL) {
-                    return false;
-                } else if ([app_name isEqualToString:@""] || [title isEqualToString:@""]) {
-                    return false;
-                }
+                return (app_name.length > 0) && (title.length > 0);
+            } else {
+                return YES;
             }
-            return true;
-        }]];
+        }];
+    NSArray<SCWindow *> *filteredWindows;
+    filteredWindows = [sc->shareable_content.windows filteredArrayUsingPredicate:filteredWindowPredicate];
 
     NSArray<SCWindow *> *sortedWindows;
     sortedWindows = [filteredWindows sortedArrayUsingComparator:^NSComparisonResult(SCWindow *window, SCWindow *other) {
@@ -797,14 +781,13 @@ static bool build_window_list(struct screen_capture *sc, obs_properties_t *props
         }
     }];
 
-    [sortedWindows
-        enumerateObjectsUsingBlock:^(SCWindow *_Nonnull window, NSUInteger idx __unused, BOOL *_Nonnull stop __unused) {
-            NSString *app_name = window.owningApplication.applicationName;
-            NSString *title = window.title;
+    for (SCWindow *window in sortedWindows) {
+        NSString *app_name = window.owningApplication.applicationName;
+        NSString *title = window.title;
 
-            const char *list_text = [[NSString stringWithFormat:@"[%@] %@", app_name, title] UTF8String];
-            obs_property_list_add_int(window_list, list_text, window.windowID);
-        }];
+        const char *list_text = [[NSString stringWithFormat:@"[%@] %@", app_name, title] UTF8String];
+        obs_property_list_add_int(window_list, list_text, window.windowID);
+    }
 
     os_sem_post(sc->shareable_content_available);
     return true;
@@ -821,11 +804,7 @@ static bool build_application_list(struct screen_capture *sc, obs_properties_t *
     filteredApplications = [sc->shareable_content.applications
         filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(SCRunningApplication *app,
                                                                           NSDictionary *bindings __unused) {
-            const char *name = [app.applicationName UTF8String];
-            if (strcmp(name, "") == 0) {
-                return false;
-            }
-            return true;
+            return app.applicationName.length > 0;
         }]];
 
     NSArray<SCRunningApplication *> *sortedApplications;
@@ -834,12 +813,11 @@ static bool build_application_list(struct screen_capture *sc, obs_properties_t *
             return [app.applicationName compare:other.applicationName options:NSCaseInsensitiveSearch];
         }];
 
-    [sortedApplications enumerateObjectsUsingBlock:^(SCRunningApplication *_Nonnull application,
-                                                     NSUInteger idx __unused, BOOL *_Nonnull stop __unused) {
+    for (SCRunningApplication *application in sortedApplications) {
         const char *name = [application.applicationName UTF8String];
         const char *bundle_id = [application.bundleIdentifier UTF8String];
         obs_property_list_add_string(application_list, name, bundle_id);
-    }];
+    }
 
     os_sem_post(sc->shareable_content_available);
     return true;
