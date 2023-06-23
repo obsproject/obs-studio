@@ -71,6 +71,8 @@ struct image_file_data {
 	obs_source_t *source;
 };
 
+typedef DARRAY(struct image_file_data) image_file_array_t;
+
 enum behavior {
 	BEHAVIOR_STOP_RESTART,
 	BEHAVIOR_PAUSE_UNPAUSE,
@@ -104,7 +106,7 @@ struct slideshow {
 	uint64_t mem_usage;
 
 	pthread_mutex_t mutex;
-	DARRAY(struct image_file_data) files;
+	image_file_array_t files;
 
 	enum behavior behavior;
 
@@ -140,18 +142,15 @@ static obs_source_t *get_transition(struct slideshow *ss)
 	return tr;
 }
 
-static obs_source_t *get_source(struct darray *array, const char *path)
+static obs_source_t *get_source(image_file_array_t *files, const char *path)
 {
-	DARRAY(struct image_file_data) files;
 	obs_source_t *source = NULL;
 
-	files.da = *array;
-
-	for (size_t i = 0; i < files.num; i++) {
-		const char *cur_path = files.array[i].path;
+	for (size_t i = 0; i < files->num; i++) {
+		const char *cur_path = files->array[i].path;
 
 		if (strcmp(path, cur_path) == 0) {
-			source = obs_source_get_ref(files.array[i].source);
+			source = obs_source_get_ref(files->array[i].source);
 			break;
 		}
 	}
@@ -172,17 +171,14 @@ static obs_source_t *create_source_from_file(const char *file)
 	return source;
 }
 
-static void free_files(struct darray *array)
+static void free_files(image_file_array_t *files)
 {
-	DARRAY(struct image_file_data) files;
-	files.da = *array;
-
-	for (size_t i = 0; i < files.num; i++) {
-		bfree(files.array[i].path);
-		obs_source_release(files.array[i].source);
+	for (size_t i = 0; i < files->num; i++) {
+		bfree(files->array[i].path);
+		obs_source_release(files->array[i].source);
 	}
 
-	da_free(files);
+	da_free(*files);
 }
 
 static inline size_t random_file(struct slideshow *ss)
@@ -205,21 +201,18 @@ static const char *ss_getname(void *unused)
 	return obs_module_text("SlideShow");
 }
 
-static void add_file(struct slideshow *ss, struct darray *array,
+static void add_file(struct slideshow *ss, image_file_array_t *new_files,
 		     const char *path, uint32_t *cx, uint32_t *cy)
 {
-	DARRAY(struct image_file_data) new_files;
 	struct image_file_data data;
 	obs_source_t *new_source;
 
-	new_files.da = *array;
-
 	pthread_mutex_lock(&ss->mutex);
-	new_source = get_source(&ss->files.da, path);
+	new_source = get_source(&ss->files, path);
 	pthread_mutex_unlock(&ss->mutex);
 
 	if (!new_source)
-		new_source = get_source(&new_files.da, path);
+		new_source = get_source(new_files, path);
 	if (!new_source)
 		new_source = create_source_from_file(path);
 
@@ -229,7 +222,7 @@ static void add_file(struct slideshow *ss, struct darray *array,
 
 		data.path = bstrdup(path);
 		data.source = new_source;
-		da_push_back(new_files, &data);
+		da_push_back(*new_files, &data);
 
 		if (new_cx > *cx)
 			*cx = new_cx;
@@ -239,8 +232,6 @@ static void add_file(struct slideshow *ss, struct darray *array,
 		void *source_data = obs_obj_get_data(new_source);
 		ss->mem_usage += image_source_get_memory_usage(source_data);
 	}
-
-	*array = new_files.da;
 }
 
 static bool valid_extension(const char *ext)
@@ -295,8 +286,8 @@ static void do_transition(void *data, bool to_null)
 
 static void ss_update(void *data, obs_data_t *settings)
 {
-	DARRAY(struct image_file_data) new_files;
-	DARRAY(struct image_file_data) old_files;
+	image_file_array_t new_files;
+	image_file_array_t old_files;
 	obs_source_t *new_tr = NULL;
 	obs_source_t *old_tr = NULL;
 	struct slideshow *ss = data;
@@ -386,7 +377,7 @@ static void ss_update(void *data, obs_data_t *settings)
 				dstr_copy(&dir_path, path);
 				dstr_cat_ch(&dir_path, '/');
 				dstr_cat(&dir_path, ent->d_name);
-				add_file(ss, &new_files.da, dir_path.array, &cx,
+				add_file(ss, &new_files, dir_path.array, &cx,
 					 &cy);
 
 				if (ss->mem_usage >= MAX_MEM_USAGE)
@@ -396,7 +387,7 @@ static void ss_update(void *data, obs_data_t *settings)
 			dstr_free(&dir_path);
 			os_closedir(dir);
 		} else {
-			add_file(ss, &new_files.da, path, &cx, &cy);
+			add_file(ss, &new_files, path, &cx, &cy);
 		}
 
 		obs_data_release(item);
@@ -410,8 +401,8 @@ static void ss_update(void *data, obs_data_t *settings)
 
 	pthread_mutex_lock(&ss->mutex);
 
-	old_files.da = ss->files.da;
-	ss->files.da = new_files.da;
+	old_files = ss->files;
+	ss->files = new_files;
 	if (new_tr) {
 		old_tr = ss->transition;
 		ss->transition = new_tr;
@@ -438,7 +429,7 @@ static void ss_update(void *data, obs_data_t *settings)
 
 	if (old_tr)
 		obs_source_release(old_tr);
-	free_files(&old_files.da);
+	free_files(&old_files);
 
 	/* ------------------------- */
 
@@ -670,7 +661,7 @@ static void ss_destroy(void *data)
 	struct slideshow *ss = data;
 
 	obs_source_release(ss->transition);
-	free_files(&ss->files.da);
+	free_files(&ss->files);
 	pthread_mutex_destroy(&ss->mutex);
 	calldata_free(&ss->cd);
 	bfree(ss);
