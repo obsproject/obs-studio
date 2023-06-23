@@ -495,9 +495,8 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	/* If media has ended and user enables looping, user expects that it restarts.
 	 * Should still check if is_looping was changed, because users may stop them
 	 * intentionally, which is why we only check for ENDED and not STOPPED. */
-	if (s->state == OBS_MEDIA_STATE_ENDED && is_looping == true &&
+	if (active && s->state == OBS_MEDIA_STATE_ENDED && is_looping == true &&
 	    s->is_looping == false) {
-		active = true;
 		should_restart_media = true;
 	}
 
