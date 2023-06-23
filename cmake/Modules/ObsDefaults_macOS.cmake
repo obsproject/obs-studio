@@ -116,7 +116,7 @@ macro(setup_obs_project)
   string(TIMESTAMP CURRENT_YEAR "%Y")
 
   # Set paths for distribution bundling
-  set(OBS_BUNDLE_NAME "OBS")
+  set(OBS_BUNDLE_NAME "OBS Studio")
   set(OBS_EXECUTABLE_DESTINATION "${CMAKE_INSTALL_BINDIR}")
   set(OBS_INCLUDE_DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/obs")
   set(OBS_LIBRARY_DESTINATION "${CMAKE_INSTALL_LIBDIR}")

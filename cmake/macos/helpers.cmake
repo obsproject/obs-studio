@@ -71,6 +71,7 @@ function(set_target_properties_obs target)
                    CLANG_ENABLE_OBJC_ARC YES
                    SKIP_INSTALL NO
                    INSTALL_PATH "$(LOCAL_APPS_DIR)"
+                   INFOPLIST_KEY_CFBundleName "OBS Studio"
                    INFOPLIST_KEY_CFBundleDisplayName "OBS Studio"
                    INFOPLIST_KEY_NSHumanReadableCopyright "(c) 2012-${CURRENT_YEAR} Lain Bailey"
                    INFOPLIST_KEY_NSCameraUsageDescription "OBS needs to access the camera to enable camera sources to work."
@@ -259,6 +260,7 @@ function(set_target_properties_obs target)
                    MARKETING_VERSION ${OBS_VERSION_CANONICAL}
                    GENERATE_INFOPLIST_FILE YES
                    INFOPLIST_FILE ""
+                   INFOPLIST_KEY_CFBundleName ${target}
                    INFOPLIST_KEY_CFBundleDisplayName ${target}
                    INFOPLIST_KEY_NSHumanReadableCopyright "(c) 2012-${CURRENT_YEAR} Lain Bailey")
       # cmake-format: on
@@ -296,6 +298,7 @@ function(set_target_properties_obs target)
                    CURRENT_PROJECT_VERSION ${OBS_BUILD_NUMBER}
                    MARKETING_VERSION ${OBS_VERSION_CANONICAL}
                    GENERATE_INFOPLIST_FILE YES
+                   INFOPLIST_KEY_CFBundleName ${target}
                    INFOPLIST_KEY_CFBundleDisplayName ${target}
                    INFOPLIST_KEY_NSHumanReadableCopyright "(c) 2012-${CURRENT_YEAR} Lain Bailey")
       # cmake-format: on
