@@ -8,6 +8,8 @@ Services usually does not separate the concept of broadcast and stream, but
 some does. In this case features related to differed start/stop might need to be
 enabled.
 
+NOTE: If the service has its bandwidth test enabled, the broadcast flow is ignored.
+
 .. code:: cpp
 
    #include <obs-frontend-api.h>
