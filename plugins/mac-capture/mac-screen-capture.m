@@ -904,15 +904,14 @@ static bool content_settings_changed(void *data, obs_properties_t *props, obs_pr
         }
     }
 
+    sc->show_empty_names = obs_data_get_bool(settings, "show_empty_names");
+    sc->show_hidden_windows = obs_data_get_bool(settings, "show_hidden_windows");
+    sc->hide_obs = obs_data_get_bool(settings, "hide_obs");
+
     screen_capture_build_content_list(sc, capture_type_id == ScreenCaptureDisplayStream);
     build_display_list(sc, props);
     build_window_list(sc, props);
     build_application_list(sc, props);
-
-    sc->show_empty_names = obs_data_get_bool(settings, "show_empty_names");
-    sc->show_hidden_windows = obs_data_get_bool(settings, "show_hidden_windows");
-
-    sc->hide_obs = obs_data_get_bool(settings, "hide_obs");
 
     return true;
 }
