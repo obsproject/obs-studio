@@ -88,7 +88,7 @@ jobs:
 
   macos_build:
     name: '02 - macOS'
-    runs-on: [macos-12]
+    runs-on: [macos-13]
     strategy:
       matrix:
         arch: ['x86_64', 'arm64']
@@ -200,6 +200,7 @@ jobs:
         env:
           PROVISIONING_PROFILE: ${{ steps.macos-codesign.outputs.provisionprofileUUID }}
         run: |
+          sudo xcode-select --switch /Applications/Xcode_14.3.1.app/Contents/Developer
           if [[ '${{ steps.github-check.outputs.generator }}' == 'Xcode' ]]; then
             SEEKING_TESTERS=1 CI/macos/02_build_obs.sh --codesign --architecture "${{ matrix.arch }}"
           else
@@ -216,6 +217,11 @@ jobs:
           esac
 
           if [[ "${PACKAGE}" ]]; then
+            sudo sqlite3 $HOME/Library/Application\ Support/com.apple.TCC/TCC.db \
+              "INSERT OR REPLACE INTO access VALUES('kTCCServiceAppleEvents','/usr/local/opt/runner/provisioner/provisioner',1,2,3,1,NULL,NULL,0,'com.apple.finder',X'fade0c000000002c00000001000000060000000200000010636f6d2e6170706c652e66696e64657200000003',NULL,1592919552);"
+            sudo sqlite3 /Library/Application\ Support/com.apple.TCC/TCC.db \
+              "INSERT OR REPLACE INTO access VALUES('kTCCServiceAppleEvents','/usr/local/opt/runner/provisioner/provisioner',1,2,3,1,NULL,NULL,0,'com.apple.finder',X'fade0c000000002c00000001000000060000000200000010636f6d2e6170706c652e66696e64657200000003',NULL,1592919552);"
+
             CI/macos/03_package_obs.sh --codesign --architecture "${{ matrix.arch }}"
             ARTIFACT_NAME=$(basename $(/usr/bin/find build_macos -type f -name "obs-studio-*.dmg" -depth 1 | head -1))
             echo "FILE_NAME=${ARTIFACT_NAME}" >> $GITHUB_ENV
@@ -394,7 +400,7 @@ jobs:
 
   macos_release:
     name: '03 - macOS notarized image'
-    runs-on: [macos-12]
+    runs-on: [macos-13]
     needs: [macos_build]
     env:
       BUILD_FOR_DISTRIBUTION: 'ON'
@@ -513,7 +519,7 @@ jobs:
 
   macos_sparkle:
     name: '04 - macOS Sparkle Updates'
-    runs-on: [macos-12]
+    runs-on: [macos-13]
     needs: [macos_release]
     if: fromJSON(needs.macos_release.outputs.run_sparkle)
     strategy:
