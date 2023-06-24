@@ -75,6 +75,7 @@ if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
     add_subdirectory(obs-text)
   endif()
   add_subdirectory(obs-transitions)
+  add_subdirectory(obs-twitch)
   if(OS_WINDOWS
      OR OS_MACOS
      OR OS_LINUX)
@@ -204,3 +205,4 @@ add_subdirectory(obs-services)
 add_subdirectory(custom-services)
 add_subdirectory(orphaned-services)
 add_subdirectory(obs-youtube)
+add_subdirectory(obs-twitch)
