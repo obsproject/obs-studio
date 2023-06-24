@@ -413,6 +413,67 @@ try {
 	return false;
 }
 
+bool OAuth::InvalidateToken(const char *url)
+{
+	return InvalidateTokenInternal(url, "", true);
+}
+
+bool OAuth::InvalidateToken(const char *url, const std::string &client_id)
+{
+	return InvalidateTokenInternal(url, client_id);
+}
+
+bool OAuth::InvalidateTokenInternal(const char *base_url,
+				    const std::string &client_id,
+				    const bool token_as_parameter)
+try {
+	std::string url(base_url);
+	std::string output;
+	std::string error;
+	std::string desc;
+	std::string post_data;
+
+	if (token.empty()) {
+		return true;
+	}
+
+	/* Google wants the token as a parameter, but still wants us to POST... */
+	if (token_as_parameter) {
+		url += "?token=" + token;
+	} else {
+		post_data += "token=" + token;
+	}
+
+	/* Only required for Twitch as far as I can tell */
+	if (!client_id.empty()) {
+		post_data += "&client_id=" + client_id;
+	}
+
+	bool success = false;
+
+	auto func = [&]() {
+		success = GetRemoteFile(url.c_str(), output, error, nullptr,
+					"application/x-www-form-urlencoded",
+					"POST", post_data.c_str(),
+					std::vector<std::string>(), nullptr, 5,
+					false);
+	};
+
+	ExecThreadedWithoutBlocking(func, QTStr("Auth.Revoking.Title"),
+				    QTStr("Auth.Revoking.Text").arg(service()));
+	if (!success)
+		throw ErrorInfo("Failed to revoke token", error);
+
+	/* We don't really care about the result here, just assume it either
+	 * succeeded or didn't matter. */
+	return true;
+
+} catch (ErrorInfo &info) {
+	blog(LOG_WARNING, "%s: %s: %s", __FUNCTION__, info.message.c_str(),
+	     info.error.c_str());
+	return false;
+}
+
 void OAuthStreamKey::OnStreamConfig()
 {
 	if (key_.empty())
