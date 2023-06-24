@@ -33,6 +33,7 @@ using namespace json11;
 /* ------------------------------------------------------------------------- */
 #define YOUTUBE_AUTH_URL "https://accounts.google.com/o/oauth2/v2/auth"
 #define YOUTUBE_TOKEN_URL "https://www.googleapis.com/oauth2/v4/token"
+#define YOUTUBE_REVOKE_URL "https://oauth2.googleapis.com/revoke"
 #define YOUTUBE_SCOPE_VERSION 1
 #define YOUTUBE_API_STATE_LENGTH 32
 #define SECTION_NAME "YouTube"
@@ -188,6 +189,12 @@ bool YoutubeAuth::LoadInternal()
 
 	firstLoad = false;
 	return implicit ? !token.empty() : !refresh_token.empty();
+}
+
+void YoutubeAuth::DeleteInternal()
+{
+	InvalidateToken(YOUTUBE_REVOKE_URL);
+	OAuthStreamKey::DeleteInternal();
 }
 
 #ifdef BROWSER_AVAILABLE

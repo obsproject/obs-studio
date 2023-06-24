@@ -24,6 +24,7 @@ using namespace json11;
 
 #define TWITCH_AUTH_URL OAUTH_BASE_URL "v1/twitch/redirect"
 #define TWITCH_TOKEN_URL OAUTH_BASE_URL "v1/twitch/token"
+#define TWITCH_REOKVE_URL "https://id.twitch.tv/oauth2/revoke"
 
 #define TWITCH_SCOPE_VERSION 1
 
@@ -497,6 +498,15 @@ std::shared_ptr<Auth> TwitchAuth::Login(QWidget *parent, const std::string &)
 	}
 
 	return nullptr;
+}
+
+void TwitchAuth::DeleteInternal()
+{
+	std::string client_id = TWITCH_CLIENTID;
+	deobfuscate_str(&client_id[0], TWITCH_HASH);
+
+	InvalidateToken(TWITCH_REOKVE_URL, client_id);
+	OAuthStreamKey::DeleteInternal();
 }
 
 static std::shared_ptr<Auth> CreateTwitchAuth()

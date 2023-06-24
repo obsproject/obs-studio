@@ -49,6 +49,7 @@ class YoutubeAuth : public OAuthStreamKey {
 	virtual bool RetryLogin() override;
 	virtual void SaveInternal() override;
 	virtual bool LoadInternal() override;
+	virtual void DeleteInternal() override;
 	virtual void LoadUI() override;
 
 	QString GenerateState();

@@ -21,6 +21,7 @@ using namespace json11;
 
 #define RESTREAM_AUTH_URL OAUTH_BASE_URL "v1/restream/redirect"
 #define RESTREAM_TOKEN_URL OAUTH_BASE_URL "v1/restream/token"
+#define RESTREAM_REVOKE_URL "https://api.restream.io/oauth/revoke"
 #define RESTREAM_STREAMKEY_URL "https://api.restream.io/v2/user/streamKey"
 #define RESTREAM_SCOPE_VERSION 1
 
@@ -127,6 +128,12 @@ bool RestreamAuth::LoadInternal()
 {
 	firstLoad = false;
 	return OAuthStreamKey::LoadInternal();
+}
+
+void RestreamAuth::DeleteInternal()
+{
+	InvalidateToken(RESTREAM_REVOKE_URL, "");
+	OAuthStreamKey::DeleteInternal();
 }
 
 void RestreamAuth::LoadUI()

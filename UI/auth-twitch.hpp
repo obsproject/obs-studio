@@ -24,6 +24,7 @@ class TwitchAuth : public OAuthStreamKey {
 
 	virtual void SaveInternal() override;
 	virtual bool LoadInternal() override;
+	virtual void DeleteInternal() override;
 
 	bool MakeApiRequest(const char *path, json11::Json &json_out);
 	bool GetChannelInfo();
