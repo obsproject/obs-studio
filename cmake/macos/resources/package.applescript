@@ -3,10 +3,10 @@ on run (volumeName)
         tell disk (volumeName as string)
             open
 
-            set theXOrigin to @_dmg_window_x@
-            set theYOrigin to @_dmg_window_y@
-            set theWidth to @_dmg_window_width@
-            set theHeight to @_dmg_window_height@
+            set theXOrigin to 100
+            set theYOrigin to 100
+            set theWidth to 540
+            set theHeight to 380
 
             set theBottomRightX to (theXOrigin + theWidth)
             set theBottomRightY to (theYOrigin + theHeight)
@@ -23,13 +23,13 @@ on run (volumeName)
 
             set opts to the icon view options of container window
             tell opts
-                set icon size to @_dmg_icon_size@
-                set text size to @_dmg_text_size@
+                set icon size to 96
+                set text size to 16
                 set arrangement to not arranged
             end tell
-            set background picture of opts to file ".background:@_dmg_background_filename@"
-            set position of item "@_dmg_package_name@.app" to {@_dmg_obs_x@, @_dmg_obs_y@}
-            set position of item "Applications" to {@_dmg_app_link_x@, @_dmg_app_link_y@}
+            set background picture of opts to file ".background:background.tiff"
+            set position of item "OBS.app" to {124, 180}
+            set position of item "Applications" to {416, 180}
             close
             open
             -- Force saving of the size
