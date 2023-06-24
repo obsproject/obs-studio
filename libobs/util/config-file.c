@@ -759,6 +759,24 @@ bool config_remove_value(config_t *config, const char *section,
 	return success;
 }
 
+bool config_remove_section(config_t *config, const char *section)
+{
+	struct config_section *sec;
+	bool success = false;
+
+	pthread_mutex_lock(&config->mutex);
+
+	HASH_FIND_STR(config->sections, section, sec);
+	if (sec) {
+		HASH_DELETE(hh, config->sections, sec);
+		config_section_free(sec);
+		success = true;
+	}
+
+	pthread_mutex_unlock(&config->mutex);
+	return success;
+}
+
 const char *config_get_default_string(config_t *config, const char *section,
 				      const char *name)
 {

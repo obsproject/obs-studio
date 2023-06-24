@@ -245,6 +245,14 @@ Set/Get Functions
    :param section:    The section of the value
    :param name:       The value name
 
+----------------------
+
+.. function:: bool config_remove_section(config_t *config, const char *section)
+
+   Removes a section.  Does not remove the default values if any.
+
+   :param config:     Configuration object
+   :param section:    The section of the value
 
 Default Value Functions
 -----------------------

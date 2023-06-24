@@ -77,6 +77,7 @@ EXPORT double config_get_double(config_t *config, const char *section,
 
 EXPORT bool config_remove_value(config_t *config, const char *section,
 				const char *name);
+EXPORT bool config_remove_section(config_t *config, const char *section);
 
 /*
  * DEFAULT VALUES
