@@ -20,7 +20,6 @@
       "cacheVariables": {
         "ENABLE_BROWSER": true,
         "CMAKE_OSX_DEPLOYMENT_TARGET": {"type": "STRING", "value": "11.0"},
-        "OBS_CMAKE_VERSION": {"type": "STRING", "value": "3.0.0"},
         "OBS_CODESIGN_TEAM": {"type": "STRING", "value": "$penv{CODESIGN_TEAM}"},
         "OBS_CODESIGN_IDENTITY": {"type": "STRING", "value": "$penv{CODESIGN_IDENT}"},
         "OBS_PROVISIONING_PROFILE": {"type": "STRING", "value": "$penv{PROVISIONING_PROFILE}"},
@@ -57,12 +56,7 @@
         "ENABLE_WAYLAND": true,
         "ENABLE_VLC": true,
         "QT_VERSION": "6",
-        "CMAKE_BUILD_TYPE": "Debug",
-        "OBS_CMAKE_VERSION": "2.0.0",
-        "CMAKE_PREFIX_PATH": {
-          "type": "PATH",
-          "value": ""
-        }
+        "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {
@@ -97,23 +91,13 @@
       "cacheVariables": {
         "ENABLE_WAYLAND": true,
         "ENABLE_VLC": true,
-        "QT_VERSION": "6",
-        "CMAKE_BUILD_TYPE": "Debug",
-        "OBS_CMAKE_VERSION": "2.0.0",
-        "CMAKE_PREFIX_PATH": {
-          "type": "PATH",
-          "value": ""
-        },
-        "CEF_ROOT_DIR": {
-          "type": "PATH",
-          "value": ""
-        }
+        "QT_VERSION": {"type": "STRING", "value": "6"},
+        "CMAKE_BUILD_TYPE": {"type": "STRING", "value": "Debug"}
       }
     },
     {
       "name": "linux-ci-x86_64",
       "inherits": ["linux-x86_64"],
-      "hidden": true,
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "RelWithDebInfo"
       }
@@ -131,7 +115,7 @@
     {
       "name": "windows-x64",
       "displayName": "Windows x64",
-      "description": "obs-studio for Windows (x64)",
+      "description": "Default Windows build (x64)",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -140,45 +124,22 @@
       "architecture": "x64",
       "binaryDir": "${sourceDir}/build_x64",
       "generator": "Visual Studio 17 2022",
-      "warnings": {"dev": true, "deprecated": true},
       "cacheVariables": {
-        "QT_VERSION": "6",
-        "CMAKE_BUILD_TYPE": "Debug",
-        "OBS_WINDOWS_LEGACY_DIRS": true,
-        "CMAKE_SYSTEM_VERSION": "10.0.18363.657",
-        "OBS_CMAKE_VERSION": "2.0.0",
-        "CMAKE_PREFIX_PATH": {
-          "type": "PATH",
-          "value": ""
-        },
-        "CEF_ROOT_DIR": {
-          "type": "PATH",
-          "value": ""
-        },
-        "VLC_PATH": {
-          "type": "PATH",
-          "value": ""
-        }
+        "OBS_CMAKE_VERSION": {"type": "STRING", "value": "3.0.0"},
+        "ENABLE_BROWSER": true,
+        "VIRTUALCAM_GUID": {"type": "STRING", "value": "A3FCE0F5-3493-419F-958A-ABA1250EC20B"},
+        "ENABLE_CCACHE": false
       }
     },
     {
       "name": "windows-ci-x64",
-      "inherits": "windows-x64",
-      "hidden": true,
+      "displayName": "Windows x64 (CI)",
+      "description": "CI Windows build (x64)",
+      "inherits": ["windows-x64"],
+      "warnings": {"dev": true, "deprecated": true},
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
-      }
-    },
-    {
-      "name": "windows-release-x64",
-      "displayName": "Windowx x64 (Release)",
-      "description": "obs-studio for Windows (x64) - Release Configuration",
-      "inherits": "windows-x64",
-      "cacheVariables": {
-        "ENABLE_RELEASE_BUILD": true,
-        "ENABLE_BROWSER": true,
-        "ENABLE_VLC": true,
-        "VIRTUALCAM_GUID": { "type": "STRING", "value": "A3FCE0F5-3493-419F-958A-ABA1250EC20B"}
+        "CMAKE_COMPILE_WARNING_AS_ERROR": true,
+        "ENABLE_CCACHE": false
       }
     }
   ],
