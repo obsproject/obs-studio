@@ -792,6 +792,9 @@ void OBSBasicSettings::on_disconnectAccount_clicked()
 		return;
 	}
 
+	if (auth)
+		auth->Delete();
+
 	main->auth.reset();
 	auth.reset();
 	main->SetBroadcastFlowEnabled(false);

@@ -59,6 +59,7 @@ protected:
 
 	virtual void SaveInternal() override;
 	virtual bool LoadInternal() override;
+	virtual void DeleteInternal() override;
 
 	virtual bool RetryLogin() = 0;
 	bool TokenExpired();

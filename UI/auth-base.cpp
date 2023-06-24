@@ -85,3 +85,20 @@ void Auth::Save()
 	auth->SaveInternal();
 	config_save_safe(main->Config(), "tmp", nullptr);
 }
+
+void Auth::Delete()
+{
+	OBSBasic *main = OBSBasic::Get();
+	Auth *auth = main->auth.get();
+	if (!auth) {
+		if (config_has_user_value(main->Config(), "Auth", "Type")) {
+			config_remove_value(main->Config(), "Auth", "Type");
+			config_save_safe(main->Config(), "tmp", nullptr);
+		}
+		return;
+	}
+
+	config_remove_value(main->Config(), "Auth", "type");
+	auth->DeleteInternal();
+	config_save_safe(main->Config(), "tmp", nullptr);
+}

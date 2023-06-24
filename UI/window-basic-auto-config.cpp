@@ -527,6 +527,9 @@ void AutoConfigStreamPage::on_disconnectAccount_clicked()
 
 	OBSBasic *main = OBSBasic::Get();
 
+	if (auth)
+		auth->Delete();
+
 	main->auth.reset();
 	auth.reset();
 

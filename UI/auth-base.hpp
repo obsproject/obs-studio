@@ -10,6 +10,7 @@ class Auth : public QObject {
 protected:
 	virtual void SaveInternal() = 0;
 	virtual bool LoadInternal() = 0;
+	virtual void DeleteInternal() = 0;
 
 	bool firstLoad = true;
 
@@ -56,6 +57,7 @@ public:
 	static bool External(const std::string &service);
 	static void Load();
 	static void Save();
+	static void Delete();
 
 protected:
 	static void RegisterAuth(const Def &d, create_cb create);
