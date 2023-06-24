@@ -5,6 +5,7 @@ find_package(x11-xcb REQUIRED)
 find_package(xcb COMPONENTS xcb OPTIONAL_COMPONENTS xcb-xinput QUIET)
 # cmake-format: on
 find_package(gio)
+find_package(Libsecret)
 
 target_sources(
   libobs
@@ -43,6 +44,15 @@ endif()
 if(TARGET gio::gio)
   target_sources(libobs PRIVATE util/platform-nix-dbus.c util/platform-nix-portal.c)
   target_link_libraries(libobs PRIVATE gio::gio)
+
+  if(TARGET Libsecret::Libsecret)
+    target_compile_definitions(libobs PRIVATE USE_LIBSECRET)
+    target_sources(libobs PRIVATE util/platform-nix-libsecret.c)
+    target_link_libraries(libobs PRIVATE Libsecret::Libsecret)
+    target_enable_feature(libobs "Libsecret Keychain API (Linux)")
+  else()
+    target_disable_feature(libobs "Libsecret Keychain API (Linux)")
+  endif()
 endif()
 
 if(ENABLE_WAYLAND)

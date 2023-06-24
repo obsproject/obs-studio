@@ -424,6 +424,14 @@ elseif(OS_POSIX)
     target_link_libraries(libobs PRIVATE GIO::GIO)
 
     target_sources(libobs PRIVATE util/platform-nix-dbus.c util/platform-nix-portal.c)
+
+    find_package(Libsecret)
+    if(TARGET Libsecret::Libsecret)
+      obs_status(STATUS "-> libsecret found, enabling keychain API")
+      target_link_libraries(libobs PRIVATE Libsecret::Libsecret)
+      target_compile_definitions(libobs PRIVATE USE_LIBSECRET)
+      target_sources(libobs PRIVATE util/platform-nix-libsecret.c)
+    endif()
   endif()
 
   if(TARGET XCB::XINPUT)
