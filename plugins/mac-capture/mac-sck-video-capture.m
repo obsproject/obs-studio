@@ -255,6 +255,7 @@ static void *sck_video_capture_create(obs_data_t *settings, obs_source_t *source
     sc->show_hidden_windows = obs_data_get_bool(settings, "show_hidden_windows");
     sc->window = (CGWindowID) obs_data_get_int(settings, "window");
     sc->capture_type = (unsigned int) obs_data_get_int(settings, "type");
+    sc->audio_only = false;
 
     os_sem_init(&sc->shareable_content_available, 1);
     screen_capture_build_content_list(sc, sc->capture_type == ScreenCaptureDisplayStream);

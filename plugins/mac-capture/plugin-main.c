@@ -27,6 +27,8 @@ bool obs_module_load(void)
 				OBS_SOURCE_DEPRECATED;
 			window_capture_info.output_flags |=
 				OBS_SOURCE_DEPRECATED;
+			extern struct obs_source_info sck_audio_capture_info;
+			obs_register_source(&sck_audio_capture_info);
 		}
 	}
 #endif

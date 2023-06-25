@@ -24,6 +24,11 @@ typedef enum {
     ScreenCaptureApplicationStream = 2,
 } ScreenCaptureStreamType;
 
+typedef enum {
+    ScreenCaptureAudioDesktopStream = 0,
+    ScreenCaptureAudioApplicationStream = 1,
+} ScreenCaptureAudioStreamType;
+
 @interface ScreenCaptureDelegate : NSObject <SCStreamOutput, SCStreamDelegate>
 
 @property struct screen_capture *sc;
@@ -41,6 +46,7 @@ struct screen_capture {
     bool hide_obs;
     bool show_hidden_windows;
     bool show_empty_names;
+    bool audio_only;
 
     SCStream *disp;
     SCStreamConfiguration *stream_properties;
@@ -55,6 +61,7 @@ struct screen_capture {
     pthread_mutex_t mutex;
 
     ScreenCaptureStreamType capture_type;
+    ScreenCaptureAudioStreamType audio_capture_type;
     CGDirectDisplayID display;
     CGWindowID window;
     NSString *application_id;
