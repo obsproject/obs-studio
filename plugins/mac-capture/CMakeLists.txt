@@ -11,8 +11,9 @@ target_sources(
           CGDisplayStream.h
           mac-audio.c
           mac-display-capture.m
-		  mac-sck-common.h
-		  mac-sck-common.m
+          mac-sck-audio-capture.m
+          mac-sck-common.h
+          mac-sck-common.m
           mac-sck-video-capture.m
           mac-window-capture.m
           plugin-main.c

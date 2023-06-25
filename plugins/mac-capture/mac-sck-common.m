@@ -16,7 +16,7 @@ bool is_screen_capture_available(void)
 - (void)stream:(SCStream *)stream didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer ofType:(SCStreamOutputType)type
 {
     if (self.sc != NULL) {
-        if (type == SCStreamOutputTypeScreen) {
+        if (type == SCStreamOutputTypeScreen && !self.sc->audio_only) {
             screen_stream_video_update(self.sc, sampleBuffer);
         }
 #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
@@ -47,7 +47,7 @@ bool is_screen_capture_available(void)
             break;
     }
 
-    MACCAP_LOG(LOG_WARNING, "%s", error.domain.UTF8String);
+    MACCAP_LOG(LOG_WARNING, "%s", errorMessage.UTF8String);
 }
 
 @end
