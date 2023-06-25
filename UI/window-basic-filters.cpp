@@ -1281,7 +1281,7 @@ void OBSBasicFilters::FiltersMoved(const QModelIndex &, int srcIdxStart, int,
 		neighborIdx = 0;
 
 	OBSSource neighbor = GetFilter(neighborIdx, isAsync);
-	size_t idx = obs_source_filter_get_index(source, neighbor);
+	int idx = obs_source_filter_get_index(source, neighbor);
 
 	OBSSource filter = GetFilter(list->currentRow(), isAsync);
 	obs_source_filter_set_index(source, filter, idx);

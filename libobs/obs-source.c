@@ -3294,12 +3294,12 @@ void obs_source_filter_set_order(obs_source_t *source, obs_source_t *filter,
 		obs_source_dosignal(source, NULL, "reorder_filters");
 }
 
-size_t obs_source_filter_get_index(obs_source_t *source, obs_source_t *filter)
+int obs_source_filter_get_index(obs_source_t *source, obs_source_t *filter)
 {
 	if (!obs_source_valid(source, "obs_source_filter_get_index"))
-		return DARRAY_INVALID;
+		return -1;
 	if (!obs_ptr_valid(filter, "obs_source_filter_get_index"))
-		return DARRAY_INVALID;
+		return -1;
 
 	size_t idx;
 
@@ -3307,7 +3307,7 @@ size_t obs_source_filter_get_index(obs_source_t *source, obs_source_t *filter)
 	idx = da_find(source->filters, &filter, 0);
 	pthread_mutex_unlock(&source->filter_mutex);
 
-	return idx;
+	return idx != DARRAY_INVALID ? (int)idx : -1;
 }
 
 static bool set_filter_index(obs_source_t *source, obs_source_t *filter,

@@ -1134,8 +1134,8 @@ EXPORT void obs_source_filter_set_order(obs_source_t *source,
 					enum obs_order_movement movement);
 
 /** Gets filter index */
-EXPORT size_t obs_source_filter_get_index(obs_source_t *source,
-					  obs_source_t *filter);
+EXPORT int obs_source_filter_get_index(obs_source_t *source,
+				       obs_source_t *filter);
 
 /** Sets filter index */
 EXPORT void obs_source_filter_set_index(obs_source_t *source,
