@@ -1226,7 +1226,7 @@ uint32_t obs_output_get_height2(const obs_output_t *output, size_t idx)
 
 	if (flag_encoded(output)) {
 		if (output->video_encoders[idx])
-			return obs_encoder_get_width(
+			return obs_encoder_get_height(
 				output->video_encoders[idx]);
 		else
 			return 0;
