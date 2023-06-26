@@ -14,7 +14,6 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-
 #pragma once
 #include "obs-mpegts-common.h"
 #include <srt/srt.h>
@@ -912,7 +911,7 @@ static int libsrt_write(URLContext *h, const uint8_t *buf, int size)
 		s->stats->latency = perf.msRcvTsbPdDelay;
 		if (time > (s->time + 10.0)) {
 			blog(LOG_DEBUG,
-			     "[obs-ffmpeg mpegts muxer / libsrt]: RTT [%.2f ms], Link Bandwidth [%.1f Mbps], peer latency [%ld ms], SRTO_RCVLATENCY [%ld ms]",
+			     "[obs-ffmpeg mpegts muxer / libsrt]: RTT [%.2f ms], Link Bandwidth [%.1f Mbps], peer latency [%d ms], SRTO_RCVLATENCY [%d ms]",
 			     perf.msRTT, perf.mbpsBandwidth,
 			     perf.msSndTsbPdDelay, perf.msRcvTsbPdDelay);
 			s->time = time;
@@ -940,23 +939,23 @@ static int libsrt_close(URLContext *h)
 	blog(LOG_INFO,
 	     "[obs-ffmpeg mpegts muxer / libsrt]: Session Summary\n"
 	     "\ttime elapsed [%.1f sec]\n"
-	     "\tmean speed [%.1f Mbp]\n"
-	     "\ttotal bytes sent [%.1f MB]\n"
-	     "\tbytes retransmitted [%.2f %%, %.1f MB]\n"
-	     "\tbytes dropped [%.2f %%, %.1f MB]\n"
-	     "\tpackets transmitted [%ld]\n"
-	     "\tpackets retransmitted [%ld]\n"
-	     "\tpackets dropped [%ld]",
-	     (double)perf.msTimeStamp / 1000.0, perf.mbpsSendRate,
-	     (double)perf.byteSentTotal / 1000000.0,
+	     "\tmean speed [%.1f Mbps]\n"
+	     "\ttotal bytes sent [%.2f MB]\n"
+	     "\tbytes retransmitted [%.2f %%, %.2f MB]\n"
+	     "\tbytes dropped [%.2f %%, %.2f MB]\n"
+	     "\tpackets transmitted [%" PRId64 "]\n"
+	     "\tpackets retransmitted [%d]\n"
+	     "\tpackets dropped [%d]",
+	     (double)perf.msTimeStamp / 1000.0f, perf.mbpsSendRate,
+	     (double)perf.byteSentTotal / 1000000.0f,
 	     perf.byteSentTotal
-		     ? perf.byteRetransTotal / perf.byteSentTotal * 100.0
-		     : 0,
-	     (double)perf.byteRetransTotal / 1000000.0,
+		     ? (perf.byteRetransTotal * 100.0f / perf.byteSentTotal)
+		     : 0.0f,
+	     (double)perf.byteRetransTotal / 1000000.0f,
 	     perf.byteSentTotal
-		     ? perf.byteSndDropTotal / perf.byteSentTotal * 100.0
-		     : 0,
-	     (double)perf.byteSndDropTotal / 1000000.0, perf.pktSentTotal,
+		     ? perf.byteSndDropTotal / perf.byteSentTotal * 100.0f
+		     : 0.0f,
+	     (double)perf.byteSndDropTotal / 1000000.0f, perf.pktSentTotal,
 	     perf.pktRetransTotal, perf.pktSndDropTotal);
 
 	srt_epoll_release(s->eid);

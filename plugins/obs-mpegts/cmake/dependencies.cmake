@@ -12,6 +12,7 @@ find_package(
            avformat)
 # cmake-format: on
 
+find_qt(COMPONENTS Core Widgets Charts)
 find_package(Librist QUIET)
 find_package(Libsrt QUIET)
 

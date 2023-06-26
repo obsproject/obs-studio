@@ -81,23 +81,25 @@ obs_to_mpegts_video_format(enum video_format format)
 		return AV_PIX_FMT_YUVA422P;
 	case VIDEO_FORMAT_YUVA:
 		return AV_PIX_FMT_YUVA444P;
-	case VIDEO_FORMAT_YA2L:
 #if LIBAVUTIL_BUILD >= AV_VERSION_INT(56, 31, 100)
+	case VIDEO_FORMAT_YA2L:
 		return AV_PIX_FMT_YUVA444P12LE;
-#else
-		return AV_PIX_FMT_NONE;
 #endif
 	case VIDEO_FORMAT_I010:
 		return AV_PIX_FMT_YUV420P10LE;
 	case VIDEO_FORMAT_P010:
 		return AV_PIX_FMT_P010LE;
+#if LIBAVUTIL_BUILD >= AV_VERSION_INT(57, 17, 100)
+	case VIDEO_FORMAT_P216:
+		return AV_PIX_FMT_P216LE;
+	case VIDEO_FORMAT_P416:
+		return AV_PIX_FMT_P416LE;
+#endif
 	case VIDEO_FORMAT_NONE:
 	case VIDEO_FORMAT_AYUV:
-		/* not supported by FFmpeg */
+	default:
 		return AV_PIX_FMT_NONE;
 	}
-
-	return AV_PIX_FMT_NONE;
 }
 
 static enum AVChromaLocation
@@ -1472,8 +1474,11 @@ struct obs_output_info mpegts_muxer = {
 	.get_properties = mpegts_properties,
 };
 
+extern void load_srt_stats(void);
+
 bool obs_module_load(void)
 {
 	obs_register_output(&mpegts_muxer);
+	load_srt_stats();
 	return true;
 }
