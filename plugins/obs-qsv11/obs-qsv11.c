@@ -1000,10 +1000,13 @@ static void *obs_qsv_create_tex(enum qsv_codec codec, obs_data_t *settings,
 	}
 
 	if (obs_encoder_scaling_enabled(encoder)) {
-		blog(LOG_INFO,
-		     ">>> encoder scaling active, fall back to old qsv encoder");
-		return obs_encoder_create_rerouted(encoder,
-						   (const char *)fallback_id);
+		if (!obs_encoder_gpu_scaling_enabled(encoder)) {
+			blog(LOG_INFO,
+			     ">>> encoder CPU scaling active, fall back to old qsv encoder");
+			return obs_encoder_create_rerouted(
+				encoder, (const char *)fallback_id);
+		}
+		blog(LOG_INFO, ">>> encoder GPU scaling active");
 	}
 
 	blog(LOG_INFO, ">>> new qsv encoder");

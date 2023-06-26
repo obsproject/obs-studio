@@ -184,6 +184,116 @@ static inline bool gpu_encode_available(const struct obs_encoder *encoder)
 	       (video->using_p010_tex || video->using_nv12_tex);
 }
 
+/**
+ * GPU based rescaling is currently implemented via core video mixes,
+ * i.e. a core mix with matching width/height/format/colorspace/range
+ * will be created if it doesn't exist already to generate encoder
+ * input
+ */
+static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
+{
+	struct obs_core_video_mix *mix = NULL;
+	bool create_mix = true;
+	struct obs_video_info ovi;
+	const struct video_output_info *info;
+
+	if (!encoder->media)
+		return;
+
+	info = video_output_get_info(encoder->media);
+
+	if (encoder->gpu_scale_type == OBS_SCALE_DISABLE)
+		return;
+
+	if (!encoder->scaled_height && !encoder->scaled_width)
+		return;
+
+	pthread_mutex_lock(&obs->video.mixes_mutex);
+	for (size_t i = 0; i < obs->video.mixes.num; i++) {
+		struct obs_core_video_mix *current = obs->video.mixes.array[i];
+		const struct video_output_info *voi =
+			video_output_get_info(current->video);
+		if (current->view != &obs->data.main_view)
+			continue;
+
+		if (voi->width != encoder->scaled_width ||
+		    voi->height != encoder->scaled_height)
+			continue;
+
+		if (voi->format != info->format ||
+		    voi->colorspace != info->colorspace ||
+		    voi->range != info->range)
+			continue;
+
+		current->encoder_refs += 1;
+		obs_encoder_set_video(encoder, current->video);
+		create_mix = false;
+		break;
+	}
+
+	if (!obs->video.main_mix) {
+		create_mix = false;
+	} else {
+		ovi = obs->video.main_mix->ovi;
+	}
+
+	pthread_mutex_unlock(&obs->video.mixes_mutex);
+
+	if (!create_mix)
+		return;
+
+	ovi.output_format = info->format;
+	ovi.colorspace = info->colorspace;
+	ovi.range = info->range;
+
+	ovi.output_height = encoder->scaled_height;
+	ovi.output_width = encoder->scaled_width;
+	ovi.scale_type = encoder->gpu_scale_type;
+
+	ovi.gpu_conversion = true;
+
+	mix = obs_create_video_mix(&ovi);
+	if (!mix)
+		return;
+
+	mix->encoder_only_mix = true;
+	mix->encoder_refs = 1;
+	mix->view = &obs->data.main_view;
+
+	pthread_mutex_lock(&obs->video.mixes_mutex);
+
+	// double check that nobody else added a matching mix while we've created our mix
+	for (size_t i = 0; i < obs->video.mixes.num; i++) {
+		struct obs_core_video_mix *current = obs->video.mixes.array[i];
+		const struct video_output_info *voi =
+			video_output_get_info(current->video);
+		if (current->view != &obs->data.main_view)
+			continue;
+
+		if (voi->width != encoder->scaled_width ||
+		    voi->height != encoder->scaled_height)
+			continue;
+
+		if (voi->format != info->format ||
+		    voi->colorspace != info->colorspace ||
+		    voi->range != info->range)
+			continue;
+
+		obs_encoder_set_video(encoder, current->video);
+		create_mix = false;
+		break;
+	}
+
+	if (!create_mix) {
+		obs_free_video_mix(mix);
+	} else {
+		da_push_back(obs->video.mixes, &mix);
+		obs_encoder_set_video(encoder, mix->video);
+	}
+
+	pthread_mutex_unlock(&obs->video.mixes_mutex);
+}
+
 static void add_connection(struct obs_encoder *encoder)
 {
 	if (encoder->info.type == OBS_ENCODER_AUDIO) {
@@ -459,6 +569,8 @@ static inline bool obs_encoder_initialize_internal(obs_encoder_t *encoder)
 
 	obs_encoder_shutdown(encoder);
 
+	maybe_set_up_gpu_rescale(encoder);
+
 	if (encoder->orig_info.create) {
 		can_reroute = true;
 		encoder->info = encoder->orig_info;
@@ -513,6 +625,31 @@ bool obs_encoder_initialize(obs_encoder_t *encoder)
 	return success;
 }
 
+/**
+ * free video mix if it's an encoder only video mix
+ * see `maybe_set_up_gpu_rescale`
+ */
+static void maybe_clear_encoder_core_video_mix(obs_encoder_t *encoder)
+{
+	pthread_mutex_lock(&obs->video.mixes_mutex);
+	for (size_t i = 0; i < obs->video.mixes.num; i++) {
+		struct obs_core_video_mix *mix = obs->video.mixes.array[i];
+		if (mix->video != encoder->media)
+			continue;
+
+		if (!mix->encoder_only_mix)
+			break;
+
+		obs_encoder_set_video(encoder, obs_get_video());
+		mix->encoder_refs -= 1;
+		if (mix->encoder_refs == 0) {
+			da_erase(obs->video.mixes, i);
+			obs_free_video_mix(mix);
+		}
+	}
+	pthread_mutex_unlock(&obs->video.mixes_mutex);
+}
+
 void obs_encoder_shutdown(obs_encoder_t *encoder)
 {
 	pthread_mutex_lock(&encoder->init_mutex);
@@ -523,6 +660,7 @@ void obs_encoder_shutdown(obs_encoder_t *encoder)
 		encoder->first_received = false;
 		encoder->offset_usec = 0;
 		encoder->start_ts = 0;
+		maybe_clear_encoder_core_video_mix(encoder);
 	}
 	obs_encoder_set_last_error(encoder, NULL);
 	pthread_mutex_unlock(&encoder->init_mutex);
@@ -710,6 +848,29 @@ void obs_encoder_set_scaled_size(obs_encoder_t *encoder, uint32_t width,
 	encoder->scaled_height = height;
 }
 
+void obs_encoder_set_gpu_scale_type(obs_encoder_t *encoder,
+				    enum obs_scale_type gpu_scale_type)
+{
+	if (!obs_encoder_valid(encoder, "obs_encoder_set_gpu_scale_type"))
+		return;
+	if (encoder->info.type != OBS_ENCODER_VIDEO) {
+		blog(LOG_WARNING,
+		     "obs_encoder_set_gpu_scale_type: "
+		     "encoder '%s' is not a video encoder",
+		     obs_encoder_get_name(encoder));
+		return;
+	}
+	if (encoder_active(encoder)) {
+		blog(LOG_WARNING,
+		     "encoder '%s': Cannot enable GPU scaling "
+		     "while the encoder is active",
+		     obs_encoder_get_name(encoder));
+		return;
+	}
+
+	encoder->gpu_scale_type = gpu_scale_type;
+}
+
 bool obs_encoder_scaling_enabled(const obs_encoder_t *encoder)
 {
 	if (!obs_encoder_valid(encoder, "obs_encoder_scaling_enabled"))
@@ -754,6 +915,36 @@ uint32_t obs_encoder_get_height(const obs_encoder_t *encoder)
 	return encoder->scaled_height != 0
 		       ? encoder->scaled_height
 		       : video_output_get_height(encoder->media);
+}
+
+bool obs_encoder_gpu_scaling_enabled(obs_encoder_t *encoder)
+{
+	if (!obs_encoder_valid(encoder, "obs_encoder_gpu_scaling_enabled"))
+		return 0;
+	if (encoder->info.type != OBS_ENCODER_VIDEO) {
+		blog(LOG_WARNING,
+		     "obs_encoder_gpu_scaling_enabled: "
+		     "encoder '%s' is not a video encoder",
+		     obs_encoder_get_name(encoder));
+		return 0;
+	}
+
+	return encoder->gpu_scale_type != OBS_SCALE_DISABLE;
+}
+
+enum obs_scale_type obs_encoder_get_scale_type(obs_encoder_t *encoder)
+{
+	if (!obs_encoder_valid(encoder, "obs_encoder_get_scale_type"))
+		return 0;
+	if (encoder->info.type != OBS_ENCODER_VIDEO) {
+		blog(LOG_WARNING,
+		     "obs_encoder_get_scale_type: "
+		     "encoder '%s' is not a video encoder",
+		     obs_encoder_get_name(encoder));
+		return 0;
+	}
+
+	return encoder->gpu_scale_type;
 }
 
 uint32_t obs_encoder_get_sample_rate(const obs_encoder_t *encoder)

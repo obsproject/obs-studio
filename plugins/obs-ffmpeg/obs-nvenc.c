@@ -452,8 +452,8 @@ static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings,
 	video_t *video = obs_encoder_video(enc->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
 
-	enc->cx = voi->width;
-	enc->cy = voi->height;
+	enc->cx = obs_encoder_get_width(enc->encoder);
+	enc->cy = obs_encoder_get_height(enc->encoder);
 
 	/* -------------------------- */
 	/* get preset                 */
@@ -1140,9 +1140,12 @@ static void *nvenc_create_base(enum codec_type codec, obs_data_t *settings,
 	}
 
 	if (obs_encoder_scaling_enabled(encoder)) {
-		blog(LOG_INFO,
-		     "[obs-nvenc] scaling enabled, falling back to ffmpeg");
-		goto reroute;
+		if (!obs_encoder_gpu_scaling_enabled(encoder)) {
+			blog(LOG_INFO,
+			     "[obs-nvenc] CPU scaling enabled, falling back to ffmpeg");
+			goto reroute;
+		}
+		blog(LOG_INFO, "[obs-nvenc] GPU scaling enabled");
 	}
 
 	if (!obs_p010_tex_active() && !obs_nv12_tex_active()) {
