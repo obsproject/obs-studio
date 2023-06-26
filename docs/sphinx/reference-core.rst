@@ -340,6 +340,8 @@ Libobs Objects
    Increments the source reference counter, use
    :c:func:`obs_source_release()` to release it when complete.
 
+   .. versionadded:: 29.1
+
 ---------------------
 
 .. function:: obs_source_t *obs_get_transition_by_name(const char *name)
@@ -357,6 +359,8 @@ Libobs Objects
 
    Increments the source reference counter, use
    :c:func:`obs_source_release()` to release it when complete.
+
+   .. versionadded:: 29.1
 
 ---------------------
 
@@ -579,6 +583,8 @@ Video, Audio, and Graphics
 
    Adds/removes a main rendered callback.  Allows using the result of
    the main stream/recording output.
+
+   .. versionadded:: 29.1
 
 ---------------------
 

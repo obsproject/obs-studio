@@ -400,7 +400,10 @@ static void ft2_source_update(void *data, obs_data_t *settings)
 		srcdata->log_lines = log_lines;
 		vbuf_needs_update = true;
 	}
-	srcdata->log_mode = chat_log_mode;
+	if (srcdata->log_mode != chat_log_mode) {
+		srcdata->log_mode = chat_log_mode;
+		vbuf_needs_update = true;
+	}
 
 	if (ft2_lib == NULL)
 		goto error;

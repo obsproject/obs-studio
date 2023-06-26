@@ -262,12 +262,14 @@ void OBSBasicSettings::SaveStream1Settings()
 		obs_data_set_bool(settings, "bwtest", false);
 	}
 
-	if (whip)
+	if (whip) {
+		obs_data_set_string(settings, "service", "WHIP");
 		obs_data_set_string(settings, "bearer_token",
 				    QT_TO_UTF8(ui->key->text()));
-	else
+	} else {
 		obs_data_set_string(settings, "key",
 				    QT_TO_UTF8(ui->key->text()));
+	}
 
 	OBSServiceAutoRelease newService = obs_service_create(
 		service_id, "default_service", settings, hotkeyData);
@@ -388,8 +390,8 @@ void OBSBasicSettings::LoadServices(bool showAll)
 		ui->service->addItem(name);
 
 	if (obs_is_output_protocol_registered("WHIP")) {
-		ui->service->insertItem(0, QTStr("WHIP"),
-					QVariant((int)ListOpt::WHIP));
+		ui->service->addItem(QTStr("WHIP"),
+				     QVariant((int)ListOpt::WHIP));
 	}
 
 	if (!showAll) {

@@ -1,29 +1,12 @@
-find_library(COCOA Cocoa)
-find_library(COREAUDIO CoreAudio)
-find_library(AUDIOTOOLBOX AudioToolbox)
-find_library(AUDIOUNIT AudioUnit)
-find_library(APPKIT AppKit)
-find_library(IOKIT IOKit)
-find_library(CARBON Carbon)
-
-mark_as_advanced(
-  COCOA
-  COREAUDIO
-  AUDIOTOOLBOX
-  AUDIOUNIT
-  APPKIT
-  IOKIT
-  CARBON)
-
 target_link_libraries(
   libobs
-  PRIVATE ${COCOA}
-          ${COREAUDIO}
-          ${AUDIOTOOLBOX}
-          ${AUDIOUNIT}
-          ${APPKIT}
-          ${IOKIT}
-          ${CARBON})
+  PRIVATE "$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,CoreAudio.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,AudioToolbox.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,AudioUnit.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,AppKit.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,IOKit.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,Carbon.framework>")
 
 target_sources(
   libobs
@@ -38,6 +21,8 @@ target_sources(
           util/threading-posix.c
           util/threading-posix.h
           util/apple/cfstring-utils.h)
+
+target_compile_options(libobs PUBLIC -Wno-strict-prototypes)
 
 set_property(SOURCE util/platform-cocoa.m obs-cocoa.m PROPERTY COMPILE_FLAGS -fobjc-arc)
 set_property(TARGET libobs PROPERTY FRAMEWORK TRUE)

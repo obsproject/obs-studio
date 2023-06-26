@@ -121,6 +121,10 @@ private slots:
 	void CopyFilter();
 	void PasteFilter();
 
+	void FiltersMoved(const QModelIndex &srcParent, int srcIdxStart,
+			  int srcIdxEnd, const QModelIndex &dstParent,
+			  int dstIdx);
+
 public:
 	OBSBasicFilters(QWidget *parent, OBSSource source_);
 	~OBSBasicFilters();

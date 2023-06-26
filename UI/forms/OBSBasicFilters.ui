@@ -72,6 +72,15 @@
             <property name="spacing">
              <number>1</number>
             </property>
+            <property name="dragEnabled">
+             <bool>true</bool>
+            </property>
+            <property name="dragDropMode">
+             <enum>QAbstractItemView::InternalMove</enum>
+            </property>
+            <property name="defaultDropAction">
+             <enum>Qt::TargetMoveAction</enum>
+            </property>
            </widget>
           </item>
           <item>
@@ -284,6 +293,15 @@
             </property>
             <property name="spacing">
              <number>1</number>
+            </property>
+            <property name="dragEnabled">
+             <bool>true</bool>
+            </property>
+            <property name="dragDropMode">
+             <enum>QAbstractItemView::InternalMove</enum>
+            </property>
+            <property name="defaultDropAction">
+             <enum>Qt::TargetMoveAction</enum>
             </property>
            </widget>
           </item>

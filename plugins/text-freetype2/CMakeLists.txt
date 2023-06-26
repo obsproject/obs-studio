@@ -24,11 +24,9 @@ if(OS_WINDOWS)
   target_link_options(text-freetype2 PRIVATE /IGNORE:4098 /IGNORE:4099)
 elseif(OS_MACOS)
   find_package(Iconv REQUIRED)
-  find_library(COCOA Cocoa)
-  mark_as_advanced(COCOA)
 
   target_sources(text-freetype2 PRIVATE find-font.c find-font-cocoa.m find-font-iconv.c)
-  target_link_libraries(text-freetype2 PRIVATE Iconv::Iconv ${COCOA})
+  target_link_libraries(text-freetype2 PRIVATE Iconv::Iconv "$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>")
 elseif(OS_LINUX OR OS_FREEBSD)
   find_package(Fontconfig REQUIRED)
 

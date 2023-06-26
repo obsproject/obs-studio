@@ -56,6 +56,9 @@ extern void media_playback_play(media_playback_t *mp, bool looping,
 				bool reconnecting);
 extern void media_playback_play_pause(media_playback_t *mp, bool pause);
 extern void media_playback_stop(media_playback_t *mp);
+extern void media_playback_set_looping(media_playback_t *mp, bool looping);
+extern void media_playback_set_is_linear_alpha(media_playback_t *mp,
+					       bool is_linear_alpha);
 extern void media_playback_preload_frame(media_playback_t *mp);
 extern int64_t media_playback_get_current_time(media_playback_t *mp);
 extern void media_playback_seek(media_playback_t *mp, int64_t pos);

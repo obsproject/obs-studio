@@ -361,7 +361,7 @@ Functions
 
 .. function:: void obs_frontend_set_current_scene_collection(const char *collection)
 
-   :param profile: Name of the scene collection to activate
+   :param collection: Name of the scene collection to activate
 
 ---------------------------------------
 
@@ -848,6 +848,8 @@ Functions
 
    :param item: The sceneitem to open the edit transform window of
 
+   .. versionadded:: 29.1
+
 ---------------------------------------
 
 .. function:: char *obs_frontend_get_current_record_output_path(void)
@@ -906,3 +908,5 @@ Functions
    :param redo_data: String with data for the redo callback
    :param repeatable: Allow multiple actions with the same name to be merged to 1 undo redo action.
                       This uses the undo action from the first and the redo action from the last action.
+
+   .. versionadded:: 29.1

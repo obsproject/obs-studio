@@ -23,13 +23,13 @@ if(OS_WINDOWS)
 
   target_sources(coreaudio-encoder PRIVATE coreaudio-encoder.rc windows-imports.h)
 elseif(OS_MACOS)
-  find_library(COREFOUNDATION CoreFoundation)
-  find_library(COREAUDIO CoreAudio)
-  find_library(AUDIOTOOLBOX AudioToolbox)
-  mark_as_advanced(AUDIOTOOLBOX COREAUDIO COREFOUNDATION)
-
-  target_link_libraries(coreaudio-encoder PRIVATE ${COREFOUNDATION} ${COREAUDIO} ${AUDIOTOOLBOX})
-
+  # cmake-format: off
+  target_link_libraries(
+    coreaudio-encoder
+    PRIVATE "$<LINK_LIBRARY:FRAMEWORK,CoreFoundation.framework>"
+            "$<LINK_LIBRARY:FRAMEWORK,CoreAudio.framework>"
+            "$<LINK_LIBRARY:FRAMEWORK,AudioToolbox.framework>")
+  # cmake-format: on
 endif()
 
 set_target_properties_obs(coreaudio-encoder PROPERTIES FOLDER plugins PREFIX "")

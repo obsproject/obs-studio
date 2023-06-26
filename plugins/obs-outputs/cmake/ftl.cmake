@@ -48,15 +48,15 @@ get_target_property(target_sources ftl-sdk INTERFACE_SOURCES)
 list(
   APPEND
   silence_ftl
-  -Wno-error=unused-parameter
-  -Wno-error=unused-variable
-  -Wno-error=sign-compare
-  -Wno-error=pointer-sign
-  -Wno-error=int-conversion)
+  -Wno-unused-parameter
+  -Wno-unused-variable
+  -Wno-sign-compare
+  -Wno-pointer-sign
+  -Wno-int-conversion)
 
 if(CMAKE_C_COMPILER_ID STREQUAL AppleClang OR CMAKE_C_COMPILER_ID STREQUAL Clang)
-  list(APPEND silence_ftl -Wno-error=incompatible-function-pointer-types -Wno-error=implicit-int-conversion
-       -Wno-error=shorten-64-to-32 -Wno-error=macro-redefined)
+  list(APPEND silence_ftl -Wno-incompatible-function-pointer-types -Wno-implicit-int-conversion -Wno-shorten-64-to-32
+       -Wno-macro-redefined)
 elseif(CMAKE_C_COMPILER_ID STREQUAL GNU)
   list(APPEND silence_ftl -Wno-error=extra -Wno-error=incompatible-pointer-types -Wno-error=int-conversion
        -Wno-error=builtin-macro-redefined)

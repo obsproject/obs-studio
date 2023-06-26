@@ -954,6 +954,8 @@ General Source Functions
 
    :return: The UUID of the source
 
+   .. versionadded:: 29.1
+
 ---------------------
 
 .. function:: void obs_source_set_name(obs_source_t *source, const char *name)

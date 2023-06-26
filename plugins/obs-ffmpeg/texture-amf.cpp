@@ -454,12 +454,12 @@ static inline void check_preset_compatibility(amf_base *enc,
 	 * throughput, switch to a lower preset. */
 
 	if (astrcmpi(preset, "highQuality") == 0) {
-		if (enc->max_throughput - enc->requested_throughput <
-		    enc->throughput) {
+		if (!enc->max_throughput) {
 			preset = "quality";
 			set_opt(QUALITY_PRESET, get_preset(enc, preset));
 		} else {
-			if (enc->max_throughput < enc->throughput) {
+			if (enc->max_throughput - enc->requested_throughput <
+			    enc->throughput) {
 				preset = "quality";
 				refresh_throughput_caps(enc, preset);
 			}

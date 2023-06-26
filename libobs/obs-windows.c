@@ -133,6 +133,31 @@ static void log_available_memory(void)
 	     (DWORD)(ms.ullAvailPhys / 1048576), note);
 }
 
+static void log_lenovo_vantage(void)
+{
+	SC_HANDLE manager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
+
+	if (!manager)
+		return;
+
+	SC_HANDLE service =
+		OpenService(manager, L"FBNetFilter", SERVICE_QUERY_STATUS);
+
+	if (service) {
+		blog(LOG_WARNING,
+		     "Lenovo Vantage / Legion Edge is installed. The \"Network Boost\" "
+		     "feature must be disabled when streaming with OBS.");
+		CloseServiceHandle(service);
+	}
+
+	CloseServiceHandle(manager);
+}
+
+static void log_conflicting_software(void)
+{
+	log_lenovo_vantage();
+}
+
 extern const char *get_win_release_id();
 
 static void log_windows_version(void)
@@ -382,6 +407,7 @@ void log_system_info(void)
 	log_admin_status();
 	log_gaming_features();
 	log_security_products();
+	log_conflicting_software();
 }
 
 struct obs_hotkeys_platform {

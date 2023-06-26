@@ -1,5 +1,7 @@
 # OBS CMake common CPack module
 
+include_guard(GLOBAL)
+
 # Set default global CPack variables
 set(CPACK_PACKAGE_NAME obs-studio)
 set(CPACK_PACKAGE_VENDOR "${OBS_WEBSITE}")

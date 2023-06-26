@@ -344,6 +344,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	qRegisterMetaTypeStreamOperators<std::vector<std::shared_ptr<OBSSignal>>>(
 		"std::vector<std::shared_ptr<OBSSignal>>");
 	qRegisterMetaTypeStreamOperators<OBSScene>("OBSScene");
+	qRegisterMetaTypeStreamOperators<OBSSource>("OBSSource");
 #endif
 
 	ui->scenes->setAttribute(Qt::WA_MacShowFocusRect, false);
@@ -8370,8 +8371,10 @@ void OBSBasic::GetConfigFPS(uint32_t &num, uint32_t &den) const
 		GetFPSInteger(num, den);
 	else if (type == 2) //"Fraction"
 		GetFPSFraction(num, den);
-	else if (false) //"Nanoseconds", currently not implemented
-		GetFPSNanoseconds(num, den);
+	/*
+	 * 	else if (false) //"Nanoseconds", currently not implemented
+	 *		GetFPSNanoseconds(num, den);
+	 */
 	else
 		GetFPSCommon(num, den);
 }
@@ -9473,11 +9476,13 @@ void OBSBasic::on_toggleListboxToolbars_toggled(bool visible)
 void OBSBasic::ShowContextBar()
 {
 	on_toggleContextBar_toggled(true);
+	ui->toggleContextBar->setChecked(true);
 }
 
 void OBSBasic::HideContextBar()
 {
 	on_toggleContextBar_toggled(false);
+	ui->toggleContextBar->setChecked(false);
 }
 
 void OBSBasic::on_toggleContextBar_toggled(bool visible)

@@ -1,14 +1,4 @@
-cmake_minimum_required(VERSION 3.22...3.25)
-
-legacy_check()
-
-find_library(AVFOUNDATION AVFoundation)
-find_library(COCOA Cocoa)
-find_library(COREFOUNDATION CoreFoundation)
-find_library(COREMEDIA CoreMedia)
-find_library(COREVIDEO CoreVideo)
-find_library(COREMEDIAIO CoreMediaIO)
-mark_as_advanced(AVFOUNDATION COCOA COREFOUNDATION COREMEDIA COREMEDIAIO COREVIDEO)
+cmake_minimum_required(VERSION 3.24...3.25)
 
 add_library(mac-avcapture MODULE)
 add_library(OBS::avcapture ALIAS mac-avcapture)
@@ -22,12 +12,12 @@ endif()
 target_link_libraries(
   mac-avcapture
   PRIVATE OBS::libobs
-          ${AVFOUNDATION}
-          ${COCOA}
-          ${COREFOUNDATION}
-          ${COREMEDIA}
-          ${COREVIDEO}
-          ${COREMEDIAIO})
+          "$<LINK_LIBRARY:FRAMEWORK,AVFoundation.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,CoreFoundation.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,CoreMedia.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,CoreVideo.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,CoreMediaIO.framework>")
 
 set_target_properties_obs(
   mac-avcapture
