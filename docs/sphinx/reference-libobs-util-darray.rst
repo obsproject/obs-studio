@@ -11,7 +11,7 @@ Dynamically resizing arrays (a C equivalent to std::vector).
 
    The base dynamic array structure.
 
-.. :c:macro:: DARRAY(type)
+.. macro:: DARRAY(type)
 
    Macro for a dynamic array based upon an actual type.  Use this with
    da_* macros.
