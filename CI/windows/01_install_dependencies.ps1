@@ -31,7 +31,7 @@ Function Install-obs-deps {
     if (!(Test-Path "${DepsBuildDir}/windows-deps-${Version}-${ArchSuffix}")) {
 
         Write-Step "Download..."
-        curl.exe -Lf "https://github.com/obsproject/obs-deps/releases/download/${Version}/windows-deps-${Version}-${ArchSuffix}.zip" -o "windows-deps-${Version}-${ArchSuffix}.zip" $(if ($Quiet.isPresent) { "-s" })
+        curl.exe -Lf "https://github.com/obsproject/sean-der/releases/download/${Version}/windows-deps-${Version}-${ArchSuffix}.zip" -o "windows-deps-${Version}-${ArchSuffix}.zip" $(if ($Quiet.isPresent) { "-s" })
 
         Write-Step "Unpack..."
 
@@ -55,7 +55,7 @@ function Install-qt-deps {
     if (!(Test-Path "${DepsBuildDir}/windows-deps-${Version}-${ArchSuffix}/mkspecs")) {
 
         Write-Step "Download..."
-        curl.exe -Lf "https://github.com/obsproject/obs-deps/releases/download/${Version}/windows-deps-qt6-${Version}-${ArchSuffix}.zip" -o "windows-deps-qt6-${Version}-${ArchSuffix}.zip" $(if ($Quiet.isPresent) { "-s" })
+        curl.exe -Lf "https://github.com/obsproject/sean-der/releases/download/${Version}/windows-deps-qt6-${Version}-${ArchSuffix}.zip" -o "windows-deps-qt6-${Version}-${ArchSuffix}.zip" $(if ($Quiet.isPresent) { "-s" })
 
         Write-Step "Unpack..."
 

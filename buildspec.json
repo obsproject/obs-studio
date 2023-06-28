@@ -1,25 +1,25 @@
 {
     "dependencies": {
         "prebuilt": {
-            "version": "2023-06-22",
-            "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
+            "version": "2023-06-29",
+            "baseUrl": "https://github.com/obsproject/sean-der/releases/download",
             "label": "Pre-Built obs-deps",
             "hashes": {
-                "macos-universal": "a0d2e03f0ea79681634c31627430a220d9b62113d6ff58174d0bdab6fafdd32b",
-                "windows-x64": "1b12e86e2d62a97a889866d66b95fe47ddc6f7fa9b13e88aedfab4ea9e298ea2",
-                "linux-x86_64": "1b82ab4247bc2730ae84caa5a009e76637eac77b05bfb4b4a2bae610e7a75262"
+                "macos-universal": "dec117242794192862ca7af1874ffefc38f1b8825bf3bfdf74a9270f96cf507e",
+                "windows-x64": "91efb294b60ca878595425655ef1318c352194dac10b3bf02da7e9f7d77cd0c3",
+                "linux-x86_64": "1562f7a1aa22a844cf1416584a0c8a95b812b3f8a1ccfd71584fedb96532c91a"
             }
         },
         "qt6": {
-            "version": "2023-06-22",
-            "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
+            "version": "2023-06-29",
+            "baseUrl": "https://github.com/obsproject/sean-der/releases/download",
             "label": "Pre-Built Qt6",
             "hashes": {
-                "macos-universal": "f890d258a1afa7ba409b79c8ee55d53155e5c72105b8b18a3f52047ee70fc0aa",
-                "windows-x64": "1907fbcbcef69527154b29316c425b0885afb77ad69a9a2af7a1471d79512195"
+                "macos-universal": "efeff7985622d200060d9d453f3438618d4bbb1ac65bbad4df171b758bcb4603",
+                "windows-x64": "e7aa3ae65062b2c7e4d86c1c5865d40f723b115e1f44c816865059ac9bb3ae88"
             },
             "debugSymbols": {
-                "windows-x64": "b461a7ade0c099505baea857fa5b98c4f8e9b702681be019ea354735d062e065"
+                "windows-x64": "411ff9916ecea2d32c1e689bc8d8780caebba8db32cc2e5b50e75e515df0959d"
             }
         },
         "cef": {

@@ -448,7 +448,7 @@ void register_whip_output()
 	struct obs_output_info info = {};
 
 	info.id = "whip_output";
-	info.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_SERVICE;
+	info.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_SERVICE | OBS_OUTPUT_MULTI_TRACK_AV;
 	info.get_name = [](void *) -> const char * {
 		return obs_module_text("Output.Name");
 	};
