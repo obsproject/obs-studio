@@ -1586,6 +1586,19 @@ Filters
 
 ---------------------
 
+.. function:: void obs_source_filter_set_index(obs_source_t *source, obs_source_t *filter, size_t index)
+
+   Moves a filter to the specified index in the filters array.
+
+   :param index: | The index to move the filter to.
+
+---------------------
+
+.. function:: int obs_source_filter_get_index(obs_source_t *source, obs_source_t *filter)
+
+   Gets the index of the specified filter.
+
+   :return: Index of the filter or -1 if it is invalid/not found.
 
 Functions used by filters
 -------------------------
