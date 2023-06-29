@@ -33,8 +33,15 @@ if(CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION VERSION_LESS 10.0.20348)
                       "Please download and install the most recent Windows SDK.")
 endif()
 
+set(_obs_msvc_c_options /Brepro /MP /permissive- /Zc:__cplusplus /Zc:preprocessor)
+
+set(_obs_msvc_cpp_options /Brepro /MP /permissive- /Zc:__cplusplus /Zc:preprocessor)
+
 add_compile_options(
-  /W3 /utf-8 "$<$<COMPILE_LANG_AND_ID:C,MSVC>:/MP>" "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/MP>"
+  /W3
+  /utf-8
+  "$<$<COMPILE_LANG_AND_ID:C,MSVC>:${_obs_msvc_c_options}>"
+  "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:${_obs_msvc_cpp_options}>"
   "$<$<COMPILE_LANG_AND_ID:C,Clang>:${_obs_clang_c_options}>"
   "$<$<COMPILE_LANG_AND_ID:CXX,Clang>:${_obs_clang_cxx_options}>")
 
@@ -42,7 +49,7 @@ add_compile_definitions(UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO
                         $<$<CONFIG:DEBUG>:_DEBUG>)
 
 add_link_options("$<$<NOT:$<CONFIG:Debug>>:/OPT\:REF>" "$<$<CONFIG:Debug>:/INCREMENTAL\:NO>"
-                 "$<$<CONFIG:RelWithDebInfo>:/INCREMENTAL\:NO>" "$<$<CONFIG:RelWithDebInfo>:/OPT\:ICF>")
+                 "$<$<CONFIG:RelWithDebInfo>:/INCREMENTAL\:NO>" "$<$<CONFIG:RelWithDebInfo>:/OPT\:ICF>" /Brepro)
 
 if(CMAKE_COMPILE_WARNING_AS_ERROR)
   add_link_options(/WX)
