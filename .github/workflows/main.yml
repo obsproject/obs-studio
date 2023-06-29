@@ -6,6 +6,7 @@ on:
     branches:
       - master
       - 'release/**'
+      - plugin
     tags: ['*']
   pull_request:
     paths-ignore: ['**.md']
