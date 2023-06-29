@@ -30,7 +30,7 @@
 
 #define ConfigSection "simulcast"
 
-SimulcastDockWidget::SimulcastDockWidget(QWidget *parent)
+SimulcastDockWidget::SimulcastDockWidget(QWidget * /*parent*/)
 {
 	QGridLayout *dockLayout = new QGridLayout(this);
 	dockLayout->setAlignment(Qt::AlignmentFlag::AlignTop);
