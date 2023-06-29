@@ -149,7 +149,7 @@ jobs:
             CERTIFICATE_PATH="${RUNNER_TEMP}/build_certificate.p12"
             KEYCHAIN_PATH="${RUNNER_TEMP}/app-signing.keychain-db"
 
-            echo -n "${MACOS_SIGNING_CERT}" | base64 --decode --output "${CERTIFICATE_PATH}"
+            echo -n "${MACOS_SIGNING_CERT}" | base64 --decode --output="${CERTIFICATE_PATH}"
 
             : "${MACOS_KEYCHAIN_PASSWORD:="$(echo ${RANDOM} | sha1sum | head -c 32)"}"
 
@@ -175,7 +175,7 @@ jobs:
 
           if [[ "${MACOS_PROVISIONING_PROFILE}" ]]; then
             PROFILE_PATH="${RUNNER_TEMP}/build_profile.provisionprofile"
-            echo -n "${MACOS_PROVISIONING_PROFILE}" | base64 --decode --output "${PROFILE_PATH}"
+            echo -n "${MACOS_PROVISIONING_PROFILE}" | base64 --decode --output="${PROFILE_PATH}"
 
             mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
             security cms -D -i "${PROFILE_PATH}" -o "${RUNNER_TEMP}/build_profile.plist"
@@ -430,7 +430,7 @@ jobs:
             CERTIFICATE_PATH="${RUNNER_TEMP}/build_certificate.p12"
             KEYCHAIN_PATH="${RUNNER_TEMP}/app-signing.keychain-db"
 
-            echo -n "${MACOS_SIGNING_CERT}" | base64 --decode --output "${CERTIFICATE_PATH}"
+            echo -n "${MACOS_SIGNING_CERT}" | base64 --decode --output="${CERTIFICATE_PATH}"
 
             : "${MACOS_KEYCHAIN_PASSWORD:="$(echo ${RANDOM} | sha1sum | head -c 32)"}"
 
@@ -456,7 +456,7 @@ jobs:
 
           if [[ "${MACOS_PROVISIONING_PROFILE}" ]]; then
             PROFILE_PATH="${RUNNER_TEMP}/build_profile.provisionprofile"
-            echo -n "${MACOS_PROVISIONING_PROFILE}" | base64 --decode --output "${PROFILE_PATH}"
+            echo -n "${MACOS_PROVISIONING_PROFILE}" | base64 --decode --output="${PROFILE_PATH}"
 
             mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
             security cms -D -i "${PROFILE_PATH}" -o "${RUNNER_TEMP}/build_profile.plist"
