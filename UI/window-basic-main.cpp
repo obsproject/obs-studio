@@ -9638,6 +9638,16 @@ void OBSBasic::ToggleShowHide()
 		EnumDialogs();
 		if (!modalDialogs.isEmpty() || !visMsgBoxes.isEmpty())
 			return;
+
+#ifdef _WIN32
+		/* Cleans the SetDisplayAffinity setting property */
+		HWND hwnd = (HWND)this->winId();
+		DWORD curAffinity;
+		if (GetWindowDisplayAffinity(hwnd, &curAffinity)) {
+			if (curAffinity != WDA_NONE)
+				SetWindowDisplayAffinity(hwnd, WDA_NONE);
+		}
+#endif
 	}
 	SetShowing(!showing);
 }
