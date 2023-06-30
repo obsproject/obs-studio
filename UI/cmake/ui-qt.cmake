@@ -1,5 +1,5 @@
 # cmake-format: off
-find_package(Qt6 REQUIRED Widgets Network Svg Xml)
+find_package(Qt6 REQUIRED Widgets Network Svg Xml Charts)
 # cmake-format: on
 
 if(OS_LINUX
@@ -8,7 +8,7 @@ if(OS_LINUX
   find_package(Qt6 REQUIRED Gui)
 endif()
 
-target_link_libraries(obs-studio PRIVATE Qt::Widgets Qt::Svg Qt::Xml Qt::Network)
+target_link_libraries(obs-studio PRIVATE Qt::Widgets Qt::Svg Qt::Xml Qt::Network Qt::Charts)
 
 set_target_properties(
   obs-studio

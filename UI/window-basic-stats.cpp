@@ -23,6 +23,12 @@ void OBSBasicStats::OBSFrontendEvent(enum obs_frontend_event event, void *ptr)
 	OBSBasicStats *stats = reinterpret_cast<OBSBasicStats *>(ptr);
 
 	switch (event) {
+	case OBS_FRONTEND_EVENT_STREAMING_STARTED:
+		stats->chart->connect();
+		break;
+	case OBS_FRONTEND_EVENT_STREAMING_STOPPED:
+		stats->chart->disconnect();
+		break;
 	case OBS_FRONTEND_EVENT_RECORDING_STARTED:
 		stats->StartRecTimeLeft();
 		break;
@@ -34,7 +40,6 @@ void OBSBasicStats::OBSFrontendEvent(enum obs_frontend_event event, void *ptr)
 		// window is being cleaned up. The closable stats window is
 		// already gone by this point as it's deleted on close.
 		obs_frontend_remove_event_callback(OBSFrontendEvent, stats);
-		break;
 	default:
 		break;
 	}
@@ -63,6 +68,7 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closable)
 {
 	QVBoxLayout *mainLayout = new QVBoxLayout();
 	QGridLayout *topLayout = new QGridLayout();
+	QVBoxLayout *chartLayout = new QVBoxLayout();
 	outputLayout = new QGridLayout();
 
 	bitrates.reserve(REC_TIME_LEFT_INTERVAL / TIMER_INTERVAL);
@@ -118,8 +124,11 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closable)
 	if (closable)
 		closeButton = new QPushButton(QTStr("Close"));
 	QPushButton *resetButton = new QPushButton(QTStr("Reset"));
+	QPushButton *showGraphs =
+		new QPushButton(QTStr("Basic.Stats.Graphs.Show.Hide"));
 	QHBoxLayout *buttonLayout = new QHBoxLayout;
 	buttonLayout->addStretch();
+	buttonLayout->addWidget(showGraphs);
 	buttonLayout->addWidget(resetButton);
 	if (closable)
 		buttonLayout->addWidget(closeButton);
@@ -158,9 +167,51 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closable)
 	scrollArea->setWidgetResizable(true);
 
 	/* --------------------------------------------- */
+	QLabel *chartGroupLabel = new QLabel(QTStr("Basic.Stats.Graphs"));
+	chartGroupLabel->setStyleSheet("font-weight: bold");
+	QLabel *timeLabel = new QLabel(QTStr("Basic.Stats.Time.Selector"));
+	timeLabel->setStyleSheet("font-weight: bold");
+	timeBox = new QComboBox();
+	timeBox->addItem(QTStr("Basic.Stats.Time.Selector.MN"),
+			 (int)OBSCHART_TIME_MN);
+	timeBox->addItem(QTStr("Basic.Stats.Time.Selector.3MN"),
+			 (int)OBSCHART_TIME_3MN);
+	timeBox->addItem(QTStr("Basic.Stats.Time.Selector.5MN"),
+			 (int)OBSCHART_TIME_5MN);
+	timeBox->addItem(QTStr("Basic.Stats.Time.Selector.10MN"),
+			 (int)OBSCHART_TIME_10MN);
+	timeBox->addItem(QTStr("Basic.Stats.Time.Selector.HR"),
+			 (int)OBSCHART_TIME_HR);
+	timeBox->addItem(QTStr("Basic.Stats.Time.Selector.2HR"),
+			 (int)OBSCHART_TIME_2HR);
+	timeBox->addItem(QTStr("Basic.Stats.Time.Selector.4HR"),
+			 (int)OBSCHART_TIME_4HR);
+	connect(timeBox, &QComboBox::currentIndexChanged, this,
+		&OBSBasicStats::timeBoxItemChanged);
+	timeGroupBox = new QGroupBox();
+	QGridLayout *timeLayout = new QGridLayout(timeGroupBox);
+
+	chart = new OBSStatsChart();
+	QChartView *chartView = new QChartView(chart);
+	chartView->setRenderHint(QPainter::Antialiasing);
+	chartView->setMinimumSize(600, 300);
+	chartView->setRubberBand(QChartView::VerticalRubberBand);
+	chartView->setToolTip(QTStr("Basic.Stats.Graph.Tooltip"));
+	chartView->setToolTipDuration(2000);
+	timeLayout->addWidget(chartGroupLabel, 0, 0, 1, 2, Qt::AlignVCenter);
+	timeLayout->addWidget(chartView, 1, 0, 1, 5,
+			      Qt::AlignVCenter | Qt::AlignLeft);
+	timeLayout->addWidget(timeLabel, 2, 1, 1, 1,
+			      Qt::AlignVCenter | Qt::AlignRight);
+	timeLayout->addWidget(timeBox, 2, 2, 1, 1,
+			      Qt::AlignVCenter | Qt::AlignLeft);
+	chartLayout->addWidget(timeGroupBox);
+
+	/* --------------------------------------------- */
 
 	mainLayout->addLayout(topLayout);
 	mainLayout->addWidget(scrollArea);
+	mainLayout->addLayout(chartLayout);
 	mainLayout->addLayout(buttonLayout);
 	setLayout(mainLayout);
 
@@ -169,7 +220,8 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closable)
 		connect(closeButton, &QPushButton::clicked,
 			[this]() { close(); });
 	connect(resetButton, &QPushButton::clicked, [this]() { Reset(); });
-
+	connect(showGraphs, &QPushButton::clicked,
+		[this]() { ToggleGraphs(); });
 	delete shortcutFilter;
 	shortcutFilter = CreateShortcutFilter();
 	installEventFilter(shortcutFilter);
@@ -439,6 +491,7 @@ void OBSBasicStats::Update()
 		long double kbps = outputLabels[1].kbps;
 		bitrates.push_back(kbps);
 	}
+	chart->output = strOutput;
 }
 
 void OBSBasicStats::StartRecTimeLeft()
@@ -499,6 +552,16 @@ void OBSBasicStats::Reset()
 	outputLabels[0].Reset(strOutput);
 	outputLabels[1].Reset(recOutput);
 	Update();
+	if (obs_frontend_streaming_active()) {
+		chart->disconnect();
+		chart->connect();
+	}
+}
+
+void OBSBasicStats::ToggleGraphs()
+{
+	bool is_visible = timeGroupBox->isVisible();
+	timeGroupBox->setVisible(!is_visible);
 }
 
 void OBSBasicStats::OutputLabels::Update(obs_output_t *output, bool rec)
@@ -612,4 +675,205 @@ void OBSBasicStats::showEvent(QShowEvent *)
 void OBSBasicStats::hideEvent(QHideEvent *)
 {
 	timer.stop();
+}
+
+void OBSBasicStats::timeBoxItemChanged(int index)
+{
+	int time_mn = timeBox->itemData(index).toInt();
+	chart->changeTimeSpan(time_mn);
+}
+
+OBSStatsChart::OBSStatsChart(QGraphicsItem *parent, Qt::WindowFlags wFlags)
+	: QChart(QChart::ChartTypeCartesian, parent, wFlags),
+	  bitrate_series(new QSplineSeries),
+	  dropped_series(new QSplineSeries),
+	  dummy_series(new QLineSeries),
+	  m_axisX(new QValueAxis()),
+	  m_axisY(new QValueAxis()),
+	  m_axisZ(new QValueAxis()),
+	  m_axisT(new QDateTimeAxis()),
+	  m_x(0),
+	  m_y(0),
+	  m_t(0),
+	  time_span(1),
+	  output(nullptr)
+{
+	QPen red(Qt::red);
+	QPen green(Qt::green);
+	QPen blue(Qt::blue);
+	red.setWidth(3);
+	green.setWidth(3);
+	blue.setWidth(3);
+	bitrate_series->setPen(red);
+	dropped_series->setPen(blue);
+
+	bitrate_series->setName(QTStr("Basic.Stats.Bitrate"));
+	dropped_series->setName(QTStr("Basic.Stats.DroppedFrames"));
+
+	addSeries(dropped_series);
+	addSeries(bitrate_series);
+	addSeries(dummy_series);
+
+	addAxis(m_axisX, Qt::AlignTop);
+	addAxis(m_axisY, Qt::AlignLeft);
+	addAxis(m_axisZ, Qt::AlignRight);
+	addAxis(m_axisT, Qt::AlignBottom);
+	m_axisX->setVisible(false);
+
+	bitrate_series->attachAxis(m_axisX);
+	bitrate_series->attachAxis(m_axisY);
+	dummy_series->attachAxis(m_axisT);
+	dummy_series->attachAxis(m_axisY);
+	dummy_series->hide();
+	dropped_series->attachAxis(m_axisX);
+	dropped_series->attachAxis(m_axisZ);
+
+	m_axisX->setTickCount(5);
+	m_axisX->setRange(0, 1);
+	m_axisY->setRange(0, 10000);
+	m_axisY->setTitleText(QTStr("Basic.Stats.Bitrate.kbps"));
+	m_axisZ->setRange(0, 10);
+	m_axisZ->setTitleText(QTStr("Basic.Stats.Dropped.Frames"));
+
+	m_axisT->setTickCount(5);
+	m_axisT->setFormat("hh:mm:ss");
+	m_axisT->setTitleText(QTStr("Basic.Stats.Time.HMS"));
+
+	QTime tm = QTime::currentTime();
+	QTime tM = tm.addSecs(60);
+	QDate date = QDate::currentDate();
+	QDateTime min;
+	min.setDate(date);
+	min.setTime(tm);
+	QDateTime max;
+	max.setDate(date);
+	max.setTime(tM);
+
+	m_axisT->setRange(min, max);
+
+	m_timer.start();
+}
+
+void OBSStatsChart::connect()
+{
+	// Reset the chart when there's a stream starting.
+	m_axisX->setTickCount(5);
+	m_axisX->setRange(0, 60 * time_span);
+	m_axisY->setRange(0, 10000);
+	m_axisZ->setRange(0, 10);
+	m_x = 0;
+	m_y = 0;
+	m_t = 0;
+	bitrate_series->clear();
+	dropped_series->clear();
+	first_total = obs_output_get_total_frames(output);
+	first_dropped = obs_output_get_frames_dropped(output);
+
+	QTime tm = QTime::currentTime();
+	QTime tM = tm.addSecs(60);
+	QDate date = QDate::currentDate();
+	QDateTime min;
+	min.setDate(date);
+	min.setTime(tm);
+	QDateTime max;
+	max.setDate(date);
+	max.setTime(tM);
+	m_axisT->setRange(min, max);
+
+	// Refresh the chart every second.
+	QObject::connect(&m_timer, &QTimer::timeout, this,
+			 &OBSStatsChart::handleTimeout);
+	m_timer.setInterval(1000);
+}
+
+void OBSStatsChart::disconnect()
+{
+	QObject::disconnect(&m_timer, &QTimer::timeout, this,
+			    &OBSStatsChart::handleTimeout);
+}
+
+void OBSStatsChart::changeTimeSpan(int time_mn)
+{
+	time_span = time_mn;
+	m_axisX->setRange(m_axisX->max() - time_span * 60, m_axisX->max());
+	QDateTime max = m_axisT->max();
+	QDate date = QDate::currentDate();
+	QDateTime min;
+	min.setDate(date);
+	QTime tm = max.time().addSecs(-60 * time_span);
+	min.setTime(tm);
+	m_axisT->setRange(min, max);
+}
+
+OBSStatsChart::~OBSStatsChart() {}
+
+void OBSStatsChart::handleTimeout()
+{
+	// The real width is divided in 60 slots per minute.
+	qreal slide_x = plotArea().width() / (60 * time_span);
+	qreal y = 1;
+	// Retrieve data from output.
+	uint64_t totalBytes = output ? obs_output_get_total_bytes(output) : 0;
+	uint64_t curTime = os_gettime_ns();
+	uint64_t bytesSent = totalBytes;
+
+	if (bytesSent < lastBytesSent)
+		bytesSent = 0;
+	if (bytesSent == 0)
+		lastBytesSent = 0;
+
+	uint64_t bitsBetween = (bytesSent - lastBytesSent) * 8;
+	long double timePassed =
+		(long double)(curTime - lastBytesSentTime) / 1000000000.0l;
+	kbps = (long double)bitsBetween / timePassed / 1000.0l;
+
+	if (timePassed < 0.01l)
+		kbps = 0.0l;
+
+	// Add bitrate data to chart & auto-scale the axis.
+	m_x += y;
+	m_y = kbps;
+
+	lastBytesSent = bytesSent;
+	lastBytesSentTime = curTime;
+
+	// auto-scale the Y axis (bitrate)
+	if (m_x == 1)
+		m_axisY->setRange(0, qMax(qCeil(m_y / 10) * 10, 10000));
+	if (m_axisY->min() < 0)
+		m_axisY->setRange(0, 10.0 * qCeil(m_axisY->max() / 10));
+	if (m_y >= 0.8 * m_axisY->max())
+		m_axisY->setRange(0, qMax(2 * m_axisY->max(),
+					  20.0 * qCeil(m_y / 10)));
+
+	bitrate_series->append(m_x, m_y);
+
+	// Add dropped frames to chart & auto-scale the axis.
+	long double num = (long double)totalBytes / (1024.0l * 1024.0l);
+	int total = output ? obs_output_get_total_frames(output) : 0;
+	int dropped = output ? obs_output_get_frames_dropped(output) : 0;
+
+	if (total < first_total || dropped < first_dropped) {
+		first_total = 0;
+		first_dropped = 0;
+	}
+
+	total -= first_total;
+	dropped -= first_dropped;
+
+	num = total ? (long double)dropped / (long double)total * 100.0l : 0.0l;
+
+	m_y = num;
+	if (m_x == 1)
+		m_axisY->setRange(0, qMax(qCeil(m_y / 10) * 10, 10));
+	if (m_axisZ->min() < 0)
+		m_axisZ->setRange(0, 10.0 * qCeil(m_axisZ->max() / 10));
+	if (m_y >= 0.8 * m_axisZ->max())
+		m_axisZ->setRange(0, qMax(2 * m_axisZ->max(),
+					  20.0 * qCeil(m_y / 10)));
+	dropped_series->append(m_x, m_y);
+
+	// Scroll once the whole range has been drawn
+	if (m_x > 60)
+		scroll(slide_x, 0);
 }
