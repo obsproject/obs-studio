@@ -300,6 +300,8 @@ static bool vaapi_update(void *data, obs_data_t *settings, bool hevc)
 	enc->context->level = level;
 	enc->context->bit_rate = bitrate * 1000;
 	enc->context->rc_max_rate = maxrate * 1000;
+	enc->context->rc_initial_buffer_occupancy =
+		(maxrate ? maxrate : bitrate) * 1000;
 
 	enc->context->width = obs_encoder_get_width(enc->encoder);
 	enc->context->height = obs_encoder_get_height(enc->encoder);
