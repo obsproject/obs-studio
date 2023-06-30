@@ -1,6 +1,6 @@
 project(win-capture)
 
-option(ENABLE_COMPAT_UPDATES "Checks for service updates" OFF)
+option(ENABLE_COMPAT_UPDATES "Checks for capture compatibility data updates" ON)
 
 set(COMPAT_URL
     "https://obsproject.com/obs2_update/win-capture"
