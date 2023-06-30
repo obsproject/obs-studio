@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <filesystem>
 
 #include <QRandomGenerator>
 #include <QByteArray>
@@ -47,9 +48,10 @@ extern QCef *cef;
 
 /* ------------------------------------------------------------------------ */
 
-static bool QuickWriteFile(const char *file, std::string &data)
+static bool QuickWriteFile(const char *file, const std::string &data)
 try {
-	std::ofstream fileStream(file, std::ios::binary);
+	std::ofstream fileStream(std::filesystem::u8path(file),
+				 std::ios::binary);
 	if (fileStream.fail())
 		throw strprintf("Failed to open file '%s': %s", file,
 				strerror(errno));
@@ -68,7 +70,8 @@ try {
 
 static bool QuickReadFile(const char *file, std::string &data)
 try {
-	std::ifstream fileStream(file, std::ifstream::binary);
+	std::ifstream fileStream(std::filesystem::u8path(file),
+				 std::ios::binary);
 	if (!fileStream.is_open() || fileStream.fail())
 		throw strprintf("Failed to open file '%s': %s", file,
 				strerror(errno));
@@ -97,7 +100,7 @@ try {
 	if (blake2b_init(&blake2, BLAKE2_HASH_LENGTH) != 0)
 		return false;
 
-	std::ifstream file(path, std::ios::binary);
+	std::ifstream file(std::filesystem::u8path(path), std::ios::binary);
 	if (!file.is_open() || file.fail())
 		return false;
 
