@@ -9,9 +9,20 @@ const uint32_t audio_ssrc = 5002;
 const char *audio_mid = "0";
 const uint8_t audio_payload_type = 111;
 
-const uint32_t video_ssrc = 5000;
+const uint32_t video_l_ssrc = 5000;
+const uint32_t video_m_ssrc = 5004;
+const uint32_t video_h_ssrc = 5006;
+
 const char *video_mid = "1";
 const uint8_t video_payload_type = 96;
+
+const std::string rtpHeaderExtUriMid = "urn:ietf:params:rtp-hdrext:sdes:mid";
+const std::string rtpHeaderExtUriRid =
+	"urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id";
+
+const std::string highRid = "h";
+const std::string medRid = "m";
+const std::string lowRid = "l";
 
 WHIPOutput::WHIPOutput(obs_data_t *, obs_output_t *output)
 	: output(output),
@@ -24,11 +35,19 @@ WHIPOutput::WHIPOutput(obs_data_t *, obs_output_t *output)
 	  peer_connection(nullptr),
 	  audio_track(nullptr),
 	  video_track(nullptr),
+	  hSequenceNumber(0),
+	  hRTPTimestamp(0),
+	  hLastVideoTimestamp(0),
+	  mSequenceNumber(0),
+	  mRTPTimestamp(0),
+	  mLastVideoTimestamp(0),
+	  lSequenceNumber(0),
+	  lRTPTimestamp(0),
+	  lLastVideoTimestamp(0),
 	  total_bytes_sent(0),
 	  connect_time_ms(0),
 	  start_time_ns(0),
-	  last_audio_timestamp(0),
-	  last_video_timestamp(0)
+	  last_audio_timestamp(0)
 {
 }
 
@@ -80,10 +99,46 @@ void WHIPOutput::Data(struct encoder_packet *packet)
 		     audio_sr_reporter);
 		last_audio_timestamp = packet->dts_usec;
 	} else if (packet->type == OBS_ENCODER_VIDEO) {
-		int64_t duration = packet->dts_usec - last_video_timestamp;
+		auto rtp_config = video_sr_reporter->rtpConfig;
+
+		auto height = obs_encoder_get_width(packet->encoder);
+		int64_t duration = 0;
+		if (height == 640) {
+			rtp_config->sequenceNumber = lSequenceNumber;
+			rtp_config->ssrc = video_l_ssrc;
+			rtp_config->rid = lowRid;
+			rtp_config->timestamp = lRTPTimestamp;
+			duration = packet->dts_usec - lLastVideoTimestamp;
+		} else if (height == 800) {
+			rtp_config->sequenceNumber = mSequenceNumber;
+			rtp_config->ssrc = video_m_ssrc;
+			rtp_config->rid = medRid;
+			rtp_config->timestamp = mRTPTimestamp;
+			duration = packet->dts_usec - mLastVideoTimestamp;
+		} else if (height == 1024) {
+			rtp_config->sequenceNumber = hSequenceNumber;
+			rtp_config->ssrc = video_h_ssrc;
+			rtp_config->rid = highRid;
+			rtp_config->timestamp = hRTPTimestamp;
+			duration = packet->dts_usec - hLastVideoTimestamp;
+		}
+
 		Send(packet->data, packet->size, duration, video_track,
 		     video_sr_reporter);
-		last_video_timestamp = packet->dts_usec;
+
+		if (height == 640) {
+			lSequenceNumber = rtp_config->sequenceNumber;
+			lLastVideoTimestamp = packet->dts_usec;
+			lRTPTimestamp = rtp_config->timestamp;
+		} else if (height == 800) {
+			mSequenceNumber = rtp_config->sequenceNumber;
+			mLastVideoTimestamp = packet->dts_usec;
+			mRTPTimestamp = rtp_config->timestamp;
+		} else if (height == 1024) {
+			hSequenceNumber = rtp_config->sequenceNumber;
+			hLastVideoTimestamp = packet->dts_usec;
+			hRTPTimestamp = rtp_config->timestamp;
+		}
 	}
 }
 
@@ -121,13 +176,26 @@ void WHIPOutput::ConfigureVideoTrack(std::string media_stream_id,
 	rtc::Description::Video video_description(
 		video_mid, rtc::Description::Direction::SendOnly);
 	video_description.addH264Codec(video_payload_type);
-	video_description.addSSRC(video_ssrc, cname, media_stream_id,
+	video_description.addSSRC(video_l_ssrc, cname, media_stream_id,
 				  media_stream_track_id);
+
+	video_description.addExtMap(
+		rtc::Description::Entry::ExtMap(1, rtpHeaderExtUriMid));
+	video_description.addExtMap(
+		rtc::Description::Entry::ExtMap(2, rtpHeaderExtUriRid));
+	video_description.addRid(highRid);
+	video_description.addRid(medRid);
+	video_description.addRid(lowRid);
+
 	video_track = peer_connection->addTrack(video_description);
 
 	auto rtp_config = std::make_shared<rtc::RtpPacketizationConfig>(
-		video_ssrc, cname, video_payload_type,
+		video_l_ssrc, cname, video_payload_type,
 		rtc::H264RtpPacketizer::defaultClockRate);
+	rtp_config->midId = 1;
+	rtp_config->ridId = 2;
+	rtp_config->mid = video_mid;
+
 	auto packetizer = std::make_shared<rtc::H264RtpPacketizer>(
 		rtc::H264RtpPacketizer::Separator::StartSequence, rtp_config);
 	video_sr_reporter = std::make_shared<rtc::RtcpSrReporter>(rtp_config);
@@ -401,7 +469,9 @@ void WHIPOutput::StopThread(bool signal)
 	connect_time_ms = 0;
 	start_time_ns = 0;
 	last_audio_timestamp = 0;
-	last_video_timestamp = 0;
+	hLastVideoTimestamp = 0;
+	mLastVideoTimestamp = 0;
+	lLastVideoTimestamp = 0;
 }
 
 void WHIPOutput::Send(void *data, uintptr_t size, uint64_t duration,
@@ -448,7 +518,8 @@ void register_whip_output()
 	struct obs_output_info info = {};
 
 	info.id = "whip_output";
-	info.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_SERVICE;
+	info.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_SERVICE |
+		     OBS_OUTPUT_MULTI_TRACK_AV;
 	info.get_name = [](void *) -> const char * {
 		return obs_module_text("Output.Name");
 	};

@@ -62,11 +62,22 @@ private:
 	std::shared_ptr<rtc::RtcpSrReporter> audio_sr_reporter;
 	std::shared_ptr<rtc::RtcpSrReporter> video_sr_reporter;
 
+	uint16_t hSequenceNumber;
+	uint32_t hRTPTimestamp;
+	int64_t hLastVideoTimestamp;
+
+	uint16_t mSequenceNumber;
+	uint32_t mRTPTimestamp;
+	int64_t mLastVideoTimestamp;
+
+	uint16_t lSequenceNumber;
+	uint32_t lRTPTimestamp;
+	int64_t lLastVideoTimestamp;
+
 	std::atomic<size_t> total_bytes_sent;
 	std::atomic<int> connect_time_ms;
 	int64_t start_time_ns;
 	int64_t last_audio_timestamp;
-	int64_t last_video_timestamp;
 };
 
 void register_whip_output();
