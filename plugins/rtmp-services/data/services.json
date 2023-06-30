@@ -2846,6 +2846,262 @@
             "supported video codecs": [
                 "h264"
             ]
+        },
+        {
+            "name": "Wavezoo SD",
+            "common": true,
+            "stream_key_link": "https://wavezoo.com",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
+            "servers": [
+                {
+                    "name": "Server #01 (RTMP)",
+                    "url": "rtmp://live-stream-server-01:1935/LiveApp"
+                },
+                {
+                    "name": "Server #02 (RTMP)",
+                    "url": "rtmp://live-stream-server-02:1935/LiveApp"
+                },
+                {
+                    "name": "Server #03 (RTMP)",
+                    "url": "rtmp://live-stream-server-03:1935/LiveApp"
+                },
+                {
+                    "name": "Server #04 (RTMP)",
+                    "url": "rtmp://live-stream-server-04:1935/LiveApp"
+                },
+                {
+                    "name": "Server #05 (RTMP)",
+                    "url": "rtmp://live-stream-server-05:1935/LiveApp"
+                },
+                {
+                    "name": "Server #06 (RTMP)",
+                    "url": "rtmp://live-stream-server-06:1935/LiveApp"
+                },
+                {
+                    "name": "Server #07 (RTMP)",
+                    "url": "rtmp://live-stream-server-07:1935/LiveApp"
+                },
+                {
+                    "name": "Server #08 (RTMP)",
+                    "url": "rtmp://live-stream-server-08:1935/LiveApp"
+                },
+                {
+                    "name": "Server #09 (RTMP)",
+                    "url": "rtmp://live-stream-server-09:1935/LiveAppApp"
+                },
+                {
+                    "name": "Server #10 (RTMP)",
+                    "url": "rtmp://live-stream-server-10:1935/LiveApp"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "main",
+                "max video bitrate": 1000,
+                "max audio bitrate": 128,
+                "supported resolutions": [
+                    "640x360"
+                ],
+                "max fps": 30,
+                "x264opts": "tune=zerolatency"
+            }
+        },
+        {
+            "name": "Wavezoo HD",
+            "common": true,
+            "stream_key_link": "https://wavezoo.com",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
+            "servers": [
+                {
+                    "name": "Server #01 (RTMP)",
+                    "url": "rtmp://live-stream-server-01:1935/LiveApp"
+                },
+                {
+                    "name": "Server #02 (RTMP)",
+                    "url": "rtmp://live-stream-server-02:1935/LiveApp"
+                },
+                {
+                    "name": "Server #03 (RTMP)",
+                    "url": "rtmp://live-stream-server-03:1935/LiveApp"
+                },
+                {
+                    "name": "Server #04 (RTMP)",
+                    "url": "rtmp://live-stream-server-04:1935/LiveApp"
+                },
+                {
+                    "name": "Server #05 (RTMP)",
+                    "url": "rtmp://live-stream-server-05:1935/LiveApp"
+                },
+                {
+                    "name": "Server #06 (RTMP)",
+                    "url": "rtmp://live-stream-server-06:1935/LiveApp"
+                },
+                {
+                    "name": "Server #07 (RTMP)",
+                    "url": "rtmp://live-stream-server-07:1935/LiveApp"
+                },
+                {
+                    "name": "Server #08 (RTMP)",
+                    "url": "rtmp://live-stream-server-08:1935/LiveApp"
+                },
+                {
+                    "name": "Server #09 (RTMP)",
+                    "url": "rtmp://live-stream-server-09:1935/LiveAppApp"
+                },
+                {
+                    "name": "Server #10 (RTMP)",
+                    "url": "rtmp://live-stream-server-10:1935/LiveApp"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "main",
+                "max video bitrate": 2000,
+                "max audio bitrate": 128,
+                "supported resolutions": [
+                    "1280x720"
+                ],
+                "max fps": 30,
+                "x264opts": "tune=zerolatency"
+            }
+        },
+        {
+            "name": "Wavezoo Full-HD",
+            "common": true,
+            "stream_key_link": "https://wavezoo.com",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
+            "servers": [
+                {
+                    "name": "Server #01 (RTMP)",
+                    "url": "rtmp://live-stream-server-01:1935/LiveApp"
+                },
+                {
+                    "name": "Server #02 (RTMP)",
+                    "url": "rtmp://live-stream-server-02:1935/LiveApp"
+                },
+                {
+                    "name": "Server #03 (RTMP)",
+                    "url": "rtmp://live-stream-server-03:1935/LiveApp"
+                },
+                {
+                    "name": "Server #04 (RTMP)",
+                    "url": "rtmp://live-stream-server-04:1935/LiveApp"
+                },
+                {
+                    "name": "Server #05 (RTMP)",
+                    "url": "rtmp://live-stream-server-05:1935/LiveApp"
+                },
+                {
+                    "name": "Server #06 (RTMP)",
+                    "url": "rtmp://live-stream-server-06:1935/LiveApp"
+                },
+                {
+                    "name": "Server #07 (RTMP)",
+                    "url": "rtmp://live-stream-server-07:1935/LiveApp"
+                },
+                {
+                    "name": "Server #08 (RTMP)",
+                    "url": "rtmp://live-stream-server-08:1935/LiveApp"
+                },
+                {
+                    "name": "Server #09 (RTMP)",
+                    "url": "rtmp://live-stream-server-09:1935/LiveApp"
+                },
+                {
+                    "name": "Server #10 (RTMP)",
+                    "url": "rtmp://live-stream-server-10:1935/LiveApp"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "high",
+                "max video bitrate": 4500,
+                "max audio bitrate": 192,
+                "supported resolutions": [
+                    "1920x1080"
+                ],
+                "max fps": 30,
+                "x264opts": "tune=zerolatency"
+            }
+        },
+        {
+            "name": "Wavezoo 4K",
+            "common": true,
+            "stream_key_link": "https://wavezoo.com",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
+            "servers": [
+                {
+                    "name": "Server #01 (RTMP)",
+                    "url": "rtmp://live-stream-server-01:1935/LiveApp"
+                },
+                {
+                    "name": "Server #02 (RTMP)",
+                    "url": "rtmp://live-stream-server-02:1935/LiveApp"
+                },
+                {
+                    "name": "Server #03 (RTMP)",
+                    "url": "rtmp://live-stream-server-03:1935/LiveApp"
+                },
+                {
+                    "name": "Server #04 (RTMP)",
+                    "url": "rtmp://live-stream-server-04:1935/LiveApp"
+                },
+                {
+                    "name": "Server #05 (RTMP)",
+                    "url": "rtmp://live-stream-server-05:1935/LiveApp"
+                },
+                {
+                    "name": "Server #06 (RTMP)",
+                    "url": "rtmp://live-stream-server-06:1935/LiveApp"
+                },
+                {
+                    "name": "Server #07 (RTMP)",
+                    "url": "rtmp://live-stream-server-07:1935/LiveApp"
+                },
+                {
+                    "name": "Server #08 (RTMP)",
+                    "url": "rtmp://live-stream-server-08:1935/LiveApp"
+                },
+                {
+                    "name": "Server #09 (RTMP)",
+                    "url": "rtmp://live-stream-server-09:1935/LiveApp"
+                },
+                {
+                    "name": "Server #10 (RTMP)",
+                    "url": "rtmp://live-stream-server-10:1935/LiveApp"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "high",
+                "max video bitrate": 10000,
+                "max audio bitrate": 192,
+                "supported resolutions": [
+                    "3840x2160"
+                ],
+                "max fps": 30,
+                "x264opts": "tune=zerolatency"
+            }
         }
     ]
 }
