@@ -19,7 +19,7 @@ endif()
 
 legacy_check()
 
-option(ENABLE_COMPAT_UPDATES "Checks for service updates" OFF)
+option(ENABLE_COMPAT_UPDATES "Checks for capture compatibility data updates" ON)
 
 # cmake-format: off
 set(COMPAT_URL "https://obsproject.com/obs2_update/win-capture" CACHE STRING "Default services package URL")
