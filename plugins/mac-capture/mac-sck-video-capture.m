@@ -2,7 +2,7 @@
 
 static void destroy_screen_stream(struct screen_capture *sc)
 {
-    if (sc->disp) {
+    if (sc->disp && !sc->capture_failed) {
         [sc->disp stopCaptureWithCompletionHandler:^(NSError *_Nullable error) {
             if (error && error.code != 3808) {
                 MACCAP_ERR("destroy_screen_stream: Failed to stop stream with error %s\n",
@@ -76,6 +76,10 @@ static void sck_video_capture_destroy(void *data)
 static bool init_screen_stream(struct screen_capture *sc)
 {
     SCContentFilter *content_filter;
+    if (sc->capture_failed) {
+        sc->capture_failed = false;
+        obs_source_update_properties(sc->source);
+    }
 
     sc->frame = CGRectZero;
     sc->stream_properties = [[SCStreamConfiguration alloc] init];
@@ -542,6 +546,23 @@ static bool content_settings_changed(void *data, obs_properties_t *props, obs_pr
     return true;
 }
 
+static bool reactivate_capture(obs_properties_t *props __unused, obs_property_t *property, void *data)
+{
+    struct screen_capture *sc = data;
+    if (!sc->capture_failed) {
+        MACCAP_LOG(LOG_WARNING, "Tried to reactivate capture that hadn't failed.");
+        return false;
+    }
+
+    obs_enter_graphics();
+    destroy_screen_stream(sc);
+    sc->capture_failed = false;
+    init_screen_stream(sc);
+    obs_leave_graphics();
+    obs_property_set_enabled(property, false);
+    return true;
+}
+
 static obs_properties_t *sck_video_capture_properties(void *data)
 {
     struct screen_capture *sc = data;
@@ -573,6 +594,9 @@ static obs_properties_t *sck_video_capture_properties(void *data)
     obs_properties_add_bool(props, "show_cursor", obs_module_text("DisplayCapture.ShowCursor"));
 
     obs_property_t *hide_obs = obs_properties_add_bool(props, "hide_obs", obs_module_text("DisplayCapture.HideOBS"));
+    obs_property_t *reactivate =
+        obs_properties_add_button2(props, "reactivate_capture", obs_module_text("SCK.Restart"), reactivate_capture, sc);
+    obs_property_set_enabled(reactivate, sc->capture_failed);
 
     if (sc) {
         obs_property_set_modified_callback2(capture_type, content_settings_changed, sc);

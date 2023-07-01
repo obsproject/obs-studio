@@ -7,7 +7,7 @@ const char *sck_audio_capture_getname(void *unused __unused)
 
 static void destroy_audio_screen_stream(struct screen_capture *sc)
 {
-    if (sc->disp) {
+    if (sc->disp && !sc->capture_failed) {
         [sc->disp stopCaptureWithCompletionHandler:^(NSError *_Nullable error) {
             if (error && error.code != 3808) {
                 MACCAP_ERR("destroy_audio_screen_stream: Failed to stop stream with error %s\n",
@@ -60,6 +60,10 @@ static void sck_audio_capture_destroy(void *data)
 static bool init_audio_screen_stream(struct screen_capture *sc)
 {
     SCContentFilter *content_filter;
+    if (sc->capture_failed) {
+        sc->capture_failed = false;
+        obs_source_update_properties(sc->source);
+    }
 
     sc->stream_properties = [[SCStreamConfiguration alloc] init];
     os_sem_wait(sc->shareable_content_available);
@@ -256,6 +260,21 @@ static bool audio_capture_method_changed(void *data, obs_properties_t *props, ob
     return true;
 }
 
+static bool reactivate_capture(obs_properties_t *props __unused, obs_property_t *property, void *data)
+{
+    struct screen_capture *sc = data;
+    if (!sc->capture_failed) {
+        MACCAP_LOG(LOG_WARNING, "Tried to reactivate capture that hadn't failed.");
+        return false;
+    }
+
+    destroy_audio_screen_stream(sc);
+    sc->capture_failed = false;
+    init_audio_screen_stream(sc);
+    obs_property_set_enabled(property, false);
+    return true;
+}
+
 static obs_properties_t *sck_audio_capture_properties(void *data)
 {
     struct screen_capture *sc = data;
@@ -272,6 +291,9 @@ static obs_properties_t *sck_audio_capture_properties(void *data)
 
     obs_property_t *app_list = obs_properties_add_list(props, "application", obs_module_text("Application"),
                                                        OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+    obs_property_t *reactivate =
+        obs_properties_add_button2(props, "reactivate_capture", obs_module_text("SCK.Restart"), reactivate_capture, sc);
+    obs_property_set_enabled(reactivate, sc->capture_failed);
 
     if (sc) {
         switch (sc->audio_capture_type) {
