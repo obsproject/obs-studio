@@ -48,6 +48,9 @@ bool is_screen_capture_available(void)
     }
 
     MACCAP_LOG(LOG_WARNING, "%s", errorMessage.UTF8String);
+
+    self.sc->capture_failed = true;
+    obs_source_update_properties(self.sc->source);
 }
 
 @end

@@ -57,6 +57,7 @@ struct screen_capture {
     os_event_t *stream_start_completed;
     os_sem_t *shareable_content_available;
     IOSurfaceRef current, prev;
+    bool capture_failed;
 
     pthread_mutex_t mutex;
 
