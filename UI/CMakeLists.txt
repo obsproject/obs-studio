@@ -49,13 +49,6 @@ include(cmake/ui-windows.cmake)
 include(cmake/feature-importers.cmake)
 include(cmake/feature-browserpanels.cmake)
 
-if(NOT OAUTH_BASE_URL)
-  # cmake-format: off
-  set(OAUTH_BASE_URL "https://auth.obsproject.com/" CACHE STRING "Default OAuth base URL")
-  mark_as_advanced(OAUTH_BASE_URL)
-  # cmake-format: on
-endif()
-include(cmake/feature-restream.cmake)
 include(cmake/feature-sparkle.cmake)
 include(cmake/feature-whatsnew.cmake)
 

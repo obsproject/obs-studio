@@ -269,18 +269,12 @@ void setupDockAction(QDockWidget *dock)
 	action->connect(action, &QAction::enabledChanged, neverDisable);
 }
 
-extern void RegisterRestreamAuth();
-
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow(parent),
 	  undo_s(ui),
 	  ui(new Ui::OBSBasic)
 {
 	setAttribute(Qt::WA_NativeWindow);
-
-#if RESTREAM_ENABLED
-	RegisterRestreamAuth();
-#endif
 
 	setAcceptDrops(true);
 

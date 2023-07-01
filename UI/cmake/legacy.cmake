@@ -18,24 +18,6 @@ if(TARGET obs-browser
   target_include_directories(obs-browser-panels INTERFACE ${CMAKE_SOURCE_DIR}/plugins/obs-browser/panel)
 endif()
 
-set(OAUTH_BASE_URL
-    "https://auth.obsproject.com/"
-    CACHE STRING "Default OAuth base URL")
-
-mark_as_advanced(OAUTH_BASE_URL)
-
-if(NOT DEFINED RESTREAM_CLIENTID
-   OR "${RESTREAM_CLIENTID}" STREQUAL ""
-   OR NOT DEFINED RESTREAM_HASH
-   OR "${RESTREAM_HASH}" STREQUAL ""
-   OR NOT TARGET OBS::browser-panels)
-  set(RESTREAM_ENABLED OFF)
-  set(RESTREAM_CLIENTID "")
-  set(RESTREAM_HASH "0")
-else()
-  set(RESTREAM_ENABLED ON)
-endif()
-
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ui-config.h.in ${CMAKE_CURRENT_BINARY_DIR}/ui-config.h)
 
 find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil avformat)
@@ -289,11 +271,6 @@ if(TARGET OBS::browser-panels)
 
   target_sources(obs PRIVATE window-dock-browser.cpp window-dock-browser.hpp window-extra-browsers.cpp
                              window-extra-browsers.hpp)
-
-  if(RESTREAM_ENABLED)
-    target_compile_definitions(obs PRIVATE RESTREAM_ENABLED)
-    target_sources(obs PRIVATE auth-restream.cpp auth-restream.hpp)
-  endif()
 
   if(OS_WINDOWS OR OS_MACOS)
     set(ENABLE_WHATSNEW
