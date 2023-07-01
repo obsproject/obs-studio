@@ -73,13 +73,14 @@ inline std::optional<T> get_stack_optional(const json &j, const char *property)
 #endif
 
 /* https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.4
- * https://datatracker.ietf.org/doc/html/rfc6749#section-5.1 */
+ * https://datatracker.ietf.org/doc/html/rfc6749#section-5.1
+ * NOTE: Scope is removed because some services (e.g. Twitch)
+ * does not provide a string but an array. */
 struct AccessTokenResponse {
 	std::string accessToken;
 	std::string tokenType;
 	std::optional<int64_t> expiresIn;
 	std::optional<std::string> refreshToken;
-	std::optional<std::string> scope;
 };
 
 /* https://datatracker.ietf.org/doc/html/rfc6749#section-5.2 */
@@ -110,7 +111,6 @@ inline void from_json(const json &j, AccessTokenResponse &s)
 		       [](unsigned char c) { return std::tolower(c); });
 	s.expiresIn = get_stack_optional<int64_t>(j, "expires_in");
 	s.refreshToken = get_stack_optional<std::string>(j, "refresh_token");
-	s.scope = get_stack_optional<std::string>(j, "scope");
 }
 
 inline void from_json(const json &j, AccessTokenError &e)

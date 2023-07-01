@@ -53,7 +53,6 @@ protected:
 	virtual std::string ClientId() = 0;
 	virtual inline std::string ClientSecret() { return {}; }
 
-	virtual std::string Scope() = 0;
 	virtual int64_t ScopeVersion() = 0;
 
 	virtual bool LoginInternal(std::string &code,

@@ -304,14 +304,6 @@ try {
 			"Missing \"refresh_token\" in the response");
 	}
 
-	if (response.scope.has_value() && response.scope.value() != Scope()) {
-		std::string scopeError = "Requested ";
-		scopeError += Scope();
-		scopeError += ", returned ";
-		scopeError += response.scope.value();
-		throw RequestError("Invalid returned scope", scopeError);
-	}
-
 	ApplyNewTokens(response);
 
 	connected = true;
