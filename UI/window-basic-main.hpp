@@ -34,6 +34,7 @@
 #include "window-basic-transform.hpp"
 #include "window-basic-adv-audio.hpp"
 #include "window-basic-filters.hpp"
+#include "window-basic-transition-audio.hpp"
 #include "window-missing-files.hpp"
 #include "window-projector.hpp"
 #include "window-basic-about.hpp"
@@ -278,6 +279,7 @@ private:
 	QPointer<OBSBasicTransform> transformWindow;
 	QPointer<OBSBasicAdvAudio> advAudioWindow;
 	QPointer<OBSBasicFilters> filters;
+	QPointer<OBSBasicTransitionAudio> transitionAudioWindow;
 	QPointer<QDockWidget> statsDock;
 #ifdef YOUTUBE_ENABLED
 	QPointer<YouTubeAppDock> youtubeAppDock;
@@ -966,6 +968,7 @@ public:
 
 	void CreateInteractionWindow(obs_source_t *source);
 	void CreatePropertiesWindow(obs_source_t *source);
+	void CreateTransitionAudioWindow(obs_source_t *source);
 	void CreateFiltersWindow(obs_source_t *source);
 	void CreateEditTransformWindow(obs_sceneitem_t *item);
 

@@ -203,6 +203,12 @@ enum obs_media_state {
  */
 #define OBS_SOURCE_CAP_DONT_SHOW_PROPERTIES (1 << 16)
 
+/**
+ * Transition source can have audio
+ * (hint for the UI that the audio properties dialog should be accessible)
+ */
+#define OBS_TRANSITION_HAS_AUDIO (1 << 17)
+
 /** @} */
 
 typedef void (*obs_source_enum_proc_t)(obs_source_t *parent, obs_source_t *child, void *param);
