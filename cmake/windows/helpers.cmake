@@ -228,7 +228,8 @@ function(_target_install_obs target)
     TARGET ${target}
     POST_BUILD
     COMMAND "${CMAKE_COMMAND}" -E make_directory "${OBS_OUTPUT_DIR}/$<CONFIG>/${_TIO_DESTINATION}"
-    COMMAND "${CMAKE_COMMAND}" -E copy ${target_file} "$<$<CONFIG:Debug,RelWithDebInfo>:${target_pdb_file}>"
+    COMMAND "${CMAKE_COMMAND}" -E copy ${target_file} "${OBS_OUTPUT_DIR}/$<CONFIG>/${_TIO_DESTINATION}"
+    COMMAND "${CMAKE_COMMAND}" -E $<IF:$<CONFIG:Debug,RelWithDebInfo>,copy,true> ${target_pdb_file}
             "${OBS_OUTPUT_DIR}/$<CONFIG>/${_TIO_DESTINATION}"
     COMMENT "${comment}"
     VERBATIM)
