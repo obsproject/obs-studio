@@ -117,30 +117,6 @@ void AutoConfigTestPage::StartRecordingEncoderStage()
 	testThread = std::thread([this]() { TestRecordingEncoderThread(); });
 }
 
-void AutoConfigTestPage::GetServers(std::vector<ServerInfo> &servers)
-{
-	OBSDataAutoRelease settings = obs_data_create();
-	obs_data_set_string(settings, "service", wiz->serviceName.c_str());
-
-	obs_properties_t *ppts = obs_get_service_properties("rtmp_common");
-	obs_property_t *p = obs_properties_get(ppts, "service");
-	obs_property_modified(p, settings);
-
-	p = obs_properties_get(ppts, "server");
-	size_t count = obs_property_list_item_count(p);
-	servers.reserve(count);
-
-	for (size_t i = 0; i < count; i++) {
-		const char *name = obs_property_list_item_name(p, i);
-		const char *server = obs_property_list_item_string(p, i);
-
-		ServerInfo info(name, server);
-		servers.push_back(info);
-	}
-
-	obs_properties_destroy(ppts);
-}
-
 static inline void string_depad_key(string &key)
 {
 	while (!key.empty()) {
@@ -193,47 +169,23 @@ void AutoConfigTestPage::TestBandwidthThread()
 	/* -----------------------------------*/
 	/* create obs objects                 */
 
-	const char *serverType = wiz->customServer ? "rtmp_custom"
-						   : "rtmp_common";
-
 	OBSEncoderAutoRelease vencoder = obs_video_encoder_create(
 		"obs_x264", "test_x264", nullptr, nullptr);
 	OBSEncoderAutoRelease aencoder = obs_audio_encoder_create(
 		"ffmpeg_aac", "test_aac", nullptr, 0, nullptr);
-	OBSServiceAutoRelease service = obs_service_create(
-		serverType, "test_service", nullptr, nullptr);
 
 	/* -----------------------------------*/
 	/* configure settings                 */
 
-	// service: "service", "server", "key"
 	// vencoder: "bitrate", "rate_control",
 	//           obs_service_apply_encoder_settings
 	// aencoder: "bitrate"
 	// output: "bind_ip" via main config -> "Output", "BindIP"
 	//         obs_output_set_service
 
-	OBSDataAutoRelease service_settings = obs_data_create();
 	OBSDataAutoRelease vencoder_settings = obs_data_create();
 	OBSDataAutoRelease aencoder_settings = obs_data_create();
 	OBSDataAutoRelease output_settings = obs_data_create();
-
-	std::string key = wiz->key;
-	if (wiz->serviceName == "Twitch") {
-		string_depad_key(key);
-		key += "?bandwidthtest";
-	} else if (wiz->serviceName == "Restream.io" ||
-		   wiz->serviceName == "Restream.io - RTMP") {
-		string_depad_key(key);
-		key += "?test=true";
-	} else if (wiz->serviceName == "Restream.io - FTL") {
-		string_depad_key(key);
-		key += "?test";
-	}
-
-	obs_data_set_string(service_settings, "service",
-			    wiz->serviceName.c_str());
-	obs_data_set_string(service_settings, "key", key.c_str());
 
 	obs_data_set_int(vencoder_settings, "bitrate", wiz->startingBitrate);
 	obs_data_set_string(vencoder_settings, "rate_control", "CBR");
@@ -251,30 +203,18 @@ void AutoConfigTestPage::TestBandwidthThread()
 	/* determine which servers to test    */
 
 	std::vector<ServerInfo> servers;
-	if (wiz->customServer)
-		servers.emplace_back(wiz->server.c_str(), wiz->server.c_str());
-	else
-		GetServers(servers);
+	servers.emplace_back(obs_service_get_connect_info(
+		wiz->service, OBS_SERVICE_CONNECT_INFO_SERVER_URL));
 
-	/* just use the first server if it only has one alternate server,
-	 * or if using Restream or Nimo TV due to their "auto" servers */
-	if (servers.size() < 3 ||
-	    wiz->serviceName.substr(0, 11) == "Restream.io" ||
-	    wiz->serviceName == "Nimo TV") {
-		servers.resize(1);
-
-	} else if (wiz->serviceName == "Twitch" && wiz->twitchAuto) {
-		/* if using Twitch and "Auto" is available, test 3 closest
-		 * server */
-		servers.erase(servers.begin() + 1);
-		servers.resize(3);
-	}
+	/* Since we no longer hack arround obs_properties_t, we can only test
+	 * the server set in the service properties.
+	 *
+	 * TODO: Create API of proc handler to restore this feature */
 
 	/* -----------------------------------*/
 	/* apply service settings             */
 
-	obs_service_update(service, service_settings);
-	obs_service_apply_encoder_settings(service, vencoder_settings,
+	obs_service_apply_encoder_settings(wiz->service, vencoder_settings,
 					   aencoder_settings);
 
 	/* -----------------------------------*/
@@ -282,11 +222,11 @@ void AutoConfigTestPage::TestBandwidthThread()
 
 	/* Check if the service has a preferred output type */
 	const char *output_type =
-		obs_service_get_preferred_output_type(service);
+		obs_service_get_preferred_output_type(wiz->service);
 	if (!output_type ||
 	    (obs_get_output_flags(output_type) & OBS_OUTPUT_SERVICE) == 0) {
 		/* Otherwise, prefer first-party output types */
-		const char *protocol = obs_service_get_protocol(service);
+		const char *protocol = obs_service_get_protocol(wiz->service);
 
 		if (can_use_output(protocol, "rtmp_output", "RTMP", "RTMPS")) {
 			output_type = "rtmp_output";
@@ -336,7 +276,7 @@ void AutoConfigTestPage::TestBandwidthThread()
 	obs_output_set_audio_encoder(output, aencoder, 0);
 	obs_output_set_reconnect_settings(output, 0, 0);
 
-	obs_output_set_service(output, service);
+	obs_output_set_service(output, wiz->service);
 
 	/* -----------------------------------*/
 	/* connect signals                    */
@@ -379,6 +319,10 @@ void AutoConfigTestPage::TestBandwidthThread()
 
 	bool success = false;
 
+	bool canBandwidthTest = obs_service_can_bandwidth_test(wiz->service);
+	if (canBandwidthTest)
+		obs_service_enable_bandwidth_test(wiz->service, true);
+
 	for (size_t i = 0; i < servers.size(); i++) {
 		auto &server = servers[i];
 
@@ -391,10 +335,6 @@ void AutoConfigTestPage::TestBandwidthThread()
 			this, "UpdateMessage",
 			Q_ARG(QString, QTStr(TEST_BW_CONNECTING)
 					       .arg(server.name.c_str())));
-
-		obs_data_set_string(service_settings, "server",
-				    server.address.c_str());
-		obs_service_update(service, service_settings);
 
 		if (!obs_output_start(output))
 			continue;
@@ -466,6 +406,9 @@ void AutoConfigTestPage::TestBandwidthThread()
 		server.ms = obs_output_get_connect_time_ms(output);
 		success = true;
 	}
+
+	if (canBandwidthTest)
+		obs_service_enable_bandwidth_test(wiz->service, false);
 
 	if (!success) {
 		QMetaObject::invokeMethod(this, "Failure",
@@ -1051,30 +994,21 @@ void AutoConfigTestPage::FinalizeResults()
 	};
 
 	if (wiz->type == AutoConfig::Type::Streaming) {
-		const char *serverType = wiz->customServer ? "rtmp_custom"
-							   : "rtmp_common";
-
-		OBSServiceAutoRelease service = obs_service_create(
-			serverType, "temp_service", nullptr, nullptr);
-
 		OBSDataAutoRelease service_settings = obs_data_create();
 		OBSDataAutoRelease vencoder_settings = obs_data_create();
 
 		obs_data_set_int(vencoder_settings, "bitrate",
 				 wiz->idealBitrate);
 
-		obs_data_set_string(service_settings, "service",
-				    wiz->serviceName.c_str());
-		obs_service_update(service, service_settings);
-		obs_service_apply_encoder_settings(service, vencoder_settings,
-						   nullptr);
+		obs_service_apply_encoder_settings(wiz->service,
+						   vencoder_settings, nullptr);
 
 		BPtr<obs_service_resolution> res_list;
 		size_t res_count;
 		int maxFPS;
-		obs_service_get_supported_resolutions(service, &res_list,
+		obs_service_get_supported_resolutions(wiz->service, &res_list,
 						      &res_count);
-		obs_service_get_max_fps(service, &maxFPS);
+		obs_service_get_max_fps(wiz->service, &maxFPS);
 
 		if (res_list) {
 			set_closest_res(wiz->idealResolutionCX,
@@ -1093,11 +1027,9 @@ void AutoConfigTestPage::FinalizeResults()
 		wiz->idealBitrate =
 			(int)obs_data_get_int(vencoder_settings, "bitrate");
 
-		if (!wiz->customServer)
-			form->addRow(
-				newLabel("Basic.AutoConfig.StreamPage.Service"),
-				new QLabel(wiz->serviceName.c_str(),
-					   ui->finishPage));
+		form->addRow(newLabel("Basic.AutoConfig.StreamPage.Service"),
+			     new QLabel(wiz->serviceName.c_str(),
+					ui->finishPage));
 		form->addRow(newLabel("Basic.AutoConfig.StreamPage.Server"),
 			     new QLabel(wiz->serverName.c_str(),
 					ui->finishPage));

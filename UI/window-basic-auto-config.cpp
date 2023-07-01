@@ -1,5 +1,6 @@
 #include <QMessageBox>
 #include <QScreen>
+#include <QStandardItemModel>
 
 #include <obs.hpp>
 
@@ -9,6 +10,8 @@
 #include "obs-app.hpp"
 #include "url-push-button.hpp"
 
+#include "service-sort-filter.hpp"
+
 #include "ui_AutoConfigStartPage.h"
 #include "ui_AutoConfigVideoPage.h"
 #include "ui_AutoConfigStreamPage.h"
@@ -16,39 +19,6 @@
 #include "ui-config.h"
 
 #define wiz reinterpret_cast<AutoConfig *>(wizard())
-
-/* ------------------------------------------------------------------------- */
-
-#define SERVICE_PATH "service.json"
-
-static OBSData OpenServiceSettings(std::string &type)
-{
-	char serviceJsonPath[512];
-	int ret = GetProfilePath(serviceJsonPath, sizeof(serviceJsonPath),
-				 SERVICE_PATH);
-	if (ret <= 0)
-		return OBSData();
-
-	OBSDataAutoRelease data =
-		obs_data_create_from_json_file_safe(serviceJsonPath, "bak");
-
-	obs_data_set_default_string(data, "type", "rtmp_common");
-	type = obs_data_get_string(data, "type");
-
-	OBSDataAutoRelease settings = obs_data_get_obj(data, "settings");
-
-	return settings.Get();
-}
-
-static void GetServiceInfo(std::string &type, std::string &service,
-			   std::string &server, std::string &key)
-{
-	OBSData settings = OpenServiceSettings(type);
-
-	service = obs_data_get_string(settings, "service");
-	server = obs_data_get_string(settings, "server");
-	key = obs_data_get_string(settings, "key");
-}
 
 /* ------------------------------------------------------------------------- */
 
@@ -237,7 +207,10 @@ enum class ListOpt : int {
 	Custom,
 };
 
-AutoConfigStreamPage::AutoConfigStreamPage(QWidget *parent)
+constexpr const char *TEMP_SERVICE_NAME = "temp_service";
+
+AutoConfigStreamPage::AutoConfigStreamPage(obs_service_t *service,
+					   QWidget *parent)
 	: QWizardPage(parent),
 	  ui(new Ui_AutoConfigStreamPage)
 {
@@ -251,6 +224,10 @@ AutoConfigStreamPage::AutoConfigStreamPage(QWidget *parent)
 	m.setBottom(vertSpacing / 2);
 	ui->topLayout->setContentsMargins(m);
 
+	m = ui->serviceProps->contentsMargins();
+	m.setTop(vertSpacing / 2);
+	ui->serviceProps->setContentsMargins(m);
+
 	m = ui->streamkeyPageLayout->contentsMargins();
 	m.setTop(vertSpacing / 2);
 	ui->streamkeyPageLayout->setContentsMargins(m);
@@ -260,27 +237,40 @@ AutoConfigStreamPage::AutoConfigStreamPage(QWidget *parent)
 
 	LoadServices(false);
 
-	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(ServiceChanged()));
-	connect(ui->customServer, SIGNAL(textChanged(const QString &)), this,
-		SLOT(ServiceChanged()));
-	connect(ui->customServer, SIGNAL(textChanged(const QString &)), this,
-		SLOT(UpdateKeyLink()));
-	connect(ui->customServer, SIGNAL(editingFinished()), this,
-		SLOT(UpdateKeyLink()));
+	OBSDataAutoRelease settings = obs_service_get_settings(service);
+	const char *id = obs_service_get_id(service);
+	uint32_t flags = obs_service_get_flags(service);
+
+	tempService =
+		obs_service_create_private(id, TEMP_SERVICE_NAME, nullptr);
+
+	/* Avoid sharing the same obs_data_t pointer,
+	 * between the service ,the temp service and the properties view */
+	const char *settingsJson = obs_data_get_json(settings);
+	settings = obs_data_create_from_json(settingsJson);
+	obs_service_update(tempService, settings);
+
+	/* Reset to index 0 if internal or deprecated */
+	if ((flags & OBS_SERVICE_INTERNAL) == 0 &&
+	    (flags & OBS_SERVICE_DEPRECATED) == 0) {
+		if ((flags & OBS_SERVICE_UNCOMMON) != 0)
+			LoadServices(true);
+
+		int idx = ui->service->findData(QT_UTF8(id));
+
+		QSignalBlocker s(ui->service);
+		ui->service->setCurrentIndex(idx);
+		delete streamServiceProps;
+		streamServiceProps = CreateTempServicePropertyView(settings);
+		ui->serviceLayout->addWidget(streamServiceProps);
+
+		ServiceChanged();
+	} else {
+		ui->service->currentIndexChanged(0);
+	}
+
 	connect(ui->doBandwidthTest, SIGNAL(toggled(bool)), this,
 		SLOT(ServiceChanged()));
-
-	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(UpdateServerList()));
-
-	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(UpdateKeyLink()));
-	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(UpdateMoreInfoLink()));
-
-	connect(ui->key, SIGNAL(textChanged(const QString &)), this,
-		SLOT(UpdateCompleted()));
 }
 
 AutoConfigStreamPage::~AutoConfigStreamPage() {}
@@ -295,30 +285,11 @@ int AutoConfigStreamPage::nextId() const
 	return AutoConfig::TestPage;
 }
 
-inline bool AutoConfigStreamPage::IsCustomService() const
-{
-	return ui->service->currentData().toInt() == (int)ListOpt::Custom;
-}
-
 bool AutoConfigStreamPage::validatePage()
 {
-	OBSDataAutoRelease service_settings = obs_data_create();
-
-	wiz->customServer = IsCustomService();
-
-	const char *serverType = wiz->customServer ? "rtmp_custom"
-						   : "rtmp_common";
-
-	if (!wiz->customServer) {
-		obs_data_set_string(service_settings, "service",
-				    QT_TO_UTF8(ui->service->currentText()));
-	}
-
-	OBSServiceAutoRelease service = obs_service_create(
-		serverType, "temp_service", service_settings, nullptr);
-
 	int bitrate;
-	if (!ui->doBandwidthTest->isChecked()) {
+	if (!(ui->doBandwidthTest->isChecked() &&
+	      ui->doBandwidthTest->isEnabled())) {
 		bitrate = ui->bitrate->value();
 		wiz->idealBitrate = bitrate;
 	} else {
@@ -328,25 +299,20 @@ bool AutoConfigStreamPage::validatePage()
 
 	OBSDataAutoRelease settings = obs_data_create();
 	obs_data_set_int(settings, "bitrate", bitrate);
-	obs_service_apply_encoder_settings(service, settings, nullptr);
+	obs_service_apply_encoder_settings(tempService, settings, nullptr);
 
-	if (wiz->customServer) {
-		QString server = ui->customServer->text().trimmed();
-		wiz->server = wiz->serverName = QT_TO_UTF8(server);
-	} else {
-		wiz->serverName = QT_TO_UTF8(ui->server->currentText());
-		wiz->server = QT_TO_UTF8(ui->server->currentData().toString());
-	}
+	wiz->service = obs_service_get_ref(tempService);
 
-	wiz->bandwidthTest = ui->doBandwidthTest->isChecked();
+	wiz->bandwidthTest = ui->doBandwidthTest->isChecked() &&
+			     ui->doBandwidthTest->isEnabled();
 	wiz->startingBitrate = (int)obs_data_get_int(settings, "bitrate");
 	wiz->idealBitrate = wiz->startingBitrate;
 	wiz->serviceName = QT_TO_UTF8(ui->service->currentText());
 	if (ui->preferHardware)
 		wiz->preferHardware = ui->preferHardware->isChecked();
-	wiz->key = QT_TO_UTF8(ui->key->text());
 
-	if (wiz->serviceName != "Twitch" && wiz->bandwidthTest) {
+	if (wiz->bandwidthTest &&
+	    !obs_service_can_bandwidth_test(tempService)) {
 		QMessageBox::StandardButton button;
 #define WARNING_TEXT(x) QTStr("Basic.AutoConfig.StreamPage.StreamWarning." x)
 		button = OBSMessageBox::question(this, WARNING_TEXT("Title"),
@@ -360,47 +326,28 @@ bool AutoConfigStreamPage::validatePage()
 	return true;
 }
 
-void AutoConfigStreamPage::on_show_clicked()
-{
-	if (ui->key->echoMode() == QLineEdit::Password) {
-		ui->key->setEchoMode(QLineEdit::Normal);
-		ui->show->setText(QTStr("Hide"));
-	} else {
-		ui->key->setEchoMode(QLineEdit::Password);
-		ui->show->setText(QTStr("Show"));
-	}
-}
-
 void AutoConfigStreamPage::ServiceChanged()
 {
-	bool showMore = ui->service->currentData().toInt() ==
-			(int)ListOpt::ShowAll;
-	if (showMore)
-		return;
+	obs_service_update(tempService, streamServiceProps->GetSettings());
 
-	std::string service = QT_TO_UTF8(ui->service->currentText());
-	bool testBandwidth = ui->doBandwidthTest->isChecked();
-	bool custom = IsCustomService();
+	/* Enable bandwidth test if available */
+	bool canBandwidthTest = obs_service_can_bandwidth_test(tempService);
+	if (canBandwidthTest)
+		obs_service_enable_bandwidth_test(tempService, true);
 
-	ui->streamkeyPageLayout->removeWidget(ui->serverLabel);
-	ui->streamkeyPageLayout->removeWidget(ui->serverStackedWidget);
+	/* Check if the service can connect to allow to do a bandwidth test */
+	bool canTryToConnect = obs_service_can_try_to_connect(tempService);
 
-	if (custom) {
-		ui->streamkeyPageLayout->insertRow(1, ui->serverLabel,
-						   ui->serverStackedWidget);
+	/* Disable bandwidth test */
+	if (canBandwidthTest)
+		obs_service_enable_bandwidth_test(tempService, false);
 
-		ui->serverStackedWidget->setCurrentIndex(1);
-		ui->serverStackedWidget->setVisible(true);
-		ui->serverLabel->setVisible(true);
-	} else {
-		if (!testBandwidth)
-			ui->streamkeyPageLayout->insertRow(
-				2, ui->serverLabel, ui->serverStackedWidget);
+	/* Make wizard bandwidth test available if the service can connect.
+	 * Otherwise, disable it */
+	ui->doBandwidthTest->setEnabled(canTryToConnect);
 
-		ui->serverStackedWidget->setCurrentIndex(0);
-		ui->serverStackedWidget->setHidden(testBandwidth);
-		ui->serverLabel->setHidden(testBandwidth);
-	}
+	bool testBandwidth = ui->doBandwidthTest->isChecked() &&
+			     ui->doBandwidthTest->isEnabled();
 
 	ui->bitrateLabel->setHidden(testBandwidth);
 	ui->bitrate->setHidden(testBandwidth);
@@ -408,172 +355,168 @@ void AutoConfigStreamPage::ServiceChanged()
 	UpdateCompleted();
 }
 
-void AutoConfigStreamPage::UpdateMoreInfoLink()
-{
-	if (IsCustomService()) {
-		ui->moreInfoButton->hide();
-		return;
-	}
+constexpr int SHOW_ALL = 1;
 
-	QString serviceName = ui->service->currentText();
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
-	obs_property_t *services = obs_properties_get(props, "service");
-
-	OBSDataAutoRelease settings = obs_data_create();
-
-	obs_data_set_string(settings, "service", QT_TO_UTF8(serviceName));
-	obs_property_modified(services, settings);
-
-	const char *more_info_link =
-		obs_data_get_string(settings, "more_info_link");
-
-	if (!more_info_link || (*more_info_link == '\0')) {
-		ui->moreInfoButton->hide();
-	} else {
-		ui->moreInfoButton->setTargetUrl(QUrl(more_info_link));
-		ui->moreInfoButton->show();
-	}
-	obs_properties_destroy(props);
-}
-
-void AutoConfigStreamPage::UpdateKeyLink()
-{
-	QString serviceName = ui->service->currentText();
-	QString customServer = ui->customServer->text().trimmed();
-	QString streamKeyLink;
-
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
-	obs_property_t *services = obs_properties_get(props, "service");
-
-	OBSDataAutoRelease settings = obs_data_create();
-
-	obs_data_set_string(settings, "service", QT_TO_UTF8(serviceName));
-	obs_property_modified(services, settings);
-
-	streamKeyLink = obs_data_get_string(settings, "stream_key_link");
-
-	if (customServer.contains("fbcdn.net") && IsCustomService()) {
-		streamKeyLink =
-			"https://www.facebook.com/live/producer?ref=OBS";
-	}
-
-	if (serviceName == "Dacast") {
-		ui->streamKeyLabel->setText(
-			QTStr("Basic.AutoConfig.StreamPage.EncoderKey"));
-	} else {
-		ui->streamKeyLabel->setText(
-			QTStr("Basic.AutoConfig.StreamPage.StreamKey"));
-	}
-
-	if (QString(streamKeyLink).isNull() ||
-	    QString(streamKeyLink).isEmpty()) {
-		ui->streamKeyButton->hide();
-	} else {
-		ui->streamKeyButton->setTargetUrl(QUrl(streamKeyLink));
-		ui->streamKeyButton->show();
-	}
-	obs_properties_destroy(props);
-}
-
+/* Note: Identical to OBSBasicSettings function except it does not show deprecated services */
 void AutoConfigStreamPage::LoadServices(bool showAll)
 {
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
+	const char *id;
+	size_t idx = 0;
+	bool needShowAllOption = false;
 
-	OBSDataAutoRelease settings = obs_data_create();
+	QSignalBlocker sb(ui->service);
 
-	obs_data_set_bool(settings, "show_all", showAll);
-
-	obs_property_t *prop = obs_properties_get(props, "show_all");
-	obs_property_modified(prop, settings);
-
-	ui->service->blockSignals(true);
 	ui->service->clear();
+	ui->service->setModel(new QStandardItemModel(0, 1, ui->service));
 
-	QStringList names;
+	while (obs_enum_service_types(idx++, &id)) {
+		uint32_t flags = obs_get_service_flags(id);
 
-	obs_property_t *services = obs_properties_get(props, "service");
-	size_t services_count = obs_property_list_item_count(services);
-	for (size_t i = 0; i < services_count; i++) {
-		const char *name = obs_property_list_item_string(services, i);
-		names.push_back(name);
+		if ((flags & OBS_SERVICE_INTERNAL) != 0 ||
+		    (flags & OBS_SERVICE_DEPRECATED) != 0)
+			continue;
+
+		QStringList protocols =
+			QT_UTF8(obs_get_service_supported_protocols(id))
+				.split(";");
+
+		if (protocols.empty()) {
+			blog(LOG_WARNING, "No protocol found for service '%s'",
+			     id);
+			continue;
+		}
+
+		bool protocolRegistered = false;
+		for (uint32_t i = 0; i < protocols.size(); i++) {
+			protocolRegistered |= obs_is_output_protocol_registered(
+				QT_TO_UTF8(protocols[i]));
+		}
+
+		if (!protocolRegistered) {
+			blog(LOG_WARNING,
+			     "No registered protocol compatible with service '%s'",
+			     id);
+			continue;
+		}
+
+		bool isUncommon = (flags & OBS_SERVICE_UNCOMMON) != 0;
+
+		QString name(obs_service_get_display_name(id));
+
+		if (showAll || !isUncommon)
+			ui->service->addItem(name, QT_UTF8(id));
+
+		if (isUncommon && !showAll)
+			needShowAllOption = true;
 	}
 
-	if (showAll)
-		names.sort(Qt::CaseInsensitive);
-
-	for (QString &name : names)
-		ui->service->addItem(name);
-
-	if (!showAll) {
+	if (needShowAllOption) {
 		ui->service->addItem(
 			QTStr("Basic.AutoConfig.StreamPage.Service.ShowAll"),
-			QVariant((int)ListOpt::ShowAll));
+			QVariant(SHOW_ALL));
 	}
 
-	ui->service->insertItem(
-		0, QTStr("Basic.AutoConfig.StreamPage.Service.Custom"),
-		QVariant((int)ListOpt::Custom));
+	QSortFilterProxyModel *model =
+		new ServiceSortFilterProxyModel(ui->service);
+	model->setSourceModel(ui->service->model());
+	// Combo's current model must be reparented,
+	// Otherwise QComboBox::setModel() will delete it
+	ui->service->model()->setParent(model);
 
-	if (!lastService.isEmpty()) {
-		int idx = ui->service->findText(lastService);
-		if (idx != -1)
-			ui->service->setCurrentIndex(idx);
-	}
+	ui->service->setModel(model);
 
-	obs_properties_destroy(props);
-
-	ui->service->blockSignals(false);
-}
-
-void AutoConfigStreamPage::UpdateServerList()
-{
-	QString serviceName = ui->service->currentText();
-	bool showMore = ui->service->currentData().toInt() ==
-			(int)ListOpt::ShowAll;
-
-	if (showMore) {
-		LoadServices(true);
-		ui->service->showPopup();
-		return;
-	} else {
-		lastService = serviceName;
-	}
-
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
-	obs_property_t *services = obs_properties_get(props, "service");
-
-	OBSDataAutoRelease settings = obs_data_create();
-
-	obs_data_set_string(settings, "service", QT_TO_UTF8(serviceName));
-	obs_property_modified(services, settings);
-
-	obs_property_t *servers = obs_properties_get(props, "server");
-
-	ui->server->clear();
-
-	size_t servers_count = obs_property_list_item_count(servers);
-	for (size_t i = 0; i < servers_count; i++) {
-		const char *name = obs_property_list_item_name(servers, i);
-		const char *server = obs_property_list_item_string(servers, i);
-		ui->server->addItem(name, server);
-	}
-
-	obs_properties_destroy(props);
+	ui->service->model()->sort(0);
 }
 
 void AutoConfigStreamPage::UpdateCompleted()
 {
-	if (ui->key->text().isEmpty()) {
-		ready = false;
-	} else {
-		bool custom = IsCustomService();
-		if (custom) {
-			ready = !ui->customServer->text().isEmpty();
-		} else {
-			ready = true;
-		}
-	}
+	/* Assume ready if an URL is present, we can't add a specific behavior
+	 * for each service. */
+	const char *streamUrl = obs_service_get_connect_info(
+		tempService, OBS_SERVICE_CONNECT_INFO_SERVER_URL);
+
+	ready = (streamUrl != NULL && streamUrl[0] != '\0');
+
 	emit completeChanged();
+}
+
+void AutoConfigStreamPage::on_service_currentIndexChanged(int)
+{
+	if (ui->service->currentData().toInt() == SHOW_ALL) {
+		LoadServices(true);
+		ui->service->showPopup();
+		return;
+	}
+
+	OBSServiceAutoRelease oldService =
+		obs_service_get_ref(tempService.Get());
+
+	QString service = ui->service->currentData().toString();
+	OBSDataAutoRelease newSettings =
+		obs_service_defaults(QT_TO_UTF8(service));
+	tempService = obs_service_create_private(
+		QT_TO_UTF8(service), TEMP_SERVICE_NAME, newSettings);
+
+	bool cancelChange = false;
+	if (!obs_service_get_protocol(tempService)) {
+		/*
+	 	 * Cancel the change if the service happen to be without default protocol.
+	 	 *
+	 	 * This is better than generating dozens of obs_service_t to check
+	 	 * if there is a default protocol while filling the combo box.
+	 	 */
+		OBSMessageBox::warning(
+			this,
+			QTStr("Basic.Settings.Stream.NoDefaultProtocol.Title"),
+			QTStr("Basic.Settings.Stream.NoDefaultProtocol.Text")
+				.arg(ui->service->currentText()));
+		cancelChange = true;
+	}
+
+	if (cancelChange) {
+		tempService = obs_service_get_ref(oldService);
+		const char *id = obs_service_get_id(tempService);
+		uint32_t flags = obs_get_service_flags(id);
+		if ((flags & OBS_SERVICE_INTERNAL) != 0) {
+			QString name(obs_service_get_display_name(id));
+			if ((flags & OBS_SERVICE_DEPRECATED) != 0)
+				name = QTStr("Basic.Settings.Stream.DeprecatedType")
+					       .arg(name);
+
+			ui->service->setPlaceholderText(name);
+		}
+		QSignalBlocker s(ui->service);
+		ui->service->setCurrentIndex(
+			ui->service->findData(QT_UTF8(id)));
+
+		return;
+	}
+
+	delete streamServiceProps;
+	streamServiceProps = CreateTempServicePropertyView(nullptr);
+	ui->serviceLayout->addWidget(streamServiceProps);
+
+	ServiceChanged();
+}
+
+OBSPropertiesView *
+AutoConfigStreamPage::CreateTempServicePropertyView(obs_data_t *settings)
+{
+	OBSDataAutoRelease defaultSettings =
+		obs_service_defaults(obs_service_get_id(tempService));
+	OBSPropertiesView *view;
+
+	view = new OBSPropertiesView(
+		settings ? settings : defaultSettings.Get(), tempService,
+		(PropertiesReloadCallback)obs_service_properties, nullptr,
+		nullptr, 170);
+	;
+	view->setFrameShape(QFrame::NoFrame);
+	view->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
+	QObject::connect(view, &OBSPropertiesView::Changed, this,
+			 &AutoConfigStreamPage::ServiceChanged);
+
+	return view;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -585,21 +528,16 @@ AutoConfig::AutoConfig(QWidget *parent) : QWizard(parent)
 	calldata_t cd = {0};
 	calldata_set_int(&cd, "seconds", 5);
 
-	proc_handler_t *ph = obs_get_proc_handler();
-	proc_handler_call(ph, "twitch_ingests_refresh", &cd);
-	calldata_free(&cd);
-
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(parent);
 	main->EnableOutputs(false);
 
 	installEventFilter(CreateShortcutFilter());
 
-	std::string serviceType;
-	GetServiceInfo(serviceType, serviceName, server, key);
 #if defined(_WIN32) || defined(__APPLE__)
 	setWizardStyle(QWizard::ModernStyle);
 #endif
-	streamPage = new AutoConfigStreamPage();
+	obs_service_t *service = main->GetService();
+	streamPage = new AutoConfigStreamPage(service);
 
 	setPage(StartPage, new AutoConfigStartPage());
 	setPage(VideoPage, new AutoConfigVideoPage());
@@ -614,79 +552,9 @@ AutoConfig::AutoConfig(QWidget *parent) : QWizard(parent)
 	baseResolutionCX = ovi.base_width;
 	baseResolutionCY = ovi.base_height;
 
-	/* ----------------------------------------- */
-	/* check to see if Twitch's "auto" available */
-
-	OBSDataAutoRelease twitchSettings = obs_data_create();
-
-	obs_data_set_string(twitchSettings, "service", "Twitch");
-
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
-	obs_properties_apply_settings(props, twitchSettings);
-
-	obs_property_t *p = obs_properties_get(props, "server");
-	const char *first = obs_property_list_item_string(p, 0);
-	twitchAuto = strcmp(first, "auto") == 0;
-
-	obs_properties_destroy(props);
-
-	/* ----------------------------------------- */
-	/* load service/servers                      */
-
-	customServer = serviceType == "rtmp_custom";
-
-	QComboBox *serviceList = streamPage->ui->service;
-
-	if (!serviceName.empty()) {
-		serviceList->blockSignals(true);
-
-		int count = serviceList->count();
-		bool found = false;
-
-		for (int i = 0; i < count; i++) {
-			QString name = serviceList->itemText(i);
-
-			if (name == serviceName.c_str()) {
-				serviceList->setCurrentIndex(i);
-				found = true;
-				break;
-			}
-		}
-
-		if (!found) {
-			serviceList->insertItem(0, serviceName.c_str());
-			serviceList->setCurrentIndex(0);
-		}
-
-		serviceList->blockSignals(false);
-	}
-
-	streamPage->UpdateServerList();
-	streamPage->UpdateKeyLink();
-	streamPage->UpdateMoreInfoLink();
-	streamPage->lastService.clear();
-
-	if (!customServer) {
-		QComboBox *serverList = streamPage->ui->server;
-		int idx = serverList->findData(QString(server.c_str()));
-		if (idx == -1)
-			idx = 0;
-
-		serverList->setCurrentIndex(idx);
-	} else {
-		streamPage->ui->customServer->setText(server.c_str());
-		int idx = streamPage->ui->service->findData(
-			QVariant((int)ListOpt::Custom));
-		streamPage->ui->service->setCurrentIndex(idx);
-	}
-
-	if (!key.empty())
-		streamPage->ui->key->setText(key.c_str());
-
 	int bitrate =
 		config_get_int(main->Config(), "SimpleOutput", "VBitrate");
 	streamPage->ui->bitrate->setValue(bitrate);
-	streamPage->ServiceChanged();
 
 	TestHardwareEncoding();
 	if (!hardwareEncodingAvailable) {
@@ -776,20 +644,13 @@ void AutoConfig::SaveStreamSettings()
 	/* ---------------------------------- */
 	/* save service                       */
 
-	const char *service_id = customServer ? "rtmp_custom" : "rtmp_common";
+	OBSDataAutoRelease settings = obs_service_get_settings(service);
+	const char *settingsJson = obs_data_get_json(settings);
+	settings = obs_data_create_from_json(settingsJson);
 
-	obs_service_t *oldService = main->GetService();
-	OBSDataAutoRelease hotkeyData = obs_hotkeys_save_service(oldService);
-
-	OBSDataAutoRelease settings = obs_data_create();
-
-	if (!customServer)
-		obs_data_set_string(settings, "service", serviceName.c_str());
-	obs_data_set_string(settings, "server", server.c_str());
-	obs_data_set_string(settings, "key", key.c_str());
-
-	OBSServiceAutoRelease newService = obs_service_create(
-		service_id, "default_service", settings, hotkeyData);
+	OBSServiceAutoRelease newService =
+		obs_service_create(obs_service_get_id(service),
+				   "default_service", settings, nullptr);
 
 	if (!newService)
 		return;

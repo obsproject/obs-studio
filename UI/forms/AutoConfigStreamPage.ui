@@ -74,32 +74,7 @@
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QFrame" name="serviceWidget">
-        <layout class="QHBoxLayout" name="serviceWidgetLayout">
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="rightMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-         <item>
-          <widget class="QComboBox" name="service"/>
-         </item>
-         <item>
-          <widget class="UrlPushButton" name="moreInfoButton">
-           <property name="text">
-            <string>Basic.AutoConfig.StreamPage.MoreInfo</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
+       <widget class="QComboBox" name="service"/>
       </item>
       <item row="2" column="1">
        <spacer name="verticalSpacer">
@@ -118,6 +93,20 @@
     </widget>
    </item>
    <item>
+    <widget class="QGroupBox" name="serviceProps">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="title">
+      <string>Basic.Settings.Stream.ServiceSettings</string>
+     </property>
+     <layout class="QVBoxLayout" name="serviceLayout"/>
+    </widget>
+   </item>
+   <item>
     <layout class="QFormLayout" name="streamkeyPageLayout">
      <property name="fieldGrowthPolicy">
       <enum>QFormLayout::ExpandingFieldsGrow</enum>
@@ -126,116 +115,6 @@
       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
      </property>
      <item row="0" column="0">
-      <widget class="QLabel" name="serverLabel">
-       <property name="text">
-        <string>Basic.AutoConfig.StreamPage.Server</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="1">
-      <widget class="QStackedWidget" name="serverStackedWidget">
-       <property name="currentIndex">
-        <number>0</number>
-       </property>
-       <widget class="QWidget" name="servicePage">
-        <layout class="QHBoxLayout" name="horizontalLayout_2">
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="rightMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-         <item>
-          <widget class="QComboBox" name="server"/>
-         </item>
-        </layout>
-       </widget>
-       <widget class="QWidget" name="customPage">
-        <layout class="QHBoxLayout" name="horizontalLayout_3">
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="rightMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-         <item>
-          <widget class="QLineEdit" name="customServer"/>
-         </item>
-        </layout>
-       </widget>
-      </widget>
-     </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="streamKeyLabel">
-       <property name="text">
-        <string>Basic.AutoConfig.StreamPage.StreamKey</string>
-       </property>
-       <property name="openExternalLinks">
-        <bool>true</bool>
-       </property>
-       <property name="buddy">
-        <cstring>key</cstring>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="1">
-      <widget class="QFrame" name="streamKeyWidget">
-       <layout class="QHBoxLayout" name="horizontalLayout_4">
-        <property name="leftMargin">
-         <number>0</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <property name="bottomMargin">
-         <number>0</number>
-        </property>
-        <item>
-         <widget class="QLineEdit" name="key">
-          <property name="inputMask">
-           <string notr="true"/>
-          </property>
-          <property name="text">
-           <string notr="true"/>
-          </property>
-          <property name="echoMode">
-           <enum>QLineEdit::Password</enum>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="show">
-          <property name="text">
-           <string>Show</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="UrlPushButton" name="streamKeyButton">
-          <property name="text">
-           <string>Basic.AutoConfig.StreamPage.GetStreamKey</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-     </item>
-     <item row="2" column="0">
       <widget class="QLabel" name="bitrateLabel">
        <property name="text">
         <string>Basic.Settings.Output.VideoBitrate</string>
@@ -245,7 +124,7 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="1">
+     <item row="0" column="1">
       <widget class="QSpinBox" name="bitrate">
        <property name="suffix">
         <string notr="true"/>
@@ -261,7 +140,7 @@
        </property>
       </widget>
      </item>
-     <item row="3" column="0">
+     <item row="1" column="0">
       <spacer name="horizontalSpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -274,7 +153,7 @@
        </property>
       </spacer>
      </item>
-     <item row="3" column="1">
+     <item row="1" column="1">
       <widget class="QCheckBox" name="preferHardware">
        <property name="toolTip">
         <string>Basic.AutoConfig.StreamPage.PreferHardwareEncoding.ToolTip</string>
@@ -287,7 +166,7 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="1">
+     <item row="2" column="1">
       <widget class="QCheckBox" name="doBandwidthTest">
        <property name="text">
         <string>Basic.AutoConfig.StreamPage.PerformBandwidthTest</string>
@@ -297,7 +176,7 @@
        </property>
       </widget>
      </item>
-     <item row="5" column="1">
+     <item row="3" column="1">
       <spacer name="verticalSpacer_2">
        <property name="orientation">
         <enum>Qt::Vertical</enum>

@@ -12,6 +12,7 @@
 #include <vector>
 #include <string>
 #include <mutex>
+#include <obs.hpp>
 
 class Ui_AutoConfigStartPage;
 class Ui_AutoConfigVideoPage;
@@ -19,6 +20,7 @@ class Ui_AutoConfigStreamPage;
 class Ui_AutoConfigTestPage;
 
 class AutoConfigStreamPage;
+class OBSPropertiesView;
 
 class AutoConfig : public QWizard {
 	Q_OBJECT
@@ -76,7 +78,7 @@ class AutoConfig : public QWizard {
 	std::string serviceName;
 	std::string serverName;
 	std::string server;
-	std::string key;
+	OBSServiceAutoRelease service = nullptr;
 
 	bool hardwareEncodingAvailable = false;
 	bool nvencAvailable = false;
@@ -85,9 +87,7 @@ class AutoConfig : public QWizard {
 	bool appleAvailable = false;
 
 	int startingBitrate = 2500;
-	bool customServer = false;
 	bool bandwidthTest = false;
-	bool twitchAuto = false;
 	bool preferHighFPS = false;
 	bool preferHardware = false;
 	int specificFPSNum = 0;
@@ -155,11 +155,18 @@ class AutoConfigStreamPage : public QWizardPage {
 	QString lastService;
 	bool ready = false;
 
+	OBSServiceAutoRelease tempService;
+	OBSPropertiesView *streamServiceProps = nullptr;
+
 	void LoadServices(bool showAll);
-	inline bool IsCustomService() const;
+
+	OBSPropertiesView *CreateTempServicePropertyView(obs_data_t *settings);
+
+private slots:
+	void on_service_currentIndexChanged(int idx);
 
 public:
-	AutoConfigStreamPage(QWidget *parent = nullptr);
+	AutoConfigStreamPage(obs_service_t *service, QWidget *parent = nullptr);
 	~AutoConfigStreamPage();
 
 	virtual bool isComplete() const override;
@@ -167,11 +174,7 @@ public:
 	virtual bool validatePage() override;
 
 public slots:
-	void on_show_clicked();
 	void ServiceChanged();
-	void UpdateKeyLink();
-	void UpdateMoreInfoLink();
-	void UpdateServerList();
 	void UpdateCompleted();
 };
 
@@ -226,9 +229,13 @@ class AutoConfigTestPage : public QWizardPage {
 			  address(address_)
 		{
 		}
-	};
 
-	void GetServers(std::vector<ServerInfo> &servers);
+		inline ServerInfo(const char *address_)
+			: name(address_),
+			  address(address_)
+		{
+		}
+	};
 
 public:
 	AutoConfigTestPage(QWidget *parent = nullptr);

@@ -273,7 +273,8 @@ OBSBasicSettings QListWidget::item {
 }
 
 /* Settings properties view */
-OBSBasicSettings #PropertiesContainer {
+OBSBasicSettings #PropertiesContainer,
+QWizardPage #PropertiesContainer {
     background-color: palette(dark);
 }
 

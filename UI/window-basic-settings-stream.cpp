@@ -107,6 +107,7 @@ void OBSBasicSettings::SaveStream1Settings()
 	SaveCheckBox(ui->ignoreRecommended, "Stream1", "IgnoreRecommended");
 }
 
+/* NOTE: Identical to AutoConfigStreamPage function except it shows deprecated services */
 void OBSBasicSettings::LoadServices(bool showAll)
 {
 	const char *id;
