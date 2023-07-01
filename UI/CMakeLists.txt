@@ -60,12 +60,6 @@ target_sources(
   obs-studio
   PRIVATE # cmake-format: sortable
           api-interface.cpp
-          auth-base.cpp
-          auth-base.hpp
-          auth-listener.cpp
-          auth-listener.hpp
-          auth-oauth.cpp
-          auth-oauth.hpp
           broadcast-flow.cpp
           broadcast-flow.hpp
           display-helpers.hpp

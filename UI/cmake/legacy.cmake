@@ -80,17 +80,11 @@ target_sources(
 
 target_sources(
   obs
-  PRIVATE auth-oauth.cpp
-          auth-oauth.hpp
-          auth-listener.cpp
-          auth-listener.hpp
-          obs-app.cpp
+  PRIVATE obs-app.cpp
           obs-app.hpp
           obs-proxy-style.cpp
           obs-proxy-style.hpp
           api-interface.cpp
-          auth-base.cpp
-          auth-base.hpp
           broadcast-flow.cpp
           broadcast-flow.hpp
           display-helpers.hpp

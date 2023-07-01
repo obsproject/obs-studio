@@ -313,9 +313,7 @@ bool OBSBasic::CreateProfile(const std::string &newName, bool create_new,
 	config_set_string(App()->GlobalConfig(), "Basic", "ProfileDir",
 			  newDir.c_str());
 
-	Auth::Save();
 	if (create_new) {
-		auth.reset();
 		DestroyPanelCookieManager();
 	} else if (!rename) {
 		DuplicateCurrentCookieProfile(config);
@@ -350,8 +348,6 @@ bool OBSBasic::CreateProfile(const std::string &newName, bool create_new,
 	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
 	UpdateTitleBar();
 	UpdateVolumeControlsDecayRate();
-
-	Auth::Load();
 
 	// Run auto configuration setup wizard when a new profile is made to assist
 	// setting up blank settings
@@ -626,8 +622,6 @@ void OBSBasic::on_actionRemoveProfile_triggered(bool skipConfirmation)
 	bool needsRestart =
 		ProfileNeedsRestart(config, settingsRequiringRestart);
 
-	Auth::Save();
-	auth.reset();
 	DeleteCookies();
 	DestroyPanelCookieManager();
 
@@ -645,8 +639,6 @@ void OBSBasic::on_actionRemoveProfile_triggered(bool skipConfirmation)
 
 	UpdateTitleBar();
 	UpdateVolumeControlsDecayRate();
-
-	Auth::Load();
 
 	if (api) {
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
@@ -824,8 +816,6 @@ void OBSBasic::ChangeProfile()
 	config_set_string(App()->GlobalConfig(), "Basic", "Profile", newName);
 	config_set_string(App()->GlobalConfig(), "Basic", "ProfileDir", newDir);
 
-	Auth::Save();
-	auth.reset();
 	DestroyPanelCookieManager();
 
 	config.Swap(basicConfig);
@@ -836,8 +826,6 @@ void OBSBasic::ChangeProfile()
 	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
 	UpdateTitleBar();
 	UpdateVolumeControlsDecayRate();
-
-	Auth::Load();
 
 	CheckForSimpleModeX264Fallback();
 

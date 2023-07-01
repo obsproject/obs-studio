@@ -36,7 +36,6 @@
 #include "window-missing-files.hpp"
 #include "window-projector.hpp"
 #include "window-basic-about.hpp"
-#include "auth-base.hpp"
 #include "log-viewer.hpp"
 #include "undo-stack-obs.hpp"
 #include "broadcast-flow.hpp"
@@ -222,8 +221,6 @@ class OBSBasic : public OBSMainWindow {
 
 private:
 	obs_frontend_callbacks *api = nullptr;
-
-	std::shared_ptr<Auth> auth;
 
 	std::vector<VolControl *> volumes;
 
@@ -943,8 +940,6 @@ public:
 
 	void SaveService();
 	bool LoadService();
-
-	inline Auth *GetAuth() { return auth.get(); }
 
 	inline void EnableOutputs(bool enable)
 	{
