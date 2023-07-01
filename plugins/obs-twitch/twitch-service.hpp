@@ -8,6 +8,14 @@
 
 #include "twitch-api.hpp"
 
+#ifdef OAUTH_ENABLED
+#include <unordered_map>
+#include <memory>
+#include <obs.hpp>
+
+#include "twitch-oauth.hpp"
+#endif
+
 class TwitchService {
 	obs_service_info info = {0};
 
@@ -34,6 +42,17 @@ class TwitchService {
 	static void InfoEnableBandwidthTest(void *data, bool enabled);
 	static bool InfoBandwidthTestEnabled(void *data);
 
+#ifdef OAUTH_ENABLED
+	OBSDataAutoRelease data = nullptr;
+
+	std::unordered_map<std::string, std::shared_ptr<TwitchApi::ServiceOAuth>>
+		oauths;
+	std::unordered_map<std::string, unsigned int> oauthsRefCounter;
+	bool deferUiFunction = true;
+
+	void SaveOAuthsData();
+	static void OBSEvent(obs_frontend_event event, void *priv);
+#endif
 public:
 	TwitchService();
 	~TwitchService() {}
@@ -41,4 +60,10 @@ public:
 	static void Register();
 
 	std::vector<TwitchApi::Ingest> GetIngests(bool refresh = false);
+
+#ifdef OAUTH_ENABLED
+	TwitchApi::ServiceOAuth *GetOAuth(const std::string &uuid,
+					  obs_service_t *service);
+	void ReleaseOAuth(const std::string &uuid, obs_service_t *service);
+#endif
 };

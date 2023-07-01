@@ -11,6 +11,12 @@
 
 class TwitchConfig {
 	TwitchService *typeData;
+#ifdef OAUTH_ENABLED
+	obs_service_t *serviceObj;
+
+	std::string uuid;
+	TwitchApi::ServiceOAuth *oauth = nullptr;
+#endif
 
 	std::string protocol;
 	bool serverAuto;

@@ -23,6 +23,8 @@ target_sources(
 
 target_link_libraries(obs-twitch PRIVATE OBS::libobs OBS::oauth nlohmann_json::nlohmann_json)
 
+include(cmake/feature-oauth.cmake)
+
 if(OS_WINDOWS)
   configure_file(cmake/windows/obs-module.rc.in obs-twitch.rc)
   target_sources(obs-twitch PRIVATE obs-twitch.rc)
