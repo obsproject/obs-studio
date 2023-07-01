@@ -40,6 +40,7 @@ set(
   forms/OBSBasicSettings.ui
   forms/OBSBasicSourceSelect.ui
   forms/OBSBasicTransform.ui
+  forms/OBSBasicTransitionAudio.ui
   forms/OBSBasicVCamConfig.ui
   forms/OBSExtraBrowsers.ui
   forms/OBSImporter.ui
