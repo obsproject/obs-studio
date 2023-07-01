@@ -24,18 +24,6 @@ set(OAUTH_BASE_URL
 
 mark_as_advanced(OAUTH_BASE_URL)
 
-if(NOT DEFINED TWITCH_CLIENTID
-   OR "${TWITCH_CLIENTID}" STREQUAL ""
-   OR NOT DEFINED TWITCH_HASH
-   OR "${TWITCH_HASH}" STREQUAL ""
-   OR NOT TARGET OBS::browser-panels)
-  set(TWITCH_ENABLED OFF)
-  set(TWITCH_CLIENTID "")
-  set(TWITCH_HASH "0")
-else()
-  set(TWITCH_ENABLED ON)
-endif()
-
 if(NOT DEFINED RESTREAM_CLIENTID
    OR "${RESTREAM_CLIENTID}" STREQUAL ""
    OR NOT DEFINED RESTREAM_HASH
@@ -301,11 +289,6 @@ if(TARGET OBS::browser-panels)
 
   target_sources(obs PRIVATE window-dock-browser.cpp window-dock-browser.hpp window-extra-browsers.cpp
                              window-extra-browsers.hpp)
-
-  if(TWITCH_ENABLED)
-    target_compile_definitions(obs PRIVATE TWITCH_ENABLED)
-    target_sources(obs PRIVATE auth-twitch.cpp auth-twitch.hpp)
-  endif()
 
   if(RESTREAM_ENABLED)
     target_compile_definitions(obs PRIVATE RESTREAM_ENABLED)

@@ -269,7 +269,6 @@ void setupDockAction(QDockWidget *dock)
 	action->connect(action, &QAction::enabledChanged, neverDisable);
 }
 
-extern void RegisterTwitchAuth();
 extern void RegisterRestreamAuth();
 
 OBSBasic::OBSBasic(QWidget *parent)
@@ -279,10 +278,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 {
 	setAttribute(Qt::WA_NativeWindow);
 
-#ifdef TWITCH_ENABLED
-	RegisterTwitchAuth();
-#endif
-#ifdef RESTREAM_ENABLED
+#if RESTREAM_ENABLED
 	RegisterRestreamAuth();
 #endif
 

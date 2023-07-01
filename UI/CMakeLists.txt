@@ -55,7 +55,6 @@ if(NOT OAUTH_BASE_URL)
   mark_as_advanced(OAUTH_BASE_URL)
   # cmake-format: on
 endif()
-include(cmake/feature-twitch.cmake)
 include(cmake/feature-restream.cmake)
 include(cmake/feature-sparkle.cmake)
 include(cmake/feature-whatsnew.cmake)
