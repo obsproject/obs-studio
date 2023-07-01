@@ -23,6 +23,8 @@ target_sources(
 
 target_link_libraries(obs-restream PRIVATE OBS::libobs OBS::oauth nlohmann_json::nlohmann_json)
 
+include(cmake/feature-oauth.cmake)
+
 if(OS_WINDOWS)
   configure_file(cmake/windows/obs-module.rc.in obs-restream.rc)
   target_sources(obs-restream PRIVATE obs-restream.rc)

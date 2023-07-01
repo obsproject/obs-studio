@@ -21,4 +21,15 @@ inline void from_json(const json &j, Ingest &s)
 	s.rtmpUrl = j.at("rtmpUrl").get<std::string>();
 }
 
+#ifdef OAUTH_ENABLED
+
+struct StreamKey {
+	std::string streamKey;
+};
+
+inline void from_json(const json &j, StreamKey &s)
+{
+	s.streamKey = j.at("streamKey").get<std::string>();
+}
+#endif
 }

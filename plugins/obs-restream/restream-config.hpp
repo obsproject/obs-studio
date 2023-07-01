@@ -11,6 +11,12 @@
 
 class RestreamConfig {
 	RestreamService *typeData;
+#ifdef OAUTH_ENABLED
+	obs_service_t *serviceObj;
+
+	std::string uuid;
+	RestreamApi::ServiceOAuth *oauth = nullptr;
+#endif
 
 	std::string server;
 
