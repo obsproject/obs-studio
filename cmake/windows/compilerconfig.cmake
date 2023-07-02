@@ -37,6 +37,10 @@ set(_obs_msvc_c_options /Brepro /MP /permissive- /Zc:__cplusplus /Zc:preprocesso
 
 set(_obs_msvc_cpp_options /Brepro /MP /permissive- /Zc:__cplusplus /Zc:preprocessor)
 
+if(CMAKE_CXX_STANDARD GREATER_EQUAL 20)
+  list(APPEND _obs_msvc_cpp_options /Zc:char8_t-)
+endif()
+
 add_compile_options(
   /W3
   /utf-8
