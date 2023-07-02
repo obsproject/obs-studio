@@ -166,7 +166,6 @@ static bool init_audio_screen_stream(struct screen_capture *sc)
     }];
     os_event_wait(sc->stream_start_completed);
 
-    MACCAP_ERR("init closing, returning %d\n", did_stream_start);
     return did_stream_start;
 }
 
