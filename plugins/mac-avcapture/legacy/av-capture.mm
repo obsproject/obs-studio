@@ -43,7 +43,7 @@ namespace std {
 
 }  // namespace std
 
-#define TEXT_AVCAPTURE     obs_module_text("AVCapture")
+#define TEXT_AVCAPTURE     obs_module_text("AVCapture_Legacy")
 #define TEXT_DEVICE        obs_module_text("Device")
 #define TEXT_USE_PRESET    obs_module_text("UsePreset")
 #define TEXT_PRESET        obs_module_text("Preset")
@@ -79,7 +79,7 @@ struct av_capture;
 
 #define AVLOG(level, format, ...) blog(level, "%s: " format, obs_source_get_name(capture->source), ##__VA_ARGS__)
 
-@interface OBSAVCaptureDelegate
+@interface OBSLegacyAVCaptureDelegate
     : NSObject <AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptureAudioDataOutputSampleBufferDelegate> {
       @public
     struct av_capture *capture;
@@ -113,7 +113,7 @@ namespace {
 }  // namespace
 
 struct av_capture {
-    OBSAVCaptureDelegate *delegate;
+    OBSLegacyAVCaptureDelegate *delegate;
     dispatch_queue_t queue;
     dispatch_queue_t audioQueue;
     bool has_clock;
@@ -198,7 +198,7 @@ static bool get_input_format(obs_data_t *settings, FourCharCode &fourcc)
     if (!item)
         return false;
 
-    fourcc = (FourCharCode) obs_data_item_get_int(item.get());
+    fourcc = static_cast<FourCharCode>(obs_data_item_get_int(item.get()));
     return true;
 }
 
@@ -564,14 +564,14 @@ static inline bool update_frame(av_capture *capture, obs_source_frame *frame, CM
     CVPixelBufferLockBaseAddress(img, kCVPixelBufferLock_ReadOnly);
 
     if (!CVPixelBufferIsPlanar(img)) {
-        frame->linesize[0] = (uint32_t) CVPixelBufferGetBytesPerRow(img);
+        frame->linesize[0] = static_cast<uint32_t>(CVPixelBufferGetBytesPerRow(img));
         frame->data[0] = static_cast<uint8_t *>(CVPixelBufferGetBaseAddress(img));
         return true;
     }
 
     size_t count = CVPixelBufferGetPlaneCount(img);
     for (size_t i = 0; i < count; i++) {
-        frame->linesize[i] = (uint32_t) CVPixelBufferGetBytesPerRowOfPlane(img, i);
+        frame->linesize[i] = static_cast<uint32_t>(CVPixelBufferGetBytesPerRowOfPlane(img, i));
         frame->data[i] = static_cast<uint8_t *>(CVPixelBufferGetBaseAddressOfPlane(img, i));
     }
     return true;
@@ -589,7 +589,7 @@ static inline bool update_audio(obs_source_audio *audio, CMSampleBufferRef sampl
         return false;
     }
 
-    AudioBufferList *list = (AudioBufferList *) bmalloc(requiredSize);
+    AudioBufferList *list = static_cast<AudioBufferList *>(bmalloc(requiredSize));
     CMBlockBufferRef buffer;
 
     status = CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(
@@ -605,13 +605,13 @@ static inline bool update_audio(obs_source_audio *audio, CMSampleBufferRef sampl
     }
 
     for (size_t i = 0; i < list->mNumberBuffers; i++)
-        audio->data[i] = (uint8_t *) list->mBuffers[i].mData;
+        audio->data[i] = static_cast<uint8_t *>(list->mBuffers[i].mData);
 
-    audio->frames = (uint32_t) CMSampleBufferGetNumSamples(sample_buffer);
+    audio->frames = static_cast<uint32_t>(CMSampleBufferGetNumSamples(sample_buffer));
     CMFormatDescriptionRef desc = CMSampleBufferGetFormatDescription(sample_buffer);
     const AudioStreamBasicDescription *asbd = CMAudioFormatDescriptionGetStreamBasicDescription(desc);
-    audio->samples_per_sec = (uint32_t) asbd->mSampleRate;
-    audio->speakers = (enum speaker_layout) asbd->mChannelsPerFrame;
+    audio->samples_per_sec = static_cast<uint32_t>(asbd->mSampleRate);
+    audio->speakers = static_cast<enum speaker_layout>(asbd->mChannelsPerFrame);
     switch (asbd->mBitsPerChannel) {
         case 8:
             audio->format = AUDIO_FORMAT_U8BIT;
@@ -634,7 +634,7 @@ static inline bool update_audio(obs_source_audio *audio, CMSampleBufferRef sampl
     return true;
 }
 
-@implementation OBSAVCaptureDelegate
+@implementation OBSLegacyAVCaptureDelegate
 
 - (void)captureOutput:(AVCaptureOutput *)out
     didDropSampleBuffer:(CMSampleBufferRef)sampleBuffer
@@ -754,7 +754,7 @@ static bool init_session(av_capture *capture)
         return false;
     }
 
-    auto delegate = [[OBSAVCaptureDelegate alloc] init];
+    auto delegate = [[OBSLegacyAVCaptureDelegate alloc] init];
     if (!delegate) {
         AVLOG(LOG_ERROR, "Could not create OBSAVCaptureDelegate");
         return false;
@@ -826,7 +826,7 @@ static bool init_device_input(av_capture *capture, AVCaptureDevice *dev)
 
 static uint32_t uint_from_dict(NSDictionary *dict, CFStringRef key)
 {
-    return ((NSNumber *) dict[(__bridge NSString *) key]).unsignedIntValue;
+    return static_cast<NSNumber *>(dict[(__bridge NSString *) key]).unsignedIntValue;
 }
 
 static bool init_format(av_capture *capture, AVCaptureDevice *dev)
@@ -1010,7 +1010,7 @@ static bool init_manual(av_capture *capture, AVCaptureDevice *dev, obs_data_t *s
     clear_capture(capture);
 
     auto input_format = obs_data_get_int(settings, "input_format");
-    FourCharCode actual_format = (FourCharCode) input_format;
+    FourCharCode actual_format = static_cast<FourCharCode>(input_format);
 
     SCOPE_EXIT
     {
@@ -1027,13 +1027,13 @@ static bool init_manual(av_capture *capture, AVCaptureDevice *dev, obs_data_t *s
             obs_source_update_properties(capture->source);
     };
 
-    capture->requested_colorspace = (int) obs_data_get_int(settings, "color_space");
+    capture->requested_colorspace = static_cast<int>(obs_data_get_int(settings, "color_space"));
     if (!color_space_valid(capture->requested_colorspace)) {
         AVLOG(LOG_WARNING, "Unsupported color space: %d", capture->requested_colorspace);
         return false;
     }
 
-    capture->requested_video_range = (int) obs_data_get_int(settings, "video_range");
+    capture->requested_video_range = static_cast<int>(obs_data_get_int(settings, "video_range"));
     if (!video_range_valid(capture->requested_video_range)) {
         AVLOG(LOG_WARNING, "Unsupported color range: %d", capture->requested_video_range);
         return false;
@@ -1074,7 +1074,8 @@ static bool init_manual(av_capture *capture, AVCaptureDevice *dev, obs_data_t *s
     if (!lock_device(capture, dev))
         return false;
 
-    const char *if_name = input_format == INPUT_FORMAT_AUTO ? "Auto" : fourcc_subtype_name((FourCharCode) input_format);
+    const char *if_name =
+        input_format == INPUT_FORMAT_AUTO ? "Auto" : fourcc_subtype_name(static_cast<FourCharCode>(input_format));
 
 #define IF_AUTO(x) (input_format != INPUT_FORMAT_AUTO ? "" : x)
     AVLOG(LOG_INFO,
@@ -1702,7 +1703,7 @@ static bool input_format_property_needs_update(obs_property_t *p, const vector<A
 
     auto num = obs_property_list_item_count(p);
     for (size_t i = 1; i < num; i++) {  // skip auto entry
-        FourCharCode fourcc = (FourCharCode) obs_property_list_item_int(p, i);
+        FourCharCode fourcc = static_cast<FourCharCode>(obs_property_list_item_int(p, i));
         fourcc_found = fourcc_found || fourcc == *fourcc_;
 
         auto pos = find_if(begin(formats), end(formats), [&](AVCaptureDeviceFormat *format) {
@@ -1803,7 +1804,7 @@ static bool update_int_list_property(const char *prop_name, const char *localiza
     if (!p)
         p = obs_properties_get(props, prop_name);
 
-    int val = (int) obs_data_get_int(conf.settings, prop_name);
+    int val = static_cast<int>(obs_data_get_int(conf.settings, prop_name));
 
     av_video_info vi;
     if (ref)
@@ -2181,7 +2182,7 @@ bool obs_module_load(void)
         .id = "av_capture_input",
         .type = OBS_SOURCE_TYPE_INPUT,
         .output_flags = OBS_SOURCE_ASYNC_VIDEO | OBS_SOURCE_AUDIO | OBS_SOURCE_DO_NOT_DUPLICATE |
-                        OBS_SOURCE_CAP_OBSOLETE,
+                        OBS_SOURCE_CAP_OBSOLETE | OBS_SOURCE_DEPRECATED,
         .get_name = av_capture_getname,
         .create = av_capture_create,
         .destroy = av_capture_destroy,
@@ -2193,7 +2194,8 @@ bool obs_module_load(void)
     obs_register_source(&av_capture_info);
 
     av_capture_info.version = 2;
-    av_capture_info.output_flags = OBS_SOURCE_ASYNC_VIDEO | OBS_SOURCE_AUDIO | OBS_SOURCE_DO_NOT_DUPLICATE;
+    av_capture_info.output_flags = OBS_SOURCE_ASYNC_VIDEO | OBS_SOURCE_AUDIO | OBS_SOURCE_DO_NOT_DUPLICATE |
+                                   OBS_SOURCE_DEPRECATED;
     av_capture_info.get_defaults = av_capture_defaults_v2;
 
     obs_register_source(&av_capture_info);
