@@ -4,7 +4,7 @@ static void destroy_screen_stream(struct screen_capture *sc)
 {
     if (sc->disp && !sc->capture_failed) {
         [sc->disp stopCaptureWithCompletionHandler:^(NSError *_Nullable error) {
-            if (error && error.code != 3808) {
+            if (error && error.code != SCStreamErrorAttemptToStopStreamState) {
                 MACCAP_ERR("destroy_screen_stream: Failed to stop stream with error %s\n",
                            [[error localizedFailureReason] cStringUsingEncoding:NSUTF8StringEncoding]);
             }
