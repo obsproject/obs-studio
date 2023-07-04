@@ -24,6 +24,7 @@
 #include <QGroupBox>
 #include <QObject>
 #include <QDesktopServices>
+#include <QUuid>
 #include "double-slider.hpp"
 #include "spinbox-ignorewheel.hpp"
 #include "properties-view.hpp"
@@ -740,6 +741,14 @@ void OBSPropertiesView::AddEditableList(obs_property_t *prop,
 		QListWidgetItem *const list_item = list->item((int)i);
 		list_item->setSelected(obs_data_get_bool(item, "selected"));
 		list_item->setHidden(obs_data_get_bool(item, "hidden"));
+		QString uuid = QT_UTF8(obs_data_get_string(item, "uuid"));
+		/* for backwards compatibility */
+		if (uuid.isEmpty()) {
+			uuid = QUuid::createUuid().toString(
+				QUuid::WithoutBraces);
+			obs_data_set_string(item, "uuid", uuid.toUtf8());
+		}
+		list_item->setData(Qt::UserRole, uuid);
 	}
 
 	WidgetInfo *info = new WidgetInfo(this, prop, list);
@@ -2024,6 +2033,9 @@ void WidgetInfo::EditableListChanged()
 		OBSDataAutoRelease arrayItem = obs_data_create();
 		obs_data_set_string(arrayItem, "value",
 				    QT_TO_UTF8(item->text()));
+		obs_data_set_string(
+			arrayItem, "uuid",
+			QT_TO_UTF8(item->data(Qt::UserRole).toString()));
 		obs_data_set_bool(arrayItem, "selected", item->isSelected());
 		obs_data_set_bool(arrayItem, "hidden", item->isHidden());
 		obs_data_array_push_back(array, arrayItem);
@@ -2293,7 +2305,11 @@ void WidgetInfo::EditListAddText()
 	if (text.isEmpty())
 		return;
 
-	list->addItem(text);
+	QListWidgetItem *item = new QListWidgetItem(text);
+	item->setData(Qt::UserRole,
+		      QUuid::createUuid().toString(QUuid::WithoutBraces));
+	list->addItem(item);
+
 	EditableListChanged();
 }
 
@@ -2318,7 +2334,13 @@ void WidgetInfo::EditListAddFiles()
 	if (files.count() == 0)
 		return;
 
-	list->addItems(files);
+	for (QString file : files) {
+		QListWidgetItem *item = new QListWidgetItem(file);
+		item->setData(Qt::UserRole, QUuid::createUuid().toString(
+						    QUuid::WithoutBraces));
+		list->addItem(item);
+	}
+
 	EditableListChanged();
 }
 
@@ -2341,7 +2363,11 @@ void WidgetInfo::EditListAddDir()
 	if (dir.isEmpty())
 		return;
 
-	list->addItem(dir);
+	QListWidgetItem *item = new QListWidgetItem(dir);
+	item->setData(Qt::UserRole,
+		      QUuid::createUuid().toString(QUuid::WithoutBraces));
+	list->addItem(item);
+
 	EditableListChanged();
 }
 
