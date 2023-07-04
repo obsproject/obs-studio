@@ -343,11 +343,8 @@ void OBSBasic::on_actionRemoveSceneCollection_triggered()
 		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING);
 
 	oldFile.insert(0, path);
-	oldFile += ".json";
-
-	os_unlink(oldFile.c_str());
-	oldFile += ".bak";
-	os_unlink(oldFile.c_str());
+	/* os_rename() overwrites if necessary, only the .bak file will remain. */
+	os_rename((oldFile + ".json").c_str(), (oldFile + ".json.bak").c_str());
 
 	Load(newPath.c_str());
 	RefreshSceneCollections();
