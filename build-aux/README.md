@@ -4,6 +4,7 @@ This folder contains:
 - The Flatpak manifest used to build OBS Studio
 - The script `format-manifest.py` which format manifest JSON files
 - JSON Schemas related to plugins
+- The script `regen-obs-services-json-parser.zsh` to regenerate obs-services plugin JSON parser against its schema
 
 ## OBS Studio Flatpak Manifest
 
