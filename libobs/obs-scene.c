@@ -401,13 +401,19 @@ static void calculate_bounds_data(struct obs_scene_item *item,
 
 	width = (float)(*cx) * scale->x;
 	height = (float)(*cy) * scale->y;
-	width_diff = item->bounds.x - width;
-	height_diff = item->bounds.y - height;
+
+	/* Disregards flip when calculating size diff */
+	width_diff = item->bounds.x - fabsf(width);
+	height_diff = item->bounds.y - fabsf(height);
 	*cx = (uint32_t)item->bounds.x;
 	*cy = (uint32_t)item->bounds.y;
 
 	add_alignment(origin, item->bounds_align, (int)-width_diff,
 		      (int)-height_diff);
+
+	/* Makes the item stay in-place in the box if flipped */
+	origin->x += (width < 0.0f) ? width : 0.0f;
+	origin->y += (height < 0.0f) ? height : 0.0f;
 }
 
 static inline uint32_t calc_cx(const struct obs_scene_item *item,
