@@ -74,7 +74,6 @@ runs:
         local -a build_args=(
           --config ${{ inputs.config }}
           --target linux-${{ inputs.target }}
-          --generator Ninja
         )
         if (( ${+RUNNER_DEBUG} )) build_args+=(--debug)
 

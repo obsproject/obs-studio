@@ -3,8 +3,7 @@ param(
     [ValidateSet('x64')]
     [string] $Target = 'x64',
     [ValidateSet('Debug', 'RelWithDebInfo', 'Release', 'MinSizeRel')]
-    [string] $Configuration = 'RelWithDebInfo',
-    [switch] $SkipDeps
+    [string] $Configuration = 'RelWithDebInfo'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -12,6 +11,10 @@ $ErrorActionPreference = 'Stop'
 if ( $DebugPreference -eq 'Continue' ) {
     $VerbosePreference = 'Continue'
     $InformationPreference = 'Continue'
+}
+
+if ( $env:CI -eq $null ) {
+    throw "Package-Windows.ps1 requires CI environment"
 }
 
 if ( ! ( [System.Environment]::Is64BitOperatingSystem ) ) {
@@ -40,9 +43,7 @@ function Package {
         . $Utility.FullName
     }
 
-    if ( ! $SkipDeps ) {
-        Install-BuildDependencies -WingetFile "${ScriptHome}/.Wingetfile"
-    }
+    Install-BuildDependencies -WingetFile "${ScriptHome}/.Wingetfile"
 
     $GitDescription = Invoke-External git describe --tags --long
     $Tokens = ($GitDescription -split '-')
@@ -60,7 +61,7 @@ function Package {
         '-C', "${Configuration}"
     )
 
-    if ( $VerbosePreference -eq 'Continue' ) {
+    if ( $DebugPreference -eq 'Continue' ) {
         $CpackArgs += ('--verbose')
     }
 
