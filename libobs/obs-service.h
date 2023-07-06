@@ -37,6 +37,7 @@ enum obs_service_info_flag {
 struct obs_service_resolution {
 	int cx;
 	int cy;
+	int fps;
 };
 
 /* NOTE: Odd numbers are reserved for custom info from third-party protocols */
@@ -104,11 +105,14 @@ struct obs_service_info {
 	/* TODO: Rename to 'get_preferred_output_type' once a API/ABI break happen */
 	const char *(*get_output_type)(void *data);
 
+	/* deprecated */
 	void (*get_supported_resolutions)(
 		void *data, struct obs_service_resolution **resolutions,
 		size_t *count);
+
 	void (*get_max_fps)(void *data, int *fps);
 
+	/* deprecated */
 	void (*get_max_bitrate)(void *data, int *video_bitrate,
 				int *audio_bitrate);
 
@@ -134,6 +138,15 @@ struct obs_service_info {
 	bool (*can_bandwidth_test)(void *data);
 	void (*enable_bandwidth_test)(void *data, bool enabled);
 	bool (*bandwidth_test_enabled)(void *data);
+
+	void (*get_supported_resolutions2)(
+		void *data, struct obs_service_resolution **resolutions,
+		size_t *count, bool *with_fps);
+
+	int (*get_max_video_bitrate)(void *data, const char *codec,
+				     struct obs_service_resolution resolution);
+
+	int (*get_max_codec_bitrate)(void *data, const char *codec);
 };
 
 EXPORT void obs_register_service_s(const struct obs_service_info *info,

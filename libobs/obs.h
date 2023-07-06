@@ -2640,11 +2640,12 @@ EXPORT void *obs_service_get_type_data(obs_service_t *service);
 
 EXPORT const char *obs_service_get_id(const obs_service_t *service);
 
-EXPORT void obs_service_get_supported_resolutions(
+OBS_DEPRECATED EXPORT void obs_service_get_supported_resolutions(
 	const obs_service_t *service,
 	struct obs_service_resolution **resolutions, size_t *count);
 EXPORT void obs_service_get_max_fps(const obs_service_t *service, int *fps);
 
+OBS_DEPRECATED
 EXPORT void obs_service_get_max_bitrate(const obs_service_t *service,
 					int *video_bitrate, int *audio_bitrate);
 
@@ -2682,6 +2683,19 @@ EXPORT bool obs_service_can_bandwidth_test(const obs_service_t *service);
 EXPORT void obs_service_enable_bandwidth_test(const obs_service_t *service,
 					      bool enabled);
 EXPORT bool obs_service_bandwidth_test_enabled(const obs_service_t *service);
+
+EXPORT int obs_service_get_max_codec_bitrate(const obs_service_t *service,
+					     const char *codec);
+
+EXPORT void obs_service_get_supported_resolutions2(
+	const obs_service_t *service,
+	struct obs_service_resolution **resolutions, size_t *count,
+	bool *with_fps);
+
+EXPORT int
+obs_service_get_max_video_bitrate(const obs_service_t *service,
+				  const char *codec,
+				  struct obs_service_resolution resolution);
 
 /* ------------------------------------------------------------------------- */
 /* Source frame allocation functions */

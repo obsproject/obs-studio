@@ -1004,17 +1004,35 @@ void AutoConfigTestPage::FinalizeResults()
 						   vencoder_settings, nullptr);
 
 		BPtr<obs_service_resolution> res_list;
-		size_t res_count;
-		int maxFPS;
-		obs_service_get_supported_resolutions(wiz->service, &res_list,
-						      &res_count);
-		obs_service_get_max_fps(wiz->service, &maxFPS);
+		size_t res_count = 0;
+		bool res_with_fps = false;
+		int maxFPS = 0;
+		obs_service_get_supported_resolutions2(
+			wiz->service, &res_list, &res_count, &res_with_fps);
+		if (!res_with_fps)
+			obs_service_get_max_fps(wiz->service, &maxFPS);
 
 		if (res_list) {
 			set_closest_res(wiz->idealResolutionCX,
 					wiz->idealResolutionCY, res_list,
 					res_count);
 		}
+
+		if (res_count && res_with_fps) {
+			for (size_t i = 0; i < res_count; i++) {
+				{
+					if (res_list[i].cx !=
+						    wiz->idealResolutionCX ||
+					    res_list[i].cy !=
+						    wiz->idealResolutionCY)
+						continue;
+
+					if (res_list[i].fps > maxFPS)
+						maxFPS = res_list[i].fps;
+				}
+			}
+		}
+
 		if (maxFPS) {
 			double idealFPS = (double)wiz->idealFPSNum /
 					  (double)wiz->idealFPSDen;

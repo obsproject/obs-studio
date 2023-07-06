@@ -601,3 +601,57 @@ bool obs_service_bandwidth_test_enabled(const obs_service_t *service)
 
 	return service->info.bandwidth_test_enabled(service->context.data);
 }
+
+int obs_service_get_max_codec_bitrate(const obs_service_t *service,
+				      const char *codec)
+{
+	if (!obs_service_valid(service, "obs_service_get_max_codec_bitrate"))
+		return 0;
+
+	if (!service->info.get_max_codec_bitrate)
+		return 0;
+
+	return service->info.get_max_codec_bitrate(service->context.data,
+						   codec);
+}
+
+void obs_service_get_supported_resolutions2(
+	const obs_service_t *service,
+	struct obs_service_resolution **resolutions, size_t *count,
+	bool *with_fps)
+{
+	if (!obs_service_valid(service, "obs_service_supported_resolutions2"))
+		return;
+	if (!obs_ptr_valid(resolutions, "obs_service_supported_resolutions2"))
+		return;
+	if (!obs_ptr_valid(count, "obs_service_supported_resolutions2"))
+		return;
+	if (!obs_ptr_valid(with_fps, "obs_service_supported_resolutions2"))
+		return;
+
+	*resolutions = NULL;
+	*count = 0;
+	*with_fps = false;
+
+	if (service->info.get_supported_resolutions2) {
+		service->info.get_supported_resolutions2(
+			service->context.data, resolutions, count, with_fps);
+	} else if (service->info.get_supported_resolutions) {
+		service->info.get_supported_resolutions(service->context.data,
+							resolutions, count);
+	}
+}
+
+int obs_service_get_max_video_bitrate(const obs_service_t *service,
+				      const char *codec,
+				      struct obs_service_resolution resolution)
+{
+	if (!obs_service_valid(service, "obs_service_get_max_video_bitrate"))
+		return 0;
+
+	if (!service->info.get_max_video_bitrate)
+		return 0;
+
+	return service->info.get_max_video_bitrate(service->context.data, codec,
+						   resolution);
+}

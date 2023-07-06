@@ -248,6 +248,24 @@ Service Definition Structure
 
    :return: If the bandwith test is enabled or not
 
+.. member:: void (*obs_service_info.get_supported_resolutions2)(void *data, struct obs_service_resolution **resolutions, size_t *count, bool *with_fps)
+
+   (Optional)
+
+   :return: Supported resolutions, number of those and if they provide a FPS value
+
+.. member:: int (*obs_service_info.get_max_video_bitrate)(void *data, const char *codec, struct obs_service_resolution resolution)
+
+   (Optional)
+
+   :return: Maximum video bitrate for a given codec and resolution
+
+.. member:: int (*obs_service_info.get_max_codec_bitrate)(void *data, const char *codec)
+
+   (Optional)
+
+   :return: Maximum bitrate for a given codec
+
 General Service Functions
 -------------------------
 
@@ -498,6 +516,24 @@ General Service Functions
 .. function:: bool obs_service_bandwidth_test_enabled(const obs_service_t *service)
 
    :return: If the service has bandwidth test enabled
+
+---------------------
+
+.. function:: void obs_service_get_supported_resolutions2(const obs_service_t *service, struct obs_service_resolution **resolutions, size_t *count, bool *with_fps)
+
+    :return: Supported resolutions, number of those and if they provide a FPS value
+
+---------------------
+
+.. function:: int obs_service_get_max_codec_bitrate(const obs_service_t *service, const char *codec)
+
+   :return: Maximum bitrate for a given codec
+
+---------------------
+
+.. function:: int obs_service_get_max_video_bitrate(const obs_service_t *service, const char *codec, struct obs_service_resolution resolution)
+
+   :return: Maximum video bitrate for a given codec and resolution
 
 .. ---------------------------------------------------------------------------
 

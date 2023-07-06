@@ -79,7 +79,6 @@ void OBSBasicSettings::LoadStream1Settings()
 	streamServiceProps = CreateTempServicePropertyView(settings);
 	ui->serviceLayout->addWidget(streamServiceProps);
 
-	UpdateServiceRecommendations();
 	DisplayEnforceWarning(ignoreRecommended);
 
 	loading = false;
@@ -340,17 +339,66 @@ void OBSBasicSettings::UpdateVodTrackSetting()
 	}
 }
 
+extern const char *get_simple_output_encoder(const char *name);
+
 void OBSBasicSettings::UpdateServiceRecommendations()
 {
-	int vbitrate, abitrate;
+	bool simple = (ui->outputMode->currentIndex() == 0);
+	QString vcodec, acodec;
+	int vbitrate = 0, abitrate;
 	BPtr<obs_service_resolution> res_list;
 	size_t res_count;
-	int fps;
+	bool res_with_fps = false;
+	obs_service_resolution *best_res = nullptr;
+	int fps = 0;
 
-	obs_service_get_max_bitrate(tempService, &vbitrate, &abitrate);
-	obs_service_get_supported_resolutions(tempService, &res_list,
-					      &res_count);
-	obs_service_get_max_fps(tempService, &fps);
+	obs_service_get_supported_resolutions2(tempService, &res_list,
+					       &res_count, &res_with_fps);
+
+	if (res_count) {
+		int best_res_pixels = 0;
+
+		for (size_t i = 0; i < res_count; i++) {
+			obs_service_resolution *res = &res_list[i];
+			int res_pixels = res->cx + res->cy;
+			if (res_pixels > best_res_pixels ||
+			    (res_pixels == best_res_pixels &&
+			     res->fps > best_res->fps)) {
+				best_res = res;
+				best_res_pixels = res_pixels;
+			}
+		}
+
+		if (res_with_fps)
+			fps = best_res->fps;
+	}
+
+	if (!res_with_fps)
+		obs_service_get_max_fps(tempService, &fps);
+
+	if (simple) {
+		QString encoder =
+			ui->simpleOutStrEncoder->currentData().toString();
+		const char *id = get_simple_output_encoder(QT_TO_UTF8(encoder));
+		vcodec = obs_get_encoder_codec(id);
+		acodec = ui->simpleOutStrAEncoder->currentData().toString();
+	} else {
+		QString vencoder = ui->advOutEncoder->currentData().toString();
+		QString aencoder = ui->advOutAEncoder->currentData().toString();
+		vcodec = obs_get_encoder_codec(QT_TO_UTF8(vencoder));
+		acodec = obs_get_encoder_codec(QT_TO_UTF8(aencoder));
+	}
+
+	if (best_res)
+		vbitrate = obs_service_get_max_video_bitrate(
+			tempService, QT_TO_UTF8(vcodec), *best_res);
+
+	if (!vbitrate)
+		vbitrate = obs_service_get_max_codec_bitrate(
+			tempService, QT_TO_UTF8(vcodec));
+
+	abitrate = obs_service_get_max_codec_bitrate(tempService,
+						     QT_TO_UTF8(acodec));
 
 	QString text;
 
@@ -364,25 +412,13 @@ void OBSBasicSettings::UpdateServiceRecommendations()
 		text += ENFORCE_TEXT("MaxAudioBitrate")
 				.arg(QString::number(abitrate));
 	}
-	if (res_count) {
+	if (best_res) {
 		if (!text.isEmpty())
 			text += "<br>";
 
-		obs_service_resolution best_res = {};
-		int best_res_pixels = 0;
-
-		for (size_t i = 0; i < res_count; i++) {
-			obs_service_resolution res = res_list[i];
-			int res_pixels = res.cx + res.cy;
-			if (res_pixels > best_res_pixels) {
-				best_res = res;
-				best_res_pixels = res_pixels;
-			}
-		}
-
 		QString res_str =
-			QString("%1x%2").arg(QString::number(best_res.cx),
-					     QString::number(best_res.cy));
+			QString("%1x%2").arg(QString::number(best_res->cx),
+					     QString::number(best_res->cy));
 		text += ENFORCE_TEXT("MaxResolution").arg(res_str);
 	}
 	if (fps) {
@@ -499,12 +535,14 @@ bool OBSBasicSettings::UpdateResFPSLimits()
 	bool ignoreRecommended = ui->ignoreRecommended->isChecked();
 	BPtr<obs_service_resolution> res_list;
 	size_t res_count = 0;
+	bool res_with_fps = false;
 	int max_fps = 0;
 
-	if (!IsCustomOrInternalService() && !ignoreRecommended) {
-		obs_service_get_supported_resolutions(tempService, &res_list,
-						      &res_count);
-		obs_service_get_max_fps(tempService, &max_fps);
+	if (!ignoreRecommended) {
+		obs_service_get_supported_resolutions2(
+			tempService, &res_list, &res_count, &res_with_fps);
+		if (!res_with_fps)
+			obs_service_get_max_fps(tempService, &max_fps);
 	}
 
 	/* ------------------------------------ */
@@ -521,6 +559,19 @@ bool OBSBasicSettings::UpdateResFPSLimits()
 
 	if (res_count)
 		set_closest_res(cx, cy, res_list, res_count);
+
+	if (res_count && res_with_fps) {
+		for (size_t i = 0; i < res_count; i++) {
+			{
+				if (res_list[i].cx != cx ||
+				    res_list[i].cy != cy)
+					continue;
+
+				if (res_list[i].fps > max_fps)
+					max_fps = res_list[i].fps;
+			}
+		}
+	}
 
 	if (max_fps) {
 		int fpsType = ui->fpsType->currentIndex();
@@ -681,7 +732,6 @@ static bool service_supports_codec(const char **codecs, const char *codec)
 }
 
 extern bool EncoderAvailable(const char *encoder);
-extern const char *get_simple_output_encoder(const char *name);
 
 static inline bool service_supports_encoder(const char **codecs,
 					    const char *encoder)
