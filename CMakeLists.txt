@@ -25,6 +25,9 @@ if(CMAKE_HOST_SYSTEM_NAME MATCHES "(Darwin)" OR OBS_CMAKE_VERSION VERSION_GREATE
   endif()
   add_subdirectory(libobs-opengl)
   add_subdirectory(plugins)
+
+  add_subdirectory(test/test-input)
+
   add_subdirectory(UI)
 
   message_configuration()
