@@ -3662,11 +3662,6 @@ void OBSBasic::VolControlContextMenu()
 	QAction propertiesAction(QTStr("Properties"), this);
 	QAction advPropAction(QTStr("Basic.MainMenu.Edit.AdvAudio"), this);
 
-	QAction toggleControlLayoutAction(QTStr("VerticalLayout"), this);
-	toggleControlLayoutAction.setCheckable(true);
-	toggleControlLayoutAction.setChecked(config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "VerticalVolControl"));
-
 	/* ------------------- */
 
 	connect(&hideAction, &QAction::triggered, this,
@@ -3688,11 +3683,6 @@ void OBSBasic::VolControlContextMenu()
 	connect(&advPropAction, &QAction::triggered, this,
 		&OBSBasic::on_actionAdvAudioProperties_triggered,
 		Qt::DirectConnection);
-
-	/* ------------------- */
-
-	connect(&toggleControlLayoutAction, &QAction::changed, this,
-		&OBSBasic::ToggleVolControlLayout, Qt::DirectConnection);
 
 	/* ------------------- */
 
@@ -3727,7 +3717,6 @@ void OBSBasic::VolControlContextMenu()
 	}
 
 	QMenu popup;
-	vol->SetContextMenu(&popup);
 	popup.addAction(&lockAction);
 	popup.addSeparator();
 	popup.addAction(&hideAction);
@@ -3736,16 +3725,10 @@ void OBSBasic::VolControlContextMenu()
 	popup.addAction(&copyFiltersAction);
 	popup.addAction(&pasteFiltersAction);
 	popup.addSeparator();
-	popup.addAction(&toggleControlLayoutAction);
-	popup.addSeparator();
 	popup.addAction(&filtersAction);
 	popup.addAction(&propertiesAction);
 	popup.addAction(&advPropAction);
-
-	// toggleControlLayoutAction deletes and re-creates the volume controls
-	// meaning that "vol" would be pointing to freed memory.
-	if (popup.exec(QCursor::pos()) != &toggleControlLayoutAction)
-		vol->SetContextMenu(nullptr);
+	popup.exec(QCursor::pos());
 }
 
 void OBSBasic::on_hMixerScrollArea_customContextMenuRequested()
