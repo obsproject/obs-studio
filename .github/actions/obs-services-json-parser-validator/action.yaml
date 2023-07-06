@@ -1,0 +1,51 @@
+name: obs-services JSON Parser Validator
+description: Runs quicktype againts obs-services JSON schemas and checks for any changes introduced by it
+inputs:
+  failCondition:
+    description: Controls whether failed checks also fail the workflow run
+    required: false
+    default: never
+  workingDirectory:
+    description: Working directory for checks
+    required: false
+    default: ${{ github.workspace }}
+runs:
+  using: composite
+  steps:
+    - name: Check Runner Operating System 🏃‍♂️
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |
+        : Check Runner Operating System 🏃‍♂️
+        echo "::notice::obs-services-json-parser-validator action requires a macOS-based or Linux-based runner."
+        exit 2
+
+    - name: Install Dependencies 🛍️
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        : Install Dependencies 🛍️
+        echo ::group::Install Dependencies
+        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+        echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
+        brew install --quiet zsh
+        echo ::endgroup::
+
+    - name: Validate obs-services JSON Parser 🎛️
+      id: result
+      shell: zsh --no-rcs --errexit --pipefail {0}
+      working-directory: ${{ github.workspace }}
+      env:
+        GITHUB_EVENT_FORCED: ${{ github.event.forced }}
+        GITHUB_REF_BEFORE: ${{ github.event.before }}
+      run: |
+        : Validate obs-services JSON Parser 🎛️
+        if (( ${+RUNNER_DEBUG} )) setopt XTRACE
+
+        print ::group::Install quicktype
+        npm install -g quicktype@23.0.49
+        print ::endgroup::
+
+        print ::group::Run Validation
+        ./build-aux/regen-obs-services-json-parser.zsh --fail-${{ inputs.failCondition }} --check
+        print ::endgroup::
