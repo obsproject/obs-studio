@@ -47,4 +47,13 @@ public:
 	const char *ConnectInfo(uint32_t type);
 
 	bool CanTryToConnect();
+
+	void
+	GetSupportedResolutions(struct obs_service_resolution **resolutions,
+				size_t *count, bool *withFps);
+
+	int GetMaxCodecBitrate(const char *codec);
+
+	int GetMaxVideoBitrate(const char *codec,
+			       struct obs_service_resolution resolution);
 };

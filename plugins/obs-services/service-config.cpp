@@ -120,3 +120,21 @@ bool ServiceConfig::CanTryToConnect()
 
 	return true;
 }
+
+void ServiceConfig::GetSupportedResolutions(
+	struct obs_service_resolution **resolutions, size_t *count,
+	bool *withFps)
+{
+	service->GetSupportedResolutions(resolutions, count, withFps);
+}
+
+int ServiceConfig::GetMaxCodecBitrate(const char *codec)
+{
+	return service->GetMaxCodecBitrate(codec);
+}
+
+int ServiceConfig::GetMaxVideoBitrate(const char *codec,
+				      struct obs_service_resolution resolution)
+{
+	return service->GetMaxVideoBitrate(codec, resolution);
+}

@@ -127,13 +127,116 @@
             },
             "minProperties": 1,
             "unevaluatedProperties": false
+        },
+        "supported_resolutions": {
+            "type": "array",
+            "title": "Supported Resolutions",
+            "description": "Resolution supported by the service. All with or all withtout the framerate.",
+            "items": {
+                "type": "string",
+                "pattern": "^[0-9]+x[0-9]+(|@[0-9]+)$"
+            },
+            "allOf": [
+                {
+                    "if": { "items": { "$ref": "#/$defs/resolutionFrameratePattern" } },
+                    "then": { "items": { "$ref": "#/$defs/resolutionFrameratePattern" } }
+                },
+                {
+                    "if": { "items": { "$ref": "#/$defs/resolutionPattern" } },
+                    "then": { "items": { "$ref": "#/$defs/resolutionPattern" } }
+                }
+            ],
+            "minItems": 1,
+            "uniqueItems": true,
+            "additionalItems": false
+        },
+        "maximums": {
+            "type": "object",
+            "title": "Maximums",
+            "description": "Maximum values allowed by the service",
+            "properties": {
+                "framerate": {
+                    "type": "integer",
+                    "title": "Maximum Framerate",
+                    "exclusiveMinimum": 0
+                },
+                "video_bitrate": {
+                    "type": "object",
+                    "title": "Maximum Video Bitrate",
+                    "description": "Maximum video bitrate per codec",
+                    "propertyNames": { "$ref": "codecDefs.json#/$defs/videoCodecEnum" },
+                    "additionalProperties": { "type": "integer", "exclusiveMinimum": 0 },
+                    "minProperties": 1,
+                    "unevaluatedProperties":false
+                },
+                "audio_bitrate": {
+                    "type": "object",
+                    "title": "Maximum Audio Bitrate",
+                    "description": "Maximum audio bitrate per codec",
+                    "propertyNames": { "$ref": "codecDefs.json#/$defs/audioCodecEnum" },
+                    "additionalProperties": { "type": "integer", "exclusiveMinimum": 0 },
+                    "minProperties": 1,
+                    "unevaluatedProperties":false
+                },
+                "video_bitrate_matrix": {
+                    "type": "object",
+                    "title": "Maximum Video Bitrate Matrix",
+                    "description": "Maximum video bitrate per supported resolution with framerate and per codec",
+                    "propertyNames": { "$ref": "#/$defs/resolutionFrameratePattern" },
+                    "additionalProperties": {
+                        "type": "object",
+                        "propertyNames": { "$ref": "codecDefs.json#/$defs/videoCodecEnum" },
+                        "additionalProperties": { "type": "integer", "exclusiveMinimum": 0 },
+                        "minProperties": 1,
+                        "unevaluatedProperties":false
+                    },
+                    "minProperties": 1,
+                    "unevaluatedProperties": false
+                }
+            },
+            "minProperties": 1,
+            "unevaluatedProperties": false
         }
     },
+    "allOf": [
+        {
+            "$comment": "Make 'video_bitrate_matrix' unusable if 'supported_resolutions' is empty",
+            "if": { "properties": { "supported_resolutions": { "maxItems": 0 } } },
+            "then": { "properties": {
+                "maximums": { "properties": { "video_bitrate_matrix": { "description": "This matrix is only available if supported resolutions with framerates are set", "maxProperties": 0 } } },
+                "recommended": { "properties": { "video_bitrate_matrix": { "description": "This matrix is only available if supported resolutions with framerates are set", "maxProperties": 0 } } }
+                } }
+        },
+        {
+            "$comment": "Make 'video_bitrate_matrix' unusable if supported resolutions are without framerate",
+            "if": { "not": { "properties": { "supported_resolutions": { "items": { "$ref": "#/$defs/resolutionFrameratePattern" } } } } },
+            "then": { "properties": {
+                "maximums": { "properties": { "video_bitrate_matrix": { "description": "This matrix is only available if 'supported_resolutions' is with framerates", "maxProperties": 0 } } },
+                "recommended": { "properties": { "video_bitrate_matrix": { "description": "This matrix is only available if 'supported_resolutions' is with framerates", "maxProperties": 0 } } }
+                } }
+        },
+        {
+            "$comment": "Make 'framerate' unusable if supported resolutions are with framerate",
+            "if": { "not": {"properties": { "supported_resolutions": { "items": { "$ref": "#/$defs/resolutionPattern" } } } } },
+            "then": { "properties": {
+                "maximums": { "properties": { "framerate": { "description": "This property is only available if 'supported_resolutions' is without framerates or not set", "const": 0 } } },
+                "recommended": { "properties": { "framerate": { "description": "This property is only available if 'supported_resolutions' is without framerates or not set", "const": 0 } } }
+                } }
+        }
+    ],
     "required": ["servers"],
     "$defs": {
         "httpPattern": {
             "$comment": "Pattern to enforce HTTP(S) links",
             "pattern": "^https?://"
+        },
+        "resolutionPattern": {
+            "$comment": "Pattern for resolution without framerate",
+            "pattern": "^[0-9]+x[0-9]+$"
+        },
+        "resolutionFrameratePattern": {
+            "$comment": "Pattern for resolution with framerate",
+            "pattern": "^[0-9]+x[0-9]+@[0-9]+$"
         }
     }
 }

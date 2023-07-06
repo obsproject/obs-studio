@@ -85,6 +85,25 @@ namespace OBSServices {
     #endif
 
     /**
+     * Maximum values allowed by the service
+     */
+    struct Maximums {
+        /**
+         * Maximum audio bitrate per codec
+         */
+        std::optional<std::map<std::string, int64_t>> audioBitrate;
+        std::optional<int64_t> framerate;
+        /**
+         * Maximum video bitrate per codec
+         */
+        std::optional<std::map<std::string, int64_t>> videoBitrate;
+        /**
+         * Maximum video bitrate per supported resolution with framerate and per codec
+         */
+        std::optional<std::map<std::string, std::map<std::string, int64_t>>> videoBitrateMatrix;
+    };
+
+    /**
      * Properties related to the RIST protocol
      */
     struct RistProperties {
@@ -158,6 +177,10 @@ namespace OBSServices {
          */
         std::string name;
         /**
+         * Maximum values allowed by the service
+         */
+        std::optional<Maximums> maximums;
+        /**
          * Link that provides additional info about the service, presented in the UI as a button
          * next to the services dropdown.
          */
@@ -176,6 +199,10 @@ namespace OBSServices {
          */
         std::optional<SupportedCodecs> supportedCodecs;
         /**
+         * Resolution supported by the service. All with or all withtout the framerate.
+         */
+        std::optional<std::vector<std::string>> supportedResolutions;
+        /**
          * Properties related to the RIST protocol
          */
         std::optional<RistProperties> rist;
@@ -192,6 +219,9 @@ namespace OBSServices {
 }
 
 namespace OBSServices {
+    void from_json(const json & j, Maximums & x);
+    void to_json(json & j, const Maximums & x);
+
     void from_json(const json & j, RistProperties & x);
     void to_json(json & j, const RistProperties & x);
 
@@ -218,6 +248,21 @@ namespace OBSServices {
 
     void from_json(const json & j, ProtocolSupportedVideoCodec & x);
     void to_json(json & j, const ProtocolSupportedVideoCodec & x);
+
+    inline void from_json(const json & j, Maximums& x) {
+        x.audioBitrate = get_stack_optional<std::map<std::string, int64_t>>(j, "audio_bitrate");
+        x.framerate = get_stack_optional<int64_t>(j, "framerate");
+        x.videoBitrate = get_stack_optional<std::map<std::string, int64_t>>(j, "video_bitrate");
+        x.videoBitrateMatrix = get_stack_optional<std::map<std::string, std::map<std::string, int64_t>>>(j, "video_bitrate_matrix");
+    }
+
+    inline void to_json(json & j, const Maximums & x) {
+        j = json::object();
+        j["audio_bitrate"] = x.audioBitrate;
+        j["framerate"] = x.framerate;
+        j["video_bitrate"] = x.videoBitrate;
+        j["video_bitrate_matrix"] = x.videoBitrateMatrix;
+    }
 
     inline void from_json(const json & j, RistProperties& x) {
         x.encryptPassphrase = j.at("encrypt_passphrase").get<bool>();
@@ -269,10 +314,12 @@ namespace OBSServices {
         x.common = get_stack_optional<bool>(j, "common");
         x.id = j.at("id").get<std::string>();
         x.name = j.at("name").get<std::string>();
+        x.maximums = get_stack_optional<Maximums>(j, "maximums");
         x.moreInfoLink = get_stack_optional<std::string>(j, "more_info_link");
         x.servers = j.at("servers").get<std::vector<Server>>();
         x.streamKeyLink = get_stack_optional<std::string>(j, "stream_key_link");
         x.supportedCodecs = get_stack_optional<SupportedCodecs>(j, "supported_codecs");
+        x.supportedResolutions = get_stack_optional<std::vector<std::string>>(j, "supported_resolutions");
         x.rist = get_stack_optional<RistProperties>(j, "RIST");
         x.srt = get_stack_optional<SrtProperties>(j, "SRT");
     }
@@ -282,10 +329,12 @@ namespace OBSServices {
         j["common"] = x.common;
         j["id"] = x.id;
         j["name"] = x.name;
+        j["maximums"] = x.maximums;
         j["more_info_link"] = x.moreInfoLink;
         j["servers"] = x.servers;
         j["stream_key_link"] = x.streamKeyLink;
         j["supported_codecs"] = x.supportedCodecs;
+        j["supported_resolutions"] = x.supportedResolutions;
         j["RIST"] = x.rist;
         j["SRT"] = x.srt;
     }

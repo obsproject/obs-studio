@@ -41,6 +41,50 @@ ServiceInstance::ServiceInstance(const OBSServices::Service &service_)
 	}
 	supportedProtocols = bstrdup(protocols.c_str());
 
+	/* Generate supported resolution */
+	if (service.supportedResolutions.has_value()) {
+		DARRAY(struct obs_service_resolution) res_list;
+		supportedResolutionsWithFps =
+			service.supportedResolutions->at(0).find("@") !=
+			std::string::npos;
+
+		da_init(res_list);
+		for (size_t i = 0; i < service.supportedResolutions->size();
+		     i++) {
+			std::string res_str =
+				service.supportedResolutions->at(i);
+			obs_service_resolution res = {};
+			if (supportedResolutionsWithFps) {
+				sscanf(res_str.c_str(), "%dx%d@%d", &res.cx,
+				       &res.cy, &res.fps);
+			} else {
+				sscanf(res_str.c_str(), "%dx%d", &res.cx,
+				       &res.cy);
+				res.fps = 0;
+			}
+			da_push_back(res_list, &res);
+		}
+
+		if (res_list.num == service.supportedResolutions->size()) {
+			supportedResolutions = res_list.array;
+			supportedResolutionsCount = res_list.num;
+
+			info.get_supported_resolutions2 =
+				InfoGetSupportedResolutions2;
+
+			if (supportedResolutionsWithFps &&
+			    service.maximums->videoBitrateMatrix.has_value()) {
+				info.get_max_video_bitrate =
+					InfoGetMaxVideoBitrate;
+			}
+		}
+	}
+
+	if (service.maximums.has_value() &&
+	    (service.maximums->videoBitrate.has_value() ||
+	     service.maximums->audioBitrate.has_value()))
+		info.get_max_codec_bitrate = InfoGetMaxCodecBitrate;
+
 	/* Fill service info and register it */
 	info.type_data = this;
 	info.id = service.id.c_str();
@@ -162,6 +206,55 @@ void ServiceInstance::GetDefaults(obs_data_t *settings)
 	obs_data_set_default_string(settings, "protocol", protocol.c_str());
 	obs_data_set_default_string(settings, "server",
 				    service.servers[0].url.c_str());
+}
+
+void ServiceInstance::GetSupportedResolutions(
+	struct obs_service_resolution **resolutions, size_t *count,
+	bool *withFps) const
+{
+	*withFps = supportedResolutionsWithFps;
+	*count = supportedResolutionsCount;
+	*resolutions = (struct obs_service_resolution *)bmemdup(
+		supportedResolutions.Get(),
+		supportedResolutionsCount *
+			sizeof(struct obs_service_resolution));
+}
+
+int ServiceInstance::GetMaxCodecBitrate(const char *codec_) const
+{
+	std::string codec(codec_);
+
+	if (!service.maximums->videoBitrateMatrix.has_value() &&
+	    service.maximums->videoBitrate.has_value()) {
+		if (service.maximums->videoBitrate->count(codec))
+			return (int)service.maximums->videoBitrate->at(codec);
+	}
+
+	if (service.maximums->audioBitrate.has_value()) {
+		if (service.maximums->audioBitrate->count(codec))
+			return (int)service.maximums->audioBitrate->at(codec);
+	}
+
+	return 0;
+}
+
+int ServiceInstance::GetMaxVideoBitrate(
+	const char *codec_, struct obs_service_resolution resolution) const
+{
+	DStr res_dstr;
+	dstr_catf(res_dstr, "%dx%d@%d", resolution.cx, resolution.cy,
+		  resolution.fps);
+	std::string res_str(res_dstr);
+	std::string codec(codec_);
+
+	if (service.maximums->videoBitrateMatrix->count(res_str)) {
+		const auto bitrates =
+			service.maximums->videoBitrateMatrix->at(res_str);
+		if (bitrates.count(codec))
+			return (int)bitrates.at(codec);
+	}
+
+	return 0;
 }
 
 bool ModifiedProtocolCb(void *service_, obs_properties_t *props,

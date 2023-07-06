@@ -15,6 +15,9 @@ class ServiceInstance {
 	const OBSServices::Service service;
 
 	BPtr<char> supportedProtocols;
+	BPtr<obs_service_resolution> supportedResolutions;
+	size_t supportedResolutionsCount;
+	bool supportedResolutionsWithFps;
 
 	static const char *InfoGetName(void *typeData);
 	static void *InfoCreate(obs_data_t *settings, obs_service_t *service);
@@ -29,6 +32,18 @@ class ServiceInstance {
 	static const char **InfoGetSupportedAudioCodecs(void *data);
 
 	static bool InfoCanTryToConnect(void *data);
+
+	static void InfoGetMaxFps(void *data, int *fps);
+
+	static int InfoGetMaxCodecBitrate(void *data, const char *codec);
+
+	static void InfoGetSupportedResolutions2(
+		void *data, struct obs_service_resolution **resolutions,
+		size_t *count, bool *withFps);
+
+	static int
+	InfoGetMaxVideoBitrate(void *data, const char *codec,
+			       struct obs_service_resolution resolution);
 
 	static void InfoGetDefault2(void *type_data, obs_data_t *settings);
 	static obs_properties_t *InfoGetProperties2(void *data, void *typeData);
@@ -57,6 +72,15 @@ public:
 	const char *GetName();
 
 	void GetDefaults(obs_data_t *settings);
+
+	void
+	GetSupportedResolutions(struct obs_service_resolution **resolutions,
+				size_t *count, bool *withFps) const;
+
+	int GetMaxCodecBitrate(const char *codec) const;
+
+	int GetMaxVideoBitrate(const char *codec,
+			       struct obs_service_resolution resolution) const;
 
 	obs_properties_t *GetProperties();
 };

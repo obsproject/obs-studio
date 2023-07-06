@@ -38,6 +38,14 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 2500
+                },
+                "audio_bitrate": {
+                    "aac": 160
+                }
             }
         },
         {
@@ -55,6 +63,19 @@
                     "RTMP": [
                         "h264"
                     ]
+                }
+            },
+            "supported_resolutions": [
+                "1920x1080",
+                "1280x720"
+            ],
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 8000
+                },
+                "framerate": 30,
+                "audio_bitrate": {
+                    "aac": 192
                 }
             }
         },
@@ -80,6 +101,14 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 6000
+                },
+                "audio_bitrate": {
+                    "aac": 256
+                }
             }
         },
         {
@@ -103,6 +132,14 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 8000
+                },
+                "audio_bitrate": {
+                    "aac": 320
+                }
             }
         },
         {
@@ -120,6 +157,14 @@
                     "RTMP": [
                         "h264"
                     ]
+                }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 3500
+                },
+                "audio_bitrate": {
+                    "aac": 160
                 }
             }
         },
@@ -211,6 +256,14 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 15000
+                },
+                "audio_bitrate": {
+                    "aac": 320
+                }
             }
         },
         {
@@ -264,6 +317,14 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 15000
+                },
+                "audio_bitrate": {
+                    "aac": 320
+                }
             }
         },
         {
@@ -283,6 +344,47 @@
                     "RTMPS": [
                         "h264"
                     ]
+                }
+            },
+            "supported_resolutions": [
+                "640x360@30",
+                "640x360@60",
+                "852x480@30",
+                "852x480@60",
+                "1280x720@30",
+                "1280x720@60",
+                "1920x1080@30",
+                "1920x1080@60"
+            ],
+            "maximums": {
+                "video_bitrate_matrix": {
+                    "640x360@30": {
+                        "h264": 1000
+                    },
+                    "640x360@60": {
+                        "h264": 1500
+                    },
+                    "852x480@30": {
+                        "h264": 2000
+                    },
+                    "852x480@60": {
+                        "h264": 3000
+                    },
+                    "1280x720@30": {
+                        "h264": 4000
+                    },
+                    "1280x720@60": {
+                        "h264": 6000
+                    },
+                    "1920x1080@30": {
+                        "h264": 6000
+                    },
+                    "1920x1080@60": {
+                        "h264": 9000
+                    }
+                },
+                "audio_bitrate": {
+                    "aac": 128
                 }
             }
         },
@@ -438,6 +540,11 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 3500
+                }
             }
         },
         {
@@ -481,6 +588,14 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 8000
+                },
+                "audio_bitrate": {
+                    "aac": 192
+                }
             }
         },
         {
@@ -499,6 +614,14 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 3000
+                },
+                "audio_bitrate": {
+                    "aac": 128
+                }
             }
         },
         {
@@ -516,6 +639,14 @@
                     "RTMP": [
                         "h264"
                     ]
+                }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 7500
+                },
+                "audio_bitrate": {
+                    "aac": 192
                 }
             }
         },
@@ -560,6 +691,11 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 3500
+                }
             }
         },
         {
@@ -596,6 +732,14 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 8000
+                },
+                "audio_bitrate": {
+                    "aac": 192
+                }
             }
         },
         {
@@ -613,6 +757,14 @@
                     "RTMP": [
                         "h264"
                     ]
+                }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 6000
+                },
+                "audio_bitrate": {
+                    "aac": 128
                 }
             }
         },
@@ -651,6 +803,21 @@
                     "RTMP": [
                         "h264"
                     ]
+                }
+            },
+            "supported_resolutions": [
+                "1920x1080",
+                "1280x720",
+                "852x480",
+                "480x360"
+            ],
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 6000
+                },
+                "framerate": 30,
+                "audio_bitrate": {
+                    "aac": 160
                 }
             }
         },
@@ -745,6 +912,14 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 50000
+                },
+                "audio_bitrate": {
+                    "aac": 192
+                }
             }
         },
         {
@@ -789,6 +964,11 @@
                     "RTMP": [
                         "h264"
                     ]
+                }
+            },
+            "maximums": {
+                "audio_bitrate": {
+                    "aac": 160
                 }
             }
         },
@@ -865,6 +1045,15 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 12000
+                },
+                "framerate": 60,
+                "audio_bitrate": {
+                    "aac": 128
+                }
             }
         },
         {
@@ -909,6 +1098,14 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 6000
+                },
+                "audio_bitrate": {
+                    "aac": 160
+                }
             }
         },
         {
@@ -927,6 +1124,14 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 900
+                },
+                "audio_bitrate": {
+                    "aac": 96
+                }
             }
         },
         {
@@ -944,6 +1149,19 @@
                     "RTMP": [
                         "h264"
                     ]
+                }
+            },
+            "supported_resolutions": [
+                "1920x1080",
+                "1280x720"
+            ],
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 3000
+                },
+                "framerate": 30,
+                "audio_bitrate": {
+                    "aac": 192
                 }
             }
         },
@@ -968,6 +1186,14 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 4000
+                },
+                "audio_bitrate": {
+                    "aac": 192
+                }
             }
         },
         {
@@ -985,6 +1211,14 @@
                     "RTMP": [
                         "h264"
                     ]
+                }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 7000
+                },
+                "audio_bitrate": {
+                    "aac": 192
                 }
             }
         },
@@ -1005,6 +1239,14 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 9000
+                },
+                "audio_bitrate": {
+                    "aac": 160
+                }
             }
         },
         {
@@ -1023,6 +1265,20 @@
                         "h264"
                     ]
                 }
+            },
+            "supported_resolutions": [
+                "1280x720",
+                "852x480",
+                "480x360"
+            ],
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 6000
+                },
+                "framerate": 30,
+                "audio_bitrate": {
+                    "aac": 320
+                }
             }
         },
         {
@@ -1040,6 +1296,14 @@
                     "RTMP": [
                         "h264"
                     ]
+                }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 2000
+                },
+                "audio_bitrate": {
+                    "aac": 128
                 }
             }
         },
@@ -1077,6 +1341,14 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 6000
+                },
+                "audio_bitrate": {
+                    "aac": 320
+                }
             }
         },
         {
@@ -1094,6 +1366,14 @@
                     "RTMP": [
                         "h264"
                     ]
+                }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 8000
+                },
+                "audio_bitrate": {
+                    "aac": 192
                 }
             }
         },
@@ -1113,6 +1393,14 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 2500
+                },
+                "audio_bitrate": {
+                    "aac": 256
+                }
             }
         },
         {
@@ -1131,6 +1419,14 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 4000
+                },
+                "audio_bitrate": {
+                    "aac": 128
+                }
             }
         },
         {
@@ -1148,6 +1444,14 @@
                     "RTMP": [
                         "h264"
                     ]
+                }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 6000
+                },
+                "audio_bitrate": {
+                    "aac": 160
                 }
             }
         },
@@ -1197,6 +1501,14 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 6000
+                },
+                "audio_bitrate": {
+                    "aac": 160
+                }
             }
         },
         {
@@ -1230,6 +1542,14 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 6000
+                },
+                "audio_bitrate": {
+                    "aac": 192
+                }
             }
         },
         {
@@ -1247,6 +1567,14 @@
                     "RTMP": [
                         "h264"
                     ]
+                }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 3600
+                },
+                "audio_bitrate": {
+                    "aac": 128
                 }
             }
         },
@@ -1271,6 +1599,14 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 2500
+                },
+                "audio_bitrate": {
+                    "aac": 192
+                }
             }
         },
         {
@@ -1288,6 +1624,14 @@
                     "RTMP": [
                         "h264"
                     ]
+                }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 7000
+                },
+                "audio_bitrate": {
+                    "aac": 128
                 }
             }
         },
@@ -1343,6 +1687,14 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 5808
+                },
+                "audio_bitrate": {
+                    "aac": 192
+                }
             }
         },
         {
@@ -1360,6 +1712,14 @@
                     "RTMP": [
                         "h264"
                     ]
+                }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 904
+                },
+                "audio_bitrate": {
+                    "aac": 96
                 }
             }
         },
@@ -1393,6 +1753,14 @@
                     "RTMP": [
                         "h264"
                     ]
+                }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 10000
+                },
+                "audio_bitrate": {
+                    "aac": 192
                 }
             }
         },
@@ -1500,6 +1868,14 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 3500
+                },
+                "audio_bitrate": {
+                    "aac": 160
+                }
             }
         },
         {
@@ -1517,6 +1893,14 @@
                     "RTMP": [
                         "h264"
                     ]
+                }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 20000
+                },
+                "audio_bitrate": {
+                    "aac": 192
                 }
             }
         },
@@ -1544,6 +1928,14 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 5000
+                },
+                "audio_bitrate": {
+                    "aac": 160
+                }
             }
         },
         {
@@ -1561,6 +1953,14 @@
                     "RTMP": [
                         "h264"
                     ]
+                }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 5000
+                },
+                "audio_bitrate": {
+                    "aac": 160
                 }
             }
         },
@@ -1614,6 +2014,15 @@
                     "RTMP": [
                         "h264"
                     ]
+                }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 10000
+                },
+                "framerate": 60,
+                "audio_bitrate": {
+                    "aac": 192
                 }
             }
         },
@@ -1686,6 +2095,14 @@
                     "RTMP": [
                         "h264"
                     ]
+                }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 5000
+                },
+                "audio_bitrate": {
+                    "aac": 160
                 }
             }
         },
@@ -1775,6 +2192,14 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 5000
+                },
+                "audio_bitrate": {
+                    "aac": 192
+                }
             }
         },
         {
@@ -1839,6 +2264,12 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 20000
+                },
+                "framerate": 60
             }
         },
         {
@@ -1899,6 +2330,14 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 32000
+                },
+                "audio_bitrate": {
+                    "aac": 256
+                }
             }
         },
         {
@@ -1941,6 +2380,14 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 5000
+                },
+                "audio_bitrate": {
+                    "aac": 160
+                }
             }
         },
         {
@@ -1958,6 +2405,14 @@
                     "RTMP": [
                         "h264"
                     ]
+                }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 2500
+                },
+                "audio_bitrate": {
+                    "aac": 128
                 }
             }
         },
@@ -1978,6 +2433,14 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 128
+                },
+                "audio_bitrate": {
+                    "aac": 160
+                }
             }
         },
         {
@@ -1995,6 +2458,20 @@
                     "RTMP": [
                         "h264"
                     ]
+                }
+            },
+            "supported_resolutions": [
+                "960x540@30",
+                "1280x720@30"
+            ],
+            "maximums": {
+                "video_bitrate_matrix": {
+                    "960x540@30": {
+                        "h264": 3000
+                    },
+                    "1280x720@30": {
+                        "h264": 4000
+                    }
                 }
             }
         },
@@ -2031,6 +2508,35 @@
                         "h264"
                     ]
                 }
+            },
+            "supported_resolutions": [
+                "852x480@30",
+                "1280x720@30",
+                "1280x720@60",
+                "1920x1080@30",
+                "1920x1080@60"
+            ],
+            "maximums": {
+                "video_bitrate_matrix": {
+                    "852x480@30": {
+                        "h264": 1200
+                    },
+                    "1280x720@30": {
+                        "h264": 3600
+                    },
+                    "1280x720@60": {
+                        "h264": 4200
+                    },
+                    "1920x1080@30": {
+                        "h264": 5000
+                    },
+                    "1920x1080@60": {
+                        "h264": 7200
+                    }
+                },
+                "audio_bitrate": {
+                    "aac": 196
+                }
             }
         },
         {
@@ -2048,6 +2554,14 @@
                     "RTMP": [
                         "h264"
                     ]
+                }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 5000
+                },
+                "audio_bitrate": {
+                    "aac": 160
                 }
             }
         },
@@ -2068,6 +2582,14 @@
                     "RTMP": [
                         "h264"
                     ]
+                }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 6000
+                },
+                "audio_bitrate": {
+                    "aac": 160
                 }
             }
         },
@@ -2098,6 +2620,14 @@
                     "RTMP": [
                         "h264"
                     ]
+                }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 6000
+                },
+                "audio_bitrate": {
+                    "aac": 160
                 }
             }
         },
@@ -2222,6 +2752,11 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 16000
+                }
             }
         },
         {
@@ -2242,6 +2777,14 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 20000
+                },
+                "audio_bitrate": {
+                    "aac": 192
+                }
             }
         },
         {
@@ -2261,6 +2804,14 @@
                     "RTMP": [
                         "h264"
                     ]
+                }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 1800
+                },
+                "audio_bitrate": {
+                    "aac": 192
                 }
             }
         },
@@ -2311,6 +2862,11 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 20000
+                }
             }
         },
         {
@@ -2351,6 +2907,11 @@
                         "h264"
                     ]
                 }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 6000
+                }
             }
         },
         {
@@ -2369,6 +2930,14 @@
                     "RTMPS": [
                         "h264"
                     ]
+                }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 9000
+                },
+                "audio_bitrate": {
+                    "aac": 192
                 }
             }
         },
@@ -2389,6 +2958,14 @@
                     "RTMP": [
                         "h264"
                     ]
+                }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 7500
+                },
+                "audio_bitrate": {
+                    "aac": 192
                 }
             }
         },
@@ -2419,6 +2996,14 @@
                     "RTMP": [
                         "h264"
                     ]
+                }
+            },
+            "maximums": {
+                "video_bitrate": {
+                    "h264": 20000
+                },
+                "audio_bitrate": {
+                    "aac": 512
                 }
             }
         }

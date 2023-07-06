@@ -71,6 +71,32 @@ bool ServiceInstance::InfoCanTryToConnect(void *data)
 	return false;
 }
 
+int ServiceInstance::InfoGetMaxCodecBitrate(void *data, const char *codec)
+{
+	ServiceConfig *priv = reinterpret_cast<ServiceConfig *>(data);
+	if (priv)
+		return priv->GetMaxCodecBitrate(codec);
+	return 0;
+}
+
+void ServiceInstance::InfoGetSupportedResolutions2(
+	void *data, struct obs_service_resolution **resolutions, size_t *count,
+	bool *withFps)
+{
+	ServiceConfig *priv = reinterpret_cast<ServiceConfig *>(data);
+	if (priv)
+		priv->GetSupportedResolutions(resolutions, count, withFps);
+}
+
+int ServiceInstance::InfoGetMaxVideoBitrate(
+	void *data, const char *codec, struct obs_service_resolution resolution)
+{
+	ServiceConfig *priv = reinterpret_cast<ServiceConfig *>(data);
+	if (priv)
+		return priv->GetMaxVideoBitrate(codec, resolution);
+	return 0;
+}
+
 void ServiceInstance::InfoGetDefault2(void *typeData, obs_data_t *settings)
 {
 	if (typeData)
