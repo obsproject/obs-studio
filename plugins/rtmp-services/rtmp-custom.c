@@ -110,18 +110,80 @@ static const char *rtmp_custom_password(void *data)
 	return service->password;
 }
 
-#define RTMP_PROTOCOL "rtmp"
+#define RTMPS_PREFIX "rtmps://"
+#define FTL_PREFIX "ftl://"
+#define SRT_PREFIX "srt://"
+#define RIST_PREFIX "rist://"
+
+static const char *rtmp_custom_get_protocol(void *data)
+{
+	struct rtmp_custom *service = data;
+
+	if (strncmp(service->server, RTMPS_PREFIX, strlen(RTMPS_PREFIX)) == 0)
+		return "RTMPS";
+
+	if (strncmp(service->server, FTL_PREFIX, strlen(FTL_PREFIX)) == 0)
+		return "FTL";
+
+	if (strncmp(service->server, SRT_PREFIX, strlen(SRT_PREFIX)) == 0)
+		return "SRT";
+
+	if (strncmp(service->server, RIST_PREFIX, strlen(RIST_PREFIX)) == 0)
+		return "RIST";
+
+	return "RTMP";
+}
 
 static void rtmp_custom_apply_settings(void *data, obs_data_t *video_settings,
 				       obs_data_t *audio_settings)
 {
 	struct rtmp_custom *service = data;
-	if (service->server != NULL && video_settings != NULL &&
-	    strncmp(service->server, RTMP_PROTOCOL, strlen(RTMP_PROTOCOL)) !=
-		    0) {
+	const char *protocol = rtmp_custom_get_protocol(service);
+	bool has_mpegts = false;
+	bool is_rtmp = false;
+	if (strcmp(protocol, "SRT") == 0 || strcmp(protocol, "RIST") == 0)
+		has_mpegts = true;
+	if (strcmp(protocol, "RTMP") == 0 || strcmp(protocol, "RTMPS") == 0)
+		is_rtmp = true;
+	if (!is_rtmp && video_settings != NULL)
 		obs_data_set_bool(video_settings, "repeat_headers", true);
+	if (has_mpegts && audio_settings != NULL)
 		obs_data_set_bool(audio_settings, "set_to_ADTS", true);
+}
+
+static const char *rtmp_custom_get_connect_info(void *data, uint32_t type)
+{
+	switch ((enum obs_service_connect_info)type) {
+	case OBS_SERVICE_CONNECT_INFO_SERVER_URL:
+		return rtmp_custom_url(data);
+	case OBS_SERVICE_CONNECT_INFO_STREAM_ID:
+		return rtmp_custom_key(data);
+	case OBS_SERVICE_CONNECT_INFO_USERNAME:
+		return rtmp_custom_username(data);
+	case OBS_SERVICE_CONNECT_INFO_PASSWORD:
+		return rtmp_custom_password(data);
+	case OBS_SERVICE_CONNECT_INFO_ENCRYPT_PASSPHRASE: {
+		const char *protocol = rtmp_custom_get_protocol(data);
+
+		if ((strcmp(protocol, "SRT") == 0))
+			return rtmp_custom_password(data);
+		else if ((strcmp(protocol, "RIST") == 0))
+			return rtmp_custom_key(data);
+
+		break;
 	}
+	case OBS_SERVICE_CONNECT_INFO_BEARER_TOKEN:
+		return NULL;
+	}
+
+	return NULL;
+}
+
+static bool rtmp_custom_can_try_to_connect(void *data)
+{
+	struct rtmp_custom *service = data;
+
+	return (service->server != NULL && service->server[0] != '\0');
 }
 
 struct obs_service_info rtmp_custom_service = {
@@ -131,9 +193,12 @@ struct obs_service_info rtmp_custom_service = {
 	.destroy = rtmp_custom_destroy,
 	.update = rtmp_custom_update,
 	.get_properties = rtmp_custom_properties,
+	.get_protocol = rtmp_custom_get_protocol,
 	.get_url = rtmp_custom_url,
 	.get_key = rtmp_custom_key,
+	.get_connect_info = rtmp_custom_get_connect_info,
 	.get_username = rtmp_custom_username,
 	.get_password = rtmp_custom_password,
 	.apply_encoder_settings = rtmp_custom_apply_settings,
+	.can_try_to_connect = rtmp_custom_can_try_to_connect,
 };

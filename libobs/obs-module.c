@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -716,14 +716,14 @@ cleanup:
 void obs_register_source_s(const struct obs_source_info *info, size_t size)
 {
 	struct obs_source_info data = {0};
-	struct darray *array = NULL;
+	obs_source_info_array_t *array = NULL;
 
 	if (info->type == OBS_SOURCE_TYPE_INPUT) {
-		array = &obs->input_types.da;
+		array = &obs->input_types;
 	} else if (info->type == OBS_SOURCE_TYPE_FILTER) {
-		array = &obs->filter_types.da;
+		array = &obs->filter_types;
 	} else if (info->type == OBS_SOURCE_TYPE_TRANSITION) {
-		array = &obs->transition_types.da;
+		array = &obs->transition_types;
 	} else if (info->type != OBS_SOURCE_TYPE_SCENE) {
 		source_warn("Tried to register unknown source type: %u",
 			    info->type);
@@ -811,7 +811,7 @@ void obs_register_source_s(const struct obs_source_info *info, size_t size)
 	}
 
 	if (array)
-		darray_push_back(sizeof(struct obs_source_info), array, &data);
+		da_push_back(*array, &data);
 	da_push_back(obs->source_types, &data);
 	return;
 
@@ -836,6 +836,9 @@ void obs_register_output_s(const struct obs_output_info *info, size_t size)
 	CHECK_REQUIRED_VAL_(info, start, obs_register_output);
 	CHECK_REQUIRED_VAL_(info, stop, obs_register_output);
 
+	if (info->flags & OBS_OUTPUT_SERVICE)
+		CHECK_REQUIRED_VAL_(info, protocols, obs_register_output);
+
 	if (info->flags & OBS_OUTPUT_ENCODED) {
 		CHECK_REQUIRED_VAL_(info, encoded_packet, obs_register_output);
 	} else {
@@ -856,6 +859,24 @@ void obs_register_output_s(const struct obs_output_info *info, size_t size)
 #undef CHECK_REQUIRED_VAL_
 
 	REGISTER_OBS_DEF(size, obs_output_info, obs->output_types, info);
+
+	if (info->flags & OBS_OUTPUT_SERVICE) {
+		char **protocols = strlist_split(info->protocols, ';', false);
+		for (char **protocol = protocols; *protocol; ++protocol) {
+			bool skip = false;
+			for (size_t i = 0; i < obs->data.protocols.num; i++) {
+				if (strcmp(*protocol,
+					   obs->data.protocols.array[i]) == 0)
+					skip = true;
+			}
+
+			if (skip)
+				continue;
+			char *new_prtcl = bstrdup(*protocol);
+			da_push_back(obs->data.protocols, &new_prtcl);
+		}
+		strlist_free(protocols);
+	}
 	return;
 
 error:
@@ -907,6 +928,7 @@ void obs_register_service_s(const struct obs_service_info *info, size_t size)
 	CHECK_REQUIRED_VAL_(info, get_name, obs_register_service);
 	CHECK_REQUIRED_VAL_(info, create, obs_register_service);
 	CHECK_REQUIRED_VAL_(info, destroy, obs_register_service);
+	CHECK_REQUIRED_VAL_(info, get_protocol, obs_register_service);
 #undef CHECK_REQUIRED_VAL_
 
 	REGISTER_OBS_DEF(size, obs_service_info, obs->service_types, info);

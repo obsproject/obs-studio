@@ -5,13 +5,11 @@
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 
-#include "obs-ffmpeg-config.h"
-
 #ifdef _WIN32
 #include <dxgi.h>
 #include <util/windows/win-version.h>
 
-#include "jim-nvenc.h"
+#include "obs-nvenc.h"
 #endif
 
 #if !defined(_WIN32) && !defined(__APPLE__) && \
@@ -36,6 +34,11 @@ extern struct obs_output_info replay_buffer;
 extern struct obs_output_info ffmpeg_hls_muxer;
 extern struct obs_encoder_info aac_encoder_info;
 extern struct obs_encoder_info opus_encoder_info;
+extern struct obs_encoder_info pcm_encoder_info;
+extern struct obs_encoder_info pcm24_encoder_info;
+extern struct obs_encoder_info pcm32_encoder_info;
+extern struct obs_encoder_info alac_encoder_info;
+extern struct obs_encoder_info flac_encoder_info;
 extern struct obs_encoder_info h264_nvenc_encoder_info;
 #ifdef ENABLE_HEVC
 extern struct obs_encoder_info hevc_nvenc_encoder_info;
@@ -44,7 +47,10 @@ extern struct obs_encoder_info svt_av1_encoder_info;
 extern struct obs_encoder_info aom_av1_encoder_info;
 
 #ifdef LIBAVUTIL_VAAPI_AVAILABLE
-extern struct obs_encoder_info vaapi_encoder_info;
+extern struct obs_encoder_info h264_vaapi_encoder_info;
+#ifdef ENABLE_HEVC
+extern struct obs_encoder_info hevc_vaapi_encoder_info;
+#endif
 #endif
 
 #ifndef __APPLE__
@@ -93,7 +99,9 @@ static const int blacklisted_adapters[] = {
 	0x1d13, // GP108M [GeForce MX250]
 	0x1d52, // GP108BM [GeForce MX250]
 	0x1c94, // GP107 [GeForce MX350]
+	0x1c96, // GP107 [GeForce MX350]
 	0x1f97, // TU117 [GeForce MX450]
+	0x1f98, // TU117 [GeForce MX450]
 	0x137b, // GM108GLM [Quadro M520 Mobile]
 	0x1d33, // GP108GLM [Quadro P500 Mobile]
 	0x137a, // GM108GLM [Quadro K620M / Quadro M500M]
@@ -334,11 +342,24 @@ static bool h264_vaapi_supported(void)
 	 * that support H264. */
 	return vaapi_get_h264_default_device() != NULL;
 }
+#ifdef ENABLE_HEVC
+static bool hevc_vaapi_supported(void)
+{
+	const AVCodec *vaenc = avcodec_find_encoder_by_name("hevc_vaapi");
+
+	if (!vaenc)
+		return false;
+
+	/* NOTE: If default device is NULL, it means there is no device
+	 * that support HEVC. */
+	return vaapi_get_hevc_default_device() != NULL;
+}
+#endif
 #endif
 
 #ifdef _WIN32
-extern void jim_nvenc_load(bool h264, bool hevc, bool av1);
-extern void jim_nvenc_unload(void);
+extern void obs_nvenc_load(bool h264, bool hevc, bool av1);
+extern void obs_nvenc_unload(void);
 extern void amf_load(void);
 extern void amf_unload(void);
 #endif
@@ -369,6 +390,11 @@ bool obs_module_load(void)
 	register_encoder_if_available(&svt_av1_encoder_info, "libsvtav1");
 	register_encoder_if_available(&aom_av1_encoder_info, "libaom-av1");
 	obs_register_encoder(&opus_encoder_info);
+	obs_register_encoder(&pcm_encoder_info);
+	obs_register_encoder(&pcm24_encoder_info);
+	obs_register_encoder(&pcm32_encoder_info);
+	obs_register_encoder(&alac_encoder_info);
+	obs_register_encoder(&flac_encoder_info);
 #ifndef __APPLE__
 	bool h264 = false;
 	bool hevc = false;
@@ -383,7 +409,7 @@ bool obs_module_load(void)
 
 #ifdef _WIN32
 		if (get_win_ver_int() > 0x0601) {
-			jim_nvenc_load(h264, hevc, av1);
+			obs_nvenc_load(h264, hevc, av1);
 		} else {
 			// if on Win 7, new nvenc isn't available so there's
 			// no nvenc encoder for the user to select, expose
@@ -421,10 +447,19 @@ bool obs_module_load(void)
 
 	if (h264_vaapi_supported()) {
 		blog(LOG_INFO, "FFmpeg VAAPI H264 encoding supported");
-		obs_register_encoder(&vaapi_encoder_info);
+		obs_register_encoder(&h264_vaapi_encoder_info);
 	} else {
 		blog(LOG_INFO, "FFmpeg VAAPI H264 encoding not supported");
 	}
+
+#ifdef ENABLE_HEVC
+	if (hevc_vaapi_supported()) {
+		blog(LOG_INFO, "FFmpeg VAAPI HEVC encoding supported");
+		obs_register_encoder(&hevc_vaapi_encoder_info);
+	} else {
+		blog(LOG_INFO, "FFmpeg VAAPI HEVC encoding not supported");
+	}
+#endif
 #endif
 #endif
 
@@ -442,6 +477,6 @@ void obs_module_unload(void)
 
 #ifdef _WIN32
 	amf_unload();
-	jim_nvenc_unload();
+	obs_nvenc_unload();
 #endif
 }

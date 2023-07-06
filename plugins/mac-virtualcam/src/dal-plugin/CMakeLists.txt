@@ -1,18 +1,10 @@
-project(mac-dal-plugin)
+cmake_minimum_required(VERSION 3.24...3.25)
 
-find_library(COCOA Cocoa)
-find_library(COREMEDIA CoreMedia)
-find_library(COREMEDIAIO CoreMediaIO)
-find_library(COREVIDEO CoreVideo)
-find_library(IOSURFACE IOSurface)
-
-mark_as_advanced(COCOA COREMEDIA COREMEDIAIO COREVIDEO IOSURFACE)
-
-add_library(mac-dal-plugin MODULE)
-add_library(OBS::mac-dal-plugin ALIAS mac-dal-plugin)
+add_library(obs-dal-plugin MODULE)
+add_library(OBS::dal-plugin ALIAS obs-dal-plugin)
 
 target_sources(
-  mac-dal-plugin
+  obs-dal-plugin
   PRIVATE OBSDALPlugIn.mm
           OBSDALPlugIn.h
           OBSDALPlugInMain.mm
@@ -29,39 +21,49 @@ target_sources(
           OBSDALStream.h
           CMSampleBufferUtils.h
           Defines.h
-          Logging.h
-          ${CMAKE_CURRENT_SOURCE_DIR}/../common/MachProtocol.h)
+          Logging.h)
 
-target_include_directories(
-  mac-dal-plugin
-  PRIVATE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/../common")
+if(NOT XCODE)
+  target_compile_options(obs-dal-plugin PRIVATE -fobjc-arc -fobjc-weak)
+endif()
 
-target_compile_options(mac-dal-plugin PRIVATE -fobjc-arc -fobjc-weak)
+set(_placeholder_location "${CMAKE_CURRENT_SOURCE_DIR}/../common/data/placeholder.png")
 
+set_property(SOURCE "${_placeholder_location}" PROPERTY MACOSX_PACKAGE_LOCATION "Resources")
+source_group("Resources" FILES "${_placeholder_location}")
+
+# cmake-format: off
 target_link_libraries(
-  mac-dal-plugin PRIVATE ${COCOA} ${COREMEDIA} ${COREMEDIAIO} ${COREVIDEO}
-                         ${IOSURFACE})
+  obs-dal-plugin
+  PRIVATE OBS::mach-protocol
+          "$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,CoreMedia.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,CoreMediaIO.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,CoreVideo.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,IOSurface.framework>")
 
-set(MACOSX_PLUGIN_BUNDLE_TYPE "BNDL")
-target_sources(mac-dal-plugin PRIVATE placeholder.png)
-set_source_files_properties(placeholder.png PROPERTIES MACOSX_PACKAGE_LOCATION
-                                                       "Resources")
-source_group("Resources" FILES placeholder.png)
+set_target_properties_obs(
+  obs-dal-plugin
+  PROPERTIES OUTPUT_NAME obs-mac-virtualcam
+             FOLDER plugins
+             PREFIX ""
+             BUNDLE TRUE BUNDLE_EXTENSION plugin MACOSX_BUNDLE_INFO_PLIST
+                         "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/Info.plist.in"
+             LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../../")
 
-set_target_properties(
-  mac-dal-plugin
-  PROPERTIES BUNDLE ON
-             BUNDLE_EXTENSION "plugin"
-             OUTPUT_NAME "obs-mac-virtualcam"
-             FOLDER "plugins"
-             VERSION "0"
-             SOVERSION "0"
-             # Force the DAL plugin to be built for arm64e as well. Note that
-             # we cannot build OBS for arm64e, since its libraries are not
-             # built for this architecture at the moment.
-             OSX_ARCHITECTURES "x86_64;arm64;arm64e"
-             LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../../"
-             MACOSX_BUNDLE_INFO_PLIST
-             "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/Virtualcam-Info.plist.in")
+set_property(TARGET obs-dal-plugin PROPERTY OSX_ARCHITECTURES x86_64 arm64)
 
-setup_binary_target(mac-dal-plugin)
+string(TIMESTAMP CURRENT_YEAR "%Y")
+set_target_xcode_properties(
+  obs-dal-plugin
+  PROPERTIES CLANG_ENABLE_OBJC_ARC YES
+             CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION YES
+             GCC_WARN_SHADOW YES
+             PRODUCT_NAME obs-mac-virtualcam
+             PRODUCT_BUNDLE_IDENTIFIER com.obsproject.obs-mac-virtualcam
+             CURRENT_PROJECT_VERSION ${OBS_BUILD_NUMBER}
+             MARKETING_VERSION ${OBS_VERSION_CANONICAL}
+             GENERATE_INFOPLIST_FILE YES
+             INFOPLIST_KEY_CFBundleDisplayName obs-mac-virtualcam
+             INFOPLIST_KEY_NSHumanReadableCopyright "(c) 2020-${CURRENT_YEAR} John Boiles, Patrick Heyer, Sebastian Beckmann")
+# cmake-format: on

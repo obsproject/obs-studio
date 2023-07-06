@@ -24,6 +24,8 @@ public:
 	inline bool LoadFail() const { return fail; }
 
 	virtual int exec() override;
+	virtual void reject() override;
+	virtual void accept() override;
 
 public slots:
 	void urlChanged(const QString &url);

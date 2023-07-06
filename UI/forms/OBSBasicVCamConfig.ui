@@ -22,23 +22,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QComboBox" name="outputType">
-     <item>
-      <property name="text">
-       <string>Basic.VCam.Internal</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Basic.Scene</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Basic.Main.Source</string>
-      </property>
-     </item>
-    </widget>
+    <widget class="QComboBox" name="outputType"/>
    </item>
    <item>
     <widget class="QLabel" name="outputSelectionLabel">
@@ -49,6 +33,16 @@
    </item>
    <item>
     <widget class="QComboBox" name="outputSelection"/>
+   </item>
+   <item>
+    <widget class="QLabel" name="warningLabel">
+     <property name="text">
+      <string>Basic.VCam.RestartWarning</string>
+     </property>
+     <property name="visible">
+	<bool>false</bool>
+     </property>
+    </widget>
    </item>
    <item>
     <spacer name="verticalSpacer">

@@ -189,32 +189,37 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 	OBSSourceAutoRelease source =
 		obs_source_create(type, sourceName.c_str(), settings, nullptr);
 	if (source) {
+		OBSDataAutoRelease wrapper = obs_save_source(source);
+
 		OBSScene scene = main->GetCurrentScene();
-		const char *sceneName =
-			obs_source_get_name(obs_scene_get_source(scene));
-		auto undo = [sceneName, sourceName](const std::string &) {
+		std::string sceneUUID =
+			obs_source_get_uuid(obs_scene_get_source(scene));
+		std::string sourceUUID = obs_source_get_uuid(source);
+
+		auto undo = [sceneUUID, sourceUUID](const std::string &) {
 			OBSSourceAutoRelease source =
-				obs_get_source_by_name(sourceName.c_str());
+				obs_get_source_by_uuid(sourceUUID.c_str());
 			obs_source_remove(source);
 			OBSSourceAutoRelease scene =
-				obs_get_source_by_name(sceneName);
+				obs_get_source_by_uuid(sceneUUID.c_str());
 			OBSBasic::Get()->SetCurrentScene(scene.Get(), true);
 		};
-		auto redo = [sceneName, sourceName,
+		auto redo = [sceneUUID, sourceName,
 			     type](const std::string &data) {
 			OBSSourceAutoRelease scene =
-				obs_get_source_by_name(sceneName);
+				obs_get_source_by_uuid(sceneUUID.c_str());
 			OBSBasic::Get()->SetCurrentScene(scene.Get(), true);
-			OBSDataAutoRelease settings =
+
+			OBSDataAutoRelease dat =
 				obs_data_create_from_json(data.c_str());
-			OBSSourceAutoRelease source = obs_source_create(
-				type, sourceName.c_str(), settings, nullptr);
+			OBSSourceAutoRelease source = obs_load_source(dat);
 			obs_scene_add(obs_scene_from_source(scene),
 				      source.Get());
 		};
+
 		undo_s.add_action(QTStr("Undo.Add").arg(sourceName.c_str()),
 				  undo, redo, "",
-				  std::string(obs_data_get_json(settings)));
+				  std::string(obs_data_get_json(wrapper)));
 		obs_scene_add(scene, source);
 	}
 }

@@ -69,6 +69,7 @@ MediaControls::MediaControls(QWidget *parent)
 					 "MediaControlsCountdownTimer");
 
 	QAction *restartAction = new QAction(this);
+	restartAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
 	restartAction->setShortcut({Qt::Key_R});
 	connect(restartAction, SIGNAL(triggered()), this, SLOT(RestartMedia()));
 	addAction(restartAction);
@@ -86,6 +87,13 @@ MediaControls::MediaControls(QWidget *parent)
 		SLOT(MoveSliderBackwards()));
 	sliderBack->setShortcut({Qt::Key_Left});
 	addAction(sliderBack);
+
+	QAction *playPause = new QAction(this);
+	playPause->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+	connect(playPause, SIGNAL(triggered()), this,
+		SLOT(on_playPauseButton_clicked()));
+	playPause->setShortcut({Qt::Key_Space});
+	addAction(playPause);
 }
 
 MediaControls::~MediaControls() {}

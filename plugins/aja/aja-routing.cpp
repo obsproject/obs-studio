@@ -211,11 +211,8 @@ bool Routing::ConfigureSourceRoute(const SourceProps &props, NTV2Mode mode,
 	if (!card)
 		return false;
 
-	bool found_preset = false;
 	auto deviceID = props.deviceID;
 	NTV2VideoFormat vf = props.videoFormat;
-	bool is_hfr = NTV2_IS_HIGH_NTV2FrameRate(
-		GetNTV2FrameRateFromVideoFormat(props.videoFormat));
 	auto init_src = props.InitialInputSource();
 	auto init_channel = props.Channel();
 
@@ -355,10 +352,7 @@ bool Routing::ConfigureOutputRoute(const OutputProps &props, NTV2Mode mode,
 	if (!card)
 		return false;
 
-	bool found_preset = false;
 	auto deviceID = props.deviceID;
-	bool is_hfr = NTV2_IS_HIGH_NTV2FrameRate(
-		GetNTV2FrameRateFromVideoFormat(props.videoFormat));
 	NTV2OutputDestinations outputDests;
 	aja::IOSelectionToOutputDests(props.ioSelect, outputDests);
 	if (outputDests.empty()) {

@@ -40,7 +40,7 @@ void SourceToolbar::SaveOldProperties(obs_source_t *source)
 
 	OBSDataAutoRelease oldSettings = obs_source_get_settings(source);
 	obs_data_apply(oldData, oldSettings);
-	obs_data_set_string(oldData, "undo_sname", obs_source_get_name(source));
+	obs_data_set_string(oldData, "undo_suuid", obs_source_get_uuid(source));
 }
 
 void SourceToolbar::SetUndoProperties(obs_source_t *source, bool repeatable)
@@ -55,17 +55,17 @@ void SourceToolbar::SetUndoProperties(obs_source_t *source, bool repeatable)
 	OBSSource currentSceneSource = main->GetCurrentSceneSource();
 	if (!currentSceneSource)
 		return;
-	std::string scene_name = obs_source_get_name(currentSceneSource);
-	auto undo_redo = [scene_name,
-			  main = std::move(main)](const std::string &data) {
+	std::string scene_uuid = obs_source_get_uuid(currentSceneSource);
+	auto undo_redo = [scene_uuid = std::move(scene_uuid),
+			  main](const std::string &data) {
 		OBSDataAutoRelease settings =
 			obs_data_create_from_json(data.c_str());
-		OBSSourceAutoRelease source = obs_get_source_by_name(
-			obs_data_get_string(settings, "undo_sname"));
+		OBSSourceAutoRelease source = obs_get_source_by_uuid(
+			obs_data_get_string(settings, "undo_suuid"));
 		obs_source_reset_settings(source, settings);
 
 		OBSSourceAutoRelease scene_source =
-			obs_get_source_by_name(scene_name.c_str());
+			obs_get_source_by_uuid(scene_uuid.c_str());
 		main->SetCurrentScene(scene_source.Get(), true);
 
 		main->UpdateContextBar();
@@ -74,8 +74,8 @@ void SourceToolbar::SetUndoProperties(obs_source_t *source, bool repeatable)
 	OBSDataAutoRelease new_settings = obs_data_create();
 	OBSDataAutoRelease curr_settings = obs_source_get_settings(source);
 	obs_data_apply(new_settings, curr_settings);
-	obs_data_set_string(new_settings, "undo_sname",
-			    obs_source_get_name(source));
+	obs_data_set_string(new_settings, "undo_suuid",
+			    obs_source_get_uuid(source));
 
 	std::string undo_data(obs_data_get_json(oldData));
 	std::string redo_data(obs_data_get_json(new_settings));
@@ -311,15 +311,13 @@ void DisplayCaptureToolbar::Init()
 	const char *device_str =
 		get_os_text(mod, "Monitor", "DisplayCapture.Display", "Screen");
 	ui->deviceLabel->setText(device_str);
-#ifndef _WIN32
-	is_int = true;
-#endif
 
 #ifdef _WIN32
 	prop_name = "monitor_id";
 #elif __APPLE__
-	prop_name = "display";
+	prop_name = "display_uuid";
 #else
+	is_int = true;
 	prop_name = "screen";
 #endif
 
@@ -573,7 +571,8 @@ void ColorSourceToolbar::on_choose_clicked()
 	QColorDialog::ColorDialogOptions options;
 
 	options |= QColorDialog::ShowAlphaChannel;
-#ifndef _WIN32
+#ifdef __linux__
+	// TODO: Revisit hang on Ubuntu with native dialog
 	options |= QColorDialog::DontUseNativeDialog;
 #endif
 
@@ -695,7 +694,8 @@ void TextSourceToolbar::on_selectColor_clicked()
 	QColorDialog::ColorDialogOptions options;
 
 	options |= QColorDialog::ShowAlphaChannel;
-#ifndef _WIN32
+#ifdef __linux__
+	// TODO: Revisit hang on Ubuntu with native dialog
 	options |= QColorDialog::DontUseNativeDialog;
 #endif
 
@@ -726,12 +726,15 @@ void TextSourceToolbar::on_text_textChanged()
 	if (!source) {
 		return;
 	}
-
+	std::string newText = QT_TO_UTF8(ui->text->text());
+	OBSDataAutoRelease settings = obs_source_get_settings(source);
+	if (newText == obs_data_get_string(settings, "text")) {
+		return;
+	}
 	SaveOldProperties(source);
 
-	OBSDataAutoRelease settings = obs_data_create();
-	obs_data_set_string(settings, "text", QT_TO_UTF8(ui->text->text()));
-	obs_source_update(source, settings);
+	obs_data_set_string(settings, "text", newText.c_str());
+	obs_source_update(source, nullptr);
 
 	SetUndoProperties(source, true);
 }

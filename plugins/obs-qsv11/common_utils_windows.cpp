@@ -9,6 +9,8 @@
 #include "common_directx9.h"
 #endif
 
+#include <intrin.h>
+
 /* =======================================================
  * Windows implementation of OS-specific utility functions
  */
@@ -17,8 +19,8 @@ mfxStatus Initialize(mfxIMPL impl, mfxVersion ver, MFXVideoSession *pSession,
 		     mfxFrameAllocator *pmfxAllocator, mfxHDL *deviceHandle,
 		     bool bCreateSharedHandles, bool dx9hack)
 {
-	bCreateSharedHandles; // (Hugh) Currently unused
-	pmfxAllocator;        // (Hugh) Currently unused
+	bCreateSharedHandles; // (Lain) Currently unused
+	pmfxAllocator;        // (Lain) Currently unused
 
 	mfxStatus sts = MFX_ERR_NONE;
 
@@ -118,7 +120,12 @@ double TimeDiffMsec(mfxTime tfinish, mfxTime tstart)
 	       freq;
 }
 
-/* (Hugh) Functions currently unused */
+void util_cpuid(int cpuinfo[4], int flags)
+{
+	return __cpuid(cpuinfo, flags);
+}
+
+/* (Lain) Functions currently unused */
 #if 0
 void ClearYUVSurfaceVMem(mfxMemId memId)
 {

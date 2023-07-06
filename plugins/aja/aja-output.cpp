@@ -917,10 +917,6 @@ bool aja_output_device_changed(void *data, obs_properties_t *props,
 		obs_properties_get(props, kUIPropVideoFormatSelect.id);
 	obs_property_t *pix_fmt_list =
 		obs_properties_get(props, kUIPropPixelFormatSelect.id);
-	obs_property_t *sdi_trx_list =
-		obs_properties_get(props, kUIPropSDITransport.id);
-	obs_property_t *sdi_4k_list =
-		obs_properties_get(props, kUIPropSDITransport4K.id);
 
 	const NTV2DeviceID deviceID = cardEntry->GetDeviceID();
 	populate_io_selection_output_list(cardID, outputID, deviceID,

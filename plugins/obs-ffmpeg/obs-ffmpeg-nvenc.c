@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2016 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -35,8 +35,10 @@ struct nvenc_encoder {
 #ifdef ENABLE_HEVC
 	bool hevc;
 #endif
+	int gpu;
 	DARRAY(uint8_t) header;
 	DARRAY(uint8_t) sei;
+	int64_t dts_offset; // Revert when FFmpeg fixes b-frame DTS calculation
 };
 
 #ifdef __linux__
@@ -178,6 +180,10 @@ static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
 	av_opt_set(enc->ffve.context->priv_data, "level", "auto", 0);
 	av_opt_set_int(enc->ffve.context->priv_data, "gpu", gpu, 0);
 
+	// This is ugly but ffmpeg wipes priv_data on error and we need
+	// to know this to show a proper error message.
+	enc->gpu = gpu;
+
 	set_psycho_aq(enc, psycho_aq);
 
 	enc->ffve.context->max_b_frames = bf;
@@ -243,20 +249,15 @@ static void on_init_error(void *data, int ret)
 	struct nvenc_encoder *enc = data;
 	struct dstr error_message = {0};
 
-	int64_t gpu;
-	if (av_opt_get_int(enc->ffve.context->priv_data, "gpu", 0, &gpu) < 0) {
-		gpu = -1;
-	}
-
 	dstr_copy(&error_message, obs_module_text("NVENC.Error"));
 	dstr_replace(&error_message, "%1", av_err2str(ret));
-	dstr_cat(&error_message, "\r\n\r\n");
+	dstr_cat(&error_message, "<br><br>");
 
-	if (gpu > 0) {
+	if (enc->gpu > 0) {
 		// if a non-zero GPU failed, almost always
 		// user error. tell then to fix it.
 		char gpu_str[16];
-		snprintf(gpu_str, sizeof(gpu_str) - 1, "%d", (int)gpu);
+		snprintf(gpu_str, sizeof(gpu_str) - 1, "%d", enc->gpu);
 		gpu_str[sizeof(gpu_str) - 1] = 0;
 
 		dstr_cat(&error_message, obs_module_text("NVENC.BadGPUIndex"));
@@ -292,6 +293,15 @@ static void on_first_packet(void *data, AVPacket *pkt, struct darray *da)
 					&enc->sei.array, &enc->sei.num);
 	}
 	da->capacity = da->num;
+
+	if (enc->ffve.context->max_b_frames != 0) {
+		int64_t expected_dts = -(enc->ffve.context->max_b_frames *
+					 enc->ffve.context->time_base.num);
+		if (pkt->dts != expected_dts) { // Unpatched FFmpeg
+			enc->dts_offset = expected_dts - pkt->dts;
+			info("Applying DTS value corrections");
+		}
+	}
 }
 
 static void *nvenc_create_internal(obs_data_t *settings, obs_encoder_t *encoder,
@@ -342,17 +352,24 @@ static void *h264_nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 		blog(LOG_ERROR, "[NVENC encoder] %s", text);
 		return NULL;
 	}
+	case VIDEO_FORMAT_P216:
+	case VIDEO_FORMAT_P416: {
+		const char *const text =
+			obs_module_text("NVENC.16bitUnsupported");
+		obs_encoder_set_last_error(encoder, text);
+		blog(LOG_ERROR, "[NVENC encoder] %s", text);
+		return NULL;
+	}
 	default:
-		switch (voi->colorspace) {
-		case VIDEO_CS_2100_PQ:
-		case VIDEO_CS_2100_HLG: {
+		if (voi->colorspace == VIDEO_CS_2100_PQ ||
+		    voi->colorspace == VIDEO_CS_2100_HLG) {
 			const char *const text =
 				obs_module_text("NVENC.8bitUnsupportedHdr");
 			obs_encoder_set_last_error(encoder, text);
 			blog(LOG_ERROR, "[NVENC encoder] %s", text);
 			return NULL;
 		}
-		}
+		break;
 	}
 
 	bool psycho_aq = obs_data_get_bool(settings, "psycho_aq");
@@ -382,17 +399,24 @@ static void *hevc_nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 	}
 	case VIDEO_FORMAT_P010:
 		break;
+	case VIDEO_FORMAT_P216:
+	case VIDEO_FORMAT_P416: {
+		const char *const text =
+			obs_module_text("NVENC.16bitUnsupported");
+		obs_encoder_set_last_error(encoder, text);
+		blog(LOG_ERROR, "[NVENC encoder] %s", text);
+		return NULL;
+	}
 	default:
-		switch (voi->colorspace) {
-		case VIDEO_CS_2100_PQ:
-		case VIDEO_CS_2100_HLG: {
+		if (voi->colorspace == VIDEO_CS_2100_PQ ||
+		    voi->colorspace == VIDEO_CS_2100_HLG) {
 			const char *const text =
 				obs_module_text("NVENC.8bitUnsupportedHdr");
 			obs_encoder_set_last_error(encoder, text);
 			blog(LOG_ERROR, "[NVENC encoder] %s", text);
 			return NULL;
 		}
-		}
+		break;
 	}
 
 	bool psycho_aq = obs_data_get_bool(settings, "psycho_aq");
@@ -412,7 +436,12 @@ static bool nvenc_encode(void *data, struct encoder_frame *frame,
 			 struct encoder_packet *packet, bool *received_packet)
 {
 	struct nvenc_encoder *enc = data;
-	return ffmpeg_video_encode(&enc->ffve, frame, packet, received_packet);
+
+	if (!ffmpeg_video_encode(&enc->ffve, frame, packet, received_packet))
+		return false;
+
+	packet->dts += enc->dts_offset;
+	return true;
 }
 
 enum codec_type {

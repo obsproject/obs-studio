@@ -1,3 +1,4 @@
+# cmake-format: off
 # * Try to find Gio Once done this will define
 #
 # GIO_FOUND - system has Gio GIO_INCLUDE_DIRS - the Gio include directory
@@ -6,6 +7,7 @@
 
 # Use pkg-config to get the directories and then use these values in the
 # find_path() and find_library() calls
+# cmake-format: on
 
 find_package(PkgConfig QUIET)
 if(PKG_CONFIG_FOUND)
@@ -36,17 +38,14 @@ if(GIO_FOUND)
   if(NOT TARGET GIO::GIO)
     if(IS_ABSOLUTE "${GIO_LIBRARIES}")
       add_library(GIO::GIO UNKNOWN IMPORTED)
-      set_target_properties(GIO::GIO PROPERTIES IMPORTED_LOCATION
-                                                "${GIO_LIBRARIES}")
+      set_target_properties(GIO::GIO PROPERTIES IMPORTED_LOCATION "${GIO_LIBRARIES}")
     else()
       add_library(GIO::GIO INTERFACE IMPORTED)
-      set_target_properties(GIO::GIO PROPERTIES IMPORTED_LIBNAME
-                                                "${GIO_LIBRARIES}")
+      set_target_properties(GIO::GIO PROPERTIES IMPORTED_LIBNAME "${GIO_LIBRARIES}")
     endif()
 
     # Special case for gio, as both the
-    set_target_properties(GIO::GIO PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                              "${_GIO_INCLUDE_DIRS}")
+    set_target_properties(GIO::GIO PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${_GIO_INCLUDE_DIRS}")
 
     target_compile_options(GIO::GIO INTERFACE ${_GIO_CFLAGS})
   endif()

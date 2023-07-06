@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2017 by Hugh Bailey <jim@obsproject.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 
 #define NO_REDEFS
 #include "obs-scripting-python-import.h"
-#include "obs-scripting-config.h"
 
 #ifdef _MSC_VER
 #pragma warning(disable : 4152)
@@ -40,7 +39,7 @@
 #endif
 
 #define PY_MAJOR_VERSION_MAX 3
-#define PY_MINOR_VERSION_MAX 10
+#define PY_MINOR_VERSION_MAX 11
 
 bool import_python(const char *python_path, python_version_t *python_version)
 {

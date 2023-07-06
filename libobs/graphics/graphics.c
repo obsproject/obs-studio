@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -3048,6 +3048,28 @@ gs_texture_t *gs_duplicator_get_texture(gs_duplicator_t *duplicator)
 		return NULL;
 
 	return thread_graphics->exports.gs_duplicator_get_texture(duplicator);
+}
+
+enum gs_color_space gs_duplicator_get_color_space(gs_duplicator_t *duplicator)
+{
+	if (!gs_valid_p("gs_duplicator_get_color_space", duplicator))
+		return GS_CS_SRGB;
+	if (!thread_graphics->exports.gs_duplicator_get_color_space)
+		return GS_CS_SRGB;
+
+	return thread_graphics->exports.gs_duplicator_get_color_space(
+		duplicator);
+}
+
+float gs_duplicator_get_sdr_white_level(gs_duplicator_t *duplicator)
+{
+	if (!gs_valid_p("gs_duplicator_get_sdr_white_level", duplicator))
+		return 80.f;
+	if (!thread_graphics->exports.gs_duplicator_get_sdr_white_level)
+		return 80.f;
+
+	return thread_graphics->exports.gs_duplicator_get_sdr_white_level(
+		duplicator);
 }
 
 /** creates a windows GDI-lockable texture */

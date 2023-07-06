@@ -1,0 +1,26 @@
+{
+    "name": "aom",
+    "buildsystem": "cmake-ninja",
+    "builddir": true,
+    "config-opts": [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DENABLE_DOCS=OFF",
+        "-DENABLE_EXAMPLES=OFF",
+        "-DENABLE_TESTDATA=OFF",
+        "-DENABLE_TESTS=OFF",
+        "-DENABLE_TOOLS=OFF "
+    ],
+    "cleanup": [
+        "/include",
+        "/lib/pkgconfig"
+    ],
+    "sources": [
+        {
+            "type": "git",
+            "url": "https://aomedia.googlesource.com/aom.git",
+            "tag": "v3.6.0",
+            "commit": "3c65175b1972da4a1992c1dae2365b48d13f9a8d"
+        }
+    ]
+}

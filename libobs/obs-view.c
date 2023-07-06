@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -197,4 +197,23 @@ void obs_view_remove(obs_view_t *view)
 		obs->video.mixes.array[idx]->view = NULL;
 	set_main_mix();
 	pthread_mutex_unlock(&obs->video.mixes_mutex);
+}
+
+bool obs_view_get_video_info(obs_view_t *view, struct obs_video_info *ovi)
+{
+	if (!view)
+		return false;
+
+	pthread_mutex_lock(&obs->video.mixes_mutex);
+
+	size_t idx = find_mix_for_view(view);
+	if (idx != DARRAY_INVALID) {
+		*ovi = obs->video.mixes.array[idx]->ovi;
+		pthread_mutex_unlock(&obs->video.mixes_mutex);
+		return true;
+	}
+
+	pthread_mutex_unlock(&obs->video.mixes_mutex);
+
+	return false;
 }

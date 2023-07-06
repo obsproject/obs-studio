@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -70,11 +70,15 @@ EXPORT void obs_data_addref(obs_data_t *data);
 EXPORT void obs_data_release(obs_data_t *data);
 
 EXPORT const char *obs_data_get_json(obs_data_t *data);
+EXPORT const char *obs_data_get_json_pretty(obs_data_t *data);
 EXPORT const char *obs_data_get_last_json(obs_data_t *data);
 EXPORT bool obs_data_save_json(obs_data_t *data, const char *file);
 EXPORT bool obs_data_save_json_safe(obs_data_t *data, const char *file,
 				    const char *temp_ext,
 				    const char *backup_ext);
+EXPORT bool obs_data_save_json_pretty_safe(obs_data_t *data, const char *file,
+					   const char *temp_ext,
+					   const char *backup_ext);
 
 EXPORT void obs_data_apply(obs_data_t *target, obs_data_t *apply_data);
 

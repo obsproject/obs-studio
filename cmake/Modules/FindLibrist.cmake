@@ -20,16 +20,14 @@ endif()
 find_path(
   LIBRIST_INCLUDE_DIR
   NAMES librist.h librist/librist.h
-  HINTS ENV LIBRIST_PATH ${LIBRIST_PATH} ${CMAKE_SOURCE_DIR}/${LIBRIST_PATH}
-        ${_LIBRIST_INCLUDE_DIRS} ${DepsPath}
+  HINTS ENV LIBRIST_PATH ${LIBRIST_PATH} ${CMAKE_SOURCE_DIR}/${LIBRIST_PATH} ${_LIBRIST_INCLUDE_DIRS} ${DepsPath}
   PATHS /usr/include /usr/local/include /opt/local/include /sw/include
   PATH_SUFFIXES include)
 
 find_library(
   LIBRIST_LIB
   NAMES ${_LIBRIST_LIBRARIES} librist rist
-  HINTS ENV LIBRIST_PATH ${LIBRIST_PATH} ${CMAKE_SOURCE_DIR}/${LIBRIST_PATH}
-        ${_LIBRIST_LIBRARY_DIRS} ${DepsPath}
+  HINTS ENV LIBRIST_PATH ${LIBRIST_PATH} ${CMAKE_SOURCE_DIR}/${LIBRIST_PATH} ${_LIBRIST_LIBRARY_DIRS} ${DepsPath}
   PATHS /usr/lib /usr/local/lib /opt/local/lib /sw/lib
   PATH_SUFFIXES
     lib${_lib_suffix}
@@ -46,8 +44,7 @@ find_library(
     ../bin)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Librist DEFAULT_MSG LIBRIST_LIB
-                                  LIBRIST_INCLUDE_DIR)
+find_package_handle_standard_args(Librist DEFAULT_MSG LIBRIST_LIB LIBRIST_INCLUDE_DIR)
 mark_as_advanced(LIBRIST_INCLUDE_DIR LIBRIST_LIB)
 
 if(LIBRIST_FOUND)
@@ -57,17 +54,13 @@ if(LIBRIST_FOUND)
   if(NOT TARGET Librist::Librist)
     if(IS_ABSOLUTE "${LIBRIST_LIBRARIES}")
       add_library(Librist::Librist UNKNOWN IMPORTED)
-      set_target_properties(Librist::Librist PROPERTIES IMPORTED_LOCATION
-                                                        "${LIBRIST_LIBRARIES}")
+      set_target_properties(Librist::Librist PROPERTIES IMPORTED_LOCATION "${LIBRIST_LIBRARIES}")
     else()
       add_library(Librist::Librist INTERFACE IMPORTED)
-      set_target_properties(Librist::Librist PROPERTIES IMPORTED_LIBNAME
-                                                        "${LIBRIST_LIBRARIES}")
+      set_target_properties(Librist::Librist PROPERTIES IMPORTED_LIBNAME "${LIBRIST_LIBRARIES}")
     endif()
 
-    set_target_properties(
-      Librist::Librist PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                  "${LIBRIST_INCLUDE_DIRS}")
+    set_target_properties(Librist::Librist PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${LIBRIST_INCLUDE_DIRS}")
   endif()
 else()
   message(STATUS "librist library not found")

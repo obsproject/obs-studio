@@ -74,7 +74,6 @@ public:
 		setAttribute(Qt::WA_InputMethodEnabled, false);
 		setAttribute(Qt::WA_MacShowFocusRect, true);
 		InitSignalHandler();
-		CreateDupeIcon();
 		ResetKey();
 	}
 	OBSHotkeyEdit(QWidget *parent = nullptr)
@@ -102,7 +101,7 @@ public:
 
 protected:
 	OBSSignal layoutChanged;
-	QAction *dupeIcon;
+	QAction *dupeIcon = nullptr;
 
 	void InitSignalHandler();
 	void CreateDupeIcon();

@@ -55,21 +55,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <stdio.h>
+#include <inttypes.h>
 #include <util/dstr.h>
 #include <util/darray.h>
 #include <util/platform.h>
+#include <util/threading.h>
 #include <obs-module.h>
 #include <obs-hevc.h>
 #include <obs-avc.h>
-#include <d3d11.h>
-#include <dxgi1_2.h>
-
-#ifndef _STDINT_H_INCLUDED
-#define _STDINT_H_INCLUDED
-#endif
 
 #include "QSV_Encoder.h"
-#include <Windows.h>
 
 #define do_log(level, format, ...)                 \
 	blog(level, "[qsv encoder: '%s'] " format, \
@@ -103,7 +98,7 @@ struct obs_qsv {
 
 /* ------------------------------------------------------------------------- */
 
-static SRWLOCK g_QsvLock = SRWLOCK_INIT;
+static pthread_mutex_t g_QsvLock = PTHREAD_MUTEX_INITIALIZER;
 static unsigned short g_verMajor;
 static unsigned short g_verMinor;
 static int64_t g_pts2dtsShift;
@@ -139,10 +134,10 @@ static void obs_qsv_stop(void *data);
 static void clear_data(struct obs_qsv *obsqsv)
 {
 	if (obsqsv->context) {
-		AcquireSRWLockExclusive(&g_QsvLock);
+		pthread_mutex_lock(&g_QsvLock);
 		qsv_encoder_close(obsqsv->context);
 		obsqsv->context = NULL;
-		ReleaseSRWLockExclusive(&g_QsvLock);
+		pthread_mutex_unlock(&g_QsvLock);
 
 		// bfree(obsqsv->sei);
 		bfree(obsqsv->extra_data);
@@ -228,7 +223,7 @@ static inline void add_strings(obs_property_t *list, const char *const *strings)
 #define TEXT_CONVERGENCE obs_module_text("Convergence")
 #define TEXT_ICQ_QUALITY obs_module_text("ICQQuality")
 #define TEXT_KEYINT_SEC obs_module_text("KeyframeIntervalSec")
-#define TEXT_BFRAMES obs_module_text("B Frames")
+#define TEXT_BFRAMES obs_module_text("BFrames")
 #define TEXT_PERCEPTUAL_ENHANCEMENTS \
 	obs_module_text("SubjectiveVideoEnhancements")
 
@@ -518,6 +513,7 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	bool cbr_override = obs_data_get_bool(settings, "cbr");
 	int bFrames = (int)obs_data_get_int(settings, "bframes");
 	bool enhancements = obs_data_get_bool(settings, "enhancements");
+	const char *codec;
 
 	if (obs_data_has_user_value(settings, "bf"))
 		bFrames = (int)obs_data_get_int(settings, "bf");
@@ -551,6 +547,7 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_7;
 
 	if (obsqsv->codec == QSV_CODEC_AVC) {
+		codec = "H.264";
 		if (astrcmpi(profile, "baseline") == 0)
 			obsqsv->params.nCodecProfile = MFX_PROFILE_AVC_BASELINE;
 		else if (astrcmpi(profile, "main") == 0)
@@ -559,6 +556,7 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 			obsqsv->params.nCodecProfile = MFX_PROFILE_AVC_HIGH;
 
 	} else if (obsqsv->codec == QSV_CODEC_HEVC) {
+		codec = "HEVC";
 		if (astrcmpi(profile, "main") == 0) {
 			obsqsv->params.nCodecProfile = MFX_PROFILE_HEVC_MAIN;
 			if (obs_p010_tex_active()) {
@@ -573,6 +571,7 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 		}
 
 	} else if (obsqsv->codec == QSV_CODEC_AV1) {
+		codec = "AV1";
 		obsqsv->params.nCodecProfile = MFX_PROFILE_AV1_MAIN;
 	}
 
@@ -721,7 +720,10 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	obsqsv->params.bMBBRC = enhancements;
 	obsqsv->params.bCQM = enhancements;
 
-	info("settings:\n\trate_control:   %s", rate_control);
+	info("settings:\n"
+	     "\tcodec:          %s\n"
+	     "\trate_control:   %s",
+	     codec, rate_control);
 
 	if (obsqsv->params.nRateControl != MFX_RATECONTROL_LA_ICQ &&
 	    obsqsv->params.nRateControl != MFX_RATECONTROL_ICQ &&
@@ -855,6 +857,14 @@ static void *obs_qsv_create(enum qsv_codec codec, obs_data_t *settings,
 		}
 		obsqsv->params.video_fmt_10bit = true;
 		break;
+	case VIDEO_FORMAT_P216:
+	case VIDEO_FORMAT_P416: {
+		const char *const text = obs_module_text("16bitUnsupported");
+		obs_encoder_set_last_error(encoder, text);
+		error("%s", text);
+		bfree(obsqsv);
+		return NULL;
+	}
 	default:
 		switch (voi->colorspace) {
 		case VIDEO_CS_2100_PQ:
@@ -870,9 +880,9 @@ static void *obs_qsv_create(enum qsv_codec codec, obs_data_t *settings,
 	}
 
 	if (update_settings(obsqsv, settings)) {
-		AcquireSRWLockExclusive(&g_QsvLock);
+		pthread_mutex_lock(&g_QsvLock);
 		obsqsv->context = qsv_encoder_open(&obsqsv->params, codec);
-		ReleaseSRWLockExclusive(&g_QsvLock);
+		pthread_mutex_unlock(&g_QsvLock);
 
 		if (obsqsv->context == NULL)
 			warn("qsv failed to load");
@@ -903,9 +913,9 @@ static void *obs_qsv_create(enum qsv_codec codec, obs_data_t *settings,
 			GopPicSize - (GopPicSize / interval) * interval;
 
 		blog(LOG_INFO,
-		     "\tinterval:       %d\n"
-		     "\tGopPictSize:    %d\n"
-		     "\tg_pts2dtsShift: %d",
+		     "\tinterval:       %" PRId64 "\n"
+		     "\tGopPictSize:    %" PRId64 "\n"
+		     "\tg_pts2dtsShift: %" PRId64,
 		     interval, GopPicSize, g_pts2dtsShift);
 	} else
 		g_pts2dtsShift = -1;
@@ -936,20 +946,6 @@ static void *obs_qsv_create_hevc(obs_data_t *settings, obs_encoder_t *encoder)
 {
 	return obs_qsv_create(QSV_CODEC_HEVC, settings, encoder);
 }
-
-static HANDLE get_lib(const char *lib)
-{
-	HMODULE mod = GetModuleHandleA(lib);
-	if (mod)
-		return mod;
-
-	mod = LoadLibraryA(lib);
-	if (!mod)
-		blog(LOG_INFO, "Failed to load %s", lib);
-	return mod;
-}
-
-typedef HRESULT(WINAPI *CREATEDXGIFACTORY1PROC)(REFIID, void **);
 
 static void *obs_qsv_create_tex(enum qsv_codec codec, obs_data_t *settings,
 				obs_encoder_t *encoder, const char *fallback_id)
@@ -985,10 +981,13 @@ static void *obs_qsv_create_tex(enum qsv_codec codec, obs_data_t *settings,
 	}
 
 	if (obs_encoder_scaling_enabled(encoder)) {
-		blog(LOG_INFO,
-		     ">>> encoder scaling active, fall back to old qsv encoder");
-		return obs_encoder_create_rerouted(encoder,
-						   (const char *)fallback_id);
+		if (!obs_encoder_gpu_scaling_enabled(encoder)) {
+			blog(LOG_INFO,
+			     ">>> encoder CPU scaling active, fall back to old qsv encoder");
+			return obs_encoder_create_rerouted(
+				encoder, (const char *)fallback_id);
+		}
+		blog(LOG_INFO, ">>> encoder GPU scaling active");
 	}
 
 	blog(LOG_INFO, ">>> new qsv encoder");
@@ -1358,7 +1357,7 @@ static bool obs_qsv_encode(void *data, struct encoder_frame *frame,
 	if (!frame || !packet || !received_packet)
 		return false;
 
-	AcquireSRWLockExclusive(&g_QsvLock);
+	pthread_mutex_lock(&g_QsvLock);
 
 	video_t *video = obs_encoder_video(obsqsv->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
@@ -1382,7 +1381,7 @@ static bool obs_qsv_encode(void *data, struct encoder_frame *frame,
 
 	if (ret < 0) {
 		warn("encode failed");
-		ReleaseSRWLockExclusive(&g_QsvLock);
+		pthread_mutex_unlock(&g_QsvLock);
 		return false;
 	}
 
@@ -1393,7 +1392,7 @@ static bool obs_qsv_encode(void *data, struct encoder_frame *frame,
 	else if (obsqsv->codec == QSV_CODEC_HEVC)
 		parse_packet_hevc(obsqsv, packet, pBS, voi, received_packet);
 
-	ReleaseSRWLockExclusive(&g_QsvLock);
+	pthread_mutex_unlock(&g_QsvLock);
 
 	return true;
 }
@@ -1414,7 +1413,7 @@ static bool obs_qsv_encode_tex(void *data, uint32_t handle, int64_t pts,
 	if (!packet || !received_packet)
 		return false;
 
-	AcquireSRWLockExclusive(&g_QsvLock);
+	pthread_mutex_lock(&g_QsvLock);
 
 	video_t *video = obs_encoder_video(obsqsv->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
@@ -1430,7 +1429,7 @@ static bool obs_qsv_encode_tex(void *data, uint32_t handle, int64_t pts,
 
 	if (ret < 0) {
 		warn("encode failed");
-		ReleaseSRWLockExclusive(&g_QsvLock);
+		pthread_mutex_unlock(&g_QsvLock);
 		return false;
 	}
 
@@ -1441,7 +1440,7 @@ static bool obs_qsv_encode_tex(void *data, uint32_t handle, int64_t pts,
 	else if (obsqsv->codec == QSV_CODEC_HEVC)
 		parse_packet_hevc(obsqsv, packet, pBS, voi, received_packet);
 
-	ReleaseSRWLockExclusive(&g_QsvLock);
+	pthread_mutex_unlock(&g_QsvLock);
 
 	return true;
 }

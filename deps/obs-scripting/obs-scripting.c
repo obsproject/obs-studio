@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2017 by Hugh Bailey <jim@obsproject.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -23,7 +23,6 @@
 
 #include "obs-scripting-internal.h"
 #include "obs-scripting-callback.h"
-#include "obs-scripting-config.h"
 
 #if defined(LUAJIT_FOUND)
 extern obs_script_t *obs_lua_script_create(const char *path,

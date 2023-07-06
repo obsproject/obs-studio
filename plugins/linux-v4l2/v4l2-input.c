@@ -39,6 +39,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "v4l2-helpers.h"
 #include "v4l2-decoder.h"
 
+#define FALLBACK_FRAMERATE 30
+
 #if HAVE_UDEV
 #include "v4l2-udev.h"
 #endif
@@ -1028,6 +1030,11 @@ static void v4l2_init(struct v4l2_data *data)
 	if (v4l2_set_framerate(data->dev, &data->framerate) < 0) {
 		blog(LOG_ERROR, "Unable to set framerate");
 		goto fail;
+	}
+	if (data->framerate == 0) {
+		blog(LOG_ERROR, "Framerate is not set, falling back to %i",
+		     FALLBACK_FRAMERATE);
+		data->framerate = v4l2_pack_tuple(1, FALLBACK_FRAMERATE);
 	}
 	v4l2_unpack_tuple(&fps_num, &fps_denom, data->framerate);
 	blog(LOG_INFO, "Framerate: %.2f fps", (float)fps_denom / fps_num);

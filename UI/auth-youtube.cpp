@@ -42,6 +42,8 @@ using namespace json11;
 #define YOUTUBE_CHAT_POPOUT_URL \
 	"https://www.youtube.com/live_chat?is_popout=1&dark_theme=1&v=%1"
 
+#define YOUTUBE_CHAT_DOCK_NAME "ytChat"
+
 static const char allowedChars[] =
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 static const int allowedCount = static_cast<int>(sizeof(allowedChars) - 1);
@@ -69,6 +71,19 @@ void RegisterYoutubeAuth()
 YoutubeAuth::YoutubeAuth(const Def &d)
 	: OAuthStreamKey(d), section(SECTION_NAME)
 {
+}
+
+YoutubeAuth::~YoutubeAuth()
+{
+	if (!uiLoaded)
+		return;
+
+#ifdef BROWSER_AVAILABLE
+	OBSBasic *main = OBSBasic::Get();
+
+	main->RemoveDockWidget(YOUTUBE_CHAT_DOCK_NAME);
+	chat = nullptr;
+#endif
 }
 
 bool YoutubeAuth::RetryLogin()
@@ -139,20 +154,19 @@ void YoutubeAuth::LoadUI()
 	QSize size = main->frameSize();
 	QPoint pos = main->pos();
 
-	chat.reset(new YoutubeChatDock());
-	chat->setObjectName("ytChat");
+	chat = new YoutubeChatDock();
+	chat->setObjectName(YOUTUBE_CHAT_DOCK_NAME);
 	chat->resize(300, 600);
 	chat->setMinimumSize(200, 300);
 	chat->setWindowTitle(QTStr("Auth.Chat"));
 	chat->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(chat.data(), YOUTUBE_CHAT_PLACEHOLDER_URL,
+	browser = cef->create_widget(chat, YOUTUBE_CHAT_PLACEHOLDER_URL,
 				     panel_cookies);
 	browser->setStartupScript(ytchat_script);
 
 	chat->SetWidget(browser);
-	main->addDockWidget(Qt::RightDockWidgetArea, chat.data());
-	chatMenu.reset(main->AddDockWidget(chat.data()));
+	main->AddDockWidget(chat, Qt::RightDockWidgetArea);
 
 	chat->setFloating(true);
 	chat->move(pos.x() + size.width() - chat->width() - 50, pos.y() + 50);

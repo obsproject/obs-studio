@@ -12,6 +12,7 @@
 #include <ipc-util/pipe.h>
 #include <util/windows/obfuscate.h>
 #include "inject-library.h"
+#include "compat-helpers.h"
 #include "graphics-hook-info.h"
 #include "graphics-hook-ver.h"
 #include "cursor-capture.h"
@@ -39,6 +40,7 @@
 #define SETTING_ANTI_CHEAT_HOOK      "anti_cheat_hook"
 #define SETTING_HOOK_RATE            "hook_rate"
 #define SETTING_RGBA10A2_SPACE       "rgb10a2_space"
+#define SETTINGS_COMPAT_INFO         "compat_info"
 
 /* deprecated */
 #define SETTING_ANY_FULLSCREEN   "capture_any_fullscreen"
@@ -2247,8 +2249,50 @@ static bool mode_callback(obs_properties_t *ppts, obs_property_t *p,
 static bool window_changed_callback(obs_properties_t *ppts, obs_property_t *p,
 				    obs_data_t *settings)
 {
-	return ms_check_window_property_setting(ppts, p, settings,
-						SETTING_CAPTURE_WINDOW, 1);
+	bool modified = ms_check_window_property_setting(
+		ppts, p, settings, SETTING_CAPTURE_WINDOW, 1);
+
+	bool capture_any;
+	if (using_older_non_mode_format(settings)) {
+		capture_any =
+			obs_data_get_bool(settings, SETTING_ANY_FULLSCREEN);
+	} else {
+		const char *mode = obs_data_get_string(settings, SETTING_MODE);
+		capture_any = strcmp(mode, SETTING_MODE_ANY) == 0 ||
+			      strcmp(mode, SETTING_MODE_HOTKEY) == 0;
+	}
+
+	if (capture_any)
+		return modified;
+
+	const char *window =
+		obs_data_get_string(settings, SETTING_CAPTURE_WINDOW);
+
+	char *class;
+	char *exe;
+	char *title;
+	ms_build_window_strings(window, &class, &title, &exe);
+	struct compat_result *compat =
+		check_compatibility(title, class, exe, GAME_CAPTURE);
+	bfree(title);
+	bfree(exe);
+	bfree(class);
+
+	obs_property_t *p_warn = obs_properties_get(ppts, SETTINGS_COMPAT_INFO);
+
+	if (!compat) {
+		modified = obs_property_visible(p_warn) || modified;
+		obs_property_set_visible(p_warn, false);
+		return modified;
+	}
+
+	obs_property_set_long_description(p_warn, compat->message);
+	obs_property_text_set_info_type(p_warn, compat->severity);
+	obs_property_set_visible(p_warn, true);
+
+	compat_result_free(compat);
+
+	return true;
 }
 
 static BOOL CALLBACK EnumFirstMonitor(HMONITOR monitor, HDC hdc, LPRECT rc,
@@ -2332,6 +2376,10 @@ static obs_properties_t *game_capture_properties(void *data)
 	obs_property_list_add_int(p, TEXT_MATCH_TITLE, WINDOW_PRIORITY_TITLE);
 	obs_property_list_add_int(p, TEXT_MATCH_CLASS, WINDOW_PRIORITY_CLASS);
 	obs_property_list_add_int(p, TEXT_MATCH_EXE, WINDOW_PRIORITY_EXE);
+
+	p = obs_properties_add_text(ppts, SETTINGS_COMPAT_INFO, NULL,
+				    OBS_TEXT_INFO);
+	obs_property_set_enabled(p, false);
 
 	obs_properties_add_bool(ppts, SETTING_COMPATIBILITY,
 				TEXT_SLI_COMPATIBILITY);

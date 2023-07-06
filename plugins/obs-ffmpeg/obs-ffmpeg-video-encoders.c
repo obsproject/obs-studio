@@ -26,7 +26,7 @@ bool ffmpeg_video_encoder_init_codec(struct ffmpeg_video_encoder *enc)
 					     enc->enc_name);
 				dstr_replace(&error_message, "%2",
 					     av_err2str(ret));
-				dstr_cat(&error_message, "\r\n\r\n");
+				dstr_cat(&error_message, "<br><br>");
 
 				obs_encoder_set_last_error(enc->encoder,
 							   error_message.array);
@@ -75,6 +75,7 @@ void ffmpeg_video_encoder_update(struct ffmpeg_video_encoder *enc, int bitrate,
 	enc->context->width = obs_encoder_get_width(enc->encoder);
 	enc->context->height = obs_encoder_get_height(enc->encoder);
 	enc->context->time_base = (AVRational){voi->fps_den, voi->fps_num};
+	enc->context->framerate = (AVRational){voi->fps_num, voi->fps_den};
 	enc->context->pix_fmt = pix_fmt;
 	enc->context->color_range = info->range == VIDEO_RANGE_FULL
 					    ? AVCOL_RANGE_JPEG

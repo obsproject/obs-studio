@@ -11,6 +11,8 @@
 #include <QComboBox>
 #include <QListWidget>
 #include <QPushButton>
+#include <QRadioButton>
+#include <QButtonGroup>
 #include <QStandardItem>
 #include <QFileDialog>
 #include <QColorDialog>
@@ -88,18 +90,32 @@ Q_DECLARE_METATYPE(media_frames_per_second);
 
 void OBSPropertiesView::ReloadProperties()
 {
+	deferUpdate = false;
 	if (weakObj || rawObj) {
 		OBSObject strongObj = GetObject();
 		void *obj = strongObj ? strongObj.Get() : rawObj;
-		if (obj)
+		if (obj) {
 			properties.reset(reloadCallback(obj));
+
+			if (obs_obj_get_type(obj) == OBS_OBJ_TYPE_SOURCE) {
+				enum obs_source_type type = obs_source_get_type(
+					(obs_source_t *)obj);
+				if (type == OBS_SOURCE_TYPE_INPUT ||
+				    type == OBS_SOURCE_TYPE_TRANSITION) {
+					uint32_t flags =
+						obs_properties_get_flags(
+							properties.get());
+					deferUpdate =
+						(flags &
+						 OBS_PROPERTIES_DEFER_UPDATE) !=
+						0;
+				}
+			}
+		}
 	} else {
 		properties.reset(reloadCallback((void *)type.c_str()));
 		obs_properties_apply_settings(properties.get(), settings);
 	}
-
-	uint32_t flags = obs_properties_get_flags(properties.get());
-	deferUpdate = (flags & OBS_PROPERTIES_DEFER_UPDATE) != 0;
 
 	RefreshProperties();
 }
@@ -108,8 +124,8 @@ void OBSPropertiesView::ReloadProperties()
 
 void OBSPropertiesView::RefreshProperties()
 {
-	int h, v;
-	GetScrollPos(h, v);
+	int h, v, hend, vend;
+	GetScrollPos(h, v, hend, vend);
 
 	children.clear();
 	if (widget)
@@ -136,9 +152,9 @@ void OBSPropertiesView::RefreshProperties()
 
 	setWidgetResizable(true);
 	setWidget(widget);
-	SetScrollPos(h, v);
 	setSizePolicy(mainPolicy);
 	adjustSize();
+	SetScrollPos(h, v, hend, vend);
 
 	lastFocused.clear();
 	if (lastWidget) {
@@ -154,28 +170,36 @@ void OBSPropertiesView::RefreshProperties()
 	emit PropertiesRefreshed();
 }
 
-void OBSPropertiesView::SetScrollPos(int h, int v)
+void OBSPropertiesView::SetScrollPos(int h, int v, int old_hend, int old_vend)
 {
 	QScrollBar *scroll = horizontalScrollBar();
-	if (scroll)
-		scroll->setValue(h);
+	if (scroll) {
+		int hend = scroll->maximum() + scroll->pageStep();
+		scroll->setValue(h * hend / old_hend);
+	}
 
 	scroll = verticalScrollBar();
-	if (scroll)
-		scroll->setValue(v);
+	if (scroll) {
+		int vend = scroll->maximum() + scroll->pageStep();
+		scroll->setValue(v * vend / old_vend);
+	}
 }
 
-void OBSPropertiesView::GetScrollPos(int &h, int &v)
+void OBSPropertiesView::GetScrollPos(int &h, int &v, int &hend, int &vend)
 {
 	h = v = 0;
 
 	QScrollBar *scroll = horizontalScrollBar();
-	if (scroll)
+	if (scroll) {
 		h = scroll->value();
+		hend = scroll->maximum() + scroll->pageStep();
+	}
 
 	scroll = verticalScrollBar();
-	if (scroll)
+	if (scroll) {
 		v = scroll->value();
+		vend = scroll->maximum() + scroll->pageStep();
+	}
 }
 
 OBSPropertiesView::OBSPropertiesView(OBSData settings_, obs_object_t *obj,
@@ -496,23 +520,30 @@ void OBSPropertiesView::AddFloat(obs_property_t *prop, QFormLayout *layout,
 	layout->addRow(*label, subLayout);
 }
 
-static void AddComboItem(QComboBox *combo, obs_property_t *prop,
-			 obs_combo_format format, size_t idx)
+static QVariant propertyListToQVariant(obs_property_t *prop, size_t idx)
 {
-	const char *name = obs_property_list_item_name(prop, idx);
-	QVariant var;
+	obs_combo_format format = obs_property_list_format(prop);
 
+	QVariant var;
 	if (format == OBS_COMBO_FORMAT_INT) {
 		long long val = obs_property_list_item_int(prop, idx);
 		var = QVariant::fromValue<long long>(val);
-
 	} else if (format == OBS_COMBO_FORMAT_FLOAT) {
 		double val = obs_property_list_item_float(prop, idx);
 		var = QVariant::fromValue<double>(val);
-
 	} else if (format == OBS_COMBO_FORMAT_STRING) {
 		var = QByteArray(obs_property_list_item_string(prop, idx));
+	} else if (format == OBS_COMBO_FORMAT_BOOL) {
+		bool val = obs_property_list_item_bool(prop, idx);
+		var = QVariant::fromValue<bool>(val);
 	}
+	return var;
+}
+
+static void AddComboItem(QComboBox *combo, obs_property_t *prop, size_t idx)
+{
+	const char *name = obs_property_list_item_name(prop, idx);
+	QVariant var = propertyListToQVariant(prop, idx);
 
 	combo->addItem(QT_UTF8(name), var);
 
@@ -532,9 +563,23 @@ static void AddComboItem(QComboBox *combo, obs_property_t *prop,
 	item->setFlags(Qt::NoItemFlags);
 }
 
+static void AddRadioItem(QButtonGroup *buttonGroup, QFormLayout *layout,
+			 obs_property_t *prop, QVariant value, size_t idx)
+{
+	const char *name = obs_property_list_item_name(prop, idx);
+
+	QVariant var = propertyListToQVariant(prop, idx);
+	QRadioButton *button = new QRadioButton(name);
+	button->setChecked(value == var);
+	button->setProperty("value", var);
+	buttonGroup->addButton(button);
+	layout->addRow(button);
+}
+
 template<long long get_int(obs_data_t *, const char *),
 	 double get_double(obs_data_t *, const char *),
-	 const char *get_string(obs_data_t *, const char *)>
+	 const char *get_string(obs_data_t *, const char *),
+	 bool get_bool(obs_data_t *, const char *)>
 static QVariant from_obs_data(obs_data_t *data, const char *name,
 			      obs_combo_format format)
 {
@@ -545,6 +590,8 @@ static QVariant from_obs_data(obs_data_t *data, const char *name,
 		return QVariant::fromValue(get_double(data, name));
 	case OBS_COMBO_FORMAT_STRING:
 		return QByteArray(get_string(data, name));
+	case OBS_COMBO_FORMAT_BOOL:
+		return QVariant::fromValue(get_bool(data, name));
 	default:
 		return QVariant();
 	}
@@ -554,37 +601,59 @@ static QVariant from_obs_data(obs_data_t *data, const char *name,
 			      obs_combo_format format)
 {
 	return from_obs_data<obs_data_get_int, obs_data_get_double,
-			     obs_data_get_string>(data, name, format);
+			     obs_data_get_string, obs_data_get_bool>(data, name,
+								     format);
 }
 
 static QVariant from_obs_data_autoselect(obs_data_t *data, const char *name,
 					 obs_combo_format format)
 {
-	return from_obs_data<obs_data_get_autoselect_int,
-			     obs_data_get_autoselect_double,
-			     obs_data_get_autoselect_string>(data, name,
-							     format);
+	return from_obs_data<
+		obs_data_get_autoselect_int, obs_data_get_autoselect_double,
+		obs_data_get_autoselect_string, obs_data_get_autoselect_bool>(
+		data, name, format);
 }
 
 QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 {
 	const char *name = obs_property_name(prop);
-	QComboBox *combo = new QComboBox();
 	obs_combo_type type = obs_property_list_type(prop);
 	obs_combo_format format = obs_property_list_format(prop);
 	size_t count = obs_property_list_item_count(prop);
+
+	QVariant value = from_obs_data(settings, name, format);
+
+	if (type == OBS_COMBO_TYPE_RADIO) {
+		QButtonGroup *buttonGroup = new QButtonGroup();
+		QFormLayout *subLayout = new QFormLayout();
+		subLayout->setContentsMargins(0, 0, 0, 0);
+
+		for (size_t idx = 0; idx < count; idx++)
+			AddRadioItem(buttonGroup, subLayout, prop, value, idx);
+
+		buttonGroup->setExclusive(true);
+		WidgetInfo *info =
+			new WidgetInfo(this, prop, buttonGroup->buttons()[0]);
+		children.emplace_back(info);
+		connect(buttonGroup, SIGNAL(buttonClicked(QAbstractButton *)),
+			info, SLOT(ControlChanged()));
+
+		QWidget *widget = new QWidget();
+		widget->setLayout(subLayout);
+		return widget;
+	}
+
 	int idx = -1;
 
+	QComboBox *combo = new QComboBox();
 	for (size_t i = 0; i < count; i++)
-		AddComboItem(combo, prop, format, i);
+		AddComboItem(combo, prop, i);
 
 	if (type == OBS_COMBO_TYPE_EDITABLE)
 		combo->setEditable(true);
 
 	combo->setMaxVisibleItems(40);
 	combo->setToolTip(QT_UTF8(obs_property_long_description(prop)));
-
-	QVariant value = from_obs_data(settings, name, format);
 
 	if (format == OBS_COMBO_FORMAT_STRING &&
 	    type == OBS_COMBO_TYPE_EDITABLE) {
@@ -625,7 +694,7 @@ QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 	children.emplace_back(info);
 
 	/* trigger a settings update if the index was not found */
-	if (idx == -1)
+	if (count && idx == -1)
 		info->ControlChanged();
 
 	return combo;
@@ -671,11 +740,8 @@ void OBSPropertiesView::AddEditableList(obs_property_t *prop,
 	WidgetInfo *info = new WidgetInfo(this, prop, list);
 
 	list->setDragDropMode(QAbstractItemView::InternalMove);
-	connect(list->model(),
-		SIGNAL(rowsMoved(QModelIndex, int, int, QModelIndex, int)),
-		info,
-		SLOT(EditListReordered(const QModelIndex &, int, int,
-				       const QModelIndex &, int)));
+	connect(list->model(), SIGNAL(rowsMoved()), info,
+		SLOT(EditListReordered()));
 
 	QVBoxLayout *sideLayout = new QVBoxLayout();
 	NewButton(sideLayout, info, "addIconSmall", &WidgetInfo::EditListAdd);
@@ -1294,8 +1360,7 @@ static void UpdateFPSLabels(OBSFrameRatePropertyWidget *w)
 		w->currentFPS->setHidden(true);
 		w->timePerFrame->setHidden(true);
 		if (!option)
-			w->warningLabel->setStyleSheet(
-				"QLabel { color: red; }");
+			w->warningLabel->setObjectName("errorLabel");
 
 		return;
 	}
@@ -1305,9 +1370,9 @@ static void UpdateFPSLabels(OBSFrameRatePropertyWidget *w)
 
 	media_frames_per_second match{};
 	if (!option && !matches_ranges(match, *valid_fps, w->fps_ranges, true))
-		w->warningLabel->setStyleSheet("QLabel { color: red; }");
+		w->warningLabel->setObjectName("errorLabel");
 	else
-		w->warningLabel->setStyleSheet("");
+		w->warningLabel->setObjectName("");
 
 	auto convert_to_fps = media_frames_per_second_to_fps;
 	auto convert_to_frame_interval =
@@ -1520,8 +1585,8 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 		label = new QLabel(QT_UTF8(obs_property_description(property)));
 
 	if (label) {
-		if (warning) //TODO: select color based on background color
-			label->setStyleSheet("QLabel { color: red; }");
+		if (warning)
+			label->setObjectName("errorLabel");
 
 		if (minSize) {
 			label->setMinimumWidth(minSize);
@@ -1767,14 +1832,19 @@ bool WidgetInfo::PathChanged(const char *setting)
 
 void WidgetInfo::ListChanged(const char *setting)
 {
-	QComboBox *combo = static_cast<QComboBox *>(widget);
 	obs_combo_format format = obs_property_list_format(property);
 	obs_combo_type type = obs_property_list_type(property);
 	QVariant data;
 
-	if (type == OBS_COMBO_TYPE_EDITABLE) {
-		data = combo->currentText().toUtf8();
+	if (type == OBS_COMBO_TYPE_RADIO) {
+		QButtonGroup *group =
+			static_cast<QAbstractButton *>(widget)->group();
+		QAbstractButton *button = group->checkedButton();
+		data = button->property("value");
+	} else if (type == OBS_COMBO_TYPE_EDITABLE) {
+		data = static_cast<QComboBox *>(widget)->currentText().toUtf8();
 	} else {
+		QComboBox *combo = static_cast<QComboBox *>(widget);
 		int index = combo->currentIndex();
 		if (index != -1)
 			data = combo->itemData(index);
@@ -1797,6 +1867,10 @@ void WidgetInfo::ListChanged(const char *setting)
 		obs_data_set_string(view->settings, setting,
 				    data.toByteArray().constData());
 		break;
+	case OBS_COMBO_FORMAT_BOOL:
+		obs_data_set_bool(view->settings, setting,
+				  data.value<double>());
+		break;
 	}
 }
 
@@ -1813,15 +1887,18 @@ bool WidgetInfo::ColorChangedInternal(const char *setting, bool supportAlpha)
 		options |= QColorDialog::ShowAlphaChannel;
 	}
 
-	/* The native dialog on OSX has all kinds of problems, like closing
-	 * other open QDialogs on exit, and
-	 * https://bugreports.qt-project.org/browse/QTBUG-34532
-	 */
-#ifndef _WIN32
+#ifdef __linux__
+	// TODO: Revisit hang on Ubuntu with native dialog
 	options |= QColorDialog::DontUseNativeDialog;
 #endif
 
 	color = QColorDialog::getColor(color, view, QT_UTF8(desc), options);
+
+#ifdef __APPLE__
+	// TODO: Revisit when QTBUG-42661 is fixed
+	widget->window()->raise();
+#endif
+
 	if (!color.isValid())
 		return false;
 
@@ -1911,16 +1988,8 @@ void WidgetInfo::GroupChanged(const char *setting)
 						  : true);
 }
 
-void WidgetInfo::EditListReordered(const QModelIndex &parent, int start,
-				   int end, const QModelIndex &destination,
-				   int row)
+void WidgetInfo::EditListReordered()
 {
-	UNUSED_PARAMETER(parent);
-	UNUSED_PARAMETER(start);
-	UNUSED_PARAMETER(end);
-	UNUSED_PARAMETER(destination);
-	UNUSED_PARAMETER(row);
-
 	EditableListChanged();
 }
 
@@ -1971,13 +2040,12 @@ void WidgetInfo::ButtonClicked()
 		}
 		return;
 	}
-	if (view->rawObj || view->weakObj) {
-		OBSObject strongObj = view->GetObject();
-		void *obj = strongObj ? strongObj.Get() : view->rawObj;
-		if (obs_property_button_clicked(property, obj)) {
-			QMetaObject::invokeMethod(view, "RefreshProperties",
-						  Qt::QueuedConnection);
-		}
+
+	OBSObject strongObj = view->GetObject();
+	void *obj = strongObj ? strongObj.Get() : view->rawObj;
+	if (obs_property_button_clicked(property, obj)) {
+		QMetaObject::invokeMethod(view, "RefreshProperties",
+					  Qt::QueuedConnection);
 	}
 }
 

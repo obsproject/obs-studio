@@ -1174,7 +1174,6 @@ VPIDStandard DetermineVPIDStandard(IOSelection io, NTV2VideoFormat vf,
 				}
 			}
 		}
-	} else if (rd == RasterDefinition::UHD2_8K) {
 	}
 	return vpid;
 }

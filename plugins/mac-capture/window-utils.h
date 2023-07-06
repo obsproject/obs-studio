@@ -5,14 +5,14 @@
 #include <obs-module.h>
 
 struct cocoa_window {
-	CGWindowID window_id;
-	int owner_pid;
+    CGWindowID window_id;
+    int owner_pid;
 
-	pthread_mutex_t name_lock;
-	NSString *owner_name;
-	NSString *window_name;
+    pthread_mutex_t name_lock;
+    NSString *owner_name;
+    NSString *window_name;
 
-	uint64_t next_search_time;
+    uint64_t next_search_time;
 };
 typedef struct cocoa_window *cocoa_window_t;
 

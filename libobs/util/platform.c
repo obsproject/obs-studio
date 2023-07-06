@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2014 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -654,28 +654,17 @@ int os_mkdirs(const char *dir)
 
 const char *os_get_path_extension(const char *path)
 {
-	struct dstr temp;
-	size_t pos = 0;
-	char *period;
-	char *slash;
+	for (size_t pos = strlen(path); pos > 0; pos--) {
+		switch (path[pos - 1]) {
+		case '.':
+			return path + pos - 1;
+		case '/':
+		case '\\':
+			return NULL;
+		}
+	}
 
-	if (!path[0])
-		return NULL;
-
-	dstr_init_copy(&temp, path);
-	dstr_replace(&temp, "\\", "/");
-
-	slash = strrchr(temp.array, '/');
-	period = strrchr(temp.array, '.');
-	if (period)
-		pos = (size_t)(period - temp.array);
-
-	dstr_free(&temp);
-
-	if (!period || slash > period)
-		return NULL;
-
-	return path + pos;
+	return NULL;
 }
 
 static inline bool valid_string(const char *str)
@@ -807,8 +796,11 @@ char *os_generate_formatted_filename(const char *extension, bool space,
 	if (!space)
 		dstr_replace(&sf, " ", "_");
 
-	dstr_cat_ch(&sf, '.');
-	dstr_cat(&sf, extension);
+	if (extension && *extension) {
+		dstr_cat_ch(&sf, '.');
+		dstr_cat(&sf, extension);
+	}
+
 	dstr_free(&c);
 
 	if (sf.len > 255)

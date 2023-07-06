@@ -42,6 +42,13 @@ struct vk_device_funcs {
 	DEF_FUNC(DestroyFence);
 	DEF_FUNC(WaitForFences);
 	DEF_FUNC(ResetFences);
+	DEF_FUNC(CreateImageView);
+	DEF_FUNC(DestroyImageView);
+	DEF_FUNC(CreateFramebuffer);
+	DEF_FUNC(DestroyFramebuffer);
+	DEF_FUNC(CmdBeginRenderPass);
+	DEF_FUNC(CmdBeginRenderPass2KHR);
+	DEF_FUNC(CmdBeginRenderPass2);
 };
 
 #undef DEF_FUNC

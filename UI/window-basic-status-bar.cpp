@@ -364,14 +364,12 @@ void OBSBasicStatusBar::OBSOutputReconnect(void *data, calldata_t *params)
 	QMetaObject::invokeMethod(statusBar, "Reconnect", Q_ARG(int, seconds));
 }
 
-void OBSBasicStatusBar::OBSOutputReconnectSuccess(void *data,
-						  calldata_t *params)
+void OBSBasicStatusBar::OBSOutputReconnectSuccess(void *data, calldata_t *)
 {
 	OBSBasicStatusBar *statusBar =
 		reinterpret_cast<OBSBasicStatusBar *>(data);
 
 	QMetaObject::invokeMethod(statusBar, "ReconnectSuccess");
-	UNUSED_PARAMETER(params);
 }
 
 void OBSBasicStatusBar::Reconnect(int seconds)

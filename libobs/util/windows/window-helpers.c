@@ -1,6 +1,5 @@
 #include "window-helpers.h"
 
-#include <util/dstr.h>
 #include <util/windows/obfuscate.h>
 
 #include <dwmapi.h>

@@ -292,12 +292,9 @@ static void toggle_multi_view(CNTV2Card *card, NTV2InputSource src, bool enable)
 	}
 }
 
-bool on_multi_view_toggle(void *data, obs_properties_t *props,
-			  obs_property_t *list, obs_data_t *settings)
+bool on_multi_view_toggle(void *data, obs_properties_t *, obs_property_t *,
+			  obs_data_t *settings)
 {
-	UNUSED_PARAMETER(props);
-	UNUSED_PARAMETER(list);
-
 	bool multiViewEnabled =
 		obs_data_get_bool(settings, kUIPropMultiViewEnable.id) &&
 		!main_output_running && !preview_output_running;
@@ -345,11 +342,8 @@ void on_preview_scene_changed(enum obs_frontend_event event, void *param)
 	}
 }
 
-void render_preview_source(void *param, uint32_t cx, uint32_t cy)
+void render_preview_source(void *param, uint32_t, uint32_t)
 {
-	UNUSED_PARAMETER(cx);
-	UNUSED_PARAMETER(cy);
-
 	auto ctx = (struct preview_output *)param;
 
 	if (!ctx->current_source)

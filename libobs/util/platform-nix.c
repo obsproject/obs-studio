@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -35,6 +35,7 @@
 #include <glob.h>
 #include <time.h>
 #include <signal.h>
+#include <uuid/uuid.h>
 
 #if !defined(__APPLE__)
 #include <sys/times.h>
@@ -1136,4 +1137,14 @@ uint64_t os_get_free_disk_space(const char *dir)
 		return 0;
 
 	return (uint64_t)info.f_frsize * (uint64_t)info.f_bavail;
+}
+
+char *os_generate_uuid(void)
+{
+	uuid_t uuid;
+	// 36 char UUID + NULL
+	char *out = bmalloc(37);
+	uuid_generate(uuid);
+	uuid_unparse_lower(uuid, out);
+	return out;
 }

@@ -65,7 +65,8 @@ OBSBasicTransform::OBSBasicTransform(OBSSceneItem item, OBSBasic *parent)
 	ui->buttonBox->button(QDialogButtonBox::Close)->setDefault(true);
 
 	connect(ui->buttonBox->button(QDialogButtonBox::Reset),
-		SIGNAL(clicked()), this, SLOT(on_resetButton_clicked()));
+		&QPushButton::clicked, main,
+		&OBSBasic::on_actionResetTransform_triggered);
 
 	installEventFilter(CreateShortcutFilter());
 
@@ -92,8 +93,8 @@ OBSBasicTransform::~OBSBasicTransform()
 	auto undo_redo = [](const std::string &data) {
 		OBSDataAutoRelease dat =
 			obs_data_create_from_json(data.c_str());
-		OBSSourceAutoRelease source = obs_get_source_by_name(
-			obs_data_get_string(dat, "scene_name"));
+		OBSSourceAutoRelease source = obs_get_source_by_uuid(
+			obs_data_get_string(dat, "scene_uuid"));
 		reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
 			->SetCurrentScene(source.Get(), true);
 		obs_scene_load_transform_states(data.c_str());
@@ -143,7 +144,9 @@ void OBSBasicTransform::SetItemQt(OBSSceneItem newItem)
 	if (item)
 		RefreshControls();
 
-	setEnabled(!!item);
+	bool enable = !!item;
+	ui->container->setEnabled(enable);
+	ui->buttonBox->button(QDialogButtonBox::Reset)->setEnabled(enable);
 }
 
 void OBSBasicTransform::OBSChannelChanged(void *param, calldata_t *data)
@@ -243,8 +246,10 @@ void OBSBasicTransform::RefreshControls()
 	obs_sceneitem_get_crop(item, &crop);
 
 	obs_source_t *source = obs_sceneitem_get_source(item);
-	float width = float(obs_source_get_width(source));
-	float height = float(obs_source_get_height(source));
+	uint32_t source_cx = obs_source_get_width(source);
+	uint32_t source_cy = obs_source_get_height(source);
+	float width = float(source_cx);
+	float height = float(source_cy);
 
 	int alignIndex = AlignToList(osi.alignment);
 	int boundsAlignIndex = AlignToList(osi.bounds_alignment);
@@ -256,6 +261,10 @@ void OBSBasicTransform::RefreshControls()
 	ui->sizeX->setValue(osi.scale.x * width);
 	ui->sizeY->setValue(osi.scale.y * height);
 	ui->align->setCurrentIndex(alignIndex);
+
+	bool valid_size = source_cx != 0 && source_cy != 0;
+	ui->sizeX->setEnabled(valid_size);
+	ui->sizeY->setEnabled(valid_size);
 
 	ui->boundsType->setCurrentIndex(int(osi.bounds_type));
 	ui->boundsAlign->setCurrentIndex(boundsAlignIndex);
@@ -305,15 +314,23 @@ void OBSBasicTransform::OnControlChanged()
 		return;
 
 	obs_source_t *source = obs_sceneitem_get_source(item);
-	double width = double(obs_source_get_width(source));
-	double height = double(obs_source_get_height(source));
+	uint32_t source_cx = obs_source_get_width(source);
+	uint32_t source_cy = obs_source_get_height(source);
+	double width = double(source_cx);
+	double height = double(source_cy);
 
 	obs_transform_info oti;
+	obs_sceneitem_get_info(item, &oti);
+
+	/* do not scale a source if it has 0 width/height */
+	if (source_cx != 0 && source_cy != 0) {
+		oti.scale.x = float(ui->sizeX->value() / width);
+		oti.scale.y = float(ui->sizeY->value() / height);
+	}
+
 	oti.pos.x = float(ui->positionX->value());
 	oti.pos.y = float(ui->positionY->value());
 	oti.rot = float(ui->rotation->value());
-	oti.scale.x = float(ui->sizeX->value() / width);
-	oti.scale.y = float(ui->sizeY->value() / height);
 	oti.alignment = listToAlign[ui->align->currentIndex()];
 
 	oti.bounds_type = (obs_bounds_type)ui->boundsType->currentIndex();
@@ -342,11 +359,6 @@ void OBSBasicTransform::OnCropChanged()
 	ignoreTransformSignal = false;
 }
 
-void OBSBasicTransform::on_resetButton_clicked()
-{
-	main->on_actionResetTransform_triggered();
-}
-
 template<typename T> static T GetOBSRef(QListWidgetItem *item)
 {
 	return item->data(static_cast<int>(QtDataRole::OBSRef)).value<T>();
@@ -358,6 +370,6 @@ void OBSBasicTransform::OnSceneChanged(QListWidgetItem *current,
 	if (!current)
 		return;
 
-	obs_scene_t *scene = GetOBSRef<OBSScene>(current);
+	OBSScene scene = GetOBSRef<OBSScene>(current);
 	this->SetScene(scene);
 }

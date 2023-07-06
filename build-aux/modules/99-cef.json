@@ -1,0 +1,28 @@
+{
+    "name": "cef",
+    "buildsystem": "cmake-ninja",
+    "config-opts": [
+        "-DCMAKE_BUILD_TYPE=Release"
+    ],
+    "no-make-install": true,
+    "make-args": [
+        "libcef_dll_wrapper"
+    ],
+    "build-commands": [
+        "mkdir -p /app/cef/libcef_dll_wrapper",
+        "cp -R ./include /app/cef",
+        "cp -R ./Release /app/cef",
+        "cp -R ./Resources /app/cef",
+        "cp -R ./libcef_dll_wrapper/libcef_dll_wrapper.a /app/cef/libcef_dll_wrapper"
+    ],
+    "cleanup": [
+        "*"
+    ],
+    "sources": [
+        {
+            "type": "archive",
+            "url": "https://cdn-fastly.obsproject.com/downloads/cef_binary_5060_linux64.tar.bz2",
+            "sha256": "ac4e2a8ebf20700e4e36353e314f876623633dd5b474778a2548bb66bdbea11d"
+        }
+    ]
+}

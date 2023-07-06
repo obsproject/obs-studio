@@ -1,30 +1,25 @@
-project(mac-videotoolbox)
-
-find_library(AVFOUNDATION AVFoundation)
-find_library(COCOA Cocoa)
-find_library(COREFOUNDATION CoreFoundation)
-find_library(COREVIDEO CoreVideo)
-find_library(VIDEOTOOLBOX VideoToolbox)
-find_library(COREMEDIA CoreMedia)
-
-mark_as_advanced(AVFOUNDATION COCOA COREFOUNDATION COREVIDEO VIDEOTOOLBOX
-                 COREMEDIA)
+cmake_minimum_required(VERSION 3.24...3.25)
 
 add_library(mac-videotoolbox MODULE)
 add_library(OBS::mac-videotoolbox ALIAS mac-videotoolbox)
 
 target_sources(mac-videotoolbox PRIVATE encoder.c)
 
+# cmake-format: off
 target_link_libraries(
   mac-videotoolbox
   PRIVATE OBS::libobs
-          ${AVFOUNDATION}
-          ${COCOA}
-          ${COREFOUNDATION}
-          ${COREVIDEO}
-          ${VIDEOTOOLBOX}
-          ${COREMEDIA})
+          "$<LINK_LIBRARY:FRAMEWORK,AVFoundation.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,CoreFoundation.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,CoreMedia.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,CoreVideo.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,VideoToolbox.framework>")
 
-set_target_properties(mac-videotoolbox PROPERTIES FOLDER "plugins" PREFIX "")
-
-setup_plugin_target(mac-videotoolbox)
+set_target_properties_obs(
+  mac-videotoolbox
+  PROPERTIES FOLDER plugins
+             PREFIX ""
+             XCODE_ATTRIBUTE_CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION YES
+             XCODE_ATTRIBUTE_GCC_WARN_SHADOW YES)
+# cmake-format: on

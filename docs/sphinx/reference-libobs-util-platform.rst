@@ -245,7 +245,7 @@ Other Path/File Functions
 
 .. function:: const char *os_get_path_extension(const char *path)
 
-   Returns the extension portion of a path string.
+   Returns the extension portion of a path string, including the dot (.).
 
 ---------------------
 
@@ -496,3 +496,12 @@ Other Functions
    being translated by Rosetta and running on Apple Silicon Macs. On Windows, it 
    returns true when an x64 binary is being emulated on Windows ARM64 PCs. On all other 
    platforms, it will always returns false.
+
+----------------------
+
+.. function:: char *os_generate_uuid(void)
+
+   Creates a version 4 UUID and returns a NULL-terminated 36-character string.
+   Must be freed with :c:func:`bfree()`.
+
+   .. versionadded:: 29.1

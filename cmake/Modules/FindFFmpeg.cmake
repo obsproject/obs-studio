@@ -1,3 +1,4 @@
+# cmake-format: off
 #
 # This module defines the following variables:
 #
@@ -17,6 +18,7 @@
 # FFMPEG_<component>_VERSION_MICRO - The components micro version
 #
 # <component> is the uppercase name of the component
+# cmake-format: on
 
 find_package(PkgConfig QUIET)
 
@@ -42,16 +44,14 @@ function(find_ffmpeg_library component header)
   find_path(
     FFMPEG_${component}_INCLUDE_DIR
     NAMES "lib${component}/${header}" "lib${component}/version.h"
-    HINTS ENV FFMPEG_PATH ${FFMPEG_PATH} ${CMAKE_SOURCE_DIR}/${FFMPEG_PATH}
-          ${PC_FFMPEG_${component}_INCLUDE_DIRS}
+    HINTS ENV FFMPEG_PATH ${FFMPEG_PATH} ${CMAKE_SOURCE_DIR}/${FFMPEG_PATH} ${PC_FFMPEG_${component}_INCLUDE_DIRS}
     PATHS /usr/include /usr/local/include /opt/local/include /sw/include
     PATH_SUFFIXES ffmpeg libav include)
 
   find_library(
     FFMPEG_${component}_LIBRARY
     NAMES "${component}" "lib${component}"
-    HINTS ENV FFMPEG_PATH ${FFMPEG_PATH} ${CMAKE_SOURCE_DIR}/${FFMPEG_PATH}
-          ${PC_FFMPEG_${component}_LIBRARY_DIRS}
+    HINTS ENV FFMPEG_PATH ${FFMPEG_PATH} ${CMAKE_SOURCE_DIR}/${FFMPEG_PATH} ${PC_FFMPEG_${component}_LIBRARY_DIRS}
     PATHS /usr/lib /usr/local/lib /opt/local/lib /sw/lib
     PATH_SUFFIXES
       lib${_lib_suffix}
@@ -102,14 +102,10 @@ function(find_ffmpeg_library component header)
     set(_vfile "${FFMPEG_${component}_INCLUDE_DIR}/lib${component}/version.h")
 
     if(EXISTS "${_vfile}")
-      file(STRINGS "${_vfile}" _version_parse
-           REGEX "^.*VERSION_(MAJOR|MINOR|MICRO)[ \t]+[0-9]+[ \t]*$")
-      string(REGEX REPLACE ".*VERSION_MAJOR[ \t]+([0-9]+).*" "\\1" _major
-                           "${_version_parse}")
-      string(REGEX REPLACE ".*VERSION_MINOR[ \t]+([0-9]+).*" "\\1" _minor
-                           "${_version_parse}")
-      string(REGEX REPLACE ".*VERSION_MICRO[ \t]+([0-9]+).*" "\\1" _micro
-                           "${_version_parse}")
+      file(STRINGS "${_vfile}" _version_parse REGEX "^.*VERSION_(MAJOR|MINOR|MICRO)[ \t]+[0-9]+[ \t]*$")
+      string(REGEX REPLACE ".*VERSION_MAJOR[ \t]+([0-9]+).*" "\\1" _major "${_version_parse}")
+      string(REGEX REPLACE ".*VERSION_MINOR[ \t]+([0-9]+).*" "\\1" _minor "${_version_parse}")
+      string(REGEX REPLACE ".*VERSION_MICRO[ \t]+([0-9]+).*" "\\1" _micro "${_version_parse}")
 
       set(FFMPEG_${component_u}_VERSION_MAJOR
           "${_major}"
@@ -168,8 +164,7 @@ include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(
   FFmpeg
   FOUND_VAR FFMPEG_FOUND
-  REQUIRED_VARS FFMPEG_${_first_comp}_LIBRARIES
-                FFMPEG_${_first_comp}_INCLUDE_DIRS
+  REQUIRED_VARS FFMPEG_${_first_comp}_LIBRARIES FFMPEG_${_first_comp}_INCLUDE_DIRS
   VERSION_VAR FFMPEG_${_first_comp}_VERSION_STRING
   HANDLE_COMPONENTS)
 
@@ -180,20 +175,14 @@ if(FFMPEG_FOUND)
       if(FFMPEG_${component_u}_FOUND)
         if(IS_ABSOLUTE "${FFMPEG_${component_u}_LIBRARIES}")
           add_library(FFmpeg::${component} UNKNOWN IMPORTED)
-          set_target_properties(
-            FFmpeg::${component}
-            PROPERTIES IMPORTED_LOCATION "${FFMPEG_${component_u}_LIBRARIES}")
+          set_target_properties(FFmpeg::${component} PROPERTIES IMPORTED_LOCATION "${FFMPEG_${component_u}_LIBRARIES}")
         else()
           add_library(FFmpeg::${component} INTERFACE IMPORTED)
-          set_target_properties(
-            FFmpeg::${component}
-            PROPERTIES IMPORTED_LIBNAME "${FFMPEG_${component_u}_LIBRARIES}")
+          set_target_properties(FFmpeg::${component} PROPERTIES IMPORTED_LIBNAME "${FFMPEG_${component_u}_LIBRARIES}")
         endif()
 
-        set_target_properties(
-          FFmpeg::${component}
-          PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                     "${FFMPEG_${component_u}_INCLUDE_DIRS}")
+        set_target_properties(FFmpeg::${component} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+                                                              "${FFMPEG_${component_u}_INCLUDE_DIRS}")
       endif()
     endif()
   endforeach()

@@ -72,6 +72,15 @@
             <property name="spacing">
              <number>1</number>
             </property>
+            <property name="dragEnabled">
+             <bool>true</bool>
+            </property>
+            <property name="dragDropMode">
+             <enum>QAbstractItemView::InternalMove</enum>
+            </property>
+            <property name="defaultDropAction">
+             <enum>Qt::TargetMoveAction</enum>
+            </property>
            </widget>
           </item>
           <item>
@@ -284,6 +293,15 @@
             </property>
             <property name="spacing">
              <number>1</number>
+            </property>
+            <property name="dragEnabled">
+             <bool>true</bool>
+            </property>
+            <property name="dragDropMode">
+             <enum>QAbstractItemView::InternalMove</enum>
+            </property>
+            <property name="defaultDropAction">
+             <enum>Qt::TargetMoveAction</enum>
             </property>
            </widget>
           </item>
@@ -597,6 +615,9 @@
    <property name="shortcut">
     <string>Del</string>
    </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
   </action>
   <action name="actionMoveUp">
    <property name="icon">
@@ -620,6 +641,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Down</string>
+   </property>
+  </action>
+  <action name="actionRenameFilter">
+   <property name="text">
+    <string>Rename</string>
    </property>
   </action>
  </widget>

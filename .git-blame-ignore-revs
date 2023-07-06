@@ -1,1 +1,6 @@
+# Run the command in the root of the repository to make it take effect:
+#
+# git config blame.ignoreRevsFile .git-blame-ignore-revs
+
 f53df7da64d2dfc542c24656720b2f47c8957164
+f8e00d6071ea1426f7f30055016cc7c3d080d64e

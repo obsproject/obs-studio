@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -204,9 +204,9 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	/* OSX/Cocoa specific functions */
 #ifdef __APPLE__
 	GRAPHICS_IMPORT(device_shared_texture_available);
-	GRAPHICS_IMPORT_OPTIONAL(device_texture_open_shared);
-	GRAPHICS_IMPORT_OPTIONAL(device_texture_create_from_iosurface);
-	GRAPHICS_IMPORT_OPTIONAL(gs_texture_rebind_iosurface);
+	GRAPHICS_IMPORT(device_texture_open_shared);
+	GRAPHICS_IMPORT(device_texture_create_from_iosurface);
+	GRAPHICS_IMPORT(gs_texture_rebind_iosurface);
 
 	/* win32 specific functions */
 #elif _WIN32
@@ -218,6 +218,8 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT_OPTIONAL(gs_duplicator_destroy);
 	GRAPHICS_IMPORT_OPTIONAL(gs_duplicator_update_frame);
 	GRAPHICS_IMPORT_OPTIONAL(gs_duplicator_get_texture);
+	GRAPHICS_IMPORT_OPTIONAL(gs_duplicator_get_color_space);
+	GRAPHICS_IMPORT_OPTIONAL(gs_duplicator_get_sdr_white_level);
 	GRAPHICS_IMPORT_OPTIONAL(gs_get_adapter_count);
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_create_gdi);
 	GRAPHICS_IMPORT_OPTIONAL(gs_texture_get_dc);

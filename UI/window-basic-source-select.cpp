@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -263,8 +263,7 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 		const char *scene_name =
 			obs_source_get_name(main->GetCurrentSceneSource());
 
-		auto undo = [scene_name, main](const std::string &data) {
-			UNUSED_PARAMETER(data);
+		auto undo = [scene_name, main](const std::string &) {
 			obs_source_t *scene_source =
 				obs_get_source_by_name(scene_name);
 			main->SetCurrentScene(scene_source, true);
@@ -272,9 +271,8 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 
 			obs_scene_t *scene = obs_get_scene_by_name(scene_name);
 			OBSSceneItem item;
-			auto cb = [](obs_scene_t *scene,
-				     obs_sceneitem_t *sceneitem, void *data) {
-				UNUSED_PARAMETER(scene);
+			auto cb = [](obs_scene_t *, obs_sceneitem_t *sceneitem,
+				     void *data) {
 				OBSSceneItem &last =
 					*reinterpret_cast<OBSSceneItem *>(data);
 				last = sceneitem;
@@ -287,8 +285,7 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 		};
 
 		auto redo = [scene_name, main, source_name,
-			     visible](const std::string &data) {
-			UNUSED_PARAMETER(data);
+			     visible](const std::string &) {
 			obs_source_t *scene_source =
 				obs_get_source_by_name(scene_name);
 			main->SetCurrentScene(scene_source, true);
@@ -370,6 +367,8 @@ static inline const char *GetSourceDisplayName(const char *id)
 {
 	if (strcmp(id, "scene") == 0)
 		return Str("Basic.Scene");
+	else if (strcmp(id, "group") == 0)
+		return Str("Group");
 	const char *v_id = obs_get_latest_input_type_id(id);
 	return obs_source_get_display_name(v_id);
 }
@@ -409,6 +408,26 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_,
 
 	installEventFilter(CreateShortcutFilter());
 
+	connect(ui->createNew, &QRadioButton::pressed, [&]() {
+		QPushButton *button =
+			ui->buttonBox->button(QDialogButtonBox::Ok);
+		if (!button->isEnabled())
+			button->setEnabled(true);
+	});
+	connect(ui->selectExisting, &QRadioButton::pressed, [&]() {
+		QPushButton *button =
+			ui->buttonBox->button(QDialogButtonBox::Ok);
+		bool enabled = ui->sourceList->selectedItems().size() != 0;
+		if (button->isEnabled() != enabled)
+			button->setEnabled(enabled);
+	});
+	connect(ui->sourceList, &QListWidget::itemSelectionChanged, [&]() {
+		QPushButton *button =
+			ui->buttonBox->button(QDialogButtonBox::Ok);
+		if (!button->isEnabled())
+			button->setEnabled(true);
+	});
+
 	if (strcmp(id_, "scene") == 0) {
 		OBSBasic *main =
 			reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
@@ -418,6 +437,7 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_,
 		ui->createNew->setChecked(false);
 		ui->createNew->setEnabled(false);
 		ui->sourceName->setEnabled(false);
+		ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
 
 		int count = main->ui->scenes->count();
 		for (int i = 0; i < count; i++) {

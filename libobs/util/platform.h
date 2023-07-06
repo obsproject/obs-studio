@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -200,6 +200,10 @@ typedef struct os_proc_memory_usage os_proc_memory_usage_t;
 EXPORT bool os_get_proc_memory_usage(os_proc_memory_usage_t *usage);
 EXPORT uint64_t os_get_proc_resident_size(void);
 EXPORT uint64_t os_get_proc_virtual_size(void);
+
+#define UUID_STR_LENGTH 36
+
+EXPORT char *os_generate_uuid(void);
 
 /* clang-format off */
 #ifdef __APPLE__

@@ -259,7 +259,8 @@ Functions
    :return: The scene name list, ending with NULL.  The list is stored
             within one contiguous segment of memory, so freeing the
             returned pointer with :c:func:`bfree()` will free the entire
-            list.
+            list. The order is same as the way the frontend displays it in
+            the Scenes dock.
 
 ---------------------------------------
 
@@ -268,7 +269,8 @@ Functions
    :param sources: Pointer to a :c:type:`obs_frontend_source_list`
                    structure to receive the list of
                    reference-incremented scenes.  Release with
-                   :c:func:`obs_frontend_source_list_free`
+                   :c:func:`obs_frontend_source_list_free`. The order is same as
+                   the way the frontend displays it in the Scenes dock.
 
 ---------------------------------------
 
@@ -343,7 +345,7 @@ Functions
 
 .. function:: char **obs_frontend_get_scene_collections(void)
 
-   :return: The list of profile names, ending with NULL.  The list is
+   :return: The list of scene collection names, ending with NULL.  The list is
             stored within one contiguous segment of memory, so freeing
             the returned pointer with :c:func:`bfree()` will free the
             entire list.
@@ -359,7 +361,7 @@ Functions
 
 .. function:: void obs_frontend_set_current_scene_collection(const char *collection)
 
-   :param profile: Name of the scene collection to activate
+   :param collection: Name of the scene collection to activate
 
 ---------------------------------------
 
@@ -444,6 +446,48 @@ Functions
 
    :param dock: QDockWidget to add/create
    :return: A pointer to the added QAction
+
+.. deprecated:: 29.1
+   Prefer :c:func:`obs_frontend_add_dock_by_id()` or
+   :c:func:`obs_frontend_add_custom_qdock()` instead.
+
+---------------------------------------
+
+.. function:: bool obs_frontend_add_dock_by_id(const char *id, const char *title, void *widget)
+
+   Adds a dock with the widget to the UI with a toggle in the Docks
+   menu.
+
+   Note: Use :c:func:`obs_frontend_remove_dock` to remove the dock
+         and the id from the UI.
+
+   :param id: Unique identifier of the dock
+   :param title: Window title of the dock
+   :param widget: QWidget to insert in the dock
+   :return: *true* if the dock was added, *false* if the id was already
+            used
+
+---------------------------------------
+
+.. function:: void obs_frontend_remove_dock(const char *id)
+
+   Removes the dock with this id from the UI.
+
+   :param id: Unique identifier of the dock to remove.
+
+---------------------------------------
+
+.. function:: bool obs_frontend_add_custom_qdock(const char *id, void *dock)
+
+   Adds a custom dock to the UI with no toggle.
+
+   Note: Use :c:func:`obs_frontend_remove_dock` to remove the dock
+         reference and id from the UI.
+
+   :param id: Unique identifier of the dock
+   :param dock: QDockWidget to add
+   :return: *true* if the dock was added, *false* if the id was already
+            used
 
 ---------------------------------------
 
@@ -804,6 +848,8 @@ Functions
 
    :param item: The sceneitem to open the edit transform window of
 
+   .. versionadded:: 29.1
+
 ---------------------------------------
 
 .. function:: char *obs_frontend_get_current_record_output_path(void)
@@ -862,3 +908,5 @@ Functions
    :param redo_data: String with data for the redo callback
    :param repeatable: Allow multiple actions with the same name to be merged to 1 undo redo action.
                       This uses the undo action from the first and the redo action from the last action.
+
+   .. versionadded:: 29.1

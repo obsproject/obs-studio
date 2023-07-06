@@ -1,12 +1,11 @@
-#include "obs.hpp"
 #include "scene-tree.hpp"
-#include "obs-app.hpp"
 
 #include <QSizePolicy>
 #include <QScrollBar>
 #include <QDropEvent>
 #include <QPushButton>
 #include <QTimer>
+#include <cmath>
 
 SceneTree::SceneTree(QWidget *parent_) : QListWidget(parent_)
 {
@@ -17,7 +16,6 @@ SceneTree::SceneTree(QWidget *parent_) : QListWidget(parent_)
 
 void SceneTree::SetGridMode(bool grid)
 {
-	config_set_bool(App()->GlobalConfig(), "BasicWindow", "gridMode", grid);
 	parent()->setProperty("gridMode", grid);
 	gridMode = grid;
 
@@ -81,7 +79,7 @@ void SceneTree::resizeEvent(QResizeEvent *event)
 		}
 
 		int wid = contentsRect().width() - scrollWid - 1;
-		int items = (int)ceil((float)wid / maxWidth);
+		int items = (int)std::ceil((float)wid / maxWidth);
 		int itemWidth = wid / items;
 
 		setGridSize(QSize(itemWidth, itemHeight));
@@ -133,10 +131,10 @@ void SceneTree::dropEvent(QDropEvent *event)
 		QPoint point = event->pos();
 #endif
 
-		int x = (float)point.x() / wid * ceil(wid / maxWidth);
+		int x = (float)point.x() / wid * std::ceil(wid / maxWidth);
 		int y = (point.y() + firstItemY) / itemHeight;
 
-		int r = x + y * ceil(wid / maxWidth);
+		int r = x + y * std::ceil(wid / maxWidth);
 
 		QListWidgetItem *item = takeItem(selectedIndexes()[0].row());
 		insertItem(r, item);
@@ -178,10 +176,10 @@ void SceneTree::RepositionGrid(QDragMoveEvent *event)
 		QPoint point = event->pos();
 #endif
 
-		int x = (float)point.x() / wid * ceil(wid / maxWidth);
+		int x = (float)point.x() / wid * std::ceil(wid / maxWidth);
 		int y = (point.y() + firstItemY) / itemHeight;
 
-		int r = x + y * ceil(wid / maxWidth);
+		int r = x + y * std::ceil(wid / maxWidth);
 		int orig = selectedIndexes()[0].row();
 
 		for (int i = 0; i < count(); i++) {
@@ -196,8 +194,8 @@ void SceneTree::RepositionGrid(QDragMoveEvent *event)
 				  (i > orig && i > r ? 1 : 0) -
 				  (i > orig && i == r ? 2 : 0);
 
-			int xPos = (i + off) % (int)ceil(wid / maxWidth);
-			int yPos = (i + off) / (int)ceil(wid / maxWidth);
+			int xPos = (i + off) % (int)std::ceil(wid / maxWidth);
+			int yPos = (i + off) / (int)std::ceil(wid / maxWidth);
 			QSize g = gridSize();
 
 			QPoint position(xPos * g.width(), yPos * g.height());
@@ -212,8 +210,8 @@ void SceneTree::RepositionGrid(QDragMoveEvent *event)
 
 			QModelIndex index = indexFromItem(wItem);
 
-			int xPos = i % (int)ceil(wid / maxWidth);
-			int yPos = i / (int)ceil(wid / maxWidth);
+			int xPos = i % (int)std::ceil(wid / maxWidth);
+			int yPos = i / (int)std::ceil(wid / maxWidth);
 			QSize g = gridSize();
 
 			QPoint position(xPos * g.width(), yPos * g.height());

@@ -45,7 +45,7 @@ jobs:
 
   service_check:
     name: Service Check
-    runs-on: ubuntu-20.04
+    runs-on: macos-latest
     needs: schema
     if: ${{ github.repository_owner == 'obsproject' && github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
 
@@ -66,12 +66,11 @@ jobs:
 
       - name: Install & Configure Python
         run: |
-          sudo apt install python3.9
-          python3.9 -m pip install requests
+          python3 -m pip install requests
 
       - name: Check Services
         id: check
-        run: python3.9 -u CI/check-services.py
+        run: python3 -u CI/check-services.py
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WORKFLOW_RUN_ID: ${{ github.run_id }}
@@ -83,7 +82,7 @@ jobs:
           path: ${{ github.workspace }}/other/*
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@f094b77505fb89581e68a1163fbd2fffece39da1
+        uses: peter-evans/create-pull-request@36a56dac0739df8d3d8ebb9e6e41026ba248ec27
         if: steps.check.outputs.make_pr == 'true'
         with:
           author: "Service Checker <commits@obsproject.com>"

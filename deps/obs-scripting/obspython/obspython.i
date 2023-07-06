@@ -23,8 +23,9 @@
 #include <callback/signal.h>
 #include <util/bmem.h>
 #include <util/base.h>
-#include "obs-scripting-config.h"
+#include "obspython.h"
 #include <util/platform.h>
+#include <util/config-file.h>
 
 #if defined(ENABLE_UI)
 #include "obs-frontend-api.h"
@@ -38,7 +39,6 @@
 #undef SWIG_PYTHON_INITIALIZE_THREADS
 #define SWIG_PYTHON_INITIALIZE_THREADS
 #endif
-
 %}
 
 %feature("python:annotations", "c");
@@ -113,7 +113,7 @@ static inline void wrap_blog(int log_level, const char *message)
 %include "graphics/matrix4.h"
 %include "graphics/matrix3.h"
 %include "graphics/quat.h"
-%include "obs-scripting-config.h"
+%include "obspython.h"
 %include "obs-data.h"
 %include "obs-source.h"
 %include "obs-properties.h"
@@ -126,6 +126,7 @@ static inline void wrap_blog(int log_level, const char *message)
 %include "util/bmem.h"
 %include "util/base.h"
 %include "util/platform.h"
+%include "util/config-file.h"
 
 #if defined(ENABLE_UI)
 %include "obs-frontend-api.h"

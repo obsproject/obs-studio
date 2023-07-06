@@ -62,6 +62,10 @@ ff_format_desc_get_default_name(const struct ff_format_desc *format_desc,
 const struct ff_format_desc *
 ff_format_desc_next(const struct ff_format_desc *format_desc);
 
+// Utility to check compatibility
+bool ff_format_codec_compatible(const char *codec, const char *format);
+bool ff_supports_pcm_in_mp4();
+
 #ifdef __cplusplus
 }
 #endif

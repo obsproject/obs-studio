@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2015 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -313,7 +313,9 @@ static void build_command_line(struct ffmpeg_muxer *stream, struct dstr *cmd,
 		add_video_encoder_params(stream, cmd, vencoder);
 
 	if (num_tracks) {
-		dstr_cat(cmd, "aac ");
+		const char *codec = obs_encoder_get_codec(aencoders[0]);
+		dstr_cat(cmd, codec);
+		dstr_cat(cmd, " ");
 
 		for (int i = 0; i < num_tracks; i++) {
 			add_audio_encoder_params(cmd, aencoders[i]);
@@ -419,7 +421,8 @@ static inline bool ffmpeg_mux_start_internal(struct ffmpeg_muxer *stream,
 		service = obs_output_get_service(stream->output);
 		if (!service)
 			return false;
-		path = obs_service_get_url(service);
+		path = obs_service_get_connect_info(
+			service, OBS_SERVICE_CONNECT_INFO_SERVER_URL);
 		stream->split_file = false;
 	} else {
 
@@ -810,12 +813,12 @@ static inline bool has_audio(struct ffmpeg_muxer *stream)
 	return !!obs_output_get_audio_encoder(stream->output, 0);
 }
 
-static void push_back_packet(struct darray *packets,
+static void push_back_packet(mux_packets_t *packets,
 			     struct encoder_packet *packet)
 {
 	struct encoder_packet pkt;
 	obs_encoder_packet_ref(&pkt, packet);
-	darray_push_back(sizeof(pkt), packets, &pkt);
+	da_push_back(*packets, &pkt);
 }
 
 static void ffmpeg_mux_data(void *data, struct encoder_packet *packet)
@@ -838,8 +841,7 @@ static void ffmpeg_mux_data(void *data, struct encoder_packet *packet)
 
 		if (pts_usec >= first_pts_usec) {
 			if (packet->type != OBS_ENCODER_AUDIO) {
-				push_back_packet(&stream->mux_packets.da,
-						 packet);
+				push_back_packet(&stream->mux_packets, packet);
 				return;
 			}
 
@@ -849,7 +851,7 @@ static void ffmpeg_mux_data(void *data, struct encoder_packet *packet)
 		}
 	} else if (stream->split_file && should_split(stream, packet)) {
 		if (has_audio(stream)) {
-			push_back_packet(&stream->mux_packets.da, packet);
+			push_back_packet(&stream->mux_packets, packet);
 			return;
 		} else {
 			if (!prepare_split_file(stream, packet))
@@ -944,8 +946,9 @@ struct obs_output_info ffmpeg_mpegts_muxer = {
 	.id = "ffmpeg_mpegts_muxer",
 	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_MULTI_TRACK |
 		 OBS_OUTPUT_SERVICE,
-	.encoded_video_codecs = "h264;av1",
-	.encoded_audio_codecs = "aac",
+	.protocols = "SRT;RIST",
+	.encoded_video_codecs = "h264",
+	.encoded_audio_codecs = "aac;opus",
 	.get_name = ffmpeg_mpegts_mux_getname,
 	.create = ffmpeg_mux_create,
 	.destroy = ffmpeg_mux_destroy,
@@ -1119,13 +1122,11 @@ static inline void replay_buffer_purge(struct ffmpeg_muxer *stream,
 		purge(stream);
 }
 
-static void insert_packet(struct darray *array, struct encoder_packet *packet,
+static void insert_packet(mux_packets_t *packets, struct encoder_packet *packet,
 			  int64_t video_offset, int64_t *audio_offsets,
 			  int64_t video_pts_offset, int64_t *audio_dts_offsets)
 {
 	struct encoder_packet pkt;
-	DARRAY(struct encoder_packet) packets;
-	packets.da = *array;
 	size_t idx;
 
 	obs_encoder_packet_ref(&pkt, packet);
@@ -1140,14 +1141,13 @@ static void insert_packet(struct darray *array, struct encoder_packet *packet,
 		pkt.pts -= audio_dts_offsets[pkt.track_idx];
 	}
 
-	for (idx = packets.num; idx > 0; idx--) {
-		struct encoder_packet *p = packets.array + (idx - 1);
+	for (idx = packets->num; idx > 0; idx--) {
+		struct encoder_packet *p = packets->array + (idx - 1);
 		if (p->dts_usec < pkt.dts_usec)
 			break;
 	}
 
-	da_insert(packets, idx, &pkt);
-	*array = packets.da;
+	da_insert(*packets, idx, &pkt);
 }
 
 static void *replay_buffer_mux_thread(void *data)
@@ -1172,7 +1172,12 @@ static void *replay_buffer_mux_thread(void *data)
 
 	for (size_t i = 0; i < stream->mux_packets.num; i++) {
 		struct encoder_packet *pkt = &stream->mux_packets.array[i];
-		write_packet(stream, pkt);
+		if (!write_packet(stream, pkt)) {
+			warn("Could not write packet for file '%s'",
+			     stream->path.array);
+			error = true;
+			goto error;
+		}
 		obs_encoder_packet_release(pkt);
 	}
 
@@ -1235,7 +1240,7 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 			}
 		}
 
-		insert_packet(&stream->mux_packets.da, pkt, video_offset,
+		insert_packet(&stream->mux_packets, pkt, video_offset,
 			      audio_offsets, video_pts_offset,
 			      audio_dts_offsets);
 	}

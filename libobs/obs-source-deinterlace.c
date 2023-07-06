@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2016 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -400,6 +400,9 @@ void deinterlace_render(obs_source_t *s)
 		case GS_CS_709_SCRGB:
 			tech_name = "DrawMultiply";
 			multiplier = obs_get_video_sdr_white_level() / 80.0f;
+			break;
+		case GS_CS_709_EXTENDED:
+			break;
 		}
 		break;
 	case GS_CS_709_SCRGB:
@@ -412,6 +415,9 @@ void deinterlace_render(obs_source_t *s)
 		case GS_CS_709_EXTENDED:
 			tech_name = "DrawMultiply";
 			multiplier = 80.0f / obs_get_video_sdr_white_level();
+			break;
+		case GS_CS_709_SCRGB:
+			break;
 		}
 	}
 

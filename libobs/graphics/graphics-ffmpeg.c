@@ -626,9 +626,9 @@ static inline enum gs_color_format convert_format(enum AVPixelFormat format)
 		return GS_BGRX;
 	case AV_PIX_FMT_RGBA64BE:
 		return GS_RGBA16;
+	default:
+		return GS_BGRX;
 	}
-
-	return GS_BGRX;
 }
 
 uint8_t *gs_create_texture_file_data(const char *file,

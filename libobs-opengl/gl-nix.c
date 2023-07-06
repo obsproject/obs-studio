@@ -28,17 +28,17 @@ static void init_winsys(void)
 {
 	assert(gl_vtable == NULL);
 
-	switch (obs_get_nix_platform()) {
-	case OBS_NIX_PLATFORM_X11_EGL:
+	enum obs_nix_platform_type platform = obs_get_nix_platform();
+
+	if (platform == OBS_NIX_PLATFORM_X11_EGL)
 		gl_vtable = gl_x11_egl_get_winsys_vtable();
-		break;
+
 #ifdef ENABLE_WAYLAND
-	case OBS_NIX_PLATFORM_WAYLAND:
+	if (platform == OBS_NIX_PLATFORM_WAYLAND) {
 		gl_vtable = gl_wayland_egl_get_winsys_vtable();
 		blog(LOG_INFO, "Using EGL/Wayland");
-		break;
-#endif
 	}
+#endif
 
 	assert(gl_vtable != NULL);
 }

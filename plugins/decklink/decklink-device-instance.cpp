@@ -17,15 +17,59 @@
 #include <caption/caption.h>
 #include <util/bitstream.h>
 
+template<typename T> RenderDelegate<T>::RenderDelegate(T *pOwner)
+{
+	m_pOwner = pOwner;
+}
+
+template<typename T> RenderDelegate<T>::~RenderDelegate() {}
+
+template<typename T>
+HRESULT RenderDelegate<T>::QueryInterface(REFIID, LPVOID *ppv)
+{
+	*ppv = NULL;
+	return E_NOINTERFACE;
+}
+
+template<typename T> ULONG RenderDelegate<T>::AddRef()
+{
+	return ++m_refCount;
+}
+
+template<typename T> ULONG RenderDelegate<T>::Release()
+{
+	const ULONG newRefValue = --m_refCount;
+	if (newRefValue == 0) {
+		delete this;
+		return 0;
+	}
+
+	return newRefValue;
+}
+
+template<typename T>
+HRESULT
+RenderDelegate<T>::ScheduledFrameCompleted(IDeckLinkVideoFrame *completedFrame,
+					   BMDOutputFrameCompletionResult)
+{
+	m_pOwner->ScheduleVideoFrame(completedFrame);
+	return S_OK;
+}
+
+template<typename T> HRESULT RenderDelegate<T>::ScheduledPlaybackHasStopped()
+{
+	return S_OK;
+}
+
 static inline enum video_format ConvertPixelFormat(BMDPixelFormat format)
 {
 	switch (format) {
 	case bmdFormat8BitBGRA:
 		return VIDEO_FORMAT_BGRX;
-
+	case bmdFormat10BitYUV:
+		return VIDEO_FORMAT_V210;
 	default:
 	case bmdFormat8BitYUV:
-	case bmdFormat10BitYUV:;
 		return VIDEO_FORMAT_UYVY;
 	}
 }
@@ -190,6 +234,32 @@ void DeckLinkDeviceInstance::HandleVideoFrame(
 	if (currentFrame.width == 0 || currentFrame.height == 0)
 		return;
 
+	enum video_trc trc = VIDEO_TRC_DEFAULT;
+	if (frame->GetFlags() & bmdFrameContainsHDRMetadata) {
+		ComPtr<IDeckLinkVideoFrameMetadataExtensions> metadata;
+		if (SUCCEEDED(videoFrame->QueryInterface(
+			    IID_IDeckLinkVideoFrameMetadataExtensions,
+			    (void **)&metadata))) {
+			int64_t range;
+			if (SUCCEEDED(metadata->GetInt(
+				    bmdDeckLinkFrameMetadataHDRElectroOpticalTransferFunc,
+				    &range))) {
+				switch (range) {
+				case 2:
+					trc = VIDEO_TRC_PQ;
+					break;
+				case 3:
+					trc = VIDEO_TRC_HLG;
+					break;
+				default:
+					trc = VIDEO_TRC_DEFAULT;
+					break;
+				}
+			}
+		}
+	}
+	currentFrame.trc = trc;
+
 	obs_source_output_video2(
 		static_cast<DeckLinkInput *>(decklink)->GetSource(),
 		&currentFrame);
@@ -314,7 +384,10 @@ void DeckLinkDeviceInstance::SetupVideoFormat(DeckLinkDeviceMode *mode_)
 	colorSpace = static_cast<DeckLinkInput *>(decklink)->GetColorSpace();
 	if (colorSpace == VIDEO_CS_DEFAULT) {
 		const BMDDisplayModeFlags flags = mode_->GetDisplayModeFlags();
-		if (flags & bmdDisplayModeColorspaceRec709)
+		/* 2020 wasn't set when testing but maybe it will be someday */
+		if (flags & bmdDisplayModeColorspaceRec2020)
+			activeColorSpace = VIDEO_CS_2100_PQ;
+		else if (flags & bmdDisplayModeColorspaceRec709)
 			activeColorSpace = VIDEO_CS_709;
 		else if (flags & bmdDisplayModeColorspaceRec601)
 			activeColorSpace = VIDEO_CS_601;
@@ -336,10 +409,10 @@ void DeckLinkDeviceInstance::SetupVideoFormat(DeckLinkDeviceMode *mode_)
 	BMDPixelFormat convertFormat;
 	switch (pixelFormat) {
 	case bmdFormat8BitBGRA:
-		convertFormat = bmdFormat8BitBGRA;
+	case bmdFormat10BitYUV:
+		convertFormat = pixelFormat;
 		break;
 	default:
-	case bmdFormat10BitYUV:
 	case bmdFormat8BitYUV:;
 		convertFormat = bmdFormat8BitYUV;
 		break;
@@ -409,7 +482,7 @@ bool DeckLinkDeviceInstance::StartCapture(DeckLinkDeviceMode *mode_,
 	bool isauto = mode_->GetName() == "Auto";
 	if (isauto) {
 		displayMode = bmdModeNTSC;
-		if (allow10Bit) {
+		if (allow10Bit_) {
 			pixelFormat = bmdFormat10BitYUV;
 		} else {
 			pixelFormat = bmdFormat8BitYUV;
@@ -499,19 +572,24 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 	if (mode_ == nullptr)
 		return false;
 
-	LOG(LOG_INFO, "Starting output...");
-
-	if (!device->GetOutput(&output))
+	auto decklinkOutput = dynamic_cast<DeckLinkOutput *>(decklink);
+	if (decklinkOutput == nullptr)
 		return false;
 
-	const HRESULT videoResult = output->EnableVideoOutput(
+	LOG(LOG_INFO, "Starting output...");
+
+	ComPtr<IDeckLinkOutput> output_;
+	if (!device->GetOutput(&output_))
+		return false;
+
+	const HRESULT videoResult = output_->EnableVideoOutput(
 		mode_->GetDisplayMode(), bmdVideoOutputFlagDefault);
 	if (videoResult != S_OK) {
 		LOG(LOG_ERROR, "Failed to enable video output");
 		return false;
 	}
 
-	const HRESULT audioResult = output->EnableAudioOutput(
+	const HRESULT audioResult = output_->EnableAudioOutput(
 		bmdAudioSampleRate48kHz, bmdAudioSampleType16bitInteger, 2,
 		bmdAudioOutputStreamTimestamped);
 	if (audioResult != S_OK) {
@@ -519,7 +597,10 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 		return false;
 	}
 
-	mode = mode_;
+	if (!mode_->GetFrameRate(&frameDuration, &frameTimescale)) {
+		LOG(LOG_ERROR, "Failed to get frame rate");
+		return false;
+	}
 
 	ComPtr<IDeckLinkKeyer> deckLinkKeyer;
 	if (device->GetKeyer(&deckLinkKeyer)) {
@@ -532,19 +613,52 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 		}
 	}
 
-	auto decklinkOutput = dynamic_cast<DeckLinkOutput *>(decklink);
-	if (decklinkOutput == nullptr)
-		return false;
+	frameQueueDecklinkToObs.reset();
+	frameQueueObsToDecklink.reset();
 
-	HRESULT result;
-	result = output->CreateVideoFrame(
-		decklinkOutput->GetWidth(), decklinkOutput->GetHeight(),
-		decklinkOutput->GetWidth() * 4, bmdFormat8BitBGRA,
-		bmdFrameFlagDefault, &decklinkOutputFrame);
-	if (result != S_OK) {
-		blog(LOG_ERROR, "failed to make frame 0x%X", result);
-		return false;
+	const int rowSize = decklinkOutput->GetWidth() * 4;
+	const int frameSize = rowSize * decklinkOutput->GetHeight();
+	for (std::vector<uint8_t> &blob : frameBlobs) {
+		blob.assign(frameSize, 0);
+		frameQueueDecklinkToObs.push(blob.data());
 	}
+	activeBlob = nullptr;
+
+	const int64_t minimumPrerollFrames =
+		std::max(device->GetMinimumPrerollFrames(), INT64_C(3));
+	for (int64_t i = 0; i < minimumPrerollFrames; ++i) {
+		ComPtr<IDeckLinkMutableVideoFrame> decklinkOutputFrame;
+		HRESULT result = output_->CreateVideoFrame(
+			decklinkOutput->GetWidth(), decklinkOutput->GetHeight(),
+			rowSize, bmdFormat8BitBGRA, bmdFrameFlagDefault,
+			&decklinkOutputFrame);
+		if (result != S_OK) {
+			blog(LOG_ERROR, "failed to create video frame 0x%X",
+			     result);
+			return false;
+		}
+
+		result = output_->ScheduleVideoFrame(decklinkOutputFrame,
+						     i * frameDuration,
+						     frameDuration,
+						     frameTimescale);
+		if (result != S_OK) {
+			blog(LOG_ERROR,
+			     "failed to schedule video frame for preroll 0x%X",
+			     result);
+			return false;
+		}
+	}
+	totalFramesScheduled = minimumPrerollFrames;
+
+	*renderDelegate.Assign() =
+		new RenderDelegate<DeckLinkDeviceInstance>(this);
+	output_->SetScheduledFrameCompletionCallback(renderDelegate);
+
+	output_->StartScheduledPlayback(0, 100, 1.0);
+
+	mode = mode_;
+	output = std::move(output_);
 
 	return true;
 }
@@ -557,31 +671,55 @@ bool DeckLinkDeviceInstance::StopOutput()
 	LOG(LOG_INFO, "Stopping output of '%s'...",
 	    GetDevice()->GetDisplayName().c_str());
 
+	output->SetScheduledFrameCompletionCallback(NULL);
 	output->DisableVideoOutput();
 	output->DisableAudioOutput();
-
-	decklinkOutputFrame.Clear();
+	output.Clear();
+	renderDelegate.Clear();
+	frameQueueDecklinkToObs.reset();
+	frameQueueObsToDecklink.reset();
 
 	return true;
 }
 
-void DeckLinkDeviceInstance::DisplayVideoFrame(video_data *frame)
+void DeckLinkDeviceInstance::UpdateVideoFrame(video_data *frame)
 {
 	auto decklinkOutput = dynamic_cast<DeckLinkOutput *>(decklink);
 	if (decklinkOutput == nullptr)
 		return;
 
-	uint8_t *destData;
-	decklinkOutputFrame->GetBytes((void **)&destData);
+	uint8_t *const blob = frameQueueDecklinkToObs.pop();
+	if (blob) {
+		memcpy(blob, frame->data[0],
+		       frame->linesize[0] * decklinkOutput->GetHeight());
+		frameQueueObsToDecklink.push(blob);
+	}
+}
 
-	uint8_t *outData = frame->data[0];
+void DeckLinkDeviceInstance::ScheduleVideoFrame(IDeckLinkVideoFrame *frame)
+{
+	void *bytes;
+	if (SUCCEEDED(frame->GetBytes(&bytes))) {
+		uint8_t *blob = frameQueueObsToDecklink.pop();
+		if (blob) {
+			if (activeBlob)
+				frameQueueDecklinkToObs.push(activeBlob);
+			activeBlob = blob;
+		} else {
+			blob = activeBlob;
+		}
 
-	std::copy(outData,
-		  outData + (decklinkOutput->GetWidth() *
-			     decklinkOutput->GetHeight() * 4),
-		  destData);
+		const int frameSize = frame->GetRowBytes() * frame->GetHeight();
+		if (blob)
+			memcpy(bytes, blob, frameSize);
+		else
+			memset(bytes, 0, frameSize);
 
-	output->DisplayVideoFrameSync(decklinkOutputFrame);
+		output->ScheduleVideoFrame(frame,
+					   totalFramesScheduled * frameDuration,
+					   frameDuration, frameTimescale);
+		++totalFramesScheduled;
+	}
 }
 
 void DeckLinkDeviceInstance::WriteAudio(audio_data *frames)
@@ -635,7 +773,6 @@ HRESULT STDMETHODCALLTYPE DeckLinkDeviceInstance::VideoInputFormatChanged(
 	BMDVideoInputFormatChangedEvents events, IDeckLinkDisplayMode *newMode,
 	BMDDetectedVideoInputFormatFlags detectedSignalFlags)
 {
-
 	if (events & bmdVideoInputColorspaceChanged) {
 		if (detectedSignalFlags & bmdDetectedVideoInputRGB444) {
 			pixelFormat = bmdFormat8BitBGRA;

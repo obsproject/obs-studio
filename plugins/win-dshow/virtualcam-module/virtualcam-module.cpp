@@ -6,9 +6,9 @@
 static const REGPINTYPES AMSMediaTypesV = {&MEDIATYPE_Video,
 					   &MEDIASUBTYPE_NV12};
 
-static const REGFILTERPINS AMSPinVideo = {L"Output", false, true,
-					  false,     false, &CLSID_NULL,
-					  nullptr,   1,     &AMSMediaTypesV};
+static const REGFILTERPINS AMSPinVideo = {nullptr, false, true,
+					  false,   false, &CLSID_NULL,
+					  nullptr, 1,     &AMSMediaTypesV};
 
 HINSTANCE dll_inst = nullptr;
 volatile long locks = 0;

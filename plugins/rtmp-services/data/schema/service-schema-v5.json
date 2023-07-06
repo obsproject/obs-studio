@@ -1,0 +1,265 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "format_version": {
+            "type": "integer",
+            "description": "Identifier for parsing this file.\n- v5 introduced the notion of protocol and Enhanced RTMP \n- v4 introduced 'ffmpeg_mpegts_muxer' to services/recommended/output\n - v3 introduced 'ffmpeg_hls_muxer' to services/recommended/output\n - v2 introduced 'alt_names' to services"
+        },
+        "services": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Name of the streaming service. Will be displayed in the Service dropdown.",
+                        "minLength": 1
+                    },
+                    "protocol": {
+                        "type": "string",
+                        "description": "Protocol used by the service. If missing the service is considered using RTMP or RTMPS.",
+                        "enum": [
+                            "RTMP",
+                            "RTMPS",
+                            "HLS",
+                            "FTL",
+                            "SRT",
+                            "RIST",
+                            "WHIP"
+                        ]
+                    },
+                    "common": {
+                        "type": "boolean",
+                        "description": "Whether or not the service is shown in the list before it is expanded to all services by the user.",
+                        "default": false
+                    },
+                    "stream_key_link": {
+                        "$ref": "#/definitions/saneUrl",
+                        "description": "Link where a logged-in user can find the 'stream key', presented as a button alongside the stream key field."
+                    },
+                    "supported video codecs": {
+                        "type": "array",
+                        "description": "Video codecs that are supported by the service.",
+                        "items": {
+                            "type": "string",
+                            "description": "Short-form codec names.",
+                            "minLength": 1,
+                            "enum": [
+                                "h264",
+                                "hevc",
+                                "av1"
+                            ]
+                        }
+                    },
+                    "supported audio codecs": {
+                        "type": "array",
+                        "description": "Audio codecs that are supported by the service.",
+                        "items": {
+                            "type": "string",
+                            "description": "Short-form codec names.",
+                            "minLength": 1,
+                            "enum": [
+                                "aac",
+                                "opus"
+                            ]
+                        }
+                    },
+                    "servers": {
+                        "type": "array",
+                        "description": "List of servers.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string",
+                                    "description": "Name of the server (e.g. location, primary/backup), displayed in the Server dropdown.",
+                                    "minLength": 1
+                                },
+                                "url": {
+                                    "$ref": "#/definitions/serviceUri",
+                                    "description": "RTMP(S) or HLS URL of the ingest server.",
+                                    "minLength": 1
+                                }
+                            },
+                            "additionalProperties": false,
+                            "required": [
+                                "name",
+                                "url"
+                            ]
+                        },
+                        "default": [
+                            {
+                                "name": "",
+                                "url": ""
+                            }
+                        ],
+                        "minItems": 1,
+                        "additionalItems": true
+                    },
+                    "recommended": {
+                        "type": "object",
+                        "description": "Recommended service settings. Users will be unable to choose values outside of these by default, so choose recommended values carefully.",
+                        "properties": {
+                            "keyint": {
+                                "type": "integer",
+                                "description": "Keyframe interval (seconds)."
+                            },
+                            "max video bitrate": {
+                                "type": "integer",
+                                "description": "Highest supported video bitrate (kbps)."
+                            },
+                            "max audio bitrate": {
+                                "type": "integer",
+                                "description": "Highest supported audio bitrate (kbps)."
+                            },
+                            "x264opts": {
+                                "type": "string",
+                                "description": "Additional x264 encoder options. Space-separated.",
+                                "pattern": "^(\\S+=\\S+\\s*)+$"
+                            },
+                            "output": {
+                                "type": "string",
+                                "description": "OBS output module used. Unused since OBS Studio 30, kept for backward compatibility.",
+                                "enum": [
+                                    "rtmp_output",
+                                    "ffmpeg_hls_muxer",
+                                    "ftl_output",
+                                    "ffmpeg_mpegts_muxer"
+                                ]
+                            },
+                            "profile": {
+                                "type": "string",
+                                "description": "H.264 Profile.",
+                                "minLength": 1,
+                                "enum": [
+                                    "high",
+                                    "main",
+                                    "baseline"
+                                ]
+                            },
+                            "bframes": {
+                                "type": "integer",
+                                "description": "Maximum allowed number of B-Frames."
+                            },
+                            "supported resolutions": {
+                                "type": "array",
+                                "description": "List of supported resolutions in format {width}x{height}",
+                                "items": {
+                                    "$ref": "#/definitions/resolution"
+                                },
+                                "minItems": 1,
+                                "additionalItems": true
+                            },
+                            "max fps": {
+                                "type": "integer",
+                                "description": "Maximum supported framerate."
+                            },
+                            "bitrate matrix": {
+                                "type": "array",
+                                "description": "List of resolutions and frame rate combinations with their recommended maximum bitrate.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "res": {
+                                            "$ref": "#/definitions/resolution",
+                                            "description": "Resolution in format {width}x{height}"
+                                        },
+                                        "fps": {
+                                            "type": "integer",
+                                            "description": "Frame rate"
+                                        },
+                                        "max bitrate": {
+                                            "type": "integer",
+                                            "description": "Maximum bitrate in kbps."
+                                        }
+                                    },
+                                    "minItems": 1,
+                                    "additionalProperties": false,
+                                    "required": [
+                                        "res",
+                                        "fps",
+                                        "max bitrate"
+                                    ]
+                                },
+                                "default": [
+                                    {
+                                        "res": "",
+                                        "fps": "",
+                                        "max bitrate": ""
+                                    }
+                                ],
+                                "additionalItems": true
+                            }
+                        },
+                        "additionalProperties": false
+                    },
+                    "more_info_link": {
+                        "$ref": "#/definitions/saneUrl",
+                        "description": "Link that provides additional info about the service, presented in the UI as a button next to the services dropdown."
+                    },
+                    "alt_names": {
+                        "type": "array",
+                        "description": "Previous names of the service used for migrating existing users to the updated entry.",
+                        "items": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "default": [
+                            ""
+                        ]
+                    }
+                },
+                "additionalProperties": false,
+                "required": [
+                    "name",
+                    "servers"
+                ],
+                "allOf": [
+                    {
+                        "$comment": "Require protocol field if not an RTMP(S) URL",
+                        "if": { "not": { "properties": { "servers": { "items": { "properties": { "url": { "format": "uri", "pattern": "^rtmps?://" } } } } } } },
+                        "then": { "required": ["protocol"] }
+                    },
+                    {
+                        "$comment": "Require recommended output field if protocol field is not RTMP(S)",
+                        "if": { "required": ["protocol"], "properties": { "protocol": { "pattern": "^(HLS|SRT|RIST|FTL|WHIP)$" } } },
+                        "then": { "properties": { "recommended": { "required": ["output"] } } }
+                    }
+                ]
+            },
+            "additionalItems": true
+        }
+    },
+    "additionalProperties": true,
+    "required": [
+        "format_version",
+        "services"
+    ],
+    "definitions": {
+        "resolution": {
+            "type": "string",
+            "pattern": "^\\d+x\\d+$",
+            "default": ""
+        },
+        "saneUrl": {
+            "type": "string",
+            "format": "uri",
+            "pattern": "^https?://.+",
+            "default": "https://"
+        },
+        "serviceUri": {
+            "anyOf": [
+                {
+                    "type": "string",
+                    "format": "uri",
+                    "pattern": "^(https|http|rtmps|rtmp|srt|rist)?://"
+                },
+                {
+                    "type": "string",
+                    "format": "hostname"
+                }
+            ]
+        }
+    }
+}

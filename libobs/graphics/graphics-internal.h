@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -307,6 +307,9 @@ struct gs_exports {
 
 	bool (*gs_duplicator_update_frame)(gs_duplicator_t *duplicator);
 	gs_texture_t *(*gs_duplicator_get_texture)(gs_duplicator_t *duplicator);
+	enum gs_color_space (*gs_duplicator_get_color_space)(
+		gs_duplicator_t *duplicator);
+	float (*gs_duplicator_get_sdr_white_level)(gs_duplicator_t *duplicator);
 
 	uint32_t (*gs_get_adapter_count)(void);
 

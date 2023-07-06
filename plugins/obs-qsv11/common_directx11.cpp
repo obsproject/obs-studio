@@ -136,7 +136,7 @@ CComPtr<ID3D11DeviceContext> GetHWDeviceContext()
 	return g_pD3D11Ctx;
 }
 
-/* (Hugh) Functions currently unused */
+/* (Lain) Functions currently unused */
 #if 0
 void ClearYUVSurfaceD3D(mfxMemId memId)
 {

@@ -47,7 +47,6 @@ struct xcompcap {
 	int crop_left;
 	int crop_right;
 	int crop_bot;
-	bool swapRedBlue;
 	bool include_border;
 	bool exclude_alpha;
 
@@ -779,9 +778,6 @@ static obs_properties_t *xcompcap_props(void *unused)
 		props, "cut_bot", obs_module_text("CropBottom"), 0, 4096, 1);
 	obs_property_int_set_suffix(prop, " px");
 
-	obs_properties_add_bool(props, "swap_redblue",
-				obs_module_text("SwapRedBlue"));
-
 	obs_properties_add_bool(props, "show_cursor",
 				obs_module_text("CaptureCursor"));
 
@@ -801,7 +797,6 @@ static void xcompcap_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "cut_left", 0);
 	obs_data_set_default_int(settings, "cut_right", 0);
 	obs_data_set_default_int(settings, "cut_bot", 0);
-	obs_data_set_default_bool(settings, "swap_redblue", false);
 	obs_data_set_default_bool(settings, "show_cursor", true);
 	obs_data_set_default_bool(settings, "include_border", false);
 	obs_data_set_default_bool(settings, "exclude_alpha", false);
@@ -818,7 +813,6 @@ static void xcompcap_update(void *data, obs_data_t *settings)
 	s->crop_left = obs_data_get_int(settings, "cut_left");
 	s->crop_right = obs_data_get_int(settings, "cut_right");
 	s->crop_bot = obs_data_get_int(settings, "cut_bot");
-	s->swapRedBlue = obs_data_get_bool(settings, "swap_redblue");
 	s->show_cursor = obs_data_get_bool(settings, "show_cursor");
 	s->include_border = obs_data_get_bool(settings, "include_border");
 	s->exclude_alpha = obs_data_get_bool(settings, "exclude_alpha");

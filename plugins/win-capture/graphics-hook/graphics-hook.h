@@ -5,7 +5,11 @@
 #pragma warning(disable : 4152)
 #endif
 
+#ifdef OBS_LEGACY
 #include "../graphics-hook-info.h"
+#else
+#include <graphics-hook-info.h>
+#endif
 #include <ipc-util/pipe.h>
 #include <psapi.h>
 

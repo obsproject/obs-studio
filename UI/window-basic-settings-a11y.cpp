@@ -36,7 +36,8 @@ QColor OBSBasicSettings::GetColor(uint32_t colorVal, QString label)
 {
 	QColorDialog::ColorDialogOptions options;
 
-#ifndef _WIN32
+#ifdef __linux__
+	// TODO: Revisit hang on Ubuntu with native dialog
 	options |= QColorDialog::DontUseNativeDialog;
 #endif
 

@@ -3,25 +3,23 @@
 *.dll
 *.dylib
 *.so
+*.plugin
+*.framework
+*.systemextension
 
 #cmake
-/cmbuild/
-/build/
-/build32/
-/build64/
-/release/
-/release32/
-/release64/
-/debug/
-/debug32/
-/debug64/
-/builds/
+/build*/
+!/build-aux/
+/release*/
+/debug*/
 .vs/
 *.o.d
 *.ninja
 .ninja*
 .dirstamp
 /cmake/.CMakeBuildNumber
+.deps
+CMakeUserPresets.json
 
 #xcode
 *.xcodeproj/
