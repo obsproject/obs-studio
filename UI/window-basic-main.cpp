@@ -3660,7 +3660,6 @@ void OBSBasic::VolControlContextMenu()
 
 	QAction filtersAction(QTStr("Filters"), this);
 	QAction propertiesAction(QTStr("Properties"), this);
-	QAction advPropAction(QTStr("Basic.MainMenu.Edit.AdvAudio"), this);
 
 	/* ------------------- */
 
@@ -3680,9 +3679,6 @@ void OBSBasic::VolControlContextMenu()
 		&OBSBasic::GetAudioSourceFilters, Qt::DirectConnection);
 	connect(&propertiesAction, &QAction::triggered, this,
 		&OBSBasic::GetAudioSourceProperties, Qt::DirectConnection);
-	connect(&advPropAction, &QAction::triggered, this,
-		&OBSBasic::on_actionAdvAudioProperties_triggered,
-		Qt::DirectConnection);
 
 	/* ------------------- */
 
@@ -3727,7 +3723,6 @@ void OBSBasic::VolControlContextMenu()
 	popup.addSeparator();
 	popup.addAction(&filtersAction);
 	popup.addAction(&propertiesAction);
-	popup.addAction(&advPropAction);
 	popup.exec(QCursor::pos());
 }
 
