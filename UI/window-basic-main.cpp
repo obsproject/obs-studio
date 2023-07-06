@@ -3653,7 +3653,6 @@ void OBSBasic::VolControlContextMenu()
 	lockAction.setChecked(SourceVolumeLocked(vol->GetSource()));
 
 	QAction hideAction(QTStr("Hide"), this);
-	QAction unhideAllAction(QTStr("UnhideAll"), this);
 	QAction mixerRenameAction(QTStr("Rename"), this);
 
 	QAction copyFiltersAction(QTStr("Copy.Filters"), this);
@@ -3672,8 +3671,6 @@ void OBSBasic::VolControlContextMenu()
 
 	connect(&hideAction, &QAction::triggered, this,
 		&OBSBasic::HideAudioControl, Qt::DirectConnection);
-	connect(&unhideAllAction, &QAction::triggered, this,
-		&OBSBasic::UnhideAllAudioControls, Qt::DirectConnection);
 	connect(&lockAction, &QAction::toggled, this,
 		&OBSBasic::LockVolumeControl, Qt::DirectConnection);
 	connect(&mixerRenameAction, &QAction::triggered, this,
@@ -3733,7 +3730,6 @@ void OBSBasic::VolControlContextMenu()
 	vol->SetContextMenu(&popup);
 	popup.addAction(&lockAction);
 	popup.addSeparator();
-	popup.addAction(&unhideAllAction);
 	popup.addAction(&hideAction);
 	popup.addAction(&mixerRenameAction);
 	popup.addSeparator();
