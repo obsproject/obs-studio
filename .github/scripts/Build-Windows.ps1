@@ -62,36 +62,6 @@ function Build {
         $CmakeBuildArgs = @('--build')
         $CmakeInstallArgs = @()
 
-        if ( ( $env:TWITCH_CLIENTID -ne '' ) -and ( $env:TWITCH_HASH -ne '' ) ) {
-            $CmakeArgs += @(
-                "-DTWITCH_CLIENTID:STRING=${env:TWITCH_CLIENTID}"
-                "-DTWITCH_HASH:STRING=${env:TWITCH_HASH}"
-            )
-        }
-
-        if ( ( $env:RESTREAM_CLIENTID -ne '' ) -and ( $env:RESTREAM_HASH -ne '' ) ) {
-            $CmakeArgs += @(
-                "-DRESTREAM_CLIENTID:STRING=${env:RESTREAM_CLIENTID}"
-                "-DRESTREAM_HASH:STRING=${env:RESTREAM_HASH}"
-            )
-        }
-
-        if ( ( $env:YOUTUBE_CLIENTID -ne '' ) -and ( $env:YOUTUBE_CLIENTID_HASH -ne '' ) -and
-             ( $env:YOUTUBE_SECRET -ne '' ) -and ( $env:YOUTUBE_SECRET_HASH-ne '' ) ) {
-            $CmakeArgs += @(
-                "-DYOUTUBE_CLIENTID:STRING=${env:YOUTUBE_CLIENTID}"
-                "-DYOUTUBE_CLIENTID_HASH:STRING=${env:YOUTUBE_CLIENTID_HASH}"
-                "-DYOUTUBE_SECRET:STRING=${env:YOUTUBE_SECRET}"
-                "-DYOUTUBE_SECRET_HASH:STRING=${env:YOUTUBE_SECRET_HASH}"
-            )
-        }
-
-        if ( $env:GPU_PRIORITY_VAL -ne '' ) {
-            $CmakeArgs += @(
-                "-DGPU_PRIORITY_VAL:STRING=${env:GPU_PRIORITY_VAL}"
-            )
-        }
-
         if ( ( $env:CI -ne $null ) -and ( $env:CCACHE_CONFIGPATH -ne $null ) ) {
             $CmakeArgs += @(
                 "-DENABLE_CCACHE:BOOL=TRUE"
