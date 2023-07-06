@@ -32,6 +32,8 @@ class YouTubeService {
 
 	static bool InfoCanTryToConnect(void *data);
 
+	static int InfoGetMaxCodecBitrate(void *data, const char *codec);
+
 	static obs_properties_t *InfoGetProperties(void *data);
 
 #ifdef OAUTH_ENABLED

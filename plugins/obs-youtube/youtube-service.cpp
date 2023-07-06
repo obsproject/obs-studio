@@ -38,6 +38,8 @@ YouTubeService::YouTubeService()
 	info.get_defaults = YouTubeConfig::InfoGetDefault;
 	info.get_properties = InfoGetProperties;
 
+	info.get_max_codec_bitrate = InfoGetMaxCodecBitrate;
+
 #ifdef OAUTH_ENABLED
 	info.can_bandwidth_test = InfoCanBandwidthTest;
 	info.enable_bandwidth_test = InfoEnableBandwidthTest;

@@ -67,6 +67,19 @@ bool YouTubeService::InfoCanTryToConnect(void *data)
 	return false;
 }
 
+int YouTubeService::InfoGetMaxCodecBitrate(void *, const char *codec_)
+{
+	std::string codec(codec_);
+
+	if (codec == "h264" || codec == "hevc" || codec == "av1")
+		return 51000;
+
+	if (codec == "aac")
+		return 160;
+
+	return 0;
+}
+
 obs_properties_t *YouTubeService::InfoGetProperties(void *data)
 {
 	if (data)
