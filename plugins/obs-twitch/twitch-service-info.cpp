@@ -67,6 +67,19 @@ bool TwitchService::InfoCanTryToConnect(void *data)
 	return false;
 }
 
+int TwitchService::InfoGetMaxCodecBitrate(void *, const char *codec_)
+{
+	std::string codec(codec_);
+
+	if (codec == "h264")
+		return 6000;
+
+	if (codec == "aac")
+		return 320;
+
+	return 0;
+}
+
 obs_properties_t *TwitchService::InfoGetProperties(void *data)
 {
 	if (data)

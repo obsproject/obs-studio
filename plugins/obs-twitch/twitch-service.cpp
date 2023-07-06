@@ -44,6 +44,8 @@ TwitchService::TwitchService()
 	info.enable_bandwidth_test = InfoEnableBandwidthTest;
 	info.bandwidth_test_enabled = InfoBandwidthTestEnabled;
 
+	info.get_max_codec_bitrate = InfoGetMaxCodecBitrate;
+
 	obs_register_service(&info);
 
 #ifdef OAUTH_ENABLED

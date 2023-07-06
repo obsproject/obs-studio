@@ -36,6 +36,8 @@ class TwitchService {
 
 	static bool InfoCanTryToConnect(void *data);
 
+	static int InfoGetMaxCodecBitrate(void *data, const char *codec);
+
 	static obs_properties_t *InfoGetProperties(void *data);
 
 	static bool InfoCanBandwidthTest(void *data);
