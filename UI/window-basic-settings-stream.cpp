@@ -1652,6 +1652,7 @@ void OBSBasicSettings::ResetEncoders(bool streamOnly)
 
 	ui->simpleOutStrEncoder->addItem(ENCODER_STR("Software"),
 					 QString(SIMPLE_ENCODER_X264));
+#ifdef _WIN32
 	if (service_supports_encoder(vcodecs, "obs_qsv11"))
 		ui->simpleOutStrEncoder->addItem(
 			ENCODER_STR("Hardware.QSV.H264"),
@@ -1660,6 +1661,7 @@ void OBSBasicSettings::ResetEncoders(bool streamOnly)
 		ui->simpleOutStrEncoder->addItem(
 			ENCODER_STR("Hardware.QSV.AV1"),
 			QString(SIMPLE_ENCODER_QSV_AV1));
+#endif
 	if (service_supports_encoder(vcodecs, "ffmpeg_nvenc"))
 		ui->simpleOutStrEncoder->addItem(
 			ENCODER_STR("Hardware.NVENC.H264"),

@@ -839,10 +839,12 @@ void OBSBasic::CheckForSimpleModeX264Fallback()
 	while (obs_enum_encoder_types(idx++, &id)) {
 		if (strcmp(id, "amd_amf_h264") == 0)
 			amd_supported = true;
+#ifdef _WIN32
 		else if (strcmp(id, "obs_qsv11") == 0)
 			qsv_supported = true;
 		else if (strcmp(id, "obs_qsv11_av1") == 0)
 			qsv_av1_supported = true;
+#endif
 		else if (strcmp(id, "ffmpeg_nvenc") == 0)
 			nve_supported = true;
 #ifdef ENABLE_HEVC
