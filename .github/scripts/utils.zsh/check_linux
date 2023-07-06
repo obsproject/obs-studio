@@ -1,4 +1,4 @@
-autoload -Uz log_info log_status log_error log_debug log_warning log_group
+autoload -Uz log_debug log_group
 
 log_group 'Check Linux build requirements'
 log_debug 'Checking Linux distribution name and version...'
@@ -14,14 +14,6 @@ if [[ -f /etc/os_release ]] {
   if [[ ${dist_name} == Ubuntu ]] && is-at-least 22.10 ${dist_version}; then
     typeset -g -i UBUNTU_2210_OR_LATER=1
   fi
-}
-
-log_debug 'Checking for apt-get...'
-if (( ! ${+commands[apt-get]} )) {
-  log_error 'No apt-get command found. Please install apt'
-  return 2
-} else {
-  log_debug "Apt-get located at ${commands[apt-get]}"
 }
 
 local -a dependencies=("${(fA)$(<${SCRIPT_HOME}/.Aptfile)}")
@@ -46,15 +38,7 @@ for dependency (${dependencies}) {
 
 log_debug "List of dependencies to install: ${install_list}"
 if (( #install_list )) {
-  if (( ! ${+CI} )) log_warning 'Dependency installation via apt may require elevated privileges'
-
-  local -a apt_args=(
-    ${CI:+-y}
-    --no-install-recommends
-  )
-  if (( _loglevel == 0 )) apt_args+=(--quiet)
-
-  sudo apt-get ${apt_args} install ${install_list}
+  sudo apt-get -y --no-install-recommends install ${install_list}
 }
 
 rehash
