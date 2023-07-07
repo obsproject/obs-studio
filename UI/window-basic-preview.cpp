@@ -390,24 +390,23 @@ static bool FindHandleAtPos(obs_scene_t * /* scene */, obs_sceneitem_t *item,
 	TestHandle(0.5f, 1.0f, ItemHandle::BottomCenter);
 	TestHandle(1.0f, 1.0f, ItemHandle::BottomRight);
 
+	vec2 scale;
+	obs_sceneitem_get_scale(item, &scale);
 	vec2 rotHandleOffset;
 	vec2_set(&rotHandleOffset, 0.0f,
 		 HANDLE_RADIUS * data.radius * 1.5 - data.radius);
-	RotatePos(&rotHandleOffset, atan2(transform.x.y, transform.x.x));
+	float angle =
+		atan2(scale.x < 0.0f ? transform.x.y * -1.0f : transform.x.y,
+		      scale.x < 0.0f ? transform.x.x * -1.0f : transform.x.x);
+	RotatePos(&rotHandleOffset, angle);
 	RotatePos(&rotHandleOffset, RAD(data.angleOffset));
 
-	vec2 scale;
-	obs_sceneitem_get_scale(item, &scale);
 	bool invert = scale.y < 0.0f;
 	vec3 handlePos =
 		GetTransformedPos(0.5f, invert ? 1.0f : 0.0f, transform);
 	vec3_transform(&handlePos, &handlePos, &data.parent_xform);
 	handlePos.x -= rotHandleOffset.x;
-
-	if (scale.x < 0.0f)
-		handlePos.y += rotHandleOffset.y;
-	else
-		handlePos.y -= rotHandleOffset.y;
+	handlePos.y -= rotHandleOffset.y;
 
 	float dist = vec3_dist(&handlePos, &pos3);
 	if (dist < data.radius) {
