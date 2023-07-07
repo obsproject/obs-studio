@@ -1361,9 +1361,13 @@ void OBSBasicPreview::CropItem(const vec2 &pos)
 	vec3_transform(&pos3, &pos3, &screenToItem);
 
 	obs_sceneitem_crop crop = startCrop;
-	vec2 scale;
+	vec2 scale, rawscale;
 
-	obs_sceneitem_get_scale(stretchItem, &scale);
+	obs_sceneitem_get_scale(stretchItem, &rawscale);
+	vec2_set(&scale,
+		 boundsType == OBS_BOUNDS_NONE ? rawscale.x : fabsf(rawscale.x),
+		 boundsType == OBS_BOUNDS_NONE ? rawscale.y
+					       : fabsf(rawscale.y));
 
 	vec2 max_tl;
 	vec2 max_br;
@@ -1375,10 +1379,18 @@ void OBSBasicPreview::CropItem(const vec2 &pos)
 
 	typedef std::function<float(float, float)> minmax_func_t;
 
-	minmax_func_t min_x = scale.x < 0.0f ? maxfunc : minfunc;
-	minmax_func_t min_y = scale.y < 0.0f ? maxfunc : minfunc;
-	minmax_func_t max_x = scale.x < 0.0f ? minfunc : maxfunc;
-	minmax_func_t max_y = scale.y < 0.0f ? minfunc : maxfunc;
+	minmax_func_t min_x = scale.x < 0.0f && boundsType == OBS_BOUNDS_NONE
+				      ? maxfunc
+				      : minfunc;
+	minmax_func_t min_y = scale.y < 0.0f && boundsType == OBS_BOUNDS_NONE
+				      ? maxfunc
+				      : minfunc;
+	minmax_func_t max_x = scale.x < 0.0f && boundsType == OBS_BOUNDS_NONE
+				      ? minfunc
+				      : maxfunc;
+	minmax_func_t max_y = scale.y < 0.0f && boundsType == OBS_BOUNDS_NONE
+				      ? minfunc
+				      : maxfunc;
 
 	pos3.x = min_x(pos3.x, max_br.x);
 	pos3.x = max_x(pos3.x, max_tl.x);
