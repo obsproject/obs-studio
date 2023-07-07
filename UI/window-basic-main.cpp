@@ -5258,29 +5258,19 @@ void OBSBasic::on_actionAdvAudioProperties_triggered()
 	advAudioWindow->SetIconsVisible(iconsVisible);
 }
 
+void OBSBasic::on_actionMixerToolbarUnhideAll_triggered()
+{
+	UnhideAllAudioControls();
+}
+
+void OBSBasic::on_actionMixerToolbarVerticalLayout_triggered()
+{
+	ToggleVolControlLayout();
+}
+
 void OBSBasic::on_actionMixerToolbarAdvAudio_triggered()
 {
 	on_actionAdvAudioProperties_triggered();
-}
-
-void OBSBasic::on_actionMixerToolbarMenu_triggered()
-{
-	QAction unhideAllAction(QTStr("UnhideAll"), this);
-	connect(&unhideAllAction, &QAction::triggered, this,
-		&OBSBasic::UnhideAllAudioControls, Qt::DirectConnection);
-
-	QAction toggleControlLayoutAction(QTStr("VerticalLayout"), this);
-	toggleControlLayoutAction.setCheckable(true);
-	toggleControlLayoutAction.setChecked(config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "VerticalVolControl"));
-	connect(&toggleControlLayoutAction, &QAction::changed, this,
-		&OBSBasic::ToggleVolControlLayout, Qt::DirectConnection);
-
-	QMenu popup;
-	popup.addAction(&unhideAllAction);
-	popup.addSeparator();
-	popup.addAction(&toggleControlLayoutAction);
-	popup.exec(QCursor::pos());
 }
 
 void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current,

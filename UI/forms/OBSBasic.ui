@@ -1186,9 +1186,11 @@
           <property name="floatable">
            <bool>false</bool>
           </property>
-          <addaction name="actionMixerToolbarAdvAudio"/>
+          <addaction name="actionMixerToolbarUnhideAll"/>
           <addaction name="separator"/>
-          <addaction name="actionMixerToolbarMenu"/>
+          <addaction name="actionMixerToolbarVerticalLayout"/>
+          <addaction name="separator"/>
+          <addaction name="actionMixerToolbarAdvAudio"/>
          </widget>
         </item>
        </layout>
@@ -2284,6 +2286,36 @@
     <string>Undo.Redo</string>
    </property>
   </action>
+  <action name="actionMixerToolbarUnhideAll">
+   <property name="icon">
+    <iconset resource="obs.qrc">
+     <normaloff>:/res/images/visible.svg</normaloff>:/res/images/visible.svg</iconset>
+   </property>
+   <property name="text">
+    <string>UnhideAll</string>
+   </property>
+   <property name="toolTip">
+    <string>UnhideAll</string>
+   </property>
+   <property name="themeID" stdset="0">
+    <string>visibleIcon</string>
+   </property>
+  </action>
+  <action name="actionMixerToolbarVerticalLayout">
+   <property name="icon">
+    <iconset resource="obs.qrc">
+     <normaloff>:/res/images/mixer-layout.svg</normaloff>:/res/images/mixer-layout.svg</iconset>
+   </property>
+   <property name="text">
+    <string>VerticalLayout</string>
+   </property>
+   <property name="toolTip">
+    <string>VerticalLayout</string>
+   </property>
+   <property name="themeID" stdset="0">
+    <string>mixerIcon</string>
+   </property>
+  </action>
   <action name="actionMixerToolbarAdvAudio">
    <property name="icon">
     <iconset resource="obs.qrc">
@@ -2297,18 +2329,6 @@
    </property>
    <property name="themeID" stdset="0">
     <string>cogsIcon</string>
-   </property>
-  </action>
-  <action name="actionMixerToolbarMenu">
-   <property name="icon">
-    <iconset resource="obs.qrc">
-     <normaloff>:/res/images/dots-vert.svg</normaloff>:/res/images/dots-vert.svg</iconset>
-   </property>
-   <property name="text">
-    <string>MixerToolbarMenu</string>
-   </property>
-   <property name="themeID" stdset="0">
-    <string>menuIconSmall</string>
    </property>
   </action>
   <action name="actionSceneFilters">

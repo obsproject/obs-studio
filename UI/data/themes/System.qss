@@ -54,6 +54,14 @@ OBSThemeMeta {
     qproperty-icon: url(:res/images/dots-vert.svg);
 }
 
+* [themeID="visibleIcon"] {
+    qproperty-icon: url(:res/images/visible.svg);
+}
+
+* [themeID="mixerIcon"] {
+    qproperty-icon: url(:/res/images/mixer-layout.svg);
+}
+
 * [themeID="cogsIcon"] {
     qproperty-icon: url(:/res/images/cogs.svg);
 }

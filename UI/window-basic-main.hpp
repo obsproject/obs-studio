@@ -1038,8 +1038,9 @@ private slots:
 	void on_actionShowMacPermissions_triggered();
 	void on_actionShowMissingFiles_triggered();
 	void on_actionAdvAudioProperties_triggered();
+	void on_actionMixerToolbarUnhideAll_triggered();
+	void on_actionMixerToolbarVerticalLayout_triggered();
 	void on_actionMixerToolbarAdvAudio_triggered();
-	void on_actionMixerToolbarMenu_triggered();
 	void on_actionShowLogs_triggered();
 	void on_actionUploadCurrentLog_triggered();
 	void on_actionUploadLastLog_triggered();

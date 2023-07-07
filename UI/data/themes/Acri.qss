@@ -508,6 +508,14 @@ QToolButton:pressed {
     qproperty-icon: url(./Dark/refresh.svg);
 }
 
+* [themeID="visibleIcon"] {
+    qproperty-icon: url(./Dark/visible.svg);
+}
+
+* [themeID="mixerIcon"] {
+    qproperty-icon: url(./Dark/mixer-layout.svg);
+}
+
 * [themeID="cogsIcon"] {
     qproperty-icon: url(./Dark/cogs.svg);
 }
