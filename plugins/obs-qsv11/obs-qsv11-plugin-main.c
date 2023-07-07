@@ -73,6 +73,8 @@ extern struct obs_encoder_info obs_qsv_encoder;
 extern struct obs_encoder_info obs_qsv_encoder_v2;
 extern struct obs_encoder_info obs_qsv_encoder_tex;
 extern struct obs_encoder_info obs_qsv_encoder_tex_v2;
+extern struct obs_encoder_info obs_qsv_vp9_encoder_tex;
+extern struct obs_encoder_info obs_qsv_vp9_encoder;
 extern struct obs_encoder_info obs_qsv_av1_encoder_tex;
 extern struct obs_encoder_info obs_qsv_av1_encoder;
 extern struct obs_encoder_info obs_qsv_hevc_encoder_tex;
@@ -138,6 +140,7 @@ bool obs_module_load(void)
 
 	adapter_count = config_num_sections(config);
 	bool avc_supported = false;
+	bool vp9_supported = false;
 	bool av1_supported = false;
 	bool hevc_supported = false;
 
@@ -152,12 +155,15 @@ bool obs_module_load(void)
 		adapter->is_intel =
 			config_get_bool(config, section, "is_intel");
 		adapter->is_dgpu = config_get_bool(config, section, "is_dgpu");
+		adapter->supports_vp9 =
+			config_get_bool(config, section, "supports_vp9");
 		adapter->supports_av1 =
 			config_get_bool(config, section, "supports_av1");
 		adapter->supports_hevc =
 			config_get_bool(config, section, "supports_hevc");
 
 		avc_supported |= adapter->is_intel;
+		vp9_supported |= adapter->supports_vp9;
 		av1_supported |= adapter->supports_av1;
 		hevc_supported |= adapter->supports_hevc;
 	}
@@ -167,6 +173,10 @@ bool obs_module_load(void)
 		obs_register_encoder(&obs_qsv_encoder_tex);
 		obs_register_encoder(&obs_qsv_encoder_v2);
 		obs_register_encoder(&obs_qsv_encoder);
+	}
+	if (vp9_supported) {
+		obs_register_encoder(&obs_qsv_vp9_encoder_tex);
+		obs_register_encoder(&obs_qsv_vp9_encoder);
 	}
 	if (av1_supported) {
 		obs_register_encoder(&obs_qsv_av1_encoder_tex);

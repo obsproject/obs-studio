@@ -177,6 +177,8 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 
 	if (codec == QSV_CODEC_AVC)
 		m_mfxEncParams.mfx.CodecId = MFX_CODEC_AVC;
+	else if (codec == QSV_CODEC_VP9)
+		m_mfxEncParams.mfx.CodecId = MFX_CODEC_VP9;
 	else if (codec == QSV_CODEC_AV1)
 		m_mfxEncParams.mfx.CodecId = MFX_CODEC_AV1;
 	else if (codec == QSV_CODEC_HEVC)
@@ -207,7 +209,7 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 	m_mfxEncParams.mfx.FrameInfo.CropY = 0;
 	m_mfxEncParams.mfx.FrameInfo.CropW = pParams->nWidth;
 	m_mfxEncParams.mfx.FrameInfo.CropH = pParams->nHeight;
-	if (codec == QSV_CODEC_AV1)
+	if (codec == QSV_CODEC_VP9 || codec == QSV_CODEC_AV1)
 		m_mfxEncParams.mfx.GopRefDist = 1;
 	else
 		m_mfxEncParams.mfx.GopRefDist = pParams->nbFrames + 1;
@@ -322,17 +324,29 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 		}
 	}
 
-	memset(&m_ExtVideoSignalInfo, 0, sizeof(m_ExtVideoSignalInfo));
-	m_ExtVideoSignalInfo.Header.BufferId = MFX_EXTBUFF_VIDEO_SIGNAL_INFO;
-	m_ExtVideoSignalInfo.Header.BufferSz = sizeof(m_ExtVideoSignalInfo);
-	m_ExtVideoSignalInfo.VideoFormat = pParams->VideoFormat;
-	m_ExtVideoSignalInfo.VideoFullRange = pParams->VideoFullRange;
-	m_ExtVideoSignalInfo.ColourDescriptionPresent = 1;
-	m_ExtVideoSignalInfo.ColourPrimaries = pParams->ColourPrimaries;
-	m_ExtVideoSignalInfo.TransferCharacteristics =
-		pParams->TransferCharacteristics;
-	m_ExtVideoSignalInfo.MatrixCoefficients = pParams->MatrixCoefficients;
-	extendedBuffers.push_back((mfxExtBuffer *)&m_ExtVideoSignalInfo);
+	if (codec == QSV_CODEC_VP9) {
+		memset(&m_ExtVP9Param, 0, sizeof(m_ExtVP9Param));
+		m_ExtVP9Param.Header.BufferId = MFX_EXTBUFF_VP9_PARAM;
+		m_ExtVP9Param.Header.BufferSz = sizeof(m_ExtVP9Param);
+		m_ExtVP9Param.WriteIVFHeaders = MFX_CODINGOPTION_OFF;
+		extendedBuffers.push_back((mfxExtBuffer *)&m_ExtVP9Param);
+	} else {
+		memset(&m_ExtVideoSignalInfo, 0, sizeof(m_ExtVideoSignalInfo));
+		m_ExtVideoSignalInfo.Header.BufferId =
+			MFX_EXTBUFF_VIDEO_SIGNAL_INFO;
+		m_ExtVideoSignalInfo.Header.BufferSz =
+			sizeof(m_ExtVideoSignalInfo);
+		m_ExtVideoSignalInfo.VideoFormat = pParams->VideoFormat;
+		m_ExtVideoSignalInfo.VideoFullRange = pParams->VideoFullRange;
+		m_ExtVideoSignalInfo.ColourDescriptionPresent = 1;
+		m_ExtVideoSignalInfo.ColourPrimaries = pParams->ColourPrimaries;
+		m_ExtVideoSignalInfo.TransferCharacteristics =
+			pParams->TransferCharacteristics;
+		m_ExtVideoSignalInfo.MatrixCoefficients =
+			pParams->MatrixCoefficients;
+		extendedBuffers.push_back(
+			(mfxExtBuffer *)&m_ExtVideoSignalInfo);
+	}
 
 /* TODO: Ask Intel why this is MFX_ERR_UNSUPPORTED */
 #if 0
@@ -347,7 +361,8 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 	extendedBuffers.push_back((mfxExtBuffer *)&m_ExtChromaLocInfo);
 #endif
 
-	if (codec != QSV_CODEC_AV1 && pParams->MaxContentLightLevel > 0) {
+	if (codec != QSV_CODEC_VP9 && codec != QSV_CODEC_AV1 &&
+	    pParams->MaxContentLightLevel > 0) {
 		memset(&m_ExtMasteringDisplayColourVolume, 0,
 		       sizeof(m_ExtMasteringDisplayColourVolume));
 		m_ExtMasteringDisplayColourVolume.Header.BufferId =
@@ -529,7 +544,8 @@ mfxStatus QSV_Encoder_Internal::GetVideoParam(enum qsv_codec codec)
 		extendedBuffers.push_back((mfxExtBuffer *)&opt_vps);
 	}
 
-	extendedBuffers.push_back((mfxExtBuffer *)&opt);
+	if (codec != QSV_CODEC_VP9)
+		extendedBuffers.push_back((mfxExtBuffer *)&opt);
 
 	m_parameter.ExtParam = extendedBuffers.data();
 	m_parameter.NumExtParam = (mfxU16)extendedBuffers.size();

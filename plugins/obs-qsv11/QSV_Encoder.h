@@ -75,6 +75,10 @@ static const struct qsv_rate_control_info qsv_ratecontrols[] = {
 	{"AVBR", false},  {"ICQ", true},  {"LA_ICQ", true}, {"LA_CBR", true},
 	{"LA_VBR", true}, {0, false}};
 
+static const struct qsv_rate_control_info qsv_vp9_ratecontrols[] = {
+	{"CBR", false},   {"VBR", false},   {"CQP", false},   {"ICQ", true},
+	{"LA_ICQ", true}, {"LA_CBR", true}, {"LA_VBR", true}, {0, false}};
+
 static const struct qsv_rate_control_info qsv_av1_ratecontrols[] =
 	{{"CBR", false}, {"VBR", false}, {"CQP", false}, {0, false}};
 
@@ -92,12 +96,14 @@ typedef struct qsv_t qsv_t;
 struct adapter_info {
 	bool is_intel;
 	bool is_dgpu;
+	bool supports_vp9;
 	bool supports_av1;
 	bool supports_hevc;
 };
 
 enum qsv_codec {
 	QSV_CODEC_AVC,
+	QSV_CODEC_VP9,
 	QSV_CODEC_AV1,
 	QSV_CODEC_HEVC,
 };
