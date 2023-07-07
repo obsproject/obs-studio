@@ -196,6 +196,67 @@ ServiceInstance::GetSupportedAudioCodecs(const std::string &protocol) const
 	return strlist_split(codecs.c_str(), ';', false);
 }
 
+void ServiceInstance::ApplySettings2(obs_encoder_type encoderType,
+				     const char *encoderId_,
+				     obs_data_t *encoderSettings) const
+{
+	std::string codec = obs_get_encoder_codec(encoderId_);
+
+	if (service.maximums.has_value()) {
+		int maxbitrate = 0;
+
+		struct obs_video_info ovi;
+		if (encoderType == OBS_ENCODER_VIDEO &&
+		    supportedResolutionsWithFps &&
+		    service.maximums->videoBitrateMatrix.has_value() &&
+		    obs_get_video_info(&ovi)) {
+			int cur_fps = ovi.fps_num / ovi.fps_den;
+			obs_service_resolution res{(int)ovi.output_width,
+						   (int)ovi.output_height,
+						   cur_fps};
+
+			maxbitrate = GetMaxVideoBitrate(codec.c_str(), res);
+		} else {
+			maxbitrate = GetMaxCodecBitrate(codec.c_str());
+		}
+
+		if (maxbitrate != 0 &&
+		    obs_data_get_int(encoderSettings, "bitrate") < maxbitrate)
+			obs_data_set_int(encoderSettings, "bitrate",
+					 maxbitrate);
+	}
+
+	if (!service.recommended.has_value())
+		return;
+
+	if (codec == "h264" && service.recommended->h264.has_value()) {
+		if (service.recommended->h264->profile.has_value()) {
+			std::string profile = H264ProfileToStdString(
+				service.recommended->h264->profile.value());
+			obs_data_set_string(encoderSettings, "profile",
+					    profile.c_str());
+		}
+
+		if (service.recommended->h264->keyint.has_value())
+			obs_data_set_int(
+				encoderSettings, "keyint_sec",
+				service.recommended->h264->keyint.value());
+
+		if (service.recommended->h264->bframes.has_value())
+			obs_data_set_int(
+				encoderSettings, "bf",
+				service.recommended->h264->bframes.value());
+	}
+
+	std::string encoderId(encoderId_);
+	if (encoderId == "obs_x264" &&
+	    service.recommended->obsX264.has_value()) {
+		obs_data_set_string(
+			encoderSettings, "x264opts",
+			service.recommended->obsX264.value().c_str());
+	}
+}
+
 const char *ServiceInstance::GetName()
 {
 	return service.name.c_str();

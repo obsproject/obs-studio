@@ -46,6 +46,13 @@
                 "audio_bitrate": {
                     "aac": 160
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "profile": "high",
+                    "keyint": 2
+                },
+                "obs_x264": "scenecut=0"
             }
         },
         {
@@ -76,6 +83,12 @@
                 "framerate": 30,
                 "audio_bitrate": {
                     "aac": 192
+                }
+            },
+            "recommended": {
+                "h264": {
+                    "profile": "main",
+                    "keyint": 2
                 }
             }
         },
@@ -109,6 +122,12 @@
                 "audio_bitrate": {
                     "aac": 256
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
+                },
+                "obs_x264": "scenecut=0"
             }
         },
         {
@@ -140,6 +159,12 @@
                 "audio_bitrate": {
                     "aac": 320
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
+                },
+                "obs_x264": "scenecut=0"
             }
         },
         {
@@ -165,6 +190,12 @@
                 },
                 "audio_bitrate": {
                     "aac": 160
+                }
+            },
+            "recommended": {
+                "h264": {
+                    "profile": "main",
+                    "keyint": 2
                 }
             }
         },
@@ -264,6 +295,11 @@
                 "audio_bitrate": {
                     "aac": 320
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
+                }
             }
         },
         {
@@ -325,6 +361,11 @@
                 "audio_bitrate": {
                     "aac": 320
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
+                }
             }
         },
         {
@@ -385,6 +426,12 @@
                 },
                 "audio_bitrate": {
                     "aac": 128
+                }
+            },
+            "recommended": {
+                "h264": {
+                    "profile": "main",
+                    "keyint": 2
                 }
             }
         },
@@ -504,6 +551,11 @@
                         "h264"
                     ]
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
+                }
             }
         },
         {
@@ -596,6 +648,12 @@
                 "audio_bitrate": {
                     "aac": 192
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "profile": "main",
+                    "keyint": 2
+                }
             }
         },
         {
@@ -622,6 +680,12 @@
                 "audio_bitrate": {
                     "aac": 128
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "profile": "baseline",
+                    "keyint": 1
+                }
             }
         },
         {
@@ -647,6 +711,12 @@
                 },
                 "audio_bitrate": {
                     "aac": 192
+                }
+            },
+            "recommended": {
+                "h264": {
+                    "profile": "main",
+                    "keyint": 2
                 }
             }
         },
@@ -696,6 +766,12 @@
                 "video_bitrate": {
                     "h264": 3500
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "profile": "main",
+                    "keyint": 2
+                }
             }
         },
         {
@@ -740,6 +816,11 @@
                 "audio_bitrate": {
                     "aac": 192
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
+                }
             }
         },
         {
@@ -766,6 +847,13 @@
                 "audio_bitrate": {
                     "aac": 128
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "profile": "main",
+                    "keyint": 2
+                },
+                "obs_x264": "tune=zerolatency"
             }
         },
         {
@@ -819,6 +907,9 @@
                 "audio_bitrate": {
                     "aac": 160
                 }
+            },
+            "recommended": {
+                "obs_x264": "tune=zerolatency"
             }
         },
         {
@@ -920,6 +1011,11 @@
                 "audio_bitrate": {
                     "aac": 192
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
+                }
             }
         },
         {
@@ -969,6 +1065,11 @@
             "maximums": {
                 "audio_bitrate": {
                     "aac": 160
+                }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
                 }
             }
         },
@@ -1054,6 +1155,11 @@
                 "audio_bitrate": {
                     "aac": 128
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 3
+                }
             }
         },
         {
@@ -1079,6 +1185,12 @@
                     "RTMPS": [
                         "h264"
                     ]
+                }
+            },
+            "recommended": {
+                "h264": {
+                    "profile": "high",
+                    "keyint": 2
                 }
             }
         },
@@ -1106,6 +1218,12 @@
                 "audio_bitrate": {
                     "aac": 160
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "profile": "main",
+                    "keyint": 2
+                }
             }
         },
         {
@@ -1131,6 +1249,12 @@
                 },
                 "audio_bitrate": {
                     "aac": 96
+                }
+            },
+            "recommended": {
+                "h264": {
+                    "profile": "baseline",
+                    "keyint": 1
                 }
             }
         },
@@ -1163,6 +1287,11 @@
                 "audio_bitrate": {
                     "aac": 192
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
+                }
             }
         },
         {
@@ -1194,6 +1323,12 @@
                 "audio_bitrate": {
                     "aac": 192
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "profile": "main",
+                    "keyint": 2
+                }
             }
         },
         {
@@ -1219,6 +1354,12 @@
                 },
                 "audio_bitrate": {
                     "aac": 192
+                }
+            },
+            "recommended": {
+                "h264": {
+                    "profile": "main",
+                    "keyint": 2
                 }
             }
         },
@@ -1247,6 +1388,12 @@
                 "audio_bitrate": {
                     "aac": 160
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
+                },
+                "obs_x264": "scenecut=0"
             }
         },
         {
@@ -1279,6 +1426,12 @@
                 "audio_bitrate": {
                     "aac": 320
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
+                },
+                "obs_x264": "scenecut=0"
             }
         },
         {
@@ -1349,6 +1502,12 @@
                 "audio_bitrate": {
                     "aac": 320
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
+                },
+                "obs_x264": "scenecut=0"
             }
         },
         {
@@ -1401,6 +1560,12 @@
                 "audio_bitrate": {
                     "aac": 256
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 4
+                },
+                "obs_x264": "tune=zerolatency"
             }
         },
         {
@@ -1427,6 +1592,12 @@
                 "audio_bitrate": {
                     "aac": 128
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "profile": "baseline",
+                    "keyint": 2
+                }
             }
         },
         {
@@ -1452,6 +1623,11 @@
                 },
                 "audio_bitrate": {
                     "aac": 160
+                }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
                 }
             }
         },
@@ -1509,6 +1685,11 @@
                 "audio_bitrate": {
                     "aac": 160
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
+                }
             }
         },
         {
@@ -1550,6 +1731,12 @@
                 "audio_bitrate": {
                     "aac": 192
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
+                },
+                "obs_x264": "tune=zerolatency"
             }
         },
         {
@@ -1575,6 +1762,11 @@
                 },
                 "audio_bitrate": {
                     "aac": 128
+                }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
                 }
             }
         },
@@ -1607,6 +1799,13 @@
                 "audio_bitrate": {
                     "aac": 192
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "profile": "main",
+                    "keyint": 2
+                },
+                "obs_x264": "tune=zerolatency"
             }
         },
         {
@@ -1633,6 +1832,12 @@
                 "audio_bitrate": {
                     "aac": 128
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "profile": "high",
+                    "keyint": 2
+                }
             }
         },
         {
@@ -1651,6 +1856,12 @@
                         "h264"
                     ]
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
+                },
+                "obs_x264": "scenecut=0"
             }
         },
         {
@@ -1668,6 +1879,11 @@
                     "RTMP": [
                         "h264"
                     ]
+                }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
                 }
             }
         },
@@ -1695,6 +1911,13 @@
                 "audio_bitrate": {
                     "aac": 192
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "profile": "high",
+                    "keyint": 2
+                },
+                "obs_x264": "tune=zerolatency"
             }
         },
         {
@@ -1721,6 +1944,13 @@
                 "audio_bitrate": {
                     "aac": 96
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "profile": "high",
+                    "keyint": 2
+                },
+                "obs_x264": "tune=zerolatency"
             }
         },
         {
@@ -1761,6 +1991,11 @@
                 },
                 "audio_bitrate": {
                     "aac": 192
+                }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
                 }
             }
         },
@@ -1815,6 +2050,9 @@
                         "h264"
                     ]
                 }
+            },
+            "recommended": {
+                "obs_x264": "scenecut=0"
             }
         },
         {
@@ -1876,6 +2114,12 @@
                 "audio_bitrate": {
                     "aac": 160
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "profile": "high",
+                    "keyint": 2
+                }
             }
         },
         {
@@ -1901,6 +2145,11 @@
                 },
                 "audio_bitrate": {
                     "aac": 192
+                }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
                 }
             }
         },
@@ -1936,6 +2185,11 @@
                 "audio_bitrate": {
                     "aac": 160
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
+                }
             }
         },
         {
@@ -1961,6 +2215,11 @@
                 },
                 "audio_bitrate": {
                     "aac": 160
+                }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
                 }
             }
         },
@@ -2024,6 +2283,13 @@
                 "audio_bitrate": {
                     "aac": 192
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "profile": "high",
+                    "keyint": 1
+                },
+                "obs_x264": "tune=zerolatency scenecut=0"
             }
         },
         {
@@ -2077,6 +2343,11 @@
                         "h264"
                     ]
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
+                }
             }
         },
         {
@@ -2103,6 +2374,11 @@
                 },
                 "audio_bitrate": {
                     "aac": 160
+                }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
                 }
             }
         },
@@ -2200,6 +2476,13 @@
                 "audio_bitrate": {
                     "aac": 192
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "profile": "baseline",
+                    "keyint": 2
+                },
+                "obs_x264": "tune=zerolatency b-pyramid=0 scenecut=0"
             }
         },
         {
@@ -2270,6 +2553,11 @@
                     "h264": 20000
                 },
                 "framerate": 60
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
+                }
             }
         },
         {
@@ -2338,6 +2626,11 @@
                 "audio_bitrate": {
                     "aac": 256
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
+                }
             }
         },
         {
@@ -2388,6 +2681,11 @@
                 "audio_bitrate": {
                     "aac": 160
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
+                }
             }
         },
         {
@@ -2413,6 +2711,11 @@
                 },
                 "audio_bitrate": {
                     "aac": 128
+                }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
                 }
             }
         },
@@ -2440,6 +2743,11 @@
                 },
                 "audio_bitrate": {
                     "aac": 160
+                }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
                 }
             }
         },
@@ -2472,6 +2780,11 @@
                     "1280x720@30": {
                         "h264": 4000
                     }
+                }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
                 }
             }
         },
@@ -2537,6 +2850,13 @@
                 "audio_bitrate": {
                     "aac": 196
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "profile": "high",
+                    "keyint": 2
+                },
+                "obs_x264": "scenecut=0"
             }
         },
         {
@@ -2562,6 +2882,11 @@
                 },
                 "audio_bitrate": {
                     "aac": 160
+                }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
                 }
             }
         },
@@ -2590,6 +2915,11 @@
                 },
                 "audio_bitrate": {
                     "aac": 160
+                }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
                 }
             }
         },
@@ -2628,6 +2958,11 @@
                 },
                 "audio_bitrate": {
                     "aac": 160
+                }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
                 }
             }
         },
@@ -2757,6 +3092,11 @@
                 "video_bitrate": {
                     "h264": 16000
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
+                }
             }
         },
         {
@@ -2785,6 +3125,12 @@
                 "audio_bitrate": {
                     "aac": 192
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "profile": "high",
+                    "keyint": 1
+                }
             }
         },
         {
@@ -2812,6 +3158,11 @@
                 },
                 "audio_bitrate": {
                     "aac": 192
+                }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
                 }
             }
         },
@@ -2867,6 +3218,11 @@
                 "video_bitrate": {
                     "h264": 20000
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
+                }
             }
         },
         {
@@ -2886,6 +3242,11 @@
                     "RTMP": [
                         "h264"
                     ]
+                }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
                 }
             }
         },
@@ -2911,6 +3272,11 @@
             "maximums": {
                 "video_bitrate": {
                     "h264": 6000
+                }
+            },
+            "recommended": {
+                "h264": {
+                    "keyint": 2
                 }
             }
         },
@@ -2938,6 +3304,12 @@
                 },
                 "audio_bitrate": {
                     "aac": 192
+                }
+            },
+            "recommended": {
+                "h264": {
+                    "profile": "high",
+                    "keyint": 2
                 }
             }
         },
@@ -2967,6 +3339,13 @@
                 "audio_bitrate": {
                     "aac": 192
                 }
+            },
+            "recommended": {
+                "h264": {
+                    "profile": "main",
+                    "keyint": 2
+                },
+                "obs_x264": "tune=zerolatency"
             }
         },
         {
@@ -3004,6 +3383,12 @@
                 },
                 "audio_bitrate": {
                     "aac": 512
+                }
+            },
+            "recommended": {
+                "h264": {
+                    "profile": "high",
+                    "keyint": 1
                 }
             }
         }

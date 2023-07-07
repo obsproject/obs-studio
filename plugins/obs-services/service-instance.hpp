@@ -72,6 +72,9 @@ public:
 	char **GetSupportedVideoCodecs(const std::string &protocol) const;
 	char **GetSupportedAudioCodecs(const std::string &protocol) const;
 
+	void ApplySettings2(obs_encoder_type encoderType, const char *encoderId,
+			    obs_data_t *encoderSettings) const;
+
 	const char *GetName();
 
 	void GetDefaults(obs_data_t *settings);

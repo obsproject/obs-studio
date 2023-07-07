@@ -173,4 +173,6 @@ void ServiceConfig::ApplySettings2(const char *encoderId,
 	case OBSServices::ServerProtocol::HLS:
 		break;
 	}
+
+	service->ApplySettings2(type, encoderId, encoderSettings);
 }

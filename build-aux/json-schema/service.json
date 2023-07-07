@@ -196,6 +196,19 @@
             },
             "minProperties": 1,
             "unevaluatedProperties": false
+        },
+        "recommended": {
+            "type": "object",
+            "title": "Recommended settings",
+            "description": "Settings that are applied only if the user wants to do so.",
+            "allOf": [
+                {
+                    "$comment": "Add codec properties",
+                    "$ref": "codecDefs.json#/$defs/codecProperties"
+                }
+            ],
+            "minProperties": 1,
+            "unevaluatedProperties": true
         }
     },
     "allOf": [

@@ -38,3 +38,11 @@ static inline std::string SupportedAudioCodecToStdString(
 	OBSServices::to_json(j, codec);
 	return j.get<std::string>();
 }
+
+static inline std::string
+H264ProfileToStdString(const OBSServices::H264Profile &profile)
+{
+	nlohmann::json j;
+	OBSServices::to_json(j, profile);
+	return j.get<std::string>();
+}

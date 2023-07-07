@@ -103,6 +103,31 @@ namespace OBSServices {
         std::optional<std::map<std::string, std::map<std::string, int64_t>>> videoBitrateMatrix;
     };
 
+    enum class H264Profile : int { BASELINE, HIGH, MAIN };
+
+    /**
+     * Properties related to the H264 codec
+     */
+    struct H264Settings {
+        std::optional<int64_t> bframes;
+        std::optional<int64_t> keyint;
+        std::optional<H264Profile> profile;
+    };
+
+    /**
+     * Settings that are applied only if the user wants to do so.
+     */
+    struct RecommendedSettings {
+        /**
+         * Properties related to the H264 codec
+         */
+        std::optional<H264Settings> h264;
+        /**
+         * Options meant for the x264 encoder implementation with the id 'obs_x264'
+         */
+        std::optional<std::string> obsX264;
+    };
+
     /**
      * Properties related to the RIST protocol
      */
@@ -186,6 +211,10 @@ namespace OBSServices {
          */
         std::optional<std::string> moreInfoLink;
         /**
+         * Settings that are applied only if the user wants to do so.
+         */
+        std::optional<RecommendedSettings> recommended;
+        /**
          * Array of server objects
          */
         std::vector<Server> servers;
@@ -222,6 +251,12 @@ namespace OBSServices {
     void from_json(const json & j, Maximums & x);
     void to_json(json & j, const Maximums & x);
 
+    void from_json(const json & j, H264Settings & x);
+    void to_json(json & j, const H264Settings & x);
+
+    void from_json(const json & j, RecommendedSettings & x);
+    void to_json(json & j, const RecommendedSettings & x);
+
     void from_json(const json & j, RistProperties & x);
     void to_json(json & j, const RistProperties & x);
 
@@ -239,6 +274,9 @@ namespace OBSServices {
 
     void from_json(const json & j, ServicesJson & x);
     void to_json(json & j, const ServicesJson & x);
+
+    void from_json(const json & j, H264Profile & x);
+    void to_json(json & j, const H264Profile & x);
 
     void from_json(const json & j, ServerProtocol & x);
     void to_json(json & j, const ServerProtocol & x);
@@ -262,6 +300,30 @@ namespace OBSServices {
         j["framerate"] = x.framerate;
         j["video_bitrate"] = x.videoBitrate;
         j["video_bitrate_matrix"] = x.videoBitrateMatrix;
+    }
+
+    inline void from_json(const json & j, H264Settings& x) {
+        x.bframes = get_stack_optional<int64_t>(j, "bframes");
+        x.keyint = get_stack_optional<int64_t>(j, "keyint");
+        x.profile = get_stack_optional<H264Profile>(j, "profile");
+    }
+
+    inline void to_json(json & j, const H264Settings & x) {
+        j = json::object();
+        j["bframes"] = x.bframes;
+        j["keyint"] = x.keyint;
+        j["profile"] = x.profile;
+    }
+
+    inline void from_json(const json & j, RecommendedSettings& x) {
+        x.h264 = get_stack_optional<H264Settings>(j, "h264");
+        x.obsX264 = get_stack_optional<std::string>(j, "obs_x264");
+    }
+
+    inline void to_json(json & j, const RecommendedSettings & x) {
+        j = json::object();
+        j["h264"] = x.h264;
+        j["obs_x264"] = x.obsX264;
     }
 
     inline void from_json(const json & j, RistProperties& x) {
@@ -316,6 +378,7 @@ namespace OBSServices {
         x.name = j.at("name").get<std::string>();
         x.maximums = get_stack_optional<Maximums>(j, "maximums");
         x.moreInfoLink = get_stack_optional<std::string>(j, "more_info_link");
+        x.recommended = get_stack_optional<RecommendedSettings>(j, "recommended");
         x.servers = j.at("servers").get<std::vector<Server>>();
         x.streamKeyLink = get_stack_optional<std::string>(j, "stream_key_link");
         x.supportedCodecs = get_stack_optional<SupportedCodecs>(j, "supported_codecs");
@@ -331,6 +394,7 @@ namespace OBSServices {
         j["name"] = x.name;
         j["maximums"] = x.maximums;
         j["more_info_link"] = x.moreInfoLink;
+        j["recommended"] = x.recommended;
         j["servers"] = x.servers;
         j["stream_key_link"] = x.streamKeyLink;
         j["supported_codecs"] = x.supportedCodecs;
@@ -348,6 +412,22 @@ namespace OBSServices {
         j = json::object();
         j["format_version"] = x.formatVersion;
         j["services"] = x.services;
+    }
+
+    inline void from_json(const json & j, H264Profile & x) {
+        if (j == "baseline") x = H264Profile::BASELINE;
+        else if (j == "high") x = H264Profile::HIGH;
+        else if (j == "main") x = H264Profile::MAIN;
+        else { throw std::runtime_error("Input JSON does not conform to schema!"); }
+    }
+
+    inline void to_json(json & j, const H264Profile & x) {
+        switch (x) {
+            case H264Profile::BASELINE: j = "baseline"; break;
+            case H264Profile::HIGH: j = "high"; break;
+            case H264Profile::MAIN: j = "main"; break;
+            default: throw std::runtime_error("This should not happen");
+        }
     }
 
     inline void from_json(const json & j, ServerProtocol & x) {

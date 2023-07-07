@@ -12,6 +12,43 @@
         "audioCodecEnum": {
             "$comment": "Enumeration of audio codecs",
             "enum": ["aac","opus"]
+        },
+        "codecProperties": {
+            "$comment": "Per-codec properties meant for obs-services schema",
+            "type": "object",
+            "properties": {
+                "h264":
+                {
+                    "type": "object",
+                    "title": "H264 Settings",
+                    "description": "Properties related to the H264 codec",
+                    "properties": {
+                        "profile": {
+                            "type": "string",
+                            "title": "H264 Profile",
+                            "enum": [ "baseline", "main", "high" ]
+                        },
+                        "keyint": {
+                            "type": "integer",
+                            "title": "Keyframe Interval (seconds)",
+                            "minimum": 0
+                        },
+                        "bframes":
+                        {
+                            "type": "integer",
+                            "title": "B-Frames",
+                            "minimum": 0
+                        }
+                    },
+                    "minProperties": 1
+                },
+                "obs_x264": {
+                    "type": "string",
+                    "title": "x264 Encoder Options",
+                    "description": "Options meant for the x264 encoder implementation with the id 'obs_x264'",
+                    "minLength": 1
+                }
+            }
         }
     }
 }
