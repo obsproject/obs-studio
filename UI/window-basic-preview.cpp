@@ -392,18 +392,19 @@ static bool FindHandleAtPos(obs_scene_t * /* scene */, obs_sceneitem_t *item,
 
 	vec2 scale;
 	obs_sceneitem_get_scale(item, &scale);
+	obs_bounds_type boundsType = obs_sceneitem_get_bounds_type(item);
 	vec2 rotHandleOffset;
 	vec2_set(&rotHandleOffset, 0.0f,
 		 HANDLE_RADIUS * data.radius * 1.5 - data.radius);
-	float angle =
-		atan2(scale.x < 0.0f ? transform.x.y * -1.0f : transform.x.y,
-		      scale.x < 0.0f ? transform.x.x * -1.0f : transform.x.x);
+	bool invertx = scale.x < 0.0f && boundsType == OBS_BOUNDS_NONE;
+	float angle = atan2(invertx ? transform.x.y * -1.0f : transform.x.y,
+			    invertx ? transform.x.x * -1.0f : transform.x.x);
 	RotatePos(&rotHandleOffset, angle);
 	RotatePos(&rotHandleOffset, RAD(data.angleOffset));
 
-	bool invert = scale.y < 0.0f;
+	bool inverty = scale.y < 0.0f && boundsType == OBS_BOUNDS_NONE;
 	vec3 handlePos =
-		GetTransformedPos(0.5f, invert ? 1.0f : 0.0f, transform);
+		GetTransformedPos(0.5f, inverty ? 1.0f : 0.0f, transform);
 	vec3_transform(&handlePos, &handlePos, &data.parent_xform);
 	handlePos.x -= rotHandleOffset.x;
 	handlePos.y -= rotHandleOffset.y;
@@ -2115,7 +2116,8 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *, obs_sceneitem_t *item,
 			prev->circleFill = gs_render_save();
 		}
 
-		bool invert = info.scale.y < 0.0f;
+		bool invert = info.scale.y < 0.0f &&
+			      info.bounds_type == OBS_BOUNDS_NONE;
 		DrawRotationHandle(prev->circleFill, info.rot + prev->groupRot,
 				   pixelRatio, invert);
 	}
