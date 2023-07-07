@@ -139,28 +139,34 @@ int ServiceConfig::GetMaxVideoBitrate(const char *codec,
 	return service->GetMaxVideoBitrate(codec, resolution);
 }
 
-void ServiceConfig::ApplySettings(obs_data_t *videoSettings,
-				  obs_data_t *audioSettings)
+void ServiceConfig::ApplySettings2(const char *encoderId,
+				   obs_data_t *encoderSettings)
 {
+	enum obs_encoder_type type = obs_get_encoder_type(encoderId);
+
 	switch (StdStringToServerProtocol(protocol)) {
 	case OBSServices::ServerProtocol::RIST:
 	case OBSServices::ServerProtocol::SRT: {
-		if (videoSettings != NULL)
-			obs_data_set_bool(videoSettings, "repeat_headers",
+		switch (type) {
+		case OBS_ENCODER_VIDEO:
+			obs_data_set_bool(encoderSettings, "repeat_headers",
 					  true);
-
-		if (audioSettings != NULL)
-			obs_data_set_bool(audioSettings, "set_to_ADTS", true);
+			break;
+		case OBS_ENCODER_AUDIO:
+			if (strcmp(encoderId, "libfdk_aac") == 0)
+				obs_data_set_bool(encoderSettings,
+						  "set_to_ADTS", true);
+			break;
+		}
 		break;
 	}
 	case OBSServices::ServerProtocol::WHIP:
-		if (videoSettings != NULL) {
-			obs_data_set_bool(videoSettings, "repeat_headers",
-					  true);
-			obs_data_set_int(videoSettings, "bf", 0);
-			obs_data_set_string(videoSettings, "rate_control",
-					    "CBR");
-		}
+		if (type != OBS_ENCODER_VIDEO)
+			break;
+
+		obs_data_set_bool(encoderSettings, "repeat_headers", true);
+		obs_data_set_int(encoderSettings, "bf", 0);
+		obs_data_set_string(encoderSettings, "rate_control", "CBR");
 		break;
 	case OBSServices::ServerProtocol::RTMP:
 	case OBSServices::ServerProtocol::RTMPS:

@@ -100,16 +100,21 @@ bool srt_service_can_try_to_connect(void *data)
 	return true;
 }
 
-static void srt_service_apply_settings(void *data, obs_data_t *video_settings,
-				       obs_data_t *audio_settings)
+static void srt_service_apply_settings2(void *data, const char *encoder_id,
+					obs_data_t *encoder_settings)
 {
 	UNUSED_PARAMETER(data);
 
-	if (video_settings != NULL)
-		obs_data_set_bool(video_settings, "repeat_headers", true);
-
-	if (audio_settings != NULL)
-		obs_data_set_bool(audio_settings, "set_to_ADTS", true);
+	switch (obs_get_encoder_type(encoder_id)) {
+	case OBS_ENCODER_VIDEO:
+		obs_data_set_bool(encoder_settings, "repeat_headers", true);
+		break;
+	case OBS_ENCODER_AUDIO:
+		if (strcmp(encoder_id, "libfdk_aac") == 0)
+			obs_data_set_bool(encoder_settings, "set_to_ADTS",
+					  true);
+		break;
+	}
 }
 
 static obs_properties_t *srt_service_properties(void *data)
@@ -148,5 +153,5 @@ const struct obs_service_info custom_srt = {
 	.get_connect_info = srt_service_connect_info,
 	.can_try_to_connect = srt_service_can_try_to_connect,
 	.get_audio_track_cap = srt_service_audio_track_cap,
-	.apply_encoder_settings = srt_service_apply_settings,
+	.apply_encoder_settings2 = srt_service_apply_settings2,
 };

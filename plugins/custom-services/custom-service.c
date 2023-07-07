@@ -158,9 +158,8 @@ bool custom_service_can_try_to_connect(void *data)
 	return true;
 }
 
-static void custom_service_apply_settings(void *data,
-					  obs_data_t *video_settings,
-					  obs_data_t *audio_settings)
+static void custom_service_apply_settings2(void *data, const char *encoder_id,
+					   obs_data_t *encoder_settings)
 {
 	struct custom_service *service = data;
 	if ((strcmp(service->protocol, "SRT") != 0) &&
@@ -169,19 +168,24 @@ static void custom_service_apply_settings(void *data,
 		return;
 	}
 
-	if (video_settings != NULL) {
-		obs_data_set_bool(video_settings, "repeat_headers", true);
-
+	switch (obs_get_encoder_type(encoder_id)) {
+	case OBS_ENCODER_VIDEO:
+		obs_data_set_bool(encoder_settings, "repeat_headers", true);
 		if (strcmp(service->protocol, "WHIP") == 0) {
-			obs_data_set_int(video_settings, "bf", 0);
-			obs_data_set_string(video_settings, "rate_control",
+			obs_data_set_int(encoder_settings, "bf", 0);
+			obs_data_set_string(encoder_settings, "rate_control",
 					    "CBR");
-			return;
 		}
-	}
+		break;
+	case OBS_ENCODER_AUDIO:
+		if (strcmp(service->protocol, "WHIP") == 0)
+			break;
 
-	if (audio_settings != NULL)
-		obs_data_set_bool(audio_settings, "set_to_ADTS", true);
+		if (strcmp(encoder_id, "libfdk_aac") == 0)
+			obs_data_set_bool(encoder_settings, "set_to_ADTS",
+					  true);
+		break;
+	}
 }
 
 bool update_protocol_cb(obs_properties_t *props, obs_property_t *prop,
@@ -363,5 +367,5 @@ const struct obs_service_info custom_service = {
 	.get_connect_info = custom_service_connect_info,
 	.can_try_to_connect = custom_service_can_try_to_connect,
 	.get_audio_track_cap = custom_service_audio_track_cap,
-	.apply_encoder_settings = custom_service_apply_settings,
+	.apply_encoder_settings2 = custom_service_apply_settings2,
 };

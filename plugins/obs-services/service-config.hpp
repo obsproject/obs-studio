@@ -57,6 +57,5 @@ public:
 	int GetMaxVideoBitrate(const char *codec,
 			       struct obs_service_resolution resolution);
 
-	void ApplySettings(obs_data_t *videoSettings,
-			   obs_data_t *audioSettings);
+	void ApplySettings2(const char *encoderId, obs_data_t *encoderSettings);
 };

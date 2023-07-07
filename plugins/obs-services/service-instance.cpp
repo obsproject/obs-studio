@@ -117,7 +117,7 @@ ServiceInstance::ServiceInstance(const OBSServices::Service &service_)
 
 	info.supported_protocols = supportedProtocols;
 
-	info.apply_encoder_settings = InfoApplySettings;
+	info.apply_encoder_settings2 = InfoApplySettings2;
 
 	obs_register_service(&info);
 }

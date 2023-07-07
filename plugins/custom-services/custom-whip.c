@@ -93,19 +93,20 @@ bool whip_service_can_try_to_connect(void *data)
 	return true;
 }
 
-static void whip_service_apply_settings(void *data, obs_data_t *video_settings,
-					obs_data_t *audio_settings)
+static void whip_service_apply_settings2(void *data, const char *encoder_id,
+					 obs_data_t *encoder_settings)
 {
 	UNUSED_PARAMETER(data);
-	UNUSED_PARAMETER(audio_settings);
 
-	if (video_settings == NULL)
-		return;
-
-	obs_data_set_bool(video_settings, "repeat_headers", true);
-
-	obs_data_set_int(video_settings, "bf", 0);
-	obs_data_set_string(video_settings, "rate_control", "CBR");
+	switch (obs_get_encoder_type(encoder_id)) {
+	case OBS_ENCODER_VIDEO:
+		obs_data_set_bool(encoder_settings, "repeat_headers", true);
+		obs_data_set_int(encoder_settings, "bf", 0);
+		obs_data_set_string(encoder_settings, "rate_control", "CBR");
+		break;
+	case OBS_ENCODER_AUDIO:
+		break;
+	}
 }
 
 static obs_properties_t *whip_service_properties(void *data)
@@ -140,5 +141,5 @@ const struct obs_service_info custom_whip = {
 	.get_connect_info = whip_service_connect_info,
 	.can_try_to_connect = whip_service_can_try_to_connect,
 	.get_audio_track_cap = whip_service_audio_track_cap,
-	.apply_encoder_settings = whip_service_apply_settings,
+	.apply_encoder_settings2 = whip_service_apply_settings2,
 };
