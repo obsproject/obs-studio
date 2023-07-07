@@ -5,6 +5,9 @@
         {
             "id": "loola",
             "name": "Loola.tv",
+            "github_logins": [
+                "atyachin"
+            ],
             "servers": [
                 {
                     "name": "US East: Virginia",
@@ -58,6 +61,9 @@
         {
             "id": "lovecast",
             "name": "Lovecast",
+            "github_logins": [
+                "LovecastNeil"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -96,6 +102,9 @@
             "id": "luzento",
             "name": "Luzento.com - RTMP",
             "stream_key_link": "https://cms.luzento.com/dashboard/stream-key?from=OBS",
+            "github_logins": [
+                "joeflateau"
+            ],
             "servers": [
                 {
                     "name": "Primary",
@@ -133,6 +142,9 @@
         {
             "id": "vimm",
             "name": "VIMM",
+            "github_logins": [
+                "chirenonhive"
+            ],
             "servers": [
                 {
                     "name": "Europe: Frankfurt",
@@ -170,6 +182,9 @@
         {
             "id": "web_tv",
             "name": "Web.TV",
+            "github_logins": [
+                "obsproject"
+            ],
             "servers": [
                 {
                     "name": "Primary",
@@ -202,6 +217,9 @@
         {
             "id": "goodgame",
             "name": "GoodGame.ru",
+            "github_logins": [
+                "obsproject"
+            ],
             "servers": [
                 {
                     "name": "Моscow",
@@ -221,6 +239,9 @@
             "id": "youstreamer",
             "name": "YouStreamer",
             "stream_key_link": "https://www.app.youstreamer.com/stream/",
+            "github_logins": [
+                "obsproject"
+            ],
             "servers": [
                 {
                     "name": "Moscow",
@@ -239,6 +260,10 @@
         {
             "id": "vaughn_live",
             "name": "Vaughn Live / iNSTAGIB",
+            "github_logins": [
+                "notmark",
+                "invalidtask"
+            ],
             "servers": [
                 {
                     "name": "US: Chicago, IL",
@@ -305,6 +330,10 @@
         {
             "id": "breakers_tv",
             "name": "Breakers.TV",
+            "github_logins": [
+                "notmark",
+                "invalidtask"
+            ],
             "servers": [
                 {
                     "name": "US: Chicago, IL",
@@ -373,6 +402,9 @@
             "name": "Facebook Live",
             "common": true,
             "stream_key_link": "https://www.facebook.com/live/producer?ref=OBS",
+            "github_logins": [
+                "obsproject"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -438,6 +470,9 @@
         {
             "id": "castr",
             "name": "Castr.io",
+            "github_logins": [
+                "wahajdar"
+            ],
             "servers": [
                 {
                     "name": "US-East (Chicago, IL)",
@@ -561,6 +596,9 @@
         {
             "id": "boomstream",
             "name": "Boomstream",
+            "github_logins": [
+                "gkozlenko"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -579,6 +617,9 @@
         {
             "id": "meridix",
             "name": "Meridix Live Sports Platform",
+            "github_logins": [
+                "obsproject"
+            ],
             "servers": [
                 {
                     "name": "Primary",
@@ -602,6 +643,10 @@
         {
             "id": "afreecatv",
             "name": "AfreecaTV",
+            "github_logins": [
+                "karenkim-AfreecaTV",
+                "rpslack"
+            ],
             "servers": [
                 {
                     "name": "Asia : Korea",
@@ -659,6 +704,9 @@
         {
             "id": "cam4",
             "name": "CAM4",
+            "github_logins": [
+                "andrein"
+            ],
             "servers": [
                 {
                     "name": "CAM4",
@@ -691,6 +739,9 @@
         {
             "id": "eplay",
             "name": "ePlay",
+            "github_logins": [
+                "thomaspicquet"
+            ],
             "servers": [
                 {
                     "name": "ePlay Primary",
@@ -723,6 +774,9 @@
         {
             "id": "picarto",
             "name": "Picarto",
+            "github_logins": [
+                "Thulinma"
+            ],
             "servers": [
                 {
                     "name": "Autoselect closest server",
@@ -777,6 +831,9 @@
         {
             "id": "livestream",
             "name": "Livestream",
+            "github_logins": [
+                "neogenix"
+            ],
             "servers": [
                 {
                     "name": "Primary",
@@ -795,6 +852,9 @@
         {
             "id": "uscreen",
             "name": "Uscreen",
+            "github_logins": [
+                "matticusfinch"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -826,6 +886,9 @@
         {
             "id": "stripchat",
             "name": "Stripchat",
+            "github_logins": [
+                "crazyheart-wisebits"
+            ],
             "servers": [
                 {
                     "name": "Auto",
@@ -859,6 +922,9 @@
         {
             "id": "camsoda",
             "name": "CamSoda",
+            "github_logins": [
+                "pardo-bsso"
+            ],
             "servers": [
                 {
                     "name": "North America",
@@ -915,6 +981,9 @@
         {
             "id": "chartubate",
             "name": "Chaturbate",
+            "github_logins": [
+                "chaturbateorg"
+            ],
             "servers": [
                 {
                     "name": "Global Main Fastest - Recommended",
@@ -1023,6 +1092,9 @@
             "name": "WpStream",
             "more_info_link": "https://wpstream.net/obs-more-info",
             "stream_key_link": "https://wpstream.net/obs-get-stream-key",
+            "github_logins": [
+                "wpstream"
+            ],
             "servers": [
                 {
                     "name": "Closest server - Automatic",
@@ -1078,6 +1150,9 @@
             "name": "Twitter",
             "common": true,
             "stream_key_link": "https://studio.twitter.com/producer/sources",
+            "github_logins": [
+                "obsproject"
+            ],
             "servers": [
                 {
                     "name": "US West: California",
@@ -1165,6 +1240,9 @@
         {
             "id": "switchboard_live",
             "name": "Switchboard Live",
+            "github_logins": [
+                "one0ten"
+            ],
             "servers": [
                 {
                     "name": "Global - Recommended",
@@ -1197,6 +1275,9 @@
         {
             "id": "looch",
             "name": "Looch",
+            "github_logins": [
+                "obsproject"
+            ],
             "servers": [
                 {
                     "name": "Primary Looch ingest server",
@@ -1229,6 +1310,9 @@
         {
             "id": "eventials",
             "name": "Eventials",
+            "github_logins": [
+                "alexandrevicenzi"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1261,6 +1345,9 @@
         {
             "id": "eventlive",
             "name": "EventLive.pro",
+            "github_logins": [
+                "mkrn"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1297,6 +1384,10 @@
         {
             "id": "lahzenegar",
             "name": "Lahzenegar - StreamG | لحظه‌نگار - استریمجی",
+            "github_logins": [
+                "FarzadKarkhani",
+                "mhabedinpour"
+            ],
             "servers": [
                 {
                     "name": "Primary",
@@ -1334,6 +1425,9 @@
         {
             "id": "mylive",
             "name": "MyLive",
+            "github_logins": [
+                "Alcaros"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1367,6 +1461,9 @@
             "id": "trovo",
             "name": "Trovo",
             "stream_key_link": "https://studio.trovo.live/mychannel/stream",
+            "github_logins": [
+                "tlivegaming"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1399,6 +1496,9 @@
         {
             "id": "mixcloud",
             "name": "Mixcloud",
+            "github_logins": [
+                "matclayton"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1437,6 +1537,9 @@
         {
             "id": "sermonaudio",
             "name": "SermonAudio Cloud",
+            "github_logins": [
+                "astudios123"
+            ],
             "servers": [
                 {
                     "name": "Primary",
@@ -1463,6 +1566,9 @@
         {
             "id": "vimeo",
             "name": "Vimeo",
+            "github_logins": [
+                "obsproject"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1481,6 +1587,9 @@
         {
             "id": "aparat",
             "name": "Aparat",
+            "github_logins": [
+                "obsproject"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1513,6 +1622,9 @@
         {
             "id": "kakaotv",
             "name": "KakaoTV",
+            "github_logins": [
+                "eastkiki"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1539,6 +1651,9 @@
         {
             "id": "piczel_tv",
             "name": "Piczel.tv",
+            "github_logins": [
+                "obsproject"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1571,6 +1686,9 @@
         {
             "id": "stage_ten",
             "name": "STAGE TEN",
+            "github_logins": [
+                "tmatth"
+            ],
             "servers": [
                 {
                     "name": "STAGE TEN",
@@ -1603,6 +1721,9 @@
         {
             "id": "dlive",
             "name": "DLive",
+            "github_logins": [
+                "fsh905"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1634,6 +1755,9 @@
         {
             "id": "lightcast_com",
             "name": "Lightcast.com",
+            "github_logins": [
+                "lylyahiko"
+            ],
             "servers": [
                 {
                     "name": "North America / East",
@@ -1695,6 +1819,9 @@
         {
             "id": "bongacams",
             "name": "Bongacams",
+            "github_logins": [
+                "bongalive"
+            ],
             "servers": [
                 {
                     "name": "Automatic / Default",
@@ -1742,6 +1869,9 @@
         {
             "id": "chathostess",
             "name": "Chathostess",
+            "github_logins": [
+                "wolf247"
+            ],
             "servers": [
                 {
                     "name": "Chathostess - Backup",
@@ -1773,6 +1903,9 @@
         {
             "id": "onlyfans",
             "name": "OnlyFans.com",
+            "github_logins": [
+                "lorskun"
+            ],
             "servers": [
                 {
                     "name": "USA",
@@ -1811,6 +1944,9 @@
         {
             "id": "steam",
             "name": "Steam",
+            "github_logins": [
+                "Linnun"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1843,6 +1979,9 @@
         {
             "id": "konduit",
             "name": "Konduit.live",
+            "github_logins": [
+                "Kraz3D"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1867,6 +2006,9 @@
         {
             "id": "loco",
             "name": "LOCO",
+            "github_logins": [
+                "praveenkumarKajla"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1890,6 +2032,9 @@
         {
             "id": "niconico-premium",
             "name": "niconico, premium member (ニコニコ生放送 プレミアム会員)",
+            "github_logins": [
+                "koizuka"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1923,6 +2068,9 @@
         {
             "id": "niconico-free",
             "name": "niconico, free member (ニコニコ生放送 一般会員)",
+            "github_logins": [
+                "koizuka"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1956,6 +2104,9 @@
         {
             "id": "wasd_tv",
             "name": "WASD.TV",
+            "github_logins": [
+                "keylase"
+            ],
             "servers": [
                 {
                     "name": "Automatic",
@@ -2002,6 +2153,9 @@
         {
             "id": "xlovecam",
             "name": "XLoveCam.com",
+            "github_logins": [
+                "nickosmoi"
+            ],
             "servers": [
                 {
                     "name": "Europe(main)",
@@ -2058,6 +2212,9 @@
         {
             "id": "angelthump",
             "name": "AngelThump",
+            "github_logins": [
+                "jbpratt"
+            ],
             "servers": [
                 {
                     "name": "Auto",
@@ -2125,6 +2282,9 @@
         {
             "id": "api_video",
             "name": "api.video",
+            "github_logins": [
+                "obsproject"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -2156,6 +2316,9 @@
         {
             "id": "mux",
             "name": "Mux",
+            "github_logins": [
+                "eropple"
+            ],
             "servers": [
                 {
                     "name": "Global (RTMPS)",
@@ -2195,6 +2358,9 @@
         {
             "id": "viloud",
             "name": "Viloud",
+            "github_logins": [
+                "sangatxo"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -2226,6 +2392,9 @@
         {
             "id": "myfreecams",
             "name": "MyFreeCams",
+            "github_logins": [
+                "SCG82"
+            ],
             "servers": [
                 {
                     "name": "Automatic",
@@ -2295,6 +2464,9 @@
         {
             "id": "polystreamer",
             "name": "PolyStreamer.com",
+            "github_logins": [
+                "jcward"
+            ],
             "servers": [
                 {
                     "name": "Auto-select closest server",
@@ -2354,6 +2526,9 @@
             "id": "openrec_tv",
             "name": "OPENREC.tv - Premium member (プレミアム会員)",
             "stream_key_link": "https://www.openrec.tv/login?keep_login=true&url=https://www.openrec.tv/dashboard/live?from=obs",
+            "github_logins": [
+                "poccariswet"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -2387,6 +2562,9 @@
             "name": "nanoStream Cloud / bintu",
             "more_info_link": "https://www.nanocosmos.de/obs",
             "stream_key_link": "https://bintu-cloud-frontend.nanocosmos.de/organisation",
+            "github_logins": [
+                "nanocosmos-ol"
+            ],
             "servers": [
                 {
                     "name": "bintu-stream global ingest (rtmp)",
@@ -2490,6 +2668,9 @@
             "name": "Bilibili Live - RTMP | 哔哩哔哩直播 - RTMP",
             "more_info_link": "https://link.bilibili.com/p/help/index?id=4#/tools-tutorial",
             "stream_key_link": "https://link.bilibili.com/p/center/index#/my-room/start-live",
+            "github_logins": [
+                "TianQiBuTian"
+            ],
             "servers": [
                 {
                     "name": "Global - Primary | 全球 - 主要",
@@ -2524,6 +2705,9 @@
             "id": "volume_com",
             "name": "Volume.com",
             "stream_key_link": "https://volume.com/b?show_key=1&webrtc=0",
+            "github_logins": [
+                "sergey-mm"
+            ],
             "servers": [
                 {
                     "name": "Default - Recommended",
@@ -2564,6 +2748,9 @@
             "id": "boxcast",
             "name": "BoxCast",
             "stream_key_link": "https://dashboard.boxcast.com/#/sources",
+            "github_logins": [
+                "obsproject"
+            ],
             "servers": [
                 {
                     "name": "BoxCast",
@@ -2582,6 +2769,9 @@
         {
             "id": "disciple",
             "name": "Disciple Media",
+            "github_logins": [
+                "obsproject"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -2600,6 +2790,9 @@
         {
             "id": "jio_games",
             "name": "Jio Games",
+            "github_logins": [
+                "vishakh-h"
+            ],
             "servers": [
                 {
                     "name": "Primary",
@@ -2637,6 +2830,9 @@
             "id": "kuaishou",
             "name": "Kuaishou Live",
             "stream_key_link": "https://studio.kuaishou.com/live/list",
+            "github_logins": [
+                "obsproject"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -2660,6 +2856,9 @@
         {
             "id": "ultreon",
             "name": "Utreon",
+            "github_logins": [
+                "DeepDiver1975"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -2691,6 +2890,9 @@
         {
             "id": "autistici_org",
             "name": "Autistici.org Live",
+            "github_logins": [
+                "controesempio"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -2723,6 +2925,9 @@
             "id": "phonelivestreaming",
             "name": "PhoneLiveStreaming",
             "stream_key_link": "https://app.phonelivestreaming.com/media/rtmp",
+            "github_logins": [
+                "davidplappert"
+            ],
             "servers": [
                 {
                     "name": "PhoneLiveStreaming",
@@ -2754,6 +2959,9 @@
         {
             "id": "manyvids",
             "name": "ManyVids",
+            "github_logins": [
+                "obsproject"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -2793,6 +3001,9 @@
             "name": "Fantasy.Club",
             "more_info_link": "https://help.fantasy.club/",
             "stream_key_link": "https://fantasy.club/app/create-content/stream-now",
+            "github_logins": [
+                "PalmerEk"
+            ],
             "servers": [
                 {
                     "name": "US: East",
@@ -2862,6 +3073,9 @@
         {
             "id": "sympla",
             "name": "Sympla",
+            "github_logins": [
+                "vfernandes-sympla"
+            ],
             "servers": [
                 {
                     "name": "Sympla RTMP",
@@ -2895,6 +3109,9 @@
             "name": "Mildom",
             "more_info_link": "https://support.mildom.com/hc/ja/articles/360056569954",
             "stream_key_link": "https://www.mildom.com/creator/live",
+            "github_logins": [
+                "obsproject"
+            ],
             "servers": [
                 {
                     "name": "Global",
@@ -2928,6 +3145,9 @@
             "name": "Nonolive",
             "more_info_link": "https://wia.nonolive.com/views/obs_assistant_tutorial.html",
             "stream_key_link": "https://www.nonolive.com/room_setting",
+            "github_logins": [
+                "obsproject"
+            ],
             "servers": [
                 {
                     "name": "Asia: Hong Kong, China",
@@ -2970,6 +3190,9 @@
             "id": "streamvi",
             "name": "StreamVi",
             "stream_key_link": "https://streamvi.ru/settings",
+            "github_logins": [
+                "Be1erafon"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -3004,6 +3227,9 @@
             "id": "livepush",
             "name": "Livepush",
             "more_info_link": "https://docs.livepush.io/en/articles/5065323-how-to-stream-live-from-obs-to-livepush",
+            "github_logins": [
+                "wahajdar"
+            ],
             "servers": [
                 {
                     "name": "Livepush Global (Default)",
@@ -3104,6 +3330,9 @@
             "name": "Vindral",
             "more_info_link": "https://docs.vindral.com/docs/vindral-cdn/",
             "stream_key_link": "https://portal.cdn.vindral.com/channels",
+            "github_logins": [
+                "mattiaslandin"
+            ],
             "servers": [
                 {
                     "name": "Global",
@@ -3138,6 +3367,9 @@
             "name": "Whowatch (ふわっち)",
             "more_info_link": "https://whowatch.tv/help/encoder",
             "stream_key_link": "https://whowatch.tv/publish",
+            "github_logins": [
+                "rch850"
+            ],
             "servers": [
                 {
                     "name": "default",
@@ -3170,6 +3402,9 @@
             "id": "irltoolkit",
             "name": "IRLToolkit",
             "stream_key_link": "https://irl.run/settings/ingest/",
+            "github_logins": [
+                "tt2468"
+            ],
             "servers": [
                 {
                     "name": "Global (Recommended)",
@@ -3230,6 +3465,9 @@
             "name": "Bitmovin",
             "more_info_link": "https://developer.bitmovin.com/docs/overview",
             "stream_key_link": "https://bitmovin.com/dashboard/streams?streamsTab=LIVE",
+            "github_logins": [
+                "CMThF"
+            ],
             "servers": [
                 {
                     "name": "Streams Live",
@@ -3255,6 +3493,9 @@
             "name": "Live Streamer Cafe",
             "more_info_link": "https://livestreamercafe.com/help.php",
             "stream_key_link": "https://livestreamercafe.com/profile.php",
+            "github_logins": [
+                "Tophicles"
+            ],
             "servers": [
                 {
                     "name": "Live Streamer Cafe Server",
@@ -3284,6 +3525,9 @@
             "id": "enchant_events",
             "name": "Enchant.events",
             "more_info_link": "https://docs.enchant.events/knowledge-base-y4pOb",
+            "github_logins": [
+                "micohasanen"
+            ],
             "servers": [
                 {
                     "name": "Primary RTMPS",
@@ -3318,6 +3562,9 @@
             "name": "Joystick.TV",
             "more_info_link": "https://support.joystick.tv/support/creator-support/setting-up-your-stream/",
             "stream_key_link": "https://joystick.tv/stream-settings",
+            "github_logins": [
+                "jwoertink"
+            ],
             "servers": [
                 {
                     "name": "RTMP",
@@ -3353,6 +3600,9 @@
             "name": "Livepeer Studio",
             "more_info_link": "https://docs.livepeer.org/guides/developing/stream-via-obs",
             "stream_key_link": "https://livepeer.studio/dashboard/streams",
+            "github_logins": [
+                "0xcadams"
+            ],
             "servers": [
                 {
                     "name": "Global (RTMP)",

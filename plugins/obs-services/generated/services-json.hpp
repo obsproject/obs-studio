@@ -193,6 +193,11 @@ namespace OBSServices {
          */
         std::optional<bool> common;
         /**
+         * Login to ping on Github when the services check is failing.
+         * 'obsproject' is used as a placeholder.
+         */
+        std::vector<std::string> githubLogins;
+        /**
          * Human readable identifier used to register the service in OBS
          * Making it human readable is meant to allow users to use it through scripts and plugins
          */
@@ -374,6 +379,7 @@ namespace OBSServices {
 
     inline void from_json(const json & j, Service& x) {
         x.common = get_stack_optional<bool>(j, "common");
+        x.githubLogins = j.at("github_logins").get<std::vector<std::string>>();
         x.id = j.at("id").get<std::string>();
         x.name = j.at("name").get<std::string>();
         x.maximums = get_stack_optional<Maximums>(j, "maximums");
@@ -390,6 +396,7 @@ namespace OBSServices {
     inline void to_json(json & j, const Service & x) {
         j = json::object();
         j["common"] = x.common;
+        j["github_logins"] = x.githubLogins;
         j["id"] = x.id;
         j["name"] = x.name;
         j["maximums"] = x.maximums;

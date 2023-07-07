@@ -33,12 +33,23 @@
                                 "title": "Property reserved to OBS Project developers",
                                 "description": "Whether or not the service is shown in the list before it is expanded to all services by the user.",
                                 "default": false
+                            },
+                            "github_logins": {
+                                "type": "array",
+                                "title": "Github logins",
+                                "description": "Login to ping on Github when the services check is failing.\n 'obsproject' is used as a placeholder.",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "minItems": 1,
+                                "uniqueItems": true,
+                                "additionalItems": false
                             }
                         },
                         "$commit": "Forbid 'common' being set if false",
                         "if": { "properties": { "common": { "const": false } } },
                         "then": { "properties": { "common": { "description": "This property is unneeded if set to false" , "const": true } } },
-                        "required": ["id","name"]
+                        "required": ["id","name", "github_logins"]
                     },
                     {
                         "$comment": "Add base service JSON schema",
