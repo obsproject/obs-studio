@@ -13,7 +13,7 @@
 
 #define HANDLE_RADIUS 4.0f
 #define HANDLE_SEL_RADIUS (HANDLE_RADIUS * 1.5f)
-#define HELPER_ROT_BREAKPONT 45.0f
+#define HELPER_ROT_BREAKPOINT 45.0f
 
 /* TODO: make C++ math classes and clean up code here later */
 
@@ -2516,7 +2516,7 @@ void OBSBasicPreview::DrawSpacingHelpers()
 	}
 
 	// Switch top/bottom or right/left if scale is negative
-	if (oti.scale.x < 0.0f) {
+	if (oti.scale.x < 0.0f && oti.bounds_type == OBS_BOUNDS_NONE) {
 		vec3 l = left;
 		vec3 r = right;
 
@@ -2524,7 +2524,7 @@ void OBSBasicPreview::DrawSpacingHelpers()
 		vec3_copy(&right, &l);
 	}
 
-	if (oti.scale.y < 0.0f) {
+	if (oti.scale.y < 0.0f && oti.bounds_type == OBS_BOUNDS_NONE) {
 		vec3 t = top;
 		vec3 b = bottom;
 
@@ -2532,8 +2532,8 @@ void OBSBasicPreview::DrawSpacingHelpers()
 		vec3_copy(&bottom, &t);
 	}
 
-	if (rot >= HELPER_ROT_BREAKPONT) {
-		for (float i = HELPER_ROT_BREAKPONT; i <= 360.0f; i += 90.0f) {
+	if (rot >= HELPER_ROT_BREAKPOINT) {
+		for (float i = HELPER_ROT_BREAKPOINT; i <= 360.0f; i += 90.0f) {
 			if (rot < i)
 				break;
 
@@ -2547,8 +2547,8 @@ void OBSBasicPreview::DrawSpacingHelpers()
 			vec3_copy(&bottom, &r);
 			vec3_copy(&left, &b);
 		}
-	} else if (rot <= -HELPER_ROT_BREAKPONT) {
-		for (float i = -HELPER_ROT_BREAKPONT; i >= -360.0f;
+	} else if (rot <= -HELPER_ROT_BREAKPOINT) {
+		for (float i = -HELPER_ROT_BREAKPOINT; i >= -360.0f;
 		     i -= 90.0f) {
 			if (rot > i)
 				break;
