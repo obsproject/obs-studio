@@ -123,6 +123,8 @@ Service Definition Structure
    :param video_encoder_settings: The audio encoder settings to change
    :param audio_encoder_settings: The video encoder settings to change
 
+   .. deprecated::Next-29.1.x
+
 .. member:: void *obs_service_info.type_data
             void (*obs_service_info.free_type_data)(void *type_data)
 
@@ -265,6 +267,19 @@ Service Definition Structure
    (Optional)
 
    :return: Maximum bitrate for a given codec
+
+.. member:: void (*obs_service_info.apply_encoder_settings2)(void *data, const char *encoder_id, obs_data_t *encoder_settings)
+
+   This function is called to apply custom encoder settings specific to
+   this service.  For example, if a service requires a specific keyframe
+   interval, or has a bitrate limit, the settings for the video and
+   audio encoders can be optionally modified if the front-end optionally
+   calls :c:func:`obs_service_apply_encoder_settings2()`.
+
+   (Optional)
+
+   :param encoder_id: The id of the encoder settings to change
+   :param encoder_settings: The encoder settings to change
 
 General Service Functions
 -------------------------
@@ -426,6 +441,8 @@ General Service Functions
    :param  video_encoder_settings: Video encoder settings.  Can be *NULL*
    :param  audio_encoder_settings: Audio encoder settings.  Can be *NULL*
 
+   .. deprecated::Next-29.1.x
+
 ---------------------
 
 .. function:: const char **obs_service_get_supported_video_codecs(const obs_service_t *service)
@@ -534,6 +551,15 @@ General Service Functions
 .. function:: int obs_service_get_max_video_bitrate(const obs_service_t *service, const char *codec, struct obs_service_resolution resolution)
 
    :return: Maximum video bitrate for a given codec and resolution
+
+---------------------
+
+.. function:: void obs_service_apply_encoder_settings2(obs_service_t *service, const char *encoder_id, obs_data_t *encoder_settings)
+
+   Applies service-specific encoder settings.
+
+   :param  encoder_id: Encoder id.
+   :param  encoder_settings: Encoder settings.
 
 .. ---------------------------------------------------------------------------
 

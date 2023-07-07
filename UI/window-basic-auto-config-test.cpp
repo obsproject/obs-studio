@@ -212,12 +212,6 @@ void AutoConfigTestPage::TestBandwidthThread()
 	 * TODO: Create API of proc handler to restore this feature */
 
 	/* -----------------------------------*/
-	/* apply service settings             */
-
-	obs_service_apply_encoder_settings(wiz->service, vencoder_settings,
-					   aencoder_settings);
-
-	/* -----------------------------------*/
 	/* create output                      */
 
 	/* Check if the service has a preferred output type */
@@ -263,6 +257,14 @@ void AutoConfigTestPage::TestBandwidthThread()
 		aencoder = obs_audio_encoder_create(id, "test_audio", nullptr,
 						    0, nullptr);
 	}
+
+	/* -----------------------------------*/
+	/* apply service settings             */
+
+	obs_service_apply_encoder_settings2(
+		wiz->service, obs_encoder_get_id(vencoder), vencoder_settings);
+	obs_service_apply_encoder_settings2(
+		wiz->service, obs_encoder_get_id(aencoder), aencoder_settings);
 
 	/* -----------------------------------*/
 	/* connect encoders/services/outputs  */
@@ -1000,8 +1002,8 @@ void AutoConfigTestPage::FinalizeResults()
 		obs_data_set_int(vencoder_settings, "bitrate",
 				 wiz->idealBitrate);
 
-		obs_service_apply_encoder_settings(wiz->service,
-						   vencoder_settings, nullptr);
+		obs_service_apply_encoder_settings2(wiz->service, "obs_x264",
+						    vencoder_settings);
 
 		BPtr<obs_service_resolution> res_list;
 		size_t res_count = 0;

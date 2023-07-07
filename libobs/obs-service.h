@@ -95,6 +95,7 @@ struct obs_service_info {
 
 	bool (*deprecated_1)();
 
+	/* deprecated */
 	void (*apply_encoder_settings)(void *data,
 				       obs_data_t *video_encoder_settings,
 				       obs_data_t *audio_encoder_settings);
@@ -147,6 +148,9 @@ struct obs_service_info {
 				     struct obs_service_resolution resolution);
 
 	int (*get_max_codec_bitrate)(void *data, const char *codec);
+
+	void (*apply_encoder_settings2)(void *data, const char *encoder_id,
+					obs_data_t *encoder_settings);
 };
 
 EXPORT void obs_register_service_s(const struct obs_service_info *info,

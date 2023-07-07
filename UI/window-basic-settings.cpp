@@ -5808,8 +5808,31 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 		obs_data_set_int(videoSettings, "bitrate", oldVBitrate);
 		obs_data_set_int(audioSettings, "bitrate", oldABitrate);
 
-		obs_service_apply_encoder_settings(tempService, videoSettings,
-						   audioSettings);
+		QString streamEnc =
+			ui->simpleOutStrEncoder->currentData().toString();
+
+		obs_service_apply_encoder_settings2(
+			tempService,
+			get_simple_output_encoder(QT_TO_UTF8(streamEnc)),
+			videoSettings);
+
+		const char *aencoder = EncoderAvailable("ffmpeg_opus")
+					       ? "ffmpeg_opus"
+					       : nullptr;
+		if (ui->simpleOutStrAEncoder->currentData().toString() ==
+		    "aac") {
+			aencoder = nullptr;
+			if (EncoderAvailable("CoreAudio_AAC")) {
+				aencoder = "CoreAudio_AAC";
+			} else if (EncoderAvailable("libfdk_aac")) {
+				aencoder = "libfdk_aac";
+			} else if (EncoderAvailable("ffmpeg_aac")) {
+				aencoder = "ffmpeg_aac";
+			}
+		}
+
+		obs_service_apply_encoder_settings2(tempService, aencoder,
+						    audioSettings);
 
 		int newVBitrate = obs_data_get_int(videoSettings, "bitrate");
 		int newABitrate = obs_data_get_int(audioSettings, "bitrate");

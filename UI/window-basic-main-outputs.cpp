@@ -818,8 +818,12 @@ void SimpleOutput::Update()
 	obs_data_set_string(audioSettings, "rate_control", "CBR");
 	obs_data_set_int(audioSettings, "bitrate", audioBitrate);
 
-	obs_service_apply_encoder_settings(main->GetService(), videoSettings,
-					   audioSettings);
+	obs_service_apply_encoder_settings2(main->GetService(),
+					    obs_encoder_get_id(videoStreaming),
+					    videoSettings);
+	obs_service_apply_encoder_settings2(main->GetService(),
+					    obs_encoder_get_id(audioStreaming),
+					    audioSettings);
 
 	if (!enforceBitrate) {
 		obs_data_set_int(videoSettings, "bitrate", videoBitrate);
@@ -1703,8 +1707,9 @@ void AdvancedOutput::UpdateStreamSettings()
 	if (applyServiceSettings) {
 		int bitrate = (int)obs_data_get_int(settings, "bitrate");
 		int keyint_sec = (int)obs_data_get_int(settings, "keyint_sec");
-		obs_service_apply_encoder_settings(main->GetService(), settings,
-						   nullptr);
+		obs_service_apply_encoder_settings2(
+			main->GetService(), obs_encoder_get_id(videoStreaming),
+			settings);
 		if (!enforceBitrate)
 			obs_data_set_int(settings, "bitrate", bitrate);
 
@@ -1769,8 +1774,9 @@ inline void AdvancedOutput::SetupStreaming()
 	const char *id = obs_service_get_id(main->GetService());
 	if (strcmp(id, "rtmp_custom") == 0) {
 		OBSDataAutoRelease settings = obs_data_create();
-		obs_service_apply_encoder_settings(main->GetService(), settings,
-						   nullptr);
+		obs_service_apply_encoder_settings2(
+			main->GetService(), obs_encoder_get_id(videoStreaming),
+			settings);
 		obs_encoder_update(videoStreaming, settings);
 	}
 }
@@ -1983,8 +1989,9 @@ inline void AdvancedOutput::UpdateAudioSettings()
 			if (applyServiceSettings) {
 				int bitrate = (int)obs_data_get_int(settings[i],
 								    "bitrate");
-				obs_service_apply_encoder_settings(
-					main->GetService(), nullptr,
+				obs_service_apply_encoder_settings2(
+					main->GetService(),
+					obs_encoder_get_id(streamAudioEnc),
 					settings[i]);
 
 				if (!enforceBitrate)

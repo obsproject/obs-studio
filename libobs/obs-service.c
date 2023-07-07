@@ -655,3 +655,17 @@ int obs_service_get_max_video_bitrate(const obs_service_t *service,
 	return service->info.get_max_video_bitrate(service->context.data, codec,
 						   resolution);
 }
+
+void obs_service_apply_encoder_settings2(obs_service_t *service,
+					 const char *encoder_id,
+					 obs_data_t *encoder_settings)
+{
+	if (!obs_service_valid(service, "obs_service_apply_encoder_settings2"))
+		return;
+	if (!service->info.apply_encoder_settings2)
+		return;
+
+	if (encoder_id && encoder_settings)
+		service->info.apply_encoder_settings2(
+			service->context.data, encoder_id, encoder_settings);
+}

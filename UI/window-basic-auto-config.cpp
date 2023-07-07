@@ -299,7 +299,7 @@ bool AutoConfigStreamPage::validatePage()
 
 	OBSDataAutoRelease settings = obs_data_create();
 	obs_data_set_int(settings, "bitrate", bitrate);
-	obs_service_apply_encoder_settings(tempService, settings, nullptr);
+	obs_service_apply_encoder_settings2(tempService, "obs_x264", settings);
 
 	wiz->service = obs_service_get_ref(tempService);
 

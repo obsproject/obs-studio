@@ -2631,7 +2631,7 @@ obs_service_get_password(const obs_service_t *service);
  * @param  video_encoder_settings  Video encoder settings.  Optional.
  * @param  audio_encoder_settings  Audio encoder settings.  Optional.
  */
-EXPORT void
+OBS_DEPRECATED EXPORT void
 obs_service_apply_encoder_settings(obs_service_t *service,
 				   obs_data_t *video_encoder_settings,
 				   obs_data_t *audio_encoder_settings);
@@ -2696,6 +2696,10 @@ EXPORT int
 obs_service_get_max_video_bitrate(const obs_service_t *service,
 				  const char *codec,
 				  struct obs_service_resolution resolution);
+
+EXPORT void obs_service_apply_encoder_settings2(obs_service_t *service,
+						const char *encoder_id,
+						obs_data_t *encoder_settings);
 
 /* ------------------------------------------------------------------------- */
 /* Source frame allocation functions */
