@@ -1120,8 +1120,9 @@ static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 				}
 			}
 		} else {
-			QuickWriteFile(file.outputPath.c_str(),
-				       patch_data.data(), patch_data.size());
+			installed_ok = QuickWriteFile(file.outputPath.c_str(),
+						      patch_data.data(),
+						      patch_data.size());
 			error_code = GetLastError();
 		}
 
