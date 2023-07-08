@@ -109,3 +109,18 @@ bool TwitchService::InfoBandwidthTestEnabled(void *data)
 			->BandwidthTestEnabled();
 	return false;
 }
+
+void TwitchService::InfoApplySettings2(void *data, const char *encoderId,
+				       obs_data_t *encoderSettings)
+{
+	if (obs_get_encoder_type(encoderId) == OBS_ENCODER_VIDEO)
+		obs_data_set_int(encoderSettings, "keyint_sec", 2);
+
+	if (strcmp(encoderId, "obs_x264"))
+		obs_data_set_string(encoderSettings, "x264opts", "scenecut=0");
+
+	int maxBitrate =
+		InfoGetMaxCodecBitrate(data, obs_get_encoder_codec(encoderId));
+	if (maxBitrate)
+		obs_data_set_int(encoderSettings, "bitrate", maxBitrate);
+}

@@ -44,6 +44,9 @@ class TwitchService {
 	static void InfoEnableBandwidthTest(void *data, bool enabled);
 	static bool InfoBandwidthTestEnabled(void *data);
 
+	static void InfoApplySettings2(void *data, const char *encoderId,
+				       obs_data_t *encoderSettings);
+
 #ifdef OAUTH_ENABLED
 	OBSDataAutoRelease data = nullptr;
 

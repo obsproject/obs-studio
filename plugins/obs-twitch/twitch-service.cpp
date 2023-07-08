@@ -46,6 +46,8 @@ TwitchService::TwitchService()
 
 	info.get_max_codec_bitrate = InfoGetMaxCodecBitrate;
 
+	info.apply_encoder_settings2 = InfoApplySettings2;
+
 	obs_register_service(&info);
 
 #ifdef OAUTH_ENABLED
