@@ -1,0 +1,47 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "url": {
+            "$ref": "#/definitions/saneUrl",
+            "description": "Points to the base URL of hosted package.json and services.json files, used to automatically fetch the latest version."
+        },
+        "version": {
+            "type": "integer"
+        },
+        "files": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Filename to read,, containing service definitions."
+                    },
+                    "version": {
+                        "type": "integer",
+                        "description": "This value should be bumped any time the file defined by the 'name' field is changed. This value will be used when determining whether a new version is available."
+                    }
+                },
+                "required": [
+                    "name",
+                    "version"
+                ]
+            },
+            "description": "List of files to read, each containing a list of services.",
+            "additionalProperties": false
+        }
+    },
+    "required": [
+        "url",
+        "version",
+        "files"
+    ],
+    "definitions": {
+        "saneUrl": {
+            "type": "string",
+            "format": "uri",
+            "pattern": "^https?://"
+        }
+    }
+}

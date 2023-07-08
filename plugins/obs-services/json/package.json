@@ -1,0 +1,11 @@
+{
+    "$schema": "schema/package-schema.json",
+    "url": "https://obsproject.com/obs2_update/obs-services/v1",
+    "version": 1,
+    "files": [
+        {
+            "name": "services.json",
+            "version": 1
+        }
+    ]
+}

@@ -24,12 +24,26 @@ target_sources(
           services-manager.cpp
           services-manager.hpp)
 
-target_link_libraries(obs-services PRIVATE OBS::libobs nlohmann_json::nlohmann_json)
+target_link_libraries(obs-services PRIVATE OBS::libobs nlohmann_json::nlohmann_json
+                                           $<$<BOOL:${ENABLE_SERVICES_UPDATE}>:OBS::file-updater>)
 
 file(STRINGS json/services.json _format_version REGEX "^.*\"format_version\":[ \t]+[0-9]+,$")
 string(REGEX REPLACE "^.*\"format_version\":[ \t]+([0-9]+),$" "\\1" JSON_FORMAT_VER "${_format_version}")
 
 target_compile_definitions(obs-services PRIVATE JSON_FORMAT_VER=${JSON_FORMAT_VER})
+
+if(ENABLE_SERVICES_UPDATE)
+  file(STRINGS json/package.json _update_url REGEX "^.*\"url\":[ \t]+\"https?:\/\/.*\/v[0-9]+\",$")
+  string(REGEX REPLACE "^.*\"url\":[ \t]+\"(https?:\/\/.*\/v[0-9]+)\",$" "\\1" UPDATE_URL "${_update_url}")
+
+  target_compile_definitions(obs-services PRIVATE UPDATE_URL="${UPDATE_URL}")
+
+  string(REGEX REPLACE "^.*\"url\":[ \t]+\"https?:\/\/.*\/v([0-9]+)\",$" "\\1" _pkg_format_version "${_update_url}")
+  if(NOT _pkg_format_version STREQUAL "${JSON_FORMAT_VER}")
+    message(FATAL_ERROR "package.json URL version does not match services.json format version")
+  endif()
+  unset(_pkg_format_version)
+endif()
 
 if(OS_WINDOWS)
   configure_file(cmake/windows/obs-module.rc.in obs-services.rc)
@@ -39,9 +53,12 @@ endif()
 if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
   target_add_resource(obs-services "${CMAKE_CURRENT_SOURCE_DIR}/json/services.json"
                       "${OBS_DATA_DESTINATION}/obs-plugins/obs-services")
+  target_add_resource(obs-services "${CMAKE_CURRENT_SOURCE_DIR}/json/package.json"
+                      "${OBS_DATA_DESTINATION}/obs-plugins/obs-services")
   set_target_properties_obs(obs-services PROPERTIES FOLDER plugins PREFIX "")
 else()
   add_target_resource(obs-services json/services.json "obs-plugins/obs-services/")
+  add_target_resource(obs-services json/package.json "obs-plugins/obs-services/")
   set_target_properties(obs-services PROPERTIES FOLDER "plugins" PREFIX "")
   setup_plugin_target(obs-services)
 endif()
