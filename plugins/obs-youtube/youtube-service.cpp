@@ -40,6 +40,8 @@ YouTubeService::YouTubeService()
 
 	info.get_max_codec_bitrate = InfoGetMaxCodecBitrate;
 
+	info.apply_encoder_settings2 = InfoApplySettings2;
+
 #ifdef OAUTH_ENABLED
 	info.can_bandwidth_test = InfoCanBandwidthTest;
 	info.enable_bandwidth_test = InfoEnableBandwidthTest;

@@ -87,6 +87,18 @@ obs_properties_t *YouTubeService::InfoGetProperties(void *data)
 	return nullptr;
 }
 
+void YouTubeService::InfoApplySettings2(void *data, const char *encoderId,
+					obs_data_t *encoderSettings)
+{
+	if (obs_get_encoder_type(encoderId) == OBS_ENCODER_VIDEO)
+		obs_data_set_int(encoderSettings, "keyint_sec", 2);
+
+	int maxBitrate =
+		InfoGetMaxCodecBitrate(data, obs_get_encoder_codec(encoderId));
+	if (maxBitrate)
+		obs_data_set_int(encoderSettings, "bitrate", maxBitrate);
+}
+
 #ifdef OAUTH_ENABLED
 bool YouTubeService::InfoCanBandwidthTest(void *data)
 {

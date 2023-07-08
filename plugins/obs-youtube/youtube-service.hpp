@@ -36,6 +36,9 @@ class YouTubeService {
 
 	static obs_properties_t *InfoGetProperties(void *data);
 
+	static void InfoApplySettings2(void *data, const char *encoderId,
+				       obs_data_t *encoderSettings);
+
 #ifdef OAUTH_ENABLED
 	OBSDataAutoRelease data = nullptr;
 
