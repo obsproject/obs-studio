@@ -94,17 +94,25 @@ void OBSBasicSettings::LoadStream1Settings()
 void OBSBasicSettings::SaveStream1Settings()
 {
 	OBSDataAutoRelease settings = obs_service_get_settings(tempService);
-	const char *settingsJson = obs_data_get_json(settings);
-	settings = obs_data_create_from_json(settingsJson);
+	obs_service_t *service = main->GetService();
 
-	OBSServiceAutoRelease newService =
-		obs_service_create(obs_service_get_id(tempService),
-				   "default_service", settings, nullptr);
+	if (ui->service->property("changed").toBool()) {
+		/* Create a unique obs_data_t for the new service */
+		const char *settingsJson = obs_data_get_json(settings);
+		settings = obs_data_create_from_json(settingsJson);
 
-	if (!newService)
-		return;
+		OBSServiceAutoRelease newService = obs_service_create(
+			obs_service_get_id(tempService), "default_service",
+			settings, nullptr);
 
-	main->SetService(newService);
+		if (!newService)
+			return;
+
+		main->SetService(newService);
+
+	} else {
+		obs_service_update(service, settings);
+	}
 	main->SaveService();
 
 	SaveCheckBox(ui->ignoreRecommended, "Stream1", "IgnoreRecommended");
