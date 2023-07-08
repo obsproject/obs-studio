@@ -316,8 +316,10 @@ static void media_stopped(void *opaque)
 	if ((s->close_when_inactive || !s->is_local_file) && s->media)
 		s->destroy_media = true;
 
-	set_media_state(s, OBS_MEDIA_STATE_ENDED);
-	obs_source_media_ended(s->source);
+	if (s->state != OBS_MEDIA_STATE_STOPPED) {
+		set_media_state(s, OBS_MEDIA_STATE_ENDED);
+		obs_source_media_ended(s->source);
+	}
 }
 
 static void ffmpeg_source_open(struct ffmpeg_source *s)
