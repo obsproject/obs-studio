@@ -3311,9 +3311,24 @@ void OBSBasic::SourceToolBarActionsSetEnabled()
 	RefreshToolBarStyling(ui->sourcesToolbar);
 }
 
+void OBSBasic::UpdateTransformShortcuts()
+{
+	OBSSource source = obs_sceneitem_get_source(GetCurrentSceneItem());
+	uint32_t flags = obs_source_get_output_flags(source);
+	bool audioOnly = (flags & OBS_SOURCE_VIDEO) == 0;
+
+	ui->actionEditTransform->setEnabled(!audioOnly);
+	ui->actionCopyTransform->setEnabled(!audioOnly);
+	ui->actionPasteTransform->setEnabled(audioOnly ? false
+						       : hasCopiedTransform);
+
+	ui->actionResetTransform->setEnabled(!audioOnly);
+}
+
 void OBSBasic::UpdateContextBar(bool force)
 {
 	SourceToolBarActionsSetEnabled();
+	UpdateTransformShortcuts();
 
 	if (!ui->contextContainer->isVisible() && !force)
 		return;
