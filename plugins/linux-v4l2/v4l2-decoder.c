@@ -104,6 +104,9 @@ int v4l2_decode_frame(struct obs_source_frame *out, uint8_t *data,
 	}
 
 	switch (decoder->context->pix_fmt) {
+	case AV_PIX_FMT_GRAY8:
+		out->format = VIDEO_FORMAT_Y800;
+		break;
 	case AV_PIX_FMT_YUVJ422P:
 	case AV_PIX_FMT_YUV422P:
 		out->format = VIDEO_FORMAT_I422;
