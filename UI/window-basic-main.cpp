@@ -2295,7 +2295,8 @@ void OBSBasic::OBSInit()
 	UpdatePreviewProgramIndicators();
 	OnFirstLoad();
 
-	activateWindow();
+	if (!hideWindowOnStart)
+		activateWindow();
 
 	/* ------------------------------------------- */
 	/* display warning message for failed modules  */
