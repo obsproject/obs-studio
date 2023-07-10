@@ -7,9 +7,24 @@
   },
   "configurePresets": [
     {
+      "name": "environmentVars",
+      "hidden": true,
+      "cacheVariables": {
+        "TWITCH_CLIENTID": {"type": "STRING", "value": "$penv{TWITCH_CLIENTID}"},
+        "TWITCH_HASH": {"type": "STRING", "value": "$penv{TWITCH_HASH}"},
+        "RESTREAM_CLIENTID": {"type": "STRING", "value": "$penv{RESTREAM_CLIENTID}"},
+        "RESTREAM_HASH": {"type": "STRING", "value": "$penv{RESTREAM_HASH}"},
+        "YOUTUBE_CLIENTID": {"type": "STRING", "value": "$penv{YOUTUBE_CLIENTID}"},
+        "YOUTUBE_CLIENTID_HASH": {"type": "STRING", "value": "$penv{YOUTUBE_CLIENTID_HASH}"},
+        "YOUTUBE_SECRET": {"type": "STRING", "value": "$penv{YOUTUBE_SECRET}"},
+        "YOUTUBE_SECRET_HASH": {"type": "STRING", "value": "$penv{YOUTUBE_SECRET_HASH}"}
+      }
+    },
+    {
       "name": "macos",
       "displayName": "macOS",
       "description": "Default macOS build (single architecture only)",
+      "inherits": ["environmentVars"],
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -44,6 +59,7 @@
       "name": "linux-aarch64",
       "displayName": "Linux aarch64",
       "description": "obs-studio for Linux (aarch64)",
+      "inherits": ["environmentVars"],
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -80,6 +96,7 @@
       "name": "linux-x86_64",
       "displayName": "Linux x86_64",
       "description": "obs-studio for Linux (x86_64)",
+      "inherits": ["environmentVars"],
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -116,6 +133,7 @@
       "name": "windows-x64",
       "displayName": "Windows x64",
       "description": "Default Windows build (x64)",
+      "inherits": ["environmentVars"],
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -128,6 +146,7 @@
         "OBS_CMAKE_VERSION": {"type": "STRING", "value": "3.0.0"},
         "ENABLE_BROWSER": true,
         "VIRTUALCAM_GUID": {"type": "STRING", "value": "A3FCE0F5-3493-419F-958A-ABA1250EC20B"},
+        "GPU_PRIORITY_VAL": {"type": "STRING", "value": "$penv{GPU_PRIORITY_VAL}"},
         "ENABLE_CCACHE": false
       }
     },

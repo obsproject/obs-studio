@@ -1,6 +1,6 @@
 project(win-capture)
 
-option(ENABLE_COMPAT_UPDATES "Checks for service updates" OFF)
+option(ENABLE_COMPAT_UPDATES "Checks for capture compatibility data updates" ON)
 
 set(COMPAT_URL
     "https://obsproject.com/obs2_update/win-capture"
@@ -52,7 +52,7 @@ if(MSVC)
 endif()
 
 target_compile_definitions(win-capture PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_WARNINGS
-                                               OBS_VERSION="${OBS_VERSION_CANONICAL}")
+                                               OBS_VERSION="${OBS_VERSION_CANONICAL}" OBS_LEGACY)
 
 set_property(GLOBAL APPEND PROPERTY OBS_MODULE_LIST "win-capture")
 

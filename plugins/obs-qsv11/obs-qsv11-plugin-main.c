@@ -53,6 +53,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#include <inttypes.h>
 #include <obs-module.h>
 #include <util/windows/device-enum.h>
 #include <util/config-file.h>
@@ -85,7 +86,7 @@ size_t adapter_count = 0;
 static bool enum_luids(void *param, uint32_t idx, uint64_t luid)
 {
 	struct dstr *cmd = param;
-	dstr_catf(cmd, " %llX", luid);
+	dstr_catf(cmd, " %" PRIx64, luid);
 	UNUSED_PARAMETER(idx);
 	return true;
 }

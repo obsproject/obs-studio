@@ -159,6 +159,7 @@ function(set_target_properties_obs target)
     set_property(GLOBAL APPEND PROPERTY OBS_MODULES_ENABLED ${target})
   endif()
 
+  target_link_options(${target} PRIVATE "/PDBALTPATH:$<TARGET_PDB_FILE_NAME:${target}>")
   target_install_resources(${target})
 endfunction()
 
@@ -227,7 +228,8 @@ function(_target_install_obs target)
     TARGET ${target}
     POST_BUILD
     COMMAND "${CMAKE_COMMAND}" -E make_directory "${OBS_OUTPUT_DIR}/$<CONFIG>/${_TIO_DESTINATION}"
-    COMMAND "${CMAKE_COMMAND}" -E copy ${target_file} "$<$<CONFIG:Debug,RelWithDebInfo>:${target_pdb_file}>"
+    COMMAND "${CMAKE_COMMAND}" -E copy ${target_file} "${OBS_OUTPUT_DIR}/$<CONFIG>/${_TIO_DESTINATION}"
+    COMMAND "${CMAKE_COMMAND}" -E $<IF:$<CONFIG:Debug,RelWithDebInfo>,copy,true> ${target_pdb_file}
             "${OBS_OUTPUT_DIR}/$<CONFIG>/${_TIO_DESTINATION}"
     COMMENT "${comment}"
     VERBATIM)

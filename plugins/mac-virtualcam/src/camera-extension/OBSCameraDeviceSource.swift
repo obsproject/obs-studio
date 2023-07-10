@@ -63,7 +63,7 @@ class OBSCameraDeviceSource: NSObject, CMIOExtensionDeviceSource {
             kCVPixelBufferWidthKey: dimensions.width,
             kCVPixelBufferHeightKey: dimensions.height,
             kCVPixelBufferPixelFormatTypeKey: _videoDescription.mediaSubType,
-            kCVPixelBufferIOSurfacePropertiesKey: [:],
+            kCVPixelBufferIOSurfacePropertiesKey: [CFString: CFTypeRef](),
         ]
 
         CVPixelBufferPoolCreate(kCFAllocatorDefault, nil, pixelBufferAttributes, &_bufferPool)

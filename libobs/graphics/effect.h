@@ -24,6 +24,9 @@
 extern "C" {
 #endif
 
+typedef DARRAY(struct gs_effect_param) gs_effect_param_array_t;
+typedef DARRAY(struct pass_shaderparam) pass_shaderparam_array_t;
+
 /*
  * Effects introduce a means of bundling together shader text into one
  * file with shared functions and parameters.  This is done because often
@@ -62,7 +65,7 @@ struct gs_effect_param {
 
 	/*char *full_name;
 	float scroller_min, scroller_max, scroller_inc, scroller_mul;*/
-	DARRAY(struct gs_effect_param) annotations;
+	gs_effect_param_array_t annotations;
 };
 
 static inline void effect_param_init(struct gs_effect_param *param)
@@ -101,8 +104,8 @@ struct gs_effect_pass {
 
 	gs_shader_t *vertshader;
 	gs_shader_t *pixelshader;
-	DARRAY(struct pass_shaderparam) vertshader_params;
-	DARRAY(struct pass_shaderparam) pixelshader_params;
+	pass_shaderparam_array_t vertshader_params;
+	pass_shaderparam_array_t pixelshader_params;
 };
 
 static inline void effect_pass_init(struct gs_effect_pass *pass)
@@ -152,7 +155,7 @@ struct gs_effect {
 	bool cached;
 	char *effect_path, *effect_dir;
 
-	DARRAY(struct gs_effect_param) params;
+	gs_effect_param_array_t params;
 	DARRAY(struct gs_effect_technique) techniques;
 
 	struct gs_effect_technique *cur_technique;
@@ -188,12 +191,6 @@ static inline void effect_free(gs_effect_t *effect)
 	effect->effect_path = NULL;
 	effect->effect_dir = NULL;
 }
-
-EXPORT void effect_upload_params(gs_effect_t *effect, bool changed_only);
-EXPORT void effect_upload_shader_params(gs_effect_t *effect,
-					gs_shader_t *shader,
-					struct darray *pass_params,
-					bool changed_only);
 
 #ifdef __cplusplus
 }

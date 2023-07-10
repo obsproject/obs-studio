@@ -342,6 +342,33 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force,
 	if (usingPreviewProgram && stillTransitioning)
 		goto cleanup;
 
+	if (usingPreviewProgram) {
+		if (!black && !manual) {
+			const char *sceneName = obs_source_get_name(source);
+			blog(LOG_INFO, "User switched Program to scene '%s'",
+			     sceneName);
+
+		} else if (black && !prevFTBSource) {
+			OBSSourceAutoRelease target =
+				obs_transition_get_active_source(transition);
+			const char *sceneName = obs_source_get_name(target);
+			blog(LOG_INFO, "User faded from scene '%s' to black",
+			     sceneName);
+
+		} else if (black && prevFTBSource) {
+			const char *sceneName =
+				obs_source_get_name(prevFTBSource);
+			blog(LOG_INFO, "User faded from black to scene '%s'",
+			     sceneName);
+
+		} else if (manual) {
+			const char *sceneName = obs_source_get_name(source);
+			blog(LOG_INFO,
+			     "User started manual transition to scene '%s'",
+			     sceneName);
+		}
+	}
+
 	if (force) {
 		obs_transition_set(transition, source);
 		if (api)
@@ -885,6 +912,11 @@ void OBSBasic::TBarReleased()
 		tBarActive = false;
 		EnableTransitionWidgets(true);
 
+		OBSSourceAutoRelease target =
+			obs_transition_get_active_source(transition);
+		const char *sceneName = obs_source_get_name(target);
+		blog(LOG_INFO, "Manual transition to scene '%s' finished",
+		     sceneName);
 	} else if (val <= T_BAR_CLAMP) {
 		obs_transition_set_manual_time(transition, 0.0f);
 		TransitionFullyStopped();
@@ -894,6 +926,7 @@ void OBSBasic::TBarReleased()
 		tBarActive = false;
 		EnableTransitionWidgets(true);
 		programScene = lastProgramScene;
+		blog(LOG_INFO, "Manual transition cancelled");
 	}
 
 	tBar->clearFocus();

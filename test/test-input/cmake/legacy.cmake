@@ -1,16 +1,6 @@
-cmake_minimum_required(VERSION 3.24...3.25)
-
-legacy_check()
-
-option(ENABLE_TEST_INPUT "Build test sources" OFF)
-
-if(NOT ENABLE_TEST_INPUT)
-  target_disable(test-input)
-  return()
-endif()
+project(test-input)
 
 add_library(test-input MODULE)
-add_library(OBS::test-input ALIAS test-input)
 
 target_sources(
   test-input
@@ -25,4 +15,10 @@ target_sources(
 
 target_link_libraries(test-input PRIVATE OBS::libobs)
 
-set_target_properties_obs(test-input PROPERTIES FOLDER "Tests and Examples" PREFIX "")
+if(MSVC)
+  target_link_libraries(test-input PRIVATE OBS::w32-pthreads)
+endif()
+
+set_target_properties(test-input PROPERTIES FOLDER "tests and examples")
+
+setup_plugin_target(test-input)

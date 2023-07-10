@@ -112,6 +112,10 @@ create_encoder(const char *id, enum obs_encoder_type type, const char *name,
 	obs_context_data_insert(&encoder->context, &obs->data.encoders_mutex,
 				&obs->data.first_encoder);
 
+	if (type == OBS_ENCODER_VIDEO) {
+		encoder->frame_rate_divisor = 1;
+	}
+
 	blog(LOG_DEBUG, "encoder '%s' (%s) created", name, id);
 	return encoder;
 }
@@ -309,8 +313,9 @@ static void add_connection(struct obs_encoder *encoder)
 		if (gpu_encode_available(encoder)) {
 			start_gpu_encode(encoder);
 		} else {
-			start_raw_video(encoder->media, &info, receive_video,
-					encoder);
+			start_raw_video(encoder->media, &info,
+					encoder->frame_rate_divisor,
+					receive_video, encoder);
 		}
 	}
 
@@ -379,6 +384,9 @@ static void obs_encoder_actually_destroy(obs_encoder_t *encoder)
 			bfree((void *)encoder->info.id);
 		if (encoder->last_error_message)
 			bfree(encoder->last_error_message);
+		if (encoder->fps_override)
+			video_output_free_frame_rate_divisor(
+				encoder->fps_override);
 		bfree(encoder);
 	}
 }
@@ -660,6 +668,7 @@ void obs_encoder_shutdown(obs_encoder_t *encoder)
 		encoder->first_received = false;
 		encoder->offset_usec = 0;
 		encoder->start_ts = 0;
+		encoder->frame_rate_divisor_counter = 1;
 		maybe_clear_encoder_core_video_mix(encoder);
 	}
 	obs_encoder_set_last_error(encoder, NULL);
@@ -871,6 +880,52 @@ void obs_encoder_set_gpu_scale_type(obs_encoder_t *encoder,
 	encoder->gpu_scale_type = gpu_scale_type;
 }
 
+bool obs_encoder_set_frame_rate_divisor(obs_encoder_t *encoder,
+					uint32_t frame_rate_divisor)
+{
+	if (!obs_encoder_valid(encoder, "obs_encoder_set_frame_rate_divisor"))
+		return false;
+
+	if (encoder->info.type != OBS_ENCODER_VIDEO) {
+		blog(LOG_WARNING,
+		     "obs_encoder_set_frame_rate_divisor: "
+		     "encoder '%s' is not a video encoder",
+		     obs_encoder_get_name(encoder));
+		return false;
+	}
+
+	if (encoder_active(encoder)) {
+		blog(LOG_WARNING,
+		     "encoder '%s': Cannot set frame rate divisor "
+		     "while the encoder is active",
+		     obs_encoder_get_name(encoder));
+		return false;
+	}
+
+	if (frame_rate_divisor == 0) {
+		blog(LOG_WARNING,
+		     "encoder '%s': Cannot set frame "
+		     "rate divisor to 0",
+		     obs_encoder_get_name(encoder));
+		return false;
+	}
+
+	encoder->frame_rate_divisor = frame_rate_divisor;
+
+	if (encoder->fps_override) {
+		video_output_free_frame_rate_divisor(encoder->fps_override);
+		encoder->fps_override = NULL;
+	}
+
+	if (encoder->media) {
+		encoder->fps_override =
+			video_output_create_with_frame_rate_divisor(
+				encoder->media, encoder->frame_rate_divisor);
+	}
+
+	return true;
+}
+
 bool obs_encoder_scaling_enabled(const obs_encoder_t *encoder)
 {
 	if (!obs_encoder_valid(encoder, "obs_encoder_scaling_enabled"))
@@ -947,6 +1002,22 @@ enum obs_scale_type obs_encoder_get_scale_type(obs_encoder_t *encoder)
 	return encoder->gpu_scale_type;
 }
 
+uint32_t obs_encoder_get_frame_rate_divisor(const obs_encoder_t *encoder)
+{
+	if (!obs_encoder_valid(encoder, "obs_encoder_set_frame_rate_divisor"))
+		return 0;
+
+	if (encoder->info.type != OBS_ENCODER_VIDEO) {
+		blog(LOG_WARNING,
+		     "obs_encoder_set_frame_rate_divisor: "
+		     "encoder '%s' is not a video encoder",
+		     obs_encoder_get_name(encoder));
+		return 0;
+	}
+
+	return encoder->frame_rate_divisor;
+}
+
 uint32_t obs_encoder_get_sample_rate(const obs_encoder_t *encoder)
 {
 	if (!obs_encoder_valid(encoder, "obs_encoder_get_sample_rate"))
@@ -1002,11 +1073,22 @@ void obs_encoder_set_video(obs_encoder_t *encoder, video_t *video)
 		return;
 	}
 
+	if (encoder->fps_override) {
+		video_output_free_frame_rate_divisor(encoder->fps_override);
+		encoder->fps_override = NULL;
+	}
+
 	if (video) {
 		voi = video_output_get_info(video);
 		encoder->media = video;
 		encoder->timebase_num = voi->fps_den;
 		encoder->timebase_den = voi->fps_num;
+
+		if (encoder->frame_rate_divisor) {
+			encoder->fps_override =
+				video_output_create_with_frame_rate_divisor(
+					video, encoder->frame_rate_divisor);
+		}
 	} else {
 		encoder->media = NULL;
 		encoder->timebase_num = 0;
@@ -1056,7 +1138,7 @@ video_t *obs_encoder_video(const obs_encoder_t *encoder)
 		return NULL;
 	}
 
-	return encoder->media;
+	return encoder->fps_override ? encoder->fps_override : encoder->media;
 }
 
 audio_t *obs_encoder_audio(const obs_encoder_t *encoder)
@@ -1218,7 +1300,7 @@ bool do_encode(struct obs_encoder *encoder, struct encoder_frame *frame)
 				     encoder->context.settings);
 	}
 
-	pkt.timebase_num = encoder->timebase_num;
+	pkt.timebase_num = encoder->timebase_num * encoder->frame_rate_divisor;
 	pkt.timebase_den = encoder->timebase_den;
 	pkt.encoder = encoder;
 

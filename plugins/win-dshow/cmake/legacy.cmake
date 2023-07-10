@@ -201,7 +201,8 @@ if(ENABLE_VIRTUALCAM AND VIRTUALCAM_AVAILABLE)
 
   target_include_directories(win-dshow PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/config)
 
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/virtualcam-guid.h.in ${CMAKE_CURRENT_BINARY_DIR}/config/virtualcam-guid.h)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/virtualcam-module/virtualcam-guid.h.in
+                 ${CMAKE_CURRENT_BINARY_DIR}/config/virtualcam-guid.h)
 
   target_sources(win-dshow PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/config/virtualcam-guid.h)
 
