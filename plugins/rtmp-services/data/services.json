@@ -2935,12 +2935,10 @@
             ],
             "protocol": "RTMPS",
             "supported video codecs": [
-                "h264",
-                "hevc"
+                "h264"
             ],
             "supported audio codecs": [
-                "aac",
-                "opus"
+                "aac"
             ],
             "recommended": {
                 "keyint": 2,
@@ -2977,7 +2975,7 @@
                 "max video bitrate": 14000,
                 "max audio bitrate": 192,
                 "bframes": 2,
-                "x264opts": "tune=zerolatency scenecut=0"
+                "x264opts": "scenecut=0"
             }
         }
     ]
