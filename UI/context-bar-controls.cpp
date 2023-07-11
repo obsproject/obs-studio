@@ -92,7 +92,8 @@ void SourceToolbar::SetUndoProperties(obs_source_t *source, bool repeatable)
 /* ========================================================================= */
 
 BrowserToolbar::BrowserToolbar(QWidget *parent, OBSSource source)
-	: SourceToolbar(parent, source), ui(new Ui_BrowserSourceToolbar)
+	: SourceToolbar(parent, source),
+	  ui(new Ui_BrowserSourceToolbar)
 {
 	ui->setupUi(this);
 }
@@ -113,7 +114,8 @@ void BrowserToolbar::on_refresh_clicked()
 /* ========================================================================= */
 
 ComboSelectToolbar::ComboSelectToolbar(QWidget *parent, OBSSource source)
-	: SourceToolbar(parent, source), ui(new Ui_DeviceSelectToolbar)
+	: SourceToolbar(parent, source),
+	  ui(new Ui_DeviceSelectToolbar)
 {
 	ui->setupUi(this);
 }
@@ -384,7 +386,8 @@ void DeviceCaptureToolbar::on_activateButton_clicked()
 /* ========================================================================= */
 
 GameCaptureToolbar::GameCaptureToolbar(QWidget *parent, OBSSource source)
-	: SourceToolbar(parent, source), ui(new Ui_GameCaptureToolbar)
+	: SourceToolbar(parent, source),
+	  ui(new Ui_GameCaptureToolbar)
 {
 	obs_property_t *p;
 	int cur_idx;
@@ -469,7 +472,8 @@ void GameCaptureToolbar::on_window_currentIndexChanged(int idx)
 /* ========================================================================= */
 
 ImageSourceToolbar::ImageSourceToolbar(QWidget *parent, OBSSource source)
-	: SourceToolbar(parent, source), ui(new Ui_ImageSourceToolbar)
+	: SourceToolbar(parent, source),
+	  ui(new Ui_ImageSourceToolbar)
 {
 	ui->setupUi(this);
 
@@ -529,7 +533,8 @@ static inline long long color_to_int(QColor color)
 }
 
 ColorSourceToolbar::ColorSourceToolbar(QWidget *parent, OBSSource source)
-	: SourceToolbar(parent, source), ui(new Ui_ColorSourceToolbar)
+	: SourceToolbar(parent, source),
+	  ui(new Ui_ColorSourceToolbar)
 {
 	ui->setupUi(this);
 
@@ -598,7 +603,8 @@ void ColorSourceToolbar::on_choose_clicked()
 extern void MakeQFont(obs_data_t *font_obj, QFont &font, bool limit = false);
 
 TextSourceToolbar::TextSourceToolbar(QWidget *parent, OBSSource source)
-	: SourceToolbar(parent, source), ui(new Ui_TextSourceToolbar)
+	: SourceToolbar(parent, source),
+	  ui(new Ui_TextSourceToolbar)
 {
 	ui->setupUi(this);
 

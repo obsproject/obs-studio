@@ -23,7 +23,8 @@
 #include "obs-app.hpp"
 
 OBSLogReply::OBSLogReply(QWidget *parent, const QString &url, const bool crash)
-	: QDialog(parent), ui(new Ui::OBSLogReply)
+	: QDialog(parent),
+	  ui(new Ui::OBSLogReply)
 {
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 	ui->setupUi(this);

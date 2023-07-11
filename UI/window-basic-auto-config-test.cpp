@@ -534,7 +534,10 @@ struct Result {
 	int fps_den;
 
 	inline Result(int cx_, int cy_, int fps_num_, int fps_den_)
-		: cx(cx_), cy(cy_), fps_num(fps_num_), fps_den(fps_den_)
+		: cx(cx_),
+		  cy(cy_),
+		  fps_num(fps_num_),
+		  fps_den(fps_den_)
 	{
 	}
 };
@@ -1217,7 +1220,8 @@ void AutoConfigTestPage::Progress(int percentage)
 }
 
 AutoConfigTestPage::AutoConfigTestPage(QWidget *parent)
-	: QWizardPage(parent), ui(new Ui_AutoConfigTestPage)
+	: QWizardPage(parent),
+	  ui(new Ui_AutoConfigTestPage)
 {
 	ui->setupUi(this);
 	setTitle(QTStr("Basic.AutoConfig.TestPage"));

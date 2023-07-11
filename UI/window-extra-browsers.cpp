@@ -123,7 +123,8 @@ public:
 class EditWidget : public QLineEdit {
 public:
 	inline EditWidget(QWidget *parent, QModelIndex index_)
-		: QLineEdit(parent), index(index_)
+		: QLineEdit(parent),
+		  index(index_)
 	{
 	}
 
@@ -420,7 +421,8 @@ bool ExtraBrowsersDelegate::UpdateText(QLineEdit *edit_)
 /* ------------------------------------------------------------------------- */
 
 OBSExtraBrowsers::OBSExtraBrowsers(QWidget *parent)
-	: QDialog(parent), ui(new Ui::OBSExtraBrowsers)
+	: QDialog(parent),
+	  ui(new Ui::OBSExtraBrowsers)
 {
 	ui->setupUi(this);
 

@@ -1,7 +1,8 @@
 #include "decklink-device-mode.hpp"
 
 DeckLinkDeviceMode::DeckLinkDeviceMode(IDeckLinkDisplayMode *mode, long long id)
-	: id(id), mode(mode)
+	: id(id),
+	  mode(mode)
 {
 	if (mode == nullptr)
 		return;
@@ -12,7 +13,9 @@ DeckLinkDeviceMode::DeckLinkDeviceMode(IDeckLinkDisplayMode *mode, long long id)
 }
 
 DeckLinkDeviceMode::DeckLinkDeviceMode(const std::string &name, long long id)
-	: id(id), mode(nullptr), name(name)
+	: id(id),
+	  mode(nullptr),
+	  name(name)
 {
 }
 

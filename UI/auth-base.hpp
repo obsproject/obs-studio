@@ -18,7 +18,8 @@ protected:
 		std::string error;
 
 		ErrorInfo(std::string message_, std::string error_)
-			: message(message_), error(error_)
+			: message(message_),
+			  error(error_)
 		{
 		}
 	};

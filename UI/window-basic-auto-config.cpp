@@ -67,7 +67,8 @@ static void GetServiceInfo(std::string &type, std::string &service,
 /* ------------------------------------------------------------------------- */
 
 AutoConfigStartPage::AutoConfigStartPage(QWidget *parent)
-	: QWizardPage(parent), ui(new Ui_AutoConfigStartPage)
+	: QWizardPage(parent),
+	  ui(new Ui_AutoConfigStartPage)
 {
 	ui->setupUi(this);
 	setTitle(QTStr("Basic.AutoConfig.StartPage"));
@@ -120,7 +121,8 @@ void AutoConfigStartPage::PrioritizeVCam()
 #define FPS_PREFER_HIGH_RES RES_TEXT("FPS.PreferHighRes")
 
 AutoConfigVideoPage::AutoConfigVideoPage(QWidget *parent)
-	: QWizardPage(parent), ui(new Ui_AutoConfigVideoPage)
+	: QWizardPage(parent),
+	  ui(new Ui_AutoConfigVideoPage)
 {
 	ui->setupUi(this);
 
@@ -250,7 +252,8 @@ enum class ListOpt : int {
 };
 
 AutoConfigStreamPage::AutoConfigStreamPage(QWidget *parent)
-	: QWizardPage(parent), ui(new Ui_AutoConfigStreamPage)
+	: QWizardPage(parent),
+	  ui(new Ui_AutoConfigStreamPage)
 {
 	ui->setupUi(this);
 	ui->bitrateLabel->setVisible(false);

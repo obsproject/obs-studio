@@ -502,7 +502,8 @@ QMenu *OBSBasicFilters::CreateAddFilterPopupMenu(bool async)
 		string name;
 
 		inline FilterInfo(const char *type_, const char *name_)
-			: type(type_), name(name_)
+			: type(type_),
+			  name(name_)
 		{
 		}
 

@@ -23,7 +23,8 @@ OBSPermissions::OBSPermissions(QWidget *parent, MacPermissionStatus capture,
 			       MacPermissionStatus video,
 			       MacPermissionStatus audio,
 			       MacPermissionStatus accessibility)
-	: QDialog(parent), ui(new Ui::OBSPermissions)
+	: QDialog(parent),
+	  ui(new Ui::OBSPermissions)
 {
 	ui->setupUi(this);
 	SetStatus(ui->capturePermissionButton, capture,

@@ -4,7 +4,8 @@
 
 DeckLinkInput::DeckLinkInput(obs_source_t *source,
 			     DeckLinkDeviceDiscovery *discovery_)
-	: DecklinkBase(discovery_), source(source)
+	: DecklinkBase(discovery_),
+	  source(source)
 {
 	discovery->AddCallback(DeckLinkInput::DevicesChanged, this);
 }

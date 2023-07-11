@@ -13,7 +13,8 @@ using namespace std;
 OutputTimer *ot;
 
 OutputTimer::OutputTimer(QWidget *parent)
-	: QDialog(parent), ui(new Ui_OutputTimer)
+	: QDialog(parent),
+	  ui(new Ui_OutputTimer)
 {
 	ui->setupUi(this);
 

@@ -97,7 +97,9 @@ struct FormatDesc {
 	inline FormatDesc() = default;
 	inline FormatDesc(const char *name, const char *mimeType,
 			  const ff_format_desc *desc = nullptr)
-		: name(name), mimeType(mimeType), desc(desc)
+		: name(name),
+		  mimeType(mimeType),
+		  desc(desc)
 	{
 	}
 

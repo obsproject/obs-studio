@@ -12,7 +12,8 @@ struct ScopeProfiler {
 
 	ScopeProfiler(const ScopeProfiler &) = delete;
 	ScopeProfiler(ScopeProfiler &&other)
-		: name(other.name), enabled(other.enabled)
+		: name(other.name),
+		  enabled(other.enabled)
 	{
 		other.enabled = false;
 	}

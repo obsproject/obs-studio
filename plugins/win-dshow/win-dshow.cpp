@@ -228,7 +228,8 @@ struct DShowInput {
 	}
 
 	inline DShowInput(obs_source_t *source_, obs_data_t *settings)
-		: source(source_), device(InitGraph::False)
+		: source(source_),
+		  device(InitGraph::False)
 	{
 		memset(&audio, 0, sizeof(audio));
 		memset(&frame, 0, sizeof(frame));
