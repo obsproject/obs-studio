@@ -8,7 +8,7 @@ AlignConsecutiveDeclarations: false
 AlignEscapedNewlines: Left
 AlignOperands: true
 AlignTrailingComments: true
-#AllowAllArgumentsOnNextLine: false  # requires clang-format 9
+AllowAllArgumentsOnNextLine: false
 #AllowAllConstructorInitializersOnNextLine: false  # requires clang-format 9
 AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortBlocksOnASingleLine: false
