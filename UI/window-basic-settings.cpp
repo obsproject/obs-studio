@@ -5140,7 +5140,9 @@ static void ResetInvalidSelection(QComboBox *cbox)
 
 void OBSBasicSettings::AdvOutRecCheckWarnings()
 {
-	auto Checked = [](QCheckBox *box) { return box->isChecked() ? 1 : 0; };
+	auto Checked = [](QCheckBox *box) {
+		return box->isChecked() ? 1 : 0;
+	};
 
 	QString errorMsg;
 	QString warningMsg;

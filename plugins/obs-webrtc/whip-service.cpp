@@ -76,7 +76,9 @@ void register_whip_service()
 	info.get_properties = [](void *) -> obs_properties_t * {
 		return WHIPService::Properties();
 	};
-	info.get_protocol = [](void *) -> const char * { return "WHIP"; };
+	info.get_protocol = [](void *) -> const char * {
+		return "WHIP";
+	};
 	info.get_url = [](void *priv_data) -> const char * {
 		return static_cast<WHIPService *>(priv_data)->server.c_str();
 	};

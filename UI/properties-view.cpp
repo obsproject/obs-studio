@@ -1718,7 +1718,9 @@ static bool FrameRateChanged(QWidget *widget, const char *name,
 	if (!variant.canConvert<frame_rate_tag>())
 		return false;
 
-	auto StopUpdating = [&](void *) { w->updating = false; };
+	auto StopUpdating = [&](void *) {
+		w->updating = false;
+	};
 	unique_ptr<void, decltype(StopUpdating)> signalGuard(
 		static_cast<void *>(w), StopUpdating);
 	w->updating = true;
