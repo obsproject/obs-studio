@@ -1,6 +1,6 @@
-# please use clang-format version 8 or later
+# please use clang-format version 13 or later
 
-Standard: Cpp11
+Standard: c++17
 AccessModifierOffset: -8
 AlignAfterOpenBracket: Align
 AlignConsecutiveAssignments: false
@@ -66,7 +66,7 @@ IndentWrappedFunctionNames: false
 KeepEmptyLinesAtTheStartOfBlocks: true
 MaxEmptyLinesToKeep: 1
 NamespaceIndentation: None
-#ObjCBinPackProtocolList: Auto  # requires clang-format 7
+ObjCBinPackProtocolList: Auto
 ObjCBlockIndentWidth: 8
 ObjCSpaceAfterProperty: true
 ObjCSpaceBeforeProtocolList: true
@@ -84,13 +84,13 @@ ReflowComments: false
 SortIncludes: false
 SortUsingDeclarations: false
 SpaceAfterCStyleCast: false
-#SpaceAfterLogicalNot: false  # requires clang-format 9
+SpaceAfterLogicalNot: false
 SpaceAfterTemplateKeyword: false
 SpaceBeforeAssignmentOperators: true
-#SpaceBeforeCtorInitializerColon: true  # requires clang-format 7
-#SpaceBeforeInheritanceColon: true  # requires clang-format 7
+SpaceBeforeCtorInitializerColon: true
+SpaceBeforeInheritanceColon: true
 SpaceBeforeParens: ControlStatements
-#SpaceBeforeRangeBasedForLoopColon: true  # requires clang-format 7
+SpaceBeforeRangeBasedForLoopColon: true
 SpaceInEmptyParentheses: false
 SpacesBeforeTrailingComments: 1
 SpacesInAngles: false
@@ -98,11 +98,11 @@ SpacesInCStyleCastParentheses: false
 SpacesInContainerLiterals: false
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
-#StatementMacros:  # requires clang-format 8
-#  - 'Q_OBJECT'
+StatementMacros:
+  - 'Q_OBJECT'
 TabWidth: 8
-#TypenameMacros:  # requires clang-format 9
-#  - 'DARRAY'
+TypenameMacros:
+  - 'DARRAY'
 UseTab: ForContinuationAndIndentation
 ---
 Language: ObjC
