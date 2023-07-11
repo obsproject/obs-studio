@@ -4,7 +4,7 @@ legacy_check()
 
 option(ENABLE_WEBRTC "Enable WebRTC Output support" ON)
 if(NOT ENABLE_WEBRTC)
-  message(STATUS "OBS:  DISABLED   obs-webrtc")
+  target_disable(obs-webrtc)
   return()
 endif()
 
