@@ -47,7 +47,6 @@ find . -type d \( \
     -path ./cmake -o \
     -path ./plugins/decklink/\*/decklink-sdk -o \
     -path ./plugins/enc-amf -o \
-    -path ./plugins/mac-syphon/syphon-framework -o \
     -path ./plugins/obs-outputs/ftl-sdk -o \
     -path ./plugins/obs-websocket/deps \
 \) -prune -false -type f -o \
