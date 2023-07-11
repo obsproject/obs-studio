@@ -468,7 +468,8 @@ void register_whip_output()
 				 struct encoder_packet *packet) {
 		static_cast<WHIPOutput *>(priv_data)->Data(packet);
 	};
-	info.get_defaults = [](obs_data_t *) {};
+	info.get_defaults = [](obs_data_t *) {
+	};
 	info.get_properties = [](void *) -> obs_properties_t * {
 		return obs_properties_create();
 	};

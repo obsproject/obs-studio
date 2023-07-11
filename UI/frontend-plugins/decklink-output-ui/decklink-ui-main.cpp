@@ -449,7 +449,9 @@ void addOutputUI(void)
 	doUI = new DecklinkOutputUI(window);
 	obs_frontend_pop_ui_translation();
 
-	auto cb = []() { doUI->ShowHideDialog(); };
+	auto cb = []() {
+		doUI->ShowHideDialog();
+	};
 
 	action->connect(action, &QAction::triggered, cb);
 }

@@ -3547,7 +3547,9 @@ void OBSBasic::UnhideAllAudioControls()
 	using UnhideAudioMixer_t = decltype(UnhideAudioMixer);
 
 	auto PreEnum = [](void *data, obs_source_t *source) -> bool /* -- */
-	{ return (*reinterpret_cast<UnhideAudioMixer_t *>(data))(source); };
+	{
+		return (*reinterpret_cast<UnhideAudioMixer_t *>(data))(source);
+	};
 
 	obs_enum_sources(PreEnum, &UnhideAudioMixer);
 }

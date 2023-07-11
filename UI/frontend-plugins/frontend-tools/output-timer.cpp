@@ -340,7 +340,9 @@ extern "C" void InitOutputTimer()
 
 	ot = new OutputTimer(window);
 
-	auto cb = []() { ot->ShowHideDialog(); };
+	auto cb = []() {
+		ot->ShowHideDialog();
+	};
 
 	obs_frontend_pop_ui_translation();
 
