@@ -30,7 +30,7 @@ else()
 endif()
 
 if(NOT ENABLE_RNNOISE)
-  obs_status(DISABLED "SpeexDSP")
+  obs_status(DISABLED "RNNoise")
 else()
   find_package(Librnnoise QUIET)
 
