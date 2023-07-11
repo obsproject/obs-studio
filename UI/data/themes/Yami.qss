@@ -1613,6 +1613,21 @@ OBSActionRow QPushButton {
     margin: 0;
 }
 
+OBSActionRow QComboBox,
+OBSActionRow QComboBox:hover,
+OBSActionRow QComboBox:selected,
+OBSActionRow QComboBox::on {
+    background: transparent;
+}
+
+OBSActionRow QComboBox::drop-down {
+    border: none;
+}
+
+OBSActionRow QComboBox::down-arrow {
+    image: url(./Dark/collapse.svg);
+}
+
 OBSPropertiesListSpacer {
     max-height: 1px;
     min-height: 1px;
