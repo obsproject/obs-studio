@@ -2792,14 +2792,14 @@
                 "keyint": 2,
                 "profile": "high",
                 "supported resolutions": [
-                    "3840×2160",
+                    "3840x2160",
                     "1920x1080",
                     "1280x720",
                     "852x480"
                 ],
                 "bitrate matrix": [
                     {
-                        "res": "3840×2160",
+                        "res": "3840x2160",
                         "fps": 30,
                         "max bitrate": 14000
                     },
@@ -2809,7 +2809,7 @@
                         "max bitrate": 4500
                     },
                     {
-                        "res": "1280×720",
+                        "res": "1280x720",
                         "fps": 30,
                         "max bitrate": 3072
                     },
