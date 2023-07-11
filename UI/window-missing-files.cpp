@@ -43,7 +43,9 @@ enum MissingFilesRole { EntryStateRole = Qt::UserRole, NewPathsToProcessRole };
 
 MissingFilesPathItemDelegate::MissingFilesPathItemDelegate(
 	bool isOutput, const QString &defaultPath)
-	: QStyledItemDelegate(), isOutput(isOutput), defaultPath(defaultPath)
+	: QStyledItemDelegate(),
+	  isOutput(isOutput),
+	  defaultPath(defaultPath)
 {
 }
 

@@ -1390,7 +1390,8 @@ std::vector<UpdateBranch> OBSApp::GetBranches()
 }
 
 OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
-	: QApplication(argc, argv), profilerNameStore(store)
+	: QApplication(argc, argv),
+	  profilerNameStore(store)
 {
 	/* fix float handling */
 #if defined(Q_OS_UNIX)

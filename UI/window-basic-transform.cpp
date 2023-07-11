@@ -41,7 +41,9 @@ void OBSBasicTransform::HookWidget(QWidget *widget, const char *signal,
 #define DSCROLL_CHANGED SIGNAL(valueChanged(double))
 
 OBSBasicTransform::OBSBasicTransform(OBSSceneItem item, OBSBasic *parent)
-	: QDialog(parent), ui(new Ui::OBSBasicTransform), main(parent)
+	: QDialog(parent),
+	  ui(new Ui::OBSBasicTransform),
+	  main(parent)
 {
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 

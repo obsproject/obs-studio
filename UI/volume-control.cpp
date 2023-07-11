@@ -826,7 +826,9 @@ void VolumeMeter::wheelEvent(QWheelEvent *event)
 
 VolumeMeter::VolumeMeter(QWidget *parent, obs_volmeter_t *obs_volmeter,
 			 bool vertical)
-	: QWidget(parent), obs_volmeter(obs_volmeter), vertical(vertical)
+	: QWidget(parent),
+	  obs_volmeter(obs_volmeter),
+	  vertical(vertical)
 {
 	setAttribute(Qt::WA_OpaquePaintEvent, true);
 

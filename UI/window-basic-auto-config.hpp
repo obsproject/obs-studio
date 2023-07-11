@@ -251,7 +251,8 @@ class AutoConfigTestPage : public QWizardPage {
 		inline ServerInfo() {}
 
 		inline ServerInfo(const char *name_, const char *address_)
-			: name(name_), address(address_)
+			: name(name_),
+			  address(address_)
 		{
 		}
 	};

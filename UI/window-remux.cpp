@@ -56,7 +56,9 @@ enum RemuxEntryRole { EntryStateRole = Qt::UserRole, NewPathsToProcessRole };
 
 RemuxEntryPathItemDelegate::RemuxEntryPathItemDelegate(
 	bool isOutput, const QString &defaultPath)
-	: QStyledItemDelegate(), isOutput(isOutput), defaultPath(defaultPath)
+	: QStyledItemDelegate(),
+	  isOutput(isOutput),
+	  defaultPath(defaultPath)
 {
 }
 

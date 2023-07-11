@@ -281,7 +281,9 @@ extern void RegisterYoutubeAuth();
 #endif
 
 OBSBasic::OBSBasic(QWidget *parent)
-	: OBSMainWindow(parent), undo_s(ui), ui(new Ui::OBSBasic)
+	: OBSMainWindow(parent),
+	  undo_s(ui),
+	  ui(new Ui::OBSBasic)
 {
 	setAttribute(Qt::WA_NativeWindow);
 
@@ -5830,7 +5832,8 @@ QMenu *OBSBasic::AddBackgroundColorMenu(QMenu *menu,
 }
 
 ColorSelect::ColorSelect(QWidget *parent)
-	: QWidget(parent), ui(new Ui::ColorSelect)
+	: QWidget(parent),
+	  ui(new Ui::ColorSelect)
 {
 	ui->setupUi(this);
 }

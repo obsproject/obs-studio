@@ -13,7 +13,8 @@
 #include "qt-wrappers.hpp"
 
 OBSLogViewer::OBSLogViewer(QWidget *parent)
-	: QDialog(parent), ui(new Ui::OBSLogViewer)
+	: QDialog(parent),
+	  ui(new Ui::OBSLogViewer)
 {
 	setWindowFlags(windowFlags() & Qt::WindowMaximizeButtonHint &
 		       ~Qt::WindowContextHelpButtonHint);

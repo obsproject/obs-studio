@@ -69,7 +69,8 @@ void RegisterYoutubeAuth()
 }
 
 YoutubeAuth::YoutubeAuth(const Def &d)
-	: OAuthStreamKey(d), section(SECTION_NAME)
+	: OAuthStreamKey(d),
+	  section(SECTION_NAME)
 {
 }
 

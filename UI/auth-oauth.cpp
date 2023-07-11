@@ -27,7 +27,8 @@ extern QCefCookieManager *panel_cookies;
 /* ------------------------------------------------------------------------- */
 
 OAuthLogin::OAuthLogin(QWidget *parent, const std::string &url, bool token)
-	: QDialog(parent), get_token(token)
+	: QDialog(parent),
+	  get_token(token)
 {
 #ifdef BROWSER_AVAILABLE
 	if (!cef) {

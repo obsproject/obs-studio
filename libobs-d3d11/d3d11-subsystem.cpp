@@ -52,7 +52,8 @@ static inline void LogD3D11ErrorDetails(HRError error, gs_device_t *device)
 }
 
 gs_obj::gs_obj(gs_device_t *device_, gs_type type)
-	: device(device_), obj_type(type)
+	: device(device_),
+	  obj_type(type)
 {
 	prev_next = &device->first_obj;
 	next = device->first_obj;
