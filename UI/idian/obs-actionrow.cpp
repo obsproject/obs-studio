@@ -15,6 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <QComboBox>
 #include <QSizePolicy>
 
 #include "obs-actionrow.hpp"
@@ -59,11 +60,8 @@ void OBSActionRow::setPrefix(QWidget *w, bool auto_connect)
 	int rowspan = !!descLbl ? 2 : 1;
 	_prefix = w;
 
-	// If element is checkable, forward clicks on the widget
-	QAbstractButton *abtn = dynamic_cast<QAbstractButton *>(w);
-	if (auto_connect && abtn && abtn->isCheckable())
-		connect(this, &OBSActionRow::clicked, abtn,
-			&QAbstractButton::click);
+	if (auto_connect)
+		this->autoConnectWidget(w);
 
 	_prefix->setParent(this);
 	layout->addWidget(_prefix, 0, 0, rowspan, 1, Qt::AlignLeft);
@@ -77,11 +75,8 @@ void OBSActionRow::setSuffix(QWidget *w, bool auto_connect)
 	int rowspan = !!descLbl ? 2 : 1;
 	_suffix = w;
 
-	// If element is checkable, forward clicks on the widget
-	QAbstractButton *abtn = dynamic_cast<QAbstractButton *>(w);
-	if (auto_connect && abtn && abtn->isCheckable())
-		connect(this, &OBSActionRow::clicked, abtn,
-			&QAbstractButton::click);
+	if (auto_connect)
+		this->autoConnectWidget(w);
 
 	_suffix->setParent(this);
 	layout->addWidget(_suffix, 0, 2, rowspan, 1,
@@ -120,6 +115,26 @@ void OBSActionRow::mouseReleaseEvent(QMouseEvent *e)
 		emit clicked();
 	}
 	QFrame::mouseReleaseEvent(e);
+}
+
+void OBSActionRow::autoConnectWidget(QWidget *w)
+{
+	/* If element is a QAbstractButton subclass, and checkable,
+	 * forward clicks on the widget. */
+	QAbstractButton *abtn = dynamic_cast<QAbstractButton *>(w);
+	if (abtn && abtn->isCheckable()) {
+		connect(this, &OBSActionRow::clicked, abtn,
+			&QAbstractButton::click);
+		return;
+	}
+
+	// Otherwise, if it's a QComboBox, popup the menu
+	QComboBox *cbx = dynamic_cast<QComboBox *>(w);
+	if (cbx) {
+		connect(this, &OBSActionRow::clicked, cbx,
+			&QComboBox::showPopup);
+		return;
+	}
 }
 
 /*

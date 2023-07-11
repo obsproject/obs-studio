@@ -82,6 +82,8 @@ private:
 
 	QWidget *_prefix = nullptr;
 	QWidget *_suffix = nullptr;
+
+	void autoConnectWidget(QWidget *w);
 };
 
 /**
