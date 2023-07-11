@@ -188,8 +188,9 @@ bool init_gpu_encoding(struct obs_core_video_mix *video)
 
 		uint32_t handle = gs_texture_get_shared_handle(tex);
 
-		struct obs_tex_frame frame = {
-			.tex = tex, .tex_uv = tex_uv, .handle = handle};
+		struct obs_tex_frame frame = {.tex = tex,
+					      .tex_uv = tex_uv,
+					      .handle = handle};
 
 		circlebuf_push_back(&video->gpu_encoder_avail_queue, &frame,
 				    sizeof(frame));

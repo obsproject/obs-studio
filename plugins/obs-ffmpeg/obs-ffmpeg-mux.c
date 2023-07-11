@@ -685,8 +685,9 @@ bool write_packet(struct ffmpeg_muxer *stream, struct encoder_packet *packet)
 static bool send_audio_headers(struct ffmpeg_muxer *stream,
 			       obs_encoder_t *aencoder, size_t idx)
 {
-	struct encoder_packet packet = {
-		.type = OBS_ENCODER_AUDIO, .timebase_den = 1, .track_idx = idx};
+	struct encoder_packet packet = {.type = OBS_ENCODER_AUDIO,
+					.timebase_den = 1,
+					.track_idx = idx};
 
 	if (!obs_encoder_get_extra_data(aencoder, &packet.data, &packet.size))
 		return false;
