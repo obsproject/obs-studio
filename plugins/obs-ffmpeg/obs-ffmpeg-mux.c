@@ -133,8 +133,6 @@ bool active(struct ffmpeg_muxer *stream)
 	return os_atomic_load_bool(&stream->active);
 }
 
-/* TODO: allow codecs other than h264 whenever we start using them */
-
 static void add_video_encoder_params(struct ffmpeg_muxer *stream,
 				     struct dstr *cmd, obs_encoder_t *vencoder)
 {
