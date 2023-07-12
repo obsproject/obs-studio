@@ -3,7 +3,11 @@
 #include <stdio.h>
 
 #include <ffnvcodec/nvEncodeAPI.h>
+#ifdef OBS_LEGACY
 #include "../obs-nvenc-ver.h"
+#else
+#include <obs-nvenc-ver.h>
+#endif
 
 #include <dxgi.h>
 #include <d3d11.h>

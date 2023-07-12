@@ -849,6 +849,9 @@ EXPORT void obs_remove_main_rendered_callback(void (*rendered)(void *param),
 EXPORT void obs_add_raw_video_callback(
 	const struct video_scale_info *conversion,
 	void (*callback)(void *param, struct video_data *frame), void *param);
+EXPORT void obs_add_raw_video_callback2(
+	const struct video_scale_info *conversion, uint32_t frame_rate_divisor,
+	void (*callback)(void *param, struct video_data *frame), void *param);
 EXPORT void obs_remove_raw_video_callback(
 	void (*callback)(void *param, struct video_data *frame), void *param);
 
@@ -1308,6 +1311,12 @@ typedef void (*obs_source_audio_capture_t)(void *param, obs_source_t *source,
 					   const struct audio_data *audio_data,
 					   bool muted);
 
+EXPORT void obs_source_add_audio_pause_callback(obs_source_t *source,
+						signal_callback_t callback,
+						void *param);
+EXPORT void obs_source_remove_audio_pause_callback(obs_source_t *source,
+						   signal_callback_t callback,
+						   void *param);
 EXPORT void obs_source_add_audio_capture_callback(
 	obs_source_t *source, obs_source_audio_capture_t callback, void *param);
 EXPORT void obs_source_remove_audio_capture_callback(
@@ -2411,6 +2420,25 @@ EXPORT enum obs_encoder_type obs_encoder_get_type(const obs_encoder_t *encoder);
 EXPORT void obs_encoder_set_scaled_size(obs_encoder_t *encoder, uint32_t width,
 					uint32_t height);
 
+/**
+ * Enable/disable GPU based scaling for a video encoder.
+ * OBS_SCALE_DISABLE disables GPU based scaling (default),
+ * any other value enables GPU based scaling. If the encoder
+ * is active, this function will trigger a warning, and do nothing.
+ */
+EXPORT void obs_encoder_set_gpu_scale_type(obs_encoder_t *encoder,
+					   enum obs_scale_type gpu_scale_type);
+
+/**
+ * Set frame rate divisor for a video encoder. This allows recording at
+ * a partial frame rate compared to the base frame rate, e.g. 60 FPS with
+ * divisor = 2 will record at 30 FPS, with divisor = 3 at 20, etc.
+ *
+ * Can only be called on stopped encoders, changing this on the fly is not supported
+ */
+EXPORT bool obs_encoder_set_frame_rate_divisor(obs_encoder_t *encoder,
+					       uint32_t divisor);
+
 /** For video encoders, returns true if pre-encode scaling is enabled */
 EXPORT bool obs_encoder_scaling_enabled(const obs_encoder_t *encoder);
 
@@ -2419,6 +2447,15 @@ EXPORT uint32_t obs_encoder_get_width(const obs_encoder_t *encoder);
 
 /** For video encoders, returns the height of the encoded image */
 EXPORT uint32_t obs_encoder_get_height(const obs_encoder_t *encoder);
+
+/** For video encoders, returns whether GPU scaling is enabled */
+EXPORT bool obs_encoder_gpu_scaling_enabled(obs_encoder_t *encoder);
+
+/** For video encoders, returns GPU scaling type */
+EXPORT enum obs_scale_type obs_encoder_get_scale_type(obs_encoder_t *encoder);
+
+/** For video encoders, returns the frame rate divisor (default is 1) */
+EXPORT uint32_t obs_encoder_get_frame_rate_divisor(const obs_encoder_t *encoder);
 
 /** For audio encoders, returns the sample rate of the audio */
 EXPORT uint32_t obs_encoder_get_sample_rate(const obs_encoder_t *encoder);

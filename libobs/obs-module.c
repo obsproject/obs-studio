@@ -716,14 +716,14 @@ cleanup:
 void obs_register_source_s(const struct obs_source_info *info, size_t size)
 {
 	struct obs_source_info data = {0};
-	struct darray *array = NULL;
+	obs_source_info_array_t *array = NULL;
 
 	if (info->type == OBS_SOURCE_TYPE_INPUT) {
-		array = &obs->input_types.da;
+		array = &obs->input_types;
 	} else if (info->type == OBS_SOURCE_TYPE_FILTER) {
-		array = &obs->filter_types.da;
+		array = &obs->filter_types;
 	} else if (info->type == OBS_SOURCE_TYPE_TRANSITION) {
-		array = &obs->transition_types.da;
+		array = &obs->transition_types;
 	} else if (info->type != OBS_SOURCE_TYPE_SCENE) {
 		source_warn("Tried to register unknown source type: %u",
 			    info->type);
@@ -811,7 +811,7 @@ void obs_register_source_s(const struct obs_source_info *info, size_t size)
 	}
 
 	if (array)
-		darray_push_back(sizeof(struct obs_source_info), array, &data);
+		da_push_back(*array, &data);
 	da_push_back(obs->source_types, &data);
 	return;
 

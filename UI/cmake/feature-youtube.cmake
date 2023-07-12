@@ -1,9 +1,9 @@
 if(YOUTUBE_CLIENTID
    AND YOUTUBE_SECRET
-   AND YOUTUBE_CLIENTID_HASH
-   AND YOUTUBE_SECRET_HASH)
-  target_sources(obs-studio PRIVATE auth-youtube.cpp auth-youtube.hpp youtube-api-wrappers.cpp youtube-api-wrappers.hpp
-                                    window-youtube-actions.cpp window-youtube-actions.hpp)
+   AND YOUTUBE_CLIENTID_HASH MATCHES "(0|[a-fA-F0-9]+)"
+   AND YOUTUBE_SECRET_HASH MATCHES "(0|[a-fA-F0-9]+)")
+  target_sources(obs-studio PRIVATE auth-youtube.cpp auth-youtube.hpp window-youtube-actions.cpp
+                                    window-youtube-actions.hpp youtube-api-wrappers.cpp youtube-api-wrappers.hpp)
 
   target_enable_feature(obs-studio "YouTube API connection" YOUTUBE_ENABLED)
 else()

@@ -48,18 +48,5 @@ set(OBS_LIBRARY_DESTINATION "lib")
 set(OBS_INCLUDE_DESTINATION "include/obs")
 set(OBS_CMAKE_DESTINATION "lib/cmake")
 
-set(_dmg_package_name "OBS")
-set(_dmg_background_filename "background.tiff")
-set(_dmg_window_x 100)
-set(_dmg_window_y 100)
-set(_dmg_window_width 540)
-set(_dmg_window_height 380)
-set(_dmg_icon_size 96)
-set(_dmg_text_size 16)
-set(_dmg_obs_x 124)
-set(_dmg_obs_y 180)
-set(_dmg_app_link_x 416)
-set(_dmg_app_link_y 180)
-
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/resources/package.applescript.in"
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/resources/package.applescript"
                "${CMAKE_CURRENT_BINARY_DIR}/package.applescript" @ONLY)

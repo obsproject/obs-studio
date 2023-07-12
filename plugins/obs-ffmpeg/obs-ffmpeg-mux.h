@@ -9,6 +9,8 @@
 #include <util/platform.h>
 #include <util/threading.h>
 
+typedef DARRAY(struct encoder_packet) mux_packets_t;
+
 struct ffmpeg_muxer {
 	obs_output_t *output;
 	os_process_pipe_t *pipe;
@@ -34,7 +36,7 @@ struct ffmpeg_muxer {
 	int keyframes;
 	obs_hotkey_id hotkey;
 	volatile bool muxing;
-	DARRAY(struct encoder_packet) mux_packets;
+	mux_packets_t mux_packets;
 
 	/* split file */
 	bool found_video;

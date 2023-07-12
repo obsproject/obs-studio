@@ -290,7 +290,8 @@ static void frontend_save_callback(obs_data_t *save_data, bool saving,
 	PyObject *py_save_data;
 
 	if (libobs_to_py(obs_data_t, save_data, false, &py_save_data)) {
-		PyObject *args = Py_BuildValue("(Op)", py_save_data, saving);
+		PyObject *args = Py_BuildValue("(ON)", py_save_data,
+					       PyBool_FromLong(saving));
 
 		struct python_obs_callback *last_cb = cur_python_cb;
 		cur_python_cb = cb;

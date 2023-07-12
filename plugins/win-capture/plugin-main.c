@@ -8,7 +8,9 @@
 
 #include "compat-helpers.h"
 #include "compat-format-ver.h"
+#ifdef OBS_LEGACY
 #include "compat-config.h"
+#endif
 
 #define WIN_CAPTURE_LOG_STRING "[win-capture plugin] "
 #define WIN_CAPTURE_VER_STRING "win-capture plugin (libobs " OBS_VERSION ")"

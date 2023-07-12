@@ -7,11 +7,11 @@ Extra Math Functions/Macros
 
 Helper functions/macros for graphics math.
 
-.. :c:macro:: RAD(val)
+.. macro:: RAD(val)
 
    Macro that converts a floating point degrees value to radians.
 
-.. :c:macro:: DEG(val)
+.. macro:: DEG(val)
 
    Macro that converts a floating point radians value to degrees.
 

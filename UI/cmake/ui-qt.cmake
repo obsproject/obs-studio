@@ -14,7 +14,7 @@ set_property(
   PROPERTY AUTOUIC_SEARCH_PATHS forms forms/source-toolbar)
 
 set(_qt_sources
-    forms/obs.qrc
+    # cmake-format: sortable
     forms/AutoConfigFinishPage.ui
     forms/AutoConfigStartPage.ui
     forms/AutoConfigStartPage.ui
@@ -22,6 +22,7 @@ set(_qt_sources
     forms/AutoConfigTestPage.ui
     forms/AutoConfigVideoPage.ui
     forms/ColorSelect.ui
+    forms/obs.qrc
     forms/OBSAbout.ui
     forms/OBSAdvAudio.ui
     forms/OBSBasic.ui

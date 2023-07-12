@@ -136,7 +136,7 @@ void gs_technique_end(gs_technique_t *tech)
 	}
 }
 
-static inline void reset_params(struct darray *shaderparams)
+static inline void reset_params(pass_shaderparam_array_t *shaderparams)
 {
 	struct pass_shaderparam *params = shaderparams->array;
 	size_t i;
@@ -145,7 +145,8 @@ static inline void reset_params(struct darray *shaderparams)
 		params[i].eparam->changed = false;
 }
 
-static void upload_shader_params(struct darray *pass_params, bool changed_only)
+static void upload_shader_params(pass_shaderparam_array_t *pass_params,
+				 bool changed_only)
 {
 	struct pass_shaderparam *params = pass_params->array;
 	size_t i;
@@ -177,13 +178,13 @@ static void upload_shader_params(struct darray *pass_params, bool changed_only)
 static inline void upload_parameters(struct gs_effect *effect,
 				     bool changed_only)
 {
-	struct darray *vshader_params, *pshader_params;
+	pass_shaderparam_array_t *vshader_params, *pshader_params;
 
 	if (!effect->cur_pass)
 		return;
 
-	vshader_params = &effect->cur_pass->vertshader_params.da;
-	pshader_params = &effect->cur_pass->pixelshader_params.da;
+	vshader_params = &effect->cur_pass->vertshader_params;
+	pshader_params = &effect->cur_pass->pixelshader_params;
 
 	upload_shader_params(vshader_params, changed_only);
 	upload_shader_params(pshader_params, changed_only);
@@ -232,7 +233,7 @@ bool gs_technique_begin_pass_by_name(gs_technique_t *tech, const char *name)
 	return false;
 }
 
-static inline void clear_tex_params(struct darray *in_params)
+static inline void clear_tex_params(pass_shaderparam_array_t *in_params)
 {
 	struct pass_shaderparam *params = in_params->array;
 
@@ -255,8 +256,8 @@ void gs_technique_end_pass(gs_technique_t *tech)
 	if (!pass)
 		return;
 
-	clear_tex_params(&pass->vertshader_params.da);
-	clear_tex_params(&pass->pixelshader_params.da);
+	clear_tex_params(&pass->vertshader_params);
+	clear_tex_params(&pass->pixelshader_params);
 	tech->effect->cur_pass = NULL;
 }
 

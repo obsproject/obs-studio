@@ -317,20 +317,20 @@ void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 
 	if (val == QDialogButtonBox::AcceptRole) {
 
-		std::string scene_name =
-			obs_source_get_name(main->GetCurrentSceneSource());
+		std::string scene_uuid =
+			obs_source_get_uuid(main->GetCurrentSceneSource());
 
-		auto undo_redo = [scene_name](const std::string &data) {
+		auto undo_redo = [scene_uuid](const std::string &data) {
 			OBSDataAutoRelease settings =
 				obs_data_create_from_json(data.c_str());
-			OBSSourceAutoRelease source = obs_get_source_by_name(
-				obs_data_get_string(settings, "undo_sname"));
+			OBSSourceAutoRelease source = obs_get_source_by_uuid(
+				obs_data_get_string(settings, "undo_uuid"));
 			obs_source_reset_settings(source, settings);
 
 			obs_source_update_properties(source);
 
 			OBSSourceAutoRelease scene_source =
-				obs_get_source_by_name(scene_name.c_str());
+				obs_get_source_by_uuid(scene_uuid.c_str());
 
 			OBSBasic::Get()->SetCurrentScene(scene_source.Get(),
 							 true);
@@ -340,10 +340,10 @@ void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 		OBSDataAutoRelease curr_settings =
 			obs_source_get_settings(source);
 		obs_data_apply(new_settings, curr_settings);
-		obs_data_set_string(new_settings, "undo_sname",
-				    obs_source_get_name(source));
-		obs_data_set_string(oldSettings, "undo_sname",
-				    obs_source_get_name(source));
+		obs_data_set_string(new_settings, "undo_uuid",
+				    obs_source_get_uuid(source));
+		obs_data_set_string(oldSettings, "undo_uuid",
+				    obs_source_get_uuid(source));
 
 		std::string undo_data(obs_data_get_json(oldSettings));
 		std::string redo_data(obs_data_get_json(new_settings));

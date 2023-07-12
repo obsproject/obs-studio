@@ -129,9 +129,9 @@ private:
 	int m_nTaskIdx;
 	int m_nFirstSyncTask;
 	mfxBitstream m_outBitstream;
-	bool m_bIsWindows8OrGreater;
 	bool m_bUseD3D11;
 	bool m_bD3D9HACK;
+	bool m_bUseTexAlloc;
 	bool m_isDGPU;
 	static mfxU16 g_numEncodersOpen;
 	static mfxHDL

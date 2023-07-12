@@ -59,13 +59,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "QSV_Encoder.h"
 #include "QSV_Encoder_Internal.h"
+#include "common_utils.h"
 #include <obs-module.h>
 #include <string>
 #include <atomic>
-#include <intrin.h>
-#include <d3d11.h>
-#include <dxgi1_2.h>
-#include <wrl/client.h>
 
 #define do_log(level, format, ...) \
 	blog(level, "[qsv encoder: '%s'] " format, "msdk_impl", ##__VA_ARGS__)
@@ -295,7 +292,7 @@ enum qsv_cpu_platform qsv_get_cpu_platform()
 	using std::string;
 
 	int cpuInfo[4];
-	__cpuid(cpuInfo, 0);
+	util_cpuid(cpuInfo, 0);
 
 	string vendor;
 	vendor += string((char *)&cpuInfo[1], 4);
@@ -305,9 +302,10 @@ enum qsv_cpu_platform qsv_get_cpu_platform()
 	if (vendor != "GenuineIntel")
 		return QSV_CPU_PLATFORM_UNKNOWN;
 
-	__cpuid(cpuInfo, 1);
-	BYTE model = ((cpuInfo[0] >> 4) & 0xF) + ((cpuInfo[0] >> 12) & 0xF0);
-	BYTE family = ((cpuInfo[0] >> 8) & 0xF) + ((cpuInfo[0] >> 20) & 0xFF);
+	util_cpuid(cpuInfo, 1);
+	uint8_t model = ((cpuInfo[0] >> 4) & 0xF) + ((cpuInfo[0] >> 12) & 0xF0);
+	uint8_t family =
+		((cpuInfo[0] >> 8) & 0xF) + ((cpuInfo[0] >> 20) & 0xFF);
 
 	// See Intel 64 and IA-32 Architectures Software Developer's Manual,
 	// Vol 3C Table 35-1

@@ -143,3 +143,4 @@ void mfxGetTime(mfxTime *timestamp);
 
 //void mfxInitTime();  might need this for Windows
 double TimeDiffMsec(mfxTime tfinish, mfxTime tstart);
+extern "C" void util_cpuid(int cpuinfo[4], int flags);

@@ -28,6 +28,9 @@ extern "C" {
 
 struct dstr;
 
+typedef DARRAY(struct ep_param) ep_param_array_t;
+typedef DARRAY(struct ep_var) ep_var_array_t;
+
 /*
  * The effect parser takes an effect file and converts it into individual
  * shaders for each technique's pass.  It automatically writes all dependent
@@ -73,10 +76,8 @@ struct ep_param {
 	struct gs_effect_param *param;
 	bool is_const, is_property, is_uniform, is_texture, written;
 	int writeorder, array_count;
-	DARRAY(struct ep_param) annotations;
+	ep_param_array_t annotations;
 };
-
-extern void ep_param_writevar(struct dstr *dst, struct darray *use_params);
 
 static inline void ep_param_init(struct ep_param *epp, char *type, char *name,
 				 bool is_property, bool is_const,
@@ -113,7 +114,7 @@ static inline void ep_param_free(struct ep_param *epp)
 
 struct ep_struct {
 	char *name;
-	DARRAY(struct ep_var) vars; /* struct ep_var */
+	ep_var_array_t vars; /* struct ep_var */
 	bool written;
 };
 
@@ -175,8 +176,8 @@ static inline void ep_sampler_free(struct ep_sampler *eps)
 
 struct ep_pass {
 	char *name;
-	DARRAY(struct cf_token) vertex_program;
-	DARRAY(struct cf_token) fragment_program;
+	cf_token_array_t vertex_program;
+	cf_token_array_t fragment_program;
 	struct gs_effect_pass *pass;
 };
 
@@ -222,7 +223,7 @@ static inline void ep_technique_free(struct ep_technique *ept)
 struct ep_func {
 	char *name, *ret_type, *mapping;
 	struct dstr contents;
-	DARRAY(struct ep_var) param_vars;
+	ep_var_array_t param_vars;
 	DARRAY(char *) func_deps;
 	DARRAY(char *) struct_deps;
 	DARRAY(char *) param_deps;
@@ -259,7 +260,7 @@ static inline void ep_func_free(struct ep_func *epf)
 struct effect_parser {
 	gs_effect_t *effect;
 
-	DARRAY(struct ep_param) params;
+	ep_param_array_t params;
 	DARRAY(struct ep_struct) structs;
 	DARRAY(struct ep_func) funcs;
 	DARRAY(struct ep_sampler) samplers;
@@ -267,7 +268,7 @@ struct effect_parser {
 
 	/* internal vars */
 	DARRAY(struct cf_lexer) files;
-	DARRAY(struct cf_token) tokens;
+	cf_token_array_t tokens;
 	struct gs_effect_pass *cur_pass;
 
 	struct cf_parser cfp;
