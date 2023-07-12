@@ -60,7 +60,7 @@
 #endif
 #include "window-projector.hpp"
 #include "window-remux.hpp"
-#if YOUTUBE_ENABLED
+#ifdef YOUTUBE_ENABLED
 #include "auth-youtube.hpp"
 #include "window-youtube-actions.hpp"
 #include "youtube-api-wrappers.hpp"
@@ -280,7 +280,7 @@ void setupDockAction(QDockWidget *dock)
 
 extern void RegisterTwitchAuth();
 extern void RegisterRestreamAuth();
-#if YOUTUBE_ENABLED
+#ifdef YOUTUBE_ENABLED
 extern void RegisterYoutubeAuth();
 #endif
 
@@ -294,13 +294,13 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	setAttribute(Qt::WA_NativeWindow);
 
-#if TWITCH_ENABLED
+#ifdef TWITCH_ENABLED
 	RegisterTwitchAuth();
 #endif
-#if RESTREAM_ENABLED
+#ifdef RESTREAM_ENABLED
 	RegisterRestreamAuth();
 #endif
-#if YOUTUBE_ENABLED
+#ifdef YOUTUBE_ENABLED
 	RegisterYoutubeAuth();
 #endif
 
@@ -4993,7 +4993,7 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 		return;
 	}
 
-#if YOUTUBE_ENABLED
+#ifdef YOUTUBE_ENABLED
 	/* Also don't close the window if the youtube stream check is active */
 	if (youtubeStreamCheckThread) {
 		QTimer::singleShot(1000, this, SLOT(close()));
@@ -6748,7 +6748,7 @@ void OBSBasic::DisplayStreamStartError()
 	QMessageBox::critical(this, QTStr("Output.StartStreamFailed"), message);
 }
 
-#if YOUTUBE_ENABLED
+#ifdef YOUTUBE_ENABLED
 void OBSBasic::YouTubeActionDialogOk(const QString &id, const QString &key,
 				     bool autostart, bool autostop,
 				     bool start_now)
@@ -6944,7 +6944,7 @@ void OBSBasic::StartStreaming()
 	if (replayBufferWhileStreaming)
 		StartReplayBuffer();
 
-#if YOUTUBE_ENABLED
+#ifdef YOUTUBE_ENABLED
 	if (!autoStartBroadcast)
 		OBSBasic::ShowYouTubeAutoStartWarning();
 #endif
@@ -6961,7 +6961,7 @@ void OBSBasic::BroadcastButtonClicked()
 	}
 
 	if (!autoStartBroadcast) {
-#if YOUTUBE_ENABLED
+#ifdef YOUTUBE_ENABLED
 		std::shared_ptr<YoutubeApiWrappers> ytAuth =
 			dynamic_pointer_cast<YoutubeApiWrappers>(auth);
 		if (ytAuth.get()) {
@@ -7001,7 +7001,7 @@ void OBSBasic::BroadcastButtonClicked()
 		ui->broadcastButton->style()->unpolish(ui->broadcastButton);
 		ui->broadcastButton->style()->polish(ui->broadcastButton);
 	} else if (!autoStopBroadcast) {
-#if YOUTUBE_ENABLED
+#ifdef YOUTUBE_ENABLED
 		bool confirm = config_get_bool(GetGlobalConfig(), "BasicWindow",
 					       "WarnBeforeStoppingStream");
 		if (confirm && isVisible()) {
@@ -7060,7 +7060,7 @@ void OBSBasic::SetBroadcastFlowEnabled(bool enabled)
 
 void OBSBasic::SetupBroadcast()
 {
-#if YOUTUBE_ENABLED
+#ifdef YOUTUBE_ENABLED
 	Auth *const auth = GetAuth();
 	if (IsYouTubeService(auth->service())) {
 		OBSYoutubeActions dialog(this, auth, broadcastReady);
@@ -7323,7 +7323,7 @@ void OBSBasic::StreamingStart()
 		sysTrayStream->setEnabled(true);
 	}
 
-#if YOUTUBE_ENABLED
+#ifdef YOUTUBE_ENABLED
 	if (!autoStartBroadcast) {
 		// get a current stream key
 		obs_service_t *service_obj = GetService();
@@ -7975,7 +7975,7 @@ void OBSBasic::on_streamButton_clicked()
 		bool confirm = config_get_bool(GetGlobalConfig(), "BasicWindow",
 					       "WarnBeforeStoppingStream");
 
-#if YOUTUBE_ENABLED
+#ifdef YOUTUBE_ENABLED
 		if (isVisible() && auth && IsYouTubeService(auth->service()) &&
 		    autoStopBroadcast) {
 			QMessageBox::StandardButton button = OBSMessageBox::question(

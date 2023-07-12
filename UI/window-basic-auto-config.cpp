@@ -19,7 +19,7 @@
 
 #include "auth-oauth.hpp"
 #include "ui-config.h"
-#if YOUTUBE_ENABLED
+#ifdef YOUTUBE_ENABLED
 #include "youtube-api-wrappers.hpp"
 #endif
 
@@ -355,7 +355,7 @@ bool AutoConfigStreamPage::validatePage()
 	} else {
 		/* Default test target is 10 Mbps */
 		bitrate = 10000;
-#if YOUTUBE_ENABLED
+#ifdef YOUTUBE_ENABLED
 		if (IsYouTubeService(wiz->serviceName)) {
 			/* Adjust upper bound to YouTube limits
 			 * for resolutions above 1080p */
@@ -394,7 +394,7 @@ bool AutoConfigStreamPage::validatePage()
 	if (!wiz->customServer) {
 		if (wiz->serviceName == "Twitch")
 			wiz->service = AutoConfig::Service::Twitch;
-#if YOUTUBE_ENABLED
+#ifdef YOUTUBE_ENABLED
 		else if (IsYouTubeService(wiz->serviceName))
 			wiz->service = AutoConfig::Service::YouTube;
 #endif
@@ -450,7 +450,7 @@ void AutoConfigStreamPage::OnOAuthStreamKeyConnected()
 		ui->connectedAccountLabel->setVisible(false);
 		ui->connectedAccountText->setVisible(false);
 
-#if YOUTUBE_ENABLED
+#ifdef YOUTUBE_ENABLED
 		if (IsYouTubeService(a->service())) {
 			ui->key->clear();
 
@@ -567,7 +567,7 @@ static inline bool is_external_oauth(const std::string &service)
 
 void AutoConfigStreamPage::reset_service_ui_fields(std::string &service)
 {
-#if YOUTUBE_ENABLED
+#ifdef YOUTUBE_ENABLED
 	// when account is already connected:
 	OAuthStreamKey *a = reinterpret_cast<OAuthStreamKey *>(auth.get());
 	if (a && service == a->service() && IsYouTubeService(a->service())) {
@@ -660,7 +660,7 @@ void AutoConfigStreamPage::ServiceChanged()
 		auto system_auth_service = main->auth->service();
 		bool service_check = service.find(system_auth_service) !=
 				     std::string::npos;
-#if YOUTUBE_ENABLED
+#ifdef YOUTUBE_ENABLED
 		service_check =
 			service_check ? service_check
 				      : IsYouTubeService(system_auth_service) &&
@@ -1083,7 +1083,7 @@ void AutoConfig::SaveStreamSettings()
 	if (!customServer)
 		obs_data_set_string(settings, "service", serviceName.c_str());
 	obs_data_set_string(settings, "server", server.c_str());
-#if YOUTUBE_ENABLED
+#ifdef YOUTUBE_ENABLED
 	if (!IsYouTubeService(serviceName))
 		obs_data_set_string(settings, "key", key.c_str());
 #else
