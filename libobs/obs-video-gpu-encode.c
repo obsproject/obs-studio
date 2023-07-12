@@ -70,13 +70,11 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 			struct encoder_packet pkt = {0};
 			bool received = false;
 			bool success;
-			uint32_t skip = 0;
 
 			obs_encoder_t *encoder = encoders.array[i];
 			struct obs_encoder *pair = encoder->paired_encoder;
 
-			pkt.timebase_num = encoder->timebase_num *
-					   encoder->frame_rate_divisor;
+			pkt.timebase_num = encoder->timebase_num;
 			pkt.timebase_den = encoder->timebase_den;
 			pkt.encoder = encoder;
 
@@ -96,16 +94,6 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 						     encoder->context.settings);
 			}
 
-			// an explicit counter is used instead of remainder calculation
-			// to allow multiple encoders started at the same time to start on
-			// the same frame
-			skip = encoder->frame_rate_divisor_counter++;
-			if (encoder->frame_rate_divisor_counter ==
-			    encoder->frame_rate_divisor)
-				encoder->frame_rate_divisor_counter = 0;
-			if (skip)
-				continue;
-
 			if (!encoder->start_ts)
 				encoder->start_ts = timestamp;
 
@@ -123,8 +111,7 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 
 			lock_key = next_key;
 
-			encoder->cur_pts += encoder->timebase_num *
-					    encoder->frame_rate_divisor;
+			encoder->cur_pts += encoder->timebase_num;
 		}
 
 		/* -------------- */
