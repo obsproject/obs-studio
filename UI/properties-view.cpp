@@ -1953,12 +1953,16 @@ bool WidgetInfo::FontChanged(const char *setting)
 
 	if (!font_obj) {
 		QFont initial;
-		font = QFontDialog::getFont(&success, initial, view,
-					    "Pick a Font", options);
+		font = QFontDialog::getFont(
+			&success, initial, view,
+			QTStr("Basic.PropertiesWindow.SelectFont.WindowTitle"),
+			options);
 	} else {
 		MakeQFont(font_obj, font);
-		font = QFontDialog::getFont(&success, font, view, "Pick a Font",
-					    options);
+		font = QFontDialog::getFont(
+			&success, font, view,
+			QTStr("Basic.PropertiesWindow.SelectFont.WindowTitle"),
+			options);
 	}
 
 	if (!success)

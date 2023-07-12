@@ -654,8 +654,10 @@ void TextSourceToolbar::on_selectFont_clicked()
 	options = QFontDialog::DontUseNativeDialog;
 #endif
 
-	font = QFontDialog::getFont(&success, font, this, "Pick a Font",
-				    options);
+	font = QFontDialog::getFont(
+		&success, font, this,
+		QTStr("Basic.PropertiesWindow.SelectFont.WindowTitle"),
+		options);
 	if (!success) {
 		return;
 	}
