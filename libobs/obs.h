@@ -2424,15 +2424,6 @@ EXPORT void obs_encoder_set_scaled_size(obs_encoder_t *encoder, uint32_t width,
 EXPORT bool obs_encoder_set_frame_rate_divisor(obs_encoder_t *encoder,
 					       uint32_t divisor);
 
-/**
- * Enable/disable GPU based scaling for a video encoder.
- * OBS_SCALE_DISABLE disables GPU based scaling (default),
- * any other value enables GPU based scaling. If the encoder
- * is active, this function will trigger a warning, and do nothing.
- */
-EXPORT void obs_encoder_set_gpu_scale_type(obs_encoder_t *encoder,
-					   enum obs_scale_type gpu_scale_type);
-
 /** For video encoders, returns true if pre-encode scaling is enabled */
 EXPORT bool obs_encoder_scaling_enabled(const obs_encoder_t *encoder);
 
@@ -2444,12 +2435,6 @@ EXPORT uint32_t obs_encoder_get_height(const obs_encoder_t *encoder);
 
 /** For video encoders, returns the frame rate divisor (default is 1) */
 EXPORT uint32_t obs_encoder_get_frame_rate_divisor(const obs_encoder_t *encoder);
-
-/** For video encoders, returns whether GPU scaling is enabled */
-EXPORT bool obs_encoder_gpu_scaling_enabled(obs_encoder_t *encoder);
-
-/** For video encoders, returns GPU scaling type */
-EXPORT enum obs_scale_type obs_encoder_get_scale_type(obs_encoder_t *encoder);
 
 /** For audio encoders, returns the sample rate of the audio */
 EXPORT uint32_t obs_encoder_get_sample_rate(const obs_encoder_t *encoder);
