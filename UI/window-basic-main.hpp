@@ -626,7 +626,7 @@ private:
 	bool broadcastActive = false;
 	bool broadcastReady = false;
 	QPointer<QThread> youtubeStreamCheckThread;
-#if YOUTUBE_ENABLED
+#ifdef YOUTUBE_ENABLED
 	void YoutubeStreamCheck(const std::string &key);
 	void ShowYouTubeAutoStartWarning();
 	void YouTubeActionDialogOk(const QString &id, const QString &key,
