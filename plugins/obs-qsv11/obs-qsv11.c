@@ -399,10 +399,7 @@ static obs_properties_t *obs_qsv_props(enum qsv_codec codec, void *unused,
 				       OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_STRING);
 
-	if (codec == QSV_CODEC_AVC || codec == QSV_CODEC_HEVC)
-		add_rate_controls(prop, qsv_ratecontrols);
-	else if (codec == QSV_CODEC_AV1)
-		add_rate_controls(prop, qsv_av1_ratecontrols);
+	add_rate_controls(prop, qsv_ratecontrols);
 
 	obs_property_set_modified_callback(prop, rate_control_modified);
 
@@ -458,8 +455,7 @@ static obs_properties_t *obs_qsv_props(enum qsv_codec codec, void *unused,
 	obs_property_set_long_description(prop,
 					  obs_module_text("Latency.ToolTip"));
 
-	if (codec != QSV_CODEC_AV1)
-		obs_properties_add_int(props, "bframes", TEXT_BFRAMES, 0, 3, 1);
+	obs_properties_add_int(props, "bframes", TEXT_BFRAMES, 0, 3, 1);
 
 	if (is_skl_or_greater_platform())
 		obs_properties_add_bool(props, "enhancements",
@@ -524,8 +520,7 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 		bFrames = (int)obs_data_get_int(settings, "bf");
 
 	enum qsv_cpu_platform plat = qsv_get_cpu_platform();
-	if (obsqsv->codec == QSV_CODEC_AV1 || plat == QSV_CPU_PLATFORM_IVB ||
-	    plat == QSV_CPU_PLATFORM_SNB)
+	if (plat == QSV_CPU_PLATFORM_IVB || plat == QSV_CPU_PLATFORM_SNB)
 		bFrames = 0;
 
 	int width = (int)obs_encoder_get_width(obsqsv->encoder);
