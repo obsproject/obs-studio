@@ -295,11 +295,6 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 		m_mfxEncParams.mfx.QPB = pParams->nQPB;
 		m_mfxEncParams.mfx.QPP = pParams->nQPP;
 		break;
-	case MFX_RATECONTROL_AVBR:
-		m_mfxEncParams.mfx.TargetKbps = pParams->nTargetBitRate;
-		m_mfxEncParams.mfx.Accuracy = pParams->nAccuracy;
-		m_mfxEncParams.mfx.Convergence = pParams->nConvergence;
-		break;
 	case MFX_RATECONTROL_ICQ:
 		m_mfxEncParams.mfx.ICQQuality = pParams->nICQQuality;
 		break;

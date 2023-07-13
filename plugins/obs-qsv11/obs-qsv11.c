@@ -177,8 +177,6 @@ static void obs_qsv_defaults(obs_data_t *settings, int ver,
 
 	obs_data_set_default_int(settings, "__ver", ver);
 
-	obs_data_set_default_int(settings, "accuracy", 1000);
-	obs_data_set_default_int(settings, "convergence", 1);
 	obs_data_set_default_int(settings, "cqp", 23);
 	obs_data_set_default_int(settings, "qpi", 23);
 	obs_data_set_default_int(settings, "qpp", 23);
@@ -225,8 +223,6 @@ static inline void add_strings(obs_property_t *list, const char *const *strings)
 #define TEXT_PROFILE obs_module_text("Profile")
 #define TEXT_LATENCY obs_module_text("Latency")
 #define TEXT_RATE_CONTROL obs_module_text("RateControl")
-#define TEXT_ACCURACY obs_module_text("Accuracy")
-#define TEXT_CONVERGENCE obs_module_text("Convergence")
 #define TEXT_ICQ_QUALITY obs_module_text("ICQQuality")
 #define TEXT_KEYINT_SEC obs_module_text("KeyframeIntervalSec")
 #define TEXT_BFRAMES obs_module_text("BFrames")
@@ -292,6 +288,20 @@ static bool update_latency(obs_data_t *settings)
 	return true;
 }
 
+static bool update_ratecontrol(obs_data_t *settings)
+{
+	const char *rate_control =
+		obs_data_get_string(settings, "rate_control");
+
+	if (astrcmpi(rate_control, "VCM") == 0) {
+		obs_data_set_string(settings, "rate_control", "CBR");
+	} else if (astrcmpi(rate_control, "AVBR") == 0) {
+		obs_data_set_string(settings, "rate_control", "VBR");
+	}
+
+	return true;
+}
+
 static bool update_enhancements(obs_data_t *settings)
 {
 	bool update = false;
@@ -352,8 +362,7 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 	const char *rate_control =
 		obs_data_get_string(settings, "rate_control");
 
-	bool bVisible = astrcmpi(rate_control, "VCM") == 0 ||
-			astrcmpi(rate_control, "VBR") == 0;
+	bool bVisible = astrcmpi(rate_control, "VBR") == 0;
 	p = obs_properties_get(ppts, "max_bitrate");
 	obs_property_set_visible(p, bVisible);
 
@@ -361,12 +370,6 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 		   astrcmpi(rate_control, "ICQ") == 0;
 	p = obs_properties_get(ppts, "bitrate");
 	obs_property_set_visible(p, !bVisible);
-
-	bVisible = astrcmpi(rate_control, "AVBR") == 0;
-	p = obs_properties_get(ppts, "accuracy");
-	obs_property_set_visible(p, bVisible);
-	p = obs_properties_get(ppts, "convergence");
-	obs_property_set_visible(p, bVisible);
 
 	bVisible = astrcmpi(rate_control, "CQP") == 0;
 	p = obs_properties_get(ppts, "qpi");
@@ -393,6 +396,7 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 
 	update_latency(settings);
 	update_enhancements(settings);
+	update_ratecontrol(settings);
 
 	return true;
 }
@@ -481,9 +485,6 @@ static obs_properties_t *obs_qsv_props(enum qsv_codec codec, void *unused,
 				      20, 1);
 	obs_property_int_set_suffix(prop, " s");
 
-	obs_properties_add_int(props, "accuracy", TEXT_ACCURACY, 0, 10000, 1);
-	obs_properties_add_int(props, "convergence", TEXT_CONVERGENCE, 0, 10,
-			       1);
 	prop = obs_properties_add_list(props, "latency", TEXT_LATENCY,
 				       OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_STRING);
@@ -539,8 +540,6 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	const char *latency = obs_data_get_string(settings, "latency");
 	int target_bitrate = (int)obs_data_get_int(settings, "bitrate");
 	int max_bitrate = (int)obs_data_get_int(settings, "max_bitrate");
-	int accuracy = (int)obs_data_get_int(settings, "accuracy");
-	int convergence = (int)obs_data_get_int(settings, "convergence");
 	int qpi = (int)obs_data_get_int(settings, "qpi");
 	int qpp = (int)obs_data_get_int(settings, "qpp");
 	int qpb = (int)obs_data_get_int(settings, "qpb");
@@ -685,12 +684,8 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 		obsqsv->params.nRateControl = MFX_RATECONTROL_CBR;
 	else if (astrcmpi(rate_control, "VBR") == 0)
 		obsqsv->params.nRateControl = MFX_RATECONTROL_VBR;
-	else if (astrcmpi(rate_control, "VCM") == 0)
-		obsqsv->params.nRateControl = MFX_RATECONTROL_VCM;
 	else if (astrcmpi(rate_control, "CQP") == 0)
 		obsqsv->params.nRateControl = MFX_RATECONTROL_CQP;
-	else if (astrcmpi(rate_control, "AVBR") == 0)
-		obsqsv->params.nRateControl = MFX_RATECONTROL_AVBR;
 	else if (astrcmpi(rate_control, "ICQ") == 0)
 		obsqsv->params.nRateControl = MFX_RATECONTROL_ICQ;
 
@@ -716,8 +711,6 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 			obsqsv->params.nLADEPTH = 10;
 	}
 
-	obsqsv->params.nAccuracy = (mfxU16)accuracy;
-	obsqsv->params.nConvergence = (mfxU16)convergence;
 	if (ver == 1) {
 		obsqsv->params.nQPI = (mfxU16)qpi;
 		obsqsv->params.nQPP = (mfxU16)qpp;
@@ -751,8 +744,7 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 		blog(LOG_INFO, "\ttarget_bitrate: %d",
 		     (int)obsqsv->params.nTargetBitRate);
 
-	if (obsqsv->params.nRateControl == MFX_RATECONTROL_VBR ||
-	    obsqsv->params.nRateControl == MFX_RATECONTROL_VCM)
+	if (obsqsv->params.nRateControl == MFX_RATECONTROL_VBR)
 		blog(LOG_INFO, "\tmax_bitrate:    %d",
 		     (int)obsqsv->params.nMaxBitRate);
 
