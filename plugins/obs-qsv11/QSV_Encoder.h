@@ -80,10 +80,14 @@ static const struct qsv_rate_control_info qsv_ratecontrols[] = {{"CBR", false},
 static const char *const qsv_profile_names[] = {"high", "main", "baseline", 0};
 static const char *const qsv_profile_names_av1[] = {"main", 0};
 static const char *const qsv_profile_names_hevc[] = {"main", "main10", 0};
-static const char *const qsv_usage_names[] = {"quality",  "balanced", "speed",
-					      "veryslow", "slower",   "slow",
-					      "medium",   "fast",     "faster",
-					      "veryfast", 0};
+static const char *const qsv_usage_names[] = {"TU1: Slowest (Best Quality)",
+					      "TU2: Slower",
+					      "TU3: Slow",
+					      "TU4: Balanced (Medium Quality)",
+					      "TU5: Fast",
+					      "TU6: Faster",
+					      "TU7: Fastest (Best Speed)",
+					      0};
 static const char *const qsv_latency_names[] = {"ultra-low", "low", "normal",
 						0};
 typedef struct qsv_t qsv_t;
