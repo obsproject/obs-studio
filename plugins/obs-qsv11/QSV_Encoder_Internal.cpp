@@ -387,20 +387,28 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 	extendedBuffers.push_back((mfxExtBuffer *)&m_ExtVideoSignalInfo);
 #endif
 
-/* TODO: Ask Intel why this is MFX_ERR_UNSUPPORTED */
-#if 0
-	memset(&m_ExtChromaLocInfo, 0, sizeof(m_ExtChromaLocInfo));
-	m_ExtChromaLocInfo.Header.BufferId = MFX_EXTBUFF_CHROMA_LOC_INFO;
-	m_ExtChromaLocInfo.Header.BufferSz = sizeof(m_ExtChromaLocInfo);
-	m_ExtChromaLocInfo.ChromaLocInfoPresentFlag = 1;
-	m_ExtChromaLocInfo.ChromaSampleLocTypeTopField =
-		pParams->ChromaSampleLocTypeTopField;
-	m_ExtChromaLocInfo.ChromaSampleLocTypeBottomField =
-		pParams->ChromaSampleLocTypeBottomField;
-	extendedBuffers.push_back((mfxExtBuffer *)&m_ExtChromaLocInfo);
-#endif
+	// CLL and Chroma location in HEVC only supported by VPL
+	if (m_ver.Major >= 2) {
+		// Chroma location is HEVC only
+		if (codec == QSV_CODEC_HEVC) {
+			memset(&m_ExtChromaLocInfo, 0,
+			       sizeof(m_ExtChromaLocInfo));
+			m_ExtChromaLocInfo.Header.BufferId =
+				MFX_EXTBUFF_CHROMA_LOC_INFO;
+			m_ExtChromaLocInfo.Header.BufferSz =
+				sizeof(m_ExtChromaLocInfo);
+			m_ExtChromaLocInfo.ChromaLocInfoPresentFlag = 1;
+			m_ExtChromaLocInfo.ChromaSampleLocTypeTopField =
+				pParams->ChromaSampleLocTypeTopField;
+			m_ExtChromaLocInfo.ChromaSampleLocTypeBottomField =
+				pParams->ChromaSampleLocTypeBottomField;
+			extendedBuffers.push_back(
+				(mfxExtBuffer *)&m_ExtChromaLocInfo);
+		}
+	}
 
-	if (codec != QSV_CODEC_AV1 && pParams->MaxContentLightLevel > 0) {
+	// AV1 HDR meta data is now supported by VPL.
+	if (pParams->MaxContentLightLevel > 0) {
 		memset(&m_ExtMasteringDisplayColourVolume, 0,
 		       sizeof(m_ExtMasteringDisplayColourVolume));
 		m_ExtMasteringDisplayColourVolume.Header.BufferId =
