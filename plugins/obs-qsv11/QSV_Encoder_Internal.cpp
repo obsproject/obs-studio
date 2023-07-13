@@ -258,22 +258,18 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 	m_mfxEncParams.mfx.FrameInfo.CropH = pParams->nHeight;
 	m_mfxEncParams.mfx.GopRefDist = pParams->nbFrames + 1;
 
-	if (codec == QSV_CODEC_HEVC)
-		m_mfxEncParams.mfx.LowPower = MFX_CODINGOPTION_OFF;
-
+	mfxPlatform platform;
+	MFXVideoCORE_QueryPlatform(m_session, &platform);
 #if defined(_WIN32)
-	// TODO: Why isn't LowPower coding supported on VAAPI backend.
-	enum qsv_cpu_platform qsv_platform = qsv_get_cpu_platform();
-	if ((m_isDGPU || qsv_platform >= QSV_CPU_PLATFORM_ICL ||
-	     qsv_platform == QSV_CPU_PLATFORM_UNKNOWN) &&
-	    (pParams->nbFrames == 0) &&
-	    (m_ver.Major == 1 && m_ver.Minor >= 31)) {
+	PRAGMA_WARN_PUSH
+	PRAGMA_WARN_DEPRECATION
+	if (codec == QSV_CODEC_AVC || codec == QSV_CODEC_HEVC) {
+		if (platform.CodeName >= MFX_PLATFORM_DG2)
+			m_mfxEncParams.mfx.LowPower = MFX_CODINGOPTION_ON;
+	} else if (codec == QSV_CODEC_AV1) {
 		m_mfxEncParams.mfx.LowPower = MFX_CODINGOPTION_ON;
-		if (pParams->nRateControl == MFX_RATECONTROL_LA_ICQ ||
-		    pParams->nRateControl == MFX_RATECONTROL_LA_HRD ||
-		    pParams->nRateControl == MFX_RATECONTROL_LA)
-			pParams->nRateControl = MFX_RATECONTROL_VBR;
 	}
+	PRAGMA_WARN_POP
 #endif
 
 	m_mfxEncParams.mfx.RateControlMethod = pParams->nRateControl;
@@ -307,16 +303,6 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 	case MFX_RATECONTROL_ICQ:
 		m_mfxEncParams.mfx.ICQQuality = pParams->nICQQuality;
 		break;
-	case MFX_RATECONTROL_LA:
-		m_mfxEncParams.mfx.TargetKbps = pParams->nTargetBitRate;
-		break;
-	case MFX_RATECONTROL_LA_ICQ:
-		m_mfxEncParams.mfx.ICQQuality = pParams->nICQQuality;
-		break;
-	case MFX_RATECONTROL_LA_HRD:
-		m_mfxEncParams.mfx.TargetKbps = pParams->nTargetBitRate;
-		m_mfxEncParams.mfx.MaxKbps = pParams->nTargetBitRate;
-		break;
 	default:
 		break;
 	}
@@ -328,37 +314,59 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 				   (float)pParams->nFpsDen)
 			: 240;
 
-	if (m_ver.Major == 1 && m_ver.Minor >= 8) {
-		memset(&m_co2, 0, sizeof(mfxExtCodingOption2));
-		m_co2.Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
-		m_co2.Header.BufferSz = sizeof(m_co2);
-		if (codec != QSV_CODEC_AVC)
-			m_co2.RepeatPPS = MFX_CODINGOPTION_ON;
-		if (pParams->nRateControl == MFX_RATECONTROL_LA_ICQ ||
-		    pParams->nRateControl == MFX_RATECONTROL_LA)
-			m_co2.LookAheadDepth = pParams->nLADEPTH;
-		if (pParams->nbFrames > 1)
-			m_co2.BRefType = MFX_B_REF_PYRAMID;
-		if (m_mfxEncParams.mfx.LowPower == MFX_CODINGOPTION_ON) {
-			if (codec == QSV_CODEC_AVC)
-				m_co2.RepeatPPS = MFX_CODINGOPTION_OFF;
-			if (pParams->nRateControl == MFX_RATECONTROL_CBR ||
-			    pParams->nRateControl == MFX_RATECONTROL_VBR) {
-				m_co2.LookAheadDepth = pParams->nLADEPTH;
-			}
+	memset(&m_co2, 0, sizeof(mfxExtCodingOption2));
+	m_co2.Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
+	m_co2.Header.BufferSz = sizeof(m_co2);
+	m_co2.RepeatPPS = MFX_CODINGOPTION_OFF;
+
+	memset(&m_co3, 0, sizeof(mfxExtCodingOption3));
+	m_co3.Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
+	m_co3.Header.BufferSz = sizeof(m_co3);
+
+	if (codec != QSV_CODEC_AVC)
+		m_co2.RepeatPPS = MFX_CODINGOPTION_ON;
+	if (pParams->nbFrames > 1)
+		m_co2.BRefType = MFX_B_REF_PYRAMID;
+
+	PRAGMA_WARN_PUSH
+	PRAGMA_WARN_DEPRECATION
+	// LA VME/ENC case for older platforms
+	if (pParams->nLADEPTH && codec == QSV_CODEC_AVC &&
+	    m_mfxEncParams.mfx.LowPower != MFX_CODINGOPTION_ON &&
+	    platform.CodeName >= MFX_PLATFORM_ICELAKE) {
+		if (pParams->nRateControl == MFX_RATECONTROL_CBR) {
+			pParams->nRateControl = MFX_RATECONTROL_LA_HRD;
+		} else if (pParams->nRateControl == MFX_RATECONTROL_VBR) {
+			pParams->nRateControl = MFX_RATECONTROL_LA;
+		} else if (pParams->nRateControl == MFX_RATECONTROL_ICQ) {
+			pParams->nRateControl = MFX_RATECONTROL_LA_ICQ;
 		}
-		extendedBuffers.push_back((mfxExtBuffer *)&m_co2);
+		m_co2.LookAheadDepth = pParams->nLADEPTH;
+	}
+	PRAGMA_WARN_POP
+
+	// LA VDENC case for newer platform, works only under CBR / VBR
+	if (pParams->nRateControl == MFX_RATECONTROL_CBR ||
+	    pParams->nRateControl == MFX_RATECONTROL_VBR) {
+		if (pParams->nLADEPTH &&
+		    m_mfxEncParams.mfx.LowPower == MFX_CODINGOPTION_ON) {
+			m_co2.LookAheadDepth = pParams->nLADEPTH;
+			m_co3.ScenarioInfo = MFX_SCENARIO_GAME_STREAMING;
+		}
+		// CQM to follow UI setting
+		if (pParams->bCQM) {
+			m_co3.AdaptiveCQM = MFX_CODINGOPTION_ON;
+			if (m_co3.ScenarioInfo != MFX_SCENARIO_GAME_STREAMING) {
+				m_co3.ScenarioInfo =
+					MFX_SCENARIO_GAME_STREAMING;
+			}
+		} else {
+			m_co3.AdaptiveCQM = MFX_CODINGOPTION_OFF;
+		}
 	}
 
-	if ((m_mfxEncParams.mfx.LowPower == MFX_CODINGOPTION_ON) ||
-	    (pParams->bCQM && m_ver.Major == 1 && m_ver.Minor >= 16)) {
-		memset(&m_co3, 0, sizeof(mfxExtCodingOption3));
-		m_co3.Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
-		m_co3.Header.BufferSz = sizeof(m_co3);
-		m_co3.ScenarioInfo = MFX_SCENARIO_GAME_STREAMING;
-		m_co3.AdaptiveCQM = MFX_CODINGOPTION_ON;
-		extendedBuffers.push_back((mfxExtBuffer *)&m_co3);
-	}
+	extendedBuffers.push_back((mfxExtBuffer *)&m_co2);
+	extendedBuffers.push_back((mfxExtBuffer *)&m_co3);
 
 	if (codec == QSV_CODEC_HEVC) {
 		if ((pParams->nWidth & 15) || (pParams->nHeight & 15)) {

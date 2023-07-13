@@ -257,14 +257,22 @@ static bool update_latency(obs_data_t *settings)
 		update = true;
 	}
 
+	const char *rate_control =
+		obs_data_get_string(settings, "rate_control");
+
+	bool lookahead = false;
+	if (astrcmpi(rate_control, "LA_CBR") == 0) {
+		obs_data_set_string(settings, "rate_control", "CBR");
+		lookahead = true;
+	} else if (astrcmpi(rate_control, "LA_VBR") == 0) {
+		obs_data_set_string(settings, "rate_control", "VBR");
+		lookahead = true;
+	} else if (astrcmpi(rate_control, "LA_ICQ") == 0) {
+		obs_data_set_string(settings, "rate_control", "ICQ");
+		lookahead = true;
+	}
+
 	if (update) {
-		const char *rate_control =
-			obs_data_get_string(settings, "rate_control");
-
-		bool lookahead = astrcmpi(rate_control, "LA_CBR") == 0 ||
-				 astrcmpi(rate_control, "LA_VBR") == 0 ||
-				 astrcmpi(rate_control, "LA_ICQ") == 0;
-
 		if (lookahead) {
 			if (la_depth == 0 || la_depth >= 15)
 				obs_data_set_string(settings, "latency",
@@ -350,7 +358,6 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 	obs_property_set_visible(p, bVisible);
 
 	bVisible = astrcmpi(rate_control, "CQP") == 0 ||
-		   astrcmpi(rate_control, "LA_ICQ") == 0 ||
 		   astrcmpi(rate_control, "ICQ") == 0;
 	p = obs_properties_get(ppts, "bitrate");
 	obs_property_set_visible(p, !bVisible);
@@ -375,8 +382,7 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 	if (p)
 		obs_property_set_visible(p, bVisible);
 
-	bVisible = astrcmpi(rate_control, "ICQ") == 0 ||
-		   astrcmpi(rate_control, "LA_ICQ") == 0;
+	bVisible = astrcmpi(rate_control, "ICQ") == 0;
 	p = obs_properties_get(ppts, "icq_quality");
 	obs_property_set_visible(p, bVisible);
 
@@ -687,29 +693,20 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 		obsqsv->params.nRateControl = MFX_RATECONTROL_AVBR;
 	else if (astrcmpi(rate_control, "ICQ") == 0)
 		obsqsv->params.nRateControl = MFX_RATECONTROL_ICQ;
-	else if (astrcmpi(rate_control, "LA_ICQ") == 0)
-		obsqsv->params.nRateControl = MFX_RATECONTROL_LA_ICQ;
-	else if (astrcmpi(rate_control, "LA_VBR") == 0)
-		obsqsv->params.nRateControl = MFX_RATECONTROL_LA;
-	else if (astrcmpi(rate_control, "LA_CBR") == 0)
-		obsqsv->params.nRateControl = MFX_RATECONTROL_LA_HRD;
 
-	if (obsqsv->codec == QSV_CODEC_AV1) {
+	obsqsv->params.nLADEPTH = (mfxU16)0;
+	if (astrcmpi(latency, "ultra-low") == 0) {
+		obsqsv->params.nAsyncDepth = 1;
+	} else if (astrcmpi(latency, "low") == 0) {
 		obsqsv->params.nAsyncDepth = 4;
-		obsqsv->params.nLADEPTH = 0;
-	} else {
-		if (astrcmpi(latency, "ultra-low") == 0) {
-			obsqsv->params.nAsyncDepth = 1;
-			obsqsv->params.nLADEPTH = (mfxU16)0;
-		} else if (astrcmpi(latency, "low") == 0) {
-			obsqsv->params.nAsyncDepth = 4;
-			obsqsv->params.nLADEPTH =
-				(mfxU16)(voi->fps_num / voi->fps_den / 2);
-		} else if (astrcmpi(latency, "normal") == 0) {
-			obsqsv->params.nAsyncDepth = 4;
-			obsqsv->params.nLADEPTH =
-				(mfxU16)(voi->fps_num / voi->fps_den);
-		}
+		if (obsqsv->params.nRateControl == MFX_RATECONTROL_CBR ||
+		    obsqsv->params.nRateControl == MFX_RATECONTROL_VBR)
+			obsqsv->params.nLADEPTH = 30;
+	} else if (astrcmpi(latency, "normal") == 0) {
+		obsqsv->params.nAsyncDepth = 4;
+		if (obsqsv->params.nRateControl == MFX_RATECONTROL_CBR ||
+		    obsqsv->params.nRateControl == MFX_RATECONTROL_VBR)
+			obsqsv->params.nLADEPTH = 60;
 	}
 
 	if (obsqsv->params.nLADEPTH > 0) {
@@ -749,8 +746,7 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	     "\trate_control:   %s",
 	     codec, rate_control);
 
-	if (obsqsv->params.nRateControl != MFX_RATECONTROL_LA_ICQ &&
-	    obsqsv->params.nRateControl != MFX_RATECONTROL_ICQ &&
+	if (obsqsv->params.nRateControl != MFX_RATECONTROL_ICQ &&
 	    obsqsv->params.nRateControl != MFX_RATECONTROL_CQP)
 		blog(LOG_INFO, "\ttarget_bitrate: %d",
 		     (int)obsqsv->params.nTargetBitRate);
@@ -760,14 +756,11 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 		blog(LOG_INFO, "\tmax_bitrate:    %d",
 		     (int)obsqsv->params.nMaxBitRate);
 
-	if (obsqsv->params.nRateControl == MFX_RATECONTROL_LA_ICQ ||
-	    obsqsv->params.nRateControl == MFX_RATECONTROL_ICQ)
+	if (obsqsv->params.nRateControl == MFX_RATECONTROL_ICQ)
 		blog(LOG_INFO, "\tICQ Quality:    %d",
 		     (int)obsqsv->params.nICQQuality);
 
-	if (obsqsv->params.nRateControl == MFX_RATECONTROL_LA_ICQ ||
-	    obsqsv->params.nRateControl == MFX_RATECONTROL_LA ||
-	    obsqsv->params.nRateControl == MFX_RATECONTROL_LA_HRD)
+	if (obsqsv->params.nLADEPTH)
 		blog(LOG_INFO, "\tLookahead Depth:%d",
 		     (int)obsqsv->params.nLADEPTH);
 
