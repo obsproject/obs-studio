@@ -71,13 +71,11 @@ struct qsv_rate_control_info {
 	bool haswell_or_greater;
 };
 
-static const struct qsv_rate_control_info qsv_ratecontrols[] = {
-	{"CBR", false},   {"VBR", false}, {"VCM", true},    {"CQP", false},
-	{"AVBR", false},  {"ICQ", true},  {"LA_ICQ", true}, {"LA_CBR", true},
-	{"LA_VBR", true}, {0, false}};
-
-static const struct qsv_rate_control_info qsv_av1_ratecontrols[] =
-	{{"CBR", false}, {"VBR", false}, {"CQP", false}, {0, false}};
+static const struct qsv_rate_control_info qsv_ratecontrols[] = {{"CBR", false},
+								{"VBR", false},
+								{"CQP", false},
+								{"ICQ", true},
+								{0, false}};
 
 static const char *const qsv_profile_names[] = {"high", "main", "baseline", 0};
 static const char *const qsv_profile_names_av1[] = {"main", 0};
