@@ -335,8 +335,6 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 		if (pParams->nRateControl == MFX_RATECONTROL_LA_ICQ ||
 		    pParams->nRateControl == MFX_RATECONTROL_LA)
 			m_co2.LookAheadDepth = pParams->nLADEPTH;
-		if (pParams->bMBBRC)
-			m_co2.MBBRC = MFX_CODINGOPTION_ON;
 		if (pParams->nbFrames > 1)
 			m_co2.BRefType = MFX_B_REF_PYRAMID;
 		if (m_mfxEncParams.mfx.LowPower == MFX_CODINGOPTION_ON) {
@@ -356,6 +354,7 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 		m_co3.Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
 		m_co3.Header.BufferSz = sizeof(m_co3);
 		m_co3.ScenarioInfo = MFX_SCENARIO_GAME_STREAMING;
+		m_co3.AdaptiveCQM = MFX_CODINGOPTION_ON;
 		extendedBuffers.push_back((mfxExtBuffer *)&m_co3);
 	}
 
