@@ -167,7 +167,8 @@ static void obs_qsv_destroy(void *data)
 static void obs_qsv_defaults(obs_data_t *settings, int ver,
 			     enum qsv_codec codec)
 {
-	obs_data_set_default_string(settings, "target_usage", "balanced");
+	obs_data_set_default_string(settings, "target_usage",
+				    "TU4: Balanced (Medium Quality)");
 	obs_data_set_default_int(settings, "bitrate", 2500);
 	obs_data_set_default_int(settings, "max_bitrate", 3000);
 	obs_data_set_default_string(settings, "profile",
@@ -304,6 +305,35 @@ static bool update_enhancements(obs_data_t *settings)
 		bool enabled = (mbbrc && cqm);
 		obs_data_set_bool(settings, "enhancements", enabled);
 	}
+
+	return true;
+}
+
+static bool update_targetusage(obs_data_t *settings)
+{
+	const char *target_usage =
+		obs_data_get_string(settings, "target_usage");
+
+	if ((astrcmpi(target_usage, "veryslow") ||
+	     astrcmpi(target_usage, "quality")) == 0)
+		obs_data_set_string(settings, "target_usage",
+				    "TU1: Slowest (Best Quality)");
+	else if (astrcmpi(target_usage, "slower") == 0)
+		obs_data_set_string(settings, "target_usage", "TU2: Slower");
+	else if (astrcmpi(target_usage, "slow") == 0)
+		obs_data_set_string(settings, "target_usage", "TU3: Slow");
+	else if ((astrcmpi(target_usage, "medium") ||
+		  astrcmpi(target_usage, "balanced")) == 0)
+		obs_data_set_string(settings, "target_usage",
+				    "TU4: Balanced (Medium Quality)");
+	else if (astrcmpi(target_usage, "fast") == 0)
+		obs_data_set_string(settings, "target_usage", "TU5: Fast");
+	else if (astrcmpi(target_usage, "faster") == 0)
+		obs_data_set_string(settings, "target_usage", "TU6: Faster");
+	else if ((astrcmpi(target_usage, "vertfast") ||
+		  astrcmpi(target_usage, "speed")) == 0)
+		obs_data_set_string(settings, "target_usage",
+				    "TU7: Fastest (Best Speed)");
 
 	return true;
 }
@@ -493,6 +523,7 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	const struct video_output_info *voi = video_output_get_info(video);
 	update_latency(settings);
 	update_enhancements(settings);
+	update_targetusage(settings);
 
 	const char *target_usage =
 		obs_data_get_string(settings, "target_usage");
@@ -525,26 +556,20 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 
 	int width = (int)obs_encoder_get_width(obsqsv->encoder);
 	int height = (int)obs_encoder_get_height(obsqsv->encoder);
-	if (astrcmpi(target_usage, "quality") == 0)
+	if (astrcmpi(target_usage, "TU1: Slowest (Best Quality)") == 0)
 		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_BEST_QUALITY;
-	else if (astrcmpi(target_usage, "balanced") == 0)
+	else if (astrcmpi(target_usage, "TU4: Balanced (Medium Quality)") == 0)
 		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_BALANCED;
-	else if (astrcmpi(target_usage, "speed") == 0)
+	else if (astrcmpi(target_usage, "TU7: Fastest (Best Speed)") == 0)
 		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_BEST_SPEED;
-	else if (astrcmpi(target_usage, "veryslow") == 0)
-		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_1;
-	else if (astrcmpi(target_usage, "slower") == 0)
+	else if (astrcmpi(target_usage, "TU2: Slower") == 0)
 		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_2;
-	else if (astrcmpi(target_usage, "slow") == 0)
+	else if (astrcmpi(target_usage, "TU3: Slow") == 0)
 		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_3;
-	else if (astrcmpi(target_usage, "medium") == 0)
-		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_4;
-	else if (astrcmpi(target_usage, "fast") == 0)
+	else if (astrcmpi(target_usage, "TU5: Fast") == 0)
 		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_5;
-	else if (astrcmpi(target_usage, "faster") == 0)
+	else if (astrcmpi(target_usage, "TU6: Faster") == 0)
 		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_6;
-	else if (astrcmpi(target_usage, "veryfast") == 0)
-		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_7;
 
 	if (obsqsv->codec == QSV_CODEC_AVC) {
 		codec = "H.264";
