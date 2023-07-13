@@ -123,7 +123,13 @@ static inline double encoder_video_codec(obs_encoder_t *encoder)
 	return 0.0;
 }
 
-#define FLV_INFO_SIZE_OFFSET 42
+/*
+ * This is based on the position of `duration` and `fileSize` in
+ * `build_flv_meta_data` relative to the beginning of the file
+ * to allow `write_file_info` to overwrite these two fields once
+ * the file is finalized.
+ */
+#define FLV_INFO_SIZE_OFFSET 58
 
 void write_file_info(FILE *file, int64_t duration_ms, int64_t size)
 {
