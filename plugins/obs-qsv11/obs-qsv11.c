@@ -187,7 +187,7 @@ static void obs_qsv_defaults(obs_data_t *settings, int ver,
 	obs_data_set_default_int(settings, "keyint_sec", 3);
 	obs_data_set_default_string(settings, "latency", "normal");
 	obs_data_set_default_int(settings, "bframes", 3);
-	obs_data_set_default_bool(settings, "enhancements", false);
+	obs_data_set_default_bool(settings, "enhancements", true);
 }
 
 static void obs_qsv_defaults_h264_v1(obs_data_t *settings)
@@ -717,7 +717,6 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	obsqsv->params.nbFrames = (mfxU16)bFrames;
 	obsqsv->params.nKeyIntSec = (mfxU16)keyint_sec;
 	obsqsv->params.nICQQuality = (mfxU16)icq_quality;
-	obsqsv->params.bMBBRC = enhancements;
 	obsqsv->params.bCQM = enhancements;
 
 	info("settings:\n"
