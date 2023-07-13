@@ -232,7 +232,6 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 	else if (codec == QSV_CODEC_HEVC)
 		m_mfxEncParams.mfx.CodecId = MFX_CODEC_HEVC;
 
-	m_mfxEncParams.mfx.GopOptFlag = MFX_GOP_STRICT;
 	if (codec == QSV_CODEC_HEVC) {
 		m_mfxEncParams.mfx.NumSlice = 0;
 		m_mfxEncParams.mfx.IdrInterval = 1;
@@ -323,8 +322,10 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 
 	m_mfxEncParams.AsyncDepth = pParams->nAsyncDepth;
 	m_mfxEncParams.mfx.GopPicSize =
-		(mfxU16)(pParams->nKeyIntSec * pParams->nFpsNum /
-			 (float)pParams->nFpsDen);
+		(pParams->nKeyIntSec)
+			? (mfxU16)(pParams->nKeyIntSec * pParams->nFpsNum /
+				   (float)pParams->nFpsDen)
+			: 240;
 
 	if (m_ver.Major == 1 && m_ver.Minor >= 8) {
 		memset(&m_co2, 0, sizeof(mfxExtCodingOption2));
