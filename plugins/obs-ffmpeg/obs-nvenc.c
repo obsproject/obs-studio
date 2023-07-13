@@ -264,9 +264,14 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	/* Only support reconfiguration of CBR bitrate */
 	if (enc->can_change_bitrate) {
 		int bitrate = (int)obs_data_get_int(settings, "bitrate");
+		int max_bitrate =
+			(int)obs_data_get_int(settings, "max_bitrate");
+		bool vbr = (enc->config.rcParams.rateControlMode ==
+			    NV_ENC_PARAMS_RC_VBR);
 
 		enc->config.rcParams.averageBitRate = bitrate * 1000;
-		enc->config.rcParams.maxBitRate = bitrate * 1000;
+		enc->config.rcParams.maxBitRate = vbr ? max_bitrate * 1000
+						      : bitrate * 1000;
 
 		NV_ENC_RECONFIGURE_PARAMS params = {0};
 		params.version = NV_ENC_RECONFIGURE_PARAMS_VER;
