@@ -281,17 +281,18 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 	switch (pParams->nRateControl) {
 	case MFX_RATECONTROL_CBR:
 		m_mfxEncParams.mfx.TargetKbps = pParams->nTargetBitRate;
-		m_mfxEncParams.mfx.BufferSizeInKB = pParams->nTargetBitRate * 2;
+		m_mfxEncParams.mfx.BufferSizeInKB =
+			(pParams->nTargetBitRate / 8) * 2;
 		m_mfxEncParams.mfx.InitialDelayInKB =
-			pParams->nTargetBitRate * 1;
+			(pParams->nTargetBitRate / 8) * 1;
 		break;
 	case MFX_RATECONTROL_VBR:
-	case MFX_RATECONTROL_VCM:
 		m_mfxEncParams.mfx.TargetKbps = pParams->nTargetBitRate;
 		m_mfxEncParams.mfx.MaxKbps = pParams->nMaxBitRate;
-		m_mfxEncParams.mfx.BufferSizeInKB = pParams->nTargetBitRate * 2;
+		m_mfxEncParams.mfx.BufferSizeInKB =
+			(pParams->nTargetBitRate / 8) * 2;
 		m_mfxEncParams.mfx.InitialDelayInKB =
-			pParams->nTargetBitRate * 1;
+			(pParams->nTargetBitRate / 8) * 1;
 		break;
 	case MFX_RATECONTROL_CQP:
 		m_mfxEncParams.mfx.QPI = pParams->nQPI;
