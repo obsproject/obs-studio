@@ -184,7 +184,7 @@ static void obs_qsv_defaults(obs_data_t *settings, int ver,
 	obs_data_set_default_int(settings, "qpb", 23);
 	obs_data_set_default_int(settings, "icq_quality", 23);
 
-	obs_data_set_default_int(settings, "keyint_sec", 3);
+	obs_data_set_default_int(settings, "keyint_sec", 0);
 	obs_data_set_default_string(settings, "latency", "normal");
 	obs_data_set_default_int(settings, "bframes", 3);
 	obs_data_set_default_bool(settings, "enhancements", true);
@@ -441,7 +441,7 @@ static obs_properties_t *obs_qsv_props(enum qsv_codec codec, void *unused,
 
 	obs_property_set_modified_callback(prop, profile_modified);
 
-	prop = obs_properties_add_int(props, "keyint_sec", TEXT_KEYINT_SEC, 1,
+	prop = obs_properties_add_int(props, "keyint_sec", TEXT_KEYINT_SEC, 0,
 				      20, 1);
 	obs_property_int_set_suffix(prop, " s");
 
