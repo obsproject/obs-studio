@@ -175,7 +175,7 @@ static bool init_audio_screen_stream(struct screen_capture *sc)
 
 static void sck_audio_capture_defaults(obs_data_t *settings)
 {
-    obs_data_set_default_obj(settings, "application", NULL);
+    obs_data_set_default_string(settings, "application", NULL);
     obs_data_set_default_int(settings, "type", ScreenCaptureAudioDesktopStream);
 }
 
