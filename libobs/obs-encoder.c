@@ -668,7 +668,7 @@ void obs_encoder_shutdown(obs_encoder_t *encoder)
 		encoder->first_received = false;
 		encoder->offset_usec = 0;
 		encoder->start_ts = 0;
-		encoder->frame_rate_divisor_counter = 1;
+		encoder->frame_rate_divisor_counter = 0;
 		maybe_clear_encoder_core_video_mix(encoder);
 	}
 	obs_encoder_set_last_error(encoder, NULL);
