@@ -312,6 +312,7 @@ struct gs_exports {
 	float (*gs_duplicator_get_sdr_white_level)(gs_duplicator_t *duplicator);
 
 	uint32_t (*gs_get_adapter_count)(void);
+	bool (*device_can_adapter_fast_clear)(gs_device_t *device);
 
 	gs_texture_t *(*device_texture_create_gdi)(gs_device_t *device,
 						   uint32_t width,

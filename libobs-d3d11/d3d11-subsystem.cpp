@@ -3593,3 +3593,8 @@ uint32_t gs_get_adapter_count(void)
 
 	return count;
 }
+
+extern "C" EXPORT bool device_can_adapter_fast_clear(gs_device_t *device)
+{
+	return device->fastClearSupported;
+}
