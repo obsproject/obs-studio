@@ -505,12 +505,24 @@ void obs_encoder_update(obs_encoder_t *encoder, obs_data_t *settings)
 
 	obs_data_apply(encoder->context.settings, settings);
 
-	// Note, we don't actually apply the changes to the encoder here
-	// as it may be active in another thread. Setting this to true
-	// makes the changes apply at the next possible moment in the
-	// encoder / GPU encoder thread.
-	if (encoder->info.update)
+	// Encoder isn't initialized yet, only apply changes to settings
+	if (!encoder->context.data)
+		return;
+
+	// Encoder doesn't support updates
+	if (!encoder->info.update)
+		return;
+
+	// If the encoder is active we defer the update as it may not be
+	// reentrant. Setting reconfigure_requested to true makes the changes
+	// apply at the next possible moment in the encoder / GPU encoder
+	// thread.
+	if (encoder_active(encoder)) {
 		encoder->reconfigure_requested = true;
+	} else {
+		encoder->info.update(encoder->context.data,
+				     encoder->context.settings);
+	}
 }
 
 bool obs_encoder_get_extra_data(const obs_encoder_t *encoder,
