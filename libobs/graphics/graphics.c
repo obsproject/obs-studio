@@ -3040,6 +3040,17 @@ uint32_t gs_get_adapter_count(void)
 	return thread_graphics->exports.gs_get_adapter_count();
 }
 
+bool gs_can_adapter_fast_clear(void)
+{
+	if (!gs_valid("gs_can_adapter_fast_clear"))
+		return false;
+	if (!thread_graphics->exports.device_can_adapter_fast_clear)
+		return false;
+
+	return thread_graphics->exports.device_can_adapter_fast_clear(
+		thread_graphics->device);
+}
+
 gs_texture_t *gs_duplicator_get_texture(gs_duplicator_t *duplicator)
 {
 	if (!gs_valid_p("gs_duplicator_get_texture", duplicator))
