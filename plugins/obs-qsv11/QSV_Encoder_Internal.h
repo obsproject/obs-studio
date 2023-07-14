@@ -119,6 +119,7 @@ private:
 	mfxExtCodingOption3 m_co3;
 	mfxExtCodingOption2 m_co2;
 	mfxExtCodingOption m_co;
+	mfxExtVP9Param m_ExtVP9Param{};
 	mfxExtHEVCParam m_ExtHEVCParam{};
 	mfxExtVideoSignalInfo m_ExtVideoSignalInfo{};
 	mfxExtChromaLocInfo m_ExtChromaLocInfo{};
