@@ -1459,7 +1459,7 @@ static inline void LogD3DAdapters()
 		     desc.DedicatedVideoMemory);
 		blog(LOG_INFO, "\t  Shared VRAM:    %" PRIu64,
 		     desc.SharedSystemMemory);
-		blog(LOG_INFO, "\t  PCI ID:         %x:%x", desc.VendorId,
+		blog(LOG_INFO, "\t  PCI ID:         %x:%.4x", desc.VendorId,
 		     desc.DeviceId);
 
 		if (auto hags_support = GetAdapterHagsStatus(&desc)) {
