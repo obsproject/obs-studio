@@ -641,11 +641,28 @@ static bool CheckFormat(ID3D11Device *device, DXGI_FORMAT format)
 	       ((support & required) == required);
 }
 
+static bool FastClearSupported(UINT vendorId, uint64_t version)
+{
+	/* Always true for non-NVIDIA GPUs */
+	if (vendorId != 0x10de)
+		return true;
+
+	const uint16_t aa = (version >> 48) & 0xffff;
+	const uint16_t bb = (version >> 32) & 0xffff;
+	const uint16_t ccccc = (version >> 16) & 0xffff;
+	const uint16_t ddddd = version & 0xffff;
+
+	/* Check for NVIDIA driver version >= 31.0.15.2737 */
+	return aa >= 31 && bb >= 0 && ccccc >= 15 && ddddd >= 2737;
+}
+
 void gs_device::InitDevice(uint32_t adapterIdx)
 {
 	wstring adapterName;
 	DXGI_ADAPTER_DESC desc;
 	D3D_FEATURE_LEVEL levelUsed = D3D_FEATURE_LEVEL_10_0;
+	LARGE_INTEGER umd;
+	uint64_t driverVersion = 0;
 	HRESULT hr = 0;
 
 	adpIdx = adapterIdx;
@@ -662,6 +679,10 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	os_wcs_to_utf8_ptr(adapterName.c_str(), 0, &adapterNameUTF8);
 	blog(LOG_INFO, "Loading up D3D11 on adapter %s (%" PRIu32 ")",
 	     adapterNameUTF8.Get(), adapterIdx);
+
+	hr = adapter->CheckInterfaceSupport(__uuidof(IDXGIDevice), &umd);
+	if (SUCCEEDED(hr))
+		driverVersion = umd.QuadPart;
 
 	hr = D3D11CreateDevice(adapter, D3D_DRIVER_TYPE_UNKNOWN, NULL,
 			       createFlags, featureLevels,
@@ -725,6 +746,8 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	nv12Supported = CheckFormat(device, DXGI_FORMAT_NV12) &&
 			!HasBadNV12Output();
 	p010Supported = nv12Supported && CheckFormat(device, DXGI_FORMAT_P010);
+
+	fastClearSupported = FastClearSupported(desc.VendorId, driverVersion);
 }
 
 static inline void ConvertStencilSide(D3D11_DEPTH_STENCILOP_DESC &desc,
