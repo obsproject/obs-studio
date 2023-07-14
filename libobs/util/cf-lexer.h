@@ -165,7 +165,6 @@ static inline void cf_def_free(struct cf_def *cfd)
  *     features for certain language implementations
  *   + macro parameter string operator #
  *   + macro parameter token concatenation operator ##
- *   + predefined macros
  *   + restricted macros
  */
 

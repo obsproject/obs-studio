@@ -395,8 +395,8 @@ static void calculate_bounds_data(struct obs_scene_item *item,
 		vec2_mulf(scale, scale, item->bounds.y / height);
 
 	} else if (bounds_type == OBS_BOUNDS_STRETCH) {
-		scale->x = item->bounds.x / (float)(*cx);
-		scale->y = item->bounds.y / (float)(*cy);
+		scale->x = copysignf(item->bounds.x / (float)(*cx), scale->x);
+		scale->y = copysignf(item->bounds.y / (float)(*cy), scale->y);
 	}
 
 	width = (float)(*cx) * scale->x;

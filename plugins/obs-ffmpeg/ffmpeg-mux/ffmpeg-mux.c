@@ -39,12 +39,6 @@
 #define ANSI_COLOR_MAGENTA "\x1b[0;95m"
 #define ANSI_COLOR_RESET "\x1b[0m"
 
-#if LIBAVCODEC_VERSION_MAJOR >= 58
-#define CODEC_FLAG_GLOBAL_H AV_CODEC_FLAG_GLOBAL_HEADER
-#else
-#define CODEC_FLAG_GLOBAL_H CODEC_FLAG_GLOBAL_HEADER
-#endif
-
 #define AVIO_BUFFER_SIZE 65536
 
 /* ------------------------------------------------------------------------- */
@@ -529,7 +523,7 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 	}
 
 	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
-		context->flags |= CODEC_FLAG_GLOBAL_H;
+		context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
 	avcodec_parameters_from_context(ffm->video_stream->codecpar, context);
 
@@ -598,7 +592,7 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 		context->ch_layout = (AVChannelLayout)AV_CHANNEL_LAYOUT_4POINT1;
 #endif
 	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
-		context->flags |= CODEC_FLAG_GLOBAL_H;
+		context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
 	avcodec_parameters_from_context(stream->codecpar, context);
 
@@ -1095,10 +1089,6 @@ static int ffmpeg_mux_init_internal(struct ffmpeg_mux *ffm, int argc,
 		ffm->audio_header =
 			calloc(ffm->params.tracks, sizeof(*ffm->audio_header));
 	}
-
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
-	av_register_all();
-#endif
 
 	if (!ffmpeg_mux_get_extra_data(ffm))
 		return FFM_ERROR;

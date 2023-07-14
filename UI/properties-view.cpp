@@ -631,12 +631,15 @@ QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 		for (size_t idx = 0; idx < count; idx++)
 			AddRadioItem(buttonGroup, subLayout, prop, value, idx);
 
-		buttonGroup->setExclusive(true);
-		WidgetInfo *info =
-			new WidgetInfo(this, prop, buttonGroup->buttons()[0]);
-		children.emplace_back(info);
-		connect(buttonGroup, SIGNAL(buttonClicked(QAbstractButton *)),
-			info, SLOT(ControlChanged()));
+		if (count > 0) {
+			buttonGroup->setExclusive(true);
+			WidgetInfo *info = new WidgetInfo(
+				this, prop, buttonGroup->buttons()[0]);
+			children.emplace_back(info);
+			connect(buttonGroup,
+				SIGNAL(buttonClicked(QAbstractButton *)), info,
+				SLOT(ControlChanged()));
+		}
 
 		QWidget *widget = new QWidget();
 		widget->setLayout(subLayout);

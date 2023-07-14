@@ -20,11 +20,6 @@
 #include "media.h"
 #include <libavutil/mastering_display_metadata.h>
 
-#if LIBAVCODEC_VERSION_INT > AV_VERSION_INT(58, 4, 100)
-#define USE_NEW_HARDWARE_CODEC_METHOD
-#endif
-
-#ifdef USE_NEW_HARDWARE_CODEC_METHOD
 enum AVHWDeviceType hw_priority[] = {
 	AV_HWDEVICE_TYPE_D3D11VA,      AV_HWDEVICE_TYPE_DXVA2,
 	AV_HWDEVICE_TYPE_CUDA,         AV_HWDEVICE_TYPE_VAAPI,
@@ -74,14 +69,12 @@ static void init_hw_decoder(struct mp_decode *d, AVCodecContext *c)
 		d->hw = true;
 	}
 }
-#endif
 
 static int mp_open_codec(struct mp_decode *d, bool hw)
 {
 	AVCodecContext *c;
 	int ret;
 
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 40, 101)
 	c = avcodec_alloc_context3(d->codec);
 	if (!c) {
 		blog(LOG_WARNING, "MP: Failed to allocate context");
@@ -91,18 +84,11 @@ static int mp_open_codec(struct mp_decode *d, bool hw)
 	ret = avcodec_parameters_to_context(c, d->stream->codecpar);
 	if (ret < 0)
 		goto fail;
-#else
-	c = d->stream->codec;
-#endif
 
 	d->hw = false;
 
-#ifdef USE_NEW_HARDWARE_CODEC_METHOD
 	if (hw)
 		init_hw_decoder(d, c);
-#else
-	UNUSED_PARAMETER(hw);
-#endif
 
 	if (c->thread_count == 1 && c->codec_id != AV_CODEC_ID_PNG &&
 	    c->codec_id != AV_CODEC_ID_TIFF &&
@@ -172,12 +158,7 @@ bool mp_decode_init(mp_media_t *m, enum AVMediaType type, bool hw)
 	if (ret < 0)
 		return false;
 	stream = d->stream = m->fmt->streams[ret];
-
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 40, 101)
 	id = stream->codecpar->codec_id;
-#else
-	id = stream->codec->codec_id;
-#endif
 
 	if (type == AVMEDIA_TYPE_VIDEO)
 		d->max_luminance = get_max_luminance(stream);
@@ -278,11 +259,9 @@ void mp_decode_free(struct mp_decode *d)
 		av_free(d->sw_frame);
 	}
 
-#ifdef USE_NEW_HARDWARE_CODEC_METHOD
 	if (d->hw_ctx) {
 		av_buffer_unref(&d->hw_ctx);
 	}
-#endif
 
 	memset(d, 0, sizeof(*d));
 }
@@ -346,7 +325,6 @@ static int decode_packet(struct mp_decode *d, int *got_frame)
 		*got_frame = 1;
 	}
 
-#ifdef USE_NEW_HARDWARE_CODEC_METHOD
 	if (*got_frame && d->hw) {
 		if (d->hw_frame->format != d->hw_format) {
 			d->frame = d->hw_frame;
@@ -365,7 +343,6 @@ static int decode_packet(struct mp_decode *d, int *got_frame)
 			d->sw_frame->colorspace = d->hw_frame->colorspace;
 		}
 	}
-#endif
 
 	d->frame = d->sw_frame;
 	return ret;

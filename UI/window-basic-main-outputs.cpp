@@ -167,8 +167,11 @@ static void OBSStopVirtualCam(void *data, calldata_t *params)
 	os_atomic_set_bool(&virtualcam_active, false);
 	QMetaObject::invokeMethod(output->main, "OnVirtualCamStop",
 				  Q_ARG(int, code));
+}
 
-	obs_output_set_media(output->virtualCam, nullptr, nullptr);
+static void OBSDeactivateVirtualCam(void *data, calldata_t * /* params */)
+{
+	BasicOutputHandler *output = static_cast<BasicOutputHandler *>(data);
 	output->DestroyVirtualCamView();
 }
 
@@ -293,6 +296,8 @@ inline BasicOutputHandler::BasicOutputHandler(OBSBasic *main_) : main(main_)
 		startVirtualCam.Connect(signal, "start", OBSStartVirtualCam,
 					this);
 		stopVirtualCam.Connect(signal, "stop", OBSStopVirtualCam, this);
+		deactivateVirtualCam.Connect(signal, "deactivate",
+					     OBSDeactivateVirtualCam, this);
 	}
 }
 

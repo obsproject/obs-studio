@@ -2281,39 +2281,6 @@
             ]
         },
         {
-            "name": "ManyVids",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://rtmp.str.manyvids.com:1935/live_stream/"
-                }
-            ],
-            "recommended": {
-                "supported resolutions": [
-                    "1280x720",
-                    "960x540"
-                ],
-                "bitrate matrix": [
-                    {
-                        "res": "960x540",
-                        "fps": 30,
-                        "max bitrate": 3000
-                    },
-                    {
-                        "res": "1280x720",
-                        "fps": 30,
-                        "max bitrate": 4000
-                    }
-                ],
-                "keyint": 2,
-                "max video bitrate": 4000,
-                "max fps": 30
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
             "name": "Fantasy.Club",
             "stream_key_link": "https://fantasy.club/app/create-content/stream-now",
             "more_info_link": "https://help.fantasy.club/",

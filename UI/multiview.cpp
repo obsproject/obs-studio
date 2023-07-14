@@ -192,13 +192,16 @@ static inline uint32_t labelOffset(MultiviewLayout multiviewLayout,
 		n = 6;
 		break;
 	case MultiviewLayout::SCENES_ONLY_25_SCENES:
-		n = 5;
+		n = 10;
+		break;
+	case MultiviewLayout::SCENES_ONLY_16_SCENES:
+		n = 8;
 		break;
 	case MultiviewLayout::SCENES_ONLY_9_SCENES:
-		n = 3;
+		n = 6;
 		break;
 	case MultiviewLayout::SCENES_ONLY_4_SCENES:
-		n = 2;
+		n = 4;
 		break;
 	default:
 		n = 4;
