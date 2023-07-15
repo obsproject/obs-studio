@@ -1,0 +1,28 @@
+{
+    "name": "onevpl",
+    "buildsystem": "cmake-ninja",
+    "builddir": true,
+    "config-opts": [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_DEV=ON",
+        "-DBUILD_PREVIEW=OFF",
+        "-DBUILD_TOOLS=OFF",
+        "-DBUILD_TOOLS_ONEVPL_EXPERIMENTAL=OFF",
+        "-DINSTALL_EXAMPLE_CODE=OFF",
+        "-DBUILD_EXAMPLES=OFF",
+        "-DBUILD_DISPATCHER_ONEVPL_EXPERIMENTAL=OFF",
+        "-DBUILD_SHARED_LIBS=ON"
+    ],
+    "cleanup": [
+        "/include",
+        "/lib/pkgconfig"
+    ],
+    "sources": [
+        {
+            "type": "git",
+            "url": "https://github.com/oneapi-src/oneVPL.git",
+            "commit": "ca5bbbb057a6e84b103aca807612afb693ad046c",
+            "tag": "v2023.3.1"
+        }
+    ]
+}
