@@ -39,7 +39,7 @@ include(VersionConfig)
 
 # Prohibit in-source builds
 if("${CMAKE_BINARY_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}")
-  message(FATAL_ERROR "OBS: You cannot build in a source directory (or any directory with CMakeLists.txt file)."
+  message(FATAL_ERROR "OBS: You cannot build in a source directory (or any directory with CMakeLists.txt file). "
                       "Please make a build subdirectory. Feel free to remove CMakeCache.txt and CMakeFiles.")
 endif()
 
