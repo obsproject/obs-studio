@@ -312,7 +312,8 @@ obs_property_t *obs_properties_get(obs_properties_t *props, const char *name)
 
 	/* Recursively check groups as well, if any */
 	HASH_ITER (hh, props->properties, property, tmp) {
-		if (property->type != OBS_PROPERTY_GROUP)
+		if (property->type != OBS_PROPERTY_GROUP ||
+		    obs_property_group_type(property) == OBS_GROUP_SUB)
 			continue;
 
 		obs_properties_t *group = obs_property_group_content(property);
@@ -352,7 +353,8 @@ void obs_properties_remove_by_name(obs_properties_t *props, const char *name)
 		return;
 
 	HASH_ITER (hh, props->properties, cur, tmp) {
-		if (cur->type != OBS_PROPERTY_GROUP)
+		if (cur->type != OBS_PROPERTY_GROUP ||
+		    obs_property_group_type(cur) == OBS_GROUP_SUB)
 			continue;
 
 		obs_properties_remove_by_name(obs_property_group_content(cur),
@@ -368,9 +370,23 @@ void obs_properties_apply_settings_internal(obs_properties_t *props,
 
 	while (p) {
 		if (p->type == OBS_PROPERTY_GROUP) {
-			obs_properties_apply_settings_internal(
-				obs_property_group_content(p), settings,
-				realprops);
+			if (obs_property_group_type(p) == OBS_GROUP_SUB) {
+				obs_data_t *sub_settings =
+					obs_data_get_obj(settings, p->name);
+				if (!sub_settings) {
+					sub_settings = obs_data_create();
+					obs_data_set_obj(settings, p->name,
+							 sub_settings);
+				}
+				obs_properties_apply_settings_internal(
+					obs_property_group_content(p),
+					sub_settings, realprops);
+				obs_data_release(sub_settings);
+			} else {
+				obs_properties_apply_settings_internal(
+					obs_property_group_content(p), settings,
+					realprops);
+			}
 		}
 		if (p->modified)
 			p->modified(realprops, p, settings);
@@ -473,7 +489,8 @@ static inline bool contains_prop(struct obs_properties *props, const char *name)
 		return false;
 
 	HASH_ITER (hh, props->properties, p, tmp) {
-		if (p->type != OBS_PROPERTY_GROUP)
+		if (p->type != OBS_PROPERTY_GROUP ||
+		    obs_property_group_type(p) == OBS_GROUP_SUB)
 			continue;
 		if (contains_prop(obs_property_group_content(p), name))
 			return true;
@@ -777,7 +794,8 @@ obs_property_t *obs_properties_add_group(obs_properties_t *props,
 		return NULL;
 
 	/* Prevent duplicate properties */
-	if (check_property_group_duplicates(props, group))
+	if (type != OBS_GROUP_SUB &&
+	    check_property_group_duplicates(props, group))
 		return NULL;
 
 	obs_property_t *p = new_prop(props, name, desc, OBS_PROPERTY_GROUP);
@@ -1487,7 +1505,7 @@ enum obs_text_type obs_proprety_text_type(obs_property_t *p)
 enum obs_group_type obs_property_group_type(obs_property_t *p)
 {
 	struct group_data *data = get_type_data(p, OBS_PROPERTY_GROUP);
-	return data ? data->type : OBS_COMBO_INVALID;
+	return data ? data->type : OBS_GROUP_INVALID;
 }
 
 obs_properties_t *obs_property_group_content(obs_property_t *p)

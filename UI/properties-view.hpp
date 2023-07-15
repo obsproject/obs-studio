@@ -31,6 +31,7 @@ private:
 	QPointer<QTimer> update_timer;
 	bool recently_updated = false;
 	OBSData old_settings_cache;
+	obs_data_t *settings;
 
 	void BoolChanged(const char *setting);
 	void IntChanged(const char *setting);
@@ -50,8 +51,11 @@ private:
 
 public:
 	inline WidgetInfo(OBSPropertiesView *view_, obs_property_t *prop,
-			  QWidget *widget_)
-		: view(view_), property(prop), widget(widget_)
+			  QWidget *widget_, obs_data_t *settings_)
+		: view(view_),
+		  property(prop),
+		  widget(widget_),
+		  settings(settings_)
 	{
 	}
 
@@ -108,32 +112,40 @@ private:
 	bool deferUpdate;
 
 	QWidget *NewWidget(obs_property_t *prop, QWidget *widget,
-			   const char *signal);
+			   const char *signal, obs_data_t *settings);
 
-	QWidget *AddCheckbox(obs_property_t *prop);
+	QWidget *AddCheckbox(obs_property_t *prop, obs_data_t *settings);
 	QWidget *AddText(obs_property_t *prop, QFormLayout *layout,
-			 QLabel *&label);
-	void AddPath(obs_property_t *prop, QFormLayout *layout, QLabel **label);
-	void AddInt(obs_property_t *prop, QFormLayout *layout, QLabel **label);
-	void AddFloat(obs_property_t *prop, QFormLayout *layout,
-		      QLabel **label);
-	QWidget *AddList(obs_property_t *prop, bool &warning);
+			 QLabel *&label, obs_data_t *settings);
+	void AddPath(obs_property_t *prop, QFormLayout *layout, QLabel **label,
+		     obs_data_t *settings);
+	void AddInt(obs_property_t *prop, QFormLayout *layout, QLabel **label,
+		    obs_data_t *settings);
+	void AddFloat(obs_property_t *prop, QFormLayout *layout, QLabel **label,
+		      obs_data_t *settings);
+	QWidget *AddList(obs_property_t *prop, bool &warning,
+			 obs_data_t *settings);
 	void AddEditableList(obs_property_t *prop, QFormLayout *layout,
-			     QLabel *&label);
-	QWidget *AddButton(obs_property_t *prop);
+			     QLabel *&label, obs_data_t *settings);
+	QWidget *AddButton(obs_property_t *prop, obs_data_t *settings);
 	void AddColorInternal(obs_property_t *prop, QFormLayout *layout,
-			      QLabel *&label, bool supportAlpha);
-	void AddColor(obs_property_t *prop, QFormLayout *layout,
-		      QLabel *&label);
+			      QLabel *&label, bool supportAlpha,
+			      obs_data_t *settings);
+	void AddColor(obs_property_t *prop, QFormLayout *layout, QLabel *&label,
+		      obs_data_t *settings);
 	void AddColorAlpha(obs_property_t *prop, QFormLayout *layout,
-			   QLabel *&label);
-	void AddFont(obs_property_t *prop, QFormLayout *layout, QLabel *&label);
+			   QLabel *&label, obs_data_t *settings);
+	void AddFont(obs_property_t *prop, QFormLayout *layout, QLabel *&label,
+		     obs_data_t *settings);
 	void AddFrameRate(obs_property_t *prop, bool &warning,
-			  QFormLayout *layout, QLabel *&label);
+			  QFormLayout *layout, QLabel *&label,
+			  obs_data_t *settings);
 
-	void AddGroup(obs_property_t *prop, QFormLayout *layout);
+	void AddGroup(obs_property_t *prop, QFormLayout *layout,
+		      obs_data_t *settings);
 
-	void AddProperty(obs_property_t *property, QFormLayout *layout);
+	void AddProperty(obs_property_t *property, QFormLayout *layout,
+			 obs_data_t *settings);
 
 	void resizeEvent(QResizeEvent *event) override;
 
