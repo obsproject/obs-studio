@@ -166,7 +166,7 @@ endif()
 file(GLOB RNNOISE_BIN_FILES "${RNNOISE_INCLUDE_DIR}/../bin${_bin_suffix}/rnnoise*.dll"
      "${RNNOISE_INCLUDE_DIR}/../bin/rnnoise*.dll")
 
-set(QtCore_DIR "${Qt${_QT_VERSION}Core_DIR}")
+set(QtCore_DIR "${Qt6Core_DIR}")
 cmake_path(SET QtCore_DIR_NORM NORMALIZE "${QtCore_DIR}/../../..")
 set(QtCore_BIN_DIR "${QtCore_DIR_NORM}bin")
 set(QtCore_PLUGIN_DIR "${QtCore_DIR_NORM}plugins")
@@ -176,13 +176,12 @@ obs_status(STATUS "QtCore_PLUGIN_DIR: ${QtCore_PLUGIN_DIR}")
 file(
   GLOB
   QT_DEBUG_BIN_FILES
-  "${QtCore_BIN_DIR}/Qt${_QT_VERSION}Cored.dll"
-  "${QtCore_BIN_DIR}/Qt${_QT_VERSION}Guid.dll"
-  "${QtCore_BIN_DIR}/Qt${_QT_VERSION}Widgetsd.dll"
-  "${QtCore_BIN_DIR}/Qt${_QT_VERSION}WinExtrasd.dll"
-  "${QtCore_BIN_DIR}/Qt${_QT_VERSION}Svgd.dll"
-  "${QtCore_BIN_DIR}/Qt${_QT_VERSION}Xmld.dll"
-  "${QtCore_BIN_DIR}/Qt${_QT_VERSION}Networkd.dll"
+  "${QtCore_BIN_DIR}/Qt6Cored.dll"
+  "${QtCore_BIN_DIR}/Qt6Guid.dll"
+  "${QtCore_BIN_DIR}/Qt6Widgetsd.dll"
+  "${QtCore_BIN_DIR}/Qt6Svgd.dll"
+  "${QtCore_BIN_DIR}/Qt6Xmld.dll"
+  "${QtCore_BIN_DIR}/Qt6Networkd.dll"
   "${QtCore_BIN_DIR}/libGLESv2d.dll"
   "${QtCore_BIN_DIR}/libEGLd.dll")
 file(GLOB QT_DEBUG_PLAT_BIN_FILES "${QtCore_PLUGIN_DIR}/platforms/qwindowsd.dll")
@@ -194,13 +193,12 @@ file(GLOB QT_DEBUG_IMAGEFORMATS_BIN_FILES "${QtCore_PLUGIN_DIR}/imageformats/qsv
 file(
   GLOB
   QT_BIN_FILES
-  "${QtCore_BIN_DIR}/Qt${_QT_VERSION}Core.dll"
-  "${QtCore_BIN_DIR}/Qt${_QT_VERSION}Gui.dll"
-  "${QtCore_BIN_DIR}/Qt${_QT_VERSION}Widgets.dll"
-  "${QtCore_BIN_DIR}/Qt${_QT_VERSION}WinExtras.dll"
-  "${QtCore_BIN_DIR}/Qt${_QT_VERSION}Svg.dll"
-  "${QtCore_BIN_DIR}/Qt${_QT_VERSION}Xml.dll"
-  "${QtCore_BIN_DIR}/Qt${_QT_VERSION}Network.dll"
+  "${QtCore_BIN_DIR}/Qt6Core.dll"
+  "${QtCore_BIN_DIR}/Qt6Gui.dll"
+  "${QtCore_BIN_DIR}/Qt6Widgets.dll"
+  "${QtCore_BIN_DIR}/Qt6Svg.dll"
+  "${QtCore_BIN_DIR}/Qt6Xml.dll"
+  "${QtCore_BIN_DIR}/Qt6Network.dll"
   "${QtCore_BIN_DIR}/libGLESv2.dll"
   "${QtCore_BIN_DIR}/libEGL.dll")
 file(GLOB QT_PLAT_BIN_FILES "${QtCore_PLUGIN_DIR}/platforms/qwindows.dll")
