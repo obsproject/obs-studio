@@ -110,16 +110,6 @@ function(target_disable target)
   set_property(GLOBAL APPEND PROPERTY OBS_MODULES_DISABLED ${target})
 endfunction()
 
-# * Use QT_VERSION value as a hint for desired Qt version
-# * If "AUTO" was specified, prefer Qt6 over Qt5
-# * Creates versionless targets of desired component if none had been created by Qt itself (Qt versions < 5.15)
-if(NOT QT_VERSION)
-  set(QT_VERSION
-      AUTO
-      CACHE STRING "OBS Qt version [AUTO, 5, 6]" FORCE)
-  set_property(CACHE QT_VERSION PROPERTY STRINGS AUTO 5 6)
-endif()
-
 # find_qt: Macro to find best possible Qt version for use with the project:
 macro(find_qt)
   set(multiValueArgs COMPONENTS COMPONENTS_WIN COMPONENTS_MAC COMPONENTS_LINUX)
@@ -129,38 +119,11 @@ macro(find_qt)
   # find_package runs
   set(QT_NO_CREATE_VERSIONLESS_TARGETS TRUE)
 
-  message(DEBUG "Start Qt version discovery...")
-  # Loop until _QT_VERSION is set or FATAL_ERROR aborts script execution early
-  while(NOT _QT_VERSION)
-    message(DEBUG "QT_VERSION set to ${QT_VERSION}")
-    if(QT_VERSION STREQUAL AUTO AND NOT qt_test_version)
-      set(qt_test_version 6)
-    elseif(NOT QT_VERSION STREQUAL AUTO)
-      set(qt_test_version ${QT_VERSION})
-    endif()
-    message(DEBUG "Attempting to find Qt${qt_test_version}")
-
-    find_package(
-      Qt${qt_test_version}
-      COMPONENTS Core
-      QUIET)
-
-    if(TARGET Qt${qt_test_version}::Core)
-      set(_QT_VERSION
-          ${qt_test_version}
-          CACHE INTERNAL "")
-      message(STATUS "Qt version found: ${_QT_VERSION}")
-      unset(qt_test_version)
-      break()
-    elseif(QT_VERSION STREQUAL AUTO)
-      if(qt_test_version EQUAL 6)
-        message(WARNING "Qt6 was not found, falling back to Qt5")
-        set(qt_test_version 5)
-        continue()
-      endif()
-    endif()
-    message(FATAL_ERROR "Neither Qt6 nor Qt5 found.")
-  endwhile()
+  message(DEBUG "Attempting to find Qt 6")
+  find_package(
+    Qt6
+    COMPONENTS Core
+    REQUIRED)
 
   # Enable versionless targets for the remaining Qt components
   set(QT_NO_CREATE_VERSIONLESS_TARGETS FALSE)
@@ -175,7 +138,7 @@ macro(find_qt)
   endif()
   message(DEBUG "Trying to find Qt components ${qt_components}...")
 
-  find_package(Qt${_QT_VERSION} REQUIRED ${qt_components})
+  find_package(Qt6 REQUIRED ${qt_components})
 
   list(APPEND qt_components Core)
 
@@ -186,9 +149,9 @@ macro(find_qt)
   # Check for versionless targets of each requested component and create if necessary
   foreach(component IN LISTS qt_components)
     message(DEBUG "Checking for target Qt::${component}")
-    if(NOT TARGET Qt::${component} AND TARGET Qt${_QT_VERSION}::${component})
+    if(NOT TARGET Qt::${component} AND TARGET Qt6::${component})
       add_library(Qt::${component} INTERFACE IMPORTED)
-      set_target_properties(Qt::${component} PROPERTIES INTERFACE_LINK_LIBRARIES Qt${_QT_VERSION}::${component})
+      set_target_properties(Qt::${component} PROPERTIES INTERFACE_LINK_LIBRARIES Qt6::${component})
     endif()
   endforeach()
 endmacro()

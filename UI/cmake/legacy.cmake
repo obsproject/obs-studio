@@ -82,7 +82,7 @@ set_target_properties(
              AUTORCC ON
              AUTOUIC_SEARCH_PATHS "forms;forms/source-toolbar")
 
-if(_QT_VERSION EQUAL 6 AND OS_WINDOWS)
+if(OS_WINDOWS)
   set_target_properties(obs PROPERTIES AUTORCC_OPTIONS "--format-version;1")
 endif()
 
@@ -356,11 +356,6 @@ if(OS_WINDOWS)
             update/crypto-helpers-mbedtls.cpp
             update/crypto-helpers.hpp
             ${CMAKE_BINARY_DIR}/obs.rc)
-
-  if(_QT_VERSION EQUAL 5)
-    find_qt(COMPONENTS WinExtras)
-    target_link_libraries(obs PRIVATE Qt::WinExtras)
-  endif()
 
   find_package(MbedTLS)
   target_link_libraries(obs PRIVATE Mbedtls::Mbedtls OBS::blake2 Detours::Detours)
