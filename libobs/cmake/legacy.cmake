@@ -20,12 +20,6 @@ find_package(
   OPTIONAL_COMPONENTS avcodec)
 find_package(ZLIB REQUIRED)
 
-if(ENABLE_UI)
-  find_qt(COMPONENTS Core)
-else()
-  set(_QT_VERSION 0)
-endif()
-
 add_library(libobs SHARED)
 add_library(OBS::libobs ALIAS libobs)
 
@@ -474,8 +468,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/obsconfig.h.in ${CMAKE_BINARY_DIR}/co
 target_compile_definitions(
   libobs
   PUBLIC HAVE_OBSCONFIG_H
-  PRIVATE "OBS_INSTALL_PREFIX=\"${OBS_INSTALL_PREFIX}\"" "OBS_QT_VERSION=${_QT_VERSION}"
-          "$<$<BOOL:${LINUX_PORTABLE}>:LINUX_PORTABLE>")
+  PRIVATE "OBS_INSTALL_PREFIX=\"${OBS_INSTALL_PREFIX}\"" "$<$<BOOL:${LINUX_PORTABLE}>:LINUX_PORTABLE>")
 
 if(ENABLE_FFMPEG_MUX_DEBUG)
   target_compile_definitions(libobs PRIVATE SHOW_SUBPROCESSES)

@@ -16,7 +16,7 @@
 
 #include "obsconfig.h"
 
-#if !defined(__APPLE__) && OBS_QT_VERSION == 6
+#if !defined(__APPLE__)
 #define _GNU_SOURCE
 #include <link.h>
 #include <stdlib.h>
@@ -106,7 +106,7 @@ void os_dlclose(void *module)
 		dlclose(module);
 }
 
-#if !defined(__APPLE__) && OBS_QT_VERSION == 6
+#if !defined(__APPLE__)
 int module_has_qt5_check(const char *path)
 {
 	void *mod = os_dlopen(path);
@@ -147,7 +147,7 @@ void get_plugin_info(const char *path, bool *is_obs_plugin, bool *can_load)
 {
 	*is_obs_plugin = true;
 	*can_load = true;
-#if !defined(__APPLE__) && OBS_QT_VERSION == 6
+#if !defined(__APPLE__)
 	*can_load = !has_qt5_dependency(path);
 #endif
 	UNUSED_PARAMETER(path);

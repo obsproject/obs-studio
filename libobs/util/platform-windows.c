@@ -138,7 +138,6 @@ void os_dlclose(void *module)
 	FreeLibrary(module);
 }
 
-#if OBS_QT_VERSION == 6
 static bool has_qt5_import(VOID *base, PIMAGE_NT_HEADERS nt_headers)
 {
 	__try {
@@ -201,7 +200,6 @@ static bool has_qt5_import(VOID *base, PIMAGE_NT_HEADERS nt_headers)
 
 	return false;
 }
-#endif
 
 static bool has_obs_export(VOID *base, PIMAGE_NT_HEADERS nt_headers)
 {
@@ -335,13 +333,9 @@ void get_plugin_info(const char *path, bool *is_obs_plugin, bool *can_load)
 
 		*is_obs_plugin = has_obs_export(base, nt_headers);
 
-#if OBS_QT_VERSION == 6
 		if (*is_obs_plugin) {
 			*can_load = !has_qt5_import(base, nt_headers);
 		}
-#else
-		*can_load = true;
-#endif
 
 	} __except (EXCEPTION_EXECUTE_HANDLER) {
 		/* we failed somehow, for compatibility let's assume it
