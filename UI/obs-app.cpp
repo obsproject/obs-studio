@@ -2338,14 +2338,12 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 	setenv("QT_STYLE_OVERRIDE", "Fusion", false);
 
-#if OBS_QT_VERSION == 6
 	/* NOTE: Users blindly set this, but this theme is incompatble with Qt6 and
 	 * crashes loading saved geometry. Just turn off this theme and let users complain OBS
 	 * looks ugly instead of crashing. */
 	const char *platform_theme = getenv("QT_QPA_PLATFORMTHEME");
 	if (platform_theme && strcmp(platform_theme, "qt5ct") == 0)
 		unsetenv("QT_QPA_PLATFORMTHEME");
-#endif
 
 #if defined(ENABLE_WAYLAND) && defined(USE_XDG)
 	/* NOTE: Qt doesn't use the Wayland platform on GNOME, so we have to
