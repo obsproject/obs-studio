@@ -260,6 +260,36 @@ ${_usage_host:-}"
     }
 
     log_group
+
+  } elif [[ ${host_os} == linux ]] {
+    local -a cmake_args=()
+    if (( _loglevel > 1 )) cmake_args+=(--verbose)
+
+    if (( package )) {
+      log_group "Packaging obs-studio..."
+      pushd ${project_root}
+      cmake --build build_${target##*-} --config ${config} -t package ${cmake_args}
+      output_name="${output_name}-${target##*-}-linux-gnu"
+
+      pushd ${project_root}/build_${target##*-}
+      local -a files=(obs-studio-*-Linux*.(ddeb|deb))
+      for file (${files}) {
+        mv ${file} ${file//obs-studio-*-Linux/${output_name}}
+      }
+      popd
+      popd
+    } else {
+      log_group "Archiving obs-studio..."
+      output_name="${output_name}-${target##*-}-linux-gnu"
+
+      local _tarflags='cJf'
+      if (( _loglevel > 1 || ${+CI} )) _tarflags="v${_tarflags}"
+
+      pushd ${project_root}/build_${target##*-}/install/${config}
+      XZ_OPT=-T0 tar "-${_tarflags}" ${project_root}/build_${target##*-}/${output_name}.tar.xz (bin|lib|share)
+      popd
+    }
+    log_group
   }
 }
 

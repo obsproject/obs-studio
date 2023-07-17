@@ -63,6 +63,7 @@ build() {
   local -r -a _valid_targets=(
     macos-x86_64
     macos-arm64
+    linux-x86_64
   )
   local target
   local config='RelWithDebInfo'
@@ -229,6 +230,33 @@ ${_usage_host:-}"
           -DOBS_CODESIGN_TEAM:STRING=${CODESIGN_TEAM:-}
           -DOBS_CODESIGN_IDENTITY:STRING=${CODESIGN_IDENT:--}
         )
+        ;;
+      linux-*)
+        cmake_args+=(
+          -S ${PWD} -B "build_${target##*-}"
+          -G "${generator}"
+          -DCMAKE_BUILD_TYPE:STRING=${config}
+          -DCEF_ROOT_DIR:PATH="${project_root}/.deps/cef_binary_${CEF_VERSION}_${target//-/_}"
+        )
+
+        local cmake_version
+        read -r _ _ cmake_version <<< "$(cmake --version)"
+
+        cmake_build_args+=("build_${target##*-}" --config ${config})
+
+        if [[ ${generator} == 'Unix Makefiles' ]] {
+          cmake_build_args+=(--parallel $(( $(nproc) + 1 )))
+        } else {
+          cmake_build_args+=(--parallel)
+        }
+
+        cmake_args+=(
+          -DENABLE_AJA:BOOL=OFF
+          -DENABLE_WEBRTC:BOOL=OFF
+        )
+        if (( ! UBUNTU_2210_OR_LATER )) cmake_args+=(-DENABLE_NEW_MPEGTS_OUTPUT:BOOL=OFF)
+
+        cmake_install_args+=(build_${target##*-} --prefix ${project_root}/build_${target##*-}/install/${config})
         ;;
     }
 
