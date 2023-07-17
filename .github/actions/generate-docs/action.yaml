@@ -1,0 +1,62 @@
+name: Generate Documentation
+description: Updates Sphinx-based documentation
+inputs:
+  sourceDirectory:
+    description: Path to repository checkout
+    required: false
+    default: ${{ github.workspace }}
+  disableLinkExtensions:
+    description: Disable Sphinx link extensions
+    required: false
+    default: 'false'
+runs:
+  using: composite
+  steps:
+    - name: Update Version Number and Copyright ↗️
+      id: setup
+      shell: bash
+      run: |
+        : Update Version Number and Copyright ↗️
+        if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
+
+        : "${major:=}"
+        : "${minor:=}"
+        : "${patch:=}"
+
+        read -r _ major _ minor _ patch _ <<< \
+          "$(grep -E -e "#define LIBOBS_API_(MAJOR|MINOR|PATCH)_VER *" libobs/obs-config.h \
+            | sed 's/#define //g' \
+            | tr -s ' ' \
+            | tr '\n' ' ')"
+
+        sed -i -E \
+          -e "s/version = '([0-9]+\.[0-9]+\.[0-9]+)'/version = '${major}.${minor}.${patch}'/g" \
+          -e "s/release = '([0-9]+\.[0-9]+\.[0-9]+)'/release = '${major}.${minor}.${patch}'/g" \
+          -e "s/copyright = '(2017-[0-9]+, Lain Bailey)'/copyright = '2017-$(date +"%Y"), Lain Bailey'/g" \
+          ${{ inputs.sourceDirectory }}/docs/sphinx/conf.py
+
+        if [[ '${{ inputs.disableLinkExtensions }}' == 'true' ]]; then
+          sed -i -e "s/html_link_suffix = None/html_link_suffix = ''/g" \
+           ${{ inputs.sourceDirectory }}/docs/sphinx/conf.py
+          echo "artifactName=OBS Studio Docs (No Extensions)" >> $GITHUB_OUTPUT
+        else
+          echo "artifactName=OBS Studio Docs" >> $GITHUB_OUTPUT
+        fi
+
+        echo "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
+
+    - name: Install Sphinx 📜
+      uses: totaldebug/sphinx-publish-action@1.2.0
+      with:
+        sphinx_src: ${{ inputs.sourceDirectory }}/docs/sphinx
+        build_only: true
+        target_branch: master
+        target_path: '../home/_build'
+        pre_build_commands: 'pip install -Iv sphinx==5.1.1'
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: ${{ steps.setup.outputs.artifactName }} ${{ steps.setup.outputs.commitHash }}
+        path: |
+          ${{ runner.temp }}/_github_home/_build
+          !${{ runner.temp }}/_github_home/_build/.doctrees

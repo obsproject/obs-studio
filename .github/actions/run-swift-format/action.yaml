@@ -1,0 +1,60 @@
+name: Run swift-format
+description: Runs swift-format and checks for any changes introduced by it
+inputs:
+  failCondition:
+    description: Controls whether failed checks also fail the workflow run
+    required: false
+    default: never
+  workingDirectory:
+    description: Working directory for checks
+    required: false
+    default: ${{ github.workspace }}
+runs:
+  using: composite
+  steps:
+    - name: Check Runner Operating System 🏃‍♂️
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |
+        : Check Runner Operating System 🏃‍♂️
+        echo "::notice::run-swift-format action requires a macOS-based or Linux-based runner."
+        exit 2
+
+    - name: Install Dependencies 🛍️
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        : Install Dependencies 🛍️
+        echo ::group::Install Dependencies
+        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+        echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
+        brew install --quiet zsh
+        echo ::endgroup::
+
+    - name: Run swift-format 🔥
+      id: result
+      shell: zsh --no-rcs --errexit --pipefail {0}
+      working-directory: ${{ github.workspace }}
+      env:
+        GITHUB_EVENT_FORCED: ${{ github.event.forced }}
+        GITHUB_REF_BEFORE: ${{ github.event.before }}
+      run: |
+        : Run swift-format 🔥
+        if (( ${+RUNNER_DEBUG} )) setopt XTRACE
+
+        local -a changes=($(git diff --name-only HEAD~1 HEAD))
+        case ${GITHUB_EVENT_NAME} {
+          pull_request) changes=($(git diff --name-only origin/${GITHUB_BASE_REF} HEAD)) ;;
+          push) if [[ ${GITHUB_EVENT_FORCED} != true ]] changes=($(git diff --name-only ${GITHUB_REF_BEFORE} HEAD)) ;;
+          *) ;;
+        }
+
+        if (( ${changes[(I)*.swift]} )) {
+          print ::group::Install swift-format
+          brew install --quiet swift-format
+          print ::endgroup::
+
+          print ::group::Run swift-format
+          ./build-aux/run-swift-format --fail-${{ inputs.failCondition }} --check
+          print ::endgroup::
+        }

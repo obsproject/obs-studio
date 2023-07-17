@@ -1,0 +1,60 @@
+name: Run cmake-format
+description: Runs cmake-format and checks for any changes introduced by it
+inputs:
+  failCondition:
+    description: Controls whether failed checks also fail the workflow run
+    required: false
+    default: never
+  workingDirectory:
+    description: Working directory for checks
+    required: false
+    default: ${{ github.workspace }}
+runs:
+  using: composite
+  steps:
+    - name: Check Runner Operating System 🏃‍♂️
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |
+        : Check Runner Operating System 🏃‍♂️
+        echo "::notice::run-cmake-format action requires a macOS-based or Linux-based runner."
+        exit 2
+
+    - name: Install Dependencies 🛍️
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        : Install Dependencies 🛍️
+        echo ::group::Install Dependencies
+        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+        echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
+        brew install --quiet zsh
+        echo ::endgroup::
+
+    - name: Run cmake-format 🎛️
+      id: result
+      shell: zsh --no-rcs --errexit --pipefail {0}
+      working-directory: ${{ github.workspace }}
+      env:
+        GITHUB_EVENT_FORCED: ${{ github.event.forced }}
+        GITHUB_REF_BEFORE: ${{ github.event.before }}
+      run: |
+        : Run cmake-format 🎛️
+        if (( ${+RUNNER_DEBUG} )) setopt XTRACE
+
+        local -a changes=($(git diff --name-only HEAD~1 HEAD))
+        case ${GITHUB_EVENT_NAME} {
+          pull_request) changes=($(git diff --name-only origin/${GITHUB_BASE_REF} HEAD)) ;;
+          push) if [[ ${GITHUB_EVENT_FORCED} != true ]] changes=($(git diff --name-only ${GITHUB_REF_BEFORE} HEAD)) ;;
+          *) ;;
+        }
+
+        if (( ${changes[(I)*.cmake|*CMakeLists.txt]} )) {
+          print ::group::Install cmakelang
+          pip3 install cmakelang
+          print ::endgroup::
+
+          print ::group::Run cmake-format
+          ./build-aux/run-cmake-format --fail-${{ inputs.failCondition }} --check
+          print ::endgroup::
+        }
