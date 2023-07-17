@@ -1342,8 +1342,9 @@ static void *connect_thread(void *data)
 		return NULL;
 	}
 
-	// HDR streaming disabled for AV1 and HEVC
-	if (stream->video_codec != CODEC_H264) {
+	// HDR streaming disabled for AV1
+	if (stream->video_codec != CODEC_H264 &&
+	    stream->video_codec != CODEC_HEVC) {
 		video_t *video = obs_get_video();
 		const struct video_output_info *info =
 			video_output_get_info(video);
