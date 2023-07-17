@@ -285,7 +285,7 @@ jobs:
           fi
 
       - name: Build Flatpak Manifest 🧾
-        uses: flatpak/flatpak-github-actions/flatpak-builder@v5
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6.1
         with:
           build-bundle: ${{ fromJSON(needs.check-event.outputs.package) }}
           bundle: obs-studio-flatpak-${{ needs.check-event.outputs.commitHash }}.flatpak
