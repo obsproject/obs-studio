@@ -117,7 +117,7 @@ runs:
           local -r uuid="$(plutil -extract UUID raw ${RUNNER_TEMP}/build_profile.plist)"
           local -r team_id="$(plutil -extract TeamIdentifier.0 raw -expect string ${RUNNER_TEMP}/build_profile.plist)"
 
-          if [[ ${team_id} != '${{ steps.codesign.codesignTeam }}' ]] {
+          if [[ ${team_id} != '${{ steps.codesign.outputs.codesignTeam }}' ]] {
             print '::notice::Code Signing team in provisioning profile does not match certificate.'
           }
 
