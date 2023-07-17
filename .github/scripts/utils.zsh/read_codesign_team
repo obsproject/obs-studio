@@ -1,0 +1,7 @@
+autoload -Uz log_info
+
+if (( ! ${+CODESIGN_TEAM} )) {
+  typeset -g CODESIGN_TEAM
+  log_info 'Setting up Apple Developer Team ID for codesigning...'
+  read CODESIGN_TEAM'?Apple Developer Team ID (leave empty to use Apple Developer ID instead): '
+}

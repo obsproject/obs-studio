@@ -1,0 +1,9 @@
+autoload -Uz log_info
+
+if (( ! ${+CODESIGN_IDENT} )) {
+  typeset -g CODESIGN_IDENT
+  log_info 'Setting up Apple Developer ID for application codesigning...'
+  read CODESIGN_IDENT'?Apple Developer Application ID: '
+}
+
+typeset -g CODESIGN_TEAM=$(print "${CODESIGN_IDENT}" | /usr/bin/sed -En 's/.+\((.+)\)/\1/p')

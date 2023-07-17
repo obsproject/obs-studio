@@ -9,9 +9,7 @@
 		<key>com.obsproject.obs-studio</key>
 		<string>${OBS_PROVISIONING_PROFILE}</string>
 	</dict>
-	<key>signingCertificate</key>
-	<string>${OBS_CODESIGN_IDENTITY}</string>
 	<key>signingStyle</key>
-	<string>manual</string>
+	<string>automatic</string>
 </dict>
 </plist>

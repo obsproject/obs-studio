@@ -1,0 +1,146 @@
+name: Dispatch
+run-name: Dispatched Repository Actions - ${{ inputs.job }} ⌛️
+on:
+  workflow_dispatch:
+    inputs:
+      job:
+        description: Dispatch job to run
+        required: true
+        type: choice
+        options:
+          - steam
+          - services
+          - translations
+          - documentation
+      ref:
+        description: GitHub reference to use for job
+        type: string
+        required: false
+      customAssetWindows:
+        description: Custom Windows build for Steam Upload
+        type: string
+        required: false
+      customAssetMacOSApple:
+        description: Custom macOS Apple Silicon build for Steam Upload
+        type: string
+        required: false
+      customAssetMacOSIntel:
+        description: Custom macOS Intel build for Steam Upload
+        type: string
+        required: false
+permissions:
+  contents: write
+jobs:
+  services-validation:
+    name: Check Services Configuration Files 🕵️
+    if: github.repository_owner == 'obsproject' && inputs.job == 'services'
+    runs-on: ubuntu-22.04
+    permissions:
+      checks: write
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check for Defunct Services 📉
+        uses: ./.github/actions/services-validator
+        with:
+          repositorySecret: ${{ secrets.GITHUB_TOKEN }}
+          runSchemaChecks: true
+          runServiceChecks: true
+          createPullRequest: true
+
+  download-language-files:
+    name: Download Language Files 🌐
+    if: github.repository_owner == 'obsproject' && inputs.job == 'translations'
+    runs-on: ubuntu-22.04
+    env:
+      CROWDIN_PAT: ${{ secrets.CROWDIN_SYNC_CROWDIN_PAT }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          token: ${{ secrets.CROWDIN_SYNC_GITHUB_PAT }}
+      - uses: obsproject/obs-crowdin-sync/download@0.2.1
+
+  steam-upload:
+    name: Upload Steam Builds 🚂
+    if: github.repository_owner == 'obsproject' && inputs.job == 'steam'
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/steam-upload
+        with:
+          steamSecret: ${{ secrets.STEAM_SHARED_SECRET }}
+          steamUser: ${{ secrets.STEAM_USER }}
+          steamPassword: ${{ secrets.STEAM_PASSWORD }}
+          tagName: ${{ inputs.ref }}
+          customAssetWindows: ${{ inputs.customAssetWindows }}
+          customAssetMacOSApple: ${{ inputs.customAssetMacOSApple }}
+          customAssetMacOSIntel: ${{ inputs.customAssetMacOSIntel }}
+          workflowSecret: ${{ github.token }}
+          preview: false
+
+  update-documentation:
+    name: Update Documentation 📖
+    if: github.repository_owner == 'obsproject' && inputs.job == 'documentation'
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Get Commit Information 🆔
+        id: setup
+        run: |
+          : Get Commit Hash 🆔
+          echo "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
+      - uses: ./.github/actions/generate-docs
+        with:
+          commitHash: ${{ steps.checks.setup.commitHash }}
+
+  update-documentation-cloudflare:
+    name: Update Documentation for Cloudflare ☁️
+    if: github.repository_owner == 'obsproject' && inputs.job == 'documentation'
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Get Commit Information 🆔
+        id: setup
+        run: |
+          : Get Commit Hash 🆔
+          echo "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
+      - uses: ./.github/actions/generate-docs
+        with:
+          commitHash: ${{ steps.checks.setup.commitHash }}
+          disableLinkExtensions: true
+
+  deploy-documentation:
+    name: Deploy Documentation to Cloudflare ☁️
+    if: github.repository_owner == 'obsproject' && inputs.job == 'documentation'
+    runs-on: ubuntu-22.04
+    needs: update-documentation-cloudflare
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Get Commit Information 🆔
+        id: setup
+        run: |
+          : Get Commit Hash 🆔
+          echo "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: OBS Studio Docs (No Extensions) ${{ steps.setup.outputs.commitHash }}
+          path: docs
+
+      - name: Set Up Redirects 🔄
+        run: |
+          : Set Up Redirects 🔄
+          if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
+
+          echo "/previous/27.2 https://obsproject.com/docs/27.2 302" >> docs/_redirects
+          echo "/previous/:major.:minor https://:major-:minor.${{ vars.CF_PAGES_PROJECT }}.pages.dev 302" >> docs/_redirects
+
+      - name: Publish to Live Page
+        uses: cloudflare/wrangler-action@4c10c1822abba527d820b29e6333e7f5dac2cabd
+        with:
+          workingDirectory: docs
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          command: pages publish . --project-name=${{ vars.CF_PAGES_PROJECT }} --commit-hash='${{ steps.setup.outputs.commitHash }}'

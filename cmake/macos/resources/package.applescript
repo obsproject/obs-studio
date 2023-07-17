@@ -61,7 +61,7 @@ on run (volumeName)
 
             if (do shell script "[ -f " & dsStore & " ]; echo $?") = "0" then set ejectMe to true
         end repeat
-        log "waited " & waitTime & " seconds for .DS_STORE to be created."
+        log "    >   Waited " & waitTime & " seconds for .DS_STORE to be created."
 
         tell disk (volumeName as string)
             close

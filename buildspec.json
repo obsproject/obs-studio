@@ -41,6 +41,12 @@
         }
     },
     "tools": {
+        "sparkle": {
+            "version": "2.3.2",
+            "baseUrl": "https://github.com/sparkle-project/Sparkle/releases/download",
+            "label": "Sparkle 2",
+            "hash": "2b3fe6918ca20a83729aad34f8f693a678b714a17d33b5f13ca2d25edfa7eed3"
+        },
         "ccache-win": {
             "version": "4.8.1",
             "baseUrl": "https://github.com/ccache/ccache/releases/download/",

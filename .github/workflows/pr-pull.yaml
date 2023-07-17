@@ -1,0 +1,94 @@
+name: Pull Request
+run-name: ${{ github.event.pull_request.title }} pull request run 🚀
+on:
+  workflow_dispatch:
+  pull_request:
+    paths-ignore:
+      - '**.md'
+    branches: [master]
+    types: [ opened, synchronize, reopened, labeled, unlabeled ]
+permissions:
+  contents: read
+concurrency:
+  group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  cancel-in-progress: true
+jobs:
+  check-format:
+    name: Check Formatting 🔍
+    uses: ./.github/workflows/check-format.yaml
+    permissions:
+      contents: read
+
+  build-project:
+    name: Build Project 🧱
+    uses: ./.github/workflows/build-project.yaml
+    secrets: inherit
+    permissions:
+      contents: read
+
+  compatibility-validation:
+    name: Validate Compatibility Data 🕵️
+    if: github.base_ref == 'master'
+    runs-on: ubuntu-22.04
+    permissions:
+      checks: write
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Check for Changed Files ✅
+        uses: ./.github/actions/check-changes
+        id: checks
+        with:
+          baseRef: origin/${{ github.base_ref }}
+          checkGlob: plugins/win-capture/data/*.json
+
+      - name: Check for Invalid Compatibility Data 📉
+        if: fromJSON(steps.checks.outputs.hasChangedFiles)
+        uses: ./.github/actions/compatibility-validator
+
+  services-validation:
+    name: Validate Services Data 🕵️
+    if: github.base_ref == 'master'
+    runs-on: ubuntu-22.04
+    permissions:
+      checks: write
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Check for Changed Files ✅
+        uses: ./.github/actions/check-changes
+        id: checks
+        with:
+          baseRef: origin/${{ github.base_ref }}
+          checkGlob: plugins/rtmp-services/data/*.json
+
+      - name: Check Services JSON Schema 📉
+        if: fromJSON(steps.checks.outputs.hasChangedFiles)
+        uses: ./.github/actions/services-validator
+        with:
+          repositorySecret: ${{ secrets.GITHUB_TOKEN }}
+          runSchemaChecks: true
+          runServiceChecks: false
+
+  update-documentation:
+    name: Update Documentation 📖
+    if: github.repository_owner == 'obsproject' && github.base_ref == 'master'
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Check for Changed Files ✅
+        uses: ./.github/actions/check-changes
+        id: checks
+        with:
+          baseRef: origin/${{ github.base_ref }}
+          checkGlob: docs/sphinx
+
+      - uses: ./.github/actions/generate-docs
+        if: fromJSON(steps.checks.outputs.hasChangedFiles)

@@ -1,0 +1,7 @@
+autoload -Uz log_info
+
+if (( ! ${+CODESIGN_IDENT_USER} )) {
+  typeset -g CODESIGN_IDENT_USER
+  log_info 'Setting up Apple ID for notarization...'
+  read CODESIGN_IDENT_USER'?Apple ID: '
+}

@@ -1,0 +1,64 @@
+name: Validate UI XML
+description: Validates Qt UI XML files
+inputs:
+  failCondition:
+    description: Controls whether failed checks also fail the workflow run
+    required: false
+    default: never
+  workingDirectory:
+    description: Working directory for checks
+    required: false
+    default: ${{ github.workspace }}
+runs:
+  using: composite
+  steps:
+    - name: Check Runner Operating System 🏃‍♂️
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |
+        : Check Runner Operating System 🏃‍♂️
+        echo "::notice::qt-xml-validator action requires an Linux-based or macOS-based runner."
+        exit 2
+
+    - name: Install xmllint 🕵️
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        : Install xmllint 🕵️
+        if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
+
+        echo ::group::Installing libxml2-utils
+        sudo apt-get -qq update
+        sudo apt-get install --no-install-recommends -y libxml2-utils
+        echo ::endgroup::
+
+    - name: Register Annotations 📝
+      uses: korelstar/xmllint-problem-matcher@v1
+
+    - name: Validate XML 💯
+      shell: bash
+      env:
+        GITHUB_EVENT_FORCED: ${{ github.event.forced }}
+        GITHUB_REF_BEFORE: ${{ github.event.before }}
+      run: |
+        : Validate XML 💯
+        if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
+        shopt -s extglob
+
+        changes=($(git diff --name-only HEAD~1 HEAD -- UI/forms))
+        case "${GITHUB_EVENT_NAME}" in
+          pull_request) changes=($(git diff --name-only origin/"${GITHUB_BASE_REF}" HEAD -- UI/forms)) ;;
+          push)
+            if [[ "${GITHUB_EVENT_FORCED}" == false ]]; then
+              changes=($(git diff --name-only ${GITHUB_REF_BEFORE} HEAD -- UI/forms))
+            fi
+            ;;
+          *) ;;
+        esac
+
+        if (( ${#changes[@]} )); then
+          if [[ '${{ inputs.failCondition }}' == never ]]; then set +e; fi
+          xmllint \
+            --schema ${{ github.workspace }}/UI/forms/XML-Schema-Qt5.15.xsd \
+            --noout "${changes[@]}"
+        fi

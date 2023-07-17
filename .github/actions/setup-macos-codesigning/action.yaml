@@ -1,0 +1,146 @@
+name: Set up macOS Code Signing
+description: Sets up code signing certificates, provisioning profiles, and notarization information
+inputs:
+  codesignIdentity:
+    description: Code signing identity
+    required: true
+  codesignCertificate:
+    description: PKCS12 certificate in base64 format
+    required: true
+  certificatePassword:
+    description: Password required to install PKCS12 certificate
+    required: true
+  keychainPassword:
+    description: Password to use for temporary keychain
+    required: false
+  notarizationUser:
+    description: Apple ID to use for notarization
+    required: false
+  notarizationPassword:
+    description: Application password for notarization
+  provisioningProfile:
+    description: Provisioning profile in base64 format
+    required: false
+outputs:
+  haveCodesignIdent:
+    description: True if necessary code signing credentials were found
+    value: ${{ steps.codesign.outputs.haveCodesignIdent }}
+  haveProvisioningProfile:
+    description: True if necessary provisioning profile credentials were found
+    value: ${{ steps.provisioning.outputs.haveProvisioningProfile }}
+  haveNotarizationUser:
+    description: True if necessary notarization credentials were found
+    value: ${{ steps.notarization.outputs.haveNotarizationUser }}
+  codesignIdent:
+    description: Code signing identity
+    value: ${{ steps.codesign.outputs.codesignIdent }}
+  codesignTeam:
+    description: Code signing team
+    value: ${{ steps.codesign.outputs.codesignTeam }}
+runs:
+  using: composite
+  steps:
+    - name: Check Runner Operating System 🏃‍♂️
+      if: runner.os != 'macOS'
+      shell: bash
+      run: |
+        : Check Runner Operating System 🏃‍♂️
+        echo "setup-macos-codesigning action requires a macOS-based runner."
+        exit 2
+
+    - name: macOS Code Signing ✍️
+      id: codesign
+      shell: zsh --no-rcs --errexit --pipefail {0}
+      env:
+        MACOS_SIGNING_IDENTITY: ${{ inputs.codesignIdentity }}
+        MACOS_SIGNING_CERT: ${{ inputs.codesignCertificate }}
+        MAOCS_SIGNING_CERT_PASSWORD: ${{ inputs.certificatePassword }}
+        MACOS_KEYCHAIN_PASSWORD: ${{ inputs.keychainPassword }}
+      run: |
+        : macOS Code Signing ✍️
+        if (( ${+RUNNER_DEBUG} )) setopt XTRACE
+
+        if [[ ${MACOS_SIGNING_IDENTITY} && ${MACOS_SIGNING_CERT} ]] {
+          print 'haveCodesignIdent=true' >> $GITHUB_OUTPUT
+
+          local -r certificate_path="${RUNNER_TEMP}/build_certificate.p12"
+          local -r keychain_path="${RUNNER_TEMP}/app-signing.keychain-db"
+
+          print -n "${MACOS_SIGNING_CERT}" | base64 --decode --output=${certificate_path}
+
+          : "${MACOS_KEYCHAIN_PASSWORD:="$(print ${RANDOM} | sha1sum | head -c 32)"}"
+
+          print '::group::Keychain setup'
+          security create-keychain -p "${MACOS_KEYCHAIN_PASSWORD}" ${keychain_path}
+          security set-keychain-settings -lut 21600 ${keychain_path}
+          security unlock-keychain -p "${MACOS_KEYCHAIN_PASSWORD}" ${keychain_path}
+
+          security import "${certificate_path}" -P "${MAOCS_SIGNING_CERT_PASSWORD}" -A \
+            -t cert -f pkcs12 -k ${keychain_path} \
+            -T /usr/bin/codesign -T /usr/bin/security -T /usr/bin/xcrun
+
+          security set-key-partition-list -S 'apple-tool:,apple:' -k "${MACOS_KEYCHAIN_PASSWORD}" \
+            ${keychain_path} &> /dev/null
+
+          security list-keychain -d user -s ${keychain_path} 'login-keychain'
+          print '::endgroup::'
+
+          local -r team_id="${${MACOS_SIGNING_IDENTITY##* }//(\(|\))/}"
+
+          print "codesignIdent=${MACOS_SIGNING_IDENTITY}" >> $GITHUB_OUTPUT
+          print "MACOS_KEYCHAIN_PASSWORD=${MACOS_KEYCHAIN_PASSWORD}" >> $GITHUB_ENV
+          print "codesignTeam=${team_id}" >> $GITHUB_OUTPUT
+        } else {
+          print 'haveCodesignIdent=false' >> $GITHUB_OUTPUT
+        }
+
+    - name: Provisioning Profile 👤
+      id: provisioning
+      if: fromJSON(steps.codesign.outputs.haveCodesignIdent)
+      shell: zsh --no-rcs --errexit --pipefail {0}
+      env:
+          MACOS_SIGNING_PROVISIONING_PROFILE: ${{ inputs.provisioningProfile }}
+      run: |
+        : Provisioning Profile 👤
+        if (( ${+RUNNER_DEBUG} )) setopt XTRACE
+
+        if [[ "${MACOS_SIGNING_PROVISIONING_PROFILE}" ]] {
+          print 'haveProvisioningProfile=true' >> $GITHUB_OUTPUT
+
+          local -r profile_path="${RUNNER_TEMP}/build_profile.provisionprofile"
+          print -n "${MACOS_SIGNING_PROVISIONING_PROFILE}" \
+            | base64 --decode --output="${profile_path}"
+
+          print '::group::Provisioning Profile Setup'
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          security cms -D -i ${profile_path} -o ${RUNNER_TEMP}/build_profile.plist
+          local -r uuid="$(plutil -extract UUID raw ${RUNNER_TEMP}/build_profile.plist)"
+          local -r team_id="$(plutil -extract TeamIdentifier.0 raw -expect string ${RUNNER_TEMP}/build_profile.plist)"
+
+          if [[ ${team_id} != '${{ steps.codesign.codesignTeam }}' ]] {
+            print '::notice::Code Signing team in provisioning profile does not match certificate.'
+          }
+
+          cp ${profile_path} ~/Library/MobileDevice/Provisioning\ Profiles/${uuid}.provisionprofile
+          print "provisioningProfileUUID=${uuid}" >> $GITHUB_OUTPUT
+          print '::endgroup::'
+        } else {
+          print 'haveProvisioningProfile=false' >> $GITHUB_OUTPUT
+        }
+
+    - name: Notarization 🧑‍💼
+      id: notarization
+      if: fromJSON(steps.codesign.outputs.haveCodesignIdent)
+      shell: zsh --no-rcs --errexit --pipefail {0}
+      env:
+          MACOS_NOTARIZATION_USERNAME: ${{ inputs.notarizationUser }}
+          MACOS_NOTARIZATION_PASSWORD: ${{ inputs.notarizationPassword }}
+      run: |
+        : Notarization 🧑‍💼
+        if (( ${+RUNNER_DEBUG} )) setopt XTRACE
+
+        if [[ ${MACOS_NOTARIZATION_USERNAME} && ${MACOS_NOTARIZATION_PASSWORD} ]] {
+          print 'haveNotarizationUser=true' >> $GITHUB_OUTPUT
+        } else {
+          print 'haveNotarizationUser=false' >> $GITHUB_OUTPUT
+        }

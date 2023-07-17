@@ -1,0 +1,118 @@
+name: Set Up and Build obs-studio
+description: Builds obs-studio for specified architecture and build config
+inputs:
+  target:
+    description: Build target for obs-studio
+    required: true
+  config:
+    description: Build configuration
+    required: false
+    default: RelWithDebInfo
+  codesign:
+    description: Enable codesigning (macOS only)
+    required: false
+    default: 'false'
+  codesignIdent:
+    description: Developer ID for application codesigning (macOS only)
+    required: false
+    default: '-'
+  codesignTeam:
+    description: Team ID for application codesigning (macOS only)
+    required: false
+    default: ''
+  workingDirectory:
+    description: Working directory for packaging
+    required: false
+    default: ${{ github.workspace }}
+runs:
+  using: composite
+  steps:
+    - name: Run macOS Build
+      if: runner.os == 'macOS'
+      shell: zsh --no-rcs --errexit --pipefail {0}
+      working-directory: ${{ inputs.workingDirectory }}
+      env:
+        CODESIGN_IDENT: ${{ inputs.codesignIdent }}
+        CODESIGN_TEAM: ${{ inputs.codesignTeam }}
+      run: |
+        : Run macOS Build
+
+        local -a build_args=(
+          --config ${{ inputs.config }}
+          --target macos-${{ inputs.target }}
+        )
+        if (( ${+RUNNER_DEBUG} )) build_args+=(--debug)
+
+        if [[ '${{ inputs.codesign }}' == true ]] build_args+=(--codesign)
+
+        git fetch origin --no-tags --no-recurse-submodules -q
+        .github/scripts/build-macos ${build_args}
+
+    - name: Install Dependencies 🛍️
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        : Install Dependencies 🛍️
+        echo ::group::Install Dependencies
+        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+        echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
+        brew install --quiet zsh
+        echo ::endgroup::
+
+    - name: Run Ubuntu Build
+      if: runner.os == 'Linux'
+      shell: zsh --no-rcs --errexit --pipefail {0}
+      working-directory: ${{ inputs.workingDirectory }}
+      run: |
+        : Run Ubuntu Build
+
+        local -a build_args=(
+          --config ${{ inputs.config }}
+          --target linux-${{ inputs.target }}
+          --generator Ninja
+        )
+        if (( ${+RUNNER_DEBUG} )) build_args+=(--debug)
+
+        git fetch origin --no-tags --no-recurse-submodules -q
+        .github/scripts/build-linux ${build_args}
+
+    - name: Run Windows Build
+      if: runner.os == 'Windows'
+      shell: pwsh
+      working-directory: ${{ inputs.workingDirectory }}
+      run: |
+        # Run Windows Build
+        $BuildArgs = @{
+          Target = '${{ inputs.target }}'
+          Configuration = '${{ inputs.config }}'
+        }
+
+        if ( $Env:RUNNER_DEBUG -ne $null ) {
+          $BuildArgs += @{ Debug = $true }
+        }
+
+        git fetch origin --no-tags --no-recurse-submodules -q
+        .github/scripts/Build-Windows.ps1 @BuildArgs
+
+    - name: Create Summary 📊
+      if: contains(fromJSON('["Linux", "macOS"]'), runner.os)
+      shell: zsh --no-rcs --errexit --pipefail {0}
+      env:
+        CCACHE_CONFIGPATH: ${{ inputs.workingDirectory }}/.ccache.conf
+      run: |
+        : Create Summary 📊
+
+        local -a ccache_data
+        if (( ${+RUNNER_DEBUG} )) {
+          setopt XTRACE
+          ccache_data=("${(fA)$(ccache -s -vv)}")
+        } else {
+          ccache_data=("${(fA)$(ccache -s)}")
+        }
+
+        print '### ${{ runner.os }} Ccache Stats (${{ inputs.target }})' >> $GITHUB_STEP_SUMMARY
+        print '```' >> $GITHUB_STEP_SUMMARY
+        for line (${ccache_data}) {
+          print ${line} >> $GITHUB_STEP_SUMMARY
+        }
+        print '```' >> $GITHUB_STEP_SUMMARY
