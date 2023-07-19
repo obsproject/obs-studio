@@ -51,7 +51,7 @@ invoke_formatter() {
       fi
 
       local -a source_files=((libobs|libobs-*|UI|plugins)/**/*.(c|cpp|h|hpp|m|mm)(.N))
-      source_files=(${source_files:#*/(obs-websocket/deps|decklink/*/decklink-sdk|enc-amf|mac-syphon/syphon-framework|obs-outputs/ftl-sdk)/*})
+      source_files=(${source_files:#*/(obs-websocket/deps|decklink/*/decklink-sdk|enc-amf|mac-syphon/syphon-framework|obs-outputs/ftl-sdk|win-dshow/libdshowcapture)/*})
 
       local -a format_args=(-style=file -fallback-style=none)
       if (( _loglevel > 2 )) format_args+=(--verbose)
