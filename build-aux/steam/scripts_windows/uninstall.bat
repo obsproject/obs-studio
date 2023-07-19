@@ -20,6 +20,7 @@ goto checkAdmin
 
 :deleteProgramDataFolder
 	RMDIR /S /Q "%PROGRAMDATA%\obs-studio-hook"
+	RMDIR /S /Q "%PROGRAMDATA%\obs-studio\shader-cache"
 
 :uninstallDLLs
 	regsvr32.exe /u /s %1\data\obs-plugins\win-dshow\obs-virtualcam-module32.dll
