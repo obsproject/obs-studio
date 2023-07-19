@@ -187,6 +187,7 @@ static void obs_qsv_defaults(obs_data_t *settings, int ver,
 	obs_data_set_default_string(settings, "latency", "normal");
 	obs_data_set_default_int(settings, "bframes", 3);
 	obs_data_set_default_bool(settings, "enhancements", true);
+	obs_data_set_default_bool(settings, "repeat_headers", false);
 }
 
 static void obs_qsv_defaults_h264_v1(obs_data_t *settings)
@@ -550,6 +551,7 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	bool cbr_override = obs_data_get_bool(settings, "cbr");
 	int bFrames = (int)obs_data_get_int(settings, "bframes");
 	bool enhancements = obs_data_get_bool(settings, "enhancements");
+	bool repeat_headers = obs_data_get_bool(settings, "repeat_headers");
 	const char *codec = "";
 
 	if (obs_data_has_user_value(settings, "bf"))
@@ -733,6 +735,7 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	obsqsv->params.nKeyIntSec = (mfxU16)keyint_sec;
 	obsqsv->params.nICQQuality = (mfxU16)icq_quality;
 	obsqsv->params.bCQM = enhancements;
+	obsqsv->params.bRepeatHeaders = repeat_headers;
 
 	info("settings:\n"
 	     "\tcodec:          %s\n"

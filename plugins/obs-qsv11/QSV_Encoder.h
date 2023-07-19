@@ -136,6 +136,7 @@ typedef struct {
 	mfxU16 MaxPicAverageLightLevel;
 	bool bCQM;
 	bool video_fmt_10bit;
+	bool bRepeatHeaders;
 } qsv_param_t;
 
 enum qsv_cpu_platform {
