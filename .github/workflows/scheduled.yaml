@@ -103,7 +103,7 @@ jobs:
           : Check Nightly Runs ☑️
           if (( ${+RUNNER_DEBUG} )) setopt XTRACE
 
-          local last_nightly=$(gh run list --workflow scheduled.yaml --limit 1 --json headSha --jq '.[0].headSha')
+          local last_nightly=$(gh run list --workflow scheduled.yaml --limit 2 --json headSha --jq '.[1].headSha')
 
           if [[ "${GITHUB_SHA}" == "${last_nightly}" ]] {
             print "passed=false" >> $GITHUB_OUTPUT
