@@ -235,19 +235,12 @@ void OBSBasicStatusBar::UpdateCPUUsage()
 
 void OBSBasicStatusBar::UpdateCurrentFPS()
 {
-	OBSBasic *main = qobject_cast<OBSBasic *>(parent());
-	if (!main)
-		return;
-
 	struct obs_video_info ovi;
 	obs_get_video_info(&ovi);
 	float targetFPS = (float)ovi.fps_num / (float)ovi.fps_den;
 
-	QString text;
-	text += QString::number(obs_get_active_fps(), 'f', 2);
-	text += QString(" / ");
-	text += QString::number(targetFPS, 'f', 2);
-	text += QString(" FPS");
+	QString text = QString::asprintf("%.2f / %.2f FPS",
+					 obs_get_active_fps(), targetFPS);
 
 	statusWidget->ui->fpsCurrent->setText(text);
 	statusWidget->ui->fpsCurrent->setMinimumWidth(
