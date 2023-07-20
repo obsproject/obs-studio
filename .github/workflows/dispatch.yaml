@@ -34,7 +34,7 @@ jobs:
   services-validation:
     name: Check Services Configuration Files 🕵️
     if: github.repository_owner == 'obsproject' && inputs.job == 'services'
-    runs-on: ubuntu-22.04
+    runs-on: macos-13
     permissions:
       checks: write
     steps:
