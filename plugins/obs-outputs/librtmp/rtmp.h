@@ -265,6 +265,7 @@ extern "C"
 
     typedef struct RTMPSockBuf
     {
+        struct sockaddr_storage sb_addr; /* address of remote */
         SOCKET sb_socket;
         int sb_size;		/* number of unprocessed bytes in buffer */
         char *sb_start;		/* pointer into sb_pBuffer of next byte to process */

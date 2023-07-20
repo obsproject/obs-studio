@@ -1115,6 +1115,7 @@ RTMP_Connect(RTMP *r, RTMPPacket *cp)
         goto fail;
     }
 
+    happy_eyeballs_get_remote_addr(happy_ctx, &r->m_sb.sb_addr);
     r->connect_time_ms = (int)(happy_eyeballs_get_connection_time_ns(happy_ctx) / 1000000);
 
     /* Successful connection */

@@ -1229,7 +1229,11 @@ static int try_connect(struct rtmp_stream *stream)
 	if (!RTMP_ConnectStream(&stream->rtmp, 0))
 		return OBS_OUTPUT_INVALID_STREAM;
 
-	info("Connection to %s successful", stream->path.array);
+	char ip_address[INET6_ADDRSTRLEN] = {0};
+	netif_addr_to_str(&stream->rtmp.m_sb.sb_addr, ip_address,
+			  INET6_ADDRSTRLEN);
+	info("Connection to %s (%s) successful", stream->path.array,
+	     ip_address);
 
 	return init_send(stream);
 }
