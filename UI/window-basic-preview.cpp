@@ -77,7 +77,8 @@ struct SceneFindData {
 	SceneFindData &operator=(SceneFindData &&) = delete;
 
 	inline SceneFindData(const vec2 &pos_, bool selectBelow_)
-		: pos(pos_), selectBelow(selectBelow_)
+		: pos(pos_),
+		  selectBelow(selectBelow_)
 	{
 	}
 };
@@ -93,7 +94,8 @@ struct SceneFindBoxData {
 	SceneFindBoxData &operator=(SceneFindData &&) = delete;
 
 	inline SceneFindBoxData(const vec2 &startPos_, const vec2 &pos_)
-		: startPos(startPos_), pos(pos_)
+		: startPos(startPos_),
+		  pos(pos_)
 	{
 	}
 };
@@ -314,7 +316,8 @@ struct HandleFindData {
 	HandleFindData &operator=(HandleFindData &&) = delete;
 
 	inline HandleFindData(const vec2 &pos_, float scale)
-		: pos(pos_), radius(HANDLE_SEL_RADIUS / scale)
+		: pos(pos_),
+		  radius(HANDLE_SEL_RADIUS / scale)
 	{
 		matrix4_identity(&parent_xform);
 	}

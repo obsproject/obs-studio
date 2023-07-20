@@ -97,7 +97,9 @@ struct FormatDesc {
 	inline FormatDesc() = default;
 	inline FormatDesc(const char *name, const char *mimeType,
 			  const ff_format_desc *desc = nullptr)
-		: name(name), mimeType(mimeType), desc(desc)
+		: name(name),
+		  mimeType(mimeType),
+		  desc(desc)
 	{
 	}
 
@@ -5138,7 +5140,9 @@ static void ResetInvalidSelection(QComboBox *cbox)
 
 void OBSBasicSettings::AdvOutRecCheckWarnings()
 {
-	auto Checked = [](QCheckBox *box) { return box->isChecked() ? 1 : 0; };
+	auto Checked = [](QCheckBox *box) {
+		return box->isChecked() ? 1 : 0;
+	};
 
 	QString errorMsg;
 	QString warningMsg;

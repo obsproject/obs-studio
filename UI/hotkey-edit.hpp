@@ -60,7 +60,9 @@ class OBSHotkeyEdit : public QLineEdit {
 public:
 	OBSHotkeyEdit(QWidget *parent, obs_key_combination_t original,
 		      OBSBasicSettings *settings)
-		: QLineEdit(parent), original(original), settings(settings)
+		: QLineEdit(parent),
+		  original(original),
+		  settings(settings)
 	{
 #ifdef __APPLE__
 		// disable the input cursor on OSX, focus should be clear
@@ -73,7 +75,9 @@ public:
 		ResetKey();
 	}
 	OBSHotkeyEdit(QWidget *parent = nullptr)
-		: QLineEdit(parent), original({}), settings(nullptr)
+		: QLineEdit(parent),
+		  original({}),
+		  settings(nullptr)
 	{
 #ifdef __APPLE__
 		// disable the input cursor on OSX, focus should be clear

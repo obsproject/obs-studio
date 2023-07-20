@@ -175,24 +175,7 @@ static bool init_audio_screen_stream(struct screen_capture *sc)
 
 static void sck_audio_capture_defaults(obs_data_t *settings)
 {
-    CGDirectDisplayID initial_display = 0;
-    {
-        NSScreen *mainScreen = [NSScreen mainScreen];
-        if (mainScreen) {
-            NSNumber *screen_num = mainScreen.deviceDescription[@"NSScreenNumber"];
-            if (screen_num) {
-                initial_display = (CGDirectDisplayID) (uintptr_t) screen_num.pointerValue;
-            }
-        }
-    }
-
-    CFUUIDRef display_uuid = CGDisplayCreateUUIDFromDisplayID(initial_display);
-    CFStringRef uuid_string = CFUUIDCreateString(kCFAllocatorDefault, display_uuid);
-    obs_data_set_default_string(settings, "display_uuid", CFStringGetCStringPtr(uuid_string, kCFStringEncodingUTF8));
-    CFRelease(uuid_string);
-    CFRelease(display_uuid);
-
-    obs_data_set_default_obj(settings, "application", NULL);
+    obs_data_set_default_string(settings, "application", NULL);
     obs_data_set_default_int(settings, "type", ScreenCaptureAudioDesktopStream);
 }
 
@@ -210,16 +193,7 @@ static void *sck_audio_capture_create(obs_data_t *settings, obs_source_t *source
     sc->capture_delegate = [[ScreenCaptureDelegate alloc] init];
     sc->capture_delegate.sc = sc;
 
-    const char *display_uuid = obs_data_get_string(settings, "display_uuid");
-    if (display_uuid) {
-        CFStringRef uuid_string = CFStringCreateWithCString(kCFAllocatorDefault, display_uuid, kCFStringEncodingUTF8);
-        CFUUIDRef uuid_ref = CFUUIDCreateFromString(kCFAllocatorDefault, uuid_string);
-        sc->display = CGDisplayGetDisplayIDFromUUID(uuid_ref);
-        CFRelease(uuid_string);
-        CFRelease(uuid_ref);
-    } else {
-        sc->display = CGMainDisplayID();
-    }
+    sc->display = CGMainDisplayID();
 
     sc->application_id = [[NSString alloc] initWithUTF8String:obs_data_get_string(settings, "application")];
     pthread_mutex_init(&sc->mutex, NULL);

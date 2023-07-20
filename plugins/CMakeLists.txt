@@ -153,6 +153,7 @@ elseif(OS_LINUX)
   add_subdirectory(vlc-video)
   add_subdirectory(sndio)
   add_subdirectory(obs-vst)
+  add_subdirectory(obs-qsv11)
 
   check_obs_browser()
 elseif(OS_FREEBSD)

@@ -23,7 +23,8 @@ obs_captions::obs_captions() {}
 static obs_captions *captions = nullptr;
 
 DecklinkCaptionsUI::DecklinkCaptionsUI(QWidget *parent)
-	: QDialog(parent), ui(new Ui_CaptionsDialog)
+	: QDialog(parent),
+	  ui(new Ui_CaptionsDialog)
 {
 	ui->setupUi(this);
 

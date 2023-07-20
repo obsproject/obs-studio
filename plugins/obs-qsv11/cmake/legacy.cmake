@@ -64,15 +64,8 @@ target_sources(
   obs-qsv11
   PRIVATE obs-qsv11.c
           obs-qsv11-plugin-main.c
-          common_directx9.cpp
-          common_directx9.h
-          common_directx11.cpp
-          common_directx11.h
           common_utils.cpp
           common_utils.h
-          common_utils_windows.cpp
-          device_directx9.cpp
-          device_directx9.h
           QSV_Encoder.cpp
           QSV_Encoder.h
           QSV_Encoder_Internal.cpp
@@ -80,27 +73,36 @@ target_sources(
           bits/linux_defs.h
           bits/windows_defs.h)
 
-target_link_libraries(
-  obs-qsv11
-  PRIVATE OBS::libobs
-          OBS::libmfx
-          d3d9
-          d3d11
-          dxva2
-          dxgi
-          dxguid)
-
-target_compile_definitions(obs-qsv11 PRIVATE DX11_D3D)
+target_link_libraries(obs-qsv11 PRIVATE OBS::libobs)
 
 if(OS_WINDOWS)
   add_subdirectory(obs-qsv-test)
 
+  target_compile_definitions(obs-qsv11 PRIVATE DX11_D3D)
+
   set(MODULE_DESCRIPTION "OBS QSV encoder")
   configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in obs-qsv11.rc)
 
-  target_sources(obs-qsv11 PRIVATE obs-qsv11.rc)
+  target_sources(
+    obs-qsv11
+    PRIVATE obs-qsv11.rc
+            common_directx9.cpp
+            common_directx9.h
+            common_directx11.cpp
+            common_directx11.h
+            common_utils_windows.cpp
+            device_directx9.cpp
+            device_directx9.h)
+
+  target_link_libraries(obs-qsv11 PRIVATE OBS::libmfx d3d9 d3d11 dxva2 dxgi dxguid)
 
   target_compile_definitions(obs-qsv11 PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_WARNINGS)
+elseif(OS_LINUX)
+  find_package(VPL REQUIRED)
+
+  target_sources(obs-qsv11 PRIVATE common_utils_linux.cpp)
+
+  target_link_libraries(obs-qsv11 PRIVATE VPL::VPL)
 endif()
 
 set_target_properties(obs-qsv11 PROPERTIES FOLDER "plugins/obs-qsv11")

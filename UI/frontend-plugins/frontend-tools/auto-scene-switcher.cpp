@@ -26,7 +26,9 @@ struct SceneSwitch {
 	regex re;
 
 	inline SceneSwitch(OBSWeakSource scene_, const char *window_)
-		: scene(scene_), window(window_), re(window_)
+		: scene(scene_),
+		  window(window_),
+		  re(window_)
 	{
 	}
 };
@@ -79,7 +81,8 @@ static inline QString MakeSwitchName(const QString &scene,
 }
 
 SceneSwitcher::SceneSwitcher(QWidget *parent)
-	: QDialog(parent), ui(new Ui_SceneSwitcher)
+	: QDialog(parent),
+	  ui(new Ui_SceneSwitcher)
 {
 	ui->setupUi(this);
 

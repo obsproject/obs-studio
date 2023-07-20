@@ -1,14 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Generator: Adobe Illustrator 25.2.3, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
-<svg version="1.1"
-	 id="svg8" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg"
-	 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 8 8"
-	 style="enable-background:new 0 0 8 8;" xml:space="preserve">
-<style type="text/css">
-	.st0{fill:#9a9996;}
-</style>
-<g>
-	<path class="st0" d="M5.8,1.5L5,2.3C4.7,2.1,4.4,2,4,2C2.9,2,2,2.9,2,4c0,0.4,0.1,0.7,0.3,1L1.5,5.8l0.4,0.4l4.2-4.2L5.8,1.5z"/>
-	<path class="st0" d="M3,5.7C3.3,5.9,3.6,6,4,6c1.1,0,2-0.9,2-2c0-0.4-0.1-0.7-0.3-1L3,5.7z"/>
-</g>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="16px" height="16px" version="1.1" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+ <path d="m15 8c0 3.8672-3.1328 7-7 7s-7-3.1328-7-7 3.1328-7 7-7 7 3.1328 7 7z" fill-opacity=".1"/>
 </svg>

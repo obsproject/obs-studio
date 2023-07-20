@@ -1,40 +1,96 @@
+import argparse
+import glob
 import json
+import logging
 import os
 import sys
+from typing import Any
 
-MAIN_MANIFEST_FILENAME = "com.obsproject.Studio.json"
 
-def main():
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    if not os.path.isfile(os.path.join(dir_path, MAIN_MANIFEST_FILENAME)):
-        print("The script is not ran in the same folder as the manifest")
-        return 1
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Format Flatpak manifest")
+    parser.add_argument(
+        "manifest_file",
+        metavar="FILE",
+        type=str,
+        help="Manifest file to adjust format for",
+    )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Check for necessary changes only",
+        default=False,
+        required=False,
+    )
+    parser.add_argument(
+        "--loglevel", type=str, help="Set log level", default="WARNING", required=False
+    )
 
-    for root, dirs, files in os.walk(dir_path):
-        for file in files:
-            if not file.endswith(".json"):
-                continue
+    arguments = parser.parse_args()
 
-            print(f"Formatting {file}")
-            # Load JSON file
-            with open(os.path.join(root, file), "r") as f:
-                j = json.load(f)
+    logging.basicConfig(level=arguments.loglevel, format="%(message)s")
+    logger = logging.getLogger()
 
-            if file == MAIN_MANIFEST_FILENAME:
-                # Sort module files order in the manifest
-                # Assumption: All modules except the last are strings
-                file_modules = j["modules"][0:-1]
-                last_module = j["modules"][-1]
-                file_modules.sort(key=lambda file_name: file_name)
-                j["modules"] = file_modules
-                j["modules"].append(last_module)
+    manifest_file = arguments.manifest_file
 
-            # Overwrite JSON file
-            with open(os.path.join(root, file), "w") as f:
-                json.dump(j, f, indent=4, ensure_ascii=False)
-                f.write("\n")
+    try:
+        with open(manifest_file, "r+") as manifest:
+            manifest_path = os.path.dirname(manifest_file)
+            manifest_string = manifest.read()
+            manifest_data = json.loads(manifest_string)
+
+            module_list = manifest_data.get("modules", [])
+
+            obs_object = module_list[-1]
+
+            if type(obs_object) != dict:
+                logger.error(
+                    f"❌ Last element in modules list is not the obs-studio object"
+                )
+                return 2
+
+            new_module_list = []
+
+            for module in module_list:
+                if type(module) == str:
+                    if not os.path.isfile(os.path.join(manifest_path, module)):
+                        logger.warning(
+                            f"⚠️ Specified module {os.path.basename(module)} not found."
+                        )
+                        continue
+
+                    new_module_list.append(module)
+
+            new_module_list.sort()
+            new_module_list.append(obs_object)
+            manifest_data["modules"] = new_module_list
+
+            new_manifest_string = (
+                f"{json.dumps(manifest_data, indent=4, ensure_ascii=False)}\n"
+            )
+
+            if arguments.check:
+                if new_module_list != module_list:
+                    logger.error(f"❌ Module list failed order validation")
+                    return 2
+                elif new_manifest_string != manifest_string:
+                    logger.error(f"❌ Manifest file is not correctly formatted")
+                    return 2
+                else:
+                    logger.info(f"✅ Module list passed order validation")
+                    return 0
+
+            manifest.seek(0)
+            manifest.truncate()
+            manifest.write(new_manifest_string)
+
+            logger.info(f"✅ Updated manifest file '{manifest_file}")
+    except IOError:
+        logger.error(f"❌ Unable to read manifest file '{manifest_file}'")
+        return 2
 
     return 0
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     sys.exit(main())

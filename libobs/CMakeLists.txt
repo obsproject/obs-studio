@@ -295,10 +295,17 @@ set(public_headers
     util/base.h
     util/bmem.h
     util/c99defs.h
+    util/circlebuf.h
+    util/config-file.h
     util/darray.h
+    util/dstr.h
+    util/platform.h
     util/profiler.h
+    util/profiler.hpp
     util/sse-intrin.h
     util/text-lookup.h
+    util/threading.h
+    util/util.hpp
     util/util_uint64.h)
 
 if(ENABLE_HEVC)

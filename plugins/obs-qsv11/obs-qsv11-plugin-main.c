@@ -53,14 +53,9 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#include <inttypes.h>
 #include <obs-module.h>
-#include <util/windows/device-enum.h>
-#include <util/config-file.h>
-#include <util/platform.h>
-#include <util/pipe.h>
-#include <util/dstr.h>
-#include "QSV_Encoder.h"
+
+#include "common_utils.h"
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("obs-qsv11", "en-US")
@@ -78,85 +73,16 @@ extern struct obs_encoder_info obs_qsv_av1_encoder;
 extern struct obs_encoder_info obs_qsv_hevc_encoder_tex;
 extern struct obs_encoder_info obs_qsv_hevc_encoder;
 
-extern bool av1_supported(mfxIMPL impl);
-
-struct adapter_info adapters[MAX_ADAPTERS] = {0};
-size_t adapter_count = 0;
-
-static bool enum_luids(void *param, uint32_t idx, uint64_t luid)
-{
-	struct dstr *cmd = param;
-	dstr_catf(cmd, " %" PRIx64, luid);
-	UNUSED_PARAMETER(idx);
-	return true;
-}
-
 bool obs_module_load(void)
 {
-	char *test_exe = os_get_executable_path_ptr("obs-qsv-test.exe");
-	struct dstr cmd = {0};
-	struct dstr caps_str = {0};
-	os_process_pipe_t *pp = NULL;
-	config_t *config = NULL;
+	adapter_count = MAX_ADAPTERS;
+	check_adapters(adapters, &adapter_count);
 
-	dstr_copy(&cmd, test_exe);
-	enum_graphics_device_luids(enum_luids, &cmd);
-
-	pp = os_process_pipe_create(cmd.array, "r");
-	if (!pp) {
-		blog(LOG_INFO, "Failed to launch the QSV test process I guess");
-		goto fail;
-	}
-
-	for (;;) {
-		char data[2048];
-		size_t len =
-			os_process_pipe_read(pp, (uint8_t *)data, sizeof(data));
-		if (!len)
-			break;
-
-		dstr_ncat(&caps_str, data, len);
-	}
-
-	if (dstr_is_empty(&caps_str)) {
-		blog(LOG_INFO, "Seems the QSV test subprocess crashed. "
-			       "Better there than here I guess. "
-			       "Let's just skip loading QSV then I suppose.");
-		goto fail;
-	}
-
-	if (config_open_string(&config, caps_str.array) != 0) {
-		blog(LOG_INFO, "Couldn't open QSV configuration string");
-		goto fail;
-	}
-
-	const char *error = config_get_string(config, "error", "string");
-	if (error) {
-		blog(LOG_INFO, "Error querying QSV support: %s", error);
-		goto fail;
-	}
-
-	adapter_count = config_num_sections(config);
 	bool avc_supported = false;
 	bool av1_supported = false;
 	bool hevc_supported = false;
-
-	if (adapter_count > MAX_ADAPTERS)
-		adapter_count = MAX_ADAPTERS;
-
 	for (size_t i = 0; i < adapter_count; i++) {
-		char section[16];
-		snprintf(section, sizeof(section), "%d", (int)i);
-
 		struct adapter_info *adapter = &adapters[i];
-		adapter->is_intel =
-			config_get_bool(config, section, "is_intel");
-		adapter->is_dgpu = config_get_bool(config, section, "is_dgpu");
-		adapter->supports_av1 =
-			config_get_bool(config, section, "supports_av1");
-		adapter->supports_hevc =
-			config_get_bool(config, section, "supports_hevc");
-
 		avc_supported |= adapter->is_intel;
 		av1_supported |= adapter->supports_av1;
 		hevc_supported |= adapter->supports_hevc;
@@ -178,13 +104,6 @@ bool obs_module_load(void)
 		obs_register_encoder(&obs_qsv_hevc_encoder);
 	}
 #endif
-
-fail:
-	config_close(config);
-	dstr_free(&caps_str);
-	dstr_free(&cmd);
-	os_process_pipe_destroy(pp);
-	bfree(test_exe);
 
 	return true;
 }

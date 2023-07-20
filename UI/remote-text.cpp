@@ -22,7 +22,9 @@
 
 using namespace std;
 
-static auto curl_deleter = [](CURL *curl) { curl_easy_cleanup(curl); };
+static auto curl_deleter = [](CURL *curl) {
+	curl_easy_cleanup(curl);
+};
 using Curl = unique_ptr<CURL, decltype(curl_deleter)>;
 
 static size_t string_write(char *ptr, size_t size, size_t nmemb, string &str)

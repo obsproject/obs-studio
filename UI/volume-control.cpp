@@ -431,8 +431,6 @@ VolControl::~VolControl()
 				  "audio_monitoring",
 				  OBSMixersOrMonitoringChanged, this);
 
-	obs_fader_destroy(obs_fader);
-	obs_volmeter_destroy(obs_volmeter);
 	if (contextMenu)
 		contextMenu->close();
 }
@@ -828,7 +826,9 @@ void VolumeMeter::wheelEvent(QWheelEvent *event)
 
 VolumeMeter::VolumeMeter(QWidget *parent, obs_volmeter_t *obs_volmeter,
 			 bool vertical)
-	: QWidget(parent), obs_volmeter(obs_volmeter), vertical(vertical)
+	: QWidget(parent),
+	  obs_volmeter(obs_volmeter),
+	  vertical(vertical)
 {
 	setAttribute(Qt::WA_OpaquePaintEvent, true);
 

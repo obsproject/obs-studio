@@ -1,0 +1,286 @@
+name: Steam Upload
+description: Creates and uploads stable and nightly builds of obs-studio and beta builds (if available)
+inputs:
+  steamSecret:
+    description: Steam auth code
+    required: true
+  steamUser:
+    description: Steam user name
+    required: true
+  steamPassword:
+    description: Steam user password
+    required: true
+  workflowSecret:
+    description: GitHub API token to use for API calls
+    required: true
+  tagName:
+    description: Tag name to use for packaging
+    required: false
+    default: ''
+  stableBranch:
+    description: Name of the stable branch to use
+    required: false
+    default: staging
+  betaBranch:
+    description: Name of the beta branch to use
+    required: false
+    default: beta_staging
+  nightlyBranch:
+    description: Name of the nightly branch to use
+    required: false
+    default: nightly
+  playtestBranch:
+    description: Name of the playtest branch to use
+    required: false
+    default: staging
+  customAssetWindows:
+    description: Custom asset for Windows
+    required: false
+    default: ''
+  customAssetMacOSApple:
+    description: Custom asset for macOS Apple Silicon
+    required: false
+    default: ''
+  customAssetMacOSIntel:
+    description: Custom asset for macOS Intel
+    required: false
+    default: ''
+  preview:
+    description: Enable preview mode (no uploads done)
+    required: false
+    default: ''
+runs:
+  using: composite
+  steps:
+    - name: Check Runner Operating System 🏃‍♂️
+      if: runner.os != 'macOS'
+      shell: bash
+      run: |
+        : Check Runner Operating System 🏃‍♂️
+        echo '::error::steam-upload action requires a macOS-based runner.'
+        exit 2
+
+    - name: Check GitHub Event 🔬
+      if: contains(fromJSON('["release", "workflow_dispatch", "schedule"]'), github.event_name) != true
+      shell: zsh --no-rcs --errexit --pipefail {0}
+      run: |
+        : Check GitHub Event 🔬
+        print "::error:steam-upload action can only be used with 'release', 'workflow-dispatch', or 'schedule' events."
+        exit 2
+
+    - name: Download Assets 📥
+      id: asset-info
+      shell: zsh --no-rcs --errexit --pipefail {0}
+      env:
+        GH_TOKEN: ${{ inputs.workflowSecret }}
+        windows_custom_asset: ${{ steps.asset-info.outputs.windowsAssetUrl }}
+        macos_apple_custom_asset: ${{ steps.asset-info.outputs.macos_appleAssetUrl }}
+        macos_intel_custom_asset: ${{ steps.asset-info.outputs.macos_intelAssetUrl }}
+      run: |
+        : Download Assets 📥
+        if (( ${+RUNNER_DEBUG} )) setopt XTRACE
+
+        local root_dir="${PWD}"
+        local description
+        local is_prerelease
+
+        case ${GITHUB_EVENT_NAME} {
+          release)
+            gh release download \
+              --pattern '*macOS*.dmg' \
+              --pattern '*Windows*' \
+              --pattern '*.zip' \
+              --clobber
+
+            IFS=';' read -r description is_prerelease <<< \
+              "$(gh release view --json tagName,isPrerelease --jq 'join(";")')"
+            ;;
+          workflow_dispatch)
+            if [[ '${{ inputs.tagName }}' =~ [0-9]+\.[0-9]+\.[0-9]+(-(rc|beta)[0-9]+)*$ ]] {
+              gh release download ${{ inputs.tagName }} \
+                --pattern '*macOS*.dmg' \
+                --pattern '*Windows*' \
+                --pattern '*.zip' \
+                --clobber
+
+              description='${{ inputs.tagName }}'
+              read -r is_prerelease <<< \
+                "$(gh release view ${{ inputs.tagName }} --json isPrerelease --jq '.isPrerelease')"
+              asset_names=(gh release view ${{ inputs.tagName }} --json assets \
+                --jq '.assets[] | select(.name|test(".*(macos|Full-x64|windows).*")) | .name')
+
+              local -A custom_assets=(
+                windows "Windows x64;${windows_custom_asset}"
+                macos_apple "macOS Apple;${macos_apple_custom_asset}"
+                macos_intel "macOS Intel;${macos_intel_custom_asset}"
+              )
+
+              local display_name
+              local url
+              mkdir -p custom_assets && pushd custom_assets
+              for platform (windows macos_apple macos_intel) {
+                IFS=';' read -r display_name url <<< "${custom_assets[${platform}]}"
+                if [[ ${url} ]] {
+                  print "::group::Download of ${display_name} custom asset"
+                  curl --location --silent --remote-name ${url}
+
+                  if [[ ! -f ${root_dir}/${url:t} ]] {
+                    print "::warning::Custom asset for ${display_name} does not replace an existing release asset"
+                  } else {
+                    rm -rf -- ${root_dir}/${url:t}
+                  }
+                  mv ${url:t} ${root_dir}
+                  print '::endgroup::'
+                }
+              }
+              popd
+            } else {
+              print "::error::Invalid tag name for non-release workflow run: '${{ inputs.tagName }}'."
+              exit 2
+            }
+            ;;
+          schedule)
+            gh run download ${GITHUB_RUN_ID} \
+              --pattern '*macos*' \
+              --pattern '*windows*'
+
+            local short_hash="${GITHUB_SHA:0:9}"
+            mv obs-studio-windows-x64-${short_hash}/obs-studio-*-windows-x64.zip \
+              ${root_dir}
+            mv obs-studio-macos-arm64-${short_hash}/obs-studio-*-macos-apple.dmg \
+              ${root_dir}
+            mv obs-studio-macos-intel-${short_hash}/obs-studio-*-macos-intel.dmg \
+              ${root_dir}
+
+            description="g${GITHUB_SHA}"
+            is_prerelease='false'
+            ;;
+        }
+
+        print "description=${description}" >> $GITHUB_OUTPUT
+        print "is_prerelease=${is_prerelease}" >> $GITHUB_OUTPUT
+
+    - name: Prepare Builds for Steam 🍜
+      shell: zsh --no-rcs --errexit --pipefail --extendedglob {0}
+      run: |
+        : Prepare Builds for Steam 🍜
+        if (( ${+RUNNER_DEBUG} )) setopt XTRACE
+
+        local root_dir="${PWD}"
+        mkdir -p steam && pushd steam
+
+        print '::group::Prepare Windows x64 assets'
+        mkdir -p steam-windows && pushd steam-windows
+        unzip ${root_dir}/(#i)obs-studio-*.zip
+        rm ${root_dir}/(#i)obs-studio-*.zip
+
+        cp -r ${root_dir}/build-aux/steam/scripts_windows scripts
+        touch disable_updater
+        popd
+        print '::endgroup::'
+
+        print '::group::Prepare macOS Apple assets'
+        mkdir -p steam-macos/arm64/OBS.app
+        hdiutil attach -noverify -readonly -noautoopen -mountpoint /Volumes/obs-studio-arm64 ${root_dir}/(#i)obs-studio-*-macos-apple.dmg
+        ditto /Volumes/obs-studio-arm64/OBS.app steam-macos/arm64/OBS.app
+        hdiutil unmount /Volumes/obs-studio-arm64
+        rm ${root_dir}/(#i)obs-studio-*-macos-apple.dmg
+        print '::endgroup::'
+
+        print '::group::Prepare macOS Intel assets'
+        mkdir -p steam-macos/x86_64/OBS.app
+        hdiutil attach -noverify -readonly -noautoopen -mountpoint /Volumes/obs-studio-x86_64 ${root_dir}/(#i)obs-studio-*-macos-intel.dmg
+        ditto /Volumes/obs-studio-x86_64/OBS.app steam-macos/x86_64/OBS.app
+        hdiutil unmount /Volumes/obs-studio-x86_64
+        rm ${root_dir}/(#i)obs-studio-*-macos-intel.dmg
+        print '::endgroup::'
+
+        cp ${root_dir}/build-aux/steam/scripts_macos/launch.sh steam-macos/launch.sh
+
+        popd
+
+    - name: Set Up steamcmd 🚂
+      uses: CyberAndrii/setup-steamcmd@b786e0da44db3d817e66fa3910a9560cb28c9323
+
+    - name: Generate Steam auth code 🔐
+      id: steam-totp
+      uses: CyberAndrii/steam-totp@c7f636bc64e77f1b901e0420b7890813141508ee
+      if: ${{ ! fromJSON(inputs.preview) }}
+      with:
+        shared_secret: ${{ inputs.steamSecret }}
+
+    - name: Upload to Steam 📤
+      shell: zsh --no-rcs --errexit --pipefail {0}
+      run: |
+        : Upload to Steam 📤
+        if (( ${+RUNNER_DEBUG} )) setopt XTRACE
+
+        local root_dir="${PWD}"
+        local build_file='build.vdf'
+        local branch_name
+
+        pushd steam
+        print '::group::Prepare Steam Build Script'
+
+        case ${GITHUB_EVENT_NAME} {
+          schedule) branch_name='${{ inputs.nightlyBranch }}' ;;
+          release|workflow_dispatch)
+            if [[ '${{ steps.asset-info.outputs.is_prerelease }}' == 'true' ]] {
+              branch_name='${{ inputs.betaBranch }}'
+            } else {
+              branch_name='${{ inputs.stableBranch }}'
+            }
+            ;;
+        }
+
+        sed "s/@@DESC@@/${branch_name}-${{ steps.asset-info.outputs.description }}/;s/@@BRANCH@@/${branch_name}/" \
+          ${root_dir}/build-aux/steam/obs_build.vdf > ${build_file}
+
+        print "Generated ${build_file}:\n$(<${build_file})"
+        print '::endgroup::'
+
+        print '::group::Upload to Steam'
+        local preview='${{ inputs.preview }}'
+
+        steamcmd \
+          +login '${{ inputs.steamUser }}' '${{ inputs.steamPassword }}' '${{ steps.steam-totp.outputs.code }}' \
+          +run_app_build ${preview:+-preview} ${build_file} \
+          +quit
+        print '::endgroup'
+        popd
+
+    - name: Upload to Steam (Playtest) 📤
+      if: fromJSON(steps.asset-info.outputs.is_prerelease)
+      shell: zsh --no-rcs --errexit --pipefail {0}
+      run: |
+        : Upload to Steam (Playtest) 📤
+        if (( ${+RUNNER_DEBUG} )) setopt XTRACE
+
+        local build_file='build_playtest.vdf'
+        local branch_name='${{ inputs.playtestBranch }}'
+
+        pushd steam
+        print '::group::Prepare Steam Build Script'
+
+        set "s/@@DESC@@/${branch_name}-${{ steps.asset-info.outputs.description }}/;s/@@BRANCH@@/${branch_name}" \
+          ${root_dir}/build-aux/steam/obs_playtest_build.vdf > ${build_file}
+
+        print "Generated ${build_file}:\n$(<${build_file})"
+        print '::endgroup::'
+
+        print '::group::Upload to Steam'
+        local preview
+        if [[ '${{ inputs.preview }}' == 'true' ]] preview='-preview'
+
+        steamcmd \
+          +login '${{ inputs.steamUser }}' '${{ inputs.steamPassword }}' '${{ steps.steam-totp.outputs.code }}' \
+          +run_app_build ${preview} ${build_file} \
+          +quit
+        print '::endgroup'
+        popd
+
+    - name: Upload Steam build logs
+      uses: actions/upload-artifact@v3
+      with:
+        name: steam-build-logs
+        path: ${{ github.workspace }}/steam/build/*.log

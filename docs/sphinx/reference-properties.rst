@@ -245,13 +245,16 @@ Property Object Functions
 ---------------------
 
 .. function:: obs_property_t *obs_properties_add_button(obs_properties_t *props, const char *name, const char *text, obs_property_clicked_t callback)
+              obs_property_t *obs_properties_add_button2(obs_properties_t *props, const char *name, const char *text, obs_property_clicked_t callback, void *priv)
 
    Adds a button property.  This property does not actually store any
    settings; it's used to implement a button in user interface if the
    properties are used to generate user interface.
 
    :param    name:        Setting identifier string
-   :param    description: Localized name shown to user
+   :param    text:        Localized name shown to user
+   :param    callback:    Callback to be executed when the button is pressed
+   :param    priv:        Pointer passed back as the `data` argument of the callback
    :return:               The property
 
    Important Related Functions:

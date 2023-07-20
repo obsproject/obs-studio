@@ -632,7 +632,9 @@ void OBSBasic::on_transitionProps_clicked()
 	if (!obs_source_configurable(source))
 		return;
 
-	auto properties = [&]() { CreatePropertiesWindow(source); };
+	auto properties = [&]() {
+		CreatePropertiesWindow(source);
+	};
 
 	QMenu menu(this);
 

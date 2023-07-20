@@ -5,7 +5,8 @@
 #include "decklink-ui-main.h"
 
 DecklinkOutputUI::DecklinkOutputUI(QWidget *parent)
-	: QDialog(parent), ui(new Ui_Output)
+	: QDialog(parent),
+	  ui(new Ui_Output)
 {
 	ui->setupUi(this);
 

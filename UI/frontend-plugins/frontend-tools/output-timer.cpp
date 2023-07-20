@@ -13,7 +13,8 @@ using namespace std;
 OutputTimer *ot;
 
 OutputTimer::OutputTimer(QWidget *parent)
-	: QDialog(parent), ui(new Ui_OutputTimer)
+	: QDialog(parent),
+	  ui(new Ui_OutputTimer)
 {
 	ui->setupUi(this);
 
@@ -339,7 +340,9 @@ extern "C" void InitOutputTimer()
 
 	ot = new OutputTimer(window);
 
-	auto cb = []() { ot->ShowHideDialog(); };
+	auto cb = []() {
+		ot->ShowHideDialog();
+	};
 
 	obs_frontend_pop_ui_translation();
 

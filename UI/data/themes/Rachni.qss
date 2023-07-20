@@ -339,8 +339,20 @@ QScrollArea {
     border-radius: 4px;
 }
 
+/* Qt enforces a padding inside its status bar, so we
+ * oversize it and use margin to crunch it back down
+ */
 OBSBasicStatusBar {
-    margin-top: 8px;
+    margin-top: 4px;
+    border-top: 1px solid #3c404b;
+    background: palette(dark);
+}
+
+StatusBarWidget > QFrame {
+    margin-top: 1px;
+    border: 0px solid #3c404b;
+    border-left-width: 1px;
+    padding: 0px 12px 2px;
 }
 
 /* Group Box */

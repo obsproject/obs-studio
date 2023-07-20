@@ -1,0 +1,113 @@
+name: Services Validation
+description: Checks services configuration file and checks for defunct services
+inputs:
+  repositorySecret:
+    description: GitHub token for API access
+    required: true
+  runSchemaChecks:
+    description: Enable schema checking
+    required: false
+    default: 'true'
+  runServiceChecks:
+    description: Enable defunct service checking
+    required: false
+    default: 'false'
+  createPullRequest:
+    description: Enable pull request creation after service checks
+    required: false
+    default: 'false'
+  workingDirectory:
+    description: Working directory for checks
+    required: false
+    default: ${{ github.workspace }}
+outputs:
+  hasDefunctServices:
+    description: True if defunct services were found in configuration
+    value: ${{ steps.check.outputs.make_pr }}
+runs:
+  using: composite
+  steps:
+    - name: Check Runner Operating System 🏃‍♂️
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |
+        : Check Runner Operating System 🏃‍♂️
+        echo "::notice::services-validation action requires a macOS-based or Linux-based runner."
+        exit 2
+
+    - name: Install and Configure Python 🐍
+      shell: bash
+      run: |
+        : Install and Configure Python 🐍
+        if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
+
+        echo ::group::Python Set Up
+        if [[ "${RUNNER_OS}" == Linux ]]; then
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
+        fi
+        brew install --quiet python3
+        python3 -m pip install jsonschema json_source_map requests
+        echo ::endgroup::
+
+    - name: Validate Services File JSON Schema 🕵️
+      if: fromJSON(inputs.runSchemaChecks)
+      shell: bash
+      working-directory: ${{ inputs.workingDirectory }}
+      run: |
+        : Validate Services File JSON Schema 🕵️
+        if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
+        shopt -s extglob
+
+        echo ::group::Run Validation
+        python3 -u \
+          .github/scripts/utils.py/check-jsonschema.py \
+          plugins/rtmp-services/data/@(services|package).json \
+          --loglevel INFO
+        echo ::endgroup::
+
+    - name: Annotate schema validation errors 🏷️
+      if: fromJSON(inputs.runSchemaChecks) && failure()
+      uses: yuzutech/annotations-action@v0.4.0
+      with:
+        repo-token: ${{ inputs.repositorySecret }}
+        title: Service JSON Errors
+        input: ${{ inputs.workingDirectory }}/validation_errors.json
+
+    - name: Restore Timestamp Cache ⏳
+      if: fromJSON(inputs.runServiceChecks)
+      uses: actions/cache@v3
+      with:
+        path: ${{ github.workspace }}/other
+        key: service-check-${{ github.run_id }}
+        restore-keys: service-check-
+
+    - name: Check for defunct services 📉
+      id: services-check
+      if: fromJSON(inputs.runServiceChecks)
+      shell: bash
+      working-directory: ${{ inputs.workingDirectory }}
+      env:
+        GITHUB_TOKEN: ${{ inputs.repositorySecret }}
+        WORKFLOW_RUN_ID: ${{ github.run_id }}
+        REPOSITORY: ${{ github.repository }}
+      run: |
+        : Check for defunct services 📉
+        python3 -u .github/scripts/utils.py/check-services.py
+
+    - uses: actions/upload-artifact@v3
+      if: fromJSON(inputs.runServiceChecks)
+      with:
+        name: timestamps
+        path: ${{ inputs.workingDirectory }}/other/*
+
+    - name: Create pull request 🔧
+      uses: peter-evans/create-pull-request@f094b77505fb89581e68a1163fbd2fffece39da1
+      if: fromJSON(inputs.createPullRequest) && fromJSON(inputs.runServiceChecks) && fromJSON(steps.services-check.outputs.make_pr)
+      with:
+        author: 'Service Checker <commits@obsproject.com>'
+        commit-message: 'rtmp-services: Remove defunct servers/services'
+        title: 'rtmp-services: Remove defunct servers/services'
+        branch: 'automated/clean-services'
+        body: ${{ fromJSON(steps.services-check.outputs.pr_message) }}
+        delete-branch: true

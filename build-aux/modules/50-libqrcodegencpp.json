@@ -1,0 +1,26 @@
+{
+    "name": "libqrcodegencpp",
+    "buildsystem": "cmake-ninja",
+    "builddir": true,
+    "config-opts": [
+        "-DBUILD_SHARED_LIBS=ON"
+    ],
+    "post-install": [
+        "rm -rf /app/include/qrcodegen",
+        "rm -rf /app/lib/cmake/qrcodegen",
+        "rm -rf /app/lib/pkgconfig/qrcodegen.pc",
+        "rm -rf /app/lib/libqrcodegen.*"
+    ],
+    "sources": [
+        {
+            "type": "archive",
+            "url": "https://github.com/nayuki/QR-Code-generator/archive/refs/tags/v1.8.0.tar.gz",
+            "sha256": "2ec0a4d33d6f521c942eeaf473d42d5fe139abcfa57d2beffe10c5cf7d34ae60"
+        },
+        {
+            "type": "archive",
+            "url": "https://github.com/EasyCoding/qrcodegen-cmake/archive/refs/tags/v1.8.0-cmake2.tar.gz",
+            "sha256": "04e0dc2d7b19457928172e338b5b22216ad23a9dee8d26be4fb05fc39ea59904"
+        }
+    ]
+}

@@ -65,6 +65,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <obs-avc.h>
 
 #include "QSV_Encoder.h"
+#include "common_utils.h"
 
 #define do_log(level, format, ...)                 \
 	blog(level, "[qsv encoder: '%s'] " format, \
@@ -74,6 +75,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
 #define debug(format, ...) do_log(LOG_DEBUG, format, ##__VA_ARGS__)
+
+#ifndef GS_INVALID_HANDLE
+#define GS_INVALID_HANDLE (uint32_t) - 1
+#endif
 
 /* ------------------------------------------------------------------------- */
 
@@ -513,7 +518,7 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	bool cbr_override = obs_data_get_bool(settings, "cbr");
 	int bFrames = (int)obs_data_get_int(settings, "bframes");
 	bool enhancements = obs_data_get_bool(settings, "enhancements");
-	const char *codec;
+	const char *codec = "";
 
 	if (obs_data_has_user_value(settings, "bf"))
 		bFrames = (int)obs_data_get_int(settings, "bf");

@@ -1,0 +1,187 @@
+autoload -Uz log_group log_error log_status log_info log_debug
+
+if (( ! ${+commands[curl]} )) {
+  log_error 'curl not found. Please install curl.'
+  return 2
+}
+
+if (( ! ${+commands[jq]} )) {
+  log_error 'jq not found. Please install jq.'
+  return 2
+}
+
+if (( ! ${+project_root} )) {
+  log_error "'project_root' not set. Please set before running ${0}."
+  return 2
+}
+
+if (( ! ${+target} )) {
+  log_error "'target' not set. Please set before running ${0}."
+  return 2
+}
+
+local -a curl_opts=()
+if (( ! ${+CI} )) {
+  curl_opts+=(--progress-bar --continue-at -)
+} else {
+  curl_opts+=(--show-error --silent)
+}
+curl_opts+=(--location -O ${@})
+
+pushd ${project_root}
+
+typeset -g QT_VERSION
+read -r QT_VERSION <<< \
+  "$(jq -r --arg target "${target}" \
+    '.platformConfig[$target] | { qtVersion } | join(" ")' \
+    ${buildspec_file})"
+
+if (( ! (${skips[(Ie)all]} + ${skips[(Ie)deps]}) )) {
+  log_group 'Installing obs-studio build dependencies...'
+
+  mkdir -p ${project_root}/.deps
+  local deps_version
+  local deps_baseurl
+  local deps_label
+  local deps_hash
+
+  IFS=';' read -r deps_version deps_baseurl deps_label deps_hash <<< \
+    "$(jq -r --arg target "${target}" \
+      '.dependencies["cef"] | {version, baseUrl, "label", "hash": .hashes[$target]} | join(";")' \
+      ${buildspec_file})"
+
+  if (( ! deps_version )) {
+    log_error 'No valid cef spec found in buildspec.json.'
+    return 2
+  }
+  log_group 'Setting up pre-built Chromium Embedded Framework...'
+
+  pushd ${project_root}/.deps
+  local _filename="cef_binary_${deps_version}_${target//-/_}.tar.xz"
+  local _url=${deps_baseurl}/${_filename}
+  local _target="cef_binary_${deps_version}_${target//-/_}"
+  typeset -g CEF_VERSION=${deps_version}
+
+  log_status 'Checking for available wrapper library...'
+  local -i _skip=0
+  if [[ -f ${_target}/build/libcef_dll_wrapper/libcef_dll_wrapper.a ]] {
+    _skip=1
+  }
+
+  if ! (( _skip )) {
+    if [[ ! -f ${_filename} ]] {
+      log_debug "Running curl ${curl_opts} ${_url}"
+      curl ${curl_opts} ${_url} && \
+        log_status "Downloaded ${deps_label} for ${target}."
+    } else {
+      log_status "Found downloaded ${deps_label}"
+    }
+
+    read -r artifact_checksum _ <<< "$(sha256sum ${_filename})"
+    if [[ ${deps_hash} != ${artifact_checksum} ]] {
+      log_error "Checksum of downloaded ${deps_label} does not match specification.
+  Expected : ${deps_hash}
+  Actual   : ${artifact_checksum}"
+      return 2
+    }
+    log_status "Checksum of downloaded ${deps_label} matches."
+    mkdir -p ${_target} && pushd ${_target}
+
+    XZ_OPT=-T0 tar --strip-components 1 -xJf ../${_filename} && log_status "${deps_label} extracted."
+
+    if [[ ! -f build/libcef_dll_wrapper/libcef_dll_wrapper.a ]] {
+      log_group "Configuring CEF wrapper library..."
+
+      local -a cmake_args=(
+        -DPROJECT_ARCH:STRING=${target##*-}
+        -DCEF_COMPILER_FLAGS:STRING="-Wno-deprecated-copy"
+        -DCMAKE_BUILD_TYPE:STRING=${config}
+        -DCMAKE_CXX_FLAGS:STRING="-std=c++11 -Wno-deprecated-declarations -Wno-unknonw-warning-option"
+        -DCMAKE_EXE_LINKER_FLAGS:STRING="-std=c++11"
+      )
+      if (( _loglevel == 0 )) cmake_args+=(-Wno-deprecated -Wno-dev --log-level=ERROR)
+      if (( ${+commands[ccache]} )) {
+        cmake_args+=(
+          -DCMAKE_C_COMPILER_LAUNCHER:STRING=ccache
+          -DCMAKE_CXX_COMPILER_LAUNCHER:STRING=ccache
+        )
+      }
+
+      cmake -S . -B build -G Ninja ${cmake_args}
+
+      log_group "Building CEF Wrapper library..."
+      cmake --build build
+    }
+
+    mkdir -p build/libcef_dll
+    popd
+  } else {
+    log_info 'Found existing Chromium Embedded Framework and loader library...'
+  }
+  popd
+
+  local -a apt_args=(
+    ${CI:+-y}
+    --no-install-recommends
+  )
+  if (( _loglevel == 0 )) apt_args+=(--quiet)
+
+  local suffix
+  if [[ ${CPUTYPE} != ${target##*-} ]] {
+    local -A arch_mappings=(
+      aarch64 arm64
+      x86_64 amd64
+    )
+
+    suffix=":${arch_mappings[${target##*-}]}"
+    sudo apt-get install ${apt_args} gcc-${${target##*-}//_/-}-linux-gnu g++-${${target##*-}//_/-}-linux-gnu
+  }
+
+  sudo apt-get install ${apt_args} \
+    build-essential \
+    libcurl4-openssl-dev \
+    libavcodec-dev libavdevice-dev libavfilter-dev libavformat-dev libavutil-dev \
+    libswresample-dev libswscale-dev \
+    libjansson-dev \
+    libx11-xcb-dev \
+    libgles2-mesa-dev libgles2-mesa \
+    libwayland-dev \
+    libpipewire-0.3-dev \
+    libpulse-dev \
+    libx264-dev \
+    libmbedtls-dev \
+    libgl1-mesa-dev \
+    libjansson-dev \
+    libluajit-5.1-dev python3-dev \
+    libx11-dev libxcb-randr0-dev libxcb-shm0-dev libxcb-xinerama0-dev \
+    libxcb-composite0-dev libxinerama-dev libxcb1-dev libx11-xcb-dev libxcb-xfixes0-dev \
+    swig libcmocka-dev libxss-dev libglvnd-dev \
+    libxkbcommon-dev \
+    libasound2-dev libfdk-aac-dev libfontconfig-dev libfreetype6-dev libjack-jackd2-dev \
+    libpulse-dev libsndio-dev libspeexdsp-dev libudev-dev libv4l-dev libva-dev libvlc-dev \
+    libpci-dev libdrm-dev \
+    nlohmann-json3-dev libwebsocketpp-dev libasio-dev libvpl-dev libqrcodegencpp-dev
+
+  if (( UBUNTU_2210_OR_LATER )) sudo apt-get install ${apt_args} librist-dev libsrt-openssl-dev
+
+  local -a _qt_packages=()
+
+  if (( QT_VERSION == 6 )) {
+    _qt_packages+=(
+      qt6-base-dev
+      libqt6svg6-dev
+      qt6-base-private-dev
+    )
+  } else {
+    log_error "Unsupported Qt version '${QT_VERSION}' specified."
+    return 2
+  }
+
+  sudo apt-get install ${apt_args} ${_qt_packages}
+} else {
+  local cef_version
+  read -r cef_version <<< \
+    "$(jq -r '.dependencies | [.cef.version] | join(" ")' ${buildspec_file})"
+
+  typeset -g CEF_VERSION=${cef_version}
+}

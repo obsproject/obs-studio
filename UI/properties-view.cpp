@@ -138,7 +138,8 @@ void OBSPropertiesView::RefreshProperties()
 	layout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
 	widget->setLayout(layout);
 
-	QSizePolicy mainPolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+	QSizePolicy mainPolicy(QSizePolicy::MinimumExpanding,
+			       QSizePolicy::MinimumExpanding);
 
 	layout->setLabelAlignment(Qt::AlignRight);
 
@@ -1718,7 +1719,9 @@ static bool FrameRateChanged(QWidget *widget, const char *name,
 	if (!variant.canConvert<frame_rate_tag>())
 		return false;
 
-	auto StopUpdating = [&](void *) { w->updating = false; };
+	auto StopUpdating = [&](void *) {
+		w->updating = false;
+	};
 	unique_ptr<void, decltype(StopUpdating)> signalGuard(
 		static_cast<void *>(w), StopUpdating);
 	w->updating = true;
@@ -1951,12 +1954,16 @@ bool WidgetInfo::FontChanged(const char *setting)
 
 	if (!font_obj) {
 		QFont initial;
-		font = QFontDialog::getFont(&success, initial, view,
-					    "Pick a Font", options);
+		font = QFontDialog::getFont(
+			&success, initial, view,
+			QTStr("Basic.PropertiesWindow.SelectFont.WindowTitle"),
+			options);
 	} else {
 		MakeQFont(font_obj, font);
-		font = QFontDialog::getFont(&success, font, view, "Pick a Font",
-					    options);
+		font = QFontDialog::getFont(
+			&success, font, view,
+			QTStr("Basic.PropertiesWindow.SelectFont.WindowTitle"),
+			options);
 	}
 
 	if (!success)

@@ -76,7 +76,8 @@ class ExtraBrowsersDelegate : public QStyledItemDelegate {
 
 public:
 	inline ExtraBrowsersDelegate(ExtraBrowsersModel *model_)
-		: QStyledItemDelegate(nullptr), model(model_)
+		: QStyledItemDelegate(nullptr),
+		  model(model_)
 	{
 	}
 

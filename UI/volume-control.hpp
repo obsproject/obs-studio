@@ -290,8 +290,8 @@ private:
 	QPushButton *config = nullptr;
 	float levelTotal;
 	float levelCount;
-	obs_fader_t *obs_fader;
-	obs_volmeter_t *obs_volmeter;
+	OBSFader obs_fader;
+	OBSVolMeter obs_volmeter;
 	bool vertical;
 	QMenu *contextMenu;
 

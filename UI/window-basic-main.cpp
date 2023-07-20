@@ -281,7 +281,9 @@ extern void RegisterYoutubeAuth();
 #endif
 
 OBSBasic::OBSBasic(QWidget *parent)
-	: OBSMainWindow(parent), undo_s(ui), ui(new Ui::OBSBasic)
+	: OBSMainWindow(parent),
+	  undo_s(ui),
+	  ui(new Ui::OBSBasic)
 {
 	setAttribute(Qt::WA_NativeWindow);
 
@@ -2275,7 +2277,8 @@ void OBSBasic::OBSInit()
 	UpdatePreviewProgramIndicators();
 	OnFirstLoad();
 
-	activateWindow();
+	if (!hideWindowOnStart)
+		activateWindow();
 
 	/* ------------------------------------------- */
 	/* display warning message for failed modules  */
@@ -3308,9 +3311,24 @@ void OBSBasic::SourceToolBarActionsSetEnabled()
 	RefreshToolBarStyling(ui->sourcesToolbar);
 }
 
+void OBSBasic::UpdateTransformShortcuts()
+{
+	OBSSource source = obs_sceneitem_get_source(GetCurrentSceneItem());
+	uint32_t flags = obs_source_get_output_flags(source);
+	bool audioOnly = (flags & OBS_SOURCE_VIDEO) == 0;
+
+	ui->actionEditTransform->setEnabled(!audioOnly);
+	ui->actionCopyTransform->setEnabled(!audioOnly);
+	ui->actionPasteTransform->setEnabled(audioOnly ? false
+						       : hasCopiedTransform);
+
+	ui->actionResetTransform->setEnabled(!audioOnly);
+}
+
 void OBSBasic::UpdateContextBar(bool force)
 {
 	SourceToolBarActionsSetEnabled();
+	UpdateTransformShortcuts();
 
 	if (!ui->contextContainer->isVisible() && !force)
 		return;
@@ -3544,7 +3562,9 @@ void OBSBasic::UnhideAllAudioControls()
 	using UnhideAudioMixer_t = decltype(UnhideAudioMixer);
 
 	auto PreEnum = [](void *data, obs_source_t *source) -> bool /* -- */
-	{ return (*reinterpret_cast<UnhideAudioMixer_t *>(data))(source); };
+	{
+		return (*reinterpret_cast<UnhideAudioMixer_t *>(data))(source);
+	};
 
 	obs_enum_sources(PreEnum, &UnhideAudioMixer);
 }
@@ -5071,6 +5091,10 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_EXIT);
 
+	// Destroys the frontend API so plugins can't continue calling it
+	obs_frontend_set_callbacks_internal(nullptr);
+	api = nullptr;
+
 	QMetaObject::invokeMethod(App(), "quit", Qt::QueuedConnection);
 }
 
@@ -5829,7 +5853,8 @@ QMenu *OBSBasic::AddBackgroundColorMenu(QMenu *menu,
 }
 
 ColorSelect::ColorSelect(QWidget *parent)
-	: QWidget(parent), ui(new Ui::ColorSelect)
+	: QWidget(parent),
+	  ui(new Ui::ColorSelect)
 {
 	ui->setupUi(this);
 }

@@ -4,7 +4,8 @@ const char *audio_codecs[MAX_CODECS] = {"opus"};
 const char *video_codecs[MAX_CODECS] = {"h264"};
 
 WHIPService::WHIPService(obs_data_t *settings, obs_service_t *)
-	: server(), bearer_token()
+	: server(),
+	  bearer_token()
 {
 	Update(settings);
 }
@@ -75,7 +76,9 @@ void register_whip_service()
 	info.get_properties = [](void *) -> obs_properties_t * {
 		return WHIPService::Properties();
 	};
-	info.get_protocol = [](void *) -> const char * { return "WHIP"; };
+	info.get_protocol = [](void *) -> const char * {
+		return "WHIP";
+	};
 	info.get_url = [](void *priv_data) -> const char * {
 		return static_cast<WHIPService *>(priv_data)->server.c_str();
 	};

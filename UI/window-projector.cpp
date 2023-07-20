@@ -16,7 +16,8 @@ static bool updatingMultiview = false, mouseSwitching, transitionOnDoubleClick;
 
 OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 			   ProjectorType type_)
-	: OBSQTDisplay(widget, Qt::Window), weakSource(OBSGetWeakRef(source_))
+	: OBSQTDisplay(widget, Qt::Window),
+	  weakSource(OBSGetWeakRef(source_))
 {
 	OBSSource source = GetSource();
 	if (source) {

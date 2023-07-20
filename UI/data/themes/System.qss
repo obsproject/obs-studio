@@ -402,3 +402,8 @@ QCalendarWidget #qt_calendar_nextmonth {
     qproperty-icon: url(./Dark/right.svg);
     icon-size: 16px, 16px;
 }
+
+/* Status Bar */
+StatusBarWidget > QFrame {
+    padding: 0px 12px 8px;
+}

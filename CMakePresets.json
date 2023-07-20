@@ -71,7 +71,6 @@
       "cacheVariables": {
         "ENABLE_WAYLAND": true,
         "ENABLE_VLC": true,
-        "QT_VERSION": "6",
         "CMAKE_BUILD_TYPE": "Debug"
       }
     },
@@ -108,7 +107,6 @@
       "cacheVariables": {
         "ENABLE_WAYLAND": true,
         "ENABLE_VLC": true,
-        "QT_VERSION": {"type": "STRING", "value": "6"},
         "CMAKE_BUILD_TYPE": {"type": "STRING", "value": "Debug"}
       }
     },

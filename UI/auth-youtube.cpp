@@ -69,7 +69,8 @@ void RegisterYoutubeAuth()
 }
 
 YoutubeAuth::YoutubeAuth(const Def &d)
-	: OAuthStreamKey(d), section(SECTION_NAME)
+	: OAuthStreamKey(d),
+	  section(SECTION_NAME)
 {
 }
 
@@ -301,7 +302,9 @@ std::shared_ptr<Auth> YoutubeAuth::Login(QWidget *owner,
 		dlg.reject();
 	});
 
-	auto open_external_browser = [url]() { OpenBrowser(url); };
+	auto open_external_browser = [url]() {
+		OpenBrowser(url);
+	};
 	QScopedPointer<QThread> thread(CreateQThread(open_external_browser));
 	thread->start();
 

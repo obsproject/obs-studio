@@ -125,6 +125,8 @@ static inline enum video_format convert_pixel_format(int f)
 	switch (f) {
 	case AV_PIX_FMT_NONE:
 		return VIDEO_FORMAT_NONE;
+	case AV_PIX_FMT_GRAY8:
+		return VIDEO_FORMAT_Y800;
 	case AV_PIX_FMT_YUV420P:
 	case AV_PIX_FMT_YUVJ420P:
 		return VIDEO_FORMAT_I420;

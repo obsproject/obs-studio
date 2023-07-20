@@ -23,7 +23,8 @@ private slots:
 
 public:
 	AutoUpdateThread(bool manualUpdate_, bool repairMode_ = false)
-		: manualUpdate(manualUpdate_), repairMode(repairMode_)
+		: manualUpdate(manualUpdate_),
+		  repairMode(repairMode_)
 	{
 	}
 };

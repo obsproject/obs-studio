@@ -1,0 +1,38 @@
+name: Flatpak Manifest Validator
+description: Checks order of Flatpak modules in manifest file
+inputs:
+  manifestFile:
+    description: Flatpak manifest file to check
+  failCondition:
+    description: Controls whether failed checks also fail the workflow run
+    required: false
+    default: never
+  workingDirectory:
+    description: Working directory for checks
+    required: false
+    default: ${{ github.workspace }}
+runs:
+  using: composite
+  steps:
+    - name: Check Runner Operating System 🏃‍♂️
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |
+        : Check Runner Operating System 🏃‍♂️
+        echo "services-validation action requires a macOS-based or Linux-based runner."
+        exit 2
+
+    - name: Validate Flatpak Manifest 🕵️
+      shell: bash
+      working-directory: ${{ inputs.workingDirectory }}
+      run: |
+        : Validate Flatpak Manifest 🕵️
+
+        echo ::group::Run Validation
+        if [[ '${{ inputs.failCondition }}' == 'never' ]]; then set +e; fi
+        python3 -u \
+          build-aux/format-manifest.py \
+          build-aux/com.obsproject.Studio.json \
+          --check \
+          --loglevel INFO
+        echo ::endgroup::

@@ -795,8 +795,9 @@ static bool send_video_header(struct rtmp_stream *stream)
 	uint8_t *header;
 	size_t size;
 
-	struct encoder_packet packet = {
-		.type = OBS_ENCODER_VIDEO, .timebase_den = 1, .keyframe = true};
+	struct encoder_packet packet = {.type = OBS_ENCODER_VIDEO,
+					.timebase_den = 1,
+					.keyframe = true};
 
 	if (!obs_encoder_get_extra_data(vencoder, &header, &size))
 		return false;
@@ -1341,8 +1342,9 @@ static void *connect_thread(void *data)
 		return NULL;
 	}
 
-	// HDR streaming disabled for AV1 and HEVC
-	if (stream->video_codec != CODEC_H264) {
+	// HDR streaming disabled for AV1
+	if (stream->video_codec != CODEC_H264 &&
+	    stream->video_codec != CODEC_HEVC) {
 		video_t *video = obs_get_video();
 		const struct video_output_info *info =
 			video_output_get_info(video);

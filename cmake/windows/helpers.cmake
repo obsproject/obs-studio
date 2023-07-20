@@ -161,6 +161,30 @@ function(set_target_properties_obs target)
 
   target_link_options(${target} PRIVATE "/PDBALTPATH:$<TARGET_PDB_FILE_NAME:${target}>")
   target_install_resources(${target})
+
+  get_target_property(target_sources ${target} SOURCES)
+  set(target_ui_files ${target_sources})
+  list(FILTER target_ui_files INCLUDE REGEX ".+\\.(ui|qrc)")
+  source_group(
+    TREE "${CMAKE_CURRENT_SOURCE_DIR}"
+    PREFIX "UI Files"
+    FILES ${target_ui_files})
+
+  if(${target} STREQUAL libobs)
+    set(target_source_files ${target_sources})
+    set(target_header_files ${target_sources})
+    list(FILTER target_source_files INCLUDE REGEX ".+\\.(m|c[cp]?p?|swift)")
+    list(FILTER target_header_files INCLUDE REGEX ".+\\.h(pp)?")
+
+    source_group(
+      TREE "${CMAKE_CURRENT_SOURCE_DIR}"
+      PREFIX "Source Files"
+      FILES ${target_source_files})
+    source_group(
+      TREE "${CMAKE_CURRENT_SOURCE_DIR}"
+      PREFIX "Header Files"
+      FILES ${target_header_files})
+  endif()
 endfunction()
 
 # _target_install_obs: Helper function to install build artifacts to rundir and install location

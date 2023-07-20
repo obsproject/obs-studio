@@ -129,7 +129,10 @@ Structures/Enumerations
 
    - **OBS_FRONTEND_EVENT_EXIT**
 
-     Triggered when the program is about to exit.
+     Triggered when the program is about to exit. This is the last chance
+     to call any frontend API functions for any saving / cleanup / etc.
+     After returning from this event callback, it is not permitted to make
+     any further frontend API calls.
 
    - **OBS_FRONTEND_EVENT_REPLAY_BUFFER_STARTING**
 

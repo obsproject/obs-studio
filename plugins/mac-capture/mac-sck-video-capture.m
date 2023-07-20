@@ -399,7 +399,7 @@ static void sck_video_capture_defaults(obs_data_t *settings)
     CFRelease(uuid_string);
     CFRelease(display_uuid);
 
-    obs_data_set_default_obj(settings, "application", NULL);
+    obs_data_set_default_string(settings, "application", NULL);
     obs_data_set_default_int(settings, "type", ScreenCaptureDisplayStream);
     obs_data_set_default_int(settings, "window", kCGNullWindowID);
     obs_data_set_default_bool(settings, "show_cursor", true);
