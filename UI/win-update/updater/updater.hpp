@@ -76,7 +76,6 @@ using B2Hash = std::array<std::byte, kBlake2HashLength>;
 #endif
 
 #include <util/windows/WinHandle.hpp>
-#include <json11.hpp>
 #include "resource.h"
 
 bool HTTPGetFile(HINTERNET hConnect, const wchar_t *url,
@@ -99,8 +98,8 @@ int ApplyPatch(ZSTD_DCtx *zstdCtx, std::byte *patch_data,
 
 extern HWND hwndMain;
 extern HCRYPTPROV hProvider;
-extern int totalFileSize;
-extern int completedFileSize;
+extern size_t totalFileSize;
+extern size_t completedFileSize;
 extern HANDLE cancelRequested;
 
 #pragma pack(push, r1, 1)

@@ -3,10 +3,7 @@ cmake_minimum_required(VERSION 3.24...3.25)
 legacy_check()
 
 find_package(zstd)
-
-if(NOT TARGET OBS::json11)
-  add_subdirectory("${CMAKE_SOURCE_DIR}/deps/json11" "${CMAKE_BINARY_DIR}/deps/json11")
-endif()
+find_package(nlohmann_json 3 REQUIRED)
 
 add_executable(updater WIN32)
 
@@ -17,6 +14,7 @@ target_sources(
           helpers.hpp
           http.cpp
           init-hook-files.c
+          manifest.hpp
           patch.cpp
           resource.h
           updater.cpp
@@ -29,7 +27,8 @@ target_compile_definitions(updater PRIVATE NOMINMAX "PSAPI_VERSION=2")
 
 target_include_directories(updater PRIVATE "${CMAKE_SOURCE_DIR}/libobs" "${CMAKE_SOURCE_DIR}/UI/win-update")
 
-target_link_libraries(updater PRIVATE OBS::blake2 OBS::json11 zstd::libzstd_static comctl32 shell32 winhttp)
+target_link_libraries(updater PRIVATE OBS::blake2 nlohmann_json::nlohmann_json zstd::libzstd_static comctl32 shell32
+                                      winhttp)
 target_link_options(updater PRIVATE /IGNORE:4098)
 
 set_target_properties(updater PROPERTIES FOLDER frontend OUTPUT_NAME updater)
