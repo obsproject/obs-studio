@@ -9,9 +9,6 @@
 #define do_log(level, format, ...)                              \
 	blog(level, "[obs-webrtc] [whip_output: '%s'] " format, \
 	     obs_output_get_name(output), ##__VA_ARGS__)
-#define do_log_s(level, format, ...)                            \
-	blog(level, "[obs-webrtc] [whip_output: '%s'] " format, \
-	     obs_output_get_name(whipOutput->output), ##__VA_ARGS__)
 
 static uint32_t generate_random_u32()
 {
