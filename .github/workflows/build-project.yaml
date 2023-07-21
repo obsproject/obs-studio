@@ -278,11 +278,12 @@ jobs:
             "$(gh actions-cache list -B ${cache_ref} --key "${cache_key}-x86_64" | head -1)"
 
           if [[ "${key}" ]]; then
-            echo "cacheKey=${cache_key}" >> $GITHUB_OUTPUT
             echo "cacheHit=true" >> $GITHUB_OUTPUT
           else
             echo "cacheHit=false" >> $GITHUB_OUTPUT
           fi
+
+          echo "cacheKey=${cache_key}" >> $GITHUB_OUTPUT
 
       - name: Build Flatpak Manifest 🧾
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6.1

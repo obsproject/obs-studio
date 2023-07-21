@@ -82,12 +82,12 @@ jobs:
             "$(gh actions-cache list -B ${cache_ref} --key "${cache_key}-x86_64" | head -1)"
 
           if [[ "${key}" ]]; then
-            echo "cacheKey=${cache_key}" >> $GITHUB_OUTPUT
             echo "cacheHit=true" >> $GITHUB_OUTPUT
           else
             echo "cacheHit=false" >> $GITHUB_OUTPUT
           fi
 
+          echo "cacheKey=${cache_key}" >> $GITHUB_OUTPUT
           echo "commitHash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
 
       - name: Build Flatpak Manifest
