@@ -1068,8 +1068,10 @@ static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 			    L".old");
 
 		if (!MyCopyFile(file.outputPath.c_str(), oldFileRenamedPath)) {
+			DWORD err = GetLastError();
 			int is_sharing_violation =
-				(GetLastError() == ERROR_SHARING_VIOLATION);
+				(err == ERROR_SHARING_VIOLATION ||
+				 err == ERROR_USER_MAPPED_FILE);
 
 			if (is_sharing_violation)
 				Status(L"Update failed: %s is still in use.  "
@@ -1128,7 +1130,8 @@ static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 
 		if (!installed_ok) {
 			int is_sharing_violation =
-				(error_code == ERROR_SHARING_VIOLATION);
+				(error_code == ERROR_SHARING_VIOLATION ||
+				 error_code == ERROR_USER_MAPPED_FILE);
 
 			if (is_sharing_violation) {
 				if (!already_tried_to_move) {
