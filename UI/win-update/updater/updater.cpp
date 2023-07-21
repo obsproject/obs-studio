@@ -1382,6 +1382,45 @@ static bool UpdateVS2019Redists(const Json &root)
 	return success;
 }
 
+static void UpdateRegistryVersion(const Json &manifest)
+{
+	const char *regKey =
+		R"(Software\Microsoft\Windows\CurrentVersion\Uninstall\OBS Studio)";
+	LSTATUS res;
+	HKEY key;
+	char version[32];
+	int formattedLen;
+
+	/* The manifest does not store a version string, so we gotta make one ourselves. */
+	int beta = manifest["beta"].int_value();
+	int rc = manifest["rc"].int_value();
+	int major = manifest["version_major"].int_value();
+	int minor = manifest["version_minor"].int_value();
+	int patch = manifest["version_patch"].int_value();
+
+	if (beta || rc) {
+		formattedLen = sprintf_s(version, sizeof(version),
+					 "%d.%d.%d-%s%d", major, minor, patch,
+					 beta ? "beta" : "rc",
+					 beta ? beta : rc);
+	} else {
+		formattedLen = sprintf_s(version, sizeof(version), "%d.%d.%d",
+					 major, minor, patch);
+	}
+
+	if (formattedLen <= 0)
+		return;
+
+	res = RegOpenKeyExA(HKEY_LOCAL_MACHINE, regKey, 0,
+			    KEY_WRITE | KEY_WOW64_32KEY, &key);
+	if (res != ERROR_SUCCESS)
+		return;
+
+	RegSetValueExA(key, "DisplayVersion", 0, REG_SZ, (const BYTE *)version,
+		       formattedLen + 1);
+	RegCloseKey(key);
+}
+
 extern "C" void UpdateHookFiles(void);
 
 static bool Update(wchar_t *cmdLine)
@@ -1683,20 +1722,20 @@ static bool Update(wchar_t *cmdLine)
 	 * Parse new manifest                    */
 
 	string error;
-	root = Json::parse(newManifest, error);
+	Json patchRoot = Json::parse(newManifest, error);
 	if (!error.empty()) {
 		Status(L"Update failed: Couldn't parse patch manifest: %S",
 		       error.c_str());
 		return false;
 	}
 
-	if (!root.is_array()) {
+	if (!patchRoot.is_array()) {
 		Status(L"Update failed: Invalid patch manifest");
 		return false;
 	}
 
 	/* Update updates with patch information. */
-	for (const Json &patch : root.array_items()) {
+	for (const Json &patch : patchRoot.array_items()) {
 		if (!patch.is_object()) {
 			Status(L"Update failed: Invalid patch manifest");
 			return false;
@@ -1804,6 +1843,14 @@ static bool Update(wchar_t *cmdLine)
 
 	Status(L"Updating Game Capture hooks...");
 	UpdateHookFiles();
+
+	/* ------------------------------------- *
+	 * Update installed version in registry  */
+
+	if (!bIsPortable) {
+		Status(L"Updating version information...");
+		UpdateRegistryVersion(root);
+	}
 
 	/* ------------------------------------- *
 	 * Finish                                */
