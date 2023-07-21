@@ -68,6 +68,11 @@ runs:
         print "::error:steam-upload action can only be used with 'release', 'workflow-dispatch', or 'schedule' events."
         exit 2
 
+    - name: Download Nightly Assets 🌙
+      id: asset-info-nightly
+      uses: actions/download-artifact@v3
+      if: github.event_name == 'schedule'
+
     - name: Download Assets 📥
       id: asset-info
       shell: zsh --no-rcs --errexit --pipefail {0}
@@ -140,16 +145,12 @@ runs:
             }
             ;;
           schedule)
-            gh run download ${GITHUB_RUN_ID} \
-              --pattern '*macos*' \
-              --pattern '*windows*'
-
             local short_hash="${GITHUB_SHA:0:9}"
             mv obs-studio-windows-x64-${short_hash}/obs-studio-*-windows-x64.zip \
               ${root_dir}
             mv obs-studio-macos-arm64-${short_hash}/obs-studio-*-macos-apple.dmg \
               ${root_dir}
-            mv obs-studio-macos-intel-${short_hash}/obs-studio-*-macos-intel.dmg \
+            mv obs-studio-macos-x86_64-${short_hash}/obs-studio-*-macos-intel.dmg \
               ${root_dir}
 
             description="g${GITHUB_SHA}"
