@@ -68,7 +68,7 @@ runs:
 
           print -n "${MACOS_SIGNING_CERT}" | base64 --decode --output=${certificate_path}
 
-          : "${MACOS_KEYCHAIN_PASSWORD:="$(print ${RANDOM} | sha1sum | head -c 32)"}"
+          : "${MACOS_KEYCHAIN_PASSWORD:="$(print ${RANDOM} | shasum | head -c 32)"}"
 
           print '::group::Keychain setup'
           security create-keychain -p "${MACOS_KEYCHAIN_PASSWORD}" ${keychain_path}
