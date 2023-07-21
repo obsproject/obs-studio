@@ -16,11 +16,9 @@ const char signaling_media_id_valid_char[] = "0123456789"
 const std::string user_agent = generate_user_agent();
 
 const char *audio_mid = "0";
-const uint32_t audio_clockrate = 48000;
 const uint8_t audio_payload_type = 111;
 
 const char *video_mid = "1";
-const uint32_t video_clockrate = 90000;
 const uint8_t video_payload_type = 96;
 
 WHIPOutput::WHIPOutput(obs_data_t *, obs_output_t *output)
@@ -32,9 +30,9 @@ WHIPOutput::WHIPOutput(obs_data_t *, obs_output_t *output)
 	  start_stop_mutex(),
 	  start_stop_thread(),
 	  base_ssrc(generate_random_u32()),
-	  peer_connection(-1),
-	  audio_track(-1),
-	  video_track(-1),
+	  peer_connection(nullptr),
+	  audio_track(nullptr),
+	  video_track(nullptr),
 	  total_bytes_sent(0),
 	  connect_time_ms(0),
 	  start_time_ns(0),
@@ -87,11 +85,13 @@ void WHIPOutput::Data(struct encoder_packet *packet)
 
 	if (packet->type == OBS_ENCODER_AUDIO) {
 		int64_t duration = packet->dts_usec - last_audio_timestamp;
-		Send(packet->data, packet->size, duration, audio_track);
+		Send(packet->data, packet->size, duration, audio_track,
+		     audio_sr_reporter);
 		last_audio_timestamp = packet->dts_usec;
 	} else if (packet->type == OBS_ENCODER_VIDEO) {
 		int64_t duration = packet->dts_usec - last_video_timestamp;
-		Send(packet->data, packet->size, duration, video_track);
+		Send(packet->data, packet->size, duration, video_track,
+		     video_sr_reporter);
 		last_video_timestamp = packet->dts_usec;
 	}
 }
@@ -103,33 +103,25 @@ void WHIPOutput::ConfigureAudioTrack(std::string media_stream_id,
 
 	uint32_t ssrc = base_ssrc;
 
-	rtcTrackInit track_init = {
-		RTC_DIRECTION_SENDONLY,
-		RTC_CODEC_OPUS,
-		audio_payload_type,
-		ssrc,
-		audio_mid,
-		cname.c_str(),
-		media_stream_id.c_str(),
-		media_stream_track_id.c_str(),
-	};
+	rtc::Description::Audio audio_description(
+		audio_mid, rtc::Description::Direction::SendOnly);
+	audio_description.addOpusCodec(audio_payload_type);
+	audio_description.addSSRC(ssrc, cname, media_stream_id,
+				  media_stream_track_id);
+	audio_track = peer_connection->addTrack(audio_description);
 
-	// Generate a random starting timestamp for the audio track
-	uint32_t rtp_audio_timestamp = generate_random_u32();
+	auto rtp_config = std::make_shared<rtc::RtpPacketizationConfig>(
+		ssrc, cname, audio_payload_type,
+		rtc::OpusRtpPacketizer::defaultClockRate);
+	auto packetizer = std::make_shared<rtc::OpusRtpPacketizer>(rtp_config);
+	audio_sr_reporter = std::make_shared<rtc::RtcpSrReporter>(rtp_config);
+	auto nack_responder = std::make_shared<rtc::RtcpNackResponder>();
 
-	rtcPacketizationHandlerInit packetizer_init = {ssrc,
-						       cname.c_str(),
-						       audio_payload_type,
-						       audio_clockrate,
-						       0,
-						       rtp_audio_timestamp,
-						       RTC_NAL_SEPARATOR_LENGTH,
-						       0};
-
-	audio_track = rtcAddTrackEx(peer_connection, &track_init);
-	rtcSetOpusPacketizationHandler(audio_track, &packetizer_init);
-	rtcChainRtcpSrReporter(audio_track);
-	rtcChainRtcpNackResponder(audio_track, 1000);
+	auto opus_handler =
+		std::make_shared<rtc::OpusPacketizationHandler>(packetizer);
+	opus_handler->addToChain(audio_sr_reporter);
+	opus_handler->addToChain(nack_responder);
+	audio_track->setMediaHandler(opus_handler);
 }
 
 void WHIPOutput::ConfigureVideoTrack(std::string media_stream_id,
@@ -140,34 +132,27 @@ void WHIPOutput::ConfigureVideoTrack(std::string media_stream_id,
 	// More predictable SSRC values between audio and video
 	uint32_t ssrc = base_ssrc + 1;
 
-	rtcTrackInit track_init = {
-		RTC_DIRECTION_SENDONLY,
-		RTC_CODEC_H264,
-		video_payload_type,
-		ssrc,
-		video_mid,
-		cname.c_str(),
-		media_stream_id.c_str(),
-		media_stream_track_id.c_str(),
-	};
+	rtc::Description::Video video_description(
+		video_mid, rtc::Description::Direction::SendOnly);
+	video_description.addH264Codec(video_payload_type);
+	video_description.addSSRC(ssrc, cname, media_stream_id,
+				  media_stream_track_id);
+	video_track = peer_connection->addTrack(video_description);
 
-	// Generate a random starting timestamp for the video track
-	uint32_t rtp_video_timestamp = generate_random_u32();
+	auto rtp_config = std::make_shared<rtc::RtpPacketizationConfig>(
+		ssrc, cname, video_payload_type,
+		rtc::H264RtpPacketizer::defaultClockRate);
+	auto packetizer = std::make_shared<rtc::H264RtpPacketizer>(
+		rtc::H264RtpPacketizer::Separator::StartSequence, rtp_config,
+		MAX_VIDEO_FRAGMENT_SIZE);
+	video_sr_reporter = std::make_shared<rtc::RtcpSrReporter>(rtp_config);
+	auto nack_responder = std::make_shared<rtc::RtcpNackResponder>();
 
-	rtcPacketizationHandlerInit packetizer_init = {
-		ssrc,
-		cname.c_str(),
-		video_payload_type,
-		video_clockrate,
-		0,
-		rtp_video_timestamp,
-		RTC_NAL_SEPARATOR_START_SEQUENCE,
-		MAX_VIDEO_FRAGMENT_SIZE};
-
-	video_track = rtcAddTrackEx(peer_connection, &track_init);
-	rtcSetH264PacketizationHandler(video_track, &packetizer_init);
-	rtcChainRtcpSrReporter(video_track);
-	rtcChainRtcpNackResponder(video_track, 1000);
+	auto h264_handler =
+		std::make_shared<rtc::H264PacketizationHandler>(packetizer);
+	h264_handler->addToChain(video_sr_reporter);
+	h264_handler->addToChain(nack_responder);
+	video_track->setMediaHandler(h264_handler);
 }
 
 /**
@@ -209,51 +194,41 @@ bool WHIPOutput::Init()
  */
 bool WHIPOutput::Setup()
 {
-	rtcConfiguration config;
-	memset(&config, 0, sizeof(config));
 
-	peer_connection = rtcCreatePeerConnection(&config);
-	rtcSetUserPointer(peer_connection, this);
+	peer_connection = std::make_shared<rtc::PeerConnection>();
 
-	rtcSetStateChangeCallback(peer_connection, [](int, rtcState state,
-						      void *ptr) {
-		auto whipOutput = static_cast<WHIPOutput *>(ptr);
+	peer_connection->onStateChange([this](rtc::PeerConnection::State state) {
 		switch (state) {
-		case RTC_NEW:
-			do_log_s(LOG_INFO, "PeerConnection state is now: New");
+		case rtc::PeerConnection::State::New:
+			do_log(LOG_INFO, "PeerConnection state is now: New");
 			break;
-		case RTC_CONNECTING:
-			do_log_s(LOG_INFO,
-				 "PeerConnection state is now: Connecting");
-			whipOutput->start_time_ns = os_gettime_ns();
+		case rtc::PeerConnection::State::Connecting:
+			do_log(LOG_INFO,
+			       "PeerConnection state is now: Connecting");
+			start_time_ns = os_gettime_ns();
 			break;
-		case RTC_CONNECTED:
-			do_log_s(LOG_INFO,
-				 "PeerConnection state is now: Connected");
-			whipOutput->connect_time_ms =
-				(int)((os_gettime_ns() -
-				       whipOutput->start_time_ns) /
+		case rtc::PeerConnection::State::Connected:
+			do_log(LOG_INFO,
+			       "PeerConnection state is now: Connected");
+			connect_time_ms =
+				(int)((os_gettime_ns() - start_time_ns) /
 				      1000000.0);
-			do_log_s(LOG_INFO, "Connect time: %dms",
-				 whipOutput->connect_time_ms.load());
+			do_log(LOG_INFO, "Connect time: %dms",
+			       connect_time_ms.load());
 			break;
-		case RTC_DISCONNECTED:
-			do_log_s(LOG_INFO,
-				 "PeerConnection state is now: Disconnected");
-			whipOutput->Stop(false);
-			obs_output_signal_stop(whipOutput->output,
-					       OBS_OUTPUT_DISCONNECTED);
+		case rtc::PeerConnection::State::Disconnected:
+			do_log(LOG_INFO,
+			       "PeerConnection state is now: Disconnected");
+			Stop(false);
+			obs_output_signal_stop(output, OBS_OUTPUT_DISCONNECTED);
 			break;
-		case RTC_FAILED:
-			do_log_s(LOG_INFO,
-				 "PeerConnection state is now: Failed");
-			whipOutput->Stop(false);
-			obs_output_signal_stop(whipOutput->output,
-					       OBS_OUTPUT_ERROR);
+		case rtc::PeerConnection::State::Failed:
+			do_log(LOG_INFO, "PeerConnection state is now: Failed");
+			Stop(false);
+			obs_output_signal_stop(output, OBS_OUTPUT_ERROR);
 			break;
-		case RTC_CLOSED:
-			do_log_s(LOG_INFO,
-				 "PeerConnection state is now: Closed");
+		case rtc::PeerConnection::State::Closed:
+			do_log(LOG_INFO, "PeerConnection state is now: Closed");
 			break;
 		}
 	});
@@ -273,7 +248,7 @@ bool WHIPOutput::Setup()
 	ConfigureAudioTrack(media_stream_id, cname);
 	ConfigureVideoTrack(media_stream_id, cname);
 
-	rtcSetLocalDescription(peer_connection, "offer");
+	peer_connection->setLocalDescription();
 
 	return true;
 }
@@ -292,11 +267,11 @@ bool WHIPOutput::Connect()
 	std::string read_buffer;
 	std::vector<std::string> location_headers;
 
-	char offer_sdp[4096] = {0};
-	rtcGetLocalDescription(peer_connection, offer_sdp, sizeof(offer_sdp));
+	auto offer_sdp =
+		std::string(peer_connection->localDescription().value());
 
 #ifdef DEBUG_SDP
-	do_log(LOG_DEBUG, "Offer SDP:\n%s", offer_sdp);
+	do_log(LOG_DEBUG, "Offer SDP:\n%s", offer_sdp.c_str());
 #endif
 
 	// Add user-agent to our requests
@@ -311,7 +286,7 @@ bool WHIPOutput::Connect()
 	curl_easy_setopt(c, CURLOPT_HTTPHEADER, headers);
 	curl_easy_setopt(c, CURLOPT_URL, endpoint_url.c_str());
 	curl_easy_setopt(c, CURLOPT_POST, 1L);
-	curl_easy_setopt(c, CURLOPT_COPYPOSTFIELDS, offer_sdp);
+	curl_easy_setopt(c, CURLOPT_COPYPOSTFIELDS, offer_sdp.c_str());
 	curl_easy_setopt(c, CURLOPT_TIMEOUT, 8L);
 	curl_easy_setopt(c, CURLOPT_FOLLOWLOCATION, 1L);
 	curl_easy_setopt(c, CURLOPT_UNRESTRICTED_AUTH, 1L);
@@ -405,7 +380,11 @@ bool WHIPOutput::Connect()
 	do_log(LOG_DEBUG, "Answer SDP:\n%s", read_buffer.c_str());
 #endif
 
-	rtcSetRemoteDescription(peer_connection, read_buffer.c_str(), "answer");
+	auto response = std::string(read_buffer);
+	response.erase(0, response.find("v=0"));
+
+	rtc::Description answer(response, "answer");
+	peer_connection->setRemoteDescription(answer);
 	cleanup();
 	return true;
 }
@@ -419,10 +398,10 @@ void WHIPOutput::StartThread()
 		return;
 
 	if (!Connect()) {
-		rtcDeletePeerConnection(peer_connection);
-		peer_connection = -1;
-		audio_track = -1;
-		video_track = -1;
+		peer_connection->close();
+		peer_connection = nullptr;
+		audio_track = nullptr;
+		video_track = nullptr;
 		return;
 	}
 
@@ -487,11 +466,11 @@ void WHIPOutput::SendDelete()
 
 void WHIPOutput::StopThread(bool signal)
 {
-	if (peer_connection != -1) {
-		rtcDeletePeerConnection(peer_connection);
-		peer_connection = -1;
-		audio_track = -1;
-		video_track = -1;
+	if (peer_connection != nullptr) {
+		peer_connection->close();
+		peer_connection = nullptr;
+		audio_track = nullptr;
+		video_track = nullptr;
 	}
 
 	SendDelete();
@@ -516,26 +495,43 @@ void WHIPOutput::StopThread(bool signal)
 	last_video_timestamp = 0;
 }
 
-void WHIPOutput::Send(void *data, uintptr_t size, uint64_t duration, int track)
+void WHIPOutput::Send(void *data, uintptr_t size, uint64_t duration,
+		      std::shared_ptr<rtc::Track> track,
+		      std::shared_ptr<rtc::RtcpSrReporter> rtcp_sr_reporter)
 {
-	if (!running)
+	if (track == nullptr || !track->isOpen())
 		return;
+
+	std::vector<rtc::byte> sample{(rtc::byte *)data,
+				      (rtc::byte *)data + size};
+
+	auto rtp_config = rtcp_sr_reporter->rtpConfig;
 
 	// Sample time is in microseconds, we need to convert it to seconds
 	auto elapsed_seconds = double(duration) / (1000.0 * 1000.0);
 
 	// Get elapsed time in clock rate
-	uint32_t elapsed_timestamp = 0;
-	rtcTransformSecondsToTimestamp(track, elapsed_seconds,
-				       &elapsed_timestamp);
+	uint32_t elapsed_timestamp =
+		rtp_config->secondsToTimestamp(elapsed_seconds);
 
 	// Set new timestamp
-	uint32_t current_timestamp = 0;
-	rtcGetCurrentTrackTimestamp(track, &current_timestamp);
-	rtcSetTrackRtpTimestamp(track, current_timestamp + elapsed_timestamp);
+	rtp_config->timestamp = rtp_config->timestamp + elapsed_timestamp;
 
-	total_bytes_sent += size;
-	rtcSendMessage(track, reinterpret_cast<const char *>(data), (int)size);
+	// get elapsed time in clock rate from last RTCP sender report
+	auto report_elapsed_timestamp =
+		rtp_config->timestamp -
+		rtcp_sr_reporter->lastReportedTimestamp();
+
+	// check if last report was at least 1 second ago
+	if (rtp_config->timestampToSeconds(report_elapsed_timestamp) > 1)
+		rtcp_sr_reporter->setNeedsToReport();
+
+	try {
+		track->send(sample);
+		total_bytes_sent += sample.size();
+	} catch (const std::exception &e) {
+		do_log(LOG_ERROR, "error: %s ", e.what());
+	}
 }
 
 void register_whip_output()
