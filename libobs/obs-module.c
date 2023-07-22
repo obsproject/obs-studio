@@ -274,6 +274,15 @@ void obs_add_module_path(const char *bin, const char *data)
 	da_push_back(obs->module_paths, &omp);
 }
 
+void obs_add_safe_module(const char *name)
+{
+	if (!obs || !name)
+		return;
+
+	char *item = bstrdup(name);
+	da_push_back(obs->safe_modules, &item);
+}
+
 extern void get_plugin_info(const char *path, bool *is_obs_plugin,
 			    bool *can_load);
 
@@ -281,6 +290,19 @@ struct fail_info {
 	struct dstr fail_modules;
 	size_t fail_count;
 };
+
+static bool is_safe_module(const char *name)
+{
+	if (!obs->safe_modules.num)
+		return true;
+
+	for (size_t i = 0; i < obs->safe_modules.num; i++) {
+		if (strcmp(name, obs->safe_modules.array[i]) == 0)
+			return true;
+	}
+
+	return false;
+}
 
 static void load_all_callback(void *param, const struct obs_module_info2 *info)
 {
@@ -295,6 +317,12 @@ static void load_all_callback(void *param, const struct obs_module_info2 *info)
 	if (!is_obs_plugin) {
 		blog(LOG_WARNING, "Skipping module '%s', not an OBS plugin",
 		     info->bin_path);
+		return;
+	}
+
+	if (!is_safe_module(info->name)) {
+		blog(LOG_WARNING, "Skipping module '%s', not on safe list",
+		     info->name);
 		return;
 	}
 

@@ -486,6 +486,10 @@ source_group(
 unset(_SOURCES)
 unset(_UI)
 
+get_property(OBS_MODULE_LIST GLOBAL PROPERTY OBS_MODULE_LIST)
+list(JOIN OBS_MODULE_LIST "|" SAFE_MODULES)
+target_compile_definitions(obs PRIVATE "SAFE_MODULES=\"${SAFE_MODULES}\"")
+
 define_graphic_modules(obs)
 setup_obs_app(obs)
 setup_target_resources(obs obs-studio)

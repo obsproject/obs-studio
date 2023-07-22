@@ -271,6 +271,15 @@ plugin modules.
 
 ---------------------
 
+.. function:: void *obs_add_safe_module(const char *name)
+
+   Adds a *name* to the list of modules allowed to load in Safe Mode.
+   If the list is empty, all modules are allowed.
+
+   :param  name: The name of the module (filename sans extension).
+
+---------------------
+
 .. function:: void obs_module_failure_info_free(struct obs_module_failure_info *mfi)
 
    Frees data allocated data used in the *mfi* parameter (calls
