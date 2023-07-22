@@ -245,7 +245,7 @@ runs:
 
         steamcmd \
           +login '${{ inputs.steamUser }}' '${{ inputs.steamPassword }}' '${{ steps.steam-totp.outputs.code }}' \
-          +run_app_build ${preview:+-preview} ${build_file} \
+          +run_app_build ${preview:+-preview} ${build_file:a} \
           +quit
         print '::endgroup'
         popd
@@ -275,7 +275,7 @@ runs:
 
         steamcmd \
           +login '${{ inputs.steamUser }}' '${{ inputs.steamPassword }}' '${{ steps.steam-totp.outputs.code }}' \
-          +run_app_build ${preview} ${build_file} \
+          +run_app_build ${preview} ${build_file:a} \
           +quit
         print '::endgroup'
         popd
