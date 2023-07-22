@@ -117,6 +117,8 @@ jobs:
     defaults:
       run:
         shell: bash
+    environment:
+      name: cf-pages-deploy
     steps:
       - name: Get Commit Information 🆔
         id: setup
