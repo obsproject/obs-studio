@@ -60,7 +60,18 @@ elseif(OS_MACOS)
   target_link_libraries(aja PRIVATE ${IOKIT} ${COREFOUNDATION} ${APPKIT})
   target_compile_options(aja PRIVATE -Wno-error=deprecated-declarations)
 elseif(OS_LINUX OR OS_FREEBSD)
-  target_compile_options(aja PRIVATE -Wno-error=deprecated-declarations)
+  #[[
+    Note about -Wdangling-reference on GCC, this warning seems to be subject of false positives. This warning is set to not turn into an error.
+
+    - https://gcc.gnu.org/bugzilla/show_bug.cgi?id=107532
+    - Example close to ours: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=107532#c20
+  ]]
+  target_compile_options(
+    aja
+    PRIVATE
+      -Wno-error=deprecated-declarations
+      "$<$<AND:$<COMPILE_LANG_AND_ID:CXX,GNU>,$<VERSION_GREATER:$<CXX_COMPILER_VERSION>,13>>:-Wno-error=dangling-reference>"
+  )
 endif()
 
 set_target_properties_obs(aja PROPERTIES FOLDER plugins PREFIX "")
