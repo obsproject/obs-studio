@@ -20,6 +20,10 @@ inputs:
     description: Team ID for application codesigning (macOS only)
     required: false
     default: ''
+  provisioningProfileUUID:
+    description: UUID of provisioning profile (macOS only)
+    required: false
+    default: ''
   workingDirectory:
     description: Working directory for packaging
     required: false
@@ -34,6 +38,7 @@ runs:
       env:
         CODESIGN_IDENT: ${{ inputs.codesignIdent }}
         CODESIGN_TEAM: ${{ inputs.codesignTeam }}
+        PROVISIONING_PROFILE: ${{ inputs.provisioningProfileUUID }}
       run: |
         : Run macOS Build
 
