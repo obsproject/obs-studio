@@ -46,7 +46,7 @@ runs:
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
         fi
-        brew install --quiet python3
+        brew install --overwrite --quiet python3
         python3 -m pip install jsonschema json_source_map requests
         echo ::endgroup::
 
