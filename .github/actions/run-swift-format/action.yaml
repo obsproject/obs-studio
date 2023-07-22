@@ -42,6 +42,8 @@ runs:
         : Run swift-format 🔥
         if (( ${+RUNNER_DEBUG} )) setopt XTRACE
 
+        if (( ! GITHUB_REF_BEFORE )) GITHUB_REF_BEFORE='4b825dc642cb6eb9a060e54bf8d69288fbee4904'
+
         local -a changes=($(git diff --name-only HEAD~1 HEAD))
         case ${GITHUB_EVENT_NAME} {
           pull_request) changes=($(git diff --name-only origin/${GITHUB_BASE_REF} HEAD)) ;;
