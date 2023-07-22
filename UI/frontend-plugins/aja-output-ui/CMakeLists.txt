@@ -80,6 +80,8 @@ elseif(OS_MACOS)
 elseif(OS_LINUX OR OS_FREEBSD)
   find_package(X11 REQUIRED)
   target_link_libraries(aja-output-ui PRIVATE X11::X11 Qt::GuiPrivate)
+
+  target_compile_options(aja-output-ui PRIVATE -Wno-error=deprecated-declarations)
 endif()
 
 set_target_properties_obs(
