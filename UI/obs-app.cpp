@@ -567,12 +567,6 @@ static bool MakeUserDirs()
 		return false;
 	if (!do_mkdir(path))
 		return false;
-
-	if (GetProgramDataPath(path, sizeof(path), "obs-studio/shader-cache") <=
-	    0)
-		return false;
-	if (!do_mkdir(path))
-		return false;
 #endif
 
 #ifdef WHATSNEW_ENABLED
