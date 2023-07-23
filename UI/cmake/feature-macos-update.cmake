@@ -14,7 +14,8 @@ target_sources(
           update/shared-update.hpp
           update/update-helpers.cpp
           update/update-helpers.hpp
-          update/models/branches.hpp)
+          update/models/branches.hpp
+          update/models/whatsnew.hpp)
 
 target_link_libraries(obs-studio PRIVATE "$<LINK_LIBRARY:FRAMEWORK,Security.framework>" nlohmann_json::nlohmann_json
                                          OBS::blake2)

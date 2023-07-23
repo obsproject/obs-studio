@@ -97,13 +97,12 @@
 
 #include <QWindow>
 
-#include <json11.hpp>
+#include "update/models/whatsnew.hpp"
 
 #ifdef ENABLE_WAYLAND
 #include <obs-nix-platform.h>
 #endif
 
-using namespace json11;
 using namespace std;
 
 #ifdef BROWSER_AVAILABLE
@@ -2397,54 +2396,52 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 	if (closing)
 		return;
 
-	std::string err;
-	Json json = Json::parse(QT_TO_UTF8(text), err);
-	if (!err.empty())
+	WhatsNewList items;
+	try {
+		nlohmann::json json = nlohmann::json::parse(text.toStdString());
+		items = json.get<WhatsNewList>();
+	} catch (nlohmann::json::exception &e) {
+		blog(LOG_WARNING, "Parsing whatsnew data failed: %s", e.what());
 		return;
+	}
 
 	std::string info_url;
 	int info_increment = -1;
 
 	/* check to see if there's an info page for this version */
-	const Json::array &items = json.array_items();
-	for (const Json &item : items) {
-		if (item["os"].is_object()) {
-			Json::object platforms = item["os"].object_items();
+	for (const WhatsNewItem &item : items) {
+		if (item.os) {
+			WhatsNewPlatforms platforms = *item.os;
 #ifdef _WIN32
-			if (!platforms["windows"].bool_value())
+			if (!platforms.windows)
 				continue;
 #elif defined(__APPLE__)
-			if (!platforms["macos"].bool_value())
+			if (!platforms.macos)
 				continue;
 #else
-			if (!platforms["linux"].bool_value())
+			if (!platforms.linux)
 				continue;
 #endif
 		}
 
-		const std::string &version = item["version"].string_value();
-		const std::string &url = item["url"].string_value();
-		int increment = item["increment"].int_value();
-		int beta = item["Beta"].int_value();
-		int rc = item["RC"].int_value();
-
 		int major = 0;
 		int minor = 0;
 
-		sscanf(version.c_str(), "%d.%d", &major, &minor);
+		sscanf(item.version.c_str(), "%d.%d", &major, &minor);
 #if defined(OBS_RELEASE_CANDIDATE) && OBS_RELEASE_CANDIDATE > 0
 		if (major == OBS_RELEASE_CANDIDATE_MAJOR &&
 		    minor == OBS_RELEASE_CANDIDATE_MINOR &&
-		    rc == OBS_RELEASE_CANDIDATE) {
+		    item.RC == OBS_RELEASE_CANDIDATE) {
 #elif OBS_BETA > 0
 		if (major == OBS_BETA_MAJOR && minor == OBS_BETA_MINOR &&
-		    beta == OBS_BETA) {
+		    item.Beta == OBS_BETA) {
 #else
 		if (major == LIBOBS_API_MAJOR_VER &&
-		    minor == LIBOBS_API_MINOR_VER && rc == 0 && beta == 0) {
+		    minor == LIBOBS_API_MINOR_VER && item.RC == 0 &&
+		    item.Beta == 0) {
 #endif
-			info_url = url;
-			info_increment = increment;
+			info_url = item.url;
+			info_increment = item.increment;
 		}
 	}
 

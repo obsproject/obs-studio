@@ -358,6 +358,7 @@ if(OS_WINDOWS)
             update/crypto-helpers-mbedtls.cpp
             update/crypto-helpers.hpp
             update/models/branches.hpp
+            update/models/whatsnew.hpp
             win-update/updater/manifest.hpp
             ${CMAKE_BINARY_DIR}/obs.rc)
 
@@ -438,7 +439,8 @@ elseif(OS_MACOS)
               update/shared-update.cpp
               update/shared-update.hpp
               update/update-helpers.cpp
-              update/update-helpers.hpp)
+              update/update-helpers.hpp
+              update/models/whatsnew.hpp)
 
     if(SPARKLE_APPCAST_URL AND SPARKLE_PUBLIC_KEY)
       find_library(SPARKLE Sparkle)
@@ -477,13 +479,14 @@ elseif(OS_POSIX)
 
   if(OS_LINUX AND ENABLE_WHATSNEW)
     find_package(MbedTLS)
+    find_package(nlohmann_json REQUIRED)
     if(NOT MBEDTLS_FOUND)
       obs_status(FATAL_ERROR "mbedTLS not found, but required for WhatsNew support on Linux")
     endif()
 
     target_sources(obs PRIVATE update/crypto-helpers.hpp update/crypto-helpers-mbedtls.cpp update/shared-update.cpp
                                update/shared-update.hpp update/update-helpers.cpp update/update-helpers.hpp)
-    target_link_libraries(obs PRIVATE Mbedtls::Mbedtls OBS::blake2)
+    target_link_libraries(obs PRIVATE Mbedtls::Mbedtls nlohmann_json::nlohmann_json OBS::blake2)
   endif()
 endif()
 
