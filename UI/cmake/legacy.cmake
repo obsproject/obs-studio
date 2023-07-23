@@ -340,6 +340,7 @@ if(OS_WINDOWS)
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/obs.rc.in ${CMAKE_BINARY_DIR}/obs.rc)
 
   find_package(Detours REQUIRED)
+  find_package(nlohmann_json REQUIRED)
 
   target_sources(
     obs
@@ -356,10 +357,11 @@ if(OS_WINDOWS)
             update/update-helpers.hpp
             update/crypto-helpers-mbedtls.cpp
             update/crypto-helpers.hpp
+            win-update/updater/manifest.hpp
             ${CMAKE_BINARY_DIR}/obs.rc)
 
   find_package(MbedTLS)
-  target_link_libraries(obs PRIVATE Mbedtls::Mbedtls OBS::blake2 Detours::Detours)
+  target_link_libraries(obs PRIVATE Mbedtls::Mbedtls nlohmann_json::nlohmann_json OBS::blake2 Detours::Detours)
 
   target_compile_features(obs PRIVATE cxx_std_17)
 

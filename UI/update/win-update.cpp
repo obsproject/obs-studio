@@ -1,3 +1,4 @@
+#include "../win-update/updater/manifest.hpp"
 #include "update-helpers.hpp"
 #include "shared-update.hpp"
 #include "update-window.hpp"
@@ -17,14 +18,13 @@
 
 #include <util/windows/WinHandle.hpp>
 #include <util/util.hpp>
-#include <json11.hpp>
 
 #ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
 #endif
 
 using namespace std;
-using namespace json11;
+using namespace updater;
 
 /* ------------------------------------------------------------------------ */
 
@@ -71,60 +71,41 @@ using namespace json11;
 #define CUR_COMMIT "00000000"
 #endif
 
-static bool ParseUpdateManifest(const char *manifest, bool *updatesAvailable,
-				string &notes_str, uint64_t &updateVer,
-				string &branch)
+static bool ParseUpdateManifest(const char *manifest_data,
+				bool *updatesAvailable, string &notes,
+				uint64_t &updateVer, const string &branch)
 try {
+	json manifestContents = json::parse(manifest_data);
+	Manifest manifest = manifestContents.get<Manifest>();
 
-	string error;
-	Json root = Json::parse(manifest, error);
-	if (!error.empty())
-		throw strprintf("Failed reading json string: %s",
-				error.c_str());
+	if (manifest.version_major == 0 && manifest.commit.empty())
+		throw strprintf("Invalid version number: %d.%d.%d",
+				manifest.version_major, manifest.version_minor,
+				manifest.version_patch);
 
-	if (!root.is_object())
-		throw string("Root of manifest is not an object");
-
-	int major = root["version_major"].int_value();
-	int minor = root["version_minor"].int_value();
-	int patch = root["version_patch"].int_value();
-	int rc = root["rc"].int_value();
-	int beta = root["beta"].int_value();
-	string commit_hash = root["commit"].string_value();
-
-	if (major == 0 && commit_hash.empty())
-		throw strprintf("Invalid version number: %d.%d.%d", major,
-				minor, patch);
-
-	const Json &notes = root["notes"];
-	if (!notes.is_string())
-		throw string("'notes' value invalid");
-
-	notes_str = notes.string_value();
-
-	const Json &packages = root["packages"];
-	if (!packages.is_array())
-		throw string("'packages' value invalid");
+	notes = manifest.notes;
 
 	uint64_t cur_ver;
 	uint64_t new_ver;
 
-	if (commit_hash.empty()) {
+	if (manifest.commit.empty()) {
 		cur_ver = CUR_VER;
-		new_ver = MAKE_SEMANTIC_VERSION(
-			(uint64_t)major, (uint64_t)minor, (uint64_t)patch);
+		new_ver =
+			MAKE_SEMANTIC_VERSION((uint64_t)manifest.version_major,
+					      (uint64_t)manifest.version_minor,
+					      (uint64_t)manifest.version_patch);
 		new_ver <<= 16;
 		/* RC builds are shifted so that rc1 and beta1 versions do not result
 		 * in the same new_ver. */
-		if (rc > 0)
-			new_ver |= (uint64_t)rc << 8;
-		else if (beta > 0)
-			new_ver |= (uint64_t)beta;
+		if (manifest.rc > 0)
+			new_ver |= (uint64_t)manifest.rc << 8;
+		else if (manifest.beta > 0)
+			new_ver |= (uint64_t)manifest.beta;
 	} else {
 		/* Test or nightly builds may not have a (valid) version number,
 		 * so compare commit hashes instead. */
 		cur_ver = stoul(CUR_COMMIT, nullptr, 16);
-		new_ver = stoul(commit_hash.substr(0, 8), nullptr, 16);
+		new_ver = stoul(manifest.commit.substr(0, 8), nullptr, 16);
 	}
 
 	updateVer = new_ver;
