@@ -53,17 +53,17 @@ struct Manifest {
 	uint8_t version_patch = 0;
 	uint8_t beta = 0;
 	uint8_t rc = 0;
+	std::string commit;
 
 	/* Hash of VC redist file */
 	std::string vc2019_redist_x64;
 
-	/* Unused until UI is migrated to nlohmann_json */
-	// std::string commit;
-	// std::string notes;
+	/* Release notes in HTML format */
+	std::string notes;
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Manifest, packages, version_major,
 				       version_minor, version_patch, beta, rc,
-				       vc2019_redist_x64)
+				       commit, vc2019_redist_x64, notes)
 };
 
 struct PatchRequest {
