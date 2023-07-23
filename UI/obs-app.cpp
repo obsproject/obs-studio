@@ -65,7 +65,7 @@
 #endif
 
 #if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
-#include <json11.hpp>
+#include "update/models/branches.hpp"
 #endif
 
 #if !defined(_WIN32) && !defined(__APPLE__)
@@ -1289,28 +1289,31 @@ bool OBSApp::InitTheme()
 void ParseBranchesJson(const std::string &jsonString, vector<UpdateBranch> &out,
 		       std::string &error)
 {
-	json11::Json root;
-	root = json11::Json::parse(jsonString, error);
-	if (!error.empty() || !root.is_array())
-		return;
+	JsonBranches branches;
 
-	for (const json11::Json &item : root.array_items()) {
+	try {
+		nlohmann::json json = nlohmann::json::parse(jsonString);
+		branches = json.get<JsonBranches>();
+	} catch (nlohmann::json::exception &e) {
+		error = e.what();
+		return;
+	}
+
+	for (const JsonBranch &json_branch : branches) {
 #ifdef _WIN32
-		if (!item["windows"].bool_value())
+		if (!json_branch.windows)
 			continue;
 #elif defined(__APPLE__)
-		if (!item["macos"].bool_value())
+		if (!json_branch.macos)
 			continue;
 #endif
 
 		UpdateBranch branch = {
-			QString::fromStdString(item["name"].string_value()),
-			QString::fromStdString(
-				item["display_name"].string_value()),
-			QString::fromStdString(
-				item["description"].string_value()),
-			item["enabled"].bool_value(),
-			item["visible"].bool_value(),
+			QString::fromStdString(json_branch.name),
+			QString::fromStdString(json_branch.display_name),
+			QString::fromStdString(json_branch.description),
+			json_branch.enabled,
+			json_branch.visible,
 		};
 		out.push_back(branch);
 	}

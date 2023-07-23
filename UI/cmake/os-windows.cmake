@@ -28,6 +28,7 @@ target_sources(
           update/update-window.hpp
           update/win-update.cpp
           update/win-update.hpp
+          update/models/branches.hpp
           win-update/updater/manifest.hpp)
 
 target_link_libraries(obs-studio PRIVATE crypt32 OBS::blake2 OBS::w32-pthreads MbedTLS::MbedTLS
