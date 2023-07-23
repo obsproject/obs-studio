@@ -1494,6 +1494,17 @@ static inline void LogD3DAdapters()
 	}
 }
 
+static void CreateShaderCacheDirectory()
+{
+	BPtr cachePath =
+		os_get_program_data_path_ptr("obs-studio/shader-cache");
+
+	if (os_mkdirs(cachePath) == MKDIR_ERROR) {
+		blog(LOG_WARNING, "Failed to create shader cache directory, "
+				  "cache may not be available.");
+	}
+}
+
 int device_create(gs_device_t **p_device, uint32_t adapter)
 {
 	gs_device *device = NULL;
@@ -1503,6 +1514,7 @@ int device_create(gs_device_t **p_device, uint32_t adapter)
 		blog(LOG_INFO, "---------------------------------");
 		blog(LOG_INFO, "Initializing D3D11...");
 		LogD3DAdapters();
+		CreateShaderCacheDirectory();
 
 		device = new gs_device(adapter);
 
