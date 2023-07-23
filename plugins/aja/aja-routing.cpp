@@ -23,9 +23,9 @@ bool Routing::ParseRouteString(const std::string &route,
 	blog(LOG_DEBUG, "aja::Routing::ParseRouteString: Input string: %s",
 	     route.c_str());
 
-	std::string route_lower(route);
-	route_lower = aja::lower(route_lower);
-	const std::string &route_strip = aja::replace(route_lower, " ", "");
+	std::string route_strip(route);
+	aja::lower(route_strip);
+	aja::replace(route_strip, " ", "");
 
 	if (route_strip.empty()) {
 		blog(LOG_DEBUG,
@@ -274,7 +274,7 @@ bool Routing::ConfigureSourceRoute(const SourceProps &props, NTV2Mode mode,
 		for (const auto &name : fs_associated) {
 			std::string placeholder = std::string(
 				name + "[{ch" + aja::to_string(c + 1) + "}]");
-			route_string = aja::replace(
+			aja::replace(
 				route_string, placeholder,
 				name + "[" +
 					aja::to_string(start_framestore_index) +
@@ -288,9 +288,8 @@ bool Routing::ConfigureSourceRoute(const SourceProps &props, NTV2Mode mode,
 	for (ULWord c = 0; c < NTV2_MAX_NUM_CHANNELS; c++) {
 		std::string channel_placeholder =
 			std::string("{ch" + aja::to_string(c + 1) + "}");
-		route_string =
-			aja::replace(route_string, channel_placeholder,
-				     aja::to_string(start_channel_index++));
+		aja::replace(route_string, channel_placeholder,
+			     aja::to_string(start_channel_index++));
 	}
 
 	if (!ParseRouteString(route_string, cnx))
@@ -421,7 +420,7 @@ bool Routing::ConfigureOutputRoute(const OutputProps &props, NTV2Mode mode,
 		for (const auto &name : fs_associated) {
 			std::string placeholder = std::string(
 				name + "[{ch" + aja::to_string(c + 1) + "}]");
-			route_string = aja::replace(
+			aja::replace(
 				route_string, placeholder,
 				name + "[" +
 					aja::to_string(start_framestore_index) +
@@ -435,9 +434,8 @@ bool Routing::ConfigureOutputRoute(const OutputProps &props, NTV2Mode mode,
 	for (ULWord c = 0; c < NTV2_MAX_NUM_CHANNELS; c++) {
 		std::string channel_placeholder =
 			std::string("{ch" + aja::to_string(c + 1) + "}");
-		route_string =
-			aja::replace(route_string, channel_placeholder,
-				     aja::to_string(start_channel_index++));
+		aja::replace(route_string, channel_placeholder,
+			     aja::to_string(start_channel_index++));
 	}
 
 	if (!ParseRouteString(route_string, cnx))
