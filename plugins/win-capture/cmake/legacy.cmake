@@ -11,6 +11,8 @@ mark_as_advanced(COMPAT_URL)
 add_library(win-capture MODULE)
 add_library(OBS::capture ALIAS win-capture)
 
+find_package(Jansson 2.5 REQUIRED)
+
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/compat-config.h.in ${CMAKE_BINARY_DIR}/config/compat-config.h)
 
 target_sources(
