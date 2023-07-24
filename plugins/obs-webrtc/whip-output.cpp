@@ -290,7 +290,7 @@ bool WHIPOutput::Connect()
 	}
 
 	std::string read_buffer;
-	std::string location_header;
+	std::vector<std::string> location_headers;
 
 	char offer_sdp[4096] = {0};
 	rtcGetLocalDescription(peer_connection, offer_sdp, sizeof(offer_sdp));
@@ -307,7 +307,7 @@ bool WHIPOutput::Connect()
 	curl_easy_setopt(c, CURLOPT_WRITEDATA, (void *)&read_buffer);
 	curl_easy_setopt(c, CURLOPT_HEADERFUNCTION,
 			 curl_header_location_function);
-	curl_easy_setopt(c, CURLOPT_HEADERDATA, (void *)&location_header);
+	curl_easy_setopt(c, CURLOPT_HEADERDATA, (void *)&location_headers);
 	curl_easy_setopt(c, CURLOPT_HTTPHEADER, headers);
 	curl_easy_setopt(c, CURLOPT_URL, endpoint_url.c_str());
 	curl_easy_setopt(c, CURLOPT_POST, 1L);
@@ -323,7 +323,7 @@ bool WHIPOutput::Connect()
 
 	CURLcode res = curl_easy_perform(c);
 	if (res != CURLE_OK) {
-		do_log(LOG_WARNING,
+		do_log(LOG_ERROR,
 		       "Connect failed: CURL returned result not CURLE_OK");
 		cleanup();
 		obs_output_signal_stop(output, OBS_OUTPUT_CONNECT_FAILED);
@@ -333,7 +333,7 @@ bool WHIPOutput::Connect()
 	long response_code;
 	curl_easy_getinfo(c, CURLINFO_RESPONSE_CODE, &response_code);
 	if (response_code != 201) {
-		do_log(LOG_WARNING,
+		do_log(LOG_ERROR,
 		       "Connect failed: HTTP endpoint returned response code %ld",
 		       response_code);
 		cleanup();
@@ -342,34 +342,64 @@ bool WHIPOutput::Connect()
 	}
 
 	if (read_buffer.empty()) {
-		do_log(LOG_WARNING,
+		do_log(LOG_ERROR,
 		       "Connect failed: No data returned from HTTP endpoint request");
 		cleanup();
 		obs_output_signal_stop(output, OBS_OUTPUT_CONNECT_FAILED);
 		return false;
 	}
 
-	if (location_header.empty()) {
-		do_log(LOG_WARNING,
+	long redirect_count = 0;
+	curl_easy_getinfo(c, CURLINFO_REDIRECT_COUNT, &redirect_count);
+
+	if (location_headers.size() < static_cast<size_t>(redirect_count) + 1) {
+		do_log(LOG_ERROR,
 		       "WHIP server did not provide a resource URL via the Location header");
-	} else {
-		CURLU *h = curl_url();
-		curl_url_set(h, CURLUPART_URL, endpoint_url.c_str(), 0);
-		curl_url_set(h, CURLUPART_URL, location_header.c_str(), 0);
-		char *url = nullptr;
-		CURLUcode rc = curl_url_get(h, CURLUPART_URL, &url,
-					    CURLU_NO_DEFAULT_PORT);
-		if (!rc) {
-			resource_url = url;
-			curl_free(url);
-			do_log(LOG_DEBUG, "WHIP Resource URL is: %s",
-			       resource_url.c_str());
-		} else {
-			do_log(LOG_WARNING,
-			       "Unable to process resource URL response");
-		}
-		curl_url_cleanup(h);
+		cleanup();
+		obs_output_signal_stop(output, OBS_OUTPUT_CONNECT_FAILED);
+		return false;
 	}
+
+	CURLU *url_builder = curl_url();
+	auto last_location_header = location_headers.back();
+
+	// If Location header doesn't start with `http` it is a relative URL.
+	// Construct a absolute URL using the host of the effective URL
+	if (last_location_header.find("http") != 0) {
+		char *effective_url = nullptr;
+		curl_easy_getinfo(c, CURLINFO_EFFECTIVE_URL, &effective_url);
+		if (effective_url == nullptr) {
+			do_log(LOG_ERROR, "Failed to build Resource URL");
+			cleanup();
+			obs_output_signal_stop(output,
+					       OBS_OUTPUT_CONNECT_FAILED);
+			return false;
+		}
+
+		curl_url_set(url_builder, CURLUPART_URL, effective_url, 0);
+		curl_url_set(url_builder, CURLUPART_PATH,
+			     last_location_header.c_str(), 0);
+		curl_url_set(url_builder, CURLUPART_QUERY, "", 0);
+	} else {
+		curl_url_set(url_builder, CURLUPART_URL,
+			     last_location_header.c_str(), 0);
+	}
+
+	char *url = nullptr;
+	CURLUcode rc = curl_url_get(url_builder, CURLUPART_URL, &url,
+				    CURLU_NO_DEFAULT_PORT);
+	if (rc) {
+		do_log(LOG_ERROR,
+		       "WHIP server provided a invalid resource URL via the Location header");
+		cleanup();
+		obs_output_signal_stop(output, OBS_OUTPUT_CONNECT_FAILED);
+		return false;
+	}
+
+	resource_url = url;
+	curl_free(url);
+	do_log(LOG_DEBUG, "WHIP Resource URL is: %s", resource_url.c_str());
+	curl_url_cleanup(url_builder);
 
 #ifdef DEBUG_SDP
 	do_log(LOG_DEBUG, "Answer SDP:\n%s", read_buffer.c_str());
