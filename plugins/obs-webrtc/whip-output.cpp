@@ -290,7 +290,7 @@ bool WHIPOutput::Connect()
 	}
 
 	std::string read_buffer;
-	std::string location_header;
+	std::vector<std::string> location_headers;
 
 	char offer_sdp[4096] = {0};
 	rtcGetLocalDescription(peer_connection, offer_sdp, sizeof(offer_sdp));
@@ -307,12 +307,14 @@ bool WHIPOutput::Connect()
 	curl_easy_setopt(c, CURLOPT_WRITEDATA, (void *)&read_buffer);
 	curl_easy_setopt(c, CURLOPT_HEADERFUNCTION,
 			 curl_header_location_function);
-	curl_easy_setopt(c, CURLOPT_HEADERDATA, (void *)&location_header);
+	curl_easy_setopt(c, CURLOPT_HEADERDATA, (void *)&location_headers);
 	curl_easy_setopt(c, CURLOPT_HTTPHEADER, headers);
 	curl_easy_setopt(c, CURLOPT_URL, endpoint_url.c_str());
 	curl_easy_setopt(c, CURLOPT_POST, 1L);
 	curl_easy_setopt(c, CURLOPT_COPYPOSTFIELDS, offer_sdp);
 	curl_easy_setopt(c, CURLOPT_TIMEOUT, 8L);
+	curl_easy_setopt(c, CURLOPT_FOLLOWLOCATION, 1L);
+	curl_easy_setopt(c, CURLOPT_UNRESTRICTED_AUTH, 1L);
 
 	auto cleanup = [&]() {
 		curl_easy_cleanup(c);
@@ -347,13 +349,16 @@ bool WHIPOutput::Connect()
 		return false;
 	}
 
-	if (location_header.empty()) {
+	long redirect_count = 0;
+	curl_easy_getinfo(c, CURLINFO_REDIRECT_COUNT, &redirect_count);
+
+	if (location_headers.size() < static_cast<size_t>(redirect_count) + 1) {
 		do_log(LOG_WARNING,
 		       "WHIP server did not provide a resource URL via the Location header");
 	} else {
 		CURLU *h = curl_url();
-		curl_url_set(h, CURLUPART_URL, endpoint_url.c_str(), 0);
-		curl_url_set(h, CURLUPART_URL, location_header.c_str(), 0);
+		curl_url_set(h, CURLUPART_URL, location_headers.back().c_str(),
+			     0);
 		char *url = nullptr;
 		CURLUcode rc = curl_url_get(h, CURLUPART_URL, &url,
 					    CURLU_NO_DEFAULT_PORT);
