@@ -67,6 +67,7 @@
         "modules/50-v4l-utils.json",
         "modules/90-asio.json",
         "modules/90-nlohmann-json.json",
+        "modules/90-uthash.json",
         "modules/90-websocketpp.json",
         "modules/99-cef.json",
         {
