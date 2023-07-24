@@ -13,6 +13,7 @@ target_sources(libobs-version PRIVATE obsversion.c obsversion.h)
 target_include_directories(libobs-version PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 set_property(TARGET libobs-version PROPERTY FOLDER core)
 
+find_package(Jansson 2.5 REQUIRED)
 find_package(Threads REQUIRED)
 find_package(
   FFmpeg REQUIRED

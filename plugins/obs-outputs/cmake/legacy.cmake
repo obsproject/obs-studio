@@ -127,6 +127,7 @@ if(FTL_FOUND)
 
 elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ftl-sdk/CMakeLists.txt")
   find_package(CURL REQUIRED)
+  find_package(Jansson 2.5 REQUIRED)
   obs_status(ENABLED "ftl ouputs (bundled ftl-sdk)")
 
   target_compile_definitions(obs-outputs PRIVATE FTL_STATIC_COMPILE)
