@@ -60,6 +60,7 @@
         "modules/50-libqrcodegencpp.json",
         "modules/50-ntv2.json",
         "modules/50-pipewire.json",
+        "modules/50-rnnoise.json",
         "modules/50-swig.json",
         "modules/50-v4l-utils.json",
         "modules/90-asio.json",
