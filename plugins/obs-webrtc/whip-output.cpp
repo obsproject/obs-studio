@@ -313,6 +313,8 @@ bool WHIPOutput::Connect()
 	curl_easy_setopt(c, CURLOPT_POST, 1L);
 	curl_easy_setopt(c, CURLOPT_COPYPOSTFIELDS, offer_sdp);
 	curl_easy_setopt(c, CURLOPT_TIMEOUT, 8L);
+	curl_easy_setopt(c, CURLOPT_FOLLOWLOCATION, 1L);
+	curl_easy_setopt(c, CURLOPT_UNRESTRICTED_AUTH, 1L);
 
 	auto cleanup = [&]() {
 		curl_easy_cleanup(c);
