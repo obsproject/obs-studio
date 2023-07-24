@@ -2694,6 +2694,66 @@
             "supported video codecs": [
                 "h264"
             ]
+        },
+        {
+            "name": "VStream",
+            "common": false,
+            "stream_key_link": "https://vstream.com/dashboard/livestreams",
+            "more_info_link": "https://vstream.com/help/streaming-with-obs",
+            "servers": [
+                {
+                    "name": "Global (RTMP)",
+                    "url": "rtmp://live.vstream.com"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "high",
+                "x264opts": "scenecut=0",
+                "supported resolutions": [
+                    "1920x1080",
+                    "1280x720",
+                    "852x480"
+                ],
+                "bitrate matrix": [
+                    {
+                        "res": "1920x1080",
+                        "fps": 60,
+                        "max bitrate": 8000
+                    },
+                    {
+                        "res": "1920x1080",
+                        "fps": 30,
+                        "max bitrate": 6000
+                    },
+                    {
+                        "res": "1280x720",
+                        "fps": 60,
+                        "max bitrate": 6000
+                    },
+                    {
+                        "res": "1280x720",
+                        "fps": 30,
+                        "max bitrate": 4000
+                    },
+                    {
+                        "res": "852x480",
+                        "fps": 60,
+                        "max bitrate": 3000
+                    },
+                    {
+                        "res": "852x480",
+                        "fps": 30,
+                        "max bitrate": 2000
+                    }
+                ],
+                "max fps": 60,
+                "max video bitrate": 8000,
+                "max audio bitrate": 320
+            },
+            "supported video codecs": [
+                "h264"
+            ]
         }
     ]
 }
