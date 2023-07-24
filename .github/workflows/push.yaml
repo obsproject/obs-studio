@@ -13,7 +13,7 @@ permissions:
   contents: write
 concurrency:
   group: '${{ github.workflow }} @ ${{ github.ref }}'
-  cancel-in-progress: ${{ github.ref_type == 'tag' }}
+  cancel-in-progress: ${{ fromJSON(github.ref_type == 'tag') }}
 jobs:
   check-format:
     name: Check Formatting 🔍
