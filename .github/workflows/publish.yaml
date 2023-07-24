@@ -61,7 +61,7 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-          set-safe-directory: ${{ github.workspace }}
+          set-safe-directory: ${{ env.GITHUB_WORKSPACE }}
 
       - name: Set Up Environment 🔧
         id: setup
@@ -88,7 +88,7 @@ jobs:
           fi
 
           echo "cacheKey=${cache_key}" >> $GITHUB_OUTPUT
-          echo "commitHash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
+          echo "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
 
       - name: Build Flatpak Manifest
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6.1
