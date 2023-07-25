@@ -25,6 +25,8 @@
 
 #define get_weak(encoder) ((obs_weak_encoder_t *)encoder->context.control)
 
+static void encoder_set_video(obs_encoder_t *encoder, video_t *video);
+
 struct obs_encoder_info *find_encoder(const char *id)
 {
 	for (size_t i = 0; i < obs->encoder_types.num; i++) {
@@ -660,7 +662,7 @@ static void maybe_clear_encoder_core_video_mix(obs_encoder_t *encoder)
 		if (!mix->encoder_only_mix)
 			break;
 
-		obs_encoder_set_video(encoder, obs_get_video());
+		encoder_set_video(encoder, obs_get_video());
 		mix->encoder_refs -= 1;
 		if (mix->encoder_refs == 0) {
 			da_erase(obs->video.mixes, i);
@@ -1066,7 +1068,6 @@ size_t obs_encoder_get_frame_size(const obs_encoder_t *encoder)
 
 void obs_encoder_set_video(obs_encoder_t *encoder, video_t *video)
 {
-	const struct video_output_info *voi;
 
 	if (!obs_encoder_valid(encoder, "obs_encoder_set_video"))
 		return;
@@ -1084,6 +1085,13 @@ void obs_encoder_set_video(obs_encoder_t *encoder, video_t *video)
 		     obs_encoder_get_name(encoder));
 		return;
 	}
+
+	encoder_set_video(encoder, video);
+}
+
+static void encoder_set_video(obs_encoder_t *encoder, video_t *video)
+{
+	const struct video_output_info *voi;
 
 	if (encoder->fps_override) {
 		video_output_free_frame_rate_divisor(encoder->fps_override);
