@@ -218,7 +218,7 @@ jobs:
       - name: Upload Artifacts 📡
         uses: actions/upload-artifact@v3
         with:
-          name: macos-sparkle-update-${{ matrix.target }}
+          name: macos-sparkle-update
           path: ${{ github.workspace }}/output
 
   create-release:
