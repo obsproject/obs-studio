@@ -99,10 +99,11 @@ if(OS_WINDOWS)
   target_compile_definitions(obs-qsv11 PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_WARNINGS)
 elseif(OS_LINUX)
   find_package(VPL REQUIRED)
+  find_package(Libva REQUIRED)
 
   target_sources(obs-qsv11 PRIVATE common_utils_linux.cpp)
 
-  target_link_libraries(obs-qsv11 PRIVATE VPL::VPL)
+  target_link_libraries(obs-qsv11 PRIVATE Libva::va Libva::drm VPL::VPL)
 endif()
 
 set_target_properties(obs-qsv11 PROPERTIES FOLDER "plugins/obs-qsv11")

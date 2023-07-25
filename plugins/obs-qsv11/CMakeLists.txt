@@ -108,10 +108,11 @@ if(OS_WINDOWS)
   target_link_libraries(obs-qsv11 PRIVATE OBS::libmfx d3d9 d3d11 dxva2 dxgi dxguid)
 elseif(OS_LINUX)
   find_package(VPL REQUIRED)
+  find_package(Libva REQUIRED)
 
   target_sources(obs-qsv11 PRIVATE common_utils_linux.cpp)
 
-  target_link_libraries(obs-qsv11 PRIVATE VPL::VPL)
+  target_link_libraries(obs-qsv11 PRIVATE Libva::va Libva::drm VPL::VPL)
 endif()
 
 get_target_property(target_sources obs-qsv11 SOURCES)
