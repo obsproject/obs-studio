@@ -13,6 +13,7 @@ add_subdirectory(obs-scripting)
 add_subdirectory(opts-parser)
 add_subdirectory(libcaption)
 add_subdirectory(uthash)
+add_subdirectory(happy-eyeballs)
 
 # Use bundled jansson version as fallback
 find_package(Jansson 2.5 QUIET)

@@ -94,6 +94,21 @@ void netif_log_saddrs(struct netif_saddr_data *sd)
 		info("\t\t%s", sd->addrs.array[i].name);
 }
 
+bool netif_addr_to_str(struct sockaddr_storage *in, char *addr, int addr_len)
+{
+	if (!in || !addr)
+		return false;
+	if (in->ss_family != AF_INET6 && in->ss_family != AF_INET)
+		return false;
+	if ((in->ss_family == AF_INET6 && addr_len < INET6_ADDRSTRLEN) ||
+	    (in->ss_family == AF_INET && addr_len < INET_ADDRSTRLEN))
+		return false;
+
+	memset(addr, 0, addr_len);
+	netif_convert_to_string(addr, in);
+	return true;
+}
+
 bool netif_str_to_addr(struct sockaddr_storage *out, int *addr_len,
 		       const char *addr)
 {

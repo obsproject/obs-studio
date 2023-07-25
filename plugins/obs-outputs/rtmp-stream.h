@@ -28,6 +28,7 @@
 #define OPT_PFRAME_DROP_THRESHOLD "pframe_drop_threshold_ms"
 #define OPT_MAX_SHUTDOWN_TIME_SEC "max_shutdown_time_sec"
 #define OPT_BIND_IP "bind_ip"
+#define OPT_IP_FAMILY "ip_family"
 #define OPT_NEWSOCKETLOOP_ENABLED "new_socket_loop_enabled"
 #define OPT_LOWLATENCY_ENABLED "low_latency_mode_enabled"
 #define OPT_METADATA_MULTITRACK "metadata_multitrack"
@@ -81,6 +82,7 @@ struct rtmp_stream {
 	struct dstr username, password;
 	struct dstr encoder_name;
 	struct dstr bind_ip;
+	socklen_t addrlen_hint; /* hint IPv4 vs IPv6 */
 
 	/* frame drop variables */
 	int64_t drop_threshold_usec;
@@ -136,7 +138,7 @@ void *socket_thread_windows(void *data);
 #endif
 
 /* Adapted from FFmpeg's libavutil/pixfmt.h
- * 
+ *
  * Renamed to make it apparent that these are not imported as this module does
  * not use or link against FFmpeg.
  */

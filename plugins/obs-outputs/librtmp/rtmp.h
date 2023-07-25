@@ -265,6 +265,7 @@ extern "C"
 
     typedef struct RTMPSockBuf
     {
+        struct sockaddr_storage sb_addr; /* address of remote */
         SOCKET sb_socket;
         int sb_size;		/* number of unprocessed bytes in buffer */
         char *sb_start;		/* pointer into sb_pBuffer of next byte to process */
@@ -488,7 +489,7 @@ extern "C"
 
     int RTMP_Connect(RTMP *r, RTMPPacket *cp);
     struct sockaddr;
-    int RTMP_Connect0(RTMP *r, struct sockaddr *svc, socklen_t addrlen);
+    int RTMP_Connect0(RTMP *r, SOCKET socket_fd);
     int RTMP_Connect1(RTMP *r, RTMPPacket *cp);
 
     int RTMP_ReadPacket(RTMP *r, RTMPPacket *packet);

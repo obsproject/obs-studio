@@ -44,7 +44,11 @@ target_sources(
           "$<$<BOOL:${ENABLE_HEVC}>:rtmp-hevc.c>"
           "$<$<BOOL:${ENABLE_HEVC}>:rtmp-hevc.h>")
 
-target_link_libraries(obs-outputs PRIVATE OBS::libobs MbedTLS::MbedTLS ZLIB::ZLIB)
+if(NOT TARGET happy-eyeballs)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/deps/happy-eyeballs" "${CMAKE_BINARY_DIR}/deps/happy-eyeballs")
+endif()
+
+target_link_libraries(obs-outputs PRIVATE OBS::libobs OBS::happy-eyeballs MbedTLS::MbedTLS ZLIB::ZLIB)
 
 target_compile_definitions(obs-outputs PRIVATE USE_MBEDTLS CRYPTO)
 
