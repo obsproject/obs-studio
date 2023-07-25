@@ -397,7 +397,7 @@ static void remove_free_framebuffer_data(struct vk_data *data,
 					 const VkAllocationCallbacks *ac)
 {
 	struct vk_swap_data *const framebuffer_data =
-		(struct vk_swap_data *)remove_obj_data(&data->swaps,
+		(struct vk_swap_data *)remove_obj_data(&data->framebuffers,
 						       (uint64_t)framebuffer);
 	vk_free(ac, framebuffer_data);
 }
@@ -2100,8 +2100,8 @@ OBS_CmdBeginRenderPass(VkCommandBuffer commandBuffer,
 {
 	struct vk_data *const data =
 		get_device_data_by_command_buffer(commandBuffer);
+	VkRenderPassBeginInfo alternateBegin;
 	if (data->valid) {
-		VkRenderPassBeginInfo alternateBegin;
 		pRenderPassBegin = process_render_pass_begin_info(
 			pRenderPassBegin, &alternateBegin, data);
 	}
@@ -2117,8 +2117,8 @@ OBS_CmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer,
 {
 	struct vk_data *const data =
 		get_device_data_by_command_buffer(commandBuffer);
+	VkRenderPassBeginInfo alternateBegin;
 	if (data->valid) {
-		VkRenderPassBeginInfo alternateBegin;
 		pRenderPassBegin = process_render_pass_begin_info(
 			pRenderPassBegin, &alternateBegin, data);
 	}
@@ -2134,8 +2134,8 @@ OBS_CmdBeginRenderPass2(VkCommandBuffer commandBuffer,
 {
 	struct vk_data *const data =
 		get_device_data_by_command_buffer(commandBuffer);
+	VkRenderPassBeginInfo alternateBegin;
 	if (data->valid) {
-		VkRenderPassBeginInfo alternateBegin;
 		pRenderPassBegin = process_render_pass_begin_info(
 			pRenderPassBegin, &alternateBegin, data);
 	}
