@@ -33,6 +33,7 @@
 #define TEXT_DEVICE_DEFAULT obs_module_text("CoreAudio.Device.Default")
 
 struct coreaudio_data {
+	pthread_mutex_t mutex;
 	char *device_name;
 	char *device_uid;
 	AudioUnit unit;
@@ -374,8 +375,6 @@ static void *reconnect_thread(void *param)
 {
 	struct coreaudio_data *ca = param;
 
-	ca->reconnecting = true;
-
 	while (os_event_timedwait(ca->exit_event, ca->retry_time) ==
 	       ETIMEDOUT) {
 		if (coreaudio_init(ca))
@@ -394,6 +393,9 @@ static void coreaudio_begin_reconnect(struct coreaudio_data *ca)
 	if (ca->reconnecting)
 		return;
 
+	// It is better to set the 'reconnecting' status here to avoid desynchronization.
+	// If the thread creation fails, something is broken anyway.
+	ca->reconnecting = true;
 	ret = pthread_create(&ca->reconnect_thread, NULL, reconnect_thread, ca);
 	if (ret != 0)
 		blog(LOG_WARNING,
@@ -712,11 +714,21 @@ static void coreaudio_destroy(void *data)
 	struct coreaudio_data *ca = data;
 
 	if (ca) {
+
+		pthread_mutex_lock(&ca->mutex);
+
 		coreaudio_shutdown(ca);
 
-		os_event_destroy(ca->exit_event);
 		bfree(ca->device_name);
 		bfree(ca->device_uid);
+
+		os_event_destroy(ca->exit_event);
+		ca->exit_event = NULL;
+
+		pthread_mutex_unlock(&ca->mutex);
+
+		pthread_mutex_destroy(&ca->mutex);
+
 		bfree(ca);
 	}
 }
@@ -725,12 +737,16 @@ static void coreaudio_update(void *data, obs_data_t *settings)
 {
 	struct coreaudio_data *ca = data;
 
+	pthread_mutex_lock(&ca->mutex);
+
 	coreaudio_shutdown(ca);
 
 	bfree(ca->device_uid);
 	ca->device_uid = bstrdup(obs_data_get_string(settings, "device_id"));
 
 	coreaudio_try_init(ca);
+
+	pthread_mutex_unlock(&ca->mutex);
 }
 
 static void coreaudio_defaults(obs_data_t *settings)
@@ -742,6 +758,18 @@ static void *coreaudio_create(obs_data_t *settings, obs_source_t *source,
 			      bool input)
 {
 	struct coreaudio_data *ca = bzalloc(sizeof(struct coreaudio_data));
+
+	if (pthread_mutex_init(&ca->mutex, NULL) != 0) {
+		blog(LOG_ERROR,
+		     "[coreaudio_create] failed to create "
+		     "mutex: %d",
+		     errno);
+		bfree(ca);
+		return NULL;
+	}
+
+	// This is obviosly overhead here but let's just be consistent
+	pthread_mutex_lock(&ca->mutex);
 
 	if (os_event_init(&ca->exit_event, OS_EVENT_TYPE_MANUAL) != 0) {
 		blog(LOG_ERROR,
@@ -760,6 +788,9 @@ static void *coreaudio_create(obs_data_t *settings, obs_source_t *source,
 		ca->device_uid = bstrdup("default");
 
 	coreaudio_try_init(ca);
+
+	pthread_mutex_unlock(&ca->mutex);
+
 	return ca;
 }
 
