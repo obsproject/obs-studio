@@ -1,4 +1,4 @@
-autoload -Uz log_debug log_error log_info log_status log_group log_output
+autoload -Uz log_debug log_error log_info log_status log_group log_output log_warning
 
 local -r _usage="Usage: %B${0}%b <source> <volume name> <output_name>
 
@@ -19,7 +19,7 @@ log_group "Create macOS disk image"
 local _hdiutil_flags
 if (( _loglevel < 1 )) _hdiutil_flags='-quiet'
 
-trap "hdiutil detach ${_hdiutil_flags} /Volumes/${output_name}; rm temp.dmg; log_group return 2" ERR
+trap "hdiutil detach ${_hdiutil_flags} /Volumes/${output_name}; rm temp.dmg; log_group; return 2" ERR
 
 hdiutil create ${_hdiutil_flags} \
     -volname "${volume_name}" \
@@ -47,7 +47,28 @@ chmod -Rf go-w /Volumes/${output_name}
 SetFile -a C /Volumes/${output_name}
 rm -rf -- /Volumes/${output_name}/.fseventsd(N)
 log_info "Converting disk image..."
-hdiutil detach ${_hdiutil_flags} /Volumes/${output_name}
+
+if (( ${+CI} )) {
+    local _status=0
+    for i ({1..5}) {
+        hdiutil detach ${_hdiutil_flags} /Volumes/${output_name} && _status=0 || _status=1
+
+        if (( status )) {
+            log_warning "Unable to eject disk image (attempt #${i}). Retrying."
+        } else {
+            break
+        }
+    }
+
+    if (( status )) {
+        log_error "Unable to eject disk image after 5 attempts. Aborting"
+        log_group
+        return 2
+    }
+} else {
+    hdiutil detach ${_hdiutil_flags} /Volumes/${output_name}
+}
+
 hdiutil convert ${_hdiutil_flags} \
     -format ULMO \
     -ov \

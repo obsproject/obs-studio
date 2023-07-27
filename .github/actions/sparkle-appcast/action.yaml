@@ -72,7 +72,6 @@ runs:
 
         mkdir builds
         mkdir -p output/appcasts/stable
-        mkdir -p output/sparkle_deltas
 
     - name: Download Builds 📥
       id: builds
@@ -152,6 +151,7 @@ runs:
 
         print -n '${{ inputs.sparklePrivateKey }}' >> eddsa_private.key
         local feed_url='${{ steps.builds.outputs.feedUrl }}'
+        local arch=${${${(s:_:)feed_url:t}[2]}//x86/x86_64}
 
         Sparkle/bin/generate_appcast \
           --verbose \
@@ -166,7 +166,8 @@ runs:
         local -a deltas=(builds/*.delta(N))
 
         if (( #deltas )) {
-          mv ${deltas} output/sparkle_deltas
+          mkdir -p output/sparkle_deltas/${arch}
+          mv ${deltas} output/sparkle_deltas/${arch}
         }
 
         mv builds/*.xml output/appcasts
@@ -202,12 +203,16 @@ runs:
 
         local -a appcasts=(output/appcasts/*_v2.xml)
         local legacy
+        local feed_url='${{ steps.builds.outputs.feedUrl }}'
+        local arch=${${${(s:_:)feed_url:t}[2]}//x86/x86_64}
 
         for appcast (${appcasts}) {
           legacy="${appcast//.xml/-legacy.xml}"
           xsltproc \
             -o ${legacy} ${GITHUB_ACTION_PATH}/appcast_legacy.xslt ${appcast}
 
-          xmllint --format ${legacy} >! output/appcasts/stable/${${appcast:t}//-v2.xml/.xml}
+          xmllint --format ${legacy} >! output/appcasts/stable/${${appcast:t}//_v2.xml/.xml}
+
+          if [[ ${arch} == x86_64 ]] xmllint --format ${legacy} >! output/appcasts/stable/${${appcast:t}//_x86_64_v2.xml/.xml}
           rm ${legacy}
         }

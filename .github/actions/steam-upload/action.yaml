@@ -153,7 +153,7 @@ runs:
             mv obs-studio-macos-x86_64-${short_hash}/obs-studio-*-macos-intel.dmg \
               ${root_dir}
 
-            description="g${GITHUB_SHA}"
+            description="g${GITHUB_SHA:0:9}"
             is_prerelease='false'
             ;;
         }

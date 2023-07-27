@@ -134,8 +134,8 @@ ${_usage_host:-}"
         config=${2}
         shift 2
         ;;
-      -s|--codesign) CODESIGN=1; shift ;;
-      -n|--notarize) NOTARIZE=1; shift ;;
+      -s|--codesign) codesign=1; shift ;;
+      -n|--notarize) notarize=1; shift ;;
       -p|--package) typeset -g package=1; shift ;;
       --skip-deps) typeset -g skip_deps=1; shift ;;
       -q|--quiet) (( verbosity -= 1 )) || true; shift ;;

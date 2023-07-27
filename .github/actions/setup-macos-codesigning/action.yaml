@@ -28,6 +28,9 @@ outputs:
   haveProvisioningProfile:
     description: True if necessary provisioning profile credentials were found
     value: ${{ steps.provisioning.outputs.haveProvisioningProfile }}
+  provisioningProfileUUID:
+    description: UUID of imported provisioning profile
+    value: ${{ steps.provisioning.outputs.provisioningProfileUUID }}
   haveNotarizationUser:
     description: True if necessary notarization credentials were found
     value: ${{ steps.notarization.outputs.haveNotarizationUser }}
