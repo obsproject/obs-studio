@@ -552,6 +552,14 @@ struct obs_source_info {
 	enum gs_color_space (*video_get_color_space)(
 		void *data, size_t count,
 		const enum gs_color_space *preferred_spaces);
+
+	/**
+	 * Called when the filter is added to a source
+	 *
+	 * @param  data    Filter data
+	 * @param  source  Source that the filter is being added to
+	 */
+	void (*filter_add)(void *data, obs_source_t *source);
 };
 
 EXPORT void obs_register_source_s(const struct obs_source_info *info,
