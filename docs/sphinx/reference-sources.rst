@@ -1543,7 +1543,8 @@ Filters
 .. function:: obs_source_t *obs_filter_get_parent(const obs_source_t *filter)
 
    If the source is a filter, returns the parent source of the filter.
-   The parent source is the source being filtered.
+   The parent source is the source being filtered. Does not increment the
+   reference.
 
    Only guaranteed to be valid inside of the video_render, filter_audio,
    filter_video, and filter_remove callbacks.
@@ -1553,7 +1554,8 @@ Filters
 .. function:: obs_source_t *obs_filter_get_target(const obs_source_t *filter)
 
    If the source is a filter, returns the target source of the filter.
-   The target source is the next source in the filter chain.
+   The target source is the next source in the filter chain. Does not increment
+   the reference.
 
    Only guaranteed to be valid inside of the video_render, filter_audio,
    filter_video, and filter_remove callbacks.
