@@ -8,6 +8,7 @@ endif()
 
 find_package(MbedTLS)
 find_package(Detours REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
 configure_file(cmake/windows/obs.rc.in obs.rc)
 
@@ -26,9 +27,13 @@ target_sources(
           update/update-window.cpp
           update/update-window.hpp
           update/win-update.cpp
-          update/win-update.hpp)
+          update/win-update.hpp
+          update/models/branches.hpp
+          update/models/whatsnew.hpp
+          win-update/updater/manifest.hpp)
 
-target_link_libraries(obs-studio PRIVATE crypt32 OBS::blake2 OBS::w32-pthreads MbedTLS::MbedTLS Detours::Detours)
+target_link_libraries(obs-studio PRIVATE crypt32 OBS::blake2 OBS::w32-pthreads MbedTLS::MbedTLS
+                                         nlohmann_json::nlohmann_json Detours::Detours)
 target_compile_definitions(obs-studio PRIVATE PSAPI_VERSION=2)
 target_link_options(obs-studio PRIVATE /IGNORE:4098 /IGNORE:4099)
 

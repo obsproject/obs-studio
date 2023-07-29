@@ -340,6 +340,7 @@ if(OS_WINDOWS)
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/obs.rc.in ${CMAKE_BINARY_DIR}/obs.rc)
 
   find_package(Detours REQUIRED)
+  find_package(nlohmann_json REQUIRED)
 
   target_sources(
     obs
@@ -356,10 +357,13 @@ if(OS_WINDOWS)
             update/update-helpers.hpp
             update/crypto-helpers-mbedtls.cpp
             update/crypto-helpers.hpp
+            update/models/branches.hpp
+            update/models/whatsnew.hpp
+            win-update/updater/manifest.hpp
             ${CMAKE_BINARY_DIR}/obs.rc)
 
   find_package(MbedTLS)
-  target_link_libraries(obs PRIVATE Mbedtls::Mbedtls OBS::blake2 Detours::Detours)
+  target_link_libraries(obs PRIVATE Mbedtls::Mbedtls nlohmann_json::nlohmann_json OBS::blake2 Detours::Detours)
 
   target_compile_features(obs PRIVATE cxx_std_17)
 
@@ -423,17 +427,27 @@ elseif(OS_MACOS)
 
   if(ENABLE_WHATSNEW)
     find_library(SECURITY Security)
+    find_package(nlohmann_json REQUIRED)
     mark_as_advanced(SECURITY)
-    target_link_libraries(obs PRIVATE ${SECURITY} OBS::blake2)
 
-    target_sources(obs PRIVATE update/crypto-helpers.hpp update/crypto-helpers-mac.mm update/shared-update.cpp
-                               update/shared-update.hpp update/update-helpers.cpp update/update-helpers.hpp)
+    target_link_libraries(obs PRIVATE ${SECURITY} OBS::blake2 nlohmann_json::nlohmann_json)
+
+    target_sources(
+      obs
+      PRIVATE update/crypto-helpers.hpp
+              update/crypto-helpers-mac.mm
+              update/shared-update.cpp
+              update/shared-update.hpp
+              update/update-helpers.cpp
+              update/update-helpers.hpp
+              update/models/whatsnew.hpp)
 
     if(SPARKLE_APPCAST_URL AND SPARKLE_PUBLIC_KEY)
       find_library(SPARKLE Sparkle)
       mark_as_advanced(SPARKLE)
 
-      target_sources(obs PRIVATE update/mac-update.cpp update/mac-update.hpp update/sparkle-updater.mm)
+      target_sources(obs PRIVATE update/mac-update.cpp update/mac-update.hpp update/sparkle-updater.mm
+                                 update/models/branches.hpp)
       target_compile_definitions(obs PRIVATE ENABLE_SPARKLE_UPDATER)
       target_link_libraries(obs PRIVATE ${SPARKLE})
       # Enable Automatic Reference Counting for Sparkle wrapper
@@ -465,13 +479,14 @@ elseif(OS_POSIX)
 
   if(OS_LINUX AND ENABLE_WHATSNEW)
     find_package(MbedTLS)
+    find_package(nlohmann_json REQUIRED)
     if(NOT MBEDTLS_FOUND)
       obs_status(FATAL_ERROR "mbedTLS not found, but required for WhatsNew support on Linux")
     endif()
 
     target_sources(obs PRIVATE update/crypto-helpers.hpp update/crypto-helpers-mbedtls.cpp update/shared-update.cpp
                                update/shared-update.hpp update/update-helpers.cpp update/update-helpers.hpp)
-    target_link_libraries(obs PRIVATE Mbedtls::Mbedtls OBS::blake2)
+    target_link_libraries(obs PRIVATE Mbedtls::Mbedtls nlohmann_json::nlohmann_json OBS::blake2)
   endif()
 endif()
 
