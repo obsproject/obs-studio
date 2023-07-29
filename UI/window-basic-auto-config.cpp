@@ -283,38 +283,38 @@ AutoConfigStreamPage::AutoConfigStreamPage(QWidget *parent)
 
 	LoadServices(false);
 
-	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(ServiceChanged()));
-	connect(ui->customServer, SIGNAL(textChanged(const QString &)), this,
-		SLOT(ServiceChanged()));
-	connect(ui->customServer, SIGNAL(textChanged(const QString &)), this,
-		SLOT(UpdateKeyLink()));
-	connect(ui->customServer, SIGNAL(editingFinished()), this,
-		SLOT(UpdateKeyLink()));
-	connect(ui->doBandwidthTest, SIGNAL(toggled(bool)), this,
-		SLOT(ServiceChanged()));
+	connect(ui->service, &QComboBox::currentIndexChanged, this,
+		&AutoConfigStreamPage::ServiceChanged);
+	connect(ui->customServer, &QLineEdit::textChanged, this,
+		&AutoConfigStreamPage::ServiceChanged);
+	connect(ui->customServer, &QLineEdit::textChanged, this,
+		&AutoConfigStreamPage::UpdateKeyLink);
+	connect(ui->customServer, &QLineEdit::editingFinished, this,
+		&AutoConfigStreamPage::UpdateKeyLink);
+	connect(ui->doBandwidthTest, &QCheckBox::toggled, this,
+		&AutoConfigStreamPage::ServiceChanged);
 
-	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(UpdateServerList()));
+	connect(ui->service, &QComboBox::currentIndexChanged, this,
+		&AutoConfigStreamPage::UpdateServerList);
 
-	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(UpdateKeyLink()));
-	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(UpdateMoreInfoLink()));
+	connect(ui->service, &QComboBox::currentIndexChanged, this,
+		&AutoConfigStreamPage::UpdateKeyLink);
+	connect(ui->service, &QComboBox::currentIndexChanged, this,
+		&AutoConfigStreamPage::UpdateMoreInfoLink);
 
-	connect(ui->useStreamKeyAdv, &QPushButton::clicked, this,
+	connect(ui->useStreamKeyAdv, &QPushButton::clicked,
 		[&]() { ui->streamKeyWidget->setVisible(true); });
 
-	connect(ui->key, SIGNAL(textChanged(const QString &)), this,
-		SLOT(UpdateCompleted()));
-	connect(ui->regionUS, SIGNAL(toggled(bool)), this,
-		SLOT(UpdateCompleted()));
-	connect(ui->regionEU, SIGNAL(toggled(bool)), this,
-		SLOT(UpdateCompleted()));
-	connect(ui->regionAsia, SIGNAL(toggled(bool)), this,
-		SLOT(UpdateCompleted()));
-	connect(ui->regionOther, SIGNAL(toggled(bool)), this,
-		SLOT(UpdateCompleted()));
+	connect(ui->key, &QLineEdit::textChanged, this,
+		&AutoConfigStreamPage::UpdateCompleted);
+	connect(ui->regionUS, &QCheckBox::toggled, this,
+		&AutoConfigStreamPage::UpdateCompleted);
+	connect(ui->regionEU, &QCheckBox::toggled, this,
+		&AutoConfigStreamPage::UpdateCompleted);
+	connect(ui->regionAsia, &QCheckBox::toggled, this,
+		&AutoConfigStreamPage::UpdateCompleted);
+	connect(ui->regionOther, &QCheckBox::toggled, this,
+		&AutoConfigStreamPage::UpdateCompleted);
 }
 
 AutoConfigStreamPage::~AutoConfigStreamPage() {}

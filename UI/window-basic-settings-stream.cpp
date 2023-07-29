@@ -84,10 +84,10 @@ void OBSBasicSettings::InitStreamPage()
 	ui->twitchAddonDropdown->addItem(
 		QTStr("Basic.Settings.Stream.TTVAddon.Both"));
 
-	connect(ui->ignoreRecommended, SIGNAL(clicked(bool)), this,
-		SLOT(DisplayEnforceWarning(bool)));
-	connect(ui->ignoreRecommended, SIGNAL(toggled(bool)), this,
-		SLOT(UpdateResFPSLimits()));
+	connect(ui->ignoreRecommended, &QCheckBox::clicked, this,
+		&OBSBasicSettings::DisplayEnforceWarning);
+	connect(ui->ignoreRecommended, &QCheckBox::toggled, this,
+		&OBSBasicSettings::UpdateResFPSLimits);
 }
 
 void OBSBasicSettings::LoadStream1Settings()
@@ -870,10 +870,10 @@ void OBSBasicSettings::UpdateVodTrackSetting()
 						     &pos, nullptr);
 	ui->simpleStreamingLayout->insertRow(pos + 1, nullptr, simpleVodTrack);
 
-	HookWidget(simpleVodTrack, SIGNAL(clicked(bool)),
-		   SLOT(OutputsChanged()));
-	connect(ui->simpleOutAdvanced, SIGNAL(toggled(bool)),
-		simpleVodTrack.data(), SLOT(setVisible(bool)));
+	HookWidget(simpleVodTrack.data(), &QCheckBox::clicked,
+		   &OBSBasicSettings::OutputsChanged);
+	connect(ui->simpleOutAdvanced, &QCheckBox::toggled,
+		simpleVodTrack.data(), &QCheckBox::setVisible);
 
 	/* -------------------------------------- */
 	/* advanced output mode vod track widgets */
@@ -889,12 +889,12 @@ void OBSBasicSettings::UpdateVodTrackSetting()
 		vodTrack[i] = new QRadioButton(QString::number(i + 1));
 		vodTrackLayout->addWidget(vodTrack[i]);
 
-		HookWidget(vodTrack[i], SIGNAL(clicked(bool)),
-			   SLOT(OutputsChanged()));
+		HookWidget(vodTrack[i].data(), &QRadioButton::clicked,
+			   &OBSBasicSettings::OutputsChanged);
 	}
 
-	HookWidget(vodTrackCheckbox, SIGNAL(clicked(bool)),
-		   SLOT(OutputsChanged()));
+	HookWidget(vodTrackCheckbox.data(), &QCheckBox::clicked,
+		   &OBSBasicSettings::OutputsChanged);
 
 	vodTrackLayout->addStretch();
 	vodTrackLayout->setContentsMargins(0, 0, 0, 0);
@@ -908,8 +908,8 @@ void OBSBasicSettings::UpdateVodTrackSetting()
 	vodTrackCheckbox->setChecked(vodTrackEnabled);
 	vodTrackContainer->setEnabled(vodTrackEnabled);
 
-	connect(vodTrackCheckbox, SIGNAL(clicked(bool)), vodTrackContainer,
-		SLOT(setEnabled(bool)));
+	connect(vodTrackCheckbox, &QCheckBox::clicked, vodTrackContainer,
+		&QWidget::setEnabled);
 
 	int trackIndex =
 		config_get_int(main->Config(), "AdvOut", "VodTrackIndex");
@@ -1218,8 +1218,8 @@ bool OBSBasicSettings::UpdateResFPSLimits()
 		ui->outputResolution->clear();
 		ui->outputResolution->setEditable(false);
 		HookWidget(ui->outputResolution,
-			   SIGNAL(currentIndexChanged(int)),
-			   SLOT(VideoChangedResolution()));
+			   &QComboBox::currentIndexChanged,
+			   &OBSBasicSettings::VideoChangedResolution);
 
 		int new_res_index = -1;
 

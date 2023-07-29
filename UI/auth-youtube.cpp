@@ -355,10 +355,10 @@ void YoutubeChatDock::SetWidget(QCefWidget *widget_)
 	widget->setLayout(layout);
 	setWidget(widget);
 
-	QWidget::connect(lineEdit, SIGNAL(returnPressed()), this,
-			 SLOT(SendChatMessage()));
-	QWidget::connect(sendButton, SIGNAL(pressed()), this,
-			 SLOT(SendChatMessage()));
+	QWidget::connect(lineEdit, &LineEditAutoResize::returnPressed, this,
+			 &YoutubeChatDock::SendChatMessage);
+	QWidget::connect(sendButton, &QPushButton::pressed, this,
+			 &YoutubeChatDock::SendChatMessage);
 
 	cefWidget.reset(widget_);
 }

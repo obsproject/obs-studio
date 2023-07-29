@@ -16,6 +16,8 @@
 
 #define MIN_DB -96.0
 #define MAX_DB 26.0
+static inline void setMixer(obs_source_t *source, const int mixerIdx,
+			    const bool checked);
 
 OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	: source(source_)
@@ -223,34 +225,33 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	mixerContainer->layout()->addWidget(mixer6);
 	mixerContainer->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
 
-	QWidget::connect(volume, SIGNAL(valueChanged(double)), this,
-			 SLOT(volumeChanged(double)));
-	QWidget::connect(percent, SIGNAL(valueChanged(int)), this,
-			 SLOT(percentChanged(int)));
-	QWidget::connect(forceMono, SIGNAL(clicked(bool)), this,
-			 SLOT(downmixMonoChanged(bool)));
-	QWidget::connect(balance, SIGNAL(valueChanged(int)), this,
-			 SLOT(balanceChanged(int)));
-	QWidget::connect(balance, SIGNAL(doubleClicked()), this,
-			 SLOT(ResetBalance()));
-	QWidget::connect(syncOffset, SIGNAL(valueChanged(int)), this,
-			 SLOT(syncOffsetChanged(int)));
+	connect(volume, &QDoubleSpinBox::valueChanged, this,
+		&OBSAdvAudioCtrl::volumeChanged);
+	connect(percent, &QSpinBox::valueChanged, this,
+		&OBSAdvAudioCtrl::percentChanged);
+	connect(forceMono, &QCheckBox::clicked, this,
+		&OBSAdvAudioCtrl::downmixMonoChanged);
+	connect(balance, &BalanceSlider::valueChanged, this,
+		&OBSAdvAudioCtrl::balanceChanged);
+	connect(balance, &BalanceSlider::doubleClicked, this,
+		&OBSAdvAudioCtrl::ResetBalance);
+	connect(syncOffset, &QSpinBox::valueChanged, this,
+		&OBSAdvAudioCtrl::syncOffsetChanged);
 	if (obs_audio_monitoring_available())
-		QWidget::connect(monitoringType,
-				 SIGNAL(currentIndexChanged(int)), this,
-				 SLOT(monitoringTypeChanged(int)));
-	QWidget::connect(mixer1, SIGNAL(clicked(bool)), this,
-			 SLOT(mixer1Changed(bool)));
-	QWidget::connect(mixer2, SIGNAL(clicked(bool)), this,
-			 SLOT(mixer2Changed(bool)));
-	QWidget::connect(mixer3, SIGNAL(clicked(bool)), this,
-			 SLOT(mixer3Changed(bool)));
-	QWidget::connect(mixer4, SIGNAL(clicked(bool)), this,
-			 SLOT(mixer4Changed(bool)));
-	QWidget::connect(mixer5, SIGNAL(clicked(bool)), this,
-			 SLOT(mixer5Changed(bool)));
-	QWidget::connect(mixer6, SIGNAL(clicked(bool)), this,
-			 SLOT(mixer6Changed(bool)));
+		connect(monitoringType, &QComboBox::currentIndexChanged, this,
+			&OBSAdvAudioCtrl::monitoringTypeChanged);
+
+	auto connectMixer = [this](QCheckBox *mixer, int num) {
+		connect(mixer, &QCheckBox::clicked, [this, num](bool checked) {
+			setMixer(source, num, checked);
+		});
+	};
+	connectMixer(mixer1, 0);
+	connectMixer(mixer2, 1);
+	connectMixer(mixer3, 2);
+	connectMixer(mixer4, 3);
+	connectMixer(mixer5, 4);
+	connectMixer(mixer6, 5);
 
 	setObjectName(sourceName);
 }
@@ -643,36 +644,6 @@ static inline void setMixer(obs_source_t *source, const int mixerIdx,
 		std::bind(undo_redo, std::placeholders::_1, mixers),
 		std::bind(undo_redo, std::placeholders::_1, new_mixers), uuid,
 		uuid);
-}
-
-void OBSAdvAudioCtrl::mixer1Changed(bool checked)
-{
-	setMixer(source, 0, checked);
-}
-
-void OBSAdvAudioCtrl::mixer2Changed(bool checked)
-{
-	setMixer(source, 1, checked);
-}
-
-void OBSAdvAudioCtrl::mixer3Changed(bool checked)
-{
-	setMixer(source, 2, checked);
-}
-
-void OBSAdvAudioCtrl::mixer4Changed(bool checked)
-{
-	setMixer(source, 3, checked);
-}
-
-void OBSAdvAudioCtrl::mixer5Changed(bool checked)
-{
-	setMixer(source, 4, checked);
-}
-
-void OBSAdvAudioCtrl::mixer6Changed(bool checked)
-{
-	setMixer(source, 5, checked);
 }
 
 void OBSAdvAudioCtrl::SetVolumeWidget(VolumeType type)

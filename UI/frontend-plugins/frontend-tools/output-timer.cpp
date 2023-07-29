@@ -20,12 +20,12 @@ OutputTimer::OutputTimer(QWidget *parent)
 
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
-	QObject::connect(ui->outputTimerStream, SIGNAL(clicked()), this,
-			 SLOT(StreamingTimerButton()));
-	QObject::connect(ui->outputTimerRecord, SIGNAL(clicked()), this,
-			 SLOT(RecordingTimerButton()));
+	QObject::connect(ui->outputTimerStream, &QPushButton::clicked, this,
+			 &OutputTimer::StreamingTimerButton);
+	QObject::connect(ui->outputTimerRecord, &QPushButton::clicked, this,
+			 &OutputTimer::RecordingTimerButton);
 	QObject::connect(ui->buttonBox->button(QDialogButtonBox::Close),
-			 SIGNAL(clicked()), this, SLOT(hide()));
+			 &QPushButton::clicked, this, &OutputTimer::hide);
 
 	streamingTimer = new QTimer(this);
 	streamingTimerDisplay = new QTimer(this);
@@ -86,11 +86,11 @@ void OutputTimer::StreamTimerStart()
 	streamingTimer->setInterval(total);
 	streamingTimer->setSingleShot(true);
 
-	QObject::connect(streamingTimer, SIGNAL(timeout()),
-			 SLOT(EventStopStreaming()));
+	QObject::connect(streamingTimer, &QTimer::timeout, this,
+			 &OutputTimer::EventStopStreaming);
 
-	QObject::connect(streamingTimerDisplay, SIGNAL(timeout()), this,
-			 SLOT(UpdateStreamTimerDisplay()));
+	QObject::connect(streamingTimerDisplay, &QTimer::timeout, this,
+			 &OutputTimer::UpdateStreamTimerDisplay);
 
 	streamingTimer->start();
 	streamingTimerDisplay->start(1000);
@@ -120,11 +120,11 @@ void OutputTimer::RecordTimerStart()
 	recordingTimer->setInterval(total);
 	recordingTimer->setSingleShot(true);
 
-	QObject::connect(recordingTimer, SIGNAL(timeout()),
-			 SLOT(EventStopRecording()));
+	QObject::connect(recordingTimer, &QTimer::timeout, this,
+			 &OutputTimer::EventStopRecording);
 
-	QObject::connect(recordingTimerDisplay, SIGNAL(timeout()), this,
-			 SLOT(UpdateRecordTimerDisplay()));
+	QObject::connect(recordingTimerDisplay, &QTimer::timeout, this,
+			 &OutputTimer::UpdateRecordTimerDisplay);
 
 	recordingTimer->start();
 	recordingTimerDisplay->start(1000);
@@ -229,10 +229,10 @@ void OutputTimer::ShowHideDialog()
 {
 	if (!isVisible()) {
 		setVisible(true);
-		QTimer::singleShot(250, this, SLOT(show()));
+		QTimer::singleShot(250, this, &OutputTimer::show);
 	} else {
 		setVisible(false);
-		QTimer::singleShot(250, this, SLOT(hide()));
+		QTimer::singleShot(250, this, &OutputTimer::hide);
 	}
 }
 

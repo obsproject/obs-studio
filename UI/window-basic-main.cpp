@@ -291,7 +291,7 @@ void setupDockAction(QDockWidget *dock)
 	};
 
 	// Replace the slot connected by default
-	action->disconnect(SIGNAL(triggered(bool)));
+	QObject::disconnect(action, &QAction::triggered, nullptr, 0);
 	dock->connect(action, &QAction::triggered, newToggleView);
 
 	// Make the action unable to be disabled
@@ -396,28 +396,29 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	UpdateTitleBar();
 
-	connect(ui->scenes->itemDelegate(), SIGNAL(closeEditor(QWidget *)),
-		this, SLOT(SceneNameEdited(QWidget *)));
+	connect(ui->scenes->itemDelegate(), &QAbstractItemDelegate::closeEditor,
+		this, &OBSBasic::SceneNameEdited);
 
 	cpuUsageInfo = os_cpu_usage_info_start();
 	cpuUsageTimer = new QTimer(this);
-	connect(cpuUsageTimer.data(), SIGNAL(timeout()), ui->statusbar,
-		SLOT(UpdateCPUUsage()));
+	connect(cpuUsageTimer.data(), &QTimer::timeout, ui->statusbar,
+		&OBSBasicStatusBar::UpdateCPUUsage);
 	cpuUsageTimer->start(3000);
 
 	diskFullTimer = new QTimer(this);
-	connect(diskFullTimer, SIGNAL(timeout()), this,
-		SLOT(CheckDiskSpaceRemaining()));
+	connect(diskFullTimer, &QTimer::timeout, this,
+		&OBSBasic::CheckDiskSpaceRemaining);
 
 	renameScene = new QAction(QTStr("Rename"), ui->scenesDock);
 	renameScene->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-	connect(renameScene, SIGNAL(triggered()), this, SLOT(EditSceneName()));
+	connect(renameScene, &QAction::triggered, this,
+		&OBSBasic::EditSceneName);
 	ui->scenesDock->addAction(renameScene);
 
 	renameSource = new QAction(QTStr("Rename"), ui->sourcesDock);
 	renameSource->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-	connect(renameSource, SIGNAL(triggered()), this,
-		SLOT(EditSceneItemName()));
+	connect(renameSource, &QAction::triggered, this,
+		&OBSBasic::EditSceneItemName);
 	ui->sourcesDock->addAction(renameSource);
 
 #ifdef __APPLE__
@@ -522,11 +523,11 @@ OBSBasic::OBSBasic(QWidget *parent)
 	statsDock->move(newPos);
 
 	ui->previewDisabledWidget->setContextMenuPolicy(Qt::CustomContextMenu);
-	connect(ui->enablePreviewButton, SIGNAL(clicked()), this,
-		SLOT(TogglePreview()));
+	connect(ui->enablePreviewButton, &QPushButton::clicked, this,
+		&OBSBasic::TogglePreview);
 
-	connect(ui->scenes, SIGNAL(scenesReordered()), this,
-		SLOT(ScenesReordered()));
+	connect(ui->scenes, &SceneTree::scenesReordered,
+		[]() { OBSProjector::UpdateMultiviewProjectors(); });
 
 	connect(ui->broadcastButton, &QPushButton::clicked, this,
 		&OBSBasic::BroadcastButtonClicked);
@@ -2277,7 +2278,7 @@ void OBSBasic::OBSInit()
 	ui->viewMenu->addSeparator();
 
 	AddProjectorMenuMonitors(ui->multiviewProjectorMenu, this,
-				 SLOT(OpenMultiviewProjector()));
+				 &OBSBasic::OpenMultiviewProjector);
 	connect(ui->viewMenu->menuAction(), &QAction::hovered, this,
 		&OBSBasic::UpdateMultiviewProjectorMenu);
 
@@ -2540,7 +2541,7 @@ void OBSBasic::UpdateMultiviewProjectorMenu()
 {
 	ui->multiviewProjectorMenu->clear();
 	AddProjectorMenuMonitors(ui->multiviewProjectorMenu, this,
-				 SLOT(OpenMultiviewProjector()));
+				 &OBSBasic::OpenMultiviewProjector);
 }
 
 void OBSBasic::InitHotkeys()
@@ -5040,7 +5041,7 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	 * could be inside of an Auth::LoadUI call.  Keep trying once per
 	 * second until we've exit any known sub-loops. */
 	if (os_atomic_load_long(&insideEventLoop) != 0) {
-		QTimer::singleShot(1000, this, SLOT(close()));
+		QTimer::singleShot(1000, this, &OBSBasic::close);
 		event->ignore();
 		return;
 	}
@@ -5048,7 +5049,7 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 #ifdef YOUTUBE_ENABLED
 	/* Also don't close the window if the youtube stream check is active */
 	if (youtubeStreamCheckThread) {
-		QTimer::singleShot(1000, this, SLOT(close()));
+		QTimer::singleShot(1000, this, &OBSBasic::close);
 		event->ignore();
 		return;
 	}
@@ -5245,7 +5246,7 @@ void OBSBasic::on_action_Settings_triggered()
 	 * once per second until we've exit any known sub-loops. */
 	if (os_atomic_load_long(&insideEventLoop) != 0) {
 		QTimer::singleShot(1000, this,
-				   SLOT(on_action_Settings_triggered()));
+				   &OBSBasic::on_action_Settings_triggered);
 		return;
 	}
 
@@ -5398,10 +5399,9 @@ void OBSBasic::EditSceneName()
 	item->setFlags(flags);
 }
 
-void OBSBasic::AddProjectorMenuMonitors(QMenu *parent, QObject *target,
-					const char *slot)
+QList<QString> OBSBasic::GetProjectorMenuMonitorsFormatted()
 {
-	QAction *action;
+	QList<QString> projectorsFormatted;
 	QList<QScreen *> screens = QGuiApplication::screens();
 	for (int i = 0; i < screens.size(); i++) {
 		QScreen *screen = screens[i];
@@ -5438,10 +5438,9 @@ void OBSBasic::AddProjectorMenuMonitors(QMenu *parent, QObject *target,
 						     ratio),
 				     QString::number(screenGeometry.x()),
 				     QString::number(screenGeometry.y()));
-
-		action = parent->addAction(str, target, slot);
-		action->setProperty("monitor", i);
+		projectorsFormatted.push_back(str);
 	}
+	return projectorsFormatted;
 }
 
 void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
@@ -5452,23 +5451,23 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 	QMenu order(QTStr("Basic.MainMenu.Edit.Order"), this);
 
 	popup.addAction(QTStr("Add"), this,
-			SLOT(on_actionAddScene_triggered()));
+			&OBSBasic::on_actionAddScene_triggered);
 
 	if (item) {
 		QAction *copyFilters = new QAction(QTStr("Copy.Filters"), this);
 		copyFilters->setEnabled(false);
-		connect(copyFilters, SIGNAL(triggered()), this,
-			SLOT(SceneCopyFilters()));
+		connect(copyFilters, &QAction::triggered, this,
+			&OBSBasic::SceneCopyFilters);
 		QAction *pasteFilters =
 			new QAction(QTStr("Paste.Filters"), this);
 		pasteFilters->setEnabled(
 			!obs_weak_source_expired(copyFiltersSource));
-		connect(pasteFilters, SIGNAL(triggered()), this,
-			SLOT(ScenePasteFilters()));
+		connect(pasteFilters, &QAction::triggered, this,
+			&OBSBasic::ScenePasteFilters);
 
 		popup.addSeparator();
 		popup.addAction(QTStr("Duplicate"), this,
-				SLOT(DuplicateSelectedScene()));
+				&OBSBasic::DuplicateSelectedScene);
 		popup.addAction(copyFilters);
 		popup.addAction(pasteFilters);
 		popup.addSeparator();
@@ -5477,14 +5476,14 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 		popup.addSeparator();
 
 		order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveUp"), this,
-				SLOT(on_actionSceneUp_triggered()));
+				&OBSBasic::on_actionSceneUp_triggered);
 		order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveDown"),
-				this, SLOT(on_actionSceneDown_triggered()));
+				this, &OBSBasic::on_actionSceneDown_triggered);
 		order.addSeparator();
 		order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveToTop"),
-				this, SLOT(MoveSceneToTop()));
+				this, &OBSBasic::MoveSceneToTop);
 		order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveToBottom"),
-				this, SLOT(MoveSceneToBottom()));
+				this, &OBSBasic::MoveSceneToBottom);
 		popup.addMenu(&order);
 
 		popup.addSeparator();
@@ -5492,18 +5491,18 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 		delete sceneProjectorMenu;
 		sceneProjectorMenu = new QMenu(QTStr("SceneProjector"));
 		AddProjectorMenuMonitors(sceneProjectorMenu, this,
-					 SLOT(OpenSceneProjector()));
+					 &OBSBasic::OpenSceneProjector);
 		popup.addMenu(sceneProjectorMenu);
 
 		QAction *sceneWindow = popup.addAction(
-			QTStr("SceneWindow"), this, SLOT(OpenSceneWindow()));
+			QTStr("SceneWindow"), this, &OBSBasic::OpenSceneWindow);
 
 		popup.addAction(sceneWindow);
 		popup.addAction(QTStr("Screenshot.Scene"), this,
-				SLOT(ScreenshotScene()));
+				&OBSBasic::ScreenshotScene);
 		popup.addSeparator();
 		popup.addAction(QTStr("Filters"), this,
-				SLOT(OpenSceneFilters()));
+				&OBSBasic::OpenSceneFilters);
 
 		popup.addSeparator();
 
@@ -5546,8 +5545,8 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 	QAction *gridAction = new QAction(grid ? QTStr("Basic.Main.ListMode")
 					       : QTStr("Basic.Main.GridMode"),
 					  this);
-	connect(gridAction, SIGNAL(triggered()), this,
-		SLOT(GridActionClicked()));
+	connect(gridAction, &QAction::triggered, this,
+		&OBSBasic::GridActionClicked);
 	popup.addAction(gridAction);
 
 	popup.exec(QCursor::pos());
@@ -5718,11 +5717,11 @@ QMenu *OBSBasic::AddDeinterlacingMenu(QMenu *menu, obs_source_t *source)
 		obs_source_get_deinterlace_field_order(source);
 	QAction *action;
 
-#define ADD_MODE(name, mode)                                    \
-	action = menu->addAction(QTStr("" name), this,          \
-				 SLOT(SetDeinterlacingMode())); \
-	action->setProperty("mode", (int)mode);                 \
-	action->setCheckable(true);                             \
+#define ADD_MODE(name, mode)                                       \
+	action = menu->addAction(QTStr("" name), this,             \
+				 &OBSBasic::SetDeinterlacingMode); \
+	action->setProperty("mode", (int)mode);                    \
+	action->setCheckable(true);                                \
 	action->setChecked(deinterlaceMode == mode);
 
 	ADD_MODE("Disable", OBS_DEINTERLACE_MODE_DISABLE);
@@ -5740,7 +5739,7 @@ QMenu *OBSBasic::AddDeinterlacingMenu(QMenu *menu, obs_source_t *source)
 
 #define ADD_ORDER(name, order)                                       \
 	action = menu->addAction(QTStr("Deinterlacing." name), this, \
-				 SLOT(SetDeinterlacingOrder()));     \
+				 &OBSBasic::SetDeinterlacingOrder);  \
 	action->setProperty("order", (int)order);                    \
 	action->setCheckable(true);                                  \
 	action->setChecked(deinterlaceOrder == order);
@@ -5766,11 +5765,11 @@ QMenu *OBSBasic::AddScaleFilteringMenu(QMenu *menu, obs_sceneitem_t *item)
 	obs_scale_type scaleFilter = obs_sceneitem_get_scale_filter(item);
 	QAction *action;
 
-#define ADD_MODE(name, mode)                                                   \
-	action =                                                               \
-		menu->addAction(QTStr("" name), this, SLOT(SetScaleFilter())); \
-	action->setProperty("mode", (int)mode);                                \
-	action->setCheckable(true);                                            \
+#define ADD_MODE(name, mode)                                 \
+	action = menu->addAction(QTStr("" name), this,       \
+				 &OBSBasic::SetScaleFilter); \
+	action->setProperty("mode", (int)mode);              \
+	action->setCheckable(true);                          \
 	action->setChecked(scaleFilter == mode);
 
 	ADD_MODE("Disable", OBS_SCALE_DISABLE);
@@ -5800,11 +5799,11 @@ QMenu *OBSBasic::AddBlendingMethodMenu(QMenu *menu, obs_sceneitem_t *item)
 		obs_sceneitem_get_blending_method(item);
 	QAction *action;
 
-#define ADD_MODE(name, method)                               \
-	action = menu->addAction(QTStr("" name), this,       \
-				 SLOT(SetBlendingMethod())); \
-	action->setProperty("method", (int)method);          \
-	action->setCheckable(true);                          \
+#define ADD_MODE(name, method)                                  \
+	action = menu->addAction(QTStr("" name), this,          \
+				 &OBSBasic::SetBlendingMethod); \
+	action->setProperty("method", (int)method);             \
+	action->setCheckable(true);                             \
 	action->setChecked(blendingMethod == method);
 
 	ADD_MODE("BlendingMethod.Default", OBS_BLEND_METHOD_DEFAULT);
@@ -5829,11 +5828,11 @@ QMenu *OBSBasic::AddBlendingModeMenu(QMenu *menu, obs_sceneitem_t *item)
 	obs_blending_type blendingMode = obs_sceneitem_get_blending_mode(item);
 	QAction *action;
 
-#define ADD_MODE(name, mode)                               \
-	action = menu->addAction(QTStr("" name), this,     \
-				 SLOT(SetBlendingMode())); \
-	action->setProperty("mode", (int)mode);            \
-	action->setCheckable(true);                        \
+#define ADD_MODE(name, mode)                                  \
+	action = menu->addAction(QTStr("" name), this,        \
+				 &OBSBasic::SetBlendingMode); \
+	action->setProperty("mode", (int)mode);               \
+	action->setCheckable(true);                           \
 	action->setChecked(blendingMode == mode);
 
 	ADD_MODE("BlendingMode.Normal", OBS_BLEND_NORMAL);
@@ -5871,13 +5870,13 @@ QMenu *OBSBasic::AddBackgroundColorMenu(QMenu *menu,
 	obs_data_set_default_int(privData, "color-preset", 0);
 	int preset = obs_data_get_int(privData, "color-preset");
 
-	action = menu->addAction(QTStr("Clear"), this, +SLOT(ColorChange()));
+	action = menu->addAction(QTStr("Clear"), this, &OBSBasic::ColorChange);
 	action->setCheckable(true);
 	action->setProperty("bgColor", 0);
 	action->setChecked(preset == 0);
 
 	action = menu->addAction(QTStr("CustomColor"), this,
-				 +SLOT(ColorChange()));
+				 &OBSBasic::ColorChange);
 	action->setCheckable(true);
 	action->setProperty("bgColor", 1);
 	action->setChecked(preset == 1);
@@ -5895,8 +5894,8 @@ QMenu *OBSBasic::AddBackgroundColorMenu(QMenu *menu,
 			colorButton->setStyleSheet("border: 2px solid black");
 
 		colorButton->setProperty("bgColor", i);
-		select->connect(colorButton, SIGNAL(released()), this,
-				SLOT(ColorChange()));
+		select->connect(colorButton, &QPushButton::released, this,
+				&OBSBasic::ColorChange);
 	}
 
 	menu->addAction(widgetAction);
@@ -5927,7 +5926,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 	if (preview) {
 		QAction *action = popup.addAction(
 			QTStr("Basic.Main.PreviewConextMenu.Enable"), this,
-			SLOT(TogglePreview()));
+			&OBSBasic::TogglePreview);
 		action->setCheckable(true);
 		action->setChecked(
 			obs_display_enabled(ui->preview->GetDisplay()));
@@ -5939,18 +5938,18 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 
 		previewProjectorSource = new QMenu(QTStr("PreviewProjector"));
 		AddProjectorMenuMonitors(previewProjectorSource, this,
-					 SLOT(OpenPreviewProjector()));
+					 &OBSBasic::OpenPreviewProjector);
 
 		popup.addMenu(previewProjectorSource);
 
 		QAction *previewWindow =
 			popup.addAction(QTStr("PreviewWindow"), this,
-					SLOT(OpenPreviewWindow()));
+					&OBSBasic::OpenPreviewWindow);
 
 		popup.addAction(previewWindow);
 
 		popup.addAction(QTStr("Screenshot.Preview"), this,
-				SLOT(ScreenshotScene()));
+				&OBSBasic::ScreenshotScene);
 
 		popup.addSeparator();
 	}
@@ -5962,12 +5961,12 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 	if (ui->sources->MultipleBaseSelected()) {
 		popup.addSeparator();
 		popup.addAction(QTStr("Basic.Main.GroupItems"), ui->sources,
-				SLOT(GroupSelectedItems()));
+				&SourceTree::GroupSelectedItems);
 
 	} else if (ui->sources->GroupsSelected()) {
 		popup.addSeparator();
 		popup.addAction(QTStr("Basic.Main.Ungroup"), ui->sources,
-				SLOT(UngroupSelectedGroups()));
+				&SourceTree::UngroupSelectedGroups);
 	}
 
 	popup.addSeparator();
@@ -6012,7 +6011,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		if (hasAudio) {
 			QAction *actionHideMixer =
 				popup.addAction(QTStr("HideMixer"), this,
-						SLOT(ToggleHideMixer()));
+						&OBSBasic::ToggleHideMixer);
 			actionHideMixer->setCheckable(true);
 			actionHideMixer->setChecked(SourceMixerHidden(source));
 			popup.addSeparator();
@@ -6021,7 +6020,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		if (hasVideo) {
 			QAction *resizeOutput = popup.addAction(
 				QTStr("ResizeOutputSizeOfSource"), this,
-				SLOT(ResizeOutputSizeOfSource()));
+				&OBSBasic::ResizeOutputSizeOfSource);
 
 			int width = obs_source_get_width(source);
 			int height = obs_source_get_height(source);
@@ -6054,26 +6053,28 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 			popup.addSeparator();
 
 			sourceProjector = new QMenu(QTStr("SourceProjector"));
-			AddProjectorMenuMonitors(sourceProjector, this,
-						 SLOT(OpenSourceProjector()));
+			AddProjectorMenuMonitors(
+				sourceProjector, this,
+				&OBSBasic::OpenSourceProjector);
 			popup.addMenu(sourceProjector);
 			popup.addAction(QTStr("SourceWindow"), this,
-					SLOT(OpenSourceWindow()));
+					&OBSBasic::OpenSourceWindow);
 
 			popup.addAction(QTStr("Screenshot.Source"), this,
-					SLOT(ScreenshotSelectedSource()));
+					&OBSBasic::ScreenshotSelectedSource);
 		}
 
 		popup.addSeparator();
 
 		if (flags & OBS_SOURCE_INTERACTION)
 			popup.addAction(QTStr("Interact"), this,
-					SLOT(on_actionInteract_triggered()));
+					&OBSBasic::on_actionInteract_triggered);
 
-		popup.addAction(QTStr("Filters"), this, SLOT(OpenFilters()));
+		popup.addAction(QTStr("Filters"), this,
+				[&]() { OpenFilters(); });
 		QAction *action = popup.addAction(
 			QTStr("Properties"), this,
-			SLOT(on_actionSourceProperties_triggered()));
+			&OBSBasic::on_actionSourceProperties_triggered);
 		action->setEnabled(obs_source_configurable(source));
 	}
 
@@ -6157,9 +6158,8 @@ QMenu *OBSBasic::CreateAddSourcePopupMenu()
 						const char *name) {
 		QString qname = QT_UTF8(name);
 		QAction *popupItem = new QAction(qname, this);
-		popupItem->setData(QT_UTF8(type));
-		connect(popupItem, SIGNAL(triggered(bool)), this,
-			SLOT(AddSourceFromAction()));
+		connect(popupItem, &QAction::triggered,
+			[this, type]() { AddSource(type); });
 
 		QIcon icon;
 
@@ -6194,10 +6194,9 @@ QMenu *OBSBasic::CreateAddSourcePopupMenu()
 
 	popup->addSeparator();
 	QAction *addGroup = new QAction(QTStr("Group"), this);
-	addGroup->setData(QT_UTF8("group"));
 	addGroup->setIcon(GetGroupIcon());
-	connect(addGroup, SIGNAL(triggered(bool)), this,
-		SLOT(AddSourceFromAction()));
+	connect(addGroup, &QAction::triggered,
+		[this]() { AddSource("group"); });
 	popup->addAction(addGroup);
 
 	if (!foundDeprecated) {
@@ -6215,15 +6214,6 @@ QMenu *OBSBasic::CreateAddSourcePopupMenu()
 	}
 
 	return popup;
-}
-
-void OBSBasic::AddSourceFromAction()
-{
-	QAction *action = qobject_cast<QAction *>(sender());
-	if (!action)
-		return;
-
-	AddSource(QT_TO_UTF8(action->data().toString()));
 }
 
 void OBSBasic::AddSourcePopupMenu(const QPoint &pos)
@@ -7341,9 +7331,9 @@ void OBSBasic::StreamDelayStarting(int sec)
 
 	startStreamMenu = new QMenu();
 	startStreamMenu->addAction(QTStr("Basic.Main.StopStreaming"), this,
-				   SLOT(StopStreaming()));
+				   &OBSBasic::StopStreaming);
 	startStreamMenu->addAction(QTStr("Basic.Main.ForceStopStreaming"), this,
-				   SLOT(ForceStopStreaming()));
+				   &OBSBasic::ForceStopStreaming);
 	ui->streamButton->setMenu(startStreamMenu);
 
 	ui->statusbar->StreamDelayStarting(sec);
@@ -7367,9 +7357,9 @@ void OBSBasic::StreamDelayStopping(int sec)
 
 	startStreamMenu = new QMenu();
 	startStreamMenu->addAction(QTStr("Basic.Main.StartStreaming"), this,
-				   SLOT(StartStreaming()));
+				   &OBSBasic::StartStreaming);
 	startStreamMenu->addAction(QTStr("Basic.Main.ForceStopStreaming"), this,
-				   SLOT(ForceStopStreaming()));
+				   &OBSBasic::ForceStopStreaming);
 	ui->streamButton->setMenu(startStreamMenu);
 
 	ui->statusbar->StreamDelayStopping(sec);
@@ -8311,18 +8301,18 @@ void OBSBasic::ProgramViewContextMenuRequested()
 
 	studioProgramProjector = new QMenu(QTStr("StudioProgramProjector"));
 	AddProjectorMenuMonitors(studioProgramProjector, this,
-				 SLOT(OpenStudioProgramProjector()));
+				 &OBSBasic::OpenStudioProgramProjector);
 
 	popup.addMenu(studioProgramProjector);
 
 	QAction *studioProgramWindow =
 		popup.addAction(QTStr("StudioProgramWindow"), this,
-				SLOT(OpenStudioProgramWindow()));
+				&OBSBasic::OpenStudioProgramWindow);
 
 	popup.addAction(studioProgramWindow);
 
 	popup.addAction(QTStr("Screenshot.StudioProgram"), this,
-			SLOT(ScreenshotProgram()));
+			&OBSBasic::ScreenshotProgram);
 
 	popup.exec(QCursor::pos());
 }
@@ -8334,16 +8324,16 @@ void OBSBasic::on_previewDisabledWidget_customContextMenuRequested()
 
 	QAction *action =
 		popup.addAction(QTStr("Basic.Main.PreviewConextMenu.Enable"),
-				this, SLOT(TogglePreview()));
+				this, &OBSBasic::TogglePreview);
 	action->setCheckable(true);
 	action->setChecked(obs_display_enabled(ui->preview->GetDisplay()));
 
 	previewProjectorMain = new QMenu(QTStr("PreviewProjector"));
 	AddProjectorMenuMonitors(previewProjectorMain, this,
-				 SLOT(OpenPreviewProjector()));
+				 &OBSBasic::OpenPreviewProjector);
 
 	QAction *previewWindow = popup.addAction(QTStr("PreviewWindow"), this,
-						 SLOT(OpenPreviewWindow()));
+						 &OBSBasic::OpenPreviewWindow);
 
 	popup.addMenu(previewProjectorMain);
 	popup.addAction(previewWindow);
@@ -9654,7 +9644,7 @@ void OBSBasic::SetShowing(bool showing)
 
 		if (showHide)
 			showHide->setText(QTStr("Basic.SystemTray.Show"));
-		QTimer::singleShot(0, this, SLOT(hide()));
+		QTimer::singleShot(0, this, &OBSBasic::hide);
 
 		if (previewEnabled)
 			EnablePreviewDisplay(false);
@@ -9666,7 +9656,7 @@ void OBSBasic::SetShowing(bool showing)
 	} else if (showing && !isVisible()) {
 		if (showHide)
 			showHide->setText(QTStr("Basic.SystemTray.Hide"));
-		QTimer::singleShot(0, this, SLOT(show()));
+		QTimer::singleShot(0, this, &OBSBasic::show);
 
 		if (previewEnabled)
 			EnablePreviewDisplay(true);
@@ -9746,9 +9736,9 @@ void OBSBasic::SystemTrayInit()
 	previewProjector = new QMenu(QTStr("PreviewProjector"));
 	studioProgramProjector = new QMenu(QTStr("StudioProgramProjector"));
 	AddProjectorMenuMonitors(previewProjector, this,
-				 SLOT(OpenPreviewProjector()));
+				 &OBSBasic::OpenPreviewProjector);
 	AddProjectorMenuMonitors(studioProgramProjector, this,
-				 SLOT(OpenStudioProgramProjector()));
+				 &OBSBasic::OpenStudioProgramProjector);
 	trayMenu->addAction(showHide);
 	trayMenu->addSeparator();
 	trayMenu->addMenu(previewProjector);
@@ -9771,19 +9761,18 @@ void OBSBasic::SystemTrayInit()
 	if (Active())
 		OnActivate(true);
 
-	connect(trayIcon.data(),
-		SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this,
-		SLOT(IconActivated(QSystemTrayIcon::ActivationReason)));
-	connect(showHide, SIGNAL(triggered()), this, SLOT(ToggleShowHide()));
-	connect(sysTrayStream, SIGNAL(triggered()), this,
-		SLOT(on_streamButton_clicked()));
-	connect(sysTrayRecord, SIGNAL(triggered()), this,
-		SLOT(on_recordButton_clicked()));
+	connect(trayIcon.data(), &QSystemTrayIcon::activated, this,
+		&OBSBasic::IconActivated);
+	connect(showHide, &QAction::triggered, this, &OBSBasic::ToggleShowHide);
+	connect(sysTrayStream, &QAction::triggered, this,
+		&OBSBasic::on_streamButton_clicked);
+	connect(sysTrayRecord, &QAction::triggered, this,
+		&OBSBasic::on_recordButton_clicked);
 	connect(sysTrayReplayBuffer.data(), &QAction::triggered, this,
 		&OBSBasic::ReplayBufferClicked);
 	connect(sysTrayVirtualCam.data(), &QAction::triggered, this,
 		&OBSBasic::VCamButtonClicked);
-	connect(exit, SIGNAL(triggered()), this, SLOT(close()));
+	connect(exit, &QAction::triggered, this, &OBSBasic::close);
 }
 
 void OBSBasic::IconActivated(QSystemTrayIcon::ActivationReason reason)
@@ -9792,9 +9781,9 @@ void OBSBasic::IconActivated(QSystemTrayIcon::ActivationReason reason)
 	previewProjector->clear();
 	studioProgramProjector->clear();
 	AddProjectorMenuMonitors(previewProjector, this,
-				 SLOT(OpenPreviewProjector()));
+				 &OBSBasic::OpenPreviewProjector);
 	AddProjectorMenuMonitors(studioProgramProjector, this,
-				 SLOT(OpenStudioProgramProjector()));
+				 &OBSBasic::OpenStudioProgramProjector);
 
 #ifdef __APPLE__
 	UNUSED_PARAMETER(reason);
@@ -10787,11 +10776,6 @@ void OBSBasic::CheckDiskSpaceRemaining()
 
 		DiskSpaceMessage();
 	}
-}
-
-void OBSBasic::ScenesReordered()
-{
-	OBSProjector::UpdateMultiviewProjectors();
 }
 
 void OBSBasic::ResetStatsHotkey()
