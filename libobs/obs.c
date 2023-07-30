@@ -540,6 +540,8 @@ gs_effect_t *obs_load_effect(gs_effect_t **effect, const char *file)
 	return *effect;
 }
 
+static const char *shader_comp_name = "shader compilation";
+static const char *obs_init_graphics_name = "obs_init_graphics";
 static int obs_init_graphics(struct obs_video_info *ovi)
 {
 	struct obs_core_video *video = &obs->video;
@@ -549,9 +551,13 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 	bool success = true;
 	int errorcode;
 
+	profile_start(obs_init_graphics_name);
+
 	errorcode =
 		gs_create(&video->graphics, ovi->graphics_module, ovi->adapter);
 	if (errorcode != GS_SUCCESS) {
+		profile_end(obs_init_graphics_name);
+
 		switch (errorcode) {
 		case GS_ERROR_MODULE_NOT_FOUND:
 			return OBS_VIDEO_MODULE_NOT_FOUND;
@@ -562,6 +568,7 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 		}
 	}
 
+	profile_start(shader_comp_name);
 	gs_enter_context(video->graphics);
 
 	char *filename = obs_find_data_file("default.effect");
@@ -639,6 +646,9 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 		success = false;
 
 	gs_leave_context();
+	profile_end(shader_comp_name);
+	profile_end(obs_init_graphics_name);
+
 	return success ? OBS_VIDEO_SUCCESS : OBS_VIDEO_FAIL;
 }
 
