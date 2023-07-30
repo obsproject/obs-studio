@@ -83,51 +83,6 @@ protected:
 	}
 };
 
-// Used for QVariant in codec comboboxes
-namespace {
-static bool StringEquals(QString left, QString right)
-{
-	return left == right;
-}
-struct FormatDesc {
-	const char *name = nullptr;
-	const char *mimeType = nullptr;
-	const ff_format_desc *desc = nullptr;
-
-	inline FormatDesc() = default;
-	inline FormatDesc(const char *name, const char *mimeType,
-			  const ff_format_desc *desc = nullptr)
-		: name(name),
-		  mimeType(mimeType),
-		  desc(desc)
-	{
-	}
-
-	bool operator==(const FormatDesc &f) const
-	{
-		if (!StringEquals(name, f.name))
-			return false;
-		return StringEquals(mimeType, f.mimeType);
-	}
-};
-struct CodecDesc {
-	const char *name = nullptr;
-	int id = 0;
-
-	inline CodecDesc() = default;
-	inline CodecDesc(const char *name, int id) : name(name), id(id) {}
-
-	bool operator==(const CodecDesc &codecDesc) const
-	{
-		if (id != codecDesc.id)
-			return false;
-		return StringEquals(name, codecDesc.name);
-	}
-};
-}
-Q_DECLARE_METATYPE(FormatDesc)
-Q_DECLARE_METATYPE(CodecDesc)
-
 static inline bool ResTooHigh(uint32_t cx, uint32_t cy)
 {
 	return cx > 16384 || cy > 16384;
@@ -231,36 +186,35 @@ static inline QString GetComboData(QComboBox *combo)
 
 static int FindEncoder(QComboBox *combo, const char *name, int id)
 {
-	CodecDesc codecDesc(name, id);
+	FFmpegCodec codec{name, nullptr, id};
+
 	for (int i = 0; i < combo->count(); i++) {
 		QVariant v = combo->itemData(i);
 		if (!v.isNull()) {
-			if (codecDesc == v.value<CodecDesc>()) {
+			if (codec == v.value<FFmpegCodec>()) {
 				return i;
-				break;
 			}
 		}
 	}
 	return -1;
 }
 
-static CodecDesc GetDefaultCodecDesc(const ff_format_desc *formatDesc,
-				     ff_codec_type codecType)
+static FFmpegCodec GetDefaultCodec(const FFmpegFormat &format,
+				   FFmpegCodecType codecType)
 {
 	int id = 0;
 	switch (codecType) {
-	case FF_CODEC_AUDIO:
-		id = ff_format_desc_audio(formatDesc);
+	case AUDIO:
+		id = format.audio_codec;
 		break;
-	case FF_CODEC_VIDEO:
-		id = ff_format_desc_video(formatDesc);
+	case VIDEO:
+		id = format.video_codec;
 		break;
 	default:
-		return CodecDesc();
+		return FFmpegCodec();
 	}
 
-	return CodecDesc(ff_format_desc_get_default_name(formatDesc, codecType),
-			 id);
+	return FFmpegCodec{format.GetDefaultName(codecType), nullptr, id};
 }
 
 #define INVALID_BITRATE 10000
@@ -754,9 +708,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	//Apply button disabled until change.
 	EnableApplyButton(false);
 
-	// Initialize libff library
-	ff_init();
-
 	installEventFilter(new SettingsEventFilter());
 
 	LoadColorRanges();
@@ -1140,25 +1091,21 @@ void OBSBasicSettings::LoadFormats()
 #define FORMAT_STR(str) QTStr("Basic.Settings.Output.Format." str)
 	ui->advOutFFFormat->blockSignals(true);
 
-	formats.reset(ff_format_supported());
-	const ff_format_desc *format = formats.get();
+	formats = GetSupportedFormats();
 
-	while (format != nullptr) {
-		bool audio = ff_format_desc_has_audio(format);
-		bool video = ff_format_desc_has_video(format);
-		FormatDesc formatDesc(ff_format_desc_name(format),
-				      ff_format_desc_mime_type(format), format);
+	for (auto &format : formats) {
+		bool audio = format.HasAudio();
+		bool video = format.HasVideo();
+
 		if (audio || video) {
-			QString itemText(ff_format_desc_name(format));
+			QString itemText(format.name);
 			if (audio ^ video)
 				itemText += QString(" (%1)").arg(
 					audio ? AUDIO_STR : VIDEO_STR);
 
 			ui->advOutFFFormat->addItem(
-				itemText, QVariant::fromValue(formatDesc));
+				itemText, QVariant::fromValue(format));
 		}
-
-		format = ff_format_desc_next(format);
 	}
 
 	ui->advOutFFFormat->model()->sort(0);
@@ -1187,26 +1134,22 @@ void OBSBasicSettings::LoadFormats()
 #undef FORMAT_STR
 }
 
-static void AddCodec(QComboBox *combo, const ff_codec_desc *codec_desc)
+static void AddCodec(QComboBox *combo, const FFmpegCodec &codec)
 {
-	QString itemText(ff_codec_desc_name(codec_desc));
-	if (ff_codec_desc_is_alias(codec_desc))
-		itemText += QString(" (%1)").arg(
-			ff_codec_desc_base_name(codec_desc));
+	QString itemText(codec.name);
+	if (codec.alias)
+		itemText += QString(" (%1)").arg(codec.base_name);
 
-	CodecDesc cd(ff_codec_desc_name(codec_desc),
-		     ff_codec_desc_id(codec_desc));
-
-	combo->addItem(itemText, QVariant::fromValue(cd));
+	combo->addItem(itemText, QVariant::fromValue(codec));
 }
 
 #define AV_ENCODER_DEFAULT_STR \
 	QTStr("Basic.Settings.Output.Adv.FFmpeg.AVEncoderDefault")
 
-static void AddDefaultCodec(QComboBox *combo, const ff_format_desc *formatDesc,
-			    ff_codec_type codecType)
+static void AddDefaultCodec(QComboBox *combo, const FFmpegFormat &format,
+			    FFmpegCodecType codecType)
 {
-	CodecDesc cd = GetDefaultCodecDesc(formatDesc, codecType);
+	FFmpegCodec cd = GetDefaultCodec(format, codecType);
 
 	int existingIdx = FindEncoder(combo, cd.name, cd.id);
 	if (existingIdx >= 0)
@@ -1219,48 +1162,41 @@ static void AddDefaultCodec(QComboBox *combo, const ff_format_desc *formatDesc,
 #define AV_ENCODER_DISABLE_STR \
 	QTStr("Basic.Settings.Output.Adv.FFmpeg.AVEncoderDisable")
 
-void OBSBasicSettings::ReloadCodecs(const ff_format_desc *formatDesc)
+void OBSBasicSettings::ReloadCodecs(const FFmpegFormat &format)
 {
 	ui->advOutFFAEncoder->blockSignals(true);
 	ui->advOutFFVEncoder->blockSignals(true);
 	ui->advOutFFAEncoder->clear();
 	ui->advOutFFVEncoder->clear();
 
-	if (formatDesc == nullptr)
-		return;
+	bool ignore_compatibility = ui->advOutFFIgnoreCompat->isChecked();
+	vector<FFmpegCodec> supportedCodecs =
+		GetFormatCodecs(format, ignore_compatibility);
 
-	bool ignore_compatability = ui->advOutFFIgnoreCompat->isChecked();
-	OBSFFCodecDesc codecDescs(
-		ff_codec_supported(formatDesc, ignore_compatability));
-
-	const ff_codec_desc *codec = codecDescs.get();
-
-	while (codec != nullptr) {
-		switch (ff_codec_desc_type(codec)) {
-		case FF_CODEC_AUDIO:
+	for (auto &codec : supportedCodecs) {
+		switch (codec.type) {
+		case AUDIO:
 			AddCodec(ui->advOutFFAEncoder, codec);
 			break;
-		case FF_CODEC_VIDEO:
+		case VIDEO:
 			AddCodec(ui->advOutFFVEncoder, codec);
 			break;
 		default:
 			break;
 		}
-
-		codec = ff_codec_desc_next(codec);
 	}
 
-	if (ff_format_desc_has_audio(formatDesc))
-		AddDefaultCodec(ui->advOutFFAEncoder, formatDesc,
-				FF_CODEC_AUDIO);
-	if (ff_format_desc_has_video(formatDesc))
-		AddDefaultCodec(ui->advOutFFVEncoder, formatDesc,
-				FF_CODEC_VIDEO);
+	if (format.HasAudio())
+		AddDefaultCodec(ui->advOutFFAEncoder, format,
+				FFmpegCodecType::AUDIO);
+	if (format.HasVideo())
+		AddDefaultCodec(ui->advOutFFVEncoder, format,
+				FFmpegCodecType::VIDEO);
 
 	ui->advOutFFAEncoder->model()->sort(0);
 	ui->advOutFFVEncoder->model()->sort(0);
 
-	QVariant disable = QVariant::fromValue(CodecDesc());
+	QVariant disable = QVariant::fromValue(FFmpegCodec());
 
 	ui->advOutFFAEncoder->insertItem(0, AV_ENCODER_DISABLE_STR, disable);
 	ui->advOutFFVEncoder->insertItem(0, AV_ENCODER_DISABLE_STR, disable);
@@ -2302,12 +2238,12 @@ void OBSBasicSettings::LoadAdvOutputRecordingEncoderProperties()
 static void SelectFormat(QComboBox *combo, const char *name,
 			 const char *mimeType)
 {
-	FormatDesc formatDesc(name, mimeType);
+	FFmpegFormat format{name, mimeType};
 
 	for (int i = 0; i < combo->count(); i++) {
 		QVariant v = combo->itemData(i);
 		if (!v.isNull()) {
-			if (formatDesc == v.value<FormatDesc>()) {
+			if (format == v.value<FFmpegFormat>()) {
 				combo->setCurrentIndex(i);
 				return;
 			}
@@ -2523,14 +2459,14 @@ void OBSBasicSettings::LoadOutputSettings()
 	loading = false;
 }
 
-void OBSBasicSettings::SetAdvOutputFFmpegEnablement(ff_codec_type encoderType,
+void OBSBasicSettings::SetAdvOutputFFmpegEnablement(FFmpegCodecType encoderType,
 						    bool enabled,
 						    bool enableEncoder)
 {
 	bool rescale = config_get_bool(main->Config(), "AdvOut", "FFRescale");
 
 	switch (encoderType) {
-	case FF_CODEC_VIDEO:
+	case FFmpegCodecType::VIDEO:
 		ui->advOutFFVBitrate->setEnabled(enabled);
 		ui->advOutFFVGOPSize->setEnabled(enabled);
 		ui->advOutFFUseRescale->setEnabled(enabled);
@@ -2538,7 +2474,7 @@ void OBSBasicSettings::SetAdvOutputFFmpegEnablement(ff_codec_type encoderType,
 		ui->advOutFFVEncoder->setEnabled(enabled || enableEncoder);
 		ui->advOutFFVCfg->setEnabled(enabled);
 		break;
-	case FF_CODEC_AUDIO:
+	case FFmpegCodecType::AUDIO:
 		ui->advOutFFABitrate->setEnabled(enabled);
 		ui->advOutFFAEncoder->setEnabled(enabled || enableEncoder);
 		ui->advOutFFACfg->setEnabled(enabled);
@@ -3766,13 +3702,13 @@ void OBSBasicSettings::SaveFormat(QComboBox *combo)
 {
 	QVariant v = combo->currentData();
 	if (!v.isNull()) {
-		FormatDesc desc = v.value<FormatDesc>();
+		auto format = v.value<FFmpegFormat>();
 		config_set_string(main->Config(), "AdvOut", "FFFormat",
-				  desc.name);
+				  format.name);
 		config_set_string(main->Config(), "AdvOut", "FFFormatMimeType",
-				  desc.mimeType);
+				  format.mime_type);
 
-		const char *ext = ff_format_desc_extensions(desc.desc);
+		const char *ext = format.extensions;
 		string extStr = ext ? ext : "";
 
 		char *comma = strchr(&extStr[0], ',');
@@ -3795,9 +3731,10 @@ void OBSBasicSettings::SaveEncoder(QComboBox *combo, const char *section,
 				   const char *value)
 {
 	QVariant v = combo->currentData();
-	CodecDesc cd;
+	FFmpegCodec cd{};
 	if (!v.isNull())
-		cd = v.value<CodecDesc>();
+		cd = v.value<FFmpegCodec>();
+
 	config_set_int(main->Config(), section,
 		       QT_TO_UTF8(QString("%1Id").arg(value)), cd.id);
 	if (cd.id != 0)
@@ -4437,27 +4374,29 @@ void OBSBasicSettings::on_advOutFFFormat_currentIndexChanged(int idx)
 	const QVariant itemDataVariant = ui->advOutFFFormat->itemData(idx);
 
 	if (!itemDataVariant.isNull()) {
-		FormatDesc desc = itemDataVariant.value<FormatDesc>();
-		SetAdvOutputFFmpegEnablement(
-			FF_CODEC_AUDIO, ff_format_desc_has_audio(desc.desc),
-			false);
-		SetAdvOutputFFmpegEnablement(
-			FF_CODEC_VIDEO, ff_format_desc_has_video(desc.desc),
-			false);
-		ReloadCodecs(desc.desc);
-		ui->advOutFFFormatDesc->setText(
-			ff_format_desc_long_name(desc.desc));
+		auto format = itemDataVariant.value<FFmpegFormat>();
+		SetAdvOutputFFmpegEnablement(FFmpegCodecType::AUDIO,
+					     format.HasAudio(), false);
+		SetAdvOutputFFmpegEnablement(FFmpegCodecType::VIDEO,
+					     format.HasVideo(), false);
+		ReloadCodecs(format);
 
-		CodecDesc defaultAudioCodecDesc =
-			GetDefaultCodecDesc(desc.desc, FF_CODEC_AUDIO);
-		CodecDesc defaultVideoCodecDesc =
-			GetDefaultCodecDesc(desc.desc, FF_CODEC_VIDEO);
+		ui->advOutFFFormatDesc->setText(format.long_name);
+
+		FFmpegCodec defaultAudioCodecDesc =
+			GetDefaultCodec(format, AUDIO);
+		FFmpegCodec defaultVideoCodecDesc =
+			GetDefaultCodec(format, VIDEO);
 		SelectEncoder(ui->advOutFFAEncoder, defaultAudioCodecDesc.name,
 			      defaultAudioCodecDesc.id);
 		SelectEncoder(ui->advOutFFVEncoder, defaultVideoCodecDesc.name,
 			      defaultVideoCodecDesc.id);
 	} else {
-		ReloadCodecs(nullptr);
+		ui->advOutFFAEncoder->blockSignals(true);
+		ui->advOutFFVEncoder->blockSignals(true);
+		ui->advOutFFAEncoder->clear();
+		ui->advOutFFVEncoder->clear();
+
 		ui->advOutFFFormatDesc->setText(DEFAULT_CONTAINER_STR);
 	}
 }
@@ -4466,10 +4405,9 @@ void OBSBasicSettings::on_advOutFFAEncoder_currentIndexChanged(int idx)
 {
 	const QVariant itemDataVariant = ui->advOutFFAEncoder->itemData(idx);
 	if (!itemDataVariant.isNull()) {
-		CodecDesc desc = itemDataVariant.value<CodecDesc>();
+		auto desc = itemDataVariant.value<FFmpegCodec>();
 		SetAdvOutputFFmpegEnablement(
-			FF_CODEC_AUDIO, desc.id != 0 || desc.name != nullptr,
-			true);
+			AUDIO, desc.id != 0 || desc.name != nullptr, true);
 	}
 }
 
@@ -4477,10 +4415,9 @@ void OBSBasicSettings::on_advOutFFVEncoder_currentIndexChanged(int idx)
 {
 	const QVariant itemDataVariant = ui->advOutFFVEncoder->itemData(idx);
 	if (!itemDataVariant.isNull()) {
-		CodecDesc desc = itemDataVariant.value<CodecDesc>();
+		auto desc = itemDataVariant.value<FFmpegCodec>();
 		SetAdvOutputFFmpegEnablement(
-			FF_CODEC_VIDEO, desc.id != 0 || desc.name != nullptr,
-			true);
+			VIDEO, desc.id != 0 || desc.name != nullptr, true);
 	}
 }
 
@@ -4994,51 +4931,6 @@ void OBSBasicSettings::AdvOutSplitFileChanged()
 	ui->advOutSplitFileSize->setVisible(splitFileType == 1);
 }
 
-static const unordered_set<string> builtin_codecs = {
-	"h264", "hevc", "av1",       "prores",    "aac",      "opus",
-	"alac", "flac", "pcm_s16le", "pcm_s24le", "pcm_f32le"};
-
-static const unordered_map<string, unordered_set<string>> codec_compat = {
-	// Technically our muxer supports HEVC and AV1 as well, but nothing else does
-	{"flv", {"h264", "aac"}},
-	{"mpegts", {"h264", "hevc", "aac", "opus"}},
-	{"hls",
-	 {"h264", "hevc", "aac"}}, // Also using MPEG-TS, but no Opus support
-	{"mp4",
-	 {"h264", "hevc", "av1", "aac", "opus", "alac", "flac", "pcm_s16le",
-	  "pcm_s24le", "pcm_f32le"}},
-	{"fragmented_mp4",
-	 {"h264", "hevc", "av1", "aac", "opus", "alac", "flac", "pcm_s16le",
-	  "pcm_s24le", "pcm_f32le"}},
-	{"mov",
-	 {"h264", "hevc", "prores", "aac", "alac", "pcm_s16le", "pcm_s24le",
-	  "pcm_f32le"}},
-	{"fragmented_mov",
-	 {"h264", "hevc", "prores", "aac", "alac", "pcm_s16le", "pcm_s24le",
-	  "pcm_f32le"}},
-	// MKV supports everything
-	{"mkv", {}},
-};
-
-static bool ContainerSupportsCodec(const string &container, const string &codec)
-{
-	auto iter = codec_compat.find(container);
-	if (iter == codec_compat.end())
-		return false;
-
-	auto codecs = iter->second;
-	// Assume everything is supported
-	if (codecs.empty())
-		return true;
-
-	// PCM in MP4 is only supported in FFmpeg > 6.0
-	if ((container == "mp4" || container == "fragmented_mp4") &&
-	    !ff_supports_pcm_in_mp4() && codec.find("pcm_") != string::npos)
-		return false;
-
-	return codecs.count(codec) > 0;
-}
-
 static void DisableIncompatibleCodecs(QComboBox *cbox, const QString &format,
 				      const QString &formatName,
 				      const QString &streamEncoder)
@@ -5063,10 +4955,10 @@ static void DisableIncompatibleCodecs(QComboBox *cbox, const QString &format,
 		bool is_compatible =
 			ContainerSupportsCodec(format.toStdString(), codec);
 		/* Fall back to FFmpeg check if codec not one of the built-in ones. */
-		if (!is_compatible && !builtin_codecs.count(codec)) {
+		if (!is_compatible && !IsBuiltinCodec(codec)) {
 			string ext = GetFormatExt(QT_TO_UTF8(format));
 			is_compatible =
-				ff_format_codec_compatible(codec, ext.c_str());
+				FFCodecAndFormatCompatible(codec, ext.c_str());
 		}
 
 		QStandardItemModel *model =

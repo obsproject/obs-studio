@@ -24,11 +24,10 @@
 #include <memory>
 #include <string>
 
-#include <libff/ff-util.h>
-
 #include <obs.hpp>
 
 #include "auth-base.hpp"
+#include "ffmpeg-utils.hpp"
 
 class OBSBasic;
 class QAbstractButton;
@@ -68,20 +67,6 @@ public slots:
 		blockSignals(blocked);
 	}
 };
-
-class OBSFFDeleter {
-public:
-	void operator()(const ff_format_desc *format)
-	{
-		ff_format_desc_free(format);
-	}
-	void operator()(const ff_codec_desc *codec)
-	{
-		ff_codec_desc_free(codec);
-	}
-};
-using OBSFFCodecDesc = std::unique_ptr<const ff_codec_desc, OBSFFDeleter>;
-using OBSFFFormatDesc = std::unique_ptr<const ff_format_desc, OBSFFDeleter>;
 
 class OBSBasicSettings : public QDialog {
 	Q_OBJECT
@@ -135,7 +120,7 @@ private:
 	static constexpr uint32_t ENCODER_HIDE_FLAGS =
 		(OBS_ENCODER_CAP_DEPRECATED | OBS_ENCODER_CAP_INTERNAL);
 
-	OBSFFFormatDesc formats;
+	std::vector<FFmpegFormat> formats;
 
 	OBSPropertiesView *streamProperties = nullptr;
 	OBSPropertiesView *streamEncoderProps = nullptr;
@@ -239,7 +224,7 @@ private:
 	void LoadColorSpaces();
 	void LoadColorFormats();
 	void LoadFormats();
-	void ReloadCodecs(const ff_format_desc *formatDesc);
+	void ReloadCodecs(const FFmpegFormat &format);
 
 	void UpdateColorFormatSpaceWarning();
 
@@ -309,7 +294,7 @@ private:
 	void LoadAdvOutputRecordingEncoderProperties();
 	void LoadAdvOutputFFmpegSettings();
 	void LoadAdvOutputAudioSettings();
-	void SetAdvOutputFFmpegEnablement(ff_codec_type encoderType,
+	void SetAdvOutputFFmpegEnablement(FFmpegCodecType encoderType,
 					  bool enabled,
 					  bool enableEncode = false);
 

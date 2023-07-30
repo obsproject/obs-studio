@@ -16,10 +16,6 @@ endif()
 find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil avformat)
 find_package(CURL REQUIRED)
 
-if(NOT TARGET OBS::libff-util)
-  add_subdirectory("${CMAKE_SOURCE_DIR}/deps/libff" "${CMAKE_BINARY_DIR}/deps/libff")
-endif()
-
 if(NOT TARGET OBS::json11)
   add_subdirectory("${CMAKE_SOURCE_DIR}/deps/json11" "${CMAKE_BINARY_DIR}/deps/json11")
 endif()
@@ -35,7 +31,6 @@ target_link_libraries(
           FFmpeg::avformat
           OBS::libobs
           OBS::frontend-api
-          OBS::libff-util
           OBS::json11)
 
 include(cmake/ui-qt.cmake)
@@ -71,6 +66,8 @@ target_sources(
           auth-oauth.cpp
           auth-oauth.hpp
           display-helpers.hpp
+          ffmpeg-utils.cpp
+          ffmpeg-utils.hpp
           multiview.cpp
           multiview.hpp
           obf.c
