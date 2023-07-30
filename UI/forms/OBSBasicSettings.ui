@@ -2256,22 +2256,6 @@
                      </widget>
                     </item>
                     <item>
-                     <layout class="QVBoxLayout" name="simpleOutInfoLayout">
-                      <property name="leftMargin">
-                       <number>10</number>
-                      </property>
-                      <property name="topMargin">
-                       <number>10</number>
-                      </property>
-                      <property name="rightMargin">
-                       <number>10</number>
-                      </property>
-                      <property name="bottomMargin">
-                       <number>10</number>
-                      </property>
-                     </layout>
-                    </item>
-                    <item>
                      <widget class="QFrame" name="simpleOutputContainer">
                       <property name="minimumSize">
                        <size>
@@ -2311,6 +2295,22 @@
                    </layout>
                   </widget>
                  </widget>
+                </item>
+                <item>
+                 <layout class="QVBoxLayout" name="simpleOutInfoLayout">
+                  <property name="leftMargin">
+                   <number>10</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>10</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>10</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>10</number>
+                  </property>
+                 </layout>
                 </item>
                </layout>
               </widget>
