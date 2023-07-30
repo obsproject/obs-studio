@@ -811,12 +811,21 @@ static void process_video_sync(obs_pipewire_stream *obs_pw_stream)
 
 	if (buffer->datas[0].type == SPA_DATA_DmaBuf) {
 		uint32_t planes = buffer->n_datas;
-		uint32_t offsets[planes];
-		uint32_t strides[planes];
-		uint64_t modifiers[planes];
-		int fds[planes];
+		DARRAY(uint32_t) offsets;
+		DARRAY(uint32_t) strides;
+		DARRAY(uint64_t) modifiers;
+		DARRAY(int) fds;
 		bool use_modifiers;
 		bool corrupt = false;
+
+		da_init(offsets);
+		da_reserve(offsets, planes);
+		da_init(strides);
+		da_reserve(strides, planes);
+		da_init(modifiers);
+		da_reserve(modifiers, planes);
+		da_init(fds);
+		da_reserve(fds, planes);
 
 #ifdef DEBUG_PIPEWIRE
 		blog(LOG_DEBUG,
@@ -838,11 +847,13 @@ static void process_video_sync(obs_pipewire_stream *obs_pw_stream)
 		}
 
 		for (uint32_t plane = 0; plane < planes; plane++) {
-			fds[plane] = buffer->datas[plane].fd;
-			offsets[plane] = buffer->datas[plane].chunk->offset;
-			strides[plane] = buffer->datas[plane].chunk->stride;
-			modifiers[plane] =
-				obs_pw_stream->format.info.raw.modifier;
+			da_push_back(fds, &buffer->datas[plane].fd);
+			da_push_back(offsets,
+				     &buffer->datas[plane].chunk->offset);
+			da_push_back(strides,
+				     &buffer->datas[plane].chunk->stride);
+			da_push_back(modifiers,
+				     &obs_pw_stream->format.info.raw.modifier);
 			corrupt |= (buffer->datas[plane].chunk->flags &
 				    SPA_CHUNK_FLAG_CORRUPTED) > 0;
 		}
@@ -850,6 +861,12 @@ static void process_video_sync(obs_pipewire_stream *obs_pw_stream)
 		if (corrupt) {
 			blog(LOG_DEBUG,
 			     "[pipewire] buffer contains corrupted data");
+
+			da_free(offsets);
+			da_free(strides);
+			da_free(modifiers);
+			da_free(fds);
+
 			goto read_metadata;
 		}
 
@@ -860,8 +877,14 @@ static void process_video_sync(obs_pipewire_stream *obs_pw_stream)
 		obs_pw_stream->texture = gs_texture_create_from_dmabuf(
 			obs_pw_stream->format.info.raw.size.width,
 			obs_pw_stream->format.info.raw.size.height,
-			format_data.drm_format, GS_BGRX, planes, fds, strides,
-			offsets, use_modifiers ? modifiers : NULL);
+			format_data.drm_format, GS_BGRX, planes, fds.array,
+			strides.array, offsets.array,
+			use_modifiers ? modifiers.array : NULL);
+
+		da_free(offsets);
+		da_free(strides);
+		da_free(modifiers);
+		da_free(fds);
 
 		if (obs_pw_stream->texture == NULL) {
 			remove_modifier_from_format(
