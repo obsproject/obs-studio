@@ -7585,17 +7585,22 @@ void OBSBasic::AutoRemux(QString input, bool no_show)
 		config, isSimpleMode ? "SimpleOutput" : "AdvOut", "RecFormat2");
 
 	bool audio_is_pcm = strncmp(aCodecName, "pcm", 3) == 0;
+
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(60, 5, 100)
 	/* FFmpeg <= 6.0 cannot remux AV1+PCM into any supported format. */
-	if (audio_is_pcm && !ff_supports_pcm_in_mp4() &&
-	    strcmp(vCodecName, "av1") == 0)
+	if (audio_is_pcm && strcmp(vCodecName, "av1") == 0)
 		return;
+#endif
 
 	/* Retain original container for fMP4/fMOV */
 	if (strncmp(format, "fragmented", 10) == 0) {
 		output += "remuxed." + suffix;
-	} else if (strcmp(vCodecName, "prores") == 0 ||
-		   (audio_is_pcm && !ff_supports_pcm_in_mp4())) {
+	} else if (strcmp(vCodecName, "prores") == 0) {
 		output += "mov";
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(60, 5, 100)
+	} else if (audio_is_pcm) {
+		output += "mov";
+#endif
 	} else {
 		output += "mp4";
 	}

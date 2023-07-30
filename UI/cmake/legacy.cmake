@@ -150,10 +150,10 @@ target_sources(
           ui-validation.hpp
           multiview.cpp
           multiview.hpp
+          ffmpeg-utils.cpp
+          ffmpeg-utils.hpp
           ${CMAKE_SOURCE_DIR}/deps/json11/json11.cpp
           ${CMAKE_SOURCE_DIR}/deps/json11/json11.hpp
-          ${CMAKE_SOURCE_DIR}/deps/libff/libff/ff-util.c
-          ${CMAKE_SOURCE_DIR}/deps/libff/libff/ff-util.h
           ${CMAKE_CURRENT_BINARY_DIR}/ui-config.h)
 
 target_sources(
@@ -289,7 +289,7 @@ target_sources(obs PRIVATE importers/importers.cpp importers/importers.hpp impor
 
 target_compile_features(obs PRIVATE cxx_std_17)
 
-target_include_directories(obs PRIVATE ${CMAKE_SOURCE_DIR}/deps/json11 ${CMAKE_SOURCE_DIR}/deps/libff)
+target_include_directories(obs PRIVATE ${CMAKE_SOURCE_DIR}/deps/json11)
 
 target_link_libraries(obs PRIVATE CURL::libcurl FFmpeg::avcodec FFmpeg::avutil FFmpeg::avformat OBS::libobs
                                   OBS::frontend-api)
@@ -374,9 +374,6 @@ if(OS_WINDOWS)
   if(MSVC)
     target_link_options(obs PRIVATE "LINKER:/IGNORE:4098" "LINKER:/IGNORE:4099")
     target_link_libraries(obs PRIVATE OBS::w32-pthreads)
-
-    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}../deps/libff/libff/ff-util.c PROPERTIES COMPILE_FLAGS
-                                                                                                    -Dinline=__inline)
   endif()
 
   if(CMAKE_SIZEOF_VOID_P EQUAL 4)
