@@ -1,4 +1,4 @@
-name: Push to master and release branches
+name: Push
 run-name: ${{ github.ref_name }} push run 🚀
 on:
   push:
@@ -16,21 +16,21 @@ concurrency:
   cancel-in-progress: ${{ fromJSON(github.ref_type == 'tag') }}
 jobs:
   check-format:
-    name: Check Formatting 🔍
+    name: Format 🔍
     if: github.ref_name == 'master'
     uses: ./.github/workflows/check-format.yaml
     permissions:
       contents: read
 
   build-project:
-    name: Build Project 🧱
+    name: Build 🧱
     uses: ./.github/workflows/build-project.yaml
     secrets: inherit
     permissions:
       contents: read
 
   compatibility-validation:
-    name: Validate Compatibility Data 🕵️
+    name: Validate Compatibility 🕵️
     if: github.ref_name == 'master'
     runs-on: ubuntu-22.04
     permissions:
@@ -54,7 +54,7 @@ jobs:
           repositorySecret: ${{ github.token }}
 
   services-validation:
-    name: Validate Service Data 🕵️
+    name: Validate Services 🕵️
     if: github.ref_name == 'master'
     runs-on: ubuntu-22.04
     permissions:

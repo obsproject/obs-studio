@@ -41,7 +41,7 @@ jobs:
           esac
 
   flatpak-publish:
-    name: Publish to Flathub 📦
+    name: Flathub 📦
     needs: check-tag
     if: github.repository_owner == 'obsproject' && fromJSON(needs.check-tag.outputs.validTag)
     runs-on: ubuntu-22.04

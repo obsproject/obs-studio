@@ -3,7 +3,7 @@ on:
   workflow_call:
 jobs:
   check-event:
-    name: Check GitHub Event Data 📡
+    name: Event Data 🔎
     runs-on: ubuntu-22.04
     defaults:
       run:
@@ -58,7 +58,7 @@ jobs:
           echo "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
 
   macos-build:
-    name: Build for macOS 🍏
+    name: macOS 🍏
     runs-on: macos-13
     needs: check-event
     strategy:
@@ -173,7 +173,7 @@ jobs:
           key: ${{ runner.os }}-ccache-${{ matrix.target }}-${{ needs.check-event.outputs.config }}
 
   ubuntu-build:
-    name: Build for Ubuntu 🐧
+    name: Ubuntu 🐧
     runs-on: ubuntu-22.04
     needs: check-event
     defaults:
@@ -242,7 +242,7 @@ jobs:
           key: ${{ runner.os }}-ccache-x86_64-${{ needs.check-event.outputs.config }}
 
   flatpak-build:
-    name: Build Application for Flatpak 📦
+    name: Flatpak 📦
     runs-on: ubuntu-22.04
     needs: check-event
     defaults:
@@ -297,7 +297,7 @@ jobs:
           cache-key: ${{ steps.setup.outputs.cacheKey }}
 
   windows-build:
-    name: Build for Windows 🪟
+    name: Windows 🪟
     runs-on: windows-2022
     needs: check-event
     defaults:
