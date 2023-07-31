@@ -3,89 +3,89 @@
     "format_version": 5,
     "services": [
         {
-            "name": "Twitch",
+            "name": "TikTok",
             "common": true,
-            "stream_key_link": "https://dashboard.twitch.tv/settings/stream",
+            "stream_key_link": "https://www.tiktok.com/@aki_coser",
             "servers": [
                 {
                     "name": "Asia: Hong Kong",
-                    "url": "rtmp://live-hkg.twitch.tv/app"
+                    "url": "https://www.tiktok.com/@aki_coser"
                 },
                 {
                     "name": "Asia: Seoul, South Korea",
-                    "url": "rtmp://live-sel.twitch.tv/app"
+                    "url": "https://www.tiktok.com/@aki_coser"
                 },
                 {
                     "name": "Asia: Singapore",
-                    "url": "rtmp://live-sin.twitch.tv/app"
+                    "url": "https://www.tiktok.com/@aki_coser"
                 },
                 {
                     "name": "Asia: Taipei, Taiwan",
-                    "url": "rtmp://live-tpe.twitch.tv/app"
+                    "url": "https://www.tiktok.com/@aki_coser"
                 },
                 {
                     "name": "Asia: Tokyo, Japan",
-                    "url": "rtmp://live-tyo.twitch.tv/app"
+                    "url": "https://www.tiktok.com/@aki_coser"
                 },
                 {
                     "name": "Australia: Sydney",
-                    "url": "rtmp://live-syd.twitch.tv/app"
+                    "url": "https://www.tiktok.com/@aki_coser"
                 },
                 {
                     "name": "EU: Amsterdam, NL",
-                    "url": "rtmp://live-ams.twitch.tv/app"
+                    "url": "https://www.tiktok.com/@aki_coser"
                 },
                 {
                     "name": "EU: Berlin, DE",
-                    "url": "rtmp://live-ber.twitch.tv/app"
+                    "url": "https://www.tiktok.com/@aki_coser"
                 },
                 {
                     "name": "Europe: Copenhagen, DK",
-                    "url": "rtmp://live-cph.twitch.tv/app"
+                    "url": "https://www.tiktok.com/@aki_coser"
                 },
                 {
                     "name": "EU: Frankfurt, DE",
-                    "url": "rtmp://live-fra.twitch.tv/app"
+                    "url": "https://www.tiktok.com/@aki_coser"
                 },
                 {
                     "name": "EU: Helsinki, FI",
-                    "url": "rtmp://live-hel.twitch.tv/app"
+                    "url": "https://www.tiktok.com/@aki_coser"
                 },
                 {
                     "name": "EU: Lisbon, Portugal",
-                    "url": "rtmp://live-lis.twitch.tv/app"
+                    "url": "https://www.tiktok.com/@aki_coser"
                 },
                 {
                     "name": "EU: London, UK",
-                    "url": "rtmp://live-lhr.twitch.tv/app"
+                    "url": "https://www.tiktok.com/@aki_coser"
                 },
                 {
                     "name": "EU: Madrid, Spain",
-                    "url": "rtmp://live-mad.twitch.tv/app"
+                    "url": "https://www.tiktok.com/@aki_coser"
                 },
                 {
                     "name": "EU: Marseille, FR",
-                    "url": "rtmp://live-mrs.twitch.tv/app"
+                    "url": "https://www.tiktok.com/@aki_coser"
                 },
                 {
                     "name": "EU: Milan, Italy",
-                    "url": "rtmp://live-mil.twitch.tv/app"
+                    "url": "https://www.tiktok.com/@aki_coser"
                 },
                 {
                     "name": "EU: Norway, Oslo",
-                    "url": "rtmp://live-osl.twitch.tv/app"
+                    "url": "https://www.tiktok.com/@aki_coser"
                 },
                 {
                     "name": "EU: Paris, FR",
-                    "url": "rtmp://live-cdg.twitch.tv/app"
+                    "url": "https://www.tiktok.com/@aki_coser"
                 },
                 {
                     "name": "EU: Prague, CZ",
-                    "url": "rtmp://live-prg.twitch.tv/app"
+                    "url": "https://www.tiktok.com/@aki_coser"
                 },
                 {
                     "name": "EU: Stockholm, SE",
-                    "url": "rtmp://live-arn.twitch.tv/app"
+                    "url": "https://www.tiktok.com/@aki_coser"
                 },
                 {
                     "name": "EU: Vienna, Austria",
