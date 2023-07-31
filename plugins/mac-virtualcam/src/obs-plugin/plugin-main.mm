@@ -369,27 +369,25 @@ static bool virtualcam_output_start(void *data)
                                            .mScope = kCMIOObjectPropertyScopeGlobal,
                                            .mElement = kCMIOObjectPropertyElementMain};
         CMIOObjectGetPropertyDataSize(kCMIOObjectSystemObject, &address, 0, NULL, &size);
-        size_t num_devices = size / sizeof(CMIOObjectID);
-        CMIOObjectID cmio_devices[num_devices];
-        CMIOObjectGetPropertyData(kCMIOObjectSystemObject, &address, 0, NULL, size, &used, &cmio_devices);
+        NSMutableData *cmioDevices = [NSMutableData dataWithLength:size];
+        void *device_data = [cmioDevices mutableBytes];
+        CMIOObjectGetPropertyData(kCMIOObjectSystemObject, &address, 0, NULL, size, &used, device_data);
 
         vcam->deviceID = 0;
-
         NSString *OBSVirtualCamUUID = [[NSBundle bundleWithIdentifier:@"com.obsproject.mac-virtualcam"]
             objectForInfoDictionaryKey:@"OBSCameraDeviceUUID"];
-        for (size_t i = 0; i < num_devices; i++) {
-            CMIOObjectID cmio_device = cmio_devices[i];
+        for (size_t i = 0; i < (used * sizeof(CMIOObjectID)); i++) {
+            CMIOObjectID cmioDevice;
+            [cmioDevices getBytes:&cmioDevice range:NSMakeRange(i * sizeof(CMIOObjectID), sizeof(CMIOObjectID))];
+
             address.mSelector = kCMIODevicePropertyDeviceUID;
-
             UInt32 device_name_size;
-            CMIOObjectGetPropertyDataSize(cmio_device, &address, 0, NULL, &device_name_size);
-
+            CMIOObjectGetPropertyDataSize(cmioDevice, &address, 0, NULL, &device_name_size);
             CFStringRef uid;
-            CMIOObjectGetPropertyData(cmio_device, &address, 0, NULL, device_name_size, &used, &uid);
-
+            CMIOObjectGetPropertyData(cmioDevice, &address, 0, NULL, device_name_size, &used, &uid);
             const char *uid_string = CFStringGetCStringPtr(uid, kCFStringEncodingUTF8);
             if (uid_string && strcmp(uid_string, OBSVirtualCamUUID.UTF8String) == 0) {
-                vcam->deviceID = cmio_device;
+                vcam->deviceID = cmioDevice;
                 CFRelease(uid);
                 break;
             } else {
@@ -404,11 +402,15 @@ static bool virtualcam_output_start(void *data)
 
         address.mSelector = kCMIODevicePropertyStreams;
         CMIOObjectGetPropertyDataSize(vcam->deviceID, &address, 0, NULL, &size);
-        CMIOStreamID stream_ids[(size / sizeof(CMIOStreamID))];
+        NSMutableData *streamIds = [NSMutableData dataWithLength:size];
+        void *stream_data = [streamIds mutableBytes];
+        CMIOObjectGetPropertyData(vcam->deviceID, &address, 0, NULL, size, &used, stream_data);
 
-        CMIOObjectGetPropertyData(vcam->deviceID, &address, 0, NULL, size, &used, &stream_ids);
-
-        vcam->streamID = stream_ids[1];
+        if (used < (2 * sizeof(CMIOStreamID))) {
+            obs_output_set_last_error(vcam->output, obs_module_text("Error.SystemExtension.CameraNotStarted"));
+            return false;
+        }
+        [streamIds getBytes:&vcam->streamID range:NSMakeRange(sizeof(CMIOStreamID), sizeof(CMIOStreamID))];
 
         CMIOStreamCopyBufferQueue(
             vcam->streamID, [](CMIOStreamID, void *, void *) {
