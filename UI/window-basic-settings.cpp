@@ -1136,9 +1136,11 @@ void OBSBasicSettings::LoadFormats()
 
 static void AddCodec(QComboBox *combo, const FFmpegCodec &codec)
 {
-	QString itemText(codec.name);
-	if (codec.alias)
-		itemText += QString(" (%1)").arg(codec.base_name);
+	QString itemText;
+	if (codec.long_name)
+		itemText = QString("%1 - %2").arg(codec.name, codec.long_name);
+	else
+		itemText = codec.name;
 
 	combo->addItem(itemText, QVariant::fromValue(codec));
 }

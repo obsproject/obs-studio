@@ -95,9 +95,6 @@ struct FFmpegCodec {
 	const char *long_name;
 	int id;
 
-	bool alias;
-	const char *base_name;
-
 	FFmpegCodecType type;
 
 	FFmpegCodec() = default;
