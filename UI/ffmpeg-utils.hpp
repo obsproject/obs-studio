@@ -58,6 +58,23 @@ struct FFmpegFormat {
 
 	FFmpegFormat() = default;
 
+	FFmpegFormat(const char *name, const char *mime_type)
+		: name(name),
+		  mime_type(mime_type)
+	{
+	}
+
+	FFmpegFormat(const AVOutputFormat *av_format)
+		: name(av_format->name),
+		  long_name(av_format->long_name),
+		  mime_type(av_format->mime_type),
+		  extensions(av_format->extensions),
+		  audio_codec(av_format->audio_codec),
+		  video_codec(av_format->video_codec),
+		  codec_tags(av_format->codec_tag)
+	{
+	}
+
 	const char *GetDefaultName(FFmpegCodecType codec_type) const;
 
 	bool HasAudio() const { return audio_codec != AV_CODEC_ID_NONE; }
@@ -84,6 +101,30 @@ struct FFmpegCodec {
 	FFmpegCodecType type;
 
 	FFmpegCodec() = default;
+
+	FFmpegCodec(const char *name, int id, FFmpegCodecType type = UNKNOWN)
+		: name(name),
+		  id(id),
+		  type(type)
+	{
+	}
+
+	FFmpegCodec(const AVCodec *codec)
+		: name(codec->name),
+		  long_name(codec->long_name),
+		  id(codec->id)
+	{
+		switch (codec->type) {
+		case AVMEDIA_TYPE_AUDIO:
+			type = AUDIO;
+			break;
+		case AVMEDIA_TYPE_VIDEO:
+			type = VIDEO;
+			break;
+		default:
+			type = UNKNOWN;
+		}
+	}
 
 	bool operator==(const FFmpegCodec &codec) const
 	{

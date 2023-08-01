@@ -26,71 +26,25 @@ extern "C" {
 
 using namespace std;
 
-static void GetCodecsForId(const FFmpegFormat &format,
-			   vector<FFmpegCodec> &codecs, enum AVCodecID id,
-			   bool ignore_compaibility)
-{
-
-	const AVCodec *codec = nullptr;
-	void *i = 0;
-
-	while ((codec = av_codec_iterate(&i)) != nullptr) {
-		if (codec->id != id)
-			continue;
-		// Not an encoding codec
-		if (!av_codec_is_encoder(codec))
-			continue;
-		// Skip if not supported and compatibility check not disabled
-		if (!ignore_compaibility &&
-		    !av_codec_get_tag(format.codec_tags, codec->id)) {
-			continue;
-		}
-
-		FFmpegCodec d{codec->name, codec->long_name, codec->id};
-
-		const AVCodec *base_codec = avcodec_find_encoder(codec->id);
-		if (strcmp(base_codec->name, codec->name) != 0) {
-			d.alias = true;
-			d.base_name = base_codec->name;
-		}
-
-		switch (codec->type) {
-		case AVMEDIA_TYPE_AUDIO:
-			d.type = FFmpegCodecType::AUDIO;
-			break;
-		case AVMEDIA_TYPE_VIDEO:
-			d.type = FFmpegCodecType::VIDEO;
-			break;
-		default:
-			d.type = FFmpegCodecType::UNKNOWN;
-		}
-
-		codecs.push_back(d);
-	}
-}
-
-static std::vector<const AVCodecDescriptor *> GetCodecDescriptors()
-{
-	std::vector<const AVCodecDescriptor *> codecs;
-
-	const AVCodecDescriptor *desc = nullptr;
-	while ((desc = avcodec_descriptor_next(desc)) != nullptr)
-		codecs.push_back(desc);
-
-	return codecs;
-}
-
 vector<FFmpegCodec> GetFormatCodecs(const FFmpegFormat &format,
 				    bool ignore_compatibility)
 {
 	vector<FFmpegCodec> codecs;
-	auto codecDescriptors = GetCodecDescriptors();
+	const AVCodec *codec;
+	void *i = 0;
 
-	if (codecDescriptors.empty())
-		return codecs;
+	while ((codec = av_codec_iterate(&i)) != nullptr) {
+		// Not an encoding codec
+		if (!av_codec_is_encoder(codec))
+			continue;
+		// Skip if not supported and compatibility check not disabled
+		if (!ignore_compatibility &&
+		    !av_codec_get_tag(format.codec_tags, codec->id)) {
+			continue;
+		}
 
-	for (const AVCodecDescriptor *codec : codecDescriptors)
-		GetCodecsForId(format, codecs, codec->id, ignore_compatibility);
+		codecs.emplace_back(codec);
+	}
 
 	return codecs;
 }
@@ -120,15 +74,7 @@ vector<FFmpegFormat> GetSupportedFormats()
 		if (is_output_device(output_format->priv_class))
 			continue;
 
-		formats.push_back({
-			output_format->name,
-			output_format->long_name,
-			output_format->mime_type,
-			output_format->extensions,
-			output_format->audio_codec,
-			output_format->video_codec,
-			output_format->codec_tag,
-		});
+		formats.emplace_back(output_format);
 	}
 
 	return formats;
