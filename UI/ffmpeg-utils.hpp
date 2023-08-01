@@ -47,6 +47,8 @@ static bool strequal(const char *a, const char *b)
 	return strcmp(a, b) == 0;
 }
 
+struct FFmpegCodec;
+
 struct FFmpegFormat {
 	const char *name;
 	const char *long_name;
@@ -60,7 +62,12 @@ struct FFmpegFormat {
 
 	FFmpegFormat(const char *name, const char *mime_type)
 		: name(name),
-		  mime_type(mime_type)
+		  long_name(nullptr),
+		  mime_type(mime_type),
+		  extensions(nullptr),
+		  audio_codec(AV_CODEC_ID_NONE),
+		  video_codec(AV_CODEC_ID_NONE),
+		  codec_tags(nullptr)
 	{
 	}
 
@@ -75,7 +82,7 @@ struct FFmpegFormat {
 	{
 	}
 
-	const char *GetDefaultName(FFmpegCodecType codec_type) const;
+	FFmpegCodec GetDefaultEncoder(FFmpegCodecType codec_type) const;
 
 	bool HasAudio() const { return audio_codec != AV_CODEC_ID_NONE; }
 	bool HasVideo() const { return video_codec != AV_CODEC_ID_NONE; }
@@ -101,6 +108,7 @@ struct FFmpegCodec {
 
 	FFmpegCodec(const char *name, int id, FFmpegCodecType type = UNKNOWN)
 		: name(name),
+		  long_name(nullptr),
 		  id(id),
 		  type(type)
 	{

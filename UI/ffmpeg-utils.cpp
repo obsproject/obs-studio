@@ -80,29 +80,19 @@ vector<FFmpegFormat> GetSupportedFormats()
 	return formats;
 }
 
-static const char *get_encoder_name(const char *format_name,
-				    enum AVCodecID codec_id)
+FFmpegCodec FFmpegFormat::GetDefaultEncoder(FFmpegCodecType codec_type) const
 {
-	const AVCodec *codec = avcodec_find_encoder(codec_id);
-	if (codec == nullptr && codec_id == AV_CODEC_ID_NONE)
-		return nullptr;
-	else if (codec == nullptr)
-		return format_name;
-	else
-		return codec->name;
-}
+	const AVCodecID codec_id = codec_type == VIDEO ? video_codec
+						       : audio_codec;
+	if (codec_type == UNKNOWN || codec_id == AV_CODEC_ID_NONE)
+		return {};
 
-const char *FFmpegFormat::GetDefaultName(FFmpegCodecType codec_type) const
-{
+	if (auto codec = avcodec_find_encoder(codec_id))
+		return {codec};
 
-	switch (codec_type) {
-	case FFmpegCodecType::AUDIO:
-		return get_encoder_name(name, audio_codec);
-	case FFmpegCodecType::VIDEO:
-		return get_encoder_name(name, video_codec);
-	default:
-		return nullptr;
-	}
+	/* Fall back to using the format name as the encoder,
+	 * this works for some formats such as FLV. */
+	return FFmpegCodec{name, codec_id, codec_type};
 }
 
 bool FFCodecAndFormatCompatible(const char *codec, const char *format)

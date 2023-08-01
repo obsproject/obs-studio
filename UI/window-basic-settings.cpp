@@ -199,24 +199,6 @@ static int FindEncoder(QComboBox *combo, const char *name, int id)
 	return -1;
 }
 
-static FFmpegCodec GetDefaultCodec(const FFmpegFormat &format,
-				   FFmpegCodecType codecType)
-{
-	int id = 0;
-	switch (codecType) {
-	case AUDIO:
-		id = format.audio_codec;
-		break;
-	case VIDEO:
-		id = format.video_codec;
-		break;
-	default:
-		return FFmpegCodec();
-	}
-
-	return FFmpegCodec{format.GetDefaultName(codecType), nullptr, id};
-}
-
 #define INVALID_BITRATE 10000
 static int FindClosestAvailableAudioBitrate(QComboBox *box, int bitrate)
 {
@@ -1151,14 +1133,23 @@ static void AddCodec(QComboBox *combo, const FFmpegCodec &codec)
 static void AddDefaultCodec(QComboBox *combo, const FFmpegFormat &format,
 			    FFmpegCodecType codecType)
 {
-	FFmpegCodec cd = GetDefaultCodec(format, codecType);
+	FFmpegCodec codec = format.GetDefaultEncoder(codecType);
 
-	int existingIdx = FindEncoder(combo, cd.name, cd.id);
+	int existingIdx = FindEncoder(combo, codec.name, codec.id);
 	if (existingIdx >= 0)
 		combo->removeItem(existingIdx);
 
-	combo->addItem(QString("%1 (%2)").arg(cd.name, AV_ENCODER_DEFAULT_STR),
-		       QVariant::fromValue(cd));
+	QString itemText;
+	if (codec.long_name) {
+		itemText = QString("%1 - %2 (%3)")
+				   .arg(codec.name, codec.long_name,
+					AV_ENCODER_DEFAULT_STR);
+	} else {
+		itemText = QString("%1 (%2)").arg(codec.name,
+						  AV_ENCODER_DEFAULT_STR);
+	}
+
+	combo->addItem(itemText, QVariant::fromValue(codec));
 }
 
 #define AV_ENCODER_DISABLE_STR \
@@ -4386,9 +4377,9 @@ void OBSBasicSettings::on_advOutFFFormat_currentIndexChanged(int idx)
 		ui->advOutFFFormatDesc->setText(format.long_name);
 
 		FFmpegCodec defaultAudioCodecDesc =
-			GetDefaultCodec(format, AUDIO);
+			format.GetDefaultEncoder(FFmpegCodecType::AUDIO);
 		FFmpegCodec defaultVideoCodecDesc =
-			GetDefaultCodec(format, VIDEO);
+			format.GetDefaultEncoder(FFmpegCodecType::VIDEO);
 		SelectEncoder(ui->advOutFFAEncoder, defaultAudioCodecDesc.name,
 			      defaultAudioCodecDesc.id);
 		SelectEncoder(ui->advOutFFVEncoder, defaultVideoCodecDesc.name,
