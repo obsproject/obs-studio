@@ -49,10 +49,10 @@ vector<FFmpegCodec> GetFormatCodecs(const FFmpegFormat &format,
 	return codecs;
 }
 
-static inline bool is_output_device(const AVClass *avclass)
+static bool is_output_device(const AVClass *avclass)
 {
 	if (!avclass)
-		return 0;
+		return false;
 
 	switch (avclass->category) {
 	case AV_CLASS_CATEGORY_DEVICE_VIDEO_OUTPUT:
@@ -115,7 +115,7 @@ bool FFCodecAndFormatCompatible(const char *codec, const char *format)
 #else
 	const AVOutputFormat *output_format;
 #endif
-	output_format = av_guess_format(format, NULL, NULL);
+	output_format = av_guess_format(format, nullptr, nullptr);
 	if (!output_format)
 		return false;
 
