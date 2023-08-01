@@ -2238,7 +2238,7 @@ void OBSBasicSettings::LoadAdvOutputRecordingEncoderProperties()
 static void SelectFormat(QComboBox *combo, const char *name,
 			 const char *mimeType)
 {
-	FFmpegFormat format{name, mimeType};
+	FFmpegFormat format{name, nullptr, mimeType};
 
 	for (int i = 0; i < combo->count(); i++) {
 		QVariant v = combo->itemData(i);
