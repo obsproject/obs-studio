@@ -186,7 +186,7 @@ static inline QString GetComboData(QComboBox *combo)
 
 static int FindEncoder(QComboBox *combo, const char *name, int id)
 {
-	FFmpegCodec codec{name, nullptr, id};
+	FFmpegCodec codec{name, id};
 
 	for (int i = 0; i < combo->count(); i++) {
 		QVariant v = combo->itemData(i);
@@ -2238,7 +2238,7 @@ void OBSBasicSettings::LoadAdvOutputRecordingEncoderProperties()
 static void SelectFormat(QComboBox *combo, const char *name,
 			 const char *mimeType)
 {
-	FFmpegFormat format{name, nullptr, mimeType};
+	FFmpegFormat format{name, mimeType};
 
 	for (int i = 0; i < combo->count(); i++) {
 		QVariant v = combo->itemData(i);
