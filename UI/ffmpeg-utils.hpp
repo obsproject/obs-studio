@@ -28,6 +28,25 @@ extern "C" {
 
 enum FFmpegCodecType { AUDIO, VIDEO, UNKNOWN };
 
+/* This needs to handle a few special cases due to how the format is used in the UI:
+ * - strequal(nullptr, "") must be true
+ * - strequal("", nullptr) must be true
+ * - strequal(nullptr, nullptr) must be true
+ */
+static bool strequal(const char *a, const char *b)
+{
+	if (!a && !b)
+		return true;
+	if (!a && *b == 0)
+		return true;
+	if (!b && *a == 0)
+		return true;
+	if (!a || !b)
+		return false;
+
+	return strcmp(a, b) == 0;
+}
+
 struct FFmpegFormat {
 	const char *name;
 	const char *long_name;
@@ -46,9 +65,10 @@ struct FFmpegFormat {
 
 	bool operator==(const FFmpegFormat &format) const
 	{
-		if (strcmp(name, format.name) != 0)
+		if (!strequal(name, format.name))
 			return false;
-		return strcmp(mime_type, format.mime_type) != 0;
+
+		return strequal(mime_type, format.mime_type);
 	}
 };
 Q_DECLARE_METATYPE(FFmpegFormat)
@@ -69,7 +89,8 @@ struct FFmpegCodec {
 	{
 		if (id != codec.id)
 			return false;
-		return strcmp(name, codec.name) != 0;
+
+		return strequal(name, codec.name);
 	}
 };
 Q_DECLARE_METATYPE(FFmpegCodec)
