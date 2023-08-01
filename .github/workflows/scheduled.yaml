@@ -79,7 +79,7 @@ jobs:
           echo '::endgroup::'
 
   build-project:
-    name: Build Project 🧱
+    name: Build 🧱
     uses: ./.github/workflows/build-project.yaml
     needs: cache-cleanup
     secrets: inherit

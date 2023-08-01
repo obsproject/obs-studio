@@ -1,4 +1,4 @@
-name: Pull Request
+name: Pull
 run-name: ${{ github.event.pull_request.title }} pull request run 🚀
 on:
   workflow_dispatch:
@@ -14,20 +14,20 @@ concurrency:
   cancel-in-progress: true
 jobs:
   check-format:
-    name: Check Formatting 🔍
+    name: Format 🔍
     uses: ./.github/workflows/check-format.yaml
     permissions:
       contents: read
 
   build-project:
-    name: Build Project 🧱
+    name: Build 🧱
     uses: ./.github/workflows/build-project.yaml
     secrets: inherit
     permissions:
       contents: read
 
   compatibility-validation:
-    name: Validate Compatibility Data 🕵️
+    name: Validate Compatibility 🕵️
     if: github.base_ref == 'master'
     runs-on: ubuntu-22.04
     permissions:
@@ -49,7 +49,7 @@ jobs:
         uses: ./.github/actions/compatibility-validator
 
   services-validation:
-    name: Validate Services Data 🕵️
+    name: Validate Services 🕵️
     if: github.base_ref == 'master'
     runs-on: ubuntu-22.04
     permissions:

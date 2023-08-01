@@ -32,7 +32,7 @@ permissions:
   contents: write
 jobs:
   services-validation:
-    name: Check Services Configuration Files 🕵️
+    name: Validate Services 🕵️
     if: github.repository_owner == 'obsproject' && inputs.job == 'services'
     runs-on: macos-13
     permissions:
