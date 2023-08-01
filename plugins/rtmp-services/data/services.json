@@ -2762,6 +2762,10 @@
             "stream_key_link": "https://masterstream.ir/managestreams.php",
             "servers": [
                 {
+                    "name": "Auto (Iran Servers)",
+                    "url": "rtmp://auto.masterstream.ir/live"
+                },
+                {
                     "name": "Iran Server 1",
                     "url": "rtmp://live1.masterstream.ir/live"
                 },
