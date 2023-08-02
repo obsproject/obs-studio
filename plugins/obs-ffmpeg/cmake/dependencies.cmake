@@ -21,7 +21,7 @@ if(NOT TARGET OBS::media-playback)
 endif()
 
 if(NOT TARGET OBS::opts-parser)
-  add_subdirectory("${CMAKE_SOURCE_DIR}/deps/opts-parser" "${CMAKE_BINARY_DIR}/deps/opts-parser")
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/opts-parser" "${CMAKE_BINARY_DIR}/shared/opts-parser")
 endif()
 
 if(OS_WINDOWS)
