@@ -4,7 +4,6 @@ if(OS_WINDOWS)
 endif()
 
 add_subdirectory(blake2)
-add_subdirectory(file-updater)
 add_subdirectory(glad)
 add_subdirectory(happy-eyeballs)
 add_subdirectory(libcaption)
