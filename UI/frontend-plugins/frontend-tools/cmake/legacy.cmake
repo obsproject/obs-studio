@@ -53,6 +53,8 @@ if(OS_POSIX AND NOT OS_MACOS)
   target_link_libraries(frontend-tools PRIVATE Qt::GuiPrivate)
 endif()
 
+add_subdirectory("${CMAKE_SOURCE_DIR}/shared/obs-scripting" "${CMAKE_BINARY_DIR}/shared/obs-scripting")
+
 if(ENABLE_SCRIPTING AND TARGET OBS::scripting)
   target_compile_definitions(frontend-tools PRIVATE ENABLE_SCRIPTING)
 

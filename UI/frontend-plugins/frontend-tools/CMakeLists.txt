@@ -51,7 +51,7 @@ target_link_libraries(
           $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:X11::X11>
           $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:Qt::GuiPrivate>)
 
-add_subdirectory("${CMAKE_SOURCE_DIR}/deps/obs-scripting" "${CMAKE_BINARY_DIR}/deps/obs-scripting")
+add_subdirectory("${CMAKE_SOURCE_DIR}/shared/obs-scripting" "${CMAKE_BINARY_DIR}/shared/obs-scripting")
 
 if(ENABLE_SCRIPTING AND TARGET OBS::scripting)
   target_sources(frontend-tools PRIVATE scripts.cpp scripts.hpp)
