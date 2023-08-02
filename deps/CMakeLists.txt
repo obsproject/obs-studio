@@ -5,7 +5,6 @@ endif()
 
 add_subdirectory(blake2)
 add_subdirectory(glad)
-add_subdirectory(happy-eyeballs)
 add_subdirectory(libcaption)
 add_subdirectory(media-playback)
 add_subdirectory(obs-scripting)
