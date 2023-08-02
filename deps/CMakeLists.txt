@@ -1,5 +1,4 @@
 if(OS_WINDOWS)
-  add_subdirectory(ipc-util)
   add_subdirectory(w32-pthreads)
 endif()
 

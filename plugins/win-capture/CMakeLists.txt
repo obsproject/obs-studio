@@ -27,7 +27,7 @@ mark_as_advanced(COMPAT_URL)
 # cmake-format: on
 
 if(NOT TARGET OBS::ipc-util)
-  add_subdirectory("${CMAKE_SOURCE_DIR}/deps/ipc-util" "${CMAKE_BINARY_DIR}/deps/ipc-util")
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/ipc-util" "${CMAKE_BINARY_DIR}/shared/ipc-util")
 endif()
 
 if(NOT TARGET OBS::file-updater)
