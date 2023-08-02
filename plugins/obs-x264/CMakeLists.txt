@@ -5,7 +5,7 @@ legacy_check()
 find_package(Libx264 REQUIRED)
 
 if(NOT TARGET OBS::opts-parser)
-  add_subdirectory("${CMAKE_SOURCE_DIR}/deps/opts-parser" "${CMAKE_BINARY_DIR}/deps/opts-parser")
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/opts-parser" "${CMAKE_BINARY_DIR}/shared/opts-parser")
 endif()
 
 add_library(obs-x264 MODULE)

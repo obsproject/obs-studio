@@ -6,6 +6,10 @@ add_library(obs-x264 MODULE)
 add_library(OBS::x264 ALIAS obs-x264)
 add_executable(obs-x264-test)
 
+if(NOT TARGET OBS::opts-parser)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/opts-parser" "${CMAKE_BINARY_DIR}/shared/opts-parser")
+endif()
+
 target_sources(obs-x264-test PRIVATE obs-x264-test.c)
 
 target_link_libraries(obs-x264-test PRIVATE OBS::opts-parser)
