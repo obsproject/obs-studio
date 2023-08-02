@@ -13,6 +13,10 @@ add_library(OBS::capture ALIAS win-capture)
 
 find_package(Jansson 2.5 REQUIRED)
 
+if(NOT TARGET OBS::file-updater)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/file-updater" "${CMAKE_BINARY_DIR}/shared/file-updater")
+endif()
+
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/compat-config.h.in ${CMAKE_BINARY_DIR}/config/compat-config.h)
 
 target_sources(

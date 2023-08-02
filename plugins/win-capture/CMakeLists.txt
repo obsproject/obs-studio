@@ -31,7 +31,7 @@ if(NOT TARGET OBS::ipc-util)
 endif()
 
 if(NOT TARGET OBS::file-updater)
-  add_subdirectory("${CMAKE_SOURCE_DIR}/deps/file-updater" "${CMAKE_BINARY_DIR}/deps/file-updater")
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/file-updater" "${CMAKE_BINARY_DIR}/shared/file-updater")
 endif()
 
 find_package(jansson REQUIRED)

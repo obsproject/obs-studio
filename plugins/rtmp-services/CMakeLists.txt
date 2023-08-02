@@ -10,7 +10,7 @@ set(RTMP_SERVICES_URL
 mark_as_advanced(RTMP_SERVICES_URL)
 
 if(NOT TARGET OBS::file-updater)
-  add_subdirectory("${CMAKE_SOURCE_DIR}/deps/file-updater" "${CMAKE_BINARY_DIR}/deps/file-updater")
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/file-updater" "${CMAKE_BINARY_DIR}/shared/file-updater")
 endif()
 
 find_package(jansson REQUIRED)
