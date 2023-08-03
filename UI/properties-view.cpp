@@ -101,7 +101,7 @@ void OBSPropertiesView::ReloadProperties()
 	}
 
 	uint32_t flags = obs_properties_get_flags(properties.get());
-	deferUpdate = (flags & OBS_PROPERTIES_DEFER_UPDATE) != 0;
+	deferUpdate = enableDefer && (flags & OBS_PROPERTIES_DEFER_UPDATE) != 0;
 
 	RefreshProperties();
 }
