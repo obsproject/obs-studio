@@ -10,13 +10,14 @@ if(ENABLE_WHATSNEW AND TARGET OBS::browser-panels)
 
     target_sources(
       obs-studio
-      PRIVATE update/crypto-helpers-mbedtls.cpp
+      PRIVATE # cmake-format: sortable
+              update/crypto-helpers-mbedtls.cpp
               update/crypto-helpers.hpp
+              update/models/whatsnew.hpp
               update/shared-update.cpp
               update/shared-update.hpp
               update/update-helpers.cpp
-              update/update-helpers.hpp
-              update/models/whatsnew.hpp)
+              update/update-helpers.hpp)
   endif()
 
   target_enable_feature(obs-studio "What's New panel" WHATSNEW_ENABLED)

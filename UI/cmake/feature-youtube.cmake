@@ -4,7 +4,8 @@ if(YOUTUBE_CLIENTID
    AND YOUTUBE_SECRET_HASH MATCHES "(0|[a-fA-F0-9]+)")
   target_sources(
     obs-studio
-    PRIVATE auth-youtube.cpp
+    PRIVATE # cmake-format: sortable
+            auth-youtube.cpp
             auth-youtube.hpp
             window-dock-youtube-app.cpp
             window-dock-youtube-app.hpp
