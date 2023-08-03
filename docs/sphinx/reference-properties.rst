@@ -51,9 +51,7 @@ General Functions
                  - OBS_PROPERTIES_DEFER_UPDATE - A hint that tells the
                    front-end to defers updating the settings until the
                    user has finished editing all properties rather than
-                   immediately updating any settings. Currently only
-                   works for properties of input and transition sources,
-                   this flag is a no-op for other properties at this time.
+                   immediately updating any settings
 
 ---------------------
 
