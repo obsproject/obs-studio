@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16...3.25)
+cmake_minimum_required(VERSION 3.22...3.25)
 
 add_library(opts-parser INTERFACE)
 add_library(OBS::opts-parser ALIAS opts-parser)
