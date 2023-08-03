@@ -18,8 +18,8 @@
         {
             "type": "git",
             "url": "https://gitlab.com/AOMediaCodec/SVT-AV1.git",
-            "tag": "v1.4.1",
-            "commit": "018276d714ce65d9b586f6205ee016cbd8d5425d"
+            "tag": "v1.6.0",
+            "commit": "08c18ba0768ed3dbbff0903adc326fb3a7549bd9"
         }
     ]
 }
