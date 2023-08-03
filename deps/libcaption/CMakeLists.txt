@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16...3.25)
+cmake_minimum_required(VERSION 3.22...3.25)
 
 add_library(caption STATIC EXCLUDE_FROM_ALL )
 add_library(OBS::caption ALIAS caption)

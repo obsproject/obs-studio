@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16...3.25)
+cmake_minimum_required(VERSION 3.22...3.25)
 
 add_library(json11 INTERFACE)
 add_library(OBS::json11 ALIAS json11)
