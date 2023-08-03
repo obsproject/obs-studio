@@ -22,17 +22,17 @@ if (( _loglevel < 1 )) _hdiutil_flags='-quiet'
 trap "hdiutil detach ${_hdiutil_flags} /Volumes/${output_name}; rm temp.dmg; log_group; return 2" ERR
 
 hdiutil create ${_hdiutil_flags} \
-    -volname "${volume_name}" \
-    -srcfolder ${source} \
-    -ov \
-    -fs APFS \
-    -format UDRW \
-    temp.dmg
+  -volname "${volume_name}" \
+  -srcfolder ${source} \
+  -ov \
+  -fs APFS \
+  -format UDRW \
+  temp.dmg
 hdiutil attach ${_hdiutil_flags} \
-    -noverify \
-    -readwrite \
-    -mountpoint /Volumes/${output_name} \
-    temp.dmg
+  -noverify \
+  -readwrite \
+  -mountpoint /Volumes/${output_name} \
+  temp.dmg
 
 log_info "Waiting 2 seconds to ensure mounted volume is available..."
 sleep 2
@@ -49,30 +49,30 @@ rm -rf -- /Volumes/${output_name}/.fseventsd(N)
 log_info "Converting disk image..."
 
 if (( ${+CI} )) {
-    local _status=0
-    for i ({1..5}) {
-        hdiutil detach ${_hdiutil_flags} /Volumes/${output_name} && _status=0 || _status=1
+  local _status=0
+  for i ({1..5}) {
+    hdiutil detach ${_hdiutil_flags} /Volumes/${output_name} && _status=0 || _status=1
 
-        if (( status )) {
-            log_warning "Unable to eject disk image (attempt #${i}). Retrying."
-        } else {
-            break
-        }
+    if (( _status )) {
+      log_warning "Unable to eject disk image (attempt #${i}). Retrying."
+    } else {
+      break
     }
+  }
 
-    if (( status )) {
-        log_error "Unable to eject disk image after 5 attempts. Aborting"
-        log_group
-        return 2
-    }
+  if (( _status )) {
+    log_error "Unable to eject disk image after 5 attempts. Aborting"
+    log_group
+    return 2
+  }
 } else {
-    hdiutil detach ${_hdiutil_flags} /Volumes/${output_name}
+  hdiutil detach ${_hdiutil_flags} /Volumes/${output_name}
 }
 
 hdiutil convert ${_hdiutil_flags} \
-    -format ULMO \
-    -ov \
-    -o ${output_name}.dmg temp.dmg
+  -format ULMO \
+  -ov \
+  -o ${output_name}.dmg temp.dmg
 
 rm temp.dmg
 
