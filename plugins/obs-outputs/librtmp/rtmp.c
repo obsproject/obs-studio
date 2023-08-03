@@ -315,13 +315,13 @@ RTMP_TLS_LoadCerts(RTMP *r) {
     CertFreeCertificateContext(pCertContext);
     CertCloseStore(hCertStore, 0);
 #elif defined(__APPLE__)
-    CFTypeRef keys[4] = {kSecClass, kSecMatchLimit, kSecReturnAttributes,
-                 kSecReturnData};
+    CFTypeRef keys[6] = {kSecClass, kSecMatchLimit, kSecReturnAttributes,
+                 kSecReturnData, kSecMatchTrustedOnly, kSecMatchValidOnDate};
 
-    CFTypeRef values[4] = {kSecClassCertificate, kSecMatchLimitAll,
-                   kCFBooleanFalse, kCFBooleanTrue};
+    CFTypeRef values[6] = {kSecClassCertificate, kSecMatchLimitAll,
+                   kCFBooleanFalse, kCFBooleanTrue, kCFBooleanTrue, kCFNull};
     CFDictionaryRef query =
-        CFDictionaryCreate(kCFAllocatorDefault, keys, values, 4,
+        CFDictionaryCreate(kCFAllocatorDefault, keys, values, 6,
                    &kCFTypeDictionaryKeyCallBacks,
                    &kCFTypeDictionaryValueCallBacks);
 
