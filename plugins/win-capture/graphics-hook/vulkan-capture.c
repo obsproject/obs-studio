@@ -1826,25 +1826,22 @@ static VkResult VKAPI_CALL
 OBS_CreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
 		    const VkAllocationCallbacks *pAllocator, VkImageView *pView)
 {
+	bool from_swap_chain = false;
+
 	struct vk_data *const data = get_device_data(device);
-	const PFN_vkCreateImageView func = data->funcs.CreateImageView;
-	VkResult result = func(device, pCreateInfo, pAllocator, pView);
-	if (data->valid && (result == VK_SUCCESS)) {
+	if (data->valid) {
 		struct vk_swap_data *swap = swap_walk_begin(data);
 
 		while (swap) {
-			bool match = false;
 			for (uint32_t i = 0, count = swap->image_count;
 			     i < count; ++i) {
-				match = swap->swap_images[i] ==
-					pCreateInfo->image;
-				if (match)
+				from_swap_chain = swap->swap_images[i] ==
+						  pCreateInfo->image;
+				if (from_swap_chain)
 					break;
 			}
-			if (match) {
-				add_swap_view_data(data, *pView, pAllocator);
+			if (from_swap_chain)
 				break;
-			}
 
 			swap = swap_walk_next(swap);
 		}
@@ -1852,6 +1849,27 @@ OBS_CreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
 		swap_walk_end(data);
 	}
 
+	if (from_swap_chain) {
+		const void *pCurrent = pCreateInfo->pNext;
+		while (pCurrent) {
+			VkBaseInStructure baseIn;
+			memcpy(&baseIn, pCurrent, sizeof(baseIn));
+			if (baseIn.sType ==
+			    VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO) {
+				((VkImageViewUsageCreateInfo *)pCurrent)
+					->usage |=
+					VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+				break;
+			}
+
+			pCurrent = baseIn.pNext;
+		}
+	}
+
+	const PFN_vkCreateImageView func = data->funcs.CreateImageView;
+	VkResult result = func(device, pCreateInfo, pAllocator, pView);
+	if ((result == VK_SUCCESS) && from_swap_chain)
+		add_swap_view_data(data, *pView, pAllocator);
 	return result;
 }
 
