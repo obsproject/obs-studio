@@ -2192,6 +2192,12 @@ void OBSBasic::OBSInit()
 	}
 #endif
 
+#ifdef YOUTUBE_ENABLED
+	/* setup YouTube app dock */
+	if (YouTubeAppDock::IsYTServiceSelected())
+		youtubeAppDock = new YouTubeAppDock();
+#endif
+
 	const char *dockStateStr = config_get_string(
 		App()->GlobalConfig(), "BasicWindow", "DockState");
 
@@ -2335,12 +2341,6 @@ void OBSBasic::OBSInit()
 
 	UpdatePreviewProgramIndicators();
 	OnFirstLoad();
-
-#ifdef YOUTUBE_ENABLED
-	/* setup YouTube app dock */
-	if (YouTubeAppDock::IsYTServiceSelected())
-		youtubeAppDock = new YouTubeAppDock();
-#endif
 
 	if (!hideWindowOnStart)
 		activateWindow();
