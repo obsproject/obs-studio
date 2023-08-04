@@ -160,6 +160,7 @@ static bool dstr_from_cfstring(struct dstr *str, CFStringRef ref)
 struct obs_hotkeys_platform {
     volatile long refs;
     CFTypeRef monitor;
+    CFTypeRef local_monitor;
     bool is_key_down[OBS_KEY_LAST_VALUE];
     TISInputSourceRef tis;
     CFDataRef layout_data;
@@ -674,6 +675,16 @@ static bool init_hotkeys_platform(obs_hotkeys_platform_t **plat_)
         [NSEvent addGlobalMonitorForEventsMatchingMask:NSEventMaskKeyDown | NSEventMaskKeyUp | NSEventMaskFlagsChanged
                                                handler:handler];
 
+    NSEvent *_Nullable (^local_handler)(NSEvent *event) = ^NSEvent *_Nullable(NSEvent *event)
+    {
+        handle_monitor_event(plat, event);
+
+        return event;
+    };
+    plat->local_monitor = (__bridge CFTypeRef)
+        [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskKeyDown | NSEventMaskKeyUp | NSEventMaskFlagsChanged
+                                              handler:local_handler];
+
     plat->tis = TISCopyCurrentKeyboardLayoutInputSource();
     plat->layout_data = (CFDataRef) TISGetInputSourceProperty(plat->tis, kTISPropertyUnicodeKeyLayoutData);
 
@@ -699,8 +710,13 @@ static inline void free_hotkeys_platform(obs_hotkeys_platform_t *plat)
         return;
 
     if (plat->monitor) {
-        CFRelease(plat->monitor);
+        [NSEvent removeMonitor:(__bridge id _Nonnull)(plat->monitor)];
         plat->monitor = NULL;
+    }
+
+    if (plat->local_monitor) {
+        [NSEvent removeMonitor:(__bridge id _Nonnull)(plat->local_monitor)];
+        plat->local_monitor = NULL;
     }
 
     if (plat->tis) {
