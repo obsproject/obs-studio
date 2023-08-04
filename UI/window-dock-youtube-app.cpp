@@ -128,15 +128,6 @@ void YouTubeAppDock::AddYouTubeAppDock(const QString &title)
 	if (IsYTServiceSelected()) {
 		const std::string url = InitYTUserUrl();
 		CreateBrowserWidget(url);
-
-		// reload panel layout
-		const char *dockStateStr = config_get_string(
-			App()->GlobalConfig(), "BasicWindow", "DockState");
-		if (dockStateStr) {
-			QByteArray dockState = QByteArray::fromBase64(
-				QByteArray(dockStateStr));
-			OBSBasic::Get()->restoreState(dockState);
-		}
 	} else {
 		this->setVisible(false);
 		actionYTAppDock->setVisible(false);

@@ -174,7 +174,12 @@ void YoutubeAuth::LoadUI()
 
 	if (firstLoad) {
 		chat->setVisible(true);
-	} else {
+	}
+#endif
+
+	main->NewYouTubeAppDock();
+
+	if (!firstLoad) {
 		const char *dockStateStr = config_get_string(
 			main->Config(), service(), "DockState");
 		QByteArray dockState =
@@ -183,7 +188,6 @@ void YoutubeAuth::LoadUI()
 		if (main->isVisible() || !main->isMaximized())
 			main->restoreState(dockState);
 	}
-#endif
 
 	uiLoaded = true;
 }
