@@ -4247,6 +4247,7 @@ void OBSBasicSettings::on_listWidget_itemSelectionChanged()
 
 void OBSBasicSettings::UpdateYouTubeAppDockSettings()
 {
+#if defined(BROWSER_ENABLED) && defined(YOUTUBE_ENABLED)
 	if (cef) {
 		std::string service = ui->service->currentText().toStdString();
 		if (IsYouTubeService(service)) {
@@ -4262,6 +4263,7 @@ void OBSBasicSettings::UpdateYouTubeAppDockSettings()
 			main->DeleteYouTubeAppDock();
 		}
 	}
+#endif
 }
 
 void OBSBasicSettings::on_buttonBox_clicked(QAbstractButton *button)
@@ -4275,9 +4277,7 @@ void OBSBasicSettings::on_buttonBox_clicked(QAbstractButton *button)
 
 		SaveSettings();
 
-#ifdef YOUTUBE_ENABLED
 		UpdateYouTubeAppDockSettings();
-#endif
 		ClearChanged();
 	}
 
