@@ -50,6 +50,9 @@ YouTubeAppDock::~YouTubeAppDock()
 
 bool YouTubeAppDock::IsYTServiceSelected()
 {
+	if (!cef)
+		return false;
+
 	obs_service_t *service_obj = OBSBasic::Get()->GetService();
 	OBSDataAutoRelease settings = obs_service_get_settings(service_obj);
 	const char *service = obs_data_get_string(settings, "service");
@@ -430,6 +433,9 @@ YoutubeApiWrappers *YouTubeAppDock::GetYTApi()
 
 void YouTubeAppDock::CleanupYouTubeUrls()
 {
+	if (!cef)
+		return;
+
 	static constexpr const char *YOUTUBE_VIDEO_URL =
 		"://studio.youtube.com/video/";
 	// remove legacy YouTube Browser Docks (once)

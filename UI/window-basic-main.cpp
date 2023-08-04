@@ -8493,6 +8493,9 @@ YouTubeAppDock *OBSBasic::GetYouTubeAppDock()
 
 void OBSBasic::NewYouTubeAppDock()
 {
+	if (!cef)
+		return;
+
 	if (youtubeAppDock)
 		delete youtubeAppDock;
 	youtubeAppDock = new YouTubeAppDock();
@@ -8500,6 +8503,9 @@ void OBSBasic::NewYouTubeAppDock()
 
 void OBSBasic::DeleteYouTubeAppDock()
 {
+	if (!cef)
+		return;
+
 	if (youtubeAppDock)
 		delete youtubeAppDock;
 	youtubeAppDock = nullptr;

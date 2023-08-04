@@ -4245,18 +4245,9 @@ void OBSBasicSettings::on_listWidget_itemSelectionChanged()
 	pageIndex = row;
 }
 
-void OBSBasicSettings::on_buttonBox_clicked(QAbstractButton *button)
+void OBSBasicSettings::UpdateYouTubeAppDockSettings()
 {
-	QDialogButtonBox::ButtonRole val = ui->buttonBox->buttonRole(button);
-
-	if (val == QDialogButtonBox::ApplyRole ||
-	    val == QDialogButtonBox::AcceptRole) {
-		if (!QueryAllowedToClose())
-			return;
-
-		SaveSettings();
-
-#ifdef YOUTUBE_ENABLED
+	if (cef) {
 		std::string service = ui->service->currentText().toStdString();
 		if (IsYouTubeService(service)) {
 			if (!main->GetYouTubeAppDock()) {
@@ -4270,6 +4261,22 @@ void OBSBasicSettings::on_buttonBox_clicked(QAbstractButton *button)
 			}
 			main->DeleteYouTubeAppDock();
 		}
+	}
+}
+
+void OBSBasicSettings::on_buttonBox_clicked(QAbstractButton *button)
+{
+	QDialogButtonBox::ButtonRole val = ui->buttonBox->buttonRole(button);
+
+	if (val == QDialogButtonBox::ApplyRole ||
+	    val == QDialogButtonBox::AcceptRole) {
+		if (!QueryAllowedToClose())
+			return;
+
+		SaveSettings();
+
+#ifdef YOUTUBE_ENABLED
+		UpdateYouTubeAppDockSettings();
 #endif
 		ClearChanged();
 	}
