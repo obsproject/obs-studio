@@ -53,6 +53,7 @@ struct ffmpeg_source {
 	bool close_when_inactive;
 	bool seekable;
 	bool is_stinger;
+	bool is_track_matte;
 	bool log_changes;
 
 	pthread_t reconnect_thread;
@@ -309,7 +310,7 @@ static void get_audio(void *opaque, struct obs_source_audio *a)
 static void media_stopped(void *opaque)
 {
 	struct ffmpeg_source *s = opaque;
-	if (s->is_clear_on_media_end && !s->is_stinger) {
+	if (s->is_clear_on_media_end && !s->is_track_matte) {
 		obs_source_output_video(s->source, NULL);
 	}
 
@@ -440,6 +441,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	bool active = obs_source_active(s->source);
 	bool is_local_file = obs_data_get_bool(settings, "is_local_file");
 	bool is_stinger = obs_data_get_bool(settings, "is_stinger");
+	bool is_track_matte = obs_data_get_bool(settings, "is_track_matte");
 	bool should_restart_media = (is_local_file != s->is_local_file) ||
 				    (is_stinger != s->is_stinger);
 
@@ -527,6 +529,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	s->seekable = obs_data_get_bool(settings, "seekable");
 	s->ffmpeg_options = ffmpeg_options ? bstrdup(ffmpeg_options) : NULL;
 	s->is_stinger = is_stinger;
+	s->is_track_matte = is_track_matte;
 	s->log_changes = obs_data_get_bool(settings, "log_changes");
 
 	if (s->speed_percent < 1 || s->speed_percent > 200)
@@ -579,7 +582,7 @@ static void restart_proc(void *data, calldata_t *cd)
 static void preload_first_frame_proc(void *data, calldata_t *cd)
 {
 	struct ffmpeg_source *s = data;
-	if (s->is_stinger)
+	if (s->is_track_matte)
 		obs_source_output_video(s->source, NULL);
 	media_playback_preload_frame(s->media);
 	UNUSED_PARAMETER(cd);
