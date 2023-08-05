@@ -50,5 +50,4 @@ private:
 	QString channelId;
 	QPointer<QCefWidget> dockBrowser;
 	QCefCookieManager *cookieManager; // is not a Qt object
-	QPointer<QAction> actionYTAppDock;
 };
