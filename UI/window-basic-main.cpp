@@ -8497,7 +8497,8 @@ void OBSBasic::NewYouTubeAppDock()
 		return;
 
 	if (youtubeAppDock)
-		delete youtubeAppDock;
+		RemoveDockWidget(youtubeAppDock->objectName());
+
 	youtubeAppDock = new YouTubeAppDock();
 }
 
@@ -8507,7 +8508,8 @@ void OBSBasic::DeleteYouTubeAppDock()
 		return;
 
 	if (youtubeAppDock)
-		delete youtubeAppDock;
+		RemoveDockWidget(youtubeAppDock->objectName());
+
 	youtubeAppDock = nullptr;
 }
 #endif

@@ -122,8 +122,7 @@ void YouTubeAppDock::AddYouTubeAppDock(const QString &title)
 	this->setWindowTitle(title);
 	this->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	OBSBasic::Get()->addDockWidget(Qt::RightDockWidgetArea, this);
-	actionYTAppDock = OBSBasic::Get()->AddDockWidget(this);
+	OBSBasic::Get()->AddDockWidget(this, Qt::RightDockWidgetArea);
 
 	if (IsYTServiceSelected()) {
 		const std::string url = InitYTUserUrl();
@@ -139,7 +138,7 @@ void YouTubeAppDock::AddYouTubeAppDock(const QString &title)
 		}
 	} else {
 		this->setVisible(false);
-		actionYTAppDock->setVisible(false);
+		this->toggleViewAction()->setVisible(false);
 	}
 }
 
@@ -167,10 +166,7 @@ void YouTubeAppDock::CreateBrowserWidget(const std::string &url)
 
 void YouTubeAppDock::SetVisibleYTAppDockInMenu(bool visible)
 {
-	if (!actionYTAppDock)
-		return;
-
-	actionYTAppDock->setVisible(visible);
+	toggleViewAction()->setVisible(visible);
 	this->setVisible(visible);
 }
 
