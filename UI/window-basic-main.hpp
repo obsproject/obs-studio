@@ -1267,6 +1267,8 @@ public:
 #endif
 };
 
+extern bool cef_js_avail;
+
 class SceneRenameDelegate : public QStyledItemDelegate {
 	Q_OBJECT
 

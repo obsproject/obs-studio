@@ -771,7 +771,7 @@ void OBSBasicSettings::on_connectAccount_clicked()
 	if (!!auth) {
 		OnAuthConnected();
 #ifdef YOUTUBE_ENABLED
-		if (cef && IsYouTubeService(service)) {
+		if (cef_js_avail && IsYouTubeService(service)) {
 			if (!main->GetYouTubeAppDock()) {
 				main->NewYouTubeAppDock();
 			}
@@ -822,7 +822,7 @@ void OBSBasicSettings::on_disconnectAccount_clicked()
 	ui->connectedAccountText->setVisible(false);
 
 #ifdef YOUTUBE_ENABLED
-	if (cef && IsYouTubeService(service)) {
+	if (cef_js_avail && IsYouTubeService(service)) {
 		if (!main->GetYouTubeAppDock()) {
 			main->NewYouTubeAppDock();
 		}

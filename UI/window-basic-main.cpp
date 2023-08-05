@@ -116,6 +116,7 @@ struct QCefCookieManager;
 
 QCef *cef = nullptr;
 QCefCookieManager *panel_cookies = nullptr;
+bool cef_js_avail = false;
 
 void DestroyPanelCookieManager();
 
@@ -2022,6 +2023,7 @@ void OBSBasic::OBSInit()
 
 #ifdef BROWSER_AVAILABLE
 	cef = obs_browser_init_panel();
+	cef_js_avail = cef && obs_browser_qcef_version() >= 3;
 #endif
 
 	OBSDataAutoRelease obsData = obs_get_private_data();
@@ -8493,7 +8495,7 @@ YouTubeAppDock *OBSBasic::GetYouTubeAppDock()
 
 void OBSBasic::NewYouTubeAppDock()
 {
-	if (!cef)
+	if (!cef_js_avail)
 		return;
 
 	if (youtubeAppDock)
@@ -8504,7 +8506,7 @@ void OBSBasic::NewYouTubeAppDock()
 
 void OBSBasic::DeleteYouTubeAppDock()
 {
-	if (!cef)
+	if (!cef_js_avail)
 		return;
 
 	if (youtubeAppDock)

@@ -50,7 +50,7 @@ YouTubeAppDock::~YouTubeAppDock()
 
 bool YouTubeAppDock::IsYTServiceSelected()
 {
-	if (!cef)
+	if (!cef_js_avail)
 		return false;
 
 	obs_service_t *service_obj = OBSBasic::Get()->GetService();
@@ -429,7 +429,7 @@ YoutubeApiWrappers *YouTubeAppDock::GetYTApi()
 
 void YouTubeAppDock::CleanupYouTubeUrls()
 {
-	if (!cef)
+	if (!cef_js_avail)
 		return;
 
 	static constexpr const char *YOUTUBE_VIDEO_URL =
