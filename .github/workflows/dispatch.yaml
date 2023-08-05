@@ -37,6 +37,7 @@ jobs:
     runs-on: macos-13
     permissions:
       checks: write
+      contents: write
     steps:
       - uses: actions/checkout@v3
       - name: Check for Defunct Services 📉
