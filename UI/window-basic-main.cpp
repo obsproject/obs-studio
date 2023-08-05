@@ -2170,10 +2170,6 @@ void OBSBasic::OBSInit()
 
 	/* ----------------------------- */
 	/* add custom browser docks      */
-#if defined(BROWSER_AVAILABLE) && defined(YOUTUBE_ENABLED)
-	YouTubeAppDock::CleanupYouTubeUrls();
-#endif
-
 #ifdef BROWSER_AVAILABLE
 	if (cef) {
 		QAction *action = new QAction(QTStr("Basic.MainMenu.Docks."

@@ -27,7 +27,6 @@ public:
 
 	static bool IsYTServiceSelected();
 	static YoutubeApiWrappers *GetYTApi();
-	static void CleanupYouTubeUrls();
 
 protected:
 	void IngestionStarted(const char *stream_id, streaming_mode_t mode);
