@@ -209,13 +209,14 @@ package() {
     log_group
 
   } elif [[ ${host_os} == linux ]] {
+    local cmake_bin='/usr/bin/cmake'
     local -a cmake_args=()
     if (( debug )) cmake_args+=(--verbose)
 
     if (( package )) {
       log_group "Packaging obs-studio..."
       pushd ${project_root}
-      cmake --build build_${target##*-} --config ${config} -t package ${cmake_args}
+      ${cmake_bin} --build build_${target##*-} --config ${config} -t package ${cmake_args}
       output_name="${output_name}-${target##*-}-linux-gnu"
 
       pushd ${project_root}/build_${target##*-}
