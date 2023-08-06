@@ -463,7 +463,7 @@ static bool code_to_str(int code, struct dstr *str)
 void obs_key_to_str(obs_key_t key, struct dstr *str)
 {
     const UniCharCount max_length = 16;
-    UniChar buffer[max_length];
+    UniChar buffer[16];
 
     if (localized_key_to_str(key, str))
         return;
