@@ -141,8 +141,6 @@ D3DFORMAT ConvertMfxFourccToD3dFormat(mfxU32 fourcc)
 		return D3DFMT_YV12;
 	case MFX_FOURCC_YUY2:
 		return D3DFMT_YUY2;
-	case MFX_FOURCC_RGB3:
-		return D3DFMT_R8G8B8;
 	case MFX_FOURCC_RGB4:
 		return D3DFMT_A8R8G8B8;
 	case MFX_FOURCC_P8:
