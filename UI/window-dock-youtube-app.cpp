@@ -157,6 +157,9 @@ void YouTubeAppDock::CreateBrowserWidget(const std::string &url)
 
 void YouTubeAppDock::SetVisibleYTAppDockInMenu(bool visible)
 {
+	if (visible && toggleViewAction()->isVisible())
+		return;
+
 	toggleViewAction()->setVisible(visible);
 	this->setVisible(visible);
 }
