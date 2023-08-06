@@ -127,18 +127,6 @@ try {
 
 /* ------------------------------------------------------------------------ */
 
-void GenerateGUID(std::string &guid)
-{
-	const char alphabet[] = "0123456789abcdef";
-	QRandomGenerator *rng = QRandomGenerator::system();
-
-	guid.resize(40);
-
-	for (size_t i = 0; i < 40; i++) {
-		guid[i] = alphabet[rng->bounded(0, 16)];
-	}
-}
-
 std::string GetProgramGUID()
 {
 	static std::mutex m;
@@ -154,7 +142,9 @@ std::string GetProgramGUID()
 		guid = pguid;
 
 	if (guid.empty()) {
-		GenerateGUID(guid);
+		BPtr<char> newId = os_generate_uuid();
+
+		guid = newId;
 
 		if (!guid.empty())
 			config_set_string(GetGlobalConfig(), "General",
