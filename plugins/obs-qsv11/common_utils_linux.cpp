@@ -69,20 +69,42 @@ void ClearYUVSurfaceVMem(mfxMemId memId);
 void ClearRGBSurfaceVMem(mfxMemId memId);
 #endif
 
-// Initialize Intel Media SDK Session, device/display and memory manager
-mfxStatus Initialize(mfxIMPL impl, mfxVersion ver, MFXVideoSession *pSession,
+// Initialize Intel VPL Session, device/display and memory manager
+mfxStatus Initialize(mfxVersion ver, mfxSession *pSession,
 		     mfxFrameAllocator *pmfxAllocator, mfxHDL *deviceHandle,
 		     bool bCreateSharedHandles, bool dx9hack)
 {
+	UNUSED_PARAMETER(ver);
 	UNUSED_PARAMETER(pmfxAllocator);
 	UNUSED_PARAMETER(deviceHandle);
 	UNUSED_PARAMETER(bCreateSharedHandles);
 	UNUSED_PARAMETER(dx9hack);
 	mfxStatus sts = MFX_ERR_NONE;
+	mfxVariant impl;
 
-	// Initialize Intel Media SDK Session
-	sts = pSession->Init(impl, &ver);
+	// Initialize Intel VPL Session
+	mfxLoader loader = MFXLoad();
+	mfxConfig cfg = MFXCreateConfig(loader);
+
+	impl.Type = MFX_VARIANT_TYPE_U32;
+	impl.Data.U32 = MFX_IMPL_TYPE_HARDWARE;
+	MFXSetConfigFilterProperty(
+		cfg, (const mfxU8 *)"mfxImplDescription.Impl", impl);
+
+	impl.Type = MFX_VARIANT_TYPE_U32;
+	impl.Data.U32 = INTEL_VENDOR_ID;
+	MFXSetConfigFilterProperty(
+		cfg, (const mfxU8 *)"mfxImplDescription.VendorID", impl);
+
+	impl.Type = MFX_VARIANT_TYPE_U32;
+	impl.Data.U32 = MFX_ACCEL_MODE_VIA_VAAPI_DRM_RENDER_NODE;
+	MFXSetConfigFilterProperty(
+		cfg, (const mfxU8 *)"mfxImplDescription.AccelerationMode",
+		impl);
+
+	sts = MFXCreateSession(loader, 0, pSession);
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
 	return sts;
 }
 

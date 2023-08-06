@@ -56,7 +56,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <mfxadapter.h>
+#include <vpl/mfxstructures.h>
+#include <vpl/mfxadapter.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>

@@ -54,7 +54,8 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-#include <mfxvideo++.h>
+#include <vpl/mfxstructures.h>
+#include <vpl/mfxvideo++.h>
 #include "QSV_Encoder.h"
 #include "common_utils.h"
 
@@ -62,7 +63,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class QSV_Encoder_Internal {
 public:
-	QSV_Encoder_Internal(mfxIMPL &impl, mfxVersion &version, bool isDGPU);
+	QSV_Encoder_Internal(mfxVersion &version, bool isDGPU);
 	~QSV_Encoder_Internal();
 
 	mfxStatus Open(qsv_param_t *pParams, enum qsv_codec codec);
@@ -98,9 +99,8 @@ protected:
 	int GetFreeTaskIndex(Task *pTaskPool, mfxU16 nPoolSize);
 
 private:
-	mfxIMPL m_impl;
 	mfxVersion m_ver;
-	MFXVideoSession m_session;
+	mfxSession m_session;
 	mfxFrameAllocator m_mfxAllocator;
 	mfxVideoParam m_mfxEncParams;
 	mfxFrameAllocResponse m_mfxResponse;
