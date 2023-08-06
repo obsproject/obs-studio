@@ -1,5 +1,5 @@
 package 'ccache'
-package 'cmake'
+package 'cmake', bin: '/usr/bin/cmake'
 package 'curl'
 package 'git'
 package 'jq'
