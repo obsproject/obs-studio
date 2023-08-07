@@ -345,13 +345,25 @@ try {
 	execInfo.cbSize = sizeof(execInfo);
 	execInfo.lpFile = wUpdateFilePath;
 
-	string parameters = "";
-	if (App()->IsPortableMode())
-		parameters += "--portable";
-	if (branch != WIN_DEFAULT_BRANCH) {
+	string parameters;
+	if (branch != WIN_DEFAULT_BRANCH)
+		parameters += "--branch=" + branch;
+
+	obs_cmdline_args obs_args = obs_get_cmdline_args();
+	for (int idx = 1; idx < obs_args.argc; idx++) {
 		if (!parameters.empty())
 			parameters += " ";
-		parameters += "--branch=" + branch;
+
+		parameters += obs_args.argv[idx];
+	}
+
+	/* Portable mode can be enabled via sentinel files, so copying the
+	 * command line doesn't guarantee the flag to be there. */
+	if (App()->IsPortableMode() &&
+	    parameters.find("--portable") == string::npos) {
+		if (!parameters.empty())
+			parameters += " ";
+		parameters += "--portable";
 	}
 
 	BPtr<wchar_t> lpParameters;
