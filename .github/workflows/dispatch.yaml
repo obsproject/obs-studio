@@ -38,6 +38,7 @@ jobs:
     permissions:
       checks: write
       contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v3
       - name: Check for Defunct Services 📉
