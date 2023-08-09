@@ -223,13 +223,8 @@ void os_cpu_usage_info_destroy(os_cpu_usage_info_t *info)
 os_performance_token_t *os_request_high_performance(const char *reason)
 {
     @autoreleasepool {
-        NSProcessInfo *pi = [NSProcessInfo processInfo];
-        SEL sel = @selector(beginActivityWithOptions:reason:);
-        if (![pi respondsToSelector:sel])
-            return nil;
-
-        //taken from http://stackoverflow.com/a/20100906
-        id activity = [pi beginActivityWithOptions:0x00FFFFFF reason:@(reason)];
+        NSProcessInfo *processInfo = NSProcessInfo.processInfo;
+        id activity = [processInfo beginActivityWithOptions:NSActivityUserInitiated reason:@(reason ? reason : "")];
 
         return CFBridgingRetain(activity);
     }
@@ -238,12 +233,8 @@ os_performance_token_t *os_request_high_performance(const char *reason)
 void os_end_high_performance(os_performance_token_t *token)
 {
     @autoreleasepool {
-        NSProcessInfo *pi = [NSProcessInfo processInfo];
-        SEL sel = @selector(beginActivityWithOptions:reason:);
-        if (![pi respondsToSelector:sel])
-            return;
-
-        [pi endActivity:CFBridgingRelease(token)];
+        NSProcessInfo *processInfo = NSProcessInfo.processInfo;
+        [processInfo endActivity:CFBridgingRelease(token)];
     }
 }
 
