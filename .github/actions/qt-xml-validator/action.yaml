@@ -33,7 +33,7 @@ runs:
         echo ::endgroup::
 
     - name: Register Annotations 📝
-      uses: korelstar/xmllint-problem-matcher@v1
+      uses: korelstar/xmllint-problem-matcher@22352420d1d3e8f18d311d76284c4f5f71982222
 
     - name: Validate XML 💯
       shell: bash
