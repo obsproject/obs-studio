@@ -1694,6 +1694,7 @@ int obs_remove_video_info(struct obs_video_info *ovi)
 		if (obs->video.canvases.array[i] == ovi) {
 			bfree(obs->video.canvases.array[i]);
 			da_erase(obs->video.canvases, i);
+			obs_set_video_rendering_canvas(NULL);
 			break;
 		}
 	}
