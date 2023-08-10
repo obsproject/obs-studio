@@ -50,6 +50,7 @@ void OBSBasicSettings::LoadA11ySettings(bool presetChange)
 {
 	config_t *config = GetGlobalConfig();
 
+	loading = true;
 	if (!presetChange) {
 		preset = config_get_int(config, "Accessibility", "ColorPreset");
 
@@ -107,6 +108,8 @@ void OBSBasicSettings::LoadA11ySettings(bool presetChange)
 	}
 
 	UpdateA11yColors();
+
+	loading = false;
 }
 
 void OBSBasicSettings::SaveA11ySettings()
