@@ -41,7 +41,7 @@ namespace std {
         }
     };
 
-}
+}  // namespace std
 
 #define TEXT_AVCAPTURE     obs_module_text("AVCapture")
 #define TEXT_DEVICE        obs_module_text("Device")
@@ -111,7 +111,7 @@ namespace {
         bool video_params_valid = false;
     };
 
-}
+}  // namespace
 
 struct av_capture {
     OBSAVCaptureDelegate *delegate;
@@ -303,7 +303,7 @@ namespace {
         }
     };
 
-}
+}  // namespace
 
 static av_capture_ref get_ref(obs_properties_t *props)
 {

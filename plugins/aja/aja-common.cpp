@@ -1183,4 +1183,4 @@ std::vector<NTV2DeviceID> MultiViewCards()
 	return {DEVICE_ID_IOX3};
 }
 
-} // aja
+} // namespace aja

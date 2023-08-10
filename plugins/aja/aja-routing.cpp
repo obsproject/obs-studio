@@ -608,4 +608,4 @@ void Routing::LogRoutingPreset(const RoutingPreset &rp)
 	}
 }
 
-} // aja
+} // namespace aja

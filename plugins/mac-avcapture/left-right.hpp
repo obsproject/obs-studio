@@ -60,4 +60,4 @@ private:
 	T data[2] = {{}, {}};
 };
 
-}
+} // namespace left_right

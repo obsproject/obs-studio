@@ -91,4 +91,4 @@ struct PatchResponse {
 };
 
 using PatchesResponse = std::vector<PatchResponse>;
-}
+} // namespace updater

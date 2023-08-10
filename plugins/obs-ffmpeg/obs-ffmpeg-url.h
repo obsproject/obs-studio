@@ -139,5 +139,5 @@ enum type {
 };
 }
 class Logger;
-}
+} // namespace srt_logging
 #endif
