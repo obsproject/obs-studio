@@ -749,6 +749,86 @@ The following signals are defined for specific sources only:
 -----------------------
 
 
+Source-specific Procedures
+--------------------------
+
+The following procedures are defined for specific sources only:
+
+**current_index** (out int current_index)
+
+   Returns the index of the currently displayed image in the slideshow.
+
+   :Defined by: - Image Slide Show
+
+-----------------------
+
+**total_files** (out int total_files)
+
+   Returns the total number of image files in the slideshow.
+
+   :Defined by: - Image Slide Show
+
+-----------------------
+
+**get_hooked** (out bool hooked, out string title, out string class, out string executable)
+
+   Returns whether the source is currently capturing a window and if yes, which.
+
+   :Defined by: - Window Capture (Windows)
+                - Game Capture (Windows)
+                - Application audio output capture (Windows)
+
+-----------------------
+
+**get_hooked** (out bool hooked, out string name, out string class)
+
+   Returns whether the source is currently capturing a window and if yes, which.
+
+   :Defined by: - Window Capture (Xcomposite)
+
+-----------------------
+
+**get_metadata** (in string tag_id, out string tag_data)
+
+   For a given metadata tag, returns the data associated with it.
+
+   :Defined by: - VLC Video Source
+
+-----------------------
+
+**restart** ()
+
+   Restarts the media.
+
+   :Defined by: - Media Source
+
+-----------------------
+
+**get_duration** (out int duration)
+
+   Returns the total duration of the media file, in nanoseconds.
+
+   :Defined by: - Media Source
+
+-----------------------
+
+**get_nb_frames** (out int num_frames)
+
+   Returns the total number of frames in the media file.
+
+   :Defined by: - Media Source
+
+-----------------------
+
+**activate** (in bool active)
+
+   Activates or deactivates the device.
+
+   :Defined by: - Video Capture Device Source (Windows)
+
+-----------------------
+
+
 General Source Functions
 ------------------------
 
