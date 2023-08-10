@@ -671,35 +671,35 @@ Source Signals
 
    Called when a transition has stopped.
 
-**media_started**
+**media_started** (ptr source)
 
    Called when media has started.
 
-**media_ended**
+**media_ended** (ptr source)
 
    Called when media has ended.
 
-**media_pause**
+**media_pause** (ptr source)
 
    Called when media has been paused.
 
-**media_play**
+**media_play** (ptr source)
 
    Called when media starts playing.
 
-**media_restart**
+**media_restart** (ptr source)
 
    Called when the playing of media has been restarted.
 
-**media_stopped**
+**media_stopped** (ptr source)
 
    Called when the playing of media has been stopped.
 
-**media_next**
+**media_next** (ptr source)
 
    Called when the media source switches to the next media.
 
-**media_previous**
+**media_previous** (ptr source)
 
    Called when the media source switches to the previous media.
 
