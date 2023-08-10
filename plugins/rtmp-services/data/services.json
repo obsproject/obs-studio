@@ -2754,6 +2754,66 @@
             "supported video codecs": [
                 "h264"
             ]
+        },
+        {
+            "name": "MasterStream.iR | مستراستریم | ری استریم و استریم همزمان",
+            "common": false,
+            "more_info_link": "https://masterstream.ir/webpage/page/docs",
+            "stream_key_link": "https://masterstream.ir/managestreams.php",
+            "servers": [
+                {
+                    "name": "Auto (Iran Servers)",
+                    "url": "rtmp://auto.masterstream.ir/live"
+                },
+                {
+                    "name": "Iran Server 1",
+                    "url": "rtmp://live1.masterstream.ir/live"
+                },
+                {
+                    "name": "Iran Server 2",
+                    "url": "rtmp://live2.masterstream.ir/live"
+                },
+                {
+                    "name": "Iran Server 3",
+                    "url": "rtmp://live3.masterstream.ir/live"
+                },
+                {
+                    "name": "Iran Server 4",
+                    "url": "rtmp://live4.masterstream.ir/live"
+                },
+                {
+                    "name": "Iran Server 5",
+                    "url": "rtmp://live5.masterstream.ir/live"
+                },
+                {
+                    "name": "Iran Server 6",
+                    "url": "rtmp://live6.masterstream.ir/live"
+                },
+                {
+                    "name": "Iran Server 7",
+                    "url": "rtmp://live7.masterstream.ir/live"
+                },
+                {
+                    "name": "Turkey Server 1",
+                    "url": "rtmp://tr-live1.masterstream.ir/live"
+                }
+            ],
+            "protocol": "RTMP",
+            "supported video codecs": [
+                "h264"
+            ],
+            "recommended": {
+                "keyint": 2,
+                "supported resolutions": [
+                    "1920x1080",
+                    "1280x720",
+                    "852x480",
+                    "640x360"
+                ],
+                "max video bitrate": 6000,
+                "max audio bitrate": 320,
+                "x264opts": "scenecut=0"
+            }
         }
     ]
 }
