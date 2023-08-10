@@ -155,11 +155,10 @@ void YoutubeAuth::LoadUI()
 	QSize size = main->frameSize();
 	QPoint pos = main->pos();
 
-	chat = new YoutubeChatDock();
+	chat = new YoutubeChatDock(QTStr("Auth.Chat"));
 	chat->setObjectName(YOUTUBE_CHAT_DOCK_NAME);
 	chat->resize(300, 600);
 	chat->setMinimumSize(200, 300);
-	chat->setWindowTitle(QTStr("Auth.Chat"));
 	chat->setAllowedAreas(Qt::AllDockWidgetAreas);
 
 	browser = cef->create_widget(chat, YOUTUBE_CHAT_PLACEHOLDER_URL,

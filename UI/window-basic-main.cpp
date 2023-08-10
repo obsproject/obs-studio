@@ -2199,7 +2199,7 @@ void OBSBasic::OBSInit()
 #ifdef YOUTUBE_ENABLED
 	/* setup YouTube app dock */
 	if (YouTubeAppDock::IsYTServiceSelected())
-		youtubeAppDock = new YouTubeAppDock();
+		NewYouTubeAppDock();
 #endif
 
 	const char *dockStateStr = config_get_string(
@@ -8517,7 +8517,7 @@ void OBSBasic::NewYouTubeAppDock()
 	if (youtubeAppDock)
 		RemoveDockWidget(youtubeAppDock->objectName());
 
-	youtubeAppDock = new YouTubeAppDock();
+	youtubeAppDock = new YouTubeAppDock("YouTube Live Control Panel");
 }
 
 void OBSBasic::DeleteYouTubeAppDock()

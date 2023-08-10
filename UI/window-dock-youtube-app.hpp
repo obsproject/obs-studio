@@ -10,7 +10,7 @@ class YouTubeAppDock : public BrowserDock {
 	Q_OBJECT
 
 public:
-	YouTubeAppDock();
+	YouTubeAppDock(const QString &title);
 	~YouTubeAppDock();
 
 	enum streaming_mode_t { YTSM_ACCOUNT, YTSM_STREAM_KEY };
@@ -36,7 +36,7 @@ protected:
 private:
 	std::string InitYTUserUrl();
 	void SetVisibleYTAppDockInMenu(bool visible);
-	void AddYouTubeAppDock(const QString &title);
+	void AddYouTubeAppDock();
 	void CreateBrowserWidget(const std::string &url);
 	virtual void showEvent(QShowEvent *event) override;
 	virtual void closeEvent(QCloseEvent *event) override;

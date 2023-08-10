@@ -529,7 +529,7 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 		panel_version = obs_browser_qcef_version();
 	}
 
-	BrowserDock *dock = new BrowserDock();
+	BrowserDock *dock = new BrowserDock(title);
 	QString bId(uuid.isEmpty() ? QUuid::createUuid().toString() : uuid);
 	bId.replace(QRegularExpression("[{}-]"), "");
 	dock->setProperty("uuid", bId);
