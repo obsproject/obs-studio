@@ -173,6 +173,7 @@ static void hotkeys_retain(struct obs_hotkeys_platform *plat)
 }
 
 static inline void free_hotkeys_platform(obs_hotkeys_platform_t *plat);
+
 static void hotkeys_release(struct obs_hotkeys_platform *plat)
 {
     if (os_atomic_dec_long(&plat->refs) == -1)
@@ -556,6 +557,7 @@ err:
 }
 
 #define OBS_COCOA_MODIFIER_SIZE 7
+
 static void unichar_to_utf8(const UniChar *c, char *buff)
 {
     CFStringRef string = CFStringCreateWithCharactersNoCopy(NULL, c, 2, kCFAllocatorNull);
@@ -578,6 +580,7 @@ static char ctrl_str[OBS_COCOA_MODIFIER_SIZE];
 static char opt_str[OBS_COCOA_MODIFIER_SIZE];
 static char shift_str[OBS_COCOA_MODIFIER_SIZE];
 static char cmd_str[OBS_COCOA_MODIFIER_SIZE];
+
 static void init_utf_8_strings(void)
 {
     const UniChar ctrl_uni[] = {kControlUnicode, 0};
@@ -592,6 +595,7 @@ static void init_utf_8_strings(void)
 }
 
 static pthread_once_t strings_token = PTHREAD_ONCE_INIT;
+
 void obs_key_combination_to_str(obs_key_combination_t key, struct dstr *str)
 {
     struct dstr key_str = {0};
@@ -785,6 +789,7 @@ void obs_hotkeys_platform_free(struct obs_core_hotkeys *hotkeys)
 }
 
 typedef unsigned long NSUInteger;
+
 static bool mouse_button_pressed(obs_key_t key, bool *pressed)
 {
     int button = 0;

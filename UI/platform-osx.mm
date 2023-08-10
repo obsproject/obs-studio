@@ -183,12 +183,14 @@ void EnableOSXDockIcon(bool enable)
 @end
 
 @implementation DockView
+
 - (id)initWithIcon:(QIcon)icon
 {
     self = [super init];
     _icon = icon;
     return self;
 }
+
 - (void)drawRect:(NSRect)dirtyRect
 {
     CGSize size = dirtyRect.size;
@@ -205,6 +207,7 @@ void EnableOSXDockIcon(bool enable)
         context, CGRectMake(size.width * (1 - iconSize), 0, size.width * iconSize, size.height * iconSize), image);
     CGImageRelease(image);
 }
+
 @end
 
 MacPermissionStatus CheckPermissionWithPrompt(MacPermissionType type, bool prompt_for_permission)
@@ -304,8 +307,8 @@ void SetMacOSDarkMode(bool dark)
     }
 }
 
-void TaskbarOverlayInit()
-{}
+void TaskbarOverlayInit() {}
+
 void TaskbarOverlaySetStatus(TaskbarOverlayStatus status)
 {
     QIcon icon;
@@ -335,12 +338,14 @@ void TaskbarOverlaySetStatus(TaskbarOverlayStatus status)
 @end
 
 @implementation OBSApplication
+
 - (void)sendEvent:(NSEvent *)event
 {
     _handlingSendEvent = YES;
     [super sendEvent:event];
     _handlingSendEvent = NO;
 }
+
 @end
 
 void InstallNSThreadLocks()

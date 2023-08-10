@@ -101,8 +101,7 @@ namespace {
     struct observer_handle : unique_ptr<remove_pointer<id>::type, decltype(remove_observer)> {
         using base = unique_ptr<remove_pointer<id>::type, decltype(remove_observer)>;
 
-        explicit observer_handle(id observer = nullptr) : base(observer, remove_observer)
-        {}
+        explicit observer_handle(id observer = nullptr) : base(observer, remove_observer) {}
     };
 
     struct av_video_info {
@@ -636,6 +635,7 @@ static inline bool update_audio(obs_source_audio *audio, CMSampleBufferRef sampl
 }
 
 @implementation OBSAVCaptureDelegate
+
 - (void)captureOutput:(AVCaptureOutput *)out
     didDropSampleBuffer:(CMSampleBufferRef)sampleBuffer
          fromConnection:(AVCaptureConnection *)connection
@@ -688,6 +688,7 @@ static inline bool update_audio(obs_source_audio *audio, CMSampleBufferRef sampl
         obs_source_output_audio(capture->source, audio);
     }
 }
+
 @end
 
 static void av_capture_enable_buffering(av_capture *capture, bool enabled)
@@ -1579,6 +1580,7 @@ static media_frames_per_second convert(CMTime time_)
 }
 
 using frame_rates_t = vector<pair<media_frames_per_second, media_frames_per_second>>;
+
 static frame_rates_t enumerate_frame_rates(AVCaptureDevice *dev, const CMVideoDimensions *dims = nullptr)
 {
     frame_rates_t res;
@@ -2159,6 +2161,7 @@ static void av_capture_update(void *data, obs_data_t *settings)
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("mac-avcapture", "en-US")
+
 MODULE_EXPORT const char *obs_module_description(void)
 {
     return "MacOS AVFoundation Capture source";
