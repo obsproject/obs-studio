@@ -22,6 +22,10 @@ using namespace json11;
 
 static string translate_key(const string &sl_key)
 {
+	if (sl_key.empty()) {
+		return "IGNORE";
+	}
+
 	if (sl_key.substr(0, 6) == "Numpad" && sl_key.size() == 7) {
 		return "OBS_KEY_NUM" + sl_key.substr(6);
 	} else if (sl_key.substr(0, 3) == "Key") {
@@ -171,6 +175,9 @@ static void get_hotkey_bindings(Json::object &out_hotkeys,
 
 			string key =
 				translate_key(binding["key"].string_value());
+
+			if (key == "IGNORE")
+				continue;
 
 			out_hotkey.push_back(
 				Json::object{{"control", modifiers["ctrl"]},
