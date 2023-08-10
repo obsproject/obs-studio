@@ -71,7 +71,8 @@ Commit Guidelines
 
 - Prefix each commit's titles with the module name, followed by a colon
   and a space (unless modifying a file in the base directory).  After
-  that, the first word should be capitalized.
+  that, the first word should be capitalized and the rest of the words
+  should not be capitalized.
 
   So for example, if you are modifying the obs-ffmpeg plugin::
 
