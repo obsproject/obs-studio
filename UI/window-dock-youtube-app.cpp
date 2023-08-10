@@ -31,13 +31,13 @@ static constexpr const char *BROADCAST_SELECTED = "BROADCAST_SELECTED";
 static constexpr const char *INGESTION_STARTED = "INGESTION_STARTED";
 static constexpr const char *INGESTION_STOPPED = "INGESTION_STOPPED";
 
-YouTubeAppDock::YouTubeAppDock()
-	: BrowserDock(),
+YouTubeAppDock::YouTubeAppDock(const QString &title)
+	: BrowserDock(title),
 	  dockBrowser(nullptr),
 	  cookieManager(nullptr)
 {
 	OBSBasic::InitBrowserPanelSafeBlock();
-	AddYouTubeAppDock("YouTube Live Control Panel");
+	AddYouTubeAppDock();
 }
 
 YouTubeAppDock::~YouTubeAppDock()
@@ -111,15 +111,14 @@ std::string YouTubeAppDock::InitYTUserUrl()
 	return user_url;
 }
 
-void YouTubeAppDock::AddYouTubeAppDock(const QString &title)
+void YouTubeAppDock::AddYouTubeAppDock()
 {
 	QString bId(QUuid::createUuid().toString());
 	bId.replace(QRegularExpression("[{}-]"), "");
 	this->setProperty("uuid", bId);
-	this->setObjectName(title + "Object");
+	this->setObjectName("youtubeLiveControlPanel");
 	this->resize(580, 500);
 	this->setMinimumSize(400, 300);
-	this->setWindowTitle(title);
 	this->setAllowedAreas(Qt::AllDockWidgetAreas);
 
 	OBSBasic::Get()->AddDockWidget(this, Qt::RightDockWidgetArea);
