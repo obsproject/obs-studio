@@ -1,4 +1,4 @@
-# please use clang-format version 13 or later
+# please use clang-format version 16 or later
 
 Standard: c++17
 AccessModifierOffset: -8
@@ -52,8 +52,8 @@ ContinuationIndentWidth: 8
 Cpp11BracedListStyle: true
 DerivePointerAlignment: false
 DisableFormat: false
-FixNamespaceComments: false
-ForEachMacros: 
+FixNamespaceComments: true
+ForEachMacros:
   - 'json_object_foreach'
   - 'json_object_foreach_safe'
   - 'json_array_foreach'

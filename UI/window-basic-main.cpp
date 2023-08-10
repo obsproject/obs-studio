@@ -126,7 +126,7 @@ template<typename OBSRef> struct SignalContainer {
 	OBSRef ref;
 	vector<shared_ptr<OBSSignal>> handlers;
 };
-}
+} // namespace
 
 extern volatile long insideEventLoop;
 

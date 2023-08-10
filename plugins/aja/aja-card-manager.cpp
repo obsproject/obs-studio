@@ -618,4 +618,4 @@ const CardEntries::iterator CardManager::end()
 	return mCardEntries.end();
 }
 
-} // aja
+} // namespace aja

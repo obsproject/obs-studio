@@ -125,7 +125,7 @@ struct ca_encoder {
 };
 typedef struct ca_encoder ca_encoder;
 
-}
+} // namespace
 
 namespace std {
 
@@ -152,7 +152,7 @@ template<> struct default_delete<remove_pointer<AudioConverterRef>::type> {
 	}
 };
 
-}
+} // namespace std
 
 template<typename T>
 using cf_ptr = unique_ptr<typename remove_pointer<T>::type>;
@@ -1405,8 +1405,7 @@ bool obs_module_load(void)
 	CA_LOG(LOG_INFO, "Adding CoreAudio AAC encoder");
 #endif
 
-	struct obs_encoder_info aac_info {
-	};
+	struct obs_encoder_info aac_info {};
 	aac_info.id = "CoreAudio_AAC";
 	aac_info.type = OBS_ENCODER_AUDIO;
 	aac_info.codec = "aac";

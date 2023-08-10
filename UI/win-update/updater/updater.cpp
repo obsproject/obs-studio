@@ -276,7 +276,7 @@ template<> struct hash<B2Hash> {
 			string_view((const char *)value.data(), value.size()));
 	}
 };
-}
+} // namespace std
 
 enum state_t {
 	STATE_INVALID,

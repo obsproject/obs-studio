@@ -4863,7 +4863,7 @@ template<> struct hash<obs_key_combination_t> {
 		return h2;
 	}
 };
-}
+} // namespace std
 
 bool OBSBasicSettings::ScanDuplicateHotkeys(QFormLayout *layout)
 {

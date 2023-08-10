@@ -62,4 +62,4 @@ public:
 	static void LogRoutingPreset(const RoutingPreset &rp);
 };
 
-} // aja
+} // namespace aja
