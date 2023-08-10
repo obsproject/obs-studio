@@ -262,6 +262,7 @@ static bool create_video_stream(struct ffmpeg_data *data)
 	context->thread_count = 0;
 
 	data->video->time_base = context->time_base;
+	data->video->avg_frame_rate = (AVRational){ovi.fps_num, ovi.fps_den};
 
 	if (data->output->oformat->flags & AVFMT_GLOBALHEADER)
 		context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
