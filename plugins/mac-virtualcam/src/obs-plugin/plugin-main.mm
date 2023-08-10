@@ -376,7 +376,9 @@ static bool virtualcam_output_start(void *data)
         vcam->deviceID = 0;
         NSString *OBSVirtualCamUUID = [[NSBundle bundleWithIdentifier:@"com.obsproject.mac-virtualcam"]
             objectForInfoDictionaryKey:@"OBSCameraDeviceUUID"];
-        for (size_t i = 0; i < (used * sizeof(CMIOObjectID)); i++) {
+
+        size_t num_elements = size / sizeof(CMIOObjectID);
+        for (size_t i = 0; i < num_elements; i++) {
             CMIOObjectID cmioDevice;
             [cmioDevices getBytes:&cmioDevice range:NSMakeRange(i * sizeof(CMIOObjectID), sizeof(CMIOObjectID))];
 
@@ -406,7 +408,7 @@ static bool virtualcam_output_start(void *data)
         void *stream_data = [streamIds mutableBytes];
         CMIOObjectGetPropertyData(vcam->deviceID, &address, 0, NULL, size, &used, stream_data);
 
-        if (used < (2 * sizeof(CMIOStreamID))) {
+        if (size < (2 * sizeof(CMIOStreamID))) {
             obs_output_set_last_error(vcam->output, obs_module_text("Error.SystemExtension.CameraNotStarted"));
             return false;
         }
