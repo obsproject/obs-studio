@@ -699,8 +699,10 @@ static void *ss_create(obs_data_t *settings, obs_source_t *source)
 		obs_module_text("SlideShow.PreviousSlide"),
 		previous_slide_hotkey, ss);
 
-	proc_handler_add(ph, "int current_index()", current_slide_proc, ss);
-	proc_handler_add(ph, "int total_files()", total_slides_proc, ss);
+	proc_handler_add(ph, "void current_index(out int current_index)",
+			 current_slide_proc, ss);
+	proc_handler_add(ph, "void total_files(out int total_files)",
+			 total_slides_proc, ss);
 
 	signal_handler_t *sh = obs_source_get_signal_handler(ss->source);
 	signal_handler_add(sh, "void slide_changed(int index, string path)");
