@@ -671,8 +671,6 @@ private:
 
 	bool restartingVCam = false;
 
-	void UpdateTransformShortcuts();
-
 public slots:
 	void DeferSaveBegin();
 	void DeferSaveEnd();
