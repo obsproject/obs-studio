@@ -97,7 +97,7 @@ static void *sndio_thread(void *attr)
 	struct sndio_thr_data *thrdata = attr;
 	size_t msgread = 0; // msg bytes read from socket
 	size_t nsiofds = sio_nfds(thrdata->hdl);
-	struct pollfd pfd[1 + nsiofds];
+	struct pollfd *pfd = bzalloc(sizeof(struct pollfd) * (1 + nsiofds));
 	struct sio_par par;
 	uint64_t ts;
 	ssize_t nread;
@@ -114,7 +114,6 @@ static void *sndio_thread(void *attr)
 		goto finish;
 	}
 
-	memset(pfd, 0, sizeof(pfd));
 	pfd[0].fd = thrdata->sock;
 
 	for (;;) {
@@ -237,6 +236,7 @@ finish:
 	close(thrdata->sock);
 	bfree(buf);
 	bfree(thrdata);
+	bfree(pfd);
 	return NULL;
 }
 
