@@ -330,10 +330,6 @@ bool obs_output_actual_start(obs_output_t *output)
 	if (output->context.data)
 		success = output->info.start(output->context.data);
 
-	if (success && output->video) {
-		output->starting_frame_count =
-			video_output_get_total_frames(output->video);
-	}
 	if (success) {
 		output->starting_drawn_count = obs->video.total_frames;
 		output->starting_lagged_count = obs->video.lagged_frames;
