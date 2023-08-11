@@ -181,6 +181,7 @@ void ExtraBrowsersModel::UpdateItem(Item &item)
 	if (main->extraBrowserDockNames[idx] != item.title) {
 		main->extraBrowserDockNames[idx] = item.title;
 		dock->toggleViewAction()->setText(item.title);
+		dock->setTitle(item.title);
 	}
 
 	if (main->extraBrowserDockTargets[idx] != item.url) {
