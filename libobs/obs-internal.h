@@ -1100,7 +1100,6 @@ struct obs_output {
 
 	uint32_t starting_drawn_count;
 	uint32_t starting_lagged_count;
-	uint32_t starting_frame_count;
 
 	int total_frames;
 
