@@ -136,7 +136,7 @@ AutoConfigVideoPage::AutoConfigVideoPage(QWidget *parent)
 		(long double)ovi.fps_num / (long double)ovi.fps_den;
 
 	QString fpsStr = (ovi.fps_den > 1) ? QString::number(fpsVal, 'f', 2)
-					   : QString::number(fpsVal, 'g', 2);
+					   : QString::number(fpsVal, 'g');
 
 	ui->fps->addItem(QTStr(FPS_PREFER_HIGH_FPS),
 			 (int)AutoConfig::FPSType::PreferHighFPS);
