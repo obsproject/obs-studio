@@ -572,6 +572,7 @@ private:
 	QPointer<QAction> extraBrowserMenuDocksSeparator;
 
 	QList<QSharedPointer<QDockWidget>> extraBrowserDocks;
+	QStringList extraBrowserDockNames;
 	QStringList extraBrowserDockTargets;
 
 	void ClearExtraBrowserDocks();
