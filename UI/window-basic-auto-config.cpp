@@ -1094,7 +1094,7 @@ void AutoConfig::SaveStreamSettings()
 		obs_data_set_string(settings, "service", serviceName.c_str());
 	obs_data_set_string(settings, "server", server.c_str());
 #ifdef YOUTUBE_ENABLED
-	if (!IsYouTubeService(serviceName))
+	if (!streamPage->auth || !IsYouTubeService(serviceName))
 		obs_data_set_string(settings, "key", key.c_str());
 #else
 	obs_data_set_string(settings, "key", key.c_str());
