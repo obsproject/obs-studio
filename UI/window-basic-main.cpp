@@ -3395,28 +3395,9 @@ void OBSBasic::SourceToolBarActionsSetEnabled()
 	RefreshToolBarStyling(ui->sourcesToolbar);
 }
 
-void OBSBasic::UpdateTransformShortcuts()
-{
-	bool hasVideo = false;
-
-	OBSSource source = obs_sceneitem_get_source(GetCurrentSceneItem());
-
-	if (source) {
-		uint32_t flags = obs_source_get_output_flags(source);
-		hasVideo = (flags & OBS_SOURCE_VIDEO) != 0;
-	}
-
-	ui->actionEditTransform->setEnabled(hasVideo);
-	ui->actionCopyTransform->setEnabled(hasVideo);
-	ui->actionPasteTransform->setEnabled(hasVideo ? hasCopiedTransform
-						      : false);
-	ui->actionResetTransform->setEnabled(hasVideo);
-}
-
 void OBSBasic::UpdateContextBar(bool force)
 {
 	SourceToolBarActionsSetEnabled();
-	UpdateTransformShortcuts();
 
 	if (!ui->contextContainer->isVisible() && !force)
 		return;
@@ -8541,10 +8522,10 @@ void OBSBasic::DeleteYouTubeAppDock()
 void OBSBasic::UpdateEditMenu()
 {
 	QModelIndexList items = GetAllSelectedSourceItems();
-	int count = items.count();
+	int totalCount = items.count();
 	size_t filter_count = 0;
 
-	if (count == 1) {
+	if (totalCount == 1) {
 		OBSSceneItem sceneItem =
 			ui->sources->Get(GetTopSelectedSourceItem());
 		OBSSource source = obs_sceneitem_get_source(sceneItem);
@@ -8567,39 +8548,48 @@ void OBSBasic::UpdateEditMenu()
 			allowPastingDuplicate = false;
 	}
 
-	ui->actionCopySource->setEnabled(count > 0);
-	ui->actionEditTransform->setEnabled(count == 1);
-	ui->actionCopyTransform->setEnabled(count == 1);
-	ui->actionPasteTransform->setEnabled(hasCopiedTransform && count > 0);
+	int videoCount = 0;
+	bool canTransformMultiple = false;
+	for (int i = 0; i < totalCount; i++) {
+		OBSSceneItem item = ui->sources->Get(items.value(i).row());
+		OBSSource source = obs_sceneitem_get_source(item);
+		const uint32_t flags = obs_source_get_output_flags(source);
+		const bool hasVideo = (flags & OBS_SOURCE_VIDEO) != 0;
+		if (hasVideo && !obs_sceneitem_locked(item))
+			canTransformMultiple = true;
+
+		if (hasVideo)
+			videoCount++;
+	}
+	const bool canTransformSingle = videoCount == 1 && totalCount == 1;
+
+	ui->actionCopySource->setEnabled(totalCount > 0);
+	ui->actionEditTransform->setEnabled(canTransformSingle);
+	ui->actionCopyTransform->setEnabled(canTransformSingle);
+	ui->actionPasteTransform->setEnabled(hasCopiedTransform &&
+					     videoCount > 0);
 	ui->actionCopyFilters->setEnabled(filter_count > 0);
 	ui->actionPasteFilters->setEnabled(
-		!obs_weak_source_expired(copyFiltersSource) && count > 0);
+		!obs_weak_source_expired(copyFiltersSource) && totalCount > 0);
 	ui->actionPasteRef->setEnabled(!!clipboard.size());
 	ui->actionPasteDup->setEnabled(allowPastingDuplicate);
 
-	ui->actionMoveUp->setEnabled(count > 0);
-	ui->actionMoveDown->setEnabled(count > 0);
-	ui->actionMoveToTop->setEnabled(count > 0);
-	ui->actionMoveToBottom->setEnabled(count > 0);
+	ui->actionMoveUp->setEnabled(totalCount > 0);
+	ui->actionMoveDown->setEnabled(totalCount > 0);
+	ui->actionMoveToTop->setEnabled(totalCount > 0);
+	ui->actionMoveToBottom->setEnabled(totalCount > 0);
 
-	bool canTransform = false;
-	for (int i = 0; i < count; i++) {
-		OBSSceneItem item = ui->sources->Get(items.value(i).row());
-		if (!obs_sceneitem_locked(item))
-			canTransform = true;
-	}
-
-	ui->actionResetTransform->setEnabled(canTransform);
-	ui->actionRotate90CW->setEnabled(canTransform);
-	ui->actionRotate90CCW->setEnabled(canTransform);
-	ui->actionRotate180->setEnabled(canTransform);
-	ui->actionFlipHorizontal->setEnabled(canTransform);
-	ui->actionFlipVertical->setEnabled(canTransform);
-	ui->actionFitToScreen->setEnabled(canTransform);
-	ui->actionStretchToScreen->setEnabled(canTransform);
-	ui->actionCenterToScreen->setEnabled(canTransform);
-	ui->actionVerticalCenter->setEnabled(canTransform);
-	ui->actionHorizontalCenter->setEnabled(canTransform);
+	ui->actionResetTransform->setEnabled(canTransformMultiple);
+	ui->actionRotate90CW->setEnabled(canTransformMultiple);
+	ui->actionRotate90CCW->setEnabled(canTransformMultiple);
+	ui->actionRotate180->setEnabled(canTransformMultiple);
+	ui->actionFlipHorizontal->setEnabled(canTransformMultiple);
+	ui->actionFlipVertical->setEnabled(canTransformMultiple);
+	ui->actionFitToScreen->setEnabled(canTransformMultiple);
+	ui->actionStretchToScreen->setEnabled(canTransformMultiple);
+	ui->actionCenterToScreen->setEnabled(canTransformMultiple);
+	ui->actionVerticalCenter->setEnabled(canTransformMultiple);
+	ui->actionHorizontalCenter->setEnabled(canTransformMultiple);
 }
 
 void OBSBasic::on_actionEditTransform_triggered()
