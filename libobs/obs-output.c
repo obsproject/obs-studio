@@ -201,8 +201,10 @@ obs_output_t *obs_output_create(const char *id, const char *name,
 	} else {
 		output->info = *info;
 	}
-	output->video = obs_get_video();
-	output->audio = obs_get_audio();
+	if (!flag_encoded(output)) {
+		output->video = obs_get_video();
+		output->audio = obs_get_audio();
+	}
 	if (output->info.get_defaults)
 		output->info.get_defaults(output->context.settings);
 
@@ -331,6 +333,8 @@ bool obs_output_actual_start(obs_output_t *output)
 	if (success && output->video) {
 		output->starting_frame_count =
 			video_output_get_total_frames(output->video);
+	}
+	if (success) {
 		output->starting_drawn_count = obs->video.total_frames;
 		output->starting_lagged_count = obs->video.lagged_frames;
 	}
@@ -1331,6 +1335,10 @@ static inline bool has_scaling(const struct obs_output *output)
 const struct video_scale_info *
 obs_output_get_video_conversion(struct obs_output *output)
 {
+	if (log_flag_encoded(output, __FUNCTION__, true) ||
+	    !log_flag_video(output, __FUNCTION__))
+		return NULL;
+
 	if (output->video_conversion_set) {
 		if (!output->video_conversion.width)
 			output->video_conversion.width =
