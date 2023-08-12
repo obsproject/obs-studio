@@ -333,7 +333,7 @@ void RestrictResetBitrates(initializer_list<QComboBox *> boxes, int maxbitrate);
 #define COMBO_CHANGED   &QComboBox::currentIndexChanged
 #define EDIT_CHANGED    &QLineEdit::textChanged
 #define CBEDIT_CHANGED  &QComboBox::editTextChanged
-#define CHECK_CHANGED   &QCheckBox::clicked
+#define CHECK_CHANGED   &QCheckBox::toggled
 #define GROUP_CHANGED   &QGroupBox::toggled
 #define SCROLL_CHANGED  &QSpinBox::valueChanged
 #define DSCROLL_CHANGED &QDoubleSpinBox::valueChanged
