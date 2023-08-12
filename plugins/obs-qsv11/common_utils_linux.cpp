@@ -5,6 +5,8 @@
 #include <util/c99defs.h>
 #include <util/dstr.h>
 #include <va/va_drm.h>
+#include <va/va_x11.h>
+#include <va/va_wayland.h>
 #include <va/va_str.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,6 +14,9 @@
 #include <fcntl.h>
 #include <string.h>
 #include <dirent.h>
+
+#include <obs.h>
+#include <obs-nix-platform.h>
 
 mfxStatus simple_alloc(mfxHDL pthis, mfxFrameAllocRequest *request,
 		       mfxFrameAllocResponse *response)
@@ -102,7 +107,27 @@ mfxStatus Initialize(mfxVersion ver, mfxSession *pSession,
 		cfg, (const mfxU8 *)"mfxImplDescription.AccelerationMode",
 		impl);
 
+	mfxHDL vaDisplay = nullptr;
+	if (obs_get_nix_platform() == OBS_NIX_PLATFORM_X11_EGL) {
+		vaDisplay =
+			vaGetDisplay((Display *)obs_get_nix_platform_display());
+	} else if (obs_get_nix_platform() == OBS_NIX_PLATFORM_WAYLAND) {
+		vaDisplay = vaGetDisplayWl(
+			(wl_display *)obs_get_nix_platform_display());
+	}
+
 	sts = MFXCreateSession(loader, 0, pSession);
+	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+	// VPL expects the VADisplay to be initialized.
+	int major;
+	int minor;
+	if (vaInitialize(vaDisplay, &major, &minor) != VA_STATUS_SUCCESS) {
+		vaTerminate(vaDisplay);
+		return MFX_ERR_DEVICE_FAILED;
+	}
+	sts = MFXVideoCORE_SetHandle(*pSession, MFX_HANDLE_VA_DISPLAY,
+				     vaDisplay);
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
 	return sts;
