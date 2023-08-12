@@ -360,7 +360,7 @@ void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
 void obs_frontend_remove_event_callback(obs_frontend_event_cb callback,
 					void *private_data)
 {
-	if (callbacks_valid())
+	if (c)
 		c->obs_frontend_remove_event_callback(callback, private_data);
 }
 
@@ -429,7 +429,7 @@ void obs_frontend_add_save_callback(obs_frontend_save_cb callback,
 void obs_frontend_remove_save_callback(obs_frontend_save_cb callback,
 				       void *private_data)
 {
-	if (callbacks_valid())
+	if (c)
 		c->obs_frontend_remove_save_callback(callback, private_data);
 }
 
@@ -443,7 +443,7 @@ void obs_frontend_add_preload_callback(obs_frontend_save_cb callback,
 void obs_frontend_remove_preload_callback(obs_frontend_save_cb callback,
 					  void *private_data)
 {
-	if (callbacks_valid())
+	if (c)
 		c->obs_frontend_remove_preload_callback(callback, private_data);
 }
 
