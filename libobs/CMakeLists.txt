@@ -129,6 +129,8 @@ target_sources(
           util/profiler.h
           util/profiler.hpp
           util/serializer.h
+          util/source-profiler.c
+          util/source-profiler.h
           util/sse-intrin.h
           util/task.c
           util/task.h

@@ -216,7 +216,9 @@ target_sources(
           util/util_uint128.h
           util/curl/curl-helper.h
           util/darray.h
-          util/util.hpp)
+          util/util.hpp
+          util/source-profiler.c
+          util/source-profiler.h)
 
 if(ENABLE_HEVC)
   target_sources(libobs PRIVATE obs-hevc.c obs-hevc.h)

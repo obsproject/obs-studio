@@ -1591,6 +1591,8 @@ int obs_reset_video(struct obs_video_info *ovi)
 	     get_video_format_name(ovi->output_format),
 	     yuv ? yuv_format : "None", yuv ? "/" : "", yuv ? yuv_range : "");
 
+	source_profiler_reset_video(ovi);
+
 	return obs_init_video(ovi);
 }
 
