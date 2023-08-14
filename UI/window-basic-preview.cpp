@@ -2461,10 +2461,10 @@ void OBSBasicPreview::DrawSpacingHelpers()
 
 	obs_scene_enum_items(main->GetCurrentScene(), FindSelected, &data);
 
-	if (data.sceneItems.size() > 1)
+	if (data.sceneItems.size() != 1)
 		return;
 
-	OBSSceneItem item = main->GetCurrentSceneItem();
+	OBSSceneItem item = data.sceneItems[0];
 	if (!item)
 		return;
 
