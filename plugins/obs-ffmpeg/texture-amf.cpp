@@ -504,6 +504,39 @@ static inline int64_t convert_to_obs_ts(amf_base *enc, int64_t ts)
 	return ts * (int64_t)enc->fps_den / amf_timebase;
 }
 
+static inline const char *
+convert_amf_memory_type_to_string(AMF_MEMORY_TYPE type)
+{
+	switch (type) {
+	case AMF_MEMORY_UNKNOWN:
+		return "Unknown";
+	case AMF_MEMORY_HOST:
+		return "Host";
+	case AMF_MEMORY_DX9:
+		return "DX9";
+	case AMF_MEMORY_DX11:
+		return "DX11";
+	case AMF_MEMORY_OPENCL:
+		return "OpenCL";
+	case AMF_MEMORY_OPENGL:
+		return "OpenGL";
+	case AMF_MEMORY_XV:
+		return "XV";
+	case AMF_MEMORY_GRALLOC:
+		return "Gralloc";
+	case AMF_MEMORY_COMPUTE_FOR_DX9:
+		return "Compute For DX9";
+	case AMF_MEMORY_COMPUTE_FOR_DX11:
+		return "Compute For DX11";
+	case AMF_MEMORY_VULKAN:
+		return "Vulkan";
+	case AMF_MEMORY_DX12:
+		return "DX12";
+	default:
+		return "Invalid";
+	}
+}
+
 static void convert_to_encoder_packet(amf_base *enc, AMFDataPtr &data,
 				      encoder_packet *packet)
 {
@@ -1161,36 +1194,17 @@ static void check_texture_encode_capability(obs_encoder_t *encoder,
 
 #include "texture-amf-opts.hpp"
 
+/* These are initial recommended settings that may be lowered later
+ * once we know more info such as the resolution and frame rate.
+ */
 static void amf_avc_defaults(obs_data_t *settings)
 {
-	// These are initial recommended settings that may be lowered later
-	// once we know more info such as the resolution and frame rate.
 	obs_data_set_default_string(settings, "rate_control", "CBR");
 	obs_data_set_default_int(settings, "bitrate", 2500);
 	obs_data_set_default_int(settings, "cqp", 20);
 	obs_data_set_default_string(settings, "preset", "quality");
 	obs_data_set_default_string(settings, "profile", "high");
 	obs_data_set_default_int(settings, "bf", 3);
-}
-
-static void amf_hevc_defaults(obs_data_t *settings)
-{
-	// These are initial recommended settings that may be lowered later
-	// once we know more info such as the resolution and frame rate.
-	obs_data_set_default_string(settings, "rate_control", "VBR");
-	obs_data_set_default_int(settings, "bitrate", 2500);
-	obs_data_set_default_int(settings, "cqp", 20);
-	obs_data_set_default_string(settings, "preset", "quality");
-}
-
-static void amf_av1_defaults(obs_data_t *settings)
-{
-	// These are initial recommended settings that may be lowered later
-	// once we know more info such as the resolution and frame rate.
-	obs_data_set_default_int(settings, "bitrate", 2500);
-	obs_data_set_default_int(settings, "cqp", 20);
-	obs_data_set_default_string(settings, "rate_control", "VBR");
-	obs_data_set_default_string(settings, "preset", "highQuality");
 }
 
 static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
@@ -1266,6 +1280,11 @@ static obs_properties_t *amf_properties_internal(amf_codec_type codec)
 			add_profile("baseline");
 #undef add_profile
 	}
+
+	p = obs_properties_add_bool(props, "pre_analysis",
+				    obs_module_text("AMF.PreAnalysis"));
+	obs_property_set_long_description(
+		p, obs_module_text("AMF.PreAnalysis.ToolTip"));
 
 	if (amf_codec_type::AVC == codec) {
 		obs_properties_add_int(props, "bf", obs_module_text("BFrames"),
@@ -1424,7 +1443,6 @@ static inline void check_recommended_avc_defaults(amf_base *enc,
 {
 	int64_t framerate = enc->fps_num / enc->fps_den;
 	if ((enc->cx * enc->cy > 1920 * 1088) || (framerate > 60)) {
-
 		// Recommended base defaults
 		obs_data_set_default_int(settings, "bitrate", 2500);
 		obs_data_set_default_int(settings, "cqp", 20);
@@ -1435,20 +1453,47 @@ static inline void check_recommended_avc_defaults(amf_base *enc,
 		info("Original default settings were lowered according to resolution"
 		     " and framerate.");
 	} else {
-		// Recommended high perceptual quality defaults
-		// that are supported up to 1080p60fps
-		set_avc_property(enc, PRE_ANALYSIS_ENABLE, true);
-		set_avc_property(enc, ADAPTIVE_MINIGOP, true);
-		set_amf_property(enc, AMF_PA_LOOKAHEAD_BUFFER_DEPTH, 20);
-		set_amf_property(enc, AMF_PA_TAQ_MODE, AMF_PA_TAQ_MODE_2);
-		set_amf_property(enc, AMF_PA_ENGINE_TYPE, AMF_MEMORY_OPENCL);
-		info("High perceptual quality defaults:\n"
-		     "\tEnablePreAnalysis:      %s\n"
-		     "\tAdaptiveMiniGOP:        %s\n"
-		     "\tPALookAheadBufferDepth: %d\n"
-		     "\tPATemporalAQMode:       %d\n"
-		     "\tPAEngineType:           %s\n",
-		     "true", "true", 20, AMF_PA_TAQ_MODE_2, "OpenCL");
+		/* Recommended high perceptual quality defaults
+		 * for up to 1080p60fps
+		 */
+
+		bool adaptive_minigop_enabled = true;
+		set_avc_property(enc, ADAPTIVE_MINIGOP,
+				 adaptive_minigop_enabled);
+
+		bool pa_enabled = obs_data_get_bool(settings, "pre_analysis");
+		bool pa_set_by_user =
+			obs_data_has_user_value(settings, "pre_analysis");
+
+		if (!pa_set_by_user || (pa_set_by_user && pa_enabled)) {
+			pa_enabled = true;
+			uint64_t pa_lab_depth = 20;
+			AMF_MEMORY_TYPE pa_engine_type = AMF_MEMORY_OPENCL;
+			AMF_PA_TAQ_MODE_ENUM pa_taq_mode = AMF_PA_TAQ_MODE_2;
+			obs_data_set_bool(settings, "pre_analysis", pa_enabled);
+
+			set_avc_property(enc, PRE_ANALYSIS_ENABLE, pa_enabled);
+			set_amf_property(enc, AMF_PA_LOOKAHEAD_BUFFER_DEPTH,
+					 pa_lab_depth);
+			set_amf_property(enc, AMF_PA_TAQ_MODE, pa_taq_mode);
+			set_amf_property(enc, AMF_PA_ENGINE_TYPE,
+					 AMF_MEMORY_OPENCL);
+
+			info("High perceptual quality defaults:\n"
+			     "\tAdaptiveMiniGOP:        %s\n"
+			     "\tEnablePreAnalysis:      %s\n"
+			     "\tPALookAheadBufferDepth: %d\n"
+			     "\tPATemporalAQMode:       %d\n"
+			     "\tPAEngineType:           %s\n",
+			     adaptive_minigop_enabled ? "true" : "false",
+			     pa_enabled ? "true" : "false", pa_lab_depth,
+			     pa_taq_mode,
+			     convert_amf_memory_type_to_string(pa_engine_type));
+		} else {
+			info("High perceptual quality defaults:\n"
+			     "\tAdaptiveMiniGOP:        %s\n",
+			     adaptive_minigop_enabled ? "true" : "false");
+		}
 	}
 }
 
@@ -1456,11 +1501,12 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 {
 	amf_base *enc = (amf_base *)data;
 
-	// We originally set the recommended defaults for high perceptual quality in
-	// the UI settings. Once the resolution and framerate are available here
-	// during init, we check if the defaults need to be lowered to the base
-	// defaults or the remaining recommended high perceptual quality settings can
-	// be set.
+	/* We originally set the recommended defaults for high perceptual quality in
+	 * the UI settings. Once the resolution and framerate are available here
+	 * during init, we check if the defaults need to be lowered to the base
+	 * defaults or the remaining recommended high perceptual quality settings can
+	 * be set.
+	 */
 	check_recommended_avc_defaults(enc, settings);
 
 	int64_t bitrate = obs_data_get_int(settings, "bitrate");
@@ -1527,14 +1573,14 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 	if (!ffmpeg_opts || !*ffmpeg_opts)
 		ffmpeg_opts = "(none)";
 
-	info("Settings:\n"
+	info("settings:\n"
 	     "\trate_control:           %s\n"
 	     "\tbitrate:                %d\n"
 	     "\tcqp:                    %d\n"
 	     "\tkeyint:                 %d\n"
 	     "\tpreset:                 %s\n"
 	     "\tprofile:                %s\n"
-	     "\tmax b-frames:           %d\n"
+	     "\tb-frames:               %d\n"
 	     "\twidth:                  %d\n"
 	     "\theight:                 %d\n"
 	     "\toverriding params:      %s",
@@ -1834,7 +1880,6 @@ static inline void check_recommended_hevc_defaults(amf_base *enc,
 	const bool is10bit = enc->amf_format == AMF_SURFACE_P010;
 	const int64_t framerate = enc->fps_num / enc->fps_den;
 	if ((enc->cx * enc->cy > 1920 * 1088) || is10bit || (framerate > 60)) {
-
 		// Recommended base defaults
 		obs_data_set_default_int(settings, "bitrate", 2500);
 		obs_data_set_default_int(settings, "cqp", 20);
@@ -1843,18 +1888,37 @@ static inline void check_recommended_hevc_defaults(amf_base *enc,
 		info("Original default settings were lowered according to resolution"
 		     " and framerate.");
 	} else {
-		// Recommended high perceptual quality defaults
-		// that are supported up to 1080p60fps
-		set_hevc_property(enc, PRE_ANALYSIS_ENABLE, true);
-		set_amf_property(enc, AMF_PA_LOOKAHEAD_BUFFER_DEPTH, 20);
-		set_amf_property(enc, AMF_PA_TAQ_MODE, AMF_PA_TAQ_MODE_2);
-		set_amf_property(enc, AMF_PA_ENGINE_TYPE, AMF_MEMORY_OPENCL);
-		info("High perceptual quality defaults:\n"
-		     "\tHevcEnablePreAnalysis:  %s\n"
-		     "\tPALookAheadBufferDepth: %d\n"
-		     "\tPATemporalAQMode:       %d\n"
-		     "\tPAEngineType:           %s\n",
-		     "true", 20, AMF_PA_TAQ_MODE_2, "OpenCL");
+		/* Recommended high perceptual quality defaults
+		 * for up to 1080p60fps
+		 */
+
+		bool pa_enabled = obs_data_get_bool(settings, "pre_analysis");
+		bool pa_set_by_user =
+			obs_data_has_user_value(settings, "pre_analysis");
+
+		if (!pa_set_by_user || (pa_set_by_user && pa_enabled)) {
+			pa_enabled = true;
+			uint64_t pa_lab_depth = 20;
+			AMF_MEMORY_TYPE pa_engine_type = AMF_MEMORY_OPENCL;
+			AMF_PA_TAQ_MODE_ENUM pa_taq_mode = AMF_PA_TAQ_MODE_2;
+			obs_data_set_bool(settings, "pre_analysis", pa_enabled);
+
+			set_hevc_property(enc, PRE_ANALYSIS_ENABLE, pa_enabled);
+			set_amf_property(enc, AMF_PA_LOOKAHEAD_BUFFER_DEPTH,
+					 pa_lab_depth);
+			set_amf_property(enc, AMF_PA_TAQ_MODE, pa_taq_mode);
+			set_amf_property(enc, AMF_PA_ENGINE_TYPE,
+					 pa_engine_type);
+
+			info("High perceptual quality defaults:\n"
+			     "\tHevcEnablePreAnalysis:  %s\n"
+			     "\tPALookAheadBufferDepth: %d\n"
+			     "\tPATemporalAQMode:       %d\n"
+			     "\tPAEngineType:           %s\n",
+			     pa_enabled ? "true" : "false", pa_lab_depth,
+			     pa_taq_mode,
+			     convert_amf_memory_type_to_string(pa_engine_type));
+		}
 	}
 }
 
@@ -1862,11 +1926,12 @@ static bool amf_hevc_init(void *data, obs_data_t *settings)
 {
 	amf_base *enc = (amf_base *)data;
 
-	// We originally set the recommended defaults for high perceptual quality in
-	// the UI settings. Once the resolution and framerate are available here
-	// during init, we check if the defaults need to be lowered to the base
-	// defaults or the remaining recommended high perceptual quality settings can
-	// be set.
+	/* We originally set the recommended defaults for high perceptual quality in
+	 * the UI settings. Once the resolution and framerate are available here
+	 * during init, we check if the defaults need to be lowered to the base
+	 * defaults or the remaining recommended high perceptual quality settings can
+	 * be set.
+	 */
 	check_recommended_hevc_defaults(enc, settings);
 
 	int64_t bitrate = obs_data_get_int(settings, "bitrate");
@@ -1906,7 +1971,7 @@ static bool amf_hevc_init(void *data, obs_data_t *settings)
 	if (!ffmpeg_opts || !*ffmpeg_opts)
 		ffmpeg_opts = "(none)";
 
-	info("Settings:\n"
+	info("settings:\n"
 	     "\trate_control:       %s\n"
 	     "\tbitrate:            %d\n"
 	     "\tcqp:                %d\n"
@@ -2097,6 +2162,17 @@ try {
 	return nullptr;
 }
 
+/* These are initial recommended settings that may be lowered later
+ * once we know more info such as the resolution and frame rate.
+ */
+static void amf_hevc_defaults(obs_data_t *settings)
+{
+	obs_data_set_default_string(settings, "rate_control", "VBR");
+	obs_data_set_default_int(settings, "bitrate", 2500);
+	obs_data_set_default_int(settings, "cqp", 20);
+	obs_data_set_default_string(settings, "preset", "quality");
+}
+
 static void register_hevc()
 {
 	struct obs_encoder_info amf_encoder_info = {};
@@ -2255,7 +2331,6 @@ static inline void check_recommended_av1_defaults(amf_base *enc,
 	const bool is10bit = enc->amf_format == AMF_SURFACE_P010;
 	const int64_t framerate = enc->fps_num / enc->fps_den;
 	if ((enc->cx * enc->cy > 1920 * 1088) || is10bit || (framerate > 60)) {
-
 		// Recommended base defaults
 		obs_data_set_default_int(settings, "bitrate", 2500);
 		obs_data_set_default_int(settings, "cqp", 20);
@@ -2265,18 +2340,34 @@ static inline void check_recommended_av1_defaults(amf_base *enc,
 		info("Original default settings were lowered according to resolution"
 		     " and framerate.");
 	} else {
-		// Recommended high perceptual quality defaults
-		// that are supported up to 1080p60fps
-		set_av1_property(enc, PRE_ANALYSIS_ENABLE, true);
-		set_amf_property(enc, AMF_PA_LOOKAHEAD_BUFFER_DEPTH, 20);
-		set_amf_property(enc, AMF_PA_TAQ_MODE, AMF_PA_TAQ_MODE_2);
-		set_amf_property(enc, AMF_PA_ENGINE_TYPE, AMF_MEMORY_OPENCL);
-		info("High perceptual quality defaults:\n"
-		     "\tAv1EnablePreAnalysis:   %s\n"
-		     "\tPALookAheadBufferDepth: %d\n"
-		     "\tPATemporalAQMode:       %d\n"
-		     "\tPAEngineType:           %s\n",
-		     "true", 20, AMF_PA_TAQ_MODE_2, "OpenCL");
+		/* Recommended high perceptual quality defaults
+		 * for up to 1080p60fps
+		 */
+
+		bool pa_enabled = obs_data_get_bool(settings, "pre_analysis");
+		bool pa_set_by_user =
+			obs_data_has_user_value(settings, "pre_analysis");
+
+		if (!pa_set_by_user || (pa_set_by_user && pa_enabled)) {
+			pa_enabled = true;
+			uint64_t pa_lab_depth = 20;
+			AMF_MEMORY_TYPE pa_engine_type = AMF_MEMORY_OPENCL;
+			AMF_PA_TAQ_MODE_ENUM pa_taq_mode = AMF_PA_TAQ_MODE_2;
+			set_av1_property(enc, PRE_ANALYSIS_ENABLE, pa_enabled);
+			set_amf_property(enc, AMF_PA_LOOKAHEAD_BUFFER_DEPTH,
+					 pa_lab_depth);
+			set_amf_property(enc, AMF_PA_TAQ_MODE, pa_taq_mode);
+			set_amf_property(enc, AMF_PA_ENGINE_TYPE,
+					 AMF_MEMORY_OPENCL);
+			info("High perceptual quality defaults:\n"
+			     "\tAv1EnablePreAnalysis:   %s\n"
+			     "\tPALookAheadBufferDepth: %d\n"
+			     "\tPATemporalAQMode:       %d\n"
+			     "\tPAEngineType:           %s\n",
+			     pa_enabled ? "true" : "false", pa_lab_depth,
+			     pa_taq_mode,
+			     convert_amf_memory_type_to_string(pa_engine_type));
+		}
 	}
 }
 
@@ -2284,11 +2375,12 @@ static bool amf_av1_init(void *data, obs_data_t *settings)
 {
 	amf_base *enc = (amf_base *)data;
 
-	// We originally set the recommended defaults for high perceptual quality in
-	// the UI settings. Once the resolution and framerate are available here
-	// during init, we check if the defaults need to be lowered to the base
-	// defaults or the remaining recommended high perceptual quality settings can
-	// be set.
+	/* We originally set the recommended defaults for high perceptual quality in
+	 * the UI settings. Once the resolution and framerate are available here
+	 * during init, we check if the defaults need to be lowered to the base
+	 * defaults or the remaining recommended high perceptual quality settings can
+	 * be set.
+	 */
 	check_recommended_av1_defaults(enc, settings);
 
 	int64_t bitrate = obs_data_get_int(settings, "bitrate");
@@ -2321,7 +2413,7 @@ static bool amf_av1_init(void *data, obs_data_t *settings)
 	if (!ffmpeg_opts || !*ffmpeg_opts)
 		ffmpeg_opts = "(none)";
 
-	info("Settings:\n"
+	info("settings:\n"
 	     "\trate_control:          %s\n"
 	     "\tbitrate:               %d\n"
 	     "\tcqp:                   %d\n"
@@ -2332,7 +2424,7 @@ static bool amf_av1_init(void *data, obs_data_t *settings)
 	     "\theight:                %d\n"
 	     "\tscreen content tools:  %s\n"
 	     "\tpalette mode:          %s\n"
-	     "\toverriding params:  %s",
+	     "\toverriding params:     %s",
 	     rc_str, bitrate, qp, gop_size, preset, profile, enc->cx, enc->cy,
 	     "true", "true", ffmpeg_opts);
 
@@ -2463,6 +2555,17 @@ try {
 } catch (const char *err) {
 	blog(LOG_ERROR, "[fallback-amf-av1] %s: %s", __FUNCTION__, err);
 	return nullptr;
+}
+
+/* These are initial recommended settings that may be lowered later
+ * once we know more info such as the resolution and frame rate.
+ */
+static void amf_av1_defaults(obs_data_t *settings)
+{
+	obs_data_set_default_int(settings, "bitrate", 2500);
+	obs_data_set_default_int(settings, "cqp", 20);
+	obs_data_set_default_string(settings, "rate_control", "VBR");
+	obs_data_set_default_string(settings, "preset", "highQuality");
 }
 
 static void register_av1()
