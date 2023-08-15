@@ -920,6 +920,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		&OBSBasicSettings::AdvOutRecCheckCodecs);
 
 	// Set placeholder used when selection was reset due to incompatibilities
+	ui->advOutAEncoder->setPlaceholderText(
+		QTStr("CodecCompat.CodecPlaceholder"));
 	ui->advOutRecEncoder->setPlaceholderText(
 		QTStr("CodecCompat.CodecPlaceholder"));
 	ui->advOutRecAEncoder->setPlaceholderText(
@@ -2427,7 +2429,8 @@ void OBSBasicSettings::LoadOutputSettings()
 
 	const char *type =
 		config_get_string(main->Config(), "AdvOut", "AudioEncoder");
-	SetComboByValue(ui->advOutAEncoder, type);
+	if (!SetComboByValue(ui->advOutAEncoder, type))
+		ui->advOutAEncoder->setCurrentIndex(-1);
 
 	LoadAdvOutputRecordingSettings();
 	LoadAdvOutputRecordingEncoderProperties();
@@ -4970,6 +4973,11 @@ static void DisableIncompatibleCodecs(QComboBox *cbox, const QString &format,
 						 ? strEncLabel
 						 : obs_encoder_get_display_name(
 							   encoderId.c_str());
+
+		/* Something has gone horribly wrong and there's no encoder */
+		if (encoderId.empty())
+			continue;
+
 		const char *codec = obs_get_encoder_codec(encoderId.c_str());
 
 		bool is_compatible =
