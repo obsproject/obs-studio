@@ -5128,6 +5128,16 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 
 	closing = true;
 
+	/* While closing, a resize event to OBSQTDisplay could be triggered.
+	 * The graphics thread on macOS dispatches a lambda function to be
+	 * executed asynchronously in the main thread. However, the display is
+	 * sometimes deleted before the lambda function is actually executed.
+	 * To avoid such a case, destroy displays earlier than others such as
+	 * deleting browser docks. */
+	ui->preview->DestroyDisplay();
+	if (program)
+		program->DestroyDisplay();
+
 	if (outputHandler->VirtualCamActive())
 		outputHandler->StopVirtualCam();
 
