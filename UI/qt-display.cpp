@@ -13,6 +13,39 @@
 #include <Windows.h>
 #endif
 
+class SurfaceEventFilter : public QObject {
+	OBSQTDisplay *display;
+
+public:
+	SurfaceEventFilter(OBSQTDisplay *src) : display(src) {}
+
+protected:
+	bool eventFilter(QObject *obj, QEvent *event) override
+	{
+		bool result = QObject::eventFilter(obj, event);
+		QPlatformSurfaceEvent *surfaceEvent;
+
+		switch (event->type()) {
+		case QEvent::PlatformSurface:
+			surfaceEvent =
+				static_cast<QPlatformSurfaceEvent *>(event);
+
+			switch (surfaceEvent->surfaceEventType()) {
+			case QPlatformSurfaceEvent::SurfaceAboutToBeDestroyed:
+				display->DestroyDisplay();
+				break;
+			default:
+				break;
+			}
+			break;
+		default:
+			break;
+		}
+
+		return result;
+	}
+};
+
 static inline long long color_to_int(const QColor &color)
 {
 	auto shift = [&](unsigned val, int shift) {
@@ -65,6 +98,8 @@ OBSQTDisplay::OBSQTDisplay(QWidget *parent, Qt::WindowFlags flags)
 
 	connect(windowHandle(), &QWindow::visibleChanged, windowVisible);
 	connect(windowHandle(), &QWindow::screenChanged, screenChanged);
+
+	windowHandle()->installEventFilter(new SurfaceEventFilter(this));
 }
 
 QColor OBSQTDisplay::GetDisplayBackgroundColor() const
@@ -90,6 +125,9 @@ void OBSQTDisplay::UpdateDisplayBackgroundColor()
 void OBSQTDisplay::CreateDisplay()
 {
 	if (display)
+		return;
+
+	if (destroying)
 		return;
 
 	if (!windowHandle()->isExposed())

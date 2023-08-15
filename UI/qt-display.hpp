@@ -12,6 +12,7 @@ class OBSQTDisplay : public QWidget {
 				   SetDisplayBackgroundColor)
 
 	OBSDisplay display;
+	bool destroying = false;
 
 	virtual void paintEvent(QPaintEvent *event) override;
 	virtual void moveEvent(QMoveEvent *event) override;
@@ -38,7 +39,11 @@ public:
 	void SetDisplayBackgroundColor(const QColor &color);
 	void UpdateDisplayBackgroundColor();
 	void CreateDisplay();
-	void DestroyDisplay() { display = nullptr; };
+	void DestroyDisplay()
+	{
+		display = nullptr;
+		destroying = true;
+	};
 
 	void OnMove();
 	void OnDisplayChange();
