@@ -13,15 +13,11 @@
 #include <Windows.h>
 #endif
 
-#ifdef ENABLE_WAYLAND
-#include <obs-nix-platform.h>
-
 class SurfaceEventFilter : public QObject {
 	OBSQTDisplay *display;
-	int mTimerId;
 
 public:
-	SurfaceEventFilter(OBSQTDisplay *src) : display(src), mTimerId(0) {}
+	SurfaceEventFilter(OBSQTDisplay *src) : display(src) {}
 
 protected:
 	bool eventFilter(QObject *obj, QEvent *event) override
@@ -35,22 +31,12 @@ protected:
 				static_cast<QPlatformSurfaceEvent *>(event);
 
 			switch (surfaceEvent->surfaceEventType()) {
-			case QPlatformSurfaceEvent::SurfaceCreated:
-				if (display->windowHandle()->isExposed())
-					createOBSDisplay();
-				else
-					mTimerId = startTimer(67); // Arbitrary
-				break;
 			case QPlatformSurfaceEvent::SurfaceAboutToBeDestroyed:
 				display->DestroyDisplay();
 				break;
 			default:
 				break;
 			}
-
-			break;
-		case QEvent::Expose:
-			createOBSDisplay();
 			break;
 		default:
 			break;
@@ -58,24 +44,7 @@ protected:
 
 		return result;
 	}
-
-	void timerEvent(QTimerEvent *) override
-	{
-		createOBSDisplay(display->isVisible());
-	}
-
-private:
-	void createOBSDisplay(bool force = false)
-	{
-		display->CreateDisplay(force);
-		if (mTimerId > 0) {
-			killTimer(mTimerId);
-			mTimerId = 0;
-		}
-	}
 };
-
-#endif
 
 static inline long long color_to_int(const QColor &color)
 {
@@ -130,11 +99,7 @@ OBSQTDisplay::OBSQTDisplay(QWidget *parent, Qt::WindowFlags flags)
 	connect(windowHandle(), &QWindow::visibleChanged, windowVisible);
 	connect(windowHandle(), &QWindow::screenChanged, screenChanged);
 
-#ifdef ENABLE_WAYLAND
-	if (obs_get_nix_platform() == OBS_NIX_PLATFORM_WAYLAND)
-		windowHandle()->installEventFilter(
-			new SurfaceEventFilter(this));
-#endif
+	windowHandle()->installEventFilter(new SurfaceEventFilter(this));
 }
 
 QColor OBSQTDisplay::GetDisplayBackgroundColor() const
@@ -157,12 +122,15 @@ void OBSQTDisplay::UpdateDisplayBackgroundColor()
 	obs_display_set_background_color(display, backgroundColor);
 }
 
-void OBSQTDisplay::CreateDisplay(bool force)
+void OBSQTDisplay::CreateDisplay()
 {
 	if (display)
 		return;
 
-	if (!windowHandle()->isExposed() && !force)
+	if (destroying)
+		return;
+
+	if (!windowHandle()->isExposed())
 		return;
 
 	QSize size = GetPixelSize(this);
