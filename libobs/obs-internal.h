@@ -281,6 +281,7 @@ struct obs_core_video_mix {
 	pthread_t gpu_encode_thread;
 	bool gpu_encode_thread_initialized;
 	volatile bool gpu_encode_stop;
+	bool gpu_want_destroy_thread;
 
 	video_t *video;
 	struct obs_video_info *ovi;

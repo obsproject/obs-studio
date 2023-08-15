@@ -3206,8 +3206,17 @@ bool start_gpu_encode(obs_encoder_t *encoder)
 	obs_enter_graphics();
 	pthread_mutex_lock(&video->gpu_encoder_mutex);
 
-	if (!video->gpu_encoders.num)
-		success = init_gpu_encoding(video);
+	if (!video->gpu_encoders.num) {
+		if (!video->gpu_encode_thread_initialized) {
+			success = init_gpu_encoding(video);
+		} else {
+			// If we got there, this means that we have scheduled GPU thread destruction,
+			// but it is busy now with some last frames, so we resetting the flag and reusing
+			// existing GPU thread instead of creating a new one
+			video->gpu_want_destroy_thread = false;
+		}
+	}
+
 	if (success)
 		da_push_back(video->gpu_encoders, &encoder);
 	else
@@ -3227,7 +3236,6 @@ bool start_gpu_encode(obs_encoder_t *encoder)
 void stop_gpu_encode(obs_encoder_t *encoder)
 {
 	struct obs_core_video_mix *video = encoder->video;
-	bool call_free = false;
 
 	os_atomic_dec_long(&video->gpu_encoder_active);
 	video_output_dec_texture_encoders(video->video);
@@ -3235,20 +3243,19 @@ void stop_gpu_encode(obs_encoder_t *encoder)
 	pthread_mutex_lock(&video->gpu_encoder_mutex);
 	da_erase_item(video->gpu_encoders, &encoder);
 	if (!video->gpu_encoders.num)
-		call_free = true;
+		video->gpu_want_destroy_thread = true;
 	pthread_mutex_unlock(&video->gpu_encoder_mutex);
 
 	os_event_wait(video->gpu_encode_inactive);
 
-	if (call_free) {
+	obs_enter_graphics();
+	pthread_mutex_lock(&video->gpu_encoder_mutex);
+	if (video->gpu_want_destroy_thread) {
 		stop_gpu_encoding_thread(video);
-
-		obs_enter_graphics();
-		pthread_mutex_lock(&video->gpu_encoder_mutex);
 		free_gpu_encoding(video);
-		pthread_mutex_unlock(&video->gpu_encoder_mutex);
-		obs_leave_graphics();
 	}
+	pthread_mutex_unlock(&video->gpu_encoder_mutex);
+	obs_leave_graphics();
 }
 
 bool obs_video_active(void)
