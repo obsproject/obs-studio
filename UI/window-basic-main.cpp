@@ -1603,6 +1603,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_bool(basicConfig, "SimpleOutput", "RecRB", false);
 	config_set_default_int(basicConfig, "SimpleOutput", "RecRBTime", 20);
 	config_set_default_int(basicConfig, "SimpleOutput", "RecRBSize", 512);
+	config_set_default_int(basicConfig, "SimpleOutput", "FlushRBAfterSave",
+			       false);
 	config_set_default_string(basicConfig, "SimpleOutput", "RecRBPrefix",
 				  "Replay");
 	config_set_default_string(basicConfig, "SimpleOutput",
@@ -1655,6 +1657,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_bool(basicConfig, "AdvOut", "RecRB", false);
 	config_set_default_uint(basicConfig, "AdvOut", "RecRBTime", 20);
 	config_set_default_int(basicConfig, "AdvOut", "RecRBSize", 512);
+	config_set_default_int(basicConfig, "AdvOut", "FlushRBAfterSave",
+			       false);
 
 	config_set_default_uint(basicConfig, "Video", "BaseCX", cx);
 	config_set_default_uint(basicConfig, "Video", "BaseCY", cy);
