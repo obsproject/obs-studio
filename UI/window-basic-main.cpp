@@ -84,6 +84,10 @@
 #include "windows.h"
 #endif
 
+#ifdef WHATSNEW_ENABLED
+#include "update/models/whatsnew.hpp"
+#endif
+
 #if !defined(_WIN32) && defined(WHATSNEW_ENABLED)
 #include "update/shared-update.hpp"
 #endif
@@ -96,8 +100,6 @@
 #include "ui_ColorSelect.h"
 
 #include <QWindow>
-
-#include "update/models/whatsnew.hpp"
 
 #ifdef ENABLE_WAYLAND
 #include <obs-nix-platform.h>
