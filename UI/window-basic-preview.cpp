@@ -2476,9 +2476,7 @@ void OBSBasicPreview::DrawSpacingHelpers()
 	if (itemSize.x == 0.0f || itemSize.y == 0.0f)
 		return;
 
-	obs_sceneitem_t *parentGroup =
-		obs_sceneitem_get_group(main->GetCurrentScene(), item);
-
+	obs_sceneitem_t *parentGroup = obs_sceneitem_get_group(scene, item);
 	if (parentGroup && obs_sceneitem_locked(parentGroup))
 		return;
 
