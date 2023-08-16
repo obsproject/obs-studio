@@ -44,7 +44,7 @@ safe_hdiutil create \
   -volname "${volume_name}" \
   -srcfolder ${source} \
   -ov \
-  -fs APFS \
+  -fs HFS+ \
   -format UDRW \
   temp.dmg
 safe_hdiutil attach \
@@ -70,7 +70,7 @@ log_info "Converting disk image..."
 safe_hdiutil detach /Volumes/${output_name}
 
 safe_hdiutil convert \
-  -format ULMO \
+  -format ULFO \
   -ov \
   -o ${output_name}.dmg temp.dmg
 
