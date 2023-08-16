@@ -38,7 +38,7 @@ runs:
         shopt -s extglob
         shopt -s dotglob
 
-        if ! git rev-parse --verify ${GIT_BASE_REF} &> /dev/null; then
+        if ! git cat-file -e "${GIT_BASE_REF}" &> /dev/null; then
           echo "::warning::Provided base reference ${GIT_BASE_REF} is invalid"
           if [[ "${USE_FALLBACK}" == 'true' ]]; then
             GIT_BASE_REF='HEAD~1'
