@@ -42,7 +42,7 @@ runs:
         : Run cmake-format 🎛️
         if (( ${+RUNNER_DEBUG} )) setopt XTRACE
 
-        if ! git rev-parse --verify ${GITHUB_REF_BEFORE} &> /dev/null; then
+        if ! git cat-file -e ${GITHUB_REF_BEFORE} &> /dev/null; then
           GITHUB_REF_BEFORE='4b825dc642cb6eb9a060e54bf8d69288fbee4904'
         fi
 
