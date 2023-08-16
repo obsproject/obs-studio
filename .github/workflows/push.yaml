@@ -113,7 +113,7 @@ jobs:
           fetch-depth: 0
 
       - name: Check for Changed Files ✅
-        if: github.ref_name != 'tag'
+        if: github.ref_type != 'tag'
         uses: ./.github/actions/check-changes
         id: checks
         with:
