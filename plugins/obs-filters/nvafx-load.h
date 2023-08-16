@@ -9,7 +9,7 @@
 #define NVAFX_API
 
 #ifdef LIBNVAFX_ENABLED
-#define MIN_AFX_SDK_VERSION (1 << 24 | 2 << 16 | 13 << 0)
+#define MIN_AFX_SDK_VERSION (1 << 24 | 3 << 16 | 0 << 0)
 static HMODULE nv_audiofx = NULL;
 static HMODULE nv_cuda = NULL;
 
