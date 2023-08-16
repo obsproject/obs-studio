@@ -87,14 +87,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
-      - name: Get Commit Information 🆔
-        id: setup
-        run: |
-          : Get Commit Hash 🆔
-          echo "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
       - uses: ./.github/actions/generate-docs
-        with:
-          commitHash: ${{ steps.checks.setup.commitHash }}
 
   update-documentation-cloudflare:
     name: Update Documentation for Cloudflare ☁️
@@ -102,14 +95,8 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
-      - name: Get Commit Information 🆔
-        id: setup
-        run: |
-          : Get Commit Hash 🆔
-          echo "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
       - uses: ./.github/actions/generate-docs
         with:
-          commitHash: ${{ steps.checks.setup.commitHash }}
           disableLinkExtensions: true
 
   deploy-documentation:
@@ -133,14 +120,6 @@ jobs:
         with:
           name: OBS Studio Docs (No Extensions) ${{ steps.setup.outputs.commitHash }}
           path: docs
-
-      - name: Set Up Redirects 🔄
-        run: |
-          : Set Up Redirects 🔄
-          if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
-
-          echo "/previous/27.2 https://obsproject.com/docs/27.2 302" >> docs/_redirects
-          echo "/previous/:major.:minor https://:major-:minor.${{ vars.CF_PAGES_PROJECT }}.pages.dev 302" >> docs/_redirects
 
       - name: Publish to Live Page
         uses: cloudflare/wrangler-action@4c10c1822abba527d820b29e6333e7f5dac2cabd
