@@ -135,12 +135,10 @@ runs:
         : Prepare Release Notes 📝
         if (( ${+RUNNER_DEBUG} )) setopt XTRACE
 
-        git tag -l --format='%(contents)' ${GITHUB_REF_NAME} \
-          | tr '\n' '\\n' \
-          | sed 's/-----BEGIN SSH SIGNATURE-----.*-----END SSH SIGNATURE-----//g' \
-          | tr '\\n' '\n' > notes.rst
-
-        sed -i '' '2i\'$'\n''###################################################' notes.rst
+        git tag -l --format='%(contents:subject)' ${GITHUB_REF_NAME} > notes.rst
+        echo '###################################################' >> notes.rst
+        echo '' >> notes.rst
+        git tag -l --format='%(contents:body)' ${GITHUB_REF_NAME} >> notes.rst
         pandoc -f rst -t html notes.rst -o output/appcasts/notes_${{ inputs.channel }}.html
 
     - name: Generate Appcast 🎙️
