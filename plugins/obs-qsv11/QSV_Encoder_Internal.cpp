@@ -258,7 +258,7 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 
 	mfxPlatform platform;
 	MFXVideoCORE_QueryPlatform(m_session, &platform);
-#if defined(_WIN32)
+
 	PRAGMA_WARN_PUSH
 	PRAGMA_WARN_DEPRECATION
 	if (codec == QSV_CODEC_AVC || codec == QSV_CODEC_HEVC) {
@@ -268,7 +268,6 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 		m_mfxEncParams.mfx.LowPower = MFX_CODINGOPTION_ON;
 	}
 	PRAGMA_WARN_POP
-#endif
 
 	m_mfxEncParams.mfx.RateControlMethod = pParams->nRateControl;
 
