@@ -490,12 +490,12 @@ static void noise_suppress_update(void *data, obs_data_t *s)
 			pthread_mutex_unlock(&ng->nvafx_mutex);
 		}
 		if ((strcmp(ng->fx, method) != 0)) {
+			pthread_mutex_lock(&ng->nvafx_mutex);
 			bfree((void *)ng->fx);
 			ng->fx = bstrdup(method);
 			ng->intensity_ratio = intensity;
 			set_model(ng, method);
 			os_atomic_set_bool(&ng->reinit_done, false);
-			pthread_mutex_lock(&ng->nvafx_mutex);
 			for (int i = 0; i < (int)ng->channels; i++) {
 				/* Destroy previous FX */
 				if (NvAFX_DestroyEffect(ng->handle[i]) !=
@@ -946,6 +946,7 @@ static inline void process_nvafx(struct noise_suppress_data *ng)
 		/* Execute */
 		size_t runs = ng->has_mono_src ? 1 : ng->channels;
 		if (ng->reinit_done) {
+			pthread_mutex_lock(&ng->nvafx_mutex);
 			for (size_t i = 0; i < runs; i++) {
 				NvAFX_Status err =
 					NvAFX_Run(ng->handle[i],
@@ -968,6 +969,7 @@ static inline void process_nvafx(struct noise_suppress_data *ng)
 					}
 				}
 			}
+			pthread_mutex_unlock(&ng->nvafx_mutex);
 		}
 		if (ng->has_mono_src) {
 			memcpy(ng->nvafx_segment_buffers[1],
