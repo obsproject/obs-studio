@@ -17,7 +17,7 @@ class SurfaceEventFilter : public QObject {
 	OBSQTDisplay *display;
 
 public:
-	SurfaceEventFilter(OBSQTDisplay *src) : display(src) {}
+	SurfaceEventFilter(OBSQTDisplay *src) : QObject(src), display(src) {}
 
 protected:
 	bool eventFilter(QObject *obj, QEvent *event) override
