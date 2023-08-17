@@ -250,20 +250,28 @@ runs:
         print '::endgroup'
         popd
 
+    - name: Generate Steam auth code 🔐
+      id: steam-totp-playtest
+      uses: CyberAndrii/steam-totp@c7f636bc64e77f1b901e0420b7890813141508ee
+      if: ${{ ! fromJSON(inputs.preview) && fromJSON(steps.asset-info.outputs.is_prerelease) }}
+      with:
+        shared_secret: ${{ inputs.steamSecret }}
+
     - name: Upload to Steam (Playtest) 📤
       if: fromJSON(steps.asset-info.outputs.is_prerelease)
       shell: zsh --no-rcs --errexit --pipefail {0}
       run: |
-        : Upload to Steam (Playtest) 📤
+        : Upload to Steam Playtest 📤
         if (( ${+RUNNER_DEBUG} )) setopt XTRACE
 
+        local root_dir="${PWD}"
         local build_file='build_playtest.vdf'
         local branch_name='${{ inputs.playtestBranch }}'
 
         pushd steam
         print '::group::Prepare Steam Build Script'
 
-        set "s/@@DESC@@/${branch_name}-${{ steps.asset-info.outputs.description }}/;s/@@BRANCH@@/${branch_name}" \
+        sed "s/@@DESC@@/${branch_name}-${{ steps.asset-info.outputs.description }}/;s/@@BRANCH@@/${branch_name}/" \
           ${root_dir}/build-aux/steam/obs_playtest_build.vdf > ${build_file}
 
         print "Generated ${build_file}:\n$(<${build_file})"
@@ -274,7 +282,7 @@ runs:
         if [[ '${{ inputs.preview }}' == 'true' ]] preview='-preview'
 
         steamcmd \
-          +login '${{ inputs.steamUser }}' '${{ inputs.steamPassword }}' '${{ steps.steam-totp.outputs.code }}' \
+          +login '${{ inputs.steamUser }}' '${{ inputs.steamPassword }}' '${{ steps.steam-totp-playtest.outputs.code }}' \
           +run_app_build ${preview} ${build_file:a} \
           +quit
         print '::endgroup'
