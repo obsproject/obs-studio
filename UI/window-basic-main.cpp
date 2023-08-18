@@ -8484,10 +8484,24 @@ YouTubeAppDock *OBSBasic::GetYouTubeAppDock()
 	return youtubeAppDock;
 }
 
+#ifndef SEC_TO_NSEC
+#define SEC_TO_NSEC 1000000000
+#endif
+
 void OBSBasic::NewYouTubeAppDock()
 {
 	if (!cef_js_avail)
 		return;
+
+	/* make sure that the youtube app dock can't be immediately recreated.
+	 * dumb hack. blame chromium. or this particular dock. or both. if CEF
+	 * creates/destroys/creates a widget too quickly it can lead to a
+	 * crash. */
+	uint64_t ts = os_gettime_ns();
+	if ((ts - lastYouTubeAppDockCreationTime) < (5ULL * SEC_TO_NSEC))
+		return;
+
+	lastYouTubeAppDockCreationTime = ts;
 
 	if (youtubeAppDock)
 		RemoveDockWidget(youtubeAppDock->objectName());
