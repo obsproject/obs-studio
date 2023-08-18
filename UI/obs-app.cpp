@@ -110,6 +110,7 @@ string opt_starting_scene;
 
 bool restart = false;
 bool restart_safe = false;
+QStringList arguments;
 
 QPointer<OBSLogViewer> obsLogViewer;
 
@@ -2587,16 +2588,13 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	}
 
 	if (restart || restart_safe) {
-		auto args = qApp->arguments();
-		auto executable = args[0];
+		arguments = qApp->arguments();
 
 		if (restart_safe) {
-			args.append("--safe-mode");
+			arguments.append("--safe-mode");
 		} else {
-			args.removeAll("--safe-mode");
+			arguments.removeAll("--safe-mode");
 		}
-
-		QProcess::startDetached(executable, args);
 	}
 
 	return ret;
@@ -3511,5 +3509,11 @@ int main(int argc, char *argv[])
 	delete_safe_mode_sentinel();
 	blog(LOG_INFO, "Number of memory leaks: %ld", bnum_allocs());
 	base_set_log_handler(nullptr, nullptr);
+
+	if (restart || restart_safe) {
+		auto executable = arguments.takeFirst();
+		QProcess::startDetached(executable, arguments);
+	}
+
 	return ret;
 }
