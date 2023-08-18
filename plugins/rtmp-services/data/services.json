@@ -404,19 +404,6 @@
             ]
         },
         {
-            "name": "YouStreamer",
-            "stream_key_link": "https://www.app.youstreamer.com/stream/",
-            "servers": [
-                {
-                    "name": "Moscow",
-                    "url": "rtmp://push.youstreamer.com/in/"
-                }
-            ],
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
             "name": "Vaughn Live / iNSTAGIB",
             "servers": [
                 {
