@@ -1,7 +1,7 @@
 # $FreeBSD$
 
 freebsd_instance:
-  image: freebsd-13-1-release-amd64
+  image: freebsd-13-2-release-amd64
 
 env:
   CIRRUS_CLONE_DEPTH: 1
