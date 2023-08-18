@@ -1441,7 +1441,7 @@ static QString get_adv_audio_fallback(const QString &enc)
 {
 	const char *codec = obs_get_encoder_codec(QT_TO_UTF8(enc));
 
-	if (strcmp(codec, "aac") == 0)
+	if (codec && strcmp(codec, "aac") == 0)
 		return "ffmpeg_opus";
 
 	QString aac_default = "ffmpeg_aac";
