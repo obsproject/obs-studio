@@ -147,4 +147,5 @@ jobs:
           steamUser: ${{ secrets.STEAM_USER }}
           steamPassword: ${{ secrets.STEAM_PASSWORD }}
           workflowSecret: ${{ github.token }}
+          tagName: ${{ github.ref_name }}
           preview: false

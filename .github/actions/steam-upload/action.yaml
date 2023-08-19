@@ -91,7 +91,7 @@ runs:
 
         case ${GITHUB_EVENT_NAME} {
           release)
-            gh release download \
+            gh release download ${{ inputs.tagName }} \
               --pattern '*macOS*.dmg' \
               --pattern '*Windows*' \
               --pattern '*.zip' \
