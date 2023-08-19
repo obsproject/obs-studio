@@ -35,6 +35,7 @@ struct nvenc_encoder {
 #ifdef ENABLE_HEVC
 	bool hevc;
 #endif
+	bool av1;
 	int gpu;
 	DARRAY(uint8_t) header;
 	DARRAY(uint8_t) sei;
@@ -60,6 +61,13 @@ static const char *hevc_nvenc_getname(void *unused)
 	return ENCODER_NAME_HEVC;
 }
 #endif
+
+#define ENCODER_NAME_AV1 "NVIDIA NVENC AV1 (FFmpeg)"
+static const char *av1_nvenc_getname(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return ENCODER_NAME_AV1;
+}
 
 static inline bool valid_format(enum video_format format)
 {
@@ -281,7 +289,9 @@ static void on_first_packet(void *data, AVPacket *pkt, struct darray *da)
 					 &enc->sei.array, &enc->sei.num);
 	} else
 #endif
-	{
+		if (enc->av1) {
+		// TODO: add obs_extract_av1_headers
+	} else {
 		obs_extract_avc_headers(pkt->data, pkt->size,
 					(uint8_t **)&da->array, &da->num,
 					&enc->header.array, &enc->header.num,
@@ -300,10 +310,11 @@ static void on_first_packet(void *data, AVPacket *pkt, struct darray *da)
 }
 
 static void *nvenc_create_internal(obs_data_t *settings, obs_encoder_t *encoder,
-				   bool psycho_aq, bool hevc)
+				   bool psycho_aq, bool hevc, bool av1)
 {
 	struct nvenc_encoder *enc = bzalloc(sizeof(*enc));
 
+	enc->av1 = av1;
 #ifdef ENABLE_HEVC
 	enc->hevc = hevc;
 	if (hevc) {
@@ -316,7 +327,12 @@ static void *nvenc_create_internal(obs_data_t *settings, obs_encoder_t *encoder,
 #else
 	UNUSED_PARAMETER(hevc);
 #endif
-	{
+		if (av1) {
+		if (!ffmpeg_video_encoder_init(
+			    &enc->ffve, enc, encoder, "av1_nvenc", NULL,
+			    ENCODER_NAME_AV1, on_init_error, on_first_packet))
+			goto fail;
+	} else {
 		if (!ffmpeg_video_encoder_init(&enc->ffve, enc, encoder,
 					       "h264_nvenc", "nvenc_h264",
 					       ENCODER_NAME_H264, on_init_error,
@@ -368,12 +384,14 @@ static void *h264_nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 	}
 
 	bool psycho_aq = obs_data_get_bool(settings, "psycho_aq");
-	void *enc = nvenc_create_internal(settings, encoder, psycho_aq, false);
+	void *enc = nvenc_create_internal(settings, encoder, psycho_aq, false,
+					  false);
 	if ((enc == NULL) && psycho_aq) {
 		blog(LOG_WARNING,
 		     "[NVENC encoder] nvenc_create_internal failed, "
 		     "trying again without Psycho Visual Tuning");
-		enc = nvenc_create_internal(settings, encoder, false, false);
+		enc = nvenc_create_internal(settings, encoder, false, false,
+					    false);
 	}
 
 	return enc;
@@ -415,17 +433,67 @@ static void *hevc_nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 	}
 
 	bool psycho_aq = obs_data_get_bool(settings, "psycho_aq");
-	void *enc = nvenc_create_internal(settings, encoder, psycho_aq, true);
+	void *enc = nvenc_create_internal(settings, encoder, psycho_aq, true,
+					  false);
 	if ((enc == NULL) && psycho_aq) {
 		blog(LOG_WARNING,
 		     "[NVENC encoder] nvenc_create_internal failed, "
 		     "trying again without Psycho Visual Tuning");
-		enc = nvenc_create_internal(settings, encoder, false, true);
+		enc = nvenc_create_internal(settings, encoder, false, true,
+					    false);
 	}
 
 	return enc;
 }
 #endif
+
+static void *av1_nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
+{
+	video_t *video = obs_encoder_video(encoder);
+	const struct video_output_info *voi = video_output_get_info(video);
+	switch (voi->format) {
+	case VIDEO_FORMAT_I010: {
+		const char *const text =
+			obs_module_text("NVENC.I010Unsupported");
+		obs_encoder_set_last_error(encoder, text);
+		blog(LOG_ERROR, "[NVENC encoder] %s", text);
+		return NULL;
+	}
+	case VIDEO_FORMAT_P010:
+		break;
+	case VIDEO_FORMAT_P216:
+	case VIDEO_FORMAT_P416: {
+		const char *const text =
+			obs_module_text("NVENC.16bitUnsupported");
+		obs_encoder_set_last_error(encoder, text);
+		blog(LOG_ERROR, "[NVENC encoder] %s", text);
+		return NULL;
+	}
+	default:
+		if (voi->colorspace == VIDEO_CS_2100_PQ ||
+		    voi->colorspace == VIDEO_CS_2100_HLG) {
+			const char *const text =
+				obs_module_text("NVENC.8bitUnsupportedHdr");
+			obs_encoder_set_last_error(encoder, text);
+			blog(LOG_ERROR, "[NVENC encoder] %s", text);
+			return NULL;
+		}
+		break;
+	}
+
+	bool psycho_aq = obs_data_get_bool(settings, "psycho_aq");
+	void *enc = nvenc_create_internal(settings, encoder, psycho_aq, false,
+					  true);
+	if ((enc == NULL) && psycho_aq) {
+		blog(LOG_WARNING,
+		     "[NVENC encoder] nvenc_create_internal failed, "
+		     "trying again without Psycho Visual Tuning");
+		enc = nvenc_create_internal(settings, encoder, false, false,
+					    true);
+	}
+
+	return enc;
+}
 
 static bool nvenc_encode(void *data, struct encoder_frame *frame,
 			 struct encoder_packet *packet, bool *received_packet)
@@ -669,6 +737,12 @@ obs_properties_t *hevc_nvenc_properties_ffmpeg(void *unused)
 }
 #endif
 
+obs_properties_t *av1_nvenc_properties_ffmpeg(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return nvenc_properties_internal(CODEC_AV1, true);
+}
+
 static bool nvenc_extra_data(void *data, uint8_t **extra_data, size_t *size)
 {
 	struct nvenc_encoder *enc = data;
@@ -730,3 +804,24 @@ struct obs_encoder_info hevc_nvenc_encoder_info = {
 #endif
 };
 #endif
+
+struct obs_encoder_info av1_nvenc_encoder_info = {
+	.id = "ffmpeg_av1_nvenc",
+	.type = OBS_ENCODER_VIDEO,
+	.codec = "av1",
+	.get_name = av1_nvenc_getname,
+	.create = av1_nvenc_create,
+	.destroy = nvenc_destroy,
+	.encode = nvenc_encode,
+	.update = nvenc_reconfigure,
+	.get_defaults = av1_nvenc_defaults,
+	.get_properties = av1_nvenc_properties_ffmpeg,
+	.get_extra_data = nvenc_extra_data,
+	.get_sei_data = nvenc_sei_data,
+	.get_video_info = nvenc_video_info,
+#ifdef _WIN32
+	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_INTERNAL,
+#else
+	.caps = OBS_ENCODER_CAP_DYN_BITRATE,
+#endif
+};
