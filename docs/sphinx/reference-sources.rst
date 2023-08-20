@@ -1732,6 +1732,8 @@ Filters
 
    :param index: | The index to move the filter to.
 
+   .. versionadded:: 30.0
+
 ---------------------
 
 .. function:: int obs_source_filter_get_index(obs_source_t *source, obs_source_t *filter)
@@ -1739,6 +1741,8 @@ Filters
    Gets the index of the specified filter.
 
    :return: Index of the filter or -1 if it is invalid/not found.
+
+   .. versionadded:: 30.0
 
 Functions used by filters
 -------------------------
