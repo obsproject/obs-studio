@@ -128,29 +128,6 @@ void OBSBasicSettings::LoadStream1Settings()
 		ui->authUsername->setText(QT_UTF8(username));
 		ui->authPw->setText(QT_UTF8(password));
 		ui->useAuth->setChecked(use_auth);
-
-		/* add tooltips for stream key, user, password fields */
-		QString file = !App()->IsThemeDark()
-				       ? ":/res/images/help.svg"
-				       : ":/res/images/help_light.svg";
-		QString lStr = "<html>%1 <img src='%2' style=' \
-				vertical-align: bottom;  \
-				' /></html>";
-
-		ui->streamKeyLabel->setText(
-			lStr.arg(ui->streamKeyLabel->text(), file));
-		ui->streamKeyLabel->setToolTip(
-			QTStr("Basic.AutoConfig.StreamPage.StreamKey.ToolTip"));
-
-		ui->authUsernameLabel->setText(
-			lStr.arg(ui->authUsernameLabel->text(), file));
-		ui->authUsernameLabel->setToolTip(
-			QTStr("Basic.Settings.Stream.Custom.Username.ToolTip"));
-
-		ui->authPwLabel->setText(
-			lStr.arg(ui->authPwLabel->text(), file));
-		ui->authPwLabel->setToolTip(
-			QTStr("Basic.Settings.Stream.Custom.Password.ToolTip"));
 	} else {
 		int idx = ui->service->findText(service);
 		if (idx == -1) {
@@ -341,12 +318,38 @@ void OBSBasicSettings::UpdateKeyLink()
 	if (serviceName == "Dacast") {
 		ui->streamKeyLabel->setText(
 			QTStr("Basic.AutoConfig.StreamPage.EncoderKey"));
+		ui->streamKeyLabel->setToolTip("");
 	} else if (IsWHIP()) {
 		ui->streamKeyLabel->setText(
 			QTStr("Basic.AutoConfig.StreamPage.BearerToken"));
+		ui->streamKeyLabel->setToolTip("");
 	} else if (!IsCustomService()) {
 		ui->streamKeyLabel->setText(
 			QTStr("Basic.AutoConfig.StreamPage.StreamKey"));
+		ui->streamKeyLabel->setToolTip("");
+	} else {
+		/* add tooltips for stream key, user, password fields */
+		QString file = !App()->IsThemeDark()
+				       ? ":/res/images/help.svg"
+				       : ":/res/images/help_light.svg";
+		QString lStr = "<html>%1 <img src='%2' style=' \
+				vertical-align: bottom;  \
+				' /></html>";
+
+		ui->streamKeyLabel->setText(lStr.arg(
+			QTStr("Basic.AutoConfig.StreamPage.StreamKey"), file));
+		ui->streamKeyLabel->setToolTip(
+			QTStr("Basic.AutoConfig.StreamPage.StreamKey.ToolTip"));
+
+		ui->authUsernameLabel->setText(lStr.arg(
+			QTStr("Basic.Settings.Stream.Custom.Username"), file));
+		ui->authUsernameLabel->setToolTip(
+			QTStr("Basic.Settings.Stream.Custom.Username.ToolTip"));
+
+		ui->authPwLabel->setText(lStr.arg(
+			QTStr("Basic.Settings.Stream.Custom.Password"), file));
+		ui->authPwLabel->setToolTip(
+			QTStr("Basic.Settings.Stream.Custom.Password.ToolTip"));
 	}
 
 	if (QString(streamKeyLink).isNull() ||
