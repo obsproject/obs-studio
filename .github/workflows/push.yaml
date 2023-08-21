@@ -79,30 +79,6 @@ jobs:
           runSchemaChecks: true
           runServiceChecks: false
 
-  upload-language-files:
-    name: Upload Language Files 🌐
-    if: github.repository_owner == 'obsproject' && github.ref_name == 'master'
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: recursive
-          fetch-depth: 0
-
-      - name: Check for Changed Files ✅
-        uses: ./.github/actions/check-changes
-        id: checks
-        with:
-          baseRef: ${{ github.event.before }}
-          checkGlob: '**/en-US.ini'
-
-      - name: Upload US English Language Files 🇺🇸
-        if: fromJSON(steps.checks.outputs.hasChangedFiles)
-        uses: obsproject/obs-crowdin-sync/upload@30b5446e3b5eb19595aa68a81ddf896a857302cf
-        env:
-          CROWDIN_PAT: ${{ secrets.CROWDIN_SYNC_CROWDIN_PAT }}
-          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
-
   update-documentation:
     name: Update Documentation 📖
     if: github.repository_owner == 'obsproject' && (github.ref_name == 'master' || github.ref_type == 'tag')
