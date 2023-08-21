@@ -86,6 +86,48 @@ jobs:
     needs: cache-cleanup
     secrets: inherit
 
+  upload-language-files:
+    name: Upload Language Files 🌐
+    if: github.repository_owner == 'obsproject' && github.ref_name == 'master'
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Check Nightly Runs ☑️
+        id: nightly-checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          : Check Nightly Runs ☑️
+          if (( ${+RUNNER_DEBUG} )) setopt XTRACE
+
+          local last_nightly=$(gh run list --workflow scheduled.yaml --limit 2 --json headSha --jq '.[1].headSha')
+
+          if [[ "${GITHUB_SHA}" == "${last_nightly}" ]] {
+            print "passed=false" >> $GITHUB_OUTPUT
+          } else {
+            print "passed=true" >> $GITHUB_OUTPUT
+            print "lastNightly=${last_nightly}" >> $GITHUB_OUTPUT
+          }
+
+      - name: Check for Changed Files ✅
+        uses: ./.github/actions/check-changes
+        if: fromJSON(steps.nightly-checks.outputs.passed)
+        id: checks
+        with:
+          baseRef: ${{ steps.nighty-checks.outputs.lastNightly }}
+          checkGlob: '**/en-US.ini'
+
+      - name: Upload US English Language Files 🇺🇸
+        if: fromJSON(steps.checks.outputs.hasChangedFiles) && fromJSON(steps.nightly-checks.outputs.passed)
+        uses: obsproject/obs-crowdin-sync/upload@30b5446e3b5eb19595aa68a81ddf896a857302cf
+        env:
+          CROWDIN_PAT: ${{ secrets.CROWDIN_SYNC_CROWDIN_PAT }}
+          GITHUB_EVENT_BEFORE: ${{ steps.nighty-checks.outputs.lastNightly }}
+
   steam-upload:
     name: Upload Steam Builds 🚂
     needs: [build-project]
