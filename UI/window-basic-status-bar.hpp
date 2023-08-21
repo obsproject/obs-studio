@@ -72,6 +72,7 @@ private:
 	float lastCongestion = 0.0f;
 
 	QPointer<QTimer> refreshTimer;
+	QPointer<QTimer> messageTimer;
 
 	obs_output_t *GetOutput();
 
@@ -89,6 +90,9 @@ private:
 
 public slots:
 	void UpdateCPUUsage();
+
+	void clearMessage();
+	void showMessage(const QString &message, int timeout = 0);
 
 private slots:
 	void Reconnect(int seconds);
