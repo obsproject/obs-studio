@@ -179,6 +179,9 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 			break;
 		}
 	}
+
+	type = obs_get_latest_input_type_id(type);
+
 	if (type == nullptr || !obs_source_get_display_name(type)) {
 		return;
 	}
