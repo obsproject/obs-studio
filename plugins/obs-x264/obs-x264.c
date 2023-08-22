@@ -342,13 +342,20 @@ static bool reset_x264_params(struct obs_x264 *obsx264, const char *preset,
 
 static void log_x264(void *param, int level, const char *format, va_list args)
 {
-	struct obs_x264 *obsx264 = param;
-	char str[1024];
+	static const int level_map[] = {
+		LOG_ERROR,
+		LOG_WARNING,
+		LOG_INFO,
+		LOG_DEBUG,
+	};
 
-	vsnprintf(str, sizeof(str), format, args);
-	info("%s", str);
+	UNUSED_PARAMETER(param);
+	if (level < X264_LOG_ERROR)
+		level = X264_LOG_ERROR;
+	else if (level > X264_LOG_DEBUG)
+		level = X264_LOG_DEBUG;
 
-	UNUSED_PARAMETER(level);
+	blogva(level_map[level], format, args);
 }
 
 static inline int get_x264_cs_val(const char *const name,
