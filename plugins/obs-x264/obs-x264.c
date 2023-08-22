@@ -237,22 +237,6 @@ static obs_properties_t *obs_x264_props(void *unused)
 	return props;
 }
 
-static bool getparam(const char *param, char **name, const char **value)
-{
-	const char *assign;
-
-	if (!param || !*param || (*param == '='))
-		return false;
-
-	assign = strchr(param, '=');
-	if (!assign || !*assign || !*(assign + 1))
-		return false;
-
-	*name = bstrdup_n(param, assign - param);
-	*value = assign + 1;
-	return true;
-}
-
 static const char *validate(struct obs_x264 *obsx264, const char *val,
 			    const char *name, const char *const *list)
 {
