@@ -528,19 +528,25 @@ void SimpleOutput::LoadRecordingPreset_Lossless()
 
 void SimpleOutput::LoadRecordingPreset_Lossy(const char *encoderId)
 {
+	int divisor =
+		config_get_int(main->Config(), "SimpleOutput", "RecFPSDivisor");
 	videoRecording = obs_video_encoder_create(
 		encoderId, "simple_video_recording", nullptr, nullptr);
 	if (!videoRecording)
 		throw "Failed to create video recording encoder (simple output)";
+	obs_encoder_set_frame_rate_divisor(videoRecording, divisor);
 	obs_encoder_release(videoRecording);
 }
 
 void SimpleOutput::LoadStreamingPreset_Lossy(const char *encoderId)
 {
+	int divisor = config_get_int(main->Config(), "SimpleOutput",
+				     "StreamFPSDivisor");
 	videoStreaming = obs_video_encoder_create(
 		encoderId, "simple_video_stream", nullptr, nullptr);
 	if (!videoStreaming)
 		throw "Failed to create video streaming encoder (simple output)";
+	obs_encoder_set_frame_rate_divisor(videoStreaming, divisor);
 	obs_encoder_release(videoStreaming);
 }
 
@@ -1558,6 +1564,10 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 		config_get_string(main->Config(), "AdvOut", "RecEncoder");
 	const char *recAudioEncoder =
 		config_get_string(main->Config(), "AdvOut", "RecAudioEncoder");
+	int streamDivisor =
+		config_get_int(main->Config(), "AdvOut", "StreamFPSDivisor");
+	int recDivisor =
+		config_get_int(main->Config(), "AdvOut", "RecFPSDivisor");
 #ifdef __APPLE__
 	translate_macvth264_encoder(streamEncoder);
 	translate_macvth264_encoder(recordEncoder);
@@ -1626,6 +1636,8 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 			if (!videoRecording)
 				throw "Failed to create recording video "
 				      "encoder (advanced output)";
+			obs_encoder_set_frame_rate_divisor(videoRecording,
+							   recDivisor);
 			obs_encoder_release(videoRecording);
 		}
 	}
@@ -1636,6 +1648,7 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 	if (!videoStreaming)
 		throw "Failed to create streaming video encoder "
 		      "(advanced output)";
+	obs_encoder_set_frame_rate_divisor(videoStreaming, streamDivisor);
 	obs_encoder_release(videoStreaming);
 
 	const char *rate_control = obs_data_get_string(

@@ -1613,6 +1613,9 @@ bool OBSBasic::InitBasicConfigDefaults()
 				  "RecAudioEncoder", "aac");
 	config_set_default_uint(basicConfig, "SimpleOutput", "RecTracks",
 				(1 << 0));
+	config_set_default_int(basicConfig, "SimpleOutput", "RecFPSDivisor", 1);
+	config_set_default_int(basicConfig, "SimpleOutput", "StreamFPSDivisor",
+			       1);
 
 	config_set_default_bool(basicConfig, "AdvOut", "ApplyServiceSettings",
 				true);
@@ -1657,6 +1660,9 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_bool(basicConfig, "AdvOut", "RecRB", false);
 	config_set_default_uint(basicConfig, "AdvOut", "RecRBTime", 20);
 	config_set_default_int(basicConfig, "AdvOut", "RecRBSize", 512);
+
+	config_set_default_int(basicConfig, "AdvOut", "RecFPSDivisor", 1);
+	config_set_default_int(basicConfig, "AdvOut", "StreamFPSDivisor", 1);
 
 	config_set_default_uint(basicConfig, "Video", "BaseCX", cx);
 	config_set_default_uint(basicConfig, "Video", "BaseCY", cy);

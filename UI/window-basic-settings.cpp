@@ -440,6 +440,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->simpleReplayBuf,      CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleRBSecMax,       SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->simpleRBMegsMax,      SCROLL_CHANGED, OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutStreamFPS,   COMBO_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutRecFPS,      COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutEncoder,        COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutAEncoder,       COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutUseRescale,     CHECK_CHANGED,  OUTPUTS_CHANGED);
@@ -512,6 +514,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advReplayBuf,         CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advRBSecMax,          SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->advRBMegsMax,         SCROLL_CHANGED, OUTPUTS_CHANGED);
+	HookWidget(ui->advOutStreamFPS,      COMBO_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->advOutRecFPS,         COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->channelSetup,         COMBO_CHANGED,  AUDIO_RESTART);
 	HookWidget(ui->sampleRate,           COMBO_CHANGED,  AUDIO_RESTART);
 	HookWidget(ui->meterDecayRate,       COMBO_CHANGED,  AUDIO_CHANGED);
@@ -700,6 +704,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	LoadColorSpaces();
 	LoadColorFormats();
 	LoadFormats();
+	LoadFPSCombos();
 
 	auto ReloadAudioSources = [](void *data, calldata_t *param) {
 		auto settings = static_cast<OBSBasicSettings *>(data);
@@ -1120,6 +1125,42 @@ void OBSBasicSettings::LoadFormats()
 	ui->advOutRecFormat->addItem(FORMAT_STR("HLS"), "hls");
 
 #undef FORMAT_STR
+}
+
+constexpr int maxFPSDivisor = 5;
+
+static void PopulateFPSCombo(QComboBox *combo, int divisor)
+{
+	combo->clear();
+
+	obs_video_info ovi;
+	obs_get_video_info(&ovi);
+
+	for (int i = 1; i <= maxFPSDivisor; i++) {
+		float fps = float(ovi.fps_num) / float(ovi.fps_den) / float(i);
+		combo->addItem(QString::number(fps));
+	}
+
+	combo->blockSignals(true);
+	combo->setCurrentIndex(divisor - 1);
+	combo->blockSignals(false);
+}
+
+void OBSBasicSettings::LoadFPSCombos()
+{
+	int divisor = config_get_int(main->Config(), "SimpleOutput",
+				     "StreamFPSDivisor");
+	PopulateFPSCombo(ui->simpleOutStreamFPS, divisor);
+
+	divisor =
+		config_get_int(main->Config(), "SimpleOutput", "RecFPSDivisor");
+	PopulateFPSCombo(ui->simpleOutRecFPS, divisor);
+
+	divisor = config_get_int(main->Config(), "AdvOut", "StreamFPSDivisor");
+	PopulateFPSCombo(ui->advOutStreamFPS, divisor);
+
+	divisor = config_get_int(main->Config(), "AdvOut", "RecFPSDivisor");
+	PopulateFPSCombo(ui->advOutRecFPS, divisor);
 }
 
 static void AddCodec(QComboBox *combo, const FFmpegCodec &codec)
@@ -3802,6 +3843,10 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveSpinBox(ui->simpleRBMegsMax, "SimpleOutput", "RecRBSize");
 	config_set_int(main->Config(), "SimpleOutput", "RecTracks",
 		       SimpleOutGetSelectedAudioTracks());
+	config_set_int(main->Config(), "SimpleOutput", "StreamFPSDivisor",
+		       ui->simpleOutStreamFPS->currentIndex() + 1);
+	config_set_int(main->Config(), "SimpleOutput", "RecFPSDivisor",
+		       ui->simpleOutRecFPS->currentIndex() + 1);
 
 	curAdvStreamEncoder = GetComboData(ui->advOutEncoder);
 
@@ -3835,6 +3880,11 @@ void OBSBasicSettings::SaveOutputSettings()
 
 	config_set_int(main->Config(), "AdvOut", "RecTracks",
 		       AdvOutGetSelectedAudioTracks());
+
+	config_set_int(main->Config(), "AdvOut", "StreamFPSDivisor",
+		       ui->advOutStreamFPS->currentIndex() + 1);
+	config_set_int(main->Config(), "AdvOut", "RecFPSDivisor",
+		       ui->advOutRecFPS->currentIndex() + 1);
 
 	config_set_int(main->Config(), "AdvOut", "FLVTrack", CurrentFLVTrack());
 
@@ -4077,8 +4127,10 @@ void OBSBasicSettings::SaveSettings()
 	if (advancedChanged)
 		SaveAdvancedSettings();
 
-	if (videoChanged || advancedChanged)
+	if (videoChanged || advancedChanged) {
 		main->ResetVideo();
+		LoadFPSCombos();
+	}
 
 	config_save_safe(main->Config(), "tmp", nullptr);
 	config_save_safe(GetGlobalConfig(), "tmp", nullptr);
@@ -5086,7 +5138,12 @@ void OBSBasicSettings::AdvOutRecCheckWarnings()
 		if (!warningMsg.isEmpty())
 			warningMsg += "\n\n";
 		warningMsg += QTStr("OutputWarnings.CannotPause");
+
+		ui->advOutRecFPS->setCurrentIndex(
+			ui->advOutStreamFPS->currentIndex());
 	}
+
+	ui->advOutRecFPS->setEnabled(!useStreamEncoder);
 
 	QString recFormat = ui->advOutRecFormat->currentData().toString();
 
@@ -5337,6 +5394,11 @@ void OBSBasicSettings::SimpleRecordingQualityChanged()
 	ui->simpleOutRecAEncoderLabel->setVisible(showEncoder);
 	ui->simpleOutRecFormat->setVisible(!losslessQuality);
 	ui->simpleOutRecFormatLabel->setVisible(!losslessQuality);
+	ui->simpleOutRecFPS->setEnabled(showEncoder);
+
+	if (!showEncoder)
+		ui->simpleOutRecFPS->setCurrentIndex(
+			ui->simpleOutStreamFPS->currentIndex());
 
 	SimpleRecordingEncoderChanged();
 	SimpleReplayBufferChanged();

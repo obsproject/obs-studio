@@ -225,6 +225,7 @@ private:
 	void LoadColorFormats();
 	void LoadFormats();
 	void ReloadCodecs(const FFmpegFormat &format);
+	void LoadFPSCombos();
 
 	void UpdateColorFormatSpaceWarning();
 
