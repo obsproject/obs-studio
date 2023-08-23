@@ -94,7 +94,7 @@ static inline bool ResTooHigh(uint32_t cx, uint32_t cy)
 
 static inline bool ResTooLow(uint32_t cx, uint32_t cy)
 {
-	return cx < 8 || cy < 8;
+	return cx < 32 || cy < 32;
 }
 
 /* parses "[width]x[height]", string, i.e. 1024x768 */
