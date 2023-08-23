@@ -6,7 +6,6 @@
 #include <libavutil/time.h>
 #include <libavutil/error.h>
 #include <stdio.h>
-#include <sys/timeb.h>
 #include <time.h>
 
 #define HTTP_PROTO "http"
