@@ -1934,6 +1934,8 @@ EXPORT int64_t obs_sceneitem_get_id(const obs_sceneitem_t *item);
 
 EXPORT void obs_sceneitem_get_pos(const obs_sceneitem_t *item,
 				  struct vec2 *pos);
+EXPORT void obs_sceneitem_get_size(const obs_sceneitem_t *item,
+				   struct vec2 *size);
 EXPORT float obs_sceneitem_get_rot(const obs_sceneitem_t *item);
 EXPORT void obs_sceneitem_get_scale(const obs_sceneitem_t *item,
 				    struct vec2 *scale);

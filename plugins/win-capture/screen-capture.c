@@ -28,6 +28,9 @@ enum game_mode {
 #define S_GC_PLACEHOLDER_IMG "auto_placeholder_image"
 #define S_GC_PLACEHOLDER_MSG "auto_placeholder_message"
 
+#define SETTING_WINDOW_DEFAULT_WIDTH "default_width"
+#define SETTING_WINDOW_DEFAULT_HEIGHT "default_height"
+
 static bool capture_source_update(struct screen_capture *context,
 				  obs_data_t *settings);
 
@@ -46,6 +49,9 @@ struct screen_capture {
 	float game_capture_attempts_time_max;
 
 	struct dstr prev_line;
+
+	int base_width;
+	int base_height;
 
 	HANDLE subsources_mutex;
 	HANDLE update_mutex;
@@ -192,22 +198,23 @@ static void scs_defaults(obs_data_t *settings)
 				    "Looking for a game to capture");
 
 	obs_data_set_default_bool(settings, S_CAPTURE_CURSOR, true);
+
+	obs_data_set_default_int(settings, SETTING_WINDOW_DEFAULT_WIDTH,
+				 (int)1920);
+	obs_data_set_default_int(settings, SETTING_WINDOW_DEFAULT_HEIGHT,
+				 (int)1080);
 }
 
 static uint32_t scs_getwidth(void *data)
 {
-	struct obs_video_info ovi;
-	if (!obs_get_video_info_current(&ovi))
-		return 0;
-	return ovi.base_width;
+	struct screen_capture *context = data;
+	return context->base_width;
 }
 
 static uint32_t scs_getheight(void *data)
 {
-	struct obs_video_info ovi;
-	if (!obs_get_video_info_current(&ovi))
-		return 0;
-	return ovi.base_height;
+	struct screen_capture *context = data;
+	return context->base_height;
 }
 
 static void scs_show(void *data) {}
@@ -234,24 +241,21 @@ static void scs_deactivate(void *data)
 	blog(LOG_DEBUG, "[SCREEN_CAPTURE]: deactivated ");
 }
 
-static void scs_render_source(struct obs_source *source)
+static void scs_render_source(struct obs_source *source,
+			      struct screen_capture *context)
 {
-	struct obs_video_info ovi;
-	if (!obs_get_video_info_current(&ovi))
-		return;
-
 	float source_height = (float)obs_source_get_height(source);
 	float source_width = (float)obs_source_get_width(source);
 
-	float scale_y = (float)ovi.base_height / source_height;
-	float scale_x = (float)ovi.base_width / source_width;
+	float scale_y = (float)context->base_height / source_height;
+	float scale_x = (float)context->base_width / source_width;
 	scale_x = min(scale_x, scale_y);
 	scale_y = min(scale_x, scale_y);
 
 	float translate_x =
-		((float)ovi.base_width - source_width * scale_x) / 2.0f;
+		((float)context->base_width - source_width * scale_x) / 2.0f;
 	float translate_y =
-		((float)ovi.base_height - source_height * scale_y) / 2.0f;
+		((float)context->base_height - source_height * scale_y) / 2.0f;
 
 	gs_matrix_push();
 	gs_matrix_translate3f(translate_x, translate_y, 0.0f);
@@ -269,7 +273,8 @@ static void scs_render(void *data, gs_effect_t *effect)
 		if (ret == WAIT_OBJECT_0) {
 			if (context->current_capture_source) {
 				scs_render_source(
-					context->current_capture_source);
+					context->current_capture_source,
+					context);
 			}
 			ReleaseMutex(context->subsources_mutex);
 		}
@@ -453,6 +458,11 @@ static bool capture_source_update(struct screen_capture *context,
 		return false;
 	}
 
+	context->base_width =
+		obs_data_get_int(settings, SETTING_WINDOW_DEFAULT_WIDTH);
+	context->base_height =
+		obs_data_get_int(settings, SETTING_WINDOW_DEFAULT_HEIGHT);
+
 	if (dstr_cmp(&context->prev_line, capture_source_string) == 0) {
 		bool capture_cursor =
 			obs_data_get_bool(settings, S_CAPTURE_CURSOR);
@@ -616,6 +626,17 @@ static obs_properties_t *scs_properties(void *data)
 	obs_property_set_visible(p, false);
 	p = obs_properties_add_text(props, S_GC_PLACEHOLDER_MSG,
 				    S_GC_PLACEHOLDER_MSG, OBS_TEXT_DEFAULT);
+	obs_property_set_visible(p, false);
+
+	obs_properties_add_int(props, SETTING_WINDOW_DEFAULT_WIDTH,
+			       SETTING_WINDOW_DEFAULT_WIDTH, 0, 10000, 1);
+	obs_properties_add_int(props, SETTING_WINDOW_DEFAULT_HEIGHT,
+			       SETTING_WINDOW_DEFAULT_HEIGHT, 0, 10000, 1);
+
+	p = obs_properties_get(props, SETTING_WINDOW_DEFAULT_WIDTH);
+	obs_property_set_visible(p, false);
+
+	p = obs_properties_get(props, SETTING_WINDOW_DEFAULT_HEIGHT);
 	obs_property_set_visible(p, false);
 
 	return props;

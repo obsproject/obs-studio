@@ -212,9 +212,6 @@ static void recalculate_transition_size(obs_source_t *transition)
 
 void obs_transition_tick(obs_source_t *transition, float t)
 {
-	recalculate_transition_size(transition);
-	recalculate_transition_matrices(transition);
-
 	if (transition->transition_mode == OBS_TRANSITION_MODE_MANUAL) {
 		if (transition->transition_manual_torque == 0.0f) {
 			transition->transition_manual_val =
@@ -750,6 +747,15 @@ void obs_transition_video_render2(
 	if (!transition_valid(transition, "obs_transition_video_render"))
 		return;
 
+	recalculate_transition_size(transition);
+	recalculate_transition_matrices(transition);
+
+	if (trylock_textures(transition) == 0) {
+		gs_texrender_reset(transition->transition_texrender[0]);
+		gs_texrender_reset(transition->transition_texrender[1]);
+		unlock_textures(transition);
+	}
+
 	t = get_video_time(transition);
 
 	lock_transition(transition);
@@ -889,6 +895,9 @@ bool obs_transition_video_render_direct(obs_source_t *transition,
 
 	if (!transition_valid(transition, "obs_transition_video_render"))
 		return false;
+
+	recalculate_transition_size(transition);
+	recalculate_transition_matrices(transition);
 
 	t = get_video_time(transition);
 

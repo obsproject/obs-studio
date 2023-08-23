@@ -439,8 +439,16 @@ static void update_item_transform(struct obs_scene_item *item, bool update_tex)
 	if (os_atomic_load_long(&item->defer_update) > 0)
 		return;
 
+	struct obs_video_info *saved_canvas = NULL;
+	if (item->canvas) {
+		saved_canvas = obs_get_video_rendering_canvas();
+		obs_set_video_rendering_canvas(item->canvas);
+	}
 	width = obs_source_get_width(item->source);
 	height = obs_source_get_height(item->source);
+	if (saved_canvas)
+		obs_set_video_rendering_canvas(saved_canvas);
+
 	cx = calc_cx(item, width);
 	cy = calc_cy(item, height);
 	scale = item->scale;
@@ -1779,6 +1787,7 @@ static inline void duplicate_item_data(struct obs_scene_item *dst,
 	dst->bounds = src->bounds;
 	dst->stream_visible = src->stream_visible;
 	dst->recording_visible = src->recording_visible;
+	dst->canvas = src->canvas;
 
 	if (src->show_transition) {
 		obs_source_t *transition = obs_source_duplicate(
@@ -2858,6 +2867,14 @@ void obs_sceneitem_get_pos(const obs_sceneitem_t *item, struct vec2 *pos)
 {
 	if (item)
 		vec2_copy(pos, &item->pos);
+}
+
+void obs_sceneitem_get_size(const obs_sceneitem_t *item, struct vec2 *size)
+{
+	if (item) {
+		size->x = item->last_width;
+		size->y = item->last_height;
+	}
 }
 
 float obs_sceneitem_get_rot(const obs_sceneitem_t *item)
