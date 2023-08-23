@@ -27,6 +27,7 @@ safe_hdiutil() {
 
     if (( _status )) {
       log_warning "Unable to run 'hdiutil ${@}' (attempt #${i}). Retrying."
+      if (( ${+CI} )) sudo pkill -9 XProtect >/dev/null || true
       sleep ${_backoff[${i}]}
     } else {
       break
