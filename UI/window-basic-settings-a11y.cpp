@@ -209,6 +209,18 @@ void OBSBasicSettings::on_colorPreset_currentIndexChanged(int idx)
 	LoadA11ySettings(true);
 }
 
+void OBSBasicSettings::UpdateColorsAndChanged()
+{
+	preset = COLOR_PRESET_CUSTOM;
+	bool block = ui->colorPreset->blockSignals(true);
+	ui->colorPreset->setCurrentIndex(ui->colorPreset->count() - 1);
+	ui->colorPreset->blockSignals(block);
+
+	A11yChanged();
+
+	UpdateA11yColors();
+}
+
 void OBSBasicSettings::on_choose1_clicked()
 {
 	QColor color = GetColor(
@@ -220,14 +232,7 @@ void OBSBasicSettings::on_choose1_clicked()
 
 	selectRed = color_to_int(color);
 
-	preset = COLOR_PRESET_CUSTOM;
-	bool block = ui->colorPreset->blockSignals(true);
-	ui->colorPreset->setCurrentIndex(ui->colorPreset->count() - 1);
-	ui->colorPreset->blockSignals(block);
-
-	A11yChanged();
-
-	UpdateA11yColors();
+	UpdateColorsAndChanged();
 }
 
 void OBSBasicSettings::on_choose2_clicked()
@@ -241,14 +246,7 @@ void OBSBasicSettings::on_choose2_clicked()
 
 	selectGreen = color_to_int(color);
 
-	preset = COLOR_PRESET_CUSTOM;
-	bool block = ui->colorPreset->blockSignals(true);
-	ui->colorPreset->setCurrentIndex(ui->colorPreset->count() - 1);
-	ui->colorPreset->blockSignals(block);
-
-	A11yChanged();
-
-	UpdateA11yColors();
+	UpdateColorsAndChanged();
 }
 
 void OBSBasicSettings::on_choose3_clicked()
@@ -262,14 +260,7 @@ void OBSBasicSettings::on_choose3_clicked()
 
 	selectBlue = color_to_int(color);
 
-	preset = COLOR_PRESET_CUSTOM;
-	bool block = ui->colorPreset->blockSignals(true);
-	ui->colorPreset->setCurrentIndex(ui->colorPreset->count() - 1);
-	ui->colorPreset->blockSignals(block);
-
-	A11yChanged();
-
-	UpdateA11yColors();
+	UpdateColorsAndChanged();
 }
 
 void OBSBasicSettings::on_choose4_clicked()
@@ -283,14 +274,7 @@ void OBSBasicSettings::on_choose4_clicked()
 
 	mixerGreen = color_to_int(color);
 
-	preset = COLOR_PRESET_CUSTOM;
-	bool block = ui->colorPreset->blockSignals(true);
-	ui->colorPreset->setCurrentIndex(ui->colorPreset->count() - 1);
-	ui->colorPreset->blockSignals(block);
-
-	A11yChanged();
-
-	UpdateA11yColors();
+	UpdateColorsAndChanged();
 }
 
 void OBSBasicSettings::on_choose5_clicked()
@@ -304,14 +288,7 @@ void OBSBasicSettings::on_choose5_clicked()
 
 	mixerYellow = color_to_int(color);
 
-	preset = COLOR_PRESET_CUSTOM;
-	bool block = ui->colorPreset->blockSignals(true);
-	ui->colorPreset->setCurrentIndex(ui->colorPreset->count() - 1);
-	ui->colorPreset->blockSignals(block);
-
-	A11yChanged();
-
-	UpdateA11yColors();
+	UpdateColorsAndChanged();
 }
 
 void OBSBasicSettings::on_choose6_clicked()
@@ -325,14 +302,7 @@ void OBSBasicSettings::on_choose6_clicked()
 
 	mixerRed = color_to_int(color);
 
-	preset = COLOR_PRESET_CUSTOM;
-	bool block = ui->colorPreset->blockSignals(true);
-	ui->colorPreset->setCurrentIndex(ui->colorPreset->count() - 1);
-	ui->colorPreset->blockSignals(block);
-
-	A11yChanged();
-
-	UpdateA11yColors();
+	UpdateColorsAndChanged();
 }
 
 void OBSBasicSettings::on_choose7_clicked()
@@ -346,14 +316,7 @@ void OBSBasicSettings::on_choose7_clicked()
 
 	mixerGreenActive = color_to_int(color);
 
-	preset = COLOR_PRESET_CUSTOM;
-	bool block = ui->colorPreset->blockSignals(true);
-	ui->colorPreset->setCurrentIndex(ui->colorPreset->count() - 1);
-	ui->colorPreset->blockSignals(block);
-
-	A11yChanged();
-
-	UpdateA11yColors();
+	UpdateColorsAndChanged();
 }
 
 void OBSBasicSettings::on_choose8_clicked()
@@ -367,14 +330,7 @@ void OBSBasicSettings::on_choose8_clicked()
 
 	mixerYellowActive = color_to_int(color);
 
-	preset = COLOR_PRESET_CUSTOM;
-	bool block = ui->colorPreset->blockSignals(true);
-	ui->colorPreset->setCurrentIndex(ui->colorPreset->count() - 1);
-	ui->colorPreset->blockSignals(block);
-
-	A11yChanged();
-
-	UpdateA11yColors();
+	UpdateColorsAndChanged();
 }
 
 void OBSBasicSettings::on_choose9_clicked()
@@ -388,12 +344,5 @@ void OBSBasicSettings::on_choose9_clicked()
 
 	mixerRedActive = color_to_int(color);
 
-	preset = COLOR_PRESET_CUSTOM;
-	bool block = ui->colorPreset->blockSignals(true);
-	ui->colorPreset->setCurrentIndex(ui->colorPreset->count() - 1);
-	ui->colorPreset->blockSignals(block);
-
-	A11yChanged();
-
-	UpdateA11yColors();
+	UpdateColorsAndChanged();
 }

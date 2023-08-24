@@ -408,6 +408,7 @@ private slots:
 
 	void on_disableOSXVSync_clicked();
 
+	void UpdateColorsAndChanged();
 	void on_choose1_clicked();
 	void on_choose2_clicked();
 	void on_choose3_clicked();
