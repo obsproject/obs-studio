@@ -27,6 +27,11 @@ using namespace std;
 #define OPT_USE_DEVICE_TIMING "use_device_timing"
 #define OPT_WINDOW "window"
 #define OPT_PRIORITY "priority"
+#define OPT_LINK_ENABLE "link_enable"
+#define OPT_LINK_SOURCE "link_source"
+
+// unversionned ids of sources that can be linked to (needs hooked proc/signals)
+static const char *link_source_id[] = {"game_capture", "window_capture"};
 
 static void GetWASAPIDefaults(obs_data_t *settings);
 
@@ -1499,7 +1504,10 @@ static void GetWASAPIDefaultsDeviceOutput(obs_data_t *settings)
 	obs_data_set_default_bool(settings, OPT_USE_DEVICE_TIMING, true);
 }
 
-static void GetWASAPIDefaultsProcessOutput(obs_data_t *) {}
+static void GetWASAPIDefaultsProcessOutput(obs_data_t *settings)
+{
+	obs_data_set_default_bool(settings, OPT_LINK_ENABLE, false);
+}
 
 static void wasapi_get_hooked(void *data, calldata_t *cd)
 {
@@ -1684,10 +1692,50 @@ static bool wasapi_window_changed(obs_properties_t *props, obs_property_t *p,
 	return true;
 }
 
+static bool wasapi_link_changed(obs_properties_t *props, obs_property_t *p,
+				obs_data_t *settings)
+{
+	WASAPISource *source = (WASAPISource *)obs_properties_get_param(props);
+	if (!source)
+		return false;
+
+	bool enabled = obs_data_get_bool(settings, OPT_LINK_ENABLE);
+
+	obs_property_t *window_prop = obs_properties_get(props, OPT_WINDOW);
+	obs_property_t *priority_prop = obs_properties_get(props, OPT_PRIORITY);
+	obs_property_t *link_source_list =
+		obs_properties_get(props, OPT_LINK_SOURCE);
+
+	obs_property_set_visible(window_prop, !enabled);
+	obs_property_set_visible(priority_prop, !enabled);
+	obs_property_set_visible(link_source_list, enabled);
+
+	return true;
+}
+
+static bool fill_sources_list(void *data, obs_source_t *source)
+{
+	obs_property_t *source_list = (obs_property_t *)data;
+	const char *id = obs_source_get_unversioned_id(source);
+
+	for (size_t i = 0; i < (sizeof(link_source_id) / sizeof(const char *));
+	     i++) {
+		if (!strcmp(id, link_source_id[i])) {
+			const char *name = obs_source_get_name(source);
+			obs_property_list_add_string(source_list, name, name);
+		}
+	}
+	return true;
+}
+
 static obs_properties_t *GetWASAPIPropertiesProcessOutput(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
 	obs_properties_set_param(props, data, NULL);
+
+	obs_property_t *const link_enable = obs_properties_add_bool(
+		props, OPT_LINK_ENABLE, obs_module_text("Link.Enable"));
+	obs_property_set_modified_callback(link_enable, wasapi_link_changed);
 
 	obs_property_t *const window_prop = obs_properties_add_list(
 		props, OPT_WINDOW, obs_module_text("Window"),
@@ -1708,6 +1756,31 @@ static obs_properties_t *GetWASAPIPropertiesProcessOutput(void *data)
 				  obs_module_text("Priority.Exe"),
 				  WINDOW_PRIORITY_EXE);
 
+	obs_property_t *const link_source_list = obs_properties_add_list(
+		props, OPT_LINK_SOURCE, obs_module_text("Link.Source"),
+		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(link_source_list, obs_module_text("None"),
+				     "none");
+
+	obs_enum_sources(fill_sources_list, link_source_list);
+
+	// Padding
+	struct dstr padstring;
+	dstr_init(&padstring);
+
+	dstr_printf(&padstring, "<p style='color:#00000000'>%s</p>",
+		    obs_module_text("Priority"));
+	obs_property_t *padding = obs_properties_add_text(
+		props, "padding1", padstring.array, OBS_TEXT_INFO);
+	obs_property_set_long_description(padding, " ");
+
+	dstr_printf(&padstring, "<p style='color:#00000000'>%s</p>",
+		    obs_module_text("Link.Source"));
+	padding = obs_properties_add_text(props, "padding2", padstring.array,
+					  OBS_TEXT_INFO);
+	obs_property_set_long_description(padding, " ");
+
+	dstr_free(&padstring);
 	return props;
 }
 
