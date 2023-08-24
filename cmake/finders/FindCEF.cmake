@@ -98,6 +98,7 @@ if(CMAKE_HOST_SYSTEM_NAME STREQUAL Windows)
   find_program(
     CEF_LIBRARY_RELEASE
     NAMES cef.dll libcef.dll
+    NO_DEFAULT_PATH
     PATHS "${CEF_ROOT_DIR}" "${CEF_ROOT_DIR}/Release"
     DOC "Chromium Embedded Framework library location")
 
