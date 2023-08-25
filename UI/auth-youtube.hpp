@@ -44,7 +44,7 @@ class YoutubeAuth : public OAuthStreamKey {
 	std::string section;
 
 #ifdef BROWSER_AVAILABLE
-	YoutubeChatDock *chat;
+	YoutubeChatDock *chat = nullptr;
 #endif
 
 	virtual bool RetryLogin() override;
