@@ -102,16 +102,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           : Check Nightly Runs ☑️
-          if (( ${+RUNNER_DEBUG} )) setopt XTRACE
+          if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
 
-          local last_nightly=$(gh run list --workflow scheduled.yaml --limit 2 --json headSha --jq '.[1].headSha')
+          last_nightly=$(gh run list --workflow scheduled.yaml --limit 2 --json headSha --jq '.[1].headSha')
 
-          if [[ "${GITHUB_SHA}" == "${last_nightly}" ]] {
-            print "passed=false" >> $GITHUB_OUTPUT
-          } else {
-            print "passed=true" >> $GITHUB_OUTPUT
-            print "lastNightly=${last_nightly}" >> $GITHUB_OUTPUT
-          }
+          if [[ "${GITHUB_SHA}" == "${last_nightly}" ]]; then
+            echo "passed=false" >> $GITHUB_OUTPUT
+          else
+            echo "passed=true" >> $GITHUB_OUTPUT
+            echo "lastNightly=${last_nightly}" >> $GITHUB_OUTPUT
+          fi
 
       - name: Check for Changed Files ✅
         uses: ./.github/actions/check-changes
