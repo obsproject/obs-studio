@@ -2,10 +2,10 @@
 
 #include <map>
 
-ID3D11Device *g_pD3D11Device;
-ID3D11DeviceContext *g_pD3D11Ctx;
-IDXGIFactory2 *g_pDXGIFactory;
-IDXGIAdapter *g_pAdapter;
+ID3D11Device *g_pD3D11Device = nullptr;
+ID3D11DeviceContext *g_pD3D11Ctx = nullptr;
+IDXGIFactory2 *g_pDXGIFactory = nullptr;
+IDXGIAdapter *g_pAdapter = nullptr;
 
 std::map<mfxMemId *, mfxHDL> allocResponses;
 std::map<mfxHDL, mfxFrameAllocResponse> allocDecodeResponses;

@@ -21,6 +21,7 @@
 static const char *default_h264_device = nullptr;
 static const char *default_hevc_device = nullptr;
 static const char *default_av1_device = nullptr;
+static int default_fd = -1;
 
 mfxStatus simple_alloc(mfxHDL pthis, mfxFrameAllocRequest *request,
 		       mfxFrameAllocResponse *response)
@@ -112,21 +113,19 @@ mfxStatus Initialize(mfxVersion ver, mfxSession *pSession,
 		cfg, (const mfxU8 *)"mfxImplDescription.AccelerationMode",
 		impl);
 
-	// We cant cleanup FDs because Release() is only called for gpu texture sharing cases.
-	int fd = -1;
-	if (codec == QSV_CODEC_AVC)
-		fd = open(default_h264_device, O_RDWR);
-	if (codec == QSV_CODEC_HEVC)
-		fd = open(default_hevc_device, O_RDWR);
-	if (codec == QSV_CODEC_AV1)
-		fd = open(default_av1_device, O_RDWR);
-	if (fd < 0) {
+	if (codec == QSV_CODEC_AVC && default_h264_device)
+		default_fd = open(default_h264_device, O_RDWR);
+	if (codec == QSV_CODEC_HEVC && default_hevc_device)
+		default_fd = open(default_hevc_device, O_RDWR);
+	if (codec == QSV_CODEC_AV1 && default_av1_device)
+		default_fd = open(default_av1_device, O_RDWR);
+	if (default_fd < 0) {
 		blog(LOG_ERROR, "Failed to open device '%s'",
 		     default_h264_device);
 		return MFX_ERR_DEVICE_FAILED;
 	}
 
-	mfxHDL vaDisplay = vaGetDisplayDRM(fd);
+	mfxHDL vaDisplay = vaGetDisplayDRM(default_fd);
 	if (!vaDisplay) {
 		return MFX_ERR_DEVICE_FAILED;
 	}
@@ -135,7 +134,8 @@ mfxStatus Initialize(mfxVersion ver, mfxSession *pSession,
 	if (MFX_ERR_NONE > sts) {
 		blog(LOG_ERROR, "Failed to initialize MFX");
 		MSDK_PRINT_RET_MSG(sts);
-		close(fd);
+		close(default_fd);
+		default_fd = -1;
 		return sts;
 	}
 
@@ -144,8 +144,9 @@ mfxStatus Initialize(mfxVersion ver, mfxSession *pSession,
 	int minor;
 	if (vaInitialize(vaDisplay, &major, &minor) != VA_STATUS_SUCCESS) {
 		blog(LOG_ERROR, "Failed to initialize VA-API");
-		close(fd);
 		vaTerminate(vaDisplay);
+		close(default_fd);
+		default_fd = -1;
 		return MFX_ERR_DEVICE_FAILED;
 	}
 	sts = MFXVideoCORE_SetHandle(*pSession, MFX_HANDLE_VA_DISPLAY,
@@ -156,7 +157,13 @@ mfxStatus Initialize(mfxVersion ver, mfxSession *pSession,
 }
 
 // Release resources (device/display)
-void Release(){};
+void Release()
+{
+	if (default_fd > 0)
+		close(default_fd);
+
+	default_fd = -1;
+}
 
 void mfxGetTime(mfxTime *timestamp)
 {

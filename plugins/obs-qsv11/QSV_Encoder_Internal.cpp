@@ -963,9 +963,9 @@ mfxStatus QSV_Encoder_Internal::ClearData()
 	}
 
 	if ((m_bUseTexAlloc) && (g_numEncodersOpen <= 0)) {
-		Release();
 		g_DX_Handle = NULL;
 	}
+	Release();
 	MFXVideoENCODE_Close(m_session);
 	return sts;
 }
