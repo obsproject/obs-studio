@@ -66,7 +66,16 @@ void OBSBasicSettings::LoadA11ySettings(bool presetChange)
 	}
 
 	if (preset == COLOR_PRESET_DEFAULT) {
-		ResetDefaultColors();
+		selectRed = 0x0000ff;
+		selectGreen = 0x00ff00;
+		selectBlue = 0xff7f00;
+		mixerGreen = 0x267f26;
+		mixerYellow = 0x267f7f;
+		mixerRed = 0x26267f;
+		mixerGreenActive = 0x4cff4c;
+		mixerYellowActive = 0x4cffff;
+		mixerRedActive = 0x4c4cff;
+
 		SetDefaultColors();
 	} else if (preset == COLOR_PRESET_COLOR_BLIND_1) {
 		selectRed = 0x3349f9;
@@ -187,19 +196,6 @@ void OBSBasicSettings::SetDefaultColors()
 			       mixerYellowActive);
 	config_set_default_int(config, "Accessibility", "MixerRedActive",
 			       mixerRedActive);
-}
-
-void OBSBasicSettings::ResetDefaultColors()
-{
-	selectRed = 0x0000ff;
-	selectGreen = 0x00ff00;
-	selectBlue = 0xff7f00;
-	mixerGreen = 0x267f26;
-	mixerYellow = 0x267f7f;
-	mixerRed = 0x26267f;
-	mixerGreenActive = 0x4cff4c;
-	mixerYellowActive = 0x4cffff;
-	mixerRedActive = 0x4c4cff;
 }
 
 void OBSBasicSettings::on_colorPreset_currentIndexChanged(int idx)

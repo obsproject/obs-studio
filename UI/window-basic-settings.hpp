@@ -314,7 +314,6 @@ private:
 	/* a11y */
 	void UpdateA11yColors();
 	void SetDefaultColors();
-	void ResetDefaultColors();
 	QColor GetColor(uint32_t colorVal, QString label);
 	uint32_t preset;
 	uint32_t selectRed;
