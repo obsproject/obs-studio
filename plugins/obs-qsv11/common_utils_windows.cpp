@@ -215,7 +215,10 @@ void check_adapters(struct adapter_info *adapters, size_t *adapter_count)
 	const char *error = nullptr;
 	size_t config_adapter_count;
 
-	dstr_copy(&cmd, test_exe);
+	dstr_init_move_array(&cmd, test_exe);
+	dstr_insert_ch(&cmd, 0, '\"');
+	dstr_cat(&cmd, "\"");
+
 	enum_graphics_device_luids(enum_luids, &cmd);
 
 	pp = os_process_pipe_create(cmd.array, "r");
@@ -276,7 +279,6 @@ fail:
 	dstr_free(&caps_str);
 	dstr_free(&cmd);
 	os_process_pipe_destroy(pp);
-	bfree(test_exe);
 }
 
 /* (Lain) Functions currently unused */

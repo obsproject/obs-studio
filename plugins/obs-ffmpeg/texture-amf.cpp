@@ -2230,7 +2230,9 @@ try {
 	std::stringstream cmd;
 	std::string caps_str;
 
+	cmd << '"';
 	cmd << test_exe;
+	cmd << '"';
 	enum_graphics_device_luids(enum_luids, &cmd);
 
 	os_process_pipe_t *pp = os_process_pipe_create(cmd.str().c_str(), "r");
