@@ -55,7 +55,7 @@ elseif(OS_LINUX)
 
   target_sources(obs-qsv11 PRIVATE common_utils_linux.cpp)
 
-  target_link_libraries(obs-qsv11 PRIVATE Libva::va Libva::drm Libva::wayland Libva::x11)
+  target_link_libraries(obs-qsv11 PRIVATE Libva::va Libva::drm)
 endif()
 
 set_target_properties(obs-qsv11 PROPERTIES FOLDER "plugins/obs-qsv11")

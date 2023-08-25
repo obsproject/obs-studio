@@ -61,6 +61,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include "common_utils.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -91,12 +92,6 @@ static const char *const qsv_usage_names[] = {"TU1: Slowest (Best Quality)",
 static const char *const qsv_latency_names[] = {"ultra-low", "low", "normal",
 						0};
 typedef struct qsv_t qsv_t;
-
-enum qsv_codec {
-	QSV_CODEC_AVC,
-	QSV_CODEC_AV1,
-	QSV_CODEC_HEVC,
-};
 
 typedef struct {
 	mfxU16 nTargetUsage; /* 1 through 7, 1 being best quality and 7
