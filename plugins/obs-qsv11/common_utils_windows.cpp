@@ -24,10 +24,10 @@
 
 mfxStatus Initialize(mfxVersion ver, mfxSession *pSession,
 		     mfxFrameAllocator *pmfxAllocator, mfxHDL *deviceHandle,
-		     bool bCreateSharedHandles, bool dx9hack)
+		     bool bCreateSharedHandles, bool dx9hack,
+		     enum qsv_codec codec)
 {
-	bCreateSharedHandles; // (Lain) Currently unused
-	pmfxAllocator;        // (Lain) Currently unused
+	UNUSED_PARAMETER(codec);
 
 	mfxStatus sts = MFX_ERR_NONE;
 	mfxVariant impl;
