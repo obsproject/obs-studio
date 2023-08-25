@@ -69,8 +69,6 @@ void OBSBasicSettings::LoadA11ySettings(bool presetChange)
 		ResetDefaultColors();
 		SetDefaultColors();
 	} else if (preset == COLOR_PRESET_COLOR_BLIND_1) {
-		ResetDefaultColors();
-
 		mixerGreenActive = 0x742e94;
 		mixerGreen = 0x4a1a60;
 		mixerYellowActive = 0x3349f9;
