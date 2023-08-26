@@ -15,7 +15,7 @@ if(OS_WINDOWS)
 
   if(ENABLE_NVVFX)
     target_enable_feature(nv-filters "NVIDIA Video FX support" LIBNVVFX_ENABLED)
-    target_sources(nv-filters PRIVATE nvidia-greenscreen-filter.c)
+    target_sources(nv-filters PRIVATE nvidia-videofx-filter.c)
   else()
     target_disable_feature(nv-filters "NVIDIA Video FX support")
   endif()
