@@ -23,10 +23,10 @@ using namespace std;
 
 void HashToString(const B2Hash &in, string &out)
 {
-	const char alphabet[] = "0123456789abcdef";
+	constexpr char alphabet[] = "0123456789abcdef";
 	out.resize(kBlake2StrLength);
 
-	for (int i = 0; i != kBlake2HashLength; ++i) {
+	for (size_t i = 0; i != kBlake2HashLength; ++i) {
 		out[2 * i] = alphabet[(uint8_t)in[i] / 16];
 		out[2 * i + 1] = alphabet[(uint8_t)in[i] % 16];
 	}
@@ -37,9 +37,9 @@ void StringToHash(const string &in, B2Hash &out)
 	unsigned int temp;
 	const char *str = in.c_str();
 
-	for (int i = 0; i < kBlake2HashLength; i++) {
+	for (size_t i = 0; i < kBlake2HashLength; i++) {
 		sscanf_s(str + i * 2, "%02x", &temp);
-		out[i] = (std::byte)temp;
+		out[i] = static_cast<std::byte>(temp);
 	}
 }
 
@@ -59,18 +59,18 @@ bool CalculateFileHash(const wchar_t *path, B2Hash &hash)
 
 	for (;;) {
 		DWORD read = 0;
-		if (!ReadFile(handle, &hashBuffer[0], (DWORD)hashBuffer.size(),
-			      &read, nullptr))
+		if (!ReadFile(handle, hashBuffer.data(),
+			      (DWORD)hashBuffer.size(), &read, nullptr))
 			return false;
 
 		if (!read)
 			break;
 
-		if (blake2b_update(&blake2, &hashBuffer[0], read) != 0)
+		if (blake2b_update(&blake2, hashBuffer.data(), read) != 0)
 			return false;
 	}
 
-	if (blake2b_final(&blake2, &hash[0], hash.size()) != 0)
+	if (blake2b_final(&blake2, hash.data(), hash.size()) != 0)
 		return false;
 
 	return true;

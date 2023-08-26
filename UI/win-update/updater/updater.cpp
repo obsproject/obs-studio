@@ -126,20 +126,6 @@ static void Status(const wchar_t *fmt, ...)
 	va_end(argptr);
 }
 
-static void CreateFoldersForPath(const wchar_t *path)
-{
-	wchar_t *p = (wchar_t *)path;
-
-	while (*p) {
-		if (*p == '\\' || *p == '/') {
-			*p = 0;
-			CreateDirectory(path, nullptr);
-			*p = '\\';
-		}
-		p++;
-	}
-}
-
 static bool MyCopyFile(const wchar_t *src, const wchar_t *dest)
 try {
 	WinHandle hSrc;
@@ -174,7 +160,7 @@ try {
 
 	return true;
 
-} catch (LastError error) {
+} catch (LastError &error) {
 	SetLastError(error.code);
 	return false;
 }
@@ -190,7 +176,7 @@ static void MyDeleteFile(const wstring &filename)
 		return;
 
 	/* If all else fails, schedule the file to be deleted on reboot */
-	MoveFileEx(filename.c_str(), NULL, MOVEFILE_DELAY_UNTIL_REBOOT);
+	MoveFileEx(filename.c_str(), nullptr, MOVEFILE_DELAY_UNTIL_REBOOT);
 }
 
 static bool IsSafeFilename(const wchar_t *path)
@@ -223,23 +209,24 @@ static string QuickReadFile(const wchar_t *path)
 	WinHandle handle = CreateFileW(path, GENERIC_READ, 0, nullptr,
 				       OPEN_EXISTING, 0, nullptr);
 	if (!handle.Valid()) {
-		return string();
+		return {};
 	}
 
 	LARGE_INTEGER size;
 
 	if (!GetFileSizeEx(handle, &size)) {
-		return string();
+		return {};
 	}
 
 	data.resize((size_t)size.QuadPart);
 
 	DWORD read;
-	if (!ReadFile(handle, &data[0], (DWORD)data.size(), &read, nullptr)) {
-		return string();
+	if (!ReadFile(handle, data.data(), (DWORD)data.size(), &read,
+		      nullptr)) {
+		return {};
 	}
 	if (read != size.QuadPart) {
-		return string();
+		return {};
 	}
 
 	return data;
@@ -260,7 +247,7 @@ try {
 
 	return true;
 
-} catch (LastError error) {
+} catch (LastError &error) {
 	SetLastError(error.code);
 	return false;
 }
@@ -268,15 +255,14 @@ try {
 /* ----------------------------------------------------------------------- */
 
 /* Extend std::hash for B2Hash */
-namespace std {
-template<> struct hash<B2Hash> {
-	size_t operator()(B2Hash value) const
+template<> struct std::hash<B2Hash> {
+	size_t operator()(const B2Hash &value) const noexcept
 	{
-		return hash<string_view>{}(
-			string_view((const char *)value.data(), value.size()));
+		return hash<string_view>{}(string_view(
+			reinterpret_cast<const char *>(value.data()),
+			value.size()));
 	}
 };
-} // namespace std
 
 enum state_t {
 	STATE_INVALID,
@@ -304,13 +290,15 @@ struct update_t {
 	bool patchable = false;
 	bool compressed = false;
 
-	inline update_t() {}
+	update_t() = default;
 
-	inline update_t(const update_t &from)
-		: sourceURL(from.sourceURL),
-		  outputPath(from.outputPath),
-		  previousFile(from.previousFile),
-		  packageName(from.packageName),
+	update_t(const update_t &from) = default;
+
+	update_t(update_t &&from) noexcept
+		: sourceURL(std::move(from.sourceURL)),
+		  outputPath(std::move(from.outputPath)),
+		  previousFile(std::move(from.previousFile)),
+		  packageName(std::move(from.packageName)),
 		  hash(from.hash),
 		  my_hash(from.my_hash),
 		  downloadHash(from.downloadHash),
@@ -320,26 +308,10 @@ struct update_t {
 		  patchable(from.patchable),
 		  compressed(from.compressed)
 	{
-	}
-
-	inline update_t(update_t &&from)
-		: sourceURL(std::move(from.sourceURL)),
-		  outputPath(std::move(from.outputPath)),
-		  previousFile(std::move(from.previousFile)),
-		  packageName(std::move(from.packageName)),
-		  hash(from.hash),
-		  my_hash(from.my_hash),
-		  downloadHash(std::move(from.downloadHash)),
-		  fileSize(from.fileSize),
-		  state(from.state),
-		  has_hash(from.has_hash),
-		  patchable(from.patchable),
-		  compressed(from.compressed)
-	{
 		from.state = STATE_INVALID;
 	}
 
-	void CleanPartialUpdate()
+	void CleanPartialUpdate() const
 	{
 		if (state == STATE_INSTALL_FAILED || state == STATE_INSTALLED) {
 			if (!previousFile.empty()) {
@@ -353,30 +325,14 @@ struct update_t {
 		}
 	}
 
-	inline update_t &operator=(const update_t &from)
-	{
-		sourceURL = from.sourceURL;
-		outputPath = from.outputPath;
-		previousFile = from.previousFile;
-		packageName = from.packageName;
-		hash = from.hash;
-		my_hash = from.my_hash;
-		downloadHash = from.downloadHash;
-		fileSize = from.fileSize;
-		state = from.state;
-		has_hash = from.has_hash;
-		patchable = from.patchable;
-		compressed = from.compressed;
-
-		return *this;
-	}
+	update_t &operator=(const update_t &from) = default;
 };
 
 struct deletion_t {
 	wstring originalFilename;
 	wstring deleteMeFilename;
 
-	void UndoRename()
+	void UndoRename() const
 	{
 		if (!deleteMeFilename.empty())
 			MoveFile(deleteMeFilename.c_str(),
@@ -413,7 +369,7 @@ static int Decompress(ZSTD_DCtx *ctx, std::vector<std::byte> &buf, size_t size)
 	}
 
 	// Overwrite buffer with decompressed data
-	size_t result = ZSTD_decompressDCtx(ctx, &buf[0], buf.size(),
+	size_t result = ZSTD_decompressDCtx(ctx, buf.data(), buf.size(),
 					    comp.data(), comp.size());
 
 	if (result != size)
@@ -502,7 +458,7 @@ bool DownloadWorkerThread()
 				Status(L"Update failed: Could not download "
 				       L"%s (error code %d)",
 				       update.outputPath.c_str(), responseCode);
-				return 1;
+				return true;
 			}
 
 			if (responseCode != 200) {
@@ -510,20 +466,20 @@ bool DownloadWorkerThread()
 				Status(L"Update failed: Could not download "
 				       L"%s (error code %d)",
 				       update.outputPath.c_str(), responseCode);
-				return 1;
+				return true;
 			}
 
 			/* Validate hash of downloaded data. */
 			B2Hash dataHash;
-			blake2b(&dataHash[0], dataHash.size(), buf.data(),
-				buf.size(), NULL, 0);
+			blake2b(dataHash.data(), dataHash.size(), buf.data(),
+				buf.size(), nullptr, 0);
 
 			if (dataHash != update.downloadHash) {
 				downloadThreadFailure = true;
 				Status(L"Update failed: Integrity check "
 				       L"failed on %s",
 				       update.outputPath.c_str());
-				return 1;
+				return true;
 			}
 
 			/* Decompress data in compressed buffer. */
@@ -535,7 +491,7 @@ bool DownloadWorkerThread()
 					Status(L"Update failed: Decompression "
 					       L"failed on %s (error code %d)",
 					       update.outputPath.c_str(), res);
-					return 1;
+					return true;
 				}
 			}
 
@@ -578,9 +534,7 @@ try {
 
 /* ----------------------------------------------------------------------- */
 
-#define WAITIFOBS_SUCCESS 0
-#define WAITIFOBS_WRONG_PROCESS 1
-#define WAITIFOBS_CANCELLED 2
+enum { WAITIFOBS_SUCCESS, WAITIFOBS_WRONG_PROCESS, WAITIFOBS_CANCELLED };
 
 static inline DWORD WaitIfOBS(DWORD id, const wchar_t *expected)
 {
@@ -601,7 +555,7 @@ static inline DWORD WaitIfOBS(DWORD id, const wchar_t *expected)
 
 	// check it's actually our exe that's running
 	size_t len = wcslen(obs_base_directory);
-	if (wcsncmp(path, obs_base_directory, len))
+	if (wcsncmp(path, obs_base_directory, len) != 0)
 		return WAITIFOBS_WRONG_PROCESS;
 
 	name = wcsrchr(path, L'\\');
@@ -674,8 +628,7 @@ queue<string> hashQueue;
 
 void HasherThread()
 {
-	bool hasherThreadFailure = false;
-	unique_lock<mutex> ulock(updateMutex, defer_lock);
+	unique_lock ulock(updateMutex, defer_lock);
 
 	while (true) {
 		ulock.lock();
@@ -746,9 +699,7 @@ static bool NonCorePackageInstalled(const char *name)
 	return false;
 }
 
-static bool AddPackageUpdateFiles(const Package &package,
-				  const wchar_t *tempPath,
-				  const wchar_t *branch)
+static bool AddPackageUpdateFiles(const Package &package, const wchar_t *branch)
 {
 	wchar_t wPackageName[512];
 	if (!UTF8ToWideBuf(wPackageName, package.name.c_str()))
@@ -828,7 +779,7 @@ static bool AddPackageUpdateFiles(const Package &package,
 		if (has_hash)
 			update.my_hash = localFileHash;
 
-		updates.push_back(move(update));
+		updates.push_back(std::move(update));
 
 		totalFileSize += file.size;
 	}
@@ -873,7 +824,7 @@ static bool RenameRemovedFile(deletion_t &deletion)
 	string temp;
 
 	CryptGenRandom(hProvider, sizeof(junk), junk);
-	blake2b(&hash[0], hash.size(), junk, sizeof(junk), NULL, 0);
+	blake2b(hash.data(), hash.size(), junk, sizeof(junk), nullptr, 0);
 	HashToString(hash, temp);
 
 	if (!UTF8ToWideBuf(randomStr, temp.c_str()))
@@ -905,11 +856,11 @@ static void UpdateWithPatchIfAvailable(const PatchResponse &patch)
 	if (patch.source.compare(0, kCDNUrl.size(), kCDNUrl) != 0)
 		return;
 
-	if (patch.name.find("/") == string::npos)
+	if (patch.name.find('/') == string::npos)
 		return;
 
-	string patchPackageName(patch.name, 0, patch.name.find("/"));
-	string fileName(patch.name, patch.name.find("/") + 1);
+	string patchPackageName(patch.name, 0, patch.name.find('/'));
+	string fileName(patch.name, patch.name.find('/') + 1);
 
 	if (!UTF8ToWideBuf(widePatchableFilename, fileName.c_str()))
 		return;
@@ -935,7 +886,7 @@ static void UpdateWithPatchIfAvailable(const PatchResponse &patch)
 	}
 }
 
-static bool MoveInUseFileAway(update_t &file)
+static bool MoveInUseFileAway(const update_t &file)
 {
 	_TCHAR deleteMeName[MAX_PATH];
 	_TCHAR randomStr[MAX_PATH];
@@ -945,7 +896,7 @@ static bool MoveInUseFileAway(update_t &file)
 	string temp;
 
 	CryptGenRandom(hProvider, sizeof(junk), junk);
-	blake2b(&hash[0], hash.size(), junk, sizeof(junk), NULL, 0);
+	blake2b(hash.data(), hash.size(), junk, sizeof(junk), nullptr, 0);
 	HashToString(hash, temp);
 
 	if (!UTF8ToWideBuf(randomStr, temp.c_str()))
@@ -992,13 +943,12 @@ static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 	DWORD attribs = GetFileAttributes(file.outputPath.c_str());
 
 	if (attribs != INVALID_FILE_ATTRIBUTES) {
-		wchar_t *curFileName = nullptr;
 		wchar_t baseName[MAX_PATH];
 
 		StringCbCopy(baseName, sizeof(baseName),
 			     file.outputPath.c_str());
 
-		curFileName = wcsrchr(baseName, '/');
+		wchar_t *curFileName = wcsrchr(baseName, '/');
 		if (curFileName) {
 			curFileName[0] = '\0';
 			curFileName++;
@@ -1112,7 +1062,8 @@ static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 
 		/* We may be installing into new folders,
 		 * make sure they exist */
-		CreateFoldersForPath(file.outputPath.c_str());
+		filesystem::path filePath(file.outputPath.c_str());
+		create_directories(filePath.parent_path());
 
 		file.previousFile = L"";
 
@@ -1175,7 +1126,7 @@ static bool UpdateWorker()
 static bool RunUpdateWorkers(int num)
 try {
 	for (update_t &update : updates)
-		updateQueue.push(update);
+		updateQueue.emplace(update);
 
 	vector<future<bool>> thread_success_results;
 	thread_success_results.resize(num);
@@ -1538,7 +1489,7 @@ static bool Update(wchar_t *cmdLine)
 	 * Parse current manifest update files   */
 
 	for (const Package &package : manifest.packages) {
-		if (!AddPackageUpdateFiles(package, tempPath, branch.c_str())) {
+		if (!AddPackageUpdateFiles(package, branch.c_str())) {
 			Status(L"Update failed: Failed to process update packages");
 			return false;
 		}
@@ -1553,7 +1504,7 @@ static bool Update(wchar_t *cmdLine)
 	/* ------------------------------------- *
 	 * Exit if updates already installed     */
 
-	if (!updates.size()) {
+	if (updates.empty()) {
 		Status(L"All available updates are already installed.");
 		SetDlgItemText(hwndMain, IDC_BUTTON, L"Launch OBS");
 		return true;
@@ -1606,9 +1557,9 @@ static bool Update(wchar_t *cmdLine)
 		compressedJson.resize(compressSize);
 
 		size_t result =
-			ZSTD_compress(&compressedJson[0], compressedJson.size(),
-				      post_body.data(), post_body.size(),
-				      ZSTD_CLEVEL_DEFAULT);
+			ZSTD_compress(compressedJson.data(),
+				      compressedJson.size(), post_body.data(),
+				      post_body.size(), ZSTD_CLEVEL_DEFAULT);
 
 		if (ZSTD_isError(result))
 			return false;
@@ -1621,7 +1572,7 @@ static bool Update(wchar_t *cmdLine)
 
 		int responseCode;
 		bool success = !!HTTPPostData(manifestUrl.c_str(),
-					      (BYTE *)&compressedJson[0],
+					      (BYTE *)compressedJson.data(),
 					      (int)compressedJson.size(),
 					      L"Accept-Encoding: gzip",
 					      &responseCode, newManifest);
@@ -1684,9 +1635,6 @@ static bool Update(wchar_t *cmdLine)
 
 	/* ------------------------------------- *
 	 * Install updates                       */
-
-	int updatesInstalled = 0;
-	int lastPosition = 0;
 
 	SendDlgItemMessage(hwndMain, IDC_PROGRESS, PBM_SETPOS, 0, 0);
 
@@ -1925,14 +1873,14 @@ static int RestartAsAdmin(LPCWSTR lpCmdLine, LPCWSTR cwd)
 	SHELLEXECUTEINFO shExInfo = {0};
 	shExInfo.cbSize = sizeof(shExInfo);
 	shExInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
-	shExInfo.hwnd = 0;
+	shExInfo.hwnd = nullptr;
 	shExInfo.lpVerb = L"runas"; /* Operation to perform */
 	shExInfo.lpFile = myPath;   /* Application to start */
 	shExInfo.lpParameters =
 		elevatedCmdLine.c_str(); /* Additional parameters */
 	shExInfo.lpDirectory = cwd;
 	shExInfo.nShow = SW_NORMAL;
-	shExInfo.hInstApp = 0;
+	shExInfo.hInstApp = nullptr;
 
 	/* annoyingly the actual elevated updater will disappear behind other
 	 * windows :( */
