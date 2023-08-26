@@ -360,27 +360,6 @@ void xcomp_cleanup_pixmap(Display *disp, struct xcompcap *s)
 	}
 }
 
-static enum gs_color_format gs_format_from_tex()
-{
-	GLint iformat = 0;
-	// consider GL_ARB_internalformat_query
-	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT,
-				 &iformat);
-
-	// These formats are known to be wrong on Intel platforms. We intentionally
-	// use swapped internal formats here to preserve historic behavior which
-	// swapped colors accidentally and because D3D11 would not support a
-	// GS_RGBX format.
-	switch (iformat) {
-	case GL_RGB:
-		return GS_BGRX_UNORM;
-	case GL_RGBA:
-		return GS_RGBA_UNORM;
-	default:
-		return GS_RGBA_UNORM;
-	}
-}
-
 static int silence_x11_errors(Display *display, XErrorEvent *err)
 {
 	UNUSED_PARAMETER(display);
