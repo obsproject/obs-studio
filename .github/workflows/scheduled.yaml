@@ -118,7 +118,7 @@ jobs:
         if: fromJSON(steps.nightly-checks.outputs.passed)
         id: checks
         with:
-          baseRef: ${{ steps.nighty-checks.outputs.lastNightly }}
+          baseRef: ${{ steps.nightly-checks.outputs.lastNightly }}
           checkGlob: '**/en-US.ini'
 
       - name: Upload US English Language Files 🇺🇸
@@ -126,7 +126,7 @@ jobs:
         uses: obsproject/obs-crowdin-sync/upload@30b5446e3b5eb19595aa68a81ddf896a857302cf
         env:
           CROWDIN_PAT: ${{ secrets.CROWDIN_SYNC_CROWDIN_PAT }}
-          GITHUB_EVENT_BEFORE: ${{ steps.nighty-checks.outputs.lastNightly }}
+          GITHUB_EVENT_BEFORE: ${{ steps.nightly-checks.outputs.lastNightly }}
 
   steam-upload:
     name: Upload Steam Builds 🚂
