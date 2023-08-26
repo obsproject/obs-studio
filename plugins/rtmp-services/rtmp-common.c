@@ -837,12 +837,6 @@ static const char *rtmp_common_key(void *data)
 	return service->key;
 }
 
-static bool supports_multitrack(void *data)
-{
-	struct rtmp_common *service = data;
-	return service->supports_additional_audio_track;
-}
-
 static void rtmp_common_get_supported_resolutions(
 	void *data, struct obs_service_resolution **resolutions, size_t *count)
 {
