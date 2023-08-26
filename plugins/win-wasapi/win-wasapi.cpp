@@ -190,6 +190,10 @@ class WASAPISource {
 	bool previouslyFailed = false;
 	WinHandle reconnectThread = NULL;
 
+	const char *linked_source_name;
+	bool linked_enabled;
+	signal_handler_t *linked_source_sh = nullptr;
+
 	class CallbackStartCapture : public ARtwqAsyncCallback {
 	public:
 		CallbackStartCapture(WASAPISource *source)
@@ -316,6 +320,13 @@ public:
 
 	bool GetHooked();
 	HWND GetHwnd();
+
+	void ChangeWindow(const char *new_title, const char *new_class,
+			  const char *new_executable);
+	void OnLinkedSourceCreate(obs_source_t *source);
+	void OnLinkedSourceDestroy();
+	void OnLinkedSourceRename(const char *name);
+	const char *GetLinkedName();
 };
 
 class WASAPINotify : public IMMNotificationClient {
@@ -535,6 +546,47 @@ void WASAPISource::Start()
 	}
 }
 
+static void on_linked_source_hooked(void *data, calldata_t *cd)
+{
+	WASAPISource *wasapi_source = reinterpret_cast<WASAPISource *>(data);
+	const char *title = nullptr;
+	const char *window_class = nullptr;
+	const char *executable = nullptr;
+	title = calldata_string(cd, "title");
+	window_class = calldata_string(cd, "class");
+	executable = calldata_string(cd, "executable");
+	wasapi_source->ChangeWindow(title, window_class, executable);
+}
+
+static void on_linked_source_unhooked(void *data, calldata_t *cd)
+{
+	WASAPISource *wasapi_source = reinterpret_cast<WASAPISource *>(data);
+	wasapi_source->ChangeWindow("", "", "");
+}
+
+static void on_linked_source_create(void *data, calldata_t *cd)
+{
+	WASAPISource *wasapi_source = reinterpret_cast<WASAPISource *>(data);
+	obs_source_t *source = (obs_source_t *)calldata_ptr(cd, "source");
+	const char *linked_name = wasapi_source->GetLinkedName();
+	const char *source_name = obs_source_get_name(source);
+	if (!strcmp(linked_name, source_name))
+		wasapi_source->OnLinkedSourceCreate(source);
+}
+
+static void on_linked_source_destroy(void *data, calldata_t *cd)
+{
+	WASAPISource *wasapi_source = reinterpret_cast<WASAPISource *>(data);
+	wasapi_source->OnLinkedSourceDestroy();
+}
+
+static void on_linked_source_rename(void *data, calldata_t *cd)
+{
+	WASAPISource *wasapi_source = reinterpret_cast<WASAPISource *>(data);
+	const char *new_name = calldata_string(cd, "new_name");
+	wasapi_source->OnLinkedSourceRename(new_name);
+}
+
 void WASAPISource::Stop()
 {
 	SetEvent(stopSignal);
@@ -562,12 +614,111 @@ void WASAPISource::Stop()
 		rtwq_unlock_work_queue(sampleReady.GetQueueId());
 	else
 		WaitForSingleObject(captureThread, INFINITE);
+
+	if (sourceType == SourceType::ProcessOutput and linked_enabled) {
+		if (linked_source_sh) {
+			signal_handler_disconnect(linked_source_sh, "hooked",
+						  on_linked_source_hooked,
+						  this);
+			signal_handler_disconnect(linked_source_sh, "unhooked",
+						  on_linked_source_unhooked,
+						  this);
+			signal_handler_disconnect(linked_source_sh, "destroy",
+						  on_linked_source_destroy,
+						  this);
+			signal_handler_disconnect(linked_source_sh, "rename",
+						  on_linked_source_rename,
+						  this);
+		} else {
+			signal_handler_t *gsh = obs_get_signal_handler();
+			signal_handler_disconnect(gsh, "source_create",
+						  on_linked_source_create,
+						  this);
+		}
+	}
 }
 
 WASAPISource::~WASAPISource()
 {
 	enumerator->UnregisterEndpointNotificationCallback(notify);
 	Stop();
+}
+
+const char *WASAPISource::GetLinkedName()
+{
+	return linked_source_name;
+}
+
+void WASAPISource::ChangeWindow(const char *new_title, const char *new_class,
+				const char *new_executable)
+{
+	title = new_title;
+	window_class = new_class;
+	executable = new_executable;
+	blog(LOG_INFO,
+	     "[win-wasapi: '%s'] linked source %s target changed to:\n"
+	     "\texecutable: %s\n"
+	     "\ttitle: %s\n"
+	     "\tclass: %s\n",
+	     obs_source_get_name(source), linked_source_name,
+	     executable.c_str(), title.c_str(), window_class.c_str());
+	SetEvent(restartSignal);
+}
+
+void WASAPISource::OnLinkedSourceCreate(obs_source_t *source)
+{
+	calldata_t cd = {};
+	proc_handler_t *ph = obs_source_get_proc_handler(source);
+	proc_handler_call(ph, "get_hooked", &cd);
+	window_class = calldata_string(&cd, "class");
+	title = calldata_string(&cd, "title");
+	executable = calldata_string(&cd, "executable");
+	calldata_free(&cd);
+	SetEvent(restartSignal);
+
+	linked_source_sh = obs_source_get_signal_handler(source);
+	signal_handler_connect(linked_source_sh, "hooked",
+			       on_linked_source_hooked, this);
+	signal_handler_connect(linked_source_sh, "unhooked",
+			       on_linked_source_unhooked, this);
+	signal_handler_connect(linked_source_sh, "destroy",
+			       on_linked_source_destroy, this);
+	signal_handler_connect(linked_source_sh, "rename",
+			       on_linked_source_rename, this);
+
+	signal_handler_t *gsh = obs_get_signal_handler();
+	signal_handler_disconnect(gsh, "source_create", on_linked_source_create,
+				  this);
+}
+
+void WASAPISource::OnLinkedSourceDestroy()
+{
+	window_class.clear();
+	title.clear();
+	executable.clear();
+	SetEvent(restartSignal);
+
+	signal_handler_disconnect(linked_source_sh, "hooked",
+				  on_linked_source_hooked, this);
+	signal_handler_disconnect(linked_source_sh, "unhooked",
+				  on_linked_source_unhooked, this);
+	signal_handler_disconnect(linked_source_sh, "destroy",
+				  on_linked_source_destroy, this);
+	signal_handler_disconnect(linked_source_sh, "rename",
+				  on_linked_source_rename, this);
+	linked_source_sh = nullptr;
+
+	signal_handler_t *gsh = obs_get_signal_handler();
+	signal_handler_connect(gsh, "source_create", on_linked_source_create,
+			       this);
+}
+
+void WASAPISource::OnLinkedSourceRename(const char *name)
+{
+	linked_source_name = name;
+	obs_data_t *settings = obs_source_get_settings(source);
+	obs_data_set_string(settings, OPT_LINK_SOURCE, linked_source_name);
+	obs_data_release(settings);
 }
 
 WASAPISource::UpdateParams WASAPISource::BuildUpdateParams(obs_data_t *settings)
@@ -579,29 +730,104 @@ WASAPISource::UpdateParams WASAPISource::BuildUpdateParams(obs_data_t *settings)
 	params.isDefaultDevice =
 		_strcmpi(params.device_id.c_str(), "default") == 0;
 	params.priority =
-		(window_priority)obs_data_get_int(settings, "priority");
+		(window_priority)obs_data_get_int(settings, OPT_PRIORITY);
 	params.window_class.clear();
 	params.title.clear();
 	params.executable.clear();
 	if (sourceType != SourceType::Input) {
-		const char *const window =
-			obs_data_get_string(settings, OPT_WINDOW);
-		char *window_class = nullptr;
-		char *title = nullptr;
-		char *executable = nullptr;
-		ms_build_window_strings(window, &window_class, &title,
-					&executable);
-		if (window_class) {
-			params.window_class = window_class;
-			bfree(window_class);
-		}
-		if (title) {
-			params.title = title;
-			bfree(title);
-		}
-		if (executable) {
-			params.executable = executable;
-			bfree(executable);
+		if (obs_data_get_bool(settings, OPT_LINK_ENABLE)) {
+			linked_enabled = true;
+			params.priority = WINDOW_PRIORITY_TITLE;
+			linked_source_name =
+				obs_data_get_string(settings, OPT_LINK_SOURCE);
+			obs_source_t *linked_source =
+				obs_get_source_by_name(linked_source_name);
+
+			if (linked_source) {
+				calldata_t cd = {};
+				proc_handler_t *ph =
+					obs_source_get_proc_handler(
+						linked_source);
+				proc_handler_call(ph, "get_hooked", &cd);
+				params.window_class =
+					calldata_string(&cd, "class");
+				params.title = calldata_string(&cd, "title");
+				params.executable =
+					calldata_string(&cd, "executable");
+				calldata_free(&cd);
+
+				linked_source_sh =
+					obs_source_get_signal_handler(
+						linked_source);
+				signal_handler_connect(linked_source_sh,
+						       "hooked",
+						       on_linked_source_hooked,
+						       this);
+				signal_handler_connect(
+					linked_source_sh, "unhooked",
+					on_linked_source_unhooked, this);
+				signal_handler_connect(linked_source_sh,
+						       "destroy",
+						       on_linked_source_destroy,
+						       this);
+				signal_handler_connect(linked_source_sh,
+						       "rename",
+						       on_linked_source_rename,
+						       this);
+			} else {
+				signal_handler_t *gsh =
+					obs_get_signal_handler();
+				signal_handler_connect(gsh, "source_create",
+						       on_linked_source_create,
+						       this);
+			}
+			obs_source_release(linked_source);
+
+		} else {
+			if (linked_enabled) {
+				linked_enabled = false;
+				if (linked_source_sh) {
+					signal_handler_disconnect(
+						linked_source_sh, "hooked",
+						on_linked_source_hooked, this);
+					signal_handler_disconnect(
+						linked_source_sh, "unhooked",
+						on_linked_source_unhooked,
+						this);
+					signal_handler_disconnect(
+						linked_source_sh, "destroy",
+						on_linked_source_destroy, this);
+					signal_handler_disconnect(
+						linked_source_sh, "rename",
+						on_linked_source_rename, this);
+				} else {
+					signal_handler_t *gsh =
+						obs_get_signal_handler();
+					signal_handler_disconnect(
+						gsh, "source_create",
+						on_linked_source_create, this);
+				}
+			}
+
+			const char *const window =
+				obs_data_get_string(settings, OPT_WINDOW);
+			char *window_class = nullptr;
+			char *title = nullptr;
+			char *executable = nullptr;
+			ms_build_window_strings(window, &window_class, &title,
+						&executable);
+			if (window_class) {
+				params.window_class = window_class;
+				bfree(window_class);
+			}
+			if (title) {
+				params.title = title;
+				bfree(title);
+			}
+			if (executable) {
+				params.executable = executable;
+				bfree(executable);
+			}
 		}
 	}
 
@@ -622,14 +848,27 @@ void WASAPISource::UpdateSettings(UpdateParams &&params)
 void WASAPISource::LogSettings()
 {
 	if (sourceType == SourceType::ProcessOutput) {
-		blog(LOG_INFO,
-		     "[win-wasapi: '%s'] update settings:\n"
-		     "\texecutable: %s\n"
-		     "\ttitle: %s\n"
-		     "\tclass: %s\n"
-		     "\tpriority: %d",
-		     obs_source_get_name(source), executable.c_str(),
-		     title.c_str(), window_class.c_str(), (int)priority);
+		if (linked_enabled) {
+			blog(LOG_INFO,
+			     "[win-wasapi: '%s'] update settings:\n"
+			     "\tlinked to source %s, targeting:\n"
+			     "\texecutable: %s\n"
+			     "\ttitle: %s\n"
+			     "\tclass: %s\n",
+			     obs_source_get_name(source), linked_source_name,
+			     executable.c_str(), title.c_str(),
+			     window_class.c_str());
+		} else {
+			blog(LOG_INFO,
+			     "[win-wasapi: '%s'] update settings:\n"
+			     "\texecutable: %s\n"
+			     "\ttitle: %s\n"
+			     "\tclass: %s\n"
+			     "\tpriority: %d",
+			     obs_source_get_name(source), executable.c_str(),
+			     title.c_str(), window_class.c_str(),
+			     (int)priority);
+		}
 	} else {
 		blog(LOG_INFO,
 		     "[win-wasapi: '%s'] update settings:\n"
