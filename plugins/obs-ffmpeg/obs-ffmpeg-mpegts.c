@@ -626,14 +626,6 @@ void ffmpeg_mpegts_data_free(struct ffmpeg_output *stream,
 	memset(data, 0, sizeof(struct ffmpeg_data));
 }
 
-static inline const char *safe_str(const char *s)
-{
-	if (s == NULL)
-		return "(NULL)";
-	else
-		return s;
-}
-
 bool ffmpeg_mpegts_data_init(struct ffmpeg_output *stream,
 			     struct ffmpeg_data *data,
 			     struct ffmpeg_cfg *config)
