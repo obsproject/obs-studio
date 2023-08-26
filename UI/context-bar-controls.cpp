@@ -283,14 +283,24 @@ ApplicationAudioCaptureToolbar::ApplicationAudioCaptureToolbar(QWidget *parent,
 
 void ApplicationAudioCaptureToolbar::Init()
 {
+	OBSSource source = GetSource();
+	OBSDataAutoRelease settings = obs_source_get_settings(source);
+	bool is_linked = obs_data_get_bool(settings, "link_enable");
 	delete ui->activateButton;
 	ui->activateButton = nullptr;
-
 	obs_module_t *mod = obs_get_module("win-wasapi");
-	const char *device_str = obs_module_get_locale_text(mod, "Window");
-	ui->deviceLabel->setText(device_str);
 
-	prop_name = "window";
+	if (is_linked) {
+		const char *device_str =
+			obs_module_get_locale_text(mod, "Link.Source");
+		ui->deviceLabel->setText(device_str);
+		prop_name = "link_source";
+	} else {
+		const char *device_str =
+			obs_module_get_locale_text(mod, "Window");
+		ui->deviceLabel->setText(device_str);
+		prop_name = "window";
+	}
 
 	ComboSelectToolbar::Init();
 }
