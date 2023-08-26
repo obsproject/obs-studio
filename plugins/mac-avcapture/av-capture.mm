@@ -903,16 +903,6 @@ static bool init_preset(av_capture *capture, AVCaptureDevice *dev, obs_data_t *s
 static bool operator==(const CMVideoDimensions &a, const CMVideoDimensions &b);
 static CMVideoDimensions get_dimensions(AVCaptureDeviceFormat *format);
 
-static AVCaptureDeviceFormat *find_format(AVCaptureDevice *dev, CMVideoDimensions dims)
-{
-    for (AVCaptureDeviceFormat *format in dev.formats) {
-        if (get_dimensions(format) == dims)
-            return format;
-    }
-
-    return nullptr;
-}
-
 static CMTime convert(media_frames_per_second fps)
 {
     CMTime time {};
