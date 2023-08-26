@@ -109,8 +109,6 @@ struct ftl_stream {
 	frame_of_nalus_t coded_pic_buffer;
 };
 
-static void log_libftl_messages(ftl_log_severity_t log_level,
-				const char *message);
 static int init_connect(struct ftl_stream *stream);
 static void *connect_thread(void *data);
 static void *status_thread(void *data);
@@ -120,12 +118,6 @@ static const char *ftl_stream_getname(void *unused)
 {
 	UNUSED_PARAMETER(unused);
 	return obs_module_text("FTLStream");
-}
-
-static void log_ftl(int level, const char *format, va_list args)
-{
-	blogva(LOG_INFO, format, args);
-	UNUSED_PARAMETER(level);
 }
 
 static inline size_t num_buffered_packets(struct ftl_stream *stream);
@@ -1010,13 +1002,6 @@ static void *connect_thread(void *data)
 
 	os_atomic_set_bool(&stream->connecting, false);
 	return NULL;
-}
-
-static void log_libftl_messages(ftl_log_severity_t log_level,
-				const char *message)
-{
-	UNUSED_PARAMETER(log_level);
-	blog(LOG_WARNING, "[libftl] %s", message);
 }
 
 static int init_connect(struct ftl_stream *stream)
