@@ -227,13 +227,6 @@ static void rtmp_stream_stop(void *data, uint64_t ts)
 	}
 }
 
-static inline void set_rtmp_str(AVal *val, const char *str)
-{
-	bool valid = (str && *str);
-	val->av_val = valid ? (char *)str : NULL;
-	val->av_len = valid ? (int)strlen(str) : 0;
-}
-
 static inline void set_rtmp_dstr(AVal *val, struct dstr *str)
 {
 	bool valid = !dstr_is_empty(str);
