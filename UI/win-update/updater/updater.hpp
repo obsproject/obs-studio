@@ -93,8 +93,8 @@ void StringToHash(const std::string &in, B2Hash &out);
 
 bool CalculateFileHash(const wchar_t *path, B2Hash &hash);
 
-int ApplyPatch(ZSTD_DCtx *zstdCtx, std::byte *patch_data,
-	       const size_t patch_size, const wchar_t *targetFile);
+int ApplyPatch(ZSTD_DCtx *zstdCtx, const std::byte *patch_data,
+	       size_t patch_size, const wchar_t *targetFile);
 
 extern HWND hwndMain;
 extern HCRYPTPROV hProvider;
