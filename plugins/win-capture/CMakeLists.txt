@@ -44,6 +44,8 @@ target_sources(
   PRIVATE # cmake-format: sortable
           app-helpers.c
           app-helpers.h
+          audio-helpers.c
+          audio-helpers.h
           compat-format-ver.h
           compat-helpers.c
           compat-helpers.h
