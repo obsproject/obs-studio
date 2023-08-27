@@ -20,6 +20,8 @@ target_sources(
   PRIVATE plugin-main.c
           app-helpers.c
           app-helpers.h
+          audio-helpers.c
+          audio-helpers.h
           cursor-capture.c
           cursor-capture.h
           dc-capture.c
