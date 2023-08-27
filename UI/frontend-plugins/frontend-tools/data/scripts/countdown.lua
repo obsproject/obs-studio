@@ -4,6 +4,8 @@ total_seconds = 0
 
 cur_seconds   = 0
 last_text     = ""
+prefix_text   = ""
+suffix_text   = ""
 stop_text     = ""
 activated     = false
 
@@ -15,7 +17,9 @@ function set_time_text()
 	local total_minutes = math.floor(cur_seconds / 60)
 	local minutes       = math.floor(total_minutes % 60)
 	local hours         = math.floor(total_minutes / 60)
-	local text          = string.format("%02d:%02d:%02d", hours, minutes, seconds)
+	local text          = prefix_text ..
+		string.format("%02d:%02d:%02d", hours, minutes, seconds) ..
+		suffix_text
 
 	if cur_seconds < 1 then
 		text = stop_text
@@ -107,7 +111,8 @@ function script_properties()
 	local props = obs.obs_properties_create()
 	obs.obs_properties_add_int(props, "duration", "Duration (minutes)", 1, 100000, 1)
 
-	local p = obs.obs_properties_add_list(props, "source", "Text Source", obs.OBS_COMBO_TYPE_EDITABLE, obs.OBS_COMBO_FORMAT_STRING)
+	local p = obs.obs_properties_add_list(props, "source", "Text Source", obs.OBS_COMBO_TYPE_EDITABLE,
+		obs.OBS_COMBO_FORMAT_STRING)
 	local sources = obs.obs_enum_sources()
 	if sources ~= nil then
 		for _, source in ipairs(sources) do
@@ -120,6 +125,8 @@ function script_properties()
 	end
 	obs.source_list_release(sources)
 
+	obs.obs_properties_add_text(props, "prefix_text", "Prefix Text", obs.OBS_TEXT_DEFAULT) -- Optional text prefix that if not empty is inserted before the timer text
+	obs.obs_properties_add_text(props, "suffix_text", "Suffix Text", obs.OBS_TEXT_DEFAULT) -- Optional text suffix that if not empty is inserted after the timer text
 	obs.obs_properties_add_text(props, "stop_text", "Final Text", obs.OBS_TEXT_DEFAULT)
 	obs.obs_properties_add_button(props, "reset_button", "Reset Timer", reset_button_clicked)
 
@@ -138,6 +145,8 @@ function script_update(settings)
 
 	total_seconds = obs.obs_data_get_int(settings, "duration") * 60
 	source_name = obs.obs_data_get_string(settings, "source")
+	prefix_text = obs.obs_data_get_string(settings, "prefix_text")
+	suffix_text = obs.obs_data_get_string(settings, "suffix_text")
 	stop_text = obs.obs_data_get_string(settings, "stop_text")
 
 	reset(true)
