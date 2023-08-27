@@ -101,8 +101,6 @@ runs:
     - name: Create Summary 📊
       if: contains(fromJSON('["Linux", "macOS"]'), runner.os)
       shell: zsh --no-rcs --errexit --pipefail {0}
-      env:
-        CCACHE_CONFIGPATH: ${{ inputs.workingDirectory }}/.ccache.conf
       run: |
         : Create Summary 📊
 
