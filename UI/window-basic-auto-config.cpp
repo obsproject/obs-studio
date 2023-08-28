@@ -1138,6 +1138,15 @@ void AutoConfig::SaveStreamSettings()
 		       idealBitrate);
 	config_set_string(main->Config(), "SimpleOutput", "StreamEncoder",
 			  GetEncoderId(streamingEncoder));
+
+	/* Enforce Opus on FTL if needed */
+	if (strcmp(obs_service_get_protocol(newService), "FTL") == 0) {
+		config_set_string(main->Config(), "SimpleOutput",
+				  "StreamAudioEncoder", "opus");
+		config_set_string(main->Config(), "AdvOut", "AudioEncoder",
+				  "ffmpeg_opus");
+	}
+
 	config_remove_value(main->Config(), "SimpleOutput", "UseAdvanced");
 }
 
