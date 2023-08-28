@@ -226,7 +226,7 @@ static void create_bitmap_sizes(struct font_path_info *info, FT_Face face)
 	da_reserve(sizes, face->num_fixed_sizes);
 
 	for (int i = 0; i < face->num_fixed_sizes; i++) {
-		int val = face->available_sizes[i].size >> 6;
+		FT_Pos val = face->available_sizes[i].size >> 6;
 		da_push_back(sizes, &val);
 	}
 
