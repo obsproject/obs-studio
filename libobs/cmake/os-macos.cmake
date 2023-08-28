@@ -22,7 +22,7 @@ target_sources(
           util/threading-posix.h
           util/apple/cfstring-utils.h)
 
-target_compile_options(libobs PUBLIC -Wno-strict-prototypes)
+target_compile_options(libobs PUBLIC -Wno-strict-prototypes -Wno-shorten-64-to-32)
 
 set_property(SOURCE util/platform-cocoa.m obs-cocoa.m PROPERTY COMPILE_FLAGS -fobjc-arc)
 set_property(TARGET libobs PROPERTY FRAMEWORK TRUE)
