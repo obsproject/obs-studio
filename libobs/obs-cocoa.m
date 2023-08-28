@@ -322,7 +322,7 @@ obs_key_t obs_key_from_virtual_key(int code)
         return OBS_KEY_META;
     for (size_t i = 0; i < OBS_KEY_LAST_VALUE; i++) {
         if (virtual_keys[i] == code) {
-            return i;
+            return (obs_key_t) i;
         }
     }
     return OBS_KEY_NONE;
