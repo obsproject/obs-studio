@@ -33,7 +33,7 @@ struct AddSourceData {
 bool OBSBasicSourceSelect::EnumSources(void *data, obs_source_t *source)
 {
 	if (obs_source_is_hidden(source))
-		return false;
+		return true;
 
 	OBSBasicSourceSelect *window =
 		static_cast<OBSBasicSourceSelect *>(data);
