@@ -783,6 +783,16 @@ void OBSBasic::ChangeProfile()
 	auth.reset();
 	DestroyPanelCookieManager();
 
+#ifdef YOUTUBE_ENABLED
+	OBSBasic *main = OBSBasic::Get();
+	// This dock works with both stream key and auth
+	// so hide it here if required.
+	YouTubeAppDock *youtubeAppDock = main->GetYouTubeAppDock();
+	if (youtubeAppDock != NULL) {
+		youtubeAppDock->hide();
+	}
+#endif
+
 	config.Swap(basicConfig);
 	InitBasicConfigDefaults();
 	InitBasicConfigDefaults2();
@@ -813,6 +823,16 @@ void OBSBasic::ChangeProfile()
 			close();
 		}
 	}
+
+#ifdef YOUTUBE_ENABLED
+	if (YouTubeAppDock::IsYTServiceSelected()) {
+		// This is re-initialized in some cases.
+		youtubeAppDock = main->GetYouTubeAppDock();
+		if (youtubeAppDock != NULL) {
+			youtubeAppDock->show();
+		}
+	}
+#endif
 }
 
 void OBSBasic::CheckForSimpleModeX264Fallback()
