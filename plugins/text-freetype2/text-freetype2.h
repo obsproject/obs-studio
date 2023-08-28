@@ -26,7 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 struct glyph_info {
 	float u, v, u2, v2;
 	int32_t w, h, xoff, yoff;
-	int32_t xadv;
+	FT_Pos xadv;
 };
 
 struct ft2_source {
