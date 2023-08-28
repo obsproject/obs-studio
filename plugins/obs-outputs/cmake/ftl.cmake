@@ -48,15 +48,19 @@ target_enable_feature(obs-outputs "FTL protocol support")
 get_target_property(target_sources ftl-sdk INTERFACE_SOURCES)
 
 if(NOT CMAKE_C_COMPILER_ID STREQUAL "MSVC")
-  set(silence_ftl -Wno-error=unused-parameter -Wno-error=unused-variable -Wno-error=sign-compare
-                  -Wno-error=pointer-sign -Wno-error=int-conversion)
+  set(silence_ftl -Wno-unused-parameter -Wno-unused-variable -Wno-sign-compare -Wno-pointer-sign -Wno-int-conversion)
 
   if(CMAKE_C_COMPILER_ID MATCHES "(Apple)?Clang")
-    list(APPEND silence_ftl -Wno-error=incompatible-function-pointer-types -Wno-error=implicit-int-conversion
-         -Wno-shorten-64-to-32 -Wno-macro-redefined)
+    list(
+      APPEND
+      silence_ftl
+      -Wno-incompatible-function-pointer-types
+      -Wno-implicit-int-conversion
+      -Wno-shorten-64-to-32
+      -Wno-macro-redefined
+      -Wno-enum-conversion)
   elseif(CMAKE_C_COMPILER_ID STREQUAL "GNU")
-    list(APPEND silence_ftl -Wno-error=extra -Wno-error=incompatible-pointer-types -Wno-error=int-conversion
-         -Wno-error=builtin-macro-redefined)
+    list(APPEND silence_ftl -Wno-extra -Wno-incompatible-pointer-types -Wno-int-conversion -Wno-builtin-macro-redefined)
   endif()
 
   if((NOT CMAKE_C_COMPILER_ID STREQUAL "GNU") OR CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL 10)
