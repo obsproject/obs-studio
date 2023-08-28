@@ -115,7 +115,6 @@ jobs:
 
       - name: Check for Changed Files ✅
         uses: ./.github/actions/check-changes
-        if: fromJSON(steps.nightly-checks.outputs.passed)
         id: checks
         with:
           baseRef: ${{ steps.nightly-checks.outputs.lastNightly }}
