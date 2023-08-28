@@ -4,7 +4,8 @@ on:
   schedule:
     - cron: 17 0 * * *
 permissions:
-  contents: write
+  contents: read
+  checks: write
 concurrency:
   group: '${{ github.workflow }} @ ${{ github.head_ref || github.ref }}'
   cancel-in-progress: true
@@ -85,6 +86,9 @@ jobs:
     uses: ./.github/workflows/build-project.yaml
     needs: cache-cleanup
     secrets: inherit
+    permissions:
+      contents: read
+      checks: write
 
   upload-language-files:
     name: Upload Language Files 🌐
