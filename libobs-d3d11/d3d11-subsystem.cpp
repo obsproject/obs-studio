@@ -15,6 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <algorithm>
 #include <cassert>
 #include <cinttypes>
 #include <optional>
@@ -28,6 +29,11 @@
 #include "d3d11-subsystem.hpp"
 #include <shellscalingapi.h>
 #include <d3dkmthk.h>
+#include <SetupAPI.h>
+#include <devguid.h>
+#include <initguid.h>
+#include <devpkey.h>
+#include <pciprop.h>
 
 struct UnsupportedHWError : HRError {
 	inline UnsupportedHWError(const char *str, HRESULT hr)
@@ -1453,6 +1459,128 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 	}
 }
 
+struct PCIeLink {
+	uint32_t current_lanes;
+	uint32_t current_speed;
+	uint32_t max_lanes;
+	uint32_t max_speed;
+
+	bool isValid() const
+	{
+		return current_lanes || current_speed || max_lanes || max_speed;
+	}
+};
+
+static optional<PCIeLink> AdapterPCIeConnection(const DXGI_ADAPTER_DESC *desc)
+{
+	optional<PCIeLink> ret;
+
+	D3DKMT_OPENADAPTERFROMLUID d3dkmt_openluid{};
+	d3dkmt_openluid.AdapterLuid = desc->AdapterLuid;
+
+	NTSTATUS res = D3DKMTOpenAdapterFromLuid(&d3dkmt_openluid);
+	if (FAILED(res)) {
+		blog(LOG_ERROR, "Failed opening D3DKMT adapter: %x", res);
+		return ret;
+	}
+
+	/* Query the "hardware PnP key", which is the registry key containing the
+	 * unique device instance Id we need to correlate with SetupAPI. */
+	wchar_t buf[1024];
+	UINT len = sizeof(buf);
+
+	D3DKMT_QUERY_PHYSICAL_ADAPTER_PNP_KEY pnpKey = {};
+	pnpKey.pCchDest = &len;
+	pnpKey.pDest = buf;
+	pnpKey.PnPKeyType = D3DKMT_PNP_KEY_HARDWARE;
+
+	D3DKMT_QUERYADAPTERINFO args;
+	args.hAdapter = d3dkmt_openluid.hAdapter;
+	args.Type = KMTQAITYPE_PHYSICALADAPTERPNPKEY;
+	args.pPrivateDriverData = &pnpKey;
+	args.PrivateDriverDataSize = sizeof(pnpKey);
+	res = D3DKMTQueryAdapterInfo(&args);
+
+	if (SUCCEEDED(res)) {
+		wstring pnpPath(pnpKey.pDest);
+		/* Convert path to all-uppercase to match SetupAPI. */
+		transform(pnpPath.begin(), pnpPath.end(), pnpPath.begin(),
+			  toupper);
+
+		HDEVINFO devInfoSet =
+			SetupDiGetClassDevs(&GUID_DEVCLASS_DISPLAY, nullptr,
+					    nullptr, DIGCF_PRESENT);
+
+		for (DWORD index = 0;; index++) {
+			SP_DEVINFO_DATA devInfo = {sizeof(SP_DEVINFO_DATA)};
+			/* If this fails all devices have been enumerated. */
+			if (!SetupDiEnumDeviceInfo(devInfoSet, index, &devInfo))
+				break;
+
+			wchar_t pnpDeviceIdBuf[1024];
+			if (!SetupDiGetDeviceInstanceId(
+				    devInfoSet, &devInfo, pnpDeviceIdBuf,
+				    sizeof(pnpDeviceIdBuf), nullptr)) {
+				blog(LOG_WARNING,
+				     "SetupDiGetDeviceInstanceId failed with %d",
+				     GetLastError());
+				break;
+			}
+
+			if (pnpPath.find(pnpDeviceIdBuf) == string::npos)
+				continue;
+
+			auto get_property =
+				[&](const DEVPROPKEY *key) -> UINT32 {
+				DEVPROPTYPE type;
+				/* Result is UINT32 */
+				BYTE result[sizeof(UINT32)];
+				DWORD size;
+
+				if (!SetupDiGetDeviceProperty(
+					    devInfoSet, &devInfo, key, &type,
+					    result, sizeof(result), &size, 0)) {
+					DWORD err = GetLastError();
+					/* Not found can happen for iGPUs that are presumably not using PCIe */
+					if (err != ERROR_NOT_FOUND) {
+						blog(LOG_WARNING,
+						     "SetupDiGetDeviceProperty failed: %d",
+						     err);
+					}
+
+					return 0;
+				}
+
+				return *reinterpret_cast<UINT32 *>(result);
+			};
+
+			ret = PCIeLink{
+				get_property(
+					&DEVPKEY_PciDevice_CurrentLinkWidth),
+				get_property(
+					&DEVPKEY_PciDevice_CurrentLinkSpeed),
+				get_property(&DEVPKEY_PciDevice_MaxLinkWidth),
+				get_property(&DEVPKEY_PciDevice_MaxLinkSpeed),
+			};
+			break;
+		}
+
+		SetupDiDestroyDeviceInfoList(devInfoSet);
+	} else {
+		blog(LOG_ERROR,
+		     "D3DKMTQueryAdapterInfo for PNP key failed with %x", res);
+	}
+
+	D3DKMT_CLOSEADAPTER d3dkmt_close = {d3dkmt_openluid.hAdapter};
+	res = D3DKMTCloseAdapter(&d3dkmt_close);
+	if (FAILED(res)) {
+		blog(LOG_DEBUG, "Failed closing D3DKMT adapter %x: %x",
+		     d3dkmt_openluid.hAdapter, res);
+	}
+
+	return ret;
+}
+
 static inline void LogD3DAdapters()
 {
 	ComPtr<IDXGIFactory1> factory;
@@ -1486,6 +1614,16 @@ static inline void LogD3DAdapters()
 		     desc.SharedSystemMemory);
 		blog(LOG_INFO, "\t  PCI ID:         %x:%.4x", desc.VendorId,
 		     desc.DeviceId);
+
+		auto pcieLink = AdapterPCIeConnection(&desc);
+		if (pcieLink && pcieLink->isValid()) {
+			blog(LOG_INFO,
+			     "\t  PCIe Speed:     %d.0 x%d (Max: %d.0 x%d)",
+			     pcieLink->current_speed, pcieLink->current_lanes,
+			     pcieLink->max_speed, pcieLink->max_lanes);
+		} else {
+			blog(LOG_INFO, "\t  PCIe Speed:     Unknown/Not Found");
+		}
 
 		if (auto hags_support = GetAdapterHagsStatus(&desc)) {
 			blog(LOG_INFO, "\t  HAGS Status:    %s",
