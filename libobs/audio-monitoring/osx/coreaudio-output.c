@@ -43,7 +43,7 @@ static inline bool fill_buffer(struct audio_monitor *monitor)
 	circlebuf_pop_front(&monitor->new_data, buf->mAudioData,
 			    monitor->buffer_size);
 
-	buf->mAudioDataByteSize = monitor->buffer_size;
+	buf->mAudioDataByteSize = (UInt32)monitor->buffer_size;
 
 	stat = AudioQueueEnqueueBuffer(monitor->queue, buf, 0, NULL);
 	if (!success(stat, "AudioQueueEnqueueBuffer")) {
@@ -225,7 +225,7 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 
 	for (size_t i = 0; i < 3; i++) {
 		stat = AudioQueueAllocateBuffer(monitor->queue,
-						monitor->buffer_size,
+						(UInt32)monitor->buffer_size,
 						&monitor->buffers[i]);
 		if (!success(stat, "allocation of buffer")) {
 			return false;

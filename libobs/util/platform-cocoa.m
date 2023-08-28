@@ -190,7 +190,7 @@ os_cpu_usage_info_t *os_cpu_usage_info_start(void)
         return NULL;
     }
 
-    info->core_count = sysconf(_SC_NPROCESSORS_ONLN);
+    info->core_count = (int) sysconf(_SC_NPROCESSORS_ONLN);
     return info;
 }
 
