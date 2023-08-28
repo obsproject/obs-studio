@@ -62,6 +62,7 @@ elseif(OS_MACOS)
   mark_as_advanced(COREFOUNDATION)
 
   target_sources(decklink PRIVATE mac/platform.cpp)
+  target_compile_options(decklink PRIVATE -Wno-shorten-64-to-32)
   target_link_libraries(decklink PRIVATE ${COREFOUNDATION})
 
   target_sources(
