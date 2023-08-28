@@ -1548,7 +1548,7 @@ static void vt_defaults(obs_data_t *settings, void *data)
 	obs_data_set_default_bool(settings, "limit_bitrate", false);
 	obs_data_set_default_int(settings, "max_bitrate", 2500);
 	obs_data_set_default_double(settings, "max_bitrate_window", 1.5f);
-	obs_data_set_default_int(settings, "keyint_sec", 0);
+	obs_data_set_default_int(settings, "keyint_sec", 2);
 	obs_data_set_default_string(
 		settings, "profile",
 		type_data->codec_type == kCMVideoCodecType_H264 ? "high"
