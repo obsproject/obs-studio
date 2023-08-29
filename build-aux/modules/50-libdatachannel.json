@@ -2,6 +2,7 @@
     "name": "libdatachannel",
     "buildsystem": "cmake-ninja",
     "config-opts": [
+        "-DCMAKE_BUILD_TYPE=Release",
         "-DNO_EXAMPLES=ON",
         "-DNO_TESTS=ON",
         "-DNO_WEBSOCKET=ON",
