@@ -90,7 +90,7 @@ bool YoutubeApiWrappers::TryInsertCommand(const char *url,
 	std::string output;
 	std::string error;
 	// Increase timeout by the time it takes to transfer `data_size` at 1 Mbps
-	int timeout = 5 + data_size / 125000;
+	int timeout = 60 + data_size / 125000;
 	bool success = GetRemoteFile(url, output, error, &httpStatusCode,
 				     content_type, request_type, data,
 				     {"Authorization: Bearer " + token},
