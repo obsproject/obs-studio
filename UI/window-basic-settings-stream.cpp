@@ -162,6 +162,7 @@ void OBSBasicSettings::LoadStream1Settings()
 	else
 		ui->key->setText(key);
 
+	lastService.clear();
 	ServiceChanged();
 
 	UpdateKeyLink();
