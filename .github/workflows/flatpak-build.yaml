@@ -2,6 +2,10 @@ name: Flatpak Build
 on:
   workflow_call:
     inputs:
+      arch:
+        description: Architecture of the build
+        default: x86_64
+        type: string
       build-bundle:
         description: Build a bundle and upload it as an artifact
         default: true
@@ -20,6 +24,7 @@ jobs:
     outputs:
       cacheKey: ${{ steps.setup.outputs.cacheKey }}
       cacheHit: ${{ steps.setup.outputs.cacheHit }}
+      qemuArch: ${{ steps.setup.outputs.qemuArch }}
     container:
       image: bilelmoussaoui/flatpak-github-actions:kde-6.5
       options: --privileged
@@ -45,13 +50,25 @@ jobs:
           gh extension install actions/gh-actions-cache
           echo '::endgroup::'
 
+          if [[ "${{ inputs.arch }}" != "x86_64" ]]; then
+            echo '::group::Install Docker'
+            dnf install -y -q docker
+            echo '::endgroup::'
+
+            if [[ "${{ inputs.arch }}" == "aarch64" ]]; then
+              echo "qemuArch=arm64" >> $GITHUB_OUTPUT
+            else
+              echo "qemuArch=${{ inputs.arch }}" >> $GITHUB_OUTPUT
+            fi
+          fi
+
           stop_at_module=$(jq -r '.modules[:-1] | map(select(test("90-*")))[0]' build-aux/com.obsproject.Studio.json)
           echo "stopAtModule=$(jq -r '.name' build-aux/$stop_at_module)" >> $GITHUB_OUTPUT
 
           cache_key='flatpak-builder-${{ hashFiles('build-aux/**/*.json') }}'
           cache_ref='master'
           read -r key size unit _ ref _ <<< \
-            "$(gh actions-cache list -B ${cache_ref} --key "${cache_key}-x86_64" | head -1)"
+            "$(gh actions-cache list -B ${cache_ref} --key "${cache_key}-${{ inputs.arch }}" | head -1)"
 
           if [[ "${key}" ]]; then
             echo "cacheHit=true" >> $GITHUB_OUTPUT
@@ -60,6 +77,12 @@ jobs:
           fi
 
           echo "cacheKey=${cache_key}" >> $GITHUB_OUTPUT
+
+      - name: Setup QEMU 🦤
+        if: ${{ (inputs.arch != 'x86_64') && !fromJSON(steps.setup.outputs.cacheHit) }}
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: ${{ steps.setup.outputs.qemuArch }}
 
       - name: Validate Flatpak manifest
         uses: ./.github/actions/flatpak-builder-lint
@@ -72,20 +95,21 @@ jobs:
         if: ${{ !fromJSON(steps.setup.outputs.cacheHit) }}
         uses: flatpak/flatpak-github-actions/flatpak-builder@0ab9dd6a6afa6fe7e292db0325171660bf5b6fdf
         with:
+          arch: ${{ inputs.arch }}
           manifest-path: ${{ github.workspace }}/build-aux/com.obsproject.Studio.json
           stop-at-module: ${{ steps.setup.outputs.stopAtModule }}
           cache: false
 
       - name: Prepare Modules Artifact 🗜️
         if: ${{ !fromJSON(steps.setup.outputs.cacheHit) }}
-        run: tar -cvf flatpak-build-until-90.tar .flatpak-builder
+        run: tar -cvf flatpak-build-until-90-${{ inputs.arch }}.tar .flatpak-builder
 
       - name: Upload Modules Artifact 📡
         if: ${{ !fromJSON(steps.setup.outputs.cacheHit) }}
         uses: actions/upload-artifact@v3
         with:
-          name: flatpak-build-until-90
-          path: flatpak-build-until-90.tar
+          name: flatpak-build-until-90-${{ inputs.arch }}
+          path: flatpak-build-until-90-${{ inputs.arch }}.tar
           retention-days: 1
 
   build-obs:
@@ -115,19 +139,32 @@ jobs:
 
           git config --global --add safe.directory "${GITHUB_WORKSPACE}"
 
+          if [[ "${{ inputs.arch }}" != "x86_64" ]]; then
+            echo '::group::Install Docker'
+            dnf install -y -q docker
+            echo '::endgroup::'
+          fi
+
+      - name: Setup QEMU 🦤
+        if: ${{ (inputs.arch != 'x86_64') && !fromJSON(needs.build-until-90.outputs.cacheHit) }}
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: ${{ needs.build-until-90.outputs.qemuArch }}
+
       - name: Download Modules Artifact 🛰️
         if: ${{ !fromJSON(needs.build-until-90.outputs.cacheHit) }}
         uses: actions/download-artifact@v3
         with:
-          name: flatpak-build-until-90
+          name: flatpak-build-until-90-${{ inputs.arch }}
 
       - name: Extract Modules Artifact 🗜️
         if: ${{ !fromJSON(needs.build-until-90.outputs.cacheHit) }}
-        run: tar -xvf flatpak-build-until-90.tar
+        run: tar -xvf flatpak-build-until-90-${{ inputs.arch }}.tar
 
       - name: Build Modules 🧱
         uses: flatpak/flatpak-github-actions/flatpak-builder@0ab9dd6a6afa6fe7e292db0325171660bf5b6fdf
         with:
+          arch: ${{ inputs.arch }}
           build-bundle: ${{ fromJSON(inputs.build-bundle) }}
           bundle: ${{ inputs.bundle }}
           manifest-path: ${{ github.workspace }}/build-aux/com.obsproject.Studio.json
@@ -159,4 +196,4 @@ jobs:
         uses: geekyeggo/delete-artifact@v2
         with:
           useGlob: false
-          name: flatpak-build-until-90
+          name: flatpak-build-until-90-${{ inputs.arch }}
