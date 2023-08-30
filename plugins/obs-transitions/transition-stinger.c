@@ -12,6 +12,13 @@ enum matte_layout {
 	MATTE_LAYOUT_MASK,
 };
 
+enum fit_style {
+	FIT_STYLE_STRETCH,
+	FIT_STYLE_BY_HEIGHT,
+	FIT_STYLE_BY_WIDTH,
+	FIT_STYLE_ONLY_PERFECT
+};
+
 enum fade_style { FADE_STYLE_FADE_OUT_FADE_IN, FADE_STYLE_CROSS_FADE };
 
 struct stinger_info {
@@ -31,6 +38,7 @@ struct stinger_info {
 	bool transition_point_is_frame;
 	int monitoring_type;
 	enum fade_style fade_style;
+	enum fit_style fit_style;
 
 	bool track_matte_enabled;
 	int matte_layout;
@@ -150,6 +158,10 @@ static void stinger_update(void *data, obs_data_t *settings)
 		s->mix_b = mix_b_cross_fade;
 		break;
 	}
+
+	s->fit_style = (enum fit_style)obs_data_get_int(settings, "fit_style");
+	if (s->track_matte_enabled)
+		s->fit_style = FIT_STYLE_STRETCH;
 
 	if (s->track_matte_enabled != track_matte_was_enabled) {
 		obs_enter_graphics();
@@ -421,9 +433,31 @@ static void stinger_video_render(void *data, gs_effect_t *effect)
 
 	float source_cxf = (float)source_cx;
 	float source_cyf = (float)source_cy;
+	float shift_xf = 0.0f;
+	float shift_yf = 0.0f;
 
 	if (!media_cx || !media_cy)
 		return;
+
+	switch (s->fit_style) {
+	case FIT_STYLE_STRETCH:
+		break;
+	case FIT_STYLE_BY_HEIGHT:
+		source_cxf =
+			(float)source_cy * (float)media_cx / (float)media_cy;
+		shift_xf = ((float)source_cx - source_cxf) / 2.0f;
+		break;
+	case FIT_STYLE_BY_WIDTH:
+		source_cyf =
+			(float)source_cx * (float)media_cy / (float)media_cx;
+		shift_yf = ((float)source_cy - source_cyf) / 2.0f;
+		break;
+	case FIT_STYLE_ONLY_PERFECT:
+		if (fabsf((float)source_cx / (float)source_cy -
+			  (float)media_cx / (float)media_cy) > 0.01f)
+			return;
+		break;
+	}
 
 	if (s->do_texrender) {
 		const enum gs_color_space space =
@@ -453,6 +487,7 @@ static void stinger_video_render(void *data, gs_effect_t *effect)
 	} else {
 		const bool previous = gs_set_linear_srgb(true);
 		gs_matrix_push();
+		gs_matrix_translate3f(shift_xf, shift_yf, 0.0f);
 		gs_matrix_scale3f(source_cxf / (float)media_cx,
 				  source_cyf / (float)media_cy, 1.0f);
 		obs_source_video_render(s->media_source);
@@ -735,6 +770,9 @@ static bool track_matte_enabled_modified(obs_properties_t *ppts,
 		obs_properties_get(ppts, "invert_matte");
 	obs_property_set_visible(prop_matte_invert, track_matte_enabled);
 
+	obs_property_t *prop_fit_style = obs_properties_get(ppts, "fit_style");
+	obs_property_set_visible(prop_fit_style, !track_matte_enabled);
+
 	UNUSED_PARAMETER(p);
 	return true;
 }
@@ -849,6 +887,22 @@ static obs_properties_t *stinger_properties(void *data)
 	obs_property_list_add_int(audio_fade_style,
 				  obs_module_text("AudioFadeStyle.CrossFade"),
 				  FADE_STYLE_CROSS_FADE);
+
+	obs_property_t *fit_style = obs_properties_add_list(
+		ppts, "fit_style", obs_module_text("FitStyle"),
+		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(fit_style,
+				  obs_module_text("FitStyle.FitHeight"),
+				  FIT_STYLE_BY_HEIGHT);
+	obs_property_list_add_int(fit_style,
+				  obs_module_text("FitStyle.FitWidth"),
+				  FIT_STYLE_BY_WIDTH);
+	obs_property_list_add_int(fit_style,
+				  obs_module_text("FitStyle.Stretch"),
+				  FIT_STYLE_STRETCH);
+	obs_property_list_add_int(fit_style,
+				  obs_module_text("FitStyle.OnlyPerfect"),
+				  FIT_STYLE_ONLY_PERFECT);
 
 	UNUSED_PARAMETER(data);
 	return ppts;

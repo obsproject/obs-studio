@@ -664,12 +664,24 @@ static int obs_init_video()
 		}
 	}
 
+	uint32_t max_fps_den = 0;
+	uint32_t max_fps_num = 1;
+	for (size_t i = 0, num = obs->video.canvases.num; i < num; i++) {
+		struct obs_video_info *ovi = obs->video.canvases.array[i];
+
+		if (!ovi->initialized)
+			continue;
+
+		if (ovi->fps_den / ovi->fps_den > max_fps_den / max_fps_num) {
+			max_fps_den = ovi->fps_den;
+			max_fps_num = ovi->fps_num;
+		}
+	}
+
 	video->video_frame_interval_ns =
-		util_mul_div64(1000000000ULL, video->canvases.array[0]->fps_den,
-			       video->canvases.array[0]->fps_num);
+		util_mul_div64(1000000000ULL, max_fps_den, max_fps_num);
 	video->video_half_frame_interval_ns =
-		util_mul_div64(500000000ULL, video->canvases.array[0]->fps_den,
-			       video->canvases.array[0]->fps_num);
+		util_mul_div64(500000000ULL, max_fps_den, max_fps_num);
 
 	if (pthread_mutex_init(&video->task_mutex, NULL) < 0)
 		return OBS_VIDEO_FAIL;
@@ -678,19 +690,18 @@ static int obs_init_video()
 	blog(LOG_INFO, "[VIDEO_CANVAS] init with canvases %d",
 	     obs->video.canvases.num);
 	for (size_t i = 0, num = obs->video.canvases.num; i < num; i++) {
-		if (!obs->video.canvases.array[i]->initialized)
+		struct obs_video_info *ovi = obs->video.canvases.array[i];
+
+		if (!ovi->initialized)
 			continue;
 
-		if (!obs_view_add(&obs->data.main_view,
-				  obs->video.canvases.array[i]))
+		if (!obs_view_add(&obs->data.main_view, ovi))
 			return OBS_VIDEO_FAIL;
 
-		if (!obs_stream_view_add(&obs->data.stream_view,
-					 obs->video.canvases.array[i]))
+		if (!obs_stream_view_add(&obs->data.stream_view, ovi))
 			return OBS_VIDEO_FAIL;
 
-		if (!obs_record_view_add(&obs->data.record_view,
-					 obs->video.canvases.array[i]))
+		if (!obs_record_view_add(&obs->data.record_view, ovi))
 			return OBS_VIDEO_FAIL;
 	}
 
@@ -1339,8 +1350,10 @@ void obs_shutdown(void)
 		struct obs_source_info *item = &obs->source_types.array[i];
 		if (item->type_data && item->free_type_data)
 			item->free_type_data(item->type_data);
-		if (item->id)
+		if (item->id) {
 			bfree((void *)item->id);
+			item->id = NULL;
+		}
 	}
 	da_free(obs->source_types);
 
@@ -1666,7 +1679,6 @@ bool obs_get_video_info_for_encoder(obs_encoder_t *encoder,
 
 bool obs_get_video_info(struct obs_video_info *ovi)
 {
-	blog(LOG_INFO, "[VIDEO_CANVAS] video info requested default");
 	if (!obs->video.graphics || !ovi)
 		return false;
 
@@ -1695,6 +1707,7 @@ int obs_remove_video_info(struct obs_video_info *ovi)
 		if (obs->video.canvases.array[i] == ovi) {
 			bfree(obs->video.canvases.array[i]);
 			da_erase(obs->video.canvases, i);
+			obs_set_video_rendering_canvas(NULL);
 			break;
 		}
 	}
@@ -1726,7 +1739,7 @@ struct obs_video_info *obs_create_video_info()
 	ovi->fps_den = 1;
 	ovi->fps_type = 1;
 
-	ovi->output_format = VIDEO_FORMAT_I420;
+	ovi->output_format = VIDEO_FORMAT_NV12;
 	ovi->colorspace = VIDEO_CS_DEFAULT;
 	ovi->range = VIDEO_RANGE_DEFAULT;
 	ovi->scale_type = OBS_SCALE_BILINEAR;
@@ -2824,8 +2837,8 @@ static inline bool obs_context_data_init_wrap(struct obs_context_data *context,
 	context->private = private;
 	context->type = type;
 
-	pthread_mutex_init_value(&context->rename_cache_mutex);
-	if (pthread_mutex_init(&context->rename_cache_mutex, NULL) < 0)
+	pthread_mutex_init_value(&context->name_mutex);
+	if (pthread_mutex_init(&context->name_mutex, NULL) < 0)
 		return false;
 
 	context->signals = signal_handler_create();
@@ -2863,12 +2876,9 @@ void obs_context_data_free(struct obs_context_data *context)
 	proc_handler_destroy(context->procs);
 	obs_data_release(context->settings);
 	obs_context_data_remove(context);
-	pthread_mutex_destroy(&context->rename_cache_mutex);
+	pthread_mutex_destroy(&context->name_mutex);
 	bfree(context->name);
-
-	for (size_t i = 0; i < context->rename_cache.num; i++)
-		bfree(context->rename_cache.array[i]);
-	da_free(context->rename_cache);
+	context->name = NULL;
 
 	memset(context, 0, sizeof(*context) - sizeof(pthread_mutex_t));
 }
@@ -2922,13 +2932,9 @@ void obs_context_wait(struct obs_context_data *context)
 void obs_context_data_setname(struct obs_context_data *context,
 			      const char *name)
 {
-	pthread_mutex_lock(&context->rename_cache_mutex);
-
-	if (context->name)
-		da_push_back(context->rename_cache, &context->name);
+	pthread_mutex_lock(&context->name_mutex);
 	context->name = dup_name(name, context->private);
-
-	pthread_mutex_unlock(&context->rename_cache_mutex);
+	pthread_mutex_unlock(&context->name_mutex);
 }
 
 profiler_name_store_t *obs_get_profiler_name_store(void)
@@ -3206,8 +3212,17 @@ bool start_gpu_encode(obs_encoder_t *encoder)
 	obs_enter_graphics();
 	pthread_mutex_lock(&video->gpu_encoder_mutex);
 
-	if (!video->gpu_encoders.num)
-		success = init_gpu_encoding(video);
+	if (!video->gpu_encoders.num) {
+		if (!video->gpu_encode_thread_initialized) {
+			success = init_gpu_encoding(video);
+		} else {
+			// If we got there, this means that we have scheduled GPU thread destruction,
+			// but it is busy now with some last frames, so we resetting the flag and reusing
+			// existing GPU thread instead of creating a new one
+			video->gpu_want_destroy_thread = false;
+		}
+	}
+
 	if (success)
 		da_push_back(video->gpu_encoders, &encoder);
 	else
@@ -3227,7 +3242,6 @@ bool start_gpu_encode(obs_encoder_t *encoder)
 void stop_gpu_encode(obs_encoder_t *encoder)
 {
 	struct obs_core_video_mix *video = get_mix_for_video(encoder->media);
-	bool call_free = false;
 
 	os_atomic_dec_long(&video->gpu_encoder_active);
 	video_output_dec_texture_encoders(video->video);
@@ -3235,20 +3249,19 @@ void stop_gpu_encode(obs_encoder_t *encoder)
 	pthread_mutex_lock(&video->gpu_encoder_mutex);
 	da_erase_item(video->gpu_encoders, &encoder);
 	if (!video->gpu_encoders.num)
-		call_free = true;
+		video->gpu_want_destroy_thread = true;
 	pthread_mutex_unlock(&video->gpu_encoder_mutex);
 
 	os_event_wait(video->gpu_encode_inactive);
 
-	if (call_free) {
+	obs_enter_graphics();
+	pthread_mutex_lock(&video->gpu_encoder_mutex);
+	if (video->gpu_want_destroy_thread) {
 		stop_gpu_encoding_thread(video);
-
-		obs_enter_graphics();
-		pthread_mutex_lock(&video->gpu_encoder_mutex);
 		free_gpu_encoding(video);
-		pthread_mutex_unlock(&video->gpu_encoder_mutex);
-		obs_leave_graphics();
 	}
+	pthread_mutex_unlock(&video->gpu_encoder_mutex);
+	obs_leave_graphics();
 }
 
 bool obs_video_active(void)

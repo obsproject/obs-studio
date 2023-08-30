@@ -37,6 +37,8 @@ extern struct obs_core *obs = NULL;
 #define SETTING_CAPTURE_WINDOW       "window"
 #define SETTING_ACTIVE_WINDOW        "active_window"
 #define SETTING_WINDOW_PRIORITY      "priority"
+#define SETTING_WINDOW_DEFAULT_WIDTH "default_width"
+#define SETTING_WINDOW_DEFAULT_HEIGHT "default_height"
 #define SETTING_COMPATIBILITY        "sli_compatibility"
 #define SETTING_CURSOR               "capture_cursor"
 #define SETTING_TRANSPARENCY         "allow_transparency"
@@ -133,6 +135,8 @@ struct game_capture_config {
 	bool anticheat_hook;
 	enum hook_rate hook_rate;
 	bool is_10a2_2100pq;
+	int base_width;
+	int base_height;
 };
 
 struct auto_game_capture {
@@ -564,6 +568,21 @@ static inline void get_config(struct game_capture_config *cfg,
 	cfg->is_10a2_2100pq =
 		strcmp(obs_data_get_string(settings, SETTING_RGBA10A2_SPACE),
 		       "2100pq") == 0;
+
+	cfg->base_width =
+		obs_data_get_int(settings, SETTING_WINDOW_DEFAULT_WIDTH);
+	cfg->base_height =
+		obs_data_get_int(settings, SETTING_WINDOW_DEFAULT_HEIGHT);
+	if (cfg->base_width < 1 || cfg->base_height < 1) {
+		struct obs_video_info ovi;
+		if (obs_get_video_info_current(&ovi)) {
+			cfg->base_width = ovi.base_width;
+			cfg->base_height = ovi.base_height;
+		} else {
+			cfg->base_width = 1920;
+			cfg->base_height = 1080;
+		}
+	}
 }
 
 static inline int s_cmp(const char *str1, const char *str2)
@@ -662,13 +681,10 @@ static void load_placeholder_image(struct game_capture *gc)
 	const int fraction_of_image_for_text = 8;
 	const int text_fitting_step = 5;
 	const int ALPHA_COMPONENT = 3;
-	struct obs_video_info ovi;
-	if (!obs_get_video_info_current(&ovi))
-		return;
 
 	gc->placeholder_text_height =
-		ovi.base_height / fraction_of_image_for_text;
-	gc->placeholder_text_width = ovi.base_width;
+		gc->config.base_height / fraction_of_image_for_text;
+	gc->placeholder_text_width = gc->config.base_width;
 
 	BITMAPINFOHEADER bmphdr = {0};
 	bmphdr.biSize = sizeof(BITMAPINFOHEADER);
@@ -2316,17 +2332,13 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 								    "image"),
 					gc->placeholder_image.image.texture);
 
-				struct obs_video_info ovi;
-				if (!obs_get_video_info_current(&ovi))
-					return;
-
 				size_t passes = gs_technique_begin(tech);
 				for (size_t i = 0; i < passes; i++) {
 					gs_technique_begin_pass(tech, i);
 					gs_draw_sprite(gc->placeholder_image
 							       .image.texture,
-						       0, ovi.base_width,
-						       ovi.base_height);
+						       0, gc->config.base_width,
+						       gc->config.base_height);
 					gs_technique_end_pass(tech);
 				}
 				gs_technique_end(tech);
@@ -2338,7 +2350,7 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 								       "Draw");
 					float scale =
 						gc->placeholder_text_width /
-						(float)ovi.base_width;
+						(float)gc->config.base_width;
 
 					gs_effect_set_texture(
 						gs_effect_get_param_by_name(
@@ -2348,7 +2360,7 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 					gs_matrix_push();
 					gs_matrix_translate3f(
 						0.0f,
-						(ovi.base_height -
+						(gc->config.base_height -
 						 gc->placeholder_text_height /
 							 scale) /
 							2.05f,
@@ -2383,13 +2395,10 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 		allow_transparency ? OBS_EFFECT_DEFAULT : OBS_EFFECT_OPAQUE);
 
 	if (gc->config.mode == CAPTURE_MODE_AUTO) {
-		struct obs_video_info ovi;
-		if (obs_get_video_info_current(&ovi)) {
-			float cx_scale = ovi.base_width / (float)gc->cx;
-			float cy_scale = ovi.base_height / (float)gc->cy;
-			gs_matrix_push();
-			gs_matrix_scale3f(cx_scale, cy_scale, 1.0f);
-		}
+		float cx_scale = gc->config.base_width / (float)gc->cx;
+		float cy_scale = gc->config.base_height / (float)gc->cy;
+		gs_matrix_push();
+		gs_matrix_scale3f(cx_scale, cy_scale, 1.0f);
 	}
 
 	gs_texture_t *texture = gc->texture;
@@ -2633,10 +2642,7 @@ static uint32_t game_capture_width(void *data)
 {
 	struct game_capture *gc = data;
 	if (gc->config.mode == CAPTURE_MODE_AUTO) {
-		struct obs_video_info ovi;
-		if (!obs_get_video_info_current(&ovi))
-			return 0;
-		return ovi.base_width;
+		return gc->config.base_width;
 	}
 	return (gc->active && gc->capturing) ? gc->cx : 0;
 }
@@ -2645,10 +2651,7 @@ static uint32_t game_capture_height(void *data)
 {
 	struct game_capture *gc = data;
 	if (gc->config.mode == CAPTURE_MODE_AUTO) {
-		struct obs_video_info ovi;
-		if (!obs_get_video_info_current(&ovi))
-			return 0;
-		return ovi.base_height;
+		return gc->config.base_height;
 	}
 	return (gc->active && gc->capturing) ? gc->cy : 0;
 }
@@ -2681,6 +2684,11 @@ static void game_capture_defaults(obs_data_t *settings)
 				    "Looking for a game to capture");
 	obs_data_set_default_string(settings, SETTING_RGBA10A2_SPACE,
 				    RGBA10A2_SPACE_SRGB);
+
+	obs_data_set_default_int(settings, SETTING_WINDOW_DEFAULT_WIDTH,
+				 (int)1920);
+	obs_data_set_default_int(settings, SETTING_WINDOW_DEFAULT_HEIGHT,
+				 (int)1080);
 }
 
 static bool mode_callback(obs_properties_t *ppts, obs_property_t *p,
@@ -2731,6 +2739,12 @@ static bool mode_callback(obs_properties_t *ppts, obs_property_t *p,
 	} else {
 		obs_property_set_visible(p, false);
 	}
+
+	p = obs_properties_get(ppts, SETTING_WINDOW_DEFAULT_WIDTH);
+	obs_property_set_visible(p, false);
+
+	p = obs_properties_get(ppts, SETTING_WINDOW_DEFAULT_HEIGHT);
+	obs_property_set_visible(p, false);
 
 	return true;
 }
@@ -2858,6 +2872,11 @@ static obs_properties_t *game_capture_properties(void *data)
 				TEXT_PLACEHOLDER_USER, OBS_PATH_FILE,
 				"PNG (*.png);;JPEG (*.jpg *.jpeg);;BMP (*.bmp)",
 				"");
+
+	obs_properties_add_int(ppts, SETTING_WINDOW_DEFAULT_WIDTH,
+			       SETTING_WINDOW_DEFAULT_WIDTH, 0, 10000, 1);
+	obs_properties_add_int(ppts, SETTING_WINDOW_DEFAULT_HEIGHT,
+			       SETTING_WINDOW_DEFAULT_HEIGHT, 0, 10000, 1);
 
 	p = obs_properties_add_list(ppts, SETTING_HOOK_RATE, TEXT_HOOK_RATE,
 				    OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);

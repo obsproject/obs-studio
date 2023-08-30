@@ -1937,6 +1937,8 @@ EXPORT int64_t obs_sceneitem_get_id(const obs_sceneitem_t *item);
 
 EXPORT void obs_sceneitem_get_pos(const obs_sceneitem_t *item,
 				  struct vec2 *pos);
+EXPORT void obs_sceneitem_get_size(const obs_sceneitem_t *item,
+				   struct vec2 *size);
 EXPORT float obs_sceneitem_get_rot(const obs_sceneitem_t *item);
 EXPORT void obs_sceneitem_get_scale(const obs_sceneitem_t *item,
 				    struct vec2 *scale);
@@ -2308,6 +2310,7 @@ EXPORT float obs_output_get_congestion(obs_output_t *output);
 EXPORT int obs_output_get_connect_time_ms(obs_output_t *output);
 
 EXPORT bool obs_output_reconnecting(const obs_output_t *output);
+EXPORT bool obs_output_connecting(const obs_output_t *output);
 
 /** Pass a string of the last output error, for UI use */
 EXPORT void obs_output_set_last_error(obs_output_t *output,

@@ -752,7 +752,9 @@ static void obs_source_destroy_defer(struct obs_source *source)
 
 	if (source->owns_info_id) {
 		bfree((void *)source->info.id);
+		source->info.id = NULL;
 		bfree((void *)source->info.unversioned_id);
+		source->info.unversioned_id = NULL;
 	}
 
 	bfree(source);
@@ -3093,7 +3095,9 @@ static bool obs_source_filter_remove_refless(obs_source_t *source,
 	signal_handler_signal(source->context.signals, "filter_remove", &cd);
 
 	blog(LOG_DEBUG, "- filter '%s' (%s) removed from source '%s'",
-	     filter->context.name, filter->info.id, source->context.name);
+	     (filter->context.name ? filter->context.name : "null"),
+	     (filter->info.id ? filter->info.id : "null"),
+	     (source->context.name ? source->context.name : "null"));
 
 	if (filter->info.filter_remove)
 		filter->info.filter_remove(filter->context.data,

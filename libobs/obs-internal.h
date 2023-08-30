@@ -281,6 +281,7 @@ struct obs_core_video_mix {
 	pthread_t gpu_encode_thread;
 	bool gpu_encode_thread_initialized;
 	volatile bool gpu_encode_stop;
+	bool gpu_want_destroy_thread;
 
 	video_t *video;
 	struct obs_video_info *ovi;
@@ -552,8 +553,11 @@ struct obs_context_data {
 
 	bool private;
 
-	DARRAY(char *) rename_cache;
-	pthread_mutex_t rename_cache_mutex;
+	// This previously was named as 'rename_cache_mutex', but traces of 'rename_cache'
+	// were removed from the code completely as it was unused.
+	// The mutex might be excessive and should be removed in the future.
+	// If you do so, do not forget to update 'memset' line of 'obs_context_data_free'.
+	pthread_mutex_t name_mutex;
 };
 
 extern bool obs_context_data_init(struct obs_context_data *context,

@@ -15,7 +15,7 @@
 CI_WORKFLOW="${CHECKOUT_DIR}/.github/workflows/main-streamlabs.yml"
 WORKFLOW_CONTENT=$(/bin/cat "${CI_WORKFLOW}")
 CI_DEPS_VERSION=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+DEPS_VERSION_MAC: '([0-9a-z\-]+)'/\1/p")
-CI_QT_DEPS_VERSION=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+QT_DEPS_VERSION_MAC: '([0-9\-]+)'/\1/p")
+CI_QT_DEPS_VERSION=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+QT_DEPS_VERSION_MAC: '([0-9a-z\-]+)'/\1/p")
 CI_DEPS_HASH_X86_64=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+DEPS_HASH_MAC_X86_64: '([0-9a-f]+)'/\1/p")
 CI_DEPS_HASH_ARM64=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+DEPS_HASH_MAC_ARM64: '([0-9a-f]+)'/\1/p")
 CI_VLC_VERSION=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+VLC_VERSION_MAC: '([0-9\.]+)'/\1/p")

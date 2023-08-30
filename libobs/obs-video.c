@@ -847,13 +847,8 @@ static const char *output_frame_gs_flush_name = "gs_flush";
 static const char *output_frame_output_video_data_name = "output_video_data";
 static inline void output_frame(struct obs_core_video_mix *video)
 {
-	if (video->rendering_mode == OBS_MAIN_VIDEO_RENDERING) {
-		if (obs_get_multiple_rendering())
-			obs_set_video_rendering_mode(OBS_MAIN_VIDEO_RENDERING);
-	}
-
-	if (obs_get_multiple_rendering() ||
-	    video->rendering_mode == OBS_MAIN_VIDEO_RENDERING)
+	if (video->rendering_mode == OBS_MAIN_VIDEO_RENDERING ||
+	    obs_get_multiple_rendering())
 		obs_set_video_rendering_mode(video->rendering_mode);
 	else
 		return;
