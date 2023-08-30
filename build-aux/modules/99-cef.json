@@ -21,8 +21,28 @@
     "sources": [
         {
             "type": "archive",
+            "only-arches": [
+                "x86_64"
+            ],
             "url": "https://cdn-fastly.obsproject.com/downloads/cef_binary_5060_linux_x86_64_v3.tar.xz",
             "sha256": "1253a6a36c3b8ac5b5ece9bfdb6eae6ab75e49516375fc475e2e871795ad9bea"
+        },
+        {
+            "type": "archive",
+            "only-arches": [
+                "aarch64"
+            ],
+            "url": "https://cdn-fastly.obsproject.com/downloads/cef_binary_5060_linux_aarch64_v3.tar.xz",
+            "sha256": "66ebcfce94a4527c8dd085a685691d0c43291adab9f2be4f8a0762f4a614083a"
+        },
+        {
+            "type": "shell",
+            "only-arches": [
+                "aarch64"
+            ],
+            "commands": [
+                "sed -i 's/set(PROJECT_ARCH \"x86_64\")/set(PROJECT_ARCH \"aarch64\")/g' cmake/cef_variables.cmake # Fix PROJECT_ARCH on aarch64"
+            ]
         }
     ]
 }
