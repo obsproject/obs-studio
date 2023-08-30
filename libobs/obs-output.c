@@ -201,10 +201,8 @@ obs_output_t *obs_output_create(const char *id, const char *name,
 	} else {
 		output->info = *info;
 	}
-	if (!flag_encoded(output)) {
-		output->video = obs_get_video();
-		output->audio = obs_get_audio();
-	}
+	output->video = obs_get_video();
+	output->audio = obs_get_audio();
 	if (output->info.get_defaults)
 		output->info.get_defaults(output->context.settings);
 
@@ -846,13 +844,9 @@ void obs_output_set_media(obs_output_t *output, video_t *video, audio_t *audio)
 {
 	if (!obs_output_valid(output, "obs_output_set_media"))
 		return;
-	if (log_flag_encoded(output, __FUNCTION__, true))
-		return;
 
-	if (flag_video(output))
-		output->video = video;
-	if (flag_audio(output))
-		output->audio = audio;
+	output->video = video;
+	output->audio = audio;
 }
 
 video_t *obs_output_video(const obs_output_t *output)
