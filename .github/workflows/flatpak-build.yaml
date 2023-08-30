@@ -1,0 +1,87 @@
+name: Flatpak Build
+on:
+  workflow_call:
+    inputs:
+      build-bundle:
+        description: Build a bundle and upload it as an artifact
+        default: true
+        type: boolean
+      bundle:
+        description: Name of the bundle
+        default: obs-studio-flatpak.flatpak
+        type: string
+jobs:
+  build:
+    name: Build 🧾
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        shell: bash
+    container:
+      image: bilelmoussaoui/flatpak-github-actions:kde-6.5
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          fetch-depth: 0
+          set-safe-directory: ${{ env.GITHUB_WORKSPACE }}
+
+      - name: Set Up Environment 🔧
+        id: setup
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          : Set Up Environment 🔧
+          if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
+
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+
+          echo '::group::Install GitHub CLI tool'
+          dnf install -y -q gh
+          gh extension install actions/gh-actions-cache
+          echo '::endgroup::'
+
+          cache_key='flatpak-builder-${{ hashFiles('build-aux/**/*.json') }}'
+          cache_ref='master'
+          read -r key size unit _ ref _ <<< \
+            "$(gh actions-cache list -B ${cache_ref} --key "${cache_key}-x86_64" | head -1)"
+
+          if [[ "${key}" ]]; then
+            echo "cacheHit=true" >> $GITHUB_OUTPUT
+          else
+            echo "cacheHit=false" >> $GITHUB_OUTPUT
+          fi
+
+          echo "cacheKey=${cache_key}" >> $GITHUB_OUTPUT
+
+      - name: Validate Flatpak manifest
+        uses: ./.github/actions/flatpak-builder-lint
+        with:
+          artifact: manifest
+          path: build-aux/com.obsproject.Studio.json
+          validateToPublish: false
+
+      - name: Build Flatpak Manifest 🧱
+        uses: flatpak/flatpak-github-actions/flatpak-builder@0ab9dd6a6afa6fe7e292db0325171660bf5b6fdf
+        with:
+          build-bundle: ${{ fromJSON(inputs.build-bundle) }}
+          bundle: ${{ inputs.bundle }}
+          manifest-path: ${{ github.workspace }}/build-aux/com.obsproject.Studio.json
+          cache: ${{ fromJSON(steps.setup.outputs.cacheHit) || (github.event_name == 'push' && github.ref_name == 'master')}}
+          restore-cache: fromJSON(steps.setup.outputs.cacheHit) }}
+          cache-key: ${{ steps.setup.outputs.cacheKey }}
+
+      - name: Validate build directory
+        uses: ./.github/actions/flatpak-builder-lint
+        with:
+          artifact: builddir
+          path: flatpak_app
+          validateToPublish: false
+
+      - name: Validate repository
+        uses: ./.github/actions/flatpak-builder-lint
+        with:
+          artifact: repo
+          path: repo
+          validateToPublish: false
