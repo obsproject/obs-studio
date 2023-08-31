@@ -52,7 +52,7 @@ class OBSCameraDeviceSource: NSObject, CMIOExtensionDeviceSource {
         let dimensions = CMVideoDimensions(width: 1920, height: 1080)
         CMVideoFormatDescriptionCreate(
             allocator: kCFAllocatorDefault,
-            codecType: kCVPixelFormatType_32ARGB,
+            codecType: kCVPixelFormatType_32BGRA,
             width: dimensions.width,
             height: dimensions.height,
             extensions: nil,
@@ -179,7 +179,7 @@ class OBSCameraDeviceSource: NSObject, CMIOExtensionDeviceSource {
                     bitsPerComponent: 8,
                     bytesPerRow: rowBytes,
                     space: CGColorSpaceCreateDeviceRGB(),
-                    bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue
+                    bitmapInfo: CGImageAlphaInfo.noneSkipFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue
                 )!
                 let graphicsContext = NSGraphicsContext(cgContext: cgContext, flipped: false)
 
