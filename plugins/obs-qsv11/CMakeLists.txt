@@ -2,6 +2,12 @@ cmake_minimum_required(VERSION 3.22...3.25)
 
 legacy_check()
 
+if(NOT OS_LINUX OR CMAKE_SYSTEM_PROCESSOR MATCHES "^(i[3-6]86|x86|x64|x86_64|amd64|AMD64)$")
+  set(_enable_qsv11 TRUE)
+else()
+  set(_enable_qsv11 FALSE)
+endif()
+
 option(ENABLE_QSV11 "Build Intel QSV11 Hardware Encoder." TRUE)
 if(NOT ENABLE_QSV11)
   target_disable_feature(obs-qsv11 "Intel QSV11 Hardware Encoder")
