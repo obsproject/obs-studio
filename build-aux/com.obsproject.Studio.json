@@ -85,8 +85,7 @@
                 "-DENABLE_RTMPS=ON",
                 "-DENABLE_VLC=OFF",
                 "-DENABLE_AJA=ON",
-                "-DENABLE_LIBFDK=ON",
-                "-DENABLE_QSV11=ON"
+                "-DENABLE_LIBFDK=ON"
             ],
             "secret-opts": [
                 "-DRESTREAM_CLIENTID=$RESTREAM_CLIENTID",

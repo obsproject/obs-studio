@@ -1,5 +1,8 @@
 {
     "name": "onevpl-intel-gpu",
+    "only-arches": [
+        "x86_64"
+    ],
     "buildsystem": "cmake-ninja",
     "builddir": true,
     "config-opts": [
