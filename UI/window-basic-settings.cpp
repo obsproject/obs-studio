@@ -4250,7 +4250,7 @@ void OBSBasicSettings::on_listWidget_itemSelectionChanged()
 
 void OBSBasicSettings::UpdateYouTubeAppDockSettings()
 {
-#if defined(BROWSER_ENABLED) && defined(YOUTUBE_ENABLED)
+#if defined(BROWSER_AVAILABLE) && defined(YOUTUBE_ENABLED)
 	if (cef_js_avail) {
 		std::string service = ui->service->currentText().toStdString();
 		if (IsYouTubeService(service)) {
