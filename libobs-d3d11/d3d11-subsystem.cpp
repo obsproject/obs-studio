@@ -1453,6 +1453,11 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 	}
 }
 
+static inline double to_GiB(size_t bytes)
+{
+	return static_cast<double>(bytes) / (1 << 30);
+}
+
 static inline void LogD3DAdapters()
 {
 	ComPtr<IDXGIFactory1> factory;
@@ -1480,10 +1485,11 @@ static inline void LogD3DAdapters()
 
 		os_wcs_to_utf8(desc.Description, 0, name, sizeof(name));
 		blog(LOG_INFO, "\tAdapter %u: %s", i, name);
-		blog(LOG_INFO, "\t  Dedicated VRAM: %" PRIu64,
-		     desc.DedicatedVideoMemory);
-		blog(LOG_INFO, "\t  Shared VRAM:    %" PRIu64,
-		     desc.SharedSystemMemory);
+		blog(LOG_INFO, "\t  Dedicated VRAM: %" PRIu64 " (%.01f GiB)",
+		     desc.DedicatedVideoMemory,
+		     to_GiB(desc.DedicatedVideoMemory));
+		blog(LOG_INFO, "\t  Shared VRAM:    %" PRIu64 " (%.01f GiB)",
+		     desc.SharedSystemMemory, to_GiB(desc.SharedSystemMemory));
 		blog(LOG_INFO, "\t  PCI ID:         %x:%.4x", desc.VendorId,
 		     desc.DeviceId);
 
