@@ -109,6 +109,9 @@ if (( QT_VERSION == 6 )) {
     qt6-base-dev
     libqt6svg6-dev
     qt6-base-private-dev
+    libqt6opengl6-dev
+    libqt6openglwidgets6
+    libqt6charts6-dev
   )
 } else {
   log_error "Unsupported Qt version '${QT_VERSION}' specified."
