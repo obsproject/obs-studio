@@ -261,7 +261,7 @@ private:
 	int prevLangIndex;
 	bool prevBrowserAccel;
 
-	void ServiceChanged();
+	void ServiceChanged(bool resetFields = false);
 	QString FindProtocol();
 	void UpdateServerList();
 	void UpdateKeyLink();

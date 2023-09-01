@@ -162,7 +162,7 @@ void OBSBasicSettings::LoadStream1Settings()
 	else
 		ui->key->setText(key);
 
-	ServiceChanged();
+	ServiceChanged(true);
 
 	UpdateKeyLink();
 	UpdateMoreInfoLink();
@@ -520,7 +520,7 @@ void OBSBasicSettings::on_customServer_textChanged(const QString &)
 		lastCustomServer = ui->customServer->text();
 }
 
-void OBSBasicSettings::ServiceChanged()
+void OBSBasicSettings::ServiceChanged(bool resetFields)
 {
 	std::string service = QT_TO_UTF8(ui->service->currentText());
 	bool custom = IsCustomService();
@@ -531,7 +531,7 @@ void OBSBasicSettings::ServiceChanged()
 	ui->twitchAddonDropdown->setVisible(false);
 	ui->twitchAddonLabel->setVisible(false);
 
-	if (lastService != service.c_str()) {
+	if (resetFields || lastService != service.c_str()) {
 		reset_service_ui_fields(ui.get(), service, loading);
 	}
 
