@@ -59,7 +59,7 @@ jobs:
       YOUTUBE_SECRET: ${{ secrets.YOUTUBE_SECRET }}
       YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
     container:
-      image: bilelmoussaoui/flatpak-github-actions:kde-6.4
+      image: bilelmoussaoui/flatpak-github-actions:kde-6.5
       options: --privileged
     strategy:
       matrix:
