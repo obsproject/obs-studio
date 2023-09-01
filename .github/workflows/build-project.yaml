@@ -287,7 +287,7 @@ jobs:
           echo "cacheKey=${cache_key}" >> $GITHUB_OUTPUT
 
       - name: Build Flatpak Manifest 🧾
-        uses: flatpak/flatpak-github-actions/flatpak-builder@v6.1
+        uses: flatpak/flatpak-github-actions/flatpak-builder@1283416d7c0462e052ab0685d9444a7a48bfff3b
         with:
           build-bundle: ${{ fromJSON(needs.check-event.outputs.package) }}
           bundle: obs-studio-flatpak-${{ needs.check-event.outputs.commitHash }}.flatpak
