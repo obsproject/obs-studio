@@ -348,11 +348,11 @@ void check_adapters(struct adapter_info *adapters, size_t *adapter_count)
 			if (adapter->is_intel && default_h264_device == nullptr)
 				default_h264_device = strdup(full_path.array);
 
-			if (adapter->supports_av1 &&
+			if (adapter->is_intel && adapter->supports_av1 &&
 			    default_av1_device == nullptr)
 				default_av1_device = strdup(full_path.array);
 
-			if (adapter->supports_hevc &&
+			if (adapter->is_intel && adapter->supports_hevc &&
 			    default_hevc_device == nullptr)
 				default_hevc_device = strdup(full_path.array);
 
