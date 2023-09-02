@@ -317,6 +317,10 @@ bool OBSBasic::CreateProfile(const std::string &newName, bool create_new,
 	if (create_new) {
 		auth.reset();
 		DestroyPanelCookieManager();
+#ifdef YOUTUBE_ENABLED
+		if (youtubeAppDock)
+			DeleteYouTubeAppDock();
+#endif
 	} else if (!rename) {
 		DuplicateCurrentCookieProfile(config);
 	}
@@ -782,6 +786,10 @@ void OBSBasic::ChangeProfile()
 	Auth::Save();
 	auth.reset();
 	DestroyPanelCookieManager();
+#ifdef YOUTUBE_ENABLED
+	if (youtubeAppDock)
+		DeleteYouTubeAppDock();
+#endif
 
 	config.Swap(basicConfig);
 	InitBasicConfigDefaults();
@@ -793,6 +801,10 @@ void OBSBasic::ChangeProfile()
 	UpdateVolumeControlsDecayRate();
 
 	Auth::Load();
+#ifdef YOUTUBE_ENABLED
+	if (YouTubeAppDock::IsYTServiceSelected() && !youtubeAppDock)
+		NewYouTubeAppDock();
+#endif
 
 	CheckForSimpleModeX264Fallback();
 
