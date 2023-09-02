@@ -14,7 +14,21 @@ add_library(libobs SHARED)
 add_library(OBS::libobs ALIAS libobs)
 
 find_package(Threads REQUIRED)
-find_package(FFmpeg REQUIRED avformat avutil swscale swresample OPTIONAL_COMPONENTS avcodec)
+# cmake-format: off
+if(OS_WINDOWS OR OS_MACOS)
+  set(ffmpeg_version 6)
+else()
+  set(ffmpeg_version 5.1)
+endif()
+
+find_package(
+  FFmpeg ${ffmpeg_version}
+  REQUIRED avformat
+           avutil
+           swscale
+           swresample
+  OPTIONAL_COMPONENTS avcodec)
+# cmake-format: on
 find_package(ZLIB REQUIRED)
 
 if(ENABLE_UI)
