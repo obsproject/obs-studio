@@ -5,15 +5,23 @@ legacy_check()
 option(ENABLE_FFMPEG_LOGGING "Enables obs-ffmpeg logging" OFF)
 option(ENABLE_NEW_MPEGTS_OUTPUT "Use native SRT/RIST mpegts output" ON)
 
+# cmake-format: off
+if(OS_WINDOWS OR OS_MACOS)
+  set(ffmpeg_version 6)
+else()
+  set(ffmpeg_version 5.1)
+endif()
+
 find_package(
-  FFmpeg REQUIRED
-  COMPONENTS avcodec
-             avfilter
-             avdevice
-             avutil
-             swscale
-             avformat
-             swresample)
+  FFmpeg ${ffmpeg_version}
+  REQUIRED avcodec
+           avfilter
+           avdevice
+           avutil
+           swscale
+           avformat
+           swresample)
+# cmake-format: on
 
 if(NOT TARGET OBS::media-playback)
   add_subdirectory("${CMAKE_SOURCE_DIR}/deps/media-playback" "${CMAKE_BINARY_DIR}/deps/media-playback")
