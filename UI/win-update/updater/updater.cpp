@@ -445,8 +445,6 @@ bool DownloadWorkerThread()
 				return false;
 			}
 
-			Status(L"Downloading %s", update.outputPath.c_str());
-
 			auto &buf = download_data[update.downloadHash];
 			/* Reserve required memory */
 			buf.reserve(update.fileSize);
@@ -929,11 +927,6 @@ static bool MoveInUseFileAway(const update_t &file)
 static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 {
 	wchar_t oldFileRenamedPath[MAX_PATH];
-
-	if (file.patchable)
-		Status(L"Updating %s...", file.outputPath.c_str());
-	else
-		Status(L"Installing %s...", file.outputPath.c_str());
 
 	/* Grab the patch/file data from the global cache. */
 	vector<std::byte> &patch_data = download_data[file.downloadHash];
@@ -1625,6 +1618,7 @@ static bool Update(wchar_t *cmdLine)
 	/* ------------------------------------- *
 	 * Download Updates                      */
 
+	Status(L"Downloading updates...");
 	if (!RunDownloadWorkers(4))
 		return false;
 
@@ -1638,6 +1632,7 @@ static bool Update(wchar_t *cmdLine)
 
 	SendDlgItemMessage(hwndMain, IDC_PROGRESS, PBM_SETPOS, 0, 0);
 
+	Status(L"Installing updates...");
 	if (!RunUpdateWorkers(4))
 		return false;
 
