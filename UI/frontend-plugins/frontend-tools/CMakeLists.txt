@@ -2,7 +2,12 @@ cmake_minimum_required(VERSION 3.22...3.25)
 
 legacy_check()
 
-find_qt(COMPONENTS Widgets COMPONENTS_LINUX Gui)
+# cmake-format: off
+find_package(Qt6 REQUIRED Widgets)
+if (OS_LINUX)
+  find_package(Qt6 REQUIRED Gui)
+endif()
+# cmake-format: on
 
 add_library(frontend-tools MODULE)
 add_library(OBS::frontend-tools ALIAS frontend-tools)

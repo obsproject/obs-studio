@@ -18,7 +18,7 @@ find_package(FFmpeg REQUIRED avformat avutil swscale swresample OPTIONAL_COMPONE
 find_package(ZLIB REQUIRED)
 
 if(ENABLE_UI)
-  find_qt(COMPONENTS Core)
+  find_package(Qt6 REQUIRED Core)
 endif()
 
 find_package(jansson REQUIRED)

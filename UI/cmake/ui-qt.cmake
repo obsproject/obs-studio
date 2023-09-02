@@ -1,4 +1,10 @@
-find_qt(COMPONENTS Widgets Network Svg Xml COMPONENTS_LINUX Gui)
+# cmake-format: off
+find_package(Qt6 REQUIRED Widgets Network Svg Xml)
+# cmake-format: on
+
+if(NOT OS_WINDOWS AND NOT OS_MACOS)
+  find_package(Qt6 REQUIRED Gui)
+endif()
 
 target_link_libraries(obs-studio PRIVATE Qt::Widgets Qt::Svg Qt::Xml Qt::Network)
 

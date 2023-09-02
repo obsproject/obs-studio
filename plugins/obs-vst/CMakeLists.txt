@@ -12,7 +12,7 @@ endif()
 add_library(obs-vst MODULE)
 add_library(OBS::vst ALIAS obs-vst)
 
-find_qt(COMPONENTS Widgets)
+find_package(Qt6 REQUIRED Widgets)
 
 target_sources(
   obs-vst

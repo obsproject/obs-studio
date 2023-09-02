@@ -7,7 +7,9 @@ if(NOT ENABLE_DECKLINK)
   return()
 endif()
 
-find_qt(COMPONENTS Widgets)
+# cmake-format: off
+find_package(Qt6 REQUIRED Widgets)
+# cmake-format: on
 
 add_library(decklink-captions MODULE)
 add_library(OBS::decklink-captions ALIAS decklink-captions)

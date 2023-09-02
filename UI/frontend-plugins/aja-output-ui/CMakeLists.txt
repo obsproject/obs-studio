@@ -8,7 +8,13 @@ if(NOT ENABLE_AJA)
 endif()
 
 find_package(LibAJANTV2 REQUIRED)
-find_qt(COMPONENTS Widgets COMPONENTS_LINUX Gui)
+
+# cmake-format: off
+find_package(Qt6 REQUIRED Widgets)
+if(OS_LINUX)
+  find_package(Qt6 REQUIRED Gui)
+endif()
+# cmake-format: on
 
 add_library(aja-output-ui MODULE)
 add_library(OBS::aja-output-ui ALIAS aja-output-ui)
