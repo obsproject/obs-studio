@@ -7,7 +7,12 @@ if(NOT ENABLE_DECKLINK)
   return()
 endif()
 
-find_qt(COMPONENTS Widgets COMPONENTS_LINUX Gui)
+# cmake-format: off
+find_package(Qt6 REQUIRED Widgets)
+if (OS_LINUX)
+  find_package(Qt6 REQUIRED Gui)
+endif()
+# cmake-format: on
 
 add_library(decklink-output-ui MODULE)
 add_library(OBS::decklink-output-ui ALIAS decklink-output-ui)

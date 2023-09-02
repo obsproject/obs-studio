@@ -263,8 +263,8 @@ function(find_qt_plugins)
   list(GET library_tuple 0 library_namespace)
   list(GET library_tuple 1 library_name)
 
-  if(NOT ${library_namespace} MATCHES "Qt[56]?")
-    message(FATAL_ERROR "'find_qt_plugins' has to be called with a valid target from the Qt, Qt5, or Qt6 namespace.")
+  if(NOT ${library_namespace} MATCHES "Qt6?")
+    message(FATAL_ERROR "'find_qt_plugins' has to be called with a valid target from the Qt or Qt6 namespace.")
   endif()
 
   list(
