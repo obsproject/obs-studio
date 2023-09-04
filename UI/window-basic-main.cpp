@@ -2451,15 +2451,16 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 #if defined(OBS_RELEASE_CANDIDATE) && OBS_RELEASE_CANDIDATE > 0
 		if (major == OBS_RELEASE_CANDIDATE_MAJOR &&
 		    minor == OBS_RELEASE_CANDIDATE_MINOR &&
-		    item.RC == OBS_RELEASE_CANDIDATE) {
+		    item.RC == OBS_RELEASE_CANDIDATE)
 #elif OBS_BETA > 0
 		if (major == OBS_BETA_MAJOR && minor == OBS_BETA_MINOR &&
-		    item.Beta == OBS_BETA) {
+		    item.Beta == OBS_BETA)
 #else
 		if (major == LIBOBS_API_MAJOR_VER &&
 		    minor == LIBOBS_API_MINOR_VER && item.RC == 0 &&
-		    item.Beta == 0) {
+		    item.Beta == 0)
 #endif
+		{
 			info_url = item.url;
 			info_increment = item.increment;
 		}
@@ -9474,12 +9475,13 @@ void OBSBasic::on_resetDocks_triggered(bool force)
 #ifdef BROWSER_AVAILABLE
 	if ((oldExtraDocks.size() || extraDocks.size() ||
 	     extraCustomDocks.size() || extraBrowserDocks.size()) &&
-	    !force) {
+	    !force)
 #else
 	if ((oldExtraDocks.size() || extraDocks.size() ||
 	     extraCustomDocks.size()) &&
-	    !force) {
+	    !force)
 #endif
+	{
 		QMessageBox::StandardButton button = QMessageBox::question(
 			this, QTStr("ResetUIWarning.Title"),
 			QTStr("ResetUIWarning.Text"));
