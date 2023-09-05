@@ -501,7 +501,9 @@ void DShowInput::OnEncodedVideoData(enum AVCodecID id, unsigned char *data,
 
 	if (!ffmpeg_decode_valid(video_decoder)) {
 		if (ffmpeg_decode_init(video_decoder, id, hw_decode) < 0) {
-			blog(LOG_WARNING, "Could not initialize video decoder");
+			blog(LOG_WARNING,
+			     "%s: Could not initialize video decoder",
+			     obs_source_get_name(source));
 			return;
 		}
 	}
@@ -510,7 +512,8 @@ void DShowInput::OnEncodedVideoData(enum AVCodecID id, unsigned char *data,
 	bool success = ffmpeg_decode_video(video_decoder, data, size, &ts, cs,
 					   frame.range, &frame, &got_output);
 	if (!success) {
-		blog(LOG_WARNING, "Error decoding video");
+		blog(LOG_WARNING, "%s: Error decoding video",
+		     obs_source_get_name(source));
 		return;
 	}
 
@@ -633,7 +636,9 @@ void DShowInput::OnEncodedAudioData(enum AVCodecID id, unsigned char *data,
 {
 	if (!ffmpeg_decode_valid(audio_decoder)) {
 		if (ffmpeg_decode_init(audio_decoder, id, false) < 0) {
-			blog(LOG_WARNING, "Could not initialize audio decoder");
+			blog(LOG_WARNING,
+			     "%s: Could not initialize audio decoder",
+			     obs_source_get_name(source));
 			return;
 		}
 	}
@@ -643,7 +648,8 @@ void DShowInput::OnEncodedAudioData(enum AVCodecID id, unsigned char *data,
 		bool success = ffmpeg_decode_audio(audio_decoder, data, size,
 						   &audio, &got_output);
 		if (!success) {
-			blog(LOG_WARNING, "Error decoding audio");
+			blog(LOG_WARNING, "%s: Error decoding audio",
+			     obs_source_get_name(source));
 			return;
 		}
 
