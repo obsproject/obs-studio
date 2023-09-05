@@ -820,13 +820,8 @@ void OBSBasic::ChangeProfile()
 	}
 
 #ifdef YOUTUBE_ENABLED
-	if (YouTubeAppDock::IsYTServiceSelected()) {
-		// This is re-initialized in some cases.
-		youtubeAppDock = main->GetYouTubeAppDock();
-		if (youtubeAppDock != NULL) {
-			youtubeAppDock->show();
-		}
-	}
+	if (YouTubeAppDock::IsYTServiceSelected() && youtubeAppDock)
+		youtubeAppDock->show();
 #endif
 }
 
