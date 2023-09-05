@@ -784,13 +784,8 @@ void OBSBasic::ChangeProfile()
 	DestroyPanelCookieManager();
 
 #ifdef YOUTUBE_ENABLED
-	OBSBasic *main = OBSBasic::Get();
-	// This dock works with both stream key and auth
-	// so hide it here if required.
-	YouTubeAppDock *youtubeAppDock = main->GetYouTubeAppDock();
-	if (youtubeAppDock != NULL) {
+	if (youtubeAppDock)
 		youtubeAppDock->hide();
-	}
 #endif
 
 	config.Swap(basicConfig);
