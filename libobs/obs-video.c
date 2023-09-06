@@ -887,6 +887,14 @@ static inline void output_video_data(struct obs_core_video_mix *video,
 	}
 }
 
+void add_ready_encoder_group(obs_encoder_t *encoder)
+{
+	obs_weak_encoder_t *weak = obs_encoder_get_weak_encoder(encoder);
+	pthread_mutex_lock(&obs->video.encoder_group_mutex);
+	da_push_back(obs->video.ready_encoder_groups, &weak);
+	pthread_mutex_unlock(&obs->video.encoder_group_mutex);
+}
+
 static inline void video_sleep(struct obs_core_video *video, uint64_t *p_time,
 			       uint64_t interval_ns)
 {
@@ -914,6 +922,28 @@ static inline void video_sleep(struct obs_core_video *video, uint64_t *p_time,
 
 	vframe_info.timestamp = cur_time;
 	vframe_info.count = count;
+
+	pthread_mutex_lock(&video->encoder_group_mutex);
+	for (size_t i = 0; i < video->ready_encoder_groups.num; i++) {
+		obs_encoder_t *encoder = obs_weak_encoder_get_encoder(
+			video->ready_encoder_groups.array[i]);
+		obs_weak_encoder_release(video->ready_encoder_groups.array[i]);
+		if (!encoder)
+			continue;
+
+		if (encoder->encoder_group) {
+			struct encoder_group *group = encoder->encoder_group;
+			pthread_mutex_lock(&group->mutex);
+			if (group->encoders_added == group->encoders_started &&
+			    !group->start_timestamp) {
+				group->start_timestamp = *p_time;
+			}
+			pthread_mutex_unlock(&group->mutex);
+		}
+		obs_encoder_release(encoder);
+	}
+	da_clear(video->ready_encoder_groups);
+	pthread_mutex_unlock(&video->encoder_group_mutex);
 
 	pthread_mutex_lock(&obs->video.mixes_mutex);
 	for (size_t i = 0, num = obs->video.mixes.num; i < num; i++) {
