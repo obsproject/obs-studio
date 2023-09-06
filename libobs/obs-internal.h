@@ -361,10 +361,15 @@ struct obs_core_video {
 	pthread_mutex_t task_mutex;
 	struct deque tasks;
 
+	pthread_mutex_t encoder_group_mutex;
+	DARRAY(obs_weak_encoder_t *) ready_encoder_groups;
+
 	pthread_mutex_t mixes_mutex;
 	DARRAY(struct obs_core_video_mix *) mixes;
 	struct obs_core_video_mix *main_mix;
 };
+
+extern void add_ready_encoder_group(obs_encoder_t *encoder);
 
 struct audio_monitor;
 
@@ -1218,6 +1223,13 @@ struct encoder_callback {
 	void *param;
 };
 
+struct encoder_group {
+	pthread_mutex_t mutex;
+	uint32_t encoders_added;
+	uint32_t encoders_started;
+	uint64_t start_timestamp;
+};
+
 struct obs_encoder {
 	struct obs_context_data context;
 	struct obs_encoder_info info;
@@ -1281,6 +1293,9 @@ struct obs_encoder {
 	int64_t offset_usec;
 	uint64_t first_raw_ts;
 	uint64_t start_ts;
+
+	/* track encoders that are part of a gop-aligned multi track group */
+	struct encoder_group *encoder_group;
 
 	pthread_mutex_t outputs_mutex;
 	DARRAY(obs_output_t *) outputs;

@@ -2600,6 +2600,11 @@ EXPORT void obs_encoder_set_last_error(obs_encoder_t *encoder,
 
 EXPORT uint64_t obs_encoder_get_pause_offset(const obs_encoder_t *encoder);
 
+EXPORT bool obs_encoder_group_keyframe_aligned_encoders(
+	obs_encoder_t *encoder, obs_encoder_t *encoder_to_be_grouped);
+EXPORT bool obs_encoder_group_remove_keyframe_aligned_encoder(
+	obs_encoder_t *encoder, obs_encoder_t *encoder_to_be_ungrouped);
+
 /* ------------------------------------------------------------------------- */
 /* Stream Services */
 
