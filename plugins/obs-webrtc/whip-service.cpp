@@ -1,6 +1,6 @@
 #include "whip-service.h"
 
-const char *audio_codecs[MAX_CODECS] = {"opus"};
+const char *audio_codecs[MAX_CODECS] = {"opus", "aac"};
 const char *video_codecs[MAX_CODECS] = {"h264"};
 
 WHIPService::WHIPService(obs_data_t *settings, obs_service_t *)
