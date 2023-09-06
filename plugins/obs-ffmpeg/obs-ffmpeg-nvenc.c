@@ -109,6 +109,7 @@ static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
 	int gpu = (int)obs_data_get_int(settings, "gpu");
 	bool cbr_override = obs_data_get_bool(settings, "cbr");
 	int bf = (int)obs_data_get_int(settings, "bf");
+	bool disable_scenecut = obs_data_get_bool(settings, "disable_scenecut");
 
 	video_t *video = obs_encoder_video(enc->ffve.encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
@@ -169,6 +170,9 @@ static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
 
 	av_opt_set(enc->ffve.context->priv_data, "level", "auto", 0);
 	av_opt_set_int(enc->ffve.context->priv_data, "gpu", gpu, 0);
+
+	av_opt_set_int(enc->ffve.context->priv_data, "no-scenecut",
+		       disable_scenecut, 0);
 
 	// This is ugly but ffmpeg wipes priv_data on error and we need
 	// to know this to show a proper error message.
