@@ -1094,6 +1094,20 @@ extern bool audio_pause_check(struct pause_data *pause, struct audio_data *data,
 			      size_t sample_rate);
 extern void pause_reset(struct pause_data *pause);
 
+enum keyframe_group_track_status {
+	KEYFRAME_TRACK_STATUS_NOT_SEEN = 0,
+	KEYFRAME_TRACK_STATUS_SEEN = 1,
+	KEYFRAME_TRACK_STATUS_SKIPPED = 2,
+};
+
+struct keyframe_group_data {
+	uintptr_t group_id;
+	int64_t pts;
+	uint32_t required_tracks;
+	enum keyframe_group_track_status
+		seen_on_track[MAX_OUTPUT_VIDEO_ENCODERS];
+};
+
 struct obs_output {
 	struct obs_context_data context;
 	struct obs_output_info info;
@@ -1102,6 +1116,7 @@ struct obs_output {
 	bool owns_info_id;
 
 	bool received_video[MAX_OUTPUT_VIDEO_ENCODERS];
+	DARRAY(struct keyframe_group_data) keyframe_group_tracking;
 	bool received_audio;
 	volatile bool data_active;
 	volatile bool end_data_capture_thread_active;

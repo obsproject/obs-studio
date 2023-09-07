@@ -290,6 +290,8 @@ void obs_output_destroy(obs_output_t *output)
 			}
 		}
 
+		da_free(output->keyframe_group_tracking);
+
 		clear_raw_audio_buffers(output);
 
 		os_event_destroy(output->stopping_event);
@@ -475,6 +477,8 @@ void obs_output_actual_stop(obs_output_t *output, bool force, uint64_t ts)
 		bfree(output->caption_head);
 		output->caption_head = output->caption_tail;
 	}
+
+	da_clear(output->keyframe_group_tracking);
 }
 
 void obs_output_stop(obs_output_t *output)
@@ -1989,6 +1993,85 @@ static void discard_unused_audio_packets(struct obs_output *output,
 		discard_to_idx(output, idx);
 }
 
+static bool purge_encoder_group_keyframe_data(obs_output_t *output, size_t idx)
+{
+	struct keyframe_group_data *data =
+		&output->keyframe_group_tracking.array[idx];
+	uint32_t modified_count = 0;
+	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+		if (data->seen_on_track[i] != KEYFRAME_TRACK_STATUS_NOT_SEEN)
+			modified_count += 1;
+	}
+
+	if (modified_count == data->required_tracks) {
+		da_erase(output->keyframe_group_tracking, idx);
+		return true;
+	}
+	return false;
+}
+
+/* Check whether keyframes are emitted from all grouped encoders, and log
+ * if keyframes haven't been emitted from all grouped encoders. */
+static void
+check_encoder_group_keyframe_alignment(obs_output_t *output,
+				       struct encoder_packet *packet)
+{
+	size_t idx = 0;
+	struct keyframe_group_data insert_data = {0};
+
+	if (!packet->keyframe || packet->type != OBS_ENCODER_VIDEO ||
+	    !packet->encoder->encoder_group)
+		return;
+
+	for (; idx < output->keyframe_group_tracking.num;) {
+		struct keyframe_group_data *data =
+			&output->keyframe_group_tracking.array[idx];
+		if (data->pts > packet->pts)
+			break;
+		if (data->group_id !=
+		    (uintptr_t)packet->encoder->encoder_group) {
+			idx += 1;
+			continue;
+		}
+
+		if (data->pts < packet->pts) {
+			if (data->seen_on_track[packet->track_idx] ==
+			    KEYFRAME_TRACK_STATUS_NOT_SEEN) {
+				blog(LOG_WARNING,
+				     "obs-output '%s': Missing keyframe with pts %" PRIi64
+				     " for encoder '%s' (track: %zu)",
+				     obs_output_get_name(output), data->pts,
+				     obs_encoder_get_name(packet->encoder),
+				     packet->track_idx);
+			}
+
+			data->seen_on_track[packet->track_idx] =
+				KEYFRAME_TRACK_STATUS_SKIPPED;
+
+			if (!purge_encoder_group_keyframe_data(output, idx))
+				idx += 1;
+			continue;
+		}
+
+		data->seen_on_track[packet->track_idx] =
+			KEYFRAME_TRACK_STATUS_SEEN;
+		purge_encoder_group_keyframe_data(output, idx);
+		return;
+	}
+
+	insert_data.group_id = (uintptr_t)packet->encoder->encoder_group;
+	insert_data.pts = packet->pts;
+	insert_data.seen_on_track[packet->track_idx] =
+		KEYFRAME_TRACK_STATUS_SEEN;
+
+	pthread_mutex_lock(&packet->encoder->encoder_group->mutex);
+	insert_data.required_tracks =
+		packet->encoder->encoder_group->encoders_started;
+	pthread_mutex_unlock(&packet->encoder->encoder_group->mutex);
+
+	da_insert(output->keyframe_group_tracking, idx, &insert_data);
+}
+
 static void interleave_packets(void *data, struct encoder_packet *packet)
 {
 	struct obs_output *output = data;
@@ -2020,6 +2103,8 @@ static void interleave_packets(void *data, struct encoder_packet *packet)
 			received_video = received_video &&
 					 output->received_video[i];
 	}
+
+	check_encoder_group_keyframe_alignment(output, packet);
 
 	was_started = output->received_audio && received_video;
 
