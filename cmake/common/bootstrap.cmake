@@ -2,34 +2,10 @@
 
 include_guard(GLOBAL)
 
-# Enable automatic PUSH and POP of policies to parent scope
-if(POLICY CMP0011)
-  cmake_policy(SET CMP0011 NEW)
-endif()
-
-# Enable distinction between Clang and AppleClang
-if(POLICY CMP0025)
-  cmake_policy(SET CMP0025 NEW)
-endif()
-
-# Enable strict checking of "break()" usage
-if(POLICY CMP0055)
-  cmake_policy(SET CMP0055 NEW)
-endif()
-
-# Honor visibility presets for all target types (executable, shared, module, static)
-if(POLICY CMP0063)
-  cmake_policy(SET CMP0063 NEW)
-endif()
-
-# Disable export function calls to populate package registry by default
-if(POLICY CMP0090)
-  cmake_policy(SET CMP0090 NEW)
-endif()
-
-set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO RelWithDebInfo Release MinSizeRel "")
-set(CMAKE_MAP_IMPORTED_CONFIG_MINSIZEREL MinSizeRel Release RelWithDebInfo "")
-set(CMAKE_MAP_IMPORTED_CONFIG_RELEASE Release RelWithDebInfo MinSizeRel "")
+# Map fallback configurations for optimized build configurations
+set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO RelWithDebInfo Release MinSizeRel None "")
+set(CMAKE_MAP_IMPORTED_CONFIG_MINSIZEREL MinSizeRel Release RelWithDebInfo None "")
+set(CMAKE_MAP_IMPORTED_CONFIG_RELEASE Release RelWithDebInfo MinSizeRel None "")
 
 # Prohibit in-source builds
 if("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -57,19 +33,20 @@ set(_obs_beta 0)
 # Add common module directories to default search path
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/common" "${CMAKE_CURRENT_SOURCE_DIR}/cmake/finders")
 
+include(policies NO_POLICY_SCOPE)
 include(versionconfig)
 include(buildnumber)
 include(osconfig)
 
 # Allow selection of common build types via UI
 if(NOT CMAKE_GENERATOR MATCHES "(Xcode|Visual Studio .+)")
-  set(CMAKE_BUILD_TYPE
-      "RelWithDebInfo"
-      CACHE STRING "OBS build type [Release, RelWithDebInfo, Debug, MinSizeRel]" FORCE)
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Release RelWithDebInfo Debug MinSizeRel)
+  if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE
+        "RelWithDebInfo"
+        CACHE STRING "OBS build type [Release, RelWithDebInfo, Debug, MinSizeRel]" FORCE)
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Release RelWithDebInfo Debug MinSizeRel)
+  endif()
 endif()
 
-# Disable exports automatically going into the CMake package registry
-set(CMAKE_EXPORT_PACKAGE_REGISTRY FALSE)
 # Enable default inclusion of targets' source and binary directory
 set(CMAKE_INCLUDE_CURRENT_DIR TRUE)

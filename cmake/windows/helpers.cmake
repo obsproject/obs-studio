@@ -1,7 +1,8 @@
 # OBS CMake Windows helper functions module
 
 # cmake-format: off
-# cmake-lint: disable=C0301
+# cmake-lint: disable=C0103
+# cmake-lint: disable=R0912
 # cmake-lint: disable=R0915
 # cmake-format: on
 
@@ -98,10 +99,11 @@ function(set_target_properties_obs target)
       add_custom_command(
         TARGET ${target}
         POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E echo "Add obspython import module"
         COMMAND "${CMAKE_COMMAND}" -E make_directory "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_SCRIPT_PLUGIN_DESTINATION}/"
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_FILE_DIR:obspython>/obspython.py"
                 "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_SCRIPT_PLUGIN_DESTINATION}/"
-        COMMENT "Add obspython import module")
+        COMMENT "")
 
       install(
         FILES "$<TARGET_FILE_DIR:obspython>/obspython.py"
@@ -118,6 +120,7 @@ function(set_target_properties_obs target)
           add_custom_command(
             TARGET ${target}
             POST_BUILD
+            COMMAND "${CMAKE_COMMAND}" -E echo "Add Chromium Embedded Framework to library directory"
             COMMAND "${CMAKE_COMMAND}" -E make_directory "${OBS_OUTPUT_DIR}/$<CONFIG>/${target_destination}"
             COMMAND
               "${CMAKE_COMMAND}" -E copy_if_different "${imported_location}" "${cef_location}/chrome_elf.dll"
@@ -129,7 +132,7 @@ function(set_target_properties_obs target)
               "${cef_root_location}/Resources/resources.pak" "${OBS_OUTPUT_DIR}/$<CONFIG>/${target_destination}/"
             COMMAND "${CMAKE_COMMAND}" -E copy_directory "${cef_root_location}/Resources/locales"
                     "${OBS_OUTPUT_DIR}/$<CONFIG>/${target_destination}/locales"
-            COMMENT "Add Chromium Embedded Framework to library directory")
+            COMMENT "")
 
           install(
             FILES "${imported_location}"
@@ -249,11 +252,12 @@ function(_target_install_obs target)
   add_custom_command(
     TARGET ${target}
     POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E echo "${comment}"
     COMMAND "${CMAKE_COMMAND}" -E make_directory "${OBS_OUTPUT_DIR}/$<CONFIG>/${_TIO_DESTINATION}"
     COMMAND "${CMAKE_COMMAND}" -E copy ${target_file} "${OBS_OUTPUT_DIR}/$<CONFIG>/${_TIO_DESTINATION}"
     COMMAND "${CMAKE_COMMAND}" -E $<IF:$<CONFIG:Debug,RelWithDebInfo,Release>,copy,true> ${target_pdb_file}
             "${OBS_OUTPUT_DIR}/$<CONFIG>/${_TIO_DESTINATION}"
-    COMMENT "${comment}"
+    COMMENT ""
     VERBATIM)
 
   install(
@@ -309,17 +313,17 @@ function(target_install_resources target)
     add_custom_command(
       TARGET ${target}
       POST_BUILD
+      COMMAND "${CMAKE_COMMAND}" -E echo "Copy ${target} resources to data directory"
       COMMAND "${CMAKE_COMMAND}" -E make_directory "${OBS_OUTPUT_DIR}/$<CONFIG>/${target_destination}"
       COMMAND "${CMAKE_COMMAND}" -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/data"
               "${OBS_OUTPUT_DIR}/$<CONFIG>/${target_destination}"
-      COMMENT "Copy ${target} resources to data directory"
+      COMMENT ""
       VERBATIM)
   endif()
 endfunction()
 
 # Helper function to add a specific resource to a bundle
 function(target_add_resource target resource)
-
   get_property(obs_module_list GLOBAL PROPERTY OBS_MODULES_ENABLED)
   if(ARGN)
     set(target_destination "${ARGN}")
@@ -341,9 +345,10 @@ function(target_add_resource target resource)
   add_custom_command(
     TARGET ${target}
     POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E echo "Copy ${target} resource ${resource} to library directory"
     COMMAND "${CMAKE_COMMAND}" -E make_directory "${OBS_OUTPUT_DIR}/$<CONFIG>/${target_destination}/"
     COMMAND "${CMAKE_COMMAND}" -E copy "${resource}" "${OBS_OUTPUT_DIR}/$<CONFIG>/${target_destination}/"
-    COMMENT "Copy ${target} resource ${resource} to library directory"
+    COMMENT ""
     VERBATIM)
 
   source_group("Resources" FILES "${resource}")
@@ -407,6 +412,7 @@ function(_bundle_dependencies target)
   add_custom_command(
     TARGET ${target}
     POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E echo "Copy dependencies to binary directory (${OBS_EXECUTABLE_DESTINATION})..."
     COMMAND "${CMAKE_COMMAND}" -E make_directory "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_EXECUTABLE_DESTINATION}"
     COMMAND "${CMAKE_COMMAND}" -E "$<IF:$<CONFIG:Debug>,copy_if_different,true>"
             "$<$<CONFIG:Debug>:${library_paths_DEBUG}>" "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_EXECUTABLE_DESTINATION}"
@@ -419,7 +425,7 @@ function(_bundle_dependencies target)
     COMMAND
       "${CMAKE_COMMAND}" -E "$<IF:$<CONFIG:MinSizeRel>,copy_if_different,true>"
       "$<$<CONFIG:MinSizeRel>:${library_paths_MINSIZEREL}>" "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_EXECUTABLE_DESTINATION}"
-    COMMENT "Copy dependencies to binary directory (${OBS_EXECUTABLE_DESTINATION})..."
+    COMMENT "."
     VERBATIM COMMAND_EXPAND_LISTS)
 
   install(
@@ -469,12 +475,14 @@ function(_bundle_dependencies target)
     add_custom_command(
       TARGET ${target}
       POST_BUILD
+      COMMAND "${CMAKE_COMMAND}" -E echo
+              "Copy Qt plugins ${stem} to binary directory (${OBS_EXECUTABLE_DESTINATION}/${stem})"
       COMMAND "${CMAKE_COMMAND}" -E make_directory "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_EXECUTABLE_DESTINATION}/${stem}"
       COMMAND "${CMAKE_COMMAND}" -E "$<IF:$<CONFIG:Debug>,copy_if_different,true>" "${plugin_list_debug}"
               "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_EXECUTABLE_DESTINATION}/${stem}"
       COMMAND "${CMAKE_COMMAND}" -E "$<IF:$<CONFIG:Debug>,true,copy_if_different>" "${plugin_list}"
               "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_EXECUTABLE_DESTINATION}/${stem}"
-      COMMENT "Copy Qt plugins ${stem} to binary directory (${OBS_EXECUTABLE_DESTINATION}/${stem})"
+      COMMENT ""
       VERBATIM COMMAND_EXPAND_LISTS)
 
     install(
