@@ -1,9 +1,5 @@
 # OBS CMake common version helper module
 
-# cmake-format: off
-# cmake-lint: disable=C0301
-# cmake-format: on
-
 include_guard(GLOBAL)
 
 set(_obs_version ${_obs_default_version})

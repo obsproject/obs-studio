@@ -1,5 +1,10 @@
 # OBS CMake 32-bit slice module
 
+# cmake-format: off
+# cmake-lint: disable=C0103
+# cmake-lint: disable=E1121
+# cmake-format: on
+
 include_guard(GLOBAL)
 
 include(compilerconfig)
@@ -13,9 +18,11 @@ macro(legacy_check)
 endmacro()
 
 # cmake-format: off
+# target_disable_feature: Stub macro for 32-bit projects
 macro(target_disable_feature)
 endmacro()
 
+# target_disable: Stub macro for 32-bit projects
 macro(target_disable)
 endmacro()
 # cmake-format: on
