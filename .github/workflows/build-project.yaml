@@ -156,7 +156,7 @@ jobs:
           codesignPass: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
 
       - name: Annotate Build 🏷️
-        if: matrix.target == 'arm64' && fromJSON(needs.check-event.outputs.annotate)
+        if: matrix.target == 'arm64' && github.event_name == 'schedule'
         uses: yuzutech/annotations-action@v0.4.0
         with:
           repo-token: ${{ github.token }}
