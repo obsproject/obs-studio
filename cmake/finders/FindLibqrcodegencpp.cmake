@@ -20,14 +20,18 @@ This module sets the following variables:
   True, if all required components and the core library were found.
 ``Libqrcodegencpp_VERSION``
   Detected version of found Libqrcodegencpp libraries.
+``Libqrcodegencpp_LIBRARIES``
+  Libraries needed to link to Libqrcodegencpp.
 
 Cache variables
 ^^^^^^^^^^^^^^^
 
 The following cache variables may also be set:
 
-``Libqrcodegencpp_LIBRARY``
-  Path to the library component of Libqrcodegencpp.
+``Libqrcodegencpp_LIBRARY_RELEASE``
+  Path to the library component of Libqrcodegencpp in non-debug configuration.
+``Libqrcodegencpp_LIBRARY_DEBUG``
+  Optional path to the library component of Libqrcodegencpp in debug configuration.
 ``Libqrcodegencpp_INCLUDE_DIR``
   Directory containing ``qrcodegen.hpp``.
 
@@ -72,34 +76,26 @@ macro(Libqrcodegencpp_set_soname)
   unset(_result)
 endmacro()
 
-# Libqrcodegencpp_find_dll: Find DLL for corresponding import library
-macro(Libqrcodegencpp_find_dll)
-  cmake_path(GET Libqrcodegencpp_IMPLIB PARENT_PATH _implib_path)
-  cmake_path(SET _bin_path NORMALIZE "${_implib_path}/../bin")
-
-  string(REGEX REPLACE "[0-9]+\\.([0-9]+)\\.[0-9]+" "\\1" _dll_version "${Libqrcodegencpp_VERSION}")
-
-  find_program(
-    Libqrcodegencpp_LIBRARY
-    NAMES qrcodegencpp.dll
-    HINTS ${_implib_path} ${_bin_path}
-    DOC "Libqrcodegencpp DLL location")
-
-  if(NOT Libqrcodegencpp_LIBRARY)
-    set(Libqrcodegencpp_LIBRARY "${Libqrcodegencpp_IMPLIB}")
-  endif()
-  unset(_implib_path)
-  unset(_bin_path)
-  unset(_dll_version)
-endmacro()
-
 find_path(
   Libqrcodegencpp_INCLUDE_DIR
-  NAMES qrcodegen.hpp
+  NAMES qrcodegencpp
   HINTS ${PC_Libqrcodegencpp_INCLUDE_DIRS}
   PATHS /usr/include /usr/local/include
-  PATH_SUFFIXES qrcodegencpp qrcodegen
   DOC "Libqrcodegencpp include directory")
+
+find_library(
+  Libqrcodegencpp_LIBRARY_RELEASE
+  NAMES qrcodegencpp libqrcodegencpp
+  HINTS ${PC_Libqrcodegencpp_LIBRARY_DIRS}
+  PATHS /usr/lib /usr/local/lib
+  DOC "Libqrcodegencpp location")
+
+find_library(
+  Libqrcodegencpp_LIBRARY_DEBUG
+  NAMES qrcodegencppd libqrcodegencppd
+  HINTS ${PC_Libqrcodegencpp_LIBRARY_DIRS}
+  PATHS /usr/lib /usr/local/lib
+  DOC "Libqrcodegencpp debug location.")
 
 if(PC_Libqrcodegencpp_VERSION VERSION_GREATER 0)
   set(Libqrcodegencpp_VERSION ${PC_Libqrcodegencpp_VERSION})
@@ -110,21 +106,8 @@ else()
   set(Libqrcodegencpp_VERSION 0.0.0)
 endif()
 
-if(CMAKE_HOST_SYSTEM_NAME MATCHES "Windows")
-  find_library(
-    Libqrcodegencpp_IMPLIB
-    NAMES libqrcodegencpp qrcodegencpp
-    DOC "Libqrcodegencpp import library location")
-
-  libqrcodegencpp_find_dll()
-else()
-  find_library(
-    Libqrcodegencpp_LIBRARY
-    NAMES libqrcodegencpp qrcodegencpp
-    HINTS ${PC_Libqrcodegencpp_LIBRARY_DIRS}
-    PATHS /usr/lib /usr/local/lib
-    DOC "Libqrcodegencpp location")
-endif()
+include(SelectLibraryConfigurations)
+select_library_configurations(Libqrcodegencpp)
 
 if(CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin|Windows")
   set(Libqrcodegencpp_ERROR_REASON "Ensure that a qrcodegencpp distribution is provided as part of CMAKE_PREFIX_PATH.")
@@ -136,26 +119,23 @@ find_package_handle_standard_args(
   Libqrcodegencpp
   REQUIRED_VARS Libqrcodegencpp_LIBRARY Libqrcodegencpp_INCLUDE_DIR
   VERSION_VAR Libqrcodegencpp_VERSION REASON_FAILURE_MESSAGE "${Libqrcodegencpp_ERROR_REASON}")
-mark_as_advanced(Libqrcodegencpp_INCLUDE_DIR Libqrcodegencpp_LIBRARY Libqrcodegencpp_IMPLIB)
+mark_as_advanced(Libqrcodegencpp_INCLUDE_DIR Libqrcodegencpp_LIBRARY)
 unset(Libqrcodegencpp_ERROR_REASON)
 
 if(Libqrcodegencpp_FOUND)
+  list(APPEND Libqrcodegencpp_INCLUDE_DIRS ${Libqrcodegencpp_INCLUDE_DIR}/qrcodegencpp)
+  set(Libqrcodegencpp_LIBRARIES ${Libqrcodegencpp_LIBRARY})
+  mark_as_advanced(Libqrcodegencpp_INCLUDE_DIR Libqrcodegencpp_LIBRARY)
+
   if(NOT TARGET Libqrcodegencpp::Libqrcodegencpp)
-    if(IS_ABSOLUTE "${Libqrcodegencpp_LIBRARY}")
-      if(DEFINED Libqrcodegencpp_IMPLIB)
-        if(Libqrcodegencpp_IMPLIB STREQUAL Libqrcodegencpp_LIBRARY)
-          add_library(Libqrcodegencpp::Libqrcodegencpp STATIC IMPORTED)
-        else()
-          add_library(Libqrcodegencpp::Libqrcodegencpp SHARED IMPORTED)
-          set_property(TARGET Libqrcodegencpp::Libqrcodegencpp PROPERTY IMPORTED_IMPLIB "${Libqrcodegencpp_IMPLIB}")
-        endif()
-      else()
-        add_library(Libqrcodegencpp::Libqrcodegencpp UNKNOWN IMPORTED)
-      endif()
-      set_property(TARGET Libqrcodegencpp::Libqrcodegencpp PROPERTY IMPORTED_LOCATION "${Libqrcodegencpp_LIBRARY}")
+    if(IS_ABSOLUTE "${Libqrcodegencpp_LIBRARY_RELEASE}")
+      add_library(Libqrcodegencpp::Libqrcodegencpp STATIC IMPORTED)
+      set_property(TARGET Libqrcodegencpp::Libqrcodegencpp PROPERTY IMPORTED_LOCATION
+                                                                    "${Libqrcodegencpp_LIBRARY_RELEASE}")
     else()
       add_library(Libqrcodegencpp::Libqrcodegencpp INTERFACE IMPORTED)
-      set_property(TARGET Libqrcodegencpp::Libqrcodegencpp PROPERTY IMPORTED_LIBNAME "${Libqrcodegencpp_LIBRARY}")
+      set_property(TARGET Libqrcodegencpp::Libqrcodegencpp PROPERTY IMPORTED_LIBNAME
+                                                                    "${Libqrcodegencpp_LIBRARY_RELEASE}")
     endif()
 
     libqrcodegencpp_set_soname()
@@ -164,6 +144,24 @@ if(Libqrcodegencpp_FOUND)
       PROPERTIES INTERFACE_COMPILE_OPTIONS "${PC_Libqrcodegencpp_CFLAGS_OTHER}"
                  INTERFACE_INCLUDE_DIRECTORIES "${Libqrcodegencpp_INCLUDE_DIR}"
                  VERSION ${Libqrcodegencpp_VERSION})
+
+    if(Libqrcodegencpp_LIBRARY_DEBUG)
+      if(IS_ABSOLUTE "${Libqrcodegencpp_LIBRARY_DEBUG}")
+        set_property(TARGET Libqrcodegencpp::Libqrcodegencpp PROPERTY IMPORTED_LOCATION_DEBUG
+                                                                      "${Libqrcodegencpp_LIBRARY_DEBUG}")
+      else()
+        set_property(TARGET Libqrcodegencpp::Libqrcodegencpp PROPERTY IMPORTED_LIBNAME_DEBUG
+                                                                      "${Libqrcodegencpp_LIBRARY_DEBUG}")
+      endif()
+      set_property(
+        TARGET Libqrcodegencpp::Libqrcodegencpp
+        APPEND
+        PROPERTY IMPORTED_CONFIGURATIONS Debug)
+    endif()
+
+    set_target_properties(Libqrcodegencpp::Libqrcodegencpp PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+                                                                      "${Libqrcodegencpp_INCLUDE_DIRS}")
+
   endif()
 endif()
 
