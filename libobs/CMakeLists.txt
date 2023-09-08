@@ -2,23 +2,15 @@ cmake_minimum_required(VERSION 3.22...3.25)
 
 legacy_check()
 
-# cmake-format: off
-add_library(libobs-version STATIC EXCLUDE_FROM_ALL)
-add_library(OBS::libobs-version ALIAS libobs-version)
-# cmake-format: on
-configure_file(obsversion.c.in obsversion.c @ONLY)
-target_sources(libobs-version PRIVATE obsversion.c obsversion.h)
-set_property(TARGET libobs-version PROPERTY FOLDER core)
-
-add_library(libobs SHARED)
-add_library(OBS::libobs ALIAS libobs)
+include(cmake/obs-version.cmake)
 
 find_package(Threads REQUIRED)
+
 # cmake-format: off
 if(OS_WINDOWS OR OS_MACOS)
   set(ffmpeg_version 6)
 else()
-  set(ffmpeg_version 5.1)
+  set(ffmpeg_version 4.4)
 endif()
 
 find_package(
@@ -29,6 +21,7 @@ find_package(
            swresample
   OPTIONAL_COMPONENTS avcodec)
 # cmake-format: on
+
 find_package(ZLIB REQUIRED)
 
 if(ENABLE_UI)
@@ -36,8 +29,16 @@ if(ENABLE_UI)
 endif()
 
 find_package(jansson REQUIRED)
-add_subdirectory("${CMAKE_SOURCE_DIR}/deps/libcaption" "${CMAKE_BINARY_DIR}/deps/libcaption")
-add_subdirectory("${CMAKE_SOURCE_DIR}/deps/uthash" "${CMAKE_BINARY_DIR}/deps/uthash")
+if(NOT TARGET OBS::caption)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/deps/libcaption" "${CMAKE_BINARY_DIR}/deps/libcaption")
+endif()
+
+if(NOT TARGET OBS::uthash)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/deps/uthash" "${CMAKE_BINARY_DIR}/deps/uthash")
+endif()
+
+add_library(libobs SHARED)
+add_library(OBS::libobs ALIAS libobs)
 
 target_sources(
   libobs
@@ -238,6 +239,7 @@ target_sources(
           graphics/vec4.h)
 
 target_compile_features(libobs PUBLIC cxx_std_17)
+
 target_compile_definitions(
   libobs
   PRIVATE IS_LIBOBS
@@ -264,13 +266,15 @@ elseif(OS_MACOS)
   include(cmake/os-macos.cmake)
 elseif(OS_LINUX)
   include(cmake/os-linux.cmake)
-elseif(OS_FREEBSD)
+elseif(OS_FREEBSD OR OS_OPENBSD)
   include(cmake/os-freebsd.cmake)
 endif()
 
 configure_file(obsconfig.h.in "${CMAKE_BINARY_DIR}/config/obsconfig.h" @ONLY)
+
 target_include_directories(libobs PUBLIC "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/config>"
                                          "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>")
+
 target_compile_definitions(libobs PUBLIC HAVE_OBSCONFIG_H)
 
 set(public_headers
