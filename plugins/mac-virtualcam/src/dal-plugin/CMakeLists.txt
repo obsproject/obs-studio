@@ -5,23 +5,24 @@ add_library(OBS::dal-plugin ALIAS obs-dal-plugin)
 
 target_sources(
   obs-dal-plugin
-  PRIVATE OBSDALPlugIn.mm
-          OBSDALPlugIn.h
-          OBSDALPlugInMain.mm
-          OBSDALPlugInInterface.mm
-          OBSDALPlugInInterface.h
-          OBSDALObjectStore.mm
-          OBSDALObjectStore.h
-          OBSDALDevice.mm
-          OBSDALDevice.h
-          OBSDALMachClient.mm
-          OBSDALMachClient.h
-          CMSampleBufferUtils.mm
-          OBSDALStream.mm
-          OBSDALStream.h
+  PRIVATE # cmake-format: sortable
           CMSampleBufferUtils.h
+          CMSampleBufferUtils.mm
           Defines.h
-          Logging.h)
+          Logging.h
+          OBSDALDevice.h
+          OBSDALDevice.mm
+          OBSDALMachClient.h
+          OBSDALMachClient.mm
+          OBSDALObjectStore.h
+          OBSDALObjectStore.mm
+          OBSDALPlugIn.h
+          OBSDALPlugIn.mm
+          OBSDALPlugInInterface.h
+          OBSDALPlugInInterface.mm
+          OBSDALPlugInMain.mm
+          OBSDALStream.h
+          OBSDALStream.mm)
 
 if(NOT XCODE)
   target_compile_options(obs-dal-plugin PRIVATE -fobjc-arc -fobjc-weak)
