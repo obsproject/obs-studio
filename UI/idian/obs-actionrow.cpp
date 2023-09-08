@@ -65,7 +65,7 @@ void OBSActionRow::setPrefix(QWidget *w, bool auto_connect)
 
 	_prefix->setParent(this);
 	layout->addWidget(_prefix, 0, 0, rowspan, 1, Qt::AlignLeft);
-	layout->setColumnStretch(0, 5);
+	layout->setColumnStretch(0, 3);
 }
 
 void OBSActionRow::setSuffix(QWidget *w, bool auto_connect)
@@ -92,6 +92,7 @@ void OBSActionRow::setPrefixEnabled(bool enabled)
 	if (enabled == _prefix->isEnabled() && enabled == _prefix->isVisible())
 		return;
 
+	layout->setColumnStretch(0, enabled ? 3 : 0);
 	_prefix->setEnabled(enabled);
 	_prefix->setVisible(enabled);
 }
