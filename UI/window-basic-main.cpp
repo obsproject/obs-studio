@@ -8566,8 +8566,11 @@ void OBSBasic::UpdateEditMenu()
 	}
 	const bool canTransformSingle = videoCount == 1 && totalCount == 1;
 
+	OBSSceneItem curItem = GetCurrentSceneItem();
+	bool locked = obs_sceneitem_locked(curItem);
+
 	ui->actionCopySource->setEnabled(totalCount > 0);
-	ui->actionEditTransform->setEnabled(canTransformSingle);
+	ui->actionEditTransform->setEnabled(canTransformSingle && !locked);
 	ui->actionCopyTransform->setEnabled(canTransformSingle);
 	ui->actionPasteTransform->setEnabled(hasCopiedTransform &&
 					     videoCount > 0);

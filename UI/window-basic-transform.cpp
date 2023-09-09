@@ -125,6 +125,7 @@ void OBSBasicTransform::SetScene(OBSScene scene)
 	selectSignal.Disconnect();
 	deselectSignal.Disconnect();
 	removeSignal.Disconnect();
+	lockSignal.Disconnect();
 
 	if (scene) {
 		OBSSource source = obs_scene_get_source(scene);
@@ -139,6 +140,8 @@ void OBSBasicTransform::SetScene(OBSScene scene)
 				     this);
 		deselectSignal.Connect(signal, "item_deselect",
 				       OBSSceneItemDeselect, this);
+		lockSignal.Connect(signal, "item_locked", OBSSceneItemLocked,
+				   this);
 	}
 }
 
@@ -148,15 +151,20 @@ void OBSBasicTransform::SetItem(OBSSceneItem newItem)
 				  Q_ARG(OBSSceneItem, OBSSceneItem(newItem)));
 }
 
+void OBSBasicTransform::SetEnabled(bool enable)
+{
+	ui->container->setEnabled(enable);
+	ui->buttonBox->button(QDialogButtonBox::Reset)->setEnabled(enable);
+}
+
 void OBSBasicTransform::SetItemQt(OBSSceneItem newItem)
 {
 	item = newItem;
 	if (item)
 		RefreshControls();
 
-	bool enable = !!item;
-	ui->container->setEnabled(enable);
-	ui->buttonBox->button(QDialogButtonBox::Reset)->setEnabled(enable);
+	bool enable = !!item && !obs_sceneitem_locked(item);
+	SetEnabled(enable);
 }
 
 void OBSBasicTransform::OBSChannelChanged(void *param, calldata_t *data)
@@ -220,6 +228,15 @@ void OBSBasicTransform::OBSSceneItemDeselect(void *param, calldata_t *data)
 			QTStr("Basic.TransformWindow.NoSelectedSource"));
 		window->SetItem(FindASelectedItem(scene));
 	}
+}
+
+void OBSBasicTransform::OBSSceneItemLocked(void *param, calldata_t *data)
+{
+	OBSBasicTransform *window =
+		reinterpret_cast<OBSBasicTransform *>(param);
+	bool locked = calldata_bool(data, "locked");
+
+	QMetaObject::invokeMethod(window, "SetEnabled", Q_ARG(bool, !locked));
 }
 
 static const uint32_t listToAlign[] = {OBS_ALIGN_TOP | OBS_ALIGN_LEFT,
