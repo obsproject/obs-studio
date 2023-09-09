@@ -33,10 +33,10 @@ endif()
 
 # Set beta/rc versions if suffix included in version string
 if(_obs_version MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+-rc[0-9]+")
-  string(REGEX REPLACE "([0-9]+)\\.([0-9]+)\\.([0-9]+)-rc([0-9])+" "\\1;\\2;\\3;\\4" _obs_release_candidate
+  string(REGEX REPLACE "([0-9]+)\\.([0-9]+)\\.([0-9]+)-rc([0-9]+).*$" "\\1;\\2;\\3;\\4" _obs_release_candidate
                        ${_obs_version})
 elseif(_obs_version MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+-beta[0-9]+")
-  string(REGEX REPLACE "([0-9]+)\\.([0-9]+)\\.([0-9]+)-beta([0-9])+" "\\1;\\2;\\3;\\4" _obs_beta ${_obs_version})
+  string(REGEX REPLACE "([0-9]+)\\.([0-9]+)\\.([0-9]+)-beta([0-9]+).*$" "\\1;\\2;\\3;\\4" _obs_beta ${_obs_version})
 endif()
 
 list(GET _obs_version_canonical 0 OBS_VERSION_MAJOR)
