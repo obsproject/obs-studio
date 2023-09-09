@@ -8584,8 +8584,8 @@ void OBSBasic::UpdateEditMenu()
 	ui->actionCopySource->setEnabled(totalCount > 0);
 	ui->actionEditTransform->setEnabled(canTransformSingle);
 	ui->actionCopyTransform->setEnabled(canTransformSingle);
-	ui->actionPasteTransform->setEnabled(hasCopiedTransform &&
-					     videoCount > 0);
+	ui->actionPasteTransform->setEnabled(
+		canTransformMultiple && hasCopiedTransform && videoCount > 0);
 	ui->actionCopyFilters->setEnabled(filter_count > 0);
 	ui->actionPasteFilters->setEnabled(
 		!obs_weak_source_expired(copyFiltersSource) && totalCount > 0);
@@ -8657,6 +8657,8 @@ void OBSBasic::on_actionPasteTransform_triggered()
 		obs_scene_save_transform_states(GetCurrentScene(), false);
 	auto func = [](obs_scene_t *, obs_sceneitem_t *item, void *data) {
 		if (!obs_sceneitem_selected(item))
+			return true;
+		if (obs_sceneitem_locked(item))
 			return true;
 
 		OBSBasic *main = reinterpret_cast<OBSBasic *>(data);
