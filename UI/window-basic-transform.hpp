@@ -21,6 +21,7 @@ private:
 	OBSSignal removeSignal;
 	OBSSignal selectSignal;
 	OBSSignal deselectSignal;
+	OBSSignal lockSignal;
 
 	std::string undo_data;
 
@@ -45,6 +46,7 @@ private:
 	static void OBSSceneItemRemoved(void *param, calldata_t *data);
 	static void OBSSceneItemSelect(void *param, calldata_t *data);
 	static void OBSSceneItemDeselect(void *param, calldata_t *data);
+	static void OBSSceneItemLocked(void *param, calldata_t *data);
 
 private slots:
 	void RefreshControls();
@@ -52,6 +54,7 @@ private slots:
 	void OnBoundsType(int index);
 	void OnControlChanged();
 	void OnCropChanged();
+	void SetEnabled(bool enable);
 
 public:
 	OBSBasicTransform(OBSSceneItem item, OBSBasic *parent);
