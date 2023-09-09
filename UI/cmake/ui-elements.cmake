@@ -11,7 +11,6 @@ target_sources(
           context-bar-controls.hpp
           double-slider.cpp
           double-slider.hpp
-          expand-checkbox.hpp
           focus-list.cpp
           focus-list.hpp
           horizontal-scroll-area.cpp

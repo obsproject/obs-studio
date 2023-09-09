@@ -4,7 +4,6 @@
 #include "qt-wrappers.hpp"
 #include "visibility-checkbox.hpp"
 #include "locked-checkbox.hpp"
-#include "expand-checkbox.hpp"
 #include "platform.hpp"
 
 #include <obs-frontend-api.h>
