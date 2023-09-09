@@ -172,7 +172,6 @@ target_sources(
           item-widget-helpers.hpp
           context-bar-controls.cpp
           context-bar-controls.hpp
-          expand-checkbox.hpp
           focus-list.cpp
           focus-list.hpp
           hotkey-edit.cpp
