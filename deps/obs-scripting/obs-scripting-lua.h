@@ -51,6 +51,12 @@
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
 #define debug(format, ...) do_log(LOG_DEBUG, format, ##__VA_ARGS__)
+#define add_func(name, func)                     \
+	do {                                     \
+		lua_pushstring(script, name);    \
+		lua_pushcfunction(script, func); \
+		lua_rawset(script, -3);          \
+	} while (false)
 
 /* ------------------------------------------------------------ */
 
