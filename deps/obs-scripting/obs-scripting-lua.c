@@ -986,14 +986,15 @@ static int lua_script_log(lua_State *script)
 
 	/* ------------------- */
 
-	dstr_copy(&data->log_chunk, msg);
+	if (data)
+		dstr_copy(&data->log_chunk, msg);
 
-	const char *start = data->log_chunk.array;
+	const char *start = data ? data->log_chunk.array : msg;
 	char *endl = strchr(start, '\n');
 
 	while (endl) {
 		*endl = 0;
-		script_log(&data->base, log_level, "%s", start);
+		script_log(data ? &data->base : NULL, log_level, "%s", start);
 		*endl = '\n';
 
 		start = endl + 1;
@@ -1001,8 +1002,9 @@ static int lua_script_log(lua_State *script)
 	}
 
 	if (start && *start)
-		script_log(&data->base, log_level, "%s", start);
-	dstr_resize(&data->log_chunk, 0);
+		script_log(data ? &data->base : NULL, log_level, "%s", start);
+	if (data)
+		dstr_resize(&data->log_chunk, 0);
 
 	/* ------------------- */
 

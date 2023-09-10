@@ -711,6 +711,9 @@ static inline void undef_source_type(struct obs_lua_script *data,
 				     struct obs_lua_source *ls)
 {
 	pthread_mutex_lock(&ls->definition_mutex);
+
+	struct obs_lua_script *__prev_script = current_lua_script;
+	current_lua_script = data;
 	pthread_mutex_lock(&data->mutex);
 
 	obs_enable_source_type(ls->id, false);
@@ -725,6 +728,8 @@ static inline void undef_source_type(struct obs_lua_script *data,
 	ls->script = NULL;
 
 	pthread_mutex_unlock(&data->mutex);
+	current_lua_script = __prev_script;
+
 	pthread_mutex_unlock(&ls->definition_mutex);
 }
 
