@@ -227,18 +227,7 @@ bool os_sleepto_ns(uint64_t time_target)
 	if (time_target < current)
 		return false;
 
-	time_target -= current;
-
-	struct timespec req, remain;
-	memset(&req, 0, sizeof(req));
-	memset(&remain, 0, sizeof(remain));
-	req.tv_sec = time_target / 1000000000;
-	req.tv_nsec = time_target % 1000000000;
-
-	while (nanosleep(&req, &remain)) {
-		req = remain;
-		memset(&remain, 0, sizeof(remain));
-	}
+	os_sleep_ns(time_target - current);
 
 	return true;
 }
@@ -260,6 +249,22 @@ bool os_sleepto_ns_fast(uint64_t time_target)
 	return true;
 }
 
+void os_sleep_ns(uint64_t duration)
+{
+	const uint64_t NANOSEC_PER_SEC = 1000000000;
+
+	struct timespec req, remain;
+	memset(&req, 0, sizeof(req));
+	memset(&remain, 0, sizeof(remain));
+	req.tv_sec = (time_t)(duration / NANOSEC_PER_SEC);
+	req.tv_nsec = (long)(duration % NANOSEC_PER_SEC);
+
+	while (nanosleep(&req, &remain)) {
+		req = remain;
+		memset(&remain, 0, sizeof(remain));
+	}
+}
+
 void os_sleep_ms(uint32_t duration)
 {
 	usleep(duration * 1000);
@@ -272,6 +277,11 @@ uint64_t os_gettime_ns(void)
 	struct timespec ts;
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 	return ((uint64_t)ts.tv_sec * 1000000000ULL + (uint64_t)ts.tv_nsec);
+}
+
+void os_realtime_ts(struct timespec *ts)
+{
+	clock_gettime(CLOCK_REALTIME, ts);
 }
 
 /* should return $HOME/.[name], or when using XDG,

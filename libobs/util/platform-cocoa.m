@@ -43,6 +43,14 @@ uint64_t os_gettime_ns(void)
     return clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
 }
 
+void os_realtime_ts(struct timespec *ts)
+{
+    const uint64_t NANOSEC_PER_SEC = 1000000000;
+    const uint64_t ns = os_gettime_ns();
+    ts->tv_sec = (time_t) (ns / NANOSEC_PER_SEC);
+    ts->tv_nsec = (long) (ns % NANOSEC_PER_SEC);
+}
+
 /* gets the location [domain mask]/Library/Application Support/[name] */
 static int os_get_path_internal(char *dst, size_t size, const char *name, NSSearchPathDomainMask domainMask)
 {

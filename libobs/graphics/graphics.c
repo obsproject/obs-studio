@@ -16,6 +16,7 @@
 ******************************************************************************/
 
 #include <assert.h>
+#include <time.h>
 
 #include "../util/base.h"
 #include "../util/bmem.h"
@@ -279,6 +280,57 @@ void gs_enter_context(graphics_t *graphics)
 	}
 
 	os_atomic_inc_long(&graphics->ref);
+}
+
+int gs_enter_context_timed(graphics_t *graphics, const uint64_t duration)
+{
+	const size_t NANOSEC_PER_SEC = 1000000000;
+	if (!ptr_valid(graphics, "gs_enter_context_timed"))
+		return 0;
+
+	/* leave other graphics thread */
+	bool is_current = thread_graphics == graphics;
+	if (thread_graphics && !is_current) {
+		while (thread_graphics)
+			gs_leave_context();
+	}
+
+	struct timespec ts_timeout;
+	os_realtime_ts(&ts_timeout);
+	ts_timeout.tv_sec += (time_t)(duration / NANOSEC_PER_SEC);
+	ts_timeout.tv_nsec += (long)(duration % NANOSEC_PER_SEC);
+
+	int result = 0;
+	if (!is_current) {
+#ifdef __APPLE__
+		while (true) {
+			result = pthread_mutex_trylock(&graphics->mutex);
+			if (result == EBUSY) {
+				struct timespec ts_now;
+				os_realtime_ts(&ts_now);
+				if (ts_now.tv_sec >= ts_timeout.tv_sec &&
+				    ts_now.tv_nsec >= ts_timeout.tv_nsec) {
+					result = ETIMEDOUT;
+					break;
+				}
+				os_sleep_ns(100);
+				continue;
+			}
+			break;
+		}
+#else
+		result = pthread_mutex_timedlock(&graphics->mutex, &ts_timeout);
+#endif
+		if (!result) {
+			graphics->exports.device_enter_context(
+				graphics->device);
+			thread_graphics = graphics;
+			os_atomic_inc_long(&graphics->ref);
+		}
+	} else
+		os_atomic_inc_long(&graphics->ref);
+
+	return result;
 }
 
 void gs_leave_context(void)
