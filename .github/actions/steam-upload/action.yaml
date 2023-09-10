@@ -98,7 +98,7 @@ runs:
               --clobber
 
             IFS=';' read -r description is_prerelease <<< \
-              "$(gh release view --json tagName,isPrerelease --jq 'join(";")')"
+              "$(gh release view ${{ inputs.tagName }} --json tagName,isPrerelease --jq 'join(";")')"
             ;;
           workflow_dispatch)
             if [[ '${{ inputs.tagName }}' =~ [0-9]+\.[0-9]+\.[0-9]+(-(rc|beta)[0-9]+)*$ ]] {
