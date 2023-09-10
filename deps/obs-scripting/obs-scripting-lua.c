@@ -1011,16 +1011,27 @@ static int lua_script_log(lua_State *script)
 	return 0;
 }
 
+static int lua_yield_script(lua_State *script)
+{
+	struct obs_lua_script *data = current_lua_script;
+
+	int sleep_ms = (int)lua_tointeger(script, 1);
+
+	if (data)
+		pthread_mutex_unlock(&data->mutex);
+
+	os_sleep_ms(sleep_ms);
+
+	if (data)
+		pthread_mutex_lock(&data->mutex);
+
+	return 0;
+}
+
 /* -------------------------------------------- */
 
 static void add_hook_functions(lua_State *script)
 {
-#define add_func(name, func)                     \
-	do {                                     \
-		lua_pushstring(script, name);    \
-		lua_pushcfunction(script, func); \
-		lua_rawset(script, -3);          \
-	} while (false)
 
 	lua_getglobal(script, "_G");
 
@@ -1063,6 +1074,7 @@ static void add_hook_functions(lua_State *script)
 	add_func("obs_property_set_modified_callback",
 		 property_set_modified_callback);
 	add_func("remove_current_callback", remove_current_callback);
+	add_func("yield_script", lua_yield_script);
 
 	lua_pop(script, 1);
 #undef add_func
@@ -1353,7 +1365,7 @@ void obs_lua_load(void)
 
 	pthread_mutex_init(&tick_mutex, NULL);
 	pthread_mutex_init_recursive(&timer_mutex);
-	pthread_mutex_init(&lua_source_def_mutex, NULL);
+	pthread_mutex_init_recursive(&lua_source_def_mutex);
 
 	/* ---------------------------------------------- */
 	/* Initialize Lua startup script                  */

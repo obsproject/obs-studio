@@ -16,6 +16,7 @@
 ******************************************************************************/
 
 #include "obs-scripting-lua.h"
+#include <util/platform.h>
 #include "cstrcache.h"
 
 #include <obs-module.h>
@@ -694,15 +695,41 @@ fail:
 	return 0;
 }
 
+static int obs_lua_yield_source_defn(lua_State *script)
+{
+	struct obs_lua_script *data = current_lua_script;
+
+	int sleep_ms = (int)lua_tointeger(script, -2);
+	const char *id = get_table_string(script, -1, "id");
+
+	if (!id)
+		return 0;
+
+	struct obs_lua_source *existing = find_existing(id);
+
+	if (data)
+		pthread_mutex_unlock(&data->mutex);
+	if (existing)
+		pthread_mutex_unlock(&existing->definition_mutex);
+
+	os_sleep_ms(sleep_ms);
+
+	if (existing)
+		pthread_mutex_lock(&existing->definition_mutex);
+	if (data)
+		pthread_mutex_lock(&data->mutex);
+
+	return 0;
+}
+
 /* ========================================================================= */
 
 void add_lua_source_functions(lua_State *script)
 {
 	lua_getglobal(script, "obslua");
 
-	lua_pushstring(script, "obs_register_source");
-	lua_pushcfunction(script, obs_lua_register_source);
-	lua_rawset(script, -3);
+	add_func("obs_register_source", obs_lua_register_source);
+	add_func("yield_source_defn", obs_lua_yield_source_defn);
 
 	lua_pop(script, 1);
 }
