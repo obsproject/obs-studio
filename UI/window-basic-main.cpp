@@ -9976,6 +9976,7 @@ void OBSBasic::on_actionCopySource_triggered()
 		copyInfo.blend_method = obs_sceneitem_get_blending_method(item);
 		copyInfo.blend_mode = obs_sceneitem_get_blending_mode(item);
 		copyInfo.visible = obs_sceneitem_visible(item);
+		copyInfo.locked = obs_sceneitem_locked(item);
 
 		clipboard.push_back(copyInfo);
 	}

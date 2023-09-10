@@ -101,6 +101,7 @@ struct SavedProjectorInfo {
 struct SourceCopyInfo {
 	OBSWeakSource weak_source;
 	bool visible;
+	bool locked;
 	obs_sceneitem_crop crop;
 	obs_transform_info transform;
 	obs_blending_method blend_method;
