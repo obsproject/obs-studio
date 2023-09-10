@@ -120,6 +120,10 @@ void OBSActionRow::mouseReleaseEvent(QMouseEvent *e)
 
 void OBSActionRow::autoConnectWidget(QWidget *w)
 {
+	/* Set label's buddy to connected widget */
+	if (!nameLbl->buddy())
+		nameLbl->setBuddy(w);
+
 	/* If element is a QAbstractButton subclass, and checkable,
 	 * forward clicks on the widget. */
 	QAbstractButton *abtn = dynamic_cast<QAbstractButton *>(w);
