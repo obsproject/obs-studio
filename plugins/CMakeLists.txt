@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22...3.25)
+cmake_minimum_required(VERSION 3.20...3.25)
 
 option(ENABLE_PLUGINS "Enable building OBS plugins" ON)
 
