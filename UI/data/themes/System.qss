@@ -78,21 +78,21 @@ MuteCheckBox::indicator:unchecked {
     image: url(:/settings/images/settings/audio.svg);
 }
 
-SourceTreeSubItemCheckBox {
+QCheckBox[sourceTreeSubItem=true] {
     background: transparent;
     outline: none;
 }
 
-SourceTreeSubItemCheckBox::indicator {
+QCheckBox[sourceTreeSubItem=true]::indicator {
     width: 10px;
     height: 10px;
 }
 
-SourceTreeSubItemCheckBox::indicator:checked {
+QCheckBox[sourceTreeSubItem=true]::indicator:checked {
     image: url(:/res/images/expand.svg);
 }
 
-SourceTreeSubItemCheckBox::indicator:unchecked {
+QCheckBox[sourceTreeSubItem=true]::indicator:unchecked {
     image: url(:/res/images/collapse.svg);
 }
 

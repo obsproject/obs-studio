@@ -1283,24 +1283,24 @@ OBSHotkeyWidget QPushButton {
 
 /* Sources List Group Collapse Checkbox */
 
-SourceTreeSubItemCheckBox {
+QCheckBox[sourceTreeSubItem=true] {
     background: transparent;
     outline: none;
     padding: 0px;
 }
 
-SourceTreeSubItemCheckBox::indicator {
+QCheckBox[sourceTreeSubItem=true]::indicator {
     width: 12px;
     height: 12px;
 }
 
-SourceTreeSubItemCheckBox::indicator:checked,
-SourceTreeSubItemCheckBox::indicator:checked:hover {
+QCheckBox[sourceTreeSubItem=true]::indicator:checked,
+QCheckBox[sourceTreeSubItem=true]::indicator:checked:hover {
     image: url(theme:Dark/expand.svg);
 }
 
-SourceTreeSubItemCheckBox::indicator:unchecked,
-SourceTreeSubItemCheckBox::indicator:unchecked:hover {
+QCheckBox[sourceTreeSubItem=true]::indicator:unchecked,
+QCheckBox[sourceTreeSubItem=true]::indicator:unchecked:hover {
     image: url(theme:Dark/collapse.svg);
 }
 

@@ -697,21 +697,21 @@ OBSHotkeyLabel[hotkeyPairHover=true] {
 
 /* Group Collapse Checkbox */
 
-SourceTreeSubItemCheckBox {
+QCheckBox[sourceTreeSubItem=true] {
     background: transparent;
     outline: none;
 }
 
-SourceTreeSubItemCheckBox::indicator {
+QCheckBox[sourceTreeSubItem=true]::indicator {
     width: 10px;
     height: 10px;
 }
 
-SourceTreeSubItemCheckBox::indicator:checked {
+QCheckBox[sourceTreeSubItem=true]::indicator:checked {
     image: url(theme:Dark/expand.svg);
 }
 
-SourceTreeSubItemCheckBox::indicator:unchecked {
+QCheckBox[sourceTreeSubItem=true]::indicator:unchecked {
     image: url(theme:Dark/collapse.svg);
 }
 
