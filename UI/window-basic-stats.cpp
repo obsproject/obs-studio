@@ -30,6 +30,9 @@ void OBSBasicStats::OBSFrontendEvent(enum obs_frontend_event event, void *ptr)
 		stats->ResetRecTimeLeft();
 		break;
 	case OBS_FRONTEND_EVENT_EXIT:
+		// This is only reached when the non-closable (dock) stats
+		// window is being cleaned up. Thee closable stats window is
+		// already gone by this point as it's deleted on close.
 		obs_frontend_remove_event_callback(OBSFrontendEvent, stats);
 		break;
 	default:
@@ -230,6 +233,10 @@ void OBSBasicStats::closeEvent(QCloseEvent *event)
 				  saveGeometry().toBase64().constData());
 		config_save_safe(main->Config(), "tmp", nullptr);
 	}
+
+	// This code is only reached when the non-dockable stats window is
+	// manually closed or OBS is exiting.
+	obs_frontend_remove_event_callback(OBSFrontendEvent, this);
 
 	QWidget::closeEvent(event);
 }
