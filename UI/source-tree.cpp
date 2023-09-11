@@ -577,7 +577,8 @@ void SourceTreeItem::Update(bool force)
 		boxLayout->insertItem(0, spacer);
 
 	} else if (type == Type::Group) {
-		expand = new SourceTreeSubItemCheckBox();
+		expand = new QCheckBox();
+		expand->setProperty("sourceTreeSubItem", true);
 		expand->setSizePolicy(QSizePolicy::Maximum,
 				      QSizePolicy::Maximum);
 		expand->setMaximumSize(10, 16);
