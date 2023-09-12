@@ -7730,8 +7730,8 @@ void OBSBasic::RecordingStop(int code, QString last_error)
 		errorDescription = Str("Output.RecordError.Msg");
 
 		if (use_last_error && !last_error.isEmpty())
-			dstr_printf(errorMessage, "%s\n\n%s", errorDescription,
-				    QT_TO_UTF8(last_error));
+			dstr_printf(errorMessage, "%s<br><br>%s",
+				    errorDescription, QT_TO_UTF8(last_error));
 		else
 			dstr_copy(errorMessage, errorDescription);
 
