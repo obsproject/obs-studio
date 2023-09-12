@@ -4256,7 +4256,8 @@ static bool ready_async_frame(obs_source_t *source, uint64_t sys_time)
 		 * helps smooth out async rendering to frame boundaries.  In
 		 * other words, tries to keep the framerate as smooth as
 		 * possible */
-		if ((source->last_frame_ts - next_frame->timestamp) < 2000000)
+		if (frame &&
+		    (source->last_frame_ts - next_frame->timestamp) < 2000000)
 			break;
 
 		if (frame)
