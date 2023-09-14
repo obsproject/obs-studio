@@ -344,7 +344,7 @@
               </font>
              </property>
              <property name="text">
-              <string>MacPermissions.Item.Accessibility</string>
+              <string>MacPermissions.Item.InputMonitoring</string>
              </property>
              <property name="alignment">
               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -354,11 +354,62 @@
            <item row="6" column="1">
             <widget class="QLabel" name="label_13">
              <property name="text">
-              <string>MacPermissions.Item.Accessibility.Details</string>
+              <string>MacPermissions.Item.InputMonitoring.Details</string>
+             </property>
+             <property name="wordWrap">
+              <bool>true</bool>
              </property>
             </widget>
            </item>
            <item row="7" column="1">
+            <layout class="QHBoxLayout" name="horizontalLayout_5">
+             <property name="sizeConstraint">
+              <enum>QLayout::SetDefaultConstraint</enum>
+             </property>
+             <item>
+              <widget class="QWidget"/>
+             </item>
+             <item>
+              <widget class="QPushButton" name="inputMonitoringPermissionButton">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>300</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>300</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="baseSize">
+                <size>
+                 <width>300</width>
+                 <height>0</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item row="8" column="1">
+            <widget class="QLabel" name="accessibilityPermissionLabel">
+             <property name="text">
+              <string>MacPermissions.Item.Accessibility.Details</string>
+             </property>
+             <property name="wordWrap">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="1">
             <layout class="QHBoxLayout" name="horizontalLayout_5">
              <property name="sizeConstraint">
               <enum>QLayout::SetDefaultConstraint</enum>
