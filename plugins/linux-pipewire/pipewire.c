@@ -83,6 +83,8 @@ struct _obs_pipewire {
 
 	struct pw_core *core;
 	struct spa_hook core_listener;
+	struct pw_registry *registry;
+	struct spa_hook registry_listener;
 	int server_version_sync;
 
 	struct obs_pw_version server_version;
@@ -1165,7 +1167,9 @@ static const struct pw_core_events core_events = {
 
 /* obs_source_info methods */
 
-obs_pipewire *obs_pipewire_create(int pipewire_fd)
+obs_pipewire *
+obs_pipewire_create(int pipewire_fd,
+		    const struct pw_registry_events *registry_events)
 {
 	obs_pipewire *obs_pw;
 
@@ -1202,7 +1206,15 @@ obs_pipewire *obs_pipewire_create(int pipewire_fd)
 	pw_core_add_listener(obs_pw->core, &obs_pw->core_listener, &core_events,
 			     obs_pw);
 
-	// Dispatch to receive the info core event
+	if (registry_events) {
+		obs_pw->registry = pw_core_get_registry(obs_pw->core,
+							PW_VERSION_REGISTRY, 0);
+		pw_registry_add_listener(obs_pw->registry,
+					 &obs_pw->registry_listener,
+					 registry_events, obs_pw);
+	}
+
+	// Dispatch to receive the info core event and registry
 	obs_pw->server_version_sync = pw_core_sync(obs_pw->core, PW_ID_CORE,
 						   obs_pw->server_version_sync);
 	pw_thread_loop_wait(obs_pw->thread_loop);
