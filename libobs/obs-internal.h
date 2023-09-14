@@ -803,6 +803,7 @@ struct obs_source {
 	uint32_t async_cache_height;
 	uint32_t async_convert_width[MAX_AV_PLANES];
 	uint32_t async_convert_height[MAX_AV_PLANES];
+	uint64_t async_last_clean;
 
 	pthread_mutex_t caption_cb_mutex;
 	DARRAY(struct caption_cb_info) caption_cb_list;
