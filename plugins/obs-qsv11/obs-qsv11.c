@@ -328,33 +328,31 @@ static bool update_enhancements(obs_data_t *settings)
 	return true;
 }
 
-static bool update_targetusage(obs_data_t *settings)
+static void update_targetusage(obs_data_t *settings)
 {
 	const char *target_usage =
 		obs_data_get_string(settings, "target_usage");
 
-	if ((astrcmpi(target_usage, "veryslow") ||
-	     astrcmpi(target_usage, "quality")) == 0)
+	if (astrcmpi(target_usage, "veryslow") == 0 ||
+	    astrcmpi(target_usage, "quality") == 0)
 		obs_data_set_string(settings, "target_usage",
 				    "TU1: Slowest (Best Quality)");
 	else if (astrcmpi(target_usage, "slower") == 0)
 		obs_data_set_string(settings, "target_usage", "TU2: Slower");
 	else if (astrcmpi(target_usage, "slow") == 0)
 		obs_data_set_string(settings, "target_usage", "TU3: Slow");
-	else if ((astrcmpi(target_usage, "medium") ||
-		  astrcmpi(target_usage, "balanced")) == 0)
+	else if (astrcmpi(target_usage, "medium") == 0 ||
+		 astrcmpi(target_usage, "balanced") == 0)
 		obs_data_set_string(settings, "target_usage",
 				    "TU4: Balanced (Medium Quality)");
 	else if (astrcmpi(target_usage, "fast") == 0)
 		obs_data_set_string(settings, "target_usage", "TU5: Fast");
 	else if (astrcmpi(target_usage, "faster") == 0)
 		obs_data_set_string(settings, "target_usage", "TU6: Faster");
-	else if ((astrcmpi(target_usage, "vertfast") ||
-		  astrcmpi(target_usage, "speed")) == 0)
+	else if (astrcmpi(target_usage, "veryfast") == 0 ||
+		 astrcmpi(target_usage, "speed") == 0)
 		obs_data_set_string(settings, "target_usage",
 				    "TU7: Fastest (Best Speed)");
-
-	return true;
 }
 
 static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
