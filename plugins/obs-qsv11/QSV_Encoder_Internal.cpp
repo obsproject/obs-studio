@@ -345,15 +345,10 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 		if (pParams->nLADEPTH &&
 		    m_mfxEncParams.mfx.LowPower == MFX_CODINGOPTION_ON) {
 			m_co2.LookAheadDepth = pParams->nLADEPTH;
-			m_co3.ScenarioInfo = MFX_SCENARIO_GAME_STREAMING;
 		}
 		// CQM to follow UI setting
 		if (pParams->bCQM && !pParams->bRepeatHeaders) {
 			m_co3.AdaptiveCQM = MFX_CODINGOPTION_ON;
-			if (m_co3.ScenarioInfo != MFX_SCENARIO_GAME_STREAMING) {
-				m_co3.ScenarioInfo =
-					MFX_SCENARIO_GAME_STREAMING;
-			}
 		} else {
 			m_co3.AdaptiveCQM = MFX_CODINGOPTION_OFF;
 		}
