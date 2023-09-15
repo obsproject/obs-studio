@@ -776,7 +776,7 @@ ComPtr<IAudioClient> WASAPISource::InitClient(
 		wf.nAvgBytesPerSec = nSamplesPerSec * nBlockAlign;
 		wf.nBlockAlign = nBlockAlign;
 		wf.wBitsPerSample = wBitsPerSample;
-		wf.cbSize = sizeof(wfextensible) - sizeof(format);
+		wf.cbSize = sizeof(wfextensible) - sizeof(wf);
 		wfextensible.Samples.wValidBitsPerSample = wBitsPerSample;
 		wfextensible.dwChannelMask =
 			GetSpeakerChannelMask(oai.speakers);
