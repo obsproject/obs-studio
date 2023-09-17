@@ -1467,9 +1467,11 @@ void obs_pipewire_stream_destroy(obs_pipewire_stream *obs_pw_stream)
 	g_clear_pointer(&obs_pw_stream->texture, gs_texture_destroy);
 	obs_leave_graphics();
 
+	pw_thread_loop_lock(obs_pw_stream->obs_pw->thread_loop);
 	if (obs_pw_stream->stream)
 		pw_stream_disconnect(obs_pw_stream->stream);
 	g_clear_pointer(&obs_pw_stream->stream, pw_stream_destroy);
+	pw_thread_loop_unlock(obs_pw_stream->obs_pw->thread_loop);
 
 	clear_format_info(obs_pw_stream);
 	bfree(obs_pw_stream);
