@@ -786,7 +786,6 @@ static void process_video_sync(obs_pipewire_stream *obs_pw_stream)
 	struct spa_buffer *buffer;
 	struct pw_buffer *b;
 	bool swap_red_blue = false;
-	bool has_buffer = true;
 
 	b = find_latest_buffer(obs_pw_stream->stream);
 	if (!b) {
@@ -804,13 +803,6 @@ static void process_video_sync(obs_pipewire_stream *obs_pw_stream)
 	}
 
 	obs_enter_graphics();
-
-	// Workaround for kwin behaviour pre 5.27.5
-	// Workaround for mutter behaviour pre GNOME 43
-	// Only check this if !SPA_META_Header, once supported platforms update.
-	has_buffer = buffer->datas[0].chunk->size != 0;
-	if (!has_buffer)
-		goto read_metadata;
 
 	if (buffer->datas[0].type == SPA_DATA_DmaBuf) {
 		uint32_t planes = buffer->n_datas;
@@ -877,6 +869,13 @@ static void process_video_sync(obs_pipewire_stream *obs_pw_stream)
 			goto read_metadata;
 		}
 	} else {
+		// Workaround for kwin behaviour pre 5.27.5
+		// Workaround for mutter behaviour pre GNOME 43
+		// Only check this if !SPA_META_Header, once supported platforms update.
+		bool has_buffer = buffer->datas[0].chunk->size != 0;
+		if (!has_buffer)
+			goto read_metadata;
+
 		blog(LOG_DEBUG, "[pipewire] Buffer has memory texture");
 
 		if (!lookup_format_info_from_spa_format(
