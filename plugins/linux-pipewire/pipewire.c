@@ -90,6 +90,7 @@ struct _obs_pipewire {
 	struct obs_pw_version server_version;
 
 	GPtrArray *streams;
+	void *userdata;
 };
 
 struct _obs_pipewire_stream {
@@ -1169,11 +1170,13 @@ static const struct pw_core_events core_events = {
 
 obs_pipewire *
 obs_pipewire_create(int pipewire_fd,
-		    const struct pw_registry_events *registry_events)
+		    const struct pw_registry_events *registry_events,
+		    void *userdata)
 {
 	obs_pipewire *obs_pw;
 
 	obs_pw = bzalloc(sizeof(obs_pipewire));
+	obs_pw->userdata = userdata;
 	obs_pw->pipewire_fd = pipewire_fd;
 	obs_pw->thread_loop = pw_thread_loop_new("PipeWire thread loop", NULL);
 	obs_pw->context = pw_context_new(
@@ -1238,6 +1241,15 @@ void obs_pipewire_destroy(obs_pipewire *obs_pw)
 	g_clear_pointer(&obs_pw->streams, g_ptr_array_unref);
 	teardown_pipewire(obs_pw);
 	bfree(obs_pw);
+}
+
+void obs_pipewire_set_userdata(obs_pipewire *obs_pw, void *userdata)
+{
+	obs_pw->userdata = userdata;
+}
+void *obs_pipewire_get_userdata(obs_pipewire *obs_pw)
+{
+	return obs_pw->userdata;
 }
 
 obs_pipewire_stream *

@@ -31,8 +31,11 @@ typedef struct _obs_pipewire_stream obs_pipewire_stream;
 
 obs_pipewire *
 obs_pipewire_create(int pipewire_fd,
-		    const struct pw_registry_events *registry_events);
+		    const struct pw_registry_events *registry_events,
+		    void *userdata);
 void obs_pipewire_destroy(obs_pipewire *obs_pw);
+void obs_pipewire_set_userdata(obs_pipewire *obs_pw, void *userdata);
+void *obs_pipewire_get_userdata(obs_pipewire *obs_pw);
 
 obs_pipewire_stream *
 obs_pipewire_connect_stream(obs_pipewire *obs_pw, obs_source_t *source,
