@@ -1281,6 +1281,7 @@ obs_pipewire_connect_stream(obs_pipewire *obs_pw, obs_source_t *source,
 
 	if (!build_format_params(obs_pw_stream, &pod_builder, &params,
 				 &n_params)) {
+		blog(LOG_ERROR, "[pipewire] Failed to build format params");
 		pw_thread_loop_unlock(obs_pw->thread_loop);
 		bfree(obs_pw_stream);
 		return NULL;
