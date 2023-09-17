@@ -1316,14 +1316,18 @@ obs_pipewire_connect_stream(obs_pipewire *obs_pw, obs_source_t *source,
 
 void obs_pipewire_stream_show(obs_pipewire_stream *obs_pw_stream)
 {
+	pw_thread_loop_lock(obs_pw_stream->obs_pw->thread_loop);
 	if (obs_pw_stream->stream)
 		pw_stream_set_active(obs_pw_stream->stream, true);
+	pw_thread_loop_unlock(obs_pw_stream->obs_pw->thread_loop);
 }
 
 void obs_pipewire_stream_hide(obs_pipewire_stream *obs_pw_stream)
 {
+	pw_thread_loop_lock(obs_pw_stream->obs_pw->thread_loop);
 	if (obs_pw_stream->stream)
 		pw_stream_set_active(obs_pw_stream->stream, false);
+	pw_thread_loop_unlock(obs_pw_stream->obs_pw->thread_loop);
 }
 
 uint32_t obs_pipewire_stream_get_width(obs_pipewire_stream *obs_pw_stream)
