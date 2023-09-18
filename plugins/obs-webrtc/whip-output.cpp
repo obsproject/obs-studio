@@ -1,6 +1,5 @@
 #include "whip-output.h"
 #include "whip-utils.h"
-
 /*
  * Sets the maximum size for a video fragment. Effective range is
  * 576-1470, with a lower value equating to more packets created,
@@ -25,6 +24,7 @@ const uint8_t video_payload_type = 96;
 
 WHIPOutput::WHIPOutput(obs_data_t *, obs_output_t *output)
 	: output(output),
+	  is_aac(false),
 	  endpoint_url(),
 	  bearer_token(),
 	  resource_url(),
@@ -55,6 +55,11 @@ WHIPOutput::~WHIPOutput()
 bool WHIPOutput::Start()
 {
 	std::lock_guard<std::mutex> l(start_stop_mutex);
+
+	auto encoder = obs_output_get_audio_encoder(output, 0);
+	if (encoder != nullptr) {
+		is_aac = (strcmp("aac", obs_encoder_get_codec(encoder)) == 0);
+	}
 
 	if (!obs_output_can_begin_data_capture(output, 0))
 		return false;
@@ -87,6 +92,29 @@ void WHIPOutput::Data(struct encoder_packet *packet)
 
 	if (packet->type == OBS_ENCODER_AUDIO) {
 		int64_t duration = packet->dts_usec - last_audio_timestamp;
+		if (is_aac) {
+			/*
+			// Latm to write, StreamMuxConfig:out of band
+			// RFC6416 6.3. Fragmentation of MPEG-4 Audio Bitstream (p17)
+			// It is RECOMMENDED to put one audioMuxElement in each RTP packet. If
+			// the size of an audioMuxElement can be kept small enough that the size
+			// of the RTP packet containing it does not exceed the size of the Path
+			// MTU, this will be no problem.
+			// in this case , PayloadLengthInfo will not be writen in rtp payload.
+
+			uint8_t buf[1200] = {0};
+			// PayloadLengthInfo()
+			int header_size = packet->size/0xFF + 1;
+			memset(buf, 0xFF, header_size - 1);
+			buf[header_size - 1] = packet->size % 0xFF;
+
+			//PayloadMux
+			memcpy(buf + header_size, packet->data, packet->size);
+
+			Send(buf, header_size + packet->size, duration, audio_track);
+			*/
+		}
+
 		Send(packet->data, packet->size, duration, audio_track);
 		last_audio_timestamp = packet->dts_usec;
 	} else if (packet->type == OBS_ENCODER_VIDEO) {
@@ -96,23 +124,90 @@ void WHIPOutput::Data(struct encoder_packet *packet)
 	}
 }
 
+int WHIPOutput::GetAudioSpecificConfigOffset(uint8_t *extradata, size_t size)
+{
+	int object_type;
+	int sampling_index;
+	int sample_rate;
+	int chan_config;
+	int sbr; ///< -1 implicit, 1 presence
+	int ext_object_type;
+	int ext_sampling_index;
+	int ext_sample_rate;
+	int channels;
+	int ps; ///< -1 implicit, 1 presence
+
+	int specific_config_bitindex = 0;
+	int bit_length = (int)size << 3;
+	int start_bit_index = 0;
+
+	GetBitContext gb = {extradata, bit_length, 0};
+	object_type = get_object_type(&gb);
+	sample_rate = get_sample_rate(&gb, &sampling_index);
+	chan_config = get_bits(&gb, 4);
+	if (chan_config < 9)
+		channels = ff_mpeg4audio_channels[chan_config];
+
+	sbr = -1;
+	ps = -1;
+	if (object_type == 5 /*AOT_SBR*/
+	    || (object_type == 29 /*AOT_PS*/ &&
+		!(show_bits(&gb, 3) & 0x03 && !(show_bits(&gb, 9) & 0x3F)))) {
+		if (object_type == 29 /*AOT_PS*/)
+			ps = 1;
+		ext_object_type = 5 /*AOT_SBR*/;
+		sbr = 1;
+
+		ext_sample_rate = get_sample_rate(&gb, &ext_sampling_index);
+		object_type = get_object_type(&gb);
+		if (object_type == 22 /*AOT_ER_BSAC*/)
+			get_bits(&gb, 4);
+	} else {
+		ext_object_type = 0;
+		ext_sample_rate = 0;
+	}
+	specific_config_bitindex = gb.bit_index;
+
+	//no support AOT_ALS
+	return specific_config_bitindex - start_bit_index;
+}
+
+void WHIPOutput::LatmWriteStreamMuxConfig(PutBitContext *pb, uint8_t *extradata,
+					  size_t size)
+{
+	int asc_off = GetAudioSpecificConfigOffset(extradata, size);
+	/* StreamMuxConfig */
+	put_bits(pb, 1, 0); /* audioMuxVersion */
+	put_bits(pb, 1, 1); /* allStreamsSameTimeFraming */
+	put_bits(pb, 6, 0); /* numSubFrames */
+	put_bits(pb, 4, 0); /* numProgram */
+	put_bits(pb, 3, 0); /* numLayer */
+
+	/* AudioSpecificConfig */
+	// + 3 assumes not scalable and dependsOnCoreCoder == 0,
+	// see decode_ga_specific_config in libavcodec/aacdec.c
+	// no support AOT_ALS
+	int header_size = asc_off + 3;
+	int words = header_size >> 4;
+	int bits = header_size & 15;
+	const uint8_t *src = extradata;
+	for (int i = 0; i < words; i++)
+		put_bits(pb, 16, AV_RB16(src + 2 * i));
+	put_bits(pb, bits, AV_RB16(src + 2 * words) >> (16 - bits));
+
+	put_bits(pb, 3, 0);    /* frameLengthType */
+	put_bits(pb, 8, 0xff); /* latmBufferFullness */
+
+	put_bits(pb, 1, 0); /* otherDataPresent */
+	put_bits(pb, 1, 0); /* crcCheckPresent */
+}
+
 void WHIPOutput::ConfigureAudioTrack(std::string media_stream_id,
 				     std::string cname)
 {
 	auto media_stream_track_id = std::string(media_stream_id + "-audio");
 
 	uint32_t ssrc = base_ssrc;
-
-	rtcTrackInit track_init = {
-		RTC_DIRECTION_SENDONLY,
-		RTC_CODEC_OPUS,
-		audio_payload_type,
-		ssrc,
-		audio_mid,
-		cname.c_str(),
-		media_stream_id.c_str(),
-		media_stream_track_id.c_str(),
-	};
 
 	// Generate a random starting timestamp for the audio track
 	uint32_t rtp_audio_timestamp = generate_random_u32();
@@ -125,9 +220,60 @@ void WHIPOutput::ConfigureAudioTrack(std::string media_stream_id,
 						       rtp_audio_timestamp,
 						       RTC_NAL_SEPARATOR_LENGTH,
 						       0};
+	if (!is_aac) {
+		rtcTrackInit track_init = {
+			RTC_DIRECTION_SENDONLY,
+			RTC_CODEC_OPUS,
+			audio_payload_type,
+			ssrc,
+			audio_mid,
+			cname.c_str(),
+			media_stream_id.c_str(),
+			media_stream_track_id.c_str(),
+		};
 
-	audio_track = rtcAddTrackEx(peer_connection, &track_init);
-	rtcSetOpusPacketizationHandler(audio_track, &packetizer_init);
+		audio_track = rtcAddTrackEx(peer_connection, &track_init);
+		rtcSetOpusPacketizationHandler(audio_track, &packetizer_init);
+	} else {
+		auto encoder = obs_output_get_audio_encoder(output, 0);
+		if (!encoder) {
+			return;
+		}
+
+		uint8_t *data = 0; /**< Packet data */
+		size_t size = 0;   /**< Packet size */
+
+		obs_encoder_get_extra_data(encoder, &data, &size);
+
+		uint8_t buf[1024] = {0};
+		PutBitContext pb{buf, 1024, 0, 0, 32};
+		LatmWriteStreamMuxConfig(&pb, data, size);
+		if (pb.bit_left < 32) {
+			put_bits(&pb, pb.bit_left, 0);
+		}
+
+		std::stringstream muxbuf;
+		for (int i = 0; i < pb.index; i++) {
+			muxbuf.fill('0');
+			muxbuf.width(2);
+			muxbuf << std::hex
+			       << static_cast<unsigned int>(pb.buf[i]);
+		}
+		std::string profile = "cpresent=0;config=" + muxbuf.str();
+		rtcTrackInit track_init = {RTC_DIRECTION_SENDONLY,
+					   RTC_CODEC_AAC,
+					   audio_payload_type,
+					   ssrc,
+					   audio_mid,
+					   cname.c_str(),
+					   media_stream_id.c_str(),
+					   media_stream_track_id.c_str(),
+					   profile.c_str()};
+
+		audio_track = rtcAddTrackEx(peer_connection, &track_init);
+		rtcSetAACPacketizationHandler(audio_track, &packetizer_init);
+	}
+
 	rtcChainRtcpSrReporter(audio_track);
 	rtcChainRtcpNackResponder(audio_track, 1000);
 }
