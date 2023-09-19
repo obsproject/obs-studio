@@ -128,42 +128,6 @@ QSV_Encoder_Internal::QSV_Encoder_Internal(mfxVersion &version, bool isDGPU)
 		m_ver = version;
 		return;
 	}
-
-#if defined(_WIN32)
-	// D3D11 failed at this point.
-	m_bUseD3D11 = false;
-	loader = MFXLoad();
-	cfg = MFXCreateConfig(loader);
-
-	tempImpl.Type = MFX_VARIANT_TYPE_U32;
-	tempImpl.Data.U32 = MFX_IMPL_TYPE_HARDWARE;
-	MFXSetConfigFilterProperty(
-		cfg, (const mfxU8 *)"mfxImplDescription.Impl", tempImpl);
-
-	tempImpl.Type = MFX_VARIANT_TYPE_U32;
-	tempImpl.Data.U32 = INTEL_VENDOR_ID;
-	MFXSetConfigFilterProperty(
-		cfg, (const mfxU8 *)"mfxImplDescription.VendorID", tempImpl);
-
-	tempImpl.Type = MFX_VARIANT_TYPE_U32;
-	tempImpl.Data.U32 = MFX_ACCEL_MODE_VIA_D3D9;
-	MFXSetConfigFilterProperty(
-		cfg, (const mfxU8 *)"mfxImplDescription.AccelerationMode",
-		tempImpl);
-
-	sts = MFXCreateSession(loader, 0, &m_session);
-	if (sts == MFX_ERR_NONE) {
-		MFXQueryVersion(m_session, &version);
-		MFXClose(m_session);
-		MFXUnload(loader);
-
-		blog(LOG_INFO, "\timpl:           D3D09\n"
-			       "\tsurf:           SysMem");
-
-		m_ver = version;
-		m_bUseD3D11 = false;
-	}
-#endif
 }
 
 QSV_Encoder_Internal::~QSV_Encoder_Internal()
