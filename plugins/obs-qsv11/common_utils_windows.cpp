@@ -6,7 +6,6 @@
 #include "common_directx.h"
 #elif DX11_D3D
 #include "common_directx11.h"
-#include "common_directx9.h"
 #endif
 
 #include <util/windows/device-enum.h>
@@ -24,8 +23,8 @@
 
 mfxStatus Initialize(mfxVersion ver, mfxSession *pSession,
 		     mfxFrameAllocator *pmfxAllocator, mfxHDL *deviceHandle,
-		     bool bCreateSharedHandles, bool dx9hack,
-		     enum qsv_codec codec, void **data)
+		     bool bCreateSharedHandles, enum qsv_codec codec,
+		     void **data)
 {
 	UNUSED_PARAMETER(codec);
 	UNUSED_PARAMETER(data);
@@ -34,7 +33,7 @@ mfxStatus Initialize(mfxVersion ver, mfxSession *pSession,
 	mfxVariant impl;
 
 	// If mfxFrameAllocator is provided it means we need to setup DirectX device and memory allocator
-	if (pmfxAllocator && !dx9hack) {
+	if (pmfxAllocator) {
 		// Initialize Intel VPL Session
 		mfxLoader loader = MFXLoad();
 		mfxConfig cfg = MFXCreateConfig(loader);
@@ -87,58 +86,6 @@ mfxStatus Initialize(mfxVersion ver, mfxSession *pSession,
 		sts = MFXVideoCORE_SetFrameAllocator(*pSession, pmfxAllocator);
 		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-	} else if (pmfxAllocator && dx9hack) {
-		// Initialize Intel VPL Session
-		mfxLoader loader = MFXLoad();
-		mfxConfig cfg = MFXCreateConfig(loader);
-
-		impl.Type = MFX_VARIANT_TYPE_U32;
-		impl.Data.U32 = MFX_IMPL_TYPE_HARDWARE;
-		MFXSetConfigFilterProperty(
-			cfg, (const mfxU8 *)"mfxImplDescription.Impl", impl);
-
-		impl.Type = MFX_VARIANT_TYPE_U32;
-		impl.Data.U32 = INTEL_VENDOR_ID;
-		MFXSetConfigFilterProperty(
-			cfg, (const mfxU8 *)"mfxImplDescription.VendorID",
-			impl);
-
-		impl.Type = MFX_VARIANT_TYPE_U32;
-		impl.Data.U32 = MFX_ACCEL_MODE_VIA_D3D9;
-		MFXSetConfigFilterProperty(
-			cfg,
-			(const mfxU8 *)"mfxImplDescription.AccelerationMode",
-			impl);
-
-		sts = MFXCreateSession(loader, 0, pSession);
-		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-		// Create DirectX device context
-		if (deviceHandle == NULL || *deviceHandle == NULL) {
-			sts = DX9_CreateHWDevice(*pSession, deviceHandle, NULL,
-						 false);
-			MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-		}
-		if (*deviceHandle == NULL)
-			return MFX_ERR_DEVICE_FAILED;
-
-		// Provide device manager to VPL
-		sts = MFXVideoCORE_SetHandle(*pSession, DEVICE_MGR_TYPE,
-					     *deviceHandle);
-		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-		pmfxAllocator->pthis =
-			*pSession; // We use VPL session ID as the allocation identifier
-		pmfxAllocator->Alloc = dx9_simple_alloc;
-		pmfxAllocator->Free = dx9_simple_free;
-		pmfxAllocator->Lock = dx9_simple_lock;
-		pmfxAllocator->Unlock = dx9_simple_unlock;
-		pmfxAllocator->GetHDL = dx9_simple_gethdl;
-
-		// Since we are using video memory we must provide VPL with an external allocator
-		sts = MFXVideoCORE_SetFrameAllocator(*pSession, pmfxAllocator);
-		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
 	} else {
 		// Initialize Intel VPL Session
 		mfxLoader loader = MFXLoad();
@@ -172,7 +119,6 @@ void Release()
 {
 #if defined(DX9_D3D) || defined(DX11_D3D)
 	CleanupHWDevice();
-	DX9_CleanupHWDevice();
 #endif
 }
 

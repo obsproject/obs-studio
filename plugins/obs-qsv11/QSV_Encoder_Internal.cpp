@@ -101,7 +101,6 @@ QSV_Encoder_Internal::QSV_Encoder_Internal(mfxVersion &version, bool isDGPU)
 		cfg, (const mfxU8 *)"mfxImplDescription.VendorID", tempImpl);
 #if defined(_WIN32)
 	m_bUseD3D11 = true;
-	m_bD3D9HACK = true;
 	m_bUseTexAlloc = true;
 
 	tempImpl.Type = MFX_VARIANT_TYPE_U32;
@@ -181,18 +180,12 @@ mfxStatus QSV_Encoder_Internal::Open(qsv_param_t *pParams, enum qsv_codec codec)
 	if (m_bUseD3D11)
 		// Use D3D11 surface
 		sts = Initialize(m_ver, &m_session, &m_mfxAllocator,
-				 &g_DX_Handle, false, false, codec,
-				 &m_sessionData);
-	else if (m_bD3D9HACK)
-		// Use hack
-		sts = Initialize(m_ver, &m_session, &m_mfxAllocator,
-				 &g_DX_Handle, false, true, codec,
-				 &m_sessionData);
+				 &g_DX_Handle, false, codec, &m_sessionData);
 	else
-		sts = Initialize(m_ver, &m_session, NULL, NULL, NULL, NULL,
-				 codec, &m_sessionData);
+		sts = Initialize(m_ver, &m_session, NULL, NULL, NULL, codec,
+				 &m_sessionData);
 #else
-	sts = Initialize(m_ver, &m_session, NULL, NULL, false, false, codec,
+	sts = Initialize(m_ver, &m_session, NULL, NULL, false, codec,
 			 &m_sessionData);
 #endif
 
