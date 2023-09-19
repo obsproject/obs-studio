@@ -86,14 +86,13 @@ void ClearRGBSurfaceVMem(mfxMemId memId);
 // Initialize Intel VPL Session, device/display and memory manager
 mfxStatus Initialize(mfxVersion ver, mfxSession *pSession,
 		     mfxFrameAllocator *pmfxAllocator, mfxHDL *deviceHandle,
-		     bool bCreateSharedHandles, bool dx9hack,
-		     enum qsv_codec codec, void **data)
+		     bool bCreateSharedHandles, enum qsv_codec codec,
+		     void **data)
 {
 	UNUSED_PARAMETER(ver);
 	UNUSED_PARAMETER(pmfxAllocator);
 	UNUSED_PARAMETER(deviceHandle);
 	UNUSED_PARAMETER(bCreateSharedHandles);
-	UNUSED_PARAMETER(dx9hack);
 	mfxStatus sts = MFX_ERR_NONE;
 	mfxVariant impl;
 

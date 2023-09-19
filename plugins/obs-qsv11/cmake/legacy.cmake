@@ -35,18 +35,9 @@ if(OS_WINDOWS)
   set(MODULE_DESCRIPTION "OBS QSV encoder")
   configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in obs-qsv11.rc)
 
-  target_sources(
-    obs-qsv11
-    PRIVATE obs-qsv11.rc
-            common_directx9.cpp
-            common_directx9.h
-            common_directx11.cpp
-            common_directx11.h
-            common_utils_windows.cpp
-            device_directx9.cpp
-            device_directx9.h)
+  target_sources(obs-qsv11 PRIVATE obs-qsv11.rc common_directx11.cpp common_directx11.h common_utils_windows.cpp)
 
-  target_link_libraries(obs-qsv11 PRIVATE d3d9 d3d11 dxva2 dxgi dxguid)
+  target_link_libraries(obs-qsv11 PRIVATE d3d11 dxgi dxguid)
   target_link_options(obs-qsv11 PRIVATE /IGNORE:4099)
 
   target_compile_definitions(obs-qsv11 PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_WARNINGS)
