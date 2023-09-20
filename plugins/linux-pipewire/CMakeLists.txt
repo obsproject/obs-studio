@@ -23,7 +23,9 @@ add_library(OBS::pipewire ALIAS linux-pipewire)
 
 target_sources(
   linux-pipewire
-  PRIVATE linux-pipewire.c
+  PRIVATE formats.c
+          formats.h
+          linux-pipewire.c
           pipewire.c
           pipewire.h
           portal.c
