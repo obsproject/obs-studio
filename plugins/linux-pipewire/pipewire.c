@@ -1168,9 +1168,9 @@ static const struct pw_core_events core_events = {
 /* obs_source_info methods */
 
 obs_pipewire *
-obs_pipewire_create(int pipewire_fd,
-		    const struct pw_registry_events *registry_events,
-		    void *user_data)
+obs_pipewire_connect_fd(int pipewire_fd,
+			const struct pw_registry_events *registry_events,
+			void *user_data)
 {
 	obs_pipewire *obs_pw;
 

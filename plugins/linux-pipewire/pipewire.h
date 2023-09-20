@@ -36,9 +36,9 @@ struct obs_pipwire_connect_stream_info {
 };
 
 obs_pipewire *
-obs_pipewire_create(int pipewire_fd,
-		    const struct pw_registry_events *registry_events,
-		    void *user_data);
+obs_pipewire_connect_fd(int pipewire_fd,
+			const struct pw_registry_events *registry_events,
+			void *user_data);
 struct pw_registry *obs_pipewire_get_registry(obs_pipewire *obs_pw);
 void obs_pipewire_roundtrip(obs_pipewire *obs_pw);
 void obs_pipewire_destroy(obs_pipewire *obs_pw);
