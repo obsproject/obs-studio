@@ -20,6 +20,8 @@
 
 #include "pipewire.h"
 
+#include "formats.h"
+
 #include <util/darray.h>
 
 #include <gio/gio.h>
@@ -257,98 +259,6 @@ static bool push_rotation(obs_pipewire_stream *obs_pw_stream)
 	return rotation != 0;
 }
 
-struct format_data {
-	uint32_t spa_format;
-	uint32_t drm_format;
-	enum gs_color_format gs_format;
-	enum video_format video_format;
-	bool swap_red_blue;
-	uint32_t bpp;
-	const char *pretty_name;
-};
-
-static const struct format_data supported_formats[] = {
-	{
-		SPA_VIDEO_FORMAT_BGRA,
-		DRM_FORMAT_ARGB8888,
-		GS_BGRA,
-		VIDEO_FORMAT_BGRA,
-		false,
-		4,
-		"ARGB8888",
-	},
-	{
-		SPA_VIDEO_FORMAT_RGBA,
-		DRM_FORMAT_ABGR8888,
-		GS_RGBA,
-		VIDEO_FORMAT_RGBA,
-		false,
-		4,
-		"ABGR8888",
-	},
-	{
-		SPA_VIDEO_FORMAT_BGRx,
-		DRM_FORMAT_XRGB8888,
-		GS_BGRX,
-		VIDEO_FORMAT_BGRX,
-		false,
-		4,
-		"XRGB8888",
-	},
-	{
-		SPA_VIDEO_FORMAT_RGBx,
-		DRM_FORMAT_XBGR8888,
-		GS_BGRX,
-		VIDEO_FORMAT_NONE,
-		true,
-		4,
-		"XBGR8888",
-	},
-	{
-		SPA_VIDEO_FORMAT_YUY2,
-		DRM_FORMAT_YUYV,
-		GS_UNKNOWN,
-		VIDEO_FORMAT_YUY2,
-		false,
-		2,
-		"YUYV422",
-	},
-	{
-		SPA_VIDEO_FORMAT_NV12,
-		DRM_FORMAT_NV12,
-		GS_UNKNOWN,
-		VIDEO_FORMAT_NV12,
-		false,
-		2,
-		"NV12",
-	},
-#if PW_CHECK_VERSION(0, 3, 41)
-	{
-		SPA_VIDEO_FORMAT_ABGR_210LE,
-		DRM_FORMAT_ABGR2101010,
-		GS_R10G10B10A2,
-		VIDEO_FORMAT_NONE,
-		false,
-		10,
-		"ABGR2101010",
-
-	},
-	{
-		SPA_VIDEO_FORMAT_xBGR_210LE,
-		DRM_FORMAT_XBGR2101010,
-		GS_R10G10B10A2,
-		VIDEO_FORMAT_NONE,
-		false,
-		10,
-		"XBGR2101010",
-
-	},
-#endif
-};
-
-#define N_SUPPORTED_FORMATS \
-	(sizeof(supported_formats) / sizeof(supported_formats[0]))
-
 static const uint32_t supported_formats_async[] = {
 	SPA_VIDEO_FORMAT_RGBA,
 	SPA_VIDEO_FORMAT_YUY2,
@@ -367,22 +277,6 @@ static const uint32_t supported_formats_sync[] = {
 
 #define N_SUPPORTED_FORMATS_SYNC \
 	(sizeof(supported_formats_sync) / sizeof(supported_formats_sync[0]))
-
-static bool
-lookup_format_info_from_spa_format(uint32_t spa_format,
-				   struct format_data *out_format_data)
-{
-	for (size_t i = 0; i < N_SUPPORTED_FORMATS; i++) {
-		if (supported_formats[i].spa_format != spa_format)
-			continue;
-
-		if (out_format_data)
-			*out_format_data = supported_formats[i];
-
-		return true;
-	}
-	return false;
-}
 
 static void swap_texture_red_blue(gs_texture_t *texture)
 {
@@ -513,16 +407,16 @@ static void init_format_info_async(obs_pipewire_stream *obs_pw_stream)
 	da_init(obs_pw_stream->format_info);
 
 	for (size_t i = 0; i < N_SUPPORTED_FORMATS_ASYNC; i++) {
-		struct format_data format_data;
+		struct obs_pw_video_format obs_pw_video_format;
 		struct format_info *info;
-		if (!lookup_format_info_from_spa_format(
-			    supported_formats_async[i], &format_data))
+		if (!obs_pw_video_format_from_spa_format(
+			    supported_formats_async[i], &obs_pw_video_format))
 			continue;
 
 		info = da_push_back_new(obs_pw_stream->format_info);
 		da_init(info->modifiers);
-		info->spa_format = format_data.spa_format;
-		info->drm_format = format_data.drm_format;
+		info->spa_format = obs_pw_video_format.spa_format;
+		info->drm_format = obs_pw_video_format.drm_format;
 	}
 }
 
@@ -540,27 +434,28 @@ static void init_format_info_sync(obs_pipewire_stream *obs_pw_stream)
 		&dmabuf_flags, &drm_formats, &n_drm_formats);
 
 	for (size_t i = 0; i < N_SUPPORTED_FORMATS_SYNC; i++) {
-		struct format_data format_data;
+		struct obs_pw_video_format obs_pw_video_format;
 		struct format_info *info;
-		if (!lookup_format_info_from_spa_format(
-			    supported_formats_sync[i], &format_data) ||
-		    format_data.gs_format == GS_UNKNOWN)
+		if (!obs_pw_video_format_from_spa_format(
+			    supported_formats_sync[i], &obs_pw_video_format) ||
+		    obs_pw_video_format.gs_format == GS_UNKNOWN)
 			continue;
 
 		info = da_push_back_new(obs_pw_stream->format_info);
 		da_init(info->modifiers);
-		info->spa_format = format_data.spa_format;
-		info->drm_format = format_data.drm_format;
+		info->spa_format = obs_pw_video_format.spa_format;
+		info->drm_format = obs_pw_video_format.drm_format;
 
 		if (!capabilities_queried ||
-		    !drm_format_available(format_data.drm_format, drm_formats,
-					  n_drm_formats))
+		    !drm_format_available(obs_pw_video_format.drm_format,
+					  drm_formats, n_drm_formats))
 			continue;
 
 		size_t n_modifiers;
 		uint64_t *modifiers = NULL;
 		if (gs_query_dmabuf_modifiers_for_format(
-			    format_data.drm_format, &modifiers, &n_modifiers)) {
+			    obs_pw_video_format.drm_format, &modifiers,
+			    &n_modifiers)) {
 			da_push_back_array(info->modifiers, modifiers,
 					   n_modifiers);
 		}
@@ -709,7 +604,7 @@ video_color_range_from_spa_color_range(enum spa_video_color_range colorrange)
 static bool prepare_obs_frame(obs_pipewire_stream *obs_pw_stream,
 			      struct obs_source_frame *frame)
 {
-	struct format_data format_data;
+	struct obs_pw_video_format obs_pw_video_format;
 
 	frame->width = obs_pw_stream->format.info.raw.size.width;
 	frame->height = obs_pw_stream->format.info.raw.size.height;
@@ -722,13 +617,15 @@ static bool prepare_obs_frame(obs_pipewire_stream *obs_pw_stream,
 		frame->color_matrix, frame->color_range_min,
 		frame->color_range_max);
 
-	if (!lookup_format_info_from_spa_format(
-		    obs_pw_stream->format.info.raw.format, &format_data) ||
-	    format_data.video_format == VIDEO_FORMAT_NONE)
+	if (!obs_pw_video_format_from_spa_format(
+		    obs_pw_stream->format.info.raw.format,
+		    &obs_pw_video_format) ||
+	    obs_pw_video_format.video_format == VIDEO_FORMAT_NONE)
 		return false;
 
-	frame->format = format_data.video_format;
-	frame->linesize[0] = SPA_ROUND_UP_N(frame->width * format_data.bpp, 4);
+	frame->format = obs_pw_video_format.video_format;
+	frame->linesize[0] =
+		SPA_ROUND_UP_N(frame->width * obs_pw_video_format.bpp, 4);
 	return true;
 }
 
@@ -791,7 +688,7 @@ static void process_video_sync(obs_pipewire_stream *obs_pw_stream)
 	struct spa_meta_header *header;
 	struct spa_meta_region *region;
 	struct spa_meta_videotransform *video_transform;
-	struct format_data format_data;
+	struct obs_pw_video_format obs_pw_video_format;
 	struct spa_buffer *buffer;
 	struct pw_buffer *b;
 	bool has_buffer = true;
@@ -838,10 +735,10 @@ static void process_video_sync(obs_pipewire_stream *obs_pw_stream)
 		     obs_pw_stream->format.info.raw.size.height);
 #endif
 
-		if (!lookup_format_info_from_spa_format(
+		if (!obs_pw_video_format_from_spa_format(
 			    obs_pw_stream->format.info.raw.format,
-			    &format_data) ||
-		    format_data.gs_format == GS_UNKNOWN) {
+			    &obs_pw_video_format) ||
+		    obs_pw_video_format.gs_format == GS_UNKNOWN) {
 			blog(LOG_ERROR,
 			     "[pipewire] unsupported DMA buffer format: %d",
 			     obs_pw_stream->format.info.raw.format);
@@ -871,8 +768,8 @@ static void process_video_sync(obs_pipewire_stream *obs_pw_stream)
 		obs_pw_stream->texture = gs_texture_create_from_dmabuf(
 			obs_pw_stream->format.info.raw.size.width,
 			obs_pw_stream->format.info.raw.size.height,
-			format_data.drm_format, GS_BGRX, planes, fds, strides,
-			offsets, use_modifiers ? modifiers : NULL);
+			obs_pw_video_format.drm_format, GS_BGRX, planes, fds,
+			strides, offsets, use_modifiers ? modifiers : NULL);
 
 		if (obs_pw_stream->texture == NULL) {
 			remove_modifier_from_format(
@@ -887,10 +784,10 @@ static void process_video_sync(obs_pipewire_stream *obs_pw_stream)
 	} else {
 		blog(LOG_DEBUG, "[pipewire] Buffer has memory texture");
 
-		if (!lookup_format_info_from_spa_format(
+		if (!obs_pw_video_format_from_spa_format(
 			    obs_pw_stream->format.info.raw.format,
-			    &format_data) ||
-		    format_data.gs_format == GS_UNKNOWN) {
+			    &obs_pw_video_format) ||
+		    obs_pw_video_format.gs_format == GS_UNKNOWN) {
 			blog(LOG_ERROR,
 			     "[pipewire] unsupported buffer format: %d",
 			     obs_pw_stream->format.info.raw.format);
@@ -914,11 +811,11 @@ static void process_video_sync(obs_pipewire_stream *obs_pw_stream)
 		obs_pw_stream->texture = gs_texture_create(
 			obs_pw_stream->format.info.raw.size.width,
 			obs_pw_stream->format.info.raw.size.height,
-			format_data.gs_format, 1,
+			obs_pw_video_format.gs_format, 1,
 			(const uint8_t **)&buffer->datas[0].data, GS_DYNAMIC);
 	}
 
-	if (format_data.swap_red_blue)
+	if (obs_pw_video_format.swap_red_blue)
 		swap_texture_red_blue(obs_pw_stream->texture);
 
 	/* Video Crop */
@@ -969,9 +866,9 @@ read_metadata:
 
 		if (bitmap && bitmap->size.width > 0 &&
 		    bitmap->size.height > 0 &&
-		    lookup_format_info_from_spa_format(bitmap->format,
-						       &format_data) &&
-		    format_data.gs_format != GS_UNKNOWN) {
+		    obs_pw_video_format_from_spa_format(bitmap->format,
+							&obs_pw_video_format) &&
+		    obs_pw_video_format.gs_format != GS_UNKNOWN) {
 			const uint8_t *bitmap_data;
 
 			bitmap_data =
@@ -985,10 +882,10 @@ read_metadata:
 			obs_pw_stream->cursor.texture =
 				gs_texture_create(obs_pw_stream->cursor.width,
 						  obs_pw_stream->cursor.height,
-						  format_data.gs_format, 1,
-						  &bitmap_data, GS_DYNAMIC);
+						  obs_pw_video_format.gs_format,
+						  1, &bitmap_data, GS_DYNAMIC);
 
-			if (format_data.swap_red_blue)
+			if (obs_pw_video_format.swap_red_blue)
 				swap_texture_red_blue(
 					obs_pw_stream->cursor.texture);
 		}
