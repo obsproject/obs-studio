@@ -569,19 +569,9 @@ void OBSBasicStatusBar::RecordingUnpaused()
 
 static QPixmap GetPixmap(const QString &filename)
 {
-	bool darkTheme = obs_frontend_is_theme_dark();
-	QString path;
-
-	if (darkTheme) {
-		std::string darkPath;
-		QString themePath = QString("themes/Dark/") + filename;
-		GetDataFilePath(QT_TO_UTF8(themePath), darkPath);
-		path = QT_UTF8(darkPath.c_str());
-	} else {
-		path = QString(":/res/images/" + filename);
-	}
-
-	return QIcon(path).pixmap(QSize(16, 16));
+	QString path = obs_frontend_is_theme_dark() ? "theme:Dark/"
+						    : ":/res/images/";
+	return QIcon(path + filename).pixmap(QSize(16, 16));
 }
 
 void OBSBasicStatusBar::UpdateIcons()
