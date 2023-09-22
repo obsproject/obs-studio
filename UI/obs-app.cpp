@@ -31,6 +31,7 @@
 #include <obs-config.h>
 #include <obs.hpp>
 
+#include <QDir>
 #include <QFile>
 #include <QGuiApplication>
 #include <QScreen>
@@ -1271,6 +1272,19 @@ bool OBSApp::InitTheme()
 {
 	defaultPalette = palette();
 	setStyle(new OBSProxyStyle());
+
+	/* Set search paths for custom 'theme:' URI prefix */
+	string searchDir;
+	if (GetDataFilePath("themes", searchDir)) {
+		auto installSearchDir = filesystem::u8path(searchDir);
+		QDir::addSearchPath("theme", absolute(installSearchDir));
+	}
+
+	char userDir[512];
+	if (GetConfigPath(userDir, sizeof(userDir), "obs-studio/themes")) {
+		auto configSearchDir = filesystem::u8path(userDir);
+		QDir::addSearchPath("theme", absolute(configSearchDir));
+	}
 
 	const char *themeName =
 		config_get_string(globalConfig, "General", "CurrentTheme3");
