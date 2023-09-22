@@ -101,6 +101,7 @@ protected:
 private:
 	mfxVersion m_ver;
 	mfxSession m_session;
+	void *m_sessionData;
 	mfxFrameAllocator m_mfxAllocator;
 	mfxVideoParam m_mfxEncParams;
 	mfxFrameAllocResponse m_mfxResponse;

@@ -81,7 +81,8 @@ QSV_Encoder_Internal::QSV_Encoder_Internal(mfxVersion &version, bool isDGPU)
 	  m_nTaskIdx(0),
 	  m_nFirstSyncTask(0),
 	  m_outBitstream(),
-	  m_isDGPU(isDGPU)
+	  m_isDGPU(isDGPU),
+	  m_sessionData(NULL)
 {
 	mfxVariant tempImpl;
 	mfxStatus sts;
@@ -180,16 +181,19 @@ mfxStatus QSV_Encoder_Internal::Open(qsv_param_t *pParams, enum qsv_codec codec)
 	if (m_bUseD3D11)
 		// Use D3D11 surface
 		sts = Initialize(m_ver, &m_session, &m_mfxAllocator,
-				 &g_DX_Handle, false, false, codec);
+				 &g_DX_Handle, false, false, codec,
+				 &m_sessionData);
 	else if (m_bD3D9HACK)
 		// Use hack
 		sts = Initialize(m_ver, &m_session, &m_mfxAllocator,
-				 &g_DX_Handle, false, true, codec);
+				 &g_DX_Handle, false, true, codec,
+				 &m_sessionData);
 	else
 		sts = Initialize(m_ver, &m_session, NULL, NULL, NULL, NULL,
-				 codec);
+				 codec, &m_sessionData);
 #else
-	sts = Initialize(m_ver, &m_session, NULL, NULL, false, false, codec);
+	sts = Initialize(m_ver, &m_session, NULL, NULL, false, false, codec,
+			 &m_sessionData);
 #endif
 
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -958,10 +962,12 @@ mfxStatus QSV_Encoder_Internal::ClearData()
 	}
 
 	if ((m_bUseTexAlloc) && (g_numEncodersOpen <= 0)) {
+		Release();
 		g_DX_Handle = NULL;
 	}
-	Release();
 	MFXVideoENCODE_Close(m_session);
+	ReleaseSessionData(m_sessionData);
+	m_sessionData = NULL;
 	return sts;
 }
 
