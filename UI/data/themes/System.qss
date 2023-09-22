@@ -71,7 +71,7 @@ MuteCheckBox::indicator:checked {
 }
 
 MuteCheckBox::indicator:indeterminate {
-    image: url(./Dark/unassigned.svg);
+    image: url(theme:Dark/unassigned.svg);
 }
 
 MuteCheckBox::indicator:unchecked {
@@ -378,7 +378,7 @@ QCalendarWidget QToolButton {
 }
 
 #qt_calendar_monthbutton::menu-indicator {
-    image: url(./Dark/down.svg);
+    image: url(theme:Dark/down.svg);
     subcontrol-position: right;
     padding-top: 2px;
     padding-right: 2px;
@@ -393,13 +393,13 @@ QCalendarWidget QToolButton {
 
 QCalendarWidget #qt_calendar_prevmonth {
     padding: 2px;
-    qproperty-icon: url(./Dark/left.svg);
+    qproperty-icon: url(theme:Dark/left.svg);
     icon-size: 16px, 16px;
 }
 
 QCalendarWidget #qt_calendar_nextmonth {
     padding: 2px;
-    qproperty-icon: url(./Dark/right.svg);
+    qproperty-icon: url(theme:Dark/right.svg);
     icon-size: 16px, 16px;
 }
 
