@@ -663,26 +663,21 @@ static void vaapi_defaults_internal(obs_data_t *settings, enum codec_type codec)
 	const char *const device = vaapi_default_device(codec);
 	obs_data_set_default_string(settings, "vaapi_device", device);
 #ifdef ENABLE_HEVC
-	if (codec == CODEC_HEVC) {
+	if (codec == CODEC_HEVC)
 		obs_data_set_default_int(settings, "profile",
 					 FF_PROFILE_HEVC_MAIN);
-		obs_data_set_default_int(settings, "level", 120);
-
-	} else
+	else
 #endif
-		if (codec == CODEC_H264) {
+		if (codec == CODEC_H264)
 		obs_data_set_default_int(settings, "profile",
-					 FF_PROFILE_H264_CONSTRAINED_BASELINE);
-		obs_data_set_default_int(settings, "level", 40);
-	} else if (codec == CODEC_AV1) {
+					 FF_PROFILE_H264_HIGH);
+	else if (codec == CODEC_AV1)
 		obs_data_set_default_int(settings, "profile",
 					 FF_PROFILE_AV1_MAIN);
-		obs_data_set_default_int(settings, "level", 8);
-	}
+	obs_data_set_default_int(settings, "level", FF_LEVEL_UNKNOWN);
 	obs_data_set_default_int(settings, "bitrate", 2500);
 	obs_data_set_default_int(settings, "keyint_sec", 0);
 	obs_data_set_default_int(settings, "bf", 0);
-	obs_data_set_default_int(settings, "rendermode", 0);
 	obs_data_set_default_int(settings, "qp", 20);
 	obs_data_set_default_int(settings, "maxrate", 0);
 
@@ -770,7 +765,7 @@ static bool vaapi_device_modified(obs_properties_t *ppts, obs_property_t *p,
 	}
 
 	if (vaapi_device_rc_supported(profile, va_dpy, VA_RC_CBR, device))
-		obs_property_list_add_string(rc_p, "CBR (default)", "CBR");
+		obs_property_list_add_string(rc_p, "CBR", "CBR");
 
 	if (vaapi_device_rc_supported(profile, va_dpy, VA_RC_VBR, device))
 		obs_property_list_add_string(rc_p, "VBR", "VBR");
@@ -924,8 +919,7 @@ static obs_properties_t *vaapi_properties_internal(enum codec_type codec)
 		obs_property_list_add_int(list, "Main10",
 					  FF_PROFILE_HEVC_MAIN_10);
 	} else if (codec == CODEC_H264) {
-		obs_property_list_add_int(list,
-					  "Constrained Baseline (default)",
+		obs_property_list_add_int(list, "Constrained Baseline",
 					  FF_PROFILE_H264_CONSTRAINED_BASELINE);
 		obs_property_list_add_int(list, "Main", FF_PROFILE_H264_MAIN);
 		obs_property_list_add_int(list, "High", FF_PROFILE_H264_HIGH);
@@ -942,8 +936,7 @@ static obs_properties_t *vaapi_properties_internal(enum codec_type codec)
 	if (codec == CODEC_H264) {
 		obs_property_list_add_int(list, "3.0", 30);
 		obs_property_list_add_int(list, "3.1", 31);
-		obs_property_list_add_int(
-			list, "4.0 (default) (Compatibility mode)", 40);
+		obs_property_list_add_int(list, "4.0", 40);
 		obs_property_list_add_int(list, "4.1", 41);
 		obs_property_list_add_int(list, "4.2", 42);
 		obs_property_list_add_int(list, "5.0", 50);
@@ -952,7 +945,7 @@ static obs_properties_t *vaapi_properties_internal(enum codec_type codec)
 	} else if (codec == CODEC_HEVC) {
 		obs_property_list_add_int(list, "3.0", 90);
 		obs_property_list_add_int(list, "3.1", 93);
-		obs_property_list_add_int(list, "4.0 (default)", 120);
+		obs_property_list_add_int(list, "4.0", 120);
 		obs_property_list_add_int(list, "4.1", 123);
 		obs_property_list_add_int(list, "5.0", 150);
 		obs_property_list_add_int(list, "5.1", 153);
@@ -960,7 +953,7 @@ static obs_properties_t *vaapi_properties_internal(enum codec_type codec)
 	} else if (codec == CODEC_AV1) {
 		obs_property_list_add_int(list, "3.0", 4);
 		obs_property_list_add_int(list, "3.1", 5);
-		obs_property_list_add_int(list, "4.0 (default)", 8);
+		obs_property_list_add_int(list, "4.0", 8);
 		obs_property_list_add_int(list, "4.1", 9);
 		obs_property_list_add_int(list, "5.0", 12);
 		obs_property_list_add_int(list, "5.1", 13);
