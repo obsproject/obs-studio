@@ -1664,11 +1664,8 @@ void SourceTree::AddGroup()
 
 void SourceTree::UpdateNoSourcesMessage()
 {
-	std::string darkPath;
-	GetDataFilePath("themes/Dark/no_sources.svg", darkPath);
-
 	QString file = !App()->IsThemeDark() ? ":res/images/no_sources.svg"
-					     : darkPath.c_str();
+					     : "theme:Dark/no_sources.svg";
 	iconNoSources.load(file);
 
 	QTextOption opt(Qt::AlignHCenter);
