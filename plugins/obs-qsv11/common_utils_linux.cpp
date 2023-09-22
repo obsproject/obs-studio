@@ -21,7 +21,11 @@
 static const char *default_h264_device = nullptr;
 static const char *default_hevc_device = nullptr;
 static const char *default_av1_device = nullptr;
-static int default_fd = -1;
+
+struct linux_data {
+	int fd;
+	VADisplay vaDisplay;
+};
 
 mfxStatus simple_alloc(mfxHDL pthis, mfxFrameAllocRequest *request,
 		       mfxFrameAllocResponse *response)
@@ -83,7 +87,7 @@ void ClearRGBSurfaceVMem(mfxMemId memId);
 mfxStatus Initialize(mfxVersion ver, mfxSession *pSession,
 		     mfxFrameAllocator *pmfxAllocator, mfxHDL *deviceHandle,
 		     bool bCreateSharedHandles, bool dx9hack,
-		     enum qsv_codec codec)
+		     enum qsv_codec codec, void **data)
 {
 	UNUSED_PARAMETER(ver);
 	UNUSED_PARAMETER(pmfxAllocator);
@@ -113,19 +117,20 @@ mfxStatus Initialize(mfxVersion ver, mfxSession *pSession,
 		cfg, (const mfxU8 *)"mfxImplDescription.AccelerationMode",
 		impl);
 
+	int fd = -1;
 	if (codec == QSV_CODEC_AVC && default_h264_device)
-		default_fd = open(default_h264_device, O_RDWR);
+		fd = open(default_h264_device, O_RDWR);
 	if (codec == QSV_CODEC_HEVC && default_hevc_device)
-		default_fd = open(default_hevc_device, O_RDWR);
+		fd = open(default_hevc_device, O_RDWR);
 	if (codec == QSV_CODEC_AV1 && default_av1_device)
-		default_fd = open(default_av1_device, O_RDWR);
-	if (default_fd < 0) {
+		fd = open(default_av1_device, O_RDWR);
+	if (fd < 0) {
 		blog(LOG_ERROR, "Failed to open device '%s'",
 		     default_h264_device);
 		return MFX_ERR_DEVICE_FAILED;
 	}
 
-	mfxHDL vaDisplay = vaGetDisplayDRM(default_fd);
+	mfxHDL vaDisplay = vaGetDisplayDRM(fd);
 	if (!vaDisplay) {
 		return MFX_ERR_DEVICE_FAILED;
 	}
@@ -134,8 +139,7 @@ mfxStatus Initialize(mfxVersion ver, mfxSession *pSession,
 	if (MFX_ERR_NONE > sts) {
 		blog(LOG_ERROR, "Failed to initialize MFX");
 		MSDK_PRINT_RET_MSG(sts);
-		close(default_fd);
-		default_fd = -1;
+		close(fd);
 		return sts;
 	}
 
@@ -145,24 +149,34 @@ mfxStatus Initialize(mfxVersion ver, mfxSession *pSession,
 	if (vaInitialize(vaDisplay, &major, &minor) != VA_STATUS_SUCCESS) {
 		blog(LOG_ERROR, "Failed to initialize VA-API");
 		vaTerminate(vaDisplay);
-		close(default_fd);
-		default_fd = -1;
+		close(fd);
 		return MFX_ERR_DEVICE_FAILED;
 	}
+
 	sts = MFXVideoCORE_SetHandle(*pSession, MFX_HANDLE_VA_DISPLAY,
 				     vaDisplay);
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
+	struct linux_data *d =
+		(struct linux_data *)bmalloc(sizeof(struct linux_data));
+	d->fd = fd;
+	d->vaDisplay = (VADisplay)vaDisplay;
+	*data = d;
+
 	return sts;
 }
 
-// Release resources (device/display)
-void Release()
-{
-	if (default_fd > 0)
-		close(default_fd);
+void Release() {}
 
-	default_fd = -1;
+// Release per session resources.
+void ReleaseSessionData(void *data)
+{
+	struct linux_data *d = (struct linux_data *)data;
+	if (d) {
+		vaTerminate(d->vaDisplay);
+		close(d->fd);
+		bfree(d);
+	}
 }
 
 void mfxGetTime(mfxTime *timestamp)
