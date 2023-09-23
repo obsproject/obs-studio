@@ -102,12 +102,16 @@ bool build_display_list(struct screen_capture *sc, obs_properties_t *props)
             continue;
         }
 
+        CGDisplayModeRef display_mode = CGDisplayCopyDisplayMode(display.displayID);
         char dimension_buffer[4][12] = {};
         char name_buffer[256] = {};
-        snprintf(dimension_buffer[0], sizeof(dimension_buffer[0]), "%u", (uint32_t) display_screen.frame.size.width);
-        snprintf(dimension_buffer[1], sizeof(dimension_buffer[0]), "%u", (uint32_t) display_screen.frame.size.height);
+        snprintf(dimension_buffer[0], sizeof(dimension_buffer[0]), "%u",
+                 (uint32_t) CGDisplayModeGetPixelWidth(display_mode));
+        snprintf(dimension_buffer[1], sizeof(dimension_buffer[0]), "%u",
+                 (uint32_t) CGDisplayModeGetPixelHeight(display_mode));
         snprintf(dimension_buffer[2], sizeof(dimension_buffer[0]), "%d", (int32_t) display_screen.frame.origin.x);
         snprintf(dimension_buffer[3], sizeof(dimension_buffer[0]), "%d", (int32_t) display_screen.frame.origin.y);
+        CGDisplayModeRelease(display_mode);
 
         snprintf(name_buffer, sizeof(name_buffer), "%.200s: %.12sx%.12s @ %.12s,%.12s",
                  display_screen.localizedName.UTF8String, dimension_buffer[0], dimension_buffer[1], dimension_buffer[2],
