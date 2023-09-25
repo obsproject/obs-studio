@@ -1,4 +1,5 @@
 #include "mac-sck-common.h"
+#include "window-utils.h"
 
 static void destroy_screen_stream(struct screen_capture *sc)
 {
@@ -271,27 +272,7 @@ static void *sck_video_capture_create(obs_data_t *settings, obs_source_t *source
     if (!sc->effect)
         goto fail;
 
-    bool legacy_display_id = obs_data_has_user_value(settings, "display");
-    if (legacy_display_id) {
-        CGDirectDisplayID display_id = (CGDirectDisplayID) obs_data_get_int(settings, "display");
-        CFUUIDRef display_uuid = CGDisplayCreateUUIDFromDisplayID(display_id);
-        CFStringRef uuid_string = CFUUIDCreateString(kCFAllocatorDefault, display_uuid);
-        obs_data_set_string(settings, "display_uuid", CFStringGetCStringPtr(uuid_string, kCFStringEncodingUTF8));
-        obs_data_erase(settings, "display");
-        CFRelease(uuid_string);
-        CFRelease(display_uuid);
-    }
-
-    const char *display_uuid = obs_data_get_string(settings, "display_uuid");
-    if (display_uuid) {
-        CFStringRef uuid_string = CFStringCreateWithCString(kCFAllocatorDefault, display_uuid, kCFStringEncodingUTF8);
-        CFUUIDRef uuid_ref = CFUUIDCreateFromString(kCFAllocatorDefault, uuid_string);
-        sc->display = CGDisplayGetDisplayIDFromUUID(uuid_ref);
-        CFRelease(uuid_string);
-        CFRelease(uuid_ref);
-    } else {
-        sc->display = CGMainDisplayID();
-    }
+    sc->display = get_display_migrate_settings(settings);
 
     sc->application_id = [[NSString alloc] initWithUTF8String:obs_data_get_string(settings, "application")];
     pthread_mutex_init(&sc->mutex, NULL);
@@ -420,12 +401,7 @@ static void sck_video_capture_update(void *data, obs_data_t *settings)
 
     ScreenCaptureStreamType capture_type = (ScreenCaptureStreamType) obs_data_get_int(settings, "type");
 
-    CFStringRef uuid_string = CFStringCreateWithCString(
-        kCFAllocatorDefault, obs_data_get_string(settings, "display_uuid"), kCFStringEncodingUTF8);
-    CFUUIDRef display_uuid = CFUUIDCreateFromString(kCFAllocatorDefault, uuid_string);
-    CGDirectDisplayID display = CGDisplayGetDisplayIDFromUUID(display_uuid);
-    CFRelease(uuid_string);
-    CFRelease(display_uuid);
+    CGDirectDisplayID display = get_display_migrate_settings(settings);
 
     NSString *application_id = [[NSString alloc] initWithUTF8String:obs_data_get_string(settings, "application")];
     bool show_cursor = obs_data_get_bool(settings, "show_cursor");
