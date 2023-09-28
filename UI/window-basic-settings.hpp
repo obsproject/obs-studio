@@ -72,6 +72,8 @@ class OBSBasicSettings : public QDialog {
 	Q_OBJECT
 	Q_PROPERTY(QIcon generalIcon READ GetGeneralIcon WRITE SetGeneralIcon
 			   DESIGNABLE true)
+	Q_PROPERTY(QIcon appearanceIcon READ GetAppearanceIcon WRITE
+			   SetAppearanceIcon DESIGNABLE true)
 	Q_PROPERTY(QIcon streamIcon READ GetStreamIcon WRITE SetStreamIcon
 			   DESIGNABLE true)
 	Q_PROPERTY(QIcon outputIcon READ GetOutputIcon WRITE SetOutputIcon
@@ -86,6 +88,19 @@ class OBSBasicSettings : public QDialog {
 			   SetAccessibilityIcon DESIGNABLE true)
 	Q_PROPERTY(QIcon advancedIcon READ GetAdvancedIcon WRITE SetAdvancedIcon
 			   DESIGNABLE true)
+
+	enum Pages {
+		GENERAL,
+		APPEARANCE,
+		STREAM,
+		OUTPUT,
+		AUDIO,
+		VIDEO,
+		HOTKEYS,
+		ACCESSIBILITY,
+		ADVANCED,
+		NUM_PAGES
+	};
 
 private:
 	OBSBasic *main;
@@ -355,6 +370,7 @@ private:
 	void UpdateYouTubeAppDockSettings();
 
 	QIcon generalIcon;
+	QIcon appearanceIcon;
 	QIcon streamIcon;
 	QIcon outputIcon;
 	QIcon audioIcon;
@@ -364,6 +380,7 @@ private:
 	QIcon advancedIcon;
 
 	QIcon GetGeneralIcon() const;
+	QIcon GetAppearanceIcon() const;
 	QIcon GetStreamIcon() const;
 	QIcon GetOutputIcon() const;
 	QIcon GetAudioIcon() const;
@@ -465,6 +482,7 @@ private slots:
 	OBSService SpawnTempService();
 
 	void SetGeneralIcon(const QIcon &icon);
+	void SetAppearanceIcon(const QIcon &icon);
 	void SetStreamIcon(const QIcon &icon);
 	void SetOutputIcon(const QIcon &icon);
 	void SetAudioIcon(const QIcon &icon);
