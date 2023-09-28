@@ -77,10 +77,6 @@ struct virtualcam_data {
     int severity;
 
     switch (error.code) {
-        case OSSystemExtensionErrorRequestCanceled:
-            errorMessage = @"macOS Camera Extension installation request cancelled.";
-            severity = LOG_INFO;
-            break;
         case OSSystemExtensionErrorUnsupportedParentBundleLocation:
             self.lastErrorMessage =
                 [NSString stringWithUTF8String:obs_module_text("Error.SystemExtension.WrongLocation")];
@@ -95,7 +91,7 @@ struct virtualcam_data {
             break;
     }
 
-    blog(severity, "mac-camera-extension error: %s", errorMessage.UTF8String);
+    blog(severity, "mac-camera-extension: %s", errorMessage.UTF8String);
 }
 
 - (void)request:(nonnull OSSystemExtensionRequest *)request didFinishWithResult:(OSSystemExtensionRequestResult)result
