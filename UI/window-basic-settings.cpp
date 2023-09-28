@@ -1217,10 +1217,10 @@ void OBSBasicSettings::ReloadCodecs(const FFmpegFormat &format)
 
 	for (auto &codec : supportedCodecs) {
 		switch (codec.type) {
-		case AUDIO:
+		case FFmpegCodecType::AUDIO:
 			AddCodec(ui->advOutFFAEncoder, codec);
 			break;
-		case VIDEO:
+		case FFmpegCodecType::VIDEO:
 			AddCodec(ui->advOutFFVEncoder, codec);
 			break;
 		default:
@@ -4313,7 +4313,7 @@ void OBSBasicSettings::on_listWidget_itemSelectionChanged()
 	if (loading || row == pageIndex)
 		return;
 
-	if (!hotkeysLoaded && row == 5) {
+	if (!hotkeysLoaded && row == Pages::HOTKEYS) {
 		setCursor(Qt::BusyCursor);
 		/* Look, I know this /feels/ wrong, but the specific issue we're dealing with
 		 * here means that the UI locks up immediately even when using "invokeMethod".
@@ -4511,7 +4511,8 @@ void OBSBasicSettings::on_advOutFFAEncoder_currentIndexChanged(int idx)
 	if (!itemDataVariant.isNull()) {
 		auto desc = itemDataVariant.value<FFmpegCodec>();
 		SetAdvOutputFFmpegEnablement(
-			AUDIO, desc.id != 0 || desc.name != nullptr, true);
+			FFmpegCodecType::AUDIO,
+			desc.id != 0 || desc.name != nullptr, true);
 	}
 }
 
@@ -4521,7 +4522,8 @@ void OBSBasicSettings::on_advOutFFVEncoder_currentIndexChanged(int idx)
 	if (!itemDataVariant.isNull()) {
 		auto desc = itemDataVariant.value<FFmpegCodec>();
 		SetAdvOutputFFmpegEnablement(
-			VIDEO, desc.id != 0 || desc.name != nullptr, true);
+			FFmpegCodecType::VIDEO,
+			desc.id != 0 || desc.name != nullptr, true);
 	}
 }
 
@@ -6089,6 +6091,11 @@ QIcon OBSBasicSettings::GetGeneralIcon() const
 	return generalIcon;
 }
 
+QIcon OBSBasicSettings::GetAppearanceIcon() const
+{
+	return appearanceIcon;
+}
+
 QIcon OBSBasicSettings::GetStreamIcon() const
 {
 	return streamIcon;
@@ -6126,42 +6133,47 @@ QIcon OBSBasicSettings::GetAdvancedIcon() const
 
 void OBSBasicSettings::SetGeneralIcon(const QIcon &icon)
 {
-	ui->listWidget->item(0)->setIcon(icon);
+	ui->listWidget->item(Pages::GENERAL)->setIcon(icon);
+}
+
+void OBSBasicSettings::SetAppearanceIcon(const QIcon &icon)
+{
+	ui->listWidget->item(Pages::APPEARANCE)->setIcon(icon);
 }
 
 void OBSBasicSettings::SetStreamIcon(const QIcon &icon)
 {
-	ui->listWidget->item(1)->setIcon(icon);
+	ui->listWidget->item(Pages::STREAM)->setIcon(icon);
 }
 
 void OBSBasicSettings::SetOutputIcon(const QIcon &icon)
 {
-	ui->listWidget->item(2)->setIcon(icon);
+	ui->listWidget->item(Pages::OUTPUT)->setIcon(icon);
 }
 
 void OBSBasicSettings::SetAudioIcon(const QIcon &icon)
 {
-	ui->listWidget->item(3)->setIcon(icon);
+	ui->listWidget->item(Pages::AUDIO)->setIcon(icon);
 }
 
 void OBSBasicSettings::SetVideoIcon(const QIcon &icon)
 {
-	ui->listWidget->item(4)->setIcon(icon);
+	ui->listWidget->item(Pages::VIDEO)->setIcon(icon);
 }
 
 void OBSBasicSettings::SetHotkeysIcon(const QIcon &icon)
 {
-	ui->listWidget->item(5)->setIcon(icon);
+	ui->listWidget->item(Pages::HOTKEYS)->setIcon(icon);
 }
 
 void OBSBasicSettings::SetAccessibilityIcon(const QIcon &icon)
 {
-	ui->listWidget->item(6)->setIcon(icon);
+	ui->listWidget->item(Pages::ACCESSIBILITY)->setIcon(icon);
 }
 
 void OBSBasicSettings::SetAdvancedIcon(const QIcon &icon)
 {
-	ui->listWidget->item(7)->setIcon(icon);
+	ui->listWidget->item(Pages::ADVANCED)->setIcon(icon);
 }
 
 int OBSBasicSettings::CurrentFLVTrack()
