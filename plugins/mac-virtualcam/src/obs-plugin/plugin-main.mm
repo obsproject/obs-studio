@@ -68,15 +68,7 @@ struct virtualcam_data {
                   actionForReplacingExtension:(nonnull OSSystemExtensionProperties *)existing
                                 withExtension:(nonnull OSSystemExtensionProperties *)ext
 {
-    NSString *extVersion = [NSString stringWithFormat:@"%@.%@", [ext bundleShortVersion], [ext bundleVersion]];
-    NSString *existingVersion =
-        [NSString stringWithFormat:@"%@.%@", [existing bundleShortVersion], [existing bundleVersion]];
-
-    if ([extVersion compare:existingVersion options:NSNumericSearch] == NSOrderedDescending) {
-        return OSSystemExtensionReplacementActionReplace;
-    } else {
-        return OSSystemExtensionReplacementActionCancel;
-    }
+    return OSSystemExtensionReplacementActionReplace;
 }
 
 - (void)request:(nonnull OSSystemExtensionRequest *)request didFailWithError:(nonnull NSError *)error
