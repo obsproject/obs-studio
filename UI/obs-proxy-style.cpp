@@ -90,17 +90,3 @@ int OBSProxyStyle::styleHint(StyleHint hint, const QStyleOption *option,
 
 	return QProxyStyle::styleHint(hint, option, widget, returnData);
 }
-
-#ifdef QT_TOOLTIP_WORKAROUND_NEEDED
-void OBSProxyStyle::polish(QWidget *widget)
-{
-	QProxyStyle::polish(widget);
-
-	// QTBUG-115511 workaround to make tooltip label QSS work again
-	if (widget->inherits("QTipLabel")) {
-		QPalette palette = widget->palette();
-		palette.setResolveMask(0);
-		widget->setPalette(palette);
-	}
-}
-#endif
