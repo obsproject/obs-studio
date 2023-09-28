@@ -36,6 +36,8 @@ void SetAlwaysOnTop(QWidget *window, bool enable);
 
 bool SetDisplayAffinitySupported(void);
 
+bool HighContrastEnabled();
+
 enum TaskbarOverlayStatus {
 	TaskbarOverlayStatusInactive,
 	TaskbarOverlayStatusActive,
