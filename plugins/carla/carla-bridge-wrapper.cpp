@@ -311,7 +311,7 @@ static bool carla_priv_load_file_callback(obs_properties_t *props,
 		const QFileInfo fileInfo(QString::fromUtf8(filename));
 		const QString extension(fileInfo.suffix());
 
-#if defined(CARLA_OS_MAC)
+#if defined(__APPLE__)
 		if (extension == "vst")
 			ptype = PLUGIN_VST2;
 #else
