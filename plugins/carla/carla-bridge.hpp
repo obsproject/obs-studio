@@ -156,7 +156,7 @@ struct carla_bridge {
 	 * required after loading plugin state */
 	void custom_data_loaded();
 
-	/* clear all custom data stored so far
+	/* clear all custom data stored so far */
 	void clear_custom_data();
 
 	/* load plugin state as base64 chunk
