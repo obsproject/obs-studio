@@ -960,7 +960,10 @@ static void set_visibility(struct obs_scene_item *item, bool vis)
 	pthread_mutex_unlock(&item->actions_mutex);
 }
 
-static void scene_load(void *data, obs_data_t *settings);
+static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
+					       obs_source_t *source,
+					       obs_sceneitem_t *insert_after,
+					       int64_t id);
 
 static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 {
@@ -971,6 +974,8 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 	const char *blend_method_str;
 	const char *blend_str;
 	struct obs_scene_item *item;
+	struct calldata params;
+	uint8_t stack[128];
 	bool visible;
 	bool lock;
 
@@ -992,7 +997,8 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 		return;
 	}
 
-	item = obs_scene_add(scene, source);
+	item = obs_scene_add_internal(scene, source, NULL,
+				      obs_data_get_int(item_data, "id"));
 	if (!item) {
 		blog(LOG_WARNING,
 		     "[scene_load_item] Could not add source '%s' "
@@ -1003,13 +1009,16 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 		return;
 	}
 
+	calldata_init_fixed(&params, stack, sizeof(stack));
+	calldata_set_ptr(&params, "scene", scene);
+	calldata_set_ptr(&params, "item", item);
+	signal_handler_signal(scene->source->context.signals, "item_add",
+			      &params);
+
 	item->is_group = strcmp(source->info.id, group_info.id) == 0;
 
 	obs_data_set_default_int(item_data, "align",
 				 OBS_ALIGN_TOP | OBS_ALIGN_LEFT);
-
-	if (obs_data_has_user_value(item_data, "id"))
-		item->id = obs_data_get_int(item_data, "id");
 
 	item->rot = (float)obs_data_get_double(item_data, "rot");
 	item->align = (uint32_t)obs_data_get_int(item_data, "align");
@@ -1112,6 +1121,9 @@ static void scene_load(void *data, obs_data_t *settings)
 		scene->custom_size = true;
 	}
 
+	if (obs_data_has_user_value(settings, "id_counter"))
+		scene->id_counter = obs_data_get_int(settings, "id_counter");
+
 	if (!items)
 		return;
 
@@ -1122,9 +1134,6 @@ static void scene_load(void *data, obs_data_t *settings)
 		scene_load_item(scene, item_data);
 		obs_data_release(item_data);
 	}
-
-	if (obs_data_has_user_value(settings, "id_counter"))
-		scene->id_counter = obs_data_get_int(settings, "id_counter");
 
 	obs_data_array_release(items);
 }
@@ -2075,7 +2084,8 @@ static inline bool source_has_audio(obs_source_t *source)
 
 static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 					       obs_source_t *source,
-					       obs_sceneitem_t *insert_after)
+					       obs_sceneitem_t *insert_after,
+					       int64_t id)
 {
 	struct obs_scene_item *last;
 	struct obs_scene_item *item;
@@ -2112,7 +2122,7 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 
 	item = bzalloc(sizeof(struct obs_scene_item));
 	item->source = source;
-	item->id = ++scene->id_counter;
+	item->id = id ? id : ++scene->id_counter;
 	item->parent = scene;
 	item->ref = 1;
 	item->align = OBS_ALIGN_TOP | OBS_ALIGN_LEFT;
@@ -2173,7 +2183,7 @@ release_source_and_fail:
 
 obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
 {
-	obs_sceneitem_t *item = obs_scene_add_internal(scene, source, NULL);
+	obs_sceneitem_t *item = obs_scene_add_internal(scene, source, NULL, 0);
 	struct calldata params;
 	uint8_t stack[128];
 
@@ -3305,7 +3315,7 @@ obs_sceneitem_t *obs_scene_insert_group(obs_scene_t *scene, const char *name,
 	obs_sceneitem_t *last_item = items ? items[count - 1] : NULL;
 
 	obs_sceneitem_t *item =
-		obs_scene_add_internal(scene, sub_scene->source, last_item);
+		obs_scene_add_internal(scene, sub_scene->source, last_item, 0);
 
 	if (!items || !count) {
 		obs_scene_release(sub_scene);
@@ -3428,7 +3438,8 @@ void obs_sceneitem_group_ungroup(obs_sceneitem_t *item)
 		obs_sceneitem_t *dst;
 
 		remove_group_transform(item, last);
-		dst = obs_scene_add_internal(scene, last->source, insert_after);
+		dst = obs_scene_add_internal(scene, last->source, insert_after,
+					     0);
 		duplicate_item_data(dst, last, true, true);
 		apply_group_transform(last, item);
 
