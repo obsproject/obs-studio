@@ -1,26 +1,26 @@
 {
     "dependencies": {
         "prebuilt": {
-            "version": "2023-09-18",
-            "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
+            "version": "2023-09-28",
+            "baseUrl": "https://github.com/falkTX/obs-deps/releases/download",
             "label": "Pre-Built obs-deps",
             "hashes": {
-                "macos-universal": "aa9728e04390b4e21f37dbc64d0e182f6b84a6208af0872c7ef386e02be9d54a",
-                "windows-x64": "c46ba0bb7d5713a8ce1e5456211e4c6b919075cc6c645195f42f8927e1dab29b",
-                "windows-x86": "c5703c3e71dc2d3c8f8266977bb02f6c7e370cd19633968b192c639599522807",
-                "linux-x86_64": "40a52e8fc47b6eb02dfa4ba0b24ba79a9f4e34f3c30b3223d55b949618477af5"
+                "macos-universal": "7c3c88cd943a97e205045dd6545b0bf960a5646d44d86ff08590370a63f1bd6c",
+                "windows-x64": "7d5d168988a476d064e187e54d3839af8451fbbc2b68774960b270a1dd5ca553",
+                "windows-x86": "d5da4649d14dbec75b2c3623a163a254d7e3e5e8cad1499271c54b24406a5a4b",
+                "linux-x86_64": "299fb21599fbe1025c8411b8e9480eb202256667d27e8c313be9e76e246564f9"
             }
         },
         "qt6": {
-            "version": "2023-09-18",
-            "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
+            "version": "2023-09-28",
+            "baseUrl": "https://github.com/falkTX/obs-deps/releases/download",
             "label": "Pre-Built Qt6",
             "hashes": {
-                "macos-universal": "223c112c085e0da3baf257ed3a0a7334b222b0fb411cd686d65eba9ebd3d74f4",
-                "windows-x64": "d57688e751dd6c3a839ee2ed962a6b78e3e162ecd1d2ab350c324a61964cc8ef"
+                "macos-universal": "a5762f7ee377858907b9106fa26be095a9bbd0a51c4eacb940827420ae1683a0",
+                "windows-x64": "7fbe00b068b72f61c58d6291352f6cf37353dd09e4d2cc19efef1a48233dfc1b"
             },
             "debugSymbols": {
-                "windows-x64": "08ada0228d53d5f90e5032fd37c4b7d518e9243158e71ebfb1df7bcab6eb30c3"
+                "windows-x64": "5011605a96411629f6e489d2f42d1a30099628d8a92775ef0cf4644f3b92a4b0"
             }
         },
         "cef": {
