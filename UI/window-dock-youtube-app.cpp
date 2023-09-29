@@ -36,6 +36,7 @@ YouTubeAppDock::YouTubeAppDock(const QString &title)
 	  dockBrowser(nullptr),
 	  cookieManager(nullptr)
 {
+	cef->init_browser();
 	OBSBasic::InitBrowserPanelSafeBlock();
 	AddYouTubeAppDock();
 }
