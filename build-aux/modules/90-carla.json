@@ -1,0 +1,24 @@
+{
+    "name": "carla",
+    "buildsystem": "cmake-ninja",
+    "builddir": true,
+    "subdir": "cmake",
+    "config-opts": [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCARLA_USE_JACK:BOOL=OFF",
+        "-DCARLA_USE_OSC:BOOL=OFF"
+    ],
+    "cleanup": [
+        "/include",
+        "/lib/carla/libcarla_native-plugin.so",
+        "/lib/carla/libcarla_standalone2.so",
+        "/lib/pkgconfig"
+    ],
+    "sources": [
+        {
+            "type": "git",
+            "url": "https://github.com/falkTX/Carla.git",
+            "commit": "070d734cbdc0c64dfea245470f313c81f5d1ca26"
+        }
+    ]
+}

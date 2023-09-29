@@ -19,7 +19,11 @@
         "--talk-name=org.a11y.Bus",
         "--own-name=org.kde.StatusNotifierItem-2-2",
         "--system-talk-name=org.freedesktop.Avahi",
-        "--env=VST_PATH=/app/extensions/Plugins/vst"
+        "--env=CLAP_PATH=/app/extensions/Plugins/clap",
+        "--env=LADSPA_PATH=/app/extensions/Plugins/ladspa",
+        "--env=LV2_PATH=/app/extensions/Plugins/lv2:/app/lib/lv2",
+        "--env=VST_PATH=/app/extensions/Plugins/vst",
+        "--env=VST3_PATH=/app/extensions/Plugins/vst3"
     ],
     "add-extensions": {
         "com.obsproject.Studio.Plugin": {
@@ -34,7 +38,7 @@
             "directory": "extensions/Plugins",
             "version": "22.08",
             "add-ld-path": "lib",
-            "merge-dirs": "vst",
+            "merge-dirs": "clap;ladspa;lv2;vst;vst3",
             "subdirectories": true,
             "no-autodownload": true
         }
@@ -67,6 +71,7 @@
         "modules/50-swig.json",
         "modules/50-v4l-utils.json",
         "modules/90-asio.json",
+        "modules/90-carla.json",
         "modules/90-nlohmann-json.json",
         "modules/90-websocketpp.json",
         "modules/99-cef.json",
