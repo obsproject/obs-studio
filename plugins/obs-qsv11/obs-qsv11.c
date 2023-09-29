@@ -167,8 +167,7 @@ static void obs_qsv_destroy(void *data)
 static void obs_qsv_defaults(obs_data_t *settings, int ver,
 			     enum qsv_codec codec)
 {
-	obs_data_set_default_string(settings, "target_usage",
-				    "TU4: Balanced (Medium Quality)");
+	obs_data_set_default_string(settings, "target_usage", "TU4");
 	obs_data_set_default_int(settings, "bitrate", 2500);
 	obs_data_set_default_int(settings, "max_bitrate", 3000);
 	obs_data_set_default_string(settings, "profile",
@@ -214,6 +213,18 @@ static inline void add_strings(obs_property_t *list, const char *const *strings)
 {
 	while (*strings) {
 		obs_property_list_add_string(list, *strings, *strings);
+		strings++;
+	}
+}
+
+static inline void add_translated_strings(obs_property_t *list,
+					  const char *const *keys,
+					  const char *const *strings)
+{
+	while (*keys && *strings) {
+		obs_property_list_add_string(list, obs_module_text(*keys),
+					     *strings);
+		keys++;
 		strings++;
 	}
 }
@@ -335,24 +346,21 @@ static void update_targetusage(obs_data_t *settings)
 
 	if (astrcmpi(target_usage, "veryslow") == 0 ||
 	    astrcmpi(target_usage, "quality") == 0)
-		obs_data_set_string(settings, "target_usage",
-				    "TU1: Slowest (Best Quality)");
+		obs_data_set_string(settings, "target_usage", "TU1");
 	else if (astrcmpi(target_usage, "slower") == 0)
-		obs_data_set_string(settings, "target_usage", "TU2: Slower");
+		obs_data_set_string(settings, "target_usage", "TU2");
 	else if (astrcmpi(target_usage, "slow") == 0)
-		obs_data_set_string(settings, "target_usage", "TU3: Slow");
+		obs_data_set_string(settings, "target_usage", "TU3");
 	else if (astrcmpi(target_usage, "medium") == 0 ||
 		 astrcmpi(target_usage, "balanced") == 0)
-		obs_data_set_string(settings, "target_usage",
-				    "TU4: Balanced (Medium Quality)");
+		obs_data_set_string(settings, "target_usage", "TU4");
 	else if (astrcmpi(target_usage, "fast") == 0)
-		obs_data_set_string(settings, "target_usage", "TU5: Fast");
+		obs_data_set_string(settings, "target_usage", "TU5");
 	else if (astrcmpi(target_usage, "faster") == 0)
-		obs_data_set_string(settings, "target_usage", "TU6: Faster");
+		obs_data_set_string(settings, "target_usage", "TU6");
 	else if (astrcmpi(target_usage, "veryfast") == 0 ||
 		 astrcmpi(target_usage, "speed") == 0)
-		obs_data_set_string(settings, "target_usage",
-				    "TU7: Fastest (Best Speed)");
+		obs_data_set_string(settings, "target_usage", "TU7");
 }
 
 static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
@@ -465,7 +473,8 @@ static obs_properties_t *obs_qsv_props(enum qsv_codec codec, void *unused,
 	prop = obs_properties_add_list(props, "target_usage", TEXT_SPEED,
 				       OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_STRING);
-	add_strings(prop, qsv_usage_names);
+	add_translated_strings(prop, qsv_usage_translation_keys,
+			       qsv_usage_names);
 
 	prop = obs_properties_add_list(props, "profile", TEXT_PROFILE,
 				       OBS_COMBO_TYPE_LIST,
@@ -561,19 +570,19 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 
 	int width = (int)obs_encoder_get_width(obsqsv->encoder);
 	int height = (int)obs_encoder_get_height(obsqsv->encoder);
-	if (astrcmpi(target_usage, "TU1: Slowest (Best Quality)") == 0)
+	if (astrcmpi(target_usage, "TU1") == 0)
 		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_BEST_QUALITY;
-	else if (astrcmpi(target_usage, "TU4: Balanced (Medium Quality)") == 0)
+	else if (astrcmpi(target_usage, "TU4") == 0)
 		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_BALANCED;
-	else if (astrcmpi(target_usage, "TU7: Fastest (Best Speed)") == 0)
+	else if (astrcmpi(target_usage, "TU7") == 0)
 		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_BEST_SPEED;
-	else if (astrcmpi(target_usage, "TU2: Slower") == 0)
+	else if (astrcmpi(target_usage, "TU2") == 0)
 		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_2;
-	else if (astrcmpi(target_usage, "TU3: Slow") == 0)
+	else if (astrcmpi(target_usage, "TU3") == 0)
 		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_3;
-	else if (astrcmpi(target_usage, "TU5: Fast") == 0)
+	else if (astrcmpi(target_usage, "TU5") == 0)
 		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_5;
-	else if (astrcmpi(target_usage, "TU6: Faster") == 0)
+	else if (astrcmpi(target_usage, "TU6") == 0)
 		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_6;
 
 	if (obsqsv->codec == QSV_CODEC_AVC) {
