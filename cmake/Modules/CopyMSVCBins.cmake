@@ -209,6 +209,18 @@ file(GLOB QT_IMAGEFORMATS_BIN_FILES "${QtCore_PLUGIN_DIR}/imageformats/qsvg.dll"
 
 file(GLOB QT_ICU_BIN_FILES "${QtCore_BIN_DIR}/icu*.dll")
 
+file(
+  GLOB
+  CARLA_BIN_FILES
+  "${CARLAUTILS_INCLUDE_DIR}/../../bin/carla-*.exe"
+  "${CARLAUTILS_INCLUDE_DIR}/../../bin/libcarla_utils.dll"
+  "${CARLAUTILS_INCLUDE_DIR}/../../bin${_bin_suffix}/carla-*.exe"
+  "${CARLAUTILS_INCLUDE_DIR}/../../bin${_bin_suffix}/libcarla_utils.dll"
+  "${CARLAUTILS_INCLUDE_DIR}/../bin/carla-*.exe"
+  "${CARLAUTILS_INCLUDE_DIR}/../bin/libcarla_utils.dll"
+  "${CARLAUTILS_INCLUDE_DIR}/../bin${_bin_suffix}/carla-*.exe"
+  "${CARLAUTILS_INCLUDE_DIR}/../bin${_bin_suffix}/libcarla_utils.dll")
+
 set(ALL_BASE_BIN_FILES
     ${FFMPEG_BIN_FILES}
     ${X264_BIN_FILES}
@@ -219,6 +231,7 @@ set(ALL_BASE_BIN_FILES
     ${LIBFDK_BIN_FILES}
     ${FREETYPE_BIN_FILES}
     ${RNNOISE_BIN_FILES}
+    ${CARLA_BIN_FILES}
     ${QT_ICU_BIN_FILES})
 
 set(ALL_REL_BIN_FILES ${QT_BIN_FILES})
@@ -272,6 +285,7 @@ obs_status(STATUS "curl files: ${CURL_BIN_FILES}")
 obs_status(STATUS "lua files: ${LUA_BIN_FILES}")
 obs_status(STATUS "ssl files: ${SSL_BIN_FILES}")
 obs_status(STATUS "zlib files: ${ZLIB_BIN_FILES}")
+obs_status(STATUS "carla files: ${CARLA_BIN_FILES}")
 obs_status(STATUS "Qt Debug files: ${QT_DEBUG_BIN_FILES}")
 obs_status(STATUS "Qt Debug Platform files: ${QT_DEBUG_PLAT_BIN_FILES}")
 obs_status(STATUS "Qt Debug Styles files: ${QT_DEBUG_STYLES_BIN_FILES}")
