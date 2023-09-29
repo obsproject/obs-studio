@@ -124,20 +124,6 @@ jobs:
     steps:
       - name: 'Add msbuild to PATH'
         uses: microsoft/setup-msbuild@v1
-      - name: Get the version of aws cli 
-        run: aws --version
-        shell: powershell
-      - name: Install specific version of AWS CLI
-        run: |
-          $version = "2.12.4"
-          $zipfile = "AWSCLIV2.zip"
-          Invoke-WebRequest -OutFile $zipfile "https://awscli.amazonaws.com/AWSCLIV2-$version.msi"
-          Start-Process msiexec.exe -Wait -ArgumentList "/i $zipfile /qn"
-          rm $zipfile
-        shell: pwsh
-      - name: Get the version of aws cli after install
-        run: aws --version
-        shell: powershell
       - name: 'Checkout'
         uses: actions/checkout@v3
         with:
