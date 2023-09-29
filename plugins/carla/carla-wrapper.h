@@ -8,7 +8,7 @@
 
 #include <obs-module.h>
 
-// maximum buffer used, can be smaller
+/* maximum buffer used, can be smaller */
 #define MAX_AUDIO_BUFFER_SIZE 512
 
 enum buffer_size_mode {
@@ -19,8 +19,7 @@ enum buffer_size_mode {
 	buffer_size_buffered_max = buffer_size_buffered_512
 };
 
-// ----------------------------------------------------------------------------
-// helper methods
+/* helper methods */
 
 static inline uint32_t bufsize_mode_to_frames(enum buffer_size_mode bufsize)
 {
@@ -34,8 +33,7 @@ static inline uint32_t bufsize_mode_to_frames(enum buffer_size_mode bufsize)
 	}
 }
 
-// ----------------------------------------------------------------------------
-// carla + obs integration methods
+/* carla + obs integration methods */
 
 #ifdef __cplusplus
 extern "C" {
@@ -69,5 +67,3 @@ void carla_priv_readd_properties(struct carla_priv *carla,
 #ifdef __cplusplus
 }
 #endif
-
-// ----------------------------------------------------------------------------

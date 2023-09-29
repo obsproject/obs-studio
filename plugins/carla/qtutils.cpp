@@ -14,8 +14,7 @@
 
 #include "qtutils.h"
 
-//-----------------------------------------------------------------------------
-// open a qt file dialog
+/* open a qt file dialog */
 
 char *carla_qt_file_dialog(bool save, bool isDir, const char *title,
 			   const char *filter)
@@ -38,8 +37,7 @@ char *carla_qt_file_dialog(bool save, bool isDir, const char *title,
 	return ret.data();
 }
 
-//-----------------------------------------------------------------------------
-// call a function on the main thread
+/* call a function on the main thread */
 
 void carla_qt_callback_on_main_thread(void (*callback)(void *param),
 				      void *param)
@@ -61,8 +59,7 @@ void carla_qt_callback_on_main_thread(void (*callback)(void *param),
 				  Q_ARG(int, 0));
 }
 
-//-----------------------------------------------------------------------------
-// get the top-level qt main window
+/* get the top-level qt main window */
 
 QMainWindow *carla_qt_get_main_window(void)
 {
@@ -74,8 +71,7 @@ QMainWindow *carla_qt_get_main_window(void)
 	return nullptr;
 }
 
-//-----------------------------------------------------------------------------
-// show an error dialog (on main thread and without blocking current scope)
+/* show an error dialog (on main thread and without blocking current scope) */
 
 static void carla_show_error_dialog_later(void *const param)
 {
@@ -88,12 +84,13 @@ static void carla_show_error_dialog_later(void *const param)
 
 void carla_show_error_dialog(const char *const text1, const char *const text2)
 {
-	// there is no point showing incomplete error messages
+	/* there is no point showing incomplete error messages */
 	if (text1 == nullptr || text2 == nullptr)
 		return;
 
-	// we cannot do Qt gui stuff outside the main thread
-	// do a little dance so we call ourselves later on the main thread
+	/* we cannot do Qt gui stuff outside the main thread
+	 * do a little dance so we call ourselves later on the main thread
+	 */
 	if (QThread::currentThread() != qApp->thread()) {
 		char **const texts =
 			static_cast<char **>(bmalloc(sizeof(char *) * 2));
@@ -111,7 +108,7 @@ void carla_show_error_dialog(const char *const text1, const char *const text2)
 	QMetaObject::invokeMethod(box, "show", Qt::QueuedConnection);
 }
 
-//-----------------------------------------------------------------------------
+/* Safer QSettings class, which does not throw if type mismatches */
 
 #if QT_VERSION >= 0x60000
 static const auto q_meta_bool = QMetaType(QMetaType::Bool);
@@ -154,5 +151,3 @@ QByteArray QSafeSettings::valueByteArray(const QString &key,
 
 	return defaultValue;
 }
-
-//-----------------------------------------------------------------------------

@@ -6,8 +6,6 @@
 
 #pragma once
 
-//-----------------------------------------------------------------------------
-
 #ifdef __cplusplus
 #include <cstdint>
 #include <QtCore/QSettings>
@@ -17,8 +15,6 @@ extern "C" {
 #include <stdint.h>
 typedef struct QMainWindow QMainWindow;
 #endif
-
-//-----------------------------------------------------------------------------
 
 typedef struct {
 	uint build;
@@ -30,36 +26,24 @@ typedef struct {
 
 const PluginListDialogResults *carla_exec_plugin_list_dialog();
 
-//-----------------------------------------------------------------------------
-// open a qt file dialog
-
+/* open a qt file dialog */
 char *carla_qt_file_dialog(bool save, bool isDir, const char *title,
 			   const char *filter);
 
-//-----------------------------------------------------------------------------
-// call a function on the main thread
-
+/* call a function on the main thread */
 void carla_qt_callback_on_main_thread(void (*callback)(void *param),
 				      void *param);
 
-//-----------------------------------------------------------------------------
-// get the top-level qt main window
-
+/* get the top-level qt main window */
 QMainWindow *carla_qt_get_main_window(void);
 
-//-----------------------------------------------------------------------------
-// show an error dialog (on main thread and without blocking current scope)
-
+/* show an error dialog (on main thread and without blocking current scope) */
 void carla_show_error_dialog(const char *text1, const char *text2);
 
-//-----------------------------------------------------------------------------
-
 #ifdef __cplusplus
-} // extern "C"
+} /* extern "C" */
 
-//-----------------------------------------------------------------------------
-// Safer QSettings class, which does not throw if type mismatches
-
+/* Safer QSettings class, which does not throw if type mismatches */
 class QSafeSettings : public QSettings {
 public:
 	inline QSafeSettings() : QSettings("obs-studio", "obs") {}
@@ -71,9 +55,7 @@ public:
 				  QByteArray defaultValue = {}) const;
 };
 
-//-----------------------------------------------------------------------------
-// Custom QString class with default utf-8 mode and a few extra methods
-
+/* Custom QString class with default utf-8 mode and a few extra methods */
 class QUtf8String : public QString {
 public:
 	explicit inline QUtf8String() : QString() {}
@@ -107,9 +89,7 @@ public:
 #endif
 };
 
-//-----------------------------------------------------------------------------
-// Custom QByteArray class with a few extra methods for Qt5 compat
-
+/* Custom QByteArray class with a few extra methods for Qt5 compat */
 #if QT_VERSION < 0x60000
 class QCompatByteArray : public QByteArray {
 public:
@@ -132,4 +112,4 @@ public:
 typedef QByteArray QCompatByteArray;
 #endif
 
-#endif // __cplusplus
+#endif /* __cplusplus */

@@ -5,8 +5,8 @@
     "subdir": "cmake",
     "config-opts": [
         "-DCMAKE_BUILD_TYPE=Release",
-        "-DCARLA_USE_JACK:BOOL=OFF",
-        "-DCARLA_USE_OSC:BOOL=OFF"
+        "-DCARLA_USE_JACK=OFF",
+        "-DCARLA_USE_OSC=OFF"
     ],
     "cleanup": [
         "/include",

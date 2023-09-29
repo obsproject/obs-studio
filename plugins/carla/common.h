@@ -16,7 +16,7 @@
 		'p', '0', '0', '0', '\0' \
 	}
 
-// property names
+/* property names */
 #define PROP_LOAD_FILE "load-file"
 #define PROP_SELECT_PLUGIN "select-plugin"
 #define PROP_RELOAD_PLUGIN "reload"
@@ -25,8 +25,6 @@
 
 #define PROP_CHUNK "chunk"
 #define PROP_CUSTOM_DATA "customdata"
-
-// ----------------------------------------------------------------------------
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,5 +41,3 @@ void handle_update_request(obs_source_t *source, uint64_t *update_req);
 #ifdef __cplusplus
 }
 #endif
-
-// ----------------------------------------------------------------------------

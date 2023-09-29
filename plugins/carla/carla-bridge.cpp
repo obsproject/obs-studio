@@ -26,9 +26,7 @@
 #include "qtutils.h"
 
 #if defined(__APPLE__) && defined(__aarch64__)
-// ----------------------------------------------------------------------------
-// check the header of a plugin binary to see if it matches mach 64bit + intel
-
+/* check the header of a plugin binary to see if it matches mach 64bit + intel */
 static bool isIntel64BitPlugin(const char *const pluginBundle)
 {
 	const char *const pluginBinary = findBinaryInBundle(pluginBundle);
@@ -50,9 +48,7 @@ static bool isIntel64BitPlugin(const char *const pluginBundle)
 }
 #endif
 
-// ----------------------------------------------------------------------------
-// utility class for reading and deleting incoming bridge text in RAII fashion
-
+/* utility class for reading and deleting incoming bridge text in RAII fashion */
 struct BridgeTextReader {
 	char *text = nullptr;
 
@@ -82,15 +78,14 @@ struct BridgeTextReader {
 	CARLA_DECLARE_NON_COPYABLE(BridgeTextReader)
 };
 
-// ----------------------------------------------------------------------------
-// custom bridge process implementation
+/* custom bridge process implementation */
 
 BridgeProcess::BridgeProcess(const char *const shmIds)
 {
-	// move object to the correct/expected thread
+	/* move object to the correct/expected thread */
 	moveToThread(qApp->thread());
 
-	// setup environment for client side
+	/* setup environment for client side */
 	QProcessEnvironment env(QProcessEnvironment::systemEnvironment());
 	env.insert("ENGINE_BRIDGE_SHM_IDS", shmIds);
 	setProcessEnvironment(env);
@@ -98,13 +93,13 @@ BridgeProcess::BridgeProcess(const char *const shmIds)
 
 void BridgeProcess::start()
 {
-	// pass-through all bridge output
+	/* pass-through all bridge output */
 	setInputChannelMode(QProcess::ForwardedInputChannel);
 	setProcessChannelMode(QProcess::ForwardedChannels);
 	QProcess::start(QIODevice::Unbuffered | QIODevice::ReadOnly);
 }
 
-// NOTE: process instance cannot be used after this!
+/* NOTE: process instance cannot be used after this! */
 void BridgeProcess::stop()
 {
 	if (state() != QProcess::NotRunning) {
@@ -121,14 +116,14 @@ void BridgeProcess::stop()
 	deleteLater();
 }
 
-// ----------------------------------------------------------------------------
+/* carla bridge implementation */
 
 bool carla_bridge::init(uint32_t maxBufferSize, double sampleRate)
 {
-	// add entropy to rand calls, used for finding unused paths
+	/* add entropy to rand calls, used for finding unused paths */
 	std::srand(static_cast<uint>(os_gettime_ns() / 1000000));
 
-	// initialize the several communication channels
+	/* initialize the several communication channels */
 	if (!audiopool.initializeServer()) {
 		blog(LOG_WARNING,
 		     "[carla] Failed to initialize shared memory audio pool");
@@ -153,25 +148,25 @@ bool carla_bridge::init(uint32_t maxBufferSize, double sampleRate)
 		goto fail4;
 	}
 
-	// resize audiopool data to be as large as needed
+	/* resize audiopool data to be as large as needed */
 	audiopool.resize(maxBufferSize, MAX_AV_PLANES, MAX_AV_PLANES);
 
-	// clear realtime data
+	/* clear realtime data */
 	rtClientCtrl.data->procFlags = 0;
 	carla_zeroStruct(rtClientCtrl.data->timeInfo);
 	carla_zeroBytes(rtClientCtrl.data->midiOut,
 			kBridgeRtClientDataMidiOutSize);
 
-	// clear ringbuffers
+	/* clear ringbuffers */
 	rtClientCtrl.clearData();
 	nonRtClientCtrl.clearData();
 	nonRtServerCtrl.clearData();
 
-	// first ever message is bridge API version
+	/* first ever message is bridge API version */
 	nonRtClientCtrl.writeOpcode(kPluginBridgeNonRtClientVersion);
 	nonRtClientCtrl.writeUInt(CARLA_PLUGIN_BRIDGE_API_VERSION_CURRENT);
 
-	// then expected size for each data channel
+	/* then expected size for each data channel */
 	nonRtClientCtrl.writeUInt(
 		static_cast<uint32_t>(sizeof(BridgeRtClientData)));
 	nonRtClientCtrl.writeUInt(
@@ -179,19 +174,19 @@ bool carla_bridge::init(uint32_t maxBufferSize, double sampleRate)
 	nonRtClientCtrl.writeUInt(
 		static_cast<uint32_t>(sizeof(BridgeNonRtServerData)));
 
-	// and finally the initial buffer size and sample rate
+	/* and finally the initial buffer size and sample rate */
 	nonRtClientCtrl.writeOpcode(kPluginBridgeNonRtClientInitialSetup);
 	nonRtClientCtrl.writeUInt(maxBufferSize);
 	nonRtClientCtrl.writeDouble(sampleRate);
 
 	nonRtClientCtrl.commitWrite();
 
-	// report audiopool size to client side
+	/* report audiopool size to client side */
 	rtClientCtrl.writeOpcode(kPluginBridgeRtClientSetAudioPool);
 	rtClientCtrl.writeULong(static_cast<uint64_t>(audiopool.dataSize));
 	rtClientCtrl.commitWrite();
 
-	// FIXME
+	/* FIXME maybe not needed */
 	rtClientCtrl.writeOpcode(kPluginBridgeRtClientSetBufferSize);
 	rtClientCtrl.writeUInt(maxBufferSize);
 	rtClientCtrl.commitWrite();
@@ -215,17 +210,17 @@ fail1:
 
 void carla_bridge::cleanup(const bool clearPluginData)
 {
-	// signal to stop processing audio
+	/* signal to stop processing audio */
 	const bool wasActivated = activated;
 	ready = activated = false;
 
-	// stop bridge process
+	/* stop bridge process */
 	if (childprocess != nullptr) {
-		// make `childprocess` null first
+		/* make `childprocess` null first */
 		BridgeProcess *proc = childprocess;
 		childprocess = nullptr;
 
-		// if process is running, ask nicely for it to close
+		/* if process is running, ask nicely for it to close */
 		if (proc->state() != QProcess::NotRunning) {
 			{
 				const CarlaMutexLocker cml(
@@ -248,7 +243,7 @@ void carla_bridge::cleanup(const bool clearPluginData)
 			if (!timedErr && !timedOut)
 				wait("stopping", 3000);
 		} else {
-			// log warning in case plugin process crashed
+			/* log warning in case plugin process crashed */
 			if (proc->exitStatus() == QProcess::CrashExit) {
 				blog(LOG_WARNING, "[carla] bridge crashed");
 
@@ -260,17 +255,17 @@ void carla_bridge::cleanup(const bool clearPluginData)
 			}
 		}
 
-		// let Qt do the final cleanup on the main thread
+		/* let Qt do the final cleanup on the main thread */
 		QMetaObject::invokeMethod(proc, "stop");
 	}
 
-	// cleanup shared memory bits
+	/* cleanup shared memory bits */
 	nonRtServerCtrl.clear();
 	nonRtClientCtrl.clear();
 	rtClientCtrl.clear();
 	audiopool.clear();
 
-	// clear cached plugin data if requested
+	/* clear cached plugin data if requested */
 	if (clearPluginData) {
 		info.clear();
 		chunk.clear();
@@ -282,13 +277,13 @@ bool carla_bridge::start(const BinaryType btype, const PluginType ptype,
 			 const char *label, const char *filename,
 			 const int64_t uniqueId)
 {
-	// make sure we are trying to load something valid
+	/* make sure we are trying to load something valid */
 	if (btype == BINARY_NONE || ptype == PLUGIN_NONE) {
 		setLastError("Invalid plugin state");
 		return false;
 	}
 
-	// find path to bridge binary
+	/* find path to bridge binary */
 	QString bridgeBinary(QString::fromUtf8(get_carla_bin_path()));
 
 	if (btype == BINARY_NATIVE) {
@@ -320,7 +315,7 @@ bool carla_bridge::start(const BinaryType btype, const PluginType ptype,
 		return false;
 	}
 
-	// create string of shared memory ids to pass into the bridge process
+	/* create string of shared memory ids to pass into the bridge process */
 	char shmIdsStr[6 * 4 + 1] = {};
 
 	size_t len = audiopool.filename.length();
@@ -339,20 +334,21 @@ bool carla_bridge::start(const BinaryType btype, const PluginType ptype,
 	CARLA_SAFE_ASSERT_RETURN(len > 6, false);
 	std::strncpy(shmIdsStr + 18, &nonRtServerCtrl.filename[len - 6], 6);
 
-	// create bridge process and setup arguments
+	/* create bridge process and setup arguments */
 	BridgeProcess *proc = new BridgeProcess(shmIdsStr);
 
 	QStringList arguments;
 
 #if defined(__APPLE__) && defined(__aarch64__)
-	// see if this binary needs special help (x86_64 plugins under arm64 systems)
+	/* see if this binary needs special help (x86_64 plugins under arm64 systems) */
 	switch (ptype) {
 	case PLUGIN_VST2:
 	case PLUGIN_VST3:
 	case PLUGIN_CLAP:
 		if (isIntel64BitPlugin(filename)) {
-			// TODO we need to hook into qprocess for:
-			// posix_spawnattr_setbinpref_np + CPU_TYPE_X86_64
+			/* TODO we need to hook into qprocess for:
+			 * posix_spawnattr_setbinpref_np + CPU_TYPE_X86_64
+			 */
 			arguments.append("-arch");
 			arguments.append("x86_64");
 			arguments.append(bridgeBinary);
@@ -363,31 +359,31 @@ bool carla_bridge::start(const BinaryType btype, const PluginType ptype,
 	}
 #endif
 
-	// do not use null strings for label and filename
+	/* do not use null strings for label and filename */
 	if (label == nullptr || label[0] == '\0')
 		label = "(none)";
 	if (filename == nullptr || filename[0] == '\0')
 		filename = "(none)";
 
-	// arg 1: plugin type
+	/* arg 1: plugin type */
 	arguments.append(QString::fromUtf8(getPluginTypeAsString(ptype)));
 
-	// arg 2: filename
+	/* arg 2: filename */
 	arguments.append(QString::fromUtf8(filename));
 
-	// arg 3: label
+	/* arg 3: label */
 	arguments.append(QString::fromUtf8(label));
 
-	// arg 4: uniqueId
+	/* arg 4: uniqueId */
 	arguments.append(QString::number(uniqueId));
 
 	proc->setProgram(bridgeBinary);
 	proc->setArguments(arguments);
 
-	// start process on main thread
+	/* start process on main thread */
 	QMetaObject::invokeMethod(proc, "start");
 
-	// check if it started correctly
+	/* check if it started correctly */
 	const bool started = proc->waitForStarted(5000);
 
 	if (!started) {
@@ -396,19 +392,20 @@ bool carla_bridge::start(const BinaryType btype, const PluginType ptype,
 		return false;
 	}
 
-	// wait for plugin process to start talking to us
+	/* wait for plugin process to start talking to us */
 	ready = false;
 	timedErr = false;
 	timedOut = false;
 
 	const uint64_t start_time = os_gettime_ns();
 
-	// NOTE: we cannot rely on `proc->state() == QProcess::Running` here
-	// as Qt only updates QProcess state on main thread
+	/* NOTE: we cannot rely on `proc->state() == QProcess::Running` here
+	 * as Qt only updates QProcess state on main thread
+	 */
 	while (proc != nullptr && !ready && !timedErr) {
 		os_sleep_ms(5);
 
-		// timeout after 5s
+		/* timeout after 5s */
 		if (os_gettime_ns() - start_time > 5 * 1000000000ULL)
 			break;
 
@@ -423,10 +420,10 @@ bool carla_bridge::start(const BinaryType btype, const PluginType ptype,
 		return false;
 	}
 
-	// refuse to load plugin with incompatible IO
+	/* refuse to load plugin with incompatible IO */
 	if (info.hasCV || info.numAudioIns > MAX_AV_PLANES ||
 	    info.numAudioOuts > MAX_AV_PLANES) {
-		// tell bridge process to quit
+		/* tell bridge process to quit */
 		nonRtClientCtrl.writeOpcode(kPluginBridgeNonRtClientQuit);
 		nonRtClientCtrl.commitWrite();
 		rtClientCtrl.writeOpcode(kPluginBridgeRtClientQuit);
@@ -434,13 +431,13 @@ bool carla_bridge::start(const BinaryType btype, const PluginType ptype,
 		wait("stopping", 3000);
 		QMetaObject::invokeMethod(proc, "stop");
 
-		// cleanup shared memory bits
+		/* cleanup shared memory bits */
 		nonRtServerCtrl.clear();
 		nonRtClientCtrl.clear();
 		rtClientCtrl.clear();
 		audiopool.clear();
 
-		// also clear cached info
+		/* also clear cached info */
 		info.clear();
 		chunk.clear();
 		clear_custom_data();
@@ -452,14 +449,14 @@ bool carla_bridge::start(const BinaryType btype, const PluginType ptype,
 		return false;
 	}
 
-	// cache relevant information for later
+	/* cache relevant information for later */
 	info.btype = btype;
 	info.ptype = ptype;
 	info.filename = filename;
 	info.label = label;
 	info.uniqueId = uniqueId;
 
-	// finally assign childprocess and set active
+	/* finally assign childprocess and set active */
 	childprocess = proc;
 
 	return true;
@@ -522,8 +519,6 @@ bool carla_bridge::wait(const char *const action, const uint msecs)
 	blog(LOG_WARNING, "[carla] wait(%s) timed out", action);
 	return false;
 }
-
-// ----------------------------------------------------------------------------
 
 void carla_bridge::set_value(uint index, float value)
 {
@@ -642,13 +637,13 @@ void carla_bridge::reload()
 		CARLA_SAFE_EXCEPTION("reload - waitForClient");
 	}
 
-	// wait for plugin process to start talking back to us
+	/* wait for plugin process to start talking back to us */
 	const uint64_t start_time = os_gettime_ns();
 
 	while (childprocess != nullptr && !ready) {
 		os_sleep_ms(5);
 
-		// timeout after 1s
+		/* timeout after 1s */
 		if (os_gettime_ns() - start_time > 1000000000ULL)
 			break;
 
@@ -801,7 +796,7 @@ void carla_bridge::add_custom_data(const char *const type,
 	CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0', );
 	CARLA_SAFE_ASSERT_RETURN(value != nullptr, );
 
-	// Check if we already have this key
+	/* Check if we already have this key */
 	bool found = false;
 	for (CustomData &cdata : customData) {
 		if (std::strcmp(cdata.key, key) == 0) {
@@ -812,7 +807,7 @@ void carla_bridge::add_custom_data(const char *const type,
 		}
 	}
 
-	// Otherwise store it
+	/* Otherwise store it */
 	if (!found) {
 		CustomData cdata = {};
 		cdata.type = bstrdup(type);
@@ -943,31 +938,32 @@ void carla_bridge::save_and_wait()
 	{
 		const CarlaMutexLocker cml(nonRtClientCtrl.mutex);
 
-		// deactivate bridge client-side ping check
-		// some plugins block during save, preventing regular ping timings
+		/* deactivate bridge client-side ping check
+		 * some plugins block during save, preventing regular ping timings
+		 */
 		nonRtClientCtrl.writeOpcode(kPluginBridgeNonRtClientPingOnOff);
 		nonRtClientCtrl.writeBool(false);
 		nonRtClientCtrl.commitWrite();
 
-		// tell plugin bridge to save and report any pending data
+		/* tell plugin bridge to save and report any pending data */
 		nonRtClientCtrl.writeOpcode(
 			kPluginBridgeNonRtClientPrepareForSave);
 		nonRtClientCtrl.commitWrite();
 	}
 
-	// wait for "saved" reply
+	/* wait for "saved" reply */
 	const uint64_t start_time = os_gettime_ns();
 
 	while (is_running() && !saved) {
 		os_sleep_ms(5);
 
-		// timeout after 10s
+		/* timeout after 10s */
 		if (os_gettime_ns() - start_time > 10 * 1000000000ULL)
 			break;
 
 		readMessages();
 
-		// deactivate plugin if we timeout during save
+		/* deactivate plugin if we timeout during save */
 		if (timedOut && activated) {
 			activated = false;
 
@@ -982,7 +978,7 @@ void carla_bridge::save_and_wait()
 	if (is_running()) {
 		const CarlaMutexLocker cml(nonRtClientCtrl.mutex);
 
-		// reactivate ping check
+		/* reactivate ping check */
 		nonRtClientCtrl.writeOpcode(kPluginBridgeNonRtClientPingOnOff);
 		nonRtClientCtrl.writeBool(true);
 		nonRtClientCtrl.commitWrite();
@@ -1015,21 +1011,19 @@ const char *carla_bridge::get_last_error() const noexcept
 	return lastError;
 }
 
-// ----------------------------------------------------------------------------
-
 void carla_bridge::readMessages()
 {
 	while (nonRtServerCtrl.isDataAvailableForReading()) {
 		const PluginBridgeNonRtServerOpcode opcode =
 			nonRtServerCtrl.readOpcode();
 
-		// #ifdef DEBUG
+		/* #ifdef DEBUG */
 		if (opcode != kPluginBridgeNonRtServerPong &&
 		    opcode != kPluginBridgeNonRtServerParameterValue2) {
 			blog(LOG_DEBUG, "[carla] got opcode: %s",
 			     PluginBridgeNonRtServerOpcode2str(opcode));
 		}
-		// #endif
+		/* #endif */
 
 		switch (opcode) {
 		case kPluginBridgeNonRtServerNull:
@@ -1039,19 +1033,22 @@ void carla_bridge::readMessages()
 			pendingPing = false;
 			break;
 
-		// uint/version
+		/* uint/version */
 		case kPluginBridgeNonRtServerVersion:
 			clientBridgeVersion = nonRtServerCtrl.readUInt();
 			break;
 
-		// uint/category, uint/hints, uint/optionsAvailable, uint/optionsEnabled, long/uniqueId
+		/* uint/category
+		 * uint/hints
+		 * uint/optionsAvailable
+		 * uint/optionsEnabled
+		 * long/uniqueId
+		 */
 		case kPluginBridgeNonRtServerPluginInfo1: {
-			// const uint32_t category =
-			nonRtServerCtrl.readUInt();
+			nonRtServerCtrl.readUInt(); /* category */
 			info.hints = nonRtServerCtrl.readUInt() |
 				     PLUGIN_IS_BRIDGE;
-			// const uint32_t optionAv =
-			nonRtServerCtrl.readUInt();
+			nonRtServerCtrl.readUInt(); /* optionsAvailable */
 			info.options = nonRtServerCtrl.readUInt();
 			const int64_t uniqueId = nonRtServerCtrl.readLong();
 
@@ -1062,45 +1059,55 @@ void carla_bridge::readMessages()
 			}
 		} break;
 
-		// uint/size, str[] (realName), uint/size, str[] (label), uint/size, str[] (maker), uint/size, str[] (copyright)
+		/* uint/size, str[] (realName)
+		 * uint/size, str[] (label)
+		 * uint/size, str[] (maker)
+		 * uint/size, str[] (copyright)
+		 */
 		case kPluginBridgeNonRtServerPluginInfo2: {
-			// realName
+			/* realName */
 			const BridgeTextReader name(nonRtServerCtrl);
 			info.name = name.text;
 
-			// label
+			/* label */
 			if (const uint32_t size = nonRtServerCtrl.readUInt())
 				nonRtServerCtrl.skipRead(size);
 
-			// maker
+			/* maker */
 			if (const uint32_t size = nonRtServerCtrl.readUInt())
 				nonRtServerCtrl.skipRead(size);
 
-			// copyright
+			/* copyright */
 			if (const uint32_t size = nonRtServerCtrl.readUInt())
 				nonRtServerCtrl.skipRead(size);
 		} break;
 
-		// uint/ins, uint/outs
+		/* uint/ins
+		 * uint/outs
+		 */
 		case kPluginBridgeNonRtServerAudioCount:
 			info.numAudioIns = nonRtServerCtrl.readUInt();
 			info.numAudioOuts = nonRtServerCtrl.readUInt();
 			break;
 
-		// uint/ins, uint/outs
+		/* uint/ins
+		 * uint/outs
+		 */
 		case kPluginBridgeNonRtServerMidiCount:
 			nonRtServerCtrl.readUInt();
 			nonRtServerCtrl.readUInt();
 			break;
 
-		// uint/ins, uint/outs
+		/* uint/ins
+		 * uint/outs
+		 */
 		case kPluginBridgeNonRtServerCvCount: {
 			const uint32_t cvIns = nonRtServerCtrl.readUInt();
 			const uint32_t cvOuts = nonRtServerCtrl.readUInt();
 			info.hasCV = cvIns + cvOuts != 0;
 		} break;
 
-		// uint/count
+		/* uint/count */
 		case kPluginBridgeNonRtServerParameterCount: {
 			paramCount = nonRtServerCtrl.readUInt();
 
@@ -1112,28 +1119,36 @@ void carla_bridge::readMessages()
 				paramDetails = nullptr;
 		} break;
 
-		// uint/count
+		/* uint/count */
 		case kPluginBridgeNonRtServerProgramCount:
 			nonRtServerCtrl.readUInt();
 			break;
 
-		// uint/count
+		/* uint/count */
 		case kPluginBridgeNonRtServerMidiProgramCount:
 			nonRtServerCtrl.readUInt();
 			break;
 
-		// byte/type, uint/index, uint/size, str[] (name)
+		/* byte/type
+		 * uint/index
+		 * uint/size, str[] (name)
+		 */
 		case kPluginBridgeNonRtServerPortName: {
 			nonRtServerCtrl.readByte();
 			nonRtServerCtrl.readUInt();
 
-			// name
+			/* name */
 			if (const uint32_t size = nonRtServerCtrl.readUInt())
 				nonRtServerCtrl.skipRead(size);
 
 		} break;
 
-		// uint/index, int/rindex, uint/type, uint/hints, short/cc
+		/* uint/index
+		 * int/rindex
+		 * uint/type
+		 * uint/hints
+		 * short/cc
+		 */
 		case kPluginBridgeNonRtServerParameterData1: {
 			const uint32_t index = nonRtServerCtrl.readUInt();
 			nonRtServerCtrl.readInt();
@@ -1155,17 +1170,21 @@ void carla_bridge::readMessages()
 			paramDetails[index].hints = hints;
 		} break;
 
-		// uint/index, uint/size, str[] (name), uint/size, str[] (unit)
+		/* uint/index
+		 * uint/size, str[] (name)
+		 * uint/size, str[] (symbol)
+		 * uint/size, str[] (unit)
+		 */
 		case kPluginBridgeNonRtServerParameterData2: {
 			const uint32_t index = nonRtServerCtrl.readUInt();
 
-			// name
+			/* name */
 			const BridgeTextReader name(nonRtServerCtrl);
 
-			// symbol
+			/* symbol */
 			const BridgeTextReader symbol(nonRtServerCtrl);
 
-			// unit
+			/* unit */
 			const BridgeTextReader unit(nonRtServerCtrl);
 
 			CARLA_SAFE_ASSERT_UINT2_BREAK(index < paramCount, index,
@@ -1178,7 +1197,14 @@ void carla_bridge::readMessages()
 			}
 		} break;
 
-		// uint/index, float/def, float/min, float/max, float/step, float/stepSmall, float/stepLarge
+		/* uint/index
+		 * float/def
+		 * float/min
+		 * float/max
+		 * float/step
+		 * float/stepSmall
+		 * float/stepLarge
+		 */
 		case kPluginBridgeNonRtServerParameterRanges: {
 			const uint32_t index = nonRtServerCtrl.readUInt();
 			const float def = nonRtServerCtrl.readFloat();
@@ -1203,7 +1229,9 @@ void carla_bridge::readMessages()
 			}
 		} break;
 
-		// uint/index, float/value
+		/* uint/index
+		 * float/value
+		 */
 		case kPluginBridgeNonRtServerParameterValue: {
 			const uint32_t index = nonRtServerCtrl.readUInt();
 			const float value = nonRtServerCtrl.readFloat();
@@ -1218,7 +1246,7 @@ void carla_bridge::readMessages()
 					paramDetails[index].value = fixedValue;
 
 					if (callback != nullptr) {
-						// skip parameters that we do not show
+						/* skip parameters that we do not show */
 						if ((paramDetails[index].hints &
 						     PARAMETER_IS_ENABLED) == 0)
 							break;
@@ -1230,7 +1258,9 @@ void carla_bridge::readMessages()
 			}
 		} break;
 
-		// uint/index, float/value
+		/* uint/index
+		 * float/value
+		 */
 		case kPluginBridgeNonRtServerParameterValue2: {
 			const uint32_t index = nonRtServerCtrl.readUInt();
 			const float value = nonRtServerCtrl.readFloat();
@@ -1243,13 +1273,17 @@ void carla_bridge::readMessages()
 			}
 		} break;
 
-		// uint/index, bool/touch
+		/* uint/index
+		 * bool/touch
+		 */
 		case kPluginBridgeNonRtServerParameterTouch:
 			nonRtServerCtrl.readUInt();
 			nonRtServerCtrl.readBool();
 			break;
 
-		// uint/index, float/value
+		/* uint/index
+		 * float/value
+		 */
 		case kPluginBridgeNonRtServerDefaultValue: {
 			const uint32_t index = nonRtServerCtrl.readUInt();
 			const float value = nonRtServerCtrl.readFloat();
@@ -1258,17 +1292,19 @@ void carla_bridge::readMessages()
 				paramDetails[index].def = value;
 		} break;
 
-		// int/index
+		/* int/index */
 		case kPluginBridgeNonRtServerCurrentProgram:
 			nonRtServerCtrl.readInt();
 			break;
 
-		// int/index
+		/* int/index */
 		case kPluginBridgeNonRtServerCurrentMidiProgram:
 			nonRtServerCtrl.readInt();
 			break;
 
-		// uint/index, uint/size, str[] (name)
+		/* uint/index
+		 * uint/size, str[] (name)
+		 */
 		case kPluginBridgeNonRtServerProgramName: {
 			nonRtServerCtrl.readUInt();
 
@@ -1276,32 +1312,39 @@ void carla_bridge::readMessages()
 				nonRtServerCtrl.skipRead(size);
 		} break;
 
-		// uint/index, uint/bank, uint/program, uint/size, str[] (name)
+		/* uint/index
+		 * uint/bank
+		 * uint/program
+		 * uint/size, str[] (name)
+		 */
 		case kPluginBridgeNonRtServerMidiProgramData: {
 			nonRtServerCtrl.readUInt();
 			nonRtServerCtrl.readUInt();
 			nonRtServerCtrl.readUInt();
 
-			// name
+			/* name */
 			if (const uint32_t size = nonRtServerCtrl.readUInt())
 				nonRtServerCtrl.skipRead(size);
 		} break;
 
-		// uint/size, str[], uint/size, str[], uint/size, str[]
+		/* uint/size, str[]
+		 * uint/size, str[]
+		 * uint/size, str[]
+		 */
 		case kPluginBridgeNonRtServerSetCustomData: {
 			const uint32_t maxLocalValueLen =
 				clientBridgeVersion >= 10 ? 4096 : 16384;
 
-			// type
+			/* type */
 			const BridgeTextReader type(nonRtServerCtrl);
 
-			// key
+			/* key */
 			const BridgeTextReader key(nonRtServerCtrl);
 
-			// value
+			/* value */
 			const uint32_t valueSize = nonRtServerCtrl.readUInt();
 
-			// special case for big values
+			/* special case for big values */
 			if (valueSize > maxLocalValueLen) {
 				const BridgeTextReader bigValueFilePath(
 					nonRtServerCtrl, valueSize);
@@ -1329,9 +1372,8 @@ void carla_bridge::readMessages()
 
 		} break;
 
-		// uint/size, str[] (filename, base64 content)
+		/* uint/size, str[] (filename, base64 content) */
 		case kPluginBridgeNonRtServerSetChunkDataFile: {
-			// chunkFilePath
 			const BridgeTextReader chunkFilePath(nonRtServerCtrl);
 
 			QString realChunkFilePath(
@@ -1347,12 +1389,14 @@ void carla_bridge::readMessages()
 			}
 		} break;
 
-		// uint/latency
+		/* uint/latency */
 		case kPluginBridgeNonRtServerSetLatency:
 			nonRtServerCtrl.readUInt();
 			break;
 
-		// uint/index, uint/size, str[] (name)
+		/* uint/index
+		 * uint/size, str[] (name)
+		 */
 		case kPluginBridgeNonRtServerSetParameterText: {
 			nonRtServerCtrl.readInt();
 
@@ -1368,12 +1412,14 @@ void carla_bridge::readMessages()
 			saved = true;
 			break;
 
-		// ulong/window-id
+		/* ulong/window-id */
 		case kPluginBridgeNonRtServerRespEmbedUI:
 			nonRtServerCtrl.readULong();
 			break;
 
-		// uint/width, uint/height
+		/* uint/width
+		 * uint/height
+		 */
 		case kPluginBridgeNonRtServerResizeEmbedUI:
 			nonRtServerCtrl.readUInt();
 			nonRtServerCtrl.readUInt();
@@ -1382,7 +1428,7 @@ void carla_bridge::readMessages()
 		case kPluginBridgeNonRtServerUiClosed:
 			break;
 
-		// uint/size, str[]
+		/* uint/size, str[] */
 		case kPluginBridgeNonRtServerError: {
 			const BridgeTextReader error(nonRtServerCtrl);
 			timedErr = true;
@@ -1393,12 +1439,8 @@ void carla_bridge::readMessages()
 	}
 }
 
-// ----------------------------------------------------------------------------
-
 void carla_bridge::setLastError(const char *const error)
 {
 	bfree(lastError);
 	lastError = bstrdup(error);
 }
-
-// ----------------------------------------------------------------------------

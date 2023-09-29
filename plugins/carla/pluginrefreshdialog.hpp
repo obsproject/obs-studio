@@ -10,8 +10,7 @@
 
 #include "qtutils.h"
 
-// ----------------------------------------------------------------------------
-// Plugin Refresh Dialog
+/* Plugin Refresh Dialog */
 
 struct PluginRefreshDialog : QDialog, Ui_PluginRefreshDialog {
 	explicit PluginRefreshDialog(QWidget *const parent) : QDialog(parent)
@@ -27,8 +26,7 @@ struct PluginRefreshDialog : QDialog, Ui_PluginRefreshDialog {
 		b_skip->setEnabled(false);
 		ch_invalid->setEnabled(false);
 
-		// ------------------------------------------------------------
-		// Load settings
+		/* Load settings */
 
 		{
 			const QSafeSettings settings;
@@ -46,20 +44,17 @@ struct PluginRefreshDialog : QDialog, Ui_PluginRefreshDialog {
 				"PluginRefreshDialog/CheckInvalid", false));
 		}
 
-		// ------------------------------------------------------------
-		// Set-up Icons
+		/* Set-up Icons */
 
 		b_start->setProperty("themeID", "playIcon");
 
-		// ------------------------------------------------------------
-		// Set-up connections
+		/* Set-up connections */
 
 		QObject::connect(this, &QDialog::finished, this,
 				 &PluginRefreshDialog::saveSettings);
 	}
 
-	// --------------------------------------------------------------------
-	// private slots
+	/* private slots */
 
 private Q_SLOTS:
 	void saveSettings()
@@ -73,5 +68,3 @@ private Q_SLOTS:
 				  ch_invalid->isChecked());
 	}
 };
-
-// ----------------------------------------------------------------------------

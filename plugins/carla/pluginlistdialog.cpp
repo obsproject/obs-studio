@@ -19,8 +19,7 @@
 
 CARLA_BACKEND_USE_NAMESPACE
 
-// ----------------------------------------------------------------------------
-// check if the plugin IO makes sense for OBS
+/* check if the plugin IO makes sense for OBS */
 
 template<class T> static bool isSupportedIO(const T &info)
 {
@@ -29,8 +28,7 @@ template<class T> static bool isSupportedIO(const T &info)
 	       info.audioOuts <= MAX_AV_PLANES;
 }
 
-// ----------------------------------------------------------------------------
-// getenv with a fallback value if unset
+/* getenv with a fallback value if unset */
 
 static inline const char *getEnvWithFallback(const char *const env,
 					     const char *const fallback)
@@ -41,8 +39,7 @@ static inline const char *getEnvWithFallback(const char *const env,
 	return fallback;
 }
 
-// ----------------------------------------------------------------------------
-// Plugin paths (from env vars first, then default locations)
+/* Plugin paths (from env vars first, then default locations) */
 
 struct PluginPaths {
 	QUtf8String ladspa;
@@ -54,7 +51,7 @@ struct PluginPaths {
 
 	PluginPaths()
 	{
-		// get common env vars first
+		/* get common env vars first */
 		const QString HOME = QDir::toNativeSeparators(QDir::homePath());
 
 #if defined(Q_OS_WINDOWS)
@@ -65,7 +62,7 @@ struct PluginPaths {
 		const char *const envCOMMONPROGRAMFILES =
 			std::getenv("COMMONPROGRAMFILES");
 
-		// small integrity tests
+		/* small integrity tests */
 		if (envAPPDATA == nullptr) {
 			qFatal("APPDATA variable not set, cannot continue");
 			abort();
@@ -90,11 +87,11 @@ struct PluginPaths {
 			"XDG_CONFIG_HOME", (HOME + "/.config").toUtf8()));
 #endif
 
-		// now we set paths, listing format path spec if available
+		/* now we set paths, listing format path spec if available */
 		if (const char *const envLADSPA = std::getenv("LADSPA_PATH")) {
 			ladspa = envLADSPA;
 		} else {
-			// no official spec for LADSPA, use most common paths
+			/* no official spec for LADSPA, use most common paths */
 #if defined(Q_OS_WINDOWS)
 			ladspa = APPDATA + "\\LADSPA";
 			ladspa += ";" + PROGRAMFILES + "\\LADSPA";
@@ -111,8 +108,9 @@ struct PluginPaths {
 		if (const char *const envLV2 = std::getenv("LV2_PATH")) {
 			lv2 = envLV2;
 		} else {
-			// use path spec as defined in:
-			// https://lv2plug.in/pages/filesystem-hierarchy-standard.html
+			/* use path spec as defined in:
+			 * https://lv2plug.in/pages/filesystem-hierarchy-standard.html
+			 */
 #if defined(Q_OS_WINDOWS)
 			lv2 = APPDATA + "\\LV2";
 			lv2 += ";" + COMMONPROGRAMFILES + "\\LV2";
@@ -130,19 +128,21 @@ struct PluginPaths {
 			vst2 = envVST2;
 		} else {
 #if defined(Q_OS_WINDOWS)
-			// use path spec as defined in:
-			// https://helpcenter.steinberg.de/hc/en-us/articles/115000177084
+			/* use path spec as defined in:
+			 * https://helpcenter.steinberg.de/hc/en-us/articles/115000177084
+			 */
 			vst2 = PROGRAMFILES + "\\VSTPlugins";
 			vst2 += ";" + PROGRAMFILES + "\\Steinberg\\VSTPlugins";
 			vst2 += ";" + COMMONPROGRAMFILES + "\\VST2";
 			vst2 += ";" + COMMONPROGRAMFILES + "\\Steinberg\\VST2";
 #elif defined(Q_OS_DARWIN)
-			// use path spec as defined in:
-			// https://helpcenter.steinberg.de/hc/en-us/articles/115000171310
+			/* use path spec as defined in:
+			 * https://helpcenter.steinberg.de/hc/en-us/articles/115000171310
+			 */
 			vst2 = HOME + "/Library/Audio/Plug-Ins/VST";
 			vst2 += ":/Library/Audio/Plug-Ins/VST";
 #else
-			// no official spec for VST2 on non-win/mac, use most common paths
+			/* no official spec for VST2 on non-win/mac, use most common paths */
 			vst2 = HOME + "/.vst";
 			vst2 += ":" + HOME + "/.lxvst";
 			vst2 += ":/usr/local/lib/vst";
@@ -155,8 +155,9 @@ struct PluginPaths {
 		if (const char *const envVST3 = std::getenv("VST3_PATH")) {
 			vst3 = envVST3;
 		} else {
-			// use path spec as defined in:
-			// https://steinbergmedia.github.io/vst3_dev_portal/pages/Technical+Documentation/Locations+Format/Plugin+Locations.html
+			/* use path spec as defined in:
+			 * https://steinbergmedia.github.io/vst3_dev_portal/pages/Technical+Documentation/Locations+Format/Plugin+Locations.html
+			 */
 #if defined(Q_OS_WINDOWS)
 			vst3 = LOCALAPPDATA + "\\Programs\\Common\\VST3";
 			vst3 += ";" + COMMONPROGRAMFILES + "\\VST3";
@@ -173,8 +174,9 @@ struct PluginPaths {
 		if (const char *const envCLAP = std::getenv("CLAP_PATH")) {
 			clap = envCLAP;
 		} else {
-			// use path spec as defined in:
-			// https://github.com/free-audio/clap/blob/main/include/clap/entry.h
+			/* use path spec as defined in:
+			 * https://github.com/free-audio/clap/blob/main/include/clap/entry.h
+			 */
 #if defined(Q_OS_WINDOWS)
 			clap = LOCALAPPDATA + "\\Programs\\Common\\CLAP";
 			clap += ";" + COMMONPROGRAMFILES + "\\CLAP";
@@ -191,7 +193,7 @@ struct PluginPaths {
 		if (const char *const envJSFX = std::getenv("JSFX_PATH")) {
 			jsfx = envJSFX;
 		} else {
-			// there is no path spec, use REAPER's user data directory
+			/* there is no path spec, use REAPER's user data directory */
 #if defined(Q_OS_WINDOWS)
 			jsfx = APPDATA + "\\REAPER\\Effects";
 #elif defined(Q_OS_DARWIN)
@@ -204,10 +206,9 @@ struct PluginPaths {
 	}
 };
 
-// ----------------------------------------------------------------------------
-// Qt-compatible plugin info (convert to and from QVariant)
+/* Qt-compatible plugin info (convert to and from QVariant) */
 
-// base details, nicely packed and POD-only so we can directly use as binary
+/* base details, nicely packed and POD-only so we can directly use as binary */
 struct PluginInfoHeader {
 	uint16_t build;
 	uint16_t type;
@@ -223,7 +224,7 @@ struct PluginInfoHeader {
 	uint16_t parameterOuts;
 };
 
-// full details, now with non-POD types
+/* full details, now with non-POD types */
 struct PluginInfo : PluginInfoHeader {
 	QString category;
 	QString filename;
@@ -232,17 +233,17 @@ struct PluginInfo : PluginInfoHeader {
 	QString maker;
 };
 
-// convert PluginInfo to Qt types
+/* convert PluginInfo to Qt types */
 static QVariant asByteArray(const PluginInfo &info)
 {
 	QByteArray qdata;
 
-	// start with the POD data, stored as-is
+	/* start with the POD data, stored as-is */
 	qdata.append(
 		static_cast<const char *>(static_cast<const void *>(&info)),
 		sizeof(PluginInfoHeader));
 
-	// then all the strings, with a null terminating byte
+	/* then all the strings, with a null terminating byte */
 	{
 		const QByteArray qcategory(info.category.toUtf8());
 		qdata += qcategory.constData();
@@ -281,16 +282,16 @@ static QVariant asVariant(const PluginInfo &info)
 	return QVariant(asByteArray(info));
 }
 
-// convert Qt types to PluginInfo
+/* convert Qt types to PluginInfo */
 static PluginInfo asPluginInfo(const QByteArray &qdata)
 {
-	// make sure data is big enough to fit POD data + 5 strings
+	/* make sure data is big enough to fit POD data + 5 strings */
 	CARLA_SAFE_ASSERT_RETURN(static_cast<size_t>(qdata.size()) >=
 					 sizeof(PluginInfoHeader) +
 						 sizeof(char) * 5,
 				 {});
 
-	// read POD data first
+	/* read POD data first */
 	const PluginInfoHeader *const data =
 		static_cast<const PluginInfoHeader *>(
 			static_cast<const void *>(qdata.constData()));
@@ -312,7 +313,7 @@ static PluginInfo asPluginInfo(const QByteArray &qdata)
 			   {},
 			   {}};
 
-	// then all the strings, keeping the same order as in `asVariant`
+	/* then all the strings, keeping the same order as in `asVariant` */
 	const char *sdata =
 		static_cast<const char *>(static_cast<const void *>(data + 1));
 
@@ -360,7 +361,7 @@ static QList<PluginInfo> asPluginInfoList(const QVariant &var)
 }
 
 #ifndef CARLA_2_6_FEATURES
-// convert cached plugin stuff to PluginInfo
+/* convert cached plugin stuff to PluginInfo */
 static PluginInfo asPluginInfo(const CarlaCachedPluginInfo *const desc,
 			       const PluginType ptype)
 {
@@ -395,16 +396,15 @@ static PluginInfo asPluginInfo(const CarlaCachedPluginInfo *const desc,
 }
 #endif
 
-// ----------------------------------------------------------------------------
-// Qt-compatible plugin favorite (convert to and from QVariant)
+/* Qt-compatible plugin favorite (convert to and from QVariant) */
 
-// base details, nicely packed and POD-only so we can directly use as binary
+/* base details, nicely packed and POD-only so we can directly use as binary */
 struct PluginFavoriteHeader {
 	uint16_t type;
 	uint64_t uniqueId;
 };
 
-// full details, now with non-POD types
+/* full details, now with non-POD types */
 struct PluginFavorite : PluginFavoriteHeader {
 	QString filename;
 	QString label;
@@ -416,16 +416,16 @@ struct PluginFavorite : PluginFavoriteHeader {
 	}
 };
 
-// convert PluginFavorite to Qt types
+/* convert PluginFavorite to Qt types */
 static QByteArray asByteArray(const PluginFavorite &fav)
 {
 	QByteArray qdata;
 
-	// start with the POD data, stored as-is
+	/* start with the POD data, stored as-is */
 	qdata.append(static_cast<const char *>(static_cast<const void *>(&fav)),
 		     sizeof(PluginFavoriteHeader));
 
-	// then all the strings, with a null terminating byte
+	/* then all the strings, with a null terminating byte */
 	{
 		const QByteArray qfilename(fav.filename.toUtf8());
 		qdata += qfilename.constData();
@@ -451,22 +451,22 @@ static QVariant asVariant(const QList<PluginFavorite> &favlist)
 	return QVariant(qdata);
 }
 
-// convert Qt types to PluginInfo
+/* convert Qt types to PluginInfo */
 static PluginFavorite asPluginFavorite(const QByteArray &qdata)
 {
-	// make sure data is big enough to fit POD data + 3 strings
+	/* make sure data is big enough to fit POD data + 3 strings */
 	CARLA_SAFE_ASSERT_RETURN(static_cast<size_t>(qdata.size()) >=
 					 sizeof(PluginFavoriteHeader) +
 						 sizeof(char) * 3,
 				 {});
 
-	// read POD data first
+	/* read POD data first */
 	const PluginFavoriteHeader *const data =
 		static_cast<const PluginFavoriteHeader *>(
 			static_cast<const void *>(qdata.constData()));
 	PluginFavorite fav = {data->type, data->uniqueId, {}, {}};
 
-	// then all the strings, keeping the same order as in `asVariant`
+	/* then all the strings, keeping the same order as in `asVariant` */
 	const char *sdata =
 		static_cast<const char *>(static_cast<const void *>(data + 1));
 
@@ -498,7 +498,7 @@ static QList<PluginFavorite> asPluginFavoriteList(const QVariant &var)
 	return favlist;
 }
 
-// create PluginFavorite from PluginInfo data
+/* create PluginFavorite from PluginInfo data */
 static PluginFavorite asPluginFavorite(const PluginInfo &info)
 {
 	return PluginFavorite{info.type, info.uniqueId, info.filename,
@@ -506,9 +506,6 @@ static PluginFavorite asPluginFavorite(const PluginInfo &info)
 }
 
 #ifdef CARLA_2_6_FEATURES
-// ----------------------------------------------------------------------------
-// discovery callbacks
-
 static void discoveryCallback(void *const ptr,
 			      const CarlaPluginDiscoveryInfo *const info,
 			      const char *const sha1sum)
@@ -525,9 +522,7 @@ static bool checkCacheCallback(void *const ptr, const char *const filename,
 	return static_cast<PluginListDialog *>(ptr)->checkPluginCache(filename,
 								      sha1sum);
 }
-#endif // CARLA_2_6_FEATURES
-
-// ----------------------------------------------------------------------------
+#endif
 
 struct PluginListDialog::PrivateData {
 	int lastTableWidgetIndex = 0;
@@ -609,20 +604,17 @@ struct PluginListDialog::PrivateData {
 	} plugins;
 };
 
-// ----------------------------------------------------------------------------
-
 PluginListDialog::PluginListDialog(QWidget *const parent)
 	: QDialog(parent),
 	  p(new PrivateData)
 {
 	ui.setupUi(this);
 
-	// --------------------------------------------------------------------
-	// Set-up GUI
+	/* Set-up GUI */
 
 	ui.b_load->setEnabled(false);
 
-	// do not resize info frame so much
+	/* do not resize info frame so much */
 	const QLayout *const infoLayout = ui.frame_info->layout();
 	const QMargins infoMargins = infoLayout->contentsMargins();
 	ui.frame_info->setMinimumWidth(
@@ -638,10 +630,10 @@ PluginListDialog::PluginListDialog(QWidget *const parent)
 	ui.ch_clap->hide();
 #endif
 
-	// start with no plugin selected
+	/* start with no plugin selected */
 	checkPlugin(-1);
 
-	// custom action that listens for Ctrl+F shortcut
+	/* custom action that listens for Ctrl+F shortcut */
 	addAction(ui.act_focus_search);
 
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
@@ -649,13 +641,11 @@ PluginListDialog::PluginListDialog(QWidget *const parent)
 	setWindowModality(Qt::WindowModal);
 #endif
 
-	// --------------------------------------------------------------------
-	// Load settings
+	/* Load settings */
 
 	loadSettings();
 
-	// --------------------------------------------------------------------
-	// Set-up Icons
+	/* Set-up Icons */
 
 	ui.b_clear_filters->setProperty("themeID", "clearIconSmall");
 	ui.b_refresh->setProperty("themeID", "refreshIconSmall");
@@ -665,8 +655,7 @@ PluginListDialog::PluginListDialog(QWidget *const parent)
 	hhi->setProperty("themeID", "starIconSmall");
 	*/
 
-	// --------------------------------------------------------------------
-	// Set-up connections
+	/* Set-up connections */
 
 	QObject::connect(this, &QDialog::finished, this,
 			 &PluginListDialog::saveSettings);
@@ -749,8 +738,7 @@ PluginListDialog::~PluginListDialog()
 	delete p;
 }
 
-// ----------------------------------------------------------------------------
-// public methods
+/* public methods */
 
 const PluginInfo &PluginListDialog::getSelectedPluginInfo() const
 {
@@ -798,7 +786,7 @@ void PluginListDialog::addPluginInfo(const CarlaPluginDiscoveryInfo *const info,
 		const QString qsha1sum(sha1sum);
 		const QString key = QString("PluginCache/%1").arg(sha1sum);
 
-		// single sha1sum can contain >1 plugin
+		/* single sha1sum can contain >1 plugin */
 		QByteArray qdata;
 		if (p->plugins.cache.contains(qsha1sum))
 			qdata = settings.valueByteArray(key);
@@ -816,7 +804,7 @@ void PluginListDialog::addPluginInfo(const CarlaPluginDiscoveryInfo *const info,
 bool PluginListDialog::checkPluginCache(const char *const filename,
 					const char *const sha1sum)
 {
-	// sha1sum is always valid for this call
+	/* sha1sum is always valid for this call */
 	const QString qsha1sum(sha1sum);
 
 	if (filename != nullptr)
@@ -830,7 +818,7 @@ bool PluginListDialog::checkPluginCache(const char *const filename,
 	if (plist.isEmpty())
 		return p->discovery.ignoreCache || !p->discovery.checkInvalid;
 
-	// if filename does not match, abort (hash collision?)
+	/* if filename does not match, abort (hash collision?) */
 	if (filename == nullptr || plist.first().filename != filename) {
 		p->plugins.cache.remove(qsha1sum);
 		return false;
@@ -845,8 +833,7 @@ bool PluginListDialog::checkPluginCache(const char *const filename,
 }
 #endif
 
-// ----------------------------------------------------------------------------
-// protected methods
+/* protected methods */
 
 void PluginListDialog::done(const int r)
 {
@@ -867,7 +854,7 @@ void PluginListDialog::showEvent(QShowEvent *const event)
 	focusSearchFieldAndSelectAllText();
 	QDialog::showEvent(event);
 
-	// Set up initial discovery
+	/* Set up initial discovery */
 	if (p->discovery.firstInit) {
 		p->discovery.firstInit = false;
 
@@ -898,7 +885,7 @@ void PluginListDialog::timerEvent(QTimerEvent *const event)
 	if (event->timerId() == p->timerId) {
 		do {
 #ifdef CARLA_2_6_FEATURES
-			// discovery in progress, keep it going
+			/* discovery in progress, keep it going */
 			if (p->discovery.handle != nullptr) {
 				if (!carla_plugin_discovery_idle(
 					    p->discovery.handle)) {
@@ -909,7 +896,7 @@ void PluginListDialog::timerEvent(QTimerEvent *const event)
 				break;
 			}
 #endif
-			// start next discovery
+			/* start next discovery */
 			QUtf8String path;
 			switch (p->discovery.ptype) {
 			case PLUGIN_NONE:
@@ -959,7 +946,7 @@ void PluginListDialog::timerEvent(QTimerEvent *const event)
 				break;
 #endif
 			default:
-				// discovery complete
+				/* discovery complete */
 				refreshPluginsStop();
 			}
 
@@ -984,7 +971,7 @@ void PluginListDialog::timerEvent(QTimerEvent *const event)
 					if (!info || !info->valid)
 						continue;
 
-					// ignore plugins with non-compatible IO
+					/* ignore plugins with non-compatible IO */
 					if (isSupportedIO(*info))
 						p->plugins.add(asPluginInfo(
 							info,
@@ -998,13 +985,11 @@ void PluginListDialog::timerEvent(QTimerEvent *const event)
 	QDialog::timerEvent(event);
 }
 
-// ----------------------------------------------------------------------------
-// private methods
+/* private methods */
 
 void PluginListDialog::addPluginsToTable()
 {
-	// --------------------------------------------------------------------
-	// sum plugins first, creating all needed rows in advance
+	/* sum plugins first, creating all needed rows in advance */
 
 	ui.tableWidget->setSortingEnabled(false);
 	ui.tableWidget->clearContents();
@@ -1037,8 +1022,7 @@ void PluginListDialog::addPluginsToTable()
 			.arg(QString::number(p->plugins.jsfx.size())));
 #endif
 
-	// --------------------------------------------------------------------
-	// now add all plugins to the table
+	/* now add all plugins to the table */
 
 	auto addPluginToTable = [=](const PluginInfo &info) {
 		const int index = p->lastTableWidgetIndex++;
@@ -1100,8 +1084,7 @@ void PluginListDialog::addPluginsToTable()
 		p->lastTableWidgetIndex == ui.tableWidget->rowCount(),
 		p->lastTableWidgetIndex, ui.tableWidget->rowCount());
 
-	// --------------------------------------------------------------------
-	// and reenable sorting + filtering
+	/* and reenable sorting + filtering */
 
 	ui.tableWidget->setSortingEnabled(true);
 
@@ -1195,7 +1178,7 @@ void PluginListDialog::loadSettings()
 		settings.valueByteArray("PluginListDialog/Favorites"));
 
 #ifdef CARLA_2_6_FEATURES
-	// load entire plugin cache
+	/* load entire plugin cache */
 	const QStringList keys = settings.allKeys();
 	for (const QUtf8String key : keys) {
 		if (!key.startsWith("PluginCache/"))
@@ -1212,8 +1195,7 @@ void PluginListDialog::loadSettings()
 #endif
 }
 
-// ----------------------------------------------------------------------------
-// private slots
+/* private slots */
 
 void PluginListDialog::cellClicked(const int row, const int column)
 {
@@ -1435,8 +1417,6 @@ void PluginListDialog::clearFilters()
 	checkFilters();
 }
 
-// ----------------------------------------------------------------------------
-
 void PluginListDialog::checkPlugin(const int row)
 {
 	if (row >= 0) {
@@ -1492,8 +1472,6 @@ void PluginListDialog::checkPlugin(const int row)
 	}
 }
 
-// ----------------------------------------------------------------------------
-
 void PluginListDialog::refreshPlugins()
 {
 	refreshPluginsStop();
@@ -1515,7 +1493,7 @@ void PluginListDialog::refreshPlugins()
 
 void PluginListDialog::refreshPluginsStart()
 {
-	// remove old plugins
+	/* remove old plugins */
 	p->plugins.internal.clear();
 	p->plugins.lv2.clear();
 	p->plugins.jsfx.clear();
@@ -1533,7 +1511,7 @@ void PluginListDialog::refreshPluginsStart()
 		p->plugins.cache.clear();
 #endif
 
-	// start discovery again
+	/* start discovery again */
 	p->discovery.ptype = PLUGIN_NONE;
 
 	if (p->timerId == 0)
@@ -1543,7 +1521,7 @@ void PluginListDialog::refreshPluginsStart()
 void PluginListDialog::refreshPluginsStop()
 {
 #ifdef CARLA_2_6_FEATURES
-	// stop previous discovery if still running
+	/* stop previous discovery if still running */
 	if (p->discovery.handle != nullptr) {
 		carla_plugin_discovery_stop(p->discovery.handle);
 		p->discovery.handle = nullptr;
@@ -1569,8 +1547,6 @@ void PluginListDialog::refreshPluginsSkip()
 		carla_plugin_discovery_skip(p->discovery.handle);
 #endif
 }
-
-// ----------------------------------------------------------------------------
 
 void PluginListDialog::saveSettings()
 {
@@ -1633,12 +1609,11 @@ void PluginListDialog::saveSettings()
 			  asVariant(p->plugins.favorites));
 }
 
-// ----------------------------------------------------------------------------
-
 const PluginListDialogResults *carla_exec_plugin_list_dialog()
 {
-	// create and keep dialog around, as recreating the dialog means doing
-	// a rescan. Qt will delete it later together with the main window
+	/* create and keep dialog around, as recreating the dialog means doing
+	 * a rescan. Qt will delete it later together with the main window
+	 */
 	static PluginListDialog *const gui =
 		new PluginListDialog(carla_qt_get_main_window());
 
@@ -1663,5 +1638,3 @@ const PluginListDialogResults *carla_exec_plugin_list_dialog()
 
 	return nullptr;
 }
-
-// ----------------------------------------------------------------------------

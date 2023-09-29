@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-// for audio generator thread
+/* for audio generator thread */
 #include <pthread.h>
 
 #include <obs-module.h>
@@ -21,37 +21,34 @@
 #error CARLA_MODULE_NAME undefined
 #endif
 
-// --------------------------------------------------------------------------------------------------------------------
-
 struct carla_data {
-	// carla host details, intentionally kept private so we can easily swap internals
+	/* carla host details, intentionally kept private so we can easily swap internals */
 	struct carla_priv *priv;
 
-	// current OBS config
+	/* current OBS config */
 	bool activated;
 	uint32_t sample_rate;
 	obs_source_t *source;
 
-	// filter related options
+	/* filter related options */
 	size_t channels;
 
-	// audio generator thread
+	/* audio generator thread */
 	bool audiogen_enabled;
 	volatile bool audiogen_running;
 	pthread_t audiogen_thread;
 
-	// internal buffering
+	/* internal buffering */
 	float *buffers[MAX_AV_PLANES];
 	uint16_t buffer_head;
 	uint16_t buffer_tail;
 	enum buffer_size_mode buffer_size_mode;
 
-	// dummy buffer for unused audio channels
+	/* dummy buffer for unused audio channels */
 	float *dummybuffer;
 };
 
-// --------------------------------------------------------------------------------------------------------------------
-// private methods
+/* private methods */
 
 static enum speaker_layout carla_obs_channels_to_speakers(const size_t channels)
 {
@@ -68,10 +65,10 @@ static enum speaker_layout carla_obs_channels_to_speakers(const size_t channels)
 		return SPEAKERS_4POINT1;
 	case 6:
 		return SPEAKERS_5POINT1;
-	// FIXME missing case for 7 channels
+	/* FIXME missing case for 7 channels */
 	case 8:
 		return SPEAKERS_7POINT1;
-	// use stereo as fallback
+	/* use stereo as fallback */
 	default:
 		return SPEAKERS_STEREO;
 	}
@@ -124,8 +121,7 @@ static void carla_obs_idle_callback(void *data, float unused)
 	carla_priv_idle(carla->priv);
 }
 
-// --------------------------------------------------------------------------------------------------------------------
-// obs plugin methods
+/* obs plugin methods */
 
 static void carla_obs_deactivate(void *data);
 
@@ -163,7 +159,7 @@ static void *carla_obs_create(obs_data_t *settings, obs_source_t *source,
 	if (carla->dummybuffer == NULL)
 		goto fail2;
 
-	// prefer no-latency mode for filter, lowest latency for generator
+	/* prefer no-latency mode for filter, lowest latency for generator */
 	const enum buffer_size_mode bufsize =
 		isFilter ? buffer_size_direct : buffer_size_buffered_128;
 
@@ -181,7 +177,7 @@ static void *carla_obs_create(obs_data_t *settings, obs_source_t *source,
 	carla->buffer_tail = UINT16_MAX;
 	carla->buffer_size_mode = bufsize;
 
-	// audio generator, aka input source
+	/* audio generator, aka input source */
 	carla->audiogen_enabled = !isFilter;
 
 	obs_add_tick_callback(carla_obs_idle_callback, carla);
@@ -254,14 +250,14 @@ static bool carla_obs_bufsize_callback(void *data, obs_properties_t *props,
 	if (carla->buffer_size_mode == bufsize)
 		return false;
 
-	// deactivate first, to stop audio from processing
+	/* deactivate first, to stop audio from processing */
 	carla_priv_deactivate(carla->priv);
 
-	// safely change to new buffer size
+	/* safely change to new buffer size */
 	carla->buffer_size_mode = bufsize;
 	carla_priv_set_buffer_size(carla->priv, bufsize);
 
-	// activate again
+	/* activate again */
 	carla_priv_activate(carla->priv);
 
 	return false;
@@ -357,7 +353,7 @@ static void carla_obs_filter_audio_direct(struct carla_data *carla,
 	uint32_t frames = audio->frames;
 	float *obsbuffers[MAX_AV_PLANES];
 
-	// process in blocks up to MAX_AUDIO_BUFFER_SIZE
+	/* process in blocks up to MAX_AUDIO_BUFFER_SIZE */
 	for (uint32_t i = 0; frames != 0;) {
 		const uint32_t stepframes = frames >= MAX_AUDIO_BUFFER_SIZE
 						    ? MAX_AUDIO_BUFFER_SIZE
@@ -385,25 +381,25 @@ static void carla_obs_filter_audio_buffered(struct carla_data *carla,
 	const size_t channels = carla->channels;
 	const uint32_t frames = audio->frames;
 
-	// cast audio buffers to correct type
+	/* cast audio buffers to correct type */
 	float *obsbuffers[MAX_AV_PLANES];
 
 	for (uint8_t c = 0; c < MAX_AV_PLANES; ++c)
 		obsbuffers[c] = audio->data[c] ? (float *)audio->data[c]
 					       : carla->dummybuffer;
 
-	// preload some variables before looping section
+	/* preload some variables before looping section */
 	uint16_t buffer_head = carla->buffer_head;
 	uint16_t buffer_tail = carla->buffer_tail;
 
 	for (uint32_t i = 0, h, t; i < frames; ++i) {
-		// OBS -> plugin internal buffering
+		/* OBS -> plugin internal buffering */
 		h = buffer_head++;
 
 		for (uint8_t c = 0; c < channels; ++c)
 			carla->buffers[c][h] = obsbuffers[c][i];
 
-		// when we reach the target buffer size, do audio processing
+		/* when we reach the target buffer size, do audio processing */
 		if (buffer_head == buffer_size) {
 			buffer_head = 0;
 			carla_priv_process_audio(carla->priv, carla->buffers,
@@ -411,17 +407,17 @@ static void carla_obs_filter_audio_buffered(struct carla_data *carla,
 			memset(carla->dummybuffer, 0,
 			       sizeof(float) * buffer_size);
 
-			// we can now begin to copy back the buffer into OBS
+			/* we can now begin to copy back the buffer into OBS */
 			if (buffer_tail == UINT16_MAX)
 				buffer_tail = 0;
 		}
 
 		if (buffer_tail == UINT16_MAX) {
-			// buffering still taking place, skip until first audio cycle
+			/* buffering still taking place, skip until first audio cycle */
 			for (uint8_t c = 0; c < channels; ++c)
 				obsbuffers[c][i] = 0.f;
 		} else {
-			// plugin -> OBS buffer copy
+			/* plugin -> OBS buffer copy */
 			t = buffer_tail++;
 
 			for (uint8_t c = 0; c < channels; ++c)
@@ -466,8 +462,6 @@ static void carla_obs_load(void *data, obs_data_t *settings)
 	struct carla_data *carla = data;
 	carla_priv_load(carla->priv, settings);
 }
-
-// --------------------------------------------------------------------------------------------------------------------
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("carla", "en-US")
@@ -526,5 +520,3 @@ bool obs_module_load(void)
 
 	return true;
 }
-
-// --------------------------------------------------------------------------------------------------------------------

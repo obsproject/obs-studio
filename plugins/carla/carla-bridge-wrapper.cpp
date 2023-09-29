@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-// needed for strcasestr
+/* needed for strcasestr */
 #if !defined(_GNU_SOURCE) && !defined(_WIN32)
 #define _GNU_SOURCE
 #endif
@@ -26,15 +26,14 @@
 #define CARLA_2_6_FEATURES
 #endif
 
-// ----------------------------------------------------------------------------
-// private data methods
+/* private data methods */
 
 struct carla_priv : carla_bridge_callback {
 	obs_source_t *source = nullptr;
 	uint32_t bufferSize = 0;
 	double sampleRate = 0;
 
-	// update properties when timeout is reached, 0 means do nothing
+	/* update properties when timeout is reached, 0 means do nothing */
 	uint64_t update_request = 0;
 
 	carla_bridge bridge;
@@ -61,8 +60,7 @@ struct carla_priv : carla_bridge_callback {
 	}
 };
 
-// ----------------------------------------------------------------------------
-// carla + obs integration methods
+/* carla + obs integration methods */
 
 struct carla_priv *carla_priv_create(obs_source_t *source,
 				     enum buffer_size_mode bufsize,
@@ -86,8 +84,6 @@ void carla_priv_destroy(struct carla_priv *priv)
 	delete priv;
 }
 
-// ----------------------------------------------------------------------------
-
 void carla_priv_activate(struct carla_priv *priv)
 {
 	priv->bridge.activate();
@@ -109,8 +105,6 @@ void carla_priv_idle(struct carla_priv *priv)
 	priv->bridge.idle();
 	handle_update_request(priv->source, &priv->update_request);
 }
-
-// ----------------------------------------------------------------------------
 
 void carla_priv_save(struct carla_priv *priv, obs_data_t *settings)
 {
@@ -198,7 +192,7 @@ void carla_priv_load(struct carla_priv *priv, obs_data_t *settings)
 	const PluginType ptype =
 		getPluginTypeFromString(obs_data_get_string(settings, "ptype"));
 
-	// abort early if both of these are null, likely from an empty config
+	/* abort early if both of these are null, likely from an empty config */
 	if (btype == BINARY_NONE && ptype == PLUGIN_NONE)
 		return;
 
@@ -268,8 +262,6 @@ void carla_priv_load(struct carla_priv *priv, obs_data_t *settings)
 	priv->bridge.activate();
 }
 
-// ----------------------------------------------------------------------------
-
 uint32_t carla_priv_get_num_channels(struct carla_priv *priv)
 {
 	return std::max(priv->bridge.info.numAudioIns,
@@ -281,8 +273,6 @@ void carla_priv_set_buffer_size(struct carla_priv *priv,
 {
 	priv->bridge.set_buffer_size(bufsize_mode_to_frames(bufsize));
 }
-
-// ----------------------------------------------------------------------------
 
 static bool carla_post_load_callback(struct carla_priv *priv,
 				     obs_properties_t *props)
@@ -309,7 +299,7 @@ static bool carla_priv_load_file_callback(obs_properties_t *props,
 		return false;
 
 #ifndef _WIN32
-	// truncate plug.vst3/Contents/<plat>/plug.so -> plug.vst3
+	/* truncate plug.vst3/Contents/<plat>/plug.so -> plug.vst3 */
 	if (char *const vst3str = strcasestr(filename, ".vst3/Contents/"))
 		vst3str[5] = '\0';
 #endif
@@ -398,7 +388,7 @@ static bool carla_priv_reload_callback(obs_properties_t *props,
 	if (priv->bridge.info.btype == BINARY_NONE)
 		return false;
 
-	// cache relevant information for later
+	/* cache relevant information for later */
 	const BinaryType btype = priv->bridge.info.btype;
 	const PluginType ptype = priv->bridge.info.ptype;
 	const int64_t uniqueId = priv->bridge.info.uniqueId;
@@ -573,5 +563,3 @@ void carla_priv_readd_properties(struct carla_priv *priv,
 
 	obs_data_release(settings);
 }
-
-// ----------------------------------------------------------------------------

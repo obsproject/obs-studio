@@ -18,8 +18,7 @@ class QSafeSettings;
 typedef struct _CarlaPluginDiscoveryInfo CarlaPluginDiscoveryInfo;
 struct PluginInfo;
 
-// ----------------------------------------------------------------------------
-// Plugin List Dialog
+/* Plugin List Dialog */
 
 class PluginListDialog : public QDialog {
 	enum TableIndex {
@@ -40,8 +39,7 @@ class PluginListDialog : public QDialog {
 
 	Ui_PluginListDialog ui;
 
-	// --------------------------------------------------------------------
-	// public methods
+	/* public methods */
 
 public:
 	explicit PluginListDialog(QWidget *parent);
@@ -54,23 +52,20 @@ public:
 	bool checkPluginCache(const char *filename, const char *sha1sum);
 #endif
 
-	// --------------------------------------------------------------------
-	// protected methods
+	/* protected methods */
 
 protected:
 	void done(int) override;
 	void showEvent(QShowEvent *) override;
 	void timerEvent(QTimerEvent *) override;
 
-	// --------------------------------------------------------------------
-	// private methods
+	/* private methods */
 
 private:
 	void addPluginsToTable();
 	void loadSettings();
 
-	// --------------------------------------------------------------------
-	// private slots
+	/* private slots */
 
 private Q_SLOTS:
 	void cellClicked(int row, int column);
@@ -87,5 +82,3 @@ private Q_SLOTS:
 	void refreshPluginsSkip();
 	void saveSettings();
 };
-
-// ----------------------------------------------------------------------------

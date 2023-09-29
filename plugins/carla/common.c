@@ -5,7 +5,7 @@
  */
 
 #if !(defined(__APPLE__) || defined(_WIN32))
-// needed for libdl stuff and strcasestr
+/* needed for libdl stuff and strcasestr */
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
@@ -24,8 +24,6 @@
 #include <util/platform.h>
 
 #include "common.h"
-
-// ----------------------------------------------------------------------------
 
 static char *carla_bin_path = NULL;
 
@@ -55,7 +53,7 @@ const char *get_carla_bin_path(void)
 	free(binpath);
 
 #if !(defined(__APPLE__) || defined(_WIN32))
-	// check path of this OBS plugin as fallback
+	/* check path of this OBS plugin as fallback */
 	Dl_info info;
 	dladdr(get_carla_bin_path, &info);
 	binpath = realpath(info.dli_fname, NULL);
@@ -63,7 +61,7 @@ const char *get_carla_bin_path(void)
 	if (binpath == NULL)
 		return NULL;
 
-	// truncate to last separator
+	/* truncate to last separator */
 	char *lastsep = strrchr(binpath, '/');
 	if (lastsep == NULL)
 		goto free;
@@ -77,7 +75,7 @@ const char *get_carla_bin_path(void)
 
 free:
 	free(binpath);
-#endif // !(__APPLE__ || _WIN32)
+#endif
 
 	return carla_bin_path;
 }
@@ -127,13 +125,13 @@ void handle_update_request(obs_source_t *source, uint64_t *update_req)
 
 	const uint64_t now = os_gettime_ns();
 
-	// request in the future?
+	/* request in the future? */
 	if (now < old_update_req) {
 		*update_req = now;
 		return;
 	}
 
-	if (now - old_update_req >= 100000000ULL) // 100ms
+	if (now - old_update_req >= 100000000ULL) /* 100ms */
 	{
 		*update_req = 0;
 		signal_handler_signal(obs_source_get_signal_handler(source),
@@ -146,5 +144,3 @@ void obs_module_unload(void)
 	bfree(carla_bin_path);
 	carla_bin_path = NULL;
 }
-
-// ----------------------------------------------------------------------------

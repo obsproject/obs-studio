@@ -12,11 +12,10 @@
 
 #include "CarlaNativePlugin.h"
 
-// If this changes we need to adapt Carla side for matching port count
+/* If this changes we need to adapt Carla side for matching port count */
 _Static_assert(MAX_AV_PLANES == 8, "expected 8 IO");
 
-// ----------------------------------------------------------------------------
-// helper methods
+/* helper methods */
 
 struct carla_main_thread_param_change {
 	const NativePluginDescriptor *descriptor;
@@ -33,8 +32,7 @@ static void carla_main_thread_param_change(void *data)
 	bfree(data);
 }
 
-// ----------------------------------------------------------------------------
-// private data methods
+/* private data methods */
 
 struct carla_param_data {
 	uint32_t hints;
@@ -50,19 +48,18 @@ struct carla_priv {
 	NativeHostDescriptor host;
 	NativeTimeInfo timeInfo;
 
-	// cached parameter info
+	/* cached parameter info */
 	uint32_t paramCount;
 	struct carla_param_data *paramDetails;
 
-	// update properties when timeout is reached, 0 means do nothing
+	/* update properties when timeout is reached, 0 means do nothing */
 	uint64_t update_request;
 
-	// keep track of active state
+	/* keep track of active state */
 	volatile bool activated;
 };
 
-// ----------------------------------------------------------------------------
-// carla host methods
+/* carla host methods */
 
 static uint32_t host_get_buffer_size(NativeHostHandle handle)
 {
@@ -104,7 +101,7 @@ static void host_ui_parameter_changed(NativeHostHandle handle, uint32_t index,
 	if (index >= priv->paramCount)
 		return;
 
-	// skip parameters that we do not show
+	/* skip parameters that we do not show */
 	const uint32_t hints = priv->paramDetails[index].hints;
 	if ((hints & NATIVE_PARAMETER_IS_ENABLED) == 0)
 		return;
@@ -203,8 +200,7 @@ static intptr_t host_dispatcher(NativeHostHandle handle,
 	return 0;
 }
 
-// ----------------------------------------------------------------------------
-// carla + obs integration methods
+/* carla + obs integration methods */
 
 struct carla_priv *carla_priv_create(obs_source_t *source,
 				     enum buffer_size_mode bufsize,
@@ -225,7 +221,7 @@ struct carla_priv *carla_priv_create(obs_source_t *source,
 	priv->descriptor = descriptor;
 
 	{
-		// resource dir swaps .../lib/carla for .../share/carla/resources
+		/* resource dir swaps .../lib/carla for .../share/carla/resources */
 		const char *const binpath = get_carla_bin_path();
 		const size_t binlen = strlen(binpath);
 		char *const respath = bmalloc(binlen + 13);
@@ -279,8 +275,6 @@ void carla_priv_destroy(struct carla_priv *priv)
 	bfree(priv);
 }
 
-// ----------------------------------------------------------------------------
-
 void carla_priv_activate(struct carla_priv *priv)
 {
 	priv->descriptor->activate(priv->handle);
@@ -323,8 +317,6 @@ void carla_priv_load(struct carla_priv *priv, obs_data_t *settings)
 		priv->descriptor->set_state(priv->handle, state);
 }
 
-// ----------------------------------------------------------------------------
-
 uint32_t carla_priv_get_num_channels(struct carla_priv *priv)
 {
 	UNUSED_PARAMETER(priv);
@@ -348,8 +340,6 @@ void carla_priv_set_buffer_size(struct carla_priv *priv,
 	if (activated)
 		carla_priv_activate(priv);
 }
-
-// ----------------------------------------------------------------------------
 
 static bool carla_priv_param_changed(void *data, obs_properties_t *props,
 				     obs_property_t *property,
@@ -400,7 +390,7 @@ static bool carla_priv_param_changed(void *data, obs_properties_t *props,
 
 	priv->descriptor->set_parameter_value(priv->handle, pindex, value);
 
-	// UI param change notification needs to happen on main thread
+	/* UI param change notification needs to happen on main thread */
 	struct carla_main_thread_param_change mchange = {
 		.descriptor = priv->descriptor,
 		.handle = priv->handle,
@@ -513,5 +503,3 @@ void carla_priv_readd_properties(struct carla_priv *priv,
 
 	obs_data_release(settings);
 }
-
-// ----------------------------------------------------------------------------
