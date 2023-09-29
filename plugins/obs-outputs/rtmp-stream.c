@@ -957,7 +957,7 @@ static inline bool send_headers(struct rtmp_stream *stream)
 		return false;
 
 	for (size_t j = 0; j < MAX_OUTPUT_VIDEO_ENCODERS; j++) {
-		obs_output_t *enc =
+		obs_encoder_t *enc =
 			obs_output_get_video_encoder2(stream->output, j);
 		if (!enc)
 			continue;
