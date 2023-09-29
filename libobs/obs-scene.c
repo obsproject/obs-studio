@@ -3627,6 +3627,22 @@ get_sceneitem_parent_group(obs_scene_t *scene, obs_sceneitem_t *group_subitem)
 	return NULL;
 }
 
+static void obs_sceneitem_move_hotkeys(obs_scene_t *parent,
+				       obs_sceneitem_t *item)
+{
+	obs_data_array_t *data0 = NULL;
+	obs_data_array_t *data1 = NULL;
+
+	obs_hotkey_pair_save(item->toggle_visibility, &data0, &data1);
+	obs_hotkey_pair_unregister(item->toggle_visibility);
+
+	init_hotkeys(parent, item, obs_source_get_name(item->source));
+	obs_hotkey_pair_load(item->toggle_visibility, data0, data1);
+
+	obs_data_array_release(data0);
+	obs_data_array_release(data1);
+}
+
 bool obs_scene_reorder_items2(obs_scene_t *scene,
 			      struct obs_sceneitem_order_info *item_order,
 			      size_t item_order_size)
@@ -3685,6 +3701,9 @@ bool obs_scene_reorder_items2(obs_scene_t *scene,
 				if (!sub_scene->first_item)
 					sub_scene->first_item = sub_item;
 
+				/* Move hotkeys into group */
+				obs_sceneitem_move_hotkeys(sub_scene, sub_item);
+
 				sub_item->prev = sub_prev;
 				sub_item->next = NULL;
 				sub_item->parent = sub_scene;
@@ -3702,6 +3721,10 @@ bool obs_scene_reorder_items2(obs_scene_t *scene,
 			full_unlock(sub_scene);
 			obs_scene_release(sub_scene);
 		}
+
+		/* Move item hotkeys out of group */
+		if (item->parent && obs_scene_is_group(item->parent))
+			obs_sceneitem_move_hotkeys(scene, item);
 
 		item->prev = prev;
 		item->next = NULL;
