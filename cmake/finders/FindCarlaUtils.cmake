@@ -36,7 +36,7 @@ if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin" AND NOT PC_CarlaUtils_FOUND)
   set(CarlaUtils_USE_MACOS_FRAMEWORK TRUE)
 else()
   message("DEBUG: NOT using carla-utils macos framework | ${PC_CarlaUtils_FOUND} | ${PC_CarlaUtils_LDFLAGS}")
-  # set(CarlaUtils_USE_MACOS_FRAMEWORK FALSE)
+  set(CarlaUtils_USE_MACOS_FRAMEWORK FALSE)
 endif()
 
 find_library(
@@ -102,10 +102,11 @@ if(CarlaUtils_FOUND)
   set(CarlaUtils_LIBRARIES ${CarlaUtils_LIBRARY})
 
   if(NOT TARGET carla::utils)
-    if(${CarlaUtils_USE_MACOS_FRAMEWORK})
+    if(CarlaUtils_USE_MACOS_FRAMEWORK)
       add_library(carla::utils INTERFACE IMPORTED GLOBAL)
       set_target_properties(carla::utils PROPERTIES IMPORTED_LOCATION "${CarlaUtils_LIBRARIES}")
-      set_target_properties(carla::utils PROPERTIES INTERFACE_LINK_LIBRARIES $<LINK_LIBRARY:FRAMEWORK,${CarlaUtils_LIBRARIES}>)
+      set_target_properties(carla::utils PROPERTIES INTERFACE_LINK_LIBRARIES
+                                                    $<LINK_LIBRARY:FRAMEWORK,${CarlaUtils_LIBRARIES}>)
     elseif(IS_ABSOLUTE "${CarlaUtils_LIBRARIES}")
       add_library(carla::utils UNKNOWN IMPORTED GLOBAL)
       set_target_properties(carla::utils PROPERTIES IMPORTED_LOCATION "${CarlaUtils_LIBRARIES}")
@@ -116,8 +117,6 @@ if(CarlaUtils_FOUND)
 
     if(PC_CarlaUtils_FOUND)
       set_target_properties(carla::utils PROPERTIES INTERFACE_LINK_OPTIONS ${PC_CarlaUtils_LDFLAGS})
-    # elseif(${CarlaUtils_USE_MACOS_FRAMEWORK})
-      # set_target_properties(carla::utils PROPERTIES INTERFACE_LINK_LIBRARIES $<LINK_LIBRARY:FRAMEWORK,${CarlaUtils_LIBRARIES}>)
     endif()
 
     set_target_properties(carla::utils PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${CarlaUtils_INCLUDE_DIRS}")
