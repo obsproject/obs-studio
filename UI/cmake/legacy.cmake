@@ -133,6 +133,8 @@ target_sources(
           auth-listener.hpp
           obf.c
           obf.h
+          obs-app-theming.cpp
+          obs-app-theming.hpp
           obs-app.cpp
           obs-app.hpp
           obs-proxy-style.cpp
@@ -250,6 +252,7 @@ target_sources(
           window-basic-settings.cpp
           window-basic-settings.hpp
           window-basic-settings-a11y.cpp
+          window-basic-settings-appearance.cpp
           window-basic-settings-stream.cpp
           window-basic-source-select.cpp
           window-basic-source-select.hpp
