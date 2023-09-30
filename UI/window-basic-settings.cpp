@@ -346,6 +346,7 @@ void RestrictResetBitrates(initializer_list<QComboBox *> boxes, int maxbitrate);
 #define VIDEO_RES       &OBSBasicSettings::VideoChangedResolution
 #define VIDEO_CHANGED   &OBSBasicSettings::VideoChanged
 #define A11Y_CHANGED    &OBSBasicSettings::A11yChanged
+#define APPEAR_CHANGED  &OBSBasicSettings::AppearanceChanged
 #define ADV_CHANGED     &OBSBasicSettings::AdvancedChanged
 #define ADV_RESTART     &OBSBasicSettings::AdvancedChangedRestart
 /* clang-format on */
@@ -369,7 +370,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	/* clang-format off */
 	HookWidget(ui->language,             COMBO_CHANGED,  GENERAL_CHANGED);
-	HookWidget(ui->theme, 		     COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->updateChannelBox,     COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->enableAutoUpdates,    CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->openStatsOnStartup,   CHECK_CHANGED,  GENERAL_CHANGED);
@@ -406,6 +406,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->multiviewDrawNames,   CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->multiviewDrawAreas,   CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->multiviewLayout,      COMBO_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->theme, 		     COMBO_CHANGED,  APPEAR_CHANGED);
+	HookWidget(ui->themeVariant,	     COMBO_CHANGED,  APPEAR_CHANGED);
 	HookWidget(ui->service,              COMBO_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->server,               COMBO_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->customServer,         EDIT_CHANGED,   STREAM1_CHANGED);
@@ -880,6 +882,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	obs_properties_destroy(ppts);
 
 	InitStreamPage();
+	InitAppearancePage();
 	LoadSettings(false);
 
 	ui->advOutTrack1->setAccessibleName(
@@ -1266,51 +1269,6 @@ void OBSBasicSettings::LoadLanguageList()
 	ui->language->model()->sort(0);
 }
 
-void OBSBasicSettings::LoadThemeList()
-{
-	/* Save theme if user presses Cancel */
-	savedTheme = string(App()->GetTheme());
-
-	ui->theme->clear();
-	QSet<QString> uniqueSet;
-	string themeDir;
-	char userThemeDir[512];
-	int ret = GetConfigPath(userThemeDir, sizeof(userThemeDir),
-				"obs-studio/themes/");
-	GetDataFilePath("themes/", themeDir);
-
-	/* Check user dir first. */
-	if (ret > 0) {
-		QDirIterator it(QString(userThemeDir), QStringList() << "*.qss",
-				QDir::Files);
-		while (it.hasNext()) {
-			it.next();
-			QString name = it.fileInfo().completeBaseName();
-			ui->theme->addItem(name, name);
-			uniqueSet.insert(name);
-		}
-	}
-
-	/* Check shipped themes. */
-	QDirIterator uIt(QString(themeDir.c_str()), QStringList() << "*.qss",
-			 QDir::Files);
-	while (uIt.hasNext()) {
-		uIt.next();
-		QString name = uIt.fileInfo().completeBaseName();
-		QString value = name;
-
-		if (name == DEFAULT_THEME)
-			name += " " + QTStr("Default");
-
-		if (!uniqueSet.contains(value) && name != "Default")
-			ui->theme->addItem(name, value);
-	}
-
-	int idx = ui->theme->findData(QT_UTF8(App()->GetTheme()));
-	if (idx != -1)
-		ui->theme->setCurrentIndex(idx);
-}
-
 #if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 void TranslateBranchInfo(const QString &name, QString &displayName,
 			 QString &description)
@@ -1383,7 +1341,6 @@ void OBSBasicSettings::LoadGeneralSettings()
 	loading = true;
 
 	LoadLanguageList();
-	LoadThemeList();
 
 #if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 	bool enableAutoUpdates = config_get_bool(GetGlobalConfig(), "General",
@@ -3329,6 +3286,8 @@ void OBSBasicSettings::LoadSettings(bool changedOnly)
 		LoadVideoSettings();
 	if (!changedOnly || a11yChanged)
 		LoadA11ySettings();
+	if (!changedOnly || appearanceChanged)
+		LoadAppearanceSettings();
 	if (!changedOnly || advancedChanged)
 		LoadAdvancedSettings();
 }
@@ -3342,15 +3301,6 @@ void OBSBasicSettings::SaveGeneralSettings()
 	if (WidgetChanged(ui->language))
 		config_set_string(GetGlobalConfig(), "General", "Language",
 				  language.c_str());
-
-	int themeIndex = ui->theme->currentIndex();
-	QString themeData = ui->theme->itemData(themeIndex).toString();
-
-	if (WidgetChanged(ui->theme)) {
-		savedTheme = themeData.toStdString();
-		config_set_string(GetGlobalConfig(), "General", "CurrentTheme3",
-				  QT_TO_UTF8(themeData));
-	}
 
 #if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 	if (WidgetChanged(ui->enableAutoUpdates))
@@ -4142,7 +4092,8 @@ void OBSBasicSettings::SaveSettings()
 		SaveA11ySettings();
 	if (advancedChanged)
 		SaveAdvancedSettings();
-
+	if (appearanceChanged)
+		SaveAppearanceSettings();
 	if (videoChanged || advancedChanged)
 		main->ResetVideo();
 
@@ -4166,6 +4117,8 @@ void OBSBasicSettings::SaveSettings()
 			AddChangedVal(changed, "hotkeys");
 		if (a11yChanged)
 			AddChangedVal(changed, "a11y");
+		if (appearanceChanged)
+			AddChangedVal(changed, "appearance");
 		if (advancedChanged)
 			AddChangedVal(changed, "advanced");
 
@@ -4204,7 +4157,7 @@ bool OBSBasicSettings::QueryChanges()
 		SaveSettings();
 	} else {
 		if (savedTheme != App()->GetTheme())
-			App()->SetTheme(savedTheme);
+			App()->SetTheme(savedTheme->id);
 
 		LoadSettings(true);
 		restart = false;
@@ -4299,13 +4252,6 @@ void OBSBasicSettings::reject()
 		close();
 }
 
-void OBSBasicSettings::on_theme_activated(int idx)
-{
-	QString currT = ui->theme->itemData(idx).toString();
-
-	App()->SetTheme(currT.toUtf8().constData());
-}
-
 void OBSBasicSettings::on_listWidget_itemSelectionChanged()
 {
 	int row = ui->listWidget->currentRow();
@@ -4370,7 +4316,7 @@ void OBSBasicSettings::on_buttonBox_clicked(QAbstractButton *button)
 	    val == QDialogButtonBox::RejectRole) {
 		if (val == QDialogButtonBox::RejectRole) {
 			if (savedTheme != App()->GetTheme())
-				App()->SetTheme(savedTheme);
+				App()->SetTheme(savedTheme->id);
 		}
 		ClearChanged();
 		close();
@@ -5010,6 +4956,15 @@ void OBSBasicSettings::A11yChanged()
 {
 	if (!loading) {
 		a11yChanged = true;
+		sender()->setProperty("changed", QVariant(true));
+		EnableApplyButton(true);
+	}
+}
+
+void OBSBasicSettings::AppearanceChanged()
+{
+	if (!loading) {
+		appearanceChanged = true;
 		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
 	}

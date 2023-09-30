@@ -71,6 +71,8 @@ target_sources(
           multiview.hpp
           obf.c
           obf.h
+          obs-app-theming.cpp
+          obs-app-theming.hpp
           obs-app.cpp
           obs-app.hpp
           obs-proxy-style.cpp
