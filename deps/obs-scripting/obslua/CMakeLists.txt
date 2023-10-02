@@ -11,12 +11,12 @@ if(POLICY CMP0086)
 endif()
 
 find_package(Luajit REQUIRED)
-
 find_package(SWIG 4 REQUIRED)
 
 include(UseSWIG)
 
 set_source_files_properties(obslua.i PROPERTIES USE_TARGET_INCLUDE_DIRECTORIES TRUE)
+
 swig_add_library(
   obslua
   LANGUAGE lua
@@ -25,21 +25,21 @@ swig_add_library(
 
 add_library(OBS::lua ALIAS obslua)
 
-target_compile_options(obslua PRIVATE "$<$<C_COMPILER_ID:AppleClang,Clang>:-Wno-error=shorten-64-to-32>")
+target_compile_options(
+  obslua
+  PRIVATE $<$<PLATFORM_ID:Windows>:/wd4054>
+          $<$<PLATFORM_ID:Windows>:/wd4197>
+          $<$<PLATFORM_ID:Windows>:/wd4244>
+          $<$<PLATFORM_ID:Windows>:/wd4267>
+          $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wno-shorten-64-to-32>
+          $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wno-unreachable-code>
+          $<$<COMPILE_LANG_AND_ID:C,GNU>:-Wno-maybe-uninitialized>)
+
 target_compile_definitions(obslua PRIVATE SWIG_TYPE_TABLE=obslua SWIG_LUA_INTERPRETER_NO_DEBUG
                                           $<$<BOOL:${ENABLE_UI}>:ENABLE_UI>)
 
-target_link_libraries(obslua PRIVATE OBS::scripting OBS::cstrcache OBS::libobs Luajit::Luajit
-                                     $<$<BOOL:ENABLE_UI>:OBS::frontend-api>)
-
-if(OS_WINDOWS)
-  target_compile_options(obslua PRIVATE /wd4054 /wd4197 /wd4244 /wd4267)
-elseif(OS_MACOS)
-  set_property(TARGET obslua PROPERTY XCODE_ATTRIBUTE_STRIP_STYLE non-global)
-  target_compile_options(obslua PRIVATE -Wno-unreachable-code)
-elseif(OS_LINUX OR OS_FREEBSD)
-  target_compile_options(obslua PRIVATE -Wno-maybe-uninitialized)
-endif()
+target_link_libraries(obslua PRIVATE OBS::cstrcache OBS::libobs OBS::scripting Luajit::Luajit
+                                     $<$<BOOL:${ENABLE_UI}>:OBS::frontend-api>)
 
 set_property(
   TARGET obslua
@@ -47,4 +47,6 @@ set_property(
   PROPERTY SWIG_COMPILE_DEFINITIONS "SWIG_TYPE_TABLE=obslua" "SWIG_LUA_INTERPRETER_NO_DEBUG"
            "$<$<BOOL:${ENABLE_UI}>:ENABLE_UI>")
 
-set_target_properties_obs(obslua PROPERTIES FOLDER scripting)
+# cmake-format: off
+set_target_properties_obs(obslua PROPERTIES FOLDER scripting XCODE_ATTRIBUTE_STRIP_STYLE non-global)
+# cmake-format: on
