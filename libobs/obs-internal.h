@@ -388,6 +388,10 @@ struct obs_core_audio {
 
 	pthread_mutex_t task_mutex;
 	struct circlebuf tasks;
+
+	volatile long duplicate_audio_device_refs;
+	bool user_ignore_duplicate_audio;
+	bool ignore_duplicate_audio;
 };
 
 /* user sources, output channels, and displays */
@@ -664,6 +668,7 @@ enum audio_action_type {
 	AUDIO_ACTION_MUTE,
 	AUDIO_ACTION_PTT,
 	AUDIO_ACTION_PTM,
+	AUDIO_ACTION_IGNORE,
 };
 
 struct audio_action {
@@ -772,6 +777,7 @@ struct obs_source {
 	int64_t sync_offset;
 	int64_t last_sync_offset;
 	float balance;
+	bool output_devices_match;
 
 	/* async video data */
 	gs_texture_t *async_textures[MAX_AV_PLANES];
@@ -898,6 +904,8 @@ extern void obs_transition_load(obs_source_t *source, obs_data_t *data);
 struct audio_monitor *audio_monitor_create(obs_source_t *source);
 void audio_monitor_reset(struct audio_monitor *monitor);
 extern void audio_monitor_destroy(struct audio_monitor *monitor);
+extern bool devices_match(const char *id1, const char *id2);
+extern void update_audio_output_dup_refs(obs_source_t *source);
 
 extern obs_source_t *
 obs_source_create_set_last_ver(const char *id, const char *name,

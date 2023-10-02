@@ -149,8 +149,6 @@ static void buffer_audio(void *data, AudioQueueRef aq, AudioQueueBufferRef buf)
 	UNUSED_PARAMETER(aq);
 }
 
-extern bool devices_match(const char *id1, const char *id2);
-
 static bool audio_monitor_init(struct audio_monitor *monitor,
 			       obs_source_t *source)
 {

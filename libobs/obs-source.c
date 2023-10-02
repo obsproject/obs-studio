@@ -172,6 +172,11 @@ static inline bool is_audio_source(const struct obs_source *source)
 	return source->info.output_flags & OBS_SOURCE_AUDIO;
 }
 
+static inline bool is_audio_output_source(const struct obs_source *source)
+{
+	return source->info.output_flags & OBS_SOURCE_DO_NOT_SELF_MONITOR;
+}
+
 static inline bool is_composite_source(const struct obs_source *source)
 {
 	return source->info.output_flags & OBS_SOURCE_COMPOSITE;
@@ -981,6 +986,49 @@ static void obs_source_deferred_update(obs_source_t *source)
 	}
 }
 
+void update_audio_output_dup_refs(obs_source_t *source)
+{
+	if (!is_audio_output_source(source))
+		return;
+
+	if (source->output_devices_match) {
+		os_atomic_dec_long(&obs->audio.duplicate_audio_device_refs);
+		source->output_devices_match = false;
+	}
+
+	if (obs_source_active(source) && !obs_source_muted(source)) {
+		obs_data_t *settings = obs_source_get_settings(source);
+		const char *device_id =
+			obs_data_get_string(settings, "device_id");
+		obs_data_release(settings);
+
+		bool match = devices_match(device_id,
+					   obs->audio.monitoring_device_id);
+
+		if (match) {
+			os_atomic_inc_long(
+				&obs->audio.duplicate_audio_device_refs);
+			source->output_devices_match = true;
+		}
+	}
+
+	bool ignore = os_atomic_load_long(
+			      &obs->audio.duplicate_audio_device_refs) > 0;
+
+	if (ignore == obs->audio.user_ignore_duplicate_audio)
+		return;
+
+	struct audio_action action = {.timestamp = os_gettime_ns(),
+				      .type = AUDIO_ACTION_IGNORE,
+				      .set = ignore};
+
+	obs->audio.user_ignore_duplicate_audio = ignore;
+
+	pthread_mutex_lock(&source->audio_actions_mutex);
+	da_push_back(source->audio_actions, &action);
+	pthread_mutex_unlock(&source->audio_actions_mutex);
+}
+
 void obs_source_update(obs_source_t *source, obs_data_t *settings)
 {
 	if (!obs_source_valid(source, "obs_source_update"))
@@ -995,6 +1043,9 @@ void obs_source_update(obs_source_t *source, obs_data_t *settings)
 	} else if (source->context.data && source->info.update) {
 		source->info.update(source->context.data,
 				    source->context.settings);
+
+		update_audio_output_dup_refs(source);
+
 		obs_source_dosignal(source, "source_update", "update");
 	}
 }
@@ -1100,6 +1151,8 @@ void obs_source_set_texcoords_centered(obs_source_t *source, bool centered)
 
 static void activate_source(obs_source_t *source)
 {
+	update_audio_output_dup_refs(source);
+
 	if (source->context.data && source->info.activate)
 		source->info.activate(source->context.data);
 	obs_source_dosignal(source, "source_activate", "activate");
@@ -1107,6 +1160,8 @@ static void activate_source(obs_source_t *source)
 
 static void deactivate_source(obs_source_t *source)
 {
+	update_audio_output_dup_refs(source);
+
 	if (source->context.data && source->info.deactivate)
 		source->info.deactivate(source->context.data);
 	obs_source_dosignal(source, "source_deactivate", "deactivate");
@@ -5263,6 +5318,8 @@ void obs_source_set_muted(obs_source_t *source, bool muted)
 
 	signal_handler_signal(source->context.signals, "mute", &data);
 
+	update_audio_output_dup_refs(source);
+
 	pthread_mutex_lock(&source->audio_actions_mutex);
 	da_push_back(source->audio_actions, &action);
 	pthread_mutex_unlock(&source->audio_actions_mutex);
@@ -5434,7 +5491,11 @@ static float get_source_volume(obs_source_t *source, uint64_t os_time)
 
 	bool muted = !source->enabled || source->muted ||
 		     (source->push_to_mute_enabled && push_to_mute_active) ||
-		     (source->push_to_talk_enabled && !push_to_talk_active);
+		     (source->push_to_talk_enabled && !push_to_talk_active) ||
+		     (obs->audio.ignore_duplicate_audio &&
+		      !is_audio_output_source(source) &&
+		      source->monitoring_type ==
+			      OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT);
 
 	if (muted || close_float(source->volume, 0.0f, 0.0001f))
 		return 0.0f;
@@ -5482,6 +5543,9 @@ static inline void apply_audio_action(obs_source_t *source,
 		break;
 	case AUDIO_ACTION_PTM:
 		source->push_to_mute_pressed = action->set;
+		break;
+	case AUDIO_ACTION_IGNORE:
+		obs->audio.ignore_duplicate_audio = action->set;
 		break;
 	}
 }

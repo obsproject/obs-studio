@@ -403,8 +403,6 @@ static inline void audio_monitor_free(struct audio_monitor *monitor)
 	da_free(monitor->buf);
 }
 
-extern bool devices_match(const char *id1, const char *id2);
-
 static bool audio_monitor_init(struct audio_monitor *monitor,
 			       obs_source_t *source)
 {
