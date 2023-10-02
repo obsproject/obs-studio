@@ -1526,13 +1526,18 @@
         },
         {
             "name": "OnlyFans.com",
+            "stream_key_link": "https://onlyfans.com/my/settings/other",
             "servers": [
                 {
-                    "name": "USA",
+                    "name": "CloudBeta",
+                    "url": "rtmp://cloudbetastreaming.onlyfans.com/live"
+                },
+                {
+                    "name": "Backup (USA)",
                     "url": "rtmp://route0.onlyfans.com/live"
                 },
                 {
-                    "name": "Europe",
+                    "name": "Backup (Europe)",
                     "url": "rtmp://route0-dc2.onlyfans.com/live"
                 }
             ],
