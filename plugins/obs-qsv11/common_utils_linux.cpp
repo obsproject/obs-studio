@@ -252,7 +252,6 @@ static void vaapi_close(struct vaapi_device *device)
 static uint32_t vaapi_check_support(VADisplay display, VAProfile profile,
 				    VAEntrypoint entrypoint)
 {
-	bool ret = false;
 	VAConfigAttrib attrib[1];
 	attrib->type = VAConfigAttribRateControl;
 
