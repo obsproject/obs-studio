@@ -75,8 +75,8 @@ struct v4l2_data {
 	int pixfmt;
 	int standard;
 	int dv_timing;
-	int resolution;
-	int framerate;
+	int64_t resolution;
+	int64_t framerate;
 	int color_range;
 
 	/* internal data */
@@ -591,7 +591,8 @@ static void v4l2_resolution_list(int dev, uint_fast32_t pixelformat,
 		blog(LOG_INFO, "Stepwise and Continuous framesizes "
 			       "are currently hardcoded");
 
-		for (const int *packed = v4l2_framesizes; *packed; ++packed) {
+		for (const int64_t *packed = v4l2_framesizes; *packed;
+		     ++packed) {
 			int width;
 			int height;
 			v4l2_unpack_tuple(&width, &height, *packed);
@@ -643,7 +644,8 @@ static void v4l2_framerate_list(int dev, uint_fast32_t pixelformat,
 		blog(LOG_INFO, "Stepwise and Continuous framerates "
 			       "are currently hardcoded");
 
-		for (const int *packed = v4l2_framerates; *packed; ++packed) {
+		for (const int64_t *packed = v4l2_framerates; *packed;
+		     ++packed) {
 			int num;
 			int denom;
 			v4l2_unpack_tuple(&num, &denom, *packed);
