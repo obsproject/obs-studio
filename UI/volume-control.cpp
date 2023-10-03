@@ -23,7 +23,7 @@ using namespace std;
 // Padding on top and bottom of vertical meters
 #define METER_PADDING 1
 
-QWeakPointer<VolumeMeterTimer> VolumeMeter::updateTimer;
+std::weak_ptr<VolumeMeterTimer> VolumeMeter::updateTimer;
 
 static inline Qt::CheckState GetCheckState(bool muted, bool unassigned)
 {
@@ -870,9 +870,9 @@ VolumeMeter::VolumeMeter(QWidget *parent, obs_volmeter_t *obs_volmeter,
 	channels = (int)audio_output_get_channels(obs_get_audio());
 
 	doLayout();
-	updateTimerRef = updateTimer.toStrongRef();
+	updateTimerRef = updateTimer.lock();
 	if (!updateTimerRef) {
-		updateTimerRef = QSharedPointer<VolumeMeterTimer>::create();
+		updateTimerRef = std::make_shared<VolumeMeterTimer>();
 		updateTimerRef->setTimerType(Qt::PreciseTimer);
 		updateTimerRef->start(16);
 		updateTimer = updateTimerRef;
