@@ -51,8 +51,8 @@ set(OBS_CMAKE_VERSION 3.0.0)
 
 # Configure default version strings
 set(_obs_default_version "0" "0" "1")
-set(_obs_release_candidate "0" "0" "0" "0")
-set(_obs_beta "0" "0" "0" "0")
+set(_obs_release_candidate 0)
+set(_obs_beta 0)
 
 # Add common module directories to default search path
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/common" "${CMAKE_CURRENT_SOURCE_DIR}/cmake/finders")
