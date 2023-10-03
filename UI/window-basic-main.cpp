@@ -10487,7 +10487,7 @@ void OBSBasic::AddDockWidget(QDockWidget *dock, Qt::DockWidgetArea area,
 #endif
 
 	extraDockNames.push_back(dock->objectName());
-	extraDocks.push_back(QSharedPointer<QDockWidget>(dock));
+	extraDocks.push_back(std::shared_ptr<QDockWidget>(dock));
 }
 
 void OBSBasic::RemoveDockWidget(const QString &name)
@@ -10495,7 +10495,7 @@ void OBSBasic::RemoveDockWidget(const QString &name)
 	if (extraDockNames.contains(name)) {
 		int idx = extraDockNames.indexOf(name);
 		extraDockNames.removeAt(idx);
-		extraDocks[idx].clear();
+		extraDocks[idx].reset();
 		extraDocks.removeAt(idx);
 	} else if (extraCustomDockNames.contains(name)) {
 		int idx = extraCustomDockNames.indexOf(name);
