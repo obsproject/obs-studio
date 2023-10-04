@@ -10882,9 +10882,11 @@ void OBSBasic::CheckDiskSpaceRemaining()
 
 void OBSBasic::ResetStatsHotkey()
 {
-	QList<OBSBasicStats *> list = findChildren<OBSBasicStats *>();
+	const QList<OBSBasicStats *> list = findChildren<OBSBasicStats *>();
 
-	foreach(OBSBasicStats * s, list) s->Reset();
+	for (OBSBasicStats *s : list) {
+		s->Reset();
+	}
 }
 
 void OBSBasic::on_OBSBasic_customContextMenuRequested(const QPoint &pos)
