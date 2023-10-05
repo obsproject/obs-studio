@@ -16,9 +16,7 @@ if(NOT OBS_CODESIGN_TEAM)
   endif()
 endif()
 
-if(XCODE)
-  include(xcode)
-endif()
+include(xcode)
 
 include(buildspec)
 
