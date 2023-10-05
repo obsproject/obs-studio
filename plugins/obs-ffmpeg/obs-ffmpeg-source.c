@@ -438,6 +438,8 @@ static bool requires_mpegts(const char *path)
 	       !astrcmpi_n(path, RIST_PROTO, sizeof(RIST_PROTO) - 1);
 }
 
+static void ffmpeg_source_play_pause(void *data, bool pause);
+
 static void ffmpeg_source_update(void *data, obs_data_t *settings)
 {
 	struct ffmpeg_source *s = data;
@@ -521,6 +523,13 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	dump_source_info(s, input, input_format);
 	if (!s->restart_on_activate || active)
 		ffmpeg_source_start(s);
+
+	const bool force_play_start =
+		obs_data_get_bool(settings, "force_play_start");
+	if (s->is_local_file && !active && input && force_play_start) {
+		obs_data_set_bool(settings, "force_play_start", false);
+		ffmpeg_source_play_pause(s, false);
+	}
 }
 
 static const char *ffmpeg_source_getname(void *unused)
@@ -808,8 +817,28 @@ static void ffmpeg_source_play_pause(void *data, bool pause)
 	if (!s->media_valid)
 		ffmpeg_source_open(s);
 
-	if (!s->media_valid)
+	if (!s->media_valid) {
+		// If media was not valid and we want (really want!) to start media source playback,
+		// setting the flag here to be reused later when media becomes valid.
+		// This is the case when new media source is added. At first it is created and added to scene,
+		// but as there is no file path, media stays invalid. A moment later when user selects a path,
+		// the media source will become playable and we will start playback during settings update with the new path property.
+		// The main use case of this behavior is to support the 'Studio Mode' feature.
+		if (!pause) {
+			obs_data_t *settings =
+				obs_source_get_settings(s->source);
+			obs_data_set_bool(settings, "force_play_start", true);
+			obs_data_release(settings);
+		}
+
 		return;
+	}
+
+	// Forcing to start playback of source if it was inactive and we are going to 'unpause' it.
+	// Notice that this action does not make the source active.
+	if (!pause && !obs_source_active(s->source)) {
+		mp_media_play(&s->media, s->is_looping, s->reconnecting);
+	}
 
 	mp_media_play_pause(&s->media, pause);
 
