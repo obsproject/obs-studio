@@ -2,7 +2,9 @@
 find_package(Qt6 REQUIRED Widgets Network Svg Xml)
 # cmake-format: on
 
-if(NOT OS_WINDOWS AND NOT OS_MACOS)
+if(OS_LINUX
+   OR OS_FREEBSD
+   OR OS_OPENBSD)
   find_package(Qt6 REQUIRED Gui)
 endif()
 
