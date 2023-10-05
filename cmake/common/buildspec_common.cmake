@@ -29,7 +29,7 @@ function(_check_deps_version version)
         )
         list(REMOVE_ITEM CMAKE_PREFIX_PATH "${path}")
         list(APPEND CMAKE_PREFIX_PATH "${path}")
-        set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} PARENT_SCOPE)
+
         continue()
       else()
         message(
@@ -42,6 +42,8 @@ function(_check_deps_version version)
       endif()
     endif()
   endforeach()
+
+  return(PROPAGATE found CMAKE_PREFIX_PATH)
 endfunction()
 
 # _check_dependencies: Fetch and extract pre-built OBS build dependencies

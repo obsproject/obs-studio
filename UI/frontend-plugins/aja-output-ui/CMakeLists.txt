@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22...3.25)
+cmake_minimum_required(VERSION 3.28...3.30)
 
 if(NOT ENABLE_AJA)
   target_disable(aja-output-ui)

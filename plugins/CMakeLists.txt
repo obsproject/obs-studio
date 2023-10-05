@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22...3.25)
+cmake_minimum_required(VERSION 3.28...3.30)
 
 option(ENABLE_PLUGINS "Enable building OBS plugins" ON)
 
@@ -10,7 +10,7 @@ endif()
 set_property(GLOBAL APPEND PROPERTY OBS_FEATURES_ENABLED "Plugin Support")
 
 macro(check_obs_browser)
-  if((OS_WINDOWS AND CMAKE_GENERATOR_PLATFORM MATCHES "(Win32|x64)") OR OS_MACOS OR OS_LINUX)
+  if((OS_WINDOWS AND CMAKE_VS_PLATFORM_NAME MATCHES "(Win32|x64)") OR OS_MACOS OR OS_LINUX)
     if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/obs-browser/CMakeLists.txt")
       message(FATAL_ERROR "Required submodule 'obs-browser' not available.")
     else()

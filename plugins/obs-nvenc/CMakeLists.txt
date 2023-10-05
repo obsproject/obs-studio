@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22...3.25)
+cmake_minimum_required(VERSION 3.28...3.30)
 
 option(ENABLE_NVENC "Build NVIDIA Hardware Encoder Plugin" ON)
 option(ENABLE_NVENC_FFMPEG_IDS "Register FFmpeg encoder IDs" ON)

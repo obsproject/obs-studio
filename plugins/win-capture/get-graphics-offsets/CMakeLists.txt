@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.24...3.25)
+cmake_minimum_required(VERSION 3.28...3.30)
 
 if(NOT TARGET OBS::d3d8-api)
   add_subdirectory("${CMAKE_SOURCE_DIR}/shared/obs-d3d8-api" obs-d3d8-api)
@@ -19,8 +19,8 @@ target_link_libraries(
   PRIVATE OBS::hook-config OBS::d3d8-api d3d9.lib dxgi.lib d3d11.lib
 )
 
-if(OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_GENERATOR_PLATFORM)
-  if(CMAKE_GENERATOR_PLATFORM STREQUAL x64)
+if(OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_VS_PLATFORM_NAME)
+  if(CMAKE_VS_PLATFORM_NAME STREQUAL x64)
     add_custom_command(
       TARGET get-graphics-offsets
       POST_BUILD
@@ -32,7 +32,7 @@ if(OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_GENERATOR_PLATFORM)
   add_dependencies(win-capture get-graphics-offsets)
 endif()
 
-if(CMAKE_GENERATOR_PLATFORM STREQUAL x64)
+if(CMAKE_VS_PLATFORM_NAME STREQUAL x64)
   set(_OUTPUT_NAME get-graphics-offsets64)
 else()
   set(_OUTPUT_NAME get-graphics-offsets32)

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22...3.25)
+cmake_minimum_required(VERSION 3.28...3.30)
 if(OS_WINDOWS)
   add_library(nv-filters MODULE)
   add_library(OBS::nv-filters ALIAS nv-filters)

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.24...3.25)
+cmake_minimum_required(VERSION 3.28...3.30)
 
 find_package(zstd)
 find_package(nlohmann_json 3 REQUIRED)

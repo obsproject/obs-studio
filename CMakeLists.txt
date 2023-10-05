@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22...3.25)
+cmake_minimum_required(VERSION 3.28...3.30)
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/common/bootstrap.cmake" NO_POLICY_SCOPE)
 
@@ -6,7 +6,7 @@ project(obs-studio VERSION ${OBS_VERSION_CANONICAL})
 
 if(CMAKE_HOST_SYSTEM_NAME MATCHES "Windows")
   include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/windows/architecture.cmake")
-  if(NOT OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_GENERATOR_PLATFORM)
+  if(NOT OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_VS_PLATFORM_NAME)
     return()
   endif()
 endif()
