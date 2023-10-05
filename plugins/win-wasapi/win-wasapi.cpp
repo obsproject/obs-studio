@@ -251,8 +251,6 @@ class WASAPISource {
 	audio_format format;
 	uint32_t sampleRate;
 
-	uint64_t framesProcessed = 0;
-
 	static DWORD WINAPI ReconnectThread(LPVOID param);
 	static DWORD WINAPI CaptureThread(LPVOID param);
 
@@ -378,6 +376,7 @@ WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
 	  sampleReady(this),
 	  restart(this)
 {
+	blog(LOG_INFO, "WASAPISource::WASAPISource");
 	mmdevapi_module = LoadLibrary(L"Mmdevapi");
 	if (mmdevapi_module) {
 		activate_audio_interface_async =
@@ -1178,10 +1177,8 @@ bool WASAPISource::ProcessCaptureData()
 		data.samples_per_sec = sampleRate;
 		data.format = format;
 		if (sourceType == SourceType::ProcessOutput) {
-			data.timestamp = util_mul_div64(framesProcessed,
-							UINT64_C(1000000000),
-							sampleRate);
-			framesProcessed += frames;
+			// Using plain device timestamps to avoid static audio issue
+			data.timestamp = ts * 100;
 		} else {
 			data.timestamp = useDeviceTiming ? ts * 100
 							 : os_gettime_ns();
