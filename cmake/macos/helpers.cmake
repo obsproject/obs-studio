@@ -80,10 +80,6 @@ function(set_target_properties_obs target)
       get_property(obs_dependencies GLOBAL PROPERTY _OBS_DEPENDENCIES)
       add_dependencies(${target} ${obs_dependencies})
 
-      if(NOT XCODE)
-        return()
-      endif()
-
       get_property(obs_frameworks GLOBAL PROPERTY _OBS_FRAMEWORKS)
       set_property(
         TARGET ${target}

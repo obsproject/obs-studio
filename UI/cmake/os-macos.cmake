@@ -1,7 +1,3 @@
-if(NOT XCODE)
-  target_add_resource(obs-studio "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/Assets.xcassets")
-endif()
-
 target_sources(obs-studio PRIVATE platform-osx.mm forms/OBSPermissions.ui window-permissions.cpp window-permissions.hpp)
 target_compile_options(obs-studio PRIVATE -Wno-quoted-include-in-framework-header -Wno-comma)
 

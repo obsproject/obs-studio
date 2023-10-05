@@ -24,10 +24,6 @@ target_sources(
           OBSDALStream.h
           OBSDALStream.mm)
 
-if(NOT XCODE)
-  target_compile_options(obs-dal-plugin PRIVATE -fobjc-arc -fobjc-weak)
-endif()
-
 set(_placeholder_location "${CMAKE_CURRENT_SOURCE_DIR}/../common/data/placeholder.png")
 
 set_property(SOURCE "${_placeholder_location}" PROPERTY MACOSX_PACKAGE_LOCATION "Resources")
