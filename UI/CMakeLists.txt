@@ -79,8 +79,6 @@ target_sources(
           platform.hpp
           qt-display.cpp
           qt-display.hpp
-          qt-wrappers.cpp
-          qt-wrappers.hpp
           ui-config.h
           ui-validation.cpp
           ui-validation.hpp)
@@ -91,7 +89,7 @@ elseif(OS_MACOS)
   include(cmake/os-macos.cmake)
 elseif(OS_LINUX)
   include(cmake/os-linux.cmake)
-elseif(OS_FREEBSD)
+elseif(OS_FREEBSD OR OS_OPENBSD)
   include(cmake/os-freebsd.cmake)
 endif()
 
