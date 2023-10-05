@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.22...3.25)
-
 option(ENABLE_SCRIPTING_LUA "Enable Lua scripting support" ON)
 
 if(ENABLE_SCRIPTING_LUA)

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22...3.25)
+cmake_minimum_required(VERSION 3.28...3.30)
 
 add_library(blake2 OBJECT)
 add_library(OBS::blake2 ALIAS blake2)

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.24...3.25)
+cmake_minimum_required(VERSION 3.28...3.30)
 
 add_library(mac-avcapture MODULE)
 add_library(OBS::avcapture ALIAS mac-avcapture)

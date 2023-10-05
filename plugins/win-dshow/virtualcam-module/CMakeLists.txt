@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.24...3.25)
+cmake_minimum_required(VERSION 3.28...3.30)
 
 option(ENABLE_VIRTUALCAM "Enable Windows Virtual Camera" ON)
 if(NOT ENABLE_VIRTUALCAM)
@@ -104,8 +104,8 @@ target_link_libraries(
     winmm
 )
 
-if(OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_GENERATOR_PLATFORM)
-  if(CMAKE_GENERATOR_PLATFORM STREQUAL x64)
+if(OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_VS_PLATFORM_NAME)
+  if(CMAKE_VS_PLATFORM_NAME STREQUAL x64)
     add_custom_command(
       TARGET obs-virtualcam-module
       POST_BUILD
@@ -117,7 +117,7 @@ if(OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_GENERATOR_PLATFORM)
   add_dependencies(win-dshow obs-virtualcam-module)
 endif()
 
-if(CMAKE_GENERATOR_PLATFORM STREQUAL x64)
+if(CMAKE_VS_PLATFORM_NAME STREQUAL x64)
   set(_OUTPUT_NAME virtualcam-module64)
 else()
   set(_OUTPUT_NAME virtualcam-module32)

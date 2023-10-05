@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22...3.25)
+cmake_minimum_required(VERSION 3.28...3.30)
 
 add_library(d3d8-api INTERFACE)
 add_library(OBS::d3d8-api ALIAS d3d8-api)

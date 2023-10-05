@@ -203,14 +203,14 @@ function(find_dependencies)
   endforeach()
 
   if(NOT is_root)
-    set(found_libraries ${found_libraries} PARENT_SCOPE)
     # Exit recursive branch
-    return()
+    return(PROPAGATE found_libraries)
   endif()
 
   list(REMOVE_DUPLICATES found_libraries)
   list(APPEND ${var_FOUND_VAR} ${found_libraries})
-  set(${var_FOUND_VAR} ${${var_FOUND_VAR}} PARENT_SCOPE)
+
+  return(PROPAGATE ${var_FOUND_VAR})
 endfunction()
 
 # find_qt_plugins: Find and add Qt plugin libraries associated with Qt component to target
@@ -278,7 +278,8 @@ function(find_qt_plugins)
     endforeach()
   endif()
 
-  set(${var_FOUND_VAR} ${plugins_list} PARENT_SCOPE)
+  set(${var_FOUND_VAR} ${plugins_list})
+  return(PROPAGATE ${var_FOUND_VAR})
 endfunction()
 
 # target_export: Helper function to export target as CMake package
@@ -432,7 +433,9 @@ function(check_uuid uuid_string return_value)
     set(valid_uuid FALSE)
   endif()
   message(DEBUG "UUID ${uuid_string} valid: ${valid_uuid}")
-  set(${return_value} ${valid_uuid} PARENT_SCOPE)
+
+  set(${return_value} ${valid_uuid})
+  return(PROPAGATE ${return_value})
 endfunction()
 
 # add_obs_plugin: Add plugin subdirectory if host platform is in specified list of supported platforms and architectures
@@ -465,7 +468,7 @@ function(add_obs_plugin target)
   else()
     foreach(architecture IN LISTS _AOP_ARCHITECTURES)
       if(OS_WINDOWS)
-        if("${architecture}" STREQUAL CMAKE_GENERATOR_PLATFORM)
+        if("${architecture}" STREQUAL CMAKE_VS_PLATFORM_NAME)
           set(found_architecture TRUE)
         endif()
       elseif(OS_MACOS)

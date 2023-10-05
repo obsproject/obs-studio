@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.24...3.25)
+cmake_minimum_required(VERSION 3.28...3.30)
 
 add_library(w32-pthreads SHARED EXCLUDE_FROM_ALL)
 add_library(OBS::w32-pthreads ALIAS w32-pthreads)
