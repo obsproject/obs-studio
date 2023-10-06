@@ -10027,6 +10027,7 @@ void OBSBasic::AudioMixerCopyFilters()
 	obs_source_t *source = vol->GetSource();
 
 	copyFiltersSource = obs_source_get_weak_source(source);
+	ui->actionPasteFilters->setEnabled(true);
 }
 
 void OBSBasic::AudioMixerPasteFilters()
@@ -10047,6 +10048,7 @@ void OBSBasic::AudioMixerPasteFilters()
 void OBSBasic::SceneCopyFilters()
 {
 	copyFiltersSource = obs_source_get_weak_source(GetCurrentSceneSource());
+	ui->actionPasteFilters->setEnabled(true);
 }
 
 void OBSBasic::ScenePasteFilters()
