@@ -249,8 +249,6 @@ class WASAPISource {
 	audio_format format;
 	uint32_t sampleRate;
 
-	uint64_t framesProcessed = 0;
-
 	static DWORD WINAPI ReconnectThread(LPVOID param);
 	static DWORD WINAPI CaptureThread(LPVOID param);
 
@@ -1145,10 +1143,7 @@ bool WASAPISource::ProcessCaptureData()
 		data.samples_per_sec = sampleRate;
 		data.format = format;
 		if (sourceType == SourceType::ProcessOutput) {
-			data.timestamp = util_mul_div64(framesProcessed,
-							UINT64_C(1000000000),
-							sampleRate);
-			framesProcessed += frames;
+			data.timestamp = ts * 100;
 		} else {
 			data.timestamp = useDeviceTiming ? ts * 100
 							 : os_gettime_ns();
