@@ -249,6 +249,8 @@ class WASAPISource {
 	audio_format format;
 	uint32_t sampleRate;
 
+	vector<BYTE> silence;
+
 	static DWORD WINAPI ReconnectThread(LPVOID param);
 	static DWORD WINAPI CaptureThread(LPVOID param);
 
@@ -1136,9 +1138,37 @@ bool WASAPISource::ProcessCaptureData()
 			return false;
 		}
 
+		if (flags & AUDCLNT_BUFFERFLAGS_TIMESTAMP_ERROR) {
+			blog(LOG_ERROR, "[WASAPISource::ProcessCaptureData]"
+					" Timestamp error!");
+			capture->ReleaseBuffer(frames);
+			return false;
+		}
+
+		if (flags & AUDCLNT_BUFFERFLAGS_DATA_DISCONTINUITY) {
+			/* libobs should handle discontinuities fine. */
+			blog(LOG_DEBUG, "[WASAPISource::ProcessCaptureData]"
+					" Discontinuity flag is set.");
+		}
+
+		if (flags & AUDCLNT_BUFFERFLAGS_SILENT) {
+			blog(LOG_DEBUG, "[WASAPISource::ProcessCaptureData]"
+					" Silent flag is set.");
+
+			/* buffer size = frame size * number of frames
+			 * frame size = channels * sample size
+			 * sample size = 4 bytes (always float per InitFormat) */
+			uint32_t requiredBufSize =
+				get_audio_channels(speakers) * frames * 4;
+			if (silence.size() < requiredBufSize)
+				silence.resize(requiredBufSize);
+
+			buffer = silence.data();
+		}
+
 		obs_source_audio data = {};
-		data.data[0] = (const uint8_t *)buffer;
-		data.frames = (uint32_t)frames;
+		data.data[0] = buffer;
+		data.frames = frames;
 		data.speakers = speakers;
 		data.samples_per_sec = sampleRate;
 		data.format = format;
