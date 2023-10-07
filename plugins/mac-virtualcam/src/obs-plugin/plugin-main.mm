@@ -96,8 +96,17 @@ struct virtualcam_data {
 
 - (void)request:(nonnull OSSystemExtensionRequest *)request didFinishWithResult:(OSSystemExtensionRequestResult)result
 {
-    self.installed = YES;
-    blog(LOG_INFO, "macOS Camera Extension activated successfully.");
+    switch (result) {
+        case OSSystemExtensionRequestCompleted:
+            self.installed = YES;
+            blog(LOG_INFO, "macOS Camera Extension activated successfully.");
+            break;
+        case OSSystemExtensionRequestWillCompleteAfterReboot:
+            self.lastErrorMessage =
+                [NSString stringWithUTF8String:obs_module_text("Error.SystemExtension.CompleteAfterReboot")];
+            blog(LOG_INFO, "macOS Camera Extension will activate after reboot.");
+            break;
+    }
 }
 
 - (void)requestNeedsUserApproval:(nonnull OSSystemExtensionRequest *)request
