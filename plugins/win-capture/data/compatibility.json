@@ -3,17 +3,17 @@
     "format_version": 1,
     "entries": [
         {
-            "name": "CS:GO",
-            "translation_key": "Compatibility.Application.CSGO",
+            "name": "Counter-Strike 2",
+            "translation_key": "Compatibility.Application.CS2",
             "severity": 1,
-            "executable": "csgo.exe",
+            "executable": "cs2.exe",
             "window_class": "",
             "window_title": "",
             "match_flags": 1,
             "game_capture": true,
             "window_capture": false,
             "window_capture_wgc": false,
-            "message": "CS:GO may require the <code>-allow_third_party_software</code> launch option to use Game Capture.",
+            "message": "Counter-Strike 2 may require the <code>-allow_third_party_software</code> launch option to use Game Capture.",
             "url": "https://help.steampowered.com/faqs/view/09A0-4879-4353-EF95#whitelist"
         },
         {
