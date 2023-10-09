@@ -14,7 +14,6 @@ jobs:
       notarize: ${{ steps.setup.outputs.notarize }}
       config: ${{ steps.setup.outputs.config }}
       commitHash: ${{ steps.setup.outputs.commitHash }}
-      annotate: ${{ steps.setup.outputs.annotate }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -29,26 +28,25 @@ jobs:
 
           case "${GITHUB_EVENT_NAME}" in
             pull_request)
-              config_data=('codesign:false' 'notarize:false' 'package:false' 'config:RelWithDebInfo' 'annotate:false')
-              label_data=$(gh pr view ${{ github.event.number }} --json labels)
-              if echo "${label_data}" \
+              config_data=('codesign:false' 'notarize:false' 'package:false' 'config:RelWithDebInfo')
+              if gh pr view ${{ github.event.number }} --json labels \
                 | jq -e -r '.labels[] | select(.name == "Seeking Testers")' > /dev/null; then
                 config_data[0]='codesign:true'
                 config_data[2]='package:true'
               fi
               ;;
             push)
-              config_data=('codesign:true' 'notarize:false' 'package:true' 'config:RelWithDebInfo' 'annotate:false')
+              config_data=('codesign:true' 'notarize:false' 'package:true' 'config:RelWithDebInfo')
               if [[ ${GITHUB_REF_NAME} =~ [0-9]+.[0-9]+.[0-9]+(-(rc|beta).+)? ]]; then
                 config_data[1]='notarize:true'
                 config_data[3]='config:Release'
               fi
               ;;
             workflow_dispatch)
-              config_data=('codesign:true' 'notarize:false' 'package:false' 'config:RelWithDebInfo' 'annotate:false')
+              config_data=('codesign:true' 'notarize:false' 'package:false' 'config:RelWithDebInfo')
               ;;
             schedule)
-              config_data=('codesign:true' 'notarize:false' 'package:true' 'config:RelWithDebInfo' 'annotate:true')
+              config_data=('codesign:true' 'notarize:false' 'package:true' 'config:RelWithDebInfo')
               ;;
             *) ;;
           esac
@@ -154,14 +152,6 @@ jobs:
           notarize: ${{ fromJSON(needs.check-event.outputs.notarize) && fromJSON(steps.codesign.outputs.haveNotarizationUser) }}
           codesignUser: ${{ secrets.MACOS_NOTARIZATION_USERNAME }}
           codesignPass: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
-
-      - name: Annotate Build 🏷️
-        if: matrix.target == 'arm64' && fromJSON(needs.check-event.outputs.annotate)
-        uses: yuzutech/annotations-action@v0.4.0
-        with:
-          repo-token: ${{ github.token }}
-          title: Clang Compiler
-          input: ${{ github.workspace }}/build_issues.json
 
       - name: Upload Artifacts 📡
         uses: actions/upload-artifact@v3
