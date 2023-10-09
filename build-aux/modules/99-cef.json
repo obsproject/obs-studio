@@ -21,8 +21,8 @@
     "sources": [
         {
             "type": "archive",
-            "url": "https://cdn-fastly.obsproject.com/downloads/cef_binary_5060_linux64.tar.bz2",
-            "sha256": "ac4e2a8ebf20700e4e36353e314f876623633dd5b474778a2548bb66bdbea11d"
+            "url": "https://cdn-fastly.obsproject.com/downloads/cef_binary_5060_linux_x86_64_v2.tar.xz",
+            "sha256": "4bee4c90edbdb67b889be28ba1c1558fa6b207ca01d921db9beab342873aa57d"
         }
     ]
 }
