@@ -57,8 +57,9 @@ try {
 	constexpr uint64_t currentVersion = (uint64_t)LIBOBS_API_VER << 16ULL |
 					    OBS_RELEASE_CANDIDATE << 8ULL |
 					    OBS_BETA;
-	constexpr bool isPreRelease = currentVersion & 0xffff ||
-				      strlen(OBS_COMMIT);
+	constexpr bool isPreRelease =
+		currentVersion & 0xffff ||
+		std::char_traits<char>::length(OBS_COMMIT);
 
 	json manifestContents = json::parse(manifest_data);
 	Manifest manifest = manifestContents.get<Manifest>();
