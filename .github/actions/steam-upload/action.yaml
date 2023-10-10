@@ -78,9 +78,9 @@ runs:
       shell: zsh --no-rcs --errexit --pipefail {0}
       env:
         GH_TOKEN: ${{ inputs.workflowSecret }}
-        windows_custom_asset: ${{ steps.asset-info.outputs.windowsAssetUrl }}
-        macos_apple_custom_asset: ${{ steps.asset-info.outputs.macos_appleAssetUrl }}
-        macos_intel_custom_asset: ${{ steps.asset-info.outputs.macos_intelAssetUrl }}
+        windows_custom_asset: ${{ inputs.customAssetWindows }}
+        macos_apple_custom_asset: ${{ inputs.customAssetMacOSApple }}
+        macos_intel_custom_asset: ${{ inputs.customAssetMacOSIntel }}
       run: |
         : Download Assets 📥
         if (( ${+RUNNER_DEBUG} )) setopt XTRACE
@@ -92,27 +92,23 @@ runs:
         case ${GITHUB_EVENT_NAME} {
           release)
             gh release download ${{ inputs.tagName }} \
-              --pattern '*macOS*.dmg' \
-              --pattern '*Windows*' \
+              --pattern '*.dmg' \
               --pattern '*.zip' \
               --clobber
 
-            IFS=';' read -r description is_prerelease <<< \
-              "$(gh release view ${{ inputs.tagName }} --json tagName,isPrerelease --jq 'join(";")')"
+            IFS=';' read -r is_prerelease description <<< \
+              "$(gh release view ${{ inputs.tagName }} --json isPrerelease,tagName --jq 'join(";")')"
             ;;
           workflow_dispatch)
             if [[ '${{ inputs.tagName }}' =~ [0-9]+\.[0-9]+\.[0-9]+(-(rc|beta)[0-9]+)*$ ]] {
               gh release download ${{ inputs.tagName }} \
-                --pattern '*macOS*.dmg' \
-                --pattern '*Windows*' \
+                --pattern '*.dmg' \
                 --pattern '*.zip' \
                 --clobber
 
               description='${{ inputs.tagName }}'
               read -r is_prerelease <<< \
                 "$(gh release view ${{ inputs.tagName }} --json isPrerelease --jq '.isPrerelease')"
-              asset_names=(gh release view ${{ inputs.tagName }} --json assets \
-                --jq '.assets[] | select(.name|test(".*(macos|Full-x64|windows).*")) | .name')
 
               local -A custom_assets=(
                 windows "Windows x64;${windows_custom_asset}"
