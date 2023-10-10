@@ -268,6 +268,26 @@
             }
         },
         {
+            "name": "Admefy",
+            "more_info_link": "https://admefy.com/creator/how-to-broadcast",
+            "stream_key_link": "https://admefy.com/creator/send-content",
+            "servers": [
+                {
+                    "name": "Admefy (RTMP)",
+                    "url": "rtmp://rtmp.admefy.com:1935/live/"
+                }
+            ],
+            "recommended": {
+                "keyint": 1,
+                "bframes": 0,
+                "max video bitrate": 20000,
+                "max audio bitrate": 512
+            },
+            "supported video codecs": [
+                "h264"
+            ]
+        },
+        {
             "name": "Loola.tv",
             "common": false,
             "servers": [
