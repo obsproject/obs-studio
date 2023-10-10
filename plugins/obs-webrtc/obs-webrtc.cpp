@@ -1,6 +1,7 @@
 #include <obs-module.h>
 
 #include "whip-output.h"
+#include "whep-source.h"
 #include "whip-service.h"
 
 OBS_DECLARE_MODULE()
@@ -14,6 +15,7 @@ bool obs_module_load()
 {
 	register_whip_output();
 	register_whip_service();
+	register_whep_source();
 
 	return true;
 }
