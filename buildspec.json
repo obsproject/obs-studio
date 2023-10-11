@@ -28,18 +28,18 @@
             "baseUrl": "https://cdn-fastly.obsproject.com/downloads",
             "label": "Chromium Embedded Framework",
             "hashes": {
-                "macos-x86_64": "4b3ac2ff135c2858fe8ecab19d936a0dd95d9374373946cb5528cb2fd8e0a89f",
-                "macos-arm64": "b554146651d8e3823a2708fc738f720ca9d373263d6896cf4b4a51e2da82c439",
-                "linux-x86_64": "4bee4c90edbdb67b889be28ba1c1558fa6b207ca01d921db9beab342873aa57d",
-                "linux-aarch64": "c07ada8e18633308771d592d0313c6fb17d5805448e8921ebc51afb19e0e429e",
-                "windows-x64": "dfb15d26daa1536cd5be10f3ad56a5888cacf226099165ec6ab70b60111b6184"
+                "macos-x86_64": "140bfd517b4b9d12343ac000abba7bb16eecefe80ecbd7225993d03f0b9c0603",
+                "macos-arm64": "3970a781132b033bb9be6a9fe328a07e97fa7737fdf1575b1c5db24a3e130da1",
+                "linux-x86_64": "1253a6a36c3b8ac5b5ece9bfdb6eae6ab75e49516375fc475e2e871795ad9bea",
+                "linux-aarch64": "66ebcfce94a4527c8dd085a685691d0c43291adab9f2be4f8a0762f4a614083a",
+                "windows-x64": "7480e9ed5688e09919db67237d130eef9a4c24df32ba2a7b8a5587de45ff8e69"
             },
             "revision": {
-                "macos-x86_64": 3,
-                "macos-arm64": 3,
-                "linux-x86_64": 2,
-                "linux-aarch64": 2,
-                "windows-x64": 2
+                "macos-x86_64": 4,
+                "macos-arm64": 4,
+                "linux-x86_64": 3,
+                "linux-aarch64": 3,
+                "windows-x64": 3
             }
         }
     },
