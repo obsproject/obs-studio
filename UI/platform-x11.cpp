@@ -203,7 +203,11 @@ bool GetDataFilePath(const char *data, string &output)
 
 string GetDefaultVideoSavePath()
 {
-	return string(getenv("HOME"));
+	const char *videoPath = getenv("XDG_VIDEOS_DIR");
+	if (!videoPath || videoPath[0] == '\0')
+		return getenv("HOME");
+
+	return videoPath;
 }
 
 vector<string> GetPreferredLocales()
