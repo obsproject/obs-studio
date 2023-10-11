@@ -6,7 +6,7 @@
     "command": "obs",
     "finish-args": [
         "--socket=wayland",
-        "--socket=x11",
+        "--socket=fallback-x11",
         "--socket=pulseaudio",
         "--device=all",
         "--share=network",
