@@ -68,6 +68,11 @@ struct virtualcam_data {
                   actionForReplacingExtension:(nonnull OSSystemExtensionProperties *)existing
                                 withExtension:(nonnull OSSystemExtensionProperties *)ext
 {
+    NSString *infoString = [NSString
+        stringWithFormat:
+            @"mac-camera-extension: Replacement requested. Existing version: %@ (%@), new version: %@ (%@). Replacing...",
+            existing.bundleShortVersion, existing.bundleVersion, ext.bundleShortVersion, ext.bundleVersion];
+    blog(LOG_INFO, "%s", infoString.UTF8String);
     return OSSystemExtensionReplacementActionReplace;
 }
 
