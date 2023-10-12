@@ -15,6 +15,20 @@ if(NOT CMAKE_OSX_ARCHITECTURES)
 endif()
 set_property(CACHE CMAKE_OSX_ARCHITECTURES PROPERTY STRINGS arm64 x86_64)
 
+# Make sure the macOS SDK is recent enough for OBS
+set(OBS_MACOS_MINIMUM_SDK "13.1") # Keep in sync with Xcode
+set(OBS_MACOS_MINIMUM_XCODE "14.2") # Keep in sync with SDK
+message(DEBUG "macOS SDK Path: ${CMAKE_OSX_SYSROOT}")
+string(REGEX MATCH ".+/MacOSX.platform/Developer/SDKs/MacOSX([0-9]+\.[0-9])+\.sdk$" _ ${CMAKE_OSX_SYSROOT})
+set(OBS_MACOS_CURRENT_SDK ${CMAKE_MATCH_1})
+message(DEBUG "macOS SDK version: ${OBS_MACOS_CURRENT_SDK}")
+if(OBS_MACOS_CURRENT_SDK VERSION_LESS OBS_MACOS_MINIMUM_SDK)
+  message(
+    FATAL_ERROR
+      "Your macOS SDK version (${OBS_MACOS_CURRENT_SDK}) is too low. The macOS ${OBS_MACOS_MINIMUM_SDK} SDK (Xcode ${OBS_MACOS_MINIMUM_XCODE}) is required to build OBS."
+  )
+endif()
+
 if(XCODE)
   # Enable dSYM generator for release builds
   string(APPEND CMAKE_C_FLAGS_RELEASE " -g")
