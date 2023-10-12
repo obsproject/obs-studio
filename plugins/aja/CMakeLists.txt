@@ -58,19 +58,7 @@ target_compile_options(
   aja-support PUBLIC $<$<COMPILE_LANG_AND_ID:CXX,AppleClang,Clang,GNU>:-Wno-deprecated-declarations>
                      $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:-Wno-unused-variable>)
 
-target_link_libraries(
-  aja
-  PRIVATE OBS::aja-support
-          $<$<PLATFORM_ID:Windows>:netapi32.lib>
-          $<$<PLATFORM_ID:Windows>:setupapi.lib>
-          $<$<PLATFORM_ID:Windows>:shlwapi.lib>
-          $<$<PLATFORM_ID:Windows>:winmm.lib>
-          $<$<PLATFORM_ID:Windows>:ws2_32.lib>
-          "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,AppKit.framework>>"
-          "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,CoreFoundation.framework>>"
-          "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,IOKit.framework>>")
-
-target_link_options(aja PRIVATE $<$<PLATFORM_ID:Windows>:/IGNORE:4099>)
+target_link_libraries(aja PRIVATE OBS::aja-support)
 
 if(OS_WINDOWS)
   configure_file(cmake/windows/obs-module.rc.in win-aja.rc)

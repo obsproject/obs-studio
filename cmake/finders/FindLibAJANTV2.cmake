@@ -56,11 +56,30 @@ if(PKG_CONFIG_FOUND)
 endif()
 
 find_path(
-  LibAJANTV2_INCLUDE_DIR
-  NAMES ajalibraries
+  _LIBAJANTV2_NEW_INCLUDE_DIR
+  NAMES libajantv2
   HINTS ${PC_LibAJANTV2_INCLUDE_DIRS}
   PATHS /usr/include /usr/local/include
-  DOC "LibAJANTV2 include directory")
+  DOC "LibAJANTV2 (new) include directory")
+if(${_LIBAJANTV2_NEW_INCLUDE_DIR} STREQUAL "_LIBAJANTV2_NEW_INCLUDE_DIR-NOTFOUND")
+  find_path(
+    _LIBAJANTV2_OLD_INCLUDE_DIR
+    NAMES ajalibraries
+    HINTS ${PC_LibAJANTV2_INCLUDE_DIRS}
+    PATHS /usr/include /usr/local/include
+    DOC "LibAJANTV2 (old) include directory")
+  if(NOT ${_LIBAJANTV2_OLD_INCLUDE_DIR} STREQUAL "_LIBAJANTV2_OLD_INCLUDE_DIR-NOTFOUND")
+    set(LibAJANTV2_INCLUDE_DIR ${_LIBAJANTV2_OLD_INCLUDE_DIR}/ajalibraries)
+    if(NOT LibAJANTV2_FIND_QUIETLY)
+      message(DEPRECATION "aja: Using old ntv2 library")
+    endif()
+  endif()
+else()
+  set(LibAJANTV2_INCLUDE_DIR ${_LIBAJANTV2_NEW_INCLUDE_DIR}/libajantv2)
+  if(NOT LibAJANTV2_FIND_QUIETLY)
+    message(STATUS "aja: Using new libajantv2 library")
+  endif()
+endif()
 
 find_library(
   LibAJANTV2_LIBRARY_RELEASE
@@ -97,7 +116,7 @@ endif()
 find_package_handle_standard_args(
   LibAJANTV2
   REQUIRED_VARS LibAJANTV2_LIBRARY LibAJANTV2_INCLUDE_DIR
-  VERSION_VAR LibAJANTV2_VERSION REASON_FAILURE_MESSAGE LibAJANTV2_ERROR_REASON)
+  VERSION_VAR LibAJANTV2_VERSION REASON_FAILURE_MESSAGE ${LibAJANTV2_ERROR_REASON})
 mark_as_advanced(LibAJANTV2_LIBRARY LibAJANTV2_INCLUDE_DIR)
 unset(LibAJANTV2_ERROR_REASON)
 
@@ -105,11 +124,19 @@ if(LibAJANTV2_FOUND)
   list(
     APPEND
     LibAJANTV2_INCLUDE_DIRS
-    ${LibAJANTV2_INCLUDE_DIR}/ajalibraries
-    ${LibAJANTV2_INCLUDE_DIR}/ajalibraries/ajaanc
-    ${LibAJANTV2_INCLUDE_DIR}/ajalibraries/ajabase
-    ${LibAJANTV2_INCLUDE_DIR}/ajalibraries/ajantv2
-    ${LibAJANTV2_INCLUDE_DIR}/ajalibraries/ajantv2/includes)
+    ${LibAJANTV2_INCLUDE_DIR}
+    ${LibAJANTV2_INCLUDE_DIR}/ajaanc
+    ${LibAJANTV2_INCLUDE_DIR}/ajabase
+    ${LibAJANTV2_INCLUDE_DIR}/ajantv2
+    ${LibAJANTV2_INCLUDE_DIR}/ajantv2/includes)
+  if(CMAKE_HOST_SYSTEM_NAME MATCHES "Windows")
+    list(APPEND LibAJANTV2_INCLUDE_DIRS ${LibAJANTV2_INCLUDE_DIR}/ajantv2/src/win)
+  elseif(CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin")
+    list(APPEND LibAJANTV2_INCLUDE_DIRS ${LibAJANTV2_INCLUDE_DIR}/ajantv2/src/mac)
+  elseif(CMAKE_HOST_SYSTEM_NAME MATCHES "Linux")
+    list(APPEND LibAJANTV2_INCLUDE_DIRS ${LibAJANTV2_INCLUDE_DIR}/ajantv2/src/lin)
+  endif()
+
   set(LibAJANTV2_LIBRARIES ${LibAJANTV2_LIBRARY})
   mark_as_advanced(LibAJANTV2_INCLUDE_DIR LibAJANTV2_LIBRARY)
 
@@ -142,6 +169,20 @@ if(LibAJANTV2_FOUND)
     endif()
 
     set_target_properties(AJA::LibAJANTV2 PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${LibAJANTV2_INCLUDE_DIRS}")
+    set_target_properties(AJA::LibAJANTV2 PROPERTIES INTERFACE_LINK_OPTIONS $<$<PLATFORM_ID:Windows>:/IGNORE:4099>)
+    set_property(
+      TARGET AJA::LibAJANTV2
+      APPEND
+      PROPERTY INTERFACE_LINK_LIBRARIES
+               $<$<PLATFORM_ID:Windows>:netapi32.lib>
+               $<$<PLATFORM_ID:Windows>:setupapi.lib>
+               $<$<PLATFORM_ID:Windows>:shlwapi.lib>
+               $<$<PLATFORM_ID:Windows>:wbemuuid.lib>
+               $<$<PLATFORM_ID:Windows>:winmm.lib>
+               $<$<PLATFORM_ID:Windows>:ws2_32.lib>
+               "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,AppKit.framework>>"
+               "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,CoreFoundation.framework>>"
+               "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,IOKit.framework>>")
     set_property(
       TARGET AJA::LibAJANTV2
       APPEND
