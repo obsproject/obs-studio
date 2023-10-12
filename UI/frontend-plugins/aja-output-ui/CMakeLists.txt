@@ -43,14 +43,6 @@ target_link_libraries(
           OBS::ui-support
           Qt::Widgets
           AJA::LibAJANTV2
-          $<$<PLATFORM_ID:Windows>:ws2_32.lib>
-          $<$<PLATFORM_ID:Windows>:setupapi.lib>
-          $<$<PLATFORM_ID:Windows>:Winmm.lib>
-          $<$<PLATFORM_ID:Windows>:netapi32.lib>
-          $<$<PLATFORM_ID:Windows>:Shlwapi.lib>
-          "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,AppKit.framework>>"
-          "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,CoreFoundation.framework>>"
-          "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,IOKit.framework>>"
           $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:X11::X11>
           $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:Qt::GuiPrivate>)
 

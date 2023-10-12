@@ -1,6 +1,7 @@
 #include "aja-widget-io.hpp"
 #include "aja-common.hpp"
 
+#include <ajantv2/includes/ntv2enums.h>
 #include <ajantv2/includes/ntv2utils.h>
 #include <ajantv2/includes/ntv2signalrouter.h>
 
@@ -35,21 +36,21 @@ static const WidgetInputSocket kWidgetInputSockets[] = {
 	//NTV2InputCrosspointID        | NTV2WidgetID                | Name | DatastreamIndex
 	{ NTV2_INPUT_CROSSPOINT_INVALID, NTV2_WIDGET_INVALID,          "",                    -1},
 	{ NTV2_XptFrameBuffer1Input,     NTV2_WgtFrameBuffer1,                kFramebufferNickname,   0},
-	{ NTV2_XptFrameBuffer1BInput,    NTV2_WgtFrameBuffer1,                kFramebufferNickname,   1},
+	{ NTV2_XptFrameBuffer1DS2Input,  NTV2_WgtFrameBuffer1,                kFramebufferNickname,   1},
 	{ NTV2_XptFrameBuffer2Input,     NTV2_WgtFrameBuffer2,                kFramebufferNickname,   0},
-	{ NTV2_XptFrameBuffer2BInput,    NTV2_WgtFrameBuffer2,                kFramebufferNickname,   1},
+	{ NTV2_XptFrameBuffer2DS2Input,  NTV2_WgtFrameBuffer2,                kFramebufferNickname,   1},
 	{ NTV2_XptFrameBuffer3Input,     NTV2_WgtFrameBuffer3,                kFramebufferNickname,   0},
-	{ NTV2_XptFrameBuffer3BInput,    NTV2_WgtFrameBuffer3,                kFramebufferNickname,   1},
+	{ NTV2_XptFrameBuffer3DS2Input,  NTV2_WgtFrameBuffer3,                kFramebufferNickname,   1},
 	{ NTV2_XptFrameBuffer4Input,     NTV2_WgtFrameBuffer4,                kFramebufferNickname,   0},
-	{ NTV2_XptFrameBuffer4BInput,    NTV2_WgtFrameBuffer4,                kFramebufferNickname,   1},
+	{ NTV2_XptFrameBuffer4DS2Input,  NTV2_WgtFrameBuffer4,                kFramebufferNickname,   1},
 	{ NTV2_XptFrameBuffer5Input,     NTV2_WgtFrameBuffer5,                kFramebufferNickname,   0},
-	{ NTV2_XptFrameBuffer5BInput,    NTV2_WgtFrameBuffer5,                kFramebufferNickname,   1},
+	{ NTV2_XptFrameBuffer5DS2Input,  NTV2_WgtFrameBuffer5,                kFramebufferNickname,   1},
 	{ NTV2_XptFrameBuffer6Input,     NTV2_WgtFrameBuffer6,                kFramebufferNickname,   0},
-	{ NTV2_XptFrameBuffer6BInput,    NTV2_WgtFrameBuffer6,                kFramebufferNickname,   1},
+	{ NTV2_XptFrameBuffer6DS2Input,  NTV2_WgtFrameBuffer6,                kFramebufferNickname,   1},
 	{ NTV2_XptFrameBuffer7Input,     NTV2_WgtFrameBuffer7,                kFramebufferNickname,   0},
-	{ NTV2_XptFrameBuffer7BInput,    NTV2_WgtFrameBuffer7,                kFramebufferNickname,   1},
+	{ NTV2_XptFrameBuffer7DS2Input,  NTV2_WgtFrameBuffer7,                kFramebufferNickname,   1},
 	{ NTV2_XptFrameBuffer8Input,     NTV2_WgtFrameBuffer8,                kFramebufferNickname,   0},
-	{ NTV2_XptFrameBuffer8BInput,    NTV2_WgtFrameBuffer8,                kFramebufferNickname,   1},
+	{ NTV2_XptFrameBuffer8DS2Input,  NTV2_WgtFrameBuffer8,                kFramebufferNickname,   1},
 	{ NTV2_XptCSC1VidInput,          NTV2_WgtCSC1,                        kCSCNickname,           0},
 	{ NTV2_XptCSC1KeyInput,          NTV2_WgtCSC1,                        kCSCNickname,           1},
 	{ NTV2_XptCSC2VidInput,          NTV2_WgtCSC2,                        kCSCNickname,           0},
