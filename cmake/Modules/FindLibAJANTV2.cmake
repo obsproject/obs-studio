@@ -14,8 +14,8 @@ else()
 endif()
 
 find_path(
-  AJA_LIBRARIES_INCLUDE_DIR
-  NAMES ajalibraries
+  _LIBAJANTV2_NEW_INCLUDE_DIR
+  NAMES libajantv2
   HINTS ENV
         AJASDKPath${_lib_suffix}
         ENV
@@ -31,6 +31,38 @@ find_path(
         ${_AJA_NTV2_INCLUDE_DIRS}
   PATHS /usr/include /usr/local/include /opt/local/include /sw/include
   PATH_SUFFIXES include)
+
+if(${_LIBAJANTV2_NEW_INCLUDE_DIR} STREQUAL "_LIBAJANTV2_NEW_INCLUDE_DIR-NOTFOUND")
+  find_path(
+    _LIBAJANTV2_OLD_INCLUDE_DIR
+    NAMES libajantv2
+    HINTS ENV
+          AJASDKPath${_lib_suffix}
+          ENV
+          AJASDKPath
+          ENV
+          DepsPath${_lib_suffix}
+          ENV
+          DepsPath
+          ${AJASDKPath${_lib_suffix}}
+          ${AJASDKPath}
+          ${DepsPath${_lib_suffix}}
+          ${DepsPath}
+          ${_AJA_NTV2_INCLUDE_DIRS}
+    PATHS /usr/include /usr/local/include /opt/local/include /sw/include
+    PATH_SUFFIXES include)
+  if(${_LIBAJANTV2_OLD_INCLUDE_DIR} STREQUAL "_LIBAJANTV2_OLD_INCLUDE_DIR-NOTFOUND")
+    set(AJA_LIBRARIES_INCLUDE_DIR ${_LIBAJANTV2_OLD_INCLUDE_DIR}/ajalibraries)
+    if(NOT LibAJANTV2_FIND_QUIETLY)
+      message(DEPRECATION "aja: Using old ntv2 library")
+    endif()
+  endif()
+else()
+  set(AJA_LIBRARIES_INCLUDE_DIR ${_LIBAJANTV2_NEW_INCLUDE_DIR}/libajantv2)
+  if(NOT LibAJANTV2_FIND_QUIETLY)
+    message(STATUS "aja: Using new libajantv2 library")
+  endif()
+endif()
 
 find_library(
   AJA_NTV2_LIB
@@ -99,10 +131,17 @@ find_package_handle_standard_args(LibAJANTV2 DEFAULT_MSG AJA_LIBRARIES_INCLUDE_D
 mark_as_advanced(AJA_LIBRARIES_INCLUDE_DIR AJA_NTV2_LIB)
 
 if(LIBAJANTV2_FOUND)
-  set(AJA_LIBRARIES_INCLUDE_DIR ${AJA_LIBRARIES_INCLUDE_DIR}/ajalibraries)
+  set(AJA_LIBRARIES_INCLUDE_DIR ${AJA_LIBRARIES_INCLUDE_DIR})
   set(AJA_LIBRARIES_INCLUDE_DIRS
       ${AJA_LIBRARIES_INCLUDE_DIR} ${AJA_LIBRARIES_INCLUDE_DIR}/ajaanc ${AJA_LIBRARIES_INCLUDE_DIR}/ajabase
       ${AJA_LIBRARIES_INCLUDE_DIR}/ajantv2 ${AJA_LIBRARIES_INCLUDE_DIR}/ajantv2/includes)
+  if(CMAKE_HOST_SYSTEM_NAME MATCHES "Windows")
+    list(APPEND LibAJANTV2_INCLUDE_DIRS ${AJA_LIBRARIES_INCLUDE_DIR}/ajantv2/src/win)
+  elseif(CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin")
+    list(APPEND LibAJANTV2_INCLUDE_DIRS ${AJA_LIBRARIES_INCLUDE_DIR}/ajantv2/src/mac)
+  elseif(CMAKE_HOST_SYSTEM_NAME MATCHES "Linux")
+    list(APPEND LibAJANTV2_INCLUDE_DIRS ${AJA_LIBRARIES_INCLUDE_DIR}/ajantv2/src/lin)
+  endif()
 
   set(LIBAJANTV2_LIBRARIES ${AJA_NTV2_LIB})
   if(AJA_NTV2_DEBUG_LIB STREQUAL "AJA_NTV2_DEBUG_LIB-NOTFOUND")
