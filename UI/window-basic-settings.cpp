@@ -553,6 +553,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->overwriteIfExists,    CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->simpleRBPrefix,       EDIT_CHANGED,   ADV_CHANGED);
 	HookWidget(ui->simpleRBSuffix,       EDIT_CHANGED,   ADV_CHANGED);
+#if defined(_WIN32) || defined(__APPLE__)
+	HookWidget(ui->clipboardScreenshot,  CHECK_CHANGED,  ADV_CHANGED);
+#endif
 	HookWidget(ui->streamDelayEnable,    CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->streamDelaySec,       SCROLL_CHANGED, ADV_CHANGED);
 	HookWidget(ui->streamDelayPreserve,  CHECK_CHANGED,  ADV_CHANGED);
@@ -644,6 +647,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 #ifdef __linux__
 	delete ui->browserHWAccel;
 	delete ui->sourcesGroup;
+	delete ui->clipboardScreenshot;
 #endif
 	delete ui->disableAudioDucking;
 
@@ -659,6 +663,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 #ifdef __linux__
 	ui->browserHWAccel = nullptr;
 	ui->sourcesGroup = nullptr;
+	ui->clipboardScreenshot = nullptr;
 #endif
 	ui->disableAudioDucking = nullptr;
 #endif
@@ -2826,6 +2831,10 @@ void OBSBasicSettings::LoadAdvancedSettings()
 						 "FilenameFormatting");
 	bool overwriteIfExists =
 		config_get_bool(main->Config(), "Output", "OverwriteIfExists");
+#if defined(_WIN32) || defined(__APPLE__)
+	bool clipboardScreenshot = config_get_bool(main->Config(), "Output",
+						   "ClipboardScreenshot");
+#endif
 	const char *bindIP =
 		config_get_string(main->Config(), "Output", "BindIP");
 	const char *rbPrefix = config_get_string(main->Config(), "SimpleOutput",
@@ -2860,6 +2869,9 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	ui->overwriteIfExists->setChecked(overwriteIfExists);
 	ui->simpleRBPrefix->setText(rbPrefix);
 	ui->simpleRBSuffix->setText(rbSuffix);
+#if defined(_WIN32) || defined(__APPLE__)
+	ui->clipboardScreenshot->setChecked(clipboardScreenshot);
+#endif
 
 	ui->advReplayBuf->setChecked(replayBuf);
 	ui->advRBSecMax->setValue(rbTime);
@@ -3608,6 +3620,9 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	SaveEdit(ui->simpleRBPrefix, "SimpleOutput", "RecRBPrefix");
 	SaveEdit(ui->simpleRBSuffix, "SimpleOutput", "RecRBSuffix");
 	SaveCheckBox(ui->overwriteIfExists, "Output", "OverwriteIfExists");
+#if defined(_WIN32) || defined(__APPLE__)
+	SaveCheckBox(ui->clipboardScreenshot, "Output", "ClipboardScreenshot");
+#endif
 	SaveCheckBox(ui->streamDelayEnable, "Output", "DelayEnable");
 	SaveSpinBox(ui->streamDelaySec, "Output", "DelaySec");
 	SaveCheckBox(ui->streamDelayPreserve, "Output", "DelayPreserve");
