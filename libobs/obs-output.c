@@ -2641,7 +2641,7 @@ static void obs_output_end_data_capture_internal(obs_output_t *output,
 
 	os_atomic_set_bool(&output->data_active, false);
 
-	if (output->video)
+	if (flag_video(output))
 		log_frame_info(output);
 
 	if (data_capture_ending(output))
