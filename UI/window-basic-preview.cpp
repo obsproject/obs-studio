@@ -660,8 +660,47 @@ void OBSBasicPreview::UpdateCursor(uint32_t &flags)
 
 	if (!flags && (cursor().shape() != Qt::OpenHandCursor || !scrollMode))
 		unsetCursor();
-	if (cursor().shape() != Qt::ArrowCursor)
+	if ((cursor().shape() != Qt::ArrowCursor) || flags == 0)
 		return;
+
+	if (flags & ITEM_ROT) {
+		setCursor(Qt::OpenHandCursor);
+		return;
+	}
+
+	float rotation = obs_sceneitem_get_rot(stretchItem);
+	vec2 scale;
+	obs_sceneitem_get_scale(stretchItem, &scale);
+
+	if (rotation < 0.0f)
+		rotation = 360.0f + rotation;
+
+	int octant = int(std::round(rotation / 45.0f));
+	bool isCorner = (flags & (flags - 1)) != 0;
+
+	if ((scale.x < 0.0f) && isCorner)
+		flags ^= ITEM_LEFT | ITEM_RIGHT;
+	if ((scale.y < 0.0f) && isCorner)
+		flags ^= ITEM_TOP | ITEM_BOTTOM;
+
+	if (octant % 4 >= 2) {
+		if (isCorner) {
+			flags ^= ITEM_TOP | ITEM_BOTTOM;
+		} else {
+			flags = (flags >> 2) | (flags << 2);
+		}
+	}
+
+	if (octant % 2 == 1) {
+		if (isCorner) {
+			flags &= (flags % 3 == 0) ? ~ITEM_TOP & ~ITEM_BOTTOM
+						  : ~ITEM_LEFT & ~ITEM_RIGHT;
+		} else {
+			flags = (flags % 4 == 0)
+					? flags | flags >> ((flags / 2) - 1)
+					: flags | ((flags >> 2) | (flags << 2));
+		}
+	}
 
 	if ((flags & ITEM_LEFT && flags & ITEM_TOP) ||
 	    (flags & ITEM_RIGHT && flags & ITEM_BOTTOM))
@@ -673,8 +712,6 @@ void OBSBasicPreview::UpdateCursor(uint32_t &flags)
 		setCursor(Qt::SizeHorCursor);
 	else if (flags & ITEM_TOP || flags & ITEM_BOTTOM)
 		setCursor(Qt::SizeVerCursor);
-	else if (flags & ITEM_ROT)
-		setCursor(Qt::OpenHandCursor);
 }
 
 static bool select_one(obs_scene_t * /* scene */, obs_sceneitem_t *item,
