@@ -125,6 +125,7 @@ static void v4l2_prep_obs_frame(struct v4l2_data *data,
 
 	const enum video_format format = v4l2_to_obs_video_format(data->pixfmt);
 
+	frame->flags = OBS_SOURCE_FRAME_LINEAR_ALPHA;
 	frame->width = data->width;
 	frame->height = data->height;
 	frame->format = format;
