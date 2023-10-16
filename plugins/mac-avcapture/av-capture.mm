@@ -2175,7 +2175,7 @@ bool obs_module_load(void)
     // From WWDC video 2014 #508 at 5:34
     // https://developer.apple.com/videos/wwdc/2014/#508
     CMIOObjectPropertyAddress prop = {kCMIOHardwarePropertyAllowScreenCaptureDevices, kCMIOObjectPropertyScopeGlobal,
-                                      kCMIOObjectPropertyElementMaster};
+                                      kCMIOObjectPropertyElementMain};
     UInt32 allow = 1;
     CMIOObjectSetPropertyData(kCMIOObjectSystemObject, &prop, 0, NULL, sizeof(allow), &allow);
 
