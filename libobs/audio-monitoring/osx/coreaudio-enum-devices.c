@@ -21,7 +21,7 @@ static bool obs_enum_audio_monitoring_device(obs_enum_audio_device_cb cb,
 
 	AudioObjectPropertyAddress addr = {kAudioDevicePropertyStreams,
 					   kAudioDevicePropertyScopeOutput,
-					   kAudioObjectPropertyElementMaster};
+					   kAudioObjectPropertyElementMain};
 
 	/* Check if the device is capable of audio output. */
 	AudioObjectGetPropertyDataSize(id, &addr, 0, NULL, &size);
@@ -69,7 +69,7 @@ static void enum_audio_devices(obs_enum_audio_device_cb cb, void *data,
 {
 	AudioObjectPropertyAddress addr = {kAudioHardwarePropertyDevices,
 					   kAudioObjectPropertyScopeGlobal,
-					   kAudioObjectPropertyElementMaster};
+					   kAudioObjectPropertyElementMain};
 
 	UInt32 size = 0;
 	UInt32 count;
@@ -116,7 +116,7 @@ static void get_default_id(char **p_id)
 	AudioObjectPropertyAddress addr = {
 		kAudioHardwarePropertyDefaultSystemOutputDevice,
 		kAudioObjectPropertyScopeGlobal,
-		kAudioObjectPropertyElementMaster};
+		kAudioObjectPropertyElementMain};
 
 	if (*p_id)
 		return;
