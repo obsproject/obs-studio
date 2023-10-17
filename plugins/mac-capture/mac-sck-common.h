@@ -65,6 +65,7 @@ struct screen_capture {
     ScreenCaptureAudioStreamType audio_capture_type;
     CGDirectDisplayID display;
     CGWindowID window;
+    NSString *window_title;
     NSString *application_id;
 };
 
