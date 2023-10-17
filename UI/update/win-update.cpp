@@ -265,7 +265,8 @@ try {
 
 	const char *skipUpdateVer = config_get_string(
 		GetGlobalConfig(), "General", "SkipUpdateVersion");
-	if (!manualUpdate && updateVer == skipUpdateVer && !repairMode)
+	if (!manualUpdate && !repairMode && skipUpdateVer &&
+	    updateVer == skipUpdateVer)
 		return;
 
 	/* ----------------------------------- *
