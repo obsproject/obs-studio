@@ -4134,8 +4134,7 @@ void OBSBasic::DuplicateSelectedScene()
 	}
 }
 
-static bool save_undo_source_enum(obs_scene_t * /* scene */,
-				  obs_sceneitem_t *item, void *p)
+bool save_source_enum(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *p)
 {
 	obs_source_t *source = obs_sceneitem_get_source(item);
 	if (obs_obj_is_private(source) && !obs_source_removed(source))
@@ -4154,7 +4153,7 @@ static bool save_undo_source_enum(obs_scene_t * /* scene */,
 
 	if (obs_source_is_group(source))
 		obs_scene_enum_items(obs_group_from_source(source),
-				     save_undo_source_enum, p);
+				     save_source_enum, p);
 
 	OBSDataAutoRelease source_data = obs_save_source(source);
 	obs_data_array_push_back(array, source_data);
@@ -4187,8 +4186,7 @@ void OBSBasic::RemoveSelectedScene()
 	OBSDataArrayAutoRelease sources_in_deleted_scene =
 		obs_data_array_create();
 
-	obs_scene_enum_items(scene, save_undo_source_enum,
-			     sources_in_deleted_scene);
+	obs_scene_enum_items(scene, save_source_enum, sources_in_deleted_scene);
 
 	OBSDataAutoRelease scene_data = obs_save_source(source);
 	obs_data_array_push_back(sources_in_deleted_scene, scene_data);
@@ -5459,6 +5457,7 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 		popup.addSeparator();
 		popup.addAction(QTStr("Duplicate"), this,
 				&OBSBasic::DuplicateSelectedScene);
+		popup.addMenu(dupSceneToCollectionMenu.data());
 		popup.addAction(copyFilters);
 		popup.addAction(pasteFilters);
 		popup.addSeparator();
@@ -6246,7 +6245,7 @@ OBSData OBSBasic::BackupScene(obs_scene_t *scene,
 	OBSDataArrayAutoRelease undo_array = obs_data_array_create();
 
 	if (!sources) {
-		obs_scene_enum_items(scene, save_undo_source_enum, undo_array);
+		obs_scene_enum_items(scene, save_source_enum, undo_array);
 	} else {
 		for (obs_source_t *source : *sources) {
 			obs_data_t *source_data = obs_save_source(source);
