@@ -653,7 +653,8 @@ static int obs_init_video()
 	}
 
 	if (&video->video_thread) {
-		blog(LOG_INFO, "[VIDEO_CANVAS] wait obs_graphics_thread to stop");
+		blog(LOG_INFO,
+			"[VIDEO_CANVAS] wait obs_graphics_thread to stop");
 		pthread_join(video->video_thread, NULL);
 	}
 
