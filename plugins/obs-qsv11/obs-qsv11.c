@@ -774,11 +774,19 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 		     qpi, qpb, qpp);
 
 	blog(LOG_INFO,
+	     "\ttarget_usage:   %s\n"
+	     "\tprofile:        %s\n"
+	     "\tkeyint:         %d\n"
+	     "\tlatency:        %s\n"
+	     "\tb-frames:       %d\n"
+	     "\tenhancements:   %s\n"
 	     "\tfps_num:        %d\n"
 	     "\tfps_den:        %d\n"
 	     "\twidth:          %d\n"
 	     "\theight:         %d",
-	     voi->fps_num, voi->fps_den, width, height);
+	     target_usage, profile, keyint_sec, latency, bFrames,
+	     enhancements ? "on" : "off", voi->fps_num, voi->fps_den, width,
+	     height);
 
 	info("debug info:");
 }
