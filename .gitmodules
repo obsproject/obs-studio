@@ -32,3 +32,6 @@
 [submodule "plugins/obs-vst"]
 	path = plugins/obs-vst
 	url = https://github.com/stream-labs/obs-vst.git
+[submodule "plugins/win-spout"]
+	path = plugins/win-spout
+	url = https://github.com/stream-labs/obs-spout2-plugin.git

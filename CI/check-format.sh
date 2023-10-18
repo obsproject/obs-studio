@@ -4,6 +4,7 @@
 set -o errexit
 set -o pipefail
 set -o nounset
+set -o xtrace
 
 if [ ${#} -eq 1 ]; then
     VERBOSITY="--verbose"
@@ -50,7 +51,8 @@ find . -type d \( \
     -path ./plugins/obs-vst -o \
     -path ./plugins/mac-syphon/syphon-framework -o \
     -path ./plugins/obs-outputs/ftl-sdk -o \
-    -path ./plugins/obs-websocket/deps \
+    -path ./plugins/obs-websocket/deps -o \
+    -path ./plugins/win-spout/deps \
 \) -prune -false -type f -o \
     -name '*.h' -or \
     -name '*.hpp' -or \

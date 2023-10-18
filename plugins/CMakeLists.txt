@@ -28,6 +28,7 @@ if(OS_WINDOWS)
   add_subdirectory(mediasoup-connector)
   add_subdirectory(motion-effect)
   add_subdirectory(obs-openvr)
+  add_subdirectory(win-spout)
 
   if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/enc-amf/CMakeLists.txt")
     add_subdirectory(enc-amf)
