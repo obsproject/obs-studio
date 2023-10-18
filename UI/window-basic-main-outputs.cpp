@@ -1015,6 +1015,9 @@ void SimpleOutput::UpdateRecordingSettings()
 		UpdateRecordingSettings_amd_cqp(crf);
 #endif
 
+	} else if (videoEncoder == SIMPLE_ENCODER_AMD_AV1) {
+		UpdateRecordingSettings_amd_cqp(crf);
+
 	} else if (videoEncoder == SIMPLE_ENCODER_NVENC) {
 		UpdateRecordingSettings_nvenc(crf);
 
