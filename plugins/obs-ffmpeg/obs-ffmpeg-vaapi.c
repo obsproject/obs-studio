@@ -752,6 +752,8 @@ static bool vaapi_device_modified(obs_properties_t *ppts, obs_property_t *p,
 	if (vaapi_device_rc_supported(profile, va_dpy, VA_RC_CQP, device))
 		obs_property_list_add_string(rc_p, "CQP", "CQP");
 
+	set_visible(ppts, "bf", vaapi_device_bframe_supported(profile, va_dpy));
+
 fail:
 	vaapi_close_device(&drm_fd, va_dpy);
 	return true;
@@ -941,6 +943,9 @@ static obs_properties_t *vaapi_properties_internal(bool hevc)
 				   obs_module_text("KeyframeIntervalSec"), 0,
 				   20, 1);
 	obs_property_int_set_suffix(p, " s");
+
+	obs_properties_add_int(props, "bf", obs_module_text("BFrames"), 0, 4,
+			       1);
 
 	obs_properties_add_text(props, "ffmpeg_opts",
 				obs_module_text("FFmpegOpts"),

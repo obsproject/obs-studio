@@ -185,6 +185,38 @@ bool vaapi_device_rc_supported(VAProfile profile, VADisplay dpy, uint32_t rc,
 	return false;
 }
 
+static bool vaapi_display_ep_bframe_supported(VAProfile profile,
+					      VAEntrypoint entrypoint,
+					      VADisplay dpy)
+{
+	bool ret = false;
+	VAStatus va_status;
+	VAConfigAttrib attrib[1];
+	attrib->type = VAConfigAttribEncMaxRefFrames;
+
+	va_status = vaGetConfigAttributes(dpy, profile, entrypoint, attrib, 1);
+
+	if (va_status == VA_STATUS_SUCCESS &&
+	    attrib->value != VA_ATTRIB_NOT_SUPPORTED)
+		return attrib->value >> 16;
+
+	return false;
+}
+
+bool vaapi_device_bframe_supported(VAProfile profile, VADisplay dpy)
+{
+	bool ret = vaapi_display_ep_bframe_supported(profile,
+						     VAEntrypointEncSlice, dpy);
+	if (ret)
+		return true;
+	ret = vaapi_display_ep_bframe_supported(profile, VAEntrypointEncSliceLP,
+						dpy);
+	if (ret)
+		return true;
+
+	return false;
+}
+
 #define CHECK_PROFILE(ret, profile, va_dpy, device_path)                      \
 	if (vaapi_display_ep_combo_supported(profile, VAEntrypointEncSlice,   \
 					     va_dpy, device_path)) {          \

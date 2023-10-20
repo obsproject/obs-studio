@@ -14,6 +14,7 @@ void vaapi_close_device(int *fd, VADisplay dpy);
 
 bool vaapi_device_rc_supported(VAProfile profile, VADisplay dpy, uint32_t rc,
 			       const char *device_path);
+bool vaapi_device_bframe_supported(VAProfile profile, VADisplay dpy);
 
 bool vaapi_display_h264_supported(VADisplay dpy, const char *device_path);
 bool vaapi_device_h264_supported(const char *device_path);
