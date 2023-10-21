@@ -21,6 +21,7 @@
 
 #include <obs-module.h>
 #include <obs-nix-platform.h>
+#include <glad/glad.h>
 
 #include <pipewire/pipewire.h>
 #include "screencast-portal.h"
@@ -34,6 +35,10 @@ MODULE_EXPORT const char *obs_module_description(void)
 
 bool obs_module_load(void)
 {
+	obs_enter_graphics();
+	gladLoadGL();
+	obs_leave_graphics();
+
 	pw_init(NULL, NULL);
 
 	screencast_portal_load();
