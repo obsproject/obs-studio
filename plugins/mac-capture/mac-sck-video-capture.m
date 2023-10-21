@@ -185,11 +185,9 @@ static bool init_screen_stream(struct screen_capture *sc)
     [sc->stream_properties setPixelFormat:l10r_type];
 
     if (@available(macOS 13.0, *)) {
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
         [sc->stream_properties setCapturesAudio:YES];
         [sc->stream_properties setExcludesCurrentProcessAudio:YES];
         [sc->stream_properties setChannelCount:2];
-#endif
     } else {
         if (sc->capture_type != ScreenCaptureWindowStream) {
             sc->disp = NULL;
@@ -216,7 +214,6 @@ static bool init_screen_stream(struct screen_capture *sc)
         return !did_add_output;
     }
 
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
     if (@available(macOS 13.0, *)) {
         did_add_output = [sc->disp addStreamOutput:sc->capture_delegate type:SCStreamOutputTypeAudio
                                 sampleHandlerQueue:nil
@@ -228,7 +225,6 @@ static bool init_screen_stream(struct screen_capture *sc)
             return !did_add_output;
         }
     }
-#endif
     os_event_init(&sc->disp_finished, OS_EVENT_TYPE_MANUAL);
     os_event_init(&sc->stream_start_completed, OS_EVENT_TYPE_MANUAL);
 

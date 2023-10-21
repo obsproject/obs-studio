@@ -141,12 +141,10 @@ static CFStringRef obs_to_vt_profile(CMVideoCodecType codec_type,
 		}
 		if (strcmp(profile, "main10") == 0)
 			return kVTProfileLevel_HEVC_Main10_AutoLevel;
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 120300 // macOS 12.3
 		if (__builtin_available(macOS 12.3, *)) {
 			if (strcmp(profile, "main42210") == 0)
 				return kVTProfileLevel_HEVC_Main42210_AutoLevel;
 		}
-#endif // macOS 12.3
 		return kVTProfileLevel_HEVC_Main_AutoLevel;
 #else
 		(void)format;
@@ -300,7 +298,6 @@ static OSStatus session_set_bitrate(VTCompressionSessionRef session,
 		can_limit_bitrate = true;
 
 		if (__builtin_available(macOS 13.0, *)) {
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
 			if (is_apple_silicon) {
 				compressionPropertyKey =
 					kVTCompressionPropertyKey_ConstantBitRate;
@@ -310,11 +307,6 @@ static OSStatus session_set_bitrate(VTCompressionSessionRef session,
 				       "CBR support for VideoToolbox encoder requires Apple Silicon. "
 				       "Will use ABR instead.");
 			}
-#else
-			VT_LOG(LOG_WARNING,
-			       "CBR support for VideoToolbox not available in this build of OBS. "
-			       "Will use ABR instead.");
-#endif
 		} else {
 			VT_LOG(LOG_WARNING,
 			       "CBR support for VideoToolbox encoder requires macOS 13 or newer. "
