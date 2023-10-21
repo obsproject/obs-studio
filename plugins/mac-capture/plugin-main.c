@@ -16,7 +16,6 @@ extern bool is_screen_capture_available() WEAK_IMPORT_ATTRIBUTE;
 
 bool obs_module_load(void)
 {
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 120300 // __MAC_12_3
 	if (is_screen_capture_available()) {
 		extern struct obs_source_info sck_video_capture_info;
 		obs_register_source(&sck_video_capture_info);
@@ -31,7 +30,6 @@ bool obs_module_load(void)
 			obs_register_source(&sck_audio_capture_info);
 		}
 	}
-#endif
 	obs_register_source(&display_capture_info);
 	obs_register_source(&window_capture_info);
 	obs_register_source(&coreaudio_input_capture_info);
