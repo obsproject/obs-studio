@@ -782,7 +782,6 @@ static void process_video_sync(obs_pipewire_stream *obs_pw_stream)
 	struct format_data format_data;
 	struct spa_buffer *buffer;
 	struct pw_buffer *b;
-	bool swap_red_blue = false;
 	bool has_buffer = true;
 
 	b = find_latest_buffer(obs_pw_stream->stream);
@@ -907,7 +906,7 @@ static void process_video_sync(obs_pipewire_stream *obs_pw_stream)
 			(const uint8_t **)&buffer->datas[0].data, GS_DYNAMIC);
 	}
 
-	if (swap_red_blue)
+	if (format_data.swap_red_blue)
 		swap_texture_red_blue(obs_pw_stream->texture);
 
 	/* Video Crop */
@@ -977,7 +976,7 @@ read_metadata:
 						  format_data.gs_format, 1,
 						  &bitmap_data, GS_DYNAMIC);
 
-			if (swap_red_blue)
+			if (format_data.swap_red_blue)
 				swap_texture_red_blue(
 					obs_pw_stream->cursor.texture);
 		}
