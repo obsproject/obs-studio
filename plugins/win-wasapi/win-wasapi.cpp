@@ -999,8 +999,9 @@ void WASAPISource::Initialize()
 		}
 	}
 
-	blog(LOG_INFO, "WASAPI: Device '%s' [%" PRIu32 " Hz] initialized",
-	     device_name.c_str(), sampleRate);
+	blog(LOG_INFO,
+	     "WASAPI: Device '%s' [%" PRIu32 " Hz] initialized (source: %s)",
+	     device_name.c_str(), sampleRate, obs_source_get_name(source));
 
 	if (sourceType == SourceType::ProcessOutput && !hooked) {
 		hooked = true;
