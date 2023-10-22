@@ -1286,14 +1286,20 @@ obs_pipewire_connect_stream(obs_pipewire *obs_pw, obs_source_t *source,
 
 void obs_pipewire_stream_show(obs_pipewire_stream *obs_pw_stream)
 {
-	if (obs_pw_stream->stream)
+	if (obs_pw_stream->stream) {
+		pw_thread_loop_lock(obs_pw_stream->obs_pw->thread_loop);
 		pw_stream_set_active(obs_pw_stream->stream, true);
+		pw_thread_loop_unlock(obs_pw_stream->obs_pw->thread_loop);
+	}
 }
 
 void obs_pipewire_stream_hide(obs_pipewire_stream *obs_pw_stream)
 {
-	if (obs_pw_stream->stream)
+	if (obs_pw_stream->stream) {
+		pw_thread_loop_lock(obs_pw_stream->obs_pw->thread_loop);
 		pw_stream_set_active(obs_pw_stream->stream, false);
+		pw_thread_loop_unlock(obs_pw_stream->obs_pw->thread_loop);
+	}
 }
 
 uint32_t obs_pipewire_stream_get_width(obs_pipewire_stream *obs_pw_stream)
@@ -1433,9 +1439,11 @@ void obs_pipewire_stream_destroy(obs_pipewire_stream *obs_pw_stream)
 	g_clear_pointer(&obs_pw_stream->texture, gs_texture_destroy);
 	obs_leave_graphics();
 
+	pw_thread_loop_lock(obs_pw_stream->obs_pw->thread_loop);
 	if (obs_pw_stream->stream)
 		pw_stream_disconnect(obs_pw_stream->stream);
 	g_clear_pointer(&obs_pw_stream->stream, pw_stream_destroy);
+	pw_thread_loop_unlock(obs_pw_stream->obs_pw->thread_loop);
 
 	clear_format_info(obs_pw_stream);
 	bfree(obs_pw_stream);
