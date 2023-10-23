@@ -2633,6 +2633,35 @@
             "supported video codecs": [
                 "h264"
             ]
+        },
+        {
+            "name": "Vault - by CommanderRoot",
+            "common": false,
+            "more_info_link": "https://vault.root-space.eu/",
+            "stream_key_link": "https://vault.root-space.eu/recordings",
+            "servers": [
+                {
+                    "name": "EU - Central",
+                    "url": "rtmp://ingest-eu-central.vault.root-space.eu/app"
+                },
+                {
+                    "name": "US - West",
+                    "url": "rtmp://ingest-us-west.vault.root-space.eu/app"
+                }
+            ],
+            "protocol": "RTMP",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 7800,
+                "max audio bitrate": 320,
+                "x264opts": "scenecut=0"
+            }
         }
     ]
 }
