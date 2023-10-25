@@ -1,0 +1,1092 @@
+
+---
+events:
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeDetermineSystem.cmake:204 (message)"
+      - "CMakeLists.txt"
+    message: |
+      The system is: Darwin - 22.1.0 - x86_64
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+      Compiler:  
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      Command line invocation:
+          /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild
+      
+      User defaults from command line:
+          IDEPackageSupportUseBuiltinSCM = YES
+      
+      Computing target dependency graph and provisioning inputs
+      
+      Create build description
+      2023-08-03 20:19:56.948 xcodebuild[59668:7931810]  DVTDownloadable: Unexpected error attempting to parse downloadable from index: Error Domain=DVTDownloadableErrors Code=16 "Unable to read in downloadable data. See underlying errors for details." UserInfo={DownloadablePlist={
+          authentication = virtual;
+          category = simulator;
+          contentType = diskImage;
+          dictionaryVersion = 2;
+          fileSize = 7354535384;
+          hostRequirements =     {
+              minHostVersion = "13.4";
+              minXcodeVersion = "15.0";
+          };
+          identifier = "com.apple.dmg.xrSimulatorSDK1_0_b1";
+          name = "xrOS 1 beta Simulator Runtime";
+          platform = "com.apple.platform.xros";
+          simulatorVersion =     {
+              buildUpdate = 21N5165g;
+              version = "1.0";
+          };
+          source = "https://download.developer.apple.com/Developer_Tools/visionOS_1_beta/visionOS_1_beta_Simulator_Runtime.dmg";
+          version = "1.0.0.1";
+      }, NSLocalizedDescription=Unable to read in downloadable data. See underlying errors for details., DVTUnderlyingErrorsKey=(
+          "Error Domain=DVTDownloadableErrors Code=23 \\"'com.apple.platform.xros' is an unknown platform identifier.\\" UserInfo={NSLocalizedDescription='com.apple.platform.xros' is an unknown platform identifier.}"
+      )}
+      2023-08-03 20:19:56.948 xcodebuild[59668:7931810]  DVTDownloadable: Unexpected error attempting to parse downloadable from index: Error Domain=DVTDownloadableErrors Code=16 "Unable to read in downloadable data. See underlying errors for details." UserInfo={DownloadablePlist={
+          authentication = virtual;
+          category = simulator;
+          contentType = diskImage;
+          dictionaryVersion = 2;
+          fileSize = 7220726735;
+          hostRequirements =     {
+              minHostVersion = "13.4";
+              minXcodeVersion = "15.0";
+          };
+          identifier = "com.apple.dmg.xrSimulatorSDK1_0_b2";
+          name = "xrOS 2 beta Simulator Runtime";
+          platform = "com.apple.platform.xros";
+          simulatorVersion =     {
+              buildUpdate = 21N5207f;
+              version = "1.0";
+          };
+          source = "https://download.developer.apple.com/Developer_Tools/visionOS_1_beta_2_Simulator_Runtime/visionOS_1_beta_2_Simulator_Runtime.dmg";
+          version = "1.0.0.2";
+      }, NSLocalizedDescription=Unable to read in downloadable data. See underlying errors for details., DVTUnderlyingErrorsKey=(
+          "Error Domain=DVTDownloadableErrors Code=23 \\"'com.apple.platform.xros' is an unknown platform identifier.\\" UserInfo={NSLocalizedDescription='com.apple.platform.xros' is an unknown platform identifier.}"
+      )}
+      Build description signature: d8f92fbf9753dae826d01ad110d78001
+      Build description path: /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/./XCBuildData/d8f92fbf9753dae826d01ad110d78001-desc.xcbuild
+      
+      warning: Building targets in manual order is deprecated - check "Parallelize build for command-line builds" in the project editor, or set DISABLE_MANUAL_TARGET_ORDER_BUILD_WARNING in any of the targets in the current build to suppress this warning
+      CreateBuildDirectory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.xcodeproj
+          builtin-create-build-directory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC
+      
+      CreateBuildDirectory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/EagerLinkingTBDs
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.xcodeproj
+          builtin-create-build-directory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/EagerLinkingTBDs
+      
+      warning: Traditional headermap style is no longer supported; please migrate to using separate headermaps and set 'ALWAYS_SEARCH_USER_PATHS' to NO. (in target 'CompilerIdC' from project 'CompilerIdC')
+      note: Run script build phase 'Run Script' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'CompilerIdC' from project 'CompilerIdC')
+      WriteAuxiliaryFile /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/DerivedSources/Entitlements.plist (in target 'CompilerIdC' from project 'CompilerIdC')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC
+          write-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/DerivedSources/Entitlements.plist
+      
+      ProcessProductPackaging "" /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/CompilerIdC.xcent (in target 'CompilerIdC' from project 'CompilerIdC')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC
+          
+          Entitlements:
+          
+          {
+          "com.apple.security.get-task-allow" = 1;
+      }
+          
+          builtin-productPackagingUtility -entitlements -format xml -o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/CompilerIdC.xcent
+      
+      ProcessProductPackagingDER /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/CompilerIdC.xcent /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/CompilerIdC.xcent.der (in target 'CompilerIdC' from project 'CompilerIdC')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC
+          /usr/bin/derq query -f xml -i /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/CompilerIdC.xcent -o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/CompilerIdC.xcent.der --raw
+      
+      WriteAuxiliaryFile /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/CompilerIdC-project-headers.hmap (in target 'CompilerIdC' from project 'CompilerIdC')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC
+          write-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/CompilerIdC-project-headers.hmap
+      
+      WriteAuxiliaryFile /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/all-product-headers.yaml (in target 'CompilerIdC' from project 'CompilerIdC')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC
+          write-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/all-product-headers.yaml
+      
+      WriteAuxiliaryFile /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/CompilerIdC.hmap (in target 'CompilerIdC' from project 'CompilerIdC')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC
+          write-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/CompilerIdC.hmap
+      
+      WriteAuxiliaryFile /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/CompilerIdC-generated-files.hmap (in target 'CompilerIdC' from project 'CompilerIdC')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC
+          write-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/CompilerIdC-generated-files.hmap
+      
+      WriteAuxiliaryFile /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/CompilerIdC-own-target-headers.hmap (in target 'CompilerIdC' from project 'CompilerIdC')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC
+          write-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/CompilerIdC-own-target-headers.hmap
+      
+      WriteAuxiliaryFile /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/CompilerIdC-all-target-headers.hmap (in target 'CompilerIdC' from project 'CompilerIdC')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC
+          write-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/CompilerIdC-all-target-headers.hmap
+      
+      WriteAuxiliaryFile /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/CompilerIdC-all-non-framework-target-headers.hmap (in target 'CompilerIdC' from project 'CompilerIdC')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC
+          write-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/CompilerIdC-all-non-framework-target-headers.hmap
+      
+      WriteAuxiliaryFile /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/Objects-normal/x86_64/CompilerIdC.LinkFileList (in target 'CompilerIdC' from project 'CompilerIdC')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC
+          write-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/Objects-normal/x86_64/CompilerIdC.LinkFileList
+      
+      CompileC /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/Objects-normal/x86_64/CMakeCCompilerId.o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CMakeCCompilerId.c normal x86_64 c com.apple.compilers.llvm.clang.1_0.compiler (in target 'CompilerIdC' from project 'CompilerIdC')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC
+          /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c -target x86_64-apple-macos12.3 -fmessage-length\\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\\=0 -Wno-trigraphs -fpascal-strings -Os -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wno-shorten-64-to-32 -Wpointer-sign -Wno-newline-eof -Wno-implicit-fallthrough -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -fasm-blocks -fstrict-aliasing -Wdeprecated-declarations -g -fvisibility\\=hidden -Wno-sign-conversion -Wno-infinite-recursion -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-semicolon-before-method-body -iquote /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/CompilerIdC-generated-files.hmap -I/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/CompilerIdC-own-target-headers.hmap -I/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/CompilerIdC-all-target-headers.hmap -iquote /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/CompilerIdC-project-headers.hmap -I/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/include -I/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/DerivedSources-normal/x86_64 -I/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/DerivedSources/x86_64 -I/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/DerivedSources -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC -MMD -MT dependencies -MF /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/Objects-normal/x86_64/CMakeCCompilerId.d --serialize-diagnostics /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/Objects-normal/x86_64/CMakeCCompilerId.dia -c /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CMakeCCompilerId.c -o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/Objects-normal/x86_64/CMakeCCompilerId.o
+      
+      Ld /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC normal (in target 'CompilerIdC' from project 'CompilerIdC')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC
+          /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -target x86_64-apple-macos12.3 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -L/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/EagerLinkingTBDs -L/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/EagerLinkingTBDs -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC -filelist /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/Objects-normal/x86_64/CompilerIdC.LinkFileList -Xlinker -object_path_lto -Xlinker /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/Objects-normal/x86_64/CompilerIdC_lto.o -Xlinker -no_adhoc_codesign -Xlinker -dependency_info -Xlinker /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/Objects-normal/x86_64/CompilerIdC_dependency_info.dat -o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC
+      
+      WriteAuxiliaryFile /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/Script-2C8FEB8E15DC1A1A00E56A5D.sh (in target 'CompilerIdC' from project 'CompilerIdC')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC
+          write-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/Script-2C8FEB8E15DC1A1A00E56A5D.sh
+      
+      PhaseScriptExecution Run\\ Script /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/Script-2C8FEB8E15DC1A1A00E56A5D.sh (in target 'CompilerIdC' from project 'CompilerIdC')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC
+          /bin/sh -c /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/Script-2C8FEB8E15DC1A1A00E56A5D.sh
+      GCC_VERSION=com.apple.compilers.llvm.clang.1_0
+      ARCHS=x86_64
+      
+      CodeSign /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC (in target 'CompilerIdC' from project 'CompilerIdC')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC
+          
+          Signing Identity:     "-"
+          
+          /usr/bin/codesign --force --sign - --entitlements /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/CompilerIdC.xcent --timestamp\\=none --generate-entitlement-der /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC
+      
+      RegisterExecutionPolicyException /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC (in target 'CompilerIdC' from project 'CompilerIdC')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC
+          builtin-RegisterExecutionPolicyException /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC
+      
+      ** BUILD SUCCEEDED **
+      
+      
+      
+      Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC"
+      
+      The C compiler identification is AppleClang, found in:
+        /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+      Compiler:  
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      Command line invocation:
+          /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild
+      
+      User defaults from command line:
+          IDEPackageSupportUseBuiltinSCM = YES
+      
+      2023-08-03 20:19:58.037 xcodebuild[59683:7931910]  DVTDownloadable: Unexpected error attempting to parse downloadable from index: Error Domain=DVTDownloadableErrors Code=16 "Unable to read in downloadable data. See underlying errors for details." UserInfo={DownloadablePlist={
+          authentication = virtual;
+          category = simulator;
+          contentType = diskImage;
+          dictionaryVersion = 2;
+          fileSize = 7354535384;
+          hostRequirements =     {
+              minHostVersion = "13.4";
+              minXcodeVersion = "15.0";
+          };
+          identifier = "com.apple.dmg.xrSimulatorSDK1_0_b1";
+          name = "xrOS 1 beta Simulator Runtime";
+          platform = "com.apple.platform.xros";
+          simulatorVersion =     {
+              buildUpdate = 21N5165g;
+              version = "1.0";
+          };
+          source = "https://download.developer.apple.com/Developer_Tools/visionOS_1_beta/visionOS_1_beta_Simulator_Runtime.dmg";
+          version = "1.0.0.1";
+      }, NSLocalizedDescription=Unable to read in downloadable data. See underlying errors for details., DVTUnderlyingErrorsKey=(
+          "Error Domain=DVTDownloadableErrors Code=23 \\"'com.apple.platform.xros' is an unknown platform identifier.\\" UserInfo={NSLocalizedDescription='com.apple.platform.xros' is an unknown platform identifier.}"
+      )}
+      2023-08-03 20:19:58.037 xcodebuild[59683:7931910]  DVTDownloadable: Unexpected error attempting to parse downloadable from index: Error Domain=DVTDownloadableErrors Code=16 "Unable to read in downloadable data. See underlying errors for details." UserInfo={DownloadablePlist={
+          authentication = virtual;
+          category = simulator;
+          contentType = diskImage;
+          dictionaryVersion = 2;
+          fileSize = 7220726735;
+          hostRequirements =     {
+              minHostVersion = "13.4";
+              minXcodeVersion = "15.0";
+          };
+          identifier = "com.apple.dmg.xrSimulatorSDK1_0_b2";
+          name = "xrOS 2 beta Simulator Runtime";
+          platform = "com.apple.platform.xros";
+          simulatorVersion =     {
+              buildUpdate = 21N5207f;
+              version = "1.0";
+          };
+          source = "https://download.developer.apple.com/Developer_Tools/visionOS_1_beta_2_Simulator_Runtime/visionOS_1_beta_2_Simulator_Runtime.dmg";
+          version = "1.0.0.2";
+      }, NSLocalizedDescription=Unable to read in downloadable data. See underlying errors for details., DVTUnderlyingErrorsKey=(
+          "Error Domain=DVTDownloadableErrors Code=23 \\"'com.apple.platform.xros' is an unknown platform identifier.\\" UserInfo={NSLocalizedDescription='com.apple.platform.xros' is an unknown platform identifier.}"
+      )}
+      Computing target dependency graph and provisioning inputs
+      
+      Create build description
+      Build description signature: e33184892518ef00e4f6f2a4305247d4
+      Build description path: /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/./XCBuildData/e33184892518ef00e4f6f2a4305247d4-desc.xcbuild
+      
+      warning: Building targets in manual order is deprecated - check "Parallelize build for command-line builds" in the project editor, or set DISABLE_MANUAL_TARGET_ORDER_BUILD_WARNING in any of the targets in the current build to suppress this warning
+      CreateBuildDirectory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.xcodeproj
+          builtin-create-build-directory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX
+      
+      CreateBuildDirectory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/EagerLinkingTBDs
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.xcodeproj
+          builtin-create-build-directory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/EagerLinkingTBDs
+      
+      warning: Traditional headermap style is no longer supported; please migrate to using separate headermaps and set 'ALWAYS_SEARCH_USER_PATHS' to NO. (in target 'CompilerIdCXX' from project 'CompilerIdCXX')
+      note: Run script build phase 'Run Script' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'CompilerIdCXX' from project 'CompilerIdCXX')
+      WriteAuxiliaryFile /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/DerivedSources/Entitlements.plist (in target 'CompilerIdCXX' from project 'CompilerIdCXX')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX
+          write-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/DerivedSources/Entitlements.plist
+      
+      ProcessProductPackaging "" /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/CompilerIdCXX.xcent (in target 'CompilerIdCXX' from project 'CompilerIdCXX')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX
+          
+          Entitlements:
+          
+          {
+          "com.apple.security.get-task-allow" = 1;
+      }
+          
+          builtin-productPackagingUtility -entitlements -format xml -o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/CompilerIdCXX.xcent
+      
+      ProcessProductPackagingDER /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/CompilerIdCXX.xcent /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/CompilerIdCXX.xcent.der (in target 'CompilerIdCXX' from project 'CompilerIdCXX')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX
+          /usr/bin/derq query -f xml -i /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/CompilerIdCXX.xcent -o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/CompilerIdCXX.xcent.der --raw
+      
+      WriteAuxiliaryFile /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/CompilerIdCXX.hmap (in target 'CompilerIdCXX' from project 'CompilerIdCXX')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX
+          write-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/CompilerIdCXX.hmap
+      
+      WriteAuxiliaryFile /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/all-product-headers.yaml (in target 'CompilerIdCXX' from project 'CompilerIdCXX')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX
+          write-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/all-product-headers.yaml
+      
+      WriteAuxiliaryFile /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/CompilerIdCXX-project-headers.hmap (in target 'CompilerIdCXX' from project 'CompilerIdCXX')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX
+          write-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/CompilerIdCXX-project-headers.hmap
+      
+      WriteAuxiliaryFile /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/CompilerIdCXX-generated-files.hmap (in target 'CompilerIdCXX' from project 'CompilerIdCXX')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX
+          write-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/CompilerIdCXX-generated-files.hmap
+      
+      WriteAuxiliaryFile /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/CompilerIdCXX-own-target-headers.hmap (in target 'CompilerIdCXX' from project 'CompilerIdCXX')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX
+          write-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/CompilerIdCXX-own-target-headers.hmap
+      
+      WriteAuxiliaryFile /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/CompilerIdCXX-all-target-headers.hmap (in target 'CompilerIdCXX' from project 'CompilerIdCXX')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX
+          write-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/CompilerIdCXX-all-target-headers.hmap
+      
+      WriteAuxiliaryFile /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/CompilerIdCXX-all-non-framework-target-headers.hmap (in target 'CompilerIdCXX' from project 'CompilerIdCXX')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX
+          write-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/CompilerIdCXX-all-non-framework-target-headers.hmap
+      
+      WriteAuxiliaryFile /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/Objects-normal/x86_64/CompilerIdCXX.LinkFileList (in target 'CompilerIdCXX' from project 'CompilerIdCXX')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX
+          write-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/Objects-normal/x86_64/CompilerIdCXX.LinkFileList
+      
+      CompileC /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/Objects-normal/x86_64/CMakeCXXCompilerId.o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CMakeCXXCompilerId.cpp normal x86_64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'CompilerIdCXX' from project 'CompilerIdCXX')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX
+          /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -target x86_64-apple-macos12.3 -fmessage-length\\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\\=0 -Wno-trigraphs -fpascal-strings -Os -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wno-shorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -fasm-blocks -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -g -fvisibility\\=hidden -fvisibility-inlines-hidden -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -iquote /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/CompilerIdCXX-generated-files.hmap -I/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/CompilerIdCXX-own-target-headers.hmap -I/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/CompilerIdCXX-all-target-headers.hmap -iquote /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/CompilerIdCXX-project-headers.hmap -I/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/include -I/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/DerivedSources-normal/x86_64 -I/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/DerivedSources/x86_64 -I/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/DerivedSources -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX -MMD -MT dependencies -MF /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/Objects-normal/x86_64/CMakeCXXCompilerId.d --serialize-diagnostics /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/Objects-normal/x86_64/CMakeCXXCompilerId.dia -c /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CMakeCXXCompilerId.cpp -o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/Objects-normal/x86_64/CMakeCXXCompilerId.o
+      
+      Ld /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX normal (in target 'CompilerIdCXX' from project 'CompilerIdCXX')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX
+          /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++ -target x86_64-apple-macos12.3 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -L/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/EagerLinkingTBDs -L/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/EagerLinkingTBDs -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX -filelist /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/Objects-normal/x86_64/CompilerIdCXX.LinkFileList -Xlinker -object_path_lto -Xlinker /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/Objects-normal/x86_64/CompilerIdCXX_lto.o -Xlinker -no_adhoc_codesign -Xlinker -dependency_info -Xlinker /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/Objects-normal/x86_64/CompilerIdCXX_dependency_info.dat -o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX
+      
+      WriteAuxiliaryFile /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/Script-2C8FEB8E15DC1A1A00E56A5D.sh (in target 'CompilerIdCXX' from project 'CompilerIdCXX')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX
+          write-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/Script-2C8FEB8E15DC1A1A00E56A5D.sh
+      
+      PhaseScriptExecution Run\\ Script /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/Script-2C8FEB8E15DC1A1A00E56A5D.sh (in target 'CompilerIdCXX' from project 'CompilerIdCXX')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX
+          /bin/sh -c /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/Script-2C8FEB8E15DC1A1A00E56A5D.sh
+      GCC_VERSION=com.apple.compilers.llvm.clang.1_0
+      ARCHS=x86_64
+      
+      CodeSign /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX (in target 'CompilerIdCXX' from project 'CompilerIdCXX')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX
+          
+          Signing Identity:     "-"
+          
+          /usr/bin/codesign --force --sign - --entitlements /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.build/Debug/CompilerIdCXX.build/CompilerIdCXX.xcent --timestamp\\=none --generate-entitlement-der /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX
+      
+      RegisterExecutionPolicyException /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX (in target 'CompilerIdCXX' from project 'CompilerIdCXX')
+          cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX
+          builtin-RegisterExecutionPolicyException /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX
+      
+      ** BUILD SUCCEEDED **
+      
+      
+      
+      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX"
+      
+      The CXX compiler identification is AppleClang, found in:
+        /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX
+      
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:57 (try_compile)"
+      - "/usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt"
+    checks:
+      - "Detecting C compiler ABI info"
+    directories:
+      source: "/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK"
+      binary: "/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_OSX_ARCHITECTURES: "x86_64"
+      CMAKE_OSX_DEPLOYMENT_TARGET: ""
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk"
+    buildResult:
+      variable: "CMAKE_C_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK
+        
+        Run Build Command(s):/usr/bin/xcodebuild -project CMAKE_TRY_COMPILE.xcodeproj build -target cmTC_e6b87 -parallelizeTargets -configuration Debug -hideShellScriptEnvironment && Command line invocation:
+            /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project CMAKE_TRY_COMPILE.xcodeproj build -target cmTC_e6b87 -parallelizeTargets -configuration Debug -hideShellScriptEnvironment
+        
+        User defaults from command line:
+            HideShellScriptEnvironment = YES
+            IDEPackageSupportUseBuiltinSCM = YES
+        
+        2023-08-03 20:19:59.620 xcodebuild[59706:7932057]  DVTDownloadable: Unexpected error attempting to parse downloadable from index: Error Domain=DVTDownloadableErrors Code=16 "Unable to read in downloadable data. See underlying errors for details." UserInfo={DownloadablePlist={
+            authentication = virtual;
+            category = simulator;
+            contentType = diskImage;
+            dictionaryVersion = 2;
+            fileSize = 7354535384;
+            hostRequirements =     {
+                minHostVersion = "13.4";
+                minXcodeVersion = "15.0";
+            };
+            identifier = "com.apple.dmg.xrSimulatorSDK1_0_b1";
+            name = "xrOS 1 beta Simulator Runtime";
+            platform = "com.apple.platform.xros";
+            simulatorVersion =     {
+                buildUpdate = 21N5165g;
+                version = "1.0";
+            };
+            source = "https://download.developer.apple.com/Developer_Tools/visionOS_1_beta/visionOS_1_beta_Simulator_Runtime.dmg";
+            version = "1.0.0.1";
+        }, NSLocalizedDescription=Unable to read in downloadable data. See underlying errors for details., DVTUnderlyingErrorsKey=(
+            "Error Domain=DVTDownloadableErrors Code=23 \\"'com.apple.platform.xros' is an unknown platform identifier.\\" UserInfo={NSLocalizedDescription='com.apple.platform.xros' is an unknown platform identifier.}"
+        )}
+        2023-08-03 20:19:59.620 xcodebuild[59706:7932057]  DVTDownloadable: Unexpected error attempting to parse downloadable from index: Error Domain=DVTDownloadableErrors Code=16 "Unable to read in downloadable data. See underlying errors for details." UserInfo={DownloadablePlist={
+            authentication = virtual;
+            category = simulator;
+            contentType = diskImage;
+            dictionaryVersion = 2;
+            fileSize = 7220726735;
+            hostRequirements =     {
+                minHostVersion = "13.4";
+                minXcodeVersion = "15.0";
+            };
+            identifier = "com.apple.dmg.xrSimulatorSDK1_0_b2";
+            name = "xrOS 2 beta Simulator Runtime";
+            platform = "com.apple.platform.xros";
+            simulatorVersion =     {
+                buildUpdate = 21N5207f;
+                version = "1.0";
+            };
+            source = "https://download.developer.apple.com/Developer_Tools/visionOS_1_beta_2_Simulator_Runtime/visionOS_1_beta_2_Simulator_Runtime.dmg";
+            version = "1.0.0.2";
+        }, NSLocalizedDescription=Unable to read in downloadable data. See underlying errors for details., DVTUnderlyingErrorsKey=(
+            "Error Domain=DVTDownloadableErrors Code=23 \\"'com.apple.platform.xros' is an unknown platform identifier.\\" UserInfo={NSLocalizedDescription='com.apple.platform.xros' is an unknown platform identifier.}"
+        )}
+        Computing target dependency graph and provisioning inputs
+        
+        Create build description
+        Build description signature: 755eed8a83e7fe38eb59495ed7eda388
+        Build description path: /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/XCBuildData/755eed8a83e7fe38eb59495ed7eda388-desc.xcbuild
+        
+        note: Building targets in dependency order
+        CreateBuildDirectory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build
+            cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/CMAKE_TRY_COMPILE.xcodeproj
+            builtin-create-build-directory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build
+        
+        CreateBuildDirectory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug
+            cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/CMAKE_TRY_COMPILE.xcodeproj
+            builtin-create-build-directory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug
+        
+        CreateBuildDirectory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/EagerLinkingTBDs
+            cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/CMAKE_TRY_COMPILE.xcodeproj
+            builtin-create-build-directory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/EagerLinkingTBDs
+        
+        CompileC /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/CMakeCCompilerABI.o /usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeCCompilerABI.c normal x86_64 c com.apple.compilers.llvm.clang.1_0.compiler (in target 'cmTC_e6b87' from project 'CMAKE_TRY_COMPILE')
+            cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK
+            /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c -target x86_64-apple-macos12.3 -fmessage-length\\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\\=0 -Wno-trigraphs -fpascal-strings -O0 -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wno-shorten-64-to-32 -Wpointer-sign -Wno-newline-eof -Wno-implicit-fallthrough -DCMAKE_INTDIR\\=\\"Debug\\" -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -fasm-blocks -fstrict-aliasing -Wdeprecated-declarations -g -Wno-sign-conversion -Wno-infinite-recursion -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-semicolon-before-method-body -I/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug/include -I/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/DerivedSources-normal/x86_64 -I/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/DerivedSources/x86_64 -I/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/DerivedSources -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug -v -Wl,-v -MMD -MT dependencies -MF /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/CMakeCCompilerABI.d --serialize-diagnostics /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/CMakeCCompilerABI.dia -c /usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeCCompilerABI.c -o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/CMakeCCompilerABI.o
+        Apple clang version 14.0.0 (clang-1400.0.29.102)
+        Target: x86_64-apple-macos12.3
+        Thread model: posix
+        InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin
+        clang: warning: -Wl,-v: 'linker' input unused [-Wunused-command-line-argument]
+         "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang" -cc1 -triple x86_64-apple-macosx12.3.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -mrelax-all --mrelax-relocations -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -mframe-pointer=all -fno-strict-return -fno-rounding-math -funwind-tables=2 -target-sdk-version=12.3 -fvisibility-inlines-hidden-static-local-var -target-cpu penryn -tune-cpu generic -debug-info-kind=standalone -dwarf-version=4 -debugger-tuning=lldb -target-linker-version 819.6 -v -resource-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0 -dependency-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/CMakeCCompilerABI.d -skip-unused-modulemap-deps -MT dependencies -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -D "CMAKE_INTDIR=\\"Debug\\"" -I /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug/include -I /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/DerivedSources-normal/x86_64 -I /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/DerivedSources/x86_64 -I /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/DerivedSources -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/local/include -internal-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include -O0 -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wno-shorten-64-to-32 -Wpointer-sign -Wno-newline-eof -Wno-implicit-fallthrough -Wdeprecated-declarations -Wno-sign-conversion -Wno-infinite-recursion -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-semicolon-before-method-body -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -Wno-cast-function-type -Wno-bitwise-instead-of-logical -fdebug-compilation-dir=/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK -ferror-limit 19 -fmacro-backtrace-limit 0 -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fpascal-strings -fmax-type-align=16 -fcommon -fdiagnostics-show-note-include-stack -fasm-blocks -serialize-diagnostic-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/CMakeCCompilerABI.dia -clang-vendor-feature=+messageToSelfInClassMethodIdReturnType -clang-vendor-feature=+disableInferNewAvailabilityFromInit -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -mllvm -disable-aligned-alloc-awareness=1 -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/CMakeCCompilerABI.o -x c /usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeCCompilerABI.c
+        clang -cc1 version 14.0.0 (clang-1400.0.29.102) default target x86_64-apple-darwin22.1.0
+        ignoring nonexistent directory "/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug/include"
+        ignoring nonexistent directory "/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/DerivedSources-normal/x86_64"
+        ignoring nonexistent directory "/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/DerivedSources/x86_64"
+        ignoring nonexistent directory "/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/DerivedSources"
+        ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/local/include"
+        ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/Library/Frameworks"
+        #include "..." search starts here:
+        #include <...> search starts here:
+         /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug (framework directory)
+         /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/include
+         /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/include
+         /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include
+         /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/System/Library/Frameworks (framework directory)
+        End of search list.
+        
+        WriteAuxiliaryFile /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/cmTC_e6b87.LinkFileList (in target 'cmTC_e6b87' from project 'CMAKE_TRY_COMPILE')
+            cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK
+            write-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/cmTC_e6b87.LinkFileList
+        
+        Ld /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug/cmTC_e6b87 normal (in target 'cmTC_e6b87' from project 'CMAKE_TRY_COMPILE')
+            cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK
+            /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -target x86_64-apple-macos12.3 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -L/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/EagerLinkingTBDs -L/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/EagerLinkingTBDs -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug -filelist /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/cmTC_e6b87.LinkFileList -Xlinker -object_path_lto -Xlinker /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/cmTC_e6b87_lto.o -Xlinker -no_deduplicate -v -Wl,-v -Wl,-search_paths_first -Wl,-headerpad_max_install_names -Xlinker -dependency_info -Xlinker /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/cmTC_e6b87_dependency_info.dat -o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug/cmTC_e6b87
+        Apple clang version 14.0.0 (clang-1400.0.29.102)
+        Target: x86_64-apple-macos12.3
+        Thread model: posix
+        InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin
+         "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld" -demangle -lto_library /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libLTO.dylib -dynamic -arch x86_64 -platform_version macos 12.3.0 12.3 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug/cmTC_e6b87 -L/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/EagerLinkingTBDs -L/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug -filelist /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/cmTC_e6b87.LinkFileList -object_path_lto /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/cmTC_e6b87_lto.o -no_deduplicate -v -search_paths_first -headerpad_max_install_names -dependency_info /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/cmTC_e6b87_dependency_info.dat -lSystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/lib/darwin/libclang_rt.osx.a -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/EagerLinkingTBDs -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug
+        @(#)PROGRAM:ld  PROJECT:ld64-819.6
+        BUILD 21:47:27 Sep 13 2022
+        configured to support archs: armv6 armv7 armv7s arm64 arm64e arm64_32 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em
+        Library search paths:
+        	/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/EagerLinkingTBDs
+        	/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug
+        	/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/lib
+        Framework search paths:
+        	/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/EagerLinkingTBDs
+        	/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug
+        	/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/
+        
+        RegisterExecutionPolicyException /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug/cmTC_e6b87 (in target 'cmTC_e6b87' from project 'CMAKE_TRY_COMPILE')
+            cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK
+            builtin-RegisterExecutionPolicyException /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug/cmTC_e6b87
+        
+        ** BUILD SUCCEEDED **
+        
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:127 (message)"
+      - "/usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt"
+    message: |
+      Parsed C implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/include]
+          add: [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/include]
+          add: [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include]
+        end of search list found
+        collapse include dir [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/include] ==> [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/include]
+        collapse include dir [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/include] ==> [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/include]
+        collapse include dir [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include] ==> [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include]
+        implicit include dirs: [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/include;/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/include;/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:152 (message)"
+      - "/usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt"
+    message: |
+      Parsed C implicit link information:
+        link line regex: [^( *|.*[/\\])(ld|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        ignore line: [Change Dir: /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK]
+        ignore line: []
+        ignore line: [Run Build Command(s):/usr/bin/xcodebuild -project CMAKE_TRY_COMPILE.xcodeproj build -target cmTC_e6b87 -parallelizeTargets -configuration Debug -hideShellScriptEnvironment && Command line invocation:]
+        ignore line: [    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project CMAKE_TRY_COMPILE.xcodeproj build -target cmTC_e6b87 -parallelizeTargets -configuration Debug -hideShellScriptEnvironment]
+        ignore line: []
+        ignore line: [User defaults from command line:]
+        ignore line: [    HideShellScriptEnvironment = YES]
+        ignore line: [    IDEPackageSupportUseBuiltinSCM = YES]
+        ignore line: []
+        ignore line: [2023-08-03 20:19:59.620 xcodebuild[59706:7932057]  DVTDownloadable: Unexpected error attempting to parse downloadable from index: Error Domain=DVTDownloadableErrors Code=16 "Unable to read in downloadable data. See underlying errors for details." UserInfo={DownloadablePlist={]
+        ignore line: [    authentication = virtual]
+        ignore line: []
+        ignore line: [    category = simulator]
+        ignore line: []
+        ignore line: [    contentType = diskImage]
+        ignore line: []
+        ignore line: [    dictionaryVersion = 2]
+        ignore line: []
+        ignore line: [    fileSize = 7354535384]
+        ignore line: []
+        ignore line: [    hostRequirements =     {]
+        ignore line: [        minHostVersion = "13.4"]
+        ignore line: []
+        ignore line: [        minXcodeVersion = "15.0"]
+        ignore line: []
+        ignore line: [    }]
+        ignore line: []
+        ignore line: [    identifier = "com.apple.dmg.xrSimulatorSDK1_0_b1"]
+        ignore line: []
+        ignore line: [    name = "xrOS 1 beta Simulator Runtime"]
+        ignore line: []
+        ignore line: [    platform = "com.apple.platform.xros"]
+        ignore line: []
+        ignore line: [    simulatorVersion =     {]
+        ignore line: [        buildUpdate = 21N5165g]
+        ignore line: []
+        ignore line: [        version = "1.0"]
+        ignore line: []
+        ignore line: [    }]
+        ignore line: []
+        ignore line: [    source = "https://download.developer.apple.com/Developer_Tools/visionOS_1_beta/visionOS_1_beta_Simulator_Runtime.dmg"]
+        ignore line: []
+        ignore line: [    version = "1.0.0.1"]
+        ignore line: []
+        ignore line: [}  NSLocalizedDescription=Unable to read in downloadable data. See underlying errors for details.  DVTUnderlyingErrorsKey=(]
+        ignore line: [    "Error Domain=DVTDownloadableErrors Code=23 \\"'com.apple.platform.xros' is an unknown platform identifier.\\" UserInfo={NSLocalizedDescription='com.apple.platform.xros' is an unknown platform identifier.}"]
+        ignore line: [)}]
+        ignore line: [2023-08-03 20:19:59.620 xcodebuild[59706:7932057]  DVTDownloadable: Unexpected error attempting to parse downloadable from index: Error Domain=DVTDownloadableErrors Code=16 "Unable to read in downloadable data. See underlying errors for details." UserInfo={DownloadablePlist={]
+        ignore line: [    authentication = virtual]
+        ignore line: []
+        ignore line: [    category = simulator]
+        ignore line: []
+        ignore line: [    contentType = diskImage]
+        ignore line: []
+        ignore line: [    dictionaryVersion = 2]
+        ignore line: []
+        ignore line: [    fileSize = 7220726735]
+        ignore line: []
+        ignore line: [    hostRequirements =     {]
+        ignore line: [        minHostVersion = "13.4"]
+        ignore line: []
+        ignore line: [        minXcodeVersion = "15.0"]
+        ignore line: []
+        ignore line: [    }]
+        ignore line: []
+        ignore line: [    identifier = "com.apple.dmg.xrSimulatorSDK1_0_b2"]
+        ignore line: []
+        ignore line: [    name = "xrOS 2 beta Simulator Runtime"]
+        ignore line: []
+        ignore line: [    platform = "com.apple.platform.xros"]
+        ignore line: []
+        ignore line: [    simulatorVersion =     {]
+        ignore line: [        buildUpdate = 21N5207f]
+        ignore line: []
+        ignore line: [        version = "1.0"]
+        ignore line: []
+        ignore line: [    }]
+        ignore line: []
+        ignore line: [    source = "https://download.developer.apple.com/Developer_Tools/visionOS_1_beta_2_Simulator_Runtime/visionOS_1_beta_2_Simulator_Runtime.dmg"]
+        ignore line: []
+        ignore line: [    version = "1.0.0.2"]
+        ignore line: []
+        ignore line: [}  NSLocalizedDescription=Unable to read in downloadable data. See underlying errors for details.  DVTUnderlyingErrorsKey=(]
+        ignore line: [    "Error Domain=DVTDownloadableErrors Code=23 \\"'com.apple.platform.xros' is an unknown platform identifier.\\" UserInfo={NSLocalizedDescription='com.apple.platform.xros' is an unknown platform identifier.}"]
+        ignore line: [)}]
+        ignore line: [Computing target dependency graph and provisioning inputs]
+        ignore line: []
+        ignore line: [Create build description]
+        ignore line: [Build description signature: 755eed8a83e7fe38eb59495ed7eda388]
+        ignore line: [Build description path: /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/XCBuildData/755eed8a83e7fe38eb59495ed7eda388-desc.xcbuild]
+        ignore line: []
+        ignore line: [note: Building targets in dependency order]
+        ignore line: [CreateBuildDirectory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build]
+        ignore line: [    cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/CMAKE_TRY_COMPILE.xcodeproj]
+        ignore line: [    builtin-create-build-directory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build]
+        ignore line: []
+        ignore line: [CreateBuildDirectory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug]
+        ignore line: [    cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/CMAKE_TRY_COMPILE.xcodeproj]
+        ignore line: [    builtin-create-build-directory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug]
+        ignore line: []
+        ignore line: [CreateBuildDirectory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/EagerLinkingTBDs]
+        ignore line: [    cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/CMAKE_TRY_COMPILE.xcodeproj]
+        ignore line: [    builtin-create-build-directory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/EagerLinkingTBDs]
+        ignore line: []
+        ignore line: [CompileC /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/CMakeCCompilerABI.o /usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeCCompilerABI.c normal x86_64 c com.apple.compilers.llvm.clang.1_0.compiler (in target 'cmTC_e6b87' from project 'CMAKE_TRY_COMPILE')]
+        ignore line: [    cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK]
+        ignore line: [    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c -target x86_64-apple-macos12.3 -fmessage-length\\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\\=0 -Wno-trigraphs -fpascal-strings -O0 -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wno-shorten-64-to-32 -Wpointer-sign -Wno-newline-eof -Wno-implicit-fallthrough -DCMAKE_INTDIR\\=\\"Debug\\" -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -fasm-blocks -fstrict-aliasing -Wdeprecated-declarations -g -Wno-sign-conversion -Wno-infinite-recursion -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-semicolon-before-method-body -I/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug/include -I/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/DerivedSources-normal/x86_64 -I/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/DerivedSources/x86_64 -I/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/DerivedSources -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug -v -Wl -v -MMD -MT dependencies -MF /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/CMakeCCompilerABI.d --serialize-diagnostics /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/CMakeCCompilerABI.dia -c /usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeCCompilerABI.c -o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/CMakeCCompilerABI.o]
+        ignore line: [Apple clang version 14.0.0 (clang-1400.0.29.102)]
+        ignore line: [Target: x86_64-apple-macos12.3]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin]
+        ignore line: [clang: warning: -Wl -v: 'linker' input unused [-Wunused-command-line-argument]]
+        ignore line: [ "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang" -cc1 -triple x86_64-apple-macosx12.3.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -mrelax-all --mrelax-relocations -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -mframe-pointer=all -fno-strict-return -fno-rounding-math -funwind-tables=2 -target-sdk-version=12.3 -fvisibility-inlines-hidden-static-local-var -target-cpu penryn -tune-cpu generic -debug-info-kind=standalone -dwarf-version=4 -debugger-tuning=lldb -target-linker-version 819.6 -v -resource-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0 -dependency-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/CMakeCCompilerABI.d -skip-unused-modulemap-deps -MT dependencies -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -D "CMAKE_INTDIR=\\"Debug\\"" -I /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug/include -I /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/DerivedSources-normal/x86_64 -I /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/DerivedSources/x86_64 -I /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/DerivedSources -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/local/include -internal-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include -O0 -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wno-shorten-64-to-32 -Wpointer-sign -Wno-newline-eof -Wno-implicit-fallthrough -Wdeprecated-declarations -Wno-sign-conversion -Wno-infinite-recursion -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-semicolon-before-method-body -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -Wno-cast-function-type -Wno-bitwise-instead-of-logical -fdebug-compilation-dir=/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK -ferror-limit 19 -fmacro-backtrace-limit 0 -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fpascal-strings -fmax-type-align=16 -fcommon -fdiagnostics-show-note-include-stack -fasm-blocks -serialize-diagnostic-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/CMakeCCompilerABI.dia -clang-vendor-feature=+messageToSelfInClassMethodIdReturnType -clang-vendor-feature=+disableInferNewAvailabilityFromInit -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -mllvm -disable-aligned-alloc-awareness=1 -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/CMakeCCompilerABI.o -x c /usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeCCompilerABI.c]
+        ignore line: [clang -cc1 version 14.0.0 (clang-1400.0.29.102) default target x86_64-apple-darwin22.1.0]
+        ignore line: [ignoring nonexistent directory "/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug/include"]
+        ignore line: [ignoring nonexistent directory "/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/DerivedSources-normal/x86_64"]
+        ignore line: [ignoring nonexistent directory "/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/DerivedSources/x86_64"]
+        ignore line: [ignoring nonexistent directory "/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/DerivedSources"]
+        ignore line: [ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/local/include"]
+        ignore line: [ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/Library/Frameworks"]
+        ignore line: [#include "..." search starts here:]
+        ignore line: [#include <...> search starts here:]
+        ignore line: [ /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug (framework directory)]
+        ignore line: [ /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/include]
+        ignore line: [ /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/include]
+        ignore line: [ /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include]
+        ignore line: [ /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/System/Library/Frameworks (framework directory)]
+        ignore line: [End of search list.]
+        ignore line: []
+        ignore line: [WriteAuxiliaryFile /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/cmTC_e6b87.LinkFileList (in target 'cmTC_e6b87' from project 'CMAKE_TRY_COMPILE')]
+        ignore line: [    cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK]
+        ignore line: [    write-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/cmTC_e6b87.LinkFileList]
+        ignore line: []
+        ignore line: [Ld /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug/cmTC_e6b87 normal (in target 'cmTC_e6b87' from project 'CMAKE_TRY_COMPILE')]
+        ignore line: [    cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK]
+        ignore line: [    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -target x86_64-apple-macos12.3 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -L/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/EagerLinkingTBDs -L/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/EagerLinkingTBDs -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug -filelist /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/cmTC_e6b87.LinkFileList -Xlinker -object_path_lto -Xlinker /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/cmTC_e6b87_lto.o -Xlinker -no_deduplicate -v -Wl -v -Wl -search_paths_first -Wl -headerpad_max_install_names -Xlinker -dependency_info -Xlinker /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/cmTC_e6b87_dependency_info.dat -o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug/cmTC_e6b87]
+        ignore line: [Apple clang version 14.0.0 (clang-1400.0.29.102)]
+        ignore line: [Target: x86_64-apple-macos12.3]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin]
+        reduced line: [ "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld" -demangle -lto_library /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libLTO.dylib -dynamic -arch x86_64 -platform_version macos 12.3.0 12.3 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug/cmTC_e6b87 -L/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/EagerLinkingTBDs -L/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug -filelist /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/cmTC_e6b87.LinkFileList -object_path_lto /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/cmTC_e6b87_lto.o -no_deduplicate -v -search_paths_first -headerpad_max_install_names -dependency_info /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/cmTC_e6b87_dependency_info.dat -lSystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/lib/darwin/libclang_rt.osx.a -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/EagerLinkingTBDs -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug]
+                  to: [ "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld" -demangle -lto_library /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libLTO.dylib -dynamic -arch x86_64 -platform_version macos 12.3.0 12.3 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug/cmTC_e6b87 -L/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug -filelist /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/cmTC_e6b87.LinkFileList -object_path_lto /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/cmTC_e6b87_lto.o -no_deduplicate -v -search_paths_first -headerpad_max_install_names -dependency_info /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/cmTC_e6b87_dependency_info.dat -lSystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/lib/darwin/libclang_rt.osx.a -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug]
+        link line: [ "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld" -demangle -lto_library /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libLTO.dylib -dynamic -arch x86_64 -platform_version macos 12.3.0 12.3 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug/cmTC_e6b87 -L/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug -filelist /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/cmTC_e6b87.LinkFileList -object_path_lto /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/cmTC_e6b87_lto.o -no_deduplicate -v -search_paths_first -headerpad_max_install_names -dependency_info /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/cmTC_e6b87_dependency_info.dat -lSystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/lib/darwin/libclang_rt.osx.a -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug]
+          arg [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld] ==> ignore
+          arg [-demangle] ==> ignore
+          arg [-lto_library] ==> ignore, skip following value
+          arg [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libLTO.dylib] ==> skip value of -lto_library
+          arg [-dynamic] ==> ignore
+          arg [-arch] ==> ignore
+          arg [x86_64] ==> ignore
+          arg [-platform_version] ==> ignore
+          arg [macos] ==> ignore
+          arg [12.3.0] ==> ignore
+          arg [12.3] ==> ignore
+          arg [-syslibroot] ==> ignore
+          arg [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk] ==> ignore
+          arg [-o] ==> ignore
+          arg [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug/cmTC_e6b87] ==> ignore
+          arg [-L/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug] ==> dir [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug]
+          arg [-filelist] ==> ignore
+          arg [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/cmTC_e6b87.LinkFileList] ==> ignore
+          arg [-object_path_lto] ==> ignore
+          arg [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/cmTC_e6b87_lto.o] ==> obj [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/cmTC_e6b87_lto.o]
+          arg [-no_deduplicate] ==> ignore
+          arg [-v] ==> ignore
+          arg [-search_paths_first] ==> ignore
+          arg [-headerpad_max_install_names] ==> ignore
+          arg [-dependency_info] ==> ignore
+          arg [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/cmTC_e6b87_dependency_info.dat] ==> ignore
+          arg [-lSystem] ==> lib [System]
+          arg [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/lib/darwin/libclang_rt.osx.a] ==> lib [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/lib/darwin/libclang_rt.osx.a]
+          arg [-F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug] ==> ignore
+        Library search paths: [;/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/EagerLinkingTBDs;/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug;/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/lib]
+        Framework search paths: [;/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/EagerLinkingTBDs;/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug;/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/]
+        remove lib [System]
+        remove lib [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/lib/darwin/libclang_rt.osx.a]
+        collapse library dir [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug] ==> [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug], skipping non-system directory
+        collapse library dir [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/EagerLinkingTBDs] ==> [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/EagerLinkingTBDs], skipping non-system directory
+        collapse library dir [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug] ==> [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug], skipping non-system directory
+        collapse library dir [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/lib] ==> [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/lib]
+        collapse framework dir [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/EagerLinkingTBDs] ==> [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/EagerLinkingTBDs], skipping non-system directory
+        collapse framework dir [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug] ==> [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/Debug], skipping non-system directory
+        collapse framework dir [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/] ==> [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/System/Library/Frameworks]
+        implicit libs: []
+        implicit objs: [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-NIfjqK/build/cmTC_e6b87.build/Debug/Objects-normal/x86_64/cmTC_e6b87_lto.o]
+        implicit dirs: [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/lib]
+        implicit fwks: [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/System/Library/Frameworks]
+      
+      
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:57 (try_compile)"
+      - "/usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt"
+    checks:
+      - "Detecting CXX compiler ABI info"
+    directories:
+      source: "/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY"
+      binary: "/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: ""
+      CMAKE_OSX_ARCHITECTURES: "x86_64"
+      CMAKE_OSX_DEPLOYMENT_TARGET: ""
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk"
+    buildResult:
+      variable: "CMAKE_CXX_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY
+        
+        Run Build Command(s):/usr/bin/xcodebuild -project CMAKE_TRY_COMPILE.xcodeproj build -target cmTC_8fc66 -parallelizeTargets -configuration Debug -hideShellScriptEnvironment && Command line invocation:
+            /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project CMAKE_TRY_COMPILE.xcodeproj build -target cmTC_8fc66 -parallelizeTargets -configuration Debug -hideShellScriptEnvironment
+        
+        User defaults from command line:
+            HideShellScriptEnvironment = YES
+            IDEPackageSupportUseBuiltinSCM = YES
+        
+        2023-08-03 20:20:01.175 xcodebuild[59719:7932167]  DVTDownloadable: Unexpected error attempting to parse downloadable from index: Error Domain=DVTDownloadableErrors Code=16 "Unable to read in downloadable data. See underlying errors for details." UserInfo={DownloadablePlist={
+            authentication = virtual;
+            category = simulator;
+            contentType = diskImage;
+            dictionaryVersion = 2;
+            fileSize = 7354535384;
+            hostRequirements =     {
+                minHostVersion = "13.4";
+                minXcodeVersion = "15.0";
+            };
+            identifier = "com.apple.dmg.xrSimulatorSDK1_0_b1";
+            name = "xrOS 1 beta Simulator Runtime";
+            platform = "com.apple.platform.xros";
+            simulatorVersion =     {
+                buildUpdate = 21N5165g;
+                version = "1.0";
+            };
+            source = "https://download.developer.apple.com/Developer_Tools/visionOS_1_beta/visionOS_1_beta_Simulator_Runtime.dmg";
+            version = "1.0.0.1";
+        }, NSLocalizedDescription=Unable to read in downloadable data. See underlying errors for details., DVTUnderlyingErrorsKey=(
+            "Error Domain=DVTDownloadableErrors Code=23 \\"'com.apple.platform.xros' is an unknown platform identifier.\\" UserInfo={NSLocalizedDescription='com.apple.platform.xros' is an unknown platform identifier.}"
+        )}
+        2023-08-03 20:20:01.175 xcodebuild[59719:7932167]  DVTDownloadable: Unexpected error attempting to parse downloadable from index: Error Domain=DVTDownloadableErrors Code=16 "Unable to read in downloadable data. See underlying errors for details." UserInfo={DownloadablePlist={
+            authentication = virtual;
+            category = simulator;
+            contentType = diskImage;
+            dictionaryVersion = 2;
+            fileSize = 7220726735;
+            hostRequirements =     {
+                minHostVersion = "13.4";
+                minXcodeVersion = "15.0";
+            };
+            identifier = "com.apple.dmg.xrSimulatorSDK1_0_b2";
+            name = "xrOS 2 beta Simulator Runtime";
+            platform = "com.apple.platform.xros";
+            simulatorVersion =     {
+                buildUpdate = 21N5207f;
+                version = "1.0";
+            };
+            source = "https://download.developer.apple.com/Developer_Tools/visionOS_1_beta_2_Simulator_Runtime/visionOS_1_beta_2_Simulator_Runtime.dmg";
+            version = "1.0.0.2";
+        }, NSLocalizedDescription=Unable to read in downloadable data. See underlying errors for details., DVTUnderlyingErrorsKey=(
+            "Error Domain=DVTDownloadableErrors Code=23 \\"'com.apple.platform.xros' is an unknown platform identifier.\\" UserInfo={NSLocalizedDescription='com.apple.platform.xros' is an unknown platform identifier.}"
+        )}
+        Computing target dependency graph and provisioning inputs
+        
+        Create build description
+        Build description signature: c85ce98c6bbebdb5829fd24b7ffd00dc
+        Build description path: /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/XCBuildData/c85ce98c6bbebdb5829fd24b7ffd00dc-desc.xcbuild
+        
+        note: Building targets in dependency order
+        CreateBuildDirectory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug
+            cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/CMAKE_TRY_COMPILE.xcodeproj
+            builtin-create-build-directory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug
+        
+        CreateBuildDirectory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build
+            cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/CMAKE_TRY_COMPILE.xcodeproj
+            builtin-create-build-directory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build
+        
+        CreateBuildDirectory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/EagerLinkingTBDs
+            cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/CMAKE_TRY_COMPILE.xcodeproj
+            builtin-create-build-directory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/EagerLinkingTBDs
+        
+        WriteAuxiliaryFile /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/cmTC_8fc66.LinkFileList (in target 'cmTC_8fc66' from project 'CMAKE_TRY_COMPILE')
+            cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY
+            write-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/cmTC_8fc66.LinkFileList
+        
+        CompileC /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/CMakeCXXCompilerABI.o /usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeCXXCompilerABI.cpp normal x86_64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'cmTC_8fc66' from project 'CMAKE_TRY_COMPILE')
+            cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY
+            /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -target x86_64-apple-macos12.3 -fmessage-length\\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\\=0 -Wno-trigraphs -fpascal-strings -O0 -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wno-shorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -DCMAKE_INTDIR\\=\\"Debug\\" -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -fasm-blocks -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -g -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -I/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug/include -I/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/DerivedSources-normal/x86_64 -I/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/DerivedSources/x86_64 -I/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/DerivedSources -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug -v -Wl,-v -MMD -MT dependencies -MF /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/CMakeCXXCompilerABI.d --serialize-diagnostics /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/CMakeCXXCompilerABI.dia -c /usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeCXXCompilerABI.cpp -o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/CMakeCXXCompilerABI.o
+        Apple clang version 14.0.0 (clang-1400.0.29.102)
+        Target: x86_64-apple-macos12.3
+        Thread model: posix
+        InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin
+        clang: warning: -Wl,-v: 'linker' input unused [-Wunused-command-line-argument]
+         "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang" -cc1 -triple x86_64-apple-macosx12.3.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -mrelax-all --mrelax-relocations -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -mframe-pointer=all -fno-strict-return -fno-rounding-math -funwind-tables=2 -target-sdk-version=12.3 -fvisibility-inlines-hidden-static-local-var -target-cpu penryn -tune-cpu generic -debug-info-kind=standalone -dwarf-version=4 -debugger-tuning=lldb -target-linker-version 819.6 -v -resource-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0 -dependency-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/CMakeCXXCompilerABI.d -skip-unused-modulemap-deps -MT dependencies -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -D "CMAKE_INTDIR=\\"Debug\\"" -I /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug/include -I /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/DerivedSources-normal/x86_64 -I /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/DerivedSources/x86_64 -I /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/DerivedSources -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug -stdlib=libc++ -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/include/c++/v1 -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/local/include -internal-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include -O0 -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wno-shorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -Wno-cast-function-type -Wno-bitwise-instead-of-logical -fdeprecated-macro -fdebug-compilation-dir=/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY -ferror-limit 19 -fmacro-backtrace-limit 0 -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fno-cxx-modules -fcxx-exceptions -fexceptions -fpascal-strings -fmax-type-align=16 -fcommon -fdiagnostics-show-note-include-stack -fasm-blocks -serialize-diagnostic-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/CMakeCXXCompilerABI.dia -clang-vendor-feature=+messageToSelfInClassMethodIdReturnType -clang-vendor-feature=+disableInferNewAvailabilityFromInit -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -mllvm -disable-aligned-alloc-awareness=1 -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/CMakeCXXCompilerABI.o -x c++ /usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeCXXCompilerABI.cpp
+        clang -cc1 version 14.0.0 (clang-1400.0.29.102) default target x86_64-apple-darwin22.1.0
+        ignoring nonexistent directory "/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug/include"
+        ignoring nonexistent directory "/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/DerivedSources-normal/x86_64"
+        ignoring nonexistent directory "/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/DerivedSources/x86_64"
+        ignoring nonexistent directory "/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/DerivedSources"
+        ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/local/include"
+        ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/Library/Frameworks"
+        #include "..." search starts here:
+        #include <...> search starts here:
+         /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug (framework directory)
+         /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/include/c++/v1
+         /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/include
+         /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/include
+         /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include
+         /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/System/Library/Frameworks (framework directory)
+        End of search list.
+        
+        Ld /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug/cmTC_8fc66 normal (in target 'cmTC_8fc66' from project 'CMAKE_TRY_COMPILE')
+            cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY
+            /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++ -target x86_64-apple-macos12.3 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -L/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/EagerLinkingTBDs -L/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/EagerLinkingTBDs -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug -filelist /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/cmTC_8fc66.LinkFileList -Xlinker -object_path_lto -Xlinker /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/cmTC_8fc66_lto.o -Xlinker -no_deduplicate -v -Wl,-v -Wl,-search_paths_first -Wl,-headerpad_max_install_names -Xlinker -dependency_info -Xlinker /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/cmTC_8fc66_dependency_info.dat -o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug/cmTC_8fc66
+        Apple clang version 14.0.0 (clang-1400.0.29.102)
+        Target: x86_64-apple-macos12.3
+        Thread model: posix
+        InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin
+         "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld" -demangle -lto_library /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libLTO.dylib -dynamic -arch x86_64 -platform_version macos 12.3.0 12.3 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug/cmTC_8fc66 -L/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/EagerLinkingTBDs -L/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug -filelist /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/cmTC_8fc66.LinkFileList -object_path_lto /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/cmTC_8fc66_lto.o -no_deduplicate -v -search_paths_first -headerpad_max_install_names -dependency_info /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/cmTC_8fc66_dependency_info.dat -lc++ -lSystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/lib/darwin/libclang_rt.osx.a -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/EagerLinkingTBDs -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug
+        @(#)PROGRAM:ld  PROJECT:ld64-819.6
+        BUILD 21:47:27 Sep 13 2022
+        configured to support archs: armv6 armv7 armv7s arm64 arm64e arm64_32 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em
+        Library search paths:
+        	/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/EagerLinkingTBDs
+        	/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug
+        	/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/lib
+        Framework search paths:
+        	/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/EagerLinkingTBDs
+        	/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug
+        	/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/
+        
+        RegisterExecutionPolicyException /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug/cmTC_8fc66 (in target 'cmTC_8fc66' from project 'CMAKE_TRY_COMPILE')
+            cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY
+            builtin-RegisterExecutionPolicyException /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug/cmTC_8fc66
+        
+        ** BUILD SUCCEEDED **
+        
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:127 (message)"
+      - "/usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt"
+    message: |
+      Parsed CXX implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/include/c++/v1]
+          add: [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/include]
+          add: [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/include]
+          add: [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include]
+        end of search list found
+        collapse include dir [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/include/c++/v1] ==> [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/include/c++/v1]
+        collapse include dir [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/include] ==> [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/include]
+        collapse include dir [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/include] ==> [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/include]
+        collapse include dir [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include] ==> [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include]
+        implicit include dirs: [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/include/c++/v1;/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/include;/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/include;/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:152 (message)"
+      - "/usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt"
+    message: |
+      Parsed CXX implicit link information:
+        link line regex: [^( *|.*[/\\])(ld|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        ignore line: [Change Dir: /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY]
+        ignore line: []
+        ignore line: [Run Build Command(s):/usr/bin/xcodebuild -project CMAKE_TRY_COMPILE.xcodeproj build -target cmTC_8fc66 -parallelizeTargets -configuration Debug -hideShellScriptEnvironment && Command line invocation:]
+        ignore line: [    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project CMAKE_TRY_COMPILE.xcodeproj build -target cmTC_8fc66 -parallelizeTargets -configuration Debug -hideShellScriptEnvironment]
+        ignore line: []
+        ignore line: [User defaults from command line:]
+        ignore line: [    HideShellScriptEnvironment = YES]
+        ignore line: [    IDEPackageSupportUseBuiltinSCM = YES]
+        ignore line: []
+        ignore line: [2023-08-03 20:20:01.175 xcodebuild[59719:7932167]  DVTDownloadable: Unexpected error attempting to parse downloadable from index: Error Domain=DVTDownloadableErrors Code=16 "Unable to read in downloadable data. See underlying errors for details." UserInfo={DownloadablePlist={]
+        ignore line: [    authentication = virtual]
+        ignore line: []
+        ignore line: [    category = simulator]
+        ignore line: []
+        ignore line: [    contentType = diskImage]
+        ignore line: []
+        ignore line: [    dictionaryVersion = 2]
+        ignore line: []
+        ignore line: [    fileSize = 7354535384]
+        ignore line: []
+        ignore line: [    hostRequirements =     {]
+        ignore line: [        minHostVersion = "13.4"]
+        ignore line: []
+        ignore line: [        minXcodeVersion = "15.0"]
+        ignore line: []
+        ignore line: [    }]
+        ignore line: []
+        ignore line: [    identifier = "com.apple.dmg.xrSimulatorSDK1_0_b1"]
+        ignore line: []
+        ignore line: [    name = "xrOS 1 beta Simulator Runtime"]
+        ignore line: []
+        ignore line: [    platform = "com.apple.platform.xros"]
+        ignore line: []
+        ignore line: [    simulatorVersion =     {]
+        ignore line: [        buildUpdate = 21N5165g]
+        ignore line: []
+        ignore line: [        version = "1.0"]
+        ignore line: []
+        ignore line: [    }]
+        ignore line: []
+        ignore line: [    source = "https://download.developer.apple.com/Developer_Tools/visionOS_1_beta/visionOS_1_beta_Simulator_Runtime.dmg"]
+        ignore line: []
+        ignore line: [    version = "1.0.0.1"]
+        ignore line: []
+        ignore line: [}  NSLocalizedDescription=Unable to read in downloadable data. See underlying errors for details.  DVTUnderlyingErrorsKey=(]
+        ignore line: [    "Error Domain=DVTDownloadableErrors Code=23 \\"'com.apple.platform.xros' is an unknown platform identifier.\\" UserInfo={NSLocalizedDescription='com.apple.platform.xros' is an unknown platform identifier.}"]
+        ignore line: [)}]
+        ignore line: [2023-08-03 20:20:01.175 xcodebuild[59719:7932167]  DVTDownloadable: Unexpected error attempting to parse downloadable from index: Error Domain=DVTDownloadableErrors Code=16 "Unable to read in downloadable data. See underlying errors for details." UserInfo={DownloadablePlist={]
+        ignore line: [    authentication = virtual]
+        ignore line: []
+        ignore line: [    category = simulator]
+        ignore line: []
+        ignore line: [    contentType = diskImage]
+        ignore line: []
+        ignore line: [    dictionaryVersion = 2]
+        ignore line: []
+        ignore line: [    fileSize = 7220726735]
+        ignore line: []
+        ignore line: [    hostRequirements =     {]
+        ignore line: [        minHostVersion = "13.4"]
+        ignore line: []
+        ignore line: [        minXcodeVersion = "15.0"]
+        ignore line: []
+        ignore line: [    }]
+        ignore line: []
+        ignore line: [    identifier = "com.apple.dmg.xrSimulatorSDK1_0_b2"]
+        ignore line: []
+        ignore line: [    name = "xrOS 2 beta Simulator Runtime"]
+        ignore line: []
+        ignore line: [    platform = "com.apple.platform.xros"]
+        ignore line: []
+        ignore line: [    simulatorVersion =     {]
+        ignore line: [        buildUpdate = 21N5207f]
+        ignore line: []
+        ignore line: [        version = "1.0"]
+        ignore line: []
+        ignore line: [    }]
+        ignore line: []
+        ignore line: [    source = "https://download.developer.apple.com/Developer_Tools/visionOS_1_beta_2_Simulator_Runtime/visionOS_1_beta_2_Simulator_Runtime.dmg"]
+        ignore line: []
+        ignore line: [    version = "1.0.0.2"]
+        ignore line: []
+        ignore line: [}  NSLocalizedDescription=Unable to read in downloadable data. See underlying errors for details.  DVTUnderlyingErrorsKey=(]
+        ignore line: [    "Error Domain=DVTDownloadableErrors Code=23 \\"'com.apple.platform.xros' is an unknown platform identifier.\\" UserInfo={NSLocalizedDescription='com.apple.platform.xros' is an unknown platform identifier.}"]
+        ignore line: [)}]
+        ignore line: [Computing target dependency graph and provisioning inputs]
+        ignore line: []
+        ignore line: [Create build description]
+        ignore line: [Build description signature: c85ce98c6bbebdb5829fd24b7ffd00dc]
+        ignore line: [Build description path: /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/XCBuildData/c85ce98c6bbebdb5829fd24b7ffd00dc-desc.xcbuild]
+        ignore line: []
+        ignore line: [note: Building targets in dependency order]
+        ignore line: [CreateBuildDirectory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug]
+        ignore line: [    cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/CMAKE_TRY_COMPILE.xcodeproj]
+        ignore line: [    builtin-create-build-directory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug]
+        ignore line: []
+        ignore line: [CreateBuildDirectory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build]
+        ignore line: [    cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/CMAKE_TRY_COMPILE.xcodeproj]
+        ignore line: [    builtin-create-build-directory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build]
+        ignore line: []
+        ignore line: [CreateBuildDirectory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/EagerLinkingTBDs]
+        ignore line: [    cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/CMAKE_TRY_COMPILE.xcodeproj]
+        ignore line: [    builtin-create-build-directory /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/EagerLinkingTBDs]
+        ignore line: []
+        ignore line: [WriteAuxiliaryFile /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/cmTC_8fc66.LinkFileList (in target 'cmTC_8fc66' from project 'CMAKE_TRY_COMPILE')]
+        ignore line: [    cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY]
+        ignore line: [    write-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/cmTC_8fc66.LinkFileList]
+        ignore line: []
+        ignore line: [CompileC /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/CMakeCXXCompilerABI.o /usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeCXXCompilerABI.cpp normal x86_64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'cmTC_8fc66' from project 'CMAKE_TRY_COMPILE')]
+        ignore line: [    cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY]
+        ignore line: [    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -target x86_64-apple-macos12.3 -fmessage-length\\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\\=0 -Wno-trigraphs -fpascal-strings -O0 -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wno-shorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -DCMAKE_INTDIR\\=\\"Debug\\" -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -fasm-blocks -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -g -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -I/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug/include -I/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/DerivedSources-normal/x86_64 -I/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/DerivedSources/x86_64 -I/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/DerivedSources -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug -v -Wl -v -MMD -MT dependencies -MF /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/CMakeCXXCompilerABI.d --serialize-diagnostics /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/CMakeCXXCompilerABI.dia -c /usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeCXXCompilerABI.cpp -o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/CMakeCXXCompilerABI.o]
+        ignore line: [Apple clang version 14.0.0 (clang-1400.0.29.102)]
+        ignore line: [Target: x86_64-apple-macos12.3]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin]
+        ignore line: [clang: warning: -Wl -v: 'linker' input unused [-Wunused-command-line-argument]]
+        ignore line: [ "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang" -cc1 -triple x86_64-apple-macosx12.3.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -mrelax-all --mrelax-relocations -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -mframe-pointer=all -fno-strict-return -fno-rounding-math -funwind-tables=2 -target-sdk-version=12.3 -fvisibility-inlines-hidden-static-local-var -target-cpu penryn -tune-cpu generic -debug-info-kind=standalone -dwarf-version=4 -debugger-tuning=lldb -target-linker-version 819.6 -v -resource-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0 -dependency-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/CMakeCXXCompilerABI.d -skip-unused-modulemap-deps -MT dependencies -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -D "CMAKE_INTDIR=\\"Debug\\"" -I /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug/include -I /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/DerivedSources-normal/x86_64 -I /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/DerivedSources/x86_64 -I /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/DerivedSources -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug -stdlib=libc++ -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/include/c++/v1 -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/local/include -internal-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include -O0 -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wno-shorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -Wno-cast-function-type -Wno-bitwise-instead-of-logical -fdeprecated-macro -fdebug-compilation-dir=/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY -ferror-limit 19 -fmacro-backtrace-limit 0 -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fno-cxx-modules -fcxx-exceptions -fexceptions -fpascal-strings -fmax-type-align=16 -fcommon -fdiagnostics-show-note-include-stack -fasm-blocks -serialize-diagnostic-file /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/CMakeCXXCompilerABI.dia -clang-vendor-feature=+messageToSelfInClassMethodIdReturnType -clang-vendor-feature=+disableInferNewAvailabilityFromInit -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -mllvm -disable-aligned-alloc-awareness=1 -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/CMakeCXXCompilerABI.o -x c++ /usr/local/Cellar/cmake/3.26.3/share/cmake/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [clang -cc1 version 14.0.0 (clang-1400.0.29.102) default target x86_64-apple-darwin22.1.0]
+        ignore line: [ignoring nonexistent directory "/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug/include"]
+        ignore line: [ignoring nonexistent directory "/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/DerivedSources-normal/x86_64"]
+        ignore line: [ignoring nonexistent directory "/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/DerivedSources/x86_64"]
+        ignore line: [ignoring nonexistent directory "/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/DerivedSources"]
+        ignore line: [ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/local/include"]
+        ignore line: [ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/Library/Frameworks"]
+        ignore line: [#include "..." search starts here:]
+        ignore line: [#include <...> search starts here:]
+        ignore line: [ /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug (framework directory)]
+        ignore line: [ /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/include/c++/v1]
+        ignore line: [ /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/include]
+        ignore line: [ /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/include]
+        ignore line: [ /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include]
+        ignore line: [ /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/System/Library/Frameworks (framework directory)]
+        ignore line: [End of search list.]
+        ignore line: []
+        ignore line: [Ld /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug/cmTC_8fc66 normal (in target 'cmTC_8fc66' from project 'CMAKE_TRY_COMPILE')]
+        ignore line: [    cd /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY]
+        ignore line: [    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++ -target x86_64-apple-macos12.3 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -L/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/EagerLinkingTBDs -L/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/EagerLinkingTBDs -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug -filelist /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/cmTC_8fc66.LinkFileList -Xlinker -object_path_lto -Xlinker /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/cmTC_8fc66_lto.o -Xlinker -no_deduplicate -v -Wl -v -Wl -search_paths_first -Wl -headerpad_max_install_names -Xlinker -dependency_info -Xlinker /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/cmTC_8fc66_dependency_info.dat -o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug/cmTC_8fc66]
+        ignore line: [Apple clang version 14.0.0 (clang-1400.0.29.102)]
+        ignore line: [Target: x86_64-apple-macos12.3]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin]
+        reduced line: [ "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld" -demangle -lto_library /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libLTO.dylib -dynamic -arch x86_64 -platform_version macos 12.3.0 12.3 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug/cmTC_8fc66 -L/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/EagerLinkingTBDs -L/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug -filelist /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/cmTC_8fc66.LinkFileList -object_path_lto /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/cmTC_8fc66_lto.o -no_deduplicate -v -search_paths_first -headerpad_max_install_names -dependency_info /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/cmTC_8fc66_dependency_info.dat -lc++ -lSystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/lib/darwin/libclang_rt.osx.a -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/EagerLinkingTBDs -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug]
+                  to: [ "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld" -demangle -lto_library /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libLTO.dylib -dynamic -arch x86_64 -platform_version macos 12.3.0 12.3 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug/cmTC_8fc66 -L/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug -filelist /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/cmTC_8fc66.LinkFileList -object_path_lto /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/cmTC_8fc66_lto.o -no_deduplicate -v -search_paths_first -headerpad_max_install_names -dependency_info /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/cmTC_8fc66_dependency_info.dat -lc++ -lSystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/lib/darwin/libclang_rt.osx.a -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug]
+        link line: [ "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld" -demangle -lto_library /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libLTO.dylib -dynamic -arch x86_64 -platform_version macos 12.3.0 12.3 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -o /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug/cmTC_8fc66 -L/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug -filelist /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/cmTC_8fc66.LinkFileList -object_path_lto /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/cmTC_8fc66_lto.o -no_deduplicate -v -search_paths_first -headerpad_max_install_names -dependency_info /Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/cmTC_8fc66_dependency_info.dat -lc++ -lSystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/lib/darwin/libclang_rt.osx.a -F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug]
+          arg [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld] ==> ignore
+          arg [-demangle] ==> ignore
+          arg [-lto_library] ==> ignore, skip following value
+          arg [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libLTO.dylib] ==> skip value of -lto_library
+          arg [-dynamic] ==> ignore
+          arg [-arch] ==> ignore
+          arg [x86_64] ==> ignore
+          arg [-platform_version] ==> ignore
+          arg [macos] ==> ignore
+          arg [12.3.0] ==> ignore
+          arg [12.3] ==> ignore
+          arg [-syslibroot] ==> ignore
+          arg [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk] ==> ignore
+          arg [-o] ==> ignore
+          arg [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug/cmTC_8fc66] ==> ignore
+          arg [-L/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug] ==> dir [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug]
+          arg [-filelist] ==> ignore
+          arg [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/cmTC_8fc66.LinkFileList] ==> ignore
+          arg [-object_path_lto] ==> ignore
+          arg [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/cmTC_8fc66_lto.o] ==> obj [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/cmTC_8fc66_lto.o]
+          arg [-no_deduplicate] ==> ignore
+          arg [-v] ==> ignore
+          arg [-search_paths_first] ==> ignore
+          arg [-headerpad_max_install_names] ==> ignore
+          arg [-dependency_info] ==> ignore
+          arg [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/cmTC_8fc66_dependency_info.dat] ==> ignore
+          arg [-lc++] ==> lib [c++]
+          arg [-lSystem] ==> lib [System]
+          arg [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/lib/darwin/libclang_rt.osx.a] ==> lib [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/lib/darwin/libclang_rt.osx.a]
+          arg [-F/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug] ==> ignore
+        Library search paths: [;/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/EagerLinkingTBDs;/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug;/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/lib]
+        Framework search paths: [;/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/EagerLinkingTBDs;/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug;/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/]
+        remove lib [System]
+        remove lib [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/lib/darwin/libclang_rt.osx.a]
+        collapse library dir [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug] ==> [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug], skipping non-system directory
+        collapse library dir [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/EagerLinkingTBDs] ==> [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/EagerLinkingTBDs], skipping non-system directory
+        collapse library dir [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug] ==> [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug], skipping non-system directory
+        collapse library dir [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/lib] ==> [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/lib]
+        collapse framework dir [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/EagerLinkingTBDs] ==> [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/EagerLinkingTBDs], skipping non-system directory
+        collapse framework dir [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug] ==> [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/Debug], skipping non-system directory
+        collapse framework dir [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/] ==> [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/System/Library/Frameworks]
+        implicit libs: [c++]
+        implicit objs: [/Users/ts/gitt/obs-studio/plugins/build/CMakeFiles/CMakeScratch/TryCompile-nX53ZY/build/cmTC_8fc66.build/Debug/Objects-normal/x86_64/cmTC_8fc66_lto.o]
+        implicit dirs: [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/lib]
+        implicit fwks: [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/System/Library/Frameworks]
+      
+      
+...

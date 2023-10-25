@@ -20,6 +20,8 @@ target_sources(
           window-utils.h
           window-utils.m)
 
+target_compile_options(mac-capture PRIVATE  -Wno-deprecated-declarations -Wno-objc-method-access)
+  
 # cmake-format: off
 target_link_libraries(
   mac-capture

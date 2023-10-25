@@ -39,11 +39,14 @@ function(set_target_properties_obs target)
 
   while(_STPO_PROPERTIES)
     list(POP_FRONT _STPO_PROPERTIES key value)
+    message(DEBUG " TARGET PROPERTY target ${target} : ${key} ${value} ")
     set_property(TARGET ${target} PROPERTY ${key} "${value}")
   endwhile()
   get_target_property(target_type ${target} TYPE)
 
   string(TIMESTAMP CURRENT_YEAR "%Y")
+
+  message(DEBUG " TARGET target_type ${target_type}  ")
 
   # Target is a GUI or CLI application
   if(target_type STREQUAL EXECUTABLE)

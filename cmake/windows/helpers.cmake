@@ -111,7 +111,7 @@ function(set_target_properties_obs target)
       message(DEBUG "Add Chromium Embedded Framework to project for obs-browser plugin...")
       if(TARGET CEF::Library)
         get_target_property(imported_location CEF::Library IMPORTED_LOCATION_RELEASE)
-
+        message(DEBUG "imported_location ${imported_location}")
         if(imported_location)
           cmake_path(GET imported_location PARENT_PATH cef_location)
           cmake_path(GET cef_location PARENT_PATH cef_root_location)

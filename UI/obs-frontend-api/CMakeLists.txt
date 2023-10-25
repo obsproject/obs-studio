@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.22...3.25)
 
 legacy_check()
 
+message(status "obs-frontend-api")
+
 add_library(obs-frontend-api SHARED)
 add_library(OBS::frontend-api ALIAS obs-frontend-api)
 

@@ -1,0 +1,116 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 45;
+	objects = {
+
+		2C18F0B615DC1E0300593670 = {isa = PBXBuildFile; fileRef = 2C18F0B415DC1DC700593670; };
+		2C18F0B415DC1DC700593670 = {isa = PBXFileReference; fileEncoding = 4; explicitFileType = sourcecode.cpp.cpp; path = CMakeCXXCompilerId.cpp; sourceTree = "<group>"; };
+		08FB7794FE84155DC02AAC07 = {
+			isa = PBXGroup;
+			children = (
+				2C18F0B415DC1DC700593670,
+			);
+			name = CompilerIdCXX;
+			sourceTree = "<group>";
+		};
+		8DD76FA90486AB0100D96B5E = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1DEB928508733DD80010E9CD;
+			buildPhases = (
+				2C18F0B515DC1DCE00593670,
+				2C8FEB8E15DC1A1A00E56A5D,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CompilerIdCXX;
+			productName = CompilerIdCXX;
+			productType = "com.apple.product-type.tool";
+		};
+		08FB7793FE84155DC02AAC07 = {
+			isa = PBXProject;
+			buildConfigurationList = 1DEB928908733DD80010E9CD;
+			compatibilityVersion = "Xcode 3.1";
+			developmentRegion = English;
+			hasScannedForEncodings = 1;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 08FB7794FE84155DC02AAC07;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				8DD76FA90486AB0100D96B5E,
+			);
+		};
+		2C8FEB8E15DC1A1A00E56A5D = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "echo \"GCC_VERSION=$GCC_VERSION\" ; echo \"ARCHS=$ARCHS\"";
+			showEnvVarsInLog = 0;
+		};
+		2C18F0B515DC1DCE00593670 = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2C18F0B615DC1E0300593670,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1DEB928608733DD80010E9CD = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				PRODUCT_NAME = CompilerIdCXX;
+			};
+			name = Debug;
+		};
+		1DEB928A08733DD80010E9CD = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_REQUIRED = NO;
+				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)";
+				GENERATE_INFOPLIST_FILE = YES;
+				SYMROOT = .;
+				ARCHS = "$(NATIVE_ARCH_ACTUAL)";
+				ONLY_ACTIVE_ARCH = YES;
+				
+				
+				
+				
+				SDKROOT = "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk";
+			};
+			name = Debug;
+		};
+		1DEB928508733DD80010E9CD = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB928608733DD80010E9CD,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		1DEB928908733DD80010E9CD = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB928A08733DD80010E9CD,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+	};
+	rootObject = 08FB7793FE84155DC02AAC07;
+}

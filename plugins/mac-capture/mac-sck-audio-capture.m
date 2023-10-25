@@ -143,7 +143,7 @@ static bool init_audio_screen_stream(struct screen_capture *sc)
         return !did_add_output;
     }
 
-    did_add_output = [sc->disp addStreamOutput:sc->capture_delegate type:SCStreamOutputTypeAudio sampleHandlerQueue:nil
+    did_add_output = [sc->disp addStreamOutput:sc->capture_delegate type:SCStreamOutputTypeScreen sampleHandlerQueue:nil
                                          error:&error];
     if (!did_add_output) {
         MACCAP_ERR("init_audio_screen_stream: Failed to add audio stream output with error %s\n",
