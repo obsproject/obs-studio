@@ -303,6 +303,20 @@ set(public_headers
     util/platform.h
     util/profiler.h
     util/profiler.hpp
+    util/simde/check.h
+    util/simde/debug-trap.h
+    util/simde/hedley.h
+    util/simde/simde-align.h
+    util/simde/simde-arch.h
+    util/simde/simde-common.h
+    util/simde/simde-constify.h
+    util/simde/simde-detect-clang.h
+    util/simde/simde-diagnostic.h
+    util/simde/simde-features.h
+    util/simde/simde-math.h
+    util/simde/x86/mmx.h
+    util/simde/x86/sse.h
+    util/simde/x86/sse2.h
     util/sse-intrin.h
     util/text-lookup.h
     util/threading.h
@@ -311,26 +325,6 @@ set(public_headers
 
 if(ENABLE_HEVC)
   list(APPEND public_headers obs-hevc.h)
-endif()
-
-if(ARCH_SIMD_FLAGS)
-  set(public_headers
-      # cmake-format: sortable
-      ${public_headers}
-      util/simde/check.h
-      util/simde/debug-trap.h
-      util/simde/hedley.h
-      util/simde/simde-align.h
-      util/simde/simde-arch.h
-      util/simde/simde-common.h
-      util/simde/simde-constify.h
-      util/simde/simde-detect-clang.h
-      util/simde/simde-diagnostic.h
-      util/simde/simde-features.h
-      util/simde/simde-math.h
-      util/simde/x86/mmx.h
-      util/simde/x86/sse.h
-      util/simde/x86/sse2.h)
 endif()
 
 # cmake-format: off
