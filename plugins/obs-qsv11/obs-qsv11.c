@@ -403,6 +403,7 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 
 	update_latency(settings);
 	update_enhancements(settings);
+	update_targetusage(settings);
 	update_ratecontrol(settings);
 
 	return true;
