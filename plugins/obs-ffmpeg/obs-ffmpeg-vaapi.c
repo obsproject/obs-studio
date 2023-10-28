@@ -17,6 +17,7 @@
 
 #include <libavutil/avutil.h>
 
+#include <string.h>
 #include <util/darray.h>
 #include <util/dstr.h>
 #include <util/base.h>
@@ -24,6 +25,7 @@
 #include <media-io/video-io.h>
 #include <obs-module.h>
 #include <obs-avc.h>
+#include <va/va.h>
 #ifdef ENABLE_HEVC
 #include <obs-hevc.h>
 #endif
@@ -83,6 +85,12 @@ static const char *h264_vaapi_getname(void *unused)
 	return "FFmpeg VAAPI H.264";
 }
 
+static const char *av1_vaapi_getname(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return "FFmpeg VAAPI AV1";
+}
+
 #ifdef ENABLE_HEVC
 static const char *hevc_vaapi_getname(void *unused)
 {
@@ -92,6 +100,11 @@ static const char *hevc_vaapi_getname(void *unused)
 #endif
 
 static inline bool h264_valid_format(enum video_format format)
+{
+	return format == VIDEO_FORMAT_NV12;
+}
+
+static inline bool av1_valid_format(enum video_format format)
 {
 	return format == VIDEO_FORMAT_NV12;
 }
@@ -112,6 +125,22 @@ static void h264_vaapi_video_info(void *data, struct video_scale_info *info)
 
 	if (!h264_valid_format(pref_format)) {
 		pref_format = h264_valid_format(info->format)
+				      ? info->format
+				      : VIDEO_FORMAT_NV12;
+	}
+
+	info->format = pref_format;
+}
+
+static void av1_vaapi_video_info(void *data, struct video_scale_info *info)
+{
+	struct vaapi_encoder *enc = data;
+	enum video_format pref_format;
+
+	pref_format = obs_encoder_get_preferred_video_format(enc->encoder);
+
+	if (!av1_valid_format(pref_format)) {
+		pref_format = av1_valid_format(info->format)
 				      ? info->format
 				      : VIDEO_FORMAT_NV12;
 	}
@@ -234,6 +263,7 @@ static const rc_mode_t *get_rc_mode(const char *name)
 
 typedef enum {
 	H264,
+	AV1,
 #ifdef ENABLE_HEVC
 	HEVC
 #endif
@@ -256,7 +286,10 @@ static bool vaapi_update(void *data, obs_data_t *settings, vaapi_codec codec)
 
 	av_opt_set_int(enc->context->priv_data, "qp", qp, 0);
 
-	int level = (int)obs_data_get_int(settings, "level");
+	int level = FF_LEVEL_UNKNOWN;
+	if (codec != AV1) {
+		level = (int)obs_data_get_int(settings, "level");
+	}
 	int bitrate = rc_mode->bitrate
 			      ? (int)obs_data_get_int(settings, "bitrate")
 			      : 0;
@@ -286,6 +319,9 @@ static bool vaapi_update(void *data, obs_data_t *settings, vaapi_codec codec)
 	switch (codec) {
 	case H264:
 		h264_vaapi_video_info(enc, &info);
+		break;
+	case AV1:
+		av1_vaapi_video_info(enc, &info);
 		break;
 #ifdef ENABLE_HEVC
 	case HEVC:
@@ -438,6 +474,9 @@ static void *vaapi_create_internal(obs_data_t *settings, obs_encoder_t *encoder,
 	case H264:
 		name = "h264_vaapi";
 		break;
+	case AV1:
+		name = "av1_vaapi";
+		break;
 #ifdef ENABLE_HEVC
 	case HEVC:
 		name = "hevc_vaapi";
@@ -474,6 +513,11 @@ fail:
 static void *h264_vaapi_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
 	return vaapi_create_internal(settings, encoder, H264);
+}
+
+static void *av1_vaapi_create(obs_data_t *settings, obs_encoder_t *encoder)
+{
+	return vaapi_create_internal(settings, encoder, AV1);
 }
 
 #ifdef ENABLE_HEVC
@@ -580,6 +624,8 @@ static bool vaapi_encode_internal(void *data, struct encoder_frame *frame,
 					&enc->header_size, &enc->sei,
 					&enc->sei_size);
 				break;
+			case AV1:
+				break;
 #ifdef ENABLE_HEVC
 			case HEVC:
 				obs_extract_hevc_headers(
@@ -607,6 +653,9 @@ static bool vaapi_encode_internal(void *data, struct encoder_frame *frame,
 		case H264:
 			packet->keyframe =
 				obs_avc_keyframe(packet->data, packet->size);
+			break;
+		case AV1:
+			packet->keyframe = !(enc->packet->flags & AV_PKT_FLAG_KEY);
 			break;
 #ifdef ENABLE_HEVC
 		case HEVC:
@@ -637,6 +686,14 @@ static bool h264_vaapi_encode(void *data, struct encoder_frame *frame,
 				     H264);
 }
 
+static bool av1_vaapi_encode(void *data, struct encoder_frame *frame,
+			      struct encoder_packet *packet,
+			      bool *received_packet)
+{
+	return vaapi_encode_internal(data, frame, packet, received_packet,
+				     AV1);
+}
+
 #ifdef ENABLE_HEVC
 static bool hevc_vaapi_encode(void *data, struct encoder_frame *frame,
 			      struct encoder_packet *packet,
@@ -656,9 +713,12 @@ static void set_visible(obs_properties_t *ppts, const char *name, bool visible)
 static void vaapi_defaults_internal(obs_data_t *settings, vaapi_codec codec)
 {
 	const char *device;
-	switch(codec) {
+	switch (codec) {
 	case H264:
 		device = vaapi_get_h264_default_device();
+		break;
+	case AV1:
+		device = vaapi_get_av1_default_device();
 		break;
 #ifdef ENABLE_HEVC
 	case HEVC:
@@ -668,19 +728,25 @@ static void vaapi_defaults_internal(obs_data_t *settings, vaapi_codec codec)
 	}
 
 	obs_data_set_default_string(settings, "vaapi_device", device);
-	switch(codec) {
+	switch (codec) {
 	case H264:
 		obs_data_set_default_int(settings, "profile",
 					 FF_PROFILE_H264_CONSTRAINED_BASELINE);
+		break;
+	case AV1:
+		obs_data_set_default_int(settings, "profile",
+					 FF_PROFILE_AV1_MAIN);
 		break;
 #ifdef ENABLE_HEVC
 	case HEVC:
 		obs_data_set_default_int(settings, "profile",
 					 FF_PROFILE_HEVC_MAIN);
-		 break;
+		break;
 #endif
 	}
-	obs_data_set_default_int(settings, "level", 40);
+	if (codec != AV1) {
+		obs_data_set_default_int(settings, "level", 40);
+	}
 	obs_data_set_default_int(settings, "bitrate", 2500);
 	obs_data_set_default_int(settings, "keyint_sec", 0);
 	obs_data_set_default_int(settings, "bf", 0);
@@ -694,9 +760,12 @@ static void vaapi_defaults_internal(obs_data_t *settings, vaapi_codec codec)
 		return;
 
 	VAProfile profile;
-	switch(codec) {
+	switch (codec) {
 	case H264:
 		profile = VAProfileH264ConstrainedBaseline;
+		break;
+	case AV1:
+		profile = VAProfileAV1Profile0;
 		break;
 #ifdef ENABLE_HEVC
 	case HEVC:
@@ -717,6 +786,11 @@ static void vaapi_defaults_internal(obs_data_t *settings, vaapi_codec codec)
 static void h264_vaapi_defaults(obs_data_t *settings)
 {
 	vaapi_defaults_internal(settings, H264);
+}
+
+static void av1_vaapi_defaults(obs_data_t *settings)
+{
+	vaapi_defaults_internal(settings, AV1);
 }
 
 #ifdef ENABLE_HEVC
@@ -758,6 +832,11 @@ static bool vaapi_device_modified(obs_properties_t *ppts, obs_property_t *p,
 		if (!vaapi_display_h264_supported(va_dpy, device))
 			goto fail;
 		profile = VAProfileH264High;
+		break;
+	case FF_PROFILE_AV1_MAIN:
+		if (!vaapi_display_av1_supported(va_dpy, device))
+			goto fail;
+		profile = VAProfileAV1Profile0;
 		break;
 #ifdef ENABLE_HEVC
 	case FF_PROFILE_HEVC_MAIN:
@@ -929,6 +1008,11 @@ static obs_properties_t *vaapi_properties_internal(vaapi_codec codec)
 		obs_property_list_add_int(list, "Main", FF_PROFILE_H264_MAIN);
 		obs_property_list_add_int(list, "High", FF_PROFILE_H264_HIGH);
 		break;
+	case AV1:
+		obs_property_list_add_int(list,
+					  "Constrained Baseline (default)",
+					  FF_PROFILE_AV1_MAIN);
+		break;
 #ifdef ENABLE_HEVC
 	case HEVC:
 		obs_property_list_add_int(list, "Main", FF_PROFILE_HEVC_MAIN);
@@ -940,26 +1024,29 @@ static obs_properties_t *vaapi_properties_internal(vaapi_codec codec)
 
 	obs_property_set_modified_callback(list, vaapi_device_modified);
 
-	list = obs_properties_add_list(props, "level", obs_module_text("Level"),
-				       OBS_COMBO_TYPE_LIST,
-				       OBS_COMBO_FORMAT_INT);
-	obs_property_list_add_int(list, "Auto", FF_LEVEL_UNKNOWN);
-	obs_property_list_add_int(list, "3.0", 30);
-	obs_property_list_add_int(list, "3.1", 31);
-	obs_property_list_add_int(list, "4.0 (default) (Compatibility mode)",
-				  40);
-	obs_property_list_add_int(list, "4.1", 41);
-	obs_property_list_add_int(list, "4.2", 42);
-	obs_property_list_add_int(list, "5.0", 50);
-	obs_property_list_add_int(list, "5.1", 51);
-	obs_property_list_add_int(list, "5.2", 52);
+	if (codec != AV1) {
+		list = obs_properties_add_list(props, "level",
+						obs_module_text("Level"),
+						OBS_COMBO_TYPE_LIST,
+						OBS_COMBO_FORMAT_INT);
+		obs_property_list_add_int(list, "Auto", FF_LEVEL_UNKNOWN);
+		obs_property_list_add_int(list, "3.0", 30);
+		obs_property_list_add_int(list, "3.1", 31);
+		obs_property_list_add_int(list, "4.0 (default) (Compatibility mode)",
+					40);
+		obs_property_list_add_int(list, "4.1", 41);
+		obs_property_list_add_int(list, "4.2", 42);
+		obs_property_list_add_int(list, "5.0", 50);
+		obs_property_list_add_int(list, "5.1", 51);
+		obs_property_list_add_int(list, "5.2", 52);
 
-	list = obs_properties_add_list(props, "rate_control",
-				       obs_module_text("RateControl"),
-				       OBS_COMBO_TYPE_LIST,
-				       OBS_COMBO_FORMAT_STRING);
+		list = obs_properties_add_list(props, "rate_control",
+						obs_module_text("RateControl"),
+						OBS_COMBO_TYPE_LIST,
+						OBS_COMBO_FORMAT_STRING);
 
-	obs_property_set_modified_callback(list, rate_control_modified);
+		obs_property_set_modified_callback(list, rate_control_modified);
+	}
 
 	obs_property_t *p;
 	p = obs_properties_add_int(props, "bitrate", obs_module_text("Bitrate"),
@@ -988,6 +1075,12 @@ static obs_properties_t *h264_vaapi_properties(void *unused)
 {
 	UNUSED_PARAMETER(unused);
 	return vaapi_properties_internal(H264);
+}
+
+static obs_properties_t *av1_vaapi_properties(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return vaapi_properties_internal(AV1);
 }
 
 #ifdef ENABLE_HEVC
@@ -1029,6 +1122,20 @@ struct obs_encoder_info h264_vaapi_encoder_info = {
 	.get_extra_data = vaapi_extra_data,
 	.get_sei_data = vaapi_sei_data,
 	.get_video_info = h264_vaapi_video_info,
+};
+
+struct obs_encoder_info av1_vaapi_encoder_info = {
+	.id = "av1_ffmpeg_vaapi",
+	.type = OBS_ENCODER_VIDEO,
+	.codec = "av1",
+	.get_name = av1_vaapi_getname,
+	.create = av1_vaapi_create,
+	.destroy = vaapi_destroy,
+	.encode = av1_vaapi_encode,
+	.get_defaults = av1_vaapi_defaults,
+	.get_properties = av1_vaapi_properties,
+	.get_extra_data = vaapi_extra_data,
+	.get_video_info = av1_vaapi_video_info,
 };
 
 #ifdef ENABLE_HEVC
