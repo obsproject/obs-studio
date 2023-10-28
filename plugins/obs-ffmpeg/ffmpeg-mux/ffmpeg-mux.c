@@ -498,9 +498,11 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 			av_content_light_metadata_alloc(&content_size);
 		content->MaxCLL = max_luminance;
 		content->MaxFALL = max_luminance;
-		av_stream_add_side_data(ffm->video_stream,
+		AVCodecParameters *cpar = ffm->video_stream->codecpar;
+		av_packet_side_data_add(&cpar->coded_side_data,
+					&cpar->nb_coded_side_data,
 					AV_PKT_DATA_CONTENT_LIGHT_LEVEL,
-					(uint8_t *)content, content_size);
+					(uint8_t *)content, content_size, 0);
 
 		AVMasteringDisplayMetadata *const mastering =
 			av_mastering_display_metadata_alloc();
@@ -516,10 +518,11 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 		mastering->max_luminance = av_make_q(max_luminance, 1);
 		mastering->has_primaries = 1;
 		mastering->has_luminance = 1;
-		av_stream_add_side_data(ffm->video_stream,
+		av_packet_side_data_add(&cpar->coded_side_data,
+					&cpar->nb_coded_side_data,
 					AV_PKT_DATA_MASTERING_DISPLAY_METADATA,
 					(uint8_t *)mastering,
-					sizeof(*mastering));
+					sizeof(*mastering), 0);
 	}
 
 	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)

@@ -96,15 +96,17 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 #else
 		size_t content_size;
 #endif
-		const uint8_t *const content_src = av_stream_get_side_data(
-			in_stream, AV_PKT_DATA_CONTENT_LIGHT_LEVEL,
-			&content_size);
+		AVCodecParameters *cpar = in_stream->codecpar;
+		const AVPacketSideData* content_src = av_packet_side_data_get(
+			cpar->coded_side_data, cpar->nb_coded_side_data,
+			AV_PKT_DATA_CONTENT_LIGHT_LEVEL);
 		if (content_src) {
-			uint8_t *const content_dst = av_stream_new_side_data(
-				out_stream, AV_PKT_DATA_CONTENT_LIGHT_LEVEL,
-				content_size);
+			content_size = content_src->size;
+			AVPacketSideData *const content_dst = av_packet_side_data_new(
+				&cpar->coded_side_data, &cpar->nb_coded_side_data,
+				AV_PKT_DATA_CONTENT_LIGHT_LEVEL, content_size, 0);
 			if (content_dst)
-				memcpy(content_dst, content_src, content_size);
+				memcpy(content_dst->data, content_src->data, content_size);
 		}
 
 #if FF_API_BUFFER_SIZE_T
@@ -112,18 +114,16 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 #else
 		size_t mastering_size;
 #endif
-		const uint8_t *const mastering_src = av_stream_get_side_data(
-			in_stream, AV_PKT_DATA_MASTERING_DISPLAY_METADATA,
-			&mastering_size);
+		const AVPacketSideData* mastering_src = av_packet_side_data_get(
+			cpar->coded_side_data, cpar->nb_coded_side_data,
+			AV_PKT_DATA_MASTERING_DISPLAY_METADATA);
 		if (mastering_src) {
-			uint8_t *const mastering_dst = av_stream_new_side_data(
-				out_stream,
-				AV_PKT_DATA_MASTERING_DISPLAY_METADATA,
-				mastering_size);
-			if (mastering_dst) {
-				memcpy(mastering_dst, mastering_src,
-				       mastering_size);
-			}
+			mastering_size = content_src->size;
+			AVPacketSideData *const mastering_dst = av_packet_side_data_new(
+				&cpar->coded_side_data, &cpar->nb_coded_side_data,
+				AV_PKT_DATA_MASTERING_DISPLAY_METADATA, mastering_size, 0);
+			if (mastering_dst)
+				memcpy(mastering_dst->data, mastering_src->data, mastering_size);
 		}
 
 		ret = avcodec_parameters_copy(out_stream->codecpar,
