@@ -504,7 +504,7 @@ void mp_media_next_video(mp_media_t *m, bool preload)
 	}
 
 	if (!m->is_local_file && !d->got_first_keyframe) {
-		if (!f->key_frame)
+		if (!f->flags & AV_FRAME_FLAG_KEY)
 			return;
 
 		d->got_first_keyframe = true;
