@@ -724,7 +724,7 @@ static void *ffmpeg_mux_io_thread(void *data)
 	// ffmpeg, then we flush the chunk. next_seek_position is the actual
 	// offset we should seek to when we write the chunk.
 	uint64_t current_seek_position = 0;
-	uint64_t next_seek_position;
+	uint64_t next_seek_position = 0;
 
 	for (;;) {
 		// Wait for ffmpeg to write data to the buffer
