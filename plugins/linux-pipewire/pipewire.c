@@ -1244,7 +1244,7 @@ obs_pipewire_connect_stream(obs_pipewire *obs_pw, obs_source_t *source,
 	/* Signal to renegotiate */
 	obs_pw_stream->reneg =
 		pw_loop_add_event(pw_thread_loop_get_loop(obs_pw->thread_loop),
-				  renegotiate_format, obs_pw);
+				  renegotiate_format, obs_pw_stream);
 	blog(LOG_DEBUG, "[pipewire] registered event %p", obs_pw_stream->reneg);
 
 	/* Stream */
