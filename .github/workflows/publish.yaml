@@ -98,6 +98,12 @@ jobs:
           echo "cacheKey=${cache_key}" >> $GITHUB_OUTPUT
           echo "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
 
+      - name: Validate Flatpak manifest
+        uses: ./.github/actions/flatpak-builder-lint
+        with:
+          artifact: manifest
+          path: build-aux/com.obsproject.Studio.json
+
       - name: Build Flatpak Manifest
         uses: flatpak/flatpak-github-actions/flatpak-builder@0ab9dd6a6afa6fe7e292db0325171660bf5b6fdf
         with:
@@ -125,6 +131,18 @@ jobs:
         run: |
           : Commit Screenshots to OSTree Repository
           ostree commit --repo=repo --canonical-permissions --branch=screenshots/x86_64 flatpak_app/screenshots
+
+      - name: Validate build directory
+        uses: ./.github/actions/flatpak-builder-lint
+        with:
+          artifact: builddir
+          path: flatpak_app
+
+      - name: Validate repository
+        uses: ./.github/actions/flatpak-builder-lint
+        with:
+          artifact: repo
+          path: repo
 
       - name: Publish to Flathub Beta
         uses: flatpak/flatpak-github-actions/flat-manager@0ab9dd6a6afa6fe7e292db0325171660bf5b6fdf

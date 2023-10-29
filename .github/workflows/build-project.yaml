@@ -286,6 +286,12 @@ jobs:
 
           echo "cacheKey=${cache_key}" >> $GITHUB_OUTPUT
 
+      - name: Validate Flatpak manifest
+        uses: ./.github/actions/flatpak-builder-lint
+        with:
+          artifact: manifest
+          path: build-aux/com.obsproject.Studio.json
+
       - name: Build Flatpak Manifest 🧾
         uses: flatpak/flatpak-github-actions/flatpak-builder@0ab9dd6a6afa6fe7e292db0325171660bf5b6fdf
         with:
@@ -295,6 +301,12 @@ jobs:
           cache: ${{ fromJSON(steps.setup.outputs.cacheHit) || (github.event_name == 'push' && github.ref_name == 'master')}}
           restore-cache: ${{ fromJSON(steps.setup.outputs.cacheHit) }}
           cache-key: ${{ steps.setup.outputs.cacheKey }}
+
+      - name: Validate build directory
+        uses: ./.github/actions/flatpak-builder-lint
+        with:
+          artifact: builddir
+          path: flatpak_app
 
   windows-build:
     name: Windows 🪟
