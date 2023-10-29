@@ -520,6 +520,8 @@ void OBSBasicPreview::GetStretchHandleData(const vec2 &pos, bool ignoreGroup)
 							 &invGroupTransform);
 			matrix4_inv(&invGroupTransform, &invGroupTransform);
 			obs_sceneitem_defer_group_resize_begin(stretchGroup);
+		} else {
+			stretchGroup = nullptr;
 		}
 	}
 }
