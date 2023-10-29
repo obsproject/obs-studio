@@ -133,6 +133,7 @@ jobs:
           flat-manager-url: https://hub.flathub.org/
           repository: beta
           token: ${{ secrets.FLATHUB_BETA_TOKEN }}
+          build-log-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
       - name: Publish to Flathub
         uses: flatpak/flatpak-github-actions/flat-manager@0ab9dd6a6afa6fe7e292db0325171660bf5b6fdf
@@ -141,6 +142,7 @@ jobs:
           flat-manager-url: https://hub.flathub.org/
           repository: stable
           token: ${{ secrets.FLATHUB_TOKEN }}
+          build-log-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
   steam-upload:
     name: Upload Steam Builds 🚂
