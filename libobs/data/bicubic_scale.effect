@@ -163,13 +163,6 @@ float4 PSDrawBicubicRGBAMultiplyTonemap(FragData f_in, bool undistort) : TARGET
 	return rgba;
 }
 
-float4 PSDrawBicubicRGBADivide(FragData f_in) : TARGET
-{
-	float4 rgba = DrawBicubic(f_in, false);
-	rgba.rgb *= max(1. / rgba.a, 0.);
-	return rgba;
-}
-
 technique Draw
 {
 	pass
@@ -203,15 +196,6 @@ technique DrawMultiplyTonemap
 	{
 		vertex_shader = VSDefault(v_in);
 		pixel_shader  = PSDrawBicubicRGBAMultiplyTonemap(f_in, false);
-	}
-}
-
-technique DrawAlphaDivide
-{
-	pass
-	{
-		vertex_shader = VSDefault(v_in);
-		pixel_shader = PSDrawBicubicRGBADivide(f_in);
 	}
 }
 
