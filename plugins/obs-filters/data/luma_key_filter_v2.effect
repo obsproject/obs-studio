@@ -28,7 +28,7 @@ VertData VSDefault(VertData v_in)
 float4 PSALumaKeyRGBA(VertData v_in) : TARGET
 {
 	float4 rgba = image.Sample(textureSampler, v_in.uv);
-	rgba.rgb = max(float3(0.0, 0.0, 0.0), rgba.rgb / rgba.a);
+	rgba.rgb *= (rgba.a > 0.) ? (1. / rgba.a) : 0.;
 
 	float3 lumaCoef = float3(0.2126, 0.7152, 0.0722);
 
