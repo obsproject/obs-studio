@@ -3200,6 +3200,10 @@ extern void free_gpu_encoding(struct obs_core_video_mix *video);
 
 bool start_gpu_encode(obs_encoder_t *encoder)
 {
+	blog(LOG_INFO, "start_gpu_encode '%s' (%s) (0x%I64X)",
+	     obs_encoder_get_name(encoder), obs_encoder_get_id(encoder),
+	     encoder);
+
 	struct obs_core_video_mix *video = encoder->video;
 	bool success = true;
 
@@ -3219,8 +3223,13 @@ bool start_gpu_encode(obs_encoder_t *encoder)
 
 	if (success)
 		da_push_back(video->gpu_encoders, &encoder);
-	else
+	else {
+		blog(LOG_ERROR,
+		     "start_gpu_encode - init_gpu_encoding failed! '%s' (%s) (0x%I64X)",
+		     obs_encoder_get_name(encoder), obs_encoder_get_id(encoder),
+		     encoder);
 		free_gpu_encoding(video);
+	}
 
 	pthread_mutex_unlock(&video->gpu_encoder_mutex);
 	obs_leave_graphics();
@@ -3235,6 +3244,9 @@ bool start_gpu_encode(obs_encoder_t *encoder)
 
 void stop_gpu_encode(obs_encoder_t *encoder)
 {
+	blog(LOG_INFO, "stop_gpu_encode '%s' (%s) (0x%I64X)",
+	     obs_encoder_get_name(encoder), obs_encoder_get_id(encoder),
+	     encoder);
 	struct obs_core_video_mix *video = encoder->video;
 
 	os_atomic_dec_long(&video->gpu_encoder_active);
@@ -3248,9 +3260,17 @@ void stop_gpu_encode(obs_encoder_t *encoder)
 
 	os_event_wait(video->gpu_encode_inactive);
 
+	blog(LOG_INFO, "stop_gpu_encode - inactive '%s' (%s) (0x%I64X)",
+	     obs_encoder_get_name(encoder), obs_encoder_get_id(encoder),
+	     encoder);
+
 	obs_enter_graphics();
 	pthread_mutex_lock(&video->gpu_encoder_mutex);
 	if (video->gpu_want_destroy_thread) {
+		blog(LOG_INFO,
+		     "stop_gpu_encode - gpu_want_destroy_thread: 1 '%s' (%s) (0x%I64X)",
+		     obs_encoder_get_name(encoder), obs_encoder_get_id(encoder),
+		     encoder);
 		stop_gpu_encoding_thread(video);
 		free_gpu_encoding(video);
 	}
