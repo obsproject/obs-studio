@@ -469,7 +469,9 @@ void OBSBasic::ChangeSceneCollection()
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING);
 
-	SaveProjectNow();
+	bool usePrettyExport =
+		config_get_bool(GetGlobalConfig(), "General", "PrettySaves");
+	SaveProjectNow(usePrettyExport);
 
 	Load(fileName.c_str());
 	RefreshSceneCollections();
