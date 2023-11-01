@@ -6962,6 +6962,13 @@
                      </property>
                     </widget>
                    </item>
+                   <item row="3" column="1">
+                    <widget class="QCheckBox" name="prettySaves">
+                     <property name="text">
+                      <string>Basic.Settings.Advanced.General.PrettySaves</string>
+                     </property>
+                    </widget>
+                   </item>
                   </layout>
                  </widget>
                 </item>
@@ -7926,6 +7933,7 @@
   <tabstop>scrollArea</tabstop>
   <tabstop>processPriority</tabstop>
   <tabstop>confirmOnExit</tabstop>
+  <tabstop>prettySaves</tabstop>
   <tabstop>renderer</tabstop>
   <tabstop>adapter</tabstop>
   <tabstop>colorFormat</tabstop>

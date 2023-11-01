@@ -847,7 +847,15 @@ void OBSBasic::Save(const char *file)
 		}
 	}
 
-	if (!obs_data_save_json_safe(saveData, file, "tmp", "bak"))
+	bool prettySaves =
+		config_get_bool(GetGlobalConfig(), "General", "PrettySaves");
+	bool success = false;
+	if (prettySaves)
+		success = obs_data_save_json_pretty_safe(saveData, file, "tmp","bak");
+	else
+		success = obs_data_save_json_safe(saveData, file, "tmp", "bak");
+
+	if (!success)
 		blog(LOG_ERROR, "Could not save scene data to %s", file);
 }
 
