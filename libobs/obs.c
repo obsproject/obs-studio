@@ -697,6 +697,9 @@ static int obs_init_video()
 
 		if (!obs_record_view_add(&obs->data.record_view, ovi))
 			return OBS_VIDEO_FAIL;
+
+		if (!obs_record_view_add(&obs->data.backstage_view, ovi))
+			return OBS_VIDEO_FAIL;
 	}
 
 	int errorcode;
@@ -965,6 +968,8 @@ static bool obs_init_data(void)
 		goto fail;
 	if (!obs_view_init(&data->record_view))
 		goto fail;
+	if (!obs_view_init(&data->backstage_view))
+		goto fail;
 
 	data->private_data = obs_data_create();
 	data->valid = true;
@@ -1009,6 +1014,8 @@ static void obs_free_data(void)
 	obs_main_view_free(&data->stream_view);
 	obs_view_remove(&data->record_view);
 	obs_main_view_free(&data->record_view);
+	obs_view_remove(&data->backstage_view);
+	obs_main_view_free(&data->backstage_view);
 
 	blog(LOG_INFO, "Freeing OBS context data");
 
@@ -1966,6 +1973,91 @@ void *obs_create_ui(const char *name, const char *task, const char *target,
 
 	callback = get_modeless_ui_callback(name, task, target);
 	return callback ? callback->create(data, ui_data) : NULL;
+}
+
+void obs_add_scene_to_backstage(obs_source_t *source)
+{
+	if (!source) {
+		blog(LOG_WARNING,
+		     "obs_add_scene_to_backstage - source is NULL");
+		return;
+	}
+
+	if (obs_source_get_type(source) != OBS_SOURCE_TYPE_SCENE) {
+		blog(LOG_WARNING,
+		     "obs_add_scene_to_backstage - trying to add not a scene");
+		return;
+	}
+
+	struct obs_view *backstage_view = &obs->data.backstage_view;
+
+	pthread_mutex_lock(&backstage_view->channels_mutex);
+
+	size_t channel = MAX_CHANNELS;
+	for (size_t i = 0; i < MAX_CHANNELS; ++i) {
+		if (!backstage_view->channels[i]) {
+			channel = i;
+			break;
+		}
+	}
+
+	if (channel == MAX_CHANNELS) {
+		blog(LOG_WARNING,
+		     "obs_add_scene_to_backstage - no free slots left for scenes");
+		pthread_mutex_unlock(&backstage_view->channels_mutex);
+		return;
+	}
+
+	source = obs_source_get_ref(source);
+	backstage_view->channels[channel] = source;
+
+	pthread_mutex_unlock(&backstage_view->channels_mutex);
+
+	if (source) {
+		obs_source_activate(source, MAIN_VIEW);
+	}
+}
+
+void obs_remove_scene_from_backstage(obs_source_t *source)
+{
+	if (!source) {
+		blog(LOG_WARNING,
+		     "obs_remove_scene_from_backstage - source is NULL");
+		return;
+	}
+
+	if (obs_source_get_type(source) != OBS_SOURCE_TYPE_SCENE) {
+		blog(LOG_WARNING,
+		     "obs_remove_scene_from_backstage - trying to remove not a scene");
+		return;
+	}
+
+	blog(LOG_INFO, "obs_remove_scene_from_backstage - 0x%" PRIXPTR,
+	     (uintptr_t)source);
+	struct obs_view *backstage_view = &obs->data.backstage_view;
+
+	pthread_mutex_lock(&backstage_view->channels_mutex);
+
+	obs_source_t *found_source = NULL;
+	for (size_t i = 0; i < MAX_CHANNELS; ++i) {
+		if (backstage_view->channels[i] == source) {
+			found_source = source;
+			backstage_view->channels[i] = NULL;
+			break;
+		}
+	}
+
+	if (!found_source) {
+		blog(LOG_WARNING,
+		     "obs_remove_scene_from_backstage - scene not found on backstage");
+		pthread_mutex_unlock(&backstage_view->channels_mutex);
+		return;
+	}
+
+	pthread_mutex_unlock(&backstage_view->channels_mutex);
+
+	obs_source_deactivate(found_source, MAIN_VIEW);
+	obs_source_release(found_source);
 }
 
 obs_source_t *obs_get_output_source(uint32_t channel)

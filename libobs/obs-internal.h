@@ -399,6 +399,7 @@ struct obs_core_data {
 	struct obs_view main_view;
 	struct obs_view stream_view;
 	struct obs_view record_view;
+	struct obs_view backstage_view;
 
 	long long unnamed_index;
 

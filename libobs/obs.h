@@ -716,6 +716,16 @@ EXPORT void obs_set_output_source(uint32_t channel, obs_source_t *source);
 EXPORT obs_source_t *obs_get_output_source(uint32_t channel);
 
 /**
+ * Adds scene to backstage view. It stays active, but is not visible on stream or recording.
+ * The main use case is creation of various scene previews while user is able to change
+ * current active scene. Use obs_remove_scene_from_backstage to clear resources.
+ */
+EXPORT void obs_add_scene_to_backstage(obs_source_t *source);
+
+/** Removes scene from backstage view. */
+EXPORT void obs_remove_scene_from_backstage(obs_source_t *source);
+
+/**
  * Enumerates all input sources
  *
  *   Callback function returns true to continue enumeration, or false to end
