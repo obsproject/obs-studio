@@ -390,13 +390,19 @@ obs_source_create_internal(const char *id, const char *name,
 	if (!private)
 		obs_source_init_audio_hotkeys(source);
 
-	/* allow the source to be created even if creation fails so that the
-	 * user's data doesn't become lost */
-	if (info && info->create)
+	if (info && info->create) {
+		// The |info->create| function description is "Creates the source data for the source".
+		// So if the function returns nullptr, we consider that the function fails.
+		// If a source does not need to create any data, the function either should be nullptr itself or
+		// return the |source| pointer as its data.
 		source->context.data =
 			info->create(source->context.settings, source);
-	if ((!info || info->create) && !source->context.data)
-		blog(LOG_ERROR, "Failed to create source '%s'!", name);
+		if (!source->context.data) {
+			// We cannot ignore the error because it causes crashes later.
+			blog(LOG_ERROR, "Failed to create data for the source '%s'!", name);
+			goto fail;
+		}
+	}
 
 	blog(LOG_DEBUG, "%ssource '%s' (%s) created", private ? "private " : "",
 	     name, id);

@@ -3017,6 +3017,9 @@ void obs_context_data_remove(struct obs_context_data *context)
 
 void obs_context_wait(struct obs_context_data *context)
 {
+	if (!context->mutex) {
+		return;
+	}
 	pthread_mutex_lock(context->mutex);
 	pthread_mutex_unlock(context->mutex);
 }
