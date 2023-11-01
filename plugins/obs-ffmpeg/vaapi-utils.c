@@ -189,7 +189,6 @@ static bool vaapi_display_ep_bframe_supported(VAProfile profile,
 					      VAEntrypoint entrypoint,
 					      VADisplay dpy)
 {
-	bool ret = false;
 	VAStatus va_status;
 	VAConfigAttrib attrib[1];
 	attrib->type = VAConfigAttribEncMaxRefFrames;
