@@ -436,6 +436,7 @@ private:
 
 	void RefreshSceneCollections();
 	void ChangeSceneCollection();
+	void ExportSceneCollection(QString inputFile, QString exportFile);
 	void LogScenes();
 
 	void ResetProfileData();
