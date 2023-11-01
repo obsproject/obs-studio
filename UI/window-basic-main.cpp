@@ -2984,13 +2984,30 @@ OBSBasic::~OBSBasic()
 #endif
 }
 
-void OBSBasic::SaveProjectNow()
+void OBSBasic::SaveProjectNow(bool usePrettyExport)
 {
 	if (disableSaving)
 		return;
 
 	projectChanged = true;
 	SaveProjectDeferred();
+
+	if (usePrettyExport) {
+		// Make sure that the file is saved with the correct formatting
+		char path[512];
+
+		QString currentFile = QT_UTF8(config_get_string(
+			App()->GlobalConfig(), "Basic", "SceneCollectionFile"));
+
+		int ret = GetConfigPath(path, 512, "obs-studio/basic/scenes/");
+		if (ret <= 0) {
+			blog(LOG_WARNING,
+			     "Failed to get scene collection config path");
+		} else {
+			QString inputFile = path + currentFile + ".json";
+			ExportSceneCollection(inputFile, inputFile);
+		}
+	}
 }
 
 void OBSBasic::SaveProject()
@@ -5108,23 +5125,9 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	signalHandlers.clear();
 
 	Auth::Save();
-	SaveProjectNow();
-	if (config_get_bool(GetGlobalConfig(), "General", "PrettySaves")) {
-
-		char path[512];
-
-		QString currentFile = QT_UTF8(config_get_string(
-			App()->GlobalConfig(), "Basic", "SceneCollectionFile"));
-
-		int ret = GetConfigPath(path, 512, "obs-studio/basic/scenes/");
-		if (ret <= 0) {
-			blog(LOG_WARNING,
-			     "Failed to get scene collection config path");
-		} else {
-			QString inputFile = path + currentFile + ".json";
-			ExportSceneCollection(inputFile, inputFile);
-		}
-	}
+	bool usePrettyExport =
+		config_get_bool(GetGlobalConfig(), "General", "PrettySaves");
+	SaveProjectNow(usePrettyExport);
 	auth.reset();
 
 	delete extraBrowsers;

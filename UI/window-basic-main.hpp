@@ -449,7 +449,7 @@ private:
 	void ChangeProfile();
 	void CheckForSimpleModeX264Fallback();
 
-	void SaveProjectNow();
+	void SaveProjectNow(bool forcePrettyExport = false);
 
 	int GetTopSelectedSourceItem();
 
