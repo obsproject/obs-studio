@@ -399,7 +399,9 @@ obs_source_create_internal(const char *id, const char *name,
 			info->create(source->context.settings, source);
 		if (!source->context.data) {
 			// We cannot ignore the error because it causes crashes later.
-			blog(LOG_ERROR, "Failed to create data for the source '%s'!", name);
+			blog(LOG_ERROR,
+			     "Failed to create data for the source '%s'!",
+			     name);
 			goto fail;
 		}
 	}

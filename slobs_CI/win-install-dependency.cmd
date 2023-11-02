@@ -9,7 +9,7 @@ set VLCURL=https://obs-studio-deployment.s3-us-west-2.amazonaws.com/%VLC_VERSION
 set VLC_DIR=%CD%\%SUBDIR%\vlc
 
 set CEFURL=https://streamlabs-cef-dist.s3.us-west-2.amazonaws.com
-set CefFileName=cef_binary_%CEF_VERSION%_windows_x64
+set CefFileName=cef_binary_%CEF_VERSION%_windows_x64_%CEF_REVISION%
 set CEFPATH=%CD%\%SUBDIR%\%CefFileName%
 
 set OBS_VIRTUALCAM=obs-virtualsource_32bit

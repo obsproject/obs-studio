@@ -36,6 +36,7 @@ jobs:
       MACOSX_DEPLOYMENT_TARGET_X86_64: '10.15'
       MACOSX_DEPLOYMENT_TARGET_ARM64: '11.0'
       CEF_BUILD_VERSION_MAC: '5060'
+      CEF_BUILD_REVISION_MAC: 'v4'
       DEPS_VERSION_MAC: '2022-08-02-b230301'
       QT_DEPS_VERSION_MAC: '2022-08-02'
       VLC_VERSION_MAC: '3.0.8'
@@ -117,6 +118,7 @@ jobs:
     env:
       OS_TAG: "windows64"
       CEF_VERSION: 5060
+      CEF_REVISION: v3
       WIN_DEPS_VERSION: windows-deps-2022-08-02-x64-sl.1
       GRPC_VERSION: v1.47.0
       CMakeGenerator: Visual Studio 17 2022
