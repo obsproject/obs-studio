@@ -8199,11 +8199,36 @@ void OBSBasic::VCamConfigButtonClicked()
 	dialog.exec();
 }
 
+void log_cvam_changed(const VCamConfig &config, bool starting)
+{
+	const char *action = starting ? "Starting" : "Changing";
+
+	switch (config.type) {
+	case VCamOutputType::Invalid:
+		break;
+	case VCamOutputType::ProgramView:
+		blog(LOG_INFO, "%s Virtual Camera output to Program", action);
+		break;
+	case VCamOutputType::PreviewOutput:
+		blog(LOG_INFO, "%s Virtual Camera output to Preview", action);
+		break;
+	case VCamOutputType::SceneOutput:
+		blog(LOG_INFO, "%s Virtual Camera output to Scene : %s", action,
+		     config.scene.c_str());
+		break;
+	case VCamOutputType::SourceOutput:
+		blog(LOG_INFO, "%s Virtual Camera output to Source : %s",
+		     action, config.source.c_str());
+		break;
+	}
+}
+
 void OBSBasic::UpdateVirtualCamConfig(const VCamConfig &config)
 {
 	vcamConfig = config;
 
 	outputHandler->UpdateVirtualCamOutputSource();
+	log_cvam_changed(config, false);
 }
 
 void OBSBasic::RestartVirtualCam(const VCamConfig &config)
