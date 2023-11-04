@@ -301,6 +301,8 @@ inline BasicOutputHandler::BasicOutputHandler(OBSBasic *main_) : main(main_)
 	}
 }
 
+extern void log_cvam_changed(const VCamConfig &config, bool starting);
+
 bool BasicOutputHandler::StartVirtualCam()
 {
 	if (!main->vcamEnabled)
@@ -343,6 +345,8 @@ bool BasicOutputHandler::StartVirtualCam()
 
 		DestroyVirtualCamView();
 	}
+
+	log_cvam_changed(main->vcamConfig, true);
 
 	return success;
 }
