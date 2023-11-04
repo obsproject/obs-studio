@@ -134,24 +134,26 @@ static bool init_screen_stream(struct screen_capture *sc)
         } break;
         case ScreenCaptureWindowStream: {
             SCWindow *target_window = nil;
-            if (sc->window != 0) {
+            if (sc->window != kCGNullWindowID) {
                 for (SCWindow *window in sc->shareable_content.windows) {
                     if (window.windowID == sc->window) {
                         target_window = window;
                         break;
                     }
                 }
-            } else {
-                target_window = [sc->shareable_content.windows objectAtIndex:0];
-                sc->window = target_window.windowID;
             }
-            content_filter = [[SCContentFilter alloc] initWithDesktopIndependentWindow:target_window];
+            if (target_window == nil) {
+                os_sem_post(sc->shareable_content_available);
+                sc->disp = NULL;
+                os_event_init(&sc->disp_finished, OS_EVENT_TYPE_MANUAL);
+                os_event_init(&sc->stream_start_completed, OS_EVENT_TYPE_MANUAL);
+                return true;
+            } else {
+                content_filter = [[SCContentFilter alloc] initWithDesktopIndependentWindow:target_window];
 
-            if (target_window) {
                 [sc->stream_properties setWidth:(size_t) target_window.frame.size.width];
                 [sc->stream_properties setHeight:(size_t) target_window.frame.size.height];
             }
-
         } break;
         case ScreenCaptureApplicationStream: {
             SCDisplay *target_display = get_target_display();
