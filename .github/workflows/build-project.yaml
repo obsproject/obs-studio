@@ -310,6 +310,13 @@ jobs:
           path: flatpak_app
           validateToPublish: false
 
+      - name: Validate repository
+        uses: ./.github/actions/flatpak-builder-lint
+        with:
+          artifact: repo
+          path: repo
+          validateToPublish: false
+
   windows-build:
     name: Windows 🪟
     runs-on: windows-2022
