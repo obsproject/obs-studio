@@ -17,7 +17,6 @@
         "--talk-name=org.freedesktop.Flatpak",
         "--talk-name=org.freedesktop.Notifications",
         "--talk-name=org.a11y.Bus",
-        "--own-name=org.kde.StatusNotifierItem-2-2",
         "--system-talk-name=org.freedesktop.Avahi",
         "--env=VST_PATH=/app/extensions/Plugins/vst"
     ],
