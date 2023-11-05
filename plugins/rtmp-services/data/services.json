@@ -2431,37 +2431,46 @@
             "servers": [
                 {
                     "name": "Global (Recommended)",
-                    "url": "rtmp://stream.global.irl.run/ingest"
+                    "url": "rtmps://stream.global.irl.run/ingest"
                 },
                 {
                     "name": "Los Angeles, US",
-                    "url": "rtmp://stream.lax.irl.run/ingest"
+                    "url": "rtmps://stream.lax.irl.run/ingest"
+                },
+                {
+                    "name": "Dallas, US",
+                    "url": "rtmps://stream.dal.irl.run/ingest"
                 },
                 {
                     "name": "New York, US",
-                    "url": "rtmp://stream.ewr.irl.run/ingest"
+                    "url": "rtmps://stream.ewr.irl.run/ingest"
                 },
                 {
-                    "name": "Rotterdam, NL",
-                    "url": "rtmp://stream.rtm.irl.run/ingest"
+                    "name": "Miami, US",
+                    "url": "rtmps://stream.mia.irl.run/ingest"
+                },
+                {
+                    "name": "Amsterdam, NL",
+                    "url": "rtmps://stream.ams.irl.run/ingest"
                 },
                 {
                     "name": "Singapore",
-                    "url": "rtmp://stream.sin.irl.run/ingest"
+                    "url": "rtmps://stream.sin.irl.run/ingest"
                 },
                 {
                     "name": "Tokyo, JP",
-                    "url": "rtmp://stream.tyo.irl.run/ingest"
+                    "url": "rtmps://stream.tyo.irl.run/ingest"
                 },
                 {
                     "name": "Sydney, AU",
-                    "url": "rtmp://stream.syd.irl.run/ingest"
+                    "url": "rtmps://stream.syd.irl.run/ingest"
                 }
             ],
             "recommended": {
                 "keyint": 2,
                 "bframes": 2,
-                "max video bitrate": 20000
+                "max video bitrate": 20000,
+                "max audio bitrate": 256
             },
             "supported video codecs": [
                 "h264"
