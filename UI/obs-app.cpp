@@ -1803,7 +1803,7 @@ bool OBSApp::IsPortableMode()
 
 bool OBSApp::IsUpdaterDisabled()
 {
-	return opt_disable_updater;
+	return true;
 }
 
 bool OBSApp::IsMissingFilesCheckDisabled()
@@ -2428,21 +2428,9 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		}
 
 		if (!multi) {
-			QMessageBox mb(QMessageBox::Question,
-				       QTStr("AlreadyRunning.Title"),
-				       QTStr("AlreadyRunning.Text"));
-			mb.addButton(QTStr("AlreadyRunning.LaunchAnyway"),
-				     QMessageBox::YesRole);
-			QPushButton *cancelButton = mb.addButton(
-				QTStr("Cancel"), QMessageBox::NoRole);
-			mb.setDefaultButton(cancelButton);
-
-			mb.exec();
-			cancel_launch = mb.clickedButton() == cancelButton;
+			return 0;
 		}
 
-		if (cancel_launch)
-			return 0;
 
 		if (!created_log) {
 			create_log_file(logFile);
@@ -2492,19 +2480,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		}
 
 		if (unclean_shutdown && !safe_mode) {
-			QMessageBox mb(QMessageBox::Warning,
-				       QTStr("AutoSafeMode.Title"),
-				       QTStr("AutoSafeMode.Text"));
-			QPushButton *launchSafeButton =
-				mb.addButton(QTStr("AutoSafeMode.LaunchSafe"),
-					     QMessageBox::AcceptRole);
-			QPushButton *launchNormalButton =
-				mb.addButton(QTStr("AutoSafeMode.LaunchNormal"),
-					     QMessageBox::RejectRole);
-			mb.setDefaultButton(launchNormalButton);
-			mb.exec();
-
-			safe_mode = mb.clickedButton() == launchSafeButton;
+			safe_mode = false;
 			if (safe_mode) {
 				blog(LOG_INFO,
 				     "[Safe Mode] User has launched in Safe Mode.");
@@ -2564,17 +2540,6 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 #ifdef _WIN32
 		if (IsRunningOnWine()) {
-			QMessageBox mb(QMessageBox::Question,
-				       QTStr("Wine.Title"), QTStr("Wine.Text"));
-			mb.setTextFormat(Qt::RichText);
-			mb.addButton(QTStr("AlreadyRunning.LaunchAnyway"),
-				     QMessageBox::AcceptRole);
-			QPushButton *closeButton =
-				mb.addButton(QMessageBox::Close);
-			mb.setDefaultButton(closeButton);
-
-			mb.exec();
-			if (mb.clickedButton() == closeButton)
 				return 0;
 		}
 #endif

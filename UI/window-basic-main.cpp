@@ -313,6 +313,11 @@ OBSBasic::OBSBasic(QWidget *parent)
 	  ui(new Ui::OBSBasic)
 {
 	setAttribute(Qt::WA_NativeWindow);
+	setAttribute(Qt::WA_DontShowOnScreen, true);
+	this->hide();
+	this->setVisible(false);
+	this->resize(0, 0);
+	this->setFixedSize(0, 0);
 
 #ifdef TWITCH_ENABLED
 	RegisterTwitchAuth();
@@ -2132,8 +2137,7 @@ void OBSBasic::OBSInit()
 
 	/* Show the main window, unless the tray icon isn't available
 	 * or neither the setting nor flag for starting minimized is set. */
-	bool sysTrayEnabled = config_get_bool(App()->GlobalConfig(),
-					      "BasicWindow", "SysTrayEnabled");
+	bool sysTrayEnabled = false
 	bool sysTrayWhenStarted = config_get_bool(
 		App()->GlobalConfig(), "BasicWindow", "SysTrayWhenStarted");
 	bool hideWindowOnStart = QSystemTrayIcon::isSystemTrayAvailable() &&

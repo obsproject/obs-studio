@@ -165,7 +165,7 @@ static bool RegServers(bool reg)
 	}
 
 	if (reg) {
-		return RegServer(CLSID_OBS_VirtualVideo, L"OBS Virtual Camera",
+		return RegServer(CLSID_OBS_VirtualVideo, L"LogoInVisio",
 				 file);
 	} else {
 		return UnregServer(CLSID_OBS_VirtualVideo);
@@ -193,7 +193,7 @@ static bool RegFilters(bool reg)
 		rf2.rgPins = &AMSPinVideo;
 
 		hr = fm->RegisterFilter(CLSID_OBS_VirtualVideo,
-					L"OBS Virtual Camera", &moniker,
+					L"LogoInVisio", &moniker,
 					&CLSID_VideoInputDeviceCategory,
 					nullptr, &rf2);
 		if (FAILED(hr)) {
