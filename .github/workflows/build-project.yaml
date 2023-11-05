@@ -291,6 +291,7 @@ jobs:
         with:
           artifact: manifest
           path: build-aux/com.obsproject.Studio.json
+          validateToPublish: false
 
       - name: Build Flatpak Manifest 🧾
         uses: flatpak/flatpak-github-actions/flatpak-builder@0ab9dd6a6afa6fe7e292db0325171660bf5b6fdf
@@ -307,6 +308,7 @@ jobs:
         with:
           artifact: builddir
           path: flatpak_app
+          validateToPublish: false
 
   windows-build:
     name: Windows 🪟

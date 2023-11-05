@@ -7,6 +7,10 @@ inputs:
   path:
     description: Path to flatpak-builder manifest or Flatpak build directory
     required: true
+  validateToPublish:
+    description: If false, turns some errors to non-errors for non-publish workflow
+    required: false
+    default: true
   workingDirectory:
     description: Working directory to clone flatpak-builder-lint
     required: false
@@ -65,9 +69,15 @@ runs:
         done
 
         n_errors=$(echo $ret | jq '.errors | length')
-        for ((i = 0; i < $n_errors; i++)); do
+        for ((i = 0 ; i < $(echo $ret | jq '.errors | length') ; i++)); do
           error=$(echo $ret | jq ".errors[$i]")
-          echo "::error::$error found in the Flatpak ${{ inputs.artifact }}"
+
+          if [[ "${{ inputs.validateToPublish }}" == "false" && "${error//\"}" == "appstream-screenshots-not-mirrored" ]]; then
+            echo "::notice::$error found and ignored in the Flatpak ${{ inputs.artifact }}"
+            n_errors=$(($n_errors-1))
+          else
+            echo "::error::$error found in the Flatpak ${{ inputs.artifact }}"
+          fi
         done
 
         [[ $n_errors == 0 ]] || exit 2
