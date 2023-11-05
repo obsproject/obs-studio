@@ -26,173 +26,173 @@ jobs:
     permissions:
       contents: read
 
-  compatibility-validation:
-    name: Validate Compatibility 🕵️
-    if: github.ref_name == 'master'
-    runs-on: ubuntu-22.04
-    permissions:
-      checks: write
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+  # compatibility-validation:
+  #   name: Validate Compatibility 🕵️
+  #   if: github.ref_name == 'master'
+  #   runs-on: ubuntu-22.04
+  #   permissions:
+  #     checks: write
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #       with:
+  #         fetch-depth: 0
 
-      - name: Check for Changed Files ✅
-        uses: ./.github/actions/check-changes
-        id: checks
-        with:
-          baseRef: ${{ github.event.before }}
-          checkGlob: plugins/win-capture/data/*.json
+  #     - name: Check for Changed Files ✅
+  #       uses: ./.github/actions/check-changes
+  #       id: checks
+  #       with:
+  #         baseRef: ${{ github.event.before }}
+  #         checkGlob: plugins/win-capture/data/*.json
 
-      - name: Check for Invalid Compatibility Data 📉
-        if: fromJSON(steps.checks.outputs.hasChangedFiles)
-        uses: ./.github/actions/compatibility-validator
-        with:
-          repositorySecret: ${{ github.token }}
+  #     - name: Check for Invalid Compatibility Data 📉
+  #       if: fromJSON(steps.checks.outputs.hasChangedFiles)
+  #       uses: ./.github/actions/compatibility-validator
+  #       with:
+  #         repositorySecret: ${{ github.token }}
 
-  services-validation:
-    name: Validate Services 🕵️
-    if: github.ref_name == 'master'
-    runs-on: ubuntu-22.04
-    permissions:
-      checks: write
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+  # services-validation:
+  #   name: Validate Services 🕵️
+  #   if: github.ref_name == 'master'
+  #   runs-on: ubuntu-22.04
+  #   permissions:
+  #     checks: write
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #       with:
+  #         fetch-depth: 0
 
-      - name: Check for Changed Files ✅
-        uses: ./.github/actions/check-changes
-        id: checks
-        with:
-          baseRef: ${{ github.event.before }}
-          checkGlob: plugins/rtmp-services/data/*.json
+  #     - name: Check for Changed Files ✅
+  #       uses: ./.github/actions/check-changes
+  #       id: checks
+  #       with:
+  #         baseRef: ${{ github.event.before }}
+  #         checkGlob: plugins/rtmp-services/data/*.json
 
-      - name: Check Services JSON Schema 📉
-        if: fromJSON(steps.checks.outputs.hasChangedFiles)
-        uses: ./.github/actions/services-validator
-        with:
-          repositorySecret: ${{ github.token }}
-          runSchemaChecks: true
-          runServiceChecks: false
+  #     - name: Check Services JSON Schema 📉
+  #       if: fromJSON(steps.checks.outputs.hasChangedFiles)
+  #       uses: ./.github/actions/services-validator
+  #       with:
+  #         repositorySecret: ${{ github.token }}
+  #         runSchemaChecks: true
+  #         runServiceChecks: false
 
-  update-documentation:
-    name: Update Documentation 📖
-    if: github.repository_owner == 'obsproject' && (github.ref_name == 'master' || github.ref_type == 'tag')
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+  # update-documentation:
+  #   name: Update Documentation 📖
+  #   if: github.repository_owner == 'obsproject' && (github.ref_name == 'master' || github.ref_type == 'tag')
+  #   runs-on: ubuntu-22.04
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #       with:
+  #         fetch-depth: 0
 
-      - name: Check for Changed Files ✅
-        if: github.ref_type != 'tag'
-        uses: ./.github/actions/check-changes
-        id: checks
-        with:
-          baseRef: ${{ github.event.before }}
-          checkGlob: '!(cmake*)'
+  #     - name: Check for Changed Files ✅
+  #       if: github.ref_type != 'tag'
+  #       uses: ./.github/actions/check-changes
+  #       id: checks
+  #       with:
+  #         baseRef: ${{ github.event.before }}
+  #         checkGlob: '!(cmake*)'
 
-      - uses: ./.github/actions/generate-docs
-        if: github.ref_type == 'tag' || fromJSON(steps.checks.outputs.hasChangedFiles)
-        with:
-          disableLinkExtensions: ${{ github.ref_type == 'tag' }}
+  #     - uses: ./.github/actions/generate-docs
+  #       if: github.ref_type == 'tag' || fromJSON(steps.checks.outputs.hasChangedFiles)
+  #       with:
+  #         disableLinkExtensions: ${{ github.ref_type == 'tag' }}
 
-  deploy-documentation:
-    name: Deploy Documentation to Cloudflare ☁️
-    if: github.repository_owner == 'obsproject' && github.ref_type == 'tag'
-    runs-on: ubuntu-22.04
-    needs: update-documentation
-    defaults:
-      run:
-        shell: bash
-    environment:
-      name: cf-pages-deploy
-    steps:
-      - name: Get Commit Information 🆔
-        id: setup
-        run: |
-          : Get Commit Hash 🆔
-          echo "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
+  # deploy-documentation:
+  #   name: Deploy Documentation to Cloudflare ☁️
+  #   if: github.repository_owner == 'obsproject' && github.ref_type == 'tag'
+  #   runs-on: ubuntu-22.04
+  #   needs: update-documentation
+  #   defaults:
+  #     run:
+  #       shell: bash
+  #   environment:
+  #     name: cf-pages-deploy
+  #   steps:
+  #     - name: Get Commit Information 🆔
+  #       id: setup
+  #       run: |
+  #         : Get Commit Hash 🆔
+  #         echo "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
 
-      - uses: actions/download-artifact@v3
-        with:
-          name: OBS Studio Docs (No Extensions) ${{ steps.setup.outputs.commitHash }}
-          path: docs
+  #     - uses: actions/download-artifact@v3
+  #       with:
+  #         name: OBS Studio Docs (No Extensions) ${{ steps.setup.outputs.commitHash }}
+  #         path: docs
 
-      - name: Set Up Redirects 🔄
-        run: |
-          : Set Up Redirects 🔄
-          if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
+  #     - name: Set Up Redirects 🔄
+  #       run: |
+  #         : Set Up Redirects 🔄
+  #         if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
 
-          echo "/previous/27.2 https://obsproject.com/docs/27.2 302" >> docs/_redirects
-          echo "/previous/:major.:minor https://:major-:minor.${{ vars.CF_PAGES_PROJECT }}.pages.dev 302" >> docs/_redirects
+  #         echo "/previous/27.2 https://obsproject.com/docs/27.2 302" >> docs/_redirects
+  #         echo "/previous/:major.:minor https://:major-:minor.${{ vars.CF_PAGES_PROJECT }}.pages.dev 302" >> docs/_redirects
 
-      - name: Publish to Live Page
-        uses: cloudflare/wrangler-action@4c10c1822abba527d820b29e6333e7f5dac2cabd
-        with:
-          workingDirectory: docs
-          apiToken: ${{ secrets.CF_API_TOKEN }}
-          accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          command: pages publish . --project-name=${{ vars.CF_PAGES_PROJECT }} --commit-hash='${{ steps.setup.outputs.commitHash }}'
+  #     - name: Publish to Live Page
+  #       uses: cloudflare/wrangler-action@4c10c1822abba527d820b29e6333e7f5dac2cabd
+  #       with:
+  #         workingDirectory: docs
+  #         apiToken: ${{ secrets.CF_API_TOKEN }}
+  #         accountId: ${{ secrets.CF_ACCOUNT_ID }}
+  #         command: pages publish . --project-name=${{ vars.CF_PAGES_PROJECT }} --commit-hash='${{ steps.setup.outputs.commitHash }}'
 
-  create-appcast:
-    name: Create Sparkle Appcast 🎙️
-    if: github.repository_owner == 'obsproject' && github.ref_type == 'tag'
-    runs-on: macos-13
-    needs: build-project
-    strategy:
-      fail-fast: false
-      matrix:
-        target: [arm64, x86_64]
-    defaults:
-      run:
-        shell: zsh --no-rcs --errexit --pipefail {0}
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: recursive
-          fetch-depth: 0
-          ref: ${{ github.ref }}
+  # create-appcast:
+  #   name: Create Sparkle Appcast 🎙️
+  #   if: github.repository_owner == 'obsproject' && github.ref_type == 'tag'
+  #   runs-on: macos-13
+  #   needs: build-project
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       target: [arm64, x86_64]
+  #   defaults:
+  #     run:
+  #       shell: zsh --no-rcs --errexit --pipefail {0}
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #       with:
+  #         submodules: recursive
+  #         fetch-depth: 0
+  #         ref: ${{ github.ref }}
 
-      - name: Set Up Environment 🔧
-        id: setup
-        run: |
-          : Set Up Environment 🔧
-          if (( ${+RUNNER_DEBUG} )) setopt XTRACE
+  #     - name: Set Up Environment 🔧
+  #       id: setup
+  #       run: |
+  #         : Set Up Environment 🔧
+  #         if (( ${+RUNNER_DEBUG} )) setopt XTRACE
 
-          local channel='stable'
-          if [[ ${GITHUB_REF_NAME} == *(beta|rc)* ]] {
-            channel='beta'
-          }
+  #         local channel='stable'
+  #         if [[ ${GITHUB_REF_NAME} == *(beta|rc)* ]] {
+  #           channel='beta'
+  #         }
 
-          local -A arch_names=(x86_64 intel arm64 apple)
-          print "cpuName=${arch_names[${{ matrix.target }}]}" >> $GITHUB_OUTPUT
-          print "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
-          print "channel=${channel}" >> $GITHUB_OUTPUT
+  #         local -A arch_names=(x86_64 intel arm64 apple)
+  #         print "cpuName=${arch_names[${{ matrix.target }}]}" >> $GITHUB_OUTPUT
+  #         print "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
+  #         print "channel=${channel}" >> $GITHUB_OUTPUT
 
-      - name: Download Artifact 📥
-        uses: actions/download-artifact@v3
-        with:
-          name: obs-studio-macos-${{ matrix.target }}-${{ steps.setup.outputs.commitHash }}
+  #     - name: Download Artifact 📥
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: obs-studio-macos-${{ matrix.target }}-${{ steps.setup.outputs.commitHash }}
 
-      - name: Generate Appcast 🎙️
-        id: generate-appcast
-        uses: ./.github/actions/sparkle-appcast
-        with:
-          sparklePrivateKey: ${{ secrets.SPARKLE_PRIVATE_KEY }}
-          baseImage: ${{ github.workspace }}/obs-studio-*-macos-${{ steps.setup.outputs.cpuName }}.dmg
-          channel: ${{ steps.setup.outputs.channel }}
-          count: 1
-          urlPrefix: 'https://cdn-fastly.obsproject.com/downloads'
-          customTitle: 'OBS Studio'
-          customLink: 'https://obsproject.com/'
+  #     - name: Generate Appcast 🎙️
+  #       id: generate-appcast
+  #       uses: ./.github/actions/sparkle-appcast
+  #       with:
+  #         sparklePrivateKey: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+  #         baseImage: ${{ github.workspace }}/obs-studio-*-macos-${{ steps.setup.outputs.cpuName }}.dmg
+  #         channel: ${{ steps.setup.outputs.channel }}
+  #         count: 1
+  #         urlPrefix: 'https://cdn-fastly.obsproject.com/downloads'
+  #         customTitle: 'OBS Studio'
+  #         customLink: 'https://obsproject.com/'
 
-      - name: Upload Artifacts 📡
-        uses: actions/upload-artifact@v3
-        with:
-          name: macos-sparkle-update
-          path: ${{ github.workspace }}/output
+  #     - name: Upload Artifacts 📡
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: macos-sparkle-update
+  #         path: ${{ github.workspace }}/output
 
   create-release:
     name: Create Release 🛫
