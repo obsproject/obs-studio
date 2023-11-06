@@ -251,14 +251,14 @@ function(_target_install_obs target)
     POST_BUILD
     COMMAND "${CMAKE_COMMAND}" -E make_directory "${OBS_OUTPUT_DIR}/$<CONFIG>/${_TIO_DESTINATION}"
     COMMAND "${CMAKE_COMMAND}" -E copy ${target_file} "${OBS_OUTPUT_DIR}/$<CONFIG>/${_TIO_DESTINATION}"
-    COMMAND "${CMAKE_COMMAND}" -E $<IF:$<CONFIG:Debug,RelWithDebInfo>,copy,true> ${target_pdb_file}
+    COMMAND "${CMAKE_COMMAND}" -E $<IF:$<CONFIG:Debug,RelWithDebInfo,Release>,copy,true> ${target_pdb_file}
             "${OBS_OUTPUT_DIR}/$<CONFIG>/${_TIO_DESTINATION}"
     COMMENT "${comment}"
     VERBATIM)
 
   install(
     FILES ${target_pdb_file}
-    CONFIGURATIONS RelWithDebInfo Debug
+    CONFIGURATIONS RelWithDebInfo Debug Release
     DESTINATION "${_TIO_DESTINATION}"
     COMPONENT Runtime
     OPTIONAL)
@@ -272,7 +272,7 @@ function(target_export target)
 
   install(
     FILES "$<TARGET_PDB_FILE:${target}>"
-    CONFIGURATIONS RelWithDebInfo Debug
+    CONFIGURATIONS RelWithDebInfo Debug Release
     DESTINATION "${OBS_EXECUTABLE_DESTINATION}"
     COMPONENT Development
     OPTIONAL)
