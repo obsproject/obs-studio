@@ -1,0 +1,133 @@
+name: Run bouf
+description: Generates signed OBS install files and updater files
+inputs:
+  gcpWorkloadIdentityProvider:
+    description: GCP Identity Provider Pool ID
+    required: true
+  gcpServiceAccountName:
+    description: Google service account name
+    required: true
+  gcpManifestSigningKeyName:
+    description: Name of the manifest signing key in GCP KMS
+    required: false
+  version:
+    description: Version string (e.g., 30.0.0-rc1)
+    required: true
+  channel:
+    description: Update channel
+    required: false
+    default: 'stable'
+
+runs:
+  using: composite
+  steps:
+    - name: Extract Artifact
+      shell: pwsh
+      run: |
+        Expand-Archive -Path build\*.zip -DestinationPath build
+        Remove-Item build\*.zip
+
+    - name: Setup bouf
+      shell: pwsh
+      env:
+        BOUF_TAG: 'v0.6.1'
+        BOUF_HASH: '7292e43186ecc6210079fa5702254455797c7652dc6b08b5b61ac2d721766d86'
+        BOUF_NSIS_HASH: '2f5ecff05a002913c10aafa838febc1b0ae6e779f5ca67efa545ed787ae485a0'
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        # Download bouf release
+        . ${env:GITHUB_ACTION_PATH}\Ensure-Location.ps1
+        . ${env:GITHUB_ACTION_PATH}\Invoke-External.ps1
+        Ensure-Location bouf
+        $windows_zip = "bouf-windows-${env:BOUF_TAG}.zip"
+        $nsis_zip = "bouf-nsis-${env:BOUF_TAG}.zip"
+        Invoke-External gh release download "${env:BOUF_TAG}" -R "obsproject/bouf" -p $windows_zip -p $nsis_zip
+        
+        if ((Get-FileHash $windows_zip -Algorithm SHA256).Hash -ne "${env:BOUF_HASH}") {
+          throw "bouf hash does not match."
+        }
+        if ((Get-FileHash $nsis_zip -Algorithm SHA256).Hash -ne "${env:BOUF_NSIS_HASH}") {
+          throw "NSIS package hash does not match."
+        }
+        
+        Expand-Archive -Path $windows_zip -DestinationPath bin
+        Expand-Archive -Path $nsis_zip -DestinationPath nsis
+
+    - name: Download Google CNG Provider
+      shell: pwsh
+      env:
+        CNG_TAG: 'cng-v1.0'
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        # Download Google CNG provider release from github
+        . ${env:GITHUB_ACTION_PATH}\Ensure-Location.ps1
+        . ${env:GITHUB_ACTION_PATH}\Invoke-External.ps1
+        Ensure-Location gcng
+        
+        Invoke-External gh release download "${env:CNG_TAG}" -R "GoogleCloudPlatform/kms-integrations" -p "*amd64.zip"
+        Expand-Archive -Path *.zip
+        $sigPath = Get-ChildItem *.sig -Recurse
+        $msiPath = Get-ChildItem *.msi -Recurse
+        # Verify digital signature against Google's public key
+        Invoke-External openssl dgst -sha384 -verify "${env:GITHUB_ACTION_PATH}/cng-release-signing-key.pem" -signature $sigPath $msiPath
+        # Finally, install the CNG provider
+        Invoke-External msiexec /i $msiPath /qn /norestart
+
+    - name: Install pandoc and rclone
+      shell: pwsh
+      run: |
+        choco install rclone --version 1.64.2 -y --no-progress
+        choco install pandoc --version 3.1.9 -y --no-progress
+
+    - name: Prepare Release Notes
+      shell: pwsh
+      run: |
+        # Release notes are just the tag body on Windows
+        Set-Location repo
+        git tag -l --format='%(contents:body)' ${{ inputs.version }} > "${{ github.workspace }}/notes.rst"
+    
+    - name: 'Authenticate to Google Cloud'
+      uses: 'google-github-actions/auth@35b0e87d162680511bf346c299f71c9c5c379033'
+      with:
+        workload_identity_provider: ${{ inputs.gcpWorkloadIdentityProvider }}
+        service_account: ${{ inputs.gcpServiceAccountName }}
+
+    - name: 'Set up Cloud SDK'
+      uses: 'google-github-actions/setup-gcloud@e30db14379863a8c79331b04a9969f4c1e225e0b'
+
+    - name: Download Old Builds
+      shell: pwsh
+      env:
+        RCLONE_GCS_ENV_AUTH: 'true'
+      run: |
+        rclone copy --transfers 100 :gcs:obs-builds "${{ github.workspace }}/old_builds"
+
+    - name: Run bouf
+      shell: pwsh
+      run: |
+        . ${env:GITHUB_ACTION_PATH}\Invoke-External.ps1
+        $boufArgs = @(
+           "--config",     "${env:GITHUB_ACTION_PATH}/config.toml",
+           "--version",    "${{ inputs.version }}"
+           "--branch",     "${{ inputs.channel }}"
+           "--notes-file", "${{ github.workspace }}/notes.rst"
+           "-i",           "${{ github.workspace }}/build"
+           "-p",           "${{ github.workspace }}/old_builds"
+           "-o",           "${{ github.workspace }}/output"
+        )
+        Invoke-External "${{ github.workspace }}\bouf\bin\bouf.exe" @boufArgs
+
+    - name: Sign Updater Manifest
+      shell: pwsh
+      if: inputs.gcpManifestSigningKeyName != ''
+      run: |
+        $gcloudArgs = @(
+           "--input-file",       "${{ github.workspace }}/output/manifest.json"
+           "--signature-file",   "${{ github.workspace }}/output/manifest.json.sig"
+           "--digest-algorithm", "sha512"
+           "--location",         "global"
+           "--keyring",          "production"
+           "--key",              "${{ inputs.gcpManifestSigningKeyName }}"
+           "--version",          "1"
+        )
+        gcloud kms asymmetric-sign @gcloudArgs

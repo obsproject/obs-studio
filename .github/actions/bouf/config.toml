@@ -1,0 +1,56 @@
+[general]
+log_level = "trace"
+
+[env]
+# On CI these should be in %PATH%
+sevenzip_path = "7z"
+makensis_path = "makensis"
+pandoc_path = "pandoc"
+pdbcopy_path = "C:/Program Files (x86)/Windows Kits/10/Debuggers/x64/pdbcopy.exe"
+
+## Preparation steps
+[prepare]
+
+[prepare.copy]
+never_copy = [
+    "bin/32bit",
+    "obs-plugins/32bit",
+    ".keepme",
+]
+
+[prepare.codesign]
+sign_cert_file = "repo/.github/actions/bouf/test.crt"
+sign_kms_key_id = "projects/ci-signing/locations/global/keyRings/testing/cryptoKeys/signing-hsm/cryptoKeyVersions/1"
+sign_digest = "sha256"
+sign_ts_serv = "http://timestamp.digicert.com"
+sign_exts = ['exe', 'dll', 'pyd']
+
+[prepare.strip_pdbs]
+# PDBs to not strip
+exclude = [
+    "obs-frontend-api.pdb",
+    "obs64.pdb",
+    "obs.pdb",
+]
+
+## Delta patch generation
+[generate]
+patch_type = "zstd"
+compress_files = true
+
+exclude_from_parallel = [
+    "libcef.dll"
+]
+
+[package]
+[package.installer]
+nsis_script = "bouf/nsis/mp-installer.nsi"
+
+[package.zip]
+skip = true
+name = "OBS-Studio-{version}.zip"
+pdb_name = "OBS-Studio-{version}-pdbs.zip"
+
+[package.updater]
+vc_redist_path = "bouf/nsis/VC_redist.x64.exe"
+skip_sign = true
