@@ -37,8 +37,8 @@ OutputTimer::OutputTimer(QWidget *parent)
 			 &OutputTimer::EventStopStreaming);
 
 	QObject::connect(streamingTimerDisplay, &QTimer::timeout, this,
-			 &OutputTimer::UpdateStreamTimerDisplay);
-
+			 &OutputTimer::UpdateStreamTimerDisplay);	
+			 
 	QObject::connect(recordingTimer, &QTimer::timeout, this,
 			 &OutputTimer::EventStopRecording);
 
