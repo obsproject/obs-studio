@@ -32,6 +32,15 @@ OutputTimer::OutputTimer(QWidget *parent)
 
 	recordingTimer = new QTimer(this);
 	recordingTimerDisplay = new QTimer(this);
+
+	QObject::connect(streamingTimer, &QTimer::timeout, this,
+			 &OutputTimer::EventStopStreaming);
+	QObject::connect(streamingTimerDisplay, &QTimer::timeout, this,
+			 &OutputTimer::UpdateStreamTimerDisplay);
+	QObject::connect(recordingTimer, &QTimer::timeout, this,
+			 &OutputTimer::EventStopRecording);
+	QObject::connect(recordingTimerDisplay, &QTimer::timeout, this,
+			 &OutputTimer::UpdateRecordTimerDisplay);
 }
 
 void OutputTimer::closeEvent(QCloseEvent *)
@@ -86,12 +95,6 @@ void OutputTimer::StreamTimerStart()
 	streamingTimer->setInterval(total);
 	streamingTimer->setSingleShot(true);
 
-	QObject::connect(streamingTimer, &QTimer::timeout, this,
-			 &OutputTimer::EventStopStreaming);
-
-	QObject::connect(streamingTimerDisplay, &QTimer::timeout, this,
-			 &OutputTimer::UpdateStreamTimerDisplay);
-
 	streamingTimer->start();
 	streamingTimerDisplay->start(1000);
 	ui->outputTimerStream->setText(obs_module_text("Stop"));
@@ -119,12 +122,6 @@ void OutputTimer::RecordTimerStart()
 
 	recordingTimer->setInterval(total);
 	recordingTimer->setSingleShot(true);
-
-	QObject::connect(recordingTimer, &QTimer::timeout, this,
-			 &OutputTimer::EventStopRecording);
-
-	QObject::connect(recordingTimerDisplay, &QTimer::timeout, this,
-			 &OutputTimer::UpdateRecordTimerDisplay);
 
 	recordingTimer->start();
 	recordingTimerDisplay->start(1000);
