@@ -76,6 +76,12 @@ EXPORT void base_set_crash_handler(void (*handler)(const char *, va_list,
 						   void *),
 				   void *param);
 
+#define CRASH_SAVE_FILE (1 << 0)
+#define CRASH_SHOW_USER (1 << 1)
+#define CRASH_KILL_THREAD (1 << 2)
+EXPORT void base_set_thread_crash_handling(int crash);
+EXPORT int base_get_thread_crash_handling();
+
 EXPORT void blogva(int log_level, const char *format, va_list args);
 
 #if !defined(_MSC_VER) && !defined(SWIG)

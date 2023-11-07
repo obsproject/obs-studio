@@ -90,6 +90,19 @@ void base_set_crash_handler(void (*handler)(const char *, va_list, void *),
 	crash_handler = handler;
 }
 
+static _Thread_local int thread_crash_handling = CRASH_SAVE_FILE |
+						 CRASH_SHOW_USER;
+
+void base_set_thread_crash_handling(int crash)
+{
+	thread_crash_handling = crash;
+}
+
+int base_get_thread_crash_handling()
+{
+	return thread_crash_handling;
+}
+
 OBS_NORETURN void bcrash(const char *format, ...)
 {
 	va_list args;

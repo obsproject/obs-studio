@@ -2618,9 +2618,12 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 #ifdef _WIN32
 
-#define CRASH_MESSAGE                                                      \
-	"Woops, OBS has crashed!\n\nWould you like to copy the crash log " \
-	"to the clipboard? The crash log will still be saved to:\n\n%s"
+#define CRASH_MESSAGE "Woops, OBS has crashed!\n\n"
+#define CRASH_THREAD_MESSAGE "Woops, a part of OBS has crashed!\n\n"
+#define CRASH_COPY_MESSAGE                      \
+	"Would you like to copy the crash log " \
+	"to the clipboard?"
+#define CRASH_MESSAGE_SAVE " The crash log will still be saved to:\n\n"
 
 static void main_crash_handler(const char *format, va_list args,
 			       void * /* param */)
@@ -2630,65 +2633,80 @@ static void main_crash_handler(const char *format, va_list args,
 	vsnprintf(text, MAX_CRASH_REPORT_SIZE, format, args);
 	text[MAX_CRASH_REPORT_SIZE - 1] = 0;
 
-	string crashFilePath = "obs-studio/crashes";
+	int crash_handling = base_get_thread_crash_handling();
+	string finalMessage = (crash_handling & CRASH_KILL_THREAD)
+				      ? CRASH_THREAD_MESSAGE
+				      : CRASH_MESSAGE;
+	finalMessage += CRASH_COPY_MESSAGE;
+	if (crash_handling & CRASH_SAVE_FILE) {
+		string crashFilePath = "obs-studio/crashes";
 
-	delete_oldest_file(true, crashFilePath.c_str());
+		delete_oldest_file(true, crashFilePath.c_str());
 
-	string name = crashFilePath + "/";
-	name += "Crash " + GenerateTimeDateFilename("txt");
+		string name = crashFilePath + "/";
+		name += "Crash " + GenerateTimeDateFilename("txt");
 
-	BPtr<char> path(GetConfigPathPtr(name.c_str()));
+		BPtr<char> path(GetConfigPathPtr(name.c_str()));
 
-	fstream file;
+		fstream file;
 
 #ifdef _WIN32
-	BPtr<wchar_t> wpath;
-	os_utf8_to_wcs_ptr(path, 0, &wpath);
-	file.open(wpath, ios_base::in | ios_base::out | ios_base::trunc |
-				 ios_base::binary);
+		BPtr<wchar_t> wpath;
+		os_utf8_to_wcs_ptr(path, 0, &wpath);
+		file.open(wpath, ios_base::in | ios_base::out |
+					 ios_base::trunc | ios_base::binary);
 #else
-	file.open(path, ios_base::in | ios_base::out | ios_base::trunc |
-				ios_base::binary);
+		file.open(path, ios_base::in | ios_base::out | ios_base::trunc |
+					ios_base::binary);
 #endif
-	file << text;
-	file.close();
-
-	string pathString(path.Get());
+		file << text;
+		file.close();
+		if (crash_handling & CRASH_SHOW_USER) {
+			string pathString(path.Get());
 
 #ifdef _WIN32
-	std::replace(pathString.begin(), pathString.end(), '/', '\\');
+			std::replace(pathString.begin(), pathString.end(), '/',
+				     '\\');
 #endif
 
-	string absolutePath =
-		canonical(filesystem::path(pathString)).u8string();
+			string absolutePath =
+				canonical(filesystem::path(pathString))
+					.u8string();
+			finalMessage += CRASH_MESSAGE_SAVE;
+			finalMessage += absolutePath;
+		}
+	}
+	if (crash_handling & CRASH_SHOW_USER) {
+		int ret = MessageBoxA(
+			NULL, finalMessage.c_str(),
+			(crash_handling & CRASH_KILL_THREAD)
+				? "OBS encountered an error!"
+				: "OBS has crashed!",
+			MB_YESNO |
+				((crash_handling & CRASH_KILL_THREAD)
+					 ? MB_ICONWARNING
+					 : MB_ICONERROR) |
+				MB_TASKMODAL);
 
-	size_t size = snprintf(nullptr, 0, CRASH_MESSAGE, absolutePath.c_str());
+		if (ret == IDYES) {
+			size_t len = strlen(text);
 
-	unique_ptr<char[]> message_buffer(new char[size + 1]);
+			HGLOBAL mem = GlobalAlloc(GMEM_MOVEABLE, len);
+			memcpy(GlobalLock(mem), text, len);
+			GlobalUnlock(mem);
 
-	snprintf(message_buffer.get(), size + 1, CRASH_MESSAGE,
-		 absolutePath.c_str());
-
-	string finalMessage =
-		string(message_buffer.get(), message_buffer.get() + size);
-
-	int ret = MessageBoxA(NULL, finalMessage.c_str(), "OBS has crashed!",
-			      MB_YESNO | MB_ICONERROR | MB_TASKMODAL);
-
-	if (ret == IDYES) {
-		size_t len = strlen(text);
-
-		HGLOBAL mem = GlobalAlloc(GMEM_MOVEABLE, len);
-		memcpy(GlobalLock(mem), text, len);
-		GlobalUnlock(mem);
-
-		OpenClipboard(0);
-		EmptyClipboard();
-		SetClipboardData(CF_TEXT, mem);
-		CloseClipboard();
+			OpenClipboard(0);
+			EmptyClipboard();
+			SetClipboardData(CF_TEXT, mem);
+			CloseClipboard();
+		}
 	}
 
-	exit(-1);
+	if (crash_handling & CRASH_KILL_THREAD) {
+		TerminateThread(GetCurrentThread(), -1);
+	} else {
+		exit(-1);
+	}
 }
 
 static void load_debug_privilege(void)
