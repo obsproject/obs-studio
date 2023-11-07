@@ -2267,9 +2267,9 @@ void OBSBasic::OBSInit()
 		config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
 	}
 
-	if (!first_run && !has_last_version && !Active())
-		QMetaObject::invokeMethod(this, "on_autoConfigure_triggered",
-					  Qt::QueuedConnection);
+	// if (!first_run && !has_last_version && !Active())
+	// 	QMetaObject::invokeMethod(this, "on_autoConfigure_triggered",
+	// 				  Qt::QueuedConnection);
 
 #if (defined(_WIN32) || defined(__APPLE__)) && \
 	(OBS_RELEASE_CANDIDATE > 0 || OBS_BETA > 0)
@@ -7188,7 +7188,7 @@ inline void OBSBasic::OnDeactivate()
 {
 	if (!outputHandler->Active() && !ui->profileMenu->isEnabled()) {
 		ui->profileMenu->setEnabled(true);
-		ui->autoConfigure->setEnabled(true);
+		// ui->autoConfigure->setEnabled(true);
 		App()->DecrementSleepInhibition();
 		ClearProcessPriority();
 
