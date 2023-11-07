@@ -8199,7 +8199,7 @@ void OBSBasic::VCamConfigButtonClicked()
 	dialog.exec();
 }
 
-void log_cvam_changed(const VCamConfig &config, bool starting)
+void log_vcam_changed(const VCamConfig &config, bool starting)
 {
 	const char *action = starting ? "Starting" : "Changing";
 
@@ -8228,7 +8228,7 @@ void OBSBasic::UpdateVirtualCamConfig(const VCamConfig &config)
 	vcamConfig = config;
 
 	outputHandler->UpdateVirtualCamOutputSource();
-	log_cvam_changed(config, false);
+	log_vcam_changed(config, false);
 }
 
 void OBSBasic::RestartVirtualCam(const VCamConfig &config)
