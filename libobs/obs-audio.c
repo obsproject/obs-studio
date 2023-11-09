@@ -24,8 +24,8 @@ struct ts_info {
 	uint64_t end;
 };
 
-#define DEBUG_AUDIO 1
-#define DEBUG_LAGGED_AUDIO 1
+#define DEBUG_AUDIO 0
+#define DEBUG_LAGGED_AUDIO 0
 
 // Cached state of multiple rendering so each run of in audio-io thread work with same state
 static bool audio_multiple_rendering = false;

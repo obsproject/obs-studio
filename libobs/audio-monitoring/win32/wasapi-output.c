@@ -50,7 +50,7 @@ struct audio_monitor {
 	SRWLOCK playback_mutex;
 };
 
-#define DEBUG_AUDIO
+/* #define DEBUG_AUDIO */
 
 static bool process_audio_delay(struct audio_monitor *monitor, float **data,
 				uint32_t *frames, uint64_t ts, uint32_t pad)
