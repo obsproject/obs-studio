@@ -2256,8 +2256,6 @@ void OBSBasic::OBSInit()
 	disableColorSpaceConversion(this);
 #endif
 
-	bool has_last_version = config_has_user_value(App()->GlobalConfig(),
-						      "General", "LastVersion");
 	bool first_run =
 		config_get_bool(App()->GlobalConfig(), "General", "FirstRun");
 

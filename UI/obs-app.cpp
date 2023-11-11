@@ -2415,7 +2415,6 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		/* --------------------------------------- */
 		/* check and warn if already running       */
 
-		bool cancel_launch = false;
 		bool already_running = false;
 
 #ifdef _WIN32
