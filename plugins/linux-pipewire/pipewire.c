@@ -522,7 +522,7 @@ static void init_format_info_sync(obs_pipewire_stream *obs_pw_stream)
 
 	enum gs_dmabuf_flags dmabuf_flags;
 	uint32_t *drm_formats = NULL;
-	size_t n_drm_formats;
+	size_t n_drm_formats = 0;
 
 	bool capabilities_queried = gs_query_dmabuf_capabilities(
 		&dmabuf_flags, &drm_formats, &n_drm_formats);
