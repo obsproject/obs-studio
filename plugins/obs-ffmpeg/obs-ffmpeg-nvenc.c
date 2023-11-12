@@ -19,6 +19,7 @@
 #ifdef ENABLE_HEVC
 #include <obs-hevc.h>
 #endif
+#include <obs-av1.h>
 
 #include "obs-ffmpeg-video-encoders.h"
 
@@ -290,7 +291,9 @@ static void on_first_packet(void *data, AVPacket *pkt, struct darray *da)
 	} else
 #endif
 		if (enc->av1) {
-		// TODO: add obs_extract_av1_headers
+		obs_extract_av1_headers(pkt->data, pkt->size,
+					(uint8_t **)&da->array, &da->num,
+					&enc->header.array, &enc->header.num);
 	} else {
 		obs_extract_avc_headers(pkt->data, pkt->size,
 					(uint8_t **)&da->array, &da->num,
