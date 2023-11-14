@@ -277,7 +277,6 @@ int device_create(gs_device_t **p_device, uint32_t adapter)
 		       "features used to maximize capture performance.  "
 		       "The Direct3D 11 renderer is recommended instead.");
 #endif
-
 	*p_device = device;
 	return GS_SUCCESS;
 
@@ -1487,6 +1486,18 @@ void device_projection_pop(gs_device_t *device)
 	end = da_end(device->proj_stack);
 	device->cur_proj = *end;
 	da_pop_back(device->proj_stack);
+}
+
+bool device_nv12_available(gs_device_t *device)
+{
+	UNUSED_PARAMETER(device);
+	return true;
+}
+
+bool device_p010_available(gs_device_t *device)
+{
+	UNUSED_PARAMETER(device);
+	return true;
 }
 
 void device_debug_marker_begin(gs_device_t *device, const char *markername,
