@@ -65,7 +65,7 @@ add_compile_definitions(UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO
 # cmake-format: off
 add_link_options($<$<NOT:$<CONFIG:Debug>>:/OPT:REF>
                  $<$<NOT:$<CONFIG:Debug>>:/OPT:ICF>
-                 $<$<NOT:$<CONFIG:Debug>>:/INCREMENTAL:NO>
+                 /INCREMENTAL:NO
                  /DEBUG
                  /Brepro)
 # cmake-format: on
