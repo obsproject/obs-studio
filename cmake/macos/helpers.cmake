@@ -149,18 +149,6 @@ function(set_target_properties_obs target)
       add_custom_command(
         TARGET ${target}
         POST_BUILD
-        COMMAND
-          /usr/bin/sed -i '' 's/font-size: 10pt\;/font-size: 12pt\;/'
-          "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/themes/Acri.qss"
-          "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/themes/Grey.qss"
-          "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/themes/Light.qss"
-          "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/themes/Rachni.qss"
-          "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/themes/Yami.qss"
-        COMMENT "Patch Qt stylesheets to use larger default font size on macOS")
-
-      add_custom_command(
-        TARGET ${target}
-        POST_BUILD
         COMMAND /bin/ln -fs obs-frontend-api.dylib libobs-frontend-api.1.dylib
         WORKING_DIRECTORY "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Frameworks"
         COMMENT "Create symlink for legacy obs-frontend-api")
