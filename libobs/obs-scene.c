@@ -2254,18 +2254,12 @@ void obs_sceneitem_remove(obs_sceneitem_t *item)
 {
 	obs_scene_t *scene;
 
-	if (!item)
+	if (!item || item->removed)
 		return;
 
 	scene = item->parent;
 
 	full_lock(scene);
-
-	if (item->removed) {
-		if (scene)
-			full_unlock(scene);
-		return;
-	}
 
 	item->removed = true;
 
