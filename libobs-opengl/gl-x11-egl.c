@@ -425,7 +425,7 @@ static bool gl_x11_egl_platform_init_swapchain(struct gs_swap_chain *swap)
 			    visual);
 
 	xcb_void_cookie_t window_cookie = xcb_create_window_checked(
-		xcb_conn, 24 /* Hardcoded? */, wid, parent, 0, 0,
+		xcb_conn, /* 24 */ 30 /* Hardcoded? */, wid, parent, 0, 0,
 		geometry->width, geometry->height, 0, 0, visual, mask,
 		mask_values);
 	xcb_generic_error_t *err = xcb_request_check(xcb_conn, window_cookie);
