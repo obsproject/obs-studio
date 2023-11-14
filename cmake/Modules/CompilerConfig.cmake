@@ -99,7 +99,7 @@ else()
     set(CMAKE_CUDA_COMPILER_LAUNCHER "${CCACHE_PROGRAM}") # CMake 3.9+
   endif()
 
-  option(CALM_DEPRECATION "Keep deprecated-declarations as warnings" OFF)
+  option(CALM_DEPRECATION "Keep deprecated-declarations as warnings" ON)
   #[[
     Note about -Wmaybe-uninitialized on GCC, this warning seems to be subject of various regressions and false positives. This
     warning is set to not turn into an error.
