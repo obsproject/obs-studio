@@ -36,6 +36,7 @@ jobs:
       MACOSX_DEPLOYMENT_TARGET_X86_64: '10.15'
       MACOSX_DEPLOYMENT_TARGET_ARM64: '11.0'
       CEF_BUILD_VERSION_MAC: '5060'
+      CEF_BUILD_REVISION_MAC: 'v4'
       DEPS_VERSION_MAC: '2023-08-28s7'
       QT_DEPS_VERSION_MAC: '20c82a4193784cb321061394789c6d04aabb85e5'
       VLC_VERSION_MAC: '3.0.8'
@@ -115,6 +116,7 @@ jobs:
     env:
       OS_TAG: "windows64"
       CEF_VERSION: 5060
+      CEF_REVISION: v3
       WIN_DEPS_VERSION: windows-deps-2023-08-28s7-x64
       GRPC_VERSION: v1.47.0
       CMakeGenerator: Visual Studio 17 2022
@@ -127,7 +129,7 @@ jobs:
         shell: powershell
       - name: Install specific version of AWS CLI
         run: |
-          $version = "2.13.24"
+          $version = "2.13.33"
           $zipfile = "AWSCLIV2.zip"
           Invoke-WebRequest -OutFile $zipfile "https://awscli.amazonaws.com/AWSCLIV2-$version.msi"
           Start-Process msiexec.exe -Wait -ArgumentList "/i $zipfile /qn"

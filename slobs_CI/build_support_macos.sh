@@ -24,6 +24,7 @@ CI_QT_VERSION=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+QT_VERSION_
 CI_MACOSX_DEPLOYMENT_TARGET_X86_64=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+MACOSX_DEPLOYMENT_TARGET_X86_64: '([0-9\.]+)'/\1/p")
 CI_MACOSX_DEPLOYMENT_TARGET_ARM64=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+MACOSX_DEPLOYMENT_TARGET_ARM64: '([0-9\.]+)'/\1/p")
 CI_MACOS_CEF_VERSION=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+CEF_BUILD_VERSION_MAC: '([0-9]+)'/\1/p")
+CI_MACOS_CEF_REVISION=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+CEF_BUILD_REVISION_MAC: '([^']+)'/\1/p")
 CI_CEF_HASH_X86_64=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+CEF_HASH_MAC_X86_64: '([0-9a-f]+)'/\1/p")
 CI_CEF_HASH_ARM64=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+CEF_HASH_MAC_ARM64: '([0-9a-f]+)'/\1/p")
 CI_BUILD_CONFIG=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+BUILD_CONFIG: '([0-9a-f]+)'/\1/p")
