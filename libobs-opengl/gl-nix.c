@@ -137,7 +137,8 @@ extern bool device_is_monitor_hdr(gs_device_t *device, void *monitor)
 	UNUSED_PARAMETER(device);
 	UNUSED_PARAMETER(monitor);
 
-	return false;
+	/* return false; */
+	return true;
 }
 
 extern struct gs_texture *device_texture_create_from_dmabuf(
