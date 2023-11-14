@@ -202,16 +202,7 @@ static inline void full_unlock(struct obs_scene *scene)
 	video_unlock(scene);
 }
 
-static void set_visibility(struct obs_scene_item *item, bool vis);
-static inline void detach_sceneitem(struct obs_scene_item *item);
-
-static inline void remove_without_release(struct obs_scene_item *item)
-{
-	item->removed = true;
-	set_visibility(item, false);
-	signal_item_remove(item);
-	detach_sceneitem(item);
-}
+static void obs_sceneitem_remove_internal(obs_sceneitem_t *item);
 
 static void remove_all_items(struct obs_scene *scene)
 {
@@ -228,7 +219,7 @@ static void remove_all_items(struct obs_scene *scene)
 		struct obs_scene_item *del_item = item;
 		item = item->next;
 
-		remove_without_release(del_item);
+		obs_sceneitem_remove_internal(del_item);
 		da_push_back(items, &del_item);
 	}
 
@@ -873,7 +864,7 @@ update_transforms_and_prune_sources(obs_scene_t *scene,
 			struct obs_scene_item *del_item = item;
 			item = item->next;
 
-			remove_without_release(del_item);
+			obs_sceneitem_remove_internal(del_item);
 			da_push_back(*remove_items, &del_item);
 			rebuild_group = true;
 			continue;
@@ -2254,6 +2245,19 @@ void obs_sceneitem_release(obs_sceneitem_t *item)
 		obs_sceneitem_destroy(item);
 }
 
+static void obs_sceneitem_remove_internal(obs_sceneitem_t *item)
+{
+	item->removed = true;
+
+	set_visibility(item, false);
+
+	signal_item_remove(item);
+	detach_sceneitem(item);
+
+	obs_sceneitem_set_transition(item, true, NULL);
+	obs_sceneitem_set_transition(item, false, NULL);
+}
+
 void obs_sceneitem_remove(obs_sceneitem_t *item)
 {
 	obs_scene_t *scene;
@@ -2263,22 +2267,12 @@ void obs_sceneitem_remove(obs_sceneitem_t *item)
 
 	scene = item->parent;
 
-	full_lock(scene);
-
-	item->removed = true;
-
 	assert(scene != NULL);
 	assert(scene->source != NULL);
 
-	set_visibility(item, false);
-
-	signal_item_remove(item);
-	detach_sceneitem(item);
-
+	full_lock(scene);
+	obs_sceneitem_remove_internal(item);
 	full_unlock(scene);
-
-	obs_sceneitem_set_transition(item, true, NULL);
-	obs_sceneitem_set_transition(item, false, NULL);
 
 	obs_sceneitem_release(item);
 }
