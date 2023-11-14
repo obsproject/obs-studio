@@ -1,0 +1,19 @@
+OBSThemeMeta {
+    name: 'Grey';
+    id: 'com.obsproject.Yami.Grey';
+    extends: 'com.obsproject.Yami';
+    author: 'Warchamp7';
+    dark: 'true';
+}
+
+OBSThemeVars {
+    base: rgb(47,47,47);
+    button: rgb(67,67,67);
+    dark: rgb(47,47,47) !editable;
+    highlight: rgb(42,130,218);
+    light: rgb(88,87,88) !editable;
+    mid: rgb(33,33,33) !editable;
+    text: rgb(255,254,255);
+    window: rgb(33,33,33);
+    preview: rgb(28,28,28) !editable;
+}
