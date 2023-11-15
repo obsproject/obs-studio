@@ -522,6 +522,10 @@ QToolButton:pressed {
     qproperty-icon: url(./Light/media-pause.svg);
 }
 
+* [themeID="filtersIcon"] {
+    qproperty-icon: url(./Light/filter.svg);
+}
+
 QToolBarExtension {
     background: palette(button);
     min-width: 12px;
@@ -808,7 +812,7 @@ QPushButton:pressed {
     background-color: rgb(193,193,193);
 }
 
-QPushButton:disabled {
+QPushButton:disabled, QToolButton:disabled {
     background-color: rgb(193,193,193);
 }
 
@@ -962,10 +966,6 @@ QHeaderView::section {
 
 /* Mute CheckBox */
 
-MuteCheckBox {
-    margin: 4px 0px 0px;
-}
-
 MuteCheckBox::indicator:checked {
     image: url(./Light/mute.svg);
 }
@@ -976,19 +976,6 @@ MuteCheckBox::indicator:unchecked {
 
 OBSHotkeyLabel[hotkeyPairHover=true] {
     color: rgb(53,82,222);
-}
-
-/* Pause */
-PauseCheckBox {
-    outline: none;
-}
-
-PauseCheckBox::indicator:checked {
-    image: url(:/res/images/media-pause.svg);
-}
-
-PauseCheckBox::indicator:unchecked {
-    image: url(:/res/images/media-play.svg);
 }
 
 /* Label warning/error */
@@ -1524,4 +1511,14 @@ QCalendarWidget QAbstractItemView:disabled {
 /* Disable icons on QDialogButtonBox */
 QDialogButtonBox {
     dialogbuttonbox-buttons-have-icons: 0;
+}
+
+/* Stats dialog */
+OBSBasicStats {
+    background: palette(dark);
+}
+
+/* Advanced audio dialog */
+OBSBasicAdvAudio #scrollAreaWidgetContents {
+    background: palette(dark);
 }

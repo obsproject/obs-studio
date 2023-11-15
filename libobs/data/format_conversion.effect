@@ -24,6 +24,7 @@ uniform float     height_i;
 uniform float     width_d2;
 uniform float     height_d2;
 uniform float     width_x2_i;
+uniform float     height_x2_i;
 uniform float     maximum_over_sdr_white_nits;
 uniform float     sdr_white_nits_over_maximum;
 uniform float     hlg_exponent;
@@ -56,8 +57,8 @@ struct VertTexPos {
 	float4 pos : POSITION;
 };
 
-struct VertPosWide {
-	float3 pos_wide : TEXCOORD0;
+struct VertTexTexPos {
+	float4 uvuv  : TEXCOORD0;
 	float4 pos : POSITION;
 };
 
@@ -75,8 +76,8 @@ struct FragTex {
 	float2 uv : TEXCOORD0;
 };
 
-struct FragPosWide {
-	float3 pos_wide : TEXCOORD0;
+struct FragTexTex {
+	float4 uvuv : TEXCOORD0;
 };
 
 struct FragTexWide {
@@ -144,41 +145,61 @@ VertTexPosWideWide VSTexPos_TopLeft(uint id : VERTEXID)
 	return vert_out;
 }
 
-VertTexPos VSTexPosHalf_Reverse(uint id : VERTEXID)
+VertTexTexPos VSPacked422Left_Reverse(uint id : VERTEXID)
 {
 	float idHigh = float(id >> 1);
 	float idLow = float(id & uint(1));
 
-	float x = idHigh * 4.0 - 1.0;
-	float y = idLow * 4.0 - 1.0;
+	float x = idHigh * 4. - 1.;
+	float y = idLow * 4. - 1.;
 
-	float u = idHigh * 2.0;
-	float v = obs_glsl_compile ? (idLow * 2.0) : (1.0 - idLow * 2.0);
+	float u = idHigh * 2. + width_x2_i;
+	float v = idLow * 2.;
+	v = obs_glsl_compile ? v : (1. - v);
 
-	VertTexPos vert_out;
-	vert_out.uv = float2(width_d2 * u, height * v);
-	vert_out.pos = float4(x, y, 0.0, 1.0);
+	VertTexTexPos vert_out;
+	vert_out.uvuv = float4(width_d2 * u, height * v, u, v);
+	vert_out.pos = float4(x, y, 0., 1.);
 	return vert_out;
 }
 
-VertTexPos VSTexPosHalfHalf_Reverse(uint id : VERTEXID)
+VertTexPos VS420Left_Reverse(uint id : VERTEXID)
 {
 	float idHigh = float(id >> 1);
 	float idLow = float(id & uint(1));
 
-	float x = idHigh * 4.0 - 1.0;
-	float y = idLow * 4.0 - 1.0;
+	float x = idHigh * 4. - 1.;
+	float y = idLow * 4. - 1.;
 
-	float u = idHigh * 2.0;
-	float v = obs_glsl_compile ? (idLow * 2.0) : (1.0 - idLow * 2.0);
+	float u = idHigh * 2. + width_x2_i;
+	float v = idLow * 2.;
+	v = obs_glsl_compile ? v : (1. - v);
 
 	VertTexPos vert_out;
-	vert_out.uv = float2(width_d2 * u, height_d2 * v);
-	vert_out.pos = float4(x, y, 0.0, 1.0);
+	vert_out.uv = float2(u, v);
+	vert_out.pos = float4(x, y, 0., 1.);
 	return vert_out;
 }
 
-VertPosWide VSPosWide_Reverse(uint id : VERTEXID)
+VertTexPos VS420TopLeft_Reverse(uint id : VERTEXID)
+{
+	float idHigh = float(id >> 1);
+	float idLow = float(id & uint(1));
+
+	float x = idHigh * 4. - 1.;
+	float y = idLow * 4. - 1.;
+
+	float u = idHigh * 2. + width_x2_i;
+	float v = idLow * 2. - height_x2_i;
+	v = obs_glsl_compile ? v : (1. - v);
+
+	VertTexPos vert_out;
+	vert_out.uv = float2(u, v);
+	vert_out.pos = float4(x, y, 0., 1.);
+	return vert_out;
+}
+
+VertTexPos VS422Left_Reverse(uint id : VERTEXID)
 {
 	float idHigh = float(id >> 1);
 	float idLow = float(id & uint(1));
@@ -186,11 +207,11 @@ VertPosWide VSPosWide_Reverse(uint id : VERTEXID)
 	float x = idHigh * 4.0 - 1.0;
 	float y = idLow * 4.0 - 1.0;
 
-	float u = idHigh * 2.0;
+	float u = idHigh * 2.0 + width_x2_i;
 	float v = obs_glsl_compile ? (idLow * 2.0) : (1.0 - idLow * 2.0);
 
-	VertPosWide vert_out;
-	vert_out.pos_wide = float3(float2(width, width_d2) * u, height * v);
+	VertTexPos vert_out;
+	vert_out.uv = float2(u, v);
 	vert_out.pos = float4(x, y, 0.0, 1.0);
 	return vert_out;
 }
@@ -425,36 +446,33 @@ float3 YUV_to_RGB(float3 yuv)
 	return float3(r, g, b);
 }
 
-float3 PSUYVY_Reverse(FragTex frag_in) : TARGET
+float3 PSUYVY_Reverse(FragTexTex frag_in) : TARGET
 {
-	float4 y2uv = image.Load(int3(frag_in.uv.xy, 0));
-	float2 y01 = y2uv.yw;
-	float2 cbcr = y2uv.zx;
-	float leftover = frac(frag_in.uv.x);
+	float2 y01 = image.Load(int3(frag_in.uvuv.xy, 0)).yw;
+	float2 cbcr = image.Sample(def_sampler, frag_in.uvuv.zw, 0).zx;
+	float leftover = frac(frag_in.uvuv.x);
 	float y = (leftover < 0.5) ? y01.x : y01.y;
 	float3 yuv = float3(y, cbcr);
 	float3 rgb = YUV_to_RGB(yuv);
 	return rgb;
 }
 
-float3 PSYUY2_Reverse(FragTex frag_in) : TARGET
+float3 PSYUY2_Reverse(FragTexTex frag_in) : TARGET
 {
-	float4 y2uv = image.Load(int3(frag_in.uv.xy, 0));
-	float2 y01 = y2uv.zx;
-	float2 cbcr = y2uv.yw;
-	float leftover = frac(frag_in.uv.x);
+	float2 y01 = image.Load(int3(frag_in.uvuv.xy, 0)).zx;
+	float2 cbcr = image.Sample(def_sampler, frag_in.uvuv.zw, 0).yw;
+	float leftover = frac(frag_in.uvuv.x);
 	float y = (leftover < 0.5) ? y01.x : y01.y;
 	float3 yuv = float3(y, cbcr);
 	float3 rgb = YUV_to_RGB(yuv);
 	return rgb;
 }
 
-float4 PSYUY2_PQ_Reverse(FragTex frag_in) : TARGET
+float4 PSYUY2_PQ_Reverse(FragTexTex frag_in) : TARGET
 {
-	float4 y2uv = image.Load(int3(frag_in.uv.xy, 0));
-	float2 y01 = y2uv.zx;
-	float2 cbcr = y2uv.yw;
-	float leftover = frac(frag_in.uv.x);
+	float2 y01 = image.Load(int3(frag_in.uvuv.xy, 0)).zx;
+	float2 cbcr = image.Sample(def_sampler, frag_in.uvuv.zw, 0).yw;
+	float leftover = frac(frag_in.uvuv.x);
 	float y = (leftover < 0.5) ? y01.x : y01.y;
 	float3 yuv = float3(y, cbcr);	
 	float3 pq = YUV_to_RGB(yuv);
@@ -463,12 +481,11 @@ float4 PSYUY2_PQ_Reverse(FragTex frag_in) : TARGET
 	return float4(rgb, 1.);
 }
 
-float4 PSYUY2_HLG_Reverse(FragTex frag_in) : TARGET
+float4 PSYUY2_HLG_Reverse(FragTexTex frag_in) : TARGET
 {
-	float4 y2uv = image.Load(int3(frag_in.uv.xy, 0));
-	float2 y01 = y2uv.zx;
-	float2 cbcr = y2uv.yw;
-	float leftover = frac(frag_in.uv.x);
+	float2 y01 = image.Load(int3(frag_in.uvuv.xy, 0)).zx;
+	float2 cbcr = image.Sample(def_sampler, frag_in.uvuv.zw, 0).yw;
+	float leftover = frac(frag_in.uvuv.x);
 	float y = (leftover < 0.5) ? y01.x : y01.y;
 	float3 yuv = float3(y, cbcr);
 	float3 hlg = YUV_to_RGB(yuv);
@@ -477,12 +494,11 @@ float4 PSYUY2_HLG_Reverse(FragTex frag_in) : TARGET
 	return float4(rgb, 1.);
 }
 
-float3 PSYVYU_Reverse(FragTex frag_in) : TARGET
+float3 PSYVYU_Reverse(FragTexTex frag_in) : TARGET
 {
-	float4 y2uv = image.Load(int3(frag_in.uv.xy, 0));
-	float2 y01 = y2uv.zx;
-	float2 cbcr = y2uv.wy;
-	float leftover = frac(frag_in.uv.x);
+	float2 y01 = image.Load(int3(frag_in.uvuv.xy, 0)).zx;
+	float2 cbcr = image.Sample(def_sampler, frag_in.uvuv.zw, 0).wy;
+	float leftover = frac(frag_in.uvuv.x);
 	float y = (leftover < 0.5) ? y01.x : y01.y;
 	float3 yuv = float3(y, cbcr);
 	float3 rgb = YUV_to_RGB(yuv);
@@ -492,9 +508,8 @@ float3 PSYVYU_Reverse(FragTex frag_in) : TARGET
 float3 PSPlanar420_Reverse(VertTexPos frag_in) : TARGET
 {
 	float y = image.Load(int3(frag_in.pos.xy, 0)).x;
-	int3 xy0_chroma = int3(frag_in.uv, 0);
-	float cb = image1.Load(xy0_chroma).x;
-	float cr = image2.Load(xy0_chroma).x;
+	float cb = image1.Sample(def_sampler, frag_in.uv).x;
+	float cr = image2.Sample(def_sampler, frag_in.uv).x;
 	float3 yuv = float3(y, cb, cr);
 	float3 rgb = YUV_to_RGB(yuv);
 	return rgb;
@@ -503,9 +518,8 @@ float3 PSPlanar420_Reverse(VertTexPos frag_in) : TARGET
 float4 PSPlanar420_PQ_Reverse(VertTexPos frag_in) : TARGET
 {
 	float y = image.Load(int3(frag_in.pos.xy, 0)).x;
-	int3 xy0_chroma = int3(frag_in.uv, 0);
-	float cb = image1.Load(xy0_chroma).x;
-	float cr = image2.Load(xy0_chroma).x;
+	float cb = image1.Sample(def_sampler, frag_in.uv).x;
+	float cr = image2.Sample(def_sampler, frag_in.uv).x;
 	float3 yuv = float3(y, cb, cr);
 	float3 pq = YUV_to_RGB(yuv);
 	float3 hdr2020 = st2084_to_linear_eetf(pq, hdr_lw, hdr_lmax) * maximum_over_sdr_white_nits;
@@ -516,9 +530,8 @@ float4 PSPlanar420_PQ_Reverse(VertTexPos frag_in) : TARGET
 float4 PSPlanar420_HLG_Reverse(VertTexPos frag_in) : TARGET
 {
 	float y = image.Load(int3(frag_in.pos.xy, 0)).x;
-	int3 xy0_chroma = int3(frag_in.uv, 0);
-	float cb = image1.Load(xy0_chroma).x;
-	float cr = image2.Load(xy0_chroma).x;
+	float cb = image1.Sample(def_sampler, frag_in.uv).x;
+	float cr = image2.Sample(def_sampler, frag_in.uv).x;
 	float3 yuv = float3(y, cb, cr);
 	float3 hlg = YUV_to_RGB(yuv);
 	float3 hdr2020 = hlg_to_linear(hlg, hlg_exponent) * maximum_over_sdr_white_nits;
@@ -530,32 +543,29 @@ float4 PSPlanar420A_Reverse(VertTexPos frag_in) : TARGET
 {
 	int3 xy0_luma = int3(frag_in.pos.xy, 0);
 	float y = image.Load(xy0_luma).x;
-	int3 xy0_chroma = int3(frag_in.uv, 0);
-	float cb = image1.Load(xy0_chroma).x;
-	float cr = image2.Load(xy0_chroma).x;
 	float alpha = image3.Load(xy0_luma).x;
+	float cb = image1.Sample(def_sampler, frag_in.uv).x;
+	float cr = image2.Sample(def_sampler, frag_in.uv).x;
 	float3 yuv = float3(y, cb, cr);
 	float4 rgba = float4(YUV_to_RGB(yuv), alpha);
 	return rgba;
 }
 
-float3 PSPlanar422_Reverse(FragPosWide frag_in) : TARGET
+float3 PSPlanar422_Reverse(VertTexPos frag_in) : TARGET
 {
-	float y = image.Load(int3(frag_in.pos_wide.xz, 0)).x;
-	int3 xy0_chroma = int3(frag_in.pos_wide.yz, 0);
-	float cb = image1.Load(xy0_chroma).x;
-	float cr = image2.Load(xy0_chroma).x;
+	float y = image.Load(int3(frag_in.pos.xy, 0)).x;
+	float cb = image1.Sample(def_sampler, frag_in.uv).x;
+	float cr = image2.Sample(def_sampler, frag_in.uv).x;
 	float3 yuv = float3(y, cb, cr);
 	float3 rgb = YUV_to_RGB(yuv);
 	return rgb;
 }
 
-float4 PSPlanar422_10LE_Reverse(FragPosWide frag_in) : TARGET
+float4 PSPlanar422_10LE_Reverse(VertTexPos frag_in) : TARGET
 {
-	float y = image.Load(int3(frag_in.pos_wide.xz, 0)).x;
-	int3 xy0_chroma = int3(frag_in.pos_wide.yz, 0);
-	float cb = image1.Load(xy0_chroma).x;
-	float cr = image2.Load(xy0_chroma).x;
+	float y = image.Load(int3(frag_in.pos.xy, 0)).x;
+	float cb = image1.Sample(def_sampler, frag_in.uv).x;
+	float cr = image2.Sample(def_sampler, frag_in.uv).x;
 	float3 yuv = float3(y, cb, cr);
 	yuv *= 65535. / 1023.;
 	float3 rgb = YUV_to_RGB(yuv);
@@ -563,14 +573,13 @@ float4 PSPlanar422_10LE_Reverse(FragPosWide frag_in) : TARGET
 	return float4(rgb, 1.);
 }
 
-float4 PSPlanar422A_Reverse(FragPosWide frag_in) : TARGET
+float4 PSPlanar422A_Reverse(VertTexPos frag_in) : TARGET
 {
-	int3 xy0_luma = int3(frag_in.pos_wide.xz, 0);
+	int3 xy0_luma = int3(frag_in.pos.xy, 0);
 	float y = image.Load(xy0_luma).x;
-	int3 xy0_chroma = int3(frag_in.pos_wide.yz, 0);
-	float cb = image1.Load(xy0_chroma).x;
-	float cr = image2.Load(xy0_chroma).x;
 	float alpha = image3.Load(xy0_luma).x;
+	float cb = image1.Sample(def_sampler, frag_in.uv).x;
+	float cr = image2.Sample(def_sampler, frag_in.uv).x;
 	float3 yuv = float3(y, cb, cr);
 	float4 rgba = float4(YUV_to_RGB(yuv), alpha);
 	return rgba;
@@ -636,7 +645,7 @@ float4 PSAYUV_Reverse(FragPos frag_in) : TARGET
 float3 PSNV12_Reverse(VertTexPos frag_in) : TARGET
 {
 	float y = image.Load(int3(frag_in.pos.xy, 0)).x;
-	float2 cbcr = image1.Load(int3(frag_in.uv, 0)).xy;
+	float2 cbcr = image1.Sample(def_sampler, frag_in.uv).xy;
 	float3 yuv = float3(y, cbcr);
 	float3 rgb = YUV_to_RGB(yuv);
 	return rgb;
@@ -645,7 +654,7 @@ float3 PSNV12_Reverse(VertTexPos frag_in) : TARGET
 float4 PSNV12_PQ_Reverse(VertTexPos frag_in) : TARGET
 {
 	float y = image.Load(int3(frag_in.pos.xy, 0)).x;
-	float2 cbcr = image1.Load(int3(frag_in.uv, 0)).xy;
+	float2 cbcr = image1.Sample(def_sampler, frag_in.uv).xy;
 	float3 yuv = float3(y, cbcr);
 	float3 pq = YUV_to_RGB(yuv);
 	float3 hdr2020 = st2084_to_linear_eetf(pq, hdr_lw, hdr_lmax) * maximum_over_sdr_white_nits;
@@ -656,7 +665,7 @@ float4 PSNV12_PQ_Reverse(VertTexPos frag_in) : TARGET
 float4 PSNV12_HLG_Reverse(VertTexPos frag_in) : TARGET
 {
 	float y = image.Load(int3(frag_in.pos.xy, 0)).x;
-	float2 cbcr = image1.Load(int3(frag_in.uv, 0)).xy;
+	float2 cbcr = image1.Sample(def_sampler, frag_in.uv).xy;
 	float3 yuv = float3(y, cbcr);
 	float3 hlg = YUV_to_RGB(yuv);
 	float3 hdr2020 = hlg_to_linear(hlg, hlg_exponent) * maximum_over_sdr_white_nits;
@@ -668,9 +677,8 @@ float4 PSI010_SRGB_Reverse(VertTexPos frag_in) : TARGET
 {
 	float ratio = 65535. / 1023.;
 	float y = image.Load(int3(frag_in.pos.xy, 0)).x * ratio;
-	int3 xy0_chroma = int3(frag_in.uv, 0);
-	float cb = image1.Load(xy0_chroma).x * ratio;
-	float cr = image2.Load(xy0_chroma).x * ratio;
+	float cb = image1.Sample(def_sampler, frag_in.uv).x * ratio;
+	float cr = image2.Sample(def_sampler, frag_in.uv).x * ratio;
 	float3 yuv = float3(y, cb, cr);
 	float3 rgb = YUV_to_RGB(yuv);
 	rgb = srgb_nonlinear_to_linear(rgb);
@@ -681,9 +689,8 @@ float4 PSI010_PQ_2020_709_Reverse(VertTexPos frag_in) : TARGET
 {
 	float ratio = 65535. / 1023.;
 	float y = image.Load(int3(frag_in.pos.xy, 0)).x * ratio;
-	int3 xy0_chroma = int3(frag_in.uv, 0);
-	float cb = image1.Load(xy0_chroma).x * ratio;
-	float cr = image2.Load(xy0_chroma).x * ratio;
+	float cb = image1.Sample(def_sampler, frag_in.uv).x * ratio;
+	float cr = image2.Sample(def_sampler, frag_in.uv).x * ratio;
 	float3 yuv = float3(y, cb, cr);
 	float3 pq = YUV_to_RGB(yuv);
 	float3 hdr2020 = st2084_to_linear_eetf(pq, hdr_lw, hdr_lmax) * maximum_over_sdr_white_nits;
@@ -695,9 +702,8 @@ float4 PSI010_HLG_2020_709_Reverse(VertTexPos frag_in) : TARGET
 {
 	float ratio = 65535. / 1023.;
 	float y = image.Load(int3(frag_in.pos.xy, 0)).x * ratio;
-	int3 xy0_chroma = int3(frag_in.uv, 0);
-	float cb = image1.Load(xy0_chroma).x * ratio;
-	float cr = image2.Load(xy0_chroma).x * ratio;
+	float cb = image1.Sample(def_sampler, frag_in.uv).x * ratio;
+	float cr = image2.Sample(def_sampler, frag_in.uv).x * ratio;
 	float3 yuv = float3(y, cb, cr);
 	float3 hlg = YUV_to_RGB(yuv);
 	float3 hdr2020 = hlg_to_linear(hlg, hlg_exponent) * maximum_over_sdr_white_nits;
@@ -708,7 +714,7 @@ float4 PSI010_HLG_2020_709_Reverse(VertTexPos frag_in) : TARGET
 float4 PSP010_SRGB_Reverse(VertTexPos frag_in) : TARGET
 {
 	float y = image.Load(int3(frag_in.pos.xy, 0)).x;
-	float2 cbcr = image1.Load(int3(frag_in.uv, 0)).xy;
+	float2 cbcr = image1.Sample(def_sampler, frag_in.uv).xy;
 	float3 yuv_65535 = floor(float3(y, cbcr) * 65535. + 0.5);
 	float3 yuv_1023 = floor(yuv_65535 * 0.015625);
 	float3 yuv = yuv_1023 / 1023.;
@@ -720,7 +726,7 @@ float4 PSP010_SRGB_Reverse(VertTexPos frag_in) : TARGET
 float4 PSP010_PQ_2020_709_Reverse(VertTexPos frag_in) : TARGET
 {
 	float y = image.Load(int3(frag_in.pos.xy, 0)).x;
-	float2 cbcr = image1.Load(int3(frag_in.uv, 0)).xy;
+	float2 cbcr = image1.Sample(def_sampler, frag_in.uv).xy;
 	float3 yuv_65535 = floor(float3(y, cbcr) * 65535. + 0.5);
 	float3 yuv_1023 = floor(yuv_65535 * 0.015625);
 	float3 yuv = yuv_1023 / 1023.;
@@ -733,7 +739,7 @@ float4 PSP010_PQ_2020_709_Reverse(VertTexPos frag_in) : TARGET
 float4 PSP010_HLG_2020_709_Reverse(VertTexPos frag_in) : TARGET
 {
 	float y = image.Load(int3(frag_in.pos.xy, 0)).x;
-	float2 cbcr = image1.Load(int3(frag_in.uv, 0)).xy;
+	float2 cbcr = image1.Sample(def_sampler, frag_in.uv).xy;
 	float3 yuv_65535 = floor(float3(y, cbcr) * 65535. + 0.5);
 	float3 yuv_1023 = floor(yuv_65535 * 0.015625);
 	float3 yuv = yuv_1023 / 1023.;
@@ -988,7 +994,7 @@ technique UYVY_Reverse
 {
 	pass
 	{
-		vertex_shader = VSTexPosHalf_Reverse(id);
+		vertex_shader = VSPacked422Left_Reverse(id);
 		pixel_shader  = PSUYVY_Reverse(frag_in);
 	}
 }
@@ -997,7 +1003,7 @@ technique YUY2_Reverse
 {
 	pass
 	{
-		vertex_shader = VSTexPosHalf_Reverse(id);
+		vertex_shader = VSPacked422Left_Reverse(id);
 		pixel_shader  = PSYUY2_Reverse(frag_in);
 	}
 }
@@ -1006,7 +1012,7 @@ technique YUY2_PQ_Reverse
 {
 	pass
 	{
-		vertex_shader = VSTexPosHalf_Reverse(id);
+		vertex_shader = VSPacked422Left_Reverse(id);
 		pixel_shader  = PSYUY2_PQ_Reverse(frag_in);
 	}
 }
@@ -1015,7 +1021,7 @@ technique YUY2_HLG_Reverse
 {
 	pass
 	{
-		vertex_shader = VSTexPosHalf_Reverse(id);
+		vertex_shader = VSPacked422Left_Reverse(id);
 		pixel_shader  = PSYUY2_HLG_Reverse(frag_in);
 	}
 }
@@ -1024,7 +1030,7 @@ technique YVYU_Reverse
 {
 	pass
 	{
-		vertex_shader = VSTexPosHalf_Reverse(id);
+		vertex_shader = VSPacked422Left_Reverse(id);
 		pixel_shader  = PSYVYU_Reverse(frag_in);
 	}
 }
@@ -1033,7 +1039,7 @@ technique I420_Reverse
 {
 	pass
 	{
-		vertex_shader = VSTexPosHalfHalf_Reverse(id);
+		vertex_shader = VS420Left_Reverse(id);
 		pixel_shader  = PSPlanar420_Reverse(frag_in);
 	}
 }
@@ -1042,7 +1048,7 @@ technique I420_PQ_Reverse
 {
 	pass
 	{
-		vertex_shader = VSTexPosHalfHalf_Reverse(id);
+		vertex_shader = VS420TopLeft_Reverse(id);
 		pixel_shader  = PSPlanar420_PQ_Reverse(frag_in);
 	}
 }
@@ -1051,7 +1057,7 @@ technique I420_HLG_Reverse
 {
 	pass
 	{
-		vertex_shader = VSTexPosHalfHalf_Reverse(id);
+		vertex_shader = VS420TopLeft_Reverse(id);
 		pixel_shader  = PSPlanar420_HLG_Reverse(frag_in);
 	}
 }
@@ -1060,7 +1066,7 @@ technique I40A_Reverse
 {
 	pass
 	{
-		vertex_shader = VSTexPosHalfHalf_Reverse(id);
+		vertex_shader = VS420Left_Reverse(id);
 		pixel_shader  = PSPlanar420A_Reverse(frag_in);
 	}
 }
@@ -1069,7 +1075,7 @@ technique I422_Reverse
 {
 	pass
 	{
-		vertex_shader = VSPosWide_Reverse(id);
+		vertex_shader = VS422Left_Reverse(id);
 		pixel_shader  = PSPlanar422_Reverse(frag_in);
 	}
 }
@@ -1078,7 +1084,7 @@ technique I210_Reverse
 {
 	pass
 	{
-		vertex_shader = VSPosWide_Reverse(id);
+		vertex_shader = VS422Left_Reverse(id);
 		pixel_shader  = PSPlanar422_10LE_Reverse(frag_in);
 	}
 }
@@ -1087,7 +1093,7 @@ technique I42A_Reverse
 {
 	pass
 	{
-		vertex_shader = VSPosWide_Reverse(id);
+		vertex_shader = VS422Left_Reverse(id);
 		pixel_shader  = PSPlanar422A_Reverse(frag_in);
 	}
 }
@@ -1141,7 +1147,7 @@ technique NV12_Reverse
 {
 	pass
 	{
-		vertex_shader = VSTexPosHalfHalf_Reverse(id);
+		vertex_shader = VS420Left_Reverse(id);
 		pixel_shader  = PSNV12_Reverse(frag_in);
 	}
 }
@@ -1150,7 +1156,7 @@ technique NV12_PQ_Reverse
 {
 	pass
 	{
-		vertex_shader = VSTexPosHalfHalf_Reverse(id);
+		vertex_shader = VS420TopLeft_Reverse(id);
 		pixel_shader  = PSNV12_PQ_Reverse(frag_in);
 	}
 }
@@ -1159,7 +1165,7 @@ technique NV12_HLG_Reverse
 {
 	pass
 	{
-		vertex_shader = VSTexPosHalfHalf_Reverse(id);
+		vertex_shader = VS420TopLeft_Reverse(id);
 		pixel_shader  = PSNV12_HLG_Reverse(frag_in);
 	}
 }
@@ -1168,7 +1174,7 @@ technique I010_SRGB_Reverse
 {
 	pass
 	{
-		vertex_shader = VSTexPosHalfHalf_Reverse(id);
+		vertex_shader = VS420Left_Reverse(id);
 		pixel_shader  = PSI010_SRGB_Reverse(frag_in);
 	}
 }
@@ -1177,7 +1183,7 @@ technique I010_PQ_2020_709_Reverse
 {
 	pass
 	{
-		vertex_shader = VSTexPosHalfHalf_Reverse(id);
+		vertex_shader = VS420TopLeft_Reverse(id);
 		pixel_shader  = PSI010_PQ_2020_709_Reverse(frag_in);
 	}
 }
@@ -1186,7 +1192,7 @@ technique I010_HLG_2020_709_Reverse
 {
 	pass
 	{
-		vertex_shader = VSTexPosHalfHalf_Reverse(id);
+		vertex_shader = VS420TopLeft_Reverse(id);
 		pixel_shader  = PSI010_HLG_2020_709_Reverse(frag_in);
 	}
 }
@@ -1195,7 +1201,7 @@ technique P010_SRGB_Reverse
 {
 	pass
 	{
-		vertex_shader = VSTexPosHalfHalf_Reverse(id);
+		vertex_shader = VS420Left_Reverse(id);
 		pixel_shader  = PSP010_SRGB_Reverse(frag_in);
 	}
 }
@@ -1204,7 +1210,7 @@ technique P010_PQ_2020_709_Reverse
 {
 	pass
 	{
-		vertex_shader = VSTexPosHalfHalf_Reverse(id);
+		vertex_shader = VS420TopLeft_Reverse(id);
 		pixel_shader  = PSP010_PQ_2020_709_Reverse(frag_in);
 	}
 }
@@ -1213,7 +1219,7 @@ technique P010_HLG_2020_709_Reverse
 {
 	pass
 	{
-		vertex_shader = VSTexPosHalfHalf_Reverse(id);
+		vertex_shader = VS420TopLeft_Reverse(id);
 		pixel_shader  = PSP010_HLG_2020_709_Reverse(frag_in);
 	}
 }

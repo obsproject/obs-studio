@@ -406,6 +406,12 @@ static void mp_media_next_audio(mp_media_t *m)
 	struct mp_decode *d = &m->a;
 	AVFrame *f = d->frame;
 	struct obs_source_audio *audio;
+	int channels;
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 19, 100)
+	channels = f->channels;
+#else
+	channels = f->ch_layout.nb_channels;
+#endif
 
 	if (m->audio.index_eof < 0 || !m->enable_caching) {
 		if (!mp_media_can_play_frame(m, d))
@@ -438,7 +444,7 @@ static void mp_media_next_audio(mp_media_t *m)
 		}
 
 		audio->samples_per_sec = f->sample_rate * m->speed / 100;
-		audio->speakers = convert_speaker_layout(f->channels);
+		audio->speakers = convert_speaker_layout(channels);
 		audio->format = convert_sample_format(f->format);
 		audio->frames = f->nb_samples;
 		audio->timestamp = m->base_ts + d->frame_pts - m->start_ts +

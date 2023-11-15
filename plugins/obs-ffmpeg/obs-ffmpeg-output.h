@@ -39,6 +39,9 @@ struct ffmpeg_cfg {
 	uint32_t fps_num;
 	uint32_t fps_den;
 	int frame_size; // audio frame size
+	const char *username;
+	const char *password;
+	const char *key;
 };
 
 struct ffmpeg_audio_info {

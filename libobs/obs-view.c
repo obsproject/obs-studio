@@ -162,6 +162,11 @@ static inline void set_main_mix()
 
 video_t *obs_view_add(obs_view_t *view, struct obs_video_info *ovi)
 {
+	return obs_view_add2(view, ovi);
+}
+
+video_t *obs_view_add2(obs_view_t *view, struct obs_video_info *ovi)
+{
 	if (!view)
 		return NULL;
 	if (!ovi) {

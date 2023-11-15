@@ -1,11 +1,11 @@
 {
     "$schema": "schema/package-schema.json",
     "url": "https://slobs-cdn.streamlabs.com/rtmp-services",
-    "version": 208,
+    "version": 217,
     "files": [
         {
             "name": "services.json",
-            "version": 208
+            "version": 217
         }
     ]
 }

@@ -35,6 +35,10 @@ Script Function Exports
 There are a number of global functions that scripts can optionally
 provide:
 
+.. py:function:: script_description()
+   Called to retrieve a description string to be displayed to the user
+   in the Scripts window.
+
 .. py:function:: script_load(settings)
 
    Called on script startup with specific settings associated with the
@@ -194,6 +198,14 @@ modules/namespaces).
    Enumerates scene items within a scene.
 
    :param scene: obs_scene_t object to enumerate items from.
+   :return:      List of scene items.  Release with
+                 :py:func:`sceneitem_list_release()`.
+
+.. py:function:: obs_sceneitem_group_enum_items(group)
+
+   Enumerates scene items within a group.
+
+   :param group: obs_sceneitem_t object to enumerate items from.
    :return:      List of scene items.  Release with
                  :py:func:`sceneitem_list_release()`.
 

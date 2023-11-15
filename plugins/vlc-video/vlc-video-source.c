@@ -668,6 +668,10 @@ static void vlcs_update(void *data, obs_data_t *settings)
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *item = obs_data_array_item(array, i);
 		const char *path = obs_data_get_string(item, "value");
+		if (!path || !*path) {
+			obs_data_release(item);
+			continue;
+		}
 		os_dir_t *dir = os_opendir(path);
 
 		if (dir) {
@@ -1154,7 +1158,10 @@ static void missing_file_callback(void *src, const char *new_path, void *data)
 		const char *path = obs_data_get_string(file, "value");
 
 		if (strcmp(path, orig_path) == 0) {
-			obs_data_set_string(file, "value", new_path);
+			if (new_path && *new_path)
+				obs_data_set_string(file, "value", new_path);
+			else
+				obs_data_array_erase(files, i);
 
 			obs_data_release(file);
 			break;

@@ -37,8 +37,8 @@ jobs:
       MACOSX_DEPLOYMENT_TARGET_ARM64: '11.0'
       CEF_BUILD_VERSION_MAC: '5060'
       CEF_BUILD_REVISION_MAC: 'v4'
-      DEPS_VERSION_MAC: '2022-08-02-b230301'
-      QT_DEPS_VERSION_MAC: '2022-08-02'
+      DEPS_VERSION_MAC: '2023-08-28s7'
+      QT_DEPS_VERSION_MAC: '20c82a4193784cb321061394789c6d04aabb85e5'
       VLC_VERSION_MAC: '3.0.8'
       QT_VERSION_MAC: '6.3.1'
       SPARKLE_VERSION: '1.26.0'
@@ -69,8 +69,6 @@ jobs:
           fi
 
           echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
-      - name: 'Switch to Xcode 14.1'
-        run: sudo xcode-select -switch /Applications/Xcode_14.1.app
       - name: Configure / Build 
         run: ./slobs_CI/build-script-osx.sh
         env:
@@ -119,7 +117,7 @@ jobs:
       OS_TAG: "windows64"
       CEF_VERSION: 5060
       CEF_REVISION: v3
-      WIN_DEPS_VERSION: windows-deps-2022-08-02-x64-sl.1
+      WIN_DEPS_VERSION: windows-deps-2023-08-28s7-x64
       GRPC_VERSION: v1.47.0
       CMakeGenerator: Visual Studio 17 2022
       VLC_VERSION: vlc_3.0.0-git
@@ -164,7 +162,7 @@ jobs:
           path: symsrv-scripts
       - name: Run symbol server scripts
         if: startsWith(github.ref, 'refs/tags/')
-        run: ./symsrv-scripts/main.bat "${{ github.workspace }}/symsrv-scripts" ".\main.ps1 -localSourceDir '${{ github.workspace }}' -repo_userId 'stream-labs' -repo_name 'obs-studio' -repo_branch '${{ github.sha }}' -subModules 'plugins/mediasoup-connector,stream-labs,mediasoup-connector,streamlabs;plugins/enc-amf,stream-labs,obs-amd-encoder,streamlabs;plugins/motion-effect,stream-labs,motion-effect,master;plugins/obs-browser,stream-labs,obs-browser,streamlabs;plugins/obs-ndi,stream-labs,obs-ndi,streamlabs;plugins/obs-ndi,stream-labs,obs-amd-encoder,streamlabs;plugins/obs-openvr,stream-labs,OBS-OpenVR-Input-Plugin,master;plugins/obs-vst,stream-labs,obs-vst,streamlabs;plugins/slobs-virtual-cam,stream-labs,slobs-virtual-cam,streamlabs;plugins/win-dshow/libdshowcapture,stream-labs,libdshowcapture,streamlabs'"
+        run: ./symsrv-scripts/main.bat "${{ github.workspace }}/symsrv-scripts" ".\main.ps1 -localSourceDir '${{ github.workspace }}' -repo_userId 'stream-labs' -repo_name 'obs-studio' -repo_branch '${{ github.sha }}' -subModules 'plugins/mediasoup-connector,stream-labs,mediasoup-connector,streamlabs;plugins/enc-amf,stream-labs,obs-amd-encoder,streamlabs;plugins/motion-effect,stream-labs,motion-effect,master;plugins/obs-browser,stream-labs,obs-browser,streamlabs;plugins/obs-ndi,stream-labs,obs-ndi,streamlabs;plugins/obs-ndi,stream-labs,obs-amd-encoder,streamlabs;plugins/obs-openvr,stream-labs,OBS-OpenVR-Input-Plugin,master;plugins/sl-vst,stream-labs,sl-vst,streamlabs;plugins/slobs-virtual-cam,stream-labs,slobs-virtual-cam,streamlabs;plugins/win-dshow/libdshowcapture,stream-labs,libdshowcapture,streamlabs'"
         env:
           AWS_SYMB_ACCESS_KEY_ID: ${{secrets.AWS_SYMB_ACCESS_KEY_ID}}
           AWS_SYMB_SECRET_ACCESS_KEY: ${{secrets.AWS_SYMB_SECRET_ACCESS_KEY}}

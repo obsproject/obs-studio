@@ -86,6 +86,12 @@ extern void device_enter_context(gs_device_t *device)
 
 extern void device_leave_context(gs_device_t *device)
 {
+	device->cur_render_target = NULL;
+	device->cur_zstencil_buffer = NULL;
+	device->cur_vertex_buffer = NULL;
+	device->cur_index_buffer = NULL;
+	device->cur_swap = NULL;
+	device->cur_fbo = NULL;
 	gl_vtable->device_leave_context(device);
 }
 

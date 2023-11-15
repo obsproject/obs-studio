@@ -359,16 +359,14 @@ static void init_format_info(obs_pipewire_data *obs_pw)
 	for (size_t i = 0; i < N_SUPPORTED_FORMATS; i++) {
 		struct format_info *info;
 
-		if (!drm_format_available(supported_formats[i].drm_format,
-					  drm_formats, n_drm_formats))
-			continue;
-
 		info = da_push_back_new(obs_pw->format_info);
 		da_init(info->modifiers);
 		info->spa_format = supported_formats[i].spa_format;
 		info->drm_format = supported_formats[i].drm_format;
 
-		if (!capabilities_queried)
+		if (!capabilities_queried ||
+		    !drm_format_available(supported_formats[i].drm_format,
+					  drm_formats, n_drm_formats))
 			continue;
 
 		size_t n_modifiers;

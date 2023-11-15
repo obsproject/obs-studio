@@ -15,7 +15,6 @@
 @property NSPort *port;
 @property NSMutableSet *clientPorts;
 @property NSRunLoop *runLoop;
-@property uint32_t seed;
 @end
 
 @implementation OBSDALMachServer
@@ -149,6 +148,9 @@
 			       length:sizeof(fpsDenominator)];
 
 		IOSurfaceRef surface = CVPixelBufferGetIOSurface(frame);
+#ifndef __aarch64__
+		IOSurfaceLock(surface, 0, NULL);
+#endif
 
 		if (!surface) {
 			blog(LOG_ERROR,
@@ -156,7 +158,6 @@
 			return;
 		}
 
-		IOSurfaceLock(surface, 0, &_seed);
 		mach_port_t framePort = IOSurfaceCreateMachPort(surface);
 
 		if (!framePort) {
@@ -176,7 +177,10 @@
 					 ]];
 
 		mach_port_deallocate(mach_task_self(), framePort);
-		IOSurfaceUnlock(surface, 0, &_seed);
+
+#ifndef __aarch64__
+		IOSurfaceUnlock(surface, 0, NULL);
+#endif
 	}
 }
 

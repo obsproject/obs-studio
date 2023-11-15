@@ -84,11 +84,9 @@ static bool check_dal_plugin()
 					copyPluginCmd];
 
 			NSDictionary *errorDict;
-			NSAppleEventDescriptor *returnDescriptor = NULL;
 			NSAppleScript *scriptObject =
 				[[NSAppleScript alloc] initWithSource:copyCmd];
-			returnDescriptor =
-				[scriptObject executeAndReturnError:&errorDict];
+			[scriptObject executeAndReturnError:&errorDict];
 			if (errorDict != nil) {
 				const char *errorMessage = [[errorDict
 					objectForKey:@"NSAppleScriptErrorMessage"]

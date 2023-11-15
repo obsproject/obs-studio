@@ -155,7 +155,7 @@ NTV2Channel SourceProps::Framestore() const
 	    NTV2_IS_4K_VIDEO_FORMAT(videoFormat)) {
 		return NTV2_CHANNEL3;
 	}
-	return NTV2InputSourceToChannel(InitialInputSource());
+	return Channel();
 }
 
 NTV2AudioSystem SourceProps::AudioSystem() const

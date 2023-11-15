@@ -80,7 +80,10 @@ enum AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_ENUM
     AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CONSTANT_QP = 0,
     AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR,
     AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR,
-    AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CBR
+    AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CBR,
+    AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_QUALITY_VBR,
+    AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_HIGH_QUALITY_VBR,
+    AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_HIGH_QUALITY_CBR
 };
 
 enum AMF_VIDEO_ENCODER_HEVC_PICTURE_TYPE_ENUM
@@ -145,9 +148,10 @@ enum AMF_VIDEO_ENCODER_HEVC_LTR_MODE_ENUM
 #define AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET                       L"HevcQualityPreset"            // amf_int64(AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_ENUM); default = depends on USAGE; Quality Preset
 #define AMF_VIDEO_ENCODER_HEVC_EXTRADATA                            L"HevcExtraData"                // AMFInterface* - > AMFBuffer*; SPS/PPS buffer - read-only
 #define AMF_VIDEO_ENCODER_HEVC_ASPECT_RATIO                         L"HevcAspectRatio"              // AMFRatio; default = 1, 1
-#define AMF_VIDEO_ENCODER_HEVC_LOWLATENCY_MODE					    L"LowLatencyInternal"           // bool; default = false, enables low latency mode
+#define AMF_VIDEO_ENCODER_HEVC_LOWLATENCY_MODE                      L"LowLatencyInternal"           // bool; default = false, enables low latency mode
 #define AMF_VIDEO_ENCODER_HEVC_PRE_ANALYSIS_ENABLE                  L"HevcEnablePreAnalysis"        // bool; default = false; enables the pre-analysis module. Currently only works in AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR mode. Refer to AMF Video PreAnalysis API reference for more details.
-#define AMF_VIDEO_ENCODER_HEVC_NOMINAL_RANGE						L"HevcNominalRange"				// amf_int64(AMF_VIDEO_ENCODER_HEVC_NOMINAL_RANGE); default = amf_int64(AMF_VIDEO_ENCODER_HEVC_NOMINAL_RANGE_STUDIO); property is bool but amf_int64 also works for backward compatibility.
+#define AMF_VIDEO_ENCODER_HEVC_NOMINAL_RANGE                        L"HevcNominalRange"				// amf_int64(AMF_VIDEO_ENCODER_HEVC_NOMINAL_RANGE); default = amf_int64(AMF_VIDEO_ENCODER_HEVC_NOMINAL_RANGE_STUDIO); property is bool but amf_int64 also works for backward compatibility.
+#define AMF_VIDEO_ENCODER_HEVC_MAX_NUM_TEMPORAL_LAYERS              L"HevcMaxNumOfTemporalLayers"   // amf_int64; default = 1; Max number of temporal layers.
 
 // Picture control properties
 #define AMF_VIDEO_ENCODER_HEVC_NUM_GOPS_PER_IDR                     L"HevcGOPSPerIDR"               // amf_int64; default = 1; The frequency to insert IDR as start of a GOP. 0 means no IDR will be inserted.
@@ -159,6 +163,7 @@ enum AMF_VIDEO_ENCODER_HEVC_LTR_MODE_ENUM
 
 // Rate control properties
 #define AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD                  L"HevcRateControlMethod"        // amf_int64(AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_ENUM); default = depends on USAGE; Rate Control Method
+#define AMF_VIDEO_ENCODER_HEVC_QVBR_QUALITY_LEVEL                   L"HevcQvbrQualityLevel"         // amf_int64; default = 23; QVBR quality level; range = 1-51
 #define AMF_VIDEO_ENCODER_HEVC_VBV_BUFFER_SIZE                      L"HevcVBVBufferSize"            // amf_int64; default = depends on USAGE; VBV Buffer Size in bits
 #define AMF_VIDEO_ENCODER_HEVC_INITIAL_VBV_BUFFER_FULLNESS          L"HevcInitialVBVBufferFullness" // amf_int64; default =  64; Initial VBV Buffer Fullness 0=0% 64=100%
 #define AMF_VIDEO_ENCODER_HEVC_ENABLE_VBAQ                          L"HevcEnableVBAQ"               // // bool; default = depends on USAGE; Enable auto VBAQ
@@ -212,6 +217,9 @@ enum AMF_VIDEO_ENCODER_HEVC_LTR_MODE_ENUM
 // color conversion
 #define AMF_VIDEO_ENCODER_HEVC_INPUT_HDR_METADATA                   L"HevcInHDRMetadata"            // AMFBuffer containing AMFHDRMetadata; default NULL
 //#define AMF_VIDEO_ENCODER_HEVC_OUTPUT_HDR_METADATA                  L"HevcOutHDRMetadata"            // AMFBuffer containing AMFHDRMetadata; default NULL
+
+// SVC
+#define AMF_VIDEO_ENCODER_HEVC_NUM_TEMPORAL_LAYERS                  L"HevcNumOfTemporalLayers"      // amf_int64; default = 1; Number of temporal layers. Can be changed at any time but the change is only applied when encoding next base layer frame.
 
 // DPB management
 #define AMF_VIDEO_ENCODER_HEVC_PICTURE_TRANSFER_MODE                L"HevcPicTransferMode"          // amf_int64(AMF_VIDEO_ENCODER_HEVC_PICTURE_TRANSFER_MODE_ENUM); default = AMF_VIDEO_ENCODER_HEVC_PICTURE_TRANSFER_MODE_OFF - whether to exchange reference/reconstructed pic between encoder and application
@@ -282,6 +290,7 @@ enum AMF_VIDEO_ENCODER_HEVC_LTR_MODE_ENUM
 #define AMF_VIDEO_ENCODER_HEVC_CAP_MAX_LEVEL                        L"HevcMaxLevel"                 // amf_int64 maximum profile level
 #define AMF_VIDEO_ENCODER_HEVC_CAP_MIN_REFERENCE_FRAMES             L"HevcMinReferenceFrames"       // amf_int64 minimum number of reference frames
 #define AMF_VIDEO_ENCODER_HEVC_CAP_MAX_REFERENCE_FRAMES             L"HevcMaxReferenceFrames"       // amf_int64 maximum number of reference frames
+#define AMF_VIDEO_ENCODER_HEVC_CAP_MAX_TEMPORAL_LAYERS              L"HevcMaxTemporalLayers"        // amf_int64 maximum number of temporal layers
 #define AMF_VIDEO_ENCODER_HEVC_CAP_NUM_OF_HW_INSTANCES              L"HevcNumOfHwInstances"         // amf_int64 number of HW encoder instances
 #define AMF_VIDEO_ENCODER_HEVC_CAP_COLOR_CONVERSION                 L"HevcColorConversion"          // amf_int64(AMF_ACCELERATION_TYPE) - type of supported color conversion. default AMF_ACCEL_GPU
 #define AMF_VIDEO_ENCODER_HEVC_CAP_PRE_ANALYSIS                     L"HevcPreAnalysis"              // amf_bool - pre analysis module is available for HEVC UVE encoder, n/a for the other encoders

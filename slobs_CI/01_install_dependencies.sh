@@ -15,18 +15,19 @@
 set -eE
 
 install_obs-deps() {
-    echo "https://obs-studio-deployment.s3-us-west-2.amazonaws.com/macos-deps-${1}-${ARCH:-x86_64}-sl.tar.xz"
+    echo "https://obs-studio-deployment.s3-us-west-2.amazonaws.com/macos-deps-${1}-${ARCH:-x86_64}.tar.xz"
     status "Set up precompiled macOS OBS dependencies v${1}"
     ensure_dir "${DEPS_BUILD_DIR}"
     step "Download..."
-    wget --quiet --retry-connrefused --waitretry=1 "https://obs-studio-deployment.s3-us-west-2.amazonaws.com/macos-deps-${1}-${ARCH:-x86_64}-sl.tar.xz"
+    wget --quiet --retry-connrefused --waitretry=1 "https://obs-studio-deployment.s3-us-west-2.amazonaws.com/macos-deps-${1}-${ARCH:-x86_64}.tar.xz"
     mkdir -p obs-deps
     step "Unpack..."
-    /usr/bin/tar -xf "./macos-deps-${1}-${ARCH:-x86_64}-sl.tar.xz" -C ./obs-deps
+    /usr/bin/tar -xf "./macos-deps-${1}-${ARCH:-x86_64}.tar.xz" -C ./obs-deps
     /usr/bin/xattr -r -d com.apple.quarantine ./obs-deps
 }
 
 install_qt-deps() {
+    echo "https://obs-studio-deployment.s3-us-west-2.amazonaws.com/macos-deps-qt6-${1}-${_ARCH:-x86_64}.tar.xz"
     status "Set up precompiled dependency Qt v${1}"
     ensure_dir "${DEPS_BUILD_DIR}"
     step "Download..."
@@ -37,7 +38,7 @@ install_qt-deps() {
         _ARCH="${ARCH:-x86_64}"
     fi
 
-    wget --quiet --retry-connrefused --waitretry=1 "https://github.com/obsproject/obs-deps/releases/download/${1}/macos-deps-qt6-${1}-${_ARCH:-x86_64}.tar.xz"
+    wget --quiet --retry-connrefused --waitretry=1 "https://obs-studio-deployment.s3-us-west-2.amazonaws.com/macos-deps-qt6-${1}-${_ARCH:-x86_64}.tar.xz"
     mkdir -p obs-deps
     step "Unpack..."
     /usr/bin/tar -xf "./macos-deps-qt6-${1}-${_ARCH}.tar.xz" -C ./obs-deps
