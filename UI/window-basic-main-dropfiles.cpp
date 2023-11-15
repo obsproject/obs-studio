@@ -23,7 +23,7 @@ static const char *imageExtensions[] = {"bmp", "gif", "jpeg", "jpg",
 #endif
 					"png", "tga", "webp", nullptr};
 
-static const char *htmlExtensions[] = {"htm", "html", nullptr};
+static const char *htmlExtensions[] = {"htm", "html", "svg", nullptr};
 
 static const char *mediaExtensions[] = {
 	"3ga",   "669",   "a52",   "aac",  "ac3",  "adt",  "adts", "aif",
