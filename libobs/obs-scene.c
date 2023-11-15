@@ -2042,13 +2042,17 @@ static void init_hotkeys(obs_scene_t *scene, obs_sceneitem_t *item,
 	/* Check if legacy keys exists, migrate if necessary */
 	dstr_printf(&legacy, "libobs.show_scene_item.%s", name);
 	hotkey_array = obs_data_get_array(hotkey_data, legacy.array);
-	if (hotkey_array)
+	if (hotkey_array) {
 		obs_data_set_array(hotkey_data, show.array, hotkey_array);
+		obs_data_array_release(hotkey_array);
+	}
 
 	dstr_printf(&legacy, "libobs.hide_scene_item.%s", name);
 	hotkey_array = obs_data_get_array(hotkey_data, legacy.array);
-	if (hotkey_array)
+	if (hotkey_array) {
 		obs_data_set_array(hotkey_data, hide.array, hotkey_array);
+		obs_data_array_release(hotkey_array);
+	}
 
 	item->toggle_visibility = obs_hotkey_pair_register_source(
 		scene->source, show.array, show_desc.array, hide.array,
