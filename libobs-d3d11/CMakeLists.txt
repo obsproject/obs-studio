@@ -30,7 +30,7 @@ target_compile_definitions(
   libobs-d3d11 PRIVATE "$<$<BOOL:${GPU_PRIORITY_VAL}>:USE_GPU_PRIORITY>"
                        "$<IF:$<BOOL:${GPU_PRIORITY_VAL}>,GPU_PRIORITY_VAL=${GPU_PRIORITY_VAL},GPU_PRIORITY_VAL=0>")
 
-target_link_libraries(libobs-d3d11 PRIVATE OBS::libobs d3d9 d3d11 dxgi shcore)
+target_link_libraries(libobs-d3d11 PRIVATE OBS::libobs d3d9 d3d11 d3dcompiler dxgi shcore)
 
 target_enable_feature(libobs "Direct3D 11 renderer")
 

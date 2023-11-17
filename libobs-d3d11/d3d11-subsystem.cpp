@@ -281,41 +281,6 @@ gs_swap_chain::~gs_swap_chain()
 		CloseHandle(hWaitable);
 }
 
-void gs_device::InitCompiler()
-{
-	char d3dcompiler[40] = {};
-	int ver = 49;
-
-	while (ver > 30) {
-		snprintf(d3dcompiler, sizeof(d3dcompiler),
-			 "D3DCompiler_%02d.dll", ver);
-
-		HMODULE module = LoadLibraryA(d3dcompiler);
-		if (module) {
-			d3dCompile = (pD3DCompile)GetProcAddress(module,
-								 "D3DCompile");
-			d3dCreateBlob = (pD3DCreateBlob)GetProcAddress(
-				module, "D3DCreateBlob");
-
-#ifdef DISASSEMBLE_SHADERS
-			d3dDisassemble = (pD3DDisassemble)GetProcAddress(
-				module, "D3DDisassemble");
-#endif
-			if (d3dCompile && d3dCreateBlob) {
-				return;
-			}
-
-			FreeLibrary(module);
-		}
-
-		ver--;
-	}
-
-	throw "Could not find any D3DCompiler libraries. Make sure you've "
-	      "installed the <a href=\"https://obsproject.com/go/dxwebsetup\">"
-	      "DirectX components</a> that OBS Studio requires.";
-}
-
 void gs_device::InitFactory()
 {
 	HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
@@ -994,7 +959,6 @@ gs_device::gs_device(uint32_t adapterIdx)
 		curSamplers[i] = NULL;
 	}
 
-	InitCompiler();
 	InitFactory();
 	InitAdapter(adapterIdx);
 	InitDevice(adapterIdx);

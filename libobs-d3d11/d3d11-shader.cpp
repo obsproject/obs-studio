@@ -26,6 +26,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <d3dcompiler.h>
 
 void gs_vertex_shader::GetBuffersExpected(
 	const vector<D3D11_INPUT_ELEMENT_DESC> &inputs)
@@ -243,13 +244,13 @@ void gs_shader::Compile(const char *shaderString, const char *file,
 		streampos len = cacheFile.tellg();
 		cacheFile.seekg(0, ios::beg);
 
-		device->d3dCreateBlob(len, shader);
+		D3DCreateBlob(len, shader);
 		cacheFile.read((char *)(*shader)->GetBufferPointer(), len);
 	} else {
-		hr = device->d3dCompile(shaderString, strlen(shaderString),
-					file, NULL, NULL, "main", target,
-					D3D10_SHADER_OPTIMIZATION_LEVEL3, 0,
-					shader, errorsBlob.Assign());
+		hr = D3DCompile(shaderString, strlen(shaderString), file, NULL,
+				NULL, "main", target,
+				D3D10_SHADER_OPTIMIZATION_LEVEL3, 0, shader,
+				errorsBlob.Assign());
 		if (FAILED(hr)) {
 			if (errorsBlob != NULL && errorsBlob->GetBufferSize())
 				throw ShaderError(errorsBlob, hr);
@@ -267,12 +268,8 @@ void gs_shader::Compile(const char *shaderString, const char *file,
 #ifdef DISASSEMBLE_SHADERS
 	ComPtr<ID3D10Blob> asmBlob;
 
-	if (!device->d3dDisassemble)
-		return;
-
-	hr = device->d3dDisassemble((*shader)->GetBufferPointer(),
-				    (*shader)->GetBufferSize(), 0, nullptr,
-				    &asmBlob);
+	hr = D3DDisassemble((*shader)->GetBufferPointer(),
+			    (*shader)->GetBufferSize(), 0, nullptr, &asmBlob);
 
 	if (SUCCEEDED(hr) && !!asmBlob && asmBlob->GetBufferSize()) {
 		blog(LOG_INFO, "=============================================");
