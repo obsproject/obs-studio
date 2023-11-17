@@ -27,6 +27,8 @@ jobs:
         uses: ./.github/actions/services-validator
         with:
           repositorySecret: ${{ secrets.GITHUB_TOKEN }}
+          checkApiSecret: ${{ secrets.CHECK_SERVERS_API_KEY }}
+          checkApiServers: ${{ secrets.CHECK_SERVERS_LIST }}
           runSchemaChecks: false
           runServiceChecks: true
           createPullRequest: true
