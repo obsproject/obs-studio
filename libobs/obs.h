@@ -162,6 +162,7 @@ struct obs_transform_info {
 	enum obs_bounds_type bounds_type;
 	uint32_t bounds_alignment;
 	struct vec2 bounds;
+	bool crop_to_bounds;
 };
 
 /**
@@ -1865,6 +1866,7 @@ EXPORT void obs_sceneitem_set_bounds_type(obs_sceneitem_t *item,
 					  enum obs_bounds_type type);
 EXPORT void obs_sceneitem_set_bounds_alignment(obs_sceneitem_t *item,
 					       uint32_t alignment);
+EXPORT void obs_sceneitem_set_bounds_crop(obs_sceneitem_t *item, bool crop);
 EXPORT void obs_sceneitem_set_bounds(obs_sceneitem_t *item,
 				     const struct vec2 *bounds);
 
@@ -1880,6 +1882,7 @@ EXPORT uint32_t obs_sceneitem_get_alignment(const obs_sceneitem_t *item);
 EXPORT enum obs_bounds_type
 obs_sceneitem_get_bounds_type(const obs_sceneitem_t *item);
 EXPORT uint32_t obs_sceneitem_get_bounds_alignment(const obs_sceneitem_t *item);
+EXPORT bool obs_sceneitem_get_bounds_crop(const obs_sceneitem_t *item);
 EXPORT void obs_sceneitem_get_bounds(const obs_sceneitem_t *item,
 				     struct vec2 *bounds);
 

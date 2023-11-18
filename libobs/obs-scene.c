@@ -351,6 +351,14 @@ void add_alignment(struct vec2 *v, uint32_t align, int cx, int cy)
 		v->y += (float)(cy / 2);
 }
 
+static inline bool crop_to_bounds(const struct obs_scene_item *item)
+{
+	return item->crop_to_bounds &&
+	       (item->bounds_type == OBS_BOUNDS_SCALE_OUTER ||
+		item->bounds_type == OBS_BOUNDS_SCALE_TO_HEIGHT ||
+		item->bounds_type == OBS_BOUNDS_SCALE_TO_WIDTH);
+}
+
 static void calculate_bounds_data(struct obs_scene_item *item,
 				  struct vec2 *origin, struct vec2 *scale,
 				  uint32_t *cx, uint32_t *cy)
@@ -402,6 +410,63 @@ static void calculate_bounds_data(struct obs_scene_item *item,
 	add_alignment(origin, item->bounds_align, (int)-width_diff,
 		      (int)-height_diff);
 
+	/* Set cropping if enabled and large enough size difference exists */
+	if (crop_to_bounds(item) && (width_diff < -0.1 || height_diff < -0.1)) {
+		bool crop_width = width_diff < -0.1;
+		bool crop_flipped = crop_width ? width < 0.0f : height < 0.0f;
+
+		float crop_diff = crop_width ? width_diff : height_diff;
+		float crop_scale = crop_width ? scale->x : scale->y;
+		float crop_origin = crop_width ? origin->x : origin->y;
+
+		/* Only get alignment for relevant axis */
+		uint32_t crop_align_mask =
+			crop_width ? OBS_ALIGN_LEFT | OBS_ALIGN_RIGHT
+				   : OBS_ALIGN_TOP | OBS_ALIGN_BOTTOM;
+		uint32_t crop_align = item->bounds_align & crop_align_mask;
+
+		/* Cropping values need to scaled to input source */
+		float overdraw = fabsf(crop_diff / crop_scale);
+
+		/* tl = top / left, br = bottom / right */
+		float overdraw_tl;
+		if (crop_align & (OBS_ALIGN_TOP | OBS_ALIGN_LEFT))
+			overdraw_tl = 0;
+		else if (crop_align & (OBS_ALIGN_BOTTOM | OBS_ALIGN_RIGHT))
+			overdraw_tl = overdraw;
+		else
+			overdraw_tl = overdraw / 2;
+
+		float overdraw_br = overdraw - overdraw_tl;
+
+		int crop_br, crop_tl;
+		if (crop_flipped) {
+			/* Adjust origin for flips */
+			if (crop_align == OBS_ALIGN_CENTER)
+				crop_origin *= 2;
+			else if (crop_align & (OBS_ALIGN_TOP | OBS_ALIGN_LEFT))
+				crop_origin -= crop_diff;
+
+			/* Note that crops are swapped if the axis is flipped */
+			crop_br = (int)roundf(overdraw_tl);
+			crop_tl = (int)roundf(overdraw_br);
+		} else {
+			crop_origin = 0;
+			crop_br = (int)roundf(overdraw_br);
+			crop_tl = (int)roundf(overdraw_tl);
+		}
+
+		if (crop_width) {
+			item->bounds_crop.right = crop_br;
+			item->bounds_crop.left = crop_tl;
+			origin->x = crop_origin;
+		} else {
+			item->bounds_crop.bottom = crop_br;
+			item->bounds_crop.top = crop_tl;
+			origin->y = crop_origin;
+		}
+	}
+
 	/* Makes the item stay in-place in the box if flipped */
 	origin->x += (width < 0.0f) ? width : 0.0f;
 	origin->y += (height < 0.0f) ? height : 0.0f;
@@ -410,14 +475,16 @@ static void calculate_bounds_data(struct obs_scene_item *item,
 static inline uint32_t calc_cx(const struct obs_scene_item *item,
 			       uint32_t width)
 {
-	uint32_t crop_cx = item->crop.left + item->crop.right;
+	uint32_t crop_cx = item->crop.left + item->crop.right +
+			   item->bounds_crop.left + item->bounds_crop.right;
 	return (crop_cx > width) ? 2 : (width - crop_cx);
 }
 
 static inline uint32_t calc_cy(const struct obs_scene_item *item,
 			       uint32_t height)
 {
-	uint32_t crop_cy = item->crop.top + item->crop.bottom;
+	uint32_t crop_cy = item->crop.top + item->crop.bottom +
+			   item->bounds_crop.top + item->bounds_crop.bottom;
 	return (crop_cy > height) ? 2 : (height - crop_cy);
 }
 
@@ -435,6 +502,9 @@ static void update_item_transform(struct obs_scene_item *item, bool update_tex)
 
 	if (os_atomic_load_long(&item->defer_update) > 0)
 		return;
+
+	/* Reset bounds crop */
+	memset(&item->bounds_crop, 0, sizeof(item->bounds_crop));
 
 	width = obs_source_get_width(item->source);
 	height = obs_source_get_height(item->source);
@@ -538,7 +608,8 @@ static inline bool item_is_scene(const struct obs_scene_item *item)
 
 static inline bool item_texture_enabled(const struct obs_scene_item *item)
 {
-	return crop_enabled(&item->crop) || scale_filter_enabled(item) ||
+	return crop_enabled(&item->crop) || crop_enabled(&item->bounds_crop) ||
+	       scale_filter_enabled(item) ||
 	       (item->blend_method == OBS_BLEND_METHOD_SRGB_OFF) ||
 	       !default_blending_enabled(item) ||
 	       (item_is_scene(item) && !item->is_group);
@@ -764,8 +835,11 @@ static inline void render_item(struct obs_scene_item *item)
 				 -100.0f, 100.0f);
 
 			gs_matrix_scale3f(cx_scale, cy_scale, 1.0f);
-			gs_matrix_translate3f(-(float)item->crop.left,
-					      -(float)item->crop.top, 0.0f);
+			gs_matrix_translate3f(-(float)(item->crop.left +
+						       item->bounds_crop.left),
+					      -(float)(item->crop.top +
+						       item->bounds_crop.top),
+					      0.0f);
 
 			if (item->user_visible &&
 			    transition_active(item->show_transition)) {
@@ -1031,6 +1105,7 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 		item_data, "bounds_type");
 	item->bounds_align =
 		(uint32_t)obs_data_get_int(item_data, "bounds_align");
+	item->crop_to_bounds = obs_data_get_bool(item_data, "bounds_crop");
 	obs_data_get_vec2(item_data, "bounds", &item->bounds);
 
 	item->crop.left = (uint32_t)obs_data_get_int(item_data, "crop_left");
@@ -1159,6 +1234,7 @@ static void scene_save_item(obs_data_array_t *array,
 	obs_data_set_int(item_data, "align", (int)item->align);
 	obs_data_set_int(item_data, "bounds_type", (int)item->bounds_type);
 	obs_data_set_int(item_data, "bounds_align", (int)item->bounds_align);
+	obs_data_set_bool(item_data, "bounds_crop", item->crop_to_bounds);
 	obs_data_set_vec2(item_data, "bounds", &item->bounds);
 	obs_data_set_int(item_data, "crop_left", (int)item->crop.left);
 	obs_data_set_int(item_data, "crop_top", (int)item->crop.top);
@@ -2686,6 +2762,14 @@ void obs_sceneitem_set_bounds_alignment(obs_sceneitem_t *item,
 	}
 }
 
+void obs_sceneitem_set_bounds_crop(obs_sceneitem_t *item, bool crop)
+{
+	if (item) {
+		item->crop_to_bounds = crop;
+		do_update_transform(item);
+	}
+}
+
 void obs_sceneitem_set_bounds(obs_sceneitem_t *item, const struct vec2 *bounds)
 {
 	if (item) {
@@ -2726,6 +2810,11 @@ uint32_t obs_sceneitem_get_bounds_alignment(const obs_sceneitem_t *item)
 	return item ? item->bounds_align : 0;
 }
 
+bool obs_sceneitem_get_bounds_crop(const obs_sceneitem_t *item)
+{
+	return item ? item->crop_to_bounds : false;
+}
+
 void obs_sceneitem_get_bounds(const obs_sceneitem_t *item, struct vec2 *bounds)
 {
 	if (item)
@@ -2743,6 +2832,7 @@ void obs_sceneitem_get_info(const obs_sceneitem_t *item,
 		info->bounds_type = item->bounds_type;
 		info->bounds_alignment = item->bounds_align;
 		info->bounds = item->bounds;
+		info->crop_to_bounds = item->crop_to_bounds;
 	}
 }
 
@@ -2759,6 +2849,7 @@ void obs_sceneitem_set_info(obs_sceneitem_t *item,
 		item->bounds_type = info->bounds_type;
 		item->bounds_align = info->bounds_alignment;
 		item->bounds = info->bounds;
+		item->crop_to_bounds = info->crop_to_bounds;
 		do_update_transform(item);
 	}
 }
