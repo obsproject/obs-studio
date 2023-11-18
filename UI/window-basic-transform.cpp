@@ -71,6 +71,8 @@ OBSBasicTransform::OBSBasicTransform(OBSSceneItem item, OBSBasic *parent)
 		   &OBSBasicTransform::OnCropChanged);
 	HookWidget(ui->cropBottom, ISCROLL_CHANGED,
 		   &OBSBasicTransform::OnCropChanged);
+	HookWidget(ui->cropToBounds, &QCheckBox::stateChanged,
+		   &OBSBasicTransform::OnControlChanged);
 
 	ui->buttonBox->button(QDialogButtonBox::Close)->setDefault(true);
 
@@ -297,6 +299,7 @@ void OBSBasicTransform::RefreshControls()
 	ui->boundsAlign->setCurrentIndex(boundsAlignIndex);
 	ui->boundsWidth->setValue(osi.bounds.x);
 	ui->boundsHeight->setValue(osi.bounds.y);
+	ui->cropToBounds->setChecked(osi.crop_to_bounds);
 
 	ui->cropLeft->setValue(int(crop.left));
 	ui->cropRight->setValue(int(crop.right));
@@ -319,6 +322,7 @@ void OBSBasicTransform::OnBoundsType(int index)
 	ui->boundsAlign->setEnabled(enable);
 	ui->boundsWidth->setEnabled(enable);
 	ui->boundsHeight->setEnabled(enable);
+	ui->cropToBounds->setEnabled(enable);
 
 	if (!ignoreItemChange) {
 		obs_bounds_type lastType = obs_sceneitem_get_bounds_type(item);
@@ -364,6 +368,7 @@ void OBSBasicTransform::OnControlChanged()
 	oti.bounds_alignment = listToAlign[ui->boundsAlign->currentIndex()];
 	oti.bounds.x = float(ui->boundsWidth->value());
 	oti.bounds.y = float(ui->boundsHeight->value());
+	oti.crop_to_bounds = ui->cropToBounds->isChecked();
 
 	ignoreTransformSignal = true;
 	obs_sceneitem_set_info(item, &oti);
