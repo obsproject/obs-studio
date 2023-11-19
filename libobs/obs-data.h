@@ -132,6 +132,8 @@ EXPORT void obs_data_set_autoselect_bool(obs_data_t *data, const char *name,
 					 bool val);
 EXPORT void obs_data_set_autoselect_obj(obs_data_t *data, const char *name,
 					obs_data_t *obj);
+EXPORT void obs_data_set_autoselect_array(obs_data_t *data, const char *name,
+					  obs_data_array_t *arr);
 
 /*
  * Get functions

@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <linux/videodev2.h>
 #include <libv4l2.h>
+#include <inttypes.h>
 
 #include <obs-module.h>
 #include <media-io/video-io.h>
@@ -26,6 +27,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define PACK64(a, b) (((uint64_t)a << 32) | ((uint64_t)b & 0xffffffff))
 
 /**
  * Data structure for mapped buffers
@@ -91,24 +94,24 @@ static inline enum video_format v4l2_to_obs_video_format(uint_fast32_t format)
  * and the height in the low word.
  * The array is terminated with a zero.
  */
-static const int v4l2_framesizes[] = {
+static const int64_t v4l2_framesizes[] = {
 	/* 4:3 */
-	160 << 16 | 120, 320 << 16 | 240, 480 << 16 | 320, 640 << 16 | 480,
-	800 << 16 | 600, 1024 << 16 | 768, 1280 << 16 | 960, 1440 << 16 | 1050,
-	1440 << 16 | 1080, 1600 << 16 | 1200,
+	PACK64(160, 120), PACK64(320, 240), PACK64(480, 320), PACK64(640, 480),
+	PACK64(800, 600), PACK64(1024, 768), PACK64(1280, 960),
+	PACK64(1440, 1050), PACK64(1440, 1080), PACK64(1600, 1200),
 
 	/* 16:9 */
-	640 << 16 | 360, 960 << 16 | 540, 1280 << 16 | 720, 1600 << 16 | 900,
-	1920 << 16 | 1080, 1920 << 16 | 1200, 2560 << 16 | 1440,
-	3840 << 16 | 2160,
+	PACK64(640, 360), PACK64(960, 540), PACK64(1280, 720),
+	PACK64(1600, 900), PACK64(1920, 1080), PACK64(1920, 1200),
+	PACK64(2560, 1440), PACK64(3840, 2160),
 
 	/* 21:9 */
-	2560 << 16 | 1080, 3440 << 16 | 1440, 5120 << 16 | 2160,
+	PACK64(2560, 1080), PACK64(3440, 1440), PACK64(5120, 2160),
 
 	/* tv */
-	432 << 16 | 520, 480 << 16 | 320, 480 << 16 | 530, 486 << 16 | 440,
-	576 << 16 | 310, 576 << 16 | 520, 576 << 16 | 570, 720 << 16 | 576,
-	1024 << 16 | 576,
+	PACK64(432, 520), PACK64(480, 320), PACK64(480, 530), PACK64(486, 440),
+	PACK64(576, 310), PACK64(576, 520), PACK64(576, 570), PACK64(720, 576),
+	PACK64(1024, 576),
 
 	0};
 
@@ -119,16 +122,16 @@ static const int v4l2_framesizes[] = {
  * word and the denominator in the low word.
  * The array is terminated with a zero.
  */
-static const int v4l2_framerates[] = {1 << 16 | 60,
-				      1 << 16 | 50,
-				      1 << 16 | 30,
-				      1 << 16 | 25,
-				      1 << 16 | 20,
-				      1 << 16 | 15,
-				      1 << 16 | 10,
-				      1 << 16 | 5,
+static const int64_t v4l2_framerates[] = {PACK64(1, 60),
+					  PACK64(1, 50),
+					  PACK64(1, 30),
+					  PACK64(1, 25),
+					  PACK64(1, 20),
+					  PACK64(1, 15),
+					  PACK64(1, 10),
+					  PACK64(1, 5),
 
-				      0};
+					  0};
 
 /**
  * Pack two integer values into one
@@ -142,9 +145,9 @@ static const int v4l2_framerates[] = {1 << 16 | 60,
  *
  * @return the packed integer
  */
-static inline int v4l2_pack_tuple(int a, int b)
+static inline int64_t v4l2_pack_tuple(int32_t a, int32_t b)
 {
-	return (a << 16) | (b & 0xffff);
+	return PACK64(a, b);
 }
 
 /**
@@ -156,10 +159,16 @@ static inline int v4l2_pack_tuple(int a, int b)
  * @param b pointer to integer b
  * @param packed the packed integer
  */
-static void v4l2_unpack_tuple(int *a, int *b, int packed)
+static void v4l2_unpack_tuple(int32_t *a, int32_t *b, int64_t packed)
 {
-	*a = packed >> 16;
-	*b = packed & 0xffff;
+	// Since we changed from 32 to 64 bits, handle old values too.
+	if ((packed & 0xffffffff00000000) == 0) {
+		*a = (int32_t)(packed >> 16);
+		*b = (int32_t)(packed & 0xffff);
+	} else {
+		*a = (int32_t)(packed >> 32);
+		*b = (int32_t)(packed & 0xffffffff);
+	}
 }
 
 /**
@@ -269,7 +278,7 @@ int_fast32_t v4l2_get_input_caps(int_fast32_t dev, int input, uint32_t *caps);
  *
  * @return negative on failure
  */
-int_fast32_t v4l2_set_format(int_fast32_t dev, int *resolution,
+int_fast32_t v4l2_set_format(int_fast32_t dev, int64_t *resolution,
 			     int *pixelformat, int *bytesperline);
 
 /**
@@ -282,7 +291,7 @@ int_fast32_t v4l2_set_format(int_fast32_t dev, int *resolution,
  *
  * @return negative on failure
  */
-int_fast32_t v4l2_set_framerate(int_fast32_t dev, int *framerate);
+int_fast32_t v4l2_set_framerate(int_fast32_t dev, int64_t *framerate);
 
 /**
  * Set a video standard on the device.

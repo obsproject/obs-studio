@@ -40,18 +40,10 @@ if(OS_WINDOWS)
 
   target_compile_definitions(obs-qsv11 PRIVATE DX11_D3D)
 
-  target_sources(
-    obs-qsv11
-    PRIVATE # cmake-format: sortable
-            common_directx11.cpp
-            common_directx11.h
-            common_directx9.cpp
-            common_directx9.h
-            common_utils_windows.cpp
-            device_directx9.cpp
-            device_directx9.h)
+  target_sources(obs-qsv11 PRIVATE # cmake-format: sortable
+                                   common_directx11.cpp common_directx11.h common_utils_windows.cpp)
 
-  target_link_libraries(obs-qsv11 PRIVATE d3d9 d3d11 dxva2 dxgi dxguid)
+  target_link_libraries(obs-qsv11 PRIVATE d3d11 dxgi dxguid)
   target_link_options(obs-qsv11 PRIVATE /IGNORE:4099)
 elseif(OS_LINUX)
   find_package(Libva REQUIRED)

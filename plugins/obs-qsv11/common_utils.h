@@ -161,11 +161,13 @@ int GetFreeTaskIndex(Task *pTaskPool, mfxU16 nPoolSize);
 // Initialize Intel VPL Session, device/display and memory manager
 mfxStatus Initialize(mfxVersion ver, mfxSession *pSession,
 		     mfxFrameAllocator *pmfxAllocator, mfxHDL *deviceHandle,
-		     bool bCreateSharedHandles, bool dx9hack,
-		     enum qsv_codec codec); //vpl change
+		     bool bCreateSharedHandles, enum qsv_codec codec,
+		     void **data); //vpl change
 
-// Release resources (device/display)
+// Release global shared resources (device/display)
 void Release();
+// Release per session resources
+void ReleaseSessionData(void *data);
 
 // Convert frame type to string
 char mfxFrameTypeString(mfxU16 FrameType);

@@ -2397,18 +2397,6 @@ void OBSBasic::OnFirstLoad()
 		on_actionViewCurrentLog_triggered();
 }
 
-#if defined(OBS_RELEASE_CANDIDATE) && OBS_RELEASE_CANDIDATE > 0
-#define CUR_VER \
-	((uint64_t)OBS_RELEASE_CANDIDATE_VER << 16ULL | OBS_RELEASE_CANDIDATE)
-#define LAST_INFO_VERSION_STRING "InfoLastRCVersion"
-#elif OBS_BETA > 0
-#define CUR_VER ((uint64_t)OBS_BETA_VER << 16ULL | OBS_BETA)
-#define LAST_INFO_VERSION_STRING "InfoLastBetaVersion"
-#else
-#define CUR_VER ((uint64_t)LIBOBS_API_VER << 16ULL)
-#define LAST_INFO_VERSION_STRING "InfoLastVersion"
-#endif
-
 /* shows a "what's new" page on startup of new versions using CEF */
 void OBSBasic::ReceivedIntroJson(const QString &text)
 {
@@ -2448,19 +2436,9 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 		int minor = 0;
 
 		sscanf(item.version.c_str(), "%d.%d", &major, &minor);
-#if defined(OBS_RELEASE_CANDIDATE) && OBS_RELEASE_CANDIDATE > 0
-		if (major == OBS_RELEASE_CANDIDATE_MAJOR &&
-		    minor == OBS_RELEASE_CANDIDATE_MINOR &&
-		    item.RC == OBS_RELEASE_CANDIDATE)
-#elif OBS_BETA > 0
-		if (major == OBS_BETA_MAJOR && minor == OBS_BETA_MINOR &&
-		    item.Beta == OBS_BETA)
-#else
 		if (major == LIBOBS_API_MAJOR_VER &&
-		    minor == LIBOBS_API_MINOR_VER && item.RC == 0 &&
-		    item.Beta == 0)
-#endif
-		{
+		    minor == LIBOBS_API_MINOR_VER &&
+		    item.RC == OBS_RELEASE_CANDIDATE && item.Beta == OBS_BETA) {
 			info_url = item.url;
 			info_increment = item.increment;
 		}
@@ -2471,15 +2449,26 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 		return;
 	}
 
+#if OBS_RELEASE_CANDIDATE > 0
+	constexpr const char *lastInfoVersion = "InfoLastRCVersion";
+#elif OBS_BETA > 0
+	constexpr const char *lastInfoVersion = "InfoLastBetaVersion";
+#else
+	constexpr const char *lastInfoVersion = "InfoLastVersion";
+#endif
+	constexpr uint64_t currentVersion = (uint64_t)LIBOBS_API_VER << 16ULL |
+					    OBS_RELEASE_CANDIDATE << 8ULL |
+					    OBS_BETA;
 	uint64_t lastVersion = config_get_uint(App()->GlobalConfig(), "General",
-					       LAST_INFO_VERSION_STRING);
+					       lastInfoVersion);
 	int current_version_increment = -1;
 
-	if ((lastVersion & ~0xFFFF0000ULL) < (CUR_VER & ~0xFFFF0000ULL)) {
+	if ((lastVersion & ~0xFFFF0000ULL) <
+	    (currentVersion & ~0xFFFF0000ULL)) {
 		config_set_int(App()->GlobalConfig(), "General",
 			       "InfoIncrement", -1);
 		config_set_uint(App()->GlobalConfig(), "General",
-				LAST_INFO_VERSION_STRING, CUR_VER);
+				lastInfoVersion, currentVersion);
 	} else {
 		current_version_increment = config_get_int(
 			App()->GlobalConfig(), "General", "InfoIncrement");
@@ -2508,9 +2497,6 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 	UNUSED_PARAMETER(text);
 #endif
 }
-
-#undef CUR_VER
-#undef LAST_INFO_VERSION_STRING
 
 void OBSBasic::ShowWhatsNew(const QString &url)
 {
@@ -2972,13 +2958,6 @@ OBSBasic::~OBSBasic()
 
 	config_set_int(App()->GlobalConfig(), "General", "LastVersion",
 		       LIBOBS_API_VER);
-#if defined(OBS_RELEASE_CANDIDATE) && OBS_RELEASE_CANDIDATE > 0
-	config_set_int(App()->GlobalConfig(), "General", "LastRCVersion",
-		       OBS_RELEASE_CANDIDATE_VER);
-#elif OBS_BETA > 0
-	config_set_int(App()->GlobalConfig(), "General", "LastBetaVersion",
-		       OBS_BETA_VER);
-#endif
 
 	config_set_bool(App()->GlobalConfig(), "BasicWindow", "PreviewEnabled",
 			previewEnabled);
@@ -7730,8 +7709,8 @@ void OBSBasic::RecordingStop(int code, QString last_error)
 		errorDescription = Str("Output.RecordError.Msg");
 
 		if (use_last_error && !last_error.isEmpty())
-			dstr_printf(errorMessage, "%s\n\n%s", errorDescription,
-				    QT_TO_UTF8(last_error));
+			dstr_printf(errorMessage, "%s<br><br>%s",
+				    errorDescription, QT_TO_UTF8(last_error));
 		else
 			dstr_copy(errorMessage, errorDescription);
 
@@ -8220,11 +8199,36 @@ void OBSBasic::VCamConfigButtonClicked()
 	dialog.exec();
 }
 
+void log_vcam_changed(const VCamConfig &config, bool starting)
+{
+	const char *action = starting ? "Starting" : "Changing";
+
+	switch (config.type) {
+	case VCamOutputType::Invalid:
+		break;
+	case VCamOutputType::ProgramView:
+		blog(LOG_INFO, "%s Virtual Camera output to Program", action);
+		break;
+	case VCamOutputType::PreviewOutput:
+		blog(LOG_INFO, "%s Virtual Camera output to Preview", action);
+		break;
+	case VCamOutputType::SceneOutput:
+		blog(LOG_INFO, "%s Virtual Camera output to Scene : %s", action,
+		     config.scene.c_str());
+		break;
+	case VCamOutputType::SourceOutput:
+		blog(LOG_INFO, "%s Virtual Camera output to Source : %s",
+		     action, config.source.c_str());
+		break;
+	}
+}
+
 void OBSBasic::UpdateVirtualCamConfig(const VCamConfig &config)
 {
 	vcamConfig = config;
 
 	outputHandler->UpdateVirtualCamOutputSource();
+	log_vcam_changed(config, false);
 }
 
 void OBSBasic::RestartVirtualCam(const VCamConfig &config)
@@ -10048,6 +10052,7 @@ void OBSBasic::AudioMixerCopyFilters()
 	obs_source_t *source = vol->GetSource();
 
 	copyFiltersSource = obs_source_get_weak_source(source);
+	ui->actionPasteFilters->setEnabled(true);
 }
 
 void OBSBasic::AudioMixerPasteFilters()
@@ -10068,6 +10073,7 @@ void OBSBasic::AudioMixerPasteFilters()
 void OBSBasic::SceneCopyFilters()
 {
 	copyFiltersSource = obs_source_get_weak_source(GetCurrentSceneSource());
+	ui->actionPasteFilters->setEnabled(true);
 }
 
 void OBSBasic::ScenePasteFilters()
@@ -10487,7 +10493,7 @@ void OBSBasic::AddDockWidget(QDockWidget *dock, Qt::DockWidgetArea area,
 #endif
 
 	extraDockNames.push_back(dock->objectName());
-	extraDocks.push_back(QSharedPointer<QDockWidget>(dock));
+	extraDocks.push_back(std::shared_ptr<QDockWidget>(dock));
 }
 
 void OBSBasic::RemoveDockWidget(const QString &name)
@@ -10495,7 +10501,7 @@ void OBSBasic::RemoveDockWidget(const QString &name)
 	if (extraDockNames.contains(name)) {
 		int idx = extraDockNames.indexOf(name);
 		extraDockNames.removeAt(idx);
-		extraDocks[idx].clear();
+		extraDocks[idx].reset();
 		extraDocks.removeAt(idx);
 	} else if (extraCustomDockNames.contains(name)) {
 		int idx = extraCustomDockNames.indexOf(name);
@@ -10882,9 +10888,11 @@ void OBSBasic::CheckDiskSpaceRemaining()
 
 void OBSBasic::ResetStatsHotkey()
 {
-	QList<OBSBasicStats *> list = findChildren<OBSBasicStats *>();
+	const QList<OBSBasicStats *> list = findChildren<OBSBasicStats *>();
 
-	foreach(OBSBasicStats * s, list) s->Reset();
+	for (OBSBasicStats *s : list) {
+		s->Reset();
+	}
 }
 
 void OBSBasic::on_OBSBasic_customContextMenuRequested(const QPoint &pos)

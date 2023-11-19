@@ -28,9 +28,9 @@ local deps_baseurl
 local deps_label
 local deps_hash
 
-IFS=';' read -r deps_version deps_baseurl deps_label deps_hash <<< \
+IFS=';' read -r deps_version deps_baseurl deps_label deps_hash deps_revision <<< \
   "$(jq -r --arg target "${target}" \
-    '.dependencies["cef"] | {version, baseUrl, "label", "hash": .hashes[$target]} | join(";")' \
+    '.dependencies["cef"] | {version, baseUrl, "label", "hash": .hashes[$target], "revision": .revision[$target]} | join(";")' \
     ${buildspec_file})"
 
 if (( ! deps_version )) {
@@ -40,7 +40,7 @@ if (( ! deps_version )) {
 log_group 'Setting up pre-built Chromium Embedded Framework...'
 
 pushd ${project_root}/.deps
-local _filename="cef_binary_${deps_version}_${target//-/_}.tar.xz"
+local _filename="cef_binary_${deps_version}_${target//-/_}${deps_revision:+"_v${deps_revision}"}.tar.xz"
 local _url=${deps_baseurl}/${_filename}
 local _target="cef_binary_${deps_version}_${target//-/_}"
 typeset -g CEF_VERSION=${deps_version}
@@ -97,7 +97,7 @@ sudo apt-get install -y --no-install-recommends \
   libasound2-dev libfdk-aac-dev libfontconfig-dev libfreetype6-dev libjack-jackd2-dev \
   libpulse-dev libsndio-dev libspeexdsp-dev libudev-dev libv4l-dev libva-dev libvlc-dev \
   libpci-dev libdrm-dev \
-  nlohmann-json3-dev libwebsocketpp-dev libasio-dev libvpl-dev libqrcodegencpp-dev
+  nlohmann-json3-dev libwebsocketpp-dev libasio-dev libvpl-dev libvpl2 libqrcodegencpp-dev
 
 if (( UBUNTU_2210_OR_LATER )) sudo apt-get install -y --no-install-recommends librist-dev libsrt-openssl-dev
 

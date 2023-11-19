@@ -2038,11 +2038,9 @@ static obs_properties_t *av_capture_properties(void *data)
 
     NSMutableArray *device_types = [NSMutableArray
         arrayWithObjects:AVCaptureDeviceTypeBuiltInWideAngleCamera, AVCaptureDeviceTypeExternalUnknown, nil];
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
     if (__builtin_available(macOS 13.0, *)) {
         [device_types addObject:AVCaptureDeviceTypeDeskViewCamera];
     }
-#endif
     AVCaptureDeviceDiscoverySession *video_discovery =
         [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:device_types mediaType:AVMediaTypeVideo
                                                                 position:AVCaptureDevicePositionUnspecified];
@@ -2175,7 +2173,7 @@ bool obs_module_load(void)
     // From WWDC video 2014 #508 at 5:34
     // https://developer.apple.com/videos/wwdc/2014/#508
     CMIOObjectPropertyAddress prop = {kCMIOHardwarePropertyAllowScreenCaptureDevices, kCMIOObjectPropertyScopeGlobal,
-                                      kCMIOObjectPropertyElementMaster};
+                                      kCMIOObjectPropertyElementMain};
     UInt32 allow = 1;
     CMIOObjectSetPropertyData(kCMIOObjectSystemObject, &prop, 0, NULL, sizeof(allow), &allow);
 

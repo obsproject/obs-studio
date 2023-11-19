@@ -39,6 +39,7 @@ struct decklink_ui_output {
 };
 
 static struct decklink_ui_output context = {0};
+static struct decklink_ui_output context_preview = {0};
 
 OBSData load_settings()
 {
@@ -61,10 +62,10 @@ static void decklink_ui_render(void *param);
 
 void output_stop()
 {
+	obs_remove_main_rendered_callback(decklink_ui_render, &context);
+
 	obs_output_stop(context.output);
 	obs_output_release(context.output);
-
-	obs_remove_main_rendered_callback(decklink_ui_render, &context);
 
 	obs_enter_graphics();
 	for (gs_stagesurf_t *&surf : context.stagesurfaces) {
@@ -189,27 +190,28 @@ static void decklink_ui_tick(void *param, float /* sec */)
 
 void preview_output_stop()
 {
-	obs_output_stop(context.output);
-	obs_output_release(context.output);
+	obs_remove_main_rendered_callback(decklink_ui_render, &context_preview);
+	obs_frontend_remove_event_callback(on_preview_scene_changed,
+					   &context_preview);
 
-	obs_remove_main_rendered_callback(decklink_ui_render, &context);
-	obs_frontend_remove_event_callback(on_preview_scene_changed, &context);
+	obs_output_stop(context_preview.output);
+	obs_output_release(context_preview.output);
 
-	obs_source_release(context.current_source);
+	obs_source_release(context_preview.current_source);
 
 	obs_enter_graphics();
-	for (gs_stagesurf_t *&surf : context.stagesurfaces) {
+	for (gs_stagesurf_t *&surf : context_preview.stagesurfaces) {
 		gs_stagesurface_destroy(surf);
 		surf = nullptr;
 	}
-	gs_texrender_destroy(context.texrender);
-	context.texrender = nullptr;
-	gs_texrender_destroy(context.texrender_premultiplied);
-	context.texrender_premultiplied = nullptr;
+	gs_texrender_destroy(context_preview.texrender);
+	context_preview.texrender = nullptr;
+	gs_texrender_destroy(context_preview.texrender_premultiplied);
+	context_preview.texrender_premultiplied = nullptr;
 	obs_leave_graphics();
 
-	video_output_close(context.video_queue);
-	obs_remove_tick_callback(decklink_ui_tick, &context);
+	video_output_close(context_preview.video_queue);
+	obs_remove_tick_callback(decklink_ui_tick, &context_preview);
 
 	preview_output_running = false;
 
@@ -227,58 +229,60 @@ void preview_output_start()
 		const struct video_scale_info *const conversion =
 			obs_output_get_video_conversion(output);
 		if (conversion != nullptr) {
-			context.output = output;
-			obs_add_tick_callback(decklink_ui_tick, &context);
+			context_preview.output = output;
+			obs_add_tick_callback(decklink_ui_tick,
+					      &context_preview);
 
-			obs_get_video_info(&context.ovi);
+			obs_get_video_info(&context_preview.ovi);
 
 			const uint32_t width = conversion->width;
 			const uint32_t height = conversion->height;
 
 			obs_enter_graphics();
-			context.texrender_premultiplied =
+			context_preview.texrender_premultiplied =
 				gs_texrender_create(GS_BGRA, GS_ZS_NONE);
-			context.texrender =
+			context_preview.texrender =
 				gs_texrender_create(GS_BGRA, GS_ZS_NONE);
-			for (gs_stagesurf_t *&surf : context.stagesurfaces)
+			for (gs_stagesurf_t *&surf :
+			     context_preview.stagesurfaces)
 				surf = gs_stagesurface_create(width, height,
 							      GS_BGRA);
 			obs_leave_graphics();
 
-			for (bool &written : context.surf_written)
+			for (bool &written : context_preview.surf_written)
 				written = false;
 
-			context.stage_index = 0;
+			context_preview.stage_index = 0;
 
 			video_output_info vi = {0};
 			vi.format = VIDEO_FORMAT_BGRA;
 			vi.width = width;
 			vi.height = height;
-			vi.fps_den = context.ovi.fps_den;
-			vi.fps_num = context.ovi.fps_num;
+			vi.fps_den = context_preview.ovi.fps_den;
+			vi.fps_num = context_preview.ovi.fps_num;
 			vi.cache_size = 16;
 			vi.colorspace = VIDEO_CS_DEFAULT;
 			vi.range = VIDEO_RANGE_FULL;
 			vi.name = "decklink_preview_output";
 
-			video_output_open(&context.video_queue, &vi);
+			video_output_open(&context_preview.video_queue, &vi);
 
 			obs_frontend_add_event_callback(
-				on_preview_scene_changed, &context);
+				on_preview_scene_changed, &context_preview);
 			if (obs_frontend_preview_program_mode_active()) {
-				context.current_source =
+				context_preview.current_source =
 					obs_frontend_get_current_preview_scene();
 			} else {
-				context.current_source =
+				context_preview.current_source =
 					obs_frontend_get_current_scene();
 			}
 			obs_add_main_rendered_callback(decklink_ui_render,
-						       &context);
+						       &context_preview);
 
-			obs_output_set_media(context.output,
-					     context.video_queue,
+			obs_output_set_media(context_preview.output,
+					     context_preview.video_queue,
 					     obs_get_audio());
-			bool started = obs_output_start(context.output);
+			bool started = obs_output_start(context_preview.output);
 
 			preview_output_running = started;
 			if (!shutting_down)
@@ -332,14 +336,20 @@ static void decklink_ui_render(void *param)
 	uint32_t height = 0;
 	gs_texture_t *tex = nullptr;
 
-	if (main_output_running) {
+	if (ctx == &context) {
+		if (!main_output_running)
+			return;
+
 		tex = obs_get_main_texture();
 		if (!tex)
 			return;
 
 		width = gs_texture_get_width(tex);
 		height = gs_texture_get_height(tex);
-	} else if (preview_output_running) {
+	} else if (ctx == &context_preview) {
+		if (!preview_output_running)
+			return;
+
 		if (!ctx->current_source)
 			return;
 
@@ -372,7 +382,7 @@ static void decklink_ui_render(void *param)
 	}
 
 	const struct video_scale_info *const conversion =
-		obs_output_get_video_conversion(context.output);
+		obs_output_get_video_conversion(ctx->output);
 	const uint32_t scaled_width = conversion->width;
 	const uint32_t scaled_height = conversion->height;
 
@@ -380,8 +390,8 @@ static void decklink_ui_render(void *param)
 		return;
 
 	const bool previous = gs_framebuffer_srgb_enabled();
-	const bool source_hdr = (context.ovi.colorspace == VIDEO_CS_2100_PQ) ||
-				(context.ovi.colorspace == VIDEO_CS_2100_HLG);
+	const bool source_hdr = (ctx->ovi.colorspace == VIDEO_CS_2100_PQ) ||
+				(ctx->ovi.colorspace == VIDEO_CS_2100_HLG);
 	const bool target_hdr = source_hdr &&
 				(conversion->colorspace == VIDEO_CS_2100_PQ);
 	gs_enable_framebuffer_srgb(!target_hdr);

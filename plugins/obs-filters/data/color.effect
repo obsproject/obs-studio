@@ -37,6 +37,7 @@ float3 rec2020_to_rec709(float3 v)
 float3 reinhard(float3 rgb)
 {
 	rgb /= rgb + float3(1., 1., 1.);
+	rgb = saturate(rgb);
 	rgb = pow(rgb, float3(1. / 2.4, 1. / 2.4, 1. / 2.4));
 	rgb = srgb_nonlinear_to_linear(rgb);
 	return rgb;

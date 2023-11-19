@@ -97,15 +97,24 @@ function(_check_dependencies)
       string(REPLACE "-REVISION" "" file "${file}")
     endif()
 
+    if(EXISTS "${dependencies_dir}/.dependency_${dependency}_${arch}.sha256")
+      file(READ "${dependencies_dir}/.dependency_${dependency}_${arch}.sha256"
+           OBS_DEPENDENCY_${dependency}_${arch}_HASH)
+    endif()
+
     set(skip FALSE)
     if(dependency STREQUAL prebuilt OR dependency STREQUAL qt6)
-      _check_deps_version(${version})
+      if(OBS_DEPENDENCY_${dependency}_${arch}_HASH STREQUAL ${hash})
+        _check_deps_version(${version})
 
-      if(found)
-        set(skip TRUE)
+        if(found)
+          set(skip TRUE)
+        endif()
       endif()
     elseif(dependency STREQUAL cef)
-      if(NOT ENABLE_BROWSER OR (CEF_ROOT_DIR AND EXISTS "${CEF_ROOT_DIR}"))
+      if(NOT ENABLE_BROWSER)
+        set(skip TRUE)
+      elseif(OBS_DEPENDENCY_${dependency}_${arch}_HASH STREQUAL ${hash} AND (CEF_ROOT_DIR AND EXISTS "${CEF_ROOT_DIR}"))
         set(skip TRUE)
       endif()
     endif()
@@ -139,6 +148,10 @@ function(_check_dependencies)
       endif()
     endif()
 
+    if(NOT OBS_DEPENDENCY_${dependency}_${arch}_HASH STREQUAL ${hash})
+      file(REMOVE_RECURSE "${dependencies_dir}/${destination}")
+    endif()
+
     if(NOT EXISTS "${dependencies_dir}/${destination}")
       file(MAKE_DIRECTORY "${dependencies_dir}/${destination}")
       if(dependency STREQUAL obs-studio)
@@ -147,6 +160,8 @@ function(_check_dependencies)
         file(ARCHIVE_EXTRACT INPUT "${dependencies_dir}/${file}" DESTINATION "${dependencies_dir}/${destination}")
       endif()
     endif()
+
+    file(WRITE "${dependencies_dir}/.dependency_${dependency}_${arch}.sha256" "${hash}")
 
     if(dependency STREQUAL prebuilt)
       set(VLC_PATH

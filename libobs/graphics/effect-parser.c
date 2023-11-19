@@ -1933,6 +1933,7 @@ static inline bool ep_compile_pass_shader(struct effect_parser *ep,
 	pass_shaderparam_array_t *pass_params = NULL;
 	gs_shader_t *shader = NULL;
 	bool success = true;
+	char *errors = NULL;
 
 	dstr_init(&shader_str);
 	da_init(used_params);
@@ -1954,8 +1955,8 @@ static inline bool ep_compile_pass_shader(struct effect_parser *ep,
 		ep_makeshaderstring(ep, &shader_str, &pass_in->vertex_program,
 				    &used_params);
 
-		pass->vertshader = gs_vertexshader_create(shader_str.array,
-							  location.array, NULL);
+		pass->vertshader = gs_vertexshader_create(
+			shader_str.array, location.array, &errors);
 
 		shader = pass->vertshader;
 		pass_params = &pass->vertshader_params;
@@ -1963,12 +1964,18 @@ static inline bool ep_compile_pass_shader(struct effect_parser *ep,
 		ep_makeshaderstring(ep, &shader_str, &pass_in->fragment_program,
 				    &used_params);
 
-		pass->pixelshader = gs_pixelshader_create(shader_str.array,
-							  location.array, NULL);
+		pass->pixelshader = gs_pixelshader_create(
+			shader_str.array, location.array, &errors);
 
 		shader = pass->pixelshader;
 		pass_params = &pass->pixelshader_params;
 	}
+
+	if (errors && strlen(errors)) {
+		cf_adderror(&ep->cfp, "Error creating shader: $1", LEX_ERROR,
+			    errors, NULL, NULL);
+	}
+	bfree(errors);
 
 #if defined(_DEBUG) && defined(_DEBUG_SHADERS)
 	blog(LOG_DEBUG, "\t\t\t%s Shader:",

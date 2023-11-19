@@ -122,9 +122,18 @@ static const char *wgc_partial_match_classes[] = {
 static const char *wgc_whole_match_classes[] = {
 	"ApplicationFrameWindow",
 	"Windows.UI.Core.CoreWindow",
-	"XLMAIN",        /* excel*/
-	"PPTFrameClass", /* powerpoint */
-	"OpusApp",       /* word */
+	"GAMINGSERVICESUI_HOSTING_WINDOW_CLASS",
+	"XLMAIN",            /* Microsoft Excel */
+	"PPTFrameClass",     /* Microsoft PowerPoint */
+	"screenClass",       /* Microsoft PowerPoint (Slide Show) */
+	"PodiumParent",      /* Microsoft PowerPoint (Presenter View) */
+	"OpusApp",           /* Microsoft Word */
+	"OMain",             /* Microsoft Access */
+	"Framework::CFrame", /* Microsoft OneNote */
+	"rctrl_renwnd32",    /* Microsoft Outlook */
+	"MSWinPub",          /* Microsoft Publisher */
+	"OfficeApp-Frame",   /* Microsoft 365 Software */
+	"SDL_app",
 	NULL,
 };
 

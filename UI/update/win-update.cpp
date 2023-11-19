@@ -50,31 +50,17 @@ using namespace updater;
 
 /* ------------------------------------------------------------------------ */
 
-#if defined(OBS_RELEASE_CANDIDATE) && OBS_RELEASE_CANDIDATE > 0
-#define CUR_VER                                                               \
-	((uint64_t)OBS_RELEASE_CANDIDATE_VER << 16ULL | OBS_RELEASE_CANDIDATE \
-								<< 8ULL)
-#define PRE_RELEASE true
-#elif OBS_BETA > 0
-#define CUR_VER ((uint64_t)OBS_BETA_VER << 16ULL | OBS_BETA)
-#define PRE_RELEASE true
-#elif defined(OBS_COMMIT)
-#define CUR_VER 1 << 16ULL
-#define CUR_COMMIT OBS_COMMIT
-#define PRE_RELEASE true
-#else
-#define CUR_VER ((uint64_t)LIBOBS_API_VER << 16ULL)
-#define PRE_RELEASE false
-#endif
-
-#ifndef CUR_COMMIT
-#define CUR_COMMIT "00000000"
-#endif
-
 static bool ParseUpdateManifest(const char *manifest_data,
 				bool *updatesAvailable, string &notes,
-				uint64_t &updateVer, const string &branch)
+				string &updateVer, const string &branch)
 try {
+	constexpr uint64_t currentVersion = (uint64_t)LIBOBS_API_VER << 16ULL |
+					    OBS_RELEASE_CANDIDATE << 8ULL |
+					    OBS_BETA;
+	constexpr bool isPreRelease =
+		currentVersion & 0xffff ||
+		std::char_traits<char>::length(OBS_COMMIT);
+
 	json manifestContents = json::parse(manifest_data);
 	Manifest manifest = manifestContents.get<Manifest>();
 
@@ -85,12 +71,8 @@ try {
 
 	notes = manifest.notes;
 
-	uint64_t cur_ver;
-	uint64_t new_ver;
-
 	if (manifest.commit.empty()) {
-		cur_ver = CUR_VER;
-		new_ver =
+		uint64_t new_ver =
 			MAKE_SEMANTIC_VERSION((uint64_t)manifest.version_major,
 					      (uint64_t)manifest.version_minor,
 					      (uint64_t)manifest.version_patch);
@@ -101,21 +83,23 @@ try {
 			new_ver |= (uint64_t)manifest.rc << 8;
 		else if (manifest.beta > 0)
 			new_ver |= (uint64_t)manifest.beta;
+
+		updateVer = to_string(new_ver);
+
+		/* When using a pre-release build or non-default branch we only check if
+		 * the manifest version is different, so that it can be rolled back. */
+		if (branch != WIN_DEFAULT_BRANCH || isPreRelease)
+			*updatesAvailable = new_ver != currentVersion;
+		else
+			*updatesAvailable = new_ver > currentVersion;
 	} else {
 		/* Test or nightly builds may not have a (valid) version number,
 		 * so compare commit hashes instead. */
-		cur_ver = stoul(CUR_COMMIT, nullptr, 16);
-		new_ver = stoul(manifest.commit.substr(0, 8), nullptr, 16);
+		updateVer = manifest.commit.substr(0, 8);
+		*updatesAvailable = !currentVersion ||
+				    !manifest.commit.compare(
+					    0, strlen(OBS_COMMIT), OBS_COMMIT);
 	}
-
-	updateVer = new_ver;
-
-	/* When using a pre-release build or non-default branch we only check if
-	 * the manifest version is different, so that it can be rolled-back. */
-	if (branch != WIN_DEFAULT_BRANCH || PRE_RELEASE)
-		*updatesAvailable = new_ver != cur_ver;
-	else
-		*updatesAvailable = new_ver > cur_ver;
 
 	return true;
 
@@ -123,10 +107,6 @@ try {
 	blog(LOG_WARNING, "%s: %s", __FUNCTION__, text.c_str());
 	return false;
 }
-
-#undef CUR_COMMIT
-#undef CUR_VER
-#undef PRE_RELEASE
 
 /* ------------------------------------------------------------------------ */
 
@@ -263,7 +243,7 @@ try {
 	 * check manifest for update           */
 
 	string notes;
-	uint64_t updateVer = 0;
+	string updateVer;
 
 	if (!ParseUpdateManifest(text.c_str(), &updatesAvailable, notes,
 				 updateVer, branch))
@@ -283,9 +263,10 @@ try {
 	/* ----------------------------------- *
 	 * skip this version if set to skip    */
 
-	uint64_t skipUpdateVer = config_get_uint(GetGlobalConfig(), "General",
-						 "SkipUpdateVersion");
-	if (!manualUpdate && updateVer == skipUpdateVer && !repairMode)
+	const char *skipUpdateVer = config_get_string(
+		GetGlobalConfig(), "General", "SkipUpdateVersion");
+	if (!manualUpdate && !repairMode && skipUpdateVer &&
+	    updateVer == skipUpdateVer)
 		return;
 
 	/* ----------------------------------- *
@@ -313,8 +294,9 @@ try {
 			return;
 
 		} else if (queryResult == OBSUpdate::Skip) {
-			config_set_uint(GetGlobalConfig(), "General",
-					"SkipUpdateVersion", updateVer);
+			config_set_string(GetGlobalConfig(), "General",
+					  "SkipUpdateVersion",
+					  updateVer.c_str());
 			return;
 		}
 	}
@@ -385,7 +367,8 @@ try {
 	/* force OBS to perform another update check immediately after updating
 	 * in case of issues with the new version */
 	config_set_int(GetGlobalConfig(), "General", "LastUpdateCheck", 0);
-	config_set_int(GetGlobalConfig(), "General", "SkipUpdateVersion", 0);
+	config_set_string(GetGlobalConfig(), "General", "SkipUpdateVersion",
+			  "0");
 
 	QMetaObject::invokeMethod(App()->GetMainWindow(), "close");
 

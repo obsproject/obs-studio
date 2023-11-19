@@ -101,6 +101,7 @@ protected:
 private:
 	mfxVersion m_ver;
 	mfxSession m_session;
+	void *m_sessionData;
 	mfxFrameAllocator m_mfxAllocator;
 	mfxVideoParam m_mfxEncParams;
 	mfxFrameAllocResponse m_mfxResponse;
@@ -129,7 +130,6 @@ private:
 	int m_nFirstSyncTask;
 	mfxBitstream m_outBitstream;
 	bool m_bUseD3D11;
-	bool m_bD3D9HACK;
 	bool m_bUseTexAlloc;
 	bool m_isDGPU;
 	static mfxU16 g_numEncodersOpen;

@@ -245,3 +245,36 @@ void show_window_properties(obs_properties_t *props, bool show)
     obs_property_set_visible(obs_properties_get(props, "window"), show);
     obs_property_set_visible(obs_properties_get(props, "show_empty_names"), show);
 }
+
+CGDirectDisplayID get_display_migrate_settings(obs_data_t *settings)
+{
+    bool legacy_display_id = obs_data_has_user_value(settings, "display");
+    bool new_display_id = obs_data_has_user_value(settings, "display_uuid");
+    if (legacy_display_id && !new_display_id) {
+        CGDirectDisplayID display_id = (CGDirectDisplayID) obs_data_get_int(settings, "display");
+        CFUUIDRef display_uuid = CGDisplayCreateUUIDFromDisplayID(display_id);
+        if (display_uuid) {
+            CFStringRef uuid_string = CFUUIDCreateString(kCFAllocatorDefault, display_uuid);
+            obs_data_set_string(settings, "display_uuid", CFStringGetCStringPtr(uuid_string, kCFStringEncodingUTF8));
+            obs_data_erase(settings, "display");
+            CFRelease(uuid_string);
+            CFRelease(display_uuid);
+        } else {
+            return 0;
+        }
+    } else if (legacy_display_id && new_display_id) {
+        obs_data_erase(settings, "display");
+    }
+
+    const char *display_uuid = obs_data_get_string(settings, "display_uuid");
+    if (display_uuid) {
+        CFStringRef uuid_string = CFStringCreateWithCString(kCFAllocatorDefault, display_uuid, kCFStringEncodingUTF8);
+        CFUUIDRef uuid_ref = CFUUIDCreateFromString(kCFAllocatorDefault, uuid_string);
+        CGDirectDisplayID display = CGDisplayGetDisplayIDFromUUID(uuid_ref);
+        CFRelease(uuid_string);
+        CFRelease(uuid_ref);
+        return display;
+    } else {
+        return 0;
+    }
+}

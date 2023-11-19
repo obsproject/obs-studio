@@ -44,7 +44,11 @@ The following cache variables may also be set:
 
 find_package(PkgConfig QUIET)
 if(PKG_CONFIG_FOUND)
-  pkg_search_module(_VPL QUIET vpl)
+  pkg_search_module(_VPL IMPORTED_TARGET QUIET vpl)
+  if(_VPL_FOUND)
+    add_library(VPL::VPL ALIAS PkgConfig::_VPL)
+    return()
+  endif()
 endif()
 
 find_path(

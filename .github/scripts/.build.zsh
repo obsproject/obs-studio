@@ -145,12 +145,11 @@ build() {
       local -a build_args=(
         ONLY_ACTIVE_ARCH=NO
         -project obs-studio.xcodeproj
-        -scheme obs-studio
+        -target obs-studio
         -destination "generic/platform=macOS,name=Any Mac"
         -configuration ${config}
         -parallelizeTargets
         -hideShellScriptEnvironment
-        -resultBundlePath ${project_root}/build_macos/build.xcresult
         build
       )
 
@@ -178,18 +177,6 @@ build() {
         run_xcodebuild ${export_args}
       } else {
         run_xcodebuild ${build_args}
-
-        local -a jq_query=(
-          'keys[] as $k'
-          '{level: "\($k)"|sub("warnings";"warning")|sub("errors";"failure"), data: (.[$k][])}'
-          '{file: .data.documentURL, start_line: .data.startingLineNumber, end_line: .data.endingLineNumber, start_column: .data.startingColumnNumber, end_column: .data.endingColumnNumber, title: "Compiler \(.level)", message: .data.title, annotation_level: .level}'
-        )
-
-        xclogparser parse --project obs-studio --reporter issues \
-          | jq ${(j: | :)jq_query} \
-          | jq -s '. | unique' \
-          | sed -E -e "s#file://${project_root}/##g" \
-          > ${project_root}/build_issues.json
 
         rm -rf OBS.app
         mkdir OBS.app

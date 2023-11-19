@@ -274,6 +274,14 @@ inappropriate or invalid.
 
 ---------------------
 
+.. function:: void obs_data_set_autoselect_array(obs_data_t *data, const char *name, obs_data_array_t *arr)
+              obs_data_array_t *obs_data_get_autoselect_array(obs_data_t *data, const char *name)
+
+   :return: An incremented reference to a data array object. Release
+             with :c:func:`obs_data_array_release()`.
+
+---------------------
+
 
 Array Functions
 ---------------

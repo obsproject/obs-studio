@@ -202,16 +202,7 @@ static inline void full_unlock(struct obs_scene *scene)
 	video_unlock(scene);
 }
 
-static void set_visibility(struct obs_scene_item *item, bool vis);
-static inline void detach_sceneitem(struct obs_scene_item *item);
-
-static inline void remove_without_release(struct obs_scene_item *item)
-{
-	item->removed = true;
-	set_visibility(item, false);
-	signal_item_remove(item);
-	detach_sceneitem(item);
-}
+static void obs_sceneitem_remove_internal(obs_sceneitem_t *item);
 
 static void remove_all_items(struct obs_scene *scene)
 {
@@ -228,7 +219,7 @@ static void remove_all_items(struct obs_scene *scene)
 		struct obs_scene_item *del_item = item;
 		item = item->next;
 
-		remove_without_release(del_item);
+		obs_sceneitem_remove_internal(del_item);
 		da_push_back(items, &del_item);
 	}
 
@@ -873,7 +864,7 @@ update_transforms_and_prune_sources(obs_scene_t *scene,
 			struct obs_scene_item *del_item = item;
 			item = item->next;
 
-			remove_without_release(del_item);
+			obs_sceneitem_remove_internal(del_item);
 			da_push_back(*remove_items, &del_item);
 			rebuild_group = true;
 			continue;
@@ -960,7 +951,10 @@ static void set_visibility(struct obs_scene_item *item, bool vis)
 	pthread_mutex_unlock(&item->actions_mutex);
 }
 
-static void scene_load(void *data, obs_data_t *settings);
+static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
+					       obs_source_t *source,
+					       obs_sceneitem_t *insert_after,
+					       int64_t id);
 
 static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 {
@@ -971,6 +965,8 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 	const char *blend_method_str;
 	const char *blend_str;
 	struct obs_scene_item *item;
+	struct calldata params;
+	uint8_t stack[128];
 	bool visible;
 	bool lock;
 
@@ -992,7 +988,8 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 		return;
 	}
 
-	item = obs_scene_add(scene, source);
+	item = obs_scene_add_internal(scene, source, NULL,
+				      obs_data_get_int(item_data, "id"));
 	if (!item) {
 		blog(LOG_WARNING,
 		     "[scene_load_item] Could not add source '%s' "
@@ -1003,13 +1000,16 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 		return;
 	}
 
+	calldata_init_fixed(&params, stack, sizeof(stack));
+	calldata_set_ptr(&params, "scene", scene);
+	calldata_set_ptr(&params, "item", item);
+	signal_handler_signal(scene->source->context.signals, "item_add",
+			      &params);
+
 	item->is_group = strcmp(source->info.id, group_info.id) == 0;
 
 	obs_data_set_default_int(item_data, "align",
 				 OBS_ALIGN_TOP | OBS_ALIGN_LEFT);
-
-	if (obs_data_has_user_value(item_data, "id"))
-		item->id = obs_data_get_int(item_data, "id");
 
 	item->rot = (float)obs_data_get_double(item_data, "rot");
 	item->align = (uint32_t)obs_data_get_int(item_data, "align");
@@ -1112,6 +1112,9 @@ static void scene_load(void *data, obs_data_t *settings)
 		scene->custom_size = true;
 	}
 
+	if (obs_data_has_user_value(settings, "id_counter"))
+		scene->id_counter = obs_data_get_int(settings, "id_counter");
+
 	if (!items)
 		return;
 
@@ -1122,9 +1125,6 @@ static void scene_load(void *data, obs_data_t *settings)
 		scene_load_item(scene, item_data);
 		obs_data_release(item_data);
 	}
-
-	if (obs_data_has_user_value(settings, "id_counter"))
-		scene->id_counter = obs_data_get_int(settings, "id_counter");
 
 	obs_data_array_release(items);
 }
@@ -1683,14 +1683,24 @@ static inline void duplicate_item_data(struct obs_scene_item *dst,
 	dst->hide_transition_duration = src->hide_transition_duration;
 
 	if (duplicate_hotkeys && !dst_scene->source->context.private) {
+		struct dstr show = {0};
+		struct dstr hide = {0};
 		obs_data_array_t *data0 = NULL;
 		obs_data_array_t *data1 = NULL;
 
 		obs_hotkey_pair_save(src->toggle_visibility, &data0, &data1);
 		obs_hotkey_pair_load(dst->toggle_visibility, data0, data1);
 
+		/* Fix scene item ID */
+		dstr_printf(&show, "libobs.show_scene_item.%" PRIi64, dst->id);
+		dstr_printf(&hide, "libobs.hide_scene_item.%" PRIi64, dst->id);
+		obs_hotkey_pair_set_names(dst->toggle_visibility, show.array,
+					  hide.array);
+
 		obs_data_array_release(data0);
 		obs_data_array_release(data1);
+		dstr_free(&show);
+		dstr_free(&hide);
 	}
 
 	obs_sceneitem_set_crop(dst, &src->crop);
@@ -2003,20 +2013,37 @@ static bool hotkey_hide_sceneitem(void *data, obs_hotkey_pair_id id,
 static void init_hotkeys(obs_scene_t *scene, obs_sceneitem_t *item,
 			 const char *name)
 {
+	struct obs_data_array *hotkey_array;
+	obs_data_t *hotkey_data = scene->source->context.hotkey_data;
+
 	struct dstr show = {0};
 	struct dstr hide = {0};
+	struct dstr legacy = {0};
 	struct dstr show_desc = {0};
 	struct dstr hide_desc = {0};
 
-	dstr_copy(&show, "libobs.show_scene_item.%1");
-	dstr_replace(&show, "%1", name);
-	dstr_copy(&hide, "libobs.hide_scene_item.%1");
-	dstr_replace(&hide, "%1", name);
+	dstr_printf(&show, "libobs.show_scene_item.%" PRIi64, item->id);
+	dstr_printf(&hide, "libobs.hide_scene_item.%" PRIi64, item->id);
 
 	dstr_copy(&show_desc, obs->hotkeys.sceneitem_show);
 	dstr_replace(&show_desc, "%1", name);
 	dstr_copy(&hide_desc, obs->hotkeys.sceneitem_hide);
 	dstr_replace(&hide_desc, "%1", name);
+
+	/* Check if legacy keys exists, migrate if necessary */
+	dstr_printf(&legacy, "libobs.show_scene_item.%s", name);
+	hotkey_array = obs_data_get_array(hotkey_data, legacy.array);
+	if (hotkey_array) {
+		obs_data_set_array(hotkey_data, show.array, hotkey_array);
+		obs_data_array_release(hotkey_array);
+	}
+
+	dstr_printf(&legacy, "libobs.hide_scene_item.%s", name);
+	hotkey_array = obs_data_get_array(hotkey_data, legacy.array);
+	if (hotkey_array) {
+		obs_data_set_array(hotkey_data, hide.array, hotkey_array);
+		obs_data_array_release(hotkey_array);
+	}
 
 	item->toggle_visibility = obs_hotkey_pair_register_source(
 		scene->source, show.array, show_desc.array, hide.array,
@@ -2025,6 +2052,7 @@ static void init_hotkeys(obs_scene_t *scene, obs_sceneitem_t *item,
 
 	dstr_free(&show);
 	dstr_free(&hide);
+	dstr_free(&legacy);
 	dstr_free(&show_desc);
 	dstr_free(&hide_desc);
 }
@@ -2032,18 +2060,8 @@ static void init_hotkeys(obs_scene_t *scene, obs_sceneitem_t *item,
 static void sceneitem_rename_hotkey(const obs_sceneitem_t *scene_item,
 				    const char *new_name)
 {
-	struct dstr show = {0};
-	struct dstr hide = {0};
 	struct dstr show_desc = {0};
 	struct dstr hide_desc = {0};
-
-	dstr_copy(&show, "libobs.show_scene_item.%1");
-	dstr_replace(&show, "%1", new_name);
-	dstr_copy(&hide, "libobs.hide_scene_item.%1");
-	dstr_replace(&hide, "%1", new_name);
-
-	obs_hotkey_pair_set_names(scene_item->toggle_visibility, show.array,
-				  hide.array);
 
 	dstr_copy(&show_desc, obs->hotkeys.sceneitem_show);
 	dstr_replace(&show_desc, "%1", new_name);
@@ -2053,8 +2071,6 @@ static void sceneitem_rename_hotkey(const obs_sceneitem_t *scene_item,
 	obs_hotkey_pair_set_descriptions(scene_item->toggle_visibility,
 					 show_desc.array, hide_desc.array);
 
-	dstr_free(&show);
-	dstr_free(&hide);
 	dstr_free(&show_desc);
 	dstr_free(&hide_desc);
 }
@@ -2075,7 +2091,8 @@ static inline bool source_has_audio(obs_source_t *source)
 
 static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 					       obs_source_t *source,
-					       obs_sceneitem_t *insert_after)
+					       obs_sceneitem_t *insert_after,
+					       int64_t id)
 {
 	struct obs_scene_item *last;
 	struct obs_scene_item *item;
@@ -2112,7 +2129,7 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 
 	item = bzalloc(sizeof(struct obs_scene_item));
 	item->source = source;
-	item->id = ++scene->id_counter;
+	item->id = id ? id : ++scene->id_counter;
 	item->parent = scene;
 	item->ref = 1;
 	item->align = OBS_ALIGN_TOP | OBS_ALIGN_LEFT;
@@ -2173,7 +2190,7 @@ release_source_and_fail:
 
 obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
 {
-	obs_sceneitem_t *item = obs_scene_add_internal(scene, source, NULL);
+	obs_sceneitem_t *item = obs_scene_add_internal(scene, source, NULL, 0);
 	struct calldata params;
 	uint8_t stack[128];
 
@@ -2228,37 +2245,34 @@ void obs_sceneitem_release(obs_sceneitem_t *item)
 		obs_sceneitem_destroy(item);
 }
 
-void obs_sceneitem_remove(obs_sceneitem_t *item)
+static void obs_sceneitem_remove_internal(obs_sceneitem_t *item)
 {
-	obs_scene_t *scene;
-
-	if (!item)
-		return;
-
-	scene = item->parent;
-
-	full_lock(scene);
-
-	if (item->removed) {
-		if (scene)
-			full_unlock(scene);
-		return;
-	}
-
 	item->removed = true;
-
-	assert(scene != NULL);
-	assert(scene->source != NULL);
 
 	set_visibility(item, false);
 
 	signal_item_remove(item);
 	detach_sceneitem(item);
 
-	full_unlock(scene);
-
 	obs_sceneitem_set_transition(item, true, NULL);
 	obs_sceneitem_set_transition(item, false, NULL);
+}
+
+void obs_sceneitem_remove(obs_sceneitem_t *item)
+{
+	obs_scene_t *scene;
+
+	if (!item || item->removed)
+		return;
+
+	scene = item->parent;
+
+	assert(scene != NULL);
+	assert(scene->source != NULL);
+
+	full_lock(scene);
+	obs_sceneitem_remove_internal(item);
+	full_unlock(scene);
 
 	obs_sceneitem_release(item);
 }
@@ -3305,7 +3319,7 @@ obs_sceneitem_t *obs_scene_insert_group(obs_scene_t *scene, const char *name,
 	obs_sceneitem_t *last_item = items ? items[count - 1] : NULL;
 
 	obs_sceneitem_t *item =
-		obs_scene_add_internal(scene, sub_scene->source, last_item);
+		obs_scene_add_internal(scene, sub_scene->source, last_item, 0);
 
 	if (!items || !count) {
 		obs_scene_release(sub_scene);
@@ -3428,7 +3442,8 @@ void obs_sceneitem_group_ungroup(obs_sceneitem_t *item)
 		obs_sceneitem_t *dst;
 
 		remove_group_transform(item, last);
-		dst = obs_scene_add_internal(scene, last->source, insert_after);
+		dst = obs_scene_add_internal(scene, last->source, insert_after,
+					     0);
 		duplicate_item_data(dst, last, true, true);
 		apply_group_transform(last, item);
 
@@ -3604,6 +3619,22 @@ get_sceneitem_parent_group(obs_scene_t *scene, obs_sceneitem_t *group_subitem)
 	return NULL;
 }
 
+static void obs_sceneitem_move_hotkeys(obs_scene_t *parent,
+				       obs_sceneitem_t *item)
+{
+	obs_data_array_t *data0 = NULL;
+	obs_data_array_t *data1 = NULL;
+
+	obs_hotkey_pair_save(item->toggle_visibility, &data0, &data1);
+	obs_hotkey_pair_unregister(item->toggle_visibility);
+
+	init_hotkeys(parent, item, obs_source_get_name(item->source));
+	obs_hotkey_pair_load(item->toggle_visibility, data0, data1);
+
+	obs_data_array_release(data0);
+	obs_data_array_release(data1);
+}
+
 bool obs_scene_reorder_items2(obs_scene_t *scene,
 			      struct obs_sceneitem_order_info *item_order,
 			      size_t item_order_size)
@@ -3662,6 +3693,9 @@ bool obs_scene_reorder_items2(obs_scene_t *scene,
 				if (!sub_scene->first_item)
 					sub_scene->first_item = sub_item;
 
+				/* Move hotkeys into group */
+				obs_sceneitem_move_hotkeys(sub_scene, sub_item);
+
 				sub_item->prev = sub_prev;
 				sub_item->next = NULL;
 				sub_item->parent = sub_scene;
@@ -3679,6 +3713,10 @@ bool obs_scene_reorder_items2(obs_scene_t *scene,
 			full_unlock(sub_scene);
 			obs_scene_release(sub_scene);
 		}
+
+		/* Move item hotkeys out of group */
+		if (item->parent && obs_scene_is_group(item->parent))
+			obs_sceneitem_move_hotkeys(scene, item);
 
 		item->prev = prev;
 		item->next = NULL;

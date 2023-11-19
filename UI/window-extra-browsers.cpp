@@ -174,7 +174,7 @@ void ExtraBrowsersModel::UpdateItem(Item &item)
 
 	OBSBasic *main = OBSBasic::Get();
 	BrowserDock *dock = reinterpret_cast<BrowserDock *>(
-		main->extraBrowserDocks[idx].data());
+		main->extraBrowserDocks[idx].get());
 	dock->setWindowTitle(item.title);
 	dock->setObjectName(item.title + OBJ_NAME_SUFFIX);
 
@@ -498,7 +498,7 @@ void OBSBasic::SaveExtraBrowserDocks()
 {
 	Json::array array;
 	for (int i = 0; i < extraBrowserDocks.size(); i++) {
-		QDockWidget *dock = extraBrowserDocks[i].data();
+		QDockWidget *dock = extraBrowserDocks[i].get();
 		QString title = extraBrowserDockNames[i];
 		QString url = extraBrowserDockTargets[i];
 		QString uuid = dock->property("uuid").toString();
@@ -571,7 +571,7 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 	}
 
 	AddDockWidget(dock, Qt::RightDockWidgetArea, true);
-	extraBrowserDocks.push_back(QSharedPointer<QDockWidget>(dock));
+	extraBrowserDocks.push_back(std::shared_ptr<QDockWidget>(dock));
 	extraBrowserDockNames.push_back(title);
 	extraBrowserDockTargets.push_back(url);
 

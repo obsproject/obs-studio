@@ -1796,7 +1796,6 @@ OBS_CreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *cinfo,
 	if ((res == VK_SUCCESS) && (count > 0)) {
 		struct vk_swap_data *swap_data = alloc_swap_data(ac);
 		if (swap_data) {
-			init_swap_data(swap_data, data, sc);
 			swap_data->swap_images = vk_alloc(
 				ac, count * sizeof(VkImage), _Alignof(VkImage),
 				VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
@@ -1816,6 +1815,7 @@ OBS_CreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *cinfo,
 			swap_data->shtex_info = NULL;
 			swap_data->d3d11_tex = NULL;
 			swap_data->captured = false;
+			init_swap_data(swap_data, data, sc);
 		}
 	}
 

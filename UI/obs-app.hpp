@@ -250,7 +250,10 @@ inline const char *Str(const char *lookup)
 {
 	return App()->GetString(lookup);
 }
-#define QTStr(lookupVal) QString::fromUtf8(Str(lookupVal))
+inline QString QTStr(const char *lookupVal)
+{
+	return QString::fromUtf8(Str(lookupVal));
+}
 
 bool GetFileSafeName(const char *name, std::string &file);
 bool GetClosestUnusedFileName(std::string &path, const char *extension);

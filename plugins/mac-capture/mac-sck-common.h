@@ -1,7 +1,6 @@
 #include <AvailabilityMacros.h>
 #include <Cocoa/Cocoa.h>
 
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 120300  // __MAC_12_3
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunguarded-availability-new"
 
@@ -85,4 +84,3 @@ void screen_stream_video_update(struct screen_capture *sc, CMSampleBufferRef sam
 void screen_stream_audio_update(struct screen_capture *sc, CMSampleBufferRef sample_buffer);
 
 #pragma clang diagnostic pop
-#endif

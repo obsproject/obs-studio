@@ -33,23 +33,17 @@ endif()
 
 # Set beta/rc versions if suffix included in version string
 if(_obs_version MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+-rc[0-9]+")
-  string(REGEX REPLACE "([0-9]+)\\.([0-9]+)\\.([0-9]+)-rc([0-9]+).*$" "\\1;\\2;\\3;\\4" _obs_release_candidate
-                       ${_obs_version})
+  string(REGEX REPLACE "[0-9]+\\.[0-9]+\\.[0-9]+-rc([0-9]+).*$" "\\1" _obs_release_candidate ${_obs_version})
 elseif(_obs_version MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+-beta[0-9]+")
-  string(REGEX REPLACE "([0-9]+)\\.([0-9]+)\\.([0-9]+)-beta([0-9]+).*$" "\\1;\\2;\\3;\\4" _obs_beta ${_obs_version})
+  string(REGEX REPLACE "[0-9]+\\.[0-9]+\\.[0-9]+-beta([0-9]+).*$" "\\1" _obs_beta ${_obs_version})
 endif()
 
 list(GET _obs_version_canonical 0 OBS_VERSION_MAJOR)
 list(GET _obs_version_canonical 1 OBS_VERSION_MINOR)
 list(GET _obs_version_canonical 2 OBS_VERSION_PATCH)
-list(GET _obs_release_candidate 0 OBS_RELEASE_CANDIDATE_MAJOR)
-list(GET _obs_release_candidate 1 OBS_RELEASE_CANDIDATE_MINOR)
-list(GET _obs_release_candidate 2 OBS_RELEASE_CANDIDATE_PATCH)
-list(GET _obs_release_candidate 3 OBS_RELEASE_CANDIDATE)
-list(GET _obs_beta 0 OBS_BETA_MAJOR)
-list(GET _obs_beta 1 OBS_BETA_MINOR)
-list(GET _obs_beta 2 OBS_BETA_PATCH)
-list(GET _obs_beta 3 OBS_BETA)
+
+set(OBS_RELEASE_CANDIDATE ${_obs_release_candidate})
+set(OBS_BETA ${_obs_beta})
 
 string(REPLACE ";" "." OBS_VERSION_CANONICAL "${_obs_version_canonical}")
 string(REPLACE ";" "." OBS_VERSION "${_obs_version}")

@@ -192,7 +192,7 @@ int_fast32_t v4l2_get_input_caps(int_fast32_t dev, int input, uint32_t *caps)
 	return 0;
 }
 
-int_fast32_t v4l2_set_format(int_fast32_t dev, int *resolution,
+int_fast32_t v4l2_set_format(int_fast32_t dev, int64_t *resolution,
 			     int *pixelformat, int *bytesperline)
 {
 	bool set = false;
@@ -229,7 +229,7 @@ int_fast32_t v4l2_set_format(int_fast32_t dev, int *resolution,
 	return 0;
 }
 
-int_fast32_t v4l2_set_framerate(int_fast32_t dev, int *framerate)
+int_fast32_t v4l2_set_framerate(int_fast32_t dev, int64_t *framerate)
 {
 	bool set = false;
 	int num, denom;

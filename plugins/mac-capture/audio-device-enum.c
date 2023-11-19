@@ -44,7 +44,7 @@ static bool coreaudio_enum_device(enum_device_proc_t proc, void *param,
 
 	AudioObjectPropertyAddress addr = {kAudioDevicePropertyStreams,
 					   kAudioDevicePropertyScopeInput,
-					   kAudioObjectPropertyElementMaster};
+					   kAudioObjectPropertyElementMain};
 
 	/* check to see if it's a mac input device */
 	AudioObjectGetPropertyDataSize(id, &addr, 0, NULL, &size);
@@ -77,7 +77,7 @@ static void enum_devices(enum_device_proc_t proc, void *param)
 {
 	AudioObjectPropertyAddress addr = {kAudioHardwarePropertyDevices,
 					   kAudioObjectPropertyScopeGlobal,
-					   kAudioObjectPropertyElementMaster};
+					   kAudioObjectPropertyElementMain};
 
 	UInt32 size = 0;
 	UInt32 count;
@@ -142,7 +142,7 @@ bool coreaudio_get_device_id(CFStringRef uid, AudioDeviceID *id)
 	AudioObjectPropertyAddress propertyAddress = {
 		kAudioHardwarePropertyDeviceForUID,
 		kAudioObjectPropertyScopeGlobal,
-		kAudioObjectPropertyElementMaster};
+		kAudioObjectPropertyElementMain};
 
 	AudioValueTranslation translation = {&uid, sizeof(CFStringRef), id,
 					     sizeof(AudioDeviceID)};

@@ -540,6 +540,12 @@ Video, Audio, and Graphics
 
 ---------------------
 
+.. function:: void obs_reset_audio_monitoring(void)
+
+   Resets all audio monitoring devices.
+
+---------------------
+
 .. function:: void obs_enum_audio_monitoring_devices(obs_enum_audio_device_cb cb, void *data)
 
    Enumerates audio devices which can be used for audio monitoring.

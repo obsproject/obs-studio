@@ -1,4 +1,5 @@
 #include "mac-sck-common.h"
+#include "window-utils.h"
 
 static void destroy_screen_stream(struct screen_capture *sc)
 {
@@ -133,24 +134,26 @@ static bool init_screen_stream(struct screen_capture *sc)
         } break;
         case ScreenCaptureWindowStream: {
             SCWindow *target_window = nil;
-            if (sc->window != 0) {
+            if (sc->window != kCGNullWindowID) {
                 for (SCWindow *window in sc->shareable_content.windows) {
                     if (window.windowID == sc->window) {
                         target_window = window;
                         break;
                     }
                 }
-            } else {
-                target_window = [sc->shareable_content.windows objectAtIndex:0];
-                sc->window = target_window.windowID;
             }
-            content_filter = [[SCContentFilter alloc] initWithDesktopIndependentWindow:target_window];
+            if (target_window == nil) {
+                os_sem_post(sc->shareable_content_available);
+                sc->disp = NULL;
+                os_event_init(&sc->disp_finished, OS_EVENT_TYPE_MANUAL);
+                os_event_init(&sc->stream_start_completed, OS_EVENT_TYPE_MANUAL);
+                return true;
+            } else {
+                content_filter = [[SCContentFilter alloc] initWithDesktopIndependentWindow:target_window];
 
-            if (target_window) {
                 [sc->stream_properties setWidth:(size_t) target_window.frame.size.width];
                 [sc->stream_properties setHeight:(size_t) target_window.frame.size.height];
             }
-
         } break;
         case ScreenCaptureApplicationStream: {
             SCDisplay *target_display = get_target_display();
@@ -184,11 +187,9 @@ static bool init_screen_stream(struct screen_capture *sc)
     [sc->stream_properties setPixelFormat:l10r_type];
 
     if (@available(macOS 13.0, *)) {
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
         [sc->stream_properties setCapturesAudio:YES];
         [sc->stream_properties setExcludesCurrentProcessAudio:YES];
         [sc->stream_properties setChannelCount:2];
-#endif
     } else {
         if (sc->capture_type != ScreenCaptureWindowStream) {
             sc->disp = NULL;
@@ -215,7 +216,6 @@ static bool init_screen_stream(struct screen_capture *sc)
         return !did_add_output;
     }
 
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
     if (@available(macOS 13.0, *)) {
         did_add_output = [sc->disp addStreamOutput:sc->capture_delegate type:SCStreamOutputTypeAudio
                                 sampleHandlerQueue:nil
@@ -227,7 +227,6 @@ static bool init_screen_stream(struct screen_capture *sc)
             return !did_add_output;
         }
     }
-#endif
     os_event_init(&sc->disp_finished, OS_EVENT_TYPE_MANUAL);
     os_event_init(&sc->stream_start_completed, OS_EVENT_TYPE_MANUAL);
 
@@ -271,27 +270,7 @@ static void *sck_video_capture_create(obs_data_t *settings, obs_source_t *source
     if (!sc->effect)
         goto fail;
 
-    bool legacy_display_id = obs_data_has_user_value(settings, "display");
-    if (legacy_display_id) {
-        CGDirectDisplayID display_id = (CGDirectDisplayID) obs_data_get_int(settings, "display");
-        CFUUIDRef display_uuid = CGDisplayCreateUUIDFromDisplayID(display_id);
-        CFStringRef uuid_string = CFUUIDCreateString(kCFAllocatorDefault, display_uuid);
-        obs_data_set_string(settings, "display_uuid", CFStringGetCStringPtr(uuid_string, kCFStringEncodingUTF8));
-        obs_data_erase(settings, "display");
-        CFRelease(uuid_string);
-        CFRelease(display_uuid);
-    }
-
-    const char *display_uuid = obs_data_get_string(settings, "display_uuid");
-    if (display_uuid) {
-        CFStringRef uuid_string = CFStringCreateWithCString(kCFAllocatorDefault, display_uuid, kCFStringEncodingUTF8);
-        CFUUIDRef uuid_ref = CFUUIDCreateFromString(kCFAllocatorDefault, uuid_string);
-        sc->display = CGDisplayGetDisplayIDFromUUID(uuid_ref);
-        CFRelease(uuid_string);
-        CFRelease(uuid_ref);
-    } else {
-        sc->display = CGMainDisplayID();
-    }
+    sc->display = get_display_migrate_settings(settings);
 
     sc->application_id = [[NSString alloc] initWithUTF8String:obs_data_get_string(settings, "application")];
     pthread_mutex_init(&sc->mutex, NULL);
@@ -420,12 +399,7 @@ static void sck_video_capture_update(void *data, obs_data_t *settings)
 
     ScreenCaptureStreamType capture_type = (ScreenCaptureStreamType) obs_data_get_int(settings, "type");
 
-    CFStringRef uuid_string = CFStringCreateWithCString(
-        kCFAllocatorDefault, obs_data_get_string(settings, "display_uuid"), kCFStringEncodingUTF8);
-    CFUUIDRef display_uuid = CFUUIDCreateFromString(kCFAllocatorDefault, uuid_string);
-    CGDirectDisplayID display = CGDisplayGetDisplayIDFromUUID(display_uuid);
-    CFRelease(uuid_string);
-    CFRelease(display_uuid);
+    CGDirectDisplayID display = get_display_migrate_settings(settings);
 
     NSString *application_id = [[NSString alloc] initWithUTF8String:obs_data_get_string(settings, "application")];
     bool show_cursor = obs_data_get_bool(settings, "show_cursor");

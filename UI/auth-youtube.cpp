@@ -278,6 +278,11 @@ std::shared_ptr<Auth> YoutubeAuth::Login(QWidget *owner,
 	dlg.setText(text);
 	dlg.setTextFormat(Qt::RichText);
 	dlg.setStandardButtons(QMessageBox::StandardButton::Cancel);
+#if defined(__APPLE__) && QT_VERSION >= QT_VERSION_CHECK(6, 6, 0)
+	/* We can't show clickable links with the native NSAlert, so let's
+	 * force the old non-native dialog instead. */
+	dlg.setOption(QMessageBox::Option::DontUseNativeDialog);
+#endif
 
 	connect(&dlg, &QMessageBox::buttonClicked, &dlg,
 		[&](QAbstractButton *) {
@@ -311,7 +316,17 @@ std::shared_ptr<Auth> YoutubeAuth::Login(QWidget *owner,
 	QScopedPointer<QThread> thread(CreateQThread(open_external_browser));
 	thread->start();
 
+#if defined(__APPLE__) && QT_VERSION >= QT_VERSION_CHECK(6, 5, 0) && \
+	QT_VERSION < QT_VERSION_CHECK(6, 6, 0)
+	const bool nativeDialogs =
+		qApp->testAttribute(Qt::AA_DontUseNativeDialogs);
+	App()->setAttribute(Qt::AA_DontUseNativeDialogs, true);
 	dlg.exec();
+	App()->setAttribute(Qt::AA_DontUseNativeDialogs, nativeDialogs);
+#else
+	dlg.exec();
+#endif
+
 	if (dlg.result() == QMessageBox::Cancel ||
 	    dlg.result() == QDialog::Rejected)
 		return nullptr;

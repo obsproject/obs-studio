@@ -11,7 +11,7 @@
 #include <mutex>
 #include <thread>
 
-#include <rtc/rtc.h>
+#include <rtc/rtc.hpp>
 
 class WHIPOutput {
 public:
@@ -38,7 +38,9 @@ private:
 	void SendDelete();
 	void StopThread(bool signal);
 
-	void Send(void *data, uintptr_t size, uint64_t duration, int track);
+	void Send(void *data, uintptr_t size, uint64_t duration,
+		  std::shared_ptr<rtc::Track> track,
+		  std::shared_ptr<rtc::RtcpSrReporter> rtcp_sr_reporter);
 
 	obs_output_t *output;
 
@@ -52,9 +54,11 @@ private:
 	std::thread start_stop_thread;
 
 	uint32_t base_ssrc;
-	int peer_connection;
-	int audio_track;
-	int video_track;
+	std::shared_ptr<rtc::PeerConnection> peer_connection;
+	std::shared_ptr<rtc::Track> audio_track;
+	std::shared_ptr<rtc::Track> video_track;
+	std::shared_ptr<rtc::RtcpSrReporter> audio_sr_reporter;
+	std::shared_ptr<rtc::RtcpSrReporter> video_sr_reporter;
 
 	std::atomic<size_t> total_bytes_sent;
 	std::atomic<int> connect_time_ms;

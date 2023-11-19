@@ -39,7 +39,7 @@
 #endif
 
 #define PY_MAJOR_VERSION_MAX 3
-#define PY_MINOR_VERSION_MAX 11
+#define PY_MINOR_VERSION_MAX 12
 
 bool import_python(const char *python_path, python_version_t *python_version)
 {

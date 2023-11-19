@@ -3,6 +3,7 @@
 enum hdr_tonemap_transform {
 	TRANSFORM_SDR_REINHARD,
 	TRANSFORM_HDR_MAXRGB,
+	TRANSFORM_SDR_MAXRGB,
 };
 
 struct hdr_tonemap_filter_data {
@@ -10,13 +11,15 @@ struct hdr_tonemap_filter_data {
 
 	gs_effect_t *effect;
 	gs_eparam_t *param_multiplier;
-	gs_eparam_t *param_hdr_input_maximum_nits;
-	gs_eparam_t *param_hdr_output_maximum_nits;
+	gs_eparam_t *param_input_maximum_nits;
+	gs_eparam_t *param_output_maximum_nits;
 
 	enum hdr_tonemap_transform transform;
 	float sdr_white_level_nits_i;
 	float hdr_input_maximum_nits;
 	float hdr_output_maximum_nits;
+	float sdr_input_maximum_nits;
+	float sdr_output_maximum_nits;
 };
 
 static const char *hdr_tonemap_filter_get_name(void *unused)
@@ -46,10 +49,10 @@ static void *hdr_tonemap_filter_create(obs_data_t *settings,
 
 	filter->param_multiplier =
 		gs_effect_get_param_by_name(filter->effect, "multiplier");
-	filter->param_hdr_input_maximum_nits = gs_effect_get_param_by_name(
-		filter->effect, "hdr_input_maximum_nits");
-	filter->param_hdr_output_maximum_nits = gs_effect_get_param_by_name(
-		filter->effect, "hdr_output_maximum_nits");
+	filter->param_input_maximum_nits = gs_effect_get_param_by_name(
+		filter->effect, "input_maximum_nits");
+	filter->param_output_maximum_nits = gs_effect_get_param_by_name(
+		filter->effect, "output_maximum_nits");
 
 	obs_source_update(context, settings);
 	return filter;
@@ -77,6 +80,10 @@ static void hdr_tonemap_filter_update(void *data, obs_data_t *settings)
 		(float)obs_data_get_int(settings, "hdr_input_maximum_nits");
 	filter->hdr_output_maximum_nits =
 		(float)obs_data_get_int(settings, "hdr_output_maximum_nits");
+	filter->sdr_input_maximum_nits =
+		(float)obs_data_get_int(settings, "sdr_input_maximum_nits");
+	filter->sdr_output_maximum_nits =
+		(float)obs_data_get_int(settings, "sdr_output_maximum_nits");
 }
 
 static bool transform_changed(obs_properties_t *props, obs_property_t *p,
@@ -86,13 +93,22 @@ static bool transform_changed(obs_properties_t *props, obs_property_t *p,
 		obs_data_get_int(settings, "transform");
 
 	const bool reinhard = transform == TRANSFORM_SDR_REINHARD;
-	const bool maxrgb = transform == TRANSFORM_HDR_MAXRGB;
+	const bool maxrgb_hdr = transform == TRANSFORM_HDR_MAXRGB;
+	const bool maxrgb_sdr = transform == TRANSFORM_SDR_MAXRGB;
 	obs_property_set_visible(
 		obs_properties_get(props, "sdr_white_level_nits"), reinhard);
-	obs_property_set_visible(
-		obs_properties_get(props, "hdr_input_maximum_nits"), maxrgb);
-	obs_property_set_visible(
-		obs_properties_get(props, "hdr_output_maximum_nits"), maxrgb);
+	obs_property_set_visible(obs_properties_get(props,
+						    "hdr_input_maximum_nits"),
+				 maxrgb_hdr);
+	obs_property_set_visible(obs_properties_get(props,
+						    "hdr_output_maximum_nits"),
+				 maxrgb_hdr);
+	obs_property_set_visible(obs_properties_get(props,
+						    "sdr_input_maximum_nits"),
+				 maxrgb_sdr);
+	obs_property_set_visible(obs_properties_get(props,
+						    "sdr_output_maximum_nits"),
+				 maxrgb_sdr);
 
 	UNUSED_PARAMETER(p);
 	return true;
@@ -113,6 +129,8 @@ static obs_properties_t *hdr_tonemap_filter_properties(void *data)
 				  TRANSFORM_SDR_REINHARD);
 	obs_property_list_add_int(p, obs_module_text("HdrTonemap.HdrMaxrgb"),
 				  TRANSFORM_HDR_MAXRGB);
+	obs_property_list_add_int(p, obs_module_text("HdrTonemap.SdrMaxrgb"),
+				  TRANSFORM_SDR_MAXRGB);
 	obs_property_set_modified_callback(p, transform_changed);
 
 	p = obs_properties_add_int(props, "sdr_white_level_nits",
@@ -127,6 +145,14 @@ static obs_properties_t *hdr_tonemap_filter_properties(void *data)
 		props, "hdr_output_maximum_nits",
 		obs_module_text("HdrTonemap.HdrOutputMaximum"), 5, 10000, 1);
 	obs_property_int_set_suffix(p, " nits");
+	p = obs_properties_add_int(
+		props, "sdr_input_maximum_nits",
+		obs_module_text("HdrTonemap.SdrInputMaximum"), 5, 10000, 1);
+	obs_property_int_set_suffix(p, " nits");
+	p = obs_properties_add_int(
+		props, "sdr_output_maximum_nits",
+		obs_module_text("HdrTonemap.SdrOutputMaximum"), 5, 10000, 1);
+	obs_property_int_set_suffix(p, " nits");
 
 	UNUSED_PARAMETER(data);
 	return props;
@@ -138,6 +164,8 @@ static void hdr_tonemap_filter_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "sdr_white_level_nits", 300);
 	obs_data_set_default_int(settings, "hdr_input_maximum_nits", 4000);
 	obs_data_set_default_int(settings, "hdr_output_maximum_nits", 1000);
+	obs_data_set_default_int(settings, "sdr_input_maximum_nits", 1000);
+	obs_data_set_default_int(settings, "sdr_output_maximum_nits", 300);
 }
 
 static void hdr_tonemap_filter_render(void *data, gs_effect_t *effect)
@@ -173,19 +201,26 @@ static void hdr_tonemap_filter_render(void *data, gs_effect_t *effect)
 			gs_effect_set_float(filter->param_multiplier,
 					    multiplier);
 			gs_effect_set_float(
-				filter->param_hdr_input_maximum_nits,
-				filter->hdr_input_maximum_nits);
+				filter->param_input_maximum_nits,
+				(filter->transform == TRANSFORM_SDR_MAXRGB)
+					? filter->sdr_input_maximum_nits
+					: filter->hdr_input_maximum_nits);
 			gs_effect_set_float(
-				filter->param_hdr_output_maximum_nits,
-				filter->hdr_output_maximum_nits);
+				filter->param_output_maximum_nits,
+				(filter->transform == TRANSFORM_SDR_MAXRGB)
+					? filter->sdr_output_maximum_nits
+					: filter->hdr_output_maximum_nits);
 
 			gs_blend_state_push();
 			gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
 
 			const char *const tech_name =
-				(filter->transform == TRANSFORM_HDR_MAXRGB)
-					? "MaxRGB"
-					: "Reinhard";
+				(filter->transform == TRANSFORM_SDR_REINHARD)
+					? "Reinhard"
+					: ((filter->transform ==
+					    TRANSFORM_HDR_MAXRGB)
+						   ? "MaxRGB"
+						   : "MaxRGBSDR");
 			obs_source_process_filter_tech_end(filter->context,
 							   filter->effect, 0, 0,
 							   tech_name);
@@ -217,7 +252,8 @@ hdr_tonemap_filter_get_color_space(void *data, size_t count,
 	enum gs_color_space space = source_space;
 
 	if (source_space == GS_CS_709_EXTENDED || source_space == GS_CS_SRGB) {
-		if (filter->transform == TRANSFORM_SDR_REINHARD) {
+		if ((filter->transform == TRANSFORM_SDR_REINHARD) ||
+		    filter->transform == TRANSFORM_SDR_MAXRGB) {
 			space = GS_CS_SRGB;
 			for (size_t i = 0; i < count; ++i) {
 				if (preferred_spaces[i] != GS_CS_SRGB) {

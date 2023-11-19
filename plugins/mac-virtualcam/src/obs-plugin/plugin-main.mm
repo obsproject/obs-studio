@@ -68,15 +68,12 @@ struct virtualcam_data {
                   actionForReplacingExtension:(nonnull OSSystemExtensionProperties *)existing
                                 withExtension:(nonnull OSSystemExtensionProperties *)ext
 {
-    NSString *extVersion = [NSString stringWithFormat:@"%@.%@", [ext bundleShortVersion], [ext bundleVersion]];
-    NSString *existingVersion =
-        [NSString stringWithFormat:@"%@.%@", [existing bundleShortVersion], [existing bundleVersion]];
-
-    if ([extVersion compare:existingVersion options:NSNumericSearch] == NSOrderedDescending) {
-        return OSSystemExtensionReplacementActionReplace;
-    } else {
-        return OSSystemExtensionReplacementActionCancel;
-    }
+    NSString *infoString = [NSString
+        stringWithFormat:
+            @"mac-camera-extension: Replacement requested. Existing version: %@ (%@), new version: %@ (%@). Replacing...",
+            existing.bundleShortVersion, existing.bundleVersion, ext.bundleShortVersion, ext.bundleVersion];
+    blog(LOG_INFO, "%s", infoString.UTF8String);
+    return OSSystemExtensionReplacementActionReplace;
 }
 
 - (void)request:(nonnull OSSystemExtensionRequest *)request didFailWithError:(nonnull NSError *)error
@@ -85,10 +82,6 @@ struct virtualcam_data {
     int severity;
 
     switch (error.code) {
-        case OSSystemExtensionErrorRequestCanceled:
-            errorMessage = @"macOS Camera Extension installation request cancelled.";
-            severity = LOG_INFO;
-            break;
         case OSSystemExtensionErrorUnsupportedParentBundleLocation:
             self.lastErrorMessage =
                 [NSString stringWithUTF8String:obs_module_text("Error.SystemExtension.WrongLocation")];
@@ -103,13 +96,22 @@ struct virtualcam_data {
             break;
     }
 
-    blog(severity, "mac-camera-extension error: %s", errorMessage.UTF8String);
+    blog(severity, "mac-camera-extension: %s", errorMessage.UTF8String);
 }
 
 - (void)request:(nonnull OSSystemExtensionRequest *)request didFinishWithResult:(OSSystemExtensionRequestResult)result
 {
-    self.installed = YES;
-    blog(LOG_INFO, "macOS Camera Extension activated successfully.");
+    switch (result) {
+        case OSSystemExtensionRequestCompleted:
+            self.installed = YES;
+            blog(LOG_INFO, "macOS Camera Extension activated successfully.");
+            break;
+        case OSSystemExtensionRequestWillCompleteAfterReboot:
+            self.lastErrorMessage =
+                [NSString stringWithUTF8String:obs_module_text("Error.SystemExtension.CompleteAfterReboot")];
+            blog(LOG_INFO, "macOS Camera Extension will activate after reboot.");
+            break;
+    }
 }
 
 - (void)requestNeedsUserApproval:(nonnull OSSystemExtensionRequest *)request

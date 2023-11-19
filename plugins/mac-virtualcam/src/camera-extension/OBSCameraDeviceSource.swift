@@ -141,7 +141,7 @@ class OBSCameraDeviceSource: NSObject, CMIOExtensionDeviceSource {
 
         _timer!.schedule(
             deadline: .now(),
-            repeating: Double(1 / OBSCameraFrameRate),
+            repeating: 1.0 / Double(OBSCameraFrameRate),
             leeway: .seconds(0)
         )
 

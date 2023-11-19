@@ -725,10 +725,11 @@ Scene Item Group Functions
 
 ---------------------
 
-.. function:: obs_sceneitem_t *obs_sceneitem_get_group(obs_sceneitem_t *item)
+.. function:: obs_sceneitem_t *obs_sceneitem_get_group(obs_scene_t *scene, obs_sceneitem_t *item)
 
    Returns the parent group of a scene item.
 
+   :param scene: Scene to find the group within
    :param item: Scene item to get the group of
    :return:     The parent group of the scene item, or *NULL* if not in
                 a group
