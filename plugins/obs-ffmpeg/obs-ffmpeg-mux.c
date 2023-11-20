@@ -465,6 +465,7 @@ static inline bool ffmpeg_mux_start_internal(struct ffmpeg_muxer *stream,
 	/* write headers and start capture */
 	os_atomic_set_bool(&stream->active, true);
 	os_atomic_set_bool(&stream->capturing, true);
+	os_atomic_set_bool(&stream->stopping, false);
 	stream->total_bytes = 0;
 	obs_output_begin_data_capture(stream->output, 0);
 
