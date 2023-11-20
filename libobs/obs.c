@@ -2523,6 +2523,7 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	int m_type = (int)obs_source_get_monitoring_type(source);
 	int di_mode = (int)obs_source_get_deinterlace_mode(source);
 	int di_order = (int)obs_source_get_deinterlace_field_order(source);
+	DARRAY(obs_source_t *) filters_copy;
 
 	obs_source_save(source);
 	hotkeys = obs_hotkeys_save_source(source);
@@ -2563,19 +2564,30 @@ obs_data_t *obs_save_source(obs_source_t *source)
 		obs_transition_save(source, source_data);
 
 	pthread_mutex_lock(&source->filter_mutex);
+	da_init(filters_copy);
+	da_reserve(filters_copy, source->filters.num);
 
-	if (source->filters.num) {
-		for (size_t i = source->filters.num; i > 0; i--) {
-			obs_source_t *filter = source->filters.array[i - 1];
-			obs_data_t *filter_data = obs_save_source(filter);
-			obs_data_array_push_back(filters, filter_data);
-			obs_data_release(filter_data);
-		}
-
-		obs_data_set_array(source_data, "filters", filters);
+	for (size_t i = 0; i < source->filters.num; i++) {
+		obs_source_t *filter =
+			obs_source_get_ref(source->filters.array[i]);
+		if (filter)
+			da_push_back(filters_copy, &filter);
 	}
 
 	pthread_mutex_unlock(&source->filter_mutex);
+
+	if (filters_copy.num) {
+		for (size_t i = filters_copy.num; i > 0; i--) {
+			obs_source_t *filter = filters_copy.array[i - 1];
+			obs_data_t *filter_data = obs_save_source(filter);
+			obs_data_array_push_back(filters, filter_data);
+			obs_data_release(filter_data);
+			obs_source_release(filter);
+		}
+
+		obs_data_set_array(source_data, "filters", filters);
+		da_free(filters_copy);
+	}
 
 	obs_data_release(settings);
 	obs_data_array_release(filters);
