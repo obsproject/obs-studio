@@ -925,10 +925,9 @@ static void scene_video_tick(void *data, float seconds)
 }
 
 /* assumes video lock */
-static void
-update_transforms_and_prune_sources(obs_scene_t *scene,
-				    obs_scene_item_ptr_array_t *remove_items,
-				    obs_sceneitem_t *group_sceneitem)
+static void update_transforms_and_prune_sources(
+	obs_scene_t *scene, obs_scene_item_ptr_array_t *remove_items,
+	obs_sceneitem_t *group_sceneitem, bool scene_size_changed)
 {
 	struct obs_scene_item *item = scene->first_item;
 	bool rebuild_group =
@@ -951,12 +950,13 @@ update_transforms_and_prune_sources(obs_scene_t *scene,
 
 			video_lock(group_scene);
 			update_transforms_and_prune_sources(group_scene,
-							    remove_items, item);
+							    remove_items, item,
+							    scene_size_changed);
 			video_unlock(group_scene);
 		}
 
 		if (os_atomic_load_bool(&item->update_transform) ||
-		    source_size_changed(item)) {
+		    source_size_changed(item) || scene_size_changed) {
 
 			update_item_transform(item, true);
 			rebuild_group = true;
@@ -967,6 +967,19 @@ update_transforms_and_prune_sources(obs_scene_t *scene,
 
 	if (rebuild_group && group_sceneitem)
 		resize_group(group_sceneitem);
+}
+
+static inline bool scene_size_changed(obs_scene_t *scene)
+{
+	uint32_t width = scene_getwidth(scene);
+	uint32_t height = scene_getheight(scene);
+
+	if (width == scene->last_width && height == scene->last_height)
+		return false;
+
+	scene->last_width = width;
+	scene->last_height = height;
+	return true;
 }
 
 static void scene_video_render(void *data, gs_effect_t *effect)
@@ -980,7 +993,9 @@ static void scene_video_render(void *data, gs_effect_t *effect)
 	video_lock(scene);
 
 	if (!scene->is_group) {
-		update_transforms_and_prune_sources(scene, &remove_items, NULL);
+		bool size_changed = scene_size_changed(scene);
+		update_transforms_and_prune_sources(scene, &remove_items, NULL,
+						    size_changed);
 	}
 
 	gs_blend_state_push();
@@ -4238,7 +4253,7 @@ void obs_scene_prune_sources(obs_scene_t *scene)
 	da_init(remove_items);
 
 	video_lock(scene);
-	update_transforms_and_prune_sources(scene, &remove_items, NULL);
+	update_transforms_and_prune_sources(scene, &remove_items, NULL, false);
 	video_unlock(scene);
 
 	for (size_t i = 0; i < remove_items.num; i++)
