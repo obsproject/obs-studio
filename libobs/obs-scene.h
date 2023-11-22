@@ -110,6 +110,9 @@ struct obs_scene {
 	uint32_t cx;
 	uint32_t cy;
 
+	uint32_t last_width;
+	uint32_t last_height;
+
 	int64_t id_counter;
 
 	pthread_mutex_t video_mutex;
