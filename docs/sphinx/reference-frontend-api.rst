@@ -205,7 +205,7 @@ Structures/Enumerations
 
    obs_frontend_get_scenes(&scenes);
 
-   for (size_t i = 0; i < scenes.num; i++) {
+   for (size_t i = 0; i < scenes.sources.num; i++) {
            obs_source_t *source = scenes.sources.array[i];
 
            [...]
