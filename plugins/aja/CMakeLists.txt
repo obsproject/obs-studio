@@ -58,9 +58,9 @@ elseif(OS_MACOS)
   find_library(APPKIT AppKit)
 
   target_link_libraries(aja PRIVATE ${IOKIT} ${COREFOUNDATION} ${APPKIT})
-  target_compile_options(aja PRIVATE -Wno-error=deprecated-declarations -Wno-shorten-64-to-32)
+  target_compile_options(aja PRIVATE -Wno-deprecated-declarations -Wno-shorten-64-to-32)
 elseif(OS_LINUX OR OS_FREEBSD)
-  target_compile_options(aja PRIVATE -Wno-error=deprecated-declarations)
+  target_compile_options(aja PRIVATE -Wno-deprecated-declarations)
 endif()
 
 set_target_properties_obs(aja PROPERTIES FOLDER plugins PREFIX "")
