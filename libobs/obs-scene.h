@@ -52,6 +52,7 @@ struct obs_scene_item {
 
 	struct vec2 pos;
 	struct vec2 scale;
+	struct vec2 scale_ref;
 	float rot;
 	uint32_t align;
 
