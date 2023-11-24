@@ -2804,6 +2804,14 @@ void obs_sceneitem_set_pos(obs_sceneitem_t *item, const struct vec2 *pos)
 	}
 }
 
+void obs_sceneitem_set_pos2(obs_sceneitem_t *item, const struct vec2 *pos)
+{
+	if (item) {
+		vec2_copy(&item->pos, pos);
+		do_update_transform(item);
+	}
+}
+
 void obs_sceneitem_set_rot(obs_sceneitem_t *item, float rot)
 {
 	if (item) {
@@ -2984,10 +2992,24 @@ void obs_sceneitem_set_bounds(obs_sceneitem_t *item, const struct vec2 *bounds)
 	}
 }
 
+void obs_sceneitem_set_bounds2(obs_sceneitem_t *item, const struct vec2 *bounds)
+{
+	if (item) {
+		vec2_copy(&item->bounds, bounds);
+		do_update_transform(item);
+	}
+}
+
 void obs_sceneitem_get_pos(const obs_sceneitem_t *item, struct vec2 *pos)
 {
 	if (item)
 		pos_to_absolute(pos, &item->pos, item);
+}
+
+void obs_sceneitem_get_pos2(const obs_sceneitem_t *item, struct vec2 *pos)
+{
+	if (item)
+		vec2_copy(pos, &item->pos);
 }
 
 float obs_sceneitem_get_rot(const obs_sceneitem_t *item)
@@ -3027,6 +3049,12 @@ void obs_sceneitem_get_bounds(const obs_sceneitem_t *item, struct vec2 *bounds)
 		size_to_absolute(bounds, &item->bounds, item);
 }
 
+void obs_sceneitem_get_bounds2(const obs_sceneitem_t *item, struct vec2 *bounds)
+{
+	if (item)
+		vec2_copy(bounds, &item->bounds);
+}
+
 void obs_sceneitem_get_info(const obs_sceneitem_t *item,
 			    struct obs_transform_info *info)
 {
@@ -3056,6 +3084,37 @@ void obs_sceneitem_set_info(obs_sceneitem_t *item,
 		item->bounds_align = info->bounds_alignment;
 		size_from_absolute(&item->bounds, &info->bounds, item);
 		item->crop_to_bounds = info->crop_to_bounds;
+		do_update_transform(item);
+	}
+}
+
+void obs_sceneitem_get_info2(const obs_sceneitem_t *item,
+			     struct obs_transform_info *info)
+{
+	if (item && info) {
+		info->pos = item->pos;
+		info->rot = item->rot;
+		item_canvas_scale(&info->scale, item);
+		info->alignment = item->align;
+		info->bounds_type = item->bounds_type;
+		info->bounds_alignment = item->bounds_align;
+		info->bounds = item->bounds;
+	}
+}
+
+void obs_sceneitem_set_info2(obs_sceneitem_t *item,
+			     const struct obs_transform_info *info)
+{
+	if (item && info) {
+		item->pos = info->pos;
+		item->rot = info->rot;
+		if (isfinite(info->scale.x) && isfinite(info->scale.y)) {
+			item_relative_scale(&item->scale, &info->scale, item);
+		}
+		item->align = info->alignment;
+		item->bounds_type = info->bounds_type;
+		item->bounds_align = info->bounds_alignment;
+		item->bounds = info->bounds;
 		do_update_transform(item);
 	}
 }
