@@ -134,6 +134,9 @@ private:
 	QSocketNotifier *snInt = nullptr;
 #endif
 
+private slots:
+	void AppCleanup();
+
 public:
 	OBSApp(int &argc, char **argv, profiler_name_store_t *store);
 	~OBSApp();

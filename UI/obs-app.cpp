@@ -1437,6 +1437,9 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 #endif
 
 	setDesktopFileName("com.obsproject.Studio");
+
+	connect(this, &QCoreApplication::aboutToQuit, this,
+		&OBSApp::AppCleanup);
 }
 
 OBSApp::~OBSApp()
@@ -3270,6 +3273,11 @@ void OBSApp::ProcessSigInt(void)
 #endif
 }
 
+void OBSApp::AppCleanup()
+{
+	delete_safe_mode_sentinel();
+}
+
 int main(int argc, char *argv[])
 {
 #ifndef _WIN32
@@ -3476,7 +3484,6 @@ int main(int argc, char *argv[])
 	log_blocked_dlls();
 #endif
 
-	delete_safe_mode_sentinel();
 	blog(LOG_INFO, "Number of memory leaks: %ld", bnum_allocs());
 	base_set_log_handler(nullptr, nullptr);
 
