@@ -2586,8 +2586,9 @@ obs_data_t *obs_save_source(obs_source_t *source)
 		}
 
 		obs_data_set_array(source_data, "filters", filters);
-		da_free(filters_copy);
 	}
+
+	da_free(filters_copy);
 
 	obs_data_release(settings);
 	obs_data_array_release(filters);
