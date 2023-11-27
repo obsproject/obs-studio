@@ -1428,6 +1428,9 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 	snInt = new QSocketNotifier(sigintFd[1], QSocketNotifier::Read, this);
 	connect(snInt, &QSocketNotifier::activated, this,
 		&OBSApp::ProcessSigInt);
+#else
+	connect(qApp, &QGuiApplication::commitDataRequest, this,
+		&OBSApp::commitData);
 #endif
 
 	sleepInhibitor = os_inhibit_sleep_create("OBS Video/audio");
@@ -3269,6 +3272,16 @@ void OBSApp::ProcessSigInt(void)
 		main->close();
 #endif
 }
+
+#ifdef _WIN32
+void OBSApp::commitData(QSessionManager &manager)
+{
+	if (auto main = App()->GetMainWindow()) {
+		QMetaObject::invokeMethod(main, "close", Qt::QueuedConnection);
+		manager.cancel();
+	}
+}
+#endif
 
 int main(int argc, char *argv[])
 {
