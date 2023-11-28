@@ -129,6 +129,44 @@ static inline void unmap_last_surface(struct obs_core_video_mix *video)
 	}
 }
 
+static inline bool can_reuse_mix_texture(const struct obs_core_video_mix *mix,
+					 size_t *idx)
+{
+	for (size_t i = 0, num = obs->video.mixes.num; i < num; i++) {
+		const struct obs_core_video_mix *other =
+			obs->video.mixes.array[i];
+		if (other == mix)
+			break;
+		if (other->view != mix->view)
+			continue;
+		if (other->render_space != mix->render_space)
+			continue;
+		if (other->ovi.base_width != mix->ovi.base_width ||
+		    other->ovi.base_height != mix->ovi.base_height)
+			continue;
+		if (!other->texture_rendered)
+			continue;
+
+		*idx = i;
+		return true;
+	}
+
+	return false;
+}
+
+static inline void draw_mix_texture(const size_t mix_idx)
+{
+	gs_texture_t *tex = obs->video.mixes.array[mix_idx]->render_texture;
+	gs_effect_t *effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
+	gs_eparam_t *param = gs_effect_get_param_by_name(effect, "image");
+	gs_effect_set_texture_srgb(param, tex);
+
+	gs_enable_framebuffer_srgb(true);
+	while (gs_effect_loop(effect, "Draw"))
+		gs_draw_sprite(tex, 0, 0, 0);
+	gs_enable_framebuffer_srgb(false);
+}
+
 static const char *render_main_texture_name = "render_main_texture";
 static inline void render_main_texture(struct obs_core_video_mix *video)
 {
@@ -158,7 +196,12 @@ static inline void render_main_texture(struct obs_core_video_mix *video)
 
 	pthread_mutex_unlock(&obs->data.draw_callbacks_mutex);
 
-	obs_view_render(video->view);
+	/* In some cases we can reuse a previous mix's texture and save re-rendering everything */
+	size_t reuse_idx;
+	if (can_reuse_mix_texture(video, &reuse_idx))
+		draw_mix_texture(reuse_idx);
+	else
+		obs_view_render(video->view);
 
 	video->texture_rendered = true;
 
