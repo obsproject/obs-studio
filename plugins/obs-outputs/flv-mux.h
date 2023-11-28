@@ -22,6 +22,7 @@
 #define MILLISECOND_DEN 1000
 
 enum video_id_t {
+	CODEC_NONE = 0, // not valid in rtmp
 	CODEC_H264 = 1, // legacy & Y2023 spec
 	CODEC_AV1,      // Y2023 spec
 	CODEC_HEVC,
