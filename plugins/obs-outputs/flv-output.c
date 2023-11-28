@@ -271,6 +271,12 @@ static bool write_video_header(struct flv_output *stream, size_t idx)
 		return false;
 
 	switch (stream->video_codec[idx]) {
+	case CODEC_NONE:
+		do_log(LOG_ERROR,
+		       "Codec not initialized for track %zu while sending header",
+		       idx);
+		return false;
+
 	case CODEC_H264:
 		packet.size = obs_parse_avc_header(&packet.data, header, size);
 		// Always send H.264 on track 0 as old style for compatibility.
@@ -541,6 +547,11 @@ static void flv_output_data(void *data, struct encoder_packet *packet)
 		}
 
 		switch (stream->video_codec[packet->track_idx]) {
+		case CODEC_NONE:
+			do_log(LOG_ERROR, "Codec not initialized for track %zu",
+			       packet->track_idx);
+			goto unlock;
+
 		case CODEC_H264:
 			obs_parse_avc_packet(&parsed_packet, packet);
 			break;

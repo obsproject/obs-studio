@@ -66,6 +66,10 @@ enum datatype_t {
 static void s_w4cc(struct serializer *s, enum video_id_t id)
 {
 	switch (id) {
+	case CODEC_NONE:
+		assert(0 && "Tried to serialize CODEC_NONE");
+		break;
+
 	case CODEC_AV1:
 		s_w8(s, 'a');
 		s_w8(s, 'v');
