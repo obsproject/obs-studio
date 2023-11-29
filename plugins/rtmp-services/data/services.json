@@ -2700,6 +2700,19 @@
                 "max audio bitrate": 320,
                 "x264opts": "scenecut=0"
             }
+        },
+        {
+            "name": "FlexTV",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmps://66368cdf63a9.global-contribute.live-video.net:443/app/"
+                }
+            ],
+            "recommended": {
+                "max video bitrate": 8000,
+                "max audio bitrate": 320
+            }
         }
     ]
 }
