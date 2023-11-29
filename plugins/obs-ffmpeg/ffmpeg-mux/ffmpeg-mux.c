@@ -498,9 +498,17 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 			av_content_light_metadata_alloc(&content_size);
 		content->MaxCLL = max_luminance;
 		content->MaxFALL = max_luminance;
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 31, 102)
 		av_stream_add_side_data(ffm->video_stream,
 					AV_PKT_DATA_CONTENT_LIGHT_LEVEL,
 					(uint8_t *)content, content_size);
+#else
+		av_packet_side_data_add(
+			&ffm->video_stream->codecpar->coded_side_data,
+			&ffm->video_stream->codecpar->nb_coded_side_data,
+			AV_PKT_DATA_CONTENT_LIGHT_LEVEL, (uint8_t *)content,
+			content_size, 0);
+#endif
 
 		AVMasteringDisplayMetadata *const mastering =
 			av_mastering_display_metadata_alloc();
@@ -516,10 +524,18 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 		mastering->max_luminance = av_make_q(max_luminance, 1);
 		mastering->has_primaries = 1;
 		mastering->has_luminance = 1;
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 31, 102)
 		av_stream_add_side_data(ffm->video_stream,
 					AV_PKT_DATA_MASTERING_DISPLAY_METADATA,
 					(uint8_t *)mastering,
 					sizeof(*mastering));
+#else
+		av_packet_side_data_add(
+			&ffm->video_stream->codecpar->coded_side_data,
+			&ffm->video_stream->codecpar->nb_coded_side_data,
+			AV_PKT_DATA_MASTERING_DISPLAY_METADATA,
+			(uint8_t *)mastering, sizeof(*mastering), 0);
+#endif
 	}
 
 	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
