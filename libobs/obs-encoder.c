@@ -198,7 +198,7 @@ static inline bool gpu_encode_available(const struct obs_encoder *encoder)
  */
 static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
 {
-	struct obs_core_video_mix *mix = NULL;
+	struct obs_core_video_mix *mix, *current_mix;
 	bool create_mix = true;
 	struct obs_video_info ovi;
 	const struct video_output_info *info;
@@ -214,12 +214,16 @@ static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
 	if (!encoder->scaled_height && !encoder->scaled_width)
 		return;
 
+	current_mix = get_mix_for_video(encoder->media);
+	if (!current_mix)
+		return;
+
 	pthread_mutex_lock(&obs->video.mixes_mutex);
 	for (size_t i = 0; i < obs->video.mixes.num; i++) {
 		struct obs_core_video_mix *current = obs->video.mixes.array[i];
 		const struct video_output_info *voi =
 			video_output_get_info(current->video);
-		if (current->view != &obs->data.main_view)
+		if (current_mix->view != current->view)
 			continue;
 
 		if (voi->width != encoder->scaled_width ||
@@ -237,16 +241,12 @@ static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
 		break;
 	}
 
-	if (!obs->video.main_mix) {
-		create_mix = false;
-	} else {
-		ovi = obs->video.main_mix->ovi;
-	}
-
 	pthread_mutex_unlock(&obs->video.mixes_mutex);
 
 	if (!create_mix)
 		return;
+
+	ovi = current_mix->ovi;
 
 	ovi.output_format = info->format;
 	ovi.colorspace = info->colorspace;
@@ -264,7 +264,7 @@ static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
 
 	mix->encoder_only_mix = true;
 	mix->encoder_refs = 1;
-	mix->view = &obs->data.main_view;
+	mix->view = current_mix->view;
 
 	pthread_mutex_lock(&obs->video.mixes_mutex);
 
