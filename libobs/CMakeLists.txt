@@ -114,6 +114,7 @@ target_sources(
           util/crc32.h
           util/curl/curl-helper.h
           util/darray.h
+          util/deque.h
           util/dstr.c
           util/dstr.h
           util/file-serializer.c
@@ -343,6 +344,7 @@ set(public_headers
     util/config-file.h
     util/crc32.h
     util/darray.h
+    util/deque.h
     util/dstr.h
     util/dstr.hpp
     util/file-serializer.h
