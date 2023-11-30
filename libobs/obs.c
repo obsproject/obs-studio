@@ -853,8 +853,8 @@ void obs_free_video_mix(struct obs_core_video_mix *video)
 
 		obs_free_render_textures(video);
 
-		circlebuf_free(&video->vframe_info_buffer);
-		circlebuf_free(&video->vframe_info_buffer_gpu);
+		deque_free(&video->vframe_info_buffer);
+		deque_free(&video->vframe_info_buffer_gpu);
 
 		video->texture_rendered = false;
 		memset(video->textures_copied, 0,
@@ -892,7 +892,7 @@ static void obs_free_video(void)
 
 	pthread_mutex_destroy(&obs->video.task_mutex);
 	pthread_mutex_init_value(&obs->video.task_mutex);
-	circlebuf_free(&obs->video.tasks);
+	deque_free(&obs->video.tasks);
 }
 
 static void obs_free_graphics(void)
@@ -940,7 +940,7 @@ static bool obs_init_audio(struct audio_output_info *ai)
 		return false;
 
 	struct obs_task_info audio_init = {.task = set_audio_thread};
-	circlebuf_push_back(&audio->tasks, &audio_init, sizeof(audio_init));
+	deque_push_back(&audio->tasks, &audio_init, sizeof(audio_init));
 
 	audio->monitoring_device_name = bstrdup("Default");
 	audio->monitoring_device_id = bstrdup("default");
@@ -972,14 +972,14 @@ static void obs_free_audio(void)
 	if (audio->audio)
 		audio_output_close(audio->audio);
 
-	circlebuf_free(&audio->buffered_timestamps);
+	deque_free(&audio->buffered_timestamps);
 	da_free(audio->render_order);
 	da_free(audio->root_nodes);
 
 	da_free(audio->monitors);
 	bfree(audio->monitoring_device_name);
 	bfree(audio->monitoring_device_id);
-	circlebuf_free(&audio->tasks);
+	deque_free(&audio->tasks);
 	pthread_mutex_destroy(&audio->task_mutex);
 	pthread_mutex_destroy(&audio->monitoring_mutex);
 
@@ -3353,7 +3353,7 @@ void obs_queue_task(enum obs_task_type type, obs_task_t task, void *param,
 			struct obs_task_info info = {task, param};
 
 			pthread_mutex_lock(&video->task_mutex);
-			circlebuf_push_back(&video->tasks, &info, sizeof(info));
+			deque_push_back(&video->tasks, &info, sizeof(info));
 			pthread_mutex_unlock(&video->task_mutex);
 
 		} else if (type == OBS_TASK_AUDIO) {
@@ -3361,7 +3361,7 @@ void obs_queue_task(enum obs_task_type type, obs_task_t task, void *param,
 			struct obs_task_info info = {task, param};
 
 			pthread_mutex_lock(&audio->task_mutex);
-			circlebuf_push_back(&audio->tasks, &info, sizeof(info));
+			deque_push_back(&audio->tasks, &info, sizeof(info));
 			pthread_mutex_unlock(&audio->task_mutex);
 
 		} else if (type == OBS_TASK_DESTROY) {
