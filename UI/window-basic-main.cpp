@@ -1211,6 +1211,17 @@ retryScene:
 		goto retryScene;
 	}
 
+	if (!curScene) {
+		auto find_scene_cb = [](void *source_ptr, obs_source_t *scene) {
+			OBSSourceAutoRelease &source =
+				reinterpret_cast<OBSSourceAutoRelease &>(
+					source_ptr);
+			source = obs_source_get_ref(scene);
+			return false;
+		};
+		obs_enum_scenes(find_scene_cb, &curScene);
+	}
+
 	SetCurrentScene(curScene.Get(), true);
 
 	if (!curProgramScene)
