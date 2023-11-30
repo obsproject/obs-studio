@@ -28,7 +28,7 @@
 
 #include <util/threading.h>
 #include <util/platform.h>
-#include <util/circlebuf.h>
+#include <util/deque.h>
 #include <util/dstr.h>
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
@@ -132,7 +132,7 @@ struct io_buffer {
 	pthread_t io_thread;
 	pthread_mutex_t data_mutex;
 	FILE *output_file;
-	struct circlebuf data;
+	struct deque data;
 	uint64_t next_pos;
 };
 
@@ -207,7 +207,7 @@ static void ffmpeg_mux_free(struct ffmpeg_mux *ffm)
 		av_write_trailer(ffm->output);
 	}
 
-	// If we're writing to a file with the circlebuf, shut it
+	// If we're writing to a file with the deque, shut it
 	// down gracefully
 	if (ffm->io.active) {
 		os_atomic_set_bool(&ffm->io.shutdown_requested, true);
@@ -224,7 +224,7 @@ static void ffmpeg_mux_free(struct ffmpeg_mux *ffm)
 
 		pthread_mutex_destroy(&ffm->io.data_mutex);
 
-		circlebuf_free(&ffm->io.data);
+		deque_free(&ffm->io.data);
 	}
 
 	free_avformat(ffm);
@@ -750,7 +750,7 @@ static void *ffmpeg_mux_io_thread(void *data)
 
 			pthread_mutex_lock(&ffm->io.data_mutex);
 
-			// Fetch as many writes as possible from the circlebuf
+			// Fetch as many writes as possible from the deque
 			// and fill up our local chunk. This may involve seeking
 			// if ffmpeg needs to, so take care of that as well.
 			for (;;) {
@@ -763,8 +763,8 @@ static void *ffmpeg_mux_io_thread(void *data)
 
 				// Get seek offset and data size
 				struct io_header header;
-				circlebuf_peek_front(&ffm->io.data, &header,
-						     sizeof(header));
+				deque_peek_front(&ffm->io.data, &header,
+						 sizeof(header));
 
 				// Do we need to seek?
 				if (header.seek_offset !=
@@ -796,13 +796,13 @@ static void *ffmpeg_mux_io_thread(void *data)
 				}
 
 				// Remove header that we already read
-				circlebuf_pop_front(&ffm->io.data, NULL,
-						    sizeof(header));
+				deque_pop_front(&ffm->io.data, NULL,
+						sizeof(header));
 
 				// Copy from the buffer to our local chunk
-				circlebuf_pop_front(&ffm->io.data,
-						    chunk + chunk_used,
-						    header.data_length);
+				deque_pop_front(&ffm->io.data,
+						chunk + chunk_used,
+						header.data_length);
 
 				// Update offsets
 				chunk_used += header.data_length;
@@ -897,7 +897,7 @@ static int ffmpeg_mux_write_av_buffer(void *opaque, uint8_t *buf, int buf_size)
 	for (;;) {
 		pthread_mutex_lock(&ffm->io.data_mutex);
 
-		// Avoid unbounded growth of the circlebuf, cap to 256 MB
+		// Avoid unbounded growth of the deque, cap to 256 MB
 		if (ffm->io.data.capacity >= 256 * 1048576 &&
 		    ffm->io.data.capacity - ffm->io.data.size <
 			    buf_size + sizeof(struct io_header)) {
@@ -916,8 +916,8 @@ static int ffmpeg_mux_write_av_buffer(void *opaque, uint8_t *buf, int buf_size)
 	header.seek_offset = ffm->io.next_pos;
 
 	// Copy the data into the buffer
-	circlebuf_push_back(&ffm->io.data, &header, sizeof(header));
-	circlebuf_push_back(&ffm->io.data, buf, buf_size);
+	deque_push_back(&ffm->io.data, &header, sizeof(header));
+	deque_push_back(&ffm->io.data, buf, buf_size);
 
 	// Advance the next write position
 	ffm->io.next_pos += buf_size;
@@ -941,7 +941,7 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 
 	if ((format->flags & AVFMT_NOFILE) == 0) {
 		if (!ffmpeg_mux_is_network(ffm)) {
-			// If not outputting to a network, write to a circlebuf
+			// If not outputting to a network, write to a deque
 			// instead of relying on ffmpeg disk output. This hopefully
 			// works around too small buffers somewhere causing output
 			// stalls when recording.
@@ -958,7 +958,7 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 			// Start at 1MB, this can grow up to 256 MB depending
 			// how fast data is going in and out (limited in
 			// ffmpeg_mux_write_av_buffer)
-			circlebuf_reserve(&ffm->io.data, 1048576);
+			deque_reserve(&ffm->io.data, 1048576);
 
 			pthread_mutex_init(&ffm->io.data_mutex, NULL);
 

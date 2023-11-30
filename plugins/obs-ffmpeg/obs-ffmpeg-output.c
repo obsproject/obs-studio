@@ -16,7 +16,7 @@
 ******************************************************************************/
 
 #include <obs-module.h>
-#include <util/circlebuf.h>
+#include <util/deque.h>
 #include <util/threading.h>
 #include <util/dstr.h>
 #include <util/darray.h>
@@ -515,7 +515,7 @@ static void close_audio(struct ffmpeg_data *data)
 {
 	for (int idx = 0; idx < data->num_audio_streams; idx++) {
 		for (size_t i = 0; i < MAX_AV_PLANES; i++)
-			circlebuf_free(&data->excess_frames[idx][i]);
+			deque_free(&data->excess_frames[idx][i]);
 
 		if (data->samples[idx][0])
 			av_freep(&data->samples[idx][0]);
@@ -961,15 +961,14 @@ static void receive_audio(void *param, size_t mix_idx, struct audio_data *frame)
 	frame_size_bytes = (size_t)data->frame_size * data->audio_size;
 
 	for (size_t i = 0; i < data->audio_planes; i++)
-		circlebuf_push_back(&data->excess_frames[track_order][i],
-				    in.data[i], in.frames * data->audio_size);
+		deque_push_back(&data->excess_frames[track_order][i],
+				in.data[i], in.frames * data->audio_size);
 
 	while (data->excess_frames[track_order][0].size >= frame_size_bytes) {
 		for (size_t i = 0; i < data->audio_planes; i++)
-			circlebuf_pop_front(
-				&data->excess_frames[track_order][i],
-				data->samples[track_order][i],
-				frame_size_bytes);
+			deque_pop_front(&data->excess_frames[track_order][i],
+					data->samples[track_order][i],
+					frame_size_bytes);
 
 		encode_audio(output, track_order, context, data->audio_size);
 	}
