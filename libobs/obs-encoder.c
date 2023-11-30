@@ -1398,7 +1398,8 @@ static void receive_video(void *param, struct video_data *frame)
 	enc_frame.pts = encoder->cur_pts;
 
 	if (do_encode(encoder, &enc_frame))
-		encoder->cur_pts += encoder->timebase_num;
+		encoder->cur_pts +=
+			encoder->timebase_num * encoder->frame_rate_divisor;
 
 wait_for_audio:
 	profile_end(receive_video_name);
