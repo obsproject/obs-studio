@@ -16,7 +16,7 @@
 ******************************************************************************/
 
 #include <util/base.h>
-#include <util/circlebuf.h>
+#include <util/deque.h>
 #include <util/darray.h>
 #include <util/dstr.h>
 #include <obs-module.h>

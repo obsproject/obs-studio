@@ -1,5 +1,5 @@
 #include "obs-nvenc.h"
-#include <util/circlebuf.h>
+#include <util/deque.h>
 #include <util/darray.h>
 #include <util/dstr.h>
 #include <obs-avc.h>
@@ -109,7 +109,7 @@ struct nvenc_data {
 	DARRAY(struct nv_bitstream) bitstreams;
 	DARRAY(struct nv_texture) textures;
 	DARRAY(struct handle_tex) input_textures;
-	struct circlebuf dts_list;
+	struct deque dts_list;
 
 	DARRAY(uint8_t) packet_data;
 	int64_t packet_pts;
@@ -1253,7 +1253,7 @@ static void nvenc_destroy(void *data)
 
 	bfree(enc->header);
 	bfree(enc->sei);
-	circlebuf_free(&enc->dts_list);
+	deque_free(&enc->dts_list);
 	da_free(enc->textures);
 	da_free(enc->bitstreams);
 	da_free(enc->input_textures);
@@ -1509,7 +1509,7 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 		return false;
 	}
 
-	circlebuf_push_back(&enc->dts_list, &pts, sizeof(pts));
+	deque_push_back(&enc->dts_list, &pts, sizeof(pts));
 
 	/* ------------------------------------ */
 	/* copy to output tex                   */
@@ -1579,7 +1579,7 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 
 	if (enc->packet_data.num) {
 		int64_t dts;
-		circlebuf_pop_front(&enc->dts_list, &dts, sizeof(dts));
+		deque_pop_front(&enc->dts_list, &dts, sizeof(dts));
 
 		/* subtract bframe delay from dts */
 		dts -= (int64_t)enc->bframes * packet->timebase_num;
