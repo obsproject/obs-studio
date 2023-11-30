@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <inttypes.h>
 
-#include <util/circlebuf.h>
+#include <util/deque.h>
 #include <util/threading.h>
 #include <obs-module.h>
 
@@ -88,9 +88,9 @@ struct noise_suppress_data {
 	size_t frames;
 	size_t channels;
 
-	struct circlebuf info_buffer;
-	struct circlebuf input_buffers[MAX_PREPROC_CHANNELS];
-	struct circlebuf output_buffers[MAX_PREPROC_CHANNELS];
+	struct deque info_buffer;
+	struct deque input_buffers[MAX_PREPROC_CHANNELS];
+	struct deque output_buffers[MAX_PREPROC_CHANNELS];
 
 	bool use_rnnoise;
 	bool use_nvafx;
@@ -197,8 +197,8 @@ static void noise_suppress_destroy(void *data)
 			}
 		}
 #endif
-		circlebuf_free(&ng->input_buffers[i]);
-		circlebuf_free(&ng->output_buffers[i]);
+		deque_free(&ng->input_buffers[i]);
+		deque_free(&ng->output_buffers[i]);
 	}
 
 #ifdef LIBSPEEXDSP_ENABLED
@@ -231,7 +231,7 @@ static void noise_suppress_destroy(void *data)
 #endif
 
 	bfree(ng->copy_buffers[0]);
-	circlebuf_free(&ng->info_buffer);
+	deque_free(&ng->info_buffer);
 	da_free(ng->output_data);
 	bfree(ng);
 }
@@ -402,8 +402,8 @@ static inline void alloc_channel(struct noise_suppress_data *ng,
 #ifdef LIBRNNOISE_ENABLED
 	ng->rnn_states[channel] = rnnoise_create(NULL);
 #endif
-	circlebuf_reserve(&ng->input_buffers[channel], frames * sizeof(float));
-	circlebuf_reserve(&ng->output_buffers[channel], frames * sizeof(float));
+	deque_reserve(&ng->input_buffers[channel], frames * sizeof(float));
+	deque_reserve(&ng->output_buffers[channel], frames * sizeof(float));
 }
 
 static inline enum speaker_layout convert_speaker_layout(uint8_t channels)
@@ -1015,10 +1015,10 @@ static inline void process_nvafx(struct noise_suppress_data *ng)
 
 static inline void process(struct noise_suppress_data *ng)
 {
-	/* Pop from input circlebuf */
+	/* Pop from input deque */
 	for (size_t i = 0; i < ng->channels; i++)
-		circlebuf_pop_front(&ng->input_buffers[i], ng->copy_buffers[i],
-				    ng->frames * sizeof(float));
+		deque_pop_front(&ng->input_buffers[i], ng->copy_buffers[i],
+				ng->frames * sizeof(float));
 
 	if (ng->use_rnnoise) {
 		process_rnnoise(ng);
@@ -1030,10 +1030,10 @@ static inline void process(struct noise_suppress_data *ng)
 		process_speexdsp(ng);
 	}
 
-	/* Push to output circlebuf */
+	/* Push to output deque */
 	for (size_t i = 0; i < ng->channels; i++)
-		circlebuf_push_back(&ng->output_buffers[i], ng->copy_buffers[i],
-				    ng->frames * sizeof(float));
+		deque_push_back(&ng->output_buffers[i], ng->copy_buffers[i],
+				ng->frames * sizeof(float));
 }
 
 struct ng_audio_info {
@@ -1041,19 +1041,19 @@ struct ng_audio_info {
 	uint64_t timestamp;
 };
 
-static inline void clear_circlebuf(struct circlebuf *buf)
+static inline void clear_deque(struct deque *buf)
 {
-	circlebuf_pop_front(buf, NULL, buf->size);
+	deque_pop_front(buf, NULL, buf->size);
 }
 
 static void reset_data(struct noise_suppress_data *ng)
 {
 	for (size_t i = 0; i < ng->channels; i++) {
-		clear_circlebuf(&ng->input_buffers[i]);
-		clear_circlebuf(&ng->output_buffers[i]);
+		clear_deque(&ng->input_buffers[i]);
+		clear_deque(&ng->output_buffers[i]);
 	}
 
-	clear_circlebuf(&ng->info_buffer);
+	clear_deque(&ng->info_buffer);
 }
 
 static struct obs_audio_data *
@@ -1091,44 +1091,44 @@ noise_suppress_filter_audio(void *data, struct obs_audio_data *audio)
 	ng->last_timestamp = audio->timestamp;
 
 	/* -----------------------------------------------
-	 * push audio packet info (timestamp/frame count) to info circlebuf */
+	 * push audio packet info (timestamp/frame count) to info deque */
 	info.frames = audio->frames;
 	info.timestamp = audio->timestamp;
-	circlebuf_push_back(&ng->info_buffer, &info, sizeof(info));
+	deque_push_back(&ng->info_buffer, &info, sizeof(info));
 
 	/* -----------------------------------------------
-	 * push back current audio data to input circlebuf */
+	 * push back current audio data to input deque */
 	for (size_t i = 0; i < ng->channels; i++)
-		circlebuf_push_back(&ng->input_buffers[i], audio->data[i],
-				    audio->frames * sizeof(float));
+		deque_push_back(&ng->input_buffers[i], audio->data[i],
+				audio->frames * sizeof(float));
 
 	/* -----------------------------------------------
-	 * pop/process each 10ms segments, push back to output circlebuf */
+	 * pop/process each 10ms segments, push back to output deque */
 	while (ng->input_buffers[0].size >= segment_size)
 		process(ng);
 
 	/* -----------------------------------------------
-	 * peek front of info circlebuf, check to see if we have enough to
+	 * peek front of info deque, check to see if we have enough to
 	 * pop the expected packet size, if not, return null */
 	memset(&info, 0, sizeof(info));
-	circlebuf_peek_front(&ng->info_buffer, &info, sizeof(info));
+	deque_peek_front(&ng->info_buffer, &info, sizeof(info));
 	out_size = info.frames * sizeof(float);
 
 	if (ng->output_buffers[0].size < out_size)
 		return NULL;
 
 	/* -----------------------------------------------
-	 * if there's enough audio data buffered in the output circlebuf,
+	 * if there's enough audio data buffered in the output deque,
 	 * pop and return a packet */
-	circlebuf_pop_front(&ng->info_buffer, NULL, sizeof(info));
+	deque_pop_front(&ng->info_buffer, NULL, sizeof(info));
 	da_resize(ng->output_data, out_size * ng->channels);
 
 	for (size_t i = 0; i < ng->channels; i++) {
 		ng->output_audio.data[i] =
 			(uint8_t *)&ng->output_data.array[i * out_size];
 
-		circlebuf_pop_front(&ng->output_buffers[i],
-				    ng->output_audio.data[i], out_size);
+		deque_pop_front(&ng->output_buffers[i],
+				ng->output_audio.data[i], out_size);
 	}
 
 	ng->output_audio.frames = info.frames;
