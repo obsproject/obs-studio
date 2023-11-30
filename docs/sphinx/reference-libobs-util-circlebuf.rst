@@ -4,6 +4,8 @@ Circular Buffers
 A circular buffer that will automatically increase in size as necessary
 as data is pushed to the front or back.
 
+.. deprecated:: 3X.0
+
 .. code:: cpp
 
    #include <util/circlebuf.h>
