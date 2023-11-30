@@ -1,5 +1,5 @@
 #include <media-io/audio-math.h>
-#include <util/circlebuf.h>
+#include <util/deque.h>
 #include <util/darray.h>
 #include <obs-module.h>
 

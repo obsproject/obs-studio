@@ -5,7 +5,7 @@
 #include <obs-module.h>
 #include <media-io/audio-math.h>
 #include <util/platform.h>
-#include <util/circlebuf.h>
+#include <util/deque.h>
 #include <util/threading.h>
 
 /* -------------------------------------------------------- */
