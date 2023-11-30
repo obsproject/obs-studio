@@ -199,19 +199,25 @@ Structures/Enumerations
 
    Example usage:
 
-.. code:: cpp
+   .. code:: cpp
 
-   struct obs_frontend_source_list scenes = {0};
+      struct obs_frontend_source_list scenes = {0};
 
-   obs_frontend_get_scenes(&scenes);
+      obs_frontend_get_scenes(&scenes);
 
-   for (size_t i = 0; i < scenes.sources.num; i++) {
-           obs_source_t *source = scenes.sources.array[i];
+      for (size_t i = 0; i < scenes.sources.num; i++) {
+            /* Do NOT call `obs_source_release` or `obs_scene_release`
+             * on these sources
+             */
+            obs_source_t *source = scenes.sources.array[i];
 
-           [...]
-   }
+            /* Convert to obs_scene_t if needed */
+            obs_scene_t *scene = obs_scene_from_source(source);
 
-   obs_frontend_source_list_free(&scenes);
+            [...]
+      }
+
+      obs_frontend_source_list_free(&scenes);
 
 .. type:: void (*obs_frontend_cb)(void *private_data)
 
@@ -269,11 +275,24 @@ Functions
 
 .. function:: void obs_frontend_get_scenes(struct obs_frontend_source_list *sources)
 
+   Populates ``sources`` with reference-incremented scenes in the same order as
+   the frontend displays it in the Scenes dock. Release with
+   :c:func:`obs_frontend_source_list_free`, which will automatically release all
+   scenes with :c:func:`obs_source_release`. Do not release a scene manually to
+   prevent double releasing, which may cause scenes to be deleted.
+
+   Use :c:func:`obs_scene_from_source` to access a source from the list as an
+   :c:type:`obs_scene_t` object.
+
+   If you wish to keep a reference to a certain scene, use
+   :c:func:`obs_source_get_ref` or :c:func:`obs_scene_get_ref` on that scene and
+   release it with either :c:func:`obs_source_release` or
+   :c:func:`obs_scene_release`. Use only one release function, as both releases
+   the same object.
+
    :param sources: Pointer to a :c:type:`obs_frontend_source_list`
-                   structure to receive the list of
-                   reference-incremented scenes.  Release with
-                   :c:func:`obs_frontend_source_list_free`. The order is same as
-                   the way the frontend displays it in the Scenes dock.
+                   structure to receive the list of reference-incremented
+                   scenes.
 
 ---------------------------------------
 
