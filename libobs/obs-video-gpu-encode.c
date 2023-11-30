@@ -48,7 +48,7 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 
 		pthread_mutex_lock(&video->gpu_encoder_mutex);
 
-		circlebuf_pop_front(&video->gpu_encoder_queue, &tf, sizeof(tf));
+		deque_pop_front(&video->gpu_encoder_queue, &tf, sizeof(tf));
 		timestamp = tf.timestamp;
 		lock_key = tf.lock_key;
 		next_key = tf.lock_key;
@@ -146,13 +146,13 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 
 		if (--tf.count) {
 			tf.timestamp += interval;
-			circlebuf_push_front(&video->gpu_encoder_queue, &tf,
-					     sizeof(tf));
+			deque_push_front(&video->gpu_encoder_queue, &tf,
+					 sizeof(tf));
 
 			video_output_inc_texture_skipped_frames(video->video);
 		} else {
-			circlebuf_push_back(&video->gpu_encoder_avail_queue,
-					    &tf, sizeof(tf));
+			deque_push_back(&video->gpu_encoder_avail_queue, &tf,
+					sizeof(tf));
 		}
 
 		pthread_mutex_unlock(&video->gpu_encoder_mutex);
@@ -179,7 +179,7 @@ bool init_gpu_encoding(struct obs_core_video_mix *video)
 
 	video->gpu_encode_stop = false;
 
-	circlebuf_reserve(&video->gpu_encoder_avail_queue, NUM_ENCODE_TEXTURES);
+	deque_reserve(&video->gpu_encoder_avail_queue, NUM_ENCODE_TEXTURES);
 	for (size_t i = 0; i < NUM_ENCODE_TEXTURES; i++) {
 		gs_texture_t *tex;
 		gs_texture_t *tex_uv;
@@ -203,8 +203,8 @@ bool init_gpu_encoding(struct obs_core_video_mix *video)
 					      .tex_uv = tex_uv,
 					      .handle = handle};
 
-		circlebuf_push_back(&video->gpu_encoder_avail_queue, &frame,
-				    sizeof(frame));
+		deque_push_back(&video->gpu_encoder_avail_queue, &frame,
+				sizeof(frame));
 	}
 
 	if (os_sem_init(&video->gpu_encode_semaphore, 0) != 0)
@@ -247,18 +247,18 @@ void free_gpu_encoding(struct obs_core_video_mix *video)
 		video->gpu_encode_inactive = NULL;
 	}
 
-#define free_circlebuf(x)                                               \
-	do {                                                            \
-		while (x.size) {                                        \
-			struct obs_tex_frame frame;                     \
-			circlebuf_pop_front(&x, &frame, sizeof(frame)); \
-			gs_texture_destroy(frame.tex);                  \
-			gs_texture_destroy(frame.tex_uv);               \
-		}                                                       \
-		circlebuf_free(&x);                                     \
+#define free_deque(x)                                               \
+	do {                                                        \
+		while (x.size) {                                    \
+			struct obs_tex_frame frame;                 \
+			deque_pop_front(&x, &frame, sizeof(frame)); \
+			gs_texture_destroy(frame.tex);              \
+			gs_texture_destroy(frame.tex_uv);           \
+		}                                                   \
+		deque_free(&x);                                     \
 	} while (false)
 
-	free_circlebuf(video->gpu_encoder_queue);
-	free_circlebuf(video->gpu_encoder_avail_queue);
-#undef free_circlebuf
+	free_deque(video->gpu_encoder_queue);
+	free_deque(video->gpu_encoder_avail_queue);
+#undef free_deque
 }

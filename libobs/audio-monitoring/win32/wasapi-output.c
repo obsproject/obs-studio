@@ -1,5 +1,5 @@
 #include "../../media-io/audio-resampler.h"
-#include "../../util/circlebuf.h"
+#include "../../util/deque.h"
 #include "../../util/platform.h"
 #include "../../util/darray.h"
 #include "../../util/util_uint64.h"
@@ -43,7 +43,7 @@ struct audio_monitor {
 	bool ignore;
 
 	int64_t lowest_audio_offset;
-	struct circlebuf delay_buffer;
+	struct deque delay_buffer;
 	uint32_t delay_size;
 
 	DARRAY(float) buf;
@@ -65,14 +65,14 @@ static bool process_audio_delay(struct audio_monitor *monitor, float **data,
 
 	/* cut off audio if long-since leftover audio in delay buffer */
 	if (cur_time - monitor->last_recv_time > 1000000000)
-		circlebuf_free(&monitor->delay_buffer);
+		deque_free(&monitor->delay_buffer);
 	monitor->last_recv_time = cur_time;
 
 	ts += monitor->source->sync_offset;
 
-	circlebuf_push_back(&monitor->delay_buffer, &ts, sizeof(ts));
-	circlebuf_push_back(&monitor->delay_buffer, frames, sizeof(*frames));
-	circlebuf_push_back(&monitor->delay_buffer, *data, *frames * blocksize);
+	deque_push_back(&monitor->delay_buffer, &ts, sizeof(ts));
+	deque_push_back(&monitor->delay_buffer, frames, sizeof(*frames));
+	deque_push_back(&monitor->delay_buffer, *data, *frames * blocksize);
 
 	if (!monitor->prev_video_ts) {
 		monitor->prev_video_ts = last_frame_ts;
@@ -88,8 +88,7 @@ static bool process_audio_delay(struct audio_monitor *monitor, float **data,
 		size_t size;
 		bool bad_diff;
 
-		circlebuf_peek_front(&monitor->delay_buffer, &cur_ts,
-				     sizeof(ts));
+		deque_peek_front(&monitor->delay_buffer, &cur_ts, sizeof(ts));
 		front_ts = cur_ts - util_mul_div64(pad, 1000000000ULL,
 						   monitor->sample_rate);
 		diff = (int64_t)front_ts - (int64_t)last_frame_ts;
@@ -109,14 +108,14 @@ static bool process_audio_delay(struct audio_monitor *monitor, float **data,
 			return false;
 		}
 
-		circlebuf_pop_front(&monitor->delay_buffer, NULL, sizeof(ts));
-		circlebuf_pop_front(&monitor->delay_buffer, frames,
-				    sizeof(*frames));
+		deque_pop_front(&monitor->delay_buffer, NULL, sizeof(ts));
+		deque_pop_front(&monitor->delay_buffer, frames,
+				sizeof(*frames));
 
 		size = *frames * blocksize;
 		da_resize(monitor->buf, size);
-		circlebuf_pop_front(&monitor->delay_buffer, monitor->buf.array,
-				    size);
+		deque_pop_front(&monitor->delay_buffer, monitor->buf.array,
+				size);
 
 		/* cut audio if dragging */
 		if (!bad_diff && diff < -75000000 &&
@@ -295,7 +294,7 @@ static void audio_monitor_free_for_reconnect(struct audio_monitor *monitor)
 	audio_resampler_destroy(monitor->resampler);
 	monitor->resampler = NULL;
 
-	circlebuf_free(&monitor->delay_buffer);
+	deque_free(&monitor->delay_buffer);
 	da_free(monitor->buf);
 }
 
@@ -399,7 +398,7 @@ static inline void audio_monitor_free(struct audio_monitor *monitor)
 	safe_release(monitor->client);
 	safe_release(monitor->render);
 	audio_resampler_destroy(monitor->resampler);
-	circlebuf_free(&monitor->delay_buffer);
+	deque_free(&monitor->delay_buffer);
 	da_free(monitor->buf);
 }
 

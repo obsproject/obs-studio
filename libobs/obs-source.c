@@ -724,7 +724,7 @@ static void obs_source_destroy_defer(struct obs_source *source)
 	for (i = 0; i < MAX_AV_PLANES; i++)
 		bfree(source->audio_data.data[i]);
 	for (i = 0; i < MAX_AUDIO_CHANNELS; i++)
-		circlebuf_free(&source->audio_input_buf[i]);
+		deque_free(&source->audio_input_buf[i]);
 	audio_resampler_destroy(source->resampler);
 	bfree(source->audio_output_buf[0][0]);
 	bfree(source->audio_mix_buf[0]);
@@ -1410,8 +1410,8 @@ static void reset_audio_data(obs_source_t *source, uint64_t os_time)
 {
 	for (size_t i = 0; i < MAX_AUDIO_CHANNELS; i++) {
 		if (source->audio_input_buf[i].size)
-			circlebuf_pop_front(&source->audio_input_buf[i], NULL,
-					    source->audio_input_buf[i].size);
+			deque_pop_front(&source->audio_input_buf[i], NULL,
+					source->audio_input_buf[i].size);
 	}
 
 	source->last_audio_input_buf_size = 0;
@@ -1485,11 +1485,11 @@ static void source_output_audio_place(obs_source_t *source,
 		return;
 
 	for (size_t i = 0; i < channels; i++) {
-		circlebuf_place(&source->audio_input_buf[i], buf_placement,
-				in->data[i], size);
-		circlebuf_pop_back(&source->audio_input_buf[i], NULL,
-				   source->audio_input_buf[i].size -
-					   (buf_placement + size));
+		deque_place(&source->audio_input_buf[i], buf_placement,
+			    in->data[i], size);
+		deque_pop_back(&source->audio_input_buf[i], NULL,
+			       source->audio_input_buf[i].size -
+				       (buf_placement + size));
 	}
 
 	source->last_audio_input_buf_size = 0;
@@ -1507,8 +1507,7 @@ static inline void source_output_audio_push_back(obs_source_t *source,
 		return;
 
 	for (size_t i = 0; i < channels; i++)
-		circlebuf_push_back(&source->audio_input_buf[i], in->data[i],
-				    size);
+		deque_push_back(&source->audio_input_buf[i], in->data[i], size);
 
 	/* reset audio input buffer size to ensure that audio doesn't get
 	 * perpetually cut */
@@ -5728,8 +5727,8 @@ static inline void process_audio_source_tick(obs_source_t *source,
 	}
 
 	for (size_t ch = 0; ch < channels; ch++)
-		circlebuf_peek_front(&source->audio_input_buf[ch],
-				     source->audio_output_buf[0][ch], size);
+		deque_peek_front(&source->audio_input_buf[ch],
+				 source->audio_output_buf[0][ch], size);
 
 	pthread_mutex_unlock(&source->audio_buf_mutex);
 
