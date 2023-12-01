@@ -955,6 +955,12 @@ EXPORT void obs_view_remove(obs_view_t *view);
 EXPORT bool obs_view_get_video_info(obs_view_t *view,
 				    struct obs_video_info *ovi);
 
+/** Enumerate the video info of all mixes using the specified view context */
+EXPORT void obs_view_enum_video_info(obs_view_t *view,
+				     bool (*enum_proc)(void *,
+						       struct obs_video_info *),
+				     void *param);
+
 /* ------------------------------------------------------------------------- */
 /* Display context */
 
