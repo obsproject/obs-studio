@@ -69,7 +69,6 @@ target_sources(
           obs-source-transition.c
           obs-source.c
           obs-source.h
-          obs-ui.h
           obs-video-gpu-encode.c
           obs-video.c
           obs-view.c
