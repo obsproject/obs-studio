@@ -2402,8 +2402,6 @@ static inline void pair_encoders(obs_output_t *output)
 
 		if (!audio->active && !video->active &&
 		    !video->paired_encoder && !audio->paired_encoder) {
-
-			audio->wait_for_video = true;
 			audio->paired_encoder = video;
 			video->paired_encoder = audio;
 		}
