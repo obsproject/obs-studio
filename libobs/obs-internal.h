@@ -1248,7 +1248,7 @@ struct obs_encoder {
 	 * up at the specific timestamp.  if this is the audio encoder,
 	 * it waits until it's ready to sync up with video */
 	bool first_received;
-	struct obs_encoder *paired_encoder;
+	DARRAY(struct obs_encoder *) paired_encoders;
 	int64_t offset_usec;
 	uint64_t first_raw_ts;
 	uint64_t start_ts;
