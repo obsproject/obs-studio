@@ -235,6 +235,7 @@ private:
 	QStringList oldExtraDockNames;
 
 	OBSDataAutoRelease safeModeModuleData;
+	std::vector<OBSDataAutoRelease> safeModeTransitions;
 
 	bool loaded = false;
 	long disableSaving = 1;
