@@ -213,9 +213,17 @@ static bool create_video_stream(struct ffmpeg_data *data)
 			av_content_light_metadata_alloc(&content_size);
 		content->MaxCLL = hdr_nominal_peak_level;
 		content->MaxFALL = hdr_nominal_peak_level;
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 31, 102)
 		av_stream_add_side_data(data->video,
 					AV_PKT_DATA_CONTENT_LIGHT_LEVEL,
 					(uint8_t *)content, content_size);
+#else
+		av_packet_side_data_add(
+			&data->video->codecpar->coded_side_data,
+			&data->video->codecpar->nb_coded_side_data,
+			AV_PKT_DATA_CONTENT_LIGHT_LEVEL, (uint8_t *)content,
+			content_size, 0);
+#endif
 
 		AVMasteringDisplayMetadata *const mastering =
 			av_mastering_display_metadata_alloc();
@@ -231,10 +239,18 @@ static bool create_video_stream(struct ffmpeg_data *data)
 		mastering->max_luminance = av_make_q(hdr_nominal_peak_level, 1);
 		mastering->has_primaries = 1;
 		mastering->has_luminance = 1;
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 31, 102)
 		av_stream_add_side_data(data->video,
 					AV_PKT_DATA_MASTERING_DISPLAY_METADATA,
 					(uint8_t *)mastering,
 					sizeof(*mastering));
+#else
+		av_packet_side_data_add(
+			&data->video->codecpar->coded_side_data,
+			&data->video->codecpar->nb_coded_side_data,
+			AV_PKT_DATA_MASTERING_DISPLAY_METADATA,
+			(uint8_t *)mastering, sizeof(*mastering), 0);
+#endif
 	}
 
 	closest_format = data->config.format;

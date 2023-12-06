@@ -1415,8 +1415,6 @@ void obs_shutdown(void)
 	FREE_REGISTERED_TYPES(obs_output_info, obs->output_types);
 	FREE_REGISTERED_TYPES(obs_encoder_info, obs->encoder_types);
 	FREE_REGISTERED_TYPES(obs_service_info, obs->service_types);
-	FREE_REGISTERED_TYPES(obs_modal_ui, obs->modal_ui_callbacks);
-	FREE_REGISTERED_TYPES(obs_modeless_ui, obs->modeless_ui_callbacks);
 
 #undef FREE_REGISTERED_TYPES
 
@@ -1805,66 +1803,6 @@ audio_t *obs_get_audio(void)
 video_t *obs_get_video(void)
 {
 	return obs->video.main_mix->video;
-}
-
-/* TODO: optimize this later so it's not just O(N) string lookups */
-static inline struct obs_modal_ui *
-get_modal_ui_callback(const char *id, const char *task, const char *target)
-{
-	for (size_t i = 0; i < obs->modal_ui_callbacks.num; i++) {
-		struct obs_modal_ui *callback =
-			obs->modal_ui_callbacks.array + i;
-
-		if (strcmp(callback->id, id) == 0 &&
-		    strcmp(callback->task, task) == 0 &&
-		    strcmp(callback->target, target) == 0)
-			return callback;
-	}
-
-	return NULL;
-}
-
-static inline struct obs_modeless_ui *
-get_modeless_ui_callback(const char *id, const char *task, const char *target)
-{
-	for (size_t i = 0; i < obs->modeless_ui_callbacks.num; i++) {
-		struct obs_modeless_ui *callback;
-		callback = obs->modeless_ui_callbacks.array + i;
-
-		if (strcmp(callback->id, id) == 0 &&
-		    strcmp(callback->task, task) == 0 &&
-		    strcmp(callback->target, target) == 0)
-			return callback;
-	}
-
-	return NULL;
-}
-
-int obs_exec_ui(const char *name, const char *task, const char *target,
-		void *data, void *ui_data)
-{
-	struct obs_modal_ui *callback;
-	int errorcode = OBS_UI_NOTFOUND;
-
-	if (!obs)
-		return errorcode;
-
-	callback = get_modal_ui_callback(name, task, target);
-	if (callback) {
-		bool success = callback->exec(data, ui_data);
-		errorcode = success ? OBS_UI_SUCCESS : OBS_UI_CANCEL;
-	}
-
-	return errorcode;
-}
-
-void *obs_create_ui(const char *name, const char *task, const char *target,
-		    void *data, void *ui_data)
-{
-	struct obs_modeless_ui *callback;
-
-	callback = get_modeless_ui_callback(name, task, target);
-	return callback ? callback->create(data, ui_data) : NULL;
 }
 
 obs_source_t *obs_get_output_source(uint32_t channel)

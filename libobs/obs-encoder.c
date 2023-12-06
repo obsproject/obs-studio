@@ -198,7 +198,7 @@ static inline bool gpu_encode_available(const struct obs_encoder *encoder)
  */
 static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
 {
-	struct obs_core_video_mix *mix = NULL;
+	struct obs_core_video_mix *mix, *current_mix;
 	bool create_mix = true;
 	struct obs_video_info ovi;
 	const struct video_output_info *info;
@@ -214,12 +214,16 @@ static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
 	if (!encoder->scaled_height && !encoder->scaled_width)
 		return;
 
+	current_mix = get_mix_for_video(encoder->media);
+	if (!current_mix)
+		return;
+
 	pthread_mutex_lock(&obs->video.mixes_mutex);
 	for (size_t i = 0; i < obs->video.mixes.num; i++) {
 		struct obs_core_video_mix *current = obs->video.mixes.array[i];
 		const struct video_output_info *voi =
 			video_output_get_info(current->video);
-		if (current->view != &obs->data.main_view)
+		if (current_mix->view != current->view)
 			continue;
 
 		if (voi->width != encoder->scaled_width ||
@@ -237,16 +241,12 @@ static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
 		break;
 	}
 
-	if (!obs->video.main_mix) {
-		create_mix = false;
-	} else {
-		ovi = obs->video.main_mix->ovi;
-	}
-
 	pthread_mutex_unlock(&obs->video.mixes_mutex);
 
 	if (!create_mix)
 		return;
+
+	ovi = current_mix->ovi;
 
 	ovi.output_format = info->format;
 	ovi.colorspace = info->colorspace;
@@ -264,7 +264,7 @@ static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
 
 	mix->encoder_only_mix = true;
 	mix->encoder_refs = 1;
-	mix->view = &obs->data.main_view;
+	mix->view = current_mix->view;
 
 	pthread_mutex_lock(&obs->video.mixes_mutex);
 
@@ -678,7 +678,7 @@ void obs_encoder_shutdown(obs_encoder_t *encoder)
 	if (encoder->context.data) {
 		encoder->info.destroy(encoder->context.data);
 		encoder->context.data = NULL;
-		encoder->paired_encoder = NULL;
+		da_free(encoder->paired_encoders);
 		encoder->first_received = false;
 		encoder->offset_usec = 0;
 		encoder->start_ts = 0;
@@ -1371,13 +1371,15 @@ static void receive_video(void *param, struct video_data *frame)
 	profile_start(receive_video_name);
 
 	struct obs_encoder *encoder = param;
-	struct obs_encoder *pair = encoder->paired_encoder;
+	struct obs_encoder **paired = encoder->paired_encoders.array;
 	struct encoder_frame enc_frame;
 
-	if (!encoder->first_received && pair) {
-		if (!pair->first_received ||
-		    pair->first_raw_ts > frame->timestamp) {
-			goto wait_for_audio;
+	if (!encoder->first_received && encoder->paired_encoders.num) {
+		for (size_t i = 0; i < encoder->paired_encoders.num; i++) {
+			if (!paired[i]->first_received ||
+			    paired[i]->first_raw_ts > frame->timestamp) {
+				goto wait_for_audio;
+			}
 		}
 	}
 
@@ -1465,9 +1467,14 @@ static bool buffer_audio(struct obs_encoder *encoder, struct audio_data *data)
 	size_t offset_size = 0;
 	bool success = true;
 
-	if (!encoder->start_ts && encoder->paired_encoder) {
+	struct obs_encoder *paired_encoder = NULL;
+	/* Audio encoders can only be paired to one video encoder */
+	if (encoder->paired_encoders.num)
+		paired_encoder = encoder->paired_encoders.array[0];
+
+	if (!encoder->start_ts && paired_encoder) {
 		uint64_t end_ts = data->timestamp;
-		uint64_t v_start_ts = encoder->paired_encoder->start_ts;
+		uint64_t v_start_ts = paired_encoder->start_ts;
 
 		/* no video yet, so don't start audio */
 		if (!v_start_ts) {
@@ -1498,7 +1505,7 @@ static bool buffer_audio(struct obs_encoder *encoder, struct audio_data *data)
 			start_from_buffer(encoder, v_start_ts);
 		}
 
-	} else if (!encoder->start_ts && !encoder->paired_encoder) {
+	} else if (!encoder->start_ts && !paired_encoder) {
 		encoder->start_ts = data->timestamp;
 	}
 

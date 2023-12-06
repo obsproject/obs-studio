@@ -73,18 +73,29 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 			uint32_t skip = 0;
 
 			obs_encoder_t *encoder = encoders.array[i];
-			struct obs_encoder *pair = encoder->paired_encoder;
+			struct obs_encoder **paired =
+				encoder->paired_encoders.array;
+			size_t num_paired = encoder->paired_encoders.num;
 
 			pkt.timebase_num = encoder->timebase_num *
 					   encoder->frame_rate_divisor;
 			pkt.timebase_den = encoder->timebase_den;
 			pkt.encoder = encoder;
 
-			if (!encoder->first_received && pair) {
-				if (!pair->first_received ||
-				    pair->first_raw_ts > timestamp) {
-					continue;
+			if (!encoder->first_received && num_paired) {
+				bool wait_for_audio = false;
+
+				for (size_t idx = 0; idx < num_paired; idx++) {
+					if (!paired[idx]->first_received ||
+					    paired[idx]->first_raw_ts >
+						    timestamp) {
+						wait_for_audio = true;
+						break;
+					}
 				}
+
+				if (wait_for_audio)
+					continue;
 			}
 
 			if (video_pause_check(&encoder->pause, timestamp))

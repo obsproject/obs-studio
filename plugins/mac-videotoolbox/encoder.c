@@ -537,7 +537,7 @@ static inline CFDictionaryRef create_pixbuf_spec(struct vt_encoder *enc)
 	return pixbuf_spec;
 }
 
-static bool create_encoder(struct vt_encoder *enc)
+static OSStatus create_encoder(struct vt_encoder *enc)
 {
 	OSStatus code;
 
@@ -678,7 +678,7 @@ static bool create_encoder(struct vt_encoder *enc)
 
 	enc->session = s;
 
-	return true;
+	return noErr;
 }
 
 static void vt_destroy(void *data)
@@ -877,8 +877,10 @@ static void *vt_create(obs_data_t *settings, obs_encoder_t *encoder)
 		goto fail;
 	}
 
-	if (!create_encoder(enc))
+	code = create_encoder(enc);
+	if (code != noErr) {
 		goto fail;
+	}
 
 	dump_encoder_info(enc);
 

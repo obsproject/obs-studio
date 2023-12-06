@@ -504,7 +504,12 @@ void mp_media_next_video(mp_media_t *m, bool preload)
 	}
 
 	if (!m->is_local_file && !d->got_first_keyframe) {
+
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(58, 29, 100)
 		if (!f->key_frame)
+#else
+		if (!(f->flags & AV_FRAME_FLAG_KEY))
+#endif
 			return;
 
 		d->got_first_keyframe = true;

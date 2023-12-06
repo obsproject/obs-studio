@@ -32,7 +32,6 @@
 #include "obs-config.h"
 #include "obs-defs.h"
 #include "obs-data.h"
-#include "obs-ui.h"
 #include "obs-properties.h"
 #include "obs-interaction.h"
 
@@ -952,8 +951,14 @@ EXPORT video_t *obs_view_add2(obs_view_t *view, struct obs_video_info *ovi);
 EXPORT void obs_view_remove(obs_view_t *view);
 
 /** Gets the video settings currently in use for this view context, returns false if no video */
-EXPORT bool obs_view_get_video_info(obs_view_t *view,
-				    struct obs_video_info *ovi);
+OBS_DEPRECATED EXPORT bool obs_view_get_video_info(obs_view_t *view,
+						   struct obs_video_info *ovi);
+
+/** Enumerate the video info of all mixes using the specified view context */
+EXPORT void obs_view_enum_video_info(obs_view_t *view,
+				     bool (*enum_proc)(void *,
+						       struct obs_video_info *),
+				     void *param);
 
 /* ------------------------------------------------------------------------- */
 /* Display context */

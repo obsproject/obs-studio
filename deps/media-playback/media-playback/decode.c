@@ -114,8 +114,14 @@ static uint16_t get_max_luminance(const AVStream *stream)
 {
 	uint32_t max_luminance = 0;
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 31, 102)
 	for (int i = 0; i < stream->nb_side_data; i++) {
 		const AVPacketSideData *const sd = &stream->side_data[i];
+#else
+	for (int i = 0; i < stream->codecpar->nb_coded_side_data; i++) {
+		const AVPacketSideData *const sd =
+			&stream->codecpar->coded_side_data[i];
+#endif
 		switch (sd->type) {
 		case AV_PKT_DATA_MASTERING_DISPLAY_METADATA: {
 			const AVMasteringDisplayMetadata *mastering =
