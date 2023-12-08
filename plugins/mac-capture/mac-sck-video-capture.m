@@ -108,6 +108,13 @@ static bool init_screen_stream(struct screen_capture *sc)
         case ScreenCaptureDisplayStream: {
             SCDisplay *target_display = get_target_display();
 
+            if (!target_display) {
+                MACCAP_ERR("init_screen_stream: Invalid target display ID:  %u\n", sc->display);
+
+                os_sem_post(sc->shareable_content_available);
+                return false;
+            }
+
             if (sc->hide_obs) {
                 SCRunningApplication *obsApp = nil;
                 NSString *mainBundleIdentifier = [[NSBundle mainBundle] bundleIdentifier];
