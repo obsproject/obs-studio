@@ -91,6 +91,7 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 			return false;
 		}
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 31, 102)
 #if FF_API_BUFFER_SIZE_T
 		int content_size;
 #else
@@ -125,6 +126,7 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 				       mastering_size);
 			}
 		}
+#endif
 
 		ret = avcodec_parameters_copy(out_stream->codecpar,
 					      in_stream->codecpar);

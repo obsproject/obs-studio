@@ -181,6 +181,7 @@ class WASAPISource {
 	const SourceType sourceType;
 	std::atomic<bool> useDeviceTiming = false;
 	std::atomic<bool> isDefaultDevice = false;
+	std::atomic<bool> sawBadTimestamp = false;
 	bool hooked = false;
 
 	bool previouslyFailed = false;
@@ -1092,11 +1093,11 @@ bool WASAPISource::ProcessCaptureData()
 			return false;
 		}
 
-		if (flags & AUDCLNT_BUFFERFLAGS_TIMESTAMP_ERROR) {
-			blog(LOG_ERROR, "[WASAPISource::ProcessCaptureData]"
-					" Timestamp error!");
-			capture->ReleaseBuffer(frames);
-			return false;
+		if (!sawBadTimestamp &&
+		    flags & AUDCLNT_BUFFERFLAGS_TIMESTAMP_ERROR) {
+			blog(LOG_WARNING, "[WASAPISource::ProcessCaptureData]"
+					  " Timestamp error!");
+			sawBadTimestamp = true;
 		}
 
 		if (flags & AUDCLNT_BUFFERFLAGS_DATA_DISCONTINUITY) {

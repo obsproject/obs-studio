@@ -42,6 +42,7 @@ target_sources(
           obs-ffmpeg-av1.c
           obs-ffmpeg-nvenc.c
           obs-ffmpeg-output.c
+          obs-ffmpeg-output.h
           obs-ffmpeg-mux.c
           obs-ffmpeg-mux.h
           obs-ffmpeg-hls-mux.c

@@ -68,7 +68,6 @@ target_sources(
           obs-source.h
           obs-source-deinterlace.c
           obs-source-transition.c
-          obs-ui.h
           obs-video.c
           obs-video-gpu-encode.c
           obs-view.c
