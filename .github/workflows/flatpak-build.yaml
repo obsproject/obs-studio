@@ -11,9 +11,87 @@ on:
         default: obs-studio-flatpak.flatpak
         type: string
 jobs:
-  build:
-    name: Build 🧾
+  build-until-90:
+    name: Build Modules Until 90-* 🧾
     runs-on: ubuntu-22.04
+    defaults:
+      run:
+        shell: bash
+    outputs:
+      cacheKey: ${{ steps.setup.outputs.cacheKey }}
+      cacheHit: ${{ steps.setup.outputs.cacheHit }}
+    container:
+      image: bilelmoussaoui/flatpak-github-actions:kde-6.5
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          fetch-depth: 0
+          set-safe-directory: ${{ env.GITHUB_WORKSPACE }}
+
+      - name: Set Up Environment 🔧
+        id: setup
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          : Set Up Environment 🔧
+          if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
+
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+
+          echo '::group::Install GitHub CLI and jq tool'
+          dnf install -y -q gh jq
+          gh extension install actions/gh-actions-cache
+          echo '::endgroup::'
+
+          stop_at_module=$(jq -r '.modules[:-1] | map(select(test("90-*")))[0]' build-aux/com.obsproject.Studio.json)
+          echo "stopAtModule=$(jq -r '.name' build-aux/$stop_at_module)" >> $GITHUB_OUTPUT
+
+          cache_key='flatpak-builder-${{ hashFiles('build-aux/**/*.json') }}'
+          cache_ref='master'
+          read -r key size unit _ ref _ <<< \
+            "$(gh actions-cache list -B ${cache_ref} --key "${cache_key}-x86_64" | head -1)"
+
+          if [[ "${key}" ]]; then
+            echo "cacheHit=true" >> $GITHUB_OUTPUT
+          else
+            echo "cacheHit=false" >> $GITHUB_OUTPUT
+          fi
+
+          echo "cacheKey=${cache_key}" >> $GITHUB_OUTPUT
+
+      - name: Validate Flatpak manifest
+        uses: ./.github/actions/flatpak-builder-lint
+        with:
+          artifact: manifest
+          path: build-aux/com.obsproject.Studio.json
+          validateToPublish: false
+
+      - name: Build Modules 🧱
+        if: ${{ !fromJSON(steps.setup.outputs.cacheHit) }}
+        uses: flatpak/flatpak-github-actions/flatpak-builder@0ab9dd6a6afa6fe7e292db0325171660bf5b6fdf
+        with:
+          manifest-path: ${{ github.workspace }}/build-aux/com.obsproject.Studio.json
+          stop-at-module: ${{ steps.setup.outputs.stopAtModule }}
+          cache: false
+
+      - name: Prepare Modules Artifact 🗜️
+        if: ${{ !fromJSON(steps.setup.outputs.cacheHit) }}
+        run: tar -cvf flatpak-build-until-90.tar .flatpak-builder
+
+      - name: Upload Modules Artifact 📡
+        if: ${{ !fromJSON(steps.setup.outputs.cacheHit) }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: flatpak-build-until-90
+          path: flatpak-build-until-90.tar
+          retention-days: 1
+
+  build-obs:
+    name: Build OBS Studio 🧾
+    runs-on: ubuntu-22.04
+    needs: build-until-90
     defaults:
       run:
         shell: bash
@@ -37,40 +115,25 @@ jobs:
 
           git config --global --add safe.directory "${GITHUB_WORKSPACE}"
 
-          echo '::group::Install GitHub CLI tool'
-          dnf install -y -q gh
-          gh extension install actions/gh-actions-cache
-          echo '::endgroup::'
-
-          cache_key='flatpak-builder-${{ hashFiles('build-aux/**/*.json') }}'
-          cache_ref='master'
-          read -r key size unit _ ref _ <<< \
-            "$(gh actions-cache list -B ${cache_ref} --key "${cache_key}-x86_64" | head -1)"
-
-          if [[ "${key}" ]]; then
-            echo "cacheHit=true" >> $GITHUB_OUTPUT
-          else
-            echo "cacheHit=false" >> $GITHUB_OUTPUT
-          fi
-
-          echo "cacheKey=${cache_key}" >> $GITHUB_OUTPUT
-
-      - name: Validate Flatpak manifest
-        uses: ./.github/actions/flatpak-builder-lint
+      - name: Download Modules Artifact 🛰️
+        if: ${{ !fromJSON(needs.build-until-90.outputs.cacheHit) }}
+        uses: actions/download-artifact@v3
         with:
-          artifact: manifest
-          path: build-aux/com.obsproject.Studio.json
-          validateToPublish: false
+          name: flatpak-build-until-90
 
-      - name: Build Flatpak Manifest 🧱
+      - name: Extract Modules Artifact 🗜️
+        if: ${{ !fromJSON(needs.build-until-90.outputs.cacheHit) }}
+        run: tar -xvf flatpak-build-until-90.tar
+
+      - name: Build Modules 🧱
         uses: flatpak/flatpak-github-actions/flatpak-builder@0ab9dd6a6afa6fe7e292db0325171660bf5b6fdf
         with:
           build-bundle: ${{ fromJSON(inputs.build-bundle) }}
           bundle: ${{ inputs.bundle }}
           manifest-path: ${{ github.workspace }}/build-aux/com.obsproject.Studio.json
-          cache: ${{ fromJSON(steps.setup.outputs.cacheHit) || (github.event_name == 'push' && github.ref_name == 'master')}}
-          restore-cache: fromJSON(steps.setup.outputs.cacheHit) }}
-          cache-key: ${{ steps.setup.outputs.cacheKey }}
+          cache: ${{ fromJSON(needs.build-until-90.outputs.cacheHit) || (github.event_name == 'push' && github.ref_name == 'master')}}
+          restore-cache: ${{ fromJSON(needs.build-until-90.outputs.cacheHit) }}
+          cache-key: ${{ needs.build-until-90.outputs.cacheKey }}
 
       - name: Validate build directory
         uses: ./.github/actions/flatpak-builder-lint
@@ -85,3 +148,15 @@ jobs:
           artifact: repo
           path: repo
           validateToPublish: false
+
+  cleanup-artifact:
+    name: Cleanup Artifact 🧹
+    runs-on: ubuntu-22.04
+    needs: [build-until-90, build-obs]
+    if: ${{ !fromJSON(needs.build-until-90.outputs.cacheHit) }}
+    steps:
+      - name: Delete Modules Artifact 🗑️
+        uses: geekyeggo/delete-artifact@v2
+        with:
+          useGlob: false
+          name: flatpak-build-until-90
