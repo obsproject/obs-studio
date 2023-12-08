@@ -1729,6 +1729,16 @@ Functions used by sources
    Preloads a video frame to ensure a frame is ready for playback as
    soon as video playback starts.
 
+   Use obs_source_preload_video2 instead if partial range support is
+   desired for non-YUV video formats.
+
+---------------------
+
+.. function:: void obs_source_preload_video2(obs_source_t *source, const struct obs_source_frame2 *frame)
+
+   Preloads a video frame to ensure a frame is ready for playback as
+   soon as video playback starts.
+
 ---------------------
 
 .. function:: void obs_source_show_preloaded_video(obs_source_t *source)
