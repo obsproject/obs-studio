@@ -75,8 +75,7 @@ elseif(OS_MACOS)
             "$<LINK_LIBRARY:FRAMEWORK,CoreFoundation.framework>"
             "$<LINK_LIBRARY:FRAMEWORK,IOKit.framework>")
   # cmake-format: on
-  target_compile_options(aja-output-ui PRIVATE -Wno-error=deprecated-declarations
-                                               -Wno-quoted-include-in-framework-header)
+  target_compile_options(aja-output-ui PRIVATE -Wno-deprecated-declarations -Wno-quoted-include-in-framework-header)
 elseif(OS_LINUX OR OS_FREEBSD)
   find_package(X11 REQUIRED)
   target_link_libraries(aja-output-ui PRIVATE X11::X11 Qt::GuiPrivate)
