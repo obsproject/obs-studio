@@ -1273,13 +1273,15 @@ char *obs_find_data_file(const char *file)
 	return NULL;
 }
 
-void obs_add_data_path(const char *path)
+// TODO: Remove after deprecation grace period
+OBS_DEPRECATED void obs_add_data_path(const char *path)
 {
 	struct dstr *new_path = da_push_back_new(core_module_paths);
 	dstr_init_copy(new_path, path);
 }
 
-bool obs_remove_data_path(const char *path)
+// TODO: Remove after deprecation grace period
+OBS_DEPRECATED bool obs_remove_data_path(const char *path)
 {
 	for (size_t i = 0; i < core_module_paths.num; ++i) {
 		int result = dstr_cmp(&core_module_paths.array[i], path);
