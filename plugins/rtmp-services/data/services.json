@@ -2706,7 +2706,7 @@
             "servers": [
                 {
                     "name": "Default",
-                    "url": "rtmps://66368cdf63a9.global-contribute.live-video.net:443/app/"
+                    "url": "rtmps://ingest.global-contribute.live-video.net:443/app/"
                 }
             ],
             "recommended": {
