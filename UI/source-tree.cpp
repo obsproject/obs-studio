@@ -180,24 +180,8 @@ void SourceTreeItem::paintEvent(QPaintEvent *event)
 	QWidget::paintEvent(event);
 }
 
-void SourceTreeItem::DisconnectSignals()
-{
-	sceneRemoveSignal.Disconnect();
-	itemRemoveSignal.Disconnect();
-	selectSignal.Disconnect();
-	deselectSignal.Disconnect();
-	visibleSignal.Disconnect();
-	lockedSignal.Disconnect();
-	renameSignal.Disconnect();
-	removeSignal.Disconnect();
-
-	if (obs_sceneitem_is_group(sceneitem))
-		groupReorderSignal.Disconnect();
-}
-
 void SourceTreeItem::Clear()
 {
-	DisconnectSignals();
 	sceneitem = nullptr;
 }
 
@@ -205,8 +189,6 @@ void SourceTreeItem::ReconnectSignals()
 {
 	if (!sceneitem)
 		return;
-
-	DisconnectSignals();
 
 	/* --------------------------------------------------------- */
 
@@ -308,7 +290,6 @@ void SourceTreeItem::ReconnectSignals()
 	auto removeSource = [](void *data, calldata_t *) {
 		SourceTreeItem *this_ =
 			reinterpret_cast<SourceTreeItem *>(data);
-		this_->DisconnectSignals();
 		this_->sceneitem = nullptr;
 		QMetaObject::invokeMethod(this_->tree, "RefreshItems");
 	};
