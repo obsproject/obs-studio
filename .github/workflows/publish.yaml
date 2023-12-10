@@ -81,7 +81,7 @@ jobs:
 
           git config --global --add safe.directory "${GITHUB_WORKSPACE}"
 
-          dnf install -y -q gh
+          dnf install -y -q gh flatpak-builder-1.3.3-2.fc39
           gh extension install actions/gh-actions-cache
 
           cache_key='flatpak-builder-${{ hashFiles('build-aux/**/*.json') }}'
