@@ -585,6 +585,7 @@ void ColorSourceToolbar::on_choose_clicked()
 	options |= QColorDialog::DontUseNativeDialog;
 #endif
 
+	HotkeyBlocker hb;
 	QColor newColor = QColorDialog::getColor(color, this, desc, options);
 	if (!newColor.isValid()) {
 		return;
@@ -658,6 +659,7 @@ void TextSourceToolbar::on_selectFont_clicked()
 	options = QFontDialog::DontUseNativeDialog;
 #endif
 
+	HotkeyBlocker hb;
 	font = QFontDialog::getFont(
 		&success, font, this,
 		QTStr("Basic.PropertiesWindow.SelectFont.WindowTitle"),
@@ -711,6 +713,7 @@ void TextSourceToolbar::on_selectColor_clicked()
 	options |= QColorDialog::DontUseNativeDialog;
 #endif
 
+	HotkeyBlocker hb;
 	QColor newColor = QColorDialog::getColor(color, this, desc, options);
 	if (!newColor.isValid()) {
 		return;
