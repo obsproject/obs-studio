@@ -179,14 +179,12 @@ build() {
       if [[ ${GITHUB_EVENT_NAME} == push && ${GITHUB_REF_NAME} =~ [0-9]+.[0-9]+.[0-9]+(-(rc|beta).+)? ]] {
         run_xcodebuild ${archive_args}
         run_xcodebuild ${export_args}
-
-        mv "OBS Studio.app" OBS.app
       } else {
         run_xcodebuild ${build_args}
 
         rm -rf OBS.app
         mkdir OBS.app
-        ditto "UI/${config}/OBS Studio.app" OBS.app
+        ditto UI/${config}/OBS.app OBS.app
       }
       popd
       ;;
