@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -67,7 +67,8 @@ static inline D3D11_FILTER ConvertGSFilter(gs_sample_filter filter)
 
 gs_sampler_state::gs_sampler_state(gs_device_t *device,
 				   const gs_sampler_info *info)
-	: gs_obj(device, gs_type::gs_sampler_state), info(*info)
+	: gs_obj(device, gs_type::gs_sampler_state),
+	  info(*info)
 {
 	HRESULT hr;
 	vec4 v4;

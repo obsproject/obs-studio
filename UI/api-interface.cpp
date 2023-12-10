@@ -81,22 +81,19 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 			OBSScene scene = GetOBSRef<OBSScene>(item);
 			obs_source_t *source = obs_scene_get_source(scene);
 
-			obs_source_addref(source);
-			da_push_back(sources->sources, &source);
+			if (obs_source_get_ref(source) != nullptr)
+				da_push_back(sources->sources, &source);
 		}
 	}
 
 	obs_source_t *obs_frontend_get_current_scene(void) override
 	{
-		OBSSource source;
-
 		if (main->IsPreviewProgramMode()) {
-			source = obs_weak_source_get_source(main->programScene);
+			return obs_weak_source_get_source(main->programScene);
 		} else {
-			source = main->GetCurrentSceneSource();
-			obs_source_addref(source);
+			OBSSource source = main->GetCurrentSceneSource();
+			return obs_source_get_ref(source);
 		}
-		return source;
 	}
 
 	void obs_frontend_set_current_scene(obs_source_t *scene) override
@@ -117,23 +114,21 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		struct obs_frontend_source_list *sources) override
 	{
 		for (int i = 0; i < main->ui->transitions->count(); i++) {
-			obs_source_t *tr = main->ui->transitions->itemData(i)
-						   .value<OBSSource>();
+			OBSSource tr = main->ui->transitions->itemData(i)
+					       .value<OBSSource>();
 
 			if (!tr)
 				continue;
 
-			obs_source_addref(tr);
-			da_push_back(sources->sources, &tr);
+			if (obs_source_get_ref(tr) != nullptr)
+				da_push_back(sources->sources, &tr);
 		}
 	}
 
 	obs_source_t *obs_frontend_get_current_transition(void) override
 	{
 		OBSSource tr = main->GetCurrentTransition();
-
-		obs_source_addref(tr);
-		return tr;
+		return obs_source_get_ref(tr);
 	}
 
 	void
@@ -325,6 +320,23 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		return os_atomic_load_bool(&recording_paused);
 	}
 
+	bool obs_frontend_recording_split_file(void) override
+	{
+		if (os_atomic_load_bool(&recording_active) &&
+		    !os_atomic_load_bool(&recording_paused)) {
+			proc_handler_t *ph = obs_output_get_proc_handler(
+				main->outputHandler->fileOutput);
+			uint8_t stack[128];
+			calldata cd;
+			calldata_init_fixed(&cd, stack, sizeof(stack));
+			proc_handler_call(ph, "split_file", &cd);
+			bool result = calldata_bool(&cd, "split_file_enabled");
+			return result;
+		} else {
+			return false;
+		}
+	}
+
 	void obs_frontend_replay_buffer_start(void) override
 	{
 		QMetaObject::invokeMethod(main, "StartReplayBuffer");
@@ -367,7 +379,70 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	void *obs_frontend_add_dock(void *dock) override
 	{
-		return (void *)main->AddDockWidget((QDockWidget *)dock);
+		QDockWidget *d = reinterpret_cast<QDockWidget *>(dock);
+
+		QString name = d->objectName();
+		if (name.isEmpty() || main->IsDockObjectNameUsed(name)) {
+			blog(LOG_WARNING,
+			     "The object name of the added dock is empty or already used,"
+			     " a temporary one will be set to avoid conflicts");
+
+			char *uuid = os_generate_uuid();
+			name = QT_UTF8(uuid);
+			bfree(uuid);
+			name.append("_oldExtraDock");
+
+			d->setObjectName(name);
+		}
+
+		return (void *)main->AddDockWidget(d);
+	}
+
+	bool obs_frontend_add_dock_by_id(const char *id, const char *title,
+					 void *widget) override
+	{
+		if (main->IsDockObjectNameUsed(QT_UTF8(id))) {
+			blog(LOG_WARNING,
+			     "Dock id '%s' already used!  "
+			     "Duplicate library?",
+			     id);
+			return false;
+		}
+
+		OBSDock *dock = new OBSDock(main);
+		dock->setWidget((QWidget *)widget);
+		dock->setWindowTitle(QT_UTF8(title));
+		dock->setObjectName(QT_UTF8(id));
+
+		main->AddDockWidget(dock, Qt::RightDockWidgetArea);
+
+		dock->setFloating(true);
+		dock->setVisible(false);
+
+		return true;
+	}
+
+	void obs_frontend_remove_dock(const char *id) override
+	{
+		main->RemoveDockWidget(QT_UTF8(id));
+	}
+
+	bool obs_frontend_add_custom_qdock(const char *id, void *dock) override
+	{
+		if (main->IsDockObjectNameUsed(QT_UTF8(id))) {
+			blog(LOG_WARNING,
+			     "Dock id '%s' already used!  "
+			     "Duplicate library?",
+			     id);
+			return false;
+		}
+
+		QDockWidget *d = reinterpret_cast<QDockWidget *>(dock);
+		d->setObjectName(QT_UTF8(id));
+
+		main->AddCustomDockWidget(d);
+
+		return true;
 	}
 
 	void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
@@ -391,22 +466,19 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	obs_output_t *obs_frontend_get_streaming_output(void) override
 	{
 		OBSOutput output = main->outputHandler->streamOutput.Get();
-		obs_output_addref(output);
-		return output;
+		return obs_output_get_ref(output);
 	}
 
 	obs_output_t *obs_frontend_get_recording_output(void) override
 	{
 		OBSOutput out = main->outputHandler->fileOutput.Get();
-		obs_output_addref(out);
-		return out;
+		return obs_output_get_ref(out);
 	}
 
 	obs_output_t *obs_frontend_get_replay_buffer_output(void) override
 	{
 		OBSOutput out = main->outputHandler->replayBuffer.Get();
-		obs_output_addref(out);
-		return out;
+		return obs_output_get_ref(out);
 	}
 
 	config_t *obs_frontend_get_profile_config(void) override
@@ -550,14 +622,12 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	obs_source_t *obs_frontend_get_current_preview_scene(void) override
 	{
-		OBSSource source = nullptr;
-
 		if (main->IsPreviewProgramMode()) {
-			source = main->GetCurrentSceneSource();
-			obs_source_addref(source);
+			OBSSource source = main->GetCurrentSceneSource();
+			return obs_source_get_ref(source);
 		}
 
-		return source;
+		return nullptr;
 	}
 
 	void
@@ -585,8 +655,7 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	obs_output_t *obs_frontend_get_virtualcam_output(void) override
 	{
 		OBSOutput output = main->outputHandler->virtualCam.Get();
-		obs_output_addref(output);
-		return output;
+		return obs_output_get_ref(output);
 	}
 
 	void obs_frontend_start_virtualcam(void) override
@@ -624,11 +693,58 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 					  Q_ARG(OBSSource, OBSSource(source)));
 	}
 
+	void obs_frontend_open_sceneitem_edit_transform(
+		obs_sceneitem_t *item) override
+	{
+		QMetaObject::invokeMethod(main, "OpenEditTransform",
+					  Q_ARG(OBSSceneItem,
+						OBSSceneItem(item)));
+	}
+
 	char *obs_frontend_get_current_record_output_path(void) override
 	{
 		const char *recordOutputPath = main->GetCurrentOutputPath();
 
 		return bstrdup(recordOutputPath);
+	}
+
+	const char *obs_frontend_get_locale_string(const char *string) override
+	{
+		return Str(string);
+	}
+
+	bool obs_frontend_is_theme_dark(void) override
+	{
+		return App()->IsThemeDark();
+	}
+
+	char *obs_frontend_get_last_recording(void) override
+	{
+		return bstrdup(main->outputHandler->lastRecordingPath.c_str());
+	}
+
+	char *obs_frontend_get_last_screenshot(void) override
+	{
+		return bstrdup(main->lastScreenshot.c_str());
+	}
+
+	char *obs_frontend_get_last_replay(void) override
+	{
+		return bstrdup(main->lastReplay.c_str());
+	}
+
+	void obs_frontend_add_undo_redo_action(const char *name,
+					       const undo_redo_cb undo,
+					       const undo_redo_cb redo,
+					       const char *undo_data,
+					       const char *redo_data,
+					       bool repeatable) override
+	{
+		main->undo_s.add_action(
+			name,
+			[undo](const std::string &data) { undo(data.c_str()); },
+			[redo](const std::string &data) { redo(data.c_str()); },
+			undo_data, redo_data, repeatable);
 	}
 
 	void on_load(obs_data_t *settings) override

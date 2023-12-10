@@ -49,11 +49,7 @@ public:
 	QPointer<OBSHotkeyLabel> pairPartner;
 	QPointer<OBSHotkeyWidget> widget;
 	void highlightPair(bool highlight);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 	void enterEvent(QEnterEvent *event) override;
-#else
-	void enterEvent(QEvent *event) override;
-#endif
 	void leaveEvent(QEvent *event) override;
 	void setToolTip(const QString &toolTip);
 };
@@ -64,7 +60,9 @@ class OBSHotkeyEdit : public QLineEdit {
 public:
 	OBSHotkeyEdit(QWidget *parent, obs_key_combination_t original,
 		      OBSBasicSettings *settings)
-		: QLineEdit(parent), original(original), settings(settings)
+		: QLineEdit(parent),
+		  original(original),
+		  settings(settings)
 	{
 #ifdef __APPLE__
 		// disable the input cursor on OSX, focus should be clear
@@ -74,11 +72,12 @@ public:
 		setAttribute(Qt::WA_InputMethodEnabled, false);
 		setAttribute(Qt::WA_MacShowFocusRect, true);
 		InitSignalHandler();
-		CreateDupeIcon();
 		ResetKey();
 	}
 	OBSHotkeyEdit(QWidget *parent = nullptr)
-		: QLineEdit(parent), original({}), settings(nullptr)
+		: QLineEdit(parent),
+		  original({}),
+		  settings(nullptr)
 	{
 #ifdef __APPLE__
 		// disable the input cursor on OSX, focus should be clear
@@ -98,10 +97,11 @@ public:
 
 	void UpdateDuplicationState();
 	bool hasDuplicate = false;
+	QVariant inputMethodQuery(Qt::InputMethodQuery) const override;
 
 protected:
 	OBSSignal layoutChanged;
-	QAction *dupeIcon;
+	QAction *dupeIcon = nullptr;
 
 	void InitSignalHandler();
 	void CreateDupeIcon();
@@ -172,11 +172,7 @@ public:
 	void Save();
 	void Save(std::vector<obs_key_combination_t> &combinations);
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 	void enterEvent(QEnterEvent *event) override;
-#else
-	void enterEvent(QEvent *event) override;
-#endif
 	void leaveEvent(QEvent *event) override;
 
 private:

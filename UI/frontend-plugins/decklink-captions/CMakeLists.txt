@@ -1,51 +1,42 @@
-project(decklink-captions)
+cmake_minimum_required(VERSION 3.22...3.25)
 
-if(APPLE)
-    find_library(COCOA Cocoa)
-    include_directories(${COCOA})
+legacy_check()
+
+if(NOT ENABLE_DECKLINK)
+  target_disable(decklink-captions)
+  return()
 endif()
 
-if(UNIX AND NOT APPLE)
-    find_package(X11 REQUIRED)
-    link_libraries(${X11_LIBRARIES})
-    include_directories(${X11_INCLUDE_DIR})
+find_qt(COMPONENTS Widgets)
+
+add_library(decklink-captions MODULE)
+add_library(OBS::decklink-captions ALIAS decklink-captions)
+
+target_sources(decklink-captions PRIVATE decklink-captions.cpp decklink-captions.h forms/captions.ui)
+target_link_libraries(decklink-captions PRIVATE OBS::frontend-api OBS::libobs Qt::Widgets)
+
+if(OS_WINDOWS)
+  configure_file(cmake/windows/obs-module.rc.in decklink-captions.rc)
+  target_sources(decklink-captions PRIVATE decklink-captions.rc)
+
+  set_property(
+    TARGET decklink-captions
+    APPEND
+    PROPERTY AUTORCC_OPTIONS --format-version 1)
+elseif(OS_MACOS)
+  target_compile_options(decklink-captions PRIVATE -Wno-quoted-include-in-framework-header -Wno-comma)
+  target_link_libraries(decklink-captions PRIVATE "$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>")
+elseif(OS_LINUX OR OS_FREEBSD)
+  find_package(X11 REQUIRED)
+  mark_as_advanced(X11)
+  target_link_libraries(decklink-captions PRIVATE X11::X11)
 endif()
 
-set(decklink-captions_HEADERS
-        decklink-captions.h
-        )
-set(decklink-captions_SOURCES
-        decklink-captions.cpp
-        )
-set(decklink-captions_UI
-        forms/captions.ui
-        )
-
-if(WIN32)
-    set(MODULE_DESCRIPTION "OBS DeckLink Captions module")
-    configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in decklink-captions.rc)
-    list(APPEND decklink-captions_SOURCES
-            decklink-captions.rc)
-endif()
-
-if(APPLE)
-    set(decklink-captions_PLATFORM_LIBS
-            ${COCOA})
-endif()
-
-qt5_wrap_ui(decklink-captions_UI_HEADERS
-        ${decklink-captions_UI})
-
-add_library(decklink-captions MODULE
-        ${decklink-captions_HEADERS}
-        ${decklink-captions_SOURCES}
-        ${decklink-captions_UI_HEADERS}
-        )
-target_link_libraries(decklink-captions
-        ${frontend-tools_PLATFORM_LIBS}
-        obs-frontend-api
-        Qt5::Widgets
-        libobs)
-set_target_properties(decklink-captions PROPERTIES FOLDER "plugins/decklink")
-
-install_obs_plugin_with_data(decklink-captions data)
+set_target_properties_obs(
+  decklink-captions
+  PROPERTIES FOLDER plugins/decklink
+             PREFIX ""
+             AUTOMOC ON
+             AUTOUIC ON
+             AUTORCC ON
+             AUTOUIC_SEARCH_PATHS forms)

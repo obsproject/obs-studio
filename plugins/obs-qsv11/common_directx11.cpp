@@ -2,10 +2,10 @@
 
 #include <map>
 
-ID3D11Device *g_pD3D11Device;
-ID3D11DeviceContext *g_pD3D11Ctx;
-IDXGIFactory2 *g_pDXGIFactory;
-IDXGIAdapter *g_pAdapter;
+ID3D11Device *g_pD3D11Device = nullptr;
+ID3D11DeviceContext *g_pD3D11Ctx = nullptr;
+IDXGIFactory2 *g_pDXGIFactory = nullptr;
+IDXGIAdapter *g_pAdapter = nullptr;
 
 std::map<mfxMemId *, mfxHDL> allocResponses;
 std::map<mfxHDL, mfxFrameAllocResponse> allocDecodeResponses;
@@ -136,7 +136,7 @@ CComPtr<ID3D11DeviceContext> GetHWDeviceContext()
 	return g_pD3D11Ctx;
 }
 
-/* (Hugh) Functions currently unused */
+/* (Lain) Functions currently unused */
 #if 0
 void ClearYUVSurfaceD3D(mfxMemId memId)
 {
@@ -169,6 +169,8 @@ mfxStatus _simple_alloc(mfxFrameAllocRequest *request,
 		 request->Info
 			 .FourCC) //|| MFX_FOURCC_P8_TEXTURE == request->Info.FourCC
 		format = DXGI_FORMAT_P8;
+	else if (MFX_FOURCC_P010 == request->Info.FourCC)
+		format = DXGI_FORMAT_P010;
 	else
 		format = DXGI_FORMAT_UNKNOWN;
 
@@ -389,6 +391,14 @@ mfxStatus simple_lock(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
 		ptr->U = 0;
 		ptr->V = 0;
 		break;
+	case DXGI_FORMAT_P010:
+		ptr->Pitch = (mfxU16)lockedRect.RowPitch;
+		ptr->PitchHigh = 0;
+		ptr->Y = (mfxU8 *)lockedRect.pData;
+		ptr->U = (mfxU8 *)lockedRect.pData +
+			 desc.Height * lockedRect.RowPitch;
+		ptr->V = ptr->U + 2;
+		break;
 	default:
 		return MFX_ERR_LOCK_MEMORY;
 	}
@@ -459,6 +469,9 @@ mfxStatus simple_copytex(mfxHDL pthis, mfxMemId mid, mfxU32 tex_handle,
 					   &SrcBox);
 
 	km->ReleaseSync(*next_key);
+
+	km->Release();
+	input_tex->Release();
 
 	return MFX_ERR_NONE;
 }

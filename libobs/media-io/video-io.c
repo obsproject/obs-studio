@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -46,6 +46,16 @@ struct video_input {
 	struct video_frame frame[MAX_CONVERT_BUFFERS];
 	int cur_frame;
 
+	// allow outputting at fractions of main composition FPS,
+	// e.g. 60 FPS with frame_rate_divisor = 1 turns into 30 FPS
+	//
+	// a separate counter is used in favor of using remainder calculations
+	// to allow "inputs" started at the same time to start on the same frame
+	// whereas with remainder calculation the frame alignment would depend on
+	// the total frame count at the time the encoder was started
+	uint32_t frame_rate_divisor;
+	uint32_t frame_rate_divisor_counter;
+
 	void (*callback)(void *param, struct video_data *frame);
 	void *param;
 };
@@ -69,8 +79,6 @@ struct video_output {
 	volatile long skipped_frames;
 	volatile long total_frames;
 
-	bool initialized;
-
 	pthread_mutex_t input_mutex;
 	DARRAY(struct video_input) inputs;
 
@@ -78,6 +86,8 @@ struct video_output {
 	size_t first_added;
 	size_t last_added;
 	struct cached_frame_info cache[MAX_CACHE_SIZE];
+
+	struct video_output *parent;
 
 	volatile bool raw_active;
 	volatile long gpu_refs;
@@ -137,6 +147,17 @@ static inline bool video_output_cur_frame(struct video_output *video)
 	for (size_t i = 0; i < video->inputs.num; i++) {
 		struct video_input *input = video->inputs.array + i;
 		struct video_data frame = frame_info->frame;
+
+		// an explicit counter is used instead of remainder calculation
+		// to allow multiple encoders started at the same time to start on
+		// the same frame
+		uint32_t skip = input->frame_rate_divisor_counter++;
+		if (input->frame_rate_divisor_counter ==
+		    input->frame_rate_divisor)
+			input->frame_rate_divisor_counter = 0;
+
+		if (skip)
+			continue;
 
 		if (scale_video_output(input, &frame))
 			input->callback(input->param, &frame);
@@ -236,7 +257,6 @@ int video_output_open(video_t **video, struct video_output_info *info)
 	memcpy(&out->info, info, sizeof(struct video_output_info));
 	out->frame_time =
 		util_mul_div64(1000000000ULL, info->fps_den, info->fps_num);
-	out->initialized = false;
 
 	if (pthread_mutex_init_recursive(&out->data_mutex) != 0)
 		goto fail0;
@@ -249,7 +269,6 @@ int video_output_open(video_t **video, struct video_output_info *info)
 
 	init_cache(out);
 
-	out->initialized = true;
 	*video = out;
 	return VIDEO_OUTPUT_SUCCESS;
 
@@ -260,7 +279,7 @@ fail2:
 fail1:
 	pthread_mutex_destroy(&out->data_mutex);
 fail0:
-	video_output_close(out);
+	bfree(out);
 	return VIDEO_OUTPUT_FAIL;
 }
 
@@ -271,12 +290,19 @@ void video_output_close(video_t *video)
 
 	video_output_stop(video);
 
+	pthread_mutex_lock(&video->input_mutex);
+
 	for (size_t i = 0; i < video->inputs.num; i++)
 		video_input_free(&video->inputs.array[i]);
 	da_free(video->inputs);
 
 	for (size_t i = 0; i < video->info.cache_size; i++)
 		video_frame_free((struct video_frame *)&video->cache[i]);
+
+	pthread_mutex_unlock(&video->input_mutex);
+	os_sem_destroy(video->update_semaphore);
+	pthread_mutex_destroy(&video->data_mutex);
+	pthread_mutex_destroy(&video->input_mutex);
 
 	bfree(video);
 }
@@ -295,12 +321,42 @@ static size_t video_get_input_idx(const video_t *video,
 	return DARRAY_INVALID;
 }
 
+static bool match_range(enum video_range_type a, enum video_range_type b)
+{
+	return (a == VIDEO_RANGE_FULL) == (b == VIDEO_RANGE_FULL);
+}
+
+static enum video_colorspace collapse_space(enum video_colorspace cs)
+{
+	switch (cs) {
+	case VIDEO_CS_SRGB:
+		cs = VIDEO_CS_709;
+		break;
+	case VIDEO_CS_2100_HLG:
+		cs = VIDEO_CS_2100_PQ;
+		break;
+	default:
+		break;
+	}
+
+	return cs;
+}
+
+static bool match_space(enum video_colorspace a, enum video_colorspace b)
+{
+	return (a == VIDEO_CS_DEFAULT) || (b == VIDEO_CS_DEFAULT) ||
+	       (collapse_space(a) == collapse_space(b));
+}
+
 static inline bool video_input_init(struct video_input *input,
 				    struct video_output *video)
 {
 	if (input->conversion.width != video->info.width ||
 	    input->conversion.height != video->info.height ||
-	    input->conversion.format != video->info.format) {
+	    input->conversion.format != video->info.format ||
+	    !match_range(input->conversion.range, video->info.range) ||
+	    !match_space(input->conversion.colorspace,
+			 video->info.colorspace)) {
 		struct video_scale_info from = {.format = video->info.format,
 						.width = video->info.width,
 						.height = video->info.height,
@@ -338,13 +394,37 @@ static inline void reset_frames(video_t *video)
 	os_atomic_set_long(&video->total_frames, 0);
 }
 
+static const video_t *get_const_root(const video_t *video)
+{
+	while (video->parent)
+		video = video->parent;
+	return video;
+}
+
+static video_t *get_root(video_t *video)
+{
+	while (video->parent)
+		video = video->parent;
+	return video;
+}
+
 bool video_output_connect(
 	video_t *video, const struct video_scale_info *conversion,
 	void (*callback)(void *param, struct video_data *frame), void *param)
 {
+	return video_output_connect2(video, conversion, 1, callback, param);
+}
+
+bool video_output_connect2(
+	video_t *video, const struct video_scale_info *conversion,
+	uint32_t frame_rate_divisor,
+	void (*callback)(void *param, struct video_data *frame), void *param)
+{
 	bool success = false;
 
-	if (!video || !callback)
+	video = get_root(video);
+
+	if (!video || !callback || frame_rate_divisor == 0)
 		return false;
 
 	pthread_mutex_lock(&video->input_mutex);
@@ -356,12 +436,16 @@ bool video_output_connect(
 		input.callback = callback;
 		input.param = param;
 
+		input.frame_rate_divisor = frame_rate_divisor;
+
 		if (conversion) {
 			input.conversion = *conversion;
 		} else {
 			input.conversion.format = video->info.format;
 			input.conversion.width = video->info.width;
 			input.conversion.height = video->info.height;
+			input.conversion.range = video->info.range;
+			input.conversion.colorspace = video->info.colorspace;
 		}
 
 		if (input.conversion.width == 0)
@@ -411,6 +495,8 @@ void video_output_disconnect(video_t *video,
 	if (!video || !callback)
 		return;
 
+	video = get_root(video);
+
 	pthread_mutex_lock(&video->input_mutex);
 
 	size_t idx = video_get_input_idx(video, callback, param);
@@ -433,7 +519,7 @@ bool video_output_active(const video_t *video)
 {
 	if (!video)
 		return false;
-	return os_atomic_load_bool(&video->raw_active);
+	return os_atomic_load_bool(&get_const_root(video)->raw_active);
 }
 
 const struct video_output_info *video_output_get_info(const video_t *video)
@@ -449,6 +535,8 @@ bool video_output_lock_frame(video_t *video, struct video_frame *frame,
 
 	if (!video)
 		return false;
+
+	video = get_root(video);
 
 	pthread_mutex_lock(&video->data_mutex);
 
@@ -483,6 +571,8 @@ void video_output_unlock_frame(video_t *video)
 	if (!video)
 		return;
 
+	video = get_root(video);
+
 	pthread_mutex_lock(&video->data_mutex);
 
 	video->available_frames--;
@@ -503,14 +593,12 @@ void video_output_stop(video_t *video)
 	if (!video)
 		return;
 
-	if (video->initialized) {
-		video->initialized = false;
+	video = get_root(video);
+
+	if (!video->stop) {
 		video->stop = true;
 		os_sem_post(video->update_semaphore);
 		pthread_join(video->thread, &thread_ret);
-		os_sem_destroy(video->update_semaphore);
-		pthread_mutex_destroy(&video->data_mutex);
-		pthread_mutex_destroy(&video->input_mutex);
 	}
 }
 
@@ -519,22 +607,22 @@ bool video_output_stopped(video_t *video)
 	if (!video)
 		return true;
 
-	return video->stop;
+	return get_root(video)->stop;
 }
 
 enum video_format video_output_get_format(const video_t *video)
 {
-	return video ? video->info.format : VIDEO_FORMAT_NONE;
+	return video ? get_const_root(video)->info.format : VIDEO_FORMAT_NONE;
 }
 
 uint32_t video_output_get_width(const video_t *video)
 {
-	return video ? video->info.width : 0;
+	return video ? get_const_root(video)->info.width : 0;
 }
 
 uint32_t video_output_get_height(const video_t *video)
 {
-	return video ? video->info.height : 0;
+	return video ? get_const_root(video)->info.height : 0;
 }
 
 double video_output_get_frame_rate(const video_t *video)
@@ -542,17 +630,21 @@ double video_output_get_frame_rate(const video_t *video)
 	if (!video)
 		return 0.0;
 
+	video = get_const_root(video);
+
 	return (double)video->info.fps_num / (double)video->info.fps_den;
 }
 
 uint32_t video_output_get_skipped_frames(const video_t *video)
 {
-	return (uint32_t)os_atomic_load_long(&video->skipped_frames);
+	return (uint32_t)os_atomic_load_long(
+		&get_const_root(video)->skipped_frames);
 }
 
 uint32_t video_output_get_total_frames(const video_t *video)
 {
-	return (uint32_t)os_atomic_load_long(&video->total_frames);
+	return (uint32_t)os_atomic_load_long(
+		&get_const_root(video)->total_frames);
 }
 
 /* Note: These four functions below are a very slight bit of a hack.  If the
@@ -563,6 +655,8 @@ uint32_t video_output_get_total_frames(const video_t *video)
 
 void video_output_inc_texture_encoders(video_t *video)
 {
+	video = get_root(video);
+
 	if (os_atomic_inc_long(&video->gpu_refs) == 1 &&
 	    !os_atomic_load_bool(&video->raw_active)) {
 		reset_frames(video);
@@ -571,6 +665,8 @@ void video_output_inc_texture_encoders(video_t *video)
 
 void video_output_dec_texture_encoders(video_t *video)
 {
+	video = get_root(video);
+
 	if (os_atomic_dec_long(&video->gpu_refs) == 0 &&
 	    !os_atomic_load_bool(&video->raw_active)) {
 		log_skipped(video);
@@ -579,10 +675,32 @@ void video_output_dec_texture_encoders(video_t *video)
 
 void video_output_inc_texture_frames(video_t *video)
 {
-	os_atomic_inc_long(&video->total_frames);
+	os_atomic_inc_long(&get_root(video)->total_frames);
 }
 
 void video_output_inc_texture_skipped_frames(video_t *video)
 {
-	os_atomic_inc_long(&video->skipped_frames);
+	os_atomic_inc_long(&get_root(video)->skipped_frames);
+}
+
+video_t *video_output_create_with_frame_rate_divisor(video_t *video,
+						     uint32_t divisor)
+{
+	// `divisor == 1` would result in the same frame rate,
+	// resulting in an unnecessary additional video output
+	if (!video || divisor == 0 || divisor == 1)
+		return NULL;
+
+	video_t *new_video = bzalloc(sizeof(video_t));
+	memcpy(new_video, video, sizeof(*new_video));
+	new_video->parent = video;
+	new_video->info.fps_den *= divisor;
+
+	return new_video;
+}
+
+void video_output_free_frame_rate_divisor(video_t *video)
+{
+	if (video && video->parent)
+		bfree(video);
 }

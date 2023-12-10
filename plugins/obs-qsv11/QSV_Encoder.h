@@ -56,9 +56,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <Windows.h>
-#include "mfxstructures.h"
+#include <vpl/mfxstructures.h>
+#include <vpl/mfxadapter.h>
 #include <stdint.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include "common_utils.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -69,15 +72,22 @@ struct qsv_rate_control_info {
 	bool haswell_or_greater;
 };
 
-static const struct qsv_rate_control_info qsv_ratecontrols[] = {
-	{"CBR", false},   {"VBR", false}, {"VCM", true},    {"CQP", false},
-	{"AVBR", false},  {"ICQ", true},  {"LA_ICQ", true}, {"LA_CBR", true},
-	{"LA_VBR", true}, {0, false}};
+static const struct qsv_rate_control_info qsv_ratecontrols[] = {{"CBR", false},
+								{"VBR", false},
+								{"CQP", false},
+								{"ICQ", true},
+								{0, false}};
+
 static const char *const qsv_profile_names[] = {"high", "main", "baseline", 0};
-static const char *const qsv_usage_names[] = {"quality",  "balanced", "speed",
-					      "veryslow", "slower",   "slow",
-					      "medium",   "fast",     "faster",
-					      "veryfast", 0};
+static const char *const qsv_profile_names_av1[] = {"main", 0};
+static const char *const qsv_profile_names_hevc[] = {"main", "main10", 0};
+static const char *const qsv_usage_translation_keys[] = {
+	"TargetUsage.TU1", "TargetUsage.TU2",
+	"TargetUsage.TU3", "TargetUsage.TU4",
+	"TargetUsage.TU5", "TargetUsage.TU6",
+	"TargetUsage.TU7", 0};
+static const char *const qsv_usage_names[] = {"TU1", "TU2", "TU3", "TU4",
+					      "TU5", "TU6", "TU7", 0};
 static const char *const qsv_latency_names[] = {"ultra-low", "low", "normal",
 						0};
 typedef struct qsv_t qsv_t;
@@ -103,8 +113,24 @@ typedef struct {
 	mfxU16 nKeyIntSec;
 	mfxU16 nbFrames;
 	mfxU16 nICQQuality;
-	bool bMBBRC;
+	mfxU16 VideoFormat;
+	mfxU16 VideoFullRange;
+	mfxU16 ColourPrimaries;
+	mfxU16 TransferCharacteristics;
+	mfxU16 MatrixCoefficients;
+	mfxU16 ChromaSampleLocTypeTopField;
+	mfxU16 ChromaSampleLocTypeBottomField;
+	mfxU16 DisplayPrimariesX[3];
+	mfxU16 DisplayPrimariesY[3];
+	mfxU16 WhitePointX;
+	mfxU16 WhitePointY;
+	mfxU32 MaxDisplayMasteringLuminance;
+	mfxU32 MinDisplayMasteringLuminance;
+	mfxU16 MaxContentLightLevel;
+	mfxU16 MaxPicAverageLightLevel;
 	bool bCQM;
+	bool video_fmt_10bit;
+	bool bRepeatHeaders;
 } qsv_param_t;
 
 enum qsv_cpu_platform {
@@ -132,7 +158,8 @@ int qsv_param_default_preset(qsv_param_t *, const char *preset,
 			     const char *tune);
 int qsv_encoder_reconfig(qsv_t *, qsv_param_t *);
 void qsv_encoder_version(unsigned short *major, unsigned short *minor);
-qsv_t *qsv_encoder_open(qsv_param_t *);
+qsv_t *qsv_encoder_open(qsv_param_t *, enum qsv_codec codec);
+bool qsv_encoder_is_dgpu(qsv_t *);
 int qsv_encoder_encode(qsv_t *, uint64_t, uint8_t *, uint8_t *, uint32_t,
 		       uint32_t, mfxBitstream **pBS);
 int qsv_encoder_encode_tex(qsv_t *, uint64_t, uint32_t, uint64_t, uint64_t *,
@@ -141,6 +168,10 @@ int qsv_encoder_headers(qsv_t *, uint8_t **pSPS, uint8_t **pPPS,
 			uint16_t *pnSPS, uint16_t *pnPPS);
 enum qsv_cpu_platform qsv_get_cpu_platform();
 bool prefer_igpu_enc(int *iGPUIndex);
+
+int qsv_hevc_encoder_headers(qsv_t *pContext, uint8_t **vVPS, uint8_t **pSPS,
+			     uint8_t **pPPS, uint16_t *pnVPS, uint16_t *pnSPS,
+			     uint16_t *pnPPS);
 
 #ifdef __cplusplus
 }

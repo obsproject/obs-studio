@@ -19,17 +19,32 @@ using namespace json11;
 
 /* ------------------------------------------------------------------------- */
 
-#define RESTREAM_AUTH_URL \
-	"https://obsproject.com/app-auth/restream?action=redirect"
-#define RESTREAM_TOKEN_URL "https://obsproject.com/app-auth/restream-token"
+#define RESTREAM_AUTH_URL OAUTH_BASE_URL "v1/restream/redirect"
+#define RESTREAM_TOKEN_URL OAUTH_BASE_URL "v1/restream/token"
 #define RESTREAM_STREAMKEY_URL "https://api.restream.io/v2/user/streamKey"
 #define RESTREAM_SCOPE_VERSION 1
+
+#define RESTREAM_CHAT_DOCK_NAME "restreamChat"
+#define RESTREAM_INFO_DOCK_NAME "restreamInfo"
+#define RESTREAM_CHANNELS_DOCK_NAME "restreamChannel"
 
 static Auth::Def restreamDef = {"Restream", Auth::Type::OAuth_StreamKey};
 
 /* ------------------------------------------------------------------------- */
 
 RestreamAuth::RestreamAuth(const Def &d) : OAuthStreamKey(d) {}
+
+RestreamAuth::~RestreamAuth()
+{
+	if (!uiLoaded)
+		return;
+
+	OBSBasic *main = OBSBasic::Get();
+
+	main->RemoveDockWidget(RESTREAM_CHAT_DOCK_NAME);
+	main->RemoveDockWidget(RESTREAM_INFO_DOCK_NAME);
+	main->RemoveDockWidget(RESTREAM_CHANNELS_DOCK_NAME);
+}
 
 bool RestreamAuth::GetChannelInfo()
 try {
@@ -135,52 +150,49 @@ void RestreamAuth::LoadUI()
 	QSize size = main->frameSize();
 	QPoint pos = main->pos();
 
-	chat.reset(new BrowserDock());
-	chat->setObjectName("restreamChat");
+	BrowserDock *chat = new BrowserDock(QTStr("Auth.Chat"));
+	chat->setObjectName(RESTREAM_CHAT_DOCK_NAME);
 	chat->resize(420, 600);
 	chat->setMinimumSize(200, 300);
 	chat->setWindowTitle(QTStr("Auth.Chat"));
 	chat->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(chat.data(), url, panel_cookies);
+	browser = cef->create_widget(chat, url, panel_cookies);
 	chat->SetWidget(browser);
 
-	main->addDockWidget(Qt::RightDockWidgetArea, chat.data());
-	chatMenu.reset(main->AddDockWidget(chat.data()));
+	main->AddDockWidget(chat, Qt::RightDockWidgetArea);
 
 	/* ----------------------------------- */
 
 	url = "https://restream.io/titles/embed";
 
-	info.reset(new BrowserDock());
-	info->setObjectName("restreamInfo");
+	BrowserDock *info = new BrowserDock(QTStr("Auth.StreamInfo"));
+	info->setObjectName(RESTREAM_INFO_DOCK_NAME);
 	info->resize(410, 600);
 	info->setMinimumSize(200, 150);
 	info->setWindowTitle(QTStr("Auth.StreamInfo"));
 	info->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(info.data(), url, panel_cookies);
+	browser = cef->create_widget(info, url, panel_cookies);
 	info->SetWidget(browser);
 
-	main->addDockWidget(Qt::LeftDockWidgetArea, info.data());
-	infoMenu.reset(main->AddDockWidget(info.data()));
+	main->AddDockWidget(info, Qt::LeftDockWidgetArea);
 
 	/* ----------------------------------- */
 
 	url = "https://restream.io/channel/embed";
 
-	channels.reset(new BrowserDock());
-	channels->setObjectName("restreamChannel");
+	BrowserDock *channels = new BrowserDock(QTStr("RestreamAuth.Channels"));
+	channels->setObjectName(RESTREAM_CHANNELS_DOCK_NAME);
 	channels->resize(410, 600);
 	channels->setMinimumSize(410, 300);
 	channels->setWindowTitle(QTStr("RestreamAuth.Channels"));
 	channels->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(channels.data(), url, panel_cookies);
+	browser = cef->create_widget(channels, url, panel_cookies);
 	channels->SetWidget(browser);
 
-	main->addDockWidget(Qt::LeftDockWidgetArea, channels.data());
-	channelMenu.reset(main->AddDockWidget(channels.data()));
+	main->AddDockWidget(channels, Qt::LeftDockWidgetArea);
 
 	/* ----------------------------------- */
 
@@ -201,7 +213,9 @@ void RestreamAuth::LoadUI()
 			main->Config(), service(), "DockState");
 		QByteArray dockState =
 			QByteArray::fromBase64(QByteArray(dockStateStr));
-		main->restoreState(dockState);
+
+		if (main->isVisible() || !main->isMaximized())
+			main->restoreState(dockState);
 	}
 
 	uiLoaded = true;
@@ -268,6 +282,11 @@ static void DeleteCookies()
 
 void RegisterRestreamAuth()
 {
+#if !defined(__APPLE__) && !defined(_WIN32)
+	if (QApplication::platformName().contains("wayland"))
+		return;
+#endif
+
 	OAuth::RegisterOAuth(restreamDef, CreateRestreamAuth,
 			     RestreamAuth::Login, DeleteCookies);
 }

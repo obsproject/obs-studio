@@ -21,13 +21,21 @@ private:
 	OBSSignal removeSignal;
 	OBSSignal selectSignal;
 	OBSSignal deselectSignal;
+	OBSSignal lockSignal;
 
 	std::string undo_data;
 
 	bool ignoreTransformSignal = false;
 	bool ignoreItemChange = false;
 
-	void HookWidget(QWidget *widget, const char *signal, const char *slot);
+	template<typename Widget, typename WidgetParent, typename... SignalArgs,
+		 typename... SlotArgs>
+	void HookWidget(Widget *widget,
+			void (WidgetParent::*signal)(SignalArgs...),
+			void (OBSBasicTransform::*slot)(SlotArgs...))
+	{
+		QObject::connect(widget, signal, this, slot);
+	}
 
 	void SetScene(OBSScene scene);
 	void SetItem(OBSSceneItem newItem);
@@ -38,6 +46,7 @@ private:
 	static void OBSSceneItemRemoved(void *param, calldata_t *data);
 	static void OBSSceneItemSelect(void *param, calldata_t *data);
 	static void OBSSceneItemDeselect(void *param, calldata_t *data);
+	static void OBSSceneItemLocked(void *param, calldata_t *data);
 
 private slots:
 	void RefreshControls();
@@ -45,10 +54,10 @@ private slots:
 	void OnBoundsType(int index);
 	void OnControlChanged();
 	void OnCropChanged();
-	void on_resetButton_clicked();
+	void SetEnabled(bool enable);
 
 public:
-	OBSBasicTransform(OBSBasic *parent);
+	OBSBasicTransform(OBSSceneItem item, OBSBasic *parent);
 	~OBSBasicTransform();
 
 public slots:

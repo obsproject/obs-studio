@@ -9,6 +9,7 @@
 
 #include "auth-youtube.hpp"
 #include "obs-app.hpp"
+#include "window-basic-main.hpp"
 #include "qt-wrappers.hpp"
 #include "remote-text.hpp"
 #include "ui-config.h"
@@ -29,6 +30,7 @@ using namespace json11;
 #define YOUTUBE_LIVE_TOKEN_URL "https://oauth2.googleapis.com/token"
 #define YOUTUBE_LIVE_VIDEOCATEGORIES_URL YOUTUBE_LIVE_API_URL "/videoCategories"
 #define YOUTUBE_LIVE_VIDEOS_URL YOUTUBE_LIVE_API_URL "/videos"
+#define YOUTUBE_LIVE_CHAT_MESSAGES_URL YOUTUBE_LIVE_API_URL "/liveChat/messages"
 #define YOUTUBE_LIVE_THUMBNAIL_URL \
 	"https://www.googleapis.com/upload/youtube/v3/thumbnails/set"
 
@@ -43,6 +45,18 @@ bool IsYouTubeService(const std::string &service)
 				  return service == yt.service;
 			  });
 	return it != youtubeServices.end();
+}
+bool IsUserSignedIntoYT()
+{
+	Auth *auth = OBSBasic::Get()->GetAuth();
+	if (auth) {
+		YoutubeApiWrappers *apiYouTube(
+			dynamic_cast<YoutubeApiWrappers *>(auth));
+		if (apiYouTube) {
+			return true;
+		}
+	}
+	return false;
 }
 
 bool YoutubeApiWrappers::GetTranslatedError(QString &error_message)
@@ -76,7 +90,7 @@ bool YoutubeApiWrappers::TryInsertCommand(const char *url,
 	std::string output;
 	std::string error;
 	// Increase timeout by the time it takes to transfer `data_size` at 1 Mbps
-	int timeout = 5 + data_size / 125000;
+	int timeout = 60 + data_size / 125000;
 	bool success = GetRemoteFile(url, output, error, &httpStatusCode,
 				     content_type, request_type, data,
 				     {"Authorization: Bearer " + token},
@@ -274,7 +288,8 @@ bool YoutubeApiWrappers::InsertStream(StreamDescription &stream)
 }
 
 bool YoutubeApiWrappers::BindStream(const QString broadcast_id,
-				    const QString stream_id)
+				    const QString stream_id,
+				    json11::Json &json_out)
 {
 	lastErrorMessage.clear();
 	lastErrorReason.clear();
@@ -285,7 +300,6 @@ bool YoutubeApiWrappers::BindStream(const QString broadcast_id,
 	const QString url = url_template.arg(broadcast_id, stream_id);
 	const Json data = Json::object{};
 	this->broadcast_id = broadcast_id;
-	Json json_out;
 	return InsertCommand(QT_TO_UTF8(url), "application/json", "",
 			     data.dump().c_str(), json_out);
 }
@@ -319,14 +333,14 @@ bool YoutubeApiWrappers::GetVideoCategoriesList(
 		"&regionCode=%1"
 		"&hl=%2";
 	/*
-	* All OBS locale regions aside from "US" are missing category id 29
-	* ("Nonprofits & Activism"), but it is still available to channels
-	* set to those regions via the YouTube Studio website.
-	* To work around this inconsistency with the API all locales will
-	* use the "US" region and only set the language part for localisation.
-	* It is worth noting that none of the regions available on YouTube
-	* feature any category not also available to the "US" region.
-	*/
+	 * All OBS locale regions aside from "US" are missing category id 29
+	 * ("Nonprofits & Activism"), but it is still available to channels
+	 * set to those regions via the YouTube Studio website.
+	 * To work around this inconsistency with the API all locales will
+	 * use the "US" region and only set the language part for localisation.
+	 * It is worth noting that none of the regions available on YouTube
+	 * feature any category not also available to the "US" region.
+	 */
 	QString url = url_template.arg("US", QLocale().name());
 
 	Json json_out;
@@ -582,4 +596,23 @@ bool YoutubeApiWrappers::FindStream(const QString &id, json11::Json &json_out)
 	}
 
 	return true;
+}
+
+bool YoutubeApiWrappers::SendChatMessage(const std::string &chat_id,
+					 const QString &message)
+{
+	QByteArray url = YOUTUBE_LIVE_CHAT_MESSAGES_URL "?part=snippet";
+
+	json11::Json json_in = Json::object{
+		{"snippet",
+		 Json::object{
+			 {"liveChatId", chat_id},
+			 {"type", "textMessageEvent"},
+			 {"textMessageDetails",
+			  Json::object{{"messageText", QT_TO_UTF8(message)}}},
+		 }}};
+
+	json11::Json json_out;
+	return InsertCommand(url, "application/json", "POST",
+			     json_in.dump().c_str(), json_out);
 }

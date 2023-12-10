@@ -1,22 +1,18 @@
-project(win-wasapi)
+cmake_minimum_required(VERSION 3.24...3.25)
 
-set(win-wasapi_HEADERS
-	enum-wasapi.hpp)
+legacy_check()
 
-set(MODULE_DESCRIPTION "OBS WASAPI module")
-configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in win-wasapi.rc)
-set(win-wasapi_SOURCES
-	win-wasapi.cpp
-	enum-wasapi.cpp
-	plugin-main.cpp
-	win-wasapi.rc)
+add_library(win-wasapi MODULE)
+add_library(OBS::wasapi ALIAS win-wasapi)
 
-add_library(win-wasapi MODULE
-	${win-wasapi_SOURCES}
-	${win-wasapi_HEADERS})
-target_link_libraries(win-wasapi
-	Avrt
-	libobs)
-set_target_properties(win-wasapi PROPERTIES FOLDER "plugins")
+target_sources(win-wasapi PRIVATE win-wasapi.cpp wasapi-notify.cpp wasapi-notify.hpp enum-wasapi.cpp enum-wasapi.hpp
+                                  plugin-main.cpp)
 
-install_obs_plugin_with_data(win-wasapi data)
+configure_file(cmake/windows/obs-module.rc.in win-wasapi.rc)
+target_sources(win-wasapi PRIVATE win-wasapi.rc)
+
+target_link_libraries(win-wasapi PRIVATE OBS::libobs Avrt)
+
+# cmake-format: off
+set_target_properties_obs(win-wasapi PROPERTIES FOLDER plugins PREFIX "")
+# cmake-format: on

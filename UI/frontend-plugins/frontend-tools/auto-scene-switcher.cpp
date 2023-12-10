@@ -26,7 +26,9 @@ struct SceneSwitch {
 	regex re;
 
 	inline SceneSwitch(OBSWeakSource scene_, const char *window_)
-		: scene(scene_), window(window_), re(window_)
+		: scene(scene_),
+		  window(window_),
+		  re(window_)
 	{
 	}
 };
@@ -47,7 +49,6 @@ struct SwitcherData {
 	OBSWeakSource nonMatchingScene;
 	int interval = DEFAULT_INTERVAL;
 	bool switchIfNotMatching = false;
-	bool startAtLaunch = false;
 
 	void Thread();
 	void Start();
@@ -79,7 +80,8 @@ static inline QString MakeSwitchName(const QString &scene,
 }
 
 SceneSwitcher::SceneSwitcher(QWidget *parent)
-	: QDialog(parent), ui(new Ui_SceneSwitcher)
+	: QDialog(parent),
+	  ui(new Ui_SceneSwitcher)
 {
 	ui->setupUi(this);
 
@@ -128,9 +130,10 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 		SetStopped();
 
 	loading = false;
+	connect(this, &QDialog::finished, this, &SceneSwitcher::finished);
 }
 
-void SceneSwitcher::closeEvent(QCloseEvent *)
+void SceneSwitcher::finished()
 {
 	obs_frontend_save();
 }
@@ -253,15 +256,6 @@ void SceneSwitcher::on_remove_clicked()
 	}
 
 	delete item;
-}
-
-void SceneSwitcher::on_startAtLaunch_toggled(bool value)
-{
-	if (loading)
-		return;
-
-	lock_guard<mutex> lock(switcher->m);
-	switcher->startAtLaunch = value;
 }
 
 void SceneSwitcher::UpdateNonMatchingScene(const QString &name)

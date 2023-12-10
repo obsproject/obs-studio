@@ -1,6 +1,10 @@
 #include <dxgi.h>
 
+#ifdef OBS_LEGACY
 #include "../d3d8-api/d3d8.h"
+#else
+#include <d3d8.h>
+#endif
 #include "graphics-hook.h"
 
 #include <detours.h>
@@ -35,7 +39,7 @@ static d3d8_data data = {};
 
 static DXGI_FORMAT d3d8_to_dxgi_format(D3DFORMAT format)
 {
-	switch ((unsigned long)format) {
+	switch (format) {
 	case D3DFMT_X1R5G5B5:
 	case D3DFMT_A1R5G5B5:
 		return DXGI_FORMAT_B5G5R5A1_UNORM;

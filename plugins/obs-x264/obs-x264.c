@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -30,11 +30,15 @@
 
 #include <x264.h>
 
-#define do_log(level, format, ...)                  \
+#define do_log_enc(level, encoder, format, ...)     \
 	blog(level, "[x264 encoder: '%s'] " format, \
-	     obs_encoder_get_name(obsx264->encoder), ##__VA_ARGS__)
+	     obs_encoder_get_name(encoder), ##__VA_ARGS__)
+#define do_log(level, format, ...) \
+	do_log_enc(level, obsx264->encoder, format, ##__VA_ARGS__)
 
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
+#define warn_enc(encoder, format, ...) \
+	do_log_enc(LOG_WARNING, encoder, format, ##__VA_ARGS__)
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
 #define debug(format, ...) do_log(LOG_DEBUG, format, ##__VA_ARGS__)
 
@@ -196,7 +200,9 @@ static obs_properties_t *obs_x264_props(void *unused)
 
 	obs_properties_add_int(props, "crf", TEXT_CRF, 0, 51, 1);
 
-	obs_properties_add_int(props, "keyint_sec", TEXT_KEYINT_SEC, 0, 20, 1);
+	p = obs_properties_add_int(props, "keyint_sec", TEXT_KEYINT_SEC, 0, 20,
+				   1);
+	obs_property_int_set_suffix(p, " s");
 
 	list = obs_properties_add_list(props, "preset", TEXT_PRESET,
 				       OBS_COMBO_TYPE_LIST,
@@ -229,22 +235,6 @@ static obs_properties_t *obs_x264_props(void *unused)
 	obs_property_set_visible(headers, false);
 
 	return props;
-}
-
-static bool getparam(const char *param, char **name, const char **value)
-{
-	const char *assign;
-
-	if (!param || !*param || (*param == '='))
-		return false;
-
-	assign = strchr(param, '=');
-	if (!assign || !*assign || !*(assign + 1))
-		return false;
-
-	*name = bstrdup_n(param, assign - param);
-	*value = assign + 1;
-	return true;
 }
 
 static const char *validate(struct obs_x264 *obsx264, const char *val,
@@ -352,13 +342,20 @@ static bool reset_x264_params(struct obs_x264 *obsx264, const char *preset,
 
 static void log_x264(void *param, int level, const char *format, va_list args)
 {
-	struct obs_x264 *obsx264 = param;
-	char str[1024];
+	static const int level_map[] = {
+		LOG_ERROR,
+		LOG_WARNING,
+		LOG_INFO,
+		LOG_DEBUG,
+	};
 
-	vsnprintf(str, 1024, format, args);
-	info("%s", str);
+	UNUSED_PARAMETER(param);
+	if (level < X264_LOG_ERROR)
+		level = X264_LOG_ERROR;
+	else if (level > X264_LOG_DEBUG)
+		level = X264_LOG_DEBUG;
 
-	UNUSED_PARAMETER(level);
+	blogva(level_map[level], format, args);
 }
 
 static inline int get_x264_cs_val(const char *const name,
@@ -470,26 +467,27 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 
 	static const char *const smpte170m = "smpte170m";
 	static const char *const bt709 = "bt709";
-	static const char *const iec61966_2_1 = "iec61966-2-1";
-	const char *colorprim = NULL;
-	const char *transfer = NULL;
-	const char *colmatrix = NULL;
+	const char *colorprim = bt709;
+	const char *transfer = bt709;
+	const char *colmatrix = bt709;
 	switch (info.colorspace) {
-	case VIDEO_CS_601:
-		colorprim = smpte170m;
-		transfer = smpte170m;
-		colmatrix = smpte170m;
-		break;
 	case VIDEO_CS_DEFAULT:
 	case VIDEO_CS_709:
 		colorprim = bt709;
 		transfer = bt709;
 		colmatrix = bt709;
 		break;
+	case VIDEO_CS_601:
+		colorprim = smpte170m;
+		transfer = smpte170m;
+		colmatrix = smpte170m;
+		break;
 	case VIDEO_CS_SRGB:
 		colorprim = bt709;
-		transfer = iec61966_2_1;
+		transfer = "iec61966-2-1";
 		colmatrix = bt709;
+		break;
+	default:
 		break;
 	}
 
@@ -682,6 +680,32 @@ static void load_headers(struct obs_x264 *obsx264)
 
 static void *obs_x264_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
+	video_t *video = obs_encoder_video(encoder);
+	const struct video_output_info *voi = video_output_get_info(video);
+	switch (voi->format) {
+	case VIDEO_FORMAT_I010:
+	case VIDEO_FORMAT_P010:
+	case VIDEO_FORMAT_P216:
+	case VIDEO_FORMAT_P416:
+		obs_encoder_set_last_error(
+			encoder, obs_module_text("HighPrecisionUnsupported"));
+		warn_enc(
+			encoder,
+			"OBS does not support using x264 with high-precision formats");
+		return NULL;
+	default:
+		if (voi->colorspace == VIDEO_CS_2100_PQ ||
+		    voi->colorspace == VIDEO_CS_2100_HLG) {
+			obs_encoder_set_last_error(
+				encoder, obs_module_text("HdrUnsupported"));
+			warn_enc(
+				encoder,
+				"OBS does not support using x264 with Rec. 2100");
+			return NULL;
+		}
+		break;
+	}
+
 	struct obs_x264 *obsx264 = bzalloc(sizeof(struct obs_x264));
 	obsx264->encoder = encoder;
 

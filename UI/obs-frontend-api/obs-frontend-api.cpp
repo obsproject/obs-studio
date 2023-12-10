@@ -13,7 +13,7 @@ void obs_frontend_set_callbacks_internal(obs_frontend_callbacks *callbacks)
 static inline bool callbacks_valid_(const char *func_name)
 {
 	if (!c) {
-		blog(LOG_WARNING, "Tried to call %s with no callbacks!",
+		blog(LOG_ERROR, "Tried to call %s with no callbacks!",
 		     func_name);
 		return false;
 	}
@@ -279,6 +279,12 @@ bool obs_frontend_recording_paused(void)
 	return !!callbacks_valid() ? c->obs_frontend_recording_paused() : false;
 }
 
+bool obs_frontend_recording_split_file(void)
+{
+	return !!callbacks_valid() ? c->obs_frontend_recording_split_file()
+				   : false;
+}
+
 void obs_frontend_replay_buffer_start(void)
 {
 	if (callbacks_valid())
@@ -322,6 +328,26 @@ void obs_frontend_add_tools_menu_item(const char *name,
 void *obs_frontend_add_dock(void *dock)
 {
 	return !!callbacks_valid() ? c->obs_frontend_add_dock(dock) : nullptr;
+}
+
+bool obs_frontend_add_dock_by_id(const char *id, const char *title,
+				 void *widget)
+{
+	return !!callbacks_valid()
+		       ? c->obs_frontend_add_dock_by_id(id, title, widget)
+		       : false;
+}
+
+void obs_frontend_remove_dock(const char *id)
+{
+	if (callbacks_valid())
+		c->obs_frontend_remove_dock(id);
+}
+
+bool obs_frontend_add_custom_qdock(const char *id, void *dock)
+{
+	return !!callbacks_valid() ? c->obs_frontend_add_custom_qdock(id, dock)
+				   : false;
 }
 
 void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
@@ -553,9 +579,55 @@ void obs_frontend_open_source_interaction(obs_source_t *source)
 		c->obs_frontend_open_source_interaction(source);
 }
 
+void obs_frontend_open_sceneitem_edit_transform(obs_sceneitem_t *item)
+{
+	if (callbacks_valid())
+		c->obs_frontend_open_sceneitem_edit_transform(item);
+}
+
 char *obs_frontend_get_current_record_output_path(void)
 {
 	return !!callbacks_valid()
 		       ? c->obs_frontend_get_current_record_output_path()
 		       : nullptr;
+}
+
+const char *obs_frontend_get_locale_string(const char *string)
+{
+	return !!callbacks_valid() ? c->obs_frontend_get_locale_string(string)
+				   : nullptr;
+}
+
+bool obs_frontend_is_theme_dark(void)
+{
+	return !!callbacks_valid() ? c->obs_frontend_is_theme_dark() : false;
+}
+
+char *obs_frontend_get_last_recording(void)
+{
+	return !!callbacks_valid() ? c->obs_frontend_get_last_recording()
+				   : nullptr;
+}
+
+char *obs_frontend_get_last_screenshot(void)
+{
+	return !!callbacks_valid() ? c->obs_frontend_get_last_screenshot()
+				   : nullptr;
+}
+
+char *obs_frontend_get_last_replay(void)
+{
+	return !!callbacks_valid() ? c->obs_frontend_get_last_replay()
+				   : nullptr;
+}
+
+void obs_frontend_add_undo_redo_action(const char *name,
+				       const undo_redo_cb undo,
+				       const undo_redo_cb redo,
+				       const char *undo_data,
+				       const char *redo_data, bool repeatable)
+{
+	if (callbacks_valid())
+		c->obs_frontend_add_undo_redo_action(
+			name, undo, redo, undo_data, redo_data, repeatable);
 }

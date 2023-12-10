@@ -125,7 +125,8 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth,
 				const QImage newImage = imgReader.read();
 				ui->thumbnailPreview->setPixmap(
 					QPixmap::fromImage(newImage).scaled(
-						160, 90, Qt::KeepAspectRatio));
+						160, 90, Qt::KeepAspectRatio,
+						Qt::SmoothTransformation));
 			}
 		} else {
 			thumbnailFile.clear();
@@ -443,12 +444,12 @@ void OBSYoutubeActions::UpdateOkButtonStatus()
 	}
 }
 bool OBSYoutubeActions::CreateEventAction(YoutubeApiWrappers *api,
+					  BroadcastDescription &broadcast,
 					  StreamDescription &stream,
 					  bool stream_later,
 					  bool ready_broadcast)
 {
 	YoutubeApiWrappers *apiYouTube = api;
-	BroadcastDescription broadcast = {};
 	UiToBroadcast(broadcast);
 
 	if (stream_later) {
@@ -497,16 +498,26 @@ bool OBSYoutubeActions::CreateEventAction(YoutubeApiWrappers *api,
 			blog(LOG_DEBUG, "No stream created.");
 			return false;
 		}
-		if (!apiYouTube->BindStream(broadcast.id, stream.id)) {
+		json11::Json json;
+		if (!apiYouTube->BindStream(broadcast.id, stream.id, json)) {
 			blog(LOG_DEBUG, "No stream binded.");
 			return false;
 		}
 
-		if (broadcast.privacy != "private")
-			apiYouTube->SetChatId(broadcast.id);
-		else
+		if (broadcast.privacy != "private") {
+			const std::string apiLiveChatId =
+				json["snippet"]["liveChatId"].string_value();
+			apiYouTube->SetChatId(broadcast.id, apiLiveChatId);
+		} else {
 			apiYouTube->ResetChat();
+		}
 	}
+
+#ifdef YOUTUBE_ENABLED
+	if (OBSBasic::Get()->GetYouTubeAppDock())
+		OBSBasic::Get()->GetYouTubeAppDock()->BroadcastCreated(
+			broadcast.id.toStdString().c_str());
+#endif
 
 	return true;
 }
@@ -530,6 +541,10 @@ bool OBSYoutubeActions::ChooseAnEventAction(YoutubeApiWrappers *api,
 		json["items"]
 			.array_items()[0]["status"]["privacyStatus"]
 			.string_value();
+	std::string apiLiveChatId =
+		json["items"]
+			.array_items()[0]["snippet"]["liveChatId"]
+			.string_value();
 
 	stream.id = boundStreamId.c_str();
 	if (!stream.id.isEmpty() && apiYouTube->FindStream(stream.id, json)) {
@@ -547,16 +562,23 @@ bool OBSYoutubeActions::ChooseAnEventAction(YoutubeApiWrappers *api,
 			blog(LOG_DEBUG, "No stream created.");
 			return false;
 		}
-		if (!apiYouTube->BindStream(selectedBroadcast, stream.id)) {
+		if (!apiYouTube->BindStream(selectedBroadcast, stream.id,
+					    json)) {
 			blog(LOG_DEBUG, "No stream binded.");
 			return false;
 		}
 	}
 
 	if (broadcastPrivacy != "private")
-		apiYouTube->SetChatId(selectedBroadcast);
+		apiYouTube->SetChatId(selectedBroadcast, apiLiveChatId);
 	else
 		apiYouTube->ResetChat();
+
+#ifdef YOUTUBE_ENABLED
+	if (OBSBasic::Get()->GetYouTubeAppDock())
+		OBSBasic::Get()->GetYouTubeAppDock()->BroadcastSelected(
+			selectedBroadcast.toStdString().c_str());
+#endif
 
 	return true;
 }
@@ -575,6 +597,7 @@ void OBSYoutubeActions::ShowErrorDialog(QWidget *parent, QString text)
 
 void OBSYoutubeActions::InitBroadcast()
 {
+	BroadcastDescription broadcast;
 	StreamDescription stream;
 	QMessageBox msgBox(this);
 	msgBox.setWindowFlags(msgBox.windowFlags() &
@@ -587,10 +610,12 @@ void OBSYoutubeActions::InitBroadcast()
 	auto action = [&]() {
 		if (ui->tabWidget->currentIndex() == 0) {
 			success = this->CreateEventAction(
-				apiYouTube, stream,
+				apiYouTube, broadcast, stream,
 				ui->checkScheduledLater->isChecked());
 		} else {
 			success = this->ChooseAnEventAction(apiYouTube, stream);
+			if (success)
+				broadcast.id = this->selectedBroadcast;
 		};
 		QMetaObject::invokeMethod(&msgBox, "accept",
 					  Qt::QueuedConnection);
@@ -617,15 +642,17 @@ void OBSYoutubeActions::InitBroadcast()
 				// Stream now usecase.
 				blog(LOG_DEBUG, "New valid stream: %s",
 				     QT_TO_UTF8(stream.name));
-				emit ok(QT_TO_UTF8(stream.id),
+				emit ok(QT_TO_UTF8(broadcast.id),
+					QT_TO_UTF8(stream.id),
 					QT_TO_UTF8(stream.name), true, true,
 					true);
 				Accept();
 			}
 		} else {
 			// Stream to precreated broadcast usecase.
-			emit ok(QT_TO_UTF8(stream.id), QT_TO_UTF8(stream.name),
-				autostart, autostop, true);
+			emit ok(QT_TO_UTF8(broadcast.id), QT_TO_UTF8(stream.id),
+				QT_TO_UTF8(stream.name), autostart, autostop,
+				true);
 			Accept();
 		}
 	} else {
@@ -644,6 +671,7 @@ void OBSYoutubeActions::InitBroadcast()
 
 void OBSYoutubeActions::ReadyBroadcast()
 {
+	BroadcastDescription broadcast;
 	StreamDescription stream;
 	QMessageBox msgBox(this);
 	msgBox.setWindowFlags(msgBox.windowFlags() &
@@ -656,10 +684,12 @@ void OBSYoutubeActions::ReadyBroadcast()
 	auto action = [&]() {
 		if (ui->tabWidget->currentIndex() == 0) {
 			success = this->CreateEventAction(
-				apiYouTube, stream,
+				apiYouTube, broadcast, stream,
 				ui->checkScheduledLater->isChecked(), true);
 		} else {
 			success = this->ChooseAnEventAction(apiYouTube, stream);
+			if (success)
+				broadcast.id = this->selectedBroadcast;
 		};
 		QMetaObject::invokeMethod(&msgBox, "accept",
 					  Qt::QueuedConnection);
@@ -670,8 +700,8 @@ void OBSYoutubeActions::ReadyBroadcast()
 	thread->wait();
 
 	if (success) {
-		emit ok(QT_TO_UTF8(stream.id), QT_TO_UTF8(stream.name),
-			autostart, autostop, false);
+		emit ok(QT_TO_UTF8(broadcast.id), QT_TO_UTF8(stream.id),
+			QT_TO_UTF8(stream.name), autostart, autostop, false);
 		Accept();
 	} else {
 		// Fail.
@@ -812,7 +842,8 @@ void OBSYoutubeActions::LoadSettings()
 			const QImage newImage = imgReader.read();
 			ui->thumbnailPreview->setPixmap(
 				QPixmap::fromImage(newImage).scaled(
-					160, 90, Qt::KeepAspectRatio));
+					160, 90, Qt::KeepAspectRatio,
+					Qt::SmoothTransformation));
 		}
 	}
 }

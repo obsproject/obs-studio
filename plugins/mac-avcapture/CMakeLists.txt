@@ -1,45 +1,28 @@
-project(mac-avcapture)
+cmake_minimum_required(VERSION 3.24...3.25)
 
-find_library(AVFOUNDATION AVFoundation)
-find_library(COCOA Cocoa)
-find_library(COREFOUNDATION CoreFoundation)
-find_library(COREMEDIA CoreMedia)
-find_library(COREVIDEO CoreVideo)
-find_library(COCOA Cocoa)
-find_library(COREMEDIAIO CoreMediaIO)
+add_library(mac-avcapture MODULE)
+add_library(OBS::avcapture ALIAS mac-avcapture)
 
-include_directories(${AVFOUNDATION}
-                    ${COCOA}
-                    ${COREFOUNDATION}
-                    ${COREMEDIA}
-                    ${COREVIDEO}
-                    ${COREMEDIAIO}
-		    ${COCOA})
+target_sources(mac-avcapture PRIVATE av-capture.mm left-right.hpp scope-guard.hpp)
 
-set(mac-avcapture_HEADERS
-	left-right.hpp
-	scope-guard.hpp
-	)
+if(NOT XCODE)
+  set_source_files_properties(av-capture.mm PROPERTIES COMPILE_FLAGS -fobjc-arc)
+endif()
 
-set(mac-avcapture_SOURCES
-	av-capture.mm)
+target_link_libraries(
+  mac-avcapture
+  PRIVATE OBS::libobs
+          "$<LINK_LIBRARY:FRAMEWORK,AVFoundation.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,CoreFoundation.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,CoreMedia.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,CoreVideo.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,CoreMediaIO.framework>")
 
-set_source_files_properties(av-capture.mm
-	PROPERTIES COMPILE_FLAGS "-fobjc-arc")
-
-add_library(mac-avcapture MODULE
-	${mac-avcapture_SOURCES}
-	${mac-avcapture_HEADERS})
-
-target_link_libraries(mac-avcapture
-	libobs
-	${AVFOUNDATION}
-	${COCOA}
-	${COREFOUNDATION}
-	${COREMEDIA}
-	${COREVIDEO}
-	${COREMEDIAIO}
-	${COCOA})
-set_target_properties(mac-avcapture PROPERTIES FOLDER "plugins")
-
-install_obs_plugin_with_data(mac-avcapture data)
+set_target_properties_obs(
+  mac-avcapture
+  PROPERTIES FOLDER plugins
+             PREFIX ""
+             XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
+             XCODE_ATTRIBUTE_CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION YES
+             XCODE_ATTRIBUTE_GCC_WARN_SHADOW YES)

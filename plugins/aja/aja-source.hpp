@@ -1,6 +1,7 @@
 #pragma once
 
 #include "aja-props.hpp"
+#include "audio-repack.hpp"
 
 #include <obs-module.h>
 
@@ -48,6 +49,9 @@ public:
 	void SetSourceProps(const SourceProps &props);
 	SourceProps GetSourceProps() const;
 
+	void CacheConnections(const NTV2XptConnections &cnx);
+	void ClearConnections();
+
 	bool ReadChannelVPIDs(NTV2Channel channel, VPIDData &vpids);
 
 	bool ReadWireFormats(NTV2DeviceID device_id, IOSelection io_select,
@@ -79,4 +83,6 @@ private:
 	std::mutex mMutex;
 
 	obs_source_t *mSource;
+
+	NTV2XptConnections mCrosspoints;
 };

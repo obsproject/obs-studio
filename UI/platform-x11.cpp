@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
     Copyright (C) 2014 by Zachary Lund <admin@computerquip.com>
 
     This program is free software: you can redistribute it and/or modify
@@ -53,7 +53,7 @@ using std::vector;
 using std::ostringstream;
 
 #ifdef __linux__
-void RunningInstanceCheck(bool &already_running)
+void CheckIfAlreadyRunning(bool &already_running)
 {
 	int uniq = socket(AF_LOCAL, SOCK_DGRAM | SOCK_CLOEXEC, 0);
 
@@ -133,10 +133,10 @@ struct RunOnce {
 } RO;
 const char *RunOnce::thr_name = "OBS runonce";
 
-void PIDFileCheck(bool &already_running)
+void CheckIfAlreadyRunning(bool &already_running)
 {
 	std::string tmpfile_name =
-		"/tmp/obs-studio.lock." + to_string(geteuid());
+		"/tmp/obs-studio.lock." + std::to_string(geteuid());
 	int fd = open(tmpfile_name.c_str(), O_RDWR | O_CREAT | O_EXLOCK, 0600);
 	if (fd == -1) {
 		already_running = true;
@@ -178,7 +178,7 @@ static inline bool check_path(const char *data, const char *path,
 	str << path << data;
 	output = str.str();
 
-	printf("Attempted path: %s\n", output.c_str());
+	blog(LOG_DEBUG, "Attempted path: %s", output.c_str());
 
 	return (access(output.c_str(), R_OK) == 0);
 }
@@ -201,11 +201,6 @@ bool GetDataFilePath(const char *data, string &output)
 	return false;
 }
 
-bool InitApplicationBundle()
-{
-	return true;
-}
-
 string GetDefaultVideoSavePath()
 {
 	return string(getenv("HOME"));
@@ -213,7 +208,6 @@ string GetDefaultVideoSavePath()
 
 vector<string> GetPreferredLocales()
 {
-	setlocale(LC_ALL, "");
 	vector<string> matched;
 	string messages = setlocale(LC_MESSAGES, NULL);
 	if (!messages.size() || messages == "C" || messages == "POSIX")
@@ -251,3 +245,13 @@ void SetAlwaysOnTop(QWidget *window, bool enable)
 	window->setWindowFlags(flags);
 	window->show();
 }
+
+bool SetDisplayAffinitySupported(void)
+{
+	// Not implemented yet
+	return false;
+}
+
+// Not implemented yet
+void TaskbarOverlayInit() {}
+void TaskbarOverlaySetStatus(TaskbarOverlayStatus) {}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -31,7 +31,7 @@ struct base_allocator {
 	void (*free)(void *);
 };
 
-EXPORT void base_set_allocator(struct base_allocator *defs);
+OBS_DEPRECATED EXPORT void base_set_allocator(struct base_allocator *defs);
 
 EXPORT void *bmalloc(size_t size);
 EXPORT void *brealloc(void *ptr, size_t size);

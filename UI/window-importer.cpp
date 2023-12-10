@@ -93,8 +93,8 @@ QWidget *ImporterEntryPathItemDelegate::createEditor(
 					QSizePolicy::ControlType::LineEdit));
 	layout->addWidget(text);
 
-	QObject::connect(text, SIGNAL(editingFinished()), this,
-			 SLOT(updateText()));
+	QObject::connect(text, &QLineEdit::editingFinished, this,
+			 &ImporterEntryPathItemDelegate::updateText);
 
 	QToolButton *browseButton = new QToolButton();
 	browseButton->setText("...");
@@ -419,8 +419,8 @@ OBSImporter::OBSImporter(QWidget *parent)
 	ui->tableView->horizontalHeader()->setSectionResizeMode(
 		ImporterColumn::Path, QHeaderView::ResizeMode::Stretch);
 
-	connect(optionsModel, SIGNAL(dataChanged(QModelIndex, QModelIndex)),
-		this, SLOT(dataChanged()));
+	connect(optionsModel, &ImporterModel::dataChanged, this,
+		&OBSImporter::dataChanged);
 
 	ui->tableView->setEditTriggers(
 		QAbstractItemView::EditTrigger::CurrentChanged);
@@ -428,12 +428,12 @@ OBSImporter::OBSImporter(QWidget *parent)
 	ui->buttonBox->button(QDialogButtonBox::Ok)->setText(QTStr("Import"));
 	ui->buttonBox->button(QDialogButtonBox::Open)->setText(QTStr("Add"));
 
-	connect(ui->buttonBox->button(QDialogButtonBox::Ok), SIGNAL(clicked()),
-		this, SLOT(importCollections()));
+	connect(ui->buttonBox->button(QDialogButtonBox::Ok),
+		&QPushButton::clicked, this, &OBSImporter::importCollections);
 	connect(ui->buttonBox->button(QDialogButtonBox::Open),
-		SIGNAL(clicked()), this, SLOT(browseImport()));
+		&QPushButton::clicked, this, &OBSImporter::browseImport);
 	connect(ui->buttonBox->button(QDialogButtonBox::Close),
-		SIGNAL(clicked()), this, SLOT(close()));
+		&QPushButton::clicked, this, &OBSImporter::close);
 
 	ImportersInit();
 

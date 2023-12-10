@@ -1,0 +1,38 @@
+{
+    "name": "intel-media-sdk",
+    "buildsystem": "cmake-ninja",
+    "builddir": true,
+    "config-opts": [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SAMPLES=OFF",
+        "-DBUILD_TUTORIALS=OFF",
+        "-DENABLE_OPENCL=OFF",
+        "-DENABLE_WAYLAND=OFF",
+        "-DENABLE_X11=OFF",
+        "-DENABLE_X11_DRI3=OFF"
+    ],
+    "cleanup": [
+        "/include",
+        "/lib/pkgconfig"
+    ],
+    "sources": [
+        {
+            "type": "git",
+            "url": "https://github.com/Intel-Media-SDK/MediaSDK.git",
+            "commit": "869b60a6c3d7b5e9f7c3b3b914986322dca4bbae",
+            "tag": "intel-mediasdk-23.2.2"
+        },
+        {
+            "type": "file",
+            "dest-filename": "010-intel-media-sdk-fix-reproducible-build.patch",
+            "url": "https://github.com/Intel-Media-SDK/MediaSDK/commit/f6925886f27a39eed2e43c5b7b6c342d00f7a970.patch",
+            "sha256": "f1d8a4edf953cfec1516f1a8383c5ee033245aba16cfae0bc79b7de1a6365fcc"
+        },
+        {
+            "type": "shell",
+            "commands": [
+                "patch -Np1 -i 010-intel-media-sdk-fix-reproducible-build.patch"
+            ]
+        }
+    ]
+}

@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 
 #define QT_UTF8(str) QString::fromUtf8(str, -1)
 #define QT_TO_UTF8(str) str.toUtf8().constData()
+#define MAX_LABEL_LENGTH 80
 
 class QDataStream;
 class QComboBox;
@@ -37,6 +38,8 @@ class QWidget;
 class QLayout;
 class QString;
 struct gs_window;
+class QLabel;
+class QToolBar;
 
 class OBSMessageBox {
 public:
@@ -68,8 +71,8 @@ QDataStream &operator>>(QDataStream &in,
 			std::vector<std::shared_ptr<OBSSignal>> &signal_vec);
 QDataStream &operator<<(QDataStream &out, const OBSScene &scene);
 QDataStream &operator>>(QDataStream &in, OBSScene &scene);
-QDataStream &operator<<(QDataStream &out, const OBSSceneItem &si);
-QDataStream &operator>>(QDataStream &in, OBSSceneItem &si);
+QDataStream &operator<<(QDataStream &out, const OBSSource &source);
+QDataStream &operator>>(QDataStream &in, OBSSource &source);
 
 QThread *CreateQThread(std::function<void()> func);
 
@@ -119,3 +122,8 @@ QString OpenFile(QWidget *parent, QString title, QString path,
 		 QString extensions);
 QStringList OpenFiles(QWidget *parent, QString title, QString path,
 		      QString extensions);
+
+void TruncateLabel(QLabel *label, QString newText,
+		   int length = MAX_LABEL_LENGTH);
+
+void RefreshToolBarStyling(QToolBar *toolBar);

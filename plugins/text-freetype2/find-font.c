@@ -79,11 +79,13 @@ static bool load_cached_font_list(struct serializer *s)
 		do_read(info->is_bitmap);
 		do_read(info->num_sizes);
 
-		info->sizes = bmalloc(sizeof(int) * info->num_sizes);
-		success = read_data(s, info->sizes,
-				    sizeof(int) * info->num_sizes);
-		if (!success)
-			break;
+		if (info->num_sizes) {
+			info->sizes = bmalloc(sizeof(int) * info->num_sizes);
+			success = read_data(s, info->sizes,
+					    sizeof(int) * info->num_sizes);
+			if (!success)
+				break;
+		}
 
 		do_read(info->bold);
 
@@ -188,10 +190,12 @@ void save_font_list(void)
 		do_write(info->is_bitmap);
 		do_write(info->num_sizes);
 
-		success = write_data(&s, info->sizes,
-				     sizeof(int) * info->num_sizes);
-		if (!success)
-			break;
+		if (info->num_sizes) {
+			success = write_data(&s, info->sizes,
+					     sizeof(int) * info->num_sizes);
+			if (!success)
+				break;
+		}
 
 		do_write(info->bold);
 
@@ -222,7 +226,7 @@ static void create_bitmap_sizes(struct font_path_info *info, FT_Face face)
 	da_reserve(sizes, face->num_fixed_sizes);
 
 	for (int i = 0; i < face->num_fixed_sizes; i++) {
-		int val = face->available_sizes[i].size >> 6;
+		FT_Pos val = face->available_sizes[i].size >> 6;
 		da_push_back(sizes, &val);
 	}
 

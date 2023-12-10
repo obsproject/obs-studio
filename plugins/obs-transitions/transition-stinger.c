@@ -69,11 +69,16 @@ static void stinger_update(void *data, obs_data_t *settings)
 	struct stinger_info *s = data;
 	const char *path = obs_data_get_string(settings, "path");
 	bool hw_decode = obs_data_get_bool(settings, "hw_decode");
+	bool preload = obs_data_get_bool(settings, "preload");
 
 	obs_data_t *media_settings = obs_data_create();
 	obs_data_set_string(media_settings, "local_file", path);
 	obs_data_set_bool(media_settings, "hw_decode", hw_decode);
 	obs_data_set_bool(media_settings, "looping", false);
+	obs_data_set_bool(media_settings, "full_decode", preload);
+	obs_data_set_bool(media_settings, "is_stinger", true);
+	obs_data_set_bool(media_settings, "is_track_matte",
+			  s->track_matte_enabled);
 
 	obs_source_release(s->media_source);
 	struct dstr name;
@@ -256,7 +261,16 @@ static void stinger_matte_render(void *data, gs_texture_t *a, gs_texture_t *b,
 		float scale_x = (float)cx / matte_cx;
 		float scale_y = (float)cy / matte_cy;
 
-		if (gs_texrender_begin(s->matte_tex, cx, cy)) {
+		const enum gs_color_space space =
+			obs_source_get_color_space(matte_source, 0, NULL);
+		enum gs_color_format format = gs_get_format_from_space(space);
+		if (gs_texrender_get_format(s->matte_tex) != format) {
+			gs_texrender_destroy(s->matte_tex);
+			s->matte_tex = gs_texrender_create(format, GS_ZS_NONE);
+		}
+
+		if (gs_texrender_begin_with_color_space(s->matte_tex, cx, cy,
+							space)) {
 			gs_matrix_scale3f(scale_x, scale_y, 1.0f);
 			gs_matrix_translate3f(width_offset, height_offset,
 					      0.0f);
@@ -273,13 +287,23 @@ static void stinger_matte_render(void *data, gs_texture_t *a, gs_texture_t *b,
 	const bool previous = gs_framebuffer_srgb_enabled();
 	gs_enable_framebuffer_srgb(true);
 
-	gs_effect_set_texture(s->ep_a_tex, a);
-	gs_effect_set_texture(s->ep_b_tex, b);
+	/* texture setters look reversed, but they aren't */
+	const char *tech_name = "StingerMatte";
+	if (gs_get_color_space() == GS_CS_SRGB) {
+		/* users want nonlinear fade */
+		gs_effect_set_texture(s->ep_a_tex, a);
+		gs_effect_set_texture(s->ep_b_tex, b);
+	} else {
+		/* nonlinear fade is too wrong, so use linear fade */
+		gs_effect_set_texture_srgb(s->ep_a_tex, a);
+		gs_effect_set_texture_srgb(s->ep_b_tex, b);
+		tech_name = "StingerMatteLinear";
+	}
 	gs_effect_set_texture(s->ep_matte_tex,
 			      gs_texrender_get_texture(s->matte_tex));
 	gs_effect_set_bool(s->ep_invert_matte, s->invert_matte);
 
-	while (gs_effect_loop(s->matte_effect, "StingerMatte"))
+	while (gs_effect_loop(s->matte_effect, tech_name))
 		gs_draw_sprite(NULL, 0, cx, cy);
 
 	gs_enable_framebuffer_srgb(previous);
@@ -289,9 +313,16 @@ static void stinger_matte_render(void *data, gs_texture_t *a, gs_texture_t *b,
 
 static void stinger_texrender(struct stinger_info *s, uint32_t source_cx,
 			      uint32_t source_cy, uint32_t media_cx,
-			      uint32_t media_cy)
+			      uint32_t media_cy, enum gs_color_space space)
 {
-	if (gs_texrender_begin(s->stinger_tex, source_cx, source_cy)) {
+	enum gs_color_format format = gs_get_format_from_space(space);
+	if (gs_texrender_get_format(s->stinger_tex) != format) {
+		gs_texrender_destroy(s->stinger_tex);
+		s->stinger_tex = gs_texrender_create(format, GS_ZS_NONE);
+	}
+
+	if (gs_texrender_begin_with_color_space(s->stinger_tex, source_cx,
+						source_cy, space)) {
 		float cx = (float)media_cx / s->matte_width_factor;
 		float cy = (float)media_cy / s->matte_height_factor;
 
@@ -304,6 +335,55 @@ static void stinger_texrender(struct stinger_info *s, uint32_t source_cx,
 
 		gs_texrender_end(s->stinger_tex);
 	}
+}
+
+static const char *
+get_tech_name_and_multiplier(enum gs_color_space current_space,
+			     enum gs_color_space source_space,
+			     float *multiplier)
+{
+	const char *tech_name = "Draw";
+	*multiplier = 1.f;
+
+	switch (source_space) {
+	case GS_CS_SRGB:
+	case GS_CS_SRGB_16F:
+		if (current_space == GS_CS_709_SCRGB) {
+			tech_name = "DrawMultiply";
+			*multiplier = obs_get_video_sdr_white_level() / 80.0f;
+		}
+		break;
+	case GS_CS_709_EXTENDED:
+		switch (current_space) {
+		case GS_CS_SRGB:
+		case GS_CS_SRGB_16F:
+			tech_name = "DrawTonemap";
+			break;
+		case GS_CS_709_SCRGB:
+			tech_name = "DrawMultiply";
+			*multiplier = obs_get_video_sdr_white_level() / 80.0f;
+			break;
+		case GS_CS_709_EXTENDED:
+			break;
+		}
+		break;
+	case GS_CS_709_SCRGB:
+		switch (current_space) {
+		case GS_CS_SRGB:
+		case GS_CS_SRGB_16F:
+			tech_name = "DrawMultiplyTonemap";
+			*multiplier = 80.0f / obs_get_video_sdr_white_level();
+			break;
+		case GS_CS_709_EXTENDED:
+			tech_name = "DrawMultiply";
+			*multiplier = 80.0f / obs_get_video_sdr_white_level();
+			break;
+		case GS_CS_709_SCRGB:
+			break;
+		}
+	}
+
+	return tech_name;
 }
 
 static void stinger_video_render(void *data, gs_effect_t *effect)
@@ -353,21 +433,38 @@ static void stinger_video_render(void *data, gs_effect_t *effect)
 		return;
 
 	if (s->do_texrender) {
-		stinger_texrender(s, source_cx, source_cy, media_cx, media_cy);
+		const enum gs_color_space space =
+			obs_source_get_color_space(s->media_source, 0, NULL);
+		stinger_texrender(s, source_cx, source_cy, media_cx, media_cy,
+				  space);
+
+		const bool previous = gs_framebuffer_srgb_enabled();
+		gs_enable_framebuffer_srgb(true);
+
+		float multiplier;
+		const char *technique = get_tech_name_and_multiplier(
+			gs_get_color_space(), space, &multiplier);
 
 		gs_effect_t *e = obs_get_base_effect(OBS_EFFECT_DEFAULT);
-		gs_eparam_t *p = gs_effect_get_param_by_name(e, "image");
+		gs_eparam_t *p_image = gs_effect_get_param_by_name(e, "image");
+		gs_eparam_t *p_multiplier =
+			gs_effect_get_param_by_name(e, "multiplier");
 		gs_texture_t *tex = gs_texrender_get_texture(s->stinger_tex);
 
-		gs_effect_set_texture(p, tex);
-		while (gs_effect_loop(e, "Draw"))
+		gs_effect_set_texture_srgb(p_image, tex);
+		gs_effect_set_float(p_multiplier, multiplier);
+		while (gs_effect_loop(e, technique))
 			gs_draw_sprite(NULL, 0, source_cx, source_cy);
+
+		gs_enable_framebuffer_srgb(previous);
 	} else {
+		const bool previous = gs_set_linear_srgb(true);
 		gs_matrix_push();
 		gs_matrix_scale3f(source_cxf / (float)media_cx,
 				  source_cyf / (float)media_cy, 1.0f);
 		obs_source_video_render(s->media_source);
 		gs_matrix_pop();
+		gs_set_linear_srgb(previous);
 	}
 
 	UNUSED_PARAMETER(effect);
@@ -543,6 +640,11 @@ static void stinger_transition_stop(void *data)
 	if (s->matte_source)
 		obs_source_remove_active_child(s->source, s->matte_source);
 
+	proc_handler_t *ph = obs_source_get_proc_handler(s->media_source);
+
+	calldata_t cd = {0};
+	proc_handler_call(ph, "preload_first_frame", &cd);
+
 	s->transitioning = false;
 }
 
@@ -570,8 +672,7 @@ static void stinger_enum_all_sources(void *data,
 		enum_callback(s->source, s->matte_source, param);
 }
 
-#define FILE_FILTER \
-	"Video Files (*.mp4 *.ts *.mov *.wmv *.flv *.mkv *.avi *.gif *.webm);;"
+#define FILE_FILTER " (*.mp4 *.ts *.mov *.wmv *.flv *.mkv *.avi *.gif *.webm);;"
 
 static bool transition_point_type_modified(obs_properties_t *ppts,
 					   obs_property_t *p, obs_data_t *s)
@@ -585,15 +686,15 @@ static bool transition_point_type_modified(obs_properties_t *ppts,
 		obs_property_set_description(
 			prop_transition_point,
 			obs_module_text("TransitionPoint"));
+		obs_property_int_set_suffix(prop_transition_point, " ms");
 	} else {
 		obs_property_set_description(
 			prop_transition_point,
 			obs_module_text("TransitionPointFrame"));
+		obs_property_int_set_suffix(prop_transition_point, "");
 	}
 
-	bool uses_ms_prefix = (type == TIMING_TIME);
-	obs_property_int_set_suffix(p, (uses_ms_prefix ? " ms" : ""));
-
+	UNUSED_PARAMETER(p);
 	return true;
 }
 
@@ -633,24 +734,35 @@ static bool track_matte_enabled_modified(obs_properties_t *ppts,
 static obs_properties_t *stinger_properties(void *data)
 {
 	obs_properties_t *ppts = obs_properties_create();
+	struct dstr filter = {0};
 
 	obs_properties_set_flags(ppts, OBS_PROPERTIES_DEFER_UPDATE);
 
+	dstr_copy(&filter, obs_module_text("FileFilter.VideoFiles"));
+	dstr_cat(&filter, FILE_FILTER);
+	dstr_cat(&filter, obs_module_text("FileFilter.AllFiles"));
+	dstr_cat(&filter, " (*.*)");
+
 	// main stinger settings
 	obs_properties_add_path(ppts, "path", obs_module_text("VideoFile"),
-				OBS_PATH_FILE, FILE_FILTER, NULL);
+				OBS_PATH_FILE, filter.array, NULL);
 
 	obs_property_t *p = obs_properties_add_list(
 		ppts, "tp_type", obs_module_text("TransitionPointType"),
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_properties_add_bool(ppts, "hw_decode",
-				obs_module_text("HardwareDecode"));
 	obs_property_list_add_int(p, obs_module_text("TransitionPointTypeTime"),
 				  TIMING_TIME);
 	obs_property_list_add_int(
 		p, obs_module_text("TransitionPointTypeFrame"), TIMING_FRAME);
 
 	obs_property_set_modified_callback(p, transition_point_type_modified);
+
+	obs_properties_add_bool(ppts, "hw_decode",
+				obs_module_text("HardwareDecode"));
+	p = obs_properties_add_bool(ppts, "preload",
+				    obs_module_text("PreloadVideoToRam"));
+	obs_property_set_long_description(
+		p, obs_module_text("PreloadVideoToRam.Description"));
 
 	obs_properties_add_int(ppts, "transition_point",
 			       obs_module_text("TransitionPoint"), 0, 120000,
@@ -688,7 +800,7 @@ static obs_properties_t *stinger_properties(void *data)
 
 		obs_properties_add_path(track_matte_group, "track_matte_path",
 					obs_module_text("TrackMatteVideoFile"),
-					OBS_PATH_FILE, FILE_FILTER, NULL);
+					OBS_PATH_FILE, filter.array, NULL);
 
 		obs_properties_add_bool(track_matte_group, "invert_matte",
 					obs_module_text("InvertTrackMatte"));
@@ -701,6 +813,7 @@ static obs_properties_t *stinger_properties(void *data)
 		obs_property_set_modified_callback(
 			p, track_matte_enabled_modified);
 	}
+	dstr_free(&filter);
 
 	// audio output settings
 	obs_property_t *monitor_list = obs_properties_add_list(
@@ -786,6 +899,17 @@ static obs_missing_files_t *stinger_missing_files(void *data)
 	return files;
 }
 
+static enum gs_color_space
+stinger_get_color_space(void *data, size_t count,
+			const enum gs_color_space *preferred_spaces)
+{
+	UNUSED_PARAMETER(count);
+	UNUSED_PARAMETER(preferred_spaces);
+
+	struct stinger_info *s = data;
+	return obs_transition_video_get_color_space(s->source);
+}
+
 struct obs_source_info stinger_transition = {
 	.id = "obs_stinger_transition",
 	.type = OBS_SOURCE_TYPE_TRANSITION,
@@ -803,4 +927,5 @@ struct obs_source_info stinger_transition = {
 	.enum_all_sources = stinger_enum_all_sources,
 	.transition_start = stinger_transition_start,
 	.transition_stop = stinger_transition_stop,
+	.video_get_color_space = stinger_get_color_space,
 };

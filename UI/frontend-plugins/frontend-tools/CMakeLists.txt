@@ -1,128 +1,94 @@
-project(frontend-tools)
+cmake_minimum_required(VERSION 3.22...3.25)
 
-if(APPLE)
-	find_library(COCOA Cocoa)
-	include_directories(${COCOA})
+legacy_check()
+
+find_qt(COMPONENTS Widgets COMPONENTS_LINUX Gui)
+
+add_library(frontend-tools MODULE)
+add_library(OBS::frontend-tools ALIAS frontend-tools)
+
+target_sources(
+  frontend-tools
+  PRIVATE frontend-tools.c
+          auto-scene-switcher.hpp
+          auto-scene-switcher.cpp
+          output-timer.hpp
+          tool-helpers.hpp
+          output-timer.cpp
+          "${CMAKE_SOURCE_DIR}/UI/double-slider.cpp"
+          "${CMAKE_SOURCE_DIR}/UI/double-slider.hpp"
+          "${CMAKE_SOURCE_DIR}/UI/horizontal-scroll-area.cpp"
+          "${CMAKE_SOURCE_DIR}/UI/horizontal-scroll-area.hpp"
+          "${CMAKE_SOURCE_DIR}/UI/properties-view.cpp"
+          "${CMAKE_SOURCE_DIR}/UI/properties-view.hpp"
+          "${CMAKE_SOURCE_DIR}/UI/properties-view.moc.hpp"
+          "${CMAKE_SOURCE_DIR}/UI/qt-wrappers.cpp"
+          "${CMAKE_SOURCE_DIR}/UI/qt-wrappers.hpp"
+          "${CMAKE_SOURCE_DIR}/UI/spinbox-ignorewheel.cpp"
+          "${CMAKE_SOURCE_DIR}/UI/spinbox-ignorewheel.hpp"
+          "${CMAKE_SOURCE_DIR}/UI/slider-ignorewheel.cpp"
+          "${CMAKE_SOURCE_DIR}/UI/slider-ignorewheel.hpp"
+          "${CMAKE_SOURCE_DIR}/UI/vertical-scroll-area.hpp"
+          "${CMAKE_SOURCE_DIR}/UI/vertical-scroll-area.cpp"
+          "${CMAKE_SOURCE_DIR}/UI/plain-text-edit.cpp"
+          "${CMAKE_SOURCE_DIR}/UI/plain-text-edit.hpp")
+
+target_sources(frontend-tools PRIVATE forms/auto-scene-switcher.ui forms/captions.ui forms/output-timer.ui
+                                      forms/scripts.ui)
+
+target_link_libraries(frontend-tools PRIVATE OBS::frontend-api OBS::libobs Qt::Widgets
+                                             $<$<PLATFORM_ID:Linux,FreeBSD>:Qt::GuiPrivate>)
+
+add_subdirectory("${CMAKE_SOURCE_DIR}/deps/obs-scripting" "${CMAKE_BINARY_DIR}/deps/obs-scripting")
+
+if(ENABLE_SCRIPTING AND TARGET OBS::scripting)
+  target_sources(frontend-tools PRIVATE scripts.cpp scripts.hpp)
+  target_link_libraries(frontend-tools PRIVATE OBS::scripting)
+  target_enable_feature(frontend-tools "Scripting Support (Frontend)" ENABLE_SCRIPTING)
 endif()
 
-if(UNIX AND NOT APPLE)
-	find_package(X11 REQUIRED)
-	link_libraries(${X11_LIBRARIES})
-	include_directories(${X11_INCLUDE_DIR})
+if(OS_WINDOWS)
+  configure_file(cmake/windows/obs-module.rc.in frontend-tools.rc)
+  target_sources(
+    frontend-tools
+    PRIVATE auto-scene-switcher-win.cpp
+            frontend-tools.rc
+            captions.cpp
+            captions.hpp
+            captions-handler.cpp
+            captions-handler.hpp
+            captions-mssapi.cpp
+            captions-mssapi.hpp
+            captions-mssapi-stream.cpp
+            captions-mssapi-stream.hpp)
+
+  set_property(
+    TARGET frontend-tools
+    APPEND
+    PROPERTY AUTORCC_OPTIONS --format-version 1)
+elseif(OS_MACOS)
+  find_library(COCOA Cocoa)
+  mark_as_advanced(COCOA)
+  target_link_libraries(frontend-tools PRIVATE ${COCOA})
+
+  target_sources(frontend-tools PRIVATE auto-scene-switcher-osx.mm)
+  target_compile_options(frontend-tools PRIVATE -Wno-quoted-include-in-framework-header -Wno-comma)
+  set_target_properties(frontend-tools PROPERTIES XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES)
+  if(NOT XCODE)
+    set_source_files_properties(auto-scene-switcher-osx.mm PROPERTIES COMPILE_FLAGS -fobjc-arc)
+  endif()
+elseif(OS_LINUX OR OS_FREEBSD)
+  find_package(X11 REQUIRED)
+
+  target_link_libraries(frontend-tools PRIVATE X11::X11)
+  target_sources(frontend-tools PRIVATE auto-scene-switcher-nix.cpp)
 endif()
 
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/deps/obs-scripting")
-
-configure_file(
-	"${CMAKE_CURRENT_SOURCE_DIR}/frontend-tools-config.h.in"
-	"${CMAKE_BINARY_DIR}/config/frontend-tools-config.h")
-
-set(frontend-tools_HEADERS
-	${frontend-tools_HEADERS}
-	"${CMAKE_BINARY_DIR}/config/frontend-tools-config.h"
-	auto-scene-switcher.hpp
-	output-timer.hpp
-	tool-helpers.hpp
-	../../properties-view.hpp
-	../../properties-view.moc.hpp
-	../../horizontal-scroll-area.hpp
-	../../vertical-scroll-area.hpp
-	../../double-slider.hpp
-	../../slider-ignorewheel.hpp
-	../../combobox-ignorewheel.hpp
-	../../spinbox-ignorewheel.hpp
-	../../qt-wrappers.hpp
-	)
-set(frontend-tools_SOURCES
-	${frontend-tools_SOURCES}
-	auto-scene-switcher.cpp
-	frontend-tools.c
-	output-timer.cpp
-	../../properties-view.cpp
-	../../horizontal-scroll-area.cpp
-	../../vertical-scroll-area.cpp
-	../../double-slider.cpp
-	../../slider-ignorewheel.cpp
-	../../combobox-ignorewheel.cpp
-	../../spinbox-ignorewheel.cpp
-	../../qt-wrappers.cpp
-	)
-set(frontend-tools_UI
-	${frontend-tools_UI}
-	forms/auto-scene-switcher.ui
-	forms/output-timer.ui
-	)
-
-if(SCRIPTING_ENABLED)
-	set(frontend-tools_HEADERS
-		${frontend-tools_HEADERS}
-		scripts.hpp
-		)
-	set(frontend-tools_SOURCES
-		${frontend-tools_SOURCES}
-		scripts.cpp
-		)
-	set(frontend-tools_UI
-		${frontend-tools_UI}
-		forms/scripts.ui
-		)
-	set(EXTRA_LIBS
-		${EXTRA_LIBS}
-		obs-scripting
-		)
-endif()
-
-if(WIN32)
-	set(MODULE_DESCRIPTION "OBS Frontend Tools")
-	configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in frontend-tools.rc)
-	set(frontend-tools_PLATFORM_SOURCES
-		auto-scene-switcher-win.cpp
-		frontend-tools.rc)
-
-	set(frontend-tools_PLATFORM_SOURCES
-		${frontend-tools_PLATFORM_SOURCES}
-		captions.cpp
-		captions-handler.cpp
-		captions-mssapi.cpp
-		captions-mssapi-stream.cpp)
-	set(frontend-tools_PLATFORM_HEADERS
-		captions.hpp
-		captions-handler.hpp
-		captions-mssapi.hpp
-		captions-mssapi-stream.hpp)
-	set(frontend-tools_PLATFORM_UI
-		forms/captions.ui)
-elseif(APPLE)
-	set(frontend-tools_PLATFORM_SOURCES
-		auto-scene-switcher-osx.mm)
-	set_source_files_properties(auto-scene-switcher-osx.mm
-		PROPERTIES COMPILE_FLAGS "-fobjc-arc")
-
-	set(frontend-tools_PLATFORM_LIBS
-		${COCOA})
-else()
-	set(frontend-tools_PLATFORM_SOURCES
-		auto-scene-switcher-nix.cpp)
-endif()
-
-qt5_wrap_ui(frontend-tools_UI_HEADERS
-	${frontend-tools_UI}
-	${frontend-tools_PLATFORM_UI})
-
-add_library(frontend-tools MODULE
-	${frontend-tools_HEADERS}
-	${frontend-tools_SOURCES}
-	${frontend-tools_UI_HEADERS}
-	${frontend-tools_PLATFORM_SOURCES}
-	${frontend-tools_PLATFORM_HEADERS}
-	)
-target_link_libraries(frontend-tools
-	${frontend-tools_PLATFORM_LIBS}
-	${EXTRA_LIBS}
-	obs-frontend-api
-	Qt5::Widgets
-	libobs)
-
-set_target_properties(frontend-tools PROPERTIES FOLDER "frontend")
-
-install_obs_plugin_with_data(frontend-tools data)
+set_target_properties_obs(
+  frontend-tools
+  PROPERTIES FOLDER frontend
+             PREFIX ""
+             AUTOMOC ON
+             AUTOUIC ON
+             AUTORCC ON
+             AUTOUIC_SEARCH_PATHS forms)

@@ -1,6 +1,6 @@
 /******************************************************************************
     Copyright (C) 2015 by Andrew Skinner <obs@theandyroid.com>
-    Copyright (C) 2017 by Hugh Bailey <jim@obsproject.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -195,6 +195,7 @@ static inline bool py_error_(const char *func, int line)
 #define py_error() py_error_(__FUNCTION__, __LINE__)
 
 #define lock_python() PyGILState_STATE gstate = PyGILState_Ensure()
+#define relock_python() gstate = PyGILState_Ensure()
 #define unlock_python() PyGILState_Release(gstate)
 
 struct py_source;

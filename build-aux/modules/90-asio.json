@@ -1,0 +1,17 @@
+{
+    "name": "asio",
+    "buildsystem": "simple",
+    "build-commands": [
+        "mkdir -p /app/include",
+        "cp asio/include/asio.hpp /app/include/",
+        "cp -R asio/include/asio /app/include/"
+    ],
+    "sources": [
+        {
+            "type": "git",
+            "url": "https://github.com/chriskohlhoff/asio.git",
+            "tag": "asio-1-28-0",
+            "commit": "c465349fa5cd91a64bb369f5131ceacab2c0c1c3"
+        }
+    ]
+}

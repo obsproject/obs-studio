@@ -1,92 +1,77 @@
-cmake_minimum_required(VERSION 2.8.12)
-project(obspython)
+cmake_minimum_required(VERSION 3.22...3.25)
+
+legacy_check()
 
 if(POLICY CMP0078)
-	# UseSWIG generates standard target names.
-	cmake_policy(SET CMP0078 OLD)
+  cmake_policy(SET CMP0078 NEW)
 endif()
+
 if(POLICY CMP0086)
-	# UseSWIG honors SWIG_MODULE_NAME via -module flag.
-	cmake_policy(SET CMP0086 OLD)
+  cmake_policy(SET CMP0086 NEW)
 endif()
 
-find_package(SWIG 2 REQUIRED)
-include(${SWIG_USE_FILE})
-
-add_definitions(-DSWIG_TYPE_TABLE=obspython -DMS_NO_COREDLL -DPy_ENABLE_SHARED=1 -DSWIG_PYTHON_INTERPRETER_NO_DEBUG)
-
-if(MSVC)
-	add_compile_options("/wd4054")
-	add_compile_options("/wd4100")
-	add_compile_options("/wd4115")
-	add_compile_options("/wd4197")
-	add_compile_options("/wd4701")
+if(POLICY CMP0094)
+  cmake_policy(SET CMP0094 NEW)
 endif()
 
-include_directories(${PYTHON_INCLUDE_DIR})
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+find_package(Python 3.8...<3.12 REQUIRED Interpreter Development)
+find_package(SWIG 4 REQUIRED)
 
-#add_definitions( -DSWIG_TYPE_TABLE=libobs )
-SET_SOURCE_FILES_PROPERTIES(obspython.i PROPERTIES SWIG_FLAGS "-modern")
-SET_SOURCE_FILES_PROPERTIES(obspython.i PROPERTIES SWIG_FLAGS "-builtin")
-SET_SOURCE_FILES_PROPERTIES(obspython.i PROPERTIES SWIG_FLAGS "-modernargs")
-SET_SOURCE_FILES_PROPERTIES(obspython.i PROPERTIES SWIG_FLAGS "-includeall")
-SET_SOURCE_FILES_PROPERTIES(obspython.i PROPERTIES SWIG_FLAGS "-importall")
-SET_SOURCE_FILES_PROPERTIES(obspython.i PROPERTIES SWIG_FLAGS "-py3")
+include(UseSWIG)
 
-if(WIN32)
-	string(REGEX REPLACE "_d" "" PYTHON_LIBRARIES "${PYTHON_LIBRARIES}")
+set_source_files_properties(obspython.i PROPERTIES USE_TARGET_INCLUDE_DIRECTORIES TRUE
+                                                   SWIG_FLAGS "$<IF:$<BOOL:${OS_LINUX}>,-py3,-py3-stable-abi>")
+
+swig_add_library(
+  obspython
+  LANGUAGE python
+  TYPE MODULE
+  SOURCES obspython.i)
+
+add_library(OBS::python ALIAS obspython)
+
+file(
+  GENERATE
+  OUTPUT $<$<PLATFORM_ID:Windows>:$<CONFIG>/>obspython.h
+  CONTENT "#pragma once\n\n#define PYTHON_LIB \"$<TARGET_LINKER_FILE_NAME:Python::Python>\"\n")
+
+target_include_directories(obspython PRIVATE "$<$<PLATFORM_ID:Windows>:${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>>")
+
+list(APPEND _SWIG_DEFINITIONS "SWIG_TYPE_TABLE=obspython" "Py_ENABLE_SHARED=1" "SWIG_PYTHON_INTERPRETER_NO_DEBUG")
+
+target_compile_definitions(obspython PRIVATE SWIG_TYPE_TABLE=obspython Py_ENABLE_SHARED=1
+                                             SWIG_PYTHON_INTERPRETER_NO_DEBUG $<$<BOOL:${ENABLE_UI}>:ENABLE_UI>)
+
+target_link_libraries(obspython PRIVATE OBS::scripting OBS::cstrcache OBS::libobs
+                                        $<$<BOOL:${ENABLE_UI}>:OBS::frontend-api>)
+
+if(OS_WINDOWS)
+  target_link_libraries(obspython PRIVATE Python::Python)
+  target_compile_options(obspython PRIVATE /wd4100 /wd4197)
+elseif(OS_MACOS)
+  get_target_property(_python_include_directory Python::Python INTERFACE_INCLUDE_DIRECTORIES)
+  target_include_directories(obspython PRIVATE ${_python_include_directory})
+  target_compile_options(obspython PRIVATE -Wno-unused-parameter -Wno-macro-redefined -Wno-unreachable-code)
+  target_link_options(obspython PUBLIC LINKER:-undefined,dynamic_lookup)
+
+  set_property(TARGET obspython PROPERTY XCODE_ATTRIBUTE_STRIP_STYLE non-global)
+elseif(OS_LINUX OR OS_FREEBSD)
+  target_link_libraries(obspython PRIVATE Python::Python)
 endif()
 
-if(CMAKE_VERSION VERSION_GREATER 3.7.2)
-	SWIG_ADD_LIBRARY(obspython
-		LANGUAGE python
-		TYPE MODULE
-		SOURCES  obspython.i ../cstrcache.cpp ../cstrcache.h)
-else()
-	SWIG_ADD_MODULE(obspython python obspython.i ../cstrcache.cpp ../cstrcache.h)
+if(MSVC OR XCODE)
+  add_custom_command(
+    TARGET obspython
+    POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_CURRENT_BINARY_DIR}/obspython.py"
+            "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/obspython.py"
+    VERBATIM)
 endif()
 
-IF(APPLE)
-	SWIG_LINK_LIBRARIES(obspython obs-scripting libobs)
-ELSE()
-	SWIG_LINK_LIBRARIES(obspython obs-scripting libobs ${PYTHON_LIBRARIES})
-ENDIF()
+set_property(
+  TARGET obspython
+  APPEND
+  PROPERTY SWIG_COMPILE_DEFINITIONS "SWIG_TYPE_TABLE=obspython" "Py_ENABLE_SHARED=1" "SWIG_PYTHON_INTERPRETER_NO_DEBUG"
+           "$<$<BOOL:${ENABLE_UI}>:ENABLE_UI>" "$<$<PLATFORM_ID:Windows>:MS_NO_COREDLL>")
 
-set_target_properties(_obspython PROPERTIES FOLDER "scripting")
-
-function(install_plugin_bin_swig target additional_target)
-	if(APPLE)
-		set(_bit_suffix "")
-	elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
-		set(_bit_suffix "64bit/")
-	else()
-		set(_bit_suffix "32bit/")
-	endif()
-
-	set_target_properties(${additional_target} PROPERTIES
-		PREFIX "")
-
-	if (APPLE)
-		SET_TARGET_PROPERTIES(${additional_target} PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
-	endif()
-
-	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/obspython.py"
-		DESTINATION "${OBS_SCRIPT_PLUGIN_DESTINATION}")
-	install(TARGETS "${additional_target}"
-		LIBRARY DESTINATION "${OBS_SCRIPT_PLUGIN_DESTINATION}")
-
-	add_custom_command(TARGET ${additional_target} POST_BUILD
-		COMMAND "${CMAKE_COMMAND}" -E copy
-			"${CMAKE_CURRENT_BINARY_DIR}/obspython.py"
-			"${OBS_OUTPUT_DIR}/$<CONFIGURATION>/data/obs-scripting/${_bit_suffix}/obspython.py"
-		VERBATIM)
-	add_custom_command(TARGET ${additional_target} POST_BUILD
-		COMMAND "${CMAKE_COMMAND}" -E copy
-			"$<TARGET_FILE:${additional_target}>"
-			"${OBS_OUTPUT_DIR}/$<CONFIGURATION>/data/obs-scripting/${_bit_suffix}$<TARGET_FILE_NAME:${additional_target}>"
-		VERBATIM)
-endfunction()
-
-install_plugin_bin_swig(obs-scripting _obspython)
+set_target_properties_obs(obspython PROPERTIES FOLDER scripting PREFIX "_")

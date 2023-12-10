@@ -14,4 +14,5 @@ signals:
 
 protected:
 	virtual void mouseMoveEvent(QMouseEvent *event) override;
+	virtual bool eventFilter(QObject *obj, QEvent *event) override;
 };

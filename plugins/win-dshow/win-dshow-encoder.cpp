@@ -22,7 +22,8 @@ struct DShowEncoder {
 	DARRAY(uint8_t) header;
 
 	inline DShowEncoder(obs_encoder_t *context_, const wchar_t *device_)
-		: context(context_), device(device_)
+		: context(context_),
+		  device(device_)
 	{
 		da_init(firstPacket);
 		da_init(header);
@@ -161,7 +162,6 @@ static inline void *CreateDShowEncoder(obs_data_t *settings,
 		     obs_encoder_get_name(context), error);
 	}
 
-	UNUSED_PARAMETER(settings);
 	return encoder;
 }
 

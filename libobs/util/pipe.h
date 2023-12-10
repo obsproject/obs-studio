@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -18,6 +18,10 @@
 
 #include "c99defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct os_process_pipe;
 typedef struct os_process_pipe os_process_pipe_t;
 
@@ -31,3 +35,7 @@ EXPORT size_t os_process_pipe_read_err(os_process_pipe_t *pp, uint8_t *data,
 				       size_t len);
 EXPORT size_t os_process_pipe_write(os_process_pipe_t *pp, const uint8_t *data,
 				    size_t len);
+
+#ifdef __cplusplus
+}
+#endif

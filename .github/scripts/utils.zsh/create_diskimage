@@ -1,0 +1,84 @@
+autoload -Uz log_debug log_error log_info log_status log_group log_output log_warning
+
+local -r _usage="Usage: %B${0}%b <source> <volume name> <output_name>
+
+Create macOS disk image <volume name> <output_name> with contents of <source>"
+
+if (( ! # )) {
+  log_error 'Called without arguments.'
+  log_output ${_usage}
+  return 2
+}
+
+local source=${1}
+local volume_name=${2}
+local output_name=${3}
+
+log_group "Create macOS disk image"
+
+trap "safe_hdiutil detach /Volumes/${output_name}; rm temp.dmg; log_group; return 2" ERR
+
+safe_hdiutil() {
+  local _status=0
+  local -r -a _backoff=(2 5 10 15 30)
+
+  for i ({1..5}) {
+    hdiutil ${@} && _status=0 || _status=1
+
+    if (( _status )) {
+      log_warning "Unable to run 'hdiutil ${@}' (attempt #${i}). Retrying."
+      if (( ${+CI} )) sudo pkill -9 XProtect >/dev/null || true
+      sleep ${_backoff[${i}]}
+    } else {
+      break
+    }
+  }
+
+  if (( _status )) {
+    log_error "Unable to run 'hdiutil ${@}'. Aborting"
+    log_group
+    return 2
+  }
+}
+
+safe_hdiutil create \
+  -volname "${volume_name}" \
+  -srcfolder ${source} \
+  -ov \
+  -fs HFS+ \
+  -format UDRW \
+  temp.dmg
+safe_hdiutil attach \
+  -noverify \
+  -readwrite \
+  -mountpoint /Volumes/${output_name} \
+  temp.dmg
+
+log_info "Waiting 2 seconds to ensure mounted volume is available..."
+sleep 2
+log_status "Done"
+log_info "Setting up disk volume..."
+log_status "Volume icon"
+SetFile -c icnC /Volumes/${output_name}/.VolumeIcon.icns
+log_status "Icon positions"
+osascript package.applescript ${output_name}
+log_status "File permissions"
+chmod -Rf go-w /Volumes/${output_name}
+SetFile -a C /Volumes/${output_name}
+rm -rf -- /Volumes/${output_name}/.fseventsd(N)
+log_info "Converting disk image..."
+
+safe_hdiutil detach /Volumes/${output_name}
+
+safe_hdiutil convert \
+  -format ULFO \
+  -ov \
+  -o ${output_name}.dmg temp.dmg
+
+rm temp.dmg
+
+trap '' ERR
+
+log_group
+
+return 0

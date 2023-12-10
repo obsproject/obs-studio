@@ -1,39 +1,46 @@
-project(mac-capture)
+cmake_minimum_required(VERSION 3.24...3.25)
 
-find_library(COREAUDIO CoreAudio)
-find_library(AUDIOUNIT AudioUnit)
-find_library(COREFOUNDATION CoreFoundation)
-find_library(IOSURF IOSurface)
-find_library(COCOA Cocoa)
+add_library(mac-capture MODULE)
+add_library(OBS::capture ALIAS mac-capture)
 
-include_directories(${COREAUDIO}
-                    ${AUDIOUNIT}
-                    ${COREFOUNDATION}
-		    ${IOSURF}
-		    ${COCOA})
+target_sources(
+  mac-capture
+  PRIVATE # cmake-format: sortable
+          audio-device-enum.c
+          audio-device-enum.h
+          CGDisplayStream.h
+          mac-audio.c
+          mac-display-capture.m
+          mac-sck-audio-capture.m
+          mac-sck-common.h
+          mac-sck-common.m
+          mac-sck-video-capture.m
+          mac-window-capture.m
+          plugin-main.c
+          window-utils.h
+          window-utils.m)
 
-set(mac-capture_HEADERS
-	audio-device-enum.h
-	window-utils.h)
+# cmake-format: off
+target_link_libraries(
+  mac-capture
+  PRIVATE OBS::libobs
+          "$<LINK_LIBRARY:FRAMEWORK,AudioUnit.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,CoreAudio.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,CoreFoundation.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,CoreMedia.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,CoreVideo.framework>"
+          "$<LINK_LIBRARY:FRAMEWORK,IOSurface.framework>"
+          "$<LINK_LIBRARY:WEAK_FRAMEWORK,ScreenCaptureKit.framework>")
 
-set(mac-capture_SOURCES
-	plugin-main.c
-	audio-device-enum.c
-	mac-audio.c
-	mac-display-capture.m
-	mac-window-capture.m
-	window-utils.m)
+set_target_properties_obs(
+  mac-capture
+  PROPERTIES FOLDER plugins
+             PREFIX ""
+             XCODE_ATTRIBUTE_CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION YES
+             XCODE_ATTRIBUTE_GCC_WARN_SHADOW YES)
+# cmake-format: on
 
-add_library(mac-capture MODULE
-	${mac-capture_SOURCES}
-	${mac-capture_HEADERS})
-target_link_libraries(mac-capture
-	libobs
-	${COREAUDIO}
-	${AUDIOUNIT}
-	${COREFOUNDATION}
-	${IOSURF}
-	${COCOA})
-set_target_properties(mac-capture PROPERTIES FOLDER "plugins")
-
-install_obs_plugin_with_data(mac-capture data)
+if(CMAKE_VERSION VERSION_LESS_EQUAL 3.25.0)
+  set_property(TARGET mac-capture PROPERTY XCODE_LINK_BUILD_PHASE_MODE BUILT_ONLY)
+endif()

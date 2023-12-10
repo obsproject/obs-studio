@@ -31,8 +31,6 @@ static void color_source_update(void *data, obs_data_t *settings)
 
 static void *color_source_create(obs_data_t *settings, obs_source_t *source)
 {
-	UNUSED_PARAMETER(source);
-
 	struct color_source *context = bzalloc(sizeof(struct color_source));
 	context->src = source;
 

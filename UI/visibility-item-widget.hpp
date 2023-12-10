@@ -29,7 +29,6 @@ private:
 	static void OBSSourceRenamed(void *param, calldata_t *data);
 
 private slots:
-	void VisibilityClicked(bool visible);
 	void SourceEnabled(bool enabled);
 	void SourceRenamed(QString name);
 
@@ -47,6 +46,9 @@ public:
 
 	void paint(QPainter *painter, const QStyleOptionViewItem &option,
 		   const QModelIndex &index) const override;
+
+protected:
+	bool eventFilter(QObject *object, QEvent *event) override;
 };
 
 void SetupVisibilityItem(QListWidget *list, QListWidgetItem *item,

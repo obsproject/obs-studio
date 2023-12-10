@@ -2,8 +2,13 @@
 #include <psapi.h>
 #include <inttypes.h>
 #include "graphics-hook.h"
+#ifdef OBS_LEGACY
 #include "../graphics-hook-ver.h"
-#include "../obfuscate.h"
+#include "../../libobs/util/windows/obfuscate.h"
+#else
+#include <graphics-hook-ver.h>
+#include <util/windows/obfuscate.h>
+#endif
 
 #define DEBUG_OUTPUT
 
@@ -65,7 +70,8 @@ static inline void wait_for_dll_main_finish(HANDLE thread_handle)
 bool init_pipe(void)
 {
 	char new_name[64];
-	sprintf(new_name, "%s%lu", PIPE_NAME, GetCurrentProcessId());
+	snprintf(new_name, sizeof(new_name), "%s%lu", PIPE_NAME,
+		 GetCurrentProcessId());
 
 	const bool success = ipc_pipe_client_open(&pipe, new_name);
 	if (!success) {
@@ -243,8 +249,6 @@ static inline bool init_hook(HANDLE thread_handle)
 	_snwprintf(keepalive_name, sizeof(keepalive_name) / sizeof(wchar_t),
 		   L"%s%lu", WINDOW_HOOK_KEEPALIVE, GetCurrentProcessId());
 
-	init_pipe();
-
 	init_dummy_window_thread();
 	log_current_process();
 
@@ -319,7 +323,7 @@ static inline bool attempt_hook(void)
 	static bool d3d12_hooked = false;
 	static bool dxgi_hooked = false;
 	static bool gl_hooked = false;
-#if COMPILE_VULKAN_HOOK
+#ifdef COMPILE_VULKAN_HOOK
 	static bool vulkan_hooked = false;
 	if (!vulkan_hooked) {
 		vulkan_hooked = hook_vulkan();
@@ -329,7 +333,7 @@ static inline bool attempt_hook(void)
 	}
 #endif //COMPILE_VULKAN_HOOK
 
-#if COMPILE_D3D12_HOOK
+#ifdef COMPILE_D3D12_HOOK
 	if (!d3d12_hooked) {
 		d3d12_hooked = hook_d3d12();
 	}
@@ -931,7 +935,7 @@ __declspec(dllexport) LRESULT CALLBACK
 		HMODULE user32 = GetModuleHandleW(L"USER32");
 		BOOL(WINAPI * unhook_windows_hook_ex)(HHOOK) = NULL;
 
-		unhook_windows_hook_ex = get_obfuscated_func(
+		unhook_windows_hook_ex = ms_get_obfuscated_func(
 			user32, "VojeleY`bdgxvM`hhDz", 0x7F55F80C9EE3A213ULL);
 
 		if (unhook_windows_hook_ex)

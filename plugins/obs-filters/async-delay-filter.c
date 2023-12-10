@@ -2,6 +2,10 @@
 #include <util/circlebuf.h>
 #include <util/util_uint64.h>
 
+/* NOTE: Delaying audio shouldn't be necessary because the audio subsystem will
+ * automatically sync audio to video frames */
+/* #define DELAY_AUDIO */
+
 #ifndef SEC_TO_NSEC
 #define SEC_TO_NSEC 1000000000ULL
 #endif
@@ -20,9 +24,11 @@ struct async_delay_data {
 	/* contains struct obs_source_frame* */
 	struct circlebuf video_frames;
 
+#ifdef DELAY_AUDIO
 	/* stores the audio data */
 	struct circlebuf audio_frames;
 	struct obs_audio_data audio_output;
+#endif
 
 	uint64_t last_video_ts;
 	uint64_t last_audio_ts;
@@ -52,6 +58,7 @@ static void free_video_data(struct async_delay_data *filter,
 	}
 }
 
+#ifdef DELAY_AUDIO
 static inline void free_audio_packet(struct obs_audio_data *audio)
 {
 	for (size_t i = 0; i < MAX_AV_PLANES; i++)
@@ -69,6 +76,7 @@ static void free_audio_data(struct async_delay_data *filter)
 		free_audio_packet(&audio);
 	}
 }
+#endif
 
 static void async_delay_filter_update(void *data, obs_data_t *settings)
 {
@@ -106,9 +114,11 @@ static void async_delay_filter_destroy(void *data)
 {
 	struct async_delay_data *filter = data;
 
-	free_audio_packet(&filter->audio_output);
 	circlebuf_free(&filter->video_frames);
+#ifdef DELAY_AUDIO
+	free_audio_packet(&filter->audio_output);
 	circlebuf_free(&filter->audio_frames);
+#endif
 	bfree(data);
 }
 
@@ -129,7 +139,9 @@ static void async_delay_filter_remove(void *data, obs_source_t *parent)
 	struct async_delay_data *filter = data;
 
 	free_video_data(filter, parent);
+#ifdef DELAY_AUDIO
 	free_audio_data(filter);
+#endif
 }
 
 /* due to the fact that we need timing information to be consistent in order to
@@ -175,11 +187,6 @@ async_delay_filter_video(void *data, struct obs_source_frame *frame)
 
 	return output;
 }
-
-/* NOTE: Delaying audio shouldn't be necessary because the audio subsystem will
- * automatically sync audio to video frames */
-
-/* #define DELAY_AUDIO */
 
 #ifdef DELAY_AUDIO
 static struct obs_audio_data *

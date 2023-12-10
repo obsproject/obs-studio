@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -241,7 +241,7 @@ set_source(obs_source_t *transition, enum obs_transition_target target,
 	bool already_active;
 
 	if (new_child)
-		obs_source_addref(new_child);
+		new_child = obs_source_get_ref(new_child);
 
 	lock_transition(transition);
 
@@ -294,7 +294,7 @@ obs_source_t *obs_transition_get_source(obs_source_t *transition,
 
 	lock_transition(transition);
 	ret = transition->transition_sources[idx];
-	obs_source_addref(ret);
+	ret = obs_source_get_ref(ret);
 	unlock_transition(transition);
 
 	return ret;
@@ -312,7 +312,7 @@ obs_source_t *obs_transition_get_active_source(obs_source_t *transition)
 		ret = transition->transition_sources[1];
 	else
 		ret = transition->transition_sources[0];
-	obs_source_addref(ret);
+	ret = obs_source_get_ref(ret);
 	unlock_transition(transition);
 
 	return ret;
@@ -439,10 +439,10 @@ void obs_transition_set(obs_source_t *transition, obs_source_t *source)
 	obs_source_t *s[2];
 	bool active[2];
 
-	if (!transition_valid(transition, "obs_transition_clear"))
+	if (!transition_valid(transition, "obs_transition_set"))
 		return;
 
-	obs_source_addref(source);
+	source = obs_source_get_ref(source);
 
 	lock_transition(transition);
 	for (size_t i = 0; i < 2; i++) {
@@ -632,10 +632,8 @@ struct transition_state {
 static inline void copy_transition_state(obs_source_t *transition,
 					 struct transition_state *state)
 {
-	state->s[0] = transition->transition_sources[0];
-	state->s[1] = transition->transition_sources[1];
-	obs_source_addref(state->s[0]);
-	obs_source_addref(state->s[1]);
+	state->s[0] = obs_source_get_ref(transition->transition_sources[0]);
+	state->s[1] = obs_source_get_ref(transition->transition_sources[1]);
 
 	state->transitioning_video = transition->transitioning_video;
 	state->transitioning_audio = transition->transitioning_audio;
@@ -667,7 +665,7 @@ void obs_transition_enum_sources(obs_source_t *transition,
 }
 
 static inline void render_child(obs_source_t *transition, obs_source_t *child,
-				size_t idx)
+				size_t idx, enum gs_color_space space)
 {
 	uint32_t cx = get_cx(transition);
 	uint32_t cy = get_cy(transition);
@@ -675,7 +673,16 @@ static inline void render_child(obs_source_t *transition, obs_source_t *child,
 	if (!child)
 		return;
 
-	if (gs_texrender_begin(transition->transition_texrender[idx], cx, cy)) {
+	enum gs_color_format format = gs_get_format_from_space(space);
+	if (gs_texrender_get_format(transition->transition_texrender[idx]) !=
+	    format) {
+		gs_texrender_destroy(transition->transition_texrender[idx]);
+		transition->transition_texrender[idx] =
+			gs_texrender_create(format, GS_ZS_NONE);
+	}
+
+	if (gs_texrender_begin_with_color_space(
+		    transition->transition_texrender[idx], cx, cy, space)) {
 		vec4_zero(&blank);
 		gs_clear(GS_CLEAR_COLOR, &blank, 0.0f, 0);
 		gs_ortho(0.0f, (float)cx, 0.0f, (float)cy, -100.0f, 100.0f);
@@ -719,6 +726,15 @@ void obs_transition_force_stop(obs_source_t *transition)
 void obs_transition_video_render(obs_source_t *transition,
 				 obs_transition_video_render_callback_t callback)
 {
+	obs_transition_video_render2(transition, callback,
+				     obs->video.transparent_texture);
+}
+
+void obs_transition_video_render2(
+	obs_source_t *transition,
+	obs_transition_video_render_callback_t callback,
+	gs_texture_t *placeholder_texture)
+{
 	struct transition_state state;
 	struct matrix4 matrices[2];
 	bool locked = false;
@@ -756,14 +772,19 @@ void obs_transition_video_render(obs_source_t *transition,
 		uint32_t cx;
 		uint32_t cy;
 
+		const enum gs_color_space current_space = gs_get_color_space();
+		const enum gs_color_space source_space =
+			obs_source_get_color_space(transition, 1,
+						   &current_space);
 		for (size_t i = 0; i < 2; i++) {
 			if (state.s[i]) {
-				render_child(transition, state.s[i], i);
+				render_child(transition, state.s[i], i,
+					     source_space);
 				tex[i] = get_texture(transition, i);
 				if (!tex[i])
-					tex[i] = obs->video.transparent_texture;
+					tex[i] = placeholder_texture;
 			} else {
-				tex[i] = obs->video.transparent_texture;
+				tex[i] = placeholder_texture;
 			}
 		}
 
@@ -808,6 +829,48 @@ void obs_transition_video_render(obs_source_t *transition,
 		handle_stop(transition);
 }
 
+static enum gs_color_space mix_spaces(enum gs_color_space a,
+				      enum gs_color_space b)
+{
+	if ((a == GS_CS_709_EXTENDED) || (a == GS_CS_709_SCRGB) ||
+	    (b == GS_CS_709_EXTENDED) || (b == GS_CS_709_SCRGB))
+		return GS_CS_709_EXTENDED;
+	if ((a == GS_CS_SRGB_16F) || (b == GS_CS_SRGB_16F))
+		return GS_CS_SRGB_16F;
+	return GS_CS_SRGB;
+}
+
+enum gs_color_space
+obs_transition_video_get_color_space(obs_source_t *transition)
+{
+	obs_source_t *source0 = transition->transition_sources[0];
+	obs_source_t *source1 = transition->transition_sources[1];
+
+	const enum gs_color_space preferred_spaces[] = {
+		GS_CS_SRGB,
+		GS_CS_SRGB_16F,
+		GS_CS_709_EXTENDED,
+	};
+
+	enum gs_color_space space = GS_CS_SRGB;
+
+	if (source0) {
+		space = mix_spaces(space, obs_source_get_color_space(
+						  source0,
+						  OBS_COUNTOF(preferred_spaces),
+						  preferred_spaces));
+	}
+
+	if (source1) {
+		space = mix_spaces(space, obs_source_get_color_space(
+						  source1,
+						  OBS_COUNTOF(preferred_spaces),
+						  preferred_spaces));
+	}
+
+	return space;
+}
+
 bool obs_transition_video_render_direct(obs_source_t *transition,
 					enum obs_transition_target target)
 {
@@ -829,6 +892,9 @@ bool obs_transition_video_render_direct(obs_source_t *transition,
 	if (t >= 1.0f && transition->transitioning_video) {
 		transition->transitioning_video = false;
 		video_stopped = true;
+
+		if (!obs_source_active(transition))
+			transition->transitioning_audio = false;
 
 		if (!transition->transitioning_audio) {
 			obs_transition_stop(transition);
@@ -1038,7 +1104,8 @@ static inline obs_source_t *
 copy_source_state(obs_source_t *tr_dest, obs_source_t *tr_source, size_t idx)
 {
 	obs_source_t *old_child = tr_dest->transition_sources[idx];
-	obs_source_t *new_child = tr_source->transition_sources[idx];
+	obs_source_t *new_child =
+		obs_source_get_ref(tr_source->transition_sources[idx]);
 	bool active = tr_source->transition_source_active[idx];
 
 	if (old_child && tr_dest->transition_source_active[idx])
@@ -1049,7 +1116,6 @@ copy_source_state(obs_source_t *tr_dest, obs_source_t *tr_source, size_t idx)
 
 	if (active && new_child)
 		obs_source_add_active_child(tr_dest, new_child);
-	obs_source_addref(new_child);
 
 	return old_child;
 }

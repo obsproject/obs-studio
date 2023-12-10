@@ -51,7 +51,9 @@ private:
 public:
 	inline WidgetInfo(OBSPropertiesView *view_, obs_property_t *prop,
 			  QWidget *widget_)
-		: view(view_), property(prop), widget(widget_)
+		: view(view_),
+		  property(prop),
+		  widget(widget_)
 	{
 	}
 
@@ -61,7 +63,6 @@ public:
 			update_timer->stop();
 			QMetaObject::invokeMethod(update_timer, "timeout");
 			update_timer->deleteLater();
-			obs_data_release(old_settings_cache);
 		}
 	}
 
@@ -78,8 +79,6 @@ public slots:
 	void EditListEdit();
 	void EditListUp();
 	void EditListDown();
-	void EditListReordered(const QModelIndex &parent, int start, int end,
-			       const QModelIndex &destination, int row);
 };
 
 /* ------------------------------------------------------------------------- */
@@ -97,19 +96,22 @@ private:
 	QWidget *widget = nullptr;
 	properties_t properties;
 	OBSData settings;
-	void *obj = nullptr;
+	OBSWeakObjectAutoRelease weakObj;
+	void *rawObj = nullptr;
 	std::string type;
 	PropertiesReloadCallback reloadCallback;
 	PropertiesUpdateCallback callback = nullptr;
-	PropertiesVisualUpdateCb cb = nullptr;
+	PropertiesVisualUpdateCb visUpdateCb = nullptr;
 	int minSize;
 	std::vector<std::unique_ptr<WidgetInfo>> children;
 	std::string lastFocused;
 	QWidget *lastWidget = nullptr;
 	bool deferUpdate;
+	bool enableDefer = true;
 
-	QWidget *NewWidget(obs_property_t *prop, QWidget *widget,
-			   const char *signal);
+	template<typename Sender, typename SenderParent, typename... Args>
+	QWidget *NewWidget(obs_property_t *prop, Sender *widget,
+			   void (SenderParent::*signal)(Args...));
 
 	QWidget *AddCheckbox(obs_property_t *prop);
 	QWidget *AddText(obs_property_t *prop, QFormLayout *layout,
@@ -138,12 +140,14 @@ private:
 
 	void resizeEvent(QResizeEvent *event) override;
 
-	void GetScrollPos(int &h, int &v);
-	void SetScrollPos(int h, int v);
+	void GetScrollPos(int &h, int &v, int &hend, int &vend);
+	void SetScrollPos(int h, int v, int old_hend, int old_vend);
+
+private slots:
+	void RefreshProperties();
 
 public slots:
 	void ReloadProperties();
-	void RefreshProperties();
 	void SignalChanged();
 
 signals:
@@ -152,6 +156,11 @@ signals:
 	void PropertiesRefreshed();
 
 public:
+	OBSPropertiesView(OBSData settings, obs_object_t *obj,
+			  PropertiesReloadCallback reloadCallback,
+			  PropertiesUpdateCallback callback,
+			  PropertiesVisualUpdateCb cb = nullptr,
+			  int minSize = 0);
 	OBSPropertiesView(OBSData settings, void *obj,
 			  PropertiesReloadCallback reloadCallback,
 			  PropertiesUpdateCallback callback,
@@ -161,8 +170,50 @@ public:
 			  PropertiesReloadCallback reloadCallback,
 			  int minSize = 0);
 
+#define obj_constructor(type)                                              \
+	inline OBSPropertiesView(OBSData settings, obs_##type##_t *type,   \
+				 PropertiesReloadCallback reloadCallback,  \
+				 PropertiesUpdateCallback callback,        \
+				 PropertiesVisualUpdateCb cb = nullptr,    \
+				 int minSize = 0)                          \
+		: OBSPropertiesView(settings, (obs_object_t *)type,        \
+				    reloadCallback, callback, cb, minSize) \
+	{                                                                  \
+	}
+
+	obj_constructor(source);
+	obj_constructor(output);
+	obj_constructor(encoder);
+	obj_constructor(service);
+#undef obj_constructor
+
 	inline obs_data_t *GetSettings() const { return settings; }
 
-	inline void UpdateSettings() { callback(obj, nullptr, settings); }
+	inline void UpdateSettings()
+	{
+		if (callback)
+			callback(OBSGetStrongRef(weakObj), nullptr, settings);
+		else if (visUpdateCb)
+			visUpdateCb(OBSGetStrongRef(weakObj), settings);
+	}
 	inline bool DeferUpdate() const { return deferUpdate; }
+	inline void SetDeferrable(bool deferrable) { enableDefer = deferrable; }
+
+	inline OBSObject GetObject() const { return OBSGetStrongRef(weakObj); }
+
+#define Def_IsObject(type)                                \
+	inline bool IsObject(obs_##type##_t *type) const  \
+	{                                                 \
+		OBSObject obj = OBSGetStrongRef(weakObj); \
+		return obj.Get() == (obs_object_t *)type; \
+	}
+
+	/* clang-format off */
+	Def_IsObject(source)
+	Def_IsObject(output)
+	Def_IsObject(encoder)
+	Def_IsObject(service)
+	/* clang-format on */
+
+#undef Def_IsObject
 };

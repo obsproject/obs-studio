@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2015 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@ struct ts_info {
 
 #define DEBUG_AUDIO 0
 #define DEBUG_LAGGED_AUDIO 0
-#define MAX_BUFFERING_TICKS 45
 
 static void push_audio_tree(obs_source_t *parent, obs_source_t *source, void *p)
 {
@@ -241,7 +240,8 @@ static inline void discard_audio(struct obs_core_audio *audio,
 
 		/* ignore_audio should have already run and marked this source
 		 * pending, unless we *just* added buffering */
-		assert(audio->total_buffering_ticks < MAX_BUFFERING_TICKS ||
+		assert(audio->total_buffering_ticks <
+			       audio->max_buffering_ticks ||
 		       source->audio_pending || !source->audio_ts ||
 		       audio->buffering_wait_ticks);
 #endif
@@ -292,6 +292,61 @@ static inline void discard_audio(struct obs_core_audio *audio,
 	source->audio_ts = ts->end;
 }
 
+static inline bool audio_buffering_maxed(struct obs_core_audio *audio)
+{
+	return audio->total_buffering_ticks == audio->max_buffering_ticks;
+}
+
+static void set_fixed_audio_buffering(struct obs_core_audio *audio,
+				      size_t sample_rate, struct ts_info *ts)
+{
+	struct ts_info new_ts;
+	size_t total_ms;
+	int ticks;
+
+	if (audio_buffering_maxed(audio))
+		return;
+
+	if (!audio->buffering_wait_ticks)
+		audio->buffered_ts = ts->start;
+
+	ticks = audio->max_buffering_ticks - audio->total_buffering_ticks;
+	audio->total_buffering_ticks += ticks;
+
+	total_ms = audio->total_buffering_ticks * AUDIO_OUTPUT_FRAMES * 1000 /
+		   sample_rate;
+
+	blog(LOG_INFO,
+	     "Enabling fixed audio buffering, total "
+	     "audio buffering is now %d milliseconds",
+	     (int)total_ms);
+
+	new_ts.start =
+		audio->buffered_ts -
+		audio_frames_to_ns(sample_rate, audio->buffering_wait_ticks *
+							AUDIO_OUTPUT_FRAMES);
+
+	while (ticks--) {
+		const uint64_t cur_ticks = ++audio->buffering_wait_ticks;
+
+		new_ts.end = new_ts.start;
+		new_ts.start =
+			audio->buffered_ts -
+			audio_frames_to_ns(sample_rate,
+					   cur_ticks * AUDIO_OUTPUT_FRAMES);
+
+#if DEBUG_AUDIO == 1
+		blog(LOG_DEBUG, "add buffered ts: %" PRIu64 "-%" PRIu64,
+		     new_ts.start, new_ts.end);
+#endif
+
+		circlebuf_push_front(&audio->buffered_timestamps, &new_ts,
+				     sizeof(new_ts));
+	}
+
+	*ts = new_ts;
+}
+
 static void add_audio_buffering(struct obs_core_audio *audio,
 				size_t sample_rate, struct ts_info *ts,
 				uint64_t min_ts, const char *buffering_name)
@@ -303,7 +358,7 @@ static void add_audio_buffering(struct obs_core_audio *audio,
 	size_t ms;
 	int ticks;
 
-	if (audio->total_buffering_ticks == MAX_BUFFERING_TICKS)
+	if (audio_buffering_maxed(audio))
 		return;
 
 	if (!audio->buffering_wait_ticks)
@@ -315,9 +370,10 @@ static void add_audio_buffering(struct obs_core_audio *audio,
 
 	audio->total_buffering_ticks += ticks;
 
-	if (audio->total_buffering_ticks >= MAX_BUFFERING_TICKS) {
-		ticks -= audio->total_buffering_ticks - MAX_BUFFERING_TICKS;
-		audio->total_buffering_ticks = MAX_BUFFERING_TICKS;
+	if (audio->total_buffering_ticks >= audio->max_buffering_ticks) {
+		ticks -= audio->total_buffering_ticks -
+			 audio->max_buffering_ticks;
+		audio->total_buffering_ticks = audio->max_buffering_ticks;
 		blog(LOG_WARNING, "Max audio buffering reached!");
 	}
 
@@ -365,8 +421,8 @@ static void add_audio_buffering(struct obs_core_audio *audio,
 	*ts = new_ts;
 }
 
-static bool audio_buffer_insuffient(struct obs_source *source,
-				    size_t sample_rate, uint64_t min_ts)
+static bool audio_buffer_insufficient(struct obs_source *source,
+				      size_t sample_rate, uint64_t min_ts)
 {
 	size_t total_floats = AUDIO_OUTPUT_FRAMES;
 	size_t size;
@@ -420,7 +476,7 @@ static inline bool mark_invalid_sources(struct obs_core_data *data,
 	struct obs_source *source = data->first_audio_source;
 	while (source) {
 		recalculate |=
-			audio_buffer_insuffient(source, sample_rate, min_ts);
+			audio_buffer_insufficient(source, sample_rate, min_ts);
 		source = (struct obs_source *)source->next_audio_source;
 	}
 
@@ -486,18 +542,34 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in,
 #endif
 
 	/* ------------------------------------------------ */
-	/* build audio render order
-	 * NOTE: these are source channels, not audio channels */
-	for (uint32_t i = 0; i < MAX_CHANNELS; i++) {
-		obs_source_t *source = obs_get_output_source(i);
-		if (source) {
+	/* build audio render order */
+
+	pthread_mutex_lock(&obs->video.mixes_mutex);
+	for (size_t j = 0; j < obs->video.mixes.num; j++) {
+		struct obs_view *view = obs->video.mixes.array[j]->view;
+		if (!view)
+			continue;
+
+		pthread_mutex_lock(&view->channels_mutex);
+
+		/* NOTE: these are source channels, not audio channels */
+		for (uint32_t i = 0; i < MAX_CHANNELS; i++) {
+			obs_source_t *source = view->channels[i];
+			if (!source)
+				continue;
+			if (!obs_source_active(source))
+				continue;
+
 			obs_source_enum_active_tree(source, push_audio_tree,
 						    audio);
 			push_audio_tree(NULL, source, audio);
-			da_push_back(audio->root_nodes, &source);
-			obs_source_release(source);
+
+			if (view == &obs->data.main_view)
+				da_push_back(audio->root_nodes, &source);
 		}
+		pthread_mutex_unlock(&view->channels_mutex);
 	}
+	pthread_mutex_unlock(&obs->video.mixes_mutex);
 
 	pthread_mutex_lock(&data->audio_sources_mutex);
 
@@ -518,7 +590,7 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in,
 
 		/* if a source has gone backward in time and we can no
 		 * longer buffer, drop some or all of its audio */
-		if (audio->total_buffering_ticks == MAX_BUFFERING_TICKS &&
+		if (audio_buffering_maxed(audio) && source->audio_ts != 0 &&
 		    source->audio_ts < ts.start) {
 			if (source->info.audio_render) {
 				blog(LOG_DEBUG,
@@ -556,10 +628,15 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in,
 	pthread_mutex_unlock(&data->audio_sources_mutex);
 
 	/* ------------------------------------------------ */
-	/* if a source has gone backward in time, buffer */
-	if (min_ts < ts.start)
+	/* if a source has gone backward in time, buffer    */
+	if (audio->fixed_buffer) {
+		if (!audio_buffering_maxed(audio)) {
+			set_fixed_audio_buffering(audio, sample_rate, &ts);
+		}
+	} else if (min_ts < ts.start) {
 		add_audio_buffering(audio, sample_rate, &ts, min_ts,
 				    buffering_name);
+	}
 
 	/* ------------------------------------------------ */
 	/* mix audio */

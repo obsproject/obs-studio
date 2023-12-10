@@ -8,8 +8,7 @@
 
 #define warn(msg, ...) \
 	blog(LOG_WARNING, "%s" msg, info->log_prefix, ##__VA_ARGS__)
-#define info(msg, ...) \
-	blog(LOG_WARNING, "%s" msg, info->log_prefix, ##__VA_ARGS__)
+#define info(msg, ...) blog(LOG_INFO, "%s" msg, info->log_prefix, ##__VA_ARGS__)
 
 struct update_info {
 	char error[CURL_ERROR_SIZE];
@@ -126,11 +125,6 @@ static bool do_http_request(struct update_info *info, const char *url,
 				 http_header);
 		curl_easy_setopt(info->curl, CURLOPT_HEADERDATA, info);
 	}
-
-#if LIBCURL_VERSION_NUM >= 0x072400
-	// A lot of servers don't yet support ALPN
-	curl_easy_setopt(info->curl, CURLOPT_SSL_ENABLE_ALPN, 0);
-#endif
 
 	code = curl_easy_perform(info->curl);
 	if (code != CURLE_OK) {

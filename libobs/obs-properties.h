@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -64,12 +64,14 @@ enum obs_combo_format {
 	OBS_COMBO_FORMAT_INT,
 	OBS_COMBO_FORMAT_FLOAT,
 	OBS_COMBO_FORMAT_STRING,
+	OBS_COMBO_FORMAT_BOOL,
 };
 
 enum obs_combo_type {
 	OBS_COMBO_TYPE_INVALID,
 	OBS_COMBO_TYPE_EDITABLE,
 	OBS_COMBO_TYPE_LIST,
+	OBS_COMBO_TYPE_RADIO,
 };
 
 enum obs_editable_list_type {
@@ -88,6 +90,13 @@ enum obs_text_type {
 	OBS_TEXT_DEFAULT,
 	OBS_TEXT_PASSWORD,
 	OBS_TEXT_MULTILINE,
+	OBS_TEXT_INFO,
+};
+
+enum obs_text_info_type {
+	OBS_TEXT_INFO_NORMAL,
+	OBS_TEXT_INFO_WARNING,
+	OBS_TEXT_INFO_ERROR,
 };
 
 enum obs_number_type {
@@ -203,7 +212,7 @@ EXPORT obs_property_t *obs_properties_add_text(obs_properties_t *props,
  * Adds a 'path' property.  Can be a directory or a file.
  *
  * If target is a file path, the filters should be this format, separated by
- * double semi-colens, and extensions separated by space:
+ * double semicolons, and extensions separated by space:
  *   "Example types 1 and 2 (*.ex1 *.ex2);;Example type 3 (*.ex3)"
  *
  * @param  props        Properties object
@@ -212,7 +221,7 @@ EXPORT obs_property_t *obs_properties_add_text(obs_properties_t *props,
  * @param  type         Type of path (directory or file)
  * @param  filter       If type is a file path, then describes the file filter
  *                      that the user can browse.  Items are separated via
- *                      double semi-colens.  If multiple file types in a
+ *                      double semicolons.  If multiple file types in a
  *                      filter, separate with space.
  */
 EXPORT obs_property_t *
@@ -324,6 +333,8 @@ EXPORT enum obs_number_type obs_property_float_type(obs_property_t *p);
 EXPORT const char *obs_property_float_suffix(obs_property_t *p);
 EXPORT enum obs_text_type obs_property_text_type(obs_property_t *p);
 EXPORT bool obs_property_text_monospace(obs_property_t *p);
+EXPORT enum obs_text_info_type obs_property_text_info_type(obs_property_t *p);
+EXPORT bool obs_property_text_info_word_wrap(obs_property_t *p);
 EXPORT enum obs_path_type obs_property_path_type(obs_property_t *p);
 EXPORT const char *obs_property_path_filter(obs_property_t *p);
 EXPORT const char *obs_property_path_default_path(obs_property_t *p);
@@ -338,6 +349,10 @@ EXPORT void obs_property_int_set_suffix(obs_property_t *p, const char *suffix);
 EXPORT void obs_property_float_set_suffix(obs_property_t *p,
 					  const char *suffix);
 EXPORT void obs_property_text_set_monospace(obs_property_t *p, bool monospace);
+EXPORT void obs_property_text_set_info_type(obs_property_t *p,
+					    enum obs_text_info_type type);
+EXPORT void obs_property_text_set_info_word_wrap(obs_property_t *p,
+						 bool word_wrap);
 
 EXPORT void obs_property_button_set_type(obs_property_t *p,
 					 enum obs_button_type type);
@@ -351,6 +366,8 @@ EXPORT size_t obs_property_list_add_int(obs_property_t *p, const char *name,
 					long long val);
 EXPORT size_t obs_property_list_add_float(obs_property_t *p, const char *name,
 					  double val);
+EXPORT size_t obs_property_list_add_bool(obs_property_t *p, const char *name,
+					 bool val);
 
 EXPORT void obs_property_list_insert_string(obs_property_t *p, size_t idx,
 					    const char *name, const char *val);
@@ -358,6 +375,8 @@ EXPORT void obs_property_list_insert_int(obs_property_t *p, size_t idx,
 					 const char *name, long long val);
 EXPORT void obs_property_list_insert_float(obs_property_t *p, size_t idx,
 					   const char *name, double val);
+EXPORT void obs_property_list_insert_bool(obs_property_t *p, size_t idx,
+					  const char *name, bool val);
 
 EXPORT void obs_property_list_item_disable(obs_property_t *p, size_t idx,
 					   bool disabled);
@@ -370,6 +389,7 @@ EXPORT const char *obs_property_list_item_name(obs_property_t *p, size_t idx);
 EXPORT const char *obs_property_list_item_string(obs_property_t *p, size_t idx);
 EXPORT long long obs_property_list_item_int(obs_property_t *p, size_t idx);
 EXPORT double obs_property_list_item_float(obs_property_t *p, size_t idx);
+EXPORT bool obs_property_list_item_bool(obs_property_t *p, size_t idx);
 
 EXPORT enum obs_editable_list_type
 obs_property_editable_list_type(obs_property_t *p);

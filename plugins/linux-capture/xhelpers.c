@@ -319,3 +319,15 @@ xcb_screen_t *xcb_get_screen(xcb_connection_t *xcb, int screen)
 
 	return NULL;
 }
+
+int xcb_get_screen_for_root(xcb_connection_t *conn, xcb_window_t root)
+{
+	xcb_screen_iterator_t iter =
+		xcb_setup_roots_iterator(xcb_get_setup(conn));
+	for (int i = 0; iter.rem > 0; xcb_screen_next(&iter)) {
+		if (iter.data->root == root)
+			return i;
+		i++;
+	}
+	return 0;
+}

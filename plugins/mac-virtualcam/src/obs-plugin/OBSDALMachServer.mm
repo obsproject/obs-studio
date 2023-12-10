@@ -20,26 +20,26 @@
 
 - (id)init
 {
-	if (self = [super init]) {
-		self.clientPorts = [[NSMutableSet alloc] init];
-	}
-	return self;
+    if (self = [super init]) {
+        self.clientPorts = [[NSMutableSet alloc] init];
+    }
+    return self;
 }
 
 - (void)dealloc
 {
-	blog(LOG_DEBUG, "tearing down MachServer");
-	[self.runLoop removePort:self.port forMode:NSDefaultRunLoopMode];
-	[self.port invalidate];
-	self.port.delegate = nil;
+    blog(LOG_DEBUG, "tearing down MachServer");
+    [self.runLoop removePort:self.port forMode:NSDefaultRunLoopMode];
+    [self.port invalidate];
+    self.port.delegate = nil;
 }
 
 - (void)run
 {
-	if (self.port != nil) {
-		blog(LOG_DEBUG, "mach server already running!");
-		return;
-	}
+    if (self.port != nil) {
+        blog(LOG_DEBUG, "mach server already running!");
+        return;
+    }
 
 // It's a bummer this is deprecated. The replacement, NSXPCConnection, seems to require
 // an assistant process that lives inside the .app bundle. This would be more modern, but adds
@@ -49,129 +49,119 @@
 // these APIs (which are, interestingly, not deprecated)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-	self.port = [[NSMachBootstrapServer sharedInstance]
-		servicePortWithName:@MACH_SERVICE_NAME];
+    self.port = [[NSMachBootstrapServer sharedInstance] servicePortWithName:@MACH_SERVICE_NAME];
 #pragma clang diagnostic pop
-	if (self.port == nil) {
-		// This probably means another instance is running.
-		blog(LOG_ERROR, "Unable to open mach server port.");
-		return;
-	}
+    if (self.port == nil) {
+        // This probably means another instance is running.
+        blog(LOG_ERROR, "Unable to open mach server port.");
+        return;
+    }
 
-	self.port.delegate = self;
+    self.port.delegate = self;
 
-	self.runLoop = [NSRunLoop currentRunLoop];
-	[self.runLoop addPort:self.port forMode:NSDefaultRunLoopMode];
+    self.runLoop = [NSRunLoop currentRunLoop];
+    [self.runLoop addPort:self.port forMode:NSDefaultRunLoopMode];
 
-	blog(LOG_DEBUG, "mach server running!");
+    blog(LOG_DEBUG, "mach server running!");
 }
 
 - (void)handlePortMessage:(NSPortMessage *)message
 {
-	switch (message.msgid) {
-	case MachMsgIdConnect:
-		if (message.sendPort != nil) {
-			blog(LOG_DEBUG,
-			     "mach server received connect message from port %d!",
-			     ((NSMachPort *)message.sendPort).machPort);
-			[self.clientPorts addObject:message.sendPort];
-		}
-		break;
-	default:
-		blog(LOG_ERROR, "Unexpected mach message ID %u",
-		     (unsigned)message.msgid);
-		break;
-	}
+    switch (message.msgid) {
+        case MachMsgIdConnect:
+            if (message.sendPort != nil) {
+                blog(LOG_DEBUG, "mach server received connect message from port %d!",
+                     ((NSMachPort *) message.sendPort).machPort);
+                [self.clientPorts addObject:message.sendPort];
+            }
+            break;
+        default:
+            blog(LOG_ERROR, "Unexpected mach message ID %u", (unsigned) message.msgid);
+            break;
+    }
 }
 
-- (void)sendMessageToClientsWithMsgId:(uint32_t)msgId
-			   components:(nullable NSArray *)components
+- (void)sendMessageToClientsWithMsgId:(uint32_t)msgId components:(nullable NSArray *)components
 {
-	if ([self.clientPorts count] <= 0) {
-		return;
-	}
+    if ([self.clientPorts count] <= 0) {
+        return;
+    }
 
-	NSMutableSet *removedPorts = [NSMutableSet set];
+    NSMutableSet *removedPorts = [NSMutableSet set];
 
-	for (NSPort *port in self.clientPorts) {
-		@try {
-			NSPortMessage *message = [[NSPortMessage alloc]
-				initWithSendPort:port
-				     receivePort:nil
-				      components:components];
-			message.msgid = msgId;
-			if (![message
-				    sendBeforeDate:
-					    [NSDate dateWithTimeIntervalSinceNow:
-							    1.0]]) {
-				blog(LOG_DEBUG,
-				     "failed to send message to %d, removing it from the clients!",
-				     ((NSMachPort *)port).machPort);
-				[removedPorts addObject:port];
-			}
-		} @catch (NSException *exception) {
-			blog(LOG_DEBUG,
-			     "failed to send message (exception) to %d, removing it from the clients!",
-			     ((NSMachPort *)port).machPort);
-			[removedPorts addObject:port];
-		}
-	}
+    for (NSPort *port in self.clientPorts) {
+        @try {
+            NSPortMessage *message = [[NSPortMessage alloc] initWithSendPort:port receivePort:nil
+                                                                  components:components];
+            message.msgid = msgId;
+            if (![port isValid] || ![message sendBeforeDate:[NSDate dateWithTimeIntervalSinceNow:1.0]]) {
+                blog(LOG_DEBUG, "failed to send message to %d, removing it from the clients!",
+                     ((NSMachPort *) port).machPort);
 
-	// Remove dead ports if necessary
-	[self.clientPorts minusSet:removedPorts];
+                [port invalidate];
+                [removedPorts addObject:port];
+            }
+        } @catch (NSException *exception) {
+            blog(LOG_DEBUG, "failed to send message (exception) to %d, removing it from the clients!",
+                 ((NSMachPort *) port).machPort);
+
+            [port invalidate];
+            [removedPorts addObject:port];
+        }
+    }
+
+    // Remove dead ports if necessary
+    [self.clientPorts minusSet:removedPorts];
 }
 
-- (void)sendFrameWithSize:(NSSize)size
-		timestamp:(uint64_t)timestamp
-	     fpsNumerator:(uint32_t)fpsNumerator
-	   fpsDenominator:(uint32_t)fpsDenominator
-	       frameBytes:(uint8_t *)frameBytes
+- (void)sendPixelBuffer:(CVPixelBufferRef)frame
+              timestamp:(uint64_t)timestamp
+           fpsNumerator:(uint32_t)fpsNumerator
+         fpsDenominator:(uint32_t)fpsDenominator
 {
-	if ([self.clientPorts count] <= 0) {
-		return;
-	}
+    if ([self.clientPorts count] <= 0) {
+        return;
+    }
 
-	@autoreleasepool {
-		CGFloat width = size.width;
-		NSData *widthData = [NSData dataWithBytes:&width
-						   length:sizeof(width)];
-		CGFloat height = size.height;
-		NSData *heightData = [NSData dataWithBytes:&height
-						    length:sizeof(height)];
-		NSData *timestampData = [NSData
-			dataWithBytes:&timestamp
-			       length:sizeof(timestamp)];
-		NSData *fpsNumeratorData = [NSData
-			dataWithBytes:&fpsNumerator
-			       length:sizeof(fpsNumerator)];
-		NSData *fpsDenominatorData = [NSData
-			dataWithBytes:&fpsDenominator
-			       length:sizeof(fpsDenominator)];
+    @autoreleasepool {
+        NSData *timestampData = [NSData dataWithBytes:&timestamp length:sizeof(timestamp)];
+        NSData *fpsNumeratorData = [NSData dataWithBytes:&fpsNumerator length:sizeof(fpsNumerator)];
+        NSData *fpsDenominatorData = [NSData dataWithBytes:&fpsDenominator length:sizeof(fpsDenominator)];
 
-		// NOTE: I'm not totally sure about the safety of dataWithBytesNoCopy in this context.
-		// Seems like there could potentially be an issue if the frameBuffer went away before the
-		// mach message finished sending. But it seems to be working and avoids a memory copy. Alternately
-		// we could do something like
-		// NSData *frameData = [NSData dataWithBytes:(void *)frameBytes length:size.width * size.height * 2];
-		NSData *frameData = [NSData
-			dataWithBytesNoCopy:(void *)frameBytes
-				     length:size.width * size.height * 2
-			       freeWhenDone:NO];
-		[self sendMessageToClientsWithMsgId:MachMsgIdFrame
-					 components:@[
-						 widthData, heightData,
-						 timestampData, frameData,
-						 fpsNumeratorData,
-						 fpsDenominatorData
-					 ]];
-	}
+        IOSurfaceRef surface = CVPixelBufferGetIOSurface(frame);
+#ifndef __aarch64__
+        IOSurfaceLock(surface, 0, NULL);
+#endif
+
+        if (!surface) {
+            blog(LOG_ERROR, "unable to access IOSurface associated with CVPixelBuffer");
+            return;
+        }
+
+        mach_port_t framePort = IOSurfaceCreateMachPort(surface);
+
+        if (!framePort) {
+            blog(LOG_ERROR, "unable to allocate mach port for IOSurface");
+            return;
+        }
+
+        [self sendMessageToClientsWithMsgId:MachMsgIdFrame components:@[
+            [NSMachPort portWithMachPort:framePort options:NSMachPortDeallocateNone], timestampData, fpsNumeratorData,
+            fpsDenominatorData
+        ]];
+
+        mach_port_deallocate(mach_task_self(), framePort);
+
+#ifndef __aarch64__
+        IOSurfaceUnlock(surface, 0, NULL);
+#endif
+    }
 }
 
 - (void)stop
 {
-	blog(LOG_DEBUG, "sending stop message to %lu clients",
-	     self.clientPorts.count);
-	[self sendMessageToClientsWithMsgId:MachMsgIdStop components:nil];
+    blog(LOG_DEBUG, "sending stop message to %lu clients", self.clientPorts.count);
+    [self sendMessageToClientsWithMsgId:MachMsgIdStop components:nil];
 }
 
 @end

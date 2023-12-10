@@ -84,7 +84,7 @@ static void platform_keyboard_keymap(void *data, struct wl_keyboard *keyboard,
 	UNUSED_PARAMETER(format);
 	obs_hotkeys_platform_t *plat = (obs_hotkeys_platform_t *)data;
 
-	char *keymap_shm = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0);
+	char *keymap_shm = mmap(NULL, size, PROT_READ, MAP_PRIVATE, fd, 0);
 	if (keymap_shm == MAP_FAILED) {
 		close(fd);
 		return;
@@ -216,7 +216,6 @@ static void platform_registry_handler(void *data, struct wl_registry *registry,
 				      uint32_t id, const char *interface,
 				      uint32_t version)
 {
-	UNUSED_PARAMETER(version);
 	obs_hotkeys_platform_t *plat = (obs_hotkeys_platform_t *)data;
 
 	if (strcmp(interface, wl_seat_interface.name) == 0) {
@@ -1062,6 +1061,21 @@ static obs_key_t obs_nix_wayland_key_from_virtual_key(int sym)
 		return OBS_KEY_NUM8;
 	case XKB_KEY_KP_9:
 		return OBS_KEY_NUM9;
+
+	case XKB_KEY_XF86AudioPlay:
+		return OBS_KEY_VK_MEDIA_PLAY_PAUSE;
+	case XKB_KEY_XF86AudioStop:
+		return OBS_KEY_VK_MEDIA_STOP;
+	case XKB_KEY_XF86AudioPrev:
+		return OBS_KEY_VK_MEDIA_PREV_TRACK;
+	case XKB_KEY_XF86AudioNext:
+		return OBS_KEY_VK_MEDIA_NEXT_TRACK;
+	case XKB_KEY_XF86AudioMute:
+		return OBS_KEY_VK_VOLUME_MUTE;
+	case XKB_KEY_XF86AudioRaiseVolume:
+		return OBS_KEY_VK_VOLUME_DOWN;
+	case XKB_KEY_XF86AudioLowerVolume:
+		return OBS_KEY_VK_VOLUME_UP;
 	}
 	return OBS_KEY_NONE;
 }
@@ -1608,6 +1622,21 @@ static int obs_nix_wayland_key_to_virtual_key(obs_key_t key)
 		return XKB_KEY_KP_8;
 	case OBS_KEY_NUM9:
 		return XKB_KEY_KP_9;
+
+	case OBS_KEY_VK_MEDIA_PLAY_PAUSE:
+		return XKB_KEY_XF86AudioPlay;
+	case OBS_KEY_VK_MEDIA_STOP:
+		return XKB_KEY_XF86AudioStop;
+	case OBS_KEY_VK_MEDIA_PREV_TRACK:
+		return XKB_KEY_XF86AudioPrev;
+	case OBS_KEY_VK_MEDIA_NEXT_TRACK:
+		return XKB_KEY_XF86AudioNext;
+	case OBS_KEY_VK_VOLUME_MUTE:
+		return XKB_KEY_XF86AudioMute;
+	case OBS_KEY_VK_VOLUME_DOWN:
+		return XKB_KEY_XF86AudioRaiseVolume;
+	case OBS_KEY_VK_VOLUME_UP:
+		return XKB_KEY_XF86AudioLowerVolume;
 	default:
 		break;
 	}

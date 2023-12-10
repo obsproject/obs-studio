@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -240,7 +240,7 @@ struct obs_encoder_info {
 
 	/**
 	 * Gets the default settings for this encoder
-	 * 
+	 *
 	 * If get_defaults is also defined both will be called, and the first
 	 * call will be to get_defaults, then to get_defaults2.
 	 *

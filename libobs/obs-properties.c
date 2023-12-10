@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -44,6 +44,7 @@ struct list_item {
 		char *str;
 		long long ll;
 		double d;
+		bool b;
 	};
 };
 
@@ -56,6 +57,8 @@ struct path_data {
 struct text_data {
 	enum obs_text_type type;
 	bool monospace;
+	enum obs_text_info_type info_type;
+	bool info_word_wrap;
 };
 
 struct list_data {
@@ -167,6 +170,12 @@ static inline void float_data_free(struct float_data *data)
 		bfree(data->suffix);
 }
 
+static inline void button_data_free(struct button_data *data)
+{
+	if (data->url)
+		bfree(data->url);
+}
+
 struct obs_properties;
 
 struct obs_property {
@@ -183,16 +192,16 @@ struct obs_property {
 	obs_property_modified_t modified;
 	obs_property_modified2_t modified2;
 
-	struct obs_property *next;
+	UT_hash_handle hh;
 };
 
 struct obs_properties {
 	void *param;
 	void (*destroy)(void *param);
 	uint32_t flags;
+	uint32_t groups;
 
-	struct obs_property *first_property;
-	struct obs_property **last;
+	struct obs_property *properties;
 	struct obs_property *parent;
 };
 
@@ -200,7 +209,6 @@ obs_properties_t *obs_properties_create(void)
 {
 	struct obs_properties *props;
 	props = bzalloc(sizeof(struct obs_properties));
-	props->last = &props->first_property;
 	return props;
 }
 
@@ -257,6 +265,8 @@ static void obs_property_destroy(struct obs_property *property)
 		int_data_free(get_property_data(property));
 	else if (property->type == OBS_PROPERTY_FLOAT)
 		float_data_free(get_property_data(property));
+	else if (property->type == OBS_PROPERTY_BUTTON)
+		button_data_free(get_property_data(property));
 
 	bfree(property->name);
 	bfree(property->desc);
@@ -267,15 +277,14 @@ static void obs_property_destroy(struct obs_property *property)
 void obs_properties_destroy(obs_properties_t *props)
 {
 	if (props) {
-		struct obs_property *p = props->first_property;
+		struct obs_property *p, *tmp;
 
 		if (props->destroy && props->param)
 			props->destroy(props->param);
 
-		while (p) {
-			struct obs_property *next = p->next;
+		HASH_ITER (hh, props->properties, p, tmp) {
+			HASH_DEL(props->properties, p);
 			obs_property_destroy(p);
-			p = next;
 		}
 
 		bfree(props);
@@ -284,31 +293,32 @@ void obs_properties_destroy(obs_properties_t *props)
 
 obs_property_t *obs_properties_first(obs_properties_t *props)
 {
-	return (props != NULL) ? props->first_property : NULL;
+	return (props != NULL) ? props->properties : NULL;
 }
 
 obs_property_t *obs_properties_get(obs_properties_t *props, const char *name)
 {
-	struct obs_property *property;
+	struct obs_property *property, *tmp;
 
 	if (!props)
 		return NULL;
 
-	property = props->first_property;
-	while (property) {
-		if (strcmp(property->name, name) == 0)
-			return property;
+	HASH_FIND_STR(props->properties, name, property);
+	if (property)
+		return property;
 
-		if (property->type == OBS_PROPERTY_GROUP) {
-			obs_properties_t *group =
-				obs_property_group_content(property);
-			obs_property_t *found = obs_properties_get(group, name);
-			if (found != NULL) {
-				return found;
-			}
-		}
+	if (!props->groups)
+		return NULL;
 
-		property = property->next;
+	/* Recursively check groups as well, if any */
+	HASH_ITER (hh, props->properties, property, tmp) {
+		if (property->type != OBS_PROPERTY_GROUP)
+			continue;
+
+		obs_properties_t *group = obs_property_group_content(property);
+		obs_property_t *found = obs_properties_get(group, name);
+		if (found)
+			return found;
 	}
 
 	return NULL;
@@ -324,72 +334,49 @@ void obs_properties_remove_by_name(obs_properties_t *props, const char *name)
 	if (!props)
 		return;
 
-	/* obs_properties_t is a forward-linked-list, so we need to keep both
-	 * previous and current pointers around. That way we can fix up the
-	 * pointers for the previous element if we find a match.
-	 */
-	struct obs_property *cur = props->first_property;
-	struct obs_property *prev = props->first_property;
+	struct obs_property *cur, *tmp;
 
-	while (cur) {
-		if (strcmp(cur->name, name) == 0) {
-			// Fix props->last pointer.
-			if (props->last == &cur->next) {
-				if (cur == prev) {
-					// If we are the last entry and there
-					// is no previous entry, reset.
-					props->last = &props->first_property;
-				} else {
-					// If we are the last entry and there
-					// is a previous entry, update.
-					props->last = &prev->next;
-				}
-			}
+	HASH_FIND_STR(props->properties, name, cur);
 
-			// Fix props->first_property.
-			if (props->first_property == cur)
-				props->first_property = cur->next;
+	if (cur) {
+		HASH_DELETE(hh, props->properties, cur);
 
-			// Update the previous element next pointer with our
-			// next pointer. This is an automatic no-op if both
-			// elements alias the same memory.
-			prev->next = cur->next;
+		if (cur->type == OBS_PROPERTY_GROUP)
+			props->groups--;
 
-			// Finally clear our own next pointer and destroy.
-			cur->next = NULL;
-			obs_property_destroy(cur);
+		obs_property_destroy(cur);
+		return;
+	}
 
-			break;
-		}
+	if (!props->groups)
+		return;
 
-		if (cur->type == OBS_PROPERTY_GROUP) {
-			obs_properties_remove_by_name(
-				obs_property_group_content(cur), name);
-		}
+	HASH_ITER (hh, props->properties, cur, tmp) {
+		if (cur->type != OBS_PROPERTY_GROUP)
+			continue;
 
-		prev = cur;
-		cur = cur->next;
+		obs_properties_remove_by_name(obs_property_group_content(cur),
+					      name);
 	}
 }
 
-void obs_properties_apply_settings_internal(obs_properties_t *props,
-					    obs_data_t *settings,
-					    obs_properties_t *realprops)
-{
-	struct obs_property *p;
+typedef DARRAY(struct obs_property *) obs_property_da_t;
 
-	p = props->first_property;
+void obs_properties_apply_settings_internal(
+	obs_properties_t *props, obs_property_da_t *properties_with_callback)
+{
+	struct obs_property *p = props->properties;
+
 	while (p) {
 		if (p->type == OBS_PROPERTY_GROUP) {
 			obs_properties_apply_settings_internal(
-				obs_property_group_content(p), settings,
-				realprops);
+				obs_property_group_content(p),
+				properties_with_callback);
 		}
-		if (p->modified)
-			p->modified(realprops, p, settings);
-		else if (p->modified2)
-			p->modified2(p->priv, realprops, p, settings);
-		p = p->next;
+		if (p->modified || p->modified2)
+			da_push_back((*properties_with_callback), &p);
+
+		p = p->hh.next;
 	}
 }
 
@@ -399,17 +386,26 @@ void obs_properties_apply_settings(obs_properties_t *props,
 	if (!props)
 		return;
 
-	obs_properties_apply_settings_internal(props, settings, props);
+	obs_property_da_t properties_with_callback;
+	da_init(properties_with_callback);
+
+	obs_properties_apply_settings_internal(props,
+					       &properties_with_callback);
+
+	while (properties_with_callback.num > 0) {
+		struct obs_property *p = *(struct obs_property **)da_end(
+			properties_with_callback);
+		if (p->modified)
+			p->modified(props, p, settings);
+		else if (p->modified2)
+			p->modified2(p->priv, props, p, settings);
+		da_pop_back(properties_with_callback);
+	}
+
+	da_free(properties_with_callback);
 }
 
 /* ------------------------------------------------------------------------- */
-
-static inline void propertes_add(struct obs_properties *props,
-				 struct obs_property *p)
-{
-	*props->last = p;
-	props->last = &p->next;
-}
 
 static inline size_t get_property_size(enum obs_property_type type)
 {
@@ -461,7 +457,8 @@ static inline struct obs_property *new_prop(struct obs_properties *props,
 	p->type = type;
 	p->name = bstrdup(name);
 	p->desc = bstrdup(desc);
-	propertes_add(props, p);
+
+	HASH_ADD_STR(props->properties, name, p);
 
 	return p;
 }
@@ -479,22 +476,22 @@ static inline obs_properties_t *get_topmost_parent(obs_properties_t *props)
 
 static inline bool contains_prop(struct obs_properties *props, const char *name)
 {
-	struct obs_property *p = props->first_property;
+	struct obs_property *p, *tmp;
+	HASH_FIND_STR(props->properties, name, p);
 
-	while (p) {
-		if (strcmp(p->name, name) == 0) {
-			blog(LOG_WARNING, "Property '%s' exists", name);
+	if (p) {
+		blog(LOG_WARNING, "Property '%s' exists", name);
+		return true;
+	}
+
+	if (!props->groups)
+		return false;
+
+	HASH_ITER (hh, props->properties, p, tmp) {
+		if (p->type != OBS_PROPERTY_GROUP)
+			continue;
+		if (contains_prop(obs_property_group_content(p), name))
 			return true;
-		}
-
-		if (p->type == OBS_PROPERTY_GROUP) {
-			if (contains_prop(obs_property_group_content(p),
-					  name)) {
-				return true;
-			}
-		}
-
-		p = p->next;
 	}
 
 	return false;
@@ -600,6 +597,8 @@ obs_property_t *obs_properties_add_text(obs_properties_t *props,
 	struct obs_property *p = new_prop(props, name, desc, OBS_PROPERTY_TEXT);
 	struct text_data *data = get_property_data(p);
 	data->type = type;
+	data->info_type = OBS_TEXT_INFO_NORMAL;
+	data->info_word_wrap = true;
 	return p;
 }
 
@@ -741,24 +740,23 @@ static bool check_property_group_recursion(obs_properties_t *parent,
 					   obs_properties_t *group)
 {
 	/* Scan the group for the parent. */
-	obs_property_t *current_property = group->first_property;
-	while (current_property) {
-		if (current_property->type == OBS_PROPERTY_GROUP) {
-			obs_properties_t *cprops =
-				obs_property_group_content(current_property);
-			if (cprops == parent) {
-				/* Contains find_props */
-				return true;
-			} else if (cprops == group) {
-				/* Contains self, shouldn't be possible but
-				 * lets verify anyway. */
-				return true;
-			}
-			if (check_property_group_recursion(parent, cprops))
-				return true;
-		}
+	obs_property_t *p, *tmp;
 
-		current_property = current_property->next;
+	HASH_ITER (hh, group->properties, p, tmp) {
+		if (p->type != OBS_PROPERTY_GROUP)
+			continue;
+
+		obs_properties_t *cprops = obs_property_group_content(p);
+		if (cprops == parent) {
+			/* Contains find_props */
+			return true;
+		} else if (cprops == group) {
+			/* Contains self, shouldn't be possible but
+				 * lets verify anyway. */
+			return true;
+		}
+		if (check_property_group_recursion(parent, cprops))
+			return true;
 	}
 
 	return false;
@@ -767,13 +765,11 @@ static bool check_property_group_recursion(obs_properties_t *parent,
 static bool check_property_group_duplicates(obs_properties_t *parent,
 					    obs_properties_t *group)
 {
-	obs_property_t *current_property = group->first_property;
-	while (current_property) {
-		if (has_prop(parent, current_property->name)) {
-			return true;
-		}
+	obs_property_t *p, *tmp;
 
-		current_property = current_property->next;
+	HASH_ITER (hh, group->properties, p, tmp) {
+		if (has_prop(parent, p->name))
+			return true;
 	}
 
 	return false;
@@ -800,6 +796,7 @@ obs_property_t *obs_properties_add_group(obs_properties_t *props,
 		return NULL;
 
 	obs_property_t *p = new_prop(props, name, desc, OBS_PROPERTY_GROUP);
+	props->groups++;
 	group->parent = p;
 
 	struct group_data *data = get_property_data(p);
@@ -837,7 +834,7 @@ bool obs_property_next(obs_property_t **p)
 	if (!p || !*p)
 		return false;
 
-	*p = (*p)->next;
+	*p = (*p)->hh.next;
 	return *p != NULL;
 }
 
@@ -1022,6 +1019,18 @@ bool obs_property_text_monospace(obs_property_t *p)
 	return data ? data->monospace : false;
 }
 
+enum obs_text_info_type obs_property_text_info_type(obs_property_t *p)
+{
+	struct text_data *data = get_type_data(p, OBS_PROPERTY_TEXT);
+	return data ? data->info_type : OBS_TEXT_INFO_NORMAL;
+}
+
+bool obs_property_text_info_word_wrap(obs_property_t *p)
+{
+	struct text_data *data = get_type_data(p, OBS_PROPERTY_TEXT);
+	return data ? data->info_word_wrap : true;
+}
+
 enum obs_path_type obs_property_path_type(obs_property_t *p)
 {
 	struct path_data *data = get_type_data(p, OBS_PROPERTY_PATH);
@@ -1104,6 +1113,25 @@ void obs_property_text_set_monospace(obs_property_t *p, bool monospace)
 	data->monospace = monospace;
 }
 
+void obs_property_text_set_info_type(obs_property_t *p,
+				     enum obs_text_info_type type)
+{
+	struct text_data *data = get_type_data(p, OBS_PROPERTY_TEXT);
+	if (!data)
+		return;
+
+	data->info_type = type;
+}
+
+void obs_property_text_set_info_word_wrap(obs_property_t *p, bool word_wrap)
+{
+	struct text_data *data = get_type_data(p, OBS_PROPERTY_TEXT);
+	if (!data)
+		return;
+
+	data->info_word_wrap = word_wrap;
+}
+
 void obs_property_button_set_type(obs_property_t *p, enum obs_button_type type)
 {
 	struct button_data *data = get_type_data(p, OBS_PROPERTY_BUTTON);
@@ -1119,7 +1147,7 @@ void obs_property_button_set_url(obs_property_t *p, char *url)
 	if (!data)
 		return;
 
-	data->url = url;
+	data->url = bstrdup(url);
 }
 
 void obs_property_list_clear(obs_property_t *p)
@@ -1139,6 +1167,8 @@ static size_t add_item(struct list_data *data, const char *name,
 		item.ll = *(const long long *)val;
 	else if (data->format == OBS_COMBO_FORMAT_FLOAT)
 		item.d = *(const double *)val;
+	else if (data->format == OBS_COMBO_FORMAT_BOOL)
+		item.b = *(const bool *)val;
 	else
 		item.str = bstrdup(val);
 
@@ -1155,6 +1185,8 @@ static void insert_item(struct list_data *data, size_t idx, const char *name,
 		item.ll = *(const long long *)val;
 	else if (data->format == OBS_COMBO_FORMAT_FLOAT)
 		item.d = *(const double *)val;
+	else if (data->format == OBS_COMBO_FORMAT_BOOL)
+		item.b = *(const bool *)val;
 	else
 		item.str = bstrdup(val);
 
@@ -1188,6 +1220,14 @@ size_t obs_property_list_add_float(obs_property_t *p, const char *name,
 	return 0;
 }
 
+size_t obs_property_list_add_bool(obs_property_t *p, const char *name, bool val)
+{
+	struct list_data *data = get_list_data(p);
+	if (data && data->format == OBS_COMBO_FORMAT_BOOL)
+		return add_item(data, name, &val);
+	return 0;
+}
+
 void obs_property_list_insert_string(obs_property_t *p, size_t idx,
 				     const char *name, const char *val)
 {
@@ -1209,6 +1249,14 @@ void obs_property_list_insert_float(obs_property_t *p, size_t idx,
 {
 	struct list_data *data = get_list_data(p);
 	if (data && data->format == OBS_COMBO_FORMAT_FLOAT)
+		insert_item(data, idx, name, &val);
+}
+
+void obs_property_list_insert_bool(obs_property_t *p, size_t idx,
+				   const char *name, bool val)
+{
+	struct list_data *data = get_list_data(p);
+	if (data && data->format == OBS_COMBO_FORMAT_BOOL)
 		insert_item(data, idx, name, &val);
 }
 
@@ -1267,6 +1315,13 @@ double obs_property_list_item_float(obs_property_t *p, size_t idx)
 {
 	struct list_data *data = get_list_fmt_data(p, OBS_COMBO_FORMAT_FLOAT);
 	return (data && idx < data->items.num) ? data->items.array[idx].d : 0.0;
+}
+
+bool obs_property_list_item_bool(obs_property_t *p, size_t idx)
+{
+	struct list_data *data = get_list_fmt_data(p, OBS_COMBO_FORMAT_BOOL);
+	return (data && idx < data->items.num) ? data->items.array[idx].d
+					       : false;
 }
 
 enum obs_editable_list_type obs_property_editable_list_type(obs_property_t *p)

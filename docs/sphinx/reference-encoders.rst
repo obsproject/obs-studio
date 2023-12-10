@@ -22,7 +22,7 @@ is the dedicated header for implementing encoders
 Encoder Definition Structure (obs_encoder_info)
 -----------------------------------------------
 
-.. type:: struct obs_encoder_info
+.. struct:: obs_encoder_info
 
    Encoder definition structure.
 
@@ -77,7 +77,7 @@ Encoder Definition Structure (obs_encoder_info)
             number would be 1024
 
 .. member:: void (*obs_encoder_info.get_defaults)(obs_data_t *settings)
-            void (*obs_encoder_info.get_defaults2)(void *type_data, obs_data_t *settings)
+            void (*obs_encoder_info.get_defaults2)(obs_data_t *settings, void *type_data)
 
    Sets the default settings for this encoder.
 
@@ -89,6 +89,11 @@ Encoder Definition Structure (obs_encoder_info)
             obs_properties_t *(*obs_encoder_info.get_properties2)(void *data, void *type_data)
 
    Gets the property information of this encoder.
+
+   :param  data:  The implementation data associated with this encoder.
+                  This value can be null (e.g., when
+                  :c:func:`obs_get_encoder_properties()` is called on the
+                  encoder type), make sure to handle this gracefully.
 
    (Optional)
 
@@ -163,7 +168,7 @@ Encoder Definition Structure (obs_encoder_info)
 Encoder Packet Structure (encoder_packet)
 -----------------------------------------
 
-.. type:: struct encoder_packet
+.. struct:: encoder_packet
 
    Encoder packet structure.
 
@@ -239,7 +244,7 @@ Encoder Packet Structure (encoder_packet)
 Raw Frame Data Structure (encoder_frame)
 ----------------------------------------
 
-.. type:: struct encoder_frame
+.. struct:: encoder_frame
 
    Raw frame data structure.
 
@@ -283,7 +288,7 @@ General Encoder Functions
 .. function:: obs_encoder_t *obs_video_encoder_create(const char *id, const char *name, obs_data_t *settings, obs_data_t *hotkey_data)
 
    Creates a video encoder with the specified settings.
-  
+
    The "encoder" context is used for encoding video/audio data.  Use
    obs_encoder_release to release it.
 
@@ -302,7 +307,7 @@ General Encoder Functions
 .. function:: obs_encoder_t *obs_audio_encoder_create(const char *id, const char *name, obs_data_t *settings, size_t mixer_idx, obs_data_t *hotkey_data)
 
    Creates an audio encoder with the specified settings.
-  
+
    The "encoder" context is used for encoding video/audio data.  Use
    :c:func:`obs_encoder_release()` to release it.
 
@@ -321,10 +326,25 @@ General Encoder Functions
 ---------------------
 
 .. function:: void obs_encoder_addref(obs_encoder_t *encoder)
-              void obs_encoder_release(obs_encoder_t *encoder)
 
-   Adds/releases a reference to an encoder.  When the last reference is
-   released, the encoder is destroyed.
+   Adds a reference to an encoder.
+
+.. deprecated:: 27.2.0
+   Use :c:func:`obs_encoder_get_ref()` instead.
+
+---------------------
+
+.. function:: obs_encoder_t *obs_encoder_get_ref(obs_encoder_t *encoder)
+
+   Returns an incremented reference if still valid, otherwise returns
+   *NULL*. Release with :c:func:`obs_encoder_release()`.
+
+---------------------
+
+.. function:: void obs_encoder_release(obs_encoder_t *encoder)
+
+   Releases a reference to an encoder.  When the last reference is released,
+   the encoder is destroyed.
 
 ---------------------
 
@@ -413,7 +433,7 @@ General Encoder Functions
    Sets the preferred video format for a video encoder.  If the encoder can use
    the format specified, it will force a conversion to that format if the
    obs output format does not match the preferred format.
-  
+
    If the format is set to VIDEO_FORMAT_NONE, will revert to the default
    functionality of converting only when absolutely necessary.
 
@@ -422,7 +442,8 @@ General Encoder Functions
 .. function:: obs_data_t *obs_encoder_defaults(const char *id)
               obs_data_t *obs_encoder_get_defaults(const obs_encoder_t *encoder)
 
-   :return: An incremented reference to the encoder's default settings
+   :return: An incremented reference to the encoder's default settings.
+            Release with :c:func:`obs_data_release()`.
 
 ---------------------
 
@@ -446,19 +467,22 @@ General Encoder Functions
 
 .. function:: obs_data_t *obs_encoder_get_settings(const obs_encoder_t *encoder)
 
-   :return: An incremented reference to the encoder's settings
+   :return: An incremented reference to the encoder's settings. Release with
+            :c:func:`obs_data_release()`.
 
 ---------------------
 
 .. function:: signal_handler_t *obs_encoder_get_signal_handler(const obs_encoder_t *encoder)
 
-   :return: The signal handler of the encoder
+   :return: The signal handler of the encoder. Should not be manually freed,
+            as its lifecycle is managed by libobs.
 
 ---------------------
 
 .. function:: proc_handler_t *obs_encoder_get_proc_handler(const obs_encoder_t *encoder)
 
-   :return: The procedure handler of the encoder
+   :return: The procedure handler of the encoder. Should not be manually freed,
+            as its lifecycle is managed by libobs.
 
 ---------------------
 
@@ -504,4 +528,4 @@ Functions used by encoders
 
 .. ---------------------------------------------------------------------------
 
-.. _libobs/obs-encoder.h: https://github.com/jp9000/obs-studio/blob/master/libobs/obs-encoder.h
+.. _libobs/obs-encoder.h: https://github.com/obsproject/obs-studio/blob/master/libobs/obs-encoder.h

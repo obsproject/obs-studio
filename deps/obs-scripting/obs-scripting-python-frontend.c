@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2017 by Hugh Bailey <jim@obsproject.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -280,7 +280,7 @@ static void frontend_save_callback(obs_data_t *save_data, bool saving,
 {
 	struct python_obs_callback *cb = priv;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		obs_frontend_remove_save_callback(frontend_save_callback, cb);
 		return;
 	}
@@ -290,7 +290,8 @@ static void frontend_save_callback(obs_data_t *save_data, bool saving,
 	PyObject *py_save_data;
 
 	if (libobs_to_py(obs_data_t, save_data, false, &py_save_data)) {
-		PyObject *args = Py_BuildValue("(Op)", py_save_data, saving);
+		PyObject *args = Py_BuildValue("(ON)", py_save_data,
+					       PyBool_FromLong(saving));
 
 		struct python_obs_callback *last_cb = cur_python_cb;
 		cur_python_cb = cb;
@@ -355,7 +356,7 @@ static void frontend_event_callback(enum obs_frontend_event event, void *priv)
 {
 	struct python_obs_callback *cb = priv;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		obs_frontend_remove_event_callback(frontend_event_callback, cb);
 		return;
 	}

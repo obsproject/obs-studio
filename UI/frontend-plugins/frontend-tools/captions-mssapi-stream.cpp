@@ -138,7 +138,6 @@ STDMETHODIMP CaptionStream::Read(void *data, ULONG bytes, ULONG *read_bytes)
 STDMETHODIMP CaptionStream::Write(const void *, ULONG bytes, ULONG *)
 {
 	debugfunc("data, %lu, written_bytes", bytes);
-	UNUSED_PARAMETER(bytes);
 
 	return STG_E_INVALIDFUNCTION;
 }
@@ -149,8 +148,6 @@ STDMETHODIMP CaptionStream::Seek(LARGE_INTEGER move, DWORD origin,
 				 ULARGE_INTEGER *new_pos)
 {
 	debugfunc("%lld, %lx, new_pos", move, origin);
-	UNUSED_PARAMETER(move);
-	UNUSED_PARAMETER(origin);
 
 	if (!new_pos)
 		return E_POINTER;
@@ -165,7 +162,6 @@ STDMETHODIMP CaptionStream::Seek(LARGE_INTEGER move, DWORD origin,
 STDMETHODIMP CaptionStream::SetSize(ULARGE_INTEGER new_size)
 {
 	debugfunc("%llu", new_size);
-	UNUSED_PARAMETER(new_size);
 	return STG_E_INVALIDFUNCTION;
 }
 
@@ -201,7 +197,6 @@ STDMETHODIMP CaptionStream::CopyTo(IStream *stream, ULARGE_INTEGER bytes,
 STDMETHODIMP CaptionStream::Commit(DWORD commit_flags)
 {
 	debugfunc("%lx", commit_flags);
-	UNUSED_PARAMETER(commit_flags);
 	/* TODO? */
 	return S_OK;
 }
@@ -216,9 +211,6 @@ STDMETHODIMP CaptionStream::LockRegion(ULARGE_INTEGER offset,
 				       ULARGE_INTEGER size, DWORD type)
 {
 	debugfunc("%llu, %llu, %ld", offset, size, type);
-	UNUSED_PARAMETER(offset);
-	UNUSED_PARAMETER(size);
-	UNUSED_PARAMETER(type);
 	/* TODO? */
 	return STG_E_INVALIDFUNCTION;
 }
@@ -227,9 +219,6 @@ STDMETHODIMP CaptionStream::UnlockRegion(ULARGE_INTEGER offset,
 					 ULARGE_INTEGER size, DWORD type)
 {
 	debugfunc("%llu, %llu, %ld", offset, size, type);
-	UNUSED_PARAMETER(offset);
-	UNUSED_PARAMETER(size);
-	UNUSED_PARAMETER(type);
 	/* TODO? */
 	return STG_E_INVALIDFUNCTION;
 }

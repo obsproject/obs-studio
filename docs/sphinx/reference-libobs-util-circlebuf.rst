@@ -12,7 +12,7 @@ as data is pushed to the front or back.
 Circular Buffer Structure (struct circlebuf)
 --------------------------------------------
 
-.. type:: struct circlebuf
+.. struct:: circlebuf
 .. member:: void   *circlebuf.data
 .. member:: size_t circlebuf.size
 .. member:: size_t circlebuf.start_pos

@@ -24,16 +24,13 @@ static bool getparam(const char *param, char **name, const char **value)
 
 struct obs_options obs_parse_options(const char *options_string)
 {
+	if (!options_string || !*options_string)
+		goto failure;
+
 	char **input_words = strlist_split(options_string, ' ', false);
-	if (!input_words) {
-		return (struct obs_options){
-			.count = 0,
-			.options = NULL,
-			.ignored_word_count = 0,
-			.ignored_words = NULL,
-			.input_words = NULL,
-		};
-	}
+	if (!input_words)
+		goto failure;
+
 	size_t input_option_count = 0;
 	for (char **input_word = input_words; *input_word; ++input_word)
 		input_option_count += 1;
@@ -58,6 +55,15 @@ struct obs_options obs_parse_options(const char *options_string)
 		.ignored_word_count = ignored_word - ignored_words,
 		.ignored_words = ignored_words,
 		.input_words = input_words,
+	};
+
+failure:
+	return (struct obs_options){
+		.count = 0,
+		.options = NULL,
+		.ignored_word_count = 0,
+		.ignored_words = NULL,
+		.input_words = NULL,
 	};
 }
 

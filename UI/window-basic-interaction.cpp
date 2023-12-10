@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -25,6 +25,11 @@
 #include <QCloseEvent>
 #include <QScreen>
 #include <QWindow>
+
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN 1
+#include <Windows.h>
+#endif
 
 using namespace std;
 
@@ -78,9 +83,7 @@ OBSBasicInteraction::~OBSBasicInteraction()
 
 OBSEventFilter *OBSBasicInteraction::BuildEventFilter()
 {
-	return new OBSEventFilter([this](QObject *obj, QEvent *event) {
-		UNUSED_PARAMETER(obj);
-
+	return new OBSEventFilter([this](QObject *, QEvent *event) {
 		switch (event->type()) {
 		case QEvent::MouseButtonPress:
 		case QEvent::MouseButtonRelease:
@@ -110,12 +113,10 @@ OBSEventFilter *OBSBasicInteraction::BuildEventFilter()
 	});
 }
 
-void OBSBasicInteraction::SourceRemoved(void *data, calldata_t *params)
+void OBSBasicInteraction::SourceRemoved(void *data, calldata_t *)
 {
 	QMetaObject::invokeMethod(static_cast<OBSBasicInteraction *>(data),
 				  "close");
-
-	UNUSED_PARAMETER(params);
 }
 
 void OBSBasicInteraction::SourceRenamed(void *data, calldata_t *params)
@@ -173,6 +174,31 @@ void OBSBasicInteraction::closeEvent(QCloseEvent *event)
 	obs_display_remove_draw_callback(ui->preview->GetDisplay(),
 					 OBSBasicInteraction::DrawPreview,
 					 this);
+}
+
+bool OBSBasicInteraction::nativeEvent(const QByteArray &, void *message,
+				      qintptr *)
+{
+#ifdef _WIN32
+	const MSG &msg = *static_cast<MSG *>(message);
+	switch (msg.message) {
+	case WM_MOVE:
+		for (OBSQTDisplay *const display :
+		     findChildren<OBSQTDisplay *>()) {
+			display->OnMove();
+		}
+		break;
+	case WM_DISPLAYCHANGE:
+		for (OBSQTDisplay *const display :
+		     findChildren<OBSQTDisplay *>()) {
+			display->OnDisplayChange();
+		}
+	}
+#else
+	UNUSED_PARAMETER(message);
+#endif
+
+	return false;
 }
 
 static int TranslateQtKeyboardEventModifiers(QInputEvent *event,
@@ -285,8 +311,9 @@ bool OBSBasicInteraction::HandleMouseClickEvent(QMouseEvent *event)
 	//if (event->flags().testFlag(Qt::MouseEventCreatedDoubleClick))
 	//	clickCount = 2;
 
-	bool insideSource = GetSourceRelativeXY(event->x(), event->y(),
-						mouseEvent.x, mouseEvent.y);
+	QPoint pos = event->pos();
+	bool insideSource = GetSourceRelativeXY(pos.x(), pos.y(), mouseEvent.x,
+						mouseEvent.y);
 
 	if (mouseUp || insideSource)
 		obs_source_send_mouse_click(source, &mouseEvent, button,
@@ -303,7 +330,8 @@ bool OBSBasicInteraction::HandleMouseMoveEvent(QMouseEvent *event)
 
 	if (!mouseLeave) {
 		mouseEvent.modifiers = TranslateQtMouseEventModifiers(event);
-		mouseLeave = !GetSourceRelativeXY(event->x(), event->y(),
+		QPoint pos = event->pos();
+		mouseLeave = !GetSourceRelativeXY(pos.x(), pos.y(),
 						  mouseEvent.x, mouseEvent.y);
 	}
 
@@ -334,14 +362,9 @@ bool OBSBasicInteraction::HandleMouseWheelEvent(QWheelEvent *event)
 			yDelta = angleDelta.y();
 	}
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
 	const QPointF position = event->position();
 	const int x = position.x();
 	const int y = position.y();
-#else
-	const int x = event->x();
-	const int y = event->y();
-#endif
 
 	if (GetSourceRelativeXY(x, y, mouseEvent.x, mouseEvent.y)) {
 		obs_source_send_mouse_wheel(source, &mouseEvent, xDelta,

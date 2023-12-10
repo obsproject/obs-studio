@@ -52,6 +52,7 @@ struct obs_frontend_callbacks {
 	virtual bool obs_frontend_recording_active(void) = 0;
 	virtual void obs_frontend_recording_pause(bool pause) = 0;
 	virtual bool obs_frontend_recording_paused(void) = 0;
+	virtual bool obs_frontend_recording_split_file(void) = 0;
 
 	virtual void obs_frontend_replay_buffer_start(void) = 0;
 	virtual void obs_frontend_replay_buffer_save(void) = 0;
@@ -64,6 +65,13 @@ struct obs_frontend_callbacks {
 						      void *private_data) = 0;
 
 	virtual void *obs_frontend_add_dock(void *dock) = 0;
+
+	virtual bool obs_frontend_add_dock_by_id(const char *id,
+						 const char *title,
+						 void *widget) = 0;
+	virtual void obs_frontend_remove_dock(const char *id) = 0;
+	virtual bool obs_frontend_add_custom_qdock(const char *id,
+						   void *dock) = 0;
 
 	virtual void
 	obs_frontend_add_event_callback(obs_frontend_event_cb callback,
@@ -140,8 +148,25 @@ struct obs_frontend_callbacks {
 	virtual void obs_frontend_open_source_filters(obs_source_t *source) = 0;
 	virtual void
 	obs_frontend_open_source_interaction(obs_source_t *source) = 0;
+	virtual void
+	obs_frontend_open_sceneitem_edit_transform(obs_sceneitem_t *item) = 0;
 
 	virtual char *obs_frontend_get_current_record_output_path(void) = 0;
+	virtual const char *
+	obs_frontend_get_locale_string(const char *string) = 0;
+
+	virtual bool obs_frontend_is_theme_dark(void) = 0;
+
+	virtual char *obs_frontend_get_last_recording(void) = 0;
+	virtual char *obs_frontend_get_last_screenshot(void) = 0;
+	virtual char *obs_frontend_get_last_replay(void) = 0;
+
+	virtual void obs_frontend_add_undo_redo_action(const char *name,
+						       const undo_redo_cb undo,
+						       const undo_redo_cb redo,
+						       const char *undo_data,
+						       const char *redo_data,
+						       bool repeatable) = 0;
 };
 
 EXPORT void

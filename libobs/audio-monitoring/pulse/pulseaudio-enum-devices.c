@@ -1,11 +1,11 @@
 #include <obs-internal.h>
 #include "pulseaudio-wrapper.h"
 
-static void pulseaudio_output_info(pa_context *c, const pa_source_info *i,
+static void pulseaudio_output_info(pa_context *c, const pa_sink_info *i,
 				   int eol, void *userdata)
 {
 	UNUSED_PARAMETER(c);
-	if (eol != 0 || i->monitor_of_sink == PA_INVALID_INDEX)
+	if (eol != 0)
 		goto skip;
 
 	struct enum_cb *ecb = (struct enum_cb *)userdata;
@@ -24,8 +24,8 @@ void obs_enum_audio_monitoring_devices(obs_enum_audio_device_cb cb, void *data)
 	ecb->cont = 1;
 
 	pulseaudio_init();
-	pa_source_info_cb_t pa_cb = pulseaudio_output_info;
-	pulseaudio_get_source_info_list(pa_cb, (void *)ecb);
+	pa_sink_info_cb_t pa_cb = pulseaudio_output_info;
+	pulseaudio_get_sink_info_list(pa_cb, (void *)ecb);
 	pulseaudio_unref();
 
 	bfree(ecb);

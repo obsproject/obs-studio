@@ -15,7 +15,8 @@ static inline bool device_is_input(char *device)
 	       astrstri(device, "ishowu") == NULL &&
 	       astrstri(device, "blackhole") == NULL &&
 	       astrstri(device, "loopback") == NULL &&
-	       astrstri(device, "groundcontrol") == NULL;
+	       astrstri(device, "groundcontrol") == NULL &&
+	       astrstri(device, "vbcable") == NULL;
 }
 
 static inline bool enum_success(OSStatus stat, const char *msg)
@@ -43,7 +44,7 @@ static bool coreaudio_enum_device(enum_device_proc_t proc, void *param,
 
 	AudioObjectPropertyAddress addr = {kAudioDevicePropertyStreams,
 					   kAudioDevicePropertyScopeInput,
-					   kAudioObjectPropertyElementMaster};
+					   kAudioObjectPropertyElementMain};
 
 	/* check to see if it's a mac input device */
 	AudioObjectGetPropertyDataSize(id, &addr, 0, NULL, &size);
@@ -76,7 +77,7 @@ static void enum_devices(enum_device_proc_t proc, void *param)
 {
 	AudioObjectPropertyAddress addr = {kAudioHardwarePropertyDevices,
 					   kAudioObjectPropertyScopeGlobal,
-					   kAudioObjectPropertyElementMaster};
+					   kAudioObjectPropertyElementMain};
 
 	UInt32 size = 0;
 	UInt32 count;
@@ -136,30 +137,19 @@ void coreaudio_enum_devices(struct device_list *list, bool input)
 	enum_devices(coreaudio_enum_add_device, &data);
 }
 
-struct device_id_data {
-	CFStringRef uid;
-	AudioDeviceID *id;
-	bool found;
-};
-
-static bool get_device_id(void *param, CFStringRef cf_name, CFStringRef cf_uid,
-			  AudioDeviceID id)
-{
-	struct device_id_data *data = param;
-
-	if (CFStringCompare(cf_uid, data->uid, 0) == 0) {
-		*data->id = id;
-		data->found = true;
-		return false;
-	}
-
-	UNUSED_PARAMETER(cf_name);
-	return true;
-}
-
 bool coreaudio_get_device_id(CFStringRef uid, AudioDeviceID *id)
 {
-	struct device_id_data data = {uid, id, false};
-	enum_devices(get_device_id, &data);
-	return data.found;
+	AudioObjectPropertyAddress propertyAddress = {
+		kAudioHardwarePropertyDeviceForUID,
+		kAudioObjectPropertyScopeGlobal,
+		kAudioObjectPropertyElementMain};
+
+	AudioValueTranslation translation = {&uid, sizeof(CFStringRef), id,
+					     sizeof(AudioDeviceID)};
+	UInt32 size = sizeof(translation);
+
+	OSStatus result = AudioObjectGetPropertyData(kAudioObjectSystemObject,
+						     &propertyAddress, 0, NULL,
+						     &size, &translation);
+	return result == noErr;
 }

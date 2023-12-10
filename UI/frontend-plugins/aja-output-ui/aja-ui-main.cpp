@@ -100,7 +100,6 @@ void preview_output_stop()
 {
 	obs_output_stop(context.output);
 	obs_output_release(context.output);
-	video_output_stop(context.video_queue);
 
 	obs_remove_main_render_callback(render_preview_source, &context);
 	obs_frontend_remove_event_callback(on_preview_scene_changed, &context);
@@ -221,7 +220,7 @@ void populate_multi_view_audio_sources(obs_property_t *list, NTV2DeviceID id)
 }
 
 bool on_misc_device_selected(void *data, obs_properties_t *props,
-			     obs_property_t *list, obs_data_t *settings)
+			     obs_property_t *, obs_data_t *settings)
 {
 	const char *cardID = obs_data_get_string(settings, kUIPropDevice.id);
 	if (!cardID || !cardID[0])
@@ -293,12 +292,9 @@ static void toggle_multi_view(CNTV2Card *card, NTV2InputSource src, bool enable)
 	}
 }
 
-bool on_multi_view_toggle(void *data, obs_properties_t *props,
-			  obs_property_t *list, obs_data_t *settings)
+bool on_multi_view_toggle(void *data, obs_properties_t *, obs_property_t *,
+			  obs_data_t *settings)
 {
-	UNUSED_PARAMETER(props);
-	UNUSED_PARAMETER(list);
-
 	bool multiViewEnabled =
 		obs_data_get_bool(settings, kUIPropMultiViewEnable.id) &&
 		!main_output_running && !preview_output_running;
@@ -346,11 +342,8 @@ void on_preview_scene_changed(enum obs_frontend_event event, void *param)
 	}
 }
 
-void render_preview_source(void *param, uint32_t cx, uint32_t cy)
+void render_preview_source(void *param, uint32_t, uint32_t)
 {
-	UNUSED_PARAMETER(cx);
-	UNUSED_PARAMETER(cy);
-
 	auto ctx = (struct preview_output *)param;
 
 	if (!ctx->current_source)
@@ -419,7 +412,9 @@ void addOutputUI(void)
 	ajaOutputUI = new AJAOutputUI(window);
 	obs_frontend_pop_ui_translation();
 
-	auto cb = []() { ajaOutputUI->ShowHideDialog(); };
+	auto cb = []() {
+		ajaOutputUI->ShowHideDialog();
+	};
 
 	action->connect(action, &QAction::triggered, cb);
 }
@@ -451,7 +446,7 @@ static void OBSEvent(enum obs_frontend_event event, void *)
 	}
 }
 
-static void aja_loaded(void *data, calldata_t *calldata)
+static void aja_loaded(void * /* data */, calldata_t *calldata)
 {
 	// Receive CardManager pointer from the main AJA plugin
 	calldata_get_ptr(calldata, "card_manager", &cardManager);

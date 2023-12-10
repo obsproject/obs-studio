@@ -125,7 +125,7 @@ struct ca_encoder {
 };
 typedef struct ca_encoder ca_encoder;
 
-}
+} // namespace
 
 namespace std {
 
@@ -152,7 +152,7 @@ template<> struct default_delete<remove_pointer<AudioConverterRef>::type> {
 	}
 };
 
-}
+} // namespace std
 
 template<typename T>
 using cf_ptr = unique_ptr<typename remove_pointer<T>::type>;
@@ -175,7 +175,7 @@ log_to_dstr(DStr &str, ca_encoder *ca, const char *fmt, ...)
 
 	char array[4096];
 	va_start(args, fmt);
-	vsnprintf(array, 4096, fmt, args);
+	vsnprintf(array, sizeof(array), fmt, args);
 	va_end(args);
 
 	array[4095] = 0;
@@ -1361,23 +1361,27 @@ static bool samplerate_updated(obs_properties_t *props, obs_property_t *prop,
 
 static obs_properties_t *aac_properties(void *data)
 {
-	ca_encoder *ca = static_cast<ca_encoder *>(data);
 
 	obs_properties_t *props = obs_properties_create();
 
-	obs_property_t *p = obs_properties_add_list(
+	obs_property_t *sample_rates = obs_properties_add_list(
 		props, "samplerate", obs_module_text("OutputSamplerate"),
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	add_samplerates(p, ca);
-	obs_property_set_modified_callback(p, samplerate_updated);
 
-	p = obs_properties_add_list(props, "bitrate",
-				    obs_module_text("Bitrate"),
-				    OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	add_bitrates(p, ca);
+	obs_property_set_modified_callback(sample_rates, samplerate_updated);
+
+	obs_property_t *bit_rates = obs_properties_add_list(
+		props, "bitrate", obs_module_text("Bitrate"),
+		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
 	obs_properties_add_bool(props, "allow he-aac",
 				obs_module_text("AllowHEAAC"));
+
+	if (data) {
+		ca_encoder *ca = static_cast<ca_encoder *>(data);
+		add_samplerates(sample_rates, ca);
+		add_bitrates(bit_rates, ca);
+	}
 
 	return props;
 }
@@ -1401,11 +1405,10 @@ bool obs_module_load(void)
 	CA_LOG(LOG_INFO, "Adding CoreAudio AAC encoder");
 #endif
 
-	struct obs_encoder_info aac_info {
-	};
+	struct obs_encoder_info aac_info {};
 	aac_info.id = "CoreAudio_AAC";
 	aac_info.type = OBS_ENCODER_AUDIO;
-	aac_info.codec = "AAC";
+	aac_info.codec = "aac";
 	aac_info.get_name = aac_get_name;
 	aac_info.destroy = aac_destroy;
 	aac_info.create = aac_create;

@@ -6,6 +6,7 @@
 #include <ajabase/common/common.h>
 #include <ajantv2/includes/ntv2card.h>
 #include <ajantv2/includes/ntv2devicefeatures.h>
+#include <ajantv2/includes/ntv2utils.h>
 
 #include <obs-module.h>
 
@@ -22,9 +23,9 @@ bool Routing::ParseRouteString(const std::string &route,
 	blog(LOG_DEBUG, "aja::Routing::ParseRouteString: Input string: %s",
 	     route.c_str());
 
-	std::string route_lower(route);
-	route_lower = aja::lower(route_lower);
-	const std::string &route_strip = aja::replace(route_lower, " ", "");
+	std::string route_strip(route);
+	aja::lower(route_strip);
+	aja::replace(route_strip, " ", "");
 
 	if (route_strip.empty()) {
 		blog(LOG_DEBUG,
@@ -151,7 +152,7 @@ void Routing::StartSourceAudio(const SourceProps &props, CNTV2Card *card)
 		audioSys, NTV2InputSourceToAudioSource(inputSrc),
 		NTV2InputSourceToEmbeddedAudioInput(inputSrc));
 
-	card->SetNumberAudioChannels(props.audioNumChannels, audioSys);
+	card->SetNumberAudioChannels(kDefaultAudioChannels, audioSys);
 	card->SetAudioRate(props.AudioRate(), audioSys);
 	card->SetAudioBufferSize(NTV2_AUDIO_BUFFER_BIG, audioSys);
 
@@ -187,7 +188,7 @@ void Routing::StartSourceAudio(const SourceProps &props, CNTV2Card *card)
 
 	for (int a = 0; a < NTV2DeviceGetNumAudioSystems(card->GetDeviceID());
 	     a++) {
-		card->SetAudioLoopBack(NTV2_AUDIO_LOOPBACK_OFF,
+		card->SetAudioLoopBack(NTV2_AUDIO_LOOPBACK_ON,
 				       NTV2AudioSystem(a));
 	}
 
@@ -205,21 +206,23 @@ void Routing::StopSourceAudio(const SourceProps &props, CNTV2Card *card)
 }
 
 bool Routing::ConfigureSourceRoute(const SourceProps &props, NTV2Mode mode,
-				   CNTV2Card *card)
+				   CNTV2Card *card, NTV2XptConnections &cnx)
 {
 	if (!card)
 		return false;
 
-	bool found_preset = false;
 	auto deviceID = props.deviceID;
 	NTV2VideoFormat vf = props.videoFormat;
-
 	auto init_src = props.InitialInputSource();
 	auto init_channel = props.Channel();
+
 	RoutingConfigurator rc;
 	RoutingPreset rp;
+	ConnectionKind kind = ConnectionKind::Unknown;
+	VPIDStandard vpidStandard = VPIDStandard_Unknown;
+	HDMIWireFormat hwf = HDMIWireFormat::Unknown;
 	if (NTV2_INPUT_SOURCE_IS_SDI(init_src)) {
-		auto vpidStandard = VPIDStandard_Unknown;
+		kind = ConnectionKind::SDI;
 		if (props.autoDetect) {
 			auto vpidList = props.vpids;
 			if (vpidList.size() > 0)
@@ -227,52 +230,68 @@ bool Routing::ConfigureSourceRoute(const SourceProps &props, NTV2Mode mode,
 		}
 		if (vpidStandard == VPIDStandard_Unknown) {
 			vpidStandard = DetermineVPIDStandard(
-				deviceID, props.ioSelect, props.videoFormat,
+				props.ioSelect, props.videoFormat,
 				props.pixelFormat, props.sdiTransport,
 				props.sdi4kTransport);
 		}
-		if (!rc.FindFirstPreset(ConnectionKind::SDI, props.deviceID,
-					NTV2_MODE_CAPTURE, vf,
-					props.pixelFormat, vpidStandard, rp)) {
-			blog(LOG_WARNING,
-			     "No SDI capture routing preset found!");
-			return false;
-		}
 	} else if (NTV2_INPUT_SOURCE_IS_HDMI(init_src)) {
-		HDMIWireFormat hwf = HDMIWireFormat::Unknown;
+		kind = ConnectionKind::HDMI;
 		if (NTV2_IS_FBF_RGB(props.pixelFormat)) {
-			if (NTV2_IS_HD_VIDEO_FORMAT(vf))
-				hwf = HDMIWireFormat::HD_RGB_LFR;
+			if (NTV2_IS_HD_VIDEO_FORMAT(vf)) {
+				hwf = HDMIWireFormat::SD_HD_RGB;
+			} else if (NTV2_IS_4K_VIDEO_FORMAT(vf)) {
+				hwf = HDMIWireFormat::UHD_4K_RGB;
+			}
 		} else {
-			if (NTV2_IS_HD_VIDEO_FORMAT(vf))
-				hwf = HDMIWireFormat::HD_YCBCR_LFR;
-			else if (NTV2_IS_4K_VIDEO_FORMAT(vf))
-				hwf = HDMIWireFormat::UHD_4K_YCBCR_LFR;
+			if (NTV2_IS_HD_VIDEO_FORMAT(vf)) {
+				hwf = HDMIWireFormat::SD_HD_YCBCR;
+			} else if (NTV2_IS_4K_VIDEO_FORMAT(vf)) {
+				hwf = HDMIWireFormat::UHD_4K_YCBCR;
+			}
 		}
-		if (!rc.FindFirstPreset(ConnectionKind::HDMI, props.deviceID,
-					NTV2_MODE_CAPTURE, vf,
-					props.pixelFormat, VPIDStandard_Unknown,
-					rp)) {
-			blog(LOG_WARNING,
-			     "No HDMI capture routing preset found!");
-			return false;
-		}
+	} else {
+		blog(LOG_WARNING,
+		     "Unsupported connection kind. SDI and HDMI only!");
+		return false;
+	}
+
+	if (!rc.FindFirstPreset(kind, props.deviceID, NTV2_MODE_CAPTURE, vf,
+				props.pixelFormat, vpidStandard, hwf, rp)) {
+		blog(LOG_WARNING, "No SDI capture routing preset found!");
+		return false;
 	}
 
 	LogRoutingPreset(rp);
 
 	// Substitute channel placeholders for actual indices
 	std::string route_string = rp.route_string;
-	ULWord start_channel_index = GetIndexForNTV2Channel(init_channel);
-	for (ULWord c = 0; c < 8; c++) {
-		std::string channel_placeholder =
-			std::string("{ch" + aja::to_string(c + 1) + "}");
-		route_string =
-			aja::replace(route_string, channel_placeholder,
-				     aja::to_string(start_channel_index++));
+
+	// Channel-substitution for widgets associated with framestore channel(s)
+	ULWord start_framestore_index =
+		GetIndexForNTV2Channel(props.Framestore());
+	const std::vector<std::string> fs_associated = {"fb", "tsi", "dli"};
+	for (ULWord c = 0; c < NTV2_MAX_NUM_CHANNELS; c++) {
+		for (const auto &name : fs_associated) {
+			std::string placeholder = std::string(
+				name + "[{ch" + aja::to_string(c + 1) + "}]");
+			aja::replace(
+				route_string, placeholder,
+				name + "[" +
+					aja::to_string(start_framestore_index) +
+					"]");
+		}
+		start_framestore_index++;
 	}
 
-	NTV2XptConnections cnx;
+	// Replace other channel placeholders
+	ULWord start_channel_index = GetIndexForNTV2Channel(init_channel);
+	for (ULWord c = 0; c < NTV2_MAX_NUM_CHANNELS; c++) {
+		std::string channel_placeholder =
+			std::string("{ch" + aja::to_string(c + 1) + "}");
+		aja::replace(route_string, channel_placeholder,
+			     aja::to_string(start_channel_index++));
+	}
+
 	if (!ParseRouteString(route_string, cnx))
 		return false;
 
@@ -299,9 +318,18 @@ bool Routing::ConfigureSourceRoute(const SourceProps &props, NTV2Mode mode,
 			(UWord)i, rp.flags & kConvert3GaRGBOut);
 	}
 
+	// Apply HDMI settings
+	if (aja::IsIOSelectionHDMI(props.ioSelect)) {
+		if (NTV2_IS_4K_VIDEO_FORMAT(props.videoFormat))
+			card->SetHDMIV2Mode(NTV2_HDMI_V2_4K_CAPTURE);
+		else
+			card->SetHDMIV2Mode(NTV2_HDMI_V2_HDSD_BIDIRECTIONAL);
+	}
+
 	// Apply Framestore settings
-	for (uint32_t i = (uint32_t)start_channel_index;
-	     i < (start_channel_index + rp.num_framestores); i++) {
+	start_framestore_index = GetIndexForNTV2Channel(props.Framestore());
+	for (uint32_t i = (uint32_t)start_framestore_index;
+	     i < (start_framestore_index + rp.num_framestores); i++) {
 		NTV2Channel channel = GetNTV2ChannelForIndex(i);
 		card->EnableChannel(channel);
 		card->SetMode(channel, mode);
@@ -318,12 +346,11 @@ bool Routing::ConfigureSourceRoute(const SourceProps &props, NTV2Mode mode,
 }
 
 bool Routing::ConfigureOutputRoute(const OutputProps &props, NTV2Mode mode,
-				   CNTV2Card *card)
+				   CNTV2Card *card, NTV2XptConnections &cnx)
 {
 	if (!card)
 		return false;
 
-	bool found_preset = false;
 	auto deviceID = props.deviceID;
 	NTV2OutputDestinations outputDests;
 	aja::IOSelectionToOutputDests(props.ioSelect, outputDests);
@@ -336,46 +363,41 @@ bool Routing::ConfigureOutputRoute(const OutputProps &props, NTV2Mode mode,
 
 	RoutingConfigurator rc;
 	RoutingPreset rp;
+	ConnectionKind kind = ConnectionKind::Unknown;
+	VPIDStandard vpidStandard = VPIDStandard_Unknown;
+	HDMIWireFormat hwf = HDMIWireFormat::Unknown;
 	if (NTV2_OUTPUT_DEST_IS_SDI(init_dest)) {
-		VPIDStandard vpidStandard = DetermineVPIDStandard(
-			deviceID, props.ioSelect, props.videoFormat,
-			props.pixelFormat, props.sdiTransport,
-			props.sdi4kTransport);
-		if (!rc.FindFirstPreset(ConnectionKind::SDI, props.deviceID,
-					NTV2_MODE_DISPLAY, props.videoFormat,
-					props.pixelFormat, vpidStandard, rp)) {
-			blog(LOG_WARNING,
-			     "No SDI output routing preset found!");
-			return false;
-		}
+		kind = ConnectionKind::SDI;
+		vpidStandard = DetermineVPIDStandard(
+			props.ioSelect, props.videoFormat, props.pixelFormat,
+			props.sdiTransport, props.sdi4kTransport);
 	} else if (NTV2_OUTPUT_DEST_IS_HDMI(init_dest)) {
-		HDMIWireFormat hwf = HDMIWireFormat::Unknown;
-		// special case devices...
-		if (props.deviceID == DEVICE_ID_TTAP_PRO) {
-			hwf = HDMIWireFormat::TTAP_PRO;
+		kind = ConnectionKind::HDMI;
+		hwf = HDMIWireFormat::Unknown;
+		if (NTV2_IS_FBF_RGB(props.pixelFormat)) {
+			if (NTV2_IS_HD_VIDEO_FORMAT(props.videoFormat)) {
+				hwf = HDMIWireFormat::SD_HD_RGB;
+			} else if (NTV2_IS_4K_VIDEO_FORMAT(props.videoFormat)) {
+				hwf = HDMIWireFormat::UHD_4K_RGB;
+			}
 		} else {
-			// ...all other devices.
-			if (NTV2_IS_FBF_RGB(props.pixelFormat)) {
-				if (NTV2_IS_HD_VIDEO_FORMAT(props.videoFormat))
-					hwf = HDMIWireFormat::HD_RGB_LFR;
-			} else {
-				if (NTV2_IS_HD_VIDEO_FORMAT(
-					    props.videoFormat)) {
-					hwf = HDMIWireFormat::HD_YCBCR_LFR;
-				} else if (NTV2_IS_4K_VIDEO_FORMAT(
-						   props.videoFormat)) {
-					hwf = HDMIWireFormat::UHD_4K_YCBCR_LFR;
-				}
+			if (NTV2_IS_HD_VIDEO_FORMAT(props.videoFormat)) {
+				hwf = HDMIWireFormat::SD_HD_YCBCR;
+			} else if (NTV2_IS_4K_VIDEO_FORMAT(props.videoFormat)) {
+				hwf = HDMIWireFormat::UHD_4K_YCBCR;
 			}
 		}
-		if (!rc.FindFirstPreset(ConnectionKind::HDMI, props.deviceID,
-					NTV2_MODE_DISPLAY, props.videoFormat,
-					props.pixelFormat, VPIDStandard_Unknown,
-					rp)) {
-			blog(LOG_WARNING,
-			     "No HDMI output routing preset found!");
-			return false;
-		}
+	} else {
+		blog(LOG_WARNING,
+		     "Unsupported connection kind. SDI and HDMI only!");
+		return false;
+	}
+
+	if (!rc.FindFirstPreset(kind, props.deviceID, NTV2_MODE_DISPLAY,
+				props.videoFormat, props.pixelFormat,
+				vpidStandard, hwf, rp)) {
+		blog(LOG_WARNING, "No HDMI output routing preset found!");
+		return false;
 	}
 
 	LogRoutingPreset(rp);
@@ -384,8 +406,8 @@ bool Routing::ConfigureOutputRoute(const OutputProps &props, NTV2Mode mode,
 
 	// Replace framestore channel placeholders
 	auto init_channel = NTV2OutputDestinationToChannel(init_dest);
-	ULWord start_framestore_index = InitialFramestoreOutputIndex(
-		deviceID, props.ioSelect, init_channel);
+	ULWord start_framestore_index =
+		GetIndexForNTV2Channel(props.Framestore());
 	if (rp.verbatim) {
 		// Presets marked "verbatim" must only be routed on the specified channels
 		start_framestore_index = 0;
@@ -398,7 +420,7 @@ bool Routing::ConfigureOutputRoute(const OutputProps &props, NTV2Mode mode,
 		for (const auto &name : fs_associated) {
 			std::string placeholder = std::string(
 				name + "[{ch" + aja::to_string(c + 1) + "}]");
-			route_string = aja::replace(
+			aja::replace(
 				route_string, placeholder,
 				name + "[" +
 					aja::to_string(start_framestore_index) +
@@ -412,19 +434,18 @@ bool Routing::ConfigureOutputRoute(const OutputProps &props, NTV2Mode mode,
 	for (ULWord c = 0; c < NTV2_MAX_NUM_CHANNELS; c++) {
 		std::string channel_placeholder =
 			std::string("{ch" + aja::to_string(c + 1) + "}");
-		route_string =
-			aja::replace(route_string, channel_placeholder,
-				     aja::to_string(start_channel_index++));
+		aja::replace(route_string, channel_placeholder,
+			     aja::to_string(start_channel_index++));
 	}
 
-	NTV2XptConnections cnx;
 	if (!ParseRouteString(route_string, cnx))
 		return false;
 
 	card->ApplySignalRoute(cnx, false);
 
 	// Apply SDI widget settings
-	if (props.ioSelect != IOSelection::HDMIMonitorOut) {
+	if (props.ioSelect != IOSelection::HDMIMonitorOut ||
+	    props.deviceID == DEVICE_ID_TTAP_PRO) {
 		start_channel_index = GetIndexForNTV2Channel(init_channel);
 		for (uint32_t i = (uint32_t)start_channel_index;
 		     i < (start_channel_index + rp.num_channels); i++) {
@@ -451,8 +472,7 @@ bool Routing::ConfigureOutputRoute(const OutputProps &props, NTV2Mode mode,
 	}
 
 	// Apply Framestore settings
-	start_framestore_index = InitialFramestoreOutputIndex(
-		deviceID, props.ioSelect, init_channel);
+	start_framestore_index = GetIndexForNTV2Channel(props.Framestore());
 	if (rp.verbatim) {
 		start_framestore_index = 0;
 	}
@@ -557,29 +577,6 @@ void Routing::ConfigureOutputAudio(const OutputProps &props, CNTV2Card *card)
 	card->StopAudioOutput(audioSys);
 }
 
-ULWord Routing::InitialFramestoreOutputIndex(NTV2DeviceID deviceID,
-					     IOSelection io,
-					     NTV2Channel init_channel)
-{
-	if (deviceID == DEVICE_ID_TTAP_PRO) {
-		return 0;
-	} else if (deviceID == DEVICE_ID_KONA1) {
-		return 1;
-	} else if (deviceID == DEVICE_ID_IO4K ||
-		   deviceID == DEVICE_ID_IO4KPLUS) {
-		// SDI Monitor output uses framestore 4
-		if (io == IOSelection::SDI5)
-			return 3;
-	}
-
-	// HDMI Monitor output uses framestore 4
-	if (io == IOSelection::HDMIMonitorOut) {
-		return 3;
-	}
-
-	return GetIndexForNTV2Channel(init_channel);
-}
-
 void Routing::LogRoutingPreset(const RoutingPreset &rp)
 {
 	auto hexStr = [&](uint8_t val) -> std::string {
@@ -611,4 +608,4 @@ void Routing::LogRoutingPreset(const RoutingPreset &rp)
 	}
 }
 
-} // aja
+} // namespace aja

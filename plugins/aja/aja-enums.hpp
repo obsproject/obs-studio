@@ -30,24 +30,20 @@ enum class IOSelection {
 	SDI7 = 6,
 	SDI8 = 7,
 	SDI1_2 = 8,
-	// special case for 2xSDI 4K Squares (requires 4x framestores)
-	SDI1_2_Squares = 9,
-	SDI3_4 = 10,
-	// special case for 2xSDI 4K Squares (requires 4x framestores)
-	SDI3_4_Squares = 11,
-	SDI5_6 = 12,
-	SDI7_8 = 13,
-	SDI1__4 = 14,
-	SDI5__8 = 15,
-	HDMI1 = 16,
-	HDMI2 = 17,
-	HDMI3 = 18,
-	HDMI4 = 19,
-	HDMIMonitorIn = 20,
-	HDMIMonitorOut = 21,
-	AnalogIn = 22,
-	AnalogOut = 23,
-	Invalid = 24,
+	SDI3_4 = 9,
+	SDI5_6 = 10,
+	SDI7_8 = 11,
+	SDI1__4 = 12,
+	SDI5__8 = 13,
+	HDMI1 = 14,
+	HDMI2 = 15,
+	HDMI3 = 16,
+	HDMI4 = 17,
+	HDMIMonitorIn = 18,
+	HDMIMonitorOut = 19,
+	AnalogIn = 20,
+	AnalogOut = 21,
+	Invalid = 22,
 	NumIOSelections = Invalid
 };
 
@@ -72,16 +68,10 @@ enum class RasterDefinition {
 };
 
 enum class HDMIWireFormat {
-	SD_HDMI = 0,
-	HD_YCBCR_LFR = 1,
-	HD_YCBCR_HFR = 2,
-	HD_RGB_LFR = 3,
-	HD_RGB_HFR = 4,
-	UHD_4K_YCBCR_LFR = 5,
-	UHD_4K_YCBCR_HFR = 6,
-	UHD_4K_RGB_LFR = 7,
-	UHD_4K_RGB_HFR = 8,
-	TTAP_PRO = 9,
+	SD_HD_YCBCR = 0,
+	SD_HD_RGB = 1,
+	UHD_4K_YCBCR = 2,
+	UHD_4K_RGB = 3,
 	Unknown
 };
 

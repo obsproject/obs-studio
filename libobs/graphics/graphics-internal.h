@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -38,6 +38,8 @@ struct gs_exports {
 	gs_swapchain_t *(*device_swapchain_create)(
 		gs_device_t *device, const struct gs_init_data *data);
 	void (*device_resize)(gs_device_t *device, uint32_t x, uint32_t y);
+	enum gs_color_space (*device_get_color_space)(gs_device_t *device);
+	void (*device_update_color_space)(gs_device_t *device);
 	void (*device_get_size)(const gs_device_t *device, uint32_t *x,
 				uint32_t *y);
 	uint32_t (*device_get_width)(const gs_device_t *device);
@@ -103,6 +105,9 @@ struct gs_exports {
 	gs_zstencil_t *(*device_get_zstencil_target)(const gs_device_t *device);
 	void (*device_set_render_target)(gs_device_t *device, gs_texture_t *tex,
 					 gs_zstencil_t *zstencil);
+	void (*device_set_render_target_with_color_space)(
+		gs_device_t *device, gs_texture_t *tex, gs_zstencil_t *zstencil,
+		enum gs_color_space space);
 	void (*device_set_cube_render_target)(gs_device_t *device,
 					      gs_texture_t *cubetex, int side,
 					      gs_zstencil_t *zstencil);
@@ -128,6 +133,7 @@ struct gs_exports {
 	void (*device_clear)(gs_device_t *device, uint32_t clear_flags,
 			     const struct vec4 *color, float depth,
 			     uint8_t stencil);
+	bool (*device_is_present_ready)(gs_device_t *device);
 	void (*device_present)(gs_device_t *device);
 	void (*device_flush)(gs_device_t *device);
 	void (*device_set_cull_mode)(gs_device_t *device,
@@ -266,6 +272,9 @@ struct gs_exports {
 					   gs_samplerstate_t *sampler);
 
 	bool (*device_nv12_available)(gs_device_t *device);
+	bool (*device_p010_available)(gs_device_t *device);
+
+	bool (*device_is_monitor_hdr)(gs_device_t *device, void *monitor);
 
 	void (*device_debug_marker_begin)(gs_device_t *device,
 					  const char *markername,
@@ -277,7 +286,7 @@ struct gs_exports {
 	gs_texture_t *(*device_texture_create_from_iosurface)(gs_device_t *dev,
 							      void *iosurf);
 	gs_texture_t *(*device_texture_open_shared)(gs_device_t *dev,
-						    uint32_t *handle);
+						    uint32_t handle);
 	bool (*gs_texture_rebind_iosurface)(gs_texture_t *texture,
 					    void *iosurf);
 	bool (*device_shared_texture_available)(void);
@@ -298,8 +307,12 @@ struct gs_exports {
 
 	bool (*gs_duplicator_update_frame)(gs_duplicator_t *duplicator);
 	gs_texture_t *(*gs_duplicator_get_texture)(gs_duplicator_t *duplicator);
+	enum gs_color_space (*gs_duplicator_get_color_space)(
+		gs_duplicator_t *duplicator);
+	float (*gs_duplicator_get_sdr_white_level)(gs_duplicator_t *duplicator);
 
 	uint32_t (*gs_get_adapter_count)(void);
+	bool (*device_can_adapter_fast_clear)(gs_device_t *device);
 
 	gs_texture_t *(*device_texture_create_gdi)(gs_device_t *device,
 						   uint32_t width,
@@ -323,15 +336,23 @@ struct gs_exports {
 					   gs_texture_t **tex_uv,
 					   uint32_t width, uint32_t height,
 					   uint32_t flags);
+	bool (*device_texture_create_p010)(gs_device_t *device,
+					   gs_texture_t **tex_y,
+					   gs_texture_t **tex_uv,
+					   uint32_t width, uint32_t height,
+					   uint32_t flags);
 
 	gs_stagesurf_t *(*device_stagesurface_create_nv12)(gs_device_t *device,
+							   uint32_t width,
+							   uint32_t height);
+	gs_stagesurf_t *(*device_stagesurface_create_p010)(gs_device_t *device,
 							   uint32_t width,
 							   uint32_t height);
 	void (*device_register_loss_callbacks)(
 		gs_device_t *device, const struct gs_device_loss *callbacks);
 	void (*device_unregister_loss_callbacks)(gs_device_t *device,
 						 void *data);
-#elif __linux__
+#elif defined(__linux__) || defined(__FreeBSD__) || defined(__DragonFly__)
 	struct gs_texture *(*device_texture_create_from_dmabuf)(
 		gs_device_t *device, unsigned int width, unsigned int height,
 		uint32_t drm_format, enum gs_color_format color_format,
@@ -344,6 +365,10 @@ struct gs_exports {
 							 uint32_t drm_format,
 							 uint64_t **modifiers,
 							 size_t *n_modifiers);
+	struct gs_texture *(*device_texture_create_from_pixmap)(
+		gs_device_t *device, uint32_t width, uint32_t height,
+		enum gs_color_format color_format, uint32_t target,
+		void *pixmap);
 #endif
 };
 

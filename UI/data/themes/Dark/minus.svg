@@ -1,1 +1,4 @@
-<svg class="feather feather-plus" fill="none" stroke="#d2d2d2" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" version="1.1" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><line x1="1.5187" x2="22.481" y1="12" y2="12" stroke-width="2.4473"/></svg>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg height="16px" viewBox="0 0 16 16" width="16px" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 1 7 h 14 v 2 h -14 z m 0 0" fill="#fefefe"/>
+</svg>

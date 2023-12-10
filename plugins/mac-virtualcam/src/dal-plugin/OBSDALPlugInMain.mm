@@ -23,15 +23,13 @@
 
 //! PlugInMain is the entrypoint for the plugin
 extern "C" {
-void *PlugInMain(CFAllocatorRef allocator, CFUUIDRef requestedTypeUUID)
-{
-	UNUSED_PARAMETER(allocator);
+    __exported void *PlugInMain(CFAllocatorRef, CFUUIDRef requestedTypeUUID)
+    {
+        DLogFunc(@"version=%@", PLUGIN_VERSION);
+        if (!CFEqual(requestedTypeUUID, kCMIOHardwarePlugInTypeID)) {
+            return 0;
+        }
 
-	DLogFunc(@"version=%@", PLUGIN_VERSION);
-	if (!CFEqual(requestedTypeUUID, kCMIOHardwarePlugInTypeID)) {
-		return 0;
-	}
-
-	return OBSDALPlugInRef();
-}
+        return OBSDALPlugInRef();
+    }
 }

@@ -58,7 +58,7 @@ operator+(detail::ScopeGuardOnExit, FunctionType &&fn)
 		std::forward<FunctionType>(fn));
 }
 
-}
+} // namespace detail
 
 } // namespace scope_guard_util
 

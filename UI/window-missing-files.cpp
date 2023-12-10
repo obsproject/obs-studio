@@ -43,13 +43,15 @@ enum MissingFilesRole { EntryStateRole = Qt::UserRole, NewPathsToProcessRole };
 
 MissingFilesPathItemDelegate::MissingFilesPathItemDelegate(
 	bool isOutput, const QString &defaultPath)
-	: QStyledItemDelegate(), isOutput(isOutput), defaultPath(defaultPath)
+	: QStyledItemDelegate(),
+	  isOutput(isOutput),
+	  defaultPath(defaultPath)
 {
 }
 
 QWidget *MissingFilesPathItemDelegate::createEditor(
 	QWidget *parent, const QStyleOptionViewItem & /* option */,
-	const QModelIndex &index) const
+	const QModelIndex &) const
 {
 	QSizePolicy buttonSizePolicy(QSizePolicy::Policy::Minimum,
 				     QSizePolicy::Policy::Expanding,
@@ -98,8 +100,6 @@ QWidget *MissingFilesPathItemDelegate::createEditor(
 
 	container->setLayout(layout);
 	container->setFocusProxy(text);
-
-	UNUSED_PARAMETER(index);
 
 	return container;
 }
@@ -165,6 +165,11 @@ void MissingFilesPathItemDelegate::handleBrowse(QWidget *container)
 		QString newPath = QFileDialog::getOpenFileName(
 			container, QTStr("MissingFiles.SelectFile"),
 			currentPath, nullptr);
+
+#ifdef __APPLE__
+		// TODO: Revisit when QTBUG-42661 is fixed
+		container->window()->raise();
+#endif
 
 		if (!newPath.isEmpty()) {
 			container->setProperty(PATH_LIST_PROP,
@@ -493,9 +498,10 @@ OBSMissingFiles::OBSMissingFiles(obs_missing_files_t *files, QWidget *parent)
 		addMissingFile(oldPath, name);
 	}
 
-	QString found = QTStr("MissingFiles.NumFound");
-	found.replace("$1", "0");
-	found.replace("$2", QString::number(obs_missing_files_count(files)));
+	QString found =
+		QTStr("MissingFiles.NumFound")
+			.arg("0",
+			     QString::number(obs_missing_files_count(files)));
 
 	ui->found->setText(found);
 
@@ -507,8 +513,8 @@ OBSMissingFiles::OBSMissingFiles(obs_missing_files_t *files, QWidget *parent)
 		&OBSMissingFiles::browseFolders);
 	connect(ui->cancelButton, &QPushButton::clicked, this,
 		&OBSMissingFiles::close);
-	connect(filesModel, SIGNAL(dataChanged(QModelIndex, QModelIndex)), this,
-		SLOT(dataChanged()));
+	connect(filesModel, &MissingFilesModel::dataChanged, this,
+		&OBSMissingFiles::dataChanged);
 
 	QModelIndex index = filesModel->createIndex(0, 1);
 	QMetaObject::invokeMethod(ui->tableView, "setCurrentIndex",
@@ -573,10 +579,10 @@ void OBSMissingFiles::browseFolders()
 
 void OBSMissingFiles::dataChanged()
 {
-	QString found = QTStr("MissingFiles.NumFound");
-	found.replace("$1", QString::number(filesModel->found()));
-	found.replace("$2",
-		      QString::number(obs_missing_files_count(fileStore)));
+	QString found = QTStr("MissingFiles.NumFound")
+				.arg(QString::number(filesModel->found()),
+				     QString::number(obs_missing_files_count(
+					     fileStore)));
 
 	ui->found->setText(found);
 

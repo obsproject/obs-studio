@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2017 by Hugh Bailey <jim@obsproject.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -39,28 +39,26 @@
 #include <Python.h>
 #endif
 
-#if defined(HAVE_ATTRIBUTE_UNUSED) || defined(__MINGW32__)
-#if !defined(UNUSED)
-#define UNUSED __attribute__((unused))
-#endif
-#else
-#define UNUSED
-#endif
-
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
 
 #if RUNTIME_LINK
-
 #ifdef NO_REDEFS
 #define PY_EXTERN
 #else
 #define PY_EXTERN extern
 #endif
 
+typedef struct python_version {
+	int major;
+	int minor;
+} python_version_t;
+
 PY_EXTERN int (*Import_PyType_Ready)(PyTypeObject *);
 PY_EXTERN PyObject *(*Import_PyObject_GenericGetAttr)(PyObject *, PyObject *);
+PY_EXTERN void (*Import_PyType_Modified)(PyTypeObject *);
+PY_EXTERN int (*Import_PyType_IsSubtype)(PyTypeObject *, PyTypeObject *);
 PY_EXTERN int (*Import_PyObject_IsTrue)(PyObject *);
 PY_EXTERN void (*Import_Py_DecRef)(PyObject *);
 PY_EXTERN void *(*Import_PyObject_Malloc)(size_t size);
@@ -108,6 +106,8 @@ PY_EXTERN int (*Import_PyDict_SetItemString)(PyObject *dp, const char *key,
 					     PyObject *item);
 PY_EXTERN PyObject *(*Import_PyCFunction_NewEx)(PyMethodDef *, PyObject *,
 						PyObject *);
+PY_EXTERN PyObject *(*Import_PyCMethod_New)(PyMethodDef *, PyObject *,
+					    PyObject *, PyTypeObject *);
 PY_EXTERN PyObject *(*Import_PyModule_GetDict)(PyObject *);
 PY_EXTERN PyObject *(*Import_PyModule_GetNameObject)(PyObject *);
 PY_EXTERN int (*Import_PyModule_AddObject)(PyObject *, const char *,
@@ -144,23 +144,21 @@ PY_EXTERN PyObject *(*Import_PyLong_FromUnsignedLongLong)(unsigned long long);
 PY_EXTERN int (*Import_PyArg_VaParse)(PyObject *, const char *, va_list);
 PY_EXTERN PyObject(*Import__Py_NoneStruct);
 PY_EXTERN PyObject *(*Import_PyTuple_New)(Py_ssize_t size);
-#if PY_VERSION_HEX >= 0x030900b0
 PY_EXTERN int (*Import_PyType_GetFlags)(PyTypeObject *o);
-#endif
 #if defined(Py_DEBUG) || PY_VERSION_HEX >= 0x030900b0
 PY_EXTERN void (*Import__Py_Dealloc)(PyObject *obj);
 #endif
 
-extern bool import_python(const char *python_path);
+PY_EXTERN PyTypeObject PyCFunction_Type;
+
+extern bool import_python(const char *python_path,
+			  python_version_t *python_version);
 
 #ifndef NO_REDEFS
 #define PyType_Ready Import_PyType_Ready
-#if PY_VERSION_HEX >= 0x030900b0
 #define PyType_GetFlags Import_PyType_GetFlags
-#endif
-#if defined(Py_DEBUG) || PY_VERSION_HEX >= 0x030900b0
-#define _Py_Dealloc Import__Py_Dealloc
-#endif
+#define PyType_Modified Import_PyType_Modified
+#define PyType_IsSubtype Import_PyType_IsSubtype
 #define PyObject_GenericGetAttr Import_PyObject_GenericGetAttr
 #define PyObject_IsTrue Import_PyObject_IsTrue
 #define Py_DecRef Import_Py_DecRef
@@ -201,7 +199,11 @@ extern bool import_python(const char *python_path);
 #define PyDict_New Import_PyDict_New
 #define PyDict_GetItemString Import_PyDict_GetItemString
 #define PyDict_SetItemString Import_PyDict_SetItemString
+#if PY_VERSION_HEX < 0x030900b0
 #define PyCFunction_NewEx Import_PyCFunction_NewEx
+#else
+#define PyCMethod_New Import_PyCMethod_New
+#endif
 #define PyModule_GetDict Import_PyModule_GetDict
 #define PyModule_GetNameObject Import_PyModule_GetNameObject
 #define PyModule_AddObject Import_PyModule_AddObject
@@ -232,10 +234,17 @@ extern bool import_python(const char *python_path);
 #define PyArg_VaParse Import_PyArg_VaParse
 #define _Py_NoneStruct (*Import__Py_NoneStruct)
 #define PyTuple_New Import_PyTuple_New
+#if defined(Py_DEBUG) || PY_VERSION_HEX >= 0x030900b0
+#define _Py_Dealloc Import__Py_Dealloc
+#endif
+
 #if PY_VERSION_HEX >= 0x030800f0
-static inline void Import__Py_DECREF(const char *filename UNUSED,
-				     int lineno UNUSED, PyObject *op)
+static inline void Import__Py_DECREF(const char *filename, int lineno,
+				     PyObject *op)
 {
+	UNUSED_PARAMETER(filename);
+	UNUSED_PARAMETER(lineno);
+
 	if (--op->ob_refcnt != 0) {
 #ifdef Py_REF_DEBUG
 		if (op->ob_refcnt < 0) {
@@ -259,7 +268,7 @@ static inline void Import__Py_XDECREF(PyObject *op)
 
 #undef Py_XDECREF
 #define Py_XDECREF(op) Import__Py_XDECREF(_PyObject_CAST(op))
-#endif
+#endif // PY_VERSION_HEX >= 0x030800f0
 
 #if PY_VERSION_HEX >= 0x030900b0
 static inline int Import_PyType_HasFeature(PyTypeObject *type,
@@ -268,8 +277,20 @@ static inline int Import_PyType_HasFeature(PyTypeObject *type,
 	return ((PyType_GetFlags(type) & feature) != 0);
 }
 #define PyType_HasFeature(t, f) Import_PyType_HasFeature(t, f)
-#endif
+#endif // PY_VERSION_HEX >= 0x030900b0
 
-#endif
+#if PY_VERSION_HEX >= 0x030a00b2
+static inline int Import__PyObject_TypeCheck(PyObject *ob, PyTypeObject *type)
+{
+	return Py_IS_TYPE(ob, type) || PyType_IsSubtype(Py_TYPE(ob), type);
+}
+#if PY_VERSION_HEX >= 0x030b00b3
+#undef PyObject_TypeCheck
+#define PyObject_TypeCheck(o, t) Import__PyObject_TypeCheck(o, t)
+#else
+#define _PyObject_TypeCheck(o, t) Import__PyObject_TypeCheck(o, t)
+#endif // PY_VERSION_HEX >= 0x030b00b3
+#endif // PY_VERSION_HEX >= 0x030a00b2
 
-#endif
+#endif // NO_REDEFS
+#endif // RUNTIME_LINK

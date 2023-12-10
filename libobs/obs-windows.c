@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -27,21 +27,14 @@
 #include <iwscapi.h>
 
 static uint32_t win_ver = 0;
+static uint32_t win_build = 0;
 
 const char *get_module_extension(void)
 {
 	return ".dll";
 }
 
-#ifdef _WIN64
-#define BIT_STRING "64bit"
-#else
-#define BIT_STRING "32bit"
-#endif
-
-static const char *module_bin[] = {
-	"../../obs-plugins/" BIT_STRING,
-};
+static const char *module_bin[] = {"../../obs-plugins/64bit"};
 
 static const char *module_data[] = {"../../data/obs-plugins/%module%"};
 
@@ -107,6 +100,13 @@ static void log_processor_cores(void)
 	     os_get_physical_cores(), os_get_logical_cores());
 }
 
+static void log_emulation_status(void)
+{
+	if (os_get_emulation_status()) {
+		blog(LOG_WARNING, "Windows ARM64: Running with x64 emulation");
+	}
+}
+
 static void log_available_memory(void)
 {
 	MEMORYSTATUSEX ms;
@@ -125,6 +125,31 @@ static void log_available_memory(void)
 	     (DWORD)(ms.ullAvailPhys / 1048576), note);
 }
 
+static void log_lenovo_vantage(void)
+{
+	SC_HANDLE manager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
+
+	if (!manager)
+		return;
+
+	SC_HANDLE service =
+		OpenService(manager, L"FBNetFilter", SERVICE_QUERY_STATUS);
+
+	if (service) {
+		blog(LOG_WARNING,
+		     "Lenovo Vantage / Legion Edge is installed. The \"Network Boost\" "
+		     "feature must be disabled when streaming with OBS.");
+		CloseServiceHandle(service);
+	}
+
+	CloseServiceHandle(manager);
+}
+
+static void log_conflicting_software(void)
+{
+	log_lenovo_vantage();
+}
+
 extern const char *get_win_release_id();
 
 static void log_windows_version(void)
@@ -137,10 +162,13 @@ static void log_windows_version(void)
 	bool b64 = is_64_bit_windows();
 	const char *windows_bitness = b64 ? "64" : "32";
 
+	bool arm64 = is_arm64_windows();
+	const char *arm64_windows = arm64 ? "ARM " : "";
+
 	blog(LOG_INFO,
-	     "Windows Version: %d.%d Build %d (release: %s; revision: %d; %s-bit)",
+	     "Windows Version: %d.%d Build %d (release: %s; revision: %d; %s%s-bit)",
 	     ver.major, ver.minor, ver.build, release_id, ver.revis,
-	     windows_bitness);
+	     arm64_windows, windows_bitness);
 }
 
 static void log_admin_status(void)
@@ -163,44 +191,12 @@ static void log_admin_status(void)
 	     success ? "true" : "false");
 }
 
-typedef HRESULT(WINAPI *dwm_is_composition_enabled_t)(BOOL *);
-
-static void log_aero(void)
-{
-	dwm_is_composition_enabled_t composition_enabled = NULL;
-
-	const char *aeroMessage =
-		win_ver >= 0x602
-			? " (Aero is always on for windows 8 and above)"
-			: "";
-
-	HMODULE dwm = LoadLibraryW(L"dwmapi");
-	BOOL bComposition = true;
-
-	if (!dwm) {
-		return;
-	}
-
-	composition_enabled = (dwm_is_composition_enabled_t)GetProcAddress(
-		dwm, "DwmIsCompositionEnabled");
-	if (!composition_enabled) {
-		FreeLibrary(dwm);
-		return;
-	}
-
-	composition_enabled(&bComposition);
-	blog(LOG_INFO, "Aero is %s%s", bComposition ? "Enabled" : "Disabled",
-	     aeroMessage);
-}
-
 #define WIN10_GAME_BAR_REG_KEY \
 	L"Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR"
 #define WIN10_GAME_DVR_POLICY_REG_KEY \
 	L"SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR"
 #define WIN10_GAME_DVR_REG_KEY L"System\\GameConfigStore"
 #define WIN10_GAME_MODE_REG_KEY L"Software\\Microsoft\\GameBar"
-#define WIN10_HAGS_REG_KEY \
-	L"SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers"
 
 static void log_gaming_features(void)
 {
@@ -212,7 +208,6 @@ static void log_gaming_features(void)
 	struct reg_dword game_dvr_enabled;
 	struct reg_dword game_dvr_bg_recording;
 	struct reg_dword game_mode_enabled;
-	struct reg_dword hags_enabled;
 
 	get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_BAR_REG_KEY,
 		      L"AppCaptureEnabled", &game_bar_enabled);
@@ -223,16 +218,14 @@ static void log_gaming_features(void)
 	get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_BAR_REG_KEY,
 		      L"HistoricalCaptureEnabled", &game_dvr_bg_recording);
 	get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_MODE_REG_KEY,
-		      L"AllowAutoGameMode", &game_mode_enabled);
-	get_reg_dword(HKEY_LOCAL_MACHINE, WIN10_HAGS_REG_KEY, L"HwSchMode",
-		      &hags_enabled);
+		      L"AutoGameModeEnabled", &game_mode_enabled);
 
 	if (game_mode_enabled.status != ERROR_SUCCESS) {
 		get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_MODE_REG_KEY,
-			      L"AutoGameModeEnabled", &game_mode_enabled);
+			      L"AllowAutoGameMode", &game_mode_enabled);
 	}
 
-	blog(LOG_INFO, "Windows 10 Gaming Features:");
+	blog(LOG_INFO, "Windows 10/11 Gaming Features:");
 	if (game_bar_enabled.status == ERROR_SUCCESS) {
 		blog(LOG_INFO, "\tGame Bar: %s",
 		     (bool)game_bar_enabled.return_value ? "On" : "Off");
@@ -256,11 +249,9 @@ static void log_gaming_features(void)
 	if (game_mode_enabled.status == ERROR_SUCCESS) {
 		blog(LOG_INFO, "\tGame Mode: %s",
 		     (bool)game_mode_enabled.return_value ? "On" : "Off");
-	}
-
-	if (hags_enabled.status == ERROR_SUCCESS) {
-		blog(LOG_INFO, "\tHardware GPU Scheduler: %s",
-		     (hags_enabled.return_value == 2) ? "On" : "Off");
+	} else if (win_build >= 19042) {
+		// On by default in newer Windows 10 builds (no registry key set)
+		blog(LOG_INFO, "\tGame Mode: Probably On (no reg key set)");
 	}
 }
 
@@ -328,8 +319,13 @@ static void log_security_products_by_type(IWSCProductList *prod_list, int type)
 			continue;
 		}
 
-		blog(LOG_INFO, "\t%S: %s (%s)", name,
+		char *product_name;
+		os_wcs_to_utf8_ptr(name, 0, &product_name);
+
+		blog(LOG_INFO, "\t%s: %s (%s)", product_name,
 		     get_str_for_state(prod_state), get_str_for_type(type));
+
+		bfree(product_name);
 
 		SysFreeString(name);
 		prod->lpVtbl->Release(prod);
@@ -393,15 +389,17 @@ void log_system_info(void)
 	get_win_ver(&ver);
 
 	win_ver = (ver.major << 8) | ver.minor;
+	win_build = ver.build;
 
 	log_processor_info();
 	log_processor_cores();
 	log_available_memory();
 	log_windows_version();
+	log_emulation_status();
 	log_admin_status();
-	log_aero();
 	log_gaming_features();
 	log_security_products();
+	log_conflicting_software();
 }
 
 struct obs_hotkeys_platform {
@@ -1217,18 +1215,21 @@ void reset_win32_symbol_paths(void)
 
 		*path_end = 0;
 
-		for (size_t i = 0; i < paths.num; i++) {
-			const char *existing_path = paths.array[i];
-			if (astrcmpi(path.array, existing_path) == 0) {
-				found = true;
-				break;
+		abspath = os_get_abs_path_ptr(path.array);
+		if (abspath) {
+			for (size_t i = 0; i < paths.num; i++) {
+				const char *existing_path = paths.array[i];
+				if (astrcmpi(abspath, existing_path) == 0) {
+					found = true;
+					break;
+				}
 			}
-		}
 
-		if (!found) {
-			abspath = os_get_abs_path_ptr(path.array);
-			if (abspath)
+			if (!found) {
 				da_push_back(paths, &abspath);
+			} else {
+				bfree(abspath);
+			}
 		}
 
 		dstr_free(&path);

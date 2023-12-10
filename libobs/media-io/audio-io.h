@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -105,6 +105,7 @@ struct audio_convert_info {
 	uint32_t samples_per_sec;
 	enum audio_format format;
 	enum speaker_layout speakers;
+	bool allow_clipping;
 };
 
 static inline uint32_t get_audio_channels(enum speaker_layout speakers)
@@ -190,6 +191,14 @@ static inline size_t get_audio_size(enum audio_format format,
 	bool planar = is_audio_planar(format);
 
 	return (planar ? 1 : get_audio_channels(speakers)) *
+	       get_audio_bytes_per_channel(format) * frames;
+}
+
+static inline size_t get_total_audio_size(enum audio_format format,
+					  enum speaker_layout speakers,
+					  uint32_t frames)
+{
+	return get_audio_channels(speakers) *
 	       get_audio_bytes_per_channel(format) * frames;
 }
 

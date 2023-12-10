@@ -30,9 +30,10 @@ void undo_stack::clear()
 	ui->actionMainRedo->setDisabled(true);
 }
 
-void undo_stack::add_action(const QString &name, undo_redo_cb undo,
-			    undo_redo_cb redo, std::string undo_data,
-			    std::string redo_data, bool repeatable)
+void undo_stack::add_action(const QString &name, const undo_redo_cb &undo,
+			    const undo_redo_cb &redo,
+			    const std::string &undo_data,
+			    const std::string &redo_data, bool repeatable)
 {
 	if (!is_enabled())
 		return;
@@ -41,8 +42,6 @@ void undo_stack::add_action(const QString &name, undo_redo_cb undo,
 		undo_redo_t item = undo_items.back();
 		undo_items.pop_back();
 	}
-
-	undo_redo_t n = {name, undo_data, redo_data, undo, redo};
 
 	if (repeatable) {
 		repeat_reset_timer.start();
@@ -53,6 +52,8 @@ void undo_stack::add_action(const QString &name, undo_redo_cb undo,
 		undo_items[0].redo_data = redo_data;
 		return;
 	}
+
+	undo_redo_t n = {name, undo_data, redo_data, undo, redo};
 
 	last_is_repeatable = repeatable;
 	undo_items.push_front(n);

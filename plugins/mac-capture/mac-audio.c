@@ -22,8 +22,6 @@
 #define BUS_OUTPUT 0
 #define BUS_INPUT 1
 
-#define MAX_DEVICES 20
-
 #define set_property AudioUnitSetProperty
 #define get_property AudioUnitGetProperty
 
@@ -84,7 +82,7 @@ static bool find_device_id_by_uid(struct coreaudio_data *ca)
 
 	AudioObjectPropertyAddress addr = {
 		.mScope = kAudioObjectPropertyScopeGlobal,
-		.mElement = kAudioObjectPropertyElementMaster};
+		.mElement = kAudioObjectPropertyElementMain};
 
 	if (!ca->device_uid)
 		ca->device_uid = bstrdup("default");
@@ -285,7 +283,7 @@ static bool coreaudio_init_buffer(struct coreaudio_data *ca)
 	AudioObjectPropertyAddress addr = {
 		kAudioDevicePropertyStreamConfiguration,
 		kAudioDevicePropertyScopeInput,
-		kAudioObjectPropertyElementMaster};
+		kAudioObjectPropertyElementMain};
 
 	stat = AudioObjectGetPropertyDataSize(ca->device_id, &addr, 0, NULL,
 					      &buf_size);
@@ -433,7 +431,7 @@ static OSStatus add_listener(struct coreaudio_data *ca, UInt32 property)
 {
 	AudioObjectPropertyAddress addr = {property,
 					   kAudioObjectPropertyScopeGlobal,
-					   kAudioObjectPropertyElementMaster};
+					   kAudioObjectPropertyElementMain};
 
 	return AudioObjectAddPropertyListener(ca->device_id, &addr,
 					      notification_callback, ca);
@@ -459,7 +457,7 @@ static bool coreaudio_init_hooks(struct coreaudio_data *ca)
 		AudioObjectPropertyAddress addr = {
 			PROPERTY_DEFAULT_DEVICE,
 			kAudioObjectPropertyScopeGlobal,
-			kAudioObjectPropertyElementMaster};
+			kAudioObjectPropertyElementMain};
 
 		stat = AudioObjectAddPropertyListener(kAudioObjectSystemObject,
 						      &addr,
@@ -486,7 +484,7 @@ static void coreaudio_remove_hooks(struct coreaudio_data *ca)
 
 	AudioObjectPropertyAddress addr = {kAudioDevicePropertyDeviceIsAlive,
 					   kAudioObjectPropertyScopeGlobal,
-					   kAudioObjectPropertyElementMaster};
+					   kAudioObjectPropertyElementMain};
 
 	AudioObjectRemovePropertyListener(ca->device_id, &addr,
 					  notification_callback, ca);
@@ -515,7 +513,7 @@ static bool coreaudio_get_device_name(struct coreaudio_data *ca)
 	const AudioObjectPropertyAddress addr = {
 		kAudioDevicePropertyDeviceNameCFString,
 		kAudioObjectPropertyScopeInput,
-		kAudioObjectPropertyElementMaster};
+		kAudioObjectPropertyElementMain};
 
 	OSStatus stat = AudioObjectGetPropertyData(ca->device_id, &addr, 0,
 						   NULL, &size, &cf_name);
@@ -629,7 +627,8 @@ static bool coreaudio_init(struct coreaudio_data *ca)
 	if (!coreaudio_start(ca))
 		goto fail;
 
-	blog(LOG_INFO, "coreaudio: device '%s' initialized", ca->device_name);
+	blog(LOG_INFO, "coreaudio: Device '%s' [%" PRIu32 " Hz] initialized",
+	     ca->device_name, ca->sample_rate);
 	return ca->au_initialized;
 
 fail:

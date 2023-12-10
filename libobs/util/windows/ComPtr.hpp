@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -163,6 +163,12 @@ public:
 	{
 		this->ptr = nullptr;
 		unk->QueryInterface(__uuidof(T), (void **)&this->ptr);
+	}
+
+	template<class U> inline ComQIPtr(const ComPtr<U> &c)
+	{
+		this->ptr = nullptr;
+		c->QueryInterface(__uuidof(T), (void **)&this->ptr);
 	}
 
 	inline ComPtr<T> &operator=(IUnknown *unk)

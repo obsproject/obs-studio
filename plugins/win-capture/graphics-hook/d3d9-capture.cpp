@@ -94,7 +94,7 @@ static void d3d9_free()
 
 static DXGI_FORMAT d3d9_to_dxgi_format(D3DFORMAT format)
 {
-	switch ((unsigned long)format) {
+	switch (format) {
 	case D3DFMT_A2B10G10R10:
 		return DXGI_FORMAT_R10G10B10A2_UNORM;
 	case D3DFMT_A8R8G8B8:

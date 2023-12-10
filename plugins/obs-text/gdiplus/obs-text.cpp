@@ -84,9 +84,6 @@ using namespace Gdiplus;
 #define S_TRANSFORM_LOWERCASE           2
 #define S_TRANSFORM_STARTCASE           3
 
-#define S_ANTIALIASING_NONE             0
-#define S_ANTIALIASING_STANDARD         1
-
 #define T_(v)                           obs_module_text(v)
 #define T_FONT                          T_("Font")
 #define T_USE_FILE                      T_("ReadFromFile")
@@ -1116,7 +1113,9 @@ bool obs_module_load(void)
 	si.get_properties = get_properties;
 	si.icon_type = OBS_ICON_TYPE_TEXT;
 
-	si.get_name = [](void *) { return obs_module_text("TextGDIPlus"); };
+	si.get_name = [](void *) {
+		return obs_module_text("TextGDIPlus");
+	};
 	si.create = [](obs_data_t *settings, obs_source_t *source) {
 		return (void *)new TextSource(source, settings);
 	};
@@ -1129,7 +1128,9 @@ bool obs_module_load(void)
 	si.get_height = [](void *data) {
 		return reinterpret_cast<TextSource *>(data)->cy;
 	};
-	si.get_defaults = [](obs_data_t *settings) { defaults(settings, 1); };
+	si.get_defaults = [](obs_data_t *settings) {
+		defaults(settings, 1);
+	};
 	si.update = [](void *data, obs_data_t *settings) {
 		reinterpret_cast<TextSource *>(data)->Update(settings);
 	};

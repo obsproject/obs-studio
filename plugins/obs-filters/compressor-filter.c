@@ -533,7 +533,6 @@ static obs_properties_t *compressor_properties(void *data)
 	struct sidechain_prop_info info = {sources, parent};
 	obs_enum_sources(add_sources, &info);
 
-	UNUSED_PARAMETER(data);
 	return props;
 }
 

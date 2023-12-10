@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -51,6 +51,8 @@ struct cf_token {
 	enum cf_token_type type;
 };
 
+typedef DARRAY(struct cf_token) cf_token_array_t;
+
 static inline void cf_token_clear(struct cf_token *t)
 {
 	memset(t, 0, sizeof(struct cf_token));
@@ -86,7 +88,7 @@ struct cf_lexer {
 	char *file;
 	struct lexer base_lexer;
 	char *reformatted, *write_offset;
-	DARRAY(struct cf_token) tokens;
+	cf_token_array_t tokens;
 	bool unexpected_eof; /* unexpected multi-line comment eof */
 };
 
@@ -106,8 +108,8 @@ EXPORT bool cf_lexer_lex(struct cf_lexer *lex, const char *str,
 
 struct cf_def {
 	struct cf_token name;
-	DARRAY(struct cf_token) params;
-	DARRAY(struct cf_token) tokens;
+	cf_token_array_t params;
+	cf_token_array_t tokens;
 	bool macro;
 };
 
@@ -156,14 +158,13 @@ static inline void cf_def_free(struct cf_def *cfd)
  *   Still left to implement (TODO):
  *   + #if/#elif
  *   + "defined" preprocessor keyword
- *   + system includes 
+ *   + system includes
  *   + variadic macros
  *   + custom callbacks (for things like pragma)
  *   + option to exclude features such as #import, variadic macros, and other
  *     features for certain language implementations
  *   + macro parameter string operator #
  *   + macro parameter token concatenation operator ##
- *   + predefined macros
  *   + restricted macros
  */
 
@@ -173,7 +174,7 @@ struct cf_preprocessor {
 	DARRAY(struct cf_def) defines;
 	DARRAY(char *) sys_include_dirs;
 	DARRAY(struct cf_lexer) dependencies;
-	DARRAY(struct cf_token) tokens;
+	cf_token_array_t tokens;
 	bool ignore_state;
 };
 

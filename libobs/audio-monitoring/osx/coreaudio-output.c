@@ -43,7 +43,7 @@ static inline bool fill_buffer(struct audio_monitor *monitor)
 	circlebuf_pop_front(&monitor->new_data, buf->mAudioData,
 			    monitor->buffer_size);
 
-	buf->mAudioDataByteSize = monitor->buffer_size;
+	buf->mAudioDataByteSize = (UInt32)monitor->buffer_size;
 
 	stat = AudioQueueEnqueueBuffer(monitor->queue, buf, 0, NULL);
 	if (!success(stat, "AudioQueueEnqueueBuffer")) {
@@ -54,6 +54,15 @@ static inline bool fill_buffer(struct audio_monitor *monitor)
 	return true;
 }
 
+static void on_audio_pause(void *data, calldata_t *calldata)
+{
+	UNUSED_PARAMETER(calldata);
+	struct audio_monitor *monitor = data;
+	pthread_mutex_lock(&monitor->mutex);
+	circlebuf_free(&monitor->new_data);
+	pthread_mutex_unlock(&monitor->mutex);
+}
+
 static void on_audio_playback(void *param, obs_source_t *source,
 			      const struct audio_data *audio_data, bool muted)
 {
@@ -61,9 +70,11 @@ static void on_audio_playback(void *param, obs_source_t *source,
 	float vol = source->user_volume;
 	uint32_t bytes;
 
-	UNUSED_PARAMETER(source);
-
 	if (!os_atomic_load_bool(&monitor->active)) {
+		return;
+	}
+
+	if (os_atomic_load_long(&source->activate_refs) == 0) {
 		return;
 	}
 
@@ -214,7 +225,7 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 
 	for (size_t i = 0; i < 3; i++) {
 		stat = AudioQueueAllocateBuffer(monitor->queue,
-						monitor->buffer_size,
+						(UInt32)monitor->buffer_size,
 						&monitor->buffers[i]);
 		if (!success(stat, "allocation of buffer")) {
 			return false;
@@ -259,6 +270,8 @@ static void audio_monitor_free(struct audio_monitor *monitor)
 	if (monitor->source) {
 		obs_source_remove_audio_capture_callback(
 			monitor->source, on_audio_playback, monitor);
+		obs_source_remove_audio_pause_callback(monitor->source,
+						       on_audio_pause, monitor);
 	}
 	if (monitor->active) {
 		AudioQueueStop(monitor->queue, true);
@@ -286,6 +299,8 @@ static void audio_monitor_init_final(struct audio_monitor *monitor)
 
 	obs_source_add_audio_capture_callback(monitor->source,
 					      on_audio_playback, monitor);
+	obs_source_add_audio_pause_callback(monitor->source, on_audio_pause,
+					    monitor);
 }
 
 struct audio_monitor *audio_monitor_create(obs_source_t *source)

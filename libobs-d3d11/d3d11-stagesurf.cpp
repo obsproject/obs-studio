@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -43,12 +43,12 @@ gs_stage_surface::gs_stage_surface(gs_device_t *device, uint32_t width,
 }
 
 gs_stage_surface::gs_stage_surface(gs_device_t *device, uint32_t width,
-				   uint32_t height)
+				   uint32_t height, bool p010)
 	: gs_obj(device, gs_type::gs_stage_surface),
 	  width(width),
 	  height(height),
 	  format(GS_UNKNOWN),
-	  dxgiFormat(DXGI_FORMAT_NV12)
+	  dxgiFormat(p010 ? DXGI_FORMAT_P010 : DXGI_FORMAT_NV12)
 {
 	HRESULT hr;
 

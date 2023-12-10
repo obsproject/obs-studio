@@ -9,7 +9,7 @@ Core Graphics API
 Graphics Enumerations
 ---------------------
 
-.. type:: enum gs_draw_mode
+.. enum:: gs_draw_mode
 
    Draw mode.  Can be one of the following values:
 
@@ -19,7 +19,7 @@ Graphics Enumerations
    - GS_TRIS      - Draws individual triangles
    - GS_TRISTRIP  - Draws a triangle strip
 
-.. type:: enum gs_color_format
+.. enum:: gs_color_format
 
    Color format.  Can be one of the following values:
 
@@ -45,8 +45,18 @@ Graphics Enumerations
    - GS_RGBA_UNORM  - RGBA, 8 bits per channel, no SRGB aliasing
    - GS_BGRX_UNORM  - BGRX, 8 bits per channel, no SRGB aliasing
    - GS_BGRA_UNORM  - BGRA, 8 bits per channel, no SRGB aliasing
+   - GS_RG16        - RG, 16 bits per channel
 
-.. type:: enum gs_zstencil_format
+.. enum:: gs_color_space
+
+   Color space.  Can be one of the following values:
+
+   - GS_CS_SRGB         - sRGB
+   - GS_CS_SRGB_16F     - High-precision SDR
+   - GS_CS_709_EXTENDED - Canvas, Mac EDR (HDR)
+   - GS_CS_709_SCRGB    - 1.0 = 80 nits, Windows/Linux HDR
+
+.. enum:: gs_zstencil_format
 
    Z-Stencil buffer format.  Can be one of the following values:
 
@@ -56,14 +66,14 @@ Graphics Enumerations
    - GS_Z32F       - 32 bit floating point Z buffer
    - GS_Z32F_S8X24 - 32 bit floating point Z buffer, 8 bit stencil
 
-.. type:: enum gs_index_type
+.. enum:: gs_index_type
 
    Index buffer type.  Can be one of the following values:
 
    - GS_UNSIGNED_SHORT - 16 bit index
    - GS_UNSIGNED_LONG  - 32 bit index
 
-.. type:: enum gs_cull_mode
+.. enum:: gs_cull_mode
 
    Cull mode.  Can be one of the following values:
 
@@ -71,7 +81,7 @@ Graphics Enumerations
    - GS_FRONT   - Cull front faces
    - GS_NEITHER - Cull neither
 
-.. type:: enum gs_blend_type
+.. enum:: gs_blend_type
 
    Blend type.  Can be one of the following values:
 
@@ -87,7 +97,7 @@ Graphics Enumerations
    - GS_BLEND_INVDSTALPHA
    - GS_BLEND_SRCALPHASAT
 
-.. type:: enum gs_depth_test
+.. enum:: gs_depth_test
 
    Depth test type.  Can be one of the following values:
 
@@ -100,7 +110,7 @@ Graphics Enumerations
    - GS_NOTEQUAL
    - GS_ALWAYS
 
-.. type:: enum gs_stencil_side
+.. enum:: gs_stencil_side
 
    Stencil side.  Can be one of the following values:
 
@@ -108,7 +118,7 @@ Graphics Enumerations
    - GS_STENCIL_BACK
    - GS_STENCIL_BOTH
 
-.. type:: enum gs_stencil_op_type
+.. enum:: gs_stencil_op_type
 
    Stencil operation type.  Can be one of the following values:
 
@@ -119,7 +129,7 @@ Graphics Enumerations
    - GS_DECR
    - GS_INVERT
 
-.. type:: enum gs_cube_sides
+.. enum:: gs_cube_sides
 
    Cubemap side.  Can be one of the following values:
 
@@ -130,7 +140,7 @@ Graphics Enumerations
    - GS_POSITIVE_Z
    - GS_NEGATIVE_Z
 
-.. type:: enum gs_sample_filter
+.. enum:: gs_sample_filter
 
    Sample filter type.  Can be one of the following values:
 
@@ -144,7 +154,7 @@ Graphics Enumerations
    - GS_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR
    - GS_FILTER_MIN_MAG_LINEAR_MIP_POINT
 
-.. type:: enum gs_address_mode
+.. enum:: gs_address_mode
 
    Address mode.  Can be one of the following values:
 
@@ -154,7 +164,7 @@ Graphics Enumerations
    - GS_ADDRESS_BORDER
    - GS_ADDRESS_MIRRORONCE
 
-.. type:: enum gs_texture_type
+.. enum:: gs_texture_type
 
    Texture type.  Can be one of the following values:
 
@@ -166,7 +176,7 @@ Graphics Enumerations
 Graphics Structures
 -------------------
 
-.. type:: struct gs_monitor_info
+.. struct:: gs_monitor_info
 .. member:: int gs_monitor_info.rotation_degrees
 .. member:: long gs_monitor_info.x
 .. member:: long gs_monitor_info.y
@@ -175,13 +185,13 @@ Graphics Structures
 
 ---------------------
 
-.. type:: struct gs_tvertarray
+.. struct:: gs_tvertarray
 .. member:: size_t gs_tvertarray.width
 .. member:: void *gs_tvertarray.array
 
 ---------------------
 
-.. type:: struct gs_vb_data
+.. struct:: gs_vb_data
 .. member:: size_t gs_vb_data.num
 .. member:: struct vec3 *gs_vb_data.points
 .. member:: struct vec3 *gs_vb_data.normals
@@ -192,7 +202,7 @@ Graphics Structures
 
 ---------------------
 
-.. type:: struct gs_sampler_info
+.. struct:: gs_sampler_info
 .. member:: enum gs_sample_filter gs_sampler_info.filter
 .. member:: enum gs_address_mode gs_sampler_info.address_u
 .. member:: enum gs_address_mode gs_sampler_info.address_v
@@ -202,7 +212,7 @@ Graphics Structures
 
 ---------------------
 
-.. type:: struct gs_display_mode
+.. struct:: gs_display_mode
 .. member:: uint32_t gs_display_mode.width
 .. member:: uint32_t gs_display_mode.height
 .. member:: uint32_t gs_display_mode.bits
@@ -210,7 +220,7 @@ Graphics Structures
 
 ---------------------
 
-.. type:: struct gs_rect
+.. struct:: gs_rect
 .. member:: int gs_rect.x
 .. member:: int gs_rect.y
 .. member:: int gs_rect.cx
@@ -218,7 +228,7 @@ Graphics Structures
 
 ---------------------
 
-.. type:: struct gs_window
+.. struct:: gs_window
 
    A window structure.  This structure is used with a native widget.
 
@@ -228,7 +238,7 @@ Graphics Structures
 
 .. member:: id  gs_window.view
 
-   (Mac only) A view ID.
+   (macOS only) A view ID.
 
 .. member:: uint32_t gs_window.id
             void* gs_window.display
@@ -237,7 +247,7 @@ Graphics Structures
 
 ---------------------
 
-.. type:: struct gs_init_data
+.. struct:: gs_init_data
 
    Swap chain initialization data.
 
@@ -257,7 +267,7 @@ Initialization Functions
 
 .. function:: void gs_enum_adapters(bool (*callback)(void *param, const char *name, uint32_t id), void *param)
 
-   Enumerates adapters (this really only applies on windows).
+   Enumerates adapters (this really only applies on Windows).
 
    :param callback: Enumeration callback
    :param param:    Private data passed to the callback
@@ -541,6 +551,13 @@ Swap Chains
 
 ---------------------
 
+.. function:: void gs_update_color_space(void)
+
+   Updates the color space of the swap chain based on the HDR status of
+   the nearest monitor
+
+---------------------
+
 .. function:: void gs_get_size(uint32_t *cx, uint32_t *cy)
 
    Gets the size of the currently active swap chain
@@ -612,6 +629,12 @@ Resource Loading
 Draw Functions
 --------------
 
+.. function:: enum gs_color_space gs_get_color_space(void)
+
+   :return: The currently active color space
+
+---------------------
+
 .. function:: gs_texture_t  *gs_get_render_target(void)
 
    :return: The currently active render target
@@ -626,10 +649,20 @@ Draw Functions
 
 .. function:: void gs_set_render_target(gs_texture_t *tex, gs_zstencil_t *zstencil)
 
-   Sets the active render target
+   Sets the active render target with implicit GS_CS_SRGB color space
 
    :param tex:      Texture to set as the active render target
    :param zstencil: Z-stencil to use as the active render target
+
+---------------------
+
+.. function:: void gs_set_render_target_with_color_space(gs_texture_t *tex, gs_zstencil_t *zstencil, enum gs_color_space space)
+
+   Sets the active render target along with color space
+
+   :param tex:      Texture to set as the active render target
+   :param zstencil: Z-stencil to use as the active render target
+   :param space:    Color space of the render target
 
 ---------------------
 
@@ -976,7 +1009,7 @@ Texture Functions
 
 .. function:: gs_texture_t *gs_texture_create_from_dmabuf(unsigned int width, unsigned int height, uint32_t drm_format, enum gs_color_format color_format, uint32_t n_planes, const int *fds, const uint32_t *strides, const uint32_t *offsets, const uint64_t *modifiers)
 
-   **Linux only:** Creates a texture from DMA-BUF metadata.
+   **only Linux, FreeBSD, DragonFly:** Creates a texture from DMA-BUF metadata.
 
    Exchanging DMA-BUFs is a verbose process because of its multiplanar nature.
    For example, YUV can have each plane as a color channel, or a monitor buffer
@@ -1005,7 +1038,7 @@ Texture Functions
 
 ---------------------
 
-.. type:: enum gs_dmabuf_flags
+.. enum:: gs_dmabuf_flags
 
    DMA-BUF capabilities:
 
@@ -1016,7 +1049,7 @@ Texture Functions
 
 .. function:: bool *gs_query_dmabuf_capabilities(enum gs_dmabuf_flags *dmabuf_flags, uint32_t **drm_formats, size_t *n_formats)
 
-   **Linux only:** Queries the capabilities for DMA-BUFs.
+   **only Linux, FreeBSD, DragonFly:** Queries the capabilities for DMA-BUFs.
 
    Graphics cards can optimize frame buffers by storing them in custom layouts,
    depending on their hardware features. These layouts can make these frame
@@ -1035,7 +1068,7 @@ Texture Functions
 
 .. function:: bool *gs_query_dmabuf_modifiers_for_format(uint32_t drm_format, uint64_t **modifiers, size_t *n_modifiers)
 
-   **Linux only:** Queries the supported DMA-BUF modifiers for a given format.
+   **only Linux, FreeBSD, DragonFly:** Queries the supported DMA-BUF modifiers for a given format.
 
    This function queries all supported explicit modifiers for a format,
    stores them as an array and returns the number of supported modifiers.
@@ -1051,7 +1084,7 @@ Texture Functions
 
 .. function:: gs_texture_t *gs_texture_create_from_iosurface(void *iosurf)
 
-   **Mac only:** Creates a texture from an IOSurface.
+   **macOS only:** Creates a texture from an IOSurface.
 
    :param iosurf: IOSurface object
 
@@ -1059,7 +1092,7 @@ Texture Functions
 
 .. function:: bool     gs_texture_rebind_iosurface(gs_texture_t *texture, void *iosurf)
 
-   **Mac only:** Rebinds a texture to another IOSurface
+   **macOS only:** Rebinds a texture to another IOSurface
 
    :param texture: Texture object
    :param iosuf:   IOSurface object
@@ -1474,6 +1507,14 @@ Display Duplicator (Windows Only)
 ---------------------
 
 
+Monitor Functions
+---------------------------------
+
+.. function:: bool gs_is_monitor_hdr(void *monitor)
+
+---------------------
+
+
 Render Helper Functions
 -----------------------
 
@@ -1533,16 +1574,16 @@ Render Helper Functions
 Graphics Types
 --------------
 
-.. type:: typedef struct gs_duplicator       gs_duplicator_t
-.. type:: typedef struct gs_texture          gs_texture_t
-.. type:: typedef struct gs_stage_surface    gs_stagesurf_t
-.. type:: typedef struct gs_zstencil_buffer  gs_zstencil_t
-.. type:: typedef struct gs_vertex_buffer    gs_vertbuffer_t
-.. type:: typedef struct gs_index_buffer     gs_indexbuffer_t
-.. type:: typedef struct gs_sampler_state    gs_samplerstate_t
-.. type:: typedef struct gs_swap_chain       gs_swapchain_t
-.. type:: typedef struct gs_texture_render   gs_texrender_t
-.. type:: typedef struct gs_shader           gs_shader_t
-.. type:: typedef struct gs_shader_param     gs_sparam_t
-.. type:: typedef struct gs_device           gs_device_t
-.. type:: typedef struct graphics_subsystem  graphics_t
+.. type:: struct gs_duplicator       gs_duplicator_t
+.. type:: struct gs_texture          gs_texture_t
+.. type:: struct gs_stage_surface    gs_stagesurf_t
+.. type:: struct gs_zstencil_buffer  gs_zstencil_t
+.. type:: struct gs_vertex_buffer    gs_vertbuffer_t
+.. type:: struct gs_index_buffer     gs_indexbuffer_t
+.. type:: struct gs_sampler_state    gs_samplerstate_t
+.. type:: struct gs_swap_chain       gs_swapchain_t
+.. type:: struct gs_texture_render   gs_texrender_t
+.. type:: struct gs_shader           gs_shader_t
+.. type:: struct gs_shader_param     gs_sparam_t
+.. type:: struct gs_device           gs_device_t
+.. type:: struct graphics_subsystem  graphics_t

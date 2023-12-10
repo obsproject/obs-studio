@@ -1,0 +1,28 @@
+{
+    "name": "onevpl-intel-gpu",
+    "buildsystem": "cmake-ninja",
+    "builddir": true,
+    "config-opts": [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_RUNTIME=ON",
+        "-DBUILD_TESTS=OFF",
+        "-DBUILD_TOOLS=OFF"
+    ],
+    "cleanup": [
+        "/lib/pkgconfig"
+    ],
+    "sources": [
+        {
+            "type": "git",
+            "url": "https://github.com/oneapi-src/oneVPL-intel-gpu.git",
+            "commit": "a9fb0bcabef0b91ddfe0c70466513d33fab38557",
+            "tag": "intel-onevpl-23.3.1"
+        },
+        {
+            "type": "shell",
+            "commands": [
+                "sed -i 's/CMAKE_VERBOSE_MAKEFILE ON/CMAKE_VERBOSE_MAKEFILE OFF/g' builder/profiles/onevpl.cmake"
+            ]
+        }
+    ]
+}

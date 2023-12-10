@@ -9,15 +9,15 @@ HLSL format.
 
    #include <graphics/graphics.h>
 
-.. type:: typedef struct gs_effect           gs_effect_t
+.. type:: struct gs_effect           gs_effect_t
 
    Effect object.
 
-.. type:: typedef struct gs_effect_technique gs_technique_t
+.. type:: struct gs_effect_technique gs_technique_t
 
    Technique object.
 
-.. type:: typedef struct gs_effect_param     gs_eparam_t
+.. type:: struct gs_effect_param     gs_eparam_t
 
    Effect parameter object.
 
@@ -174,7 +174,7 @@ HLSL format.
 
 ---------------------
 
-.. function:: gs_eparam_t *gs_param_get_annotation_by_name(const gs_eparam_t *pardam, const char *annotation)
+.. function:: gs_eparam_t *gs_param_get_annotation_by_name(const gs_eparam_t *param, const char *annotation)
 
    Gets parameter of an effect by its name.
 

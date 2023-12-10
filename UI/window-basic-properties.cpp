@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -31,6 +31,11 @@
 #include <qpointer.h>
 #include <util/c99defs.h>
 
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN 1
+#include <Windows.h>
+#endif
+
 using namespace std;
 
 static void CreateTransitionScene(OBSSource scene, const char *text,
@@ -38,7 +43,7 @@ static void CreateTransitionScene(OBSSource scene, const char *text,
 
 OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	: QDialog(parent),
-	  preview(new OBSQTDisplay(this)),
+	  ui(new Ui::OBSBasicProperties),
 	  main(qobject_cast<OBSBasic *>(parent)),
 	  acceptClicked(false),
 	  source(source_),
@@ -46,8 +51,7 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 			OBSBasicProperties::SourceRemoved, this),
 	  renamedSignal(obs_source_get_signal_handler(source), "rename",
 			OBSBasicProperties::SourceRenamed, this),
-	  oldSettings(obs_data_create()),
-	  buttonBox(new QDialogButtonBox(this))
+	  oldSettings(obs_data_create())
 {
 	int cx = (int)config_get_int(App()->GlobalConfig(), "PropertiesWindow",
 				     "cx");
@@ -56,24 +60,13 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 
 	enum obs_source_type type = obs_source_get_type(source);
 
-	buttonBox->setObjectName(QStringLiteral("buttonBox"));
-	buttonBox->setStandardButtons(QDialogButtonBox::Ok |
-				      QDialogButtonBox::Cancel |
-				      QDialogButtonBox::RestoreDefaults);
+	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
-	buttonBox->button(QDialogButtonBox::Ok)->setText(QTStr("OK"));
-	buttonBox->button(QDialogButtonBox::Cancel)->setText(QTStr("Cancel"));
-	buttonBox->button(QDialogButtonBox::RestoreDefaults)
-		->setText(QTStr("Defaults"));
+	ui->setupUi(this);
+	ui->buttonBox->button(QDialogButtonBox::Ok)->setFocus();
 
 	if (cx > 400 && cy > 400)
 		resize(cx, cy);
-	else
-		resize(720, 580);
-
-	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
-
-	QMetaObject::connectSlotsByName(this);
 
 	/* The OBSData constructor increments the reference once */
 	obs_data_release(oldSettings);
@@ -81,46 +74,19 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	OBSDataAutoRelease nd_settings = obs_source_get_settings(source);
 	obs_data_apply(oldSettings, nd_settings);
 
-	auto handle_memory = [](void *vp, obs_data_t *old_settings,
-				obs_data_t *new_settings) {
-		obs_source_t *source = reinterpret_cast<obs_source_t *>(vp);
-
-		obs_source_update(source, new_settings);
-
-		UNUSED_PARAMETER(old_settings);
-		UNUSED_PARAMETER(vp);
-	};
-
 	view = new OBSPropertiesView(
 		nd_settings.Get(), source,
 		(PropertiesReloadCallback)obs_source_properties,
-		(PropertiesUpdateCallback)handle_memory,
+		(PropertiesUpdateCallback) nullptr, // No special handling required for undo/redo
 		(PropertiesVisualUpdateCb)obs_source_update);
 	view->setMinimumHeight(150);
 
-	preview->setMinimumSize(20, 150);
-	preview->setSizePolicy(
-		QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
-
-	// Create a QSplitter to keep a unified workflow here.
-	windowSplitter = new QSplitter(Qt::Orientation::Vertical, this);
-	windowSplitter->addWidget(preview);
-	windowSplitter->addWidget(view);
-	windowSplitter->setChildrenCollapsible(false);
-	//windowSplitter->setSizes(QList<int>({ 16777216, 150 }));
-	windowSplitter->setStretchFactor(0, 3);
-	windowSplitter->setStretchFactor(1, 1);
-
-	setLayout(new QVBoxLayout(this));
-	layout()->addWidget(windowSplitter);
+	ui->propertiesLayout->addWidget(view);
 
 	if (type == OBS_SOURCE_TYPE_TRANSITION) {
-		connect(view, SIGNAL(PropertiesRefreshed()), this,
-			SLOT(AddPreviewButton()));
+		connect(view, &OBSPropertiesView::PropertiesRefreshed, this,
+			&OBSBasicProperties::AddPreviewButton);
 	}
-
-	layout()->addWidget(buttonBox);
-	layout()->setAlignment(buttonBox, Qt::AlignBottom);
 
 	view->show();
 	installEventFilter(CreateShortcutFilter());
@@ -136,13 +102,13 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 				       this);
 
 	auto addDrawCallback = [this]() {
-		obs_display_add_draw_callback(preview->GetDisplay(),
+		obs_display_add_draw_callback(ui->preview->GetDisplay(),
 					      OBSBasicProperties::DrawPreview,
 					      this);
 	};
 	auto addTransitionDrawCallback = [this]() {
 		obs_display_add_draw_callback(
-			preview->GetDisplay(),
+			ui->preview->GetDisplay(),
 			OBSBasicProperties::DrawTransitionPreview, this);
 	};
 	uint32_t caps = obs_source_get_output_flags(source);
@@ -151,8 +117,8 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	bool drawable_preview = (caps & OBS_SOURCE_VIDEO) != 0;
 
 	if (drawable_preview && drawable_type) {
-		preview->show();
-		connect(preview.data(), &OBSQTDisplay::DisplayCreated,
+		ui->preview->show();
+		connect(ui->preview, &OBSQTDisplay::DisplayCreated,
 			addDrawCallback);
 
 	} else if (type == OBS_SOURCE_TYPE_TRANSITION) {
@@ -195,12 +161,12 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 
 		connect(view, &OBSPropertiesView::Changed, updateCallback);
 
-		preview->show();
-		connect(preview.data(), &OBSQTDisplay::DisplayCreated,
+		ui->preview->show();
+		connect(ui->preview, &OBSQTDisplay::DisplayCreated,
 			addTransitionDrawCallback);
 
 	} else {
-		preview->hide();
+		ui->preview->hide();
 	}
 }
 
@@ -313,12 +279,10 @@ static void CreateTransitionScene(OBSSource scene, const char *text,
 	obs_sceneitem_set_bounds_type(item, OBS_BOUNDS_SCALE_INNER);
 }
 
-void OBSBasicProperties::SourceRemoved(void *data, calldata_t *params)
+void OBSBasicProperties::SourceRemoved(void *data, calldata_t *)
 {
 	QMetaObject::invokeMethod(static_cast<OBSBasicProperties *>(data),
 				  "close");
-
-	UNUSED_PARAMETER(params);
 }
 
 void OBSBasicProperties::SourceRenamed(void *data, calldata_t *params)
@@ -336,26 +300,37 @@ void OBSBasicProperties::UpdateProperties(void *data, calldata_t *)
 				  "ReloadProperties");
 }
 
+static bool ConfirmReset(QWidget *parent)
+{
+	QMessageBox::StandardButton button;
+
+	button = OBSMessageBox::question(parent, QTStr("ConfirmReset.Title"),
+					 QTStr("ConfirmReset.Text"),
+					 QMessageBox::Yes | QMessageBox::No);
+
+	return button == QMessageBox::Yes;
+}
+
 void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 {
-	QDialogButtonBox::ButtonRole val = buttonBox->buttonRole(button);
+	QDialogButtonBox::ButtonRole val = ui->buttonBox->buttonRole(button);
 
 	if (val == QDialogButtonBox::AcceptRole) {
 
-		std::string scene_name =
-			obs_source_get_name(main->GetCurrentSceneSource());
+		std::string scene_uuid =
+			obs_source_get_uuid(main->GetCurrentSceneSource());
 
-		auto undo_redo = [scene_name](const std::string &data) {
+		auto undo_redo = [scene_uuid](const std::string &data) {
 			OBSDataAutoRelease settings =
 				obs_data_create_from_json(data.c_str());
-			OBSSourceAutoRelease source = obs_get_source_by_name(
-				obs_data_get_string(settings, "undo_sname"));
+			OBSSourceAutoRelease source = obs_get_source_by_uuid(
+				obs_data_get_string(settings, "undo_uuid"));
 			obs_source_reset_settings(source, settings);
 
 			obs_source_update_properties(source);
 
 			OBSSourceAutoRelease scene_source =
-				obs_get_source_by_name(scene_name.c_str());
+				obs_get_source_by_uuid(scene_uuid.c_str());
 
 			OBSBasic::Get()->SetCurrentScene(scene_source.Get(),
 							 true);
@@ -365,10 +340,10 @@ void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 		OBSDataAutoRelease curr_settings =
 			obs_source_get_settings(source);
 		obs_data_apply(new_settings, curr_settings);
-		obs_data_set_string(new_settings, "undo_sname",
-				    obs_source_get_name(source));
-		obs_data_set_string(oldSettings, "undo_sname",
-				    obs_source_get_name(source));
+		obs_data_set_string(new_settings, "undo_uuid",
+				    obs_source_get_uuid(source));
+		obs_data_set_string(oldSettings, "undo_uuid",
+				    obs_source_get_uuid(source));
 
 		std::string undo_data(obs_data_get_json(oldSettings));
 		std::string redo_data(obs_data_get_json(new_settings));
@@ -397,6 +372,9 @@ void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 		close();
 
 	} else if (val == QDialogButtonBox::ResetRole) {
+		if (!ConfirmReset(this))
+			return;
+
 		OBSDataAutoRelease settings = obs_source_get_settings(source);
 		obs_data_clear(settings);
 
@@ -477,10 +455,10 @@ void OBSBasicProperties::Cleanup()
 	config_set_int(App()->GlobalConfig(), "PropertiesWindow", "cy",
 		       height());
 
-	obs_display_remove_draw_callback(preview->GetDisplay(),
+	obs_display_remove_draw_callback(ui->preview->GetDisplay(),
 					 OBSBasicProperties::DrawPreview, this);
 	obs_display_remove_draw_callback(
-		preview->GetDisplay(),
+		ui->preview->GetDisplay(),
 		OBSBasicProperties::DrawTransitionPreview, this);
 }
 
@@ -510,6 +488,31 @@ void OBSBasicProperties::closeEvent(QCloseEvent *event)
 		return;
 
 	Cleanup();
+}
+
+bool OBSBasicProperties::nativeEvent(const QByteArray &, void *message,
+				     qintptr *)
+{
+#ifdef _WIN32
+	const MSG &msg = *static_cast<MSG *>(message);
+	switch (msg.message) {
+	case WM_MOVE:
+		for (OBSQTDisplay *const display :
+		     findChildren<OBSQTDisplay *>()) {
+			display->OnMove();
+		}
+		break;
+	case WM_DISPLAYCHANGE:
+		for (OBSQTDisplay *const display :
+		     findChildren<OBSQTDisplay *>()) {
+			display->OnDisplayChange();
+		}
+	}
+#else
+	UNUSED_PARAMETER(message);
+#endif
+
+	return false;
 }
 
 void OBSBasicProperties::Init()

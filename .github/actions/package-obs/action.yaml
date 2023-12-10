@@ -1,0 +1,114 @@
+name: Package obs-studio
+description: Packages obs-studio for specified architecture and build config
+inputs:
+  target:
+    description: Build target for dependencies
+    required: true
+  config:
+    description: Build configuration
+    required: false
+    default: Release
+  codesign:
+    description: Enable codesigning (macOS only)
+    required: false
+    default: 'false'
+  notarize:
+    description: Enable notarization (macOS only)
+    required: false
+    default: 'false'
+  codesignIdent:
+    description: Developer ID for application codesigning (macOS only)
+    required: false
+    default: '-'
+  codesignUser:
+    description: Apple ID username for notarization (macOS only)
+    required: false
+    default: ''
+  codesignPass:
+    description: Apple ID password for notarization (macOS only)
+    required: false
+    default: ''
+  package:
+    description: Create platform-specific packages instead of archives
+    required: false
+    default: 'false'
+  workingDirectory:
+    description: Working directory for packaging
+    required: false
+    default: ${{ github.workspace }}
+runs:
+  using: composite
+  steps:
+    - name: Run macOS packaging
+      if: runner.os == 'macOS'
+      shell: zsh --no-rcs --errexit --pipefail {0}
+      working-directory: ${{ inputs.workingDirectory }}
+      env:
+        CODESIGN_IDENT: ${{ inputs.codesignIdent }}
+        CODESIGN_IDENT_USER: ${{ inputs.codesignUser }}
+        CODESIGN_IDENT_PASS: ${{ inputs.codesignPass }}
+      run: |
+        : Run macOS Packaging
+
+        local -a package_args=(
+          --target macos-${{ inputs.target }}
+          --config ${{ inputs.config }}
+        )
+        if (( ${+RUNNER_DEBUG} )) build_args+=(--debug)
+
+        if [[ '${{ inputs.codesign }}' == true ]] package_args+=(--codesign)
+        if [[ '${{ inputs.notarize }}' == true ]] package_args+=(--notarize)
+        if [[ '${{ inputs.package }}' == true ]] package_args+=(--package)
+
+        .github/scripts/package-macos ${package_args}
+
+    - name: Install Dependencies 🛍️
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        : Install Dependencies 🛍️
+        echo ::group::Install Dependencies
+        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+        echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
+        brew install --quiet zsh
+        echo ::endgroup::
+
+    - name: Run Ubuntu packaging
+      if: runner.os == 'Linux'
+      shell: zsh --no-rcs --errexit --pipefail {0}
+      working-directory: ${{ inputs.workingDirectory }}
+      run: |
+        : Run Ubuntu Packaging
+
+        local -a package_args=(
+          --target linux-${{ inputs.target }}
+          --config ${{ inputs.config }}
+        )
+        if (( ${+RUNNER_DEBUG} )) build_args+=(--debug)
+
+        if [[ '${{ inputs.package }}' == true ]] package_args+=(--package)
+
+        ${{ inputs.workingDirectory }}/.github/scripts/package-linux ${package_args}
+
+    - name: Run Windows packaging
+      if: runner.os == 'Windows'
+      shell: pwsh
+      working-directory: ${{ inputs.workingDirectory }}
+      run: |
+        # Run Windows Packaging
+        $PackageArgs = @{
+          Target = '${{ inputs.target }}'
+          Configuration = '${{ inputs.config }}'
+        }
+
+        if ( $Env:RUNNER_DEBUG -ne $null ) {
+          $PackageArgs += @{ Debug = $true }
+        }
+
+        if ( ( Test-Path env:CI ) -and ( Test-Path env:RUNNER_DEBUG ) ) {
+          $BuildArgs += @{
+            Debug = $true
+          }
+        }
+
+        .github/scripts/Package-windows.ps1 @PackageArgs

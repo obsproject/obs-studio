@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -27,10 +27,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define BOUNDS_MAX_X 1
-#define BOUNDS_MAX_Y 2
-#define BOUNDS_MAX_Z 4
 
 #define BOUNDS_OUTSIDE 1
 #define BOUNDS_INSIDE 2

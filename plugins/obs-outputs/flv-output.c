@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -119,7 +119,8 @@ static void write_audio_header(struct flv_output *stream)
 	struct encoder_packet packet = {.type = OBS_ENCODER_AUDIO,
 					.timebase_den = 1};
 
-	obs_encoder_get_extra_data(aencoder, &packet.data, &packet.size);
+	if (!obs_encoder_get_extra_data(aencoder, &packet.data, &packet.size))
+		return;
 	write_packet(stream, &packet, true);
 }
 
@@ -130,10 +131,12 @@ static void write_video_header(struct flv_output *stream)
 	uint8_t *header;
 	size_t size;
 
-	struct encoder_packet packet = {
-		.type = OBS_ENCODER_VIDEO, .timebase_den = 1, .keyframe = true};
+	struct encoder_packet packet = {.type = OBS_ENCODER_VIDEO,
+					.timebase_den = 1,
+					.keyframe = true};
 
-	obs_encoder_get_extra_data(vencoder, &header, &size);
+	if (!obs_encoder_get_extra_data(vencoder, &header, &size))
+		return;
 	packet.size = obs_parse_avc_header(&packet.data, header, size);
 	write_packet(stream, &packet, true);
 	bfree(packet.data);

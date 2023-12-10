@@ -5,8 +5,13 @@
 #include <util/threading.h>
 
 #include "cursor-capture.h"
+#ifdef OBS_LEGACY
 #include "../../libobs/util/platform.h"
 #include "../../libobs-winrt/winrt-capture.h"
+#else
+#include <util/platform.h>
+#include <winrt-capture.h>
+#endif
 
 #define do_log(level, format, ...)                                \
 	blog(level, "[duplicator-monitor-capture: '%s'] " format, \
@@ -27,6 +32,7 @@
 #define TEXT_METHOD_AUTO     obs_module_text("WindowCapture.Method.Auto")
 #define TEXT_METHOD_DXGI     obs_module_text("Method.DXGI")
 #define TEXT_METHOD_WGC      obs_module_text("Method.WindowsGraphicsCapture")
+#define TEXT_FORCE_SDR       obs_module_text("ForceSdr")
 
 /* clang-format on */
 
@@ -35,10 +41,12 @@
 typedef BOOL (*PFN_winrt_capture_supported)();
 typedef BOOL (*PFN_winrt_capture_cursor_toggle_supported)();
 typedef struct winrt_capture *(*PFN_winrt_capture_init_monitor)(
-	BOOL cursor, HMONITOR monitor);
+	BOOL cursor, HMONITOR monitor, BOOL force_sdr);
 typedef void (*PFN_winrt_capture_free)(struct winrt_capture *capture);
 
 typedef BOOL (*PFN_winrt_capture_active)(const struct winrt_capture *capture);
+typedef enum gs_color_space (*PFN_winrt_capture_get_color_space)(
+	const struct winrt_capture *capture);
 typedef void (*PFN_winrt_capture_render)(struct winrt_capture *capture);
 typedef uint32_t (*PFN_winrt_capture_width)(const struct winrt_capture *capture);
 typedef uint32_t (*PFN_winrt_capture_height)(
@@ -51,6 +59,7 @@ struct winrt_exports {
 	PFN_winrt_capture_init_monitor winrt_capture_init_monitor;
 	PFN_winrt_capture_free winrt_capture_free;
 	PFN_winrt_capture_active winrt_capture_active;
+	PFN_winrt_capture_get_color_space winrt_capture_get_color_space;
 	PFN_winrt_capture_render winrt_capture_render;
 	PFN_winrt_capture_width winrt_capture_width;
 	PFN_winrt_capture_height winrt_capture_height;
@@ -65,12 +74,15 @@ enum display_capture_method {
 struct duplicator_capture {
 	obs_source_t *source;
 	pthread_mutex_t update_mutex;
-	int monitor;
-	int dxgi_index;
+	char monitor_id[128];
+	char id[128];
+	char alt_id[128];
+	char monitor_name[64];
 	enum display_capture_method method;
 	bool reset_wgc;
 	HMONITOR handle;
 	bool capture_cursor;
+	bool force_sdr;
 	bool showing;
 	LONG logged_width;
 	LONG logged_height;
@@ -89,10 +101,11 @@ struct duplicator_capture {
 	struct winrt_capture *capture_winrt;
 };
 
-struct wgc_monitor_info {
-	int cur_id;
-	int desired_id;
-	int id;
+struct duplicator_monitor_info {
+	char device_id[128];
+	char id[128];
+	char alt_id[128];
+	char name[128];
 	RECT rect;
 	HMONITOR handle;
 };
@@ -114,49 +127,171 @@ static const char *get_method_name(int method)
 	return method_name;
 }
 
+static bool GetMonitorTarget(LPCWSTR device,
+			     DISPLAYCONFIG_TARGET_DEVICE_NAME *target)
+{
+	bool found = false;
+
+	UINT32 numPath, numMode;
+	if (GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &numPath,
+					&numMode) == ERROR_SUCCESS) {
+		DISPLAYCONFIG_PATH_INFO *paths =
+			bmalloc(numPath * sizeof(DISPLAYCONFIG_PATH_INFO));
+		DISPLAYCONFIG_MODE_INFO *modes =
+			bmalloc(numMode * sizeof(DISPLAYCONFIG_MODE_INFO));
+		if (QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &numPath, paths,
+				       &numMode, modes,
+				       NULL) == ERROR_SUCCESS) {
+			for (size_t i = 0; i < numPath; ++i) {
+				const DISPLAYCONFIG_PATH_INFO *const path =
+					&paths[i];
+
+				DISPLAYCONFIG_SOURCE_DEVICE_NAME
+				source;
+				source.header.type =
+					DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME;
+				source.header.size = sizeof(source);
+				source.header.adapterId =
+					path->sourceInfo.adapterId;
+				source.header.id = path->sourceInfo.id;
+				if (DisplayConfigGetDeviceInfo(
+					    &source.header) == ERROR_SUCCESS &&
+				    wcscmp(device, source.viewGdiDeviceName) ==
+					    0) {
+					target->header.type =
+						DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME;
+					target->header.size = sizeof(*target);
+					target->header.adapterId =
+						path->sourceInfo.adapterId;
+					target->header.id = path->targetInfo.id;
+					found = DisplayConfigGetDeviceInfo(
+							&target->header) ==
+						ERROR_SUCCESS;
+					break;
+				}
+			}
+		}
+
+		bfree(modes);
+		bfree(paths);
+	}
+
+	return found;
+}
+
+static void GetMonitorName(HMONITOR handle, char *name, size_t count)
+{
+	MONITORINFOEXW mi;
+	DISPLAYCONFIG_TARGET_DEVICE_NAME target;
+
+	mi.cbSize = sizeof(mi);
+	if (GetMonitorInfoW(handle, (LPMONITORINFO)&mi) &&
+	    GetMonitorTarget(mi.szDevice, &target)) {
+		char *friendly_name;
+		os_wcs_to_utf8_ptr(target.monitorFriendlyDeviceName, 0,
+				   &friendly_name);
+
+		strcpy_s(name, count, friendly_name);
+		bfree(friendly_name);
+	} else {
+		strcpy_s(name, count, "[OBS: Unknown]");
+	}
+}
+
 static BOOL CALLBACK enum_monitor(HMONITOR handle, HDC hdc, LPRECT rect,
 				  LPARAM param)
 {
-	struct wgc_monitor_info *monitor = (struct wgc_monitor_info *)param;
+	UNUSED_PARAMETER(hdc);
 
-	if (monitor->cur_id == 0 || monitor->desired_id == monitor->cur_id) {
-		monitor->id = monitor->cur_id;
-		monitor->rect = *rect;
-		monitor->handle = handle;
+	struct duplicator_monitor_info *monitor =
+		(struct duplicator_monitor_info *)param;
+
+	bool match = false;
+
+	MONITORINFOEXA mi;
+	mi.cbSize = sizeof(mi);
+	if (GetMonitorInfoA(handle, (LPMONITORINFO)&mi)) {
+		DISPLAY_DEVICEA device;
+		device.cb = sizeof(device);
+		if (EnumDisplayDevicesA(mi.szDevice, 0, &device,
+					EDD_GET_DEVICE_INTERFACE_NAME)) {
+			match = strcmp(monitor->device_id, device.DeviceID) ==
+				0;
+			if (match) {
+				strcpy_s(monitor->id, _countof(monitor->id),
+					 device.DeviceID);
+				strcpy_s(monitor->alt_id,
+					 _countof(monitor->alt_id),
+					 mi.szDevice);
+				GetMonitorName(handle, monitor->name,
+					       _countof(monitor->name));
+				monitor->rect = *rect;
+				monitor->handle = handle;
+			}
+		}
 	}
 
-	UNUSED_PARAMETER(hdc);
-	return (monitor->desired_id > monitor->cur_id++);
+	return !match;
 }
 
-static void log_settings(struct duplicator_capture *capture, int monitor,
-			 LONG width, LONG height)
+static BOOL CALLBACK enum_monitor_fallback(HMONITOR handle, HDC hdc,
+					   LPRECT rect, LPARAM param)
+{
+	UNUSED_PARAMETER(hdc);
+
+	struct duplicator_monitor_info *monitor =
+		(struct duplicator_monitor_info *)param;
+
+	bool match = false;
+
+	MONITORINFOEXA mi;
+	mi.cbSize = sizeof(mi);
+	if (GetMonitorInfoA(handle, (LPMONITORINFO)&mi)) {
+		match = strcmp(monitor->device_id, mi.szDevice) == 0;
+		if (match) {
+			strcpy_s(monitor->alt_id, _countof(monitor->alt_id),
+				 mi.szDevice);
+			GetMonitorName(handle, monitor->name,
+				       _countof(monitor->name));
+			monitor->rect = *rect;
+			monitor->handle = handle;
+		}
+	}
+
+	return !match;
+}
+
+static void log_settings(struct duplicator_capture *capture,
+			 const char *monitor, LONG width, LONG height)
 {
 	info("update settings:\n"
-	     "\tdisplay: %d (%ldx%ld)\n"
+	     "\tdisplay: %s (%ldx%ld)\n"
 	     "\tcursor: %s\n"
-	     "\tmethod: %s",
-	     monitor + 1, width, height,
-	     capture->capture_cursor ? "true" : "false",
-	     get_method_name(capture->method));
+	     "\tmethod: %s\n"
+	     "\tid: %s\n"
+	     "\talt_id: %s\n"
+	     "\tsetting_id: %s\n"
+	     "\tforce SDR: %s",
+	     monitor, width, height, capture->capture_cursor ? "true" : "false",
+	     get_method_name(capture->method), capture->id, capture->alt_id,
+	     capture->monitor_id, capture->force_sdr ? "true" : "false");
 }
 
 static enum display_capture_method
 choose_method(enum display_capture_method method, bool wgc_supported,
-	      HMONITOR monitor, int *dxgi_index)
+	      HMONITOR monitor)
 {
 	if (!wgc_supported)
 		method = METHOD_DXGI;
 
-	if (method != METHOD_WGC) {
-		obs_enter_graphics();
-		*dxgi_index = gs_duplicator_get_monitor_index(monitor);
-		obs_leave_graphics();
-	}
-
 	if (method == METHOD_AUTO) {
 		method = METHOD_DXGI;
-		if (*dxgi_index == -1) {
+
+		obs_enter_graphics();
+		const int dxgi_index = gs_duplicator_get_monitor_index(monitor);
+		obs_leave_graphics();
+
+		if (dxgi_index == -1) {
 			method = METHOD_WGC;
 		} else {
 			SYSTEM_POWER_STATUS status;
@@ -176,23 +311,41 @@ choose_method(enum display_capture_method method, bool wgc_supported,
 
 extern bool wgc_supported;
 
+static struct duplicator_monitor_info find_monitor(const char *monitor_id)
+{
+	struct duplicator_monitor_info monitor = {0};
+	strcpy_s(monitor.device_id, _countof(monitor.device_id), monitor_id);
+	EnumDisplayMonitors(NULL, NULL, &enum_monitor, (LPARAM)&monitor);
+	if (monitor.handle == NULL) {
+		EnumDisplayMonitors(NULL, NULL, &enum_monitor_fallback,
+				    (LPARAM)&monitor);
+	}
+
+	return monitor;
+}
+
 static inline void update_settings(struct duplicator_capture *capture,
 				   obs_data_t *settings)
 {
 	pthread_mutex_lock(&capture->update_mutex);
 
-	struct wgc_monitor_info monitor = {0};
-	monitor.desired_id = (int)obs_data_get_int(settings, "monitor");
-	EnumDisplayMonitors(NULL, NULL, enum_monitor, (LPARAM)&monitor);
+	struct duplicator_monitor_info monitor =
+		find_monitor(obs_data_get_string(settings, "monitor_id"));
 
-	capture->method = choose_method(
-		(int)obs_data_get_int(settings, "method"), wgc_supported,
-		monitor.handle, &capture->dxgi_index);
+	capture->method =
+		choose_method((int)obs_data_get_int(settings, "method"),
+			      wgc_supported, monitor.handle);
 
-	capture->monitor = monitor.id;
+	strcpy_s(capture->monitor_id, _countof(capture->monitor_id),
+		 monitor.device_id);
+	strcpy_s(capture->id, _countof(capture->id), monitor.id);
+	strcpy_s(capture->alt_id, _countof(capture->alt_id), monitor.alt_id);
+	strcpy_s(capture->monitor_name, _countof(capture->monitor_name),
+		 monitor.name);
 	capture->handle = monitor.handle;
 
 	capture->capture_cursor = obs_data_get_bool(settings, "capture_cursor");
+	capture->force_sdr = obs_data_get_bool(settings, "force_sdr");
 
 	capture->logged_width = monitor.rect.right - monitor.rect.left;
 	capture->logged_height = monitor.rect.bottom - monitor.rect.top;
@@ -263,16 +416,17 @@ static void duplicator_capture_destroy(void *data)
 static void duplicator_capture_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_int(settings, "method", METHOD_AUTO);
-	obs_data_set_default_int(settings, "monitor", 0);
+	obs_data_set_default_string(settings, "monitor_id", "DUMMY");
 	obs_data_set_default_int(settings, "monitor_wgc", 0);
 	obs_data_set_default_bool(settings, "capture_cursor", true);
+	obs_data_set_default_bool(settings, "force_sdr", false);
 }
 
 static void duplicator_capture_update(void *data, obs_data_t *settings)
 {
 	struct duplicator_capture *mc = data;
 	update_settings(mc, settings);
-	log_settings(mc, mc->monitor, mc->logged_width, mc->logged_height);
+	log_settings(mc, mc->monitor_name, mc->logged_width, mc->logged_height);
 
 	mc->reset_wgc = true;
 }
@@ -299,6 +453,7 @@ static bool load_winrt_imports(struct winrt_exports *exports, void *module,
 	WINRT_IMPORT(winrt_capture_init_monitor);
 	WINRT_IMPORT(winrt_capture_free);
 	WINRT_IMPORT(winrt_capture_active);
+	WINRT_IMPORT(winrt_capture_get_color_space);
 	WINRT_IMPORT(winrt_capture_render);
 	WINRT_IMPORT(winrt_capture_width);
 	WINRT_IMPORT(winrt_capture_height);
@@ -328,7 +483,7 @@ static void *duplicator_capture_create(obs_data_t *settings,
 	}
 
 	update_settings(capture, settings);
-	log_settings(capture, capture->monitor, capture->logged_width,
+	log_settings(capture, capture->monitor_name, capture->logged_width,
 		     capture->logged_height);
 
 	return capture;
@@ -339,7 +494,8 @@ static void reset_capture_data(struct duplicator_capture *capture)
 	struct gs_monitor_info monitor_info = {0};
 	gs_texture_t *texture = gs_duplicator_get_texture(capture->duplicator);
 
-	gs_get_duplicator_monitor_info(capture->dxgi_index, &monitor_info);
+	const int dxgi_index = gs_duplicator_get_monitor_index(capture->handle);
+	gs_get_duplicator_monitor_info(dxgi_index, &monitor_info);
 	if (texture) {
 		capture->width = gs_texture_get_width(texture);
 		capture->height = gs_texture_get_height(texture);
@@ -372,6 +528,11 @@ static void free_capture_data(struct duplicator_capture *capture)
 	capture->y = 0;
 	capture->rot = 0;
 	capture->reset_timeout = 0.0f;
+}
+
+static void update_monitor_handle(struct duplicator_capture *capture)
+{
+	capture->handle = find_monitor(capture->monitor_id).handle;
 }
 
 static void duplicator_capture_tick(void *data, float seconds)
@@ -412,11 +573,27 @@ static void duplicator_capture_tick(void *data, float seconds)
 			capture->reset_timeout += seconds;
 
 			if (capture->reset_timeout >= RESET_INTERVAL_SEC) {
-				capture->capture_winrt =
-					capture->exports
-						.winrt_capture_init_monitor(
+				if (!capture->handle)
+					update_monitor_handle(capture);
+
+				if (capture->handle) {
+					capture->capture_winrt =
+						capture->exports.winrt_capture_init_monitor(
 							capture->capture_cursor,
-							capture->handle);
+							capture->handle,
+							capture->force_sdr);
+					if (!capture->capture_winrt) {
+						update_monitor_handle(capture);
+
+						if (capture->handle) {
+							capture->capture_winrt =
+								capture->exports.winrt_capture_init_monitor(
+									capture->capture_cursor,
+									capture->handle,
+									capture->force_sdr);
+						}
+					}
+				}
 
 				capture->reset_timeout = 0.0f;
 			}
@@ -432,8 +609,29 @@ static void duplicator_capture_tick(void *data, float seconds)
 			capture->reset_timeout += seconds;
 
 			if (capture->reset_timeout >= RESET_INTERVAL_SEC) {
-				capture->duplicator = gs_duplicator_create(
-					capture->dxgi_index);
+				if (!capture->handle)
+					update_monitor_handle(capture);
+
+				if (capture->handle) {
+					int dxgi_index =
+						gs_duplicator_get_monitor_index(
+							capture->handle);
+
+					if (dxgi_index == -1) {
+						update_monitor_handle(capture);
+
+						if (capture->handle) {
+							dxgi_index = gs_duplicator_get_monitor_index(
+								capture->handle);
+						}
+					}
+
+					if (dxgi_index != -1) {
+						capture->duplicator =
+							gs_duplicator_create(
+								dxgi_index);
+					}
+				}
 
 				capture->reset_timeout = 0.0f;
 			}
@@ -456,8 +654,6 @@ static void duplicator_capture_tick(void *data, float seconds)
 
 	if (!capture->showing)
 		capture->showing = true;
-
-	UNUSED_PARAMETER(seconds);
 }
 
 static uint32_t duplicator_capture_width(void *data)
@@ -541,13 +737,51 @@ static void duplicator_capture_render(void *data, gs_effect_t *unused)
 			gs_matrix_rotaa4f(0.0f, 0.0f, 1.0f, RAD((float)rot));
 		}
 
+		const char *tech_name = "Draw";
+		float multiplier = 1.f;
+		const enum gs_color_space current_space = gs_get_color_space();
+		if (gs_duplicator_get_color_space(capture->duplicator) ==
+		    GS_CS_709_SCRGB) {
+			if (capture->force_sdr) {
+				tech_name = "DrawMultiply";
+				const float target_nits =
+					(current_space == GS_CS_709_SCRGB)
+						? obs_get_video_sdr_white_level()
+						: 80.f;
+				multiplier = target_nits /
+					     gs_duplicator_get_sdr_white_level(
+						     capture->duplicator);
+			} else {
+				switch (current_space) {
+				case GS_CS_SRGB:
+				case GS_CS_SRGB_16F:
+					tech_name = "DrawMultiplyTonemap";
+					multiplier =
+						80.f /
+						obs_get_video_sdr_white_level();
+					break;
+				case GS_CS_709_EXTENDED:
+					tech_name = "DrawMultiply";
+					multiplier =
+						80.f /
+						obs_get_video_sdr_white_level();
+				}
+			}
+		} else if (current_space == GS_CS_709_SCRGB) {
+			tech_name = "DrawMultiply";
+			multiplier = obs_get_video_sdr_white_level() / 80.f;
+		}
+
 		gs_effect_t *const opaque_effect =
 			obs_get_base_effect(OBS_EFFECT_OPAQUE);
-		while (gs_effect_loop(opaque_effect, "Draw")) {
-			gs_eparam_t *image = gs_effect_get_param_by_name(
-				opaque_effect, "image");
-			gs_effect_set_texture_srgb(image, texture);
+		gs_eparam_t *multiplier_param = gs_effect_get_param_by_name(
+			opaque_effect, "multiplier");
+		gs_effect_set_float(multiplier_param, multiplier);
+		gs_eparam_t *image_param =
+			gs_effect_get_param_by_name(opaque_effect, "image");
+		gs_effect_set_texture_srgb(image_param, texture);
 
+		while (gs_effect_loop(opaque_effect, tech_name)) {
 			gs_draw_sprite(texture, 0, 0, 0);
 		}
 
@@ -574,37 +808,42 @@ static BOOL CALLBACK enum_monitor_props(HMONITOR handle, HDC hdc, LPRECT rect,
 	UNUSED_PARAMETER(hdc);
 	UNUSED_PARAMETER(rect);
 
-	obs_property_t *monitor_list = (obs_property_t *)param;
-	MONITORINFO mi;
-	size_t monitor_id = 0;
-	struct dstr monitor_desc = {0};
-	struct dstr resolution = {0};
-	struct dstr format_string = {0};
+	char monitor_name[64];
+	GetMonitorName(handle, monitor_name, sizeof(monitor_name));
 
-	monitor_id = obs_property_list_item_count(monitor_list);
-
+	MONITORINFOEXA mi;
 	mi.cbSize = sizeof(mi);
-	GetMonitorInfo(handle, &mi);
+	if (GetMonitorInfoA(handle, (LPMONITORINFO)&mi)) {
+		obs_property_t *monitor_list = (obs_property_t *)param;
+		struct dstr monitor_desc = {0};
+		dstr_printf(&monitor_desc, "%s: %dx%d @ %d,%d", monitor_name,
+			    mi.rcMonitor.right - mi.rcMonitor.left,
+			    mi.rcMonitor.bottom - mi.rcMonitor.top,
+			    mi.rcMonitor.left, mi.rcMonitor.top);
+		if (mi.dwFlags == MONITORINFOF_PRIMARY)
+			dstr_catf(&monitor_desc, " (%s)", TEXT_PRIMARY_MONITOR);
 
-	dstr_catf(&resolution, "%dx%d @ %d,%d",
-		  mi.rcMonitor.right - mi.rcMonitor.left,
-		  mi.rcMonitor.bottom - mi.rcMonitor.top, mi.rcMonitor.left,
-		  mi.rcMonitor.top);
+		DISPLAY_DEVICEA device;
+		device.cb = sizeof(device);
+		if (EnumDisplayDevicesA(mi.szDevice, 0, &device,
+					EDD_GET_DEVICE_INTERFACE_NAME)) {
+			obs_property_list_add_string(monitor_list,
+						     monitor_desc.array,
+						     device.DeviceID);
+		} else {
+			blog(LOG_WARNING,
+			     "[duplicator-monitor-capture] EnumDisplayDevices failed for monitor (%s), falling back to szDevice",
+			     monitor_name);
+			obs_property_list_add_string(
+				monitor_list, monitor_desc.array, mi.szDevice);
+		}
 
-	dstr_copy(&format_string, "%s %d: %s");
-	if (mi.dwFlags == MONITORINFOF_PRIMARY) {
-		dstr_catf(&format_string, " (%s)", TEXT_PRIMARY_MONITOR);
+		dstr_free(&monitor_desc);
+	} else {
+		blog(LOG_WARNING,
+		     "[duplicator-monitor-capture] GetMonitorInfo failed for monitor: %s",
+		     monitor_name);
 	}
-
-	dstr_catf(&monitor_desc, format_string.array, TEXT_MONITOR,
-		  monitor_id + 1, resolution.array);
-
-	obs_property_list_add_int(monitor_list, monitor_desc.array,
-				  (int)monitor_id);
-
-	dstr_free(&monitor_desc);
-	dstr_free(&resolution);
-	dstr_free(&format_string);
 
 	return TRUE;
 }
@@ -663,14 +902,44 @@ static obs_properties_t *duplicator_capture_properties(void *data)
 	obs_property_set_modified_callback(p, display_capture_method_changed);
 
 	obs_property_t *monitors = obs_properties_add_list(
-		props, "monitor", TEXT_MONITOR, OBS_COMBO_TYPE_LIST,
-		OBS_COMBO_FORMAT_INT);
+		props, "monitor_id", TEXT_MONITOR, OBS_COMBO_TYPE_LIST,
+		OBS_COMBO_FORMAT_STRING);
 
 	obs_properties_add_bool(props, "capture_cursor", TEXT_CAPTURE_CURSOR);
+	obs_properties_add_bool(props, "force_sdr", TEXT_FORCE_SDR);
 
 	EnumDisplayMonitors(NULL, NULL, enum_monitor_props, (LPARAM)monitors);
 
 	return props;
+}
+
+enum gs_color_space
+duplicator_capture_get_color_space(void *data, size_t count,
+				   const enum gs_color_space *preferred_spaces)
+{
+	enum gs_color_space capture_space = GS_CS_SRGB;
+
+	struct duplicator_capture *capture = data;
+	if (capture->method == METHOD_WGC) {
+		if (capture->capture_winrt) {
+			capture_space =
+				capture->exports.winrt_capture_get_color_space(
+					capture->capture_winrt);
+		}
+	} else if (capture->duplicator && !capture->force_sdr) {
+		capture_space =
+			gs_duplicator_get_color_space(capture->duplicator);
+	}
+
+	enum gs_color_space space = capture_space;
+	for (size_t i = 0; i < count; ++i) {
+		const enum gs_color_space preferred_space = preferred_spaces[i];
+		space = preferred_space;
+		if (preferred_space == capture_space)
+			break;
+	}
+
+	return space;
 }
 
 struct obs_source_info duplicator_capture_info = {
@@ -689,4 +958,5 @@ struct obs_source_info duplicator_capture_info = {
 	.get_defaults = duplicator_capture_defaults,
 	.get_properties = duplicator_capture_properties,
 	.icon_type = OBS_ICON_TYPE_DESKTOP_CAPTURE,
+	.video_get_color_space = duplicator_capture_get_color_space,
 };

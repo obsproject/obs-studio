@@ -22,21 +22,28 @@ void OBSBasicStats::OBSFrontendEvent(enum obs_frontend_event event, void *ptr)
 {
 	OBSBasicStats *stats = reinterpret_cast<OBSBasicStats *>(ptr);
 
-	switch ((int)event) {
+	switch (event) {
 	case OBS_FRONTEND_EVENT_RECORDING_STARTED:
 		stats->StartRecTimeLeft();
 		break;
 	case OBS_FRONTEND_EVENT_RECORDING_STOPPED:
 		stats->ResetRecTimeLeft();
 		break;
+	case OBS_FRONTEND_EVENT_EXIT:
+		// This is only reached when the non-closable (dock) stats
+		// window is being cleaned up. The closable stats window is
+		// already gone by this point as it's deleted on close.
+		obs_frontend_remove_event_callback(OBSFrontendEvent, stats);
+		break;
+	default:
+		break;
 	}
 }
 
 static QString MakeTimeLeftText(int hours, int minutes)
 {
-	return QString::asprintf("%d %s, %d %s", hours,
-				 QT_TO_UTF8(QTStr("Hours")), minutes,
-				 QT_TO_UTF8(QTStr("Minutes")));
+	return QString::asprintf("%d %s, %d %s", hours, Str("Hours"), minutes,
+				 Str("Minutes"));
 }
 
 static QString MakeMissedFramesText(uint32_t total_lagged,
@@ -48,8 +55,8 @@ static QString MakeMissedFramesText(uint32_t total_lagged,
 		     QString::number(num, 'f', 1));
 }
 
-OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
-	: QWidget(parent),
+OBSBasicStats::OBSBasicStats(QWidget *parent, bool closable)
+	: QFrame(parent),
 	  cpu_info(os_cpu_usage_info_start()),
 	  timer(this),
 	  recTimeLeft(this)
@@ -108,13 +115,13 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 
 	/* --------------------------------------------- */
 	QPushButton *closeButton = nullptr;
-	if (closeable)
+	if (closable)
 		closeButton = new QPushButton(QTStr("Close"));
 	QPushButton *resetButton = new QPushButton(QTStr("Reset"));
 	QHBoxLayout *buttonLayout = new QHBoxLayout;
 	buttonLayout->addStretch();
 	buttonLayout->addWidget(resetButton);
-	if (closeable)
+	if (closable)
 		buttonLayout->addWidget(closeButton);
 
 	/* --------------------------------------------- */
@@ -158,7 +165,7 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 	setLayout(mainLayout);
 
 	/* --------------------------------------------- */
-	if (closeable)
+	if (closable)
 		connect(closeButton, &QPushButton::clicked,
 			[this]() { close(); });
 	connect(resetButton, &QPushButton::clicked, [this]() { Reset(); });
@@ -227,13 +234,15 @@ void OBSBasicStats::closeEvent(QCloseEvent *event)
 		config_save_safe(main->Config(), "tmp", nullptr);
 	}
 
+	// This code is only reached when the non-dockable stats window is
+	// manually closed or OBS is exiting.
+	obs_frontend_remove_event_callback(OBSFrontendEvent, this);
+
 	QWidget::closeEvent(event);
 }
 
 OBSBasicStats::~OBSBasicStats()
 {
-	obs_frontend_remove_event_callback(OBSFrontendEvent, this);
-
 	delete shortcutFilter;
 	os_cpu_usage_info_destroy(cpu_info);
 }
@@ -246,13 +255,6 @@ void OBSBasicStats::AddOutputLabels(QString name)
 	ol.droppedFrames = new QLabel(this);
 	ol.megabytesSent = new QLabel(this);
 	ol.bitrate = new QLabel(this);
-
-	int newPointSize = ol.status->font().pointSize();
-	newPointSize *= 13;
-	newPointSize /= 10;
-	QString qss =
-		QString("font-size: %1pt").arg(QString::number(newPointSize));
-	ol.status->setStyleSheet(qss);
 
 	int col = 0;
 	int row = outputLabels.size() + 1;
@@ -459,9 +461,15 @@ void OBSBasicStats::ResetRecTimeLeft()
 
 void OBSBasicStats::RecordingTimeLeft()
 {
+	if (bitrates.empty())
+		return;
+
 	long double averageBitrate =
 		accumulate(bitrates.begin(), bitrates.end(), 0.0) /
 		(long double)bitrates.size();
+	if (averageBitrate == 0)
+		return;
+
 	long double bytesPerSec = (averageBitrate / 8.0l) * 1000.0l;
 	long double secondsUntilFull = (long double)num_bytes / bytesPerSec;
 

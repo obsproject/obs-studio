@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2015 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -22,7 +22,9 @@
 
 using namespace std;
 
-static auto curl_deleter = [](CURL *curl) { curl_easy_cleanup(curl); };
+static auto curl_deleter = [](CURL *curl) {
+	curl_easy_cleanup(curl);
+};
 using Curl = unique_ptr<CURL, decltype(curl_deleter)>;
 
 static size_t string_write(char *ptr, size_t size, size_t nmemb, string &str)
@@ -76,11 +78,6 @@ void RemoteTextThread::run()
 		if (timeoutSec)
 			curl_easy_setopt(curl.get(), CURLOPT_TIMEOUT,
 					 timeoutSec);
-
-#if LIBCURL_VERSION_NUM >= 0x072400
-		// A lot of servers don't yet support ALPN
-		curl_easy_setopt(curl.get(), CURLOPT_SSL_ENABLE_ALPN, 0);
-#endif
 
 		if (!postData.empty()) {
 			curl_easy_setopt(curl.get(), CURLOPT_POSTFIELDS,
@@ -177,10 +174,6 @@ bool GetRemoteFile(const char *url, std::string &str, std::string &error,
 			curl_easy_setopt(curl.get(), CURLOPT_TIMEOUT,
 					 timeoutSec);
 
-#if LIBCURL_VERSION_NUM >= 0x072400
-		// A lot of servers don't yet support ALPN
-		curl_easy_setopt(curl.get(), CURLOPT_SSL_ENABLE_ALPN, 0);
-#endif
 		if (!request_type.empty()) {
 			if (request_type != "GET")
 				curl_easy_setopt(curl.get(),
@@ -217,7 +210,9 @@ bool GetRemoteFile(const char *url, std::string &str, std::string &error,
 		} else if (signature) {
 			for (string &h : header_in_list) {
 				string name = h.substr(0, 13);
-				if (name == "X-Signature: ") {
+				// HTTP headers are technically case-insensitive
+				if (name == "X-Signature: " ||
+				    name == "x-signature: ") {
 					*signature = h.substr(13);
 					break;
 				}

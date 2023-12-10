@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -117,7 +117,7 @@ static inline int newline_size(const char *array)
 
 /* ------------------------------------------------------------------------- */
 
-/* 
+/*
  * A "base" token is one of four things:
  *   1.) A sequence of alpha characters
  *   2.) A sequence of numeric characters

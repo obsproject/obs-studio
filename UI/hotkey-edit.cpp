@@ -59,6 +59,15 @@ void OBSHotkeyEdit::keyPressEvent(QKeyEvent *event)
 	HandleNewKey(new_key);
 }
 
+QVariant OBSHotkeyEdit::inputMethodQuery(Qt::InputMethodQuery query) const
+{
+	if (query == Qt::ImEnabled) {
+		return false;
+	} else {
+		return QLineEdit::inputMethodQuery(query);
+	}
+}
+
 #ifdef __APPLE__
 void OBSHotkeyEdit::keyReleaseEvent(QKeyEvent *event)
 {
@@ -175,7 +184,13 @@ void OBSHotkeyEdit::ClearKey()
 
 void OBSHotkeyEdit::UpdateDuplicationState()
 {
-	if (dupeIcon && dupeIcon->isVisible() != hasDuplicate) {
+	if (!dupeIcon && !hasDuplicate)
+		return;
+
+	if (!dupeIcon)
+		CreateDupeIcon();
+
+	if (dupeIcon->isVisible() != hasDuplicate) {
 		dupeIcon->setVisible(hasDuplicate);
 		update();
 	}
@@ -280,15 +295,11 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 	auto revert = new QPushButton;
 	revert->setProperty("themeID", "revertIcon");
 	revert->setToolTip(QTStr("Revert"));
-	revert->setFixedSize(24, 24);
-	revert->setFlat(true);
 	revert->setEnabled(false);
 
 	auto clear = new QPushButton;
-	clear->setProperty("themeID", "trashIcon");
+	clear->setProperty("themeID", "clearIconSmall");
 	clear->setToolTip(QTStr("Clear"));
-	clear->setFixedSize(24, 24);
-	clear->setFlat(true);
 	clear->setEnabled(!obs_key_combination_is_empty(combo));
 
 	QObject::connect(
@@ -302,15 +313,11 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 	auto add = new QPushButton;
 	add->setProperty("themeID", "addIconSmall");
 	add->setToolTip(QTStr("Add"));
-	add->setFixedSize(24, 24);
-	add->setFlat(true);
 
 	auto remove = new QPushButton;
 	remove->setProperty("themeID", "removeIconSmall");
 	remove->setToolTip(QTStr("Remove"));
 	remove->setEnabled(removeButtons.size() > 0);
-	remove->setFixedSize(24, 24);
-	remove->setFlat(true);
 
 	auto CurrentIndex = [&, remove] {
 		auto res = std::find(begin(removeButtons), end(removeButtons),
@@ -326,7 +333,7 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 			 [&, CurrentIndex] { RemoveEdit(CurrentIndex()); });
 
 	QHBoxLayout *subLayout = new QHBoxLayout;
-	subLayout->setContentsMargins(0, 4, 0, 0);
+	subLayout->setContentsMargins(0, 2, 0, 2);
 	subLayout->addWidget(edit);
 	subLayout->addWidget(revert);
 	subLayout->addWidget(clear);
@@ -432,11 +439,7 @@ static inline void updateStyle(QWidget *widget)
 	widget->update();
 }
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 void OBSHotkeyWidget::enterEvent(QEnterEvent *event)
-#else
-void OBSHotkeyWidget::enterEvent(QEvent *event)
-#endif
 {
 	if (!label)
 		return;
@@ -465,11 +468,7 @@ void OBSHotkeyLabel::highlightPair(bool highlight)
 	updateStyle(this);
 }
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 void OBSHotkeyLabel::enterEvent(QEnterEvent *event)
-#else
-void OBSHotkeyLabel::enterEvent(QEvent *event)
-#endif
 {
 
 	if (!pairPartner)
