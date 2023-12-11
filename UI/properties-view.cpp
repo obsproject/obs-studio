@@ -228,6 +228,25 @@ OBSPropertiesView::OBSPropertiesView(OBSData settings_, void *obj,
 }
 
 OBSPropertiesView::OBSPropertiesView(OBSData settings_, const char *type_,
+				     PropertiesReloadCallback reloadCallback,
+				     PropertiesUpdateCallback callback_,
+				     PropertiesVisualUpdateCb visUpdateCb_,
+				     int minSize_)
+	: VScrollArea(nullptr),
+	  properties(nullptr, obs_properties_destroy),
+	  settings(settings_),
+	  type(type_),
+	  reloadCallback(reloadCallback),
+	  callback(callback_),
+	  visUpdateCb(visUpdateCb_),
+	  minSize(minSize_)
+{
+	setFrameShape(QFrame::NoFrame);
+	QMetaObject::invokeMethod(this, "ReloadProperties",
+				  Qt::QueuedConnection);
+}
+
+OBSPropertiesView::OBSPropertiesView(OBSData settings_, const char *type_,
 				     PropertiesReloadCallback reloadCallback_,
 				     int minSize_)
 	: VScrollArea(nullptr),

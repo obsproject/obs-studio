@@ -168,6 +168,11 @@ public:
 			  int minSize = 0);
 	OBSPropertiesView(OBSData settings, const char *type,
 			  PropertiesReloadCallback reloadCallback,
+			  PropertiesUpdateCallback callback,
+			  PropertiesVisualUpdateCb cb = nullptr,
+			  int minSize = 0);
+	OBSPropertiesView(OBSData settings, const char *type,
+			  PropertiesReloadCallback reloadCallback,
 			  int minSize = 0);
 
 #define obj_constructor(type)                                              \
