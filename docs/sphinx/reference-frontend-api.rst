@@ -932,3 +932,33 @@ Functions
                       This uses the undo action from the first and the redo action from the last action.
 
    .. versionadded:: 29.1
+
+---------------------------------------
+
+.. function:: void *obs_frontend_generate_properties_by_obj(obs_data_t *settings, void *obj, const reload_cb reload, const update_cb update, const visual_update_cb visual_update, bool deferrable)
+
+   Generates properties view widget by object.
+
+   :param settings: Settings of the properties
+   :param obj: Pointer of object setting up properties (source, output, etc.)
+   :param reload: Callback for when the properties are reloaded
+   :param update: Callback for when the properties are updated
+   :param visual_update: Callback for when the properties are visually updated
+   :param deferrable: Set whether the properties are deferrable
+
+   :return: The QWidget of the properties
+
+---------------------------------------
+
+.. function:: void *obs_frontend_generate_properties_by_type(obs_data_t *settings, const char *type, const reload_cb reload, const update_cb update, const visual_update_cb visual_update, bool deferrable)
+
+   Generates properties view widget by ID of object.
+
+   :param settings: Settings of the properties
+   :param type: ID of object (source, output, etc.)
+   :param reload: Callback for when the properties are reloaded
+   :param update: Callback for when the properties are updated
+   :param visual_update: Callback for when the properties are visually updated
+   :param deferrable: Set whether the properties are deferrable
+
+   :return: The QWidget of the properties
