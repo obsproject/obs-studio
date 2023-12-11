@@ -14,6 +14,20 @@
 #include <obs-module.h>
 #include <util/platform.h>
 #include <util/util.hpp>
+#include <obs-frontend-api.h>
+
+static void SaveSettings(const char *filename, obs_data_t *settings)
+{
+	BPtr<char> modulePath =
+		obs_module_get_config_path(obs_current_module(), "");
+
+	os_mkdirs(modulePath);
+
+	BPtr<char> path =
+		obs_module_get_config_path(obs_current_module(), filename);
+
+	obs_data_save_json_safe(settings, path, "tmp", "bak");
+}
 
 AJAOutputUI::AJAOutputUI(QWidget *parent) : QDialog(parent), ui(new Ui_Output)
 {
@@ -66,29 +80,16 @@ void AJAOutputUI::SetupPropertiesView()
 	// Assign an ID to the program output plugin instance for channel usage tracking
 	obs_data_set_string(settings, kUIPropAJAOutputID.id, kProgramOutputID);
 
-	propertiesView = new OBSPropertiesView(
-		settings, "aja_output",
-		(PropertiesReloadCallback)obs_get_output_properties, 170);
+	auto save = [](void * /* data */, obs_data_t *settings) {
+		SaveSettings(kProgramPropsFilename, settings);
+	};
+
+	propertiesView = (QWidget *)obs_frontend_generate_properties_by_type(
+		settings, "aja_output", (reload_cb)obs_get_output_properties,
+		nullptr, (visual_update_cb)save, true);
 
 	ui->propertiesLayout->addWidget(propertiesView);
 	obs_data_release(settings);
-
-	connect(propertiesView, &OBSPropertiesView::Changed, this,
-		&AJAOutputUI::PropertiesChanged);
-}
-
-void AJAOutputUI::SaveSettings(const char *filename, obs_data_t *settings)
-{
-	BPtr<char> modulePath =
-		obs_module_get_config_path(obs_current_module(), "");
-
-	os_mkdirs(modulePath);
-
-	BPtr<char> path =
-		obs_module_get_config_path(obs_current_module(), filename);
-
-	if (settings)
-		obs_data_save_json_safe(settings, path, "tmp", "bak");
 }
 
 void AJAOutputUI::SetupPreviewPropertiesView()
@@ -123,26 +124,23 @@ void AJAOutputUI::SetupPreviewPropertiesView()
 	// Assign an ID to the program output plugin instance for channel usage tracking
 	obs_data_set_string(settings, kUIPropAJAOutputID.id, kPreviewOutputID);
 
-	previewPropertiesView = new OBSPropertiesView(
-		settings, "aja_output",
-		(PropertiesReloadCallback)obs_get_output_properties, 170);
+	auto save = [](void * /* data */, obs_data_t *settings) {
+		SaveSettings(kPreviewPropsFilename, settings);
+	};
+
+	previewPropertiesView =
+		(QWidget *)obs_frontend_generate_properties_by_type(
+			settings, "aja_output",
+			(reload_cb)obs_get_output_properties, nullptr,
+			(visual_update_cb)save, true);
 
 	ui->previewPropertiesLayout->addWidget(previewPropertiesView);
 	obs_data_release(settings);
-
-	connect(previewPropertiesView, &OBSPropertiesView::Changed, this,
-		&AJAOutputUI::PreviewPropertiesChanged);
 }
 
 void AJAOutputUI::on_outputButton_clicked()
 {
-	SaveSettings(kProgramPropsFilename, propertiesView->GetSettings());
 	output_toggle();
-}
-
-void AJAOutputUI::PropertiesChanged()
-{
-	SaveSettings(kProgramPropsFilename, propertiesView->GetSettings());
 }
 
 void AJAOutputUI::OutputStateChanged(bool active)
@@ -160,15 +158,7 @@ void AJAOutputUI::OutputStateChanged(bool active)
 
 void AJAOutputUI::on_previewOutputButton_clicked()
 {
-	SaveSettings(kPreviewPropsFilename,
-		     previewPropertiesView->GetSettings());
 	preview_output_toggle();
-}
-
-void AJAOutputUI::PreviewPropertiesChanged()
-{
-	SaveSettings(kPreviewPropsFilename,
-		     previewPropertiesView->GetSettings());
 }
 
 void AJAOutputUI::PreviewOutputStateChanged(bool active)
@@ -237,11 +227,6 @@ static obs_properties_t *create_misc_props_ui(void *vp)
 	return props;
 }
 
-void AJAOutputUI::MiscPropertiesChanged()
-{
-	SaveSettings(kMiscPropsFilename, miscPropertiesView->GetSettings());
-}
-
 void AJAOutputUI::SetCardManager(aja::CardManager *cm)
 {
 	cardManager = cm;
@@ -263,12 +248,14 @@ void AJAOutputUI::SetupMiscPropertiesView()
 		obs_data_apply(settings, data);
 	}
 
-	miscPropertiesView = new OBSPropertiesView(
-		settings, this, (PropertiesReloadCallback)create_misc_props_ui,
-		nullptr, nullptr, 170);
+	auto save = [](void * /* data */, obs_data_t *settings) {
+		SaveSettings(kPreviewPropsFilename, settings);
+	};
+
+	miscPropertiesView = (QWidget *)obs_frontend_generate_properties_by_obj(
+		settings, this, (reload_cb)create_misc_props_ui, nullptr,
+		(visual_update_cb)save, true);
 
 	ui->miscPropertiesLayout->addWidget(miscPropertiesView);
 	obs_data_release(settings);
-	connect(miscPropertiesView, &OBSPropertiesView::Changed, this,
-		&AJAOutputUI::MiscPropertiesChanged);
 }

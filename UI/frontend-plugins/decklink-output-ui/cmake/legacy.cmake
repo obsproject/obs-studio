@@ -23,26 +23,8 @@ endif()
 target_sources(decklink-output-ui PRIVATE forms/output.ui)
 
 target_sources(
-  decklink-output-ui
-  PRIVATE DecklinkOutputUI.cpp
-          DecklinkOutputUI.h
-          decklink-ui-main.cpp
-          decklink-ui-main.h
-          ${CMAKE_SOURCE_DIR}/UI/double-slider.cpp
-          ${CMAKE_SOURCE_DIR}/UI/double-slider.hpp
-          ${CMAKE_SOURCE_DIR}/UI/plain-text-edit.hpp
-          ${CMAKE_SOURCE_DIR}/UI/plain-text-edit.cpp
-          ${CMAKE_SOURCE_DIR}/UI/properties-view.hpp
-          ${CMAKE_SOURCE_DIR}/UI/properties-view.cpp
-          ${CMAKE_SOURCE_DIR}/UI/properties-view.moc.hpp
-          ${CMAKE_SOURCE_DIR}/UI/qt-wrappers.hpp
-          ${CMAKE_SOURCE_DIR}/UI/qt-wrappers.cpp
-          ${CMAKE_SOURCE_DIR}/UI/spinbox-ignorewheel.cpp
-          ${CMAKE_SOURCE_DIR}/UI/spinbox-ignorewheel.hpp
-          ${CMAKE_SOURCE_DIR}/UI/slider-ignorewheel.cpp
-          ${CMAKE_SOURCE_DIR}/UI/slider-ignorewheel.hpp
-          ${CMAKE_SOURCE_DIR}/UI/vertical-scroll-area.hpp
-          ${CMAKE_SOURCE_DIR}/UI/vertical-scroll-area.cpp)
+  decklink-output-ui PRIVATE DecklinkOutputUI.cpp DecklinkOutputUI.h decklink-ui-main.cpp decklink-ui-main.h
+                             ${CMAKE_SOURCE_DIR}/UI/qt-wrappers.hpp ${CMAKE_SOURCE_DIR}/UI/qt-wrappers.cpp)
 
 target_link_libraries(decklink-output-ui PRIVATE OBS::libobs OBS::frontend-api Qt::Widgets)
 

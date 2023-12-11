@@ -3,21 +3,19 @@
 #include <QDialog>
 
 #include "ui_output.h"
-#include "../../UI/properties-view.hpp"
+#include <obs.hpp>
 
 class DecklinkOutputUI : public QDialog {
 	Q_OBJECT
 private:
-	OBSPropertiesView *propertiesView;
-	OBSPropertiesView *previewPropertiesView;
+	QWidget *propertiesView;
+	QWidget *previewPropertiesView;
 
 public slots:
 	void on_outputButton_clicked();
-	void PropertiesChanged();
 	void OutputStateChanged(bool);
 
 	void on_previewOutputButton_clicked();
-	void PreviewPropertiesChanged();
 	void PreviewOutputStateChanged(bool);
 
 public:
@@ -27,8 +25,5 @@ public:
 	void ShowHideDialog();
 
 	void SetupPropertiesView();
-	void SaveSettings();
-
 	void SetupPreviewPropertiesView();
-	void SavePreviewSettings();
 };

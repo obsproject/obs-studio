@@ -27,23 +27,10 @@ target_sources(
           output-timer.hpp
           tool-helpers.hpp
           output-timer.cpp
-          ${CMAKE_SOURCE_DIR}/UI/double-slider.cpp
-          ${CMAKE_SOURCE_DIR}/UI/double-slider.hpp
-          ${CMAKE_SOURCE_DIR}/UI/horizontal-scroll-area.cpp
-          ${CMAKE_SOURCE_DIR}/UI/horizontal-scroll-area.hpp
-          ${CMAKE_SOURCE_DIR}/UI/properties-view.cpp
-          ${CMAKE_SOURCE_DIR}/UI/properties-view.hpp
-          ${CMAKE_SOURCE_DIR}/UI/properties-view.moc.hpp
-          ${CMAKE_SOURCE_DIR}/UI/qt-wrappers.cpp
-          ${CMAKE_SOURCE_DIR}/UI/qt-wrappers.hpp
-          ${CMAKE_SOURCE_DIR}/UI/spinbox-ignorewheel.cpp
-          ${CMAKE_SOURCE_DIR}/UI/spinbox-ignorewheel.hpp
-          ${CMAKE_SOURCE_DIR}/UI/slider-ignorewheel.cpp
-          ${CMAKE_SOURCE_DIR}/UI/slider-ignorewheel.hpp
-          ${CMAKE_SOURCE_DIR}/UI/vertical-scroll-area.hpp
-          ${CMAKE_SOURCE_DIR}/UI/vertical-scroll-area.cpp
+          ${CMAKE_SOURCE_DIR}/UI/plain-text-edit.hpp
           ${CMAKE_SOURCE_DIR}/UI/plain-text-edit.cpp
-          ${CMAKE_SOURCE_DIR}/UI/plain-text-edit.hpp)
+          ${CMAKE_SOURCE_DIR}/UI/qt-wrappers.cpp
+          ${CMAKE_SOURCE_DIR}/UI/qt-wrappers.hpp)
 
 target_compile_features(frontend-tools PRIVATE cxx_std_17)
 

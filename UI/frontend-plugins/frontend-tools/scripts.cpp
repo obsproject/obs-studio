@@ -1,6 +1,5 @@
 #include "obs-module.h"
 #include "scripts.hpp"
-#include "../../properties-view.hpp"
 #include "../../qt-wrappers.hpp"
 #include "../../plain-text-edit.hpp"
 
@@ -529,11 +528,9 @@ void ScriptsTool::on_scripts_currentRowChanged(int row)
 
 	OBSDataAutoRelease settings = obs_script_get_settings(script);
 
-	OBSPropertiesView *view = new OBSPropertiesView(
-		settings.Get(), script,
-		(PropertiesReloadCallback)obs_script_get_properties, nullptr,
-		(PropertiesVisualUpdateCb)obs_script_update);
-	view->SetDeferrable(false);
+	QWidget *view = (QWidget *)obs_frontend_generate_properties_by_obj(
+		settings.Get(), script, (reload_cb)obs_script_get_properties,
+		nullptr, (visual_update_cb)obs_script_update, false);
 
 	propertiesView = view;
 
