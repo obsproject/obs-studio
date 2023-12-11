@@ -1261,6 +1261,11 @@ OBSHotkeyWidget {
     margin: 2px 0px;
 }
 
+#hotkeyScrollContents {
+    background: palette(dark);
+    border-radius: 4px;
+}
+
 OBSHotkeyLabel {
     padding: 4px 0px;
 }

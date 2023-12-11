@@ -5886,6 +5886,12 @@
          </item>
          <item>
           <widget class="QScrollArea" name="hotkeyScrollArea">
+           <property name="frameShape">
+            <enum>QFrame::NoFrame</enum>
+           </property>
+           <property name="frameShadow">
+            <enum>QFrame::Plain</enum>
+           </property>
            <property name="widgetResizable">
             <bool>true</bool>
            </property>
