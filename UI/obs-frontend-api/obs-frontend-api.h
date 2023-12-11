@@ -252,6 +252,19 @@ EXPORT void obs_frontend_add_undo_redo_action(
 	const char *name, const undo_redo_cb undo, const undo_redo_cb redo,
 	const char *undo_data, const char *redo_data, bool repeatable);
 
+typedef obs_properties_t *(*reload_cb)(void *obj);
+typedef void (*update_cb)(void *obj, obs_data_t *old_settings,
+			  obs_data_t *new_settings);
+typedef void (*visual_update_cb)(void *obj, obs_data_t *settings);
+EXPORT void *obs_frontend_generate_properties_by_obj(
+	obs_data_t *settings, void *obj, const reload_cb reload,
+	const update_cb update, const visual_update_cb visual_update,
+	bool deferrable);
+EXPORT void *obs_frontend_generate_properties_by_type(
+	obs_data_t *settings, const char *type, const reload_cb reload,
+	const update_cb update, const visual_update_cb visual_update,
+	bool deferrable);
+
 /* ------------------------------------------------------------------------- */
 
 #ifdef __cplusplus

@@ -3,6 +3,7 @@
 #include "qt-wrappers.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-main-outputs.hpp"
+#include "properties-view.hpp"
 
 #include <functional>
 
@@ -745,6 +746,36 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 			[undo](const std::string &data) { undo(data.c_str()); },
 			[redo](const std::string &data) { redo(data.c_str()); },
 			undo_data, redo_data, repeatable);
+	}
+
+	void *obs_frontend_generate_properties_by_obj(
+		obs_data_t *settings, void *obj, const reload_cb reload,
+		const update_cb update, const visual_update_cb visual_update,
+		bool deferrable) override
+	{
+		OBSPropertiesView *view = new OBSPropertiesView(
+			settings, obj, (PropertiesReloadCallback)reload,
+			(PropertiesUpdateCallback)update,
+			(PropertiesVisualUpdateCb)visual_update);
+
+		view->SetDeferrable(deferrable);
+
+		return view;
+	}
+
+	void *obs_frontend_generate_properties_by_type(
+		obs_data_t *settings, const char *type, const reload_cb reload,
+		const update_cb update, const visual_update_cb visual_update,
+		bool deferrable) override
+	{
+		OBSPropertiesView *view = new OBSPropertiesView(
+			settings, type, (PropertiesReloadCallback)reload,
+			(PropertiesUpdateCallback)update,
+			(PropertiesVisualUpdateCb)visual_update);
+
+		view->SetDeferrable(deferrable);
+
+		return view;
 	}
 
 	void on_load(obs_data_t *settings) override

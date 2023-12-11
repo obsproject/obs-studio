@@ -167,6 +167,15 @@ struct obs_frontend_callbacks {
 						       const char *undo_data,
 						       const char *redo_data,
 						       bool repeatable) = 0;
+
+	virtual void *obs_frontend_generate_properties_by_obj(
+		obs_data_t *settings, void *obj, const reload_cb reload,
+		const update_cb update, const visual_update_cb visual_update,
+		bool deferrable) = 0;
+	virtual void *obs_frontend_generate_properties_by_type(
+		obs_data_t *settings, const char *type, const reload_cb reload,
+		const update_cb update, const visual_update_cb visual_update,
+		bool deferrable) = 0;
 };
 
 EXPORT void

@@ -631,3 +631,26 @@ void obs_frontend_add_undo_redo_action(const char *name,
 		c->obs_frontend_add_undo_redo_action(
 			name, undo, redo, undo_data, redo_data, repeatable);
 }
+
+void *obs_frontend_generate_properties_by_obj(
+	obs_data_t *settings, void *obj, const reload_cb reload,
+	const update_cb update, const visual_update_cb visual_update,
+	bool deferrable)
+{
+	return !!callbacks_valid() ? c->obs_frontend_generate_properties_by_obj(
+					     settings, obj, reload, update,
+					     visual_update, deferrable)
+				   : nullptr;
+}
+
+void *obs_frontend_generate_properties_by_type(
+	obs_data_t *settings, const char *type, const reload_cb reload,
+	const update_cb update, const visual_update_cb visual_update,
+	bool deferrable)
+{
+	return !!callbacks_valid()
+		       ? c->obs_frontend_generate_properties_by_type(
+				 settings, type, reload, update, visual_update,
+				 deferrable)
+		       : nullptr;
+}
