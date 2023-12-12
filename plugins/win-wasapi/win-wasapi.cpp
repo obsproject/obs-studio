@@ -161,7 +161,7 @@ class WASAPISource {
 	ComPtr<IAudioCaptureClient> capture;
 
 	obs_source_t *source;
-	obs_source_t *reroute_target;
+	obs_source_t *reroute_target = nullptr;
 	wstring default_id;
 	string device_id;
 	string device_name;
