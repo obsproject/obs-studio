@@ -63,21 +63,22 @@ bool import_python(const char *python_path, python_version_t *python_version)
 	}
 
 	struct dstr lib_candidate_path;
-	dstr_init_copy(&lib_candidate_path, lib_path.array);
+	dstr_init(&lib_candidate_path);
 
 	char cur_version[5];
 	char next_version[5];
 
-	char temp[PATH_MAX];
-
 	snprintf(cur_version, sizeof(cur_version), VERSION_PATTERN,
 		 PY_MAJOR_VERSION_MAX, PY_MINOR_VERSION_MAX);
-	snprintf(temp, sizeof(temp), FILE_PATTERN, cur_version);
 
-	dstr_cat(&lib_candidate_path, temp);
+	struct dstr temp;
+	dstr_init(&temp);
+	dstr_printf(&temp, FILE_PATTERN, cur_version);
 
 	int minor_version = PY_MINOR_VERSION_MAX;
 	do {
+		dstr_printf(&lib_candidate_path, "%s%s", lib_path.array,
+			    temp.array);
 		if (access(lib_candidate_path.array, F_OK) == 0) {
 			lib = os_dlopen(lib_candidate_path.array);
 		}
@@ -90,9 +91,10 @@ bool import_python(const char *python_path, python_version_t *python_version)
 			 PY_MAJOR_VERSION_MAX, minor_version);
 		snprintf(next_version, sizeof(next_version), VERSION_PATTERN,
 			 PY_MAJOR_VERSION_MAX, --minor_version);
-		dstr_replace(&lib_candidate_path, cur_version, next_version);
+		dstr_replace(&temp, cur_version, next_version);
 	} while (minor_version > 5);
 
+	dstr_free(&temp);
 	dstr_free(&lib_candidate_path);
 
 	if (!lib) {
@@ -116,6 +118,7 @@ bool import_python(const char *python_path, python_version_t *python_version)
 
 	IMPORT_FUNC(PyType_Ready);
 	IMPORT_FUNC(PyType_Modified);
+	IMPORT_FUNC(PyType_IsSubtype);
 	IMPORT_FUNC(PyObject_GenericGetAttr);
 	IMPORT_FUNC(PyObject_IsTrue);
 	IMPORT_FUNC(Py_DecRef);

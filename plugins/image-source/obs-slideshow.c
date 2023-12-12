@@ -738,8 +738,10 @@ static void ss_video_tick(void *data, float seconds)
 {
 	struct slideshow *ss = data;
 
+	pthread_mutex_lock(&ss->mutex);
+
 	if (!ss->transition || !ss->slide_time)
-		return;
+		goto finish;
 
 	if (ss->restart_on_activate && ss->use_cut) {
 		ss->elapsed = 0.0f;
@@ -748,11 +750,11 @@ static void ss_video_tick(void *data, float seconds)
 		ss->restart_on_activate = false;
 		ss->use_cut = false;
 		ss->stop = false;
-		return;
+		goto finish;
 	}
 
 	if (ss->pause_on_deactivate || ss->manual || ss->stop || ss->paused)
-		return;
+		goto finish;
 
 	/* ----------------------------------------------------- */
 	/* fade to transparency when the file list becomes empty */
@@ -779,11 +781,14 @@ static void ss_video_tick(void *data, float seconds)
 			else
 				do_transition(ss, false);
 
-			return;
+			goto finish;
 		}
 
 		obs_source_media_next(ss->source);
 	}
+
+finish:
+	pthread_mutex_unlock(&ss->mutex);
 }
 
 static inline bool ss_audio_render_(obs_source_t *transition, uint64_t *ts_out,

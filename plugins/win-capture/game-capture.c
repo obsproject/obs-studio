@@ -17,6 +17,7 @@
 #include "graphics-hook-ver.h"
 #include "cursor-capture.h"
 #include "app-helpers.h"
+#include "audio-helpers.h"
 #include "nt-stuff.h"
 
 #define do_log(level, format, ...)                  \
@@ -117,6 +118,7 @@ struct game_capture_config {
 	bool anticheat_hook;
 	enum hook_rate hook_rate;
 	bool is_10a2_2100pq;
+	bool capture_audio;
 };
 
 typedef DPI_AWARENESS_CONTEXT(WINAPI *PFN_SetThreadDpiAwarenessContext)(
@@ -126,6 +128,7 @@ typedef DPI_AWARENESS_CONTEXT(WINAPI *PFN_GetWindowDpiAwarenessContext)(HWND);
 
 struct game_capture {
 	obs_source_t *source;
+	obs_source_t *audio_source;
 
 	struct cursor_data cursor_data;
 	HANDLE injector_process;
@@ -398,6 +401,13 @@ static void game_capture_destroy(void *data)
 	struct game_capture *gc = data;
 	stop_capture(gc);
 
+	if (gc->audio_source)
+		destroy_audio_source(gc->source, &gc->audio_source);
+
+	signal_handler_t *sh = obs_source_get_signal_handler(gc->source);
+	signal_handler_disconnect(sh, "rename", rename_audio_source,
+				  &gc->audio_source);
+
 	if (gc->hotkey_pair)
 		obs_hotkey_pair_unregister(gc->hotkey_pair);
 
@@ -457,6 +467,7 @@ static inline void get_config(struct game_capture_config *cfg,
 	cfg->is_10a2_2100pq =
 		strcmp(obs_data_get_string(settings, SETTING_RGBA10A2_SPACE),
 		       "2100pq") == 0;
+	cfg->capture_audio = obs_data_get_bool(settings, SETTING_CAPTURE_AUDIO);
 }
 
 static inline int s_cmp(const char *str1, const char *str2)
@@ -592,6 +603,11 @@ static void game_capture_update(void *data, obs_data_t *settings)
 	} else {
 		gc->initial_config = false;
 	}
+
+	/* Linked audio capture source stuff */
+	setup_audio_source(gc->source, &gc->audio_source,
+			   cfg.mode == CAPTURE_MODE_WINDOW ? window : NULL,
+			   cfg.capture_audio, cfg.priority);
 }
 
 extern void wait_for_hook_initialization(void);
@@ -650,6 +666,9 @@ static void *game_capture_create(obs_data_t *settings, obs_source_t *source)
 		ph,
 		"void get_hooked(out bool hooked, out string title, out string class, out string executable)",
 		game_capture_get_hooked, gc);
+
+	signal_handler_connect(sh, "rename", rename_audio_source,
+			       &gc->audio_source);
 
 	game_capture_update(gc, settings);
 	return gc;
@@ -1910,6 +1929,13 @@ static void game_capture_tick(void *data, float seconds)
 
 			signal_handler_signal(sh, "hooked", &data);
 			calldata_free(&data);
+
+			// Update audio capture settings if not in window mode
+			if (gc->audio_source &&
+			    gc->config.mode != CAPTURE_MODE_WINDOW) {
+				reconfigure_audio_source(gc->audio_source,
+							 gc->window);
+			}
 		}
 		if (result != CAPTURE_RETRY && !gc->capturing) {
 			gc->retry_interval =
@@ -2442,6 +2468,12 @@ static obs_properties_t *game_capture_properties(void *data)
 				    OBS_TEXT_INFO);
 	obs_property_set_enabled(p, false);
 
+	if (audio_capture_available()) {
+		p = obs_properties_add_bool(ppts, SETTING_CAPTURE_AUDIO,
+					    TEXT_CAPTURE_AUDIO);
+		obs_property_set_long_description(p, TEXT_CAPTURE_AUDIO_TT);
+	}
+
 	obs_properties_add_bool(ppts, SETTING_COMPATIBILITY,
 				TEXT_SLI_COMPATIBILITY);
 
@@ -2516,11 +2548,20 @@ game_capture_get_color_space(void *data, size_t count,
 	return space;
 }
 
+static void game_capture_enum(void *data, obs_source_enum_proc_t cb,
+			      void *param)
+{
+	struct game_capture *gc = data;
+	if (gc->audio_source)
+		cb(gc->source, gc->audio_source, param);
+}
+
 struct obs_source_info game_capture_info = {
 	.id = "game_capture",
 	.type = OBS_SOURCE_TYPE_INPUT,
-	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
-			OBS_SOURCE_DO_NOT_DUPLICATE | OBS_SOURCE_SRGB,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_AUDIO |
+			OBS_SOURCE_CUSTOM_DRAW | OBS_SOURCE_DO_NOT_DUPLICATE |
+			OBS_SOURCE_SRGB,
 	.get_name = game_capture_name,
 	.create = game_capture_create,
 	.destroy = game_capture_destroy,
@@ -2528,6 +2569,7 @@ struct obs_source_info game_capture_info = {
 	.get_height = game_capture_height,
 	.get_defaults = game_capture_defaults,
 	.get_properties = game_capture_properties,
+	.enum_active_sources = game_capture_enum,
 	.update = game_capture_update,
 	.video_tick = game_capture_tick,
 	.video_render = game_capture_render,

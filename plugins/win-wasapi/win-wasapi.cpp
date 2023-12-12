@@ -161,6 +161,7 @@ class WASAPISource {
 	ComPtr<IAudioCaptureClient> capture;
 
 	obs_source_t *source;
+	obs_source_t *reroute_target;
 	wstring default_id;
 	string device_id;
 	string device_name;
@@ -313,6 +314,12 @@ public:
 
 	bool GetHooked();
 	HWND GetHwnd();
+
+	void SetRerouteTarget(obs_source_t *target)
+	{
+		obs_source_release(reroute_target);
+		reroute_target = obs_source_get_ref(target);
+	}
 };
 
 WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
@@ -507,6 +514,8 @@ void WASAPISource::Stop()
 		rtwq_unlock_work_queue(sampleReady.GetQueueId());
 	else
 		WaitForSingleObject(captureThread, INFINITE);
+
+	obs_source_release(reroute_target);
 }
 
 WASAPISource::~WASAPISource()
@@ -1139,7 +1148,8 @@ bool WASAPISource::ProcessCaptureData()
 					sampleRate);
 		}
 
-		obs_source_output_audio(source, &data);
+		obs_source_output_audio(
+			reroute_target ? reroute_target : source, &data);
 
 		capture->ReleaseBuffer(frames);
 	}
@@ -1513,6 +1523,17 @@ static void wasapi_get_hooked(void *data, calldata_t *cd)
 	}
 }
 
+static void wasapi_reroute_audio(void *data, calldata_t *cd)
+{
+	auto wasapi_source = static_cast<WASAPISource *>(data);
+	if (!wasapi_source)
+		return;
+
+	obs_source_t *target = nullptr;
+	calldata_get_ptr(cd, "target", &target);
+	wasapi_source->SetRerouteTarget(target);
+}
+
 static void *CreateWASAPISource(obs_data_t *settings, obs_source_t *source,
 				SourceType type)
 {
@@ -1538,6 +1559,9 @@ static void *CreateWASAPISource(obs_data_t *settings, obs_source_t *source,
 					ph,
 					"void get_hooked(out bool hooked, out string title, out string class, out string executable)",
 					wasapi_get_hooked, wasapi_source);
+				proc_handler_add(
+					ph, "void reroute_audio(in ptr target)",
+					wasapi_reroute_audio, wasapi_source);
 			}
 			return wasapi_source;
 		}

@@ -2093,6 +2093,11 @@ static void default_raw_video_callback(void *param, struct video_data *frame)
 static bool prepare_audio(struct obs_output *output,
 			  const struct audio_data *old, struct audio_data *new)
 {
+	if ((output->info.flags & OBS_OUTPUT_VIDEO) == 0) {
+		*new = *old;
+		return true;
+	}
+
 	if (!output->video_start_ts) {
 		pthread_mutex_lock(&output->pause.mutex);
 		output->video_start_ts = output->pause.last_video_ts;
