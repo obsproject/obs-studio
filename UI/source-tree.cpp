@@ -157,12 +157,12 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 			std::bind(undo_redo, std::placeholders::_1, id, val),
 			uuid, uuid);
 
-		SignalBlocker sourcesSignalBlocker(this);
+		QSignalBlocker sourcesSignalBlocker(this);
 		obs_sceneitem_set_visible(sceneitem, val);
 	};
 
 	auto setItemLocked = [this](bool checked) {
-		SignalBlocker sourcesSignalBlocker(this);
+		QSignalBlocker sourcesSignalBlocker(this);
 		obs_sceneitem_set_locked(sceneitem, checked);
 	};
 
@@ -447,7 +447,7 @@ void SourceTreeItem::ExitEditModeInternal(bool save)
 	/* ----------------------------------------- */
 	/* rename                                    */
 
-	SignalBlocker sourcesSignalBlocker(this);
+	QSignalBlocker sourcesSignalBlocker(this);
 	std::string prevName(obs_source_get_name(source));
 	std::string scene_uuid =
 		obs_source_get_uuid(main->GetCurrentSceneSource());
@@ -1485,7 +1485,7 @@ void SourceTree::selectionChanged(const QItemSelection &selected,
 				  const QItemSelection &deselected)
 {
 	{
-		SignalBlocker sourcesSignalBlocker(this);
+		QSignalBlocker sourcesSignalBlocker(this);
 		SourceTreeModel *stm = GetStm();
 
 		QModelIndexList selectedIdxs = selected.indexes();
