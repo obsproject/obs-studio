@@ -998,10 +998,6 @@ MuteCheckBox::indicator:unchecked {
     image: url(theme:Dark/settings/audio.svg);
 }
 
-OBSHotkeyLabel[hotkeyPairHover=true] {
-    color: rgb(240,98,146);
-}
-
 /* Label warning/error */
 
 QLabel#warningLabel {

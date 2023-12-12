@@ -994,10 +994,6 @@ MuteCheckBox::indicator:unchecked {
     image: url(theme:Light/settings/audio.svg);
 }
 
-OBSHotkeyLabel[hotkeyPairHover=true] {
-    color: rgb(53,82,222);
-}
-
 /* Label warning/error */
 
 QLabel#warningLabel {
@@ -1271,7 +1267,7 @@ OBSHotkeyLabel {
 }
 
 OBSHotkeyLabel[hotkeyPairHover=true] {
-    color: rgb(53,82,222);
+    color: rgb(192,32,0);
 }
 
 OBSHotkeyWidget QPushButton {

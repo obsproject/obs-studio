@@ -97,7 +97,7 @@ QCheckBox[sourceTreeSubItem=true]::indicator:unchecked {
 }
 
 OBSHotkeyLabel[hotkeyPairHover=true] {
-    color: red;
+    color: rgb(192,64,0);
 }
 
 

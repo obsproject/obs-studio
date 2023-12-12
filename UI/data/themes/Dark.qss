@@ -692,7 +692,7 @@ MuteCheckBox::indicator:unchecked {
 }
 
 OBSHotkeyLabel[hotkeyPairHover=true] {
-    color: red;
+    color: rgb(255,128,0);
 }
 
 /* Group Collapse Checkbox */
