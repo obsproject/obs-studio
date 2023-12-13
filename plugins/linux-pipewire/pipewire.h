@@ -33,6 +33,10 @@ struct obs_pipwire_connect_stream_info {
 	struct {
 		bool cursor_visible;
 	} screencast;
+	struct {
+		const struct spa_rectangle *resolution;
+		const struct spa_fraction *framerate;
+	} video;
 };
 
 obs_pipewire *

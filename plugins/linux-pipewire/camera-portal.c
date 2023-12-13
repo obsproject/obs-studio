@@ -43,6 +43,16 @@ struct camera_portal_source {
 
 	obs_pipewire_stream *obs_pw_stream;
 	char *device_id;
+
+	struct {
+		struct spa_rectangle rect;
+		bool set;
+	} resolution;
+
+	struct {
+		struct spa_fraction fraction;
+		bool set;
+	} framerate;
 };
 
 /* ------------------------------------------------- */
@@ -259,6 +269,8 @@ static bool update_device_id(struct camera_portal_source *camera_source,
 static void stream_camera(struct camera_portal_source *camera_source)
 {
 	struct obs_pipwire_connect_stream_info connect_info;
+	const struct spa_rectangle *resolution = NULL;
+	const struct spa_fraction *framerate = NULL;
 	struct camera_device *device;
 
 	g_clear_pointer(&camera_source->obs_pw_stream,
@@ -273,12 +285,20 @@ static void stream_camera(struct camera_portal_source *camera_source)
 	blog(LOG_INFO, "[camera-portal] streaming camera '%s'",
 	     camera_source->device_id);
 
+	if (camera_source->resolution.set)
+		resolution = &camera_source->resolution.rect;
+	if (camera_source->framerate.set)
+		framerate = &camera_source->framerate.fraction;
+
 	connect_info = (struct obs_pipwire_connect_stream_info){
 		.stream_name = "OBS PipeWire Camera",
 		.stream_properties = pw_properties_new(
 			PW_KEY_MEDIA_TYPE, "Video", PW_KEY_MEDIA_CATEGORY,
 			"Capture", PW_KEY_MEDIA_ROLE, "Camera", NULL),
-	};
+		.video = {
+			.resolution = resolution,
+			.framerate = framerate,
+		}};
 
 	camera_source->obs_pw_stream = obs_pipewire_connect_stream(
 		connection->obs_pw, camera_source->source, device->id,
@@ -1239,11 +1259,18 @@ static const char *pipewire_camera_get_name(void *data)
 static void *pipewire_camera_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct camera_portal_source *camera_source;
+	bool set;
 
 	camera_source = bzalloc(sizeof(struct camera_portal_source));
 	camera_source->source = source;
 	camera_source->device_id =
 		bstrdup(obs_data_get_string(settings, "device_id"));
+	camera_source->framerate.set =
+		parse_framerate(&camera_source->framerate.fraction,
+				obs_data_get_string(settings, "framerate"));
+	camera_source->resolution.set =
+		parse_resolution(&camera_source->resolution.rect,
+				 obs_data_get_string(settings, "resolution"));
 
 	access_camera(camera_source);
 

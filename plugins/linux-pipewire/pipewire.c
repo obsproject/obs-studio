@@ -1215,8 +1215,16 @@ obs_pipewire_stream *obs_pipewire_connect_stream(
 	obs_pw_stream->obs_pw = obs_pw;
 	obs_pw_stream->source = source;
 	obs_pw_stream->cursor.visible = connect_info->screencast.cursor_visible;
-	obs_pw_stream->framerate.set = false;
-	obs_pw_stream->resolution.set = false;
+	obs_pw_stream->framerate.set = connect_info->video.framerate != NULL;
+	obs_pw_stream->resolution.set = connect_info->video.resolution != NULL;
+
+	if (obs_pw_stream->framerate.set)
+		obs_pw_stream->framerate.fraction =
+			*connect_info->video.framerate;
+
+	if (obs_pw_stream->resolution.set)
+		obs_pw_stream->resolution.rect =
+			*connect_info->video.resolution;
 
 	init_format_info(obs_pw_stream);
 
