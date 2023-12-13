@@ -1237,6 +1237,7 @@ obs_pipewire_stream *obs_pipewire_connect_stream(
 	obs_pw_stream = bzalloc(sizeof(obs_pipewire_stream));
 	obs_pw_stream->obs_pw = obs_pw;
 	obs_pw_stream->source = source;
+	obs_pw_stream->cursor.visible = connect_info->screencast.cursor_visible;
 
 	init_format_info(obs_pw_stream);
 
