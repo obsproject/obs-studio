@@ -198,13 +198,15 @@ static void on_pipewire_remote_opened_cb(GObject *source, GAsyncResult *res,
 		.stream_properties = pw_properties_new(
 			PW_KEY_MEDIA_TYPE, "Video", PW_KEY_MEDIA_CATEGORY,
 			"Capture", PW_KEY_MEDIA_ROLE, "Screen", NULL),
+		.screencast =
+			{
+				.cursor_visible = capture->cursor_visible,
+			},
 	};
 
 	capture->obs_pw_stream = obs_pipewire_connect_stream(
 		capture->obs_pw, capture->source, capture->pipewire_node,
 		&connect_info);
-	obs_pipewire_stream_set_cursor_visible(capture->obs_pw_stream,
-					       capture->cursor_visible);
 }
 
 static void open_pipewire_remote(struct screencast_portal_capture *capture)

@@ -31,6 +31,9 @@ typedef struct _obs_pipewire_stream obs_pipewire_stream;
 struct obs_pipwire_connect_stream_info {
 	const char *stream_name;
 	struct pw_properties *stream_properties;
+	struct {
+		bool cursor_visible;
+	} screencast;
 };
 
 obs_pipewire *obs_pipewire_create(int pipewire_fd);
