@@ -161,7 +161,7 @@ class WASAPISource {
 	ComPtr<IAudioCaptureClient> capture;
 
 	obs_source_t *source;
-	obs_source_t *reroute_target = nullptr;
+	obs_weak_source_t *reroute_target = nullptr;
 	wstring default_id;
 	string device_id;
 	string device_name;
@@ -317,8 +317,8 @@ public:
 
 	void SetRerouteTarget(obs_source_t *target)
 	{
-		obs_source_release(reroute_target);
-		reroute_target = obs_source_get_ref(target);
+		obs_weak_source_release(reroute_target);
+		reroute_target = obs_source_get_weak_source(target);
 	}
 };
 
@@ -515,7 +515,7 @@ void WASAPISource::Stop()
 	else
 		WaitForSingleObject(captureThread, INFINITE);
 
-	obs_source_release(reroute_target);
+	obs_weak_source_release(reroute_target);
 }
 
 WASAPISource::~WASAPISource()
@@ -1148,8 +1148,17 @@ bool WASAPISource::ProcessCaptureData()
 					sampleRate);
 		}
 
-		obs_source_output_audio(
-			reroute_target ? reroute_target : source, &data);
+		if (reroute_target) {
+			obs_source_t *target =
+				obs_weak_source_get_source(reroute_target);
+
+			if (target) {
+				obs_source_output_audio(target, &data);
+				obs_source_release(target);
+			}
+		} else {
+			obs_source_output_audio(source, &data);
+		}
 
 		capture->ReleaseBuffer(frames);
 	}
