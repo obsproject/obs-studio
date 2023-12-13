@@ -83,12 +83,12 @@ void WHIPOutput::Data(struct encoder_packet *packet)
 		return;
 	}
 
-	if (packet->type == OBS_ENCODER_AUDIO) {
+	if (audio_track && packet->type == OBS_ENCODER_AUDIO) {
 		int64_t duration = packet->dts_usec - last_audio_timestamp;
 		Send(packet->data, packet->size, duration, audio_track,
 		     audio_sr_reporter);
 		last_audio_timestamp = packet->dts_usec;
-	} else if (packet->type == OBS_ENCODER_VIDEO) {
+	} else if (video_track && packet->type == OBS_ENCODER_VIDEO) {
 		int64_t duration = packet->dts_usec - last_video_timestamp;
 		Send(packet->data, packet->size, duration, video_track,
 		     video_sr_reporter);
@@ -99,6 +99,12 @@ void WHIPOutput::Data(struct encoder_packet *packet)
 void WHIPOutput::ConfigureAudioTrack(std::string media_stream_id,
 				     std::string cname)
 {
+	if (!obs_output_get_audio_encoder(output, 0)) {
+		do_log(LOG_DEBUG,
+		       "Not configuring audio track: Audio encoder not assigned");
+		return;
+	}
+
 	auto media_stream_track_id = std::string(media_stream_id + "-audio");
 
 	uint32_t ssrc = base_ssrc;
@@ -125,6 +131,12 @@ void WHIPOutput::ConfigureAudioTrack(std::string media_stream_id,
 void WHIPOutput::ConfigureVideoTrack(std::string media_stream_id,
 				     std::string cname)
 {
+	if (!obs_output_get_video_encoder(output)) {
+		do_log(LOG_DEBUG,
+		       "Not configuring video track: Video encoder not assigned");
+		return;
+	}
+
 	auto media_stream_track_id = std::string(media_stream_id + "-video");
 	std::shared_ptr<rtc::RtpPacketizer> packetizer;
 
@@ -590,10 +602,11 @@ void WHIPOutput::Send(void *data, uintptr_t size, uint64_t duration,
 
 void register_whip_output()
 {
-	struct obs_output_info info = {};
+	const uint32_t base_flags = OBS_OUTPUT_ENCODED | OBS_OUTPUT_SERVICE;
 
+	struct obs_output_info info = {};
 	info.id = "whip_output";
-	info.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_SERVICE;
+	info.flags = OBS_OUTPUT_AV | base_flags;
 	info.get_name = [](void *) -> const char * {
 		return obs_module_text("Output.Name");
 	};
@@ -629,5 +642,13 @@ void register_whip_output()
 	info.encoded_audio_codecs = "opus";
 	info.protocols = "WHIP";
 
+	obs_register_output(&info);
+
+	info.id = "whip_output_video";
+	info.flags = OBS_OUTPUT_VIDEO | base_flags;
+	obs_register_output(&info);
+
+	info.id = "whip_output_audio";
+	info.flags = OBS_OUTPUT_AUDIO | base_flags;
 	obs_register_output(&info);
 }
