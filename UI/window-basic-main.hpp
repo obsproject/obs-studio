@@ -461,6 +461,7 @@ private:
 
 	void InitDefaultTransitions();
 	void InitTransition(obs_source_t *transition);
+	void DeinitTransition(obs_source_t *transition);
 	obs_source_t *FindTransition(const char *name);
 	OBSSource GetCurrentTransition();
 	obs_data_array_t *SaveTransitions();
@@ -719,6 +720,8 @@ public slots:
 	void SaveProjectDeferred();
 	void SaveProject();
 
+	void AddTransitionInstance(OBSSource transition);
+	void RemoveTransitionInstance(OBSSource transition);
 	void SetTransition(OBSSource transition);
 	void OverrideTransition(OBSSource transition);
 	void TransitionToScene(OBSScene scene, bool force = false);
@@ -767,6 +770,7 @@ private slots:
 
 	void AddTransition(const char *id);
 	void RenameTransition(OBSSource transition);
+	void TransitionWasRenamed(OBSSource transition);
 	void TransitionClicked();
 	void TransitionStopped();
 	void TransitionFullyStopped();

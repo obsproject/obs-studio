@@ -309,6 +309,24 @@ Functions
 
 ---------------------------------------
 
+.. function:: void obs_frontend_add_transition(obs_source_t *transition)
+
+   :param transition: The transition to add to the frontend's transition list.
+                      This source should be created with
+                      :c:func:`obs_source_create_private()` to ensure behavior is
+                      consistent with the transitions created by a user.
+                      The transition can be safely renamed with
+                      :c:func:`obs_source_set_name()`
+
+---------------------------------------
+
+.. function:: void obs_frontend_remove_transition(obs_source_t *transition)
+
+   :param transition: The transition that should be removed from the frontend's
+                      transition list
+
+---------------------------------------
+
 .. function:: void obs_frontend_get_transitions(struct obs_frontend_source_list *sources)
 
    :param sources: Pointer to a :c:type:`obs_frontend_source_list`

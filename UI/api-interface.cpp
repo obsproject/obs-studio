@@ -110,6 +110,20 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		}
 	}
 
+	void obs_frontend_add_transition(obs_source_t *transition) override
+	{
+		QMetaObject::invokeMethod(main, "AddTransitionInstance",
+					  Q_ARG(OBSSource,
+						OBSSource(transition)));
+	}
+
+	void obs_frontend_remove_transition(obs_source_t *transition) override
+	{
+		QMetaObject::invokeMethod(main, "RemoveTransitionInstance",
+					  Q_ARG(OBSSource,
+						OBSSource(transition)));
+	}
+
 	void obs_frontend_get_transitions(
 		struct obs_frontend_source_list *sources) override
 	{
