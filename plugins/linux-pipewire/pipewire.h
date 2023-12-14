@@ -28,13 +28,17 @@
 typedef struct _obs_pipewire obs_pipewire;
 typedef struct _obs_pipewire_stream obs_pipewire_stream;
 
+struct obs_pipwire_connect_stream_info {
+	const char *stream_name;
+	struct pw_properties *stream_properties;
+};
+
 obs_pipewire *obs_pipewire_create(int pipewire_fd);
 void obs_pipewire_destroy(obs_pipewire *obs_pw);
 
-obs_pipewire_stream *
-obs_pipewire_connect_stream(obs_pipewire *obs_pw, obs_source_t *source,
-			    int pipewire_node, const char *stream_name,
-			    struct pw_properties *stream_properties);
+obs_pipewire_stream *obs_pipewire_connect_stream(
+	obs_pipewire *obs_pw, obs_source_t *source, int pipewire_node,
+	const struct obs_pipwire_connect_stream_info *connect_info);
 
 void obs_pipewire_stream_show(obs_pipewire_stream *obs_pw_stream);
 void obs_pipewire_stream_hide(obs_pipewire_stream *obs_pw_stream);
