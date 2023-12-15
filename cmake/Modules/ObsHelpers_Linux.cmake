@@ -58,7 +58,12 @@ function(export_target_pkgconf target)
     set(_TARGET_OPTIONS "")
   endif()
 
-  configure_file("${CMAKE_CURRENT_SOURCE_DIR}/pkgconfig/${target}.pc.in" "${target}.pc" @ONLY)
+  configure_file("${CMAKE_CURRENT_SOURCE_DIR}/pkgconfig/${target}.pc.in"
+                 "${CMAKE_CURRENT_SOURCE_DIR}/pkgconfig/${target}.pc.in2" @ONLY)
+  file(
+    GENERATE
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${target}.pc"
+    INPUT "${CMAKE_CURRENT_SOURCE_DIR}/pkgconfig/${target}.pc.in2")
 
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${target}.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
 endfunction()
