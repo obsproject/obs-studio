@@ -487,6 +487,13 @@ static inline bool obs_encoder_initialize_internal(obs_encoder_t *encoder)
 	obs_encoder_shutdown(encoder);
 
 	if (encoder->orig_info.create) {
+		pthread_mutex_lock(&obs->video.mixes_mutex);
+		if (!obs->video.main_mix) {
+			// App is at shutdown state if no main mix
+			pthread_mutex_unlock(&obs->video.mixes_mutex);
+			return false;
+		}
+
 		can_reroute = true;
 		encoder->info = encoder->orig_info;
 		if (!encoder->video)
@@ -494,6 +501,8 @@ static inline bool obs_encoder_initialize_internal(obs_encoder_t *encoder)
 		encoder->context.data = encoder->orig_info.create(
 			encoder->context.settings, encoder);
 		can_reroute = false;
+
+		pthread_mutex_unlock(&obs->video.mixes_mutex);
 	}
 	if (!encoder->context.data)
 		return false;

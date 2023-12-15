@@ -836,6 +836,8 @@ static void obs_free_video(bool full_clean)
 	}
 	if (num_views > 0)
 		blog(LOG_WARNING, "Number of remaining views: %ld", num_views);
+
+	obs->video.main_mix = NULL;
 	pthread_mutex_unlock(&obs->video.mixes_mutex);
 
 	pthread_mutex_destroy(&obs->video.mixes_mutex);
@@ -857,7 +859,6 @@ static void obs_free_video(bool full_clean)
 	pthread_mutex_destroy(&obs->video.task_mutex);
 	pthread_mutex_init_value(&obs->video.task_mutex);
 	circlebuf_free(&obs->video.tasks);
-	obs->video.main_mix = NULL;
 }
 
 static void obs_free_graphics(void)
