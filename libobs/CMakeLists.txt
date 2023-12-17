@@ -311,7 +311,6 @@ set(public_headers
     obs-properties.h
     obs-service.h
     obs-source.h
-    obs-ui.h
     obs.h
     obs.hpp
     util/AlignedNew.hpp
