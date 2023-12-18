@@ -847,6 +847,13 @@ void OBSBasic::Save(const char *file)
 		}
 	}
 
+	if (lastOutputResolution) {
+		OBSDataAutoRelease res = obs_data_create();
+		obs_data_set_int(res, "x", lastOutputResolution->first);
+		obs_data_set_int(res, "y", lastOutputResolution->second);
+		obs_data_set_obj(saveData, "resolution", res);
+	}
+
 	if (!obs_data_save_json_safe(saveData, file, "tmp", "bak"))
 		blog(LOG_ERROR, "Could not save scene data to %s", file);
 }
@@ -1077,6 +1084,7 @@ void OBSBasic::LogScenes()
 void OBSBasic::Load(const char *file)
 {
 	disableSaving++;
+	lastOutputResolution.reset();
 
 	obs_data_t *data = obs_data_create_from_json_file_safe(file, "bak");
 	if (!data) {
@@ -7170,6 +7178,10 @@ inline void OBSBasic::OnActivate(bool force)
 		ui->autoConfigure->setEnabled(false);
 		App()->IncrementSleepInhibition();
 		UpdateProcessPriority();
+
+		struct obs_video_info ovi;
+		obs_get_video_info(&ovi);
+		lastOutputResolution = {ovi.base_width, ovi.base_height};
 
 		TaskbarOverlaySetStatus(TaskbarOverlayStatusActive);
 		if (trayIcon && trayIcon->isVisible()) {
