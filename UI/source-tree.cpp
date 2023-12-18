@@ -2,8 +2,6 @@
 #include "obs-app.hpp"
 #include "source-tree.hpp"
 #include "qt-wrappers.hpp"
-#include "visibility-checkbox.hpp"
-#include "locked-checkbox.hpp"
 #include "platform.hpp"
 
 #include <obs-frontend-api.h>
@@ -80,7 +78,8 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 		iconLabel->setStyleSheet("background: none");
 	}
 
-	vis = new VisibilityCheckBox();
+	vis = new QCheckBox();
+	vis->setProperty("visibilityCheckBox", true);
 	vis->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 	vis->setChecked(sourceVisible);
 	vis->setStyleSheet("background: none");
@@ -88,7 +87,8 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 	vis->setAccessibleDescription(
 		QTStr("Basic.Main.Sources.VisibilityDescription").arg(name));
 
-	lock = new LockedCheckBox();
+	lock = new QCheckBox();
+	lock->setProperty("lockCheckBox", true);
 	lock->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 	lock->setChecked(obs_sceneitem_locked(sceneitem));
 	lock->setStyleSheet("background: none");
