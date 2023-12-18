@@ -21,8 +21,6 @@ target_sources(
           item-widget-helpers.hpp
           lineedit-autoresize.cpp
           lineedit-autoresize.hpp
-          locked-checkbox.cpp
-          locked-checkbox.hpp
           log-viewer.cpp
           log-viewer.hpp
           media-controls.cpp
@@ -60,8 +58,6 @@ target_sources(
           url-push-button.hpp
           vertical-scroll-area.cpp
           vertical-scroll-area.hpp
-          visibility-checkbox.cpp
-          visibility-checkbox.hpp
           visibility-item-widget.cpp
           visibility-item-widget.hpp
           volume-control.cpp
