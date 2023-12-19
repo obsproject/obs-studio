@@ -1593,6 +1593,10 @@ EXPORT void obs_source_set_async_unbuffered(obs_source_t *source,
 					    bool unbuffered);
 EXPORT bool obs_source_async_unbuffered(const obs_source_t *source);
 
+EXPORT void obs_source_set_async_compensation(obs_source_t *source,
+					      bool compensate);
+EXPORT bool obs_source_async_compensation(const obs_source_t *source);
+
 /** Used to decouple audio from video so that audio doesn't attempt to sync up
  * with video.  I.E. Audio acts independently.  Only works when in unbuffered
  * mode. */
