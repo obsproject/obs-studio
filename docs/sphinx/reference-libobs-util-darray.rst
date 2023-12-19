@@ -66,6 +66,15 @@ dynamic array value with a reference (&) operator.  For example:
 
 ---------------------
 
+.. function:: size_t da_alloc_size(v)
+
+   Gets a size of allocated array in bytes.
+
+   :param da: The dynamic array
+   :return:   The allocated size of the dynamic array.
+
+---------------------
+
 .. function:: void *da_end(da)
 
    Gets a pointer to the last value.
@@ -185,6 +194,17 @@ dynamic array value with a reference (&) operator.  For example:
 
 ---------------------
 
+.. function:: void da_insert_array(dst, size_t idx, src, size_t n)
+
+   Inserts one or more items at a given index.
+
+   :param dst: The dynamic array:
+   :param idx: Index where the new item will be inserted
+   :param src: Pointer to the first item to insert
+   :param n:   Number of items to insert
+
+---------------------
+
 .. function:: void da_insert_da(da_dst, size_t idx, da_src)
 
    Inserts a dynamic array in to another dynamic array at a specific
@@ -216,7 +236,8 @@ dynamic array value with a reference (&) operator.  For example:
 
 .. function:: void da_erase_range(da, size_t start_idx, size_t end_idx)
 
-   Erases a range of values.
+   Erases a range of values, including the element at ``start_idx``, but
+   not the one at ``end_idx``.
 
    :param da:        The dynamic array
    :param start_idx: The starting index

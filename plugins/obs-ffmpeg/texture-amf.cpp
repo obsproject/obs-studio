@@ -3,8 +3,6 @@
 #include <obs-module.h>
 #include <obs-avc.h>
 
-#include "obs-ffmpeg-config.h"
-
 #include <unordered_map>
 #include <cstdlib>
 #include <memory>
@@ -14,11 +12,11 @@
 #include <deque>
 #include <map>
 
-#include "external/AMF/include/components/VideoEncoderHEVC.h"
-#include "external/AMF/include/components/VideoEncoderVCE.h"
-#include "external/AMF/include/components/VideoEncoderAV1.h"
-#include "external/AMF/include/core/Factory.h"
-#include "external/AMF/include/core/Trace.h"
+#include <AMF/components/VideoEncoderHEVC.h>
+#include <AMF/components/VideoEncoderVCE.h>
+#include <AMF/components/VideoEncoderAV1.h>
+#include <AMF/core/Factory.h>
+#include <AMF/core/Trace.h>
 
 #include <dxgi.h>
 #include <d3d11.h>
@@ -106,6 +104,7 @@ struct amf_base {
 	AMF_SURFACE_FORMAT amf_format;
 
 	amf_int64 max_throughput = 0;
+	amf_int64 requested_throughput = 0;
 	amf_int64 throughput = 0;
 	int64_t dts_offset = 0;
 	uint32_t cx;
@@ -442,6 +441,8 @@ static inline void refresh_throughput_caps(amf_base *enc, const char *&preset)
 	if (res == AMF_OK) {
 		caps->GetProperty(get_opt_name(CAP_MAX_THROUGHPUT),
 				  &enc->max_throughput);
+		caps->GetProperty(get_opt_name(CAP_REQUESTED_THROUGHPUT),
+				  &enc->requested_throughput);
 	}
 }
 
@@ -457,7 +458,8 @@ static inline void check_preset_compatibility(amf_base *enc,
 			preset = "quality";
 			set_opt(QUALITY_PRESET, get_preset(enc, preset));
 		} else {
-			if (enc->max_throughput < enc->throughput) {
+			if (enc->max_throughput - enc->requested_throughput <
+			    enc->throughput) {
 				preset = "quality";
 				refresh_throughput_caps(enc, preset);
 			}
@@ -469,7 +471,8 @@ static inline void check_preset_compatibility(amf_base *enc,
 			preset = "balanced";
 			set_opt(QUALITY_PRESET, get_preset(enc, preset));
 		} else {
-			if (enc->max_throughput < enc->throughput) {
+			if (enc->max_throughput - enc->requested_throughput <
+			    enc->throughput) {
 				preset = "balanced";
 				refresh_throughput_caps(enc, preset);
 			}
@@ -478,7 +481,8 @@ static inline void check_preset_compatibility(amf_base *enc,
 
 	if (astrcmpi(preset, "balanced") == 0) {
 		if (enc->max_throughput &&
-		    enc->max_throughput < enc->throughput) {
+		    enc->max_throughput - enc->requested_throughput <
+			    enc->throughput) {
 			preset = "speed";
 			refresh_throughput_caps(enc, preset);
 		}
@@ -1068,11 +1072,12 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 {
 	const char *rc = obs_data_get_string(settings, "rate_control");
 	bool cqp = astrcmpi(rc, "CQP") == 0;
+	bool qvbr = astrcmpi(rc, "QVBR") == 0;
 
 	p = obs_properties_get(ppts, "bitrate");
-	obs_property_set_visible(p, !cqp);
+	obs_property_set_visible(p, !cqp && !qvbr);
 	p = obs_properties_get(ppts, "cqp");
-	obs_property_set_visible(p, cqp);
+	obs_property_set_visible(p, cqp || qvbr);
 	return true;
 }
 
@@ -1225,7 +1230,8 @@ static inline int get_avc_profile(obs_data_t *settings)
 static void amf_avc_update_data(amf_base *enc, int rc, int64_t bitrate,
 				int64_t qp)
 {
-	if (rc != AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTANT_QP) {
+	if (rc != AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTANT_QP &&
+	    rc != AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_QUALITY_VBR) {
 		set_avc_property(enc, TARGET_BITRATE, bitrate);
 		set_avc_property(enc, PEAK_BITRATE, bitrate);
 		set_avc_property(enc, VBV_BUFFER_SIZE, bitrate);
@@ -1237,6 +1243,7 @@ static void amf_avc_update_data(amf_base *enc, int rc, int64_t bitrate,
 		set_avc_property(enc, QP_I, qp);
 		set_avc_property(enc, QP_P, qp);
 		set_avc_property(enc, QP_B, qp);
+		set_avc_property(enc, QVBR_QUALITY_LEVEL, qp);
 	}
 }
 
@@ -1253,13 +1260,17 @@ try {
 	int64_t qp = obs_data_get_int(settings, "cqp");
 	const char *rc_str = obs_data_get_string(settings, "rate_control");
 	int rc = get_avc_rate_control(rc_str);
-	AMF_RESULT res;
+	AMF_RESULT res = AMF_OK;
 
 	amf_avc_update_data(enc, rc, bitrate * 1000, qp);
 
+	res = enc->amf_encoder->Flush();
+	if (res != AMF_OK)
+		throw amf_error("AMFComponent::Flush failed", res);
+
 	res = enc->amf_encoder->ReInit(enc->cx, enc->cy);
 	if (res != AMF_OK)
-		throw amf_error("AMFComponent::Init failed", res);
+		throw amf_error("AMFComponent::ReInit failed", res);
 
 	return true;
 
@@ -1363,6 +1374,8 @@ static void amf_avc_create_internal(amf_base *enc, obs_data_t *settings)
 				  &enc->bframes_supported);
 		caps->GetProperty(AMF_VIDEO_ENCODER_CAP_MAX_THROUGHPUT,
 				  &enc->max_throughput);
+		caps->GetProperty(AMF_VIDEO_ENCODER_CAP_REQUESTED_THROUGHPUT,
+				  &enc->requested_throughput);
 	}
 
 	const char *preset = obs_data_get_string(settings, "preset");
@@ -1446,6 +1459,13 @@ try {
 		obs_encoder_set_last_error(encoder, text);
 		throw text;
 	}
+	case VIDEO_FORMAT_P216:
+	case VIDEO_FORMAT_P416: {
+		const char *const text =
+			obs_module_text("AMF.16bitUnsupported");
+		obs_encoder_set_last_error(encoder, text);
+		throw text;
+	}
 	default:
 		switch (voi->colorspace) {
 		case VIDEO_CS_2100_PQ:
@@ -1485,8 +1505,7 @@ static void register_avc()
 	amf_encoder_info.get_defaults = amf_defaults;
 	amf_encoder_info.get_properties = amf_avc_properties;
 	amf_encoder_info.get_extra_data = amf_extra_data;
-	amf_encoder_info.caps = OBS_ENCODER_CAP_PASS_TEXTURE |
-				OBS_ENCODER_CAP_DYN_BITRATE;
+	amf_encoder_info.caps = OBS_ENCODER_CAP_PASS_TEXTURE;
 
 	obs_register_encoder(&amf_encoder_info);
 
@@ -1544,7 +1563,8 @@ static inline int get_hevc_rate_control(const char *rc_str)
 static void amf_hevc_update_data(amf_base *enc, int rc, int64_t bitrate,
 				 int64_t qp)
 {
-	if (rc != AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTANT_QP) {
+	if (rc != AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CONSTANT_QP &&
+	    rc != AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_QUALITY_VBR) {
 		set_hevc_property(enc, TARGET_BITRATE, bitrate);
 		set_hevc_property(enc, PEAK_BITRATE, bitrate);
 		set_hevc_property(enc, VBV_BUFFER_SIZE, bitrate);
@@ -1555,6 +1575,7 @@ static void amf_hevc_update_data(amf_base *enc, int rc, int64_t bitrate,
 	} else {
 		set_hevc_property(enc, QP_I, qp);
 		set_hevc_property(enc, QP_P, qp);
+		set_hevc_property(enc, QVBR_QUALITY_LEVEL, qp);
 	}
 }
 
@@ -1571,13 +1592,17 @@ try {
 	int64_t qp = obs_data_get_int(settings, "cqp");
 	const char *rc_str = obs_data_get_string(settings, "rate_control");
 	int rc = get_hevc_rate_control(rc_str);
-	AMF_RESULT res;
+	AMF_RESULT res = AMF_OK;
 
 	amf_hevc_update_data(enc, rc, bitrate * 1000, qp);
 
+	res = enc->amf_encoder->Flush();
+	if (res != AMF_OK)
+		throw amf_error("AMFComponent::Flush failed", res);
+
 	res = enc->amf_encoder->ReInit(enc->cx, enc->cy);
 	if (res != AMF_OK)
-		throw amf_error("AMFComponent::Init failed", res);
+		throw amf_error("AMFComponent::ReInit failed", res);
 
 	return true;
 
@@ -1683,6 +1708,9 @@ static void amf_hevc_create_internal(amf_base *enc, obs_data_t *settings)
 	if (res == AMF_OK) {
 		caps->GetProperty(AMF_VIDEO_ENCODER_HEVC_CAP_MAX_THROUGHPUT,
 				  &enc->max_throughput);
+		caps->GetProperty(
+			AMF_VIDEO_ENCODER_HEVC_CAP_REQUESTED_THROUGHPUT,
+			&enc->requested_throughput);
 	}
 
 	const bool is10bit = enc->amf_format == AMF_SURFACE_P010;
@@ -1784,6 +1812,13 @@ try {
 	case VIDEO_FORMAT_I010:
 	case VIDEO_FORMAT_P010:
 		break;
+	case VIDEO_FORMAT_P216:
+	case VIDEO_FORMAT_P416: {
+		const char *const text =
+			obs_module_text("AMF.16bitUnsupported");
+		obs_encoder_set_last_error(encoder, text);
+		throw text;
+	}
 	default:
 		switch (voi->colorspace) {
 		case VIDEO_CS_2100_PQ:
@@ -1823,8 +1858,7 @@ static void register_hevc()
 	amf_encoder_info.get_defaults = amf_defaults;
 	amf_encoder_info.get_properties = amf_hevc_properties;
 	amf_encoder_info.get_extra_data = amf_extra_data;
-	amf_encoder_info.caps = OBS_ENCODER_CAP_PASS_TEXTURE |
-				OBS_ENCODER_CAP_DYN_BITRATE;
+	amf_encoder_info.caps = OBS_ENCODER_CAP_PASS_TEXTURE;
 
 	obs_register_encoder(&amf_encoder_info);
 
@@ -1896,7 +1930,8 @@ static inline int get_av1_profile(obs_data_t *settings)
 static void amf_av1_update_data(amf_base *enc, int rc, int64_t bitrate,
 				int64_t cq_value)
 {
-	if (rc != AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_CONSTANT_QP) {
+	if (rc != AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_CONSTANT_QP &&
+	    rc != AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_QUALITY_VBR) {
 		set_av1_property(enc, TARGET_BITRATE, bitrate);
 		set_av1_property(enc, PEAK_BITRATE, bitrate);
 		set_av1_property(enc, VBV_BUFFER_SIZE, bitrate);
@@ -1910,6 +1945,7 @@ static void amf_av1_update_data(amf_base *enc, int rc, int64_t bitrate,
 		}
 	} else {
 		int64_t qp = cq_value * 4;
+		set_av1_property(enc, QVBR_QUALITY_LEVEL, qp / 4);
 		set_av1_property(enc, Q_INDEX_INTRA, qp);
 		set_av1_property(enc, Q_INDEX_INTER, qp);
 	}
@@ -1928,12 +1964,17 @@ try {
 	int64_t cq_level = obs_data_get_int(settings, "cqp");
 	const char *rc_str = obs_data_get_string(settings, "rate_control");
 	int rc = get_av1_rate_control(rc_str);
+	AMF_RESULT res = AMF_OK;
 
 	amf_av1_update_data(enc, rc, bitrate * 1000, cq_level);
 
-	AMF_RESULT res = enc->amf_encoder->ReInit(enc->cx, enc->cy);
+	res = enc->amf_encoder->Flush();
 	if (res != AMF_OK)
-		throw amf_error("AMFComponent::Init failed", res);
+		throw amf_error("AMFComponent::Flush failed", res);
+
+	res = enc->amf_encoder->ReInit(enc->cx, enc->cy);
+	if (res != AMF_OK)
+		throw amf_error("AMFComponent::ReInit failed", res);
 
 	return true;
 
@@ -2008,6 +2049,9 @@ static void amf_av1_create_internal(amf_base *enc, obs_data_t *settings)
 	if (res == AMF_OK) {
 		caps->GetProperty(AMF_VIDEO_ENCODER_AV1_CAP_MAX_THROUGHPUT,
 				  &enc->max_throughput);
+		caps->GetProperty(
+			AMF_VIDEO_ENCODER_AV1_CAP_REQUESTED_THROUGHPUT,
+			&enc->requested_throughput);
 	}
 
 	const bool is10bit = enc->amf_format == AMF_SURFACE_P010;
@@ -2084,6 +2128,13 @@ try {
 	case VIDEO_FORMAT_P010: {
 		break;
 	}
+	case VIDEO_FORMAT_P216:
+	case VIDEO_FORMAT_P416: {
+		const char *const text =
+			obs_module_text("AMF.16bitUnsupported");
+		obs_encoder_set_last_error(encoder, text);
+		throw text;
+	}
 	default:
 		switch (voi->colorspace) {
 		case VIDEO_CS_2100_PQ:
@@ -2132,8 +2183,7 @@ static void register_av1()
 	amf_encoder_info.get_defaults = amf_av1_defaults;
 	amf_encoder_info.get_properties = amf_av1_properties;
 	amf_encoder_info.get_extra_data = amf_extra_data;
-	amf_encoder_info.caps = OBS_ENCODER_CAP_PASS_TEXTURE |
-				OBS_ENCODER_CAP_DYN_BITRATE;
+	amf_encoder_info.caps = OBS_ENCODER_CAP_PASS_TEXTURE;
 
 	obs_register_encoder(&amf_encoder_info);
 

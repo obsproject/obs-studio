@@ -140,7 +140,8 @@ void set_up_vertex_buffer(struct ft2_source *srcdata)
 	next_char:;
 		glyph_index =
 			FT_Get_Char_Index(srcdata->font_face, srcdata->text[i]);
-		word_width += src_glyph->xadv;
+		if (src_glyph)
+			word_width += src_glyph->xadv;
 	eos_skip:;
 	}
 

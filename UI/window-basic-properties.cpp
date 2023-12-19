@@ -63,6 +63,7 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
 	ui->setupUi(this);
+	ui->buttonBox->button(QDialogButtonBox::Ok)->setFocus();
 
 	if (cx > 400 && cy > 400)
 		resize(cx, cy);
@@ -278,12 +279,10 @@ static void CreateTransitionScene(OBSSource scene, const char *text,
 	obs_sceneitem_set_bounds_type(item, OBS_BOUNDS_SCALE_INNER);
 }
 
-void OBSBasicProperties::SourceRemoved(void *data, calldata_t *params)
+void OBSBasicProperties::SourceRemoved(void *data, calldata_t *)
 {
 	QMetaObject::invokeMethod(static_cast<OBSBasicProperties *>(data),
 				  "close");
-
-	UNUSED_PARAMETER(params);
 }
 
 void OBSBasicProperties::SourceRenamed(void *data, calldata_t *params)
@@ -299,6 +298,17 @@ void OBSBasicProperties::UpdateProperties(void *data, calldata_t *)
 {
 	QMetaObject::invokeMethod(static_cast<OBSBasicProperties *>(data)->view,
 				  "ReloadProperties");
+}
+
+static bool ConfirmReset(QWidget *parent)
+{
+	QMessageBox::StandardButton button;
+
+	button = OBSMessageBox::question(parent, QTStr("ConfirmReset.Title"),
+					 QTStr("ConfirmReset.Text"),
+					 QMessageBox::Yes | QMessageBox::No);
+
+	return button == QMessageBox::Yes;
 }
 
 void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
@@ -362,6 +372,9 @@ void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 		close();
 
 	} else if (val == QDialogButtonBox::ResetRole) {
+		if (!ConfirmReset(this))
+			return;
+
 		OBSDataAutoRelease settings = obs_source_get_settings(source);
 		obs_data_clear(settings);
 

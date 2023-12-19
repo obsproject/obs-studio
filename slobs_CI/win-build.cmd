@@ -41,7 +41,7 @@ cmake -H. ^
          -DGPU_PRIORITY_VAL="%GPUPriority%" ^
          -DBUILD_CAPTIONS=false ^
          -DCOMPILE_D3D12_HOOK=true ^
-         -DENABLE_BROWSER=true ^
+         -DENABLE_BROWSER=ON ^
          -DENABLE_BROWSER_PANELS=false ^
          -DENABLE_BROWSER_QT_LOOP=false ^
          -DBROWSER_FRONTEND_API_SUPPORT=false ^
@@ -65,8 +65,8 @@ cmake -H. ^
          -DCURL_INCLUDE_DIR=%DEPS_DIR%/ ^
          -DENABLE_VLC=true ^
          -DVIRTUALCAM_GUID="27B05C2D-93DC-474A-A5DA-9BBA34CB2A9C" ^
-         -DOBS_VERSION="28.0.3" ^
-         -DOBS_VERSION_OVERRIDE="28.0.3"
+         -DOBS_VERSION="29.1.3" ^
+         -DOBS_VERSION_OVERRIDE="29.1.3"
 
 del /q /s %CD%\%InstallPath%
 cmake --build %CD%\%BUILD_DIRECTORY% --config %BuildConfig% -v

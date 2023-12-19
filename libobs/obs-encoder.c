@@ -46,7 +46,7 @@ const char *obs_encoder_get_display_name(const char *id)
 static bool init_encoder(struct obs_encoder *encoder, const char *name,
 			 obs_data_t *settings, obs_data_t *hotkey_data)
 {
-	blog(LOG_INFO, "init_encoder - begin '%s' (%s) (0x%I64X)", name,
+	blog(LOG_INFO, "init_encoder - begin '%s' (%s) (%p)", name,
 	     obs_encoder_get_id(encoder), encoder);
 
 	pthread_mutex_init_value(&encoder->init_mutex);
@@ -55,7 +55,7 @@ static bool init_encoder(struct obs_encoder *encoder, const char *name,
 	pthread_mutex_init_value(&encoder->pause.mutex);
 
 	if (!obs_context_data_init(&encoder->context, OBS_OBJ_TYPE_ENCODER,
-				   settings, name, hotkey_data, false))
+				   settings, name, NULL, hotkey_data, false))
 		return false;
 	if (pthread_mutex_init_recursive(&encoder->init_mutex) != 0)
 		return false;
@@ -74,7 +74,7 @@ static bool init_encoder(struct obs_encoder *encoder, const char *name,
 						 encoder->orig_info.type_data);
 	}
 
-	blog(LOG_INFO, "init_encoder - end '%s' (%s) (0x%I64X)", name,
+	blog(LOG_INFO, "init_encoder - end '%s' (%s) (%p)", name,
 	     obs_encoder_get_id(encoder), encoder);
 
 	return true;
@@ -118,8 +118,7 @@ create_encoder(const char *id, enum obs_encoder_type type, const char *name,
 	obs_context_data_insert(&encoder->context, &obs->data.encoders_mutex,
 				&obs->data.first_encoder);
 
-	blog(LOG_DEBUG, "encoder '%s' (%s) created (0x%I64X)", name, id,
-	     encoder);
+	blog(LOG_DEBUG, "encoder '%s' (%s) created (%p)", name, id, encoder);
 	return encoder;
 }
 
@@ -194,7 +193,7 @@ static inline bool gpu_encode_available(const struct obs_encoder *encoder)
 
 static void add_connection(struct obs_encoder *encoder)
 {
-	blog(LOG_INFO, "add_connection '%s' (%s) (0x%I64X)",
+	blog(LOG_INFO, "add_connection '%s' (%s) (%p)",
 	     obs_encoder_get_name(encoder), obs_encoder_get_id(encoder),
 	     encoder);
 	if (encoder->info.type == OBS_ENCODER_AUDIO) {
@@ -220,7 +219,7 @@ static void add_connection(struct obs_encoder *encoder)
 
 static void remove_connection(struct obs_encoder *encoder, bool shutdown)
 {
-	blog(LOG_INFO, "remove_connection - shutdown: %d '%s' (%s) (0x%I64X)",
+	blog(LOG_INFO, "remove_connection - shutdown: %d '%s' (%s) (%p)",
 	     shutdown, obs_encoder_get_name(encoder),
 	     obs_encoder_get_id(encoder), encoder);
 
@@ -257,19 +256,20 @@ static inline void free_audio_buffers(struct obs_encoder *encoder)
 static void obs_encoder_actually_destroy(obs_encoder_t *encoder)
 {
 	if (encoder) {
-		blog(LOG_INFO,
-		     "obs_encoder_actually_destroy '%s' (%s) (0x%I64X)",
+		blog(LOG_INFO, "obs_encoder_actually_destroy '%s' (%s) (%p)",
 		     obs_encoder_get_name(encoder), obs_encoder_get_id(encoder),
 		     encoder);
 		pthread_mutex_lock(&encoder->outputs_mutex);
 		for (size_t i = 0; i < encoder->outputs.num; i++) {
 			struct obs_output *output = encoder->outputs.array[i];
-			obs_output_remove_encoder(output, encoder);
+			// This happens while the output is still "active", so
+			// remove without checking active
+			obs_output_remove_encoder_internal(output, encoder);
 		}
 		da_free(encoder->outputs);
 		pthread_mutex_unlock(&encoder->outputs_mutex);
 
-		blog(LOG_DEBUG, "encoder '%s' destroyed (0x%I64X)",
+		blog(LOG_DEBUG, "encoder '%s' destroyed (%p)",
 		     encoder->context.name, encoder);
 
 		free_audio_buffers(encoder);
@@ -295,7 +295,7 @@ static void obs_encoder_actually_destroy(obs_encoder_t *encoder)
 void obs_encoder_destroy(obs_encoder_t *encoder)
 {
 	if (encoder) {
-		blog(LOG_INFO, "obs_encoder_destroy '%s' (%s) (0x%I64X)",
+		blog(LOG_INFO, "obs_encoder_destroy '%s' (%s) (%p)",
 		     obs_encoder_get_name(encoder), obs_encoder_get_id(encoder),
 		     encoder);
 
@@ -478,7 +478,7 @@ static inline bool obs_encoder_initialize_internal(obs_encoder_t *encoder)
 	if (encoder->initialized)
 		return true;
 
-	blog(LOG_INFO, "obs_encoder_initialize_internal '%s' (%s) (0x%I64X)",
+	blog(LOG_INFO, "obs_encoder_initialize_internal '%s' (%s) (%p)",
 	     obs_encoder_get_name(encoder), obs_encoder_get_id(encoder),
 	     encoder);
 
@@ -553,7 +553,7 @@ bool obs_encoder_initialize(obs_encoder_t *encoder)
 
 void obs_encoder_shutdown(obs_encoder_t *encoder)
 {
-	blog(LOG_INFO, "obs_encoder_shutdown '%s' (%s) (0x%I64X)",
+	blog(LOG_INFO, "obs_encoder_shutdown '%s' (%s) (%p)",
 	     obs_encoder_get_name(encoder), obs_encoder_get_id(encoder),
 	     encoder);
 
@@ -561,8 +561,7 @@ void obs_encoder_shutdown(obs_encoder_t *encoder)
 	if (encoder->paired_encoder) {
 		pthread_mutex_lock(&encoder->paired_encoder->init_mutex);
 
-		blog(LOG_INFO,
-		     "obs_encoder_shutdown - unpair '%s' (%s) (0x%I64X)",
+		blog(LOG_INFO, "obs_encoder_shutdown - unpair '%s' (%s) (%p)",
 		     obs_encoder_get_name(encoder->paired_encoder),
 		     obs_encoder_get_id(encoder->paired_encoder),
 		     encoder->paired_encoder);
@@ -614,7 +613,7 @@ static inline void obs_encoder_start_internal(
 	void (*new_packet)(void *param, struct encoder_packet *packet),
 	void *param)
 {
-	blog(LOG_INFO, "obs_encoder_start_internal '%s' (%s) (0x%I64X)",
+	blog(LOG_INFO, "obs_encoder_start_internal '%s' (%s) (%p)",
 	     obs_encoder_get_name(encoder), obs_encoder_get_id(encoder),
 	     encoder);
 	struct encoder_callback cb = {false, new_packet, param};
@@ -662,7 +661,7 @@ static inline bool obs_encoder_stop_internal(
 	void (*new_packet)(void *param, struct encoder_packet *packet),
 	void *param)
 {
-	blog(LOG_INFO, "obs_encoder_stop_internal '%s' (%s) (0x%I64X)",
+	blog(LOG_INFO, "obs_encoder_stop_internal '%s' (%s) (%p)",
 	     obs_encoder_get_name(encoder), obs_encoder_get_id(encoder),
 	     encoder);
 	bool last = false;
@@ -753,6 +752,18 @@ void obs_encoder_set_scaled_size(obs_encoder_t *encoder, uint32_t width,
 		     "encoder '%s': Cannot set the scaled "
 		     "resolution while the encoder is active",
 		     obs_encoder_get_name(encoder));
+		return;
+	}
+
+	const struct video_output_info *voi;
+	voi = video_output_get_info(encoder->media);
+	if (voi && voi->width == width && voi->height == height) {
+		blog(LOG_WARNING,
+		     "encoder '%s': Scaled resolution "
+		     "matches output resolution, scaling "
+		     "disabled",
+		     obs_encoder_get_name(encoder));
+		encoder->scaled_width = encoder->scaled_height = 0;
 		return;
 	}
 

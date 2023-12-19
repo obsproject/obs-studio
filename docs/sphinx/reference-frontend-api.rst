@@ -226,6 +226,10 @@ Structures/Enumerations
 
    Translation callback
 
+.. type::  void (*undo_redo_cb)(const char *data)
+
+   Undo redo callback
+
 
 Functions
 ---------
@@ -255,7 +259,8 @@ Functions
    :return: The scene name list, ending with NULL.  The list is stored
             within one contiguous segment of memory, so freeing the
             returned pointer with :c:func:`bfree()` will free the entire
-            list.
+            list. The order is same as the way the frontend displays it in
+            the Scenes dock.
 
 ---------------------------------------
 
@@ -264,7 +269,8 @@ Functions
    :param sources: Pointer to a :c:type:`obs_frontend_source_list`
                    structure to receive the list of
                    reference-incremented scenes.  Release with
-                   :c:func:`obs_frontend_source_list_free`
+                   :c:func:`obs_frontend_source_list_free`. The order is same as
+                   the way the frontend displays it in the Scenes dock.
 
 ---------------------------------------
 
@@ -339,7 +345,7 @@ Functions
 
 .. function:: char **obs_frontend_get_scene_collections(void)
 
-   :return: The list of profile names, ending with NULL.  The list is
+   :return: The list of scene collection names, ending with NULL.  The list is
             stored within one contiguous segment of memory, so freeing
             the returned pointer with :c:func:`bfree()` will free the
             entire list.
@@ -794,6 +800,14 @@ Functions
 
 ---------------------------------------
 
+.. function:: void *obs_frontend_open_sceneitem_edit_transform(obs_sceneitem_t *item)
+
+   Opens the edit transform window of the specified sceneitem.
+
+   :param item: The sceneitem to open the edit transform window of
+
+---------------------------------------
+
 .. function:: char *obs_frontend_get_current_record_output_path(void)
 
    :return: A new pointer to the current record output path.  Free
@@ -838,3 +852,15 @@ Functions
             :c:func:`bfree()`
 
    .. versionadded:: 29.0.0
+
+---------------------------------------
+
+.. function:: void obs_frontend_add_undo_redo_action(const char *name, const undo_redo_cb undo, const undo_redo_cb redo, const char *undo_data, const char *redo_data, bool repeatable)
+
+   :param name: The name of the undo redo action
+   :param undo: Callback to use for undo
+   :param redo: Callback to use for redo
+   :param undo_data: String with data for the undo callback
+   :param redo_data: String with data for the redo callback
+   :param repeatable: Allow multiple actions with the same name to be merged to 1 undo redo action.
+                      This uses the undo action from the first and the redo action from the last action.

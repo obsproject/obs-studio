@@ -19,7 +19,7 @@
 
 static void *gpu_encode_thread(struct obs_core_video_mix *video)
 {
-	blog(LOG_INFO, "gpu_encode_thread (0x%I64X)", video);
+	blog(LOG_INFO, "gpu_encode_thread (%p)", video);
 	uint64_t interval = video_output_get_frame_time(video->video);
 	DARRAY(obs_encoder_t *) encoders;
 	int wait_frames = NUM_ENCODE_TEXTURE_FRAMES_TO_WAIT;
@@ -151,7 +151,7 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 
 bool init_gpu_encoding(struct obs_core_video_mix *video)
 {
-	blog(LOG_INFO, "init_gpu_encoding - begin (0x%I64X)", video);
+	blog(LOG_INFO, "init_gpu_encoding - begin (%p)", video);
 #ifdef _WIN32
 	const struct video_output_info *info =
 		video_output_get_info(video->video);
@@ -207,20 +207,18 @@ bool init_gpu_encoding(struct obs_core_video_mix *video)
 void stop_gpu_encoding_thread(struct obs_core_video_mix *video)
 {
 	if (video->gpu_encode_thread_initialized) {
-		blog(LOG_INFO, "stop_gpu_encoding_thread - begin (0x%I64X)",
-		     video);
+		blog(LOG_INFO, "stop_gpu_encoding_thread - begin (%p)", video);
 		os_atomic_set_bool(&video->gpu_encode_stop, true);
 		os_sem_post(video->gpu_encode_semaphore);
 		pthread_join(video->gpu_encode_thread, NULL);
 		video->gpu_encode_thread_initialized = false;
-		blog(LOG_INFO, "stop_gpu_encoding_thread - end (0x%I64X)",
-		     video);
+		blog(LOG_INFO, "stop_gpu_encoding_thread - end (%p)", video);
 	}
 }
 
 void free_gpu_encoding(struct obs_core_video_mix *video)
 {
-	blog(LOG_INFO, "free_gpu_encoding - begin (0x%I64X)", video);
+	blog(LOG_INFO, "free_gpu_encoding - begin (%p)", video);
 	if (video->gpu_encode_semaphore) {
 		os_sem_destroy(video->gpu_encode_semaphore);
 		video->gpu_encode_semaphore = NULL;
@@ -244,5 +242,5 @@ void free_gpu_encoding(struct obs_core_video_mix *video)
 	free_circlebuf(video->gpu_encoder_queue);
 	free_circlebuf(video->gpu_encoder_avail_queue);
 #undef free_circlebuf
-	blog(LOG_INFO, "free_gpu_encoding - end (0x%I64X)", video);
+	blog(LOG_INFO, "free_gpu_encoding - end (%p)", video);
 }

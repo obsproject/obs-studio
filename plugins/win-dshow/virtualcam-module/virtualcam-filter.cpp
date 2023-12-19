@@ -14,17 +14,10 @@ extern volatile long locks;
 
 /* ========================================================================= */
 
-VCamFilter::VCamFilter()
-	: OutputFilter(VideoFormat::NV12, DEFAULT_CX, DEFAULT_CY,
-		       DEFAULT_INTERVAL)
+VCamFilter::VCamFilter() : OutputFilter()
 {
 	thread_start = CreateEvent(nullptr, true, false, nullptr);
 	thread_stop = CreateEvent(nullptr, true, false, nullptr);
-
-	AddVideoFormat(VideoFormat::I420, DEFAULT_CX, DEFAULT_CY,
-		       DEFAULT_INTERVAL);
-	AddVideoFormat(VideoFormat::YUY2, DEFAULT_CX, DEFAULT_CY,
-		       DEFAULT_INTERVAL);
 
 	format = VideoFormat::NV12;
 

@@ -15,7 +15,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 #include "ffmpeg-mux/ffmpeg-mux.h"
-#include "obs-internal.h"
 #include "obs-ffmpeg-mux.h"
 #include "obs-ffmpeg-formats.h"
 
@@ -323,7 +322,9 @@ static void build_command_line(struct ffmpeg_muxer *stream, struct dstr *cmd,
 		add_video_encoder_params(stream, cmd, vencoder);
 
 	if (num_tracks) {
-		dstr_cat(cmd, "aac ");
+		const char *codec = obs_encoder_get_codec(aencoders[0]);
+		dstr_cat(cmd, codec);
+		dstr_cat(cmd, " ");
 
 		for (int i = 0; i < num_tracks; i++) {
 			add_audio_encoder_params(cmd, aencoders[i]);
@@ -429,7 +430,8 @@ static inline bool ffmpeg_mux_start_internal(struct ffmpeg_muxer *stream,
 		service = obs_output_get_service(stream->output);
 		if (!service)
 			return false;
-		path = obs_service_get_url(service);
+		path = obs_service_get_connect_info(
+			service, OBS_SERVICE_CONNECT_INFO_SERVER_URL);
 		stream->split_file = false;
 	} else {
 
@@ -539,8 +541,8 @@ int deactivate(struct ffmpeg_muxer *stream, int code)
 
 	os_atomic_set_bool(&stream->stopping, false);
 
-	if (strcmp(stream->output->info.id, "ffmpeg_muxer") == 0)
-		do_output_signal(stream->output, "wrote");
+	if (strcmp("ffmpeg_muxer", obs_output_get_id(stream->output)) == 0)
+		obs_output_signal_write(stream->output, "wrote");
 	return ret;
 }
 
@@ -966,8 +968,9 @@ struct obs_output_info ffmpeg_mpegts_muxer = {
 	.id = "ffmpeg_mpegts_muxer",
 	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_MULTI_TRACK |
 		 OBS_OUTPUT_SERVICE,
-	.encoded_video_codecs = "h264;av1",
-	.encoded_audio_codecs = "aac",
+	.protocols = "SRT;RIST",
+	.encoded_video_codecs = "h264",
+	.encoded_audio_codecs = "aac;opus",
 	.get_name = ffmpeg_mpegts_mux_getname,
 	.create = ffmpeg_mux_create,
 	.destroy = ffmpeg_mux_destroy,
@@ -1175,14 +1178,14 @@ static void *replay_buffer_mux_thread(void *data)
 	struct ffmpeg_muxer *stream = data;
 	int ret = 0;
 
-	do_output_signal(stream->output, "writing");
+	obs_output_signal_write(stream->output, "writing");
 	bool error = false;
 
 	start_pipe(stream, stream->path.array);
 
 	if (!stream->pipe) {
 		warn("Failed to create process pipe");
-		do_output_signal(stream->output, "writing_error");
+		obs_output_signal_write(stream->output, "writing_error");
 		hasFailed = true;
 		error = true;
 		goto error;
@@ -1191,7 +1194,7 @@ static void *replay_buffer_mux_thread(void *data)
 	if (!send_headers(stream)) {
 		warn("Could not write headers for file '%s'",
 		     stream->path.array);
-		do_output_signal(stream->output, "writing_error");
+		obs_output_signal_write(stream->output, "writing_error");
 		hasFailed = true;
 		error = true;
 		goto error;
@@ -1202,6 +1205,8 @@ static void *replay_buffer_mux_thread(void *data)
 
 		if (!hasFailed) {
 			hasFailed = !write_packet(stream, pkt);
+			if (hasFailed)
+				error = true;
 		}
 
 		obs_encoder_packet_release(pkt);
@@ -1224,7 +1229,7 @@ error:
 	if (ret < 0) {
 		signal_failure(stream);
 	} else if (!hasFailed) {
-		do_output_signal(stream->output, "wrote");
+		obs_output_signal_write(stream->output, "wrote");
 	}
 
 	if (!error) {

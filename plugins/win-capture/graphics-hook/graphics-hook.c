@@ -244,8 +244,6 @@ static inline bool init_hook(HANDLE thread_handle)
 	_snwprintf(keepalive_name, sizeof(keepalive_name) / sizeof(wchar_t),
 		   L"%s%lu", WINDOW_HOOK_KEEPALIVE, GetCurrentProcessId());
 
-	init_pipe();
-
 	init_dummy_window_thread();
 	log_current_process();
 

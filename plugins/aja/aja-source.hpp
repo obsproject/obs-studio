@@ -1,6 +1,7 @@
 #pragma once
 
 #include "aja-props.hpp"
+#include "audio-repack.hpp"
 
 #include <obs-module.h>
 

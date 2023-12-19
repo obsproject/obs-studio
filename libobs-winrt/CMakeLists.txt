@@ -3,8 +3,7 @@ project(libobs-winrt)
 add_library(libobs-winrt MODULE)
 add_library(OBS::libobs-winrt ALIAS libobs-winrt)
 
-target_sources(libobs-winrt PRIVATE winrt-capture.cpp winrt-capture.h
-                                    winrt-dispatch.cpp winrt-dispatch.h)
+target_sources(libobs-winrt PRIVATE winrt-capture.cpp winrt-capture.h winrt-dispatch.cpp winrt-dispatch.h)
 
 target_precompile_headers(
   libobs-winrt

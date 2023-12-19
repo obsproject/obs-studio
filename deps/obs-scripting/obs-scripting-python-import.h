@@ -57,6 +57,7 @@ typedef struct python_version {
 
 PY_EXTERN int (*Import_PyType_Ready)(PyTypeObject *);
 PY_EXTERN PyObject *(*Import_PyObject_GenericGetAttr)(PyObject *, PyObject *);
+PY_EXTERN void (*Import_PyType_Modified)(PyTypeObject *);
 PY_EXTERN int (*Import_PyObject_IsTrue)(PyObject *);
 PY_EXTERN void (*Import_Py_DecRef)(PyObject *);
 PY_EXTERN void *(*Import_PyObject_Malloc)(size_t size);
@@ -153,6 +154,7 @@ extern bool import_python(const char *python_path,
 #ifndef NO_REDEFS
 #define PyType_Ready Import_PyType_Ready
 #define PyType_GetFlags Import_PyType_GetFlags
+#define PyType_Modified Import_PyType_Modified
 #define PyObject_GenericGetAttr Import_PyObject_GenericGetAttr
 #define PyObject_IsTrue Import_PyObject_IsTrue
 #define Py_DecRef Import_Py_DecRef

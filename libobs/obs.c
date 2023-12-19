@@ -59,7 +59,7 @@ static inline void calc_gpu_conversion_sizes(struct obs_core_video_mix *video)
 	video->conversion_width_i = 0.f;
 	video->conversion_height_i = 0.f;
 
-	switch ((uint32_t)info->format) {
+	switch (info->format) {
 	case VIDEO_FORMAT_I420:
 		video->conversion_needed = true;
 		video->conversion_techs[0] = "Planar_Y";
@@ -111,6 +111,39 @@ static inline void calc_gpu_conversion_sizes(struct obs_core_video_mix *video)
 			video->conversion_techs[0] = "P010_SRGB_Y";
 			video->conversion_techs[1] = "P010_SRGB_UV";
 		}
+		break;
+	case VIDEO_FORMAT_P216:
+		video->conversion_needed = true;
+		video->conversion_width_i = 1.f / (float)info->width;
+		video->conversion_height_i = 1.f / (float)info->height;
+		if (info->colorspace == VIDEO_CS_2100_PQ) {
+			video->conversion_techs[0] = "P216_PQ_Y";
+			video->conversion_techs[1] = "P216_PQ_UV";
+		} else if (info->colorspace == VIDEO_CS_2100_HLG) {
+			video->conversion_techs[0] = "P216_HLG_Y";
+			video->conversion_techs[1] = "P216_HLG_UV";
+		} else {
+			video->conversion_techs[0] = "P216_SRGB_Y";
+			video->conversion_techs[1] = "P216_SRGB_UV";
+		}
+		break;
+	case VIDEO_FORMAT_P416:
+		video->conversion_needed = true;
+		video->conversion_width_i = 1.f / (float)info->width;
+		video->conversion_height_i = 1.f / (float)info->height;
+		if (info->colorspace == VIDEO_CS_2100_PQ) {
+			video->conversion_techs[0] = "P416_PQ_Y";
+			video->conversion_techs[1] = "P416_PQ_UV";
+		} else if (info->colorspace == VIDEO_CS_2100_HLG) {
+			video->conversion_techs[0] = "P416_HLG_Y";
+			video->conversion_techs[1] = "P416_HLG_UV";
+		} else {
+			video->conversion_techs[0] = "P416_SRGB_Y";
+			video->conversion_techs[1] = "P416_SRGB_UV";
+		}
+		break;
+	default:
+		break;
 	}
 }
 
@@ -237,6 +270,28 @@ static bool obs_init_gpu_conversion(struct obs_core_video_mix *video)
 		if (!video->convert_textures[0] || !video->convert_textures[1])
 			success = false;
 		break;
+	case VIDEO_FORMAT_P216:
+		video->convert_textures[0] =
+			gs_texture_create(info->width, info->height, GS_R16, 1,
+					  NULL, GS_RENDER_TARGET);
+		video->convert_textures[1] =
+			gs_texture_create(info->width / 2, info->height,
+					  GS_RG16, 1, NULL, GS_RENDER_TARGET);
+		if (!video->convert_textures[0] || !video->convert_textures[1])
+			success = false;
+		break;
+	case VIDEO_FORMAT_P416:
+		video->convert_textures[0] =
+			gs_texture_create(info->width, info->height, GS_R16, 1,
+					  NULL, GS_RENDER_TARGET);
+		video->convert_textures[1] =
+			gs_texture_create(info->width, info->height, GS_RG16, 1,
+					  NULL, GS_RENDER_TARGET);
+		if (!video->convert_textures[0] || !video->convert_textures[1])
+			success = false;
+		break;
+	default:
+		break;
 	}
 
 	if (!success) {
@@ -326,6 +381,26 @@ static bool obs_init_gpu_copy_surfaces(struct obs_core_video_mix *video,
 		if (!video->copy_surfaces[i][1])
 			return false;
 		break;
+	case VIDEO_FORMAT_P216:
+		video->copy_surfaces[i][0] = gs_stagesurface_create(
+			info->width, info->height, GS_R16);
+		if (!video->copy_surfaces[i][0])
+			return false;
+		video->copy_surfaces[i][1] = gs_stagesurface_create(
+			info->width / 2, info->height, GS_RG16);
+		if (!video->copy_surfaces[i][1])
+			return false;
+		break;
+	case VIDEO_FORMAT_P416:
+		video->copy_surfaces[i][0] = gs_stagesurface_create(
+			info->width, info->height, GS_R16);
+		if (!video->copy_surfaces[i][0])
+			return false;
+		video->copy_surfaces[i][1] = gs_stagesurface_create(
+			info->width, info->height, GS_RG16);
+		if (!video->copy_surfaces[i][1])
+			return false;
+		break;
 	default:
 		break;
 	}
@@ -347,7 +422,12 @@ static bool obs_init_textures(struct obs_core_video_mix *video)
 	case VIDEO_FORMAT_I210:
 	case VIDEO_FORMAT_I412:
 	case VIDEO_FORMAT_YA2L:
+	case VIDEO_FORMAT_P216:
+	case VIDEO_FORMAT_P416:
 		format = GS_RGBA16F;
+		break;
+	default:
+		break;
 	}
 
 	for (size_t i = 0; i < NUM_TEXTURES; i++) {
@@ -396,8 +476,15 @@ static bool obs_init_textures(struct obs_core_video_mix *video)
 		switch (info->format) {
 		case VIDEO_FORMAT_I010:
 		case VIDEO_FORMAT_P010:
+		case VIDEO_FORMAT_P216:
+		case VIDEO_FORMAT_P416:
 			space = GS_CS_SRGB_16F;
+			break;
+		default:
+			space = GS_CS_SRGB;
+			break;
 		}
+		break;
 	}
 
 	struct obs_video_info *ovi = video->ovi;
@@ -664,11 +751,8 @@ static int obs_init_video()
 		}
 	}
 
-	if (&video->video_thread) {
-		blog(LOG_INFO,
-		     "[VIDEO_CANVAS] wait obs_graphics_thread to stop");
-		pthread_join(video->video_thread, NULL);
-	}
+	blog(LOG_INFO, "[VIDEO_CANVAS] wait obs_graphics_thread to stop");
+	pthread_join(video->video_thread, NULL);
 
 	uint32_t max_fps_den = 0;
 	uint32_t max_fps_num = 1;
@@ -693,7 +777,7 @@ static int obs_init_video()
 		return OBS_VIDEO_FAIL;
 	if (pthread_mutex_init(&video->mixes_mutex, NULL) < 0)
 		return OBS_VIDEO_FAIL;
-	blog(LOG_INFO, "[VIDEO_CANVAS] init with canvases %d",
+	blog(LOG_INFO, "[VIDEO_CANVAS] init with canvases %zu",
 	     obs->video.canvases.num);
 	for (size_t i = 0, num = obs->video.canvases.num; i < num; i++) {
 		struct obs_video_info *ovi = obs->video.canvases.array[i];
@@ -716,7 +800,10 @@ static int obs_init_video()
 
 	int errorcode;
 #ifdef __APPLE__
-	errorcode = pthread_create(&video->video_thread, NULL,
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+	pthread_attr_set_qos_class_np(&attr, QOS_CLASS_USER_INTERACTIVE, 0);
+	errorcode = pthread_create(&video->video_thread, &attr,
 				   obs_graphics_thread_autorelease, obs);
 #else
 	errorcode = pthread_create(&video->video_thread, NULL,
@@ -985,6 +1072,8 @@ static bool obs_init_data(void)
 	if (!obs_view_init(&data->backstage_view))
 		goto fail;
 
+	data->sources = NULL;
+	data->public_sources = NULL;
 	data->private_data = obs_data_create();
 	data->valid = true;
 
@@ -1003,6 +1092,20 @@ void obs_main_view_free(struct obs_view *view)
 	memset(view->channels, 0, sizeof(view->channels));
 	pthread_mutex_destroy(&view->channels_mutex);
 }
+
+#define FREE_OBS_HASH_TABLE(handle, table, type)                            \
+	do {                                                                \
+		struct obs_context_data *ctx, *tmp;                         \
+		int unfreed = 0;                                            \
+		HASH_ITER (handle, *(struct obs_context_data **)table, ctx, \
+			   tmp) {                                           \
+			obs_##type##_destroy((obs_##type##_t *)ctx);        \
+			unfreed++;                                          \
+		}                                                           \
+		if (unfreed)                                                \
+			blog(LOG_INFO, "\t%d " #type "(s) were remaining",  \
+			     unfreed);                                      \
+	} while (false)
 
 #define FREE_OBS_LINKED_LIST(type)                                         \
 	do {                                                               \
@@ -1033,11 +1136,13 @@ static void obs_free_data(void)
 
 	blog(LOG_INFO, "Freeing OBS context data");
 
-	FREE_OBS_LINKED_LIST(source);
 	FREE_OBS_LINKED_LIST(output);
 	FREE_OBS_LINKED_LIST(encoder);
 	FREE_OBS_LINKED_LIST(display);
 	FREE_OBS_LINKED_LIST(service);
+
+	FREE_OBS_HASH_TABLE(hh, &data->public_sources, source);
+	FREE_OBS_HASH_TABLE(hh_uuid, &data->sources, source);
 
 	os_task_queue_wait(obs->destruction_task_thread);
 
@@ -1049,8 +1154,14 @@ static void obs_free_data(void)
 	pthread_mutex_destroy(&data->services_mutex);
 	pthread_mutex_destroy(&data->draw_callbacks_mutex);
 	da_free(data->draw_callbacks);
+	da_free(data->rendered_callbacks);
 	da_free(data->tick_callbacks);
 	obs_data_release(data->private_data);
+
+	for (size_t i = 0; i < data->protocols.num; i++)
+		bfree(data->protocols.array[i]);
+	da_free(data->protocols);
+	da_free(data->sources_to_tick);
 }
 
 static const char *obs_signals[] = {
@@ -1105,7 +1216,8 @@ static inline bool obs_init_hotkeys(void)
 
 	assert(hotkeys != NULL);
 
-	da_init(hotkeys->hotkeys);
+	hotkeys->hotkeys = NULL;
+	hotkeys->hotkey_pairs = NULL;
 	hotkeys->signals = obs->signals;
 	hotkeys->name_map_init_token = obs_pthread_once_init_token;
 	hotkeys->mute = bstrdup("Mute");
@@ -1266,6 +1378,9 @@ char *obs_find_data_file(const char *file)
 		if (check_path(file, core_module_paths.array[i].array, &path))
 			return path.array;
 	}
+
+	blog(LOG_ERROR, "Failed to find file '%s' in libobs data directory",
+	     file);
 
 	dstr_free(&path);
 	return NULL;
@@ -1558,7 +1673,7 @@ int obs_set_video_info(struct obs_video_info *canvas,
 
 	blog(LOG_INFO, "---------------------------------");
 	blog(LOG_INFO,
-	     "[VIDEO_CANVAS] video info set for %08X:\n"
+	     "[VIDEO_CANVAS] video info set for %p:\n"
 	     "\tbase resolution:   %dx%d\n"
 	     "\toutput resolution: %dx%d\n"
 	     "\tdownscale filter:  %s\n"
@@ -1710,7 +1825,7 @@ bool obs_get_video_info(struct obs_video_info *ovi)
 
 int obs_remove_video_info(struct obs_video_info *ovi)
 {
-	blog(LOG_INFO, "[VIDEO_CANVAS] remove %08X", ovi);
+	blog(LOG_INFO, "[VIDEO_CANVAS] remove %p", ovi);
 	int ret = obs_deactivate_video_info();
 	if (ret != OBS_VIDEO_SUCCESS)
 		return ret;
@@ -1737,7 +1852,7 @@ struct obs_video_info *obs_create_video_info()
 	pthread_mutex_lock(&obs->video.canvases_mutex);
 	da_push_back(obs->video.canvases, &ovi);
 	pthread_mutex_unlock(&obs->video.canvases_mutex);
-	blog(LOG_INFO, "[VIDEO_CANVAS] created %08X", ovi);
+	blog(LOG_INFO, "[VIDEO_CANVAS] created %p", ovi);
 
 #ifdef _WIN32
 	ovi->graphics_module = "libobs-d3d11.dll";
@@ -1770,7 +1885,7 @@ size_t obs_get_video_info_count()
 
 bool obs_get_video_info_by_index(size_t index, struct obs_video_info *ovi)
 {
-	blog(LOG_INFO, "[VIDEO_CANVAS] get video info by index %d", index);
+	blog(LOG_INFO, "[VIDEO_CANVAS] get video info by index %zu", index);
 	if (index >= obs->video.canvases.num)
 		return false;
 	*ovi = *obs->video.canvases.array[index];
@@ -2123,17 +2238,16 @@ void obs_enum_sources(bool (*enum_proc)(void *, obs_source_t *), void *param)
 	obs_source_t *source;
 
 	pthread_mutex_lock(&obs->data.sources_mutex);
-	source = obs->data.first_source;
+	source = obs->data.public_sources;
 
 	while (source) {
 		obs_source_t *s = obs_source_get_ref(source);
 		if (s) {
-			if (strcmp(s->info.id, group_info.id) == 0 &&
+			if (s->info.type == OBS_SOURCE_TYPE_INPUT &&
 			    !enum_proc(param, s)) {
 				obs_source_release(s);
 				break;
-			} else if (s->info.type == OBS_SOURCE_TYPE_INPUT &&
-				   !s->context.private &&
+			} else if (strcmp(s->info.id, group_info.id) == 0 &&
 				   !enum_proc(param, s)) {
 				obs_source_release(s);
 				break;
@@ -2141,7 +2255,7 @@ void obs_enum_sources(bool (*enum_proc)(void *, obs_source_t *), void *param)
 			obs_source_release(s);
 		}
 
-		source = (obs_source_t *)source->context.next;
+		source = (obs_source_t *)source->context.hh.next;
 	}
 
 	pthread_mutex_unlock(&obs->data.sources_mutex);
@@ -2152,20 +2266,20 @@ void obs_enum_scenes(bool (*enum_proc)(void *, obs_source_t *), void *param)
 	obs_source_t *source;
 
 	pthread_mutex_lock(&obs->data.sources_mutex);
-	source = obs->data.first_source;
 
+	source = obs->data.public_sources;
 	while (source) {
 		obs_source_t *s = obs_source_get_ref(source);
 		if (s) {
 			if (source->info.type == OBS_SOURCE_TYPE_SCENE &&
-			    !source->context.private && !enum_proc(param, s)) {
+			    !enum_proc(param, s)) {
 				obs_source_release(s);
 				break;
 			}
 			obs_source_release(s);
 		}
 
-		source = (obs_source_t *)source->context.next;
+		source = (obs_source_t *)source->context.hh.next;
 	}
 
 	pthread_mutex_unlock(&obs->data.sources_mutex);
@@ -2238,11 +2352,31 @@ static inline void obs_enum(void *pstart, pthread_mutex_t *mutex, void *proc,
 	pthread_mutex_unlock(mutex);
 }
 
+static inline void obs_enum_uuid(void *pstart, pthread_mutex_t *mutex,
+				 void *proc, void *param)
+{
+	struct obs_context_data **start = pstart, *context, *tmp;
+	bool (*enum_proc)(void *, void *) = proc;
+
+	assert(start);
+	assert(mutex);
+	assert(enum_proc);
+
+	pthread_mutex_lock(mutex);
+
+	HASH_ITER (hh_uuid, *start, context, tmp) {
+		if (!enum_proc(param, context))
+			break;
+	}
+
+	pthread_mutex_unlock(mutex);
+}
+
 void obs_enum_all_sources(bool (*enum_proc)(void *, obs_source_t *),
 			  void *param)
 {
-	obs_enum(&obs->data.first_source, &obs->data.sources_mutex, enum_proc,
-		 param);
+	obs_enum_uuid(&obs->data.sources, &obs->data.sources_mutex, enum_proc,
+		      param);
 }
 
 void obs_enum_outputs(bool (*enum_proc)(void *, obs_output_t *), void *param)
@@ -2272,14 +2406,40 @@ static inline void *get_context_by_name(void *vfirst, const char *name,
 
 	pthread_mutex_lock(mutex);
 
-	context = *first;
-	while (context) {
-		if (!context->private && strcmp(context->name, name) == 0) {
-			context = addref(context);
-			break;
+	/* If context list head has a hash table, look the name up in there */
+	if (*first && (*first)->hh.tbl) {
+		HASH_FIND_STR(*first, name, context);
+	} else {
+		context = *first;
+		while (context) {
+			if (!context->private &&
+			    strcmp(context->name, name) == 0) {
+				break;
+			}
+
+			context = context->next;
 		}
-		context = context->next;
 	}
+
+	if (context)
+		addref(context);
+
+	pthread_mutex_unlock(mutex);
+	return context;
+}
+
+static void *get_context_by_uuid(void *ptable, const char *uuid,
+				 pthread_mutex_t *mutex,
+				 void *(*addref)(void *))
+{
+	struct obs_context_data **ht = ptable;
+	struct obs_context_data *context;
+
+	pthread_mutex_lock(mutex);
+
+	HASH_FIND_UUID(*ht, uuid, context);
+	if (context)
+		addref(context);
 
 	pthread_mutex_unlock(mutex);
 	return context;
@@ -2312,18 +2472,27 @@ static inline void *obs_id_(void *data)
 
 obs_source_t *obs_get_source_by_name(const char *name)
 {
-	return get_context_by_name(&obs->data.first_source, name,
+	return get_context_by_name(&obs->data.public_sources, name,
+				   &obs->data.sources_mutex,
+				   obs_source_addref_safe_);
+}
+
+obs_source_t *obs_get_source_by_uuid(const char *uuid)
+{
+	return get_context_by_uuid(&obs->data.sources, uuid,
 				   &obs->data.sources_mutex,
 				   obs_source_addref_safe_);
 }
 
 obs_source_t *obs_get_transition_by_name(const char *name)
 {
-	struct obs_source **first = &obs->data.first_source;
+	struct obs_source **first = &obs->data.sources;
 	struct obs_source *source;
 
 	pthread_mutex_lock(&obs->data.sources_mutex);
 
+	/* Transitions are private but can be found via this method, so we
+	 * can't look them up by name in the public_sources hash table. */
 	source = *first;
 	while (source) {
 		if (source->info.type == OBS_SOURCE_TYPE_TRANSITION &&
@@ -2331,11 +2500,23 @@ obs_source_t *obs_get_transition_by_name(const char *name)
 			source = obs_source_addref_safe_(source);
 			break;
 		}
-		source = (void *)source->context.next;
+		source = (void *)source->context.hh_uuid.next;
 	}
 
 	pthread_mutex_unlock(&obs->data.sources_mutex);
 	return source;
+}
+
+obs_source_t *obs_get_transition_by_uuid(const char *uuid)
+{
+	obs_source_t *source = obs_get_source_by_uuid(uuid);
+
+	if (source && source->info.type == OBS_SOURCE_TYPE_TRANSITION)
+		return source;
+	else if (source)
+		obs_source_release(source);
+
+	return NULL;
 }
 
 obs_output_t *obs_get_output_by_name(const char *name)
@@ -2435,6 +2616,9 @@ static void obs_render_texture_internal(enum gs_blend_type src_c,
 	case GS_CS_709_SCRGB:
 		tech_name = "DrawMultiply";
 		multiplier = obs_get_video_sdr_white_level() / 80.f;
+		break;
+	case GS_CS_709_EXTENDED:
+		break;
 	}
 
 	const bool previous = gs_framebuffer_srgb_enabled();
@@ -2599,6 +2783,7 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data,
 	obs_data_array_t *filters = obs_data_get_array(source_data, "filters");
 	obs_source_t *source;
 	const char *name = obs_data_get_string(source_data, "name");
+	const char *uuid = obs_data_get_string(source_data, "uuid");
 	const char *id = obs_data_get_string(source_data, "id");
 	const char *v_id = obs_data_get_string(source_data, "versioned_id");
 	obs_data_t *settings = obs_data_get_obj(source_data, "settings");
@@ -2619,8 +2804,9 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data,
 	if (!*v_id)
 		v_id = id;
 
-	source = obs_source_create_set_last_ver(v_id, name, settings, hotkeys,
-						prev_ver, is_private);
+	source = obs_source_create_set_last_ver(v_id, name, uuid, settings,
+						hotkeys, prev_ver, is_private);
+
 	if (source->owns_info_id) {
 		bfree((void *)source->info.unversioned_id);
 		source->info.unversioned_id = bstrdup(id);
@@ -2794,6 +2980,7 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	int64_t sync = obs_source_get_sync_offset(source);
 	uint32_t flags = obs_source_get_flags(source);
 	const char *name = obs_source_get_name(source);
+	const char *uuid = obs_source_get_uuid(source);
 	const char *id = source->info.unversioned_id;
 	const char *v_id = source->info.id;
 	bool enabled = obs_source_enabled(source);
@@ -2818,6 +3005,7 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	obs_data_set_int(source_data, "prev_ver", LIBOBS_API_VER);
 
 	obs_data_set_string(source_data, "name", name);
+	obs_data_set_string(source_data, "uuid", uuid);
 	obs_data_set_string(source_data, "id", id);
 	obs_data_set_string(source_data, "versioned_id", v_id);
 	obs_data_set_obj(source_data, "settings", settings);
@@ -2875,19 +3063,19 @@ obs_data_array_t *obs_save_sources_filtered(obs_save_source_filter_cb cb,
 
 	pthread_mutex_lock(&data->sources_mutex);
 
-	source = data->first_source;
+	source = data->public_sources;
 
 	while (source) {
 		if ((source->info.type != OBS_SOURCE_TYPE_FILTER) != 0 &&
-		    !source->context.private && !source->removed &&
-		    !source->temp_removed && cb(data_, source)) {
+		    !source->removed && !source->temp_removed &&
+		    cb(data_, source)) {
 			obs_data_t *source_data = obs_save_source(source);
 
 			obs_data_array_push_back(array, source_data);
 			obs_data_release(source_data);
 		}
 
-		source = (obs_source_t *)source->context.next;
+		source = (obs_source_t *)source->context.hh.next;
 	}
 
 	pthread_mutex_unlock(&data->sources_mutex);
@@ -2907,6 +3095,32 @@ obs_data_array_t *obs_save_sources(void)
 	return obs_save_sources_filtered(save_source_filter, NULL);
 }
 
+void obs_reset_source_uuids()
+{
+	pthread_mutex_lock(&obs->data.sources_mutex);
+
+	/* Move all sources to a new hash table */
+	struct obs_context_data *ht =
+		(struct obs_context_data *)obs->data.sources;
+	struct obs_context_data *new_ht = NULL;
+
+	struct obs_context_data *ctx, *tmp;
+	HASH_ITER (hh_uuid, ht, ctx, tmp) {
+		HASH_DELETE(hh_uuid, ht, ctx);
+
+		bfree((void *)ctx->uuid);
+		ctx->uuid = os_generate_uuid();
+
+		HASH_ADD_UUID(new_ht, uuid, ctx);
+	}
+
+	/* The old table will be automatically freed once the last element has
+	 * been removed, so we can simply overwrite the pointer. */
+	obs->data.sources = (struct obs_source *)new_ht;
+
+	pthread_mutex_unlock(&obs->data.sources_mutex);
+}
+
 /* ensures that names are never blank */
 static inline char *dup_name(const char *name, bool private)
 {
@@ -2924,12 +3138,11 @@ static inline char *dup_name(const char *name, bool private)
 	}
 }
 
-static inline bool obs_context_data_init_wrap(struct obs_context_data *context,
-					      enum obs_obj_type type,
-					      obs_data_t *settings,
-					      const char *name,
-					      obs_data_t *hotkey_data,
-					      bool private)
+static inline bool
+obs_context_data_init_wrap(struct obs_context_data *context,
+			   enum obs_obj_type type, obs_data_t *settings,
+			   const char *name, const char *uuid,
+			   obs_data_t *hotkey_data, bool private)
 {
 	assert(context);
 	memset(context, 0, sizeof(*context));
@@ -2948,6 +3161,12 @@ static inline bool obs_context_data_init_wrap(struct obs_context_data *context,
 	if (!context->procs)
 		return false;
 
+	if (uuid && strlen(uuid) == UUID_STR_LENGTH)
+		context->uuid = bstrdup(uuid);
+	/* Only automatically generate UUIDs for sources */
+	else if (type == OBS_OBJ_TYPE_SOURCE)
+		context->uuid = os_generate_uuid();
+
 	context->name = dup_name(name, private);
 	context->settings = obs_data_newref(settings);
 	context->hotkey_data = obs_data_newref(hotkey_data);
@@ -2956,10 +3175,10 @@ static inline bool obs_context_data_init_wrap(struct obs_context_data *context,
 
 bool obs_context_data_init(struct obs_context_data *context,
 			   enum obs_obj_type type, obs_data_t *settings,
-			   const char *name, obs_data_t *hotkey_data,
-			   bool private)
+			   const char *name, const char *uuid,
+			   obs_data_t *hotkey_data, bool private)
 {
-	if (obs_context_data_init_wrap(context, type, settings, name,
+	if (obs_context_data_init_wrap(context, type, settings, name, uuid,
 				       hotkey_data, private)) {
 		return true;
 	} else {
@@ -2977,6 +3196,7 @@ void obs_context_data_free(struct obs_context_data *context)
 	obs_context_data_remove(context);
 	pthread_mutex_destroy(&context->name_mutex);
 	bfree(context->name);
+	bfree((void *)context->uuid);
 	context->name = NULL;
 
 	memset(context, 0, sizeof(*context) - sizeof(pthread_mutex_t));
@@ -3010,6 +3230,91 @@ void obs_context_data_insert(struct obs_context_data *context,
 	pthread_mutex_unlock(mutex);
 }
 
+static inline char *obs_context_deduplicate_name(void *phash, const char *name)
+{
+	struct obs_context_data *head = phash;
+	struct obs_context_data *item = NULL;
+
+	HASH_FIND_STR(head, name, item);
+	if (!item)
+		return NULL;
+
+	struct dstr new_name = {0};
+	int suffix = 2;
+
+	while (item) {
+		dstr_printf(&new_name, "%s %d", name, suffix++);
+		HASH_FIND_STR(head, new_name.array, item);
+	}
+
+	return new_name.array;
+}
+
+void obs_context_data_insert_name(struct obs_context_data *context,
+				  pthread_mutex_t *mutex, void *pfirst)
+{
+	struct obs_context_data **first = pfirst;
+	char *new_name;
+
+	assert(context);
+	assert(mutex);
+	assert(first);
+
+	context->mutex = mutex;
+
+	pthread_mutex_lock(mutex);
+
+	/* Ensure name is not a duplicate. */
+	new_name = obs_context_deduplicate_name(*first, context->name);
+	if (new_name) {
+		blog(LOG_WARNING,
+		     "Attempted to insert context with duplicate name \"%s\"!"
+		     " Name has been changed to \"%s\"",
+		     context->name, new_name);
+		/* Since this happens before the context creation finishes,
+		 * do not bother to add it to the rename cache. */
+		bfree(context->name);
+		context->name = new_name;
+	}
+
+	HASH_ADD_STR(*first, name, context);
+
+	pthread_mutex_unlock(mutex);
+}
+
+void obs_context_data_insert_uuid(struct obs_context_data *context,
+				  pthread_mutex_t *mutex, void *pfirst_uuid)
+{
+	struct obs_context_data **first_uuid = pfirst_uuid;
+	struct obs_context_data *item = NULL;
+
+	assert(context);
+	assert(mutex);
+	assert(first_uuid);
+
+	context->mutex = mutex;
+
+	pthread_mutex_lock(mutex);
+
+	/* Ensure UUID is not a duplicate.
+	 * This should only ever happen if a scene collection file has been
+	 * manually edited and an entry has been duplicated without removing
+	 * or regenerating the UUID. */
+	HASH_FIND_UUID(*first_uuid, context->uuid, item);
+	if (item) {
+		blog(LOG_WARNING,
+		     "Attempted to insert context with duplicate UUID \"%s\"!",
+		     context->uuid);
+		/* It is practically impossible for the new UUID to be a
+		 * duplicate, so don't bother checking again. */
+		bfree((void *)context->uuid);
+		context->uuid = os_generate_uuid();
+	}
+
+	HASH_ADD_UUID(*first_uuid, uuid, context);
+	pthread_mutex_unlock(mutex);
+}
+
 void obs_context_data_remove(struct obs_context_data *context)
 {
 	if (context && context->prev_next) {
@@ -3020,6 +3325,35 @@ void obs_context_data_remove(struct obs_context_data *context)
 		context->prev_next = NULL;
 		pthread_mutex_unlock(context->mutex);
 	}
+}
+
+void obs_context_data_remove_name(struct obs_context_data *context, void *phead)
+{
+	struct obs_context_data **head = phead;
+
+	assert(head);
+
+	if (!context)
+		return;
+
+	pthread_mutex_lock(context->mutex);
+	HASH_DELETE(hh, *head, context);
+	pthread_mutex_unlock(context->mutex);
+}
+
+void obs_context_data_remove_uuid(struct obs_context_data *context,
+				  void *puuid_head)
+{
+	struct obs_context_data **uuid_head = puuid_head;
+
+	assert(uuid_head);
+
+	if (!context || !context->uuid || !uuid_head)
+		return;
+
+	pthread_mutex_lock(context->mutex);
+	HASH_DELETE(hh_uuid, *uuid_head, context);
+	pthread_mutex_unlock(context->mutex);
 }
 
 void obs_context_wait(struct obs_context_data *context)
@@ -3037,6 +3371,33 @@ void obs_context_data_setname(struct obs_context_data *context,
 	pthread_mutex_lock(&context->name_mutex);
 	context->name = dup_name(name, context->private);
 	pthread_mutex_unlock(&context->name_mutex);
+}
+
+void obs_context_data_setname_ht(struct obs_context_data *context,
+				 const char *name, void *phead)
+{
+	struct obs_context_data **head = phead;
+	char *new_name;
+
+	pthread_mutex_lock(context->mutex);
+
+	HASH_DEL(*head, context);
+
+	/* Ensure new name is not a duplicate. */
+	new_name = obs_context_deduplicate_name(*head, name);
+	if (new_name) {
+		blog(LOG_WARNING,
+		     "Attempted to rename context to duplicate name \"%s\"!"
+		     " New name has been changed to \"%s\"",
+		     context->name, new_name);
+		context->name = new_name;
+	} else {
+		context->name = dup_name(name, context->private);
+	}
+
+	HASH_ADD_STR(*head, name, context);
+
+	pthread_mutex_unlock(context->mutex);
 }
 
 profiler_name_store_t *obs_get_profiler_name_store(void)
@@ -3198,6 +3559,25 @@ void obs_remove_main_render_callback(void (*draw)(void *param, uint32_t cx,
 	pthread_mutex_unlock(&obs->data.draw_callbacks_mutex);
 }
 
+void obs_add_main_rendered_callback(void (*rendered)(void *param), void *param)
+{
+	struct rendered_callback data = {rendered, param};
+
+	pthread_mutex_lock(&obs->data.draw_callbacks_mutex);
+	da_insert(obs->data.rendered_callbacks, 0, &data);
+	pthread_mutex_unlock(&obs->data.draw_callbacks_mutex);
+}
+
+void obs_remove_main_rendered_callback(void (*rendered)(void *param),
+				       void *param)
+{
+	struct rendered_callback data = {rendered, param};
+
+	pthread_mutex_lock(&obs->data.draw_callbacks_mutex);
+	da_erase_item(obs->data.rendered_callbacks, &data);
+	pthread_mutex_unlock(&obs->data.draw_callbacks_mutex);
+}
+
 uint32_t obs_get_total_frames(void)
 {
 	return obs->video.total_frames;
@@ -3308,7 +3688,7 @@ extern void free_gpu_encoding(struct obs_core_video_mix *video);
 
 bool start_gpu_encode(obs_encoder_t *encoder)
 {
-	blog(LOG_INFO, "start_gpu_encode '%s' (%s) (0x%I64X)",
+	blog(LOG_INFO, "start_gpu_encode '%s' (%s) (%p)",
 	     obs_encoder_get_name(encoder), obs_encoder_get_id(encoder),
 	     encoder);
 
@@ -3333,7 +3713,7 @@ bool start_gpu_encode(obs_encoder_t *encoder)
 		da_push_back(video->gpu_encoders, &encoder);
 	else {
 		blog(LOG_ERROR,
-		     "start_gpu_encode - init_gpu_encoding failed! '%s' (%s) (0x%I64X)",
+		     "start_gpu_encode - init_gpu_encoding failed! '%s' (%s) (%p)",
 		     obs_encoder_get_name(encoder), obs_encoder_get_id(encoder),
 		     encoder);
 		free_gpu_encoding(video);
@@ -3352,7 +3732,7 @@ bool start_gpu_encode(obs_encoder_t *encoder)
 
 void stop_gpu_encode(obs_encoder_t *encoder)
 {
-	blog(LOG_INFO, "stop_gpu_encode '%s' (%s) (0x%I64X)",
+	blog(LOG_INFO, "stop_gpu_encode '%s' (%s) (%p)",
 	     obs_encoder_get_name(encoder), obs_encoder_get_id(encoder),
 	     encoder);
 	struct obs_core_video_mix *video = get_mix_for_video(encoder->media);
@@ -3368,7 +3748,7 @@ void stop_gpu_encode(obs_encoder_t *encoder)
 
 	os_event_wait(video->gpu_encode_inactive);
 
-	blog(LOG_INFO, "stop_gpu_encode - inactive '%s' (%s) (0x%I64X)",
+	blog(LOG_INFO, "stop_gpu_encode - inactive '%s' (%s) (%p)",
 	     obs_encoder_get_name(encoder), obs_encoder_get_id(encoder),
 	     encoder);
 
@@ -3376,7 +3756,7 @@ void stop_gpu_encode(obs_encoder_t *encoder)
 	pthread_mutex_lock(&video->gpu_encoder_mutex);
 	if (video->gpu_want_destroy_thread) {
 		blog(LOG_INFO,
-		     "stop_gpu_encode - gpu_want_destroy_thread: 1 '%s' (%s) (0x%I64X)",
+		     "stop_gpu_encode - gpu_want_destroy_thread: 1 '%s' (%s) (%p)",
 		     obs_encoder_get_name(encoder), obs_encoder_get_id(encoder),
 		     encoder);
 		stop_gpu_encoding_thread(video);
@@ -3611,4 +3991,23 @@ bool obs_weak_object_references_object(obs_weak_object_t *weak,
 				       obs_object_t *object)
 {
 	return weak && object && weak->object == object;
+}
+
+bool obs_is_output_protocol_registered(const char *protocol)
+{
+	for (size_t i = 0; i < obs->data.protocols.num; i++) {
+		if (strcmp(protocol, obs->data.protocols.array[i]) == 0)
+			return true;
+	}
+
+	return false;
+}
+
+bool obs_enum_output_protocols(size_t idx, char **protocol)
+{
+	if (idx >= obs->data.protocols.num)
+		return false;
+
+	*protocol = obs->data.protocols.array[idx];
+	return true;
 }

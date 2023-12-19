@@ -2941,9 +2941,9 @@ uint32_t gs_create_iosurface(uint32_t width, uint32_t height)
 	graphics_t *graphics = thread_graphics;
 
 	if (!gs_valid("gs_create_iosurface"))
-		return NULL;
+		return 0;
 	if (!graphics->exports.create_iosurface)
-		return NULL;
+		return 0;
 
 	return graphics->exports.create_iosurface(graphics->device, width,
 						  height);
@@ -3061,6 +3061,28 @@ gs_texture_t *gs_duplicator_get_texture(gs_duplicator_t *duplicator)
 		return NULL;
 
 	return thread_graphics->exports.gs_duplicator_get_texture(duplicator);
+}
+
+enum gs_color_space gs_duplicator_get_color_space(gs_duplicator_t *duplicator)
+{
+	if (!gs_valid_p("gs_duplicator_get_color_space", duplicator))
+		return GS_CS_SRGB;
+	if (!thread_graphics->exports.gs_duplicator_get_color_space)
+		return GS_CS_SRGB;
+
+	return thread_graphics->exports.gs_duplicator_get_color_space(
+		duplicator);
+}
+
+float gs_duplicator_get_sdr_white_level(gs_duplicator_t *duplicator)
+{
+	if (!gs_valid_p("gs_duplicator_get_sdr_white_level", duplicator))
+		return 80.f;
+	if (!thread_graphics->exports.gs_duplicator_get_sdr_white_level)
+		return 80.f;
+
+	return thread_graphics->exports.gs_duplicator_get_sdr_white_level(
+		duplicator);
 }
 
 /** creates a windows GDI-lockable texture */

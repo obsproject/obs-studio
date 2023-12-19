@@ -1,10 +1,12 @@
+if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
+  return()
+endif()
+
 if(OS_WINDOWS)
   if(NOT MINGW)
     add_subdirectory(w32-pthreads)
   endif()
   add_subdirectory(ipc-util)
-
-  add_subdirectory(lzma)
 endif()
 
 add_subdirectory(blake2)
@@ -14,6 +16,7 @@ add_subdirectory(file-updater)
 add_subdirectory(obs-scripting)
 add_subdirectory(opts-parser)
 add_subdirectory(libcaption)
+add_subdirectory(uthash)
 
 # Use bundled jansson version as fallback
 find_package(Jansson 2.5 QUIET)

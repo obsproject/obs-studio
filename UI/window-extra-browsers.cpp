@@ -179,7 +179,6 @@ void ExtraBrowsersModel::UpdateItem(Item &item)
 		main->extraBrowserDocks[idx].data());
 	dock->setWindowTitle(item.title);
 	dock->setObjectName(item.title + OBJ_NAME_SUFFIX);
-	main->extraBrowserDockActions[idx]->setText(item.title);
 
 	if (main->extraBrowserDockTargets[idx] != item.url) {
 		dock->cefWidget->setURL(QT_TO_UTF8(item.url));
@@ -234,10 +233,12 @@ void ExtraBrowsersModel::Apply()
 
 	for (int i = deleted.size() - 1; i >= 0; i--) {
 		int idx = deleted[i];
-		main->extraBrowserDockActions.removeAt(idx);
 		main->extraBrowserDockTargets.removeAt(idx);
 		main->extraBrowserDocks.removeAt(idx);
 	}
+
+	if (main->extraBrowserDocks.empty())
+		main->extraBrowserMenuDocksSeparator.clear();
 
 	deleted.clear();
 
@@ -459,7 +460,6 @@ void OBSExtraBrowsers::on_apply_clicked()
 void OBSBasic::ClearExtraBrowserDocks()
 {
 	extraBrowserDockTargets.clear();
-	extraBrowserDockActions.clear();
 	extraBrowserDocks.clear();
 }
 
@@ -475,7 +475,7 @@ void OBSBasic::LoadExtraBrowserDocks()
 
 	Json::array array = json.array_items();
 	if (!array.empty())
-		ui->menuDocks->addSeparator();
+		extraBrowserMenuDocksSeparator = ui->menuDocks->addSeparator();
 
 	for (Json &item : array) {
 		std::string title = item["title"].string_value();
@@ -562,7 +562,9 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 		}
 	}
 
-	addDockWidget(Qt::RightDockWidgetArea, dock);
+	AddDockWidget(dock, Qt::RightDockWidgetArea, true);
+	extraBrowserDocks.push_back(QSharedPointer<QDockWidget>(dock));
+	extraBrowserDockTargets.push_back(url);
 
 	if (firstCreate) {
 		dock->setFloating(true);
@@ -577,15 +579,4 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 		dock->move(curPos);
 		dock->setVisible(true);
 	}
-
-	QAction *action = AddDockWidget(dock);
-	if (firstCreate) {
-		action->blockSignals(true);
-		action->setChecked(true);
-		action->blockSignals(false);
-	}
-
-	extraBrowserDocks.push_back(QSharedPointer<QDockWidget>(dock));
-	extraBrowserDockActions.push_back(QSharedPointer<QAction>(action));
-	extraBrowserDockTargets.push_back(url);
 }

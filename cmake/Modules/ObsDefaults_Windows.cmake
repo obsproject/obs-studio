@@ -39,6 +39,7 @@ macro(setup_obs_project)
   set(OBS_LIBRARY_EXPORT_DESTINATION "bin/${_ARCH_SUFFIX}bit")
 
   set(OBS_PLUGIN_DESTINATION "obs-plugins/${_ARCH_SUFFIX}bit")
+  set(OBS_PLUGIN_PATH "../../${OBS_PLUGIN_DESTINATION}")
   set(OBS_PLUGIN32_DESTINATION "obs-plugins/32bit")
   set(OBS_PLUGIN64_DESTINATION "obs-plugins/64bit")
 
@@ -48,8 +49,7 @@ macro(setup_obs_project)
   set(OBS_DATA_PATH "../../${OBS_DATA_DESTINATION}")
   set(OBS_INSTALL_PREFIX "")
 
-  set(OBS_SCRIPT_PLUGIN_DESTINATION
-      "${OBS_DATA_DESTINATION}/obs-scripting/${_ARCH_SUFFIX}bit")
+  set(OBS_SCRIPT_PLUGIN_DESTINATION "${OBS_DATA_DESTINATION}/obs-scripting/${_ARCH_SUFFIX}bit")
   set(OBS_SCRIPT_PLUGIN_PATH "../../${OBS_SCRIPT_PLUGIN_DESTINATION}")
 
   string(REPLACE "-" ";" UI_VERSION_SPLIT ${OBS_VERSION})
@@ -62,10 +62,7 @@ macro(setup_obs_project)
   if(INSTALLER_RUN
      AND NOT DEFINED ENV{OBS_InstallerTempDir}
      AND NOT DEFINED ENV{obsInstallerTempDir})
-    message(
-      FATAL_ERROR
-        "Environment variable obsInstallerTempDir is needed for multiarch installer generation"
-    )
+    message(FATAL_ERROR "Environment variable obsInstallerTempDir is needed for multiarch installer generation")
   endif()
 
   if(DEFINED ENV{OBS_DepsPath${_ARCH_SUFFIX}})
@@ -89,19 +86,16 @@ macro(setup_obs_project)
   endif()
 
   if(DEFINED DepsPath${_ARCH_SUFFIX})
-    list(APPEND CMAKE_PREFIX_PATH "${DepsPath${_ARCH_SUFFIX}}"
-         "${DepsPath${_ARCH_SUFFIX}}/bin")
+    list(APPEND CMAKE_PREFIX_PATH "${DepsPath${_ARCH_SUFFIX}}" "${DepsPath${_ARCH_SUFFIX}}/bin")
   elseif(DEFINED DepsPath)
     list(APPEND CMAKE_PREFIX_PATH "${DepsPath}" "${DepsPath}/bin")
   elseif(NOT DEFINED CMAKE_PREFIX_PATH)
     message(
-      WARNING
-        "No CMAKE_PREFIX_PATH set: OBS requires pre-built dependencies for building on Windows."
-        "Please download the appropriate obs-deps package for your architecture and set CMAKE_PREFIX_PATH "
-        "to the base directory and 'bin' directory inside it:\n"
-        "CMAKE_PREFIX_PATH=\"<PATH_TO_OBS_DEPS>\"\n"
-        "Download pre-built OBS dependencies at https://github.com/obsproject/obs-deps/releases\n"
-    )
+      WARNING "No CMAKE_PREFIX_PATH set: OBS requires pre-built dependencies for building on Windows."
+              "Please download the appropriate obs-deps package for your architecture and set CMAKE_PREFIX_PATH "
+              "to the base directory and 'bin' directory inside it:\n"
+              "CMAKE_PREFIX_PATH=\"<PATH_TO_OBS_DEPS>\"\n"
+              "Download pre-built OBS dependencies at https://github.com/obsproject/obs-deps/releases\n")
   endif()
 
   if(DEFINED QTDIR${_ARCH_SUFFIX})
@@ -146,8 +140,7 @@ macro(setup_obs_project)
   set(ENV{OBS_AdditionalInstallFiles} "${_ADDITIONAL_FILES}")
   unset(_ADDITIONAL_FILES)
 
-  list(APPEND CMAKE_INCLUDE_PATH
-       "$ENV{OBS_AdditionalInstallFiles}/include${_ARCH_SUFFIX}"
+  list(APPEND CMAKE_INCLUDE_PATH "$ENV{OBS_AdditionalInstallFiles}/include${_ARCH_SUFFIX}"
        "$ENV{OBS_AdditionalInstallFiles}/include")
 
   list(

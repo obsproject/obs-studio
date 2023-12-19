@@ -22,8 +22,6 @@
 #define BUS_OUTPUT 0
 #define BUS_INPUT 1
 
-#define MAX_DEVICES 20
-
 #define set_property AudioUnitSetProperty
 #define get_property AudioUnitGetProperty
 

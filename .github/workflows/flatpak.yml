@@ -32,14 +32,14 @@ jobs:
 
           case ${GITHUB_REF##*/} in
             +([0-9]).+([0-9]).+([0-9]) )
-              echo 'valid_tag=${{ toJSON(true) }}' >> $GITHUB_OUTPUT
+              echo 'valid_tag=true' >> $GITHUB_OUTPUT
               echo 'matrix=["beta", "stable"]' >> $GITHUB_OUTPUT
               ;;
             +([0-9]).+([0-9]).+([0-9])-@(beta|rc)*([0-9]) )
-              echo 'valid_tag=${{ toJSON(true) }}' >> $GITHUB_OUTPUT
+              echo 'valid_tag=true' >> $GITHUB_OUTPUT
               echo 'matrix=["beta"]' >> $GITHUB_OUTPUT
               ;;
-            * ) echo 'valid_tag=${{ toJSON(false) }}' >> $GITHUB_OUTPUT ;;
+            * ) echo 'valid_tag=false' >> $GITHUB_OUTPUT ;;
           esac
 
   publish:
@@ -63,16 +63,29 @@ jobs:
 
       - name: 'Setup build environment'
         id: setup
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CACHE_KEY: flatpak-builder-${{ hashFiles('CI/flatpak/com.obsproject.Studio.json') }}
         run: |
+          dnf install -y -q gh
+          gh extension install actions/gh-actions-cache
+
           git config --global --add safe.directory $GITHUB_WORKSPACE
-          echo "commitHash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
+
+          KEY="$CACHE_KEY-x86_64"
+          CACHE_HIT=$(gh actions-cache list -B master --key $KEY | grep -q $KEY && echo 'true' || echo 'false')
+
+          echo "git_hash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
+          echo "cache_key=$CACHE_KEY" >> $GITHUB_OUTPUT
+          echo "cache_hit=$CACHE_HIT" >> $GITHUB_OUTPUT
 
       - name: Build Flatpak Manifest
-        uses: flatpak/flatpak-github-actions/flatpak-builder@v5
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6.1
         with:
-          bundle: obs-studio-${{ steps.setup.outputs.commitHash }}.flatpak
+          bundle: obs-studio-${{ steps.setup.outputs.git_hash }}.flatpak
           manifest-path: CI/flatpak/com.obsproject.Studio.json
-          cache-key: flatpak-builder-${{ hashFiles('CI/flatpak/com.obsproject.Studio.json') }}
+          cache: ${{ fromJSON(steps.setup.outputs.cache_hit) }}
+          cache-key: ${{ steps.setup.outputs.cache_key }}
           mirror-screenshots-url: https://dl.flathub.org/repo/screenshots
           branch: ${{ matrix.branch }}
 
@@ -94,7 +107,7 @@ jobs:
           ostree commit --repo=repo --canonical-permissions --branch=screenshots/x86_64 flatpak_app/screenshots
 
       - name: Publish to Flathub Beta
-        uses: flatpak/flatpak-github-actions/flat-manager@v5
+        uses: flatpak/flatpak-github-actions/flat-manager@v6.1
         if: matrix.branch == 'beta'
         with:
           flat-manager-url: https://hub.flathub.org/
@@ -102,7 +115,7 @@ jobs:
           token: ${{ secrets.FLATHUB_BETA_TOKEN }}
 
       - name: Publish to Flathub
-        uses: flatpak/flatpak-github-actions/flat-manager@v5
+        uses: flatpak/flatpak-github-actions/flat-manager@v6.1
         if: matrix.branch == 'stable'
         with:
           flat-manager-url: https://hub.flathub.org/

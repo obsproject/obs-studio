@@ -1055,7 +1055,8 @@ static int init_connect(struct ftl_stream *stream)
 		obs_output_get_video_encoder(stream->output);
 	obs_data_t *video_settings = obs_encoder_get_settings(video_encoder);
 
-	ingest_url = obs_service_get_url(service);
+	ingest_url = obs_service_get_connect_info(
+		service, OBS_SERVICE_CONNECT_INFO_SERVER_URL);
 	if (strncmp(ingest_url, FTL_URL_PROTOCOL, strlen(FTL_URL_PROTOCOL)) ==
 	    0) {
 		dstr_copy(&stream->path, ingest_url + strlen(FTL_URL_PROTOCOL));
@@ -1063,7 +1064,8 @@ static int init_connect(struct ftl_stream *stream)
 		dstr_copy(&stream->path, ingest_url);
 	}
 
-	key = obs_service_get_key(service);
+	key = obs_service_get_connect_info(service,
+					   OBS_SERVICE_CONNECT_INFO_STREAM_KEY);
 
 	int target_bitrate = (int)obs_data_get_int(video_settings, "bitrate");
 	int peak_bitrate = (int)((float)target_bitrate * 1.1f);
@@ -1099,8 +1101,12 @@ static int init_connect(struct ftl_stream *stream)
 		}
 	}
 
-	dstr_copy(&stream->username, obs_service_get_username(service));
-	dstr_copy(&stream->password, obs_service_get_password(service));
+	dstr_copy(&stream->username,
+		  obs_service_get_connect_info(
+			  service, OBS_SERVICE_CONNECT_INFO_USERNAME));
+	dstr_copy(&stream->password,
+		  obs_service_get_connect_info(
+			  service, OBS_SERVICE_CONNECT_INFO_PASSWORD));
 	dstr_depad(&stream->path);
 
 	stream->drop_threshold_usec =
@@ -1165,6 +1171,7 @@ static int _ftl_error_to_obs_error(int status)
 struct obs_output_info ftl_output_info = {
 	.id = "ftl_output",
 	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_SERVICE,
+	.protocols = "FTL",
 	.encoded_video_codecs = "h264",
 	.encoded_audio_codecs = "opus",
 	.get_name = ftl_stream_getname,

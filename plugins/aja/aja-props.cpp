@@ -13,12 +13,13 @@ SourceProps::SourceProps()
 	  pixelFormat{NTV2_FBF_INVALID},
 	  sdiTransport{SDITransport::SingleLink},
 	  sdi4kTransport{SDITransport4K::TwoSampleInterleave},
-	  audioNumChannels{8},
-	  audioSampleSize{4},
-	  audioSampleRate{48000},
+	  audioNumChannels{kDefaultAudioChannels},
+	  audioSampleSize{kDefaultAudioSampleSize},
+	  audioSampleRate{kDefaultAudioSampleRate},
 	  vpids{},
 	  autoDetect{false},
-	  deactivateWhileNotShowing{false}
+	  deactivateWhileNotShowing{false},
+	  swapFrontCenterLFE{false}
 {
 }
 
@@ -30,12 +31,13 @@ SourceProps::SourceProps(NTV2DeviceID devID)
 	  pixelFormat{NTV2_FBF_INVALID},
 	  sdiTransport{SDITransport::SingleLink},
 	  sdi4kTransport{SDITransport4K::TwoSampleInterleave},
-	  audioNumChannels{8},
-	  audioSampleSize{4},
-	  audioSampleRate{48000},
+	  audioNumChannels{kDefaultAudioChannels},
+	  audioSampleSize{kDefaultAudioSampleSize},
+	  audioSampleRate{kDefaultAudioSampleRate},
 	  vpids{},
 	  autoDetect{false},
-	  deactivateWhileNotShowing{false}
+	  deactivateWhileNotShowing{false},
+	  swapFrontCenterLFE{false}
 {
 }
 
@@ -54,6 +56,7 @@ SourceProps::SourceProps(const SourceProps &props)
 	vpids = props.vpids;
 	autoDetect = props.autoDetect;
 	deactivateWhileNotShowing = props.deactivateWhileNotShowing;
+	swapFrontCenterLFE = props.swapFrontCenterLFE;
 }
 
 SourceProps::SourceProps(SourceProps &&props)
@@ -71,6 +74,7 @@ SourceProps::SourceProps(SourceProps &&props)
 	vpids = props.vpids;
 	autoDetect = props.autoDetect;
 	deactivateWhileNotShowing = props.deactivateWhileNotShowing;
+	swapFrontCenterLFE = props.swapFrontCenterLFE;
 }
 
 void SourceProps::operator=(const SourceProps &props)
@@ -88,6 +92,7 @@ void SourceProps::operator=(const SourceProps &props)
 	vpids = props.vpids;
 	autoDetect = props.autoDetect;
 	deactivateWhileNotShowing = props.deactivateWhileNotShowing;
+	swapFrontCenterLFE = props.swapFrontCenterLFE;
 }
 
 void SourceProps::operator=(SourceProps &&props)
@@ -105,6 +110,7 @@ void SourceProps::operator=(SourceProps &&props)
 	vpids = props.vpids;
 	autoDetect = props.autoDetect;
 	deactivateWhileNotShowing = props.deactivateWhileNotShowing;
+	swapFrontCenterLFE = props.swapFrontCenterLFE;
 }
 
 bool SourceProps::operator==(const SourceProps &props)
@@ -120,7 +126,8 @@ bool SourceProps::operator==(const SourceProps &props)
 		audioNumChannels == props.audioNumChannels &&
 		audioSampleSize == props.audioSampleSize &&
 		audioSampleRate == props.audioSampleRate &&
-		deactivateWhileNotShowing == props.deactivateWhileNotShowing);
+		deactivateWhileNotShowing == props.deactivateWhileNotShowing &&
+		swapFrontCenterLFE == props.swapFrontCenterLFE);
 }
 
 bool SourceProps::operator!=(const SourceProps &props)
@@ -196,9 +203,19 @@ audio_format SourceProps::AudioFormat() const
 
 speaker_layout SourceProps::SpeakerLayout() const
 {
-	if (audioNumChannels == 2)
+	if (audioNumChannels == 1)
+		return SPEAKERS_MONO;
+	else if (audioNumChannels == 2)
 		return SPEAKERS_STEREO;
-	// NTV2 is always at least 8ch on modern boards
+	else if (audioNumChannels == 3)
+		return SPEAKERS_2POINT1;
+	else if (audioNumChannels == 4)
+		return SPEAKERS_4POINT0;
+	else if (audioNumChannels == 5)
+		return SPEAKERS_4POINT1;
+	else if (audioNumChannels == 6)
+		return SPEAKERS_5POINT1;
+	// NTV2 card is always set to at least 8ch
 	return SPEAKERS_7POINT1;
 }
 
@@ -213,8 +230,8 @@ OutputProps::OutputProps(NTV2DeviceID devID)
 	  pixelFormat{NTV2_FBF_INVALID},
 	  sdi4kTransport{SDITransport4K::TwoSampleInterleave},
 	  audioNumChannels{8},
-	  audioSampleSize{4},
-	  audioSampleRate{48000}
+	  audioSampleSize{kDefaultAudioSampleSize},
+	  audioSampleRate{kDefaultAudioSampleRate}
 {
 }
 

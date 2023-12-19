@@ -28,10 +28,6 @@
 extern "C" {
 #endif
 
-#define BOUNDS_MAX_X 1
-#define BOUNDS_MAX_Y 2
-#define BOUNDS_MAX_Z 4
-
 #define BOUNDS_OUTSIDE 1
 #define BOUNDS_INSIDE 2
 #define BOUNDS_PARTIAL 3

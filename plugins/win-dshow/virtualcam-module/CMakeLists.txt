@@ -24,51 +24,36 @@ target_sources(
           ../tiny-nv12-scale.c
           ../tiny-nv12-scale.h)
 
-target_include_directories(obs-virtualcam-module
-                           PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
+target_include_directories(obs-virtualcam-module PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 set(MODULE_DESCRIPTION "OBS Virtual Camera output module")
 
-configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
-               virtualcam-module.rc)
+configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in virtualcam-module.rc)
 
 target_sources(obs-virtualcam-module PRIVATE virtualcam-module.rc)
 
-target_link_libraries(
-  obs-virtualcam-module
-  PRIVATE OBS::libdshowcapture OBS::libdshowcapture-external setupapi winmm
-          strmiids gdiplus)
+target_link_libraries(obs-virtualcam-module PRIVATE OBS::libdshowcapture OBS::libdshowcapture-external setupapi winmm
+                                                    strmiids gdiplus)
 
 target_link_options(obs-virtualcam-module PRIVATE "LINKER:/ignore:4104")
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/virtualcam-module.def.in
-               ${CMAKE_CURRENT_BINARY_DIR}/virtualcam-module.def)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/virtualcam-module.def.in ${CMAKE_CURRENT_BINARY_DIR}/virtualcam-module.def)
 
-target_sources(obs-virtualcam-module
-               PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/virtualcam-module.def)
+target_sources(obs-virtualcam-module PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/virtualcam-module.def)
 
-target_include_directories(obs-virtualcam-module
-                           PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../config)
+target_include_directories(obs-virtualcam-module PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../config)
 
-target_compile_definitions(
-  obs-virtualcam-module
-  PRIVATE VIRTUALCAM_AVAILABLE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS
-          _CRT_NONSTDC_NO_WARNINGS)
+target_compile_definitions(obs-virtualcam-module PRIVATE VIRTUALCAM_AVAILABLE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS
+                                                         _CRT_NONSTDC_NO_WARNINGS)
 
 if(MSVC)
-  target_compile_options(obs-virtualcam-module
-                         PRIVATE "$<IF:$<CONFIG:Debug>,/MTd,/MT>")
-  add_target_resource(win-dshow "$<TARGET_PDB_FILE:obs-virtualcam-module>"
-                      "obs-plugins/win-dshow/" OPTIONAL)
+  target_compile_options(obs-virtualcam-module PRIVATE "$<IF:$<CONFIG:Debug>,/MTd,/MT>")
+  add_target_resource(win-dshow "$<TARGET_PDB_FILE:obs-virtualcam-module>" "obs-plugins/win-dshow/" OPTIONAL)
 
 endif()
 
-set_target_properties(obs-virtualcam-module PROPERTIES FOLDER
-                                                       "plugins/win-dshow")
+set_target_properties(obs-virtualcam-module PROPERTIES FOLDER "plugins/win-dshow")
 
-set_target_properties(
-  obs-virtualcam-module PROPERTIES OUTPUT_NAME
-                                   "obs-virtualcam-module${_output_suffix}")
+set_target_properties(obs-virtualcam-module PROPERTIES OUTPUT_NAME "obs-virtualcam-module${_output_suffix}")
 
-add_target_resource(win-dshow "$<TARGET_FILE:obs-virtualcam-module>"
-                    "obs-plugins/win-dshow/")
+add_target_resource(win-dshow "$<TARGET_FILE:obs-virtualcam-module>" "obs-plugins/win-dshow/")

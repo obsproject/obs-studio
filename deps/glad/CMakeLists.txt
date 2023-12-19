@@ -1,47 +1,28 @@
-project(glad)
+cmake_minimum_required(VERSION 3.16...3.25)
 
 find_package(OpenGL REQUIRED)
 
-add_library(glad SHARED)
-add_library(OBS::obsglad ALIAS glad)
+add_library(obsglad STATIC EXCLUDE_FROM_ALL )
+add_library(OBS::glad ALIAS obsglad)
 
-target_sources(glad PRIVATE src/glad.c include/glad/glad.h)
+if(OBS_CMAKE_VERSION VERSION_LESS 3.0.0)
+  add_library(OBS::obsglad ALIAS obsglad)
+endif()
 
-target_include_directories(glad PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_sources(obsglad PRIVATE src/glad.c include/glad/glad.h)
 
-target_compile_definitions(glad PRIVATE GLAD_GLAPI_EXPORT_BUILD)
+target_include_directories(obsglad PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
-target_link_libraries(glad PUBLIC OpenGL::GL)
-
-set_target_properties(
-  glad
-  PROPERTIES OUTPUT_NAME obsglad
-             FOLDER "deps"
-             VERSION "${OBS_VERSION_MAJOR}"
-             SOVERSION "1")
+target_link_libraries(obsglad PUBLIC OpenGL::GL)
 
 if(OS_WINDOWS)
-  set(MODULE_DESCRIPTION "Glad OpenGL Loading Library")
-
-  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
-                 obsglad.rc)
-
-  target_sources(glad PRIVATE src/glad_wgl.c include/glad/glad_wgl.h obsglad.rc)
-
-elseif(OS_POSIX AND NOT OS_MACOS)
-  find_package(OpenGL REQUIRED)
-
+  target_sources(obsglad PRIVATE src/glad_wgl.c include/glad/glad_wgl.h)
+elseif(OS_LINUX OR OS_FREEBSD)
   if(TARGET OpenGL::EGL)
-    target_sources(glad PRIVATE src/glad_egl.c include/EGL/eglplatform.h
-                                include/glad/glad_egl.h)
+    target_sources(obsglad PRIVATE src/glad_egl.c include/EGL/eglplatform.h include/glad/glad_egl.h)
 
-    target_link_libraries(glad PRIVATE OpenGL::EGL)
+    target_link_libraries(obsglad PRIVATE OpenGL::EGL)
   endif()
-
 endif()
 
-if(NOT MSVC)
-  target_compile_options(glad PRIVATE -fvisibility=hidden)
-endif()
-
-setup_binary_target(glad)
+set_target_properties(obsglad PROPERTIES FOLDER deps POSITION_INDEPENDENT_CODE TRUE)

@@ -19,8 +19,10 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 	: OBSQTDisplay(widget, Qt::Window), weakSource(OBSGetWeakRef(source_))
 {
 	OBSSource source = GetSource();
-	destroyedSignal.Connect(obs_source_get_signal_handler(source),
-				"destroy", OBSSourceDestroyed, this);
+	if (source) {
+		destroyedSignal.Connect(obs_source_get_signal_handler(source),
+					"destroy", OBSSourceDestroyed, this);
+	}
 
 	isAlwaysOnTop = config_get_bool(GetGlobalConfig(), "BasicWindow",
 					"ProjectorAlwaysOnTop");
@@ -50,7 +52,10 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 	else
 		SetMonitor(monitor);
 
-	UpdateProjectorTitle(QT_UTF8(obs_source_get_name(source)));
+	if (source)
+		UpdateProjectorTitle(QT_UTF8(obs_source_get_name(source)));
+	else
+		UpdateProjectorTitle(QString());
 
 	QAction *action = new QAction(this);
 	action->setShortcut(Qt::Key_Escape);
@@ -208,11 +213,10 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 	endRegion();
 }
 
-void OBSProjector::OBSSourceDestroyed(void *data, calldata_t *params)
+void OBSProjector::OBSSourceDestroyed(void *data, calldata_t *)
 {
 	OBSProjector *window = reinterpret_cast<OBSProjector *>(data);
 	QMetaObject::invokeMethod(window, "EscapeTriggered");
-	UNUSED_PARAMETER(params);
 }
 
 void OBSProjector::mouseDoubleClickEvent(QMouseEvent *event)
@@ -223,6 +227,10 @@ void OBSProjector::mouseDoubleClickEvent(QMouseEvent *event)
 		return;
 
 	if (!transitionOnDoubleClick)
+		return;
+
+	// Only MultiView projectors handle double click
+	if (this->type != ProjectorType::Multiview)
 		return;
 
 	OBSBasic *main = (OBSBasic *)obs_frontend_get_main_window();

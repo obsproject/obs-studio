@@ -9,5 +9,3 @@
 #endif
 
 #cmakedefine HAS_NOISEREDUCTION
-#define NVIDIA_GREENSCREEN_ENABLED @NVVFX_FOUND@
-

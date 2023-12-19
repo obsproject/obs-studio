@@ -15,6 +15,7 @@
 
 #include <atomic>
 #include <stdlib.h>
+#include <inttypes.h>
 
 // Log AJA Output video/audio delay/sync
 // #define AJA_OUTPUT_STATS
@@ -839,7 +840,9 @@ void AJAOutput::OutputThread(AJAThread *thread, void *ctx)
 	uint32_t audioSize = props.audioNumChannels / props.audioSampleSize;
 	if (audioSize > 0) {
 		blog(LOG_INFO,
-		     "AJAOutput::OutputThread: Thread stopped\n[Video] qf: %lu wf: %lu pf: %lu\n[Audio] qs: %lu ws: %lu ps: %lu",
+		     "AJAOutput::OutputThread: Thread stopped\n[Video] qf: %" PRIu64
+		     " wf: %" PRIu64 " pf: %" PRIu64 "\n[Audio] qs: %" PRIu64
+		     " ws: %" PRIu64 " ps: %" PRIu64,
 		     ajaOutput->mVideoQueueFrames, ajaOutput->mVideoWriteFrames,
 		     ajaOutput->mVideoPlayFrames,
 		     ajaOutput->mAudioQueueBytes / audioSize,
@@ -914,10 +917,6 @@ bool aja_output_device_changed(void *data, obs_properties_t *props,
 		obs_properties_get(props, kUIPropVideoFormatSelect.id);
 	obs_property_t *pix_fmt_list =
 		obs_properties_get(props, kUIPropPixelFormatSelect.id);
-	obs_property_t *sdi_trx_list =
-		obs_properties_get(props, kUIPropSDITransport.id);
-	obs_property_t *sdi_4k_list =
-		obs_properties_get(props, kUIPropSDITransport4K.id);
 
 	const NTV2DeviceID deviceID = cardEntry->GetDeviceID();
 	populate_io_selection_output_list(cardID, outputID, deviceID,

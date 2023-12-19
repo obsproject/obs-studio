@@ -24,7 +24,11 @@ install_obs-deps() {
     status "Install OBS dependencies"
     trap "caught_error 'install_obs-deps'" ERR
 
-    sudo pkg install -U -y $@
+    if [ -z "${DISABLE_PIPEWIRE}" ]; then
+	sudo pkg install -U -y $@ pipewire
+    else
+	sudo pkg install -U -y $@
+    fi
 }
 
 install_qt-deps() {
@@ -79,6 +83,7 @@ print_usage() {
             "-h, --help                     : Print this help\n" \
             "-q, --quiet                    : Suppress most build process output\n" \
             "-v, --verbose                  : Enable more verbose build process output\n"
+            "--disable-pipewire             : Disable building with PipeWire support (default: off)\n"
 }
 
 install-dependencies-main() {
@@ -88,6 +93,7 @@ install-dependencies-main() {
                 -h | --help ) print_usage; exit 0 ;;
                 -q | --quiet ) export QUIET=TRUE; shift ;;
                 -v | --verbose ) export VERBOSE=TRUE; shift ;;
+                --disable-pipewire ) DISABLE_PIPEWIRE=TRUE; shift ;;
                 -- ) shift; break ;;
                 * ) break ;;
             esac

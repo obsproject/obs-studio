@@ -532,6 +532,7 @@
     <addaction name="separator"/>
     <addaction name="actionRepair"/>
     <addaction name="actionCheckForUpdates"/>
+    <addaction name="actionShowWhatsNew"/>
     <addaction name="actionShowAbout"/>
     <addaction name="actionShowMacPermissions"/>
     <addaction name="separator"/>
@@ -713,12 +714,6 @@
     <addaction name="lockDocks"/>
     <addaction name="resetDocks"/>
     <addaction name="separator"/>
-    <addaction name="toggleScenes"/>
-    <addaction name="toggleSources"/>
-    <addaction name="toggleMixer"/>
-    <addaction name="toggleTransitions"/>
-    <addaction name="toggleControls"/>
-    <addaction name="toggleStats"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menuBasic_MainMenu_Edit"/>
@@ -1688,6 +1683,9 @@
    <property name="shortcutContext">
     <enum>Qt::WidgetWithChildrenShortcut</enum>
    </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
    <property name="themeID" stdset="0">
     <string notr="true">removeIconSmall</string>
    </property>
@@ -1708,6 +1706,9 @@
    </property>
    <property name="shortcutContext">
     <enum>Qt::WidgetWithChildrenShortcut</enum>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
    </property>
    <property name="themeID" stdset="0">
     <string notr="true">removeIconSmall</string>
@@ -2187,61 +2188,6 @@
     <string>Basic.MainMenu.Docks.LockDocks</string>
    </property>
   </action>
-  <action name="toggleScenes">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Basic.Main.Scenes</string>
-   </property>
-  </action>
-  <action name="toggleSources">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Basic.Main.Sources</string>
-   </property>
-  </action>
-  <action name="toggleMixer">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Mixer</string>
-   </property>
-  </action>
-  <action name="toggleTransitions">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Basic.SceneTransitions</string>
-   </property>
-  </action>
-  <action name="toggleControls">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Basic.Main.Controls</string>
-   </property>
-  </action>
   <action name="actionHelpPortal">
    <property name="text">
     <string>Basic.MainMenu.Help.HelpPortal</string>
@@ -2262,15 +2208,9 @@
     <string>Basic.MainMenu.Help.Discord</string>
    </property>
   </action>
-  <action name="toggleStats">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
+  <action name="actionShowWhatsNew">
    <property name="text">
-    <string>Basic.Stats</string>
+    <string>Basic.MainMenu.Help.WhatsNew</string>
    </property>
   </action>
   <action name="actionShowAbout">

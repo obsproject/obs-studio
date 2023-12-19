@@ -153,12 +153,12 @@ VertTexTexPos VSPacked422Left_Reverse(uint id : VERTEXID)
 	float x = idHigh * 4. - 1.;
 	float y = idLow * 4. - 1.;
 
-	float u = idHigh * 2. + width_x2_i;
+	float u = idHigh * 2.;
 	float v = idLow * 2.;
 	v = obs_glsl_compile ? v : (1. - v);
 
 	VertTexTexPos vert_out;
-	vert_out.uvuv = float4(width_d2 * u, height * v, u, v);
+	vert_out.uvuv = float4(width_d2 * u, height * v, u + width_x2_i, v);
 	vert_out.pos = float4(x, y, 0., 1.);
 	return vert_out;
 }
@@ -252,6 +252,58 @@ float PS_P010_SRGB_Y(FragPos frag_in) : TARGET
 	return y;
 }
 
+float PS_P216_PQ_Y_709_2020(FragPos frag_in) : TARGET
+{
+	float3 rgb = image.Load(int3(frag_in.pos.xy, 0)).rgb * sdr_white_nits_over_maximum;
+	rgb = rec709_to_rec2020(rgb);
+	rgb = linear_to_st2084(rgb);
+	float y = dot(color_vec0.xyz, rgb) + color_vec0.w;
+	return y;
+}
+
+float PS_P216_HLG_Y_709_2020(FragPos frag_in) : TARGET
+{
+	float3 rgb = image.Load(int3(frag_in.pos.xy, 0)).rgb * sdr_white_nits_over_maximum;
+	rgb = rec709_to_rec2020(rgb);
+	rgb = linear_to_hlg(rgb, hdr_lw);
+	float y = dot(color_vec0.xyz, rgb) + color_vec0.w;
+	return y;
+}
+
+float PS_P216_SRGB_Y(FragPos frag_in) : TARGET
+{
+	float3 rgb = image.Load(int3(frag_in.pos.xy, 0)).rgb;
+	rgb = srgb_linear_to_nonlinear(rgb);
+	float y = dot(color_vec0.xyz, rgb) + color_vec0.w;
+	return y;
+}
+
+float PS_P416_PQ_Y_709_2020(FragPos frag_in) : TARGET
+{
+	float3 rgb = image.Load(int3(frag_in.pos.xy, 0)).rgb * sdr_white_nits_over_maximum;
+	rgb = rec709_to_rec2020(rgb);
+	rgb = linear_to_st2084(rgb);
+	float y = dot(color_vec0.xyz, rgb) + color_vec0.w;
+	return y;
+}
+
+float PS_P416_HLG_Y_709_2020(FragPos frag_in) : TARGET
+{
+	float3 rgb = image.Load(int3(frag_in.pos.xy, 0)).rgb * sdr_white_nits_over_maximum;
+	rgb = rec709_to_rec2020(rgb);
+	rgb = linear_to_hlg(rgb, hdr_lw);
+	float y = dot(color_vec0.xyz, rgb) + color_vec0.w;
+	return y;
+}
+
+float PS_P416_SRGB_Y(FragPos frag_in) : TARGET
+{
+	float3 rgb = image.Load(int3(frag_in.pos.xy, 0)).rgb;
+	rgb = srgb_linear_to_nonlinear(rgb);
+	float y = dot(color_vec0.xyz, rgb) + color_vec0.w;
+	return y;
+}
+
 float PS_I010_PQ_Y_709_2020(FragPos frag_in) : TARGET
 {
 	float3 rgb = image.Load(int3(frag_in.pos.xy, 0)).rgb * sdr_white_nits_over_maximum;
@@ -330,6 +382,76 @@ float2 PS_P010_SRGB_UV_Wide(FragTexWide frag_in) : TARGET
 	float v = dot(color_vec2.xyz, rgb) + color_vec2.w;
 	float2 uv = float2(u, v);
 	uv = floor(saturate(uv) * 1023. + 0.5) * (64. / 65535.);
+	return uv;
+}
+
+float2 PS_P216_PQ_UV_709_2020_Wide(FragTexWide frag_in) : TARGET
+{
+	float3 rgb_left = image.Sample(def_sampler, frag_in.uuv.xz).rgb;
+	float3 rgb_right = image.Sample(def_sampler, frag_in.uuv.yz).rgb;
+	float3 rgb = (rgb_left + rgb_right) * (0.5 * sdr_white_nits_over_maximum);
+	rgb = rec709_to_rec2020(rgb);
+	rgb = linear_to_st2084(rgb);
+	float u = dot(color_vec1.xyz, rgb) + color_vec1.w;
+	float v = dot(color_vec2.xyz, rgb) + color_vec2.w;
+	float2 uv = float2(u, v);
+	return uv;
+}
+
+float2 PS_P216_HLG_UV_709_2020_Wide(FragTexWide frag_in) : TARGET
+{
+	float3 rgb_left = image.Sample(def_sampler, frag_in.uuv.xz).rgb;
+	float3 rgb_right = image.Sample(def_sampler, frag_in.uuv.yz).rgb;
+	float3 rgb = (rgb_left + rgb_right) * (0.5 * sdr_white_nits_over_maximum);
+	rgb = rec709_to_rec2020(rgb);
+	rgb = linear_to_hlg(rgb, hdr_lw);
+	float u = dot(color_vec1.xyz, rgb) + color_vec1.w;
+	float v = dot(color_vec2.xyz, rgb) + color_vec2.w;
+	float2 uv = float2(u, v);
+	return uv;
+}
+
+float2 PS_P216_SRGB_UV_Wide(FragTexWide frag_in) : TARGET
+{
+	float3 rgb_left = image.Sample(def_sampler, frag_in.uuv.xz).rgb;
+	float3 rgb_right = image.Sample(def_sampler, frag_in.uuv.yz).rgb;
+	float3 rgb = (rgb_left + rgb_right) * 0.5;
+	rgb = srgb_linear_to_nonlinear(rgb);
+	float u = dot(color_vec1.xyz, rgb) + color_vec1.w;
+	float v = dot(color_vec2.xyz, rgb) + color_vec2.w;
+	float2 uv = float2(u, v);
+	return uv;
+}
+
+float2 PS_P416_PQ_UV_709_2020(FragPos frag_in) : TARGET
+{
+	float3 rgb = image.Load(int3(frag_in.pos.xy, 0)).rgb;
+	rgb = rec709_to_rec2020(rgb);
+	rgb = linear_to_st2084(rgb);
+	float u = dot(color_vec1.xyz, rgb) + color_vec1.w;
+	float v = dot(color_vec2.xyz, rgb) + color_vec2.w;
+	float2 uv = float2(u, v);
+	return uv;
+}
+
+float2 PS_P416_HLG_UV_709_2020(FragPos frag_in) : TARGET
+{
+	float3 rgb = image.Load(int3(frag_in.pos.xy, 0)).rgb;
+	rgb = rec709_to_rec2020(rgb);
+	rgb = linear_to_hlg(rgb, hdr_lw);
+	float u = dot(color_vec1.xyz, rgb) + color_vec1.w;
+	float v = dot(color_vec2.xyz, rgb) + color_vec2.w;
+	float2 uv = float2(u, v);
+	return uv;
+}
+
+float2 PS_P416_SRGB_UV(FragPos frag_in) : TARGET
+{
+	float3 rgb = image.Load(int3(frag_in.pos.xy, 0)).rgb;
+	rgb = srgb_linear_to_nonlinear(rgb);
+	float u = dot(color_vec1.xyz, rgb) + color_vec1.w;
+	float v = dot(color_vec2.xyz, rgb) + color_vec2.w;
+	float2 uv = float2(u, v);
 	return uv;
 }
 
@@ -573,6 +695,32 @@ float4 PSPlanar422_10LE_Reverse(VertTexPos frag_in) : TARGET
 	return float4(rgb, 1.);
 }
 
+float4 PSPlanar422_10LE_PQ_Reverse(VertTexPos frag_in) : TARGET
+{
+	float y = image.Load(int3(frag_in.pos.xy, 0)).x;
+	float cb = image1.Sample(def_sampler, frag_in.uv).x;
+	float cr = image2.Sample(def_sampler, frag_in.uv).x;
+	float3 yuv = float3(y, cb, cr);
+	yuv *= 65535. / 1023.;
+	float3 pq = YUV_to_RGB(yuv);
+	float3 hdr2020 = st2084_to_linear_eetf(pq, hdr_lw, hdr_lmax) * maximum_over_sdr_white_nits;
+	float3 rgb = rec2020_to_rec709(hdr2020);
+	return float4(rgb, 1.);
+}
+
+float4 PSPlanar422_10LE_HLG_Reverse(VertTexPos frag_in) : TARGET
+{
+	float y = image.Load(int3(frag_in.pos.xy, 0)).x;
+	float cb = image1.Sample(def_sampler, frag_in.uv).x;
+	float cr = image2.Sample(def_sampler, frag_in.uv).x;
+	float3 yuv = float3(y, cb, cr);
+	yuv *= 65535. / 1023.;
+	float3 hlg = YUV_to_RGB(yuv);
+	float3 hdr2020 = hlg_to_linear(hlg, hlg_exponent) * maximum_over_sdr_white_nits;
+	float3 rgb = rec2020_to_rec709(hdr2020);
+	return float4(rgb, 1.);
+}
+
 float4 PSPlanar422A_Reverse(VertTexPos frag_in) : TARGET
 {
 	int3 xy0_luma = int3(frag_in.pos.xy, 0);
@@ -606,6 +754,34 @@ float4 PSPlanar444_12LE_Reverse(FragPos frag_in) : TARGET
 	yuv *= 65535. / 4095.;
 	float3 rgb = YUV_to_RGB(yuv);
 	rgb = srgb_nonlinear_to_linear(rgb);
+	return float4(rgb, 1.);
+}
+
+float4 PSPlanar444_12LE_PQ_Reverse(FragPos frag_in) : TARGET
+{
+	int3 xy0 = int3(frag_in.pos.xy, 0);
+	float y = image.Load(xy0).x;
+	float cb = image1.Load(xy0).x;
+	float cr = image2.Load(xy0).x;
+	float3 yuv = float3(y, cb, cr);
+	yuv *= 65535. / 4095;
+	float3 pq = YUV_to_RGB(yuv);
+	float3 hdr2020 = st2084_to_linear_eetf(pq, hdr_lw, hdr_lmax) * maximum_over_sdr_white_nits;
+	float3 rgb = rec2020_to_rec709(hdr2020);
+	return float4(rgb, 1.);
+}
+
+float4 PSPlanar444_12LE_HLG_Reverse(FragPos frag_in) : TARGET
+{
+	int3 xy0 = int3(frag_in.pos.xy, 0);
+	float y = image.Load(xy0).x;
+	float cb = image1.Load(xy0).x;
+	float cr = image2.Load(xy0).x;
+	float3 yuv = float3(y, cb, cr);
+	yuv *= 65535. / 4095;
+	float3 hlg = YUV_to_RGB(yuv);
+	float3 hdr2020 = hlg_to_linear(hlg, hlg_exponent) * maximum_over_sdr_white_nits;
+	float3 rgb = rec2020_to_rec709(hdr2020);
 	return float4(rgb, 1.);
 }
 
@@ -744,6 +920,92 @@ float4 PSP010_HLG_2020_709_Reverse(VertTexPos frag_in) : TARGET
 	float3 yuv_1023 = floor(yuv_65535 * 0.015625);
 	float3 yuv = yuv_1023 / 1023.;
 	float3 hlg = YUV_to_RGB(yuv);
+	float3 hdr2020 = hlg_to_linear(hlg, hlg_exponent) * maximum_over_sdr_white_nits;
+	float3 rgb = rec2020_to_rec709(hdr2020);
+	return float4(rgb, 1.);
+}
+
+float3 compute_v210_reverse(float2 pos)
+{
+	uint x = uint(pos.x);
+	uint packed_x = x % 6u;
+	uint base_x = x / 6u * 4u;
+	float y, cb, cr;
+	if (packed_x == 0u)
+	{
+		float3 word0_rgb = image.Load(int3(base_x, pos.y, 0)).rgb;
+		y = word0_rgb.y;
+		cb = word0_rgb.x;
+		cr = word0_rgb.z;
+	}
+	else if (packed_x == 1u)
+	{
+		float2 word0_rb = image.Load(int3(base_x, pos.y, 0)).rb;
+		float2 word1_rg = image.Load(int3(base_x + 1u, pos.y, 0)).rg;
+		y = word1_rg.x;
+		cb = (word0_rb.x + word1_rg.y) * 0.5;
+		cr = (word0_rb.y + image.Load(int3(base_x + 2u, pos.y, 0)).r) * 0.5;
+	}
+	else if (packed_x == 2u)
+	{
+		float2 word1_gb = image.Load(int3(base_x + 1u, pos.y, 0)).gb;
+		y = word1_gb.y;
+		cb = word1_gb.x;
+		cr = image.Load(int3(base_x + 2u, pos.y, 0)).r;
+	}
+	else if (packed_x == 3u)
+	{
+		float2 word2_rb = image.Load(int3(base_x + 2u, pos.y, 0)).rb;
+		y = image.Load(int3(base_x + 2u, pos.y, 0)).g;
+		cb = (image.Load(int3(base_x + 1u, pos.y, 0)).g + word2_rb.y) * 0.5;
+		cr = (word2_rb.x + image.Load(int3(base_x + 3u, pos.y, 0)).g) * 0.5;
+	}
+	else if (packed_x == 4u)
+	{
+		float2 word3_rg = image.Load(int3(base_x + 3u, pos.y, 0)).rg;
+		y = word3_rg.x;
+		cb = image.Load(int3(base_x + 2u, pos.y, 0)).b;
+		cr = word3_rg.y;
+	}
+	else
+	{
+		float2 word3_gb = image.Load(int3(base_x + 3u, pos.y, 0)).gb;
+		y = word3_gb.y;
+		cb = image.Load(int3(base_x + 2u, pos.y, 0)).b;
+		cr = word3_gb.x;
+		uint base_x_4 = base_x + 4u;
+		if ((pos.x + 1.) < width)
+		{
+			float2 word4_gb = image.Load(int3(base_x + 4u, pos.y, 0)).rb;
+			cb = (cb + word4_gb.x) * 0.5;
+			cr = (cr + word4_gb.y) * 0.5;
+		}
+	}
+	float3 yuv_65535 = floor(float3(y, cb, cr) * 65535. + 0.5);
+	float3 yuv_1023 = floor(yuv_65535 * 0.015625);
+	float3 yuv = yuv_1023 / 1023.;
+	float3 rgb = YUV_to_RGB(yuv);
+	return rgb;
+}
+
+float4 PSV210_SRGB_Reverse(FragPos frag_in) : TARGET
+{
+	float3 rgb = compute_v210_reverse(frag_in.pos.xy);
+	rgb = srgb_nonlinear_to_linear(rgb);
+	return float4(rgb, 1.);
+}
+
+float4 PSV210_PQ_2020_709_Reverse(FragPos frag_in) : TARGET
+{
+	float3 pq = compute_v210_reverse(frag_in.pos.xy);
+	float3 hdr2020 = st2084_to_linear_eetf(pq, hdr_lw, hdr_lmax) * maximum_over_sdr_white_nits;
+	float3 rgb = rec2020_to_rec709(hdr2020);
+	return float4(rgb, 1.);
+}
+
+float4 PSV210_HLG_2020_709_Reverse(FragPos frag_in) : TARGET
+{
+	float3 hlg = compute_v210_reverse(frag_in.pos.xy);
 	float3 hdr2020 = hlg_to_linear(hlg, hlg_exponent) * maximum_over_sdr_white_nits;
 	float3 rgb = rec2020_to_rec709(hdr2020);
 	return float4(rgb, 1.);
@@ -990,6 +1252,114 @@ technique P010_SRGB_UV
 	}
 }
 
+technique P216_PQ_Y
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PS_P216_PQ_Y_709_2020(frag_in);
+	}
+}
+
+technique P216_HLG_Y
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PS_P216_HLG_Y_709_2020(frag_in);
+	}
+}
+
+technique P216_SRGB_Y
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PS_P216_SRGB_Y(frag_in);
+	}
+}
+
+technique P216_PQ_UV
+{
+	pass
+	{
+		vertex_shader = VSTexPos_Left(id);
+		pixel_shader  = PS_P216_PQ_UV_709_2020_Wide(frag_in);
+	}
+}
+
+technique P216_HLG_UV
+{
+	pass
+	{
+		vertex_shader = VSTexPos_Left(id);
+		pixel_shader  = PS_P216_HLG_UV_709_2020_Wide(frag_in);
+	}
+}
+
+technique P216_SRGB_UV
+{
+	pass
+	{
+		vertex_shader = VSTexPos_Left(id);
+		pixel_shader  = PS_P216_SRGB_UV_Wide(frag_in);
+	}
+}
+
+technique P416_PQ_Y
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PS_P416_PQ_Y_709_2020(frag_in);
+	}
+}
+
+technique P416_HLG_Y
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PS_P416_HLG_Y_709_2020(frag_in);
+	}
+}
+
+technique P416_SRGB_Y
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PS_P416_SRGB_Y(frag_in);
+	}
+}
+
+technique P416_PQ_UV
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PS_P416_PQ_UV_709_2020(frag_in);
+	}
+}
+
+technique P416_HLG_UV
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PS_P416_HLG_UV_709_2020(frag_in);
+	}
+}
+
+technique P416_SRGB_UV
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PS_P416_SRGB_UV(frag_in);
+	}
+}
+
 technique UYVY_Reverse
 {
 	pass
@@ -1089,6 +1459,24 @@ technique I210_Reverse
 	}
 }
 
+technique I210_PQ_Reverse
+{
+	pass
+	{
+		vertex_shader = VS422Left_Reverse(id);
+		pixel_shader  = PSPlanar422_10LE_PQ_Reverse(frag_in);
+	}
+}
+
+technique I210_HLG_Reverse
+{
+	pass
+	{
+		vertex_shader = VS422Left_Reverse(id);
+		pixel_shader  = PSPlanar422_10LE_HLG_Reverse(frag_in);
+	}
+}
+
 technique I42A_Reverse
 {
 	pass
@@ -1113,6 +1501,24 @@ technique I412_Reverse
 	{
 		vertex_shader = VSPos(id);
 		pixel_shader  = PSPlanar444_12LE_Reverse(frag_in);
+	}
+}
+
+technique I412_PQ_Reverse
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PSPlanar444_12LE_PQ_Reverse(frag_in);
+	}
+}
+
+technique I412_HLG_Reverse
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PSPlanar444_12LE_HLG_Reverse(frag_in);
 	}
 }
 
@@ -1221,6 +1627,33 @@ technique P010_HLG_2020_709_Reverse
 	{
 		vertex_shader = VS420TopLeft_Reverse(id);
 		pixel_shader  = PSP010_HLG_2020_709_Reverse(frag_in);
+	}
+}
+
+technique V210_SRGB_Reverse
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PSV210_SRGB_Reverse(frag_in);
+	}
+}
+
+technique V210_PQ_2020_709_Reverse
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PSV210_PQ_2020_709_Reverse(frag_in);
+	}
+}
+
+technique V210_HLG_2020_709_Reverse
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PSV210_HLG_2020_709_Reverse(frag_in);
 	}
 }
 

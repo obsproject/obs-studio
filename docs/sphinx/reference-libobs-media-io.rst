@@ -48,6 +48,18 @@ Video Handler
    - VIDEO_FORMAT_I010
    - VIDEO_FORMAT_P010
 
+   - VIDEO_FORMAT_I210
+
+   - VIDEO_FORMAT_I412
+
+   - VIDEO_FORMAT_YA2L
+
+   - VIDEO_FORMAT_P216
+
+   - VIDEO_FORMAT_P416
+
+   - VIDEO_FORMAT_V210
+
 ---------------------
 
 .. enum:: video_trc

@@ -144,6 +144,8 @@ static void *scale_filter_create(obs_data_t *settings, obs_source_t *context)
 
 static void scale_filter_tick(void *data, float seconds)
 {
+	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(seconds);
 	return;
 }
 
@@ -284,16 +286,9 @@ get_tech_name_and_multiplier(const struct scale_filter_data *filter,
 	switch (source_space) {
 	case GS_CS_SRGB:
 	case GS_CS_SRGB_16F:
-		switch (current_space) {
-		case GS_CS_709_SCRGB:
-			*multiplier = obs_get_video_sdr_white_level() / 80.f;
-		}
-		break;
 	case GS_CS_709_EXTENDED:
-		switch (current_space) {
-		case GS_CS_709_SCRGB:
+		if (current_space == GS_CS_709_SCRGB)
 			*multiplier = obs_get_video_sdr_white_level() / 80.f;
-		}
 		break;
 	case GS_CS_709_SCRGB:
 		switch (current_space) {
@@ -301,6 +296,9 @@ get_tech_name_and_multiplier(const struct scale_filter_data *filter,
 		case GS_CS_SRGB_16F:
 		case GS_CS_709_EXTENDED:
 			*multiplier = 80.f / obs_get_video_sdr_white_level();
+			break;
+		case GS_CS_709_SCRGB:
+			break;
 		}
 	}
 
@@ -310,10 +308,8 @@ get_tech_name_and_multiplier(const struct scale_filter_data *filter,
 		switch (source_space) {
 		case GS_CS_SRGB:
 		case GS_CS_SRGB_16F:
-			switch (current_space) {
-			case GS_CS_709_SCRGB:
+			if (current_space == GS_CS_709_SCRGB)
 				tech_name = "DrawUndistortMultiply";
-			}
 			break;
 		case GS_CS_709_EXTENDED:
 			switch (current_space) {
@@ -323,6 +319,9 @@ get_tech_name_and_multiplier(const struct scale_filter_data *filter,
 				break;
 			case GS_CS_709_SCRGB:
 				tech_name = "DrawUndistortMultiply";
+				break;
+			case GS_CS_709_EXTENDED:
+				break;
 			}
 			break;
 		case GS_CS_709_SCRGB:
@@ -333,6 +332,9 @@ get_tech_name_and_multiplier(const struct scale_filter_data *filter,
 				break;
 			case GS_CS_709_EXTENDED:
 				tech_name = "DrawUndistortMultiply";
+				break;
+			case GS_CS_709_SCRGB:
+				break;
 			}
 		}
 	} else if (filter->upscale) {
@@ -340,10 +342,8 @@ get_tech_name_and_multiplier(const struct scale_filter_data *filter,
 		switch (source_space) {
 		case GS_CS_SRGB:
 		case GS_CS_SRGB_16F:
-			switch (current_space) {
-			case GS_CS_709_SCRGB:
+			if (current_space == GS_CS_709_SCRGB)
 				tech_name = "DrawUpscaleMultiply";
-			}
 			break;
 		case GS_CS_709_EXTENDED:
 			switch (current_space) {
@@ -353,6 +353,9 @@ get_tech_name_and_multiplier(const struct scale_filter_data *filter,
 				break;
 			case GS_CS_709_SCRGB:
 				tech_name = "DrawUpscaleMultiply";
+				break;
+			case GS_CS_709_EXTENDED:
+				break;
 			}
 			break;
 		case GS_CS_709_SCRGB:
@@ -363,16 +366,17 @@ get_tech_name_and_multiplier(const struct scale_filter_data *filter,
 				break;
 			case GS_CS_709_EXTENDED:
 				tech_name = "DrawUpscaleMultiply";
+				break;
+			case GS_CS_709_SCRGB:
+				break;
 			}
 		}
 	} else {
 		switch (source_space) {
 		case GS_CS_SRGB:
 		case GS_CS_SRGB_16F:
-			switch (current_space) {
-			case GS_CS_709_SCRGB:
+			if (current_space == GS_CS_709_SCRGB)
 				tech_name = "DrawMultiply";
-			}
 			break;
 		case GS_CS_709_EXTENDED:
 			switch (current_space) {
@@ -382,6 +386,9 @@ get_tech_name_and_multiplier(const struct scale_filter_data *filter,
 				break;
 			case GS_CS_709_SCRGB:
 				tech_name = "DrawMultiply";
+				break;
+			case GS_CS_709_EXTENDED:
+				break;
 			}
 			break;
 		case GS_CS_709_SCRGB:
@@ -392,6 +399,9 @@ get_tech_name_and_multiplier(const struct scale_filter_data *filter,
 				break;
 			case GS_CS_709_EXTENDED:
 				tech_name = "DrawMultiply";
+				break;
+			case GS_CS_709_SCRGB:
+				break;
 			}
 		}
 	}
@@ -535,7 +545,7 @@ static obs_properties_t *scale_filter_properties(void *data)
 		obs_property_list_add_string(p, aspects[i], aspects[i]);
 
 	size_t contexts = obs_get_video_info_count();
-	for (int i = 0; i < contexts; i++) {
+	for (size_t i = 0; i < contexts; i++) {
 		obs_get_video_info_by_index(i, &ovi);
 		cx = ovi.base_width;
 		cy = ovi.base_height;

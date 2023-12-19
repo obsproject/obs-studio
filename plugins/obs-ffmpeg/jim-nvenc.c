@@ -134,7 +134,7 @@ struct nv_bitstream {
 	void *ptr;
 };
 
-#define NV_FAIL(format, ...) nv_fail(enc->encoder, format, __VA_ARGS__)
+#define NV_FAIL(format, ...) nv_fail(enc->encoder, format, ##__VA_ARGS__)
 #define NV_FAILED(x) nv_failed(enc->encoder, x, __FUNCTION__, #x)
 
 static bool nv_bitstream_init(struct nvenc_data *enc, struct nv_bitstream *bs)
@@ -656,8 +656,7 @@ static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings,
 	/* rate control               */
 
 	enc->can_change_bitrate =
-		nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_DYN_BITRATE_CHANGE) &&
-		!lookahead;
+		nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_DYN_BITRATE_CHANGE);
 
 	config->rcParams.rateControlMode = NV_ENC_PARAMS_RC_VBR;
 
@@ -746,6 +745,10 @@ static bool init_encoder_h264(struct nvenc_data *enc, obs_data_t *settings,
 
 	h264_config->useBFramesAsRef = NV_ENC_BFRAME_REF_MODE_DISABLED;
 
+	/* Enable CBR padding */
+	if (config->rcParams.rateControlMode == NV_ENC_PARAMS_RC_CBR)
+		h264_config->enableFillerDataInsertion = 1;
+
 	vui_params->videoSignalTypePresentFlag = 1;
 	vui_params->videoFullRangeFlag = (voi->range == VIDEO_RANGE_FULL);
 	vui_params->colourDescriptionPresentFlag = 1;
@@ -830,6 +833,10 @@ static bool init_encoder_hevc(struct nvenc_data *enc, obs_data_t *settings,
 	hevc_config->sliceModeData = 1;
 
 	hevc_config->useBFramesAsRef = NV_ENC_BFRAME_REF_MODE_DISABLED;
+
+	/* Enable CBR padding */
+	if (config->rcParams.rateControlMode == NV_ENC_PARAMS_RC_CBR)
+		hevc_config->enableFillerDataInsertion = 1;
 
 	vui_params->videoSignalTypePresentFlag = 1;
 	vui_params->videoFullRangeFlag = (voi->range == VIDEO_RANGE_FULL);
@@ -921,6 +928,10 @@ static bool init_encoder_av1(struct nvenc_data *enc, obs_data_t *settings,
 	av1_config->useBFramesAsRef = NV_ENC_BFRAME_REF_MODE_DISABLED;
 
 	av1_config->colorRange = (voi->range == VIDEO_RANGE_FULL);
+
+	/* Enable CBR padding */
+	if (config->rcParams.rateControlMode == NV_ENC_PARAMS_RC_CBR)
+		av1_config->enableBitstreamPadding = 1;
 
 	switch (voi->colorspace) {
 	case VIDEO_CS_601:
@@ -1165,6 +1176,11 @@ reroute:
 	case CODEC_HEVC:
 		return obs_encoder_create_rerouted(encoder,
 						   "ffmpeg_hevc_nvenc");
+	case CODEC_AV1:
+		obs_encoder_set_last_error(
+			encoder,
+			obs_module_text("NVENC.NoAV1FallbackPossible"));
+		break;
 	}
 
 	return NULL;

@@ -121,6 +121,11 @@ static inline void darray_ensure_capacity(const size_t element_size,
 	dst->capacity = new_cap;
 }
 
+static inline void darray_clear(struct darray *dst)
+{
+	dst->num = 0;
+}
+
 static inline void darray_resize(const size_t element_size, struct darray *dst,
 				 const size_t size)
 {
@@ -269,10 +274,10 @@ static inline void *darray_insert_new(const size_t element_size,
 	if (idx == dst->num)
 		return darray_push_back_new(element_size, dst);
 
-	item = darray_item(element_size, dst, idx);
-
 	move_count = dst->num - idx;
 	darray_ensure_capacity(element_size, dst, ++dst->num);
+
+	item = darray_item(element_size, dst, idx);
 	memmove(darray_item(element_size, dst, idx + 1), item,
 		move_count * element_size);
 
@@ -487,6 +492,8 @@ static inline void darray_swap(const size_t element_size, struct darray *dst,
 
 #define da_resize(v, size) darray_resize(sizeof(*v.array), &v.da, size)
 
+#define da_clear(v) darray_clear(&v.da)
+
 #define da_copy(dst, src) darray_copy(sizeof(*dst.array), &dst.da, &src.da)
 
 #define da_copy_array(dst, src_array, n) \
@@ -538,7 +545,20 @@ static inline void darray_swap(const size_t element_size, struct darray *dst,
 #define da_push_back(v, item) darray_push_back(sizeof(*v.array), &v.da, item)
 #endif
 
+#ifdef __GNUC__
+/* GCC 12 with -O2 generates a warning -Wstringop-overflow in da_push_back_new,
+ * which could be false positive. Extract the macro here to avoid the warning.
+ */
+#define da_push_back_new(v)                                                  \
+	({                                                                   \
+		__typeof__(v) *d = &(v);                                     \
+		darray_ensure_capacity(sizeof(*d->array), &d->da, ++d->num); \
+		memset(&d->array[d->num - 1], 0, sizeof(*d->array));         \
+		&d->array[d->num - 1];                                       \
+	})
+#else
 #define da_push_back_new(v) darray_push_back_new(sizeof(*v.array), &v.da)
+#endif
 
 #ifdef ENABLE_DARRAY_TYPE_TEST
 #define da_push_back_array(dst, src_array, n)                                  \

@@ -234,7 +234,15 @@ Output Definition Structure (obs_output_info)
    This variable specifies which codecs are supported by an encoded
    output, separated by semicolon.
 
-   (Optional, though recommended)
+   Required if **OBS_OUTPUT_SERVICE** flag is set, otherwise
+   recommended.
+
+.. member:: const char *obs_output_info.protocols
+
+   This variable specifies which protocols are supported by an output,
+   separated by semicolon.
+
+   Required only if **OBS_OUTPUT_SERVICE** flag is set.
 
 .. _output_signal_handler_reference:
 
@@ -671,10 +679,12 @@ General Output Functions
 ---------------------
 
 .. function:: const char *obs_output_get_supported_video_codecs(const obs_output_t *output)
+              const char *obs_get_output_supported_video_codecs(const char *id)
               const char *obs_output_get_supported_audio_codecs(const obs_output_t *output)
+              const char *obs_get_output_supported_video_codecs(const char *id)
 
    :return: Supported video/audio codecs of an encoded output, separated
-            by semicolen
+            by semicolon
 
 ---------------------
 
@@ -682,6 +692,40 @@ General Output Functions
               uint32_t obs_get_output_flags(const char *id)
 
    :return: The output capability flags
+
+---------------------
+
+.. function:: const char *obs_output_get_protocols(const obs_output_t *output)
+
+   :return: Supported protocols, separated by semicolon. Always NULL if the
+            output is not **OBS_OUTPUT_SERVICE**.
+
+---------------------
+
+.. function:: bool obs_is_output_protocol_registered(const char *protocol)
+
+   Check if one of the registered output use the given protocol.
+
+   :return:                 A boolean showing if an output with the given
+                            protocol is registered
+
+---------------------
+
+.. function:: bool obs_enum_output_protocols(size_t idx, char **protocol)
+
+   Enumerates all registered protocol.
+
+---------------------
+
+.. function:: void obs_enum_output_types_with_protocol(const char *protocol, void *data, bool (*enum_cb)(void *data, const char *id))
+
+   Enumerates through a callback all available output types for the given protocol.
+
+   :param protocol: Protocol of the outputs to enumerate
+   :param data:     Data passed to the callback
+   :param enum_cb:  Callback used when a matching output is found, the id
+                    of the output is passed to the callback
+   :return:         When all outputs are enumerated or if the callback return *false*
 
 ---------------------
 
@@ -697,9 +741,10 @@ Functions used by outputs
 ---------------------
 
 .. function:: void obs_output_set_video_conversion(obs_output_t *output, const struct video_scale_info *conversion)
+              const struct video_scale_info *obs_output_get_video_conversion(obs_output_t *output)
 
-   Optionally sets the video conversion information.  Only used by raw
-   outputs.
+   Optionally sets/gets the video conversion information.  Only used by
+   raw outputs.
 
    Relevant data types used with this function:
 
@@ -747,6 +792,24 @@ Functions used by outputs
            /* planar 4:2:0 format, 10 bpp */
            VIDEO_FORMAT_I010, /* three-plane */
            VIDEO_FORMAT_P010, /* two-plane, luma and packed chroma */
+
+           /* planar 4:2:2 format, 10 bpp */
+           VIDEO_FORMAT_I210,
+
+           /* planar 4:4:4 format, 12 bpp */
+           VIDEO_FORMAT_I412,
+
+           /* planar 4:4:4:4 format, 12 bpp */
+           VIDEO_FORMAT_YA2L,
+
+           /* planar 4:2:2 format, 16 bpp */
+           VIDEO_FORMAT_P216, /* two-plane, luma and packed chroma */
+
+           /* planar 4:4:4 format, 16 bpp */
+           VIDEO_FORMAT_P416, /* two-plane, luma and packed chroma */
+
+           /* packed 4:2:2 format, 10 bpp */
+           VIDEO_FORMAT_V210,
    };
 
    enum video_colorspace {

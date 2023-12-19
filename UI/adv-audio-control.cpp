@@ -291,18 +291,16 @@ void OBSAdvAudioCtrl::ShowAudioControl(QGridLayout *layout)
 /* ------------------------------------------------------------------------- */
 /* OBS source callbacks */
 
-void OBSAdvAudioCtrl::OBSSourceActivated(void *param, calldata_t *calldata)
+void OBSAdvAudioCtrl::OBSSourceActivated(void *param, calldata_t *)
 {
 	QMetaObject::invokeMethod(reinterpret_cast<OBSAdvAudioCtrl *>(param),
 				  "SourceActiveChanged", Q_ARG(bool, true));
-	UNUSED_PARAMETER(calldata);
 }
 
-void OBSAdvAudioCtrl::OBSSourceDeactivated(void *param, calldata_t *calldata)
+void OBSAdvAudioCtrl::OBSSourceDeactivated(void *param, calldata_t *)
 {
 	QMetaObject::invokeMethod(reinterpret_cast<OBSAdvAudioCtrl *>(param),
 				  "SourceActiveChanged", Q_ARG(bool, false));
-	UNUSED_PARAMETER(calldata);
 }
 
 void OBSAdvAudioCtrl::OBSSourceFlagsChanged(void *param, calldata_t *calldata)

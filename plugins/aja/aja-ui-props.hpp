@@ -108,3 +108,23 @@ static const UIProperty kUIPropMultiViewAudioSource = {
 	"Multi View Audio Source",
 	"",
 };
+
+static const UIProperty kUIPropChannelFormat = {
+	"ui_prop_channel_format",
+	"ChannelFormat",
+	"",
+};
+
+static const UIProperty kUIPropChannelSwap_FC_LFE = {
+	"ui_prop_channel_swap_fc_lfe",
+	"SwapFC-LFE",
+	"SwapFC-LFE.Tooltip",
+};
+
+#define TEXT_CHANNEL_FORMAT_NONE obs_module_text("ChannelFormat.None")
+#define TEXT_CHANNEL_FORMAT_2_0CH obs_module_text("ChannelFormat.2_0ch")
+#define TEXT_CHANNEL_FORMAT_2_1CH obs_module_text("ChannelFormat.2_1ch")
+#define TEXT_CHANNEL_FORMAT_4_0CH obs_module_text("ChannelFormat.4_0ch")
+#define TEXT_CHANNEL_FORMAT_4_1CH obs_module_text("ChannelFormat.4_1ch")
+#define TEXT_CHANNEL_FORMAT_5_1CH obs_module_text("ChannelFormat.5_1ch")
+#define TEXT_CHANNEL_FORMAT_7_1CH obs_module_text("ChannelFormat.7_1ch")

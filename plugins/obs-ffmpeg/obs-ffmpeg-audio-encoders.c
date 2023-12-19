@@ -22,7 +22,6 @@
 #include <obs-module.h>
 
 #include <libavutil/channel_layout.h>
-#include <libavutil/opt.h>
 #include <libavformat/avformat.h>
 
 #include "obs-ffmpeg-formats.h"
@@ -94,6 +93,36 @@ static const char *opus_getname(void *unused)
 {
 	UNUSED_PARAMETER(unused);
 	return obs_module_text("FFmpegOpus");
+}
+
+static const char *pcm_getname(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return obs_module_text("FFmpegPCM16Bit");
+}
+
+static const char *pcm24_getname(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return obs_module_text("FFmpegPCM24Bit");
+}
+
+static const char *pcm32_getname(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return obs_module_text("FFmpegPCM32BitFloat");
+}
+
+static const char *alac_getname(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return obs_module_text("FFmpegALAC");
+}
+
+static const char *flac_getname(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return obs_module_text("FFmpegFLAC");
 }
 
 static void enc_destroy(void *data)
@@ -181,7 +210,8 @@ static void init_sizes(struct enc_encoder *enc, audio_t *audio)
 #endif
 
 static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
-			const char *type, const char *alt)
+			const char *type, const char *alt,
+			enum AVSampleFormat sample_format)
 {
 	struct enc_encoder *enc;
 	int bitrate = (int)obs_data_get_int(settings, "bitrate");
@@ -208,9 +238,17 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 		goto fail;
 	}
 
-	if (!bitrate) {
+	const AVCodecDescriptor *codec_desc =
+		avcodec_descriptor_get(enc->codec->id);
+
+	if (!codec_desc) {
+		warn("Failed to get codec descriptor");
+		goto fail;
+	}
+
+	if (!bitrate && !(codec_desc->props & AV_CODEC_PROP_LOSSLESS)) {
 		warn("Invalid bitrate specified");
-		return NULL;
+		goto fail;
 	}
 
 	enc->context = avcodec_alloc_context3(enc->codec);
@@ -219,7 +257,12 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 		goto fail;
 	}
 
-	enc->context->bit_rate = bitrate * 1000;
+	if (codec_desc->props & AV_CODEC_PROP_LOSSLESS)
+		// Set by encoder on init, not known at this time
+		enc->context->bit_rate = -1;
+	else
+		enc->context->bit_rate = bitrate * 1000;
+
 	const struct audio_output_info *aoi;
 	aoi = audio_output_get_info(audio);
 
@@ -235,12 +278,33 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 	if (aoi->speakers == SPEAKERS_4POINT1)
 		enc->context->ch_layout =
 			(AVChannelLayout)AV_CHANNEL_LAYOUT_4POINT1;
+	if (aoi->speakers == SPEAKERS_2POINT1)
+		enc->context->ch_layout =
+			(AVChannelLayout)AV_CHANNEL_LAYOUT_SURROUND;
 #endif
 
 	enc->context->sample_rate = audio_output_get_sample_rate(audio);
-	enc->context->sample_fmt = enc->codec->sample_fmts
-					   ? enc->codec->sample_fmts[0]
-					   : AV_SAMPLE_FMT_FLTP;
+
+	if (enc->codec->sample_fmts) {
+		/* Check if the requested format is actually available for the specified
+		 * encoder. This may not always be the case due to FFmpeg changes or a
+		 * fallback being used (for example, when libopus is unavailable). */
+		const enum AVSampleFormat *fmt = enc->codec->sample_fmts;
+		while (*fmt != AV_SAMPLE_FMT_NONE) {
+			if (*fmt == sample_format) {
+				enc->context->sample_fmt = *fmt;
+				break;
+			}
+			fmt++;
+		}
+
+		/* Fall back to default if requested format was not found. */
+		if (enc->context->sample_fmt == AV_SAMPLE_FMT_NONE)
+			enc->context->sample_fmt = enc->codec->sample_fmts[0];
+	} else {
+		/* Fall back to planar float if codec does not specify formats. */
+		enc->context->sample_fmt = AV_SAMPLE_FMT_FLTP;
+	}
 
 	/* check to make sure sample rate is supported */
 	if (enc->codec->supported_samplerates) {
@@ -259,10 +323,6 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 
 		if (closest)
 			enc->context->sample_rate = closest;
-	}
-
-	if (strcmp(enc->codec->name, "aac") == 0) {
-		av_opt_set(enc->context->priv_data, "aac_coder", "fast", 0);
 	}
 
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(59, 24, 100)
@@ -294,12 +354,41 @@ fail:
 
 static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return enc_create(settings, encoder, "aac", NULL);
+	return enc_create(settings, encoder, "aac", NULL, AV_SAMPLE_FMT_NONE);
 }
 
 static void *opus_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return enc_create(settings, encoder, "libopus", "opus");
+	return enc_create(settings, encoder, "libopus", "opus",
+			  AV_SAMPLE_FMT_FLT);
+}
+
+static void *pcm_create(obs_data_t *settings, obs_encoder_t *encoder)
+{
+	return enc_create(settings, encoder, "pcm_s16le", NULL,
+			  AV_SAMPLE_FMT_NONE);
+}
+
+static void *pcm24_create(obs_data_t *settings, obs_encoder_t *encoder)
+{
+	return enc_create(settings, encoder, "pcm_s24le", NULL,
+			  AV_SAMPLE_FMT_NONE);
+}
+
+static void *pcm32_create(obs_data_t *settings, obs_encoder_t *encoder)
+{
+	return enc_create(settings, encoder, "pcm_f32le", NULL,
+			  AV_SAMPLE_FMT_NONE);
+}
+
+static void *alac_create(obs_data_t *settings, obs_encoder_t *encoder)
+{
+	return enc_create(settings, encoder, "alac", NULL, AV_SAMPLE_FMT_S32P);
+}
+
+static void *flac_create(obs_data_t *settings, obs_encoder_t *encoder)
+{
+	return enc_create(settings, encoder, "flac", NULL, AV_SAMPLE_FMT_S16);
 }
 
 static bool do_encode(struct enc_encoder *enc, struct encoder_packet *packet,
@@ -420,6 +509,12 @@ static void enc_audio_info(void *data, struct audio_convert_info *info)
 		info->speakers = SPEAKERS_UNKNOWN;
 }
 
+static void enc_audio_info_float(void *data, struct audio_convert_info *info)
+{
+	enc_audio_info(data, info);
+	info->allow_clipping = true;
+}
+
 static size_t enc_frame_size(void *data)
 {
 	struct enc_encoder *enc = data;
@@ -429,7 +524,7 @@ static size_t enc_frame_size(void *data)
 struct obs_encoder_info aac_encoder_info = {
 	.id = "ffmpeg_aac",
 	.type = OBS_ENCODER_AUDIO,
-	.codec = "AAC",
+	.codec = "aac",
 	.get_name = aac_getname,
 	.create = aac_create,
 	.destroy = enc_destroy,
@@ -447,6 +542,81 @@ struct obs_encoder_info opus_encoder_info = {
 	.codec = "opus",
 	.get_name = opus_getname,
 	.create = opus_create,
+	.destroy = enc_destroy,
+	.encode = enc_encode,
+	.get_frame_size = enc_frame_size,
+	.get_defaults = enc_defaults,
+	.get_properties = enc_properties,
+	.get_extra_data = enc_extra_data,
+	.get_audio_info = enc_audio_info,
+};
+
+struct obs_encoder_info pcm_encoder_info = {
+	.id = "ffmpeg_pcm_s16le",
+	.type = OBS_ENCODER_AUDIO,
+	.codec = "pcm_s16le",
+	.get_name = pcm_getname,
+	.create = pcm_create,
+	.destroy = enc_destroy,
+	.encode = enc_encode,
+	.get_frame_size = enc_frame_size,
+	.get_defaults = enc_defaults,
+	.get_properties = enc_properties,
+	.get_extra_data = enc_extra_data,
+	.get_audio_info = enc_audio_info,
+};
+
+struct obs_encoder_info pcm24_encoder_info = {
+	.id = "ffmpeg_pcm_s24le",
+	.type = OBS_ENCODER_AUDIO,
+	.codec = "pcm_s24le",
+	.get_name = pcm24_getname,
+	.create = pcm24_create,
+	.destroy = enc_destroy,
+	.encode = enc_encode,
+	.get_frame_size = enc_frame_size,
+	.get_defaults = enc_defaults,
+	.get_properties = enc_properties,
+	.get_extra_data = enc_extra_data,
+	.get_audio_info = enc_audio_info,
+};
+
+struct obs_encoder_info pcm32_encoder_info = {
+	.id = "ffmpeg_pcm_f32le",
+	.type = OBS_ENCODER_AUDIO,
+	.codec = "pcm_f32le",
+	.get_name = pcm32_getname,
+	.create = pcm32_create,
+	.destroy = enc_destroy,
+	.encode = enc_encode,
+	.get_frame_size = enc_frame_size,
+	.get_defaults = enc_defaults,
+	.get_properties = enc_properties,
+	.get_extra_data = enc_extra_data,
+	.get_audio_info = enc_audio_info_float,
+};
+
+struct obs_encoder_info alac_encoder_info = {
+	.id = "ffmpeg_alac",
+	.type = OBS_ENCODER_AUDIO,
+	.codec = "alac",
+	.get_name = alac_getname,
+	.create = alac_create,
+	.destroy = enc_destroy,
+	.encode = enc_encode,
+	.get_frame_size = enc_frame_size,
+	.get_defaults = enc_defaults,
+	.get_properties = enc_properties,
+	.get_extra_data = enc_extra_data,
+	.get_audio_info = enc_audio_info,
+};
+
+struct obs_encoder_info flac_encoder_info = {
+	.id = "ffmpeg_flac",
+	.type = OBS_ENCODER_AUDIO,
+	.codec = "flac",
+	.get_name = flac_getname,
+	.create = flac_create,
 	.destroy = enc_destroy,
 	.encode = enc_encode,
 	.get_frame_size = enc_frame_size,

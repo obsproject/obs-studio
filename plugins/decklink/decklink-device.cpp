@@ -114,6 +114,11 @@ bool DeckLinkDevice::Init()
 	attributes->GetInt(BMDDeckLinkSubDeviceIndex, &subDeviceIndex);
 	attributes->GetInt(BMDDeckLinkNumberOfSubDevices, &numSubDevices);
 
+	if (FAILED(attributes->GetInt(BMDDeckLinkMinimumPrerollFrames,
+				      &minimumPrerollFrames))) {
+		minimumPrerollFrames = 3;
+	}
+
 	decklink_string_t decklinkModelName;
 	decklink_string_t decklinkDisplayName;
 
@@ -253,6 +258,11 @@ int64_t DeckLinkDevice::GetSubDeviceCount()
 int64_t DeckLinkDevice::GetSubDeviceIndex()
 {
 	return subDeviceIndex;
+}
+
+int64_t DeckLinkDevice::GetMinimumPrerollFrames()
+{
+	return minimumPrerollFrames;
 }
 
 const std::string &DeckLinkDevice::GetName(void) const

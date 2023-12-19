@@ -20,7 +20,6 @@
 
 #define NO_REDEFS
 #include "obs-scripting-python-import.h"
-#include "obs-scripting-config.h"
 
 #ifdef _MSC_VER
 #pragma warning(disable : 4152)
@@ -40,7 +39,7 @@
 #endif
 
 #define PY_MAJOR_VERSION_MAX 3
-#define PY_MINOR_VERSION_MAX 10
+#define PY_MINOR_VERSION_MAX 11
 
 bool import_python(const char *python_path, python_version_t *python_version)
 {
@@ -116,6 +115,7 @@ bool import_python(const char *python_path, python_version_t *python_version)
 	} while (false)
 
 	IMPORT_FUNC(PyType_Ready);
+	IMPORT_FUNC(PyType_Modified);
 	IMPORT_FUNC(PyObject_GenericGetAttr);
 	IMPORT_FUNC(PyObject_IsTrue);
 	IMPORT_FUNC(Py_DecRef);

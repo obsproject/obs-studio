@@ -71,12 +71,7 @@ OAuthLogin::OAuthLogin(QWidget *parent, const std::string &url, bool token)
 #endif
 }
 
-OAuthLogin::~OAuthLogin()
-{
-#ifdef BROWSER_AVAILABLE
-	delete cefWidget;
-#endif
-}
+OAuthLogin::~OAuthLogin() {}
 
 int OAuthLogin::exec()
 {
@@ -86,6 +81,22 @@ int OAuthLogin::exec()
 	}
 #endif
 	return QDialog::Rejected;
+}
+
+void OAuthLogin::reject()
+{
+#ifdef BROWSER_AVAILABLE
+	delete cefWidget;
+#endif
+	QDialog::reject();
+}
+
+void OAuthLogin::accept()
+{
+#ifdef BROWSER_AVAILABLE
+	delete cefWidget;
+#endif
+	QDialog::accept();
 }
 
 void OAuthLogin::urlChanged(const QString &url)

@@ -16,7 +16,6 @@
 ******************************************************************************/
 
 #include "obs-scripting-lua.h"
-#include "obs-scripting-config.h"
 #include <util/platform.h>
 #include <util/base.h>
 #include <util/dstr.h>
@@ -77,7 +76,7 @@ static void add_hook_functions(lua_State *script);
 static int obs_lua_remove_tick_callback(lua_State *script);
 static int obs_lua_remove_main_render_callback(lua_State *script);
 
-#if UI_ENABLED
+#ifdef ENABLE_UI
 void add_lua_frontend_funcs(lua_State *script);
 #endif
 
@@ -86,6 +85,7 @@ static bool load_lua_script(struct obs_lua_script *data)
 	struct dstr str = {0};
 	bool success = false;
 	int ret;
+	char *file_data;
 
 	lua_State *script = luaL_newstate();
 	if (!script) {
@@ -118,15 +118,25 @@ static bool load_lua_script(struct obs_lua_script *data)
 
 	add_lua_source_functions(script);
 	add_hook_functions(script);
-#if UI_ENABLED
+#ifdef ENABLE_UI
 	add_lua_frontend_funcs(script);
 #endif
 
-	if (luaL_loadfile(script, data->base.path.array) != 0) {
-		script_warn(&data->base, "Error loading file: %s",
+	file_data = os_quick_read_utf8_file(data->base.path.array);
+	if (!file_data) {
+		script_warn(&data->base, "Error opening file: %s",
 			    lua_tostring(script, -1));
 		goto fail;
 	}
+
+	if (luaL_loadbuffer(script, file_data, strlen(file_data),
+			    data->base.path.array) != 0) {
+		script_warn(&data->base, "Error loading file: %s",
+			    lua_tostring(script, -1));
+		bfree(file_data);
+		goto fail;
+	}
+	bfree(file_data);
 
 	if (lua_pcall(script, 0, LUA_MULTRET, 0) != 0) {
 		script_warn(&data->base, "Error running file: %s",
@@ -1218,9 +1228,12 @@ void obs_lua_script_unload(obs_script_t *s)
 	/* call script_unload           */
 
 	pthread_mutex_lock(&data->mutex);
+	current_lua_script = data;
 
 	lua_getglobal(script, "script_unload");
 	lua_pcall(script, 0, 0, 0);
+
+	current_lua_script = NULL;
 
 	/* ---------------------------- */
 	/* remove all callbacks         */

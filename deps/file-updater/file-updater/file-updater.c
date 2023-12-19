@@ -8,8 +8,7 @@
 
 #define warn(msg, ...) \
 	blog(LOG_WARNING, "%s" msg, info->log_prefix, ##__VA_ARGS__)
-#define info(msg, ...) \
-	blog(LOG_WARNING, "%s" msg, info->log_prefix, ##__VA_ARGS__)
+#define info(msg, ...) blog(LOG_INFO, "%s" msg, info->log_prefix, ##__VA_ARGS__)
 
 struct update_info {
 	char error[CURL_ERROR_SIZE];

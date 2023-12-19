@@ -35,3 +35,6 @@
 [submodule "plugins/win-spout"]
 	path = plugins/win-spout
 	url = https://github.com/stream-labs/obs-spout2-plugin.git
+[submodule "plugins/obs-websocket"]
+	path = plugins/obs-websocket
+	url = https://github.com/stream-labs/obs-websocket.git

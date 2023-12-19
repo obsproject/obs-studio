@@ -27,14 +27,37 @@
 
 #include <fcntl.h>
 #include <glad/glad.h>
-#include <linux/dma-buf.h>
 #include <libdrm/drm_fourcc.h>
 #include <pipewire/pipewire.h>
 #include <spa/param/video/format-utils.h>
+#include <spa/buffer/meta.h>
 #include <spa/debug/format.h>
 #include <spa/debug/types.h>
 #include <spa/param/video/type-info.h>
 #include <spa/utils/result.h>
+
+//#define DEBUG_PIPEWIRE
+
+#if !PW_CHECK_VERSION(0, 3, 62)
+enum spa_meta_videotransform_value {
+	SPA_META_TRANSFORMATION_None = 0, /**< no transform */
+	SPA_META_TRANSFORMATION_90,       /**< 90 degree counter-clockwise */
+	SPA_META_TRANSFORMATION_180,      /**< 180 degree counter-clockwise */
+	SPA_META_TRANSFORMATION_270,      /**< 270 degree counter-clockwise */
+	SPA_META_TRANSFORMATION_Flipped, /**< 180 degree flipped around the vertical axis. Equivalent
+						  * to a reflexion through the vertical line splitting the
+						  * bufffer in two equal sized parts */
+	SPA_META_TRANSFORMATION_Flipped90, /**< flip then rotate around 90 degree counter-clockwise */
+	SPA_META_TRANSFORMATION_Flipped180, /**< flip then rotate around 180 degree counter-clockwise */
+	SPA_META_TRANSFORMATION_Flipped270, /**< flip then rotate around 270 degree counter-clockwise */
+};
+
+#define SPA_META_VideoTransform 8
+
+struct spa_meta_videotransform {
+	uint32_t transform; /**< orientation transformation that was applied to the buffer */
+};
+#endif
 
 #define CURSOR_META_SIZE(width, height)                                    \
 	(sizeof(struct spa_meta_cursor) + sizeof(struct spa_meta_bitmap) + \
@@ -52,8 +75,7 @@ struct format_info {
 	DARRAY(uint64_t) modifiers;
 };
 
-struct _obs_pipewire_data {
-	uint32_t pipewire_node;
+struct _obs_pipewire {
 	int pipewire_fd;
 
 	gs_texture_t *texture;
@@ -72,6 +94,8 @@ struct _obs_pipewire_data {
 	struct spa_source *reneg;
 
 	struct spa_video_info format;
+
+	enum spa_meta_videotransform_value transform;
 
 	struct {
 		bool valid;
@@ -113,7 +137,7 @@ static bool check_pw_version(const struct obs_pw_version *pw_version, int major,
 	return pw_version->micro >= micro;
 }
 
-static void update_pw_versions(obs_pipewire_data *obs_pw, const char *version)
+static void update_pw_versions(obs_pipewire *obs_pw, const char *version)
 {
 	blog(LOG_INFO, "[pipewire] Server version: %s", version);
 	blog(LOG_INFO, "[pipewire] Library version: %s",
@@ -125,7 +149,7 @@ static void update_pw_versions(obs_pipewire_data *obs_pw, const char *version)
 		blog(LOG_WARNING, "[pipewire] failed to parse server version");
 }
 
-static void teardown_pipewire(obs_pipewire_data *obs_pw)
+static void teardown_pipewire(obs_pipewire *obs_pw)
 {
 	if (obs_pw->thread_loop) {
 		pw_thread_loop_wait(obs_pw->thread_loop);
@@ -146,7 +170,7 @@ static void teardown_pipewire(obs_pipewire_data *obs_pw)
 	obs_pw->negotiated = false;
 }
 
-static void destroy_session(obs_pipewire_data *obs_pw)
+static void destroy_session(obs_pipewire *obs_pw)
 {
 	obs_enter_graphics();
 	g_clear_pointer(&obs_pw->cursor.texture, gs_texture_destroy);
@@ -154,12 +178,82 @@ static void destroy_session(obs_pipewire_data *obs_pw)
 	obs_leave_graphics();
 }
 
-static inline bool has_effective_crop(obs_pipewire_data *obs_pw)
+static inline bool has_effective_crop(obs_pipewire *obs_pw)
 {
 	return obs_pw->crop.valid &&
 	       (obs_pw->crop.x != 0 || obs_pw->crop.y != 0 ||
 		obs_pw->crop.width < obs_pw->format.info.raw.size.width ||
 		obs_pw->crop.height < obs_pw->format.info.raw.size.height);
+}
+
+static int get_buffer_flip(obs_pipewire *obs_pw)
+{
+	int flip = 0;
+
+	switch (obs_pw->transform) {
+	case SPA_META_TRANSFORMATION_Flipped:
+	case SPA_META_TRANSFORMATION_Flipped180:
+		flip = GS_FLIP_U;
+		break;
+	case SPA_META_TRANSFORMATION_Flipped90:
+	case SPA_META_TRANSFORMATION_Flipped270:
+		flip = GS_FLIP_V;
+		break;
+	case SPA_META_TRANSFORMATION_None:
+	case SPA_META_TRANSFORMATION_90:
+	case SPA_META_TRANSFORMATION_180:
+	case SPA_META_TRANSFORMATION_270:
+		break;
+	}
+
+	return flip;
+}
+
+static bool push_rotation(obs_pipewire *obs_pw)
+{
+	double offset_x = 0;
+	double offset_y = 0;
+	double rotation = 0;
+	bool has_crop;
+
+	has_crop = has_effective_crop(obs_pw);
+
+	switch (obs_pw->transform) {
+	case SPA_META_TRANSFORMATION_Flipped:
+	case SPA_META_TRANSFORMATION_None:
+		rotation = 0;
+		break;
+	case SPA_META_TRANSFORMATION_Flipped90:
+	case SPA_META_TRANSFORMATION_90:
+		rotation = 90;
+		offset_x = 0;
+		offset_y = has_crop ? obs_pw->crop.height
+				    : obs_pw->format.info.raw.size.height;
+		break;
+	case SPA_META_TRANSFORMATION_Flipped180:
+	case SPA_META_TRANSFORMATION_180:
+		rotation = 180;
+		offset_x = has_crop ? obs_pw->crop.width
+				    : obs_pw->format.info.raw.size.width;
+		offset_y = has_crop ? obs_pw->crop.height
+				    : obs_pw->format.info.raw.size.height;
+		break;
+	case SPA_META_TRANSFORMATION_Flipped270:
+	case SPA_META_TRANSFORMATION_270:
+		rotation = 270;
+		offset_x = has_crop ? obs_pw->crop.width
+				    : obs_pw->format.info.raw.size.width;
+		offset_y = 0;
+		break;
+	}
+
+	if (rotation != 0) {
+		gs_matrix_push();
+		gs_matrix_rotaa4f(0.0f, 0.0f, 1.0f, RAD(rotation));
+		gs_matrix_translate3f(-offset_x, -offset_y, 0.0f);
+	}
+
+	return rotation != 0;
 }
 
 static const struct {
@@ -290,7 +384,7 @@ static inline struct spa_pod *build_format(struct spa_pod_builder *b,
 	return spa_pod_builder_pop(b, &format_frame);
 }
 
-static bool build_format_params(obs_pipewire_data *obs_pw,
+static bool build_format_params(obs_pipewire *obs_pw,
 				struct spa_pod_builder *pod_builder,
 				const struct spa_pod ***param_list,
 				uint32_t *n_params)
@@ -343,7 +437,7 @@ static bool drm_format_available(uint32_t drm_format, uint32_t *drm_formats,
 	return false;
 }
 
-static void init_format_info(obs_pipewire_data *obs_pw)
+static void init_format_info(obs_pipewire *obs_pw)
 {
 	da_init(obs_pw->format_info);
 
@@ -390,7 +484,7 @@ static void init_format_info(obs_pipewire_data *obs_pw)
 	bfree(drm_formats);
 }
 
-static void clear_format_info(obs_pipewire_data *obs_pw)
+static void clear_format_info(obs_pipewire *obs_pw)
 {
 	for (size_t i = 0; i < obs_pw->format_info.num; i++) {
 		da_free(obs_pw->format_info.array[i].modifiers);
@@ -398,7 +492,7 @@ static void clear_format_info(obs_pipewire_data *obs_pw)
 	da_free(obs_pw->format_info);
 }
 
-static void remove_modifier_from_format(obs_pipewire_data *obs_pw,
+static void remove_modifier_from_format(obs_pipewire *obs_pw,
 					uint32_t spa_format, uint64_t modifier)
 {
 	for (size_t i = 0; i < obs_pw->format_info.num; i++) {
@@ -425,7 +519,7 @@ static void remove_modifier_from_format(obs_pipewire_data *obs_pw,
 static void renegotiate_format(void *data, uint64_t expirations)
 {
 	UNUSED_PARAMETER(expirations);
-	obs_pipewire_data *obs_pw = (obs_pipewire_data *)data;
+	obs_pipewire *obs_pw = (obs_pipewire *)data;
 	const struct spa_pod **params = NULL;
 
 	blog(LOG_INFO, "[pipewire] Renegotiating stream");
@@ -451,14 +545,16 @@ static void renegotiate_format(void *data, uint64_t expirations)
 
 static void on_process_cb(void *user_data)
 {
-	obs_pipewire_data *obs_pw = user_data;
+	obs_pipewire *obs_pw = user_data;
 	struct spa_meta_cursor *cursor;
 	uint32_t drm_format;
+	struct spa_meta_header *header;
 	struct spa_meta_region *region;
+	struct spa_meta_videotransform *video_transform;
 	struct spa_buffer *buffer;
 	struct pw_buffer *b;
 	bool swap_red_blue = false;
-	bool has_buffer;
+	bool has_buffer = true;
 
 	/* Find the most recent buffer */
 	b = NULL;
@@ -478,10 +574,20 @@ static void on_process_cb(void *user_data)
 	}
 
 	buffer = b->buffer;
-	has_buffer = buffer->datas[0].chunk->size != 0;
+	header = spa_buffer_find_meta_data(buffer, SPA_META_Header,
+					   sizeof(*header));
+	if (header && (header->flags & SPA_META_HEADER_FLAG_CORRUPTED) > 0) {
+		blog(LOG_ERROR, "[pipewire] buffer is corrupt");
+		pw_stream_queue_buffer(obs_pw->stream, b);
+		return;
+	}
 
 	obs_enter_graphics();
 
+	// Workaround for kwin behaviour pre 5.27.5
+	// Workaround for mutter behaviour pre GNOME 43
+	// Only check this if !SPA_META_Header, once supported platforms update.
+	has_buffer = buffer->datas[0].chunk->size != 0;
 	if (!has_buffer)
 		goto read_metadata;
 
@@ -492,13 +598,16 @@ static void on_process_cb(void *user_data)
 		uint64_t modifiers[planes];
 		int fds[planes];
 		bool use_modifiers;
+		bool corrupt = false;
 
+#ifdef DEBUG_PIPEWIRE
 		blog(LOG_DEBUG,
 		     "[pipewire] DMA-BUF info: fd:%ld, stride:%d, offset:%u, size:%dx%d",
 		     buffer->datas[0].fd, buffer->datas[0].chunk->stride,
 		     buffer->datas[0].chunk->offset,
 		     obs_pw->format.info.raw.size.width,
 		     obs_pw->format.info.raw.size.height);
+#endif
 
 		if (!lookup_format_info_from_spa_format(
 			    obs_pw->format.info.raw.format, &drm_format, NULL,
@@ -514,6 +623,14 @@ static void on_process_cb(void *user_data)
 			offsets[plane] = buffer->datas[plane].chunk->offset;
 			strides[plane] = buffer->datas[plane].chunk->stride;
 			modifiers[plane] = obs_pw->format.info.raw.modifier;
+			corrupt |= (buffer->datas[plane].chunk->flags &
+				    SPA_CHUNK_FLAG_CORRUPTED) > 0;
+		}
+
+		if (corrupt) {
+			blog(LOG_DEBUG,
+			     "[pipewire] buffer contains corrupted data");
+			goto read_metadata;
 		}
 
 		g_clear_pointer(&obs_pw->texture, gs_texture_destroy);
@@ -542,8 +659,21 @@ static void on_process_cb(void *user_data)
 			    obs_pw->format.info.raw.format, NULL, &gs_format,
 			    &swap_red_blue)) {
 			blog(LOG_ERROR,
-			     "[pipewire] unsupported DMA buffer format: %d",
+			     "[pipewire] unsupported buffer format: %d",
 			     obs_pw->format.info.raw.format);
+			goto read_metadata;
+		}
+
+		if ((buffer->datas[0].chunk->flags & SPA_CHUNK_FLAG_CORRUPTED) >
+		    0) {
+			blog(LOG_DEBUG,
+			     "[pipewire] buffer contains corrupted data");
+			goto read_metadata;
+		}
+
+		if (buffer->datas[0].chunk->size == 0) {
+			blog(LOG_DEBUG,
+			     "[pipewire] buffer contains empty data");
 			goto read_metadata;
 		}
 
@@ -561,10 +691,12 @@ static void on_process_cb(void *user_data)
 	region = spa_buffer_find_meta_data(buffer, SPA_META_VideoCrop,
 					   sizeof(*region));
 	if (region && spa_meta_region_is_valid(region)) {
+#ifdef DEBUG_PIPEWIRE
 		blog(LOG_DEBUG,
 		     "[pipewire] Crop Region available (%dx%d+%d+%d)",
 		     region->region.position.x, region->region.position.y,
 		     region->region.size.width, region->region.size.height);
+#endif
 
 		obs_pw->crop.x = region->region.position.x;
 		obs_pw->crop.y = region->region.position.y;
@@ -574,6 +706,14 @@ static void on_process_cb(void *user_data)
 	} else {
 		obs_pw->crop.valid = false;
 	}
+
+	/* Video Transform */
+	video_transform = spa_buffer_find_meta_data(
+		buffer, SPA_META_VideoTransform, sizeof(*video_transform));
+	if (video_transform)
+		obs_pw->transform = video_transform->transform;
+	else
+		obs_pw->transform = SPA_META_TRANSFORMATION_None;
 
 read_metadata:
 
@@ -589,6 +729,10 @@ read_metadata:
 			bitmap = SPA_MEMBER(cursor, cursor->bitmap_offset,
 					    struct spa_meta_bitmap);
 
+		if (bitmap)
+			g_clear_pointer(&obs_pw->cursor.texture,
+					gs_texture_destroy);
+
 		if (bitmap && bitmap->size.width > 0 &&
 		    bitmap->size.height > 0 &&
 		    lookup_format_info_from_spa_format(
@@ -602,8 +746,7 @@ read_metadata:
 			obs_pw->cursor.width = bitmap->size.width;
 			obs_pw->cursor.height = bitmap->size.height;
 
-			g_clear_pointer(&obs_pw->cursor.texture,
-					gs_texture_destroy);
+			assert(obs_pw->cursor.texture == NULL);
 			obs_pw->cursor.texture = gs_texture_create(
 				obs_pw->cursor.width, obs_pw->cursor.height,
 				gs_format, 1, &bitmap_data, GS_DYNAMIC);
@@ -624,9 +767,10 @@ read_metadata:
 static void on_param_changed_cb(void *user_data, uint32_t id,
 				const struct spa_pod *param)
 {
-	obs_pipewire_data *obs_pw = user_data;
+	obs_pipewire *obs_pw = user_data;
 	struct spa_pod_builder pod_builder;
-	const struct spa_pod *params[3];
+	const struct spa_pod *params[5];
+	uint32_t n_params = 0;
 	uint32_t buffer_types;
 	uint8_t params_buffer[1024];
 	int result;
@@ -660,7 +804,7 @@ static void on_param_changed_cb(void *user_data, uint32_t id,
 				      obs_pw->format.info.raw.format));
 
 	if (has_modifier) {
-		blog(LOG_INFO, "[pipewire]     Modifier: %" PRIu64,
+		blog(LOG_INFO, "[pipewire]     Modifier: 0x%" PRIx64,
 		     obs_pw->format.info.raw.modifier);
 	}
 
@@ -675,14 +819,14 @@ static void on_param_changed_cb(void *user_data, uint32_t id,
 	/* Video crop */
 	pod_builder =
 		SPA_POD_BUILDER_INIT(params_buffer, sizeof(params_buffer));
-	params[0] = spa_pod_builder_add_object(
+	params[n_params++] = spa_pod_builder_add_object(
 		&pod_builder, SPA_TYPE_OBJECT_ParamMeta, SPA_PARAM_Meta,
 		SPA_PARAM_META_type, SPA_POD_Id(SPA_META_VideoCrop),
 		SPA_PARAM_META_size,
 		SPA_POD_Int(sizeof(struct spa_meta_region)));
 
 	/* Cursor */
-	params[1] = spa_pod_builder_add_object(
+	params[n_params++] = spa_pod_builder_add_object(
 		&pod_builder, SPA_TYPE_OBJECT_ParamMeta, SPA_PARAM_Meta,
 		SPA_PARAM_META_type, SPA_POD_Id(SPA_META_Cursor),
 		SPA_PARAM_META_size,
@@ -691,11 +835,29 @@ static void on_param_changed_cb(void *user_data, uint32_t id,
 					 CURSOR_META_SIZE(1024, 1024)));
 
 	/* Buffer options */
-	params[2] = spa_pod_builder_add_object(
+	params[n_params++] = spa_pod_builder_add_object(
 		&pod_builder, SPA_TYPE_OBJECT_ParamBuffers, SPA_PARAM_Buffers,
 		SPA_PARAM_BUFFERS_dataType, SPA_POD_Int(buffer_types));
 
-	pw_stream_update_params(obs_pw->stream, params, 3);
+	/* Meta header */
+	params[n_params++] = spa_pod_builder_add_object(
+		&pod_builder, SPA_TYPE_OBJECT_ParamMeta, SPA_PARAM_Meta,
+		SPA_PARAM_META_type, SPA_POD_Id(SPA_META_Header),
+		SPA_PARAM_META_size,
+		SPA_POD_Int(sizeof(struct spa_meta_header)));
+
+#if PW_CHECK_VERSION(0, 3, 62)
+	if (check_pw_version(&obs_pw->server_version, 0, 3, 62)) {
+		/* Video transformation */
+		params[n_params++] = spa_pod_builder_add_object(
+			&pod_builder, SPA_TYPE_OBJECT_ParamMeta, SPA_PARAM_Meta,
+			SPA_PARAM_META_type,
+			SPA_POD_Id(SPA_META_VideoTransform),
+			SPA_PARAM_META_size,
+			SPA_POD_Int(sizeof(struct spa_meta_videotransform)));
+	}
+#endif
+	pw_stream_update_params(obs_pw->stream, params, n_params);
 
 	obs_pw->negotiated = true;
 }
@@ -705,7 +867,7 @@ static void on_state_changed_cb(void *user_data, enum pw_stream_state old,
 {
 	UNUSED_PARAMETER(old);
 
-	obs_pipewire_data *obs_pw = user_data;
+	obs_pipewire *obs_pw = user_data;
 
 	blog(LOG_INFO, "[pipewire] Stream %p state: \"%s\" (error: %s)",
 	     obs_pw->stream, pw_stream_state_as_string(state),
@@ -721,7 +883,7 @@ static const struct pw_stream_events stream_events = {
 
 static void on_core_info_cb(void *user_data, const struct pw_core_info *info)
 {
-	obs_pipewire_data *obs_pw = user_data;
+	obs_pipewire *obs_pw = user_data;
 
 	update_pw_versions(obs_pw, info->version);
 }
@@ -729,7 +891,7 @@ static void on_core_info_cb(void *user_data, const struct pw_core_info *info)
 static void on_core_error_cb(void *user_data, uint32_t id, int seq, int res,
 			     const char *message)
 {
-	obs_pipewire_data *obs_pw = user_data;
+	obs_pipewire *obs_pw = user_data;
 
 	blog(LOG_ERROR, "[pipewire] Error id:%u seq:%d res:%d (%s): %s", id,
 	     seq, res, g_strerror(res), message);
@@ -739,7 +901,7 @@ static void on_core_error_cb(void *user_data, uint32_t id, int seq, int res,
 
 static void on_core_done_cb(void *user_data, uint32_t id, int seq)
 {
-	obs_pipewire_data *obs_pw = user_data;
+	obs_pipewire *obs_pw = user_data;
 
 	if (id == PW_ID_CORE && obs_pw->server_version_sync == seq)
 		pw_thread_loop_signal(obs_pw->thread_loop, FALSE);
@@ -752,12 +914,16 @@ static const struct pw_core_events core_events = {
 	.error = on_core_error_cb,
 };
 
-static void play_pipewire_stream(obs_pipewire_data *obs_pw)
+/* obs_source_info methods */
+
+obs_pipewire *obs_pipewire_create(int pipewire_fd)
 {
-	struct spa_pod_builder pod_builder;
-	const struct spa_pod **params = NULL;
-	uint32_t n_params;
-	uint8_t params_buffer[2048];
+	obs_pipewire *obs_pw;
+
+	obs_pw = bzalloc(sizeof(obs_pipewire));
+	obs_pw->pipewire_fd = pipewire_fd;
+
+	init_format_info(obs_pw);
 
 	obs_pw->thread_loop = pw_thread_loop_new("PipeWire thread loop", NULL);
 	obs_pw->context = pw_context_new(
@@ -765,7 +931,8 @@ static void play_pipewire_stream(obs_pipewire_data *obs_pw)
 
 	if (pw_thread_loop_start(obs_pw->thread_loop) < 0) {
 		blog(LOG_WARNING, "Error starting threaded mainloop");
-		return;
+		bfree(obs_pw);
+		return NULL;
 	}
 
 	pw_thread_loop_lock(obs_pw->thread_loop);
@@ -777,72 +944,23 @@ static void play_pipewire_stream(obs_pipewire_data *obs_pw)
 	if (!obs_pw->core) {
 		blog(LOG_WARNING, "Error creating PipeWire core: %m");
 		pw_thread_loop_unlock(obs_pw->thread_loop);
-		return;
+		bfree(obs_pw);
+		return NULL;
 	}
 
 	pw_core_add_listener(obs_pw->core, &obs_pw->core_listener, &core_events,
 			     obs_pw);
 
-	/* Signal to renegotiate */
-	obs_pw->reneg =
-		pw_loop_add_event(pw_thread_loop_get_loop(obs_pw->thread_loop),
-				  renegotiate_format, obs_pw);
-	blog(LOG_DEBUG, "[pipewire] registered event %p", obs_pw->reneg);
-
 	// Dispatch to receive the info core event
 	obs_pw->server_version_sync = pw_core_sync(obs_pw->core, PW_ID_CORE,
 						   obs_pw->server_version_sync);
 	pw_thread_loop_wait(obs_pw->thread_loop);
-
-	/* Stream */
-	obs_pw->stream = pw_stream_new(
-		obs_pw->core, "OBS Studio",
-		pw_properties_new(PW_KEY_MEDIA_TYPE, "Video",
-				  PW_KEY_MEDIA_CATEGORY, "Capture",
-				  PW_KEY_MEDIA_ROLE, "Screen", NULL));
-	pw_stream_add_listener(obs_pw->stream, &obs_pw->stream_listener,
-			       &stream_events, obs_pw);
-	blog(LOG_INFO, "[pipewire] Created stream %p", obs_pw->stream);
-
-	/* Stream parameters */
-	pod_builder =
-		SPA_POD_BUILDER_INIT(params_buffer, sizeof(params_buffer));
-
-	obs_get_video_info(&obs_pw->video_info);
-
-	if (!build_format_params(obs_pw, &pod_builder, &params, &n_params)) {
-		pw_thread_loop_unlock(obs_pw->thread_loop);
-		teardown_pipewire(obs_pw);
-		return;
-	}
-
-	pw_stream_connect(
-		obs_pw->stream, PW_DIRECTION_INPUT, obs_pw->pipewire_node,
-		PW_STREAM_FLAG_AUTOCONNECT | PW_STREAM_FLAG_MAP_BUFFERS, params,
-		n_params);
-
-	blog(LOG_INFO, "[pipewire] Playing stream %p", obs_pw->stream);
-
 	pw_thread_loop_unlock(obs_pw->thread_loop);
-	bfree(params);
-}
-
-/* obs_source_info methods */
-
-void *obs_pipewire_create(int pipewire_fd, int pipewire_node)
-{
-	obs_pipewire_data *obs_pw = bzalloc(sizeof(obs_pipewire_data));
-
-	obs_pw->pipewire_fd = pipewire_fd;
-	obs_pw->pipewire_node = pipewire_node;
-
-	init_format_info(obs_pw);
-	play_pipewire_stream(obs_pw);
 
 	return obs_pw;
 }
 
-void obs_pipewire_destroy(obs_pipewire_data *obs_pw)
+void obs_pipewire_destroy(obs_pipewire *obs_pw)
 {
 	if (!obs_pw)
 		return;
@@ -855,42 +973,119 @@ void obs_pipewire_destroy(obs_pipewire_data *obs_pw)
 	bfree(obs_pw);
 }
 
-void obs_pipewire_show(obs_pipewire_data *obs_pw)
+void obs_pipewire_connect_stream(obs_pipewire *obs_pw, int pipewire_node,
+				 const char *stream_name,
+				 struct pw_properties *stream_properties)
+{
+	struct spa_pod_builder pod_builder;
+	const struct spa_pod **params = NULL;
+	uint32_t n_params;
+	uint8_t params_buffer[2048];
+
+	pw_thread_loop_lock(obs_pw->thread_loop);
+
+	/* Signal to renegotiate */
+	obs_pw->reneg =
+		pw_loop_add_event(pw_thread_loop_get_loop(obs_pw->thread_loop),
+				  renegotiate_format, obs_pw);
+	blog(LOG_DEBUG, "[pipewire] registered event %p", obs_pw->reneg);
+
+	/* Stream */
+	obs_pw->stream =
+		pw_stream_new(obs_pw->core, stream_name, stream_properties);
+	pw_stream_add_listener(obs_pw->stream, &obs_pw->stream_listener,
+			       &stream_events, obs_pw);
+	blog(LOG_INFO, "[pipewire] Created stream %p", obs_pw->stream);
+
+	/* Stream parameters */
+	pod_builder =
+		SPA_POD_BUILDER_INIT(params_buffer, sizeof(params_buffer));
+
+	obs_get_video_info(&obs_pw->video_info);
+
+	if (!build_format_params(obs_pw, &pod_builder, &params, &n_params)) {
+		pw_thread_loop_unlock(obs_pw->thread_loop);
+		return;
+	}
+
+	pw_stream_connect(obs_pw->stream, PW_DIRECTION_INPUT, pipewire_node,
+			  PW_STREAM_FLAG_AUTOCONNECT |
+				  PW_STREAM_FLAG_MAP_BUFFERS,
+			  params, n_params);
+
+	blog(LOG_INFO, "[pipewire] Playing stream %p", obs_pw->stream);
+
+	pw_thread_loop_unlock(obs_pw->thread_loop);
+	bfree(params);
+}
+
+void obs_pipewire_show(obs_pipewire *obs_pw)
 {
 	if (obs_pw->stream)
 		pw_stream_set_active(obs_pw->stream, true);
 }
 
-void obs_pipewire_hide(obs_pipewire_data *obs_pw)
+void obs_pipewire_hide(obs_pipewire *obs_pw)
 {
 	if (obs_pw->stream)
 		pw_stream_set_active(obs_pw->stream, false);
 }
 
-uint32_t obs_pipewire_get_width(obs_pipewire_data *obs_pw)
+uint32_t obs_pipewire_get_width(obs_pipewire *obs_pw)
 {
+	bool has_crop;
+
 	if (!obs_pw->negotiated)
 		return 0;
 
-	if (obs_pw->crop.valid)
-		return obs_pw->crop.width;
-	else
-		return obs_pw->format.info.raw.size.width;
+	has_crop = has_effective_crop(obs_pw);
+
+	switch (obs_pw->transform) {
+	case SPA_META_TRANSFORMATION_Flipped:
+	case SPA_META_TRANSFORMATION_None:
+	case SPA_META_TRANSFORMATION_Flipped180:
+	case SPA_META_TRANSFORMATION_180:
+		return has_crop ? obs_pw->crop.width
+				: obs_pw->format.info.raw.size.width;
+	case SPA_META_TRANSFORMATION_Flipped90:
+	case SPA_META_TRANSFORMATION_90:
+	case SPA_META_TRANSFORMATION_Flipped270:
+	case SPA_META_TRANSFORMATION_270:
+		return has_crop ? obs_pw->crop.height
+				: obs_pw->format.info.raw.size.height;
+	}
 }
 
-uint32_t obs_pipewire_get_height(obs_pipewire_data *obs_pw)
+uint32_t obs_pipewire_get_height(obs_pipewire *obs_pw)
 {
+	bool has_crop;
+
 	if (!obs_pw->negotiated)
 		return 0;
 
-	if (obs_pw->crop.valid)
-		return obs_pw->crop.height;
-	else
-		return obs_pw->format.info.raw.size.height;
+	has_crop = has_effective_crop(obs_pw);
+
+	switch (obs_pw->transform) {
+	case SPA_META_TRANSFORMATION_Flipped:
+	case SPA_META_TRANSFORMATION_None:
+	case SPA_META_TRANSFORMATION_Flipped180:
+	case SPA_META_TRANSFORMATION_180:
+		return has_crop ? obs_pw->crop.height
+				: obs_pw->format.info.raw.size.height;
+	case SPA_META_TRANSFORMATION_Flipped90:
+	case SPA_META_TRANSFORMATION_90:
+	case SPA_META_TRANSFORMATION_Flipped270:
+	case SPA_META_TRANSFORMATION_270:
+		return has_crop ? obs_pw->crop.width
+				: obs_pw->format.info.raw.size.width;
+	}
 }
 
-void obs_pipewire_video_render(obs_pipewire_data *obs_pw, gs_effect_t *effect)
+void obs_pipewire_video_render(obs_pipewire *obs_pw, gs_effect_t *effect)
 {
+	bool rotated;
+	int flip = 0;
+
 	gs_eparam_t *image;
 
 	if (!obs_pw->texture)
@@ -899,13 +1094,31 @@ void obs_pipewire_video_render(obs_pipewire_data *obs_pw, gs_effect_t *effect)
 	image = gs_effect_get_param_by_name(effect, "image");
 	gs_effect_set_texture(image, obs_pw->texture);
 
+	rotated = push_rotation(obs_pw);
+
+	flip = get_buffer_flip(obs_pw);
+
+	/* There is a SPA_VIDEO_FLAG_PREMULTIPLIED_ALPHA flag, but it does not
+	 * seem to be fully implemented nor ever set. Just assume premultiplied
+	 * always, which seems to be the default convention.
+	 *
+	 * See https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/3126
+	 *
+	 * The cursor bitmap alpha mode is also not specified, and the
+	 * convention there also seems to be premultiplied. */
+	gs_blend_state_push();
+	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+
 	if (has_effective_crop(obs_pw)) {
-		gs_draw_sprite_subregion(obs_pw->texture, 0, obs_pw->crop.x,
+		gs_draw_sprite_subregion(obs_pw->texture, flip, obs_pw->crop.x,
 					 obs_pw->crop.y, obs_pw->crop.width,
 					 obs_pw->crop.height);
 	} else {
-		gs_draw_sprite(obs_pw->texture, 0, 0, 0);
+		gs_draw_sprite(obs_pw->texture, flip, 0, 0);
 	}
+
+	if (rotated)
+		gs_matrix_pop();
 
 	if (obs_pw->cursor.visible && obs_pw->cursor.valid &&
 	    obs_pw->cursor.texture) {
@@ -921,10 +1134,11 @@ void obs_pipewire_video_render(obs_pipewire_data *obs_pw, gs_effect_t *effect)
 
 		gs_matrix_pop();
 	}
+
+	gs_blend_state_pop();
 }
 
-void obs_pipewire_set_cursor_visible(obs_pipewire_data *obs_pw,
-				     bool cursor_visible)
+void obs_pipewire_set_cursor_visible(obs_pipewire *obs_pw, bool cursor_visible)
 {
 	obs_pw->cursor.visible = cursor_visible;
 }

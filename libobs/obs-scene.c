@@ -618,23 +618,27 @@ static void render_item_texture(struct obs_scene_item *item,
 
 	float multiplier = 1.f;
 
-	switch (current_space) {
-	case GS_CS_709_SCRGB:
+	if (current_space == GS_CS_709_SCRGB) {
 		switch (source_space) {
 		case GS_CS_SRGB:
 		case GS_CS_SRGB_16F:
 		case GS_CS_709_EXTENDED:
 			multiplier = obs_get_video_sdr_white_level() / 80.f;
+			break;
+		case GS_CS_709_SCRGB:
+			break;
 		}
 	}
 
-	switch (source_space) {
-	case GS_CS_709_SCRGB:
+	if (source_space == GS_CS_709_SCRGB) {
 		switch (current_space) {
 		case GS_CS_SRGB:
 		case GS_CS_SRGB_16F:
 		case GS_CS_709_EXTENDED:
 			multiplier = 80.f / obs_get_video_sdr_white_level();
+			break;
+		case GS_CS_709_SCRGB:
+			break;
 		}
 	}
 
@@ -644,59 +648,45 @@ static void render_item_texture(struct obs_scene_item *item,
 		switch (source_space) {
 		case GS_CS_SRGB:
 		case GS_CS_SRGB_16F:
-			switch (current_space) {
-			case GS_CS_709_SCRGB:
+			if (current_space == GS_CS_709_SCRGB)
 				tech_name = "DrawUpscaleMultiply";
-			}
 			break;
 		case GS_CS_709_EXTENDED:
-			switch (current_space) {
-			case GS_CS_SRGB:
-			case GS_CS_SRGB_16F:
+			if (current_space == GS_CS_SRGB ||
+			    current_space == GS_CS_SRGB_16F)
 				tech_name = "DrawUpscaleTonemap";
-				break;
-			case GS_CS_709_SCRGB:
+			else if (current_space == GS_CS_709_SCRGB)
 				tech_name = "DrawUpscaleMultiply";
-			}
 			break;
 		case GS_CS_709_SCRGB:
-			switch (current_space) {
-			case GS_CS_SRGB:
-			case GS_CS_SRGB_16F:
+			if (current_space == GS_CS_SRGB ||
+			    current_space == GS_CS_SRGB_16F)
 				tech_name = "DrawUpscaleMultiplyTonemap";
-				break;
-			case GS_CS_709_EXTENDED:
+			else if (current_space == GS_CS_709_EXTENDED)
 				tech_name = "DrawUpscaleMultiply";
-			}
+			break;
 		}
 	} else {
 		switch (source_space) {
 		case GS_CS_SRGB:
 		case GS_CS_SRGB_16F:
-			switch (current_space) {
-			case GS_CS_709_SCRGB:
+			if (current_space == GS_CS_709_SCRGB)
 				tech_name = "DrawMultiply";
-			}
 			break;
 		case GS_CS_709_EXTENDED:
-			switch (current_space) {
-			case GS_CS_SRGB:
-			case GS_CS_SRGB_16F:
+			if (current_space == GS_CS_SRGB ||
+			    current_space == GS_CS_SRGB_16F)
 				tech_name = "DrawTonemap";
-				break;
-			case GS_CS_709_SCRGB:
+			else if (current_space == GS_CS_709_SCRGB)
 				tech_name = "DrawMultiply";
-			}
 			break;
 		case GS_CS_709_SCRGB:
-			switch (current_space) {
-			case GS_CS_SRGB:
-			case GS_CS_SRGB_16F:
+			if (current_space == GS_CS_SRGB ||
+			    current_space == GS_CS_SRGB_16F)
 				tech_name = "DrawMultiplyTonemap";
-				break;
-			case GS_CS_709_EXTENDED:
+			else if (current_space == GS_CS_709_EXTENDED)
 				tech_name = "DrawMultiply";
-			}
+			break;
 		}
 	}
 
@@ -1011,7 +1001,8 @@ static void scene_load(void *data, obs_data_t *settings);
 static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 {
 	const char *name = obs_data_get_string(item_data, "name");
-	obs_source_t *source;
+	const char *src_uuid = obs_data_get_string(item_data, "source_uuid");
+	obs_source_t *source = NULL;
 	const char *scale_filter_str;
 	const char *blend_method_str;
 	const char *blend_str;
@@ -1024,7 +1015,13 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 	if (obs_data_get_bool(item_data, "group_item_backup"))
 		return;
 
-	source = obs_get_source_by_name(name);
+	if (src_uuid && strlen(src_uuid) == UUID_STR_LENGTH)
+		source = obs_get_source_by_uuid(src_uuid);
+
+	/* Fall back to name if UUID was not found or is not set. */
+	if (!source)
+		source = obs_get_source_by_name(name);
+
 	if (!source) {
 		blog(LOG_WARNING,
 		     "[scene_load_item] Source %s not "
@@ -1182,6 +1179,7 @@ static void scene_save_item(obs_data_array_t *array,
 {
 	obs_data_t *item_data = obs_data_create();
 	const char *name = obs_source_get_name(item->source);
+	const char *src_uuid = obs_source_get_uuid(item->source);
 	const char *scale_filter;
 	const char *blend_method;
 	const char *blend_type;
@@ -1194,6 +1192,7 @@ static void scene_save_item(obs_data_array_t *array,
 	}
 
 	obs_data_set_string(item_data, "name", name);
+	obs_data_set_string(item_data, "source_uuid", src_uuid);
 	obs_data_set_bool(item_data, "visible", item->user_visible);
 	obs_data_set_bool(item_data, "locked", item->locked);
 	obs_data_set_double(item_data, "rot", rot);
@@ -1471,9 +1470,9 @@ static void process_all_audio_actions(struct obs_scene_item *item,
 static void mix_audio_with_buf(float *p_out, float *p_in, float *buf_in,
 			       size_t pos, size_t count)
 {
-	register float *out = p_out;
-	register float *buf = buf_in + pos;
-	register float *in = p_in + pos;
+	register float *out = p_out + pos;
+	register float *buf = buf_in;
+	register float *in = p_in;
 	register float *end = in + count;
 
 	while (in < end)
@@ -1483,8 +1482,8 @@ static void mix_audio_with_buf(float *p_out, float *p_in, float *buf_in,
 static inline void mix_audio(float *p_out, float *p_in, size_t pos,
 			     size_t count)
 {
-	register float *out = p_out;
-	register float *in = p_in + pos;
+	register float *out = p_out + pos;
+	register float *in = p_in;
 	register float *end = in + count;
 
 	while (in < end)
@@ -1579,6 +1578,12 @@ static bool scene_audio_render(void *data, uint64_t *ts_out,
 
 		pos = (size_t)ns_to_audio_frames(sample_rate,
 						 source_ts - timestamp);
+
+		if (pos >= AUDIO_OUTPUT_FRAMES) {
+			item = item->next;
+			continue;
+		}
+
 		count = AUDIO_OUTPUT_FRAMES - pos;
 
 		if (obs_get_multiple_rendering()) {
@@ -1646,11 +1651,9 @@ scene_video_get_color_space(void *data, size_t count,
 	enum gs_color_space space = GS_CS_SRGB;
 	struct obs_video_info ovi;
 	if (obs_get_video_info_current(&ovi)) {
-		switch (ovi.colorspace) {
-		case VIDEO_CS_2100_PQ:
-		case VIDEO_CS_2100_HLG:
+		if (ovi.colorspace == VIDEO_CS_2100_PQ ||
+		    ovi.colorspace == VIDEO_CS_2100_HLG)
 			space = GS_CS_709_EXTENDED;
-		}
 	}
 
 	return space;
@@ -1761,8 +1764,7 @@ static inline obs_source_t *new_ref(obs_source_t *source)
 static inline void duplicate_item_data(struct obs_scene_item *dst,
 				       struct obs_scene_item *src,
 				       bool defer_texture_update,
-				       bool duplicate_hotkeys,
-				       bool duplicate_private_data)
+				       bool duplicate_hotkeys)
 {
 	struct obs_scene *dst_scene = dst->parent;
 
@@ -1825,9 +1827,7 @@ static inline void duplicate_item_data(struct obs_scene_item *dst,
 		os_atomic_set_bool(&dst->update_transform, true);
 	}
 
-	if (duplicate_private_data) {
-		obs_data_apply(dst->private_settings, src->private_settings);
-	}
+	obs_data_apply(dst->private_settings, src->private_settings);
 }
 
 obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name,
@@ -1888,8 +1888,7 @@ obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name,
 				continue;
 			}
 
-			duplicate_item_data(new_item, item, false, false,
-					    false);
+			duplicate_item_data(new_item, item, false, false);
 
 			obs_source_release(source);
 		}
@@ -2930,7 +2929,9 @@ void obs_sceneitem_set_info(obs_sceneitem_t *item,
 	if (item && info) {
 		item->pos = info->pos;
 		item->rot = info->rot;
-		item->scale = info->scale;
+		if (isfinite(info->scale.x) && isfinite(info->scale.y)) {
+			item->scale = info->scale;
+		}
 		item->align = info->alignment;
 		item->bounds_type = info->bounds_type;
 		item->bounds_align = info->bounds_alignment;
@@ -3552,10 +3553,10 @@ obs_sceneitem_t *obs_scene_insert_group(obs_scene_t *scene, const char *name,
 	obs_sceneitem_t *item =
 		obs_scene_add_internal(scene, sub_scene->source, last_item);
 
-	obs_scene_release(sub_scene);
-
-	if (!items || !count)
+	if (!items || !count) {
+		obs_scene_release(sub_scene);
 		return item;
+	}
 
 	/* ------------------------- */
 
@@ -3596,6 +3597,7 @@ obs_sceneitem_t *obs_scene_insert_group(obs_scene_t *scene, const char *name,
 
 	/* ------------------------- */
 
+	obs_scene_release(sub_scene);
 	return item;
 }
 
@@ -3673,7 +3675,7 @@ void obs_sceneitem_group_ungroup(obs_sceneitem_t *item)
 
 		remove_group_transform(item, last);
 		dst = obs_scene_add_internal(scene, last->source, insert_after);
-		duplicate_item_data(dst, last, true, true, true);
+		duplicate_item_data(dst, last, true, true);
 		apply_group_transform(last, item);
 
 		if (!last->next)

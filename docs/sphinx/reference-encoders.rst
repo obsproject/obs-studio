@@ -90,6 +90,11 @@ Encoder Definition Structure (obs_encoder_info)
 
    Gets the property information of this encoder.
 
+   :param  data:  The implementation data associated with this encoder.
+                  This value can be null (e.g., when
+                  :c:func:`obs_get_encoder_properties()` is called on the
+                  encoder type), make sure to handle this gracefully.
+
    (Optional)
 
    :return: The properties of the encoder

@@ -16,6 +16,11 @@ struct BasicOutputHandler {
 	bool virtualCamActive = false;
 	OBSBasic *main;
 
+	obs_view_t *virtualCamView = nullptr;
+	video_t *virtualCamVideo = nullptr;
+	obs_scene_t *vCamSourceScene = nullptr;
+	obs_sceneitem_t *vCamSourceSceneItem = nullptr;
+
 	std::string outputType;
 	std::string lastError;
 
@@ -57,6 +62,10 @@ struct BasicOutputHandler {
 	virtual void Update() = 0;
 	virtual void SetupOutputs() = 0;
 
+	virtual void UpdateVirtualCamOutputSource();
+	virtual void DestroyVirtualCamView();
+	virtual void DestroyVirtualCameraScene();
+
 	inline bool Active() const
 	{
 		return streamingActive || recordingActive || delayActive ||
@@ -64,10 +73,11 @@ struct BasicOutputHandler {
 	}
 
 protected:
-	void SetupAutoRemux(const char *&ext);
-	std::string GetRecordingFilename(const char *path, const char *ext,
-					 bool noSpace, bool overwrite,
-					 const char *format, bool ffmpeg);
+	void SetupAutoRemux(const char *&container);
+	std::string GetRecordingFilename(const char *path,
+					 const char *container, bool noSpace,
+					 bool overwrite, const char *format,
+					 bool ffmpeg);
 };
 
 BasicOutputHandler *CreateSimpleOutputHandler(OBSBasic *main);

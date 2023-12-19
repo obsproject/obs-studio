@@ -104,6 +104,8 @@ static int libsrt_neterrno(URLContext *h)
 static int libsrt_getsockopt(URLContext *h, SRTSOCKET fd, SRT_SOCKOPT optname,
 			     const char *optnamestr, void *optval, int *optlen)
 {
+	UNUSED_PARAMETER(h);
+
 	if (srt_getsockopt(fd, 0, optname, optval, optlen) < 0) {
 		blog(LOG_INFO,
 		     "[obs-ffmpeg mpegts muxer / libsrt]: Failed to get option %s on socket: %s",
@@ -275,6 +277,8 @@ static int libsrt_setsockopt(URLContext *h, SRTSOCKET fd, SRT_SOCKOPT optname,
 			     const char *optnamestr, const void *optval,
 			     int optlen)
 {
+	UNUSED_PARAMETER(h);
+
 	if (srt_setsockopt(fd, 0, optname, optval, optlen) < 0) {
 		blog(LOG_ERROR,
 		     "[obs-ffmpeg mpegts muxer / libsrt]: Failed to set option %s on socket: %s",
@@ -850,7 +854,7 @@ static int libsrt_close(URLContext *h)
 	if (s->passphrase)
 		av_freep(&s->passphrase);
 	/* Log stream stats. */
-	SRT_TRACEBSTATS perf;
+	SRT_TRACEBSTATS perf = {0};
 	srt_bstats(s->fd, &perf, 1);
 	blog(LOG_INFO, "---------------------------------");
 	blog(LOG_INFO,

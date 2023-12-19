@@ -1,3 +1,4 @@
+# cmake-format: off
 # * Try to find jack-2.6 Once done this will define
 #
 # JACK_FOUND - system has jack JACK_INCLUDE_DIRS - the jack include directory
@@ -10,13 +11,13 @@
 # Redistribution and use is allowed according to the terms of the New BSD
 # license. For details see the accompanying COPYING-CMAKE-SCRIPTS file.
 #
+# cmake-format: on
 
 if(JACK_LIBRARIES AND JACK_INCLUDE_DIRS)
   # in cache already
   set(JACK_FOUND TRUE)
 else(JACK_LIBRARIES AND JACK_INCLUDE_DIRS)
-  # use pkg-config to get the directories and then use these values in the
-  # FIND_PATH() and FIND_LIBRARY() calls
+  # use pkg-config to get the directories and then use these values in the FIND_PATH() and FIND_LIBRARY() calls
   if(${CMAKE_MAJOR_VERSION} EQUAL 2 AND ${CMAKE_MINOR_VERSION} EQUAL 4)
     include(UsePkgConfig)
     pkgconfig(jack _JACK_INCLUDEDIR _JACK_LIBDIR _JACK_LDFLAGS _JACK_CFLAGS)
@@ -29,8 +30,7 @@ else(JACK_LIBRARIES AND JACK_INCLUDE_DIRS)
   find_path(
     JACK_INCLUDE_DIR
     NAMES jack/jack.h
-    PATHS ${_JACK_INCLUDE_DIRS} /usr/include /usr/local/include
-          /opt/local/include /sw/include)
+    PATHS ${_JACK_INCLUDE_DIRS} /usr/include /usr/local/include /opt/local/include /sw/include)
 
   find_library(
     JACK_LIBRARY
@@ -54,16 +54,13 @@ else(JACK_LIBRARIES AND JACK_INCLUDE_DIRS)
     if(NOT TARGET Jack::Jack)
       if(IS_ABSOLUTE "${JACK_LIBRARIES}")
         add_library(Jack::Jack UNKNOWN IMPORTED)
-        set_target_properties(Jack::Jack PROPERTIES IMPORTED_LOCATION
-                                                    "${JACK_LIBRARIES}")
+        set_target_properties(Jack::Jack PROPERTIES IMPORTED_LOCATION "${JACK_LIBRARIES}")
       else()
         add_library(Jack::Jack INTERFACE IMPORTED)
-        set_target_properties(Jack::Jack PROPERTIES IMPORTED_LIBNAME
-                                                    "${JACK_LIBRARIES}")
+        set_target_properties(Jack::Jack PROPERTIES IMPORTED_LIBNAME "${JACK_LIBRARIES}")
       endif()
 
-      set_target_properties(Jack::Jack PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                                  "${JACK_INCLUDE_DIRS}")
+      set_target_properties(Jack::Jack PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${JACK_INCLUDE_DIRS}")
     endif()
   else(JACK_FOUND)
     if(JACK_FIND_REQUIRED)
@@ -71,8 +68,7 @@ else(JACK_LIBRARIES AND JACK_INCLUDE_DIRS)
     endif(JACK_FIND_REQUIRED)
   endif(JACK_FOUND)
 
-  # show the JACK_INCLUDE_DIRS and JACK_LIBRARIES variables only in the advanced
-  # view
+  # show the JACK_INCLUDE_DIRS and JACK_LIBRARIES variables only in the advanced view
   mark_as_advanced(JACK_INCLUDE_DIRS JACK_LIBRARIES)
 
 endif(JACK_LIBRARIES AND JACK_INCLUDE_DIRS)

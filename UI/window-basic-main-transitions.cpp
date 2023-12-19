@@ -21,6 +21,7 @@
 #include <QMessageBox>
 #include <util/dstr.hpp>
 #include "window-basic-main.hpp"
+#include "window-basic-main-outputs.hpp"
 #include "window-basic-vcam-config.hpp"
 #include "display-helpers.hpp"
 #include "window-namedialog.hpp"
@@ -108,7 +109,7 @@ void OBSBasic::AddQuickTransitionHotkey(QuickTransition *qt)
 						  (void *)(uintptr_t)qt->id);
 }
 
-void QuickTransition::SourceRenamed(void *param, calldata_t *data)
+void QuickTransition::SourceRenamed(void *param, calldata_t *)
 {
 	QuickTransition *qt = reinterpret_cast<QuickTransition *>(param);
 
@@ -116,8 +117,6 @@ void QuickTransition::SourceRenamed(void *param, calldata_t *data)
 				     .arg(MakeQuickTransitionText(qt));
 
 	obs_hotkey_set_description(qt->hotkey, QT_TO_UTF8(hotkeyName));
-
-	UNUSED_PARAMETER(data);
 }
 
 void OBSBasic::TriggerQuickTransition(int id)
@@ -286,7 +285,8 @@ void OBSBasic::OverrideTransition(OBSSource transition)
 		obs_transition_swap_end(transition, oldTransition);
 
 		// Transition overrides don't raise an event so we need to call update directly
-		OBSBasicVCamConfig::UpdateOutputSource();
+		if (vcamEnabled)
+			outputHandler->UpdateVirtualCamOutputSource();
 	}
 }
 
@@ -306,8 +306,6 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force,
 	bool usingPreviewProgram = IsPreviewProgramMode();
 	if (!scene)
 		return;
-
-	OBSWeakSource lastProgramScene;
 
 	if (usingPreviewProgram) {
 		if (!tBarActive)
@@ -427,6 +425,10 @@ void OBSBasic::SetTransition(OBSSource transition)
 	bool configurable = obs_source_configurable(transition);
 	ui->transitionRemove->setEnabled(configurable);
 	ui->transitionProps->setEnabled(configurable);
+
+	if (vcamEnabled && vcamConfig.type == VCamOutputType::InternalOutput &&
+	    vcamConfig.internal == VCamInternalType::Default)
+		outputHandler->UpdateVirtualCamOutputSource();
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_CHANGED);
@@ -561,7 +563,7 @@ void OBSBasic::RenameTransition()
 {
 	QAction *action = reinterpret_cast<QAction *>(sender());
 	QVariant variant = action->property("transition");
-	obs_source_t *transition = variant.value<OBSSource>();
+	OBSSource transition = variant.value<OBSSource>();
 
 	string name;
 	QString placeHolderText = QT_UTF8(obs_source_get_name(transition));
@@ -627,13 +629,11 @@ void OBSBasic::on_transitionProps_clicked()
 	menu.exec(QCursor::pos());
 }
 
-void OBSBasic::on_transitionDuration_valueChanged(int value)
+void OBSBasic::on_transitionDuration_valueChanged()
 {
 	if (api) {
 		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_DURATION_CHANGED);
 	}
-
-	UNUSED_PARAMETER(value);
 }
 
 QuickTransition *OBSBasic::GetQuickTransition(int id)
@@ -695,6 +695,13 @@ void OBSBasic::SetCurrentScene(OBSSource scene, bool force)
 				currentScene = itemScene.Get();
 				ui->scenes->setCurrentItem(item);
 				ui->scenes->blockSignals(false);
+
+				if (vcamEnabled &&
+				    vcamConfig.internal ==
+					    VCamInternalType::Preview)
+					outputHandler
+						->UpdateVirtualCamOutputSource();
+
 				if (api)
 					api->on_event(
 						OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
@@ -787,15 +794,13 @@ void OBSBasic::CreateProgramOptions()
 	mainButtonLayout->addWidget(transitionButton);
 	mainButtonLayout->addWidget(configTransitions);
 
-	tBar = new SliderIgnoreScroll(Qt::Horizontal);
+	tBar = new SliderIgnoreClick(Qt::Horizontal);
 	tBar->setMinimum(0);
 	tBar->setMaximum(T_BAR_PRECISION - 1);
 
 	tBar->setProperty("themeID", "tBarSlider");
 
-	connect(tBar, SIGNAL(sliderMoved(int)), this, SLOT(TBarChanged(int)));
-	connect(tBar, SIGNAL(valueChanged(int)), this,
-		SLOT(on_tbar_position_valueChanged(int)));
+	connect(tBar, &QSlider::valueChanged, this, &OBSBasic::TBarChanged);
 	connect(tBar, SIGNAL(sliderReleased()), this, SLOT(TBarReleased()));
 
 	layout->addStretch(0);
@@ -896,6 +901,7 @@ void OBSBasic::TBarReleased()
 		tBar->blockSignals(false);
 		tBarActive = false;
 		EnableTransitionWidgets(true);
+		programScene = lastProgramScene;
 	}
 
 	tBar->clearFocus();
@@ -917,8 +923,6 @@ static bool ValidTBarTransition(OBSSource transition)
 void OBSBasic::TBarChanged(int value)
 {
 	OBSSourceAutoRelease transition = obs_get_output_source(0);
-
-	tBar->setValue(value);
 
 	if (!tBarActive) {
 		OBSSource sceneSource = GetCurrentSceneSource();
@@ -945,6 +949,9 @@ void OBSBasic::TBarChanged(int value)
 
 	obs_transition_set_manual_time(transition,
 				       (float)value / T_BAR_PRECISION_F);
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_TBAR_VALUE_CHANGED);
 }
 
 int OBSBasic::GetTbarPosition()
@@ -952,14 +959,6 @@ int OBSBasic::GetTbarPosition()
 	return tBar->value();
 }
 
-void OBSBasic::on_tbar_position_valueChanged(int value)
-{
-	if (api) {
-		api->on_event(OBS_FRONTEND_EVENT_TBAR_VALUE_CHANGED);
-	}
-
-	UNUSED_PARAMETER(value);
-}
 void OBSBasic::on_modeSwitch_clicked()
 {
 	SetPreviewProgramMode(!IsPreviewProgramMode());
@@ -1477,6 +1476,7 @@ void OBSBasic::QuickTransitionChange()
 								trIdx);
 		if (tr) {
 			qt->source = tr;
+			qt->fadeToBlack = fadeToBlack;
 			ResetQuickTransitionText(qt);
 		}
 	}
@@ -1694,7 +1694,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 	UpdateTitleBar();
 }
 
-void OBSBasic::RenderProgram(void *data, uint32_t cx, uint32_t cy)
+void OBSBasic::RenderProgram(void *data, uint32_t, uint32_t)
 {
 	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_DEFAULT, "RenderProgram");
 
@@ -1725,9 +1725,6 @@ void OBSBasic::RenderProgram(void *data, uint32_t cx, uint32_t cy)
 	gs_viewport_pop();
 
 	GS_DEBUG_MARKER_END();
-
-	UNUSED_PARAMETER(cx);
-	UNUSED_PARAMETER(cy);
 }
 
 void OBSBasic::ResizeProgram(uint32_t cx, uint32_t cy)

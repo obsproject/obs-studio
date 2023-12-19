@@ -328,7 +328,7 @@ void SourceTreeItem::mouseDoubleClickEvent(QMouseEvent *event)
 		obs_source_t *source = obs_sceneitem_get_source(sceneitem);
 		OBSBasic *main =
 			reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
-		if (source) {
+		if (obs_source_configurable(source)) {
 			main->CreatePropertiesWindow(source);
 		}
 	}
@@ -413,7 +413,7 @@ void SourceTreeItem::ExitEditModeInternal(bool save)
 	editor = nullptr;
 	setFocusPolicy(Qt::NoFocus);
 	boxLayout->insertWidget(index, label);
-	label->setFocus();
+	setFocus();
 
 	/* ----------------------------------------- */
 	/* check for empty string                    */
@@ -636,13 +636,15 @@ void SourceTreeModel::OBSFrontendEvent(enum obs_frontend_event event, void *ptr)
 {
 	SourceTreeModel *stm = reinterpret_cast<SourceTreeModel *>(ptr);
 
-	switch ((int)event) {
+	switch (event) {
 	case OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED:
 		stm->SceneChanged();
 		break;
 	case OBS_FRONTEND_EVENT_EXIT:
 	case OBS_FRONTEND_EVENT_SCENE_COLLECTION_CLEANUP:
 		stm->Clear();
+		break;
+	default:
 		break;
 	}
 }
@@ -1152,7 +1154,7 @@ void SourceTree::SelectItem(obs_sceneitem_t *sceneitem, bool select)
 		return;
 
 	QModelIndex index = stm->createIndex(i, 0);
-	if (index.isValid())
+	if (index.isValid() && select != selectionModel()->isSelected(index))
 		selectionModel()->select(
 			index, select ? QItemSelectionModel::Select
 				      : QItemSelectionModel::Deselect);

@@ -157,6 +157,21 @@ struct ffmpeg_mux {
 	struct io_buffer io;
 };
 
+#define SRT_PROTO "srt"
+#define UDP_PROTO "udp"
+#define TCP_PROTO "tcp"
+#define HTTP_PROTO "http"
+#define RIST_PROTO "rist"
+
+static bool ffmpeg_mux_is_network(struct ffmpeg_mux *ffm)
+{
+	return !strncmp(ffm->params.file, SRT_PROTO, sizeof(SRT_PROTO) - 1) ||
+	       !strncmp(ffm->params.file, UDP_PROTO, sizeof(UDP_PROTO) - 1) ||
+	       !strncmp(ffm->params.file, TCP_PROTO, sizeof(TCP_PROTO) - 1) ||
+	       !strncmp(ffm->params.file, HTTP_PROTO, sizeof(HTTP_PROTO) - 1) ||
+	       !strncmp(ffm->params.file, RIST_PROTO, sizeof(RIST_PROTO) - 1);
+}
+
 static void header_free(struct header *header)
 {
 	free(header->data);
@@ -167,8 +182,14 @@ static void free_avformat(struct ffmpeg_mux *ffm)
 	if (ffm->output) {
 		avcodec_free_context(&ffm->video_ctx);
 
-		if ((ffm->output->oformat->flags & AVFMT_NOFILE) == 0)
-			avio_close(ffm->output->pb);
+		if ((ffm->output->oformat->flags & AVFMT_NOFILE) == 0) {
+			if (!ffmpeg_mux_is_network(ffm)) {
+				av_free(ffm->output->pb->buffer);
+				avio_context_free(&ffm->output->pb);
+			} else {
+				avio_close(ffm->output->pb);
+			}
+		}
 
 		avformat_free_context(ffm->output);
 		ffm->output = NULL;
@@ -204,9 +225,6 @@ static void ffmpeg_mux_free(struct ffmpeg_mux *ffm)
 		pthread_join(ffm->io.io_thread, NULL);
 
 		// Cleanup everything else
-		av_free(ffm->output->pb->buffer);
-		avio_context_free(&ffm->output->pb);
-
 		os_event_destroy(ffm->io.new_data_available_event);
 		os_event_destroy(ffm->io.buffer_space_available_event);
 
@@ -472,7 +490,10 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 	ffm->video_stream->time_base = context->time_base;
 #if LIBAVFORMAT_VERSION_MAJOR < 59
 	// codec->time_base may still be used if LIBAVFORMAT_VERSION_MAJOR < 59
+	PRAGMA_WARN_PUSH
+	PRAGMA_WARN_DEPRECATION
 	ffm->video_stream->codec->time_base = context->time_base;
+	PRAGMA_WARN_POP
 #endif
 	ffm->video_stream->avg_frame_rate = av_inv_q(context->time_base);
 
@@ -523,7 +544,14 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 	const char *name = ffm->params.acodec;
 	int channels;
 
-	const AVCodecDescriptor *codec = avcodec_descriptor_get_by_name(name);
+	const AVCodecDescriptor *codec_desc =
+		avcodec_descriptor_get_by_name(name);
+	if (!codec_desc) {
+		fprintf(stderr, "Couldn't find codec descriptor '%s'\n", name);
+		return;
+	}
+
+	const AVCodec *codec = avcodec_find_encoder(codec_desc->id);
 	if (!codec) {
 		fprintf(stderr, "Couldn't find codec '%s'\n", name);
 		return;
@@ -544,14 +572,17 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 	context = avcodec_alloc_context3(NULL);
 	context->codec_type = codec->type;
 	context->codec_id = codec->id;
-	context->bit_rate = (int64_t)ffm->audio[idx].abitrate * 1000;
+	if (!(codec_desc->props & AV_CODEC_PROP_LOSSLESS))
+		context->bit_rate = (int64_t)ffm->audio[idx].abitrate * 1000;
+
 	channels = ffm->audio[idx].channels;
 #if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(57, 24, 100)
 	context->channels = channels;
 #endif
 	context->sample_rate = ffm->audio[idx].sample_rate;
-	context->frame_size = ffm->audio[idx].frame_size;
-	context->sample_fmt = AV_SAMPLE_FMT_S16;
+	if (!(codec->capabilities & AV_CODEC_CAP_VARIABLE_FRAME_SIZE))
+		context->frame_size = ffm->audio[idx].frame_size;
+
 	context->time_base = stream->time_base;
 	context->extradata = extradata;
 	context->extradata_size = ffm->audio_header[idx].size;
@@ -889,21 +920,6 @@ static int ffmpeg_mux_write_av_buffer(void *opaque, uint8_t *buf, int buf_size)
 	return buf_size;
 }
 
-#define SRT_PROTO "srt"
-#define UDP_PROTO "udp"
-#define TCP_PROTO "tcp"
-#define HTTP_PROTO "http"
-#define RIST_PROTO "rist"
-
-static bool ffmpeg_mux_is_network(struct ffmpeg_mux *ffm)
-{
-	return !strncmp(ffm->params.file, SRT_PROTO, sizeof(SRT_PROTO) - 1) ||
-	       !strncmp(ffm->params.file, UDP_PROTO, sizeof(UDP_PROTO) - 1) ||
-	       !strncmp(ffm->params.file, TCP_PROTO, sizeof(TCP_PROTO) - 1) ||
-	       !strncmp(ffm->params.file, HTTP_PROTO, sizeof(HTTP_PROTO) - 1) ||
-	       !strncmp(ffm->params.file, RIST_PROTO, sizeof(RIST_PROTO) - 1);
-}
-
 static inline int open_output_file(struct ffmpeg_mux *ffm)
 {
 #if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
@@ -1046,6 +1062,11 @@ static int ffmpeg_mux_init_context(struct ffmpeg_mux *ffm)
 #if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
 	ffm->output->oformat->video_codec = AV_CODEC_ID_NONE;
 	ffm->output->oformat->audio_codec = AV_CODEC_ID_NONE;
+#endif
+
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(60, 0, 100)
+	/* Allow FLAC/OPUS in MP4 */
+	ffm->output->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
 #endif
 
 	if (!init_streams(ffm)) {

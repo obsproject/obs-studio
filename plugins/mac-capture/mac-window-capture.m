@@ -55,10 +55,10 @@ static inline void capture_frame(struct window_capture *wc)
 
 	struct obs_source_frame frame = {
 		.format = VIDEO_FORMAT_BGRA,
-		.width = width,
-		.height = height,
+		.width = (uint32_t)width,
+		.height = (uint32_t)height,
 		.data[0] = (uint8_t *)CFDataGetBytePtr(data),
-		.linesize[0] = CGImageGetBytesPerRow(img),
+		.linesize[0] = (uint32_t)CGImageGetBytesPerRow(img),
 		.timestamp = ts,
 	};
 
@@ -100,7 +100,7 @@ static bool init_screen_stream(struct display_capture *dc)
 	dc->frame = [dc->screen convertRectToBacking:dc->screen.frame];
 
 	NSNumber *screen_num = dc->screen.deviceDescription[@"NSScreenNumber"];
-	CGDirectDisplayID disp_id = (CGDirectDisplayID)screen_num.pointerValue;
+	CGDirectDisplayID disp_id = [screen_num unsignedIntValue];
 
 	NSDictionary *rect_dict =
 		CFBridgingRelease(CGRectCreateDictionaryRepresentation(
@@ -119,15 +119,21 @@ static bool init_screen_stream(struct display_capture *dc)
 
 	os_event_init(&dc->disp_finished, OS_EVENT_TYPE_MANUAL);
 
+	FourCharCode bgra_code = 0;
+	bgra_code = ('B' << 24) | ('G' << 16) | ('R' << 8) | 'A';
+
 	const CGSize *size = &dc->frame.size;
-	// https://developer.apple.com/forums/thread/127374 -> popup permission
 	dc->disp = CGDisplayStreamCreateWithDispatchQueue(
-		disp_id, size->width, size->height, 'BGRA',
+		disp_id, (size_t)size->width, (size_t)size->height, bgra_code,
 		(__bridge CFDictionaryRef)dict,
 		dispatch_queue_create(NULL, NULL),
 		^(CGDisplayStreamFrameStatus status, uint64_t displayTime,
 		  IOSurfaceRef frameSurface,
-		  CGDisplayStreamUpdateRef updateRef){
+		  CGDisplayStreamUpdateRef updateRef) {
+			(void)status;
+			(void)displayTime;
+			(void)frameSurface;
+			(void)updateRef;
 		});
 
 	return true;

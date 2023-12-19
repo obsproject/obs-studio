@@ -88,18 +88,32 @@ Q_DECLARE_METATYPE(media_frames_per_second);
 
 void OBSPropertiesView::ReloadProperties()
 {
+	deferUpdate = false;
 	if (weakObj || rawObj) {
 		OBSObject strongObj = GetObject();
 		void *obj = strongObj ? strongObj.Get() : rawObj;
-		if (obj)
+		if (obj) {
 			properties.reset(reloadCallback(obj));
+
+			if (obs_obj_get_type(obj) == OBS_OBJ_TYPE_SOURCE) {
+				enum obs_source_type type = obs_source_get_type(
+					(obs_source_t *)obj);
+				if (type == OBS_SOURCE_TYPE_INPUT ||
+				    type == OBS_SOURCE_TYPE_TRANSITION) {
+					uint32_t flags =
+						obs_properties_get_flags(
+							properties.get());
+					deferUpdate =
+						(flags &
+						 OBS_PROPERTIES_DEFER_UPDATE) !=
+						0;
+				}
+			}
+		}
 	} else {
 		properties.reset(reloadCallback((void *)type.c_str()));
 		obs_properties_apply_settings(properties.get(), settings);
 	}
-
-	uint32_t flags = obs_properties_get_flags(properties.get());
-	deferUpdate = (flags & OBS_PROPERTIES_DEFER_UPDATE) != 0;
 
 	RefreshProperties();
 }
@@ -108,8 +122,8 @@ void OBSPropertiesView::ReloadProperties()
 
 void OBSPropertiesView::RefreshProperties()
 {
-	int h, v;
-	GetScrollPos(h, v);
+	int h, v, hend, vend;
+	GetScrollPos(h, v, hend, vend);
 
 	children.clear();
 	if (widget)
@@ -136,8 +150,9 @@ void OBSPropertiesView::RefreshProperties()
 
 	setWidgetResizable(true);
 	setWidget(widget);
-	SetScrollPos(h, v);
 	setSizePolicy(mainPolicy);
+	adjustSize();
+	SetScrollPos(h, v, hend, vend);
 
 	lastFocused.clear();
 	if (lastWidget) {
@@ -153,28 +168,36 @@ void OBSPropertiesView::RefreshProperties()
 	emit PropertiesRefreshed();
 }
 
-void OBSPropertiesView::SetScrollPos(int h, int v)
+void OBSPropertiesView::SetScrollPos(int h, int v, int old_hend, int old_vend)
 {
 	QScrollBar *scroll = horizontalScrollBar();
-	if (scroll)
-		scroll->setValue(h);
+	if (scroll) {
+		int hend = scroll->maximum() + scroll->pageStep();
+		scroll->setValue(h * hend / old_hend);
+	}
 
 	scroll = verticalScrollBar();
-	if (scroll)
-		scroll->setValue(v);
+	if (scroll) {
+		int vend = scroll->maximum() + scroll->pageStep();
+		scroll->setValue(v * vend / old_vend);
+	}
 }
 
-void OBSPropertiesView::GetScrollPos(int &h, int &v)
+void OBSPropertiesView::GetScrollPos(int &h, int &v, int &hend, int &vend)
 {
 	h = v = 0;
 
 	QScrollBar *scroll = horizontalScrollBar();
-	if (scroll)
+	if (scroll) {
 		h = scroll->value();
+		hend = scroll->maximum() + scroll->pageStep();
+	}
 
 	scroll = verticalScrollBar();
-	if (scroll)
+	if (scroll) {
 		v = scroll->value();
+		vend = scroll->maximum() + scroll->pageStep();
+	}
 }
 
 OBSPropertiesView::OBSPropertiesView(OBSData settings_, obs_object_t *obj,
@@ -624,7 +647,7 @@ QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 	children.emplace_back(info);
 
 	/* trigger a settings update if the index was not found */
-	if (idx == -1)
+	if (count && idx == -1)
 		info->ControlChanged();
 
 	return combo;
@@ -670,11 +693,8 @@ void OBSPropertiesView::AddEditableList(obs_property_t *prop,
 	WidgetInfo *info = new WidgetInfo(this, prop, list);
 
 	list->setDragDropMode(QAbstractItemView::InternalMove);
-	connect(list->model(),
-		SIGNAL(rowsMoved(QModelIndex, int, int, QModelIndex, int)),
-		info,
-		SLOT(EditListReordered(const QModelIndex &, int, int,
-				       const QModelIndex &, int)));
+	connect(list->model(), SIGNAL(rowsMoved()), info,
+		SLOT(EditListReordered()));
 
 	QVBoxLayout *sideLayout = new QVBoxLayout();
 	NewButton(sideLayout, info, "addIconSmall", &WidgetInfo::EditListAdd);
@@ -1293,8 +1313,7 @@ static void UpdateFPSLabels(OBSFrameRatePropertyWidget *w)
 		w->currentFPS->setHidden(true);
 		w->timePerFrame->setHidden(true);
 		if (!option)
-			w->warningLabel->setStyleSheet(
-				"QLabel { color: red; }");
+			w->warningLabel->setObjectName("errorLabel");
 
 		return;
 	}
@@ -1304,9 +1323,9 @@ static void UpdateFPSLabels(OBSFrameRatePropertyWidget *w)
 
 	media_frames_per_second match{};
 	if (!option && !matches_ranges(match, *valid_fps, w->fps_ranges, true))
-		w->warningLabel->setStyleSheet("QLabel { color: red; }");
+		w->warningLabel->setObjectName("errorLabel");
 	else
-		w->warningLabel->setStyleSheet("");
+		w->warningLabel->setObjectName("");
 
 	auto convert_to_fps = media_frames_per_second_to_fps;
 	auto convert_to_frame_interval =
@@ -1509,6 +1528,9 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 		break;
 	case OBS_PROPERTY_COLOR_ALPHA:
 		AddColorAlpha(property, layout, label);
+		break;
+	default:
+		break;
 	}
 
 	if (!widget && !label)
@@ -1519,8 +1541,8 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 		label = new QLabel(QT_UTF8(obs_property_description(property)));
 
 	if (label) {
-		if (warning) //TODO: select color based on background color
-			label->setStyleSheet("QLabel { color: red; }");
+		if (warning)
+			label->setObjectName("errorLabel");
 
 		if (minSize) {
 			label->setMinimumWidth(minSize);
@@ -1812,15 +1834,18 @@ bool WidgetInfo::ColorChangedInternal(const char *setting, bool supportAlpha)
 		options |= QColorDialog::ShowAlphaChannel;
 	}
 
-	/* The native dialog on OSX has all kinds of problems, like closing
-	 * other open QDialogs on exit, and
-	 * https://bugreports.qt-project.org/browse/QTBUG-34532
-	 */
-#ifndef _WIN32
+#ifdef __linux__
+	// TODO: Revisit hang on Ubuntu with native dialog
 	options |= QColorDialog::DontUseNativeDialog;
 #endif
 
 	color = QColorDialog::getColor(color, view, QT_UTF8(desc), options);
+
+#ifdef __APPLE__
+	// TODO: Revisit when QTBUG-42661 is fixed
+	widget->window()->raise();
+#endif
+
 	if (!color.isValid())
 		return false;
 
@@ -1910,16 +1935,8 @@ void WidgetInfo::GroupChanged(const char *setting)
 						  : true);
 }
 
-void WidgetInfo::EditListReordered(const QModelIndex &parent, int start,
-				   int end, const QModelIndex &destination,
-				   int row)
+void WidgetInfo::EditListReordered()
 {
-	UNUSED_PARAMETER(parent);
-	UNUSED_PARAMETER(start);
-	UNUSED_PARAMETER(end);
-	UNUSED_PARAMETER(destination);
-	UNUSED_PARAMETER(row);
-
 	EditableListChanged();
 }
 
@@ -1970,13 +1987,12 @@ void WidgetInfo::ButtonClicked()
 		}
 		return;
 	}
-	if (view->rawObj || view->weakObj) {
-		OBSObject strongObj = view->GetObject();
-		void *obj = strongObj ? strongObj.Get() : view->rawObj;
-		if (obs_property_button_clicked(property, obj)) {
-			QMetaObject::invokeMethod(view, "RefreshProperties",
-						  Qt::QueuedConnection);
-		}
+
+	OBSObject strongObj = view->GetObject();
+	void *obj = strongObj ? strongObj.Get() : view->rawObj;
+	if (obs_property_button_clicked(property, obj)) {
+		QMetaObject::invokeMethod(view, "RefreshProperties",
+					  Qt::QueuedConnection);
 	}
 }
 
@@ -2042,6 +2058,8 @@ void WidgetInfo::ControlChanged()
 	case OBS_PROPERTY_COLOR_ALPHA:
 		if (!ColorAlphaChanged(setting))
 			return;
+		break;
+	default:
 		break;
 	}
 

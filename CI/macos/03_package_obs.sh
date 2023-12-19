@@ -19,23 +19,36 @@ package_obs() {
     status "Create macOS disk image"
     trap "caught_error 'package app'" ERR
 
-    info "/!\\ CPack will use an AppleScript to create the disk image, this will lead to a Finder window opening to adjust window settings. /!\\"
-
     ensure_dir "${CHECKOUT_DIR}"
 
     step "Package OBS..."
-    cmake --build ${BUILD_DIR} -t package
+    BUILD_DIR="build_${ARCH}"
 
-    DMG_NAME=$(/usr/bin/find "${BUILD_DIR}" -type f -name "OBS-*.dmg" -depth 1 | sort -rn | head -1)
+    root_dir="$(pwd)"
 
-    if [ "${DMG_NAME}" ]; then
-        mv "${DMG_NAME}" "${BUILD_DIR}/${FILE_NAME}"
+    pushd "${BUILD_DIR}" > /dev/null > /dev/null
 
-        step "Codesign OBS disk image..."
-        /usr/bin/codesign --force --sign "${CODESIGN_IDENT:--}" "${BUILD_DIR}/${FILE_NAME}"
-    else
-        error "ERROR No suitable OBS disk image generated"
-    fi
+    mkdir -p "${FILE_NAME//.dmg/}/.background"
+    cp "${root_dir}/cmake/macos/resources/background.tiff" "${FILE_NAME//.dmg/}/.background/"
+    cp "${root_dir}/cmake/macos/resources/AppIcon.icns" "${FILE_NAME//.dmg/}/.VolumeIcon.icns"
+    ln -s /Applications "${FILE_NAME//.dmg/}/Applications"
+
+    mkdir -p "${FILE_NAME//.dmg/}/OBS.app"
+    ditto OBS.app "${FILE_NAME//.dmg/}/OBS.app"
+
+    hdiutil create -volname "${FILE_NAME//.dmg/}" -srcfolder "${FILE_NAME//.dmg/}" -ov -fs APFS -format UDRW temp.dmg
+    hdiutil attach -noverify -readwrite temp.dmg
+    osascript package.applescript "${FILE_NAME//.dmg/}"
+    hdiutil detach "/Volumes/${FILE_NAME//.dmg/}"
+    hdiutil convert -format ULMO -o "${FILE_NAME}" temp.dmg
+
+    rm temp.dmg
+
+    step "Codesign OBS disk image..."
+    /usr/bin/codesign --force --sign "${CODESIGN_IDENT:--}" "${FILE_NAME}"
+
+    rm -rf "${FILE_NAME//.dmg/}"
+    popd > /dev/null
 }
 
 notarize_obs() {

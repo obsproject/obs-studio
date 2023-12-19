@@ -1731,7 +1731,7 @@
                        <item row="2" column="0">
                         <widget class="QLabel" name="simpleOutStrEncoderLabel">
                          <property name="text">
-                          <string>Basic.Settings.Output.Encoder</string>
+                          <string>Basic.Settings.Output.Encoder.Video</string>
                          </property>
                          <property name="buddy">
                           <cstring>simpleOutRecEncoder</cstring>
@@ -1779,6 +1779,19 @@
                        </item>
                        <item row="5" column="1">
                         <widget class="QLineEdit" name="simpleOutCustom"/>
+                       </item>
+                       <item row="6" column="0">
+                        <widget class="QLabel" name="simpleOutStrAEncoderLabel">
+                         <property name="text">
+                          <string>Basic.Settings.Output.Encoder.Audio</string>
+                         </property>
+                         <property name="buddy">
+                          <cstring>simpleOutStrAEncoder</cstring>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="6" column="1">
+                        <widget class="QComboBox" name="simpleOutStrAEncoder"/>
                        </item>
                       </layout>
                      </widget>
@@ -1888,42 +1901,18 @@
                        </item>
                        <item row="3" column="1">
                         <widget class="QComboBox" name="simpleOutRecFormat">
-                         <item>
-                          <property name="text">
-                           <string notr="true">flv</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string notr="true">mp4</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string notr="true">mov</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string notr="true">mkv</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string notr="true">ts</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string notr="true">m3u8</string>
-                          </property>
-                         </item>
+                         <property name="editable">
+                          <bool>false</bool>
+                         </property>
+                         <property name="currentText">
+                          <string/>
+                         </property>
                         </widget>
                        </item>
                        <item row="4" column="0">
                         <widget class="QLabel" name="simpleOutRecEncoderLabel">
                          <property name="text">
-                          <string>Basic.Settings.Output.Encoder</string>
+                          <string>Basic.Settings.Output.Encoder.Video</string>
                          </property>
                          <property name="buddy">
                           <cstring>simpleOutRecEncoder</cstring>
@@ -1934,6 +1923,230 @@
                         <widget class="QComboBox" name="simpleOutRecEncoder"/>
                        </item>
                        <item row="5" column="0">
+                        <widget class="QLabel" name="simpleOutRecAEncoderLabel">
+                         <property name="text">
+                          <string>Basic.Settings.Output.Encoder.Audio</string>
+                         </property>
+                         <property name="buddy">
+                          <cstring>simpleOutRecAEncoder</cstring>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="5" column="1">
+                        <widget class="QComboBox" name="simpleOutRecAEncoder"/>
+                       </item>
+                       <item row="6" column="0">
+                        <widget class="QLabel" name="simplerectrack_label">
+                         <property name="text">
+                          <string>Basic.Settings.Output.Simple.RecAudioTrack</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="6" column="1">
+                        <widget class="QStackedWidget" name="simpleRecTrackWidget">
+                         <property name="sizePolicy">
+                          <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                           <horstretch>0</horstretch>
+                           <verstretch>0</verstretch>
+                          </sizepolicy>
+                         </property>
+                         <property name="currentIndex">
+                          <number>0</number>
+                         </property>
+                         <widget class="QWidget" name="simpleRecTracks">
+                          <layout class="QHBoxLayout" name="horizontalLayoutSimpleTracks">
+                           <property name="leftMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="topMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="rightMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="bottomMargin">
+                            <number>0</number>
+                           </property>
+                           <item>
+                            <widget class="QCheckBox" name="simpleOutRecTrack1">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="text">
+                              <string notr="true">1</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item>
+                            <widget class="QCheckBox" name="simpleOutRecTrack2">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="text">
+                              <string notr="true">2</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item>
+                            <widget class="QCheckBox" name="simpleOutRecTrack3">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="text">
+                              <string notr="true">3</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item>
+                            <widget class="QCheckBox" name="simpleOutRecTrack4">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="text">
+                              <string notr="true">4</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item>
+                            <widget class="QCheckBox" name="simpleOutRecTrack5">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="text">
+                              <string notr="true">5</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item>
+                            <widget class="QCheckBox" name="simpleOutRecTrack6">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="text">
+                              <string notr="true">6</string>
+                             </property>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                         <widget class="QWidget" name="simpleFlvTracks">
+                          <layout class="QHBoxLayout" name="horizontalLayoutSimpleFLVTracks">
+                           <property name="leftMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="topMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="rightMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="bottomMargin">
+                            <number>0</number>
+                           </property>
+                           <item>
+                            <widget class="QRadioButton" name="simpleFlvTrack1">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="text">
+                              <string>1</string>
+                             </property>
+                             <property name="checked">
+                              <bool>true</bool>
+                             </property>
+                            </widget>
+                           </item>
+                           <item>
+                            <widget class="QRadioButton" name="simpleFlvTrack2">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="text">
+                              <string>2</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item>
+                            <widget class="QRadioButton" name="simpleFlvTrack3">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="text">
+                              <string>3</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item>
+                            <widget class="QRadioButton" name="simpleFlvTrack4">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="text">
+                              <string>4</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item>
+                            <widget class="QRadioButton" name="simpleFlvTrack5">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="text">
+                              <string>5</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item>
+                            <widget class="QRadioButton" name="simpleFlvTrack6">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="text">
+                              <string>6</string>
+                             </property>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </widget>
+                       </item>
+                       <item row="7" column="0">
                         <widget class="QLabel" name="label_420">
                          <property name="text">
                           <string>Basic.Settings.Output.CustomMuxerSettings</string>
@@ -1943,10 +2156,10 @@
                          </property>
                         </widget>
                        </item>
-                       <item row="5" column="1">
+                       <item row="7" column="1">
                         <widget class="QLineEdit" name="simpleOutMuxCustom"/>
                        </item>
-                       <item row="6" column="1">
+                       <item row="8" column="1">
                         <widget class="QCheckBox" name="simpleReplayBuf">
                          <property name="text">
                           <string>Basic.Settings.Output.UseReplayBuffer</string>
@@ -2289,16 +2502,26 @@
                             </widget>
                            </item>
                            <item row="2" column="0">
-                            <widget class="QLabel" name="advOutEncLabel">
+                            <widget class="QLabel" name="advOutAEncLabel">
                              <property name="text">
-                              <string>Basic.Settings.Output.Encoder</string>
+                              <string>Basic.Settings.Output.Encoder.Audio</string>
                              </property>
                             </widget>
                            </item>
                            <item row="2" column="1">
-                            <widget class="QComboBox" name="advOutEncoder"/>
+                            <widget class="QComboBox" name="advOutAEncoder"/>
                            </item>
                            <item row="3" column="0">
+                            <widget class="QLabel" name="advOutEncLabel">
+                             <property name="text">
+                              <string>Basic.Settings.Output.Encoder.Video</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="3" column="1">
+                            <widget class="QComboBox" name="advOutEncoder"/>
+                           </item>
+                           <item row="4" column="0">
                             <widget class="QCheckBox" name="advOutUseRescale">
                              <property name="sizePolicy">
                               <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
@@ -2314,7 +2537,7 @@
                              </property>
                             </widget>
                            </item>
-                           <item row="3" column="1">
+                           <item row="4" column="1">
                             <widget class="QComboBox" name="advOutRescale">
                              <property name="enabled">
                               <bool>false</bool>
@@ -2658,46 +2881,22 @@
                                    <verstretch>0</verstretch>
                                   </sizepolicy>
                                  </property>
-                                 <item>
-                                  <property name="text">
-                                   <string notr="true">flv</string>
-                                  </property>
-                                 </item>
-                                 <item>
-                                  <property name="text">
-                                   <string notr="true">mp4</string>
-                                  </property>
-                                 </item>
-                                 <item>
-                                  <property name="text">
-                                   <string notr="true">mov</string>
-                                  </property>
-                                 </item>
-                                 <item>
-                                  <property name="text">
-                                   <string notr="true">mkv</string>
-                                  </property>
-                                 </item>
-                                 <item>
-                                  <property name="text">
-                                   <string notr="true">ts</string>
-                                  </property>
-                                 </item>
-                                 <item>
-                                  <property name="text">
-                                   <string notr="true">m3u8</string>
-                                  </property>
-                                 </item>
+                                 <property name="editable">
+                                  <bool>false</bool>
+                                 </property>
+                                 <property name="currentText">
+                                  <string/>
+                                 </property>
                                 </widget>
                                </item>
-                               <item row="3" column="0">
+                               <item row="5" column="0">
                                 <widget class="QLabel" name="label_29">
                                  <property name="text">
                                   <string>Basic.Settings.Output.Adv.AudioTrack</string>
                                  </property>
                                 </widget>
                                </item>
-                               <item row="3" column="1">
+                               <item row="5" column="1">
                                 <widget class="QStackedWidget" name="advRecTrackWidget">
                                  <property name="sizePolicy">
                                   <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
@@ -2899,13 +3098,30 @@
                                 </widget>
                                </item>
                                <item row="4" column="0">
-                                <widget class="QLabel" name="advOutRecEncLabel">
+                                <widget class="QLabel" name="advOutRecAEncLabel">
                                  <property name="text">
-                                  <string>Basic.Settings.Output.Encoder</string>
+                                  <string>Basic.Settings.Output.Encoder.Audio</string>
                                  </property>
                                 </widget>
                                </item>
                                <item row="4" column="1">
+                                <widget class="QComboBox" name="advOutRecAEncoder">
+                                 <property name="sizePolicy">
+                                  <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                                   <horstretch>0</horstretch>
+                                   <verstretch>0</verstretch>
+                                  </sizepolicy>
+                                 </property>
+                                </widget>
+                               </item>
+                               <item row="3" column="0">
+                                <widget class="QLabel" name="advOutRecEncLabel">
+                                 <property name="text">
+                                  <string>Basic.Settings.Output.Encoder.Video</string>
+                                 </property>
+                                </widget>
+                               </item>
+                               <item row="3" column="1">
                                 <widget class="QComboBox" name="advOutRecEncoder">
                                  <property name="sizePolicy">
                                   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -2915,7 +3131,7 @@
                                  </property>
                                 </widget>
                                </item>
-                               <item row="5" column="0">
+                               <item row="6" column="0">
                                 <widget class="QCheckBox" name="advOutRecUseRescale">
                                  <property name="sizePolicy">
                                   <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
@@ -2931,7 +3147,7 @@
                                  </property>
                                 </widget>
                                </item>
-                               <item row="5" column="1">
+                               <item row="6" column="1">
                                 <widget class="QFrame" name="advOutRecRescaleContainer">
                                  <layout class="QHBoxLayout" name="horizontalLayout_4">
                                   <property name="leftMargin">
@@ -2965,14 +3181,14 @@
                                  </layout>
                                 </widget>
                                </item>
-                               <item row="6" column="0">
+                               <item row="7" column="0">
                                 <widget class="QLabel" name="label_9001">
                                  <property name="text">
                                   <string>Basic.Settings.Output.CustomMuxerSettings</string>
                                  </property>
                                 </widget>
                                </item>
-                               <item row="6" column="1">
+                               <item row="7" column="1">
                                 <widget class="QLineEdit" name="advOutMuxCustom">
                                  <property name="sizePolicy">
                                   <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
@@ -2982,7 +3198,7 @@
                                  </property>
                                 </widget>
                                </item>
-                               <item row="7" column="0">
+                               <item row="8" column="0">
                                 <widget class="QCheckBox" name="advOutSplitFile">
                                  <property name="sizePolicy">
                                   <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
@@ -2998,7 +3214,7 @@
                                  </property>
                                 </widget>
                                </item>
-                               <item row="7" column="1">
+                               <item row="8" column="1">
                                 <widget class="QComboBox" name="advOutSplitFileType">
                                  <property name="enabled">
                                   <bool>false</bool>
@@ -3020,14 +3236,14 @@
                                  </item>
                                 </widget>
                                </item>
-                               <item row="8" column="0">
+                               <item row="9" column="0">
                                 <widget class="QLabel" name="advOutSplitFileTimeLabel">
                                  <property name="text">
                                   <string>Basic.Settings.Output.SplitFile.Time</string>
                                  </property>
                                 </widget>
                                </item>
-                               <item row="8" column="1">
+                               <item row="9" column="1">
                                 <widget class="QSpinBox" name="advOutSplitFileTime">
                                  <property name="suffix">
                                   <string> min</string>
@@ -3043,14 +3259,14 @@
                                  </property>
                                 </widget>
                                </item>
-                               <item row="9" column="0">
+                               <item row="10" column="0">
                                 <widget class="QLabel" name="advOutSplitFileSizeLabel">
                                  <property name="text">
                                   <string>Basic.Settings.Output.SplitFile.Size</string>
                                  </property>
                                 </widget>
                                </item>
-                               <item row="9" column="1">
+                               <item row="10" column="1">
                                 <widget class="QSpinBox" name="advOutSplitFileSize">
                                  <property name="suffix">
                                   <string> MB</string>
@@ -4594,6 +4810,16 @@
                         <number>9</number>
                        </property>
                        <item>
+                        <widget class="QLabel" name="advReplayBufCustomFFmpeg">
+                         <property name="text">
+                          <string>Basic.Settings.Output.ReplayBuffer.UnavailableCustomFFmpeg</string>
+                         </property>
+                         <property name="themeID" stdset="0">
+                          <string>warning</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item>
                         <widget class="QCheckBox" name="advReplayBuf">
                          <property name="text">
                           <string>Basic.Settings.Output.UseReplayBuffer</string>
@@ -5692,6 +5918,25 @@
              <property name="bottomMargin">
               <number>9</number>
              </property>
+             <item row="0" column="0" colspan="2">
+              <widget class="QLabel" name="pleaseWaitLabel">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>Basic.Settings.Hotkeys.PleaseWait</string>
+               </property>
+               <property name="scaledContents">
+                <bool>false</bool>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+              </widget>
+             </item>
             </layout>
            </widget>
           </widget>
@@ -7521,9 +7766,10 @@
   <tabstop>scrollArea_2</tabstop>
   <tabstop>language</tabstop>
   <tabstop>theme</tabstop>
+  <tabstop>openStatsOnStartup</tabstop>
+  <tabstop>hideOBSFromCapture</tabstop>
   <tabstop>updateChannelBox</tabstop>
   <tabstop>enableAutoUpdates</tabstop>
-  <tabstop>openStatsOnStartup</tabstop>
   <tabstop>warnBeforeStreamStart</tabstop>
   <tabstop>warnBeforeStreamStop</tabstop>
   <tabstop>warnBeforeRecordStop</tabstop>
@@ -7580,6 +7826,12 @@
   <tabstop>simpleOutPreset</tabstop>
   <tabstop>simpleOutAdvanced</tabstop>
   <tabstop>simpleOutCustom</tabstop>
+  <tabstop>simpleOutRecTrack1</tabstop>
+  <tabstop>simpleOutRecTrack2</tabstop>
+  <tabstop>simpleOutRecTrack3</tabstop>
+  <tabstop>simpleOutRecTrack4</tabstop>
+  <tabstop>simpleOutRecTrack5</tabstop>
+  <tabstop>simpleOutRecTrack6</tabstop>
   <tabstop>simpleOutputPath</tabstop>
   <tabstop>simpleOutputBrowse</tabstop>
   <tabstop>simpleNoSpace</tabstop>
@@ -7684,7 +7936,6 @@
   <tabstop>enableLowLatencyMode</tabstop>
   <tabstop>browserHWAccel</tabstop>
   <tabstop>hotkeyFocusType</tabstop>
-  <tabstop>hideOBSFromCapture</tabstop>
   <tabstop>ignoreRecommended</tabstop>
   <tabstop>useStreamKeyAdv</tabstop>
   <tabstop>hotkeyFilterSearch</tabstop>

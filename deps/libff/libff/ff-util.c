@@ -447,3 +447,29 @@ void ff_format_desc_free(const struct ff_format_desc *format_desc)
 		desc = next;
 	}
 }
+
+
+bool ff_format_codec_compatible(const char *codec, const char *format)
+{
+	if (!codec || !format)
+		return false;
+
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
+	AVOutputFormat *output_format;
+#else
+	const AVOutputFormat *output_format;
+#endif
+	output_format = av_guess_format(format, NULL, NULL);
+	if (!output_format)
+		return false;
+	
+	const AVCodecDescriptor *codec_desc = avcodec_descriptor_get_by_name(codec);
+	if (!codec_desc)
+		return false;
+	
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(60, 0, 100)
+	return avformat_query_codec(output_format, codec_desc->id, FF_COMPLIANCE_EXPERIMENTAL) == 1;
+#else
+	return avformat_query_codec(output_format, codec_desc->id, FF_COMPLIANCE_NORMAL) == 1;
+#endif
+}

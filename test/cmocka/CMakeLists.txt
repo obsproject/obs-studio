@@ -21,3 +21,10 @@ target_include_directories(test_bitstream PRIVATE ${CMOCKA_INCLUDE_DIR})
 target_link_libraries(test_bitstream PRIVATE OBS::libobs ${CMOCKA_LIBRARIES})
 
 add_test(test_bitstream ${CMAKE_CURRENT_BINARY_DIR}/test_bitstream)
+
+# OS path test
+add_executable(test_os_path test_os_path.c)
+target_include_directories(test_os_path PRIVATE ${CMOCKA_INCLUDE_DIR})
+target_link_libraries(test_os_path PRIVATE OBS::libobs ${CMOCKA_LIBRARIES})
+
+add_test(test_os_path ${CMAKE_CURRENT_BINARY_DIR}/test_os_path)

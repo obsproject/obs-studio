@@ -28,7 +28,16 @@
 
 #define ALIGNMENT 32
 
-/* TODO: use memalign for non-windows systems */
+/*
+ * Attention, intrepid adventurers, exploring the depths of the libobs code!
+ *
+ * There used to be a TODO comment here saying that we should use memalign on
+ * non-Windows platforms. However, since *nix/POSIX systems do not provide an
+ * aligned realloc(), this is currently not (easily) achievable.
+ * So while the use of posix_memalign()/memalign() would be a fairly trivial
+ * change, it would also ruin our memory alignment for some reallocated memory
+ * on those platforms.
+ */
 #if defined(_WIN32)
 #define ALIGNED_MALLOC 1
 #else

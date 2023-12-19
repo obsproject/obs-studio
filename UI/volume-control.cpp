@@ -25,6 +25,52 @@ using namespace std;
 
 QWeakPointer<VolumeMeterTimer> VolumeMeter::updateTimer;
 
+static inline Qt::CheckState GetCheckState(bool muted, bool unassigned)
+{
+	if (muted)
+		return Qt::Checked;
+	else if (unassigned)
+		return Qt::PartiallyChecked;
+	else
+		return Qt::Unchecked;
+}
+
+static inline bool IsSourceUnassigned(obs_source_t *source)
+{
+	uint32_t mixes = (obs_source_get_audio_mixers(source) &
+			  ((1 << MAX_AUDIO_MIXES) - 1));
+	obs_monitoring_type mt = obs_source_get_monitoring_type(source);
+
+	return mixes == 0 && mt != OBS_MONITORING_TYPE_MONITOR_ONLY;
+}
+
+static void ShowUnassignedWarning(const char *name)
+{
+	auto msgBox = [=]() {
+		QMessageBox msgbox(App()->GetMainWindow());
+		msgbox.setWindowTitle(
+			QTStr("VolControl.UnassignedWarning.Title"));
+		msgbox.setText(
+			QTStr("VolControl.UnassignedWarning.Text").arg(name));
+		msgbox.setIcon(QMessageBox::Icon::Information);
+		msgbox.addButton(QMessageBox::Ok);
+
+		QCheckBox *cb = new QCheckBox(QTStr("DoNotShowAgain"));
+		msgbox.setCheckBox(cb);
+
+		msgbox.exec();
+
+		if (cb->isChecked()) {
+			config_set_bool(App()->GlobalConfig(), "General",
+					"WarnedAboutUnassignedSources", true);
+			config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+		}
+	};
+
+	QMetaObject::invokeMethod(App(), "Exec", Qt::QueuedConnection,
+				  Q_ARG(VoidFunc, msgBox));
+}
+
 void VolControl::OBSVolumeChanged(void *data, float db)
 {
 	Q_UNUSED(db);
@@ -64,16 +110,51 @@ void VolControl::VolumeChanged()
 
 void VolControl::VolumeMuted(bool muted)
 {
-	if (mute->isChecked() != muted)
-		mute->setChecked(muted);
+	bool unassigned = IsSourceUnassigned(source);
 
-	volMeter->muted = muted;
+	auto newState = GetCheckState(muted, unassigned);
+	if (mute->checkState() != newState)
+		mute->setCheckState(newState);
+
+	volMeter->muted = muted || unassigned;
 }
 
-void VolControl::SetMuted(bool checked)
+void VolControl::OBSMixersOrMonitoringChanged(void *data, calldata_t *)
 {
+
+	VolControl *volControl = static_cast<VolControl *>(data);
+	QMetaObject::invokeMethod(volControl, "MixersOrMonitoringChanged",
+				  Qt::QueuedConnection);
+}
+
+void VolControl::MixersOrMonitoringChanged()
+{
+	bool muted = obs_source_muted(source);
+	bool unassigned = IsSourceUnassigned(source);
+
+	auto newState = GetCheckState(muted, unassigned);
+	if (mute->checkState() != newState)
+		mute->setCheckState(newState);
+
+	volMeter->muted = muted || unassigned;
+}
+
+void VolControl::SetMuted(bool)
+{
+	bool checked = mute->checkState() == Qt::Checked;
 	bool prev = obs_source_muted(source);
 	obs_source_set_muted(source, checked);
+	bool unassigned = IsSourceUnassigned(source);
+
+	if (!checked && unassigned) {
+		mute->setCheckState(Qt::PartiallyChecked);
+		/* Show notice about the source no being assigned to any tracks */
+		bool has_shown_warning =
+			config_get_bool(App()->GlobalConfig(), "General",
+					"WarnedAboutUnassignedSources");
+		if (!has_shown_warning)
+			ShowUnassignedWarning(obs_source_get_name(source));
+	}
 
 	auto undo_redo = [](const std::string &name, bool val) {
 		OBSSourceAutoRelease source =
@@ -289,19 +370,26 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	slider->setMaximum(int(FADER_PRECISION));
 
 	bool muted = obs_source_muted(source);
-	mute->setChecked(muted);
-	volMeter->muted = muted;
+	bool unassigned = IsSourceUnassigned(source);
+	mute->setCheckState(GetCheckState(muted, unassigned));
+	volMeter->muted = muted || unassigned;
 	mute->setAccessibleName(QTStr("VolControl.Mute").arg(sourceName));
 	obs_fader_add_callback(obs_fader, OBSVolumeChanged, this);
 	obs_volmeter_add_callback(obs_volmeter, OBSVolumeLevel, this);
 
 	signal_handler_connect(obs_source_get_signal_handler(source), "mute",
 			       OBSVolumeMuted, this);
+	signal_handler_connect(obs_source_get_signal_handler(source),
+			       "audio_mixers", OBSMixersOrMonitoringChanged,
+			       this);
+	signal_handler_connect(obs_source_get_signal_handler(source),
+			       "audio_monitoring", OBSMixersOrMonitoringChanged,
+			       this);
 
 	QWidget::connect(slider, SIGNAL(valueChanged(int)), this,
 			 SLOT(SliderChanged(int)));
-	QWidget::connect(mute, SIGNAL(clicked(bool)), this,
-			 SLOT(SetMuted(bool)));
+	QWidget::connect(mute, &MuteCheckBox::clicked, this,
+			 &VolControl::SetMuted);
 
 	obs_fader_attach_source(obs_fader, source);
 	obs_volmeter_attach_source(obs_volmeter, source);
@@ -334,6 +422,12 @@ VolControl::~VolControl()
 
 	signal_handler_disconnect(obs_source_get_signal_handler(source), "mute",
 				  OBSVolumeMuted, this);
+	signal_handler_disconnect(obs_source_get_signal_handler(source),
+				  "audio_mixers", OBSMixersOrMonitoringChanged,
+				  this);
+	signal_handler_disconnect(obs_source_get_signal_handler(source),
+				  "audio_monitoring",
+				  OBSMixersOrMonitoringChanged, this);
 
 	obs_fader_destroy(obs_fader);
 	obs_volmeter_destroy(obs_volmeter);
@@ -1077,7 +1171,8 @@ inline int VolumeMeter::convertToInt(float number)
 	constexpr int min = std::numeric_limits<int>::min();
 	constexpr int max = std::numeric_limits<int>::max();
 
-	if (number > max)
+	// NOTE: Conversion from 'const int' to 'float' changes max value from 2147483647 to 2147483648
+	if (number >= (float)max)
 		return max;
 	else if (number < min)
 		return min;

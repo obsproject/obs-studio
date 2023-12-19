@@ -305,7 +305,7 @@ static size_t libfdk_frame_size(void *data)
 struct obs_encoder_info obs_libfdk_encoder = {
 	.id = "libfdk_aac",
 	.type = OBS_ENCODER_AUDIO,
-	.codec = "AAC",
+	.codec = "aac",
 	.get_name = libfdk_getname,
 	.create = libfdk_create,
 	.destroy = libfdk_destroy,

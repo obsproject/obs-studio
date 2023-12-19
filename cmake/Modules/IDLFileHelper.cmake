@@ -20,10 +20,8 @@ macro(add_idl_files_base generated_files with_tlb)
       add_custom_command(
         OUTPUT ${bin_file_h} ${bin_file_c}
         DEPENDS ${filename}
-        COMMAND
-          midl /h ${file_h} /iid ${file_c} ${tlb_opt}
-          $<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>,/win64,/win32>
-          ${CMAKE_CURRENT_SOURCE_DIR}/${filename}
+        COMMAND midl /h ${file_h} /iid ${file_c} ${tlb_opt} $<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>,/win64,/win32>
+                ${CMAKE_CURRENT_SOURCE_DIR}/${filename}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
     else()
       execute_process(
@@ -53,15 +51,13 @@ macro(add_idl_files_base generated_files with_tlb)
       add_custom_command(
         OUTPUT ${file_h}
         DEPENDS ${filename}
-        COMMAND ${CMAKE_WIDL} ${include_params} -h -o ${file_h}
-                ${CMAKE_CURRENT_SOURCE_DIR}/${filename}
+        COMMAND ${CMAKE_WIDL} ${include_params} -h -o ${file_h} ${CMAKE_CURRENT_SOURCE_DIR}/${filename}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
       file(WRITE ${bin_file_c} "#include <initguid.h>\n#include <${file_h}>\n")
     endif()
 
-    set_source_files_properties(${bin_file_h} ${bin_file_c} PROPERTIES GENERATED
-                                                                       TRUE)
+    set_source_files_properties(${bin_file_h} ${bin_file_c} PROPERTIES GENERATED TRUE)
 
     set(${generated_files} ${${generated_file}} ${bin_file_h} ${bin_file_c})
 

@@ -83,9 +83,7 @@ OBSBasicInteraction::~OBSBasicInteraction()
 
 OBSEventFilter *OBSBasicInteraction::BuildEventFilter()
 {
-	return new OBSEventFilter([this](QObject *obj, QEvent *event) {
-		UNUSED_PARAMETER(obj);
-
+	return new OBSEventFilter([this](QObject *, QEvent *event) {
 		switch (event->type()) {
 		case QEvent::MouseButtonPress:
 		case QEvent::MouseButtonRelease:
@@ -115,12 +113,10 @@ OBSEventFilter *OBSBasicInteraction::BuildEventFilter()
 	});
 }
 
-void OBSBasicInteraction::SourceRemoved(void *data, calldata_t *params)
+void OBSBasicInteraction::SourceRemoved(void *data, calldata_t *)
 {
 	QMetaObject::invokeMethod(static_cast<OBSBasicInteraction *>(data),
 				  "close");
-
-	UNUSED_PARAMETER(params);
 }
 
 void OBSBasicInteraction::SourceRenamed(void *data, calldata_t *params)
