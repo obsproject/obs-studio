@@ -1173,25 +1173,6 @@
             ]
         },
         {
-            "name": "Looch",
-            "common": false,
-            "servers": [
-                {
-                    "name": "Primary Looch ingest server",
-                    "url": "rtmp://ingest.looch.tv/live"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "profile": "main",
-                "max video bitrate": 6000,
-                "max audio bitrate": 160
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
             "name": "Eventials",
             "servers": [
                 {
@@ -1638,27 +1619,6 @@
                 "max audio bitrate": 96,
                 "max video bitrate": 904,
                 "x264opts": "tune=zerolatency"
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
-            "name": "WASD.TV",
-            "servers": [
-                {
-                    "name": "Automatic",
-                    "url": "rtmp://push.rtmp.wasd.tv/live"
-                },
-                {
-                    "name": "Germany, Frankfurt",
-                    "url": "rtmp://de-frankfurt.rtmp.wasd.tv/live"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 10000,
-                "max audio bitrate": 192
             },
             "supported video codecs": [
                 "h264"
@@ -2261,33 +2221,6 @@
             ]
         },
         {
-            "name": "Nonolive",
-            "more_info_link": "https://wia.nonolive.com/views/obs_assistant_tutorial.html",
-            "stream_key_link": "https://www.nonolive.com/room_setting",
-            "servers": [
-                {
-                    "name": "Asia: Hong Kong, China",
-                    "url": "rtmp://live-hk-zl.nonolive.tv/live"
-                },
-                {
-                    "name": "Asia: Jakarta, Indonesia",
-                    "url": "rtmp://live-jkt-zl.nonolive.tv/live"
-                },
-                {
-                    "name": "EU: Frankfurt, DE",
-                    "url": "rtmp://live-fra-zl.nonolive.tv/live"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 6000,
-                "max audio bitrate": 160
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
             "name": "StreamVi",
             "stream_key_link": "https://streamvi.ru/settings",
             "servers": [
@@ -2371,10 +2304,6 @@
                 {
                     "name": "Bangalore, IN",
                     "url": "rtmp://in-south-blr.livepush.io/live"
-                },
-                {
-                    "name": "Turkiye",
-                    "url": "rtmp://tr-north-ist.livepush.io/live"
                 }
             ],
             "recommended": {
