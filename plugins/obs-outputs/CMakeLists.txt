@@ -83,8 +83,6 @@ if(OS_WINDOWS)
   target_sources(obs-outputs PRIVATE obs-outputs.rc)
 endif()
 
-include(cmake/ftl.cmake)
-
 # cmake-format: off
 set_target_properties_obs(obs-outputs PROPERTIES FOLDER plugins/obs-outputs PREFIX "")
 # cmake-format: on
