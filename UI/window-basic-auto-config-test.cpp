@@ -228,9 +228,6 @@ void AutoConfigTestPage::TestBandwidthThread()
 		   wiz->serviceName == "Restream.io - RTMP") {
 		string_depad_key(key);
 		key += "?test=true";
-	} else if (wiz->serviceName == "Restream.io - FTL") {
-		string_depad_key(key);
-		key += "?test";
 	}
 
 	obs_data_set_string(service_settings, "service",
