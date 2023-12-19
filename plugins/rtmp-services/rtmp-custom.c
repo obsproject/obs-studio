@@ -111,7 +111,6 @@ static const char *rtmp_custom_password(void *data)
 }
 
 #define RTMPS_PREFIX "rtmps://"
-#define FTL_PREFIX "ftl://"
 #define SRT_PREFIX "srt://"
 #define RIST_PREFIX "rist://"
 
@@ -121,9 +120,6 @@ static const char *rtmp_custom_get_protocol(void *data)
 
 	if (strncmp(service->server, RTMPS_PREFIX, strlen(RTMPS_PREFIX)) == 0)
 		return "RTMPS";
-
-	if (strncmp(service->server, FTL_PREFIX, strlen(FTL_PREFIX)) == 0)
-		return "FTL";
 
 	if (strncmp(service->server, SRT_PREFIX, strlen(SRT_PREFIX)) == 0)
 		return "SRT";
