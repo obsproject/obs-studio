@@ -47,12 +47,19 @@ extern struct obs_core *obs = NULL;
 #define SETTING_ANTI_CHEAT_HOOK      "anti_cheat_hook"
 #define SETTING_HOOK_RATE            "hook_rate"
 #define SETTING_RGBA10A2_SPACE       "rgb10a2_space"
+#define SETTINGS_COMPAT_INFO         "compat_info"
 
-#define SETTING_AUTO_LIST_FILE   "auto_capture_rules_path"
-#define SETTING_PLACEHOLDER_IMG  "auto_placeholder_image"
-#define SETTING_PLACEHOLDER_MSG  "auto_placeholder_message"
-#define SETTING_PLACEHOLDER_USE  "user_placeholder_use"
-#define SETTING_PLACEHOLDER_USR  "user_placeholder_image"
+#define SETTING_AUTO_LIST_FILE           "auto_capture_rules_path"
+#define SETTING_PLACEHOLDER_IMG          "auto_placeholder_image"
+#define SETTING_PLACEHOLDER_MSG          "auto_placeholder_message"
+#define SETTING_PLACEHOLDER_USE          "user_placeholder_use"
+#define SETTING_PLACEHOLDER_USR          "user_placeholder_image"
+#define SETTING_PLACEHOLDER_WND_IMG      "window_placeholder_image"
+#define SETTING_PLACEHOLDER_WND_MSG_WAIT "window_placeholder_waiting_message"
+#define SETTING_PLACEHOLDER_WND_MSG_ERR  "window_placeholder_missing_message"
+
+/* custom props */
+# define COMPAT_INFO_VISIBLE "compat_info_visible"
 
 /* deprecated */
 #define SETTING_ANY_FULLSCREEN   "capture_any_fullscreen"
@@ -192,7 +199,11 @@ struct game_capture {
 	gs_image_file2_t placeholder_image;
 	gs_texture_t *placeholder_text_texture;
 	struct dstr placeholder_image_path;
-	struct dstr placeholder_text;
+	struct dstr
+		placeholder_text; // currently active placeholder message (if any)
+
+	struct dstr placeholder_wait_text;  // default message
+	struct dstr placeholder_error_text; // error message
 
 	ipc_pipe_server_t pipe;
 	gs_texture_t *texture;
@@ -516,6 +527,8 @@ static void game_capture_destroy(void *data)
 	close_handle(&gc->auto_capture.mutex);
 	dstr_free(&gc->placeholder_image_path);
 	dstr_free(&gc->placeholder_text);
+	dstr_free(&gc->placeholder_wait_text);
+	dstr_free(&gc->placeholder_error_text);
 	unload_placeholder_image(gc);
 
 	bfree(gc);
@@ -810,14 +823,22 @@ static void game_capture_update(void *data, obs_data_t *settings)
 
 	const char *img_path = NULL;
 	const char *placeholder_text = NULL;
+	const char *placeholder_wait_text = NULL;
+	const char *placeholder_error_text = NULL;
 	bool use_custom_placeholder =
 		obs_data_get_bool(settings, SETTING_PLACEHOLDER_USE);
 	if (use_custom_placeholder)
 		img_path =
 			obs_data_get_string(settings, SETTING_PLACEHOLDER_USR);
-	else
-		img_path =
-			obs_data_get_string(settings, SETTING_PLACEHOLDER_IMG);
+	else {
+		if (cfg.mode == CAPTURE_MODE_WINDOW) {
+			img_path = obs_data_get_string(
+				settings, SETTING_PLACEHOLDER_WND_IMG);
+		} else {
+			img_path = obs_data_get_string(settings,
+						       SETTING_PLACEHOLDER_IMG);
+		}
+	}
 
 	if (gc->placeholder_image_path.len == 0 ||
 	    dstr_cmp(&gc->placeholder_image_path, img_path) != 0) {
@@ -825,11 +846,23 @@ static void game_capture_update(void *data, obs_data_t *settings)
 	}
 	dstr_copy(&gc->placeholder_image_path, img_path);
 
-	if (!use_custom_placeholder)
-		placeholder_text =
-			obs_data_get_string(settings, SETTING_PLACEHOLDER_MSG);
+	if (!use_custom_placeholder) {
+		if (cfg.mode == CAPTURE_MODE_WINDOW) {
+			placeholder_wait_text = obs_data_get_string(
+				settings, SETTING_PLACEHOLDER_WND_MSG_WAIT);
+			placeholder_error_text = obs_data_get_string(
+				settings, SETTING_PLACEHOLDER_WND_MSG_ERR);
+
+			placeholder_text = placeholder_wait_text;
+		} else {
+			placeholder_text = obs_data_get_string(
+				settings, SETTING_PLACEHOLDER_MSG);
+		}
+	}
 
 	dstr_copy(&gc->placeholder_text, placeholder_text);
+	dstr_copy(&gc->placeholder_wait_text, placeholder_wait_text);
+	dstr_copy(&gc->placeholder_error_text, placeholder_error_text);
 
 	reset_capture = capture_needs_reset(&cfg, &gc->config);
 
@@ -860,7 +893,7 @@ static void game_capture_update(void *data, obs_data_t *settings)
 		gc->priority = gc->config.priority;
 	}
 
-	if (cfg.mode == CAPTURE_MODE_AUTO) {
+	if (cfg.mode == CAPTURE_MODE_AUTO || cfg.mode == CAPTURE_MODE_WINDOW) {
 		load_placeholder_image(gc);
 	} else {
 		unload_placeholder_image(gc);
@@ -898,6 +931,8 @@ static void *game_capture_create(obs_data_t *settings, obs_source_t *source)
 
 	dstr_init(&gc->placeholder_image_path);
 	dstr_init(&gc->placeholder_text);
+	dstr_init(&gc->placeholder_wait_text);
+	dstr_init(&gc->placeholder_error_text);
 	gc->placeholder_text_texture = NULL;
 	const HMODULE hModuleUser32 = GetModuleHandle(L"User32.dll");
 	if (hModuleUser32) {
@@ -927,6 +962,8 @@ static void *game_capture_create(obs_data_t *settings, obs_source_t *source)
 				get_window_dpi_awareness_context;
 		}
 	}
+
+	obs_data_set_bool(settings, COMPAT_INFO_VISIBLE, false);
 
 	game_capture_update(gc, settings);
 	return gc;
@@ -1335,6 +1372,7 @@ static bool target_suspended(struct game_capture *gc)
 }
 
 static bool init_events(struct game_capture *gc);
+//static void set_compat_info_visible(struct game_capture* gc, bool visible); // TODO: remove????
 
 static bool init_hook(struct game_capture *gc)
 {
@@ -1522,6 +1560,7 @@ static void get_selected_window(struct game_capture *gc)
 	if (window) {
 		setup_window(gc, window);
 	} else {
+		gc->window = NULL;
 		gc->wait_for_target_startup = true;
 	}
 }
@@ -2136,6 +2175,25 @@ static void check_foreground_window(struct game_capture *gc, float seconds)
 	}
 }
 
+static void set_compat_info_visible(struct game_capture *gc, bool visible)
+{
+	// 30 is just big enought number to not overlap with the existing and possible future flags
+	const uint32_t CUSTOM_REFRESH_UI_FLAG = (1 << 30);
+
+	obs_data_t *setings = obs_source_get_settings(gc->source);
+	obs_data_set_bool(setings, COMPAT_INFO_VISIBLE, visible);
+
+	obs_properties_t *props = obs_source_properties(gc->source);
+	obs_properties_destroy(props);
+
+	// Toggling custom flag to force UI refresh
+	// For details see 'globalCallback::worker()' in obs-studio-node and
+	// 'updateSourceFlags' in desktop repo
+	gc->source->info.output_flags ^= CUSTOM_REFRESH_UI_FLAG;
+
+	obs_data_release(setings);
+}
+
 static void game_capture_tick(void *data, float seconds)
 {
 	struct game_capture *gc = data;
@@ -2237,7 +2295,43 @@ static void game_capture_tick(void *data, float seconds)
 				gc->retry_time = 0.0f;
 			}
 		}
+
+		if (gc->config.mode == CAPTURE_MODE_WINDOW) {
+			if (gc->window) {
+				if (dstr_cmpi(
+					    &gc->placeholder_text,
+					    gc->placeholder_error_text.array) !=
+				    0) {
+					set_compat_info_visible(gc, true);
+
+					dstr_copy(&gc->placeholder_text,
+						  gc->placeholder_error_text
+							  .array);
+					load_placeholder_image(gc);
+				}
+			} else {
+				if (dstr_cmpi(&gc->placeholder_text,
+					      gc->placeholder_wait_text.array) !=
+				    0) {
+					set_compat_info_visible(gc, false);
+
+					dstr_copy(
+						&gc->placeholder_text,
+						gc->placeholder_wait_text.array);
+					load_placeholder_image(gc);
+				}
+			}
+		}
 	} else {
+		if (gc->capturing) {
+			obs_data_t *settings =
+				obs_source_get_settings(gc->source);
+			if (obs_data_get_bool(settings, COMPAT_INFO_VISIBLE)) {
+				set_compat_info_visible(gc, false);
+			}
+			obs_data_release(settings);
+		}
+
 		if (!capture_valid(gc)) {
 			info("capture window no longer exists, "
 			     "terminating capture");
@@ -2318,7 +2412,8 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 
 	struct game_capture *gc = data;
 	if (!gc->texture || !gc->active) {
-		if (gc->config.mode == CAPTURE_MODE_AUTO) {
+		if (gc->config.mode == CAPTURE_MODE_AUTO ||
+		    gc->config.mode == CAPTURE_MODE_WINDOW) {
 			if (gc->placeholder_image.image.texture) {
 				//draw placeholder image
 				gs_effect_t *effect;
@@ -2394,7 +2489,8 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 	gs_effect_t *const effect = obs_get_base_effect(
 		allow_transparency ? OBS_EFFECT_DEFAULT : OBS_EFFECT_OPAQUE);
 
-	if (gc->config.mode == CAPTURE_MODE_AUTO) {
+	if (gc->config.mode == CAPTURE_MODE_AUTO ||
+	    gc->config.mode == CAPTURE_MODE_WINDOW) {
 		float cx_scale = gc->config.base_width / (float)gc->cx;
 		float cy_scale = gc->config.base_height / (float)gc->cy;
 		gs_matrix_push();
@@ -2633,7 +2729,8 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 		gs_set_linear_srgb(previous);
 	}
 
-	if (gc->config.mode == CAPTURE_MODE_AUTO) {
+	if (gc->config.mode == CAPTURE_MODE_AUTO ||
+	    gc->config.mode == CAPTURE_MODE_WINDOW) {
 		gs_matrix_pop();
 	}
 }
@@ -2641,7 +2738,8 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 static uint32_t game_capture_width(void *data)
 {
 	struct game_capture *gc = data;
-	if (gc->config.mode == CAPTURE_MODE_AUTO) {
+	if (gc->config.mode == CAPTURE_MODE_AUTO ||
+	    gc->config.mode == CAPTURE_MODE_WINDOW) {
 		return gc->config.base_width;
 	}
 	return (gc->active && gc->capturing) ? gc->cx : 0;
@@ -2650,7 +2748,8 @@ static uint32_t game_capture_width(void *data)
 static uint32_t game_capture_height(void *data)
 {
 	struct game_capture *gc = data;
-	if (gc->config.mode == CAPTURE_MODE_AUTO) {
+	if (gc->config.mode == CAPTURE_MODE_AUTO ||
+	    gc->config.mode == CAPTURE_MODE_WINDOW) {
 		return gc->config.base_height;
 	}
 	return (gc->active && gc->capturing) ? gc->cy : 0;
@@ -2680,6 +2779,11 @@ static void game_capture_defaults(obs_data_t *settings)
 	obs_data_set_default_string(settings, SETTING_PLACEHOLDER_IMG, "");
 	obs_data_set_default_string(settings, SETTING_PLACEHOLDER_USR, "");
 	obs_data_set_default_bool(settings, SETTING_PLACEHOLDER_USE, false);
+	obs_data_set_default_string(settings, SETTING_PLACEHOLDER_WND_IMG, "");
+	obs_data_set_default_string(settings, SETTING_PLACEHOLDER_WND_MSG_WAIT,
+				    "Looking for a game to capture");
+	obs_data_set_default_string(settings, SETTING_PLACEHOLDER_WND_MSG_ERR,
+				    "");
 	obs_data_set_default_string(settings, SETTING_PLACEHOLDER_MSG,
 				    "Looking for a game to capture");
 	obs_data_set_default_string(settings, SETTING_RGBA10A2_SPACE,
@@ -2745,6 +2849,18 @@ static bool mode_callback(obs_properties_t *ppts, obs_property_t *p,
 
 	p = obs_properties_get(ppts, SETTING_WINDOW_DEFAULT_HEIGHT);
 	obs_property_set_visible(p, false);
+
+	return true;
+}
+
+static bool status_message_changed_callback(obs_properties_t *ppts,
+					    obs_property_t *p,
+					    obs_data_t *settings)
+{
+	UNUSED_PARAMETER(ppts);
+
+	obs_property_set_visible(p, obs_data_get_bool(settings,
+						      COMPAT_INFO_VISIBLE));
 
 	return true;
 }
@@ -2838,6 +2954,20 @@ static obs_properties_t *game_capture_properties(void *data)
 	obs_property_list_add_int(p, TEXT_MATCH_TITLE, WINDOW_PRIORITY_TITLE);
 	obs_property_list_add_int(p, TEXT_MATCH_CLASS, WINDOW_PRIORITY_CLASS);
 	obs_property_list_add_int(p, TEXT_MATCH_EXE, WINDOW_PRIORITY_EXE);
+
+	p = obs_properties_add_text(ppts, SETTINGS_COMPAT_INFO,
+				    "Specified window is not a game",
+				    OBS_TEXT_INFO);
+	obs_property_text_set_info_type(p, OBS_TEXT_INFO_ERROR);
+	obs_property_set_visible(p, false);
+	if (data) {
+		struct game_capture *gc = data;
+		obs_data_t *settings = obs_source_get_settings(gc->source);
+		obs_property_set_visible(
+			p, obs_data_get_bool(settings, COMPAT_INFO_VISIBLE));
+		obs_data_release(settings);
+	}
+	obs_property_set_modified_callback(p, status_message_changed_callback);
 
 	obs_properties_add_bool(ppts, SETTING_COMPATIBILITY,
 				TEXT_SLI_COMPATIBILITY);
