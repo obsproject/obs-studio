@@ -2182,11 +2182,6 @@ static void set_compat_info_visible(struct game_capture *gc, bool visible)
 	obs_properties_t *props = obs_source_properties(gc->source);
 	obs_properties_destroy(props);
 
-	// Toggling custom flag to force UI refresh
-	// For details see 'globalCallback::worker()' in obs-studio-node and
-	// 'updateSourceFlags' in desktop repo
-	gc->source->info.output_flags ^= CUSTOM_REFRESH_UI_FLAG;
-
 	obs_data_release(setings);
 }
 
@@ -3103,11 +3098,13 @@ game_capture_get_color_space(void *data, size_t count,
 	return space;
 }
 
+#define CUSTOM_REFRESH_UI_FLAG (1 << 30)
+
 struct obs_source_info game_capture_info = {
 	.id = "game_capture",
 	.type = OBS_SOURCE_TYPE_INPUT,
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
-			OBS_SOURCE_DO_NOT_DUPLICATE | OBS_SOURCE_SRGB,
+			OBS_SOURCE_DO_NOT_DUPLICATE | OBS_SOURCE_SRGB | CUSTOM_REFRESH_UI_FLAG,
 	.get_name = game_capture_name,
 	.create = game_capture_create,
 	.destroy = game_capture_destroy,
