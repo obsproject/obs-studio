@@ -1,0 +1,13 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: obs-frontend-api
+Description: OBS Studio frontend API library
+Version: @OBS_VERSION_CANONICAL@
+
+Requires:
+Libs: -L${libdir} -lobs-frontend-api -lobs
+Libs.private: -lobs -lm -pthread
+Cflags: -I${includedir} -std=gnu@CMAKE_C_STANDARD@ -fPIC -fvisibility=hidden -fopenmp-simd -Werror
