@@ -7,6 +7,7 @@
         "-DNO_TESTS=ON",
         "-DNO_WEBSOCKET=ON",
         "-DUSE_NICE=ON",
+        "-DUSE_MBEDTLS=ON",
         "-DPREFER_SYSTEM_LIB=ON"
     ],
     "sources": [

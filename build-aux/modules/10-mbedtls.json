@@ -19,6 +19,13 @@
             "url": "https://github.com/ARMmbed/mbedtls.git",
             "commit": "1873d3bfc2da771672bd8e7e8f41f57e0af77f33",
             "tag": "v3.4.0"
+        },
+        {
+            "type": "shell",
+            "commands": [
+                "echo '#define MBEDTLS_SSL_DTLS_SRTP' >> include/mbedtls/mbedtls_config.h"
+            ]
         }
+
     ]
 }
