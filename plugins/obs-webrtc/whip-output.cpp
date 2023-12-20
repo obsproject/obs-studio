@@ -277,6 +277,8 @@ bool WHIPOutput::Connect()
 	// Add user-agent to our requests
 	headers = curl_slist_append(headers, user_agent.c_str());
 
+	char error_buffer[CURL_ERROR_SIZE] = {};
+
 	CURL *c = curl_easy_init();
 	curl_easy_setopt(c, CURLOPT_WRITEFUNCTION, curl_writefunction);
 	curl_easy_setopt(c, CURLOPT_WRITEDATA, (void *)&read_buffer);
@@ -290,6 +292,7 @@ bool WHIPOutput::Connect()
 	curl_easy_setopt(c, CURLOPT_TIMEOUT, 8L);
 	curl_easy_setopt(c, CURLOPT_FOLLOWLOCATION, 1L);
 	curl_easy_setopt(c, CURLOPT_UNRESTRICTED_AUTH, 1L);
+	curl_easy_setopt(c, CURLOPT_ERRORBUFFER, error_buffer);
 
 	auto cleanup = [&]() {
 		curl_easy_cleanup(c);
@@ -298,8 +301,9 @@ bool WHIPOutput::Connect()
 
 	CURLcode res = curl_easy_perform(c);
 	if (res != CURLE_OK) {
-		do_log(LOG_ERROR,
-		       "Connect failed: CURL returned result not CURLE_OK");
+		do_log(LOG_ERROR, "Connect failed: %s",
+		       error_buffer[0] ? error_buffer
+				       : curl_easy_strerror(res));
 		cleanup();
 		obs_output_signal_stop(output, OBS_OUTPUT_CONNECT_FAILED);
 		return false;
@@ -428,11 +432,14 @@ void WHIPOutput::SendDelete()
 	// Add user-agent to our requests
 	headers = curl_slist_append(headers, user_agent.c_str());
 
+	char error_buffer[CURL_ERROR_SIZE] = {};
+
 	CURL *c = curl_easy_init();
 	curl_easy_setopt(c, CURLOPT_HTTPHEADER, headers);
 	curl_easy_setopt(c, CURLOPT_URL, resource_url.c_str());
 	curl_easy_setopt(c, CURLOPT_CUSTOMREQUEST, "DELETE");
 	curl_easy_setopt(c, CURLOPT_TIMEOUT, 8L);
+	curl_easy_setopt(c, CURLOPT_ERRORBUFFER, error_buffer);
 
 	auto cleanup = [&]() {
 		curl_easy_cleanup(c);
@@ -442,8 +449,9 @@ void WHIPOutput::SendDelete()
 	CURLcode res = curl_easy_perform(c);
 	if (res != CURLE_OK) {
 		do_log(LOG_WARNING,
-		       "DELETE request for resource URL failed. Reason: %s",
-		       curl_easy_strerror(res));
+		       "DELETE request for resource URL failed: %s",
+		       error_buffer[0] ? error_buffer
+				       : curl_easy_strerror(res));
 		cleanup();
 		return;
 	}
