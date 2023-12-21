@@ -557,19 +557,6 @@ void obs_encoder_shutdown(obs_encoder_t *encoder)
 	     obs_encoder_get_name(encoder), obs_encoder_get_id(encoder),
 	     encoder);
 
-	// Unpairing encoders, if any
-	if (encoder->paired_encoder) {
-		pthread_mutex_lock(&encoder->paired_encoder->init_mutex);
-
-		blog(LOG_INFO, "obs_encoder_shutdown - unpair '%s' (%s) (%p)",
-		     obs_encoder_get_name(encoder->paired_encoder),
-		     obs_encoder_get_id(encoder->paired_encoder),
-		     encoder->paired_encoder);
-
-		encoder->paired_encoder->paired_encoder = NULL;
-		pthread_mutex_unlock(&encoder->paired_encoder->init_mutex);
-	}
-
 	pthread_mutex_lock(&encoder->init_mutex);
 	if (encoder->context.data) {
 		encoder->info.destroy(encoder->context.data);

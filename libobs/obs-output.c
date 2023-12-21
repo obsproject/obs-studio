@@ -2167,6 +2167,34 @@ static inline void pair_encoders(obs_output_t *output)
 	}
 }
 
+static inline void unpair_encoders(obs_output_t *output)
+{
+	struct obs_encoder *video = output->video_encoder;
+	if (video) {
+		pthread_mutex_lock(&video->init_mutex);
+		blog(LOG_INFO, "unpair_encoders - video: '%s' (%s) (%p)",
+		     obs_encoder_get_name(video), obs_encoder_get_id(video),
+		     video);
+
+		struct obs_encoder *audio = video->paired_encoder;
+
+		if (audio) {
+			pthread_mutex_lock(&audio->init_mutex);
+			blog(LOG_INFO,
+			     "unpair_encoders - audio: '%s' (%s) (%p)",
+			     obs_encoder_get_name(audio),
+			     obs_encoder_get_id(audio), audio);
+
+			audio->paired_encoder = NULL;
+			pthread_mutex_unlock(&audio->init_mutex);
+		}
+
+		video->paired_encoder = NULL;
+
+		pthread_mutex_unlock(&video->init_mutex);
+	}
+}
+
 bool obs_output_initialize_encoders(obs_output_t *output, uint32_t flags)
 {
 	bool encoded, has_video, has_audio, has_service, force_encoder;
@@ -2338,6 +2366,8 @@ static void *end_data_capture_thread(void *data)
 
 	convert_flags(output, 0, &encoded, &has_video, &has_audio, &has_service,
 		      &force_encoder);
+
+	unpair_encoders(output);
 
 	if (encoded) {
 		if (output->active_delay_ns)
