@@ -63,6 +63,9 @@ void OBSBasicSettings::LoadThemeList(bool reload)
 						  Qt::CaseInsensitive) < 0;
 		  });
 
+	QString defaultVariant;
+	const OBSTheme *baseTheme = App()->GetTheme(baseThemeId);
+
 	for (const OBSTheme &theme : themes) {
 		/* Skip non-visible themes */
 		if (!theme.isVisible || theme.isHighContrast)
@@ -72,6 +75,8 @@ void OBSBasicSettings::LoadThemeList(bool reload)
 			continue;
 
 		ui->themeVariant->addItem(theme.name, theme.id);
+		if (baseTheme && theme.filename == baseTheme->filename)
+			defaultVariant = theme.id;
 	}
 
 	int idx = ui->themeVariant->findData(currentTheme->id);
@@ -81,8 +86,10 @@ void OBSBasicSettings::LoadThemeList(bool reload)
 	ui->themeVariant->setEnabled(ui->themeVariant->count() > 0);
 	ui->themeVariant->blockSignals(false);
 	/* If no variant is selected but variants are available set the first one. */
-	if (idx == -1 && ui->themeVariant->count() > 0)
-		ui->themeVariant->setCurrentIndex(0);
+	if (idx == -1 && ui->themeVariant->count() > 0) {
+		idx = ui->themeVariant->findData(defaultVariant);
+		ui->themeVariant->setCurrentIndex(idx != -1 ? idx : 0);
+	}
 }
 
 void OBSBasicSettings::LoadAppearanceSettings(bool reload)
