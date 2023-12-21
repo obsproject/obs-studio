@@ -94,8 +94,7 @@ void OBSBasicSettings::LoadAppearanceSettings(bool reload)
 		if (ui->themeVariant->currentIndex() != -1)
 			themeId = ui->themeVariant->currentData().toString();
 
-		if (App()->GetTheme()->id != themeId)
-			App()->SetTheme(themeId);
+		App()->SetTheme(themeId);
 	}
 }
 
