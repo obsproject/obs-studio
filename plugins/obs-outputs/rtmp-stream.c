@@ -923,8 +923,6 @@ static inline bool send_headers(struct rtmp_stream *stream)
 
 	if (!send_audio_header(stream, i++, &next))
 		return false;
-	if (!send_video_header(stream))
-		return false;
 
 	// send metadata only if HDR
 	video_t *video = obs_get_video();
@@ -933,6 +931,9 @@ static inline bool send_headers(struct rtmp_stream *stream)
 	if (colorspace == VIDEO_CS_2100_PQ || colorspace == VIDEO_CS_2100_HLG)
 		if (!send_video_metadata(stream)) // Y2023 spec
 			return false;
+
+	if (!send_video_header(stream))
+		return false;
 
 	while (next) {
 		if (!send_audio_header(stream, i++, &next))
