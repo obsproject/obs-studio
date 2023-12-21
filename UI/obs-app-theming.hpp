@@ -19,6 +19,8 @@
 
 #include <QVariant>
 
+#include <filesystem>
+
 struct OBSThemeVariable;
 
 struct OBSTheme {
@@ -33,7 +35,8 @@ struct OBSTheme {
 	/* Dependencies from root to direct ancestor */
 	QStringList dependencies;
 	/* File path */
-	QString location;
+	std::filesystem::path location;
+	std::filesystem::path filename; /* Filename without extension */
 
 	bool isDark;
 	bool isVisible;      /* Whether it should be shown to the user */

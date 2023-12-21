@@ -122,7 +122,9 @@ static OBSTheme *ParseThemeMeta(const QString &path)
 	}
 
 	if (meta) {
-		meta->isBaseTheme = path.endsWith(".obt");
+		auto filepath = filesystem::u8path(path.toStdString());
+		meta->isBaseTheme = filepath.extension() == ".obt";
+		meta->filename = filepath.stem();
 
 		if (meta->id.isEmpty() || meta->name.isEmpty() ||
 		    (!meta->isBaseTheme && meta->extends.isEmpty())) {
@@ -130,8 +132,7 @@ static OBSTheme *ParseThemeMeta(const QString &path)
 			delete meta;
 			meta = nullptr;
 		} else {
-			BPtr absPath = os_get_abs_path_ptr(QT_TO_UTF8(path));
-			meta->location = absPath;
+			meta->location = absolute(filepath);
 			meta->isHighContrast = path.endsWith(".oha");
 			meta->isVisible = !path.contains("System");
 		}
@@ -790,7 +791,7 @@ bool OBSApp::SetTheme(const QString &name)
 		OBSTheme *cur = GetTheme(themeId);
 
 		QFile file(cur->location);
-		filenames << cur->location;
+		filenames << file.fileName();
 
 		if (!file.open(QIODeviceBase::ReadOnly))
 			return false;
