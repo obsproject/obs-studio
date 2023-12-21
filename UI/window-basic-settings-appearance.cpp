@@ -78,6 +78,7 @@ void OBSBasicSettings::LoadThemeList(bool reload)
 	if (idx != -1)
 		ui->themeVariant->setCurrentIndex(idx);
 
+	ui->themeVariant->setEnabled(ui->themeVariant->count() > 0);
 	ui->themeVariant->blockSignals(false);
 	/* If no variant is selected but variants are available set the first one. */
 	if (idx == -1 && ui->themeVariant->count() > 0)
