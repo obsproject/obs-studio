@@ -105,11 +105,11 @@ if(LibAJANTV2_FOUND)
   list(
     APPEND
     LibAJANTV2_INCLUDE_DIRS
-    ${LibAJANTV2_INCLUDE_DIR}/ajalibraries
-    ${LibAJANTV2_INCLUDE_DIR}/ajalibraries/ajaanc
-    ${LibAJANTV2_INCLUDE_DIR}/ajalibraries/ajabase
-    ${LibAJANTV2_INCLUDE_DIR}/ajalibraries/ajantv2
-    ${LibAJANTV2_INCLUDE_DIR}/ajalibraries/ajantv2/includes)
+    ${LibAJANTV2_INCLUDE_DIR}
+    ${LibAJANTV2_INCLUDE_DIR}/ajaanc
+    ${LibAJANTV2_INCLUDE_DIR}/ajabase
+    ${LibAJANTV2_INCLUDE_DIR}/ajantv2
+    ${LibAJANTV2_INCLUDE_DIR}/ajantv2/includes)
   set(LibAJANTV2_LIBRARIES ${LibAJANTV2_LIBRARY})
   mark_as_advanced(LibAJANTV2_INCLUDE_DIR LibAJANTV2_LIBRARY)
 
