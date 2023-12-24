@@ -81,6 +81,9 @@ public:
 	mfxStatus Reset(qsv_param_t *pParams, enum qsv_codec codec);
 	mfxStatus ReconfigureEncoder();
 	bool UpdateParams(qsv_param_t *pParams);
+	void AddROI(mfxU32 left, mfxU32 top, mfxU32 right, mfxU32 bottom,
+		    mfxI16 delta);
+	void ClearROI();
 
 	bool IsDGPU() const { return m_isDGPU; }
 
@@ -135,4 +138,8 @@ private:
 	static mfxU16 g_numEncodersOpen;
 	static mfxHDL
 		g_DX_Handle; // we only want one handle for all instances to use;
+
+	mfxEncodeCtrl m_ctrl;
+	mfxExtEncoderROI m_roi;
+	std::vector<mfxExtBuffer *> m_extbuf;
 };
