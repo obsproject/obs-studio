@@ -1263,6 +1263,11 @@ struct obs_encoder {
 	uint32_t frame_rate_divisor_counter; // only used for GPU encoders
 	video_t *fps_override;
 
+	/* Regions of interest to prioritize during encoding */
+	pthread_mutex_t roi_mutex;
+	DARRAY(struct obs_encoder_roi) roi;
+	uint32_t roi_increment;
+
 	int64_t cur_pts;
 
 	struct circlebuf audio_input_buffer[MAX_AV_PLANES];
