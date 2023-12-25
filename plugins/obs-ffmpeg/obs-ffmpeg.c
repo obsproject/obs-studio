@@ -369,23 +369,7 @@ bool obs_module_load(void)
 		blog(LOG_INFO, "NVENC supported");
 
 #ifdef _WIN32
-		if (get_win_ver_int() > 0x0601) {
-			obs_nvenc_load(h264, hevc, av1);
-		} else {
-			// if on Win 7, new nvenc isn't available so there's
-			// no nvenc encoder for the user to select, expose
-			// the old encoder directly
-			if (h264) {
-				h264_nvenc_encoder_info.caps &=
-					~OBS_ENCODER_CAP_INTERNAL;
-			}
-#ifdef ENABLE_HEVC
-			if (hevc) {
-				hevc_nvenc_encoder_info.caps &=
-					~OBS_ENCODER_CAP_INTERNAL;
-			}
-#endif
-		}
+		obs_nvenc_load(h264, hevc, av1);
 #endif
 		if (h264)
 			obs_register_encoder(&h264_nvenc_encoder_info);
