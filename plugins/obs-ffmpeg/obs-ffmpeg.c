@@ -1,4 +1,3 @@
-#include <util/dstr.h>
 #include <obs-module.h>
 #include <util/platform.h>
 #include <libavutil/avutil.h>
@@ -241,34 +240,6 @@ extern bool load_nvenc_lib(void);
 extern uint32_t get_nvenc_ver();
 #endif
 
-/* please remove this annoying garbage and the associated garbage in
- * obs-ffmpeg-nvenc.c when ubuntu 20.04 is finally gone for good. */
-
-#ifdef __linux__
-bool ubuntu_20_04_nvenc_fallback = false;
-
-static void do_nvenc_check_for_ubuntu_20_04(void)
-{
-	FILE *fp;
-	char *line = NULL;
-	size_t linecap = 0;
-
-	fp = fopen("/etc/os-release", "r");
-	if (!fp) {
-		return;
-	}
-
-	while (getline(&line, &linecap, fp) != -1) {
-		if (strncmp(line, "VERSION_CODENAME=focal", 22) == 0) {
-			ubuntu_20_04_nvenc_fallback = true;
-		}
-	}
-
-	fclose(fp);
-	free(line);
-}
-#endif
-
 static bool nvenc_codec_exists(const char *name, const char *fallback)
 {
 	const AVCodec *nvenc = avcodec_find_encoder_by_name(name);
@@ -396,11 +367,6 @@ bool obs_module_load(void)
 	bool av1 = false;
 	if (nvenc_supported(&h264, &hevc, &av1)) {
 		blog(LOG_INFO, "NVENC supported");
-
-#ifdef __linux__
-		/* why are we here? just to suffer? */
-		do_nvenc_check_for_ubuntu_20_04();
-#endif
 
 #ifdef _WIN32
 		if (get_win_ver_int() > 0x0601) {
