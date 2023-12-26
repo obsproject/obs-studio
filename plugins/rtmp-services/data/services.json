@@ -1364,6 +1364,25 @@
             ]
         },
         {
+            "name": "Kick",
+            "stream_key_link": "https://kick.com/dashboard/settings/stream",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmps://fa723fc1b171.global-contribute.live-video.net"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 8000,
+                "max audio bitrate": 160,
+                "x264opts": "scenecut=0"
+            },
+            "supported video codecs": [
+                "h264"
+            ]
+        },
+        {
             "name": "Piczel.tv",
             "servers": [
                 {
