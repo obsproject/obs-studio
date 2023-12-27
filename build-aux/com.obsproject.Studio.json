@@ -18,7 +18,8 @@
         "--talk-name=org.freedesktop.Notifications",
         "--talk-name=org.a11y.Bus",
         "--system-talk-name=org.freedesktop.Avahi",
-        "--env=VST_PATH=/app/extensions/Plugins/vst"
+        "--env=VST_PATH=/app/extensions/Plugins/vst",
+        "--env=ONEVPL_SEARCH_PATH=/app/lib"
     ],
     "add-extensions": {
         "com.obsproject.Studio.Plugin": {
