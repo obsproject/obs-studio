@@ -300,7 +300,7 @@ RunOnceMutex CheckIfAlreadyRunning(bool &already_running)
 {
 	string name;
 
-	if (!portable_mode) {
+	if (!App()->IsPortableMode()) {
 		name = "OBSStudioCore";
 	} else {
 		char path[500];

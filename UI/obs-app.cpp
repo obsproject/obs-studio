@@ -86,7 +86,6 @@ static string currentLogFile;
 static string lastLogFile;
 static string lastCrashLogFile;
 
-bool portable_mode = false;
 bool steam = false;
 bool safe_mode = false;
 bool disable_3p_plugins = false;
@@ -108,6 +107,7 @@ bool opt_disable_missing_files_check = false;
 string opt_starting_collection;
 string opt_starting_profile;
 string opt_starting_scene;
+string opt_config_path;
 
 bool restart = false;
 bool restart_safe = false;
@@ -1736,7 +1736,10 @@ bool OBSApp::OBSInit()
 
 	blog(LOG_INFO, "Qt Version: %s (runtime), %s (compiled)", qVersion(),
 	     QT_VERSION_STR);
-	blog(LOG_INFO, "Portable mode: %s", portable_mode ? "true" : "false");
+	blog(LOG_INFO, "Portable mode: %s",
+	     opt_config_path.empty() ? "false" : "true");
+	blog(LOG_INFO, "Config path: %s",
+	     opt_config_path.empty() ? "default" : opt_config_path.c_str());
 
 	if (safe_mode) {
 		blog(LOG_WARNING, "Safe Mode enabled.");
@@ -1798,7 +1801,7 @@ string OBSApp::GetVersionString(bool platform) const
 
 bool OBSApp::IsPortableMode()
 {
-	return portable_mode;
+	return !opt_config_path.empty();
 }
 
 bool OBSApp::IsUpdaterDisabled()
@@ -2728,12 +2731,12 @@ static void load_debug_privilege(void)
 #endif
 
 #ifdef __APPLE__
-#define BASE_PATH ".."
+#define PORTABLE_BASE_PATH ".."
 #else
-#define BASE_PATH "../.."
+#define PORTABLE_BASE_PATH "../.."
 #endif
 
-#define CONFIG_PATH BASE_PATH "/config"
+#define PORTABLE_CONFIG_PATH PORTABLE_BASE_PATH "/config"
 
 #if defined(LINUX_PORTABLE) || defined(_WIN32)
 #define ALLOW_PORTABLE_MODE 1
@@ -2743,28 +2746,26 @@ static void load_debug_privilege(void)
 
 int GetConfigPath(char *path, size_t size, const char *name)
 {
-#if ALLOW_PORTABLE_MODE
-	if (portable_mode) {
+	if (!opt_config_path.empty()) {
 		if (name && *name) {
-			return snprintf(path, size, CONFIG_PATH "/%s", name);
+			return snprintf(path, size, "%s/%s",
+					opt_config_path.c_str(), name);
 		} else {
-			return snprintf(path, size, CONFIG_PATH);
+			return snprintf(path, size, "%s",
+					opt_config_path.c_str());
 		}
 	} else {
 		return os_get_config_path(path, size, name);
 	}
-#else
-	return os_get_config_path(path, size, name);
-#endif
 }
 
 char *GetConfigPathPtr(const char *name)
 {
-#if ALLOW_PORTABLE_MODE
-	if (portable_mode) {
+	if (!opt_config_path.empty()) {
 		char path[512];
 
-		if (snprintf(path, sizeof(path), CONFIG_PATH "/%s", name) > 0) {
+		if (snprintf(path, sizeof(path), "%s/%s",
+			     opt_config_path.c_str(), name) > 0) {
 			return bstrdup(path);
 		} else {
 			return NULL;
@@ -2772,9 +2773,6 @@ char *GetConfigPathPtr(const char *name)
 	} else {
 		return os_get_config_path_ptr(name);
 	}
-#else
-	return os_get_config_path_ptr(name);
-#endif
 }
 
 int GetProgramDataPath(char *path, size_t size, const char *name)
@@ -3324,9 +3322,13 @@ int main(int argc, char *argv[])
 
 #if ALLOW_PORTABLE_MODE
 		} else if (arg_is(argv[i], "--portable", "-p")) {
-			portable_mode = true;
+			opt_config_path = PORTABLE_CONFIG_PATH;
 
 #endif
+		} else if (arg_is(argv[i], "--config-dir", nullptr)) {
+			if (++i < argc)
+				opt_config_path = argv[i];
+
 		} else if (arg_is(argv[i], "--verbose", nullptr)) {
 			log_verbose = true;
 
@@ -3406,7 +3408,8 @@ int main(int argc, char *argv[])
 #if ALLOW_PORTABLE_MODE
 				"--portable, -p: Use portable mode.\n"
 #endif
-				"--multi, -m: Don't warn when launching multiple instances.\n\n"
+				"--multi, -m: Don't warn when launching multiple instances.\n"
+				"--config-dir <path>: Use specific path as config directory.\n\n"
 				"--safe-mode: Run in Safe Mode (disables third-party plugins, scripting, and WebSockets).\n"
 				"--only-bundled-plugins: Only load included (first-party) plugins\n"
 				"--disable-shutdown-check: Disable unclean shutdown detection.\n"
@@ -3433,25 +3436,28 @@ int main(int argc, char *argv[])
 	}
 
 #if ALLOW_PORTABLE_MODE
-	if (!portable_mode) {
-		portable_mode =
-			os_file_exists(BASE_PATH "/portable_mode") ||
-			os_file_exists(BASE_PATH "/obs_portable_mode") ||
-			os_file_exists(BASE_PATH "/portable_mode.txt") ||
-			os_file_exists(BASE_PATH "/obs_portable_mode.txt");
+	if (opt_config_path.empty()) {
+		if (os_file_exists(PORTABLE_BASE_PATH "/portable_mode") ||
+		    os_file_exists(PORTABLE_BASE_PATH "/obs_portable_mode") ||
+		    os_file_exists(PORTABLE_BASE_PATH "/portable_mode.txt") ||
+		    os_file_exists(PORTABLE_BASE_PATH
+				   "/obs_portable_mode.txt")) {
+			opt_config_path = PORTABLE_CONFIG_PATH;
+		}
 	}
 
 	if (!opt_disable_updater) {
 		opt_disable_updater =
-			os_file_exists(BASE_PATH "/disable_updater") ||
-			os_file_exists(BASE_PATH "/disable_updater.txt");
+			os_file_exists(PORTABLE_BASE_PATH "/disable_updater") ||
+			os_file_exists(PORTABLE_BASE_PATH
+				       "/disable_updater.txt");
 	}
 
 	if (!opt_disable_missing_files_check) {
 		opt_disable_missing_files_check =
-			os_file_exists(BASE_PATH
+			os_file_exists(PORTABLE_BASE_PATH
 				       "/disable_missing_files_check") ||
-			os_file_exists(BASE_PATH
+			os_file_exists(PORTABLE_BASE_PATH
 				       "/disable_missing_files_check.txt");
 	}
 #endif
