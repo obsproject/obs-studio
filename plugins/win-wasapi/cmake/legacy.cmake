@@ -3,7 +3,8 @@ project(win-wasapi)
 add_library(win-wasapi MODULE)
 add_library(OBS::wasapi ALIAS win-wasapi)
 
-target_sources(win-wasapi PRIVATE win-wasapi.cpp enum-wasapi.cpp enum-wasapi.hpp plugin-main.cpp)
+target_sources(win-wasapi PRIVATE win-wasapi.cpp wasapi-notify.cpp wasapi-notify.hpp enum-wasapi.cpp enum-wasapi.hpp
+                                  plugin-main.cpp)
 
 set(MODULE_DESCRIPTION "OBS WASAPI module")
 
