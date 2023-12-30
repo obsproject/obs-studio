@@ -2327,8 +2327,8 @@ static void obs_sceneitem_remove_internal(obs_sceneitem_t *item)
 
 	set_visibility(item, false);
 
-	signal_item_remove(item);
 	detach_sceneitem(item);
+	signal_item_remove(item);
 
 	obs_sceneitem_set_transition(item, true, NULL);
 	obs_sceneitem_set_transition(item, false, NULL);
