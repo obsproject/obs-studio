@@ -34,6 +34,8 @@ public slots:
 private:
 	bool streamingAlreadyActive = false;
 	bool recordingAlreadyActive = false;
+	bool stoppingStreamTimer = false;
+	bool stoppingRecordingTimer = false;
 
 	QTimer *streamingTimer;
 	QTimer *recordingTimer;
