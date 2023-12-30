@@ -287,6 +287,12 @@ General Service Functions
 
 ---------------------
 
+.. function:: const char *obs_service_get_uuid(const obs_service_t *service)
+
+   :return: The UUID of the service
+
+---------------------
+
 .. function:: obs_data_t *obs_service_defaults(const char *id)
 
    :return: An incremented reference to the service's default settings.

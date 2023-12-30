@@ -397,6 +397,12 @@ General Output Functions
 
 ---------------------
 
+.. function:: const char *obs_output_get_uuid(const obs_output_t *output)
+
+   :return: The UUID of the output
+
+---------------------
+
 .. function:: const char *obs_output_get_id(const obs_output_t *output)
 
    :return: The output's type identifier string

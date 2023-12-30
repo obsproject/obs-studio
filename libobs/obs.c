@@ -1998,16 +1998,29 @@ static inline void *get_context_by_name(void *vfirst, const char *name,
 	return context;
 }
 
-static void *get_context_by_uuid(void *ptable, const char *uuid,
+static void *get_context_by_uuid(void *vfirst, const char *uuid,
 				 pthread_mutex_t *mutex,
 				 void *(*addref)(void *))
 {
-	struct obs_context_data **ht = ptable;
+	struct obs_context_data **first = vfirst;
 	struct obs_context_data *context;
 
 	pthread_mutex_lock(mutex);
 
-	HASH_FIND_UUID(*ht, uuid, context);
+	/* If context list head has a hash table, look the uuid up in there */
+	if (*first && (*first)->hh.tbl) {
+		HASH_FIND_UUID(*first, uuid, context);
+	} else {
+		context = *first;
+		while (context) {
+			if (strcmp(context->uuid, uuid) == 0) {
+				break;
+			}
+
+			context = context->next;
+		}
+	}
+
 	if (context)
 		addref(context);
 
@@ -2096,6 +2109,13 @@ obs_output_t *obs_get_output_by_name(const char *name)
 				   obs_output_addref_safe_);
 }
 
+obs_output_t *obs_get_output_by_uuid(const char *uuid)
+{
+	return get_context_by_uuid(&obs->data.first_output, uuid,
+				   &obs->data.outputs_mutex,
+				   obs_output_addref_safe_);
+}
+
 obs_encoder_t *obs_get_encoder_by_name(const char *name)
 {
 	return get_context_by_name(&obs->data.first_encoder, name,
@@ -2103,9 +2123,23 @@ obs_encoder_t *obs_get_encoder_by_name(const char *name)
 				   obs_encoder_addref_safe_);
 }
 
+obs_encoder_t *obs_get_encoder_by_uuid(const char *uuid)
+{
+	return get_context_by_uuid(&obs->data.first_encoder, uuid,
+				   &obs->data.encoders_mutex,
+				   obs_encoder_addref_safe_);
+}
+
 obs_service_t *obs_get_service_by_name(const char *name)
 {
 	return get_context_by_name(&obs->data.first_service, name,
+				   &obs->data.services_mutex,
+				   obs_service_addref_safe_);
+}
+
+obs_service_t *obs_get_service_by_uuid(const char *uuid)
+{
+	return get_context_by_uuid(&obs->data.first_service, uuid,
 				   &obs->data.services_mutex,
 				   obs_service_addref_safe_);
 }
@@ -2645,8 +2679,7 @@ obs_context_data_init_wrap(struct obs_context_data *context,
 
 	if (uuid && strlen(uuid) == UUID_STR_LENGTH)
 		context->uuid = bstrdup(uuid);
-	/* Only automatically generate UUIDs for sources */
-	else if (type == OBS_OBJ_TYPE_SOURCE)
+	else
 		context->uuid = os_generate_uuid();
 
 	context->name = dup_name(name, private);

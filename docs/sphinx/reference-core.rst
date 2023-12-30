@@ -382,6 +382,15 @@ Libobs Objects
 
 ---------------------
 
+.. function:: obs_output_t *obs_get_output_by_uuid(const char *uuid)
+
+   Gets an output by its UUID.
+
+   Increments the output reference counter, use
+   :c:func:`obs_output_release()` to release it when complete.
+
+---------------------
+
 .. function:: obs_encoder_t *obs_get_encoder_by_name(const char *name)
 
    Gets an encoder by its name.
@@ -391,9 +400,27 @@ Libobs Objects
 
 ---------------------
 
+.. function:: obs_encoder_t *obs_get_encoder_by_uuid(const char *uuid)
+
+   Gets an encoder by its UUID.
+
+   Increments the encoder reference counter, use
+   :c:func:`obs_encoder_release()` to release it when complete.
+
+---------------------
+
 .. function:: obs_service_t *obs_get_service_by_name(const char *name)
 
    Gets an service by its name.
+
+   Increments the service reference counter, use
+   :c:func:`obs_service_release()` to release it when complete.
+
+---------------------
+
+.. function:: obs_service_t *obs_get_service_by_uuid(const char *uuid)
+
+   Gets an service by its UUID.
 
    Increments the service reference counter, use
    :c:func:`obs_service_release()` to release it when complete.
