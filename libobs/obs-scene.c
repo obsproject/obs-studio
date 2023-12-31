@@ -1740,6 +1740,8 @@ static inline void duplicate_item_data(struct obs_scene_item *dst,
 	dst->bounds_type = src->bounds_type;
 	dst->bounds_align = src->bounds_align;
 	dst->bounds = src->bounds;
+	dst->crop_to_bounds = src->crop_to_bounds;
+	dst->bounds_crop = src->bounds_crop;
 
 	if (src->show_transition) {
 		obs_source_t *transition = obs_source_duplicate(
