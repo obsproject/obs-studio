@@ -2618,9 +2618,19 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 #ifdef _WIN32
 
+typedef HRESULT(WINAPI *GETTHREADDESCRIPTION)(HANDLE thread, PWSTR *desc);
+
 #define CRASH_MESSAGE                                                      \
 	"Woops, OBS has crashed!\n\nWould you like to copy the crash log " \
 	"to the clipboard? The crash log will still be saved to:\n\n%s"
+#define CRASH_THREAD_MESSAGE                                           \
+	"Woops, a non critical component of OBS has crashed! "         \
+	"Would you like to try and continue in an unstable state?\n\n" \
+	"The crash log will still be saved to:\n\n%s"
+#define CRASH_NAMED_THREAD_MESSAGE                                     \
+	"Woops, a non critical component of OBS has crashed (%s)! "    \
+	"Would you like to try and continue in an unstable state?\n\n" \
+	"The crash log will still be saved to:\n\n%s"
 
 static void main_crash_handler(const char *format, va_list args,
 			       void * /* param */)
@@ -2661,6 +2671,65 @@ static void main_crash_handler(const char *format, va_list args,
 
 	string absolutePath =
 		canonical(filesystem::path(pathString)).u8string();
+
+	const bool criticalThread = obs_in_task_thread(OBS_TASK_UI) ||
+				    obs_in_task_thread(OBS_TASK_GRAPHICS) ||
+				    obs_in_task_thread(OBS_TASK_AUDIO);
+
+	if (!criticalThread) {
+		static GETTHREADDESCRIPTION get_thread_desc = NULL;
+		static bool failed = false;
+
+		if (!get_thread_desc && !failed) {
+			HMODULE k32 = LoadLibraryW(L"kernel32.dll");
+			get_thread_desc = (GETTHREADDESCRIPTION)GetProcAddress(
+				k32, "GetThreadDescription");
+			if (!get_thread_desc) {
+				failed = true;
+			}
+		}
+		struct dstr thread_name = {};
+		if (get_thread_desc) {
+			wchar_t *w_name = nullptr;
+			HRESULT hr =
+				get_thread_desc(GetCurrentThread(), &w_name);
+			if (SUCCEEDED(hr) && w_name) {
+
+				dstr_from_wcs(&thread_name, w_name);
+				LocalFree(w_name);
+			}
+		}
+		struct dstr finalMessage = {};
+		if (thread_name.len) {
+			dstr_printf(&finalMessage, CRASH_NAMED_THREAD_MESSAGE,
+				    thread_name.array, absolutePath.c_str());
+			blog(LOG_ERROR,
+			     "Error in thread \"%s\", error report saved to: %s",
+			     thread_name.array, absolutePath.c_str());
+		} else {
+			dstr_printf(&finalMessage, CRASH_THREAD_MESSAGE,
+				    absolutePath.c_str());
+			blog(LOG_ERROR,
+			     "Error in a non critical thread, error report saved to: %s",
+			     absolutePath.c_str());
+		}
+		dstr_free(&thread_name);
+
+		int ret = MessageBoxA(NULL, finalMessage.array,
+				      "OBS has partly crashed!",
+				      MB_YESNO | MB_ICONWARNING | MB_TASKMODAL);
+
+		dstr_free(&finalMessage);
+
+		if (ret == IDYES) {
+			blog(LOG_WARNING, "Continue in unstable state");
+			TerminateThread(GetCurrentThread(), -1);
+		} else {
+			blog(LOG_WARNING, "Exiting OBS");
+			exit(-1);
+		}
+		return;
+	}
 
 	size_t size = snprintf(nullptr, 0, CRASH_MESSAGE, absolutePath.c_str());
 
