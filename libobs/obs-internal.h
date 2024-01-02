@@ -870,9 +870,11 @@ struct obs_source {
 	/* color space */
 	gs_texrender_t *color_space_texrender;
 
+	/* audio monitoring */
 	struct audio_monitor *monitor;
 	enum obs_monitoring_type monitoring_type;
 
+	/* private data */
 	obs_data_t *private_settings;
 };
 
