@@ -688,6 +688,24 @@ struct caption_cb_info {
 	void *param;
 };
 
+enum media_action_type {
+	MEDIA_ACTION_NONE,
+	MEDIA_ACTION_PLAY_PAUSE,
+	MEDIA_ACTION_RESTART,
+	MEDIA_ACTION_STOP,
+	MEDIA_ACTION_NEXT,
+	MEDIA_ACTION_PREVIOUS,
+	MEDIA_ACTION_SET_TIME,
+};
+
+struct media_action {
+	enum media_action_type type;
+	union {
+		bool pause;
+		int64_t ms;
+	};
+};
+
 struct obs_source {
 	struct obs_context_data context;
 	struct obs_source_info info;
@@ -873,6 +891,10 @@ struct obs_source {
 	/* audio monitoring */
 	struct audio_monitor *monitor;
 	enum obs_monitoring_type monitoring_type;
+
+	/* media action queue */
+	DARRAY(struct media_action) media_actions;
+	pthread_mutex_t media_actions_mutex;
 
 	/* private data */
 	obs_data_t *private_settings;
