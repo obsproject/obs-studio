@@ -46,7 +46,7 @@ runs:
       run: |
         : Install Dependencies 🛍️
         echo ::group::Install Dependencies
-        dnf install -y -q poetry jq
+        pip install poetry
         poetry -q -C flatpak-builder-lint install
         echo ::endgroup::
 

@@ -245,7 +245,7 @@ jobs:
       run:
         shell: bash
     container:
-      image: bilelmoussaoui/flatpak-github-actions:kde-6.5
+      image: ghcr.io/tytan652/flatpak-github-actions:kde-6.6-x86_64
       options: --privileged
     steps:
       - uses: actions/checkout@v4
@@ -264,8 +264,7 @@ jobs:
 
           git config --global --add safe.directory "${GITHUB_WORKSPACE}"
 
-          echo '::group::Install GitHub CLI tool'
-          dnf install -y -q gh
+          echo '::group::Install GitHub CLI Actions Cache Extension'
           gh extension install actions/gh-actions-cache
           echo '::endgroup::'
 

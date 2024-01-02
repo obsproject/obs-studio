@@ -59,7 +59,7 @@ jobs:
       YOUTUBE_SECRET: ${{ secrets.YOUTUBE_SECRET }}
       YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
     container:
-      image: bilelmoussaoui/flatpak-github-actions:kde-6.5
+      image: ghcr.io/tytan652/flatpak-github-actions:kde-6.6-x86_64
       options: --privileged
     strategy:
       matrix:
@@ -81,7 +81,6 @@ jobs:
 
           git config --global --add safe.directory "${GITHUB_WORKSPACE}"
 
-          dnf install -y -q gh
           gh extension install actions/gh-actions-cache
 
           cache_key='flatpak-builder-${{ hashFiles('build-aux/**/*.json') }}'
