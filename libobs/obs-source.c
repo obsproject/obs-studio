@@ -5997,6 +5997,8 @@ void obs_source_media_play_pause(obs_source_t *source, bool pause)
 	if (!data_valid(source, "obs_source_media_play_pause"))
 		return;
 
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
+		return;
 	if (!source->info.media_play_pause)
 		return;
 
@@ -6013,6 +6015,8 @@ void obs_source_media_restart(obs_source_t *source)
 	if (!data_valid(source, "obs_source_media_restart"))
 		return;
 
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
+		return;
 	if (!source->info.media_restart)
 		return;
 
@@ -6026,6 +6030,8 @@ void obs_source_media_stop(obs_source_t *source)
 	if (!data_valid(source, "obs_source_media_stop"))
 		return;
 
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
+		return;
 	if (!source->info.media_stop)
 		return;
 
@@ -6039,6 +6045,8 @@ void obs_source_media_next(obs_source_t *source)
 	if (!data_valid(source, "obs_source_media_next"))
 		return;
 
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
+		return;
 	if (!source->info.media_next)
 		return;
 
@@ -6052,6 +6060,8 @@ void obs_source_media_previous(obs_source_t *source)
 	if (!data_valid(source, "obs_source_media_previous"))
 		return;
 
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
+		return;
 	if (!source->info.media_previous)
 		return;
 
@@ -6065,6 +6075,8 @@ int64_t obs_source_media_get_duration(obs_source_t *source)
 	if (!data_valid(source, "obs_source_media_get_duration"))
 		return 0;
 
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
+		return 0;
 	if (source->info.media_get_duration)
 		return source->info.media_get_duration(source->context.data);
 	else
@@ -6076,6 +6088,8 @@ int64_t obs_source_media_get_time(obs_source_t *source)
 	if (!data_valid(source, "obs_source_media_get_time"))
 		return 0;
 
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
+		return 0;
 	if (source->info.media_get_time)
 		return source->info.media_get_time(source->context.data);
 	else
@@ -6086,6 +6100,8 @@ void obs_source_media_set_time(obs_source_t *source, int64_t ms)
 {
 	if (!data_valid(source, "obs_source_media_set_time"))
 		return;
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
+		return;
 
 	if (source->info.media_set_time)
 		source->info.media_set_time(source->context.data, ms);
@@ -6094,6 +6110,8 @@ void obs_source_media_set_time(obs_source_t *source, int64_t ms)
 enum obs_media_state obs_source_media_get_state(obs_source_t *source)
 {
 	if (!data_valid(source, "obs_source_media_get_state"))
+		return OBS_MEDIA_STATE_NONE;
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
 		return OBS_MEDIA_STATE_NONE;
 
 	if (source->info.media_get_state)
@@ -6106,6 +6124,8 @@ void obs_source_media_started(obs_source_t *source)
 {
 	if (!obs_source_valid(source, "obs_source_media_started"))
 		return;
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
+		return;
 
 	obs_source_dosignal(source, NULL, "media_started");
 }
@@ -6113,6 +6133,8 @@ void obs_source_media_started(obs_source_t *source)
 void obs_source_media_ended(obs_source_t *source)
 {
 	if (!obs_source_valid(source, "obs_source_media_ended"))
+		return;
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
 		return;
 
 	obs_source_dosignal(source, NULL, "media_ended");
