@@ -212,6 +212,7 @@ static BOOL CALLBACK enum_monitor(HMONITOR handle, HDC hdc, LPRECT rect,
 					EDD_GET_DEVICE_INTERFACE_NAME)) {
 			match = strcmp(monitor->device_id, device.DeviceID) ==
 				0;
+			match |= strcmp(monitor->device_id, "Auto") == 0;
 			if (match) {
 				strcpy_s(monitor->id, _countof(monitor->id),
 					 device.DeviceID);
@@ -411,7 +412,7 @@ static void duplicator_capture_destroy(void *data)
 static void duplicator_capture_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_int(settings, "method", METHOD_AUTO);
-	obs_data_set_default_string(settings, "monitor_id", "DUMMY");
+	obs_data_set_default_string(settings, "monitor_id", "Auto");
 	obs_data_set_default_int(settings, "monitor_wgc", 0);
 	obs_data_set_default_bool(settings, "capture_cursor", true);
 	obs_data_set_default_bool(settings, "force_sdr", false);
@@ -903,6 +904,7 @@ static obs_properties_t *duplicator_capture_properties(void *data)
 	obs_properties_add_bool(props, "capture_cursor", TEXT_CAPTURE_CURSOR);
 	obs_properties_add_bool(props, "force_sdr", TEXT_FORCE_SDR);
 
+	obs_property_list_add_string(monitors, "Auto", "Auto");
 	EnumDisplayMonitors(NULL, NULL, enum_monitor_props, (LPARAM)monitors);
 
 	return props;
