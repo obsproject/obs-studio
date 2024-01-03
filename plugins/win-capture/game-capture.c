@@ -38,6 +38,7 @@ extern struct obs_core *obs = NULL;
 #define SETTING_WINDOW_PRIORITY      "priority"
 #define SETTING_WINDOW_DEFAULT_WIDTH "default_width"
 #define SETTING_WINDOW_DEFAULT_HEIGHT "default_height"
+#define SETTING_WINDOW_INTERNAL_MODE "internal_mode"
 #define SETTING_COMPATIBILITY        "sli_compatibility"
 #define SETTING_CURSOR               "capture_cursor"
 #define SETTING_TRANSPARENCY         "allow_transparency"
@@ -103,6 +104,7 @@ extern struct obs_core *obs = NULL;
 
 #define TEXT_HOTKEY_START        obs_module_text("GameCapture.HotkeyStart")
 #define TEXT_HOTKEY_STOP         obs_module_text("GameCapture.HotkeyStop")
+#define TEXT_WINDOW_INTERNAL_MODE obs_module_text("GameCapture.WindowInternalMode")
 
 /* clang-format on */
 
@@ -190,6 +192,7 @@ struct game_capture {
 	bool convert_16bit;
 	bool is_app;
 	bool cursor_hidden;
+	bool is_internal_source;
 
 	struct game_capture_config config;
 	struct auto_game_capture auto_capture;
@@ -820,6 +823,9 @@ static void game_capture_update(void *data, obs_data_t *settings)
 		free_whitelist(&gc->auto_capture);
 	}
 
+	gc->is_internal_source =
+		obs_data_get_bool(settings, SETTING_WINDOW_INTERNAL_MODE);
+
 	const char *img_path = NULL;
 	const char *placeholder_text = NULL;
 	const char *placeholder_wait_text = NULL;
@@ -1371,7 +1377,6 @@ static bool target_suspended(struct game_capture *gc)
 }
 
 static bool init_events(struct game_capture *gc);
-//static void set_compat_info_visible(struct game_capture* gc, bool visible); // TODO: remove????
 
 static bool init_hook(struct game_capture *gc)
 {
@@ -2730,7 +2735,8 @@ static uint32_t game_capture_width(void *data)
 {
 	struct game_capture *gc = data;
 	if (gc->config.mode == CAPTURE_MODE_AUTO ||
-	    gc->config.mode == CAPTURE_MODE_WINDOW) {
+	    (gc->config.mode == CAPTURE_MODE_WINDOW &&
+	     !gc->is_internal_source)) {
 		return gc->config.base_width;
 	}
 	return (gc->active && gc->capturing) ? gc->cx : 0;
@@ -2740,7 +2746,8 @@ static uint32_t game_capture_height(void *data)
 {
 	struct game_capture *gc = data;
 	if (gc->config.mode == CAPTURE_MODE_AUTO ||
-	    gc->config.mode == CAPTURE_MODE_WINDOW) {
+	    (gc->config.mode == CAPTURE_MODE_WINDOW &&
+	     !gc->is_internal_source)) {
 		return gc->config.base_height;
 	}
 	return (gc->active && gc->capturing) ? gc->cy : 0;
@@ -2784,6 +2791,8 @@ static void game_capture_defaults(obs_data_t *settings)
 				 (int)1920);
 	obs_data_set_default_int(settings, SETTING_WINDOW_DEFAULT_HEIGHT,
 				 (int)1080);
+	obs_data_set_default_bool(settings, SETTING_WINDOW_INTERNAL_MODE,
+				  false);
 }
 
 static bool mode_callback(obs_properties_t *ppts, obs_property_t *p,
@@ -2839,6 +2848,9 @@ static bool mode_callback(obs_properties_t *ppts, obs_property_t *p,
 	obs_property_set_visible(p, false);
 
 	p = obs_properties_get(ppts, SETTING_WINDOW_DEFAULT_HEIGHT);
+	obs_property_set_visible(p, false);
+
+	p = obs_properties_get(ppts, SETTING_WINDOW_INTERNAL_MODE);
 	obs_property_set_visible(p, false);
 
 	return true;
@@ -3056,6 +3068,8 @@ static obs_properties_t *game_capture_properties(void *data)
 	obs_property_list_add_string(p, TEXT_RGBA10A2_SPACE_2100PQ,
 				     RGBA10A2_SPACE_2100PQ);
 
+	p = obs_properties_add_bool(ppts, SETTING_WINDOW_INTERNAL_MODE,
+				    TEXT_WINDOW_INTERNAL_MODE);
 	return ppts;
 }
 
