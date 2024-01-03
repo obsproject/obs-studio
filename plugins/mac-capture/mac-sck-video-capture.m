@@ -160,6 +160,10 @@ static bool init_screen_stream(struct screen_capture *sc)
 
                 [sc->stream_properties setWidth:(size_t) target_window.frame.size.width];
                 [sc->stream_properties setHeight:(size_t) target_window.frame.size.height];
+
+                if (@available(macOS 14.2, *)) {
+                    [sc->stream_properties setIncludeChildWindows:YES];
+                }
             }
         } break;
         case ScreenCaptureApplicationStream: {
@@ -176,6 +180,10 @@ static bool init_screen_stream(struct screen_capture *sc)
             content_filter = [[SCContentFilter alloc] initWithDisplay:target_display
                                                 includingApplications:target_application_array
                                                      exceptingWindows:empty_array];
+            if (@available(macOS 14.2, *)) {
+                content_filter.includeMenuBar = YES;
+            }
+
             [target_application_array release];
             [empty_array release];
 
