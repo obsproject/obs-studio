@@ -1294,8 +1294,16 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 	int64_t bf = obs_data_get_int(settings, "bf");
 
 	if (enc->bframes_supported) {
-		set_avc_property(enc, MAX_CONSECUTIVE_BPICTURES, 3);
+		set_avc_property(enc, MAX_CONSECUTIVE_BPICTURES, bf);
 		set_avc_property(enc, B_PIC_PATTERN, bf);
+
+		/* AdaptiveMiniGOP is suggested for some types of content such
+		 * as those with high motion. This only takes effect if
+		 * Pre-Analysis is enabled.
+		 */
+		if (bf > 0) {
+			set_avc_property(enc, ADAPTIVE_MINIGOP, true);
+		}
 
 	} else if (bf != 0) {
 		warn("B-Frames set to %lld but b-frames are not "
