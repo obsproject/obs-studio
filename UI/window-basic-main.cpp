@@ -7576,16 +7576,16 @@ void OBSBasic::AutoRemux(QString input, bool no_show)
 
 	const obs_encoder_t *videoEncoder =
 		obs_output_get_video_encoder(outputHandler->fileOutput);
-	const obs_encoder_t *audioEncoder =
-		obs_output_get_audio_encoder(outputHandler->fileOutput, 0);
 	const char *vCodecName = obs_encoder_get_codec(videoEncoder);
-	const char *aCodecName = obs_encoder_get_codec(audioEncoder);
 	const char *format = config_get_string(
 		config, isSimpleMode ? "SimpleOutput" : "AdvOut", "RecFormat2");
 
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(60, 5, 100)
+	const obs_encoder_t *audioEncoder =
+		obs_output_get_audio_encoder(outputHandler->fileOutput, 0);
+	const char *aCodecName = obs_encoder_get_codec(audioEncoder);
 	bool audio_is_pcm = strncmp(aCodecName, "pcm", 3) == 0;
 
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(60, 5, 100)
 	/* FFmpeg <= 6.0 cannot remux AV1+PCM into any supported format. */
 	if (audio_is_pcm && strcmp(vCodecName, "av1") == 0)
 		return;
