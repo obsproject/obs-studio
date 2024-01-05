@@ -1481,6 +1481,9 @@ EXPORT obs_data_array_t *obs_source_backup_filters(obs_source_t *source);
 EXPORT void obs_source_restore_filters(obs_source_t *source,
 				       obs_data_array_t *array);
 
+/** Custom function to force source-related UI refresh from inside OBS */
+EXPORT void streamlabs_force_source_ui_refresh(obs_source_t *source);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by sources */
 

@@ -6148,3 +6148,17 @@ void obs_source_restore_filters(obs_source_t *source, obs_data_array_t *array)
 
 	da_free(cur_filters);
 }
+
+void streamlabs_force_source_ui_refresh(obs_source_t *source)
+{
+	// Note: overall this is a bit hackish approach to force UI refresh.
+	// Proper solution could be implemented, but will be significantly more complicated.
+
+	// 30 is just big enought number to not overlap with the existing and possible future flags
+	const uint32_t CUSTOM_REFRESH_UI_FLAG = (1 << 30);
+
+	// Toggling custom output flag to force UI refresh
+	// For details see 'globalCallback::worker()' in obs-studio-node and
+	// 'updateSourceFlags' in desktop repo
+	source->info.output_flags ^= CUSTOM_REFRESH_UI_FLAG;
+}

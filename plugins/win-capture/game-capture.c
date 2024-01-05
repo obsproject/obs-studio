@@ -2178,14 +2178,10 @@ static void check_foreground_window(struct game_capture *gc, float seconds)
 
 static void set_compat_info_visible(struct game_capture *gc, bool visible)
 {
-	// 30 is just big enought number to not overlap with the existing and possible future flags
-	const uint32_t CUSTOM_REFRESH_UI_FLAG = (1 << 30);
-
 	obs_data_t *setings = obs_source_get_settings(gc->source);
-	obs_data_set_bool(setings, COMPAT_INFO_VISIBLE, visible);
 
-	obs_properties_t *props = obs_source_properties(gc->source);
-	obs_properties_destroy(props);
+	obs_data_set_bool(setings, COMPAT_INFO_VISIBLE, visible);
+	streamlabs_force_source_ui_refresh(gc->source);
 
 	obs_data_release(setings);
 }
@@ -3112,14 +3108,11 @@ game_capture_get_color_space(void *data, size_t count,
 	return space;
 }
 
-#define CUSTOM_REFRESH_UI_FLAG (1 << 30)
-
 struct obs_source_info game_capture_info = {
 	.id = "game_capture",
 	.type = OBS_SOURCE_TYPE_INPUT,
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
-			OBS_SOURCE_DO_NOT_DUPLICATE | OBS_SOURCE_SRGB |
-			CUSTOM_REFRESH_UI_FLAG,
+			OBS_SOURCE_DO_NOT_DUPLICATE | OBS_SOURCE_SRGB,
 	.get_name = game_capture_name,
 	.create = game_capture_create,
 	.destroy = game_capture_destroy,
