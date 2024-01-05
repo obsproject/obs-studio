@@ -74,7 +74,7 @@ macro(setup_obs_project)
         CACHE STRING "OBS code signing team for macOS" FORCE)
     if(NOT OBS_BUNDLE_CODESIGN_IDENTITY)
       set(OBS_BUNDLE_CODESIGN_IDENTITY
-          "-"
+          ""
           CACHE STRING "OBS code signing identity for macOS" FORCE)
     endif()
     set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "${OBS_BUNDLE_CODESIGN_IDENTITY}")

@@ -115,11 +115,6 @@ macro(find_qt)
   set(multiValueArgs COMPONENTS COMPONENTS_WIN COMPONENTS_MAC COMPONENTS_LINUX)
   cmake_parse_arguments(find_qt "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-
-
-#message(FATAL_ERROR "hello fff ${FIND_QT_VERSION}" ${FIND_QT_VERSION}"  "${FIND_QT_COMPONENTS}"  "${FIND_QT_COMPONENTS_MAC} " ::" ${CMAKE_MODULE_PATH} "  " ${CMAKE_PREFIX_PATH})
-
-
   # Do not use versionless targets in the first step to avoid Qt::Core being clobbered by later opportunistic
   # find_package runs
   set(QT_NO_CREATE_VERSIONLESS_TARGETS TRUE)

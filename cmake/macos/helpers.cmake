@@ -18,7 +18,9 @@ function(set_target_xcode_properties target)
   set(multiValueArgs PROPERTIES)
   cmake_parse_arguments(PARSE_ARGV 0 _STXP "${options}" "${oneValueArgs}" "${multiValueArgs}")
 
-  message(DEBUG "Setting Xcode properties for target ${target}...")
+  if( target STREQUAL "av-obs-plugin")
+    message("Setting Xcode properties for target ${target}...")
+  endif()
 
   while(_STXP_PROPERTIES)
     list(POP_FRONT _STXP_PROPERTIES key value)
@@ -35,18 +37,21 @@ function(set_target_properties_obs target)
   set(multiValueArgs PROPERTIES)
   cmake_parse_arguments(PARSE_ARGV 0 _STPO "${options}" "${oneValueArgs}" "${multiValueArgs}")
 
-  message(DEBUG "Setting additional properties for target ${target}...")
+  # message( "Settingadditionalproperties for target set_target_properties_obs=${target}...  target_type=${target_type}")
 
   while(_STPO_PROPERTIES)
     list(POP_FRONT _STPO_PROPERTIES key value)
-    message(DEBUG " TARGET PROPERTY target ${target} : ${key} ${value} ")
     set_property(TARGET ${target} PROPERTY ${key} "${value}")
   endwhile()
   get_target_property(target_type ${target} TYPE)
 
   string(TIMESTAMP CURRENT_YEAR "%Y")
 
-  message(DEBUG " TARGET target_type ${target_type}  ")
+  if( target STREQUAL "av-obs-plugin")
+    message( "Settingadditionalproperties for target set_target_properties_obs=${target}...  target_type=${target_type}")
+  endif()
+
+  
 
   # Target is a GUI or CLI application
   if(target_type STREQUAL EXECUTABLE)
@@ -303,6 +308,18 @@ function(set_target_properties_obs target)
                    INFOPLIST_KEY_NSHumanReadableCopyright "(c) 2012-${CURRENT_YEAR} Lain Bailey")
       # cmake-format: on
 
+      # if( target STREQUAL "av-obs-plugin")
+
+      #   set_target_properties(${target} PROPERTIES
+      #       XCODE_ATTRIBUTE_LD_RUNPATH_SEARCH_PATHS "@executable_path/../Frameworks2"
+      #   )
+
+      #   set_target_properties(${target} PROPERTIES
+      #     # INSTALL_RPATH_USE_LINK_PATH TRUE
+      #     INSTALL_RPATH "${CMAKE_CURRENT_SOURCE_DIR}/../inf_macos/3rd-macos/openssl/build-3.1.1/lib;${CMAKE_CURRENT_SOURCE_DIR}/../inf_macos/3rd-macos/openvino/build-2023.2.0/runtime/lib/intel64/Release;${CMAKE_CURRENT_SOURCE_DIR}/../inf_macos/3rd-macos/openvino/build-2023.2.0/runtime/3rdparty/tbb/lib;${CMAKE_CURRENT_SOURCE_DIR}/../inf_macos/3rd-macos/openvino/build-2023.2.0/runtime/3rdparty/tbb/lib;${CMAKE_CURRENT_SOURCE_DIR}/../inf_macos/3rd-macos/fmt/build-10.1.1/lib64"
+      #     BUILD_WITH_INSTALL_RPATH TRUE)
+      # endif()
+
       if(target STREQUAL obs-browser)
         # Good-enough for now as there are no other variants - in _theory_ we should only add the appropriate variant,
         # but that is only known at project generation and not build system configuration.
@@ -380,9 +397,18 @@ endfunction()
 
 # target_install_resources: Helper function to add resources into bundle
 function(target_install_resources target)
-  message(DEBUG "Installing resources for target ${target}...")
+  if( target STREQUAL "av-obs-plugin")
+    message("target_install_resources Installing resources for target ${target}...")
+  endif()
+
   if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/data")
     file(GLOB_RECURSE data_files "${CMAKE_CURRENT_SOURCE_DIR}/data/*")
+
+    if( target STREQUAL "av-obs-plugin")
+      message("target_install_resources data_files=${data_files}")
+    endif()
+
+
     foreach(data_file IN LISTS data_files)
       cmake_path(RELATIVE_PATH data_file BASE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/data/" OUTPUT_VARIABLE
                  relative_path)

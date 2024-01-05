@@ -20,10 +20,15 @@ function(set_target_properties_obs target)
 
   while(_STPO_PROPERTIES)
     list(POP_FRONT _STPO_PROPERTIES key value)
+
+    message(DEBUG " TARGET PROPERTY target ${target} : ${key} ${value} ")
+
     set_property(TARGET ${target} PROPERTY ${key} "${value}")
   endwhile()
 
   get_target_property(target_type ${target} TYPE)
+
+  message(DEBUG " TARGET target ${target} target_type ${target_type}  ")
 
   if(target_type STREQUAL EXECUTABLE)
     if(target STREQUAL obs-browser-helper)
@@ -90,6 +95,8 @@ function(set_target_properties_obs target)
       set(target_destination "${OBS_PLUGIN_DESTINATION}")
     endif()
 
+    message(DEBUG "target ${target} target_destination ${target_destination}")
+
     # cmake-format: off
     _target_install_obs(${target} DESTINATION ${target_destination})
     # cmake-format: on
@@ -111,10 +118,14 @@ function(set_target_properties_obs target)
       message(DEBUG "Add Chromium Embedded Framework to project for obs-browser plugin...")
       if(TARGET CEF::Library)
         get_target_property(imported_location CEF::Library IMPORTED_LOCATION_RELEASE)
-        message(DEBUG "imported_location ${imported_location}")
+       
+        message(DEBUG "imported_location=${imported_location} ")
+
         if(imported_location)
           cmake_path(GET imported_location PARENT_PATH cef_location)
           cmake_path(GET cef_location PARENT_PATH cef_root_location)
+
+          message(DEBUG "cef_location=${cef_location} cef_root_location ${cef_root_location} ${OBS_OUTPUT_DIR}/$<CONFIG>/${target_destination}")
           add_custom_command(
             TARGET ${target}
             POST_BUILD
@@ -152,6 +163,50 @@ function(set_target_properties_obs target)
             COMPONENT Runtime)
         endif()
       endif()
+    elseif(${target} STREQUAL av-obs-plugin)
+      get_target_property(imported_libs_dir ${target} IMPORTED_LIBS_RELEASE)
+      file(GLOB LIB_FILES CONFIGURE_DEPENDS "${imported_libs_dir}/*.dll")
+      #file(GLOB LIB_FILES CONFIGURE_DEPENDS ${LIB_FILES} "${imported_libs_dir}/tsc_inf.json")
+
+      set(LIB_FILES ${LIB_FILES} "${imported_libs_dir}/tsc_inf.json")
+
+      message("imported_libs_dir=${imported_libs_dir}  LIB_FILES=${LIB_FILES}  target_destination=${target_destination}   ${OBS_OUTPUT_DIR}/${CONFIG}/${target_destination}")
+      
+      #   add_custom_command(
+      #     ${target} ALL 
+      #     VERBATIM 
+      #     COMMAND_EXPAND_LISTS 
+      #     COMMAND "${CMAKE_COMMAND}" -E make_directory "${OBS_OUTPUT_DIR}/$<CONFIG>/${target_destination}"
+      #     COMMAND
+      #       "${CMAKE_COMMAND}" -E copy_if_different "$<$<CONFIG:Release>:${LIB_FILES}>>" "${OBS_OUTPUT_DIR}/$<CONFIG>/${target_destination}"
+      #     COMMENT "Add  Embedded dll to library directory")
+
+      #file(COPY ${LIB_FILES} DESTINATION "${OBS_OUTPUT_DIR}/${CONFIG}/${target_destination}")
+
+      # install(
+      #   TARGETS ${target} "${LIB_FILES}"
+      # RUNTIME
+      # #         DESTINATION "${OBS_OUTPUT_DIR}/$<CONFIG>/${target_destination}")
+
+      # install(
+      #   FILES ${LIB_FILES}
+      #   CONFIGURATIONS Release
+      #   DESTINATION "${target_destination}"
+      #   COMPONENT Runtime)
+
+      add_custom_command(
+            TARGET ${target}
+            POST_BUILD
+            COMMAND "${CMAKE_COMMAND}" -E make_directory "${OBS_OUTPUT_DIR}/$<CONFIG>/${target_destination}"
+            COMMAND
+              "${CMAKE_COMMAND}" -E copy_if_different ${LIB_FILES} "${OBS_OUTPUT_DIR}/$<CONFIG>/${target_destination}"
+            COMMENT "Add Chromium Embedded Framework to library directory")
+
+      install(
+        TARGETS ${target}
+        LIBRARY DESTINATION  "${target_destination}"
+        COMPONENT Runtime
+        NAMELINK_COMPONENT Development)
     endif()
 
     set_property(GLOBAL APPEND PROPERTY OBS_MODULES_ENABLED ${target})
@@ -161,6 +216,9 @@ function(set_target_properties_obs target)
   target_install_resources(${target})
 
   get_target_property(target_sources ${target} SOURCES)
+
+  #message(DEBUG " TARGET target ${target} target_sources ${target_sources}  ")
+
   set(target_ui_files ${target_sources})
   list(FILTER target_ui_files INCLUDE REGEX ".+\\.(ui|qrc)")
   source_group(
@@ -192,6 +250,8 @@ function(_target_install_obs target)
   set(multiValueArgs "")
   cmake_parse_arguments(PARSE_ARGV 0 _TIO "${options}" "${oneValueArgs}" "${multiValueArgs}")
 
+  message(DEBUG "_target_install_obs target=${target} _TIO_32BIT:${_TIO_32BIT}")
+
   if(_TIO_32BIT)
     get_target_property(target_type ${target} TYPE)
     if(target_type STREQUAL EXECUTABLE)
@@ -216,8 +276,11 @@ function(_target_install_obs target)
     set(target_file "$<TARGET_FILE:${target}>")
     set(target_pdb_file "$<TARGET_PDB_FILE:${target}>")
     set(comment "Copy ${target} to destination")
-
+    
     get_target_property(target_type ${target} TYPE)
+
+    message(DEBUG "_target_install_obs target=${target} target_type:${target_type} ${target_file}  " )
+
     if(target_type STREQUAL EXECUTABLE)
       install(TARGETS ${target} RUNTIME DESTINATION "${_TIO_DESTINATION}" COMPONENT Runtime)
     elseif(target_type STREQUAL SHARED_LIBRARY)

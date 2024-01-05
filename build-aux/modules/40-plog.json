@@ -2,7 +2,6 @@
     "name": "plog",
     "buildsystem": "cmake-ninja",
     "config-opts": [
-        "-DCMAKE_BUILD_TYPE=Release",
         "-DPLOG_BUILD_SAMPLES=OFF"
     ],
     "cleanup": [

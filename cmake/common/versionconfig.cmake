@@ -9,6 +9,7 @@ include_guard(GLOBAL)
 set(_obs_version ${_obs_default_version})
 set(_obs_version_canonical ${_obs_default_version})
 
+#echo '30.0.0-beta2-71-g90987cfa0-modified' #
 # Attempt to automatically discover expected OBS version
 if(NOT DEFINED OBS_VERSION_OVERRIDE AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
   execute_process(
@@ -38,7 +39,7 @@ if(_obs_version MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+-rc[0-9]+")
 elseif(_obs_version MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+-beta[0-9]+")
   string(REGEX REPLACE "([0-9]+)\\.([0-9]+)\\.([0-9]+)-beta([0-9])+" "\\1;\\2;\\3;\\4" _obs_beta ${_obs_version})
 endif()
-
+message(DEBUG "_obs_version_canonical ${_obs_version_canonical}")
 list(GET _obs_version_canonical 0 OBS_VERSION_MAJOR)
 list(GET _obs_version_canonical 1 OBS_VERSION_MINOR)
 list(GET _obs_version_canonical 2 OBS_VERSION_PATCH)
