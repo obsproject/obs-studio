@@ -23,6 +23,7 @@ const uint8_t video_payload_type = 96;
 
 WHIPOutput::WHIPOutput(obs_data_t *, obs_output_t *output)
 	: output(output),
+	  is_av1(false),
 	  endpoint_url(),
 	  bearer_token(),
 	  resource_url(),
@@ -53,6 +54,13 @@ WHIPOutput::~WHIPOutput()
 bool WHIPOutput::Start()
 {
 	std::lock_guard<std::mutex> l(start_stop_mutex);
+
+	auto encoder = obs_output_get_video_encoder2(output, 0);
+	if (encoder == nullptr) {
+		return false;
+	}
+
+	is_av1 = (strcmp("av1", obs_encoder_get_codec(encoder)) == 0);
 
 	if (!obs_output_can_begin_data_capture(output, 0))
 		return false;
@@ -126,28 +134,37 @@ void WHIPOutput::ConfigureVideoTrack(std::string media_stream_id,
 				     std::string cname)
 {
 	auto media_stream_track_id = std::string(media_stream_id + "-video");
+	std::shared_ptr<rtc::RtpPacketizer> packetizer;
 
 	// More predictable SSRC values between audio and video
 	uint32_t ssrc = base_ssrc + 1;
 
 	rtc::Description::Video video_description(
 		video_mid, rtc::Description::Direction::SendOnly);
-	video_description.addH264Codec(video_payload_type);
 	video_description.addSSRC(ssrc, cname, media_stream_id,
 				  media_stream_track_id);
-	video_track = peer_connection->addTrack(video_description);
 
 	auto rtp_config = std::make_shared<rtc::RtpPacketizationConfig>(
 		ssrc, cname, video_payload_type,
 		rtc::H264RtpPacketizer::defaultClockRate);
-	auto packetizer = std::make_shared<rtc::H264RtpPacketizer>(
-		rtc::H264RtpPacketizer::Separator::StartSequence, rtp_config,
-		MAX_VIDEO_FRAGMENT_SIZE);
-	video_sr_reporter = std::make_shared<rtc::RtcpSrReporter>(rtp_config);
-	auto nack_responder = std::make_shared<rtc::RtcpNackResponder>();
 
+	if (is_av1) {
+		video_description.addAV1Codec(video_payload_type);
+		packetizer = std::make_shared<rtc::AV1RtpPacketizer>(
+			rtc::AV1RtpPacketizer::Packetization::TemporalUnit,
+			rtp_config, MAX_VIDEO_FRAGMENT_SIZE);
+	} else {
+		video_description.addH264Codec(video_payload_type);
+		packetizer = std::make_shared<rtc::H264RtpPacketizer>(
+			rtc::H264RtpPacketizer::Separator::StartSequence,
+			rtp_config, MAX_VIDEO_FRAGMENT_SIZE);
+	}
+
+	video_sr_reporter = std::make_shared<rtc::RtcpSrReporter>(rtp_config);
 	packetizer->addToChain(video_sr_reporter);
-	packetizer->addToChain(nack_responder);
+	packetizer->addToChain(std::make_shared<rtc::RtcpNackResponder>());
+
+	video_track = peer_connection->addTrack(video_description);
 	video_track->setMediaHandler(packetizer);
 }
 
@@ -575,7 +592,7 @@ void register_whip_output()
 	info.get_connect_time_ms = [](void *priv_data) -> int {
 		return static_cast<WHIPOutput *>(priv_data)->GetConnectTime();
 	};
-	info.encoded_video_codecs = "h264";
+	info.encoded_video_codecs = "h264;av1";
 	info.encoded_audio_codecs = "opus";
 	info.protocols = "WHIP";
 
