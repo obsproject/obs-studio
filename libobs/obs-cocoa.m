@@ -72,13 +72,13 @@ static void log_processor_name(void)
     if (ret != 0)
         return;
 
-    name = malloc(size);
+    name = bmalloc(size);
 
     ret = sysctlbyname("machdep.cpu.brand_string", name, &size, NULL, 0);
     if (ret == 0)
         blog(LOG_INFO, "CPU Name: %s", name);
 
-    free(name);
+    bfree(name);
 }
 
 static void log_processor_speed(void)
