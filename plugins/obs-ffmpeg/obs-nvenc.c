@@ -26,15 +26,18 @@
 #endif
 
 #undef NVENCAPI_STRUCT_VERSION
-#define NVENCAPI_STRUCT_VERSION(ver)                              \
-	((uint32_t)(enc->codec == CODEC_AV1 ? NVENCAPI_VERSION    \
-					    : NVENC_COMPAT_VER) | \
+#define NVENCAPI_STRUCT_VERSION(ver)                            \
+	((uint32_t)(enc->needs_compat_ver ? NVENCAPI_VERSION    \
+					  : NVENC_COMPAT_VER) | \
 	 ((ver) << 16) | (0x7 << 28))
 
 #define NV_ENC_CONFIG_COMPAT_VER (NVENCAPI_STRUCT_VERSION(7) | (1 << 31))
 #define NV_ENC_PIC_PARAMS_COMPAT_VER (NVENCAPI_STRUCT_VERSION(4) | (1 << 31))
 #define NV_ENC_LOCK_BITSTREAM_COMPAT_VER NVENCAPI_STRUCT_VERSION(1)
 #define NV_ENC_REGISTER_RESOURCE_COMPAT_VER NVENCAPI_STRUCT_VERSION(3)
+
+#define COMPATIBILITY_VERSION \
+	(NVENC_COMPAT_MAJOR_VER << 4 | NVENC_COMPAT_MINOR_VER)
 
 /* ========================================================================= */
 
@@ -100,6 +103,7 @@ struct nvenc_data {
 	bool encode_started;
 	bool first_packet;
 	bool can_change_bitrate;
+	bool needs_compat_ver;
 	int32_t bframes;
 
 	DARRAY(struct nv_bitstream) bitstreams;
@@ -186,7 +190,7 @@ static bool nv_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex)
 
 	tex->lpVtbl->SetEvictionPriority(tex, DXGI_RESOURCE_PRIORITY_MAXIMUM);
 
-	uint32_t struct_ver = enc->codec == CODEC_AV1
+	uint32_t struct_ver = enc->needs_compat_ver
 				      ? NV_ENC_REGISTER_RESOURCE_VER
 				      : NV_ENC_REGISTER_RESOURCE_COMPAT_VER;
 
@@ -360,8 +364,8 @@ static bool init_session(struct nvenc_data *enc)
 		NV_ENC_OPEN_ENCODE_SESSION_EX_PARAMS_VER};
 	params.device = enc->device;
 	params.deviceType = NV_ENC_DEVICE_TYPE_DIRECTX;
-	params.apiVersion = enc->codec == CODEC_AV1 ? NVENCAPI_VERSION
-						    : NVENC_COMPAT_VER;
+	params.apiVersion = enc->needs_compat_ver ? NVENCAPI_VERSION
+						  : NVENC_COMPAT_VER;
 
 	if (NV_FAILED(nv.nvEncOpenEncodeSessionEx(&params, &enc->session))) {
 		return false;
@@ -566,9 +570,8 @@ static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings,
 	/* -------------------------- */
 	/* get preset default config  */
 
-	uint32_t config_ver = enc->codec == CODEC_AV1
-				      ? NV_ENC_CONFIG_VER
-				      : NV_ENC_CONFIG_COMPAT_VER;
+	uint32_t config_ver = enc->needs_compat_ver ? NV_ENC_CONFIG_VER
+						    : NV_ENC_CONFIG_COMPAT_VER;
 
 	NV_ENC_PRESET_CONFIG preset_config = {NV_ENC_PRESET_CONFIG_VER,
 					      {config_ver}};
@@ -1109,6 +1112,9 @@ static void *nvenc_create_internal(enum codec_type codec, obs_data_t *settings,
 	if (!init_d3d11(enc, settings)) {
 		goto fail;
 	}
+	if (get_nvenc_ver() == COMPATIBILITY_VERSION) {
+		enc->needs_compat_ver = true;
+	}
 	if (!init_session(enc)) {
 		goto fail;
 	}
@@ -1207,9 +1213,7 @@ static void nvenc_destroy(void *data)
 	struct nvenc_data *enc = data;
 
 	if (enc->encode_started) {
-		size_t next_bitstream = enc->next_bitstream;
-
-		uint32_t struct_ver = enc->codec == CODEC_AV1
+		uint32_t struct_ver = enc->needs_compat_ver
 					      ? NV_ENC_PIC_PARAMS_VER
 					      : NV_ENC_PIC_PARAMS_COMPAT_VER;
 		NV_ENC_PIC_PARAMS params = {struct_ver};
@@ -1314,7 +1318,7 @@ static bool get_encoded_packet(struct nvenc_data *enc, bool finalize)
 		/* ---------------- */
 
 		uint32_t struct_ver =
-			enc->codec == CODEC_AV1
+			enc->needs_compat_ver
 				? NV_ENC_LOCK_BITSTREAM_VER
 				: NV_ENC_LOCK_BITSTREAM_COMPAT_VER;
 
@@ -1434,8 +1438,8 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 	/* do actual encode call                */
 
 	NV_ENC_PIC_PARAMS params = {0};
-	params.version = enc->codec == CODEC_AV1 ? NV_ENC_PIC_PARAMS_VER
-						 : NV_ENC_PIC_PARAMS_COMPAT_VER;
+	params.version = enc->needs_compat_ver ? NV_ENC_PIC_PARAMS_VER
+					       : NV_ENC_PIC_PARAMS_COMPAT_VER;
 	params.pictureStruct = NV_ENC_PIC_STRUCT_FRAME;
 	params.inputBuffer = nvtex->mapped_res;
 	params.bufferFmt = obs_p010_tex_active()

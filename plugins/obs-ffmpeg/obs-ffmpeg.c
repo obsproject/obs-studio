@@ -237,7 +237,6 @@ static bool nvenc_device_available(void)
 
 #ifdef _WIN32
 extern bool load_nvenc_lib(void);
-extern uint32_t get_nvenc_ver();
 #endif
 
 static bool nvenc_codec_exists(const char *name, const char *fallback)
