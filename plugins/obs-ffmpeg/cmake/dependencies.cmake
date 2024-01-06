@@ -54,7 +54,7 @@ if(ENABLE_NEW_MPEGTS_OUTPUT)
   endforeach()
 
   if(_error_messages)
-    list(JOIN "\n" _error_string _error_string)
+    list(JOIN _error_messages "\n" _error_string)
     message(
       FATAL_ERROR
         "${_error_string}\n Disable this error by setting ENABLE_NEW_MPEGTS_OUTPUT to OFF or providing the build system with required SRT and Rist libraries."
