@@ -810,10 +810,12 @@ static bool send_video_header(struct rtmp_stream *stream)
 	case CODEC_H264:
 		packet.size = obs_parse_avc_header(&packet.data, header, size);
 		return send_packet(stream, &packet, true, 0) >= 0;
-#ifdef ENABLE_HEVC
 	case CODEC_HEVC:
+#ifdef ENABLE_HEVC
 		packet.size = obs_parse_hevc_header(&packet.data, header, size);
 		return send_packet_ex(stream, &packet, true, 0) >= 0;
+#else
+		return false;
 #endif
 	case CODEC_AV1:
 		packet.size = obs_parse_av1_header(&packet.data, header, size);
@@ -1695,10 +1697,12 @@ static void rtmp_stream_data(void *data, struct encoder_packet *packet)
 		case CODEC_H264:
 			obs_parse_avc_packet(&new_packet, packet);
 			break;
-#ifdef ENABLE_HEVC
 		case CODEC_HEVC:
+#ifdef ENABLE_HEVC
 			obs_parse_hevc_packet(&new_packet, packet);
 			break;
+#else
+			return;
 #endif
 		case CODEC_AV1:
 			obs_parse_av1_packet(&new_packet, packet);

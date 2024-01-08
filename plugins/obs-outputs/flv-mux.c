@@ -65,13 +65,15 @@ static void s_w4cc(struct serializer *s, enum video_id_t id)
 		s_w8(s, '0');
 		s_w8(s, '1');
 		break;
-#ifdef ENABLE_HEVC
 	case CODEC_HEVC:
+#ifdef ENABLE_HEVC
 		s_w8(s, 'h');
 		s_w8(s, 'v');
 		s_w8(s, 'c');
 		s_w8(s, '1');
 		break;
+#else
+		assert(0);
 #endif
 	case CODEC_H264:
 		assert(0);
