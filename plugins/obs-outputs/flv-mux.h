@@ -24,9 +24,7 @@
 enum video_id_t {
 	CODEC_H264 = 1, // legacy
 	CODEC_AV1,      // Y2023 spec
-#ifdef ENABLE_HEVC
 	CODEC_HEVC,
-#endif
 };
 
 static enum video_id_t to_video_type(const char *codec)
