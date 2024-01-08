@@ -1066,6 +1066,7 @@ static void amf_defaults(obs_data_t *settings)
 	obs_data_set_default_string(settings, "rate_control", "CBR");
 	obs_data_set_default_string(settings, "preset", "quality");
 	obs_data_set_default_string(settings, "profile", "high");
+	obs_data_set_default_int(settings, "bf", 3);
 }
 
 static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
