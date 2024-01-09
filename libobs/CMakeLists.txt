@@ -331,7 +331,6 @@ set(public_headers
     obs-source.h
     obs.h
     obs.hpp
-    util/AlignedNew.hpp
     util/apple/cfstring-utils.h
     util/array-serializer.h
     util/base.h
