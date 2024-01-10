@@ -1810,9 +1810,10 @@ inline bool AdvancedOutput::allowsMultiTrack()
 
 inline void AdvancedOutput::SetupStreaming()
 {
-	bool rescale = config_get_bool(main->Config(), "AdvOut", "Rescale");
 	const char *rescaleRes =
 		config_get_string(main->Config(), "AdvOut", "RescaleRes");
+	int rescaleFilter =
+		config_get_int(main->Config(), "AdvOut", "RescaleFilter");
 	int multiTrackAudioMixes = config_get_int(main->Config(), "AdvOut",
 						  "StreamMultiTrackAudioMixes");
 	unsigned int cx = 0;
@@ -1820,7 +1821,7 @@ inline void AdvancedOutput::SetupStreaming()
 	int idx = 0;
 	bool is_multitrack_output = allowsMultiTrack();
 
-	if (rescale && rescaleRes && *rescaleRes) {
+	if (rescaleFilter != OBS_SCALE_DISABLE && rescaleRes && *rescaleRes) {
 		if (sscanf(rescaleRes, "%ux%u", &cx, &cy) != 2) {
 			cx = 0;
 			cy = 0;
@@ -1840,6 +1841,8 @@ inline void AdvancedOutput::SetupStreaming()
 	}
 
 	obs_encoder_set_scaled_size(videoStreaming, cx, cy);
+	obs_encoder_set_gpu_scale_type(videoStreaming,
+				       (obs_scale_type)rescaleFilter);
 
 	const char *id = obs_service_get_id(main->GetService());
 	if (strcmp(id, "rtmp_custom") == 0) {
@@ -1856,9 +1859,10 @@ inline void AdvancedOutput::SetupRecording()
 		config_get_string(main->Config(), "AdvOut", "RecFilePath");
 	const char *mux =
 		config_get_string(main->Config(), "AdvOut", "RecMuxerCustom");
-	bool rescale = config_get_bool(main->Config(), "AdvOut", "RecRescale");
 	const char *rescaleRes =
 		config_get_string(main->Config(), "AdvOut", "RecRescaleRes");
+	int rescaleFilter =
+		config_get_int(main->Config(), "AdvOut", "RecRescaleFilter");
 	int tracks;
 
 	const char *recFormat =
@@ -1890,7 +1894,8 @@ inline void AdvancedOutput::SetupRecording()
 			obs_output_set_video_encoder(replayBuffer,
 						     videoStreaming);
 	} else {
-		if (rescale && rescaleRes && *rescaleRes) {
+		if (rescaleFilter != OBS_SCALE_DISABLE && rescaleRes &&
+		    *rescaleRes) {
 			if (sscanf(rescaleRes, "%ux%u", &cx, &cy) != 2) {
 				cx = 0;
 				cy = 0;
@@ -1898,6 +1903,8 @@ inline void AdvancedOutput::SetupRecording()
 		}
 
 		obs_encoder_set_scaled_size(videoRecording, cx, cy);
+		obs_encoder_set_gpu_scale_type(videoRecording,
+					       (obs_scale_type)rescaleFilter);
 		obs_output_set_video_encoder(fileOutput, videoRecording);
 		if (replayBuffer)
 			obs_output_set_video_encoder(replayBuffer,
