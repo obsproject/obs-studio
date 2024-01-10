@@ -275,7 +275,8 @@ static vector<OBSThemeVariable> ParseThemeVariables(const char *themeData)
 
 			/* Look for a suffix and mark variable as size if it exists */
 			while (ch < end) {
-				if (!isdigit(*ch) && !isspace(*ch)) {
+				if (!isdigit(*ch) && !isspace(*ch) &&
+				    *ch != '.') {
 					var.suffix =
 						QString::fromUtf8(ch, end - ch);
 					var.type = OBSThemeVariable::Size;
@@ -485,7 +486,7 @@ ParseCalcVariable(const QHash<QString, OBSThemeVariable> &vars,
 
 		const char *dataEnd = data + utf8.size();
 		while (data < dataEnd) {
-			if (*data && !isdigit(*data)) {
+			if (*data && !isdigit(*data) && *data != '.') {
 				var.suffix =
 					QString::fromUtf8(data, dataEnd - data);
 				var.type = OBSThemeVariable::Size;
