@@ -2590,7 +2590,7 @@
                             <widget class="QComboBox" name="advOutEncoder"/>
                            </item>
                            <item row="4" column="0">
-                            <widget class="QCheckBox" name="advOutUseRescale">
+                            <widget class="QLabel" name="advOutUseRescale">
                              <property name="sizePolicy">
                               <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
                                <horstretch>0</horstretch>
@@ -2606,14 +2606,21 @@
                             </widget>
                            </item>
                            <item row="4" column="1">
-                            <widget class="QComboBox" name="advOutRescale">
-                             <property name="enabled">
-                              <bool>false</bool>
-                             </property>
-                             <property name="editable">
-                              <bool>true</bool>
-                             </property>
-                            </widget>
+                            <layout class="QHBoxLayout" name="horizontalLayout_10">
+                             <item>
+                              <widget class="QComboBox" name="advOutRescaleFilter" />
+                             </item>
+                             <item>
+                              <widget class="QComboBox" name="advOutRescale">
+                               <property name="enabled">
+                                <bool>false</bool>
+                               </property>
+                               <property name="editable">
+                                <bool>true</bool>
+                               </property>
+                              </widget>
+                             </item>
+                            </layout>
                            </item>
                           </layout>
                          </widget>
@@ -3200,7 +3207,7 @@
                                 </widget>
                                </item>
                                <item row="6" column="0">
-                                <widget class="QCheckBox" name="advOutRecUseRescale">
+                                <widget class="QLabel" name="advOutRecUseRescale">
                                  <property name="sizePolicy">
                                   <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
                                    <horstretch>0</horstretch>
@@ -3230,6 +3237,9 @@
                                   <property name="bottomMargin">
                                    <number>0</number>
                                   </property>
+                                  <item>
+                                   <widget class="QComboBox" name="advOutRecRescaleFilter" />
+                                  </item>
                                   <item>
                                    <widget class="QComboBox" name="advOutRecRescale">
                                     <property name="enabled">
@@ -7937,7 +7947,7 @@
   <tabstop>advOutMultiTrack5</tabstop>
   <tabstop>advOutMultiTrack6</tabstop>
   <tabstop>advOutEncoder</tabstop>
-  <tabstop>advOutUseRescale</tabstop>
+  <tabstop>advOutRescaleFilter</tabstop>
   <tabstop>advOutRescale</tabstop>
   <tabstop>advOutRecType</tabstop>
   <tabstop>advOutRecPath</tabstop>
@@ -7951,7 +7961,7 @@
   <tabstop>advOutRecTrack5</tabstop>
   <tabstop>advOutRecTrack6</tabstop>
   <tabstop>advOutRecEncoder</tabstop>
-  <tabstop>advOutRecUseRescale</tabstop>
+  <tabstop>advOutRecRescaleFilter</tabstop>
   <tabstop>advOutRecRescale</tabstop>
   <tabstop>advOutMuxCustom</tabstop>
   <tabstop>advOutSplitFile</tabstop>
@@ -8371,22 +8381,6 @@
    </hints>
   </connection>
   <connection>
-   <sender>advOutUseRescale</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>advOutRescale</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>269</x>
-     <y>192</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>656</x>
-     <y>192</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>advOutRecType</sender>
    <signal>currentIndexChanged(int)</signal>
    <receiver>stackedWidget</receiver>
@@ -8399,22 +8393,6 @@
     <hint type="destinationlabel">
      <x>560</x>
      <y>391</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>advOutRecUseRescale</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>advOutRecRescale</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>289</x>
-     <y>317</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>662</x>
-     <y>317</y>
     </hint>
    </hints>
   </connection>
