@@ -1596,6 +1596,21 @@ bool OBSBasic::InitBasicConfigDefaults()
 	MigrateFormat("SimpleOutput");
 
 	/* ----------------------------------------------------- */
+	/* Migrate output scale setting to GPU scaling options.  */
+
+	if (config_get_bool(basicConfig, "AdvOut", "Rescale") &&
+	    !config_has_user_value(basicConfig, "AdvOut", "RescaleFilter")) {
+		config_set_int(basicConfig, "AdvOut", "RescaleFilter",
+			       OBS_SCALE_BILINEAR);
+	}
+
+	if (config_get_bool(basicConfig, "AdvOut", "RecRescale") &&
+	    !config_has_user_value(basicConfig, "AdvOut", "RecRescaleFilter")) {
+		config_set_int(basicConfig, "AdvOut", "RecRescaleFilter",
+			       OBS_SCALE_BILINEAR);
+	}
+
+	/* ----------------------------------------------------- */
 
 	if (changed)
 		config_save_safe(basicConfig, "tmp", nullptr);
