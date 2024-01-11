@@ -1,4 +1,4 @@
-OBSThemeMeta {
+@OBSThemeMeta {
     name: 'Grey';
     id: 'com.obsproject.Yami.Grey';
     extends: 'com.obsproject.Yami';
@@ -6,7 +6,7 @@ OBSThemeMeta {
     dark: 'true';
 }
 
-OBSThemeVars {
+@OBSThemeVars {
     base: rgb(47,47,47);
     button: rgb(67,67,67);
     dark: rgb(47,47,47) !editable;

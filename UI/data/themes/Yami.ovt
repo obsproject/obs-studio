@@ -1,4 +1,4 @@
-OBSThemeMeta {
+@OBSThemeMeta {
     name: 'Original';
     id: 'com.obsproject.Yami.Original';
     extends: 'com.obsproject.Yami';

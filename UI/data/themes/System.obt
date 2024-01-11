@@ -8,7 +8,7 @@
 /* Dark Theme is a good place to start if you need */
 /* a template. */
 
-OBSThemeMeta {
+@OBSThemeMeta {
     name: 'System';
     id: 'com.obsproject.System';
     author: 'Warchamp7';

@@ -1,164 +1,164 @@
-OBSThemeMeta {
+@OBSThemeMeta {
     name: 'Yami';
     id: 'com.obsproject.Yami';
     author: 'Warchamp7';
     dark: 'true';
 }
 
-OBSThemeVars {
+@OBSThemeVars {
     /* OBS Color Palette */
-    blue1: #718CDC;
-    blue2: #476BD7;
-    blue3: #284CB8;
-    blue4: #213E97;
-    blue5: #1A3278;
+    --blue1: #718CDC;
+    --blue2: #476BD7;
+    --blue3: #284CB8;
+    --blue4: #213E97;
+    --blue5: #1A3278;
 
-    red1: #E85E75;
-    red2: #E33B57;
-    red3: #C01C37;
-    red4: #A1172E;
-    red5: #7D1224;
+    --red1: #E85E75;
+    --red2: #E33B57;
+    --red3: #C01C37;
+    --red4: #A1172E;
+    --red5: #7D1224;
 
-    pink1: #E5619A;
-    pink2: #E03E84;
-    pink3: #C11F65;
-    pink4: #9E1A53;
-    pink5: #7B1441;
+    --pink1: #E5619A;
+    --pink2: #E03E84;
+    --pink3: #C11F65;
+    --pink4: #9E1A53;
+    --pink5: #7B1441;
 
-    teal1: #3DBEF5;
-    teal2: #16B1F3;
-    teal3: #0981B4;
-    teal4: #086F9B;
-    teal5: #065374;
+    --teal1: #3DBEF5;
+    --teal2: #16B1F3;
+    --teal3: #0981B4;
+    --teal4: #086F9B;
+    --teal5: #065374;
 
-    purple1: #997FDC;
-    purple2: #805FD3;
-    purple3: #5B34BF;
-    purple4: #4D2CA0;
-    purple5: #3D2380;
+    --purple1: #997FDC;
+    --purple2: #805FD3;
+    --purple3: #5B34BF;
+    --purple4: #4D2CA0;
+    --purple5: #3D2380;
 
-    green1: #59D966;
-    green2: #37D247;
-    green3: #25A231;
-    green4: #1E8528;
-    green5: #17641E;
+    --green1: #59D966;
+    --green2: #37D247;
+    --green3: #25A231;
+    --green4: #1E8528;
+    --green5: #17641E;
 
-    yellow1: #EABC48;
-    yellow2: #E5AF24;
-    yellow3: #B88A16;
-    yellow4: #926E11;
-    yellow5: #6E520D;
+    --yellow1: #EABC48;
+    --yellow2: #E5AF24;
+    --yellow3: #B88A16;
+    --yellow4: #926E11;
+    --yellow5: #6E520D;
 
-    grey1: #5B6273;
-    grey2: #4E5566;
-    grey3: #464B59;
-    grey4: #3C404D;
-    grey5: #323540;
-    grey6: #272A33;
-    grey7: #1D1F26;
-    grey8: #13141A;
+    --grey1: #5B6273;
+    --grey2: #4E5566;
+    --grey3: #464B59;
+    --grey4: #3C404D;
+    --grey5: #323540;
+    --grey6: #272A33;
+    --grey7: #1D1F26;
+    --grey8: #13141A;
 
-    white1: #FFFFFF;
-    white2: #EBEBEB;
-    white3: #D6D6D6;
-    white4: #C2C2C2;
-    white5: #ADADAD;
+    --white1: #FFFFFF;
+    --white2: #EBEBEB;
+    --white3: #D6D6D6;
+    --white4: #C2C2C2;
+    --white5: #ADADAD;
 
-    black1: #0A0A0A;
-    black2: #1F1F1F;
-    black3: #333333;
-    black4: #474747;
-    black5: #5C5C5C;
+    --black1: #0A0A0A;
+    --black2: #1F1F1F;
+    --black3: #333333;
+    --black4: #474747;
+    --black5: #5C5C5C;
 
     /* Base Theme Colors */
-    bg_window: alias(grey7);
-    bg_base: alias(grey6);
-    bg_preview: alias(grey8);
+    --bg_window: var(--grey7);
+    --bg_base: var(--grey6);
+    --bg_preview: var(--grey8);
 
-    primary: alias(blue3);
-    primary_light: alias(blue2);
-    primary_lighter: alias(blue1);
-    primary_dark: alias(blue4);
-    primary_darker: alias(blue5);
+    --primary: var(--blue3);
+    --primary_light: var(--blue2);
+    --primary_lighter: var(--blue1);
+    --primary_dark: var(--blue4);
+    --primary_darker: var(--blue5);
 
-    warning: alias(yellow3);
-    danger: alias(red3);
+    --warning: var(--yellow3);
+    --danger: var(--red3);
 
-    text: rgb(255,254,255);
-    text_light: rgb(214,214,214);
-    text_muted: rgb(153,153,153);
+    --text: var(--white1);
+    --text_light: rgb(214,214,214);
+    --text_muted: rgb(153,153,153);
 
-    text_disabled: alias(text_muted);
-    text_inactive: rgb(255,254,255);
+    --text_disabled: var(--text_muted);
+    --text_inactive: rgb(255,254,255);
 
     /* Layout */
-    font_base_value: 5;
+    --font_base_value: 5;
 
-    font_base: calc(2pt * font_base_value);
-    font_large: calc(2.2pt * font_base_value);
-    font_xlarge: calc(3pt * font_base_value);
+    --font_base: calc(2pt * var(--font_base_value));
+    --font_large: calc(2.2pt * var(--font_base_value));
+    --font_xlarge: calc(3pt * var(--font_base_value));
 
-    font_heading: calc(5pt * 5);
+    --font_heading: calc(5pt * 5);
 
-    spacing_base_value: 3;
+    --spacing_base_value: 3;
 
-    spacing_base: calc(1px * spacing_base_value);
-    spacing_large: calc(2px * spacing_base_value);
-    spacing_small: calc(0.5px * spacing_base_value);
+    --spacing_base: calc(1px * var(--spacing_base_value));
+    --spacing_large: calc(2px * var(--spacing_base_value));
+    --spacing_small: calc(0.5px * var(--spacing_base_value));
 
-    padding_base_value: 4;
+    --padding_base_value: 3;
 
-    padding_base: calc(1px * padding_base_value);
-    padding_large: calc(2px * padding_base_value);
-    padding_xlarge: calc(3px * padding_base_value);
-    padding_small: calc(0.5px * padding_base_value);
+    --padding_base: calc(1px * var(--padding_base_value));
+    --padding_large: calc(2px * var(--padding_base_value));
+    --padding_xlarge: calc(4px * var(--padding_base_value));
+    --padding_small: calc(0.5px * var(--padding_base_value));
 
-    scrollbar_size: calc(4px * padding_base_value);
+    --scrollbar_size: calc(4px * var(--padding_base_value));
 
     /* Inputs / Controls */
-    bg_input: alias(grey4);
-    bg_input_hover: alias(grey3);
-    bg_input_focus: alias(grey7);
+    --bg_input: var(--grey4);
+    --bg_input_hover: var(--grey3);
+    --bg_input_focus: var(--grey7);
 
-    spacing_input: alias(spacing_base);
+    --spacing_input: var(--spacing_base);
 
-    bg_button: alias(grey4);
-    bg_button_hover: alias(bg_input_hover);
-    bg_button_down: alias(grey7);
-    bg_button_disabled: alias(grey6);
+    --bg_button: var(--bg_input);
+    --bg_button_hover: var(--grey3);
+    --bg_button_down: var(--grey7);
+    --bg_button_disabled: var(--grey6);
 
-    border_color: alias(grey4);
-    border_radius: 3px;
-    border_radius_small: 2px;
-    border_radius_large: 6px;
+    --border_color: var(--grey4);
+    --border_radius: 3px;
+    --border_radius_small: 2px;
+    --border_radius_large: 6px;
 
-    highlight: rgb(42,130,218);
-    highlight_inactive: rgb(25,28,34);
+    --highlight: rgb(42,130,218);
+    --highlight_inactive: rgb(25,28,34);
     
     /* Qt Palette variables can be set with the "palette_" prefix */
-    palette_window: alias(bg_window);
-    palette_windowText: alias(text);
-    palette_base: alias(bg_base);
+    --palette_window: var(--bg_window);
+    --palette_windowText: var(--text);
+    --palette_base: var(--bg_base);
+    
+    --palette_light: var(--grey2);
+    --palette_mid: var(--grey7);
+    --palette_dark: var(--grey6);
 
-    palette_light: alias(grey2);
-    palette_mid: alias(grey7);
-    palette_dark: alias(grey6);
+    --palette_highlight: var(--primary);
+    --palette_highlightedText: var(--text);
 
-    palette_highlight: alias(primary);
-    palette_highlightedText: alias(text);
+    --palette_text: var(--text);
+    --palette_link: var(--blue2);
+    --palette_linkVisited: var(--blue2);
 
-    palette_text: alias(text);
-    palette_link: alias(blue2);
-    palette_linkVisited: alias(blue2);
-
-    palette_button: alias(bg_button);
-    palette_buttonText: alias(text);
+    --palette_button: var(--bg_button);
+    --palette_buttonText: var(--text);
 
     /* They can be selectively set for palette groups by appending those as well */
-    palette_text_active: alias(text);
-    palette_text_disabled: alias(text_disabled);
-    palette_text_inactive: alias(text_inactive);
-
+    --palette_text_active: var(--text);
+    --palette_text_disabled: var(--text_disabled);
+    --palette_text_inactive: var(--text_inactive);
+    
     /*
     * Variables calculated at runtime (after all themes have been composed).
     *
@@ -175,16 +175,16 @@ OBSThemeVars {
 /* Default widget style, we override only what is needed. */
 
 QWidget {
-    alternate-background-color: ${bg_base};
-    color: ${text};
-    selection-background-color: ${primary};
-    selection-color: ${text};
-    font-size: ${font_base};
+    alternate-background-color: var(--bg_base);
+    color: var(--text);
+    selection-background-color: var(--primary);
+    selection-color: var(--text);
+    font-size: var(--font_base);
     font-family: 'Open Sans', '.AppleSystemUIFont', Helvetica, Arial, 'MS Shell Dlg', sans-serif;
 }
 
 QWidget:disabled {
-    color: ${text_disabled};
+    color: var(--text_disabled);
 }
 
 /* Container windows */
@@ -194,15 +194,15 @@ QMainWindow,
 QStatusBar,
 QMenuBar,
 QMenu {
-    background-color: ${bg_window};
+    background-color: var(--bg_window);
 }
 
 /* macOS Separator Fix */
 
 QMainWindow::separator {
     background: transparent;
-    width: ${spacing_base};
-    height: ${spacing_base};
+    width: var(--spacing_base);
+    height: var(--spacing_base);
 }
 
 /* General Widgets */
@@ -218,8 +218,8 @@ QCheckBox,
 QPushButton,
 QSpinBox,
 QDoubleSpinBox {
-    margin-top: ${spacing_input};
-    margin-bottom: ${spacing_input};
+    margin-top: var(--spacing_input);
+    margin-bottom: var(--spacing_input);
 }
 
 QListWidget QWidget,
@@ -230,7 +230,7 @@ SourceTree QWidget {
 }
 
 * [frameShape="1"], * [frameShape="2"], * [frameShape="3"], * [frameShape="4"], * [frameShape="5"], * [frameShape="6"] {
-    border: 1px solid ${bg_base};
+    border: 1px solid var(--bg_base);
 }
 
 
@@ -238,16 +238,16 @@ SourceTree QWidget {
 
 QAbstractItemView,
 QStackedWidget#stackedMixerArea QWidget {
-    background-color: ${bg_base};
+    background-color: var(--bg_base);
 }
 
 QStackedWidget#stackedMixerArea QScrollBar {
-    background-color: ${grey6};
+    background-color: var(--grey6);
 }
 
 QToolTip {
-    background-color: ${bg_base};
-    color: ${text};
+    background-color: var(--bg_base);
+    color: var(--text);
     border: none;
 }
 
@@ -258,13 +258,13 @@ QMenu::icon {
 }
 
 QMenu::separator {
-    background: ${bg_button};
+    background: var(--bg_button);
     height: 1px;
-    margin: ${spacing_base} ${spacing_large};
+    margin: var(--spacing_base) var(--spacing_large);
 }
 
 QMenu::item:disabled {
-    color: ${text_disabled};
+    color: var(--text_disabled);
     background: transparent;
 }
 
@@ -278,30 +278,30 @@ QMenuBar::item {
 }
 
 QMenuBar::item:selected {
-    background: ${primary};
+    background: var(--primary);
 }
 
 /* Item Lists */
 QListWidget {
-    border-radius: ${border_radius};
+    border-radius: var(--border_radius);
 }
 
 QListWidget::item {
-    color: ${text};
+    color: var(--text);
 }
 
 QListWidget,
 QMenu,
 SceneTree,
 SourceTree {
-    padding: ${spacing_base};
+    padding: var(--spacing_base);
 }
 
 QListWidget::item,
 SourceTreeItem,
 QMenu::item,
 SceneTree::item {
-    padding: ${padding_large};
+    padding: var(--padding_large) var(--padding_large);
 }
 
 QMenu::item {
@@ -313,8 +313,8 @@ SourceTreeItem,
 QMenu::item,
 SceneTree::item,
 SourceTree::item {
-    border-radius: ${border_radius};
-    color: ${text};
+    border-radius: var(--border_radius);
+    color: var(--text);
     border: 0px solid transparent;
 }
 
@@ -322,7 +322,7 @@ QMenu::item:selected,
 QListWidget::item:selected,
 SceneTree::item:selected,
 SourceTree::item:selected {
-    background-color: ${primary};
+    background-color: var(--primary);
 }
 
 QMenu::item:hover,
@@ -333,8 +333,8 @@ QMenu::item:selected:hover,
 QListWidget::item:selected:hover,
 SceneTree::item:selected:hover,
 SourceTree::item:selected:hover {
-    background-color: ${primary_light};
-    color: ${text};
+    background-color: var(--primary_light);
+    color: var(--text);
 }
 
 QListWidget::item:disabled,
@@ -344,7 +344,7 @@ SourceTree::item:disabled:hover,
 SceneTree::item:disabled,
 SceneTree::item:disabled:hover {
     background: transparent;
-    color: ${text_disabled};
+    color: var(--text_disabled);
 }
 
 QListWidget QLineEdit,
@@ -353,43 +353,43 @@ SourceTree QLineEdit {
     padding:  0;
     padding-bottom: 1px;
     margin: 0;
-    border: 1px solid ${white1};
-    border-radius: ${border_radius};
+    border: 1px solid var(--white1);
+    border-radius: var(--border_radius);
 }
 
 QListWidget QLineEdit:focus,
 SceneTree QLineEdit:focus,
 SourceTree QLineEdit:focus {
-    border: 1px solid ${grey1};
+    border: 1px solid var(--grey1);
 }
 
 /* Settings QList */
 
 OBSBasicSettings QListWidget {
-    border-radius: ${border_radius};
-    padding: ${spacing_base};
+    border-radius: var(--border_radius);
+    padding: var(--spacing_base);
 }
 
 OBSBasicSettings QListWidget::item {
-    border-radius: ${border_radius};
-    padding: ${padding_large};
+    border-radius: var(--border_radius);
+    padding: var(--padding_large);
 }
 
 /* Settings properties view */
 OBSBasicSettings #PropertiesContainer {
-    background-color: ${bg_base};
+    background-color: var(--bg_base);
 }
 
 /* Dock Widget */
 OBSDock > QWidget {
-    background: ${bg_base};
-    border-bottom-left-radius: ${border_radius};
-    border-bottom-right-radius: ${border_radius};
+    background: var(--bg_base);
+    border-bottom-left-radius: var(--border_radius);
+    border-bottom-right-radius: var(--border_radius);
 }
 
 #transitionsContainer QPushButton {
     margin: 0;
-    padding: ${padding_base} ${padding_large};
+    padding: var(--padding_base) var(--padding_large);
 }
 
 OBSDock QLabel {
@@ -398,11 +398,11 @@ OBSDock QLabel {
 
 OBSDock QComboBox,
 OBSDock QPushButton {
-    margin: ${spacing_base} ${spacing_small};
+    margin: var(--spacing_base) var(--spacing_small);
 }
 
 QDockWidget {
-    font-size: ${font_large};
+    font-size: var(--font_large);
     font-weight: bold;
 
     titlebar-close-icon: url(theme:Dark/close.svg);
@@ -411,21 +411,21 @@ QDockWidget {
 
 QDockWidget::title {
     text-align: left;
-    background-color: ${bg_button};
-    padding: ${padding_large};
-    border-top-left-radius: ${border_radius};
-    border-top-right-radius: ${border_radius};
+    background-color: var(--bg_button);
+    padding: var(--padding_large);
+    border-top-left-radius: var(--border_radius);
+    border-top-right-radius: var(--border_radius);
 }
 
 QDockWidget::close-button, QDockWidget::float-button {
     border: none;
-    border-radius: ${border_radius};
+    border-radius: var(--border_radius);
     background: transparent;
     margin-right: 1px;
 }
 
 QDockWidget::close-button:hover, QDockWidget::float-button:hover {
-    background: rgb(79,83,94);
+    background: var(--bg_button_hover);
 }
 
 QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
@@ -433,30 +433,30 @@ QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
 }
 
 QScrollArea {
-    border-radius: ${border_radius};
+    border-radius: var(--border_radius);
 }
 
 /* Qt enforces a padding inside its status bar, so we
  * oversize it and use margin to crunch it back down
  */
 OBSBasicStatusBar {
-    margin-top: ${spacing_base};
-    border-top: 1px solid ${border_color};
-    background: ${bg_base};
+    margin-top: var(--spacing_base);
+    border-top: 1px solid var(--border_color);
+    background: var(--bg_base);
 }
 
 StatusBarWidget > QFrame {
     margin-top: 1px;
-    border: 0px solid ${border_color};
+    border: 0px solid var(--border_color);
     border-left-width: 1px;
-    padding: 0px ${padding_xlarge} ${padding_small};
+    padding: 0px var(--padding_xlarge) var(--padding_small);
 }
 
 /* Group Box */
 
 QGroupBox {
-    background: ${bg_base};
-    border-radius: ${border_radius};
+    background: var(--bg_base);
+    border-radius: var(--border_radius);
     padding-top: 32px;
     padding-bottom: 8px;
     font-weight: bold;
@@ -465,26 +465,26 @@ QGroupBox {
 
 QGroupBox::title {
     subcontrol-origin: margin;
-    left: ${spacing_large};
-    top: ${spacing_large};
+    left: var(--spacing_large);
+    top: var(--spacing_large);
 }
 
 
 /* ScrollBars */
 
 QScrollBar {
-    background-color: ${grey6};
+    background-color: var(--grey6);
     margin: px;
-    border-radius: ${border_radius};
+    border-radius: var(--border_radius);
 }
 
 ::corner {
-    background-color: ${bg_window};
+    background-color: var(--bg_window);
     border: none;
 }
 
 QScrollBar:vertical {
-    width: ${scrollbar_size};
+    width: var(--scrollbar_size);
 }
 
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
@@ -500,7 +500,7 @@ QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical, QScrollBar::add-
 }
 
 QScrollBar:horizontal {
-    height: ${scrollbar_size};
+    height: var(--scrollbar_size);
 }
 
 QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
@@ -516,20 +516,20 @@ QScrollBar::left-arrow:horizontal, QScrollBar::right-arrow:horizontal, QScrollBa
 }
 
 QScrollBar::handle {
-    background-color: ${grey4};
-    margin: ${spacing_base};
-    border-radius: ${border_radius_small};
-    border: 1px solid ${grey4};
+    background-color: var(--grey4);
+    margin: var(--spacing_base);
+    border-radius: var(--border_radius_small);
+    border: 1px solid var(--grey4);
 }
 
 QScrollBar::handle:hover {
-    background-color: ${grey3};
-    border-color: ${grey2};
+    background-color: var(--grey3);
+    border-color: var(--grey2);
 }
 
 QScrollBar::handle:pressed {
-    background-color: ${grey8};
-    border-color: ${grey8};
+    background-color: var(--grey8);
+    border-color: var(--grey8);
 }
 
 QScrollBar::handle:vertical {
@@ -543,9 +543,9 @@ QScrollBar::handle:horizontal {
 /* Source Context Bar */
 
 #contextContainer {
-  background-color: ${bg_base};
+  background-color: var(--bg_base);
   margin-top: 4px;
-  border-radius: ${border_radius};
+  border-radius: var(--border_radius);
 }
 
 #contextContainer QPushButton {
@@ -566,15 +566,15 @@ QPushButton#sourceFiltersButton {
 QToolBar {
     background-color: transparent;
     border: none;
-    margin: ${spacing_base} 0px;
+    margin: var(--spacing_base) 0px;
 }
 
 QPushButton[toolButton="true"],
 QToolButton {
-    background-color: ${bg_button};
-    padding: ${padding_base} ${padding_large};
+    background-color: var(--bg_button);
+    padding: var(--padding_base) var(--padding_large);
     margin: 0px 2px;
-    border-radius: ${border_radius};
+    border-radius: var(--border_radius);
 }
 
 QPushButton[toolButton="true"]:last-child,
@@ -583,11 +583,11 @@ QToolButton:last-child {
 }
 
 QToolButton:hover {
-    background-color: ${bg_button_hover};
+    background-color: var(--bg_button_hover);
 }
 
 QToolButton:pressed {
-    background-color: ${bg_button_down};
+    background-color: var(--bg_button_down);
 }
 
 * [themeID="addIconSmall"] {
@@ -643,7 +643,7 @@ QToolButton:pressed {
 }
 
 QToolBarExtension {
-    background: ${bg_button};
+    background: var(--bg_button);
     min-width: 12px;
     max-width: 12px;
     padding: 4px 0px;
@@ -656,7 +656,7 @@ QToolBarExtension {
 /* Tab Widget */
 
 QTabWidget::pane { /* The tab widget frame */
-    border-top: 4px solid ${bg_base};
+    border-top: 4px solid var(--bg_base);
 }
 
 QTabWidget::tab-bar {
@@ -664,7 +664,7 @@ QTabWidget::tab-bar {
 }
 
 QTabBar QToolButton {
-    background: rgb(44,46,53);
+    background: var(--bg_button);
     border: none;
 }
 
@@ -679,38 +679,47 @@ QTabBar::tab:bottom {
 }
 
 QTabBar::tab {
-    background: ${bg_base};
-    color: ${text};
+    background: var(--bg_button);
+    color: var(--text);
     border: none;
     padding: 8px 12px;
     min-width: 50px;
-    margin: 1px 2px;
+    margin: 1px 0px;
+    margin-right: 2px;
+    border: 1px solid var(--border_color);
 }
 
 QTabBar::tab:pressed {
-    background: rgb(25,27,38);
+    background: var(--bg_button_down);
 }
 
 QTabBar::tab:hover {
-    background: rgb(79,83,94);
-    color: ${text};
+    background: var(--bg_button_hover);
+    color: var(--text);
 }
 
 QTabBar::tab:selected {
-    background: rgb(60,64,75);
-    color: ${text};
+    background: var(--bg_button_down);
+    color: var(--text);
+}
+
+QTabBar::tab:top {
 }
 
 QTabBar::tab:top:selected {
-    border-bottom: 2px solid rgb(250,250,250);
+    border-bottom: 2px solid var(--primary);
+}
+
+QTabBar::tab:bottom {
+    
 }
 
 QTabBar::tab:bottom:selected {
-    border-top: 2px solid rgb(250,250,250);
+    border-top: 2px solid var(--primary);
 }
 
 QTabBar QToolButton {
-    background: ${bg_button};
+    background: var(--bg_button);
     min-width: 16px;
     padding: 0px;
 }
@@ -719,12 +728,11 @@ QTabBar QToolButton {
 
 QComboBox,
 QDateTimeEdit {
-    background-color: rgb(60,64,75);
+    background-color: var(--bg_input);
     border-style: solid;
-    border: 1px;
-    border-radius: ${border_radius};
-    border-color: rgb(60,64,75);
-    padding: 4px;
+    border: 2px solid var(--bg_input);
+    border-radius: var(--border_radius);
+    padding: 4px 4px;
     padding-left: 10px;
 }
 
@@ -732,14 +740,14 @@ QComboBox:hover,
 QComboBox:selected,
 QDateTimeEdit:hover,
 QDateTimeEdit:selected {
-    background-color: rgb(79,83,94);
+    border-color: var(--grey1);
 }
 
 QComboBox::drop-down,
 QDateTimeEdit::drop-down {
     border:none;
-    border-left: 1px solid rgb(25,28,34);
-    width: 20px;
+    border-left: 1px solid var(--grey8);
+    width: 32px;
 }
 
 QComboBox::down-arrow,
@@ -750,12 +758,10 @@ QDateTimeEdit::down-arrow {
 }
 
 QComboBox:on,
-QDateTimeEdit:on {
-    background-color: rgb(25,27,38);
-}
-
-QComboBox:editable:hover {
-
+QDateTimeEdit:on,
+QComboBox:editable:focus {
+    background-color: var(--bg_input_focus);
+    border-color: var(--primary);
 }
 
 QComboBox::drop-down:editable,
@@ -774,9 +780,9 @@ QDateTimeEdit::down-arrow:editable {
 /* Textedits etc */
 
 QLineEdit, QTextEdit, QPlainTextEdit {
-    background-color: ${bg_input};
+    background-color: var(--bg_input);
     border: none;
-    border-radius: ${border_radius};
+    border-radius: var(--border_radius);
     padding: 5px 2px 5px 7px;
     border: 2px solid transparent;
 }
@@ -784,43 +790,44 @@ QLineEdit, QTextEdit, QPlainTextEdit {
 QLineEdit:hover,
 QTextEdit:hover,
 QPlainTextEdit:hover {
-    border: 2px solid ${grey1};
+    border: 2px solid var(--grey1);
 }
 
 QLineEdit:focus,
 QTextEdit:focus,
-QPlainTextEdit:focus {
-    background-color: ${bg_input_focus};
-    border: 2px solid ${primary};
+QPlainTextEdit:focus,
+QComboFox:focus {
+    background-color: var(--bg_input_focus);
+    border: 2px solid var(--primary);
 }
 
 /* Spinbox and doubleSpinbox */
 
 QSpinBox,
 QDoubleSpinBox {
-    background-color: ${bg_button};
-    border: 2px solid ${bg_button};
-    border-radius: ${border_radius};
-    margin-right: ${spacing_base};
+    background-color: var(--bg_button);
+    border: 2px solid var(--bg_button);
+    border-radius: var(--border_radius);
+    margin-right: var(--spacing_base);
     padding: 3px 0px 4px 5px;
 }
 
 QSpinBox:hover,
 QDoubleSpinBox:hover {
-    border: 2px solid ${grey1};
+    border: 2px solid var(--grey1);
 }
 
 QSpinBox:focus,
 QDoubleSpinBox:focus {
-    background-color: ${bg_input_focus};
-    border: 2px solid ${primary};
+    background-color: var(--bg_input_focus);
+    border: 2px solid var(--primary);
 }
 
 QSpinBox::up-button, QDoubleSpinBox::up-button {
     subcontrol-origin: padding;
     subcontrol-position: top right; /* position at the top right corner */
     right: 2px;
-    border-radius: ${border_radius};
+    border-radius: var(--border_radius);
     border-width: 0;
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
@@ -831,7 +838,7 @@ QSpinBox::down-button, QDoubleSpinBox::down-button {
     subcontrol-origin: padding;
     subcontrol-position: bottom right; /* position at the top right corner */
     right: 2px;
-    border-radius: ${border_radius};
+    border-radius: var(--border_radius);
     border-width: 0;
     border-top-left-radius: 0;
     border-top-right-radius: 0;
@@ -839,19 +846,19 @@ QSpinBox::down-button, QDoubleSpinBox::down-button {
 }
 
 QSpinBox::up-button:hover, QSpinBox::down-button:hover, QDoubleSpinBox::up-button:hover, QDoubleSpinBox::down-button:hover {
-    background-color: rgb(79,83,94);
+    background-color: var(--bg_button_hover);
 }
 
 QSpinBox::up-button:pressed, QSpinBox::down-button:pressed, QDoubleSpinBox::up-button:pressed, QDoubleSpinBox::down-button:pressed {
-    background-color: rgb(25,27,38);
+    background-color: var(--bg_button_down);
 }
 
 QSpinBox::up-button:disabled, QSpinBox::up-button:off, QSpinBox::down-button:disabled, QSpinBox::down-button:off {
-    background-color: rgb(25,27,38);
+    background-color: var(--bg_button_disabled);
 }
 
 QDoubleSpinBox::up-button:disabled, QDoubleSpinBox::up-button:off, QDoubleSpinBox::down-button:disabled, QDoubleSpinBox::down-button:off {
-    background-color: rgb(25,27,38);
+    background-color: var(--bg_button_disabled);
 }
 
 QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {
@@ -886,7 +893,7 @@ QPushButton[themeID="replayBufferButton"]:!hover:!pressed:checked,
 QPushButton[themeID="vcamButton"]:!hover:!pressed:checked,
 #modeSwitch:!hover:!pressed:checked,
 #broadcastButton:!hover:!pressed:checked {
-    background: ${primary};
+    background: var(--primary);
 }
 
 /* Primary Control Button Hover Coloring */
@@ -896,40 +903,57 @@ QPushButton[themeID="replayBufferButton"]:!pressed:checked,
 QPushButton[themeID="vcamButton"]:!pressed:checked,
 #modeSwitch:hover:!pressed:checked,
 #broadcastButton:hover:!pressed:checked {
-    background: ${primary_light};
-    color: ${text};
+    background: var(--primary_light);
+    color: var(--text);
 }
 
 
 /* Buttons */
 
 QPushButton {
-    color: ${text};
-    background-color: ${bg_button};
+    color: var(--text);
+    background-color: var(--bg_button);
     min-height: 18px;
-    border: none;
-    border-radius: ${border_radius};
-    padding: 6px 16px;
+    border-radius: var(--border_radius);
+    padding: var(--padding_large) 16px;
+}
+
+
+QPushButton, QToolButton {
+    border: 1px solid var(--border_color);
+}
+
+QPushButton:hover, QToolButton:hover {
+    border-width: 2px;
+    border-color: var(--grey1);
 }
 
 QPushButton::flat {
-    background-color: rgb(60,64,75);
+    background-color: var(--bg_button);
 }
 
 QPushButton:checked {
-    background-color: ${primary};
+    background-color: var(--primary);
+}
+
+QPushButton:checked:hover {
+    border-color: var(--primary_lighter);
 }
 
 QPushButton:hover {
-    background-color: rgb(79,83,94);
+    background-color: var(--bg_button_hover);
 }
 
 QPushButton:pressed {
-    background-color: rgb(25,27,38);
+    background-color: var(--bg_button_down);
+}
+
+QPushButton:pressed:hover {
+    border-color: var(--grey4);
 }
 
 QPushButton:disabled, QToolButton:disabled {
-    background-color: ${bg_button_disabled};
+    background-color: var(--bg_button_disabled);
 }
 
 QPushButton::menu-indicator {
@@ -942,7 +966,7 @@ QPushButton::menu-indicator {
 /* Sliders */
 
 QSlider::groove {
-    background-color: ${grey4};
+    background-color: var(--grey4);
     border: none;
     border-radius: 2px;
 }
@@ -956,38 +980,38 @@ QSlider::groove:vertical {
 }
 
 QSlider::sub-page:horizontal {
-    background-color: ${blue2};
+    background-color: var(--blue2);
     border-radius: 2px;
 }
 
 QSlider::sub-page:horizontal:disabled {
-    background-color: ${grey4};
+    background-color: var(--grey4);
     border-radius: 2px;
 }
 
 QSlider::add-page:horizontal:disabled {
-    background-color: ${grey7};
+    background-color: var(--grey7);
     border-radius: 2px;
 }
 
 QSlider::add-page:vertical {
-    background-color: ${blue2};
+    background-color: var(--blue2);
     border-radius: 2px;
 }
 
 QSlider::add-page:vertical:disabled {
-    background-color: ${grey4};
+    background-color: var(--grey4);
     border-radius: 2px;
 }
 
 QSlider::sub-page:vertical:disabled {
-    background-color: ${grey7};
+    background-color: var(--grey7);
     border-radius: 2px;
 }
 
 QSlider::handle {
-    background-color: ${white1};
-    border-radius: ${border_radius};
+    background-color: var(--white1);
+    border-radius: var(--border_radius);
 }
 
 QSlider::handle:horizontal {
@@ -1003,48 +1027,48 @@ QSlider::handle:vertical {
 }
 
 QSlider::handle:hover {
-    background-color: ${white4};
+    background-color: var(--white4);
 }
 
 QSlider::handle:pressed {
-    background-color: ${white5};
+    background-color: var(--white5);
 }
 
 QSlider::handle:disabled {
-    background-color: ${white5};
+    background-color: var(--white5);
 }
 
 /* Volume Control */
 
 #stackedMixerArea QPushButton {
-    background-color: ${bg_button};
+    background-color: var(--bg_button);
     min-width: 16px;
     padding: 4px 8px;
 }
 
 /* This is an incredibly cursed but necessary fix */
 #stackedMixerArea QPushButton:!hover {
-    background-color: ${bg_button};
+    background-color: var(--bg_button);
 }
 
 #stackedMixerArea QPushButton:hover {
-    background-color: ${bg_button_hover};
+    background-color: var(--bg_button_hover);
 }
 
 #stackedMixerArea QPushButton:pressed {
-    background-color: ${bg_button_down};
+    background-color: var(--bg_button_down);
 }
 
 VolumeMeter {
-    qproperty-backgroundNominalColor: ${green5};
-    qproperty-backgroundWarningColor: ${yellow5};
-    qproperty-backgroundErrorColor: ${red5};
-    qproperty-foregroundNominalColor: ${green2};
-    qproperty-foregroundWarningColor: ${yellow2};
-    qproperty-foregroundErrorColor: ${red2};
+    qproperty-backgroundNominalColor: var(--green5);
+    qproperty-backgroundWarningColor: var(--yellow5);
+    qproperty-backgroundErrorColor: var(--red5);
+    qproperty-foregroundNominalColor: var(--green2);
+    qproperty-foregroundWarningColor: var(--yellow2);
+    qproperty-foregroundErrorColor: var(--red2);
     qproperty-magnitudeColor: rgb(0,0,0);
-    qproperty-majorTickColor: ${white1};
-    qproperty-minorTickColor: ${grey1};
+    qproperty-majorTickColor: var(--white1);
+    qproperty-minorTickColor: var(--grey1);
 }
 
 /* Status Bar */
@@ -1056,8 +1080,8 @@ QStatusBar::item {
 /* Table View */
 
 QTableView {
-    background: ${bg_base};
-    gridline-color: ${grey1};
+    background: var(--bg_base);
+    gridline-color: var(--grey1);
 }
 
 QTableView::item {
@@ -1066,7 +1090,7 @@ QTableView::item {
 }
 
 QTableView QLineEdit {
-    background: ${bg_input_focus};
+    background: var(--bg_input_focus);
     padding: 0;
     margin: 0;
 }
@@ -1079,11 +1103,11 @@ QTableView QToolButton {
 }
 
 QHeaderView::section {
-    background-color: ${bg_button};
-    color: ${text};
+    background-color: var(--bg_button);
+    color: var(--text);
     border: none;
-    border-left: 1px solid ${bg_window};
-    border-right: 1px solid ${bg_window};
+    border-left: 1px solid var(--bg_window);
+    border-right: 1px solid var(--bg_window);
     padding: 3px 0px;
     margin-bottom: 2px;
 }
@@ -1103,45 +1127,45 @@ MuteCheckBox::indicator:unchecked {
 }
 
 OBSHotkeyLabel[hotkeyPairHover=true] {
-    color: rgb(53,82,222);
+    color: var(--primary_light);
 }
 
 /* Label warning/error */
 
 QLabel#warningLabel {
-    color: ${warning};
+    color: var(--warning);
     font-weight: bold;
 }
 
 QLabel#errorLabel {
-    color: ${danger};
+    color: var(--danger);
     font-weight: bold;
 }
 
 * [themeID="warning"] {
-    color: ${danger};
+    color: var(--danger);
     font-weight: bold;
 }
 
 * [themeID="error"] {
-    color: ${danger};
+    color: var(--danger);
     font-weight: bold;
 }
 
 * [themeID="good"] {
-    color: ${green3};
+    color: var(--green3);
     font-weight: bold;
 }
 
 /* About dialog */
 
 * [themeID="aboutName"] {
-    font-size: ${font_heading};
+    font-size: var(--font_heading);
     font-weight: bold;
 }
 
 * [themeID="aboutVersion"] {
-    font-size: ${font_large};
+    font-size: var(--font_large);
     margin-bottom: 20px;
 }
 
@@ -1150,47 +1174,47 @@ QLabel#errorLabel {
 }
 
 * [themeID="aboutHLayout"] {
-    background-color: ${bg_base};
+    background-color: var(--bg_base);
 }
 
 /* Canvas / Preview background color */
 
 OBSQTDisplay {
-    qproperty-displayBackgroundColor: ${bg_preview};
+    qproperty-displayBackgroundColor: var(--bg_preview);
 }
 
 /* Filters Window */
 
 OBSBasicFilters QListWidget {
-    border-radius: ${border_radius_large};
-    padding: ${spacing_base};
+    border-radius: var(--border_radius_large);
+    padding: var(--spacing_base);
 }
 
 OBSBasicFilters QListWidget::item {
-    border-radius: ${border_radius};
-    padding: ${padding_base} ${padding_large};
+    border-radius: var(--border_radius);
+    padding: var(--padding_base) var(--padding_large);
 }
 
 OBSBasicFilters #widget,
 OBSBasicFilters #widget_2 {
     margin: 0px;
     padding: 0px;
-    padding-bottom: ${padding_base};
+    padding-bottom: var(--padding_base);
 }
 
 OBSBasicFilters #widget QPushButton,
 OBSBasicFilters #widget_2 QPushButton {
     min-width: 16px;
-    padding: ${padding_base} ${padding_large};
+    padding: var(--padding_base) var(--padding_large);
     margin-top: 0px;
 }
 
 /* Preview/Program labels */
 
 * [themeID="previewProgramLabels"] {
-    font-size: ${font_xlarge};
+    font-size: var(--font_xlarge);
     font-weight: bold;
-    color: ${text_light};
+    color: var(--text_light);
     margin-bottom: 4px;
 }
 
@@ -1360,14 +1384,14 @@ OBSHotkeyLabel {
 }
 
 OBSHotkeyLabel[hotkeyPairHover=true] {
-    color: ${blue2};
+    color: var(--blue2);
 }
 
 OBSHotkeyWidget QPushButton {
     min-width: 16px;
-    padding: ${padding_base};
+    padding: var(--padding_base);
     margin-top: 0px;
-    margin-left: ${spacing_base};
+    margin-left: var(--spacing_base);
 }
 
 
@@ -1423,26 +1447,26 @@ SceneTree {
 }
 
 *[gridMode="true"] SceneTree::item {
-    color: ${text};
-    background-color: ${bg_button};
-    border-radius: ${border_radius};
-    margin: ${spacing_base};
+    color: var(--text);
+    background-color: var(--bg_button);
+    border-radius: var(--border_radius);
+    margin: var(--spacing_base);
 }
 
 *[gridMode="true"] SceneTree::item:selected {
-    background-color: ${primary};
+    background-color: var(--primary);
 }
 
 *[gridMode="true"] SceneTree::item:checked {
-    background-color: ${primary};
+    background-color: var(--primary);
 }
 
 *[gridMode="true"] SceneTree::item:hover {
-    background-color: ${primary_light};
+    background-color: var(--primary_light);
 }
 
 *[gridMode="true"] SceneTree::item:selected:hover {
-    background-color: ${primary_light};
+    background-color: var(--primary_light);
 }
 
 /* Save icon */
@@ -1462,7 +1486,7 @@ QSlider::groove:horizontal[themeID="tBarSlider"] {
 }
 
 QSlider::sub-page:horizontal[themeID="tBarSlider"] {
-    background: ${blue2};
+    background: var(--blue2);
 }
 
 QSlider::handle:horizontal[themeID="tBarSlider"] {
@@ -1503,25 +1527,25 @@ OBSYoutubeActions {
 }
 
 #ytEventList QLabel {
-    color: ${text};
-    background-color: ${bg_button};
+    color: var(--text);
+    background-color: var(--bg_button);
     border: none;
-    border-radius: ${border_radius};
+    border-radius: var(--border_radius);
     padding: 4px 20px;
 }
 
 #ytEventList QLabel:hover {
-    background-color: rgb(79,83,94);
+    background-color: var(--bg_button_hover);
 }
 
 #ytEventList QLabel[isSelectedEvent=true] {
-    background-color: ${primary};
+    background-color: var(--primary);
     border: none;
 }
 
 #ytEventList QLabel[isSelectedEvent=true]:hover {
-    background-color: ${primary_light};
-    color: ${text};
+    background-color: var(--primary_light);
+    color: var(--text);
 }
 
 /* Calendar Widget */
@@ -1532,51 +1556,51 @@ QDateTimeEdit::down-arrow {
 }
 
 QDateTimeEdit:on {
-    background-color: ${grey7};
+    background-color: var(--grey7);
 }
 
 /* Calendar Top Bar */
 QCalendarWidget QWidget#qt_calendar_navigationbar {
-    background-color: ${bg_base};
-    padding: ${padding_base} ${padding_large};
+    background-color: var(--bg_base);
+    padding: var(--padding_base) var(--padding_large);
 }
 
 /* Calendar Top Bar Buttons */
 QCalendarWidget QToolButton {
-    background-color: ${bg_button};
+    background-color: var(--bg_button);
     padding: 2px 16px;
-    border-radius: ${border_radius};
-    margin: ${spacing_base};
+    border-radius: var(--border_radius);
+    margin: var(--spacing_base);
 }
 
 #qt_calendar_monthbutton::menu-indicator {
     image: url(theme:Dark/down.svg);
     subcontrol-position: right;
-    padding-top: ${padding_small};
-    padding-right: ${padding_base};
+    padding-top: var(--padding_small);
+    padding-right: var(--padding_base);
     height: 10px;
     width: 10px;
 }
 
 QCalendarWidget #qt_calendar_prevmonth {
-    padding: ${padding_small};
+    padding: var(--padding_small);
     qproperty-icon: url(theme:Dark/left.svg);
     icon-size: 16px, 16px;
 }
 
 QCalendarWidget #qt_calendar_nextmonth {
-    padding: ${padding_small};
+    padding: var(--padding_small);
     qproperty-icon: url(theme:Dark/right.svg);
     icon-size: 16px, 16px;
 }
 
 QCalendarWidget QToolButton:hover {
-    background-color: ${bg_button_hover};
-    border-radius: ${border_radius};
+    background-color: var(--bg_button_hover);
+    border-radius: var(--border_radius);
 }
 
 QCalendarWidget QToolButton:pressed {
-    background-color: ${bg_button_down};
+    background-color: var(--bg_button_down);
 }
 
 /* Month Dropdown Menu */
@@ -1585,11 +1609,11 @@ QCalendarWidget QMenu {
 }
 /* Year spinbox */
 QCalendarWidget QSpinBox {
-    background-color: ${bg_input};
+    background-color: var(--bg_input);
     border: none;
-    border-radius: ${border_radius};
-    margin: 0px ${spacing_base} 0px 0px;
-    padding: ${padding_base} 16px;
+    border-radius: var(--border_radius);
+    margin: 0px var(--spacing_base) 0px 0px;
+    padding: var(--padding_base) 16px;
 }
 
 QCalendarWidget QSpinBox::up-button { subcontrol-origin: border; subcontrol-position: top right; width: 16px; }
@@ -1598,15 +1622,15 @@ QCalendarWidget QSpinBox::up-arrow { width: 10px; height: 10px; }
 QCalendarWidget QSpinBox::down-arrow { width: 10px; height: 10px; }
 
 /* Days of the Week Bar */
-QCalendarWidget QWidget { alternate-background-color: ${grey7}; }
+QCalendarWidget QWidget { alternate-background-color: var(--grey7); }
 
 QCalendarWidget QAbstractItemView:enabled {
-    background-color: ${bg_base};
-    color: ${text};
+    background-color: var(--bg_base);
+    color: var(--text);
 }
 
 QCalendarWidget QAbstractItemView:disabled {
-    color: ${text_disabled};
+    color: var(--text_disabled);
 }
 
 /* VirtualCam Plugin Fixes */
@@ -1623,10 +1647,10 @@ QDialogButtonBox {
 
 /* Stats dialog */
 OBSBasicStats {
-    background: ${bg_base};
+    background: var(--bg_base);
 }
 
 /* Advanced audio dialog */
 OBSBasicAdvAudio #scrollAreaWidgetContents {
-    background: ${bg_base};
+    background: var(--bg_base);
 }

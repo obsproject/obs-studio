@@ -58,8 +58,15 @@ static OBSTheme *ParseThemeMeta(const QString &path)
 	if (!cf_parser_parse(cfp, data.constData(), QT_TO_UTF8(path)))
 		return nullptr;
 
-	if (cf_token_is(cfp, "OBSThemeMeta") ||
-	    cf_go_to_token(cfp, "OBSThemeMeta", nullptr)) {
+	if (cf_token_is(cfp, "@") || cf_go_to_token(cfp, "@", nullptr)) {
+
+		while (cf_next_token(cfp)) {
+			if (cf_token_is(cfp, "OBSThemeMeta"))
+				break;
+
+			if (!cf_go_to_token(cfp, "@", nullptr))
+				return nullptr;
+		}
 
 		if (!cf_next_token(cfp))
 			return nullptr;
@@ -141,6 +148,33 @@ static OBSTheme *ParseThemeMeta(const QString &path)
 	return meta;
 }
 
+static bool ParseVarName(CFParser &cfp, QString &value,
+		     vector<OBSThemeVariable> &vars)
+{
+	int ret;
+
+	ret = cf_next_token_should_be(cfp, "(", ";", nullptr);
+	if (ret != PARSE_SUCCESS)
+		return false;
+	ret = cf_next_token_should_be(cfp, "-", ";", nullptr);
+	if (ret != PARSE_SUCCESS)
+		return false;
+	ret = cf_next_token_should_be(cfp, "-", ";", nullptr);
+	if (ret != PARSE_SUCCESS)
+		return false;
+	if (!cf_next_token(cfp))
+		return false;
+
+	value = QString::fromUtf8(cfp->cur_token->str.array,
+				  cfp->cur_token->str.len);
+
+	ret = cf_next_token_should_be(cfp, ")", ";", nullptr);
+	if (ret != PARSE_SUCCESS)
+		return false;
+
+	return !value.isEmpty();
+}
+
 static QColor ParseColor(CFParser &cfp)
 {
 	const char *array;
@@ -213,6 +247,12 @@ static bool ParseCalc(CFParser &cfp, QStringList &calc,
 			var.value = subcalc;
 			calc << var.name;
 			vars.push_back(std::move(var));
+		} else if (cf_token_is(cfp, "var")) {
+			QString value;
+			if (!ParseVarName(cfp, value, vars))
+				return false;
+
+			calc << value;
 		} else {
 			calc << QString::fromUtf8(cfp->cur_token->str.array,
 						  cfp->cur_token->str.len);
@@ -235,9 +275,16 @@ static vector<OBSThemeVariable> ParseThemeVariables(const char *themeData)
 	if (!cf_parser_parse(cfp, themeData, nullptr))
 		return vars;
 
-	if (!cf_token_is(cfp, "OBSThemeVars") &&
-	    !cf_go_to_token(cfp, "OBSThemeVars", nullptr))
+	if (!cf_token_is(cfp, "@") && !cf_go_to_token(cfp, "@", nullptr))
 		return vars;
+
+	while (cf_next_token(cfp)) {
+		if (cf_token_is(cfp, "OBSThemeVars"))
+			break;
+
+		if (!cf_go_to_token(cfp, "@", nullptr))
+			return vars;
+	}
 
 	if (!cf_next_token(cfp))
 		return {};
@@ -246,6 +293,16 @@ static vector<OBSThemeVariable> ParseThemeVariables(const char *themeData)
 		return {};
 
 	for (;;) {
+		if (!cf_next_token(cfp))
+			return vars;
+
+		if (!cf_token_is(cfp, "-"))
+			return vars;
+
+		ret = cf_next_token_should_be(cfp, "-", ";", nullptr);
+		if (ret != PARSE_SUCCESS)
+			continue;
+
 		if (!cf_next_token(cfp))
 			return vars;
 
@@ -291,20 +348,14 @@ static vector<OBSThemeVariable> ParseThemeVariables(const char *themeData)
 
 			var.value = color;
 			var.type = OBSThemeVariable::Color;
-		} else if (cf_token_is(cfp, "alias")) {
-			ret = cf_next_token_should_be(cfp, "(", ";", nullptr);
-			if (ret != PARSE_SUCCESS)
-				continue;
-			if (!cf_next_token(cfp))
-				return vars;
+		} else if (cf_token_is(cfp, "var")) {
+			QString value;
 
-			var.value = QString::fromUtf8(cfp->cur_token->str.array,
-						      cfp->cur_token->str.len);
+			if (!ParseVarName(cfp, value, vars))
+				continue;
+
+			var.value = value;
 			var.type = OBSThemeVariable::Alias;
-
-			ret = cf_next_token_should_be(cfp, ")", ";", nullptr);
-			if (ret != PARSE_SUCCESS)
-				continue;
 		} else if (cf_token_is(cfp, "calc")) {
 			QStringList calc;
 
@@ -629,7 +680,7 @@ static QString PrepareQSS(const QHash<QString, OBSThemeVariable> &vars,
 			  const QStringList &contents)
 {
 	QString stylesheet;
-	QString needleTemplate("${%1}");
+	QString needleTemplate("var(--%1)");
 
 	for (const QString &content : contents) {
 		qsizetype offset = FindEndOfOBSMetadata(content);
