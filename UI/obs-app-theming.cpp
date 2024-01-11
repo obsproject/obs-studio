@@ -149,7 +149,7 @@ static OBSTheme *ParseThemeMeta(const QString &path)
 }
 
 static bool ParseVarName(CFParser &cfp, QString &value,
-		     vector<OBSThemeVariable> &vars)
+			 vector<OBSThemeVariable> &vars)
 {
 	int ret;
 
