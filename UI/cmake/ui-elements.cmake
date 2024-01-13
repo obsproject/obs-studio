@@ -1,14 +1,3 @@
-add_library(obs-ui-support INTERFACE)
-add_library(OBS::ui-support ALIAS obs-ui-support)
-
-target_sources(obs-ui-support INTERFACE # cmake-format: sortable
-                                        clickable-label.hpp horizontal-scroll-area.cpp horizontal-scroll-area.hpp)
-
-target_include_directories(obs-ui-support INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
-target_compile_options(obs-ui-support INTERFACE $<$<PLATFORM_ID:Linux>:-Wno-error=enum-conversion>)
-
-target_link_libraries(obs-studio PRIVATE OBS::ui-support)
-
 if(NOT TARGET OBS::properties-view)
   add_subdirectory("${CMAKE_SOURCE_DIR}/shared/properties-view" "${CMAKE_BINARY_DIR}/shared/properties-view")
 endif()
@@ -42,10 +31,13 @@ target_sources(
           balance-slider.hpp
           basic-controls.cpp
           basic-controls.hpp
+          clickable-label.hpp
           context-bar-controls.cpp
           context-bar-controls.hpp
           focus-list.cpp
           focus-list.hpp
+          horizontal-scroll-area.cpp
+          horizontal-scroll-area.hpp
           hotkey-edit.cpp
           hotkey-edit.hpp
           item-widget-helpers.cpp
