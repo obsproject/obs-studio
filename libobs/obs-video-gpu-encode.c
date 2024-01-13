@@ -137,6 +137,18 @@ static void *gpu_encode_thread(void *data)
 			if (skip)
 				continue;
 
+			if (tf.skip) {
+				/* Skip frame but increment PTS to maintain
+				 * sync if encoder already started. */
+				if (encoder->start_ts) {
+					encoder->cur_pts +=
+						encoder->timebase_num *
+						encoder->frame_rate_divisor;
+				}
+
+				continue;
+			}
+
 			if (!encoder->start_ts)
 				encoder->start_ts = timestamp;
 
@@ -182,9 +194,13 @@ static void *gpu_encode_thread(void *data)
 
 		if (--tf.count) {
 			tf.timestamp += interval;
-			deque_push_front(&video->gpu_encoder_queue, &tf,
-					 sizeof(tf));
-
+			deque_push_back(&video->gpu_encoder_queue, &tf,
+					sizeof(tf));
+			if (tf.skip) {
+				video_output_inc_texture_skipped_frames(
+					video->video);
+			}
+		} else if (tf.skip) {
 			video_output_inc_texture_skipped_frames(video->video);
 		} else {
 			deque_push_back(&video->gpu_encoder_avail_queue, &tf,
@@ -243,7 +259,8 @@ bool init_gpu_encoding(struct obs_core_video_mix *video)
 
 		struct obs_tex_frame frame = {.tex = tex,
 					      .tex_uv = tex_uv,
-					      .handle = handle};
+					      .handle = handle,
+					      .skip = false};
 
 		deque_push_back(&video->gpu_encoder_avail_queue, &frame,
 				sizeof(frame));

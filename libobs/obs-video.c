@@ -481,9 +481,8 @@ static inline bool queue_frame(struct obs_core_video_mix *video,
 			       bool raw_active,
 			       struct obs_vframe_info *vframe_info)
 {
-	bool duplicate =
-		!video->gpu_encoder_avail_queue.size ||
-		(video->gpu_encoder_queue.size && vframe_info->count > 1);
+	bool duplicate = video->gpu_encoder_queue.size &&
+			 vframe_info->count > 1;
 
 	if (duplicate) {
 		struct obs_tex_frame *tf =
@@ -496,6 +495,19 @@ static inline bool queue_frame(struct obs_core_video_mix *video,
 		}
 
 		tf->count++;
+		os_sem_post(video->gpu_encode_semaphore);
+		goto finish;
+	}
+
+	/* If no frames are available add a placeholder that will simply
+	 * instruct the gpu encode thread to increment the encoders' pts
+	 * without actually encoding anything. */
+	if (!video->gpu_encoder_avail_queue.size) {
+		struct obs_tex_frame tf = {0};
+		tf.skip = true;
+		tf.count = 1;
+		tf.timestamp = vframe_info->timestamp;
+		deque_push_back(&video->gpu_encoder_queue, &tf, sizeof(tf));
 		os_sem_post(video->gpu_encode_semaphore);
 		goto finish;
 	}
