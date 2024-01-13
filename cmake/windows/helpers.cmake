@@ -274,12 +274,15 @@ function(target_export target)
   set(exclude_variant EXCLUDE_FROM_ALL)
   _target_export(${target})
 
-  install(
-    FILES "$<TARGET_PDB_FILE:${target}>"
-    CONFIGURATIONS RelWithDebInfo Debug Release
-    DESTINATION "${OBS_EXECUTABLE_DESTINATION}"
-    COMPONENT Development
-    OPTIONAL)
+  get_target_property(target_type ${target} TYPE)
+  if(NOT target_type STREQUAL INTERFACE_LIBRARY)
+    install(
+      FILES "$<TARGET_PDB_FILE:${target}>"
+      CONFIGURATIONS RelWithDebInfo Debug Release
+      DESTINATION "${OBS_EXECUTABLE_DESTINATION}"
+      COMPONENT Development
+      OPTIONAL)
+  endif()
 endfunction()
 
 # Helper function to add resources into bundle
