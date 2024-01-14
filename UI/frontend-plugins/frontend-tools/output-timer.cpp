@@ -22,6 +22,8 @@ OutputTimer::OutputTimer(QWidget *parent)
 
 	QObject::connect(ui->outputTimerStream, &QPushButton::clicked, this,
 			 &OutputTimer::StreamingTimerButton);
+	QObject::connect(ui->outputTimerStartRecord, &QPushButton::clicked,
+			 this, &OutputTimer::StartRecordingTimerButton);
 	QObject::connect(ui->outputTimerRecord, &QPushButton::clicked, this,
 			 &OutputTimer::RecordingTimerButton);
 	QObject::connect(ui->buttonBox->button(QDialogButtonBox::Close),
@@ -30,6 +32,9 @@ OutputTimer::OutputTimer(QWidget *parent)
 	streamingTimer = new QTimer(this);
 	streamingTimerDisplay = new QTimer(this);
 
+	startRecordingTimer = new QTimer(this);
+	startRecordingTimerDisplay = new QTimer(this);
+
 	recordingTimer = new QTimer(this);
 	recordingTimerDisplay = new QTimer(this);
 
@@ -37,6 +42,10 @@ OutputTimer::OutputTimer(QWidget *parent)
 			 &OutputTimer::EventStopStreaming);
 	QObject::connect(streamingTimerDisplay, &QTimer::timeout, this,
 			 &OutputTimer::UpdateStreamTimerDisplay);
+	QObject::connect(startRecordingTimer, &QTimer::timeout, this,
+			 &OutputTimer::EventStartRecording);
+	QObject::connect(startRecordingTimerDisplay, &QTimer::timeout, this,
+			 &OutputTimer::UpdateStartRecordTimerDisplay);
 	QObject::connect(recordingTimer, &QTimer::timeout, this,
 			 &OutputTimer::EventStopRecording);
 	QObject::connect(recordingTimerDisplay, &QTimer::timeout, this,
@@ -61,6 +70,20 @@ void OutputTimer::StreamingTimerButton()
 		stoppingStreamTimer = true;
 		StreamTimerStop();
 		stoppingStreamTimer = false;
+	}
+}
+
+void OutputTimer::StartRecordingTimerButton()
+{
+	if (obs_frontend_recording_active())
+		return;
+
+	if (!recordingAlreadyActive && !this->startRecordingTimer->isActive()) {
+		StartRecordTimerStart();
+	} else {
+		stoppingStartRecordingTimer = true;
+		StartRecordTimerStop();
+		stoppingStartRecordingTimer = false;
 	}
 }
 
@@ -106,6 +129,32 @@ void OutputTimer::StreamTimerStart()
 	UpdateStreamTimerDisplay();
 
 	ui->outputTimerStream->setChecked(true);
+}
+
+void OutputTimer::StartRecordTimerStart()
+{
+	if (!isVisible())
+		return;
+
+	int hours = ui->startRecordingTimerHours->value();
+	int minutes = ui->startRecordingTimerMinutes->value();
+	int seconds = ui->startRecordingTimerSeconds->value();
+
+	int total = (((hours * 3600) + (minutes * 60)) + seconds) * 1000;
+
+	if (total == 0)
+		total = 1000;
+
+	startRecordingTimer->setInterval(total);
+	startRecordingTimer->setSingleShot(true);
+
+	startRecordingTimer->start();
+	startRecordingTimerDisplay->start(1000);
+	ui->outputTimerStartRecord->setText(obs_module_text("Stop"));
+
+	UpdateStartRecordTimerDisplay();
+
+	ui->outputTimerStartRecord->setChecked(true);
 }
 
 void OutputTimer::RecordTimerStart()
@@ -155,6 +204,23 @@ void OutputTimer::StreamTimerStop()
 	ui->outputTimerStream->setChecked(false);
 }
 
+void OutputTimer::StartRecordTimerStop()
+{
+	if (!isVisible())
+		return;
+
+	if (startRecordingTimer->isActive())
+		startRecordingTimer->stop();
+
+	ui->outputTimerStartRecord->setText(obs_module_text("Start"));
+
+	if (startRecordingTimerDisplay->isActive())
+		startRecordingTimerDisplay->stop();
+
+	ui->startRecordTime->setText("00:00:00");
+	ui->outputTimerStartRecord->setChecked(false);
+}
+
 void OutputTimer::RecordTimerStop()
 {
 	recordingAlreadyActive = false;
@@ -185,6 +251,21 @@ void OutputTimer::UpdateStreamTimerDisplay()
 	QString text =
 		QString::asprintf("%02d:%02d:%02d", hours, minutes, seconds);
 	ui->streamTime->setText(text);
+}
+
+void OutputTimer::UpdateStartRecordTimerDisplay()
+{
+	int remainingTime = 0;
+
+	remainingTime = startRecordingTimer->remainingTime() / 1000;
+
+	int seconds = remainingTime % 60;
+	int minutes = (remainingTime % 3600) / 60;
+	int hours = remainingTime / 3600;
+
+	QString text =
+		QString::asprintf("%02d:%02d:%02d", hours, minutes, seconds);
+	ui->startRecordTime->setText(text);
 }
 
 void OutputTimer::UpdateRecordTimerDisplay()
@@ -245,6 +326,14 @@ void OutputTimer::EventStopStreaming()
 	}
 }
 
+void OutputTimer::EventStartRecording()
+{
+	if (!stoppingStartRecordingTimer) {
+		blog(LOG_INFO, "Starting recording due to OutputTimer timeout");
+		obs_frontend_recording_start();
+	}
+}
+
 void OutputTimer::EventStopRecording()
 {
 	if (!stoppingRecordingTimer) {
@@ -264,6 +353,13 @@ static void SaveOutputTimer(obs_data_t *save_data, bool saving, void *)
 				 ot->ui->streamingTimerMinutes->value());
 		obs_data_set_int(obj, "streamTimerSeconds",
 				 ot->ui->streamingTimerSeconds->value());
+
+		obs_data_set_int(obj, "startRecordTimerHours",
+				 ot->ui->startRecordingTimerHours->value());
+		obs_data_set_int(obj, "startRecordTimerMinutes",
+				 ot->ui->startRecordingTimerMinutes->value());
+		obs_data_set_int(obj, "startRecordTimerSeconds",
+				 ot->ui->startRecordingTimerSeconds->value());
 
 		obs_data_set_int(obj, "recordTimerHours",
 				 ot->ui->recordingTimerHours->value());
@@ -295,6 +391,13 @@ static void SaveOutputTimer(obs_data_t *save_data, bool saving, void *)
 		ot->ui->streamingTimerSeconds->setValue(
 			obs_data_get_int(obj, "streamTimerSeconds"));
 
+		ot->ui->startRecordingTimerHours->setValue(
+			obs_data_get_int(obj, "startRecordTimerHours"));
+		ot->ui->startRecordingTimerMinutes->setValue(
+			obs_data_get_int(obj, "startRecordTimerMinutes"));
+		ot->ui->startRecordingTimerSeconds->setValue(
+			obs_data_get_int(obj, "startRecordTimerSeconds"));
+
 		ot->ui->recordingTimerHours->setValue(
 			obs_data_get_int(obj, "recordTimerHours"));
 		ot->ui->recordingTimerMinutes->setValue(
@@ -324,9 +427,12 @@ static void OBSEvent(enum obs_frontend_event event, void *)
 	} else if (event == OBS_FRONTEND_EVENT_STREAMING_STOPPING) {
 		ot->StreamTimerStop();
 	} else if (event == OBS_FRONTEND_EVENT_RECORDING_STARTED) {
+		ot->ui->outputTimerStartRecord->setEnabled(false);
 		ot->RecordTimerStart();
+		ot->StartRecordTimerStop();
 	} else if (event == OBS_FRONTEND_EVENT_RECORDING_STOPPING) {
 		ot->RecordTimerStop();
+		ot->ui->outputTimerStartRecord->setEnabled(true);
 	} else if (event == OBS_FRONTEND_EVENT_RECORDING_PAUSED) {
 		ot->PauseRecordingTimer();
 	} else if (event == OBS_FRONTEND_EVENT_RECORDING_UNPAUSED) {
