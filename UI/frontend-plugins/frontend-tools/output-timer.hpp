@@ -20,26 +20,34 @@ public:
 
 public slots:
 	void StreamingTimerButton();
+	void StartRecordingTimerButton();
 	void RecordingTimerButton();
 	void StreamTimerStart();
+	void StartRecordTimerStart();
 	void RecordTimerStart();
 	void StreamTimerStop();
+	void StartRecordTimerStop();
 	void RecordTimerStop();
 	void UpdateStreamTimerDisplay();
+	void UpdateStartRecordTimerDisplay();
 	void UpdateRecordTimerDisplay();
 	void ShowHideDialog();
 	void EventStopStreaming();
+	void EventStartRecording();
 	void EventStopRecording();
 
 private:
 	bool streamingAlreadyActive = false;
 	bool recordingAlreadyActive = false;
 	bool stoppingStreamTimer = false;
+	bool stoppingStartRecordingTimer = false;
 	bool stoppingRecordingTimer = false;
 
 	QTimer *streamingTimer;
+	QTimer *startRecordingTimer;
 	QTimer *recordingTimer;
 	QTimer *streamingTimerDisplay;
+	QTimer *startRecordingTimerDisplay;
 	QTimer *recordingTimerDisplay;
 
 	int recordingTimeLeft;
