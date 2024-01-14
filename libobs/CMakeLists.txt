@@ -118,6 +118,7 @@ target_sources(
           util/file-serializer.h
           util/lexer.c
           util/lexer.h
+          util/pipe.c
           util/pipe.h
           util/platform.c
           util/platform.h

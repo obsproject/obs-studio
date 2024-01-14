@@ -198,6 +198,7 @@ target_sources(
           util/profiler.c
           util/profiler.h
           util/profiler.hpp
+          util/pipe.c
           util/pipe.h
           util/serializer.h
           util/sse-intrin.h
