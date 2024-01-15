@@ -148,8 +148,7 @@ static OBSTheme *ParseThemeMeta(const QString &path)
 	return meta;
 }
 
-static bool ParseVarName(CFParser &cfp, QString &value,
-			 vector<OBSThemeVariable> &vars)
+static bool ParseVarName(CFParser &cfp, QString &value)
 {
 	int ret;
 
@@ -249,7 +248,7 @@ static bool ParseCalc(CFParser &cfp, QStringList &calc,
 			vars.push_back(std::move(var));
 		} else if (cf_token_is(cfp, "var")) {
 			QString value;
-			if (!ParseVarName(cfp, value, vars))
+			if (!ParseVarName(cfp, value))
 				return false;
 
 			calc << value;
@@ -351,7 +350,7 @@ static vector<OBSThemeVariable> ParseThemeVariables(const char *themeData)
 		} else if (cf_token_is(cfp, "var")) {
 			QString value;
 
-			if (!ParseVarName(cfp, value, vars))
+			if (!ParseVarName(cfp, value))
 				continue;
 
 			var.value = value;
