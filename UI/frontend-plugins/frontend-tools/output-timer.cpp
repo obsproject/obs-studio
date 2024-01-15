@@ -75,6 +75,9 @@ void OutputTimer::StreamingTimerButton()
 
 void OutputTimer::StartRecordingTimerButton()
 {
+	if (obs_frontend_recording_active())
+		return;
+
 	if (!recordingAlreadyActive && !this->startRecordingTimer->isActive()) {
 		StartRecordTimerStart();
 	} else {
@@ -424,10 +427,12 @@ static void OBSEvent(enum obs_frontend_event event, void *)
 	} else if (event == OBS_FRONTEND_EVENT_STREAMING_STOPPING) {
 		ot->StreamTimerStop();
 	} else if (event == OBS_FRONTEND_EVENT_RECORDING_STARTED) {
+		ot->ui->outputTimerStartRecord->setEnabled(false);
 		ot->RecordTimerStart();
 		ot->StartRecordTimerStop();
 	} else if (event == OBS_FRONTEND_EVENT_RECORDING_STOPPING) {
 		ot->RecordTimerStop();
+		ot->ui->outputTimerStartRecord->setEnabled(true);
 	} else if (event == OBS_FRONTEND_EVENT_RECORDING_PAUSED) {
 		ot->PauseRecordingTimer();
 	} else if (event == OBS_FRONTEND_EVENT_RECORDING_UNPAUSED) {
