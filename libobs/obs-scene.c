@@ -128,7 +128,8 @@ static const struct {
 	/* clang-format on */
 };
 
-static inline void signal_item_remove(struct obs_scene_item *item)
+static inline void signal_item_remove(struct obs_scene *parent,
+				      struct obs_scene_item *item)
 {
 	struct calldata params;
 	uint8_t stack[128];
@@ -136,7 +137,7 @@ static inline void signal_item_remove(struct obs_scene_item *item)
 	calldata_init_fixed(&params, stack, sizeof(stack));
 	calldata_set_ptr(&params, "item", item);
 
-	signal_parent(item->parent, "item_remove", &params);
+	signal_parent(parent, "item_remove", &params);
 }
 
 static const char *scene_getname(void *unused)
@@ -1740,6 +1741,8 @@ static inline void duplicate_item_data(struct obs_scene_item *dst,
 	dst->bounds_type = src->bounds_type;
 	dst->bounds_align = src->bounds_align;
 	dst->bounds = src->bounds;
+	dst->crop_to_bounds = src->crop_to_bounds;
+	dst->bounds_crop = src->bounds_crop;
 
 	if (src->show_transition) {
 		obs_source_t *transition = obs_source_duplicate(
@@ -2323,12 +2326,13 @@ void obs_sceneitem_release(obs_sceneitem_t *item)
 
 static void obs_sceneitem_remove_internal(obs_sceneitem_t *item)
 {
+	obs_scene_t *parent = item->parent;
 	item->removed = true;
 
 	set_visibility(item, false);
 
-	signal_item_remove(item);
 	detach_sceneitem(item);
+	signal_item_remove(parent, item);
 
 	obs_sceneitem_set_transition(item, true, NULL);
 	obs_sceneitem_set_transition(item, false, NULL);
@@ -3520,7 +3524,7 @@ void obs_sceneitem_group_ungroup(obs_sceneitem_t *item)
 	obs_sceneitem_t *first;
 	obs_sceneitem_t *last;
 
-	signal_item_remove(item);
+	signal_item_remove(scene, item);
 
 	full_lock(scene);
 

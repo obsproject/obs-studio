@@ -27,7 +27,7 @@ static volatile long thread_id_counter = 1;
 
 static void *tiny_tubular_task_thread(void *param);
 
-os_task_queue_t *os_task_queue_create()
+os_task_queue_t *os_task_queue_create(void)
 {
 	struct os_task_queue *tq = bzalloc(sizeof(*tq));
 	tq->id = os_atomic_inc_long(&thread_id_counter);

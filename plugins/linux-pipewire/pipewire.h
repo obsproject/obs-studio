@@ -22,8 +22,7 @@
 
 #include <obs-module.h>
 
-#include <pipewire/keys.h>
-#include <pipewire/properties.h>
+#include <pipewire/pipewire.h>
 
 typedef struct _obs_pipewire obs_pipewire;
 typedef struct _obs_pipewire_stream obs_pipewire_stream;
@@ -34,9 +33,18 @@ struct obs_pipwire_connect_stream_info {
 	struct {
 		bool cursor_visible;
 	} screencast;
+	struct {
+		const struct spa_rectangle *resolution;
+		const struct spa_fraction *framerate;
+	} video;
 };
 
-obs_pipewire *obs_pipewire_create(int pipewire_fd);
+obs_pipewire *
+obs_pipewire_connect_fd(int pipewire_fd,
+			const struct pw_registry_events *registry_events,
+			void *user_data);
+struct pw_registry *obs_pipewire_get_registry(obs_pipewire *obs_pw);
+void obs_pipewire_roundtrip(obs_pipewire *obs_pw);
 void obs_pipewire_destroy(obs_pipewire *obs_pw);
 
 obs_pipewire_stream *obs_pipewire_connect_stream(
@@ -53,3 +61,8 @@ void obs_pipewire_stream_video_render(obs_pipewire_stream *obs_pw_stream,
 void obs_pipewire_stream_set_cursor_visible(obs_pipewire_stream *obs_pw_stream,
 					    bool cursor_visible);
 void obs_pipewire_stream_destroy(obs_pipewire_stream *obs_pw_stream);
+
+void obs_pipewire_stream_set_framerate(obs_pipewire_stream *obs_pw_stream,
+				       const struct spa_fraction *framerate);
+void obs_pipewire_stream_set_resolution(obs_pipewire_stream *obs_pw,
+					const struct spa_rectangle *resolution);

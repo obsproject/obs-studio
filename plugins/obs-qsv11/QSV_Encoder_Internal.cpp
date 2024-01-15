@@ -442,6 +442,9 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 		}
 	}
 
+	memset(&m_ctrl, 0, sizeof(m_ctrl));
+	memset(&m_roi, 0, sizeof(m_roi));
+
 	return sts;
 }
 
@@ -776,7 +779,7 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY,
 
 	for (;;) {
 		// Encode a frame asynchronously (returns immediately)
-		sts = m_pmfxENC->EncodeFrameAsync(NULL, pSurface,
+		sts = m_pmfxENC->EncodeFrameAsync(&m_ctrl, pSurface,
 						  &m_pTaskPool[nTaskIdx].mfxBS,
 						  &m_pTaskPool[nTaskIdx].syncp);
 
@@ -841,7 +844,7 @@ mfxStatus QSV_Encoder_Internal::Encode_tex(uint64_t ts, uint32_t tex_handle,
 
 	for (;;) {
 		// Encode a frame asynchronously (returns immediately)
-		sts = m_pmfxENC->EncodeFrameAsync(NULL, pSurface,
+		sts = m_pmfxENC->EncodeFrameAsync(&m_ctrl, pSurface,
 						  &m_pTaskPool[nTaskIdx].mfxBS,
 						  &m_pTaskPool[nTaskIdx].syncp);
 
@@ -938,4 +941,40 @@ mfxStatus QSV_Encoder_Internal::Reset(qsv_param_t *pParams,
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
 	return sts;
+}
+
+void QSV_Encoder_Internal::AddROI(mfxU32 left, mfxU32 top, mfxU32 right,
+				  mfxU32 bottom, mfxI16 delta)
+{
+	if (m_roi.NumROI == 256) {
+		warn("Maximum number of ROIs hit, ignoring additional ROI!");
+		return;
+	}
+
+	m_roi.Header.BufferId = MFX_EXTBUFF_ENCODER_ROI;
+	m_roi.Header.BufferSz = sizeof(mfxExtEncoderROI);
+	m_roi.ROIMode = MFX_ROI_MODE_QP_DELTA;
+	/* The SDK will automatically align the values to block sizes so we
+	 * don't have to do any maths here. */
+	m_roi.ROI[m_roi.NumROI].Left = left;
+	m_roi.ROI[m_roi.NumROI].Top = top;
+	m_roi.ROI[m_roi.NumROI].Right = right;
+	m_roi.ROI[m_roi.NumROI].Bottom = bottom;
+	m_roi.ROI[m_roi.NumROI].DeltaQP = delta;
+	m_roi.NumROI++;
+
+	/* Right now ROI is the only thing we add so this is fine */
+	if (m_extbuf.empty())
+		m_extbuf.push_back((mfxExtBuffer *)&m_roi);
+
+	m_ctrl.ExtParam = m_extbuf.data();
+	m_ctrl.NumExtParam = (mfxU16)m_extbuf.size();
+}
+
+void QSV_Encoder_Internal::ClearROI()
+{
+	m_roi.NumROI = 0;
+	m_ctrl.ExtParam = nullptr;
+	m_ctrl.NumExtParam = 0;
+	m_extbuf.clear();
 }

@@ -194,6 +194,95 @@ jobs:
           name: macos-sparkle-update
           path: ${{ github.workspace }}/output
 
+  create-windows-update:
+    name: Create Windows Update 🥩
+    if: github.repository_owner == 'obsproject' && github.ref_type == 'tag'
+    runs-on: windows-2022
+    needs: build-project
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    defaults:
+      run:
+        shell: pwsh
+    environment:
+      name: bouf
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          path: "repo"
+          fetch-depth: 0
+          ref: ${{ github.ref }}
+
+      - name: Set Up Environment 🔧
+        id: setup
+        env:
+          BOUF_ACTION_HASH: '4b421d1fa51cbf35f9c68f80795be3468dc480d47989c0bf713c39a7d62dec9e'
+        run: |
+          $channel = if ($env:GITHUB_REF_NAME -match "(beta|rc)") { "beta" } else { "stable" }
+          $shortHash = $env:GITHUB_SHA.Substring(0,9)
+          "channel=${channel}" >> $env:GITHUB_OUTPUT
+          "commitHash=${shortHash}" >> $env:GITHUB_OUTPUT
+          
+          # Ensure files in action haven't been modified
+          $folderHash = ''
+          $files = Get-ChildItem "${{ github.workspace }}\repo\.github\actions\bouf"
+          foreach ($file in $files) {
+            $folderHash += (Get-FileHash $file -Algorithm SHA256).Hash
+          }
+          # This is stupid but so is powershell
+          $stream = [IO.MemoryStream]::new([byte[]][char[]]$folderHash)
+          if ((Get-FileHash -InputStream $stream -Algorithm SHA256).Hash -ne "$env:BOUF_ACTION_HASH") {
+            throw "bouf action folder hash does not match."
+          }
+
+      - name: Download Artifact 📥
+        uses: actions/download-artifact@v3
+        with:
+          name: obs-studio-windows-x64-${{ steps.setup.outputs.commitHash }}
+          path: ${{ github.workspace }}/build
+
+      - name: Run bouf 🥩
+        uses: ./repo/.github/actions/bouf
+        with:
+          gcpWorkloadIdentityProvider: ${{ secrets.GCP_IDENTITY_POOL }}
+          gcpServiceAccountName: ${{ secrets.GCP_SERVICE_ACCOUNT_NAME }}
+          version: ${{ github.ref_name }}
+          channel: ${{ steps.setup.outputs.channel }}
+
+      - name: Upload Signed Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: obs-studio-windows-x64-${{ github.ref_name }}-signed
+          compression-level: 6
+          path: ${{ github.workspace }}/output/install
+
+      - name: Upload PDBs
+        uses: actions/upload-artifact@v4
+        with:
+          name: obs-studio-windows-x64-${{ github.ref_name }}-pdbs
+          compression-level: 9
+          path: ${{ github.workspace }}/output/pdbs
+
+      - name: Upload Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: obs-studio-windows-x64-${{ github.ref_name }}-installer
+          compression-level: 0
+          path: ${{ github.workspace }}/output/*.exe
+
+      - name: Upload Updater Files
+        uses: actions/upload-artifact@v4
+        with:
+          name: obs-studio-windows-x64-${{ github.ref_name }}-patches
+          compression-level: 0
+          path: |
+            ${{ github.workspace }}/output/updater
+            ${{ github.workspace }}/output/*.json
+            ${{ github.workspace }}/output/*.sig
+            ${{ github.workspace }}/output/*.txt
+            ${{ github.workspace }}/output/*.rst
+
   create-release:
     name: Create Release 🛫
     if: github.ref_type == 'tag'

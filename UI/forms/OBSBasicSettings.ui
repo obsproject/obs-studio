@@ -2432,73 +2432,142 @@
                             </widget>
                            </item>
                            <item row="1" column="1">
-                            <widget class="QFrame" name="widget_8">
+                            <widget class="QStackedWidget" name="advStreamTrackWidget">
                              <property name="sizePolicy">
                               <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
                                <horstretch>0</horstretch>
                                <verstretch>0</verstretch>
                               </sizepolicy>
                              </property>
-                             <layout class="QHBoxLayout" name="horizontalLayout_7">
-                              <property name="leftMargin">
-                               <number>0</number>
+                             <property name="currentIndex">
+                              <number>0</number>
+                             </property>
+                             <widget class="QFrame" name="streamSingleTracks">
+                              <property name="sizePolicy">
+                               <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                               </sizepolicy>
                               </property>
-                              <property name="topMargin">
-                               <number>0</number>
-                              </property>
-                              <property name="rightMargin">
-                               <number>0</number>
-                              </property>
-                              <property name="bottomMargin">
-                               <number>0</number>
-                              </property>
-                              <item>
-                               <widget class="QRadioButton" name="advOutTrack1">
-                                <property name="text">
-                                 <string notr="true">1</string>
-                                </property>
-                                <property name="checked">
-                                 <bool>true</bool>
-                                </property>
-                               </widget>
+                              <layout class="QHBoxLayout" name="horizontalLayout_7">
+                               <property name="leftMargin">
+                                <number>0</number>
+                               </property>
+                               <property name="topMargin">
+                                <number>0</number>
+                               </property>
+                               <property name="rightMargin">
+                                <number>0</number>
+                               </property>
+                               <property name="bottomMargin">
+                                <number>0</number>
+                               </property>
+                               <item>
+                                <widget class="QRadioButton" name="advOutTrack1">
+                                 <property name="text">
+                                  <string notr="true">1</string>
+                                 </property>
+                                 <property name="checked">
+                                  <bool>true</bool>
+                                 </property>
+                                </widget>
+                               </item>
+                               <item>
+                                <widget class="QRadioButton" name="advOutTrack2">
+                                 <property name="text">
+                                  <string notr="true">2</string>
+                                 </property>
+                                </widget>
+                               </item>
+                               <item>
+                                <widget class="QRadioButton" name="advOutTrack3">
+                                 <property name="text">
+                                  <string notr="true">3</string>
+                                 </property>
+                                </widget>
                               </item>
-                              <item>
-                               <widget class="QRadioButton" name="advOutTrack2">
-                                <property name="text">
-                                 <string notr="true">2</string>
+                               <item>
+                                <widget class="QRadioButton" name="advOutTrack4">
+                                 <property name="text">
+                                  <string notr="true">4</string>
+                                 </property>
+                                </widget>
+                               </item>
+                               <item>
+                                <widget class="QRadioButton" name="advOutTrack5">
+                                 <property name="text">
+                                  <string notr="true">5</string>
+                                 </property>
+                                </widget>
+                               </item>
+                               <item>
+                                <widget class="QRadioButton" name="advOutTrack6">
+                                 <property name="text">
+                                  <string notr="true">6</string>
+                                 </property>
+                                </widget>
+                               </item>
+                              </layout>
+                             </widget>
+                             <widget class="QWidget" name="streamMultiTracks">
+                               <layout class="QHBoxLayout" name="horizontalLayout_multitrack">
+                                <property name="leftMargin">
+                                 <number>0</number>
                                 </property>
-                               </widget>
-                              </item>
-                              <item>
-                               <widget class="QRadioButton" name="advOutTrack3">
-                                <property name="text">
-                                 <string notr="true">3</string>
+                                <property name="topMargin">
+                                 <number>0</number>
                                 </property>
-                               </widget>
-                              </item>
-                              <item>
-                               <widget class="QRadioButton" name="advOutTrack4">
-                                <property name="text">
-                                 <string notr="true">4</string>
+                                <property name="rightMargin">
+                                 <number>0</number>
                                 </property>
-                               </widget>
-                              </item>
-                              <item>
-                               <widget class="QRadioButton" name="advOutTrack5">
-                                <property name="text">
-                                 <string notr="true">5</string>
+                                <property name="bottomMargin">
+                                 <number>0</number>
                                 </property>
-                               </widget>
-                              </item>
-                              <item>
-                               <widget class="QRadioButton" name="advOutTrack6">
-                                <property name="text">
-                                 <string notr="true">6</string>
-                                </property>
-                               </widget>
-                              </item>
-                             </layout>
-                            </widget>
+                                <item>
+                                 <widget class="QCheckBox" name="advOutMultiTrack1">
+                                  <property name="text">
+                                   <string notr="true">1</string>
+                                  </property>
+                                 </widget>
+                                </item>
+                                <item>
+                                 <widget class="QCheckBox" name="advOutMultiTrack2">
+                                  <property name="text">
+                                   <string notr="true">2</string>
+                                  </property>
+                                 </widget>
+                                </item>
+                                <item>
+                                 <widget class="QCheckBox" name="advOutMultiTrack3">
+                                  <property name="text">
+                                   <string notr="true">3</string>
+                                  </property>
+                                 </widget>
+                                </item>
+                                <item>
+                                 <widget class="QCheckBox" name="advOutMultiTrack4">
+                                  <property name="text">
+                                   <string notr="true">4</string>
+                                  </property>
+                                 </widget>
+                                </item>
+                                <item>
+                                 <widget class="QCheckBox" name="advOutMultiTrack5">
+                                  <property name="text">
+                                   <string notr="true">5</string>
+                                  </property>
+                                 </widget>
+                                </item>
+                                <item>
+                                 <widget class="QCheckBox" name="advOutMultiTrack6">
+                                  <property name="text">
+                                   <string notr="true">6</string>
+                                  </property>
+                                 </widget>
+                                </item>
+                               </layout>
+                              </widget>
+			    </widget>
                            </item>
                            <item row="2" column="0">
                             <widget class="QLabel" name="advOutAEncLabel">
@@ -7861,6 +7930,12 @@
   <tabstop>advOutTrack4</tabstop>
   <tabstop>advOutTrack5</tabstop>
   <tabstop>advOutTrack6</tabstop>
+  <tabstop>advOutMultiTrack1</tabstop>
+  <tabstop>advOutMultiTrack2</tabstop>
+  <tabstop>advOutMultiTrack3</tabstop>
+  <tabstop>advOutMultiTrack4</tabstop>
+  <tabstop>advOutMultiTrack5</tabstop>
+  <tabstop>advOutMultiTrack6</tabstop>
   <tabstop>advOutEncoder</tabstop>
   <tabstop>advOutUseRescale</tabstop>
   <tabstop>advOutRescale</tabstop>

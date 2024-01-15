@@ -193,6 +193,7 @@ static bool obs_source_init(struct obs_source *source)
 	pthread_mutex_init_value(&source->audio_buf_mutex);
 	pthread_mutex_init_value(&source->audio_cb_mutex);
 	pthread_mutex_init_value(&source->caption_cb_mutex);
+	pthread_mutex_init_value(&source->media_actions_mutex);
 
 	if (pthread_mutex_init_recursive(&source->filter_mutex) != 0)
 		return false;
@@ -207,6 +208,8 @@ static bool obs_source_init(struct obs_source *source)
 	if (pthread_mutex_init_recursive(&source->async_mutex) != 0)
 		return false;
 	if (pthread_mutex_init(&source->caption_cb_mutex, NULL) != 0)
+		return false;
+	if (pthread_mutex_init(&source->media_actions_mutex, NULL) != 0)
 		return false;
 
 	if (is_audio_source(source) || is_composite_source(source))
@@ -737,6 +740,7 @@ static void obs_source_destroy_defer(struct obs_source *source)
 	da_free(source->async_cache);
 	da_free(source->async_frames);
 	da_free(source->filters);
+	da_free(source->media_actions);
 	pthread_mutex_destroy(&source->filter_mutex);
 	pthread_mutex_destroy(&source->audio_actions_mutex);
 	pthread_mutex_destroy(&source->audio_buf_mutex);
@@ -744,6 +748,7 @@ static void obs_source_destroy_defer(struct obs_source *source)
 	pthread_mutex_destroy(&source->audio_mutex);
 	pthread_mutex_destroy(&source->caption_cb_mutex);
 	pthread_mutex_destroy(&source->async_mutex);
+	pthread_mutex_destroy(&source->media_actions_mutex);
 	obs_data_release(source->private_settings);
 	obs_context_data_free(&source->context);
 
@@ -1210,6 +1215,59 @@ static void filter_frame(obs_source_t *source,
 	*ref_frame = frame;
 }
 
+void process_media_actions(obs_source_t *source)
+{
+	struct media_action action = {0};
+
+	for (;;) {
+		pthread_mutex_lock(&source->media_actions_mutex);
+		if (source->media_actions.num) {
+			action = source->media_actions.array[0];
+			da_pop_front(source->media_actions);
+		} else {
+			action.type = MEDIA_ACTION_NONE;
+		}
+		pthread_mutex_unlock(&source->media_actions_mutex);
+
+		switch (action.type) {
+		case MEDIA_ACTION_NONE:
+			return;
+		case MEDIA_ACTION_PLAY_PAUSE:
+			source->info.media_play_pause(source->context.data,
+						      action.pause);
+
+			if (action.pause)
+				obs_source_dosignal(source, NULL,
+						    "media_pause");
+			else
+				obs_source_dosignal(source, NULL, "media_play");
+			break;
+
+		case MEDIA_ACTION_RESTART:
+			source->info.media_restart(source->context.data);
+			obs_source_dosignal(source, NULL, "media_restart");
+			break;
+
+		case MEDIA_ACTION_STOP:
+			source->info.media_stop(source->context.data);
+			obs_source_dosignal(source, NULL, "media_stopped");
+			break;
+		case MEDIA_ACTION_NEXT:
+			source->info.media_next(source->context.data);
+			obs_source_dosignal(source, NULL, "media_next");
+			break;
+		case MEDIA_ACTION_PREVIOUS:
+			source->info.media_previous(source->context.data);
+			obs_source_dosignal(source, NULL, "media_previous");
+			break;
+		case MEDIA_ACTION_SET_TIME:
+			source->info.media_set_time(source->context.data,
+						    action.ms);
+			break;
+		}
+	}
+}
+
 static void async_tick(obs_source_t *source)
 {
 	uint64_t sys_time = obs->video.video_time;
@@ -1252,6 +1310,9 @@ void obs_source_video_tick(obs_source_t *source, float seconds)
 
 	if ((source->info.output_flags & OBS_SOURCE_ASYNC) != 0)
 		async_tick(source);
+
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) != 0)
+		process_media_actions(source);
 
 	if (os_atomic_load_long(&source->defer_update_count) > 0)
 		obs_source_deferred_update(source);
@@ -5997,15 +6058,19 @@ void obs_source_media_play_pause(obs_source_t *source, bool pause)
 	if (!data_valid(source, "obs_source_media_play_pause"))
 		return;
 
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
+		return;
 	if (!source->info.media_play_pause)
 		return;
 
-	source->info.media_play_pause(source->context.data, pause);
+	struct media_action action = {
+		.type = MEDIA_ACTION_PLAY_PAUSE,
+		.pause = pause,
+	};
 
-	if (pause)
-		obs_source_dosignal(source, NULL, "media_pause");
-	else
-		obs_source_dosignal(source, NULL, "media_play");
+	pthread_mutex_lock(&source->media_actions_mutex);
+	da_push_back(source->media_actions, &action);
+	pthread_mutex_unlock(&source->media_actions_mutex);
 }
 
 void obs_source_media_restart(obs_source_t *source)
@@ -6013,12 +6078,18 @@ void obs_source_media_restart(obs_source_t *source)
 	if (!data_valid(source, "obs_source_media_restart"))
 		return;
 
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
+		return;
 	if (!source->info.media_restart)
 		return;
 
-	source->info.media_restart(source->context.data);
+	struct media_action action = {
+		.type = MEDIA_ACTION_RESTART,
+	};
 
-	obs_source_dosignal(source, NULL, "media_restart");
+	pthread_mutex_lock(&source->media_actions_mutex);
+	da_push_back(source->media_actions, &action);
+	pthread_mutex_unlock(&source->media_actions_mutex);
 }
 
 void obs_source_media_stop(obs_source_t *source)
@@ -6026,12 +6097,18 @@ void obs_source_media_stop(obs_source_t *source)
 	if (!data_valid(source, "obs_source_media_stop"))
 		return;
 
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
+		return;
 	if (!source->info.media_stop)
 		return;
 
-	source->info.media_stop(source->context.data);
+	struct media_action action = {
+		.type = MEDIA_ACTION_STOP,
+	};
 
-	obs_source_dosignal(source, NULL, "media_stopped");
+	pthread_mutex_lock(&source->media_actions_mutex);
+	da_push_back(source->media_actions, &action);
+	pthread_mutex_unlock(&source->media_actions_mutex);
 }
 
 void obs_source_media_next(obs_source_t *source)
@@ -6039,12 +6116,18 @@ void obs_source_media_next(obs_source_t *source)
 	if (!data_valid(source, "obs_source_media_next"))
 		return;
 
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
+		return;
 	if (!source->info.media_next)
 		return;
 
-	source->info.media_next(source->context.data);
+	struct media_action action = {
+		.type = MEDIA_ACTION_NEXT,
+	};
 
-	obs_source_dosignal(source, NULL, "media_next");
+	pthread_mutex_lock(&source->media_actions_mutex);
+	da_push_back(source->media_actions, &action);
+	pthread_mutex_unlock(&source->media_actions_mutex);
 }
 
 void obs_source_media_previous(obs_source_t *source)
@@ -6052,12 +6135,18 @@ void obs_source_media_previous(obs_source_t *source)
 	if (!data_valid(source, "obs_source_media_previous"))
 		return;
 
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
+		return;
 	if (!source->info.media_previous)
 		return;
 
-	source->info.media_previous(source->context.data);
+	struct media_action action = {
+		.type = MEDIA_ACTION_PREVIOUS,
+	};
 
-	obs_source_dosignal(source, NULL, "media_previous");
+	pthread_mutex_lock(&source->media_actions_mutex);
+	da_push_back(source->media_actions, &action);
+	pthread_mutex_unlock(&source->media_actions_mutex);
 }
 
 int64_t obs_source_media_get_duration(obs_source_t *source)
@@ -6065,6 +6154,8 @@ int64_t obs_source_media_get_duration(obs_source_t *source)
 	if (!data_valid(source, "obs_source_media_get_duration"))
 		return 0;
 
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
+		return 0;
 	if (source->info.media_get_duration)
 		return source->info.media_get_duration(source->context.data);
 	else
@@ -6076,6 +6167,8 @@ int64_t obs_source_media_get_time(obs_source_t *source)
 	if (!data_valid(source, "obs_source_media_get_time"))
 		return 0;
 
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
+		return 0;
 	if (source->info.media_get_time)
 		return source->info.media_get_time(source->context.data);
 	else
@@ -6086,14 +6179,26 @@ void obs_source_media_set_time(obs_source_t *source, int64_t ms)
 {
 	if (!data_valid(source, "obs_source_media_set_time"))
 		return;
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
+		return;
+	if (!source->info.media_set_time)
+		return;
 
-	if (source->info.media_set_time)
-		source->info.media_set_time(source->context.data, ms);
+	struct media_action action = {
+		.type = MEDIA_ACTION_SET_TIME,
+		.ms = ms,
+	};
+
+	pthread_mutex_lock(&source->media_actions_mutex);
+	da_push_back(source->media_actions, &action);
+	pthread_mutex_unlock(&source->media_actions_mutex);
 }
 
 enum obs_media_state obs_source_media_get_state(obs_source_t *source)
 {
 	if (!data_valid(source, "obs_source_media_get_state"))
+		return OBS_MEDIA_STATE_NONE;
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
 		return OBS_MEDIA_STATE_NONE;
 
 	if (source->info.media_get_state)
@@ -6106,6 +6211,8 @@ void obs_source_media_started(obs_source_t *source)
 {
 	if (!obs_source_valid(source, "obs_source_media_started"))
 		return;
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
+		return;
 
 	obs_source_dosignal(source, NULL, "media_started");
 }
@@ -6113,6 +6220,8 @@ void obs_source_media_started(obs_source_t *source)
 void obs_source_media_ended(obs_source_t *source)
 {
 	if (!obs_source_valid(source, "obs_source_media_ended"))
+		return;
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
 		return;
 
 	obs_source_dosignal(source, NULL, "media_ended");

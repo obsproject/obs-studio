@@ -80,8 +80,8 @@ jobs:
           : Set Up Environment 🔧
           if (( ${+RUNNER_DEBUG} )) setopt XTRACE
 
-          print '::group::Enable Xcode 14.3.1 and AppleScript'
-          sudo xcode-select --switch /Applications/Xcode_14.3.1.app/Contents/Developer
+          print '::group::Enable Xcode 15.1 and AppleScript'
+          sudo xcode-select --switch /Applications/Xcode_15.1.app/Contents/Developer
           sudo sqlite3 $HOME/Library/Application\ Support/com.apple.TCC/TCC.db \
             "INSERT OR REPLACE INTO access VALUES('kTCCServiceAppleEvents','/usr/local/opt/runner/provisioner/provisioner',1,2,3,1,NULL,NULL,0,'com.apple.finder',X'fade0c000000002c00000001000000060000000200000010636f6d2e6170706c652e66696e64657200000003',NULL,1592919552);"
           sudo sqlite3 /Library/Application\ Support/com.apple.TCC/TCC.db \

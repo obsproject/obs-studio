@@ -688,6 +688,24 @@ struct caption_cb_info {
 	void *param;
 };
 
+enum media_action_type {
+	MEDIA_ACTION_NONE,
+	MEDIA_ACTION_PLAY_PAUSE,
+	MEDIA_ACTION_RESTART,
+	MEDIA_ACTION_STOP,
+	MEDIA_ACTION_NEXT,
+	MEDIA_ACTION_PREVIOUS,
+	MEDIA_ACTION_SET_TIME,
+};
+
+struct media_action {
+	enum media_action_type type;
+	union {
+		bool pause;
+		int64_t ms;
+	};
+};
+
 struct obs_source {
 	struct obs_context_data context;
 	struct obs_source_info info;
@@ -870,9 +888,15 @@ struct obs_source {
 	/* color space */
 	gs_texrender_t *color_space_texrender;
 
+	/* audio monitoring */
 	struct audio_monitor *monitor;
 	enum obs_monitoring_type monitoring_type;
 
+	/* media action queue */
+	DARRAY(struct media_action) media_actions;
+	pthread_mutex_t media_actions_mutex;
+
+	/* private data */
 	obs_data_t *private_settings;
 };
 
@@ -1238,6 +1262,11 @@ struct obs_encoder {
 	uint32_t frame_rate_divisor;
 	uint32_t frame_rate_divisor_counter; // only used for GPU encoders
 	video_t *fps_override;
+
+	/* Regions of interest to prioritize during encoding */
+	pthread_mutex_t roi_mutex;
+	DARRAY(struct obs_encoder_roi) roi;
+	uint32_t roi_increment;
 
 	int64_t cur_pts;
 

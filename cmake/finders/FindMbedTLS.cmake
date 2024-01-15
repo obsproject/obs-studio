@@ -194,6 +194,7 @@ if(MbedTLS_FOUND)
         MbedTLS::MbedTLS
         PROPERTIES INTERFACE_COMPILE_OPTIONS "${PC_MbedTLS_CFLAGS_OTHER}"
                    INTERFACE_INCLUDE_DIRECTORIES "${MbedTLS_INCLUDE_DIR}"
+                   INTERFACE_LINK_OPTIONS "$<$<AND:$<PLATFORM_ID:Windows>,$<CONFIG:DEBUG>>:/NODEFAULTLIB:MSVCRT>"
                    VERSION ${MbedTLS_VERSION})
     endif()
   endforeach()
