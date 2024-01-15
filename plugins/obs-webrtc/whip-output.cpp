@@ -235,13 +235,14 @@ void WHIPOutput::ConfigureAudioTrack(std::string media_stream_id,
 		audio_track = rtcAddTrackEx(peer_connection, &track_init);
 		rtcSetOpusPacketizationHandler(audio_track, &packetizer_init);
 	} else {
+		/*
 		auto encoder = obs_output_get_audio_encoder(output, 0);
 		if (!encoder) {
 			return;
 		}
 
-		uint8_t *data = 0; /**< Packet data */
-		size_t size = 0;   /**< Packet size */
+		uint8_t *data = 0;  
+		size_t size = 0;
 
 		obs_encoder_get_extra_data(encoder, &data, &size);
 
@@ -272,6 +273,7 @@ void WHIPOutput::ConfigureAudioTrack(std::string media_stream_id,
 
 		audio_track = rtcAddTrackEx(peer_connection, &track_init);
 		rtcSetAACPacketizationHandler(audio_track, &packetizer_init);
+		*/
 	}
 
 	rtcChainRtcpSrReporter(audio_track);
