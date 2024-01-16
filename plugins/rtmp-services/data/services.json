@@ -2633,6 +2633,28 @@
                 "max audio bitrate": 320,
                 "x264opts": "scenecut=0"
             }
+        },
+        {
+            "name": "Hakuna Live - WHIP",
+            "protocol": "WHIP",
+            "servers": [
+                {
+                    "name": "Republic of Korea",
+                    "url": "https://media-server-broker-b2c.prod.an2.media.hpcnt.com/whip"
+                },
+                {
+                    "name": "Japan",
+                    "url": "https://media-server-broker-b2c.prod.an1.media.hpcnt.com/whip"
+                },
+                {
+                    "name": "India, SEA, Thailand, Vietnam, Taiwan",
+                    "url": "https://media-server-broker-b2c.prod.as1.media.hpcnt.com/whip"
+                },
+                {
+                    "name": "Mideast, Turkey, Europe",
+                    "url": "https://media-server-broker-b2c.prod.ec1.media.hpcnt.com/whip"
+                }
+            ]
         }
     ]
 }
