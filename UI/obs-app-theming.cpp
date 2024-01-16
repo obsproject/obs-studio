@@ -964,5 +964,13 @@ bool OBSApp::InitTheme()
 #endif
 	}
 
-	return SetTheme(themeName);
+	if (!SetTheme(themeName)) {
+		blog(LOG_ERROR,
+		     "Loading default theme \"%s\" failed, falling back to "
+		     "system theme as last resort.",
+		     QT_TO_UTF8(themeName));
+		return SetTheme("com.obsproject.System");
+	}
+
+	return true;
 }
