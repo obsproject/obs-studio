@@ -15,8 +15,17 @@ add_library(obs-webrtc MODULE)
 add_library(OBS::webrtc ALIAS obs-webrtc)
 
 target_sources(
-  obs-webrtc PRIVATE # cmake-format: sortable
-                     obs-webrtc.cpp whip-output.cpp whip-output.h whip-custom.cpp whip-custom.h whip-common.cpp whip-common.h whip-utils.h common.h)
+  obs-webrtc
+  PRIVATE # cmake-format: sortable
+          common.h
+          obs-webrtc.cpp
+          whip-common.cpp
+          whip-common.h
+          whip-custom.cpp
+          whip-custom.h
+          whip-output.cpp
+          whip-output.h
+          whip-utils.h)
 
 target_link_libraries(obs-webrtc PRIVATE OBS::libobs LibDataChannel::LibDataChannel CURL::libcurl)
 
