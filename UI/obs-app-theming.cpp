@@ -614,12 +614,6 @@ static QString EvalCalc(const QHash<QString, OBSThemeVariable> &vars,
 	double val = numeric_limits<double>::quiet_NaN();
 	double d1 = val1.userValue.isValid() ? val1.userValue.toDouble()
 					     : val1.value.toDouble();
-	blog(LOG_DEBUG, "User value valid for \"%s\": %s",
-	     QT_TO_UTF8(val1.name),
-	     val1.userValue.isValid() ? "true" : "false");
-	blog(LOG_DEBUG, "\tValues: %f / %f", val1.value.toDouble(),
-	     val1.userValue.toDouble());
-
 	double d2 = val2.userValue.isValid() ? val2.userValue.toDouble()
 					     : val2.value.toDouble();
 
