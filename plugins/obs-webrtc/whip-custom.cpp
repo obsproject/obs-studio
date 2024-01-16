@@ -1,22 +1,19 @@
-#include "whip-service.h"
+#include "whip-custom.h"
 
-const char *audio_codecs[MAX_CODECS] = {"opus"};
-const char *video_codecs[MAX_CODECS] = {"h264"};
-
-WHIPService::WHIPService(obs_data_t *settings, obs_service_t *)
+WHIPCustom::WHIPCustom(obs_data_t *settings, obs_service_t *)
 	: server(),
 	  bearer_token()
 {
 	Update(settings);
 }
 
-void WHIPService::Update(obs_data_t *settings)
+void WHIPCustom::Update(obs_data_t *settings)
 {
 	server = obs_data_get_string(settings, "server");
 	bearer_token = obs_data_get_string(settings, "bearer_token");
 }
 
-obs_properties_t *WHIPService::Properties()
+obs_properties_t *WHIPCustom::Properties()
 {
 	obs_properties_t *ppts = obs_properties_create();
 
@@ -28,7 +25,7 @@ obs_properties_t *WHIPService::Properties()
 	return ppts;
 }
 
-void WHIPService::ApplyEncoderSettings(obs_data_t *video_settings, obs_data_t *)
+void WHIPCustom::ApplyEncoderSettings(obs_data_t *video_settings, obs_data_t *)
 {
 	// For now, ensure maximum compatibility with webrtc peers
 	if (video_settings) {
@@ -37,7 +34,7 @@ void WHIPService::ApplyEncoderSettings(obs_data_t *video_settings, obs_data_t *)
 	}
 }
 
-const char *WHIPService::GetConnectInfo(enum obs_service_connect_info type)
+const char *WHIPCustom::GetConnectInfo(enum obs_service_connect_info type)
 {
 	switch (type) {
 	case OBS_SERVICE_CONNECT_INFO_SERVER_URL:
@@ -49,12 +46,12 @@ const char *WHIPService::GetConnectInfo(enum obs_service_connect_info type)
 	}
 }
 
-bool WHIPService::CanTryToConnect()
+bool WHIPCustom::CanTryToConnect()
 {
 	return !server.empty();
 }
 
-void register_whip_service()
+void register_whip_custom()
 {
 	struct obs_service_info info = {};
 
@@ -64,30 +61,30 @@ void register_whip_service()
 	};
 	info.create = [](obs_data_t *settings,
 			 obs_service_t *service) -> void * {
-		return new WHIPService(settings, service);
+		return new WHIPCustom(settings, service);
 	};
 	info.destroy = [](void *priv_data) {
-		delete static_cast<WHIPService *>(priv_data);
+		delete static_cast<WHIPCustom *>(priv_data);
 	};
 	info.update = [](void *priv_data, obs_data_t *settings) {
-		static_cast<WHIPService *>(priv_data)->Update(settings);
+		static_cast<WHIPCustom *>(priv_data)->Update(settings);
 	};
 	info.get_properties = [](void *) -> obs_properties_t * {
-		return WHIPService::Properties();
+		return WHIPCustom::Properties();
 	};
 	info.get_protocol = [](void *) -> const char * {
 		return "WHIP";
 	};
 	info.get_url = [](void *priv_data) -> const char * {
-		return static_cast<WHIPService *>(priv_data)->server.c_str();
+		return static_cast<WHIPCustom *>(priv_data)->server.c_str();
 	};
 	info.get_output_type = [](void *) -> const char * {
 		return "whip_output";
 	};
 	info.apply_encoder_settings = [](void *, obs_data_t *video_settings,
 					 obs_data_t *audio_settings) {
-		WHIPService::ApplyEncoderSettings(video_settings,
-						  audio_settings);
+		WHIPCustom::ApplyEncoderSettings(video_settings,
+						 audio_settings);
 	};
 	info.get_supported_video_codecs = [](void *) -> const char ** {
 		return video_codecs;
@@ -96,11 +93,11 @@ void register_whip_service()
 		return audio_codecs;
 	};
 	info.can_try_to_connect = [](void *priv_data) -> bool {
-		return static_cast<WHIPService *>(priv_data)->CanTryToConnect();
+		return static_cast<WHIPCustom *>(priv_data)->CanTryToConnect();
 	};
 	info.get_connect_info = [](void *priv_data,
 				   uint32_t type) -> const char * {
-		return static_cast<WHIPService *>(priv_data)->GetConnectInfo(
+		return static_cast<WHIPCustom *>(priv_data)->GetConnectInfo(
 			(enum obs_service_connect_info)type);
 	};
 	obs_register_service(&info);

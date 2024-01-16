@@ -253,7 +253,8 @@ private:
 	/* stream */
 	void InitStreamPage();
 	inline bool IsCustomService() const;
-	inline bool IsWHIP() const;
+	inline bool IsWHIPCustom() const;
+	inline bool IsWHIPCommon() const;
 	void LoadServices(bool showAll);
 	void OnOAuthStreamKeyConnected();
 	void OnAuthConnected();

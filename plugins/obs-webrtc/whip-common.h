@@ -1,14 +1,13 @@
 #pragma once
 #include <obs-module.h>
 #include <string>
+#include "common.h"
 
-#define MAX_CODECS 3
-
-struct WHIPService {
+struct WHIPCommon {
 	std::string server;
 	std::string bearer_token;
 
-	WHIPService(obs_data_t *settings, obs_service_t *service);
+	WHIPCommon(obs_data_t *settings, obs_service_t *service);
 
 	void Update(obs_data_t *settings);
 	static obs_properties_t *Properties();
@@ -18,4 +17,4 @@ struct WHIPService {
 	const char *GetConnectInfo(enum obs_service_connect_info type);
 };
 
-void register_whip_service();
+void register_whip_common();
