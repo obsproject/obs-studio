@@ -956,6 +956,12 @@ bool OBSApp::InitTheme()
 		config_get_string(globalConfig, "Appearance", "Theme");
 
 	if (themeName.isEmpty() || !GetTheme(themeName)) {
+		if (!themeName.isEmpty()) {
+			blog(LOG_WARNING,
+			     "Loading theme \"%s\" failed, falling back to "
+			     "default theme (\"%s\").",
+			     QT_TO_UTF8(themeName), DEFAULT_THEME);
+		}
 #ifdef _WIN32
 		themeName = HighContrastEnabled() ? "com.obsproject.System"
 						  : DEFAULT_THEME;
