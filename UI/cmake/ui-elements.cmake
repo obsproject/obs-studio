@@ -15,9 +15,7 @@ target_sources(
             slider-ignorewheel.cpp
             slider-ignorewheel.hpp
             spinbox-ignorewheel.cpp
-            spinbox-ignorewheel.hpp
-            vertical-scroll-area.cpp
-            vertical-scroll-area.hpp)
+            spinbox-ignorewheel.hpp)
 
 target_include_directories(obs-ui-support INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
 target_compile_options(obs-ui-support INTERFACE $<$<PLATFORM_ID:Linux>:-Wno-error=enum-conversion>)
@@ -28,7 +26,12 @@ if(NOT TARGET OBS::qt-plain-text-edit)
   add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/plain-text-edit" "${CMAKE_BINARY_DIR}/shared/qt/plain-text-edit")
 endif()
 
-target_link_libraries(obs-studio PRIVATE OBS::qt-plain-text-edit)
+if(NOT TARGET OBS::qt-vertical-scroll-area)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/vertical-scroll-area"
+                   "${CMAKE_BINARY_DIR}/shared/qt/vertical-scroll-area")
+endif()
+
+target_link_libraries(obs-studio PRIVATE OBS::qt-plain-text-edit OBS::qt-vertical-scroll-area)
 
 target_sources(
   obs-studio

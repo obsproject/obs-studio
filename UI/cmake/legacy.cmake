@@ -75,6 +75,11 @@ if(NOT TARGET OBS::qt-plain-text-edit)
   add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/plain-text-edit" "${CMAKE_BINARY_DIR}/shared/qt/plain-text-edit")
 endif()
 
+if(NOT TARGET OBS::qt-vertical-scroll-area)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/vertical-scroll-area"
+                   "${CMAKE_BINARY_DIR}/shared/qt/vertical-scroll-area")
+endif()
+
 if(NOT TARGET OBS::qt-wrappers)
   add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/wrappers" "${CMAKE_BINARY_DIR}/shared/qt/wrappers")
 endif()
@@ -221,8 +226,6 @@ target_sources(
           undo-stack-obs.hpp
           volume-control.cpp
           volume-control.hpp
-          vertical-scroll-area.cpp
-          vertical-scroll-area.hpp
           visibility-item-widget.cpp
           visibility-item-widget.hpp)
 
@@ -317,7 +320,8 @@ target_link_libraries(
           OBS::libobs
           OBS::frontend-api
           OBS::qt-wrappers
-          OBS::qt-plain-text-edit)
+          OBS::qt-plain-text-edit
+          OBS::qt-vertical-scroll-area)
 
 set_target_properties(obs PROPERTIES FOLDER "frontend")
 

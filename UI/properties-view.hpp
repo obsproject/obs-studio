@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vertical-scroll-area.hpp"
+#include <vertical-scroll-area.hpp>
 #include <obs-data.h>
 #include <obs.hpp>
 #include <qtimer.h>
