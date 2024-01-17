@@ -8,10 +8,10 @@
 #include <graphics/vec4.h>
 #include <graphics/graphics.h>
 #include <graphics/math-extra.h>
+#include <qt-wrappers.hpp>
 
 #include "window-basic-auto-config.hpp"
 #include "window-basic-main.hpp"
-#include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 
 #include "ui_AutoConfigTestPage.h"

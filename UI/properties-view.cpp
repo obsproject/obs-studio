@@ -27,12 +27,12 @@
 #include "double-slider.hpp"
 #include "slider-ignorewheel.hpp"
 #include "spinbox-ignorewheel.hpp"
-#include "qt-wrappers.hpp"
 #include "properties-view.hpp"
 #include "properties-view.moc.hpp"
 #include "plain-text-edit.hpp"
 #include "obs-app.hpp"
 
+#include <qt-wrappers.hpp>
 #include <cstdlib>
 #include <initializer_list>
 #include <obs-data.h>

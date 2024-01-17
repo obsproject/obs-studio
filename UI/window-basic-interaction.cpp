@@ -18,9 +18,9 @@
 #include "obs-app.hpp"
 #include "window-basic-interaction.hpp"
 #include "window-basic-main.hpp"
-#include "qt-wrappers.hpp"
 #include "display-helpers.hpp"
 
+#include <qt-wrappers.hpp>
 #include <QKeyEvent>
 #include <QCloseEvent>
 #include <QScreen>

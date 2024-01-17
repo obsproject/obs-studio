@@ -22,9 +22,9 @@
 #include <QPointer>
 #include <QStyle>
 #include <QAction>
+#include <qt-wrappers.hpp>
 
 #include "obs-app.hpp"
-#include "qt-wrappers.hpp"
 
 void OBSHotkeyEdit::keyPressEvent(QKeyEvent *event)
 {

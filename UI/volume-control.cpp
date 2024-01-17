@@ -1,10 +1,10 @@
 #include "window-basic-main.hpp"
 #include "volume-control.hpp"
-#include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 #include "mute-checkbox.hpp"
 #include "slider-ignorewheel.hpp"
 #include "slider-absoluteset-style.hpp"
+#include <qt-wrappers.hpp>
 #include <QFontDatabase>
 #include <QHBoxLayout>
 #include <QPushButton>

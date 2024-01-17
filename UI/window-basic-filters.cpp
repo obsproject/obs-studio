@@ -20,12 +20,12 @@
 #include "window-basic-main.hpp"
 #include "window-basic-filters.hpp"
 #include "display-helpers.hpp"
-#include "qt-wrappers.hpp"
 #include "visibility-item-widget.hpp"
 #include "item-widget-helpers.hpp"
 #include "obs-app.hpp"
 #include "undo-stack-obs.hpp"
 
+#include <qt-wrappers.hpp>
 #include <QMessageBox>
 #include <QCloseEvent>
 #include <obs-data.h>

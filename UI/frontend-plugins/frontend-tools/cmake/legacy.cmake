@@ -3,6 +3,10 @@ project(frontend-tools)
 add_library(frontend-tools MODULE)
 add_library(OBS::frontend-tools ALIAS frontend-tools)
 
+if(NOT TARGET OBS::qt-wrappers)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/wrappers" "${CMAKE_BINARY_DIR}/shared/qt/wrappers")
+endif()
+
 find_qt(COMPONENTS Widgets COMPONENTS_LINUX Gui)
 
 set_target_properties(
@@ -34,8 +38,6 @@ target_sources(
           ${CMAKE_SOURCE_DIR}/UI/properties-view.cpp
           ${CMAKE_SOURCE_DIR}/UI/properties-view.hpp
           ${CMAKE_SOURCE_DIR}/UI/properties-view.moc.hpp
-          ${CMAKE_SOURCE_DIR}/UI/qt-wrappers.cpp
-          ${CMAKE_SOURCE_DIR}/UI/qt-wrappers.hpp
           ${CMAKE_SOURCE_DIR}/UI/spinbox-ignorewheel.cpp
           ${CMAKE_SOURCE_DIR}/UI/spinbox-ignorewheel.hpp
           ${CMAKE_SOURCE_DIR}/UI/slider-ignorewheel.cpp
@@ -47,7 +49,7 @@ target_sources(
 
 target_compile_features(frontend-tools PRIVATE cxx_std_17)
 
-target_link_libraries(frontend-tools PRIVATE OBS::frontend-api OBS::libobs Qt::Widgets)
+target_link_libraries(frontend-tools PRIVATE OBS::frontend-api OBS::qt-wrappers OBS::libobs Qt::Widgets)
 
 if(OS_POSIX AND NOT OS_MACOS)
   target_link_libraries(frontend-tools PRIVATE Qt::GuiPrivate)

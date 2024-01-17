@@ -20,6 +20,10 @@ if(NOT TARGET OBS::json11)
   add_subdirectory("${CMAKE_SOURCE_DIR}/deps/json11" "${CMAKE_BINARY_DIR}/deps/json11")
 endif()
 
+if(NOT TARGET OBS::qt-wrappers)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/wrappers" "${CMAKE_BINARY_DIR}/shared/qt/wrappers")
+endif()
+
 add_executable(obs-studio)
 add_executable(OBS::studio ALIAS obs-studio)
 
@@ -31,7 +35,8 @@ target_link_libraries(
           FFmpeg::avformat
           OBS::libobs
           OBS::frontend-api
-          OBS::json11)
+          OBS::json11
+          OBS::qt-wrappers)
 
 include(cmake/ui-qt.cmake)
 include(cmake/ui-elements.cmake)

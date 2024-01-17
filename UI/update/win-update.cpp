@@ -3,10 +3,10 @@
 #include "shared-update.hpp"
 #include "update-window.hpp"
 #include "remote-text.hpp"
-#include "qt-wrappers.hpp"
 #include "win-update.hpp"
 #include "obs-app.hpp"
 
+#include <qt-wrappers.hpp>
 #include <QMessageBox>
 
 #include <string>

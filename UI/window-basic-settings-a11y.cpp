@@ -2,7 +2,7 @@
 #include "window-basic-main.hpp"
 #include "obs-frontend-api.h"
 #include "obs-app.hpp"
-#include "qt-wrappers.hpp"
+#include <qt-wrappers.hpp>
 #include <QColorDialog>
 
 enum ColorPreset {

@@ -19,9 +19,9 @@
 #include <sstream>
 #include "obs-config.h"
 #include "obs-app.hpp"
-#include "qt-wrappers.hpp"
 #include "platform.hpp"
 
+#include <qt-wrappers.hpp>
 #include <util/windows/win-version.h>
 #include <util/platform.h>
 
