@@ -27,6 +27,11 @@ if(NOT TARGET OBS::qt-plain-text-edit)
   add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/plain-text-edit" "${CMAKE_BINARY_DIR}/shared/qt/plain-text-edit")
 endif()
 
+if(NOT TARGET OBS::qt-slider-ignorewheel)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/slider-ignorewheel"
+                   "${CMAKE_BINARY_DIR}/shared/qt/slider-ignorewheel")
+endif()
+
 if(NOT TARGET OBS::qt-vertical-scroll-area)
   add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/vertical-scroll-area"
                    "${CMAKE_BINARY_DIR}/shared/qt/vertical-scroll-area")
@@ -54,6 +59,7 @@ target_link_libraries(
           OBS::aja-support
           OBS::frontend-api
           OBS::qt-plain-text-edit
+          OBS::qt-slider-ignorewheel
           OBS::qt-vertical-scroll-area
           OBS::qt-wrappers
           OBS::ui-support
