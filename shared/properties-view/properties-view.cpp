@@ -28,7 +28,6 @@
 #include "spinbox-ignorewheel.hpp"
 #include "properties-view.hpp"
 #include "properties-view.moc.hpp"
-#include "obs-app.hpp"
 
 #include <qt-wrappers.hpp>
 #include <plain-text-edit.hpp>
@@ -39,6 +38,7 @@
 #include <obs.h>
 #include <qtimer.h>
 #include <string>
+#include <obs-frontend-api.h>
 
 using namespace std;
 
@@ -106,7 +106,7 @@ void OBSPropertiesView::ReloadProperties()
 	RefreshProperties();
 }
 
-#define NO_PROPERTIES_STRING QTStr("Basic.PropertiesWindow.NoProperties")
+#define NO_PROPERTIES_STRING QObject::tr("Basic.PropertiesWindow.NoProperties")
 
 void OBSPropertiesView::RefreshProperties()
 {
@@ -292,7 +292,7 @@ QWidget *OBSPropertiesView::AddText(obs_property_t *prop, QFormLayout *layout,
 		QLineEdit *edit = new QLineEdit();
 		QPushButton *show = new QPushButton();
 
-		show->setText(QTStr("Show"));
+		show->setText(tr("Show"));
 		show->setCheckable(true);
 		edit->setText(QT_UTF8(val));
 		edit->setEchoMode(QLineEdit::Password);
@@ -304,7 +304,7 @@ QWidget *OBSPropertiesView::AddText(obs_property_t *prop, QFormLayout *layout,
 		connect(show, &QAbstractButton::toggled, info,
 			&WidgetInfo::TogglePasswordText);
 		connect(show, &QAbstractButton::toggled, [=](bool hide) {
-			show->setText(hide ? QTStr("Hide") : QTStr("Show"));
+			show->setText(hide ? tr("Hide") : tr("Show"));
 		});
 		children.emplace_back(info);
 
@@ -331,7 +331,7 @@ QWidget *OBSPropertiesView::AddText(obs_property_t *prop, QFormLayout *layout,
 			label = new QLabel(desc);
 
 		if (long_desc != NULL && !info_label->text().isEmpty()) {
-			QString file = !App()->IsThemeDark()
+			QString file = !obs_frontend_is_theme_dark()
 					       ? ":/res/images/help.svg"
 					       : ":/res/images/help_light.svg";
 			QString lStr = "<html>%1 <img src='%2' style=' \
@@ -377,7 +377,7 @@ void OBSPropertiesView::AddPath(obs_property_t *prop, QFormLayout *layout,
 	const char *val = obs_data_get_string(settings, name);
 	QLayout *subLayout = new QHBoxLayout();
 	QLineEdit *edit = new QLineEdit();
-	QPushButton *button = new QPushButton(QTStr("Browse"));
+	QPushButton *button = new QPushButton(tr("Browse"));
 
 	if (!obs_property_enabled(prop)) {
 		edit->setEnabled(false);
@@ -668,8 +668,8 @@ QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 		if (id != -1 && id != idx) {
 			QString actual = combo->itemText(id);
 			QString selected = combo->itemText(idx);
-			QString combined = QTStr(
-				"Basic.PropertiesWindow.AutoSelectFormat");
+			QString combined =
+				tr("Basic.PropertiesWindow.AutoSelectFormat");
 			combo->setItemText(idx,
 					   combined.arg(selected).arg(actual));
 		}
@@ -783,7 +783,7 @@ void OBSPropertiesView::AddColorInternal(obs_property_t *prop,
 	}
 
 	button->setProperty("themeID", "settingsButtons");
-	button->setText(QTStr("Basic.PropertiesWindow.SelectColor"));
+	button->setText(tr("Basic.PropertiesWindow.SelectColor"));
 	button->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
 	if (supportAlpha) {
@@ -885,7 +885,7 @@ void OBSPropertiesView::AddFont(obs_property_t *prop, QFormLayout *layout,
 	MakeQFont(font_obj, font, true);
 
 	button->setProperty("themeID", "settingsButtons");
-	button->setText(QTStr("Basic.PropertiesWindow.SelectFont"));
+	button->setText(tr("Basic.PropertiesWindow.SelectFont"));
 	button->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
 	fontLabel->setFrameStyle(QFrame::Sunken | QFrame::Panel);
@@ -1151,7 +1151,7 @@ static QWidget *CreateRationalFPS(OBSFrameRatePropertyWidget *fpsProps,
 	layout->setContentsMargins(0, 0, 0, 0);
 	layout->setSpacing(4);
 
-	auto str = QTStr("Basic.PropertiesView.FPS.ValidFPSRanges");
+	auto str = QObject::tr("Basic.PropertiesView.FPS.ValidFPSRanges");
 	auto rlabel = new QLabel{str};
 
 	auto combo = fpsProps->fpsRange = new QComboBox();
@@ -1186,8 +1186,9 @@ static QWidget *CreateRationalFPS(OBSFrameRatePropertyWidget *fpsProps,
 		den_edit->setValue(current_fps->denominator);
 	}
 
-	layout->addRow(QTStr("Basic.Settings.Video.Numerator"), num_edit);
-	layout->addRow(QTStr("Basic.Settings.Video.Denominator"), den_edit);
+	layout->addRow(QObject::tr("Basic.Settings.Video.Numerator"), num_edit);
+	layout->addRow(QObject::tr("Basic.Settings.Video.Denominator"),
+		       den_edit);
 
 	widget->setLayout(layout);
 
@@ -1206,9 +1207,9 @@ CreateFrameRateWidget(obs_property_t *prop, bool &warning, const char *option,
 	swap(widget->fps_ranges, fps_ranges);
 
 	auto combo = widget->modeSelect = new QComboBox();
-	combo->addItem(QTStr("Basic.PropertiesView.FPS.Simple"),
+	combo->addItem(QObject::tr("Basic.PropertiesView.FPS.Simple"),
 		       QVariant::fromValue(frame_rate_tag::simple()));
-	combo->addItem(QTStr("Basic.PropertiesView.FPS.Rational"),
+	combo->addItem(QObject::tr("Basic.PropertiesView.FPS.Rational"),
 		       QVariant::fromValue(frame_rate_tag::rational()));
 
 	combo->setToolTip(QT_UTF8(obs_property_long_description(prop)));
@@ -1602,7 +1603,7 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 		widget->setEnabled(false);
 
 	if (obs_property_long_description(property)) {
-		QString file = !App()->IsThemeDark()
+		QString file = !obs_frontend_is_theme_dark()
 				       ? ":/res/images/help.svg"
 				       : ":/res/images/help_light.svg";
 		if (label) {
@@ -1956,13 +1957,13 @@ bool WidgetInfo::FontChanged(const char *setting)
 		QFont initial;
 		font = QFontDialog::getFont(
 			&success, initial, view,
-			QTStr("Basic.PropertiesWindow.SelectFont.WindowTitle"),
+			tr("Basic.PropertiesWindow.SelectFont.WindowTitle"),
 			options);
 	} else {
 		MakeQFont(font_obj, font);
 		font = QFontDialog::getFont(
 			&success, font, view,
-			QTStr("Basic.PropertiesWindow.SelectFont.WindowTitle"),
+			tr("Basic.PropertiesWindow.SelectFont.WindowTitle"),
 			options);
 	}
 
@@ -2028,15 +2029,14 @@ void WidgetInfo::ButtonClicked()
 		QUrl url(savedUrl, QUrl::StrictMode);
 		if (url.isValid() && (url.scheme().compare("http") == 0 ||
 				      url.scheme().compare("https") == 0)) {
-			QString msg(
-				QTStr("Basic.PropertiesView.UrlButton.Text"));
+			QString msg(tr("Basic.PropertiesView.UrlButton.Text"));
 			msg += "\n\n";
-			msg += QString(QTStr("Basic.PropertiesView.UrlButton.Text.Url"))
+			msg += QString(tr("Basic.PropertiesView.UrlButton.Text.Url"))
 				       .arg(savedUrl);
 
 			QMessageBox::StandardButton button = OBSMessageBox::question(
 				view->window(),
-				QTStr("Basic.PropertiesView.UrlButton.OpenUrl"),
+				tr("Basic.PropertiesView.UrlButton.OpenUrl"),
 				msg, QMessageBox::Yes | QMessageBox::No,
 				QMessageBox::No);
 
@@ -2174,8 +2174,7 @@ class EditableItemDialog : public QDialog {
 		if (curPath.isEmpty())
 			curPath = default_path;
 
-		QString path = OpenFile(App()->GetMainWindow(), QTStr("Browse"),
-					curPath, filter);
+		QString path = OpenFile(this, tr("Browse"), curPath, filter);
 		if (path.isEmpty())
 			return;
 
@@ -2200,7 +2199,7 @@ public:
 
 		if (browse) {
 			QPushButton *browseButton =
-				new QPushButton(QTStr("Browse"));
+				new QPushButton(tr("Browse"));
 			browseButton->setProperty("themeID", "settingsButtons");
 			topLayout->addWidget(browseButton);
 			topLayout->setAlignment(browseButton, Qt::AlignVCenter);
@@ -2245,18 +2244,17 @@ void WidgetInfo::EditListAdd()
 
 	QAction *action;
 
-	action = new QAction(QTStr("Basic.PropertiesWindow.AddFiles"), this);
+	action = new QAction(tr("Basic.PropertiesWindow.AddFiles"), this);
 	connect(action, &QAction::triggered, this,
 		&WidgetInfo::EditListAddFiles);
 	popup.addAction(action);
 
-	action = new QAction(QTStr("Basic.PropertiesWindow.AddDir"), this);
+	action = new QAction(tr("Basic.PropertiesWindow.AddDir"), this);
 	connect(action, &QAction::triggered, this, &WidgetInfo::EditListAddDir);
 	popup.addAction(action);
 
 	if (type == OBS_EDITABLE_LIST_TYPE_FILES_AND_URLS) {
-		action = new QAction(QTStr("Basic.PropertiesWindow.AddURL"),
-				     this);
+		action = new QAction(tr("Basic.PropertiesWindow.AddURL"), this);
 		connect(action, &QAction::triggered, this,
 			&WidgetInfo::EditListAddText);
 		popup.addAction(action);
@@ -2271,7 +2269,7 @@ void WidgetInfo::EditListAddText()
 	const char *desc = obs_property_description(property);
 
 	EditableItemDialog dialog(widget->window(), QString(), false);
-	auto title = QTStr("Basic.PropertiesWindow.AddEditableListEntry")
+	auto title = tr("Basic.PropertiesWindow.AddEditableListEntry")
 			     .arg(QT_UTF8(desc));
 	dialog.setWindowTitle(title);
 	if (dialog.exec() == QDialog::Rejected)
@@ -2293,11 +2291,11 @@ void WidgetInfo::EditListAddFiles()
 	const char *default_path =
 		obs_property_editable_list_default_path(property);
 
-	QString title = QTStr("Basic.PropertiesWindow.AddEditableListFiles")
+	QString title = tr("Basic.PropertiesWindow.AddEditableListFiles")
 				.arg(QT_UTF8(desc));
 
-	QStringList files = OpenFiles(App()->GetMainWindow(), title,
-				      QT_UTF8(default_path), QT_UTF8(filter));
+	QStringList files =
+		OpenFiles(list, title, QT_UTF8(default_path), QT_UTF8(filter));
 #ifdef __APPLE__
 	// TODO: Revisit when QTBUG-42661 is fixed
 	widget->window()->raise();
@@ -2317,11 +2315,10 @@ void WidgetInfo::EditListAddDir()
 	const char *default_path =
 		obs_property_editable_list_default_path(property);
 
-	QString title = QTStr("Basic.PropertiesWindow.AddEditableListDir")
+	QString title = tr("Basic.PropertiesWindow.AddEditableListDir")
 				.arg(QT_UTF8(desc));
 
-	QString dir = SelectDirectory(App()->GetMainWindow(), title,
-				      QT_UTF8(default_path));
+	QString dir = SelectDirectory(list, title, QT_UTF8(default_path));
 #ifdef __APPLE__
 	// TODO: Revisit when QTBUG-42661 is fixed
 	widget->window()->raise();
@@ -2363,11 +2360,11 @@ void WidgetInfo::EditListEdit()
 		QString path;
 
 		if (pathDir.exists())
-			path = SelectDirectory(App()->GetMainWindow(),
-					       QTStr("Browse"), item->text());
+			path = SelectDirectory(list, tr("Browse"),
+					       item->text());
 		else
-			path = OpenFile(App()->GetMainWindow(), QTStr("Browse"),
-					item->text(), QT_UTF8(filter));
+			path = OpenFile(list, tr("Browse"), item->text(),
+					QT_UTF8(filter));
 
 		if (path.isEmpty())
 			return;
@@ -2380,7 +2377,7 @@ void WidgetInfo::EditListEdit()
 	EditableItemDialog dialog(widget->window(), item->text(),
 				  type != OBS_EDITABLE_LIST_TYPE_STRINGS,
 				  filter);
-	auto title = QTStr("Basic.PropertiesWindow.EditEditableListEntry")
+	auto title = tr("Basic.PropertiesWindow.EditEditableListEntry")
 			     .arg(QT_UTF8(desc));
 	dialog.setWindowTitle(title);
 	if (dialog.exec() == QDialog::Rejected)

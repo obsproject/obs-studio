@@ -22,8 +22,7 @@
 #include <functional>
 
 #include <obs.hpp>
-
-#include "properties-view.hpp"
+#include <properties-view.hpp>
 
 class OBSBasic;
 
