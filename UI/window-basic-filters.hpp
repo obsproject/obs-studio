@@ -21,8 +21,7 @@
 #include <QDialogButtonBox>
 #include <memory>
 #include <obs.hpp>
-
-#include "properties-view.hpp"
+#include <properties-view.hpp>
 
 class OBSBasic;
 class QMenu;

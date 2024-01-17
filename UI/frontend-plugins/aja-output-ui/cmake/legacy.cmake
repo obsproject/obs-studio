@@ -9,22 +9,8 @@ find_package(LibAJANTV2 REQUIRED)
 add_library(aja-output-ui MODULE)
 add_library(OBS::aja-output-ui ALIAS aja-output-ui)
 
-if(NOT TARGET OBS::qt-plain-text-edit)
-  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/plain-text-edit" "${CMAKE_BINARY_DIR}/shared/qt/plain-text-edit")
-endif()
-
-if(NOT TARGET OBS::qt-slider-ignorewheel)
-  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/slider-ignorewheel"
-                   "${CMAKE_BINARY_DIR}/shared/qt/slider-ignorewheel")
-endif()
-
-if(NOT TARGET OBS::qt-vertical-scroll-area)
-  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/vertical-scroll-area"
-                   "${CMAKE_BINARY_DIR}/shared/qt/vertical-scroll-area")
-endif()
-
-if(NOT TARGET OBS::qt-wrappers)
-  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/wrappers" "${CMAKE_BINARY_DIR}/shared/qt/wrappers")
+if(NOT TARGET OBS::properties-view)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/properties-view" "${CMAKE_BINARY_DIR}/shared/properties-view")
 endif()
 
 find_qt(COMPONENTS Widgets COMPONENTS_LINUX Gui)
@@ -63,25 +49,10 @@ target_sources(
           ${CMAKE_SOURCE_DIR}/plugins/aja/aja-vpid-data.cpp
           ${CMAKE_SOURCE_DIR}/plugins/aja/aja-vpid-data.hpp
           ${CMAKE_SOURCE_DIR}/plugins/aja/aja-widget-io.cpp
-          ${CMAKE_SOURCE_DIR}/plugins/aja/aja-widget-io.hpp
-          ${CMAKE_SOURCE_DIR}/UI/double-slider.cpp
-          ${CMAKE_SOURCE_DIR}/UI/double-slider.hpp
-          ${CMAKE_SOURCE_DIR}/UI/properties-view.hpp
-          ${CMAKE_SOURCE_DIR}/UI/properties-view.cpp
-          ${CMAKE_SOURCE_DIR}/UI/properties-view.moc.hpp
-          ${CMAKE_SOURCE_DIR}/UI/spinbox-ignorewheel.cpp
-          ${CMAKE_SOURCE_DIR}/UI/spinbox-ignorewheel.hpp)
+          ${CMAKE_SOURCE_DIR}/plugins/aja/aja-widget-io.hpp)
 
-target_link_libraries(
-  aja-output-ui
-  PRIVATE OBS::libobs
-          OBS::frontend-api
-          OBS::qt-wrappers
-          OBS::qt-plain-text-edit
-          OBS::qt-vertical-scroll-area
-          OBS::qt-slider-ignorewheel
-          Qt::Widgets
-          AJA::LibAJANTV2)
+target_link_libraries(aja-output-ui PRIVATE OBS::libobs OBS::frontend-api OBS::properties-view Qt::Widgets
+                                            AJA::LibAJANTV2)
 
 if(OS_MACOS)
   find_library(IOKIT_FRAMEWORK Iokit)

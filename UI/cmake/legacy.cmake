@@ -71,6 +71,10 @@ find_package(CURL REQUIRED)
 add_subdirectory(frontend-plugins)
 add_executable(obs)
 
+if(NOT TARGET OBS::properties-view)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/properties-view" "${CMAKE_BINARY_DIR}/shared/properties-view")
+endif()
+
 if(NOT TARGET OBS::qt-plain-text-edit)
   add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/plain-text-edit" "${CMAKE_BINARY_DIR}/shared/qt/plain-text-edit")
 endif()
@@ -187,8 +191,6 @@ target_sources(
           basic-controls.cpp
           basic-controls.hpp
           clickable-label.hpp
-          double-slider.cpp
-          double-slider.hpp
           horizontal-scroll-area.cpp
           horizontal-scroll-area.hpp
           item-widget-helpers.cpp
@@ -209,9 +211,6 @@ target_sources(
           menu-button.hpp
           mute-checkbox.hpp
           noncheckable-button.hpp
-          properties-view.cpp
-          properties-view.hpp
-          properties-view.moc.hpp
           remote-text.cpp
           remote-text.hpp
           scene-tree.cpp
@@ -219,8 +218,6 @@ target_sources(
           screenshot-obj.hpp
           source-label.cpp
           source-label.hpp
-          spinbox-ignorewheel.cpp
-          spinbox-ignorewheel.hpp
           source-tree.cpp
           source-tree.hpp
           url-push-button.cpp
@@ -325,7 +322,8 @@ target_link_libraries(
           OBS::qt-wrappers
           OBS::qt-plain-text-edit
           OBS::qt-vertical-scroll-area
-          OBS::qt-slider-ignorewheel)
+          OBS::qt-slider-ignorewheel
+          OBS::properties-view)
 
 set_target_properties(obs PROPERTIES FOLDER "frontend")
 

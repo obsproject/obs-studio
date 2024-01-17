@@ -20,22 +20,8 @@ endif()
 add_library(decklink-output-ui MODULE)
 add_library(OBS::decklink-output-ui ALIAS decklink-output-ui)
 
-if(NOT TARGET OBS::qt-plain-text-edit)
-  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/plain-text-edit" "${CMAKE_BINARY_DIR}/shared/qt/plain-text-edit")
-endif()
-
-if(NOT TARGET OBS::qt-vertical-scroll-area)
-  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/vertical-scroll-area"
-                   "${CMAKE_BINARY_DIR}/shared/qt/vertical-scroll-area")
-endif()
-
-if(NOT TARGET OBS::qt-slider-ignorewheel)
-  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/slider-ignorewheel"
-                   "${CMAKE_BINARY_DIR}/shared/qt/slider-ignorewheel")
-endif()
-
-if(NOT TARGET OBS::qt-wrappers)
-  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/wrappers" "${CMAKE_BINARY_DIR}/shared/qt/wrappers")
+if(NOT TARGET OBS::properties-view)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/properties-view" "${CMAKE_BINARY_DIR}/shared/properties-view")
 endif()
 
 target_sources(decklink-output-ui PRIVATE forms/output.ui)
@@ -49,11 +35,7 @@ target_link_libraries(
   decklink-output-ui
   PRIVATE OBS::libobs
           OBS::frontend-api
-          OBS::qt-plain-text-edit
-          OBS::qt-slider-ignorewheel
-          OBS::qt-vertical-scroll-area
-          OBS::qt-wrappers
-          OBS::ui-support
+          OBS::properties-view
           Qt::Widgets
           "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>>"
           $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:X11::X11>
