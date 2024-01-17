@@ -23,6 +23,10 @@ if(NOT TARGET OBS::aja-support)
   add_subdirectory("${CMAKE_SOURCE_DIR}/plugins/aja" "${CMAKE_BINARY_DIR}/plugins/aja")
 endif()
 
+if(NOT TARGET OBS::qt-plain-text-edit)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/plain-text-edit" "${CMAKE_BINARY_DIR}/shared/qt/plain-text-edit")
+endif()
+
 if(NOT TARGET OBS::qt-wrappers)
   add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/wrappers" "${CMAKE_BINARY_DIR}/shared/qt/wrappers")
 endif()
@@ -44,6 +48,7 @@ target_link_libraries(
   PRIVATE OBS::libobs
           OBS::aja-support
           OBS::frontend-api
+          OBS::qt-plain-text-edit
           OBS::qt-wrappers
           OBS::ui-support
           Qt::Widgets

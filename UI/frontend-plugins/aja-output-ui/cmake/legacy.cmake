@@ -9,6 +9,10 @@ find_package(LibAJANTV2 REQUIRED)
 add_library(aja-output-ui MODULE)
 add_library(OBS::aja-output-ui ALIAS aja-output-ui)
 
+if(NOT TARGET OBS::qt-plain-text-edit)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/plain-text-edit" "${CMAKE_BINARY_DIR}/shared/qt/plain-text-edit")
+endif()
+
 if(NOT TARGET OBS::qt-wrappers)
   add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/wrappers" "${CMAKE_BINARY_DIR}/shared/qt/wrappers")
 endif()
@@ -52,8 +56,6 @@ target_sources(
           ${CMAKE_SOURCE_DIR}/plugins/aja/aja-widget-io.hpp
           ${CMAKE_SOURCE_DIR}/UI/double-slider.cpp
           ${CMAKE_SOURCE_DIR}/UI/double-slider.hpp
-          ${CMAKE_SOURCE_DIR}/UI/plain-text-edit.hpp
-          ${CMAKE_SOURCE_DIR}/UI/plain-text-edit.cpp
           ${CMAKE_SOURCE_DIR}/UI/properties-view.hpp
           ${CMAKE_SOURCE_DIR}/UI/properties-view.cpp
           ${CMAKE_SOURCE_DIR}/UI/properties-view.moc.hpp
@@ -64,7 +66,8 @@ target_sources(
           ${CMAKE_SOURCE_DIR}/UI/vertical-scroll-area.cpp
           ${CMAKE_SOURCE_DIR}/UI/vertical-scroll-area.hpp)
 
-target_link_libraries(aja-output-ui PRIVATE OBS::libobs OBS::frontend-api OBS::qt-wrappers Qt::Widgets AJA::LibAJANTV2)
+target_link_libraries(aja-output-ui PRIVATE OBS::libobs OBS::frontend-api OBS::qt-wrappers OBS::qt-plain-text-edit
+                                            Qt::Widgets AJA::LibAJANTV2)
 
 if(OS_MACOS)
   find_library(IOKIT_FRAMEWORK Iokit)

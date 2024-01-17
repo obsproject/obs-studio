@@ -3,6 +3,10 @@ project(frontend-tools)
 add_library(frontend-tools MODULE)
 add_library(OBS::frontend-tools ALIAS frontend-tools)
 
+if(NOT TARGET OBS::qt-plain-text-edit)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/plain-text-edit" "${CMAKE_BINARY_DIR}/shared/qt/plain-text-edit")
+endif()
+
 if(NOT TARGET OBS::qt-wrappers)
   add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/wrappers" "${CMAKE_BINARY_DIR}/shared/qt/wrappers")
 endif()
@@ -43,13 +47,12 @@ target_sources(
           ${CMAKE_SOURCE_DIR}/UI/slider-ignorewheel.cpp
           ${CMAKE_SOURCE_DIR}/UI/slider-ignorewheel.hpp
           ${CMAKE_SOURCE_DIR}/UI/vertical-scroll-area.hpp
-          ${CMAKE_SOURCE_DIR}/UI/vertical-scroll-area.cpp
-          ${CMAKE_SOURCE_DIR}/UI/plain-text-edit.cpp
-          ${CMAKE_SOURCE_DIR}/UI/plain-text-edit.hpp)
+          ${CMAKE_SOURCE_DIR}/UI/vertical-scroll-area.cpp)
 
 target_compile_features(frontend-tools PRIVATE cxx_std_17)
 
-target_link_libraries(frontend-tools PRIVATE OBS::frontend-api OBS::qt-wrappers OBS::libobs Qt::Widgets)
+target_link_libraries(frontend-tools PRIVATE OBS::frontend-api OBS::qt-wrappers OBS::qt-plain-text-edit OBS::libobs
+                                             Qt::Widgets)
 
 if(OS_POSIX AND NOT OS_MACOS)
   target_link_libraries(frontend-tools PRIVATE Qt::GuiPrivate)
