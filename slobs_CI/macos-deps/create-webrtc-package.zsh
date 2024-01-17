@@ -44,7 +44,7 @@
 # Unfortunately, that did not help me. Xcode started to ask me to install command line tools repeatedly.
 # Even using python3 from an Xcode subfolder did not help.
 # So, do the following:
-# - Delete the webrtc-checkout/src/... folders.
+# - Delete the webrtc-checkout/src/out folder.
 # - Edit webrtc-checkout/src/build/toolchain/apple/toolchain.gni by changing
 #     linker_driver =
 #        "TOOL_VERSION=${tool_versions.linker_driver} " +
@@ -151,6 +151,52 @@ download_webrtc() {
         echo "### Could not sync the webrtc source code."
         cd "${INITIAL_WORKING_FOLDER}"
         exit 1
+    fi
+}
+
+patch_webrtc() {
+    BUILD_GN=${GIT_FOLDER}/build/config/mac/BUILD.gn
+
+    if grep -q "NS_FORMAT_ARGUMENT" "${BUILD_GN}"
+    then
+        echo "### It looks like '${GIT_FOLDER}/build/config/mac/BUILD.gn' does not need to be patched!"
+    else
+        echo "### Patching '${GIT_FOLDER}/build/config/mac/BUILD.gn' ..."
+
+        PATCH_FILENAME=build-gn-fixes.patch
+        PATCH_PATH=${GIT_FOLDER}/${PATCH_FILENAME}
+
+        cat <<'EOT' > "${PATCH_PATH}"
+--- a/build/config/mac/BUILD.gn	2024-01-14 22:05:29
++++ b/build/config/mac/BUILD.gn	2024-01-15 22:19:30
+@@ -68,7 +68,9 @@
+ 
+   asmflags = common_flags
+   cflags = common_flags
++  cflags += [ "-DNS_FORMAT_ARGUMENT(A)=", "-Wno-c++11-narrowing" ]
+   ldflags = common_flags
++  ldflags += [ "-Wl,-ld_classic" ]
+ 
+   # Prevent Mac OS X AssertMacros.h (included by system header) from defining
+   # macros that collide with common names, like 'check', 'require', and
+EOT
+
+        if [ $? -ne 0 ]
+        then
+            echo "### Could not prepare the macos BUILD.gn patch!"
+            exit 1
+        fi 
+
+        cd "${GIT_FOLDER}"
+        git apply "${PATCH_FILENAME}"
+        if [ $? -ne 0 ]
+        then
+            echo "### Could not apply the macos BUILD.gn patch!"
+            cd "${INITIAL_WORKING_FOLDER}"
+            exit 1
+        fi 
+
+        cd "${INITIAL_WORKING_FOLDER}"
     fi
 }
 
@@ -303,6 +349,9 @@ fi
 
 # Downlaod the source code if it is necessary
 download_webrtc
+
+# Patch build/config/mac/BUILD.gn to build it with the latest XCode
+patch_webrtc
 
 # Build 
 build_webrtc

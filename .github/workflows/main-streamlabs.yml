@@ -21,7 +21,7 @@ env:
 jobs:
   macos64:
     name: 'macOS'
-    runs-on: [macos-12]
+    runs-on: [macos-13]
     strategy:
       matrix:
         arch: ['x86_64', 'arm64']
@@ -42,8 +42,8 @@ jobs:
       VLC_VERSION_MAC: '3.0.8'
       QT_VERSION_MAC: '6.3.1'
       SPARKLE_VERSION: '1.26.0'
-      WEBRTC_VERSION_MAC: 'm94-b230130'
-      LIBMEDIASOUPCLIENT_VERSION_MAC: '55d724f-b230130'
+      WEBRTC_VERSION_MAC: 'm94-b240115'
+      LIBMEDIASOUPCLIENT_VERSION_MAC: '0b76859-b240116'
 
     steps:
       - name: 'Checkout'
@@ -69,6 +69,7 @@ jobs:
           fi
 
           echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
+          sudo xcode-select --switch /Applications/Xcode_15.1.app/Contents/Developer
       - name: Configure / Build 
         run: ./slobs_CI/build-script-osx.sh
         env:

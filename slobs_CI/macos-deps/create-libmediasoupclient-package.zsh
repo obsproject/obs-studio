@@ -29,54 +29,6 @@ download_libmediasoupclient() {
     fi
 }
 
-patch_libmediasoupclient() {
-    CATCH_HPP=${GIT_FOLDER}/deps/libsdptransform/test/include/catch.hpp
-    if grep -q "0xd4200000" "${CATCH_HPP}"
-    then
-        echo "### It looks like the '${CATCH_HPP}' does not need to be patched!"
-    else
-        echo "### Patching '${GIT_FOLDER}/deps/libsdptransform/test/include/catch.hpp' ..."
-
-        PATCH_FILENAME=catch-hpp-arm64-fix.patch
-        PATCH_PATH=${GIT_FOLDER}/${PATCH_FILENAME}
-
-        cat <<'EOT' > "${PATCH_PATH}"
---- a/deps/libsdptransform/test/include/catch.hpp	2023-01-18 20:24:16
-+++ b/deps/libsdptransform/test/include/catch.hpp	2023-01-18 20:21:40
-@@ -7852,7 +7852,11 @@
- 
- #ifdef CATCH_PLATFORM_MAC
- 
--    #define CATCH_TRAP() __asm__("int $3\n" : : ) /* NOLINT */
-+    #if defined(__i386__) || defined(__x86_64__)
-+        #define CATCH_TRAP() __asm__("int $3\n" : : ) /* NOLINT */
-+    #elif defined(__aarch64__)
-+        #define CATCH_TRAP()  __asm__(".inst 0xd4200000")
-+    #endif
- 
- #elif defined(CATCH_PLATFORM_LINUX)
-     // If we can use inline assembler, do it because this allows us to break
-EOT
-
-        if [ $? -ne 0 ]
-        then
-            echo "### Could not prepare the arm64 patch!"
-            exit 1
-        fi 
-
-        cd "${GIT_FOLDER}"
-        git apply "${PATCH_FILENAME}"
-        if [ $? -ne 0 ]
-        then
-            echo "### Could not apply the arm64 patch!"
-            cd "${INITIAL_WORKING_FOLDER}"
-            exit 1
-        fi 
-
-        cd "${INITIAL_WORKING_FOLDER}"
-    fi
-}
-
 build_libmediasoupclient() {
     # Prepare build parameters
     case "${ARCHITECTURE}" in
@@ -141,12 +93,12 @@ package_libmediasoupclient() {
     # Copy libs
     echo "### Copying libraries ..."
     cp "${BUILD_FOLDER}/libmediasoupclient.a" "${PACKAGE_FOLDER}/lib"
-    cp "${BUILD_FOLDER}/libsdptransform/libsdptransform.a" "${PACKAGE_FOLDER}/lib"
+    cp "${BUILD_FOLDER}/_deps/libsdptransform-build/libsdptransform.a" "${PACKAGE_FOLDER}/lib"
 
     # Copy includes    
     echo "### Copying includes ..."
     cp -R "${GIT_FOLDER}/include/." "${PACKAGE_FOLDER}/include/mediasoupclient"
-    cp -R "${GIT_FOLDER}/deps/libsdptransform/include/." "${PACKAGE_FOLDER}/include/sdptransform"
+    cp -R "${BUILD_FOLDER}/_deps/libsdptransform-src/include/." "${PACKAGE_FOLDER}/include/sdptransform"
 
     # Copy the script
     cp "${SCRIPT_PATH}" "${PACKAGE_FOLDER}"
@@ -206,9 +158,6 @@ fi
 
 # Download the sources
 download_libmediasoupclient
-
-# Patch if necessary
-patch_libmediasoupclient
 
 # Build
 build_libmediasoupclient

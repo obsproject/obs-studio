@@ -9,6 +9,9 @@
 
 #include "window-utils.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
+
 static inline bool requires_window(enum crop_mode mode)
 {
 	return mode == CROP_TO_WINDOW || mode == CROP_TO_WINDOW_AND_MANUAL;
@@ -640,3 +643,6 @@ struct obs_source_info display_capture_info = {
 	.update = display_capture_update,
 	.icon_type = OBS_ICON_TYPE_DESKTOP_CAPTURE,
 };
+
+// "-Wunguarded-availability-new"
+#pragma clang diagnostic pop

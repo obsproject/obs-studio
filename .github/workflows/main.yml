@@ -107,7 +107,7 @@ jobs:
 
   macos_build:
     name: '02 - macOS'
-    runs-on: [macos-12]
+    runs-on: [macos-13]
     strategy:
       matrix:
         arch: ['x86_64', 'arm64']
@@ -177,6 +177,8 @@ jobs:
           fi
 
           echo "commitHash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
+
+          sudo xcode-select --switch /Applications/Xcode_15.1.app/Contents/Developer
 
       - name: 'Install dependencies'
         run: CI/macos/01_install_dependencies.sh --architecture "${{ matrix.arch }}"
