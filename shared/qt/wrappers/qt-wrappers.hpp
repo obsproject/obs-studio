@@ -40,7 +40,8 @@ class QString;
 class QLabel;
 class QToolBar;
 
-class OBSMessageBox {
+class OBSMessageBox : QObject {
+	Q_OBJECT
 public:
 	static QMessageBox::StandardButton
 	question(QWidget *parent, const QString &title, const QString &text,

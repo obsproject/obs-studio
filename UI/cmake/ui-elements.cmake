@@ -14,8 +14,6 @@ target_sources(
             properties-view.cpp
             properties-view.hpp
             properties-view.moc.hpp
-            qt-wrappers.cpp
-            qt-wrappers.hpp
             slider-ignorewheel.cpp
             slider-ignorewheel.hpp
             spinbox-ignorewheel.cpp

@@ -71,6 +71,10 @@ find_package(CURL REQUIRED)
 add_subdirectory(frontend-plugins)
 add_executable(obs)
 
+if(NOT TARGET OBS::qt-wrappers)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/wrappers" "${CMAKE_BINARY_DIR}/shared/qt/wrappers")
+endif()
+
 find_qt(COMPONENTS Widgets Network Svg Xml COMPONENTS_LINUX Gui DBus)
 
 target_link_libraries(obs PRIVATE Qt::Widgets Qt::Svg Qt::Xml Qt::Network)
@@ -147,8 +151,6 @@ target_sources(
           platform.hpp
           qt-display.cpp
           qt-display.hpp
-          qt-wrappers.cpp
-          qt-wrappers.hpp
           ui-validation.cpp
           ui-validation.hpp
           multiview.cpp
@@ -304,8 +306,15 @@ target_compile_features(obs PRIVATE cxx_std_17)
 
 target_include_directories(obs PRIVATE ${CMAKE_SOURCE_DIR}/deps/json11)
 
-target_link_libraries(obs PRIVATE CURL::libcurl FFmpeg::avcodec FFmpeg::avutil FFmpeg::avformat OBS::libobs
-                                  OBS::frontend-api)
+target_link_libraries(
+  obs
+  PRIVATE CURL::libcurl
+          FFmpeg::avcodec
+          FFmpeg::avutil
+          FFmpeg::avformat
+          OBS::libobs
+          OBS::frontend-api
+          OBS::qt-wrappers)
 
 set_target_properties(obs PROPERTIES FOLDER "frontend")
 

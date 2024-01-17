@@ -3,7 +3,7 @@
 #include <cinttypes>
 #include <QMessageBox>
 #include <QThreadPool>
-#include "qt-wrappers.hpp"
+#include <qt-wrappers.hpp>
 #include "audio-encoders.hpp"
 #include "multitrack-video-error.hpp"
 #include "window-basic-main.hpp"

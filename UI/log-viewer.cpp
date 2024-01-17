@@ -8,9 +8,9 @@
 #include <QLayout>
 #include <QDesktopServices>
 #include <string>
+#include <qt-wrappers.hpp>
 
 #include "log-viewer.hpp"
-#include "qt-wrappers.hpp"
 
 OBSLogViewer::OBSLogViewer(QWidget *parent)
 	: QDialog(parent),

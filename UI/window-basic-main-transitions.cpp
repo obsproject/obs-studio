@@ -20,6 +20,7 @@
 #include <QToolTip>
 #include <QMessageBox>
 #include <util/dstr.hpp>
+#include <qt-wrappers.hpp>
 #include "window-basic-main.hpp"
 #include "window-basic-main-outputs.hpp"
 #include "window-basic-vcam-config.hpp"
@@ -27,7 +28,6 @@
 #include "window-namedialog.hpp"
 #include "menu-button.hpp"
 #include "slider-ignorewheel.hpp"
-#include "qt-wrappers.hpp"
 
 #include "obs-hotkey.h"
 

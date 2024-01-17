@@ -4,7 +4,7 @@
 #include <QTimer>
 #include <vector>
 #include <obs.hpp>
-#include "qt-wrappers.hpp"
+#include <qt-wrappers.hpp>
 
 class Ui_MediaControls;
 

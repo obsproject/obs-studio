@@ -1,11 +1,11 @@
 #include "qt-display.hpp"
-#include "qt-wrappers.hpp"
 #include "display-helpers.hpp"
 #include <QWindow>
 #include <QScreen>
 #include <QResizeEvent>
 #include <QShowEvent>
 
+#include <qt-wrappers.hpp>
 #include <obs-config.h>
 
 #ifdef _WIN32

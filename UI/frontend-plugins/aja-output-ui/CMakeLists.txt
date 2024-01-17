@@ -23,6 +23,10 @@ if(NOT TARGET OBS::aja-support)
   add_subdirectory("${CMAKE_SOURCE_DIR}/plugins/aja" "${CMAKE_BINARY_DIR}/plugins/aja")
 endif()
 
+if(NOT TARGET OBS::qt-wrappers)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/wrappers" "${CMAKE_BINARY_DIR}/shared/qt/wrappers")
+endif()
+
 add_library(aja-output-ui MODULE)
 add_library(OBS::aja-output-ui ALIAS aja-output-ui)
 
@@ -40,6 +44,7 @@ target_link_libraries(
   PRIVATE OBS::libobs
           OBS::aja-support
           OBS::frontend-api
+          OBS::qt-wrappers
           OBS::ui-support
           Qt::Widgets
           AJA::LibAJANTV2

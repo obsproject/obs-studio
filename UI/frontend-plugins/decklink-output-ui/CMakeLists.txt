@@ -20,6 +20,10 @@ endif()
 add_library(decklink-output-ui MODULE)
 add_library(OBS::decklink-output-ui ALIAS decklink-output-ui)
 
+if(NOT TARGET OBS::qt-wrappers)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/wrappers" "${CMAKE_BINARY_DIR}/shared/qt/wrappers")
+endif()
+
 target_sources(decklink-output-ui PRIVATE forms/output.ui)
 
 target_sources(decklink-output-ui PRIVATE DecklinkOutputUI.cpp DecklinkOutputUI.h decklink-ui-main.cpp
@@ -31,6 +35,7 @@ target_link_libraries(
   decklink-output-ui
   PRIVATE OBS::libobs
           OBS::frontend-api
+          OBS::qt-wrappers
           OBS::ui-support
           Qt::Widgets
           "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>>"

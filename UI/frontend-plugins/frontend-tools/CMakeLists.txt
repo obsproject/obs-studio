@@ -14,6 +14,10 @@ endif()
 add_library(frontend-tools MODULE)
 add_library(OBS::frontend-tools ALIAS frontend-tools)
 
+if(NOT TARGET OBS::qt-wrappers)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/wrappers" "${CMAKE_BINARY_DIR}/shared/qt/wrappers")
+endif()
+
 target_sources(
   frontend-tools
   PRIVATE # cmake-format: sortable
@@ -45,6 +49,7 @@ target_link_libraries(
   frontend-tools
   PRIVATE OBS::frontend-api
           OBS::libobs
+          OBS::qt-wrappers
           OBS::ui-support
           Qt::Widgets
           "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,Cocoa>>"

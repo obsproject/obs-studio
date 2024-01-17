@@ -8,6 +8,7 @@
 #include <QHBoxLayout>
 #include <QUrl>
 #include <QRandomGenerator>
+#include <qt-wrappers.hpp>
 
 #ifdef WIN32
 #include <windows.h>
@@ -18,7 +19,6 @@
 
 #include "auth-listener.hpp"
 #include "obs-app.hpp"
-#include "qt-wrappers.hpp"
 #include "ui-config.h"
 #include "youtube-api-wrappers.hpp"
 #include "window-basic-main.hpp"

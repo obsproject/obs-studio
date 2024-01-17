@@ -1,7 +1,6 @@
 #include "obs-module.h"
 #include "scripts.hpp"
 #include "../../properties-view.hpp"
-#include "../../qt-wrappers.hpp"
 #include "../../plain-text-edit.hpp"
 
 #include <QFileDialog>
@@ -18,6 +17,7 @@
 #include <QMenu>
 #include <QUrl>
 #include <QDesktopServices>
+#include <qt-wrappers.hpp>
 
 #include <obs.hpp>
 #include <obs-module.h>

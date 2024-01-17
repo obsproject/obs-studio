@@ -35,6 +35,7 @@
 #include <QScreen>
 #include <QStandardItemModel>
 #include <QSpacerItem>
+#include <qt-wrappers.hpp>
 
 #include "audio-encoders.hpp"
 #include "hotkey-edit.hpp"
@@ -42,7 +43,6 @@
 #include "obs-app.hpp"
 #include "platform.hpp"
 #include "properties-view.hpp"
-#include "qt-wrappers.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-settings.hpp"
 #include "window-basic-main-outputs.hpp"
