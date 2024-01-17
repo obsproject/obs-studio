@@ -75,6 +75,11 @@ if(NOT TARGET OBS::qt-plain-text-edit)
   add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/plain-text-edit" "${CMAKE_BINARY_DIR}/shared/qt/plain-text-edit")
 endif()
 
+if(NOT TARGET OBS::qt-slider-ignorewheel)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/slider-ignorewheel"
+                   "${CMAKE_BINARY_DIR}/shared/qt/slider-ignorewheel")
+endif()
+
 if(NOT TARGET OBS::qt-vertical-scroll-area)
   add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/vertical-scroll-area"
                    "${CMAKE_BINARY_DIR}/shared/qt/vertical-scroll-area")
@@ -212,8 +217,6 @@ target_sources(
           scene-tree.cpp
           scene-tree.hpp
           screenshot-obj.hpp
-          slider-ignorewheel.cpp
-          slider-ignorewheel.hpp
           source-label.cpp
           source-label.hpp
           spinbox-ignorewheel.cpp
@@ -321,7 +324,8 @@ target_link_libraries(
           OBS::frontend-api
           OBS::qt-wrappers
           OBS::qt-plain-text-edit
-          OBS::qt-vertical-scroll-area)
+          OBS::qt-vertical-scroll-area
+          OBS::qt-slider-ignorewheel)
 
 set_target_properties(obs PROPERTIES FOLDER "frontend")
 

@@ -7,6 +7,11 @@ if(NOT TARGET OBS::qt-plain-text-edit)
   add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/plain-text-edit" "${CMAKE_BINARY_DIR}/shared/qt/plain-text-edit")
 endif()
 
+if(NOT TARGET OBS::qt-slider-ignorewheel)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/slider-ignorewheel"
+                   "${CMAKE_BINARY_DIR}/shared/qt/slider-ignorewheel")
+endif()
+
 if(NOT TARGET OBS::qt-vertical-scroll-area)
   add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/vertical-scroll-area"
                    "${CMAKE_BINARY_DIR}/shared/qt/vertical-scroll-area")
@@ -48,14 +53,19 @@ target_sources(
           ${CMAKE_SOURCE_DIR}/UI/properties-view.hpp
           ${CMAKE_SOURCE_DIR}/UI/properties-view.moc.hpp
           ${CMAKE_SOURCE_DIR}/UI/spinbox-ignorewheel.cpp
-          ${CMAKE_SOURCE_DIR}/UI/spinbox-ignorewheel.hpp
-          ${CMAKE_SOURCE_DIR}/UI/slider-ignorewheel.cpp
-          ${CMAKE_SOURCE_DIR}/UI/slider-ignorewheel.hpp)
+          ${CMAKE_SOURCE_DIR}/UI/spinbox-ignorewheel.hpp)
 
 target_compile_features(frontend-tools PRIVATE cxx_std_17)
 
-target_link_libraries(frontend-tools PRIVATE OBS::frontend-api OBS::qt-wrappers OBS::qt-plain-text-edit
-                                             OBS::qt-vertical-scroll-area OBS::libobs Qt::Widgets)
+target_link_libraries(
+  frontend-tools
+  PRIVATE OBS::frontend-api
+          OBS::qt-wrappers
+          OBS::qt-plain-text-edit
+          OBS::qt-vertical-scroll-area
+          OBS::qt-slider-ignorewheel
+          OBS::libobs
+          Qt::Widgets)
 
 if(OS_POSIX AND NOT OS_MACOS)
   target_link_libraries(frontend-tools PRIVATE Qt::GuiPrivate)

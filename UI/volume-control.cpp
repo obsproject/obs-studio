@@ -5,6 +5,7 @@
 #include "absolute-slider.hpp"
 #include "source-label.hpp"
 
+#include <slider-ignorewheel.hpp>
 #include <qt-wrappers.hpp>
 #include <QFontDatabase>
 #include <QHBoxLayout>
