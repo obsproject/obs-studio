@@ -20,5 +20,6 @@
 	do {                                       \
 		if (ptr) {                         \
 			ptr->lpVtbl->Release(ptr); \
+			ptr = NULL;                \
 		}                                  \
 	} while (false)

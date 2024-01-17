@@ -997,6 +997,7 @@ bool WASAPISource::TryInitialize()
 	bool success = false;
 	try {
 		Initialize();
+		obs_source_device_changed(source);
 		success = true;
 
 	} catch (HRError &error) {
