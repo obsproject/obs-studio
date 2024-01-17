@@ -9,8 +9,6 @@ target_sources(
             double-slider.hpp
             horizontal-scroll-area.cpp
             horizontal-scroll-area.hpp
-            plain-text-edit.cpp
-            plain-text-edit.hpp
             properties-view.cpp
             properties-view.hpp
             properties-view.moc.hpp
@@ -25,6 +23,12 @@ target_include_directories(obs-ui-support INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}
 target_compile_options(obs-ui-support INTERFACE $<$<PLATFORM_ID:Linux>:-Wno-error=enum-conversion>)
 
 target_link_libraries(obs-studio PRIVATE OBS::ui-support)
+
+if(NOT TARGET OBS::qt-plain-text-edit)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/plain-text-edit" "${CMAKE_BINARY_DIR}/shared/qt/plain-text-edit")
+endif()
+
+target_link_libraries(obs-studio PRIVATE OBS::qt-plain-text-edit)
 
 target_sources(
   obs-studio

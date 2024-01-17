@@ -71,6 +71,10 @@ find_package(CURL REQUIRED)
 add_subdirectory(frontend-plugins)
 add_executable(obs)
 
+if(NOT TARGET OBS::qt-plain-text-edit)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/plain-text-edit" "${CMAKE_BINARY_DIR}/shared/qt/plain-text-edit")
+endif()
+
 if(NOT TARGET OBS::qt-wrappers)
   add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/wrappers" "${CMAKE_BINARY_DIR}/shared/qt/wrappers")
 endif()
@@ -195,8 +199,6 @@ target_sources(
           menu-button.hpp
           mute-checkbox.hpp
           noncheckable-button.hpp
-          plain-text-edit.cpp
-          plain-text-edit.hpp
           properties-view.cpp
           properties-view.hpp
           properties-view.moc.hpp
@@ -314,7 +316,8 @@ target_link_libraries(
           FFmpeg::avformat
           OBS::libobs
           OBS::frontend-api
-          OBS::qt-wrappers)
+          OBS::qt-wrappers
+          OBS::qt-plain-text-edit)
 
 set_target_properties(obs PROPERTIES FOLDER "frontend")
 

@@ -14,6 +14,10 @@ endif()
 add_library(frontend-tools MODULE)
 add_library(OBS::frontend-tools ALIAS frontend-tools)
 
+if(NOT TARGET OBS::qt-plain-text-edit)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/plain-text-edit" "${CMAKE_BINARY_DIR}/shared/qt/plain-text-edit")
+endif()
+
 if(NOT TARGET OBS::qt-wrappers)
   add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/wrappers" "${CMAKE_BINARY_DIR}/shared/qt/wrappers")
 endif()
@@ -49,6 +53,7 @@ target_link_libraries(
   frontend-tools
   PRIVATE OBS::frontend-api
           OBS::libobs
+          OBS::qt-plain-text-edit
           OBS::qt-wrappers
           OBS::ui-support
           Qt::Widgets

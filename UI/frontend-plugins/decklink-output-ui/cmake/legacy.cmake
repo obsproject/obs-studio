@@ -7,6 +7,10 @@ endif()
 add_library(decklink-output-ui MODULE)
 add_library(OBS::decklink-output-ui ALIAS decklink-output-ui)
 
+if(NOT TARGET OBS::qt-plain-text-edit)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/plain-text-edit" "${CMAKE_BINARY_DIR}/shared/qt/plain-text-edit")
+endif()
+
 if(NOT TARGET OBS::qt-wrappers)
   add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/wrappers" "${CMAKE_BINARY_DIR}/shared/qt/wrappers")
 endif()
@@ -34,8 +38,6 @@ target_sources(
           decklink-ui-main.h
           ${CMAKE_SOURCE_DIR}/UI/double-slider.cpp
           ${CMAKE_SOURCE_DIR}/UI/double-slider.hpp
-          ${CMAKE_SOURCE_DIR}/UI/plain-text-edit.hpp
-          ${CMAKE_SOURCE_DIR}/UI/plain-text-edit.cpp
           ${CMAKE_SOURCE_DIR}/UI/properties-view.hpp
           ${CMAKE_SOURCE_DIR}/UI/properties-view.cpp
           ${CMAKE_SOURCE_DIR}/UI/properties-view.moc.hpp
@@ -46,7 +48,8 @@ target_sources(
           ${CMAKE_SOURCE_DIR}/UI/vertical-scroll-area.hpp
           ${CMAKE_SOURCE_DIR}/UI/vertical-scroll-area.cpp)
 
-target_link_libraries(decklink-output-ui PRIVATE OBS::libobs OBS::frontend-api OBS::qt-wrappers Qt::Widgets)
+target_link_libraries(decklink-output-ui PRIVATE OBS::libobs OBS::frontend-api OBS::qt-wrappers OBS::qt-plain-text-edit
+                                                 Qt::Widgets)
 
 target_compile_features(decklink-output-ui PRIVATE cxx_std_17)
 
