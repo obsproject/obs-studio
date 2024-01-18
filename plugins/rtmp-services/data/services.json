@@ -2903,6 +2903,25 @@
                 "x264opts": "scenecut=0",
                 "output": "rtmp_output"
             }
+        },
+        {
+            "name": "Amazon IVS",
+            "supported video codecs": ["h264"],
+            "servers": [
+                {
+                    "name": "Global (RTMPS, recommended)",
+                    "url": "rtmps://ingest.global-contribute.live-video.net:443/app"
+                },
+                {
+                    "name": "Global (RTMP)",
+                    "url": "rtmp://ingest.global-contribute.live-video.net/app"
+                }
+            ],
+            "multitrack_video_configuration_url": "https://ingest.contribute.live-video.net/api/v3/GetClientConfiguration",
+            "recommended": {
+                "keyint": 2,
+                "x264opts": "scenecut=0"
+            }
         }
     ]
 }
