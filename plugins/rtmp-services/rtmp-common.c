@@ -538,8 +538,19 @@ static void update_protocol(json_t *service, obs_data_t *settings)
 
 static void copy_info_to_settings(json_t *service, obs_data_t *settings)
 {
+	const char *name = obs_data_get_string(settings, "service");
+
 	fill_more_info_link(service, settings);
 	fill_stream_key_link(service, settings);
+	copy_string_from_json_if_available(
+		service, settings, "multitrack_video_configuration_url");
+	copy_string_from_json_if_available(service, settings,
+					   "multitrack_video_name");
+	if (!obs_data_has_user_value(settings, "multitrack_video_name")) {
+		obs_data_set_string(settings, "multitrack_video_name",
+				    "Multitrack Video");
+	}
+
 	update_protocol(service, settings);
 }
 
