@@ -331,6 +331,17 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 		}
 	}
 
+	constexpr uint32_t pixelcount_4k = 3840 * 2160;
+	/* If size is 4K+, set tile columns per frame to 2. */
+	if (codec == QSV_CODEC_AV1 &&
+	    (pParams->nWidth * pParams->nHeight) >= pixelcount_4k) {
+		memset(&m_ExtAv1TileParam, 0, sizeof(m_ExtAv1TileParam));
+		m_ExtAv1TileParam.Header.BufferId = MFX_EXTBUFF_AV1_TILE_PARAM;
+		m_ExtAv1TileParam.Header.BufferSz = sizeof(m_ExtAv1TileParam);
+		m_ExtAv1TileParam.NumTileColumns = 2;
+		extendedBuffers.push_back((mfxExtBuffer *)&m_ExtAv1TileParam);
+	}
+
 #if defined(_WIN32)
 	// TODO: Ask about this one on VAAPI too.
 	memset(&m_ExtVideoSignalInfo, 0, sizeof(m_ExtVideoSignalInfo));

@@ -123,6 +123,7 @@ private:
 	mfxExtCodingOption2 m_co2;
 	mfxExtCodingOption m_co;
 	mfxExtHEVCParam m_ExtHEVCParam{};
+	mfxExtAV1TileParam m_ExtAv1TileParam{};
 	mfxExtVideoSignalInfo m_ExtVideoSignalInfo{};
 	mfxExtChromaLocInfo m_ExtChromaLocInfo{};
 	mfxExtMasteringDisplayColourVolume m_ExtMasteringDisplayColourVolume{};
