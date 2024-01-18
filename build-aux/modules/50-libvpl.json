@@ -1,5 +1,5 @@
 {
-    "name": "onevpl",
+    "name": "libvpl",
     "buildsystem": "cmake-ninja",
     "builddir": true,
     "config-opts": [
@@ -20,9 +20,9 @@
     "sources": [
         {
             "type": "git",
-            "url": "https://github.com/oneapi-src/oneVPL.git",
-            "commit": "ca5bbbb057a6e84b103aca807612afb693ad046c",
-            "tag": "v2023.3.1"
+            "url": "https://github.com/intel/libvpl.git",
+            "commit": "79ef61b11790c70941cfa4d167b5d20d3a4e9744",
+            "tag": "v2.10.1"
         }
     ]
 }
