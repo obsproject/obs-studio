@@ -25,7 +25,8 @@
         {
             "type": "git",
             "url": "https://github.com/FFmpeg/FFmpeg.git",
-            "commit": "a6dc92968a325d331bb6dcf9b3b2248026cd1d6c",
+            "tag": "n6.1.1",
+            "commit": "e38092ef9395d7049f871ef4d5411eb410e283e0",
             "disable-shallow-clone": true
         },
         {
