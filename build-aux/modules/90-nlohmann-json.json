@@ -10,8 +10,8 @@
         {
             "type": "git",
             "url": "https://github.com/nlohmann/json.git",
-            "tag": "v3.11.2",
-            "commit": "bc889afb4c5bf1c0d8ee29ef35eaaf4c8bef8a5d"
+            "tag": "v3.11.3",
+            "commit": "9cca280a4d0ccf0c08f47a99aa71d1b0e52f8d03"
         }
     ]
 }

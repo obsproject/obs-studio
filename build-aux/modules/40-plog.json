@@ -12,8 +12,8 @@
         {
             "type": "git",
             "url": "https://github.com/SergiusTheBest/plog.git",
-            "tag": "1.1.9",
-            "commit": "f47149410a4c927643148b96799f28b2d80d451b"
+            "tag": "1.1.10",
+            "commit": "e21baecd4753f14da64ede979c5a19302618b752"
         }
     ]
 }
