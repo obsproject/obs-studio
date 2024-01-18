@@ -489,23 +489,24 @@ static void fill_servers(obs_property_t *servers_prop, json_t *service,
 	}
 }
 
+static void copy_string_from_json_if_available(json_t *service,
+					       obs_data_t *settings,
+					       const char *name)
+{
+	const char *string = get_string_val(service, name);
+	if (string)
+		obs_data_set_string(settings, name, string);
+}
+
 static void fill_more_info_link(json_t *service, obs_data_t *settings)
 {
-	const char *more_info_link;
-
-	more_info_link = get_string_val(service, "more_info_link");
-	if (more_info_link)
-		obs_data_set_string(settings, "more_info_link", more_info_link);
+	copy_string_from_json_if_available(service, settings, "more_info_link");
 }
 
 static void fill_stream_key_link(json_t *service, obs_data_t *settings)
 {
-	const char *stream_key_link;
-
-	stream_key_link = get_string_val(service, "stream_key_link");
-	if (stream_key_link)
-		obs_data_set_string(settings, "stream_key_link",
-				    stream_key_link);
+	copy_string_from_json_if_available(service, settings,
+					   "stream_key_link");
 }
 
 static void update_protocol(json_t *service, obs_data_t *settings)
