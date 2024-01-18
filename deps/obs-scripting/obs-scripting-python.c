@@ -1047,6 +1047,50 @@ fail:
 	return py_ret;
 }
 
+static PyObject *calldata_scene(PyObject *self, PyObject *args)
+{
+	PyObject *py_ret = NULL;
+	PyObject *py_cd = NULL;
+
+	calldata_t *cd;
+	const char *name;
+
+	UNUSED_PARAMETER(self);
+
+	if (!parse_args(args, "Os", &py_cd, &name))
+		goto fail;
+	if (!py_to_libobs(calldata_t, py_cd, &cd))
+		goto fail;
+
+	obs_scene_t *scene = calldata_ptr(cd, name);
+	libobs_to_py(obs_scene_t, scene, false, &py_ret);
+
+fail:
+	return py_ret;
+}
+
+static PyObject *calldata_hotkey(PyObject *self, PyObject *args)
+{
+	PyObject *py_ret = NULL;
+	PyObject *py_cd = NULL;
+
+	calldata_t *cd;
+	const char *name;
+
+	UNUSED_PARAMETER(self);
+
+	if (!parse_args(args, "Os", &py_cd, &name))
+		goto fail;
+	if (!py_to_libobs(calldata_t, py_cd, &cd))
+		goto fail;
+
+	obs_hotkey_t *hotkey = calldata_ptr(cd, name);
+	libobs_to_py(obs_hotkey_t, hotkey, false, &py_ret);
+
+fail:
+	return py_ret;
+}
+
 /* -------------------------------------------- */
 
 static bool enum_sources_proc(void *param, obs_source_t *source)
