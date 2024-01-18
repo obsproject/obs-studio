@@ -1,7 +1,7 @@
 {
     "id": "com.obsproject.Studio",
     "runtime": "org.kde.Platform",
-    "runtime-version": "6.5",
+    "runtime-version": "6.6",
     "sdk": "org.kde.Sdk",
     "command": "obs",
     "finish-args": [
@@ -62,7 +62,6 @@
         "modules/50-ntv2.json",
         "modules/50-onevpl-intel-gpu.json",
         "modules/50-onevpl.json",
-        "modules/50-pipewire.json",
         "modules/50-rnnoise.json",
         "modules/50-swig.json",
         "modules/50-v4l-utils.json",
