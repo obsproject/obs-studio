@@ -334,3 +334,21 @@ modules/namespaces).
    :param calldata: A calldata_t object.
    :param name:     Name of the parameter.
    :return:         A borrowed reference to an obs_sceneitem_t object.
+
+.. py:function:: calldata_scene(calldata, name)
+
+   Casts a pointer parameter of a calldata_t object to an obs_scene_t
+   object.
+
+   :param calldata: A calldata_t object.
+   :param name:     Name of the parameter.
+   :return:         A borrowed reference to an obs_scene_t object.
+
+.. py:function:: calldata_hotkey(calldata, name)
+
+   Casts a pointer parameter of a calldata_t object to an
+   obs_hotkey_t object.
+
+   :param calldata: A calldata_t object.
+   :param name:     Name of the parameter.
+   :return:         A borrowed reference to an obs_hotkey_t object.
