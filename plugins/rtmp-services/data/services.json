@@ -6,6 +6,9 @@
             "name": "Twitch",
             "common": true,
             "stream_key_link": "https://dashboard.twitch.tv/settings/stream",
+            "multitrack_video_configuration_url": "https://ingest.twitch.tv/api/v3/GetClientConfiguration",
+            "multitrack_video_name": "Enhanced Broadcasting",
+            "multitrack_video_learn_more_link": "https://help.twitch.tv/s/article/multiple-encodes",
             "servers": [
                 {
                     "name": "Asia: Hong Kong",
