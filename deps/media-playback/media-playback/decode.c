@@ -239,7 +239,7 @@ void mp_decode_clear_packets(struct mp_decode *d)
 
 	while (d->packets.size) {
 		AVPacket *pkt;
-		circlebuf_pop_front(&d->packets, &pkt, sizeof(pkt));
+		deque_pop_front(&d->packets, &pkt, sizeof(pkt));
 		mp_media_free_packet(d->m, pkt);
 	}
 }
@@ -247,7 +247,7 @@ void mp_decode_clear_packets(struct mp_decode *d)
 void mp_decode_free(struct mp_decode *d)
 {
 	mp_decode_clear_packets(d);
-	circlebuf_free(&d->packets);
+	deque_free(&d->packets);
 
 	av_packet_free(&d->pkt);
 	av_packet_free(&d->orig_pkt);
@@ -274,7 +274,7 @@ void mp_decode_free(struct mp_decode *d)
 
 void mp_decode_push_packet(struct mp_decode *decode, AVPacket *packet)
 {
-	circlebuf_push_back(&decode->packets, &packet, sizeof(packet));
+	deque_push_back(&decode->packets, &packet, sizeof(packet));
 }
 
 static inline int64_t get_estimated_duration(struct mp_decode *d,
@@ -376,8 +376,8 @@ bool mp_decode_next(struct mp_decode *d)
 				}
 			} else {
 				mp_media_free_packet(d->m, d->orig_pkt);
-				circlebuf_pop_front(&d->packets, &d->orig_pkt,
-						    sizeof(d->orig_pkt));
+				deque_pop_front(&d->packets, &d->orig_pkt,
+						sizeof(d->orig_pkt));
 				av_packet_ref(d->pkt, d->orig_pkt);
 				d->packet_pending = true;
 			}

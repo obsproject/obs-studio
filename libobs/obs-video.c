@@ -487,9 +487,9 @@ static inline bool queue_frame(struct obs_core_video_mix *video,
 		(video->gpu_encoder_queue.size && vframe_info->count > 1);
 
 	if (duplicate) {
-		struct obs_tex_frame *tf = circlebuf_data(
-			&video->gpu_encoder_queue,
-			video->gpu_encoder_queue.size - sizeof(*tf));
+		struct obs_tex_frame *tf =
+			deque_data(&video->gpu_encoder_queue,
+				   video->gpu_encoder_queue.size - sizeof(*tf));
 
 		/* texture-based encoding is stopping */
 		if (!tf) {
@@ -502,7 +502,7 @@ static inline bool queue_frame(struct obs_core_video_mix *video,
 	}
 
 	struct obs_tex_frame tf;
-	circlebuf_pop_front(&video->gpu_encoder_avail_queue, &tf, sizeof(tf));
+	deque_pop_front(&video->gpu_encoder_avail_queue, &tf, sizeof(tf));
 
 	if (tf.released) {
 		gs_texture_acquire_sync(tf.tex, tf.lock_key, GS_WAIT_INFINITE);
@@ -531,7 +531,7 @@ static inline bool queue_frame(struct obs_core_video_mix *video,
 	tf.released = true;
 	tf.handle = gs_texture_get_shared_handle(tf.tex);
 	gs_texture_release_sync(tf.tex, ++tf.lock_key);
-	circlebuf_push_back(&video->gpu_encoder_queue, &tf, sizeof(tf));
+	deque_push_back(&video->gpu_encoder_queue, &tf, sizeof(tf));
 
 	os_sem_post(video->gpu_encode_semaphore);
 
@@ -560,8 +560,8 @@ static void output_gpu_encoders(struct obs_core_video_mix *video,
 		goto end;
 
 	struct obs_vframe_info vframe_info;
-	circlebuf_pop_front(&video->vframe_info_buffer_gpu, &vframe_info,
-			    sizeof(vframe_info));
+	deque_pop_front(&video->vframe_info_buffer_gpu, &vframe_info,
+			sizeof(vframe_info));
 
 	pthread_mutex_lock(&video->gpu_encoder_mutex);
 	encode_gpu(video, raw_active, &vframe_info);
@@ -915,11 +915,11 @@ static inline void video_sleep(struct obs_core_video *video, uint64_t *p_time,
 		bool gpu_active = video->gpu_was_active;
 
 		if (raw_active)
-			circlebuf_push_back(&video->vframe_info_buffer,
-					    &vframe_info, sizeof(vframe_info));
+			deque_push_back(&video->vframe_info_buffer,
+					&vframe_info, sizeof(vframe_info));
 		if (gpu_active)
-			circlebuf_push_back(&video->vframe_info_buffer_gpu,
-					    &vframe_info, sizeof(vframe_info));
+			deque_push_back(&video->vframe_info_buffer_gpu,
+					&vframe_info, sizeof(vframe_info));
 	}
 	pthread_mutex_unlock(&obs->video.mixes_mutex);
 }
@@ -967,8 +967,8 @@ static inline void output_frame(struct obs_core_video_mix *video)
 
 	if (raw_active && frame_ready) {
 		struct obs_vframe_info vframe_info;
-		circlebuf_pop_front(&video->vframe_info_buffer, &vframe_info,
-				    sizeof(vframe_info));
+		deque_pop_front(&video->vframe_info_buffer, &vframe_info,
+				sizeof(vframe_info));
 
 		frame.timestamp = vframe_info.timestamp;
 		profile_start(output_frame_output_video_data_name);
@@ -1004,20 +1004,20 @@ static void clear_base_frame_data(struct obs_core_video_mix *video)
 {
 	video->texture_rendered = false;
 	video->texture_converted = false;
-	circlebuf_free(&video->vframe_info_buffer);
+	deque_free(&video->vframe_info_buffer);
 	video->cur_texture = 0;
 }
 
 static void clear_raw_frame_data(struct obs_core_video_mix *video)
 {
 	memset(video->textures_copied, 0, sizeof(video->textures_copied));
-	circlebuf_free(&video->vframe_info_buffer);
+	deque_free(&video->vframe_info_buffer);
 }
 
 #ifdef _WIN32
 static void clear_gpu_frame_data(struct obs_core_video_mix *video)
 {
-	circlebuf_free(&video->vframe_info_buffer_gpu);
+	deque_free(&video->vframe_info_buffer_gpu);
 }
 #endif
 
@@ -1032,7 +1032,7 @@ static void execute_graphics_tasks(void)
 		pthread_mutex_lock(&video->task_mutex);
 		if (video->tasks.size) {
 			struct obs_task_info info;
-			circlebuf_pop_front(&video->tasks, &info, sizeof(info));
+			deque_pop_front(&video->tasks, &info, sizeof(info));
 			info.task(info.param);
 		}
 		tasks_remaining = !!video->tasks.size;

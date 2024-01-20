@@ -1,5 +1,5 @@
 #include <obs-module.h>
-#include <util/circlebuf.h>
+#include <util/deque.h>
 #include <util/threading.h>
 #include <util/platform.h>
 #include <util/darray.h>
@@ -87,8 +87,8 @@ enum behavior {
 #define SLIDE_BUFFER_COUNT 5
 
 struct active_slides {
-	struct circlebuf prev;
-	struct circlebuf next;
+	struct deque prev;
+	struct deque next;
 	struct source_data cur;
 };
 
@@ -157,20 +157,20 @@ static void free_active_slides(struct active_slides *slides)
 {
 	while (slides->prev.size) {
 		struct source_data file;
-		circlebuf_pop_front(&slides->prev, &file, sizeof(file));
+		deque_pop_front(&slides->prev, &file, sizeof(file));
 		free_source_data(&file);
 	}
 
 	while (slides->next.size) {
 		struct source_data file;
-		circlebuf_pop_front(&slides->next, &file, sizeof(file));
+		deque_pop_front(&slides->next, &file, sizeof(file));
 		free_source_data(&file);
 	}
 
 	free_source_data(&slides->cur);
 
-	circlebuf_free(&slides->prev);
-	circlebuf_free(&slides->next);
+	deque_free(&slides->prev);
+	deque_free(&slides->next);
 }
 
 static inline void free_slideshow_data(struct slideshow_data *ssd)
@@ -263,16 +263,16 @@ static void do_transition(void *data, bool to_null)
 	}
 }
 
-/* get a source via its slide idx in one of slideshow_data's circlebufs. *
+/* get a source via its slide idx in one of slideshow_data's deques. *
  * only used in get_new_source().                                        */
-static inline struct source_data *circlebuf_get_source(struct circlebuf *buf,
-						       size_t slide_idx)
+static inline struct source_data *deque_get_source(struct deque *buf,
+						   size_t slide_idx)
 {
 	struct source_data *cur;
 	size_t count = buf->size / sizeof(*cur);
 
 	for (size_t i = 0; i < count; i++) {
-		cur = circlebuf_data(buf, i * sizeof(struct source_data));
+		cur = deque_data(buf, i * sizeof(struct source_data));
 		if (cur->slide_idx == slide_idx)
 			return cur;
 	}
@@ -323,11 +323,11 @@ static struct source_data *find_existing_source(struct active_slides *as,
 	if (as->cur.source && as->cur.slide_idx == slide_idx)
 		return &as->cur;
 
-	psd = circlebuf_get_source(&as->prev, slide_idx);
+	psd = deque_get_source(&as->prev, slide_idx);
 	if (psd)
 		return psd;
 
-	psd = circlebuf_get_source(&as->next, slide_idx);
+	psd = deque_get_source(&as->next, slide_idx);
 	return psd;
 }
 
@@ -390,14 +390,14 @@ static void restart_slides(struct slideshow *ss)
 		for (size_t i = 0; i < SLIDE_BUFFER_COUNT; i++) {
 			idx = get_new_file(ssd, idx, true);
 			sd = get_new_source(ss, &new_slides, idx);
-			circlebuf_push_back(&new_slides.next, &sd, sizeof(sd));
+			deque_push_back(&new_slides.next, &sd, sizeof(sd));
 		}
 
 		idx = start_idx;
 		for (size_t i = 0; i < SLIDE_BUFFER_COUNT; i++) {
 			idx = get_new_file(ssd, idx, false);
 			sd = get_new_source(ss, &new_slides, idx);
-			circlebuf_push_front(&new_slides.prev, &sd, sizeof(sd));
+			deque_push_front(&new_slides.prev, &sd, sizeof(sd));
 		}
 	}
 
@@ -633,7 +633,7 @@ static void ss_next_slide(void *data)
 	if (!ssd->files.num || obs_transition_get_time(ss->transition) < 1.0f)
 		return;
 
-	struct source_data *last = circlebuf_data(
+	struct source_data *last = deque_data(
 		&slides->next, (SLIDE_BUFFER_COUNT - 1) * sizeof(sd));
 
 	size_t slide_idx = last->slide_idx;
@@ -643,10 +643,10 @@ static void ss_next_slide(void *data)
 		slide_idx = 0;
 
 	sd = get_new_source(ss, NULL, slide_idx);
-	circlebuf_push_back(&slides->next, &sd, sizeof(sd));
-	circlebuf_push_back(&slides->prev, &slides->cur, sizeof(sd));
-	circlebuf_pop_front(&slides->next, &slides->cur, sizeof(sd));
-	circlebuf_pop_front(&slides->prev, &sd, sizeof(sd));
+	deque_push_back(&slides->next, &sd, sizeof(sd));
+	deque_push_back(&slides->prev, &slides->cur, sizeof(sd));
+	deque_pop_front(&slides->next, &slides->cur, sizeof(sd));
+	deque_pop_front(&slides->prev, &sd, sizeof(sd));
 	free_source_data(&sd);
 
 	do_transition(ss, false);
@@ -662,7 +662,7 @@ static void ss_previous_slide(void *data)
 	if (!ssd->files.num || obs_transition_get_time(ss->transition) < 1.0f)
 		return;
 
-	struct source_data *first = circlebuf_data(&slides->prev, 0);
+	struct source_data *first = deque_data(&slides->prev, 0);
 
 	size_t slide_idx = first->slide_idx;
 	if (ss->data.randomize)
@@ -673,10 +673,10 @@ static void ss_previous_slide(void *data)
 		--slide_idx;
 
 	sd = get_new_source(ss, NULL, slide_idx);
-	circlebuf_push_front(&slides->prev, &sd, sizeof(sd));
-	circlebuf_push_front(&slides->next, &slides->cur, sizeof(sd));
-	circlebuf_pop_back(&slides->prev, &slides->cur, sizeof(sd));
-	circlebuf_pop_back(&slides->next, &sd, sizeof(sd));
+	deque_push_front(&slides->prev, &sd, sizeof(sd));
+	deque_push_front(&slides->next, &slides->cur, sizeof(sd));
+	deque_pop_back(&slides->prev, &slides->cur, sizeof(sd));
+	deque_pop_back(&slides->next, &sd, sizeof(sd));
 	free_source_data(&sd);
 
 	do_transition(ss, false);

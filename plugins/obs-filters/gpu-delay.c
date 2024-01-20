@@ -1,5 +1,5 @@
 #include <obs-module.h>
-#include <util/circlebuf.h>
+#include <util/deque.h>
 #include <util/util_uint64.h>
 
 #define S_DELAY_MS "delay_ms"
@@ -13,7 +13,7 @@ struct frame {
 
 struct gpu_delay_filter_data {
 	obs_source_t *context;
-	struct circlebuf frames;
+	struct deque frames;
 	uint64_t delay_ns;
 	uint64_t interval_ns;
 	uint32_t cx;
@@ -33,14 +33,14 @@ static void free_textures(struct gpu_delay_filter_data *f)
 	obs_enter_graphics();
 	while (f->frames.size) {
 		struct frame frame;
-		circlebuf_pop_front(&f->frames, &frame, sizeof(frame));
+		deque_pop_front(&f->frames, &frame, sizeof(frame));
 		gs_texrender_destroy(frame.render);
 	}
-	circlebuf_free(&f->frames);
+	deque_free(&f->frames);
 	obs_leave_graphics();
 }
 
-static size_t num_frames(struct circlebuf *buf)
+static size_t num_frames(struct deque *buf)
 {
 	return buf->size / sizeof(struct frame);
 }
@@ -61,11 +61,11 @@ static void update_interval(struct gpu_delay_filter_data *f,
 
 		obs_enter_graphics();
 
-		circlebuf_upsize(&f->frames, num * sizeof(struct frame));
+		deque_upsize(&f->frames, num * sizeof(struct frame));
 
 		for (size_t i = prev_num; i < num; i++) {
 			struct frame *frame =
-				circlebuf_data(&f->frames, i * sizeof(*frame));
+				deque_data(&f->frames, i * sizeof(*frame));
 			frame->render =
 				gs_texrender_create(GS_RGBA, GS_ZS_NONE);
 		}
@@ -77,7 +77,7 @@ static void update_interval(struct gpu_delay_filter_data *f,
 
 		while (num_frames(&f->frames) > num) {
 			struct frame frame;
-			circlebuf_pop_front(&f->frames, &frame, sizeof(frame));
+			deque_pop_front(&f->frames, &frame, sizeof(frame));
 			gs_texrender_destroy(frame.render);
 		}
 
@@ -240,7 +240,7 @@ get_tech_name_and_multiplier(enum gs_color_space current_space,
 static void draw_frame(struct gpu_delay_filter_data *f)
 {
 	struct frame frame;
-	circlebuf_peek_front(&f->frames, &frame, sizeof(frame));
+	deque_peek_front(&f->frames, &frame, sizeof(frame));
 
 	const enum gs_color_space current_space = gs_get_color_space();
 	float multiplier;
@@ -283,7 +283,7 @@ static void gpu_delay_filter_render(void *data, gs_effect_t *effect)
 	}
 
 	struct frame frame;
-	circlebuf_pop_front(&f->frames, &frame, sizeof(frame));
+	deque_pop_front(&f->frames, &frame, sizeof(frame));
 
 	const enum gs_color_space preferred_spaces[] = {
 		GS_CS_SRGB,
@@ -327,7 +327,7 @@ static void gpu_delay_filter_render(void *data, gs_effect_t *effect)
 
 	gs_blend_state_pop();
 
-	circlebuf_push_back(&f->frames, &frame, sizeof(frame));
+	deque_push_back(&f->frames, &frame, sizeof(frame));
 	draw_frame(f);
 	f->processed_frame = true;
 
@@ -347,7 +347,7 @@ gpu_delay_filter_get_color_space(void *data, size_t count,
 	}
 
 	struct frame frame;
-	circlebuf_peek_front(&f->frames, &frame, sizeof(frame));
+	deque_peek_front(&f->frames, &frame, sizeof(frame));
 	enum gs_color_space space = frame.space;
 	for (size_t i = 0; i < count; ++i) {
 		space = preferred_spaces[i];

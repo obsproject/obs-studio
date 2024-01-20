@@ -49,11 +49,11 @@ static inline void replay_buffer_clear(struct ffmpeg_muxer *stream)
 {
 	while (stream->packets.size > 0) {
 		struct encoder_packet pkt;
-		circlebuf_pop_front(&stream->packets, &pkt, sizeof(pkt));
+		deque_pop_front(&stream->packets, &pkt, sizeof(pkt));
 		obs_encoder_packet_release(&pkt);
 	}
 
-	circlebuf_free(&stream->packets);
+	deque_free(&stream->packets);
 	stream->cur_size = 0;
 	stream->cur_time = 0;
 	stream->max_size = 0;
@@ -72,7 +72,7 @@ static void ffmpeg_mux_destroy(void *data)
 	for (size_t i = 0; i < stream->mux_packets.num; i++)
 		obs_encoder_packet_release(&stream->mux_packets.array[i]);
 	da_free(stream->mux_packets);
-	circlebuf_free(&stream->packets);
+	deque_free(&stream->packets);
 
 	os_process_pipe_destroy(stream->pipe);
 	dstr_free(&stream->path);
@@ -521,8 +521,8 @@ int deactivate(struct ffmpeg_muxer *stream, int code)
 
 		while (stream->packets.size) {
 			struct encoder_packet packet;
-			circlebuf_pop_front(&stream->packets, &packet,
-					    sizeof(packet));
+			deque_pop_front(&stream->packets, &packet,
+					sizeof(packet));
 			obs_encoder_packet_release(&packet);
 		}
 
@@ -1064,7 +1064,7 @@ static bool purge_front(struct ffmpeg_muxer *stream)
 	if (!stream->packets.size)
 		return false;
 
-	circlebuf_pop_front(&stream->packets, &pkt, sizeof(pkt));
+	deque_pop_front(&stream->packets, &pkt, sizeof(pkt));
 
 	keyframe = pkt.type == OBS_ENCODER_VIDEO && pkt.keyframe;
 
@@ -1076,7 +1076,7 @@ static bool purge_front(struct ffmpeg_muxer *stream)
 		stream->cur_time = 0;
 	} else {
 		struct encoder_packet first;
-		circlebuf_peek_front(&stream->packets, &first, sizeof(first));
+		deque_peek_front(&stream->packets, &first, sizeof(first));
 		stream->cur_time = first.dts_usec;
 		stream->cur_size -= (int64_t)pkt.size;
 	}
@@ -1093,8 +1093,7 @@ static inline void purge(struct ffmpeg_muxer *stream)
 		for (;;) {
 			if (!stream->packets.size)
 				return;
-			circlebuf_peek_front(&stream->packets, &pkt,
-					     sizeof(pkt));
+			deque_peek_front(&stream->packets, &pkt, sizeof(pkt));
 			if (pkt.type == OBS_ENCODER_VIDEO && pkt.keyframe)
 				return;
 
@@ -1223,7 +1222,7 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 
 	for (size_t i = 0; i < num_packets; i++) {
 		struct encoder_packet *pkt;
-		pkt = circlebuf_data(&stream->packets, i * size);
+		pkt = deque_data(&stream->packets, i * size);
 
 		if (pkt->type == OBS_ENCODER_VIDEO) {
 			if (!found_video) {
@@ -1299,7 +1298,7 @@ static void replay_buffer_data(void *data, struct encoder_packet *packet)
 		stream->cur_time = pkt.dts_usec;
 	stream->cur_size += pkt.size;
 
-	circlebuf_push_back(&stream->packets, packet, sizeof(*packet));
+	deque_push_back(&stream->packets, packet, sizeof(*packet));
 
 	if (packet->type == OBS_ENCODER_VIDEO && packet->keyframe)
 		stream->keyframes++;

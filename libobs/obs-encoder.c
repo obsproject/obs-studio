@@ -353,7 +353,7 @@ static void remove_connection(struct obs_encoder *encoder, bool shutdown)
 static inline void free_audio_buffers(struct obs_encoder *encoder)
 {
 	for (size_t i = 0; i < MAX_AV_PLANES; i++) {
-		circlebuf_free(&encoder->audio_input_buffer[i]);
+		deque_free(&encoder->audio_input_buffer[i]);
 		bfree(encoder->audio_output_buffer[i]);
 		encoder->audio_output_buffer[i] = NULL;
 	}
@@ -1415,7 +1415,7 @@ wait_for_audio:
 static void clear_audio(struct obs_encoder *encoder)
 {
 	for (size_t i = 0; i < encoder->planes; i++)
-		circlebuf_free(&encoder->audio_input_buffer[i]);
+		deque_free(&encoder->audio_input_buffer[i]);
 }
 
 static inline void push_back_audio(struct obs_encoder *encoder,
@@ -1429,8 +1429,8 @@ static inline void push_back_audio(struct obs_encoder *encoder,
 
 	/* push in to the circular buffer */
 	for (size_t i = 0; i < encoder->planes; i++)
-		circlebuf_push_back(&encoder->audio_input_buffer[i],
-				    data->data[i] + offset_size, size);
+		deque_push_back(&encoder->audio_input_buffer[i],
+				data->data[i] + offset_size, size);
 }
 
 static inline size_t calc_offset_size(struct obs_encoder *encoder,
@@ -1450,7 +1450,7 @@ static void start_from_buffer(struct obs_encoder *encoder, uint64_t v_start_ts)
 	for (size_t i = 0; i < MAX_AV_PLANES; i++) {
 		audio.data[i] = encoder->audio_input_buffer[i].data;
 		memset(&encoder->audio_input_buffer[i], 0,
-		       sizeof(struct circlebuf));
+		       sizeof(struct deque));
 	}
 
 	if (encoder->first_raw_ts < v_start_ts)
@@ -1528,9 +1528,9 @@ static bool send_audio_data(struct obs_encoder *encoder)
 	memset(&enc_frame, 0, sizeof(struct encoder_frame));
 
 	for (size_t i = 0; i < encoder->planes; i++) {
-		circlebuf_pop_front(&encoder->audio_input_buffer[i],
-				    encoder->audio_output_buffer[i],
-				    encoder->framesize_bytes);
+		deque_pop_front(&encoder->audio_input_buffer[i],
+				encoder->audio_output_buffer[i],
+				encoder->framesize_bytes);
 
 		enc_frame.data[i] = encoder->audio_output_buffer[i];
 		enc_frame.linesize[i] = (uint32_t)encoder->framesize_bytes;
