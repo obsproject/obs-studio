@@ -25,11 +25,26 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 					"destroy", OBSSourceDestroyed, this);
 	}
 
+	Qt::WindowFlags hints = {};
+
+	bool hideFrame = config_get_bool(GetGlobalConfig(), "BasicWindow",
+					 "HideProjectorFrame");
+
+	if (hideFrame) {
+		hints |= Qt::FramelessWindowHint;
+
+		// If the frame is hidden, allow the window to be dragged by
+		// left-clicking anywhere in it.
+		isDraggableEverywhere = true;
+	}
+
 	isAlwaysOnTop = config_get_bool(GetGlobalConfig(), "BasicWindow",
 					"ProjectorAlwaysOnTop");
 
 	if (isAlwaysOnTop)
-		setWindowFlags(Qt::WindowStaysOnTopHint);
+		hints |= Qt::WindowStaysOnTopHint;
+
+	setWindowFlags(hints);
 
 	// Mark the window as a projector so SetDisplayAffinity
 	// can skip it
@@ -287,22 +302,69 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 				&OBSProjector::EscapeTriggered);
 		popup.exec(QCursor::pos());
 	} else if (event->button() == Qt::LeftButton) {
-		// Only MultiView projectors handle left click
-		if (this->type != ProjectorType::Multiview)
-			return;
+		// Left-click can mean a couple of things:
+		//
+		// 1. If this is a MultiView projector, mouse switching is enabled,
+		//    and the user has clicked on a scene selector, this is a scene
+		//    switch.
+		// 2. Otherwise, if isDraggableEverywhere is set, this could be the
+		//    start of a drag.
+		//
+		// So. Start by assuming that we are _not_ starting a drag.
+		isDragging = false;
 
-		if (!mouseSwitching)
-			return;
+		// After that, is this a MultiView projector with mouse switching
+		// enabled?
+		if ((this->type == ProjectorType::Multiview) &&
+		    mouseSwitching) {
+			// Yes. Did they just click on a scene selector?
+			QPoint pos = event->pos();
+			OBSSource src = multiview->GetSourceByPosition(pos.x(),
+								       pos.y());
 
-		QPoint pos = event->pos();
-		OBSSource src =
-			multiview->GetSourceByPosition(pos.x(), pos.y());
-		if (!src)
-			return;
+			if (src) {
+				// Yes. Activate that scene, and we're done.
+				OBSBasic *main = (OBSBasic *)
+					obs_frontend_get_main_window();
+				if (main->GetCurrentSceneSource() != src) {
+					main->SetCurrentScene(src, false);
+				}
 
-		OBSBasic *main = (OBSBasic *)obs_frontend_get_main_window();
-		if (main->GetCurrentSceneSource() != src)
-			main->SetCurrentScene(src, false);
+				return;
+			}
+		}
+
+		// If we get here, it wasn't a scene switch (either because it wasn't
+		// enabled, or because they didn't click on a scene selector). So, is
+		// this a draggable projector?
+
+		if (isDraggableEverywhere) {
+			// Yes. Save the start position for a later mouse-move event...
+			oldPosition = event->globalPos();
+
+			// ...and note that we're dragging this window.
+			isDragging = true;
+		}
+	}
+}
+
+void OBSProjector::mouseMoveEvent(QMouseEvent *event)
+{
+	// This is a drag event. Are we currently dragging this window?
+	if (isDragging) {
+		// Yup. Do it.
+		const QPointF delta = event->globalPos() - oldPosition;
+
+		move(x() + delta.x(), y() + delta.y());
+		oldPosition = event->globalPos();
+	}
+}
+
+void OBSProjector::mouseReleaseEvent(QMouseEvent *event)
+{
+	// If this is a left-button release, we're no longer dragging.
+	if (event->button() == Qt::LeftButton) {
+		isDragging = false;
 	}
 }
 
