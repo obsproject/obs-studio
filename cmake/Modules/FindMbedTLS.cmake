@@ -94,6 +94,7 @@ if(MBEDTLS_LIB
    AND NOT MBEDX509_LIB)
   set(CMAKE_REQUIRED_LIBRARIES ${MBEDTLS_LIB})
   set(CMAKE_REQUIRED_INCLUDES ${MBEDTLS_INCLUDE_DIR})
+  include(CheckSymbolExists)
   check_symbol_exists(mbedtls_x509_crt_init "mbedtls/x509_crt.h" MBEDTLS_INCLUDES_X509)
   check_symbol_exists(mbedtls_sha256_init "mbedtls/sha256.h" MBEDTLS_INCLUDES_CRYPTO)
   unset(CMAKE_REQUIRED_INCLUDES)
