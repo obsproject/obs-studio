@@ -14,6 +14,7 @@ jobs:
       notarize: ${{ steps.setup.outputs.notarize }}
       config: ${{ steps.setup.outputs.config }}
       commitHash: ${{ steps.setup.outputs.commitHash }}
+      flatpakArch: ${{ steps.setup.outputs.flatpakArch }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -28,25 +29,30 @@ jobs:
 
           case "${GITHUB_EVENT_NAME}" in
             pull_request)
-              config_data=('codesign:false' 'notarize:false' 'package:false' 'config:RelWithDebInfo')
-              if gh pr view ${{ github.event.number }} --json labels \
+              config_data=('codesign:false' 'notarize:false' 'package:false' 'config:RelWithDebInfo' 'flatpakArch:["x86_64"]')
+              label_data=$(gh pr view ${{ github.event.number }} --json labels)
+              if echo "${label_data}" \
                 | jq -e -r '.labels[] | select(.name == "Seeking Testers")' > /dev/null; then
                 config_data[0]='codesign:true'
                 config_data[2]='package:true'
               fi
+              if echo "${label_data}" \
+                | jq -e -r '.labels[] | select(.name == "Flatpak QEMU")' > /dev/null; then
+                config_data[5]='flatpakArch:["x86_64", "aarch64"]'
+              fi
               ;;
             push)
-              config_data=('codesign:true' 'notarize:false' 'package:true' 'config:RelWithDebInfo')
+              config_data=('codesign:true' 'notarize:false' 'package:true' 'config:RelWithDebInfo' 'flatpakArch:["x86_64", "aarch64"]')
               if [[ ${GITHUB_REF_NAME} =~ [0-9]+.[0-9]+.[0-9]+(-(rc|beta).+)? ]]; then
                 config_data[1]='notarize:true'
                 config_data[3]='config:Release'
               fi
               ;;
             workflow_dispatch)
-              config_data=('codesign:true' 'notarize:false' 'package:false' 'config:RelWithDebInfo')
+              config_data=('codesign:true' 'notarize:false' 'package:false' 'config:RelWithDebInfo' 'flatpakArch:["x86_64", "aarch64"]')
               ;;
             schedule)
-              config_data=('codesign:true' 'notarize:false' 'package:true' 'config:RelWithDebInfo')
+              config_data=('codesign:true' 'notarize:false' 'package:true' 'config:RelWithDebInfo' 'flatpakArch:["x86_64", "aarch64"]')
               ;;
             *) ;;
           esac
@@ -243,79 +249,19 @@ jobs:
 
   flatpak-build:
     name: Flatpak 📦
-    runs-on: ubuntu-22.04
     needs: check-event
-    defaults:
-      run:
-        shell: bash
-    container:
-      image: bilelmoussaoui/flatpak-github-actions:kde-6.5
-      options: --privileged
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: recursive
-          fetch-depth: 0
-          set-safe-directory: ${{ env.GITHUB_WORKSPACE }}
-
-      - name: Set Up Environment 🔧
-        id: setup
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          : Set Up Environment 🔧
-          if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
-
-          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
-
-          echo '::group::Install GitHub CLI tool'
-          dnf install -y -q gh
-          gh extension install actions/gh-actions-cache
-          echo '::endgroup::'
-
-          cache_key='flatpak-builder-${{ hashFiles('build-aux/**/*.json') }}'
-          cache_ref='master'
-          read -r key size unit _ ref _ <<< \
-            "$(gh actions-cache list -B ${cache_ref} --key "${cache_key}-x86_64" | head -1)"
-
-          if [[ "${key}" ]]; then
-            echo "cacheHit=true" >> $GITHUB_OUTPUT
-          else
-            echo "cacheHit=false" >> $GITHUB_OUTPUT
-          fi
-
-          echo "cacheKey=${cache_key}" >> $GITHUB_OUTPUT
-
-      - name: Validate Flatpak manifest
-        uses: ./.github/actions/flatpak-builder-lint
-        with:
-          artifact: manifest
-          path: build-aux/com.obsproject.Studio.json
-          validateToPublish: false
-
-      - name: Build Flatpak Manifest 🧾
-        uses: flatpak/flatpak-github-actions/flatpak-builder@0ab9dd6a6afa6fe7e292db0325171660bf5b6fdf
-        with:
-          build-bundle: ${{ fromJSON(needs.check-event.outputs.package) }}
-          bundle: obs-studio-flatpak-${{ needs.check-event.outputs.commitHash }}.flatpak
-          manifest-path: ${{ github.workspace }}/build-aux/com.obsproject.Studio.json
-          cache: ${{ fromJSON(steps.setup.outputs.cacheHit) || (github.event_name == 'push' && github.ref_name == 'master')}}
-          restore-cache: ${{ fromJSON(steps.setup.outputs.cacheHit) }}
-          cache-key: ${{ steps.setup.outputs.cacheKey }}
-
-      - name: Validate build directory
-        uses: ./.github/actions/flatpak-builder-lint
-        with:
-          artifact: builddir
-          path: flatpak_app
-          validateToPublish: false
-
-      - name: Validate repository
-        uses: ./.github/actions/flatpak-builder-lint
-        with:
-          artifact: repo
-          path: repo
-          validateToPublish: false
+    uses: ./.github/workflows/flatpak-build.yaml
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: ${{ fromJson(needs.check-event.outputs.flatpakArch) }}
+    with:
+      build-bundle: ${{ fromJSON(needs.check-event.outputs.package) }}
+      bundle: obs-studio-flatpak-${{ needs.check-event.outputs.commitHash }}-${{ matrix.arch }}.flatpak
+      arch: ${{ matrix.arch }}
+    secrets: inherit
+    permissions:
+      contents: read
 
   windows-build:
     name: Windows 🪟

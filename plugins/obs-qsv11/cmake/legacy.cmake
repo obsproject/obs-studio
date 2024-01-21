@@ -1,9 +1,21 @@
-option(ENABLE_QSV11 "Build Intel QSV11 Hardware Encoder." TRUE)
+if(NOT OS_LINUX OR CMAKE_SYSTEM_PROCESSOR MATCHES "^(i[3-6]86|x86|x64|x86_64|amd64|AMD64)$")
+  set(_enable_qsv11 TRUE)
+else()
+  set(_enable_qsv11 FALSE)
+endif()
+
+option(ENABLE_QSV11 "Build Intel QSV11 Hardware Encoder." _enable_qsv11)
 
 if(NOT ENABLE_QSV11)
   obs_status(DISABLED "obs-qsv11")
   return()
+elseif(NOT _enable_qsv11)
+  message(
+    FATAL_ERROR
+      "QSV plugin is not compatible with ${CMAKE_SYSTEM_PROCESSOR} architecture.\n Disable this error by setting ENABLE_QSV11 to OFF."
+  )
 endif()
+unset(_enable_qsv11)
 
 project(obs-qsv11)
 

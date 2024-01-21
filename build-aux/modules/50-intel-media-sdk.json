@@ -1,5 +1,8 @@
 {
     "name": "intel-media-sdk",
+    "only-arches": [
+        "x86_64"
+    ],
     "buildsystem": "cmake-ninja",
     "builddir": true,
     "config-opts": [
