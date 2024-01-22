@@ -2633,6 +2633,23 @@
                 "max audio bitrate": 320,
                 "x264opts": "scenecut=0"
             }
+        },
+        {
+            "name": "MAVENX.GG",
+            "more_info_link": "https://mavenx.gg/about-us",
+            "servers": [
+                {
+                    "name": "MAVEN X Streaming",
+                    "url": "rtmp://rtmp.mavenx.tv/live"
+                }
+            ],
+            "supported video codecs": [
+                "h264"
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 6000
+            }
         }
     ]
 }
