@@ -137,6 +137,10 @@ struct obs_frontend_callbacks {
 	virtual void obs_frontend_add_undo_redo_action(const char *name, const undo_redo_cb undo,
 						       const undo_redo_cb redo, const char *undo_data,
 						       const char *redo_data, bool repeatable) = 0;
+
+	virtual void obs_frontend_multitrack_video_register(const char *name, multitrack_video_start_cb start_video,
+							    multitrack_video_stop_cb stop_video, void *param) = 0;
+	virtual void obs_frontend_multitrack_video_unregister(const char *name) = 0;
 };
 
 EXPORT void obs_frontend_set_callbacks_internal(obs_frontend_callbacks *callbacks);

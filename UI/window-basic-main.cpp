@@ -10097,6 +10097,29 @@ QColor OBSBasic::GetSelectionColor() const
 	}
 }
 
+const std::vector<MultitrackVideoViewInfo> &OBSBasic::GetAdditionalMultitrackVideoViews()
+{
+	return multitrackVideoViews;
+}
+
+void OBSBasic::MultitrackVideoRegister(const char *name, multitrack_video_start_cb start_video,
+				       multitrack_video_stop_cb stop_video, void *param)
+{
+	MultitrackVideoUnregister(name);
+	multitrackVideoViews.push_back({name, start_video, stop_video, param});
+}
+
+void OBSBasic::MultitrackVideoUnregister(const char *name)
+{
+	for (auto it = multitrackVideoViews.begin(); it != multitrackVideoViews.end();) {
+		if (it->name == name) {
+			it = multitrackVideoViews.erase(it);
+		} else {
+			++it;
+		}
+	}
+}
+
 QColor OBSBasic::GetCropColor() const
 {
 	if (config_get_bool(App()->GetUserConfig(), "Accessibility", "OverrideColors")) {
