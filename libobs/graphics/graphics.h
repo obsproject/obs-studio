@@ -60,6 +60,8 @@ enum gs_color_format {
 	GS_RGBA,
 	GS_BGRX,
 	GS_BGRA,
+	GS_XRGB,
+	GS_ARGB,
 	GS_R10G10B10A2,
 	GS_RGBA16,
 	GS_R16,
@@ -1018,6 +1020,8 @@ static inline uint32_t gs_get_format_bpp(enum gs_color_format format)
 	case GS_RGBA:
 	case GS_BGRX:
 	case GS_BGRA:
+	case GS_XRGB:
+	case GS_ARGB:
 	case GS_R10G10B10A2:
 	case GS_RG16F:
 	case GS_R32F:

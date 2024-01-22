@@ -280,6 +280,7 @@ static const uint32_t supported_formats_async[] = {
 static const uint32_t supported_formats_sync[] = {
 	SPA_VIDEO_FORMAT_BGRA,       SPA_VIDEO_FORMAT_RGBA,
 	SPA_VIDEO_FORMAT_BGRx,       SPA_VIDEO_FORMAT_RGBx,
+	SPA_VIDEO_FORMAT_ABGR,       SPA_VIDEO_FORMAT_xBGR,
 #if PW_CHECK_VERSION(0, 3, 41)
 	SPA_VIDEO_FORMAT_ABGR_210LE, SPA_VIDEO_FORMAT_xBGR_210LE,
 #endif
