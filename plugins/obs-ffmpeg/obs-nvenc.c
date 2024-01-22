@@ -14,7 +14,7 @@
 /* a hack of the ages: nvenc backward compatibility                          */
 
 #define CONFIGURED_NVENC_MAJOR 12
-#define CONFIGURED_NVENC_MINOR 0
+#define CONFIGURED_NVENC_MINOR 1
 #define CONFIGURED_NVENC_VER \
 	(CONFIGURED_NVENC_MAJOR | (CONFIGURED_NVENC_MINOR << 24))
 
