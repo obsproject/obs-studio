@@ -2221,31 +2221,6 @@
             ]
         },
         {
-            "name": "StreamVi",
-            "stream_key_link": "https://streamvi.ru/settings",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://live-default.streamvi.ru/live"
-                },
-                {
-                    "name": "Russia: Moscow",
-                    "url": "rtmp://live-msk.streamvi.ru/live"
-                },
-                {
-                    "name": "EU Central: Germany",
-                    "url": "rtmp://live-germany.streamvi.ru/live"
-                },
-                {
-                    "name": "Russia: Novosibirsk",
-                    "url": "rtmp://live-novosib.streamvi.ru/live"
-                }
-            ],
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
             "name": "Livepush",
             "more_info_link": "https://docs.livepush.io/en/articles/5065323-how-to-stream-live-from-obs-to-livepush",
             "servers": [
