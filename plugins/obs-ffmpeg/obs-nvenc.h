@@ -37,6 +37,16 @@ typedef struct CudaFunctions {
 
 	tcuMemHostRegister *cuMemHostRegister;
 	tcuMemHostUnregister *cuMemHostUnregister;
+
+#ifndef _WIN32
+	tcuGLGetDevices_v2 *cuGLGetDevices;
+	tcuGraphicsGLRegisterImage *cuGraphicsGLRegisterImage;
+	tcuGraphicsUnregisterResource *cuGraphicsUnregisterResource;
+	tcuGraphicsMapResources *cuGraphicsMapResources;
+	tcuGraphicsUnmapResources *cuGraphicsUnmapResources;
+	tcuGraphicsSubResourceGetMappedArray
+		*cuGraphicsSubResourceGetMappedArray;
+#endif
 } CudaFunctions;
 
 typedef NVENCSTATUS(NVENCAPI *NV_CREATE_INSTANCE_FUNC)(
