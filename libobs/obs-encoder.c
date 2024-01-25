@@ -276,7 +276,7 @@ static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
 		struct obs_core_video_mix *current = obs->video.mixes.array[i];
 		const struct video_output_info *voi =
 			video_output_get_info(current->video);
-		if (current->view != &obs->data.main_view)
+		if (current->view != current_mix->view)
 			continue;
 
 		if (voi->width != encoder->scaled_width ||
