@@ -26,7 +26,7 @@ endif()
 
 if(OS_WINDOWS)
   find_package(AMF 1.4.29 REQUIRED)
-  find_package(FFnvcodec 12 REQUIRED)
+  find_package(FFnvcodec 12.0.0.0...<12.2.0.0 REQUIRED)
 
   add_library(obs-nvenc-version INTERFACE)
   add_library(OBS::obs-nvenc-version ALIAS obs-nvenc-version)
