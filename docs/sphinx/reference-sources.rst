@@ -547,6 +547,11 @@ Source Definition Structure (obs_source_info)
 Common Source Signals
 ---------------------
 
+Sources can emit signals on specific events using signal handlers, with
+callbacks connected via :c:func:`signal_handler_connect()`. Define signals with
+:c:func:`signal_handler_add()` or :c:func:`signal_handler_add_array()`, and emit
+them using :c:func:`signal_handler_signal()`.
+
 The following signals are defined for every source type:
 
 **destroy** (ptr *source*)
@@ -719,6 +724,10 @@ The following signals are defined for every source type:
 Source-specific Signals
 -----------------------
 
+The following is a list of signals defined by sources included with official OBS
+Studio releases. For sources defined by third-party plugins, refer to the
+plugin's documentation or source code to see the defined signals.
+
 **slide_changed** (int index, string path)
 
    Called when the source's currently displayed image changes.
@@ -759,6 +768,13 @@ Source-specific Signals
 
 Source-specific Procedures
 --------------------------
+
+Using procedure handlers, sources can allow external code to execute specific
+actions. These actions are defined using :c:func:`proc_handler_add()` and called
+by external code using :c:func:`proc_handler_call()`. For sources created by
+plugins not included in official OBS Studio releases, check the plugin's
+documentation or source code to determine whether custom procedures are defined
+and what they do.
 
 The following procedures are defined for specific sources only:
 
