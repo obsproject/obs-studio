@@ -2094,13 +2094,16 @@ void OBSBasic::OBSInit()
 	editPropertiesMode = config_get_bool(
 		App()->GlobalConfig(), "BasicWindow", "EditPropertiesMode");
 
-	if (!opt_studio_mode) {
+	if (!opt_studio_mode && !opt_no_studio_mode) {
 		SetPreviewProgramMode(config_get_bool(App()->GlobalConfig(),
 						      "BasicWindow",
 						      "PreviewProgramMode"));
-	} else {
+	} else if (opt_studio_mode) {
 		SetPreviewProgramMode(true);
 		opt_studio_mode = false;
+	} else {
+		SetPreviewProgramMode(false);
+		opt_no_studio_mode = false;
 	}
 
 #define SET_VISIBILITY(name, control)                                         \
