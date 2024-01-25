@@ -187,13 +187,13 @@ void video_frame_get_plane_heights(uint32_t heights[MAX_AV_PLANES], enum video_f
 	}
 }
 
-void video_frame_init(struct video_frame *frame, enum video_format format, uint32_t width, uint32_t height)
+void video_frame_init2(struct video_frame *frame, enum video_format format, uint32_t width, uint32_t height, int32_t align)
 {
 	size_t size = 0;
 	uint32_t linesizes[MAX_AV_PLANES];
 	uint32_t heights[MAX_AV_PLANES];
 	size_t offsets[MAX_AV_PLANES - 1];
-	int alignment = base_get_alignment();
+	int base_alignment = base_get_alignment();
 
 	if (!frame)
 		return;
@@ -209,12 +209,18 @@ void video_frame_init(struct video_frame *frame, enum video_format format, uint3
 	/* determine line count for each plane */
 	video_frame_get_plane_heights(heights, format, height);
 
+	/* align linesizes to requested value */
+	if (align > 1) {
+		for (size_t i = 0; i < MAX_AV_PLANES; i++)
+			align_uint32(&linesizes[i], align);
+	}
+
 	/* calculate total buffer required */
 	for (uint32_t i = 0; i < MAX_AV_PLANES; i++) {
 		if (!linesizes[i] || !heights[i])
 			continue;
 		size_t plane_size = (size_t)linesizes[i] * (size_t)heights[i];
-		align_size(&plane_size, alignment);
+		align_size(&plane_size, base_alignment);
 		size += plane_size;
 		offsets[i] = size;
 	}
@@ -231,7 +237,12 @@ void video_frame_init(struct video_frame *frame, enum video_format format, uint3
 		frame->linesize[i] = linesizes[i];
 	}
 
-	assert(((uintptr_t)frame->data[i] % alignment) == 0);
+	assert(((uintptr_t)frame->data[i] % base_alignment) == 0);
+}
+
+void video_frame_init(struct video_frame *frame, enum video_format format, uint32_t width, uint32_t height)
+{
+	video_frame_init2(frame, format, width, height, 0);
 }
 
 void video_frame_copy(struct video_frame *dst, const struct video_frame *src,
