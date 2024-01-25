@@ -281,6 +281,20 @@ static const cuda_function cuda_functions[] = {
 
 	{offsetof(CudaFunctions, cuMemHostRegister), "cuMemHostRegister_v2"},
 	{offsetof(CudaFunctions, cuMemHostUnregister), "cuMemHostUnregister"},
+
+#ifndef _WIN32
+	{offsetof(CudaFunctions, cuGLGetDevices), "cuGLGetDevices_v2"},
+	{offsetof(CudaFunctions, cuGraphicsGLRegisterImage),
+	 "cuGraphicsGLRegisterImage"},
+	{offsetof(CudaFunctions, cuGraphicsUnregisterResource),
+	 "cuGraphicsUnregisterResource"},
+	{offsetof(CudaFunctions, cuGraphicsMapResources),
+	 "cuGraphicsMapResources"},
+	{offsetof(CudaFunctions, cuGraphicsUnmapResources),
+	 "cuGraphicsUnmapResources"},
+	{offsetof(CudaFunctions, cuGraphicsSubResourceGetMappedArray),
+	 "cuGraphicsSubResourceGetMappedArray"},
+#endif
 };
 
 static const size_t num_cuda_funcs =
@@ -352,13 +366,11 @@ bool init_cuda(obs_encoder_t *encoder)
 	return success;
 }
 
-#ifdef _WIN32
 extern struct obs_encoder_info h264_nvenc_info;
 #ifdef ENABLE_HEVC
 extern struct obs_encoder_info hevc_nvenc_info;
 #endif
 extern struct obs_encoder_info av1_nvenc_info;
-#endif
 
 extern struct obs_encoder_info h264_nvenc_soft_info;
 #ifdef ENABLE_HEVC
@@ -453,23 +465,17 @@ void obs_nvenc_load(bool h264, bool hevc, bool av1)
 {
 	pthread_mutex_init(&init_mutex, NULL);
 	if (h264) {
-#ifdef _WIN32
 		obs_register_encoder(&h264_nvenc_info);
-#endif
 		obs_register_encoder(&h264_nvenc_soft_info);
 	}
 #ifdef ENABLE_HEVC
 	if (hevc) {
-#ifdef _WIN32
 		obs_register_encoder(&hevc_nvenc_info);
-#endif
 		obs_register_encoder(&hevc_nvenc_soft_info);
 	}
 #endif
 	if (av1 && av1_supported()) {
-#ifdef _WIN32
 		obs_register_encoder(&av1_nvenc_info);
-#endif
 		obs_register_encoder(&av1_nvenc_soft_info);
 	} else {
 		blog(LOG_WARNING, "[NVENC] AV1 is not supported");
