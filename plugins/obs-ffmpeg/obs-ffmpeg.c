@@ -7,8 +7,12 @@
 #ifdef _WIN32
 #include <dxgi.h>
 #include <util/windows/win-version.h>
+#endif
 
+#if defined(_WIN32) || defined(NVCODEC_AVAILABLE)
 #include "obs-nvenc.h"
+
+#define OBS_NVENC_AVAILABLE
 #endif
 
 #if !defined(_WIN32) && !defined(__APPLE__)
@@ -236,7 +240,7 @@ static bool nvenc_device_available(void)
 }
 #endif
 
-#ifdef _WIN32
+#ifdef OBS_NVENC_AVAILABLE
 extern bool load_nvenc_lib(void);
 #endif
 
@@ -264,18 +268,9 @@ static bool nvenc_supported(bool *out_h264, bool *out_hevc, bool *out_av1)
 
 	bool success = h264 || hevc;
 	if (success) {
-#if defined(_WIN32)
+#ifdef OBS_NVENC_AVAILABLE
 		success = nvenc_device_available() && load_nvenc_lib();
 		av1 = success && (get_nvenc_ver() >= ((12 << 4) | 0));
-
-#elif defined(__linux__)
-		success = nvenc_device_available();
-		if (success) {
-			void *const lib = os_dlopen("libnvidia-encode.so.1");
-			success = lib != NULL;
-			if (success)
-				os_dlclose(lib);
-		}
 #else
 		void *const lib = os_dlopen("libnvidia-encode.so.1");
 		success = lib != NULL;
@@ -336,9 +331,12 @@ static bool hevc_vaapi_supported(void)
 #endif
 #endif
 
-#ifdef _WIN32
+#ifdef OBS_NVENC_AVAILABLE
 extern void obs_nvenc_load(bool h264, bool hevc, bool av1);
 extern void obs_nvenc_unload(void);
+#endif
+
+#ifdef _WIN32
 extern void amf_load(void);
 extern void amf_unload(void);
 #endif
@@ -381,7 +379,7 @@ bool obs_module_load(void)
 	if (nvenc_supported(&h264, &hevc, &av1)) {
 		blog(LOG_INFO, "NVENC supported");
 
-#ifdef _WIN32
+#ifdef OBS_NVENC_AVAILABLE
 		obs_nvenc_load(h264, hevc, av1);
 #endif
 		if (h264)
@@ -442,6 +440,8 @@ void obs_module_unload(void)
 
 #ifdef _WIN32
 	amf_unload();
+#endif
+#ifdef OBS_NVENC_AVAILABLE
 	obs_nvenc_unload();
 #endif
 }
