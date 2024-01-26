@@ -614,7 +614,10 @@ bool AJASource::ReadWireFormats(NTV2DeviceID device_id, IOSelection io_select,
 		if (vpids.size() > 0) {
 			auto vpid = *vpids.begin();
 			if (vpid.Sampling() == VPIDSampling_YUV_422) {
-				pf = NTV2_FBF_8BIT_YCBCR;
+				if (vpid.BitDepth() == VPIDBitDepth_8)
+					pf = NTV2_FBF_8BIT_YCBCR;
+				else if (vpid.BitDepth() == VPIDBitDepth_10)
+					pf = NTV2_FBF_10BIT_YCBCR;
 				blog(LOG_INFO,
 				     "AJASource::ReadWireFormats - Detected pixel format %s",
 				     NTV2FrameBufferFormatToString(pf, true)
@@ -745,7 +748,10 @@ bool aja_source_device_changed(void *data, obs_properties_t *props,
 	obs_property_list_clear(pix_fmt_list);
 	obs_property_list_add_int(pix_fmt_list, obs_module_text("Auto"),
 				  kAutoDetect);
-	populate_pixel_format_list(deviceID, pix_fmt_list);
+	populate_pixel_format_list(deviceID,
+				   {kDefaultAJAPixelFormat,
+				    NTV2_FBF_10BIT_YCBCR, NTV2_FBF_24BIT_BGR},
+				   pix_fmt_list);
 
 	IOSelection io_select = static_cast<IOSelection>(
 		obs_data_get_int(settings, kUIPropInput.id));
