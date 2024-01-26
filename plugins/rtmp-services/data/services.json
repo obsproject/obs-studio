@@ -2658,6 +2658,25 @@
                 "max audio bitrate": 320,
                 "x264opts": "scenecut=0"
             }
+        },
+        {
+            "name": "CHZZK",
+            "common": false,
+            "stream_key_link": "https://studio.chzzk.naver.com/setting",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://global-rtmp.lip2.navercorp.com:8080/relay"
+                }
+            ],
+            "supported video codecs": [
+                "h264"
+            ],
+            "recommended": {
+                "keyint": 1,
+                "profile": "high",
+                "bframes": 0
+            }
         }
     ]
 }
