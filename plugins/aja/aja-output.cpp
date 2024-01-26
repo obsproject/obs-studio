@@ -936,7 +936,9 @@ bool aja_output_device_changed(void *data, obs_properties_t *props,
 				   false, MATCH_OBS_FRAMERATE);
 
 	obs_property_list_clear(pix_fmt_list);
-	populate_pixel_format_list(deviceID, pix_fmt_list);
+	populate_pixel_format_list(deviceID,
+				   {kDefaultAJAPixelFormat, NTV2_FBF_24BIT_BGR},
+				   pix_fmt_list);
 
 	IOSelection io_select = static_cast<IOSelection>(
 		obs_data_get_int(settings, kUIPropOutput.id));
