@@ -3037,6 +3037,7 @@ LayoutHotkey(OBSBasicSettings *settings, obs_hotkey_id id, obs_hotkey_t *key,
 					 settings, combos->second);
 
 	hw->label = label;
+	hw->setAccessibleName(text);
 	label->widget = hw;
 
 	fun(key, label, hw);
