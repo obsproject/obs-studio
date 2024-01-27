@@ -265,6 +265,21 @@ mfxStatus simple_copytex(mfxHDL pthis, mfxMemId mid, void *tex, mfxU64 lock_key,
 	return MFX_ERR_NONE;
 }
 
+struct get_drm_device_params {
+	const char **out_path;
+	uint32_t idx;
+};
+
+bool get_drm_device(void *param, const char *node, uint32_t idx)
+{
+	struct get_drm_device_params *p = (struct get_drm_device_params *)param;
+	if (idx == p->idx) {
+		*p->out_path = node;
+		return false;
+	}
+	return true;
+}
+
 // Initialize Intel VPL Session, device/display and memory manager
 mfxStatus Initialize(mfxVersion ver, mfxSession *pSession,
 		     mfxFrameAllocator *pmfxAllocator, mfxHDL *deviceHandle,
@@ -297,28 +312,27 @@ mfxStatus Initialize(mfxVersion ver, mfxSession *pSession,
 		cfg, (const mfxU8 *)"mfxImplDescription.AccelerationMode",
 		impl);
 
+	const char *device_path = NULL;
 	int fd = -1;
 	if (pmfxAllocator) {
-		// TODO: This is broken and we need the ovi adapter to be
-		// correct for checks earlier in encoder_create to fallback
-		// properly.
-		char device_path[128];
 		obs_video_info ovi;
 		obs_get_video_info(&ovi);
-		// eglQueryDeviceStringEXT( device, EGL_DRM_DEVICE_FILE_EXT);
-		sprintf(device_path, "/dev/dri/renderD%d", 128 + ovi.adapter);
-		fd = open(device_path, O_RDWR);
+		struct get_drm_device_params params = {&device_path,
+						       (uint32_t)ovi.adapter};
+		obs_enter_graphics();
+		gs_enum_adapters(get_drm_device, &params);
+		obs_leave_graphics();
 	} else {
 		if (codec == QSV_CODEC_AVC && default_h264_device)
-			fd = open(default_h264_device, O_RDWR);
+			device_path = default_h264_device;
 		else if (codec == QSV_CODEC_HEVC && default_hevc_device)
-			fd = open(default_hevc_device, O_RDWR);
+			device_path = default_hevc_device;
 		else if (codec == QSV_CODEC_AV1 && default_av1_device)
-			fd = open(default_av1_device, O_RDWR);
+			device_path = default_av1_device;
 	}
+	fd = open(device_path, O_RDWR);
 	if (fd < 0) {
-		blog(LOG_ERROR, "Failed to open device '%s'",
-		     default_h264_device);
+		blog(LOG_ERROR, "Failed to open device '%s'", device_path);
 		return MFX_ERR_DEVICE_FAILED;
 	}
 

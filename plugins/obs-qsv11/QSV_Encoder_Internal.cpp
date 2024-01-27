@@ -71,7 +71,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 mfxHDL QSV_Encoder_Internal::g_GFX_Handle = NULL;
 mfxU16 QSV_Encoder_Internal::g_numEncodersOpen = 0;
 
-QSV_Encoder_Internal::QSV_Encoder_Internal(mfxVersion &version)
+QSV_Encoder_Internal::QSV_Encoder_Internal(mfxVersion &version,
+					   bool useTexAlloc)
 	: m_pmfxSurfaces(NULL),
 	  m_pmfxENC(NULL),
 	  m_nSPSBufferSize(1024),
@@ -81,6 +82,8 @@ QSV_Encoder_Internal::QSV_Encoder_Internal(mfxVersion &version)
 	  m_nTaskIdx(0),
 	  m_nFirstSyncTask(0),
 	  m_outBitstream(),
+	  m_bUseD3D11(false),
+	  m_bUseTexAlloc(useTexAlloc),
 	  m_sessionData(NULL),
 	  m_ver(version)
 {
@@ -109,7 +112,6 @@ QSV_Encoder_Internal::QSV_Encoder_Internal(mfxVersion &version)
 		cfg, (const mfxU8 *)"mfxImplDescription.AccelerationMode",
 		tempImpl);
 #else
-	m_bUseTexAlloc = true;
 	tempImpl.Type = MFX_VARIANT_TYPE_U32;
 	tempImpl.Data.U32 = MFX_ACCEL_MODE_VIA_VAAPI;
 	MFXSetConfigFilterProperty(

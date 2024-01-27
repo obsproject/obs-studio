@@ -824,7 +824,7 @@ static bool obs_qsv_update(void *data, obs_data_t *settings)
 }
 
 static void *obs_qsv_create(enum qsv_codec codec, obs_data_t *settings,
-			    obs_encoder_t *encoder)
+			    obs_encoder_t *encoder, bool useTexAlloc)
 {
 	struct obs_qsv *obsqsv = bzalloc(sizeof(struct obs_qsv));
 	obsqsv->encoder = encoder;
@@ -869,7 +869,8 @@ static void *obs_qsv_create(enum qsv_codec codec, obs_data_t *settings,
 
 	if (update_settings(obsqsv, settings)) {
 		pthread_mutex_lock(&g_QsvLock);
-		obsqsv->context = qsv_encoder_open(&obsqsv->params, codec);
+		obsqsv->context =
+			qsv_encoder_open(&obsqsv->params, codec, useTexAlloc);
 		pthread_mutex_unlock(&g_QsvLock);
 
 		if (obsqsv->context == NULL)
@@ -922,17 +923,17 @@ static void *obs_qsv_create(enum qsv_codec codec, obs_data_t *settings,
 
 static void *obs_qsv_create_h264(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return obs_qsv_create(QSV_CODEC_AVC, settings, encoder);
+	return obs_qsv_create(QSV_CODEC_AVC, settings, encoder, false);
 }
 
 static void *obs_qsv_create_av1(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return obs_qsv_create(QSV_CODEC_AV1, settings, encoder);
+	return obs_qsv_create(QSV_CODEC_AV1, settings, encoder, false);
 }
 
 static void *obs_qsv_create_hevc(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return obs_qsv_create(QSV_CODEC_HEVC, settings, encoder);
+	return obs_qsv_create(QSV_CODEC_HEVC, settings, encoder, false);
 }
 
 static void *obs_qsv_create_tex(enum qsv_codec codec, obs_data_t *settings,
@@ -940,11 +941,6 @@ static void *obs_qsv_create_tex(enum qsv_codec codec, obs_data_t *settings,
 {
 	struct obs_video_info ovi;
 	obs_get_video_info(&ovi);
-
-#if !defined(_WIN32)
-	blog(LOG_INFO, ">>> fall back to non-texture sharing on this platform");
-	return obs_encoder_create_rerouted(encoder, (const char *)fallback_id);
-#endif
 
 	if (!adapters[ovi.adapter].is_intel) {
 		blog(LOG_INFO,
@@ -984,7 +980,7 @@ static void *obs_qsv_create_tex(enum qsv_codec codec, obs_data_t *settings,
 	}
 
 	blog(LOG_INFO, ">>> new qsv encoder");
-	return obs_qsv_create(codec, settings, encoder);
+	return obs_qsv_create(codec, settings, encoder, true);
 }
 
 static void *obs_qsv_create_tex_h264(obs_data_t *settings,
