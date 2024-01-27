@@ -526,10 +526,14 @@ General Encoder Functions
 ---------------------
 
 .. function:: video_t *obs_encoder_video(const obs_encoder_t *encoder)
+              video_t *obs_encoder_parent_video(const obs_encoder_t *encoder)
               audio_t *obs_encoder_audio(const obs_encoder_t *encoder)
 
    :return: The video/audio handler associated with this encoder, or
-            *NULL* if none or not a matching encoder type
+            *NULL* if none or not a matching encoder type.
+            *parent_video* returns the "original" video handler
+            associated with this encoder, regardless of whether an FPS
+            divisor is set.
 
 ---------------------
 
