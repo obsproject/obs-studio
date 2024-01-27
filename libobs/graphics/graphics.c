@@ -82,7 +82,8 @@ void gs_enum_adapters(bool (*callback)(void *param, const char *name,
 		return;
 
 	if (graphics->exports.device_enum_adapters) {
-		if (graphics->exports.device_enum_adapters(callback, param)) {
+		if (graphics->exports.device_enum_adapters(graphics->device,
+							   callback, param)) {
 			return;
 		}
 	}
@@ -2986,6 +2987,16 @@ bool gs_texture_create_p010(gs_texture_t **tex_y, gs_texture_t **tex_uv,
 	return true;
 }
 
+uint32_t gs_get_adapter_count(void)
+{
+	if (!gs_valid("gs_get_adapter_count"))
+		return 0;
+	if (!thread_graphics->exports.gs_get_adapter_count)
+		return 0;
+
+	return thread_graphics->exports.gs_get_adapter_count();
+}
+
 #ifdef __APPLE__
 
 /** Platform specific functions */
@@ -3106,16 +3117,6 @@ bool gs_duplicator_update_frame(gs_duplicator_t *duplicator)
 		return false;
 
 	return thread_graphics->exports.gs_duplicator_update_frame(duplicator);
-}
-
-uint32_t gs_get_adapter_count(void)
-{
-	if (!gs_valid("gs_get_adapter_count"))
-		return 0;
-	if (!thread_graphics->exports.gs_get_adapter_count)
-		return 0;
-
-	return thread_graphics->exports.gs_get_adapter_count();
 }
 
 bool gs_can_adapter_fast_clear(void)

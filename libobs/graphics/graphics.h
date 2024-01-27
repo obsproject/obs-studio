@@ -525,6 +525,7 @@ struct gs_init_data {
 
 EXPORT const char *gs_get_device_name(void);
 EXPORT int gs_get_device_type(void);
+EXPORT uint32_t gs_get_adapter_count(void);
 EXPORT void gs_enum_adapters(bool (*callback)(void *param, const char *name,
 					      uint32_t id),
 			     void *param);
@@ -929,7 +930,6 @@ EXPORT enum gs_color_space
 gs_duplicator_get_color_space(gs_duplicator_t *duplicator);
 EXPORT float gs_duplicator_get_sdr_white_level(gs_duplicator_t *duplicator);
 
-EXPORT uint32_t gs_get_adapter_count(void);
 EXPORT bool gs_can_adapter_fast_clear(void);
 
 /** creates a windows GDI-lockable texture */
