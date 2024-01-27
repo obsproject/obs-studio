@@ -397,6 +397,15 @@ static struct gs_texture *gl_wayland_egl_device_texture_create_from_pixmap(
 	return NULL;
 }
 
+static bool gl_wayland_egl_enum_adapters(gs_device_t *device,
+					 bool (*callback)(void *param,
+							  const char *name,
+							  uint32_t id),
+					 void *param)
+{
+	return gl_egl_enum_adapters(device->plat->display, callback, param);
+}
+
 static const struct gl_winsys_vtable egl_wayland_winsys_vtable = {
 	.windowinfo_create = gl_wayland_egl_windowinfo_create,
 	.windowinfo_destroy = gl_wayland_egl_windowinfo_destroy,
@@ -420,6 +429,7 @@ static const struct gl_winsys_vtable egl_wayland_winsys_vtable = {
 		gl_wayland_egl_device_query_dmabuf_modifiers_for_format,
 	.device_texture_create_from_pixmap =
 		gl_wayland_egl_device_texture_create_from_pixmap,
+	.device_enum_adapters = gl_wayland_egl_enum_adapters,
 };
 
 const struct gl_winsys_vtable *gl_wayland_egl_get_winsys_vtable(void)

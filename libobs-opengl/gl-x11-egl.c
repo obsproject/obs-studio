@@ -612,6 +612,15 @@ static bool gl_x11_egl_device_query_dmabuf_modifiers_for_format(
 		plat->edisplay, drm_format, modifiers, n_modifiers);
 }
 
+static bool gl_x11_egl_enum_adapters(gs_device_t *device,
+				     bool (*callback)(void *param,
+						      const char *name,
+						      uint32_t id),
+				     void *param)
+{
+	return gl_egl_enum_adapters(device->plat->edisplay, callback, param);
+}
+
 static const struct gl_winsys_vtable egl_x11_winsys_vtable = {
 	.windowinfo_create = gl_x11_egl_windowinfo_create,
 	.windowinfo_destroy = gl_x11_egl_windowinfo_destroy,
@@ -635,6 +644,7 @@ static const struct gl_winsys_vtable egl_x11_winsys_vtable = {
 		gl_x11_egl_device_query_dmabuf_modifiers_for_format,
 	.device_texture_create_from_pixmap =
 		gl_x11_egl_device_texture_create_from_pixmap,
+	.device_enum_adapters = gl_x11_egl_enum_adapters,
 };
 
 const struct gl_winsys_vtable *gl_x11_egl_get_winsys_vtable(void)

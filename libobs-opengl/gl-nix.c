@@ -95,6 +95,14 @@ extern void device_leave_context(gs_device_t *device)
 	gl_vtable->device_leave_context(device);
 }
 
+extern bool device_enum_adapters(gs_device_t *device,
+				 bool (*callback)(void *param, const char *name,
+						  uint32_t id),
+				 void *param)
+{
+	return gl_vtable->device_enum_adapters(device, callback, param);
+}
+
 extern void *device_get_device_obj(gs_device_t *device)
 {
 	return gl_vtable->device_get_device_obj(device);
