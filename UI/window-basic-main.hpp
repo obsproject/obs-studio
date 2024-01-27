@@ -1013,6 +1013,7 @@ public:
 	QIcon GetSourceIcon(const char *id) const;
 	QIcon GetGroupIcon() const;
 	QIcon GetSceneIcon() const;
+	QIcon GetCustomIcon(const char *id) const;
 
 	OBSWeakSource copyFilter;
 
