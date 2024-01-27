@@ -77,7 +77,8 @@ void qsv_encoder_version(unsigned short *major, unsigned short *minor)
 	*minor = ver.Minor;
 }
 
-qsv_t *qsv_encoder_open(qsv_param_t *pParams, enum qsv_codec codec)
+qsv_t *qsv_encoder_open(qsv_param_t *pParams, enum qsv_codec codec,
+			bool useTexAlloc)
 {
 	obs_video_info ovi;
 	obs_get_video_info(&ovi);
@@ -102,7 +103,8 @@ qsv_t *qsv_encoder_open(qsv_param_t *pParams, enum qsv_codec codec)
 
 	bool isDGPU = adapters[adapter_idx].is_dgpu;
 
-	QSV_Encoder_Internal *pEncoder = new QSV_Encoder_Internal(ver, isDGPU);
+	QSV_Encoder_Internal *pEncoder =
+		new QSV_Encoder_Internal(ver, isDGPU, useTexAlloc);
 	mfxStatus sts = pEncoder->Open(pParams, codec);
 	if (sts != MFX_ERR_NONE) {
 
