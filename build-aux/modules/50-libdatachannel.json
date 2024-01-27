@@ -14,8 +14,8 @@
             "type": "git",
             "url": "https://github.com/paullouisageneau/libdatachannel.git",
             "disable-submodules": true,
-            "tag": "v0.19.5",
-            "commit": "3cbfc42a018a144224e3f9032c6635491ee8672d"
+            "tag": "v0.20.1",
+            "commit": "7841d9f34cf9bd735958ae203a2536c14240c8a5"
         }
     ]
 }
