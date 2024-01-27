@@ -631,3 +631,9 @@ void obs_frontend_add_undo_redo_action(const char *name,
 		c->obs_frontend_add_undo_redo_action(
 			name, undo, redo, undo_data, redo_data, repeatable);
 }
+
+void obs_frontend_exit(bool force)
+{
+	if (callbacks_valid())
+		c->obs_frontend_exit(force);
+}

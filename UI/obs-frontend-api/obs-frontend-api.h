@@ -252,6 +252,8 @@ EXPORT void obs_frontend_add_undo_redo_action(
 	const char *name, const undo_redo_cb undo, const undo_redo_cb redo,
 	const char *undo_data, const char *redo_data, bool repeatable);
 
+EXPORT void obs_frontend_exit(bool force);
+
 /* ------------------------------------------------------------------------- */
 
 #ifdef __cplusplus

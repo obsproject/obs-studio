@@ -747,6 +747,13 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 			undo_data, redo_data, repeatable);
 	}
 
+	void obs_frontend_exit(bool force) override
+	{
+		QMetaObject::invokeMethod(OBSBasic::Get(), "CloseApp",
+					  Qt::QueuedConnection,
+					  Q_ARG(bool, force));
+	}
+
 	void on_load(obs_data_t *settings) override
 	{
 		for (size_t i = saveCallbacks.size(); i > 0; i--) {

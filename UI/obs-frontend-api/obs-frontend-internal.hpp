@@ -167,6 +167,8 @@ struct obs_frontend_callbacks {
 						       const char *undo_data,
 						       const char *redo_data,
 						       bool repeatable) = 0;
+
+	virtual void obs_frontend_exit(bool force) = 0;
 };
 
 EXPORT void
