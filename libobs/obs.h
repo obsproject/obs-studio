@@ -2559,6 +2559,13 @@ EXPORT void obs_encoder_set_audio(obs_encoder_t *encoder, audio_t *audio);
 EXPORT video_t *obs_encoder_video(const obs_encoder_t *encoder);
 
 /**
+ * Returns the parent video output context used with this encoder, or NULL if not
+ * a video context. Used when an FPS divisor is set, where the original video
+ * context would not otherwise be gettable.
+ */
+EXPORT video_t *obs_encoder_parent_video(const obs_encoder_t *encoder);
+
+/**
  * Returns the audio output context used with this encoder, or NULL if not
  * a audio context
  */

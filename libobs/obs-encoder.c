@@ -1232,6 +1232,21 @@ video_t *obs_encoder_video(const obs_encoder_t *encoder)
 	return encoder->fps_override ? encoder->fps_override : encoder->media;
 }
 
+video_t *obs_encoder_parent_video(const obs_encoder_t *encoder)
+{
+	if (!obs_encoder_valid(encoder, "obs_encoder_parent_video"))
+		return NULL;
+	if (encoder->info.type != OBS_ENCODER_VIDEO) {
+		blog(LOG_WARNING,
+		     "obs_encoder_parent_video: "
+		     "encoder '%s' is not a video encoder",
+		     obs_encoder_get_name(encoder));
+		return NULL;
+	}
+
+	return encoder->media;
+}
+
 audio_t *obs_encoder_audio(const obs_encoder_t *encoder)
 {
 	if (!obs_encoder_valid(encoder, "obs_encoder_audio"))
