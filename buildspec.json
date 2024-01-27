@@ -1,25 +1,25 @@
 {
     "dependencies": {
         "prebuilt": {
-            "version": "2024-01-18",
+            "version": "2024-01-27",
             "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
             "label": "Pre-Built obs-deps",
             "hashes": {
-                "macos-universal": "53214a1f3aece7957126ddb03f8261106a0200b7a953ae119f05f0b8d7db87f7",
-                "windows-x64": "5e78964e1d54602138f13429445502855adbae88adb41f2e92779eadbd5698a1",
-                "windows-x86": "96a48417a04c9922bd6608727892908760f923031183fe6ae44447fc2ba4bffe"
+                "macos-universal": "57a13557f7528e58743c4712dc25eb1c4558d36eeaca6f5361fe1f6cbfabe229",
+                "windows-x64": "d371f8cc81859b5321b66dcef00a207abbdff7373c722b761852cbc95664b4c9",
+                "windows-x86": "66a72428f404c69d6abac0b36fc89bb2ae4a8a6cb3bd14816a35b5ceb95d8769"
             }
         },
         "qt6": {
-            "version": "2024-01-18",
+            "version": "2024-01-27",
             "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
             "label": "Pre-Built Qt6",
             "hashes": {
-                "macos-universal": "8d3a8ff028c0c5e1ed8ab1b81da483f151b3ea214390a9b1fef30f836938c1bb",
-                "windows-x64": "59155432b6ea0044f4399ebcf83e882112d4aedae99d00b4f6f765e5897f752b"
+                "macos-universal": "86f6418c3e454b3979947fdba183aa7303ca9d7729c7056435bd023d466cf93a",
+                "windows-x64": "7a15c4b494bfe2df51cad16e7cbcfcc2b5b69b55839dd584c622214038c7d44c"
             },
             "debugSymbols": {
-                "windows-x64": "98d3f590175fceefce4e5e20b56886ff04f004db938dcbbd11dde5ca69bf7494"
+                "windows-x64": "ddf356ce20a4946f7522253b5da44ce7fe29398bb55ff74467431fb31e8ec645"
             }
         },
         "cef": {
