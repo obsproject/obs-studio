@@ -112,16 +112,14 @@ void WHIPOutput::ConfigureAudioTrack(std::string media_stream_id,
 
 	auto rtp_config = std::make_shared<rtc::RtpPacketizationConfig>(
 		ssrc, cname, audio_payload_type,
-		rtc::OpusRtpPacketizer::defaultClockRate);
+		rtc::OpusRtpPacketizer::DefaultClockRate);
 	auto packetizer = std::make_shared<rtc::OpusRtpPacketizer>(rtp_config);
 	audio_sr_reporter = std::make_shared<rtc::RtcpSrReporter>(rtp_config);
 	auto nack_responder = std::make_shared<rtc::RtcpNackResponder>();
 
-	auto opus_handler =
-		std::make_shared<rtc::OpusPacketizationHandler>(packetizer);
-	opus_handler->addToChain(audio_sr_reporter);
-	opus_handler->addToChain(nack_responder);
-	audio_track->setMediaHandler(opus_handler);
+	packetizer->addToChain(audio_sr_reporter);
+	packetizer->addToChain(nack_responder);
+	audio_track->setMediaHandler(packetizer);
 }
 
 void WHIPOutput::ConfigureVideoTrack(std::string media_stream_id,
@@ -148,11 +146,9 @@ void WHIPOutput::ConfigureVideoTrack(std::string media_stream_id,
 	video_sr_reporter = std::make_shared<rtc::RtcpSrReporter>(rtp_config);
 	auto nack_responder = std::make_shared<rtc::RtcpNackResponder>();
 
-	auto h264_handler =
-		std::make_shared<rtc::H264PacketizationHandler>(packetizer);
-	h264_handler->addToChain(video_sr_reporter);
-	h264_handler->addToChain(nack_responder);
-	video_track->setMediaHandler(h264_handler);
+	packetizer->addToChain(video_sr_reporter);
+	packetizer->addToChain(nack_responder);
+	video_track->setMediaHandler(packetizer);
 }
 
 /**
