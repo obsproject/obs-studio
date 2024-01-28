@@ -516,6 +516,13 @@ static inline bool queue_frame(struct obs_core_video_mix *video,
 	 * will ensure better performance. */
 	if (raw_active || vframe_info->count > 1) {
 		gs_copy_texture(tf.tex, video->convert_textures_encode[0]);
+#ifndef _WIN32
+		/* Y and UV textures are views of the same texture on D3D, and
+		 * gs_copy_texture will copy all views of the underlying
+		 * texture. On other platforms, these are two distinct textures
+		 * that must be copied separately. */
+		gs_copy_texture(tf.tex_uv, video->convert_textures_encode[1]);
+#endif
 	} else {
 		gs_texture_t *tex = video->convert_textures_encode[0];
 		gs_texture_t *tex_uv = video->convert_textures_encode[1];
