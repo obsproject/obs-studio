@@ -859,6 +859,13 @@ void obs_encoder_set_scaled_size(obs_encoder_t *encoder, uint32_t width,
 		     obs_encoder_get_name(encoder));
 		return;
 	}
+	if (encoder->initialized) {
+		blog(LOG_WARNING,
+		     "encoder '%s': Cannot set the scaled resolution "
+		     "after the encoder has been initialized",
+		     obs_encoder_get_name(encoder));
+		return;
+	}
 
 	const struct video_output_info *voi;
 	voi = video_output_get_info(encoder->media);
@@ -895,6 +902,13 @@ void obs_encoder_set_gpu_scale_type(obs_encoder_t *encoder,
 		     obs_encoder_get_name(encoder));
 		return;
 	}
+	if (encoder->initialized) {
+		blog(LOG_WARNING,
+		     "encoder '%s': Cannot enable GPU scaling "
+		     "after the encoder has been initialized",
+		     obs_encoder_get_name(encoder));
+		return;
+	}
 
 	encoder->gpu_scale_type = gpu_scale_type;
 }
@@ -917,6 +931,14 @@ bool obs_encoder_set_frame_rate_divisor(obs_encoder_t *encoder,
 		blog(LOG_WARNING,
 		     "encoder '%s': Cannot set frame rate divisor "
 		     "while the encoder is active",
+		     obs_encoder_get_name(encoder));
+		return false;
+	}
+
+	if (encoder->initialized) {
+		blog(LOG_WARNING,
+		     "encoder '%s': Cannot set frame rate divisor "
+		     "after the encoder has been initialized",
 		     obs_encoder_get_name(encoder));
 		return false;
 	}
@@ -1087,6 +1109,13 @@ void obs_encoder_set_video(obs_encoder_t *encoder, video_t *video)
 		blog(LOG_WARNING,
 		     "encoder '%s': Cannot apply a new video_t "
 		     "object while the encoder is active",
+		     obs_encoder_get_name(encoder));
+		return;
+	}
+	if (encoder->initialized) {
+		blog(LOG_WARNING,
+		     "encoder '%s': Cannot apply a new video_t object "
+		     "after the encoder has been initialized",
 		     obs_encoder_get_name(encoder));
 		return;
 	}
