@@ -217,7 +217,7 @@ jobs:
       - name: Set Up Environment 🔧
         id: setup
         env:
-          BOUF_ACTION_HASH: '4b421d1fa51cbf35f9c68f80795be3468dc480d47989c0bf713c39a7d62dec9e'
+          BOUF_ACTION_HASH: 'e91375eb41c3c9d97df14dc3c2775ce254e50f92dad782341e8cd2a1f9faf7de'
         run: |
           $channel = if ($env:GITHUB_REF_NAME -match "(beta|rc)") { "beta" } else { "stable" }
           $shortHash = $env:GITHUB_SHA.Substring(0,9)

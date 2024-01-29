@@ -30,9 +30,9 @@ runs:
     - name: Setup bouf
       shell: pwsh
       env:
-        BOUF_TAG: 'v0.6.1'
-        BOUF_HASH: '7292e43186ecc6210079fa5702254455797c7652dc6b08b5b61ac2d721766d86'
-        BOUF_NSIS_HASH: '2f5ecff05a002913c10aafa838febc1b0ae6e779f5ca67efa545ed787ae485a0'
+        BOUF_TAG: 'v0.6.2'
+        BOUF_HASH: '40ca34457a8ac60b9710a41b4cde2a0fc36d8740ab21b01d702069be2e1c5fb9'
+        BOUF_NSIS_HASH: '88958a9e4e0f3cb6f78e8359fdfa3343d050d5c2158e3ee77cb2cc4a8785ac61'
         GH_TOKEN: ${{ github.token }}
       run: |
         # Download bouf release
@@ -76,8 +76,8 @@ runs:
     - name: Install pandoc and rclone
       shell: pwsh
       run: |
-        choco install rclone --version 1.64.2 -y --no-progress
-        choco install pandoc --version 3.1.9 -y --no-progress
+        choco install rclone --version=1.64.2 -y --no-progress
+        choco install pandoc --version=3.1.9 -y --no-progress
 
     - name: Prepare Release Notes
       shell: pwsh
