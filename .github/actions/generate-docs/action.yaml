@@ -54,7 +54,7 @@ runs:
         target_path: '../home/_build'
         pre_build_commands: 'pip install -Iv sphinx==5.1.1'
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: ${{ steps.setup.outputs.artifactName }} ${{ steps.setup.outputs.commitHash }}
         path: |

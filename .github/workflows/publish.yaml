@@ -65,7 +65,7 @@ jobs:
       matrix:
         branch: ${{ fromJSON(needs.check-tag.outputs.flatpakMatrix) }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
@@ -168,7 +168,7 @@ jobs:
     if: github.repository_owner == 'obsproject' && fromJSON(needs.check-tag.outputs.validTag)
     runs-on: macos-13
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/steam-upload
         with:
           steamSecret: ${{ secrets.STEAM_SHARED_SECRET }}
