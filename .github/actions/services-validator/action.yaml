@@ -82,7 +82,7 @@ runs:
 
     - name: Restore Timestamp Cache ⏳
       if: fromJSON(inputs.runServiceChecks)
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ github.workspace }}/other
         key: service-check-${{ github.run_id }}
@@ -103,7 +103,7 @@ runs:
         : Check for defunct services 📉
         python3 -u .github/scripts/utils.py/check-services.py
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       if: fromJSON(inputs.runServiceChecks)
       with:
         name: timestamps
