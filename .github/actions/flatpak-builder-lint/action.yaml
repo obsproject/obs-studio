@@ -33,7 +33,7 @@ runs:
             ;;
         esac
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         repository: flathub/flatpak-builder-lint
         ref: v2.0.13

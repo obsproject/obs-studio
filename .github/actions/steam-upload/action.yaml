@@ -70,7 +70,7 @@ runs:
 
     - name: Download Nightly Assets 🌙
       id: asset-info-nightly
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       if: github.event_name == 'schedule'
 
     - name: Download Assets 📥
@@ -285,7 +285,7 @@ runs:
         popd
 
     - name: Upload Steam build logs
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: steam-build-logs
         path: ${{ github.workspace }}/steam/build/*.log
