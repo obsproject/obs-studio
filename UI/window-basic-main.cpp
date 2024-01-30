@@ -6244,14 +6244,6 @@ QMenu *OBSBasic::CreateAddSourcePopupMenu()
 
 void OBSBasic::AddSourcePopupMenu(const QPoint &pos)
 {
-	if (!GetCurrentScene()) {
-		// Tell the user he needs a scene first (help beginners).
-		OBSMessageBox::information(
-			this, QTStr("Basic.Main.AddSourceHelp.Title"),
-			QTStr("Basic.Main.AddSourceHelp.Text"));
-		return;
-	}
-
 	QScopedPointer<QMenu> popup(CreateAddSourcePopupMenu());
 	if (popup)
 		popup->exec(pos);
