@@ -98,7 +98,7 @@ static inline bool ResTooLow(uint32_t cx, uint32_t cy)
 }
 
 /* parses "[width]x[height]", string, i.e. 1024x768 */
-static bool ConvertResText(const char *res, uint32_t &cx, uint32_t &cy)
+bool ConvertResText(const char *res, uint32_t &cx, uint32_t &cy)
 {
 	BaseLexer lex;
 	base_token token;

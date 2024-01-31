@@ -113,6 +113,7 @@ target_sources(
           forms/OBSLogReply.ui
           forms/OBSLogViewer.ui
           forms/OBSMissingFiles.ui
+          forms/OBSProjectorCustomSizeSetting.ui
           forms/OBSRemux.ui
           forms/OBSUpdate.ui
           forms/OBSYoutubeActions.ui
@@ -274,6 +275,8 @@ target_sources(
           window-namedialog.cpp
           window-namedialog.hpp
           window-log-reply.cpp
+          window-projector-custom-size-setting.cpp
+          window-projector-custom-size-setting.hpp
           window-projector.cpp
           window-projector.hpp
           window-remux.cpp
