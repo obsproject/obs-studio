@@ -51,8 +51,8 @@ runs:
         if [[ "${RUNNER_OS}" == Linux ]]; then
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
+          brew install --overwrite --quiet python3
         fi
-        brew install --overwrite --quiet python@3.11
         python3 -m pip install jsonschema json_source_map requests aiohttp
         echo ::endgroup::
 
