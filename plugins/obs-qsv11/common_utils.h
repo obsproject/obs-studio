@@ -23,6 +23,7 @@ struct adapter_info {
 #define MAX_ADAPTERS 10
 extern struct adapter_info adapters[MAX_ADAPTERS];
 extern size_t adapter_count;
+extern size_t adapter_index;
 
 void util_cpuid(int cpuinfo[4], int flags);
 void check_adapters(struct adapter_info *adapters, size_t *adapter_count);
@@ -159,10 +160,10 @@ typedef struct {
 int GetFreeTaskIndex(Task *pTaskPool, mfxU16 nPoolSize);
 
 // Initialize Intel VPL Session, device/display and memory manager
-mfxStatus Initialize(mfxVersion ver, mfxSession *pSession,
+mfxStatus Initialize(mfxVersion *pVer, mfxSession *pSession,
 		     mfxFrameAllocator *pmfxAllocator, mfxHDL *deviceHandle,
 		     bool bCreateSharedHandles, enum qsv_codec codec,
-		     void **data); //vpl change
+		     void **data);
 
 // Release global shared resources (device/display)
 void Release();
