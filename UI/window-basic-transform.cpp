@@ -123,27 +123,23 @@ OBSBasicTransform::~OBSBasicTransform()
 
 void OBSBasicTransform::SetScene(OBSScene scene)
 {
-	transformSignal.Disconnect();
-	selectSignal.Disconnect();
-	deselectSignal.Disconnect();
-	removeSignal.Disconnect();
-	lockSignal.Disconnect();
+	sigs.clear();
 
 	if (scene) {
 		OBSSource source = obs_scene_get_source(scene);
 		signal_handler_t *signal =
 			obs_source_get_signal_handler(source);
 
-		transformSignal.Connect(signal, "item_transform",
-					OBSSceneItemTransform, this);
-		removeSignal.Connect(signal, "item_remove", OBSSceneItemRemoved,
-				     this);
-		selectSignal.Connect(signal, "item_select", OBSSceneItemSelect,
-				     this);
-		deselectSignal.Connect(signal, "item_deselect",
-				       OBSSceneItemDeselect, this);
-		lockSignal.Connect(signal, "item_locked", OBSSceneItemLocked,
-				   this);
+		sigs.emplace_back(signal, "item_transform",
+				  OBSSceneItemTransform, this);
+		sigs.emplace_back(signal, "item_remove", OBSSceneItemRemoved,
+				  this);
+		sigs.emplace_back(signal, "item_select", OBSSceneItemSelect,
+				  this);
+		sigs.emplace_back(signal, "item_deselect", OBSSceneItemDeselect,
+				  this);
+		sigs.emplace_back(signal, "item_locked", OBSSceneItemLocked,
+				  this);
 	}
 }
 
