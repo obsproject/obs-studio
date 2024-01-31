@@ -201,7 +201,7 @@ runs:
 
     - name: Generate Steam auth code 🔐
       id: steam-totp
-      uses: CyberAndrii/steam-totp@c7f636bc64e77f1b901e0420b7890813141508ee
+      uses: CyberAndrii/steam-totp@45775c32193801a84d19d94076d72a2ece010948
       if: ${{ ! fromJSON(inputs.preview) }}
       with:
         shared_secret: ${{ inputs.steamSecret }}
@@ -248,7 +248,7 @@ runs:
 
     - name: Generate Steam auth code 🔐
       id: steam-totp-playtest
-      uses: CyberAndrii/steam-totp@c7f636bc64e77f1b901e0420b7890813141508ee
+      uses: CyberAndrii/steam-totp@45775c32193801a84d19d94076d72a2ece010948
       if: ${{ ! fromJSON(inputs.preview) && fromJSON(steps.asset-info.outputs.is_prerelease) }}
       with:
         shared_secret: ${{ inputs.steamSecret }}
