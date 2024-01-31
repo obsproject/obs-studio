@@ -181,7 +181,7 @@ void ScreenshotObj::Save()
 	bool overwriteIfExists =
 		config_get_bool(config, "Output", "OverwriteIfExists");
 
-	const char *ext = half_bytes.empty() ? "png" : "jxr";
+	const char *ext = half_bytes.empty() ? "jpg" : "jxr";
 	path = GetOutputFilename(
 		rec_path, ext, noSpace, overwriteIfExists,
 		GetFormatString(filenameFormat, "Screenshot", nullptr).c_str());
@@ -284,8 +284,9 @@ static HRESULT SaveJxr(LPCWSTR path, uint8_t *pixels, uint32_t cx, uint32_t cy)
 void ScreenshotObj::MuxAndFinish()
 {
 	if (half_bytes.empty()) {
-		image.save(QT_UTF8(path.c_str()));
-		blog(LOG_INFO, "Saved screenshot to '%s'", path.c_str());
+		const char *file = "JPG";
+		image.save(QT_UTF8(path.c_str()), file, 100);
+		blog(LOG_INFO, "here Saved screenshot to '%s'", path.c_str());
 	} else {
 #ifdef _WIN32
 		wchar_t *path_w = nullptr;
