@@ -1431,7 +1431,9 @@ bool OBSBasic::LoadService()
 
 		option = config_get_string(basicConfig, "AdvOut",
 					   "AudioEncoder");
-		if (strcmp(obs_get_encoder_codec(option), "opus") != 0)
+
+		const char *encoder_codec = obs_get_encoder_codec(option);
+		if (!encoder_codec || strcmp(encoder_codec, "opus") != 0)
 			config_set_string(basicConfig, "AdvOut", "AudioEncoder",
 					  "ffmpeg_opus");
 	}
