@@ -65,15 +65,7 @@ private:
 
 	SourceTree *tree;
 	OBSSceneItem sceneitem;
-	OBSSignal sceneRemoveSignal;
-	OBSSignal itemRemoveSignal;
-	OBSSignal groupReorderSignal;
-	OBSSignal selectSignal;
-	OBSSignal deselectSignal;
-	OBSSignal visibleSignal;
-	OBSSignal lockedSignal;
-	OBSSignal renameSignal;
-	OBSSignal removeSignal;
+	std::vector<OBSSignal> sigs;
 
 	virtual void paintEvent(QPaintEvent *event) override;
 

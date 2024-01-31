@@ -182,17 +182,7 @@ void SourceTreeItem::paintEvent(QPaintEvent *event)
 
 void SourceTreeItem::DisconnectSignals()
 {
-	sceneRemoveSignal.Disconnect();
-	itemRemoveSignal.Disconnect();
-	selectSignal.Disconnect();
-	deselectSignal.Disconnect();
-	visibleSignal.Disconnect();
-	lockedSignal.Disconnect();
-	renameSignal.Disconnect();
-	removeSignal.Disconnect();
-
-	if (obs_sceneitem_is_group(sceneitem))
-		groupReorderSignal.Disconnect();
+	sigs.clear();
 }
 
 void SourceTreeItem::Clear()
@@ -279,19 +269,18 @@ void SourceTreeItem::ReconnectSignals()
 	obs_source_t *sceneSource = obs_scene_get_source(scene);
 	signal_handler_t *signal = obs_source_get_signal_handler(sceneSource);
 
-	sceneRemoveSignal.Connect(signal, "remove", removeItem, this);
-	itemRemoveSignal.Connect(signal, "item_remove", removeItem, this);
-	visibleSignal.Connect(signal, "item_visible", itemVisible, this);
-	lockedSignal.Connect(signal, "item_locked", itemLocked, this);
-	selectSignal.Connect(signal, "item_select", itemSelect, this);
-	deselectSignal.Connect(signal, "item_deselect", itemDeselect, this);
+	sigs.emplace_back(signal, "remove", removeItem, this);
+	sigs.emplace_back(signal, "item_remove", removeItem, this);
+	sigs.emplace_back(signal, "item_visible", itemVisible, this);
+	sigs.emplace_back(signal, "item_locked", itemLocked, this);
+	sigs.emplace_back(signal, "item_select", itemSelect, this);
+	sigs.emplace_back(signal, "item_deselect", itemDeselect, this);
 
 	if (obs_sceneitem_is_group(sceneitem)) {
 		obs_source_t *source = obs_sceneitem_get_source(sceneitem);
 		signal = obs_source_get_signal_handler(source);
 
-		groupReorderSignal.Connect(signal, "reorder", reorderGroup,
-					   this);
+		sigs.emplace_back(signal, "reorder", reorderGroup, this);
 	}
 
 	/* --------------------------------------------------------- */
@@ -315,8 +304,8 @@ void SourceTreeItem::ReconnectSignals()
 
 	obs_source_t *source = obs_sceneitem_get_source(sceneitem);
 	signal = obs_source_get_signal_handler(source);
-	renameSignal.Connect(signal, "rename", renamed, this);
-	removeSignal.Connect(signal, "remove", removeSource, this);
+	sigs.emplace_back(signal, "rename", renamed, this);
+	sigs.emplace_back(signal, "remove", removeSource, this);
 }
 
 void SourceTreeItem::mouseDoubleClickEvent(QMouseEvent *event)
