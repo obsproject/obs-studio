@@ -155,8 +155,9 @@ static EGLDisplay get_egl_display(struct gl_platform *plat)
 							  : NULL);
 
 	if (eglGetPlatformDisplayEXT) {
+		const EGLint plat_attribs[] = {EGL_NONE};
 		edisplay = eglGetPlatformDisplayEXT(EGL_PLATFORM_X11_EXT,
-						    display, NULL);
+						    display, plat_attribs);
 		if (EGL_NO_DISPLAY == edisplay)
 			blog(LOG_ERROR, "Failed to get EGL/X11 display");
 	}
