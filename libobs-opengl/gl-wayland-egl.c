@@ -190,7 +190,9 @@ static struct gl_platform *gl_wayland_egl_platform_create(gs_device_t *device,
 
 	device->plat = plat;
 
-	plat->display = eglGetDisplay(plat->wl_display);
+	const EGLAttrib plat_attribs[] = {EGL_NONE};
+	plat->display = eglGetPlatformDisplay(EGL_PLATFORM_WAYLAND_EXT,
+					      plat->wl_display, plat_attribs);
 	if (plat->display == EGL_NO_DISPLAY) {
 		blog(LOG_ERROR, "eglGetDisplay failed");
 		goto fail_display_init;
