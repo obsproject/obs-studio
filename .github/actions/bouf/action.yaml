@@ -87,13 +87,13 @@ runs:
         git tag -l --format='%(contents:body)' ${{ inputs.version }} > "${{ github.workspace }}/notes.rst"
     
     - name: 'Authenticate to Google Cloud'
-      uses: 'google-github-actions/auth@35b0e87d162680511bf346c299f71c9c5c379033'
+      uses: 'google-github-actions/auth@5a50e581162a13f4baa8916d01180d2acbc04363'
       with:
         workload_identity_provider: ${{ inputs.gcpWorkloadIdentityProvider }}
         service_account: ${{ inputs.gcpServiceAccountName }}
 
     - name: 'Set up Cloud SDK'
-      uses: 'google-github-actions/setup-gcloud@e30db14379863a8c79331b04a9969f4c1e225e0b'
+      uses: 'google-github-actions/setup-gcloud@98ddc00a17442e89a24bbf282954a3b65ce6d200'
 
     - name: Download Old Builds
       shell: pwsh
