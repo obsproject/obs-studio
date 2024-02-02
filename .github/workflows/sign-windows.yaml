@@ -1,0 +1,86 @@
+name: Sign Windows Project
+on:
+  workflow_call:
+jobs:
+  create-windows-update:
+    name: Create Windows Update 🥩
+    runs-on: windows-2022
+    environment:
+      name: bouf
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Parse JWT
+        id: jwt
+        run: |
+          $token = ConvertTo-SecureString -String ${env:ACTIONS_ID_TOKEN_REQUEST_TOKEN} -AsPlainText
+          $jwt = Invoke-WebRequest -Uri "${env:ACTIONS_ID_TOKEN_REQUEST_URL}&audience=ignore" -Authentication Bearer -Token $token
+          $claim_b64 = (($jwt.Content | ConvertFrom-Json -AsHashtable).value -split '\.')[1]
+          $mod = $claim_b64.Length % 4
+          if ($mod -gt 0) {$claim_b64 += '=' * (4 - $mod)}
+          $claim = [Text.Encoding]::Utf8.GetString([Convert]::FromBase64String($claim_b64)) | ConvertFrom-Json -AsHashtable
+          $sha = ${claim}.job_workflow_sha
+          Write-Output "Workflow SHA: ${sha}"
+          "workflow_sha=${sha}" >> $env:GITHUB_OUTPUT
+
+      - uses: actions/checkout@v4
+        with:
+          path: "repo"
+          fetch-depth: 0
+          ref: ${{ steps.jwt.outputs.workflow_sha }}
+
+      - name: Set Up Environment 🔧
+        id: setup
+        run: |
+          $channel = if ($env:GITHUB_REF_NAME -match "(beta|rc)") { "beta" } else { "stable" }
+          $shortHash = $env:GITHUB_SHA.Substring(0,9)
+          "channel=${channel}" >> $env:GITHUB_OUTPUT
+          "commitHash=${shortHash}" >> $env:GITHUB_OUTPUT
+
+      - name: Download Artifact 📥
+        uses: actions/download-artifact@v4
+        with:
+          name: obs-studio-windows-x64-${{ steps.setup.outputs.commitHash }}
+          path: ${{ github.workspace }}/build
+
+      - name: Run bouf 🥩
+        uses: ./repo/.github/actions/bouf
+        with:
+          gcpWorkloadIdentityProvider: ${{ secrets.GCP_IDENTITY_POOL }}
+          gcpServiceAccountName: ${{ secrets.GCP_SERVICE_ACCOUNT_NAME }}
+          version: ${{ github.ref_name }}
+          channel: ${{ steps.setup.outputs.channel }}
+
+      - name: Upload Signed Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: obs-studio-windows-x64-${{ github.ref_name }}-signed
+          compression-level: 6
+          path: ${{ github.workspace }}/output/install
+
+      - name: Upload PDBs
+        uses: actions/upload-artifact@v4
+        with:
+          name: obs-studio-windows-x64-${{ github.ref_name }}-pdbs
+          compression-level: 9
+          path: ${{ github.workspace }}/output/pdbs
+
+      - name: Upload Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: obs-studio-windows-x64-${{ github.ref_name }}-installer
+          compression-level: 0
+          path: ${{ github.workspace }}/output/*.exe
+
+      - name: Upload Updater Files
+        uses: actions/upload-artifact@v4
+        with:
+          name: obs-studio-windows-x64-${{ github.ref_name }}-patches
+          compression-level: 0
+          path: |
+            ${{ github.workspace }}/output/updater
+            ${{ github.workspace }}/output/*.json
+            ${{ github.workspace }}/output/*.sig
+            ${{ github.workspace }}/output/*.txt
+            ${{ github.workspace }}/output/*.rst
