@@ -139,7 +139,7 @@ jobs:
   create-appcast:
     name: Create Sparkle Appcast 🎙️
     if: github.repository_owner == 'obsproject' && github.ref_type == 'tag'
-    runs-on: macos-13
+    runs-on: macos-14
     needs: build-project
     strategy:
       fail-fast: false
@@ -234,7 +234,7 @@ jobs:
           $shortHash = $env:GITHUB_SHA.Substring(0,9)
           "channel=${channel}" >> $env:GITHUB_OUTPUT
           "commitHash=${shortHash}" >> $env:GITHUB_OUTPUT
-          
+
           # Ensure files in action haven't been modified
           $folderHash = ''
           $files = Get-ChildItem "${{ github.workspace }}\repo\.github\actions\bouf"
