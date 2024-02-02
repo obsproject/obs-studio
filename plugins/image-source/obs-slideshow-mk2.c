@@ -377,7 +377,12 @@ static struct source_data get_new_source(struct slideshow *ss,
 static void restart_slides(struct slideshow *ss)
 {
 	struct slideshow_data *ssd = &ss->data;
-	size_t start_idx = ssd->randomize ? (size_t)rand() % ssd->files.num : 0;
+	size_t start_idx = 0;
+
+	if (ssd->randomize && ssd->files.num > 0) {
+		start_idx = (size_t)rand() % ssd->files.num;
+	}
+
 	struct active_slides new_slides = {0};
 
 	if (ssd->files.num) {
