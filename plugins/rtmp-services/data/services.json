@@ -2828,6 +2828,81 @@
                 "max audio bitrate": 320,
                 "bframes": 0
             }
+        },
+        {
+            "name": "sheeta",
+            "common": false,
+            "more_info_link": "https://partner-support.sheeta.com/hc/ja/articles/4404573942425-%E7%94%9F%E6%94%BE%E9%80%81%E3%81%AE%E9%85%8D%E4%BF%A1%E6%96%B9%E6%B3%95",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://lsm.sheeta.com:1935/lsm"
+                }
+            ],
+            "protocol": "RTMP",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
+            "recommended": {
+                "keyint": 1,
+                "profile": "main",
+                "supported resolutions": [
+                    "1920x1080",
+                    "1280x720",
+                    "854x480",
+                    "640x480"
+                ],
+                "bitrate matrix": [
+                    {
+                        "res": "1920x1080",
+                        "fps": 30,
+                        "max bitrate": 6000
+                    },
+                    {
+                        "res": "1280x720",
+                        "fps": 30,
+                        "max bitrate": 4700
+                    },
+                    {
+                        "res": "854x480",
+                        "fps": 30,
+                        "max bitrate": 3400
+                    },
+                    {
+                        "res": "640x480",
+                        "fps": 30,
+                        "max bitrate": 3400
+                    },
+                    {
+                        "res": "1920x1080",
+                        "fps": 60,
+                        "max bitrate": 9000
+                    },
+                    {
+                        "res": "1280x720",
+                        "fps": 60,
+                        "max bitrate": 7000
+                    },
+                    {
+                        "res": "854x480",
+                        "fps": 60,
+                        "max bitrate": 5000
+                    },
+                    {
+                        "res": "640x480",
+                        "fps": 60,
+                        "max bitrate": 5000
+                    }
+                ],
+                "max fps": 60,
+                "max video bitrate": 9000,
+                "max audio bitrate": 512,
+                "x264opts": "scenecut=0",
+                "output": "rtmp_output"
+            }
         }
     ]
 }
