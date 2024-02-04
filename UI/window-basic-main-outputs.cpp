@@ -2273,8 +2273,8 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 	obs_service_t *service_obj = main->GetService();
 	const char *protocol = obs_service_get_protocol(service_obj);
 	if (protocol) {
-		if (strncmp(protocol, RTMP_PROTOCOL, strlen(RTMP_PROTOCOL)) ==
-		    0)
+		if (astrcmpi_n(protocol, RTMP_PROTOCOL,
+			       strlen(RTMP_PROTOCOL)) == 0)
 			is_rtmp = true;
 	}
 
