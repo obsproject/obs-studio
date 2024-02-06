@@ -205,10 +205,13 @@ void SourceTreeItem::ReconnectSignals()
 			reinterpret_cast<SourceTreeItem *>(data);
 		obs_sceneitem_t *curItem =
 			(obs_sceneitem_t *)calldata_ptr(cd, "item");
+		obs_scene_t *curScene =
+			(obs_scene_t *)calldata_ptr(cd, "scene");
 
 		if (curItem == this_->sceneitem) {
 			QMetaObject::invokeMethod(this_->tree, "Remove",
-						  Q_ARG(OBSSceneItem, curItem));
+						  Q_ARG(OBSSceneItem, curItem),
+						  Q_ARG(OBSScene, curScene));
 			curItem = nullptr;
 		}
 		if (!curItem)
@@ -1617,14 +1620,13 @@ bool SourceTree::GroupedItemsSelected() const
 	return false;
 }
 
-void SourceTree::Remove(OBSSceneItem item)
+void SourceTree::Remove(OBSSceneItem item, OBSScene scene)
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 	GetStm()->Remove(item);
 	main->SaveProject();
 
 	if (!main->SavingDisabled()) {
-		obs_scene_t *scene = obs_sceneitem_get_scene(item);
 		obs_source_t *sceneSource = obs_scene_get_source(scene);
 		obs_source_t *itemSource = obs_sceneitem_get_source(item);
 		blog(LOG_INFO, "User Removed source '%s' (%s) from scene '%s'",
