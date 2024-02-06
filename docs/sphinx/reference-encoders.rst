@@ -267,7 +267,7 @@ Raw Frame Data Structure (encoder_frame)
 
 
 Encoder Region of Interest Structure (obs_encoder_roi)
------------------------------------------
+------------------------------------------------------
 
 .. struct:: obs_encoder_roi
 
@@ -277,7 +277,7 @@ Encoder Region of Interest Structure (obs_encoder_roi)
             uint32_t bottom
             uint32_t left
             uint32_t right
-   
+
    The rectangle edges of the region are specified as number of pixels from the input video's top and left edges (i.e. row/column 0).
 
 .. member:: float priority
@@ -562,7 +562,7 @@ General Encoder Functions
 .. function:: void obs_encoder_enum_roi(obs_encoder_t *encoder, void (*enum_proc)(void *, struct obs_encoder_roi *), void *param)
 
     Enumerate currently configured ROIs by invoking callback for each entry, in reverse order of addition (i.e. most recent to oldest).
-    
+
     **Note:** If the encoder has scaling enabled the struct passed to the callback will be scaled accordingly.
 
 ---------------------
@@ -570,7 +570,7 @@ General Encoder Functions
 .. function:: uint32_t obs_encoder_get_roi_increment(const obs_encoder_t *encoder)
 
    Encoders shall refresh their ROI configuration if the increment value changes.
-    
+
    :return: Increment/revision of ROI list
 
 ---------------------
