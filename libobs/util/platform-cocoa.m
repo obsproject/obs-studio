@@ -370,11 +370,11 @@ int64_t os_get_free_space(const char *path)
 
         NSDictionary *values = [fileURL resourceValuesForKeys:availableCapacityKeys error:nil];
 
-        NSNumber *availableOpportunisticSpace = values[NSURLVolumeAvailableCapacityForOpportunisticUsageKey];
+        NSNumber *availableImportantSpace = values[NSURLVolumeAvailableCapacityForImportantUsageKey];
         NSNumber *availableSpace = values[NSURLVolumeAvailableCapacityKey];
 
-        if (availableOpportunisticSpace.longValue > 0) {
-            return availableOpportunisticSpace.longValue;
+        if (availableImportantSpace.longValue > 0) {
+            return availableImportantSpace.longValue;
         } else {
             return availableSpace.longValue;
         }
