@@ -599,6 +599,11 @@ static int obs_lua_register_source(lua_State *script)
 
 	info.id = v->id;
 	info.type = (enum obs_source_type)get_table_int(script, -1, "type");
+	info.subcategory = get_table_string(script, -1, "subcategory");
+
+	if (info.subcategory[0] == '\0') {
+		info.subcategory = NULL;
+	}
 
 	info.output_flags = get_table_int(script, -1, "output_flags");
 
