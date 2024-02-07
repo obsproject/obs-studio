@@ -4,7 +4,8 @@ Circular Buffers
 A circular buffer that will automatically increase in size as necessary
 as data is pushed to the front or back.
 
-.. deprecated:: 3X.0
+.. deprecated:: 30.1
+   Replaced by :doc:`reference-libobs-util-deque`
 
 .. code:: cpp
 
