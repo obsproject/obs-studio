@@ -16,9 +16,6 @@
 #define S_LOOP                         "loop"
 #define S_SHUFFLE                      "shuffle"
 #define S_BEHAVIOR                     "playback_behavior"
-#define S_BEHAVIOR_STOP_RESTART        "stop_restart"
-#define S_BEHAVIOR_PAUSE_UNPAUSE       "pause_unpause"
-#define S_BEHAVIOR_ALWAYS_PLAY         "always_play"
 #define S_NETWORK_CACHING              "network_caching"
 #define S_TRACK                        "track"
 #define S_SUBTITLE_ENABLE              "subtitle_enable"
@@ -620,7 +617,6 @@ static void vlcs_update(void *data, obs_data_t *settings)
 	libvlc_media_list_t *media_list;
 	struct vlc_source *c = data;
 	obs_data_array_t *array;
-	const char *behavior;
 	size_t count;
 	int network_caching;
 	int track_index;
@@ -635,7 +631,9 @@ static void vlcs_update(void *data, obs_data_t *settings)
 
 	c->loop = obs_data_get_bool(settings, S_LOOP);
 
-	behavior = obs_data_get_string(settings, S_BEHAVIOR);
+	c->behavior = obs_data_get_int(settings, S_BEHAVIOR);
+	if (c->behavior > BEHAVIOR_ALWAYS_PLAY)
+		c->behavior = BEHAVIOR_ALWAYS_PLAY;
 
 	network_caching = (int)obs_data_get_int(settings, S_NETWORK_CACHING);
 
@@ -644,14 +642,6 @@ static void vlcs_update(void *data, obs_data_t *settings)
 	subtitle_index = (int)obs_data_get_int(settings, S_SUBTITLE_TRACK);
 
 	subtitle_enable = obs_data_get_bool(settings, S_SUBTITLE_ENABLE);
-
-	if (astrcmpi(behavior, S_BEHAVIOR_PAUSE_UNPAUSE) == 0) {
-		c->behavior = BEHAVIOR_PAUSE_UNPAUSE;
-	} else if (astrcmpi(behavior, S_BEHAVIOR_ALWAYS_PLAY) == 0) {
-		c->behavior = BEHAVIOR_ALWAYS_PLAY;
-	} else { /* S_BEHAVIOR_STOP_RESTART */
-		c->behavior = BEHAVIOR_STOP_RESTART;
-	}
 
 	/* ------------------------------------- */
 	/* create new list of sources */
@@ -1050,8 +1040,7 @@ static void vlcs_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_bool(settings, S_LOOP, true);
 	obs_data_set_default_bool(settings, S_SHUFFLE, false);
-	obs_data_set_default_string(settings, S_BEHAVIOR,
-				    S_BEHAVIOR_STOP_RESTART);
+	obs_data_set_default_int(settings, S_BEHAVIOR, BEHAVIOR_STOP_RESTART);
 	obs_data_set_default_int(settings, S_NETWORK_CACHING, 400);
 	obs_data_set_default_int(settings, S_TRACK, 1);
 	obs_data_set_default_bool(settings, S_SUBTITLE_ENABLE, false);
@@ -1087,14 +1076,13 @@ static obs_properties_t *vlcs_properties(void *data)
 	}
 
 	p = obs_properties_add_list(ppts, S_BEHAVIOR, T_BEHAVIOR,
-				    OBS_COMBO_TYPE_LIST,
-				    OBS_COMBO_FORMAT_STRING);
-	obs_property_list_add_string(p, T_BEHAVIOR_STOP_RESTART,
-				     S_BEHAVIOR_STOP_RESTART);
-	obs_property_list_add_string(p, T_BEHAVIOR_PAUSE_UNPAUSE,
-				     S_BEHAVIOR_PAUSE_UNPAUSE);
-	obs_property_list_add_string(p, T_BEHAVIOR_ALWAYS_PLAY,
-				     S_BEHAVIOR_ALWAYS_PLAY);
+				    OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(p, T_BEHAVIOR_STOP_RESTART,
+				  BEHAVIOR_STOP_RESTART);
+	obs_property_list_add_int(p, T_BEHAVIOR_PAUSE_UNPAUSE,
+				  BEHAVIOR_PAUSE_UNPAUSE);
+	obs_property_list_add_int(p, T_BEHAVIOR_ALWAYS_PLAY,
+				  BEHAVIOR_ALWAYS_PLAY);
 
 	dstr_cat(&filter, "Media Files (");
 	dstr_copy(&exts, EXTENSIONS_MEDIA);
