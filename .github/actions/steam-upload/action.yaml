@@ -168,7 +168,7 @@ runs:
 
         print '::group::Prepare Windows x64 assets'
         mkdir -p steam-windows && pushd steam-windows
-        unzip ${root_dir}/(#i)obs-studio-*.zip
+        unzip ${root_dir}/(#i)obs-studio-(^*-pdbs).zip
         rm ${root_dir}/(#i)obs-studio-*.zip
 
         cp -r ${root_dir}/build-aux/steam/scripts_windows scripts
