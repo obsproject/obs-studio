@@ -197,6 +197,7 @@ build() {
         -DCEF_ROOT_DIR:PATH="${project_root}/.deps/cef_binary_${CEF_VERSION}_${target//-/_}"
         -DENABLE_AJA:BOOL=OFF
         -DENABLE_WEBRTC:BOOL=OFF
+        -DENABLE_NATIVE_NVENC:BOOL=OFF
       )
       if (( ! UBUNTU_2210_OR_LATER )) cmake_args+=(-DENABLE_NEW_MPEGTS_OUTPUT:BOOL=OFF)
 
