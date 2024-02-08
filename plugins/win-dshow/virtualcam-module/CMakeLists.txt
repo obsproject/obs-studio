@@ -60,7 +60,13 @@ if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
   target_sources(
     _virtualcam
     INTERFACE # cmake-format: sortable
-              placeholder.cpp sleepto.c sleepto.h virtualcam-filter.cpp virtualcam-filter.hpp virtualcam-module.cpp)
+              ${CMAKE_CURRENT_BINARY_DIR}/virtualcam-module.rc
+              placeholder.cpp
+              sleepto.c
+              sleepto.h
+              virtualcam-filter.cpp
+              virtualcam-filter.hpp
+              virtualcam-module.cpp)
   target_include_directories(_virtualcam INTERFACE "${CMAKE_CURRENT_BINARY_DIR}")
   target_compile_definitions(_virtualcam INTERFACE VIRTUALCAM_AVAILABLE)
   set_property(TARGET _virtualcam PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
