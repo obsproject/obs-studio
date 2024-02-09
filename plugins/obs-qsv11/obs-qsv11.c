@@ -983,6 +983,11 @@ static void *obs_qsv_create_tex(enum qsv_codec codec, obs_data_t *settings,
 	struct obs_video_info ovi;
 	obs_get_video_info(&ovi);
 
+#if !defined(_WIN32)
+	blog(LOG_INFO, ">>> fall back to non-texture sharing on this platform");
+	return obs_encoder_create_rerouted(encoder, (const char *)fallback_id);
+#endif
+
 	if (!adapters[ovi.adapter].is_intel) {
 		blog(LOG_INFO,
 		     ">>> app not on intel GPU, fall back to old qsv encoder");
