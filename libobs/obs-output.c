@@ -1919,11 +1919,6 @@ static bool initialize_interleaved_packets(struct obs_output *output)
 	/* subtract offsets from highest TS offset variables */
 	output->highest_audio_ts -= audio[first_audio_idx]->dts_usec;
 
-	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
-		if (video[i])
-			output->highest_video_ts[i] -= video[i]->dts_usec;
-	}
-
 	/* apply new offsets to all existing packet DTS/PTS values */
 	for (size_t i = 0; i < output->interleaved_packets.num; i++) {
 		struct encoder_packet *packet =
@@ -1970,8 +1965,11 @@ static void resort_interleaved_packets(struct obs_output *output)
 	memset(&output->interleaved_packets, 0,
 	       sizeof(output->interleaved_packets));
 
-	for (size_t i = 0; i < old_array.num; i++)
+	for (size_t i = 0; i < old_array.num; i++) {
+		set_higher_ts(output, &old_array.array[i]);
+
 		insert_interleaved_packet(output, &old_array.array[i]);
+	}
 
 	da_free(old_array);
 }
@@ -2119,7 +2117,6 @@ static void interleave_packets(void *data, struct encoder_packet *packet)
 		check_received(output, packet);
 
 	insert_interleaved_packet(output, &out);
-	set_higher_ts(output, &out);
 
 	received_video = true;
 	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
@@ -2139,6 +2136,8 @@ static void interleave_packets(void *data, struct encoder_packet *packet)
 				}
 			}
 		} else {
+			set_higher_ts(output, &out);
+
 			send_interleaved(output);
 		}
 	}
@@ -2322,7 +2321,7 @@ static void reset_packet_data(obs_output_t *output)
 	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
 		output->received_video[i] = false;
 		output->video_offsets[i] = 0;
-		output->highest_video_ts[i] = 0;
+		output->highest_video_ts[i] = INT64_MIN;
 	}
 	for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++)
 		output->audio_offsets[i] = 0;
