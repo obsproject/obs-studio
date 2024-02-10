@@ -543,7 +543,7 @@ static bool vaapi_encode(void *data, struct encoder_frame *frame,
 	}
 
 	ret = avcodec_send_frame(enc->context, hwframe);
-	if (ret == 0)
+	if (ret == 0 || ret == AVERROR(EAGAIN))
 		ret = avcodec_receive_packet(enc->context, enc->packet);
 
 	got_packet = (ret == 0);
