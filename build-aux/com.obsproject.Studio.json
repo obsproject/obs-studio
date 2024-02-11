@@ -32,7 +32,7 @@
         },
         "org.freedesktop.LinuxAudio.Plugins": {
             "directory": "extensions/Plugins",
-            "version": "22.08",
+            "version": "23.08",
             "add-ld-path": "lib",
             "merge-dirs": "vst",
             "subdirectories": true,
