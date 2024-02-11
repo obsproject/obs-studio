@@ -372,6 +372,11 @@ void VSTPlugin::closeEditor()
 		editorWidget->close();
 }
 
+int32_t VSTPlugin::getUniqueID()
+{
+	return effect ? effect->uniqueID : 0;
+}
+
 std::string VSTPlugin::getEffectPath()
 {
 	return pluginPath;

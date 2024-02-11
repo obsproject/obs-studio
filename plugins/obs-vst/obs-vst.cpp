@@ -130,14 +130,25 @@ static void vst_update(void *data, obs_data_t *settings)
 	}
 	vstPlugin->loadEffectFromPath(std::string(path));
 
-	std::string hash = getFileMD5(path);
-	const char *chunkHash = obs_data_get_string(settings, "chunk_hash");
+	const int32_t unique_id = vstPlugin->getUniqueID();
+	const int32_t chunk_unique_id =
+		obs_data_get_int(settings, "chunk_unique_id");
 	const char *chunkData = obs_data_get_string(settings, "chunk_data");
 
-	bool chunkHashesMatch = chunkHash && *chunkHash &&
-				hash.compare(chunkHash) == 0;
-	if (chunkData && *chunkData &&
-	    (chunkHashesMatch || !chunkHash || !*chunkHash)) {
+	bool isChunkMatch =
+		(0 != chunk_unique_id && unique_id == chunk_unique_id);
+
+	// Fall back to support older sessions saved with MD5 hash.
+	if (!isChunkMatch) {
+		std::string hash = getFileMD5(path);
+		const char *chunkHash =
+			obs_data_get_string(settings, "chunk_hash");
+
+		isChunkMatch = chunkHash && *chunkHash &&
+			       hash.compare(chunkHash) == 0;
+	}
+
+	if (chunkData && *chunkData && isChunkMatch) {
 		vstPlugin->setChunk(std::string(chunkData));
 	}
 }
@@ -155,9 +166,7 @@ static void vst_save(void *data, obs_data_t *settings)
 	VSTPlugin *vstPlugin = (VSTPlugin *)data;
 	obs_data_set_string(settings, "chunk_data",
 			    vstPlugin->getChunk().c_str());
-	obs_data_set_string(
-		settings, "chunk_hash",
-		getFileMD5(vstPlugin->getEffectPath().c_str()).c_str());
+	obs_data_set_int(settings, "chunk_unique_id", vstPlugin->getUniqueID());
 }
 
 static struct obs_audio_data *vst_filter_audio(void *data,
