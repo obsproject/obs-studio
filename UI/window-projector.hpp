@@ -26,7 +26,10 @@ private:
 	static void OBSSourceDestroyed(void *data, calldata_t *params);
 
 	void mousePressEvent(QMouseEvent *event) override;
+	void mouseMoveEvent(QMouseEvent *event) override;
 	void mouseDoubleClickEvent(QMouseEvent *event) override;
+	void enterEvent(QEnterEvent *) override;
+	void leaveEvent(QEvent *) override;
 	void closeEvent(QCloseEvent *event) override;
 
 	bool isAlwaysOnTop;
@@ -45,6 +48,8 @@ private:
 	void SetMonitor(int monitor);
 
 	QScreen *screen = nullptr;
+
+	QPoint onMousePressMouseOffset;
 
 private slots:
 	void EscapeTriggered();
