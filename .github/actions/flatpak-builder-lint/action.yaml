@@ -35,8 +35,8 @@ runs:
 
     - uses: actions/checkout@v4
       with:
-        repository: flathub/flatpak-builder-lint
-        ref: v2.0.13
+        repository: flathub-infra/flatpak-builder-lint
+        ref: v2.1.5
         path: flatpak-builder-lint
         set-safe-directory: ${{ inputs.workingDirectory }}
 
@@ -44,9 +44,13 @@ runs:
       shell: bash
       working-directory: ${{ inputs.workingDirectory }}
       run: |
+        echo ::group::Remove logging documentation link
+        sed -i 's|len(output) != 0|False|g' flatpak-builder-lint/flatpak_builder_lint/cli.py
+        echo ::endgroup::
+
         : Install Dependencies 🛍️
         echo ::group::Install Dependencies
-        dnf install -y -q poetry jq
+        dnf install -y -q poetry desktop-file-utils jq
         poetry -q -C flatpak-builder-lint install
         echo ::endgroup::
 
@@ -72,7 +76,7 @@ runs:
         for ((i = 0 ; i < $(echo $ret | jq '.errors | length') ; i++)); do
           error=$(echo $ret | jq ".errors[$i]")
 
-          if [[ "${{ inputs.validateToPublish }}" == "false" && "${error//\"}" == "appstream-screenshots-not-mirrored" ]]; then
+          if [[ "${{ inputs.validateToPublish }}" == "false" && "${error//\"}" == "appstream-missing-screenshots" ]]; then
             echo "::notice::$error found and ignored in the Flatpak ${{ inputs.artifact }}"
             n_errors=$(($n_errors-1))
           else
