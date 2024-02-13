@@ -272,6 +272,7 @@ protected:
 class QLabel;
 class QSlider;
 class MuteCheckBox;
+class OBSSourceLabel;
 
 class VolControl : public QWidget {
 	Q_OBJECT
@@ -279,7 +280,7 @@ class VolControl : public QWidget {
 private:
 	OBSSource source;
 	std::vector<OBSSignal> sigs;
-	QLabel *nameLabel;
+	OBSSourceLabel *nameLabel;
 	QLabel *volLabel;
 	VolumeMeter *volMeter;
 	QSlider *slider;
@@ -320,9 +321,6 @@ public:
 	~VolControl();
 
 	inline obs_source_t *GetSource() const { return source; }
-
-	QString GetName() const;
-	void SetName(const QString &newName);
 
 	void SetMeterDecayRate(qreal q);
 	void setPeakMeterType(enum obs_peak_meter_type peakMeterType);
