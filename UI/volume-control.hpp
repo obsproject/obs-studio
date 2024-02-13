@@ -278,6 +278,7 @@ class VolControl : public QWidget {
 
 private:
 	OBSSource source;
+	std::vector<OBSSignal> sigs;
 	QLabel *nameLabel;
 	QLabel *volLabel;
 	VolumeMeter *volMeter;
