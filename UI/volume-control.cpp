@@ -379,14 +379,13 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	obs_fader_add_callback(obs_fader, OBSVolumeChanged, this);
 	obs_volmeter_add_callback(obs_volmeter, OBSVolumeLevel, this);
 
-	signal_handler_connect(obs_source_get_signal_handler(source), "mute",
-			       OBSVolumeMuted, this);
-	signal_handler_connect(obs_source_get_signal_handler(source),
-			       "audio_mixers", OBSMixersOrMonitoringChanged,
-			       this);
-	signal_handler_connect(obs_source_get_signal_handler(source),
-			       "audio_monitoring", OBSMixersOrMonitoringChanged,
-			       this);
+	sigs.emplace_back(obs_source_get_signal_handler(source), "mute",
+			  OBSVolumeMuted, this);
+	sigs.emplace_back(obs_source_get_signal_handler(source), "audio_mixers",
+			  OBSMixersOrMonitoringChanged, this);
+	sigs.emplace_back(obs_source_get_signal_handler(source),
+			  "audio_monitoring", OBSMixersOrMonitoringChanged,
+			  this);
 
 	QWidget::connect(slider, &VolumeSlider::valueChanged, this,
 			 &VolControl::SliderChanged);
@@ -422,14 +421,7 @@ VolControl::~VolControl()
 	obs_fader_remove_callback(obs_fader, OBSVolumeChanged, this);
 	obs_volmeter_remove_callback(obs_volmeter, OBSVolumeLevel, this);
 
-	signal_handler_disconnect(obs_source_get_signal_handler(source), "mute",
-				  OBSVolumeMuted, this);
-	signal_handler_disconnect(obs_source_get_signal_handler(source),
-				  "audio_mixers", OBSMixersOrMonitoringChanged,
-				  this);
-	signal_handler_disconnect(obs_source_get_signal_handler(source),
-				  "audio_monitoring",
-				  OBSMixersOrMonitoringChanged, this);
+	sigs.clear();
 
 	if (contextMenu)
 		contextMenu->close();
