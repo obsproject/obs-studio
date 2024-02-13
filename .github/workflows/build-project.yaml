@@ -245,7 +245,7 @@ jobs:
       run:
         shell: bash
     container:
-      image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.5
+      image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.6
       options: --privileged
     steps:
       - uses: actions/checkout@v4
