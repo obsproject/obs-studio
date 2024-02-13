@@ -17,12 +17,20 @@ inputs:
     description: Update channel
     required: false
     default: 'stable'
+  step:
+    description: Step to run
+    required: true
+    type: choice
+    options:
+      - package
+      - updater
 
 runs:
   using: composite
   steps:
     - name: Extract Artifact
       shell: pwsh
+      if: inputs.step == 'package'
       run: |
         Expand-Archive -Path build\*.zip -DestinationPath build
         Remove-Item build\*.zip
@@ -30,9 +38,9 @@ runs:
     - name: Setup bouf
       shell: pwsh
       env:
-        BOUF_TAG: 'v0.6.2'
-        BOUF_HASH: '40ca34457a8ac60b9710a41b4cde2a0fc36d8740ab21b01d702069be2e1c5fb9'
-        BOUF_NSIS_HASH: '88958a9e4e0f3cb6f78e8359fdfa3343d050d5c2158e3ee77cb2cc4a8785ac61'
+        BOUF_TAG: 'v0.6.3-pre3'
+        BOUF_HASH: '1d1612b9d61c95bbe18c65ad44238170f920464353302832aef1553a0320f8af'
+        BOUF_NSIS_HASH: '0d136a70d2187bdd2e59c9bd3c7f472fe12c1042976f040a79cd95864b6a4a50'
         GH_TOKEN: ${{ github.token }}
       run: |
         # Download bouf release
@@ -55,6 +63,7 @@ runs:
 
     - name: Download Google CNG Provider
       shell: pwsh
+      if: inputs.step == 'package'
       env:
         CNG_TAG: 'cng-v1.0'
         GH_TOKEN: ${{ github.token }}
@@ -73,14 +82,20 @@ runs:
         # Finally, install the CNG provider
         Invoke-External msiexec /i $msiPath /qn /norestart
 
-    - name: Install pandoc and rclone
+    - name: Install rclone
       shell: pwsh
       run: |
         choco install rclone --version=1.64.2 -y --no-progress
+
+    - name: Install pandoc
+      shell: pwsh
+      if: inputs.step == 'updater'
+      run: |
         choco install pandoc --version=3.1.9 -y --no-progress
 
     - name: Prepare Release Notes
       shell: pwsh
+      if: inputs.step == 'updater'
       run: |
         # Release notes are just the tag body on Windows
         Set-Location repo
@@ -93,6 +108,7 @@ runs:
         service_account: ${{ inputs.gcpServiceAccountName }}
 
     - name: 'Set up Cloud SDK'
+      if: inputs.gcpManifestSigningKeyName != '' && inputs.step == 'updater'
       uses: 'google-github-actions/setup-gcloud@98ddc00a17442e89a24bbf282954a3b65ce6d200'
 
     - name: Download Old Builds
@@ -114,12 +130,13 @@ runs:
            "-i",           "${{ github.workspace }}/build"
            "-p",           "${{ github.workspace }}/old_builds"
            "-o",           "${{ github.workspace }}/output"
+           "${{ inputs.step == 'updater' && '--updater-data-only' || '--packaging-only' }}"
         )
         Invoke-External "${{ github.workspace }}\bouf\bin\bouf.exe" @boufArgs
 
     - name: Sign Updater Manifest
       shell: pwsh
-      if: inputs.gcpManifestSigningKeyName != ''
+      if: inputs.gcpManifestSigningKeyName != '' && inputs.step == 'updater'
       run: |
         $gcloudArgs = @(
            "--input-file",       "${{ github.workspace }}/output/manifest.json"
