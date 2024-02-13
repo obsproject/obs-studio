@@ -550,9 +550,13 @@ void OBSBasicStatusBar::RecordingStopped()
 
 void OBSBasicStatusBar::RecordingPaused()
 {
-	QString text = statusWidget->ui->recordTime->text() +
-		       QStringLiteral(" (PAUSED)");
-	statusWidget->ui->recordTime->setText(text);
+	if (!statusWidget->ui->recordTime->text().contains(
+		    QStringLiteral(" (PAUSED)"))) {
+		QString text = statusWidget->ui->recordTime->text() +
+			       QStringLiteral(" (PAUSED)");
+
+		statusWidget->ui->recordTime->setText(text);
+	}
 
 	if (recordOutput) {
 		statusWidget->ui->recordIcon->setPixmap(recordingPausePixmap);
