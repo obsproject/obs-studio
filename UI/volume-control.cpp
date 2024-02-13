@@ -5,6 +5,7 @@
 #include "mute-checkbox.hpp"
 #include "slider-ignorewheel.hpp"
 #include "slider-absoluteset-style.hpp"
+#include "source-label.hpp"
 #include <QFontDatabase>
 #include <QHBoxLayout>
 #include <QPushButton>
@@ -219,16 +220,6 @@ void VolControl::updateText()
 	slider->setAccessibleName(accText);
 }
 
-QString VolControl::GetName() const
-{
-	return nameLabel->text();
-}
-
-void VolControl::SetName(const QString &newName)
-{
-	nameLabel->setText(newName);
-}
-
 void VolControl::EmitConfigClicked()
 {
 	emit ConfigClicked();
@@ -253,7 +244,7 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	  vertical(vertical),
 	  contextMenu(nullptr)
 {
-	nameLabel = new QLabel();
+	nameLabel = new OBSSourceLabel(source);
 	volLabel = new QLabel();
 	mute = new MuteCheckBox();
 
