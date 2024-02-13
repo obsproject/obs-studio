@@ -7,10 +7,6 @@ inputs:
   path:
     description: Path to flatpak-builder manifest or Flatpak build directory
     required: true
-  validateToPublish:
-    description: If false, turns some errors to non-errors for non-publish workflow
-    required: false
-    default: true
   workingDirectory:
     description: Working directory to clone flatpak-builder-lint
     required: false
