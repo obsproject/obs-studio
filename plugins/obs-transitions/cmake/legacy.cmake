@@ -9,6 +9,7 @@ target_sources(
           transition-slide.c
           transition-swipe.c
           transition-fade.c
+          transition-shuffle.c
           transition-cut.c
           transition-fade-to-color.c
           transition-luma-wipe.c
@@ -18,7 +19,7 @@ if(NOT OS_MACOS)
   target_sources(
     obs-transitions
     PRIVATE data/fade_to_color_transition.effect data/fade_transition.effect data/luma_wipe_transition.effect
-            data/slide_transition.effect data/stinger_matte_transition.effect data/swipe_transition.effect)
+    data/slide_transition.effect data/shuffle_transition.effect data/stinger_matte_transition.effect data/swipe_transition.effect)
 
   get_target_property(_SOURCES obs-transitions SOURCES)
   set(_FILTERS ${_SOURCES})

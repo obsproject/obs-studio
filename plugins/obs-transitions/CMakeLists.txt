@@ -11,6 +11,7 @@ target_sources(
           transition-slide.c
           transition-swipe.c
           transition-fade.c
+          transition-shuffle.c
           transition-cut.c
           transition-fade-to-color.c
           transition-luma-wipe.c
