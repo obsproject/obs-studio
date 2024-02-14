@@ -206,6 +206,8 @@ ScriptsTool::ScriptsTool() : QDialog(nullptr), ui(new Ui_ScriptsTool)
 	propertiesView->setSizePolicy(QSizePolicy::Expanding,
 				      QSizePolicy::Expanding);
 	ui->propertiesLayout->addWidget(propertiesView);
+	ui->enabledCheckBox->hide();
+	ui->disabledLabel->hide();
 
 	config_t *global_config = obs_frontend_get_global_config();
 	int row =
@@ -514,6 +516,8 @@ void ScriptsTool::on_scripts_currentRowChanged(int row)
 					      QSizePolicy::Expanding);
 		ui->propertiesLayout->addWidget(propertiesView);
 		ui->description->setText(QString());
+		ui->enabledCheckBox->hide();
+		ui->disabledLabel->hide();
 		return;
 	}
 
@@ -524,6 +528,8 @@ void ScriptsTool::on_scripts_currentRowChanged(int row)
 	obs_script_t *script = scriptData->FindScript(path);
 	if (!script) {
 		propertiesView = nullptr;
+		ui->enabledCheckBox->hide();
+		ui->disabledLabel->hide();
 		return;
 	}
 
@@ -537,8 +543,19 @@ void ScriptsTool::on_scripts_currentRowChanged(int row)
 
 	propertiesView = view;
 
-	ui->propertiesLayout->addWidget(propertiesView);
+	bool enabled = obs_script_enabled(script);
+
+	if (enabled)
+		ui->propertiesLayout->insertWidget(4, propertiesView);
+
+	ui->disabledLabel->setVisible(!enabled);
+
 	ui->description->setText(obs_script_get_description(script));
+
+	SignalBlocker sb(ui->enabledCheckBox);
+	ui->enabledCheckBox->setChecked(enabled);
+
+	ui->enabledCheckBox->show();
 }
 
 void ScriptsTool::on_defaults_clicked()
@@ -585,6 +602,25 @@ void ScriptsTool::on_description_linkActivated(const QString &link)
 	}
 }
 
+void ScriptsTool::on_enabledCheckBox_toggled(bool checked)
+{
+	QListWidgetItem *item = ui->scripts->currentItem();
+	if (!item)
+		return;
+
+	const char *path = ui->scripts->currentItem()
+				   ->data(Qt::UserRole)
+				   .toString()
+				   .toUtf8()
+				   .constData();
+	obs_script_t *script = scriptData->FindScript(path);
+	if (!script)
+		return;
+
+	obs_script_set_enabled(script, checked);
+	on_scripts_currentRowChanged(ui->scripts->currentRow());
+}
+
 /* ----------------------------------------------------------------- */
 
 extern "C" void FreeScripts()
@@ -627,8 +663,10 @@ static void load_script_data(obs_data_t *load_data, bool, void *)
 		OBSDataAutoRelease obj = obs_data_array_item(array, i);
 		const char *path = obs_data_get_string(obj, "path");
 		OBSDataAutoRelease settings = obs_data_get_obj(obj, "settings");
+		bool enabled = obs_data_get_bool(obj, "enabled");
 
 		obs_script_t *script = obs_script_create(path, settings);
+		obs_script_set_enabled(script, enabled);
 		if (script) {
 			scriptData->scripts.emplace_back(script);
 		}
@@ -652,6 +690,7 @@ static void save_script_data(obs_data_t *save_data, bool saving, void *)
 		OBSDataAutoRelease obj = obs_data_create();
 		obs_data_set_string(obj, "path", script_path);
 		obs_data_set_obj(obj, "settings", settings);
+		obs_data_set_bool(obj, "enabled", obs_script_enabled(script));
 		obs_data_array_push_back(array, obj);
 	}
 

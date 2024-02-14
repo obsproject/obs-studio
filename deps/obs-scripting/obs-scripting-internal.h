@@ -30,6 +30,8 @@ struct obs_script {
 	struct dstr path;
 	struct dstr file;
 	struct dstr desc;
+
+	bool enabled;
 };
 
 struct script_callback;
