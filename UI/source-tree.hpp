@@ -13,6 +13,7 @@
 #include <obs-frontend-api.h>
 
 class QLabel;
+class OBSSourceLabel;
 class QCheckBox;
 class QLineEdit;
 class SourceTree;
@@ -57,7 +58,7 @@ private:
 	QCheckBox *vis = nullptr;
 	QCheckBox *lock = nullptr;
 	QHBoxLayout *boxLayout = nullptr;
-	QLabel *label = nullptr;
+	OBSSourceLabel *label = nullptr;
 
 	QLineEdit *editor = nullptr;
 
@@ -79,7 +80,6 @@ private slots:
 
 	void VisibilityChanged(bool visible);
 	void LockedChanged(bool locked);
-	void Renamed(const QString &name);
 
 	void ExpandClicked(bool checked);
 
