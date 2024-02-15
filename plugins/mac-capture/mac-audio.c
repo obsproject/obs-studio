@@ -811,11 +811,6 @@ static void coreaudio_uninit(struct coreaudio_data *ca)
 		bfree(ca->channel_names);
 		ca->channel_names = NULL;
 	}
-
-	if (ca->channel_map) {
-		bfree(ca->channel_map);
-		ca->channel_map = NULL;
-	}
 }
 
 /* ------------------------------------------------------------------------- */
@@ -854,6 +849,12 @@ static void coreaudio_destroy(void *data)
 		coreaudio_shutdown(ca);
 
 		os_event_destroy(ca->exit_event);
+
+		if (ca->channel_map) {
+			bfree(ca->channel_map);
+			ca->channel_map = NULL;
+		}
+
 		bfree(ca->device_name);
 		bfree(ca->device_uid);
 		bfree(ca);
