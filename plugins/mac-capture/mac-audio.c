@@ -467,11 +467,16 @@ static OSStatus input_callback(void *data,
 	if (!ca_success(stat, ca, "input_callback", "audio retrieval"))
 		return noErr;
 
-	for (UInt32 i = 0; i < ca->buf_list->mNumberBuffers; i++)
-		audio.data[i] = ca->buf_list->mBuffers[i].mData;
+	for (UInt32 i = 0; i < ca->buf_list->mNumberBuffers; i++) {
+		if (i < MAX_AUDIO_CHANNELS) {
+			audio.data[i] = ca->buf_list->mBuffers[i].mData;
+		}
+	}
 
 	audio.frames = frames;
-	audio.speakers = ca->buf_list->mNumberBuffers;
+	audio.speakers = (ca->buf_list->mNumberBuffers > MAX_AUDIO_CHANNELS)
+				 ? MAX_AUDIO_CHANNELS
+				 : ca->buf_list->mNumberBuffers;
 	audio.format = ca->format;
 	audio.samples_per_sec = ca->sample_rate;
 	static double factor = 0.;
@@ -863,10 +868,10 @@ static void coreaudio_destroy(void *data)
 static void coreaudio_set_channels(struct coreaudio_data *ca,
 				   obs_data_t *settings)
 {
-	ca->channel_map = bzalloc(sizeof(SInt32) * MAX_AV_PLANES);
+	ca->channel_map = bzalloc(sizeof(SInt32) * MAX_AUDIO_CHANNELS);
 
 	char *device_config_name = sanitize_device_name(ca->device_uid);
-	for (uint8_t i = 0; i < MAX_AV_PLANES; i++) {
+	for (uint8_t i = 0; i < MAX_AUDIO_CHANNELS; i++) {
 		char setting_name[128];
 		snprintf(setting_name, 128, "output-%s-%i", device_config_name,
 			 i + 1);
