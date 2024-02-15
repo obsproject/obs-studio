@@ -2710,8 +2710,6 @@ void OBSBasicSettings::LoadAudioSources()
 		HookWidget(pttCB, CHECK_CHANGED, AUDIO_CHANGED);
 		HookWidget(pttSB, SCROLL_CHANGED, AUDIO_CHANGED);
 
-		audioSourceSignals.reserve(audioSourceSignals.size() + 4);
-
 		auto handler = obs_source_get_signal_handler(source);
 		audioSourceSignals.emplace_back(
 			handler, "push_to_mute_changed",

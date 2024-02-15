@@ -1856,7 +1856,6 @@ void OBSBasic::InitOBSCallbacks()
 {
 	ProfileScope("OBSBasic::InitOBSCallbacks");
 
-	signalHandlers.reserve(signalHandlers.size() + 7);
 	signalHandlers.emplace_back(obs_get_signal_handler(), "source_create",
 				    OBSBasic::SourceCreated, this);
 	signalHandlers.emplace_back(obs_get_signal_handler(), "source_remove",
