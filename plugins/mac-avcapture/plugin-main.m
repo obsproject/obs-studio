@@ -117,7 +117,7 @@ static obs_properties_t *av_capture_properties(void *capture_info_aliased)
         configure_property(frame_rates, isFastPath, isFastPath, NULL, NULL);
         configure_property(color_space, !isFastPath, !isFastPath, NULL, NULL);
         configure_property(video_range, !isFastPath, !isFastPath, NULL, NULL);
-        configure_property(input_format, !isFastPath, !isFastPath, NULL, NULL);
+        configure_property(input_format, true, true, NULL, NULL);
     }
 
     return properties;
