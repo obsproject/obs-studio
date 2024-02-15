@@ -448,8 +448,11 @@
             return NO;
         }
     } else {
+        int inputFormat;
         CMFormatDescriptionRef formatDescription = self.deviceInput.device.activeFormat.formatDescription;
-        inputFourCC = CMFormatDescriptionGetMediaSubType(formatDescription);
+        inputFormat = (int) obs_data_get_int(self.captureInfo->settings, "input_format");
+        inputFourCC = [OBSAVCapture fourCharCodeFromFormat:inputFormat withRange:VIDEO_RANGE_DEFAULT];
+
         colorSpace = [OBSAVCapture colorspaceFromDescription:formatDescription];
         videoRange = ([OBSAVCapture isFullRangeFormat:inputFourCC]) ? VIDEO_RANGE_FULL : VIDEO_RANGE_PARTIAL;
     }
