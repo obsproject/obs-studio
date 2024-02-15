@@ -540,6 +540,12 @@ Video, Audio, and Graphics
 
 ---------------------
 
+.. function:: void obs_reset_audio_monitoring(void)
+
+   Resets all audio monitoring devices.
+
+---------------------
+
 .. function:: void obs_enum_audio_monitoring_devices(obs_enum_audio_device_cb cb, void *data)
 
    Enumerates audio devices which can be used for audio monitoring.
@@ -889,6 +895,14 @@ Views
 
 .. function:: bool obs_view_get_video_info(obs_view_t *view, struct obs_video_info *ovi)
 
-   Gets the video settings currently in use for this view context.
+   Gets the video settings of the first matching mix currently in use for this view context.
 
    :return: *false* if no video
+
+   .. deprecated:: 3X.X
+
+---------------------
+
+.. function:: void obs_view_enum_video_info(obs_view_t *view, bool (*enum_proc)(void *, struct obs_video_info *), void *param)
+
+   Enumerates all the video info of all mixes that use the specified mix.

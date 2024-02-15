@@ -281,41 +281,6 @@ gs_swap_chain::~gs_swap_chain()
 		CloseHandle(hWaitable);
 }
 
-void gs_device::InitCompiler()
-{
-	char d3dcompiler[40] = {};
-	int ver = 49;
-
-	while (ver > 30) {
-		snprintf(d3dcompiler, sizeof(d3dcompiler),
-			 "D3DCompiler_%02d.dll", ver);
-
-		HMODULE module = LoadLibraryA(d3dcompiler);
-		if (module) {
-			d3dCompile = (pD3DCompile)GetProcAddress(module,
-								 "D3DCompile");
-			d3dCreateBlob = (pD3DCreateBlob)GetProcAddress(
-				module, "D3DCreateBlob");
-
-#ifdef DISASSEMBLE_SHADERS
-			d3dDisassemble = (pD3DDisassemble)GetProcAddress(
-				module, "D3DDisassemble");
-#endif
-			if (d3dCompile && d3dCreateBlob) {
-				return;
-			}
-
-			FreeLibrary(module);
-		}
-
-		ver--;
-	}
-
-	throw "Could not find any D3DCompiler libraries. Make sure you've "
-	      "installed the <a href=\"https://obsproject.com/go/dxwebsetup\">"
-	      "DirectX components</a> that OBS Studio requires.";
-}
-
 void gs_device::InitFactory()
 {
 	HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
@@ -994,7 +959,6 @@ gs_device::gs_device(uint32_t adapterIdx)
 		curSamplers[i] = NULL;
 	}
 
-	InitCompiler();
 	InitFactory();
 	InitAdapter(adapterIdx);
 	InitDevice(adapterIdx);
@@ -1052,10 +1016,13 @@ EnumD3DAdapters(bool (*callback)(void *, const char *, uint32_t), void *param)
 	}
 }
 
-bool device_enum_adapters(bool (*callback)(void *param, const char *name,
+bool device_enum_adapters(gs_device_t *device,
+			  bool (*callback)(void *param, const char *name,
 					   uint32_t id),
 			  void *param)
 {
+	UNUSED_PARAMETER(device);
+
 	try {
 		EnumD3DAdapters(callback, param);
 		return true;
@@ -1346,6 +1313,12 @@ static void PopulateMonitorIds(HMONITOR handle, char *id, char *alt_id,
 	}
 }
 
+static constexpr double DoubleTriangleArea(double ax, double ay, double bx,
+					   double by, double cx, double cy)
+{
+	return ax * (by - cy) + bx * (cy - ay) + cx * (ay - by);
+}
+
 static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 {
 	UINT i;
@@ -1387,6 +1360,8 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 		UINT bits_per_color = 8;
 		DXGI_COLOR_SPACE_TYPE type =
 			DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
+		FLOAT primaries[4][2]{};
+		double gamut_size = 0.;
 		FLOAT min_luminance = 0.f;
 		FLOAT max_luminance = 0.f;
 		FLOAT max_full_frame_luminance = 0.f;
@@ -1394,6 +1369,18 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 		if (GetOutputDesc1(output, &desc1)) {
 			bits_per_color = desc1.BitsPerColor;
 			type = desc1.ColorSpace;
+			primaries[0][0] = desc1.RedPrimary[0];
+			primaries[0][1] = desc1.RedPrimary[1];
+			primaries[1][0] = desc1.GreenPrimary[0];
+			primaries[1][1] = desc1.GreenPrimary[1];
+			primaries[2][0] = desc1.BluePrimary[0];
+			primaries[2][1] = desc1.BluePrimary[1];
+			primaries[3][0] = desc1.WhitePoint[0];
+			primaries[3][1] = desc1.WhitePoint[1];
+			gamut_size = DoubleTriangleArea(
+				desc1.RedPrimary[0], desc1.RedPrimary[1],
+				desc1.GreenPrimary[0], desc1.GreenPrimary[1],
+				desc1.BluePrimary[0], desc1.BluePrimary[1]);
 			min_luminance = desc1.MinLuminance;
 			max_luminance = desc1.MaxLuminance;
 			max_full_frame_luminance = desc1.MaxFullFrameLuminance;
@@ -1424,7 +1411,7 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 		}
 
 		const RECT &rect = desc.DesktopCoordinates;
-		const ULONG nits = GetSdrMaxNits(desc.Monitor);
+		const ULONG sdr_white_nits = GetSdrMaxNits(desc.Monitor);
 
 		char *friendly_name;
 		os_wcs_to_utf8_ptr(target.monitorFriendlyDeviceName, 0,
@@ -1439,6 +1426,8 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 		     "\t    refresh=%u\n"
 		     "\t    bits_per_color=%u\n"
 		     "\t    space=%s\n"
+		     "\t    primaries=[r=(%f, %f), g=(%f, %f), b=(%f, %f), wp=(%f, %f)]\n"
+		     "\t    relative_gamut_area=[709=%f, P3=%f, 2020=%f]\n"
 		     "\t    sdr_white_nits=%lu\n"
 		     "\t    nit_range=[min=%f, max=%f, max_full_frame=%f]\n"
 		     "\t    dpi=%u (%u%%)\n"
@@ -1447,7 +1436,16 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 		     i, friendly_name, rect.left, rect.top,
 		     rect.right - rect.left, rect.bottom - rect.top,
 		     desc.AttachedToDesktop ? "true" : "false", refresh,
-		     bits_per_color, space, nits, min_luminance, max_luminance,
+		     bits_per_color, space, primaries[0][0], primaries[0][1],
+		     primaries[1][0], primaries[1][1], primaries[2][0],
+		     primaries[2][1], primaries[3][0], primaries[3][1],
+		     gamut_size /
+			     DoubleTriangleArea(.64, .33, .3, .6, .15, .06),
+		     gamut_size /
+			     DoubleTriangleArea(.68, .32, .265, .69, .15, .060),
+		     gamut_size / DoubleTriangleArea(.708, .292, .17, .797,
+						     .131, .046),
+		     sdr_white_nits, min_luminance, max_luminance,
 		     max_full_frame_luminance, dpiX, scaling, id, alt_id);
 		bfree(friendly_name);
 	}

@@ -31,14 +31,14 @@ float4 PSDrawBare(VertInOut vert_in) : TARGET
 float4 PSDrawAlphaDivide(VertInOut vert_in) : TARGET
 {
 	float4 rgba = image.Sample(def_sampler, vert_in.uv);
-	rgba.rgb = (rgba.a > 0.) ? (rgba.rgb / rgba.a) : float3(0., 0., 0.);
+	rgba.rgb *= (rgba.a > 0.) ? (1. / rgba.a) : 0.;
 	return rgba;
 }
 
 float4 PSDrawAlphaDivideTonemap(VertInOut vert_in) : TARGET
 {
 	float4 rgba = image.Sample(def_sampler, vert_in.uv);
-	rgba.rgb = (rgba.a > 0.) ? (rgba.rgb / rgba.a) : float3(0., 0., 0.);
+	rgba.rgb *= (rgba.a > 0.) ? (1. / rgba.a) : 0.;
 	rgba.rgb = rec709_to_rec2020(rgba.rgb);
 	rgba.rgb = reinhard(rgba.rgb);
 	rgba.rgb = rec2020_to_rec709(rgba.rgb);
@@ -48,8 +48,7 @@ float4 PSDrawAlphaDivideTonemap(VertInOut vert_in) : TARGET
 float4 PSDrawAlphaDivideR10L(VertInOut vert_in) : TARGET
 {
 	float4 rgba = image.Sample(def_sampler, vert_in.uv);
-	rgba.rgb = (rgba.a > 0.) ? (rgba.rgb / rgba.a) : float3(0., 0., 0.);
-	rgba.rgb *= multiplier;
+	rgba.rgb *= (rgba.a > 0.) ? (multiplier / rgba.a) : 0.;
 	rgba.rgb = rec709_to_rec2020(rgba.rgb);
 	rgba.rgb = linear_to_st2084(rgba.rgb);
 	uint3 rgb1023 = uint3(mad(rgba.rgb, 1023., .5));

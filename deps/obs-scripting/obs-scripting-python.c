@@ -1706,6 +1706,11 @@ bool obs_scripting_load_python(const char *python_path)
 	PySys_SetArgv(argc, argv);
 	PRAGMA_WARN_POP
 
+#ifdef __APPLE__
+	PyRun_SimpleString("import sys");
+	PyRun_SimpleString("sys.dont_write_bytecode = True");
+#endif
+
 #ifdef DEBUG_PYTHON_STARTUP
 	/* ---------------------------------------------- */
 	/* Debug logging to file if startup is failing    */

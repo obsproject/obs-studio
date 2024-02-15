@@ -1,5 +1,4 @@
 #include "visibility-item-widget.hpp"
-#include "visibility-checkbox.hpp"
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 #include <QListWidget>
@@ -8,6 +7,7 @@
 #include <QMessageBox>
 #include <QLabel>
 #include <QKeyEvent>
+#include <QCheckBox>
 
 VisibilityItemWidget::VisibilityItemWidget(obs_source_t *source_)
 	: source(source_),
@@ -19,7 +19,8 @@ VisibilityItemWidget::VisibilityItemWidget(obs_source_t *source_)
 	const char *name = obs_source_get_name(source);
 	bool enabled = obs_source_enabled(source);
 
-	vis = new VisibilityCheckBox();
+	vis = new QCheckBox();
+	vis->setProperty("visibilityCheckBox", true);
 	vis->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 	vis->setChecked(enabled);
 
@@ -34,7 +35,7 @@ VisibilityItemWidget::VisibilityItemWidget(obs_source_t *source_)
 	setLayout(itemLayout);
 	setStyleSheet("background-color: rgba(255, 255, 255, 0);");
 
-	connect(vis, &VisibilityCheckBox::clicked, [this](bool visible) {
+	connect(vis, &QCheckBox::clicked, [this](bool visible) {
 		obs_source_set_enabled(source, visible);
 	});
 }

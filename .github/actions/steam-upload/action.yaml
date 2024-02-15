@@ -70,7 +70,7 @@ runs:
 
     - name: Download Nightly Assets 🌙
       id: asset-info-nightly
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       if: github.event_name == 'schedule'
 
     - name: Download Assets 📥
@@ -168,7 +168,7 @@ runs:
 
         print '::group::Prepare Windows x64 assets'
         mkdir -p steam-windows && pushd steam-windows
-        unzip ${root_dir}/(#i)obs-studio-*.zip
+        unzip ${root_dir}/(#i)obs-studio-(^*-pdbs).zip
         rm ${root_dir}/(#i)obs-studio-*.zip
 
         cp -r ${root_dir}/build-aux/steam/scripts_windows scripts
@@ -197,11 +197,11 @@ runs:
         popd
 
     - name: Set Up steamcmd 🚂
-      uses: CyberAndrii/setup-steamcmd@b786e0da44db3d817e66fa3910a9560cb28c9323
+      uses: CyberAndrii/setup-steamcmd@29e114af032a947f5ed57832409070d6e4cbfce3
 
     - name: Generate Steam auth code 🔐
       id: steam-totp
-      uses: CyberAndrii/steam-totp@c7f636bc64e77f1b901e0420b7890813141508ee
+      uses: CyberAndrii/steam-totp@45775c32193801a84d19d94076d72a2ece010948
       if: ${{ ! fromJSON(inputs.preview) }}
       with:
         shared_secret: ${{ inputs.steamSecret }}
@@ -248,7 +248,7 @@ runs:
 
     - name: Generate Steam auth code 🔐
       id: steam-totp-playtest
-      uses: CyberAndrii/steam-totp@c7f636bc64e77f1b901e0420b7890813141508ee
+      uses: CyberAndrii/steam-totp@45775c32193801a84d19d94076d72a2ece010948
       if: ${{ ! fromJSON(inputs.preview) && fromJSON(steps.asset-info.outputs.is_prerelease) }}
       with:
         shared_secret: ${{ inputs.steamSecret }}
@@ -285,7 +285,7 @@ runs:
         popd
 
     - name: Upload Steam build logs
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: steam-build-logs
         path: ${{ github.workspace }}/steam/build/*.log

@@ -15,8 +15,8 @@
         {
             "type": "git",
             "url": "https://github.com/oneapi-src/oneVPL-intel-gpu.git",
-            "commit": "a9fb0bcabef0b91ddfe0c70466513d33fab38557",
-            "tag": "intel-onevpl-23.3.1"
+            "commit": "852fa9f705ef44c004d014548601f3804a6de705",
+            "tag": "intel-onevpl-23.4.3"
         },
         {
             "type": "shell",

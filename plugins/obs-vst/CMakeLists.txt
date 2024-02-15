@@ -12,42 +12,43 @@ endif()
 add_library(obs-vst MODULE)
 add_library(OBS::vst ALIAS obs-vst)
 
-find_qt(COMPONENTS Widgets)
+find_package(Qt6 REQUIRED Widgets)
 
 target_sources(
   obs-vst
-  PRIVATE obs-vst.cpp
-          VSTPlugin.cpp
+  PRIVATE # cmake-format: sortable
+          $<$<PLATFORM_ID:Darwin>:mac/EditorWidget-osx.mm>
+          $<$<PLATFORM_ID:Darwin>:mac/VSTPlugin-osx.mm>
+          $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:linux/EditorWidget-linux.cpp>
+          $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:linux/VSTPlugin-linux.cpp>
+          $<$<PLATFORM_ID:Windows>:win/EditorWidget-win.cpp>
+          $<$<PLATFORM_ID:Windows>:win/VSTPlugin-win.cpp>
           EditorWidget.cpp
-          headers/vst-plugin-callbacks.hpp
           headers/EditorWidget.h
+          headers/vst-plugin-callbacks.hpp
           headers/VSTPlugin.h
-          vst_header/aeffectx.h)
+          obs-vst.cpp
+          vst_header/aeffectx.h
+          VSTPlugin.cpp)
 
 target_include_directories(obs-vst PRIVATE vst_header)
-target_link_libraries(obs-vst PRIVATE OBS::libobs Qt::Widgets)
 
-if(OS_MACOS)
-  target_sources(obs-vst PRIVATE mac/EditorWidget-osx.mm mac/VSTPlugin-osx.mm)
+# cmake-format: off
+target_link_libraries(
+  obs-vst PRIVATE OBS::libobs
+                  Qt::Widgets
+                  "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>>"
+                  "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,Foundation.framework>>")
+# cmake-format: on
 
-  # cmake-format: off
-  target_link_libraries(
-    obs-vst
-    PRIVATE "$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>"
-            "$<LINK_LIBRARY:FRAMEWORK,Foundation.framework>")
-  # cmake-format: on
-elseif(OS_WINDOWS)
-  target_sources(obs-vst PRIVATE win/VSTPlugin-win.cpp win/EditorWidget-win.cpp)
-
+if(OS_WINDOWS)
   set_property(
     TARGET obs-vst
     APPEND
     PROPERTY AUTORCC_OPTIONS --format-version 1)
-
-elseif(OS_POSIX)
-  target_sources(obs-vst PRIVATE linux/VSTPlugin-linux.cpp linux/EditorWidget-linux.cpp)
 endif()
 
+# cmake-format: off
 set_target_properties_obs(
   obs-vst
   PROPERTIES FOLDER plugins
@@ -55,3 +56,4 @@ set_target_properties_obs(
              AUTOMOC ON
              AUTOUIC ON
              AUTORCC ON)
+# cmake-format: on

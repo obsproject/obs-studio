@@ -19,8 +19,8 @@
         {
             "type": "git",
             "url": "https://aomedia.googlesource.com/aom.git",
-            "tag": "v3.6.1",
-            "commit": "7ade96172b95adc91a5d85bf80c90989cd543ee8"
+            "tag": "v3.8.0",
+            "commit": "b681eac83963950afc7be55df56c22fa5210aaa2"
         }
     ]
 }

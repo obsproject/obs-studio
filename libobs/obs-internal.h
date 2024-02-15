@@ -19,7 +19,7 @@
 
 #include "util/c99defs.h"
 #include "util/darray.h"
-#include "util/circlebuf.h"
+#include "util/deque.h"
 #include "util/dstr.h"
 #include "util/threading.h"
 #include "util/platform.h"
@@ -269,9 +269,9 @@ struct obs_core_video_mix {
 	gs_stagesurf_t *active_copy_surfaces[NUM_TEXTURES][NUM_CHANNELS];
 	gs_stagesurf_t *copy_surfaces[NUM_TEXTURES][NUM_CHANNELS];
 	gs_texture_t *convert_textures[NUM_CHANNELS];
+	gs_texture_t *convert_textures_encode[NUM_CHANNELS];
 #ifdef _WIN32
 	gs_stagesurf_t *copy_surfaces_encode[NUM_TEXTURES];
-	gs_texture_t *convert_textures_encode[NUM_CHANNELS];
 #endif
 	gs_texture_t *render_texture;
 	gs_texture_t *output_texture;
@@ -281,8 +281,8 @@ struct obs_core_video_mix {
 	bool texture_converted;
 	bool using_nv12_tex;
 	bool using_p010_tex;
-	struct circlebuf vframe_info_buffer;
-	struct circlebuf vframe_info_buffer_gpu;
+	struct deque vframe_info_buffer;
+	struct deque vframe_info_buffer_gpu;
 	gs_stagesurf_t *mapped_surfaces[NUM_CHANNELS];
 	int cur_texture;
 	volatile long raw_active;
@@ -291,8 +291,8 @@ struct obs_core_video_mix {
 	bool raw_was_active;
 	bool was_active;
 	pthread_mutex_t gpu_encoder_mutex;
-	struct circlebuf gpu_encoder_queue;
-	struct circlebuf gpu_encoder_avail_queue;
+	struct deque gpu_encoder_queue;
+	struct deque gpu_encoder_avail_queue;
 	DARRAY(obs_encoder_t *) gpu_encoders;
 	os_sem_t *gpu_encode_semaphore;
 	os_event_t *gpu_encode_inactive;
@@ -359,7 +359,7 @@ struct obs_core_video {
 	float hdr_nominal_peak_level;
 
 	pthread_mutex_t task_mutex;
-	struct circlebuf tasks;
+	struct deque tasks;
 
 	pthread_mutex_t mixes_mutex;
 	DARRAY(struct obs_core_video_mix *) mixes;
@@ -375,7 +375,7 @@ struct obs_core_audio {
 	DARRAY(struct obs_source *) root_nodes;
 
 	uint64_t buffered_ts;
-	struct circlebuf buffered_timestamps;
+	struct deque buffered_timestamps;
 	uint64_t buffering_wait_ticks;
 	int total_buffering_ticks;
 	int max_buffering_ticks;
@@ -387,7 +387,7 @@ struct obs_core_audio {
 	char *monitoring_device_id;
 
 	pthread_mutex_t task_mutex;
-	struct circlebuf tasks;
+	struct deque tasks;
 };
 
 /* user sources, output channels, and displays */
@@ -475,8 +475,6 @@ struct obs_core {
 	DARRAY(struct obs_output_info) output_types;
 	DARRAY(struct obs_encoder_info) encoder_types;
 	DARRAY(struct obs_service_info) service_types;
-	DARRAY(struct obs_modal_ui) modal_ui_callbacks;
-	DARRAY(struct obs_modeless_ui) modeless_ui_callbacks;
 
 	signal_handler_t *signals;
 	proc_handler_t *procs;
@@ -690,6 +688,24 @@ struct caption_cb_info {
 	void *param;
 };
 
+enum media_action_type {
+	MEDIA_ACTION_NONE,
+	MEDIA_ACTION_PLAY_PAUSE,
+	MEDIA_ACTION_RESTART,
+	MEDIA_ACTION_STOP,
+	MEDIA_ACTION_NEXT,
+	MEDIA_ACTION_PREVIOUS,
+	MEDIA_ACTION_SET_TIME,
+};
+
+struct media_action {
+	enum media_action_type type;
+	union {
+		bool pause;
+		int64_t ms;
+	};
+};
+
 struct obs_source {
 	struct obs_context_data context;
 	struct obs_source_info info;
@@ -752,7 +768,7 @@ struct obs_source {
 	struct obs_source *next_audio_source;
 	struct obs_source **prev_next_audio_source;
 	uint64_t audio_ts;
-	struct circlebuf audio_input_buf[MAX_AUDIO_CHANNELS];
+	struct deque audio_input_buf[MAX_AUDIO_CHANNELS];
 	size_t last_audio_input_buf_size;
 	DARRAY(struct audio_action) audio_actions;
 	float *audio_output_buf[MAX_AUDIO_MIXES][MAX_AUDIO_CHANNELS];
@@ -872,9 +888,15 @@ struct obs_source {
 	/* color space */
 	gs_texrender_t *color_space_texrender;
 
+	/* audio monitoring */
 	struct audio_monitor *monitor;
 	enum obs_monitoring_type monitoring_type;
 
+	/* media action queue */
+	DARRAY(struct media_action) media_actions;
+	pthread_mutex_t media_actions_mutex;
+
+	/* private data */
 	obs_data_t *private_settings;
 };
 
@@ -1114,7 +1136,7 @@ struct obs_output {
 
 	struct pause_data pause;
 
-	struct circlebuf audio_buffer[MAX_AUDIO_MIXES][MAX_AV_PLANES];
+	struct deque audio_buffer[MAX_AUDIO_MIXES][MAX_AV_PLANES];
 	uint64_t audio_start_ts;
 	uint64_t video_start_ts;
 	size_t audio_size;
@@ -1135,13 +1157,13 @@ struct obs_output {
 	struct caption_text *caption_head;
 	struct caption_text *caption_tail;
 
-	struct circlebuf caption_data;
+	struct deque caption_data;
 
 	bool valid;
 
 	uint64_t active_delay_ns;
 	encoded_callback_t delay_callback;
-	struct circlebuf delay_data; /* struct delay_data */
+	struct deque delay_data; /* struct delay_data */
 	pthread_mutex_t delay_mutex;
 	uint32_t delay_sec;
 	uint32_t delay_flags;
@@ -1241,18 +1263,21 @@ struct obs_encoder {
 	uint32_t frame_rate_divisor_counter; // only used for GPU encoders
 	video_t *fps_override;
 
+	/* Regions of interest to prioritize during encoding */
+	pthread_mutex_t roi_mutex;
+	DARRAY(struct obs_encoder_roi) roi;
+	uint32_t roi_increment;
+
 	int64_t cur_pts;
 
-	struct circlebuf audio_input_buffer[MAX_AV_PLANES];
+	struct deque audio_input_buffer[MAX_AV_PLANES];
 	uint8_t *audio_output_buffer[MAX_AV_PLANES];
 
 	/* if a video encoder is paired with an audio encoder, make it start
 	 * up at the specific timestamp.  if this is the audio encoder,
-	 * wait_for_video makes it wait until it's ready to sync up with
-	 * video */
-	bool wait_for_video;
+	 * it waits until it's ready to sync up with video */
 	bool first_received;
-	struct obs_encoder *paired_encoder;
+	DARRAY(struct obs_encoder *) paired_encoders;
 	int64_t offset_usec;
 	uint64_t first_raw_ts;
 	uint64_t start_ts;

@@ -6,7 +6,7 @@ if(NOT ENABLE_WEBRTC)
   return()
 endif()
 
-find_package(LibDataChannel REQUIRED)
+find_package(LibDataChannel 0.20 REQUIRED)
 find_package(CURL REQUIRED)
 
 add_library(obs-webrtc MODULE)

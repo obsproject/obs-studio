@@ -18,7 +18,7 @@
 #include <obs-module.h>
 #include <obs-avc.h>
 #include <util/platform.h>
-#include <util/circlebuf.h>
+#include <util/deque.h>
 #include <util/dstr.h>
 #include <util/threading.h>
 #include <inttypes.h>
@@ -64,7 +64,7 @@ struct ftl_stream {
 	obs_output_t *output;
 
 	pthread_mutex_t packets_mutex;
-	struct circlebuf packets;
+	struct deque packets;
 	bool sent_headers;
 	int64_t frames_sent;
 
@@ -134,7 +134,7 @@ static inline void free_packets(struct ftl_stream *stream)
 
 	while (stream->packets.size) {
 		struct encoder_packet packet;
-		circlebuf_pop_front(&stream->packets, &packet, sizeof(packet));
+		deque_pop_front(&stream->packets, &packet, sizeof(packet));
 		obs_encoder_packet_release(&packet);
 	}
 	pthread_mutex_unlock(&stream->packets_mutex);
@@ -205,7 +205,7 @@ static void ftl_stream_destroy(void *data)
 		os_event_destroy(stream->stop_event);
 		os_sem_destroy(stream->send_sem);
 		pthread_mutex_destroy(&stream->packets_mutex);
-		circlebuf_free(&stream->packets);
+		deque_free(&stream->packets);
 		bfree(stream);
 	}
 }
@@ -276,8 +276,8 @@ static inline bool get_next_packet(struct ftl_stream *stream,
 
 	pthread_mutex_lock(&stream->packets_mutex);
 	if (stream->packets.size) {
-		circlebuf_pop_front(&stream->packets, packet,
-				    sizeof(struct encoder_packet));
+		deque_pop_front(&stream->packets, packet,
+				sizeof(struct encoder_packet));
 		new_packet = true;
 	}
 	pthread_mutex_unlock(&stream->packets_mutex);
@@ -658,8 +658,8 @@ static bool ftl_stream_start(void *data)
 static inline bool add_packet(struct ftl_stream *stream,
 			      struct encoder_packet *packet)
 {
-	circlebuf_push_back(&stream->packets, packet,
-			    sizeof(struct encoder_packet));
+	deque_push_back(&stream->packets, packet,
+			sizeof(struct encoder_packet));
 	return true;
 }
 
@@ -673,7 +673,7 @@ static void drop_frames(struct ftl_stream *stream, const char *name,
 {
 	UNUSED_PARAMETER(pframes);
 
-	struct circlebuf new_buf = {0};
+	struct deque new_buf = {0};
 	int num_frames_dropped = 0;
 
 #ifdef _DEBUG
@@ -682,16 +682,16 @@ static void drop_frames(struct ftl_stream *stream, const char *name,
 	UNUSED_PARAMETER(name);
 #endif
 
-	circlebuf_reserve(&new_buf, sizeof(struct encoder_packet) * 8);
+	deque_reserve(&new_buf, sizeof(struct encoder_packet) * 8);
 
 	while (stream->packets.size) {
 		struct encoder_packet packet;
-		circlebuf_pop_front(&stream->packets, &packet, sizeof(packet));
+		deque_pop_front(&stream->packets, &packet, sizeof(packet));
 
 		/* do not drop audio data or video keyframes */
 		if (packet.type == OBS_ENCODER_AUDIO ||
 		    packet.drop_priority >= highest_priority) {
-			circlebuf_push_back(&new_buf, &packet, sizeof(packet));
+			deque_push_back(&new_buf, &packet, sizeof(packet));
 
 		} else {
 			num_frames_dropped++;
@@ -699,7 +699,7 @@ static void drop_frames(struct ftl_stream *stream, const char *name,
 		}
 	}
 
-	circlebuf_free(&stream->packets);
+	deque_free(&stream->packets);
 	stream->packets = new_buf;
 
 	if (stream->min_priority < highest_priority)
@@ -721,7 +721,7 @@ static bool find_first_video_packet(struct ftl_stream *stream,
 
 	for (size_t i = 0; i < count; i++) {
 		struct encoder_packet *cur =
-			circlebuf_data(&stream->packets, i * sizeof(*first));
+			deque_data(&stream->packets, i * sizeof(*first));
 		if (cur->type == OBS_ENCODER_VIDEO && !cur->keyframe) {
 			*first = *cur;
 			return true;

@@ -43,6 +43,7 @@ private:
 		  std::shared_ptr<rtc::RtcpSrReporter> rtcp_sr_reporter);
 
 	obs_output_t *output;
+	bool is_av1;
 
 	std::string endpoint_url;
 	std::string bearer_token;

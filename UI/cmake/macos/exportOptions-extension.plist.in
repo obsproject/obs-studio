@@ -10,6 +10,10 @@
 		<string>${OBS_PROVISIONING_PROFILE}</string>
 	</dict>
 	<key>signingStyle</key>
-	<string>automatic</string>
+	<string>manual</string>
+	<key>signingCertificate</key>
+	<string>Developer ID Application</string>
+	<key>teamID</key>
+	<string>${OBS_CODESIGN_TEAM}</string>
 </dict>
 </plist>

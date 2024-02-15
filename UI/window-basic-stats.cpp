@@ -546,10 +546,20 @@ void OBSBasicStats::OutputLabels::Update(obs_output_t *output, bool rec)
 	setThemeID(status, themeID);
 
 	long double num = (long double)totalBytes / (1024.0l * 1024.0l);
+	const char *unit = "MiB";
+	if (num > 1024) {
+		num /= 1024;
+		unit = "GiB";
+	}
+	megabytesSent->setText(QString("%1 %2").arg(num, 0, 'f', 1).arg(unit));
 
-	megabytesSent->setText(
-		QString("%1 MB").arg(QString::number(num, 'f', 1)));
-	bitrate->setText(QString("%1 kb/s").arg(QString::number(kbps, 'f', 0)));
+	num = kbps;
+	unit = "kb/s";
+	if (num >= 10'000) {
+		num /= 1000;
+		unit = "Mb/s";
+	}
+	bitrate->setText(QString("%1 %2").arg(num, 0, 'f', 0).arg(unit));
 
 	if (!rec) {
 		int total = output ? obs_output_get_total_frames(output) : 0;

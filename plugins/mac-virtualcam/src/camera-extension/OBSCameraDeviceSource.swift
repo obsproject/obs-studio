@@ -23,7 +23,8 @@ class OBSCameraDeviceSource: NSObject, CMIOExtensionDeviceSource {
     private var _streamingCounter: UInt32 = 0
     private var _streamingSinkCounter: UInt32 = 0
 
-    private var _timer: DispatchSourceTimer?
+    private var _placeholderTimer: DispatchSourceTimer?
+    private var _consumeBufferTimer: DispatchSourceTimer?
 
     private let _timerQueue = DispatchQueue(
         label: "timerQueue",
@@ -137,15 +138,15 @@ class OBSCameraDeviceSource: NSObject, CMIOExtensionDeviceSource {
 
         _streamingCounter += 1
 
-        _timer = DispatchSource.makeTimerSource(flags: .strict, queue: _timerQueue)
+        _placeholderTimer = DispatchSource.makeTimerSource(flags: .strict, queue: _timerQueue)
 
-        _timer!.schedule(
+        _placeholderTimer!.schedule(
             deadline: .now(),
             repeating: 1.0 / Double(OBSCameraFrameRate),
             leeway: .seconds(0)
         )
 
-        _timer!.setEventHandler {
+        _placeholderTimer!.setEventHandler {
             if self.sinkStarted {
                 return
             }
@@ -217,9 +218,9 @@ class OBSCameraDeviceSource: NSObject, CMIOExtensionDeviceSource {
                 }
             }
         }
-        _timer!.setCancelHandler {}
+        _placeholderTimer!.setCancelHandler {}
 
-        _timer!.resume()
+        _placeholderTimer!.resume()
     }
 
     func stopStreaming() {
@@ -228,9 +229,9 @@ class OBSCameraDeviceSource: NSObject, CMIOExtensionDeviceSource {
         } else {
             _streamingCounter = 0
 
-            if let timer = _timer {
+            if let timer = _placeholderTimer {
                 timer.cancel()
-                _timer = nil
+                _placeholderTimer = nil
             }
         }
     }
@@ -267,22 +268,41 @@ class OBSCameraDeviceSource: NSObject, CMIOExtensionDeviceSource {
 
                 self._streamSink.stream.notifyScheduledOutputChanged(output)
             }
-            self.consumeBuffer(client)
         }
     }
 
     func startStreamingSink(client: CMIOExtensionClient) {
         _streamingSinkCounter += 1
         self.sinkStarted = true
-        consumeBuffer(client)
+
+        _consumeBufferTimer = DispatchSource.makeTimerSource(flags: .strict, queue: _timerQueue)
+
+        _consumeBufferTimer!.schedule(
+            deadline: .now(),
+            repeating: 1.0 / (Double(OBSCameraFrameRate) * 3.0),
+            leeway: .seconds(0)
+        )
+
+        _consumeBufferTimer!.setEventHandler {
+            self.consumeBuffer(client)
+        }
+
+        _consumeBufferTimer!.setCancelHandler {}
+
+        _consumeBufferTimer!.resume()
     }
 
     func stopStreamingSink() {
         self.sinkStarted = false
+
         if _streamingCounter > 1 {
             _streamingSinkCounter -= 1
         } else {
             _streamingSinkCounter = 0
+            if let timer = _consumeBufferTimer {
+                timer.cancel()
+                _consumeBufferTimer = nil
+            }
         }
     }
 }

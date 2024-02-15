@@ -5,7 +5,8 @@ legacy_check()
 add_library(win-wasapi MODULE)
 add_library(OBS::wasapi ALIAS win-wasapi)
 
-target_sources(win-wasapi PRIVATE enum-wasapi.cpp enum-wasapi.hpp plugin-main.cpp win-wasapi.cpp)
+target_sources(win-wasapi PRIVATE win-wasapi.cpp wasapi-notify.cpp wasapi-notify.hpp enum-wasapi.cpp enum-wasapi.hpp
+                                  plugin-main.cpp)
 
 configure_file(cmake/windows/obs-module.rc.in win-wasapi.rc)
 target_sources(win-wasapi PRIVATE win-wasapi.rc)

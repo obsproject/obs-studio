@@ -154,22 +154,6 @@ static bool load_lua_script(struct obs_lua_script *data)
 		}
 	}
 
-	lua_getglobal(script, "script_tick");
-	if (lua_isfunction(script, -1)) {
-		pthread_mutex_lock(&tick_mutex);
-
-		struct obs_lua_script *next = first_tick_script;
-		data->next_tick = next;
-		data->p_prev_next_tick = &first_tick_script;
-		if (next)
-			next->p_prev_next_tick = &data->next_tick;
-		first_tick_script = data;
-
-		data->tick = luaL_ref(script, LUA_REGISTRYINDEX);
-
-		pthread_mutex_unlock(&tick_mutex);
-	}
-
 	lua_getglobal(script, "script_properties");
 	if (lua_isfunction(script, -1))
 		data->get_properties = luaL_ref(script, LUA_REGISTRYINDEX);
@@ -224,6 +208,23 @@ static bool load_lua_script(struct obs_lua_script *data)
 	}
 
 	data->script = script;
+
+	lua_getglobal(script, "script_tick");
+	if (lua_isfunction(script, -1)) {
+		pthread_mutex_lock(&tick_mutex);
+
+		struct obs_lua_script *next = first_tick_script;
+		data->next_tick = next;
+		data->p_prev_next_tick = &first_tick_script;
+		if (next)
+			next->p_prev_next_tick = &data->next_tick;
+		first_tick_script = data;
+
+		data->tick = luaL_ref(script, LUA_REGISTRYINDEX);
+
+		pthread_mutex_unlock(&tick_mutex);
+	}
+
 	success = true;
 
 fail:

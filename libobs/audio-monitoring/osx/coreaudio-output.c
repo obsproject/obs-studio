@@ -4,7 +4,7 @@
 #include <CoreAudio/CoreAudio.h>
 
 #include "../../media-io/audio-resampler.h"
-#include "../../util/circlebuf.h"
+#include "../../util/deque.h"
 #include "../../util/threading.h"
 #include "../../util/platform.h"
 #include "../../obs-internal.h"
@@ -18,8 +18,8 @@ struct audio_monitor {
 	AudioQueueBufferRef buffers[3];
 
 	pthread_mutex_t mutex;
-	struct circlebuf empty_buffers;
-	struct circlebuf new_data;
+	struct deque empty_buffers;
+	struct deque new_data;
 	audio_resampler_t *resampler;
 	size_t buffer_size;
 	size_t wait_size;
@@ -39,9 +39,9 @@ static inline bool fill_buffer(struct audio_monitor *monitor)
 		return false;
 	}
 
-	circlebuf_pop_front(&monitor->empty_buffers, &buf, sizeof(buf));
-	circlebuf_pop_front(&monitor->new_data, buf->mAudioData,
-			    monitor->buffer_size);
+	deque_pop_front(&monitor->empty_buffers, &buf, sizeof(buf));
+	deque_pop_front(&monitor->new_data, buf->mAudioData,
+			monitor->buffer_size);
 
 	buf->mAudioDataByteSize = (UInt32)monitor->buffer_size;
 
@@ -59,7 +59,7 @@ static void on_audio_pause(void *data, calldata_t *calldata)
 	UNUSED_PARAMETER(calldata);
 	struct audio_monitor *monitor = data;
 	pthread_mutex_lock(&monitor->mutex);
-	circlebuf_free(&monitor->new_data);
+	deque_free(&monitor->new_data);
 	pthread_mutex_unlock(&monitor->mutex);
 }
 
@@ -108,7 +108,7 @@ static void on_audio_playback(void *param, obs_source_t *source,
 	}
 
 	pthread_mutex_lock(&monitor->mutex);
-	circlebuf_push_back(&monitor->new_data, resample_data[0], bytes);
+	deque_push_back(&monitor->new_data, resample_data[0], bytes);
 
 	if (monitor->new_data.size >= monitor->wait_size) {
 		monitor->wait_size = 0;
@@ -133,7 +133,7 @@ static void buffer_audio(void *data, AudioQueueRef aq, AudioQueueBufferRef buf)
 	struct audio_monitor *monitor = data;
 
 	pthread_mutex_lock(&monitor->mutex);
-	circlebuf_push_back(&monitor->empty_buffers, &buf, sizeof(buf));
+	deque_push_back(&monitor->empty_buffers, &buf, sizeof(buf));
 	while (monitor->empty_buffers.size > 0) {
 		if (!fill_buffer(monitor)) {
 			break;
@@ -231,9 +231,8 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 			return false;
 		}
 
-		circlebuf_push_back(&monitor->empty_buffers,
-				    &monitor->buffers[i],
-				    sizeof(monitor->buffers[i]));
+		deque_push_back(&monitor->empty_buffers, &monitor->buffers[i],
+				sizeof(monitor->buffers[i]));
 	}
 
 	if (pthread_mutex_init(&monitor->mutex, NULL) != 0) {
@@ -287,8 +286,8 @@ static void audio_monitor_free(struct audio_monitor *monitor)
 	}
 
 	audio_resampler_destroy(monitor->resampler);
-	circlebuf_free(&monitor->empty_buffers);
-	circlebuf_free(&monitor->new_data);
+	deque_free(&monitor->empty_buffers);
+	deque_free(&monitor->new_data);
 	pthread_mutex_destroy(&monitor->mutex);
 }
 

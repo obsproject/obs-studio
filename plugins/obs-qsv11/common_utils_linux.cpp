@@ -204,7 +204,7 @@ struct vaapi_device {
 	const char *driver;
 };
 
-static void vaapi_open(char *device_path, struct vaapi_device *device)
+static void vaapi_open(const char *device_path, struct vaapi_device *device)
 {
 	int fd = open(device_path, O_RDWR);
 	if (fd < 0) {
@@ -317,64 +317,47 @@ static bool vaapi_supports_hevc(VADisplay display)
 	return ret;
 }
 
+bool check_adapter(void *param, const char *node, uint32_t idx)
+{
+	struct vaapi_device device = {0};
+	struct adapter_info *adapters = (struct adapter_info *)param;
+
+	vaapi_open(node, &device);
+	if (!device.display)
+		return true;
+
+	struct adapter_info *adapter = &adapters[idx];
+	adapter->is_intel = strstr(device.driver, "Intel") != nullptr;
+	// This is currently only used for LowPower coding which is busted on VA-API anyway.
+	adapter->is_dgpu = false;
+	adapter->supports_av1 = vaapi_supports_av1(device.display);
+	adapter->supports_hevc = vaapi_supports_hevc(device.display);
+
+	if (adapter->is_intel && default_h264_device == nullptr)
+		default_h264_device = strdup(node);
+
+	if (adapter->is_intel && adapter->supports_av1 &&
+	    default_av1_device == nullptr)
+		default_av1_device = strdup(node);
+
+	if (adapter->is_intel && adapter->supports_hevc &&
+	    default_hevc_device == nullptr)
+		default_hevc_device = strdup(node);
+
+	vaapi_close(&device);
+	return true;
+}
+
 void check_adapters(struct adapter_info *adapters, size_t *adapter_count)
 {
-	struct dstr full_path;
-	struct dirent **namelist;
-	int no;
-	int adapter_idx;
-	const char *base_dir = "/dev/dri/";
-
-	dstr_init(&full_path);
-	if ((no = scandir(base_dir, &namelist, 0, alphasort)) > 0) {
-		for (int i = 0; i < no; i++) {
-			struct adapter_info *adapter;
-			struct dirent *dp;
-			struct vaapi_device device = {0};
-
-			dp = namelist[i];
-			if (strstr(dp->d_name, "renderD") == nullptr)
-				goto next_entry;
-
-			adapter_idx = atoi(&dp->d_name[7]) - 128;
-			if (adapter_idx >= (ssize_t)*adapter_count ||
-			    adapter_idx < 0)
-				goto next_entry;
-
-			*adapter_count = adapter_idx + 1;
-			dstr_copy(&full_path, base_dir);
-			dstr_cat(&full_path, dp->d_name);
-			vaapi_open(full_path.array, &device);
-			if (!device.display)
-				goto next_entry;
-
-			adapter = &adapters[adapter_idx];
-			adapter->is_intel = strstr(device.driver, "Intel") !=
-					    nullptr;
-			// This is currently only used for LowPower coding which is busted on VA-API anyway.
-			adapter->is_dgpu = false;
-			adapter->supports_av1 =
-				vaapi_supports_av1(device.display);
-			adapter->supports_hevc =
-				vaapi_supports_hevc(device.display);
-
-			if (adapter->is_intel && default_h264_device == nullptr)
-				default_h264_device = strdup(full_path.array);
-
-			if (adapter->is_intel && adapter->supports_av1 &&
-			    default_av1_device == nullptr)
-				default_av1_device = strdup(full_path.array);
-
-			if (adapter->is_intel && adapter->supports_hevc &&
-			    default_hevc_device == nullptr)
-				default_hevc_device = strdup(full_path.array);
-
-			vaapi_close(&device);
-
-		next_entry:
-			free(dp);
-		}
-		free(namelist);
+	obs_enter_graphics();
+	uint32_t gs_count = gs_get_adapter_count();
+	if (*adapter_count < gs_count) {
+		blog(LOG_WARNING, "Too many video adapters: %ld < %d",
+		     *adapter_count, gs_count);
+		obs_leave_graphics();
+		return;
 	}
-	dstr_free(&full_path);
+	gs_enum_adapters(check_adapter, adapters);
+	obs_leave_graphics();
 }

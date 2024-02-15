@@ -16,7 +16,7 @@
 ******************************************************************************/
 
 #include <obs-module.h>
-#include <util/circlebuf.h>
+#include <util/deque.h>
 #include <util/threading.h>
 #include <util/dstr.h>
 #include <util/darray.h>
@@ -168,9 +168,17 @@ static bool create_video_stream(struct ffmpeg_output *stream,
 			av_content_light_metadata_alloc(&content_size);
 		content->MaxCLL = hdr_nominal_peak_level;
 		content->MaxFALL = hdr_nominal_peak_level;
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 31, 102)
 		av_stream_add_side_data(data->video,
 					AV_PKT_DATA_CONTENT_LIGHT_LEVEL,
 					(uint8_t *)content, content_size);
+#else
+		av_packet_side_data_add(
+			&data->video->codecpar->coded_side_data,
+			&data->video->codecpar->nb_coded_side_data,
+			AV_PKT_DATA_CONTENT_LIGHT_LEVEL, (uint8_t *)content,
+			content_size, 0);
+#endif
 
 		AVMasteringDisplayMetadata *const mastering =
 			av_mastering_display_metadata_alloc();
@@ -186,10 +194,18 @@ static bool create_video_stream(struct ffmpeg_output *stream,
 		mastering->max_luminance = av_make_q(hdr_nominal_peak_level, 1);
 		mastering->has_primaries = 1;
 		mastering->has_luminance = 1;
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 31, 102)
 		av_stream_add_side_data(data->video,
 					AV_PKT_DATA_MASTERING_DISPLAY_METADATA,
 					(uint8_t *)mastering,
 					sizeof(*mastering));
+#else
+		av_packet_side_data_add(
+			&data->video->codecpar->coded_side_data,
+			&data->video->codecpar->nb_coded_side_data,
+			AV_PKT_DATA_MASTERING_DISPLAY_METADATA,
+			(uint8_t *)mastering, sizeof(*mastering), 0);
+#endif
 	}
 	context = avcodec_alloc_context3(NULL);
 	context->codec_type = codec->type;
@@ -251,7 +267,7 @@ static bool create_audio_stream(struct ffmpeg_output *stream,
 	context = avcodec_alloc_context3(NULL);
 	context->codec_type = codec->type;
 	context->codec_id = codec->id;
-	context->bit_rate = (int64_t)data->config.audio_bitrate * 1000;
+	context->bit_rate = (int64_t)data->config.audio_bitrates[idx] * 1000;
 	context->time_base = (AVRational){1, aoi.samples_per_sec};
 	channels = get_audio_channels(aoi.speakers);
 #if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(57, 24, 100)
@@ -552,7 +568,7 @@ static void close_audio(struct ffmpeg_data *data)
 {
 	for (int idx = 0; idx < data->num_audio_streams; idx++) {
 		for (size_t i = 0; i < MAX_AV_PLANES; i++)
-			circlebuf_free(&data->excess_frames[idx][i]);
+			deque_free(&data->excess_frames[idx][i]);
 
 		if (data->samples[idx][0])
 			av_freep(&data->samples[idx][0]);
@@ -633,7 +649,6 @@ bool ffmpeg_mpegts_data_init(struct ffmpeg_output *stream,
 	memset(data, 0, sizeof(struct ffmpeg_data));
 	data->config = *config;
 	data->num_audio_streams = config->audio_mix_count;
-	data->audio_tracks = config->audio_tracks;
 
 	if (!config->url || !*config->url)
 		return false;
@@ -661,6 +676,10 @@ bool ffmpeg_mpegts_data_init(struct ffmpeg_output *stream,
 
 	avformat_alloc_output_context2(&data->output, output_format, NULL,
 				       data->config.url);
+	av_dict_set(&data->output->metadata, "service_provider", "obs-studio",
+		    0);
+	av_dict_set(&data->output->metadata, "service_name", "mpegts output",
+		    0);
 
 	if (!data->output) {
 		ffmpeg_mpegts_log_error(LOG_WARNING, data,
@@ -953,30 +972,38 @@ static bool set_config(struct ffmpeg_output *stream)
 	obs_data_release(settings);
 
 	/* 3. Audio settings */
-	// 3.a) set audio codec & id from audio encoder
-	obs_encoder_t *aencoder =
-		obs_output_get_audio_encoder(stream->output, 0);
-	config.audio_encoder = obs_encoder_get_codec(aencoder);
+	// 3.a) get audio encoders & retrieve number of tracks
+	obs_encoder_t *aencoders[MAX_AUDIO_MIXES];
+	int num_tracks = 0;
+
+	for (;;) {
+		obs_encoder_t *aencoder = obs_output_get_audio_encoder(
+			stream->output, num_tracks);
+		if (!aencoder)
+			break;
+
+		aencoders[num_tracks] = aencoder;
+		num_tracks++;
+	}
+	config.audio_mix_count = num_tracks;
+
+	// 3.b) set audio codec & id from audio encoder
+	config.audio_encoder = obs_encoder_get_codec(aencoders[0]);
 	if (strcmp(config.audio_encoder, "aac") == 0)
 		config.audio_encoder_id = AV_CODEC_ID_AAC;
 	else if (strcmp(config.audio_encoder, "opus") == 0)
 		config.audio_encoder_id = AV_CODEC_ID_OPUS;
 
-	// 3.b) get audio bitrate from the audio encoder.
-	settings = obs_encoder_get_settings(aencoder);
-	config.audio_bitrate = (int)obs_data_get_int(settings, "bitrate");
-	obs_data_release(settings);
+	// 3.c) get audio bitrate from the audio encoder.
+	for (int idx = 0; idx < num_tracks; idx++) {
+		settings = obs_encoder_get_settings(aencoders[idx]);
+		config.audio_bitrates[idx] =
+			(int)obs_data_get_int(settings, "bitrate");
+		obs_data_release(settings);
+	}
 
-	// 3.c set audio frame size
-	config.frame_size = (int)obs_encoder_get_frame_size(aencoder);
-
-	// 3.d) set the number of tracks
-	// The UI for multiple tracks is not written for streaming outputs.
-	// When it is, modify write_packet & uncomment :
-	// config.audio_tracks = (int)obs_output_get_mixers(stream->output);
-	// config.audio_mix_count = get_audio_mix_count(config.audio_tracks);
-	config.audio_tracks = 1;
-	config.audio_mix_count = 1;
+	// 3.d) set audio frame size
+	config.frame_size = (int)obs_encoder_get_frame_size(aencoders[0]);
 
 	/* 4. Muxer & protocol settings */
 	// This requires some UI to be written for the output.
@@ -1136,9 +1163,12 @@ void mpegts_write_packet(struct ffmpeg_output *stream,
 	if (stopping(stream) || !stream->ff_data.video ||
 	    !stream->ff_data.video_ctx || !stream->ff_data.audio_infos)
 		return;
-	if (!stream->ff_data.audio_infos[encpacket->track_idx].stream)
-		return;
 	bool is_video = encpacket->type == OBS_ENCODER_VIDEO;
+	if (!is_video) {
+		if (!stream->ff_data.audio_infos[encpacket->track_idx].stream)
+			return;
+	}
+
 	AVStream *avstream =
 		is_video ? stream->ff_data.video
 			 : stream->ff_data.audio_infos[encpacket->track_idx]
@@ -1173,6 +1203,7 @@ void mpegts_write_packet(struct ffmpeg_output *stream,
 fail:
 	av_packet_free(&packet);
 }
+
 static bool write_header(struct ffmpeg_output *stream, struct ffmpeg_data *data)
 {
 	AVDictionary *dict = NULL;

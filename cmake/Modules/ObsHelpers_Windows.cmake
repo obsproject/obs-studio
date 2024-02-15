@@ -234,7 +234,8 @@ function(export_target target)
       COMPONENT obs_libraries
       EXCLUDE_FROM_ALL)
 
-  if(MSVC)
+  get_target_property(target_type ${target} TYPE)
+  if(MSVC AND NOT target_type STREQUAL INTERFACE_LIBRARY)
     install(
       FILES $<TARGET_PDB_FILE:${target}>
       CONFIGURATIONS "RelWithDebInfo" "Debug"

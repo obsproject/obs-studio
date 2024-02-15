@@ -5,7 +5,7 @@
 #include <obs-module.h>
 #include <media-io/audio-math.h>
 #include <util/platform.h>
-#include <util/circlebuf.h>
+#include <util/deque.h>
 #include <util/threading.h>
 
 /* -------------------------------------------------------- */
@@ -82,7 +82,7 @@ struct compressor_data {
 	char *sidechain_name;
 
 	pthread_mutex_t sidechain_mutex;
-	struct circlebuf sidechain_data[MAX_AUDIO_CHANNELS];
+	struct deque sidechain_data[MAX_AUDIO_CHANNELS];
 	float *sidechain_buf[MAX_AUDIO_CHANNELS];
 	size_t max_sidechain_frames;
 };
@@ -113,8 +113,8 @@ static inline void get_sidechain_data(struct compressor_data *cd,
 	}
 
 	for (size_t i = 0; i < cd->num_channels; i++)
-		circlebuf_pop_front(&cd->sidechain_data[i],
-				    cd->sidechain_buf[i], data_size);
+		deque_pop_front(&cd->sidechain_data[i], cd->sidechain_buf[i],
+				data_size);
 
 	pthread_mutex_unlock(&cd->sidechain_mutex);
 	return;
@@ -164,22 +164,22 @@ static void sidechain_capture(void *param, obs_source_t *source,
 
 	if (cd->sidechain_data[0].size > expected_size * 2) {
 		for (size_t i = 0; i < cd->num_channels; i++) {
-			circlebuf_pop_front(&cd->sidechain_data[i], NULL,
-					    expected_size);
+			deque_pop_front(&cd->sidechain_data[i], NULL,
+					expected_size);
 		}
 	}
 
 	if (muted) {
 		for (size_t i = 0; i < cd->num_channels; i++) {
-			circlebuf_push_back_zero(&cd->sidechain_data[i],
-						 audio_data->frames *
-							 sizeof(float));
+			deque_push_back_zero(&cd->sidechain_data[i],
+					     audio_data->frames *
+						     sizeof(float));
 		}
 	} else {
 		for (size_t i = 0; i < cd->num_channels; i++) {
-			circlebuf_push_back(&cd->sidechain_data[i],
-					    audio_data->data[i],
-					    audio_data->frames * sizeof(float));
+			deque_push_back(&cd->sidechain_data[i],
+					audio_data->data[i],
+					audio_data->frames * sizeof(float));
 		}
 	}
 
@@ -299,7 +299,7 @@ static void compressor_destroy(void *data)
 	}
 
 	for (size_t i = 0; i < MAX_AUDIO_CHANNELS; i++) {
-		circlebuf_free(&cd->sidechain_data[i]);
+		deque_free(&cd->sidechain_data[i]);
 		bfree(cd->sidechain_buf[i]);
 	}
 	pthread_mutex_destroy(&cd->sidechain_mutex);

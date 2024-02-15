@@ -1153,45 +1153,45 @@ QGroupBox::indicator:unchecked:disabled {
 
 /* Locked CheckBox */
 
-LockedCheckBox {
+QCheckBox[lockCheckBox=true] {
     outline: none;
     background: transparent;
 }
 
-LockedCheckBox::indicator {
+QCheckBox[lockCheckBox=true]::indicator {
     width: 16px;
     height: 16px;
 }
 
-LockedCheckBox::indicator:checked,
-LockedCheckBox::indicator:checked:hover {
+QCheckBox[lockCheckBox=true]::indicator:checked,
+QCheckBox[lockCheckBox=true]::indicator:checked:hover {
     image: url(theme:Dark/locked.svg);
 }
 
-LockedCheckBox::indicator:unchecked,
-LockedCheckBox::indicator:unchecked:hover {
+QCheckBox[lockCheckBox=true]::indicator:unchecked,
+QCheckBox[lockCheckBox=true]::indicator:unchecked:hover {
     image: url(:res/images/unlocked.svg);
 }
 
 /* Visibility CheckBox */
 
-VisibilityCheckBox {
+QCheckBox[visibilityCheckBox=true] {
     outline: none;
     background: transparent;
 }
 
-VisibilityCheckBox::indicator {
+QCheckBox[visibilityCheckBox=true]::indicator {
     width: 16px;
     height: 16px;
 }
 
-VisibilityCheckBox::indicator:checked,
-VisibilityCheckBox::indicator:checked:hover {
+QCheckBox[visibilityCheckBox=true]::indicator:checked,
+QCheckBox[visibilityCheckBox=true]::indicator:checked:hover {
     image: url(theme:Dark/visible.svg);
 }
 
-VisibilityCheckBox::indicator:unchecked,
-VisibilityCheckBox::indicator:unchecked:hover {
+QCheckBox[visibilityCheckBox=true]::indicator:unchecked,
+QCheckBox[visibilityCheckBox=true]::indicator:unchecked:hover {
     image: url(:res/images/invisible.svg);
 }
 

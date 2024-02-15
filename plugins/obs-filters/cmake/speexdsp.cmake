@@ -6,8 +6,7 @@ if(ENABLE_SPEEXDSP)
   target_sources(obs-filters PRIVATE noise-suppress-filter.c)
   target_link_libraries(obs-filters PRIVATE SpeexDSP::Libspeexdsp)
   target_compile_definitions(obs-filters PRIVATE LIBSPEEXDSP_ENABLED)
-  target_link_options(obs-filters PRIVATE $<$<PLATFORM_ID:Windows>:/LTCG> $<$<PLATFORM_ID:Windows>:/IGNORE:4098>
-                      $<$<PLATFORM_ID:Windows>:/IGNORE:4099>)
+  target_link_options(obs-filters PRIVATE $<$<AND:$<PLATFORM_ID:Windows>,$<CONFIG:Debug>>:/NODEFAULTLIB:MSVCRT>)
 
   target_enable_feature(obs-filters "SpeexDSP noise suppression" HAS_NOISEREDUCTION)
 else()

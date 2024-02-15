@@ -47,7 +47,7 @@ float3 srgb_linear_to_nonlinear(float3 v)
 float4 LUT1D(VertDataOut v_in) : TARGET
 {
 	float4 textureColor = image.Sample(textureSampler, v_in.uv);
-	textureColor.rgb = max(float3(0.0, 0.0, 0.0), textureColor.rgb / textureColor.a);
+	textureColor.rgb *= (textureColor.a > 0.) ? (1. / textureColor.a) : 0.;
 	float3 nonlinear = srgb_linear_to_nonlinear(textureColor.rgb);
 
 	if (nonlinear.r >= domain_min.r && nonlinear.r <= domain_max.r) {
@@ -85,7 +85,7 @@ float4 LUT3D(VertDataOut v_in) : TARGET
 float4 LUTAlpha3D(VertDataOut v_in) : TARGET
 {
 	float4 textureColor = image.Sample(textureSampler, v_in.uv);
-	textureColor.rgb = max(float3(0.0, 0.0, 0.0), textureColor.rgb / textureColor.a);
+	textureColor.rgb *= (textureColor.a > 0.) ? (1. / textureColor.a) : 0.;
 	float3 nonlinear = srgb_linear_to_nonlinear(textureColor.rgb);
 
 	float3 clut_uvw = nonlinear * clut_scale + clut_offset;
@@ -98,7 +98,7 @@ float4 LUTAlpha3D(VertDataOut v_in) : TARGET
 float4 LUTAmount3D(VertDataOut v_in) : TARGET
 {
 	float4 textureColor = image.Sample(textureSampler, v_in.uv);
-	textureColor.rgb = max(float3(0.0, 0.0, 0.0), textureColor.rgb / textureColor.a);
+	textureColor.rgb *= (textureColor.a > 0.) ? (1. / textureColor.a) : 0.;
 	float3 nonlinear = srgb_linear_to_nonlinear(textureColor.rgb);
 
 	float3 clut_uvw = nonlinear * clut_scale + clut_offset;
@@ -112,7 +112,7 @@ float4 LUTAmount3D(VertDataOut v_in) : TARGET
 float4 LUTDomain3D(VertDataOut v_in) : TARGET
 {
 	float4 textureColor = image.Sample(textureSampler, v_in.uv);
-	textureColor.rgb = max(float3(0.0, 0.0, 0.0), textureColor.rgb / textureColor.a);
+	textureColor.rgb *= (textureColor.a > 0.) ? (1. / textureColor.a) : 0.;
 	float3 nonlinear = srgb_linear_to_nonlinear(textureColor.rgb);
 
 	float r = nonlinear.r;

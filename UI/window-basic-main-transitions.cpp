@@ -1779,6 +1779,10 @@ obs_data_array_t *OBSBasic::SaveTransitions()
 		obs_data_array_push_back(transitions, sourceData);
 	}
 
+	for (const OBSDataAutoRelease &transition : safeModeTransitions) {
+		obs_data_array_push_back(transitions, transition);
+	}
+
 	return transitions;
 }
 
@@ -1787,6 +1791,7 @@ void OBSBasic::LoadTransitions(obs_data_array_t *transitions,
 {
 	size_t count = obs_data_array_count(transitions);
 
+	safeModeTransitions.clear();
 	for (size_t i = 0; i < count; i++) {
 		OBSDataAutoRelease item = obs_data_array_item(transitions, i);
 		const char *name = obs_data_get_string(item, "name");
@@ -1806,6 +1811,8 @@ void OBSBasic::LoadTransitions(obs_data_array_t *transitions,
 				ui->transitions->count() - 1);
 			if (cb)
 				cb(private_data, source);
+		} else if (safe_mode || disable_3p_plugins) {
+			safeModeTransitions.push_back(std::move(item));
 		}
 	}
 }

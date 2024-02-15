@@ -32,6 +32,8 @@ target_sources(
           obs-audio.c
           obs-audio-controls.c
           obs-audio-controls.h
+          obs-av1.c
+          obs-av1.h
           obs-avc.c
           obs-avc.h
           obs-data.c
@@ -66,7 +68,6 @@ target_sources(
           obs-source.h
           obs-source-deinterlace.c
           obs-source-transition.c
-          obs-ui.h
           obs-video.c
           obs-video-gpu-encode.c
           obs-view.c
@@ -184,6 +185,7 @@ target_sources(
           util/config-file.h
           util/crc32.c
           util/crc32.h
+          util/deque.h
           util/dstr.c
           util/dstr.h
           util/file-serializer.c

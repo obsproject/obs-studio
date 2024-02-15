@@ -1298,6 +1298,16 @@ static void UpdateRegistryVersion(const Manifest &manifest)
 	RegCloseKey(key);
 }
 
+static void ClearShaderCache()
+{
+	wchar_t shader_path[MAX_PATH];
+	SHGetFolderPathW(NULL, CSIDL_COMMON_APPDATA, NULL, SHGFP_TYPE_CURRENT,
+			 shader_path);
+	StringCbCatW(shader_path, sizeof(shader_path),
+		     L"\\obs-studio\\shader-cache");
+	filesystem::remove_all(shader_path);
+}
+
 extern "C" void UpdateHookFiles(void);
 
 static bool Update(wchar_t *cmdLine)
@@ -1699,6 +1709,12 @@ static bool Update(wchar_t *cmdLine)
 
 	Status(L"Updating Game Capture hooks...");
 	UpdateHookFiles();
+
+	/* ------------------------------------- *
+	 * Clear shader cache                    */
+
+	Status(L"Clearing shader cache...");
+	ClearShaderCache();
 
 	/* ------------------------------------- *
 	 * Update installed version in registry  */

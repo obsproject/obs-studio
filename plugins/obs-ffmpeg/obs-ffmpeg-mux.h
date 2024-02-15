@@ -2,7 +2,7 @@
 
 #include <obs-module.h>
 #include <obs-hotkey.h>
-#include <util/circlebuf.h>
+#include <util/deque.h>
 #include <util/darray.h>
 #include <util/dstr.h>
 #include <util/pipe.h>
@@ -49,7 +49,7 @@ struct ffmpeg_muxer {
 	/* these are accessed both by replay buffer and by HLS */
 	pthread_t mux_thread;
 	bool mux_thread_joinable;
-	struct circlebuf packets;
+	struct deque packets;
 
 	/* HLS only */
 	int keyint_sec;

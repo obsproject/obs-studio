@@ -1,7 +1,8 @@
 if(YOUTUBE_CLIENTID
    AND YOUTUBE_SECRET
    AND YOUTUBE_CLIENTID_HASH MATCHES "^(0|[a-fA-F0-9]+)$"
-   AND YOUTUBE_SECRET_HASH MATCHES "^(0|[a-fA-F0-9]+)$")
+   AND YOUTUBE_SECRET_HASH MATCHES "^(0|[a-fA-F0-9]+)$"
+   AND TARGET OBS::browser-panels)
   target_sources(
     obs-studio
     PRIVATE # cmake-format: sortable

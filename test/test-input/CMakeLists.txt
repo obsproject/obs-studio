@@ -14,14 +14,15 @@ add_library(OBS::test-input ALIAS test-input)
 
 target_sources(
   test-input
-  PRIVATE test-filter.c
-          test-input.c
-          test-sinewave.c
+  PRIVATE # cmake-format: sortable
           sync-async-source.c
           sync-audio-buffering.c
-          sync-pair-vid.c
           sync-pair-aud.c
-          test-random.c)
+          sync-pair-vid.c
+          test-filter.c
+          test-input.c
+          test-random.c
+          test-sinewave.c)
 
 target_link_libraries(test-input PRIVATE OBS::libobs)
 

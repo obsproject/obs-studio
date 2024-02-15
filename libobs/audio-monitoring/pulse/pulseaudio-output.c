@@ -18,7 +18,7 @@ struct audio_monitor {
 	uint_fast32_t packets;
 	uint_fast64_t frames;
 
-	struct circlebuf new_data;
+	struct deque new_data;
 	audio_resampler_t *resampler;
 
 	bool ignore;
@@ -225,7 +225,7 @@ static void do_stream_write(void *param)
 			goto finish;
 		}
 
-		circlebuf_pop_front(&data->new_data, buffer, bytesToFill);
+		deque_pop_front(&data->new_data, buffer, bytesToFill);
 
 		pa_stream_write(data->stream, buffer, bytesToFill, NULL, 0LL,
 				PA_SEEK_RELATIVE);
@@ -273,7 +273,7 @@ static void on_audio_playback(void *param, obs_source_t *source,
 		}
 	}
 
-	circlebuf_push_back(&monitor->new_data, resample_data[0], bytes);
+	deque_push_back(&monitor->new_data, resample_data[0], bytes);
 	monitor->packets++;
 	monitor->frames += resample_frames;
 
@@ -502,7 +502,7 @@ static inline void audio_monitor_free(struct audio_monitor *monitor)
 			monitor->source, on_audio_playback, monitor);
 
 	audio_resampler_destroy(monitor->resampler);
-	circlebuf_free(&monitor->new_data);
+	deque_free(&monitor->new_data);
 
 	if (monitor->stream)
 		pulseaudio_stop_playback(monitor);

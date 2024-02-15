@@ -19,8 +19,10 @@ find_package(FFmpeg REQUIRED avcodec avutil)
 add_library(win-dshow MODULE)
 add_library(OBS::dshow ALIAS win-dshow)
 
-target_sources(win-dshow PRIVATE dshow-plugin.cpp encode-dstr.hpp ffmpeg-decode.c ffmpeg-decode.h win-dshow-encoder.cpp
-                                 win-dshow.cpp)
+target_sources(
+  win-dshow
+  PRIVATE # cmake-format: sortable
+          dshow-plugin.cpp encode-dstr.hpp ffmpeg-decode.c ffmpeg-decode.h win-dshow-encoder.cpp win-dshow.cpp)
 
 configure_file(cmake/windows/obs-module.rc.in win-dshow.rc)
 target_sources(win-dshow PRIVATE win-dshow.rc)

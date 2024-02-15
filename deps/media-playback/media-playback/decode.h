@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-#include <util/circlebuf.h>
+#include <util/deque.h>
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -69,7 +69,7 @@ struct mp_decode {
 	AVPacket *orig_pkt;
 	AVPacket *pkt;
 	bool packet_pending;
-	struct circlebuf packets;
+	struct deque packets;
 };
 
 extern bool mp_decode_init(struct mp_media *media, enum AVMediaType type,

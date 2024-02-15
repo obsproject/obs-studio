@@ -821,9 +821,11 @@ static void vlcs_play_pause(void *data, bool pause)
 {
 	struct vlc_source *c = data;
 
-	if (pause)
+	libvlc_state_t state = libvlc_media_player_get_state_(c->media_player);
+
+	if (pause && state == libvlc_Playing)
 		libvlc_media_list_player_pause_(c->media_list_player);
-	else
+	else if (!pause && state == libvlc_Paused)
 		libvlc_media_list_player_play_(c->media_list_player);
 }
 

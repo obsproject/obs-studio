@@ -1,7 +1,7 @@
 # OBS common build dependencies module
 
 # cmake-format: off
-# cmake-lint: disable=C0103
+# cmake-lint: disable=E1121
 # cmake-lint: disable=E1126
 # cmake-lint: disable=R0912
 # cmake-lint: disable=R0915
@@ -11,9 +11,9 @@ include_guard(GLOBAL)
 
 # _check_deps_version: Checks for obs-deps VERSION file in prefix paths
 function(_check_deps_version version)
-  # cmake-format: off
-  set(found FALSE PARENT_SCOPE)
-  # cmake-format: on
+  set(found
+      FALSE
+      PARENT_SCOPE)
 
   foreach(path IN LISTS CMAKE_PREFIX_PATH)
     if(EXISTS "${path}/share/obs-deps/VERSION")
@@ -30,25 +30,25 @@ function(_check_deps_version version)
       string(REPLACE "-" "." version "${version}")
 
       if(_check_version VERSION_EQUAL version)
-        # cmake-format: off
-        set(found TRUE PARENT_SCOPE)
-        # cmake-format: on
+        set(found
+            TRUE
+            PARENT_SCOPE)
         break()
       elseif(_check_version VERSION_LESS version)
         message(AUTHOR_WARNING "Older ${label} version detected in ${path}: \n"
                                "Found ${_check_version}, require ${version}")
         list(REMOVE_ITEM CMAKE_PREFIX_PATH "${path}")
         list(APPEND CMAKE_PREFIX_PATH "${path}")
-        # cmake-format: off
-        set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} PARENT_SCOPE)
-        # cmake-format: on
+        set(CMAKE_PREFIX_PATH
+            ${CMAKE_PREFIX_PATH}
+            PARENT_SCOPE)
         continue()
       else()
         message(AUTHOR_WARNING "Newer ${label} version detected in ${path}: \n"
                                "Found ${_check_version}, require ${version}")
-        # cmake-format: off
-        set(found TRUE PARENT_SCOPE)
-        # cmake-format: on
+        set(found
+            TRUE
+            PARENT_SCOPE)
         break()
       endif()
     endif()
@@ -59,9 +59,7 @@ endfunction()
 function(_check_dependencies)
   file(READ "${CMAKE_CURRENT_SOURCE_DIR}/buildspec.json" buildspec)
 
-  # cmake-format: off
   string(JSON dependency_data GET ${buildspec} dependencies)
-  # cmake-format: on
 
   foreach(dependency IN LISTS dependencies_list)
     if(dependency STREQUAL cef AND arch STREQUAL universal)
@@ -72,12 +70,12 @@ function(_check_dependencies)
       set(platform macos-${arch})
     endif()
 
-    # cmake-format: off
     string(JSON data GET ${dependency_data} ${dependency})
     string(JSON version GET ${data} version)
     string(JSON hash GET ${data} hashes ${platform})
     string(JSON url GET ${data} baseUrl)
     string(JSON label GET ${data} label)
+    # cmake-format: off
     string(JSON revision ERROR_VARIABLE error GET ${data} revision ${platform})
     # cmake-format: on
 
@@ -181,7 +179,7 @@ function(_check_dependencies)
 
   list(REMOVE_DUPLICATES CMAKE_PREFIX_PATH)
 
-  # cmake-format: off
-  set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} CACHE PATH "CMake prefix search path" FORCE)
-  # cmake-format: on
+  set(CMAKE_PREFIX_PATH
+      ${CMAKE_PREFIX_PATH}
+      CACHE PATH "CMake prefix search path" FORCE)
 endfunction()

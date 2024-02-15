@@ -18,8 +18,6 @@ class QLineEdit;
 class SourceTree;
 class QSpacerItem;
 class QHBoxLayout;
-class LockedCheckBox;
-class VisibilityCheckBox;
 class VisibilityItemWidget;
 
 class SourceTreeItem : public QFrame {
@@ -56,8 +54,8 @@ private:
 	QSpacerItem *spacer = nullptr;
 	QCheckBox *expand = nullptr;
 	QLabel *iconLabel = nullptr;
-	VisibilityCheckBox *vis = nullptr;
-	LockedCheckBox *lock = nullptr;
+	QCheckBox *vis = nullptr;
+	QCheckBox *lock = nullptr;
 	QHBoxLayout *boxLayout = nullptr;
 	QLabel *label = nullptr;
 
@@ -67,15 +65,7 @@ private:
 
 	SourceTree *tree;
 	OBSSceneItem sceneitem;
-	OBSSignal sceneRemoveSignal;
-	OBSSignal itemRemoveSignal;
-	OBSSignal groupReorderSignal;
-	OBSSignal selectSignal;
-	OBSSignal deselectSignal;
-	OBSSignal visibleSignal;
-	OBSSignal lockedSignal;
-	OBSSignal renameSignal;
-	OBSSignal removeSignal;
+	std::vector<OBSSignal> sigs;
 
 	virtual void paintEvent(QPaintEvent *event) override;
 
@@ -192,7 +182,7 @@ public:
 public slots:
 	inline void ReorderItems() { GetStm()->ReorderItems(); }
 	inline void RefreshItems() { GetStm()->SceneChanged(); }
-	void Remove(OBSSceneItem item);
+	void Remove(OBSSceneItem item, OBSScene scene);
 	void GroupSelectedItems();
 	void UngroupSelectedGroups();
 	void AddGroup();

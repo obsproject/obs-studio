@@ -602,6 +602,16 @@
        </widget>
       </item>
       <item row="8" column="1">
+       <widget class="QCheckBox" name="cropToBounds">
+        <property name="accessibleName">
+         <string>Basic.TransformWindow.BoundsAlignment</string>
+        </property>
+        <property name="text">
+         <string>Basic.TransformWindow.CropToBounds</string>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="1">
        <spacer name="verticalSpacer_2">
         <property name="orientation">
          <enum>Qt::Vertical</enum>
@@ -614,7 +624,7 @@
         </property>
        </spacer>
       </item>
-      <item row="9" column="0">
+      <item row="10" column="0">
        <widget class="QLabel" name="label_8">
         <property name="accessibleName">
          <string>Basic.TransformWindow.Crop</string>
@@ -624,7 +634,7 @@
         </property>
        </widget>
       </item>
-      <item row="9" column="1">
+      <item row="10" column="1">
        <layout class="QGridLayout" name="gridLayout">
         <item row="0" column="1">
          <widget class="QSpinBox" name="cropLeft">

@@ -37,7 +37,7 @@ void CaptionStream::Stop()
 {
 	{
 		lock_guard<mutex> lock(m);
-		circlebuf_free(buf);
+		deque_free(buf);
 	}
 
 	cv.notify_one();
@@ -48,7 +48,7 @@ void CaptionStream::PushAudio(const void *data, size_t frames)
 	bool ready = false;
 
 	lock_guard<mutex> lock(m);
-	circlebuf_push_back(buf, data, frames * sizeof(int16_t));
+	deque_push_back(buf, data, frames * sizeof(int16_t));
 	write_pos += frames * sizeof(int16_t);
 
 	if (wait_size && buf->size >= wait_size)
@@ -126,7 +126,7 @@ STDMETHODIMP CaptionStream::Read(void *data, ULONG bytes, ULONG *read_bytes)
 		hr = S_FALSE;
 	}
 	if (bytes)
-		circlebuf_pop_front(buf, data, bytes);
+		deque_pop_front(buf, data, bytes);
 	if (read_bytes)
 		*read_bytes = bytes;
 
@@ -182,7 +182,7 @@ STDMETHODIMP CaptionStream::CopyTo(IStream *stream, ULARGE_INTEGER bytes,
 
 	lock_guard<mutex> lock(m);
 	temp_buf.resize((size_t)bytes.QuadPart);
-	circlebuf_peek_front(buf, &temp_buf[0], (size_t)bytes.QuadPart);
+	deque_peek_front(buf, &temp_buf[0], (size_t)bytes.QuadPart);
 
 	hr = stream->Write(temp_buf.data(), (ULONG)bytes.QuadPart, &written);
 
@@ -301,7 +301,7 @@ STDMETHODIMP CaptionStream::SetFormat(REFGUID guid_ref,
 		/* 50 msec */
 		DWORD size = format.nSamplesPerSec / 20;
 		DWORD byte_size = size * format.nBlockAlign;
-		circlebuf_reserve(buf, (size_t)byte_size);
+		deque_reserve(buf, (size_t)byte_size);
 	}
 	return S_OK;
 }

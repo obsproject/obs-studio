@@ -3,7 +3,7 @@ project(image-source)
 add_library(image-source MODULE)
 add_library(OBS::image-source ALIAS image-source)
 
-target_sources(image-source PRIVATE image-source.c color-source.c obs-slideshow.c)
+target_sources(image-source PRIVATE image-source.c color-source.c obs-slideshow.c obs-slideshow-mk2.c)
 
 target_link_libraries(image-source PRIVATE OBS::libobs)
 

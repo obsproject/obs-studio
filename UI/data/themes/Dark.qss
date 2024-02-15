@@ -797,31 +797,31 @@ OBSBasicSettings QListWidget::item {
 
 /* Locked CheckBox */
 
-LockedCheckBox {
+QCheckBox[lockCheckBox=true] {
     outline: none;
     background: transparent;
 }
 
-LockedCheckBox::indicator:checked {
+QCheckBox[lockCheckBox=true]::indicator:checked {
     image: url(theme:Dark/locked.svg);
 }
 
-LockedCheckBox::indicator:unchecked {
+QCheckBox[lockCheckBox=true]::indicator:unchecked {
     image: url(:res/images/unlocked.svg);
 }
 
 /* Visibility CheckBox */
 
-VisibilityCheckBox {
+QCheckBox[visibilityCheckBox=true] {
     outline: none;
     background: transparent;
 }
 
-VisibilityCheckBox::indicator:checked {
+QCheckBox[visibilityCheckBox=true]::indicator:checked {
     image: url(theme:Dark/visible.svg);
 }
 
-VisibilityCheckBox::indicator:unchecked {
+QCheckBox[visibilityCheckBox=true]::indicator:unchecked {
     image: url(:res/images/invisible.svg);
 }
 

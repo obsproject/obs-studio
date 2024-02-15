@@ -1,5 +1,6 @@
 #include <obs-module.h>
 #include <graphics/image-file.h>
+#include <util/threading.h>
 #include <util/platform.h>
 #include <util/dstr.h>
 #include <sys/stat.h>
@@ -17,12 +18,15 @@ struct image_source {
 
 	char *file;
 	bool persistent;
+	bool is_slide;
 	bool linear_alpha;
 	time_t file_timestamp;
 	float update_time_elapsed;
 	uint64_t last_time;
 	bool active;
 	bool restart_gif;
+	volatile bool file_decoded;
+	volatile bool texture_loaded;
 
 	gs_image_file4_t if4;
 };
@@ -41,37 +45,57 @@ static const char *image_source_get_name(void *unused)
 	return obs_module_text("ImageInput");
 }
 
-static void image_source_load(struct image_source *context)
+void image_source_preload_image(void *data)
 {
-	char *file = context->file;
+	struct image_source *context = data;
+	if (os_atomic_load_bool(&context->file_decoded))
+		return;
 
-	obs_enter_graphics();
-	gs_image_file4_free(&context->if4);
-	obs_leave_graphics();
-
-	if (file && *file) {
-		debug("loading texture '%s'", file);
-		context->file_timestamp = get_modified_timestamp(file);
-		gs_image_file4_init(&context->if4, file,
-				    context->linear_alpha
-					    ? GS_IMAGE_ALPHA_PREMULTIPLY_SRGB
-					    : GS_IMAGE_ALPHA_PREMULTIPLY);
-		context->update_time_elapsed = 0;
-
-		obs_enter_graphics();
-		gs_image_file4_init_texture(&context->if4);
-		obs_leave_graphics();
-
-		if (!context->if4.image3.image2.image.loaded)
-			warn("failed to load texture '%s'", file);
-	}
+	context->file_timestamp = get_modified_timestamp(context->file);
+	gs_image_file4_init(&context->if4, context->file,
+			    context->linear_alpha
+				    ? GS_IMAGE_ALPHA_PREMULTIPLY_SRGB
+				    : GS_IMAGE_ALPHA_PREMULTIPLY);
+	os_atomic_set_bool(&context->file_decoded, true);
 }
 
-static void image_source_unload(struct image_source *context)
+static void image_source_load_texture(void *data)
 {
+	struct image_source *context = data;
+	if (os_atomic_load_bool(&context->texture_loaded))
+		return;
+
+	debug("loading texture '%s'", context->file);
+
+	obs_enter_graphics();
+	gs_image_file4_init_texture(&context->if4);
+	obs_leave_graphics();
+
+	if (!context->if4.image3.image2.image.loaded)
+		warn("failed to load texture '%s'", context->file);
+	context->update_time_elapsed = 0;
+	os_atomic_set_bool(&context->texture_loaded, true);
+}
+
+static void image_source_unload(void *data)
+{
+	struct image_source *context = data;
+	os_atomic_set_bool(&context->file_decoded, false);
+	os_atomic_set_bool(&context->texture_loaded, false);
+
 	obs_enter_graphics();
 	gs_image_file4_free(&context->if4);
 	obs_leave_graphics();
+}
+
+static void image_source_load(struct image_source *context)
+{
+	image_source_unload(context);
+
+	if (context->file && *context->file) {
+		image_source_preload_image(context);
+		image_source_load_texture(context);
+	}
 }
 
 static void image_source_update(void *data, obs_data_t *settings)
@@ -80,12 +104,17 @@ static void image_source_update(void *data, obs_data_t *settings)
 	const char *file = obs_data_get_string(settings, "file");
 	const bool unload = obs_data_get_bool(settings, "unload");
 	const bool linear_alpha = obs_data_get_bool(settings, "linear_alpha");
+	const bool is_slide = obs_data_get_bool(settings, "is_slide");
 
 	if (context->file)
 		bfree(context->file);
 	context->file = bstrdup(file);
 	context->persistent = !unload;
 	context->linear_alpha = linear_alpha;
+	context->is_slide = is_slide;
+
+	if (is_slide)
+		return;
 
 	/* Load the image if the source is persistent or showing */
 	if (context->persistent || obs_source_showing(context->source))
@@ -104,7 +133,7 @@ static void image_source_show(void *data)
 {
 	struct image_source *context = data;
 
-	if (!context->persistent)
+	if (!context->persistent && !context->is_slide)
 		image_source_load(context);
 }
 
@@ -112,7 +141,7 @@ static void image_source_hide(void *data)
 {
 	struct image_source *context = data;
 
-	if (!context->persistent)
+	if (!context->persistent && !context->is_slide)
 		image_source_unload(context);
 }
 
@@ -174,6 +203,8 @@ static uint32_t image_source_getheight(void *data)
 static void image_source_render(void *data, gs_effect_t *effect)
 {
 	struct image_source *context = data;
+	if (!os_atomic_load_bool(&context->texture_loaded))
+		return;
 
 	struct gs_image_file *const image = &context->if4.image3.image2.image;
 	gs_texture_t *const texture = image->texture;
@@ -199,6 +230,13 @@ static void image_source_render(void *data, gs_effect_t *effect)
 static void image_source_tick(void *data, float seconds)
 {
 	struct image_source *context = data;
+	if (!os_atomic_load_bool(&context->texture_loaded)) {
+		if (os_atomic_load_bool(&context->file_decoded))
+			image_source_load_texture(context);
+		else
+			return;
+	}
+
 	uint64_t frame_time = obs_get_video_frame_time();
 
 	context->update_time_elapsed += seconds;
@@ -373,6 +411,7 @@ MODULE_EXPORT const char *obs_module_description(void)
 }
 
 extern struct obs_source_info slideshow_info;
+extern struct obs_source_info slideshow_info_mk2;
 extern struct obs_source_info color_source_info_v1;
 extern struct obs_source_info color_source_info_v2;
 extern struct obs_source_info color_source_info_v3;
@@ -384,5 +423,6 @@ bool obs_module_load(void)
 	obs_register_source(&color_source_info_v2);
 	obs_register_source(&color_source_info_v3);
 	obs_register_source(&slideshow_info);
+	obs_register_source(&slideshow_info_mk2);
 	return true;
 }

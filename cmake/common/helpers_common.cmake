@@ -2,10 +2,7 @@
 
 # cmake-format: off
 # cmake-lint: disable=C0103
-# cmake-lint: disable=C0301
-# cmake-lint: disable=C0307
-# cmake-lint: disable=R0912
-# cmake-lint: disable=R0915
+# cmake-lint: disable=E1121
 # cmake-format: on
 
 include_guard(GLOBAL)
@@ -156,6 +153,74 @@ macro(find_qt)
   endforeach()
 endmacro()
 
+# _handle_generator_expression_dependency: Helper function to yield dependency from a generator expression
+function(_handle_generator_expression_dependency library)
+  set(oneValueArgs FOUND_VAR)
+  set(multiValueArgs)
+  cmake_parse_arguments(var "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+  set(${var_FOUND_VAR} "${var_FOUND_VAR}-NOTFOUND")
+
+  message(DEBUG "Checking ${library}...")
+
+  if(library MATCHES "\\$<\\$<PLATFORM_ID:[^>]+>:.+>" OR library MATCHES "\\$<\\$<NOT:\\$<PLATFORM_ID:[^>]+>>:.+>")
+    # Platform-dependent generator expression found. Platforms are a comma-separated list of CMake host OS identifiers.
+    # Convert to CMake list and check if current host OS is contained in list.
+    string(REGEX REPLACE "\\$<.*\\$<PLATFORM_ID:([^>]+)>>?:([^>]+)>" "\\1;\\2" gen_expression "${library}")
+    list(GET gen_expression 0 gen_platform)
+    list(GET gen_expression 1 gen_library)
+    string(REPLACE "," ";" gen_platform "${gen_platform}")
+
+    set(${var_FOUND_VAR} "${var_FOUND_VAR}-SKIP")
+
+    if(library MATCHES "\\$<\\$<NOT:.+>.+>")
+      if(NOT CMAKE_SYSTEM_NAME IN_LIST gen_platform)
+        set(${var_FOUND_VAR} "${gen_library}")
+      endif()
+    else()
+      if(CMAKE_SYSTEM_NAME IN_LIST gen_platform)
+        set(${var_FOUND_VAR} "${gen_library}")
+      endif()
+    endif()
+  elseif(library MATCHES "\\$<\\$<BOOL:[^>]+>:.+>")
+    # Boolean generator expression found. Consider parameter a CMake variable that resolves into a CMake-like boolean
+    # value for a simple conditional check.
+    string(REGEX REPLACE "\\$<\\$<BOOL:([^>]+)>:([^>]+)>" "\\1;\\2" gen_expression "${library}")
+    list(GET gen_expression 0 gen_boolean)
+    list(GET gen_expression 1 gen_library)
+
+    set(${var_FOUND_VAR} "${var_FOUND_VAR}-SKIP")
+
+    if(${gen_boolean})
+      set(${var_FOUND_VAR} "${gen_library}")
+    endif()
+  elseif(library MATCHES "\\$<TARGET_NAME_IF_EXISTS:[^>]+>")
+    # Target-dependent generator expression found. Consider parameter to be a CMake target identifier and check for
+    # target existence.
+    string(REGEX REPLACE "\\$<TARGET_NAME_IF_EXISTS:([^>]+)>" "\\1" gen_target "${library}")
+
+    set(${var_FOUND_VAR} "${var_FOUND_VAR}-SKIP")
+
+    if(TARGET ${gen_target})
+      set(${var_FOUND_VAR} "${gen_target}")
+    endif()
+  elseif(library MATCHES "\\$<.*Qt6::EntryPointPrivate>" OR library MATCHES "\\$<.*Qt6::QDarwin.+PermissionPlugin>")
+    set(${var_FOUND_VAR} "${var_FOUND_VAR}-SKIP")
+  else()
+    # Unknown or unimplemented generator expression found. Abort script run to either add to ignore list or implement
+    # detection.
+    message(FATAL_ERROR "${library} is an unsupported generator expression for linked libraries.")
+  endif()
+
+  if(CMAKE_VERSION VERSION_LESS 3.25)
+    set(${var_FOUND_VAR}
+        ${var_FOUND_VAR}
+        PARENT_SCOPE)
+  else()
+    return(PROPAGATE ${var_FOUND_VAR})
+  endif()
+endfunction()
+
 # find_dependencies: Check linked interface and direct dependencies of target
 function(find_dependencies)
   set(oneValueArgs TARGET FOUND_VAR)
@@ -188,45 +253,11 @@ function(find_dependencies)
       continue()
     elseif(library MATCHES "\\$<.*:[^>]+>")
       # Generator expression found
-      if(library MATCHES "\\$<\\$<PLATFORM_ID:[^>]+>:.+>")
-        # Platform-dependent generator expression found - platforms are a comma-separated list of CMake host OS
-        # identifiers. Convert to CMake list and check if current host os is contained in list.
-        string(REGEX REPLACE "\\$<\\$<PLATFORM_ID:([^>]+)>:([^>]+)>" "\\1;\\2" gen_expression "${library}")
-        list(GET gen_expression 0 gen_platform)
-        list(GET gen_expression 1 gen_library)
-        string(REPLACE "," ";" gen_platform "${gen_platform}")
-        if(CMAKE_SYSTEM_NAME IN_LIST platform)
-          set(library "${gen_library}")
-        else()
-          continue()
-        endif()
-      elseif(library MATCHES "\\$<\\$<BOOL:[^>]+>:.+>")
-        # Boolean generator expression found - consider parameter a CMake variable that resolves into a CMake-like
-        # boolean value for a simple conditional check.
-        string(REGEX REPLACE "\\$<\\$<BOOL:([^>]+)>:([^>]+)>" "\\1;\\2" gen_expression "${library}")
-        list(GET gen_expression 0 gen_boolean)
-        list(GET gen_expression 1 gen_library)
-        if(${gen_boolean})
-          set(library "${gen_library}")
-        else()
-          continue()
-        endif()
-      elseif(library MATCHES "\\$<TARGET_NAME_IF_EXISTS:[^>]+>")
-        # Target-dependent generator expression found - consider parameter to be a CMake target identifier and check for
-        # target existence.
-        string(REGEX REPLACE "\\$<TARGET_NAME_IF_EXISTS:([^>]+)>" "\\1" gen_target "${library}")
-        if(TARGET ${gen_target})
-          set(library "${gen_target}")
-        else()
-          continue()
-        endif()
-      elseif(library MATCHES "\\$<.*Qt6::EntryPointPrivate>" OR library MATCHES "\\$<.*Qt6::QDarwin.+PermissionPlugin>")
-        # Known Qt6-specific generator expression, ignored.
+      _handle_generator_expression_dependency(${library} FOUND_VAR found_library)
+      if(found_library STREQUAL found_library-SKIP)
         continue()
-      else()
-        # Unknown or unimplemented generator expression found - abort script run to either add to ignore list or
-        # implement detection.
-        message(FATAL_ERROR "${library} is an unsupported generator expression for linked libraries.")
+      elseif(found_library)
+        set(library ${found_library})
       endif()
     endif()
 
@@ -240,18 +271,18 @@ function(find_dependencies)
   endforeach()
 
   if(NOT is_root)
-    set(found_libraries
-        ${found_libraries}
-        PARENT_SCOPE)
+    # cmake-format: off
+    set(found_libraries ${found_libraries} PARENT_SCOPE)
+    # cmake-format: on
     # Exit recursive branch
     return()
   endif()
 
   list(REMOVE_DUPLICATES found_libraries)
   list(APPEND ${var_FOUND_VAR} ${found_libraries})
-  set(${var_FOUND_VAR}
-      ${${var_FOUND_VAR}}
-      PARENT_SCOPE)
+  # cmake-format: off
+  set(${var_FOUND_VAR} ${${var_FOUND_VAR}} PARENT_SCOPE)
+  # cmake-format: on
 endfunction()
 
 # find_qt_plugins: Find and add Qt plugin libraries associated with Qt component to target
@@ -263,18 +294,13 @@ function(find_qt_plugins)
   list(GET library_tuple 0 library_namespace)
   list(GET library_tuple 1 library_name)
 
-  if(NOT ${library_namespace} MATCHES "Qt[56]?")
-    message(FATAL_ERROR "'find_qt_plugins' has to be called with a valid target from the Qt, Qt5, or Qt6 namespace.")
+  if(NOT ${library_namespace} MATCHES "Qt6?")
+    message(FATAL_ERROR "'find_qt_plugins' has to be called with a valid target from the Qt or Qt6 namespace.")
   endif()
 
-  list(
-    APPEND
-    qt_plugins_Core
-    platforms
-    printsupport
-    styles
-    imageformats
-    iconengines)
+  # cmake-format: off
+  list(APPEND qt_plugins_Core platforms printsupport styles imageformats iconengines)
+  # cmake-format: on
   list(APPEND qt_plugins_Gui platforminputcontexts virtualkeyboard)
   list(APPEND qt_plugins_Network bearer)
   list(APPEND qt_plugins_Sql sqldrivers)
@@ -318,9 +344,9 @@ function(find_qt_plugins)
     endforeach()
   endif()
 
-  set(${var_FOUND_VAR}
-      ${plugins_list}
-      PARENT_SCOPE)
+  # cmake-format: off
+  set(${var_FOUND_VAR} ${plugins_list} PARENT_SCOPE)
+  # cmake-format: on
 endfunction()
 
 # target_export: Helper function to export target as CMake package
@@ -400,15 +426,19 @@ function(target_export target)
       ${exclude_variant})
   endif()
 
-  message(DEBUG "Generating export header for target ${target} as ${target}_EXPORT.h...")
-  include(GenerateExportHeader)
-  generate_export_header(${target} EXPORT_FILE_NAME "${target}_EXPORT.h")
-  target_sources(${target} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/${target}_EXPORT.h>)
+  get_target_property(target_type ${target} TYPE)
 
-  set_property(
-    TARGET ${target}
-    APPEND
-    PROPERTY PUBLIC_HEADER "${target}_EXPORT.h")
+  if(NOT target_type STREQUAL INTERFACE_LIBRARY)
+    message(DEBUG "Generating export header for target ${target} as ${target}_EXPORT.h...")
+    include(GenerateExportHeader)
+    generate_export_header(${target} EXPORT_FILE_NAME "${target}_EXPORT.h")
+    target_sources(${target} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/${target}_EXPORT.h>)
+
+    set_property(
+      TARGET ${target}
+      APPEND
+      PROPERTY PUBLIC_HEADER "${target}_EXPORT.h")
+  endif()
 
   set(TARGETS_EXPORT_NAME ${target}Targets)
   message(
@@ -476,14 +506,44 @@ function(check_uuid uuid_string return_value)
     set(valid_uuid FALSE)
   endif()
   message(DEBUG "UUID ${uuid_string} valid: ${valid_uuid}")
-  set(${return_value}
-      ${valid_uuid}
-      PARENT_SCOPE)
+  # cmake-format: off
+  set(${return_value} ${valid_uuid} PARENT_SCOPE)
+  # cmake-format: on
 endfunction()
 
-# legacy_check: Checks if new CMake framework was not enabled and load legacy rules instead
+# legacy_check: Check if new CMake framework was not enabled and load legacy rules instead
 macro(legacy_check)
   if(OBS_CMAKE_VERSION VERSION_LESS 3.0.0)
     message(FATAL_ERROR "CMake version changed between CMakeLists.txt.")
   endif()
 endmacro()
+
+# add_obs_plugin: Add plugin subdirectory if host platform is in specified list of supported platforms
+function(add_obs_plugin target)
+  set(options WITH_MESSAGE)
+  set(oneValueArgs "")
+  set(multiValueArgs PLATFORMS)
+  cmake_parse_arguments(PARSE_ARGV 0 _AOP "${options}" "${oneValueArgs}" "${multiValueArgs}")
+
+  set(found_platform FALSE)
+  list(LENGTH _AOP_PLATFORMS _AOP_NUM_PLATFORMS)
+
+  if(_AOP_NUM_PLATFORMS EQUAL 0)
+    set(found_platform TRUE)
+  else()
+    foreach(platform IN LISTS _AOP_PLATFORMS)
+      set(check_var_name "OS_${platform}")
+      if(${${check_var_name}})
+        set(found_platform TRUE)
+        break()
+      endif()
+    endforeach()
+  endif()
+
+  if(found_platform)
+    add_subdirectory(${target})
+  elseif(_AOP_WITH_MESSAGE)
+    add_custom_target(${target} COMMENT "Dummy target for unavailable module ${target}")
+    target_disable(${target})
+  endif()
+endfunction()

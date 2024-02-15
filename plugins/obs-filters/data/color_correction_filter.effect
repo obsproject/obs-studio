@@ -47,7 +47,7 @@ float4 PSColorFilterRGBA(VertData vert_in) : TARGET
 {
 	/* Grab the current pixel to perform operations on. */
 	float4 currentPixel = image.Sample(textureSampler, vert_in.uv);
-	currentPixel.rgb = max(float3(0.0, 0.0, 0.0), currentPixel.rgb / currentPixel.a);
+	currentPixel.rgb *= (currentPixel.a > 0.) ? (1. / currentPixel.a) : 0.;
 
 	/* Always address the gamma first. */
 	currentPixel.rgb = pow(currentPixel.rgb, float3(gamma, gamma, gamma));

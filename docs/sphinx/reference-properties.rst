@@ -75,6 +75,18 @@ General Functions
 
 ---------------------
 
+.. function:: void obs_properties_remove_by_name(obs_properties_t *props, const char *property)
+
+   Removes a property from a properties list. Only valid in ``get_properties``,
+   ``script_properties`` for scripts, ``modified_callback``, and ``modified_callback2``.
+   ``modified_callback`` and ``modified_callback2`` *must* return true so that
+   all UI properties are rebuilt. Returning false is undefined behavior.
+
+   :param props:    Properties to remove from.
+   :param property: Name of the property to remove.
+
+---------------------
+
 
 Property Object Functions
 -------------------------
@@ -248,6 +260,9 @@ Property Object Functions
    Adds a button property.  This property does not actually store any
    settings; it's used to implement a button in user interface if the
    properties are used to generate user interface.
+
+   If the properties need to be refreshed due to changes to the property layout,
+   the callback should return true, otherwise return false.
 
    :param    name:        Setting identifier string
    :param    text:        Localized name shown to user
@@ -436,6 +451,10 @@ Property Enumeration Functions
 
 ---------------------
 
+.. function:: const char *           obs_property_int_suffix(obs_property_t *p)
+
+---------------------
+
 .. function:: double                 obs_property_float_min(obs_property_t *p)
 
 ---------------------
@@ -452,7 +471,19 @@ Property Enumeration Functions
 
 ---------------------
 
+.. function:: const char *           obs_property_float_suffix(obs_property_t *p)
+
+---------------------
+
 .. function:: enum obs_text_type     obs_property_text_type(obs_property_t *p)
+
+---------------------
+
+.. function:: bool                   obs_property_text_monospace(obs_property_t *p)
+
+   Returns whether the input of the text property should be rendered
+   with a monospace font or not. Only has an effect if the text type
+   of the property is ``OBS_TEXT_MULTILINE``, even if this returns *true*.
 
 ---------------------
 
@@ -635,6 +666,30 @@ Property Modification Functions
 ---------------------
 
 .. function:: void obs_property_float_set_limits(obs_property_t *p, double min, double max, double step)
+
+---------------------
+
+.. function:: void obs_property_int_set_suffix(obs_property_t *p, const char *suffix)
+
+   Adds a suffix to the int property, such that 100 will show up
+   as "100ms" if the suffix is "ms". The user will only be able
+   to edit the number, not the suffix.
+
+---------------------
+
+.. function:: void obs_property_float_set_suffix(obs_property_t *p, const char *suffix)
+
+   Adds a suffix to the float property, such that 1.5 will show up
+   as "1.5s" if the suffix is "s". The user will only be able
+   to edit the number, not the suffix.
+
+---------------------
+
+.. function:: void obs_property_text_set_monospace(obs_property_t *p, bool monospace)
+
+   Sets whether the input of text property should be rendered with
+   a monospace font or not. Only has an effect if the text type of
+   the property is ``OBS_TEXT_MULTILINE``.
 
 ---------------------
 

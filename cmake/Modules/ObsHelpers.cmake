@@ -251,10 +251,13 @@ function(export_target target)
       COMPONENT obs_libraries
       ${_EXCLUDE})
 
-  include(GenerateExportHeader)
-  generate_export_header(${target} EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/${target}_EXPORT.h)
+  get_target_property(target_type ${target} TYPE)
+  if(NOT target_type STREQUAL INTERFACE_LIBRARY)
+    include(GenerateExportHeader)
+    generate_export_header(${target} EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/${target}_EXPORT.h)
 
-  target_sources(${target} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/${target}_EXPORT.h)
+    target_sources(${target} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/${target}_EXPORT.h)
+  endif()
 
   set(TARGETS_EXPORT_NAME "${target}Targets")
   include(CMakePackageConfigHelpers)

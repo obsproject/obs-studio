@@ -86,13 +86,6 @@ float4 PSDrawLowresBilinearRGBAMultiplyTonemap(VertData f_in) : TARGET
 	return rgba;
 }
 
-float4 PSDrawLowresBilinearRGBADivide(VertData f_in) : TARGET
-{
-	float4 rgba = DrawLowresBilinear(f_in);
-	rgba.rgb *= max(1. / rgba.a, 0.);
-	return rgba;
-}
-
 technique Draw
 {
 	pass
@@ -126,14 +119,5 @@ technique DrawMultiplyTonemap
 	{
 		vertex_shader = VSDefault(v_in);
 		pixel_shader  = PSDrawLowresBilinearRGBAMultiplyTonemap(f_in);
-	}
-}
-
-technique DrawAlphaDivide
-{
-	pass
-	{
-		vertex_shader = VSDefault(v_in);
-		pixel_shader  = PSDrawLowresBilinearRGBADivide(f_in);
 	}
 }

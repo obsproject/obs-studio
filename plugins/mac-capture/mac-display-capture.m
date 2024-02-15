@@ -4,13 +4,7 @@
 #include <pthread.h>
 
 #import <AvailabilityMacros.h>
-
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 140000
 #import <CoreGraphics/CGDisplayStream.h>
-#else
-#import "CGDisplayStream.h"
-#endif
-
 #import <Cocoa/Cocoa.h>
 
 #include "window-utils.h"
