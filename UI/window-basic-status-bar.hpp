@@ -28,6 +28,7 @@ private:
 	StatusBarWidget *statusWidget = nullptr;
 
 	obs_output_t *streamOutput = nullptr;
+	std::vector<OBSSignal> streamSigs;
 	obs_output_t *recordOutput = nullptr;
 	bool active = false;
 	bool overloadedNotify = true;
