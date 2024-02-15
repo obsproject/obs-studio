@@ -1708,6 +1708,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 
 	config_set_default_string(basicConfig, "Output", "FilenameFormatting",
 				  "%CCYY-%MM-%DD %hh-%mm-%ss");
+	config_set_default_bool(basicConfig, "Output", "ClipboardScreenshot",
+				true);
 
 	config_set_default_bool(basicConfig, "Output", "DelayEnable", false);
 	config_set_default_uint(basicConfig, "Output", "DelaySec", 20);

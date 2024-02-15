@@ -18,6 +18,7 @@
 #include "window-basic-main.hpp"
 #include "screenshot-obj.hpp"
 #include "qt-wrappers.hpp"
+#include <qclipboard.h>
 
 #ifdef _WIN32
 #include <wincodec.h>
@@ -30,8 +31,9 @@ static void ScreenshotTick(void *param, float);
 
 /* ========================================================================= */
 
-ScreenshotObj::ScreenshotObj(obs_source_t *source)
-	: weakSource(OBSGetWeakRef(source))
+ScreenshotObj::ScreenshotObj(obs_source_t *source, bool clipboard)
+	: weakSource(OBSGetWeakRef(source)),
+	  use_clipboard(clipboard)
 {
 	obs_add_tick_callback(ScreenshotTick, this);
 }
@@ -39,8 +41,14 @@ ScreenshotObj::ScreenshotObj(obs_source_t *source)
 ScreenshotObj::~ScreenshotObj()
 {
 	obs_enter_graphics();
-	gs_stagesurface_destroy(stagesurf);
-	gs_texrender_destroy(texrender);
+	if (stagesurf_hdr)
+		gs_stagesurface_destroy(stagesurf_hdr);
+	if (texrender_hdr)
+		gs_texrender_destroy(texrender_hdr);
+	if (stagesurf_sdr)
+		gs_stagesurface_destroy(stagesurf_sdr);
+	if (texrender_sdr)
+		gs_texrender_destroy(texrender_sdr);
 	obs_leave_graphics();
 
 	obs_remove_tick_callback(ScreenshotTick, this);
@@ -48,18 +56,19 @@ ScreenshotObj::~ScreenshotObj()
 	if (th.joinable()) {
 		th.join();
 
-		if (cx && cy) {
-			OBSBasic *main = OBSBasic::Get();
-			main->ShowStatusBarMessage(
-				QTStr("Basic.StatusBar.ScreenshotSavedTo")
-					.arg(QT_UTF8(path.c_str())));
+		OBSBasic *main = OBSBasic::Get();
+		const char *const format =
+			use_clipboard
+				? "Basic.StatusBar.ScreenshotSavedToClipboard"
+				: "Basic.StatusBar.ScreenshotSavedTo";
+		main->ShowStatusBarMessage(
+			QTStr(format).arg(QT_UTF8(path.c_str())));
 
-			main->lastScreenshot = path;
+		main->lastScreenshot = path;
 
-			if (main->api)
-				main->api->on_event(
-					OBS_FRONTEND_EVENT_SCREENSHOT_TAKEN);
-		}
+		if (main->api)
+			main->api->on_event(
+				OBS_FRONTEND_EVENT_SCREENSHOT_TAKEN);
 	}
 }
 
@@ -97,10 +106,17 @@ void ScreenshotObj::Screenshot()
 #endif
 	const enum gs_color_format format = gs_get_format_from_space(space);
 
-	texrender = gs_texrender_create(format, GS_ZS_NONE);
-	stagesurf = gs_stagesurface_create(cx, cy, format);
+	if (use_clipboard || space == GS_CS_SRGB) {
+		texrender_sdr = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
+		stagesurf_sdr = gs_stagesurface_create(cx, cy, GS_RGBA);
+	}
+	if (space == GS_CS_709_SCRGB) {
+		texrender_hdr = gs_texrender_create(format, GS_ZS_NONE);
+		stagesurf_hdr = gs_stagesurface_create(cx, cy, format);
+	}
 
-	if (gs_texrender_begin_with_color_space(texrender, cx, cy, space)) {
+	if (texrender_sdr && gs_texrender_begin_with_color_space(
+				     texrender_sdr, cx, cy, GS_CS_SRGB)) {
 		vec4 zero;
 		vec4_zero(&zero);
 
@@ -119,13 +135,44 @@ void ScreenshotObj::Screenshot()
 		}
 
 		gs_blend_state_pop();
-		gs_texrender_end(texrender);
+		gs_texrender_end(texrender_sdr);
+	}
+
+	if (texrender_hdr &&
+	    gs_texrender_begin_with_color_space(texrender_hdr, cx, cy, space)) {
+		vec4 zero;
+		vec4_zero(&zero);
+
+		gs_clear(GS_CLEAR_COLOR, &zero, 0.0f, 0);
+		gs_ortho(0.0f, (float)cx, 0.0f, (float)cy, -100.0f, 100.0f);
+
+		gs_blend_state_push();
+		gs_blend_function(GS_BLEND_ONE, GS_BLEND_ZERO);
+
+		if (source) {
+			obs_source_inc_showing(source);
+			obs_source_video_render(source);
+			obs_source_dec_showing(source);
+		} else {
+			obs_render_main_texture();
+		}
+
+		gs_blend_state_pop();
+		gs_texrender_end(texrender_hdr);
 	}
 }
 
 void ScreenshotObj::Download()
 {
-	gs_stage_texture(stagesurf, gs_texrender_get_texture(texrender));
+	if (stagesurf_sdr) {
+		gs_stage_texture(stagesurf_sdr,
+				 gs_texrender_get_texture(texrender_sdr));
+	}
+
+	if (stagesurf_hdr) {
+		gs_stage_texture(stagesurf_hdr,
+				 gs_texrender_get_texture(texrender_hdr));
+	}
 }
 
 void ScreenshotObj::Copy()
@@ -133,33 +180,42 @@ void ScreenshotObj::Copy()
 	uint8_t *videoData = nullptr;
 	uint32_t videoLinesize = 0;
 
-	if (gs_stagesurface_map(stagesurf, &videoData, &videoLinesize)) {
-		if (gs_stagesurface_get_color_format(stagesurf) == GS_RGBA16F) {
-			const uint32_t linesize = cx * 8;
-			half_bytes.reserve(cx * cy * 8);
+	if (stagesurf_sdr &&
+	    gs_stagesurface_map(stagesurf_sdr, &videoData, &videoLinesize)) {
+		image = QImage(cx, cy, QImage::Format::Format_RGBX8888);
 
-			for (uint32_t y = 0; y < cy; y++) {
-				const uint8_t *const line =
-					videoData + (y * videoLinesize);
-				half_bytes.insert(half_bytes.end(), line,
-						  line + linesize);
-			}
-		} else {
-			image = QImage(cx, cy, QImage::Format::Format_RGBX8888);
+		int linesize = image.bytesPerLine();
+		for (int y = 0; y < (int)cy; y++)
+			memcpy(image.scanLine(y),
+			       videoData + (y * videoLinesize), linesize);
 
-			int linesize = image.bytesPerLine();
-			for (int y = 0; y < (int)cy; y++)
-				memcpy(image.scanLine(y),
-				       videoData + (y * videoLinesize),
-				       linesize);
+		gs_stagesurface_unmap(stagesurf_sdr);
+	}
+
+	if (stagesurf_hdr &&
+	    gs_stagesurface_map(stagesurf_hdr, &videoData, &videoLinesize)) {
+		const uint32_t linesize = cx * 8;
+		half_bytes.reserve(cx * cy * 8);
+
+		for (uint32_t y = 0; y < cy; y++) {
+			const uint8_t *const line =
+				videoData + (y * videoLinesize);
+			half_bytes.insert(half_bytes.end(), line,
+					  line + linesize);
 		}
 
-		gs_stagesurface_unmap(stagesurf);
+		gs_stagesurface_unmap(stagesurf_hdr);
 	}
 }
 
 void ScreenshotObj::Save()
 {
+	if (use_clipboard) {
+		QClipboard *const clipboard = QApplication::clipboard();
+		clipboard->setImage(image);
+		blog(LOG_INFO, "Saved screenshot to clipboard");
+	}
+
 	OBSBasic *main = OBSBasic::Get();
 	config_t *config = main->Config();
 
@@ -338,13 +394,14 @@ static void ScreenshotTick(void *param, float)
 
 void OBSBasic::Screenshot(OBSSource source)
 {
-	if (!!screenshotData) {
+	if (screenshotData) {
 		blog(LOG_WARNING, "Cannot take new screenshot, "
 				  "screenshot currently in progress");
-		return;
+	} else {
+		screenshotData = new ScreenshotObj(
+			source, config_get_bool(basicConfig, "Output",
+						"ClipboardScreenshot"));
 	}
-
-	screenshotData = new ScreenshotObj(source);
 }
 
 void OBSBasic::ScreenshotSelectedSource()
