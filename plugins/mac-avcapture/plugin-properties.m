@@ -289,12 +289,13 @@ bool properties_update_config(OBSAVCaptureInfo *capture, obs_properties_t *prope
     obs_property_t *prop_color_space = NULL;
     obs_property_t *prop_video_range = NULL;
 
+    prop_input_format = obs_properties_get(properties, "input_format");
+    obs_property_list_clear(prop_input_format);
+
     if (!captureInstance.isFastPath) {
-        prop_input_format = obs_properties_get(properties, "input_format");
         prop_color_space = obs_properties_get(properties, "color_space");
         prop_video_range = obs_properties_get(properties, "video_range");
 
-        obs_property_list_clear(prop_input_format);
         obs_property_list_clear(prop_video_range);
         obs_property_list_clear(prop_color_space);
     }
@@ -320,12 +321,13 @@ bool properties_update_config(OBSAVCaptureInfo *capture, obs_properties_t *prope
     NSMutableArray *colorSpaces = NULL;
     NSMutableArray *videoRanges = NULL;
 
+    input_format = (int) obs_data_get_int(settings, "input_format");
+    inputFormats = [[NSMutableArray alloc] init];
+
     if (!captureInstance.isFastPath) {
-        input_format = (int) obs_data_get_int(settings, "input_format");
         color_space = (int) obs_data_get_int(settings, "color_space");
         video_range = (int) obs_data_get_int(settings, "video_range");
 
-        inputFormats = [[NSMutableArray alloc] init];
         colorSpaces = [[NSMutableArray alloc] init];
         videoRanges = [[NSMutableArray alloc] init];
     }
@@ -335,7 +337,7 @@ bool properties_update_config(OBSAVCaptureInfo *capture, obs_properties_t *prope
 
     BOOL hasFoundResolution = NO;
     BOOL hasFoundFramerate = NO;
-    BOOL hasFoundInputFormat = captureInstance.isFastPath;
+    BOOL hasFoundInputFormat = NO;
     BOOL hasFoundColorSpace = captureInstance.isFastPath;
     BOOL hasFoundVideoRange = captureInstance.isFastPath;
 
@@ -388,6 +390,20 @@ bool properties_update_config(OBSAVCaptureInfo *capture, obs_properties_t *prope
                 if (!hasFoundColorSpace && device_color_space == color_space) {
                     hasFoundColorSpace = YES;
                 }
+            } else {
+                FourCharCode formatSubType = CMFormatDescriptionGetMediaSubType(format.formatDescription);
+
+                NSString *formatDescription = [OBSAVCapture stringFromSubType:formatSubType];
+                int device_format = [OBSAVCapture formatFromSubtype:formatSubType];
+
+                if (!hasFoundInputFormat && input_format == device_format) {
+                    hasFoundInputFormat = YES;
+                }
+
+                if (![inputFormats containsObject:@(formatSubType)]) {
+                    obs_property_list_add_int(prop_input_format, formatDescription.UTF8String, device_format);
+                    [inputFormats addObject:@(formatSubType)];
+                }
             }
 
             CMVideoDimensions formatDimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription);
@@ -406,23 +422,28 @@ bool properties_update_config(OBSAVCaptureInfo *capture, obs_properties_t *prope
             }
 
             // Only iterate over available framerates if input format, color space, and resolution are matching
-            if (hasFoundInputFormat && hasFoundColorSpace && hasFoundResolution) {
+            if (hasFoundInputFormat && hasFoundColorSpace && hasFoundResolution && !hasFoundFramerate) {
                 for (AVFrameRateRange *range in format.videoSupportedFrameRateRanges.reverseObjectEnumerator) {
-                    struct media_frames_per_second min_fps = {
-                        .numerator = (uint32_t) clamp_Uint(range.maxFrameDuration.timescale, 0, UINT32_MAX),
-                        .denominator = (uint32_t) clamp_Uint(range.maxFrameDuration.value, 0, UINT32_MAX)};
-                    struct media_frames_per_second max_fps = {
-                        .numerator = (uint32_t) clamp_Uint(range.minFrameDuration.timescale, 0, UINT32_MAX),
-                        .denominator = (uint32_t) clamp_Uint(range.minFrameDuration.value, 0, UINT32_MAX)};
+                    FourCharCode formatSubType = CMFormatDescriptionGetMediaSubType(format.formatDescription);
+                    int device_format = [OBSAVCapture formatFromSubtype:formatSubType];
 
-                    if (![frameRates containsObject:range]) {
-                        obs_property_frame_rate_fps_range_add(prop_framerate, min_fps, max_fps);
-                        [frameRates addObject:range];
-                    }
+                    if (input_format == device_format) {
+                        struct media_frames_per_second min_fps = {
+                            .numerator = (uint32_t) clamp_Uint(range.maxFrameDuration.timescale, 0, UINT32_MAX),
+                            .denominator = (uint32_t) clamp_Uint(range.maxFrameDuration.value, 0, UINT32_MAX)};
+                        struct media_frames_per_second max_fps = {
+                            .numerator = (uint32_t) clamp_Uint(range.minFrameDuration.timescale, 0, UINT32_MAX),
+                            .denominator = (uint32_t) clamp_Uint(range.minFrameDuration.value, 0, UINT32_MAX)};
 
-                    if (!hasFoundFramerate && CMTimeCompare(range.maxFrameDuration, time) >= 0 &&
-                        CMTimeCompare(range.minFrameDuration, time) <= 0) {
-                        hasFoundFramerate = YES;
+                        if (![frameRates containsObject:range]) {
+                            obs_property_frame_rate_fps_range_add(prop_framerate, min_fps, max_fps);
+                            [frameRates addObject:range];
+                        }
+
+                        if (!hasFoundFramerate && CMTimeCompare(range.maxFrameDuration, time) >= 0 &&
+                            CMTimeCompare(range.minFrameDuration, time) <= 0) {
+                            hasFoundFramerate = YES;
+                        }
                     }
                 }
             }
@@ -443,15 +464,16 @@ bool properties_update_config(OBSAVCaptureInfo *capture, obs_properties_t *prope
 
         // Add currently selected values in disabled state if they are not supported by the device
         size_t index;
+
+        FourCharCode formatSubType = [OBSAVCapture fourCharCodeFromFormat:input_format withRange:video_range];
+        if (!hasFoundInputFormat) {
+            NSString *formatDescription = [OBSAVCapture stringFromSubType:formatSubType];
+
+            index = obs_property_list_add_int(prop_input_format, formatDescription.UTF8String, input_format);
+            obs_property_list_item_disable(prop_input_format, index, true);
+        }
+
         if (!captureInstance.isFastPath) {
-            FourCharCode formatSubType = [OBSAVCapture fourCharCodeFromFormat:input_format withRange:video_range];
-            if (!hasFoundInputFormat) {
-                NSString *formatDescription = [OBSAVCapture stringFromSubType:formatSubType];
-
-                index = obs_property_list_add_int(prop_input_format, formatDescription.UTF8String, input_format);
-                obs_property_list_item_disable(prop_input_format, index, true);
-            }
-
             if (!hasFoundVideoRange) {
                 int device_range;
                 const char *range_description;
