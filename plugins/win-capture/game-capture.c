@@ -380,6 +380,10 @@ static void stop_capture(struct game_capture *gc)
 		calldata_set_ptr(&data, "source", gc->source);
 		signal_handler_signal(sh, "unhooked", &data);
 		calldata_free(&data);
+
+		// Also update audio source to stop capturing
+		if (gc->audio_source)
+			reconfigure_audio_source(gc->audio_source, NULL);
 	}
 
 	gc->copy_texture = NULL;
