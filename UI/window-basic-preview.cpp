@@ -1969,7 +1969,7 @@ bool OBSBasicPreview::DrawSelectedOverflow(obs_scene_t *, obs_sceneitem_t *item,
 	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_DEFAULT, "DrawSelectedOverflow");
 
 	obs_transform_info info;
-	obs_sceneitem_get_info(item, &info);
+	obs_sceneitem_get_info2(item, &info);
 
 	gs_effect_t *solid = obs_get_base_effect(OBS_EFFECT_REPEAT);
 	gs_eparam_t *image = gs_effect_get_param_by_name(solid, "image");
@@ -2013,7 +2013,7 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *, obs_sceneitem_t *item,
 		matrix4 mat;
 		obs_transform_info groupInfo;
 		obs_sceneitem_get_draw_transform(item, &mat);
-		obs_sceneitem_get_info(item, &groupInfo);
+		obs_sceneitem_get_info2(item, &groupInfo);
 
 		prev->groupRot = groupInfo.rot;
 
@@ -2095,7 +2095,7 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *, obs_sceneitem_t *item,
 	boxScale.y *= curTransform.y.y;
 
 	obs_transform_info info;
-	obs_sceneitem_get_info(item, &info);
+	obs_sceneitem_get_info2(item, &info);
 
 	gs_matrix_push();
 	gs_matrix_mul(&boxTransform);
@@ -2523,7 +2523,7 @@ void OBSBasicPreview::DrawSpacingHelpers()
 	obs_sceneitem_get_box_transform(item, &boxTransform);
 
 	obs_transform_info oti;
-	obs_sceneitem_get_info(item, &oti);
+	obs_sceneitem_get_info2(item, &oti);
 
 	obs_video_info ovi;
 	obs_get_video_info(&ovi);
@@ -2545,7 +2545,7 @@ void OBSBasicPreview::DrawSpacingHelpers()
 
 	if (parentGroup) {
 		obs_transform_info groupOti;
-		obs_sceneitem_get_info(parentGroup, &groupOti);
+		obs_sceneitem_get_info2(parentGroup, &groupOti);
 
 		//Correct the scene item rotation angle
 		rot = oti.rot + groupOti.rot;
