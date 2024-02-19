@@ -380,8 +380,8 @@ static inline void pos_from_absolute(struct vec2 *dst, const struct vec2 *v,
 {
 	float x, y;
 	get_scene_dimensions(item, &x, &y);
-	/* Scaled so that largest side is [-1, 1] */
-	if (x >= y) {
+	/* Scaled so that shorter side is [-1, 1] */
+	if (x < y) {
 		dst->x = 2 * v->x / x - 1.0f;
 		dst->y = (2 * v->y - y) / x;
 	} else {
@@ -395,7 +395,7 @@ static inline void pos_to_absolute(struct vec2 *dst, const struct vec2 *v,
 {
 	float x, y;
 	get_scene_dimensions(item, &x, &y);
-	if (x >= y) {
+	if (x < y) {
 		dst->x = (v->x * x + x) / 2;
 		dst->y = (v->y * x + y) / 2;
 	} else {
@@ -414,9 +414,9 @@ static inline void size_from_absolute(struct vec2 *dst, const struct vec2 *v,
 {
 	float x, y;
 	get_scene_dimensions(item, &x, &y);
-	/* The long side of the canvas is from [-1, 1] so 2.0f is the
-	 * full width or height (depending on aspect ratio). */
-	if (x >= y) {
+	/* The short side of the canvas is from [-1, 1] so 2.0f * aspect is the
+	 * full longer side (depending on aspect ratio). */
+	if (x < y) {
 		dst->x = 2 * v->x / x;
 		dst->y = (2 * v->y) / x;
 	} else {
@@ -430,7 +430,7 @@ static inline void size_to_absolute(struct vec2 *dst, const struct vec2 *v,
 {
 	float x, y;
 	get_scene_dimensions(item, &x, &y);
-	if (x >= y) {
+	if (x < y) {
 		dst->x = (v->x * x) / 2;
 		dst->y = (v->y * x) / 2;
 	} else {
@@ -455,9 +455,9 @@ static inline void item_canvas_scale(struct vec2 *dst,
 	float x, y;
 	get_scene_dimensions(item, &x, &y);
 	/* Divide largest side of canvas and reference to get the scale factor */
-	float canvas = x >= y ? x : y;
-	float ref = item->scale_ref.x >= item->scale_ref.y ? item->scale_ref.x
-							   : item->scale_ref.y;
+	float canvas = x < y ? x : y;
+	float ref = item->scale_ref.x < item->scale_ref.y ? item->scale_ref.x
+							  : item->scale_ref.y;
 	float scale_factor = canvas / ref;
 	vec2_mulf(dst, &item->scale, scale_factor);
 }
@@ -473,9 +473,9 @@ static inline void item_relative_scale(struct vec2 *dst, const struct vec2 *v,
 
 	float x, y;
 	get_scene_dimensions(item, &x, &y);
-	float canvas = x >= y ? x : y;
-	float ref = item->scale_ref.x >= item->scale_ref.y ? item->scale_ref.x
-							   : item->scale_ref.y;
+	float canvas = x < y ? x : y;
+	float ref = item->scale_ref.x < item->scale_ref.y ? item->scale_ref.x
+							  : item->scale_ref.y;
 	float scale_factor = ref / canvas;
 	vec2_mulf(dst, v, scale_factor);
 }
