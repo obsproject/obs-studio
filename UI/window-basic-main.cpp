@@ -8666,7 +8666,7 @@ void OBSBasic::on_actionCopyTransform_triggered()
 {
 	OBSSceneItem item = GetCurrentSceneItem();
 
-	obs_sceneitem_get_info(item, &copiedTransformInfo);
+	obs_sceneitem_get_info2(item, &copiedTransformInfo);
 	obs_sceneitem_get_crop(item, &copiedCropInfo);
 
 	ui->actionPasteTransform->setEnabled(true);
@@ -8697,7 +8697,7 @@ void OBSBasic::on_actionPasteTransform_triggered()
 		OBSBasic *main = reinterpret_cast<OBSBasic *>(data);
 
 		obs_sceneitem_defer_update_begin(item);
-		obs_sceneitem_set_info(item, &main->copiedTransformInfo);
+		obs_sceneitem_set_info2(item, &main->copiedTransformInfo);
 		obs_sceneitem_set_crop(item, &main->copiedCropInfo);
 		obs_sceneitem_defer_update_end(item);
 
@@ -8735,8 +8735,9 @@ static bool reset_tr(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *)
 	info.alignment = OBS_ALIGN_TOP | OBS_ALIGN_LEFT;
 	info.bounds_type = OBS_BOUNDS_NONE;
 	info.bounds_alignment = OBS_ALIGN_CENTER;
+	info.crop_to_bounds = false;
 	vec2_set(&info.bounds, 0.0f, 0.0f);
-	obs_sceneitem_set_info(item, &info);
+	obs_sceneitem_set_info2(item, &info);
 
 	obs_sceneitem_crop crop = {};
 	obs_sceneitem_set_crop(item, &crop);
@@ -8979,8 +8980,9 @@ static bool CenterAlignSelectedItems(obs_scene_t * /* scene */,
 		 float(ovi.base_height));
 	itemInfo.bounds_type = boundsType;
 	itemInfo.bounds_alignment = OBS_ALIGN_CENTER;
+	itemInfo.crop_to_bounds = obs_sceneitem_get_bounds_crop(item);
 
-	obs_sceneitem_set_info(item, &itemInfo);
+	obs_sceneitem_set_info2(item, &itemInfo);
 
 	return true;
 }
@@ -9034,7 +9036,7 @@ void OBSBasic::CenterSelectedSceneItems(const CenterType &centerType)
 	for (int x = 0; x < selectedItems.count(); x++) {
 		OBSSceneItem item = ui->sources->Get(selectedItems[x].row());
 		obs_transform_info oti;
-		obs_sceneitem_get_info(item, &oti);
+		obs_sceneitem_get_info2(item, &oti);
 
 		obs_source_t *source = obs_sceneitem_get_source(item);
 		float width = float(obs_source_get_width(source)) * oti.scale.x;
@@ -10021,7 +10023,7 @@ void OBSBasic::on_actionCopySource_triggered()
 
 		SourceCopyInfo copyInfo;
 		copyInfo.weak_source = OBSGetWeakRef(source);
-		obs_sceneitem_get_info(item, &copyInfo.transform);
+		obs_sceneitem_get_info2(item, &copyInfo.transform);
 		obs_sceneitem_get_crop(item, &copyInfo.crop);
 		copyInfo.blend_method = obs_sceneitem_get_blending_method(item);
 		copyInfo.blend_mode = obs_sceneitem_get_blending_mode(item);
