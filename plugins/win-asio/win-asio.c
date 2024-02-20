@@ -278,7 +278,7 @@ static void asio_update(void *vptr, obs_data_t *settings, bool is_output)
 			data->asio_device->obs_track[i] = -1;         // device does not use track i
 			data->asio_device->obs_track_channel[i] = -1; // device does not use any channel from track i
 			if (data->out_mix_channels[i] >= 0) {
-				for (int j = 0; j < MAX_AUDIO_MIXES; j++) {
+				for (int j = 0; j < MAX_AUDIO_MIXES_NEW; j++) {
 					for (int k = 0; k < data->obs_track_channels; k++) {
 						int64_t idx = (int64_t)k + (1LL << (j + 4));
 						if (data->out_mix_channels[i] == idx) {
@@ -513,7 +513,7 @@ static bool on_asio_device_changed(void *priv, obs_properties_t *props, obs_prop
 
 				obs_property_list_add_int(p, obs_module_text("Mute"), -1);
 
-				for (int j = 0; j < MAX_AUDIO_MIXES; j++) {
+				for (int j = 0; j < MAX_AUDIO_MIXES_NEW; j++) {
 					for (int k = 0; k < global_output_asio_data->obs_track_channels; k++) {
 						long long idx = k + (1ULL << (j + 4));
 						char label[32];
