@@ -1,10 +1,13 @@
 #include <obs-module.h>
 #include <util/platform.h>
+#include "util/threading.h"
 #include "shared-memory-queue.h"
 
 struct virtualcam_data {
 	obs_output_t *output;
 	video_queue_t *vq;
+	volatile bool active;
+	volatile bool stopping;
 };
 
 static const char *virtualcam_name(void *unused)
@@ -62,19 +65,31 @@ static bool virtualcam_start(void *data)
 	vsi.height = height;
 	obs_output_set_video_conversion(vcam->output, &vsi);
 
+	os_atomic_set_bool(&vcam->active, true);
+	os_atomic_set_bool(&vcam->stopping, false);
 	blog(LOG_INFO, "Virtual output started");
 	obs_output_begin_data_capture(vcam->output, 0);
 	return true;
 }
 
-static void virtualcam_stop(void *data, uint64_t ts)
+static void virtualcam_deactive(struct virtualcam_data *vcam)
 {
-	struct virtualcam_data *vcam = (struct virtualcam_data *)data;
 	obs_output_end_data_capture(vcam->output);
 	video_queue_close(vcam->vq);
 	vcam->vq = NULL;
 
+	os_atomic_set_bool(&vcam->active, false);
+	os_atomic_set_bool(&vcam->stopping, false);
+
 	blog(LOG_INFO, "Virtual output stopped");
+}
+
+static void virtualcam_stop(void *data, uint64_t ts)
+{
+	struct virtualcam_data *vcam = (struct virtualcam_data *)data;
+	os_atomic_set_bool(&vcam->stopping, true);
+
+	blog(LOG_INFO, "Virtual output stopping");
 
 	UNUSED_PARAMETER(ts);
 }
@@ -85,6 +100,14 @@ static void virtual_video(void *param, struct video_data *frame)
 
 	if (!vcam->vq)
 		return;
+
+	if (!os_atomic_load_bool(&vcam->active))
+		return;
+
+	if (os_atomic_load_bool(&vcam->stopping)) {
+		virtualcam_deactive(vcam);
+		return;
+	}
 
 	video_queue_write(vcam->vq, frame->data, frame->linesize,
 			  frame->timestamp);

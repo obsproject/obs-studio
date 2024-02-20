@@ -1,0 +1,3 @@
+if (( ! ${+_loglevel} )) typeset -g _loglevel=1
+
+if (( _loglevel > 2 )) print -PR -e -- "${CI:+::debug::}%F{220}DEBUG: ${@}%f"

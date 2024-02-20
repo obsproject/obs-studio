@@ -11,7 +11,7 @@ various reading/writing to/from different inputs/outputs)
 Serializer Structure (struct serializer)
 ----------------------------------------
 
-.. type:: struct serializer
+.. struct:: serializer
 .. member:: void     *serializer.data
 .. member:: size_t   (*serializer.read)(void *, void *, size_t)
 .. member:: size_t   (*serializer.write)(void *, const void *, size_t)
@@ -102,9 +102,11 @@ Provides an output serializer used with dynamic arrays.
 Array Output Serializer Structure (struct array_output_data)
 ------------------------------------------------------------
 
-.. type:: struct array_output_data
+.. struct:: array_output_data
 
-.. member:: DARRAY(uint8_t) array_output_data.bytes
+.. code:: cpp
+
+   DARRAY(uint8_t) array_output_data.bytes
 
 Array Output Serializer Functions
 ---------------------------------

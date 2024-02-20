@@ -1,8 +1,10 @@
 #include "auth-twitch.hpp"
 
+#include <QRegularExpression>
 #include <QPushButton>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
+#include <QUuid>
 
 #include <qt-wrappers.hpp>
 #include <obs-app.hpp>
@@ -20,11 +22,15 @@ using namespace json11;
 
 /* ------------------------------------------------------------------------- */
 
-#define TWITCH_AUTH_URL "https://obsproject.com/app-auth/twitch?action=redirect"
-#define TWITCH_TOKEN_URL "https://obsproject.com/app-auth/twitch-token"
-#define ACCEPT_HEADER "Accept: application/vnd.twitchtv.v5+json"
+#define TWITCH_AUTH_URL OAUTH_BASE_URL "v1/twitch/redirect"
+#define TWITCH_TOKEN_URL OAUTH_BASE_URL "v1/twitch/token"
 
 #define TWITCH_SCOPE_VERSION 1
+
+#define TWITCH_CHAT_DOCK_NAME "twitchChat"
+#define TWITCH_INFO_DOCK_NAME "twitchInfo"
+#define TWITCH_STATS_DOCK_NAME "twitchStats"
+#define TWITCH_FEED_DOCK_NAME "twitchFeed"
 
 static Auth::Def twitchDef = {"Twitch", Auth::Type::OAuth_StreamKey};
 
@@ -48,26 +54,30 @@ TwitchAuth::TwitchAuth(const Def &d) : OAuthStreamKey(d)
 		&TwitchAuth::TryLoadSecondaryUIPanes);
 }
 
-bool TwitchAuth::GetChannelInfo()
-try {
+TwitchAuth::~TwitchAuth()
+{
+	if (!uiLoaded)
+		return;
+
+	OBSBasic *main = OBSBasic::Get();
+
+	main->RemoveDockWidget(TWITCH_CHAT_DOCK_NAME);
+	main->RemoveDockWidget(TWITCH_INFO_DOCK_NAME);
+	main->RemoveDockWidget(TWITCH_STATS_DOCK_NAME);
+	main->RemoveDockWidget(TWITCH_FEED_DOCK_NAME);
+}
+
+bool TwitchAuth::MakeApiRequest(const char *path, Json &json_out)
+{
 	std::string client_id = TWITCH_CLIENTID;
 	deobfuscate_str(&client_id[0], TWITCH_HASH);
 
-	if (!GetToken(TWITCH_TOKEN_URL, client_id, TWITCH_SCOPE_VERSION))
-		return false;
-	if (token.empty())
-		return false;
-	if (!key_.empty())
-		return true;
-
-	std::string auth;
-	auth += "Authorization: OAuth ";
-	auth += token;
+	std::string url = "https://api.twitch.tv/helix/";
+	url += std::string(path);
 
 	std::vector<std::string> headers;
 	headers.push_back(std::string("Client-ID: ") + client_id);
-	headers.push_back(ACCEPT_HEADER);
-	headers.push_back(std::move(auth));
+	headers.push_back(std::string("Authorization: Bearer ") + token);
 
 	std::string output;
 	std::string error;
@@ -76,10 +86,9 @@ try {
 	bool success = false;
 
 	auto func = [&]() {
-		success = GetRemoteFile("https://api.twitch.tv/kraken/channel",
-					output, error, &error_code,
-					"application/json", nullptr, headers,
-					nullptr, 5);
+		success = GetRemoteFile(url.c_str(), output, error, &error_code,
+					"application/json", "", nullptr,
+					headers, nullptr, 5);
 	};
 
 	ExecThreadedWithoutBlocking(
@@ -100,24 +109,44 @@ try {
 	if (!success || output.empty())
 		throw ErrorInfo("Failed to get text from remote", error);
 
-	Json json = Json::parse(output, error);
+	json_out = Json::parse(output, error);
 	if (!error.empty())
 		throw ErrorInfo("Failed to parse json", error);
 
-	error = json["error"].string_value();
-	if (!error.empty()) {
-		if (error == "Unauthorized") {
-			if (RetryLogin()) {
-				return GetChannelInfo();
-			}
-			throw ErrorInfo(error, json["message"].string_value());
-		}
-		throw ErrorInfo(error,
-				json["error_description"].string_value());
-	}
+	error = json_out["error"].string_value();
+	if (!error.empty())
+		throw ErrorInfo(error, json_out["message"].string_value());
 
-	name = json["name"].string_value();
-	key_ = json["stream_key"].string_value();
+	return true;
+}
+
+bool TwitchAuth::GetChannelInfo()
+try {
+	std::string client_id = TWITCH_CLIENTID;
+	deobfuscate_str(&client_id[0], TWITCH_HASH);
+
+	if (!GetToken(TWITCH_TOKEN_URL, client_id, TWITCH_SCOPE_VERSION))
+		return false;
+	if (token.empty())
+		return false;
+	if (!key_.empty())
+		return true;
+
+	Json json;
+	bool success = MakeApiRequest("users", json);
+
+	if (!success)
+		return false;
+
+	name = json["data"][0]["login"].string_value();
+
+	std::string path = "streams/key?broadcaster_id=" +
+			   json["data"][0]["id"].string_value();
+	success = MakeApiRequest(path.c_str(), json);
+	if (!success)
+		return false;
+
+	key_ = json["data"][0]["stream_key"].string_value();
 
 	return true;
 } catch (ErrorInfo info) {
@@ -137,6 +166,8 @@ void TwitchAuth::SaveInternal()
 {
 	OBSBasic *main = OBSBasic::Get();
 	config_set_string(main->Config(), service(), "Name", name.c_str());
+	config_set_string(main->Config(), service(), "UUID", uuid.c_str());
+
 	if (uiLoaded) {
 		config_set_string(main->Config(), service(), "DockState",
 				  main->saveState().toBase64().constData());
@@ -158,6 +189,8 @@ bool TwitchAuth::LoadInternal()
 
 	OBSBasic *main = OBSBasic::Get();
 	name = get_config_str(main, service(), "Name");
+	uuid = get_config_str(main, service(), "UUID");
+
 	firstLoad = false;
 	return OAuthStreamKey::LoadInternal();
 }
@@ -195,6 +228,15 @@ void TwitchAuth::LoadUI()
 	std::string url;
 	std::string script;
 
+	/* Twitch panels require a UUID, it does not actually need to be unique,
+	 * and is generated client-side.
+	 * It is only for preferences stored in the browser's local store. */
+	if (uuid.empty()) {
+		QString qtUuid = QUuid::createUuid().toString();
+		qtUuid.replace(QRegularExpression("[{}-]"), "");
+		uuid = qtUuid.toStdString();
+	}
+
 	std::string moderation_tools_url;
 	moderation_tools_url = "https://www.twitch.tv/";
 	moderation_tools_url += name;
@@ -209,18 +251,22 @@ void TwitchAuth::LoadUI()
 	QSize size = main->frameSize();
 	QPoint pos = main->pos();
 
-	chat.reset(new BrowserDock());
-	chat->setObjectName("twitchChat");
+	BrowserDock *chat = new BrowserDock(QTStr("Auth.Chat"));
+	chat->setObjectName(TWITCH_CHAT_DOCK_NAME);
 	chat->resize(300, 600);
 	chat->setMinimumSize(200, 300);
 	chat->setWindowTitle(QTStr("Auth.Chat"));
 	chat->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(nullptr, url, panel_cookies);
+	browser = cef->create_widget(chat, url, panel_cookies);
 	chat->SetWidget(browser);
-	cef->add_force_popup_url(moderation_tools_url, chat.data());
+	cef->add_force_popup_url(moderation_tools_url, chat);
 
-	script = "localStorage.setItem('twilight.theme', 1);";
+	if (App()->IsThemeDark()) {
+		script = "localStorage.setItem('twilight.theme', 1);";
+	} else {
+		script = "localStorage.setItem('twilight.theme', 0);";
+	}
 
 	const int twAddonChoice =
 		config_get_int(main->Config(), service(), "AddonChoice");
@@ -233,8 +279,7 @@ void TwitchAuth::LoadUI()
 
 	browser->setStartupScript(script);
 
-	main->addDockWidget(Qt::RightDockWidgetArea, chat.data());
-	chatMenu.reset(main->AddDockWidget(chat.data()));
+	main->AddDockWidget(chat, Qt::RightDockWidgetArea);
 
 	/* ----------------------------------- */
 
@@ -248,7 +293,9 @@ void TwitchAuth::LoadUI()
 			main->Config(), service(), "DockState");
 		QByteArray dockState =
 			QByteArray::fromBase64(QByteArray(dockStateStr));
-		main->restoreState(dockState);
+
+		if (main->isVisible() || !main->isMaximized())
+			main->restoreState(dockState);
 	}
 
 	TryLoadSecondaryUIPanes();
@@ -267,7 +314,11 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	QSize size = main->frameSize();
 	QPoint pos = main->pos();
 
-	script = "localStorage.setItem('twilight.theme', 1);";
+	if (App()->IsThemeDark()) {
+		script = "localStorage.setItem('twilight.theme', 1);";
+	} else {
+		script = "localStorage.setItem('twilight.theme', 0);";
+	}
 	script += referrer_script1;
 	script += "https://www.twitch.tv/";
 	script += name;
@@ -285,23 +336,22 @@ void TwitchAuth::LoadSecondaryUIPanes()
 
 	/* ----------------------------------- */
 
-	url = "https://www.twitch.tv/popout/";
+	url = "https://dashboard.twitch.tv/popout/u/";
 	url += name;
-	url += "/dashboard/live/stream-info";
+	url += "/stream-manager/edit-stream-info";
 
-	info.reset(new BrowserDock());
-	info->setObjectName("twitchInfo");
+	BrowserDock *info = new BrowserDock(QTStr("Auth.StreamInfo"));
+	info->setObjectName(TWITCH_INFO_DOCK_NAME);
 	info->resize(300, 650);
 	info->setMinimumSize(200, 300);
 	info->setWindowTitle(QTStr("Auth.StreamInfo"));
 	info->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(nullptr, url, panel_cookies);
+	browser = cef->create_widget(info, url, panel_cookies);
 	info->SetWidget(browser);
 	browser->setStartupScript(script);
 
-	main->addDockWidget(Qt::RightDockWidgetArea, info.data());
-	infoMenu.reset(main->AddDockWidget(info.data()));
+	main->AddDockWidget(info, Qt::RightDockWidgetArea);
 
 	/* ----------------------------------- */
 
@@ -309,56 +359,55 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	url += name;
 	url += "/dashboard/live/stats";
 
-	stat.reset(new BrowserDock());
-	stat->setObjectName("twitchStats");
-	stat->resize(200, 250);
-	stat->setMinimumSize(200, 150);
-	stat->setWindowTitle(QTStr("TwitchAuth.Stats"));
-	stat->setAllowedAreas(Qt::AllDockWidgetAreas);
+	BrowserDock *stats = new BrowserDock(QTStr("TwitchAuth.Stats"));
+	stats->setObjectName(TWITCH_STATS_DOCK_NAME);
+	stats->resize(200, 250);
+	stats->setMinimumSize(200, 150);
+	stats->setWindowTitle(QTStr("TwitchAuth.Stats"));
+	stats->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(nullptr, url, panel_cookies);
-	stat->SetWidget(browser);
+	browser = cef->create_widget(stats, url, panel_cookies);
+	stats->SetWidget(browser);
 	browser->setStartupScript(script);
 
-	main->addDockWidget(Qt::RightDockWidgetArea, stat.data());
-	statMenu.reset(main->AddDockWidget(stat.data()));
+	main->AddDockWidget(stats, Qt::RightDockWidgetArea);
 
 	/* ----------------------------------- */
 
-	url = "https://www.twitch.tv/popout/";
+	url = "https://dashboard.twitch.tv/popout/u/";
 	url += name;
-	url += "/dashboard/live/activity-feed";
+	url += "/stream-manager/activity-feed";
+	url += "?uuid=" + uuid;
 
-	feed.reset(new BrowserDock());
-	feed->setObjectName("twitchFeed");
+	BrowserDock *feed = new BrowserDock(QTStr("TwitchAuth.Feed"));
+	feed->setObjectName(TWITCH_FEED_DOCK_NAME);
 	feed->resize(300, 650);
 	feed->setMinimumSize(200, 300);
 	feed->setWindowTitle(QTStr("TwitchAuth.Feed"));
 	feed->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(nullptr, url, panel_cookies);
+	browser = cef->create_widget(feed, url, panel_cookies);
 	feed->SetWidget(browser);
 	browser->setStartupScript(script);
 
-	main->addDockWidget(Qt::RightDockWidgetArea, feed.data());
-	feedMenu.reset(main->AddDockWidget(feed.data()));
+	main->AddDockWidget(feed, Qt::RightDockWidgetArea);
 
 	/* ----------------------------------- */
 
 	info->setFloating(true);
-	stat->setFloating(true);
+	stats->setFloating(true);
 	feed->setFloating(true);
 
-	QSize statSize = stat->frameSize();
+	QSize statSize = stats->frameSize();
 
 	info->move(pos.x() + 50, pos.y() + 50);
-	stat->move(pos.x() + size.width() / 2 - statSize.width() / 2,
-		   pos.y() + size.height() / 2 - statSize.height() / 2);
+	stats->move(pos.x() + size.width() / 2 - statSize.width() / 2,
+		    pos.y() + size.height() / 2 - statSize.height() / 2);
 	feed->move(pos.x() + 100, pos.y() + 100);
 
 	if (firstLoad) {
 		info->setVisible(true);
-		stat->setVisible(false);
+		stats->setVisible(false);
 		feed->setVisible(false);
 	} else {
 		uint32_t lastVersion = config_get_int(App()->GlobalConfig(),
@@ -372,7 +421,9 @@ void TwitchAuth::LoadSecondaryUIPanes()
 			main->Config(), service(), "DockState");
 		QByteArray dockState =
 			QByteArray::fromBase64(QByteArray(dockStateStr));
-		main->restoreState(dockState);
+
+		if (main->isVisible() || !main->isMaximized())
+			main->restoreState(dockState);
 	}
 }
 
@@ -423,7 +474,7 @@ bool TwitchAuth::RetryLogin()
 			QT_TO_UTF8(login.GetCode()), true);
 }
 
-std::shared_ptr<Auth> TwitchAuth::Login(QWidget *parent)
+std::shared_ptr<Auth> TwitchAuth::Login(QWidget *parent, const std::string &)
 {
 	OAuthLogin login(parent, TWITCH_AUTH_URL, false);
 	if (login.exec() == QDialog::Rejected) {
@@ -461,6 +512,11 @@ static void DeleteCookies()
 
 void RegisterTwitchAuth()
 {
+#if !defined(__APPLE__) && !defined(_WIN32)
+	if (QApplication::platformName().contains("wayland"))
+		return;
+#endif
+
 	OAuth::RegisterOAuth(twitchDef, CreateTwitchAuth, TwitchAuth::Login,
 			     DeleteCookies);
 }

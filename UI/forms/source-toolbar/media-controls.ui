@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
@@ -22,18 +22,12 @@
     <height>22</height>
    </size>
   </property>
-  <property name="maximumSize">
-   <size>
-    <width>16777215</width>
-    <height>22</height>
-   </size>
-  </property>
   <property name="windowTitle">
    <string notr="true">Form</string>
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout">
    <property name="spacing">
-    <number>0</number>
+    <number>6</number>
    </property>
    <property name="leftMargin">
     <number>0</number>
@@ -61,12 +55,6 @@
        <height>22</height>
       </size>
      </property>
-     <property name="maximumSize">
-      <size>
-       <width>22</width>
-       <height>22</height>
-      </size>
-     </property>
      <property name="toolTip">
       <string>ContextBar.MediaControls.RestartMedia</string>
      </property>
@@ -83,29 +71,13 @@
        <height>20</height>
       </size>
      </property>
-     <property name="shortcut">
-      <string>Space</string>
-     </property>
      <property name="flat">
       <bool>true</bool>
      </property>
+     <property name="themeID2" stdset="0">
+      <string notr="true">contextBarButton</string>
+     </property>
     </widget>
-   </item>
-   <item>
-    <spacer name="horizontalSpacer">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeType">
-      <enum>QSizePolicy::Fixed</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>8</width>
-       <height>20</height>
-      </size>
-     </property>
-    </spacer>
    </item>
    <item>
     <widget class="QPushButton" name="previousButton">
@@ -116,12 +88,6 @@
       </sizepolicy>
      </property>
      <property name="minimumSize">
-      <size>
-       <width>22</width>
-       <height>22</height>
-      </size>
-     </property>
-     <property name="maximumSize">
       <size>
        <width>22</width>
        <height>22</height>
@@ -149,6 +115,9 @@
      <property name="flat">
       <bool>true</bool>
      </property>
+     <property name="themeID2" stdset="0">
+      <string notr="true">contextBarButton</string>
+     </property>
     </widget>
    </item>
    <item>
@@ -160,12 +129,6 @@
       </sizepolicy>
      </property>
      <property name="minimumSize">
-      <size>
-       <width>22</width>
-       <height>22</height>
-      </size>
-     </property>
-     <property name="maximumSize">
       <size>
        <width>22</width>
        <height>22</height>
@@ -193,6 +156,9 @@
      <property name="flat">
       <bool>true</bool>
      </property>
+     <property name="themeID2" stdset="0">
+      <string notr="true">contextBarButton</string>
+     </property>
     </widget>
    </item>
    <item>
@@ -204,12 +170,6 @@
       </sizepolicy>
      </property>
      <property name="minimumSize">
-      <size>
-       <width>22</width>
-       <height>22</height>
-      </size>
-     </property>
-     <property name="maximumSize">
       <size>
        <width>22</width>
        <height>22</height>
@@ -237,6 +197,9 @@
      <property name="flat">
       <bool>true</bool>
      </property>
+     <property name="themeID2" stdset="0">
+      <string notr="true">contextBarButton</string>
+     </property>
     </widget>
    </item>
    <item>
@@ -244,12 +207,6 @@
      <property name="minimumSize">
       <size>
        <width>0</width>
-       <height>22</height>
-      </size>
-     </property>
-     <property name="maximumSize">
-      <size>
-       <width>16777215</width>
        <height>22</height>
       </size>
      </property>
@@ -268,22 +225,6 @@
     </widget>
    </item>
    <item>
-    <spacer name="horizontalSpacer_2">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeType">
-      <enum>QSizePolicy::Fixed</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>6</width>
-       <height>20</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item>
     <widget class="QLabel" name="timerLabel">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -297,32 +238,10 @@
        <height>22</height>
       </size>
      </property>
-     <property name="maximumSize">
-      <size>
-       <width>16777215</width>
-       <height>22</height>
-      </size>
-     </property>
      <property name="text">
       <string>--:--:--</string>
      </property>
     </widget>
-   </item>
-   <item>
-    <spacer name="horizontalSpacer_3">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeType">
-      <enum>QSizePolicy::Fixed</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>4</width>
-       <height>0</height>
-      </size>
-     </property>
-    </spacer>
    </item>
    <item>
     <widget class="QLabel" name="label">
@@ -338,32 +257,10 @@
        <height>22</height>
       </size>
      </property>
-     <property name="maximumSize">
-      <size>
-       <width>16777215</width>
-       <height>22</height>
-      </size>
-     </property>
      <property name="text">
       <string>/</string>
      </property>
     </widget>
-   </item>
-   <item>
-    <spacer name="horizontalSpacer_4">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeType">
-      <enum>QSizePolicy::Fixed</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>4</width>
-       <height>0</height>
-      </size>
-     </property>
-    </spacer>
    </item>
    <item>
     <widget class="ClickableLabel" name="durationLabel">
@@ -379,21 +276,15 @@
        <height>22</height>
       </size>
      </property>
-     <property name="maximumSize">
-      <size>
-       <width>16777215</width>
-       <height>22</height>
-      </size>
-     </property>
      <property name="text">
       <string>--:--:--</string>
      </property>
     </widget>
    </item>
    <item>
-    <widget class="QWidget" name="emptySpaceAgain" native="true">
+    <widget class="QFrame" name="emptySpaceAgain">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>

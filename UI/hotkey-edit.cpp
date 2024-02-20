@@ -15,26 +15,16 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include "window-basic-settings.hpp"
 #include "hotkey-edit.hpp"
 
 #include <util/dstr.hpp>
 #include <QPointer>
 #include <QStyle>
+#include <QAction>
 
 #include "obs-app.hpp"
 #include "qt-wrappers.hpp"
-
-static inline bool operator!=(const obs_key_combination_t &c1,
-			      const obs_key_combination_t &c2)
-{
-	return c1.modifiers != c2.modifiers || c1.key != c2.key;
-}
-
-static inline bool operator==(const obs_key_combination_t &c1,
-			      const obs_key_combination_t &c2)
-{
-	return !(c1 != c2);
-}
 
 void OBSHotkeyEdit::keyPressEvent(QKeyEvent *event)
 {
@@ -69,6 +59,15 @@ void OBSHotkeyEdit::keyPressEvent(QKeyEvent *event)
 	HandleNewKey(new_key);
 }
 
+QVariant OBSHotkeyEdit::inputMethodQuery(Qt::InputMethodQuery query) const
+{
+	if (query == Qt::ImEnabled) {
+		return false;
+	} else {
+		return QLineEdit::inputMethodQuery(query);
+	}
+}
+
 #ifdef __APPLE__
 void OBSHotkeyEdit::keyReleaseEvent(QKeyEvent *event)
 {
@@ -101,7 +100,7 @@ void OBSHotkeyEdit::mousePressEvent(QMouseEvent *event)
 	case Qt::MouseButtonMask:
 		return;
 
-	case Qt::MidButton:
+	case Qt::MiddleButton:
 		new_key.key = OBS_KEY_MOUSE3;
 		break;
 
@@ -183,6 +182,20 @@ void OBSHotkeyEdit::ClearKey()
 	RenderKey();
 }
 
+void OBSHotkeyEdit::UpdateDuplicationState()
+{
+	if (!dupeIcon && !hasDuplicate)
+		return;
+
+	if (!dupeIcon)
+		CreateDupeIcon();
+
+	if (dupeIcon->isVisible() != hasDuplicate) {
+		dupeIcon->setVisible(hasDuplicate);
+		update();
+	}
+}
+
 void OBSHotkeyEdit::InitSignalHandler()
 {
 	layoutChanged = {
@@ -192,6 +205,16 @@ void OBSHotkeyEdit::InitSignalHandler()
 			QMetaObject::invokeMethod(edit, "ReloadKeyLayout");
 		},
 		this};
+}
+
+void OBSHotkeyEdit::CreateDupeIcon()
+{
+	dupeIcon = addAction(settings->GetHotkeyConflictIcon(),
+			     ActionPosition::TrailingPosition);
+	dupeIcon->setToolTip(QTStr("Basic.Settings.Hotkeys.DuplicateWarning"));
+	QObject::connect(dupeIcon, &QAction::triggered,
+			 [=] { emit SearchKey(key); });
+	dupeIcon->setVisible(false);
 }
 
 void OBSHotkeyEdit::ReloadKeyLayout()
@@ -266,21 +289,17 @@ void OBSHotkeyWidget::Save(std::vector<obs_key_combination_t> &combinations)
 
 void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 {
-	auto edit = new OBSHotkeyEdit(combo);
+	auto edit = new OBSHotkeyEdit(parentWidget(), combo, settings);
 	edit->setToolTip(toolTip);
 
 	auto revert = new QPushButton;
 	revert->setProperty("themeID", "revertIcon");
 	revert->setToolTip(QTStr("Revert"));
-	revert->setFixedSize(24, 24);
-	revert->setFlat(true);
 	revert->setEnabled(false);
 
 	auto clear = new QPushButton;
-	clear->setProperty("themeID", "trashIcon");
+	clear->setProperty("themeID", "clearIconSmall");
 	clear->setToolTip(QTStr("Clear"));
-	clear->setFixedSize(24, 24);
-	clear->setFlat(true);
 	clear->setEnabled(!obs_key_combination_is_empty(combo));
 
 	QObject::connect(
@@ -293,14 +312,12 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 
 	auto add = new QPushButton;
 	add->setProperty("themeID", "addIconSmall");
-	add->setFixedSize(24, 24);
-	add->setFlat(true);
+	add->setToolTip(QTStr("Add"));
 
 	auto remove = new QPushButton;
 	remove->setProperty("themeID", "removeIconSmall");
+	remove->setToolTip(QTStr("Remove"));
 	remove->setEnabled(removeButtons.size() > 0);
-	remove->setFixedSize(24, 24);
-	remove->setFlat(true);
 
 	auto CurrentIndex = [&, remove] {
 		auto res = std::find(begin(removeButtons), end(removeButtons),
@@ -316,7 +333,7 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 			 [&, CurrentIndex] { RemoveEdit(CurrentIndex()); });
 
 	QHBoxLayout *subLayout = new QHBoxLayout;
-	subLayout->setContentsMargins(0, 4, 0, 0);
+	subLayout->setContentsMargins(0, 2, 0, 2);
 	subLayout->addWidget(edit);
 	subLayout->addWidget(revert);
 	subLayout->addWidget(clear);
@@ -345,6 +362,10 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 
 	QObject::connect(edit, &OBSHotkeyEdit::KeyChanged,
 			 [&](obs_key_combination) { emit KeyChanged(); });
+	QObject::connect(edit, &OBSHotkeyEdit::SearchKey,
+			 [=](obs_key_combination combo) {
+				 emit SearchKey(combo);
+			 });
 }
 
 void OBSHotkeyWidget::RemoveEdit(size_t idx, bool signal)
@@ -352,7 +373,6 @@ void OBSHotkeyWidget::RemoveEdit(size_t idx, bool signal)
 	auto &edit = *(begin(edits) + idx);
 	if (!obs_key_combination_is_empty(edit->original) && signal) {
 		changed = true;
-		emit KeyChanged();
 	}
 
 	revertButtons.erase(begin(revertButtons) + idx);
@@ -369,6 +389,8 @@ void OBSHotkeyWidget::RemoveEdit(size_t idx, bool signal)
 
 	if (removeButtons.size() == 1)
 		removeButtons.front()->setEnabled(false);
+
+	emit KeyChanged();
 }
 
 void OBSHotkeyWidget::BindingsChanged(void *data, calldata_t *param)
@@ -417,7 +439,7 @@ static inline void updateStyle(QWidget *widget)
 	widget->update();
 }
 
-void OBSHotkeyWidget::enterEvent(QEvent *event)
+void OBSHotkeyWidget::enterEvent(QEnterEvent *event)
 {
 	if (!label)
 		return;
@@ -446,8 +468,9 @@ void OBSHotkeyLabel::highlightPair(bool highlight)
 	updateStyle(this);
 }
 
-void OBSHotkeyLabel::enterEvent(QEvent *event)
+void OBSHotkeyLabel::enterEvent(QEnterEvent *event)
 {
+
 	if (!pairPartner)
 		return;
 

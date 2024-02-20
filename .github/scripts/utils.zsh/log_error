@@ -1,0 +1,1 @@
+print -u2 -PR "::error::%F{1}    ✖︎%f  ${@}"

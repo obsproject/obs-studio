@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2017 by Hugh Bailey <jim@obsproject.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -161,6 +161,26 @@ static PyObject *set_current_transition(PyObject *self, PyObject *args)
 	return python_none();
 }
 
+static PyObject *get_transition_duration(PyObject *self, PyObject *args)
+{
+	int duration = obs_frontend_get_transition_duration();
+	PyObject *ret = PyLong_FromLong(duration);
+	UNUSED_PARAMETER(self);
+	UNUSED_PARAMETER(args);
+	return ret;
+}
+
+static PyObject *set_transition_duration(PyObject *self, PyObject *args)
+{
+	int duration;
+	if (!parse_args(args, "i", &duration))
+		return python_none();
+
+	obs_frontend_set_transition_duration(duration);
+	UNUSED_PARAMETER(self);
+	return python_none();
+}
+
 static PyObject *get_scene_collections(PyObject *self, PyObject *args)
 {
 	char **names = obs_frontend_get_scene_collections();
@@ -260,7 +280,7 @@ static void frontend_save_callback(obs_data_t *save_data, bool saving,
 {
 	struct python_obs_callback *cb = priv;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		obs_frontend_remove_save_callback(frontend_save_callback, cb);
 		return;
 	}
@@ -270,7 +290,8 @@ static void frontend_save_callback(obs_data_t *save_data, bool saving,
 	PyObject *py_save_data;
 
 	if (libobs_to_py(obs_data_t, save_data, false, &py_save_data)) {
-		PyObject *args = Py_BuildValue("(Op)", py_save_data, saving);
+		PyObject *args = Py_BuildValue("(ON)", py_save_data,
+					       PyBool_FromLong(saving));
 
 		struct python_obs_callback *last_cb = cur_python_cb;
 		cur_python_cb = cb;
@@ -335,7 +356,7 @@ static void frontend_event_callback(enum obs_frontend_event event, void *priv)
 {
 	struct python_obs_callback *cb = priv;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		obs_frontend_remove_event_callback(frontend_event_callback, cb);
 		return;
 	}
@@ -415,6 +436,8 @@ void add_python_frontend_funcs(PyObject *module)
 		DEF_FUNC(get_transitions),
 		DEF_FUNC(get_current_transition),
 		DEF_FUNC(set_current_transition),
+		DEF_FUNC(set_transition_duration),
+		DEF_FUNC(get_transition_duration),
 		DEF_FUNC(get_scene_collections),
 		DEF_FUNC(get_current_scene_collection),
 		DEF_FUNC(set_current_scene_collection),

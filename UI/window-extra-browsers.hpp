@@ -4,6 +4,7 @@
 #include <QScopedPointer>
 #include <QAbstractTableModel>
 #include <QStyledItemDelegate>
+#include <memory>
 
 class Ui_OBSExtraBrowsers;
 class ExtraBrowsersModel;
@@ -13,7 +14,7 @@ class QCefWidget;
 class OBSExtraBrowsers : public QDialog {
 	Q_OBJECT
 
-	Ui_OBSExtraBrowsers *ui;
+	std::unique_ptr<Ui_OBSExtraBrowsers> ui;
 	ExtraBrowsersModel *model;
 
 public:
@@ -75,7 +76,8 @@ class ExtraBrowsersDelegate : public QStyledItemDelegate {
 
 public:
 	inline ExtraBrowsersDelegate(ExtraBrowsersModel *model_)
-		: QStyledItemDelegate(nullptr), model(model_)
+		: QStyledItemDelegate(nullptr),
+		  model(model_)
 	{
 	}
 

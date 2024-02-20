@@ -1,25 +1,16 @@
-if (NOT WIN32)
-	return()
-endif()
+cmake_minimum_required(VERSION 3.24...3.25)
 
-project(obs-text)
+legacy_check()
 
-if(WIN32)
-	set(MODULE_DESCRIPTION "OBS GDI+ text module")
-	configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in obs-text.rc)
-	set(obs-text_PLATFORM_SOURCES
-		gdiplus/obs-text.cpp
-		obs-text.rc)
-	set(obs-text_PLATFORM_DEPS
-		gdiplus)
-endif()
+add_library(obs-text MODULE)
+add_library(OBS::text ALIAS obs-text)
 
-add_library(obs-text MODULE
-	${obs-text_PLATFORM_SOURCES}
-	${obs-text_PLATFORM_HEADERS})
-target_link_libraries(obs-text
-	libobs
-	${obs-text_PLATFORM_DEPS})
-set_target_properties(obs-text PROPERTIES FOLDER "plugins")
+configure_file(cmake/windows/obs-module.rc.in obs-text.rc)
 
-install_obs_plugin_with_data(obs-text data)
+target_sources(obs-text PRIVATE gdiplus/obs-text.cpp obs-text.rc)
+
+target_link_libraries(obs-text PRIVATE OBS::libobs gdiplus)
+
+# cmake-format: off
+set_target_properties_obs(obs-text PROPERTIES FOLDER plugins PREFIX "")
+# cmake-format: on

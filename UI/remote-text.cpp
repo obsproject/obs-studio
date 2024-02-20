@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2015 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -22,7 +22,9 @@
 
 using namespace std;
 
-static auto curl_deleter = [](CURL *curl) { curl_easy_cleanup(curl); };
+static auto curl_deleter = [](CURL *curl) {
+	curl_easy_cleanup(curl);
+};
 using Curl = unique_ptr<CURL, decltype(curl_deleter)>;
 
 static size_t string_write(char *ptr, size_t size, size_t nmemb, string &str)
@@ -67,6 +69,7 @@ void RemoteTextThread::run()
 		curl_easy_setopt(curl.get(), CURLOPT_ACCEPT_ENCODING, "");
 		curl_easy_setopt(curl.get(), CURLOPT_HTTPHEADER, header);
 		curl_easy_setopt(curl.get(), CURLOPT_ERRORBUFFER, error);
+		curl_easy_setopt(curl.get(), CURLOPT_FAILONERROR, 1L);
 		curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION,
 				 string_write);
 		curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &str);
@@ -76,11 +79,6 @@ void RemoteTextThread::run()
 			curl_easy_setopt(curl.get(), CURLOPT_TIMEOUT,
 					 timeoutSec);
 
-#if LIBCURL_VERSION_NUM >= 0x072400
-		// A lot of servers don't yet support ALPN
-		curl_easy_setopt(curl.get(), CURLOPT_SSL_ENABLE_ALPN, 0);
-#endif
-
 		if (!postData.empty()) {
 			curl_easy_setopt(curl.get(), CURLOPT_POSTFIELDS,
 					 postData.c_str());
@@ -88,6 +86,9 @@ void RemoteTextThread::run()
 
 		code = curl_easy_perform(curl.get());
 		if (code != CURLE_OK) {
+			blog(LOG_WARNING,
+			     "RemoteTextThread: HTTP request failed. %s",
+			     strlen(error) ? error : curl_easy_strerror(code));
 			emit Result(QString(), QT_UTF8(error));
 		} else {
 			emit Result(QT_UTF8(str.c_str()), QString());
@@ -117,8 +118,10 @@ static size_t header_write(char *ptr, size_t size, size_t nmemb,
 
 bool GetRemoteFile(const char *url, std::string &str, std::string &error,
 		   long *responseCode, const char *contentType,
-		   const char *postData, std::vector<std::string> extraHeaders,
-		   std::string *signature, int timeoutSec)
+		   std::string request_type, const char *postData,
+		   std::vector<std::string> extraHeaders,
+		   std::string *signature, int timeoutSec, bool fail_on_error,
+		   int postDataSize)
 {
 	vector<string> header_in_list;
 	char error_in[CURL_ERROR_SIZE];
@@ -153,6 +156,8 @@ bool GetRemoteFile(const char *url, std::string &str, std::string &error,
 		curl_easy_setopt(curl.get(), CURLOPT_ACCEPT_ENCODING, "");
 		curl_easy_setopt(curl.get(), CURLOPT_HTTPHEADER, header);
 		curl_easy_setopt(curl.get(), CURLOPT_ERRORBUFFER, error_in);
+		if (fail_on_error)
+			curl_easy_setopt(curl.get(), CURLOPT_FAILONERROR, 1L);
 		curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION,
 				 string_write);
 		curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &str);
@@ -169,12 +174,27 @@ bool GetRemoteFile(const char *url, std::string &str, std::string &error,
 			curl_easy_setopt(curl.get(), CURLOPT_TIMEOUT,
 					 timeoutSec);
 
-#if LIBCURL_VERSION_NUM >= 0x072400
-		// A lot of servers don't yet support ALPN
-		curl_easy_setopt(curl.get(), CURLOPT_SSL_ENABLE_ALPN, 0);
-#endif
+		if (!request_type.empty()) {
+			if (request_type != "GET")
+				curl_easy_setopt(curl.get(),
+						 CURLOPT_CUSTOMREQUEST,
+						 request_type.c_str());
 
+			// Special case of "POST"
+			if (request_type == "POST") {
+				curl_easy_setopt(curl.get(), CURLOPT_POST, 1);
+				if (!postData)
+					curl_easy_setopt(curl.get(),
+							 CURLOPT_POSTFIELDS,
+							 "{}");
+			}
+		}
 		if (postData) {
+			if (postDataSize > 0) {
+				curl_easy_setopt(curl.get(),
+						 CURLOPT_POSTFIELDSIZE,
+						 (long)postDataSize);
+			}
 			curl_easy_setopt(curl.get(), CURLOPT_POSTFIELDS,
 					 postData);
 		}
@@ -185,11 +205,14 @@ bool GetRemoteFile(const char *url, std::string &str, std::string &error,
 					  responseCode);
 
 		if (code != CURLE_OK) {
-			error = error_in;
+			error = strlen(error_in) ? error_in
+						 : curl_easy_strerror(code);
 		} else if (signature) {
 			for (string &h : header_in_list) {
 				string name = h.substr(0, 13);
-				if (name == "X-Signature: ") {
+				// HTTP headers are technically case-insensitive
+				if (name == "X-Signature: " ||
+				    name == "x-signature: ") {
 					*signature = h.substr(13);
 					break;
 				}

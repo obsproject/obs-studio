@@ -23,6 +23,7 @@
 #include <util/util.hpp>
 #include <string>
 #include <vector>
+#include <QDir>
 
 enum obs_importer_responses {
 	IMPORTER_SUCCESS,
@@ -86,11 +87,7 @@ public:
 	int ImportScenes(const std::string &path, std::string &name,
 			 json11::Json &res);
 	bool Check(const std::string &path);
-	std::string Name(const std::string &path)
-	{
-		return "XSplit Import";
-		UNUSED_PARAMETER(path);
-	};
+	std::string Name(const std::string &) { return "XSplit Import"; };
 	OBSImporterFiles FindFiles();
 };
 
@@ -106,6 +103,7 @@ int ImportSC(const std::string &path, std::string &name, json11::Json &res);
 OBSImporterFiles ImportersFindFiles();
 
 void TranslateOSStudio(json11::Json &data);
+void TranslatePaths(json11::Json &data, const std::string &rootDir);
 
 static inline std::string GetFilenameFromPath(const std::string &path)
 {

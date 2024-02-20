@@ -1,6 +1,7 @@
 #pragma once
 
 #if defined(_WIN32)
+#include <combaseapi.h>
 #include <DeckLinkAPI.h>
 #include "win/decklink-sdk/DeckLinkAPIVersion.h"
 typedef BOOL decklink_bool_t;

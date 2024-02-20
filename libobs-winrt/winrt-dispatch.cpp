@@ -1,6 +1,6 @@
 extern "C" EXPORT void winrt_initialize()
 {
-	winrt::init_apartment(winrt::apartment_type::single_threaded);
+	winrt::init_apartment(winrt::apartment_type::multi_threaded);
 }
 
 extern "C" EXPORT void winrt_uninitialize()
@@ -42,11 +42,12 @@ extern "C" EXPORT struct winrt_disaptcher *winrt_dispatcher_init()
 			dispatcher->controller = std::move(controller);
 		}
 	} catch (const winrt::hresult_error &err) {
-		blog(LOG_ERROR, "winrt_dispatcher_init (0x%08X): %ls",
-		     err.to_abi(), err.message().c_str());
+		blog(LOG_ERROR, "winrt_dispatcher_init (0x%08X): %s",
+		     (int32_t)err.code(),
+		     winrt::to_string(err.message()).c_str());
 	} catch (...) {
 		blog(LOG_ERROR, "winrt_dispatcher_init (0x%08X)",
-		     winrt::to_hresult());
+		     (int32_t)winrt::to_hresult());
 	}
 
 	return dispatcher;
@@ -57,8 +58,9 @@ winrt_dispatcher_free(struct winrt_disaptcher *dispatcher)
 try {
 	delete dispatcher;
 } catch (const winrt::hresult_error &err) {
-	blog(LOG_ERROR, "winrt_dispatcher_free (0x%08X): %ls", err.to_abi(),
-	     err.message().c_str());
+	blog(LOG_ERROR, "winrt_dispatcher_free (0x%08X): %s",
+	     (int32_t)err.code(), winrt::to_string(err.message()).c_str());
 } catch (...) {
-	blog(LOG_ERROR, "winrt_dispatcher_free (0x%08X)", winrt::to_hresult());
+	blog(LOG_ERROR, "winrt_dispatcher_free (0x%08X)",
+	     (int32_t)winrt::to_hresult());
 }

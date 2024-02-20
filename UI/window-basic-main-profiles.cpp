@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2015 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -77,12 +77,13 @@ void EnumProfiles(std::function<bool(const char *, const char *)> &&cb)
 	os_globfree(glob);
 }
 
-static bool ProfileExists(const char *findName)
+static bool GetProfileDir(const char *findName, const char *&profileDir)
 {
 	bool found = false;
-	auto func = [&](const char *name, const char *) {
+	auto func = [&](const char *name, const char *path) {
 		if (strcmp(name, findName) == 0) {
 			found = true;
+			profileDir = strrchr(path, '/') + 1;
 			return false;
 		}
 		return true;
@@ -92,14 +93,17 @@ static bool ProfileExists(const char *findName)
 	return found;
 }
 
-static bool GetProfileName(QWidget *parent, std::string &name,
-			   std::string &file, const char *title,
-			   const char *text, const bool showWizard,
-			   bool &wizardChecked, const char *oldName = nullptr)
+static bool ProfileExists(const char *findName)
 {
-	char path[512];
-	int ret;
+	const char *profileDir = nullptr;
+	return GetProfileDir(findName, profileDir);
+}
 
+static bool AskForProfileName(QWidget *parent, std::string &name,
+			      const char *title, const char *text,
+			      const bool showWizard, bool &wizardChecked,
+			      const char *oldName = nullptr)
+{
 	for (;;) {
 		bool success = false;
 
@@ -130,10 +134,23 @@ static bool GetProfileName(QWidget *parent, std::string &name,
 		}
 		break;
 	}
+	return true;
+}
 
-	if (!GetFileSafeName(name.c_str(), file)) {
+static bool FindSafeProfileDirName(const std::string &profileName,
+				   std::string &dirName)
+{
+	char path[512];
+	int ret;
+
+	if (ProfileExists(profileName.c_str())) {
+		blog(LOG_WARNING, "Profile '%s' exists", profileName.c_str());
+		return false;
+	}
+
+	if (!GetFileSafeName(profileName.c_str(), dirName)) {
 		blog(LOG_WARNING, "Failed to create safe file name for '%s'",
-		     name.c_str());
+		     profileName.c_str());
 		return false;
 	}
 
@@ -143,15 +160,15 @@ static bool GetProfileName(QWidget *parent, std::string &name,
 		return false;
 	}
 
-	file.insert(0, path);
+	dirName.insert(0, path);
 
-	if (!GetClosestUnusedFileName(file, nullptr)) {
+	if (!GetClosestUnusedFileName(dirName, nullptr)) {
 		blog(LOG_WARNING, "Failed to get closest file name for %s",
-		     file.c_str());
+		     dirName.c_str());
 		return false;
 	}
 
-	file.erase(0, ret);
+	dirName.erase(0, ret);
 	return true;
 }
 
@@ -197,19 +214,59 @@ static bool CopyProfile(const char *fromPartial, const char *to)
 	return true;
 }
 
+static bool ProfileNeedsRestart(config_t *newConfig, QString &settings)
+{
+	OBSBasic *main = OBSBasic::Get();
+
+	const char *oldSpeakers =
+		config_get_string(main->Config(), "Audio", "ChannelSetup");
+	uint oldSampleRate =
+		config_get_uint(main->Config(), "Audio", "SampleRate");
+
+	const char *newSpeakers =
+		config_get_string(newConfig, "Audio", "ChannelSetup");
+	uint newSampleRate = config_get_uint(newConfig, "Audio", "SampleRate");
+
+	auto appendSetting = [&settings](const char *name) {
+		settings += QStringLiteral("\n") + QTStr(name);
+	};
+
+	bool result = false;
+	if (oldSpeakers != NULL && newSpeakers != NULL) {
+		result = strcmp(oldSpeakers, newSpeakers) != 0;
+		appendSetting("Basic.Settings.Audio.Channels");
+	}
+	if (oldSampleRate != 0 && newSampleRate != 0) {
+		result |= oldSampleRate != newSampleRate;
+		appendSetting("Basic.Settings.Audio.SampleRate");
+	}
+
+	return result;
+}
+
 bool OBSBasic::AddProfile(bool create_new, const char *title, const char *text,
 			  const char *init_text, bool rename)
 {
-	std::string newName;
-	std::string newDir;
-	std::string newPath;
-	ConfigFile config;
+	std::string name;
 
 	bool showWizardChecked = config_get_bool(App()->GlobalConfig(), "Basic",
 						 "ConfigOnNewProfile");
 
-	if (!GetProfileName(this, newName, newDir, title, text, create_new,
-			    showWizardChecked, init_text))
+	if (!AskForProfileName(this, name, title, text, create_new,
+			       showWizardChecked, init_text))
+		return false;
+
+	return CreateProfile(name, create_new, showWizardChecked, rename);
+}
+
+bool OBSBasic::CreateProfile(const std::string &newName, bool create_new,
+			     bool showWizardChecked, bool rename)
+{
+	std::string newDir;
+	std::string newPath;
+	ConfigFile config;
+
+	if (!FindSafeProfileDirName(newName, newDir))
 		return false;
 
 	if (create_new) {
@@ -248,6 +305,9 @@ bool OBSBasic::AddProfile(bool create_new, const char *title, const char *text,
 		return false;
 	}
 
+	if (api && !rename)
+		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGING);
+
 	config_set_string(App()->GlobalConfig(), "Basic", "Profile",
 			  newName.c_str());
 	config_set_string(App()->GlobalConfig(), "Basic", "ProfileDir",
@@ -257,6 +317,10 @@ bool OBSBasic::AddProfile(bool create_new, const char *title, const char *text,
 	if (create_new) {
 		auth.reset();
 		DestroyPanelCookieManager();
+#ifdef YOUTUBE_ENABLED
+		if (youtubeAppDock)
+			DeleteYouTubeAppDock();
+#endif
 	} else if (!rename) {
 		DuplicateCurrentCookieProfile(config);
 	}
@@ -278,6 +342,9 @@ bool OBSBasic::AddProfile(bool create_new, const char *title, const char *text,
 
 	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
 	UpdateTitleBar();
+	UpdateVolumeControlsDecayRate();
+
+	Auth::Load();
 
 	// Run auto configuration setup wizard when a new profile is made to assist
 	// setting up blank settings
@@ -288,11 +355,21 @@ bool OBSBasic::AddProfile(bool create_new, const char *title, const char *text,
 		wizard.exec();
 	}
 
-	if (api) {
+	if (api && !rename) {
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
 	}
 	return true;
+}
+
+bool OBSBasic::NewProfile(const QString &name)
+{
+	return CreateProfile(name.toStdString(), true, false, false);
+}
+
+bool OBSBasic::DuplicateProfile(const QString &name)
+{
+	return CreateProfile(name.toStdString(), false, false, false);
 }
 
 void OBSBasic::DeleteProfile(const char *profileName, const char *profileDir)
@@ -300,13 +377,15 @@ void OBSBasic::DeleteProfile(const char *profileName, const char *profileDir)
 	char profilePath[512];
 	char basePath[512];
 
-	int ret = GetConfigPath(basePath, 512, "obs-studio/basic/profiles");
+	int ret = GetConfigPath(basePath, sizeof(basePath),
+				"obs-studio/basic/profiles");
 	if (ret <= 0) {
 		blog(LOG_WARNING, "Failed to get profiles config path");
 		return;
 	}
 
-	ret = snprintf(profilePath, 512, "%s/%s/*", basePath, profileDir);
+	ret = snprintf(profilePath, sizeof(profilePath), "%s/%s/*", basePath,
+		       profileDir);
 	if (ret <= 0) {
 		blog(LOG_WARNING, "Failed to get path for profile dir '%s'",
 		     profileDir);
@@ -331,7 +410,8 @@ void OBSBasic::DeleteProfile(const char *profileName, const char *profileDir)
 
 	os_globfree(glob);
 
-	ret = snprintf(profilePath, 512, "%s/%s", basePath, profileDir);
+	ret = snprintf(profilePath, sizeof(profilePath), "%s/%s", basePath,
+		       profileDir);
 	if (ret <= 0) {
 		blog(LOG_WARNING, "Failed to get path for profile dir '%s'",
 		     profileDir);
@@ -343,6 +423,36 @@ void OBSBasic::DeleteProfile(const char *profileName, const char *profileDir)
 	blog(LOG_INFO, "------------------------------------------------");
 	blog(LOG_INFO, "Removed profile '%s' (%s)", profileName, profileDir);
 	blog(LOG_INFO, "------------------------------------------------");
+}
+
+void OBSBasic::DeleteProfile(const QString &profileName)
+{
+	std::string name = profileName.toStdString();
+	const char *curName =
+		config_get_string(App()->GlobalConfig(), "Basic", "Profile");
+
+	if (strcmp(curName, name.c_str()) == 0) {
+		on_actionRemoveProfile_triggered(true);
+		return;
+	}
+
+	const char *profileDir = nullptr;
+	if (!GetProfileDir(name.c_str(), profileDir)) {
+		blog(LOG_WARNING, "Profile '%s' not found", name.c_str());
+		return;
+	}
+
+	if (!profileDir) {
+		blog(LOG_WARNING, "Failed to get profile dir for profile '%s'",
+		     name.c_str());
+		return;
+	}
+
+	DeleteProfile(name.c_str(), profileDir);
+	RefreshProfiles();
+	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
 }
 
 void OBSBasic::RefreshProfiles()
@@ -390,17 +500,17 @@ void OBSBasic::ResetProfileData()
 	CreateHotkeys();
 
 	/* load audio monitoring */
-#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
-	const char *device_name =
-		config_get_string(basicConfig, "Audio", "MonitoringDeviceName");
-	const char *device_id =
-		config_get_string(basicConfig, "Audio", "MonitoringDeviceId");
+	if (obs_audio_monitoring_available()) {
+		const char *device_name = config_get_string(
+			basicConfig, "Audio", "MonitoringDeviceName");
+		const char *device_id = config_get_string(basicConfig, "Audio",
+							  "MonitoringDeviceId");
 
-	obs_set_audio_monitoring_device(device_name, device_id);
+		obs_set_audio_monitoring_device(device_name, device_id);
 
-	blog(LOG_INFO, "Audio monitoring device:\n\tname: %s\n\tid: %s",
-	     device_name, device_id);
-#endif
+		blog(LOG_INFO, "Audio monitoring device:\n\tname: %s\n\tid: %s",
+		     device_name, device_id);
+	}
 }
 
 void OBSBasic::on_actionNewProfile_triggered()
@@ -429,13 +539,11 @@ void OBSBasic::on_actionRenameProfile_triggered()
 		RefreshProfiles();
 	}
 
-	if (api) {
-		api->on_event(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
-		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
-	}
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_PROFILE_RENAMED);
 }
 
-void OBSBasic::on_actionRemoveProfile_triggered()
+void OBSBasic::on_actionRemoveProfile_triggered(bool skipConfirmation)
 {
 	std::string newName;
 	std::string newPath;
@@ -462,13 +570,15 @@ void OBSBasic::on_actionRemoveProfile_triggered()
 	if (newPath.empty())
 		return;
 
-	QString text = QTStr("ConfirmRemove.Text");
-	text.replace("$1", QT_UTF8(oldName.c_str()));
+	if (!skipConfirmation) {
+		QString text = QTStr("ConfirmRemove.Text")
+				       .arg(QT_UTF8(oldName.c_str()));
 
-	QMessageBox::StandardButton button = OBSMessageBox::question(
-		this, QTStr("ConfirmRemove.Title"), text);
-	if (button == QMessageBox::No)
-		return;
+		QMessageBox::StandardButton button = OBSMessageBox::question(
+			this, QTStr("ConfirmRemove.Title"), text);
+		if (button == QMessageBox::No)
+			return;
+	}
 
 	size_t newPath_len = newPath.size();
 	newPath += "/basic.ini";
@@ -479,6 +589,9 @@ void OBSBasic::on_actionRemoveProfile_triggered()
 		return;
 	}
 
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGING);
+
 	newPath.resize(newPath_len);
 
 	const char *newDir = strrchr(newPath.c_str(), '/') + 1;
@@ -486,6 +599,10 @@ void OBSBasic::on_actionRemoveProfile_triggered()
 	config_set_string(App()->GlobalConfig(), "Basic", "Profile",
 			  newName.c_str());
 	config_set_string(App()->GlobalConfig(), "Basic", "ProfileDir", newDir);
+
+	QString settingsRequiringRestart;
+	bool needsRestart =
+		ProfileNeedsRestart(config, settingsRequiringRestart);
 
 	Auth::Save();
 	auth.reset();
@@ -505,12 +622,25 @@ void OBSBasic::on_actionRemoveProfile_triggered()
 	blog(LOG_INFO, "------------------------------------------------");
 
 	UpdateTitleBar();
+	UpdateVolumeControlsDecayRate();
 
 	Auth::Load();
 
 	if (api) {
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
+	}
+
+	if (needsRestart) {
+		QMessageBox::StandardButton button = OBSMessageBox::question(
+			this, QTStr("Restart"),
+			QTStr("LoadProfileNeedsRestart")
+				.arg(settingsRequiringRestart));
+
+		if (button == QMessageBox::Yes) {
+			restart = true;
+			close();
+		}
 	}
 }
 
@@ -638,10 +768,17 @@ void OBSBasic::ChangeProfile()
 		return;
 	}
 
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGING);
+
 	path.resize(path_len);
 
 	const char *newName = config_get_string(config, "General", "Name");
 	const char *newDir = strrchr(path.c_str(), '/') + 1;
+
+	QString settingsRequiringRestart;
+	bool needsRestart =
+		ProfileNeedsRestart(config, settingsRequiringRestart);
 
 	config_set_string(App()->GlobalConfig(), "Basic", "Profile", newName);
 	config_set_string(App()->GlobalConfig(), "Basic", "ProfileDir", newDir);
@@ -649,6 +786,10 @@ void OBSBasic::ChangeProfile()
 	Auth::Save();
 	auth.reset();
 	DestroyPanelCookieManager();
+#ifdef YOUTUBE_ENABLED
+	if (youtubeAppDock)
+		DeleteYouTubeAppDock();
+#endif
 
 	config.Swap(basicConfig);
 	InitBasicConfigDefaults();
@@ -657,8 +798,13 @@ void OBSBasic::ChangeProfile()
 	RefreshProfiles();
 	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
 	UpdateTitleBar();
+	UpdateVolumeControlsDecayRate();
 
 	Auth::Load();
+#ifdef YOUTUBE_ENABLED
+	if (YouTubeAppDock::IsYTServiceSelected() && !youtubeAppDock)
+		NewYouTubeAppDock();
+#endif
 
 	CheckForSimpleModeX264Fallback();
 
@@ -667,6 +813,18 @@ void OBSBasic::ChangeProfile()
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
+
+	if (needsRestart) {
+		QMessageBox::StandardButton button = OBSMessageBox::question(
+			this, QTStr("Restart"),
+			QTStr("LoadProfileNeedsRestart")
+				.arg(settingsRequiringRestart));
+
+		if (button == QMessageBox::Yes) {
+			restart = true;
+			close();
+		}
+	}
 }
 
 void OBSBasic::CheckForSimpleModeX264Fallback()
@@ -676,24 +834,58 @@ void OBSBasic::CheckForSimpleModeX264Fallback()
 	const char *curRecEncoder =
 		config_get_string(basicConfig, "SimpleOutput", "RecEncoder");
 	bool qsv_supported = false;
+	bool qsv_av1_supported = false;
 	bool amd_supported = false;
 	bool nve_supported = false;
+#ifdef ENABLE_HEVC
+	bool amd_hevc_supported = false;
+	bool nve_hevc_supported = false;
+	bool apple_hevc_supported = false;
+#endif
+	bool amd_av1_supported = false;
+	bool apple_supported = false;
 	bool changed = false;
 	size_t idx = 0;
 	const char *id;
 
 	while (obs_enum_encoder_types(idx++, &id)) {
-		if (strcmp(id, "amd_amf_h264") == 0)
+		if (strcmp(id, "h264_texture_amf") == 0)
 			amd_supported = true;
 		else if (strcmp(id, "obs_qsv11") == 0)
 			qsv_supported = true;
+		else if (strcmp(id, "obs_qsv11_av1") == 0)
+			qsv_av1_supported = true;
 		else if (strcmp(id, "ffmpeg_nvenc") == 0)
 			nve_supported = true;
+#ifdef ENABLE_HEVC
+		else if (strcmp(id, "h265_texture_amf") == 0)
+			amd_hevc_supported = true;
+		else if (strcmp(id, "ffmpeg_hevc_nvenc") == 0)
+			nve_hevc_supported = true;
+#endif
+		else if (strcmp(id, "av1_texture_amf") == 0)
+			amd_av1_supported = true;
+		else if (strcmp(id,
+				"com.apple.videotoolbox.videoencoder.ave.avc") ==
+			 0)
+			apple_supported = true;
+#ifdef ENABLE_HEVC
+		else if (strcmp(id,
+				"com.apple.videotoolbox.videoencoder.ave.hevc") ==
+			 0)
+			apple_hevc_supported = true;
+#endif
 	}
 
 	auto CheckEncoder = [&](const char *&name) {
 		if (strcmp(name, SIMPLE_ENCODER_QSV) == 0) {
 			if (!qsv_supported) {
+				changed = true;
+				name = SIMPLE_ENCODER_X264;
+				return false;
+			}
+		} else if (strcmp(name, SIMPLE_ENCODER_QSV_AV1) == 0) {
+			if (!qsv_av1_supported) {
 				changed = true;
 				name = SIMPLE_ENCODER_X264;
 				return false;
@@ -704,12 +896,52 @@ void OBSBasic::CheckForSimpleModeX264Fallback()
 				name = SIMPLE_ENCODER_X264;
 				return false;
 			}
+		} else if (strcmp(name, SIMPLE_ENCODER_NVENC_AV1) == 0) {
+			if (!nve_supported) {
+				changed = true;
+				name = SIMPLE_ENCODER_X264;
+				return false;
+			}
+#ifdef ENABLE_HEVC
+		} else if (strcmp(name, SIMPLE_ENCODER_AMD_HEVC) == 0) {
+			if (!amd_hevc_supported) {
+				changed = true;
+				name = SIMPLE_ENCODER_X264;
+				return false;
+			}
+		} else if (strcmp(name, SIMPLE_ENCODER_NVENC_HEVC) == 0) {
+			if (!nve_hevc_supported) {
+				changed = true;
+				name = SIMPLE_ENCODER_X264;
+				return false;
+			}
+#endif
 		} else if (strcmp(name, SIMPLE_ENCODER_AMD) == 0) {
 			if (!amd_supported) {
 				changed = true;
 				name = SIMPLE_ENCODER_X264;
 				return false;
 			}
+		} else if (strcmp(name, SIMPLE_ENCODER_AMD_AV1) == 0) {
+			if (!amd_av1_supported) {
+				changed = true;
+				name = SIMPLE_ENCODER_X264;
+				return false;
+			}
+		} else if (strcmp(name, SIMPLE_ENCODER_APPLE_H264) == 0) {
+			if (!apple_supported) {
+				changed = true;
+				name = SIMPLE_ENCODER_X264;
+				return false;
+			}
+#ifdef ENABLE_HEVC
+		} else if (strcmp(name, SIMPLE_ENCODER_APPLE_HEVC) == 0) {
+			if (!apple_hevc_supported) {
+				changed = true;
+				name = SIMPLE_ENCODER_X264;
+				return false;
+			}
+#endif
 		}
 
 		return true;

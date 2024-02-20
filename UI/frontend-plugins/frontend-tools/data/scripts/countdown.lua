@@ -129,7 +129,7 @@ end
 -- A function named script_description returns the description shown to
 -- the user
 function script_description()
-	return "Sets a text source to act as a countdown timer when the source is active.\n\nMade by Jim"
+	return "Sets a text source to act as a countdown timer when the source is active.\n\nMade by Lain"
 end
 
 -- A function named script_update will be called when settings are changed

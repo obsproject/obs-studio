@@ -1,79 +1,56 @@
-project(decklink-output-ui)
+cmake_minimum_required(VERSION 3.22...3.25)
 
-if(APPLE)
-	find_library(COCOA Cocoa)
-	include_directories(${COCOA})
+legacy_check()
+
+if(NOT ENABLE_DECKLINK)
+  target_disable(decklink-output-ui)
+  return()
 endif()
 
-if(UNIX AND NOT APPLE)
-	find_package(X11 REQUIRED)
-	link_libraries(${X11_LIBRARIES})
-	include_directories(${X11_INCLUDE_DIR})
+find_package(Qt6 REQUIRED Widgets)
 
-	find_package(Qt5X11Extras REQUIRED)
+if(OS_LINUX
+   OR OS_FREEBSD
+   OR OS_OPENBSD)
+  find_package(Qt6 REQUIRED Gui)
+
+  find_package(X11 REQUIRED)
 endif()
 
-set(decklink-ouput-ui_HEADERS
-	${decklink-ouput-ui_HEADERS}
-	../../qt-wrappers.hpp
-	../../properties-view.hpp
-	../../properties-view.moc.hpp
-	../../vertical-scroll-area.hpp
-	../../double-slider.hpp
-	../../slider-ignorewheel.hpp
-	../../combobox-ignorewheel.hpp
-	../../spinbox-ignorewheel.hpp
-	./DecklinkOutputUI.h
-	decklink-ui-main.h
-	)
-set(decklink-ouput-ui_SOURCES
-	${decklink-ouput-ui_SOURCES}
-	../../qt-wrappers.cpp
-	../../properties-view.cpp
-	../../vertical-scroll-area.cpp
-	../../double-slider.cpp
-	../../slider-ignorewheel.cpp
-	../../combobox-ignorewheel.cpp
-	../../spinbox-ignorewheel.cpp
-	./DecklinkOutputUI.cpp
-	decklink-ui-main.cpp
-	)
-set(decklink-ouput-ui_UI
-	${decklink-ouput-ui_UI}
-	forms/output.ui
-	)
+add_library(decklink-output-ui MODULE)
+add_library(OBS::decklink-output-ui ALIAS decklink-output-ui)
 
-if(WIN32)
-	set(MODULE_DESCRIPTION "OBS DeckLink Output UI")
-	configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in decklink-ouput-ui.rc)
-	list(APPEND decklink-ouput-ui_SOURCES
-		decklink-ouput-ui.rc)
+target_sources(decklink-output-ui PRIVATE forms/output.ui)
+
+target_sources(decklink-output-ui PRIVATE DecklinkOutputUI.cpp DecklinkOutputUI.h decklink-ui-main.cpp
+                                          decklink-ui-main.h)
+
+target_compile_options(decklink-output-ui PRIVATE $<$<PLATFORM_ID:Darwin>:-Wno-quoted-include-in-framework-header>)
+
+target_link_libraries(
+  decklink-output-ui
+  PRIVATE OBS::libobs
+          OBS::frontend-api
+          OBS::ui-support
+          Qt::Widgets
+          "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>>"
+          $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:X11::X11>
+          $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:Qt::GuiPrivate>)
+
+if(OS_WINDOWS)
+  configure_file(cmake/windows/obs-module.rc.in decklink-output-ui.rc)
+  target_sources(decklink-output-ui PRIVATE decklink-output-ui.rc)
+
+  # cmake-format: off
+  set_property(TARGET decklink-output-ui APPEND PROPERTY AUTORCC_OPTIONS --format-version 1)
+  # cmake-format: on
 endif()
 
-if(APPLE)
-	set(decklink-ouput-ui_PLATFORM_LIBS
-		${COCOA})
-endif()
-
-qt5_wrap_ui(decklink-ouput-ui_UI_HEADERS
-	${decklink-ouput-ui_UI})
-
-add_library(decklink-ouput-ui MODULE
-	${decklink-ouput-ui_HEADERS}
-	${decklink-ouput-ui_SOURCES}
-	${decklink-ouput-ui_UI_HEADERS}
-	)
-target_link_libraries(decklink-ouput-ui
-	${frontend-tools_PLATFORM_LIBS}
-	obs-frontend-api
-	Qt5::Widgets
-	libobs)
-
-if(UNIX AND NOT APPLE)
-	target_link_libraries(decklink-ouput-ui
-		Qt5::X11Extras)
-endif()
-
-set_target_properties(decklink-ouput-ui PROPERTIES FOLDER "frontend")
-
-install_obs_plugin_with_data(decklink-ouput-ui data)
+set_target_properties_obs(
+  decklink-output-ui
+  PROPERTIES FOLDER frontend
+             PREFIX ""
+             AUTOMOC ON
+             AUTOUIC ON
+             AUTORCC ON
+             AUTOUIC_SEARCH_PATHS forms)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -70,6 +70,11 @@ static inline bool create_process(const char *cmd_line, HANDLE stdin_handle,
 		if (success) {
 			*process = pi.hProcess;
 			CloseHandle(pi.hThread);
+		} else {
+			// Not logging the full command line is intentional
+			// as it may contain stream keys etc.
+			blog(LOG_ERROR, "CreateProcessW failed: %lu",
+			     GetLastError());
 		}
 
 		bfree(cmd_line_w);

@@ -18,7 +18,7 @@
 #include <obs-module.h>
 #include <obs-avc.h>
 #include <util/platform.h>
-#include <util/circlebuf.h>
+#include <util/deque.h>
 #include <util/dstr.h>
 #include <util/threading.h>
 #include <inttypes.h>
@@ -45,6 +45,8 @@
 #define OPT_MAX_SHUTDOWN_TIME_SEC "max_shutdown_time_sec"
 #define OPT_BIND_IP "bind_ip"
 
+#define FTL_URL_PROTOCOL "ftl://"
+
 typedef struct _nalu_t {
 	int len;
 	int dts_usec;
@@ -62,7 +64,7 @@ struct ftl_stream {
 	obs_output_t *output;
 
 	pthread_mutex_t packets_mutex;
-	struct circlebuf packets;
+	struct deque packets;
 	bool sent_headers;
 	int64_t frames_sent;
 
@@ -107,8 +109,6 @@ struct ftl_stream {
 	frame_of_nalus_t coded_pic_buffer;
 };
 
-static void log_libftl_messages(ftl_log_severity_t log_level,
-				const char *message);
 static int init_connect(struct ftl_stream *stream);
 static void *connect_thread(void *data);
 static void *status_thread(void *data);
@@ -118,12 +118,6 @@ static const char *ftl_stream_getname(void *unused)
 {
 	UNUSED_PARAMETER(unused);
 	return obs_module_text("FTLStream");
-}
-
-static void log_ftl(int level, const char *format, va_list args)
-{
-	blogva(LOG_INFO, format, args);
-	UNUSED_PARAMETER(level);
 }
 
 static inline size_t num_buffered_packets(struct ftl_stream *stream);
@@ -140,7 +134,7 @@ static inline void free_packets(struct ftl_stream *stream)
 
 	while (stream->packets.size) {
 		struct encoder_packet packet;
-		circlebuf_pop_front(&stream->packets, &packet, sizeof(packet));
+		deque_pop_front(&stream->packets, &packet, sizeof(packet));
 		obs_encoder_packet_release(&packet);
 	}
 	pthread_mutex_unlock(&stream->packets_mutex);
@@ -211,7 +205,7 @@ static void ftl_stream_destroy(void *data)
 		os_event_destroy(stream->stop_event);
 		os_sem_destroy(stream->send_sem);
 		pthread_mutex_destroy(&stream->packets_mutex);
-		circlebuf_free(&stream->packets);
+		deque_free(&stream->packets);
 		bfree(stream);
 	}
 }
@@ -282,8 +276,8 @@ static inline bool get_next_packet(struct ftl_stream *stream,
 
 	pthread_mutex_lock(&stream->packets_mutex);
 	if (stream->packets.size) {
-		circlebuf_pop_front(&stream->packets, packet,
-				    sizeof(struct encoder_packet));
+		deque_pop_front(&stream->packets, packet,
+				sizeof(struct encoder_packet));
 		new_packet = true;
 	}
 	pthread_mutex_unlock(&stream->packets_mutex);
@@ -551,7 +545,8 @@ static bool send_video_header(struct ftl_stream *stream, int64_t dts_usec)
 					.keyframe = true,
 					.dts_usec = dts_usec};
 
-	obs_encoder_get_extra_data(vencoder, &header, &size);
+	if (!obs_encoder_get_extra_data(vencoder, &header, &size))
+		return false;
 	packet.size = obs_parse_avc_header(&packet.data, header, size);
 	return send_packet(stream, &packet, true) >= 0;
 }
@@ -663,8 +658,8 @@ static bool ftl_stream_start(void *data)
 static inline bool add_packet(struct ftl_stream *stream,
 			      struct encoder_packet *packet)
 {
-	circlebuf_push_back(&stream->packets, packet,
-			    sizeof(struct encoder_packet));
+	deque_push_back(&stream->packets, packet,
+			sizeof(struct encoder_packet));
 	return true;
 }
 
@@ -678,7 +673,7 @@ static void drop_frames(struct ftl_stream *stream, const char *name,
 {
 	UNUSED_PARAMETER(pframes);
 
-	struct circlebuf new_buf = {0};
+	struct deque new_buf = {0};
 	int num_frames_dropped = 0;
 
 #ifdef _DEBUG
@@ -687,16 +682,16 @@ static void drop_frames(struct ftl_stream *stream, const char *name,
 	UNUSED_PARAMETER(name);
 #endif
 
-	circlebuf_reserve(&new_buf, sizeof(struct encoder_packet) * 8);
+	deque_reserve(&new_buf, sizeof(struct encoder_packet) * 8);
 
 	while (stream->packets.size) {
 		struct encoder_packet packet;
-		circlebuf_pop_front(&stream->packets, &packet, sizeof(packet));
+		deque_pop_front(&stream->packets, &packet, sizeof(packet));
 
 		/* do not drop audio data or video keyframes */
 		if (packet.type == OBS_ENCODER_AUDIO ||
 		    packet.drop_priority >= highest_priority) {
-			circlebuf_push_back(&new_buf, &packet, sizeof(packet));
+			deque_push_back(&new_buf, &packet, sizeof(packet));
 
 		} else {
 			num_frames_dropped++;
@@ -704,7 +699,7 @@ static void drop_frames(struct ftl_stream *stream, const char *name,
 		}
 	}
 
-	circlebuf_free(&stream->packets);
+	deque_free(&stream->packets);
 	stream->packets = new_buf;
 
 	if (stream->min_priority < highest_priority)
@@ -726,7 +721,7 @@ static bool find_first_video_packet(struct ftl_stream *stream,
 
 	for (size_t i = 0; i < count; i++) {
 		struct encoder_packet *cur =
-			circlebuf_data(&stream->packets, i * sizeof(*first));
+			deque_data(&stream->packets, i * sizeof(*first));
 		if (cur->type == OBS_ENCODER_VIDEO && !cur->keyframe) {
 			*first = *cur;
 			return true;
@@ -886,6 +881,7 @@ static enum ret_type ftl_event(struct ftl_stream *stream,
 	//tell OBS and it will trigger a reconnection
 	blog(LOG_WARNING, "Reconnecting to Ingest");
 	obs_output_signal_stop(stream->output, OBS_OUTPUT_DISCONNECTED);
+	reset_semaphore(stream);
 	return RET_EXIT;
 }
 
@@ -1008,18 +1004,11 @@ static void *connect_thread(void *data)
 	return NULL;
 }
 
-static void log_libftl_messages(ftl_log_severity_t log_level,
-				const char *message)
-{
-	UNUSED_PARAMETER(log_level);
-	blog(LOG_WARNING, "[libftl] %s", message);
-}
-
 static int init_connect(struct ftl_stream *stream)
 {
 	obs_service_t *service;
 	obs_data_t *settings;
-	const char *bind_ip, *key;
+	const char *bind_ip, *key, *ingest_url;
 	ftl_status_t status_code;
 
 	info("init_connect");
@@ -1045,8 +1034,17 @@ static int init_connect(struct ftl_stream *stream)
 		obs_output_get_video_encoder(stream->output);
 	obs_data_t *video_settings = obs_encoder_get_settings(video_encoder);
 
-	dstr_copy(&stream->path, obs_service_get_url(service));
-	key = obs_service_get_key(service);
+	ingest_url = obs_service_get_connect_info(
+		service, OBS_SERVICE_CONNECT_INFO_SERVER_URL);
+	if (strncmp(ingest_url, FTL_URL_PROTOCOL, strlen(FTL_URL_PROTOCOL)) ==
+	    0) {
+		dstr_copy(&stream->path, ingest_url + strlen(FTL_URL_PROTOCOL));
+	} else {
+		dstr_copy(&stream->path, ingest_url);
+	}
+
+	key = obs_service_get_connect_info(service,
+					   OBS_SERVICE_CONNECT_INFO_STREAM_KEY);
 
 	int target_bitrate = (int)obs_data_get_int(video_settings, "bitrate");
 	int peak_bitrate = (int)((float)target_bitrate * 1.1f);
@@ -1061,7 +1059,7 @@ static int init_connect(struct ftl_stream *stream)
 	stream->params.audio_codec = FTL_AUDIO_OPUS;
 	stream->params.ingest_hostname = stream->path.array;
 	stream->params.vendor_name = "OBS Studio";
-	stream->params.vendor_version = OBS_VERSION;
+	stream->params.vendor_version = obs_get_version_string();
 	stream->params.peak_kbps = stream->peak_kbps < 0 ? 0
 							 : stream->peak_kbps;
 
@@ -1082,8 +1080,12 @@ static int init_connect(struct ftl_stream *stream)
 		}
 	}
 
-	dstr_copy(&stream->username, obs_service_get_username(service));
-	dstr_copy(&stream->password, obs_service_get_password(service));
+	dstr_copy(&stream->username,
+		  obs_service_get_connect_info(
+			  service, OBS_SERVICE_CONNECT_INFO_USERNAME));
+	dstr_copy(&stream->password,
+		  obs_service_get_connect_info(
+			  service, OBS_SERVICE_CONNECT_INFO_PASSWORD));
 	dstr_depad(&stream->path);
 
 	stream->drop_threshold_usec =
@@ -1148,6 +1150,7 @@ static int _ftl_error_to_obs_error(int status)
 struct obs_output_info ftl_output_info = {
 	.id = "ftl_output",
 	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_SERVICE,
+	.protocols = "FTL",
 	.encoded_video_codecs = "h264",
 	.encoded_audio_codecs = "opus",
 	.get_name = ftl_stream_getname,

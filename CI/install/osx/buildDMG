@@ -1,1 +1,0 @@
-dmgbuild -s ./settings.json "OBS" obs.dmg

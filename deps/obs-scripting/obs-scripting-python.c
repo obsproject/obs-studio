@@ -1,6 +1,6 @@
 /******************************************************************************
     Copyright (C) 2015 by Andrew Skinner <obs@theandyroid.com>
-    Copyright (C) 2017 by Hugh Bailey <jim@obsproject.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,6 @@
 ******************************************************************************/
 
 #include "obs-scripting-python.h"
-#include "obs-scripting-config.h"
 #include <util/base.h>
 #include <util/platform.h>
 #include <util/darray.h>
@@ -49,12 +48,14 @@ sys.stderr = stderr_logger()\n";
 
 #if RUNTIME_LINK
 static wchar_t home_path[1024] = {0};
+static python_version_t python_version = {0};
 #endif
 
 DARRAY(char *) python_paths;
 static bool python_loaded = false;
+static bool mutexes_loaded = false;
 
-static pthread_mutex_t tick_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t tick_mutex;
 static struct obs_python_script *first_tick_script = NULL;
 
 static PyObject *py_obspython = NULL;
@@ -378,7 +379,7 @@ struct python_obs_timer {
 	uint64_t interval;
 };
 
-static pthread_mutex_t timer_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t timer_mutex;
 static struct python_obs_timer *first_timer = NULL;
 
 static inline void python_obs_timer_init(struct python_obs_timer *timer)
@@ -430,7 +431,7 @@ static void timer_call(struct script_callback *p_cb)
 {
 	struct python_obs_callback *cb = (struct python_obs_callback *)p_cb;
 
-	if (p_cb->removed)
+	if (script_callback_removed(p_cb))
 		return;
 
 	lock_callback(cb);
@@ -475,7 +476,7 @@ static void obs_python_tick_callback(void *priv, float seconds)
 {
 	struct python_obs_callback *cb = priv;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		obs_remove_tick_callback(obs_python_tick_callback, cb);
 		return;
 	}
@@ -498,7 +499,7 @@ static PyObject *obs_python_remove_tick_callback(PyObject *self, PyObject *args)
 
 	if (!script) {
 		PyErr_SetString(PyExc_RuntimeError,
-				"No active script, report this to Jim");
+				"No active script, report this to Lain");
 		return NULL;
 	}
 
@@ -523,7 +524,7 @@ static PyObject *obs_python_add_tick_callback(PyObject *self, PyObject *args)
 
 	if (!script) {
 		PyErr_SetString(PyExc_RuntimeError,
-				"No active script, report this to Jim");
+				"No active script, report this to Lain");
 		return NULL;
 	}
 
@@ -545,7 +546,7 @@ static void calldata_signal_callback(void *priv, calldata_t *cd)
 {
 	struct python_obs_callback *cb = priv;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		signal_handler_remove_current();
 		return;
 	}
@@ -576,7 +577,7 @@ static PyObject *obs_python_signal_handler_disconnect(PyObject *self,
 
 	if (!script) {
 		PyErr_SetString(PyExc_RuntimeError,
-				"No active script, report this to Jim");
+				"No active script, report this to Lain");
 		return NULL;
 	}
 
@@ -622,7 +623,7 @@ static PyObject *obs_python_signal_handler_connect(PyObject *self,
 
 	if (!script) {
 		PyErr_SetString(PyExc_RuntimeError,
-				"No active script, report this to Jim");
+				"No active script, report this to Lain");
 		return NULL;
 	}
 
@@ -651,7 +652,7 @@ static void calldata_signal_callback_global(void *priv, const char *signal,
 {
 	struct python_obs_callback *cb = priv;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		signal_handler_remove_current();
 		return;
 	}
@@ -681,7 +682,7 @@ static PyObject *obs_python_signal_handler_disconnect_global(PyObject *self,
 
 	if (!script) {
 		PyErr_SetString(PyExc_RuntimeError,
-				"No active script, report this to Jim");
+				"No active script, report this to Lain");
 		return NULL;
 	}
 
@@ -723,7 +724,7 @@ static PyObject *obs_python_signal_handler_connect_global(PyObject *self,
 
 	if (!script) {
 		PyErr_SetString(PyExc_RuntimeError,
-				"No active script, report this to Jim");
+				"No active script, report this to Lain");
 		return NULL;
 	}
 
@@ -766,7 +767,7 @@ static void hotkey_pressed(void *p_cb, bool pressed)
 {
 	struct python_obs_callback *cb = p_cb;
 
-	if (cb->base.removed)
+	if (script_callback_removed(&cb->base))
 		return;
 
 	lock_callback(cb);
@@ -802,7 +803,7 @@ static void hotkey_callback(void *p_cb, obs_hotkey_id id, obs_hotkey_t *hotkey,
 {
 	struct python_obs_callback *cb = p_cb;
 
-	if (cb->base.removed)
+	if (script_callback_removed(&cb->base))
 		return;
 
 	if (pressed)
@@ -821,7 +822,7 @@ static PyObject *hotkey_unregister(PyObject *self, PyObject *args)
 
 	if (!script) {
 		PyErr_SetString(PyExc_RuntimeError,
-				"No active script, report this to Jim");
+				"No active script, report this to Lain");
 		return NULL;
 	}
 
@@ -872,7 +873,7 @@ static bool button_prop_clicked(obs_properties_t *props, obs_property_t *p,
 	struct python_obs_callback *cb = p_cb;
 	bool ret = false;
 
-	if (cb->base.removed)
+	if (script_callback_removed(&cb->base))
 		return false;
 
 	lock_callback(cb);
@@ -936,7 +937,7 @@ static bool modified_callback(void *p_cb, obs_properties_t *props,
 	struct python_obs_callback *cb = p_cb;
 	bool ret = false;
 
-	if (cb->base.removed)
+	if (script_callback_removed(&cb->base))
 		return false;
 
 	lock_callback(cb);
@@ -1106,6 +1107,23 @@ static PyObject *scene_enum_items(PyObject *self, PyObject *args)
 	return list;
 }
 
+static PyObject *sceneitem_group_enum_items(PyObject *self, PyObject *args)
+{
+	PyObject *py_sceneitem;
+	obs_sceneitem_t *sceneitem;
+
+	UNUSED_PARAMETER(self);
+
+	if (!parse_args(args, "O", &py_sceneitem))
+		return python_none();
+	if (!py_to_libobs(obs_sceneitem_t, py_sceneitem, &sceneitem))
+		return python_none();
+
+	PyObject *list = PyList_New(0);
+	obs_sceneitem_group_enum_items(sceneitem, enum_items_proc, list);
+	return list;
+}
+
 /* -------------------------------------------- */
 
 static PyObject *source_list_release(PyObject *self, PyObject *args)
@@ -1233,6 +1251,8 @@ static void add_hook_functions(PyObject *module)
 		DEF_FUNC("sceneitem_list_release", sceneitem_list_release),
 		DEF_FUNC("obs_enum_sources", enum_sources),
 		DEF_FUNC("obs_scene_enum_items", scene_enum_items),
+		DEF_FUNC("obs_sceneitem_group_enum_items",
+			 sceneitem_group_enum_items),
 		DEF_FUNC("obs_remove_tick_callback",
 			 obs_python_remove_tick_callback),
 		DEF_FUNC("obs_add_tick_callback", obs_python_add_tick_callback),
@@ -1272,8 +1292,12 @@ bool obs_python_script_load(obs_script_t *s)
 		data->base.loaded = load_python_script(data);
 		unlock_python();
 
-		if (data->base.loaded)
+		if (data->base.loaded) {
+			blog(LOG_INFO,
+			     "[obs-scripting]: Loaded python script: %s",
+			     data->base.file.array);
 			obs_python_script_update(s, NULL);
+		}
 	}
 
 	return data->base.loaded;
@@ -1316,6 +1340,8 @@ obs_script_t *obs_python_script_create(const char *path, obs_data_t *settings)
 	add_to_python_path(data->dir.array);
 	data->base.loaded = load_python_script(data);
 	if (data->base.loaded) {
+		blog(LOG_INFO, "[obs-scripting]: Loaded python script: %s",
+		     data->base.file.array);
 		cur_python_script = data;
 		obs_python_script_update(&data->base, NULL);
 		cur_python_script = NULL;
@@ -1331,6 +1357,24 @@ void obs_python_script_unload(obs_script_t *s)
 
 	if (!s->loaded || !python_loaded)
 		return;
+
+	/* ---------------------------- */
+	/* mark callbacks as removed    */
+
+	lock_python();
+
+	/* XXX: scripts can potentially make callbacks when this happens, so
+	 * this probably still isn't ideal as we can't predict how the
+	 * processor or operating system is going to schedule things. a more
+	 * ideal method would be to reference count the script objects and
+	 * atomically share ownership with callbacks when they're called. */
+	struct script_callback *cb = data->first_callback;
+	while (cb) {
+		os_atomic_set_bool(&cb->removed, true);
+		cb = cb->next;
+	}
+
+	unlock_python();
 
 	/* ---------------------------- */
 	/* unhook tick function         */
@@ -1349,7 +1393,7 @@ void obs_python_script_unload(obs_script_t *s)
 		data->next_tick = NULL;
 	}
 
-	lock_python();
+	relock_python();
 
 	Py_XDECREF(data->tick);
 	Py_XDECREF(data->save);
@@ -1363,7 +1407,7 @@ void obs_python_script_unload(obs_script_t *s)
 	/* ---------------------------- */
 	/* remove all callbacks         */
 
-	struct script_callback *cb = data->first_callback;
+	cb = data->first_callback;
 	while (cb) {
 		struct script_callback *next = cb->next;
 		remove_script_callback(cb);
@@ -1377,6 +1421,9 @@ void obs_python_script_unload(obs_script_t *s)
 	unlock_python();
 
 	s->loaded = false;
+
+	blog(LOG_INFO, "[obs-scripting]: Unloaded python script: %s",
+	     data->base.file.array);
 }
 
 void obs_python_script_destroy(obs_script_t *s)
@@ -1485,6 +1532,12 @@ void obs_python_script_save(obs_script_t *s)
 static void python_tick(void *param, float seconds)
 {
 	struct obs_python_script *data;
+	/* When loading a new Python script, the GIL might be released while
+	 * importing the module, allowing the tick to run and change and reset
+	 * the cur_python_script state variable. Use the busy_script variable
+	 * to save and restore the value if not null.
+	 */
+	struct obs_python_script *busy_script = NULL;
 	bool valid;
 	uint64_t ts = obs_get_video_frame_time();
 
@@ -1502,6 +1555,10 @@ static void python_tick(void *param, float seconds)
 
 		pthread_mutex_lock(&tick_mutex);
 		data = first_tick_script;
+
+		if (cur_python_script)
+			busy_script = cur_python_script;
+
 		while (data) {
 			cur_python_script = data;
 
@@ -1514,6 +1571,10 @@ static void python_tick(void *param, float seconds)
 		}
 
 		cur_python_script = NULL;
+		if (busy_script) {
+			cur_python_script = busy_script;
+			busy_script = NULL;
+		}
 
 		pthread_mutex_unlock(&tick_mutex);
 
@@ -1531,7 +1592,7 @@ static void python_tick(void *param, float seconds)
 		struct python_obs_timer *next = timer->next;
 		struct python_obs_callback *cb = python_obs_timer_cb(timer);
 
-		if (cb->base.removed) {
+		if (script_callback_removed(&cb->base)) {
 			python_obs_timer_remove(timer);
 		} else {
 			uint64_t elapsed = ts - timer->last_ts;
@@ -1561,6 +1622,17 @@ bool obs_scripting_python_runtime_linked(void)
 	return (bool)RUNTIME_LINK;
 }
 
+void obs_scripting_python_version(char *version, size_t version_length)
+{
+#if RUNTIME_LINK
+	snprintf(version, version_length, "%d.%d", python_version.major,
+		 python_version.minor);
+#else
+	snprintf(version, version_length, "%d.%d", PY_MAJOR_VERSION,
+		 PY_MINOR_VERSION);
+#endif
+}
+
 bool obs_scripting_python_loaded(void)
 {
 	return python_loaded;
@@ -1570,12 +1642,10 @@ void obs_python_load(void)
 {
 	da_init(python_paths);
 
-	pthread_mutexattr_t attr;
-	pthread_mutexattr_init(&attr);
-	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-
 	pthread_mutex_init(&tick_mutex, NULL);
-	pthread_mutex_init(&timer_mutex, &attr);
+	pthread_mutex_init_recursive(&timer_mutex);
+
+	mutexes_loaded = true;
 }
 
 extern void add_python_frontend_funcs(PyObject *module);
@@ -1589,21 +1659,20 @@ bool obs_scripting_load_python(const char *python_path)
 
 		/* Use external python on windows and mac */
 #if RUNTIME_LINK
-#if 0
-	struct dstr old_path  = {0};
-	struct dstr new_path  = {0};
-#endif
-
-	if (!import_python(python_path))
+	if (!import_python(python_path, &python_version))
 		return false;
 
 	if (python_path && *python_path) {
+#ifdef __APPLE__
+		char temp[PATH_MAX];
+		snprintf(temp, sizeof(temp),
+			 "%s/Python.framework/Versions/Current", python_path);
+		os_utf8_to_wcs(temp, 0, home_path, PATH_MAX);
+		Py_SetPythonHome(home_path);
+#else
+
 		os_utf8_to_wcs(python_path, 0, home_path, 1024);
 		Py_SetPythonHome(home_path);
-#if 0
-		dstr_copy(&old_path, getenv("PATH"));
-		_putenv("PYTHONPATH=");
-		_putenv("PATH=");
 #endif
 	}
 #else
@@ -1614,22 +1683,17 @@ bool obs_scripting_load_python(const char *python_path)
 	if (!Py_IsInitialized())
 		return false;
 
-#if 0
-#ifdef _DEBUG
-	if (pythondir && *pythondir) {
-		dstr_printf(&new_path, "PATH=%s", old_path.array);
-		_putenv(new_path.array);
+#if RUNTIME_LINK
+	if (python_version.major == 3 && python_version.minor < 7) {
+		PyEval_InitThreads();
+		if (!PyEval_ThreadsInitialized())
+			return false;
 	}
-#endif
-
-	bfree(pythondir);
-	dstr_free(&new_path);
-	dstr_free(&old_path);
-#endif
-
+#elif PY_VERSION_HEX < 0x03070000
 	PyEval_InitThreads();
 	if (!PyEval_ThreadsInitialized())
 		return false;
+#endif
 
 	/* ---------------------------------------------- */
 	/* Must set arguments for guis to work            */
@@ -1637,7 +1701,15 @@ bool obs_scripting_load_python(const char *python_path)
 	wchar_t *argv[] = {L"", NULL};
 	int argc = sizeof(argv) / sizeof(wchar_t *) - 1;
 
+	PRAGMA_WARN_PUSH
+	PRAGMA_WARN_DEPRECATION
 	PySys_SetArgv(argc, argv);
+	PRAGMA_WARN_POP
+
+#ifdef __APPLE__
+	PyRun_SimpleString("import sys");
+	PyRun_SimpleString("sys.dont_write_bytecode = True");
+#endif
 
 #ifdef DEBUG_PYTHON_STARTUP
 	/* ---------------------------------------------- */
@@ -1654,13 +1726,33 @@ bool obs_scripting_load_python(const char *python_path)
 	/* ---------------------------------------------- */
 	/* Load main interface module                     */
 
-	add_to_python_path(SCRIPT_DIR);
+#ifdef __APPLE__
+	struct dstr plugin_path;
+	struct dstr resource_path;
 
-#if __APPLE__
-	char *exec_path = os_get_executable_path_ptr("");
-	if (exec_path)
-		add_to_python_path(exec_path);
-	bfree(exec_path);
+	dstr_init_move_array(&plugin_path, os_get_executable_path_ptr(""));
+	dstr_init_copy(&resource_path, plugin_path.array);
+	dstr_cat(&plugin_path, "../PlugIns");
+	dstr_cat(&resource_path, "../Resources");
+
+	char *absolute_plugin_path = os_get_abs_path_ptr(plugin_path.array);
+	char *absolute_resource_path = os_get_abs_path_ptr(resource_path.array);
+
+	if (absolute_plugin_path != NULL) {
+		add_to_python_path(absolute_plugin_path);
+		bfree(absolute_plugin_path);
+	}
+	dstr_free(&plugin_path);
+
+	if (absolute_resource_path != NULL) {
+		add_to_python_path(absolute_resource_path);
+		bfree(absolute_resource_path);
+	}
+	dstr_free(&resource_path);
+#else
+	char *absolute_script_path = os_get_abs_path_ptr(SCRIPT_DIR);
+	add_to_python_path(absolute_script_path);
+	bfree(absolute_script_path);
 #endif
 
 	py_obspython = PyImport_ImportModule("obspython");
@@ -1700,6 +1792,11 @@ out:
 
 void obs_python_unload(void)
 {
+	if (mutexes_loaded) {
+		pthread_mutex_destroy(&tick_mutex);
+		pthread_mutex_destroy(&timer_mutex);
+	}
+
 	if (!python_loaded_at_all)
 		return;
 
@@ -1718,8 +1815,6 @@ void obs_python_unload(void)
 		bfree(python_paths.array[i]);
 	da_free(python_paths);
 
-	pthread_mutex_destroy(&tick_mutex);
-	pthread_mutex_destroy(&timer_mutex);
 	dstr_free(&cur_py_log_chunk);
 
 	python_loaded_at_all = false;

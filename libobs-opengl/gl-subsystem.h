@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -71,6 +71,14 @@ static inline GLenum convert_gs_format(enum gs_color_format format)
 		return GL_RGBA;
 	case GS_DXT5:
 		return GL_RGBA;
+	case GS_RGBA_UNORM:
+		return GL_RGBA;
+	case GS_BGRX_UNORM:
+		return GL_BGRA;
+	case GS_BGRA_UNORM:
+		return GL_BGRA;
+	case GS_RG16:
+		return GL_RG;
 	case GS_UNKNOWN:
 		return 0;
 	}
@@ -86,11 +94,11 @@ static inline GLenum convert_gs_internal_format(enum gs_color_format format)
 	case GS_R8:
 		return GL_R8;
 	case GS_RGBA:
-		return GL_RGBA;
+		return GL_SRGB8_ALPHA8;
 	case GS_BGRX:
-		return GL_RGB;
+		return GL_SRGB8;
 	case GS_BGRA:
-		return GL_RGBA;
+		return GL_SRGB8_ALPHA8;
 	case GS_R10G10B10A2:
 		return GL_RGB10_A2;
 	case GS_RGBA16:
@@ -117,6 +125,14 @@ static inline GLenum convert_gs_internal_format(enum gs_color_format format)
 		return GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
 	case GS_DXT5:
 		return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+	case GS_RGBA_UNORM:
+		return GL_RGBA;
+	case GS_BGRX_UNORM:
+		return GL_RGB;
+	case GS_BGRA_UNORM:
+		return GL_RGBA;
+	case GS_RG16:
+		return GL_RG16;
 	case GS_UNKNOWN:
 		return 0;
 	}
@@ -138,7 +154,7 @@ static inline GLenum get_gl_format_type(enum gs_color_format format)
 	case GS_BGRA:
 		return GL_UNSIGNED_BYTE;
 	case GS_R10G10B10A2:
-		return GL_UNSIGNED_INT_10_10_10_2;
+		return GL_UNSIGNED_INT_2_10_10_10_REV;
 	case GS_RGBA16:
 		return GL_UNSIGNED_SHORT;
 	case GS_R16:
@@ -163,6 +179,14 @@ static inline GLenum get_gl_format_type(enum gs_color_format format)
 		return GL_UNSIGNED_BYTE;
 	case GS_DXT5:
 		return GL_UNSIGNED_BYTE;
+	case GS_RGBA_UNORM:
+		return GL_UNSIGNED_BYTE;
+	case GS_BGRX_UNORM:
+		return GL_UNSIGNED_BYTE;
+	case GS_BGRA_UNORM:
+		return GL_UNSIGNED_BYTE;
+	case GS_RG16:
+		return GL_UNSIGNED_SHORT;
 	case GS_UNKNOWN:
 		return 0;
 	}
@@ -276,6 +300,24 @@ static inline GLenum convert_gs_blend_type(enum gs_blend_type type)
 	return GL_ONE;
 }
 
+static inline GLenum convert_gs_blend_op_type(enum gs_blend_op_type type)
+{
+	switch (type) {
+	case GS_BLEND_OP_ADD:
+		return GL_FUNC_ADD;
+	case GS_BLEND_OP_SUBTRACT:
+		return GL_FUNC_SUBTRACT;
+	case GS_BLEND_OP_REVERSE_SUBTRACT:
+		return GL_FUNC_REVERSE_SUBTRACT;
+	case GS_BLEND_OP_MIN:
+		return GL_MIN;
+	case GS_BLEND_OP_MAX:
+		return GL_MAX;
+	}
+
+	return GL_FUNC_ADD;
+}
+
 static inline GLenum convert_shader_type(enum gs_shader_type type)
 {
 	switch (type) {
@@ -383,6 +425,7 @@ struct gs_sampler_state {
 	GLint address_v;
 	GLint address_w;
 	GLint max_anisotropy;
+	struct vec4 border_color;
 };
 
 static inline void samplerstate_addref(gs_samplerstate_t *ss)
@@ -411,6 +454,7 @@ struct gs_shader_param {
 	int array_count;
 
 	struct gs_texture *texture;
+	bool srgb;
 
 	DARRAY(uint8_t) cur_value;
 	DARRAY(uint8_t) def_value;
@@ -596,6 +640,7 @@ struct gs_device {
 	enum copy_type copy_type;
 
 	GLuint empty_vao;
+	gs_samplerstate_t *raw_load_sampler;
 
 	gs_texture_t *cur_render_target;
 	gs_zstencil_t *cur_zstencil_buffer;
@@ -608,6 +653,7 @@ struct gs_device {
 	gs_shader_t *cur_pixel_shader;
 	gs_swapchain_t *cur_swap;
 	struct gs_program *cur_program;
+	enum gs_color_space cur_color_space;
 
 	struct gs_program *first_program;
 

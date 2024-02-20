@@ -80,15 +80,15 @@ static void decklink_update(void *data, obs_data_t *settings)
 	decklink->SetChannelFormat(channelFormat);
 	decklink->hash = std::string(hash);
 	decklink->swap = obs_data_get_bool(settings, SWAP);
+	decklink->allow10Bit = obs_data_get_bool(settings, ALLOW_10_BIT);
 	decklink->Activate(device, id, videoConnection, audioConnection);
 }
 
 static void decklink_show(void *data)
 {
 	DeckLinkInput *decklink = (DeckLinkInput *)data;
-	obs_source_t *source = decklink->GetSource();
-	bool showing = obs_source_showing(source);
-	if (decklink->dwns && showing && !decklink->Capturing()) {
+
+	if (decklink->dwns && !decklink->Capturing()) {
 		ComPtr<DeckLinkDevice> device;
 		device.Set(deviceEnum->FindByHash(decklink->hash.c_str()));
 		decklink->Activate(device, decklink->id,
@@ -99,9 +99,8 @@ static void decklink_show(void *data)
 static void decklink_hide(void *data)
 {
 	DeckLinkInput *decklink = (DeckLinkInput *)data;
-	obs_source_t *source = decklink->GetSource();
-	bool showing = obs_source_showing(source);
-	if (decklink->dwns && showing)
+
+	if (decklink->dwns && decklink->Capturing())
 		decklink->Deactivate();
 }
 
@@ -247,6 +246,9 @@ static bool mode_id_changed(obs_properties_t *props, obs_property_t *list,
 	list = obs_properties_get(props, PIXEL_FORMAT);
 	obs_property_set_visible(list, id != MODE_ID_AUTO);
 
+	auto allow10BitProp = obs_properties_get(props, ALLOW_10_BIT);
+	obs_property_set_visible(allow10BitProp, id == MODE_ID_AUTO);
+
 	return true;
 }
 
@@ -277,6 +279,7 @@ static obs_properties_t *decklink_get_properties(void *data)
 				       OBS_COMBO_FORMAT_INT);
 
 	obs_property_list_add_int(list, "8-bit YUV", bmdFormat8BitYUV);
+	obs_property_list_add_int(list, "10-bit YUV", bmdFormat10BitYUV);
 	obs_property_list_add_int(list, "8-bit BGRA", bmdFormat8BitBGRA);
 
 	list = obs_properties_add_list(props, COLOR_SPACE, TEXT_COLOR_SPACE,
@@ -284,8 +287,9 @@ static obs_properties_t *decklink_get_properties(void *data)
 				       OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list, TEXT_COLOR_SPACE_DEFAULT,
 				  VIDEO_CS_DEFAULT);
-	obs_property_list_add_int(list, "BT.601", VIDEO_CS_601);
-	obs_property_list_add_int(list, "BT.709", VIDEO_CS_709);
+	obs_property_list_add_int(list, "Rec. 601", VIDEO_CS_601);
+	obs_property_list_add_int(list, "Rec. 709", VIDEO_CS_709);
+	obs_property_list_add_int(list, "Rec. 2020", VIDEO_CS_2100_PQ);
 
 	list = obs_properties_add_list(props, COLOR_RANGE, TEXT_COLOR_RANGE,
 				       OBS_COMBO_TYPE_LIST,
@@ -321,6 +325,8 @@ static obs_properties_t *decklink_get_properties(void *data)
 	obs_properties_add_bool(props, BUFFERING, TEXT_BUFFERING);
 
 	obs_properties_add_bool(props, DEACTIVATE_WNS, TEXT_DWNS);
+
+	obs_properties_add_bool(props, ALLOW_10_BIT, TEXT_ALLOW_10_BIT);
 
 	UNUSED_PARAMETER(data);
 	return props;

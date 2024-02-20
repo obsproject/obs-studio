@@ -1,39 +1,28 @@
-project(media-playback)
+cmake_minimum_required(VERSION 3.22...3.25)
 
-find_package(FFmpeg REQUIRED
-	COMPONENTS avcodec avdevice avutil avformat)
+find_package(FFmpeg REQUIRED avcodec avdevice avutil avformat)
 
-include_directories(
-	${CMAKE_SOURCE_DIR}/libobs
-	${FFMPEG_INCLUDE_DIRS}
-	)
+add_library(media-playback INTERFACE)
+add_library(OBS::media-playback ALIAS media-playback)
 
-set(media-playback_HEADERS
-	media-playback/closest-format.h
-	media-playback/decode.h
-	media-playback/media.h
-	)
-set(media-playback_SOURCES
-	media-playback/decode.c
-	media-playback/media.c
-	)
+target_sources(
+  media-playback
+  INTERFACE # cmake-format: sortable
+            media-playback/cache.c
+            media-playback/cache.h
+            media-playback/closest-format.h
+            media-playback/decode.c
+            media-playback/decode.h
+            media-playback/media-playback.c
+            media-playback/media-playback.h
+            media-playback/media.c
+            media-playback/media.h)
 
-add_library(media-playback STATIC
-	${media-playback_HEADERS}
-	${media-playback_SOURCES}
-	)
+target_include_directories(media-playback INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
 
-target_compile_options(media-playback
-	PUBLIC
-	${ARCH_SIMD_FLAGS})
+if(OBS_CMAKE_VERSION VERSION_LESS 3.0)
+  target_compile_options(media-playback INTERFACE ${ARCH_SIMD_FLAGS})
+  target_compile_definitions(media-playback INTERFACE ${ARCH_SIMD_DEFINES})
+endif()
 
-target_include_directories(media-playback
-	PUBLIC .
-	)
-
-target_link_libraries(media-playback
-	${FFMPEG_LIBRARIES}
-	)
-set_target_properties(media-playback PROPERTIES
-	FOLDER "deps"
-	POSITION_INDEPENDENT_CODE ON)
+target_link_libraries(media-playback INTERFACE FFmpeg::avcodec FFmpeg::avdevice FFmpeg::avutil FFmpeg::avformat)

@@ -1,18 +1,39 @@
-/*****************************************************************************
-
-INTEL CORPORATION PROPRIETARY INFORMATION
-This software is supplied under the terms of a license agreement or
-nondisclosure agreement with Intel Corporation and may not be copied
-or disclosed except in accordance with the terms of that agreement.
-Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
-
-*****************************************************************************/
-
 #pragma once
 
 #include <stdio.h>
 
-#include "mfxvideo++.h"
+// Most of this file shouldnt be accessed from C.
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
+enum qsv_codec {
+	QSV_CODEC_AVC,
+	QSV_CODEC_AV1,
+	QSV_CODEC_HEVC,
+};
+
+struct adapter_info {
+	bool is_intel;
+	bool is_dgpu;
+	bool supports_av1;
+	bool supports_hevc;
+};
+
+#define MAX_ADAPTERS 10
+extern struct adapter_info adapters[MAX_ADAPTERS];
+extern size_t adapter_count;
+
+void util_cpuid(int cpuinfo[4], int flags);
+void check_adapters(struct adapter_info *adapters, size_t *adapter_count);
+
+#ifdef __cplusplus
+}
+
+#include <vpl/mfxvideo++.h>
+#include <vpl/mfxdispatcher.h>
+
+constexpr inline int INTEL_VENDOR_ID = 0x8086;
 
 // =================================================================
 // OS-specific definitions of types, macro, etc...
@@ -87,7 +108,7 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 #define WILL_WRITE 0x2000
 
 // =================================================================
-// Intel Media SDK memory allocator entrypoints....
+// Intel VPL memory allocator entrypoints....
 // Implementation of this functions is OS/Memory type specific.
 mfxStatus simple_alloc(mfxHDL pthis, mfxFrameAllocRequest *request,
 		       mfxFrameAllocResponse *response);
@@ -99,7 +120,7 @@ mfxStatus simple_copytex(mfxHDL pthis, mfxMemId mid, mfxU32 tex_handle,
 			 mfxU64 lock_key, mfxU64 *next_key);
 
 // =================================================================
-// Utility functions, not directly tied to Media SDK functionality
+// Utility functions, not directly tied to VPL functionality
 //
 
 void PrintErrString(int err, const char *filestr, int line);
@@ -137,14 +158,16 @@ typedef struct {
 // Get free task
 int GetFreeTaskIndex(Task *pTaskPool, mfxU16 nPoolSize);
 
-// Initialize Intel Media SDK Session, device/display and memory manager
-mfxStatus Initialize(mfxIMPL impl, mfxVersion ver, MFXVideoSession *pSession,
-		     mfxFrameAllocator *pmfxAllocator,
-		     mfxHDL *deviceHandle = NULL,
-		     bool bCreateSharedHandles = false, bool dx9hack = false);
+// Initialize Intel VPL Session, device/display and memory manager
+mfxStatus Initialize(mfxVersion ver, mfxSession *pSession,
+		     mfxFrameAllocator *pmfxAllocator, mfxHDL *deviceHandle,
+		     bool bCreateSharedHandles, enum qsv_codec codec,
+		     void **data); //vpl change
 
-// Release resources (device/display)
+// Release global shared resources (device/display)
 void Release();
+// Release per session resources
+void ReleaseSessionData(void *data);
 
 // Convert frame type to string
 char mfxFrameTypeString(mfxU16 FrameType);
@@ -153,3 +176,5 @@ void mfxGetTime(mfxTime *timestamp);
 
 //void mfxInitTime();  might need this for Windows
 double TimeDiffMsec(mfxTime tfinish, mfxTime tstart);
+
+#endif // __cplusplus

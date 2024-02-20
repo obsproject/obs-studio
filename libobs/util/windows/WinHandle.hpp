@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -48,4 +48,35 @@ public:
 	{
 		return handle && handle != INVALID_HANDLE_VALUE;
 	}
+};
+
+class WinModule {
+	HMODULE handle = NULL;
+
+	inline void Clear()
+	{
+		if (handle)
+			FreeLibrary(handle);
+	}
+
+public:
+	inline WinModule() {}
+	inline WinModule(HMODULE handle_) : handle(handle_) {}
+	inline ~WinModule() { Clear(); }
+
+	inline operator HMODULE() const { return handle; }
+
+	inline WinModule &operator=(HMODULE handle_)
+	{
+		if (handle_ != handle) {
+			Clear();
+			handle = handle_;
+		}
+
+		return *this;
+	}
+
+	inline HMODULE *operator&() { return &handle; }
+
+	inline bool Valid() const { return handle != NULL; }
 };

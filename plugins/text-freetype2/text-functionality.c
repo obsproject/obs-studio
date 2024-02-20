@@ -140,7 +140,8 @@ void set_up_vertex_buffer(struct ft2_source *srcdata)
 	next_char:;
 		glyph_index =
 			FT_Get_Char_Index(srcdata->font_face, srcdata->text[i]);
-		word_width += src_glyph->xadv;
+		if (src_glyph)
+			word_width += src_glyph->xadv;
 	eos_skip:;
 	}
 
@@ -437,7 +438,7 @@ void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 	fseek(tmp_file, 0, SEEK_END);
 	filesize = (uint32_t)ftell(tmp_file);
 	fseek(tmp_file, 0, SEEK_SET);
-	bytes_read = fread(&header, 2, 1, tmp_file);
+	bytes_read = fread(&header, 1, 2, tmp_file);
 
 	if (bytes_read == 2 && header == 0xFEFF) {
 		// File is already in UTF-16 format
@@ -491,7 +492,7 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 		}
 		return;
 	}
-	bytes_read = fread(&value, 2, 1, tmp_file);
+	bytes_read = fread(&value, 1, 2, tmp_file);
 
 	if (bytes_read == 2 && value == 0xFEFF)
 		utf16 = true;
@@ -513,7 +514,7 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 			if (bytes_read == 1 && bvalue == '\n')
 				line_breaks++;
 		} else {
-			bytes_read = fread(&value, 2, 1, tmp_file);
+			bytes_read = fread(&value, 1, 2, tmp_file);
 			if (bytes_read == 2 && value == L'\n')
 				line_breaks++;
 		}

@@ -85,13 +85,13 @@ public:
 /* ------------------------------------------------------------------------- */
 
 #define TEST_STR(x) "Basic.AutoConfig.TestPage." x
-#define SUBTITLE_TESTING TEST_STR("Subtitle.Testing")
-#define SUBTITLE_COMPLETE TEST_STR("Subtitle.Complete")
+#define SUBTITLE_TESTING TEST_STR("SubTitle.Testing")
+#define SUBTITLE_COMPLETE TEST_STR("SubTitle.Complete")
 #define TEST_BW TEST_STR("TestingBandwidth")
+#define TEST_BW_NO_OUTPUT TEST_STR("TestingBandwidth.NoOutput")
 #define TEST_BW_CONNECTING TEST_STR("TestingBandwidth.Connecting")
 #define TEST_BW_CONNECT_FAIL TEST_STR("TestingBandwidth.ConnectFailed")
 #define TEST_BW_SERVER TEST_STR("TestingBandwidth.Server")
-#define TEST_RES TEST_STR("TestingRes")
 #define TEST_RES_VAL TEST_STR("TestingRes.Resolution")
 #define TEST_RES_FAIL TEST_STR("TestingRes.Fail")
 #define TEST_SE TEST_STR("TestingStreamEncoder")
@@ -119,8 +119,7 @@ void AutoConfigTestPage::StartRecordingEncoderStage()
 
 void AutoConfigTestPage::GetServers(std::vector<ServerInfo> &servers)
 {
-	OBSData settings = obs_data_create();
-	obs_data_release(settings);
+	OBSDataAutoRelease settings = obs_data_create();
 	obs_data_set_string(settings, "service", wiz->serviceName.c_str());
 
 	obs_properties_t *ppts = obs_get_service_properties("rtmp_common");
@@ -157,6 +156,23 @@ static inline void string_depad_key(string &key)
 
 const char *FindAudioEncoderFromCodec(const char *type);
 
+static inline bool can_use_output(const char *prot, const char *output,
+				  const char *prot_test1,
+				  const char *prot_test2 = nullptr)
+{
+	return (strcmp(prot, prot_test1) == 0 ||
+		(prot_test2 && strcmp(prot, prot_test2) == 0)) &&
+	       (obs_get_output_flags(output) & OBS_OUTPUT_SERVICE) != 0;
+}
+
+static bool return_first_id(void *data, const char *id)
+{
+	const char **output = (const char **)data;
+
+	*output = id;
+	return false;
+}
+
 void AutoConfigTestPage::TestBandwidthThread()
 {
 	bool connected = false;
@@ -182,15 +198,12 @@ void AutoConfigTestPage::TestBandwidthThread()
 	const char *serverType = wiz->customServer ? "rtmp_custom"
 						   : "rtmp_common";
 
-	OBSEncoder vencoder = obs_video_encoder_create("obs_x264", "test_x264",
-						       nullptr, nullptr);
-	OBSEncoder aencoder = obs_audio_encoder_create("ffmpeg_aac", "test_aac",
-						       nullptr, 0, nullptr);
-	OBSService service = obs_service_create(serverType, "test_service",
-						nullptr, nullptr);
-	obs_encoder_release(vencoder);
-	obs_encoder_release(aencoder);
-	obs_service_release(service);
+	OBSEncoderAutoRelease vencoder = obs_video_encoder_create(
+		"obs_x264", "test_x264", nullptr, nullptr);
+	OBSEncoderAutoRelease aencoder = obs_audio_encoder_create(
+		"ffmpeg_aac", "test_aac", nullptr, 0, nullptr);
+	OBSServiceAutoRelease service = obs_service_create(
+		serverType, "test_service", nullptr, nullptr);
 
 	/* -----------------------------------*/
 	/* configure settings                 */
@@ -202,14 +215,10 @@ void AutoConfigTestPage::TestBandwidthThread()
 	// output: "bind_ip" via main config -> "Output", "BindIP"
 	//         obs_output_set_service
 
-	OBSData service_settings = obs_data_create();
-	OBSData vencoder_settings = obs_data_create();
-	OBSData aencoder_settings = obs_data_create();
-	OBSData output_settings = obs_data_create();
-	obs_data_release(service_settings);
-	obs_data_release(vencoder_settings);
-	obs_data_release(aencoder_settings);
-	obs_data_release(output_settings);
+	OBSDataAutoRelease service_settings = obs_data_create();
+	OBSDataAutoRelease vencoder_settings = obs_data_create();
+	OBSDataAutoRelease aencoder_settings = obs_data_create();
+	OBSDataAutoRelease output_settings = obs_data_create();
 
 	std::string key = wiz->key;
 	if (wiz->service == AutoConfig::Service::Twitch) {
@@ -240,6 +249,10 @@ void AutoConfigTestPage::TestBandwidthThread()
 		config_get_string(main->Config(), "Output", "BindIP");
 	obs_data_set_string(output_settings, "bind_ip", bind_ip);
 
+	const char *ip_family =
+		config_get_string(main->Config(), "Output", "IPFamily");
+	obs_data_set_string(output_settings, "ip_family", ip_family);
+
 	/* -----------------------------------*/
 	/* determine which servers to test    */
 
@@ -262,6 +275,9 @@ void AutoConfigTestPage::TestBandwidthThread()
 		 * server */
 		servers.erase(servers.begin() + 1);
 		servers.resize(3);
+	} else if (wiz->service == AutoConfig::Service::YouTube) {
+		/* Only test first set of primary + backup servers */
+		servers.resize(2);
 	}
 
 	/* -----------------------------------*/
@@ -274,13 +290,40 @@ void AutoConfigTestPage::TestBandwidthThread()
 	/* -----------------------------------*/
 	/* create output                      */
 
-	const char *output_type = obs_service_get_output_type(service);
-	if (!output_type)
-		output_type = "rtmp_output";
+	/* Check if the service has a preferred output type */
+	const char *output_type =
+		obs_service_get_preferred_output_type(service);
+	if (!output_type ||
+	    (obs_get_output_flags(output_type) & OBS_OUTPUT_SERVICE) == 0) {
+		/* Otherwise, prefer first-party output types */
+		const char *protocol = obs_service_get_protocol(service);
 
-	OBSOutput output =
+		if (can_use_output(protocol, "rtmp_output", "RTMP", "RTMPS")) {
+			output_type = "rtmp_output";
+		} else if (can_use_output(protocol, "ffmpeg_hls_muxer",
+					  "HLS")) {
+			output_type = "ffmpeg_hls_muxer";
+		} else if (can_use_output(protocol, "ffmpeg_mpegts_muxer",
+					  "SRT", "RIST")) {
+			output_type = "ffmpeg_mpegts_muxer";
+		}
+
+		/* If third-party protocol, use the first enumerated type */
+		if (!output_type)
+			obs_enum_output_types_with_protocol(
+				protocol, &output_type, return_first_id);
+
+		/* If none, fail */
+		if (!output_type) {
+			QMetaObject::invokeMethod(
+				this, "Failure",
+				Q_ARG(QString, QTStr(TEST_BW_NO_OUTPUT)));
+			return;
+		}
+	}
+
+	OBSOutputAutoRelease output =
 		obs_output_create(output_type, "test_stream", nullptr, nullptr);
-	obs_output_release(output);
 	obs_output_update(output, output_settings);
 
 	const char *audio_codec = obs_output_get_supported_audio_codecs(output);
@@ -289,7 +332,6 @@ void AutoConfigTestPage::TestBandwidthThread()
 		const char *id = FindAudioEncoderFromCodec(audio_codec);
 		aencoder = obs_audio_encoder_create(id, "test_audio", nullptr,
 						    0, nullptr);
-		obs_encoder_release(aencoder);
 	}
 
 	/* -----------------------------------*/
@@ -302,6 +344,7 @@ void AutoConfigTestPage::TestBandwidthThread()
 
 	obs_output_set_video_encoder(output, vencoder);
 	obs_output_set_audio_encoder(output, aencoder, 0);
+	obs_output_set_reconnect_settings(output, 0, 0);
 
 	obs_output_set_service(output, service);
 
@@ -495,7 +538,10 @@ struct Result {
 	int fps_den;
 
 	inline Result(int cx_, int cy_, int fps_num_, int fps_den_)
-		: cx(cx_), cy(cy_), fps_num(fps_num_), fps_den(fps_den_)
+		: cx(cx_),
+		  cy(cy_),
+		  fps_num(fps_num_),
+		  fps_den(fps_den_)
 	{
 	}
 };
@@ -527,23 +573,18 @@ bool AutoConfigTestPage::TestSoftwareEncoding()
 	/* -----------------------------------*/
 	/* create obs objects                 */
 
-	OBSEncoder vencoder = obs_video_encoder_create("obs_x264", "test_x264",
-						       nullptr, nullptr);
-	OBSEncoder aencoder = obs_audio_encoder_create("ffmpeg_aac", "test_aac",
-						       nullptr, 0, nullptr);
-	OBSOutput output =
+	OBSEncoderAutoRelease vencoder = obs_video_encoder_create(
+		"obs_x264", "test_x264", nullptr, nullptr);
+	OBSEncoderAutoRelease aencoder = obs_audio_encoder_create(
+		"ffmpeg_aac", "test_aac", nullptr, 0, nullptr);
+	OBSOutputAutoRelease output =
 		obs_output_create("null_output", "null", nullptr, nullptr);
-	obs_output_release(output);
-	obs_encoder_release(vencoder);
-	obs_encoder_release(aencoder);
 
 	/* -----------------------------------*/
 	/* configure settings                 */
 
-	OBSData aencoder_settings = obs_data_create();
-	OBSData vencoder_settings = obs_data_create();
-	obs_data_release(aencoder_settings);
-	obs_data_release(vencoder_settings);
+	OBSDataAutoRelease aencoder_settings = obs_data_create();
+	OBSDataAutoRelease vencoder_settings = obs_data_create();
 	obs_data_set_int(aencoder_settings, "bitrate", 32);
 
 	if (wiz->type != AutoConfig::Type::Recording) {
@@ -905,11 +946,23 @@ void AutoConfigTestPage::TestStreamEncoderThread()
 			wiz->streamingEncoder = AutoConfig::Encoder::NVENC;
 		else if (wiz->qsvAvailable)
 			wiz->streamingEncoder = AutoConfig::Encoder::QSV;
+		else if (wiz->appleAvailable)
+			wiz->streamingEncoder = AutoConfig::Encoder::Apple;
 		else
 			wiz->streamingEncoder = AutoConfig::Encoder::AMD;
 	} else {
 		wiz->streamingEncoder = AutoConfig::Encoder::x264;
 	}
+
+#ifdef __linux__
+	// On linux CBR rate control is not guaranteed so fallback to x264.
+	if (wiz->streamingEncoder == AutoConfig::Encoder::QSV) {
+		wiz->streamingEncoder = AutoConfig::Encoder::x264;
+		if (!TestSoftwareEncoding()) {
+			return;
+		}
+	}
+#endif
 
 	if (preferHardware && !softwareTested && wiz->hardwareEncodingAvailable)
 		FindIdealHardwareResolution();
@@ -938,6 +991,8 @@ void AutoConfigTestPage::TestRecordingEncoderThread()
 			wiz->recordingEncoder = AutoConfig::Encoder::NVENC;
 		else if (wiz->qsvAvailable)
 			wiz->recordingEncoder = AutoConfig::Encoder::QSV;
+		else if (wiz->appleAvailable)
+			wiz->recordingEncoder = AutoConfig::Encoder::Apple;
 		else
 			wiz->recordingEncoder = AutoConfig::Encoder::AMD;
 	} else {
@@ -956,9 +1011,10 @@ void AutoConfigTestPage::TestRecordingEncoderThread()
 
 #define ENCODER_TEXT(x) "Basic.Settings.Output.Simple.Encoder." x
 #define ENCODER_SOFTWARE ENCODER_TEXT("Software")
-#define ENCODER_NVENC ENCODER_TEXT("Hardware.NVENC")
-#define ENCODER_QSV ENCODER_TEXT("Hardware.QSV")
-#define ENCODER_AMD ENCODER_TEXT("Hardware.AMD")
+#define ENCODER_NVENC ENCODER_TEXT("Hardware.NVENC.H264")
+#define ENCODER_QSV ENCODER_TEXT("Hardware.QSV.H264")
+#define ENCODER_AMD ENCODER_TEXT("Hardware.AMD.H264")
+#define ENCODER_APPLE ENCODER_TEXT("Hardware.Apple.H264")
 
 #define QUALITY_SAME "Basic.Settings.Output.Simple.RecordingQuality.Stream"
 #define QUALITY_HIGH "Basic.Settings.Output.Simple.RecordingQuality.Small"
@@ -1001,6 +1057,8 @@ void AutoConfigTestPage::FinalizeResults()
 			return QTStr(ENCODER_QSV);
 		case AutoConfig::Encoder::AMD:
 			return QTStr(ENCODER_AMD);
+		case AutoConfig::Encoder::Apple:
+			return QTStr(ENCODER_APPLE);
 		case AutoConfig::Encoder::Stream:
 			return QTStr(QUALITY_SAME);
 		}
@@ -1016,14 +1074,11 @@ void AutoConfigTestPage::FinalizeResults()
 		const char *serverType = wiz->customServer ? "rtmp_custom"
 							   : "rtmp_common";
 
-		OBSService service = obs_service_create(
+		OBSServiceAutoRelease service = obs_service_create(
 			serverType, "temp_service", nullptr, nullptr);
-		obs_service_release(service);
 
-		OBSData service_settings = obs_data_create();
-		OBSData vencoder_settings = obs_data_create();
-		obs_data_release(service_settings);
-		obs_data_release(vencoder_settings);
+		OBSDataAutoRelease service_settings = obs_data_create();
+		OBSDataAutoRelease vencoder_settings = obs_data_create();
 
 		obs_data_set_int(vencoder_settings, "bitrate",
 				 wiz->idealBitrate);
@@ -1034,7 +1089,7 @@ void AutoConfigTestPage::FinalizeResults()
 		obs_service_apply_encoder_settings(service, vencoder_settings,
 						   nullptr);
 
-		struct obs_service_resolution *res_list;
+		BPtr<obs_service_resolution> res_list;
 		size_t res_count;
 		int maxFPS;
 		obs_service_get_supported_resolutions(service, &res_list,
@@ -1179,7 +1234,8 @@ void AutoConfigTestPage::Progress(int percentage)
 }
 
 AutoConfigTestPage::AutoConfigTestPage(QWidget *parent)
-	: QWizardPage(parent), ui(new Ui_AutoConfigTestPage)
+	: QWizardPage(parent),
+	  ui(new Ui_AutoConfigTestPage)
 {
 	ui->setupUi(this);
 	setTitle(QTStr("Basic.AutoConfig.TestPage"));
@@ -1189,8 +1245,6 @@ AutoConfigTestPage::AutoConfigTestPage(QWidget *parent)
 
 AutoConfigTestPage::~AutoConfigTestPage()
 {
-	delete ui;
-
 	if (testThread.joinable()) {
 		{
 			unique_lock<mutex> ul(m);

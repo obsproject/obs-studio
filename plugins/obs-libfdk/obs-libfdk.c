@@ -96,6 +96,8 @@ static void *libfdk_create(obs_data_t *settings, obs_encoder_t *encoder)
 	int bitrate = (int)obs_data_get_int(settings, "bitrate") * 1000;
 	int afterburner = obs_data_get_bool(settings, "afterburner") ? 1 : 0;
 	audio_t *audio = obs_encoder_audio(encoder);
+	bool set_to_ADTS = obs_data_get_bool(settings, "set_to_ADTS");
+	int transmux = set_to_ADTS ? 2 : 0;
 	int mode = 0;
 	AACENC_ERROR err;
 
@@ -130,14 +132,9 @@ static void *libfdk_create(obs_data_t *settings, obs_encoder_t *encoder)
 		mode = MODE_1_2_2_1;
 		break;
 
-		/* lib_fdk-aac > 1.3 required for 7.1 surround;
-         * uncomment if available on linux build
-         */
-#ifndef __linux__
 	case 8:
 		mode = MODE_7_1_REAR_SURROUND;
 		break;
-#endif
 
 	default:
 		blog(LOG_ERROR, "Invalid channel count");
@@ -159,7 +156,9 @@ static void *libfdk_create(obs_data_t *settings, obs_encoder_t *encoder)
 		aacEncoder_SetParam(enc->fdkhandle, AACENC_BITRATEMODE, 0));
 	CHECK_LIBFDK(
 		aacEncoder_SetParam(enc->fdkhandle, AACENC_BITRATE, bitrate));
-	CHECK_LIBFDK(aacEncoder_SetParam(enc->fdkhandle, AACENC_TRANSMUX, 0));
+
+	CHECK_LIBFDK(
+		aacEncoder_SetParam(enc->fdkhandle, AACENC_TRANSMUX, transmux));
 	CHECK_LIBFDK(aacEncoder_SetParam(enc->fdkhandle, AACENC_AFTERBURNER,
 					 afterburner));
 
@@ -306,7 +305,7 @@ static size_t libfdk_frame_size(void *data)
 struct obs_encoder_info obs_libfdk_encoder = {
 	.id = "libfdk_aac",
 	.type = OBS_ENCODER_AUDIO,
-	.codec = "AAC",
+	.codec = "aac",
 	.get_name = libfdk_getname,
 	.create = libfdk_create,
 	.destroy = libfdk_destroy,

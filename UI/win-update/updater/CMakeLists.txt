@@ -1,52 +1,35 @@
-if(DISABLE_UPDATE_MODULE)
-	return()
-endif()
+cmake_minimum_required(VERSION 3.24...3.25)
 
-if(NOT DEFINED STATIC_ZLIB_PATH OR "${STATIC_ZLIB_PATH}" STREQUAL "")
-	message(STATUS "STATIC_ZLIB_PATH not set, windows updater disabled")
-	return()
-endif()
+legacy_check()
 
-project(updater)
+find_package(zstd)
+find_package(nlohmann_json 3 REQUIRED)
 
-include_directories(${OBS_JANSSON_INCLUDE_DIRS})
-include_directories(${LIBLZMA_INCLUDE_DIRS})
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
-include_directories(${BLAKE2_INCLUDE_DIR})
+add_executable(updater WIN32)
 
-set(updater_HEADERS
-	../win-update-helpers.hpp
-	resource.h
-	updater.hpp
-	)
-set(updater_SOURCES
-	../win-update-helpers.cpp
-	init-hook-files.c
-	updater.cpp
-	patch.cpp
-	http.cpp
-	hash.cpp
-	updater.rc
-	updater.manifest
-	)
+target_sources(
+  updater
+  PRIVATE hash.cpp
+          helpers.cpp
+          helpers.hpp
+          http.cpp
+          init-hook-files.c
+          manifest.hpp
+          patch.cpp
+          resource.h
+          updater.cpp
+          updater.hpp
+          updater.manifest
+          updater.rc)
 
-add_definitions(-DNOMINMAX -DUNICODE -D_UNICODE)
-if(MSVC)
-	add_compile_options($<IF:$<CONFIG:Debug>,/MTd,/MT>)
-endif()
+target_compile_definitions(updater PRIVATE NOMINMAX "PSAPI_VERSION=2")
 
-add_executable(updater WIN32
-	${updater_HEADERS}
-	${updater_SOURCES}
-	)
-target_link_libraries(updater
-	${OBS_JANSSON_IMPORT}
-	${STATIC_ZLIB_PATH}
-	lzma
-	blake2
-	psapi
-	comctl32
-	shell32
-	winhttp
-	)
-set_target_properties(updater PROPERTIES FOLDER "frontend")
+target_include_directories(updater PRIVATE "${CMAKE_SOURCE_DIR}/libobs" "${CMAKE_SOURCE_DIR}/UI/win-update")
+
+target_link_libraries(updater PRIVATE OBS::blake2 nlohmann_json::nlohmann_json zstd::libzstd_static comctl32 shell32
+                                      winhttp)
+
+# zstd is hardcoded with /DEFAULTLIB:LIBCMT
+target_link_options(updater PRIVATE /NODEFAULTLIB:LIBCMT)
+
+set_target_properties(updater PROPERTIES FOLDER frontend OUTPUT_NAME updater)

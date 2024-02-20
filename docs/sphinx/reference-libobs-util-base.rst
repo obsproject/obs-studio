@@ -39,7 +39,7 @@ Logging Levels
 Logging Functions
 -----------------
 
-.. type:: typedef void (*log_handler_t)(int lvl, const char *msg, va_list args, void *p)
+.. type:: void (*log_handler_t)(int lvl, const char *msg, va_list args, void *p)
 
    Logging callback.
 

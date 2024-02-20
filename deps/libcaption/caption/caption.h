@@ -99,7 +99,7 @@ static inline int caption_frame_painton(caption_frame_t* frame) { return (frame-
 /*! \brief
     \param
 */
-const static int _caption_frame_rollup[] = { 0, 2, 3, 4 };
+static const int _caption_frame_rollup[] = { 0, 2, 3, 4 };
 static inline int caption_frame_rollup(caption_frame_t* frame) { return _caption_frame_rollup[frame->state.rup]; }
 /*! \brief
     \param
@@ -134,10 +134,6 @@ size_t caption_frame_to_text(caption_frame_t* frame, utf8_char_t* data);
 /*! \brief
     \param
 */
-#define CAPTION_FRAME_DUMP_BUF_SIZE 8192
-size_t caption_frame_dump_buffer(caption_frame_t* frame, utf8_char_t* buf);
-void caption_frame_dump(caption_frame_t* frame);
-
 #ifdef __cplusplus
 }
 #endif

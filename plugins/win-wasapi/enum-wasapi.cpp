@@ -30,13 +30,14 @@ string GetDeviceName(IMMDevice *device)
 			device_name.resize(size);
 			os_wcs_to_utf8(nameVar.pwszVal, len, &device_name[0],
 				       size);
+			PropVariantClear(&nameVar);
 		}
 	}
 
 	return device_name;
 }
 
-void GetWASAPIAudioDevices_(vector<AudioDeviceInfo> &devices, bool input)
+static void GetWASAPIAudioDevices_(vector<AudioDeviceInfo> &devices, bool input)
 {
 	ComPtr<IMMDeviceEnumerator> enumerator;
 	ComPtr<IMMDeviceCollection> collection;

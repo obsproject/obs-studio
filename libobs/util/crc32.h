@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015 Hugh Bailey <obs.jim@gmail.com>
+ *  Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -18,4 +18,12 @@
 
 #include "c99defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 EXPORT uint32_t calc_crc32(uint32_t crc, const void *buf, size_t size);
+
+#ifdef __cplusplus
+}
+#endif

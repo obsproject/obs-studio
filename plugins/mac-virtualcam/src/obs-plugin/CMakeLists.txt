@@ -1,59 +1,23 @@
-project(mac-virtualcam)
+cmake_minimum_required(VERSION 3.24...3.25)
 
-find_library(AVFOUNDATION AVFoundation)
-find_library(APPKIT AppKit)
-find_library(COCOA Cocoa)
-find_library(COREFOUNDATION CoreFoundation)
-find_library(COREMEDIA CoreMedia)
-find_library(COREVIDEO CoreVideo)
-find_library(COCOA Cocoa)
-find_library(COREMEDIAIO CoreMediaIO)
-find_library(IOSURFACE IOSurface)
-find_library(IOKIT IOKit)
+add_library(mac-virtualcam MODULE)
+add_library(OBS::virtualcam ALIAS mac-virtualcam)
 
-include_directories(${AVFOUNDATION}
-					${APPKIT}
-					${COCOA}
-					${COREFOUNDATION}
-					${COREMEDIA}
-					${COREVIDEO}
-					${COREMEDIAIO}
-					${COCOA}
-					${IOSURFACE}
-					"${CMAKE_SOURCE_DIR}/UI/obs-frontend-api"
-					../common)
+target_sources(mac-virtualcam PRIVATE Defines.h plugin-main.mm OBSDALMachServer.mm OBSDALMachServer.h)
+target_compile_options(mac-virtualcam PRIVATE -fmodules -fcxx-modules)
 
-set(mac-virtualcam_HEADERS
-	Defines.h
-	MachServer.h
-	../common/MachProtocol.h)
+target_link_libraries(mac-virtualcam PRIVATE OBS::mach-protocol OBS::libobs OBS::frontend-api)
 
-set(mac-virtualcam_SOURCES
-	plugin-main.mm
-	MachServer.mm)
-
-add_library(mac-virtualcam MODULE
-	${mac-virtualcam_SOURCES}
-	${mac-virtualcam_HEADERS})
-
-target_link_libraries(mac-virtualcam
-	libobs
-	obs-frontend-api
-	Qt5::Core
-	Qt5::Widgets
-	${AVFOUNDATION}
-	${APPKIT}
-	${COCOA}
-	${COREFOUNDATION}
-	${COREMEDIA}
-	${COREVIDEO}
-	${COREMEDIAIO}
-	${IOSURFACE}
-	${IOKIT})
-
-set_target_properties(mac-virtualcam PROPERTIES
-	FOLDER "plugins"
-	COMPILE_FLAGS "-std=gnu++14 -stdlib=libc++ -fobjc-arc -fobjc-weak"
-)
-
-install_obs_plugin_with_data(mac-virtualcam data)
+# cmake-format: off
+set_target_properties_obs(
+  mac-virtualcam
+  PROPERTIES FOLDER plugins
+             PREFIX ""
+             MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/Info.plist.in"
+             LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../../"
+             XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
+             XCODE_ATTRIBUTE_CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION YES
+             XCODE_ATTRIBUTE_GCC_WARN_SHADOW YES
+             XCODE_ATTRIBUTE_CLANG_ENABLE_MODULES YES
+             XCODE_ATTRIBUTE_CLANG_MODULES_AUTOLINK YES)
+# cmake-format: on

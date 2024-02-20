@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -18,7 +18,6 @@
 #pragma once
 
 #include "obs.h"
-#include "obs-internal.h"
 #include "graphics/matrix4.h"
 
 /* how obs scene! */
@@ -64,6 +63,9 @@ struct obs_scene_item {
 	struct vec2 output_scale;
 	enum obs_scale_type scale_filter;
 
+	enum obs_blending_method blend_method;
+	enum obs_blending_type blend_type;
+
 	struct matrix4 box_transform;
 	struct vec2 box_scale;
 	struct matrix4 draw_transform;
@@ -71,6 +73,8 @@ struct obs_scene_item {
 	enum obs_bounds_type bounds_type;
 	uint32_t bounds_align;
 	struct vec2 bounds;
+	bool crop_to_bounds;
+	struct obs_sceneitem_crop bounds_crop;
 
 	obs_hotkey_pair_id toggle_visibility;
 
@@ -78,6 +82,11 @@ struct obs_scene_item {
 
 	pthread_mutex_t actions_mutex;
 	DARRAY(struct item_action) audio_actions;
+
+	struct obs_source *show_transition;
+	struct obs_source *hide_transition;
+	uint32_t show_transition_duration;
+	uint32_t hide_transition_duration;
 
 	/* would do **prev_next, but not really great for reordering */
 	struct obs_scene_item *prev;

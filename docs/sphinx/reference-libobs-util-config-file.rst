@@ -310,3 +310,80 @@ Default Value Functions
    :param section:    The section of the value
    :param name:       The value name
    :param value:      The floating point value
+
+----------------------
+
+.. function:: const char *config_get_default_string(config_t *config, const char *section, const char *name)
+
+   Gets a default string value.  If there is no default value, it will return *NULL*.
+
+   :param config:     Configuration object
+   :param section:    The section of the value
+   :param name:       The value name
+   :return:           The default string value
+
+----------------------
+
+.. function:: int64_t config_get_default_int(config_t *config, const char *section, const char *name)
+
+   Gets a default integer value.  If there is no default value, it will return 0.
+
+   :param config:     Configuration object
+   :param section:    The section of the value
+   :param name:       The value name
+   :return:           The integer value
+
+----------------------
+
+.. function:: uint64_t config_get_default_uint(config_t *config, const char *section, const char *name)
+
+   Gets a default unsigned integer value.  If there is no default value, it will return 0.
+
+   :param config:     Configuration object
+   :param section:    The section of the value
+   :param name:       The value name
+   :return:           The unsigned integer value
+
+----------------------
+
+.. function:: bool config_get_default_bool(config_t *config, const char *section, const char *name)
+
+   Gets a default boolean value.  If there is no default value, it will return false.
+
+   :param config:     Configuration object
+   :param section:    The section of the value
+   :param name:       The value name
+   :return:           The boolean value
+
+----------------------
+
+.. function:: double config_get_default_double(config_t *config, const char *section, const char *name)
+
+   Gets a default floating point value.  If there is no default value, it will return 0.0.
+
+   :param config:     Configuration object
+   :param section:    The section of the value
+   :param name:       The value name
+   :return:           The floating point value
+
+-----------------------
+
+.. function:: bool config_has_user_value(config_t *config, const char *section, const char *name)
+
+  Returns whether a value is user-set (true) or default/none (false).
+
+   :param config:     Configuration object
+   :param section:    The section of the value
+   :param name:       The value name
+   :return:           Whether a user value exists
+
+-----------------------
+
+.. function:: bool config_has_default_value(config_t *config, const char *section, const char *name)
+
+  Returns whether a value has a default set.
+
+   :param config:     Configuration object
+   :param section:    The section of the value
+   :param name:       The value name
+   :return:           Whether a user value exists

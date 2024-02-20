@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@ static inline bool check_path(const char *data, const char *path,
 	str << path << data;
 	output = str.str();
 
-	printf("Attempted path: %s\n", output.c_str());
+	blog(LOG_DEBUG, "Attempted path: %s", output.c_str());
 
 	return os_file_exists(output.c_str());
 }
@@ -57,11 +57,6 @@ bool GetDataFilePath(const char *data, string &output)
 		return true;
 
 	return check_path(data, OBS_DATA_PATH "/obs-studio/", output);
-}
-
-bool InitApplicationBundle()
-{
-	return true;
 }
 
 string GetDefaultVideoSavePath()
@@ -162,31 +157,18 @@ uint32_t GetWindowsVersion()
 	return ver;
 }
 
-void SetAeroEnabled(bool enable)
+uint32_t GetWindowsBuild()
 {
-	static HRESULT(WINAPI * func)(UINT) = nullptr;
-	static bool failed = false;
+	static uint32_t build = 0;
 
-	if (!func) {
-		if (failed) {
-			return;
-		}
+	if (build == 0) {
+		struct win_version_info ver_info;
 
-		HMODULE dwm = LoadLibraryW(L"dwmapi");
-		if (!dwm) {
-			failed = true;
-			return;
-		}
-
-		func = reinterpret_cast<decltype(func)>(
-			GetProcAddress(dwm, "DwmEnableComposition"));
-		if (!func) {
-			failed = true;
-			return;
-		}
+		get_win_ver(&ver_info);
+		build = ver_info.build;
 	}
 
-	func(enable ? DWM_EC_ENABLECOMPOSITION : DWM_EC_DISABLECOMPOSITION);
+	return build;
 }
 
 bool IsAlwaysOnTop(QWidget *window)
@@ -227,6 +209,27 @@ void SetWin32DropStyle(QWidget *window)
 	LONG_PTR ex_style = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
 	ex_style |= WS_EX_ACCEPTFILES;
 	SetWindowLongPtr(hwnd, GWL_EXSTYLE, ex_style);
+}
+
+bool SetDisplayAffinitySupported(void)
+{
+	static bool checked = false;
+	static bool supported;
+
+	/* this has to be version gated as setting WDA_EXCLUDEFROMCAPTURE on
+	   older Windows builds behaves like WDA_MONITOR (black box) */
+
+	if (!checked) {
+		if (GetWindowsVersion() > 0x0A00 ||
+		    GetWindowsVersion() == 0x0A00 && GetWindowsBuild() >= 19041)
+			supported = true;
+		else
+			supported = false;
+
+		checked = true;
+	}
+
+	return supported;
 }
 
 bool DisableAudioDucking(bool disable)
@@ -293,7 +296,7 @@ RunOnceMutex &RunOnceMutex::operator=(RunOnceMutex &&rom)
 	return *this;
 }
 
-RunOnceMutex GetRunOnceMutex(bool &already_running)
+RunOnceMutex CheckIfAlreadyRunning(bool &already_running)
 {
 	string name;
 
@@ -353,6 +356,7 @@ static BOOL CALLBACK GetMonitorCallback(HMONITOR monitor, HDC, LPRECT,
 	return true;
 }
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 4, 0)
 #define GENERIC_MONITOR_NAME QStringLiteral("Generic PnP Monitor")
 
 QString GetMonitorName(const QString &id)
@@ -368,17 +372,17 @@ QString GetMonitorName(const QString &id)
 	}
 
 	UINT32 numPath, numMode;
-	if (!GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &numPath,
-					 &numMode) == ERROR_SUCCESS) {
+	if (GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &numPath,
+					&numMode) != ERROR_SUCCESS) {
 		return GENERIC_MONITOR_NAME;
 	}
 
 	std::vector<DISPLAYCONFIG_PATH_INFO> paths(numPath);
 	std::vector<DISPLAYCONFIG_MODE_INFO> modes(numMode);
 
-	if (!QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &numPath, paths.data(),
-				&numMode, modes.data(),
-				nullptr) == ERROR_SUCCESS) {
+	if (QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &numPath, paths.data(),
+			       &numMode, modes.data(),
+			       nullptr) != ERROR_SUCCESS) {
 		return GENERIC_MONITOR_NAME;
 	}
 
@@ -413,4 +417,80 @@ QString GetMonitorName(const QString &id)
 	}
 
 	return QString::fromWCharArray(target.monitorFriendlyDeviceName);
+}
+#endif
+
+/* Based on https://www.winehq.org/pipermail/wine-devel/2008-September/069387.html */
+typedef const char *(CDECL *WINEGETVERSION)(void);
+bool IsRunningOnWine()
+{
+	WINEGETVERSION func;
+	HMODULE nt;
+
+	nt = GetModuleHandleW(L"ntdll");
+	if (!nt)
+		return false;
+
+	func = (WINEGETVERSION)GetProcAddress(nt, "wine_get_version");
+	if (func) {
+		blog(LOG_WARNING, "Running on Wine version \"%s\"", func());
+		return true;
+	}
+
+	return false;
+}
+
+HWND hwnd;
+void TaskbarOverlayInit()
+{
+	hwnd = (HWND)App()->GetMainWindow()->winId();
+}
+
+void TaskbarOverlaySetStatus(TaskbarOverlayStatus status)
+{
+	ITaskbarList4 *taskbarIcon;
+	auto hr = CoCreateInstance(CLSID_TaskbarList, NULL,
+				   CLSCTX_INPROC_SERVER,
+				   IID_PPV_ARGS(&taskbarIcon));
+
+	if (FAILED(hr)) {
+		taskbarIcon->Release();
+		return;
+	}
+
+	hr = taskbarIcon->HrInit();
+
+	if (FAILED(hr)) {
+		taskbarIcon->Release();
+		return;
+	}
+
+	QIcon qicon;
+	switch (status) {
+	case TaskbarOverlayStatusActive:
+		qicon = QIcon::fromTheme("obs-active",
+					 QIcon(":/res/images/active.png"));
+		break;
+	case TaskbarOverlayStatusPaused:
+		qicon = QIcon::fromTheme("obs-paused",
+					 QIcon(":/res/images/paused.png"));
+		break;
+	case TaskbarOverlayStatusInactive:
+		taskbarIcon->SetOverlayIcon(hwnd, nullptr, nullptr);
+		taskbarIcon->Release();
+		return;
+	}
+
+	HICON hicon = nullptr;
+	if (!qicon.isNull()) {
+		Q_GUI_EXPORT HICON qt_pixmapToWinHICON(const QPixmap &p);
+		hicon = qt_pixmapToWinHICON(
+			qicon.pixmap(GetSystemMetrics(SM_CXSMICON)));
+		if (!hicon)
+			return;
+	}
+
+	taskbarIcon->SetOverlayIcon(hwnd, hicon, nullptr);
+	DestroyIcon(hicon);
+	taskbarIcon->Release();
 }

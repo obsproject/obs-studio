@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,13 +20,19 @@
 
 #include "../util/threading.h"
 #include "../util/darray.h"
-#include "../util/circlebuf.h"
+#include "../util/deque.h"
 #include "../util/platform.h"
 #include "../util/profiler.h"
 #include "../util/util_uint64.h"
 
 #include "audio-io.h"
 #include "audio-resampler.h"
+
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include <avrt.h>
+#endif
 
 extern profiler_name_store_t *obs_get_profiler_name_store(void);
 
@@ -53,6 +59,7 @@ static inline void audio_input_free(struct audio_input *input)
 struct audio_mix {
 	DARRAY(struct audio_input) inputs;
 	float buffer[MAX_AUDIO_CHANNELS][AUDIO_OUTPUT_FRAMES];
+	float buffer_unclamped[MAX_AUDIO_CHANNELS][AUDIO_OUTPUT_FRAMES];
 };
 
 struct audio_output {
@@ -110,8 +117,12 @@ static inline void do_audio_output(struct audio_output *audio, size_t mix_idx,
 	for (size_t i = mix->inputs.num; i > 0; i--) {
 		struct audio_input *input = mix->inputs.array + (i - 1);
 
+		float(*buf)[AUDIO_OUTPUT_FRAMES] =
+			input->conversion.allow_clipping ? mix->buffer_unclamped
+							 : mix->buffer;
 		for (size_t i = 0; i < audio->planes; i++)
-			data.data[i] = (uint8_t *)mix->buffer[i];
+			data.data[i] = (uint8_t *)buf[i];
+
 		data.frames = frames;
 		data.timestamp = timestamp;
 
@@ -136,9 +147,12 @@ static inline void clamp_audio_output(struct audio_output *audio, size_t bytes)
 		for (size_t plane = 0; plane < audio->planes; plane++) {
 			float *mix_data = mix->buffer[plane];
 			float *mix_end = &mix_data[float_size];
+			/* Unclamped mix is copied directly. */
+			memcpy(mix->buffer_unclamped[plane], mix_data, bytes);
 
 			while (mix_data < mix_end) {
 				float val = *mix_data;
+				val = (val == val) ? val : 0.0f;
 				val = (val > 1.0f) ? 1.0f : val;
 				val = (val < -1.0f) ? -1.0f : val;
 				*(mix_data++) = val;
@@ -197,14 +211,16 @@ static void input_and_output(struct audio_output *audio, uint64_t audio_time,
 
 static void *audio_thread(void *param)
 {
+#ifdef _WIN32
+	DWORD unused = 0;
+	const HANDLE handle = AvSetMmThreadCharacteristics(L"Audio", &unused);
+#endif
+
 	struct audio_output *audio = param;
 	size_t rate = audio->info.samples_per_sec;
 	uint64_t samples = 0;
 	uint64_t start_time = os_gettime_ns();
 	uint64_t prev_time = start_time;
-	uint64_t audio_time = prev_time;
-	uint32_t audio_wait_time = (uint32_t)(
-		audio_frames_to_ns(rate, AUDIO_OUTPUT_FRAMES) / 1000000);
 
 	os_set_thread_name("audio-io: audio thread");
 
@@ -213,26 +229,26 @@ static void *audio_thread(void *param)
 				   "audio_thread(%s)", audio->info.name);
 
 	while (os_event_try(audio->stop_event) == EAGAIN) {
-		uint64_t cur_time;
+		samples += AUDIO_OUTPUT_FRAMES;
+		uint64_t audio_time =
+			start_time + audio_frames_to_ns(rate, samples);
 
-		os_sleep_ms(audio_wait_time);
+		os_sleepto_ns_fast(audio_time);
 
 		profile_start(audio_thread_name);
 
-		cur_time = os_gettime_ns();
-		while (audio_time <= cur_time) {
-			samples += AUDIO_OUTPUT_FRAMES;
-			audio_time =
-				start_time + audio_frames_to_ns(rate, samples);
-
-			input_and_output(audio, audio_time, prev_time);
-			prev_time = audio_time;
-		}
+		input_and_output(audio, audio_time, prev_time);
+		prev_time = audio_time;
 
 		profile_end(audio_thread_name);
 
 		profile_reenable_thread();
 	}
+
+#ifdef _WIN32
+	if (handle)
+		AvRevertMmThreadCharacteristics(handle);
+#endif
 
 	return NULL;
 }
@@ -354,7 +370,6 @@ static inline bool valid_audio_params(const struct audio_output_info *info)
 int audio_output_open(audio_t **audio, struct audio_output_info *info)
 {
 	struct audio_output *out;
-	pthread_mutexattr_t attr;
 	bool planar = is_audio_planar(info->format);
 
 	if (!valid_audio_params(info))
@@ -362,7 +377,7 @@ int audio_output_open(audio_t **audio, struct audio_output_info *info)
 
 	out = bzalloc(sizeof(struct audio_output));
 	if (!out)
-		goto fail;
+		goto fail0;
 
 	memcpy(&out->info, info, sizeof(struct audio_output_info));
 	out->channels = get_audio_channels(info->speakers);
@@ -372,22 +387,22 @@ int audio_output_open(audio_t **audio, struct audio_output_info *info)
 	out->block_size = (planar ? 1 : out->channels) *
 			  get_audio_bytes_per_channel(info->format);
 
-	if (pthread_mutexattr_init(&attr) != 0)
-		goto fail;
-	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0)
-		goto fail;
-	if (pthread_mutex_init(&out->input_mutex, &attr) != 0)
-		goto fail;
+	if (pthread_mutex_init_recursive(&out->input_mutex) != 0)
+		goto fail0;
 	if (os_event_init(&out->stop_event, OS_EVENT_TYPE_MANUAL) != 0)
-		goto fail;
+		goto fail1;
 	if (pthread_create(&out->thread, NULL, audio_thread, out) != 0)
-		goto fail;
+		goto fail2;
 
 	out->initialized = true;
 	*audio = out;
 	return AUDIO_OUTPUT_SUCCESS;
 
-fail:
+fail2:
+	os_event_destroy(out->stop_event);
+fail1:
+	pthread_mutex_destroy(&out->input_mutex);
+fail0:
 	audio_output_close(out);
 	return AUDIO_OUTPUT_FAIL;
 }
@@ -402,6 +417,8 @@ void audio_output_close(audio_t *audio)
 	if (audio->initialized) {
 		os_event_signal(audio->stop_event);
 		pthread_join(audio->thread, &thread_ret);
+		os_event_destroy(audio->stop_event);
+		pthread_mutex_destroy(&audio->input_mutex);
 	}
 
 	for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
@@ -412,8 +429,6 @@ void audio_output_close(audio_t *audio)
 
 		da_free(mix->inputs);
 	}
-
-	os_event_destroy(audio->stop_event);
 	bfree(audio);
 }
 
@@ -439,20 +454,20 @@ bool audio_output_active(const audio_t *audio)
 
 size_t audio_output_get_block_size(const audio_t *audio)
 {
-	return audio ? audio->block_size : 0;
+	return audio->block_size;
 }
 
 size_t audio_output_get_planes(const audio_t *audio)
 {
-	return audio ? audio->planes : 0;
+	return audio->planes;
 }
 
 size_t audio_output_get_channels(const audio_t *audio)
 {
-	return audio ? audio->channels : 0;
+	return audio->channels;
 }
 
 uint32_t audio_output_get_sample_rate(const audio_t *audio)
 {
-	return audio ? audio->info.samples_per_sec : 0;
+	return audio->info.samples_per_sec;
 }

@@ -4,10 +4,10 @@ Profiler
 The profiler is used to get information about program performance and
 efficiency.
 
-.. type:: typedef struct profiler_snapshot profiler_snapshot_t
-.. type:: typedef struct profiler_snapshot_entry profiler_snapshot_entry_t
-.. type:: typedef struct profiler_name_store profiler_name_store_t
-.. type:: typedef struct profiler_time_entry profiler_time_entry_t
+.. type:: struct profiler_snapshot profiler_snapshot_t
+.. type:: struct profiler_snapshot_entry profiler_snapshot_entry_t
+.. type:: struct profiler_name_store profiler_name_store_t
+.. type:: struct profiler_time_entry profiler_time_entry_t
 
 .. code:: cpp
 
@@ -17,7 +17,7 @@ efficiency.
 Profiler Structures
 -------------------
 
-.. type:: struct profiler_time_entry
+.. struct:: profiler_time_entry
 .. member:: uint64_t profiler_time_entry.time_delta
 .. member:: uint64_t profiler_time_entry.count
 
@@ -180,7 +180,7 @@ Profiler Data Access Functions
 
 ----------------------
 
-.. type:: typedef bool (*profiler_entry_enum_func)(void *context, profiler_snapshot_entry_t *entry)
+.. type:: bool (*profiler_entry_enum_func)(void *context, profiler_snapshot_entry_t *entry)
 
    Profiler snapshot entry numeration callback
 
@@ -200,7 +200,7 @@ Profiler Data Access Functions
 
 ----------------------
 
-.. type:: typedef bool (*profiler_name_filter_func)(void *data, const char *name, bool *remove)
+.. type:: bool (*profiler_name_filter_func)(void *data, const char *name, bool *remove)
 
    Callback used to determine what profile nodes are removed/filtered.
 

@@ -3,7 +3,6 @@
 
 #include "dxgi-helpers.hpp"
 #include "graphics-hook.h"
-#include "../funchook.h"
 
 struct d3d11_data {
 	ID3D11Device *device;         /* do not release */
@@ -14,26 +13,11 @@ struct d3d11_data {
 	bool using_shtex;
 	bool multisampled;
 
-	ID3D11Texture2D *scale_tex;
-	ID3D11ShaderResourceView *scale_resource;
-
-	ID3D11VertexShader *vertex_shader;
-	ID3D11InputLayout *vertex_layout;
-	ID3D11PixelShader *pixel_shader;
-
-	ID3D11SamplerState *sampler_state;
-	ID3D11BlendState *blend_state;
-	ID3D11DepthStencilState *zstencil_state;
-	ID3D11RasterizerState *raster_state;
-
-	ID3D11Buffer *vertex_buffer;
-
 	union {
 		/* shared texture */
 		struct {
 			struct shtex_data *shtex_info;
 			ID3D11Texture2D *texture;
-			ID3D11RenderTargetView *render_target;
 			HANDLE handle;
 		};
 		/* shared memory */
@@ -53,34 +37,11 @@ static struct d3d11_data data = {};
 
 void d3d11_free(void)
 {
-	if (data.scale_tex)
-		data.scale_tex->Release();
-	if (data.scale_resource)
-		data.scale_resource->Release();
-	if (data.vertex_shader)
-		data.vertex_shader->Release();
-	if (data.vertex_layout)
-		data.vertex_layout->Release();
-	if (data.pixel_shader)
-		data.pixel_shader->Release();
-	if (data.sampler_state)
-		data.sampler_state->Release();
-	if (data.blend_state)
-		data.blend_state->Release();
-	if (data.zstencil_state)
-		data.zstencil_state->Release();
-	if (data.raster_state)
-		data.raster_state->Release();
-	if (data.vertex_buffer)
-		data.vertex_buffer->Release();
-
 	capture_free();
 
 	if (data.using_shtex) {
 		if (data.texture)
 			data.texture->Release();
-		if (data.render_target)
-			data.render_target->Release();
 	} else {
 		for (size_t i = 0; i < NUM_BUFFERS; i++) {
 			if (data.copy_surfaces[i]) {
@@ -122,63 +83,26 @@ static bool create_d3d11_stage_surface(ID3D11Texture2D **tex)
 }
 
 static bool create_d3d11_tex(uint32_t cx, uint32_t cy, ID3D11Texture2D **tex,
-			     ID3D11ShaderResourceView **resource,
-			     ID3D11RenderTargetView **render_target,
 			     HANDLE *handle)
 {
-	UINT flags = 0;
-	UINT misc_flags = 0;
 	HRESULT hr;
-
-	if (!!resource)
-		flags |= D3D11_BIND_SHADER_RESOURCE;
-	if (!!render_target)
-		flags |= D3D11_BIND_RENDER_TARGET;
-	if (!!handle)
-		misc_flags |= D3D11_RESOURCE_MISC_SHARED;
 
 	D3D11_TEXTURE2D_DESC desc = {};
 	desc.Width = cx;
 	desc.Height = cy;
 	desc.MipLevels = 1;
 	desc.ArraySize = 1;
-	desc.Format = data.format;
-	desc.BindFlags = flags;
+	desc.Format = apply_dxgi_format_typeless(
+		data.format, global_hook_info->allow_srgb_alias);
+	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 	desc.SampleDesc.Count = 1;
 	desc.Usage = D3D11_USAGE_DEFAULT;
-	desc.MiscFlags = misc_flags;
+	desc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
 
 	hr = data.device->CreateTexture2D(&desc, nullptr, tex);
 	if (FAILED(hr)) {
 		hlog_hr("create_d3d11_tex: failed to create texture", hr);
 		return false;
-	}
-
-	if (!!resource) {
-		D3D11_SHADER_RESOURCE_VIEW_DESC res_desc = {};
-		res_desc.Format = data.format;
-		res_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-		res_desc.Texture2D.MipLevels = 1;
-
-		hr = data.device->CreateShaderResourceView(*tex, &res_desc,
-							   resource);
-		if (FAILED(hr)) {
-			hlog_hr("create_d3d11_tex: failed to create resource "
-				"view",
-				hr);
-			return false;
-		}
-	}
-
-	if (!!render_target) {
-		hr = data.device->CreateRenderTargetView(*tex, nullptr,
-							 render_target);
-		if (FAILED(hr)) {
-			hlog_hr("create_d3d11_tex: failed to create render "
-				"target view",
-				hr);
-			return false;
-		}
 	}
 
 	if (!!handle) {
@@ -215,7 +139,9 @@ static inline bool d3d11_init_format(IDXGISwapChain *swap, HWND &window)
 		return false;
 	}
 
-	data.format = fix_dxgi_format(desc.BufferDesc.Format);
+	print_swap_desc(&desc);
+
+	data.format = strip_dxgi_format_srgb(desc.BufferDesc.Format);
 	data.multisampled = desc.SampleDesc.Count > 1;
 	window = desc.OutputWindow;
 	data.cx = desc.BufferDesc.Width;
@@ -274,15 +200,12 @@ static bool d3d11_shmem_init(HWND window)
 
 static bool d3d11_shtex_init(HWND window)
 {
-	ID3D11ShaderResourceView *resource = nullptr;
 	bool success;
 
 	data.using_shtex = true;
 
-	success = create_d3d11_tex(data.cx, data.cy, &data.texture, &resource,
-				   &data.render_target, &data.handle);
-	if (resource)
-		resource->Release();
+	success =
+		create_d3d11_tex(data.cx, data.cy, &data.texture, &data.handle);
 
 	if (!success) {
 		hlog("d3d11_shtex_init: failed to create texture");
@@ -380,7 +303,7 @@ static inline void d3d11_shmem_capture(ID3D11Resource *backbuffer)
 	data.cur_tex = next_tex;
 }
 
-void d3d11_capture(void *swap_ptr, void *backbuffer_ptr, bool)
+void d3d11_capture(void *swap_ptr, void *backbuffer_ptr)
 {
 	IDXGIResource *dxgi_backbuffer = (IDXGIResource *)backbuffer_ptr;
 	IDXGISwapChain *swap = (IDXGISwapChain *)swap_ptr;

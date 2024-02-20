@@ -5,7 +5,7 @@ Quaternion
 
    #include <graphics/quat.h>
 
-.. type:: struct quat
+.. struct:: quat
 
    Two component quaternion structure.
 
@@ -107,7 +107,7 @@ Quaternion
    :param dst: Destination
    :param v:   Quaternion being subtracted from
    :param f:   Floating point being subtracted
-   
+
 ---------------------
 
 .. function:: void quat_mulf(struct quat *dst, const struct quat *v, float f)

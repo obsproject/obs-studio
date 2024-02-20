@@ -39,6 +39,17 @@ Auth::Type Auth::AuthType(const std::string &service)
 	return Type::None;
 }
 
+bool Auth::External(const std::string &service)
+{
+	for (auto &a : authDefs) {
+		if (service.find(a.def.service) != std::string::npos) {
+			return a.def.externalOAuth;
+		}
+	}
+
+	return false;
+}
+
 void Auth::Load()
 {
 	OBSBasic *main = OBSBasic::Get();
@@ -50,7 +61,11 @@ void Auth::Load()
 	if (main->auth) {
 		if (main->auth->LoadInternal()) {
 			main->auth->LoadUI();
+			main->SetBroadcastFlowEnabled(
+				main->auth->broadcastFlow());
 		}
+	} else {
+		main->SetBroadcastFlowEnabled(false);
 	}
 }
 

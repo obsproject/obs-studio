@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -129,14 +129,14 @@ void gs_technique_end(gs_technique_t *tech)
 	for (i = 0; i < effect->params.num; i++) {
 		struct gs_effect_param *param = params + i;
 
-		da_free(param->cur_val);
+		da_resize(param->cur_val, 0);
 		param->changed = false;
 		if (param->next_sampler)
 			param->next_sampler = NULL;
 	}
 }
 
-static inline void reset_params(struct darray *shaderparams)
+static inline void reset_params(pass_shaderparam_array_t *shaderparams)
 {
 	struct pass_shaderparam *params = shaderparams->array;
 	size_t i;
@@ -145,7 +145,8 @@ static inline void reset_params(struct darray *shaderparams)
 		params[i].eparam->changed = false;
 }
 
-static void upload_shader_params(struct darray *pass_params, bool changed_only)
+static void upload_shader_params(pass_shaderparam_array_t *pass_params,
+				 bool changed_only)
 {
 	struct pass_shaderparam *params = pass_params->array;
 	size_t i;
@@ -177,13 +178,13 @@ static void upload_shader_params(struct darray *pass_params, bool changed_only)
 static inline void upload_parameters(struct gs_effect *effect,
 				     bool changed_only)
 {
-	struct darray *vshader_params, *pshader_params;
+	pass_shaderparam_array_t *vshader_params, *pshader_params;
 
 	if (!effect->cur_pass)
 		return;
 
-	vshader_params = &effect->cur_pass->vertshader_params.da;
-	pshader_params = &effect->cur_pass->pixelshader_params.da;
+	vshader_params = &effect->cur_pass->vertshader_params;
+	pshader_params = &effect->cur_pass->pixelshader_params;
 
 	upload_shader_params(vshader_params, changed_only);
 	upload_shader_params(pshader_params, changed_only);
@@ -232,7 +233,7 @@ bool gs_technique_begin_pass_by_name(gs_technique_t *tech, const char *name)
 	return false;
 }
 
-static inline void clear_tex_params(struct darray *in_params)
+static inline void clear_tex_params(pass_shaderparam_array_t *in_params)
 {
 	struct pass_shaderparam *params = in_params->array;
 
@@ -255,8 +256,8 @@ void gs_technique_end_pass(gs_technique_t *tech)
 	if (!pass)
 		return;
 
-	clear_tex_params(&pass->vertshader_params.da);
-	clear_tex_params(&pass->pixelshader_params.da);
+	clear_tex_params(&pass->vertshader_params);
+	clear_tex_params(&pass->pixelshader_params);
 	tech->effect->cur_pass = NULL;
 }
 
@@ -486,7 +487,18 @@ void gs_effect_set_color(gs_eparam_t *param, uint32_t argb)
 
 void gs_effect_set_texture(gs_eparam_t *param, gs_texture_t *val)
 {
-	effect_setval_inline(param, &val, sizeof(gs_texture_t *));
+	struct gs_shader_texture shader_tex;
+	shader_tex.tex = val;
+	shader_tex.srgb = false;
+	effect_setval_inline(param, &shader_tex, sizeof(shader_tex));
+}
+
+void gs_effect_set_texture_srgb(gs_eparam_t *param, gs_texture_t *val)
+{
+	struct gs_shader_texture shader_tex;
+	shader_tex.tex = val;
+	shader_tex.srgb = true;
+	effect_setval_inline(param, &shader_tex, sizeof(shader_tex));
 }
 
 void gs_effect_set_val(gs_eparam_t *param, const void *val, size_t size)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -14,11 +14,11 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <obs.h>
 #include <util/platform.h>
 
 #include <assert.h>
 
+#include "media-playback.h"
 #include "media.h"
 #include "closest-format.h"
 
@@ -34,26 +34,42 @@ static inline enum video_format convert_pixel_format(int f)
 		return VIDEO_FORMAT_NONE;
 	case AV_PIX_FMT_YUV420P:
 		return VIDEO_FORMAT_I420;
-	case AV_PIX_FMT_NV12:
-		return VIDEO_FORMAT_NV12;
 	case AV_PIX_FMT_YUYV422:
 		return VIDEO_FORMAT_YUY2;
+	case AV_PIX_FMT_YUV422P:
+		return VIDEO_FORMAT_I422;
+	case AV_PIX_FMT_YUV422P10LE:
+		return VIDEO_FORMAT_I210;
 	case AV_PIX_FMT_YUV444P:
 		return VIDEO_FORMAT_I444;
+	case AV_PIX_FMT_YUV444P12LE:
+		return VIDEO_FORMAT_I412;
 	case AV_PIX_FMT_UYVY422:
 		return VIDEO_FORMAT_UYVY;
+	case AV_PIX_FMT_YVYU422:
+		return VIDEO_FORMAT_YVYU;
+	case AV_PIX_FMT_NV12:
+		return VIDEO_FORMAT_NV12;
 	case AV_PIX_FMT_RGBA:
 		return VIDEO_FORMAT_RGBA;
 	case AV_PIX_FMT_BGRA:
 		return VIDEO_FORMAT_BGRA;
-	case AV_PIX_FMT_BGR0:
-		return VIDEO_FORMAT_BGRX;
 	case AV_PIX_FMT_YUVA420P:
 		return VIDEO_FORMAT_I40A;
+	case AV_PIX_FMT_YUV420P10LE:
+		return VIDEO_FORMAT_I010;
 	case AV_PIX_FMT_YUVA422P:
 		return VIDEO_FORMAT_I42A;
 	case AV_PIX_FMT_YUVA444P:
 		return VIDEO_FORMAT_YUVA;
+#if LIBAVUTIL_BUILD >= AV_VERSION_INT(56, 31, 100)
+	case AV_PIX_FMT_YUVA444P12LE:
+		return VIDEO_FORMAT_YA2L;
+#endif
+	case AV_PIX_FMT_BGR0:
+		return VIDEO_FORMAT_BGRX;
+	case AV_PIX_FMT_P010LE:
+		return VIDEO_FORMAT_P010;
 	default:;
 	}
 
@@ -110,7 +126,8 @@ static inline enum speaker_layout convert_speaker_layout(uint8_t channels)
 }
 
 static inline enum video_colorspace
-convert_color_space(enum AVColorSpace s, enum AVColorTransferCharacteristic trc)
+convert_color_space(enum AVColorSpace s, enum AVColorTransferCharacteristic trc,
+		    enum AVColorPrimaries color_primaries)
 {
 	switch (s) {
 	case AVCOL_SPC_BT709:
@@ -121,8 +138,15 @@ convert_color_space(enum AVColorSpace s, enum AVColorTransferCharacteristic trc)
 	case AVCOL_SPC_SMPTE170M:
 	case AVCOL_SPC_SMPTE240M:
 		return VIDEO_CS_601;
+	case AVCOL_SPC_BT2020_NCL:
+		return (trc == AVCOL_TRC_ARIB_STD_B67) ? VIDEO_CS_2100_HLG
+						       : VIDEO_CS_2100_PQ;
 	default:
-		return VIDEO_CS_DEFAULT;
+		return (color_primaries == AVCOL_PRI_BT2020)
+			       ? ((trc == AVCOL_TRC_ARIB_STD_B67)
+					  ? VIDEO_CS_2100_HLG
+					  : VIDEO_CS_2100_PQ)
+			       : VIDEO_CS_DEFAULT;
 	}
 }
 
@@ -132,7 +156,7 @@ static inline enum video_range_type convert_color_range(enum AVColorRange r)
 }
 
 static inline struct mp_decode *get_packet_decoder(mp_media_t *media,
-						   AVPacket *pkt)
+						   const AVPacket *pkt)
 {
 	if (media->has_audio && pkt->stream_index == media->a.stream->index)
 		return &media->a;
@@ -142,14 +166,24 @@ static inline struct mp_decode *get_packet_decoder(mp_media_t *media,
 	return NULL;
 }
 
+void mp_media_free_packet(struct mp_media *media, AVPacket *pkt)
+{
+	av_packet_unref(pkt);
+	da_push_back(media->packet_pool, &pkt);
+}
+
 static int mp_media_next_packet(mp_media_t *media)
 {
-	AVPacket new_pkt;
-	AVPacket pkt;
-	av_init_packet(&pkt);
-	new_pkt = pkt;
+	AVPacket *pkt;
+	AVPacket **const cached = da_end(media->packet_pool);
+	if (cached) {
+		pkt = *cached;
+		da_pop_back(media->packet_pool);
+	} else {
+		pkt = av_packet_alloc();
+	}
 
-	int ret = av_read_frame(media->fmt, &pkt);
+	int ret = av_read_frame(media->fmt, pkt);
 	if (ret < 0) {
 		if (ret != AVERROR_EOF && ret != AVERROR_EXIT)
 			blog(LOG_WARNING, "MP: av_read_frame failed: %s (%d)",
@@ -157,13 +191,13 @@ static int mp_media_next_packet(mp_media_t *media)
 		return ret;
 	}
 
-	struct mp_decode *d = get_packet_decoder(media, &pkt);
-	if (d && pkt.size) {
-		av_packet_ref(&new_pkt, &pkt);
-		mp_decode_push_packet(d, &new_pkt);
+	struct mp_decode *d = get_packet_decoder(media, pkt);
+	if (d && pkt->size) {
+		mp_decode_push_packet(d, pkt);
+	} else {
+		mp_media_free_packet(media, pkt);
 	}
 
-	av_packet_unref(&pkt);
 	return ret;
 }
 
@@ -188,15 +222,19 @@ static inline int get_sws_colorspace(enum AVColorSpace cs)
 		return SWS_CS_ITU709;
 	case AVCOL_SPC_FCC:
 		return SWS_CS_FCC;
+	case AVCOL_SPC_BT470BG:
+		return SWS_CS_ITU624;
 	case AVCOL_SPC_SMPTE170M:
 		return SWS_CS_SMPTE170M;
 	case AVCOL_SPC_SMPTE240M:
 		return SWS_CS_SMPTE240M;
+	case AVCOL_SPC_BT2020_NCL:
+		return SWS_CS_BT2020;
 	default:
 		break;
 	}
 
-	return SWS_CS_ITU601;
+	return SWS_CS_ITU709;
 }
 
 static inline int get_sws_range(enum AVColorRange r)
@@ -237,7 +275,7 @@ static bool mp_media_init_scaling(mp_media_t *m)
 	return true;
 }
 
-static bool mp_media_prepare_frames(mp_media_t *m)
+bool mp_media_prepare_frames(mp_media_t *m)
 {
 	bool actively_seeking = m->seek_next_ts && m->pause;
 
@@ -254,6 +292,14 @@ static bool mp_media_prepare_frames(mp_media_t *m)
 				return false;
 			}
 		}
+
+		/* kind of a cheap fix, but because a stinger might be
+		 * interrupted and restart playback, the request_preload signal
+		 * might happen when the current frame is invalid, so clear out
+		 * these pointers to signify they're not valid. (the obsframe
+		 * structure is only used in the media thread, so this isn't a
+		 * threading issue) */
+		m->obsframe.data[0] = NULL;
 
 		if (m->has_video && !mp_decode_frame(&m->v))
 			return false;
@@ -301,19 +347,32 @@ static inline int64_t mp_media_get_base_pts(mp_media_t *m)
 	return base_ts;
 }
 
+/* maximum timestamp variance in nanoseconds */
+#define MAX_TS_VAR 2000000000LL
+
 static inline bool mp_media_can_play_frame(mp_media_t *m, struct mp_decode *d)
 {
-	return d->frame_ready && d->frame_pts <= m->next_pts_ns;
+	if (m->full_decode)
+		return d->frame_ready;
+	return d->frame_ready && (d->frame_pts <= m->next_pts_ns ||
+				  (d->frame_pts - m->next_pts_ns > MAX_TS_VAR));
 }
 
-static void mp_media_next_audio(mp_media_t *m)
+void mp_media_next_audio(mp_media_t *m)
 {
 	struct mp_decode *d = &m->a;
 	struct obs_source_audio audio = {0};
 	AVFrame *f = d->frame;
+	int channels;
 
 	if (!mp_media_can_play_frame(m, d))
 		return;
+
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 19, 100)
+	channels = f->channels;
+#else
+	channels = f->ch_layout.nb_channels;
+#endif
 
 	d->frame_ready = false;
 	if (!m->a_cb)
@@ -323,12 +382,13 @@ static void mp_media_next_audio(mp_media_t *m)
 		audio.data[i] = f->data[i];
 
 	audio.samples_per_sec = f->sample_rate * m->speed / 100;
-	audio.speakers = convert_speaker_layout(f->channels);
+	audio.speakers = convert_speaker_layout(channels);
 	audio.format = convert_sample_format(f->format);
 	audio.frames = f->nb_samples;
-
-	audio.timestamp = m->base_ts + d->frame_pts - m->start_ts +
-			  m->play_sys_ts - base_sys_ts;
+	audio.timestamp = m->full_decode
+				  ? d->frame_pts
+				  : m->base_ts + d->frame_pts - m->start_ts +
+					    m->play_sys_ts - base_sys_ts;
 
 	if (audio.format == AUDIO_FORMAT_UNKNOWN)
 		return;
@@ -336,7 +396,7 @@ static void mp_media_next_audio(mp_media_t *m)
 	m->a_cb(m->opaque, &audio);
 }
 
-static void mp_media_next_video(mp_media_t *m, bool preload)
+void mp_media_next_video(mp_media_t *m, bool preload)
 {
 	struct mp_decode *d = &m->v;
 	struct obs_source_frame *frame = &m->obsframe;
@@ -381,10 +441,11 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 	}
 
 	if (flip)
-		frame->data[0] -= frame->linesize[0] * (f->height - 1);
+		frame->data[0] -= frame->linesize[0] * ((size_t)f->height - 1);
 
 	new_format = convert_pixel_format(m->scale_format);
-	new_space = convert_color_space(f->colorspace, f->color_trc);
+	new_space = convert_color_space(f->colorspace, f->color_trc,
+					f->color_primaries);
 	new_range = m->force_range == VIDEO_RANGE_DEFAULT
 			    ? convert_color_range(f->color_range)
 			    : m->force_range;
@@ -396,10 +457,9 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 		frame->format = new_format;
 		frame->full_range = new_range == VIDEO_RANGE_FULL;
 
-		success = video_format_get_parameters(new_space, new_range,
-						      frame->color_matrix,
-						      frame->color_range_min,
-						      frame->color_range_max);
+		success = video_format_get_parameters_for_format(
+			new_space, new_range, new_format, frame->color_matrix,
+			frame->color_range_min, frame->color_range_max);
 
 		frame->format = new_format;
 		m->cur_space = new_space;
@@ -414,15 +474,42 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 	if (frame->format == VIDEO_FORMAT_NONE)
 		return;
 
-	frame->timestamp = m->base_ts + d->frame_pts - m->start_ts +
-			   m->play_sys_ts - base_sys_ts;
+	frame->timestamp = m->full_decode
+				   ? d->frame_pts
+				   : (m->base_ts + d->frame_pts - m->start_ts +
+				      m->play_sys_ts - base_sys_ts);
 
 	frame->width = f->width;
 	frame->height = f->height;
+	frame->max_luminance = d->max_luminance;
 	frame->flip = flip;
+	frame->flags = m->is_linear_alpha ? OBS_SOURCE_FRAME_LINEAR_ALPHA : 0;
+	switch (f->color_trc) {
+	case AVCOL_TRC_BT709:
+	case AVCOL_TRC_GAMMA22:
+	case AVCOL_TRC_GAMMA28:
+	case AVCOL_TRC_SMPTE170M:
+	case AVCOL_TRC_SMPTE240M:
+	case AVCOL_TRC_IEC61966_2_1:
+		frame->trc = VIDEO_TRC_SRGB;
+		break;
+	case AVCOL_TRC_SMPTE2084:
+		frame->trc = VIDEO_TRC_PQ;
+		break;
+	case AVCOL_TRC_ARIB_STD_B67:
+		frame->trc = VIDEO_TRC_HLG;
+		break;
+	default:
+		frame->trc = VIDEO_TRC_DEFAULT;
+	}
 
 	if (!m->is_local_file && !d->got_first_keyframe) {
+
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(58, 29, 100)
 		if (!f->key_frame)
+#else
+		if (!(f->flags & AV_FRAME_FLAG_KEY))
+#endif
 			return;
 
 		d->got_first_keyframe = true;
@@ -431,7 +518,7 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 	if (preload) {
 		if (m->seek_next_ts && m->v_seek_cb) {
 			m->v_seek_cb(m->opaque, frame);
-		} else {
+		} else if (!m->request_preload) {
 			m->v_preload_cb(m->opaque, frame);
 		}
 	} else {
@@ -495,19 +582,22 @@ static void seek_to(mp_media_t *m, int64_t pos)
 		mp_decode_flush(&m->a);
 }
 
-static bool mp_media_reset(mp_media_t *m)
+bool mp_media_reset(mp_media_t *m)
 {
 	bool stopping;
 	bool active;
 
-	seek_to(m, m->fmt->start_time);
-
 	int64_t next_ts = mp_media_get_base_pts(m);
 	int64_t offset = next_ts - m->next_pts_ns;
+	int64_t start_time = m->fmt->start_time;
+	if (start_time == AV_NOPTS_VALUE)
+		start_time = 0;
 
 	m->eof = false;
 	m->base_ts += next_ts;
 	m->seek_next_ts = false;
+
+	seek_to(m, start_time);
 
 	pthread_mutex_lock(&m->mutex);
 	stopping = m->stopping;
@@ -539,28 +629,29 @@ static bool mp_media_reset(mp_media_t *m)
 	return true;
 }
 
-static inline bool mp_media_sleepto(mp_media_t *m)
+static inline bool mp_media_sleep(mp_media_t *m)
 {
 	bool timeout = false;
 
 	if (!m->next_ns) {
 		m->next_ns = os_gettime_ns();
 	} else {
-		uint64_t t = os_gettime_ns();
-		const uint64_t timeout_ns = 200000000;
-
-		if (m->next_ns > t && (m->next_ns - t) > timeout_ns) {
-			os_sleepto_ns(t + timeout_ns);
-			timeout = true;
-		} else {
-			os_sleepto_ns(m->next_ns);
+		const uint64_t t = os_gettime_ns();
+		if (m->next_ns > t) {
+			const uint32_t delta_ms =
+				(uint32_t)((m->next_ns - t + 500000) / 1000000);
+			if (delta_ms > 0) {
+				static const uint32_t timeout_ms = 200;
+				timeout = delta_ms > timeout_ms;
+				os_sleep_ms(timeout ? timeout_ms : delta_ms);
+			}
 		}
 	}
 
 	return timeout;
 }
 
-static inline bool mp_media_eof(mp_media_t *m)
+bool mp_media_eof(mp_media_t *m)
 {
 	bool v_ended = !m->has_video || !m->v.frame_ready;
 	bool a_ended = !m->has_audio || !m->a.frame_ready;
@@ -600,9 +691,15 @@ static int interrupt_callback(void *data)
 	return stop;
 }
 
+#define RIST_PROTO "rist"
+
 static bool init_avformat(mp_media_t *m)
 {
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
 	AVInputFormat *format = NULL;
+#else
+	const AVInputFormat *format = NULL;
+#endif
 
 	if (m->format_name && *m->format_name) {
 		format = av_find_input_format(m->format_name);
@@ -614,8 +711,18 @@ static bool init_avformat(mp_media_t *m)
 	}
 
 	AVDictionary *opts = NULL;
-	if (m->buffering && !m->is_local_file)
+	bool is_rist = strncmp(m->path, RIST_PROTO, strlen(RIST_PROTO)) == 0;
+	if (m->buffering && !m->is_local_file && !is_rist)
 		av_dict_set_int(&opts, "buffer_size", m->buffering, 0);
+
+	if (m->ffmpeg_options) {
+		int ret = av_dict_parse_string(&opts, m->ffmpeg_options, "=",
+					       " ", 0);
+		if (ret)
+			blog(LOG_WARNING,
+			     "Failed to parse FFmpeg options: %s\n%s",
+			     av_err2str(ret), m->ffmpeg_options);
+	}
 
 	m->fmt = avformat_alloc_context();
 	if (m->buffering == 0) {
@@ -667,11 +774,19 @@ static void reset_ts(mp_media_t *m)
 	m->next_ns = 0;
 }
 
+bool mp_media_init2(mp_media_t *m)
+{
+	if (!init_avformat(m)) {
+		return false;
+	}
+	return true;
+}
+
 static inline bool mp_media_thread(mp_media_t *m)
 {
 	os_set_thread_name("mp_media_thread");
 
-	if (!init_avformat(m)) {
+	if (!mp_media_init2(m)) {
 		return false;
 	}
 	if (!mp_media_reset(m)) {
@@ -679,7 +794,8 @@ static inline bool mp_media_thread(mp_media_t *m)
 	}
 
 	for (;;) {
-		bool reset, kill, is_active, seek, pause, reset_time;
+		bool reset, kill, is_active, seek, pause, reset_time,
+			preload_frame;
 		int64_t seek_pos;
 		bool timeout = false;
 
@@ -694,7 +810,7 @@ static inline bool mp_media_thread(mp_media_t *m)
 			if (pause)
 				reset_ts(m);
 		} else {
-			timeout = mp_media_sleepto(m);
+			timeout = mp_media_sleep(m);
 		}
 
 		pthread_mutex_lock(&m->mutex);
@@ -704,10 +820,12 @@ static inline bool mp_media_thread(mp_media_t *m)
 		m->reset = false;
 		m->kill = false;
 
+		preload_frame = m->preload_frame;
 		pause = m->pause;
 		seek_pos = m->seek_pos;
 		seek = m->seek;
 		reset_time = m->reset_ts;
+		m->preload_frame = false;
 		m->seek = false;
 		m->reset_ts = false;
 
@@ -734,6 +852,12 @@ static inline bool mp_media_thread(mp_media_t *m)
 
 		if (pause)
 			continue;
+
+		/* see note in mp_media_prepare_frames() for context on the
+		 * pointer check */
+		if (preload_frame && m->obsframe.data[0] && !is_active) {
+			m->v_preload_cb(m->opaque, &m->obsframe);
+		}
 
 		/* frames are ready */
 		if (is_active && !timeout) {
@@ -783,6 +907,9 @@ static inline bool mp_media_init_internal(mp_media_t *m,
 	m->format_name = info->format ? bstrdup(info->format) : NULL;
 	m->hw = info->hardware_decoding;
 
+	if (info->full_decode)
+		return true;
+
 	if (pthread_create(&m->thread, NULL, mp_media_thread_start, m) != 0) {
 		blog(LOG_WARNING, "MP: Could not create media thread");
 		return false;
@@ -800,22 +927,22 @@ bool mp_media_init(mp_media_t *media, const struct mp_media_info *info)
 	media->v_cb = info->v_cb;
 	media->a_cb = info->a_cb;
 	media->stop_cb = info->stop_cb;
+	media->ffmpeg_options = info->ffmpeg_options;
 	media->v_seek_cb = info->v_seek_cb;
 	media->v_preload_cb = info->v_preload_cb;
 	media->force_range = info->force_range;
+	media->is_linear_alpha = info->is_linear_alpha;
 	media->buffering = info->buffering;
 	media->speed = info->speed;
+	media->request_preload = info->request_preload;
 	media->is_local_file = info->is_local_file;
+	da_init(media->packet_pool);
 
 	if (!info->is_local_file || media->speed < 1 || media->speed > 200)
 		media->speed = 100;
 
 	static bool initialized = false;
 	if (!initialized) {
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
-		av_register_all();
-		avcodec_register_all();
-#endif
 		avdevice_register_all();
 		avformat_network_init();
 		initialized = true;
@@ -853,6 +980,9 @@ void mp_media_free(mp_media_t *media)
 	mp_kill_thread(media);
 	mp_decode_free(&media->v);
 	mp_decode_free(&media->a);
+	for (size_t i = 0; i < media->packet_pool.num; i++)
+		av_packet_free(&media->packet_pool.array[i]);
+	da_free(media->packet_pool);
 	avformat_close_input(&media->fmt);
 	pthread_mutex_destroy(&media->mutex);
 	os_sem_destroy(media->sem);
@@ -892,6 +1022,16 @@ void mp_media_play_pause(mp_media_t *m, bool pause)
 	os_sem_post(m->sem);
 }
 
+void mp_media_preload_frame(mp_media_t *m)
+{
+	if (m->request_preload && m->thread_valid && m->v_preload_cb) {
+		pthread_mutex_lock(&m->mutex);
+		m->preload_frame = true;
+		pthread_mutex_unlock(&m->mutex);
+		os_sem_post(m->sem);
+	}
+}
+
 void mp_media_stop(mp_media_t *m)
 {
 	pthread_mutex_lock(&m->mutex);
@@ -905,12 +1045,51 @@ void mp_media_stop(mp_media_t *m)
 	os_sem_post(m->sem);
 }
 
-int64_t mp_get_current_time(mp_media_t *m)
+int64_t mp_media_get_current_time(mp_media_t *m)
 {
 	return mp_media_get_base_pts(m) * (int64_t)m->speed / 100000000LL;
 }
 
-void mp_media_seek_to(mp_media_t *m, int64_t pos)
+int64_t mp_media_get_frames(mp_media_t *m)
+{
+	int64_t frames = 0;
+
+	if (!m->fmt) {
+		return 0;
+	}
+
+	int video_stream_index = av_find_best_stream(m->fmt, AVMEDIA_TYPE_VIDEO,
+						     -1, -1, NULL, 0);
+
+	if (video_stream_index < 0) {
+		blog(LOG_WARNING, "MP: Getting number of frames failed: No "
+				  "video stream in media file!");
+		return 0;
+	}
+
+	AVStream *stream = m->fmt->streams[video_stream_index];
+
+	if (stream->nb_frames > 0) {
+		frames = stream->nb_frames;
+	} else {
+		blog(LOG_DEBUG, "MP: nb_frames not set, estimating using frame "
+				"rate and duration");
+		AVRational avg_frame_rate = stream->avg_frame_rate;
+		frames = (int64_t)ceil((double)m->fmt->duration /
+				       (double)AV_TIME_BASE *
+				       (double)avg_frame_rate.num /
+				       (double)avg_frame_rate.den);
+	}
+
+	return frames;
+}
+
+int64_t mp_media_get_duration(mp_media_t *m)
+{
+	return m->fmt ? m->fmt->duration : 0;
+}
+
+void mp_media_seek(mp_media_t *m, int64_t pos)
 {
 	pthread_mutex_lock(&m->mutex);
 	if (m->active) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -57,7 +57,11 @@ public:
 		if (ptr)
 			ptr->AddRef();
 	}
-	inline ComPtr(ComPtr<T> &&c) : ptr(c.ptr) { c.ptr = nullptr; }
+	inline ComPtr(ComPtr<T> &&c) noexcept : ptr(c.ptr) { c.ptr = nullptr; }
+	template<class U>
+	inline ComPtr(ComPtr<U> &&c) noexcept : ptr(c.Detach())
+	{
+	}
 	inline ~ComPtr() { Kill(); }
 
 	inline void Clear()
@@ -80,13 +84,21 @@ public:
 		return *this;
 	}
 
-	inline ComPtr<T> &operator=(ComPtr<T> &&c)
+	inline ComPtr<T> &operator=(ComPtr<T> &&c) noexcept
 	{
 		if (&ptr != &c.ptr) {
 			Kill();
 			ptr = c.ptr;
 			c.ptr = nullptr;
 		}
+
+		return *this;
+	}
+
+	template<class U> inline ComPtr<T> &operator=(ComPtr<U> &&c) noexcept
+	{
+		Kill();
+		ptr = c.Detach();
 
 		return *this;
 	}
@@ -151,6 +163,12 @@ public:
 	{
 		this->ptr = nullptr;
 		unk->QueryInterface(__uuidof(T), (void **)&this->ptr);
+	}
+
+	template<class U> inline ComQIPtr(const ComPtr<U> &c)
+	{
+		this->ptr = nullptr;
+		c->QueryInterface(__uuidof(T), (void **)&this->ptr);
 	}
 
 	inline ComPtr<T> &operator=(IUnknown *unk)

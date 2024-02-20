@@ -1,27 +1,18 @@
 #pragma once
 
-#ifndef TRUE
-#define TRUE 1
-#endif
+#cmakedefine USE_XDG
 
-#ifndef ON
-#define ON 1
-#endif
+#define OAUTH_BASE_URL "@OAUTH_BASE_URL@"
 
-#ifndef FALSE
-#define FALSE 0
-#endif
-
-#ifndef OFF
-#define OFF 0
-#endif
-
-#define TWITCH_ENABLED  @TWITCH_ENABLED@
 #define TWITCH_CLIENTID "@TWITCH_CLIENTID@"
 #define TWITCH_HASH     0x@TWITCH_HASH@
 
-#define RESTREAM_ENABLED  @RESTREAM_ENABLED@
 #define RESTREAM_CLIENTID "@RESTREAM_CLIENTID@"
 #define RESTREAM_HASH     0x@RESTREAM_HASH@
 
-#define DEFAULT_THEME "Dark"
+#define YOUTUBE_CLIENTID      "@YOUTUBE_CLIENTID@"
+#define YOUTUBE_SECRET        "@YOUTUBE_SECRET@"
+#define YOUTUBE_CLIENTID_HASH 0x@YOUTUBE_CLIENTID_HASH@
+#define YOUTUBE_SECRET_HASH   0x@YOUTUBE_SECRET_HASH@
+
+#define DEFAULT_THEME "Yami"

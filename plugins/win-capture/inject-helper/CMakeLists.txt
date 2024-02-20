@@ -1,32 +1,24 @@
-project(inject-helper)
+cmake_minimum_required(VERSION 3.24...3.25)
 
-set(inject-helper_HEADERS
-	../inject-library.h
-	../obfuscate.h)
-
-set(inject-helper_SOURCES
-	../inject-library.c
-	../obfuscate.c
-	inject-helper.c)
-
-if(MSVC)
-	add_compile_options($<IF:$<CONFIG:Debug>,/MTd,/MT>)
+if(NOT TARGET OBS::obfuscate)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/libobs" "${CMAKE_BINARY_DIR}/libobs")
 endif()
 
-add_executable(inject-helper
-	${inject-helper_SOURCES})
+add_library(_inject-helper INTERFACE)
 
-target_link_libraries(inject-helper)
+target_sources(_inject-helper INTERFACE inject-helper.c)
 
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-	set(_output_suffix "64")
-else()
-	set(_output_suffix "32")
-endif()
+target_link_libraries(_inject-helper INTERFACE OBS::inject-library OBS::obfuscate)
 
-set_target_properties(inject-helper
-	PROPERTIES
-		FOLDER "plugins/win-capture"
-		OUTPUT_NAME "inject-helper${_output_suffix}")
+legacy_check()
 
-install_obs_datatarget(inject-helper "obs-plugins/win-capture")
+add_executable(inject-helper)
+target_link_libraries(inject-helper PRIVATE _inject-helper)
+
+include(cmake/32bit.cmake)
+
+# cmake-format: off
+set_target_properties_obs(inject-helper PROPERTIES FOLDER plugins/win-capture OUTPUT_NAME inject-helper64 MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+# cmake-format: on
+
+add_dependencies(win-capture inject-helper)

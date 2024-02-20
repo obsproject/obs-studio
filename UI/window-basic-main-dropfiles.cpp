@@ -5,6 +5,9 @@
 #include <QFileInfo>
 #include <QMimeData>
 #include <QUrlQuery>
+#ifdef _WIN32
+#include <QSettings>
+#endif
 #include <string>
 
 #include "window-basic-main.hpp"
@@ -14,8 +17,11 @@ using namespace std;
 
 static const char *textExtensions[] = {"txt", "log", nullptr};
 
-static const char *imageExtensions[] = {"bmp",  "tga", "png",  "jpg",
-					"jpeg", "gif", nullptr};
+static const char *imageExtensions[] = {"bmp", "gif", "jpeg", "jpg",
+#ifdef _WIN32
+					"jxr",
+#endif
+					"png", "tga", "webp", nullptr};
 
 static const char *htmlExtensions[] = {"htm", "html", nullptr};
 
@@ -50,14 +56,22 @@ static string GenerateSourceName(const char *base)
 			name += ")";
 		}
 
-		obs_source_t *source = obs_get_source_by_name(name.c_str());
+		OBSSourceAutoRelease source =
+			obs_get_source_by_name(name.c_str());
 
 		if (!source)
 			return name;
-		else
-			obs_source_release(source);
 	}
 }
+
+#ifdef _WIN32
+static QString ReadWindowsURLFile(const QString &file)
+{
+	QSettings iniFile(file, QSettings::IniFormat);
+	QVariant url = iniFile.value("InternetShortcut/URL");
+	return url.toString();
+}
+#endif
 
 void OBSBasic::AddDropURL(const char *url, QString &name, obs_data_t *settings,
 			  const obs_video_info &ovi)
@@ -72,6 +86,20 @@ void OBSBasic::AddDropURL(const char *url, QString &name, obs_data_t *settings,
 		cx = query.queryItemValue("layer-width").toInt();
 	if (query.hasQueryItem("layer-height"))
 		cy = query.queryItemValue("layer-height").toInt();
+	if (query.hasQueryItem("layer-css")) {
+		// QUrl::FullyDecoded does NOT properly decode a
+		// application/x-www-form-urlencoded space represented as '+'
+		// Thus, this is manually filtered out before QUrl's
+		// decoding kicks in again. This is to allow JavaScript's
+		// default searchParams.append function to simply append css
+		// to the query parameters, which is the intended usecase for this.
+		QString fullyEncoded =
+			query.queryItemValue("layer-css", QUrl::FullyEncoded);
+		fullyEncoded = fullyEncoded.replace("+", "%20");
+		QString decoded = QUrl::fromPercentEncoding(
+			QByteArray::fromStdString(QT_TO_UTF8(fullyEncoded)));
+		obs_data_set_string(settings, "css", QT_TO_UTF8(decoded));
+	}
 
 	obs_data_set_int(settings, "width", cx);
 	obs_data_set_int(settings, "height", cy);
@@ -83,6 +111,7 @@ void OBSBasic::AddDropURL(const char *url, QString &name, obs_data_t *settings,
 	query.removeQueryItem("layer-width");
 	query.removeQueryItem("layer-height");
 	query.removeQueryItem("layer-name");
+	query.removeQueryItem("layer-css");
 	path.setQuery(query);
 
 	obs_data_set_string(settings, "url", QT_TO_UTF8(path.url()));
@@ -91,10 +120,8 @@ void OBSBasic::AddDropURL(const char *url, QString &name, obs_data_t *settings,
 void OBSBasic::AddDropSource(const char *data, DropType image)
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
-	obs_data_t *settings = obs_data_create();
-	obs_source_t *source = nullptr;
+	OBSDataAutoRelease settings = obs_data_create();
 	const char *type = nullptr;
-	std::vector<const char *> types;
 	QString name;
 
 	obs_video_info ovi;
@@ -137,37 +164,59 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 		obs_data_set_int(settings, "width", ovi.base_width);
 		obs_data_set_int(settings, "height", ovi.base_height);
 		name = QUrl::fromLocalFile(QString(data)).fileName();
-		types = {"browser_source", "linuxbrowser-source"};
+		type = "browser_source";
 		break;
 	case DropType_Url:
 		AddDropURL(data, name, settings, ovi);
-		types = {"browser_source", "linuxbrowser-source"};
+		type = "browser_source";
 		break;
 	}
 
-	for (char const *t : types) {
-		if (obs_source_get_display_name(t)) {
-			type = t;
-			break;
-		}
-	}
+	type = obs_get_latest_input_type_id(type);
+
 	if (type == nullptr || !obs_source_get_display_name(type)) {
-		obs_data_release(settings);
 		return;
 	}
 
 	if (name.isEmpty())
 		name = obs_source_get_display_name(type);
-	source = obs_source_create(type,
-				   GenerateSourceName(QT_TO_UTF8(name)).c_str(),
-				   settings, nullptr);
+	std::string sourceName = GenerateSourceName(QT_TO_UTF8(name));
+	OBSSourceAutoRelease source =
+		obs_source_create(type, sourceName.c_str(), settings, nullptr);
 	if (source) {
-		OBSScene scene = main->GetCurrentScene();
-		obs_scene_add(scene, source);
-		obs_source_release(source);
-	}
+		OBSDataAutoRelease wrapper = obs_save_source(source);
 
-	obs_data_release(settings);
+		OBSScene scene = main->GetCurrentScene();
+		std::string sceneUUID =
+			obs_source_get_uuid(obs_scene_get_source(scene));
+		std::string sourceUUID = obs_source_get_uuid(source);
+
+		auto undo = [sceneUUID, sourceUUID](const std::string &) {
+			OBSSourceAutoRelease source =
+				obs_get_source_by_uuid(sourceUUID.c_str());
+			obs_source_remove(source);
+			OBSSourceAutoRelease scene =
+				obs_get_source_by_uuid(sceneUUID.c_str());
+			OBSBasic::Get()->SetCurrentScene(scene.Get(), true);
+		};
+		auto redo = [sceneUUID, sourceName,
+			     type](const std::string &data) {
+			OBSSourceAutoRelease scene =
+				obs_get_source_by_uuid(sceneUUID.c_str());
+			OBSBasic::Get()->SetCurrentScene(scene.Get(), true);
+
+			OBSDataAutoRelease dat =
+				obs_data_create_from_json(data.c_str());
+			OBSSourceAutoRelease source = obs_load_source(dat);
+			obs_scene_add(obs_scene_from_source(scene),
+				      source.Get());
+		};
+
+		undo_s.add_action(QTStr("Undo.Add").arg(sourceName.c_str()),
+				  undo, redo, "",
+				  std::string(obs_data_get_json(wrapper)));
+		obs_scene_add(scene, source);
+	}
 }
 
 void OBSBasic::dragEnterEvent(QDragEnterEvent *event)
@@ -237,6 +286,23 @@ void OBSBasic::dropEvent(QDropEvent *event)
 				continue;
 			}
 
+#ifdef _WIN32
+			if (fileInfo.suffix().compare(
+				    "url", Qt::CaseInsensitive) == 0) {
+				QString urlTarget = ReadWindowsURLFile(file);
+				if (!urlTarget.isEmpty()) {
+					ConfirmDropUrl(urlTarget);
+				}
+				continue;
+			} else if (fileInfo.isShortcut()) {
+				file = fileInfo.symLinkTarget();
+				fileInfo = QFileInfo(file);
+				if (!fileInfo.exists()) {
+					continue;
+				}
+			}
+#endif
+
 			QString suffixQStr = fileInfo.suffix();
 			QByteArray suffixArray = suffixQStr.toUtf8();
 			const char *suffix = suffixArray.constData();
@@ -247,7 +313,7 @@ void OBSBasic::dropEvent(QDropEvent *event)
 #define CHECK_SUFFIX(extensions, type)                         \
 	cmp = extensions;                                      \
 	while (*cmp) {                                         \
-		if (strcmp(*cmp, suffix) == 0) {               \
+		if (astrcmpi(*cmp, suffix) == 0) {             \
 			AddDropSource(QT_TO_UTF8(file), type); \
 			found = true;                          \
 			break;                                 \

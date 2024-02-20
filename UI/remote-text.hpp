@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2015 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -66,6 +66,7 @@ public:
 bool GetRemoteFile(
 	const char *url, std::string &str, std::string &error,
 	long *responseCode = nullptr, const char *contentType = nullptr,
-	const char *postData = nullptr,
+	std::string request_type = "", const char *postData = nullptr,
 	std::vector<std::string> extraHeaders = std::vector<std::string>(),
-	std::string *signature = nullptr, int timeoutSec = 0);
+	std::string *signature = nullptr, int timeoutSec = 0,
+	bool fail_on_error = true, int postDataSize = 0);

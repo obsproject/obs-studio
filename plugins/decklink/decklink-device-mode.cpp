@@ -1,12 +1,11 @@
 #include "decklink-device-mode.hpp"
 
 DeckLinkDeviceMode::DeckLinkDeviceMode(IDeckLinkDisplayMode *mode, long long id)
-	: id(id), mode(mode)
+	: id(id),
+	  mode(mode)
 {
 	if (mode == nullptr)
 		return;
-
-	mode->AddRef();
 
 	decklink_string_t decklinkStringName;
 	if (mode->GetName(&decklinkStringName) == S_OK)
@@ -14,15 +13,13 @@ DeckLinkDeviceMode::DeckLinkDeviceMode(IDeckLinkDisplayMode *mode, long long id)
 }
 
 DeckLinkDeviceMode::DeckLinkDeviceMode(const std::string &name, long long id)
-	: id(id), mode(nullptr), name(name)
+	: id(id),
+	  mode(nullptr),
+	  name(name)
 {
 }
 
-DeckLinkDeviceMode::~DeckLinkDeviceMode(void)
-{
-	if (mode != nullptr)
-		mode->Release();
-}
+DeckLinkDeviceMode::~DeckLinkDeviceMode(void) {}
 
 BMDDisplayMode DeckLinkDeviceMode::GetDisplayMode(void) const
 {
@@ -48,6 +45,15 @@ int DeckLinkDeviceMode::GetHeight()
 	return 0;
 }
 
+bool DeckLinkDeviceMode::GetFrameRate(BMDTimeValue *frameDuration,
+				      BMDTimeScale *timeScale)
+{
+	if (mode != nullptr)
+		return SUCCEEDED(mode->GetFrameRate(frameDuration, timeScale));
+
+	return false;
+}
+
 BMDDisplayModeFlags DeckLinkDeviceMode::GetDisplayModeFlags(void) const
 {
 	if (mode != nullptr)
@@ -66,13 +72,21 @@ const std::string &DeckLinkDeviceMode::GetName(void) const
 	return name;
 }
 
+bool DeckLinkDeviceMode::IsEqualFrameRate(int64_t num, int64_t den)
+{
+	bool equal = false;
+
+	if (mode) {
+		BMDTimeValue frameDuration;
+		BMDTimeScale timeScale;
+		if (SUCCEEDED(mode->GetFrameRate(&frameDuration, &timeScale)))
+			equal = timeScale * den == frameDuration * num;
+	}
+
+	return equal;
+}
+
 void DeckLinkDeviceMode::SetMode(IDeckLinkDisplayMode *mode_)
 {
-	IDeckLinkDisplayMode *old = mode;
-	if (old != nullptr)
-		old->Release();
-
 	mode = mode_;
-	if (mode != nullptr)
-		mode->AddRef();
 }

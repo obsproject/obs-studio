@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -29,8 +29,8 @@ struct win_version_info {
 	int revis;
 };
 
-static inline int win_version_compare(struct win_version_info *dst,
-				      struct win_version_info *src)
+static inline int win_version_compare(const struct win_version_info *dst,
+				      const struct win_version_info *src)
 {
 	if (dst->major > src->major)
 		return 1;
@@ -48,6 +48,7 @@ static inline int win_version_compare(struct win_version_info *dst,
 }
 
 EXPORT bool is_64_bit_windows(void);
+EXPORT bool is_arm64_windows(void);
 EXPORT bool get_dll_ver(const wchar_t *lib, struct win_version_info *info);
 EXPORT void get_win_ver(struct win_version_info *info);
 EXPORT uint32_t get_win_ver_int(void);

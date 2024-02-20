@@ -109,7 +109,7 @@ end
 -- A function named script_description returns the description shown to
 -- the user
 function script_description()
-	return "When the \"Instant Replay\" hotkey is triggered, saves a replay with the replay buffer, and then plays it in a media source as soon as the replay is ready.  Requires an active replay buffer.\n\nMade by Jim and Exeldro"
+	return "When the \"Instant Replay\" hotkey is triggered, saves a replay with the replay buffer, and then plays it in a media source as soon as the replay is ready.  Requires an active replay buffer.\n\nMade by Lain and Exeldro"
 end
 
 -- A function named script_properties defines the properties that the user

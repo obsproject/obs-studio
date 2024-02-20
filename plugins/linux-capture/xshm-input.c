@@ -346,14 +346,13 @@ static bool xshm_server_changed(obs_properties_t *props, obs_property_t *p,
 	bool randr = randr_is_active(xcb);
 	bool xinerama = xinerama_is_active(xcb);
 	int_fast32_t count =
-		(randr) ? randr_screen_count(xcb)
-			: (xinerama)
-				  ? xinerama_screen_count(xcb)
-				  : xcb_setup_roots_length(xcb_get_setup(xcb));
+		randr ? randr_screen_count(xcb)
+		      : (xinerama ? xinerama_screen_count(xcb)
+				  : xcb_setup_roots_length(xcb_get_setup(xcb)));
 
 	for (int_fast32_t i = 0; i < count; ++i) {
 		char *name;
-		char name_tmp[12];
+		char name_tmp[20];
 		int_fast32_t x, y, w, h;
 		x = y = w = h = 0;
 
@@ -366,7 +365,13 @@ static bool xshm_server_changed(obs_properties_t *props, obs_property_t *p,
 			x11_screen_geo(xcb, i, &w, &h);
 
 		if (name == NULL) {
-			sprintf(name_tmp, "%" PRIuFAST32, i);
+			int ret = snprintf(name_tmp, sizeof(name_tmp),
+					   "%" PRIuFAST32, i);
+			if (ret >= (int)sizeof(name_tmp))
+				blog(LOG_DEBUG,
+				     "linux-capture: A format truncation may have occurred."
+				     " This can be ignored since it is quite improbable.");
+
 			name = name_tmp;
 		}
 
@@ -408,6 +413,7 @@ static obs_properties_t *xshm_properties(void *vptr)
 	XSHM_DATA(vptr);
 
 	obs_properties_t *props = obs_properties_create();
+	obs_property_t *prop;
 
 	obs_properties_add_list(props, "screen", obs_module_text("Screen"),
 				OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
@@ -416,14 +422,21 @@ static obs_properties_t *xshm_properties(void *vptr)
 	obs_property_t *advanced = obs_properties_add_bool(
 		props, "advanced", obs_module_text("AdvancedSettings"));
 
-	obs_properties_add_int(props, "cut_top", obs_module_text("CropTop"),
-			       -4096, 4096, 1);
-	obs_properties_add_int(props, "cut_left", obs_module_text("CropLeft"),
-			       -4096, 4096, 1);
-	obs_properties_add_int(props, "cut_right", obs_module_text("CropRight"),
-			       0, 4096, 1);
-	obs_properties_add_int(props, "cut_bot", obs_module_text("CropBottom"),
-			       0, 4096, 1);
+	prop = obs_properties_add_int(
+		props, "cut_top", obs_module_text("CropTop"), -4096, 4096, 1);
+	obs_property_int_set_suffix(prop, " px");
+
+	prop = obs_properties_add_int(
+		props, "cut_left", obs_module_text("CropLeft"), -4096, 4096, 1);
+	obs_property_int_set_suffix(prop, " px");
+
+	prop = obs_properties_add_int(props, "cut_right",
+				      obs_module_text("CropRight"), 0, 4096, 1);
+	obs_property_int_set_suffix(prop, " px");
+
+	prop = obs_properties_add_int(
+		props, "cut_bot", obs_module_text("CropBottom"), 0, 4096, 1);
+	obs_property_int_set_suffix(prop, " px");
 
 	obs_property_t *server = obs_properties_add_text(
 		props, "server", obs_module_text("XServer"), OBS_TEXT_DEFAULT);
@@ -482,18 +495,14 @@ static void xshm_video_tick(void *vptr, float seconds)
 
 	xcb_shm_get_image_cookie_t img_c;
 	xcb_shm_get_image_reply_t *img_r;
-	xcb_xfixes_get_cursor_image_cookie_t cur_c;
-	xcb_xfixes_get_cursor_image_reply_t *cur_r;
 
 	img_c = xcb_shm_get_image_unchecked(data->xcb, data->xcb_screen->root,
 					    data->adj_x_org, data->adj_y_org,
 					    data->adj_width, data->adj_height,
 					    ~0, XCB_IMAGE_FORMAT_Z_PIXMAP,
 					    data->xshm->seg, 0);
-	cur_c = xcb_xfixes_get_cursor_image_unchecked(data->xcb);
 
 	img_r = xcb_shm_get_image_reply(data->xcb, img_c, NULL);
-	cur_r = xcb_xfixes_get_cursor_image_reply(data->xcb, cur_c, NULL);
 
 	if (!img_r)
 		goto exit;
@@ -502,13 +511,12 @@ static void xshm_video_tick(void *vptr, float seconds)
 
 	gs_texture_set_image(data->texture, (void *)data->xshm->data,
 			     data->adj_width * 4, false);
-	xcb_xcursor_update(data->cursor, cur_r);
+	xcb_xcursor_update(data->xcb, data->cursor);
 
 	obs_leave_graphics();
 
 exit:
 	free(img_r);
-	free(cur_r);
 }
 
 /**
@@ -523,12 +531,22 @@ static void xshm_video_render(void *vptr, gs_effect_t *effect)
 	if (!data->texture)
 		return;
 
+	const bool linear_srgb = gs_get_linear_srgb();
+
+	const bool previous = gs_framebuffer_srgb_enabled();
+	gs_enable_framebuffer_srgb(linear_srgb);
+
 	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
-	gs_effect_set_texture(image, data->texture);
+	if (linear_srgb)
+		gs_effect_set_texture_srgb(image, data->texture);
+	else
+		gs_effect_set_texture(image, data->texture);
 
 	while (gs_effect_loop(effect, "Draw")) {
 		gs_draw_sprite(data->texture, 0, 0, 0);
 	}
+
+	gs_enable_framebuffer_srgb(previous);
 
 	if (data->show_cursor) {
 		effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
@@ -561,7 +579,7 @@ struct obs_source_info xshm_input = {
 	.id = "xshm_input",
 	.type = OBS_SOURCE_TYPE_INPUT,
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
-			OBS_SOURCE_DO_NOT_DUPLICATE,
+			OBS_SOURCE_DO_NOT_DUPLICATE | OBS_SOURCE_SRGB,
 	.get_name = xshm_getname,
 	.create = xshm_create,
 	.destroy = xshm_destroy,

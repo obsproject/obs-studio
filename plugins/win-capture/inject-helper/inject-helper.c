@@ -4,8 +4,13 @@
 #include <windows.h>
 #include <shellapi.h>
 #include <stdbool.h>
-#include "../obfuscate.h"
+#ifdef OBS_LEGACY
+#include "../../../libobs/util/windows/obfuscate.h"
 #include "../inject-library.h"
+#else
+#include <util/windows/obfuscate.h>
+#include <inject-library.h>
+#endif
 
 #if defined(_MSC_VER) && !defined(inline)
 #define inline __inline
@@ -38,9 +43,9 @@ static inline HANDLE open_process(DWORD desired_access, bool inherit_handle,
 				  DWORD process_id)
 {
 	HANDLE(WINAPI * open_process_proc)(DWORD, BOOL, DWORD);
-	open_process_proc = get_obfuscated_func(GetModuleHandleW(L"KERNEL32"),
-						"HxjcQrmkb|~",
-						0xc82efdf78201df87);
+	open_process_proc =
+		ms_get_obfuscated_func(GetModuleHandleW(L"KERNEL32"),
+				       "HxjcQrmkb|~", 0xc82efdf78201df87);
 
 	return open_process_proc(desired_access, inherit_handle, process_id);
 }
@@ -92,12 +97,11 @@ static int inject_helper(wchar_t *argv[], const wchar_t *dll)
 			       : inject_library_full(id, dll);
 }
 
-#define UNUSED_PARAMETER(x) ((void)(x))
-
-int main(int argc, char *argv_ansi[])
+int main(void)
 {
 	wchar_t dll_path[MAX_PATH];
 	LPWSTR pCommandLineW;
+	int argc;
 	LPWSTR *argv;
 	int ret = INJECT_ERROR_INVALID_PARAMS;
 
@@ -106,14 +110,14 @@ int main(int argc, char *argv_ansi[])
 
 	pCommandLineW = GetCommandLineW();
 	argv = CommandLineToArgvW(pCommandLineW, &argc);
-	if (argv && argc == 4) {
-		DWORD size = GetModuleFileNameW(NULL, dll_path, MAX_PATH);
-		if (size) {
-			ret = inject_helper(argv, argv[1]);
+	if (argv) {
+		if (argc == 4) {
+			if (GetModuleFileNameW(NULL, dll_path, MAX_PATH))
+				ret = inject_helper(argv, argv[1]);
 		}
-	}
-	LocalFree(argv);
 
-	UNUSED_PARAMETER(argv_ansi);
+		LocalFree(argv);
+	}
+
 	return ret;
 }

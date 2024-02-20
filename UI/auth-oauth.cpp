@@ -14,17 +14,23 @@
 
 #include <json11.hpp>
 
+#include "ui-config.h"
+
 using namespace json11;
 
+#ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
 extern QCef *cef;
 extern QCefCookieManager *panel_cookies;
+#endif
 
 /* ------------------------------------------------------------------------- */
 
 OAuthLogin::OAuthLogin(QWidget *parent, const std::string &url, bool token)
-	: QDialog(parent), get_token(token)
+	: QDialog(parent),
+	  get_token(token)
 {
+#ifdef BROWSER_AVAILABLE
 	if (!cef) {
 		return;
 	}
@@ -61,20 +67,37 @@ OAuthLogin::OAuthLogin(QWidget *parent, const std::string &url, bool token)
 	QVBoxLayout *topLayout = new QVBoxLayout(this);
 	topLayout->addWidget(cefWidget);
 	topLayout->addLayout(bottomLayout);
+#else
+	UNUSED_PARAMETER(url);
+#endif
 }
 
-OAuthLogin::~OAuthLogin()
-{
-	delete cefWidget;
-}
+OAuthLogin::~OAuthLogin() {}
 
 int OAuthLogin::exec()
 {
+#ifdef BROWSER_AVAILABLE
 	if (cefWidget) {
 		return QDialog::exec();
 	}
-
+#endif
 	return QDialog::Rejected;
+}
+
+void OAuthLogin::reject()
+{
+#ifdef BROWSER_AVAILABLE
+	delete cefWidget;
+#endif
+	QDialog::reject();
+}
+
+void OAuthLogin::accept()
+{
+#ifdef BROWSER_AVAILABLE
+	delete cefWidget;
+#endif
+	QDialog::accept();
 }
 
 void OAuthLogin::urlChanged(const QString &url)
@@ -84,7 +107,7 @@ void OAuthLogin::urlChanged(const QString &url)
 	if (code_idx == -1)
 		return;
 
-	if (url.left(22) != "https://obsproject.com")
+	if (!url.startsWith(OAUTH_BASE_URL))
 		return;
 
 	code_idx += (int)uri.size();
@@ -120,7 +143,7 @@ std::shared_ptr<Auth> OAuth::Login(QWidget *parent, const std::string &service)
 {
 	for (auto &a : loginCBs) {
 		if (service.find(a.def.service) != std::string::npos) {
-			return a.login(parent);
+			return a.login(parent, service);
 		}
 	}
 
@@ -174,7 +197,24 @@ bool OAuth::TokenExpired()
 }
 
 bool OAuth::GetToken(const char *url, const std::string &client_id,
+		     const std::string &secret, const std::string &redirect_uri,
 		     int scope_ver, const std::string &auth_code, bool retry)
+{
+	return GetTokenInternal(url, client_id, secret, redirect_uri, scope_ver,
+				auth_code, retry);
+}
+
+bool OAuth::GetToken(const char *url, const std::string &client_id,
+		     int scope_ver, const std::string &auth_code, bool retry)
+{
+	return GetTokenInternal(url, client_id, {}, {}, scope_ver, auth_code,
+				retry);
+}
+
+bool OAuth::GetTokenInternal(const char *url, const std::string &client_id,
+			     const std::string &secret,
+			     const std::string &redirect_uri, int scope_ver,
+			     const std::string &auth_code, bool retry)
 try {
 	std::string output;
 	std::string error;
@@ -199,6 +239,14 @@ try {
 	std::string post_data;
 	post_data += "action=redirect&client_id=";
 	post_data += client_id;
+	if (!secret.empty()) {
+		post_data += "&client_secret=";
+		post_data += secret;
+	}
+	if (!redirect_uri.empty()) {
+		post_data += "&redirect_uri=";
+		post_data += redirect_uri;
+	}
 
 	if (!auth_code.empty()) {
 		post_data += "&grant_type=authorization_code&code=";
@@ -212,7 +260,7 @@ try {
 
 	auto func = [&]() {
 		success = GetRemoteFile(url, output, error, nullptr,
-					"application/x-www-form-urlencoded",
+					"application/x-www-form-urlencoded", "",
 					post_data.c_str(),
 					std::vector<std::string>(), nullptr, 5);
 	};
@@ -282,7 +330,7 @@ void OAuthStreamKey::OnStreamConfig()
 	OBSBasic *main = OBSBasic::Get();
 	obs_service_t *service = main->GetService();
 
-	obs_data_t *settings = obs_service_get_settings(service);
+	OBSDataAutoRelease settings = obs_service_get_settings(service);
 
 	bool bwtest = obs_data_get_bool(settings, "bwtest");
 
@@ -293,6 +341,4 @@ void OAuthStreamKey::OnStreamConfig()
 		obs_data_set_string(settings, "key", key_.c_str());
 
 	obs_service_update(service, settings);
-
-	obs_data_release(settings);
 }

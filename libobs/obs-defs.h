@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 #define MODULE_FILE_NOT_FOUND -2
 #define MODULE_MISSING_EXPORTS -3
 #define MODULE_INCOMPATIBLE_VER -4
+#define MODULE_HARDCODED_SKIP -5
 
 #define OBS_OUTPUT_SUCCESS 0
 #define OBS_OUTPUT_BAD_PATH -1
@@ -41,6 +42,7 @@
 #define OBS_OUTPUT_UNSUPPORTED -6
 #define OBS_OUTPUT_NO_SPACE -7
 #define OBS_OUTPUT_ENCODE_ERROR -8
+#define OBS_OUTPUT_HDR_DISABLED -9
 
 #define OBS_VIDEO_SUCCESS 0
 #define OBS_VIDEO_FAIL -1

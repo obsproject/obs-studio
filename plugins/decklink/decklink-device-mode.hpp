@@ -9,7 +9,7 @@
 class DeckLinkDeviceMode {
 protected:
 	long long id;
-	IDeckLinkDisplayMode *mode;
+	ComPtr<IDeckLinkDisplayMode> mode;
 	std::string name;
 
 public:
@@ -21,9 +21,11 @@ public:
 	BMDDisplayModeFlags GetDisplayModeFlags(void) const;
 	long long GetId(void) const;
 	const std::string &GetName(void) const;
+	bool IsEqualFrameRate(int64_t num, int64_t den);
 
 	void SetMode(IDeckLinkDisplayMode *mode);
 
 	int GetWidth();
 	int GetHeight();
+	bool GetFrameRate(BMDTimeValue *frameDuration, BMDTimeScale *timeScale);
 };

@@ -18,11 +18,8 @@ struct audio_monitor {
 	uint_fast32_t packets;
 	uint_fast64_t frames;
 
-	struct circlebuf new_data;
+	struct deque new_data;
 	audio_resampler_t *resampler;
-	size_t buffer_size;
-	size_t bytesRemaining;
-	size_t bytes_per_channel;
 
 	bool ignore;
 	pthread_mutex_t playback_mutex;
@@ -127,17 +124,26 @@ static pa_channel_map pulseaudio_channel_map(enum speaker_layout layout)
 
 static void process_byte(void *p, size_t frames, size_t channels, float vol)
 {
-	register char *cur = (char *)p;
-	register char *end = cur + frames * channels;
+	register uint8_t *cur = (uint8_t *)p;
+	register uint8_t *end = cur + frames * channels;
+
+	for (; cur < end; cur++)
+		*cur = ((int)*cur - 128) * vol + 128;
+}
+
+static void process_s16(void *p, size_t frames, size_t channels, float vol)
+{
+	register int16_t *cur = (int16_t *)p;
+	register int16_t *end = cur + frames * channels;
 
 	while (cur < end)
 		*(cur++) *= vol;
 }
 
-static void process_short(void *p, size_t frames, size_t channels, float vol)
+static void process_s32(void *p, size_t frames, size_t channels, float vol)
 {
-	register short *cur = (short *)p;
-	register short *end = cur + frames * channels;
+	register int32_t *cur = (int32_t *)p;
+	register int32_t *end = cur + frames * channels;
 
 	while (cur < end)
 		*(cur++) *= vol;
@@ -155,18 +161,25 @@ static void process_float(void *p, size_t frames, size_t channels, float vol)
 void process_volume(const struct audio_monitor *monitor, float vol,
 		    uint8_t *const *resample_data, uint32_t resample_frames)
 {
-	switch (monitor->bytes_per_channel) {
-	case 1:
+	switch (monitor->format) {
+	case PA_SAMPLE_U8:
 		process_byte(resample_data[0], resample_frames,
 			     monitor->channels, vol);
 		break;
-	case 2:
-		process_short(resample_data[0], resample_frames,
+	case PA_SAMPLE_S16LE:
+		process_s16(resample_data[0], resample_frames,
+			    monitor->channels, vol);
+		break;
+	case PA_SAMPLE_S32LE:
+		process_s32(resample_data[0], resample_frames,
+			    monitor->channels, vol);
+		break;
+	case PA_SAMPLE_FLOAT32LE:
+		process_float(resample_data[0], resample_frames,
 			      monitor->channels, vol);
 		break;
 	default:
-		process_float(resample_data[0], resample_frames,
-			      monitor->channels, vol);
+		// just ignore
 		break;
 	}
 }
@@ -176,25 +189,51 @@ static void do_stream_write(void *param)
 	PULSE_DATA(param);
 	uint8_t *buffer = NULL;
 
-	while (data->new_data.size >= data->buffer_size &&
-	       data->bytesRemaining > 0) {
-		size_t bytesToFill = data->buffer_size;
+	pulseaudio_lock();
+	pthread_mutex_lock(&data->playback_mutex);
 
-		if (bytesToFill > data->bytesRemaining)
-			bytesToFill = data->bytesRemaining;
+	// If we have grown a large buffer internally, grow the pulse buffer to match so we can write our data out.
+	if (data->new_data.size > data->attr.tlength * 2) {
+		data->attr.fragsize = (uint32_t)-1;
+		data->attr.maxlength = (uint32_t)-1;
+		data->attr.prebuf = (uint32_t)-1;
+		data->attr.minreq = (uint32_t)-1;
+		data->attr.tlength = data->new_data.size;
+		pa_stream_set_buffer_attr(data->stream, &data->attr, NULL,
+					  NULL);
+	}
 
-		pa_stream_begin_write(data->stream, (void **)&buffer,
-				      &bytesToFill);
+	// Buffer up enough data before we start playing.
+	if (pa_stream_is_corked(data->stream)) {
+		if (data->new_data.size >= data->attr.tlength) {
+			pa_stream_cork(data->stream, 0, NULL, NULL);
+		} else {
+			goto finish;
+		}
+	}
 
-		circlebuf_pop_front(&data->new_data, buffer, bytesToFill);
+	while (data->new_data.size > 0) {
+		size_t bytesToFill = data->new_data.size;
+		if (pa_stream_begin_write(data->stream, (void **)&buffer,
+					  &bytesToFill))
+			goto finish;
 
-		pulseaudio_lock();
+		// PA may request we submit more or less data than we have.
+		// Wait for more data if we cannot perform a full write.
+		if (bytesToFill > data->new_data.size) {
+			pa_stream_cancel_write(data->stream);
+			goto finish;
+		}
+
+		deque_pop_front(&data->new_data, buffer, bytesToFill);
+
 		pa_stream_write(data->stream, buffer, bytesToFill, NULL, 0LL,
 				PA_SEEK_RELATIVE);
-		pulseaudio_unlock();
-
-		data->bytesRemaining -= bytesToFill;
 	}
+
+finish:
+	pthread_mutex_unlock(&data->playback_mutex);
+	pulseaudio_unlock();
 }
 
 static void on_audio_playback(void *param, obs_source_t *source,
@@ -234,40 +273,13 @@ static void on_audio_playback(void *param, obs_source_t *source,
 		}
 	}
 
-	circlebuf_push_back(&monitor->new_data, resample_data[0], bytes);
+	deque_push_back(&monitor->new_data, resample_data[0], bytes);
 	monitor->packets++;
 	monitor->frames += resample_frames;
 
 unlock:
 	pthread_mutex_unlock(&monitor->playback_mutex);
 	do_stream_write(param);
-}
-
-static void pulseaudio_stream_write(pa_stream *p, size_t nbytes, void *userdata)
-{
-	UNUSED_PARAMETER(p);
-	PULSE_DATA(userdata);
-
-	pthread_mutex_lock(&data->playback_mutex);
-	data->bytesRemaining += nbytes;
-	pthread_mutex_unlock(&data->playback_mutex);
-
-	pulseaudio_signal(0);
-}
-
-static void pulseaudio_underflow(pa_stream *p, void *userdata)
-{
-	UNUSED_PARAMETER(p);
-	PULSE_DATA(userdata);
-
-	pthread_mutex_lock(&data->playback_mutex);
-	if (obs_source_active(data->source))
-		data->attr.tlength = (data->attr.tlength * 3) / 2;
-
-	pa_stream_set_buffer_attr(data->stream, &data->attr, NULL, NULL);
-	pthread_mutex_unlock(&data->playback_mutex);
-
-	pulseaudio_signal(0);
 }
 
 static void pulseaudio_server_info(pa_context *c, const pa_server_info *i,
@@ -282,8 +294,8 @@ static void pulseaudio_server_info(pa_context *c, const pa_server_info *i,
 	pulseaudio_signal(0);
 }
 
-static void pulseaudio_source_info(pa_context *c, const pa_source_info *i,
-				   int eol, void *userdata)
+static void pulseaudio_sink_info(pa_context *c, const pa_sink_info *i, int eol,
+				 void *userdata)
 {
 	UNUSED_PARAMETER(c);
 	PULSE_DATA(userdata);
@@ -331,8 +343,19 @@ skip:
 static void pulseaudio_stop_playback(struct audio_monitor *monitor)
 {
 	if (monitor->stream) {
+		/* Stop the stream */
+		pulseaudio_lock();
 		pa_stream_disconnect(monitor->stream);
+		pulseaudio_unlock();
+
+		/* Remove the callbacks, to ensure we no longer try to do anything
+		 * with this stream object */
+		pulseaudio_write_callback(monitor->stream, NULL, NULL);
+
+		/* Unreference the stream and drop it. PA will free it when it can. */
+		pulseaudio_lock();
 		pa_stream_unref(monitor->stream);
+		pulseaudio_unlock();
 		monitor->stream = NULL;
 	}
 
@@ -386,9 +409,9 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 		return false;
 	}
 
-	if (pulseaudio_get_source_info(pulseaudio_source_info, monitor->device,
-				       (void *)monitor) < 0) {
-		blog(LOG_ERROR, "Unable to get source info !");
+	if (pulseaudio_get_sink_info(pulseaudio_sink_info, monitor->device,
+				     (void *)monitor) < 0) {
+		blog(LOG_ERROR, "Unable to get sink info !");
 		return false;
 	}
 	if (monitor->format == PA_SAMPLE_INVALID) {
@@ -426,8 +449,6 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 		return false;
 	}
 
-	monitor->bytes_per_channel = get_audio_bytes_per_channel(
-		pulseaudio_to_obs_audio_format(monitor->format));
 	monitor->speakers = pulseaudio_channels_to_obs_speakers(spec.channels);
 	monitor->bytes_per_frame = pa_frame_size(&spec);
 
@@ -446,17 +467,9 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 	monitor->attr.prebuf = (uint32_t)-1;
 	monitor->attr.tlength = pa_usec_to_bytes(25000, &spec);
 
-	monitor->buffer_size =
-		monitor->bytes_per_frame * pa_usec_to_bytes(5000, &spec);
-
 	pa_stream_flags_t flags = PA_STREAM_INTERPOLATE_TIMING |
-				  PA_STREAM_AUTO_TIMING_UPDATE;
-
-	if (pthread_mutex_init(&monitor->playback_mutex, NULL) != 0) {
-		blog(LOG_WARNING, "%s: %s", __FUNCTION__,
-		     "Failed to init mutex");
-		return false;
-	}
+				  PA_STREAM_AUTO_TIMING_UPDATE |
+				  PA_STREAM_START_CORKED;
 
 	int_fast32_t ret = pulseaudio_connect_playback(
 		monitor->stream, monitor->device, &monitor->attr, flags);
@@ -477,12 +490,6 @@ static void audio_monitor_init_final(struct audio_monitor *monitor)
 
 	obs_source_add_audio_capture_callback(monitor->source,
 					      on_audio_playback, monitor);
-
-	pulseaudio_write_callback(monitor->stream, pulseaudio_stream_write,
-				  (void *)monitor);
-
-	pulseaudio_set_underflow_callback(monitor->stream, pulseaudio_underflow,
-					  (void *)monitor);
 }
 
 static inline void audio_monitor_free(struct audio_monitor *monitor)
@@ -495,7 +502,7 @@ static inline void audio_monitor_free(struct audio_monitor *monitor)
 			monitor->source, on_audio_playback, monitor);
 
 	audio_resampler_destroy(monitor->resampler);
-	circlebuf_free(&monitor->new_data);
+	deque_free(&monitor->new_data);
 
 	if (monitor->stream)
 		pulseaudio_stop_playback(monitor);

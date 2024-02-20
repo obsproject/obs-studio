@@ -1,6 +1,10 @@
 #include <obs-module.h>
-#include <util/circlebuf.h>
+#include <util/deque.h>
 #include <util/util_uint64.h>
+
+/* NOTE: Delaying audio shouldn't be necessary because the audio subsystem will
+ * automatically sync audio to video frames */
+/* #define DELAY_AUDIO */
 
 #ifndef SEC_TO_NSEC
 #define SEC_TO_NSEC 1000000000ULL
@@ -18,11 +22,13 @@ struct async_delay_data {
 	obs_source_t *context;
 
 	/* contains struct obs_source_frame* */
-	struct circlebuf video_frames;
+	struct deque video_frames;
 
+#ifdef DELAY_AUDIO
 	/* stores the audio data */
-	struct circlebuf audio_frames;
+	struct deque audio_frames;
 	struct obs_audio_data audio_output;
+#endif
 
 	uint64_t last_video_ts;
 	uint64_t last_audio_ts;
@@ -46,12 +52,13 @@ static void free_video_data(struct async_delay_data *filter,
 	while (filter->video_frames.size) {
 		struct obs_source_frame *frame;
 
-		circlebuf_pop_front(&filter->video_frames, &frame,
-				    sizeof(struct obs_source_frame *));
+		deque_pop_front(&filter->video_frames, &frame,
+				sizeof(struct obs_source_frame *));
 		obs_source_release_frame(parent, frame);
 	}
 }
 
+#ifdef DELAY_AUDIO
 static inline void free_audio_packet(struct obs_audio_data *audio)
 {
 	for (size_t i = 0; i < MAX_AV_PLANES; i++)
@@ -64,11 +71,12 @@ static void free_audio_data(struct async_delay_data *filter)
 	while (filter->audio_frames.size) {
 		struct obs_audio_data audio;
 
-		circlebuf_pop_front(&filter->audio_frames, &audio,
-				    sizeof(struct obs_audio_data));
+		deque_pop_front(&filter->audio_frames, &audio,
+				sizeof(struct obs_audio_data));
 		free_audio_packet(&audio);
 	}
 }
+#endif
 
 static void async_delay_filter_update(void *data, obs_data_t *settings)
 {
@@ -106,9 +114,11 @@ static void async_delay_filter_destroy(void *data)
 {
 	struct async_delay_data *filter = data;
 
+	deque_free(&filter->video_frames);
+#ifdef DELAY_AUDIO
 	free_audio_packet(&filter->audio_output);
-	circlebuf_free(&filter->video_frames);
-	circlebuf_free(&filter->audio_frames);
+	deque_free(&filter->audio_frames);
+#endif
 	bfree(data);
 }
 
@@ -129,7 +139,9 @@ static void async_delay_filter_remove(void *data, obs_source_t *parent)
 	struct async_delay_data *filter = data;
 
 	free_video_data(filter, parent);
+#ifdef DELAY_AUDIO
 	free_audio_data(filter);
+#endif
 }
 
 /* due to the fact that we need timing information to be consistent in order to
@@ -158,28 +170,23 @@ async_delay_filter_video(void *data, struct obs_source_frame *frame)
 
 	filter->last_video_ts = frame->timestamp;
 
-	circlebuf_push_back(&filter->video_frames, &frame,
-			    sizeof(struct obs_source_frame *));
-	circlebuf_peek_front(&filter->video_frames, &output,
-			     sizeof(struct obs_source_frame *));
+	deque_push_back(&filter->video_frames, &frame,
+			sizeof(struct obs_source_frame *));
+	deque_peek_front(&filter->video_frames, &output,
+			 sizeof(struct obs_source_frame *));
 
 	cur_interval = frame->timestamp - output->timestamp;
 	if (!filter->video_delay_reached && cur_interval < filter->interval)
 		return NULL;
 
-	circlebuf_pop_front(&filter->video_frames, NULL,
-			    sizeof(struct obs_source_frame *));
+	deque_pop_front(&filter->video_frames, NULL,
+			sizeof(struct obs_source_frame *));
 
 	if (!filter->video_delay_reached)
 		filter->video_delay_reached = true;
 
 	return output;
 }
-
-/* NOTE: Delaying audio shouldn't be necessary because the audio subsystem will
- * automatically sync audio to video frames */
-
-/* #define DELAY_AUDIO */
 
 #ifdef DELAY_AUDIO
 static struct obs_audio_data *
@@ -214,14 +221,14 @@ async_delay_filter_audio(void *data, struct obs_audio_data *audio)
 
 	free_audio_packet(&filter->audio_output);
 
-	circlebuf_push_back(&filter->audio_frames, &cached, sizeof(cached));
-	circlebuf_peek_front(&filter->audio_frames, &cached, sizeof(cached));
+	deque_push_back(&filter->audio_frames, &cached, sizeof(cached));
+	deque_peek_front(&filter->audio_frames, &cached, sizeof(cached));
 
 	cur_interval = end_ts - cached.timestamp;
 	if (!filter->audio_delay_reached && cur_interval < filter->interval)
 		return NULL;
 
-	circlebuf_pop_front(&filter->audio_frames, NULL, sizeof(cached));
+	deque_pop_front(&filter->audio_frames, NULL, sizeof(cached));
 	memcpy(&filter->audio_output, &cached, sizeof(cached));
 
 	if (!filter->audio_delay_reached)

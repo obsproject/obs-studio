@@ -3,30 +3,39 @@
 #include <QStatusBar>
 #include <QPointer>
 #include <QTimer>
-#include <util/platform.h>
 #include <obs.h>
+#include <memory>
 
-class QLabel;
+class Ui_StatusBarWidget;
+
+class StatusBarWidget : public QWidget {
+	Q_OBJECT
+
+	friend class OBSBasicStatusBar;
+
+private:
+	std::unique_ptr<Ui_StatusBarWidget> ui;
+
+public:
+	StatusBarWidget(QWidget *parent = nullptr);
+	~StatusBarWidget();
+};
 
 class OBSBasicStatusBar : public QStatusBar {
 	Q_OBJECT
 
 private:
-	QLabel *delayInfo;
-	QLabel *droppedFrames;
-	QLabel *streamIcon;
-	QLabel *streamTime;
-	QLabel *recordTime;
-	QLabel *recordIcon;
-	QLabel *cpuUsage;
-	QLabel *kbps;
-	QLabel *statusSquare;
+	StatusBarWidget *statusWidget = nullptr;
 
 	obs_output_t *streamOutput = nullptr;
 	obs_output_t *recordOutput = nullptr;
 	bool active = false;
 	bool overloadedNotify = true;
 	bool streamPauseIconToggle = false;
+	bool disconnected = false;
+	bool firstCongestionUpdate = false;
+
+	std::vector<float> congestionArray;
 
 	int retries = 0;
 	int totalStreamSeconds = 0;
@@ -42,14 +51,16 @@ private:
 	int startTotalFrameCount = 0;
 	int lastSkippedFrameCount = 0;
 
-	int bitrateUpdateSeconds = 0;
+	int seconds = 0;
 	uint64_t lastBytesSent = 0;
 	uint64_t lastBytesSentTime = 0;
 
-	QPixmap transparentPixmap;
-	QPixmap greenPixmap;
-	QPixmap grayPixmap;
-	QPixmap redPixmap;
+	QPixmap excellentPixmap;
+	QPixmap goodPixmap;
+	QPixmap mediocrePixmap;
+	QPixmap badPixmap;
+	QPixmap disconnectedPixmap;
+	QPixmap inactivePixmap;
 
 	QPixmap recordingActivePixmap;
 	QPixmap recordingPausePixmap;
@@ -61,6 +72,7 @@ private:
 	float lastCongestion = 0.0f;
 
 	QPointer<QTimer> refreshTimer;
+	QPointer<QTimer> messageTimer;
 
 	obs_output_t *GetOutput();
 
@@ -76,11 +88,18 @@ private:
 	static void OBSOutputReconnect(void *data, calldata_t *params);
 	static void OBSOutputReconnectSuccess(void *data, calldata_t *params);
 
+public slots:
+	void UpdateCPUUsage();
+
+	void clearMessage();
+	void showMessage(const QString &message, int timeout = 0);
+
 private slots:
 	void Reconnect(int seconds);
 	void ReconnectSuccess();
 	void UpdateStatusBar();
-	void UpdateCPUUsage();
+	void UpdateCurrentFPS();
+	void UpdateIcons();
 
 public:
 	OBSBasicStatusBar(QWidget *parent);

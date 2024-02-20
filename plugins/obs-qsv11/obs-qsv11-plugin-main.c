@@ -54,39 +54,56 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <obs-module.h>
-#include "mfxsession.h"
+
+#include "common_utils.h"
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("obs-qsv11", "en-US")
 MODULE_EXPORT const char *obs_module_description(void)
 {
-	return "Intel Quick Sync Video H.264 encoder support for Windows";
+	return "Intel Quick Sync Video support for Windows";
 }
 
 extern struct obs_encoder_info obs_qsv_encoder;
+extern struct obs_encoder_info obs_qsv_encoder_v2;
 extern struct obs_encoder_info obs_qsv_encoder_tex;
+extern struct obs_encoder_info obs_qsv_encoder_tex_v2;
+extern struct obs_encoder_info obs_qsv_av1_encoder_tex;
+extern struct obs_encoder_info obs_qsv_av1_encoder;
+extern struct obs_encoder_info obs_qsv_hevc_encoder_tex;
+extern struct obs_encoder_info obs_qsv_hevc_encoder;
 
 bool obs_module_load(void)
 {
-	mfxIMPL impl = MFX_IMPL_HARDWARE_ANY | MFX_IMPL_VIA_D3D11;
-	mfxVersion ver = {{0, 1}};
-	mfxSession session;
-	mfxStatus sts;
+	adapter_count = MAX_ADAPTERS;
+	check_adapters(adapters, &adapter_count);
 
-	sts = MFXInit(impl, &ver, &session);
-
-	if (sts == MFX_ERR_NONE) {
-		obs_register_encoder(&obs_qsv_encoder);
-		obs_register_encoder(&obs_qsv_encoder_tex);
-		MFXClose(session);
-	} else {
-		impl = MFX_IMPL_HARDWARE_ANY | MFX_IMPL_VIA_D3D9;
-		sts = MFXInit(impl, &ver, &session);
-		if (sts == MFX_ERR_NONE) {
-			obs_register_encoder(&obs_qsv_encoder);
-			MFXClose(session);
-		}
+	bool avc_supported = false;
+	bool av1_supported = false;
+	bool hevc_supported = false;
+	for (size_t i = 0; i < adapter_count; i++) {
+		struct adapter_info *adapter = &adapters[i];
+		avc_supported |= adapter->is_intel;
+		av1_supported |= adapter->supports_av1;
+		hevc_supported |= adapter->supports_hevc;
 	}
+
+	if (avc_supported) {
+		obs_register_encoder(&obs_qsv_encoder_tex_v2);
+		obs_register_encoder(&obs_qsv_encoder_tex);
+		obs_register_encoder(&obs_qsv_encoder_v2);
+		obs_register_encoder(&obs_qsv_encoder);
+	}
+	if (av1_supported) {
+		obs_register_encoder(&obs_qsv_av1_encoder_tex);
+		obs_register_encoder(&obs_qsv_av1_encoder);
+	}
+#if ENABLE_HEVC
+	if (hevc_supported) {
+		obs_register_encoder(&obs_qsv_hevc_encoder_tex);
+		obs_register_encoder(&obs_qsv_hevc_encoder);
+	}
+#endif
 
 	return true;
 }

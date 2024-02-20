@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
     Copyright (C) 2014 by Zachary Lund <admin@computerquip.com>
 
     This program is free software: you can redistribute it and/or modify
@@ -20,8 +20,12 @@
 #include "gl-subsystem.h"
 
 /* Goofy Windows.h macros need to be removed */
-#undef far
+#ifdef near
 #undef near
+#endif
+#ifdef far
+#undef far
+#endif
 
 /* #define SHOW_ALL_GL_MESSAGES */
 
@@ -138,6 +142,12 @@ static bool gl_init_extensions(struct gs_device *device)
 
 	gl_enable_debug();
 
+	if (!GLAD_GL_EXT_texture_sRGB_decode) {
+		blog(LOG_ERROR, "OpenGL extension EXT_texture_sRGB_decode "
+				"is required.");
+		return false;
+	}
+
 	gl_enable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
 	if (GLAD_GL_VERSION_4_3 || GLAD_GL_ARB_copy_image)
@@ -188,6 +198,8 @@ void convert_sampler_info(struct gs_sampler_state *sampler,
 		sampler->max_anisotropy = 1;
 	else if (sampler->max_anisotropy > max_anisotropy_max)
 		sampler->max_anisotropy = max_anisotropy_max;
+
+	vec4_from_rgba(&sampler->border_color, info->border_color);
 
 	blog(LOG_DEBUG,
 	     "convert_sampler_info: 1 <= max_anisotropy <= "
@@ -245,6 +257,16 @@ int device_create(gs_device_t **p_device, uint32_t adapter)
 	gl_enable(GL_CULL_FACE);
 	gl_gen_vertex_arrays(1, &device->empty_vao);
 
+	struct gs_sampler_info raw_load_info;
+	raw_load_info.filter = GS_FILTER_POINT;
+	raw_load_info.address_u = GS_ADDRESS_BORDER;
+	raw_load_info.address_v = GS_ADDRESS_BORDER;
+	raw_load_info.address_w = GS_ADDRESS_BORDER;
+	raw_load_info.max_anisotropy = 1;
+	raw_load_info.border_color = 0;
+	device->raw_load_sampler =
+		device_samplerstate_create(device, &raw_load_info);
+
 	gl_clear_context(device);
 	device->cur_swap = NULL;
 
@@ -273,6 +295,7 @@ void device_destroy(gs_device_t *device)
 		while (device->first_program)
 			gs_program_destroy(device->first_program);
 
+		samplerstate_release(device->raw_load_sampler);
 		gl_delete_vertex_arrays(1, &device->empty_vao);
 
 		da_free(device->proj_stack);
@@ -315,6 +338,17 @@ void device_resize(gs_device_t *device, uint32_t cx, uint32_t cy)
 	}
 
 	gl_update(device);
+}
+
+enum gs_color_space device_get_color_space(gs_device_t *device)
+{
+	return device->cur_color_space;
+}
+
+void device_update_color_space(gs_device_t *device)
+{
+	if (!device->cur_swap)
+		blog(LOG_WARNING, "device_display_change (GL): No active swap");
 }
 
 void device_get_size(const gs_device_t *device, uint32_t *cx, uint32_t *cy)
@@ -452,6 +486,13 @@ static bool load_texture_sampler(gs_texture_t *tex, gs_samplerstate_t *ss)
 		success = false;
 	if (!gl_tex_param_i(tex->gl_target, GL_TEXTURE_WRAP_R, ss->address_w))
 		success = false;
+	if (ss->address_u == GL_CLAMP_TO_BORDER ||
+	    ss->address_v == GL_CLAMP_TO_BORDER ||
+	    ss->address_w == GL_CLAMP_TO_BORDER) {
+		if (!gl_tex_param_fv(tex->gl_target, GL_TEXTURE_BORDER_COLOR,
+				     ss->border_color.ptr))
+			success = false;
+	}
 	if (GLAD_GL_EXT_texture_filter_anisotropic) {
 		if (!gl_tex_param_i(tex->gl_target,
 				    GL_TEXTURE_MAX_ANISOTROPY_EXT,
@@ -481,7 +522,8 @@ static inline struct gs_shader_param *get_texture_param(gs_device_t *device,
 	return NULL;
 }
 
-void device_load_texture(gs_device_t *device, gs_texture_t *tex, int unit)
+static void device_load_texture_internal(gs_device_t *device, gs_texture_t *tex,
+					 int unit, GLint decode)
 {
 	struct gs_shader_param *param;
 	struct gs_sampler_state *sampler;
@@ -512,14 +554,17 @@ void device_load_texture(gs_device_t *device, gs_texture_t *tex, int unit)
 	if (!tex)
 		return;
 
-	// texelFetch doesn't need a sampler
 	if (param->sampler_id != (size_t)-1)
 		sampler = device->cur_samplers[param->sampler_id];
 	else
-		sampler = NULL;
+		sampler = device->raw_load_sampler;
 
 	if (!gl_bind_texture(tex->gl_target, tex->texture))
 		goto fail;
+
+	if (!gl_tex_param_i(tex->gl_target, GL_TEXTURE_SRGB_DECODE_EXT, decode))
+		goto fail;
+
 	if (sampler && !load_texture_sampler(tex, sampler))
 		goto fail;
 
@@ -527,6 +572,16 @@ void device_load_texture(gs_device_t *device, gs_texture_t *tex, int unit)
 
 fail:
 	blog(LOG_ERROR, "device_load_texture (GL) failed");
+}
+
+void device_load_texture(gs_device_t *device, gs_texture_t *tex, int unit)
+{
+	device_load_texture_internal(device, tex, unit, GL_SKIP_DECODE_EXT);
+}
+
+void device_load_texture_srgb(gs_device_t *device, gs_texture_t *tex, int unit)
+{
+	device_load_texture_internal(device, tex, unit, GL_DECODE_EXT);
 }
 
 static bool load_sampler_on_textures(gs_device_t *device, gs_samplerstate_t *ss,
@@ -775,9 +830,9 @@ static bool attach_zstencil(struct fbo_info *fbo, gs_zstencil_t *zs)
 }
 
 static bool set_target(gs_device_t *device, gs_texture_t *tex, int side,
-		       gs_zstencil_t *zs)
+		       gs_zstencil_t *zs, enum gs_color_space space)
 {
-	struct fbo_info *fbo;
+	device->cur_color_space = space;
 
 	if (device->cur_render_target == tex &&
 	    device->cur_zstencil_buffer == zs &&
@@ -791,7 +846,7 @@ static bool set_target(gs_device_t *device, gs_texture_t *tex, int side,
 	if (!tex)
 		return set_current_fbo(device, NULL);
 
-	fbo = get_fbo_by_tex(tex);
+	struct fbo_info *const fbo = get_fbo_by_tex(tex);
 	if (!fbo)
 		return false;
 
@@ -820,13 +875,40 @@ void device_set_render_target(gs_device_t *device, gs_texture_t *tex,
 		}
 	}
 
-	if (!set_target(device, tex, 0, zstencil))
+	if (!set_target(device, tex, 0, zstencil, GS_CS_SRGB))
 		goto fail;
 
 	return;
 
 fail:
 	blog(LOG_ERROR, "device_set_render_target (GL) failed");
+}
+
+void device_set_render_target_with_color_space(gs_device_t *device,
+					       gs_texture_t *tex,
+					       gs_zstencil_t *zstencil,
+					       enum gs_color_space space)
+{
+	if (tex) {
+		if (tex->type != GS_TEXTURE_2D) {
+			blog(LOG_ERROR, "Texture is not a 2D texture");
+			goto fail;
+		}
+
+		if (!tex->is_render_target) {
+			blog(LOG_ERROR, "Texture is not a render target");
+			goto fail;
+		}
+	}
+
+	if (!set_target(device, tex, 0, zstencil, space))
+		goto fail;
+
+	return;
+
+fail:
+	blog(LOG_ERROR,
+	     "device_set_render_target_with_color_space (GL) failed");
 }
 
 void device_set_cube_render_target(gs_device_t *device, gs_texture_t *cubetex,
@@ -844,13 +926,32 @@ void device_set_cube_render_target(gs_device_t *device, gs_texture_t *cubetex,
 		}
 	}
 
-	if (!set_target(device, cubetex, side, zstencil))
+	if (!set_target(device, cubetex, side, zstencil, GS_CS_SRGB))
 		goto fail;
 
 	return;
 
 fail:
 	blog(LOG_ERROR, "device_set_cube_render_target (GL) failed");
+}
+
+void device_enable_framebuffer_srgb(gs_device_t *device, bool enable)
+{
+	UNUSED_PARAMETER(device);
+
+	if (enable)
+		gl_enable(GL_FRAMEBUFFER_SRGB);
+	else
+		gl_disable(GL_FRAMEBUFFER_SRGB);
+}
+
+bool device_framebuffer_srgb_enabled(gs_device_t *device)
+{
+	UNUSED_PARAMETER(device);
+
+	const GLboolean enabled = glIsEnabled(GL_FRAMEBUFFER_SRGB);
+	gl_success("glIsEnabled");
+	return enabled == GL_TRUE;
 }
 
 void device_copy_texture_region(gs_device_t *device, gs_texture_t *dst,
@@ -1101,9 +1202,9 @@ void device_flush(gs_device_t *device)
 		glFlush();
 #else
 	glFlush();
-#endif
 
 	UNUSED_PARAMETER(device);
+#endif
 }
 
 void device_set_cull_mode(gs_device_t *device, enum gs_cull_mode mode)
@@ -1204,6 +1305,17 @@ void device_blend_function_separate(gs_device_t *device,
 	glBlendFuncSeparate(gl_src_c, gl_dst_c, gl_src_a, gl_dst_a);
 	if (!gl_success("glBlendFuncSeparate"))
 		blog(LOG_ERROR, "device_blend_function_separate (GL) failed");
+
+	UNUSED_PARAMETER(device);
+}
+
+void device_blend_op(gs_device_t *device, enum gs_blend_op_type op)
+{
+	GLenum gl_blend_op = convert_gs_blend_op_type(op);
+
+	glBlendEquation(gl_blend_op);
+	if (!gl_success("glBlendEquation"))
+		blog(LOG_ERROR, "device_blend_op (GL) failed");
 
 	UNUSED_PARAMETER(device);
 }
@@ -1405,6 +1517,18 @@ void gs_swapchain_destroy(gs_swapchain_t *swapchain)
 
 	gl_windowinfo_destroy(swapchain->wi);
 	bfree(swapchain);
+}
+
+bool device_nv12_available(gs_device_t *device)
+{
+	UNUSED_PARAMETER(device);
+	return true; // always a split R8,R8G8 texture.
+}
+
+bool device_p010_available(gs_device_t *device)
+{
+	UNUSED_PARAMETER(device);
+	return true; // always a split R16,R16G16 texture.
 }
 
 uint32_t gs_voltexture_get_width(const gs_texture_t *voltex)

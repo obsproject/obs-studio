@@ -1,62 +1,52 @@
-cmake_minimum_required(VERSION 2.8)
-project(obslua)
+cmake_minimum_required(VERSION 3.22...3.25)
+
+legacy_check()
 
 if(POLICY CMP0078)
-	# UseSWIG generates standard target names.
-	cmake_policy(SET CMP0078 OLD)
+  cmake_policy(SET CMP0078 NEW)
 endif()
+
 if(POLICY CMP0086)
-	# UseSWIG honors SWIG_MODULE_NAME via -module flag.
-	cmake_policy(SET CMP0086 OLD)
+  cmake_policy(SET CMP0086 NEW)
 endif()
 
-find_package(SWIG 2 REQUIRED)
-include(${SWIG_USE_FILE})
+find_package(Luajit REQUIRED)
+find_package(SWIG 4 REQUIRED)
 
-add_definitions(-DSWIG_TYPE_TABLE=obslua -DSWIG_LUA_INTERPRETER_NO_DEBUG)
+include(UseSWIG)
 
-if(MSVC)
-	add_compile_options("/wd4054")
-	add_compile_options("/wd4197")
-	add_compile_options("/wd4244")
-	add_compile_options("/wd4267")
-endif()
+set_source_files_properties(obslua.i PROPERTIES USE_TARGET_INCLUDE_DIRECTORIES TRUE)
 
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+swig_add_library(
+  obslua
+  LANGUAGE lua
+  TYPE MODULE
+  SOURCES obslua.i)
 
-if(CMAKE_VERSION VERSION_GREATER 3.7.2)
-	SWIG_ADD_LIBRARY(obslua
-		LANGUAGE lua
-		TYPE MODULE
-		SOURCES obslua.i ../cstrcache.cpp ../cstrcache.h)
-else()
-	SWIG_ADD_MODULE(obslua lua obslua.i ../cstrcache.cpp ../cstrcache.h)
-endif()
-SWIG_LINK_LIBRARIES(obslua obs-scripting libobs ${LUA_LIBRARIES} ${EXTRA_LIBS})
+add_library(OBS::lua ALIAS obslua)
 
-set_target_properties(obslua PROPERTIES FOLDER "scripting")
+target_compile_options(
+  obslua
+  PRIVATE $<$<PLATFORM_ID:Windows>:/wd4054>
+          $<$<PLATFORM_ID:Windows>:/wd4197>
+          $<$<PLATFORM_ID:Windows>:/wd4244>
+          $<$<PLATFORM_ID:Windows>:/wd4267>
+          $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wno-shorten-64-to-32>
+          $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wno-unreachable-code>
+          $<$<COMPILE_LANG_AND_ID:C,GNU>:-Wno-maybe-uninitialized>)
 
-function(install_plugin_bin_swig target additional_target)
-	if(APPLE)
-		set(_bit_suffix "")
-	elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
-		set(_bit_suffix "64bit/")
-	else()
-		set(_bit_suffix "32bit/")
-	endif()
+target_compile_definitions(obslua PRIVATE SWIG_TYPE_TABLE=obslua SWIG_LUA_INTERPRETER_NO_DEBUG
+                                          $<$<BOOL:${ENABLE_UI}>:ENABLE_UI>)
 
-	set_target_properties(${additional_target} PROPERTIES
-		PREFIX "")
+target_link_libraries(obslua PRIVATE OBS::cstrcache OBS::libobs OBS::scripting Luajit::Luajit
+                                     $<$<BOOL:${ENABLE_UI}>:OBS::frontend-api>)
 
-	install(TARGETS "${additional_target}"
-		LIBRARY DESTINATION "${OBS_SCRIPT_PLUGIN_DESTINATION}")
+set_property(
+  TARGET obslua
+  APPEND
+  PROPERTY SWIG_COMPILE_DEFINITIONS "SWIG_TYPE_TABLE=obslua" "SWIG_LUA_INTERPRETER_NO_DEBUG"
+           "$<$<BOOL:${ENABLE_UI}>:ENABLE_UI>")
 
-	add_custom_command(TARGET ${additional_target} POST_BUILD
-		COMMAND "${CMAKE_COMMAND}" -E copy
-			"$<TARGET_FILE:${additional_target}>"
-			"${OBS_OUTPUT_DIR}/$<CONFIGURATION>/data/obs-scripting/${_bit_suffix}$<TARGET_FILE_NAME:${additional_target}>"
-		VERBATIM)
-endfunction()
-
-install_plugin_bin_swig(obs-scripting obslua)
+# cmake-format: off
+set_target_properties_obs(obslua PROPERTIES FOLDER scripting XCODE_ATTRIBUTE_STRIP_STYLE non-global)
+# cmake-format: on

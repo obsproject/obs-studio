@@ -5,7 +5,8 @@
 #include "decklink-ui-main.h"
 
 DecklinkOutputUI::DecklinkOutputUI(QWidget *parent)
-	: QDialog(parent), ui(new Ui_Output)
+	: QDialog(parent),
+	  ui(new Ui_Output)
 {
 	ui->setupUi(this);
 
@@ -43,8 +44,8 @@ void DecklinkOutputUI::SetupPropertiesView()
 	ui->propertiesLayout->addWidget(propertiesView);
 	obs_data_release(settings);
 
-	connect(propertiesView, SIGNAL(Changed()), this,
-		SLOT(PropertiesChanged()));
+	connect(propertiesView, &OBSPropertiesView::Changed, this,
+		&DecklinkOutputUI::PropertiesChanged);
 }
 
 void DecklinkOutputUI::SaveSettings()
@@ -80,17 +81,18 @@ void DecklinkOutputUI::SetupPreviewPropertiesView()
 	ui->previewPropertiesLayout->addWidget(previewPropertiesView);
 	obs_data_release(settings);
 
-	connect(previewPropertiesView, SIGNAL(Changed()), this,
-		SLOT(PreviewPropertiesChanged()));
+	connect(previewPropertiesView, &OBSPropertiesView::Changed, this,
+		&DecklinkOutputUI::PreviewPropertiesChanged);
 }
 
 void DecklinkOutputUI::SavePreviewSettings()
 {
-	char *modulePath = obs_module_get_config_path(obs_current_module(), "");
+	BPtr<char> modulePath =
+		obs_module_get_config_path(obs_current_module(), "");
 
 	os_mkdirs(modulePath);
 
-	char *path = obs_module_get_config_path(
+	BPtr<char> path = obs_module_get_config_path(
 		obs_current_module(), "decklinkPreviewOutputProps.json");
 
 	obs_data_t *settings = previewPropertiesView->GetSettings();

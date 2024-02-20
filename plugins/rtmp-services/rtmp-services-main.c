@@ -6,8 +6,9 @@
 #include <file-updater/file-updater.h>
 
 #include "rtmp-format-ver.h"
-#include "lookup-config.h"
-#include "showroom.h"
+
+#include "service-specific/showroom.h"
+#include "service-specific/dacast.h"
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("rtmp-services", "en-US")
@@ -16,8 +17,10 @@ MODULE_EXPORT const char *obs_module_description(void)
 	return "OBS core RTMP services";
 }
 
-#define RTMP_SERVICES_LOG_STR "[rtmp-services plugin] "
-#define RTMP_SERVICES_VER_STR "rtmp-services plugin (libobs " OBS_VERSION ")"
+#if defined(ENABLE_SERVICE_UPDATES)
+static const char *RTMP_SERVICES_LOG_STR = "[rtmp-services plugin] ";
+static const char *RTMP_SERVICES_URL = (const char *)SERVICES_URL;
+#endif
 
 extern struct obs_service_info rtmp_common_service;
 extern struct obs_service_info rtmp_custom_service;
@@ -72,6 +75,7 @@ static void refresh_callback(void *unused, calldata_t *cd)
 bool obs_module_load(void)
 {
 	init_twitch_data();
+	init_dacast_data();
 
 	dstr_copy(&module_name, "rtmp-services plugin (libobs ");
 	dstr_cat(&module_name, obs_get_version_string());
@@ -81,15 +85,17 @@ bool obs_module_load(void)
 	proc_handler_add(ph, "void twitch_ingests_refresh(int seconds)",
 			 refresh_callback, NULL);
 
-#if !defined(_WIN32) || CHECK_FOR_SERVICE_UPDATES
+#if defined(ENABLE_SERVICE_UPDATES)
 	char *local_dir = obs_module_file("");
 	char *cache_dir = obs_module_config_path("");
+	char update_url[128];
+	snprintf(update_url, sizeof(update_url), "%s/v%d", RTMP_SERVICES_URL,
+		 RTMP_SERVICES_FORMAT_VERSION);
 
 	if (cache_dir) {
 		update_info = update_info_create(RTMP_SERVICES_LOG_STR,
-						 module_name.array,
-						 RTMP_SERVICES_URL, local_dir,
-						 cache_dir,
+						 module_name.array, update_url,
+						 local_dir, cache_dir,
 						 confirm_service_file, NULL);
 	}
 
@@ -109,5 +115,6 @@ void obs_module_unload(void)
 	update_info_destroy(update_info);
 	unload_twitch_data();
 	free_showroom_data();
+	unload_dacast_data();
 	dstr_free(&module_name);
 }

@@ -10,7 +10,14 @@
 
 #ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
+#endif
+
 #include "auth-oauth.hpp"
+
+#include "ui-config.h"
+
+#ifdef YOUTUBE_ENABLED
+#include "youtube-api-wrappers.hpp"
 #endif
 
 struct QCef;
@@ -22,6 +29,7 @@ extern QCefCookieManager *panel_cookies;
 enum class ListOpt : int {
 	ShowAll = 1,
 	Custom,
+	WHIP,
 };
 
 enum class Section : int {
@@ -34,13 +42,22 @@ inline bool OBSBasicSettings::IsCustomService() const
 	return ui->service->currentData().toInt() == (int)ListOpt::Custom;
 }
 
+inline bool OBSBasicSettings::IsWHIP() const
+{
+	return ui->service->currentData().toInt() == (int)ListOpt::WHIP;
+}
+
 void OBSBasicSettings::InitStreamPage()
 {
 	ui->connectAccount2->setVisible(false);
 	ui->disconnectAccount->setVisible(false);
 	ui->bandwidthTestEnable->setVisible(false);
+
 	ui->twitchAddonDropdown->setVisible(false);
 	ui->twitchAddonLabel->setVisible(false);
+
+	ui->connectedAccountLabel->setVisible(false);
+	ui->connectedAccountText->setVisible(false);
 
 	int vertSpacing = ui->topStreamLayout->verticalSpacing();
 
@@ -67,26 +84,10 @@ void OBSBasicSettings::InitStreamPage()
 	ui->twitchAddonDropdown->addItem(
 		QTStr("Basic.Settings.Stream.TTVAddon.Both"));
 
-	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(UpdateServerList()));
-	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(UpdateKeyLink()));
-	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(UpdateVodTrackSetting()));
-	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(UpdateServiceRecommendations()));
-	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(UpdateResFPSLimits()));
-	connect(ui->customServer, SIGNAL(textChanged(const QString &)), this,
-		SLOT(UpdateKeyLink()));
-	connect(ui->ignoreRecommended, SIGNAL(clicked(bool)), this,
-		SLOT(DisplayEnforceWarning(bool)));
-	connect(ui->ignoreRecommended, SIGNAL(toggled(bool)), this,
-		SLOT(UpdateResFPSLimits()));
-	connect(ui->customServer, SIGNAL(editingFinished(const QString &)),
-		this, SLOT(UpdateKeyLink()));
-	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(UpdateMoreInfoLink()));
+	connect(ui->ignoreRecommended, &QCheckBox::clicked, this,
+		&OBSBasicSettings::DisplayEnforceWarning);
+	connect(ui->ignoreRecommended, &QCheckBox::toggled, this,
+		&OBSBasicSettings::UpdateResFPSLimits);
 }
 
 void OBSBasicSettings::LoadStream1Settings()
@@ -96,18 +97,28 @@ void OBSBasicSettings::LoadStream1Settings()
 
 	obs_service_t *service_obj = main->GetService();
 	const char *type = obs_service_get_type(service_obj);
+	bool is_rtmp_custom = (strcmp(type, "rtmp_custom") == 0);
+	bool is_rtmp_common = (strcmp(type, "rtmp_common") == 0);
+	bool is_whip = (strcmp(type, "whip_custom") == 0);
 
 	loading = true;
 
-	obs_data_t *settings = obs_service_get_settings(service_obj);
+	OBSDataAutoRelease settings = obs_service_get_settings(service_obj);
 
 	const char *service = obs_data_get_string(settings, "service");
 	const char *server = obs_data_get_string(settings, "server");
 	const char *key = obs_data_get_string(settings, "key");
+	protocol = QT_UTF8(obs_service_get_protocol(service_obj));
+	const char *bearer_token =
+		obs_data_get_string(settings, "bearer_token");
 
-	if (strcmp(type, "rtmp_custom") == 0) {
-		ui->service->setCurrentIndex(0);
+	if (is_rtmp_custom || is_whip)
 		ui->customServer->setText(server);
+
+	if (is_rtmp_custom) {
+		ui->service->setCurrentIndex(0);
+		lastServiceIdx = 0;
+		lastCustomServer = ui->customServer->text();
 
 		bool use_auth = obs_data_get_bool(settings, "use_auth");
 		const char *username =
@@ -125,6 +136,7 @@ void OBSBasicSettings::LoadStream1Settings()
 			idx = 1;
 		}
 		ui->service->setCurrentIndex(idx);
+		lastServiceIdx = idx;
 
 		bool bw_test = obs_data_get_bool(settings, "bwtest");
 		ui->bandwidthTestEnable->setChecked(bw_test);
@@ -135,7 +147,7 @@ void OBSBasicSettings::LoadStream1Settings()
 
 	UpdateServerList();
 
-	if (strcmp(type, "rtmp_common") == 0) {
+	if (is_rtmp_common) {
 		int idx = ui->server->findData(server);
 		if (idx == -1) {
 			if (server && *server)
@@ -145,12 +157,12 @@ void OBSBasicSettings::LoadStream1Settings()
 		ui->server->setCurrentIndex(idx);
 	}
 
-	ui->key->setText(key);
+	if (is_whip)
+		ui->key->setText(bearer_token);
+	else
+		ui->key->setText(key);
 
-	lastService.clear();
-	on_service_currentIndexChanged(0);
-
-	obs_data_release(settings);
+	ServiceChanged(true);
 
 	UpdateKeyLink();
 	UpdateMoreInfoLink();
@@ -171,24 +183,31 @@ void OBSBasicSettings::LoadStream1Settings()
 void OBSBasicSettings::SaveStream1Settings()
 {
 	bool customServer = IsCustomService();
-	const char *service_id = customServer ? "rtmp_custom" : "rtmp_common";
+	bool whip = IsWHIP();
+	const char *service_id = "rtmp_common";
+
+	if (customServer) {
+		service_id = "rtmp_custom";
+	} else if (whip) {
+		service_id = "whip_custom";
+	}
 
 	obs_service_t *oldService = main->GetService();
-	OBSData hotkeyData = obs_hotkeys_save_service(oldService);
-	obs_data_release(hotkeyData);
+	OBSDataAutoRelease hotkeyData = obs_hotkeys_save_service(oldService);
 
-	OBSData settings = obs_data_create();
-	obs_data_release(settings);
+	OBSDataAutoRelease settings = obs_data_create();
 
-	if (!customServer) {
+	if (!customServer && !whip) {
 		obs_data_set_string(settings, "service",
 				    QT_TO_UTF8(ui->service->currentText()));
+		obs_data_set_string(settings, "protocol", QT_TO_UTF8(protocol));
 		obs_data_set_string(
 			settings, "server",
 			QT_TO_UTF8(ui->server->currentData().toString()));
 	} else {
-		obs_data_set_string(settings, "server",
-				    QT_TO_UTF8(ui->customServer->text()));
+		obs_data_set_string(
+			settings, "server",
+			QT_TO_UTF8(ui->customServer->text().trimmed()));
 		obs_data_set_bool(settings, "use_auth",
 				  ui->useAuth->isChecked());
 		if (ui->useAuth->isChecked()) {
@@ -219,27 +238,38 @@ void OBSBasicSettings::SaveStream1Settings()
 		obs_data_set_bool(settings, "bwtest", false);
 	}
 
-	obs_data_set_string(settings, "key", QT_TO_UTF8(ui->key->text()));
+	if (whip) {
+		obs_data_set_string(settings, "service", "WHIP");
+		obs_data_set_string(settings, "bearer_token",
+				    QT_TO_UTF8(ui->key->text()));
+	} else {
+		obs_data_set_string(settings, "key",
+				    QT_TO_UTF8(ui->key->text()));
+	}
 
-	OBSService newService = obs_service_create(
+	OBSServiceAutoRelease newService = obs_service_create(
 		service_id, "default_service", settings, hotkeyData);
-	obs_service_release(newService);
 
 	if (!newService)
 		return;
 
 	main->SetService(newService);
 	main->SaveService();
+	LoadOutputSettings();
 	main->auth = auth;
-	if (!!main->auth)
+	if (!!main->auth) {
 		main->auth->LoadUI();
+		main->SetBroadcastFlowEnabled(main->auth->broadcastFlow());
+	} else {
+		main->SetBroadcastFlowEnabled(false);
+	}
 
 	SaveCheckBox(ui->ignoreRecommended, "Stream1", "IgnoreRecommended");
 }
 
 void OBSBasicSettings::UpdateMoreInfoLink()
 {
-	if (IsCustomService()) {
+	if (IsCustomService() || IsWHIP()) {
 		ui->moreInfoButton->hide();
 		return;
 	}
@@ -248,8 +278,7 @@ void OBSBasicSettings::UpdateMoreInfoLink()
 	obs_properties_t *props = obs_get_service_properties("rtmp_common");
 	obs_property_t *services = obs_properties_get(props, "service");
 
-	OBSData settings = obs_data_create();
-	obs_data_release(settings);
+	OBSDataAutoRelease settings = obs_data_create();
 
 	obs_data_set_string(settings, "service", QT_TO_UTF8(serviceName));
 	obs_property_modified(services, settings);
@@ -269,41 +298,76 @@ void OBSBasicSettings::UpdateMoreInfoLink()
 void OBSBasicSettings::UpdateKeyLink()
 {
 	QString serviceName = ui->service->currentText();
-	QString customServer = ui->customServer->text();
+	QString customServer = ui->customServer->text().trimmed();
 	QString streamKeyLink;
-	if (serviceName == "Twitch") {
-		streamKeyLink = "https://dashboard.twitch.tv/settings/stream";
-	} else if (serviceName.startsWith("YouTube")) {
-		streamKeyLink = "https://www.youtube.com/live_dashboard";
-	} else if (serviceName.startsWith("Restream.io")) {
-		streamKeyLink =
-			"https://restream.io/settings/streaming-setup?from=OBS";
-	} else if (serviceName == "Facebook Live" ||
-		   (customServer.contains("fbcdn.net") && IsCustomService())) {
+
+	obs_properties_t *props = obs_get_service_properties("rtmp_common");
+	obs_property_t *services = obs_properties_get(props, "service");
+
+	OBSDataAutoRelease settings = obs_data_create();
+
+	obs_data_set_string(settings, "service", QT_TO_UTF8(serviceName));
+	obs_property_modified(services, settings);
+
+	streamKeyLink = obs_data_get_string(settings, "stream_key_link");
+
+	if (customServer.contains("fbcdn.net") && IsCustomService()) {
 		streamKeyLink =
 			"https://www.facebook.com/live/producer?ref=OBS";
-	} else if (serviceName.startsWith("Twitter")) {
-		streamKeyLink = "https://www.pscp.tv/account/producer";
-	} else if (serviceName.startsWith("YouStreamer")) {
-		streamKeyLink = "https://app.youstreamer.com/stream/";
-	} else if (serviceName == "Trovo") {
-		streamKeyLink = "https://studio.trovo.live/mychannel/stream";
 	}
 
-	if (QString(streamKeyLink).isNull()) {
+	if (serviceName == "Dacast") {
+		ui->streamKeyLabel->setText(
+			QTStr("Basic.AutoConfig.StreamPage.EncoderKey"));
+		ui->streamKeyLabel->setToolTip("");
+	} else if (IsWHIP()) {
+		ui->streamKeyLabel->setText(
+			QTStr("Basic.AutoConfig.StreamPage.BearerToken"));
+		ui->streamKeyLabel->setToolTip("");
+	} else if (!IsCustomService()) {
+		ui->streamKeyLabel->setText(
+			QTStr("Basic.AutoConfig.StreamPage.StreamKey"));
+		ui->streamKeyLabel->setToolTip("");
+	} else {
+		/* add tooltips for stream key, user, password fields */
+		QString file = !App()->IsThemeDark()
+				       ? ":/res/images/help.svg"
+				       : ":/res/images/help_light.svg";
+		QString lStr = "<html>%1 <img src='%2' style=' \
+				vertical-align: bottom;  \
+				' /></html>";
+
+		ui->streamKeyLabel->setText(lStr.arg(
+			QTStr("Basic.AutoConfig.StreamPage.StreamKey"), file));
+		ui->streamKeyLabel->setToolTip(
+			QTStr("Basic.AutoConfig.StreamPage.StreamKey.ToolTip"));
+
+		ui->authUsernameLabel->setText(lStr.arg(
+			QTStr("Basic.Settings.Stream.Custom.Username"), file));
+		ui->authUsernameLabel->setToolTip(
+			QTStr("Basic.Settings.Stream.Custom.Username.ToolTip"));
+
+		ui->authPwLabel->setText(lStr.arg(
+			QTStr("Basic.Settings.Stream.Custom.Password"), file));
+		ui->authPwLabel->setToolTip(
+			QTStr("Basic.Settings.Stream.Custom.Password.ToolTip"));
+	}
+
+	if (QString(streamKeyLink).isNull() ||
+	    QString(streamKeyLink).isEmpty()) {
 		ui->getStreamKeyButton->hide();
 	} else {
 		ui->getStreamKeyButton->setTargetUrl(QUrl(streamKeyLink));
 		ui->getStreamKeyButton->show();
 	}
+	obs_properties_destroy(props);
 }
 
 void OBSBasicSettings::LoadServices(bool showAll)
 {
 	obs_properties_t *props = obs_get_service_properties("rtmp_common");
 
-	OBSData settings = obs_data_create();
-	obs_data_release(settings);
+	OBSDataAutoRelease settings = obs_data_create();
 
 	obs_data_set_bool(settings, "show_all", showAll);
 
@@ -327,6 +391,11 @@ void OBSBasicSettings::LoadServices(bool showAll)
 
 	for (QString &name : names)
 		ui->service->addItem(name);
+
+	if (obs_is_output_protocol_registered("WHIP")) {
+		ui->service->addItem(QTStr("WHIP"),
+				     QVariant((int)ListOpt::WHIP));
+	}
 
 	if (!showAll) {
 		ui->service->addItem(
@@ -354,41 +423,120 @@ static inline bool is_auth_service(const std::string &service)
 	return Auth::AuthType(service) != Auth::Type::None;
 }
 
-void OBSBasicSettings::on_service_currentIndexChanged(int)
+static inline bool is_external_oauth(const std::string &service)
 {
-	bool showMore = ui->service->currentData().toInt() ==
-			(int)ListOpt::ShowAll;
-	if (showMore)
-		return;
+	return Auth::External(service);
+}
 
+static void reset_service_ui_fields(Ui::OBSBasicSettings *ui,
+				    std::string &service, bool loading)
+{
+	bool external_oauth = is_external_oauth(service);
+	if (external_oauth) {
+		ui->streamKeyWidget->setVisible(false);
+		ui->streamKeyLabel->setVisible(false);
+		ui->connectAccount2->setVisible(true);
+		ui->useStreamKeyAdv->setVisible(true);
+		ui->streamStackWidget->setCurrentIndex((int)Section::StreamKey);
+	} else if (cef) {
+		QString key = ui->key->text();
+		bool can_auth = is_auth_service(service);
+		int page = can_auth && (!loading || key.isEmpty())
+				   ? (int)Section::Connect
+				   : (int)Section::StreamKey;
+
+		ui->streamStackWidget->setCurrentIndex(page);
+		ui->streamKeyWidget->setVisible(true);
+		ui->streamKeyLabel->setVisible(true);
+		ui->connectAccount2->setVisible(can_auth);
+		ui->useStreamKeyAdv->setVisible(false);
+	} else {
+		ui->connectAccount2->setVisible(false);
+		ui->useStreamKeyAdv->setVisible(false);
+		ui->streamStackWidget->setCurrentIndex((int)Section::StreamKey);
+	}
+
+	ui->connectedAccountLabel->setVisible(false);
+	ui->connectedAccountText->setVisible(false);
+	ui->disconnectAccount->setVisible(false);
+}
+
+#ifdef YOUTUBE_ENABLED
+static void get_yt_ch_title(Ui::OBSBasicSettings *ui)
+{
+	const char *name = config_get_string(OBSBasic::Get()->Config(),
+					     "YouTube", "ChannelName");
+	if (name) {
+		ui->connectedAccountText->setText(name);
+	} else {
+		// if we still not changed the service page
+		if (IsYouTubeService(QT_TO_UTF8(ui->service->currentText()))) {
+			ui->connectedAccountText->setText(
+				QTStr("Auth.LoadingChannel.Error"));
+		}
+	}
+}
+#endif
+
+void OBSBasicSettings::UseStreamKeyAdvClicked()
+{
+	ui->streamKeyWidget->setVisible(true);
+	ui->streamKeyLabel->setVisible(true);
+	ui->useStreamKeyAdv->setVisible(false);
+}
+
+void OBSBasicSettings::on_service_currentIndexChanged(int idx)
+{
+	if (ui->service->currentData().toInt() == (int)ListOpt::ShowAll) {
+		LoadServices(true);
+		ui->service->showPopup();
+		return;
+	}
+
+	ServiceChanged();
+
+	UpdateMoreInfoLink();
+	UpdateServerList();
+	UpdateKeyLink();
+	UpdateServiceRecommendations();
+
+	UpdateVodTrackSetting();
+
+	protocol = FindProtocol();
+	UpdateAdvNetworkGroup();
+
+	if (ServiceSupportsCodecCheck() && UpdateResFPSLimits()) {
+		lastServiceIdx = idx;
+		if (idx == 0)
+			lastCustomServer = ui->customServer->text();
+	}
+}
+
+void OBSBasicSettings::on_customServer_textChanged(const QString &)
+{
+	UpdateKeyLink();
+
+	protocol = FindProtocol();
+	UpdateAdvNetworkGroup();
+
+	if (ServiceSupportsCodecCheck())
+		lastCustomServer = ui->customServer->text();
+}
+
+void OBSBasicSettings::ServiceChanged(bool resetFields)
+{
 	std::string service = QT_TO_UTF8(ui->service->currentText());
 	bool custom = IsCustomService();
+	bool whip = IsWHIP();
 
 	ui->disconnectAccount->setVisible(false);
 	ui->bandwidthTestEnable->setVisible(false);
 	ui->twitchAddonDropdown->setVisible(false);
 	ui->twitchAddonLabel->setVisible(false);
 
-#ifdef BROWSER_AVAILABLE
-	if (cef) {
-		if (lastService != service.c_str()) {
-			QString key = ui->key->text();
-			bool can_auth = is_auth_service(service);
-			int page = can_auth && (!loading || key.isEmpty())
-					   ? (int)Section::Connect
-					   : (int)Section::StreamKey;
-
-			ui->streamStackWidget->setCurrentIndex(page);
-			ui->streamKeyWidget->setVisible(true);
-			ui->streamKeyLabel->setVisible(true);
-			ui->connectAccount2->setVisible(can_auth);
-		}
-	} else {
-		ui->connectAccount2->setVisible(false);
+	if (resetFields || lastService != service.c_str()) {
+		reset_service_ui_fields(ui.get(), service, loading);
 	}
-#else
-	ui->connectAccount2->setVisible(false);
-#endif
 
 	ui->useAuth->setVisible(custom);
 	ui->authUsernameLabel->setVisible(custom);
@@ -396,7 +544,7 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 	ui->authPwLabel->setVisible(custom);
 	ui->authPwWidget->setVisible(custom);
 
-	if (custom) {
+	if (custom || whip) {
 		ui->streamkeyPageLayout->insertRow(1, ui->serverLabel,
 						   ui->serverStackedWidget);
 
@@ -408,36 +556,79 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 		ui->serverStackedWidget->setCurrentIndex(0);
 	}
 
-#ifdef BROWSER_AVAILABLE
 	auth.reset();
 
-	if (!!main->auth &&
-	    service.find(main->auth->service()) != std::string::npos) {
+	if (!main->auth) {
+		return;
+	}
+
+	auto system_auth_service = main->auth->service();
+	bool service_check = service.find(system_auth_service) !=
+			     std::string::npos;
+#ifdef YOUTUBE_ENABLED
+	service_check = service_check ? service_check
+				      : IsYouTubeService(system_auth_service) &&
+						IsYouTubeService(service);
+#endif
+	if (service_check) {
 		auth = main->auth;
 		OnAuthConnected();
 	}
-#endif
+}
+
+QString OBSBasicSettings::FindProtocol()
+{
+	if (IsCustomService()) {
+		if (ui->customServer->text().isEmpty())
+			return QString("RTMP");
+
+		QString server = ui->customServer->text();
+
+		if (obs_is_output_protocol_registered("RTMPS") &&
+		    server.startsWith("rtmps://"))
+			return QString("RTMPS");
+
+		if (server.startsWith("ftl://"))
+			return QString("FTL");
+
+		if (server.startsWith("srt://"))
+			return QString("SRT");
+
+		if (server.startsWith("rist://"))
+			return QString("RIST");
+
+	} else {
+		obs_properties_t *props =
+			obs_get_service_properties("rtmp_common");
+		obs_property_t *services = obs_properties_get(props, "service");
+
+		OBSDataAutoRelease settings = obs_data_create();
+
+		obs_data_set_string(settings, "service",
+				    QT_TO_UTF8(ui->service->currentText()));
+		obs_property_modified(services, settings);
+
+		obs_properties_destroy(props);
+
+		const char *protocol =
+			obs_data_get_string(settings, "protocol");
+		if (protocol && *protocol)
+			return QT_UTF8(protocol);
+	}
+
+	return QString("RTMP");
 }
 
 void OBSBasicSettings::UpdateServerList()
 {
 	QString serviceName = ui->service->currentText();
-	bool showMore = ui->service->currentData().toInt() ==
-			(int)ListOpt::ShowAll;
 
-	if (showMore) {
-		LoadServices(true);
-		ui->service->showPopup();
-		return;
-	} else {
-		lastService = serviceName;
-	}
+	lastService = serviceName;
 
 	obs_properties_t *props = obs_get_service_properties("rtmp_common");
 	obs_property_t *services = obs_properties_get(props, "service");
 
-	OBSData settings = obs_data_create();
-	obs_data_release(settings);
+	OBSDataAutoRelease settings = obs_data_create();
 
 	obs_data_set_string(settings, "service", QT_TO_UTF8(serviceName));
 	obs_property_modified(services, settings);
@@ -481,33 +672,43 @@ void OBSBasicSettings::on_authPwShow_clicked()
 OBSService OBSBasicSettings::SpawnTempService()
 {
 	bool custom = IsCustomService();
-	const char *service_id = custom ? "rtmp_custom" : "rtmp_common";
+	bool whip = IsWHIP();
+	const char *service_id = "rtmp_common";
 
-	OBSData settings = obs_data_create();
-	obs_data_release(settings);
+	if (custom) {
+		service_id = "rtmp_custom";
+	} else if (whip) {
+		service_id = "whip_custom";
+	}
 
-	if (!custom) {
+	OBSDataAutoRelease settings = obs_data_create();
+
+	if (!custom && !whip) {
 		obs_data_set_string(settings, "service",
 				    QT_TO_UTF8(ui->service->currentText()));
 		obs_data_set_string(
 			settings, "server",
 			QT_TO_UTF8(ui->server->currentData().toString()));
 	} else {
-		obs_data_set_string(settings, "server",
-				    QT_TO_UTF8(ui->customServer->text()));
+		obs_data_set_string(
+			settings, "server",
+			QT_TO_UTF8(ui->customServer->text().trimmed()));
 	}
-	obs_data_set_string(settings, "key", QT_TO_UTF8(ui->key->text()));
 
-	OBSService newService = obs_service_create(service_id, "temp_service",
-						   settings, nullptr);
-	obs_service_release(newService);
+	if (whip)
+		obs_data_set_string(settings, "bearer_token",
+				    QT_TO_UTF8(ui->key->text()));
+	else
+		obs_data_set_string(settings, "key",
+				    QT_TO_UTF8(ui->key->text()));
 
-	return newService;
+	OBSServiceAutoRelease newService = obs_service_create(
+		service_id, "temp_service", settings, nullptr);
+	return newService.Get();
 }
 
 void OBSBasicSettings::OnOAuthStreamKeyConnected()
 {
-#ifdef BROWSER_AVAILABLE
 	OAuthStreamKey *a = reinterpret_cast<OAuthStreamKey *>(auth.get());
 
 	if (a) {
@@ -520,6 +721,10 @@ void OBSBasicSettings::OnOAuthStreamKeyConnected()
 		ui->streamKeyLabel->setVisible(false);
 		ui->connectAccount2->setVisible(false);
 		ui->disconnectAccount->setVisible(true);
+		ui->useStreamKeyAdv->setVisible(false);
+
+		ui->connectedAccountLabel->setVisible(false);
+		ui->connectedAccountText->setVisible(false);
 
 		if (strcmp(a->service(), "Twitch") == 0) {
 			ui->bandwidthTestEnable->setVisible(true);
@@ -528,10 +733,22 @@ void OBSBasicSettings::OnOAuthStreamKeyConnected()
 		} else {
 			ui->bandwidthTestEnable->setChecked(false);
 		}
+#ifdef YOUTUBE_ENABLED
+		if (IsYouTubeService(a->service())) {
+			ui->key->clear();
+
+			ui->connectedAccountLabel->setVisible(true);
+			ui->connectedAccountText->setVisible(true);
+
+			ui->connectedAccountText->setText(
+				QTStr("Auth.LoadingChannel.Title"));
+
+			get_yt_ch_title(ui.get());
+		}
+#endif
 	}
 
 	ui->streamStackWidget->setCurrentIndex((int)Section::StreamKey);
-#endif
 }
 
 void OBSBasicSettings::OnAuthConnected()
@@ -539,7 +756,8 @@ void OBSBasicSettings::OnAuthConnected()
 	std::string service = QT_TO_UTF8(ui->service->currentText());
 	Auth::Type type = Auth::AuthType(service);
 
-	if (type == Auth::Type::OAuth_StreamKey) {
+	if (type == Auth::Type::OAuth_StreamKey ||
+	    type == Auth::Type::OAuth_LinkedAccount) {
 		OnOAuthStreamKeyConnected();
 	}
 
@@ -551,15 +769,24 @@ void OBSBasicSettings::OnAuthConnected()
 
 void OBSBasicSettings::on_connectAccount_clicked()
 {
-#ifdef BROWSER_AVAILABLE
 	std::string service = QT_TO_UTF8(ui->service->currentText());
 
 	OAuth::DeleteCookies(service);
 
 	auth = OAuthStreamKey::Login(this, service);
-	if (!!auth)
+	if (!!auth) {
 		OnAuthConnected();
+#ifdef YOUTUBE_ENABLED
+		if (cef_js_avail && IsYouTubeService(service)) {
+			if (!main->GetYouTubeAppDock()) {
+				main->NewYouTubeAppDock();
+			}
+			main->GetYouTubeAppDock()->AccountConnected();
+		}
 #endif
+
+		ui->useStreamKeyAdv->setVisible(false);
+	}
 }
 
 #define DISCONNECT_COMFIRM_TITLE \
@@ -580,6 +807,7 @@ void OBSBasicSettings::on_disconnectAccount_clicked()
 
 	main->auth.reset();
 	auth.reset();
+	main->SetBroadcastFlowEnabled(false);
 
 	std::string service = QT_TO_UTF8(ui->service->currentText());
 
@@ -589,14 +817,25 @@ void OBSBasicSettings::on_disconnectAccount_clicked()
 
 	ui->bandwidthTestEnable->setChecked(false);
 
-	ui->streamKeyWidget->setVisible(true);
-	ui->streamKeyLabel->setVisible(true);
-	ui->connectAccount2->setVisible(true);
-	ui->disconnectAccount->setVisible(false);
+	reset_service_ui_fields(ui.get(), service, loading);
+
 	ui->bandwidthTestEnable->setVisible(false);
 	ui->twitchAddonDropdown->setVisible(false);
 	ui->twitchAddonLabel->setVisible(false);
 	ui->key->setText("");
+
+	ui->connectedAccountLabel->setVisible(false);
+	ui->connectedAccountText->setVisible(false);
+
+#ifdef YOUTUBE_ENABLED
+	if (cef_js_avail && IsYouTubeService(service)) {
+		if (!main->GetYouTubeAppDock()) {
+			main->NewYouTubeAppDock();
+		}
+		main->GetYouTubeAppDock()->AccountDisconnected();
+		main->GetYouTubeAppDock()->Update();
+	}
+#endif
 }
 
 void OBSBasicSettings::on_useStreamKey_clicked()
@@ -619,8 +858,13 @@ void OBSBasicSettings::on_useAuth_toggled()
 
 void OBSBasicSettings::UpdateVodTrackSetting()
 {
+	bool enableForCustomServer = config_get_bool(
+		GetGlobalConfig(), "General", "EnableCustomServerVodTrack");
 	bool enableVodTrack = ui->service->currentText() == "Twitch";
 	bool wasEnabled = !!vodTrackCheckbox;
+
+	if (enableForCustomServer && IsCustomService())
+		enableVodTrack = true;
 
 	if (enableVodTrack == wasEnabled)
 		return;
@@ -650,10 +894,10 @@ void OBSBasicSettings::UpdateVodTrackSetting()
 						     &pos, nullptr);
 	ui->simpleStreamingLayout->insertRow(pos + 1, nullptr, simpleVodTrack);
 
-	HookWidget(simpleVodTrack, SIGNAL(clicked(bool)),
-		   SLOT(OutputsChanged()));
-	connect(ui->simpleOutAdvanced, SIGNAL(toggled(bool)),
-		simpleVodTrack.data(), SLOT(setVisible(bool)));
+	HookWidget(simpleVodTrack.data(), &QCheckBox::clicked,
+		   &OBSBasicSettings::OutputsChanged);
+	connect(ui->simpleOutAdvanced, &QCheckBox::toggled,
+		simpleVodTrack.data(), &QCheckBox::setVisible);
 
 	/* -------------------------------------- */
 	/* advanced output mode vod track widgets */
@@ -669,12 +913,12 @@ void OBSBasicSettings::UpdateVodTrackSetting()
 		vodTrack[i] = new QRadioButton(QString::number(i + 1));
 		vodTrackLayout->addWidget(vodTrack[i]);
 
-		HookWidget(vodTrack[i], SIGNAL(clicked(bool)),
-			   SLOT(OutputsChanged()));
+		HookWidget(vodTrack[i].data(), &QRadioButton::clicked,
+			   &OBSBasicSettings::OutputsChanged);
 	}
 
-	HookWidget(vodTrackCheckbox, SIGNAL(clicked(bool)),
-		   SLOT(OutputsChanged()));
+	HookWidget(vodTrackCheckbox.data(), &QCheckBox::clicked,
+		   &OBSBasicSettings::OutputsChanged);
 
 	vodTrackLayout->addStretch();
 	vodTrackLayout->setContentsMargins(0, 0, 0, 0);
@@ -688,8 +932,8 @@ void OBSBasicSettings::UpdateVodTrackSetting()
 	vodTrackCheckbox->setChecked(vodTrackEnabled);
 	vodTrackContainer->setEnabled(vodTrackEnabled);
 
-	connect(vodTrackCheckbox, SIGNAL(clicked(bool)), vodTrackContainer,
-		SLOT(setEnabled(bool)));
+	connect(vodTrackCheckbox, &QCheckBox::clicked, vodTrackContainer,
+		&QWidget::setEnabled);
 
 	int trackIndex =
 		config_get_int(main->Config(), "AdvOut", "VodTrackIndex");
@@ -729,13 +973,13 @@ void OBSBasicSettings::UpdateServiceRecommendations()
 				.arg(QString::number(vbitrate));
 	if (abitrate) {
 		if (!text.isEmpty())
-			text += "\n";
+			text += "<br>";
 		text += ENFORCE_TEXT("MaxAudioBitrate")
 				.arg(QString::number(abitrate));
 	}
 	if (res_count) {
 		if (!text.isEmpty())
-			text += "\n";
+			text += "<br>";
 
 		obs_service_resolution best_res = {};
 		int best_res_pixels = 0;
@@ -756,12 +1000,25 @@ void OBSBasicSettings::UpdateServiceRecommendations()
 	}
 	if (fps) {
 		if (!text.isEmpty())
-			text += "\n";
+			text += "<br>";
 
 		text += ENFORCE_TEXT("MaxFPS").arg(QString::number(fps));
 	}
 #undef ENFORCE_TEXT
 
+#ifdef YOUTUBE_ENABLED
+	if (IsYouTubeService(QT_TO_UTF8(ui->service->currentText()))) {
+		if (!text.isEmpty())
+			text += "<br><br>";
+
+		text += "<a href=\"https://www.youtube.com/t/terms\">"
+			"YouTube Terms of Service</a><br>"
+			"<a href=\"http://www.google.com/policies/privacy\">"
+			"Google Privacy Policy</a><br>"
+			"<a href=\"https://security.google.com/settings/security/permissions\">"
+			"Google Third-Party Permissions</a>";
+	}
+#endif
 	ui->enforceSettingsLabel->setText(text);
 }
 
@@ -855,14 +1112,14 @@ extern void set_closest_res(int &cx, int &cy,
  * which as of this writing, and hopefully for the foreseeable future, there is
  * only one.
  */
-void OBSBasicSettings::UpdateResFPSLimits()
+bool OBSBasicSettings::UpdateResFPSLimits()
 {
 	if (loading)
-		return;
+		return false;
 
 	int idx = ui->service->currentIndex();
 	if (idx == -1)
-		return;
+		return false;
 
 	bool ignoreRecommended = ui->ignoreRecommended->isChecked();
 	BPtr<obs_service_resolution> res_list;
@@ -940,8 +1197,7 @@ void OBSBasicSettings::UpdateResFPSLimits()
 			ui->ignoreRecommended->setProperty("changed", true);
 			stream1Changed = true;
 			EnableApplyButton(true);
-			UpdateResFPSLimits();
-			return;
+			return UpdateResFPSLimits();
 		}
 
 		QMessageBox::StandardButton button;
@@ -973,7 +1229,7 @@ void OBSBasicSettings::UpdateResFPSLimits()
 							  "setChecked",
 							  Qt::QueuedConnection,
 							  Q_ARG(bool, true));
-			return;
+			return false;
 		}
 	}
 
@@ -985,6 +1241,9 @@ void OBSBasicSettings::UpdateResFPSLimits()
 	if (res_count) {
 		ui->outputResolution->clear();
 		ui->outputResolution->setEditable(false);
+		HookWidget(ui->outputResolution,
+			   &QComboBox::currentIndexChanged,
+			   &OBSBasicSettings::VideoChangedResolution);
 
 		int new_res_index = -1;
 
@@ -1051,5 +1310,506 @@ void OBSBasicSettings::UpdateResFPSLimits()
 	/* ------------------------------------ */
 
 	lastIgnoreRecommended = (int)ignoreRecommended;
-	lastServiceIdx = idx;
+
+	return true;
+}
+
+static bool service_supports_codec(const char **codecs, const char *codec)
+{
+	if (!codecs)
+		return true;
+
+	while (*codecs) {
+		if (strcmp(*codecs, codec) == 0)
+			return true;
+		codecs++;
+	}
+
+	return false;
+}
+
+extern bool EncoderAvailable(const char *encoder);
+extern const char *get_simple_output_encoder(const char *name);
+
+static inline bool service_supports_encoder(const char **codecs,
+					    const char *encoder)
+{
+	if (!EncoderAvailable(encoder))
+		return false;
+
+	const char *codec = obs_get_encoder_codec(encoder);
+	return service_supports_codec(codecs, codec);
+}
+
+static bool return_first_id(void *data, const char *id)
+{
+	const char **output = (const char **)data;
+
+	*output = id;
+	return false;
+}
+
+bool OBSBasicSettings::ServiceAndVCodecCompatible()
+{
+	bool simple = (ui->outputMode->currentIndex() == 0);
+	bool ret;
+
+	const char *codec;
+
+	if (simple) {
+		QString encoder =
+			ui->simpleOutStrEncoder->currentData().toString();
+		const char *id = get_simple_output_encoder(QT_TO_UTF8(encoder));
+		codec = obs_get_encoder_codec(id);
+	} else {
+		QString encoder = ui->advOutEncoder->currentData().toString();
+		codec = obs_get_encoder_codec(QT_TO_UTF8(encoder));
+	}
+
+	OBSService service = SpawnTempService();
+	const char **codecs = obs_service_get_supported_video_codecs(service);
+
+	if (!codecs || IsCustomService()) {
+		const char *output;
+		char **output_codecs;
+
+		obs_enum_output_types_with_protocol(QT_TO_UTF8(protocol),
+						    &output, return_first_id);
+
+		output_codecs = strlist_split(
+			obs_get_output_supported_video_codecs(output), ';',
+			false);
+
+		ret = service_supports_codec((const char **)output_codecs,
+					     codec);
+
+		strlist_free(output_codecs);
+	} else {
+		ret = service_supports_codec(codecs, codec);
+	}
+
+	return ret;
+}
+
+bool OBSBasicSettings::ServiceAndACodecCompatible()
+{
+	bool simple = (ui->outputMode->currentIndex() == 0);
+	bool ret;
+
+	QString codec;
+
+	if (simple) {
+		codec = ui->simpleOutStrAEncoder->currentData().toString();
+	} else {
+		QString encoder = ui->advOutAEncoder->currentData().toString();
+		codec = obs_get_encoder_codec(QT_TO_UTF8(encoder));
+	}
+
+	OBSService service = SpawnTempService();
+	const char **codecs = obs_service_get_supported_audio_codecs(service);
+
+	if (!codecs || IsCustomService()) {
+		const char *output;
+		char **output_codecs;
+
+		obs_enum_output_types_with_protocol(QT_TO_UTF8(protocol),
+						    &output, return_first_id);
+		output_codecs = strlist_split(
+			obs_get_output_supported_audio_codecs(output), ';',
+			false);
+
+		ret = service_supports_codec((const char **)output_codecs,
+					     QT_TO_UTF8(codec));
+
+		strlist_free(output_codecs);
+	} else {
+		ret = service_supports_codec(codecs, QT_TO_UTF8(codec));
+	}
+
+	return ret;
+}
+
+/* we really need a way to find fallbacks in a less hardcoded way. maybe. */
+static QString get_adv_fallback(const QString &enc)
+{
+	if (enc == "jim_hevc_nvenc" || enc == "jim_av1_nvenc")
+		return "jim_nvenc";
+	if (enc == "h265_texture_amf" || enc == "av1_texture_amf")
+		return "h264_texture_amf";
+	if (enc == "com.apple.videotoolbox.videoencoder.ave.hevc")
+		return "com.apple.videotoolbox.videoencoder.ave.avc";
+	if (enc == "obs_qsv11_av1")
+		return "obs_qsv11";
+	return "obs_x264";
+}
+
+static QString get_adv_audio_fallback(const QString &enc)
+{
+	const char *codec = obs_get_encoder_codec(QT_TO_UTF8(enc));
+
+	if (codec && strcmp(codec, "aac") == 0)
+		return "ffmpeg_opus";
+
+	QString aac_default = "ffmpeg_aac";
+	if (EncoderAvailable("CoreAudio_AAC"))
+		aac_default = "CoreAudio_AAC";
+	else if (EncoderAvailable("libfdk_aac"))
+		aac_default = "libfdk_aac";
+
+	return aac_default;
+}
+
+static QString get_simple_fallback(const QString &enc)
+{
+	if (enc == SIMPLE_ENCODER_NVENC_HEVC || enc == SIMPLE_ENCODER_NVENC_AV1)
+		return SIMPLE_ENCODER_NVENC;
+	if (enc == SIMPLE_ENCODER_AMD_HEVC || enc == SIMPLE_ENCODER_AMD_AV1)
+		return SIMPLE_ENCODER_AMD;
+	if (enc == SIMPLE_ENCODER_APPLE_HEVC)
+		return SIMPLE_ENCODER_APPLE_H264;
+	if (enc == SIMPLE_ENCODER_QSV_AV1)
+		return SIMPLE_ENCODER_QSV;
+	return SIMPLE_ENCODER_X264;
+}
+
+bool OBSBasicSettings::ServiceSupportsCodecCheck()
+{
+	if (loading)
+		return false;
+
+	bool vcodec_compat = ServiceAndVCodecCompatible();
+	bool acodec_compat = ServiceAndACodecCompatible();
+
+	if (vcodec_compat && acodec_compat) {
+		if (lastServiceIdx != ui->service->currentIndex() ||
+		    IsCustomService())
+			ResetEncoders(true);
+		return true;
+	}
+
+	QString service = ui->service->currentText();
+	QString cur_video_name;
+	QString fb_video_name;
+	QString cur_audio_name;
+	QString fb_audio_name;
+	bool simple = (ui->outputMode->currentIndex() == 0);
+
+	/* ------------------------------------------------- */
+	/* get current codec                                 */
+
+	if (simple) {
+		QString cur_enc =
+			ui->simpleOutStrEncoder->currentData().toString();
+		QString fb_enc = get_simple_fallback(cur_enc);
+
+		int cur_idx = ui->simpleOutStrEncoder->findData(cur_enc);
+		int fb_idx = ui->simpleOutStrEncoder->findData(fb_enc);
+
+		cur_video_name = ui->simpleOutStrEncoder->itemText(cur_idx);
+		fb_video_name = ui->simpleOutStrEncoder->itemText(fb_idx);
+
+		cur_enc = ui->simpleOutStrAEncoder->currentData().toString();
+		fb_enc = (cur_enc == "opus") ? "aac" : "opus";
+
+		cur_audio_name = ui->simpleOutStrAEncoder->itemText(
+			ui->simpleOutStrAEncoder->findData(cur_enc));
+		fb_audio_name =
+			(cur_enc == "opus")
+				? QTStr("Basic.Settings.Output.Simple.Codec.AAC")
+				: QTStr("Basic.Settings.Output.Simple.Codec.Opus");
+	} else {
+		QString cur_enc = ui->advOutEncoder->currentData().toString();
+		QString fb_enc = get_adv_fallback(cur_enc);
+
+		cur_video_name =
+			obs_encoder_get_display_name(QT_TO_UTF8(cur_enc));
+		fb_video_name =
+			obs_encoder_get_display_name(QT_TO_UTF8(fb_enc));
+
+		cur_enc = ui->advOutAEncoder->currentData().toString();
+		fb_enc = get_adv_audio_fallback(cur_enc);
+
+		cur_audio_name =
+			obs_encoder_get_display_name(QT_TO_UTF8(cur_enc));
+		fb_audio_name =
+			obs_encoder_get_display_name(QT_TO_UTF8(fb_enc));
+	}
+
+#define WARNING_VAL(x) \
+	QTStr("Basic.Settings.Output.Warn.ServiceCodecCompatibility." x)
+
+	QString msg = WARNING_VAL("Msg").arg(
+		service, vcodec_compat ? cur_audio_name : cur_video_name,
+		vcodec_compat ? fb_audio_name : fb_video_name);
+	if (!vcodec_compat && !acodec_compat)
+		msg = WARNING_VAL("Msg2").arg(service, cur_video_name,
+					      cur_audio_name, fb_video_name,
+					      fb_audio_name);
+
+	auto button = OBSMessageBox::question(this, WARNING_VAL("Title"), msg);
+#undef WARNING_VAL
+
+	if (button == QMessageBox::No) {
+		if (lastServiceIdx == 0 &&
+		    lastServiceIdx == ui->service->currentIndex())
+			QMetaObject::invokeMethod(ui->customServer, "setText",
+						  Qt::QueuedConnection,
+						  Q_ARG(QString,
+							lastCustomServer));
+		else
+			QMetaObject::invokeMethod(ui->service,
+						  "setCurrentIndex",
+						  Qt::QueuedConnection,
+						  Q_ARG(int, lastServiceIdx));
+		return false;
+	}
+
+	ResetEncoders(true);
+	return true;
+}
+
+#define TEXT_USE_STREAM_ENC \
+	QTStr("Basic.Settings.Output.Adv.Recording.UseStreamEncoder")
+
+void OBSBasicSettings::ResetEncoders(bool streamOnly)
+{
+	QString lastAdvVideoEnc = ui->advOutEncoder->currentData().toString();
+	QString lastVideoEnc =
+		ui->simpleOutStrEncoder->currentData().toString();
+	QString lastAdvAudioEnc = ui->advOutAEncoder->currentData().toString();
+	QString lastAudioEnc =
+		ui->simpleOutStrAEncoder->currentData().toString();
+	OBSService service = SpawnTempService();
+	const char **vcodecs = obs_service_get_supported_video_codecs(service);
+	const char **acodecs = obs_service_get_supported_audio_codecs(service);
+	const char *type;
+	BPtr<char *> output_vcodecs;
+	BPtr<char *> output_acodecs;
+	size_t idx = 0;
+
+	if (!vcodecs || IsCustomService()) {
+		const char *output;
+
+		obs_enum_output_types_with_protocol(QT_TO_UTF8(protocol),
+						    &output, return_first_id);
+		output_vcodecs = strlist_split(
+			obs_get_output_supported_video_codecs(output), ';',
+			false);
+		vcodecs = (const char **)output_vcodecs.Get();
+	}
+
+	if (!acodecs || IsCustomService()) {
+		const char *output;
+
+		obs_enum_output_types_with_protocol(QT_TO_UTF8(protocol),
+						    &output, return_first_id);
+		output_acodecs = strlist_split(
+			obs_get_output_supported_audio_codecs(output), ';',
+			false);
+		acodecs = (const char **)output_acodecs.Get();
+	}
+
+	QSignalBlocker s1(ui->simpleOutStrEncoder);
+	QSignalBlocker s2(ui->advOutEncoder);
+	QSignalBlocker s3(ui->simpleOutStrAEncoder);
+	QSignalBlocker s4(ui->advOutAEncoder);
+
+	/* ------------------------------------------------- */
+	/* clear encoder lists                               */
+
+	ui->simpleOutStrEncoder->clear();
+	ui->advOutEncoder->clear();
+	ui->simpleOutStrAEncoder->clear();
+	ui->advOutAEncoder->clear();
+
+	if (!streamOnly) {
+		ui->advOutRecEncoder->clear();
+		ui->advOutRecAEncoder->clear();
+	}
+
+	/* ------------------------------------------------- */
+	/* load advanced stream/recording encoders           */
+
+	while (obs_enum_encoder_types(idx++, &type)) {
+		const char *name = obs_encoder_get_display_name(type);
+		const char *codec = obs_get_encoder_codec(type);
+		uint32_t caps = obs_get_encoder_caps(type);
+
+		QString qName = QT_UTF8(name);
+		QString qType = QT_UTF8(type);
+
+		if (obs_get_encoder_type(type) == OBS_ENCODER_VIDEO) {
+			if ((caps & ENCODER_HIDE_FLAGS) != 0)
+				continue;
+
+			if (service_supports_codec(vcodecs, codec))
+				ui->advOutEncoder->addItem(qName, qType);
+			if (!streamOnly)
+				ui->advOutRecEncoder->addItem(qName, qType);
+		}
+
+		if (obs_get_encoder_type(type) == OBS_ENCODER_AUDIO) {
+			if (service_supports_codec(acodecs, codec))
+				ui->advOutAEncoder->addItem(qName, qType);
+			if (!streamOnly)
+				ui->advOutRecAEncoder->addItem(qName, qType);
+		}
+	}
+
+	ui->advOutEncoder->model()->sort(0);
+	ui->advOutAEncoder->model()->sort(0);
+
+	if (!streamOnly) {
+		ui->advOutRecEncoder->model()->sort(0);
+		ui->advOutRecEncoder->insertItem(0, TEXT_USE_STREAM_ENC,
+						 "none");
+		ui->advOutRecAEncoder->model()->sort(0);
+		ui->advOutRecAEncoder->insertItem(0, TEXT_USE_STREAM_ENC,
+						  "none");
+	}
+
+	/* ------------------------------------------------- */
+	/* load simple stream encoders                       */
+
+#define ENCODER_STR(str) QTStr("Basic.Settings.Output.Simple.Encoder." str)
+
+	ui->simpleOutStrEncoder->addItem(ENCODER_STR("Software"),
+					 QString(SIMPLE_ENCODER_X264));
+#ifdef _WIN32
+	if (service_supports_encoder(vcodecs, "obs_qsv11"))
+		ui->simpleOutStrEncoder->addItem(
+			ENCODER_STR("Hardware.QSV.H264"),
+			QString(SIMPLE_ENCODER_QSV));
+	if (service_supports_encoder(vcodecs, "obs_qsv11_av1"))
+		ui->simpleOutStrEncoder->addItem(
+			ENCODER_STR("Hardware.QSV.AV1"),
+			QString(SIMPLE_ENCODER_QSV_AV1));
+#endif
+	if (service_supports_encoder(vcodecs, "ffmpeg_nvenc"))
+		ui->simpleOutStrEncoder->addItem(
+			ENCODER_STR("Hardware.NVENC.H264"),
+			QString(SIMPLE_ENCODER_NVENC));
+	if (service_supports_encoder(vcodecs, "jim_av1_nvenc"))
+		ui->simpleOutStrEncoder->addItem(
+			ENCODER_STR("Hardware.NVENC.AV1"),
+			QString(SIMPLE_ENCODER_NVENC_AV1));
+#ifdef ENABLE_HEVC
+	if (service_supports_encoder(vcodecs, "h265_texture_amf"))
+		ui->simpleOutStrEncoder->addItem(
+			ENCODER_STR("Hardware.AMD.HEVC"),
+			QString(SIMPLE_ENCODER_AMD_HEVC));
+	if (service_supports_encoder(vcodecs, "ffmpeg_hevc_nvenc"))
+		ui->simpleOutStrEncoder->addItem(
+			ENCODER_STR("Hardware.NVENC.HEVC"),
+			QString(SIMPLE_ENCODER_NVENC_HEVC));
+#endif
+	if (service_supports_encoder(vcodecs, "h264_texture_amf"))
+		ui->simpleOutStrEncoder->addItem(
+			ENCODER_STR("Hardware.AMD.H264"),
+			QString(SIMPLE_ENCODER_AMD));
+	if (service_supports_encoder(vcodecs, "av1_texture_amf"))
+		ui->simpleOutStrEncoder->addItem(
+			ENCODER_STR("Hardware.AMD.AV1"),
+			QString(SIMPLE_ENCODER_AMD_AV1));
+/* Preprocessor guard required for the macOS version check */
+#ifdef __APPLE__
+	if (service_supports_encoder(
+		    vcodecs, "com.apple.videotoolbox.videoencoder.ave.avc")
+#ifndef __aarch64__
+	    && os_get_emulation_status() == true
+#endif
+	) {
+		if (__builtin_available(macOS 13.0, *)) {
+			ui->simpleOutStrEncoder->addItem(
+				ENCODER_STR("Hardware.Apple.H264"),
+				QString(SIMPLE_ENCODER_APPLE_H264));
+		}
+	}
+#ifdef ENABLE_HEVC
+	if (service_supports_encoder(
+		    vcodecs, "com.apple.videotoolbox.videoencoder.ave.hevc")
+#ifndef __aarch64__
+	    && os_get_emulation_status() == true
+#endif
+	) {
+		if (__builtin_available(macOS 13.0, *)) {
+			ui->simpleOutStrEncoder->addItem(
+				ENCODER_STR("Hardware.Apple.HEVC"),
+				QString(SIMPLE_ENCODER_APPLE_HEVC));
+		}
+	}
+#endif
+#endif
+	if (service_supports_encoder(acodecs, "CoreAudio_AAC") ||
+	    service_supports_encoder(acodecs, "libfdk_aac") ||
+	    service_supports_encoder(acodecs, "ffmpeg_aac"))
+		ui->simpleOutStrAEncoder->addItem(
+			QTStr("Basic.Settings.Output.Simple.Codec.AAC.Default"),
+			"aac");
+	if (service_supports_encoder(acodecs, "ffmpeg_opus"))
+		ui->simpleOutStrAEncoder->addItem(
+			QTStr("Basic.Settings.Output.Simple.Codec.Opus"),
+			"opus");
+#undef ENCODER_STR
+
+	/* ------------------------------------------------- */
+	/* Find fallback encoders                            */
+
+	if (!lastAdvVideoEnc.isEmpty()) {
+		int idx = ui->advOutEncoder->findData(lastAdvVideoEnc);
+		if (idx == -1) {
+			lastAdvVideoEnc = get_adv_fallback(lastAdvVideoEnc);
+			ui->advOutEncoder->setProperty("changed",
+						       QVariant(true));
+			OutputsChanged();
+		}
+
+		idx = ui->advOutEncoder->findData(lastAdvVideoEnc);
+		s2.unblock();
+		ui->advOutEncoder->setCurrentIndex(idx);
+	}
+
+	if (!lastAdvAudioEnc.isEmpty()) {
+		int idx = ui->advOutAEncoder->findData(lastAdvAudioEnc);
+		if (idx == -1) {
+			lastAdvAudioEnc =
+				get_adv_audio_fallback(lastAdvAudioEnc);
+			ui->advOutAEncoder->setProperty("changed",
+							QVariant(true));
+			OutputsChanged();
+		}
+
+		idx = ui->advOutAEncoder->findData(lastAdvAudioEnc);
+		s4.unblock();
+		ui->advOutAEncoder->setCurrentIndex(idx);
+	}
+
+	if (!lastVideoEnc.isEmpty()) {
+		int idx = ui->simpleOutStrEncoder->findData(lastVideoEnc);
+		if (idx == -1) {
+			lastVideoEnc = get_simple_fallback(lastVideoEnc);
+			ui->simpleOutStrEncoder->setProperty("changed",
+							     QVariant(true));
+			OutputsChanged();
+		}
+
+		idx = ui->simpleOutStrEncoder->findData(lastVideoEnc);
+		s1.unblock();
+		ui->simpleOutStrEncoder->setCurrentIndex(idx);
+	}
+
+	if (!lastAudioEnc.isEmpty()) {
+		int idx = ui->simpleOutStrAEncoder->findData(lastAudioEnc);
+		if (idx == -1) {
+			lastAudioEnc = (lastAudioEnc == "opus") ? "aac"
+								: "opus";
+			ui->simpleOutStrAEncoder->setProperty("changed",
+							      QVariant(true));
+			OutputsChanged();
+		}
+
+		idx = ui->simpleOutStrAEncoder->findData(lastAudioEnc);
+		s3.unblock();
+		ui->simpleOutStrAEncoder->setCurrentIndex(idx);
+	}
 }

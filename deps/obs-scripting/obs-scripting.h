@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2017 by Hugh Bailey <jim@obsproject.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -46,6 +46,7 @@ EXPORT void obs_scripting_set_log_callback(scripting_log_handler_t handler,
 					   void *param);
 
 EXPORT bool obs_scripting_python_runtime_linked(void);
+EXPORT void obs_scripting_python_version(char *version, size_t version_length);
 EXPORT bool obs_scripting_python_loaded(void);
 EXPORT bool obs_scripting_load_python(const char *python_path);
 

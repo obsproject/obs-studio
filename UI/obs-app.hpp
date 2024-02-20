@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,6 +20,11 @@
 #include <QApplication>
 #include <QTranslator>
 #include <QPointer>
+#ifndef _WIN32
+#include <QSocketNotifier>
+#else
+#include <QSessionManager>
+#endif
 #include <obs.hpp>
 #include <util/lexer.h>
 #include <util/profiler.h>
@@ -42,8 +47,9 @@ std::string GenerateSpecifiedFilename(const char *extension, bool noSpace,
 				      const char *format);
 std::string GetFormatString(const char *format, const char *prefix,
 			    const char *suffix);
-std::string GetOutputFilename(const char *path, const char *ext, bool noSpace,
-			      bool overwrite, const char *format);
+std::string GetFormatExt(const char *container);
+std::string GetOutputFilename(const char *path, const char *container,
+			      bool noSpace, bool overwrite, const char *format);
 QObject *CreateShortcutFilter();
 
 struct BaseLexer {
@@ -68,16 +74,34 @@ public:
 
 typedef std::function<void()> VoidFunc;
 
+struct OBSThemeMeta {
+	bool dark;
+	std::string parent;
+	std::string author;
+};
+
+struct UpdateBranch {
+	QString name;
+	QString display_name;
+	QString description;
+	bool is_enabled;
+	bool is_visible;
+};
+
 class OBSApp : public QApplication {
 	Q_OBJECT
 
 private:
 	std::string locale;
 	std::string theme;
+
+	bool themeDarkMode = true;
 	ConfigFile globalConfig;
 	TextLookup textLookup;
 	QPointer<OBSMainWindow> mainWindow;
 	profiler_name_store_t *profilerNameStore = nullptr;
+	std::vector<UpdateBranch> updateBranches;
+	bool branches_loaded = false;
 
 	bool libobs_initialized = false;
 
@@ -101,8 +125,19 @@ private:
 	QPalette defaultPalette;
 
 	void ParseExtraThemeData(const char *path);
+	static OBSThemeMeta *ParseThemeMeta(const char *path);
 	void AddExtraThemeColor(QPalette &pal, int group, const char *name,
 				uint32_t color);
+
+	bool notify(QObject *receiver, QEvent *e) override;
+
+#ifndef _WIN32
+	static int sigintFd[2];
+	QSocketNotifier *snInt = nullptr;
+#else
+private slots:
+	void commitData(QSessionManager &manager);
+#endif
 
 public:
 	OBSApp(int &argc, char **argv, profiler_name_store_t *store);
@@ -126,7 +161,13 @@ public:
 	inline const char *GetLocale() const { return locale.c_str(); }
 
 	inline const char *GetTheme() const { return theme.c_str(); }
+	std::string GetTheme(std::string name, std::string path);
+	std::string SetParentTheme(std::string name);
 	bool SetTheme(std::string name, std::string path = "");
+	inline bool IsThemeDark() const { return themeDarkMode; };
+
+	void SetBranchData(const std::string &data);
+	std::vector<UpdateBranch> GetBranches();
 
 	inline lookup_t *GetTextLookup() const { return textLookup; }
 
@@ -147,9 +188,10 @@ public:
 
 	const char *GetLastCrashLog() const;
 
-	std::string GetVersionString() const;
+	std::string GetVersionString(bool platform = true) const;
 	bool IsPortableMode();
 	bool IsUpdaterDisabled();
+	bool IsMissingFilesCheckDisabled();
 
 	const char *InputAudioSource() const;
 	const char *OutputAudioSource() const;
@@ -180,9 +222,13 @@ public:
 	}
 
 	inline void PopUITranslation() { translatorHooks.pop_front(); }
+#ifndef _WIN32
+	static void SigIntSignalHandler(int);
+#endif
 
 public slots:
 	void Exec(VoidFunc func);
+	void ProcessSigInt();
 
 signals:
 	void StyleChanged();
@@ -209,10 +255,14 @@ inline const char *Str(const char *lookup)
 {
 	return App()->GetString(lookup);
 }
-#define QTStr(lookupVal) QString::fromUtf8(Str(lookupVal))
+inline QString QTStr(const char *lookupVal)
+{
+	return QString::fromUtf8(Str(lookupVal));
+}
 
 bool GetFileSafeName(const char *name, std::string &file);
 bool GetClosestUnusedFileName(std::string &path, const char *extension);
+bool GetUnusedSceneCollectionFile(std::string &name, std::string &file);
 
 bool WindowPositionValid(QRect rect);
 
@@ -224,6 +274,9 @@ static inline int GetProfilePath(char *path, size_t size, const char *file)
 }
 
 extern bool portable_mode;
+extern bool steam;
+extern bool safe_mode;
+extern bool disable_3p_plugins;
 
 extern bool opt_start_streaming;
 extern bool opt_start_recording;
@@ -235,3 +288,9 @@ extern bool opt_allow_opengl;
 extern bool opt_always_on_top;
 extern std::string opt_starting_scene;
 extern bool restart;
+extern bool restart_safe;
+
+#ifdef _WIN32
+extern "C" void install_dll_blocklist_hook(void);
+extern "C" void log_blocked_dlls(void);
+#endif

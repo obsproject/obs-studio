@@ -4,7 +4,8 @@
 
 DeckLinkInput::DeckLinkInput(obs_source_t *source,
 			     DeckLinkDeviceDiscovery *discovery_)
-	: DecklinkBase(discovery_), source(source)
+	: DecklinkBase(discovery_),
+	  source(source)
 {
 	discovery->AddCallback(DeckLinkInput::DevicesChanged, this);
 }
@@ -100,7 +101,7 @@ bool DeckLinkInput::Activate(DeckLinkDevice *device, long long modeId,
 		return false;
 	}
 
-	if (!instance->StartCapture(mode, bmdVideoConnection,
+	if (!instance->StartCapture(mode, allow10Bit, bmdVideoConnection,
 				    bmdAudioConnection)) {
 		instance = nullptr;
 		return false;

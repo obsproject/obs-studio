@@ -11,7 +11,8 @@
 
 #include "gl-decs.h"
 #include "graphics-hook.h"
-#include "../funchook.h"
+
+#include <detours.h>
 
 #define DUMMY_WINDOW_CLASS_NAME L"graphics_hook_gl_dummy_window"
 
@@ -24,10 +25,15 @@ static const GUID GUID_IDXGIResource =
 
 /* clang-format on */
 
-static struct func_hook swap_buffers;
-static struct func_hook wgl_swap_layer_buffers;
-static struct func_hook wgl_swap_buffers;
-static struct func_hook wgl_delete_context;
+typedef BOOL(WINAPI *PFN_SwapBuffers)(HDC);
+typedef BOOL(WINAPI *PFN_WglSwapLayerBuffers)(HDC, UINT);
+typedef BOOL(WINAPI *PFN_WglSwapBuffers)(HDC);
+typedef BOOL(WINAPI *PFN_WglDeleteContext)(HGLRC);
+
+PFN_SwapBuffers RealSwapBuffers = NULL;
+PFN_WglSwapLayerBuffers RealWglSwapLayerBuffers = NULL;
+PFN_WglSwapBuffers RealWglSwapBuffers = NULL;
+PFN_WglDeleteContext RealWglDeleteContext = NULL;
 
 static bool darkest_dungeon_fix = false;
 static bool functions_initialized = false;
@@ -71,6 +77,7 @@ struct gl_data {
 static HMODULE gl = NULL;
 static bool nv_capture_available = false;
 static struct gl_data data = {0};
+__declspec(thread) static int swap_recurse;
 
 static inline bool gl_error(const char *func, const char *str)
 {
@@ -89,10 +96,10 @@ static void gl_free(void)
 
 	if (data.using_shtex) {
 		if (data.gl_dxobj)
-			jimglDXUnregisterObjectNV(data.gl_device,
+			obsglDXUnregisterObjectNV(data.gl_device,
 						  data.gl_dxobj);
 		if (data.gl_device)
-			jimglDXCloseDeviceNV(data.gl_device);
+			obsglDXCloseDeviceNV(data.gl_device);
 		if (data.texture)
 			glDeleteTextures(1, &data.texture);
 		if (data.d3d11_tex)
@@ -140,7 +147,7 @@ static inline void *base_get_proc(const char *name)
 
 static inline void *wgl_get_proc(const char *name)
 {
-	return (void *)jimglGetProcAddress(name);
+	return (void *)obsglGetProcAddress(name);
 }
 
 static inline void *get_proc(const char *name)
@@ -154,21 +161,21 @@ static inline void *get_proc(const char *name)
 
 static void init_nv_functions(void)
 {
-	jimglDXSetResourceShareHandleNV =
+	obsglDXSetResourceShareHandleNV =
 		get_proc("wglDXSetResourceShareHandleNV");
-	jimglDXOpenDeviceNV = get_proc("wglDXOpenDeviceNV");
-	jimglDXCloseDeviceNV = get_proc("wglDXCloseDeviceNV");
-	jimglDXRegisterObjectNV = get_proc("wglDXRegisterObjectNV");
-	jimglDXUnregisterObjectNV = get_proc("wglDXUnregisterObjectNV");
-	jimglDXObjectAccessNV = get_proc("wglDXObjectAccessNV");
-	jimglDXLockObjectsNV = get_proc("wglDXLockObjectsNV");
-	jimglDXUnlockObjectsNV = get_proc("wglDXUnlockObjectsNV");
+	obsglDXOpenDeviceNV = get_proc("wglDXOpenDeviceNV");
+	obsglDXCloseDeviceNV = get_proc("wglDXCloseDeviceNV");
+	obsglDXRegisterObjectNV = get_proc("wglDXRegisterObjectNV");
+	obsglDXUnregisterObjectNV = get_proc("wglDXUnregisterObjectNV");
+	obsglDXObjectAccessNV = get_proc("wglDXObjectAccessNV");
+	obsglDXLockObjectsNV = get_proc("wglDXLockObjectsNV");
+	obsglDXUnlockObjectsNV = get_proc("wglDXUnlockObjectsNV");
 
 	nv_capture_available =
-		!!jimglDXSetResourceShareHandleNV && !!jimglDXOpenDeviceNV &&
-		!!jimglDXCloseDeviceNV && !!jimglDXRegisterObjectNV &&
-		!!jimglDXUnregisterObjectNV && !!jimglDXObjectAccessNV &&
-		!!jimglDXLockObjectsNV && !!jimglDXUnlockObjectsNV;
+		!!obsglDXSetResourceShareHandleNV && !!obsglDXOpenDeviceNV &&
+		!!obsglDXCloseDeviceNV && !!obsglDXRegisterObjectNV &&
+		!!obsglDXUnregisterObjectNV && !!obsglDXObjectAccessNV &&
+		!!obsglDXLockObjectsNV && !!obsglDXUnlockObjectsNV;
 
 	if (nv_capture_available)
 		hlog("Shared-texture OpenGL capture available");
@@ -188,15 +195,15 @@ static bool init_gl_functions(void)
 {
 	bool success = true;
 
-	jimglGetProcAddress = base_get_proc("wglGetProcAddress");
-	if (!jimglGetProcAddress) {
+	obsglGetProcAddress = base_get_proc("wglGetProcAddress");
+	if (!obsglGetProcAddress) {
 		hlog("init_gl_functions: failed to get wglGetProcAddress");
 		return false;
 	}
 
-	GET_PROC(init_gl_functions, jimglMakeCurrent, wglMakeCurrent);
-	GET_PROC(init_gl_functions, jimglGetCurrentDC, wglGetCurrentDC);
-	GET_PROC(init_gl_functions, jimglGetCurrentContext,
+	GET_PROC(init_gl_functions, obsglMakeCurrent, wglMakeCurrent);
+	GET_PROC(init_gl_functions, obsglGetCurrentDC, wglGetCurrentDC);
+	GET_PROC(init_gl_functions, obsglGetCurrentContext,
 		 wglGetCurrentContext);
 	GET_PROC(init_gl_functions, glTexImage2D, glTexImage2D);
 	GET_PROC(init_gl_functions, glReadBuffer, glReadBuffer);
@@ -285,7 +292,7 @@ static inline bool gl_shtex_init_d3d11(void)
 
 	DXGI_SWAP_CHAIN_DESC desc = {0};
 	desc.BufferCount = 2;
-	desc.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	desc.BufferDesc.Format = data.format;
 	desc.BufferDesc.Width = 2;
 	desc.BufferDesc.Height = 2;
 	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
@@ -350,11 +357,11 @@ static inline bool gl_shtex_init_d3d11_tex(void)
 	desc.Height = data.cy;
 	desc.MipLevels = 1;
 	desc.ArraySize = 1;
-	desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	desc.Format = data.format;
 	desc.SampleDesc.Count = 1;
 	desc.Usage = D3D11_USAGE_DEFAULT;
 	desc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
-	desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 
 	hr = ID3D11Device_CreateTexture2D(data.d3d11_device, &desc, NULL,
 					  &data.d3d11_tex);
@@ -386,7 +393,7 @@ static inline bool gl_shtex_init_d3d11_tex(void)
 
 static inline bool gl_shtex_init_gl_tex(void)
 {
-	data.gl_device = jimglDXOpenDeviceNV(data.d3d11_device);
+	data.gl_device = obsglDXOpenDeviceNV(data.d3d11_device);
 	if (!data.gl_device) {
 		hlog("gl_shtex_init_gl_tex: failed to open device");
 		return false;
@@ -397,7 +404,7 @@ static inline bool gl_shtex_init_gl_tex(void)
 		return false;
 	}
 
-	data.gl_dxobj = jimglDXRegisterObjectNV(data.gl_device, data.d3d11_tex,
+	data.gl_dxobj = obsglDXRegisterObjectNV(data.gl_device, data.d3d11_tex,
 						data.texture, GL_TEXTURE_2D,
 						WGL_ACCESS_WRITE_DISCARD_NV);
 	if (!data.gl_dxobj) {
@@ -602,7 +609,7 @@ static void gl_shtex_capture(void)
 	GLint last_fbo;
 	GLint last_tex;
 
-	jimglDXLockObjectsNV(data.gl_device, 1, &data.gl_dxobj);
+	obsglDXLockObjectsNV(data.gl_device, 1, &data.gl_dxobj);
 
 	glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &last_fbo);
 	if (gl_error("gl_shtex_capture", "failed to get last fbo")) {
@@ -619,7 +626,7 @@ static void gl_shtex_capture(void)
 	glBindTexture(GL_TEXTURE_2D, last_tex);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, last_fbo);
 
-	jimglDXUnlockObjectsNV(data.gl_device, 1, &data.gl_dxobj);
+	obsglDXUnlockObjectsNV(data.gl_device, 1, &data.gl_dxobj);
 
 	IDXGISwapChain_Present(data.dxgi_swap, 0, 0);
 }
@@ -759,79 +766,69 @@ static void gl_capture(HDC hdc)
 	}
 }
 
+static inline void gl_swap_begin(HDC hdc)
+{
+	const bool first = swap_recurse == 0;
+	++swap_recurse;
+
+	if (first && !global_hook_info->capture_overlay)
+		gl_capture(hdc);
+}
+
+static inline void gl_swap_end(HDC hdc)
+{
+	--swap_recurse;
+	const bool first = swap_recurse == 0;
+
+	if (first && global_hook_info->capture_overlay)
+		gl_capture(hdc);
+}
+
 static BOOL WINAPI hook_swap_buffers(HDC hdc)
 {
-	BOOL ret;
+	gl_swap_begin(hdc);
 
-	if (!global_hook_info->capture_overlay)
-		gl_capture(hdc);
+	const BOOL ret = RealSwapBuffers(hdc);
 
-	unhook(&swap_buffers);
-	BOOL(WINAPI * call)(HDC) = swap_buffers.call_addr;
-	ret = call(hdc);
-	rehook(&swap_buffers);
-
-	if (global_hook_info->capture_overlay)
-		gl_capture(hdc);
+	gl_swap_end(hdc);
 
 	return ret;
 }
 
 static BOOL WINAPI hook_wgl_swap_buffers(HDC hdc)
 {
-	BOOL ret;
+	gl_swap_begin(hdc);
 
-	if (!global_hook_info->capture_overlay)
-		gl_capture(hdc);
+	const BOOL ret = RealWglSwapBuffers(hdc);
 
-	unhook(&wgl_swap_buffers);
-	BOOL(WINAPI * call)(HDC) = wgl_swap_buffers.call_addr;
-	ret = call(hdc);
-	rehook(&wgl_swap_buffers);
-
-	if (global_hook_info->capture_overlay)
-		gl_capture(hdc);
+	gl_swap_end(hdc);
 
 	return ret;
 }
 
 static BOOL WINAPI hook_wgl_swap_layer_buffers(HDC hdc, UINT planes)
 {
-	BOOL ret;
+	gl_swap_begin(hdc);
 
-	if (!global_hook_info->capture_overlay)
-		gl_capture(hdc);
+	const BOOL ret = RealWglSwapLayerBuffers(hdc, planes);
 
-	unhook(&wgl_swap_layer_buffers);
-	BOOL(WINAPI * call)(HDC, UINT) = wgl_swap_layer_buffers.call_addr;
-	ret = call(hdc, planes);
-	rehook(&wgl_swap_layer_buffers);
-
-	if (global_hook_info->capture_overlay)
-		gl_capture(hdc);
+	gl_swap_end(hdc);
 
 	return ret;
 }
 
 static BOOL WINAPI hook_wgl_delete_context(HGLRC hrc)
 {
-	BOOL ret;
-
 	if (capture_active() && functions_initialized) {
-		HDC last_hdc = jimglGetCurrentDC();
-		HGLRC last_hrc = jimglGetCurrentContext();
+		HDC last_hdc = obsglGetCurrentDC();
+		HGLRC last_hrc = obsglGetCurrentContext();
 
-		jimglMakeCurrent(data.hdc, hrc);
+		obsglMakeCurrent(data.hdc, hrc);
 		gl_free();
-		jimglMakeCurrent(last_hdc, last_hrc);
+		obsglMakeCurrent(last_hdc, last_hrc);
 	}
 
-	unhook(&wgl_delete_context);
-	BOOL(WINAPI * call)(HGLRC) = wgl_delete_context.call_addr;
-	ret = call(hrc);
-	rehook(&wgl_delete_context);
-
-	return ret;
+	return RealWglDeleteContext(hrc);
 }
 
 static bool gl_register_window(void)
@@ -879,24 +876,44 @@ bool hook_gl(void)
 	wgl_slb_proc = base_get_proc("wglSwapLayerBuffers");
 	wgl_sb_proc = base_get_proc("wglSwapBuffers");
 
-	hook_init(&swap_buffers, SwapBuffers, hook_swap_buffers, "SwapBuffers");
+	DetourTransactionBegin();
+
+	RealSwapBuffers = SwapBuffers;
+	DetourAttach((PVOID *)&RealSwapBuffers, hook_swap_buffers);
 	if (wgl_dc_proc) {
-		hook_init(&wgl_delete_context, wgl_dc_proc,
-			  hook_wgl_delete_context, "wglDeleteContext");
-		rehook(&wgl_delete_context);
+		RealWglDeleteContext = (PFN_WglDeleteContext)wgl_dc_proc;
+		DetourAttach((PVOID *)&RealWglDeleteContext,
+			     hook_wgl_delete_context);
 	}
 	if (wgl_slb_proc) {
-		hook_init(&wgl_swap_layer_buffers, wgl_slb_proc,
-			  hook_wgl_swap_layer_buffers, "wglSwapLayerBuffers");
-		rehook(&wgl_swap_layer_buffers);
+		RealWglSwapLayerBuffers = (PFN_WglSwapLayerBuffers)wgl_slb_proc;
+		DetourAttach((PVOID *)&RealWglSwapLayerBuffers,
+			     hook_wgl_swap_layer_buffers);
 	}
 	if (wgl_sb_proc) {
-		hook_init(&wgl_swap_buffers, wgl_sb_proc, hook_wgl_swap_buffers,
-			  "wglSwapBuffers");
-		rehook(&wgl_swap_buffers);
+		RealWglSwapBuffers = (PFN_WglSwapBuffers)wgl_sb_proc;
+		DetourAttach((PVOID *)&RealWglSwapBuffers,
+			     hook_wgl_swap_buffers);
 	}
 
-	rehook(&swap_buffers);
+	const LONG error = DetourTransactionCommit();
+	const bool success = error == NO_ERROR;
+	if (success) {
+		hlog("Hooked SwapBuffers");
+		if (RealWglDeleteContext)
+			hlog("Hooked wglDeleteContext");
+		if (RealWglSwapLayerBuffers)
+			hlog("Hooked wglSwapLayerBuffers");
+		if (RealWglSwapBuffers)
+			hlog("Hooked wglSwapBuffers");
+		hlog("Hooked GL");
+	} else {
+		RealSwapBuffers = NULL;
+		RealWglDeleteContext = NULL;
+		RealWglSwapLayerBuffers = NULL;
+		RealWglSwapBuffers = NULL;
+		hlog("Failed to attach Detours hook: %ld", error);
+	}
 
-	return true;
+	return success;
 }

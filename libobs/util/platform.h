@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -84,6 +84,7 @@ EXPORT int os_dtostr(double value, char *dst, size_t size);
 EXPORT void *os_dlopen(const char *path);
 EXPORT void *os_dlsym(void *module, const char *func);
 EXPORT void os_dlclose(void *module);
+EXPORT bool os_is_obs_plugin(const char *path);
 
 struct os_cpu_usage_info;
 typedef struct os_cpu_usage_info os_cpu_usage_info_t;
@@ -102,6 +103,7 @@ EXPORT void os_end_high_performance(os_performance_token_t *);
  * Returns false if already at or past target time.
  */
 EXPORT bool os_sleepto_ns(uint64_t time_target);
+EXPORT bool os_sleepto_ns_fast(uint64_t time_target);
 EXPORT void os_sleep_ms(uint32_t duration);
 
 EXPORT uint64_t os_gettime_ns(void);
@@ -120,6 +122,8 @@ EXPORT size_t os_get_abs_path(const char *path, char *abspath, size_t size);
 EXPORT char *os_get_abs_path_ptr(const char *path);
 
 EXPORT const char *os_get_path_extension(const char *path);
+
+EXPORT bool os_get_emulation_status(void);
 
 struct os_dir;
 typedef struct os_dir os_dir_t;
@@ -185,6 +189,7 @@ EXPORT int os_get_physical_cores(void);
 EXPORT int os_get_logical_cores(void);
 
 EXPORT uint64_t os_get_sys_free_size(void);
+EXPORT uint64_t os_get_sys_total_size(void);
 
 struct os_proc_memory_usage {
 	uint64_t resident_size;
@@ -196,12 +201,9 @@ EXPORT bool os_get_proc_memory_usage(os_proc_memory_usage_t *usage);
 EXPORT uint64_t os_get_proc_resident_size(void);
 EXPORT uint64_t os_get_proc_virtual_size(void);
 
-#ifdef _MSC_VER
-#define strtoll _strtoi64
-#if _MSC_VER < 1900
-#define snprintf _snprintf
-#endif
-#endif
+#define UUID_STR_LENGTH 36
+
+EXPORT char *os_generate_uuid(void);
 
 /* clang-format off */
 #ifdef __APPLE__

@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -170,6 +170,12 @@ static inline void gl_delete_framebuffers(GLsizei num_arrays, GLuint *arrays)
 static inline bool gl_tex_param_f(GLenum target, GLenum param, GLfloat val)
 {
 	glTexParameterf(target, param, val);
+	return gl_success("glTexParameterf");
+}
+
+static inline bool gl_tex_param_fv(GLenum target, GLenum param, GLfloat *val)
+{
+	glTexParameterfv(target, param, val);
 	return gl_success("glTexParameterf");
 }
 

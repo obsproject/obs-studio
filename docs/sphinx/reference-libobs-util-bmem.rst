@@ -26,7 +26,7 @@ Memory Functions
 
 .. function:: void bfree(void *ptr)
 
-   Frees memory allocated with :c:func:`bmalloc()` or :c:func:`bfree()`.
+   Frees memory allocated with :c:func:`bmalloc()`.
 
 ---------------------
 

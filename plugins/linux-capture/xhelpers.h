@@ -136,6 +136,14 @@ void xshm_xcb_detach(xcb_shm_t *shm);
  */
 xcb_screen_t *xcb_get_screen(xcb_connection_t *xcb, int screen);
 
+/**
+ * Get the screen id for the given root window
+ *
+ * @param conn xcb connection
+ * @param root window id for the root window
+ * @return screen id
+ */
+int xcb_get_screen_for_root(xcb_connection_t *conn, xcb_window_t root);
 #ifdef __cplusplus
 }
 #endif

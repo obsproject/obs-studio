@@ -1,4 +1,8 @@
 #include "obs-ffmpeg-mux.h"
+#include <obs-avc.h>
+#ifdef ENABLE_HEVC
+#include <obs-hevc.h>
+#endif
 
 #define do_log(level, format, ...)                      \
 	blog(level, "[ffmpeg hls muxer: '%s'] " format, \
@@ -31,7 +35,7 @@ void ffmpeg_hls_mux_destroy(void *data)
 		os_event_destroy(stream->stop_event);
 
 		da_free(stream->mux_packets);
-		circlebuf_free(&stream->packets);
+		deque_free(&stream->packets);
 
 		os_process_pipe_destroy(stream->pipe);
 		dstr_free(&stream->path);
@@ -73,7 +77,7 @@ static bool process_packet(struct ffmpeg_muxer *stream)
 	pthread_mutex_lock(&stream->write_mutex);
 
 	if (stream->packets.size) {
-		circlebuf_pop_front(&stream->packets, &packet, sizeof(packet));
+		deque_pop_front(&stream->packets, &packet, sizeof(packet));
 		has_packet = true;
 	}
 
@@ -122,15 +126,17 @@ bool ffmpeg_hls_mux_start(void *data)
 	service = obs_output_get_service(stream->output);
 	if (!service)
 		return false;
-	path_str = obs_service_get_url(service);
-	stream_key = obs_service_get_key(service);
+	path_str = obs_service_get_connect_info(
+		service, OBS_SERVICE_CONNECT_INFO_SERVER_URL);
+	stream_key = obs_service_get_connect_info(
+		service, OBS_SERVICE_CONNECT_INFO_STREAM_KEY);
 	dstr_copy(&stream->stream_key, stream_key);
 	dstr_copy(&path, path_str);
 	dstr_replace(&path, "{stream_key}", stream_key);
 	dstr_copy(&stream->muxer_settings,
 		  "method=PUT http_persistent=1 ignore_io_errors=1 ");
 	dstr_catf(&stream->muxer_settings, "http_user_agent=libobs/%s",
-		  OBS_VERSION);
+		  obs_get_version_string());
 
 	vencoder = obs_output_get_video_encoder(stream->output);
 	settings = obs_encoder_get_settings(vencoder);
@@ -174,33 +180,33 @@ bool ffmpeg_hls_mux_start(void *data)
 static bool write_packet_to_buf(struct ffmpeg_muxer *stream,
 				struct encoder_packet *packet)
 {
-	circlebuf_push_back(&stream->packets, packet,
-			    sizeof(struct encoder_packet));
+	deque_push_back(&stream->packets, packet,
+			sizeof(struct encoder_packet));
 	return true;
 }
 
 static void drop_frames(struct ffmpeg_muxer *stream, int highest_priority)
 {
-	struct circlebuf new_buf = {0};
+	struct deque new_buf = {0};
 	int num_frames_dropped = 0;
 
-	circlebuf_reserve(&new_buf, sizeof(struct encoder_packet) * 8);
+	deque_reserve(&new_buf, sizeof(struct encoder_packet) * 8);
 
 	while (stream->packets.size) {
 		struct encoder_packet packet;
-		circlebuf_pop_front(&stream->packets, &packet, sizeof(packet));
+		deque_pop_front(&stream->packets, &packet, sizeof(packet));
 
 		/* do not drop audio data or video keyframes */
 		if (packet.type == OBS_ENCODER_AUDIO ||
 		    packet.drop_priority >= highest_priority) {
-			circlebuf_push_back(&new_buf, &packet, sizeof(packet));
+			deque_push_back(&new_buf, &packet, sizeof(packet));
 		} else {
 			num_frames_dropped++;
 			obs_encoder_packet_release(&packet);
 		}
 	}
 
-	circlebuf_free(&stream->packets);
+	deque_free(&stream->packets);
 	stream->packets = new_buf;
 
 	if (stream->min_priority < highest_priority)
@@ -216,7 +222,7 @@ static bool find_first_video_packet(struct ffmpeg_muxer *stream,
 
 	for (size_t i = 0; i < count; i++) {
 		struct encoder_packet *cur =
-			circlebuf_data(&stream->packets, i * sizeof(*first));
+			deque_data(&stream->packets, i * sizeof(*first));
 		if (cur->type == OBS_ENCODER_VIDEO && !cur->keyframe) {
 			*first = *cur;
 			return true;
@@ -266,7 +272,6 @@ void ffmpeg_hls_mux_data(void *data, struct encoder_packet *packet)
 {
 	struct ffmpeg_muxer *stream = data;
 	struct encoder_packet new_packet;
-	struct encoder_packet tmp_packet;
 	bool added_packet = false;
 
 	if (!active(stream))
@@ -292,9 +297,18 @@ void ffmpeg_hls_mux_data(void *data, struct encoder_packet *packet)
 	}
 
 	if (packet->type == OBS_ENCODER_VIDEO) {
-		obs_parse_avc_packet(&tmp_packet, packet);
-		packet->drop_priority = tmp_packet.priority;
-		obs_encoder_packet_release(&tmp_packet);
+		const char *const codec =
+			obs_encoder_get_codec(packet->encoder);
+		if (strcmp(codec, "h264") == 0) {
+			packet->drop_priority =
+				obs_parse_avc_packet_priority(packet);
+		}
+#ifdef ENABLE_HEVC
+		else if (strcmp(codec, "hevc") == 0) {
+			packet->drop_priority =
+				obs_parse_hevc_packet_priority(packet);
+		}
+#endif
 	}
 	obs_encoder_packet_ref(&new_packet, packet);
 
@@ -319,7 +333,12 @@ struct obs_output_info ffmpeg_hls_muxer = {
 	.id = "ffmpeg_hls_muxer",
 	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_MULTI_TRACK |
 		 OBS_OUTPUT_SERVICE,
+	.protocols = "HLS",
+#ifdef ENABLE_HEVC
+	.encoded_video_codecs = "h264;hevc",
+#else
 	.encoded_video_codecs = "h264",
+#endif
 	.encoded_audio_codecs = "aac",
 	.get_name = ffmpeg_hls_mux_getname,
 	.create = ffmpeg_hls_mux_create,

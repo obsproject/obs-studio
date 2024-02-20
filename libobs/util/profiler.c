@@ -452,8 +452,8 @@ static uint64_t copy_map_to_array(profile_times_table *map,
 {
 	migrate_old_entries(map, false);
 
-	da_reserve((*entry_buffer), map->occupied);
-	da_resize((*entry_buffer), 0);
+	da_reserve(*entry_buffer, map->occupied);
+	da_resize(*entry_buffer, 0);
 
 	uint64_t min__ = ~(uint64_t)0;
 	uint64_t max__ = 0;
@@ -465,7 +465,7 @@ static uint64_t copy_map_to_array(profile_times_table *map,
 
 		profiler_time_entry *entry = &map->entries[i].entry;
 
-		da_push_back((*entry_buffer), entry);
+		da_push_back(*entry_buffer, entry);
 
 		calls += entry->count;
 		min__ = (min__ < entry->time_delta) ? min__ : entry->time_delta;
@@ -825,6 +825,8 @@ void profiler_free(void)
 	}
 
 	da_free(old_root_entries);
+
+	pthread_mutex_destroy(&root_mutex);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -858,6 +860,9 @@ void profiler_name_store_free(profiler_name_store_t *store)
 		bfree(store->names.array[i]);
 
 	da_free(store->names);
+
+	pthread_mutex_destroy(&store->mutex);
+
 	bfree(store);
 }
 

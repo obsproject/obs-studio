@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2017 by Hugh Bailey <jim@obsproject.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,7 +16,6 @@
 ******************************************************************************/
 
 #include "obs-scripting-lua.h"
-#include "obs-scripting-config.h"
 #include <util/platform.h>
 #include <util/base.h>
 #include <util/dstr.h>
@@ -32,33 +31,36 @@
 #endif
 
 #ifdef __APPLE__
-#define SO_EXT "dylib"
+#define SO_EXT "so"
 #elif _WIN32
+#include <windows.h>
 #define SO_EXT "dll"
 #else
 #define SO_EXT "so"
 #endif
 
-static const char *startup_script_template = "\
+static const char *startup_script_template =
+	"\
 for val in pairs(package.preload) do\n\
 	package.preload[val] = nil\n\
 end\n\
-package.cpath = package.cpath .. \";\" .. \"%s/Contents/MacOS/?.so\" .. \";\" .. \"%s\" .. \"/?." SO_EXT
-					     "\"\n\
+package.cpath = package.cpath .. \";\" .. \"%s/?." SO_EXT
+	"\" .. \";\" .. \"%s\" .. \"/?." SO_EXT "\"\n\
 require \"obslua\"\n";
 
 static const char *get_script_path_func = "\
 function script_path()\n\
 	 return \"%s\"\n\
 end\n\
+package.cpath = package.cpath .. \";\" .. script_path() .. \"/?." SO_EXT "\"\n\
 package.path = package.path .. \";\" .. script_path() .. \"/?.lua\"\n";
 
 static char *startup_script = NULL;
 
-static pthread_mutex_t tick_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t tick_mutex;
 static struct obs_lua_script *first_tick_script = NULL;
 
-pthread_mutex_t lua_source_def_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t lua_source_def_mutex;
 
 #define ls_get_libobs_obj(type, lua_index, obs_obj)                      \
 	ls_get_libobs_obj_(script, #type " *", lua_index, obs_obj, NULL, \
@@ -75,7 +77,7 @@ static void add_hook_functions(lua_State *script);
 static int obs_lua_remove_tick_callback(lua_State *script);
 static int obs_lua_remove_main_render_callback(lua_State *script);
 
-#if UI_ENABLED
+#ifdef ENABLE_UI
 void add_lua_frontend_funcs(lua_State *script);
 #endif
 
@@ -84,6 +86,7 @@ static bool load_lua_script(struct obs_lua_script *data)
 	struct dstr str = {0};
 	bool success = false;
 	int ret;
+	char *file_data;
 
 	lua_State *script = luaL_newstate();
 	if (!script) {
@@ -116,15 +119,25 @@ static bool load_lua_script(struct obs_lua_script *data)
 
 	add_lua_source_functions(script);
 	add_hook_functions(script);
-#if UI_ENABLED
+#ifdef ENABLE_UI
 	add_lua_frontend_funcs(script);
 #endif
 
-	if (luaL_loadfile(script, data->base.path.array) != 0) {
-		script_warn(&data->base, "Error loading file: %s",
+	file_data = os_quick_read_utf8_file(data->base.path.array);
+	if (!file_data) {
+		script_warn(&data->base, "Error opening file: %s",
 			    lua_tostring(script, -1));
 		goto fail;
 	}
+
+	if (luaL_loadbuffer(script, file_data, strlen(file_data),
+			    data->base.path.array) != 0) {
+		script_warn(&data->base, "Error loading file: %s",
+			    lua_tostring(script, -1));
+		bfree(file_data);
+		goto fail;
+	}
+	bfree(file_data);
 
 	if (lua_pcall(script, 0, LUA_MULTRET, 0) != 0) {
 		script_warn(&data->base, "Error running file: %s",
@@ -139,22 +152,6 @@ static bool load_lua_script(struct obs_lua_script *data)
 		if (!success) {
 			goto fail;
 		}
-	}
-
-	lua_getglobal(script, "script_tick");
-	if (lua_isfunction(script, -1)) {
-		pthread_mutex_lock(&tick_mutex);
-
-		struct obs_lua_script *next = first_tick_script;
-		data->next_tick = next;
-		data->p_prev_next_tick = &first_tick_script;
-		if (next)
-			next->p_prev_next_tick = &data->next_tick;
-		first_tick_script = data;
-
-		data->tick = luaL_ref(script, LUA_REGISTRYINDEX);
-
-		pthread_mutex_unlock(&tick_mutex);
 	}
 
 	lua_getglobal(script, "script_properties");
@@ -211,6 +208,23 @@ static bool load_lua_script(struct obs_lua_script *data)
 	}
 
 	data->script = script;
+
+	lua_getglobal(script, "script_tick");
+	if (lua_isfunction(script, -1)) {
+		pthread_mutex_lock(&tick_mutex);
+
+		struct obs_lua_script *next = first_tick_script;
+		data->next_tick = next;
+		data->p_prev_next_tick = &first_tick_script;
+		if (next)
+			next->p_prev_next_tick = &data->next_tick;
+		first_tick_script = data;
+
+		data->tick = luaL_ref(script, LUA_REGISTRYINDEX);
+
+		pthread_mutex_unlock(&tick_mutex);
+	}
+
 	success = true;
 
 fail:
@@ -242,7 +256,7 @@ struct lua_obs_timer {
 	uint64_t interval;
 };
 
-static pthread_mutex_t timer_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t timer_mutex;
 static struct lua_obs_timer *first_timer = NULL;
 
 static inline void lua_obs_timer_init(struct lua_obs_timer *timer)
@@ -288,7 +302,7 @@ static void timer_call(struct script_callback *p_cb)
 {
 	struct lua_obs_callback *cb = (struct lua_obs_callback *)p_cb;
 
-	if (p_cb->removed)
+	if (script_callback_removed(p_cb))
 		return;
 
 	lock_callback();
@@ -329,7 +343,7 @@ static void obs_lua_main_render_callback(void *priv, uint32_t cx, uint32_t cy)
 	struct lua_obs_callback *cb = priv;
 	lua_State *script = cb->script;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		obs_remove_main_render_callback(obs_lua_main_render_callback,
 						cb);
 		return;
@@ -377,7 +391,7 @@ static void obs_lua_tick_callback(void *priv, float seconds)
 	struct lua_obs_callback *cb = priv;
 	lua_State *script = cb->script;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		obs_remove_tick_callback(obs_lua_tick_callback, cb);
 		return;
 	}
@@ -423,7 +437,7 @@ static void calldata_signal_callback(void *priv, calldata_t *cd)
 	struct lua_obs_callback *cb = priv;
 	lua_State *script = cb->script;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		signal_handler_remove_current();
 		return;
 	}
@@ -456,7 +470,7 @@ static int obs_lua_signal_handler_disconnect(lua_State *script)
 		const char *cb_signal =
 			calldata_string(&cb->base.extra, "signal");
 
-		if (cb_signal && strcmp(signal, cb_signal) != 0 &&
+		if (cb_signal && strcmp(signal, cb_signal) == 0 &&
 		    handler == cb_handler)
 			break;
 
@@ -505,7 +519,7 @@ static void calldata_signal_callback_global(void *priv, const char *signal,
 	struct lua_obs_callback *cb = priv;
 	lua_State *script = cb->script;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		signal_handler_remove_current();
 		return;
 	}
@@ -642,6 +656,17 @@ static int scene_enum_items(lua_State *script)
 	return 1;
 }
 
+static int sceneitem_group_enum_items(lua_State *script)
+{
+	obs_sceneitem_t *sceneitem;
+	if (!ls_get_libobs_obj(obs_sceneitem_t, 1, &sceneitem))
+		return 0;
+
+	lua_newtable(script);
+	obs_sceneitem_group_enum_items(sceneitem, enum_items_proc, script);
+	return 1;
+}
+
 /* -------------------------------------------- */
 
 static void defer_hotkey_unregister(void *p_cb)
@@ -663,7 +688,7 @@ static void hotkey_pressed(void *p_cb, bool pressed)
 	struct lua_obs_callback *cb = p_cb;
 	lua_State *script = cb->script;
 
-	if (cb->base.removed)
+	if (script_callback_removed(&cb->base))
 		return;
 
 	lock_callback();
@@ -689,7 +714,7 @@ static void hotkey_callback(void *p_cb, obs_hotkey_id id, obs_hotkey_t *hotkey,
 {
 	struct lua_obs_callback *cb = p_cb;
 
-	if (cb->base.removed)
+	if (script_callback_removed(&cb->base))
 		return;
 
 	if (pressed)
@@ -745,7 +770,7 @@ static bool button_prop_clicked(obs_properties_t *props, obs_property_t *p,
 	lua_State *script = cb->script;
 	bool ret = false;
 
-	if (cb->base.removed)
+	if (script_callback_removed(&cb->base))
 		return false;
 
 	lock_callback();
@@ -801,7 +826,7 @@ static bool modified_callback(void *p_cb, obs_properties_t *props,
 	lua_State *script = cb->script;
 	bool ret = false;
 
-	if (cb->base.removed)
+	if (script_callback_removed(&cb->base))
 		return false;
 
 	lock_callback();
@@ -1012,6 +1037,7 @@ static void add_hook_functions(lua_State *script)
 	add_func("obs_enum_sources", enum_sources);
 	add_func("obs_source_enum_filters", source_enum_filters);
 	add_func("obs_scene_enum_items", scene_enum_items);
+	add_func("obs_sceneitem_group_enum_items", sceneitem_group_enum_items);
 	add_func("source_list_release", source_list_release);
 	add_func("sceneitem_list_release", sceneitem_list_release);
 	add_func("calldata_source", calldata_source);
@@ -1078,7 +1104,7 @@ static void lua_tick(void *param, float seconds)
 		struct lua_obs_timer *next = timer->next;
 		struct lua_obs_callback *cb = lua_obs_timer_cb(timer);
 
-		if (cb->base.removed) {
+		if (script_callback_removed(&cb->base)) {
 			lua_obs_timer_remove(timer);
 		} else {
 			uint64_t elapsed = ts - timer->last_ts;
@@ -1105,8 +1131,11 @@ bool obs_lua_script_load(obs_script_t *s)
 	struct obs_lua_script *data = (struct obs_lua_script *)s;
 	if (!data->base.loaded) {
 		data->base.loaded = load_lua_script(data);
-		if (data->base.loaded)
+		if (data->base.loaded) {
+			blog(LOG_INFO, "[obs-scripting]: Loaded lua script: %s",
+			     data->base.file.array);
 			obs_lua_script_update(s, NULL);
+		}
 	}
 
 	return data->base.loaded;
@@ -1119,12 +1148,9 @@ obs_script_t *obs_lua_script_create(const char *path, obs_data_t *settings)
 	data->base.type = OBS_SCRIPT_LANG_LUA;
 	data->tick = LUA_REFNIL;
 
-	pthread_mutexattr_t attr;
-	pthread_mutexattr_init(&attr);
 	pthread_mutex_init_value(&data->mutex);
-	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 
-	if (pthread_mutex_init(&data->mutex, &attr) != 0) {
+	if (pthread_mutex_init_recursive(&data->mutex) != 0) {
 		bfree(data);
 		return NULL;
 	}
@@ -1160,6 +1186,25 @@ void obs_lua_script_unload(obs_script_t *s)
 	lua_State *script = data->script;
 
 	/* ---------------------------- */
+	/* mark callbacks as removed    */
+
+	pthread_mutex_lock(&data->mutex);
+
+	/* XXX: scripts can potentially make callbacks when this happens, so
+	 * this probably still isn't ideal as we can't predict how the
+	 * processor or operating system is going to schedule things. a more
+	 * ideal method would be to reference count the script objects and
+	 * atomically share ownership with callbacks when they're called. */
+	struct lua_obs_callback *cb =
+		(struct lua_obs_callback *)data->first_callback;
+	while (cb) {
+		os_atomic_set_bool(&cb->base.removed, true);
+		cb = (struct lua_obs_callback *)cb->base.next;
+	}
+
+	pthread_mutex_unlock(&data->mutex);
+
+	/* ---------------------------- */
 	/* undefine source types        */
 
 	undef_lua_script_sources(data);
@@ -1185,15 +1230,17 @@ void obs_lua_script_unload(obs_script_t *s)
 	/* call script_unload           */
 
 	pthread_mutex_lock(&data->mutex);
+	current_lua_script = data;
 
 	lua_getglobal(script, "script_unload");
 	lua_pcall(script, 0, 0, 0);
 
+	current_lua_script = NULL;
+
 	/* ---------------------------- */
 	/* remove all callbacks         */
 
-	struct lua_obs_callback *cb =
-		(struct lua_obs_callback *)data->first_callback;
+	cb = (struct lua_obs_callback *)data->first_callback;
 	while (cb) {
 		struct lua_obs_callback *next =
 			(struct lua_obs_callback *)cb->base.next;
@@ -1208,6 +1255,9 @@ void obs_lua_script_unload(obs_script_t *s)
 
 	lua_close(script);
 	s->loaded = false;
+
+	blog(LOG_INFO, "[obs-scripting]: Unloaded lua script: %s",
+	     data->base.file.array);
 }
 
 void obs_lua_script_destroy(obs_script_t *s)
@@ -1297,48 +1347,38 @@ void obs_lua_script_save(obs_script_t *s)
 
 void obs_lua_load(void)
 {
-	struct dstr dep_paths = {0};
 	struct dstr tmp = {0};
 
-	pthread_mutexattr_t attr;
-	pthread_mutexattr_init(&attr);
-	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-
 	pthread_mutex_init(&tick_mutex, NULL);
-	pthread_mutex_init(&timer_mutex, &attr);
+	pthread_mutex_init_recursive(&timer_mutex);
 	pthread_mutex_init(&lua_source_def_mutex, NULL);
 
 	/* ---------------------------------------------- */
 	/* Initialize Lua startup script                  */
 
-	char *bundlePath = "./";
-
-#ifdef __APPLE__
-	Class nsRunningApplication = objc_lookUpClass("NSRunningApplication");
-	SEL currentAppSel = sel_getUid("currentApplication");
-
-	typedef id (*running_app_func)(Class, SEL);
-	running_app_func operatingSystemName = (running_app_func)objc_msgSend;
-	id app = operatingSystemName(nsRunningApplication, currentAppSel);
-
-	typedef id (*bundle_url_func)(id, SEL);
-	bundle_url_func bundleURL = (bundle_url_func)objc_msgSend;
-	id url = bundleURL(app, sel_getUid("bundleURL"));
-
-	typedef id (*url_path_func)(id, SEL);
-	url_path_func urlPath = (url_path_func)objc_msgSend;
-
-	id path = urlPath(url, sel_getUid("path"));
-
-	typedef id (*string_func)(id, SEL);
-	string_func utf8String = (string_func)objc_msgSend;
-	bundlePath = (char *)utf8String(path, sel_registerName("UTF8String"));
+#if _WIN32
+#define PATH_MAX MAX_PATH
 #endif
 
-	dstr_printf(&tmp, startup_script_template, bundlePath, SCRIPT_DIR);
-	startup_script = tmp.array;
+	char import_path[PATH_MAX];
 
-	dstr_free(&dep_paths);
+#ifdef __APPLE__
+	struct dstr bundle_path;
+
+	dstr_init_move_array(&bundle_path, os_get_executable_path_ptr(""));
+	dstr_cat(&bundle_path, "../PlugIns");
+	char *absolute_plugin_path = os_get_abs_path_ptr(bundle_path.array);
+
+	if (absolute_plugin_path != NULL) {
+		strcpy(import_path, absolute_plugin_path);
+		bfree(absolute_plugin_path);
+	}
+	dstr_free(&bundle_path);
+#else
+	strcpy(import_path, "./");
+#endif
+	dstr_printf(&tmp, startup_script_template, import_path, SCRIPT_DIR);
+	startup_script = tmp.array;
 
 	obs_add_tick_callback(lua_tick, NULL);
 }

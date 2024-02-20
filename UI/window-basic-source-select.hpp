@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -21,6 +21,8 @@
 #include <memory>
 
 #include "ui_OBSBasicSourceSelect.h"
+#include "undo-stack-obs.hpp"
+#include "window-basic-main.hpp"
 
 class OBSBasic;
 
@@ -30,6 +32,7 @@ class OBSBasicSourceSelect : public QDialog {
 private:
 	std::unique_ptr<Ui::OBSBasicSourceSelect> ui;
 	const char *id;
+	undo_stack &undo_s;
 
 	static bool EnumSources(void *data, obs_source_t *source);
 	static bool EnumGroups(void *data, obs_source_t *source);
@@ -45,9 +48,10 @@ private slots:
 	void SourceRemoved(OBSSource source);
 
 public:
-	OBSBasicSourceSelect(OBSBasic *parent, const char *id);
+	OBSBasicSourceSelect(OBSBasic *parent, const char *id,
+			     undo_stack &undo_s);
 
 	OBSSource newSource;
 
-	static void SourcePaste(const char *name, bool visible, bool duplicate);
+	static void SourcePaste(SourceCopyInfo &info, bool duplicate);
 };

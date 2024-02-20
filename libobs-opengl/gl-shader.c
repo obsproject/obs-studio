@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -228,12 +228,15 @@ static bool gl_shader_init(struct gs_shader *shader,
 
 		char *infoLog = malloc(sizeof(char) * infoLength);
 
-		GLsizei returnedLength = 0;
-		glGetShaderInfoLog(shader->obj, infoLength, &returnedLength,
-				   infoLog);
-		blog(LOG_ERROR, "Error compiling shader:\n%s\n", infoLog);
+		if (infoLog) {
+			GLsizei returnedLength = 0;
+			glGetShaderInfoLog(shader->obj, infoLength,
+					   &returnedLength, infoLog);
+			blog(LOG_ERROR, "Error compiling shader:\n%s\n",
+			     infoLog);
 
-		free(infoLog);
+			free(infoLog);
+		}
 
 		success = false;
 	}
@@ -525,8 +528,13 @@ static void program_set_param_data(struct gs_program *program,
 		}
 
 		glUniform1i(pp->obj, pp->param->texture_id);
-		device_load_texture(program->device, pp->param->texture,
-				    pp->param->texture_id);
+		if (pp->param->srgb)
+			device_load_texture_srgb(program->device,
+						 pp->param->texture,
+						 pp->param->texture_id);
+		else
+			device_load_texture(program->device, pp->param->texture,
+					    pp->param->texture_id);
 	}
 }
 
@@ -727,7 +735,7 @@ void gs_shader_set_val(gs_sparam_t *param, const void *val, size_t size)
 	if (!count)
 		count = 1;
 
-	switch ((uint32_t)param->type) {
+	switch (param->type) {
 	case GS_SHADER_PARAM_FLOAT:
 		expected_size = sizeof(float);
 		break;
@@ -757,7 +765,7 @@ void gs_shader_set_val(gs_sparam_t *param, const void *val, size_t size)
 		expected_size = sizeof(float) * 4 * 4;
 		break;
 	case GS_SHADER_PARAM_TEXTURE:
-		expected_size = sizeof(void *);
+		expected_size = sizeof(struct gs_shader_texture);
 		break;
 	default:
 		expected_size = 0;
@@ -773,10 +781,14 @@ void gs_shader_set_val(gs_sparam_t *param, const void *val, size_t size)
 		return;
 	}
 
-	if (param->type == GS_SHADER_PARAM_TEXTURE)
-		gs_shader_set_texture(param, *(gs_texture_t **)val);
-	else
+	if (param->type == GS_SHADER_PARAM_TEXTURE) {
+		struct gs_shader_texture shader_tex;
+		memcpy(&shader_tex, val, sizeof(shader_tex));
+		gs_shader_set_texture(param, shader_tex.tex);
+		param->srgb = shader_tex.srgb;
+	} else {
 		da_copy_array(param->cur_value, val, size);
+	}
 }
 
 void gs_shader_set_default(gs_sparam_t *param)

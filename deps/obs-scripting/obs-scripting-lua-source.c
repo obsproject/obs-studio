@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2017 by Hugh Bailey <jim@obsproject.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -641,11 +641,7 @@ static int obs_lua_register_source(lua_State *script)
 	if (!existing) {
 		ls.data = current_lua_script;
 
-		pthread_mutexattr_t mutexattr;
-		pthread_mutexattr_init(&mutexattr);
-		pthread_mutexattr_settype(&mutexattr, PTHREAD_MUTEX_RECURSIVE);
-		pthread_mutex_init(&ls.definition_mutex, &mutexattr);
-		pthread_mutexattr_destroy(&mutexattr);
+		pthread_mutex_init_recursive(&ls.definition_mutex);
 
 		info.type_data = bmemdup(&ls, sizeof(ls));
 		info.free_type_data = obs_lua_source_free_type_data;
