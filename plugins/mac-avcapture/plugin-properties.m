@@ -10,50 +10,50 @@
 
 extern const char *av_capture_get_text(const char *text_id);
 
-void configure_property(obs_property_t *property, bool enable, bool visible, void *callback, void *callback_data)
+void configure_property(obs_property_t *property, bool enable, bool visible, void *callback, OBSAVCapture *capture)
 {
     if (property) {
         obs_property_set_enabled(property, enable);
         obs_property_set_visible(property, visible);
 
         if (callback) {
-            obs_property_set_modified_callback2(property, callback, callback_data);
+            obs_property_set_modified_callback2(property, callback, (__bridge void *) (capture));
         }
     }
 }
 
-bool properties_changed(OBSAVCaptureInfo *captureInfo, obs_properties_t *properties, obs_property_t *property __unused,
+bool properties_changed(OBSAVCapture *capture, obs_properties_t *properties, obs_property_t *property __unused,
                         obs_data_t *settings)
 {
+    OBSAVCaptureInfo *captureInfo = capture.captureInfo;
+
     obs_property_t *prop_use_preset = obs_properties_get(properties, "use_preset");
     obs_property_t *prop_device = obs_properties_get(properties, "device");
     obs_property_t *prop_presets = obs_properties_get(properties, "preset");
 
     obs_property_set_enabled(prop_use_preset, !captureInfo->isFastPath);
 
-    if (captureInfo && captureInfo->capture && settings) {
-        properties_update_device(captureInfo, prop_device, settings);
+    if (captureInfo && settings) {
+        properties_update_device(capture, prop_device, settings);
 
         bool use_preset = (settings ? obs_data_get_bool(settings, "use_preset") : true);
 
         if (use_preset) {
-            properties_update_preset(captureInfo, prop_presets, settings);
+            properties_update_preset(capture, prop_presets, settings);
         } else {
-            properties_update_config(captureInfo, properties, settings);
+            properties_update_config(capture, properties, settings);
         }
     }
 
     return true;
 }
 
-bool properties_changed_preset(OBSAVCaptureInfo *captureInfo, obs_properties_t *properties __unused,
-                               obs_property_t *property, obs_data_t *settings)
+bool properties_changed_preset(OBSAVCapture *capture, obs_properties_t *properties __unused, obs_property_t *property,
+                               obs_data_t *settings)
 {
     bool use_preset = obs_data_get_bool(settings, "use_preset");
 
-    if (captureInfo && captureInfo->capture && settings && use_preset) {
-        OBSAVCapture *capture = captureInfo->capture;
-
+    if (capture && settings && use_preset) {
         NSArray *presetKeys =
             [capture.presetList keysSortedByValueUsingComparator:^NSComparisonResult(NSString *obj1, NSString *obj2) {
                 NSNumber *obj1Resolution;
@@ -123,7 +123,7 @@ bool properties_changed_preset(OBSAVCaptureInfo *captureInfo, obs_properties_t *
     }
 }
 
-bool properties_changed_use_preset(OBSAVCaptureInfo *captureInfo, obs_properties_t *properties,
+bool properties_changed_use_preset(OBSAVCapture *capture, obs_properties_t *properties,
                                    obs_property_t *property __unused, obs_data_t *settings)
 {
     bool use_preset = obs_data_get_bool(settings, "use_preset");
@@ -132,7 +132,7 @@ bool properties_changed_use_preset(OBSAVCaptureInfo *captureInfo, obs_properties
     obs_property_set_visible(preset_list, use_preset);
 
     if (use_preset) {
-        properties_changed_preset(captureInfo, properties, preset_list, settings);
+        properties_changed_preset(capture, properties, preset_list, settings);
     }
 
     const char *update_properties[5] = {"resolution", "frame_rate", "color_space", "video_range", "input_format"};
@@ -151,12 +151,10 @@ bool properties_changed_use_preset(OBSAVCaptureInfo *captureInfo, obs_properties
     return true;
 }
 
-bool properties_update_preset(OBSAVCaptureInfo *captureInfo, obs_property_t *property, obs_data_t *settings)
+bool properties_update_preset(OBSAVCapture *capture, obs_property_t *property, obs_data_t *settings)
 {
-    OBSAVCapture *captureInstance = captureInfo->capture;
-
-    NSArray *presetKeys = [captureInstance.presetList
-        keysSortedByValueUsingComparator:^NSComparisonResult(NSString *obj1, NSString *obj2) {
+    NSArray *presetKeys =
+        [capture.presetList keysSortedByValueUsingComparator:^NSComparisonResult(NSString *obj1, NSString *obj2) {
             NSNumber *obj1Resolution;
             NSNumber *obj2Resolution;
             if ([obj1 isEqualToString:@"High"]) {
@@ -202,7 +200,7 @@ bool properties_update_preset(OBSAVCaptureInfo *captureInfo, obs_property_t *pro
 
     if (device) {
         for (NSString *presetName in presetKeys) {
-            NSString *presetDescription = captureInstance.presetList[presetName];
+            NSString *presetDescription = capture.presetList[presetName];
 
             if ([device supportsAVCaptureSessionPreset:presetName]) {
                 obs_property_list_add_string(property, presetDescription.UTF8String, presetName.UTF8String);
@@ -213,7 +211,7 @@ bool properties_update_preset(OBSAVCaptureInfo *captureInfo, obs_property_t *pro
             }
         };
     } else if (deviceUUID.length) {
-        size_t index = obs_property_list_add_string(property, captureInstance.presetList[currentPreset].UTF8String,
+        size_t index = obs_property_list_add_string(property, capture.presetList[currentPreset].UTF8String,
                                                     currentPreset.UTF8String);
         obs_property_list_item_disable(property, index, true);
     }
@@ -221,7 +219,7 @@ bool properties_update_preset(OBSAVCaptureInfo *captureInfo, obs_property_t *pro
     return true;
 }
 
-bool properties_update_device(OBSAVCaptureInfo *captureInfo __unused, obs_property_t *property, obs_data_t *settings)
+bool properties_update_device(OBSAVCapture *capture __unused, obs_property_t *property, obs_data_t *settings)
 {
     obs_property_list_clear(property);
 
@@ -273,9 +271,8 @@ bool properties_update_device(OBSAVCaptureInfo *captureInfo __unused, obs_proper
     return true;
 }
 
-bool properties_update_config(OBSAVCaptureInfo *capture, obs_properties_t *properties, obs_data_t *settings)
+bool properties_update_config(OBSAVCapture *capture, obs_properties_t *properties, obs_data_t *settings)
 {
-    OBSAVCapture *captureInstance = capture->capture;
     AVCaptureDevice *device = [AVCaptureDevice deviceWithUniqueID:[OBSAVCapture stringFromSettings:settings
                                                                                        withSetting:@"device"]];
 
@@ -292,7 +289,7 @@ bool properties_update_config(OBSAVCaptureInfo *capture, obs_properties_t *prope
     prop_input_format = obs_properties_get(properties, "input_format");
     obs_property_list_clear(prop_input_format);
 
-    if (!captureInstance.isFastPath) {
+    if (!capture.isFastPath) {
         prop_color_space = obs_properties_get(properties, "color_space");
         prop_video_range = obs_properties_get(properties, "video_range");
 
@@ -303,12 +300,12 @@ bool properties_update_config(OBSAVCaptureInfo *capture, obs_properties_t *prope
     CMVideoDimensions resolution = [OBSAVCapture dimensionsFromSettings:settings];
 
     if (resolution.width == 0 || resolution.height == 0) {
-        [captureInstance AVCaptureLog:LOG_DEBUG withFormat:@"No valid resolution found in settings"];
+        [capture AVCaptureLog:LOG_DEBUG withFormat:@"No valid resolution found in settings"];
     }
 
     struct media_frames_per_second fps;
     if (!obs_data_get_frames_per_second(settings, "frame_rate", &fps, NULL)) {
-        [captureInstance AVCaptureLog:LOG_DEBUG withFormat:@"No valid framerate found in settings"];
+        [capture AVCaptureLog:LOG_DEBUG withFormat:@"No valid framerate found in settings"];
     }
 
     CMTime time = {.value = fps.denominator, .timescale = fps.numerator, .flags = 1};
@@ -324,7 +321,7 @@ bool properties_update_config(OBSAVCaptureInfo *capture, obs_properties_t *prope
     input_format = (int) obs_data_get_int(settings, "input_format");
     inputFormats = [[NSMutableArray alloc] init];
 
-    if (!captureInstance.isFastPath) {
+    if (!capture.isFastPath) {
         color_space = (int) obs_data_get_int(settings, "color_space");
         video_range = (int) obs_data_get_int(settings, "video_range");
 
@@ -338,13 +335,13 @@ bool properties_update_config(OBSAVCaptureInfo *capture, obs_properties_t *prope
     BOOL hasFoundResolution = NO;
     BOOL hasFoundFramerate = NO;
     BOOL hasFoundInputFormat = NO;
-    BOOL hasFoundColorSpace = captureInstance.isFastPath;
-    BOOL hasFoundVideoRange = captureInstance.isFastPath;
+    BOOL hasFoundColorSpace = capture.isFastPath;
+    BOOL hasFoundVideoRange = capture.isFastPath;
 
     if (device) {
         // Iterate over all formats reported by the device and gather them for property lists
         for (AVCaptureDeviceFormat *format in device.formats) {
-            if (!captureInstance.isFastPath) {
+            if (!capture.isFastPath) {
                 FourCharCode formatSubType = CMFormatDescriptionGetMediaSubType(format.formatDescription);
 
                 NSString *formatDescription = [OBSAVCapture stringFromSubType:formatSubType];
@@ -473,7 +470,7 @@ bool properties_update_config(OBSAVCaptureInfo *capture, obs_properties_t *prope
             obs_property_list_item_disable(prop_input_format, index, true);
         }
 
-        if (!captureInstance.isFastPath) {
+        if (!capture.isFastPath) {
             if (!hasFoundVideoRange) {
                 int device_range;
                 const char *range_description;
