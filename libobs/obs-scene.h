@@ -52,6 +52,7 @@ struct obs_scene_item {
 
 	struct vec2 pos;
 	struct vec2 scale;
+	struct vec2 scale_ref;
 	float rot;
 	uint32_t align;
 
@@ -100,6 +101,9 @@ struct obs_scene {
 	bool custom_size;
 	uint32_t cx;
 	uint32_t cy;
+
+	uint32_t last_width;
+	uint32_t last_height;
 
 	int64_t id_counter;
 
