@@ -9532,7 +9532,7 @@ void OBSBasic::on_resetDocks_triggered(bool force)
 	    !force)
 #endif
 	{
-		QMessageBox::StandardButton button = QMessageBox::question(
+		QMessageBox::StandardButton button = OBSMessageBox::question(
 			this, QTStr("ResetUIWarning.Title"),
 			QTStr("ResetUIWarning.Text"));
 
