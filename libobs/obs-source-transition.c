@@ -890,7 +890,7 @@ static void process_audio(obs_source_t *transition, obs_source_t *child, struct 
 	if (pos > AUDIO_OUTPUT_FRAMES)
 		return;
 
-	for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
+	for (size_t mix_idx = 0; mix_idx < (MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES); mix_idx++) {
 		struct audio_output_data *output = &audio->output[mix_idx];
 		struct audio_output_data *input = &child_audio.output[mix_idx];
 

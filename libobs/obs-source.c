@@ -172,10 +172,11 @@ enum obs_module_load_state obs_source_load_state(const char *id)
 
 static void allocate_audio_output_buffer(struct obs_source *source)
 {
-	size_t size = sizeof(float) * AUDIO_OUTPUT_FRAMES * MAX_AUDIO_CHANNELS * MAX_AUDIO_MIXES;
+	size_t size = sizeof(float) * AUDIO_OUTPUT_FRAMES * MAX_AUDIO_CHANNELS *
+		      (MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES);
 	float *ptr = bzalloc(size);
 
-	for (size_t mix = 0; mix < MAX_AUDIO_MIXES; mix++) {
+	for (size_t mix = 0; mix < (MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES); mix++) {
 		size_t mix_pos = mix * AUDIO_OUTPUT_FRAMES * MAX_AUDIO_CHANNELS;
 
 		for (size_t i = 0; i < MAX_AUDIO_CHANNELS; i++) {
@@ -5289,7 +5290,7 @@ static void apply_audio_actions(obs_source_t *source, size_t channels, size_t sa
 
 	pthread_mutex_unlock(&source->audio_actions_mutex);
 
-	for (size_t mix = 0; mix < MAX_AUDIO_MIXES; mix++) {
+	for (size_t mix = 0; mix < (MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES); mix++) {
 		if ((source->audio_mixers & (1 << mix)) != 0)
 			multiply_vol_data(source, mix, channels, vol_data);
 	}
@@ -5324,11 +5325,12 @@ static void apply_audio_volume(obs_source_t *source, uint32_t mixers, size_t cha
 
 	if (vol == 0.0f || mixers == 0) {
 		memset(source->audio_output_buf[0][0], 0,
-		       AUDIO_OUTPUT_FRAMES * sizeof(float) * MAX_AUDIO_CHANNELS * MAX_AUDIO_MIXES);
+		       AUDIO_OUTPUT_FRAMES * sizeof(float) * MAX_AUDIO_CHANNELS *
+			       (MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES));
 		return;
 	}
 
-	for (size_t mix = 0; mix < MAX_AUDIO_MIXES; mix++) {
+	for (size_t mix = 0; mix < (MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES); mix++) {
 		uint32_t mix_and_val = (1 << mix);
 		if ((source->audio_mixers & mix_and_val) != 0 && (mixers & mix_and_val) != 0)
 			multiply_output_audio(source, mix, channels, vol);
@@ -5341,7 +5343,7 @@ static void custom_audio_render(obs_source_t *source, uint32_t mixers, size_t ch
 	bool success;
 	uint64_t ts;
 
-	for (size_t mix = 0; mix < MAX_AUDIO_MIXES; mix++) {
+	for (size_t mix = 0; mix < (MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES); mix++) {
 		for (size_t ch = 0; ch < channels; ch++) {
 			audio_data.output[mix].data[ch] = source->audio_output_buf[mix][ch];
 		}
@@ -5358,7 +5360,7 @@ static void custom_audio_render(obs_source_t *source, uint32_t mixers, size_t ch
 	if (!success || !source->audio_ts || !mixers)
 		return;
 
-	for (size_t mix = 0; mix < MAX_AUDIO_MIXES; mix++) {
+	for (size_t mix = 0; mix < (MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES); mix++) {
 		uint32_t mix_bit = 1 << mix;
 
 		if ((mixers & mix_bit) == 0)
@@ -5420,7 +5422,7 @@ static inline void process_audio_source_tick(obs_source_t *source, uint32_t mixe
 
 	pthread_mutex_unlock(&source->audio_buf_mutex);
 
-	for (size_t mix = 1; mix < MAX_AUDIO_MIXES; mix++) {
+	for (size_t mix = 1; mix < (MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES); mix++) {
 		uint32_t mix_and_val = (1 << mix);
 
 		if (audio_submix) {
@@ -5503,7 +5505,7 @@ void obs_source_get_audio_mix(const obs_source_t *source, struct obs_source_audi
 	if (!obs_ptr_valid(audio, "audio"))
 		return;
 
-	for (size_t mix = 0; mix < MAX_AUDIO_MIXES; mix++) {
+	for (size_t mix = 0; mix < (MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES); mix++) {
 		for (size_t ch = 0; ch < MAX_AUDIO_CHANNELS; ch++) {
 			audio->output[mix].data[ch] = source->audio_output_buf[mix][ch];
 		}
@@ -5587,10 +5589,30 @@ void obs_source_set_monitoring_type(obs_source_t *source, enum obs_monitoring_ty
 	}
 
 	source->monitoring_type = type;
+
+#ifdef _WIN32
+	// On windows, assign to the extra asio monitoring track (track 7) all sources which have not type
+	// OBS_MONITORING_TYPE_NONE.
+	if (type != OBS_MONITORING_TYPE_NONE) {
+		source->audio_mixers |= 1 << (MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES - 1);
+	} else {
+		source->audio_mixers &= ~(1 << (MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES - 1));
+	}
+#endif
 }
 
 enum obs_monitoring_type obs_source_get_monitoring_type(const obs_source_t *source)
 {
+#ifdef _WIN32
+	// If type is OBS_MONITORING_TYPE_NONE, unselect the extra asio monitoring track (track 7) on windows.
+	uint32_t mixers = obs_source_get_audio_mixers(source);
+	if (source->monitoring_type == OBS_MONITORING_TYPE_NONE && mixers) {
+		if (mixers & 1 << (MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES - 1)) {
+			mixers &= ~(1 << (MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES - 1));
+			obs_source_set_audio_mixers((obs_source_t *)source, mixers);
+		}
+	}
+#endif
 	return obs_source_valid(source, "obs_source_get_monitoring_type") ? source->monitoring_type
 									  : OBS_MONITORING_TYPE_NONE;
 }

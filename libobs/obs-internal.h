@@ -867,7 +867,7 @@ struct obs_source {
 	struct deque audio_input_buf[MAX_AUDIO_CHANNELS];
 	size_t last_audio_input_buf_size;
 	DARRAY(struct audio_action) audio_actions;
-	float *audio_output_buf[MAX_AUDIO_MIXES][MAX_AUDIO_CHANNELS];
+	float *audio_output_buf[MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES][MAX_AUDIO_CHANNELS];
 	float *audio_mix_buf[MAX_AUDIO_CHANNELS];
 	struct resample_info sample_info;
 	audio_resampler_t *resampler;
@@ -1256,7 +1256,7 @@ struct obs_output {
 
 	struct pause_data pause;
 
-	struct deque audio_buffer[MAX_AUDIO_MIXES][MAX_AV_PLANES];
+	struct deque audio_buffer[MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES][MAX_AV_PLANES];
 	uint64_t audio_start_ts;
 	uint64_t video_start_ts;
 	size_t audio_size;
