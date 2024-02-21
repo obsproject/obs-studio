@@ -182,6 +182,9 @@ file(
   "${QtCore_BIN_DIR}/Qt6Svgd.dll"
   "${QtCore_BIN_DIR}/Qt6Xmld.dll"
   "${QtCore_BIN_DIR}/Qt6Networkd.dll"
+  "${QtCore_BIN_DIR}/Qt6Chartsd.dll"
+  "${QtCore_BIN_DIR}/Qt6OpenGLd.dll"
+  "${QtCore_BIN_DIR}/Qt6OpenGLWidgetsd.dll"
   "${QtCore_BIN_DIR}/libGLESv2d.dll"
   "${QtCore_BIN_DIR}/libEGLd.dll")
 file(GLOB QT_DEBUG_PLAT_BIN_FILES "${QtCore_PLUGIN_DIR}/platforms/qwindowsd.dll")
@@ -199,6 +202,9 @@ file(
   "${QtCore_BIN_DIR}/Qt6Svg.dll"
   "${QtCore_BIN_DIR}/Qt6Xml.dll"
   "${QtCore_BIN_DIR}/Qt6Network.dll"
+  "${QtCore_BIN_DIR}/Qt6Charts.dll"
+  "${QtCore_BIN_DIR}/Qt6OpenGL.dll"
+  "${QtCore_BIN_DIR}/Qt6OpenGLWidgets.dll"
   "${QtCore_BIN_DIR}/libGLESv2.dll"
   "${QtCore_BIN_DIR}/libEGL.dll")
 file(GLOB QT_PLAT_BIN_FILES "${QtCore_PLUGIN_DIR}/platforms/qwindows.dll")

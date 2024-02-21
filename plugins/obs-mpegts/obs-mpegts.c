@@ -15,32 +15,170 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <obs-module.h>
-#include <util/deque.h>
-#include <util/threading.h>
-#include <util/dstr.h>
-#include <util/darray.h>
-#include <util/platform.h>
+#include "obs-mpegts-rist.h"
+#include "obs-mpegts-srt.h"
 
-#include "obs-ffmpeg-output.h"
-#include "obs-ffmpeg-formats.h"
-#include "obs-ffmpeg-compat.h"
-#include "obs-ffmpeg-rist.h"
-#include "obs-ffmpeg-srt.h"
-#include <libavutil/channel_layout.h>
-#include <libavutil/mastering_display_metadata.h>
+OBS_DECLARE_MODULE()
+OBS_MODULE_USE_DEFAULT_LOCALE("obs-mpegts", "en-US")
+MODULE_EXPORT const char *obs_module_description(void)
+{
+	return "MPEG-TS muxer to stream with srt or rist protocols";
+}
 
 /* ------------------------------------------------------------------------- */
-#define do_log(level, format, ...)                              \
-	blog(level, "[obs-ffmpeg mpegts muxer: '%s']: " format, \
+#define do_log(level, format, ...)                       \
+	blog(level, "[obs-mpegts muxer: '%s']: " format, \
 	     obs_output_get_name(stream->output), ##__VA_ARGS__)
 
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
 #define error(format, ...) do_log(LOG_ERROR, format, ##__VA_ARGS__)
 
-static void ffmpeg_mpegts_set_last_error(struct ffmpeg_data *data,
-					 const char *error)
+/* ------------------------------------------------------------------------- */
+
+static inline int64_t rescale_ts(int64_t val, AVCodecContext *context,
+				 AVRational new_base)
+{
+	return av_rescale_q_rnd(val, context->time_base, new_base,
+				AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
+}
+
+static inline enum AVPixelFormat
+obs_to_mpegts_video_format(enum video_format format)
+{
+	switch (format) {
+	case VIDEO_FORMAT_I444:
+		return AV_PIX_FMT_YUV444P;
+	case VIDEO_FORMAT_I412:
+		return AV_PIX_FMT_YUV444P12LE;
+	case VIDEO_FORMAT_I420:
+		return AV_PIX_FMT_YUV420P;
+	case VIDEO_FORMAT_NV12:
+		return AV_PIX_FMT_NV12;
+	case VIDEO_FORMAT_YUY2:
+		return AV_PIX_FMT_YUYV422;
+	case VIDEO_FORMAT_UYVY:
+		return AV_PIX_FMT_UYVY422;
+	case VIDEO_FORMAT_YVYU:
+		return AV_PIX_FMT_YVYU422;
+	case VIDEO_FORMAT_RGBA:
+		return AV_PIX_FMT_RGBA;
+	case VIDEO_FORMAT_BGRA:
+		return AV_PIX_FMT_BGRA;
+	case VIDEO_FORMAT_BGRX:
+		return AV_PIX_FMT_BGRA;
+	case VIDEO_FORMAT_Y800:
+		return AV_PIX_FMT_GRAY8;
+	case VIDEO_FORMAT_BGR3:
+		return AV_PIX_FMT_BGR24;
+	case VIDEO_FORMAT_I422:
+		return AV_PIX_FMT_YUV422P;
+	case VIDEO_FORMAT_I210:
+		return AV_PIX_FMT_YUV422P10LE;
+	case VIDEO_FORMAT_I40A:
+		return AV_PIX_FMT_YUVA420P;
+	case VIDEO_FORMAT_I42A:
+		return AV_PIX_FMT_YUVA422P;
+	case VIDEO_FORMAT_YUVA:
+		return AV_PIX_FMT_YUVA444P;
+#if LIBAVUTIL_BUILD >= AV_VERSION_INT(56, 31, 100)
+	case VIDEO_FORMAT_YA2L:
+		return AV_PIX_FMT_YUVA444P12LE;
+#endif
+	case VIDEO_FORMAT_I010:
+		return AV_PIX_FMT_YUV420P10LE;
+	case VIDEO_FORMAT_P010:
+		return AV_PIX_FMT_P010LE;
+#if LIBAVUTIL_BUILD >= AV_VERSION_INT(57, 17, 100)
+	case VIDEO_FORMAT_P216:
+		return AV_PIX_FMT_P216LE;
+	case VIDEO_FORMAT_P416:
+		return AV_PIX_FMT_P416LE;
+#endif
+	case VIDEO_FORMAT_NONE:
+	case VIDEO_FORMAT_AYUV:
+	default:
+		return AV_PIX_FMT_NONE;
+	}
+}
+
+static enum AVChromaLocation
+determine_chroma_location(enum AVPixelFormat pix_fmt,
+			  enum AVColorSpace colorspace)
+{
+	const AVPixFmtDescriptor *const desc = av_pix_fmt_desc_get(pix_fmt);
+	if (desc) {
+		const unsigned log_chroma_w = desc->log2_chroma_w;
+		const unsigned log_chroma_h = desc->log2_chroma_h;
+		switch (log_chroma_h) {
+		case 0:
+			switch (log_chroma_w) {
+			case 0:
+				/* 4:4:4 */
+				return AVCHROMA_LOC_CENTER;
+			case 1:
+				/* 4:2:2 */
+				return AVCHROMA_LOC_LEFT;
+			}
+			break;
+		case 1:
+			if (log_chroma_w == 1) {
+				/* 4:2:0 */
+				return (colorspace == AVCOL_SPC_BT2020_NCL)
+					       ? AVCHROMA_LOC_TOPLEFT
+					       : AVCHROMA_LOC_LEFT;
+			}
+		}
+	}
+
+	return AVCHROMA_LOC_UNSPECIFIED;
+}
+
+static inline enum audio_format
+convert_mpegts_sample_format(enum AVSampleFormat format)
+{
+	switch (format) {
+	case AV_SAMPLE_FMT_U8:
+		return AUDIO_FORMAT_U8BIT;
+	case AV_SAMPLE_FMT_S16:
+		return AUDIO_FORMAT_16BIT;
+	case AV_SAMPLE_FMT_S32:
+		return AUDIO_FORMAT_32BIT;
+	case AV_SAMPLE_FMT_FLT:
+		return AUDIO_FORMAT_FLOAT;
+	case AV_SAMPLE_FMT_U8P:
+		return AUDIO_FORMAT_U8BIT_PLANAR;
+	case AV_SAMPLE_FMT_S16P:
+		return AUDIO_FORMAT_16BIT_PLANAR;
+	case AV_SAMPLE_FMT_S32P:
+		return AUDIO_FORMAT_32BIT_PLANAR;
+	case AV_SAMPLE_FMT_FLTP:
+		return AUDIO_FORMAT_FLOAT_PLANAR;
+	default:
+		return AUDIO_FORMAT_16BIT;
+	}
+
+	/* shouldn't get here */
+	return AUDIO_FORMAT_16BIT;
+}
+
+/* LIBAVCODEC_VERSION_CHECK checks for the right version of libav and FFmpeg
+ * a is the major version
+ * b and c the minor and micro versions of libav
+ * d and e the minor and micro versions of FFmpeg */
+#define LIBAVCODEC_VERSION_CHECK(a, b, c, d, e)                 \
+	((LIBAVCODEC_VERSION_MICRO < 100 &&                     \
+	  LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(a, b, c)) || \
+	 (LIBAVCODEC_VERSION_MICRO >= 100 &&                    \
+	  LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(a, d, e)))
+
+#if !LIBAVCODEC_VERSION_CHECK(54, 28, 0, 59, 100)
+#define avcodec_free_frame av_freep
+#endif
+
+/* ------------------------------------------------------------------------- */
+
+static void mpegts_set_last_error(struct mpegts_data *data, const char *error)
 {
 	if (data->last_error)
 		bfree(data->last_error);
@@ -48,8 +186,8 @@ static void ffmpeg_mpegts_set_last_error(struct ffmpeg_data *data,
 	data->last_error = bstrdup(error);
 }
 
-void ffmpeg_mpegts_log_error(int log_level, struct ffmpeg_data *data,
-			     const char *format, ...)
+void mpegts_log_error(int log_level, struct mpegts_data *data,
+		      const char *format, ...)
 {
 	va_list args;
 	char out[4096];
@@ -58,24 +196,24 @@ void ffmpeg_mpegts_log_error(int log_level, struct ffmpeg_data *data,
 	vsnprintf(out, sizeof(out), format, args);
 	va_end(args);
 
-	ffmpeg_mpegts_set_last_error(data, out);
+	mpegts_set_last_error(data, out);
 
 	blog(log_level, "%s", out);
 }
 
-static bool is_rist(struct ffmpeg_output *stream)
+static bool is_rist(struct mpegts_output *stream)
 {
 	return !strncmp(stream->ff_data.config.url, RIST_PROTO,
 			sizeof(RIST_PROTO) - 1);
 }
 
-static bool is_srt(struct ffmpeg_output *stream)
+static bool is_srt(struct mpegts_output *stream)
 {
 	return !strncmp(stream->ff_data.config.url, SRT_PROTO,
 			sizeof(SRT_PROTO) - 1);
 }
 
-static bool proto_is_allowed(struct ffmpeg_output *stream)
+static bool proto_is_allowed(struct mpegts_output *stream)
 {
 	return !strncmp(stream->ff_data.config.url, UDP_PROTO,
 			sizeof(UDP_PROTO) - 1) ||
@@ -85,15 +223,15 @@ static bool proto_is_allowed(struct ffmpeg_output *stream)
 			sizeof(HTTP_PROTO) - 1);
 }
 
-static bool new_stream(struct ffmpeg_data *data, AVStream **stream,
+static bool new_stream(struct mpegts_data *data, AVStream **stream,
 		       const char *name)
 {
 
 	*stream = avformat_new_stream(data->output, NULL);
 	if (!*stream) {
-		ffmpeg_mpegts_log_error(
-			LOG_WARNING, data,
-			"Couldn't create stream for encoder '%s'", name);
+		mpegts_log_error(LOG_WARNING, data,
+				 "Couldn't create stream for encoder '%s'",
+				 name);
 		return false;
 	}
 
@@ -101,8 +239,8 @@ static bool new_stream(struct ffmpeg_data *data, AVStream **stream,
 	return true;
 }
 
-static bool get_audio_headers(struct ffmpeg_output *stream,
-			      struct ffmpeg_data *data, int idx)
+static bool get_audio_headers(struct mpegts_output *stream,
+			      struct mpegts_data *data, int idx)
 {
 	AVCodecParameters *par = data->audio_infos[idx].stream->codecpar;
 	obs_encoder_t *aencoder =
@@ -120,8 +258,8 @@ static bool get_audio_headers(struct ffmpeg_output *stream,
 	return 0;
 }
 
-static bool get_video_headers(struct ffmpeg_output *stream,
-			      struct ffmpeg_data *data)
+static bool get_video_headers(struct mpegts_output *stream,
+			      struct mpegts_data *data)
 {
 	AVCodecParameters *par = data->video->codecpar;
 	obs_encoder_t *vencoder = obs_output_get_video_encoder(stream->output);
@@ -138,14 +276,14 @@ static bool get_video_headers(struct ffmpeg_output *stream,
 	return 0;
 }
 
-static bool create_video_stream(struct ffmpeg_output *stream,
-				struct ffmpeg_data *data)
+static bool create_video_stream(struct mpegts_output *stream,
+				struct mpegts_data *data)
 {
 	AVCodecContext *context;
 	struct obs_video_info ovi;
 
 	if (!obs_get_video_info(&ovi)) {
-		ffmpeg_mpegts_log_error(LOG_WARNING, data, "No active video");
+		mpegts_log_error(LOG_WARNING, data, "No active video");
 		return false;
 	}
 	const char *name = data->config.video_encoder;
@@ -241,8 +379,8 @@ static bool create_video_stream(struct ffmpeg_output *stream,
 	return true;
 }
 
-static bool create_audio_stream(struct ffmpeg_output *stream,
-				struct ffmpeg_data *data, int idx)
+static bool create_audio_stream(struct mpegts_output *stream,
+				struct mpegts_data *data, int idx)
 {
 	AVCodecContext *context;
 	AVStream *avstream;
@@ -257,7 +395,7 @@ static bool create_audio_stream(struct ffmpeg_output *stream,
 	}
 
 	if (!obs_get_audio_info(&aoi)) {
-		ffmpeg_mpegts_log_error(LOG_WARNING, data, "No active audio");
+		mpegts_log_error(LOG_WARNING, data, "No active audio");
 		return false;
 	}
 
@@ -294,7 +432,7 @@ static bool create_audio_stream(struct ffmpeg_output *stream,
 	avstream->time_base = context->time_base;
 
 	data->audio_samplerate = aoi.samples_per_sec;
-	data->audio_format = convert_ffmpeg_sample_format(context->sample_fmt);
+	data->audio_format = convert_mpegts_sample_format(context->sample_fmt);
 	data->audio_planes = get_audio_planes(data->audio_format, aoi.speakers);
 	data->audio_size = get_audio_size(data->audio_format, aoi.speakers, 1);
 
@@ -305,8 +443,8 @@ static bool create_audio_stream(struct ffmpeg_output *stream,
 	return true;
 }
 
-static inline bool init_streams(struct ffmpeg_output *stream,
-				struct ffmpeg_data *data)
+static inline bool init_streams(struct mpegts_output *stream,
+				struct mpegts_data *data)
 {
 	if (!create_video_stream(stream, data))
 		return false;
@@ -334,20 +472,20 @@ int ff_network_init(void)
 	return 1;
 }
 
-static inline int connect_mpegts_url(struct ffmpeg_output *stream, bool is_rist)
+static inline int connect_mpegts_url(struct mpegts_output *stream, bool is_rist)
 {
 	int err = 0;
 	const char *url = stream->ff_data.config.url;
 	if (!ff_network_init()) {
-		ffmpeg_mpegts_log_error(LOG_ERROR, &stream->ff_data,
-					"Couldn't initialize network");
+		mpegts_log_error(LOG_ERROR, &stream->ff_data,
+				 "Couldn't initialize network");
 		return AVERROR(EIO);
 	}
 
 	URLContext *uc = av_mallocz(sizeof(URLContext) + strlen(url) + 1);
 	if (!uc) {
-		ffmpeg_mpegts_log_error(LOG_ERROR, &stream->ff_data,
-					"Couldn't allocate memory");
+		mpegts_log_error(LOG_ERROR, &stream->ff_data,
+				 "Couldn't allocate memory");
 		goto fail;
 	}
 	uc->url = (char *)url;
@@ -356,8 +494,8 @@ static inline int connect_mpegts_url(struct ffmpeg_output *stream, bool is_rist)
 	uc->priv_data = is_rist ? av_mallocz(sizeof(RISTContext))
 				: av_mallocz(sizeof(SRTContext));
 	if (!uc->priv_data) {
-		ffmpeg_mpegts_log_error(LOG_ERROR, &stream->ff_data,
-					"Couldn't allocate memory");
+		mpegts_log_error(LOG_ERROR, &stream->ff_data,
+				 "Couldn't allocate memory");
 		goto fail;
 	}
 	/* For SRT, pass streamid & passphrase; for RIST, pass passphrase, username
@@ -419,7 +557,7 @@ fail:
 	return err;
 }
 
-static inline int allocate_custom_aviocontext(struct ffmpeg_output *stream,
+static inline int allocate_custom_aviocontext(struct mpegts_output *stream,
 					      bool is_rist)
 {
 	/* allocate buffers */
@@ -455,8 +593,8 @@ fail:
 	return AVERROR(ENOMEM);
 }
 
-static inline int open_output_file(struct ffmpeg_output *stream,
-				   struct ffmpeg_data *data)
+static inline int open_output_file(struct mpegts_output *stream,
+				   struct mpegts_data *data)
 {
 	int ret;
 	bool rist = is_rist(stream);
@@ -471,7 +609,7 @@ static inline int open_output_file(struct ffmpeg_output *stream,
 		if ((ret = av_dict_parse_string(&dict,
 						data->config.protocol_settings,
 						"=", " ", 0))) {
-			ffmpeg_mpegts_log_error(
+			mpegts_log_error(
 				LOG_WARNING, data,
 				"Failed to parse protocol settings: %s, %s",
 				data->config.protocol_settings,
@@ -519,10 +657,9 @@ static inline int open_output_file(struct ffmpeg_output *stream,
 				      ret == OBS_OUTPUT_INVALID_STREAM)) {
 			error("Failed to open the url or invalid stream");
 		} else {
-			ffmpeg_mpegts_log_error(LOG_WARNING, data,
-						"Couldn't open '%s', %s",
-						data->config.url,
-						av_err2str(ret));
+			mpegts_log_error(LOG_WARNING, data,
+					 "Couldn't open '%s', %s",
+					 data->config.url, av_err2str(ret));
 			av_dict_free(&dict);
 		}
 		return ret;
@@ -559,12 +696,12 @@ static inline int open_output_file(struct ffmpeg_output *stream,
 	return 0;
 }
 
-static void close_video(struct ffmpeg_data *data)
+static void close_video(struct mpegts_data *data)
 {
 	avcodec_free_context(&data->video_ctx);
 }
 
-static void close_audio(struct ffmpeg_data *data)
+static void close_audio(struct mpegts_data *data)
 {
 	for (int idx = 0; idx < data->num_audio_streams; idx++) {
 		for (size_t i = 0; i < MAX_AV_PLANES; i++)
@@ -580,7 +717,7 @@ static void close_audio(struct ffmpeg_data *data)
 	}
 }
 
-static void close_mpegts_url(struct ffmpeg_output *stream, bool is_rist)
+static void close_mpegts_url(struct mpegts_output *stream, bool is_rist)
 {
 	int err = 0;
 	AVIOContext *s = stream->s;
@@ -610,8 +747,7 @@ static void close_mpegts_url(struct ffmpeg_output *stream, bool is_rist)
 		     stream->ff_data.config.url);
 }
 
-void ffmpeg_mpegts_data_free(struct ffmpeg_output *stream,
-			     struct ffmpeg_data *data)
+void mpegts_data_free(struct mpegts_output *stream, struct mpegts_data *data)
 {
 	if (data->initialized)
 		av_write_trailer(data->output);
@@ -639,14 +775,13 @@ void ffmpeg_mpegts_data_free(struct ffmpeg_output *stream,
 	if (data->last_error)
 		bfree(data->last_error);
 
-	memset(data, 0, sizeof(struct ffmpeg_data));
+	memset(data, 0, sizeof(struct mpegts_data));
 }
 
-bool ffmpeg_mpegts_data_init(struct ffmpeg_output *stream,
-			     struct ffmpeg_data *data,
-			     struct ffmpeg_cfg *config)
+bool mpegts_data_init(struct mpegts_output *stream, struct mpegts_data *data,
+		      struct mpegts_cfg *config)
 {
-	memset(data, 0, sizeof(struct ffmpeg_data));
+	memset(data, 0, sizeof(struct mpegts_data));
 	data->config = *config;
 	data->num_audio_streams = config->audio_mix_count;
 
@@ -664,8 +799,8 @@ bool ffmpeg_mpegts_data_init(struct ffmpeg_output *stream,
 	output_format = av_guess_format("mpegts", NULL, "video/M2PT");
 
 	if (output_format == NULL) {
-		ffmpeg_mpegts_log_error(LOG_WARNING, data,
-					"Couldn't set output format to mpegts");
+		mpegts_log_error(LOG_WARNING, data,
+				 "Couldn't set output format to mpegts");
 		goto fail;
 	} else {
 		info("Output format name and long_name: %s, %s",
@@ -682,33 +817,33 @@ bool ffmpeg_mpegts_data_init(struct ffmpeg_output *stream,
 		    0);
 
 	if (!data->output) {
-		ffmpeg_mpegts_log_error(LOG_WARNING, data,
-					"Couldn't create avformat context");
+		mpegts_log_error(LOG_WARNING, data,
+				 "Couldn't create avformat context");
 		goto fail;
 	}
 
 	return true;
 
 fail:
-	warn("ffmpeg_data_init failed");
+	warn("mpegts_data_init failed");
 	return false;
 }
 
 /* ------------------------------------------------------------------------- */
 
-static inline bool stopping(struct ffmpeg_output *output)
+static inline bool stopping(struct mpegts_output *output)
 {
 	return os_atomic_load_bool(&output->stopping);
 }
 
-static const char *ffmpeg_mpegts_getname(void *unused)
+static const char *mpegts_getname(void *unused)
 {
 	UNUSED_PARAMETER(unused);
 	return obs_module_text("FFmpegMpegts");
 }
 
-static void ffmpeg_mpegts_log_callback(void *param, int level,
-				       const char *format, va_list args)
+static void mpegts_log_callback(void *param, int level, const char *format,
+				va_list args)
 {
 	if (level <= AV_LOG_INFO)
 		blogva(LOG_DEBUG, format, args);
@@ -716,9 +851,9 @@ static void ffmpeg_mpegts_log_callback(void *param, int level,
 	UNUSED_PARAMETER(param);
 }
 
-static void *ffmpeg_mpegts_create(obs_data_t *settings, obs_output_t *output)
+static void *mpegts_create(obs_data_t *settings, obs_output_t *output)
 {
-	struct ffmpeg_output *data = bzalloc(sizeof(struct ffmpeg_output));
+	struct mpegts_output *data = bzalloc(sizeof(struct mpegts_output));
 	pthread_mutex_init_value(&data->write_mutex);
 	data->output = output;
 
@@ -729,7 +864,12 @@ static void *ffmpeg_mpegts_create(obs_data_t *settings, obs_output_t *output)
 	if (os_sem_init(&data->write_sem, 0) != 0)
 		goto fail;
 
-	av_log_set_callback(ffmpeg_mpegts_log_callback);
+	av_log_set_callback(mpegts_log_callback);
+	proc_handler_t *ph = obs_output_get_proc_handler(output);
+	proc_handler_add(
+		ph,
+		"void get_srt_stats(out int srt_total_pkts, int srt_dropped_pkts, int srt_retransmitted_pkts, float srt_rtt, float srt_bandwidth)",
+		get_srt_stats, data);
 
 	UNUSED_PARAMETER(settings);
 	return data;
@@ -741,18 +881,18 @@ fail:
 	return NULL;
 }
 
-static void ffmpeg_mpegts_full_stop(void *data);
-static void ffmpeg_mpegts_deactivate(struct ffmpeg_output *output);
+static void mpegts_full_stop(void *data);
+static void mpegts_deactivate(struct mpegts_output *output);
 
-static void ffmpeg_mpegts_destroy(void *data)
+static void mpegts_destroy(void *data)
 {
-	struct ffmpeg_output *output = data;
+	struct mpegts_output *output = data;
 
 	if (output) {
 		if (output->connecting)
 			pthread_join(output->start_thread, NULL);
 
-		ffmpeg_mpegts_full_stop(output);
+		mpegts_full_stop(output);
 
 		pthread_mutex_destroy(&output->write_mutex);
 		os_sem_destroy(output->write_sem);
@@ -761,10 +901,10 @@ static void ffmpeg_mpegts_destroy(void *data)
 	}
 }
 
-static uint64_t get_packet_sys_dts(struct ffmpeg_output *output,
+static uint64_t get_packet_sys_dts(struct mpegts_output *output,
 				   AVPacket *packet)
 {
-	struct ffmpeg_data *data = &output->ff_data;
+	struct mpegts_data *data = &output->ff_data;
 	uint64_t pause_offset = obs_output_get_pause_offset(output->output);
 	uint64_t start_ts;
 
@@ -783,7 +923,7 @@ static uint64_t get_packet_sys_dts(struct ffmpeg_output *output,
 				      (AVRational){1, 1000000000});
 }
 
-static int mpegts_process_packet(struct ffmpeg_output *output)
+static int mpegts_process_packet(struct mpegts_output *output)
 {
 	AVPacket *packet = NULL;
 	int ret = 0;
@@ -817,10 +957,9 @@ static int mpegts_process_packet(struct ffmpeg_output *output)
 	av_freep(&buf);
 
 	if (ret < 0) {
-		ffmpeg_mpegts_log_error(
-			LOG_WARNING, &output->ff_data,
-			"process_packet: Error writing packet: %s",
-			av_err2str(ret));
+		mpegts_log_error(LOG_WARNING, &output->ff_data,
+				 "process_packet: Error writing packet: %s",
+				 av_err2str(ret));
 
 		/* Treat "Invalid data found when processing input" and
 		 * "Invalid argument" as non-fatal */
@@ -835,7 +974,7 @@ end:
 
 static void *write_thread(void *data)
 {
-	struct ffmpeg_output *output = data;
+	struct mpegts_output *output = data;
 
 	while (os_sem_wait(output->write_sem) == 0) {
 		/* check to see if shutting down */
@@ -853,7 +992,7 @@ static void *write_thread(void *data)
 				code = OBS_OUTPUT_NO_SPACE;
 
 			obs_output_signal_stop(output->output, code);
-			ffmpeg_mpegts_deactivate(output);
+			mpegts_deactivate(output);
 			break;
 		}
 	}
@@ -862,9 +1001,9 @@ static void *write_thread(void *data)
 	return NULL;
 }
 
-static bool get_extradata(struct ffmpeg_output *stream)
+static bool get_extradata(struct mpegts_output *stream)
 {
-	struct ffmpeg_data *ff_data = &stream->ff_data;
+	struct mpegts_data *ff_data = &stream->ff_data;
 
 	/* get extradata for av headers from encoders */
 	if (!get_video_headers(stream, ff_data))
@@ -877,10 +1016,10 @@ static bool get_extradata(struct ffmpeg_output *stream)
 	return true;
 }
 
-/* set ffmpeg_config & init write_thread & capture */
-static bool set_config(struct ffmpeg_output *stream)
+/* set mpegts_config & init write_thread & capture */
+static bool set_config(struct mpegts_output *stream)
 {
-	struct ffmpeg_cfg config;
+	struct mpegts_cfg config;
 	bool success;
 	int ret;
 	int code;
@@ -922,7 +1061,7 @@ static bool set_config(struct ffmpeg_output *stream)
 	// 2.c) set video format from OBS to FFmpeg
 	video_t *video = obs_encoder_video(vencoder);
 	config.format =
-		obs_to_ffmpeg_video_format(video_output_get_format(video));
+		obs_to_mpegts_video_format(video_output_get_format(video));
 
 	if (config.format == AV_PIX_FMT_NONE) {
 		blog(LOG_WARNING,
@@ -1018,17 +1157,17 @@ static bool set_config(struct ffmpeg_output *stream)
 	config.video_settings = "";
 	config.audio_settings = "";
 
-	success = ffmpeg_mpegts_data_init(stream, &stream->ff_data, &config);
+	success = mpegts_data_init(stream, &stream->ff_data, &config);
 	if (!success) {
 		if (stream->ff_data.last_error) {
 			obs_output_set_last_error(stream->output,
 						  stream->ff_data.last_error);
 		}
-		ffmpeg_mpegts_data_free(stream, &stream->ff_data);
+		mpegts_data_free(stream, &stream->ff_data);
 		code = OBS_OUTPUT_INVALID_STREAM;
 		goto fail;
 	}
-	struct ffmpeg_data *ff_data = &stream->ff_data;
+	struct mpegts_data *ff_data = &stream->ff_data;
 	if (!stream->got_headers) {
 		if (!init_streams(stream, ff_data)) {
 			error("mpegts avstream failed to be created");
@@ -1049,10 +1188,9 @@ static bool set_config(struct ffmpeg_output *stream)
 
 	ret = pthread_create(&stream->write_thread, NULL, write_thread, stream);
 	if (ret != 0) {
-		ffmpeg_mpegts_log_error(
-			LOG_WARNING, &stream->ff_data,
-			"ffmpeg_output_start: Failed to create write "
-			"thread.");
+		mpegts_log_error(LOG_WARNING, &stream->ff_data,
+				 "mpegts_output_start: Failed to create write "
+				 "thread.");
 		code = OBS_OUTPUT_ERROR;
 		goto fail;
 	}
@@ -1064,21 +1202,21 @@ static bool set_config(struct ffmpeg_output *stream)
 	return true;
 fail:
 	obs_output_signal_stop(stream->output, code);
-	ffmpeg_mpegts_full_stop(stream);
+	mpegts_full_stop(stream);
 	return false;
 }
 
 static void *start_thread(void *data)
 {
-	struct ffmpeg_output *output = data;
+	struct mpegts_output *output = data;
 	set_config(output);
 	output->connecting = false;
 	return NULL;
 }
 
-static bool ffmpeg_mpegts_start(void *data)
+static bool mpegts_start(void *data)
 {
-	struct ffmpeg_output *output = data;
+	struct mpegts_output *output = data;
 	int ret;
 
 	if (output->connecting)
@@ -1094,19 +1232,19 @@ static bool ffmpeg_mpegts_start(void *data)
 	return (output->connecting = (ret == 0));
 }
 
-static void ffmpeg_mpegts_full_stop(void *data)
+static void mpegts_full_stop(void *data)
 {
-	struct ffmpeg_output *output = data;
+	struct mpegts_output *output = data;
 
 	if (output->active) {
 		obs_output_end_data_capture(output->output);
-		ffmpeg_mpegts_deactivate(output);
+		mpegts_deactivate(output);
 	}
 }
 
-static void ffmpeg_mpegts_stop(void *data, uint64_t ts)
+static void mpegts_stop(void *data, uint64_t ts)
 {
-	struct ffmpeg_output *output = data;
+	struct mpegts_output *output = data;
 
 	if (output->active) {
 		if (ts > 0) {
@@ -1114,13 +1252,13 @@ static void ffmpeg_mpegts_stop(void *data, uint64_t ts)
 			os_atomic_set_bool(&output->stopping, true);
 		}
 
-		ffmpeg_mpegts_full_stop(output);
+		mpegts_full_stop(output);
 	} else {
 		obs_output_signal_stop(output->output, OBS_OUTPUT_SUCCESS);
 	}
 }
 
-static void ffmpeg_mpegts_deactivate(struct ffmpeg_output *output)
+static void mpegts_deactivate(struct mpegts_output *output)
 {
 	if (output->write_thread_active) {
 		os_event_signal(output->stop_event);
@@ -1137,12 +1275,12 @@ static void ffmpeg_mpegts_deactivate(struct ffmpeg_output *output)
 
 	pthread_mutex_unlock(&output->write_mutex);
 
-	ffmpeg_mpegts_data_free(output, &output->ff_data);
+	mpegts_data_free(output, &output->ff_data);
 }
 
-static uint64_t ffmpeg_mpegts_total_bytes(void *data)
+static uint64_t mpegts_total_bytes(void *data)
 {
-	struct ffmpeg_output *output = data;
+	struct mpegts_output *output = data;
 	return output->total_bytes;
 }
 
@@ -1157,7 +1295,7 @@ static inline int64_t rescale_ts2(AVStream *stream, AVRational codec_time_base,
 /* Convert obs encoder_packet to FFmpeg AVPacket and write to circular buffer
  * where it will be processed in the write_thread by process_packet.
  */
-void mpegts_write_packet(struct ffmpeg_output *stream,
+void mpegts_write_packet(struct mpegts_output *stream,
 			 struct encoder_packet *encpacket)
 {
 	if (stopping(stream) || !stream->ff_data.video ||
@@ -1204,17 +1342,16 @@ fail:
 	av_packet_free(&packet);
 }
 
-static bool write_header(struct ffmpeg_output *stream, struct ffmpeg_data *data)
+static bool write_header(struct mpegts_output *stream, struct mpegts_data *data)
 {
 	AVDictionary *dict = NULL;
 	int ret;
 	/* get mpegts muxer settings (can be used with rist, srt, rtp, etc ... */
 	if ((ret = av_dict_parse_string(&dict, data->config.muxer_settings, "=",
 					" ", 0))) {
-		ffmpeg_mpegts_log_error(
-			LOG_WARNING, data,
-			"Failed to parse muxer settings: %s, %s",
-			data->config.muxer_settings, av_err2str(ret));
+		mpegts_log_error(LOG_WARNING, data,
+				 "Failed to parse muxer settings: %s, %s",
+				 data->config.muxer_settings, av_err2str(ret));
 
 		av_dict_free(&dict);
 		return false;
@@ -1235,10 +1372,9 @@ static bool write_header(struct ffmpeg_output *stream, struct ffmpeg_data *data)
 	/* Allocate the stream private data and write the stream header. */
 	ret = avformat_write_header(data->output, &dict);
 	if (ret < 0) {
-		ffmpeg_mpegts_log_error(
-			LOG_WARNING, data,
-			"Error setting stream header for '%s': %s",
-			data->config.url, av_err2str(ret));
+		mpegts_log_error(LOG_WARNING, data,
+				 "Error setting stream header for '%s': %s",
+				 data->config.url, av_err2str(ret));
 		return false;
 	}
 
@@ -1260,10 +1396,10 @@ static bool write_header(struct ffmpeg_output *stream, struct ffmpeg_data *data)
 	return true;
 }
 
-static void ffmpeg_mpegts_data(void *data, struct encoder_packet *packet)
+static void mpegts_receive_data(void *data, struct encoder_packet *packet)
 {
-	struct ffmpeg_output *stream = data;
-	struct ffmpeg_data *ff_data = &stream->ff_data;
+	struct mpegts_output *stream = data;
+	struct mpegts_data *ff_data = &stream->ff_data;
 	int code;
 	if (!stream->got_headers) {
 		if (get_extradata(stream)) {
@@ -1288,13 +1424,13 @@ static void ffmpeg_mpegts_data(void *data, struct encoder_packet *packet)
 	/* encoder failure */
 	if (!packet) {
 		obs_output_signal_stop(stream->output, OBS_OUTPUT_ENCODE_ERROR);
-		ffmpeg_mpegts_deactivate(stream);
+		mpegts_deactivate(stream);
 		return;
 	}
 
 	if (stopping(stream)) {
 		if (packet->sys_dts_usec >= (int64_t)stream->stop_ts) {
-			ffmpeg_mpegts_deactivate(stream);
+			mpegts_deactivate(stream);
 			return;
 		}
 	}
@@ -1303,10 +1439,10 @@ static void ffmpeg_mpegts_data(void *data, struct encoder_packet *packet)
 	return;
 fail:
 	obs_output_signal_stop(stream->output, code);
-	ffmpeg_mpegts_full_stop(stream);
+	mpegts_full_stop(stream);
 }
 
-static obs_properties_t *ffmpeg_mpegts_properties(void *unused)
+static obs_properties_t *mpegts_properties(void *unused)
 {
 	UNUSED_PARAMETER(unused);
 
@@ -1317,7 +1453,7 @@ static obs_properties_t *ffmpeg_mpegts_properties(void *unused)
 	return props;
 }
 
-struct obs_output_info ffmpeg_mpegts_muxer = {
+struct obs_output_info mpegts_muxer = {
 	.id = "ffmpeg_mpegts_muxer",
 	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_MULTI_TRACK |
 		 OBS_OUTPUT_SERVICE,
@@ -1328,12 +1464,21 @@ struct obs_output_info ffmpeg_mpegts_muxer = {
 	.encoded_video_codecs = "h264",
 #endif
 	.encoded_audio_codecs = "aac;opus",
-	.get_name = ffmpeg_mpegts_getname,
-	.create = ffmpeg_mpegts_create,
-	.destroy = ffmpeg_mpegts_destroy,
-	.start = ffmpeg_mpegts_start,
-	.stop = ffmpeg_mpegts_stop,
-	.encoded_packet = ffmpeg_mpegts_data,
-	.get_total_bytes = ffmpeg_mpegts_total_bytes,
-	.get_properties = ffmpeg_mpegts_properties,
+	.get_name = mpegts_getname,
+	.create = mpegts_create,
+	.destroy = mpegts_destroy,
+	.start = mpegts_start,
+	.stop = mpegts_stop,
+	.encoded_packet = mpegts_receive_data,
+	.get_total_bytes = mpegts_total_bytes,
+	.get_properties = mpegts_properties,
 };
+
+extern void load_srt_stats(void);
+
+bool obs_module_load(void)
+{
+	obs_register_output(&mpegts_muxer);
+	load_srt_stats();
+	return true;
+}

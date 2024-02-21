@@ -14,12 +14,9 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-
 #pragma once
-#include <obs-module.h>
-#include "obs-ffmpeg-url.h"
+#include "obs-mpegts-common.h"
 #include <srt/srt.h>
-#include <libavformat/avformat.h>
 #ifdef _WIN32
 #include <sys/timeb.h>
 #endif
@@ -35,6 +32,16 @@ enum SRTMode {
 	SRT_MODE_CALLER = 0,
 	SRT_MODE_LISTENER = 1,
 	SRT_MODE_RENDEZVOUS = 2
+};
+
+struct srt_stats {
+	uint64_t total_packets_sent;
+	int packets_dropped;
+	int packets_retransmitted;
+	double rtt;
+	double peer_latency;
+	double latency;
+	double bandwidth;
 };
 
 typedef struct SRTContext {
@@ -81,7 +88,40 @@ typedef struct SRTContext {
 	int linger;
 	int tsbpd;
 	double time; // time in s in order to post logs at definite intervals
+	struct srt_stats *stats;
 } SRTContext;
+
+static void get_srt_stats(void *data, calldata_t *cd)
+{
+	struct mpegts_output *output = (struct mpegts_output *)data;
+	SRTContext *s = (SRTContext *)output->h->priv_data;
+	if (s) {
+		if (s->stats) {
+			calldata_set_int(cd, "srt_total_pkts",
+					 s->stats->total_packets_sent);
+			calldata_set_int(cd, "srt_dropped_pkts",
+					 s->stats->packets_dropped);
+			calldata_set_int(cd, "srt_retransmitted_pkts",
+					 s->stats->packets_retransmitted);
+			calldata_set_float(cd, "srt_rtt", (float)s->stats->rtt);
+			calldata_set_float(cd, "srt_peer_latency",
+					   (float)s->stats->peer_latency);
+			calldata_set_float(cd, "srt_latency",
+					   (float)s->stats->latency);
+			calldata_set_float(cd, "srt_bandwidth",
+					   (float)s->stats->bandwidth);
+		} else {
+			calldata_set_int(cd, "srt_total_pkts", 0);
+			calldata_set_int(cd, "srt_dropped_pkts", 0);
+			calldata_set_int(cd, "srt_retransmitted_pkts", 0);
+			calldata_set_float(cd, "srt_rtt", 0);
+			calldata_set_float(cd, "srt_peer_latency",
+					   (float)s->stats->peer_latency);
+			calldata_set_float(cd, "srt_latency", 0);
+			calldata_set_float(cd, "srt_bandwidth", 0);
+		}
+	}
+}
 
 static int libsrt_neterrno(URLContext *h)
 {
@@ -664,6 +704,7 @@ static int libsrt_open(URLContext *h, const char *uri)
 	const char *p;
 	char buf[1024];
 	int ret = 0;
+	s->stats = bzalloc(sizeof(struct srt_stats));
 
 	if (srt_startup() < 0) {
 		blog(LOG_ERROR,
@@ -863,13 +904,22 @@ static int libsrt_write(URLContext *h, const uint8_t *buf, int size)
 		double time = (double)timesp.tv_sec +
 			      0.000000001 * (double)timesp.tv_nsec;
 #endif
-		if (time > (s->time + 60.0)) {
-			srt_bistats(s->fd, &perf, 0, 1);
+		srt_bistats(s->fd, &perf, 0, 1);
+		s->stats->rtt = perf.msRTT;
+		s->stats->bandwidth = perf.mbpsBandwidth;
+		s->stats->peer_latency = perf.msSndTsbPdDelay;
+		s->stats->latency = perf.msRcvTsbPdDelay;
+		if (time > (s->time + 10.0)) {
 			blog(LOG_DEBUG,
-			     "[obs-ffmpeg mpegts muxer / libsrt]: RTT [%.2f ms], Link Bandwidth [%.1f Mbps]",
-			     perf.msRTT, perf.mbpsBandwidth);
+			     "[obs-ffmpeg mpegts muxer / libsrt]: RTT [%.2f ms], Link Bandwidth [%.1f Mbps], peer latency [%d ms], SRTO_RCVLATENCY [%d ms]",
+			     perf.msRTT, perf.mbpsBandwidth,
+			     perf.msSndTsbPdDelay, perf.msRcvTsbPdDelay);
 			s->time = time;
 		}
+		srt_bstats(s->fd, &perf, 1);
+		s->stats->total_packets_sent = perf.pktSentTotal;
+		s->stats->packets_retransmitted = perf.pktRetransTotal;
+		s->stats->packets_dropped = perf.pktSndDropTotal;
 	}
 
 	return ret;
@@ -889,18 +939,24 @@ static int libsrt_close(URLContext *h)
 	blog(LOG_INFO,
 	     "[obs-ffmpeg mpegts muxer / libsrt]: Session Summary\n"
 	     "\ttime elapsed [%.1f sec]\n"
-	     "\tmean speed [%.1f Mbp]\n"
-	     "\ttotal bytes sent [%.1f MB]\n"
-	     "\tbytes retransmitted [%.1f %%]\n"
-	     "\tbytes dropped [%.1f %%]\n",
-	     (double)perf.msTimeStamp / 1000.0, perf.mbpsSendRate,
-	     (double)perf.byteSentTotal / 1000000.0,
+	     "\tmean speed [%.1f Mbps]\n"
+	     "\ttotal bytes sent [%.2f MB]\n"
+	     "\tbytes retransmitted [%.2f %%, %.2f MB]\n"
+	     "\tbytes dropped [%.2f %%, %.2f MB]\n"
+	     "\tpackets transmitted [%" PRId64 "]\n"
+	     "\tpackets retransmitted [%d]\n"
+	     "\tpackets dropped [%d]",
+	     (double)perf.msTimeStamp / 1000.0f, perf.mbpsSendRate,
+	     (double)perf.byteSentTotal / 1000000.0f,
 	     perf.byteSentTotal
-		     ? perf.byteRetransTotal / perf.byteSentTotal * 100.0
-		     : 0,
+		     ? (perf.byteRetransTotal * 100.0f / perf.byteSentTotal)
+		     : 0.0f,
+	     (double)perf.byteRetransTotal / 1000000.0f,
 	     perf.byteSentTotal
-		     ? perf.byteSndDropTotal / perf.byteSentTotal * 100.0
-		     : 0);
+		     ? perf.byteSndDropTotal / perf.byteSentTotal * 100.0f
+		     : 0.0f,
+	     (double)perf.byteSndDropTotal / 1000000.0f, perf.pktSentTotal,
+	     perf.pktRetransTotal, perf.pktSndDropTotal);
 
 	srt_epoll_release(s->eid);
 	int err = srt_close(s->fd);
@@ -909,7 +965,7 @@ static int libsrt_close(URLContext *h)
 		     srt_getlasterror_str());
 		return -1;
 	}
-
+	bfree(s->stats);
 	srt_cleanup();
 	blog(LOG_INFO,
 	     "[obs-ffmpeg mpegts muxer / libsrt]: SRT connection closed");

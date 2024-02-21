@@ -1,7 +1,6 @@
 project(obs-ffmpeg)
 
 option(ENABLE_FFMPEG_LOGGING "Enables obs-ffmpeg logging" OFF)
-option(ENABLE_NEW_MPEGTS_OUTPUT "Use native SRT/RIST mpegts output" ON)
 
 find_package(
   FFmpeg REQUIRED
@@ -17,20 +16,6 @@ add_library(obs-ffmpeg MODULE)
 add_library(OBS::ffmpeg ALIAS obs-ffmpeg)
 
 add_subdirectory(ffmpeg-mux)
-if(ENABLE_NEW_MPEGTS_OUTPUT)
-  find_package(Librist QUIET)
-  find_package(Libsrt QUIET)
-
-  if(NOT TARGET Librist::Librist AND NOT TARGET Libsrt::Libsrt)
-    obs_status(
-      FATAL_ERROR
-      "SRT and RIST libraries not found! Please install SRT and RIST libraries or set ENABLE_NEW_MPEGTS_OUTPUT=OFF.")
-  elseif(NOT TARGET Libsrt::Libsrt)
-    obs_status(FATAL_ERROR "SRT library not found! Please install SRT library or set ENABLE_NEW_MPEGTS_OUTPUT=OFF.")
-  elseif(NOT TARGET Librist::Librist)
-    obs_status(FATAL_ERROR "RIST library not found! Please install RIST library or set ENABLE_NEW_MPEGTS_OUTPUT=OFF.")
-  endif()
-endif()
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/obs-ffmpeg-config.h.in ${CMAKE_BINARY_DIR}/config/obs-ffmpeg-config.h)
 
@@ -65,16 +50,6 @@ target_link_libraries(
           FFmpeg::avutil
           FFmpeg::swscale
           FFmpeg::swresample)
-
-if(ENABLE_NEW_MPEGTS_OUTPUT)
-  target_sources(obs-ffmpeg PRIVATE obs-ffmpeg-mpegts.c obs-ffmpeg-srt.h obs-ffmpeg-rist.h obs-ffmpeg-url.h)
-
-  target_link_libraries(obs-ffmpeg PRIVATE Librist::Librist Libsrt::Libsrt)
-  if(OS_WINDOWS)
-    target_link_libraries(obs-ffmpeg PRIVATE ws2_32.lib)
-  endif()
-  target_compile_definitions(obs-ffmpeg PRIVATE NEW_MPEGTS_OUTPUT)
-endif()
 
 if(ENABLE_FFMPEG_LOGGING)
   target_sources(obs-ffmpeg PRIVATE obs-ffmpeg-logging.c)
