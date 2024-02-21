@@ -296,7 +296,7 @@ jobs:
           cache: ${{ fromJSON(steps.setup.outputs.cacheHit) || (github.event_name == 'push' && github.ref_name == 'master')}}
           restore-cache: ${{ fromJSON(steps.setup.outputs.cacheHit) }}
           cache-key: ${{ steps.setup.outputs.cacheKey }}
-          mirror-screenshots-url: https://dl.flathub.org/repo/screenshots
+          mirror-screenshots-url: https://dl.flathub.org/media
 
       - name: Validate build directory
         uses: ./.github/actions/flatpak-builder-lint
