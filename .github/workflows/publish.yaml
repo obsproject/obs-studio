@@ -110,7 +110,7 @@ jobs:
           manifest-path: ${{ github.workspace }}/build-aux/com.obsproject.Studio.json
           cache: ${{ fromJSON(steps.setup.outputs.cacheHit) }}
           cache-key: ${{ steps.setup.outputs.cacheKey }}
-          mirror-screenshots-url: https://dl.flathub.org/repo/screenshots
+          mirror-screenshots-url: https://dl.flathub.org/media
           branch: ${{ matrix.branch }}
 
       - name: Validate AppStream
