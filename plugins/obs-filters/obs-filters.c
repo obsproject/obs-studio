@@ -84,7 +84,10 @@ bool obs_module_load(void)
 	obs_register_source(&luma_key_filter);
 	obs_register_source(&luma_key_filter_v2);
 #ifdef LIBNVVFX_ENABLED
-	if (load_nvvfx())
+	obs_enter_graphics();
+	const bool direct3d = gs_get_device_type() == GS_DEVICE_DIRECT3D_11;
+	obs_leave_graphics();
+	if (direct3d && load_nvvfx())
 		obs_register_source(&nvidia_greenscreen_filter_info);
 #endif
 	return true;
