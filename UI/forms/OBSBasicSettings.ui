@@ -2248,6 +2248,13 @@
                          </property>
                         </widget>
                        </item>
+                       <item row="3" column="1">
+                        <widget class="QCheckBox" name="simpleRBFlush">
+                         <property name="text">
+                          <string>Basic.Settings.Output.ReplayBuffer.FlushAfterSave</string>
+                         </property>
+                        </widget>
+                       </item>
                       </layout>
                      </widget>
                     </item>
@@ -4975,6 +4982,13 @@
                            <widget class="QLabel" name="advRBEstimate">
                             <property name="text">
                              <string notr="true"/>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="3" column="0">
+                           <widget class="QCheckBox" name="advRBFlush">
+                            <property name="text">
+                             <string>Basic.Settings.Output.ReplayBuffer.FlushAfterSave</string>
                             </property>
                            </widget>
                           </item>
@@ -7933,6 +7947,7 @@
   <tabstop>simpleReplayBuf</tabstop>
   <tabstop>simpleRBSecMax</tabstop>
   <tabstop>simpleRBMegsMax</tabstop>
+  <tabstop>simpleRBFlush</tabstop>
   <tabstop>advOutTabs</tabstop>
   <tabstop>advOutTrack1</tabstop>
   <tabstop>advOutTrack2</tabstop>
@@ -7982,6 +7997,7 @@
   <tabstop>advOutTrack6Name</tabstop>
   <tabstop>advRBSecMax</tabstop>
   <tabstop>advRBMegsMax</tabstop>
+  <tabstop>advRBFlush</tabstop>
   <tabstop>scrollArea_50</tabstop>
   <tabstop>sampleRate</tabstop>
   <tabstop>channelSetup</tabstop>
