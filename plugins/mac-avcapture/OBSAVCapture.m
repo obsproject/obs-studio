@@ -197,6 +197,7 @@
         [self.deviceInput.device unlockForConfiguration];
         self.deviceInput = nil;
         self.isDeviceLocked = NO;
+        self.presetFormat = nil;
     }
 
     if (!device) {
