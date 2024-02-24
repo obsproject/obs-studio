@@ -338,6 +338,8 @@ bool properties_update_config(OBSAVCapture *capture, obs_properties_t *propertie
     BOOL hasFoundColorSpace = capture.isFastPath;
     BOOL hasFoundVideoRange = capture.isFastPath;
 
+    CFPropertyListRef priorColorPrimary = @"";
+
     if (device) {
         // Iterate over all formats reported by the device and gather them for property lists
         for (AVCaptureDeviceFormat *format in device.formats) {
@@ -419,29 +421,38 @@ bool properties_update_config(OBSAVCapture *capture, obs_properties_t *propertie
             }
 
             // Only iterate over available framerates if input format, color space, and resolution are matching
-            if (hasFoundInputFormat && hasFoundColorSpace && hasFoundResolution && !hasFoundFramerate) {
-                for (AVFrameRateRange *range in format.videoSupportedFrameRateRanges.reverseObjectEnumerator) {
-                    FourCharCode formatSubType = CMFormatDescriptionGetMediaSubType(format.formatDescription);
-                    int device_format = [OBSAVCapture formatFromSubtype:formatSubType];
+            if (hasFoundInputFormat && hasFoundColorSpace && hasFoundResolution) {
+                CFPropertyListRef colorPrimary = CMFormatDescriptionGetExtension(
+                    format.formatDescription, kCMFormatDescriptionExtension_ColorPrimaries);
 
-                    if (input_format == device_format) {
-                        struct media_frames_per_second min_fps = {
-                            .numerator = (uint32_t) clamp_Uint(range.maxFrameDuration.timescale, 0, UINT32_MAX),
-                            .denominator = (uint32_t) clamp_Uint(range.maxFrameDuration.value, 0, UINT32_MAX)};
-                        struct media_frames_per_second max_fps = {
-                            .numerator = (uint32_t) clamp_Uint(range.minFrameDuration.timescale, 0, UINT32_MAX),
-                            .denominator = (uint32_t) clamp_Uint(range.minFrameDuration.value, 0, UINT32_MAX)};
+                CFComparisonResult isColorPrimaryMatch = CFStringCompare(colorPrimary, priorColorPrimary, 0);
 
-                        if (![frameRates containsObject:range]) {
-                            obs_property_frame_rate_fps_range_add(prop_framerate, min_fps, max_fps);
-                            [frameRates addObject:range];
-                        }
+                if (isColorPrimaryMatch != kCFCompareEqualTo || !hasFoundFramerate) {
+                    for (AVFrameRateRange *range in format.videoSupportedFrameRateRanges.reverseObjectEnumerator) {
+                        FourCharCode formatSubType = CMFormatDescriptionGetMediaSubType(format.formatDescription);
+                        int device_format = [OBSAVCapture formatFromSubtype:formatSubType];
 
-                        if (!hasFoundFramerate && CMTimeCompare(range.maxFrameDuration, time) >= 0 &&
-                            CMTimeCompare(range.minFrameDuration, time) <= 0) {
-                            hasFoundFramerate = YES;
+                        if (input_format == device_format) {
+                            struct media_frames_per_second min_fps = {
+                                .numerator = (uint32_t) clamp_Uint(range.maxFrameDuration.timescale, 0, UINT32_MAX),
+                                .denominator = (uint32_t) clamp_Uint(range.maxFrameDuration.value, 0, UINT32_MAX)};
+                            struct media_frames_per_second max_fps = {
+                                .numerator = (uint32_t) clamp_Uint(range.minFrameDuration.timescale, 0, UINT32_MAX),
+                                .denominator = (uint32_t) clamp_Uint(range.minFrameDuration.value, 0, UINT32_MAX)};
+
+                            if (![frameRates containsObject:range]) {
+                                obs_property_frame_rate_fps_range_add(prop_framerate, min_fps, max_fps);
+                                [frameRates addObject:range];
+                            }
+
+                            if (!hasFoundFramerate && CMTimeCompare(range.maxFrameDuration, time) >= 0 &&
+                                CMTimeCompare(range.minFrameDuration, time) <= 0) {
+                                hasFoundFramerate = YES;
+                            }
                         }
                     }
+
+                    priorColorPrimary = colorPrimary;
                 }
             }
         }
