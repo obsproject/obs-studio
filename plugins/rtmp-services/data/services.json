@@ -2633,6 +2633,24 @@
             "supported video codecs": [
                 "h264"
             ]
+        },
+        {
+            "name": "Livito | لیویتو",
+            "common": false,
+            "more_info_link": "https://livito.tv/help",
+            "stream_key_link": "https://livito.tv/panel/stream#StreamUrlAndKey",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://rtmp.livito.tv/livestream"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 6000,
+                "max audio bitrate": 320,
+                "x264opts": "scenecut=0"
+            }
         }
     ]
 }
