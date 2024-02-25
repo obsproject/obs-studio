@@ -839,6 +839,8 @@ void SourceTreeModel::Remove(obs_sceneitem_t *item)
 
 	if (is_group)
 		UpdateGroupState(true);
+
+	OBSBasic::Get()->UpdateContextBarDeferred();
 }
 
 OBSSceneItem SourceTreeModel::Get(int idx)
