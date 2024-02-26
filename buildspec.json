@@ -29,15 +29,15 @@
             "hashes": {
                 "macos-x86_64": "140bfd517b4b9d12343ac000abba7bb16eecefe80ecbd7225993d03f0b9c0603",
                 "macos-arm64": "3970a781132b033bb9be6a9fe328a07e97fa7737fdf1575b1c5db24a3e130da1",
-                "linux-x86_64": "1253a6a36c3b8ac5b5ece9bfdb6eae6ab75e49516375fc475e2e871795ad9bea",
-                "linux-aarch64": "66ebcfce94a4527c8dd085a685691d0c43291adab9f2be4f8a0762f4a614083a",
+                "ubuntu-x86_64": "1253a6a36c3b8ac5b5ece9bfdb6eae6ab75e49516375fc475e2e871795ad9bea",
+                "ubuntu-aarch64": "66ebcfce94a4527c8dd085a685691d0c43291adab9f2be4f8a0762f4a614083a",
                 "windows-x64": "7480e9ed5688e09919db67237d130eef9a4c24df32ba2a7b8a5587de45ff8e69"
             },
             "revision": {
                 "macos-x86_64": 4,
                 "macos-arm64": 4,
-                "linux-x86_64": 3,
-                "linux-aarch64": 3,
+                "ubuntu-x86_64": 3,
+                "ubuntu-aarch64": 3,
                 "windows-x64": 3
             }
         }
@@ -57,13 +57,11 @@
         }
     },
     "platformConfig": {
-        "macos-universal": {
-            "qtVersion": 6
+        "ubuntu-x86_64": {
+            "qtVersion": 6,
+            "generator": "Ninja"
         },
-        "windows-x64": {
-            "qtVersion": 6
-        },
-        "linux-x86_64": {
+        "ubuntu-aarch64": {
             "qtVersion": 6,
             "generator": "Ninja"
         }
