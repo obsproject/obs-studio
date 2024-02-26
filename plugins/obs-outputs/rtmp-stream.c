@@ -627,6 +627,28 @@ static void log_sndbuf_size(struct rtmp_stream *stream)
 	}
 }
 
+#ifdef _WIN32
+static void setup_qos(struct rtmp_stream *stream)
+{
+	QOS_VERSION ver = {1, 0};
+	QOS_FLOWID flow_id = 0;
+
+	if (!QOSCreateHandle(&ver, &stream->qos_handle)) {
+		warn("Failed creating QOS Handle: %d", GetLastError());
+		return;
+	}
+
+	if (!QOSAddSocketToFlow(stream->qos_handle, stream->rtmp.m_sb.sb_socket,
+				NULL, QOSTrafficTypeAudioVideo,
+				QOS_NON_ADAPTIVE_FLOW, &flow_id)) {
+		warn("Failed adding socket to QOS: %d", GetLastError());
+		return;
+	}
+
+	info("QoS setup success!");
+}
+#endif
+
 static void *send_thread(void *data)
 {
 	struct rtmp_stream *stream = data;
@@ -635,6 +657,8 @@ static void *send_thread(void *data)
 
 #if defined(_WIN32)
 	log_sndbuf_size(stream);
+	if (stream->quality_of_service)
+		setup_qos(stream);
 #endif
 
 	while (os_sem_wait(stream->send_sem) == 0) {
@@ -704,6 +728,8 @@ static void *send_thread(void *data)
 
 #if defined(_WIN32)
 	log_sndbuf_size(stream);
+	if (stream->qos_handle)
+		QOSCloseHandle(stream->qos_handle);
 #endif
 
 	if (stream->new_socket_loop) {
@@ -1340,6 +1366,8 @@ static bool init_connect(struct rtmp_stream *stream)
 		obs_data_get_bool(settings, OPT_NEWSOCKETLOOP_ENABLED);
 	stream->low_latency_mode =
 		obs_data_get_bool(settings, OPT_LOWLATENCY_ENABLED);
+	stream->quality_of_service =
+		obs_data_get_bool(settings, OPT_QUALITY_OF_SERVICE);
 
 	// ugly hack for now, can be removed once new loop is reworked
 	if (stream->new_socket_loop &&
