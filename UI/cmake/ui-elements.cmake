@@ -24,6 +24,7 @@ target_sources(
             vertical-scroll-area.hpp)
 
 target_include_directories(obs-ui-support INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
+target_compile_options(obs-ui-support INTERFACE $<$<PLATFORM_ID:Linux>:-Wno-error=enum-conversion>)
 
 target_link_libraries(obs-studio PRIVATE OBS::ui-support)
 
