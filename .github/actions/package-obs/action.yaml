@@ -81,14 +81,14 @@ runs:
         : Run Ubuntu Packaging
 
         local -a package_args=(
-          --target linux-${{ inputs.target }}
+          --target ubuntu-${{ inputs.target }}
           --config ${{ inputs.config }}
         )
         if (( ${+RUNNER_DEBUG} )) build_args+=(--debug)
 
         if [[ '${{ inputs.package }}' == true ]] package_args+=(--package)
 
-        ${{ inputs.workingDirectory }}/.github/scripts/package-linux ${package_args}
+        ${{ inputs.workingDirectory }}/.github/scripts/package-ubuntu ${package_args}
 
     - name: Run Windows packaging
       if: runner.os == 'Windows'

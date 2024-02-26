@@ -9,19 +9,21 @@ env:
 
 task:
   install_script:
-  - pkg install -y
-    alsa-lib
-    v4l_compat swig ffmpeg curl dbus fdk-aac fontconfig
-    freetype2 jackit jansson luajit mbedtls pulseaudio speexdsp
-    libpci librist libsysinfo libudev-devd libv4l libx264 cmake ninja
-    mesa-libs lua52 pkgconf
-    srt
-    qt5-svg qt5-qmake qt5-buildtools qt5-x11extras qt5-xml
-    pipewire
+  - pkg-install -y
+    cmake ninja binutils pkgconf curl
+    ffmpeg qt6-base qt6-svg jansson libsysinfo e2fsprogs-libuuid pulseaudio
+    alsa-lib pipewire v4l_compat libpci librist srt nlohmann-json uthash
+    qr-code-generator websocketpp asio vlc swig luajit jackit sndio fdk-aac
   script:
-  - mkdir build
-  - cd build
   - cmake
-      -DENABLE_AJA=OFF
-      -GNinja ..
-  - ninja
+    -S $(pwd)
+    -B build
+    -G Ninja
+    -DOBS_CMAKE_VERSION=3.0
+    -DENABLE_JACK:BOOL=ON
+    -DENABLE_SNDIO:BOOL=ON
+    -DENABLE_LIBFDK:BOOL=ON
+    -DENABLE_WEBRTC:BOOL=OFF
+  - cmake
+    --build build
+    --config RelWithDebInfo
