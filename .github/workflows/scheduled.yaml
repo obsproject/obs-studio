@@ -116,6 +116,7 @@ jobs:
           fi
 
       - name: Check for Changed Files ✅
+        if: fromJSON(steps.nightly-checks.outputs.passed)
         uses: ./.github/actions/check-changes
         id: checks
         with:
