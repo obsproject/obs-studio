@@ -383,6 +383,9 @@ private:
 	bool ServiceAndACodecCompatible();
 	bool ServiceSupportsCodecCheck();
 
+	inline bool AllowsMultiTrack(const char *protocol);
+	void SwapMultiTrack(const char *protocol);
+
 private slots:
 	void on_theme_activated(int idx);
 
