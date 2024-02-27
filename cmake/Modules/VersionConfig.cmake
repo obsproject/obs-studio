@@ -17,9 +17,14 @@ if(NOT DEFINED OBS_VERSION_OVERRIDE)
     execute_process(
       COMMAND git describe --always --tags --dirty=-modified
       OUTPUT_VARIABLE _OBS_VERSION
+      ERROR_VARIABLE _GIT_DESCRIBE_ERR
       WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
       RESULT_VARIABLE _OBS_VERSION_RESULT
       OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+    if(_GIT_DESCRIBE_ERR)
+      message(FATAL_ERROR "Could not fetch OBS version tag from git.\n" ${_GIT_DESCRIBE_ERR})
+    endif()
 
     if(_OBS_VERSION_RESULT EQUAL 0)
       if(${_OBS_VERSION} MATCHES "rc[0-9]+$")
