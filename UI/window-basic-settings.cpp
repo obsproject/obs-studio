@@ -2057,16 +2057,6 @@ static inline QString makeFormatToolTip()
 	return html;
 }
 
-#define RTMP_PROTOCOL "rtmp"
-#define SRT_PROTOCOL "srt"
-#define RIST_PROTOCOL "rist"
-
-inline bool allowsMultiTrack(const char *protocol)
-{
-	return astrcmpi_n(protocol, SRT_PROTOCOL, strlen(SRT_PROTOCOL)) == 0 ||
-	       astrcmpi_n(protocol, RIST_PROTOCOL, strlen(RIST_PROTOCOL)) == 0;
-}
-
 void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 {
 	const char *rescaleRes =
@@ -2118,21 +2108,10 @@ void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 	ui->advOutMultiTrack5->setChecked(audioMixes & (1 << 4));
 	ui->advOutMultiTrack6->setChecked(audioMixes & (1 << 5));
 
-	bool is_multitrack_output = false;
 	obs_service_t *service_obj = main->GetService();
 	const char *protocol = nullptr;
 	protocol = obs_service_get_protocol(service_obj);
-	if (protocol) {
-		is_multitrack_output = allowsMultiTrack(protocol);
-	}
-
-	if (is_multitrack_output) {
-		ui->advStreamTrackWidget->setCurrentWidget(
-			ui->streamMultiTracks);
-	} else {
-		ui->advStreamTrackWidget->setCurrentWidget(
-			ui->streamSingleTracks);
-	}
+	SwapMultiTrack(protocol);
 }
 
 OBSPropertiesView *
