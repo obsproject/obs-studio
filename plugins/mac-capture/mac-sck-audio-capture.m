@@ -68,8 +68,7 @@ static bool init_audio_screen_stream(struct screen_capture *sc)
     sc->stream_properties = [[SCStreamConfiguration alloc] init];
     os_sem_wait(sc->shareable_content_available);
 
-    SCDisplay * (^get_target_display)(void) = ^SCDisplay *
-    {
+    SCDisplayRef (^get_target_display)(void) = ^SCDisplayRef {
         for (SCDisplay *display in sc->shareable_content.displays) {
             if (display.displayID == sc->display) {
                 return display;
