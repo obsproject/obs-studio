@@ -2676,7 +2676,7 @@ static void main_crash_handler(const char *format, va_list args,
 		string(message_buffer.get(), message_buffer.get() + size);
 
 	int ret = MessageBoxA(NULL, finalMessage.c_str(), "OBS has crashed!",
-			      MB_YESNO | MB_ICONERROR | MB_TASKMODAL);
+			      MB_YESNOCANCEL | MB_ICONERROR | MB_TASKMODAL);
 
 	if (ret == IDYES) {
 		size_t len = strlen(text);
@@ -2690,8 +2690,11 @@ static void main_crash_handler(const char *format, va_list args,
 		SetClipboardData(CF_TEXT, mem);
 		CloseClipboard();
 	}
+	
+	if (ret == IDYES || ret == IDNO) {
+		exit(-1);
+	}
 
-	exit(-1);
 }
 
 static void load_debug_privilege(void)
