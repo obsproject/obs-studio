@@ -33,24 +33,24 @@ invoke_formatter() {
 
   case ${formatter} {
     clang)
-      if (( ${+commands[clang-format-16]} )) {
-        local formatter=clang-format-16
+      if (( ${+commands[clang-format-17]} )) {
+        local formatter=clang-format-17
       } elif (( ${+commands[clang-format]} )) {
         local formatter=clang-format
       } else {
-        log_error "No viable clang-format version found (required 16.0.5)"
+        log_error "No viable clang-format version found (required 17.0.3)"
         exit 2
       }
 
       local -a formatter_version=($(${formatter} --version))
 
-      if ! is-at-least 16.0.5 ${formatter_version[-1]}; then
-        log_error "clang-format is not version 16.0.5 or above (found ${formatter_version[-1]}."
+      if ! is-at-least 17.0.3 ${formatter_version[-1]}; then
+        log_error "clang-format is not version 17.0.3 or above (found ${formatter_version[-1]}."
         exit 2
       fi
 
-      if ! is-at-least ${formatter_version[-1]} 16.0.5; then
-        log_error "clang-format is more recent than version 16.0.5 (found ${formatter_version[-1]})."
+      if ! is-at-least ${formatter_version[-1]} 17.0.3; then
+        log_error "clang-format is more recent than version 17.0.3 (found ${formatter_version[-1]})."
         exit 2
       fi
 
