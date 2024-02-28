@@ -2633,6 +2633,20 @@
             "supported video codecs": [
                 "h264"
             ]
+        },
+        {
+            "name": "NUUM",
+            "servers": [
+                {
+                    "name": "Automatic",
+                    "url": "rtmp://push.rtmp.nuum.ru/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 10000,
+                "max audio bitrate": 192
+            }
         }
     ]
 }
