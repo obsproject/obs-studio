@@ -179,9 +179,9 @@ static bool load_libvlc_module(void)
 	RegCloseKey(key);
 #else
 
+/* According to otoolo -L, this is what libvlc.dylib wants. */
 #ifdef __APPLE__
 #define LIBVLC_DIR "/Applications/VLC.app/Contents/MacOS/"
-/* According to otoolo -L, this is what libvlc.dylib wants. */
 #define LIBVLC_CORE_FILE LIBVLC_DIR "lib/libvlccore.dylib"
 #define LIBVLC_FILE LIBVLC_DIR "lib/libvlc.5.dylib"
 	setenv("VLC_PLUGIN_PATH", LIBVLC_DIR "plugins", false);

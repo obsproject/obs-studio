@@ -28,6 +28,8 @@ typedef enum {
     ScreenCaptureAudioApplicationStream = 1,
 } ScreenCaptureAudioStreamType;
 
+typedef SCDisplay *SCDisplayRef;
+
 @interface ScreenCaptureDelegate : NSObject <SCStreamOutput, SCStreamDelegate>
 
 @property struct screen_capture *sc;

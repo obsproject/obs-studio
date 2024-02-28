@@ -25,7 +25,7 @@
 #define RIST_MAX_PAYLOAD_SIZE (10000 - 28)
 
 #define FF_LIBRIST_MAKE_VERSION(major, minor, patch) \
-	((patch) + ((minor)*0x100) + ((major)*0x10000))
+	((patch) + ((minor) * 0x100) + ((major) * 0x10000))
 #define FF_LIBRIST_VERSION                                 \
 	FF_LIBRIST_MAKE_VERSION(LIBRIST_API_VERSION_MAJOR, \
 				LIBRIST_API_VERSION_MINOR, \
