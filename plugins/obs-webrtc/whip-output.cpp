@@ -401,7 +401,21 @@ bool WHIPOutput::Connect()
 	response.erase(0, response.find("v=0"));
 
 	rtc::Description answer(response, "answer");
-	peer_connection->setRemoteDescription(answer);
+	try {
+		peer_connection->setRemoteDescription(answer);
+	} catch (const std::invalid_argument &err) {
+		do_log(LOG_ERROR, "WHIP server responded with invalid SDP: %s",
+		       err.what());
+		cleanup();
+		obs_output_signal_stop(output, OBS_OUTPUT_CONNECT_FAILED);
+		return false;
+	} catch (const std::exception &err) {
+		do_log(LOG_ERROR, "Failed to set remote description: %s",
+		       err.what());
+		cleanup();
+		obs_output_signal_stop(output, OBS_OUTPUT_CONNECT_FAILED);
+		return false;
+	}
 	cleanup();
 	return true;
 }
