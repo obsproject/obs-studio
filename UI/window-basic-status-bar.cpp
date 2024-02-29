@@ -302,15 +302,6 @@ void OBSBasicStatusBar::UpdateRecordTime()
 	if (!paused) {
 		totalRecordSeconds++;
 
-		int seconds = totalRecordSeconds % 60;
-		int totalMinutes = totalRecordSeconds / 60;
-		int minutes = totalMinutes % 60;
-		int hours = totalMinutes / 60;
-
-		QString text = QString::asprintf("%02d:%02d:%02d", hours,
-						 minutes, seconds);
-
-		statusWidget->ui->recordTime->setText(text);
 		if (recordOutput && !statusWidget->ui->recordTime->isEnabled())
 			statusWidget->ui->recordTime->setDisabled(false);
 	} else {
@@ -320,6 +311,24 @@ void OBSBasicStatusBar::UpdateRecordTime()
 
 		streamPauseIconToggle = !streamPauseIconToggle;
 	}
+
+	UpdateRecordTimeLabel();
+}
+
+void OBSBasicStatusBar::UpdateRecordTimeLabel()
+{
+	int seconds = totalRecordSeconds % 60;
+	int totalMinutes = totalRecordSeconds / 60;
+	int minutes = totalMinutes % 60;
+	int hours = totalMinutes / 60;
+
+	QString text =
+		QString::asprintf("%02d:%02d:%02d", hours, minutes, seconds);
+	if (os_atomic_load_bool(&recording_paused)) {
+		text += QStringLiteral(" (PAUSED)");
+	}
+
+	statusWidget->ui->recordTime->setText(text);
 }
 
 void OBSBasicStatusBar::UpdateDroppedFrames()
@@ -550,14 +559,12 @@ void OBSBasicStatusBar::RecordingStopped()
 
 void OBSBasicStatusBar::RecordingPaused()
 {
-	QString text = statusWidget->ui->recordTime->text() +
-		       QStringLiteral(" (PAUSED)");
-	statusWidget->ui->recordTime->setText(text);
-
 	if (recordOutput) {
 		statusWidget->ui->recordIcon->setPixmap(recordingPausePixmap);
 		streamPauseIconToggle = true;
 	}
+
+	UpdateRecordTimeLabel();
 }
 
 void OBSBasicStatusBar::RecordingUnpaused()
@@ -565,6 +572,8 @@ void OBSBasicStatusBar::RecordingUnpaused()
 	if (recordOutput) {
 		statusWidget->ui->recordIcon->setPixmap(recordingActivePixmap);
 	}
+
+	UpdateRecordTimeLabel();
 }
 
 static QPixmap GetPixmap(const QString &filename)

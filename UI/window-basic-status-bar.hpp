@@ -83,6 +83,7 @@ private:
 	void UpdateBandwidth();
 	void UpdateStreamTime();
 	void UpdateRecordTime();
+	void UpdateRecordTimeLabel();
 	void UpdateDroppedFrames();
 
 	static void OBSOutputReconnect(void *data, calldata_t *params);
