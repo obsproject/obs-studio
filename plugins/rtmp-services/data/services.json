@@ -1158,10 +1158,6 @@
                 {
                     "name": "Global - Recommended",
                     "url": "rtmps://live.sb.zone:443/live"
-                },
-                {
-                    "name": "Global - Legacy",
-                    "url": "rtmp://ingest-global.switchboard.zone/live"
                 }
             ],
             "recommended": {
