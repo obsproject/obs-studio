@@ -42,6 +42,8 @@ OBSBasicStatusBar::OBSBasicStatusBar(QWidget *parent)
 	  streamingActivePixmap(QIcon(":/res/images/streaming-active.svg")
 					.pixmap(QSize(16, 16)))
 {
+	congestionArray.reserve(congestionUpdateSeconds);
+
 	statusWidget = new StatusBarWidget(this);
 	statusWidget->ui->delayInfo->setText("");
 	statusWidget->ui->droppedFrames->setText(
