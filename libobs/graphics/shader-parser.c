@@ -36,6 +36,10 @@ enum gs_shader_param_type get_shader_param_type(const char *type)
 		return GS_SHADER_PARAM_INT4;
 	else if (astrcmp_n(type, "texture", 7) == 0)
 		return GS_SHADER_PARAM_TEXTURE;
+	else if (strcmp(type, "float2x2") == 0)
+		return GS_SHADER_PARAM_MATRIX2X2;
+	else if (strcmp(type, "float3x3") == 0)
+		return GS_SHADER_PARAM_MATRIX3X3;
 	else if (strcmp(type, "float4x4") == 0)
 		return GS_SHADER_PARAM_MATRIX4X4;
 	else if (strcmp(type, "bool") == 0)
