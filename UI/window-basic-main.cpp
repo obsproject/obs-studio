@@ -1938,6 +1938,8 @@ void OBSBasic::AddVCamButton()
 			    QStringLiteral("configIconSmall"),
 			    &OBSBasic::VCamConfigButtonClicked);
 	vcamButton->insert(2);
+	vcamButton->first()->setSizePolicy(QSizePolicy::Minimum,
+					   QSizePolicy::Minimum);
 }
 
 void OBSBasic::ResetOutputs()
