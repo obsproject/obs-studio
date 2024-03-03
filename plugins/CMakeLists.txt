@@ -37,6 +37,7 @@ add_obs_plugin(
     WITH_MESSAGE
 )
 add_obs_plugin(aja-output-ui PLATFORMS WINDOWS MACOS LINUX WITH_MESSAGE)
+add_obs_plugin(asio-output-ui PLATFORMS WINDOWS WITH_MESSAGE)
 add_obs_plugin(coreaudio-encoder PLATFORMS WINDOWS MACOS)
 add_obs_plugin(
     decklink
