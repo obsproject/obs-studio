@@ -1042,6 +1042,7 @@ public:
 	void SetDisplayAffinity(QWindow *window);
 
 	QColor GetSelectionColor() const;
+	inline bool Closing() { return closing; }
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
