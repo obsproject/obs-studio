@@ -22,9 +22,9 @@ if(NOT DEFINED GIT_HASH)
   endif()
 endif()
 
-configure_file(com.obsproject.Studio.appdata.xml.in com.obsproject.Studio.appdata.xml)
+configure_file(com.obsproject.Studio.metainfo.xml.in com.obsproject.Studio.metainfo.xml)
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/com.obsproject.Studio.appdata.xml
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/com.obsproject.Studio.metainfo.xml
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/metainfo)
 
 install(FILES com.obsproject.Studio.desktop DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
