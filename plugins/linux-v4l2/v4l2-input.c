@@ -178,7 +178,11 @@ static void *v4l2_thread(void *vptr)
 	size_t plane_offsets[MAX_AV_PLANES];
 	int fps_num, fps_denom;
 	float ffps;
-	uint64_t timeout_usec;
+	uint64_t data_timeout_usec;
+	// v4l2_start_capture is async so we need some extra time to recieve
+	// the first frame from slow to initialize devices.
+	const uint64_t init_timeout_usec = 2000000;
+	bool initialized = false;
 
 	blog(LOG_DEBUG, "%s: new capture thread", data->device_id);
 	os_set_thread_name("v4l2: capture");
@@ -187,11 +191,11 @@ static void *v4l2_thread(void *vptr)
 	v4l2_unpack_tuple(&fps_num, &fps_denom, data->framerate);
 	ffps = (float)fps_denom / fps_num;
 	blog(LOG_DEBUG, "%s: framerate: %.2f fps", data->device_id, ffps);
-	/* Timeout set to 5 frame periods. */
-	timeout_usec = (1000000 * data->timeout_frames) / ffps;
+	/* Timeout for new frames set to 5 frame periods. */
+	data_timeout_usec = (1000000 * data->timeout_frames) / ffps;
 	blog(LOG_INFO,
 	     "%s: select timeout set to %" PRIu64 " (%dx frame periods)",
-	     data->device_id, timeout_usec, data->timeout_frames);
+	     data->device_id, data_timeout_usec, data->timeout_frames);
 
 	if (v4l2_start_capture(data->dev, &data->buffers) < 0)
 		goto exit;
@@ -210,7 +214,8 @@ static void *v4l2_thread(void *vptr)
 
 		/* Set timeout timevalue. */
 		tv.tv_sec = 0;
-		tv.tv_usec = timeout_usec;
+		tv.tv_usec = initialized ? data_timeout_usec
+					 : init_timeout_usec;
 
 		r = select(data->dev + 1, &fds, NULL, NULL, &tv);
 		if (r < 0) {
@@ -232,6 +237,7 @@ static void *v4l2_thread(void *vptr)
 			}
 
 			if (data->auto_reset) {
+				initialized = false;
 				if (v4l2_reset_capture(data->dev,
 						       &data->buffers) == 0)
 					blog(LOG_INFO,
@@ -258,6 +264,7 @@ static void *v4l2_thread(void *vptr)
 			     data->device_id);
 			break;
 		}
+		initialized = true;
 
 		blog(LOG_DEBUG,
 		     "%s: ts: %06ld buf id #%d, flags 0x%08X, seq #%d, len %d, used %d",
