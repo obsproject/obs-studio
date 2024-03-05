@@ -1,5 +1,6 @@
 /******************************************************************************
     Copyright (C) 2019 by Jason Francis <cycl0ps@tuta.io>
+    Copyright (C) 2022 by Mark Bolhuis <mark@bolhuis.dev>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -33,29 +34,44 @@
 
 struct obs_hotkeys_platform {
 	struct wl_display *display;
-	struct wl_seat *seat;
-	struct wl_keyboard *keyboard;
+	struct wl_registry *registry;
+
 	struct xkb_context *xkb_context;
+
+	struct wl_list seat_list;
+};
+
+typedef struct obs_hotkeys_seat {
+	obs_hotkeys_platform_t *plat;
+
+	struct wl_list link;
+	uint32_t wl_name;
+
+	struct wl_seat *wl_seat;
+	struct wl_keyboard *wl_keyboard;
+
 	struct xkb_keymap *xkb_keymap;
 	struct xkb_state *xkb_state;
+
 	xkb_keysym_t key_to_sym[MAX_SHIFT_LEVELS][MAX_KEYCODES];
 	xkb_keysym_t obs_to_key[OBS_KEY_LAST_VALUE];
 	uint32_t current_layout;
-};
+} obs_hotkeys_seat_t;
 
 static obs_key_t obs_nix_wayland_key_from_virtual_key(int sym);
 
 static void load_keymap_data(struct xkb_keymap *keymap, xkb_keycode_t key,
 			     void *data)
 {
-	obs_hotkeys_platform_t *plat = (obs_hotkeys_platform_t *)data;
+	obs_hotkeys_seat_t *seat = (obs_hotkeys_seat_t *)data;
+
 	if (key >= MAX_KEYCODES)
 		return;
 
 	const xkb_keysym_t *syms;
 	for (int level = 0; level < MAX_SHIFT_LEVELS; level++) {
 		int nsyms = xkb_keymap_key_get_syms_by_level(
-			keymap, key, plat->current_layout, level, &syms);
+			keymap, key, seat->current_layout, level, &syms);
 		if (nsyms < 1)
 			continue;
 
@@ -63,46 +79,67 @@ static void load_keymap_data(struct xkb_keymap *keymap, xkb_keycode_t key,
 			obs_nix_wayland_key_from_virtual_key(syms[0]);
 		// This avoids ambiguity where multiple scancodes produce the same symbols.
 		// e.g. LSGT and Shift+AB08 produce `<` on default US layout.
-		if (!plat->obs_to_key[obs_key])
-			plat->obs_to_key[obs_key] = key;
-		plat->key_to_sym[level][key] = syms[0];
+		if (!seat->obs_to_key[obs_key])
+			seat->obs_to_key[obs_key] = key;
+		seat->key_to_sym[level][key] = syms[0];
 	}
 }
 
-static void rebuild_keymap_data(obs_hotkeys_platform_t *plat)
+static void clear_keymap_data(obs_hotkeys_seat_t *seat)
 {
-	memset(plat->key_to_sym, 0,
+	memset(seat->key_to_sym, 0,
 	       sizeof(xkb_keysym_t) * MAX_SHIFT_LEVELS * MAX_KEYCODES);
-	memset(plat->obs_to_key, 0, sizeof(xkb_keysym_t) * OBS_KEY_LAST_VALUE);
-	xkb_keymap_key_for_each(plat->xkb_keymap, load_keymap_data, plat);
+	memset(seat->obs_to_key, 0, sizeof(xkb_keysym_t) * OBS_KEY_LAST_VALUE);
 }
 
 static void platform_keyboard_keymap(void *data, struct wl_keyboard *keyboard,
 				     uint32_t format, int32_t fd, uint32_t size)
 {
-	UNUSED_PARAMETER(keyboard);
-	UNUSED_PARAMETER(format);
-	obs_hotkeys_platform_t *plat = (obs_hotkeys_platform_t *)data;
+	obs_hotkeys_seat_t *seat = (obs_hotkeys_seat_t *)data;
+	obs_hotkeys_platform_t *plat = seat->plat;
+
+	xkb_state_unref(seat->xkb_state);
+	seat->xkb_keymap = NULL;
+
+	xkb_keymap_unref(seat->xkb_keymap);
+	seat->xkb_state = NULL;
+
+	clear_keymap_data(seat);
+
+	if (format != WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1) {
+		blog(LOG_WARNING, "[wayland] Unsupported keymap format: %d",
+		     format);
+		return;
+	}
 
 	char *keymap_shm = mmap(NULL, size, PROT_READ, MAP_PRIVATE, fd, 0);
 	if (keymap_shm == MAP_FAILED) {
-		close(fd);
+		blog(LOG_ERROR, "[wayland] Failed to mmap keymap: %s",
+		     strerror(errno));
 		return;
 	}
+	close(fd);
 
 	struct xkb_keymap *xkb_keymap = xkb_keymap_new_from_string(
 		plat->xkb_context, keymap_shm, XKB_KEYMAP_FORMAT_TEXT_V1,
 		XKB_KEYMAP_COMPILE_NO_FLAGS);
 	munmap(keymap_shm, size);
-	close(fd);
+	if (!xkb_keymap) {
+		blog(LOG_ERROR, "[wayland] Failed to compile keymap");
+		return;
+	}
 
-	// cleanup old keymap and state
-	xkb_keymap_unref(plat->xkb_keymap);
-	xkb_state_unref(plat->xkb_state);
+	struct xkb_state *xkb_state = xkb_state_new(xkb_keymap);
+	if (!xkb_state) {
+		blog(LOG_ERROR, "[wayland] Failed to create xkb state");
+		xkb_keymap_unref(xkb_keymap);
+		return;
+	}
 
-	plat->xkb_keymap = xkb_keymap;
-	plat->xkb_state = xkb_state_new(xkb_keymap);
-	rebuild_keymap_data(plat);
+	seat->xkb_keymap = xkb_keymap;
+	seat->xkb_state = xkb_state;
+
+	xkb_keymap_key_for_each(seat->xkb_keymap, load_keymap_data, seat);
 }
 
 static void platform_keyboard_modifiers(void *data,
@@ -114,14 +151,20 @@ static void platform_keyboard_modifiers(void *data,
 {
 	UNUSED_PARAMETER(keyboard);
 	UNUSED_PARAMETER(serial);
-	obs_hotkeys_platform_t *plat = (obs_hotkeys_platform_t *)data;
-	xkb_state_update_mask(plat->xkb_state, mods_depressed, mods_latched,
+
+	obs_hotkeys_seat_t *seat = (obs_hotkeys_seat_t *)data;
+	if (seat->xkb_keymap == NULL)
+		return;
+
+	xkb_state_update_mask(seat->xkb_state, mods_depressed, mods_latched,
 			      mods_locked, 0, 0, group);
 
-	if (plat->current_layout != group) {
-		plat->current_layout = group;
-		rebuild_keymap_data(plat);
-	}
+	if (seat->current_layout == group)
+		return;
+
+	seat->current_layout = group;
+	clear_keymap_data(seat);
+	xkb_keymap_key_for_each(seat->xkb_keymap, load_keymap_data, seat);
 }
 
 static void platform_keyboard_key(void *data, struct wl_keyboard *keyboard,
@@ -181,23 +224,32 @@ const struct wl_keyboard_listener keyboard_listener = {
 	.repeat_info = platform_keyboard_repeat_info,
 };
 
-static void platform_seat_capabilities(void *data, struct wl_seat *seat,
+static void platform_seat_capabilities(void *data, struct wl_seat *wl_seat,
 				       uint32_t capabilities)
 {
-	UNUSED_PARAMETER(seat);
-	obs_hotkeys_platform_t *plat = (obs_hotkeys_platform_t *)data;
+	obs_hotkeys_seat_t *seat = (obs_hotkeys_seat_t *)data;
+	obs_hotkeys_platform_t *plat = seat->plat;
+
+	assert(seat->wl_seat == wl_seat);
 
 	bool kb_present = capabilities & WL_SEAT_CAPABILITY_KEYBOARD;
 
-	if (kb_present && plat->keyboard == NULL) {
-		plat->keyboard = wl_seat_get_keyboard(plat->seat);
-		wl_keyboard_add_listener(plat->keyboard, &keyboard_listener,
-					 plat);
-	} else if (!kb_present && plat->keyboard != NULL) {
-		wl_keyboard_release(plat->keyboard);
-		plat->keyboard = NULL;
+	if (kb_present && seat->wl_keyboard == NULL) {
+		seat->wl_keyboard = wl_seat_get_keyboard(wl_seat);
+		if (seat->wl_keyboard == NULL) {
+			blog(LOG_ERROR,
+			     "[wayland] Failed to get keyboard from wl_seat@%d",
+			     wl_proxy_get_id((struct wl_proxy *)wl_seat));
+			return;
+		}
+		wl_keyboard_add_listener(seat->wl_keyboard, &keyboard_listener,
+					 seat);
+	} else if (!kb_present && seat->wl_keyboard != NULL) {
+		wl_keyboard_release(seat->wl_keyboard);
+		seat->wl_keyboard = NULL;
 	}
 }
+
 static void platform_seat_name(void *data, struct wl_seat *seat,
 			       const char *name)
 {
@@ -212,32 +264,79 @@ const struct wl_seat_listener seat_listener = {
 	.name = platform_seat_name,
 };
 
+static void seat_bind(obs_hotkeys_platform_t *plat, uint32_t name,
+		      uint32_t version)
+{
+	obs_hotkeys_seat_t *seat = bzalloc(sizeof(obs_hotkeys_seat_t));
+	if (seat == NULL) {
+		blog(LOG_ERROR,
+		     "[wayland] Failed to allocate obs_hotkeys_seat_t");
+		return;
+	}
+
+	seat->plat = plat;
+	seat->wl_name = name;
+
+	seat->wl_seat = wl_registry_bind(plat->registry, name,
+					 &wl_seat_interface, version);
+	if (!seat->wl_seat) {
+		blog(LOG_ERROR, "[wayland] Failed to bind to wl_seat %u", name);
+		bfree(seat);
+		return;
+	}
+
+	wl_seat_add_listener(seat->wl_seat, &seat_listener, seat);
+	wl_list_insert(&plat->seat_list, &seat->link);
+}
+
+static void seat_destroy(obs_hotkeys_seat_t *seat)
+{
+	if (seat->wl_keyboard != NULL) {
+		wl_keyboard_release(seat->wl_keyboard);
+	}
+	wl_seat_release(seat->wl_seat);
+	xkb_keymap_unref(seat->xkb_keymap);
+	xkb_state_unref(seat->xkb_state);
+	wl_list_remove(&seat->link);
+	bfree(seat);
+}
+
 static void platform_registry_handler(void *data, struct wl_registry *registry,
-				      uint32_t id, const char *interface,
+				      uint32_t name, const char *interface,
 				      uint32_t version)
 {
 	obs_hotkeys_platform_t *plat = (obs_hotkeys_platform_t *)data;
 
+	assert(plat->registry == registry);
+
 	if (strcmp(interface, wl_seat_interface.name) == 0) {
-		if (version < 4) {
+		// Version 5 or greater is required for wl_seat_release and
+		// wl_keyboard_release requests.
+		if (version < 5) {
 			blog(LOG_WARNING,
 			     "[wayland] hotkeys disabled, compositor is too old");
 			return;
 		}
-		// Only negotiate up to version 7, the current wl_seat at time of writing.
-		plat->seat = wl_registry_bind(registry, id, &wl_seat_interface,
-					      version <= 7 ? version : 7);
-		wl_seat_add_listener(plat->seat, &seat_listener, plat);
+
+		seat_bind(plat, name, version > 7 ? 7 : version);
 	}
 }
 
 static void platform_registry_remover(void *data, struct wl_registry *registry,
-				      uint32_t id)
+				      uint32_t name)
 {
-	UNUSED_PARAMETER(data);
-	UNUSED_PARAMETER(registry);
-	UNUSED_PARAMETER(id);
-	// Nothing to do.
+	struct obs_hotkeys_platform *plat = (obs_hotkeys_platform_t *)data;
+
+	assert(plat->registry == registry);
+
+	obs_hotkeys_seat_t *seat, *seat_tmp;
+	wl_list_for_each_safe(seat, seat_tmp, &plat->seat_list, link)
+	{
+		if (seat->wl_name == name) {
+			seat_destroy(seat);
+			break;
+		}
+	}
 }
 
 const struct wl_registry_listener registry_listener = {
@@ -259,26 +358,59 @@ void obs_nix_wayland_log_info(void)
 static bool
 obs_nix_wayland_hotkeys_platform_init(struct obs_core_hotkeys *hotkeys)
 {
-	struct wl_display *display = obs_get_nix_platform_display();
-	hotkeys->platform_context = bzalloc(sizeof(obs_hotkeys_platform_t));
-	hotkeys->platform_context->display = display;
-	hotkeys->platform_context->xkb_context =
-		xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+	struct obs_hotkeys_platform *plat = bzalloc(sizeof(*plat));
+	if (plat == NULL) {
+		blog(LOG_ERROR,
+		     "[wayland] Failed to allocate hotkeys platform context");
+		return false;
+	}
 
-	struct wl_registry *registry = wl_display_get_registry(display);
-	wl_registry_add_listener(registry, &registry_listener,
-				 hotkeys->platform_context);
-	wl_display_roundtrip(display);
+	wl_list_init(&plat->seat_list);
+
+	plat->display = obs_get_nix_platform_display();
+	plat->xkb_context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+	if (plat->xkb_context == NULL) {
+		blog(LOG_ERROR, "[wayland] Failed to create XKB context");
+		goto err_xkb_context;
+	}
+
+	plat->registry = wl_display_get_registry(plat->display);
+	if (plat->registry == NULL) {
+		blog(LOG_ERROR, "[wayland] Failed to get Wayland registry");
+		goto err_registry;
+	}
+	wl_registry_add_listener(plat->registry, &registry_listener, plat);
+
+	wl_display_roundtrip(plat->display);
+
+	if (wl_list_empty(&plat->seat_list)) {
+		blog(LOG_WARNING, "[wayland] no seats detected");
+	}
+
+	hotkeys->platform_context = plat;
 	return true;
+
+err_registry:
+	xkb_context_unref(plat->xkb_context);
+err_xkb_context:
+	free(plat);
+	return false;
 }
 
 static void
 obs_nix_wayland_hotkeys_platform_free(struct obs_core_hotkeys *hotkeys)
 {
 	obs_hotkeys_platform_t *plat = hotkeys->platform_context;
+
+	obs_hotkeys_seat_t *seat, *seat_tmp;
+	wl_list_for_each_safe(seat, seat_tmp, &plat->seat_list, link)
+	{
+		seat_destroy(seat);
+	}
+
+	wl_registry_destroy(plat->registry);
 	xkb_context_unref(plat->xkb_context);
-	xkb_keymap_unref(plat->xkb_keymap);
-	xkb_state_unref(plat->xkb_state);
+
 	bfree(plat);
 }
 
@@ -389,9 +521,29 @@ static void obs_nix_wayland_key_to_str(obs_key_t key, struct dstr *dstr)
 	}
 
 	obs_hotkeys_platform_t *plat = obs->hotkeys.platform_context;
+
+	// Here we get the first seat with a valid keymap. This is not ideal
+	// since the keymap may not be the same for all seats. However, since
+	// we don't have a way to get the seat from the key event we have to
+	// make do with this.
+	bool found = false;
+	obs_hotkeys_seat_t *seat = NULL;
+	wl_list_for_each(seat, &plat->seat_list, link)
+	{
+		if (seat->xkb_keymap != NULL) {
+			found = true;
+			break;
+		}
+	}
+
+	if (!found) {
+		// TODO: What should we do here?
+		return;
+	}
+
 	// Translate the obs key back down to shift level 1 and then back to obs key.
-	xkb_keycode_t keycode = plat->obs_to_key[key];
-	xkb_keysym_t base_sym = plat->key_to_sym[0][keycode];
+	xkb_keycode_t keycode = seat->obs_to_key[key];
+	xkb_keysym_t base_sym = seat->key_to_sym[0][keycode];
 	if (base_sym != 0) {
 		char buf[16] = {0};
 		if (xkb_keysym_to_utf8(base_sym, buf, 15)) {
