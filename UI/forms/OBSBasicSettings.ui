@@ -3908,6 +3908,24 @@
                       </widget>
                      </widget>
                     </item>
+                    <item>
+                     <widget class="QFrame" name="advOutRecInfo">
+                      <layout class="QVBoxLayout" name="advOutRecInfoLayout">
+                       <property name="leftMargin">
+                        <number>0</number>
+                       </property>
+                       <property name="topMargin">
+                        <number>0</number>
+                       </property>
+                       <property name="rightMargin">
+                        <number>0</number>
+                       </property>
+                       <property name="bottomMargin">
+                        <number>0</number>
+                       </property>
+                      </layout>
+                     </widget>
+                    </item>
                    </layout>
                   </widget>
                   <widget class="QWidget" name="advOutputAudioTracksTab">
