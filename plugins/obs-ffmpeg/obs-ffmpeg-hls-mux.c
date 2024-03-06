@@ -113,7 +113,6 @@ bool ffmpeg_hls_mux_start(void *data)
 	obs_service_t *service;
 	const char *path_str;
 	const char *stream_key;
-	struct dstr path = {0};
 	obs_encoder_t *vencoder;
 	obs_data_t *settings;
 	int keyint_sec;
@@ -131,8 +130,8 @@ bool ffmpeg_hls_mux_start(void *data)
 	stream_key = obs_service_get_connect_info(
 		service, OBS_SERVICE_CONNECT_INFO_STREAM_KEY);
 	dstr_copy(&stream->stream_key, stream_key);
-	dstr_copy(&path, path_str);
-	dstr_replace(&path, "{stream_key}", stream_key);
+	dstr_copy(&stream->path, path_str);
+	dstr_replace(&stream->path, "{stream_key}", stream_key);
 	dstr_copy(&stream->muxer_settings,
 		  "method=PUT http_persistent=1 ignore_io_errors=1 ");
 	dstr_catf(&stream->muxer_settings, "http_user_agent=libobs/%s",
@@ -148,8 +147,7 @@ bool ffmpeg_hls_mux_start(void *data)
 
 	obs_data_release(settings);
 
-	start_pipe(stream, path.array);
-	dstr_free(&path);
+	start_pipe(stream);
 
 	if (!stream->pipe) {
 		obs_output_set_last_error(
