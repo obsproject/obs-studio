@@ -425,14 +425,7 @@ static void ffmpeg_source_tick(void *data, float seconds)
 	}
 }
 
-#define SRT_PROTO "srt"
 #define RIST_PROTO "rist"
-
-static bool requires_mpegts(const char *path)
-{
-	return !astrcmpi_n(path, SRT_PROTO, sizeof(SRT_PROTO) - 1) ||
-	       !astrcmpi_n(path, RIST_PROTO, sizeof(RIST_PROTO) - 1);
-}
 
 static void ffmpeg_source_update(void *data, obs_data_t *settings)
 {
@@ -468,10 +461,6 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 		should_restart_media = true;
 		input = obs_data_get_string(settings, "input");
 		input_format = obs_data_get_string(settings, "input_format");
-		if (requires_mpegts(input)) {
-			input_format = "mpegts";
-			obs_data_set_string(settings, "input_format", "mpegts");
-		}
 		s->reconnect_delay_sec =
 			(int)obs_data_get_int(settings, "reconnect_delay_sec");
 		s->reconnect_delay_sec = s->reconnect_delay_sec == 0
