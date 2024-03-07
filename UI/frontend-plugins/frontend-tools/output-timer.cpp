@@ -218,7 +218,7 @@ void OutputTimer::UnpauseRecordingTimer()
 	if (!ui->pauseRecordTimer->isChecked())
 		return;
 
-	if (!recordingTimer->isActive())
+	if (recordingTimeLeft > 0 && !recordingTimer->isActive())
 		recordingTimer->start(recordingTimeLeft);
 }
 
