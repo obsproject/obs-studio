@@ -138,7 +138,11 @@ build() {
         if (( debug )) {
           xcodebuild ${@}
         } else {
-          xcodebuild ${@} 2>&1 | xcbeautify
+          if [[ ${GITHUB_EVENT_NAME} == push ]] {
+            xcodebuild ${@} 2>&1 | xcbeautify --renderer terminal
+          } else {
+            xcodebuild ${@} 2>&1 | xcbeautify --renderer github-actions
+          }
         }
       }
 

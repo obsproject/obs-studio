@@ -41,10 +41,6 @@ struct nvenc_encoder {
 	int64_t dts_offset; // Revert when FFmpeg fixes b-frame DTS calculation
 };
 
-#ifdef __linux__
-extern bool ubuntu_20_04_nvenc_fallback;
-#endif
-
 #define ENCODER_NAME_H264 "NVIDIA NVENC H.264 (FFmpeg)"
 static const char *h264_nvenc_getname(void *unused)
 {
@@ -113,6 +109,7 @@ static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
 	int gpu = (int)obs_data_get_int(settings, "gpu");
 	bool cbr_override = obs_data_get_bool(settings, "cbr");
 	int bf = (int)obs_data_get_int(settings, "bf");
+	bool disable_scenecut = obs_data_get_bool(settings, "disable_scenecut");
 
 	video_t *video = obs_encoder_video(enc->ffve.encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
@@ -128,12 +125,6 @@ static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
 		rc = "CBR";
 	}
 
-#ifdef __linux__
-	bool use_old_nvenc = ubuntu_20_04_nvenc_fallback;
-#else
-#define use_old_nvenc false
-#endif
-
 	info.format = voi->format;
 	info.colorspace = voi->colorspace;
 	info.range = voi->range;
@@ -143,8 +134,8 @@ static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
 	av_opt_set_int(enc->ffve.context->priv_data, "cbr", false, 0);
 	av_opt_set(enc->ffve.context->priv_data, "profile", profile, 0);
 
-	if (use_old_nvenc || (obs_data_has_user_value(settings, "preset") &&
-			      !obs_data_has_user_value(settings, "preset2"))) {
+	if (obs_data_has_user_value(settings, "preset") &&
+	    !obs_data_has_user_value(settings, "preset2")) {
 
 		if (astrcmpi(preset, "mq") == 0) {
 			preset = "hq";
@@ -179,6 +170,9 @@ static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
 
 	av_opt_set(enc->ffve.context->priv_data, "level", "auto", 0);
 	av_opt_set_int(enc->ffve.context->priv_data, "gpu", gpu, 0);
+
+	av_opt_set_int(enc->ffve.context->priv_data, "no-scenecut",
+		       disable_scenecut, 0);
 
 	// This is ugly but ffmpeg wipes priv_data on error and we need
 	// to know this to show a proper error message.
@@ -505,12 +499,6 @@ obs_properties_t *nvenc_properties_internal(enum codec_type codec, bool ffmpeg)
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *p;
 
-#ifdef __linux__
-	bool use_old_nvenc = ubuntu_20_04_nvenc_fallback;
-#else
-#define use_old_nvenc false
-#endif
-
 	p = obs_properties_add_list(props, "rate_control",
 				    obs_module_text("RateControl"),
 				    OBS_COMBO_TYPE_LIST,
@@ -539,60 +527,47 @@ obs_properties_t *nvenc_properties_internal(enum codec_type codec, bool ffmpeg)
 				   10, 1);
 	obs_property_int_set_suffix(p, " s");
 
-	p = obs_properties_add_list(props, use_old_nvenc ? "preset" : "preset2",
-				    obs_module_text("Preset"),
+	p = obs_properties_add_list(props, "preset2", obs_module_text("Preset"),
 				    OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
 
 #define add_preset(val)                                                        \
 	obs_property_list_add_string(p, obs_module_text("NVENC.Preset2." val), \
 				     val)
-	if (use_old_nvenc) {
-		add_preset("mq");
-		add_preset("hq");
-		add_preset("default");
-		add_preset("hp");
-		add_preset("ll");
-		add_preset("llhq");
-		add_preset("llhp");
-	} else {
-		add_preset("p1");
-		add_preset("p2");
-		add_preset("p3");
-		add_preset("p4");
-		add_preset("p5");
-		add_preset("p6");
-		add_preset("p7");
-	}
+
+	add_preset("p1");
+	add_preset("p2");
+	add_preset("p3");
+	add_preset("p4");
+	add_preset("p5");
+	add_preset("p6");
+	add_preset("p7");
 #undef add_preset
 
-	if (!use_old_nvenc) {
-		p = obs_properties_add_list(props, "tune",
-					    obs_module_text("Tuning"),
-					    OBS_COMBO_TYPE_LIST,
-					    OBS_COMBO_FORMAT_STRING);
+	p = obs_properties_add_list(props, "tune", obs_module_text("Tuning"),
+				    OBS_COMBO_TYPE_LIST,
+				    OBS_COMBO_FORMAT_STRING);
 
 #define add_tune(val)                                                         \
 	obs_property_list_add_string(p, obs_module_text("NVENC.Tuning." val), \
 				     val)
-		add_tune("hq");
-		add_tune("ll");
-		add_tune("ull");
+	add_tune("hq");
+	add_tune("ll");
+	add_tune("ull");
 #undef add_tune
 
-		p = obs_properties_add_list(props, "multipass",
-					    obs_module_text("NVENC.Multipass"),
-					    OBS_COMBO_TYPE_LIST,
-					    OBS_COMBO_FORMAT_STRING);
+	p = obs_properties_add_list(props, "multipass",
+				    obs_module_text("NVENC.Multipass"),
+				    OBS_COMBO_TYPE_LIST,
+				    OBS_COMBO_FORMAT_STRING);
 
 #define add_multipass(val)            \
 	obs_property_list_add_string( \
 		p, obs_module_text("NVENC.Multipass." val), val)
-		add_multipass("disabled");
-		add_multipass("qres");
-		add_multipass("fullres");
+	add_multipass("disabled");
+	add_multipass("qres");
+	add_multipass("fullres");
 #undef add_multipass
-	}
 
 	p = obs_properties_add_list(props, "profile",
 				    obs_module_text("Profile"),

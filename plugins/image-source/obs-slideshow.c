@@ -234,7 +234,7 @@ static void add_file(struct slideshow *ss, image_file_array_t *new_files,
 	}
 }
 
-static bool valid_extension(const char *ext)
+bool valid_extension(const char *ext)
 {
 	if (!ext)
 		return false;
@@ -738,8 +738,10 @@ static void ss_video_tick(void *data, float seconds)
 {
 	struct slideshow *ss = data;
 
+	pthread_mutex_lock(&ss->mutex);
+
 	if (!ss->transition || !ss->slide_time)
-		return;
+		goto finish;
 
 	if (ss->restart_on_activate && ss->use_cut) {
 		ss->elapsed = 0.0f;
@@ -748,11 +750,11 @@ static void ss_video_tick(void *data, float seconds)
 		ss->restart_on_activate = false;
 		ss->use_cut = false;
 		ss->stop = false;
-		return;
+		goto finish;
 	}
 
 	if (ss->pause_on_deactivate || ss->manual || ss->stop || ss->paused)
-		return;
+		goto finish;
 
 	/* ----------------------------------------------------- */
 	/* fade to transparency when the file list becomes empty */
@@ -779,11 +781,14 @@ static void ss_video_tick(void *data, float seconds)
 			else
 				do_transition(ss, false);
 
-			return;
+			goto finish;
 		}
 
 		obs_source_media_next(ss->source);
 	}
+
+finish:
+	pthread_mutex_unlock(&ss->mutex);
 }
 
 static inline bool ss_audio_render_(obs_source_t *transition, uint64_t *ts_out,
@@ -1086,7 +1091,8 @@ struct obs_source_info slideshow_info = {
 	.id = "slideshow",
 	.type = OBS_SOURCE_TYPE_INPUT,
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
-			OBS_SOURCE_COMPOSITE | OBS_SOURCE_CONTROLLABLE_MEDIA,
+			OBS_SOURCE_COMPOSITE | OBS_SOURCE_CONTROLLABLE_MEDIA |
+			OBS_SOURCE_CAP_OBSOLETE,
 	.get_name = ss_getname,
 	.create = ss_create,
 	.destroy = ss_destroy,

@@ -1,0 +1,65 @@
+name: Run flatpak-builder-lint
+description: Runs flatpak-builder-lint with exceptions
+inputs:
+  artifact:
+    description: Type of artifact to lint (builddir, repo, manifest, appstream)
+    required: true
+  path:
+    description: Path to flatpak-builder manifest or Flatpak build directory
+    required: true
+  workingDirectory:
+    description: Working directory to clone flatpak-builder-lint
+    required: false
+    default: ${{ github.workspace }}
+runs:
+  using: composite
+  steps:
+    - name: Check artifact type
+      shell: bash
+      working-directory: ${{ inputs.workingDirectory }}
+      run: |
+        : Check artifact input
+        case "${{ inputs.artifact }}" in
+          builddir);;
+          repo);;
+          manifest);;
+          appstream);;
+          *)
+            echo "::error::Given artifact type is incorrect"
+            exit 2
+            ;;
+        esac
+
+    - name: Run flatpak-builder-lint
+      id: result
+      shell: bash
+      working-directory: ${{ inputs.workingDirectory }}
+      run: |
+        : Run flatpak-builder-lint
+        exit_code=0
+        ret=$(flatpak-builder-lint --exceptions ${{ inputs.artifact }} ${{ inputs.path }}) || exit_code=$?
+        if [[ $exit_code != 0 && -z "$ret" ]]; then
+          echo "::error::Error while running flatpak-builder-lint"
+          exit 2
+        fi
+
+        if [[ ${{ inputs.artifact }} == "appstream" ]]; then
+          echo $ret
+
+          [[ $exit_code != 0 ]] && echo "::error::Flatpak appstream info is not valid"
+
+          exit $exit_code
+        fi
+
+        for ((i = 0 ; i < $(echo $ret | jq '.warnings | length') ; i++)); do
+          warning=$(echo $ret | jq ".warnings[$i]")
+          echo "::warning::$warning found in the Flatpak ${{ inputs.artifact }}"
+        done
+
+        n_errors=$(echo $ret | jq '.errors | length')
+        for ((i = 0 ; i < $n_errors ; i++)); do
+          error=$(echo $ret | jq ".errors[$i]")
+          echo "::error::$error found in the Flatpak ${{ inputs.artifact }}"
+        done
+
+        [[ $n_errors == 0 ]] || exit 2

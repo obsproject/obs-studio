@@ -22,6 +22,8 @@
 #include <QPointer>
 #ifndef _WIN32
 #include <QSocketNotifier>
+#else
+#include <QSessionManager>
 #endif
 #include <obs.hpp>
 #include <util/lexer.h>
@@ -132,6 +134,9 @@ private:
 #ifndef _WIN32
 	static int sigintFd[2];
 	QSocketNotifier *snInt = nullptr;
+#else
+private slots:
+	void commitData(QSessionManager &manager);
 #endif
 
 public:

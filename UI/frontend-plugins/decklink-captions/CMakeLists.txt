@@ -7,31 +7,40 @@ if(NOT ENABLE_DECKLINK)
   return()
 endif()
 
-find_qt(COMPONENTS Widgets)
+if(OS_LINUX
+   OR OS_FREEBSD
+   OR OS_OPENBSD)
+  find_package(X11 REQUIRED)
+  mark_as_advanced(X11)
+endif()
+
+# cmake-format: off
+find_package(Qt6 REQUIRED Widgets)
+# cmake-format: on
 
 add_library(decklink-captions MODULE)
 add_library(OBS::decklink-captions ALIAS decklink-captions)
 
 target_sources(decklink-captions PRIVATE decklink-captions.cpp decklink-captions.h forms/captions.ui)
-target_link_libraries(decklink-captions PRIVATE OBS::frontend-api OBS::libobs Qt::Widgets)
+
+target_compile_options(decklink-captions PRIVATE $<$<PLATFORM_ID:Darwin>:-Wno-quoted-include-in-framework-header>
+                                                 $<$<PLATFORM_ID:Darwin>:-Wno-comma>)
+
+target_link_libraries(
+  decklink-captions
+  PRIVATE OBS::frontend-api OBS::libobs Qt::Widgets
+          "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>>" $<$<PLATFORM_ID:Linux,FreeBSD>:X11::X11>)
 
 if(OS_WINDOWS)
   configure_file(cmake/windows/obs-module.rc.in decklink-captions.rc)
   target_sources(decklink-captions PRIVATE decklink-captions.rc)
 
-  set_property(
-    TARGET decklink-captions
-    APPEND
-    PROPERTY AUTORCC_OPTIONS --format-version 1)
-elseif(OS_MACOS)
-  target_compile_options(decklink-captions PRIVATE -Wno-quoted-include-in-framework-header -Wno-comma)
-  target_link_libraries(decklink-captions PRIVATE "$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>")
-elseif(OS_LINUX OR OS_FREEBSD)
-  find_package(X11 REQUIRED)
-  mark_as_advanced(X11)
-  target_link_libraries(decklink-captions PRIVATE X11::X11)
+  # cmake-format: off
+  set_property(TARGET decklink-captions APPEND PROPERTY AUTORCC_OPTIONS --format-version 1)
+  # cmake-format: on
 endif()
 
+# cmake-format: off
 set_target_properties_obs(
   decklink-captions
   PROPERTIES FOLDER plugins/decklink
@@ -40,3 +49,4 @@ set_target_properties_obs(
              AUTOUIC ON
              AUTORCC ON
              AUTOUIC_SEARCH_PATHS forms)
+# cmake-format: on

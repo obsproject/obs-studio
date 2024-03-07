@@ -71,6 +71,8 @@ OBSBasicTransform::OBSBasicTransform(OBSSceneItem item, OBSBasic *parent)
 		   &OBSBasicTransform::OnCropChanged);
 	HookWidget(ui->cropBottom, ISCROLL_CHANGED,
 		   &OBSBasicTransform::OnCropChanged);
+	HookWidget(ui->cropToBounds, &QCheckBox::stateChanged,
+		   &OBSBasicTransform::OnControlChanged);
 
 	ui->buttonBox->button(QDialogButtonBox::Close)->setDefault(true);
 
@@ -121,24 +123,23 @@ OBSBasicTransform::~OBSBasicTransform()
 
 void OBSBasicTransform::SetScene(OBSScene scene)
 {
-	transformSignal.Disconnect();
-	selectSignal.Disconnect();
-	deselectSignal.Disconnect();
-	removeSignal.Disconnect();
+	sigs.clear();
 
 	if (scene) {
 		OBSSource source = obs_scene_get_source(scene);
 		signal_handler_t *signal =
 			obs_source_get_signal_handler(source);
 
-		transformSignal.Connect(signal, "item_transform",
-					OBSSceneItemTransform, this);
-		removeSignal.Connect(signal, "item_remove", OBSSceneItemRemoved,
-				     this);
-		selectSignal.Connect(signal, "item_select", OBSSceneItemSelect,
-				     this);
-		deselectSignal.Connect(signal, "item_deselect",
-				       OBSSceneItemDeselect, this);
+		sigs.emplace_back(signal, "item_transform",
+				  OBSSceneItemTransform, this);
+		sigs.emplace_back(signal, "item_remove", OBSSceneItemRemoved,
+				  this);
+		sigs.emplace_back(signal, "item_select", OBSSceneItemSelect,
+				  this);
+		sigs.emplace_back(signal, "item_deselect", OBSSceneItemDeselect,
+				  this);
+		sigs.emplace_back(signal, "item_locked", OBSSceneItemLocked,
+				  this);
 	}
 }
 
@@ -148,15 +149,20 @@ void OBSBasicTransform::SetItem(OBSSceneItem newItem)
 				  Q_ARG(OBSSceneItem, OBSSceneItem(newItem)));
 }
 
+void OBSBasicTransform::SetEnabled(bool enable)
+{
+	ui->container->setEnabled(enable);
+	ui->buttonBox->button(QDialogButtonBox::Reset)->setEnabled(enable);
+}
+
 void OBSBasicTransform::SetItemQt(OBSSceneItem newItem)
 {
 	item = newItem;
 	if (item)
 		RefreshControls();
 
-	bool enable = !!item;
-	ui->container->setEnabled(enable);
-	ui->buttonBox->button(QDialogButtonBox::Reset)->setEnabled(enable);
+	bool enable = !!item && !obs_sceneitem_locked(item);
+	SetEnabled(enable);
 }
 
 void OBSBasicTransform::OBSChannelChanged(void *param, calldata_t *data)
@@ -222,6 +228,15 @@ void OBSBasicTransform::OBSSceneItemDeselect(void *param, calldata_t *data)
 	}
 }
 
+void OBSBasicTransform::OBSSceneItemLocked(void *param, calldata_t *data)
+{
+	OBSBasicTransform *window =
+		reinterpret_cast<OBSBasicTransform *>(param);
+	bool locked = calldata_bool(data, "locked");
+
+	QMetaObject::invokeMethod(window, "SetEnabled", Q_ARG(bool, !locked));
+}
+
 static const uint32_t listToAlign[] = {OBS_ALIGN_TOP | OBS_ALIGN_LEFT,
 				       OBS_ALIGN_TOP,
 				       OBS_ALIGN_TOP | OBS_ALIGN_RIGHT,
@@ -252,7 +267,7 @@ void OBSBasicTransform::RefreshControls()
 
 	obs_transform_info osi;
 	obs_sceneitem_crop crop;
-	obs_sceneitem_get_info(item, &osi);
+	obs_sceneitem_get_info2(item, &osi);
 	obs_sceneitem_get_crop(item, &crop);
 
 	obs_source_t *source = obs_sceneitem_get_source(item);
@@ -280,6 +295,7 @@ void OBSBasicTransform::RefreshControls()
 	ui->boundsAlign->setCurrentIndex(boundsAlignIndex);
 	ui->boundsWidth->setValue(osi.bounds.x);
 	ui->boundsHeight->setValue(osi.bounds.y);
+	ui->cropToBounds->setChecked(osi.crop_to_bounds);
 
 	ui->cropLeft->setValue(int(crop.left));
 	ui->cropRight->setValue(int(crop.right));
@@ -302,6 +318,7 @@ void OBSBasicTransform::OnBoundsType(int index)
 	ui->boundsAlign->setEnabled(enable);
 	ui->boundsWidth->setEnabled(enable);
 	ui->boundsHeight->setEnabled(enable);
+	ui->cropToBounds->setEnabled(enable);
 
 	if (!ignoreItemChange) {
 		obs_bounds_type lastType = obs_sceneitem_get_bounds_type(item);
@@ -330,7 +347,7 @@ void OBSBasicTransform::OnControlChanged()
 	double height = double(source_cy);
 
 	obs_transform_info oti;
-	obs_sceneitem_get_info(item, &oti);
+	obs_sceneitem_get_info2(item, &oti);
 
 	/* do not scale a source if it has 0 width/height */
 	if (source_cx != 0 && source_cy != 0) {
@@ -347,9 +364,10 @@ void OBSBasicTransform::OnControlChanged()
 	oti.bounds_alignment = listToAlign[ui->boundsAlign->currentIndex()];
 	oti.bounds.x = float(ui->boundsWidth->value());
 	oti.bounds.y = float(ui->boundsHeight->value());
+	oti.crop_to_bounds = ui->cropToBounds->isChecked();
 
 	ignoreTransformSignal = true;
-	obs_sceneitem_set_info(item, &oti);
+	obs_sceneitem_set_info2(item, &oti);
 	ignoreTransformSignal = false;
 }
 

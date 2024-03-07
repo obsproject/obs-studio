@@ -12,13 +12,13 @@ jobs:
   services-availability:
     name: Check Service Availability 🛜
     if: github.repository_owner == 'obsproject'
-    runs-on: macos-13
+    runs-on: macos-14
     permissions:
       checks: write
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Set Up Homebrew 🍺
@@ -27,6 +27,8 @@ jobs:
         uses: ./.github/actions/services-validator
         with:
           repositorySecret: ${{ secrets.GITHUB_TOKEN }}
+          checkApiSecret: ${{ secrets.CHECK_SERVERS_API_KEY }}
+          checkApiServers: ${{ secrets.CHECK_SERVERS_LIST }}
           runSchemaChecks: false
           runServiceChecks: true
           createPullRequest: true
@@ -91,7 +93,7 @@ jobs:
     if: github.repository_owner == 'obsproject' && github.ref_name == 'master'
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
@@ -114,6 +116,7 @@ jobs:
           fi
 
       - name: Check for Changed Files ✅
+        if: fromJSON(steps.nightly-checks.outputs.passed)
         uses: ./.github/actions/check-changes
         id: checks
         with:
@@ -131,12 +134,12 @@ jobs:
     name: Upload Steam Builds 🚂
     needs: [build-project]
     if: github.repository_owner == 'obsproject'
-    runs-on: macos-13
+    runs-on: macos-14
     defaults:
       run:
         shell: zsh --no-rcs --errexit --pipefail {0}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Check Nightly Runs ☑️
         id: checks

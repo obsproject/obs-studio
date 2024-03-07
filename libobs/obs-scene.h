@@ -73,6 +73,8 @@ struct obs_scene_item {
 	enum obs_bounds_type bounds_type;
 	uint32_t bounds_align;
 	struct vec2 bounds;
+	bool crop_to_bounds;
+	struct obs_sceneitem_crop bounds_crop;
 
 	obs_hotkey_pair_id toggle_visibility;
 

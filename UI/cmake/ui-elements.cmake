@@ -1,3 +1,32 @@
+add_library(obs-ui-support INTERFACE)
+add_library(OBS::ui-support ALIAS obs-ui-support)
+
+target_sources(
+  obs-ui-support
+  INTERFACE # cmake-format: sortable
+            clickable-label.hpp
+            double-slider.cpp
+            double-slider.hpp
+            horizontal-scroll-area.cpp
+            horizontal-scroll-area.hpp
+            plain-text-edit.cpp
+            plain-text-edit.hpp
+            properties-view.cpp
+            properties-view.hpp
+            properties-view.moc.hpp
+            qt-wrappers.cpp
+            qt-wrappers.hpp
+            slider-ignorewheel.cpp
+            slider-ignorewheel.hpp
+            spinbox-ignorewheel.cpp
+            spinbox-ignorewheel.hpp
+            vertical-scroll-area.cpp
+            vertical-scroll-area.hpp)
+
+target_include_directories(obs-ui-support INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
+
+target_link_libraries(obs-studio PRIVATE OBS::ui-support)
+
 target_sources(
   obs-studio
   PRIVATE # cmake-format: sortable
@@ -6,23 +35,16 @@ target_sources(
           audio-encoders.cpp
           audio-encoders.hpp
           balance-slider.hpp
-          clickable-label.hpp
           context-bar-controls.cpp
           context-bar-controls.hpp
-          double-slider.cpp
-          double-slider.hpp
           focus-list.cpp
           focus-list.hpp
-          horizontal-scroll-area.cpp
-          horizontal-scroll-area.hpp
           hotkey-edit.cpp
           hotkey-edit.hpp
           item-widget-helpers.cpp
           item-widget-helpers.hpp
           lineedit-autoresize.cpp
           lineedit-autoresize.hpp
-          locked-checkbox.cpp
-          locked-checkbox.hpp
           log-viewer.cpp
           log-viewer.hpp
           media-controls.cpp
@@ -32,11 +54,6 @@ target_sources(
           menu-button.cpp
           menu-button.hpp
           mute-checkbox.hpp
-          plain-text-edit.cpp
-          plain-text-edit.hpp
-          properties-view.cpp
-          properties-view.hpp
-          properties-view.moc.hpp
           record-button.cpp
           record-button.hpp
           remote-text.cpp
@@ -46,22 +63,14 @@ target_sources(
           screenshot-obj.hpp
           slider-absoluteset-style.cpp
           slider-absoluteset-style.hpp
-          slider-ignorewheel.cpp
-          slider-ignorewheel.hpp
           source-label.cpp
           source-label.hpp
           source-tree.cpp
           source-tree.hpp
-          spinbox-ignorewheel.cpp
-          spinbox-ignorewheel.hpp
           undo-stack-obs.cpp
           undo-stack-obs.hpp
           url-push-button.cpp
           url-push-button.hpp
-          vertical-scroll-area.cpp
-          vertical-scroll-area.hpp
-          visibility-checkbox.cpp
-          visibility-checkbox.hpp
           visibility-item-widget.cpp
           visibility-item-widget.hpp
           volume-control.cpp

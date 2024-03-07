@@ -847,6 +847,13 @@ void OBSBasic::Save(const char *file)
 		}
 	}
 
+	if (lastOutputResolution) {
+		OBSDataAutoRelease res = obs_data_create();
+		obs_data_set_int(res, "x", lastOutputResolution->first);
+		obs_data_set_int(res, "y", lastOutputResolution->second);
+		obs_data_set_obj(saveData, "resolution", res);
+	}
+
 	if (!obs_data_save_json_safe(saveData, file, "tmp", "bak"))
 		blog(LOG_ERROR, "Could not save scene data to %s", file);
 }
@@ -1077,6 +1084,7 @@ void OBSBasic::LogScenes()
 void OBSBasic::Load(const char *file)
 {
 	disableSaving++;
+	lastOutputResolution.reset();
 
 	obs_data_t *data = obs_data_create_from_json_file_safe(file, "bak");
 	if (!data) {
@@ -1209,6 +1217,17 @@ retryScene:
 			obs_data_get_string(data, "current_program_scene");
 		opt_starting_scene.clear();
 		goto retryScene;
+	}
+
+	if (!curScene) {
+		auto find_scene_cb = [](void *source_ptr, obs_source_t *scene) {
+			OBSSourceAutoRelease &source =
+				reinterpret_cast<OBSSourceAutoRelease &>(
+					source_ptr);
+			source = obs_source_get_ref(scene);
+			return false;
+		};
+		obs_enum_scenes(find_scene_cb, &curScene);
 	}
 
 	SetCurrentScene(curScene.Get(), true);
@@ -1412,7 +1431,9 @@ bool OBSBasic::LoadService()
 
 		option = config_get_string(basicConfig, "AdvOut",
 					   "AudioEncoder");
-		if (strcmp(obs_get_encoder_codec(option), "opus") != 0)
+
+		const char *encoder_codec = obs_get_encoder_codec(option);
+		if (!encoder_codec || strcmp(encoder_codec, "opus") != 0)
 			config_set_string(basicConfig, "AdvOut", "AudioEncoder",
 					  "ffmpeg_opus");
 	}
@@ -1577,6 +1598,21 @@ bool OBSBasic::InitBasicConfigDefaults()
 	MigrateFormat("SimpleOutput");
 
 	/* ----------------------------------------------------- */
+	/* Migrate output scale setting to GPU scaling options.  */
+
+	if (config_get_bool(basicConfig, "AdvOut", "Rescale") &&
+	    !config_has_user_value(basicConfig, "AdvOut", "RescaleFilter")) {
+		config_set_int(basicConfig, "AdvOut", "RescaleFilter",
+			       OBS_SCALE_BILINEAR);
+	}
+
+	if (config_get_bool(basicConfig, "AdvOut", "RecRescale") &&
+	    !config_has_user_value(basicConfig, "AdvOut", "RecRescaleFilter")) {
+		config_set_int(basicConfig, "AdvOut", "RecRescaleFilter",
+			       OBS_SCALE_BILINEAR);
+	}
+
+	/* ----------------------------------------------------- */
 
 	if (changed)
 		config_save_safe(basicConfig, "tmp", nullptr);
@@ -1631,7 +1667,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_uint(basicConfig, "AdvOut", "RecTracks", (1 << 0));
 	config_set_default_string(basicConfig, "AdvOut", "RecEncoder", "none");
 	config_set_default_uint(basicConfig, "AdvOut", "FLVTrack", 1);
-
+	config_set_default_uint(basicConfig, "AdvOut",
+				"StreamMultiTrackAudioMixes", 1);
 	config_set_default_bool(basicConfig, "AdvOut", "FFOutputToFile", true);
 	config_set_default_string(basicConfig, "AdvOut", "FFFilePath",
 				  GetDefaultVideoSavePath().c_str());
@@ -7160,6 +7197,10 @@ inline void OBSBasic::OnActivate(bool force)
 		App()->IncrementSleepInhibition();
 		UpdateProcessPriority();
 
+		struct obs_video_info ovi;
+		obs_get_video_info(&ovi);
+		lastOutputResolution = {ovi.base_width, ovi.base_height};
+
 		TaskbarOverlaySetStatus(TaskbarOverlayStatusActive);
 		if (trayIcon && trayIcon->isVisible()) {
 #ifdef __APPLE__
@@ -7565,16 +7606,16 @@ void OBSBasic::AutoRemux(QString input, bool no_show)
 
 	const obs_encoder_t *videoEncoder =
 		obs_output_get_video_encoder(outputHandler->fileOutput);
-	const obs_encoder_t *audioEncoder =
-		obs_output_get_audio_encoder(outputHandler->fileOutput, 0);
 	const char *vCodecName = obs_encoder_get_codec(videoEncoder);
-	const char *aCodecName = obs_encoder_get_codec(audioEncoder);
 	const char *format = config_get_string(
 		config, isSimpleMode ? "SimpleOutput" : "AdvOut", "RecFormat2");
 
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(60, 5, 100)
+	const obs_encoder_t *audioEncoder =
+		obs_output_get_audio_encoder(outputHandler->fileOutput, 0);
+	const char *aCodecName = obs_encoder_get_codec(audioEncoder);
 	bool audio_is_pcm = strncmp(aCodecName, "pcm", 3) == 0;
 
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(60, 5, 100)
 	/* FFmpeg <= 6.0 cannot remux AV1+PCM into any supported format. */
 	if (audio_is_pcm && strcmp(vCodecName, "av1") == 0)
 		return;
@@ -8199,11 +8240,36 @@ void OBSBasic::VCamConfigButtonClicked()
 	dialog.exec();
 }
 
+void log_vcam_changed(const VCamConfig &config, bool starting)
+{
+	const char *action = starting ? "Starting" : "Changing";
+
+	switch (config.type) {
+	case VCamOutputType::Invalid:
+		break;
+	case VCamOutputType::ProgramView:
+		blog(LOG_INFO, "%s Virtual Camera output to Program", action);
+		break;
+	case VCamOutputType::PreviewOutput:
+		blog(LOG_INFO, "%s Virtual Camera output to Preview", action);
+		break;
+	case VCamOutputType::SceneOutput:
+		blog(LOG_INFO, "%s Virtual Camera output to Scene : %s", action,
+		     config.scene.c_str());
+		break;
+	case VCamOutputType::SourceOutput:
+		blog(LOG_INFO, "%s Virtual Camera output to Source : %s",
+		     action, config.source.c_str());
+		break;
+	}
+}
+
 void OBSBasic::UpdateVirtualCamConfig(const VCamConfig &config)
 {
 	vcamConfig = config;
 
 	outputHandler->UpdateVirtualCamOutputSource();
+	log_vcam_changed(config, false);
 }
 
 void OBSBasic::RestartVirtualCam(const VCamConfig &config)
@@ -8545,11 +8611,14 @@ void OBSBasic::UpdateEditMenu()
 	}
 	const bool canTransformSingle = videoCount == 1 && totalCount == 1;
 
+	OBSSceneItem curItem = GetCurrentSceneItem();
+	bool locked = obs_sceneitem_locked(curItem);
+
 	ui->actionCopySource->setEnabled(totalCount > 0);
-	ui->actionEditTransform->setEnabled(canTransformSingle);
+	ui->actionEditTransform->setEnabled(canTransformSingle && !locked);
 	ui->actionCopyTransform->setEnabled(canTransformSingle);
-	ui->actionPasteTransform->setEnabled(hasCopiedTransform &&
-					     videoCount > 0);
+	ui->actionPasteTransform->setEnabled(
+		canTransformMultiple && hasCopiedTransform && videoCount > 0);
 	ui->actionCopyFilters->setEnabled(filter_count > 0);
 	ui->actionPasteFilters->setEnabled(
 		!obs_weak_source_expired(copyFiltersSource) && totalCount > 0);
@@ -8597,7 +8666,7 @@ void OBSBasic::on_actionCopyTransform_triggered()
 {
 	OBSSceneItem item = GetCurrentSceneItem();
 
-	obs_sceneitem_get_info(item, &copiedTransformInfo);
+	obs_sceneitem_get_info2(item, &copiedTransformInfo);
 	obs_sceneitem_get_crop(item, &copiedCropInfo);
 
 	ui->actionPasteTransform->setEnabled(true);
@@ -8622,11 +8691,13 @@ void OBSBasic::on_actionPasteTransform_triggered()
 	auto func = [](obs_scene_t *, obs_sceneitem_t *item, void *data) {
 		if (!obs_sceneitem_selected(item))
 			return true;
+		if (obs_sceneitem_locked(item))
+			return true;
 
 		OBSBasic *main = reinterpret_cast<OBSBasic *>(data);
 
 		obs_sceneitem_defer_update_begin(item);
-		obs_sceneitem_set_info(item, &main->copiedTransformInfo);
+		obs_sceneitem_set_info2(item, &main->copiedTransformInfo);
 		obs_sceneitem_set_crop(item, &main->copiedCropInfo);
 		obs_sceneitem_defer_update_end(item);
 
@@ -8664,8 +8735,9 @@ static bool reset_tr(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *)
 	info.alignment = OBS_ALIGN_TOP | OBS_ALIGN_LEFT;
 	info.bounds_type = OBS_BOUNDS_NONE;
 	info.bounds_alignment = OBS_ALIGN_CENTER;
+	info.crop_to_bounds = false;
 	vec2_set(&info.bounds, 0.0f, 0.0f);
-	obs_sceneitem_set_info(item, &info);
+	obs_sceneitem_set_info2(item, &info);
 
 	obs_sceneitem_crop crop = {};
 	obs_sceneitem_set_crop(item, &crop);
@@ -8908,8 +8980,9 @@ static bool CenterAlignSelectedItems(obs_scene_t * /* scene */,
 		 float(ovi.base_height));
 	itemInfo.bounds_type = boundsType;
 	itemInfo.bounds_alignment = OBS_ALIGN_CENTER;
+	itemInfo.crop_to_bounds = obs_sceneitem_get_bounds_crop(item);
 
-	obs_sceneitem_set_info(item, &itemInfo);
+	obs_sceneitem_set_info2(item, &itemInfo);
 
 	return true;
 }
@@ -8963,7 +9036,7 @@ void OBSBasic::CenterSelectedSceneItems(const CenterType &centerType)
 	for (int x = 0; x < selectedItems.count(); x++) {
 		OBSSceneItem item = ui->sources->Get(selectedItems[x].row());
 		obs_transform_info oti;
-		obs_sceneitem_get_info(item, &oti);
+		obs_sceneitem_get_info2(item, &oti);
 
 		obs_source_t *source = obs_sceneitem_get_source(item);
 		float width = float(obs_source_get_width(source)) * oti.scale.x;
@@ -9461,7 +9534,7 @@ void OBSBasic::on_resetDocks_triggered(bool force)
 	    !force)
 #endif
 	{
-		QMessageBox::StandardButton button = QMessageBox::question(
+		QMessageBox::StandardButton button = OBSMessageBox::question(
 			this, QTStr("ResetUIWarning.Title"),
 			QTStr("ResetUIWarning.Text"));
 
@@ -9950,7 +10023,7 @@ void OBSBasic::on_actionCopySource_triggered()
 
 		SourceCopyInfo copyInfo;
 		copyInfo.weak_source = OBSGetWeakRef(source);
-		obs_sceneitem_get_info(item, &copyInfo.transform);
+		obs_sceneitem_get_info2(item, &copyInfo.transform);
 		obs_sceneitem_get_crop(item, &copyInfo.crop);
 		copyInfo.blend_method = obs_sceneitem_get_blending_method(item);
 		copyInfo.blend_mode = obs_sceneitem_get_blending_mode(item);

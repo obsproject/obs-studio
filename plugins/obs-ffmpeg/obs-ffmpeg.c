@@ -1,4 +1,3 @@
-#include <util/dstr.h>
 #include <obs-module.h>
 #include <util/platform.h>
 #include <libavutil/avutil.h>
@@ -47,6 +46,7 @@ extern struct obs_encoder_info aom_av1_encoder_info;
 
 #ifdef LIBAVUTIL_VAAPI_AVAILABLE
 extern struct obs_encoder_info h264_vaapi_encoder_info;
+extern struct obs_encoder_info av1_vaapi_encoder_info;
 #ifdef ENABLE_HEVC
 extern struct obs_encoder_info hevc_vaapi_encoder_info;
 #endif
@@ -238,35 +238,6 @@ static bool nvenc_device_available(void)
 
 #ifdef _WIN32
 extern bool load_nvenc_lib(void);
-extern uint32_t get_nvenc_ver();
-#endif
-
-/* please remove this annoying garbage and the associated garbage in
- * obs-ffmpeg-nvenc.c when ubuntu 20.04 is finally gone for good. */
-
-#ifdef __linux__
-bool ubuntu_20_04_nvenc_fallback = false;
-
-static void do_nvenc_check_for_ubuntu_20_04(void)
-{
-	FILE *fp;
-	char *line = NULL;
-	size_t linecap = 0;
-
-	fp = fopen("/etc/os-release", "r");
-	if (!fp) {
-		return;
-	}
-
-	while (getline(&line, &linecap, fp) != -1) {
-		if (strncmp(line, "VERSION_CODENAME=focal", 22) == 0) {
-			ubuntu_20_04_nvenc_fallback = true;
-		}
-	}
-
-	fclose(fp);
-	free(line);
-}
 #endif
 
 static bool nvenc_codec_exists(const char *name, const char *fallback)
@@ -337,6 +308,19 @@ static bool h264_vaapi_supported(void)
 	 * that support H264. */
 	return vaapi_get_h264_default_device() != NULL;
 }
+
+static bool av1_vaapi_supported(void)
+{
+	const AVCodec *vaenc = avcodec_find_encoder_by_name("av1_vaapi");
+
+	if (!vaenc)
+		return false;
+
+	/* NOTE: If default device is NULL, it means there is no device
+	 * that support AV1. */
+	return vaapi_get_av1_default_device() != NULL;
+}
+
 #ifdef ENABLE_HEVC
 static bool hevc_vaapi_supported(void)
 {
@@ -397,29 +381,8 @@ bool obs_module_load(void)
 	if (nvenc_supported(&h264, &hevc, &av1)) {
 		blog(LOG_INFO, "NVENC supported");
 
-#ifdef __linux__
-		/* why are we here? just to suffer? */
-		do_nvenc_check_for_ubuntu_20_04();
-#endif
-
 #ifdef _WIN32
-		if (get_win_ver_int() > 0x0601) {
-			obs_nvenc_load(h264, hevc, av1);
-		} else {
-			// if on Win 7, new nvenc isn't available so there's
-			// no nvenc encoder for the user to select, expose
-			// the old encoder directly
-			if (h264) {
-				h264_nvenc_encoder_info.caps &=
-					~OBS_ENCODER_CAP_INTERNAL;
-			}
-#ifdef ENABLE_HEVC
-			if (hevc) {
-				hevc_nvenc_encoder_info.caps &=
-					~OBS_ENCODER_CAP_INTERNAL;
-			}
-#endif
-		}
+		obs_nvenc_load(h264, hevc, av1);
 #endif
 		if (h264)
 			obs_register_encoder(&h264_nvenc_encoder_info);
@@ -445,6 +408,13 @@ bool obs_module_load(void)
 		obs_register_encoder(&h264_vaapi_encoder_info);
 	} else {
 		blog(LOG_INFO, "FFmpeg VAAPI H264 encoding not supported");
+	}
+
+	if (av1_vaapi_supported()) {
+		blog(LOG_INFO, "FFmpeg VAAPI AV1 encoding supported");
+		obs_register_encoder(&av1_vaapi_encoder_info);
+	} else {
+		blog(LOG_INFO, "FFmpeg VAAPI AV1 encoding not supported");
 	}
 
 #ifdef ENABLE_HEVC

@@ -360,22 +360,21 @@ void obs_properties_remove_by_name(obs_properties_t *props, const char *name)
 	}
 }
 
-void obs_properties_apply_settings_internal(obs_properties_t *props,
-					    obs_data_t *settings,
-					    obs_properties_t *realprops)
+typedef DARRAY(struct obs_property *) obs_property_da_t;
+
+void obs_properties_apply_settings_internal(
+	obs_properties_t *props, obs_property_da_t *properties_with_callback)
 {
 	struct obs_property *p = props->properties;
 
 	while (p) {
 		if (p->type == OBS_PROPERTY_GROUP) {
 			obs_properties_apply_settings_internal(
-				obs_property_group_content(p), settings,
-				realprops);
+				obs_property_group_content(p),
+				properties_with_callback);
 		}
-		if (p->modified)
-			p->modified(realprops, p, settings);
-		else if (p->modified2)
-			p->modified2(p->priv, realprops, p, settings);
+		if (p->modified || p->modified2)
+			da_push_back((*properties_with_callback), &p);
 
 		p = p->hh.next;
 	}
@@ -387,7 +386,23 @@ void obs_properties_apply_settings(obs_properties_t *props,
 	if (!props)
 		return;
 
-	obs_properties_apply_settings_internal(props, settings, props);
+	obs_property_da_t properties_with_callback;
+	da_init(properties_with_callback);
+
+	obs_properties_apply_settings_internal(props,
+					       &properties_with_callback);
+
+	while (properties_with_callback.num > 0) {
+		struct obs_property *p = *(struct obs_property **)da_end(
+			properties_with_callback);
+		if (p->modified)
+			p->modified(props, p, settings);
+		else if (p->modified2)
+			p->modified2(p->priv, props, p, settings);
+		da_pop_back(properties_with_callback);
+	}
+
+	da_free(properties_with_callback);
 }
 
 /* ------------------------------------------------------------------------- */

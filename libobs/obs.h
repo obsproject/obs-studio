@@ -32,7 +32,6 @@
 #include "obs-config.h"
 #include "obs-defs.h"
 #include "obs-data.h"
-#include "obs-ui.h"
 #include "obs-properties.h"
 #include "obs-interaction.h"
 
@@ -163,6 +162,7 @@ struct obs_transform_info {
 	enum obs_bounds_type bounds_type;
 	uint32_t bounds_alignment;
 	struct vec2 bounds;
+	bool crop_to_bounds;
 };
 
 /**
@@ -832,6 +832,8 @@ typedef bool (*obs_enum_audio_device_cb)(void *data, const char *name,
 
 EXPORT bool obs_audio_monitoring_available(void);
 
+EXPORT void obs_reset_audio_monitoring(void);
+
 EXPORT void obs_enum_audio_monitoring_devices(obs_enum_audio_device_cb cb,
 					      void *data);
 
@@ -950,8 +952,14 @@ EXPORT video_t *obs_view_add2(obs_view_t *view, struct obs_video_info *ovi);
 EXPORT void obs_view_remove(obs_view_t *view);
 
 /** Gets the video settings currently in use for this view context, returns false if no video */
-EXPORT bool obs_view_get_video_info(obs_view_t *view,
-				    struct obs_video_info *ovi);
+OBS_DEPRECATED EXPORT bool obs_view_get_video_info(obs_view_t *view,
+						   struct obs_video_info *ovi);
+
+/** Enumerate the video info of all mixes using the specified view context */
+EXPORT void obs_view_enum_video_info(obs_view_t *view,
+				     bool (*enum_proc)(void *,
+						       struct obs_video_info *),
+				     void *param);
 
 /* ------------------------------------------------------------------------- */
 /* Display context */
@@ -1858,6 +1866,7 @@ EXPORT void obs_sceneitem_set_bounds_type(obs_sceneitem_t *item,
 					  enum obs_bounds_type type);
 EXPORT void obs_sceneitem_set_bounds_alignment(obs_sceneitem_t *item,
 					       uint32_t alignment);
+EXPORT void obs_sceneitem_set_bounds_crop(obs_sceneitem_t *item, bool crop);
 EXPORT void obs_sceneitem_set_bounds(obs_sceneitem_t *item,
 				     const struct vec2 *bounds);
 
@@ -1873,13 +1882,19 @@ EXPORT uint32_t obs_sceneitem_get_alignment(const obs_sceneitem_t *item);
 EXPORT enum obs_bounds_type
 obs_sceneitem_get_bounds_type(const obs_sceneitem_t *item);
 EXPORT uint32_t obs_sceneitem_get_bounds_alignment(const obs_sceneitem_t *item);
+EXPORT bool obs_sceneitem_get_bounds_crop(const obs_sceneitem_t *item);
 EXPORT void obs_sceneitem_get_bounds(const obs_sceneitem_t *item,
 				     struct vec2 *bounds);
-
-EXPORT void obs_sceneitem_get_info(const obs_sceneitem_t *item,
-				   struct obs_transform_info *info);
-EXPORT void obs_sceneitem_set_info(obs_sceneitem_t *item,
-				   const struct obs_transform_info *info);
+OBS_DEPRECATED EXPORT void
+obs_sceneitem_get_info(const obs_sceneitem_t *item,
+		       struct obs_transform_info *info);
+OBS_DEPRECATED EXPORT void
+obs_sceneitem_set_info(obs_sceneitem_t *item,
+		       const struct obs_transform_info *info);
+EXPORT void obs_sceneitem_get_info2(const obs_sceneitem_t *item,
+				    struct obs_transform_info *info);
+EXPORT void obs_sceneitem_set_info2(obs_sceneitem_t *item,
+				    const struct obs_transform_info *info);
 
 EXPORT void obs_sceneitem_get_draw_transform(const obs_sceneitem_t *item,
 					     struct matrix4 *transform);
@@ -2446,6 +2461,27 @@ EXPORT void obs_encoder_set_gpu_scale_type(obs_encoder_t *encoder,
  */
 EXPORT bool obs_encoder_set_frame_rate_divisor(obs_encoder_t *encoder,
 					       uint32_t divisor);
+
+/**
+ * Adds region of interest (ROI) for an encoder. This allows prioritizing
+ * quality of regions of the frame.
+ * If regions overlap, regions added earlier take precedence.
+ *
+ * Returns false if the encoder does not support ROI or region is invalid.
+ */
+EXPORT bool obs_encoder_add_roi(obs_encoder_t *encoder,
+				const struct obs_encoder_roi *roi);
+/** For video encoders, returns true if any ROIs were set */
+EXPORT bool obs_encoder_has_roi(const obs_encoder_t *encoder);
+/** Clear all regions */
+EXPORT void obs_encoder_clear_roi(obs_encoder_t *encoder);
+/** Enumerate regions with callback (reverse order of addition) */
+EXPORT void obs_encoder_enum_roi(obs_encoder_t *encoder,
+				 void (*enum_proc)(void *,
+						   struct obs_encoder_roi *),
+				 void *param);
+/** Get ROI increment, encoders must rebuild their ROI map if it has changed */
+EXPORT uint32_t obs_encoder_get_roi_increment(const obs_encoder_t *encoder);
 
 /** For video encoders, returns true if pre-encode scaling is enabled */
 EXPORT bool obs_encoder_scaling_enabled(const obs_encoder_t *encoder);

@@ -707,16 +707,30 @@ cleanup:
 		da_push_back(dest, &data);                              \
 	} while (false)
 
-#define CHECK_REQUIRED_VAL(type, info, val, func)                       \
-	do {                                                            \
-		if ((offsetof(type, val) + sizeof(info->val) > size) || \
-		    !info->val) {                                       \
-			blog(LOG_ERROR,                                 \
-			     "Required value '" #val "' for "           \
-			     "'%s' not found.  " #func " failed.",      \
-			     info->id);                                 \
-			goto error;                                     \
-		}                                                       \
+#define HAS_VAL(type, info, val) \
+	((offsetof(type, val) + sizeof(info->val) <= size) && info->val)
+
+#define CHECK_REQUIRED_VAL(type, info, val, func)                  \
+	do {                                                       \
+		if (!HAS_VAL(type, info, val)) {                   \
+			blog(LOG_ERROR,                            \
+			     "Required value '" #val "' for "      \
+			     "'%s' not found.  " #func " failed.", \
+			     info->id);                            \
+			goto error;                                \
+		}                                                  \
+	} while (false)
+
+#define CHECK_REQUIRED_VAL_EITHER(type, info, val1, val2, func)     \
+	do {                                                        \
+		if (!HAS_VAL(type, info, val1) &&                   \
+		    !HAS_VAL(type, info, val2)) {                   \
+			blog(LOG_ERROR,                             \
+			     "Neither '" #val1 "' nor '" #val2 "' " \
+			     "for '%s' found.  " #func " failed.",  \
+			     info->id);                             \
+			goto error;                                 \
+		}                                                   \
 	} while (false)
 
 #define HANDLE_ERROR(size_var, structure, info)                            \
@@ -927,7 +941,9 @@ void obs_register_encoder_s(const struct obs_encoder_info *info, size_t size)
 	CHECK_REQUIRED_VAL_(info, destroy, obs_register_encoder);
 
 	if ((info->caps & OBS_ENCODER_CAP_PASS_TEXTURE) != 0)
-		CHECK_REQUIRED_VAL_(info, encode_texture, obs_register_encoder);
+		CHECK_REQUIRED_VAL_EITHER(struct obs_encoder_info, info,
+					  encode_texture, encode_texture2,
+					  obs_register_encoder);
 	else
 		CHECK_REQUIRED_VAL_(info, encode, obs_register_encoder);
 
@@ -964,37 +980,4 @@ void obs_register_service_s(const struct obs_service_info *info, size_t size)
 
 error:
 	HANDLE_ERROR(size, obs_service_info, info);
-}
-
-void obs_register_modal_ui_s(const struct obs_modal_ui *info, size_t size)
-{
-#define CHECK_REQUIRED_VAL_(info, val, func) \
-	CHECK_REQUIRED_VAL(struct obs_modal_ui, info, val, func)
-	CHECK_REQUIRED_VAL_(info, task, obs_register_modal_ui);
-	CHECK_REQUIRED_VAL_(info, target, obs_register_modal_ui);
-	CHECK_REQUIRED_VAL_(info, exec, obs_register_modal_ui);
-#undef CHECK_REQUIRED_VAL_
-
-	REGISTER_OBS_DEF(size, obs_modal_ui, obs->modal_ui_callbacks, info);
-	return;
-
-error:
-	HANDLE_ERROR(size, obs_modal_ui, info);
-}
-
-void obs_register_modeless_ui_s(const struct obs_modeless_ui *info, size_t size)
-{
-#define CHECK_REQUIRED_VAL_(info, val, func) \
-	CHECK_REQUIRED_VAL(struct obs_modeless_ui, info, val, func)
-	CHECK_REQUIRED_VAL_(info, task, obs_register_modeless_ui);
-	CHECK_REQUIRED_VAL_(info, target, obs_register_modeless_ui);
-	CHECK_REQUIRED_VAL_(info, create, obs_register_modeless_ui);
-#undef CHECK_REQUIRED_VAL_
-
-	REGISTER_OBS_DEF(size, obs_modeless_ui, obs->modeless_ui_callbacks,
-			 info);
-	return;
-
-error:
-	HANDLE_ERROR(size, obs_modeless_ui, info);
 }

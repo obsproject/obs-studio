@@ -14,12 +14,14 @@ configure_file(cmake/windows/obs.rc.in obs.rc)
 
 target_sources(
   obs-studio
-  PRIVATE obs.rc
-          platform-windows.cpp
-          win-dll-blocklist.c
+  PRIVATE # cmake-format: sortable
           cmake/windows/obs.manifest
+          obs.rc
+          platform-windows.cpp
           update/crypto-helpers-mbedtls.cpp
           update/crypto-helpers.hpp
+          update/models/branches.hpp
+          update/models/whatsnew.hpp
           update/shared-update.cpp
           update/shared-update.hpp
           update/update-helpers.cpp
@@ -28,19 +30,21 @@ target_sources(
           update/update-window.hpp
           update/win-update.cpp
           update/win-update.hpp
-          update/models/branches.hpp
-          update/models/whatsnew.hpp
+          win-dll-blocklist.c
           win-update/updater/manifest.hpp)
 
 target_link_libraries(obs-studio PRIVATE crypt32 OBS::blake2 OBS::w32-pthreads MbedTLS::MbedTLS
                                          nlohmann_json::nlohmann_json Detours::Detours)
+
 target_compile_definitions(obs-studio PRIVATE PSAPI_VERSION=2)
-target_link_options(obs-studio PRIVATE /IGNORE:4098 /IGNORE:4099)
+
+target_link_options(obs-studio PRIVATE /IGNORE:4099)
 
 add_library(obs-update-helpers INTERFACE)
 add_library(OBS::update-helpers ALIAS obs-update-helpers)
 
 target_sources(obs-update-helpers INTERFACE win-update/win-update-helpers.cpp win-update/win-update-helpers.hpp)
+
 target_include_directories(obs-update-helpers INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/win-update")
 
 # Set commit for untagged version comparisons in the Windows updater
@@ -49,6 +53,7 @@ if(OBS_VERSION MATCHES ".+g[a-f0-9]+.*")
 else()
   set(OBS_COMMIT "")
 endif()
+
 set_source_files_properties(update/win-update.cpp PROPERTIES COMPILE_DEFINITIONS OBS_COMMIT="${OBS_COMMIT}")
 
 add_subdirectory(win-update/updater)

@@ -52,9 +52,9 @@
 #endif
 
 #ifdef _MSC_VER
-#define PRAGMA_WARN_PUSH __pragma(warning(push))
-#define PRAGMA_WARN_POP __pragma(warning(pop))
-#define PRAGMA_WARN_DEPRECATION __pragma(warning(disable : 4996))
+#define PRAGMA_WARN_PUSH _Pragma("warning(push)")
+#define PRAGMA_WARN_POP _Pragma("warning(pop)")
+#define PRAGMA_WARN_DEPRECATION _Pragma("warning(disable: 4996)")
 #elif defined(__clang__)
 #define PRAGMA_WARN_PUSH _Pragma("clang diagnostic push")
 #define PRAGMA_WARN_POP _Pragma("clang diagnostic pop")

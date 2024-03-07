@@ -22,13 +22,14 @@ target_sources(
           updater.manifest
           updater.rc)
 
-target_compile_options(updater PRIVATE $<IF:$<CONFIG:DEBUG>,/MTd,/MT> "/utf-8")
 target_compile_definitions(updater PRIVATE NOMINMAX "PSAPI_VERSION=2")
 
 target_include_directories(updater PRIVATE "${CMAKE_SOURCE_DIR}/libobs" "${CMAKE_SOURCE_DIR}/UI/win-update")
 
 target_link_libraries(updater PRIVATE OBS::blake2 nlohmann_json::nlohmann_json zstd::libzstd_static comctl32 shell32
                                       winhttp)
-target_link_options(updater PRIVATE /IGNORE:4098)
+
+# zstd is hardcoded with /DEFAULTLIB:LIBCMT
+target_link_options(updater PRIVATE /NODEFAULTLIB:LIBCMT)
 
 set_target_properties(updater PROPERTIES FOLDER frontend OUTPUT_NAME updater)

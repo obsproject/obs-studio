@@ -23,6 +23,7 @@ const uint8_t video_payload_type = 96;
 
 WHIPOutput::WHIPOutput(obs_data_t *, obs_output_t *output)
 	: output(output),
+	  is_av1(false),
 	  endpoint_url(),
 	  bearer_token(),
 	  resource_url(),
@@ -53,6 +54,13 @@ WHIPOutput::~WHIPOutput()
 bool WHIPOutput::Start()
 {
 	std::lock_guard<std::mutex> l(start_stop_mutex);
+
+	auto encoder = obs_output_get_video_encoder2(output, 0);
+	if (encoder == nullptr) {
+		return false;
+	}
+
+	is_av1 = (strcmp("av1", obs_encoder_get_codec(encoder)) == 0);
 
 	if (!obs_output_can_begin_data_capture(output, 0))
 		return false;
@@ -112,47 +120,52 @@ void WHIPOutput::ConfigureAudioTrack(std::string media_stream_id,
 
 	auto rtp_config = std::make_shared<rtc::RtpPacketizationConfig>(
 		ssrc, cname, audio_payload_type,
-		rtc::OpusRtpPacketizer::defaultClockRate);
+		rtc::OpusRtpPacketizer::DefaultClockRate);
 	auto packetizer = std::make_shared<rtc::OpusRtpPacketizer>(rtp_config);
 	audio_sr_reporter = std::make_shared<rtc::RtcpSrReporter>(rtp_config);
 	auto nack_responder = std::make_shared<rtc::RtcpNackResponder>();
 
-	auto opus_handler =
-		std::make_shared<rtc::OpusPacketizationHandler>(packetizer);
-	opus_handler->addToChain(audio_sr_reporter);
-	opus_handler->addToChain(nack_responder);
-	audio_track->setMediaHandler(opus_handler);
+	packetizer->addToChain(audio_sr_reporter);
+	packetizer->addToChain(nack_responder);
+	audio_track->setMediaHandler(packetizer);
 }
 
 void WHIPOutput::ConfigureVideoTrack(std::string media_stream_id,
 				     std::string cname)
 {
 	auto media_stream_track_id = std::string(media_stream_id + "-video");
+	std::shared_ptr<rtc::RtpPacketizer> packetizer;
 
 	// More predictable SSRC values between audio and video
 	uint32_t ssrc = base_ssrc + 1;
 
 	rtc::Description::Video video_description(
 		video_mid, rtc::Description::Direction::SendOnly);
-	video_description.addH264Codec(video_payload_type);
 	video_description.addSSRC(ssrc, cname, media_stream_id,
 				  media_stream_track_id);
-	video_track = peer_connection->addTrack(video_description);
 
 	auto rtp_config = std::make_shared<rtc::RtpPacketizationConfig>(
 		ssrc, cname, video_payload_type,
 		rtc::H264RtpPacketizer::defaultClockRate);
-	auto packetizer = std::make_shared<rtc::H264RtpPacketizer>(
-		rtc::H264RtpPacketizer::Separator::StartSequence, rtp_config,
-		MAX_VIDEO_FRAGMENT_SIZE);
-	video_sr_reporter = std::make_shared<rtc::RtcpSrReporter>(rtp_config);
-	auto nack_responder = std::make_shared<rtc::RtcpNackResponder>();
 
-	auto h264_handler =
-		std::make_shared<rtc::H264PacketizationHandler>(packetizer);
-	h264_handler->addToChain(video_sr_reporter);
-	h264_handler->addToChain(nack_responder);
-	video_track->setMediaHandler(h264_handler);
+	if (is_av1) {
+		video_description.addAV1Codec(video_payload_type);
+		packetizer = std::make_shared<rtc::AV1RtpPacketizer>(
+			rtc::AV1RtpPacketizer::Packetization::TemporalUnit,
+			rtp_config, MAX_VIDEO_FRAGMENT_SIZE);
+	} else {
+		video_description.addH264Codec(video_payload_type);
+		packetizer = std::make_shared<rtc::H264RtpPacketizer>(
+			rtc::H264RtpPacketizer::Separator::StartSequence,
+			rtp_config, MAX_VIDEO_FRAGMENT_SIZE);
+	}
+
+	video_sr_reporter = std::make_shared<rtc::RtcpSrReporter>(rtp_config);
+	packetizer->addToChain(video_sr_reporter);
+	packetizer->addToChain(std::make_shared<rtc::RtcpNackResponder>());
+
+	video_track = peer_connection->addTrack(video_description);
+	video_track->setMediaHandler(packetizer);
 }
 
 /**
@@ -277,6 +290,8 @@ bool WHIPOutput::Connect()
 	// Add user-agent to our requests
 	headers = curl_slist_append(headers, user_agent.c_str());
 
+	char error_buffer[CURL_ERROR_SIZE] = {};
+
 	CURL *c = curl_easy_init();
 	curl_easy_setopt(c, CURLOPT_WRITEFUNCTION, curl_writefunction);
 	curl_easy_setopt(c, CURLOPT_WRITEDATA, (void *)&read_buffer);
@@ -290,6 +305,7 @@ bool WHIPOutput::Connect()
 	curl_easy_setopt(c, CURLOPT_TIMEOUT, 8L);
 	curl_easy_setopt(c, CURLOPT_FOLLOWLOCATION, 1L);
 	curl_easy_setopt(c, CURLOPT_UNRESTRICTED_AUTH, 1L);
+	curl_easy_setopt(c, CURLOPT_ERRORBUFFER, error_buffer);
 
 	auto cleanup = [&]() {
 		curl_easy_cleanup(c);
@@ -298,8 +314,9 @@ bool WHIPOutput::Connect()
 
 	CURLcode res = curl_easy_perform(c);
 	if (res != CURLE_OK) {
-		do_log(LOG_ERROR,
-		       "Connect failed: CURL returned result not CURLE_OK");
+		do_log(LOG_ERROR, "Connect failed: %s",
+		       error_buffer[0] ? error_buffer
+				       : curl_easy_strerror(res));
 		cleanup();
 		obs_output_signal_stop(output, OBS_OUTPUT_CONNECT_FAILED);
 		return false;
@@ -428,11 +445,14 @@ void WHIPOutput::SendDelete()
 	// Add user-agent to our requests
 	headers = curl_slist_append(headers, user_agent.c_str());
 
+	char error_buffer[CURL_ERROR_SIZE] = {};
+
 	CURL *c = curl_easy_init();
 	curl_easy_setopt(c, CURLOPT_HTTPHEADER, headers);
 	curl_easy_setopt(c, CURLOPT_URL, resource_url.c_str());
 	curl_easy_setopt(c, CURLOPT_CUSTOMREQUEST, "DELETE");
 	curl_easy_setopt(c, CURLOPT_TIMEOUT, 8L);
+	curl_easy_setopt(c, CURLOPT_ERRORBUFFER, error_buffer);
 
 	auto cleanup = [&]() {
 		curl_easy_cleanup(c);
@@ -442,8 +462,9 @@ void WHIPOutput::SendDelete()
 	CURLcode res = curl_easy_perform(c);
 	if (res != CURLE_OK) {
 		do_log(LOG_WARNING,
-		       "DELETE request for resource URL failed. Reason: %s",
-		       curl_easy_strerror(res));
+		       "DELETE request for resource URL failed: %s",
+		       error_buffer[0] ? error_buffer
+				       : curl_easy_strerror(res));
 		cleanup();
 		return;
 	}
@@ -571,7 +592,7 @@ void register_whip_output()
 	info.get_connect_time_ms = [](void *priv_data) -> int {
 		return static_cast<WHIPOutput *>(priv_data)->GetConnectTime();
 	};
-	info.encoded_video_codecs = "h264";
+	info.encoded_video_codecs = "h264;av1";
 	info.encoded_audio_codecs = "opus";
 	info.protocols = "WHIP";
 

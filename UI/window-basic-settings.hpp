@@ -168,6 +168,8 @@ private:
 			   const char *value);
 	void SaveCheckBox(QAbstractButton *widget, const char *section,
 			  const char *value, bool invert = false);
+	void SaveGroupBox(QGroupBox *widget, const char *section,
+			  const char *value);
 	void SaveEdit(QLineEdit *widget, const char *section,
 		      const char *value);
 	void SaveSpinBox(QSpinBox *widget, const char *section,
@@ -373,12 +375,16 @@ private:
 	int CurrentFLVTrack();
 	int SimpleOutGetSelectedAudioTracks();
 	int AdvOutGetSelectedAudioTracks();
+	int AdvOutGetStreamingSelectedAudioTracks();
 
 	OBSService GetStream1Service();
 
 	bool ServiceAndVCodecCompatible();
 	bool ServiceAndACodecCompatible();
 	bool ServiceSupportsCodecCheck();
+
+	inline bool AllowsMultiTrack(const char *protocol);
+	void SwapMultiTrack(const char *protocol);
 
 private slots:
 	void on_theme_activated(int idx);

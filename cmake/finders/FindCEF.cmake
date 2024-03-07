@@ -154,7 +154,8 @@ elseif(CMAKE_HOST_SYSTEM_NAME STREQUAL Linux)
     CEF_LIBRARY_WRAPPER_RELEASE
     NAMES cef_dll_wrapper.a libcef_dll_wrapper.a
     NO_DEFAULT_PATH
-    PATHS "${CEF_ROOT_DIR}/build/libcef_dll" "${CEF_ROOT_DIR}/build/libcef_dll_wrapper"
+    PATHS "${CEF_ROOT_DIR}/libcef_dll_wrapper" "${CEF_ROOT_DIR}/build/libcef_dll"
+          "${CEF_ROOT_DIR}/build/libcef_dll_wrapper"
     DOC "Chromium Embedded Framework static library wrapper.")
 endif()
 

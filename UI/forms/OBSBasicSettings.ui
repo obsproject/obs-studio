@@ -2162,21 +2162,17 @@
                        <item row="7" column="1">
                         <widget class="QLineEdit" name="simpleOutMuxCustom"/>
                        </item>
-                       <item row="8" column="1">
-                        <widget class="QCheckBox" name="simpleReplayBuf">
-                         <property name="text">
-                          <string>Basic.Settings.Output.UseReplayBuffer</string>
-                         </property>
-                         <property name="checked">
-                          <bool>true</bool>
-                         </property>
-                        </widget>
-                       </item>
                       </layout>
                      </widget>
                     </item>
                     <item>
-                     <widget class="QGroupBox" name="replayBufferGroupBox">
+                     <widget class="QGroupBox" name="simpleReplayBuf">
+                      <property name="checkable">
+                       <bool>true</bool>
+                      </property>
+                      <property name="checked">
+                       <bool>true</bool>
+                      </property>
                       <property name="title">
                        <string>ReplayBuffer</string>
                       </property>
@@ -2436,73 +2432,142 @@
                             </widget>
                            </item>
                            <item row="1" column="1">
-                            <widget class="QFrame" name="widget_8">
+                            <widget class="QStackedWidget" name="advStreamTrackWidget">
                              <property name="sizePolicy">
                               <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
                                <horstretch>0</horstretch>
                                <verstretch>0</verstretch>
                               </sizepolicy>
                              </property>
-                             <layout class="QHBoxLayout" name="horizontalLayout_7">
-                              <property name="leftMargin">
-                               <number>0</number>
+                             <property name="currentIndex">
+                              <number>0</number>
+                             </property>
+                             <widget class="QFrame" name="streamSingleTracks">
+                              <property name="sizePolicy">
+                               <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                               </sizepolicy>
                               </property>
-                              <property name="topMargin">
-                               <number>0</number>
-                              </property>
-                              <property name="rightMargin">
-                               <number>0</number>
-                              </property>
-                              <property name="bottomMargin">
-                               <number>0</number>
-                              </property>
-                              <item>
-                               <widget class="QRadioButton" name="advOutTrack1">
-                                <property name="text">
-                                 <string notr="true">1</string>
-                                </property>
-                                <property name="checked">
-                                 <bool>true</bool>
-                                </property>
-                               </widget>
+                              <layout class="QHBoxLayout" name="horizontalLayout_7">
+                               <property name="leftMargin">
+                                <number>0</number>
+                               </property>
+                               <property name="topMargin">
+                                <number>0</number>
+                               </property>
+                               <property name="rightMargin">
+                                <number>0</number>
+                               </property>
+                               <property name="bottomMargin">
+                                <number>0</number>
+                               </property>
+                               <item>
+                                <widget class="QRadioButton" name="advOutTrack1">
+                                 <property name="text">
+                                  <string notr="true">1</string>
+                                 </property>
+                                 <property name="checked">
+                                  <bool>true</bool>
+                                 </property>
+                                </widget>
+                               </item>
+                               <item>
+                                <widget class="QRadioButton" name="advOutTrack2">
+                                 <property name="text">
+                                  <string notr="true">2</string>
+                                 </property>
+                                </widget>
+                               </item>
+                               <item>
+                                <widget class="QRadioButton" name="advOutTrack3">
+                                 <property name="text">
+                                  <string notr="true">3</string>
+                                 </property>
+                                </widget>
                               </item>
-                              <item>
-                               <widget class="QRadioButton" name="advOutTrack2">
-                                <property name="text">
-                                 <string notr="true">2</string>
+                               <item>
+                                <widget class="QRadioButton" name="advOutTrack4">
+                                 <property name="text">
+                                  <string notr="true">4</string>
+                                 </property>
+                                </widget>
+                               </item>
+                               <item>
+                                <widget class="QRadioButton" name="advOutTrack5">
+                                 <property name="text">
+                                  <string notr="true">5</string>
+                                 </property>
+                                </widget>
+                               </item>
+                               <item>
+                                <widget class="QRadioButton" name="advOutTrack6">
+                                 <property name="text">
+                                  <string notr="true">6</string>
+                                 </property>
+                                </widget>
+                               </item>
+                              </layout>
+                             </widget>
+                             <widget class="QWidget" name="streamMultiTracks">
+                               <layout class="QHBoxLayout" name="horizontalLayout_multitrack">
+                                <property name="leftMargin">
+                                 <number>0</number>
                                 </property>
-                               </widget>
-                              </item>
-                              <item>
-                               <widget class="QRadioButton" name="advOutTrack3">
-                                <property name="text">
-                                 <string notr="true">3</string>
+                                <property name="topMargin">
+                                 <number>0</number>
                                 </property>
-                               </widget>
-                              </item>
-                              <item>
-                               <widget class="QRadioButton" name="advOutTrack4">
-                                <property name="text">
-                                 <string notr="true">4</string>
+                                <property name="rightMargin">
+                                 <number>0</number>
                                 </property>
-                               </widget>
-                              </item>
-                              <item>
-                               <widget class="QRadioButton" name="advOutTrack5">
-                                <property name="text">
-                                 <string notr="true">5</string>
+                                <property name="bottomMargin">
+                                 <number>0</number>
                                 </property>
-                               </widget>
-                              </item>
-                              <item>
-                               <widget class="QRadioButton" name="advOutTrack6">
-                                <property name="text">
-                                 <string notr="true">6</string>
-                                </property>
-                               </widget>
-                              </item>
-                             </layout>
-                            </widget>
+                                <item>
+                                 <widget class="QCheckBox" name="advOutMultiTrack1">
+                                  <property name="text">
+                                   <string notr="true">1</string>
+                                  </property>
+                                 </widget>
+                                </item>
+                                <item>
+                                 <widget class="QCheckBox" name="advOutMultiTrack2">
+                                  <property name="text">
+                                   <string notr="true">2</string>
+                                  </property>
+                                 </widget>
+                                </item>
+                                <item>
+                                 <widget class="QCheckBox" name="advOutMultiTrack3">
+                                  <property name="text">
+                                   <string notr="true">3</string>
+                                  </property>
+                                 </widget>
+                                </item>
+                                <item>
+                                 <widget class="QCheckBox" name="advOutMultiTrack4">
+                                  <property name="text">
+                                   <string notr="true">4</string>
+                                  </property>
+                                 </widget>
+                                </item>
+                                <item>
+                                 <widget class="QCheckBox" name="advOutMultiTrack5">
+                                  <property name="text">
+                                   <string notr="true">5</string>
+                                  </property>
+                                 </widget>
+                                </item>
+                                <item>
+                                 <widget class="QCheckBox" name="advOutMultiTrack6">
+                                  <property name="text">
+                                   <string notr="true">6</string>
+                                  </property>
+                                 </widget>
+                                </item>
+                               </layout>
+                              </widget>
+			    </widget>
                            </item>
                            <item row="2" column="0">
                             <widget class="QLabel" name="advOutAEncLabel">
@@ -2525,7 +2590,7 @@
                             <widget class="QComboBox" name="advOutEncoder"/>
                            </item>
                            <item row="4" column="0">
-                            <widget class="QCheckBox" name="advOutUseRescale">
+                            <widget class="QLabel" name="advOutUseRescale">
                              <property name="sizePolicy">
                               <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
                                <horstretch>0</horstretch>
@@ -2541,14 +2606,21 @@
                             </widget>
                            </item>
                            <item row="4" column="1">
-                            <widget class="QComboBox" name="advOutRescale">
-                             <property name="enabled">
-                              <bool>false</bool>
-                             </property>
-                             <property name="editable">
-                              <bool>true</bool>
-                             </property>
-                            </widget>
+                            <layout class="QHBoxLayout" name="horizontalLayout_10">
+                             <item>
+                              <widget class="QComboBox" name="advOutRescaleFilter" />
+                             </item>
+                             <item>
+                              <widget class="QComboBox" name="advOutRescale">
+                               <property name="enabled">
+                                <bool>false</bool>
+                               </property>
+                               <property name="editable">
+                                <bool>true</bool>
+                               </property>
+                              </widget>
+                             </item>
+                            </layout>
                            </item>
                           </layout>
                          </widget>
@@ -3135,7 +3207,7 @@
                                 </widget>
                                </item>
                                <item row="6" column="0">
-                                <widget class="QCheckBox" name="advOutRecUseRescale">
+                                <widget class="QLabel" name="advOutRecUseRescale">
                                  <property name="sizePolicy">
                                   <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
                                    <horstretch>0</horstretch>
@@ -3165,6 +3237,9 @@
                                   <property name="bottomMargin">
                                    <number>0</number>
                                   </property>
+                                  <item>
+                                   <widget class="QComboBox" name="advOutRecRescaleFilter" />
+                                  </item>
                                   <item>
                                    <widget class="QComboBox" name="advOutRecRescale">
                                     <property name="enabled">
@@ -7865,8 +7940,14 @@
   <tabstop>advOutTrack4</tabstop>
   <tabstop>advOutTrack5</tabstop>
   <tabstop>advOutTrack6</tabstop>
+  <tabstop>advOutMultiTrack1</tabstop>
+  <tabstop>advOutMultiTrack2</tabstop>
+  <tabstop>advOutMultiTrack3</tabstop>
+  <tabstop>advOutMultiTrack4</tabstop>
+  <tabstop>advOutMultiTrack5</tabstop>
+  <tabstop>advOutMultiTrack6</tabstop>
   <tabstop>advOutEncoder</tabstop>
-  <tabstop>advOutUseRescale</tabstop>
+  <tabstop>advOutRescaleFilter</tabstop>
   <tabstop>advOutRescale</tabstop>
   <tabstop>advOutRecType</tabstop>
   <tabstop>advOutRecPath</tabstop>
@@ -7880,7 +7961,7 @@
   <tabstop>advOutRecTrack5</tabstop>
   <tabstop>advOutRecTrack6</tabstop>
   <tabstop>advOutRecEncoder</tabstop>
-  <tabstop>advOutRecUseRescale</tabstop>
+  <tabstop>advOutRecRescaleFilter</tabstop>
   <tabstop>advOutRecRescale</tabstop>
   <tabstop>advOutMuxCustom</tabstop>
   <tabstop>advOutSplitFile</tabstop>
@@ -8300,22 +8381,6 @@
    </hints>
   </connection>
   <connection>
-   <sender>advOutUseRescale</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>advOutRescale</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>269</x>
-     <y>192</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>656</x>
-     <y>192</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>advOutRecType</sender>
    <signal>currentIndexChanged(int)</signal>
    <receiver>stackedWidget</receiver>
@@ -8328,22 +8393,6 @@
     <hint type="destinationlabel">
      <x>560</x>
      <y>391</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>advOutRecUseRescale</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>advOutRecRescale</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>289</x>
-     <y>317</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>662</x>
-     <y>317</y>
     </hint>
    </hints>
   </connection>

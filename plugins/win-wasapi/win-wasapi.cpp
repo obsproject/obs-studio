@@ -1,3 +1,4 @@
+#include "wasapi-notify.hpp"
 #include "enum-wasapi.hpp"
 
 #include <obs-module.h>
@@ -28,6 +29,7 @@ using namespace std;
 #define OPT_WINDOW "window"
 #define OPT_PRIORITY "priority"
 
+WASAPINotify *GetNotify();
 static void GetWASAPIDefaults(obs_data_t *settings);
 
 #define OBS_KSAUDIO_SPEAKER_4POINT1 \
@@ -154,12 +156,12 @@ protected:
 };
 
 class WASAPISource {
-	ComPtr<IMMNotificationClient> notify;
 	ComPtr<IMMDeviceEnumerator> enumerator;
 	ComPtr<IAudioClient> client;
 	ComPtr<IAudioCaptureClient> capture;
 
 	obs_source_t *source;
+	obs_weak_source_t *reroute_target = nullptr;
 	wstring default_id;
 	string device_id;
 	string device_name;
@@ -180,6 +182,7 @@ class WASAPISource {
 	const SourceType sourceType;
 	std::atomic<bool> useDeviceTiming = false;
 	std::atomic<bool> isDefaultDevice = false;
+	std::atomic<bool> sawBadTimestamp = false;
 	bool hooked = false;
 
 	bool previouslyFailed = false;
@@ -311,56 +314,11 @@ public:
 
 	bool GetHooked();
 	HWND GetHwnd();
-};
 
-class WASAPINotify : public IMMNotificationClient {
-	long refs = 0; /* auto-incremented to 1 by ComPtr */
-	WASAPISource *source;
-
-public:
-	WASAPINotify(WASAPISource *source_) : source(source_) {}
-
-	STDMETHODIMP_(ULONG) AddRef()
+	void SetRerouteTarget(obs_source_t *target)
 	{
-		return (ULONG)os_atomic_inc_long(&refs);
-	}
-
-	STDMETHODIMP_(ULONG) STDMETHODCALLTYPE Release()
-	{
-		long val = os_atomic_dec_long(&refs);
-		if (val == 0)
-			delete this;
-		return (ULONG)val;
-	}
-
-	STDMETHODIMP QueryInterface(REFIID riid, void **ptr)
-	{
-		if (riid == IID_IUnknown) {
-			*ptr = (IUnknown *)this;
-		} else if (riid == __uuidof(IMMNotificationClient)) {
-			*ptr = (IMMNotificationClient *)this;
-		} else {
-			*ptr = nullptr;
-			return E_NOINTERFACE;
-		}
-
-		os_atomic_inc_long(&refs);
-		return S_OK;
-	}
-
-	STDMETHODIMP OnDefaultDeviceChanged(EDataFlow flow, ERole role,
-					    LPCWSTR id)
-	{
-		source->SetDefaultDevice(flow, role, id);
-		return S_OK;
-	}
-
-	STDMETHODIMP OnDeviceAdded(LPCWSTR) { return S_OK; }
-	STDMETHODIMP OnDeviceRemoved(LPCWSTR) { return S_OK; }
-	STDMETHODIMP OnDeviceStateChanged(LPCWSTR, DWORD) { return S_OK; }
-	STDMETHODIMP OnPropertyValueChanged(LPCWSTR, const PROPERTYKEY)
-	{
-		return S_OK;
+		obs_weak_source_release(reroute_target);
+		reroute_target = obs_source_get_weak_source(target);
 	}
 };
 
@@ -414,19 +372,11 @@ WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
 	if (!reconnectSignal.Valid())
 		throw "Could not create reconnect signal";
 
-	notify = new WASAPINotify(this);
-	if (!notify)
-		throw "Could not create WASAPINotify";
-
 	HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr,
 				      CLSCTX_ALL,
 				      IID_PPV_ARGS(enumerator.Assign()));
 	if (FAILED(hr))
 		throw HRError("Failed to create enumerator", hr);
-
-	hr = enumerator->RegisterEndpointNotificationCallback(notify);
-	if (FAILED(hr))
-		throw HRError("Failed to register endpoint callback", hr);
 
 	/* OBS will already load DLL on startup if it exists */
 	const HMODULE rtwq_module = GetModuleHandle(L"RTWorkQ.dll");
@@ -511,10 +461,17 @@ WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
 					     WASAPISource::CaptureThread, this,
 					     0, nullptr);
 		if (!captureThread.Valid()) {
-			enumerator->UnregisterEndpointNotificationCallback(
-				notify);
 			throw "Failed to create capture thread";
 		}
+	}
+
+	auto notify = GetNotify();
+	if (notify) {
+		notify->AddDefaultDeviceChangedCallback(
+			this,
+			std::bind(&WASAPISource::SetDefaultDevice, this,
+				  std::placeholders::_1, std::placeholders::_2,
+				  std::placeholders::_3));
 	}
 
 	Start();
@@ -557,11 +514,17 @@ void WASAPISource::Stop()
 		rtwq_unlock_work_queue(sampleReady.GetQueueId());
 	else
 		WaitForSingleObject(captureThread, INFINITE);
+
+	obs_weak_source_release(reroute_target);
 }
 
 WASAPISource::~WASAPISource()
 {
-	enumerator->UnregisterEndpointNotificationCallback(notify);
+	auto notify = GetNotify();
+	if (notify) {
+		notify->RemoveDefaultDeviceChangedCallback(this);
+	}
+
 	Stop();
 }
 
@@ -999,8 +962,9 @@ void WASAPISource::Initialize()
 		}
 	}
 
-	blog(LOG_INFO, "WASAPI: Device '%s' [%" PRIu32 " Hz] initialized",
-	     device_name.c_str(), sampleRate);
+	blog(LOG_INFO,
+	     "WASAPI: Device '%s' [%" PRIu32 " Hz] initialized (source: %s)",
+	     device_name.c_str(), sampleRate, obs_source_get_name(source));
 
 	if (sourceType == SourceType::ProcessOutput && !hooked) {
 		hooked = true;
@@ -1138,11 +1102,11 @@ bool WASAPISource::ProcessCaptureData()
 			return false;
 		}
 
-		if (flags & AUDCLNT_BUFFERFLAGS_TIMESTAMP_ERROR) {
-			blog(LOG_ERROR, "[WASAPISource::ProcessCaptureData]"
-					" Timestamp error!");
-			capture->ReleaseBuffer(frames);
-			return false;
+		if (!sawBadTimestamp &&
+		    flags & AUDCLNT_BUFFERFLAGS_TIMESTAMP_ERROR) {
+			blog(LOG_WARNING, "[WASAPISource::ProcessCaptureData]"
+					  " Timestamp error!");
+			sawBadTimestamp = true;
 		}
 
 		if (flags & AUDCLNT_BUFFERFLAGS_DATA_DISCONTINUITY) {
@@ -1184,7 +1148,17 @@ bool WASAPISource::ProcessCaptureData()
 					sampleRate);
 		}
 
-		obs_source_output_audio(source, &data);
+		if (reroute_target) {
+			obs_source_t *target =
+				obs_weak_source_get_source(reroute_target);
+
+			if (target) {
+				obs_source_output_audio(target, &data);
+				obs_source_release(target);
+			}
+		} else {
+			obs_source_output_audio(source, &data);
+		}
 
 		capture->ReleaseBuffer(frames);
 	}
@@ -1558,6 +1532,17 @@ static void wasapi_get_hooked(void *data, calldata_t *cd)
 	}
 }
 
+static void wasapi_reroute_audio(void *data, calldata_t *cd)
+{
+	auto wasapi_source = static_cast<WASAPISource *>(data);
+	if (!wasapi_source)
+		return;
+
+	obs_source_t *target = nullptr;
+	calldata_get_ptr(cd, "target", &target);
+	wasapi_source->SetRerouteTarget(target);
+}
+
 static void *CreateWASAPISource(obs_data_t *settings, obs_source_t *source,
 				SourceType type)
 {
@@ -1583,6 +1568,9 @@ static void *CreateWASAPISource(obs_data_t *settings, obs_source_t *source,
 					ph,
 					"void get_hooked(out bool hooked, out string title, out string class, out string executable)",
 					wasapi_get_hooked, wasapi_source);
+				proc_handler_add(
+					ph, "void reroute_audio(in ptr target)",
+					wasapi_reroute_audio, wasapi_source);
 			}
 			return wasapi_source;
 		}

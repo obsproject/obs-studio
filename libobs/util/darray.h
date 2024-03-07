@@ -360,6 +360,15 @@ static inline void darray_erase_range(const size_t element_size,
 	dst->num -= count;
 }
 
+static inline void darray_pop_front(const size_t element_size,
+				    struct darray *dst)
+{
+	assert(dst->num != 0);
+
+	if (dst->num)
+		darray_erase(element_size, dst, 0);
+}
+
 static inline void darray_pop_back(const size_t element_size,
 				   struct darray *dst)
 {
@@ -641,6 +650,7 @@ static inline void darray_swap(const size_t element_size, struct darray *dst,
 #define da_erase_range(dst, from, to) \
 	darray_erase_range(sizeof(*(dst).array), &(dst).da, from, to)
 
+#define da_pop_front(dst) darray_pop_front(sizeof(*(dst).array), &(dst).da);
 #define da_pop_back(dst) darray_pop_back(sizeof(*(dst).array), &(dst).da);
 
 #define da_join(dst, src) \

@@ -72,13 +72,13 @@ static void log_processor_name(void)
     if (ret != 0)
         return;
 
-    name = malloc(size);
+    name = bmalloc(size);
 
     ret = sysctlbyname("machdep.cpu.brand_string", name, &size, NULL, 0);
     if (ret == 0)
         blog(LOG_INFO, "CPU Name: %s", name);
 
-    free(name);
+    bfree(name);
 }
 
 static void log_processor_speed(void)
@@ -91,6 +91,25 @@ static void log_processor_speed(void)
     ret = sysctlbyname("hw.cpufrequency", &freq, &size, NULL, 0);
     if (ret == 0)
         blog(LOG_INFO, "CPU Speed: %lldMHz", freq / 1000000);
+}
+
+static void log_model_name(void)
+{
+    char *name = NULL;
+    size_t size;
+    int ret;
+
+    ret = sysctlbyname("hw.model", NULL, &size, NULL, 0);
+    if (ret != 0)
+        return;
+
+    name = bmalloc(size);
+
+    ret = sysctlbyname("hw.model", name, &size, NULL, 0);
+    if (ret == 0)
+        blog(LOG_INFO, "Model Identifier: %s", name);
+
+    bfree(name);
 }
 
 static void log_processor_cores(void)
@@ -139,6 +158,7 @@ void log_system_info(void)
     log_processor_speed();
     log_processor_cores();
     log_available_memory();
+    log_model_name();
     log_os();
     log_emulation_status();
     log_kernel_version();

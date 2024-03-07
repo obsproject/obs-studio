@@ -525,6 +525,7 @@ struct gs_init_data {
 
 EXPORT const char *gs_get_device_name(void);
 EXPORT int gs_get_device_type(void);
+EXPORT uint32_t gs_get_adapter_count(void);
 EXPORT void gs_enum_adapters(bool (*callback)(void *param, const char *name,
 					      uint32_t id),
 			     void *param);
@@ -857,6 +858,12 @@ EXPORT bool gs_timer_range_get_data(gs_timer_range_t *range, bool *disjoint,
 
 EXPORT bool gs_nv12_available(void);
 EXPORT bool gs_p010_available(void);
+EXPORT bool gs_texture_create_nv12(gs_texture_t **tex_y, gs_texture_t **tex_uv,
+				   uint32_t width, uint32_t height,
+				   uint32_t flags);
+EXPORT bool gs_texture_create_p010(gs_texture_t **tex_y, gs_texture_t **tex_uv,
+				   uint32_t width, uint32_t height,
+				   uint32_t flags);
 
 EXPORT bool gs_is_monitor_hdr(void *monitor);
 
@@ -923,7 +930,6 @@ EXPORT enum gs_color_space
 gs_duplicator_get_color_space(gs_duplicator_t *duplicator);
 EXPORT float gs_duplicator_get_sdr_white_level(gs_duplicator_t *duplicator);
 
-EXPORT uint32_t gs_get_adapter_count(void);
 EXPORT bool gs_can_adapter_fast_clear(void);
 
 /** creates a windows GDI-lockable texture */
@@ -955,13 +961,6 @@ EXPORT int gs_texture_acquire_sync(gs_texture_t *tex, uint64_t key,
  * return 0 on success, -1 on error
  */
 EXPORT int gs_texture_release_sync(gs_texture_t *tex, uint64_t key);
-
-EXPORT bool gs_texture_create_nv12(gs_texture_t **tex_y, gs_texture_t **tex_uv,
-				   uint32_t width, uint32_t height,
-				   uint32_t flags);
-EXPORT bool gs_texture_create_p010(gs_texture_t **tex_y, gs_texture_t **tex_uv,
-				   uint32_t width, uint32_t height,
-				   uint32_t flags);
 
 EXPORT gs_stagesurf_t *gs_stagesurface_create_nv12(uint32_t width,
 						   uint32_t height);

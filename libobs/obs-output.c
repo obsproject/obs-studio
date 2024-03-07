@@ -250,7 +250,7 @@ static inline void clear_raw_audio_buffers(obs_output_t *output)
 {
 	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++) {
 		for (size_t j = 0; j < MAX_AV_PLANES; j++) {
-			circlebuf_free(&output->audio_buffer[i][j]);
+			deque_free(&output->audio_buffer[i][j]);
 		}
 	}
 }
@@ -299,8 +299,8 @@ void obs_output_destroy(obs_output_t *output)
 		pthread_mutex_destroy(&output->delay_mutex);
 		os_event_destroy(output->reconnect_stop_event);
 		obs_context_data_free(&output->context);
-		circlebuf_free(&output->delay_data);
-		circlebuf_free(&output->caption_data);
+		deque_free(&output->delay_data);
+		deque_free(&output->caption_data);
 		if (output->owns_info_id)
 			bfree((void *)output->info.id);
 		if (output->last_error_message)
@@ -340,8 +340,8 @@ bool obs_output_actual_start(obs_output_t *output)
 
 	output->caption_timestamp = 0;
 
-	circlebuf_free(&output->caption_data);
-	circlebuf_init(&output->caption_data);
+	deque_free(&output->caption_data);
+	deque_init(&output->caption_data);
 
 	return success;
 }
@@ -1491,8 +1491,8 @@ static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 		void *caption_buf = bzalloc(3 * sizeof(uint8_t));
 
 		while (output->caption_data.size > 0) {
-			circlebuf_pop_front(&output->caption_data, caption_buf,
-					    3 * sizeof(uint8_t));
+			deque_pop_front(&output->caption_data, caption_buf,
+					3 * sizeof(uint8_t));
 
 			if ((((uint8_t *)caption_buf)[0] & 0x3) != 0) {
 				// only send cea 608
@@ -2093,6 +2093,11 @@ static void default_raw_video_callback(void *param, struct video_data *frame)
 static bool prepare_audio(struct obs_output *output,
 			  const struct audio_data *old, struct audio_data *new)
 {
+	if ((output->info.flags & OBS_OUTPUT_VIDEO) == 0) {
+		*new = *old;
+		return true;
+	}
+
 	if (!output->video_start_ts) {
 		pthread_mutex_lock(&output->pause.mutex);
 		output->video_start_ts = output->pause.last_video_ts;
@@ -2152,17 +2157,16 @@ static void default_raw_audio_callback(void *param, size_t mix_idx,
 	frame_size_bytes = AUDIO_OUTPUT_FRAMES * output->audio_size;
 
 	for (size_t i = 0; i < output->planes; i++)
-		circlebuf_push_back(&output->audio_buffer[mix_idx][i],
-				    out.data[i],
-				    out.frames * output->audio_size);
+		deque_push_back(&output->audio_buffer[mix_idx][i], out.data[i],
+				out.frames * output->audio_size);
 
 	/* -------------- */
 
 	while (output->audio_buffer[mix_idx][0].size > frame_size_bytes) {
 		for (size_t i = 0; i < output->planes; i++) {
-			circlebuf_pop_front(&output->audio_buffer[mix_idx][i],
-					    output->audio_data[i],
-					    frame_size_bytes);
+			deque_pop_front(&output->audio_buffer[mix_idx][i],
+					output->audio_data[i],
+					frame_size_bytes);
 			out.data[i] = (uint8_t *)output->audio_data[i];
 		}
 
@@ -2376,41 +2380,32 @@ static inline bool initialize_video_encoders(obs_output_t *output)
 	return true;
 }
 
-static inline obs_encoder_t *find_inactive_audio_encoder(obs_output_t *output)
-{
-	for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
-		struct obs_encoder *audio = output->audio_encoders[i];
-
-		if (audio && !audio->active && !audio->paired_encoder)
-			return audio;
-	}
-
-	return NULL;
-}
-
 static inline void pair_encoders(obs_output_t *output)
 {
 	size_t first_venc_idx;
 	if (!get_first_video_encoder_index(output, &first_venc_idx))
 		return;
 	struct obs_encoder *video = output->video_encoders[first_venc_idx];
-	struct obs_encoder *audio = find_inactive_audio_encoder(output);
 
-	if (video && audio) {
-		pthread_mutex_lock(&audio->init_mutex);
-		pthread_mutex_lock(&video->init_mutex);
-
-		if (!audio->active && !video->active &&
-		    !video->paired_encoder && !audio->paired_encoder) {
-
-			audio->wait_for_video = true;
-			audio->paired_encoder = video;
-			video->paired_encoder = audio;
-		}
-
+	pthread_mutex_lock(&video->init_mutex);
+	if (video->active) {
 		pthread_mutex_unlock(&video->init_mutex);
+		return;
+	}
+
+	for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
+		struct obs_encoder *audio = output->audio_encoders[i];
+		if (!audio)
+			continue;
+
+		pthread_mutex_lock(&audio->init_mutex);
+		if (!audio->active && !audio->paired_encoders.num) {
+			da_push_back(video->paired_encoders, &audio);
+			da_push_back(audio->paired_encoders, &video);
+		}
 		pthread_mutex_unlock(&audio->init_mutex);
 	}
+	pthread_mutex_unlock(&video->init_mutex);
 }
 
 bool obs_output_initialize_encoders(obs_output_t *output, uint32_t flags)
@@ -2860,9 +2855,8 @@ void obs_output_caption(obs_output_t *output,
 {
 	pthread_mutex_lock(&output->caption_mutex);
 	for (size_t i = 0; i < captions->packets; i++) {
-		circlebuf_push_back(&output->caption_data,
-				    captions->data + (i * 3),
-				    3 * sizeof(uint8_t));
+		deque_push_back(&output->caption_data, captions->data + (i * 3),
+				3 * sizeof(uint8_t));
 	}
 	pthread_mutex_unlock(&output->caption_mutex);
 }

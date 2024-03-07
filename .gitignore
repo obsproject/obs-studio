@@ -9,7 +9,7 @@
 !/docs
 !/libobs*
 !/plugins
-!/tests
+!/test
 !/UI
 !.cirrus.xml
 !.clang-format

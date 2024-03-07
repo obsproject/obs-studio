@@ -358,6 +358,38 @@ uint64_t os_get_sys_free_size(void)
     return vmstat.free_count * vm_page_size;
 }
 
+int64_t os_get_free_space(const char *path)
+{
+    if (path) {
+        NSURL *fileURL = [NSURL fileURLWithPath:@(path)];
+
+        NSArray *availableCapacityKeys = @[
+            NSURLVolumeAvailableCapacityKey, NSURLVolumeAvailableCapacityForImportantUsageKey,
+            NSURLVolumeAvailableCapacityForOpportunisticUsageKey
+        ];
+
+        NSDictionary *values = [fileURL resourceValuesForKeys:availableCapacityKeys error:nil];
+
+        NSNumber *availableImportantSpace = values[NSURLVolumeAvailableCapacityForImportantUsageKey];
+        NSNumber *availableSpace = values[NSURLVolumeAvailableCapacityKey];
+
+        if (availableImportantSpace.longValue > 0) {
+            return availableImportantSpace.longValue;
+        } else {
+            return availableSpace.longValue;
+        }
+    }
+
+    return 0;
+}
+
+uint64_t os_get_free_disk_space(const char *dir)
+{
+    int64_t free_space = os_get_free_space(dir);
+
+    return (uint64_t) free_space;
+}
+
 static uint64_t total_memory = 0;
 static bool total_memory_initialized = false;
 

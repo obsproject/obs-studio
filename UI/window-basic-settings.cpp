@@ -437,27 +437,33 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->simpleOutRecTrack5,   CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutRecTrack6,   CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutMuxCustom,   EDIT_CHANGED,   OUTPUTS_CHANGED);
-	HookWidget(ui->simpleReplayBuf,      CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->simpleReplayBuf,      GROUP_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleRBSecMax,       SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->simpleRBMegsMax,      SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->advOutEncoder,        COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutAEncoder,       COMBO_CHANGED,  OUTPUTS_CHANGED);
-	HookWidget(ui->advOutUseRescale,     CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRescale,        CBEDIT_CHANGED, OUTPUTS_CHANGED);
+	HookWidget(ui->advOutRescaleFilter,  COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack1,         CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack2,         CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack3,         CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack4,         CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack5,         CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack6,         CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->advOutMultiTrack1,    CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->advOutMultiTrack2,    CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->advOutMultiTrack3,    CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->advOutMultiTrack4,    CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->advOutMultiTrack5,    CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->advOutMultiTrack6,    CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecType,        COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecPath,        EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->advOutNoSpace,        CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecFormat,      COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecEncoder,     COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecAEncoder,    COMBO_CHANGED,  OUTPUTS_CHANGED);
-	HookWidget(ui->advOutRecUseRescale,  CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecRescale,     CBEDIT_CHANGED, OUTPUTS_CHANGED);
+	HookWidget(ui->advOutRecRescaleFilter, COMBO_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->advOutMuxCustom,      EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->advOutSplitFile,      CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutSplitFileType,  COMBO_CHANGED,  OUTPUTS_CHANGED);
@@ -774,7 +780,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		&OBSBasicSettings::SimpleRecordingEncoderChanged);
 	connect(ui->ignoreRecommended, &QCheckBox::toggled, this,
 		&OBSBasicSettings::SimpleRecordingEncoderChanged);
-	connect(ui->simpleReplayBuf, &QCheckBox::toggled, this,
+	connect(ui->simpleReplayBuf, &QGroupBox::toggled, this,
 		&OBSBasicSettings::SimpleReplayBufferChanged);
 	connect(ui->simpleOutputVBitrate, &QSpinBox::valueChanged, this,
 		&OBSBasicSettings::SimpleReplayBufferChanged);
@@ -818,6 +824,35 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		&OBSBasicSettings::AdvReplayBufferChanged);
 	connect(ui->advRBSecMax, &QSpinBox::valueChanged, this,
 		&OBSBasicSettings::AdvReplayBufferChanged);
+
+	// GPU scaling filters
+	auto addScaleFilter = [&](const char *string, int value) -> void {
+		ui->advOutRescaleFilter->addItem(QTStr(string), value);
+		ui->advOutRecRescaleFilter->addItem(QTStr(string), value);
+	};
+
+	addScaleFilter("Basic.Settings.Output.Adv.Rescale.Disabled",
+		       OBS_SCALE_DISABLE);
+	addScaleFilter("Basic.Settings.Video.DownscaleFilter.Bilinear",
+		       OBS_SCALE_BILINEAR);
+	addScaleFilter("Basic.Settings.Video.DownscaleFilter.Area",
+		       OBS_SCALE_AREA);
+	addScaleFilter("Basic.Settings.Video.DownscaleFilter.Bicubic",
+		       OBS_SCALE_BICUBIC);
+	addScaleFilter("Basic.Settings.Video.DownscaleFilter.Lanczos",
+		       OBS_SCALE_LANCZOS);
+
+	auto connectScaleFilter = [&](QComboBox *filter,
+				      QComboBox *res) -> void {
+		connect(filter, &QComboBox::currentIndexChanged, this,
+			[this, res, filter](int) {
+				res->setEnabled(filter->currentData() !=
+						OBS_SCALE_DISABLE);
+			});
+	};
+
+	connectScaleFilter(ui->advOutRescaleFilter, ui->advOutRescale);
+	connectScaleFilter(ui->advOutRecRescaleFilter, ui->advOutRecRescale);
 
 	// Get Bind to IP Addresses
 	obs_properties_t *ppts = obs_get_output_properties("rtmp_output");
@@ -1022,6 +1057,14 @@ void OBSBasicSettings::SaveSpinBox(QSpinBox *widget, const char *section,
 {
 	if (WidgetChanged(widget))
 		config_set_int(main->Config(), section, value, widget->value());
+}
+
+void OBSBasicSettings::SaveGroupBox(QGroupBox *widget, const char *section,
+				    const char *value)
+{
+	if (WidgetChanged(widget))
+		config_set_bool(main->Config(), section, value,
+				widget->isChecked());
 }
 
 #define CS_PARTIAL_STR QTStr("Basic.Settings.Advanced.Video.ColorRange.Partial")
@@ -2016,14 +2059,19 @@ static inline QString makeFormatToolTip()
 
 void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 {
-	bool rescale = config_get_bool(main->Config(), "AdvOut", "Rescale");
 	const char *rescaleRes =
 		config_get_string(main->Config(), "AdvOut", "RescaleRes");
+	int rescaleFilter =
+		config_get_int(main->Config(), "AdvOut", "RescaleFilter");
 	int trackIndex = config_get_int(main->Config(), "AdvOut", "TrackIndex");
-
-	ui->advOutUseRescale->setChecked(rescale);
-	ui->advOutRescale->setEnabled(rescale);
+	int audioMixes = config_get_int(main->Config(), "AdvOut",
+					"StreamMultiTrackAudioMixes");
+	ui->advOutRescale->setEnabled(rescaleFilter != OBS_SCALE_DISABLE);
 	ui->advOutRescale->setCurrentText(rescaleRes);
+
+	int idx = ui->advOutRescaleFilter->findData(rescaleFilter);
+	if (idx != -1)
+		ui->advOutRescaleFilter->setCurrentIndex(idx);
 
 	QStringList specList = QTStr("FilenameFormatting.completer")
 				       .split(QRegularExpression("\n"));
@@ -2053,6 +2101,17 @@ void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 		ui->advOutTrack6->setChecked(true);
 		break;
 	}
+	ui->advOutMultiTrack1->setChecked(audioMixes & (1 << 0));
+	ui->advOutMultiTrack2->setChecked(audioMixes & (1 << 1));
+	ui->advOutMultiTrack3->setChecked(audioMixes & (1 << 2));
+	ui->advOutMultiTrack4->setChecked(audioMixes & (1 << 3));
+	ui->advOutMultiTrack5->setChecked(audioMixes & (1 << 4));
+	ui->advOutMultiTrack6->setChecked(audioMixes & (1 << 5));
+
+	obs_service_t *service_obj = main->GetService();
+	const char *protocol = nullptr;
+	protocol = obs_service_get_protocol(service_obj);
+	SwapMultiTrack(protocol);
 }
 
 OBSPropertiesView *
@@ -2129,9 +2188,10 @@ void OBSBasicSettings::LoadAdvOutputRecordingSettings()
 		config_get_string(main->Config(), "AdvOut", "RecFilePath");
 	bool noSpace = config_get_bool(main->Config(), "AdvOut",
 				       "RecFileNameWithoutSpace");
-	bool rescale = config_get_bool(main->Config(), "AdvOut", "RecRescale");
 	const char *rescaleRes =
 		config_get_string(main->Config(), "AdvOut", "RecRescaleRes");
+	int rescaleFilter =
+		config_get_int(main->Config(), "AdvOut", "RecRescaleFilter");
 	const char *muxCustom =
 		config_get_string(main->Config(), "AdvOut", "RecMuxerCustom");
 	int tracks = config_get_int(main->Config(), "AdvOut", "RecTracks");
@@ -2149,11 +2209,13 @@ void OBSBasicSettings::LoadAdvOutputRecordingSettings()
 	ui->advOutRecType->setCurrentIndex(typeIndex);
 	ui->advOutRecPath->setText(path);
 	ui->advOutNoSpace->setChecked(noSpace);
-	ui->advOutRecUseRescale->setChecked(rescale);
 	ui->advOutRecRescale->setCurrentText(rescaleRes);
+	int idx = ui->advOutRecRescaleFilter->findData(rescaleFilter);
+	if (idx != -1)
+		ui->advOutRecRescaleFilter->setCurrentIndex(idx);
 	ui->advOutMuxCustom->setText(muxCustom);
 
-	int idx = ui->advOutRecFormat->findData(format);
+	idx = ui->advOutRecFormat->findData(format);
 	ui->advOutRecFormat->setCurrentIndex(idx);
 
 	ui->advOutRecTrack1->setChecked(tracks & (1 << 0));
@@ -2448,7 +2510,7 @@ void OBSBasicSettings::LoadOutputSettings()
 		ui->simpleOutStrAEncoderLabel->setEnabled(false);
 		ui->simpleOutStrAEncoder->setEnabled(false);
 		ui->simpleRecordingGroupBox->setEnabled(false);
-		ui->replayBufferGroupBox->setEnabled(false);
+		ui->simpleReplayBuf->setEnabled(false);
 		ui->advOutTopContainer->setEnabled(false);
 		ui->advOutRecTopContainer->setEnabled(false);
 		ui->advOutRecTypeContainer->setEnabled(false);
@@ -2954,6 +3016,7 @@ LayoutHotkey(OBSBasicSettings *settings, obs_hotkey_id id, obs_hotkey_t *key,
 					 settings, combos->second);
 
 	hw->label = label;
+	hw->setAccessibleName(text);
 	label->widget = hw;
 
 	fun(key, label, hw);
@@ -3798,7 +3861,7 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveComboData(ui->simpleOutRecAEncoder, "SimpleOutput",
 		      "RecAudioEncoder");
 	SaveEdit(ui->simpleOutMuxCustom, "SimpleOutput", "MuxerCustom");
-	SaveCheckBox(ui->simpleReplayBuf, "SimpleOutput", "RecRB");
+	SaveGroupBox(ui->simpleReplayBuf, "SimpleOutput", "RecRB");
 	SaveSpinBox(ui->simpleRBSecMax, "SimpleOutput", "RecRBTime");
 	SaveSpinBox(ui->simpleRBMegsMax, "SimpleOutput", "RecRBSize");
 	config_set_int(main->Config(), "SimpleOutput", "RecTracks",
@@ -3808,12 +3871,13 @@ void OBSBasicSettings::SaveOutputSettings()
 
 	SaveComboData(ui->advOutEncoder, "AdvOut", "Encoder");
 	SaveComboData(ui->advOutAEncoder, "AdvOut", "AudioEncoder");
-	SaveCheckBox(ui->advOutUseRescale, "AdvOut", "Rescale");
 	SaveCombo(ui->advOutRescale, "AdvOut", "RescaleRes");
+	SaveComboData(ui->advOutRescaleFilter, "AdvOut", "RescaleFilter");
 	SaveTrackIndex(main->Config(), "AdvOut", "TrackIndex", ui->advOutTrack1,
 		       ui->advOutTrack2, ui->advOutTrack3, ui->advOutTrack4,
 		       ui->advOutTrack5, ui->advOutTrack6);
-
+	config_set_int(main->Config(), "AdvOut", "StreamMultiTrackAudioMixes",
+		       AdvOutGetStreamingSelectedAudioTracks());
 	config_set_string(main->Config(), "AdvOut", "RecType",
 			  RecTypeFromIdx(ui->advOutRecType->currentIndex()));
 
@@ -3824,8 +3888,8 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveComboData(ui->advOutRecFormat, "AdvOut", "RecFormat2");
 	SaveComboData(ui->advOutRecEncoder, "AdvOut", "RecEncoder");
 	SaveComboData(ui->advOutRecAEncoder, "AdvOut", "RecAudioEncoder");
-	SaveCheckBox(ui->advOutRecUseRescale, "AdvOut", "RecRescale");
 	SaveCombo(ui->advOutRecRescale, "AdvOut", "RecRescaleRes");
+	SaveComboData(ui->advOutRecRescaleFilter, "AdvOut", "RecRescaleFilter");
 	SaveEdit(ui->advOutMuxCustom, "AdvOut", "RecMuxerCustom");
 	SaveCheckBox(ui->advOutSplitFile, "AdvOut", "RecSplitFile");
 	config_set_string(
@@ -4183,6 +4247,8 @@ bool OBSBasicSettings::QueryAllowedToClose()
 		QString format = ui->advOutRecFormat->currentData().toString();
 		if (AdvOutGetSelectedAudioTracks() == 0 && format != "flv")
 			invalidTracks = true;
+		if (AdvOutGetStreamingSelectedAudioTracks() == 0)
+			invalidTracks = true;
 	}
 
 	if (invalidEncoder) {
@@ -4356,7 +4422,6 @@ void OBSBasicSettings::on_advOutRecEncoder_currentIndexChanged(int idx)
 	}
 
 	if (idx <= 0) {
-		ui->advOutRecUseRescale->setChecked(false);
 		ui->advOutRecUseRescale->setVisible(false);
 		ui->advOutRecRescaleContainer->setVisible(false);
 		ui->advOutRecEncoderProps->setVisible(false);
@@ -5460,18 +5525,23 @@ void OBSBasicSettings::UpdateAutomaticReplayBufferCheckboxes()
 {
 	bool state = false;
 	switch (ui->outputMode->currentIndex()) {
-	case 0:
+	case 0: {
+		const bool lossless =
+			ui->simpleOutRecQuality->currentData().toString() ==
+			"Lossless";
 		state = ui->simpleReplayBuf->isChecked();
 		ui->simpleReplayBuf->setEnabled(
-			!obs_frontend_replay_buffer_active());
+			!obs_frontend_replay_buffer_active() && !lossless);
 		break;
-	case 1:
+	}
+	case 1: {
 		state = ui->advReplayBuf->isChecked();
 		bool customFFmpeg = ui->advOutRecType->currentIndex() == 1;
 		ui->advReplayBuf->setEnabled(
 			!obs_frontend_replay_buffer_active() && !customFFmpeg);
 		ui->advReplayBufCustomFFmpeg->setVisible(customFFmpeg);
 		break;
+	}
 	}
 	ui->replayWhileStreaming->setEnabled(state);
 	ui->keepReplayStreamStops->setEnabled(
@@ -5481,8 +5551,6 @@ void OBSBasicSettings::UpdateAutomaticReplayBufferCheckboxes()
 void OBSBasicSettings::SimpleReplayBufferChanged()
 {
 	QString qual = ui->simpleOutRecQuality->currentData().toString();
-	bool replayBufferEnabled = ui->simpleReplayBuf->isChecked();
-	bool lossless = qual == "Lossless";
 	bool streamQuality = qual == "Stream";
 	int abitrate = 0;
 
@@ -5539,8 +5607,6 @@ void OBSBasicSettings::SimpleReplayBufferChanged()
 	}
 
 	ui->simpleRBEstimate->style()->polish(ui->simpleRBEstimate);
-	ui->replayBufferGroupBox->setVisible(!lossless && replayBufferEnabled);
-	ui->simpleReplayBuf->setVisible(!lossless);
 
 	UpdateAutomaticReplayBufferCheckboxes();
 }
@@ -6123,6 +6189,17 @@ int OBSBasicSettings::AdvOutGetSelectedAudioTracks()
 		     (ui->advOutRecTrack4->isChecked() ? (1 << 3) : 0) |
 		     (ui->advOutRecTrack5->isChecked() ? (1 << 4) : 0) |
 		     (ui->advOutRecTrack6->isChecked() ? (1 << 5) : 0);
+	return tracks;
+}
+
+int OBSBasicSettings::AdvOutGetStreamingSelectedAudioTracks()
+{
+	int tracks = (ui->advOutMultiTrack1->isChecked() ? (1 << 0) : 0) |
+		     (ui->advOutMultiTrack2->isChecked() ? (1 << 1) : 0) |
+		     (ui->advOutMultiTrack3->isChecked() ? (1 << 2) : 0) |
+		     (ui->advOutMultiTrack4->isChecked() ? (1 << 3) : 0) |
+		     (ui->advOutMultiTrack5->isChecked() ? (1 << 4) : 0) |
+		     (ui->advOutMultiTrack6->isChecked() ? (1 << 5) : 0);
 	return tracks;
 }
 

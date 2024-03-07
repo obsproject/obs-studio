@@ -108,6 +108,13 @@ static bool init_screen_stream(struct screen_capture *sc)
         case ScreenCaptureDisplayStream: {
             SCDisplay *target_display = get_target_display();
 
+            if (!target_display) {
+                MACCAP_ERR("init_screen_stream: Invalid target display ID:  %u\n", sc->display);
+
+                os_sem_post(sc->shareable_content_available);
+                return false;
+            }
+
             if (sc->hide_obs) {
                 SCRunningApplication *obsApp = nil;
                 NSString *mainBundleIdentifier = [[NSBundle mainBundle] bundleIdentifier];
@@ -134,24 +141,30 @@ static bool init_screen_stream(struct screen_capture *sc)
         } break;
         case ScreenCaptureWindowStream: {
             SCWindow *target_window = nil;
-            if (sc->window != 0) {
+            if (sc->window != kCGNullWindowID) {
                 for (SCWindow *window in sc->shareable_content.windows) {
                     if (window.windowID == sc->window) {
                         target_window = window;
                         break;
                     }
                 }
-            } else {
-                target_window = [sc->shareable_content.windows objectAtIndex:0];
-                sc->window = target_window.windowID;
             }
-            content_filter = [[SCContentFilter alloc] initWithDesktopIndependentWindow:target_window];
+            if (target_window == nil) {
+                os_sem_post(sc->shareable_content_available);
+                sc->disp = NULL;
+                os_event_init(&sc->disp_finished, OS_EVENT_TYPE_MANUAL);
+                os_event_init(&sc->stream_start_completed, OS_EVENT_TYPE_MANUAL);
+                return true;
+            } else {
+                content_filter = [[SCContentFilter alloc] initWithDesktopIndependentWindow:target_window];
 
-            if (target_window) {
                 [sc->stream_properties setWidth:(size_t) target_window.frame.size.width];
                 [sc->stream_properties setHeight:(size_t) target_window.frame.size.height];
-            }
 
+                if (@available(macOS 14.2, *)) {
+                    [sc->stream_properties setIncludeChildWindows:YES];
+                }
+            }
         } break;
         case ScreenCaptureApplicationStream: {
             SCDisplay *target_display = get_target_display();
@@ -167,6 +180,10 @@ static bool init_screen_stream(struct screen_capture *sc)
             content_filter = [[SCContentFilter alloc] initWithDisplay:target_display
                                                 includingApplications:target_application_array
                                                      exceptingWindows:empty_array];
+            if (@available(macOS 14.2, *)) {
+                content_filter.includeMenuBar = YES;
+            }
+
             [target_application_array release];
             [empty_array release];
 
@@ -185,11 +202,9 @@ static bool init_screen_stream(struct screen_capture *sc)
     [sc->stream_properties setPixelFormat:l10r_type];
 
     if (@available(macOS 13.0, *)) {
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
         [sc->stream_properties setCapturesAudio:YES];
         [sc->stream_properties setExcludesCurrentProcessAudio:YES];
         [sc->stream_properties setChannelCount:2];
-#endif
     } else {
         if (sc->capture_type != ScreenCaptureWindowStream) {
             sc->disp = NULL;
@@ -216,7 +231,6 @@ static bool init_screen_stream(struct screen_capture *sc)
         return !did_add_output;
     }
 
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
     if (@available(macOS 13.0, *)) {
         did_add_output = [sc->disp addStreamOutput:sc->capture_delegate type:SCStreamOutputTypeAudio
                                 sampleHandlerQueue:nil
@@ -228,7 +242,6 @@ static bool init_screen_stream(struct screen_capture *sc)
             return !did_add_output;
         }
     }
-#endif
     os_event_init(&sc->disp_finished, OS_EVENT_TYPE_MANUAL);
     os_event_init(&sc->stream_start_completed, OS_EVENT_TYPE_MANUAL);
 

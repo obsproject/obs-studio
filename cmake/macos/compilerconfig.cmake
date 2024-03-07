@@ -2,6 +2,13 @@
 
 include_guard(GLOBAL)
 
+option(ENABLE_COMPILER_TRACE "Enable clang time-trace" OFF)
+mark_as_advanced(ENABLE_COMPILER_TRACE)
+
+if(NOT XCODE)
+  message(FATAL_ERROR "Building OBS Studio on macOS requires Xcode generator.")
+endif()
+
 include(ccache)
 include(compiler_common)
 
@@ -15,77 +22,59 @@ if(NOT CMAKE_OSX_ARCHITECTURES)
 endif()
 set_property(CACHE CMAKE_OSX_ARCHITECTURES PROPERTY STRINGS arm64 x86_64)
 
-# Make sure the macOS SDK is recent enough for OBS
-set(OBS_MACOS_MINIMUM_SDK "13.1") # Keep in sync with Xcode
-set(OBS_MACOS_MINIMUM_XCODE "14.2") # Keep in sync with SDK
+# Ensure recent enough Xcode and platform SDK
+set(_obs_macos_minimum_sdk 14.2) # Keep in sync with Xcode
+set(_obs_macos_minimum_xcode 15.1) # Keep in sync with SDK
 message(DEBUG "macOS SDK Path: ${CMAKE_OSX_SYSROOT}")
-string(REGEX MATCH ".+/MacOSX.platform/Developer/SDKs/MacOSX([0-9]+\.[0-9])+\.sdk$" _ ${CMAKE_OSX_SYSROOT})
-set(OBS_MACOS_CURRENT_SDK ${CMAKE_MATCH_1})
-message(DEBUG "macOS SDK version: ${OBS_MACOS_CURRENT_SDK}")
-if(OBS_MACOS_CURRENT_SDK VERSION_LESS OBS_MACOS_MINIMUM_SDK)
+string(REGEX MATCH ".+/MacOSX.platform/Developer/SDKs/MacOSX([0-9]+\\.[0-9])+\\.sdk$" _ ${CMAKE_OSX_SYSROOT})
+set(_obs_macos_current_sdk ${CMAKE_MATCH_1})
+message(DEBUG "macOS SDK version: ${_obs_macos_current_sdk}")
+if(_obs_macos_current_sdk VERSION_LESS _obs_macos_minimum_sdk)
   message(
-    FATAL_ERROR
-      "Your macOS SDK version (${OBS_MACOS_CURRENT_SDK}) is too low. The macOS ${OBS_MACOS_MINIMUM_SDK} SDK (Xcode ${OBS_MACOS_MINIMUM_XCODE}) is required to build OBS."
-  )
+    FATAL_ERROR "Your macOS SDK version (${_obs_macos_current_sdk}) is too low. "
+                "The macOS ${_obs_macos_minimum_sdk} SDK (Xcode ${_obs_macos_minimum_xcode}) is required to build OBS.")
 endif()
+unset(_obs_macos_current_sdk)
+unset(_obs_macos_minimum_sdk)
+unset(_obs_macos_minimum_xcode)
 
-if(XCODE)
-  # Enable dSYM generator for release builds
-  string(APPEND CMAKE_C_FLAGS_RELEASE " -g")
-  string(APPEND CMAKE_CXX_FLAGS_RELEASE " -g")
-else()
-  option(ENABLE_COMPILER_TRACE "Enable clang time-trace (requires Ninja)" OFF)
-  mark_as_advanced(ENABLE_COMPILER_TRACE)
+# Enable dSYM generator for release builds
+string(APPEND CMAKE_C_FLAGS_RELEASE " -g")
+string(APPEND CMAKE_CXX_FLAGS_RELEASE " -g")
+string(APPEND CMAKE_OBJC_FLAGS_RELEASE " -g")
+string(APPEND CMAKE_OBJCXX_FLAGS_RELEASE " -g")
 
-  # clang options for ObjC
-  set(_obs_clang_objc_options
-      ${_obs_clang_common_options}
-      -Wno-implicit-atomic-properties
-      -Wno-objc-interface-ivars
-      -Warc-repeated-use-of-weak
-      -Wno-arc-maybe-repeated-use-of-weak
-      -Wimplicit-retain-self
-      -Wduplicate-method-match
-      -Wshadow
-      -Wfloat-conversion
-      -Wobjc-literal-conversion
-      -Wno-selector
-      -Wno-strict-selector-match
-      -Wundeclared-selector
-      -Wdeprecated-implementations
-      -Wprotocol
-      -Werror=block-capture-autoreleasing
-      -Wrange-loop-analysis)
+# Default ObjC compiler options used by Xcode:
+#
+# * -Wno-implicit-atomic-properties
+# * -Wno-objc-interface-ivars
+# * -Warc-repeated-use-of-weak
+# * -Wno-arc-maybe-repeated-use-of-weak
+# * -Wimplicit-retain-self
+# * -Wduplicate-method-match
+# * -Wshadow
+# * -Wfloat-conversion
+# * -Wobjc-literal-conversion
+# * -Wno-selector
+# * -Wno-strict-selector-match
+# * -Wundeclared-selector
+# * -Wdeprecated-implementations
+# * -Wprotocol
+# * -Werror=block-capture-autoreleasing
+# * -Wrange-loop-analysis
 
-  # clang options for ObjC++
-  set(_obs_clang_objcxx_options ${_obs_clang_objc_options} -Wno-non-virtual-dtor)
-
-  # cmake-format: off
-  add_compile_options(
-    "$<$<COMPILE_LANGUAGE:C>:${_obs_clang_c_options}>"
-    "$<$<COMPILE_LANGUAGE:CXX>:${_obs_clang_cxx_options}>"
-    "$<$<COMPILE_LANGUAGE:OBJC>:${_obs_clang_objc_options}>"
-    "$<$<COMPILE_LANGUAGE:OBJCXX>:${_obs_clang_objcxx_options}>")
-  # cmake-format: on
-
-  # Enable stripping of dead symbols when not building for Debug configuration
-  set(_release_configs RelWithDebInfo Release MinSizeRel)
-  if(CMAKE_BUILD_TYPE IN_LIST _release_configs)
-    add_link_options(LINKER:-dead_strip)
-  endif()
-
-  # Enable color diagnostics for AppleClang
-  set(CMAKE_COLOR_DIAGNOSTICS ON)
-
-  # Add time trace option to compiler, if enabled.
-  if(ENABLE_COMPILER_TRACE AND CMAKE_GENERATOR STREQUAL "Ninja")
-    add_compile_options($<$<NOT:$<COMPILE_LANGUAGE:Swift>>:-ftime-trace>)
-  else()
-    set(ENABLE_COMPILER_TRACE
-        OFF
-        CACHE BOOL "Enable clang time-trace (requires Ninja)" FORCE)
-  endif()
-endif()
+# Default ObjC++ compiler options used by Xcode:
+#
+# * -Wno-non-virtual-dtor
 
 add_compile_definitions(
-  "$<$<NOT:$<COMPILE_LANGUAGE:Swift>>:$<$<CONFIG:DEBUG>:DEBUG>;$<$<CONFIG:DEBUG>:_DEBUG>;SIMDE_ENABLE_OPENMP>")
+  $<$<NOT:$<COMPILE_LANGUAGE:Swift>>:$<$<CONFIG:DEBUG>:DEBUG>>
+  $<$<NOT:$<COMPILE_LANGUAGE:Swift>>:$<$<CONFIG:DEBUG>:_DEBUG>> $<$<NOT:$<COMPILE_LANGUAGE:Swift>>:SIMDE_ENABLE_OPENMP>)
+
+if(ENABLE_COMPILER_TRACE)
+  add_compile_options(
+    $<$<NOT:$<COMPILE_LANGUAGE:Swift>>:-ftime-trace>
+    "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-Xfrontend -debug-time-expression-type-checking>"
+    "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-Xfrontend -debug-time-function-bodies>")
+  add_link_options(LINKER:-print_statistics)
+endif()

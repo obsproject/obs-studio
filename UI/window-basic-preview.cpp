@@ -520,6 +520,8 @@ void OBSBasicPreview::GetStretchHandleData(const vec2 &pos, bool ignoreGroup)
 							 &invGroupTransform);
 			matrix4_inv(&invGroupTransform, &invGroupTransform);
 			obs_sceneitem_defer_group_resize_begin(stretchGroup);
+		} else {
+			stretchGroup = nullptr;
 		}
 	}
 }
@@ -658,8 +660,47 @@ void OBSBasicPreview::UpdateCursor(uint32_t &flags)
 
 	if (!flags && (cursor().shape() != Qt::OpenHandCursor || !scrollMode))
 		unsetCursor();
-	if (cursor().shape() != Qt::ArrowCursor)
+	if ((cursor().shape() != Qt::ArrowCursor) || flags == 0)
 		return;
+
+	if (flags & ITEM_ROT) {
+		setCursor(Qt::OpenHandCursor);
+		return;
+	}
+
+	float rotation = obs_sceneitem_get_rot(stretchItem);
+	vec2 scale;
+	obs_sceneitem_get_scale(stretchItem, &scale);
+
+	if (rotation < 0.0f)
+		rotation = 360.0f + rotation;
+
+	int octant = int(std::round(rotation / 45.0f));
+	bool isCorner = (flags & (flags - 1)) != 0;
+
+	if ((scale.x < 0.0f) && isCorner)
+		flags ^= ITEM_LEFT | ITEM_RIGHT;
+	if ((scale.y < 0.0f) && isCorner)
+		flags ^= ITEM_TOP | ITEM_BOTTOM;
+
+	if (octant % 4 >= 2) {
+		if (isCorner) {
+			flags ^= ITEM_TOP | ITEM_BOTTOM;
+		} else {
+			flags = (flags >> 2) | (flags << 2);
+		}
+	}
+
+	if (octant % 2 == 1) {
+		if (isCorner) {
+			flags &= (flags % 3 == 0) ? ~ITEM_TOP & ~ITEM_BOTTOM
+						  : ~ITEM_LEFT & ~ITEM_RIGHT;
+		} else {
+			flags = (flags % 4 == 0)
+					? flags | flags >> ((flags / 2) - 1)
+					: flags | ((flags >> 2) | (flags << 2));
+		}
+	}
 
 	if ((flags & ITEM_LEFT && flags & ITEM_TOP) ||
 	    (flags & ITEM_RIGHT && flags & ITEM_BOTTOM))
@@ -671,8 +712,6 @@ void OBSBasicPreview::UpdateCursor(uint32_t &flags)
 		setCursor(Qt::SizeHorCursor);
 	else if (flags & ITEM_TOP || flags & ITEM_BOTTOM)
 		setCursor(Qt::SizeVerCursor);
-	else if (flags & ITEM_ROT)
-		setCursor(Qt::OpenHandCursor);
 }
 
 static bool select_one(obs_scene_t * /* scene */, obs_sceneitem_t *item,
@@ -1930,7 +1969,7 @@ bool OBSBasicPreview::DrawSelectedOverflow(obs_scene_t *, obs_sceneitem_t *item,
 	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_DEFAULT, "DrawSelectedOverflow");
 
 	obs_transform_info info;
-	obs_sceneitem_get_info(item, &info);
+	obs_sceneitem_get_info2(item, &info);
 
 	gs_effect_t *solid = obs_get_base_effect(OBS_EFFECT_REPEAT);
 	gs_eparam_t *image = gs_effect_get_param_by_name(solid, "image");
@@ -1974,7 +2013,7 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *, obs_sceneitem_t *item,
 		matrix4 mat;
 		obs_transform_info groupInfo;
 		obs_sceneitem_get_draw_transform(item, &mat);
-		obs_sceneitem_get_info(item, &groupInfo);
+		obs_sceneitem_get_info2(item, &groupInfo);
 
 		prev->groupRot = groupInfo.rot;
 
@@ -2056,7 +2095,7 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *, obs_sceneitem_t *item,
 	boxScale.y *= curTransform.y.y;
 
 	obs_transform_info info;
-	obs_sceneitem_get_info(item, &info);
+	obs_sceneitem_get_info2(item, &info);
 
 	gs_matrix_push();
 	gs_matrix_mul(&boxTransform);
@@ -2484,7 +2523,7 @@ void OBSBasicPreview::DrawSpacingHelpers()
 	obs_sceneitem_get_box_transform(item, &boxTransform);
 
 	obs_transform_info oti;
-	obs_sceneitem_get_info(item, &oti);
+	obs_sceneitem_get_info2(item, &oti);
 
 	obs_video_info ovi;
 	obs_get_video_info(&ovi);
@@ -2506,7 +2545,7 @@ void OBSBasicPreview::DrawSpacingHelpers()
 
 	if (parentGroup) {
 		obs_transform_info groupOti;
-		obs_sceneitem_get_info(parentGroup, &groupOti);
+		obs_sceneitem_get_info2(parentGroup, &groupOti);
 
 		//Correct the scene item rotation angle
 		rot = oti.rot + groupOti.rot;

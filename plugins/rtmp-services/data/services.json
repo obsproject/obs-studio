@@ -1156,36 +1156,13 @@
             ],
             "servers": [
                 {
-                    "name": "Global - Recommended",
+                    "name": "Default",
                     "url": "rtmps://live.sb.zone:443/live"
-                },
-                {
-                    "name": "Global - Legacy",
-                    "url": "rtmp://ingest-global.switchboard.zone/live"
                 }
             ],
             "recommended": {
                 "keyint": 2,
                 "profile": "high"
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
-            "name": "Looch",
-            "common": false,
-            "servers": [
-                {
-                    "name": "Primary Looch ingest server",
-                    "url": "rtmp://ingest.looch.tv/live"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "profile": "main",
-                "max video bitrate": 6000,
-                "max audio bitrate": 160
             },
             "supported video codecs": [
                 "h264"
@@ -1508,23 +1485,6 @@
             ]
         },
         {
-            "name": "Chathostess",
-            "servers": [
-                {
-                    "name": "Chathostess - Backup",
-                    "url": "rtmp://wowza05.foobarweb.com/cmschatsys_video"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 3600,
-                "max audio bitrate": 128
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
             "name": "OnlyFans.com",
             "stream_key_link": "https://onlyfans.com/my/settings/other",
             "servers": [
@@ -1655,35 +1615,6 @@
                 "max audio bitrate": 96,
                 "max video bitrate": 904,
                 "x264opts": "tune=zerolatency"
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
-            "name": "WASD.TV",
-            "servers": [
-                {
-                    "name": "Automatic",
-                    "url": "rtmp://push.rtmp.wasd.tv/live"
-                },
-                {
-                    "name": "Russia, Moscow",
-                    "url": "rtmp://ru-moscow.rtmp.wasd.tv/live"
-                },
-                {
-                    "name": "Germany, Frankfurt",
-                    "url": "rtmp://de-frankfurt.rtmp.wasd.tv/live"
-                },
-                {
-                    "name": "Finland, Helsinki",
-                    "url": "rtmp://fi-helsinki.rtmp.wasd.tv/live"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 10000,
-                "max audio bitrate": 192
             },
             "supported video codecs": [
                 "h264"
@@ -2286,58 +2217,6 @@
             ]
         },
         {
-            "name": "Nonolive",
-            "more_info_link": "https://wia.nonolive.com/views/obs_assistant_tutorial.html",
-            "stream_key_link": "https://www.nonolive.com/room_setting",
-            "servers": [
-                {
-                    "name": "Asia: Hong Kong, China",
-                    "url": "rtmp://live-hk-zl.nonolive.tv/live"
-                },
-                {
-                    "name": "Asia: Jakarta, Indonesia",
-                    "url": "rtmp://live-jkt-zl.nonolive.tv/live"
-                },
-                {
-                    "name": "EU: Frankfurt, DE",
-                    "url": "rtmp://live-fra-zl.nonolive.tv/live"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 6000,
-                "max audio bitrate": 160
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
-            "name": "StreamVi",
-            "stream_key_link": "https://streamvi.ru/settings",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://live-default.streamvi.ru/live"
-                },
-                {
-                    "name": "Russia: Moscow",
-                    "url": "rtmp://live-msk.streamvi.ru/live"
-                },
-                {
-                    "name": "EU Central: Germany",
-                    "url": "rtmp://live-germany.streamvi.ru/live"
-                },
-                {
-                    "name": "Russia: Novosibirsk",
-                    "url": "rtmp://live-novosib.streamvi.ru/live"
-                }
-            ],
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
             "name": "Livepush",
             "more_info_link": "https://docs.livepush.io/en/articles/5065323-how-to-stream-live-from-obs-to-livepush",
             "servers": [
@@ -2396,10 +2275,6 @@
                 {
                     "name": "Bangalore, IN",
                     "url": "rtmp://in-south-blr.livepush.io/live"
-                },
-                {
-                    "name": "Turkiye",
-                    "url": "rtmp://tr-north-ist.livepush.io/live"
                 }
             ],
             "recommended": {
@@ -2456,37 +2331,50 @@
             "servers": [
                 {
                     "name": "Global (Recommended)",
-                    "url": "rtmp://stream.global.irl.run/ingest"
+                    "url": "rtmps://stream.global.irl.run/ingest"
                 },
                 {
                     "name": "Los Angeles, US",
-                    "url": "rtmp://stream.lax.irl.run/ingest"
+                    "url": "rtmps://stream.lax.irl.run/ingest"
+                },
+                {
+                    "name": "Dallas, US",
+                    "url": "rtmps://stream.dal.irl.run/ingest"
                 },
                 {
                     "name": "New York, US",
-                    "url": "rtmp://stream.ewr.irl.run/ingest"
+                    "url": "rtmps://stream.ewr.irl.run/ingest"
                 },
                 {
-                    "name": "Rotterdam, NL",
-                    "url": "rtmp://stream.rtm.irl.run/ingest"
+                    "name": "Miami, US",
+                    "url": "rtmps://stream.mia.irl.run/ingest"
+                },
+                {
+                    "name": "Amsterdam, NL",
+                    "url": "rtmps://stream.ams.irl.run/ingest"
+                },
+                {
+                    "name": "Frankfurt, DE",
+                    "url": "rtmps://stream.fra.irl.run/ingest"
                 },
                 {
                     "name": "Singapore",
-                    "url": "rtmp://stream.sin.irl.run/ingest"
+                    "url": "rtmps://stream.sin.irl.run/ingest"
                 },
                 {
                     "name": "Tokyo, JP",
-                    "url": "rtmp://stream.tyo.irl.run/ingest"
+                    "url": "rtmps://stream.tyo.irl.run/ingest"
                 },
                 {
                     "name": "Sydney, AU",
-                    "url": "rtmp://stream.syd.irl.run/ingest"
+                    "url": "rtmps://stream.syd.irl.run/ingest"
                 }
             ],
             "recommended": {
                 "keyint": 2,
                 "bframes": 2,
-                "max video bitrate": 20000
+                "max video bitrate": 20000,
+                "max audio bitrate": 256
             },
             "supported video codecs": [
                 "h264"
@@ -2718,6 +2606,79 @@
             }
         },
         {
+            "name": "PandaTV | 팬더티비",
+            "common": false,
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://rtmp.pandalive.co.kr/app"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "supported resolutions": [
+                    "1920x1080",
+                    "1280x720",
+                    "852x480",
+                    "640x360"
+                ],
+                "max video bitrate": 7500,
+                "max audio bitrate": 320,
+                "x264opts": "scenecut=0"
+            },
+            "supported video codecs": [
+                "h264"
+            ]
+        },
+        {
+            "name": "Vault - by CommanderRoot",
+            "common": false,
+            "more_info_link": "https://vault.root-space.eu/",
+            "stream_key_link": "https://vault.root-space.eu/recordings",
+            "servers": [
+                {
+                    "name": "EU - Central",
+                    "url": "rtmp://ingest-eu-central.vault.root-space.eu/app"
+                },
+                {
+                    "name": "US - West",
+                    "url": "rtmp://ingest-us-west.vault.root-space.eu/app"
+                }
+            ],
+            "protocol": "RTMP",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 7800,
+                "max audio bitrate": 320,
+                "x264opts": "scenecut=0"
+            }
+        },
+        {
+            "name": "CHZZK",
+            "common": false,
+            "stream_key_link": "https://studio.chzzk.naver.com/setting",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://global-rtmp.lip2.navercorp.com:8080/relay"
+                }
+            ],
+            "supported video codecs": [
+                "h264"
+            ],
+            "recommended": {
+                "keyint": 1,
+                "profile": "high",
+                "bframes": 0
+            }
+        },
+        {
             "name": "LiveSpace",
             "common": false,
             "more_info_link": "https://about.live.space",
@@ -2739,7 +2700,6 @@
                 "max video bitrate": 20000,
                 "max audio bitrate": 512
             }
-        }
     ]
 }
 

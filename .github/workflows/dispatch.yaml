@@ -34,17 +34,19 @@ jobs:
   services-validation:
     name: Validate Services 🕵️
     if: github.repository_owner == 'obsproject' && inputs.job == 'services'
-    runs-on: macos-13
+    runs-on: macos-14
     permissions:
       checks: write
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Check for Defunct Services 📉
         uses: ./.github/actions/services-validator
         with:
           repositorySecret: ${{ secrets.GITHUB_TOKEN }}
+          checkApiSecret: ${{ secrets.CHECK_SERVERS_API_KEY }}
+          checkApiServers: ${{ secrets.CHECK_SERVERS_LIST }}
           runSchemaChecks: true
           runServiceChecks: true
           createPullRequest: true
@@ -56,7 +58,7 @@ jobs:
     env:
       CROWDIN_PAT: ${{ secrets.CROWDIN_SYNC_CROWDIN_PAT }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
           token: ${{ secrets.CROWDIN_SYNC_GITHUB_PAT }}
@@ -66,9 +68,9 @@ jobs:
   steam-upload:
     name: Upload Steam Builds 🚂
     if: github.repository_owner == 'obsproject' && inputs.job == 'steam'
-    runs-on: macos-13
+    runs-on: macos-14
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/steam-upload
         with:
           steamSecret: ${{ secrets.STEAM_SHARED_SECRET }}
@@ -86,7 +88,7 @@ jobs:
     if: github.repository_owner == 'obsproject' && inputs.job == 'documentation'
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/generate-docs
 
   update-documentation-cloudflare:
@@ -94,7 +96,7 @@ jobs:
     if: github.repository_owner == 'obsproject' && inputs.job == 'documentation'
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/generate-docs
         with:
           disableLinkExtensions: true
@@ -116,7 +118,7 @@ jobs:
           : Get Commit Hash 🆔
           echo "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: OBS Studio Docs (No Extensions) ${{ steps.setup.outputs.commitHash }}
           path: docs

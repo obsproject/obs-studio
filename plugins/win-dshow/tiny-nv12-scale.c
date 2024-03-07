@@ -159,7 +159,7 @@ static void nv12_convert_to_yuy2(nv12_scale_t *s, uint8_t *dst_start,
 				 const uint8_t *src_start)
 {
 	const int size = s->src_cx * s->src_cy;
-	const int size_dst_line = s->src_cx * 4;
+	const int size_dst_line = s->src_cx * 2;
 
 	register const uint8_t *src_y = src_start;
 	register const uint8_t *src_uv = src_y + size;
