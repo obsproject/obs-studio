@@ -2677,6 +2677,30 @@
                 "profile": "high",
                 "bframes": 0
             }
+        },
+        {
+            "name": "LiveSpace",
+            "common": false,
+            "more_info_link": "https://about.live.space",
+            "stream_key_link": "https://live.space/start",
+            "servers": [
+                {
+                    "name": "Global (RTMP)",
+                    "url": "rtmp://app.live.space/live"
+                }
+            ],
+            "protocol": "RTMP",
+            "supported video codecs": [
+                "h264"
+            ],
+            "recommended": {
+                "keyint": 1,
+                "profile": "high",
+                "bframes": 0,
+                "max video bitrate": 20000,
+                "max audio bitrate": 512
+            }
         }
     ]
 }
+
