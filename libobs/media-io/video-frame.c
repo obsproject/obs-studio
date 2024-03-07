@@ -18,7 +18,8 @@
 #include "video-frame.h"
 
 #define HALF(size) ((size + 1) / 2)
-#define ALIGN(size, alignment) *size = (*size + alignment - 1) & (~(alignment - 1));
+#define ALIGN(size, alignment) \
+	*size = (*size + alignment - 1) & (~(alignment - 1));
 
 static inline void align_size(size_t *size, size_t alignment)
 {
@@ -31,163 +32,171 @@ static inline void align_uint32(uint32_t *size, size_t alignment)
 }
 
 /* assumes already-zeroed array */
-void video_frame_get_linesizes(uint32_t linesize[MAX_AV_PLANES], enum video_format format, uint32_t width)
+void video_frame_get_linesizes(uint32_t linesize[MAX_AV_PLANES],
+			       enum video_format format, uint32_t width)
 {
 	switch (format) {
-		default:
-		case VIDEO_FORMAT_NONE:
-			break;
-		case VIDEO_FORMAT_BGR3: /* one plane: triple width */
-			linesize[0] = width * 3;
-			break;
-		case VIDEO_FORMAT_RGBA: /* one plane: quadruple width */
-		case VIDEO_FORMAT_BGRA:
-		case VIDEO_FORMAT_BGRX:
-		case VIDEO_FORMAT_AYUV:
-		case VIDEO_FORMAT_R10L:
-			linesize[0] = width * 4;
-			break;
-		case VIDEO_FORMAT_P416: /* two planes: double width, quadruple width */
-			linesize[0] = width * 2;
-			linesize[1] = width * 4;
-			break;
-		case VIDEO_FORMAT_I420: /* three planes: full width, half width, half width */
-		case VIDEO_FORMAT_I422:
-			linesize[0] = width;
-			linesize[1] = HALF(width);
-			linesize[2] = HALF(width);
-			break;
-		case VIDEO_FORMAT_I210: /* three planes: double width, full width, full width */
-		case VIDEO_FORMAT_I010:
-			linesize[0] = width * 2;
-			linesize[1] = width;
-			linesize[2] = width;
-			break;
-		case VIDEO_FORMAT_I40A: /* four planes: full width, half width, half width, full width */
-		case VIDEO_FORMAT_I42A:
-			linesize[0] = width;
-			linesize[1] = HALF(width);
-			linesize[2] = HALF(width);
-			linesize[3] = width;
-			break;
+	default:
+	case VIDEO_FORMAT_NONE:
+		break;
+	case VIDEO_FORMAT_BGR3: /* one plane: triple width */
+		linesize[0] = width * 3;
+		break;
+	case VIDEO_FORMAT_RGBA: /* one plane: quadruple width */
+	case VIDEO_FORMAT_BGRA:
+	case VIDEO_FORMAT_BGRX:
+	case VIDEO_FORMAT_AYUV:
+	case VIDEO_FORMAT_R10L:
+		linesize[0] = width * 4;
+		break;
+	case VIDEO_FORMAT_P416: /* two planes: double width, quadruple width */
+		linesize[0] = width * 2;
+		linesize[1] = width * 4;
+		break;
+	case VIDEO_FORMAT_I420: /* three planes: full width, half width, half width */
+	case VIDEO_FORMAT_I422:
+		linesize[0] = width;
+		linesize[1] = HALF(width);
+		linesize[2] = HALF(width);
+		break;
+	case VIDEO_FORMAT_I210: /* three planes: double width, full width, full width */
+	case VIDEO_FORMAT_I010:
+		linesize[0] = width * 2;
+		linesize[1] = width;
+		linesize[2] = width;
+		break;
+	case VIDEO_FORMAT_I40A: /* four planes: full width, half width, half width, full width */
+	case VIDEO_FORMAT_I42A:
+		linesize[0] = width;
+		linesize[1] = HALF(width);
+		linesize[2] = HALF(width);
+		linesize[3] = width;
+		break;
 
-		case VIDEO_FORMAT_YVYU: /* one plane: double width */
-		case VIDEO_FORMAT_YUY2:
-		case VIDEO_FORMAT_UYVY:
-			linesize[0] = width * 2;
-			break;
-		case VIDEO_FORMAT_P010: /* two planes: all double width */
-		case VIDEO_FORMAT_P216:
-			linesize[0] = width * 2;
-			linesize[1] = width * 2;
-			break;
-		case VIDEO_FORMAT_I412: /* three planes: all double width */
-			linesize[0] = width * 2;
-			linesize[1] = width * 2;
-			linesize[2] = width * 2;
-			break;
-		case VIDEO_FORMAT_YA2L: /* four planes: all double width */
-			linesize[0] = width * 2;
-			linesize[1] = width * 2;
-			linesize[2] = width * 2;
-			linesize[3] = width * 2;
-			break;
+	case VIDEO_FORMAT_YVYU: /* one plane: double width */
+	case VIDEO_FORMAT_YUY2:
+	case VIDEO_FORMAT_UYVY:
+		linesize[0] = width * 2;
+		break;
+	case VIDEO_FORMAT_UYVA: /* two planes: one double width, one single width */
+		linesize[0] = width * 2;
+		linesize[1] = width;
+		break;
+	case VIDEO_FORMAT_P010: /* two planes: all double width */
+	case VIDEO_FORMAT_P216:
+		linesize[0] = width * 2;
+		linesize[1] = width * 2;
+		break;
+	case VIDEO_FORMAT_I412: /* three planes: all double width */
+		linesize[0] = width * 2;
+		linesize[1] = width * 2;
+		linesize[2] = width * 2;
+		break;
+	case VIDEO_FORMAT_YA2L: /* four planes: all double width */
+		linesize[0] = width * 2;
+		linesize[1] = width * 2;
+		linesize[2] = width * 2;
+		linesize[3] = width * 2;
+		break;
 
-		case VIDEO_FORMAT_Y800: /* one plane: full width */
-			linesize[0] = width;
-			break;
-		case VIDEO_FORMAT_NV12: /* two planes: all full width */
-			linesize[0] = width;
-			linesize[1] = width;
-			break;
-		case VIDEO_FORMAT_I444: /* three planes: all full width */
-			linesize[0] = width;
-			linesize[1] = width;
-			linesize[2] = width;
-			break;
-		case VIDEO_FORMAT_YUVA: /* four planes: all full width */
-			linesize[0] = width;
-			linesize[1] = width;
-			linesize[2] = width;
-			linesize[3] = width;
-			break;
+	case VIDEO_FORMAT_Y800: /* one plane: full width */
+		linesize[0] = width;
+		break;
+	case VIDEO_FORMAT_NV12: /* two planes: all full width */
+		linesize[0] = width;
+		linesize[1] = width;
+		break;
+	case VIDEO_FORMAT_I444: /* three planes: all full width */
+		linesize[0] = width;
+		linesize[1] = width;
+		linesize[2] = width;
+		break;
+	case VIDEO_FORMAT_YUVA: /* four planes: all full width */
+		linesize[0] = width;
+		linesize[1] = width;
+		linesize[2] = width;
+		linesize[3] = width;
+		break;
 
-		case VIDEO_FORMAT_V210: { /* one plane: bruh (Little Endian Compressed) */
-			align_uint32(&width, 48);
-			linesize[0] = ((width + 5) / 6) * 16;
-			break;
-		}
+	case VIDEO_FORMAT_V210: { /* one plane: bruh (Little Endian Compressed) */
+		align_uint32(&width, 48);
+		linesize[0] = ((width + 5) / 6) * 16;
+		break;
+	}
 	}
 }
 
-void video_frame_get_plane_heights(uint32_t heights[MAX_AV_PLANES], enum video_format format, uint32_t height)
+void video_frame_get_plane_heights(uint32_t heights[MAX_AV_PLANES],
+				   enum video_format format, uint32_t height)
 {
 	switch (format) {
-		default:
-		case VIDEO_FORMAT_NONE:
-			return;
+	default:
+	case VIDEO_FORMAT_NONE:
+		return;
 
-		case VIDEO_FORMAT_I420: /* three planes: full height, half height, half height */
-		case VIDEO_FORMAT_I010:
-			heights[0] = height;
-			heights[1] = height / 2;
-			heights[2] = height / 2;
-			break;
+	case VIDEO_FORMAT_I420: /* three planes: full height, half height, half height */
+	case VIDEO_FORMAT_I010:
+		heights[0] = height;
+		heights[1] = height / 2;
+		heights[2] = height / 2;
+		break;
 
-		case VIDEO_FORMAT_NV12: /* two planes: full height, half height */
-		case VIDEO_FORMAT_P010:
-			heights[0] = height;
-			heights[1] = height / 2;
-			break;
+	case VIDEO_FORMAT_NV12: /* two planes: full height, half height */
+	case VIDEO_FORMAT_P010:
+		heights[0] = height;
+		heights[1] = height / 2;
+		break;
 
-		case VIDEO_FORMAT_Y800: /* one plane: full height */
-		case VIDEO_FORMAT_YVYU:
-		case VIDEO_FORMAT_YUY2:
-		case VIDEO_FORMAT_UYVY:
-		case VIDEO_FORMAT_RGBA:
-		case VIDEO_FORMAT_BGRA:
-		case VIDEO_FORMAT_BGRX:
-		case VIDEO_FORMAT_BGR3:
-		case VIDEO_FORMAT_AYUV:
-		case VIDEO_FORMAT_V210:
-		case VIDEO_FORMAT_R10L:
-			heights[0] = height;
-			break;
+	case VIDEO_FORMAT_Y800: /* one plane: full height */
+	case VIDEO_FORMAT_YVYU:
+	case VIDEO_FORMAT_YUY2:
+	case VIDEO_FORMAT_UYVY:
+	case VIDEO_FORMAT_RGBA:
+	case VIDEO_FORMAT_BGRA:
+	case VIDEO_FORMAT_BGRX:
+	case VIDEO_FORMAT_BGR3:
+	case VIDEO_FORMAT_AYUV:
+	case VIDEO_FORMAT_V210:
+	case VIDEO_FORMAT_R10L:
+		heights[0] = height;
+		break;
 
-		case VIDEO_FORMAT_I444: /* three planes: all full height */
-		case VIDEO_FORMAT_I422:
-		case VIDEO_FORMAT_I210:
-		case VIDEO_FORMAT_I412:
-			heights[0] = height;
-			heights[1] = height;
-			heights[2] = height;
-			break;
+	case VIDEO_FORMAT_I444: /* three planes: all full height */
+	case VIDEO_FORMAT_I422:
+	case VIDEO_FORMAT_I210:
+	case VIDEO_FORMAT_I412:
+		heights[0] = height;
+		heights[1] = height;
+		heights[2] = height;
+		break;
 
-		case VIDEO_FORMAT_I40A: /* four planes: full height, half height, half height, full height */
-			heights[0] = height;
-			heights[1] = height / 2;
-			heights[2] = height / 2;
-			heights[0] = height;
-			break;
+	case VIDEO_FORMAT_I40A: /* four planes: full height, half height, half height, full height */
+		heights[0] = height;
+		heights[1] = height / 2;
+		heights[2] = height / 2;
+		heights[0] = height;
+		break;
 
-		case VIDEO_FORMAT_I42A: /* four planes: all full height */
-		case VIDEO_FORMAT_YUVA:
-		case VIDEO_FORMAT_YA2L:
-			heights[0] = height;
-			heights[1] = height;
-			heights[2] = height;
-			heights[3] = height;
-			break;
+	case VIDEO_FORMAT_I42A: /* four planes: all full height */
+	case VIDEO_FORMAT_YUVA:
+	case VIDEO_FORMAT_YA2L:
+		heights[0] = height;
+		heights[1] = height;
+		heights[2] = height;
+		heights[3] = height;
+		break;
 
-		case VIDEO_FORMAT_P216: /* two planes: all full height */
-		case VIDEO_FORMAT_P416:
-			heights[0] = height;
-			heights[1] = height;
-			break;
+	case VIDEO_FORMAT_P216: /* two planes: all full height */
+	case VIDEO_FORMAT_P416:
+	case VIDEO_FORMAT_UYVA:
+		heights[0] = height;
+		heights[1] = height;
+		break;
 	}
 }
 
-void video_frame_init(struct video_frame *frame, enum video_format format, uint32_t width, uint32_t height)
+void video_frame_init(struct video_frame *frame, enum video_format format,
+		      uint32_t width, uint32_t height)
 {
 	size_t size = 0;
 	uint32_t linesizes[MAX_AV_PLANES];
@@ -229,9 +238,8 @@ void video_frame_init(struct video_frame *frame, enum video_format format, uint3
 			continue;
 		frame->data[i] = frame->data[0] + offsets[i - 1];
 		frame->linesize[i] = linesizes[i];
+		assert(((uintptr_t)frame->data[i] % alignment) == 0);
 	}
-
-	assert(((uintptr_t)frame->data[i] % alignment) == 0);
 }
 
 void video_frame_copy(struct video_frame *dst, const struct video_frame *src,
@@ -249,15 +257,20 @@ void video_frame_copy(struct video_frame *dst, const struct video_frame *src,
 		if (!heights[i])
 			continue;
 		if (src->linesize[i] == dst->linesize[i]) {
-			memcpy(dst->data[i], src->data[i], src->linesize[i] * heights[i]);
+			memcpy(dst->data[i], src->data[i],
+			       src->linesize[i] * heights[i]);
 		} else { /* linesizes which do not match must be copied line-by-line */
 			size_t src_linesize = src->linesize[i];
 			size_t dst_linesize = dst->linesize[i];
 			/* determine how much we can write (frames with different line sizes require more )*/
-			size_t linesize = src_linesize < dst_linesize ? src_linesize : dst_linesize;
+			size_t linesize = src_linesize < dst_linesize
+						  ? src_linesize
+						  : dst_linesize;
 			for (uint32_t i = 0; i < heights[i]; i++) {
-				uint8_t *src_pos = src->data[i] + (src_linesize * i);
-				uint8_t *dst_pos = dst->data[i] + (dst_linesize * i);
+				uint8_t *src_pos =
+					src->data[i] + (src_linesize * i);
+				uint8_t *dst_pos =
+					dst->data[i] + (dst_linesize * i);
 				memcpy(dst_pos, src_pos, linesize);
 			}
 		}

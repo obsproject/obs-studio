@@ -579,6 +579,19 @@ float3 PSUYVY_Reverse(FragTexTex frag_in) : TARGET
 	return rgb;
 }
 
+float4 PSUYVA_Reverse(VertTexTexPos frag_in) : TARGET
+{
+	float2 y01 = image.Load(int3(frag_in.uvuv.xy, 0)).yw;
+	float2 cbcr = image.Sample(def_sampler, frag_in.uvuv.zw, 0.0).zx;
+	float leftover = frac(frag_in.uvuv.x);
+	float y = (leftover < 0.5) ? y01.x : y01.y;
+	float alpha_x = (leftover < 0.5) ? frag_in.uvuv.x * 2 : frag_in.uvuv.x * 2 + 1;
+	float alpha = image1.Load(int3(alpha_x, frag_in.uvuv.y, 0)).x;
+	float3 yuv = float3(y, cbcr);
+	float3 rgb = YUV_to_RGB(yuv);
+	return float4(rgb, alpha);
+}
+
 float3 PSYUY2_Reverse(FragTexTex frag_in) : TARGET
 {
 	float2 y01 = image.Load(int3(frag_in.uvuv.xy, 0)).zx;
@@ -1432,6 +1445,15 @@ technique UYVY_Reverse
 	{
 		vertex_shader = VSPacked422Left_Reverse(id);
 		pixel_shader  = PSUYVY_Reverse(frag_in);
+	}
+}
+
+technique UYVA_Reverse
+{
+	pass
+	{
+		vertex_shader = VSPacked422Left_Reverse(id);
+		pixel_shader  = PSUYVA_Reverse(frag_in);
 	}
 }
 
