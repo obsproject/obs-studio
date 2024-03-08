@@ -1613,6 +1613,28 @@ bool OBSBasic::InitBasicConfigDefaults()
 	}
 
 	/* ----------------------------------------------------- */
+	/* Migrate NVENC to new IDs.                             */
+
+	auto MigrateNvencID = [&](const char *section, const char *key) {
+		const string_view current =
+			config_get_string(basicConfig, section, key);
+
+		if (current == "jim_nvenc") {
+			config_set_string(basicConfig, section, key,
+					  "obs_nvenc_h264_tex");
+		} else if (current == "jim_nvenc_hevc") {
+			config_set_string(basicConfig, section, key,
+					  "obs_nvenc_hevc_tex");
+		} else if (current == "jim_nvenc_av1") {
+			config_set_string(basicConfig, section, key,
+					  "obs_nvenc_av1_tex");
+		}
+	};
+
+	MigrateNvencID("AdvOut", "Encoder");
+	MigrateNvencID("AdvOut", "RecEncoder");
+
+	/* ----------------------------------------------------- */
 
 	if (changed)
 		config_save_safe(basicConfig, "tmp", nullptr);
