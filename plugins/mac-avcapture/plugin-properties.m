@@ -422,10 +422,14 @@ bool properties_update_config(OBSAVCapture *capture, obs_properties_t *propertie
 
             // Only iterate over available framerates if input format, color space, and resolution are matching
             if (hasFoundInputFormat && hasFoundColorSpace && hasFoundResolution) {
+                CFComparisonResult isColorPrimaryMatch = kCFCompareEqualTo;
+
                 CFPropertyListRef colorPrimary = CMFormatDescriptionGetExtension(
                     format.formatDescription, kCMFormatDescriptionExtension_ColorPrimaries);
 
-                CFComparisonResult isColorPrimaryMatch = CFStringCompare(colorPrimary, priorColorPrimary, 0);
+                if (colorPrimary) {
+                    isColorPrimaryMatch = CFStringCompare(colorPrimary, priorColorPrimary, 0);
+                }
 
                 if (isColorPrimaryMatch != kCFCompareEqualTo || !hasFoundFramerate) {
                     for (AVFrameRateRange *range in format.videoSupportedFrameRateRanges.reverseObjectEnumerator) {
