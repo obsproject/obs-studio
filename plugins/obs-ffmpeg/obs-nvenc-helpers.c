@@ -463,20 +463,44 @@ bool av1_supported()
 
 void obs_nvenc_load(bool h264, bool hevc, bool av1)
 {
+#ifdef _WIN32
+	struct obs_encoder_info tmp;
+#endif
+
 	pthread_mutex_init(&init_mutex, NULL);
 	if (h264) {
 		obs_register_encoder(&h264_nvenc_info);
 		obs_register_encoder(&h264_nvenc_soft_info);
+#ifdef _WIN32
+		/* Register hidden encoder with legacy ID to not break existing
+		 * configs and maintain backwards-compatibility. */
+		tmp = h264_nvenc_info;
+		tmp.id = "jim_nvenc";
+		tmp.caps |= OBS_ENCODER_CAP_DEPRECATED;
+		obs_register_encoder(&tmp);
+#endif
 	}
 #ifdef ENABLE_HEVC
 	if (hevc) {
 		obs_register_encoder(&hevc_nvenc_info);
 		obs_register_encoder(&hevc_nvenc_soft_info);
+#ifdef _WIN32
+		tmp = hevc_nvenc_info;
+		tmp.id = "jim_nvenc_hevc";
+		tmp.caps |= OBS_ENCODER_CAP_DEPRECATED;
+		obs_register_encoder(&tmp);
+#endif
 	}
 #endif
 	if (av1 && av1_supported()) {
 		obs_register_encoder(&av1_nvenc_info);
 		obs_register_encoder(&av1_nvenc_soft_info);
+#ifdef _WIN32
+		tmp = av1_nvenc_info;
+		tmp.id = "jim_nvenc_av1";
+		tmp.caps |= OBS_ENCODER_CAP_DEPRECATED;
+		obs_register_encoder(&tmp);
+#endif
 	} else {
 		blog(LOG_WARNING, "[NVENC] AV1 is not supported");
 	}

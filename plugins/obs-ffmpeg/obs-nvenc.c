@@ -2343,7 +2343,7 @@ static bool nvenc_sei_data(void *data, uint8_t **sei, size_t *size)
 }
 
 struct obs_encoder_info h264_nvenc_info = {
-	.id = "jim_nvenc",
+	.id = "obs_nvenc_h264_tex",
 	.codec = "h264",
 	.type = OBS_ENCODER_VIDEO,
 	.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE |
@@ -2365,7 +2365,7 @@ struct obs_encoder_info h264_nvenc_info = {
 
 #ifdef ENABLE_HEVC
 struct obs_encoder_info hevc_nvenc_info = {
-	.id = "jim_hevc_nvenc",
+	.id = "obs_nvenc_hevc_tex",
 	.codec = "hevc",
 	.type = OBS_ENCODER_VIDEO,
 	.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE |
@@ -2387,7 +2387,7 @@ struct obs_encoder_info hevc_nvenc_info = {
 #endif
 
 struct obs_encoder_info av1_nvenc_info = {
-	.id = "jim_av1_nvenc",
+	.id = "obs_nvenc_av1_tex",
 	.codec = "av1",
 	.type = OBS_ENCODER_VIDEO,
 	.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE |
