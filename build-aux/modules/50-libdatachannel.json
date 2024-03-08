@@ -12,10 +12,9 @@
     "sources": [
         {
             "type": "git",
-            "url": "https://github.com/paullouisageneau/libdatachannel.git",
+            "url": "https://github.com/edmonds/libdatachannel.git",
             "disable-submodules": true,
-            "tag": "v0.20.1",
-            "commit": "7841d9f34cf9bd735958ae203a2536c14240c8a5"
+            "commit": "faad80caa65a6acee1d4faeaace29e405908a0a9"
         }
     ]
 }

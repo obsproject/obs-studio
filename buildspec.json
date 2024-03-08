@@ -1,13 +1,13 @@
 {
     "dependencies": {
         "prebuilt": {
-            "version": "2024-03-19",
-            "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
+            "version": "2024-03-26",
+            "baseUrl": "https://github.com/sean-der/obs-deps/releases/download",
             "label": "Pre-Built obs-deps",
             "hashes": {
-                "macos-universal": "2e9bfb55a5e0e4c1086fa1fda4cf268debfead473089df2aaea80e1c7a3ca7ff",
-                "windows-x64": "6e86068371526a967e805f6f9903f9407adb683c21820db5f07da8f30d11e998",
-                "windows-x86": "1002a7a19c55a6eb3cd0fb9c4c6d6bb1d649176439b6705e4bb5bd12948456a0"
+                "macos-universal": "b63f4ba7e3d129c10e0f281e03be80f09bfc2cbb7283cec75223ce83a5cc05e2",
+                "windows-x64": "5bacc21bdaceb2ca9d2a597d94579cd90be63c8ff2d586e4fbe8d3f7972395c5",
+                "windows-x86": "aeeccf48bbe0257b7d9b272505e0bc94f820239ac8c25faa4bebe3aac5b60f95"
             }
         },
         "qt6": {
