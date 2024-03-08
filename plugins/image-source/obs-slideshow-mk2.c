@@ -31,6 +31,10 @@ static const char *S_BEHAVIOR_ALWAYS_PLAY    = "always_play";
 static const char *S_MODE                    = "slide_mode";
 static const char *S_MODE_AUTO               = "mode_auto";
 static const char *S_MODE_MANUAL             = "mode_manual";
+static const char *S_PLAYBACK_MODE           = "playback_mode";
+static const char *S_PLAYBACK_ONCE           = "once";
+static const char *S_PLAYBACK_LOOP           = "loop";
+static const char *S_PLAYBACK_RANDOM         = "random";
 
 static const char *TR_CUT                    = "cut";
 static const char *TR_FADE                   = "fade";
@@ -42,8 +46,6 @@ static const char *TR_SLIDE                  = "slide";
 #define T_CUSTOM_SIZE                        T_("CustomSize")
 #define T_SLIDE_TIME                         T_("SlideTime")
 #define T_TRANSITION                         T_("Transition")
-#define T_RANDOMIZE                          T_("Randomize")
-#define T_LOOP                               T_("Loop")
 #define T_HIDE                               T_("HideWhenDone")
 #define T_FILES                              T_("Files")
 #define T_BEHAVIOR                           T_("PlaybackBehavior")
@@ -53,6 +55,10 @@ static const char *TR_SLIDE                  = "slide";
 #define T_MODE                               T_("SlideMode")
 #define T_MODE_AUTO                          T_("SlideMode.Auto")
 #define T_MODE_MANUAL                        T_("SlideMode.Manual")
+#define T_PLAYBACK_MODE                      T_("PlaybackMode")
+#define T_PLAYBACK_ONCE                      T_("PlaybackMode.Once")
+#define T_PLAYBACK_LOOP                      T_("PlaybackMode.Loop")
+#define T_PLAYBACK_RANDOM                    T_("PlaybackMode.Random")
 
 #define T_TR_(text) obs_module_text("SlideShow.Transition." text)
 #define T_TR_CUT                             T_TR_("Cut")
@@ -452,8 +458,25 @@ static void ss_update(void *data, obs_data_t *settings)
 	else
 		tr_name = "fade_transition";
 
-	new_data.randomize = obs_data_get_bool(settings, S_RANDOMIZE);
-	new_data.loop = obs_data_get_bool(settings, S_LOOP);
+	/* Migrate and old loop/random settings to playback mode. */
+	if (!obs_data_has_user_value(settings, S_PLAYBACK_MODE)) {
+		if (obs_data_has_user_value(settings, S_RANDOMIZE) &&
+		    obs_data_get_bool(settings, S_RANDOMIZE)) {
+			obs_data_set_string(settings, S_PLAYBACK_MODE,
+					    S_PLAYBACK_RANDOM);
+		} else if (obs_data_has_user_value(settings, S_LOOP)) {
+			bool loop = obs_data_get_bool(settings, S_LOOP);
+			obs_data_set_string(settings, S_PLAYBACK_MODE,
+					    loop ? S_PLAYBACK_LOOP
+						 : S_PLAYBACK_ONCE);
+		}
+	}
+
+	const char *playback_mode =
+		obs_data_get_string(settings, S_PLAYBACK_MODE);
+	new_data.randomize = strcmp(playback_mode, S_PLAYBACK_RANDOM) == 0;
+	new_data.loop = strcmp(playback_mode, S_PLAYBACK_LOOP) == 0;
+
 	new_data.hide = obs_data_get_bool(settings, S_HIDE);
 
 	if (!old_data.tr_name || strcmp(tr_name, old_data.tr_name) != 0)
@@ -972,7 +995,7 @@ static void ss_defaults(obs_data_t *settings)
 	obs_data_set_default_string(settings, S_BEHAVIOR,
 				    S_BEHAVIOR_ALWAYS_PLAY);
 	obs_data_set_default_string(settings, S_MODE, S_MODE_AUTO);
-	obs_data_set_default_bool(settings, S_LOOP, true);
+	obs_data_set_default_string(settings, S_PLAYBACK_MODE, S_PLAYBACK_LOOP);
 }
 
 static const char *file_filter = "Image files (*.bmp *.tga *.png *.jpeg *.jpg"
@@ -1030,9 +1053,14 @@ static obs_properties_t *ss_properties(void *data)
 				   50);
 	obs_property_int_set_suffix(p, " ms");
 
-	obs_properties_add_bool(ppts, S_LOOP, T_LOOP);
+	p = obs_properties_add_list(ppts, S_PLAYBACK_MODE, T_PLAYBACK_MODE,
+				    OBS_COMBO_TYPE_LIST,
+				    OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(p, T_PLAYBACK_ONCE, S_PLAYBACK_ONCE);
+	obs_property_list_add_string(p, T_PLAYBACK_LOOP, S_PLAYBACK_LOOP);
+	obs_property_list_add_string(p, T_PLAYBACK_RANDOM, S_PLAYBACK_RANDOM);
+
 	obs_properties_add_bool(ppts, S_HIDE, T_HIDE);
-	obs_properties_add_bool(ppts, S_RANDOMIZE, T_RANDOMIZE);
 
 	p = obs_properties_add_list(ppts, S_CUSTOM_SIZE, T_CUSTOM_SIZE,
 				    OBS_COMBO_TYPE_EDITABLE,
