@@ -160,6 +160,10 @@ runs:
           --channel '${{ inputs.channel }}'
         )
 
+        if [[ '${{ inputs.channel }}' == 'stable' ]] {
+          sparkle_options+=(--phased-rollout-interval 86400)
+        }
+
         Sparkle/bin/generate_appcast \
           ${sparkle_options} \
           builds
