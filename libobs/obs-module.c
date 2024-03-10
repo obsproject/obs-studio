@@ -129,6 +129,16 @@ int obs_open_module(obs_module_t **module, const char *path,
 	if (errorcode != MODULE_SUCCESS)
 		return errorcode;
 
+	/* Reject plugins compiled with a newer libobs.
+	 * Patch version (lower 16-bit) is ignored. */
+	uint32_t ver = mod.ver ? mod.ver() & 0xFFFF0000 : 0;
+	if (ver > LIBOBS_API_VER) {
+		blog(LOG_WARNING,
+		     "Module '%s' compiled with newer libobs %d.%d", path,
+		     (ver >> 24) & 0xFF, (ver >> 16) & 0xFF);
+		return MODULE_INCOMPATIBLE_VER;
+	}
+
 	mod.bin_path = bstrdup(path);
 	mod.file = strrchr(mod.bin_path, '/');
 	mod.file = (!mod.file) ? mod.bin_path : (mod.file + 1);
