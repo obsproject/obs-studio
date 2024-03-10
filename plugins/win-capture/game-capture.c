@@ -1939,9 +1939,7 @@ static void game_capture_tick(void *data, float seconds)
 			signal_handler_signal(sh, "hooked", &data);
 			calldata_free(&data);
 
-			// Update audio capture settings if not in window mode
-			if (gc->audio_source &&
-			    gc->config.mode != CAPTURE_MODE_WINDOW) {
+			if (gc->audio_source) {
 				reconfigure_audio_source(gc->audio_source,
 							 gc->window);
 			}

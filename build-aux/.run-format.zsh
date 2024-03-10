@@ -27,7 +27,11 @@ invoke_formatter() {
     exit 2
   }
 
-  case ${1} {
+  local formatter="${1}"
+  shift
+  local -a source_files=(${@})
+
+  case ${formatter} {
     clang)
       if (( ${+commands[clang-format-16]} )) {
         local formatter=clang-format-16
@@ -50,7 +54,8 @@ invoke_formatter() {
         exit 2
       fi
 
-      local -a source_files=((libobs|libobs-*|UI|plugins|deps)/**/*.(c|cpp|h|hpp|m|mm)(.N))
+      if (( ! #source_files )) source_files=((libobs|libobs-*|UI|plugins|deps)/**/*.(c|cpp|h|hpp|m|mm)(.N))
+
       source_files=(${source_files:#*/(obs-websocket/deps|decklink/*/decklink-sdk|mac-syphon/syphon-framework|obs-outputs/ftl-sdk|win-dshow/libdshowcapture)/*})
 
       local -a format_args=(-style=file -fallback-style=none)
@@ -70,7 +75,8 @@ invoke_formatter() {
         exit 2
       }
 
-      local -a source_files=((libobs|libobs-*|UI|plugins|deps|cmake)/**/(CMakeLists.txt|*.cmake)(.N))
+      if (( ! #source_files )) source_files=((libobs|libobs-*|UI|plugins|deps|cmake)/**/(CMakeLists.txt|*.cmake)(.N))
+
       source_files=(${source_files:#*/(obs-outputs/ftl-sdk|jansson|decklink/*/decklink-sdk|obs-websocket|obs-browser|win-dshow/libdshowcapture)/*})
 
       local -a format_args=()
@@ -90,7 +96,7 @@ invoke_formatter() {
         exit 2
       }
 
-      local -a source_files=((libobs|libobs-*|UI|plugins)/**/*.swift(.N))
+      if (( ! #source_files )) source_files=((libobs|libobs-*|UI|plugins)/**/*.swift(.N))
 
       local -a format_args=()
       ;;
@@ -155,11 +161,6 @@ Usage: %B${functrace[1]%:*}%b <option>
   local -a args
   while (( # )) {
     case ${1} {
-      --)
-        shift
-        args+=($@)
-        break
-        ;;
       -c|--check) check_only=1; shift ;;
       -v|--verbose) (( verbosity += 1 )); shift ;;
       -h|--help) log_output ${_usage}; exit 0 ;;
@@ -177,14 +178,17 @@ Usage: %B${functrace[1]%:*}%b <option>
         fail_on_error=2
         shift
         ;;
-      *) log_error "Unknown option: %B${1}%b"; log_output ${_usage}; exit 2 ;;
+      *)
+        args+=($@)
+        break
+        ;;
     }
   }
 
   set -- ${(@)args}
   set_loglevel ${verbosity}
 
-  invoke_formatter ${FORMATTER_NAME}
+  invoke_formatter ${FORMATTER_NAME} ${args}
 }
 
 run_format ${@}

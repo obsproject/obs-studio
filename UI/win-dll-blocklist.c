@@ -183,6 +183,12 @@ static blocked_module_t blocked_modules[] = {
 	// Reference: https://github.com/obsproject/obs-studio/issues/8552
 	{L"\\holisticmotioncapturefilter64bit.dll", 0, 1680044549,
 	 TS_LESS_THAN},
+
+	// Elgato Stream Deck plugin < 2024-02-01
+	// Blocking all previous versions because they have undefined behavior
+	// that results in crashes.
+	// Reference: https://github.com/obsproject/obs-studio/issues/10245
+	{L"\\streamdeckplugin.dll", 0, 1706745600, TS_LESS_THAN},
 };
 
 static bool is_module_blocked(wchar_t *dll, uint32_t timestamp)

@@ -407,12 +407,24 @@ bool WHIPOutput::Connect()
 		do_log(LOG_ERROR, "WHIP server responded with invalid SDP: %s",
 		       err.what());
 		cleanup();
+		struct dstr error_message;
+		dstr_init_copy(&error_message,
+			       obs_module_text("Error.InvalidSDP"));
+		dstr_replace(&error_message, "%1", err.what());
+		obs_output_set_last_error(output, error_message.array);
+		dstr_free(&error_message);
 		obs_output_signal_stop(output, OBS_OUTPUT_CONNECT_FAILED);
 		return false;
 	} catch (const std::exception &err) {
 		do_log(LOG_ERROR, "Failed to set remote description: %s",
 		       err.what());
 		cleanup();
+		struct dstr error_message;
+		dstr_init_copy(&error_message,
+			       obs_module_text("Error.NoRemoteDescription"));
+		dstr_replace(&error_message, "%1", err.what());
+		obs_output_set_last_error(output, error_message.array);
+		dstr_free(&error_message);
 		obs_output_signal_stop(output, OBS_OUTPUT_CONNECT_FAILED);
 		return false;
 	}
