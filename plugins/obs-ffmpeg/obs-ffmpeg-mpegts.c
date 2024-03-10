@@ -437,11 +437,11 @@ static inline int allocate_custom_aviocontext(struct ffmpeg_output *stream,
 	if (is_rist)
 		s = avio_alloc_context(
 			buffer, buffer_size, AVIO_FLAG_WRITE, h, NULL,
-			(int (*)(void *, uint8_t *, int))librist_write, NULL);
+			(int (*)(void *, const uint8_t *, int))libsrt_write, NULL);
 	else
 		s = avio_alloc_context(
 			buffer, buffer_size, AVIO_FLAG_WRITE, h, NULL,
-			(int (*)(void *, uint8_t *, int))libsrt_write, NULL);
+			(int (*)(void *, const uint8_t *, int))libsrt_write, NULL);
 	if (!s)
 		goto fail;
 	s->max_packet_size = h->max_packet_size;

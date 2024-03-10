@@ -78,7 +78,7 @@ void v4l2_destroy_decoder(struct v4l2_decoder *decoder)
 	}
 
 	if (decoder->context) {
-		avcodec_close(decoder->context);
+		// avcodec_close(decoder->context);
 		avcodec_free_context(&decoder->context);
 	}
 }

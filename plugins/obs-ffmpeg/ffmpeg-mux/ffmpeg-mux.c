@@ -975,7 +975,7 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 
 			ffm->output->pb = avio_alloc_context(
 				avio_ctx_buffer, AVIO_BUFFER_SIZE, 1, ffm, NULL,
-				ffmpeg_mux_write_av_buffer,
+				 (int (*)(void *, const uint8_t *, int))ffmpeg_mux_write_av_buffer,
 				ffmpeg_mux_seek_av_buffer);
 
 			ffm->io.active = true;
