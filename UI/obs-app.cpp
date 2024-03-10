@@ -448,6 +448,7 @@ bool OBSApp::InitGlobalConfigDefaults()
 				true);
 
 	config_set_default_bool(globalConfig, "General", "ConfirmOnExit", true);
+	config_set_default_bool(globalConfig, "General", "PrettySaves", false);
 
 #if _WIN32
 	config_set_default_string(globalConfig, "Video", "Renderer",

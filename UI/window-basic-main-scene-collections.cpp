@@ -241,6 +241,51 @@ void OBSBasic::RefreshSceneCollections()
 	main->ui->actionPasteDup->setEnabled(false);
 }
 
+void OBSBasic::ExportSceneCollection(QString inputFile, QString exportFile)
+{
+	if (!exportFile.isEmpty() && !exportFile.isNull()) {
+
+		OBSDataAutoRelease collection =
+			obs_data_create_from_json_file(QT_TO_UTF8(inputFile));
+
+		OBSDataArrayAutoRelease sources =
+			obs_data_get_array(collection, "sources");
+		if (!sources) {
+			blog(LOG_WARNING,
+			     "No sources in exported scene collection");
+			return;
+		}
+		obs_data_erase(collection, "sources");
+
+		// We're just using std::sort on a vector to make life easier.
+		vector<OBSData> sourceItems;
+		obs_data_array_enum(
+			sources,
+			[](obs_data_t *data, void *pVec) -> void {
+				auto &sourceItems =
+					*static_cast<vector<OBSData> *>(pVec);
+				sourceItems.push_back(data);
+			},
+			&sourceItems);
+
+		std::sort(sourceItems.begin(), sourceItems.end(),
+			  [](const OBSData &a, const OBSData &b) {
+				  return astrcmpi(obs_data_get_string(a,
+								      "name"),
+						  obs_data_get_string(
+							  b, "name")) < 0;
+			  });
+
+		OBSDataArrayAutoRelease newSources = obs_data_array_create();
+		for (auto &item : sourceItems)
+			obs_data_array_push_back(newSources, item);
+
+		obs_data_set_array(collection, "sources", newSources);
+		obs_data_save_json_pretty_safe(
+			collection, QT_TO_UTF8(exportFile), "tmp", "bak");
+	}
+}
+
 void OBSBasic::on_actionNewSceneCollection_triggered()
 {
 	AddSceneCollection(true);
@@ -397,48 +442,8 @@ void OBSBasic::on_actionExportSceneCollection_triggered()
 
 	string file = QT_TO_UTF8(exportFile);
 
-	if (!exportFile.isEmpty() && !exportFile.isNull()) {
-		QString inputFile = path + currentFile + ".json";
-
-		OBSDataAutoRelease collection =
-			obs_data_create_from_json_file(QT_TO_UTF8(inputFile));
-
-		OBSDataArrayAutoRelease sources =
-			obs_data_get_array(collection, "sources");
-		if (!sources) {
-			blog(LOG_WARNING,
-			     "No sources in exported scene collection");
-			return;
-		}
-		obs_data_erase(collection, "sources");
-
-		// We're just using std::sort on a vector to make life easier.
-		vector<OBSData> sourceItems;
-		obs_data_array_enum(
-			sources,
-			[](obs_data_t *data, void *pVec) -> void {
-				auto &sourceItems =
-					*static_cast<vector<OBSData> *>(pVec);
-				sourceItems.push_back(data);
-			},
-			&sourceItems);
-
-		std::sort(sourceItems.begin(), sourceItems.end(),
-			  [](const OBSData &a, const OBSData &b) {
-				  return astrcmpi(obs_data_get_string(a,
-								      "name"),
-						  obs_data_get_string(
-							  b, "name")) < 0;
-			  });
-
-		OBSDataArrayAutoRelease newSources = obs_data_array_create();
-		for (auto &item : sourceItems)
-			obs_data_array_push_back(newSources, item);
-
-		obs_data_set_array(collection, "sources", newSources);
-		obs_data_save_json_pretty_safe(
-			collection, QT_TO_UTF8(exportFile), "tmp", "bak");
-	}
+	QString inputFile = path + currentFile + ".json";
+	ExportSceneCollection(inputFile, exportFile);
 }
 
 void OBSBasic::ChangeSceneCollection()
@@ -464,7 +469,9 @@ void OBSBasic::ChangeSceneCollection()
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING);
 
-	SaveProjectNow();
+	bool usePrettyExport =
+		config_get_bool(GetGlobalConfig(), "General", "PrettySaves");
+	SaveProjectNow(usePrettyExport);
 
 	Load(fileName.c_str());
 	RefreshSceneCollections();

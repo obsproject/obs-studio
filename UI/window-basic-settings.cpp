@@ -567,6 +567,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->reconnectMaxRetries,  SCROLL_CHANGED, ADV_CHANGED);
 	HookWidget(ui->processPriority,      COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->confirmOnExit,        CHECK_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->prettySaves,          CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->bindToIP,             COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->ipFamily,             COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->enableNewSocketLoop,  CHECK_CHANGED,  ADV_CHANGED);
@@ -2906,6 +2907,8 @@ void OBSBasicSettings::LoadAdvancedSettings()
 		config_get_string(main->Config(), "Output", "IPFamily");
 	bool confirmOnExit =
 		config_get_bool(GetGlobalConfig(), "General", "ConfirmOnExit");
+	bool prettySaves =
+		config_get_bool(GetGlobalConfig(), "General", "PrettySaves");
 
 	loading = true;
 
@@ -2917,6 +2920,7 @@ void OBSBasicSettings::LoadAdvancedSettings()
 				monDevId.toUtf8());
 
 	ui->confirmOnExit->setChecked(confirmOnExit);
+	ui->prettySaves->setChecked(prettySaves);
 
 	ui->filenameFormatting->setText(filename);
 	ui->overwriteIfExists->setChecked(overwriteIfExists);
@@ -3666,6 +3670,9 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	if (WidgetChanged(ui->confirmOnExit))
 		config_set_bool(GetGlobalConfig(), "General", "ConfirmOnExit",
 				ui->confirmOnExit->isChecked());
+	if (WidgetChanged(ui->prettySaves))
+		config_set_bool(GetGlobalConfig(), "General", "PrettySaves",
+				ui->prettySaves->isChecked());
 
 	SaveEdit(ui->filenameFormatting, "Output", "FilenameFormatting");
 	SaveEdit(ui->simpleRBPrefix, "SimpleOutput", "RecRBPrefix");

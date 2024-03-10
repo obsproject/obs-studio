@@ -438,6 +438,7 @@ private:
 
 	void RefreshSceneCollections();
 	void ChangeSceneCollection();
+	void ExportSceneCollection(QString inputFile, QString exportFile);
 	void LogScenes();
 
 	void ResetProfileData();
@@ -450,7 +451,7 @@ private:
 	void ChangeProfile();
 	void CheckForSimpleModeX264Fallback();
 
-	void SaveProjectNow();
+	void SaveProjectNow(bool usePrettyExport = false);
 
 	int GetTopSelectedSourceItem();
 
