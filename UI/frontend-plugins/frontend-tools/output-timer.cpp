@@ -53,12 +53,14 @@ void OutputTimer::StreamingTimerButton()
 	if (!obs_frontend_streaming_active()) {
 		blog(LOG_INFO, "Starting stream due to OutputTimer");
 		obs_frontend_streaming_start();
-	} else if (streamingAlreadyActive) {
+	} else if (streamingAlreadyActive ||
+		   !this->streamingTimer->isActive()) {
 		StreamTimerStart();
 		streamingAlreadyActive = false;
 	} else if (obs_frontend_streaming_active()) {
-		blog(LOG_INFO, "Stopping stream due to OutputTimer");
-		obs_frontend_streaming_stop();
+		stoppingStreamTimer = true;
+		StreamTimerStop();
+		stoppingStreamTimer = false;
 	}
 }
 
@@ -67,12 +69,14 @@ void OutputTimer::RecordingTimerButton()
 	if (!obs_frontend_recording_active()) {
 		blog(LOG_INFO, "Starting recording due to OutputTimer");
 		obs_frontend_recording_start();
-	} else if (recordingAlreadyActive) {
+	} else if (recordingAlreadyActive ||
+		   !this->recordingTimer->isActive()) {
 		RecordTimerStart();
 		recordingAlreadyActive = false;
 	} else if (obs_frontend_recording_active()) {
-		blog(LOG_INFO, "Stopping recording due to OutputTimer");
-		obs_frontend_recording_stop();
+		stoppingRecordingTimer = true;
+		RecordTimerStop();
+		stoppingRecordingTimer = false;
 	}
 }
 
@@ -235,14 +239,18 @@ void OutputTimer::ShowHideDialog()
 
 void OutputTimer::EventStopStreaming()
 {
-	blog(LOG_INFO, "Stopping stream due to OutputTimer timeout");
-	obs_frontend_streaming_stop();
+	if (!stoppingStreamTimer) {
+		blog(LOG_INFO, "Stopping stream due to OutputTimer timeout");
+		obs_frontend_streaming_stop();
+	}
 }
 
 void OutputTimer::EventStopRecording()
 {
-	blog(LOG_INFO, "Stopping recording due to OutputTimer timeout");
-	obs_frontend_recording_stop();
+	if (!stoppingRecordingTimer) {
+		blog(LOG_INFO, "Stopping recording due to OutputTimer timeout");
+		obs_frontend_recording_stop();
+	}
 }
 
 static void SaveOutputTimer(obs_data_t *save_data, bool saving, void *)
