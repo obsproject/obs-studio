@@ -326,6 +326,24 @@ General Encoder Functions
 
 ---------------------
 
+.. function:: obs_encoder_t *obs_video_encoder_create_private(const char *id, const char *name, obs_data_t *settings)
+
+   Creates a 'private' video encoder which is not enumerated by
+   :c:func:`obs_enum_encoders()`.
+
+   The "encoder" context is used for encoding video/audio data.  Use
+   obs_encoder_release to release it.
+
+   :param   id:             The encoder type string identifier
+   :param   name:           The desired name of the encoder.  If this is
+                            not unique, it will be made to be unique
+   :param   settings:       The settings for the encoder, or *NULL* if
+                            none
+   :return:                 A reference to the newly created encoder, or
+                            *NULL* if failed
+
+---------------------
+
 .. function:: obs_encoder_t *obs_audio_encoder_create(const char *id, const char *name, obs_data_t *settings, size_t mixer_idx, obs_data_t *hotkey_data)
 
    Creates an audio encoder with the specified settings.
@@ -342,6 +360,26 @@ General Encoder Functions
                             will capture audio from
    :param   hotkey_data:    Saved hotkey data for the encoder, or *NULL*
                             if none
+   :return:                 A reference to the newly created encoder, or
+                            *NULL* if failed
+
+---------------------
+
+.. function:: obs_encoder_t *obs_audio_encoder_create_private(const char *id, const char *name, obs_data_t *settings, size_t mixer_idx)
+
+   Creates a 'private' audio encoder which is not enumerated by
+   :c:func:`obs_enum_encoders()`.
+
+   The "encoder" context is used for encoding video/audio data.  Use
+   :c:func:`obs_encoder_release()` to release it.
+
+   :param   id:             The encoder type string identifier
+   :param   name:           The desired name of the encoder.  If this is
+                            not unique, it will be made to be unique
+   :param   settings:       The settings for the encoder, or *NULL* if
+                            none
+   :param   mixer_idx:      The audio mixer index this audio encoder
+                            will capture audio from
    :return:                 A reference to the newly created encoder, or
                             *NULL* if failed
 

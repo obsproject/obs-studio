@@ -351,8 +351,8 @@ bool AutoConfigStreamPage::validatePage()
 				    QT_TO_UTF8(ui->service->currentText()));
 	}
 
-	OBSServiceAutoRelease service = obs_service_create(
-		serverType, "temp_service", service_settings, nullptr);
+	OBSServiceAutoRelease service = obs_service_create_private(
+		serverType, "temp_service", service_settings);
 
 	int bitrate;
 	if (!ui->doBandwidthTest->isChecked()) {

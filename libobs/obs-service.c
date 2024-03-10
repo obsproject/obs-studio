@@ -70,6 +70,9 @@ static obs_service_t *obs_service_create_internal(const char *id,
 				&obs->data.first_service);
 
 	blog(LOG_DEBUG, "service '%s' (%s) created", name, id);
+	if (!private) {
+		obs_service_dosignal(service, "service_create", NULL);
+	}
 	return service;
 }
 
@@ -88,6 +91,8 @@ obs_service_t *obs_service_create_private(const char *id, const char *name,
 
 static void actually_destroy_service(struct obs_service *service)
 {
+	obs_service_dosignal(service, "service_destroy", NULL);
+
 	if (service->context.data)
 		service->info.destroy(service->context.data);
 
