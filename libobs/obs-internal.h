@@ -1080,6 +1080,15 @@ struct caption_text {
 	struct caption_text *next;
 };
 
+struct caption_track_data {
+	struct caption_text *caption_head;
+	struct caption_text *caption_tail;
+	pthread_mutex_t caption_mutex;
+	double caption_timestamp;
+	double last_caption_timestamp;
+	struct deque caption_data;
+};
+
 struct pause_data {
 	pthread_mutex_t mutex;
 	uint64_t last_video_ts;
@@ -1171,12 +1180,8 @@ struct obs_output {
 	struct video_scale_info video_conversion;
 	struct audio_convert_info audio_conversion;
 
-	pthread_mutex_t caption_mutex;
-	double caption_timestamp;
-	struct caption_text *caption_head;
-	struct caption_text *caption_tail;
-
-	struct deque caption_data;
+	// captions are output per track
+	struct caption_track_data *caption_tracks[MAX_OUTPUT_VIDEO_ENCODERS];
 
 	bool valid;
 
