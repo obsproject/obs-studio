@@ -1519,6 +1519,15 @@ static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 	uint8_t *data;
 	size_t size;
 	long ref = 1;
+	bool avc = false;
+
+	/* Instead of exiting early for unsupported codecs, we will continue
+	 * processing to allow the freeing of caption data even if the captions
+	 * will not be included in the bitstream due to being unimplemented in
+	 * the given codec. */
+	if (strcmp(out->encoder->info.codec, "h264") == 0) {
+		avc = true;
+	}
 
 	DARRAY(uint8_t) out_data;
 
@@ -1597,22 +1606,26 @@ static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 		ctrack->caption_head = next;
 	}
 
-	data = malloc(sei_render_size(&sei));
-	size = sei_render(&sei, data);
-	/* TODO SEI should come after AUD/SPS/PPS, but before any VCL */
-	da_push_back_array(out_data, nal_start, 4);
-	da_push_back_array(out_data, data, size);
-	free(data);
+	if (avc) {
+		data = malloc(sei_render_size(&sei));
+		size = sei_render(&sei, data);
+		/* TODO: SEI should come after AUD/SPS/PPS,
+		 * but before any VCL */
+		da_push_back_array(out_data, nal_start, 4);
+		da_push_back_array(out_data, data, size);
+		free(data);
+	}
 
 	obs_encoder_packet_release(out);
 
 	*out = backup;
 	out->data = (uint8_t *)out_data.array + sizeof(ref);
 	out->size = out_data.num - sizeof(ref);
-
 	sei_free(&sei);
-
-	return true;
+	if (avc) {
+		return true;
+	}
+	return false;
 }
 
 static inline void send_interleaved(struct obs_output *output)
