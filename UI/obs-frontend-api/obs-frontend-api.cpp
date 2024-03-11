@@ -57,6 +57,12 @@ static char **convert_string_list(vector<string> &strings)
 
 /* ------------------------------------------------------------------------- */
 
+void obs_frontend_close_main_window(void)
+{
+	if (callbacks_valid())
+		c->obs_frontend_close_main_window();
+}
+
 void *obs_frontend_get_main_window(void)
 {
 	return !!callbacks_valid() ? c->obs_frontend_get_main_window()
