@@ -1,3 +1,7 @@
+if(NOT TARGET OBS::w32-pthreads)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/deps/w32-pthreads" "${CMAKE_BINARY_DIR}/deps/w32-pthreads")
+endif()
+
 configure_file(cmake/windows/obs-module.rc.in libobs.rc)
 
 add_library(obs-obfuscate INTERFACE)
