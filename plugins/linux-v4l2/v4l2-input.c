@@ -179,6 +179,7 @@ static void *v4l2_thread(void *vptr)
 	int fps_num, fps_denom;
 	float ffps;
 	uint64_t timeout_usec;
+	const uint64_t first_frame_timeout_usec = 2000000;
 	bool frame_received = false;
 
 	blog(LOG_DEBUG, "%s: new capture thread", data->device_id);
@@ -211,9 +212,10 @@ static void *v4l2_thread(void *vptr)
 
 		/* Set timeout timevalue. */
 		tv.tv_sec = 0;
-		tv.tv_usec = frame_received || timeout_usec > 2000000
+		tv.tv_usec = frame_received || timeout_usec >
+						       first_frame_timeout_usec
 				     ? timeout_usec
-				     : 2000000;
+				     : first_frame_timeout_usec;
 
 		r = select(data->dev + 1, &fds, NULL, NULL, &tv);
 		if (r < 0) {
