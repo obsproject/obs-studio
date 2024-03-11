@@ -62,6 +62,7 @@ if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
   add_obs_plugin(obs-ffmpeg)
   add_obs_plugin(obs-filters)
   add_obs_plugin(obs-libfdk)
+  add_obs_plugin(obs-nvenc PLATFORMS WINDOWS LINUX)
   add_obs_plugin(obs-outputs)
   add_obs_plugin(
     obs-qsv11
