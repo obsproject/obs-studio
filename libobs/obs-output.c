@@ -175,14 +175,11 @@ obs_output_t *obs_output_create(const char *id, const char *name,
 	output = bzalloc(sizeof(struct obs_output));
 	pthread_mutex_init_value(&output->interleaved_mutex);
 	pthread_mutex_init_value(&output->delay_mutex);
-	pthread_mutex_init_value(&output->caption_mutex);
 	pthread_mutex_init_value(&output->pause.mutex);
 
 	if (pthread_mutex_init(&output->interleaved_mutex, NULL) != 0)
 		goto fail;
 	if (pthread_mutex_init(&output->delay_mutex, NULL) != 0)
-		goto fail;
-	if (pthread_mutex_init(&output->caption_mutex, NULL) != 0)
 		goto fail;
 	if (pthread_mutex_init(&output->pause.mutex, NULL) != 0)
 		goto fail;
@@ -253,6 +250,18 @@ static inline void clear_raw_audio_buffers(obs_output_t *output)
 	}
 }
 
+static void destroy_caption_track(struct caption_track_data **ctrack_ptr)
+{
+	if (!ctrack_ptr || !*ctrack_ptr) {
+		return;
+	}
+	struct caption_track_data *ctrack = *ctrack_ptr;
+	pthread_mutex_destroy(&ctrack->caption_mutex);
+	circlebuf_free(&ctrack->caption_data);
+	bfree(ctrack);
+	*ctrack_ptr = NULL;
+}
+
 void obs_output_destroy(obs_output_t *output)
 {
 	if (output) {
@@ -279,6 +288,10 @@ void obs_output_destroy(obs_output_t *output)
 				obs_encoder_remove_output(
 					output->video_encoders[i], output);
 			}
+			if (output->caption_tracks[i]) {
+				destroy_caption_track(
+					&output->caption_tracks[i]);
+			}
 		}
 
 		for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
@@ -292,13 +305,11 @@ void obs_output_destroy(obs_output_t *output)
 
 		os_event_destroy(output->stopping_event);
 		pthread_mutex_destroy(&output->pause.mutex);
-		pthread_mutex_destroy(&output->caption_mutex);
 		pthread_mutex_destroy(&output->interleaved_mutex);
 		pthread_mutex_destroy(&output->delay_mutex);
 		os_event_destroy(output->reconnect_stop_event);
 		obs_context_data_free(&output->context);
 		circlebuf_free(&output->delay_data);
-		circlebuf_free(&output->caption_data);
 		if (output->owns_info_id)
 			bfree((void *)output->info.id);
 		if (output->last_error_message)
@@ -338,11 +349,17 @@ bool obs_output_actual_start(obs_output_t *output)
 	if (os_atomic_load_long(&output->delay_restart_refs))
 		os_atomic_dec_long(&output->delay_restart_refs);
 
-	output->caption_timestamp = 0;
-
-	circlebuf_free(&output->caption_data);
-	circlebuf_init(&output->caption_data);
-
+	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+		struct caption_track_data *ctrack = output->caption_tracks[i];
+		if (!ctrack) {
+			continue;
+		}
+		pthread_mutex_lock(&ctrack->caption_mutex);
+		ctrack->caption_timestamp = 0;
+		circlebuf_free(&ctrack->caption_data);
+		circlebuf_init(&ctrack->caption_data);
+		pthread_mutex_unlock(&ctrack->caption_mutex);
+	}
 	return success;
 }
 
@@ -470,10 +487,16 @@ void obs_output_actual_stop(obs_output_t *output, bool force, uint64_t ts)
 		os_event_signal(output->stopping_event);
 	}
 
-	while (output->caption_head) {
-		output->caption_tail = output->caption_head->next;
-		bfree(output->caption_head);
-		output->caption_head = output->caption_tail;
+	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+		struct caption_track_data *ctrack = output->caption_tracks[i];
+		if (!ctrack) {
+			continue;
+		}
+		while (ctrack->caption_head) {
+			ctrack->caption_tail = ctrack->caption_head->next;
+			bfree(ctrack->caption_head);
+			ctrack->caption_head = ctrack->caption_tail;
+		}
 	}
 }
 
@@ -949,6 +972,19 @@ void obs_output_remove_encoder(struct obs_output *output,
 	obs_output_remove_encoder_internal(output, encoder);
 }
 
+static struct caption_track_data *create_caption_track()
+{
+	struct caption_track_data *rval =
+		bzalloc(sizeof(struct caption_track_data));
+	pthread_mutex_init_value(&rval->caption_mutex);
+
+	if (pthread_mutex_init(&rval->caption_mutex, NULL) != 0) {
+		bfree(rval);
+		rval = NULL;
+	}
+	return rval;
+}
+
 void obs_output_set_video_encoder2(obs_output_t *output, obs_encoder_t *encoder,
 				   size_t idx)
 {
@@ -986,6 +1022,13 @@ void obs_output_set_video_encoder2(obs_output_t *output, obs_encoder_t *encoder,
 	obs_encoder_remove_output(output->video_encoders[idx], output);
 	obs_encoder_add_output(encoder, output);
 	output->video_encoders[idx] = encoder;
+
+	destroy_caption_track(&output->caption_tracks[idx]);
+	if (encoder != NULL) {
+		output->caption_tracks[idx] = create_caption_track();
+	} else {
+		output->caption_tracks[idx] = NULL;
+	}
 
 	// Set preferred resolution on the default index to preserve old behavior
 	if (idx == 0) {
@@ -1458,20 +1501,29 @@ static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 	if (out->priority > 1)
 		return false;
 
+	struct caption_track_data *ctrack =
+		output->caption_tracks[out->track_idx];
+	if (!ctrack) {
+		blog(LOG_DEBUG,
+		     "Caption track for index: %lu has not been initialized",
+		     out->track_idx);
+		return false;
+	}
+
 	sei_init(&sei, 0.0);
 
 	da_init(out_data);
 	da_push_back_array(out_data, (uint8_t *)&ref, sizeof(ref));
 	da_push_back_array(out_data, out->data, out->size);
 
-	if (output->caption_data.size > 0) {
+	if (ctrack->caption_data.size > 0) {
 
 		cea708_t cea708;
 		cea708_init(&cea708, 0); // set up a new popon frame
 		void *caption_buf = bzalloc(3 * sizeof(uint8_t));
 
-		while (output->caption_data.size > 0) {
-			circlebuf_pop_front(&output->caption_data, caption_buf,
+		while (ctrack->caption_data.size > 0) {
+			circlebuf_pop_front(&ctrack->caption_data, caption_buf,
 					    3 * sizeof(uint8_t));
 
 			if ((((uint8_t *)caption_buf)[0] & 0x3) != 0) {
@@ -1509,16 +1561,16 @@ static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 		msg->size = cea708_render(&cea708, sei_message_data(msg),
 					  sei_message_size(msg));
 		sei_message_append(&sei, msg);
-	} else if (output->caption_head) {
+	} else if (ctrack->caption_head) {
 		caption_frame_t cf;
 		caption_frame_init(&cf);
-		caption_frame_from_text(&cf, &output->caption_head->text[0]);
+		caption_frame_from_text(&cf, &ctrack->caption_head->text[0]);
 
 		sei_from_caption_frame(&sei, &cf);
 
-		struct caption_text *next = output->caption_head->next;
-		bfree(output->caption_head);
-		output->caption_head = next;
+		struct caption_text *next = ctrack->caption_head->next;
+		bfree(ctrack->caption_head);
+		ctrack->caption_head = next;
 	}
 
 	data = malloc(sei_render_size(&sei));
@@ -1539,8 +1591,6 @@ static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 	return true;
 }
 
-double last_caption_timestamp = 0;
-
 static inline void send_interleaved(struct obs_output *output)
 {
 	struct encoder_packet out = output->interleaved_packets.array[0];
@@ -1556,33 +1606,37 @@ static inline void send_interleaved(struct obs_output *output)
 	if (out.type == OBS_ENCODER_VIDEO) {
 		output->total_frames++;
 
-		pthread_mutex_lock(&output->caption_mutex);
+		pthread_mutex_lock(
+			&output->caption_tracks[out.track_idx]->caption_mutex);
 
 		double frame_timestamp =
 			(out.pts * out.timebase_num) / (double)out.timebase_den;
 
-		if (output->caption_head &&
-		    output->caption_timestamp <= frame_timestamp) {
+		struct caption_track_data *ctrack =
+			output->caption_tracks[out.track_idx];
+
+		if (ctrack->caption_head &&
+		    ctrack->caption_timestamp <= frame_timestamp) {
 			blog(LOG_DEBUG, "Sending caption: %f \"%s\"",
-			     frame_timestamp, &output->caption_head->text[0]);
+			     frame_timestamp, &ctrack->caption_head->text[0]);
 
 			double display_duration =
-				output->caption_head->display_duration;
+				ctrack->caption_head->display_duration;
 
 			if (add_caption(output, &out)) {
-				output->caption_timestamp =
+				ctrack->caption_timestamp =
 					frame_timestamp + display_duration;
 			}
 		}
 
-		if (output->caption_data.size > 0) {
-			if (last_caption_timestamp < frame_timestamp) {
-				last_caption_timestamp = frame_timestamp;
+		if (ctrack->caption_data.size > 0) {
+			if (ctrack->last_caption_timestamp < frame_timestamp) {
+				ctrack->last_caption_timestamp =
+					frame_timestamp;
 				add_caption(output, &out);
 			}
 		}
-
-		pthread_mutex_unlock(&output->caption_mutex);
+		pthread_mutex_unlock(&ctrack->caption_mutex);
 	}
 
 	output->info.encoded_packet(output->context.data, &out);
@@ -2838,13 +2892,19 @@ const char *obs_output_get_id(const obs_output_t *output)
 void obs_output_caption(obs_output_t *output,
 			const struct obs_source_cea_708 *captions)
 {
-	pthread_mutex_lock(&output->caption_mutex);
-	for (size_t i = 0; i < captions->packets; i++) {
-		circlebuf_push_back(&output->caption_data,
-				    captions->data + (i * 3),
-				    3 * sizeof(uint8_t));
+	for (int i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+		struct caption_track_data *ctrack = output->caption_tracks[i];
+		if (!ctrack) {
+			continue;
+		}
+		pthread_mutex_lock(&ctrack->caption_mutex);
+		for (size_t i = 0; i < captions->packets; i++) {
+			curclebuf_push_back(&ctrack->caption_data,
+					    captions->data + (i * 3),
+					    3 * sizeof(uint8_t));
+		}
+		pthread_mutex_unlock(&ctrack->caption_mutex);
 	}
-	pthread_mutex_unlock(&output->caption_mutex);
 }
 
 static struct caption_text *caption_text_new(const char *text, size_t bytes,
@@ -2885,13 +2945,20 @@ void obs_output_output_caption_text2(obs_output_t *output, const char *text,
 	int size = (int)strlen(text);
 	blog(LOG_DEBUG, "Caption text: %s", text);
 
-	pthread_mutex_lock(&output->caption_mutex);
+	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+		struct caption_track_data *ctrack = output->caption_tracks[i];
+		if (!ctrack) {
+			continue;
+		}
+		pthread_mutex_lock(&ctrack->caption_mutex);
 
-	output->caption_tail =
-		caption_text_new(text, size, output->caption_tail,
-				 &output->caption_head, display_duration);
+		ctrack->caption_tail = caption_text_new(text, size,
+							ctrack->caption_tail,
+							&ctrack->caption_head,
+							display_duration);
 
-	pthread_mutex_unlock(&output->caption_mutex);
+		pthread_mutex_unlock(&ctrack->caption_mutex);
+	}
 }
 
 float obs_output_get_congestion(obs_output_t *output)
