@@ -30,6 +30,10 @@ EXPORT void obs_extract_av1_headers(const uint8_t *packet, size_t size,
 				    size_t *new_packet_size,
 				    uint8_t **header_data, size_t *header_size);
 
+EXPORT void metadata_obu_itu_t35(const uint8_t *itut_t35_buffer,
+				 size_t itut_bufsize, uint8_t **out_buffer,
+				 size_t *outbuf_size);
+
 #ifdef __cplusplus
 }
 #endif

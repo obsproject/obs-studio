@@ -63,6 +63,95 @@ static void parse_obu_header(const uint8_t *buf, size_t size, size_t *obu_start,
 	*obu_start += size_len;
 }
 
+// Pass a static 10 byte buffer in. The max size for a leb128.
+static inline void encode_uleb128(uint64_t val, uint8_t *out_buf,
+				  size_t *len_out)
+{
+	size_t num_bytes = 0;
+	uint8_t b = val & 0x7f;
+	val >>= 7;
+	while (val > 0) {
+		out_buf[num_bytes] = b | 0x80;
+		++num_bytes;
+		b = val & 0x7f;
+		val >>= 7;
+	}
+	out_buf[num_bytes] = b;
+	++num_bytes;
+	*len_out = num_bytes;
+}
+
+static const uint8_t METADATA_TYPE_ITUT_T35 = 4;
+static const uint8_t OBU_METADATA = 5;
+
+// Create a metadata OBU to carry caption information.
+void metadata_obu_itu_t35(const uint8_t *itut_t35_buffer, size_t itut_bufsize,
+			  uint8_t **out_buffer, size_t *outbuf_size)
+{
+	/* From the AV1 spec: 5.3.2 OBU Header Syntax
+	 * -------------
+	 * obu_forbidden_bit   (1)
+	 * obu_type            (4)  // In this case OBS_OBU_METADATA
+	 * obu_extension_flag  (1)
+	 * obu_has_size_field  (1)  // Must be set, size of OBU is variable
+	 * obu_reserved_1bit   (1)
+	 * if(obu_extension_flag == 1)
+	 *   // skip, because we aren't setting this
+	 */
+
+	uint8_t obu_header_byte = (OBU_METADATA << 3) | (1 << 1);
+
+	/* From the AV1 spec: 5.3.1 General OBU Syntax
+	 * if (obu_has_size_field)
+	 * 	obu_size    leb128()
+	 * else
+	 * 	obu_size = sz - 1 - obu_extension_flag
+	 *
+	 * 	// Skipping portions unrelated to this OBU type	
+	 *
+	 * if (obu_type == OBU_METADATA)
+	 * 	metdata_obu()
+	 * 5.8.1 General metadata OBU Syntax
+	 *	// leb128(metadatatype) should always be 1 byte +1 for trailing bits
+	 * 	metadata_type                     leb128()
+	 * 5.8.2 Metadata ITUT T35 syntax
+	 * 	if (metadata_type == METADATA_TYPE_ITUT_T35)
+         * 		// add ITUT T35 payload
+	 * 5.8.1 General metadata OBU Syntax
+	 * 	// trailing bits will always be 0x80 because
+	 *	// everything in here is byte aligned
+	 * 	trailing_bits( obu_size * 8 - payloadBits )
+	 */
+
+	int64_t size_field = 1 + itut_bufsize + 1;
+	uint8_t size_buf[10];
+	size_t size_buf_size = 0;
+	encode_uleb128(size_field, size_buf, &size_buf_size);
+	// header + obu_size + metadata_type + metadata_payload + trailing_bits
+	*outbuf_size = 1 + size_buf_size + 1 + itut_bufsize + 1;
+	*out_buffer = bzalloc(*outbuf_size);
+	size_t offset = 0;
+	(*out_buffer)[0] = obu_header_byte;
+	++offset;
+	memcpy((*out_buffer) + offset, size_buf, size_buf_size);
+	offset += size_buf_size;
+	(*out_buffer)[offset] = METADATA_TYPE_ITUT_T35;
+	++offset;
+	memcpy((*out_buffer) + offset, itut_t35_buffer, itut_bufsize);
+	offset += itut_bufsize;
+
+	/* From AV1 spec: 6.2.1 General OBU semantics
+	 * ... Trailing bits are always present, unless the OBU consists of only
+	 * the header. Trailing bits achieve byte alignment when the payload of
+	 * an OBU is not byte aligned. The trailing bits may also used for
+	 * additional byte padding, and if used are taken into account in the
+	 * sz value. In all cases, the pattern used for the trailing bits
+	 * guarantees that all OBUs (except header-only OBUs) end with the same
+	 * pattern: one bit set to one, optionally followed by zeros. */
+
+	(*out_buffer)[offset] = 0x80;
+}
+
 bool obs_av1_keyframe(const uint8_t *data, size_t size)
 {
 	const uint8_t *start = data, *end = data + size;
