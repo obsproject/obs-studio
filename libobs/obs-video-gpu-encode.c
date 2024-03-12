@@ -19,7 +19,7 @@
 
 static void *gpu_encode_thread(struct obs_core_video_mix *video)
 {
-	blog(LOG_INFO, "gpu_encode_thread (%p)", video);
+	blog(LOG_INFO, "gpu_encode_thread Begin (%p)", video);
 	uint64_t interval = video_output_get_frame_time(video->video);
 	DARRAY(obs_encoder_t *) encoders;
 	int wait_frames = NUM_ENCODE_TEXTURE_FRAMES_TO_WAIT;
@@ -145,7 +145,7 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 	}
 
 	da_free(encoders);
-	blog(LOG_INFO, "Exit gpu encode thread");
+	blog(LOG_INFO, "gpu_encode_thread Finished (%p)", video);
 	return NULL;
 }
 
@@ -211,6 +211,7 @@ void stop_gpu_encoding_thread(struct obs_core_video_mix *video)
 		os_atomic_set_bool(&video->gpu_encode_stop, true);
 		os_sem_post(video->gpu_encode_semaphore);
 		pthread_join(video->gpu_encode_thread, NULL);
+		video->gpu_want_destroy_thread = false;
 		video->gpu_encode_thread_initialized = false;
 		blog(LOG_INFO, "stop_gpu_encoding_thread - end (%p)", video);
 	}
