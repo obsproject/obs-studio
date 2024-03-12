@@ -46,6 +46,7 @@ struct flv_output {
 	bool sent_headers;
 	int64_t last_packet_ts;
 
+	enum audio_id_t audio_codec[MAX_OUTPUT_AUDIO_ENCODERS];
 	enum video_id_t video_codec[MAX_OUTPUT_VIDEO_ENCODERS];
 
 	pthread_mutex_t mutex;
@@ -226,6 +227,29 @@ static int write_packet_ex(struct flv_output *stream,
 	return ret;
 }
 
+static int write_audio_packet_ex(struct flv_output *stream,
+				 struct encoder_packet *packet, bool is_header,
+				 size_t idx)
+{
+	uint8_t *data;
+	size_t size = 0;
+	int ret = 0;
+
+	if (is_header) {
+		flv_packet_audio_start(packet, stream->audio_codec[idx], &data,
+				       &size, idx);
+	} else {
+		flv_packet_audio_frames(packet, stream->audio_codec[idx],
+					stream->start_dts_offset, &data, &size,
+					idx);
+	}
+
+	fwrite(data, 1, size, stream->file);
+	bfree(data);
+
+	return ret;
+}
+
 static void write_meta_data(struct flv_output *stream)
 {
 	uint8_t *meta_data;
@@ -247,8 +271,13 @@ static bool write_audio_header(struct flv_output *stream, size_t idx)
 	if (!aencoder)
 		return false;
 
-	if (obs_encoder_get_extra_data(aencoder, &packet.data, &packet.size))
-		write_packet(stream, &packet, true);
+	if (obs_encoder_get_extra_data(aencoder, &packet.data, &packet.size)) {
+		if (idx == 0) {
+			write_packet(stream, &packet, true);
+		} else {
+			write_audio_packet_ex(stream, &packet, true, idx);
+		}
+	}
 
 	return true;
 }
@@ -394,6 +423,16 @@ static bool write_video_metadata(struct flv_output *stream, size_t idx)
 
 static void write_headers(struct flv_output *stream)
 {
+	for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
+		obs_encoder_t *enc =
+			obs_output_get_audio_encoder(stream->output, i);
+		if (!enc)
+			break;
+
+		const char *codec = obs_encoder_get_codec(enc);
+		stream->audio_codec[i] = to_audio_type(codec);
+	}
+
 	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
 		obs_encoder_t *enc =
 			obs_output_get_video_encoder2(stream->output, i);
@@ -577,7 +616,12 @@ static void flv_output_data(void *data, struct encoder_packet *packet)
 		}
 		obs_encoder_packet_release(&parsed_packet);
 	} else {
-		write_packet(stream, packet, false);
+		if (packet->track_idx != 0) {
+			write_audio_packet_ex(stream, packet, false,
+					      packet->track_idx);
+		} else {
+			write_packet(stream, packet, false);
+		}
 	}
 
 unlock:
