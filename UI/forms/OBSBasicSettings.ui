@@ -3910,18 +3910,6 @@
                     </item>
                     <item>
                      <layout class="QVBoxLayout" name="advOutRecInfoLayout">
-                      <property name="leftMargin">
-                       <number>10</number>
-                      </property>
-                      <property name="topMargin">
-                       <number>10</number>
-                      </property>
-                      <property name="rightMargin">
-                       <number>10</number>
-                      </property>
-                      <property name="bottomMargin">
-                       <number>10</number>
-                      </property>
                      </layout>
                     </item>
                    </layout>
