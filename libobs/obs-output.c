@@ -1516,6 +1516,7 @@ static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 	size_t size;
 	long ref = 1;
 	bool avc = false;
+	bool hevc = false;
 
 	/* Instead of exiting early for unsupported codecs, we will continue
 	 * processing to allow the freeing of caption data even if the captions
@@ -1523,6 +1524,10 @@ static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 	 * the given codec. */
 	if (strcmp(out->encoder->info.codec, "h264") == 0) {
 		avc = true;
+#ifdef ENABLE_HEVC
+	} else if (strcmp(out->encoder->info.codec, "hevc") == 0) {
+		hevc = true;
+#endif
 	}
 
 	DARRAY(uint8_t) out_data;
@@ -1539,6 +1544,31 @@ static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 		return false;
 	}
 
+#ifdef ENABLE_HEVC
+	uint8_t hevc_nal_header[2];
+	if (hevc) {
+		size_t nal_header_index_start = 4;
+		// Skip past the annex-b start code
+		if (memcmp(out->data, nal_start + 1, 3) == 0) {
+			nal_header_index_start = 3;
+		} else if (memcmp(out->data, nal_start, 4) == 0) {
+			nal_header_index_start = 4;
+
+		} else {
+			/* We shouldn't ever see this unless we start getting
+			 * packets without annex-b start codes. */
+			blog(LOG_DEBUG,
+			     "Annex-B start code not found. We may not "
+			     "generate a valid HEVC NAL unit header "
+			     "for our caption");
+			return false;
+		}
+		/* We will use the same 2 byte NAL unit header for the CC SEI,
+		 * but swap the NAL types out. */
+		hevc_nal_header[0] = out->data[nal_header_index_start];
+		hevc_nal_header[1] = out->data[nal_header_index_start + 1];
+	}
+#endif
 	sei_init(&sei, 0.0);
 
 	da_init(out_data);
@@ -1602,13 +1632,40 @@ static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 		ctrack->caption_head = next;
 	}
 
-	if (avc) {
+	if (avc || hevc) {
 		data = malloc(sei_render_size(&sei));
 		size = sei_render(&sei, data);
-		/* TODO: SEI should come after AUD/SPS/PPS,
-		 * but before any VCL */
-		da_push_back_array(out_data, nal_start, 4);
-		da_push_back_array(out_data, data, size);
+		if (avc) {
+			/* TODO: SEI should come after AUD/SPS/PPS,
+			 * but before any VCL */
+			da_push_back_array(out_data, nal_start, 4);
+			da_push_back_array(out_data, data, size);
+#ifdef ENABLE_HEVC
+		} else if (hevc) {
+			/* Only first NAL, VPS/PPS/SPS should use the 4 byte
+				start code, SEIs use 3 byte version */
+			da_push_back_array(out_data, nal_start + 1, 3);
+			/* nal_unit_header( ) {
+			 * forbidden_zero_bit       f(1)
+			 * nal_unit_type            u(6)
+			 * nuh_layer_id             u(6)
+			 * nuh_temporal_id_plus1    u(3)
+			 * }
+			 */
+			const uint8_t prefix_sei_nal_type = 39;
+			/* The first bit is always 0, so we just need to
+			 * save the last bit off the original header and
+			 * add the SEI NAL type. */
+			uint8_t first_byte = (prefix_sei_nal_type << 1) |
+					     (0x01 & hevc_nal_header[0]);
+			hevc_nal_header[0] = first_byte;
+			/* The HEVC NAL unit header is 2 byte instead of
+			 * one, otherwise everything else is the
+			 * same. */
+			da_push_back_array(out_data, hevc_nal_header, 2);
+			da_push_back_array(out_data, &data[1], size - 1);
+#endif
+		}
 		free(data);
 	}
 
@@ -1618,7 +1675,7 @@ static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 	out->data = (uint8_t *)out_data.array + sizeof(ref);
 	out->size = out_data.num - sizeof(ref);
 	sei_free(&sei);
-	if (avc) {
+	if (avc || hevc) {
 		return true;
 	}
 	return false;
