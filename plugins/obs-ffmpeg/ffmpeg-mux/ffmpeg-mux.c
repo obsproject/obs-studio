@@ -491,6 +491,11 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 #endif
 	ffm->video_stream->avg_frame_rate = av_inv_q(context->time_base);
 
+	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
+		context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+
+	avcodec_parameters_from_context(ffm->video_stream->codecpar, context);
+
 	const int max_luminance = ffm->params.max_luminance;
 	if (max_luminance > 0) {
 		size_t content_size;
@@ -537,11 +542,6 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 			(uint8_t *)mastering, sizeof(*mastering), 0);
 #endif
 	}
-
-	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
-		context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
-
-	avcodec_parameters_from_context(ffm->video_stream->codecpar, context);
 
 	ffm->video_ctx = context;
 }
