@@ -106,14 +106,14 @@ static bool init_screen_stream(struct screen_capture *sc)
     switch (sc->capture_type) {
         case ScreenCaptureDisplayStream: {
             SCDisplay *target_display = get_target_display();
-
-            if (!target_display) {
+            if (target_display == nil) {
                 MACCAP_ERR("init_screen_stream: Invalid target display ID:  %u\n", sc->display);
-
                 os_sem_post(sc->shareable_content_available);
-                return false;
+                sc->disp = NULL;
+                os_event_init(&sc->disp_finished, OS_EVENT_TYPE_MANUAL);
+                os_event_init(&sc->stream_start_completed, OS_EVENT_TYPE_MANUAL);
+                return true;
             }
-
             if (sc->hide_obs) {
                 SCRunningApplication *obsApp = nil;
                 NSString *mainBundleIdentifier = [[NSBundle mainBundle] bundleIdentifier];
@@ -149,6 +149,7 @@ static bool init_screen_stream(struct screen_capture *sc)
                 }
             }
             if (target_window == nil) {
+                MACCAP_ERR("init_screen_stream: Invalid target window ID:  %u\n", sc->window);
                 os_sem_post(sc->shareable_content_available);
                 sc->disp = NULL;
                 os_event_init(&sc->disp_finished, OS_EVENT_TYPE_MANUAL);
@@ -167,6 +168,14 @@ static bool init_screen_stream(struct screen_capture *sc)
         } break;
         case ScreenCaptureApplicationStream: {
             SCDisplay *target_display = get_target_display();
+            if (target_display == nil) {
+                MACCAP_ERR("init_screen_stream: Invalid target display ID:  %u\n", sc->display);
+                os_sem_post(sc->shareable_content_available);
+                sc->disp = NULL;
+                os_event_init(&sc->disp_finished, OS_EVENT_TYPE_MANUAL);
+                os_event_init(&sc->stream_start_completed, OS_EVENT_TYPE_MANUAL);
+                return true;
+            }
             SCRunningApplication *target_application = nil;
             for (SCRunningApplication *application in sc->shareable_content.applications) {
                 if ([application.bundleIdentifier isEqualToString:sc->application_id]) {
