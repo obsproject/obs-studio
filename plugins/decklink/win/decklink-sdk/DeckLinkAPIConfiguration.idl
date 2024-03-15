@@ -1,5 +1,5 @@
 /* -LICENSE-START-
-** Copyright (c) 2020 Blackmagic Design
+** Copyright (c) 2024 Blackmagic Design
 **
 ** Permission is hereby granted, free of charge, to any person or organization
 ** obtaining a copy of the software and accompanying documentation covered by
@@ -24,7 +24,6 @@
 ** DEALINGS IN THE SOFTWARE.
 ** -LICENSE-END-
 */
-
 
 #ifndef BMD_CONST
     #if defined(_MSC_VER)
@@ -81,6 +80,7 @@ typedef [v1_enum] enum _BMDDeckLinkConfigurationID {
     bmdDeckLinkConfigVideoOutputConversionMode                   = /* 'vocm' */ 0x766F636D,
     bmdDeckLinkConfigAnalogVideoOutputFlags                      = /* 'avof' */ 0x61766F66,
     bmdDeckLinkConfigReferenceInputTimingOffset                  = /* 'glot' */ 0x676C6F74,
+    bmdDeckLinkConfigReferenceOutputMode                         = /* 'glOm' */ 0x676C4F6D,
     bmdDeckLinkConfigVideoOutputIdleOperation                    = /* 'voio' */ 0x766F696F,
     bmdDeckLinkConfigDefaultVideoOutputMode                      = /* 'dvom' */ 0x64766F6D,
     bmdDeckLinkConfigDefaultVideoOutputModeFlags                 = /* 'dvof' */ 0x64766F66,
@@ -160,6 +160,30 @@ typedef [v1_enum] enum _BMDDeckLinkConfigurationID {
     bmdDeckLinkConfigAnalogAudioOutputScaleChannel4              = /* 'aos4' */ 0x616F7334,
     bmdDeckLinkConfigDigitalAudioOutputScale                     = /* 'daos' */ 0x64616F73,
     bmdDeckLinkConfigHeadphoneVolume                             = /* 'hvol' */ 0x68766F6C,
+
+    /* Network Flags */
+
+    bmdDeckLinkConfigEthernetUseDHCP                             = /* 'DHCP' */ 0x44484350,
+    bmdDeckLinkConfigEthernetPTPFollowerOnly                     = /* 'PTPf' */ 0x50545066,
+    bmdDeckLinkConfigEthernetPTPUseUDPEncapsulation              = /* 'PTPU' */ 0x50545055,
+
+    /* Network Integers */
+
+    bmdDeckLinkConfigEthernetPTPPriority1                        = /* 'PTP1' */ 0x50545031,
+    bmdDeckLinkConfigEthernetPTPPriority2                        = /* 'PTP2' */ 0x50545032,
+    bmdDeckLinkConfigEthernetPTPDomain                           = /* 'PTPD' */ 0x50545044,
+
+    /* Network Strings */
+
+    bmdDeckLinkConfigEthernetStaticLocalIPAddress                = /* 'nsip' */ 0x6E736970,
+    bmdDeckLinkConfigEthernetStaticSubnetMask                    = /* 'nssm' */ 0x6E73736D,
+    bmdDeckLinkConfigEthernetStaticGatewayIPAddress              = /* 'nsgw' */ 0x6E736777,
+    bmdDeckLinkConfigEthernetStaticPrimaryDNS                    = /* 'nspd' */ 0x6E737064,
+    bmdDeckLinkConfigEthernetStaticSecondaryDNS                  = /* 'nssd' */ 0x6E737364,
+    bmdDeckLinkConfigEthernetVideoOutputAddress                  = /* 'noav' */ 0x6E6F6176,
+    bmdDeckLinkConfigEthernetAudioOutputAddress                  = /* 'noaa' */ 0x6E6F6161,
+    bmdDeckLinkConfigEthernetAncillaryOutputAddress              = /* 'noaA' */ 0x6E6F6141,
+    bmdDeckLinkConfigEthernetAudioOutputChannelOrder             = /* 'caco' */ 0x6361636F,
 
     /* Device Information Strings */
 
