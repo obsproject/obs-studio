@@ -346,7 +346,7 @@ static void vlcs_destroy(void *data)
 	struct vlc_source *c = data;
 
 	if (c->media_list_player) {
-		libvlc_media_list_player_stop_(c->media_list_player);
+		libvlc_media_list_player_stop_async_(c->media_list_player);
 		libvlc_media_list_player_release_(c->media_list_player);
 	}
 	if (c->media_player) {
@@ -703,7 +703,7 @@ static void vlcs_update(void *data, obs_data_t *settings)
 	/* ------------------------------------- */
 	/* update settings data */
 
-	libvlc_media_list_player_stop_(c->media_list_player);
+	libvlc_media_list_player_stop_async_(c->media_list_player);
 
 	pthread_mutex_lock(&c->mutex);
 	old_files = c->files;
@@ -833,7 +833,7 @@ static void vlcs_restart(void *data)
 {
 	struct vlc_source *c = data;
 
-	libvlc_media_list_player_stop_(c->media_list_player);
+	libvlc_media_list_player_stop_async_(c->media_list_player);
 	libvlc_media_list_player_play_(c->media_list_player);
 }
 
@@ -841,7 +841,7 @@ static void vlcs_stop(void *data)
 {
 	struct vlc_source *c = data;
 
-	libvlc_media_list_player_stop_(c->media_list_player);
+	libvlc_media_list_player_stop_async_(c->media_list_player);
 	obs_source_output_video(c->source, NULL);
 }
 
@@ -877,7 +877,8 @@ static void vlcs_set_time(void *data, int64_t ms)
 {
 	struct vlc_source *c = data;
 
-	libvlc_media_player_set_time_(c->media_player, (libvlc_time_t)ms);
+	libvlc_media_player_set_time_(c->media_player, (libvlc_time_t)ms,
+				      false);
 }
 
 static void vlcs_play_pause_hotkey(void *data, obs_hotkey_id id,
@@ -1038,7 +1039,7 @@ static void vlcs_deactivate(void *data)
 	struct vlc_source *c = data;
 
 	if (c->behavior == BEHAVIOR_STOP_RESTART) {
-		libvlc_media_list_player_stop_(c->media_list_player);
+		libvlc_media_list_player_stop_async_(c->media_list_player);
 		obs_source_output_video(c->source, NULL);
 
 	} else if (c->behavior == BEHAVIOR_PAUSE_UNPAUSE) {
