@@ -187,7 +187,6 @@ static void obs_qsv_defaults(obs_data_t *settings, int ver,
 	obs_data_set_default_int(settings, "keyint_sec", 0);
 	obs_data_set_default_string(settings, "latency", "normal");
 	obs_data_set_default_int(settings, "bframes", 3);
-	obs_data_set_default_bool(settings, "enhancements", true);
 	obs_data_set_default_bool(settings, "repeat_headers", false);
 }
 
@@ -240,8 +239,6 @@ static inline void add_translated_strings(obs_property_t *list,
 #define TEXT_ICQ_QUALITY obs_module_text("ICQQuality")
 #define TEXT_KEYINT_SEC obs_module_text("KeyframeIntervalSec")
 #define TEXT_BFRAMES obs_module_text("BFrames")
-#define TEXT_PERCEPTUAL_ENHANCEMENTS \
-	obs_module_text("SubjectiveVideoEnhancements")
 
 static inline bool is_skl_or_greater_platform()
 {
@@ -316,31 +313,6 @@ static bool update_ratecontrol(obs_data_t *settings)
 	return true;
 }
 
-static bool update_enhancements(obs_data_t *settings)
-{
-	bool update = false;
-	bool mbbrc = true;
-	if (obs_data_item_byname(settings, "mbbrc") != NULL) {
-		mbbrc = (bool)obs_data_get_bool(settings, "mbbrc");
-		obs_data_erase(settings, "mbbrc");
-		update = true;
-	}
-
-	bool cqm = false;
-	if (obs_data_item_byname(settings, "CQM") != NULL) {
-		cqm = (bool)obs_data_get_bool(settings, "CQM");
-		obs_data_erase(settings, "CQM");
-		update = true;
-	}
-
-	if (update) {
-		bool enabled = (mbbrc && cqm);
-		obs_data_set_bool(settings, "enhancements", enabled);
-	}
-
-	return true;
-}
-
 static void update_targetusage(obs_data_t *settings)
 {
 	const char *target_usage =
@@ -398,13 +370,7 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 	p = obs_properties_get(ppts, "icq_quality");
 	obs_property_set_visible(p, bVisible);
 
-	bVisible = astrcmpi(rate_control, "CBR") == 0 ||
-		   astrcmpi(rate_control, "VBR") == 0;
-	p = obs_properties_get(ppts, "enhancements");
-	obs_property_set_visible(p, bVisible);
-
 	update_latency(settings);
-	update_enhancements(settings);
 	update_targetusage(settings);
 	update_ratecontrol(settings);
 
@@ -505,9 +471,6 @@ static obs_properties_t *obs_qsv_props(enum qsv_codec codec, void *unused,
 
 	obs_properties_add_int(props, "bframes", TEXT_BFRAMES, 0, 3, 1);
 
-	if (is_skl_or_greater_platform())
-		obs_properties_add_bool(props, "enhancements",
-					TEXT_PERCEPTUAL_ENHANCEMENTS);
 	return props;
 }
 
@@ -540,7 +503,6 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	video_t *video = obs_encoder_video(obsqsv->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
 	update_latency(settings);
-	update_enhancements(settings);
 	update_targetusage(settings);
 
 	const char *target_usage =
@@ -560,7 +522,6 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	int keyint_sec = (int)obs_data_get_int(settings, "keyint_sec");
 	bool cbr_override = obs_data_get_bool(settings, "cbr");
 	int bFrames = (int)obs_data_get_int(settings, "bframes");
-	bool enhancements = obs_data_get_bool(settings, "enhancements");
 	bool repeat_headers = obs_data_get_bool(settings, "repeat_headers");
 	const char *codec = "";
 
@@ -744,7 +705,6 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	obsqsv->params.nbFrames = (mfxU16)bFrames;
 	obsqsv->params.nKeyIntSec = (mfxU16)keyint_sec;
 	obsqsv->params.nICQQuality = (mfxU16)icq_quality;
-	obsqsv->params.bCQM = enhancements;
 	obsqsv->params.bRepeatHeaders = repeat_headers;
 
 	info("settings:\n"
@@ -782,14 +742,12 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	     "\tkeyint:         %d\n"
 	     "\tlatency:        %s\n"
 	     "\tb-frames:       %d\n"
-	     "\tenhancements:   %s\n"
 	     "\tfps_num:        %d\n"
 	     "\tfps_den:        %d\n"
 	     "\twidth:          %d\n"
 	     "\theight:         %d",
-	     target_usage, profile, keyint_sec, latency, bFrames,
-	     enhancements ? "on" : "off", voi->fps_num, voi->fps_den, width,
-	     height);
+	     target_usage, profile, keyint_sec, latency, bFrames, voi->fps_num,
+	     voi->fps_den, width, height);
 
 	info("debug info:");
 }
