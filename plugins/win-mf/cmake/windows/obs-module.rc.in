@@ -1,0 +1,24 @@
+1 VERSIONINFO
+FILEVERSION ${OBS_VERSION_MAJOR},${OBS_VERSION_MINOR},${OBS_VERSION_PATCH},0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904B0"
+    BEGIN
+      VALUE "CompanyName", "${OBS_COMPANY_NAME}"
+      VALUE "FileDescription", "OBS Media Foundation module"
+      VALUE "FileVersion", "${OBS_VERSION_CANONICAL}"
+      VALUE "ProductName", "${OBS_PRODUCT_NAME}"
+      VALUE "ProductVersion", "${OBS_VERSION_CANONICAL}"
+      VALUE "Comments", "${OBS_COMMENTS}"
+      VALUE "LegalCopyright", "${OBS_LEGAL_COPYRIGHT}"
+      VALUE "InternalName", "win-mf"
+      VALUE "OriginalFilename", "win-mf"
+    END
+  END
+
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x0409, 0x04B0
+  END
+END
