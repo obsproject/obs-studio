@@ -108,6 +108,7 @@ add_core_module(text-freetype2)
 add_core_module(vlc-video WITH_MESSAGE)
 add_core_module(win-capture PLATFORMS WINDOWS)
 add_core_module(win-dshow PLATFORMS WINDOWS)
+add_core_module(win-mediafoundation PLATFORMS WINDOWS)
 add_core_module(win-wasapi PLATFORMS WINDOWS)
 
 set_obs_core_modules()
