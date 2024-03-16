@@ -152,6 +152,18 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 			// Otherwise tag 0 to let FFmpeg automatically select the appropriate tag
 			out_stream->codecpar->codec_tag = 0;
 		}
+
+		if (in_stream->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(59, 24, 100)
+			out_stream->codecpar->channel_layout =
+				av_get_default_channel_layout(
+					in_stream->codecpar->channels);
+#else
+			av_channel_layout_default(
+				&out_stream->codecpar->ch_layout,
+				in_stream->codecpar->ch_layout.nb_channels);
+#endif
+		}
 	}
 
 #ifndef NDEBUG
