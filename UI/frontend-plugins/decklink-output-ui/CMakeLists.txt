@@ -20,6 +20,10 @@ endif()
 add_library(decklink-output-ui MODULE)
 add_library(OBS::decklink-output-ui ALIAS decklink-output-ui)
 
+if(NOT TARGET OBS::properties-view)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/properties-view" "${CMAKE_BINARY_DIR}/shared/properties-view")
+endif()
+
 target_sources(decklink-output-ui PRIVATE forms/output.ui)
 
 target_sources(decklink-output-ui PRIVATE DecklinkOutputUI.cpp DecklinkOutputUI.h decklink-ui-main.cpp
@@ -31,7 +35,7 @@ target_link_libraries(
   decklink-output-ui
   PRIVATE OBS::libobs
           OBS::frontend-api
-          OBS::ui-support
+          OBS::properties-view
           Qt::Widgets
           "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>>"
           $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:X11::X11>

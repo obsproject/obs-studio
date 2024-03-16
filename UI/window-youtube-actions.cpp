@@ -2,9 +2,9 @@
 #include "window-youtube-actions.hpp"
 
 #include "obs-app.hpp"
-#include "qt-wrappers.hpp"
 #include "youtube-api-wrappers.hpp"
 
+#include <qt-wrappers.hpp>
 #include <QToolTip>
 #include <QDateTime>
 #include <QDesktopServices>

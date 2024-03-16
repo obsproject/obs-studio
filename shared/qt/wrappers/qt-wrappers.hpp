@@ -37,11 +37,11 @@ class QComboBox;
 class QWidget;
 class QLayout;
 class QString;
-struct gs_window;
 class QLabel;
 class QToolBar;
 
-class OBSMessageBox {
+class OBSMessageBox : QObject {
+	Q_OBJECT
 public:
 	static QMessageBox::StandardButton
 	question(QWidget *parent, const QString &title, const QString &text,
@@ -59,8 +59,6 @@ public:
 };
 
 void OBSErrorBox(QWidget *parent, const char *msg, ...);
-
-bool QTToGSWindow(QWindow *window, gs_window &gswindow);
 
 uint32_t TranslateQtKeyboardEventModifiers(Qt::KeyboardModifiers mods);
 

@@ -1,8 +1,8 @@
 #include "window-basic-main.hpp"
 #include "context-bar-controls.hpp"
-#include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 
+#include <qt-wrappers.hpp>
 #include <QStandardItemModel>
 #include <QColorDialog>
 #include <QFontDialog>

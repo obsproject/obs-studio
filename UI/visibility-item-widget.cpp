@@ -1,6 +1,6 @@
 #include "visibility-item-widget.hpp"
-#include "qt-wrappers.hpp"
 #include "obs-app.hpp"
+#include <qt-wrappers.hpp>
 #include <QListWidget>
 #include <QLineEdit>
 #include <QHBoxLayout>

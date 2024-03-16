@@ -4,8 +4,8 @@
 #include "window-basic-main.hpp"
 #include "platform.hpp"
 #include "obs-app.hpp"
-#include "qt-wrappers.hpp"
 
+#include <qt-wrappers.hpp>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QVBoxLayout>

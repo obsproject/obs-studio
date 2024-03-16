@@ -24,7 +24,7 @@
 #include <QToolButton>
 #include <QFileDialog>
 
-#include "qt-wrappers.hpp"
+#include <qt-wrappers.hpp>
 
 enum MissingFilesColumn {
 	Source,

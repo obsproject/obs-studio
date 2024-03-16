@@ -3,6 +3,18 @@ project(frontend-tools)
 add_library(frontend-tools MODULE)
 add_library(OBS::frontend-tools ALIAS frontend-tools)
 
+if(NOT TARGET OBS::properties-view)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/properties-view" "${CMAKE_BINARY_DIR}/shared/properties-view")
+endif()
+
+if(NOT TARGET OBS::qt-plain-text-edit)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/plain-text-edit" "${CMAKE_BINARY_DIR}/shared/qt/plain-text-edit")
+endif()
+
+if(NOT TARGET OBS::qt-wrappers)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/wrappers" "${CMAKE_BINARY_DIR}/shared/qt/wrappers")
+endif()
+
 find_qt(COMPONENTS Widgets COMPONENTS_LINUX Gui)
 
 set_target_properties(
@@ -19,39 +31,19 @@ endif()
 target_sources(frontend-tools PRIVATE forms/auto-scene-switcher.ui forms/captions.ui forms/output-timer.ui
                                       forms/scripts.ui)
 
-target_sources(
-  frontend-tools
-  PRIVATE frontend-tools.c
-          auto-scene-switcher.hpp
-          auto-scene-switcher.cpp
-          output-timer.hpp
-          tool-helpers.hpp
-          output-timer.cpp
-          ${CMAKE_SOURCE_DIR}/UI/double-slider.cpp
-          ${CMAKE_SOURCE_DIR}/UI/double-slider.hpp
-          ${CMAKE_SOURCE_DIR}/UI/horizontal-scroll-area.cpp
-          ${CMAKE_SOURCE_DIR}/UI/horizontal-scroll-area.hpp
-          ${CMAKE_SOURCE_DIR}/UI/properties-view.cpp
-          ${CMAKE_SOURCE_DIR}/UI/properties-view.hpp
-          ${CMAKE_SOURCE_DIR}/UI/properties-view.moc.hpp
-          ${CMAKE_SOURCE_DIR}/UI/qt-wrappers.cpp
-          ${CMAKE_SOURCE_DIR}/UI/qt-wrappers.hpp
-          ${CMAKE_SOURCE_DIR}/UI/spinbox-ignorewheel.cpp
-          ${CMAKE_SOURCE_DIR}/UI/spinbox-ignorewheel.hpp
-          ${CMAKE_SOURCE_DIR}/UI/slider-ignorewheel.cpp
-          ${CMAKE_SOURCE_DIR}/UI/slider-ignorewheel.hpp
-          ${CMAKE_SOURCE_DIR}/UI/vertical-scroll-area.hpp
-          ${CMAKE_SOURCE_DIR}/UI/vertical-scroll-area.cpp
-          ${CMAKE_SOURCE_DIR}/UI/plain-text-edit.cpp
-          ${CMAKE_SOURCE_DIR}/UI/plain-text-edit.hpp)
+target_sources(frontend-tools PRIVATE frontend-tools.c auto-scene-switcher.hpp auto-scene-switcher.cpp output-timer.hpp
+                                      tool-helpers.hpp output-timer.cpp)
 
 target_compile_features(frontend-tools PRIVATE cxx_std_17)
 
-target_link_libraries(frontend-tools PRIVATE OBS::frontend-api OBS::libobs Qt::Widgets)
+target_link_libraries(frontend-tools PRIVATE OBS::frontend-api OBS::qt-wrappers OBS::qt-plain-text-edit
+                                             OBS::properties-view OBS::libobs Qt::Widgets)
 
 if(OS_POSIX AND NOT OS_MACOS)
   target_link_libraries(frontend-tools PRIVATE Qt::GuiPrivate)
 endif()
+
+add_subdirectory("${CMAKE_SOURCE_DIR}/shared/obs-scripting" "${CMAKE_BINARY_DIR}/shared/obs-scripting")
 
 if(ENABLE_SCRIPTING AND TARGET OBS::scripting)
   target_compile_definitions(frontend-tools PRIVATE ENABLE_SCRIPTING)

@@ -31,8 +31,8 @@
 #include <QStyledItemDelegate>
 #include <QToolButton>
 #include <QTimer>
+#include <qt-wrappers.hpp>
 
-#include "qt-wrappers.hpp"
 #include "window-basic-main.hpp"
 
 #include <memory>

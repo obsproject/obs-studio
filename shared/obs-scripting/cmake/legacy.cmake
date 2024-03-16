@@ -176,3 +176,6 @@ target_compile_definitions(obs-scripting PRIVATE SCRIPT_DIR="${OBS_SCRIPT_PLUGIN
                                                  $<$<BOOL:${ENABLE_UI}>:ENABLE_UI>)
 
 setup_binary_target(obs-scripting)
+
+# Dirty workaround: CMake 2.0 seems to fail without this file
+file(TOUCH "${CMAKE_BINARY_DIR}/shared/cmake_install.cmake")

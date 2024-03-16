@@ -30,6 +30,8 @@
 #include <util/cf-parser.h>
 #include <obs-config.h>
 #include <obs.hpp>
+#include <qt-wrappers.hpp>
+#include <slider-ignorewheel.hpp>
 
 #include <QDir>
 #include <QFile>
@@ -38,11 +40,9 @@
 #include <QProcess>
 #include <QAccessible>
 
-#include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 #include "obs-proxy-style.hpp"
 #include "log-viewer.hpp"
-#include "slider-ignorewheel.hpp"
 #include "window-basic-main.hpp"
 #ifdef __APPLE__
 #include "window-permissions.hpp"

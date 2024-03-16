@@ -1,7 +1,7 @@
 #include <string>
 #include <algorithm>
 #include <QMessageBox>
-#include "qt-wrappers.hpp"
+#include <qt-wrappers.hpp>
 #include "audio-encoders.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-main-outputs.hpp"
