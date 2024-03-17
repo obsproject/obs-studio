@@ -883,7 +883,7 @@ static void nv_greenscreen_filter_render(void *data, gs_effect_t *effect)
 	UNUSED_PARAMETER(effect);
 }
 
-bool load_nvvfx(void)
+bool load_nvidia_vfx(void)
 {
 	bool old_sdk_loaded = false;
 	unsigned int version = get_lib_version();
@@ -1032,7 +1032,7 @@ unload_everything:
 }
 
 #ifdef LIBNVVFX_ENABLED
-void unload_nvvfx(void)
+void unload_nvidia_vfx(void)
 {
 	release_nv_vfx();
 }
