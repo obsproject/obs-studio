@@ -694,6 +694,14 @@ Core OBS Signals
 
    Called when a source's volume has changed.
 
+**source_audio_activate** (ptr source)
+
+   Called when a source's audio becomes active.
+
+**source_audio_deactivate** (ptr source)
+
+   Called when a source's audio becomes inactive.
+
 **source_transition_start** (ptr source)
 
    Called when a transition has started its transition.
