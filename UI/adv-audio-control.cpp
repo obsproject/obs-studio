@@ -54,6 +54,10 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	activateSignal.Connect(handler, "activate", OBSSourceActivated, this);
 	deactivateSignal.Connect(handler, "deactivate", OBSSourceDeactivated,
 				 this);
+	audioActivateSignal.Connect(handler, "audio_activate",
+				    OBSSourceActivated, this);
+	audioDeactivateSignal.Connect(handler, "audio_deactivate",
+				      OBSSourceDeactivated, this);
 	volChangedSignal.Connect(handler, "volume", OBSSourceVolumeChanged,
 				 this);
 	syncOffsetSignal.Connect(handler, "audio_sync", OBSSourceSyncChanged,
@@ -92,7 +96,8 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	SetSourceName(sourceName);
 	nameLabel->setAlignment(Qt::AlignVCenter);
 
-	bool isActive = obs_source_active(source);
+	bool isActive = obs_source_active(source) &&
+			obs_source_audio_active(source);
 	active->setText(isActive ? QTStr("Basic.Stats.Status.Active")
 				 : QTStr("Basic.Stats.Status.Inactive"));
 	if (isActive)
@@ -369,7 +374,7 @@ static inline void setCheckboxState(QCheckBox *checkbox, bool checked)
 
 void OBSAdvAudioCtrl::SourceActiveChanged(bool isActive)
 {
-	if (isActive) {
+	if (isActive && obs_source_audio_active(source)) {
 		active->setText(QTStr("Basic.Stats.Status.Active"));
 		setThemeID(active, "error");
 	} else {
