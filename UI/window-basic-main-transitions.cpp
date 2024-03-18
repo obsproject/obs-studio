@@ -142,25 +142,50 @@ void OBSBasic::RemoveQuickTransitionHotkey(QuickTransition *qt)
 	obs_hotkey_unregister(qt->hotkey);
 }
 
+static void initTransitionOnStop(void *data, calldata_t *)
+{
+	OBSBasic *window = (OBSBasic *)data;
+	QMetaObject::invokeMethod(window, "TransitionStopped",
+				  Qt::QueuedConnection);
+}
+
+static void initTransitionOnFullStop(void *data, calldata_t *)
+{
+	OBSBasic *window = (OBSBasic *)data;
+	QMetaObject::invokeMethod(window, "TransitionFullyStopped",
+				  Qt::QueuedConnection);
+}
+
+static void initTransitionOnRename(void *data, calldata_t *calldata)
+{
+	OBSBasic *window = (OBSBasic *)data;
+	OBSSource source((obs_source_t *)calldata_ptr(calldata, "source"));
+
+	QMetaObject::invokeMethod(window, "TransitionWasRenamed",
+				  Qt::QueuedConnection,
+				  Q_ARG(OBSSource, source));
+}
+
 void OBSBasic::InitTransition(obs_source_t *transition)
 {
-	auto onTransitionStop = [](void *data, calldata_t *) {
-		OBSBasic *window = (OBSBasic *)data;
-		QMetaObject::invokeMethod(window, "TransitionStopped",
-					  Qt::QueuedConnection);
-	};
-
-	auto onTransitionFullStop = [](void *data, calldata_t *) {
-		OBSBasic *window = (OBSBasic *)data;
-		QMetaObject::invokeMethod(window, "TransitionFullyStopped",
-					  Qt::QueuedConnection);
-	};
-
 	signal_handler_t *handler = obs_source_get_signal_handler(transition);
 	signal_handler_connect(handler, "transition_video_stop",
-			       onTransitionStop, this);
-	signal_handler_connect(handler, "transition_stop", onTransitionFullStop,
-			       this);
+			       initTransitionOnStop, this);
+	signal_handler_connect(handler, "transition_stop",
+			       initTransitionOnFullStop, this);
+	signal_handler_connect(handler, "rename", initTransitionOnRename, this);
+}
+
+void OBSBasic::DeinitTransition(obs_source_t *transition)
+{
+	signal_handler_t *handler = obs_source_get_signal_handler(transition);
+
+	signal_handler_disconnect(handler, "transition_video_stop",
+				  initTransitionOnStop, this);
+	signal_handler_disconnect(handler, "transition_stop",
+				  initTransitionOnFullStop, this);
+	signal_handler_disconnect(handler, "rename", initTransitionOnRename,
+				  this);
 }
 
 static inline OBSSource GetTransitionComboItem(QComboBox *combo, int idx)
@@ -254,6 +279,38 @@ void OBSBasic::TransitionToScene(OBSScene scene, bool force)
 {
 	obs_source_t *source = obs_scene_get_source(scene);
 	TransitionToScene(source, force);
+}
+
+void OBSBasic::TransitionWasRenamed(OBSSource transition)
+{
+	int idx = ui->transitions->findData(QVariant::fromValue(transition));
+	if (idx == -1) {
+		return;
+	}
+
+	string name = obs_source_get_name(transition);
+
+	obs_source_t *source = FindTransition(name.c_str());
+	if (source != transition) {
+		int copy = 1;
+		string updatedName = name;
+		while (source) {
+			updatedName = name + " " + to_string(++copy);
+			source = FindTransition(updatedName.c_str());
+		}
+		if (copy > 1) {
+			name = std::move(updatedName);
+			obs_source_set_name(transition, name.c_str());
+		}
+	}
+
+	ui->transitions->setItemText(idx, QT_UTF8(name.c_str()));
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_LIST_CHANGED);
+
+	ClearQuickTransitionWidgets();
+	RefreshQuickTransitions();
 }
 
 void OBSBasic::TransitionStopped()
@@ -427,6 +484,69 @@ static inline void SetComboTransition(QComboBox *combo, obs_source_t *tr)
 	}
 }
 
+void OBSBasic::AddTransitionInstance(OBSSource transition)
+{
+	int idx = ui->transitions->findData(QVariant::fromValue(transition));
+	if (idx != -1)
+		return;
+
+	string name = obs_source_get_name(transition);
+
+	obs_source_t *source = FindTransition(name.c_str());
+	int copy = 1;
+	string updatedName = name;
+	while (source) {
+		updatedName = name + " " + to_string(++copy);
+		source = FindTransition(updatedName.c_str());
+	}
+	if (copy > 1) {
+		name = std::move(updatedName);
+		obs_source_set_name(transition, name.c_str());
+	}
+
+	InitTransition(transition);
+
+	ui->transitions->addItem(QT_UTF8(name.c_str()),
+				 QVariant::fromValue(transition));
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_LIST_CHANGED);
+
+	ClearQuickTransitionWidgets();
+	RefreshQuickTransitions();
+}
+
+void OBSBasic::RemoveTransitionInstance(OBSSource transition)
+{
+	if (!transition || !obs_source_configurable(transition))
+		return;
+
+	int idx = ui->transitions->findData(QVariant::fromValue(transition));
+	if (idx == -1)
+		return;
+
+	DeinitTransition(transition);
+
+	for (size_t i = quickTransitions.size(); i > 0; i--) {
+		QuickTransition &qt = quickTransitions[i - 1];
+		if (qt.source == transition) {
+			if (qt.button)
+				qt.button->deleteLater();
+			RemoveQuickTransitionHotkey(&qt);
+			quickTransitions.erase(quickTransitions.begin() + i -
+					       1);
+		}
+	}
+
+	ui->transitions->removeItem(idx);
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_LIST_CHANGED);
+
+	ClearQuickTransitionWidgets();
+	RefreshQuickTransitions();
+}
+
 void OBSBasic::SetTransition(OBSSource transition)
 {
 	OBSSourceAutoRelease oldTransition = obs_get_output_source(0);
@@ -544,32 +664,8 @@ void OBSBasic::on_transitionAdd_clicked()
 void OBSBasic::on_transitionRemove_clicked()
 {
 	OBSSource tr = GetCurrentTransition();
-
-	if (!tr || !obs_source_configurable(tr) || !QueryRemoveSource(tr))
-		return;
-
-	int idx = ui->transitions->findData(QVariant::fromValue<OBSSource>(tr));
-	if (idx == -1)
-		return;
-
-	for (size_t i = quickTransitions.size(); i > 0; i--) {
-		QuickTransition &qt = quickTransitions[i - 1];
-		if (qt.source == tr) {
-			if (qt.button)
-				qt.button->deleteLater();
-			RemoveQuickTransitionHotkey(&qt);
-			quickTransitions.erase(quickTransitions.begin() + i -
-					       1);
-		}
-	}
-
-	ui->transitions->removeItem(idx);
-
-	if (api)
-		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_LIST_CHANGED);
-
-	ClearQuickTransitionWidgets();
-	RefreshQuickTransitions();
+	if (QueryRemoveSource(tr))
+		RemoveTransitionInstance(tr);
 }
 
 void OBSBasic::RenameTransition(OBSSource transition)

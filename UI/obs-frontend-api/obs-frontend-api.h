@@ -107,6 +107,8 @@ EXPORT void obs_frontend_get_scenes(struct obs_frontend_source_list *sources);
 EXPORT obs_source_t *obs_frontend_get_current_scene(void);
 EXPORT void obs_frontend_set_current_scene(obs_source_t *scene);
 
+EXPORT void obs_frontend_add_transition(obs_source_t *transition);
+EXPORT void obs_frontend_remove_transition(obs_source_t *transition);
 EXPORT void
 obs_frontend_get_transitions(struct obs_frontend_source_list *sources);
 EXPORT obs_source_t *obs_frontend_get_current_transition(void);
