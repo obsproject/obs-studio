@@ -1,6 +1,13 @@
 name: Sign Windows Project
+
 on:
   workflow_call:
+    inputs:
+      step:
+        description: Step to run
+        required: true
+        type: string
+
 jobs:
   create-windows-update:
     name: Create Windows Update 🥩
@@ -40,8 +47,16 @@ jobs:
 
       - name: Download Artifact 📥
         uses: actions/download-artifact@v4
+        if: inputs.step == 'package'
         with:
           name: obs-studio-windows-x64-${{ steps.setup.outputs.commitHash }}
+          path: ${{ github.workspace }}/build
+
+      - name: Download Signed Artifact 📥
+        uses: actions/download-artifact@v4
+        if: inputs.step == 'updater'
+        with:
+          name: obs-studio-windows-x64-${{ github.ref_name }}-signed
           path: ${{ github.workspace }}/build
 
       - name: Run bouf 🥩
@@ -51,9 +66,11 @@ jobs:
           gcpServiceAccountName: ${{ secrets.GCP_SERVICE_ACCOUNT_NAME }}
           version: ${{ github.ref_name }}
           channel: ${{ steps.setup.outputs.channel }}
+          step: ${{ inputs.step }}
 
       - name: Upload Signed Build
         uses: actions/upload-artifact@v4
+        if: inputs.step == 'package'
         with:
           name: obs-studio-windows-x64-${{ github.ref_name }}-signed
           compression-level: 6
@@ -61,6 +78,7 @@ jobs:
 
       - name: Upload PDBs
         uses: actions/upload-artifact@v4
+        if: inputs.step == 'package'
         with:
           name: obs-studio-windows-x64-${{ github.ref_name }}-pdbs
           compression-level: 9
@@ -68,6 +86,7 @@ jobs:
 
       - name: Upload Installer
         uses: actions/upload-artifact@v4
+        if: inputs.step == 'package'
         with:
           name: obs-studio-windows-x64-${{ github.ref_name }}-installer
           compression-level: 0
@@ -75,6 +94,7 @@ jobs:
 
       - name: Upload Updater Files
         uses: actions/upload-artifact@v4
+        if: inputs.step == 'updater'
         with:
           name: obs-studio-windows-x64-${{ github.ref_name }}-patches
           compression-level: 0

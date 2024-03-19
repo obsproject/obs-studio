@@ -205,21 +205,35 @@ jobs:
           pattern: macos-sparkle-update-*
           delete-merged: true
 
-  sign-windows-build:
+  package-windows-build:
     name: Windows Signing ✍️
-    uses: obsproject/obs-studio/.github/workflows/sign-windows.yaml@ffd5879ec95f09e4e551b839f5fe6738058231c1
+    uses: obsproject/obs-studio/.github/workflows/sign-windows.yaml@23b0ab186046382d487731870d9a9d6022fb2139
     if: github.repository_owner == 'obsproject' && github.ref_type == 'tag'
     needs: build-project
     permissions:
       contents: 'read'
       id-token: 'write'
     secrets: inherit
+    with:
+      step: package
+
+  create-windows-updates:
+    needs: package-windows-build
+    name: Windows Update Packages ✍️
+    uses: obsproject/obs-studio/.github/workflows/sign-windows.yaml@23b0ab186046382d487731870d9a9d6022fb2139
+    if: github.repository_owner == 'obsproject' && github.ref_type == 'tag'
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    secrets: inherit
+    with:
+      step: updater
 
   create-release:
     name: Create Release 🛫
     if: github.ref_type == 'tag'
     runs-on: ubuntu-22.04
-    needs: build-project
+    needs: [build-project, package-windows-build]
     defaults:
       run:
         shell: bash
@@ -264,6 +278,9 @@ jobs:
           macos_intel_dsym_artifact_name="obs-studio-macos-x86_64-${commit_hash}-dSYMs"
           ubuntu_x86_64_artifact_name="obs-studio-ubuntu-22.04-x86_64-${commit_hash}"
           ubuntu_x86_64_debug_name="obs-studio-ubuntu-22.04-x86_64-${commit_hash}-dbgsym"
+          windows_artifact_name="obs-studio-windows-x64-${{ steps.check.outputs.version }}-signed"
+          windows_installer_name="obs-studio-windows-x64-${{ steps.check.outputs.version }}-installer"
+          windows_debug_name="obs-studio-windows-x64-${{ steps.check.outputs.version }}-pdbs"
 
           echo '::group::Renaming Artifacts'
           mv -v "${macos_arm64_artifact_name}/"obs-studio-*-macos-apple.dmg \
@@ -278,6 +295,13 @@ jobs:
             "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-x86_64.deb
           mv -v "${ubuntu_x86_64_debug_name}/"obs-studio-*-x86_64-linux-gnu-dbgsym.ddeb \
             "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-x86_64-dbsym.ddeb
+          mv -v "${windows_installer_name}/"OBS-Studio-*-x64.exe \
+            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Windows-x64-Installer.exe
+          echo '::endgroup::'
+          
+          echo '::group::Zipping Windows Artifacts'
+          zip -r6 "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Windows-x64.zip "${windows_artifact_name}/"
+          zip -r9 "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Windows-x64-PDBs.zip "${windows_debug_name}/"
           echo '::endgroup::'
 
       - name: Generate Checksums 🪪
