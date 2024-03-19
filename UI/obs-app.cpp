@@ -49,6 +49,7 @@
 #endif
 #include "window-basic-settings.hpp"
 #include "platform.hpp"
+#include "log-redaction.hpp"
 
 #include <fstream>
 
@@ -422,8 +423,13 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 #if !defined(_WIN32) && !defined(_DEBUG)
 		def_log_handler(log_level, msg, args2, nullptr);
 #endif
-		if (!too_many_repeated_entries(logFile, msg, str))
+		if (!too_many_repeated_entries(logFile, msg, str)) {
+			string result = redact(str);
+			strncpy(str, result.c_str(), sizeof(str));
+			str[4095] = '\0';
+
 			LogStringChunk(logFile, str, log_level);
+		}
 	}
 
 #if defined(_WIN32) && defined(OBS_DEBUGBREAK_ON_ERROR)

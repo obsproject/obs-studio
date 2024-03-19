@@ -152,6 +152,8 @@ target_sources(
           multiview.hpp
           ffmpeg-utils.cpp
           ffmpeg-utils.hpp
+          log-redaction.cpp
+          log-redaction.hpp
           ${CMAKE_SOURCE_DIR}/deps/json11/json11.cpp
           ${CMAKE_SOURCE_DIR}/deps/json11/json11.hpp
           ${CMAKE_CURRENT_BINARY_DIR}/ui-config.h)
