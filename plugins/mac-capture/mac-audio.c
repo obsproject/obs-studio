@@ -266,7 +266,7 @@ static char **coreaudio_get_channel_names(struct coreaudio_data *ca)
 				    obs_module_text("CoreAudio.Channel.Device"),
 				    i + 1);
 		}
-		channel_names[i] = bstrdup_n(name.array, name.len + 1);
+		channel_names[i] = bstrdup_n(name.array, name.len);
 		dstr_free(&name);
 
 		if (cf_chan_name) {
