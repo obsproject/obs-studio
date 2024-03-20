@@ -6,9 +6,8 @@
 #include "nvvfx-load.h"
 /* -------------------------------------------------------- */
 
-#define do_log(level, format, ...)                                         \
-	blog(level,                                                        \
-	     "[NVIDIA AI Greenscreen (Background removal): '%s'] " format, \
+#define do_log(level, format, ...)                         \
+	blog(level, "[NVIDIA Video Effect: '%s'] " format, \
 	     obs_source_get_name(filter->context), ##__VA_ARGS__)
 
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
@@ -38,6 +37,11 @@
 #define TEXT_PROCESSING MT_("Greenscreen.Processing")
 #define TEXT_PROCESSING_HINT MT_("Greenscreen.Processing.Hint")
 
+/* blur fx */
+#define S_STRENGTH "intensity"
+#define S_STRENGTH_DEFAULT 0.5
+#define BLUR_TEXT_MODE_STRENGTH MT_("Blur.Strength")
+
 bool nvvfx_loaded = false;
 bool nvvfx_new_sdk = false;
 struct nv_greenscreen_data {
@@ -50,6 +54,8 @@ struct nv_greenscreen_data {
 	bool got_new_frame;
 	signal_handler_t *handler;
 
+	bool is_greenscreen;
+
 	/* RTX SDK vars */
 	NvVFX_Handle handle;
 	CUstream stream;        // CUDA stream
@@ -57,24 +63,30 @@ struct nv_greenscreen_data {
 	NvCVImage *src_img;     // src img in obs format (RGBA ?) on GPU
 	NvCVImage *BGR_src_img; // src img in BGR on GPU
 	NvCVImage *A_dst_img;   // mask img on GPU
-	NvCVImage *dst_img;     // mask texture
-	NvCVImage *stage;       // planar stage img used for transfer to texture
+	NvCVImage *dst_img; // dst holding texture either alpha for greenscreen
+		// or for blur, initialized from d3d11 texture (RGBA, chunky, u8)
+	NvCVImage *stage; // planar stage img used for transfer to texture
 	unsigned int version;
 	NvVFX_StateObjectHandle stateObjectHandle;
+	/* blur specific */
+	float strength;              // from 0 to 1, default = 0.5
+	NvCVImage *blur_BGR_dst_img; // dst img of blur fx (BGR, chunky, u8)
+	NvCVImage *RGBA_dst_img;     // tmp dst img used to transfer to texture
 
 	/* alpha mask effect */
 	gs_effect_t *effect;
 	gs_texrender_t *render;
 	gs_texrender_t *render_unorm;
-	gs_texture_t *alpha_texture;
-	uint32_t width;  // width of texture
-	uint32_t height; // height of texture
+	gs_texture_t *alpha_blur_texture; // either alpha or blur
+	uint32_t width;                   // width of texture
+	uint32_t height;                  // height of texture
 	enum gs_color_space space;
 	gs_eparam_t *mask_param;
 	gs_eparam_t *image_param;
 	gs_eparam_t *threshold_param;
 	gs_eparam_t *multiplier_param;
 	float threshold;
+	gs_eparam_t *blur_param;
 
 	/* Every nth frame is processed through the FX (where n =
 	 * processing_interval) so that the same mask is used for n consecutive
@@ -119,7 +131,7 @@ static void nv_greenscreen_filter_actual_destroy(void *data)
 
 	if (filter->images_allocated) {
 		obs_enter_graphics();
-		gs_texture_destroy(filter->alpha_texture);
+		gs_texture_destroy(filter->alpha_blur_texture);
 		gs_texrender_destroy(filter->render);
 		gs_texrender_destroy(filter->render_unorm);
 		obs_leave_graphics();
@@ -128,6 +140,10 @@ static void nv_greenscreen_filter_actual_destroy(void *data)
 		NvCVImage_Destroy(filter->A_dst_img);
 		NvCVImage_Destroy(filter->dst_img);
 		NvCVImage_Destroy(filter->stage);
+		if (filter->blur_BGR_dst_img)
+			NvCVImage_Destroy(filter->blur_BGR_dst_img);
+		if (filter->RGBA_dst_img)
+			NvCVImage_Destroy(filter->RGBA_dst_img);
 	}
 	if (filter->stream) {
 		NvVFX_CudaStreamDestroy(filter->stream);
@@ -183,13 +199,15 @@ static void nv_greenscreen_filter_reset(void *data, calldata_t *calldata)
 	}
 
 	/* 2. Set models path & initialize CudaStream */
-	char buffer[MAX_PATH];
-	char modelDir[MAX_PATH];
-	nvvfx_get_sdk_path(buffer, MAX_PATH);
-	size_t max_len = sizeof(buffer) / sizeof(char);
-	snprintf(modelDir, max_len, "%s\\models", buffer);
-	vfxErr = NvVFX_SetString(filter->handle, NVVFX_MODEL_DIRECTORY,
-				 modelDir);
+	if (filter->is_greenscreen) {
+		char buffer[MAX_PATH];
+		char modelDir[MAX_PATH];
+		nvvfx_get_sdk_path(buffer, MAX_PATH);
+		size_t max_len = sizeof(buffer) / sizeof(char);
+		snprintf(modelDir, max_len, "%s\\models", buffer);
+		vfxErr = NvVFX_SetString(filter->handle, NVVFX_MODEL_DIRECTORY,
+					 modelDir);
+	}
 	vfxErr = NvVFX_CudaStreamCreate(&filter->stream);
 	if (NVCV_SUCCESS != vfxErr) {
 		const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
@@ -209,7 +227,7 @@ static void nv_greenscreen_filter_reset(void *data, calldata_t *calldata)
 	vfxErr = NvVFX_SetU32(filter->handle, NVVFX_MODE, filter->mode);
 	vfxErr = NvVFX_Load(filter->handle);
 	if (NVCV_SUCCESS != vfxErr)
-		error("Error loading AI Greenscreen FX %i", vfxErr);
+		error("Error loading NVIDIA Video FX %i", vfxErr);
 
 	filter->images_allocated = false;
 	os_atomic_set_bool(&filter->processing_stop, false);
@@ -221,24 +239,27 @@ static void init_images_greenscreen(struct nv_greenscreen_data *filter)
 	uint32_t width = filter->width;
 	uint32_t height = filter->height;
 
-	/* 1. create alpha texture */
-	if (filter->alpha_texture) {
-		gs_texture_destroy(filter->alpha_texture);
+	/* 1. create alpha / blur texture */
+	if (filter->alpha_blur_texture) {
+		gs_texture_destroy(filter->alpha_blur_texture);
 	}
-	filter->alpha_texture =
-		gs_texture_create(width, height, GS_A8, 1, NULL, 0);
-	if (filter->alpha_texture == NULL) {
-		error("Alpha texture couldn't be created");
+	filter->alpha_blur_texture = gs_texture_create(
+		width, height, filter->is_greenscreen ? GS_A8 : GS_RGBA_UNORM,
+		1, NULL, 0);
+	if (filter->alpha_blur_texture == NULL) {
+		error("Alpha / Blur texture couldn't be created");
 		goto fail;
 	}
 	struct ID3D11Texture2D *d11texture =
 		(struct ID3D11Texture2D *)gs_texture_get_obj(
-			filter->alpha_texture);
+			filter->alpha_blur_texture);
 
-	/* 2. Create NvCVImage which will hold final alpha texture. */
+	/* 2. Create NvCVImage which will hold final alpha or blur texture. */
 	if (!filter->dst_img &&
-	    (NvCVImage_Create(width, height, NVCV_A, NVCV_U8, NVCV_CHUNKY,
-			      NVCV_GPU, 1, &filter->dst_img) != NVCV_SUCCESS)) {
+	    (NvCVImage_Create(width, height,
+			      filter->is_greenscreen ? NVCV_A : NVCV_RGBA,
+			      NVCV_U8, NVCV_CHUNKY, NVCV_GPU, 1,
+			      &filter->dst_img) != NVCV_SUCCESS)) {
 		goto fail;
 	}
 
@@ -287,7 +308,7 @@ static void init_images_greenscreen(struct nv_greenscreen_data *filter)
 		}
 	}
 
-	/* 5. Create and allocate Alpha NvCVimage (fx dst). */
+	/* 5. Create and allocate Alpha NvCVimage (greenscreen dst or mask for blur). */
 	if (filter->A_dst_img) {
 		if (NvCVImage_Realloc(filter->A_dst_img, width, height, NVCV_A,
 				      NVCV_U8, NVCV_CHUNKY, NVCV_GPU,
@@ -306,24 +327,68 @@ static void init_images_greenscreen(struct nv_greenscreen_data *filter)
 			goto fail;
 		}
 	}
+	if (!filter->is_greenscreen) {
+		/* 5b. Create and allocate Blur BGR NvCVimage (blur fx dst). */
+		vfxErr = NvCVImage_Create(width, height, NVCV_BGR, NVCV_U8,
+					  NVCV_CHUNKY, NVCV_GPU, 1,
+					  &filter->blur_BGR_dst_img);
+		vfxErr = NvCVImage_Alloc(filter->blur_BGR_dst_img, width,
+					 height, NVCV_BGR, NVCV_U8, NVCV_CHUNKY,
+					 NVCV_GPU, 1);
+		if (vfxErr != NVCV_SUCCESS) {
+			goto fail;
+		}
 
-	/* 6. Create stage NvCVImage which will be used as buffer for transfer */
-	if (filter->stage) {
-		if (NvCVImage_Realloc(filter->stage, width, height, NVCV_RGBA,
-				      NVCV_U8, NVCV_PLANAR, NVCV_GPU,
-				      1) != NVCV_SUCCESS) {
+		/* 5c. Create a temp dst NvCVImage converted from BGR to RGBA */
+		if (filter->RGBA_dst_img) {
+			if (NvCVImage_Realloc(filter->RGBA_dst_img, width,
+					      height, NVCV_RGBA, NVCV_U8,
+					      NVCV_CHUNKY, NVCV_GPU,
+					      1) != NVCV_SUCCESS) {
+				goto fail;
+			}
+		} else {
+			if (NvCVImage_Create(width, height, NVCV_RGBA, NVCV_U8,
+					     NVCV_CHUNKY, NVCV_GPU, 1,
+					     &filter->RGBA_dst_img) !=
+			    NVCV_SUCCESS) {
+				goto fail;
+			}
+			if (NvCVImage_Alloc(filter->RGBA_dst_img, width, height,
+					    NVCV_RGBA, NVCV_U8, NVCV_CHUNKY,
+					    NVCV_GPU, 1) != NVCV_SUCCESS) {
+				goto fail;
+			}
+		}
+		/* 5d. Create stage NvCVImage which will be used as buffer for transfer */
+		vfxErr = NvCVImage_Create(width, height, NVCV_RGBA, NVCV_U8,
+					  NVCV_CHUNKY, NVCV_GPU, 1,
+					  &filter->stage);
+		vfxErr = NvCVImage_Alloc(filter->stage, width, height,
+					 NVCV_RGBA, NVCV_U8, NVCV_CHUNKY,
+					 NVCV_GPU, 1);
+		if (vfxErr != NVCV_SUCCESS) {
 			goto fail;
 		}
 	} else {
-		if (NvCVImage_Create(width, height, NVCV_RGBA, NVCV_U8,
-				     NVCV_PLANAR, NVCV_GPU, 1,
-				     &filter->stage) != NVCV_SUCCESS) {
-			goto fail;
-		}
-		if (NvCVImage_Alloc(filter->stage, width, height, NVCV_RGBA,
-				    NVCV_U8, NVCV_PLANAR, NVCV_GPU,
-				    1) != NVCV_SUCCESS) {
-			goto fail;
+		/* 6. Create stage NvCVImage which will be used as buffer for transfer */
+		if (filter->stage) {
+			if (NvCVImage_Realloc(filter->stage, width, height,
+					      NVCV_RGBA, NVCV_U8, NVCV_PLANAR,
+					      NVCV_GPU, 1) != NVCV_SUCCESS) {
+				goto fail;
+			}
+		} else {
+			if (NvCVImage_Create(width, height, NVCV_RGBA, NVCV_U8,
+					     NVCV_PLANAR, NVCV_GPU, 1,
+					     &filter->stage) != NVCV_SUCCESS) {
+				goto fail;
+			}
+			if (NvCVImage_Alloc(filter->stage, width, height,
+					    NVCV_RGBA, NVCV_U8, NVCV_PLANAR,
+					    NVCV_GPU, 1) != NVCV_SUCCESS) {
+				goto fail;
+			}
 		}
 	}
 
@@ -332,9 +397,19 @@ static void init_images_greenscreen(struct nv_greenscreen_data *filter)
 			   filter->BGR_src_img) != NVCV_SUCCESS) {
 		goto fail;
 	}
-	if (NvVFX_SetImage(filter->handle, NVVFX_OUTPUT_IMAGE,
-			   filter->A_dst_img) != NVCV_SUCCESS) {
-		goto fail;
+	if (filter->is_greenscreen) {
+		if (NvVFX_SetImage(filter->handle, NVVFX_OUTPUT_IMAGE,
+				   filter->A_dst_img) != NVCV_SUCCESS) {
+			goto fail;
+		}
+	} else {
+		vfxErr = NvVFX_SetImage(filter->handle, NVVFX_INPUT_IMAGE_1,
+					filter->A_dst_img);
+		vfxErr = NvVFX_SetImage(filter->handle, NVVFX_OUTPUT_IMAGE,
+					filter->blur_BGR_dst_img);
+		vfxErr = NvVFX_Load(filter->handle);
+		if (NVCV_SUCCESS != vfxErr)
+			error("Error loading blur FX %i", vfxErr);
 	}
 
 	filter->images_allocated = true;
@@ -383,7 +458,19 @@ static bool process_texture_greenscreen(struct nv_greenscreen_data *filter)
 			nv_greenscreen_filter_reset(filter, NULL);
 	}
 
-	/* 4. Map dst texture before transfer from dst img provided by FX */
+	/* 4. Transfer to an intermediate dst [RGBA, chunky, u8] for blur fx */
+	if (!filter->is_greenscreen) {
+		vfxErr = NvCVImage_Transfer(filter->blur_BGR_dst_img,
+					    filter->RGBA_dst_img, 1.0f,
+					    filter->stream, filter->stage);
+		if (vfxErr != NVCV_SUCCESS) {
+			error("Error transferring blurred img to intermediate img [RGBA, chunky, u8], error %i, ",
+			      vfxErr);
+			goto fail;
+		}
+	}
+
+	/* 5. Map dst texture before transfer from dst img provided by FX */
 	vfxErr = NvCVImage_MapResource(filter->dst_img, filter->stream);
 	if (vfxErr != NVCV_SUCCESS) {
 		const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
@@ -392,11 +479,14 @@ static bool process_texture_greenscreen(struct nv_greenscreen_data *filter)
 		goto fail;
 	}
 
-	vfxErr = NvCVImage_Transfer(filter->A_dst_img, filter->dst_img, 1.0f,
-				    filter->stream, filter->stage);
+	vfxErr = NvCVImage_Transfer(filter->is_greenscreen
+					    ? filter->A_dst_img
+					    : filter->RGBA_dst_img,
+				    filter->dst_img, 1.0f, filter->stream,
+				    filter->stage);
 	if (vfxErr != NVCV_SUCCESS) {
 		const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
-		error("Error transferring mask to alpha texture; error %i: %s ",
+		error("Error transferring to alpha/blur texture; error %i: %s ",
 		      vfxErr, errString);
 		goto fail;
 	}
@@ -415,8 +505,9 @@ fail:
 	return false;
 }
 
-static void *nv_greenscreen_filter_create(obs_data_t *settings,
-					  obs_source_t *context)
+static void *nv_greenscreen_blur_filter_create(obs_data_t *settings,
+					       obs_source_t *context,
+					       bool is_greenscreen)
 {
 	struct nv_greenscreen_data *filter =
 		(struct nv_greenscreen_data *)bzalloc(sizeof(*filter));
@@ -427,7 +518,10 @@ static void *nv_greenscreen_filter_create(obs_data_t *settings,
 
 	NvCV_Status vfxErr;
 	filter->context = context;
-	filter->mode = -1; // should be 0 or 1; -1 triggers an update
+	filter->mode =
+		is_greenscreen
+			? -1
+			: S_MODE_QUALITY; // should be 0 or 1; -1 triggers an update
 	filter->images_allocated = false;
 	filter->processed_frame = true; // start processing when false
 	filter->width = 0;
@@ -435,27 +529,35 @@ static void *nv_greenscreen_filter_create(obs_data_t *settings,
 	filter->initial_render = false;
 	os_atomic_set_bool(&filter->processing_stop, false);
 	filter->handler = NULL;
-	filter->processing_interval = 1;
-	filter->processing_counter = 0;
+	filter->processing_interval = 1; // aigs specific
+	filter->processing_counter = 0;  // aigs specific
+	filter->is_greenscreen = is_greenscreen;
+	filter->strength = -1; // blur specific
 
 	/* 1. Create FX */
-	vfxErr = NvVFX_CreateEffect(NVVFX_FX_GREEN_SCREEN, &filter->handle);
+	if (is_greenscreen)
+		vfxErr = NvVFX_CreateEffect(NVVFX_FX_GREEN_SCREEN,
+					    &filter->handle);
+	else
+		vfxErr = NvVFX_CreateEffect(NVVFX_FX_BGBLUR, &filter->handle);
 	if (NVCV_SUCCESS != vfxErr) {
 		const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
-		error("Error creating AI Greenscreen FX; error %i: %s", vfxErr,
-		      errString);
+		error("Error creating effect; error %i: %s", vfxErr, errString);
 		nv_greenscreen_filter_destroy(filter);
 		return NULL;
 	}
 
 	/* 2. Set models path & initialize CudaStream */
-	char buffer[MAX_PATH];
-	char modelDir[MAX_PATH];
-	nvvfx_get_sdk_path(buffer, MAX_PATH);
-	size_t max_len = sizeof(buffer) / sizeof(char);
-	snprintf(modelDir, max_len, "%s\\models", buffer);
-	vfxErr = NvVFX_SetString(filter->handle, NVVFX_MODEL_DIRECTORY,
-				 modelDir);
+	if (is_greenscreen) {
+		char buffer[MAX_PATH];
+		char modelDir[MAX_PATH];
+		nvvfx_get_sdk_path(buffer, MAX_PATH);
+		size_t max_len = sizeof(buffer) / sizeof(char);
+		snprintf(modelDir, max_len, "%s\\models", buffer);
+		vfxErr = NvVFX_SetString(filter->handle, NVVFX_MODEL_DIRECTORY,
+					 modelDir);
+	}
+
 	vfxErr = NvVFX_CudaStreamCreate(&filter->stream);
 	if (NVCV_SUCCESS != vfxErr) {
 		const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
@@ -484,25 +586,32 @@ static void *nv_greenscreen_filter_create(obs_data_t *settings,
 	}
 
 	/* 3. Load alpha mask effect. */
-	char *effect_path = obs_module_file("rtx_greenscreen.effect");
+	char *effect_path = is_greenscreen
+				    ? obs_module_file("rtx_greenscreen.effect")
+				    : obs_module_file("rtx_blur.effect");
 
 	obs_enter_graphics();
 	filter->effect = gs_effect_create_from_file(effect_path, NULL);
 	bfree(effect_path);
 	if (filter->effect) {
-		filter->mask_param =
-			gs_effect_get_param_by_name(filter->effect, "mask");
+		if (is_greenscreen) {
+			filter->mask_param = gs_effect_get_param_by_name(
+				filter->effect, "mask");
+			filter->threshold_param = gs_effect_get_param_by_name(
+				filter->effect, "threshold");
+		} else {
+			filter->blur_param = gs_effect_get_param_by_name(
+				filter->effect, "blurred");
+		}
 		filter->image_param =
 			gs_effect_get_param_by_name(filter->effect, "image");
-		filter->threshold_param = gs_effect_get_param_by_name(
-			filter->effect, "threshold");
 		filter->multiplier_param = gs_effect_get_param_by_name(
 			filter->effect, "multiplier");
 	}
 	obs_leave_graphics();
 
 	/* 4. Allocate state for the effect */
-	if (nvvfx_new_sdk) {
+	if (nvvfx_new_sdk && is_greenscreen) {
 		vfxErr = NvVFX_AllocateState(filter->handle,
 					     &filter->stateObjectHandle);
 		if (NVCV_SUCCESS != vfxErr) {
@@ -534,6 +643,16 @@ static void *nv_greenscreen_filter_create(obs_data_t *settings,
 	nv_greenscreen_filter_update(filter, settings);
 
 	return filter;
+}
+
+static void *nv_greenscreen_filter_create(obs_data_t *settings,
+					  obs_source_t *context)
+{
+	return nv_greenscreen_blur_filter_create(settings, context, true);
+}
+static void *nv_blur_filter_create(obs_data_t *settings, obs_source_t *context)
+{
+	return nv_greenscreen_blur_filter_create(settings, context, false);
 }
 
 static obs_properties_t *nv_greenscreen_filter_properties(void *data)
@@ -602,12 +721,15 @@ static void nv_greenscreen_filter_tick(void *data, float t)
 		return;
 	}
 
-	/* minimum size supported by SDK is (512,288) */
-	filter->target_valid = cx >= 512 && cy >= 288;
-	if (!filter->target_valid) {
-		error("Size must be larger than (512,288)");
-		return;
+	/* minimum size supported by SDK is (512,288) for greenscreen */
+	if (filter->is_greenscreen) {
+		filter->target_valid = cx >= 512 && cy >= 288;
+		if (!filter->target_valid) {
+			error("Size must be larger than (512,288)");
+			return;
+		}
 	}
+
 	if (cx != filter->width && cy != filter->height) {
 		filter->images_allocated = false;
 		filter->width = cx;
@@ -666,7 +788,8 @@ get_tech_name_and_multiplier(enum gs_color_space current_space,
 	return tech_name;
 }
 
-static void draw_greenscreen(struct nv_greenscreen_data *filter)
+static void draw_greenscreen_blur(struct nv_greenscreen_data *filter,
+				  bool is_greenscreen)
 {
 	/* Render alpha mask */
 	const enum gs_color_space source_space = filter->space;
@@ -678,14 +801,19 @@ static void draw_greenscreen(struct nv_greenscreen_data *filter)
 	if (obs_source_process_filter_begin_with_color_space(
 		    filter->context, format, source_space,
 		    OBS_ALLOW_DIRECT_RENDERING)) {
-		gs_effect_set_texture(filter->mask_param,
-				      filter->alpha_texture);
+		if (is_greenscreen) {
+			gs_effect_set_texture(filter->mask_param,
+					      filter->alpha_blur_texture);
+			gs_effect_set_float(filter->threshold_param,
+					    filter->threshold);
+		} else {
+			gs_effect_set_texture(filter->blur_param,
+					      filter->alpha_blur_texture);
+		}
 		gs_effect_set_texture_srgb(
 			filter->image_param,
 			gs_texrender_get_texture(filter->render));
-		gs_effect_set_float(filter->threshold_param, filter->threshold);
 		gs_effect_set_float(filter->multiplier_param, multiplier);
-
 		gs_blend_state_push();
 		gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
 
@@ -696,12 +824,14 @@ static void draw_greenscreen(struct nv_greenscreen_data *filter)
 	}
 }
 
-static void nv_greenscreen_filter_render(void *data, gs_effect_t *effect)
+static void nv_greenscreen_blur_filter_render(void *data, gs_effect_t *effect,
+					      bool is_greenscreen)
 {
 	NvCV_Status vfxErr;
 	struct nv_greenscreen_data *filter = (struct nv_greenscreen_data *)data;
 
-	if (filter->processing_stop) {
+	if (filter->processing_stop ||
+	    (!is_greenscreen && filter->strength == 0)) {
 		obs_source_skip_video_filter(filter->context);
 		return;
 	}
@@ -717,7 +847,7 @@ static void nv_greenscreen_filter_render(void *data, gs_effect_t *effect)
 
 	/* Render processed image from earlier in the frame */
 	if (filter->processed_frame) {
-		draw_greenscreen(filter);
+		draw_greenscreen_blur(filter, is_greenscreen);
 		return;
 	}
 
@@ -789,16 +919,27 @@ static void nv_greenscreen_filter_render(void *data, gs_effect_t *effect)
 
 			const char *tech_name = "ConvertUnorm";
 			float multiplier = 1.f;
-			switch (source_space) {
-			case GS_CS_709_EXTENDED:
-				tech_name = "ConvertUnormTonemap";
-				break;
-			case GS_CS_709_SCRGB:
-				tech_name = "ConvertUnormMultiplyTonemap";
-				multiplier =
-					80.0f / obs_get_video_sdr_white_level();
+			if (is_greenscreen) {
+				switch (source_space) {
+				case GS_CS_709_EXTENDED:
+					tech_name = "ConvertUnormTonemap";
+					break;
+				case GS_CS_709_SCRGB:
+					tech_name =
+						"ConvertUnormMultiplyTonemap";
+					multiplier =
+						80.0f /
+						obs_get_video_sdr_white_level();
+				}
+			} else {
+				switch (source_space) {
+				case GS_CS_709_SCRGB:
+					tech_name = "ConvertUnormMultiply";
+					multiplier =
+						80.0f /
+						obs_get_video_sdr_white_level();
+				}
 			}
-
 			gs_effect_set_texture_srgb(
 				filter->image_param,
 				gs_texrender_get_texture(render));
@@ -862,25 +1003,40 @@ static void nv_greenscreen_filter_render(void *data, gs_effect_t *effect)
 	if (filter->initial_render && filter->images_allocated) {
 		bool draw = true;
 		if (!async || filter->got_new_frame) {
-			if (filter->processing_counter %
-				    filter->processing_interval ==
-			    0) {
-				draw = process_texture_greenscreen(filter);
-				filter->processing_counter = 1;
+			if (filter->is_greenscreen) {
+				if (filter->processing_counter %
+					    filter->processing_interval ==
+				    0) {
+					draw = process_texture_greenscreen(
+						filter);
+					filter->processing_counter = 1;
+				} else {
+					filter->processing_counter++;
+				}
 			} else {
-				filter->processing_counter++;
+				draw = process_texture_greenscreen(filter);
 			}
 			filter->got_new_frame = false;
 		}
 
 		if (draw) {
-			draw_greenscreen(filter);
+			draw_greenscreen_blur(filter, is_greenscreen);
 			filter->processed_frame = true;
 		}
 	} else {
 		obs_source_skip_video_filter(filter->context);
 	}
 	UNUSED_PARAMETER(effect);
+}
+
+static void nv_greenscreen_filter_render(void *data, gs_effect_t *effect)
+{
+	nv_greenscreen_blur_filter_render(data, effect, true);
+}
+
+static void nv_blur_filter_render(void *data, gs_effect_t *effect)
+{
+	nv_greenscreen_blur_filter_render(data, effect, false);
 }
 
 bool load_nvvfx(void)
@@ -1074,6 +1230,68 @@ struct obs_source_info nvidia_greenscreen_filter_info = {
 	.update = nv_greenscreen_filter_update,
 	.filter_video = nv_greenscreen_filter_video,
 	.video_render = nv_greenscreen_filter_render,
+	.video_tick = nv_greenscreen_filter_tick,
+	.video_get_color_space = nv_greenscreen_filter_get_color_space,
+};
+
+///////////////////////////////////////////////////////////////////////////////
+
+static const char *nv_blur_filter_name(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return obs_module_text("NvidiaBlurFilter");
+}
+
+static void nv_blur_filter_update(void *data, obs_data_t *settings)
+{
+	struct nv_greenscreen_data *filter = (struct nv_greenscreen_data *)data;
+	NvCV_Status vfxErr;
+
+	float strength = (float)obs_data_get_double(settings, S_STRENGTH);
+	if (filter->strength != strength) {
+		filter->strength = strength;
+		vfxErr = NvVFX_SetF32(filter->handle, NVVFX_STRENGTH,
+				      filter->strength);
+	}
+	vfxErr = NvVFX_Load(filter->handle);
+	if (NVCV_SUCCESS != vfxErr)
+		error("Error loading blur FX %i", vfxErr);
+}
+
+static obs_properties_t *nv_blur_filter_properties(void *data)
+{
+	struct nv_blur_data *filter = (struct nv_blur_data *)data;
+	obs_properties_t *props = obs_properties_create();
+	obs_property_t *strength = obs_properties_add_float_slider(
+		props, S_STRENGTH, BLUR_TEXT_MODE_STRENGTH, 0, 1, 0.05);
+	unsigned int version = get_lib_version();
+	if (version && version < MIN_VFX_SDK_VERSION) {
+		obs_property_t *warning = obs_properties_add_text(
+			props, "deprecation", NULL, OBS_TEXT_INFO);
+		obs_property_text_set_info_type(warning, OBS_TEXT_INFO_WARNING);
+		obs_property_set_long_description(warning, TEXT_DEPRECATION);
+	}
+
+	return props;
+}
+
+static void nv_blur_filter_defaults(obs_data_t *settings)
+{
+	obs_data_set_default_double(settings, S_STRENGTH, S_STRENGTH_DEFAULT);
+}
+
+struct obs_source_info nvidia_blur_filter_info = {
+	.id = "nv_blur_filter",
+	.type = OBS_SOURCE_TYPE_FILTER,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_SRGB,
+	.get_name = nv_blur_filter_name,
+	.create = nv_blur_filter_create,
+	.destroy = nv_greenscreen_filter_destroy,
+	.get_defaults = nv_blur_filter_defaults,
+	.get_properties = nv_blur_filter_properties,
+	.update = nv_blur_filter_update,
+	.filter_video = nv_greenscreen_filter_video,
+	.video_render = nv_blur_filter_render,
 	.video_tick = nv_greenscreen_filter_tick,
 	.video_get_color_space = nv_greenscreen_filter_get_color_space,
 };
