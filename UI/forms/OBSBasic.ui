@@ -656,15 +656,10 @@
     <property name="title">
      <string>Basic.MainMenu.SceneCollection</string>
     </property>
-    <addaction name="actionNewSceneCollection"/>
-    <addaction name="actionDupSceneCollection"/>
-    <addaction name="actionRenameSceneCollection"/>
-    <addaction name="actionRemoveSceneCollection"/>
-    <addaction name="actionImportSceneCollection"/>
-    <addaction name="actionExportSceneCollection"/>
+    <addaction name="separator"/>
+    <addaction name="actionManageSceneCollections"/>
     <addaction name="separator"/>
     <addaction name="actionShowMissingFiles"/>
-    <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="viewMenu">
     <property name="title">
@@ -716,6 +711,7 @@
      <string>Basic.MainMenu.Tools</string>
     </property>
     <addaction name="autoConfigure"/>
+    <addaction name="widgetPlayground"/>
     <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuDocks">
@@ -2035,34 +2031,12 @@
     <string>Basic.MainMenu.Help.Website</string>
    </property>
   </action>
-  <action name="actionNewSceneCollection">
+  <action name="actionManageSceneCollections">
    <property name="text">
-    <string>New</string>
+    <string>Basic.MainMenu.File.ManageSceneCollections</string>
    </property>
-  </action>
-  <action name="actionDupSceneCollection">
-   <property name="text">
-    <string>Duplicate</string>
-   </property>
-  </action>
-  <action name="actionRenameSceneCollection">
-   <property name="text">
-    <string>Rename</string>
-   </property>
-  </action>
-  <action name="actionRemoveSceneCollection">
-   <property name="text">
-    <string>Remove</string>
-   </property>
-  </action>
-  <action name="actionImportSceneCollection">
-   <property name="text">
-    <string>Import</string>
-   </property>
-  </action>
-  <action name="actionExportSceneCollection">
-   <property name="text">
-    <string>Export</string>
+   <property name="shortcut">
+    <string>Ctrl+M</string>
    </property>
   </action>
   <action name="actionShowMissingFiles">
@@ -2177,9 +2151,9 @@
     <string>PasteDuplicate</string>
    </property>
   </action>
-  <action name="autoConfigure2">
+  <action name="widgetPlayground">
    <property name="text">
-    <string>Basic.AutoConfig</string>
+    <string>Widget Playground</string>
    </property>
   </action>
   <action name="autoConfigure">

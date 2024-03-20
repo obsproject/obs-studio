@@ -47,6 +47,7 @@ set(_qt_sources
     forms/OBSLogViewer.ui
     forms/OBSMissingFiles.ui
     forms/OBSRemux.ui
+    forms/OBSSceneCollections.ui
     forms/OBSUpdate.ui
     forms/OBSYoutubeActions.ui
     forms/source-toolbar/browser-source-toolbar.ui

@@ -114,6 +114,7 @@ target_sources(
           forms/OBSLogViewer.ui
           forms/OBSMissingFiles.ui
           forms/OBSRemux.ui
+          forms/OBSSceneCollections.ui
           forms/OBSUpdate.ui
           forms/OBSYoutubeActions.ui
           forms/StatusBarWidget.ui
@@ -146,6 +147,8 @@ target_sources(
           qt-display.hpp
           qt-wrappers.cpp
           qt-wrappers.hpp
+          scene-collections-util.cpp
+          scene-collections-util.hpp
           ui-validation.cpp
           ui-validation.hpp
           multiview.cpp
@@ -158,16 +161,38 @@ target_sources(
 
 target_sources(
   obs
+  PRIVATE idian/obs-actionrow.hpp
+          idian/obs-controls.hpp
+          idian/obs-groupbox.hpp
+          idian/obs-propertieslist.hpp
+          idian/obs-toggleswitch.hpp
+          idian/obs-widgets.hpp
+          idian/obs-actionrow.cpp
+          idian/obs-controls.cpp
+          idian/obs-groupbox.cpp
+          idian/obs-propertieslist.cpp
+          idian/obs-toggleswitch.cpp)
+
+option(ENABLE_WIDGET_PLAYGROUND "Enable building custom widget demo window" OFF)
+if(ENABLE_WIDGET_PLAYGROUND)
+  target_compile_definitions(obs PRIVATE ENABLE_WIDGET_PLAYGROUND)
+  target_sources(obs PRIVATE forms/IdianPlayground.ui idian/widget-playground.hpp idian/widget-playground.cpp)
+endif()
+
+target_sources(
+  obs
   PRIVATE adv-audio-control.cpp
           adv-audio-control.hpp
           audio-encoders.cpp
           audio-encoders.hpp
           balance-slider.hpp
           clickable-label.hpp
+          doubleclick-eventfilter.hpp
           double-slider.cpp
           double-slider.hpp
           horizontal-scroll-area.cpp
           horizontal-scroll-area.hpp
+          icon-label.hpp
           item-widget-helpers.cpp
           item-widget-helpers.hpp
           context-bar-controls.cpp
@@ -277,7 +302,9 @@ target_sources(
           window-projector.cpp
           window-projector.hpp
           window-remux.cpp
-          window-remux.hpp)
+          window-remux.hpp
+          window-scene-collections.cpp
+          window-scene-collections.hpp)
 
 target_sources(obs PRIVATE importers/importers.cpp importers/importers.hpp importers/classic.cpp importers/sl.cpp
                            importers/studio.cpp importers/xsplit.cpp)
