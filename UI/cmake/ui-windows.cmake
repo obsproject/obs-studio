@@ -39,6 +39,8 @@ target_sources(
           window-basic-status-bar.hpp
           window-basic-transform.cpp
           window-basic-transform.hpp
+          window-basic-transition-audio.cpp
+          window-basic-transition-audio.hpp
           window-basic-vcam-config.cpp
           window-basic-vcam-config.hpp
           window-basic-vcam.hpp
