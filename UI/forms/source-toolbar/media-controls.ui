@@ -295,14 +295,14 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>MediaSlider</class>
-   <extends>QSlider</extends>
-   <header>media-slider.hpp</header>
-  </customwidget>
-  <customwidget>
    <class>ClickableLabel</class>
    <extends>QLabel</extends>
    <header>clickable-label.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>MediaSlider</class>
+   <extends>QSlider</extends>
+   <header>media-slider.hpp</header>
   </customwidget>
  </customwidgets>
  <resources>

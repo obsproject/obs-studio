@@ -97,8 +97,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>1346</width>
-        <height>254</height>
+        <width>1157</width>
+        <height>262</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_3">
@@ -143,7 +143,6 @@
             <widget class="QLabel" name="label_2">
              <property name="font">
               <font>
-               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
@@ -162,7 +161,6 @@
              </property>
              <property name="font">
               <font>
-               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
@@ -175,7 +173,6 @@
             <widget class="QLabel" name="label_3">
              <property name="font">
               <font>
-               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
@@ -188,7 +185,6 @@
             <widget class="QLabel" name="label_5">
              <property name="font">
               <font>
-               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
@@ -201,7 +197,6 @@
             <widget class="QLabel" name="label">
              <property name="font">
               <font>
-               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
@@ -214,7 +209,6 @@
             <widget class="QLabel" name="label_4">
              <property name="font">
               <font>
-               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
@@ -227,7 +221,6 @@
             <widget class="QLabel" name="label_6">
              <property name="font">
               <font>
-               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
@@ -263,7 +256,6 @@
                  <widget class="QLabel" name="label_9">
                   <property name="font">
                    <font>
-                    <weight>75</weight>
                     <bold>true</bold>
                    </font>
                   </property>
@@ -276,7 +268,6 @@
                  <widget class="QCheckBox" name="usePercent">
                   <property name="font">
                    <font>
-                    <weight>75</weight>
                     <bold>true</bold>
                    </font>
                   </property>

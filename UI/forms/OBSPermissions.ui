@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>692</width>
-    <height>550</height>
+    <height>613</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -95,7 +95,7 @@
            <property name="wordWrap">
             <bool>true</bool>
            </property>
-           <property name="bottomMargin">
+           <property name="bottomMargin" stdset="0">
             <number>8</number>
            </property>
           </widget>
