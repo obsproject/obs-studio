@@ -39,7 +39,7 @@
       <number>0</number>
      </property>
      <property name="sizeConstraint">
-      <enum>QLayout::SetNoConstraint</enum>
+      <enum>QLayout::SizeConstraint::SetNoConstraint</enum>
      </property>
      <property name="leftMargin">
       <number>0</number>
@@ -70,7 +70,7 @@
          <item row="1" column="0">
           <spacer name="verticalSpacer">
            <property name="orientation">
-            <enum>Qt::Vertical</enum>
+            <enum>Qt::Orientation::Vertical</enum>
            </property>
            <property name="sizeHint" stdset="0">
             <size>
@@ -95,7 +95,7 @@
            <property name="wordWrap">
             <bool>true</bool>
            </property>
-           <property name="bottomMargin">
+           <property name="bottomMargin" stdset="0">
             <number>8</number>
            </property>
           </widget>
@@ -103,10 +103,10 @@
          <item row="0" column="0">
           <layout class="QFormLayout" name="formLayout">
            <property name="fieldGrowthPolicy">
-            <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+            <enum>QFormLayout::FieldGrowthPolicy::AllNonFixedFieldsGrow</enum>
            </property>
            <property name="rowWrapPolicy">
-            <enum>QFormLayout::WrapAllRows</enum>
+            <enum>QFormLayout::RowWrapPolicy::WrapAllRows</enum>
            </property>
            <property name="topMargin">
             <number>22</number>
@@ -125,7 +125,7 @@
               <string>MacPermissions.Item.ScreenRecording</string>
              </property>
              <property name="alignment">
-              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
              </property>
             </widget>
            </item>
@@ -145,7 +145,7 @@
               <number>25</number>
              </property>
              <item>
-              <widget class="QWidget"/>
+              <widget class="QWidget" name="widget" native="true"/>
              </item>
              <item>
               <widget class="QPushButton" name="capturePermissionButton">
@@ -188,7 +188,7 @@
               <string>MacPermissions.Item.Camera</string>
              </property>
              <property name="alignment">
-              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
              </property>
             </widget>
            </item>
@@ -211,7 +211,7 @@
               <number>25</number>
              </property>
              <item>
-              <widget class="QWidget"/>
+              <widget class="QWidget" name="widget" native="true"/>
              </item>
              <item>
               <widget class="QPushButton" name="videoPermissionButton">
@@ -254,7 +254,7 @@
               <string>MacPermissions.Item.Microphone</string>
              </property>
              <property name="alignment">
-              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
              </property>
             </widget>
            </item>
@@ -274,7 +274,7 @@
               <number>25</number>
              </property>
              <item>
-              <widget class="QWidget"/>
+              <widget class="QWidget" name="widget" native="true"/>
              </item>
              <item>
               <widget class="QPushButton" name="audioPermissionButton">
@@ -317,7 +317,7 @@
               <string>MacPermissions.Item.Accessibility</string>
              </property>
              <property name="alignment">
-              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
              </property>
             </widget>
            </item>
@@ -331,7 +331,7 @@
            <item row="7" column="1">
             <layout class="QHBoxLayout" name="horizontalLayout_5">
              <property name="sizeConstraint">
-              <enum>QLayout::SetDefaultConstraint</enum>
+              <enum>QLayout::SizeConstraint::SetDefaultConstraint</enum>
              </property>
              <property name="topMargin">
               <number>8</number>
@@ -340,7 +340,7 @@
               <number>25</number>
              </property>
              <item>
-              <widget class="QWidget"/>
+              <widget class="QWidget" name="widget" native="true"/>
              </item>
              <item>
               <widget class="QPushButton" name="accessibilityPermissionButton">

@@ -17,7 +17,7 @@
    <item>
     <layout class="QFormLayout" name="formLayout">
      <property name="labelAlignment">
-      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
      </property>
      <item row="1" column="0">
       <widget class="QLabel" name="label">
@@ -32,7 +32,7 @@
      <item row="1" column="1">
       <widget class="QComboBox" name="source">
        <property name="insertPolicy">
-        <enum>QComboBox::InsertAlphabetically</enum>
+        <enum>QComboBox::InsertPolicy::InsertAlphabetically</enum>
        </property>
       </widget>
      </item>
@@ -59,7 +59,7 @@
      <item row="3" column="1">
       <widget class="QComboBox" name="provider">
        <property name="insertPolicy">
-        <enum>QComboBox::InsertAlphabetically</enum>
+        <enum>QComboBox::InsertPolicy::InsertAlphabetically</enum>
        </property>
       </widget>
      </item>
@@ -75,7 +75,7 @@
    <item>
     <spacer name="verticalSpacer">
      <property name="orientation">
-      <enum>Qt::Vertical</enum>
+      <enum>Qt::Orientation::Vertical</enum>
      </property>
      <property name="sizeHint" stdset="0">
       <size>
@@ -90,7 +90,7 @@
      <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+        <enum>Qt::Orientation::Horizontal</enum>
        </property>
        <property name="sizeHint" stdset="0">
         <size>
@@ -110,7 +110,7 @@
      <item>
       <spacer name="horizontalSpacer_2">
        <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+        <enum>Qt::Orientation::Horizontal</enum>
        </property>
        <property name="sizeHint" stdset="0">
         <size>
