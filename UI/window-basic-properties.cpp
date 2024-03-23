@@ -546,7 +546,7 @@ bool OBSBasicProperties::ConfirmQuit()
 		// Do nothing because the settings are already updated
 		break;
 	case QMessageBox::Discard:
-		obs_source_update(source, oldSettings);
+		obs_source_reset_settings(source, oldSettings);
 		break;
 	case QMessageBox::Cancel:
 		return false;
