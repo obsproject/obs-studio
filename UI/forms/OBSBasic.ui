@@ -716,6 +716,7 @@
      <string>Basic.MainMenu.Tools</string>
     </property>
     <addaction name="autoConfigure"/>
+    <addaction name="widgetPlayground"/>
     <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuDocks">
@@ -2177,9 +2178,9 @@
     <string>PasteDuplicate</string>
    </property>
   </action>
-  <action name="autoConfigure2">
+  <action name="widgetPlayground">
    <property name="text">
-    <string>Basic.AutoConfig</string>
+    <string>Widget Playground</string>
    </property>
   </action>
   <action name="autoConfigure">
