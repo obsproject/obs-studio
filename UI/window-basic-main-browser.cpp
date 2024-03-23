@@ -25,6 +25,7 @@
 
 #ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
+#include "window-dock-browser.hpp"
 #endif
 
 struct QCef;
@@ -162,3 +163,70 @@ void OBSBasic::InitBrowserPanelSafeBlock()
 	InitPanelCookieManager();
 #endif
 }
+
+#ifdef BROWSER_AVAILABLE
+bool OBSBasic::IsBrowserInitialised()
+{
+	return !!cef;
+}
+
+void OBSBasic::StorePluginBrowserDock(const PluginBrowserParams &params)
+{
+	pluginBrowserDockNames.push_back(params.id);
+	preInitPluginBrowserDocks.push_back(params);
+}
+
+void OBSBasic::LoadStoredPluginBrowserDock()
+{
+	for (int i = 0; preInitPluginBrowserDocks.size() > i; i++)
+		AddPluginBrowserDock(preInitPluginBrowserDocks[i]);
+
+	preInitPluginBrowserDocks.clear();
+}
+
+void OBSBasic::AddPluginBrowserDock(const PluginBrowserParams &params)
+{
+	static int panel_version = -1;
+	if (panel_version == -1) {
+		panel_version = obs_browser_qcef_version();
+	}
+
+	BrowserDock *dock = new BrowserDock();
+	dock->setObjectName(params.id);
+	dock->resize(460, 600);
+	dock->setMinimumSize(80, 80);
+	dock->setWindowTitle(params.title);
+
+	QCefWidget *browser =
+		cef->create_widget(dock, QT_TO_UTF8(params.url), nullptr);
+	if (browser && panel_version >= 1)
+		browser->allowAllPopups(true);
+
+	dock->SetWidget(browser);
+
+	if (!params.startupScript.isEmpty())
+		browser->setStartupScript(params.startupScript.toStdString());
+
+	for (int i = 0; params.forcePopupUrls.size() > i; i++)
+		cef->add_force_popup_url(params.forcePopupUrls[i].toStdString(),
+					 dock);
+
+	if (!pluginBrowserDockNames.contains(dock->objectName()))
+		pluginBrowserDockNames.push_back(dock->objectName());
+	AddDockWidget(dock, Qt::RightDockWidgetArea);
+
+	dock->setFloating(true);
+	dock->setVisible(false);
+}
+
+void OBSBasic::ChangePluginBrowserDockUrl(const char *id_, const char *url)
+{
+	QString id = QT_UTF8(id_);
+	if (pluginBrowserDockNames.contains(id) &&
+	    extraDockNames.contains(id)) {
+		int idx = extraDockNames.indexOf(id);
+		reinterpret_cast<BrowserDock *>(extraDocks[idx].data())
+			->cefWidget->setURL(url);
+	}
+}
+#endif
