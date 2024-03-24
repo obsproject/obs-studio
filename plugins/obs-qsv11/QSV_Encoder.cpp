@@ -77,7 +77,8 @@ void qsv_encoder_version(unsigned short *major, unsigned short *minor)
 	*minor = ver.Minor;
 }
 
-qsv_t *qsv_encoder_open(qsv_param_t *pParams, enum qsv_codec codec)
+qsv_t *qsv_encoder_open(qsv_param_t *pParams, enum qsv_codec codec,
+			bool useTexAlloc)
 {
 	obs_video_info ovi;
 	obs_get_video_info(&ovi);
@@ -102,7 +103,8 @@ qsv_t *qsv_encoder_open(qsv_param_t *pParams, enum qsv_codec codec)
 
 	bool isDGPU = adapters[adapter_idx].is_dgpu;
 
-	QSV_Encoder_Internal *pEncoder = new QSV_Encoder_Internal(ver, isDGPU);
+	QSV_Encoder_Internal *pEncoder =
+		new QSV_Encoder_Internal(ver, isDGPU, useTexAlloc);
 	mfxStatus sts = pEncoder->Open(pParams, codec);
 	if (sts != MFX_ERR_NONE) {
 
@@ -129,7 +131,7 @@ qsv_t *qsv_encoder_open(qsv_param_t *pParams, enum qsv_codec codec)
 			WARN_ERR(MFX_ERR_NOT_FOUND,
 				 "Specified object/item/sync point not found.");
 			WARN_ERR(MFX_ERR_MEMORY_ALLOC,
-				 "Gailed to allocate memory");
+				 "Failed to allocate memory");
 			WARN_ERR(MFX_ERR_LOCK_MEMORY,
 				 "failed to lock the memory block "
 				 "(external allocator).");
@@ -241,14 +243,14 @@ int qsv_encoder_encode(qsv_t *pContext, uint64_t ts, uint8_t *pDataY,
 		return -1;
 }
 
-int qsv_encoder_encode_tex(qsv_t *pContext, uint64_t ts, uint32_t tex_handle,
+int qsv_encoder_encode_tex(qsv_t *pContext, uint64_t ts, void *tex,
 			   uint64_t lock_key, uint64_t *next_key,
 			   mfxBitstream **pBS)
 {
 	QSV_Encoder_Internal *pEncoder = (QSV_Encoder_Internal *)pContext;
 	mfxStatus sts = MFX_ERR_NONE;
 
-	sts = pEncoder->Encode_tex(ts, tex_handle, lock_key, next_key, pBS);
+	sts = pEncoder->Encode_tex(ts, tex, lock_key, next_key, pBS);
 
 	if (sts == MFX_ERR_NONE)
 		return 0;

@@ -866,7 +866,7 @@ static bool obs_qsv_update(void *data, obs_data_t *settings)
 }
 
 static void *obs_qsv_create(enum qsv_codec codec, obs_data_t *settings,
-			    obs_encoder_t *encoder)
+			    obs_encoder_t *encoder, bool useTexAlloc)
 {
 	struct obs_qsv *obsqsv = bzalloc(sizeof(struct obs_qsv));
 	obsqsv->encoder = encoder;
@@ -911,7 +911,8 @@ static void *obs_qsv_create(enum qsv_codec codec, obs_data_t *settings,
 
 	if (update_settings(obsqsv, settings)) {
 		pthread_mutex_lock(&g_QsvLock);
-		obsqsv->context = qsv_encoder_open(&obsqsv->params, codec);
+		obsqsv->context =
+			qsv_encoder_open(&obsqsv->params, codec, useTexAlloc);
 		pthread_mutex_unlock(&g_QsvLock);
 
 		if (obsqsv->context == NULL)
@@ -964,17 +965,17 @@ static void *obs_qsv_create(enum qsv_codec codec, obs_data_t *settings,
 
 static void *obs_qsv_create_h264(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return obs_qsv_create(QSV_CODEC_AVC, settings, encoder);
+	return obs_qsv_create(QSV_CODEC_AVC, settings, encoder, false);
 }
 
 static void *obs_qsv_create_av1(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return obs_qsv_create(QSV_CODEC_AV1, settings, encoder);
+	return obs_qsv_create(QSV_CODEC_AV1, settings, encoder, false);
 }
 
 static void *obs_qsv_create_hevc(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return obs_qsv_create(QSV_CODEC_HEVC, settings, encoder);
+	return obs_qsv_create(QSV_CODEC_HEVC, settings, encoder, false);
 }
 
 static void *obs_qsv_create_tex(enum qsv_codec codec, obs_data_t *settings,
@@ -982,11 +983,6 @@ static void *obs_qsv_create_tex(enum qsv_codec codec, obs_data_t *settings,
 {
 	struct obs_video_info ovi;
 	obs_get_video_info(&ovi);
-
-#if !defined(_WIN32)
-	blog(LOG_INFO, ">>> fall back to non-texture sharing on this platform");
-	return obs_encoder_create_rerouted(encoder, (const char *)fallback_id);
-#endif
 
 	if (!adapters[ovi.adapter].is_intel) {
 		blog(LOG_INFO,
@@ -1026,7 +1022,7 @@ static void *obs_qsv_create_tex(enum qsv_codec codec, obs_data_t *settings,
 	}
 
 	blog(LOG_INFO, ">>> new qsv encoder");
-	return obs_qsv_create(codec, settings, encoder);
+	return obs_qsv_create(codec, settings, encoder, true);
 }
 
 static void *obs_qsv_create_tex_h264(obs_data_t *settings,
@@ -1466,14 +1462,19 @@ static bool obs_qsv_encode(void *data, struct encoder_frame *frame,
 	return true;
 }
 
-static bool obs_qsv_encode_tex(void *data, uint32_t handle, int64_t pts,
-			       uint64_t lock_key, uint64_t *next_key,
+static bool obs_qsv_encode_tex(void *data, struct encoder_texture *tex,
+			       int64_t pts, uint64_t lock_key,
+			       uint64_t *next_key,
 			       struct encoder_packet *packet,
 			       bool *received_packet)
 {
 	struct obs_qsv *obsqsv = data;
 
-	if (handle == GS_INVALID_HANDLE) {
+#ifdef _WIN32
+	if (!tex || tex->handle == GS_INVALID_HANDLE) {
+#else
+	if (!tex || !tex->tex[0] || !tex->tex[1]) {
+#endif
 		warn("Encode failed: bad texture handle");
 		*next_key = lock_key;
 		return false;
@@ -1496,8 +1497,8 @@ static bool obs_qsv_encode_tex(void *data, uint32_t handle, int64_t pts,
 	if (obs_encoder_has_roi(obsqsv->encoder))
 		obs_qsv_setup_rois(obsqsv);
 
-	ret = qsv_encoder_encode_tex(obsqsv->context, qsvPTS, handle, lock_key,
-				     next_key, &pBS);
+	ret = qsv_encoder_encode_tex(obsqsv->context, qsvPTS, (void *)tex,
+				     lock_key, next_key, &pBS);
 
 	if (ret < 0) {
 		warn("encode failed");
@@ -1526,7 +1527,7 @@ struct obs_encoder_info obs_qsv_encoder_tex = {
 	.destroy = obs_qsv_destroy,
 	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_PASS_TEXTURE |
 		OBS_ENCODER_CAP_DEPRECATED,
-	.encode_texture = obs_qsv_encode_tex,
+	.encode_texture2 = obs_qsv_encode_tex,
 	.update = obs_qsv_update,
 	.get_properties = obs_qsv_props_h264,
 	.get_defaults = obs_qsv_defaults_h264_v1,
@@ -1562,7 +1563,7 @@ struct obs_encoder_info obs_qsv_encoder_tex_v2 = {
 	.destroy = obs_qsv_destroy,
 	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_PASS_TEXTURE |
 		OBS_ENCODER_CAP_ROI,
-	.encode_texture = obs_qsv_encode_tex,
+	.encode_texture2 = obs_qsv_encode_tex,
 	.update = obs_qsv_update,
 	.get_properties = obs_qsv_props_h264_v2,
 	.get_defaults = obs_qsv_defaults_h264_v2,
@@ -1598,7 +1599,7 @@ struct obs_encoder_info obs_qsv_av1_encoder_tex = {
 	.destroy = obs_qsv_destroy,
 	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_PASS_TEXTURE |
 		OBS_ENCODER_CAP_ROI,
-	.encode_texture = obs_qsv_encode_tex,
+	.encode_texture2 = obs_qsv_encode_tex,
 	.update = obs_qsv_update,
 	.get_properties = obs_qsv_props_av1,
 	.get_defaults = obs_qsv_defaults_av1,
@@ -1632,7 +1633,7 @@ struct obs_encoder_info obs_qsv_hevc_encoder_tex = {
 	.destroy = obs_qsv_destroy,
 	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_PASS_TEXTURE |
 		OBS_ENCODER_CAP_ROI,
-	.encode_texture = obs_qsv_encode_tex,
+	.encode_texture2 = obs_qsv_encode_tex,
 	.update = obs_qsv_update,
 	.get_properties = obs_qsv_props_hevc,
 	.get_defaults = obs_qsv_defaults_hevc,
