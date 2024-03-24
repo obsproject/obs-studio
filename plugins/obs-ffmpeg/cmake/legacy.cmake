@@ -40,6 +40,7 @@ target_sources(
           obs-ffmpeg-video-encoders.c
           obs-ffmpeg-audio-encoders.c
           obs-ffmpeg-av1.c
+          obs-ffmpeg-h264.c
           obs-ffmpeg-nvenc.c
           obs-ffmpeg-output.c
           obs-ffmpeg-output.h
