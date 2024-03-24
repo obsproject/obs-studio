@@ -23,7 +23,6 @@ const uint8_t video_payload_type = 96;
 
 WHIPOutput::WHIPOutput(obs_data_t *, obs_output_t *output)
 	: output(output),
-	  is_av1(false),
 	  endpoint_url(),
 	  bearer_token(),
 	  resource_url(),
@@ -54,13 +53,6 @@ WHIPOutput::~WHIPOutput()
 bool WHIPOutput::Start()
 {
 	std::lock_guard<std::mutex> l(start_stop_mutex);
-
-	auto encoder = obs_output_get_video_encoder2(output, 0);
-	if (encoder == nullptr) {
-		return false;
-	}
-
-	is_av1 = (strcmp("av1", obs_encoder_get_codec(encoder)) == 0);
 
 	if (!obs_output_can_begin_data_capture(output, 0))
 		return false;
@@ -133,6 +125,13 @@ void WHIPOutput::ConfigureAudioTrack(std::string media_stream_id,
 void WHIPOutput::ConfigureVideoTrack(std::string media_stream_id,
 				     std::string cname)
 {
+	auto encoder = obs_output_get_video_encoder2(output, 0);
+	if (encoder == nullptr) {
+		return;
+	}
+
+	auto codec = obs_encoder_get_codec(encoder);
+
 	auto media_stream_track_id = std::string(media_stream_id + "-video");
 	std::shared_ptr<rtc::RtpPacketizer> packetizer;
 
@@ -148,16 +147,24 @@ void WHIPOutput::ConfigureVideoTrack(std::string media_stream_id,
 		ssrc, cname, video_payload_type,
 		rtc::H264RtpPacketizer::defaultClockRate);
 
-	if (is_av1) {
+	if (strcmp("av1", codec) == 0) {
 		video_description.addAV1Codec(video_payload_type);
 		packetizer = std::make_shared<rtc::AV1RtpPacketizer>(
 			rtc::AV1RtpPacketizer::Packetization::TemporalUnit,
 			rtp_config, MAX_VIDEO_FRAGMENT_SIZE);
-	} else {
+	} else if (strcmp("h264", codec) == 0) {
 		video_description.addH264Codec(video_payload_type);
 		packetizer = std::make_shared<rtc::H264RtpPacketizer>(
 			rtc::H264RtpPacketizer::Separator::StartSequence,
 			rtp_config, MAX_VIDEO_FRAGMENT_SIZE);
+	} else if (strcmp("hevc", codec) == 0) {
+		video_description.addH265Codec(video_payload_type);
+		packetizer = std::make_shared<rtc::H265RtpPacketizer>(
+			rtc::H265RtpPacketizer::Separator::StartSequence,
+			rtp_config, MAX_VIDEO_FRAGMENT_SIZE);
+	} else {
+		do_log(LOG_ERROR, "Video codec not supported: %s", codec);
+		return;
 	}
 
 	video_sr_reporter = std::make_shared<rtc::RtcpSrReporter>(rtp_config);
