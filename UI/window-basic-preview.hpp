@@ -42,6 +42,7 @@ class OBSBasicPreview : public OBSQTDisplay {
 
 	friend class SourceTree;
 	friend class SourceTreeItem;
+	friend class OBSBasic;
 
 private:
 	obs_sceneitem_crop startCrop;
@@ -81,6 +82,8 @@ private:
 	int32_t scalingLevel = 0;
 	float scalingAmount = 1.0f;
 	float groupRot = 0.0f;
+	bool updatingXScrollBar = false;
+	bool updatingYScrollBar = false;
 
 	std::vector<obs_sceneitem_t *> hoveredPreviewItems;
 	std::vector<obs_sceneitem_t *> selectedItems;
@@ -198,4 +201,6 @@ public:
 
 	void DrawSpacingHelpers();
 	void ClampScrollingOffsets();
+	void UpdateXScrollBar(float cx);
+	void UpdateYScrollBar(float cy);
 };

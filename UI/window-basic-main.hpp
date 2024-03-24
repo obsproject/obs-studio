@@ -672,6 +672,7 @@ private:
 	std::string lastReplay;
 
 	void UpdatePreviewOverflowSettings();
+	void SetPreviewScrollBarsVisible(bool visible);
 
 	bool restartingVCam = false;
 
@@ -802,6 +803,9 @@ private slots:
 
 	void on_actionCopyFilters_triggered();
 	void on_actionPasteFilters_triggered();
+
+	void on_previewXScrollBar_valueChanged(int value);
+	void on_previewYScrollBar_valueChanged(int value);
 
 	void ColorChange();
 
