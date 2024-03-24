@@ -373,6 +373,7 @@ void setThemeID(QWidget *widget, const QString &themeID)
 
 QString SelectDirectory(QWidget *parent, QString title, QString path)
 {
+	HotkeyBlocker hb;
 	QString dir = QFileDialog::getExistingDirectory(
 		parent, title, path,
 		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
@@ -383,6 +384,7 @@ QString SelectDirectory(QWidget *parent, QString title, QString path)
 QString SaveFile(QWidget *parent, QString title, QString path,
 		 QString extensions)
 {
+	HotkeyBlocker hb;
 	QString file =
 		QFileDialog::getSaveFileName(parent, title, path, extensions);
 
@@ -392,6 +394,7 @@ QString SaveFile(QWidget *parent, QString title, QString path,
 QString OpenFile(QWidget *parent, QString title, QString path,
 		 QString extensions)
 {
+	HotkeyBlocker hb;
 	QString file =
 		QFileDialog::getOpenFileName(parent, title, path, extensions);
 
@@ -401,6 +404,7 @@ QString OpenFile(QWidget *parent, QString title, QString path,
 QStringList OpenFiles(QWidget *parent, QString title, QString path,
 		      QString extensions)
 {
+	HotkeyBlocker hb;
 	QStringList files =
 		QFileDialog::getOpenFileNames(parent, title, path, extensions);
 

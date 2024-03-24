@@ -294,3 +294,10 @@ extern bool restart_safe;
 extern "C" void install_dll_blocklist_hook(void);
 extern "C" void log_blocked_dlls(void);
 #endif
+
+class HotkeyBlocker {
+public:
+	inline explicit HotkeyBlocker() { App()->DisableHotkeys(); }
+
+	inline ~HotkeyBlocker() { App()->UpdateHotkeyFocusSetting(); }
+};
