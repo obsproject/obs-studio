@@ -82,6 +82,8 @@ class OBSBasicVCamConfig;
 
 #define PREVIEW_EDGE_SIZE 10
 
+bool save_source_enum(obs_scene_t *scene, obs_sceneitem_t *item, void *p);
+
 struct BasicOutputHandler;
 
 enum class QtDataRole {
@@ -344,6 +346,7 @@ private:
 	QPointer<QMenu> blendingMethodMenu;
 	QPointer<QMenu> blendingModeMenu;
 	QPointer<QMenu> colorMenu;
+	QScopedPointer<QMenu> dupSceneToCollectionMenu;
 	QPointer<QWidgetAction> colorWidgetAction;
 	QPointer<ColorSelect> colorSelect;
 	QPointer<QMenu> deinterlaceMenu;
@@ -758,6 +761,7 @@ private slots:
 	void DeactivateAudioSource(OBSSource source);
 
 	void DuplicateSelectedScene();
+	void DuplicateToSceneCollection();
 	void RemoveSelectedScene();
 
 	void ToggleAlwaysOnTop();

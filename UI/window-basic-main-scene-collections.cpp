@@ -189,6 +189,8 @@ bool OBSBasic::AddSceneCollection(bool create_new, const QString &qname)
 
 void OBSBasic::RefreshSceneCollections()
 {
+	dupSceneToCollectionMenu.reset(new QMenu(QTStr("DuplicateSceneTo")));
+
 	QList<QAction *> menuActions = ui->sceneCollectionMenu->actions();
 	int count = 0;
 
@@ -210,10 +212,18 @@ void OBSBasic::RefreshSceneCollections()
 		connect(action, &QAction::triggered, this,
 			&OBSBasic::ChangeSceneCollection);
 		action->setCheckable(true);
-
 		action->setChecked(strcmp(name, cur_name) == 0);
 
 		ui->sceneCollectionMenu->addAction(action);
+
+		if (strcmp(name, cur_name) != 0) {
+			QAction *dupAction = new QAction(QT_UTF8(name), this);
+			dupAction->setProperty("file_name", QT_UTF8(path));
+			connect(dupAction, &QAction::triggered, this,
+				&OBSBasic::DuplicateToSceneCollection);
+			dupSceneToCollectionMenu->addAction(dupAction);
+		}
+
 		count++;
 		return true;
 	};
@@ -233,6 +243,7 @@ void OBSBasic::RefreshSceneCollections()
 	}
 
 	ui->actionRemoveSceneCollection->setEnabled(count > 1);
+	dupSceneToCollectionMenu->setEnabled(count > 1);
 
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 
@@ -482,4 +493,203 @@ void OBSBasic::ChangeSceneCollection()
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED);
+}
+
+static void DuplicateSceneMessage(bool success, const QString &from,
+				  const QString &to)
+{
+	if (success)
+		OBSMessageBox::information(
+			OBSBasic::Get(),
+			QTStr("DuplicateSceneTo.Success.Title"),
+			QTStr("DuplicateSceneTo.Success.Text").arg(from, to));
+	else
+		OBSMessageBox::warning(
+			OBSBasic::Get(), QTStr("DuplicateSceneTo.Error.Title"),
+			QTStr("DuplicateSceneTo.Error.Text").arg(from, to));
+}
+
+static string GenerateSourceName(string base, OBSDataArray array)
+{
+	string name;
+	int inc = 0;
+	const size_t count = obs_data_array_count(array);
+
+	for (;; inc++) {
+		name = base;
+
+		if (inc) {
+			name += " ";
+			name += to_string(inc + 1);
+		}
+
+		bool match = false;
+
+		for (size_t i = 0; i < count; i++) {
+			OBSDataAutoRelease sourceData =
+				obs_data_array_item(array, i);
+			string sourceName =
+				obs_data_get_string(sourceData, "name");
+
+			if (sourceName == name) {
+				match = true;
+				break;
+			}
+		}
+
+		if (!match)
+			return name;
+	}
+}
+
+static string GetDupVideoDeviceUUID(string deviceID, OBSDataArray array)
+{
+	string uuid;
+
+	const size_t count = obs_data_array_count(array);
+	for (size_t i = 0; i < count; i++) {
+		OBSDataAutoRelease sourceData = obs_data_array_item(array, i);
+		OBSDataAutoRelease settings =
+			obs_data_get_obj(sourceData, "settings");
+		string targetID = obs_data_get_string(settings, "device_id");
+
+		if (targetID == deviceID) {
+			uuid = obs_data_get_string(sourceData, "uuid");
+			break;
+		}
+	}
+
+	return uuid;
+}
+
+static string GetDeviceSettingByID(string id)
+{
+	string name;
+
+	if (id == "v4l2_input")
+		name = "device_id";
+	else if (id == "decklink-input")
+		name = "device_hash";
+	else if (id == "dshow_input")
+		name = "video_device_id";
+	else if (id == "av_capture_input")
+		name = "device";
+
+	return name;
+}
+
+void OBSBasic::DuplicateToSceneCollection()
+{
+	QAction *action = reinterpret_cast<QAction *>(sender());
+	QString fileName = action->property("file_name").value<QString>();
+	OBSScene scene = GetCurrentScene();
+	OBSSource source = obs_scene_get_source(scene);
+	string sceneName = obs_source_get_name(source);
+
+	// Get data from target scene collection
+	OBSDataAutoRelease targetData = obs_data_create_from_json_file_safe(
+		QT_TO_UTF8(fileName), "bak");
+	if (!targetData) {
+		blog(LOG_WARNING, "Failed to get scene collection");
+		DuplicateSceneMessage(false, QT_UTF8(sceneName.c_str()),
+				      action->text());
+		return;
+	}
+
+	// Get source array from target scene collection
+	OBSDataArrayAutoRelease targetSources =
+		obs_data_get_array(targetData, "sources");
+
+	// Generate save data for current scene
+	OBSDataAutoRelease sceneData = obs_save_source(source);
+
+	// Put sources of current scene into an array
+	OBSDataArrayAutoRelease sources = obs_data_array_create();
+	obs_data_array_push_back(sources, sceneData);
+	obs_scene_enum_items(scene, save_source_enum, sources);
+
+	// Generate new names/uuids for sources
+	const size_t sourceCount = obs_data_array_count(sources);
+	for (size_t i = 0; i < sourceCount; i++) {
+		OBSDataAutoRelease sourceData = obs_data_array_item(sources, i);
+
+		string oldName = obs_data_get_string(sourceData, "name");
+		string newName =
+			GenerateSourceName(oldName, targetSources.Get());
+		obs_data_set_string(sourceData, "name", newName.c_str());
+
+		string oldUUID = obs_data_get_string(sourceData, "uuid");
+		BPtr<char> newUUID = os_generate_uuid();
+		obs_data_set_string(sourceData, "old_uuid", oldUUID.c_str());
+		obs_data_set_string(sourceData, "uuid", newUUID);
+
+		// Add scene name to target scene list order
+		if (sceneName == oldName) {
+			OBSDataArrayAutoRelease sceneOrder =
+				obs_data_get_array(targetData, "scene_order");
+			OBSDataAutoRelease nameData = obs_data_create();
+			obs_data_set_string(nameData, "name", newName.c_str());
+			obs_data_array_push_back(sceneOrder, nameData);
+		}
+	}
+
+	// Get current scene's item array
+	OBSDataAutoRelease settings = obs_data_get_obj(sceneData, "settings");
+	OBSDataArrayAutoRelease items = obs_data_get_array(settings, "items");
+
+	// Make sure names/uuids match in source and item arrays
+	const size_t itemCount = obs_data_array_count(items);
+	for (size_t i = 0; i < sourceCount; i++) {
+		OBSDataAutoRelease sourceData = obs_data_array_item(sources, i);
+		string oldUUID = obs_data_get_string(sourceData, "old_uuid");
+		string newUUID = obs_data_get_string(sourceData, "uuid");
+		string sourceName = obs_data_get_string(sourceData, "name");
+		string id = obs_data_get_string(sourceData, "id");
+
+		OBSDataAutoRelease s = obs_data_get_obj(sourceData, "settings");
+		string deviceID = obs_data_get_string(
+			s, GetDeviceSettingByID(id).c_str());
+
+		if (!deviceID.empty()) {
+			string dupUUID = GetDupVideoDeviceUUID(
+				deviceID, targetSources.Get());
+
+			if (!dupUUID.empty())
+				newUUID = dupUUID;
+		}
+
+		obs_data_erase(sourceData, "old_uuid");
+
+		for (size_t j = 0; j < itemCount; j++) {
+			OBSDataAutoRelease itemData =
+				obs_data_array_item(items, j);
+			string itemUUID =
+				obs_data_get_string(itemData, "source_uuid");
+
+			if (itemUUID == oldUUID) {
+				obs_data_set_string(itemData, "source_uuid",
+						    newUUID.c_str());
+				obs_data_set_string(itemData, "name",
+						    sourceName.c_str());
+			}
+		}
+	}
+
+	// Append sources array to target data
+	for (size_t i = 0; i < sourceCount; i++) {
+		OBSDataAutoRelease sourceData = obs_data_array_item(sources, i);
+		obs_data_array_push_back(targetSources.Get(), sourceData);
+	}
+
+	// Save target scene collection
+	if (!obs_data_save_json_safe(targetData, QT_TO_UTF8(fileName), "tmp",
+				     "bak")) {
+		blog(LOG_WARNING, "Failed to copy scene to scene collection");
+		DuplicateSceneMessage(false, QT_UTF8(sceneName.c_str()),
+				      action->text());
+		return;
+	}
+
+	// Show success dialog
+	DuplicateSceneMessage(true, QT_UTF8(sceneName.c_str()), action->text());
 }
