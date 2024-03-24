@@ -16,18 +16,41 @@
 
 #include <intrin.h>
 #include <inttypes.h>
+#include <obs-module.h>
 
 /* =======================================================
  * Windows implementation of OS-specific utility functions
  */
 
-mfxStatus Initialize(mfxVersion ver, mfxSession *pSession,
+mfxStatus Initialize(mfxVersion *pVer, mfxSession *pSession,
 		     mfxFrameAllocator *pmfxAllocator, mfxHDL *deviceHandle,
 		     bool bCreateSharedHandles, enum qsv_codec codec,
 		     void **data)
 {
 	UNUSED_PARAMETER(codec);
 	UNUSED_PARAMETER(data);
+
+	obs_video_info ovi;
+	obs_get_video_info(&ovi);
+	mfxU32 adapter_idx = ovi.adapter;
+
+	//Select current adapter - will be iGPU if exists due to adapter reordering
+	if (codec == QSV_CODEC_AV1 && !adapters[adapter_idx].supports_av1) {
+		for (mfxU32 i = 0; i < 4; i++) {
+			if (adapters[i].supports_av1) {
+				adapter_idx = i;
+				break;
+			}
+		}
+	} else if (!adapters[adapter_idx].is_intel) {
+		for (mfxU32 i = 0; i < 4; i++) {
+			if (adapters[i].is_intel) {
+				adapter_idx = i;
+				break;
+			}
+		}
+	}
+	adapter_index = adapter_idx;
 
 	mfxStatus sts = MFX_ERR_NONE;
 	mfxVariant impl;
@@ -56,8 +79,9 @@ mfxStatus Initialize(mfxVersion ver, mfxSession *pSession,
 			(const mfxU8 *)"mfxImplDescription.AccelerationMode",
 			impl);
 
-		sts = MFXCreateSession(loader, 0, pSession);
-		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+		sts = MFXCreateSession(loader, adapter_idx, pSession);
+		if (sts == MFX_ERR_NONE)
+			MFXQueryVersion(*pSession, pVer);
 
 		// Create DirectX device context
 		if (deviceHandle == NULL || *deviceHandle == NULL) {
@@ -109,8 +133,9 @@ mfxStatus Initialize(mfxVersion ver, mfxSession *pSession,
 			(const mfxU8 *)"mfxImplDescription.AccelerationMode",
 			impl);
 
-		sts = MFXCreateSession(loader, 0, pSession);
-		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+		sts = MFXCreateSession(loader, adapter_idx, pSession);
+		if (sts == MFX_ERR_NONE)
+			MFXQueryVersion(*pSession, pVer);
 	}
 	return sts;
 }

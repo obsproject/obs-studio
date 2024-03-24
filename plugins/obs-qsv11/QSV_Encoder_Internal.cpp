@@ -71,7 +71,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 mfxHDL QSV_Encoder_Internal::g_DX_Handle = NULL;
 mfxU16 QSV_Encoder_Internal::g_numEncodersOpen = 0;
 
-QSV_Encoder_Internal::QSV_Encoder_Internal(mfxVersion &version, bool isDGPU)
+QSV_Encoder_Internal::QSV_Encoder_Internal(mfxVersion &version)
 	: m_pmfxSurfaces(NULL),
 	  m_pmfxENC(NULL),
 	  m_nSPSBufferSize(1024),
@@ -81,53 +81,17 @@ QSV_Encoder_Internal::QSV_Encoder_Internal(mfxVersion &version, bool isDGPU)
 	  m_nTaskIdx(0),
 	  m_nFirstSyncTask(0),
 	  m_outBitstream(),
-	  m_isDGPU(isDGPU),
-	  m_sessionData(NULL)
+	  m_sessionData(NULL),
+	  m_ver(version)
 {
-	mfxVariant tempImpl;
-	mfxStatus sts;
-
-	mfxLoader loader = MFXLoad();
-	mfxConfig cfg = MFXCreateConfig(loader);
-
-	tempImpl.Type = MFX_VARIANT_TYPE_U32;
-	tempImpl.Data.U32 = MFX_IMPL_TYPE_HARDWARE;
-	MFXSetConfigFilterProperty(
-		cfg, (const mfxU8 *)"mfxImplDescription.Impl", tempImpl);
-
-	tempImpl.Type = MFX_VARIANT_TYPE_U32;
-	tempImpl.Data.U32 = INTEL_VENDOR_ID;
-	MFXSetConfigFilterProperty(
-		cfg, (const mfxU8 *)"mfxImplDescription.VendorID", tempImpl);
 #if defined(_WIN32)
 	m_bUseD3D11 = true;
 	m_bUseTexAlloc = true;
-
-	tempImpl.Type = MFX_VARIANT_TYPE_U32;
-	tempImpl.Data.U32 = MFX_ACCEL_MODE_VIA_D3D11;
-	MFXSetConfigFilterProperty(
-		cfg, (const mfxU8 *)"mfxImplDescription.AccelerationMode",
-		tempImpl);
 #else
 	m_bUseTexAlloc = false;
-	tempImpl.Type = MFX_VARIANT_TYPE_U32;
-	tempImpl.Data.U32 = MFX_ACCEL_MODE_VIA_VAAPI;
-	MFXSetConfigFilterProperty(
-		cfg, (const mfxU8 *)"mfxImplDescription.AccelerationMode",
-		tempImpl);
 #endif
-	sts = MFXCreateSession(loader, 0, &m_session);
-	if (sts == MFX_ERR_NONE) {
-		MFXQueryVersion(m_session, &version);
-		MFXClose(m_session);
-		MFXUnload(loader);
-
-		blog(LOG_INFO, "\tsurf:           %s",
-		     m_bUseTexAlloc ? "Texture" : "SysMem");
-
-		m_ver = version;
-		return;
-	}
+	blog(LOG_INFO, "\tsurf:           %s",
+	     m_bUseTexAlloc ? "Texture" : "SysMem");
 }
 
 QSV_Encoder_Internal::~QSV_Encoder_Internal()
@@ -143,13 +107,13 @@ mfxStatus QSV_Encoder_Internal::Open(qsv_param_t *pParams, enum qsv_codec codec)
 #if defined(_WIN32)
 	if (m_bUseD3D11)
 		// Use D3D11 surface
-		sts = Initialize(m_ver, &m_session, &m_mfxAllocator,
+		sts = Initialize(&m_ver, &m_session, &m_mfxAllocator,
 				 &g_DX_Handle, false, codec, &m_sessionData);
 	else
-		sts = Initialize(m_ver, &m_session, NULL, NULL, NULL, codec,
+		sts = Initialize(&m_ver, &m_session, NULL, NULL, NULL, codec,
 				 &m_sessionData);
 #else
-	sts = Initialize(m_ver, &m_session, NULL, NULL, false, codec,
+	sts = Initialize(&m_ver, &m_session, NULL, NULL, false, codec,
 			 &m_sessionData);
 #endif
 
@@ -988,4 +952,9 @@ void QSV_Encoder_Internal::ClearROI()
 	m_ctrl.ExtParam = nullptr;
 	m_ctrl.NumExtParam = 0;
 	m_extbuf.clear();
+}
+
+mfxVersion QSV_Encoder_Internal::getVersion()
+{
+	return m_ver;
 }

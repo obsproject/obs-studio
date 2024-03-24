@@ -1098,7 +1098,7 @@ static inline void cap_resolution(struct obs_qsv *obsqsv,
 	uint32_t width = obs_encoder_get_width(obsqsv->encoder);
 	uint32_t height = obs_encoder_get_height(obsqsv->encoder);
 
-	if (qsv_encoder_is_dgpu(obsqsv->context))
+	if (adapters[adapter_index].is_dgpu == true)
 		qsv_platform = QSV_CPU_PLATFORM_UNKNOWN;
 
 	info->height = height;
