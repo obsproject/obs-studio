@@ -10,6 +10,7 @@
 #include "net-if.h"
 
 #ifdef _WIN32
+#include <qos2.h>
 #include <Iphlpapi.h>
 #else
 #include <sys/ioctl.h>
@@ -31,6 +32,7 @@
 #define OPT_IP_FAMILY "ip_family"
 #define OPT_NEWSOCKETLOOP_ENABLED "new_socket_loop_enabled"
 #define OPT_LOWLATENCY_ENABLED "low_latency_mode_enabled"
+#define OPT_QUALITY_OF_SERVICE "qos"
 #define OPT_METADATA_MULTITRACK "metadata_multitrack"
 
 //#define TEST_FRAMEDROPS
@@ -120,6 +122,7 @@ struct rtmp_stream {
 
 	bool new_socket_loop;
 	bool low_latency_mode;
+	bool quality_of_service;
 	bool disable_send_window_optimization;
 	bool socket_thread_active;
 	pthread_t socket_thread;
@@ -131,6 +134,10 @@ struct rtmp_stream {
 	os_event_t *buffer_has_data_event;
 	os_event_t *socket_available_event;
 	os_event_t *send_thread_signaled_exit;
+
+#ifdef _WIN32
+	HANDLE qos_handle;
+#endif
 };
 
 #ifdef _WIN32

@@ -67,6 +67,7 @@ target_link_libraries(
           $<$<PLATFORM_ID:Windows>:iphlpapi>
           $<$<PLATFORM_ID:Windows>:winmm>
           $<$<PLATFORM_ID:Windows>:ws2_32>
+          $<$<PLATFORM_ID:Windows>:qwave>
           "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,Foundation.framework>>"
           "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,Security.framework>>")
 
