@@ -138,7 +138,9 @@ SourceTree QWidget {
 
 /* Misc */
 
-QAbstractItemView, QStackedWidget#stackedMixerArea QWidget {
+QAbstractItemView,
+QStackedWidget#stackedMixerArea QWidget,
+QStackedWidget#stackedAudioTrackMixerArea QWidget {
     background-color: palette(base);
 }
 
@@ -915,21 +917,25 @@ QSlider::handle:disabled {
 
 /* Volume Control */
 
-#stackedMixerArea QPushButton {
+#stackedMixerArea QPushButton,
+#stackedAudioTrackMixerArea QPushButton {
     min-width: 16px;
     padding: 4px 8px;
 }
 
 /* This is an incredibly cursed but necessary fix */
-#stackedMixerArea QPushButton:!hover {
+#stackedMixerArea QPushButton:!hover,
+#stackedAudioTrackMixerArea QPushButton:!hover {
     background-color: palette(button);
 }
 
-#stackedMixerArea QPushButton:hover {
+#stackedMixerArea QPushButton:hover,
+#stackedAudioTrackMixerArea QPushButton:hover {
     background-color: rgb(254,254,255);
 }
 
-#stackedMixerArea QPushButton:pressed {
+#stackedMixerArea QPushButton:pressed,
+#stackedAudioTrackMixerArea QPushButton:pressed {
     background-color: rgb(193,193,193);
 }
 

@@ -92,7 +92,9 @@ QWidget::disabled {
     color: rgb(165,164,165); /* disabledText */
 }
 
-QAbstractItemView, QStackedWidget#stackedMixerArea QWidget {
+QAbstractItemView,
+QStackedWidget#stackedMixerArea QWidget,
+QStackedWidget#stackedAudioTrackMixerArea QWidget {
     background-color: palette(base);
 }
 

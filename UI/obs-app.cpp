@@ -531,6 +531,8 @@ bool OBSApp::InitGlobalConfigDefaults()
 
 	config_set_default_bool(globalConfig, "BasicWindow",
 				"MediaControlsCountdownTimer", true);
+	config_set_default_bool(globalConfig, "BasicWindow",
+				"VerticalAudioTrackControls", true);
 
 	return true;
 }

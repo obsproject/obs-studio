@@ -4,6 +4,8 @@
 #define PULSE_DATA(voidptr) struct audio_monitor *data = voidptr;
 #define blog(level, msg, ...) blog(level, "pulse-am: " msg, ##__VA_ARGS__)
 
+static volatile long audio_track_active;
+
 struct audio_monitor {
 	obs_source_t *source;
 	pa_stream *stream;
@@ -23,6 +25,8 @@ struct audio_monitor {
 
 	bool ignore;
 	pthread_mutex_t playback_mutex;
+
+	bool audio_track;
 };
 
 static enum speaker_layout
@@ -252,6 +256,10 @@ static void on_audio_playback(void *param, obs_source_t *source,
 		return;
 
 	if (os_atomic_load_long(&source->activate_refs) == 0)
+		goto unlock;
+
+	if (!monitor->audio_track &&
+	    os_atomic_load_long(&audio_track_active) > 0)
 		goto unlock;
 
 	success = audio_resampler_resample(
@@ -501,6 +509,9 @@ static inline void audio_monitor_free(struct audio_monitor *monitor)
 		obs_source_remove_audio_capture_callback(
 			monitor->source, on_audio_playback, monitor);
 
+	if (monitor->audio_track)
+		os_atomic_dec_long(&audio_track_active);
+
 	audio_resampler_destroy(monitor->resampler);
 	deque_free(&monitor->new_data);
 
@@ -524,6 +535,12 @@ struct audio_monitor *audio_monitor_create(obs_source_t *source)
 	pthread_mutex_lock(&obs->audio.monitoring_mutex);
 	da_push_back(obs->audio.monitors, &out);
 	pthread_mutex_unlock(&obs->audio.monitoring_mutex);
+
+	out->audio_track =
+		(out->source->info.output_flags & OBS_SOURCE_AUDIO_TRACK) != 0;
+
+	if (out->audio_track)
+		os_atomic_inc_long(&audio_track_active);
 
 	audio_monitor_init_final(out);
 	return out;

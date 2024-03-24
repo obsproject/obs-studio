@@ -176,6 +176,8 @@ Source Definition Structure (obs_source_info)
      to have its properties shown on creation (prefers to rely on
      defaults first)
 
+   - **OBS_SOURCE_AUDIO_TRACK** - The source is an audio track.
+
 .. member:: const char *(*obs_source_info.get_name)(void *type_data)
 
    Get the translated name of the source type.

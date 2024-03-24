@@ -203,6 +203,11 @@ enum obs_media_state {
  */
 #define OBS_SOURCE_CAP_DONT_SHOW_PROPERTIES (1 << 16)
 
+/**
+ * Source is an audio track container
+ */
+#define OBS_SOURCE_AUDIO_TRACK (1 << 17)
+
 /** @} */
 
 typedef void (*obs_source_enum_proc_t)(obs_source_t *parent,

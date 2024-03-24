@@ -528,6 +528,9 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in,
 	size_t audio_size;
 	uint64_t min_ts;
 
+	const struct audio_output_info *obs_info =
+		audio_output_get_info(audio->audio);
+
 	da_resize(audio->render_order, 0);
 	da_resize(audio->root_nodes, 0);
 
@@ -655,6 +658,37 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in,
 
 			pthread_mutex_unlock(&source->audio_buf_mutex);
 		}
+
+		pthread_mutex_lock(&data->audio_sources_mutex);
+
+		for (size_t i = 0; i < MAX_AUDIO_MIXES; i++) {
+			obs_source_t *source = obs->data.tracks[i];
+			if (!source)
+				continue;
+
+			struct obs_source_audio s;
+			s.format = obs_info->format;
+			s.frames = AUDIO_OUTPUT_FRAMES;
+			s.samples_per_sec = (uint32_t)sample_rate;
+			s.speakers = obs_info->speakers;
+			s.timestamp = ts.end;
+
+			for (size_t j = 0; j < channels; j++)
+				s.data[j] = (const uint8_t *)mixes[i].data[j];
+
+			struct obs_audio_data *o =
+				obs_source_get_output_audio_data(source, &s);
+
+			for (size_t j = 0; j < channels; j++) {
+				if (o)
+					memcpy(mixes[i].data[j], o->data[j],
+					       audio_size);
+				else
+					memset(mixes[i].data[j], 0, audio_size);
+			}
+		}
+
+		pthread_mutex_unlock(&data->audio_sources_mutex);
 	}
 
 	/* ------------------------------------------------ */

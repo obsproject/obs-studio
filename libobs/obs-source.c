@@ -4210,17 +4210,18 @@ static void process_audio(obs_source_t *source,
 		downmix_to_mono_planar(source, frames);
 }
 
-void obs_source_output_audio(obs_source_t *source,
-			     const struct obs_source_audio *audio_in)
+struct obs_audio_data *
+obs_source_get_output_audio_data(obs_source_t *source,
+				 const struct obs_source_audio *audio_in)
 {
-	struct obs_audio_data *output;
-
-	if (!obs_source_valid(source, "obs_source_output_audio"))
-		return;
+	if (!obs_source_valid(source, "obs_source_get_output_audio_data"))
+		return NULL;
 	if (destroying(source))
-		return;
-	if (!obs_ptr_valid(audio_in, "obs_source_output_audio"))
-		return;
+		return NULL;
+	if (!obs_ptr_valid(audio_in, "obs_source_get_output_audio_data"))
+		return NULL;
+
+	struct obs_audio_data *output;
 
 	/* sets unused data pointers to NULL automatically because apparently
 	 * some filter plugins aren't checking the actual channel count, and
@@ -4250,6 +4251,14 @@ void obs_source_output_audio(obs_source_t *source,
 	}
 
 	pthread_mutex_unlock(&source->filter_mutex);
+
+	return output;
+}
+
+void obs_source_output_audio(obs_source_t *source,
+			     const struct obs_source_audio *audio)
+{
+	obs_source_get_output_audio_data(source, audio);
 }
 
 void remove_async_frame(obs_source_t *source, struct obs_source_frame *frame)

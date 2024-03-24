@@ -12,6 +12,8 @@
 
 #include "mac-helpers.h"
 
+static volatile long audio_track_active;
+
 struct audio_monitor {
 	obs_source_t *source;
 	AudioQueueRef queue;
@@ -28,6 +30,8 @@ struct audio_monitor {
 	volatile bool active;
 	bool paused;
 	bool ignore;
+
+	bool audio_track;
 };
 
 static inline bool fill_buffer(struct audio_monitor *monitor)
@@ -77,6 +81,10 @@ static void on_audio_playback(void *param, obs_source_t *source,
 	if (os_atomic_load_long(&source->activate_refs) == 0) {
 		return;
 	}
+
+	if (!monitor->audio_track &&
+	    os_atomic_load_long(&audio_track_active) > 0)
+		return;
 
 	uint8_t *resample_data[MAX_AV_PLANES];
 	uint32_t resample_frames;
@@ -285,6 +293,9 @@ static void audio_monitor_free(struct audio_monitor *monitor)
 		AudioQueueDispose(monitor->queue, true);
 	}
 
+	if (monitor->audio_track)
+		os_atomic_dec_long(&audio_track_active);
+
 	audio_resampler_destroy(monitor->resampler);
 	deque_free(&monitor->empty_buffers);
 	deque_free(&monitor->new_data);
@@ -313,6 +324,12 @@ struct audio_monitor *audio_monitor_create(obs_source_t *source)
 	pthread_mutex_lock(&obs->audio.monitoring_mutex);
 	da_push_back(obs->audio.monitors, &monitor);
 	pthread_mutex_unlock(&obs->audio.monitoring_mutex);
+
+	monitor->audio_track = (monitor->source->info.output_flags &
+				OBS_SOURCE_AUDIO_TRACK) != 0;
+
+	if (monitor->audio_track)
+		os_atomic_inc_long(&audio_track_active);
 
 	audio_monitor_init_final(monitor);
 	return monitor;

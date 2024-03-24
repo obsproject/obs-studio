@@ -28,6 +28,8 @@ ACTUALLY_DEFINE_GUID(IID_IAudioClient, 0x1CB9AD4C, 0xDBFA, 0x4C32, 0xB1, 0x78,
 ACTUALLY_DEFINE_GUID(IID_IAudioRenderClient, 0xF294ACFC, 0x3146, 0x4483, 0xA7,
 		     0xBF, 0xAD, 0xDC, 0xA7, 0xC2, 0x60, 0xE2);
 
+static volatile long audio_track_active;
+
 struct audio_monitor {
 	obs_source_t *source;
 	IAudioClient *client;
@@ -48,6 +50,8 @@ struct audio_monitor {
 
 	DARRAY(float) buf;
 	SRWLOCK playback_mutex;
+
+	bool audio_track;
 };
 
 /* #define DEBUG_AUDIO */
@@ -320,6 +324,10 @@ static void on_audio_playback(void *param, obs_source_t *source,
 		goto free_for_reconnect;
 	}
 
+	if (!monitor->audio_track &&
+	    os_atomic_load_long(&audio_track_active) > 0)
+		goto unlock;
+
 	success = audio_resampler_resample(
 		monitor->resampler, resample_data, &resample_frames, &ts_offset,
 		(const uint8_t *const *)audio_data->data,
@@ -395,6 +403,9 @@ static inline void audio_monitor_free(struct audio_monitor *monitor)
 	if (monitor->client)
 		monitor->client->lpVtbl->Stop(monitor->client);
 
+	if (monitor->audio_track)
+		os_atomic_dec_long(&audio_track_active);
+
 	safe_release(monitor->client);
 	safe_release(monitor->render);
 	audio_resampler_destroy(monitor->resampler);
@@ -457,6 +468,12 @@ struct audio_monitor *audio_monitor_create(obs_source_t *source)
 	pthread_mutex_lock(&obs->audio.monitoring_mutex);
 	da_push_back(obs->audio.monitors, &out);
 	pthread_mutex_unlock(&obs->audio.monitoring_mutex);
+
+	out->audio_track =
+		(out->source->info.output_flags & OBS_SOURCE_AUDIO_TRACK) != 0;
+
+	if (out->audio_track)
+		os_atomic_inc_long(&audio_track_active);
 
 	audio_monitor_init_final(out);
 	return out;

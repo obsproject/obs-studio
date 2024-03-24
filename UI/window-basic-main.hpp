@@ -434,7 +434,9 @@ private:
 	void GetAudioSourceProperties();
 	void VolControlContextMenu();
 	void ToggleVolControlLayout();
+	void ToggleAudioTrackLayout();
 	void ToggleMixerLayout(bool vertical);
+	void ToggleAudioTrackMixerLayout(bool vertical);
 
 	void RefreshSceneCollections();
 	void ChangeSceneCollection();
@@ -744,6 +746,9 @@ public slots:
 	void PauseRecording();
 	void UnpauseRecording();
 
+	void ActivateAudioSource(OBSSource source);
+	void DeactivateAudioSource(OBSSource source);
+
 private slots:
 
 	void on_actionMainUndo_triggered();
@@ -753,9 +758,6 @@ private slots:
 	void AddScene(OBSSource source);
 	void RemoveScene(OBSSource source);
 	void RenameSources(OBSSource source, QString newName, QString prevName);
-
-	void ActivateAudioSource(OBSSource source);
-	void DeactivateAudioSource(OBSSource source);
 
 	void DuplicateSelectedScene();
 	void RemoveSelectedScene();
@@ -789,12 +791,15 @@ private slots:
 
 	void HideAudioControl();
 	void UnhideAllAudioControls();
+	void UnhideAllAudioTrackControls();
 	void ToggleHideMixer();
 
 	void MixerRenameSource();
 
 	void on_vMixerScrollArea_customContextMenuRequested();
 	void on_hMixerScrollArea_customContextMenuRequested();
+	void on_vAudioTrackMixerScrollArea_customContextMenuRequested();
+	void on_hAudioTrackMixerScrollArea_customContextMenuRequested();
 
 	void on_actionCopySource_triggered();
 	void on_actionPasteRef_triggered();
@@ -848,6 +853,8 @@ private slots:
 
 	void LockVolumeControl(bool lock);
 	void ThemeChanged();
+
+	void ResetAudioTrackControls();
 
 	void UpdateVirtualCamConfig(const VCamConfig &config);
 	void RestartVirtualCam(const VCamConfig &config);
@@ -929,6 +936,7 @@ public:
 
 	void ResetAudioDevice(const char *sourceId, const char *deviceId,
 			      const char *deviceDesc, int channel);
+	void ResetAudioTrack(int track);
 
 	void NewProject();
 	void LoadProject();
@@ -1061,6 +1069,7 @@ private slots:
 	void on_actionAdvAudioProperties_triggered();
 	void on_actionMixerToolbarAdvAudio_triggered();
 	void on_actionMixerToolbarMenu_triggered();
+	void on_actionAudioTrackMixerToolbarMenu_triggered();
 	void on_actionShowLogs_triggered();
 	void on_actionUploadCurrentLog_triggered();
 	void on_actionUploadLastLog_triggered();
@@ -1225,7 +1234,8 @@ private slots:
 	void OpenSourceWindow();
 	void OpenSceneWindow();
 
-	void StackedMixerAreaContextMenuRequested();
+	void StackedMixerAreaContextMenuRequested(bool audioTrack = false,
+						  bool menuButton = false);
 
 	void ResizeOutputSizeOfSource();
 

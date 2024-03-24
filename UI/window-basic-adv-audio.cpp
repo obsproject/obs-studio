@@ -51,6 +51,7 @@ bool OBSBasicAdvAudio::EnumSources(void *param, obs_source_t *source)
 	uint32_t flags = obs_source_get_output_flags(source);
 
 	if ((flags & OBS_SOURCE_AUDIO) != 0 &&
+	    (flags & OBS_SOURCE_AUDIO_TRACK) == 0 &&
 	    (dialog->showInactive || obs_source_active(source)))
 		dialog->AddAudioSource(source);
 
