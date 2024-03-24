@@ -41,6 +41,7 @@ extern struct obs_encoder_info h264_nvenc_encoder_info;
 #ifdef ENABLE_HEVC
 extern struct obs_encoder_info hevc_nvenc_encoder_info;
 #endif
+extern struct obs_encoder_info av1_nvenc_encoder_info;
 extern struct obs_encoder_info svt_av1_encoder_info;
 extern struct obs_encoder_info aom_av1_encoder_info;
 
@@ -243,7 +244,7 @@ extern bool load_nvenc_lib(void);
 static bool nvenc_codec_exists(const char *name, const char *fallback)
 {
 	const AVCodec *nvenc = avcodec_find_encoder_by_name(name);
-	if (!nvenc)
+	if (!nvenc && fallback)
 		nvenc = avcodec_find_encoder_by_name(fallback);
 
 	return nvenc != NULL;
@@ -273,8 +274,10 @@ static bool nvenc_supported(bool *out_h264, bool *out_hevc, bool *out_av1)
 		if (success) {
 			void *const lib = os_dlopen("libnvidia-encode.so.1");
 			success = lib != NULL;
-			if (success)
+			if (success) {
 				os_dlclose(lib);
+				av1 = nvenc_codec_exists("av1_nvenc", NULL);
+			}
 		}
 #else
 		void *const lib = os_dlopen("libnvidia-encode.so.1");
@@ -390,6 +393,8 @@ bool obs_module_load(void)
 		if (hevc)
 			obs_register_encoder(&hevc_nvenc_encoder_info);
 #endif
+		if (av1)
+			obs_register_encoder(&av1_nvenc_encoder_info);
 	}
 
 #ifdef _WIN32
