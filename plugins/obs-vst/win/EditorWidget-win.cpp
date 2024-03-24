@@ -35,8 +35,8 @@ void EditorWidget::buildEffectContainer(AEffect *effect)
 	LONG_PTR wndPtr = (LONG_PTR)effect;
 	SetWindowLongPtr(windowHandle, -21 /*GWLP_USERDATA*/, wndPtr);
 
-	QWidget *widget = QWidget::createWindowContainer(
-		QWindow::fromWinId((WId)windowHandle), nullptr);
+	QWindow *window = QWindow::fromWinId((WId)windowHandle);
+	QWidget *widget = QWidget::createWindowContainer(window, nullptr);
 	widget->move(0, 0);
 	QGridLayout *layout = new QGridLayout();
 	layout->setContentsMargins(0, 0, 0, 0);
@@ -52,7 +52,7 @@ void EditorWidget::buildEffectContainer(AEffect *effect)
 		// on Windows, the size reported by 'effect' is larger than
 		// its actuall size by a factor of the monitor's ui scale,
 		// so the window size should be divided by the factor
-		qreal scale_factor = devicePixelRatioF();
+		qreal scale_factor = window->devicePixelRatio();
 		int width = vstRect->right - vstRect->left;
 		int height = vstRect->bottom - vstRect->top;
 		width = static_cast<int>(width / scale_factor);
@@ -81,7 +81,8 @@ void EditorWidget::handleResizeRequest(int, int)
 		// on Windows, the size reported by 'effect' is larger than
 		// its actuall size by a factor of the monitor's ui scale,
 		// so the window size should be divided by the factor
-		qreal scale_factor = devicePixelRatioF();
+		QWindow *window = QWindow::fromWinId((WId)windowHandle);
+		qreal scale_factor = window->devicePixelRatio();
 		int width = rec->right - rec->left;
 		int height = rec->bottom - rec->top;
 		width = static_cast<int>(width / scale_factor);
