@@ -758,7 +758,6 @@ private slots:
 	void DeactivateAudioSource(OBSSource source);
 
 	void DuplicateSelectedScene();
-	void RemoveSelectedScene();
 
 	void ToggleAlwaysOnTop();
 
@@ -890,6 +889,9 @@ private:
 	OBSSource prevFTBSource = nullptr;
 
 	float dpi = 1.0;
+
+	int GetSceneIndex(OBSScene scene);
+	void DeleteScenes(std::vector<OBSScene> scenes);
 
 public:
 	OBSSource GetProgramSource();
