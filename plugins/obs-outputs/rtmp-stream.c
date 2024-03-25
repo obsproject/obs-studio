@@ -1158,18 +1158,6 @@ static int init_send(struct rtmp_stream *stream)
 		return OBS_OUTPUT_DISCONNECTED;
 	}
 
-	obs_encoder_t *aencoder = obs_output_get_audio_encoder(context, 1);
-	if (aencoder && !send_additional_meta_data(stream)) {
-		warn("Disconnected while attempting to send additional "
-		     "metadata");
-		return OBS_OUTPUT_DISCONNECTED;
-	}
-
-	if (obs_output_get_audio_encoder(context, 2) != NULL) {
-		warn("Additional audio streams not supported");
-		return OBS_OUTPUT_DISCONNECTED;
-	}
-
 	obs_output_begin_data_capture(stream->output, 0);
 
 	return OBS_OUTPUT_SUCCESS;
