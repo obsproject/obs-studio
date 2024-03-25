@@ -406,25 +406,17 @@ static int handle_socket_read(struct rtmp_stream *stream)
 }
 
 static int send_packet(struct rtmp_stream *stream,
-		       struct encoder_packet *packet, bool is_header,
-		       size_t idx)
+		       struct encoder_packet *packet, bool is_header)
 {
 	uint8_t *data;
 	size_t size;
 	int ret = 0;
 
-	assert(idx < RTMP_MAX_STREAMS);
 	if (handle_socket_read(stream))
 		return -1;
 
-	if (idx > 0) {
-		flv_additional_packet_mux(
-			packet, is_header ? 0 : stream->start_dts_offset, &data,
-			&size, is_header, idx);
-	} else {
-		flv_packet_mux(packet, is_header ? 0 : stream->start_dts_offset,
-			       &data, &size, is_header);
-	}
+	flv_packet_mux(packet, is_header ? 0 : stream->start_dts_offset, &data,
+		       &size, is_header);
 
 #ifdef TEST_FRAMEDROPS
 	droptest_cap_data_rate(stream, size);
@@ -712,8 +704,7 @@ static void *send_thread(void *data)
 			sent = send_audio_packet_ex(stream, &packet, false,
 						    packet.track_idx);
 		} else {
-			sent = send_packet(stream, &packet, false,
-					   packet.track_idx);
+			sent = send_packet(stream, &packet, false);
 		}
 
 		if (sent < 0) {
@@ -783,20 +774,6 @@ static void *send_thread(void *data)
 	return NULL;
 }
 
-static bool send_additional_meta_data(struct rtmp_stream *stream)
-{
-	uint8_t *meta_data;
-	size_t meta_data_size;
-	bool success = true;
-
-	flv_additional_meta_data(stream->output, &meta_data, &meta_data_size);
-	success = RTMP_Write(&stream->rtmp, (char *)meta_data,
-			     (int)meta_data_size, 0) >= 0;
-	bfree(meta_data);
-
-	return success;
-}
-
 static bool send_meta_data(struct rtmp_stream *stream)
 {
 	uint8_t *meta_data;
@@ -829,7 +806,7 @@ static bool send_audio_header(struct rtmp_stream *stream, size_t idx,
 	if (obs_encoder_get_extra_data(aencoder, &header, &packet.size)) {
 		packet.data = bmemdup(header, packet.size);
 		if (idx == 0) {
-			return send_packet(stream, &packet, true, idx) >= 0;
+			return send_packet(stream, &packet, true) >= 0;
 		} else {
 			return send_audio_packet_ex(stream, &packet, true,
 						    idx) >= 0;
@@ -866,7 +843,7 @@ static bool send_video_header(struct rtmp_stream *stream, size_t idx)
 		packet.size = obs_parse_avc_header(&packet.data, header, size);
 		// Always send H.264 on track 0 as old style for compatibility.
 		if (idx == 0) {
-			return send_packet(stream, &packet, true, idx) >= 0;
+			return send_packet(stream, &packet, true) >= 0;
 		} else {
 			return send_packet_ex(stream, &packet, true, false,
 					      idx) >= 0;
