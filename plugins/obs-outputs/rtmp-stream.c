@@ -480,6 +480,37 @@ static int send_packet_ex(struct rtmp_stream *stream,
 	return ret;
 }
 
+static int send_audio_packet_ex(struct rtmp_stream *stream,
+				struct encoder_packet *packet, bool is_header,
+				size_t idx)
+{
+	uint8_t *data;
+	size_t size = 0;
+	int ret = 0;
+
+	if (handle_socket_read(stream))
+		return -1;
+
+	if (is_header) {
+		flv_packet_audio_start(packet, stream->audio_codec[idx], &data,
+				       &size, idx);
+	} else {
+		flv_packet_audio_frames(packet, stream->audio_codec[idx],
+					stream->start_dts_offset, &data, &size,
+					idx);
+	}
+
+	ret = RTMP_Write(&stream->rtmp, (char *)data, (int)size, 0);
+	bfree(data);
+
+	if (is_header)
+		bfree(packet->data);
+	else
+		obs_encoder_packet_release(packet);
+
+	return ret;
+}
+
 static inline bool send_headers(struct rtmp_stream *stream);
 static inline bool send_footers(struct rtmp_stream *stream);
 
@@ -676,6 +707,10 @@ static void *send_thread(void *data)
 		      packet.track_idx != 0))) {
 			sent = send_packet_ex(stream, &packet, false, false,
 					      packet.track_idx);
+		} else if (packet.type == OBS_ENCODER_AUDIO &&
+			   packet.track_idx != 0) {
+			sent = send_audio_packet_ex(stream, &packet, false,
+						    packet.track_idx);
 		} else {
 			sent = send_packet(stream, &packet, false,
 					   packet.track_idx);
@@ -791,10 +826,16 @@ static bool send_audio_header(struct rtmp_stream *stream, size_t idx,
 		return true;
 	}
 
-	if (!obs_encoder_get_extra_data(aencoder, &header, &packet.size))
-		return false;
-	packet.data = bmemdup(header, packet.size);
-	return send_packet(stream, &packet, true, idx) >= 0;
+	if (obs_encoder_get_extra_data(aencoder, &header, &packet.size)) {
+		packet.data = bmemdup(header, packet.size);
+		if (idx == 0) {
+			return send_packet(stream, &packet, true, idx) >= 0;
+		} else {
+			return send_audio_packet_ex(stream, &packet, true,
+						    idx) >= 0;
+		}
+	}
+	return false;
 }
 
 static bool send_video_header(struct rtmp_stream *stream, size_t idx)
@@ -1334,6 +1375,15 @@ static bool init_connect(struct rtmp_stream *stream)
 	obs_encoder_t *aenc = obs_output_get_audio_encoder(stream->output, 0);
 	obs_data_t *vsettings = obs_encoder_get_settings(venc);
 	obs_data_t *asettings = obs_encoder_get_settings(aenc);
+	for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
+		obs_encoder_t *enc =
+			obs_output_get_audio_encoder(stream->output, i);
+		if (enc) {
+			const char *codec = obs_encoder_get_codec(enc);
+			stream->audio_codec[i] = to_audio_type(codec);
+		}
+	}
+
 	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
 		obs_encoder_t *enc =
 			obs_output_get_video_encoder2(stream->output, i);
