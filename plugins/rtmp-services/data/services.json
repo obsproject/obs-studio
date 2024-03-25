@@ -2692,25 +2692,6 @@
             }
         },
         {
-            "name": "CHZZK",
-            "common": false,
-            "stream_key_link": "https://studio.chzzk.naver.com/setting",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://global-rtmp.lip2.navercorp.com:8080/relay"
-                }
-            ],
-            "supported video codecs": [
-                "h264"
-            ],
-            "recommended": {
-                "keyint": 1,
-                "profile": "high",
-                "bframes": 0
-            }
-        },
-        {
             "name": "Streamway",
             "common": false,
             "more_info_link": "https://support.streamway.in/how-to-connect-obs-studio-to-streamway/",
@@ -2798,6 +2779,56 @@
                 "keyint": 2,
                 "max video bitrate": 12000,
                 "max audio bitrate": 320
+            }
+        },
+        {
+            "name": "CHZZK - Good Quality",
+            "common": false,
+            "stream_key_link": "https://studio.chzzk.naver.com/setting",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://global.rtmp.lip2.navercorp.com:8080/relay"
+                }
+            ],
+            "supported video codecs": [
+                "h264"
+            ],
+            "recommended": {
+                "keyint": 2,
+                "supported resolutions": [
+                    "1920x1080"
+                ],
+                "bframes": 2,
+                "max fps": 60,
+                "max video bitrate": 8000,
+                "max audio bitrate": 192,
+                "x264opts": "scenecut=0"
+            }
+        },
+        {
+            "name": "CHZZK - Low Latency",
+            "common": false,
+            "stream_key_link": "https://studio.chzzk.naver.com/setting",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://global.rtmp.lip2.navercorp.com:8080/relay"
+                }
+            ],
+            "supported video codecs": [
+                "h264"
+            ],
+            "recommended": {
+                "keyint": 1,
+                "supported resolutions": [
+                    "1920x1080"
+                ],
+                "bframes": 0,
+                "max fps": 60,
+                "max video bitrate": 8000,
+                "max audio bitrate": 192,
+                "x264opts": "tune=zerolatency scenecut=0"
             }
         }
     ]
