@@ -34,6 +34,12 @@
 
 #include "../../deps/w32-pthreads/pthread.h"
 
+#if !defined(NEED_FTIME)
+#include <sys/timeb.h>
+#else
+extern void ptw32_filetime_to_timespec(const FILETIME *ft, struct timespec *ts);
+#endif
+
 #define MAX_SZ_LEN 256
 
 static bool have_clockfreq = false;
@@ -422,6 +428,23 @@ void os_cpu_usage_info_destroy(os_cpu_usage_info_t *info)
 		bfree(info);
 }
 
+void os_sleepto_ns_internal(const LONGLONG count_target, LARGE_INTEGER count,
+			    const uint64_t freq)
+{
+	const DWORD milliseconds =
+		(DWORD)(((count_target - count.QuadPart) * 1000.0) / freq);
+	if (milliseconds > 1)
+		Sleep(milliseconds - 1);
+
+	for (;;) {
+		QueryPerformanceCounter(&count);
+		if (count.QuadPart >= count_target)
+			break;
+
+		YieldProcessor();
+	}
+}
+
 bool os_sleepto_ns(uint64_t time_target)
 {
 	const uint64_t freq = get_clockfreq();
@@ -432,21 +455,8 @@ bool os_sleepto_ns(uint64_t time_target)
 	QueryPerformanceCounter(&count);
 
 	const bool stall = count.QuadPart < count_target;
-	if (stall) {
-		const DWORD milliseconds =
-			(DWORD)(((count_target - count.QuadPart) * 1000.0) /
-				freq);
-		if (milliseconds > 1)
-			Sleep(milliseconds - 1);
-
-		for (;;) {
-			QueryPerformanceCounter(&count);
-			if (count.QuadPart >= count_target)
-				break;
-
-			YieldProcessor();
-		}
-	}
+	if (stall)
+		os_sleepto_ns_internal(count_target, count, freq);
 
 	return stall;
 }
@@ -469,6 +479,18 @@ bool os_sleepto_ns_fast(uint64_t time_target)
 	return true;
 }
 
+void os_sleep_ns(uint64_t duration)
+{
+	const uint64_t freq = get_clockfreq();
+
+	LARGE_INTEGER count;
+	QueryPerformanceCounter(&count);
+
+	const LONGLONG count_target =
+		count.QuadPart + util_mul_div64(duration, freq, 1000000000);
+	os_sleepto_ns_internal(count_target, count, freq);
+}
+
 void os_sleep_ms(uint32_t duration)
 {
 	/* windows 8+ appears to have decreased sleep precision */
@@ -484,6 +506,52 @@ uint64_t os_gettime_ns(void)
 	QueryPerformanceCounter(&current_time);
 	return util_mul_div64(current_time.QuadPart, 1000000000,
 			      get_clockfreq());
+}
+
+/* Time */
+void os_realtime_ts(struct timespec *ts)
+{
+#if defined(NEED_FTIME)
+	FILETIME ft;
+	SYSTEMTIME st;
+#else /* ! NEED_FTIME */
+#if (defined(_MSC_VER) && _MSC_VER >= 1300) ||             \
+	((defined(__MINGW64__) || defined(__MINGW32__)) && \
+	 __MSVCRT_VERSION__ >= 0x0601)
+	struct __timeb64 currSysTime;
+#else
+	struct _timeb currSysTime;
+#endif
+#endif /* NEED_FTIME */
+
+#if defined(NEED_FTIME)
+
+	GetSystemTime(&st);
+	SystemTimeToFileTime(&st, &ft);
+	/*
+	 * GetSystemTimeAsFileTime(&ft); would be faster,
+	 * but it does not exist on WinCE
+	 */
+
+	ptw32_filetime_to_timespec(&ft, ts);
+
+#else /* ! NEED_FTIME */
+
+	const uint64_t NANOSEC_PER_MILLISEC = 1000000;
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+	_ftime64_s(&currSysTime);
+#elif (defined(_MSC_VER) && _MSC_VER >= 1300) ||           \
+	((defined(__MINGW64__) || defined(__MINGW32__)) && \
+	 __MSVCRT_VERSION__ >= 0x0601)
+	_ftime64(&currSysTime);
+#else
+	_ftime(&currSysTime);
+#endif
+	ts->tv_sec = (time_t)(currSysTime.time);
+	ts->tv_nsec = (long)(currSysTime.millitm * NANOSEC_PER_MILLISEC -
+			     NANOSEC_PER_MILLISEC / 2);
+
+#endif
 }
 
 /* returns [folder]\[name] on windows */

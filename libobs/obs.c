@@ -1783,6 +1783,14 @@ void obs_enter_graphics(void)
 		gs_enter_context(obs->video.graphics);
 }
 
+int obs_enter_graphics_timed(const uint64_t duration)
+{
+	if (obs->video.graphics)
+		return gs_enter_context_timed(obs->video.graphics, duration);
+	else
+		return 0;
+}
+
 void obs_leave_graphics(void)
 {
 	if (obs->video.graphics)

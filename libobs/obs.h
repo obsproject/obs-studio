@@ -644,6 +644,9 @@ EXPORT bool obs_enum_service_types(size_t idx, const char **id);
 /** Helper function for entering the OBS graphics context */
 EXPORT void obs_enter_graphics(void);
 
+/** Helper function for entering the OBS graphics context w/- timeout */
+EXPORT int obs_enter_graphics_timed(const uint64_t duration);
+
 /** Helper function for leaving the OBS graphics context */
 EXPORT void obs_leave_graphics(void);
 

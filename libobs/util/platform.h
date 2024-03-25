@@ -104,9 +104,11 @@ EXPORT void os_end_high_performance(os_performance_token_t *);
  */
 EXPORT bool os_sleepto_ns(uint64_t time_target);
 EXPORT bool os_sleepto_ns_fast(uint64_t time_target);
+EXPORT void os_sleep_ns(uint64_t duration);
 EXPORT void os_sleep_ms(uint32_t duration);
 
 EXPORT uint64_t os_gettime_ns(void);
+EXPORT void os_realtime_ts(struct timespec *ts);
 
 EXPORT int os_get_config_path(char *dst, size_t size, const char *name);
 EXPORT char *os_get_config_path_ptr(const char *name);
