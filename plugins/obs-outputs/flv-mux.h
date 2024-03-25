@@ -62,14 +62,8 @@ extern void write_file_info(FILE *file, int64_t duration_ms, int64_t size);
 
 extern void flv_meta_data(obs_output_t *context, uint8_t **output, size_t *size,
 			  bool write_header);
-extern void flv_additional_meta_data(obs_output_t *context, uint8_t **output,
-				     size_t *size);
 extern void flv_packet_mux(struct encoder_packet *packet, int32_t dts_offset,
 			   uint8_t **output, size_t *size, bool is_header);
-extern void flv_additional_packet_mux(struct encoder_packet *packet,
-				      int32_t dts_offset, uint8_t **output,
-				      size_t *size, bool is_header,
-				      size_t index);
 // Y2023 spec
 extern void flv_packet_start(struct encoder_packet *packet,
 			     enum video_id_t codec, uint8_t **output,
