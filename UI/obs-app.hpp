@@ -20,6 +20,8 @@
 #include <QApplication>
 #include <QTranslator>
 #include <QPointer>
+#include <QFileSystemWatcher>
+
 #ifndef _WIN32
 #include <QSocketNotifier>
 #else
@@ -38,6 +40,7 @@
 #include <deque>
 
 #include "window-main.hpp"
+#include "obs-app-theming.hpp"
 
 std::string CurrentTimeString();
 std::string CurrentDateTimeString();
@@ -74,12 +77,6 @@ public:
 
 typedef std::function<void()> VoidFunc;
 
-struct OBSThemeMeta {
-	bool dark;
-	std::string parent;
-	std::string author;
-};
-
 struct UpdateBranch {
 	QString name;
 	QString display_name;
@@ -93,9 +90,7 @@ class OBSApp : public QApplication {
 
 private:
 	std::string locale;
-	std::string theme;
 
-	bool themeDarkMode = true;
 	ConfigFile globalConfig;
 	TextLookup textLookup;
 	QPointer<OBSMainWindow> mainWindow;
@@ -123,11 +118,11 @@ private:
 	inline void ResetHotkeyState(bool inFocus);
 
 	QPalette defaultPalette;
+	OBSTheme *currentTheme = nullptr;
+	QHash<QString, OBSTheme> themes;
+	QPointer<QFileSystemWatcher> themeWatcher;
 
-	void ParseExtraThemeData(const char *path);
-	static OBSThemeMeta *ParseThemeMeta(const char *path);
-	void AddExtraThemeColor(QPalette &pal, int group, const char *name,
-				uint32_t color);
+	void FindThemes();
 
 	bool notify(QObject *receiver, QEvent *e) override;
 
@@ -138,6 +133,9 @@ private:
 private slots:
 	void commitData(QSessionManager &manager);
 #endif
+
+private slots:
+	void themeFileChanged(const QString &);
 
 public:
 	OBSApp(int &argc, char **argv, profiler_name_store_t *store);
@@ -160,11 +158,14 @@ public:
 
 	inline const char *GetLocale() const { return locale.c_str(); }
 
-	inline const char *GetTheme() const { return theme.c_str(); }
-	std::string GetTheme(std::string name, std::string path);
-	std::string SetParentTheme(std::string name);
-	bool SetTheme(std::string name, std::string path = "");
-	inline bool IsThemeDark() const { return themeDarkMode; };
+	OBSTheme *GetTheme() const { return currentTheme; }
+	QList<OBSTheme> GetThemes() const { return themes.values(); }
+	OBSTheme *GetTheme(const QString &name);
+	bool SetTheme(const QString &name);
+	bool IsThemeDark() const
+	{
+		return currentTheme ? currentTheme->isDark : false;
+	}
 
 	void SetBranchData(const std::string &data);
 	std::vector<UpdateBranch> GetBranches();

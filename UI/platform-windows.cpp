@@ -494,3 +494,14 @@ void TaskbarOverlaySetStatus(TaskbarOverlayStatus status)
 	DestroyIcon(hicon);
 	taskbarIcon->Release();
 }
+
+bool HighContrastEnabled()
+{
+	HIGHCONTRAST hc = {};
+	hc.cbSize = sizeof(HIGHCONTRAST);
+
+	if (SystemParametersInfo(SPI_GETHIGHCONTRAST, hc.cbSize, &hc, 0))
+		return hc.dwFlags & HCF_HIGHCONTRASTON;
+
+	return false;
+}

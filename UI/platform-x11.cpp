@@ -256,3 +256,9 @@ bool SetDisplayAffinitySupported(void)
 // Not implemented yet
 void TaskbarOverlayInit() {}
 void TaskbarOverlaySetStatus(TaskbarOverlayStatus) {}
+
+bool HighContrastEnabled()
+{
+	// Note implemented yet
+	return false;
+}
