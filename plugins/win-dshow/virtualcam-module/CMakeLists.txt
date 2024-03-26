@@ -9,10 +9,8 @@ if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
   endif()
 
   if(NOT VIRTUALCAM_GUID)
-    # cmake-format: off
     set(VIRTUALCAM_GUID "" CACHE STRING "Virtual Camera GUID" FORCE)
     mark_as_advanced(VIRTUALCAM_GUID)
-    # cmake-format: on
 
     message(WARNING "Empty Virtual Camera GUID set.")
     target_disable_feature(obs-virtualcam-module "Virtual Camera Support (empty GUID)")
@@ -59,26 +57,22 @@ if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
   configure_file(cmake/windows/obs-module.rc.in virtualcam-module.rc)
   target_sources(
     _virtualcam
-    INTERFACE # cmake-format: sortable
-              ${CMAKE_CURRENT_BINARY_DIR}/virtualcam-module.rc
-              placeholder.cpp
-              sleepto.c
-              sleepto.h
-              virtualcam-filter.cpp
-              virtualcam-filter.hpp
-              virtualcam-module.cpp)
+    INTERFACE
+      ${CMAKE_CURRENT_BINARY_DIR}/virtualcam-module.rc
+      placeholder.cpp
+      sleepto.c
+      sleepto.h
+      virtualcam-filter.cpp
+      virtualcam-filter.hpp
+      virtualcam-module.cpp
+  )
   target_include_directories(_virtualcam INTERFACE "${CMAKE_CURRENT_BINARY_DIR}")
   target_compile_definitions(_virtualcam INTERFACE VIRTUALCAM_AVAILABLE)
 
   target_link_libraries(
     _virtualcam
-    INTERFACE OBS::virtualcam-interface
-              OBS::virtualcam-guid
-              OBS::libdshowcapture
-              OBS::winhandle
-              gdiplus
-              strmiids
-              winmm)
+    INTERFACE OBS::virtualcam-interface OBS::virtualcam-guid OBS::libdshowcapture OBS::winhandle gdiplus strmiids winmm
+  )
 endif()
 
 legacy_check()
@@ -93,14 +87,14 @@ set_property(TARGET obs-virtualcam-module PROPERTY MSVC_RUNTIME_LIBRARY "MultiTh
 
 configure_file(virtualcam-install.bat.in virtualcam-install.bat)
 target_add_resource(obs-virtualcam-module "${CMAKE_CURRENT_BINARY_DIR}/virtualcam-install.bat"
-                    "${OBS_DATA_DESTINATION}/obs-plugins/win-dshow")
+                    "${OBS_DATA_DESTINATION}/obs-plugins/win-dshow"
+)
 
 configure_file(virtualcam-uninstall.bat.in virtualcam-uninstall.bat)
 target_add_resource(obs-virtualcam-module "${CMAKE_CURRENT_BINARY_DIR}/virtualcam-uninstall.bat"
-                    "${OBS_DATA_DESTINATION}/obs-plugins/win-dshow")
+                    "${OBS_DATA_DESTINATION}/obs-plugins/win-dshow"
+)
 
 include(cmake/32bit.cmake)
 
-# cmake-format: off
 set_target_properties_obs(obs-virtualcam-module PROPERTIES FOLDER plugins/win-dshow OUTPUT_NAME obs-virtualcam-module64)
-# cmake-format: on

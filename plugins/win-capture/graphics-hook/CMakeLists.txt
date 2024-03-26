@@ -15,24 +15,27 @@ add_library(_graphics-hook INTERFACE)
 
 target_sources(
   _graphics-hook
-  INTERFACE # cmake-format: sortable
-            d3d10-capture.cpp
-            d3d11-capture.cpp
-            d3d12-capture.cpp
-            d3d8-capture.cpp
-            d3d9-capture.cpp
-            d3d9-patches.hpp
-            dxgi-capture.cpp
-            gl-capture.c
-            gl-decs.h
-            graphics-hook.c
-            graphics-hook.h
-            graphics-hook.rc)
+  INTERFACE
+    d3d10-capture.cpp
+    d3d11-capture.cpp
+    d3d12-capture.cpp
+    d3d8-capture.cpp
+    d3d9-capture.cpp
+    d3d9-patches.hpp
+    dxgi-capture.cpp
+    gl-capture.c
+    gl-decs.h
+    graphics-hook.c
+    graphics-hook.h
+    graphics-hook.rc
+)
 
 target_compile_definitions(_graphics-hook INTERFACE COMPILE_D3D12_HOOK)
 
-target_link_libraries(_graphics-hook INTERFACE OBS::d3d8-api OBS::hook-config OBS::ipc-util OBS::obfuscate
-                                               Detours::Detours dxguid)
+target_link_libraries(
+  _graphics-hook
+  INTERFACE OBS::d3d8-api OBS::hook-config OBS::ipc-util OBS::obfuscate Detours::Detours dxguid
+)
 
 target_link_options(_graphics-hook INTERFACE /IGNORE:4099)
 
@@ -51,8 +54,6 @@ target_link_libraries(graphics-hook PRIVATE _graphics-hook)
 
 include(cmake/32bit.cmake)
 
-# cmake-format: off
 set_target_properties_obs(graphics-hook PROPERTIES FOLDER "plugins/win-capture" OUTPUT_NAME graphics-hook64 MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-# cmake-format: on
 
 add_dependencies(win-capture graphics-hook)

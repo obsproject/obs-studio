@@ -22,13 +22,19 @@ add_executable(OBS:mac-camera-extension ALIAS mac-camera-extension)
 
 set(_placeholder_location "${CMAKE_CURRENT_SOURCE_DIR}/../common/data/placeholder.png")
 target_sources(
-  mac-camera-extension PRIVATE "${_placeholder_location}" main.swift OBSCameraDeviceSource.swift
-                               OBSCameraProviderSource.swift OBSCameraStreamSink.swift OBSCameraStreamSource.swift)
+  mac-camera-extension
+  PRIVATE
+    "${_placeholder_location}"
+    main.swift
+    OBSCameraDeviceSource.swift
+    OBSCameraProviderSource.swift
+    OBSCameraStreamSink.swift
+    OBSCameraStreamSource.swift
+)
 
 set_property(SOURCE "${_placeholder_location}" PROPERTY MACOSX_PACKAGE_LOCATION "Resources")
 source_group("Resources" FILES "${_placeholder_location}")
 
-# cmake-format: off
 set_target_properties_obs(
   mac-camera-extension
   PROPERTIES FOLDER plugins
@@ -37,7 +43,8 @@ set_target_properties_obs(
              MACOSX_BUNDLE ON
              MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/Info.plist.in"
              BUNDLE_EXTENSION systemextension
-             XCODE_PRODUCT_TYPE com.apple.product-type.system-extension)
+             XCODE_PRODUCT_TYPE com.apple.product-type.system-extension
+)
 
 string(TIMESTAMP CURRENT_YEAR "%Y")
 set_target_xcode_properties(
@@ -53,5 +60,5 @@ set_target_xcode_properties(
              GENERATE_INFOPLIST_FILE YES
              INFOPLIST_KEY_CFBundleDisplayName "OBS Virtual Camera"
              INFOPLIST_KEY_NSHumanReadableCopyright "(c) 2022-${CURRENT_YEAR} Sebastian Beckmann, Patrick Heyer"
-             INFOPLIST_KEY_NSSystemExtensionUsageDescription "This Camera Extension enables virtual camera functionality in OBS Studio.")
-# cmake-format: on
+             INFOPLIST_KEY_NSSystemExtensionUsageDescription "This Camera Extension enables virtual camera functionality in OBS Studio."
+)

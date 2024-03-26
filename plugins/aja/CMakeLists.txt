@@ -19,24 +19,25 @@ add_library(OBS::aja-support ALIAS aja-support)
 
 target_sources(
   aja-support
-  PRIVATE # cmake-format: sortable
-          aja-card-manager.cpp
-          aja-common.cpp
-          aja-presets.cpp
-          aja-props.cpp
-          aja-routing.cpp
-          aja-vpid-data.cpp
-          aja-widget-io.cpp
-  PUBLIC # cmake-format: sortable
-         aja-card-manager.hpp
-         aja-common.hpp
-         aja-enums.hpp
-         aja-presets.hpp
-         aja-props.hpp
-         aja-routing.hpp
-         aja-ui-props.hpp
-         aja-vpid-data.hpp
-         aja-widget-io.hpp)
+  PRIVATE
+    aja-card-manager.cpp
+    aja-common.cpp
+    aja-presets.cpp
+    aja-props.cpp
+    aja-routing.cpp
+    aja-vpid-data.cpp
+    aja-widget-io.cpp
+  PUBLIC
+    aja-card-manager.hpp
+    aja-common.hpp
+    aja-enums.hpp
+    aja-presets.hpp
+    aja-props.hpp
+    aja-routing.hpp
+    aja-ui-props.hpp
+    aja-vpid-data.hpp
+    aja-widget-io.hpp
+)
 
 target_link_libraries(aja-support PUBLIC OBS::libobs AJA::LibAJANTV2)
 
@@ -44,19 +45,23 @@ set_target_properties(aja-support PROPERTIES FOLDER plugins/aja POSITION_INDEPEN
 
 target_sources(
   aja
-  PRIVATE # cmake-format: sortable
-          aja-output.cpp
-          aja-output.hpp
-          aja-source.cpp
-          aja-source.hpp
-          audio-repack.c
-          audio-repack.h
-          audio-repack.hpp
-          main.cpp)
+  PRIVATE
+    aja-output.cpp
+    aja-output.hpp
+    aja-source.cpp
+    aja-source.hpp
+    audio-repack.c
+    audio-repack.h
+    audio-repack.hpp
+    main.cpp
+)
 
 target_compile_options(
-  aja-support PUBLIC $<$<COMPILE_LANG_AND_ID:CXX,AppleClang,Clang,GNU>:-Wno-deprecated-declarations>
-                     $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:-Wno-unused-variable>)
+  aja-support
+  PUBLIC
+    $<$<COMPILE_LANG_AND_ID:CXX,AppleClang,Clang,GNU>:-Wno-deprecated-declarations>
+    $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:-Wno-unused-variable>
+)
 
 target_link_libraries(aja PRIVATE OBS::aja-support)
 
@@ -66,6 +71,4 @@ if(OS_WINDOWS)
   set_property(TARGET aja PROPERTY COMPILE_WARNING_AS_ERROR FALSE)
 endif()
 
-# cmake-format: off
 set_target_properties_obs(aja PROPERTIES FOLDER plugins/aja PREFIX "")
-# cmake-format: on

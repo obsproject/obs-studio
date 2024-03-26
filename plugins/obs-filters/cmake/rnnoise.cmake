@@ -12,25 +12,26 @@ if(ENABLE_RNNOISE)
 
       target_sources(
         obs-rnnoise
-        PRIVATE # cmake-format: sortable
-                rnnoise/src/_kiss_fft_guts.h
-                rnnoise/src/arch.h
-                rnnoise/src/celt_lpc.c
-                rnnoise/src/celt_lpc.h
-                rnnoise/src/common.h
-                rnnoise/src/denoise.c
-                rnnoise/src/kiss_fft.c
-                rnnoise/src/kiss_fft.h
-                rnnoise/src/opus_types.h
-                rnnoise/src/pitch.c
-                rnnoise/src/pitch.h
-                rnnoise/src/rnn.c
-                rnnoise/src/rnn.h
-                rnnoise/src/rnn_data.c
-                rnnoise/src/rnn_data.h
-                rnnoise/src/rnn_reader.c
-                rnnoise/src/tansig_table.h
-        PUBLIC rnnoise/include/rnnoise.h)
+        PRIVATE
+          rnnoise/src/_kiss_fft_guts.h
+          rnnoise/src/arch.h
+          rnnoise/src/celt_lpc.c
+          rnnoise/src/celt_lpc.h
+          rnnoise/src/common.h
+          rnnoise/src/denoise.c
+          rnnoise/src/kiss_fft.c
+          rnnoise/src/kiss_fft.h
+          rnnoise/src/opus_types.h
+          rnnoise/src/pitch.c
+          rnnoise/src/pitch.h
+          rnnoise/src/rnn.c
+          rnnoise/src/rnn.h
+          rnnoise/src/rnn_data.c
+          rnnoise/src/rnn_data.h
+          rnnoise/src/rnn_reader.c
+          rnnoise/src/tansig_table.h
+        PUBLIC rnnoise/include/rnnoise.h
+      )
 
       add_library(Librnnoise::Librnnoise ALIAS obs-rnnoise)
 
