@@ -43,6 +43,7 @@ class AutoConfig : public QWizard {
 	};
 
 	enum class Encoder {
+		OpenH264,
 		x264,
 		NVENC,
 		QSV,
@@ -91,6 +92,7 @@ class AutoConfig : public QWizard {
 	bool qsvAvailable = false;
 	bool vceAvailable = false;
 	bool appleAvailable = false;
+	bool x264Available = false;
 
 	int startingBitrate = 2500;
 	bool customServer = false;
@@ -106,6 +108,7 @@ class AutoConfig : public QWizard {
 	int specificFPSNum = 0;
 	int specificFPSDen = 0;
 
+	void TestSoftwareEncoding();
 	void TestHardwareEncoding();
 	bool CanTestServer(const char *server);
 
