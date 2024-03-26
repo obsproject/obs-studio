@@ -36,10 +36,6 @@ The following cache variables may also be set:
 
 #]=======================================================================]
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-format: on
-
 include(FindPackageHandleStandardArgs)
 
 find_package(PkgConfig QUIET)
@@ -53,14 +49,16 @@ find_path(
   HINTS ${PC_Libpci_INCLUDE_DIRS}
   PATHS /usr/include/ /usr/local/include
   PATH_SUFFIXES pci
-  DOC "Libpci include directory")
+  DOC "Libpci include directory"
+)
 
 find_library(
   Libpci_LIBRARY
   NAMES libpci pci
   HINTS ${PC_Libpci_LIBRARY_DIRS}
   PATHS /usr/lib /usr/local/lib
-  DOC "Libpci location")
+  DOC "Libpci location"
+)
 
 if(PC_Libpci_VERSION VERSION_GREATER 0)
   set(Libpci_VERSION ${PC_Libpci_VERSION})
@@ -77,7 +75,9 @@ endif()
 find_package_handle_standard_args(
   Libpci
   REQUIRED_VARS Libpci_LIBRARY Libpci_INCLUDE_DIR
-  VERSION_VAR Libpci_VERSION REASON_FAILURE_MESSAGE "Ensure that libpci is installed on the system.")
+  VERSION_VAR Libpci_VERSION
+  REASON_FAILURE_MESSAGE "Ensure that libpci is installed on the system."
+)
 mark_as_advanced(Libpci_INCLUDE_DIR Libpci_LIBRARY)
 
 if(Libpci_FOUND)
@@ -92,14 +92,18 @@ if(Libpci_FOUND)
 
     set_target_properties(
       Libpci::pci
-      PROPERTIES INTERFACE_COMPILE_OPTIONS "${PC_Libpci_CFLAFGS_OTHER}"
-                 INTERFACE_INCLUDE_DIRECTORIES "${Libpci_INCLUDE_DIR}"
-                 VERSION ${Libpci_VERSION})
+      PROPERTIES
+        INTERFACE_COMPILE_OPTIONS "${PC_Libpci_CFLAFGS_OTHER}"
+        INTERFACE_INCLUDE_DIRECTORIES "${Libpci_INCLUDE_DIR}"
+        VERSION ${Libpci_VERSION}
+    )
   endif()
 endif()
 
 include(FeatureSummary)
 set_package_properties(
-  Libpci PROPERTIES
-  URL "https://mj.ucw.cz/sw/pciutils"
-  DESCRIPTION "Offers access to the PCI configuration space on a variety of operating systems.")
+  Libpci
+  PROPERTIES
+    URL "https://mj.ucw.cz/sw/pciutils"
+    DESCRIPTION "Offers access to the PCI configuration space on a variety of operating systems."
+)

@@ -36,10 +36,6 @@ The following cache variables may also be set:
 
 #]=======================================================================]
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-format: on
-
 include(FindPackageHandleStandardArgs)
 
 find_package(PkgConfig QUIET)
@@ -54,7 +50,8 @@ find_path(
   HINTS ${PC_PipeWire_INCLUDE_DIRS}
   PATH_SUFFIXES pipewire-0.3
   PATHS /usr/include /usr/local/include
-  DOC "PipeWire include directory")
+  DOC "PipeWire include directory"
+)
 
 find_path(
   Libspa_INCLUDE_DIR
@@ -62,20 +59,26 @@ find_path(
   HINTS ${PC_Libspa_INCLUDE_DIRS}
   PATH_SUFFIXES spa-0.2
   PATHS /usr/include /usr/local/include
-  DOC "Libspa include directory")
+  DOC "Libspa include directory"
+)
 
 find_library(
   PipeWire_LIBRARY
   NAMES pipewire-0.3
   HINTS ${PC_PipeWire_LIBRARY_DIRS}
   PATHS /usr/lib /usr/local/lib
-  DOC "PipeWire location")
+  DOC "PipeWire location"
+)
 
 if(PC_PipeWire_VERSION VERSION_GREATER 0)
   set(PipeWire_VERSION ${PC_PipeWire_VERSION})
 elseif(EXISTS "${PipeWire_INCLUDE_DIR}/pipewire/version.h")
-  file(STRINGS "${PipeWire_INCLUDE_DIR}/pipewire/version.h" _version_string
-       REGEX "^.*PW_(MAJOR|MINOR|MICRO)[ \t]+[0-9]+[ \t]*$")
+  file(
+    STRINGS
+    "${PipeWire_INCLUDE_DIR}/pipewire/version.h"
+    _version_string
+    REGEX "^.*PW_(MAJOR|MINOR|MICRO)[ \t]+[0-9]+[ \t]*$"
+  )
   string(REGEX REPLACE ".*PW_MAJOR[ \t]+([0-9]+).*" "\\1" _version_major "${_version_string}")
   string(REGEX REPLACE ".*PW_MINOR[ \t]+([0-9]+).*" "\\1" _version_minor "${_version_string}")
   string(REGEX REPLACE ".*PW_MICRO[ \t]+([0-9]+).*" "\\1" _version_micro "${_version_string}")
@@ -94,7 +97,9 @@ endif()
 find_package_handle_standard_args(
   PipeWire
   REQUIRED_VARS PipeWire_LIBRARY PipeWire_INCLUDE_DIR Libspa_INCLUDE_DIR
-  VERSION_VAR PipeWire_VERSION REASON_FAILURE_MESSAGE "Ensure that PipeWire is installed on the system.")
+  VERSION_VAR PipeWire_VERSION
+  REASON_FAILURE_MESSAGE "Ensure that PipeWire is installed on the system."
+)
 mark_as_advanced(PipeWire_LIBRARY PipeWire_INCLUDE_DIR)
 
 if(PipeWire_FOUND)
@@ -109,14 +114,16 @@ if(PipeWire_FOUND)
 
     set_target_properties(
       PipeWire::PipeWire
-      PROPERTIES INTERFACE_COMPILE_OPTIONS "${PC_PipeWire_CFLAGS_OTHER}"
-                 INTERFACE_INCLUDE_DIRECTORIES "${PipeWire_INCLUDE_DIR};${Libspa_INCLUDE_DIR}"
-                 VERSION ${PipeWire_VERSION})
+      PROPERTIES
+        INTERFACE_COMPILE_OPTIONS "${PC_PipeWire_CFLAGS_OTHER}"
+        INTERFACE_INCLUDE_DIRECTORIES "${PipeWire_INCLUDE_DIR};${Libspa_INCLUDE_DIR}"
+        VERSION ${PipeWire_VERSION}
+    )
   endif()
 endif()
 
 include(FeatureSummary)
 set_package_properties(
-  PipeWire PROPERTIES
-  URL "https://www.pipewire.org"
-  DESCRIPTION "PipeWire - multimedia processing")
+  PipeWire
+  PROPERTIES URL "https://www.pipewire.org" DESCRIPTION "PipeWire - multimedia processing"
+)

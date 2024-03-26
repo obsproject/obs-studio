@@ -36,11 +36,6 @@ The following cache variables may also be set:
 
 #]=======================================================================]
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-lint: disable=C0307
-# cmake-format: on
-
 include(FindPackageHandleStandardArgs)
 
 find_package(PkgConfig QUIET)
@@ -54,7 +49,8 @@ macro(libspeexdsp_set_soname)
     execute_process(
       COMMAND sh -c "otool -D '${Libspeexdsp_LIBRARY}' | grep -v '${Libspeexdsp_LIBRARY}'"
       OUTPUT_VARIABLE _output
-      RESULT_VARIABLE _result)
+      RESULT_VARIABLE _result
+    )
 
     if(_result EQUAL 0 AND _output MATCHES "^@rpath/")
       set_property(TARGET SpeexDSP::Libspeexdsp PROPERTY IMPORTED_SONAME "${_output}")
@@ -63,7 +59,8 @@ macro(libspeexdsp_set_soname)
     execute_process(
       COMMAND sh -c "objdump -p '${Libspeexdsp_LIBRARY}' | grep SONAME"
       OUTPUT_VARIABLE _output
-      RESULT_VARIABLE _result)
+      RESULT_VARIABLE _result
+    )
 
     if(_result EQUAL 0)
       string(REGEX REPLACE "[ \t]+SONAME[ \t]+([^ \t]+)" "\\1" _soname "${_output}")
@@ -80,7 +77,8 @@ find_path(
   NAMES speex/speex_preprocess.h
   HINTS ${PC_Libspeexdsp_INCLUDE_DIRS}
   PATHS /usr/include /usr/local/include
-  DOC "Libspeexdsp include directory")
+  DOC "Libspeexdsp include directory"
+)
 
 if(PC_Libspeexdsp_VERSION VERSION_GREATER 0)
   set(Libspeexdsp_VERSION ${PC_Libspeexdsp_VERSION})
@@ -96,7 +94,8 @@ find_library(
   NAMES speexdsp libspeexdsp
   HINTS ${PC_Libspeexdsp_LIBRARY_DIRS}
   PATHS /usr/lib /usr/local/lib
-  DOC "Libspeexdsp location")
+  DOC "Libspeexdsp location"
+)
 
 if(CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin|Windows")
   set(Libspeexdsp_ERROR_REASON "Ensure that obs-deps is provided as part of CMAKE_PREFIX_PATH.")
@@ -107,7 +106,9 @@ endif()
 find_package_handle_standard_args(
   Libspeexdsp
   REQUIRED_VARS Libspeexdsp_LIBRARY Libspeexdsp_INCLUDE_DIR
-  VERSION_VAR Libspeexdsp_VERSION REASON_FAILURE_MESSAGE "${Libspeexdsp_ERROR_REASON}")
+  VERSION_VAR Libspeexdsp_VERSION
+  REASON_FAILURE_MESSAGE "${Libspeexdsp_ERROR_REASON}"
+)
 mark_as_advanced(Libspeexdsp_INCLUDE_DIR Libspeexdsp_LIBRARY)
 unset(Libspeexdsp_ERROR_REASON)
 
@@ -124,14 +125,16 @@ if(Libspeexdsp_FOUND)
     libspeexdsp_set_soname()
     set_target_properties(
       SpeexDSP::Libspeexdsp
-      PROPERTIES INTERFACE_COMPILE_OPTIONS "${PC_Libspeexdsp_CFLAGS_OTHER}"
-                 INTERFACE_INCLUDE_DIRECTORIES "${Libspeexdsp_INCLUDE_DIR}"
-                 VERSION ${Libspeexdsp_VERSION})
+      PROPERTIES
+        INTERFACE_COMPILE_OPTIONS "${PC_Libspeexdsp_CFLAGS_OTHER}"
+        INTERFACE_INCLUDE_DIRECTORIES "${Libspeexdsp_INCLUDE_DIR}"
+        VERSION ${Libspeexdsp_VERSION}
+    )
   endif()
 endif()
 
 include(FeatureSummary)
 set_package_properties(
-  Libspeexdsp PROPERTIES
-  URL "https://gitlab.xiph.org/xiph/speexdsp"
-  DESCRIPTION "DSP library derived from speex.")
+  Libspeexdsp
+  PROPERTIES URL "https://gitlab.xiph.org/xiph/speexdsp" DESCRIPTION "DSP library derived from speex."
+)

@@ -66,11 +66,6 @@ The following cache variables may also be set:
 
 #]=======================================================================]
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-lint: disable=C0301
-# cmake-format: on
-
 include(FindPackageHandleStandardArgs)
 
 find_package(PkgConfig QUIET)
@@ -97,14 +92,16 @@ macro(Wayland_find_component component)
       NAMES ${COMPONENT_LIBRARY}.h
       HINTS ${PC_Wayland_${COMPONENT_NAME}_INCLUDE_DIRS}
       PATHS /usr/include /usr/local/include
-      DOC "Wayland ${COMPONENT_NAME} include directory")
+      DOC "Wayland ${COMPONENT_NAME} include directory"
+    )
 
     find_library(
       Wayland_${COMPONENT_NAME}_LIBRARY
       NAMES ${COMPONENT_LIBRARY}
       HINTS ${PC_Wayland_${COMPONENT_NAME}_LIBRARY_DIRS}
       PATHS /usr/lib /usr/local/lib
-      DOC "Wayland ${COMPONENT_NAME} location")
+      DOC "Wayland ${COMPONENT_NAME} location"
+    )
 
     if(PC_Wayland_${COMPONENT_NAME}_VERSION VERSION_GREATER 0)
       set(Wayland_${COMPONENT_NAME}_VERSION ${PC_Wayland_${COMPONENT_NAME}_VERSION})
@@ -124,8 +121,10 @@ macro(Wayland_find_component component)
 
       if(IS_ABSOLUTE "${Wayland_${COMPONENT_NAME}_LIBRARY}")
         add_library(Wayland::${COMPONENT_NAME} UNKNOWN IMPORTED)
-        set_property(TARGET Wayland::${COMPONENT_NAME} PROPERTY IMPORTED_LOCATION
-                                                                "${Wayland_${COMPONENT_NAME}_LIBRARY}")
+        set_property(
+          TARGET Wayland::${COMPONENT_NAME}
+          PROPERTY IMPORTED_LOCATION "${Wayland_${COMPONENT_NAME}_LIBRARY}"
+        )
       else()
         add_library(Wayland::${COMPONENT_NAME} INTERFACE IMPORTED)
         set_property(TARGET Wayland::${COMPONENT_NAME} PROPERTY IMPORTED_LIBNAME "${Wayland_${COMPONENT_NAME}_LIBRARY}")
@@ -133,9 +132,11 @@ macro(Wayland_find_component component)
 
       set_target_properties(
         Wayland::${COMPONENT_NAME}
-        PROPERTIES INTERFACE_COMPILE_OPTIONS "${PC_Wayland_${COMPONENT_NAME}_CFLAGS_OTHER}"
-                   INTERFACE_INCLUDE_DIRECTORIES "${Wayland_${COMPONENT_NAME}_INCLUDE_DIR}"
-                   VERSION ${Wayland_${COMPONENT_NAME}_VERSION})
+        PROPERTIES
+          INTERFACE_COMPILE_OPTIONS "${PC_Wayland_${COMPONENT_NAME}_CFLAGS_OTHER}"
+          INTERFACE_INCLUDE_DIRECTORIES "${Wayland_${COMPONENT_NAME}_INCLUDE_DIR}"
+          VERSION ${Wayland_${COMPONENT_NAME}_VERSION}
+      )
       list(APPEND Wayland_COMPONENTS Wayland::${COMPONENT_NAME})
       list(APPEND Wayland_INCLUDE_DIRS ${Wayland_${COMPONENT_NAME}_INCLUDE_DIR})
       list(APPEND Wayland_LIBRARIES ${Wayland_${COMPONENT_NAME}_LIBRARY})
@@ -163,15 +164,18 @@ find_package_handle_standard_args(
   Wayland
   REQUIRED_VARS Wayland_LIBRARIES Wayland_INCLUDE_DIRS
   VERSION_VAR Wayland_VERSION
-  HANDLE_COMPONENTS REASON_FAILURE_MESSAGE "Ensure that Wayland is installed on the system.")
+  HANDLE_COMPONENTS
+  REASON_FAILURE_MESSAGE "Ensure that Wayland is installed on the system."
+)
 
 unset(_Wayland_DEFAULT_COMPONENTS)
 unset(_Wayland_LIBRARIES)
 
 include(FeatureSummary)
 set_package_properties(
-  Wayland PROPERTIES
-  URL "https://wayland.freedesktop.org"
-  DESCRIPTION
-    "A replacement for the X11 window system protocol and architecture with the aim to be easier to develop, extend, and maintain."
+  Wayland
+  PROPERTIES
+    URL "https://wayland.freedesktop.org"
+    DESCRIPTION
+      "A replacement for the X11 window system protocol and architecture with the aim to be easier to develop, extend, and maintain."
 )

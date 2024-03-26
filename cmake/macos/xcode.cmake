@@ -9,8 +9,9 @@ if(ENABLE_CCACHE AND CCACHE_PROGRAM)
   configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/resources/ccache-launcher-c.in" ccache-launcher-c)
   configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/resources/ccache-launcher-cxx.in" ccache-launcher-cxx)
 
-  execute_process(COMMAND chmod a+rx "${CMAKE_CURRENT_BINARY_DIR}/ccache-launcher-c"
-                          "${CMAKE_CURRENT_BINARY_DIR}/ccache-launcher-cxx")
+  execute_process(
+    COMMAND chmod a+rx "${CMAKE_CURRENT_BINARY_DIR}/ccache-launcher-c" "${CMAKE_CURRENT_BINARY_DIR}/ccache-launcher-cxx"
+  )
   set(CMAKE_XCODE_ATTRIBUTE_CC "${CMAKE_CURRENT_BINARY_DIR}/ccache-launcher-c")
   set(CMAKE_XCODE_ATTRIBUTE_CXX "${CMAKE_CURRENT_BINARY_DIR}/ccache-launcher-cxx")
   set(CMAKE_XCODE_ATTRIBUTE_LD "${CMAKE_C_COMPILER}")
@@ -26,9 +27,7 @@ set(CMAKE_XCODE_ATTRIBUTE_MARKETING_VERSION ${OBS_VERSION_CANONICAL})
 set(CMAKE_XCODE_ATTRIBUTE_MACOSX_DEPLOYMENT_TARGET ${CMAKE_OSX_DEPLOYMENT_TARGET})
 
 if(NOT OBS_PROVISIONING_PROFILE)
-  set(OBS_PROVISIONING_PROFILE
-      ""
-      CACHE STRING "OBS provisioning profile name for macOS" FORCE)
+  set(OBS_PROVISIONING_PROFILE "" CACHE STRING "OBS provisioning profile name for macOS" FORCE)
 else()
   set(CMAKE_XCODE_ATTRIBUTE_PROVISIONING_PROFILE_NAME "${OBS_PROVISIONING_PROFILE}")
 endif()

@@ -36,10 +36,6 @@ The following cache variables may also be set:
 
 #]=======================================================================]
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-format: on
-
 include(FindPackageHandleStandardArgs)
 
 find_package(PkgConfig QUIET)
@@ -53,7 +49,8 @@ macro(Luajit_set_soname)
     execute_process(
       COMMAND sh -c "otool -D '${Luajit_LIBRARY}' | grep -v '${Luajit_LIBRARY}'"
       OUTPUT_VARIABLE _output
-      RESULT_VARIABLE _result)
+      RESULT_VARIABLE _result
+    )
 
     if(_result EQUAL 0 AND _output MATCHES "^@rpath/")
       set_property(TARGET Luajit::Luajit PROPERTY IMPORTED_SONAME "${_output}")
@@ -62,7 +59,8 @@ macro(Luajit_set_soname)
     execute_process(
       COMMAND sh -c "objdump -p '${Luajit_LIBRARY}' | grep SONAME"
       OUTPUT_VARIABLE _output
-      RESULT_VARIABLE _result)
+      RESULT_VARIABLE _result
+    )
 
     if(_result EQUAL 0)
       string(REGEX REPLACE "[ \t]+SONAME[ \t]+([^ \t]+)" "\\1" _soname "${_output}")
@@ -80,7 +78,8 @@ find_path(
   HINTS ${PC_Luajit_INCLUDE_DIRS}
   PATHS /usr/include /usr/local/include
   PATH_SUFFIXES luajit-2.1 luajit-2.0 luajit
-  DOC "Luajit include directory")
+  DOC "Luajit include directory"
+)
 
 if(PC_Luajit_VERSION VERSION_GREATER 0)
   set(Luajit_VERSION ${PC_Luajit_VERSION})
@@ -98,7 +97,8 @@ find_library(
   NAMES luajit luajit-51 luajit-5.1 lua51
   HINTS ${PC_Luajit_LIBRARY_DIRS}
   PATHS /usr/lib /usr/local/lib
-  DOC "Luajit location")
+  DOC "Luajit location"
+)
 
 if(CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin|Windows")
   set(Luajit_ERROR_REASON "Ensure that obs-deps is provided as part of CMAKE_PREFIX_PATH.")
@@ -109,7 +109,9 @@ endif()
 find_package_handle_standard_args(
   Luajit
   REQUIRED_VARS Luajit_LIBRARY Luajit_INCLUDE_DIR
-  VERSION_VAR Luajit_VERSION REASON_FAILURE_MESSAGE "${Luajit_ERROR_REASON}")
+  VERSION_VAR Luajit_VERSION
+  REASON_FAILURE_MESSAGE "${Luajit_ERROR_REASON}"
+)
 mark_as_advanced(Luajit_INCLUDE_DIR Luajit_LIBRARY)
 unset(Luajit_ERROR_REASON)
 
@@ -126,14 +128,18 @@ if(Luajit_FOUND)
     luajit_set_soname()
     set_target_properties(
       Luajit::Luajit
-      PROPERTIES INTERFACE_COMPILE_OPTIONS "${PC_Luajit_CFLAGS_OTHER}"
-                 INTERFACE_INCLUDE_DIRECTORIES "${Luajit_INCLUDE_DIR}"
-                 VERSION ${Luajit_VERSION})
+      PROPERTIES
+        INTERFACE_COMPILE_OPTIONS "${PC_Luajit_CFLAGS_OTHER}"
+        INTERFACE_INCLUDE_DIRECTORIES "${Luajit_INCLUDE_DIR}"
+        VERSION ${Luajit_VERSION}
+    )
   endif()
 endif()
 
 include(FeatureSummary)
 set_package_properties(
-  Luajit PROPERTIES
-  URL "https://luajit.org/luajit.html"
-  DESCRIPTION "LuaJIT is a Just-In-Time Compiler (JIT) for the Lua programming language.")
+  Luajit
+  PROPERTIES
+    URL "https://luajit.org/luajit.html"
+    DESCRIPTION "LuaJIT is a Just-In-Time Compiler (JIT) for the Lua programming language."
+)

@@ -36,11 +36,6 @@ The following cache variables may also be set:
 
 #]=======================================================================]
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-lint: disable=C0301
-# cmake-format: on
-
 include(FindPackageHandleStandardArgs)
 
 find_package(PkgConfig QUIET)
@@ -54,20 +49,26 @@ find_path(
   HINTS ${PC_LibVLC_INCLUDE_DIRS}
   PATHS /usr/include /usr/local/include
   PATH_SUFFIXES vlc include/vlc include
-  DOC "LibVLC include directory")
+  DOC "LibVLC include directory"
+)
 
 find_library(
   LibVLC_LIBRARY
   NAMES vlc libvlc
   HINTS ${PC_LibVLC_LIBRARY_DIRS}
   PATHS /usr/lib /usr/local/lib
-  DOC "LibVLC location")
+  DOC "LibVLC location"
+)
 
 if(PC_LibVLC_VERSION VERSION_GREATER 0)
   set(LibVLC_VERSION ${PC_LibVLC_VERSION})
 elseif(EXISTS "${LibVLC_INCLUDE_DIR}/libvlc_version.h")
-  file(STRINGS "${LibVLC_INCLUDE_DIR}/libvlc_version.h" _VERSION_STRING
-       REGEX "^.*LIBVLC_VERSION_(MAJOR|MINOR|PATCH)[ \t]+[0-9]+[ \t]*$")
+  file(
+    STRINGS
+    "${LibVLC_INCLUDE_DIR}/libvlc_version.h"
+    _VERSION_STRING
+    REGEX "^.*LIBVLC_VERSION_(MAJOR|MINOR|PATCH)[ \t]+[0-9]+[ \t]*$"
+  )
   string(REGEX REPLACE ".*LIBVLC_VERSION_MAJOR[ \t]+([0-9]+).*" "\\1" VERSION_MAJOR "${_VERSION_STRING}")
   string(REGEX REPLACE ".*LIBVLC_VERSION_MINOR[ \t]+([0-9]+).*" "\\1" VERSION_MINOR "${_VERSION_STRING}")
   string(REGEX REPLACE ".*LIBVLC_VERSION_REVISION[ \t]+([0-9]+).*" "\\1" VERSION_REVISION "${_VERSION_STRING}")
@@ -82,7 +83,9 @@ endif()
 find_package_handle_standard_args(
   LibVLC
   REQUIRED_VARS LibVLC_LIBRARY LibVLC_INCLUDE_DIR
-  VERSION_VAR LibVLC_VERSION REASON_FAILURE_MESSAGE "Ensure that libvlc-dev (vlc on BSD) is installed on the system.")
+  VERSION_VAR LibVLC_VERSION
+  REASON_FAILURE_MESSAGE "Ensure that libvlc-dev (vlc on BSD) is installed on the system."
+)
 mark_as_advanced(LibVLC_INCLUDE_DIR LibVLC_LIBRARY)
 
 if(LibVLC_FOUND)
@@ -97,15 +100,19 @@ if(LibVLC_FOUND)
 
     set_target_properties(
       VLC::LibVLC
-      PROPERTIES INTERFACE_COMPILE_OPTIONS "${PC_LibVLC_CFLAGS_OTHER}"
-                 INTERFACE_INCLUDE_DIRECTORIES "${LibVLC_INCLUDE_DIR}"
-                 VERSION ${LibVLC_VERSION})
+      PROPERTIES
+        INTERFACE_COMPILE_OPTIONS "${PC_LibVLC_CFLAGS_OTHER}"
+        INTERFACE_INCLUDE_DIRECTORIES "${LibVLC_INCLUDE_DIR}"
+        VERSION ${LibVLC_VERSION}
+    )
   endif()
 endif()
 
 include(FeatureSummary)
 set_package_properties(
-  LibVLC PROPERTIES
-  URL "https://www.videolan.org/vlc/libvlc.html"
-  DESCRIPTION
-    "libVLC is the core engine and the interface to the multimedia framework on which VLC media player is based.")
+  LibVLC
+  PROPERTIES
+    URL "https://www.videolan.org/vlc/libvlc.html"
+    DESCRIPTION
+      "libVLC is the core engine and the interface to the multimedia framework on which VLC media player is based."
+)

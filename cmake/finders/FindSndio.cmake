@@ -36,10 +36,6 @@ The following cache variables may also be set:
 
 #]=======================================================================]
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-format: on
-
 include(FindPackageHandleStandardArgs)
 
 find_package(PkgConfig QUIET)
@@ -52,14 +48,16 @@ find_path(
   NAMES sndio.h
   HINTS ${PC_Sndio_INCLUDE_DIRS}
   PATHS /usr/include /usr/local/include
-  DOC "Sndio include directory")
+  DOC "Sndio include directory"
+)
 
 find_library(
   Sndio_LIBRARY
   NAMES sndio
   HINTS ${PC_Sndio_LIBRARY_DIRS}
   PATHS /usr/lib /usr/local/lib
-  DOC "Sndio location")
+  DOC "Sndio location"
+)
 
 if(PC_Sndio_VERSION VERSION_GREATER 0)
   set(Sndio_VERSION ${PC_Sndio_VERSION})
@@ -73,7 +71,9 @@ endif()
 find_package_handle_standard_args(
   Sndio
   REQUIRED_VARS Sndio_LIBRARY Sndio_INCLUDE_DIR
-  VERSION_VAR Sndio_VERSION REASON_FAILURE_MESSAGE "Ensure that Sndio is installed on the system.")
+  VERSION_VAR Sndio_VERSION
+  REASON_FAILURE_MESSAGE "Ensure that Sndio is installed on the system."
+)
 mark_as_advanced(Sndio_INCLUDE_DIR Sndio_LIBRARY)
 
 if(Sndio_FOUND)
@@ -88,14 +88,18 @@ if(Sndio_FOUND)
 
     set_target_properties(
       Sndio::Sndio
-      PROPERTIES INTERFACE_COMPILE_OPTIONS "${PC_Sndio_CFLAGS_OTHER}"
-                 INTERFACE_INCLUDE_DIRECTORIES "${Sndio_INCLUDE_DIR}"
-                 VERSION ${Sndio_VERSION})
+      PROPERTIES
+        INTERFACE_COMPILE_OPTIONS "${PC_Sndio_CFLAGS_OTHER}"
+        INTERFACE_INCLUDE_DIRECTORIES "${Sndio_INCLUDE_DIR}"
+        VERSION ${Sndio_VERSION}
+    )
   endif()
 endif()
 
 include(FeatureSummary)
 set_package_properties(
-  Sndio PROPERTIES
-  URL "https://www.sndio.org"
-  DESCRIPTION "Sndio is a small audio and MIDI framework part of the OpenBSD project and ported to FreeBSD.")
+  Sndio
+  PROPERTIES
+    URL "https://www.sndio.org"
+    DESCRIPTION "Sndio is a small audio and MIDI framework part of the OpenBSD project and ported to FreeBSD."
+)
