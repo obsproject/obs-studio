@@ -543,12 +543,6 @@ static void serialize_av1_data(struct serializer *s, const uint8_t *data,
 	(void)priority;
 	uint8_t *buf = (uint8_t *)data;
 	uint8_t *end = (uint8_t *)data + size;
-	enum {
-		START_NOT_FOUND,
-		START_FOUND,
-		END_FOUND,
-		OFFSET_IMPOSSIBLE,
-	} state = START_NOT_FOUND;
 
 	while (buf < end) {
 		int64_t obu_size;
@@ -564,15 +558,8 @@ static void serialize_av1_data(struct serializer *s, const uint8_t *data,
 		case AV1_OBU_TEMPORAL_DELIMITER:
 		case AV1_OBU_REDUNDANT_FRAME_HEADER:
 		case AV1_OBU_TILE_LIST:
-			if (state == START_FOUND)
-				state = END_FOUND;
 			break;
 		default:
-			if (state == START_NOT_FOUND) {
-				state = START_FOUND;
-			} else if (state == END_FOUND) {
-				state = OFFSET_IMPOSSIBLE;
-			}
 			s_write(s, buf, len);
 			size += len;
 			break;
