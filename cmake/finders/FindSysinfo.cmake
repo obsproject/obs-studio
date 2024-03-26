@@ -36,10 +36,6 @@ The following cache variables may also be set:
 
 #]=======================================================================]
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-format: on
-
 include(FindPackageHandleStandardArgs)
 
 find_package(PkgConfig QUIET)
@@ -52,14 +48,16 @@ find_path(
   NAMES sys/sysinfo.h
   HINTS ${PC_Sysinfo_INCLUDE_DIRS}
   PATHS /usr/include /usr/local/include
-  DOC "Sysinfo include directory")
+  DOC "Sysinfo include directory"
+)
 
 find_library(
   Sysinfo_LIBRARY
   NAMES sysinfo libsysinfo
   HINTS ${PC_Sysinfo_LIBRARY_DIRS}
   PATHS /usr/lib /usr/local/lib
-  DOC "Sysinfo location")
+  DOC "Sysinfo location"
+)
 
 if(PC_Sysinfo_VERSION VERSION_GREATER 0)
   set(Sysinfo_VERSION ${PC_Sysinfo_VERSION})
@@ -73,7 +71,9 @@ endif()
 find_package_handle_standard_args(
   Sysinfo
   REQUIRED_VARS Sysinfo_LIBRARY Sysinfo_INCLUDE_DIR
-  VERSION_VAR Sysinfo_VERSION REASON_FAILURE_MESSAGE "Ensure that Sysinfo is installed on the system.")
+  VERSION_VAR Sysinfo_VERSION
+  REASON_FAILURE_MESSAGE "Ensure that Sysinfo is installed on the system."
+)
 mark_as_advanced(Sysinfo_INCLUDE_DIR Sysinfo_LIBRARY)
 
 if(Sysinfo_FOUND)
@@ -88,8 +88,10 @@ if(Sysinfo_FOUND)
 
     set_target_properties(
       Sysinfo::Sysinfo
-      PROPERTIES INTERFACE_COMPILE_OPTIONS "${PC_Sysinfo_CFLAGS_OTHER}"
-                 INTERFACE_INCLUDE_DIRECTORIES "${Sysinfo_INCLUDE_DIR}"
-                 VERSION ${Sysinfo_VERSION})
+      PROPERTIES
+        INTERFACE_COMPILE_OPTIONS "${PC_Sysinfo_CFLAGS_OTHER}"
+        INTERFACE_INCLUDE_DIRECTORIES "${Sysinfo_INCLUDE_DIR}"
+        VERSION ${Sysinfo_VERSION}
+    )
   endif()
 endif()

@@ -7,6 +7,4 @@ add_executable(obs-nvenc-test)
 target_sources(obs-nvenc-test PRIVATE obs-nvenc-test.cpp)
 target_link_libraries(obs-nvenc-test FFnvcodec::FFnvcodec)
 
-# cmake-format: off
 set_target_properties_obs(obs-nvenc-test PROPERTIES FOLDER plugins/obs-nvenc)
-# cmake-format: on

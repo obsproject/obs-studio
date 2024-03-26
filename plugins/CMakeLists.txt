@@ -11,9 +11,7 @@ if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
   set_property(GLOBAL APPEND PROPERTY OBS_FEATURES_ENABLED "Plugin Support")
 
   macro(check_obs_browser)
-    if((OS_WINDOWS AND CMAKE_GENERATOR_PLATFORM MATCHES "(Win32|x64)")
-       OR OS_MACOS
-       OR OS_LINUX)
+    if((OS_WINDOWS AND CMAKE_GENERATOR_PLATFORM MATCHES "(Win32|x64)") OR OS_MACOS OR OS_LINUX)
       if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/obs-browser/CMakeLists.txt")
         message(FATAL_ERROR "Required submodule 'obs-browser' not available.")
       else()
@@ -37,12 +35,14 @@ if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
   add_obs_plugin(
     aja
     PLATFORMS WINDOWS MACOS LINUX
-    WITH_MESSAGE)
+    WITH_MESSAGE
+  )
   add_obs_plugin(coreaudio-encoder PLATFORMS WINDOWS MACOS)
   add_obs_plugin(
     decklink
     PLATFORMS WINDOWS MACOS LINUX
-    WITH_MESSAGE)
+    WITH_MESSAGE
+  )
   add_obs_plugin(image-source)
   add_obs_plugin(linux-alsa PLATFORMS LINUX FREEBSD OPENBSD)
   add_obs_plugin(linux-capture PLATFORMS LINUX FREEBSD OPENBSD)
@@ -68,13 +68,15 @@ if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
     obs-qsv11
     PLATFORMS WINDOWS LINUX
     ARCHITECTURES x64 x86_64
-    WITH_MESSAGE)
+    WITH_MESSAGE
+  )
   add_obs_plugin(obs-text PLATFORMS WINDOWS)
   add_obs_plugin(obs-transitions)
   add_obs_plugin(
     obs-vst
     PLATFORMS WINDOWS MACOS LINUX
-    WITH_MESSAGE)
+    WITH_MESSAGE
+  )
   add_obs_plugin(obs-webrtc)
 
   check_obs_websocket()

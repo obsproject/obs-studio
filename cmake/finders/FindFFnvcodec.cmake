@@ -31,11 +31,6 @@ The following cache variables may also be set:
 
 #]=======================================================================]
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-lint: disable=C0301
-# cmake-format: on
-
 include(FindPackageHandleStandardArgs)
 
 find_package(PkgConfig QUIET)
@@ -48,13 +43,18 @@ find_path(
   NAMES ffnvcodec/nvEncodeAPI.h
   HINTS ${PC_FFnvcodec_INCLUDE_DIRS}
   PATHS /usr/include /usr/local/include
-  DOC "FFnvcodec include directory")
+  DOC "FFnvcodec include directory"
+)
 
 if(PC_FFnvcodec_VERSION VERSION_GREATER 0)
   set(FFnvcodec_VERSION ${PC_FFnvcodec_VERSION})
 elseif(EXISTS "${FFnvcodec_INCLUDE_DIR}/ffnvcodec/nvEncodeAPI.h")
-  file(STRINGS "${FFnvcodec_INCLUDE_DIR}/ffnvcodec/nvEncodeAPI.h" _version_string
-       REGEX "^.*NVENCAPI_(MAJOR|MINOR)_VERSION[ \t]+[0-9]+[ \t]*$")
+  file(
+    STRINGS
+    "${FFnvcodec_INCLUDE_DIR}/ffnvcodec/nvEncodeAPI.h"
+    _version_string
+    REGEX "^.*NVENCAPI_(MAJOR|MINOR)_VERSION[ \t]+[0-9]+[ \t]*$"
+  )
 
   string(REGEX REPLACE ".*MAJOR_VERSION[ \t]+([0-9]+).*" "\\1" _version_major "${_version_string}")
   string(REGEX REPLACE ".*MINOR_VERSION[ \t]+([0-9]+).*" "\\1" _version_minor "${_version_string}")
@@ -78,7 +78,10 @@ endif()
 find_package_handle_standard_args(
   FFnvcodec
   REQUIRED_VARS FFnvcodec_INCLUDE_DIR
-  VERSION_VAR FFnvcodec_VERSION HANDLE_VERSION_RANGE REASON_FAILURE_MESSAGE "${FFnvcodec_ERROR_REASON}")
+  VERSION_VAR FFnvcodec_VERSION
+  HANDLE_VERSION_RANGE
+  REASON_FAILURE_MESSAGE "${FFnvcodec_ERROR_REASON}"
+)
 mark_as_advanced(FFnvcodec_INCLUDE_DIR)
 unset(FFnvcodec_ERROR_REASON)
 
@@ -91,6 +94,8 @@ endif()
 
 include(FeatureSummary)
 set_package_properties(
-  FFnvcodec PROPERTIES
-  URL "https://github.com/FFmpeg/nv-codec-headers/"
-  DESCRIPTION "FFmpeg version of headers required to interface with NVIDIA's codec APIs.")
+  FFnvcodec
+  PROPERTIES
+    URL "https://github.com/FFmpeg/nv-codec-headers/"
+    DESCRIPTION "FFmpeg version of headers required to interface with NVIDIA's codec APIs."
+)

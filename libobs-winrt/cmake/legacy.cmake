@@ -25,8 +25,7 @@ target_compile_features(libobs-winrt PRIVATE cxx_std_17)
 
 set_target_properties(
   libobs-winrt
-  PROPERTIES OUTPUT_NAME libobs-winrt
-             FOLDER "core"
-             PREFIX "")
+  PROPERTIES OUTPUT_NAME libobs-winrt FOLDER "core" PREFIX ""
+)
 
 setup_binary_target(libobs-winrt)

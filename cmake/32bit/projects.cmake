@@ -1,10 +1,5 @@
 # OBS CMake 32-bit slice module
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-lint: disable=E1121
-# cmake-format: on
-
 include_guard(GLOBAL)
 
 include(compilerconfig)
@@ -17,7 +12,6 @@ macro(legacy_check)
   return()
 endmacro()
 
-# cmake-format: off
 # target_disable_feature: Stub macro for 32-bit projects
 macro(target_disable_feature)
 endmacro()
@@ -25,12 +19,13 @@ endmacro()
 # target_disable: Stub macro for 32-bit projects
 macro(target_disable)
 endmacro()
-# cmake-format: on
 
 # check_uuid: Helper function to check for valid UUID
 function(check_uuid uuid_string return_value)
   set(valid_uuid TRUE)
+  # gersemi: off
   set(uuid_token_lengths 8 4 4 4 12)
+  # gersemi: on
   set(token_num 0)
 
   string(REPLACE "-" ";" uuid_tokens ${uuid_string})
@@ -57,9 +52,7 @@ function(check_uuid uuid_string return_value)
     set(valid_uuid FALSE)
   endif()
   message(DEBUG "UUID ${uuid_string} valid: ${valid_uuid}")
-  # cmake-format: off
   set(${return_value} ${valid_uuid} PARENT_SCOPE)
-  # cmake-format: on
 endfunction()
 
 if(OS_WINDOWS)

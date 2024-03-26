@@ -36,10 +36,6 @@ The following cache variables may also be set:
 
 #]=======================================================================]
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-format: on
-
 include(FindPackageHandleStandardArgs)
 
 find_package(PkgConfig QUIET)
@@ -52,14 +48,16 @@ find_path(
   NAMES uuid/uuid.h
   HINTS ${PC_LibUUID_INCLUDE_DIRS}
   PATHS /usr/include /usr/local/include
-  DOC "LibUUID include directory")
+  DOC "LibUUID include directory"
+)
 
 find_library(
   LibUUID_LIBRARY
   NAMES uuid
   HINTS ${PC_LibUUID_LIBRARY_DIRS}
   PATHS /usr/lib /usr/local/lib
-  DOC "LibUUID location")
+  DOC "LibUUID location"
+)
 
 if(PC_LibUUID_VERSION VERSION_GREATER 0)
   set(LibUUID_VERSION ${PC_LibUUID_VERSION})
@@ -73,7 +71,9 @@ endif()
 find_package_handle_standard_args(
   LibUUID
   REQUIRED_VARS LibUUID_LIBRARY LibUUID_INCLUDE_DIR
-  VERSION_VAR LibUUID_VERSION REASON_FAILURE_MESSAGE "Ensure that e2fsprogs is installed on the system.")
+  VERSION_VAR LibUUID_VERSION
+  REASON_FAILURE_MESSAGE "Ensure that e2fsprogs is installed on the system."
+)
 mark_as_advanced(LibUUID_INCLUDE_DIR LibUUID_LIBRARY)
 
 if(LibUUID_FOUND)
@@ -88,16 +88,19 @@ if(LibUUID_FOUND)
 
     set_target_properties(
       LibUUID::LibUUID
-      PROPERTIES INTERFACE_COMPILE_OPTIONS "${PC_LibUUID_CFLAGS_OTHER}"
-                 INTERFACE_INCLUDE_DIRECTORIES "${LibUUID_INCLUDE_DIR}"
-                 VERSION ${LibUUID_VERSION})
+      PROPERTIES
+        INTERFACE_COMPILE_OPTIONS "${PC_LibUUID_CFLAGS_OTHER}"
+        INTERFACE_INCLUDE_DIRECTORIES "${LibUUID_INCLUDE_DIR}"
+        VERSION ${LibUUID_VERSION}
+    )
   endif()
 endif()
 
 include(FeatureSummary)
 set_package_properties(
-  LibUUID PROPERTIES
-  URL "http://e2fsprogs.sourceforge.net/"
-  DESCRIPTION
-    "The libuuid library is used to generate unique identifiers for objects that may be accessible beyond the local system."
+  LibUUID
+  PROPERTIES
+    URL "http://e2fsprogs.sourceforge.net/"
+    DESCRIPTION
+      "The libuuid library is used to generate unique identifiers for objects that may be accessible beyond the local system."
 )

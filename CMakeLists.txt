@@ -36,25 +36,29 @@ endif()
 
 message(
   DEPRECATION
-    "\n"
-    "============ LEGACY BUILD SYSTEM IS DEPRECATED ============"
-    "\n"
-    "You are using the legacy build system to build OBS Studio. "
-    "The legacy build system is unsupported and will be removed in the near future."
-    "\n"
-    "To migrate to the new build system, familiarize yourself with CMake presets "
-    "(https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html) and create "
-    "a user preset with your customized build settings, inheriting from one of the default presets."
-    "\n"
-    "============ LEGACY BUILD SYSTEM IS DEPRECATED ============")
+  "\n"
+  "============ LEGACY BUILD SYSTEM IS DEPRECATED ============"
+  "\n"
+  "You are using the legacy build system to build OBS Studio. "
+  "The legacy build system is unsupported and will be removed in the near future."
+  "\n"
+  "To migrate to the new build system, familiarize yourself with CMake presets "
+  "(https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html) and create "
+  "a user preset with your customized build settings, inheriting from one of the default presets."
+  "\n"
+  "============ LEGACY BUILD SYSTEM IS DEPRECATED ============"
+)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/Modules")
 include(VersionConfig)
 
 # Prohibit in-source builds
 if("${CMAKE_BINARY_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}")
-  message(FATAL_ERROR "OBS: You cannot build in a source directory (or any directory with CMakeLists.txt file). "
-                      "Please make a build subdirectory. Feel free to remove CMakeCache.txt and CMakeFiles.")
+  message(
+    FATAL_ERROR
+    "OBS: You cannot build in a source directory (or any directory with CMakeLists.txt file). "
+    "Please make a build subdirectory. Feel free to remove CMakeCache.txt and CMakeFiles."
+  )
 endif()
 
 project(obs-studio VERSION ${OBS_VERSION_CANONICAL})
@@ -68,10 +72,17 @@ include(CompilerConfig)
 
 # Allow selection of common build types via UI
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE
-      "RelWithDebInfo"
-      CACHE STRING "OBS build type [Release, RelWithDebInfo, Debug, MinSizeRel]" FORCE)
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Release RelWithDebInfo Debug MinSizeRel)
+  set(
+    CMAKE_BUILD_TYPE
+    "RelWithDebInfo"
+    CACHE STRING
+    "OBS build type [Release, RelWithDebInfo, Debug, MinSizeRel]"
+    FORCE
+  )
+  set_property(
+    CACHE CMAKE_BUILD_TYPE
+    PROPERTY STRINGS Release RelWithDebInfo Debug MinSizeRel
+  )
 endif()
 
 # Global project options
@@ -86,9 +97,11 @@ option(USE_LIBCXX "Use libc++ instead of libstdc++" ${APPLE})
 option(BUILD_TESTS "Build test directory (includes test sources and possibly a platform test executable)" OFF)
 
 if(OS_WINDOWS)
-  option(INSTALLER_RUN
-         "Build a multiarch installer (needs to run independently after both archs have compiled) (Windows)" OFF)
-
+  option(
+    INSTALLER_RUN
+    "Build a multiarch installer (needs to run independently after both archs have compiled) (Windows)"
+    OFF
+  )
 elseif(OS_POSIX)
   option(LINUX_PORTABLE "Build portable version (Linux)" OFF)
   option(USE_XDG "Utilize XDG Base Directory Specification (Linux)" ON)

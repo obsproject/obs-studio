@@ -14,6 +14,4 @@ if(OS_WINDOWS)
   target_sources(image-source PRIVATE image-source.rc)
 endif()
 
-# cmake-format: off
 set_target_properties_obs(image-source PROPERTIES FOLDER plugins PREFIX "")
-# cmake-format: on
