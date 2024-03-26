@@ -11,10 +11,10 @@ if(CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL 14.0.3)
   target_compile_options(obs-studio PRIVATE -Wno-error=unqualified-std-cast-call)
 endif()
 
-# cmake-format: off
 target_link_libraries(
   obs-studio
-  PRIVATE "$<LINK_LIBRARY:FRAMEWORK,AppKit.framework>"
-          "$<LINK_LIBRARY:FRAMEWORK,ApplicationServices.framework>"
-          "$<LINK_LIBRARY:FRAMEWORK,AVFoundation.framework>")
-# cmake-format: on
+  PRIVATE
+    "$<LINK_LIBRARY:FRAMEWORK,AppKit.framework>"
+    "$<LINK_LIBRARY:FRAMEWORK,ApplicationServices.framework>"
+    "$<LINK_LIBRARY:FRAMEWORK,AVFoundation.framework>"
+)

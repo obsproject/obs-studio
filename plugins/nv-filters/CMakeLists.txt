@@ -26,7 +26,5 @@ if(OS_WINDOWS)
 
   target_link_libraries(nv-filters PRIVATE OBS::libobs $<$<PLATFORM_ID:Windows>:OBS::w32-pthreads>)
 
-  # cmake-format: off
   set_target_properties_obs(nv-filters PROPERTIES FOLDER plugins PREFIX "")
-  # cmake-format: on
 endif()

@@ -20,31 +20,34 @@ endif()
 
 target_sources(
   obs-qsv11
-  PRIVATE # cmake-format: sortable
-          $<$<PLATFORM_ID:Linux>:common_utils_linux.cpp>
-          $<$<PLATFORM_ID:Windows>:common_directx11.cpp>
-          $<$<PLATFORM_ID:Windows>:common_directx11.h>
-          $<$<PLATFORM_ID:Windows>:common_utils_windows.cpp>
-          common_utils.cpp
-          common_utils.h
-          obs-qsv11-plugin-main.c
-          obs-qsv11.c
-          QSV_Encoder.cpp
-          QSV_Encoder.h
-          QSV_Encoder_Internal.cpp
-          QSV_Encoder_Internal.h)
+  PRIVATE
+    $<$<PLATFORM_ID:Linux>:common_utils_linux.cpp>
+    $<$<PLATFORM_ID:Windows>:common_directx11.cpp>
+    $<$<PLATFORM_ID:Windows>:common_directx11.h>
+    $<$<PLATFORM_ID:Windows>:common_utils_windows.cpp>
+    common_utils.cpp
+    common_utils.h
+    obs-qsv11-plugin-main.c
+    obs-qsv11.c
+    QSV_Encoder.cpp
+    QSV_Encoder.h
+    QSV_Encoder_Internal.cpp
+    QSV_Encoder_Internal.h
+)
 
 target_compile_definitions(obs-qsv11 PRIVATE $<$<PLATFORM_ID:Windows>:DX11_D3D>)
 
 target_link_libraries(
   obs-qsv11
-  PRIVATE OBS::libobs
-          VPL::VPL
-          $<$<PLATFORM_ID:Linux>:Libva::va>
-          $<$<PLATFORM_ID:Linux>:Libva::drm>
-          $<$<PLATFORM_ID:Windows>:d3d11>
-          $<$<PLATFORM_ID:Windows>:dxgi>
-          $<$<PLATFORM_ID:Windows>:dxguid>)
+  PRIVATE
+    OBS::libobs
+    VPL::VPL
+    $<$<PLATFORM_ID:Linux>:Libva::va>
+    $<$<PLATFORM_ID:Linux>:Libva::drm>
+    $<$<PLATFORM_ID:Windows>:d3d11>
+    $<$<PLATFORM_ID:Windows>:dxgi>
+    $<$<PLATFORM_ID:Windows>:dxguid>
+)
 
 target_link_options(obs-qsv11 PRIVATE $<$<PLATFORM_ID:Windows>:/IGNORE:4099>)
 
@@ -55,6 +58,4 @@ if(OS_WINDOWS)
   target_sources(obs-qsv11 PRIVATE obs-qsv11.rc)
 endif()
 
-# cmake-format: off
 set_target_properties_obs(obs-qsv11 PROPERTIES FOLDER plugins/obs-qsv11 PREFIX "")
-# cmake-format: on

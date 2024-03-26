@@ -8,15 +8,18 @@ endif()
 
 target_sources(
   obs-studio
-  PRIVATE # cmake-format: sortable
-          update/crypto-helpers-mac.mm
-          update/crypto-helpers.hpp
-          update/models/branches.hpp
-          update/models/whatsnew.hpp
-          update/shared-update.cpp
-          update/shared-update.hpp
-          update/update-helpers.cpp
-          update/update-helpers.hpp)
+  PRIVATE
+    update/crypto-helpers-mac.mm
+    update/crypto-helpers.hpp
+    update/models/branches.hpp
+    update/models/whatsnew.hpp
+    update/shared-update.cpp
+    update/shared-update.hpp
+    update/update-helpers.cpp
+    update/update-helpers.hpp
+)
 
-target_link_libraries(obs-studio PRIVATE "$<LINK_LIBRARY:FRAMEWORK,Security.framework>" nlohmann_json::nlohmann_json
-                                         OBS::blake2)
+target_link_libraries(
+  obs-studio
+  PRIVATE "$<LINK_LIBRARY:FRAMEWORK,Security.framework>" nlohmann_json::nlohmann_json OBS::blake2
+)

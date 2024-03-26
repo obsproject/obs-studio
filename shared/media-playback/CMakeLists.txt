@@ -7,16 +7,17 @@ add_library(OBS::media-playback ALIAS media-playback)
 
 target_sources(
   media-playback
-  INTERFACE # cmake-format: sortable
-            media-playback/cache.c
-            media-playback/cache.h
-            media-playback/closest-format.h
-            media-playback/decode.c
-            media-playback/decode.h
-            media-playback/media-playback.c
-            media-playback/media-playback.h
-            media-playback/media.c
-            media-playback/media.h)
+  INTERFACE
+    media-playback/cache.c
+    media-playback/cache.h
+    media-playback/closest-format.h
+    media-playback/decode.c
+    media-playback/decode.h
+    media-playback/media-playback.c
+    media-playback/media-playback.h
+    media-playback/media.c
+    media-playback/media.h
+)
 
 target_include_directories(media-playback INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
 

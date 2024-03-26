@@ -36,11 +36,6 @@ The following cache variables may also be set:
 
 #]=======================================================================]
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-lint: disable=C0301
-# cmake-format: on
-
 include(FindPackageHandleStandardArgs)
 
 find_package(PkgConfig QUIET)
@@ -54,7 +49,8 @@ macro(Libx264_set_soname)
     execute_process(
       COMMAND sh -c "otool -D '${Libx264_LIBRARY}' | grep -v '${Libx264_LIBRARY}'"
       OUTPUT_VARIABLE _output
-      RESULT_VARIABLE _result)
+      RESULT_VARIABLE _result
+    )
 
     if(_result EQUAL 0 AND _output MATCHES "^@rpath/")
       set_property(TARGET Libx264::Libx264 PROPERTY IMPORTED_SONAME "${_output}")
@@ -63,7 +59,8 @@ macro(Libx264_set_soname)
     execute_process(
       COMMAND sh -c "objdump -p '${Libx264_LIBRARY}' | grep SONAME"
       OUTPUT_VARIABLE _output
-      RESULT_VARIABLE _result)
+      RESULT_VARIABLE _result
+    )
 
     if(_result EQUAL 0)
       string(REGEX REPLACE "[ \t]+SONAME[ \t]+([^ \t]+)" "\\1" _soname "${_output}")
@@ -86,7 +83,8 @@ macro(Libx264_find_dll)
     Libx264_LIBRARY
     NAMES libx264-${_dll_version}.dll x264-${_dll_version}.dll libx264.dll x264.dll
     HINTS ${_implib_path} ${_bin_path}
-    DOC "Libx264 DLL location")
+    DOC "Libx264 DLL location"
+  )
 
   if(NOT Libx264_LIBRARY)
     set(Libx264_LIBRARY "${Libx264_IMPLIB}")
@@ -101,7 +99,8 @@ find_path(
   NAMES x264.h
   HINTS ${PC_Libx264_INCLUDE_DIRS}
   PATHS /usr/include /usr/local/include
-  DOC "Libx264 include directory")
+  DOC "Libx264 include directory"
+)
 
 if(PC_Libx264_VERSION VERSION_GREATER 0)
   set(Libx264_VERSION ${PC_Libx264_VERSION})
@@ -116,10 +115,7 @@ else()
 endif()
 
 if(CMAKE_HOST_SYSTEM_NAME MATCHES "Windows")
-  find_library(
-    Libx264_IMPLIB
-    NAMES x264 libx264
-    DOC "Libx264 import library location")
+  find_library(Libx264_IMPLIB NAMES x264 libx264 DOC "Libx264 import library location")
 
   libx264_find_dll()
 else()
@@ -128,7 +124,8 @@ else()
     NAMES x264 libx264
     HINTS ${PC_Libx264_LIBRARY_DIRS}
     PATHS /usr/lib /usr/local/lib
-    DOC "Libx264 location")
+    DOC "Libx264 location"
+  )
 endif()
 
 if(CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin|Windows")
@@ -140,7 +137,9 @@ endif()
 find_package_handle_standard_args(
   Libx264
   REQUIRED_VARS Libx264_LIBRARY Libx264_INCLUDE_DIR
-  VERSION_VAR Libx264_VERSION REASON_FAILURE_MESSAGE "${Libx264_ERROR_REASON}")
+  VERSION_VAR Libx264_VERSION
+  REASON_FAILURE_MESSAGE "${Libx264_ERROR_REASON}"
+)
 mark_as_advanced(Libx264_INCLUDE_DIR Libx264_LIBRARY Libx264_IMPLIB)
 unset(Libx264_ERROR_REASON)
 
@@ -166,16 +165,19 @@ if(Libx264_FOUND)
     libx264_set_soname()
     set_target_properties(
       Libx264::Libx264
-      PROPERTIES INTERFACE_COMPILE_OPTIONS "${PC_Libx264_CFLAGS_OTHER}"
-                 INTERFACE_INCLUDE_DIRECTORIES "${Libx264_INCLUDE_DIR}"
-                 VERSION ${Libx264_VERSION})
+      PROPERTIES
+        INTERFACE_COMPILE_OPTIONS "${PC_Libx264_CFLAGS_OTHER}"
+        INTERFACE_INCLUDE_DIRECTORIES "${Libx264_INCLUDE_DIR}"
+        VERSION ${Libx264_VERSION}
+    )
   endif()
 endif()
 
 include(FeatureSummary)
 set_package_properties(
-  Libx264 PROPERTIES
-  URL "https://www.videolan.org/developers/x264.html"
-  DESCRIPTION
-    "x264 is a free software library and application for encoding video streams into the H.264/MPEG-4 AVC compression format."
+  Libx264
+  PROPERTIES
+    URL "https://www.videolan.org/developers/x264.html"
+    DESCRIPTION
+      "x264 is a free software library and application for encoding video streams into the H.264/MPEG-4 AVC compression format."
 )

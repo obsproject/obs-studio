@@ -33,11 +33,6 @@ The following cache variables may also be set:
 
 #]=======================================================================]
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-lint: disable=C0301
-# cmake-format: on
-
 include(FindPackageHandleStandardArgs)
 
 find_package(PkgConfig QUIET)
@@ -51,7 +46,8 @@ macro(qrcodegencpp_set_soname)
     execute_process(
       COMMAND sh -c "otool -D '${qrcodegencpp_LIBRARY}' | grep -v '${qrcodegencpp_LIBRARY}'"
       OUTPUT_VARIABLE _output
-      RESULT_VARIABLE _result)
+      RESULT_VARIABLE _result
+    )
 
     if(_result EQUAL 0 AND _output MATCHES "^@rpath/")
       set_property(TARGET qrcodegencpp::qrcodegencpp PROPERTY IMPORTED_SONAME "${_output}")
@@ -60,7 +56,8 @@ macro(qrcodegencpp_set_soname)
     execute_process(
       COMMAND sh -c "${CMAKE_OBJDUMP} -p '${qrcodegencpp_LIBRARY}' | grep SONAME"
       OUTPUT_VARIABLE _output
-      RESULT_VARIABLE _result)
+      RESULT_VARIABLE _result
+    )
 
     if(_result EQUAL 0)
       string(REGEX REPLACE "[ \t]+SONAME[ \t]+([^ \t]+)" "\\1" _soname "${_output}")
@@ -83,7 +80,8 @@ macro(qrcodegencpp_find_dll)
     qrcodegencpp_LIBRARY
     NAMES qrcodegencpp.dll
     HINTS ${_implib_path} ${_bin_path}
-    DOC "qrcodegencpp DLL location")
+    DOC "qrcodegencpp DLL location"
+  )
 
   if(NOT qrcodegencpp_LIBRARY)
     set(qrcodegencpp_LIBRARY "${qrcodegencpp_IMPLIB}")
@@ -99,7 +97,8 @@ find_path(
   HINTS ${PC_qrcodegencpp_INCLUDE_DIRS}
   PATHS /usr/include /usr/local/include
   PATH_SUFFIXES qrcodegencpp qrcodegen
-  DOC "qrcodegencpp include directory")
+  DOC "qrcodegencpp include directory"
+)
 
 if(PC_qrcodegencpp_VERSION VERSION_GREATER 0)
   set(qrcodegencpp_VERSION ${PC_qrcodegencpp_VERSION})
@@ -111,10 +110,7 @@ else()
 endif()
 
 if(CMAKE_HOST_SYSTEM_NAME MATCHES "Windows")
-  find_library(
-    qrcodegencpp_IMPLIB
-    NAMES qrcodegencpp qrcodegencpp
-    DOC "qrcodegencpp import library location")
+  find_library(qrcodegencpp_IMPLIB NAMES qrcodegencpp qrcodegencpp DOC "qrcodegencpp import library location")
 
   qrcodegencpp_find_dll()
 else()
@@ -123,7 +119,8 @@ else()
     NAMES qrcodegencpp qrcodegencpp
     HINTS ${PC_qrcodegencpp_LIBRARY_DIRS}
     PATHS /usr/lib /usr/local/lib
-    DOC "qrcodegencpp location")
+    DOC "qrcodegencpp location"
+  )
 endif()
 
 if(CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin|Windows")
@@ -135,7 +132,9 @@ endif()
 find_package_handle_standard_args(
   qrcodegencpp
   REQUIRED_VARS qrcodegencpp_LIBRARY qrcodegencpp_INCLUDE_DIR
-  VERSION_VAR qrcodegencpp_VERSION REASON_FAILURE_MESSAGE "${qrcodegencpp_ERROR_REASON}")
+  VERSION_VAR qrcodegencpp_VERSION
+  REASON_FAILURE_MESSAGE "${qrcodegencpp_ERROR_REASON}"
+)
 mark_as_advanced(qrcodegencpp_INCLUDE_DIR qrcodegencpp_LIBRARY qrcodegencpp_IMPLIB)
 unset(qrcodegencpp_ERROR_REASON)
 
@@ -161,14 +160,18 @@ if(qrcodegencpp_FOUND)
     qrcodegencpp_set_soname()
     set_target_properties(
       qrcodegencpp::qrcodegencpp
-      PROPERTIES INTERFACE_COMPILE_OPTIONS "${PC_qrcodegencpp_CFLAGS_OTHER}"
-                 INTERFACE_INCLUDE_DIRECTORIES "${qrcodegencpp_INCLUDE_DIR}"
-                 VERSION ${qrcodegencpp_VERSION})
+      PROPERTIES
+        INTERFACE_COMPILE_OPTIONS "${PC_qrcodegencpp_CFLAGS_OTHER}"
+        INTERFACE_INCLUDE_DIRECTORIES "${qrcodegencpp_INCLUDE_DIR}"
+        VERSION ${qrcodegencpp_VERSION}
+    )
   endif()
 endif()
 
 include(FeatureSummary)
 set_package_properties(
-  qrcodegencpp PROPERTIES
-  URL "https://www.nayuki.io/page/qr-code-generator-library"
-  DESCRIPTION "This project aims to be the best, clearest library for generating QR Codes in C++.")
+  qrcodegencpp
+  PROPERTIES
+    URL "https://www.nayuki.io/page/qr-code-generator-library"
+    DESCRIPTION "This project aims to be the best, clearest library for generating QR Codes in C++."
+)

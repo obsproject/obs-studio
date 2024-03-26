@@ -11,13 +11,15 @@ endif()
 
 target_link_libraries(
   mac-avcapture
-  PRIVATE OBS::libobs
-          "$<LINK_LIBRARY:FRAMEWORK,AVFoundation.framework>"
-          "$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>"
-          "$<LINK_LIBRARY:FRAMEWORK,CoreFoundation.framework>"
-          "$<LINK_LIBRARY:FRAMEWORK,CoreMedia.framework>"
-          "$<LINK_LIBRARY:FRAMEWORK,CoreVideo.framework>"
-          "$<LINK_LIBRARY:FRAMEWORK,CoreMediaIO.framework>")
+  PRIVATE
+    OBS::libobs
+    "$<LINK_LIBRARY:FRAMEWORK,AVFoundation.framework>"
+    "$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>"
+    "$<LINK_LIBRARY:FRAMEWORK,CoreFoundation.framework>"
+    "$<LINK_LIBRARY:FRAMEWORK,CoreMedia.framework>"
+    "$<LINK_LIBRARY:FRAMEWORK,CoreVideo.framework>"
+    "$<LINK_LIBRARY:FRAMEWORK,CoreMediaIO.framework>"
+)
 
 set_target_properties_obs(
   mac-avcapture
@@ -25,4 +27,5 @@ set_target_properties_obs(
              PREFIX ""
              XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
              XCODE_ATTRIBUTE_CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION YES
-             XCODE_ATTRIBUTE_GCC_WARN_SHADOW YES)
+             XCODE_ATTRIBUTE_GCC_WARN_SHADOW YES
+)

@@ -19,19 +19,20 @@ target_sources(mac-syphon PRIVATE syphon.m plugin-main.c SyphonOBSClient.h Sypho
 
 target_compile_options(mac-syphon PRIVATE -fobjc-arc)
 
-# cmake-format: off
 target_link_libraries(
   mac-syphon
-  PRIVATE OBS::libobs
-          "$<LINK_LIBRARY:FRAMEWORK,AppKit.framework>"
-          "$<LINK_LIBRARY:FRAMEWORK,IOSurface.framework>"
-          "$<LINK_LIBRARY:FRAMEWORK,ScriptingBridge.framework>"
-          "$<LINK_LIBRARY:FRAMEWORK,${SYPHON}>")
+  PRIVATE
+    OBS::libobs
+    "$<LINK_LIBRARY:FRAMEWORK,AppKit.framework>"
+    "$<LINK_LIBRARY:FRAMEWORK,IOSurface.framework>"
+    "$<LINK_LIBRARY:FRAMEWORK,ScriptingBridge.framework>"
+    "$<LINK_LIBRARY:FRAMEWORK,${SYPHON}>"
+)
 
 set_target_properties_obs(
   mac-syphon
   PROPERTIES FOLDER "plugins"
              PREFIX ""
              XCODE_ATTRIBUTE_CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION YES
-             XCODE_ATTRIBUTE_GCC_WARN_SHADOW YES)
-# cmake-format: on
+             XCODE_ATTRIBUTE_GCC_WARN_SHADOW YES
+)

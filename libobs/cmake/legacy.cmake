@@ -4,10 +4,8 @@ endif()
 
 project(libobs)
 
-# cmake-format: off
 add_library(libobs-version STATIC EXCLUDE_FROM_ALL)
 add_library(OBS::libobs-version ALIAS libobs-version)
-# cmake-format: on
 configure_file(obsversion.c.in obsversion.c @ONLY)
 target_sources(libobs-version PRIVATE obsversion.c obsversion.h)
 target_include_directories(libobs-version PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -15,10 +13,7 @@ set_property(TARGET libobs-version PROPERTY FOLDER core)
 
 find_package(Jansson 2.5 REQUIRED)
 find_package(Threads REQUIRED)
-find_package(
-  FFmpeg REQUIRED
-  COMPONENTS avformat avutil swscale swresample
-  OPTIONAL_COMPONENTS avcodec)
+find_package(FFmpeg REQUIRED COMPONENTS avformat avutil swscale swresample OPTIONAL_COMPONENTS avcodec)
 find_package(ZLIB REQUIRED)
 find_package(Uthash REQUIRED)
 
@@ -27,144 +22,154 @@ add_library(OBS::libobs ALIAS libobs)
 
 target_sources(
   libobs
-  PRIVATE obs.c
-          obs.h
-          obs.hpp
-          obs-audio.c
-          obs-audio-controls.c
-          obs-audio-controls.h
-          obs-av1.c
-          obs-av1.h
-          obs-avc.c
-          obs-avc.h
-          obs-data.c
-          obs-data.h
-          obs-defs.h
-          obs-display.c
-          obs-encoder.c
-          obs-encoder.h
-          obs-ffmpeg-compat.h
-          obs-hotkey.c
-          obs-hotkey.h
-          obs-hotkeys.h
-          obs-missing-files.c
-          obs-missing-files.h
-          obs-nal.c
-          obs-nal.h
-          obs-hotkey-name-map.c
-          obs-interaction.h
-          obs-internal.h
-          obs-module.c
-          obs-module.h
-          obs-output.c
-          obs-output.h
-          obs-output-delay.c
-          obs-properties.c
-          obs-properties.h
-          obs-service.c
-          obs-service.h
-          obs-scene.c
-          obs-scene.h
-          obs-source.c
-          obs-source.h
-          obs-source-deinterlace.c
-          obs-source-transition.c
-          obs-video.c
-          obs-video-gpu-encode.c
-          obs-view.c
-          obs-config.h)
+  PRIVATE
+    obs.c
+    obs.h
+    obs.hpp
+    obs-audio.c
+    obs-audio-controls.c
+    obs-audio-controls.h
+    obs-av1.c
+    obs-av1.h
+    obs-avc.c
+    obs-avc.h
+    obs-data.c
+    obs-data.h
+    obs-defs.h
+    obs-display.c
+    obs-encoder.c
+    obs-encoder.h
+    obs-ffmpeg-compat.h
+    obs-hotkey.c
+    obs-hotkey.h
+    obs-hotkeys.h
+    obs-missing-files.c
+    obs-missing-files.h
+    obs-nal.c
+    obs-nal.h
+    obs-hotkey-name-map.c
+    obs-interaction.h
+    obs-internal.h
+    obs-module.c
+    obs-module.h
+    obs-output.c
+    obs-output.h
+    obs-output-delay.c
+    obs-properties.c
+    obs-properties.h
+    obs-service.c
+    obs-service.h
+    obs-scene.c
+    obs-scene.h
+    obs-source.c
+    obs-source.h
+    obs-source-deinterlace.c
+    obs-source-transition.c
+    obs-video.c
+    obs-video-gpu-encode.c
+    obs-view.c
+    obs-config.h
+)
 
 target_sources(
   libobs
-  PRIVATE util/simde/check.h
-          util/simde/debug-trap.h
-          util/simde/hedley.h
-          util/simde/simde-align.h
-          util/simde/simde-arch.h
-          util/simde/simde-common.h
-          util/simde/simde-constify.h
-          util/simde/simde-detect-clang.h
-          util/simde/simde-diagnostic.h
-          util/simde/simde-features.h
-          util/simde/simde-math.h
-          util/simde/x86/mmx.h
-          util/simde/x86/sse2.h
-          util/simde/x86/sse.h)
+  PRIVATE
+    util/simde/check.h
+    util/simde/debug-trap.h
+    util/simde/hedley.h
+    util/simde/simde-align.h
+    util/simde/simde-arch.h
+    util/simde/simde-common.h
+    util/simde/simde-constify.h
+    util/simde/simde-detect-clang.h
+    util/simde/simde-diagnostic.h
+    util/simde/simde-features.h
+    util/simde/simde-math.h
+    util/simde/x86/mmx.h
+    util/simde/x86/sse2.h
+    util/simde/x86/sse.h
+)
 
 target_sources(
   libobs
-  PRIVATE callback/calldata.c
-          callback/calldata.h
-          callback/decl.c
-          callback/decl.h
-          callback/signal.c
-          callback/signal.h
-          callback/proc.c
-          callback/proc.h)
+  PRIVATE
+    callback/calldata.c
+    callback/calldata.h
+    callback/decl.c
+    callback/decl.h
+    callback/signal.c
+    callback/signal.h
+    callback/proc.c
+    callback/proc.h
+)
 
 target_sources(
   libobs
-  PRIVATE graphics/graphics.c
-          graphics/graphics.h
-          graphics/graphics-imports.c
-          graphics/graphics-internal.h
-          graphics/axisang.c
-          graphics/axisang.h
-          graphics/bounds.c
-          graphics/bounds.h
-          graphics/device-exports.h
-          graphics/effect.c
-          graphics/effect.h
-          graphics/effect-parser.c
-          graphics/effect-parser.h
-          graphics/half.h
-          graphics/image-file.c
-          graphics/image-file.h
-          graphics/math-extra.c
-          graphics/math-extra.h
-          graphics/matrix3.c
-          graphics/matrix3.h
-          graphics/matrix4.c
-          graphics/matrix4.h
-          graphics/plane.c
-          graphics/plane.h
-          graphics/quat.c
-          graphics/quat.h
-          graphics/shader-parser.c
-          graphics/shader-parser.h
-          graphics/srgb.h
-          graphics/texture-render.c
-          graphics/vec2.c
-          graphics/vec2.h
-          graphics/vec3.c
-          graphics/vec3.h
-          graphics/vec4.c
-          graphics/vec4.h
-          graphics/libnsgif/libnsgif.c
-          graphics/libnsgif/libnsgif.h
-          graphics/graphics-ffmpeg.c)
+  PRIVATE
+    graphics/graphics.c
+    graphics/graphics.h
+    graphics/graphics-imports.c
+    graphics/graphics-internal.h
+    graphics/axisang.c
+    graphics/axisang.h
+    graphics/bounds.c
+    graphics/bounds.h
+    graphics/device-exports.h
+    graphics/effect.c
+    graphics/effect.h
+    graphics/effect-parser.c
+    graphics/effect-parser.h
+    graphics/half.h
+    graphics/image-file.c
+    graphics/image-file.h
+    graphics/math-extra.c
+    graphics/math-extra.h
+    graphics/matrix3.c
+    graphics/matrix3.h
+    graphics/matrix4.c
+    graphics/matrix4.h
+    graphics/plane.c
+    graphics/plane.h
+    graphics/quat.c
+    graphics/quat.h
+    graphics/shader-parser.c
+    graphics/shader-parser.h
+    graphics/srgb.h
+    graphics/texture-render.c
+    graphics/vec2.c
+    graphics/vec2.h
+    graphics/vec3.c
+    graphics/vec3.h
+    graphics/vec4.c
+    graphics/vec4.h
+    graphics/libnsgif/libnsgif.c
+    graphics/libnsgif/libnsgif.h
+    graphics/graphics-ffmpeg.c
+)
 
 target_sources(
   libobs
-  PRIVATE media-io/audio-io.c
-          media-io/audio-io.h
-          media-io/audio-math.h
-          media-io/audio-resampler.h
-          media-io/audio-resampler-ffmpeg.c
-          media-io/format-conversion.c
-          media-io/format-conversion.h
-          media-io/frame-rate.h
-          media-io/media-remux.c
-          media-io/media-remux.h
-          media-io/video-fourcc.c
-          media-io/video-frame.c
-          media-io/video-frame.h
-          media-io/video-io.c
-          media-io/video-io.h
-          media-io/media-io-defs.h
-          media-io/video-matrices.c
-          media-io/video-scaler-ffmpeg.c
-          media-io/video-scaler.h)
+  PRIVATE
+    media-io/audio-io.c
+    media-io/audio-io.h
+    media-io/audio-math.h
+    media-io/audio-resampler.h
+    media-io/audio-resampler-ffmpeg.c
+    media-io/format-conversion.c
+    media-io/format-conversion.h
+    media-io/frame-rate.h
+    media-io/media-remux.c
+    media-io/media-remux.h
+    media-io/video-fourcc.c
+    media-io/video-frame.c
+    media-io/video-frame.h
+    media-io/video-io.c
+    media-io/video-io.h
+    media-io/media-io-defs.h
+    media-io/video-matrices.c
+    media-io/video-scaler-ffmpeg.c
+    media-io/video-scaler.h
+)
 
 target_sources(
   libobs
@@ -228,61 +233,62 @@ endif()
 if(NOT OS_MACOS)
   target_sources(
     libobs
-    PRIVATE data/area.effect
-            data/bicubic_scale.effect
-            data/bilinear_lowres_scale.effect
-            data/color.effect
-            data/default.effect
-            data/default_rect.effect
-            data/deinterlace_base.effect
-            data/deinterlace_blend.effect
-            data/deinterlace_blend_2x.effect
-            data/deinterlace_discard.effect
-            data/deinterlace_discard_2x.effect
-            data/deinterlace_linear.effect
-            data/deinterlace_linear_2x.effect
-            data/deinterlace_yadif.effect
-            data/deinterlace_yadif_2x.effect
-            data/format_conversion.effect
-            data/lanczos_scale.effect
-            data/opaque.effect
-            data/premultiplied_alpha.effect
-            data/repeat.effect
-            data/solid.effect)
+    PRIVATE
+      data/area.effect
+      data/bicubic_scale.effect
+      data/bilinear_lowres_scale.effect
+      data/color.effect
+      data/default.effect
+      data/default_rect.effect
+      data/deinterlace_base.effect
+      data/deinterlace_blend.effect
+      data/deinterlace_blend_2x.effect
+      data/deinterlace_discard.effect
+      data/deinterlace_discard_2x.effect
+      data/deinterlace_linear.effect
+      data/deinterlace_linear_2x.effect
+      data/deinterlace_yadif.effect
+      data/deinterlace_yadif_2x.effect
+      data/format_conversion.effect
+      data/lanczos_scale.effect
+      data/opaque.effect
+      data/premultiplied_alpha.effect
+      data/repeat.effect
+      data/solid.effect
+  )
 endif()
 
 target_link_libraries(
   libobs
-  PRIVATE FFmpeg::avcodec
-          FFmpeg::avformat
-          FFmpeg::avutil
-          FFmpeg::swscale
-          FFmpeg::swresample
-          Jansson::Jansson
-          OBS::caption
-          OBS::libobs-version
-          Uthash::Uthash
-          ZLIB::ZLIB
-  PUBLIC Threads::Threads)
+  PRIVATE
+    FFmpeg::avcodec
+    FFmpeg::avformat
+    FFmpeg::avutil
+    FFmpeg::swscale
+    FFmpeg::swresample
+    Jansson::Jansson
+    OBS::caption
+    OBS::libobs-version
+    Uthash::Uthash
+    ZLIB::ZLIB
+  PUBLIC Threads::Threads
+)
 
 set_target_properties(
   libobs
-  PROPERTIES OUTPUT_NAME obs
-             FOLDER "core"
-             VERSION "${OBS_VERSION_MAJOR}"
-             SOVERSION "0")
+  PROPERTIES OUTPUT_NAME obs FOLDER "core" VERSION "${OBS_VERSION_MAJOR}" SOVERSION "0"
+)
 
-target_compile_definitions(
-  libobs
-  PUBLIC ${ARCH_SIMD_DEFINES}
-  PRIVATE IS_LIBOBS)
+target_compile_definitions(libobs PUBLIC ${ARCH_SIMD_DEFINES} PRIVATE IS_LIBOBS)
 
 target_compile_features(libobs PRIVATE cxx_alias_templates)
 
 target_compile_options(libobs PUBLIC ${ARCH_SIMD_FLAGS})
 
-target_include_directories(libobs PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-                                         $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/config>)
+target_include_directories(
+  libobs
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}> $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/config>
+)
 
 if(OS_WINDOWS)
   set(MODULE_DESCRIPTION "OBS Library")
@@ -292,34 +298,41 @@ if(OS_WINDOWS)
 
   target_sources(
     libobs
-    PRIVATE obs-win-crash-handler.c
-            obs-windows.c
-            util/threading-windows.c
-            util/threading-windows.h
-            util/pipe-windows.c
-            util/platform-windows.c
-            util/windows/device-enum.c
-            util/windows/device-enum.h
-            util/windows/obfuscate.c
-            util/windows/obfuscate.h
-            util/windows/win-registry.h
-            util/windows/win-version.h
-            util/windows/window-helpers.c
-            util/windows/window-helpers.h
-            util/windows/ComPtr.hpp
-            util/windows/CoTaskMemPtr.hpp
-            util/windows/HRError.hpp
-            util/windows/WinHandle.hpp
-            libobs.rc
-            audio-monitoring/win32/wasapi-output.c
-            audio-monitoring/win32/wasapi-enum-devices.c
-            audio-monitoring/win32/wasapi-output.h
-            audio-monitoring/win32/wasapi-monitoring-available.c)
+    PRIVATE
+      obs-win-crash-handler.c
+      obs-windows.c
+      util/threading-windows.c
+      util/threading-windows.h
+      util/pipe-windows.c
+      util/platform-windows.c
+      util/windows/device-enum.c
+      util/windows/device-enum.h
+      util/windows/obfuscate.c
+      util/windows/obfuscate.h
+      util/windows/win-registry.h
+      util/windows/win-version.h
+      util/windows/window-helpers.c
+      util/windows/window-helpers.h
+      util/windows/ComPtr.hpp
+      util/windows/CoTaskMemPtr.hpp
+      util/windows/HRError.hpp
+      util/windows/WinHandle.hpp
+      libobs.rc
+      audio-monitoring/win32/wasapi-output.c
+      audio-monitoring/win32/wasapi-enum-devices.c
+      audio-monitoring/win32/wasapi-output.h
+      audio-monitoring/win32/wasapi-monitoring-available.c
+  )
 
   target_compile_definitions(libobs PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_WARNINGS)
-  set_source_files_properties(obs-win-crash-handler.c PROPERTIES COMPILE_DEFINITIONS
-                                                                 OBS_VERSION="${OBS_VERSION_CANONICAL}")
-  target_link_libraries(libobs PRIVATE dxgi Avrt Dwmapi winmm Rpcrt4)
+  set_source_files_properties(
+    obs-win-crash-handler.c
+    PROPERTIES COMPILE_DEFINITIONS OBS_VERSION="${OBS_VERSION_CANONICAL}"
+  )
+  target_link_libraries(
+    libobs
+    PRIVATE dxgi Avrt Dwmapi winmm Rpcrt4
+  )
 
   if(MSVC)
     target_link_libraries(libobs PUBLIC OBS::w32-pthreads)
@@ -343,9 +356,7 @@ if(OS_WINDOWS)
     target_sources(obs-winhandle INTERFACE util/windows/WinHandle.hpp)
     target_include_directories(obs-winhandle INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
   endif()
-
 elseif(OS_MACOS)
-
   find_library(COCOA Cocoa)
   find_library(COREAUDIO CoreAudio)
   find_library(AUDIOTOOLBOX AudioToolbox)
@@ -361,36 +372,33 @@ elseif(OS_MACOS)
     AUDIOUNIT
     APPKIT
     IOKIT
-    CARBON)
+    CARBON
+  )
 
   target_link_libraries(
     libobs
-    PRIVATE ${COCOA}
-            ${COREAUDIO}
-            ${AUDIOTOOLBOX}
-            ${AUDIOUNIT}
-            ${APPKIT}
-            ${IOKIT}
-            ${CARBON})
+    PRIVATE ${COCOA} ${COREAUDIO} ${AUDIOTOOLBOX} ${AUDIOUNIT} ${APPKIT} ${IOKIT} ${CARBON}
+  )
 
   target_sources(
     libobs
-    PRIVATE obs-cocoa.m
-            util/pipe-posix.c
-            util/platform-cocoa.m
-            util/platform-nix.c
-            util/threading-posix.c
-            util/threading-posix.h
-            util/apple/cfstring-utils.h
-            audio-monitoring/osx/coreaudio-enum-devices.c
-            audio-monitoring/osx/coreaudio-output.c
-            audio-monitoring/osx/coreaudio-monitoring-available.c
-            audio-monitoring/osx/mac-helpers.h)
+    PRIVATE
+      obs-cocoa.m
+      util/pipe-posix.c
+      util/platform-cocoa.m
+      util/platform-nix.c
+      util/threading-posix.c
+      util/threading-posix.h
+      util/apple/cfstring-utils.h
+      audio-monitoring/osx/coreaudio-enum-devices.c
+      audio-monitoring/osx/coreaudio-output.c
+      audio-monitoring/osx/coreaudio-monitoring-available.c
+      audio-monitoring/osx/mac-helpers.h
+  )
 
   set_source_files_properties(util/platform-cocoa.m obs-cocoa.m PROPERTIES COMPILE_FLAGS -fobjc-arc)
 
   set_target_properties(libobs PROPERTIES SOVERSION "1" BUILD_RPATH "$<TARGET_FILE_DIR:OBS::libobs-opengl>")
-
 elseif(OS_POSIX)
   if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
     target_compile_definitions(libobs PRIVATE ENABLE_DARRAY_TYPE_TEST)
@@ -398,23 +406,21 @@ elseif(OS_POSIX)
 
   find_package(LibUUID REQUIRED)
   find_package(X11 REQUIRED)
-  find_package(
-    XCB
-    COMPONENTS XCB
-    OPTIONAL_COMPONENTS XINPUT
-    QUIET)
+  find_package(XCB COMPONENTS XCB OPTIONAL_COMPONENTS XINPUT QUIET)
   find_package(X11_XCB REQUIRED)
 
   target_sources(
     libobs
-    PRIVATE obs-nix.c
-            obs-nix-platform.c
-            obs-nix-platform.h
-            obs-nix-x11.c
-            util/threading-posix.c
-            util/threading-posix.h
-            util/pipe-posix.c
-            util/platform-nix.c)
+    PRIVATE
+      obs-nix.c
+      obs-nix-platform.c
+      obs-nix-platform.h
+      obs-nix-x11.c
+      util/threading-posix.c
+      util/threading-posix.h
+      util/pipe-posix.c
+      util/platform-nix.c
+  )
 
   target_link_libraries(libobs PRIVATE X11::X11_xcb XCB::XCB LibUUID::LibUUID)
 
@@ -427,9 +433,13 @@ elseif(OS_POSIX)
     obs_status(STATUS "-> PulseAudio found - audio monitoring enabled")
     target_sources(
       libobs
-      PRIVATE audio-monitoring/pulse/pulseaudio-output.c audio-monitoring/pulse/pulseaudio-enum-devices.c
-              audio-monitoring/pulse/pulseaudio-wrapper.c audio-monitoring/pulse/pulseaudio-wrapper.h
-              audio-monitoring/pulse/pulseaudio-monitoring-available.c)
+      PRIVATE
+        audio-monitoring/pulse/pulseaudio-output.c
+        audio-monitoring/pulse/pulseaudio-enum-devices.c
+        audio-monitoring/pulse/pulseaudio-wrapper.c
+        audio-monitoring/pulse/pulseaudio-wrapper.h
+        audio-monitoring/pulse/pulseaudio-monitoring-available.c
+    )
 
     target_link_libraries(libobs PRIVATE ${PULSEAUDIO_LIBRARY})
   else()
@@ -449,10 +459,7 @@ elseif(OS_POSIX)
   endif()
 
   if(ENABLE_WAYLAND)
-    find_package(
-      Wayland
-      COMPONENTS Client
-      REQUIRED)
+    find_package(Wayland COMPONENTS Client REQUIRED)
     find_package(Xkbcommon REQUIRED)
 
     target_link_libraries(libobs PRIVATE Wayland::Client Xkbcommon::Xkbcommon)
@@ -477,7 +484,8 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/obsconfig.h.in ${CMAKE_BINARY_DIR}/co
 target_compile_definitions(
   libobs
   PUBLIC HAVE_OBSCONFIG_H
-  PRIVATE "OBS_INSTALL_PREFIX=\"${OBS_INSTALL_PREFIX}\"" "$<$<BOOL:${LINUX_PORTABLE}>:LINUX_PORTABLE>")
+  PRIVATE "OBS_INSTALL_PREFIX=\"${OBS_INSTALL_PREFIX}\"" "$<$<BOOL:${LINUX_PORTABLE}>:LINUX_PORTABLE>"
+)
 
 if(ENABLE_FFMPEG_MUX_DEBUG)
   target_compile_definitions(libobs PRIVATE SHOW_SUBPROCESSES)
@@ -490,18 +498,9 @@ list(FILTER _OBS_HEADERS INCLUDE REGEX ".*\\.h(pp)?")
 list(FILTER _OBS_SOURCES INCLUDE REGEX ".*\\.(m|c[cp]?p?)")
 list(FILTER _OBS_FILTERS INCLUDE REGEX ".*\\.effect")
 
-source_group(
-  TREE "${CMAKE_CURRENT_SOURCE_DIR}"
-  PREFIX "Source Files"
-  FILES ${_OBS_SOURCES})
-source_group(
-  TREE "${CMAKE_CURRENT_SOURCE_DIR}"
-  PREFIX "Header Files"
-  FILES ${_OBS_HEADERS})
-source_group(
-  TREE "${CMAKE_CURRENT_SOURCE_DIR}"
-  PREFIX "Effect Files"
-  FILES ${_OBS_FILTERS})
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" PREFIX "Source Files" FILES ${_OBS_SOURCES})
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" PREFIX "Header Files" FILES ${_OBS_HEADERS})
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" PREFIX "Effect Files" FILES ${_OBS_FILTERS})
 
 setup_binary_target(libobs)
 setup_target_resources(libobs libobs)

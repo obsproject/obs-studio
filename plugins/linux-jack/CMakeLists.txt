@@ -13,8 +13,7 @@ find_package(Jack REQUIRED)
 add_library(linux-jack MODULE)
 add_library(OBS::jack ALIAS linux-jack)
 
-target_sources(linux-jack PRIVATE # cmake-format: sortable
-                                  jack-input.c jack-wrapper.c linux-jack.c)
+target_sources(linux-jack PRIVATE jack-input.c jack-wrapper.c linux-jack.c)
 
 target_compile_options(linux-jack PRIVATE $<$<COMPILE_LANG_AND_ID:C,Clang>:-Wno-error=sign-compare>)
 

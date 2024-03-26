@@ -25,18 +25,19 @@ endif()
 
 target_sources(
   linux-pipewire
-  PRIVATE # cmake-format: sortable
-          $<$<BOOL:${_HAS_PIPEWIRE_CAMERA}>:camera-portal.c>
-          $<$<BOOL:${_HAS_PIPEWIRE_CAMERA}>:camera-portal.h>
-          formats.c
-          formats.h
-          linux-pipewire.c
-          pipewire.c
-          pipewire.h
-          portal.c
-          portal.h
-          screencast-portal.c
-          screencast-portal.h)
+  PRIVATE
+    $<$<BOOL:${_HAS_PIPEWIRE_CAMERA}>:camera-portal.c>
+    $<$<BOOL:${_HAS_PIPEWIRE_CAMERA}>:camera-portal.h>
+    formats.c
+    formats.h
+    linux-pipewire.c
+    pipewire.c
+    pipewire.h
+    portal.c
+    portal.h
+    screencast-portal.c
+    screencast-portal.h
+)
 
 target_include_directories(linux-pipewire PRIVATE ${libdrm_include_directories})
 

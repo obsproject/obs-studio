@@ -28,23 +28,26 @@ add_subdirectory(obs-nvenc-test)
 target_sources(
   obs-nvenc
   PRIVATE # cmake-format: sortable
-          $<$<PLATFORM_ID:Linux>:nvenc-opengl.c>
-          $<$<PLATFORM_ID:Windows>:nvenc-d3d11.c>
-          cuda-helpers.c
-          cuda-helpers.h
-          nvenc-compat.c
-          nvenc-cuda.c
-          nvenc-helpers.c
-          nvenc-helpers.h
-          nvenc-internal.h
-          nvenc-opts-parser.c
-          nvenc-properties.c
-          nvenc.c
-          obs-nvenc.c
-          obs-nvenc.h)
+    $<$<PLATFORM_ID:Linux>:nvenc-opengl.c>
+    $<$<PLATFORM_ID:Windows>:nvenc-d3d11.c>
+    cuda-helpers.c
+    cuda-helpers.h
+    nvenc-compat.c
+    nvenc-cuda.c
+    nvenc-helpers.c
+    nvenc-helpers.h
+    nvenc-internal.h
+    nvenc-opts-parser.c
+    nvenc-properties.c
+    nvenc.c
+    obs-nvenc.c
+    obs-nvenc.h
+)
 
-target_link_libraries(obs-nvenc PRIVATE OBS::libobs OBS::opts-parser FFnvcodec::FFnvcodec
-                                        $<$<PLATFORM_ID:Linux>:OBS::glad>)
+target_link_libraries(
+  obs-nvenc
+  PRIVATE OBS::libobs OBS::opts-parser FFnvcodec::FFnvcodec $<$<PLATFORM_ID:Linux>:OBS::glad>
+)
 
 target_compile_definitions(obs-nvenc PRIVATE $<$<BOOL:${ENABLE_NVENC_FFMPEG_IDS}>:REGISTER_FFMPEG_IDS>)
 
