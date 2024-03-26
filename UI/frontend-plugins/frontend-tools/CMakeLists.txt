@@ -4,9 +4,7 @@ legacy_check()
 
 find_package(Qt6 REQUIRED Widgets)
 
-if(OS_LINUX
-   OR OS_FREEBSD
-   OR OS_OPENBSD)
+if(OS_LINUX OR OS_FREEBSD OR OS_OPENBSD)
   find_package(Qt6 REQUIRED Gui)
   find_package(X11 REQUIRED)
 endif()
@@ -28,42 +26,49 @@ endif()
 
 target_sources(
   frontend-tools
-  PRIVATE # cmake-format: sortable
-          $<$<PLATFORM_ID:Darwin>:auto-scene-switcher-osx.mm>
-          $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:auto-scene-switcher-nix.cpp>
-          $<$<PLATFORM_ID:Windows>:auto-scene-switcher-win.cpp>
-          $<$<PLATFORM_ID:Windows>:captions-handler.cpp>
-          $<$<PLATFORM_ID:Windows>:captions-handler.hpp>
-          $<$<PLATFORM_ID:Windows>:captions-mssapi-stream.cpp>
-          $<$<PLATFORM_ID:Windows>:captions-mssapi-stream.hpp>
-          $<$<PLATFORM_ID:Windows>:captions-mssapi.cpp>
-          $<$<PLATFORM_ID:Windows>:captions-mssapi.hpp>
-          $<$<PLATFORM_ID:Windows>:captions.cpp>
-          $<$<PLATFORM_ID:Windows>:captions.hpp>
-          auto-scene-switcher.cpp
-          auto-scene-switcher.hpp
-          frontend-tools.c
-          output-timer.cpp
-          output-timer.hpp
-          tool-helpers.hpp)
+  PRIVATE
+    $<$<PLATFORM_ID:Darwin>:auto-scene-switcher-osx.mm>
+    $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:auto-scene-switcher-nix.cpp>
+    $<$<PLATFORM_ID:Windows>:auto-scene-switcher-win.cpp>
+    $<$<PLATFORM_ID:Windows>:captions-handler.cpp>
+    $<$<PLATFORM_ID:Windows>:captions-handler.hpp>
+    $<$<PLATFORM_ID:Windows>:captions-mssapi-stream.cpp>
+    $<$<PLATFORM_ID:Windows>:captions-mssapi-stream.hpp>
+    $<$<PLATFORM_ID:Windows>:captions-mssapi.cpp>
+    $<$<PLATFORM_ID:Windows>:captions-mssapi.hpp>
+    $<$<PLATFORM_ID:Windows>:captions.cpp>
+    $<$<PLATFORM_ID:Windows>:captions.hpp>
+    auto-scene-switcher.cpp
+    auto-scene-switcher.hpp
+    frontend-tools.c
+    output-timer.cpp
+    output-timer.hpp
+    tool-helpers.hpp
+)
 
-target_sources(frontend-tools PRIVATE forms/auto-scene-switcher.ui forms/captions.ui forms/output-timer.ui
-                                      forms/scripts.ui)
+target_sources(
+  frontend-tools
+  PRIVATE forms/auto-scene-switcher.ui forms/captions.ui forms/output-timer.ui forms/scripts.ui
+)
 
-target_compile_options(frontend-tools PRIVATE $<$<PLATFORM_ID:Darwin>:-Wno-quoted-include-in-framework-header>
-                                              $<$<PLATFORM_ID:Darwin>:-Wno-comma>)
+target_compile_options(
+  frontend-tools
+  PRIVATE $<$<PLATFORM_ID:Darwin>:-Wno-quoted-include-in-framework-header> $<$<PLATFORM_ID:Darwin>:-Wno-comma>
+)
 
 target_link_libraries(
   frontend-tools
-  PRIVATE OBS::frontend-api
-          OBS::libobs
-          OBS::properties-view
-          OBS::qt-plain-text-edit
-          OBS::qt-wrappers
-          Qt::Widgets
-          "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,Cocoa>>"
-          $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:X11::X11>
-          $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:Qt::GuiPrivate>)
+  PRIVATE
+    OBS::frontend-api
+    OBS::libobs
+    OBS::properties-view
+    OBS::qt-plain-text-edit
+    OBS::qt-wrappers
+    Qt::Widgets
+    "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,Cocoa>>"
+    $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:X11::X11>
+    $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:Qt::GuiPrivate>
+)
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/shared/obs-scripting" "${CMAKE_BINARY_DIR}/shared/obs-scripting")
 
@@ -77,12 +82,9 @@ if(OS_WINDOWS)
   configure_file(cmake/windows/obs-module.rc.in frontend-tools.rc)
   target_sources(frontend-tools PRIVATE frontend-tools.rc)
 
-  # cmake-format: off
   set_property(TARGET frontend-tools APPEND PROPERTY AUTORCC_OPTIONS --format-version 1)
-  # cmake-format: on
 endif()
 
-# cmake-format: off
 set_target_properties_obs(
   frontend-tools
   PROPERTIES FOLDER frontend
@@ -91,5 +93,5 @@ set_target_properties_obs(
              AUTOUIC ON
              AUTORCC ON
              AUTOUIC_SEARCH_PATHS forms
-             XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES)
-# cmake-format: on
+             XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
+)
