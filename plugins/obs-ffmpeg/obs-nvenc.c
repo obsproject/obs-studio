@@ -1105,6 +1105,9 @@ static void *nvenc_create_internal(enum codec_type codec, obs_data_t *settings,
 	enc->codec = codec;
 	enc->first_packet = true;
 
+	if (get_nvenc_ver() == COMPATIBILITY_VERSION) {
+		enc->needs_compat_ver = true;
+	}
 	NV_ENCODE_API_FUNCTION_LIST init = {NV_ENCODE_API_FUNCTION_LIST_VER};
 
 	switch (enc->codec) {
@@ -1127,9 +1130,6 @@ static void *nvenc_create_internal(enum codec_type codec, obs_data_t *settings,
 	}
 	if (!init_d3d11(enc, settings)) {
 		goto fail;
-	}
-	if (get_nvenc_ver() == COMPATIBILITY_VERSION) {
-		enc->needs_compat_ver = true;
 	}
 	if (!init_session(enc)) {
 		goto fail;
