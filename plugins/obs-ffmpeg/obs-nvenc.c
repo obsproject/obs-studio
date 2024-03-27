@@ -32,6 +32,8 @@
 	 ((ver) << 16) | (0x7 << 28))
 
 #define NV_ENC_CONFIG_COMPAT_VER (NVENCAPI_STRUCT_VERSION(7) | (1 << 31))
+#define NV_ENC_INITIALIZE_PARAMS_COMPAT_VER \
+	(NVENCAPI_STRUCT_VERSION(5) | (1 << 31))
 #define NV_ENC_PIC_PARAMS_COMPAT_VER (NVENCAPI_STRUCT_VERSION(4) | (1 << 31))
 #define NV_ENC_LOCK_BITSTREAM_COMPAT_VER NVENCAPI_STRUCT_VERSION(1)
 #define NV_ENC_REGISTER_RESOURCE_COMPAT_VER NVENCAPI_STRUCT_VERSION(3)
@@ -387,7 +389,9 @@ static void initialize_params(struct nvenc_data *enc, const GUID *nv_preset,
 
 	NV_ENC_INITIALIZE_PARAMS *params = &enc->params;
 	memset(params, 0, sizeof(*params));
-	params->version = NV_ENC_INITIALIZE_PARAMS_VER;
+	params->version = enc->needs_compat_ver
+				  ? NV_ENC_INITIALIZE_PARAMS_COMPAT_VER
+				  : NV_ENC_INITIALIZE_PARAMS_VER;
 	params->encodeGUID = enc->codec_guid;
 	params->presetGUID = *nv_preset;
 	params->encodeWidth = width;
