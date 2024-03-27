@@ -101,6 +101,7 @@ struct duplicator_monitor_info {
 	char id[128];
 	char alt_id[128];
 	char name[128];
+	int idx;
 	RECT rect;
 	HMONITOR handle;
 };
@@ -232,6 +233,36 @@ static BOOL CALLBACK enum_monitor(HMONITOR handle, HDC hdc, LPRECT rect,
 	return !match;
 }
 
+static BOOL CALLBACK enum_monitor_by_idx(HMONITOR handle, HDC hdc, LPRECT rect,
+					 LPARAM param)
+{
+	UNUSED_PARAMETER(hdc);
+
+	struct duplicator_monitor_info *monitor =
+		(struct duplicator_monitor_info *)param;
+
+	bool match = false;
+
+	MONITORINFOEXA mi;
+	mi.cbSize = sizeof(mi);
+	if (GetMonitorInfoA(handle, (LPMONITORINFO)&mi)) {
+		match = monitor->idx == 0;
+		if (match) {
+			strcpy_s(monitor->id, _countof(monitor->id),
+				 mi.szDevice);
+			strcpy_s(monitor->alt_id, _countof(monitor->alt_id),
+				 mi.szDevice);
+			monitor->rect = *rect;
+			monitor->handle = handle;
+			GetMonitorName(handle, monitor->name,
+				       _countof(monitor->name));
+		}
+		monitor->idx--;
+	}
+
+	return !match;
+}
+
 static BOOL CALLBACK enum_monitor_fallback(HMONITOR handle, HDC hdc,
 					   LPRECT rect, LPARAM param)
 {
@@ -320,13 +351,31 @@ static struct duplicator_monitor_info find_monitor(const char *monitor_id)
 	return monitor;
 }
 
+static struct duplicator_monitor_info find_monitor_by_idx(int monitor_idx)
+{
+	struct duplicator_monitor_info monitor = {0};
+	monitor.idx = monitor_idx;
+	EnumDisplayMonitors(NULL, NULL, &enum_monitor_by_idx, (LPARAM)&monitor);
+	if (monitor.handle == NULL) {
+		EnumDisplayMonitors(NULL, NULL, &enum_monitor_fallback,
+				    (LPARAM)&monitor);
+	}
+
+	return monitor;
+}
+
 static inline void update_settings(struct duplicator_capture *capture,
 				   obs_data_t *settings)
 {
 	pthread_mutex_lock(&capture->update_mutex);
 
-	struct duplicator_monitor_info monitor =
-		find_monitor(obs_data_get_string(settings, "monitor_id"));
+	struct duplicator_monitor_info monitor;
+	int monitor_idx = obs_data_get_int(settings, "monitor_idx");
+	if (monitor_idx < 0)
+		monitor = find_monitor(
+			obs_data_get_string(settings, "monitor_id"));
+	else
+		monitor = find_monitor_by_idx(monitor_idx);
 
 	capture->method =
 		choose_method((int)obs_data_get_int(settings, "method"),
@@ -416,6 +465,7 @@ static void duplicator_capture_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "monitor_wgc", 0);
 	obs_data_set_default_bool(settings, "capture_cursor", true);
 	obs_data_set_default_bool(settings, "force_sdr", false);
+	obs_data_set_default_int(settings, "monitor_idx", -1);
 }
 
 static void duplicator_capture_update(void *data, obs_data_t *settings)

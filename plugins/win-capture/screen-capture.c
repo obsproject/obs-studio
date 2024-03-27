@@ -345,7 +345,7 @@ static void switch_to_monitor_capture_mode(struct screen_capture *context)
 	obs_data_t *monitor_settings =
 		obs_get_source_defaults("monitor_capture");
 
-	obs_data_set_int(monitor_settings, "monitor", context->monitor_id);
+	obs_data_set_int(monitor_settings, "monitor_idx", context->monitor_id);
 	obs_data_set_int(monitor_settings, "method", 0);
 	obs_data_set_int(monitor_settings, "monitor_wgc", 0);
 	obs_data_set_bool(monitor_settings, S_CAPTURE_CURSOR,
