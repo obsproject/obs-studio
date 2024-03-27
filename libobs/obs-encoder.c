@@ -324,6 +324,17 @@ static void add_connection(struct obs_encoder *encoder)
 		}
 	}
 
+	if (encoder->encoder_group) {
+		bool ready = false;
+		pthread_mutex_lock(&encoder->encoder_group->mutex);
+		encoder->encoder_group->encoders_started += 1;
+		ready = encoder->encoder_group->encoders_started ==
+			encoder->encoder_group->encoders_added;
+		pthread_mutex_unlock(&encoder->encoder_group->mutex);
+		if (ready)
+			add_ready_encoder_group(encoder);
+	}
+
 	set_encoder_active(encoder, true);
 }
 
@@ -338,6 +349,12 @@ static void remove_connection(struct obs_encoder *encoder, bool shutdown)
 		} else {
 			stop_raw_video(encoder->media, receive_video, encoder);
 		}
+	}
+
+	if (encoder->encoder_group) {
+		pthread_mutex_lock(&encoder->encoder_group->mutex);
+		encoder->encoder_group->encoders_started -= 1;
+		pthread_mutex_unlock(&encoder->encoder_group->mutex);
 	}
 
 	/* obs_encoder_shutdown locks init_mutex, so don't call it on encode
@@ -374,6 +391,23 @@ static void obs_encoder_actually_destroy(obs_encoder_t *encoder)
 
 		blog(LOG_DEBUG, "encoder '%s' destroyed",
 		     encoder->context.name);
+
+		if (encoder->encoder_group) {
+			struct encoder_group *group = encoder->encoder_group;
+			bool release = false;
+
+			encoder->encoder_group = NULL;
+
+			pthread_mutex_lock(&group->mutex);
+			group->encoders_added -= 1;
+			release = group->encoders_added == 0;
+			pthread_mutex_unlock(&group->mutex);
+
+			if (release) {
+				pthread_mutex_destroy(&group->mutex);
+				bfree(group);
+			}
+		}
 
 		free_audio_buffers(encoder);
 
@@ -1408,6 +1442,16 @@ static void receive_video(void *param, struct video_data *frame)
 	struct obs_encoder **paired = encoder->paired_encoders.array;
 	struct encoder_frame enc_frame;
 
+	if (encoder->encoder_group && !encoder->start_ts) {
+		struct encoder_group *group = encoder->encoder_group;
+		bool ready = false;
+		pthread_mutex_lock(&group->mutex);
+		ready = group->start_timestamp == frame->timestamp;
+		pthread_mutex_unlock(&group->mutex);
+		if (!ready)
+			goto wait_for_audio;
+	}
+
 	if (!encoder->first_received && encoder->paired_encoders.num) {
 		for (size_t i = 0; i < encoder->paired_encoders.num; i++) {
 			if (!paired[i]->first_received ||
@@ -1994,4 +2038,134 @@ void obs_encoder_enum_roi(obs_encoder_t *encoder,
 uint32_t obs_encoder_get_roi_increment(const obs_encoder_t *encoder)
 {
 	return encoder->roi_increment;
+}
+
+bool obs_encoder_group_keyframe_aligned_encoders(
+	obs_encoder_t *encoder, obs_encoder_t *encoder_to_be_grouped)
+{
+	if (!obs_encoder_valid(encoder,
+			       "obs_encoder_group_keyframe_aligned_encoders") ||
+	    !obs_encoder_valid(encoder_to_be_grouped,
+			       "obs_encoder_group_keyframe_aligned_encoders"))
+		return false;
+
+	if (obs_encoder_active(encoder) ||
+	    obs_encoder_active(encoder_to_be_grouped)) {
+		obs_encoder_t *active = obs_encoder_active(encoder)
+						? encoder
+						: encoder_to_be_grouped;
+		obs_encoder_t *other = active == encoder ? encoder_to_be_grouped
+							 : encoder;
+		blog(LOG_ERROR,
+		     "obs_encoder_group_keyframe_aligned_encoders: encoder '%s' "
+		     "is already active, could not group with '%s'",
+		     obs_encoder_get_name(active), obs_encoder_get_name(other));
+		return false;
+	}
+
+	if (encoder_to_be_grouped->encoder_group) {
+		blog(LOG_ERROR,
+		     "obs_encoder_group_keyframe_aligned_encoders: encoder '%s' "
+		     "is already part of a keyframe aligned group while trying "
+		     "to group with encoder '%s'",
+		     obs_encoder_get_name(encoder_to_be_grouped),
+		     obs_encoder_get_name(encoder));
+		return false;
+	}
+
+	bool unlock = false;
+	if (!encoder->encoder_group) {
+		encoder->encoder_group = bzalloc(sizeof(struct encoder_group));
+		if (pthread_mutex_init(&encoder->encoder_group->mutex, NULL) <
+		    0) {
+			bfree(encoder->encoder_group);
+			encoder->encoder_group = NULL;
+			return false;
+		}
+
+		encoder->encoder_group->encoders_added = 1;
+	} else {
+		pthread_mutex_lock(&encoder->encoder_group->mutex);
+		unlock = true;
+		if (encoder->encoder_group->encoders_started != 0) {
+			blog(LOG_ERROR,
+			     "obs_encoder_group_keyframe_aligned_encoders: "
+			     "Can't add encoder '%s' to active group "
+			     "from encoder '%s'",
+			     obs_encoder_get_name(encoder_to_be_grouped),
+			     obs_encoder_get_name(encoder));
+			pthread_mutex_unlock(&encoder->encoder_group->mutex);
+			return false;
+		}
+	}
+
+	encoder->encoder_group->encoders_added += 1;
+	encoder_to_be_grouped->encoder_group = encoder->encoder_group;
+
+	if (unlock)
+		pthread_mutex_unlock(&encoder->encoder_group->mutex);
+
+	return true;
+}
+
+bool obs_encoder_group_remove_keyframe_aligned_encoder(
+	obs_encoder_t *encoder, obs_encoder_t *encoder_to_be_ungrouped)
+{
+	if (!obs_encoder_valid(
+		    encoder,
+		    "obs_encoder_group_remove_keyframe_aligned_encoder") ||
+	    !obs_encoder_valid(
+		    encoder_to_be_ungrouped,
+		    "obs_encoder_group_remove_keyframe_aligned_encoder"))
+		return false;
+
+	if (obs_encoder_active(encoder) ||
+	    obs_encoder_active(encoder_to_be_ungrouped)) {
+		blog(LOG_ERROR,
+		     "obs_encoder_group_remove_keyframe_aligned_encoder: encoders are active, "
+		     "could not ungroup encoder '%s' from '%s'",
+		     obs_encoder_get_name(encoder_to_be_ungrouped),
+		     obs_encoder_get_name(encoder));
+		return false;
+	}
+
+	if (encoder->encoder_group != encoder_to_be_ungrouped->encoder_group) {
+		blog(LOG_ERROR,
+		     "obs_encoder_group_remove_keyframe_aligned_encoder: "
+		     "encoder '%s' does not belong to the same group as encoder '%s'",
+		     obs_encoder_get_name(encoder_to_be_ungrouped),
+		     obs_encoder_get_name(encoder));
+		return false;
+	}
+
+	struct encoder_group *current_group = encoder->encoder_group;
+	struct encoder_group *free_group = NULL;
+
+	pthread_mutex_lock(&current_group->mutex);
+
+	if (current_group->encoders_started != 0) {
+		blog(LOG_ERROR,
+		     "obs_encoder_group_remove_keyframe_aligned_encoder: "
+		     "could not ungroup encoder '%s' from '%s' while "
+		     "the group contains active encoders",
+		     obs_encoder_get_name(encoder_to_be_ungrouped),
+		     obs_encoder_get_name(encoder));
+		pthread_mutex_unlock(&current_group->mutex);
+		return false;
+	}
+
+	current_group->encoders_added -= 1;
+	encoder_to_be_ungrouped->encoder_group = NULL;
+	if (current_group->encoders_added == 1) {
+		free_group = current_group;
+		encoder->encoder_group = NULL;
+	}
+	pthread_mutex_unlock(&current_group->mutex);
+
+	if (free_group) {
+		pthread_mutex_destroy(&free_group->mutex);
+		bfree(free_group);
+	}
+
+	return true;
 }
