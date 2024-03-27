@@ -23,6 +23,7 @@ find_package(
 # cmake-format: on
 
 find_package(ZLIB REQUIRED)
+find_package(Uthash REQUIRED)
 
 if(ENABLE_UI)
   find_package(Qt6 REQUIRED Core)
@@ -31,10 +32,6 @@ endif()
 find_package(jansson REQUIRED)
 if(NOT TARGET OBS::caption)
   add_subdirectory("${CMAKE_SOURCE_DIR}/deps/libcaption" "${CMAKE_BINARY_DIR}/deps/libcaption")
-endif()
-
-if(NOT TARGET OBS::uthash)
-  add_subdirectory("${CMAKE_SOURCE_DIR}/deps/uthash" "${CMAKE_BINARY_DIR}/deps/uthash")
 endif()
 
 add_library(libobs SHARED)
@@ -250,7 +247,6 @@ target_compile_definitions(
 target_link_libraries(
   libobs
   PRIVATE OBS::caption
-          OBS::uthash
           OBS::libobs-version
           FFmpeg::avcodec
           FFmpeg::avformat
@@ -258,6 +254,7 @@ target_link_libraries(
           FFmpeg::swscale
           FFmpeg::swresample
           jansson::jansson
+          Uthash::Uthash
           ZLIB::ZLIB
   PUBLIC Threads::Threads)
 
