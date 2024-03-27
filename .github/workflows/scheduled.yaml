@@ -124,7 +124,7 @@ jobs:
           checkGlob: '**/en-US.ini'
 
       - name: Upload US English Language Files 🇺🇸
-        if: fromJSON(steps.checks.outputs.hasChangedFiles) && fromJSON(steps.nightly-checks.outputs.passed)
+        if: fromJSON(steps.nightly-checks.outputs.passed) && steps.checks.outputs.passed == 'true'
         uses: obsproject/obs-crowdin-sync/upload@30b5446e3b5eb19595aa68a81ddf896a857302cf
         env:
           CROWDIN_PAT: ${{ secrets.CROWDIN_SYNC_CROWDIN_PAT }}
