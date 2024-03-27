@@ -79,14 +79,14 @@ find_path(
   NAMES lua.h luajit.h
   HINTS ${PC_Luajit_INCLUDE_DIRS}
   PATHS /usr/include /usr/local/include
-  PATH_SUFFIXES luajit-2.1 luajit
+  PATH_SUFFIXES luajit-2.1 luajit-2.0 luajit
   DOC "Luajit include directory")
 
 if(PC_Luajit_VERSION VERSION_GREATER 0)
   set(Luajit_VERSION ${PC_Luajit_VERSION})
-elseif(EXISTS "${Luajit_INCLUDE_DIR}/lua.h")
-  file(STRINGS "${Luajit_INCLUDE_DIR}/lua.h" _VERSION_STRING REGEX "#define[ \t]+LUA_RELEASE[ \t]+.+")
-  string(REGEX REPLACE ".*#define[ \t]+LUA_RELEASE[ \t]+\"Lua (.+)\".*" "\\1" Luajit_VERSION "${_VERSION_STRING}")
+elseif(EXISTS "${Luajit_INCLUDE_DIR}/luajit.h")
+  file(STRINGS "${Luajit_INCLUDE_DIR}/luajit.h" _VERSION_STRING REGEX "#define[ \t]+LUAJIT_VERSION[ \t]+\".+\".*")
+  string(REGEX REPLACE ".*#define[ \t]+LUAJIT_VERSION[ \t]+\"LuaJIT (.+)\".*" "\\1" Luajit_VERSION "${_VERSION_STRING}")
 else()
   if(NOT Luajit_FIND_QUIETLY)
     message(AUTHOR_WARNING "Failed to find Luajit version.")

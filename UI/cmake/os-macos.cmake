@@ -1,3 +1,5 @@
+include(cmake/feature-sparkle.cmake)
+
 target_sources(obs-studio PRIVATE platform-osx.mm forms/OBSPermissions.ui window-permissions.cpp window-permissions.hpp)
 target_compile_options(obs-studio PRIVATE -Wno-quoted-include-in-framework-header -Wno-comma)
 

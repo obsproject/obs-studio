@@ -55,11 +55,11 @@ target_include_directories(
          "$<$<NOT:$<PLATFORM_ID:Windows>>:${CMAKE_CURRENT_SOURCE_DIR}/ftl-sdk/libftl/posix>")
 
 if(CMAKE_C_COMPILER_ID STREQUAL "GNU" AND CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL 10)
-  target_compile_options(ftl-sdk PRIVATE -Wno-error=enum-conversion)
+  target_compile_options(ftl-sdk PRIVATE -Wno-error=enum-conversion -Wno-error=maybe-uninitialized)
 endif()
 
 target_sources(obs-outputs PRIVATE ftl-stream.c)
 target_link_libraries(obs-outputs PRIVATE ftl-sdk)
 target_enable_feature(obs-outputs "FTL protocol support")
 
-set_target_properties(ftl-sdk PROPERTIES FOLDER plugins/obs-outputs)
+set_target_properties(ftl-sdk PROPERTIES FOLDER plugins/obs-outputs POSITION_INDEPENDENT_CODE TRUE)

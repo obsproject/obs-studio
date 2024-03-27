@@ -47,24 +47,24 @@ const char *get_module_extension(void)
 	return ".so";
 }
 
-#ifdef __LP64__
-#define BIT_STRING "64bit"
-#else
-#define BIT_STRING "32bit"
-#endif
-
 #define FLATPAK_PLUGIN_PATH "/app/plugins"
 
 static const char *module_bin[] = {
-	OBS_INSTALL_PREFIX "/" OBS_PLUGIN_DESTINATION,
-	"../../obs-plugins/" BIT_STRING,
-	FLATPAK_PLUGIN_PATH "/" OBS_PLUGIN_DESTINATION,
+	OBS_PLUGIN_PATH, FLATPAK_PLUGIN_PATH "/" OBS_PLUGIN_DESTINATION,
+	"../../obs-plugins/64bit",
+#ifdef OBS_INSTALL_PREFIX
+	OBS_INSTALL_PREFIX "/" OBS_PLUGIN_DESTINATION
+#endif
 };
 
 static const char *module_data[] = {
-	OBS_INSTALL_DATA_PATH "/obs-plugins/%module%",
 	OBS_DATA_PATH "/obs-plugins/%module%",
-	FLATPAK_PLUGIN_PATH "/share/obs/obs-plugins/%module%"};
+	FLATPAK_PLUGIN_PATH "/share/obs/obs-plugins/%module%",
+	OBS_DATA_PATH "/%module%",
+#ifdef OBS_INSTALL_PREFIX
+	OBS_INSTALL_DATA_PATH "/obs-plugins/%module%"
+#endif
+};
 
 static const int module_patterns_size =
 	sizeof(module_bin) / sizeof(module_bin[0]);
@@ -89,10 +89,12 @@ char *find_libobs_data_file(const char *file)
 	if (check_path(file, OBS_DATA_PATH "/libobs/", &output))
 		return output.array;
 
+#ifdef OBS_INSTALL_PREFIX
 	if (OBS_INSTALL_PREFIX[0] != 0) {
 		if (check_path(file, OBS_INSTALL_DATA_PATH "/libobs/", &output))
 			return output.array;
 	}
+#endif
 
 	dstr_free(&output);
 	return NULL;

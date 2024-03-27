@@ -317,14 +317,20 @@ obs_properties_t *alsa_get_properties(void *unused)
 		obs_property_list_add_string(devices, descr, name);
 
 	next:
-		if (name != NULL)
-			free(name), name = NULL;
+		if (name != NULL) {
+			free(name);
+			name = NULL;
+		}
 
-		if (descr != NULL)
-			free(descr), descr = NULL;
+		if (descr != NULL) {
+			free(descr);
+			descr = NULL;
+		}
 
-		if (io != NULL)
-			free(io), io = NULL;
+		if (io != NULL) {
+			free(io);
+			io = NULL;
+		}
 
 		++hint;
 	}
@@ -412,11 +418,14 @@ void _alsa_close(struct alsa_data *data)
 
 	if (data->handle) {
 		snd_pcm_drop(data->handle);
-		snd_pcm_close(data->handle), data->handle = NULL;
+		snd_pcm_close(data->handle);
+		data->handle = NULL;
 	}
 
-	if (data->buffer)
-		bfree(data->buffer), data->buffer = NULL;
+	if (data->buffer) {
+		bfree(data->buffer);
+		data->buffer = NULL;
+	}
 }
 
 bool _alsa_configure(struct alsa_data *data)

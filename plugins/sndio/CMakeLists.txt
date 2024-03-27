@@ -1,8 +1,10 @@
-project(sndio)
+cmake_minimum_required(VERSION 3.22...3.25)
+
+legacy_check()
 
 option(ENABLE_SNDIO "Build OBS with sndio support" OFF)
 if(NOT ENABLE_SNDIO)
-  obs_status(DISABLED "sndio")
+  target_disable(sndio)
   return()
 endif()
 
@@ -13,8 +15,8 @@ add_library(OBS::sndio ALIAS sndio)
 
 target_sources(sndio PRIVATE sndio.c sndio-input.c)
 
+target_compile_options(sndio PRIVATE -Wno-error=vla)
+
 target_link_libraries(sndio PRIVATE OBS::libobs Sndio::Sndio)
 
-set_target_properties(sndio PROPERTIES FOLDER "plugins")
-
-setup_plugin_target(sndio)
+set_target_properties_obs(sndio PROPERTIES FOLDER plugins PREFIX "")

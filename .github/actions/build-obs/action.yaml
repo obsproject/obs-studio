@@ -73,12 +73,12 @@ runs:
 
         local -a build_args=(
           --config ${{ inputs.config }}
-          --target linux-${{ inputs.target }}
+          --target ubuntu-${{ inputs.target }}
         )
         if (( ${+RUNNER_DEBUG} )) build_args+=(--debug)
 
         git fetch origin --no-tags --no-recurse-submodules -q
-        .github/scripts/build-linux ${build_args}
+        .github/scripts/build-ubuntu ${build_args}
 
     - name: Run Windows Build
       if: runner.os == 'Windows'

@@ -14,9 +14,9 @@ if(OS_LINUX
    OR OS_OPENBSD)
   find_package(X11 REQUIRED)
   # cmake-format: off
-  find_package(xcb REQUIRED xcb)
+  find_package(Xcb REQUIRED xcb)
   # cmake-format: on
-  find_package(x11-xcb REQUIRED)
+  find_package(X11-xcb REQUIRED)
 
   if(ENABLE_WAYLAND)
     find_package(OpenGL REQUIRED EGL)

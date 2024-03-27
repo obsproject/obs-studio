@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 3,
   "cmakeMinimumRequired": {
     "major": 3,
     "minor": 22,
@@ -56,75 +56,33 @@
       }
     },
     {
-      "name": "linux-aarch64",
-      "displayName": "Linux aarch64",
-      "description": "obs-studio for Linux (aarch64)",
+      "name": "ubuntu",
+      "displayName": "Ubuntu",
+      "description": "obs-studio for Ubuntu",
       "inherits": ["environmentVars"],
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
         "rhs": "Linux"
       },
-      "binaryDir": "${sourceDir}/build_aarch64",
+      "binaryDir": "${sourceDir}/build_ubuntu",
       "generator": "Ninja",
       "warnings": {"dev": true, "deprecated": true},
       "cacheVariables": {
         "ENABLE_WAYLAND": true,
         "ENABLE_VLC": true,
-        "CMAKE_BUILD_TYPE": "Debug"
+        "ENABLE_AJA": false,
+        "ENABLE_WEBRTC": false,
+        "CMAKE_BUILD_TYPE": "Debug",
+        "OBS_CMAKE_VERSION": {"type": "STRING", "value": "3.0.0"}
       }
     },
     {
-      "name": "linux-ci-aarch64",
-      "inherits": ["linux-aarch64"],
-      "hidden": true,
+      "name": "ubuntu-ci",
+      "inherits": ["ubuntu"],
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
-      }
-    },
-    {
-      "name": "linux-release-aarch64",
-      "displayName": "Linux aarch64 (Release)",
-      "description": "obs-studio for Linux (aarch64) - Release Configuration",
-      "inherits": "linux-aarch64",
-      "cacheVariables": {
-        "ENABLE_RELEASE_BUILD": true
-      }
-    },
-    {
-      "name": "linux-x86_64",
-      "displayName": "Linux x86_64",
-      "description": "obs-studio for Linux (x86_64)",
-      "inherits": ["environmentVars"],
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
-      },
-      "binaryDir": "${sourceDir}/build_x86_64",
-      "generator": "Ninja",
-      "warnings": {"dev": true, "deprecated": true},
-      "cacheVariables": {
-        "ENABLE_WAYLAND": true,
-        "ENABLE_VLC": true,
-        "CMAKE_BUILD_TYPE": {"type": "STRING", "value": "Debug"}
-      }
-    },
-    {
-      "name": "linux-ci-x86_64",
-      "inherits": ["linux-x86_64"],
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
-      }
-    },
-    {
-      "name": "linux-release-x86_64",
-      "displayName": "Linux x86_64 (Release)",
-      "description": "obs-studio for Linux (x86_64) - Release Configuration",
-      "inherits": "linux-x86_64",
-      "cacheVariables": {
-        "ENABLE_RELEASE_BUILD": true,
-        "ENABLE_BROWSER": true
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_COMPILE_WARNING_AS_ERROR": true
       }
     },
     {
@@ -162,17 +120,10 @@
   ],
   "buildPresets": [
     {
-      "name": "linux-aarch64",
-      "configurePreset": "linux-aarch64",
-      "displayName": "Linux aarch64",
-      "description": "Linux build for aarch64 (aka arm64)",
-      "configuration": "RelWithDebInfo"
-    },
-    {
-      "name": "linux-x86_64",
-      "configurePreset": "linux-x86_64",
-      "displayName": "Linux x86_64",
-      "description": "Linux build for x86_64 (aka amd64)",
+      "name": "ubuntu",
+      "configurePreset": "ubuntu",
+      "displayName": "Ubuntu",
+      "description": "Ubuntu build",
       "configuration": "RelWithDebInfo"
     },
     {

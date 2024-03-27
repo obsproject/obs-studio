@@ -1,19 +1,29 @@
 autoload -Uz log_debug log_group
 
-log_group 'Check Linux build requirements'
-log_debug 'Checking Linux distribution name and version...'
+log_group 'Check Ubuntu build requirements'
+log_debug 'Checking Ubuntu distribution name and version...'
 
 # Check for Ubuntu version 22.10 or later, which have srt and librist available via apt-get
 typeset -g -i UBUNTU_2210_OR_LATER=0
-if [[ -f /etc/os_release ]] {
+if [[ -f /etc/os-release ]] {
   local dist_name
   local dist_version
-  read -r dist_name dist_version <<< "$(source /etc/os_release; print "${NAME} ${VERSION_ID}")"
+  read -r dist_name dist_version <<< "$(source /etc/os-release; print "${NAME} ${VERSION_ID}")"
+
+  if [[ ${dist_name} != Ubuntu ]] {
+    log_error "Not running on an Ubuntu distribution. Aborting"
+    log_group
+    return 2
+  }
 
   autoload -Uz is-at-least
-  if [[ ${dist_name} == Ubuntu ]] && is-at-least 22.10 ${dist_version}; then
+  if is-at-least 22.10 ${dist_version}; then
     typeset -g -i UBUNTU_2210_OR_LATER=1
   fi
+} else {
+  log_error "Unable to determine local Linux distribution, but Ubuntu is required. Aborting"
+  log_group
+  return 2
 }
 
 local -a dependencies=("${(fA)$(<${SCRIPT_HOME}/.Aptfile)}")

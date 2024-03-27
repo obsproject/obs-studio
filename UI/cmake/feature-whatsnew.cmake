@@ -8,6 +8,11 @@ if(ENABLE_WHATSNEW AND TARGET OBS::browser-panels)
   elseif(OS_LINUX)
     find_package(MbedTLS REQUIRED)
     find_package(nlohmann_json REQUIRED)
+
+    if(NOT TARGET OBS::blake2)
+      add_subdirectory("${CMAKE_SOURCE_DIR}/deps/blake2" "${CMAKE_BINARY_DIR}/deps/blake2")
+    endif()
+
     target_link_libraries(obs-studio PRIVATE MbedTLS::MbedTLS nlohmann_json::nlohmann_json OBS::blake2)
 
     target_sources(
