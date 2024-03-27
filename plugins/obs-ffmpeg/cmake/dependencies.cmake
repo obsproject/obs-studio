@@ -1,4 +1,3 @@
-# cmake-format: off
 if(OS_WINDOWS OR OS_MACOS)
   set(ffmpeg_version 6)
 else()
@@ -6,15 +5,10 @@ else()
 endif()
 
 find_package(
-  FFmpeg ${ffmpeg_version}
-  REQUIRED avcodec
-           avfilter
-           avdevice
-           avutil
-           swscale
-           avformat
-           swresample)
-# cmake-format: on
+  FFmpeg
+  ${ffmpeg_version}
+  REQUIRED avcodec avfilter avdevice avutil swscale avformat swresample
+)
 
 if(NOT TARGET OBS::media-playback)
   add_subdirectory("${CMAKE_SOURCE_DIR}/deps/media-playback" "${CMAKE_BINARY_DIR}/deps/media-playback")
@@ -35,10 +29,7 @@ if(OS_WINDOWS)
 
   add_subdirectory(obs-amf-test)
   add_subdirectory(obs-nvenc-test)
-elseif(
-  OS_LINUX
-  OR OS_FREEBSD
-  OR OS_OPENBSD)
+elseif(OS_LINUX OR OS_FREEBSD OR OS_OPENBSD)
   find_package(Libva REQUIRED)
   find_package(Libpci REQUIRED)
 endif()
@@ -57,7 +48,7 @@ if(ENABLE_NEW_MPEGTS_OUTPUT)
     list(JOIN _error_messages "\n" _error_string)
     message(
       FATAL_ERROR
-        "${_error_string}\n Disable this error by setting ENABLE_NEW_MPEGTS_OUTPUT to OFF or providing the build system with required SRT and Rist libraries."
+      "${_error_string}\n Disable this error by setting ENABLE_NEW_MPEGTS_OUTPUT to OFF or providing the build system with required SRT and Rist libraries."
     )
   endif()
 endif()

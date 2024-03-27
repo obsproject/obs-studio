@@ -53,7 +53,8 @@ macro(Librist_set_soname)
     execute_process(
       COMMAND sh -c "otool -D '${Librist_LIBRARY}' | grep -v '${Librist_LIBRARY}'"
       OUTPUT_VARIABLE _output
-      RESULT_VARIABLE _result)
+      RESULT_VARIABLE _result
+    )
 
     if(_result EQUAL 0 AND _output MATCHES "^@rpath/")
       set_property(TARGET Librist::Librist PROPERTY IMPORTED_SONAME "${_output}")
@@ -62,7 +63,8 @@ macro(Librist_set_soname)
     execute_process(
       COMMAND sh -c "objdump -p '${Librist_LIBRARY}' | grep SONAME"
       OUTPUT_VARIABLE _output
-      RESULT_VARIABLE _result)
+      RESULT_VARIABLE _result
+    )
 
     if(_result EQUAL 0)
       string(REGEX REPLACE "[ \t]+SONAME[ \t]+([^ \t]+)" "\\1" _soname "${_output}")
@@ -79,7 +81,8 @@ find_path(
   NAMES librist.h librist/librist.h
   HINTS ${PC_Librist_INCLUDE_DIRS}
   PATHS /usr/include /usr/local/include
-  DOC "Librist include directory")
+  DOC "Librist include directory"
+)
 
 if(PC_Librist_VERSION VERSION_GREATER 0)
   set(Librist_VERSION ${PC_Librist_VERSION})
@@ -101,7 +104,8 @@ find_library(
   NAMES librist rist
   HINTS ${PC_Librist_LIBRARY_DIRS}
   PATHS /usr/lib /usr/local/lib
-  DOC "Librist location")
+  DOC "Librist location"
+)
 
 if(CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin|Windows")
   set(Librist_ERROR_REASON "Ensure that obs-deps is provided as part of CMAKE_PREFIX_PATH.")
@@ -112,7 +116,9 @@ endif()
 find_package_handle_standard_args(
   Librist
   REQUIRED_VARS Librist_LIBRARY Librist_INCLUDE_DIR
-  VERSION_VAR Librist_VERSION REASON_FAILURE_MESSAGE "${Librist_ERROR_REASON}")
+  VERSION_VAR Librist_VERSION
+  REASON_FAILURE_MESSAGE "${Librist_ERROR_REASON}"
+)
 mark_as_advanced(Librist_INCLUDE_DIR Librist_LIBRARY)
 unset(Librist_ERROR_REASON)
 
@@ -129,14 +135,18 @@ if(Librist_FOUND)
     librist_set_soname()
     set_target_properties(
       Librist::Librist
-      PROPERTIES INTERFACE_COMPILE_OPTIONS "${PC_Librist_CFLAGS_OTHER}"
-                 INTERFACE_INCLUDE_DIRECTORIES "${Librist_INCLUDE_DIR}"
-                 VERSION ${Librist_VERSION})
+      PROPERTIES
+        INTERFACE_COMPILE_OPTIONS "${PC_Librist_CFLAGS_OTHER}"
+        INTERFACE_INCLUDE_DIRECTORIES "${Librist_INCLUDE_DIR}"
+        VERSION ${Librist_VERSION}
+    )
   endif()
 endif()
 
 include(FeatureSummary)
 set_package_properties(
-  Librist PROPERTIES
+  Librist
+  PROPERTIES
   URL "https://code.videolan.org/rist/librist"
-  DESCRIPTION "A library that can be used to easily add the RIST protocol to your application.")
+  DESCRIPTION "A library that can be used to easily add the RIST protocol to your application."
+)

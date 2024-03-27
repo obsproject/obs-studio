@@ -4,15 +4,11 @@ include_guard(GLOBAL)
 
 # Set empty codesigning team if not specified as cache variable
 if(NOT OBS_CODESIGN_TEAM)
-  set(OBS_CODESIGN_TEAM
-      ""
-      CACHE STRING "OBS code signing team for macOS" FORCE)
+  set(OBS_CODESIGN_TEAM "" CACHE STRING "OBS code signing team for macOS" FORCE)
 
   # Set ad-hoc codesigning identity if not specified as cache variable
   if(NOT OBS_CODESIGN_IDENTITY)
-    set(OBS_CODESIGN_IDENTITY
-        "-"
-        CACHE STRING "OBS code signing identity for macOS" FORCE)
+    set(OBS_CODESIGN_IDENTITY "-" CACHE STRING "OBS code signing identity for macOS" FORCE)
   endif()
 endif()
 
@@ -46,5 +42,8 @@ set(OBS_LIBRARY_DESTINATION "lib")
 set(OBS_INCLUDE_DESTINATION "include/obs")
 set(OBS_CMAKE_DESTINATION "lib/cmake")
 
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/resources/package.applescript"
-               "${CMAKE_CURRENT_BINARY_DIR}/package.applescript" @ONLY)
+configure_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/resources/package.applescript"
+  "${CMAKE_CURRENT_BINARY_DIR}/package.applescript"
+  @ONLY
+)

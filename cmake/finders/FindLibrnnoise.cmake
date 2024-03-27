@@ -54,7 +54,8 @@ macro(librnnoise_set_soname)
     execute_process(
       COMMAND sh -c "otool -D '${Librnnoise_LIBRARY}' | grep -v '${Librnnoise_LIBRARY}'"
       OUTPUT_VARIABLE _output
-      RESULT_VARIABLE _result)
+      RESULT_VARIABLE _result
+    )
 
     if(_result EQUAL 0 AND _output MATCHES "^@rpath/")
       set_property(TARGET Librnnoise::Librnnoise PROPERTY IMPORTED_SONAME "${_output}")
@@ -63,7 +64,8 @@ macro(librnnoise_set_soname)
     execute_process(
       COMMAND sh -c "objdump -p '${Librnnoise_LIBRARY}' | grep SONAME"
       OUTPUT_VARIABLE _output
-      RESULT_VARIABLE _result)
+      RESULT_VARIABLE _result
+    )
 
     if(_result EQUAL 0)
       string(REGEX REPLACE "[ \t]+SONAME[ \t]+([^ \t]+)" "\\1" _soname "${_output}")
@@ -80,7 +82,8 @@ find_path(
   NAMES rnnoise.h
   HINTS ${PC_Librnnoise_INCLUDE_DIRS}
   PATHS /usr/include /usr/local/include
-  DOC "Librnnoise include directory")
+  DOC "Librnnoise include directory"
+)
 
 if(PC_Librnnoise_VERSION VERSION_GREATER 0)
   set(Librnnoise_VERSION ${PC_Librnnoise_VERSION})
@@ -96,7 +99,8 @@ find_library(
   NAMES rnnoise librnnoise
   HINTS ${PC_Librnnoise_LIBRARY_DIRS}
   PATHS /usr/lib /usr/local/lib
-  DOC "Librnnoise location")
+  DOC "Librnnoise location"
+)
 
 if(CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin|Windows")
   set(Librnnoise_ERROR_REASON "Ensure that obs-deps is provided as part of CMAKE_PREFIX_PATH.")
@@ -107,7 +111,9 @@ endif()
 find_package_handle_standard_args(
   Librnnoise
   REQUIRED_VARS Librnnoise_LIBRARY Librnnoise_INCLUDE_DIR
-  VERSION_VAR Librnnoise_VERSION REASON_FAILURE_MESSAGE "${Librnnoise_ERROR_REASON}")
+  VERSION_VAR Librnnoise_VERSION
+  REASON_FAILURE_MESSAGE "${Librnnoise_ERROR_REASON}"
+)
 mark_as_advanced(Librnnoise_INCLUDE_DIR Librnnoise_LIBRARY)
 unset(Librnnoise_ERROR_REASON)
 
@@ -124,14 +130,18 @@ if(Librnnoise_FOUND)
 
     set_target_properties(
       Librnnoise::Librnnoise
-      PROPERTIES INTERFACE_COMPILE_OPTIONS "${PC_Librnnoise_CFLAGS_OTHER}"
-                 INTERFACE_INCLUDE_DIRECTORIES "${Librnnoise_INCLUDE_DIR}"
-                 VERSION ${Librnnoise_VERSION})
+      PROPERTIES
+        INTERFACE_COMPILE_OPTIONS "${PC_Librnnoise_CFLAGS_OTHER}"
+        INTERFACE_INCLUDE_DIRECTORIES "${Librnnoise_INCLUDE_DIR}"
+        VERSION ${Librnnoise_VERSION}
+    )
   endif()
 endif()
 
 include(FeatureSummary)
 set_package_properties(
-  Librnnoise PROPERTIES
+  Librnnoise
+  PROPERTIES
   URL "https://gitlab.xiph.org/xiph/rnnoise"
-  DESCRIPTION "Recurrent neural network for audio noise reduction.")
+  DESCRIPTION "Recurrent neural network for audio noise reduction."
+)

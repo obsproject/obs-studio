@@ -60,21 +60,24 @@ find_path(
   NAMES ajalibraries
   HINTS ${PC_LibAJANTV2_INCLUDE_DIRS}
   PATHS /usr/include /usr/local/include
-  DOC "LibAJANTV2 include directory")
+  DOC "LibAJANTV2 include directory"
+)
 
 find_library(
   LibAJANTV2_LIBRARY_RELEASE
   NAMES ajantv2 libajantv2
   HINTS ${PC_LibAJANTV2_LIBRARY_DIRS}
   PATHS /usr/lib /usr/local/lib
-  DOC "LibAJANTV2 location")
+  DOC "LibAJANTV2 location"
+)
 
 find_library(
   LibAJANTV2_LIBRARY_DEBUG
   NAMES ajantv2d libajantv2d
   HINTS ${PC_LibAJANTV2_LIBRARY_DIRS}
   PATHS /usr/lib /usr/local/lib
-  DOC "LibAJANTV2 debug location.")
+  DOC "LibAJANTV2 debug location."
+)
 
 if(PC_LibAJANTV2_VERSION VERSION_GREATER 0)
   set(LibAJANTV2_VERSION ${PC_LibAJANTV2_VERSION})
@@ -97,7 +100,9 @@ endif()
 find_package_handle_standard_args(
   LibAJANTV2
   REQUIRED_VARS LibAJANTV2_LIBRARY LibAJANTV2_INCLUDE_DIR
-  VERSION_VAR LibAJANTV2_VERSION REASON_FAILURE_MESSAGE LibAJANTV2_ERROR_REASON)
+  VERSION_VAR LibAJANTV2_VERSION
+  REASON_FAILURE_MESSAGE LibAJANTV2_ERROR_REASON
+)
 mark_as_advanced(LibAJANTV2_LIBRARY LibAJANTV2_INCLUDE_DIR)
 unset(LibAJANTV2_ERROR_REASON)
 
@@ -109,7 +114,8 @@ if(LibAJANTV2_FOUND)
     ${LibAJANTV2_INCLUDE_DIR}/ajalibraries/ajaanc
     ${LibAJANTV2_INCLUDE_DIR}/ajalibraries/ajabase
     ${LibAJANTV2_INCLUDE_DIR}/ajalibraries/ajantv2
-    ${LibAJANTV2_INCLUDE_DIR}/ajalibraries/ajantv2/includes)
+    ${LibAJANTV2_INCLUDE_DIR}/ajalibraries/ajantv2/includes
+  )
   set(LibAJANTV2_LIBRARIES ${LibAJANTV2_LIBRARY})
   mark_as_advanced(LibAJANTV2_INCLUDE_DIR LibAJANTV2_LIBRARY)
 
@@ -124,10 +130,12 @@ if(LibAJANTV2_FOUND)
 
     set_target_properties(
       AJA::LibAJANTV2
-      PROPERTIES INTERFACE_COMPILE_OPTIONS "${PC_LibAJANTV2_CFLAGS_OTHER}"
-                 INTERFACE_INCLUDE_DIRECTORIES "${LibAJANTV2_INCLUDE_DIR}"
-                 VERSION ${LibAJANTV2_VERSION}
-                 IMPORTED_CONFIGURATIONS Release)
+      PROPERTIES
+        INTERFACE_COMPILE_OPTIONS "${PC_LibAJANTV2_CFLAGS_OTHER}"
+        INTERFACE_INCLUDE_DIRECTORIES "${LibAJANTV2_INCLUDE_DIR}"
+        VERSION ${LibAJANTV2_VERSION}
+        IMPORTED_CONFIGURATIONS Release
+    )
 
     if(LibAJANTV2_LIBRARY_DEBUG)
       if(IS_ABSOLUTE "${LibAJANTV2_LIBRARY_DEBUG}")
@@ -135,25 +143,27 @@ if(LibAJANTV2_FOUND)
       else()
         set_property(TARGET AJA::LibAJANTV2 PROPERTY IMPORTED_LIBNAME_DEBUG "${LibAJANTV2_LIBRARY_DEBUG}")
       endif()
-      set_property(
-        TARGET AJA::LibAJANTV2
-        APPEND
-        PROPERTY IMPORTED_CONFIGURATIONS Debug)
+      set_property(TARGET AJA::LibAJANTV2 APPEND PROPERTY IMPORTED_CONFIGURATIONS Debug)
     endif()
 
     set_target_properties(AJA::LibAJANTV2 PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${LibAJANTV2_INCLUDE_DIRS}")
     set_property(
       TARGET AJA::LibAJANTV2
       APPEND
-      PROPERTY INTERFACE_COMPILE_DEFINITIONS "$<$<BOOL:${OS_WINDOWS}>:AJA_WINDOWS;_WINDOWS;WIN32;MSWindows>"
-               "$<$<AND:$<BOOL:${OS_WINDOWS}>,$<CONFIG:DEBUG>>:_DEBUG;_NDEBUG>" "$<$<BOOL:${OS_MACOS}>:AJAMac;AJA_MAC>"
-               "$<$<BOOL:${OS_LINUX}>:AJA_LINUX;AJALinux>")
+      PROPERTY
+        INTERFACE_COMPILE_DEFINITIONS
+          "$<$<BOOL:${OS_WINDOWS}>:AJA_WINDOWS;_WINDOWS;WIN32;MSWindows>"
+          "$<$<AND:$<BOOL:${OS_WINDOWS}>,$<CONFIG:DEBUG>>:_DEBUG;_NDEBUG>"
+          "$<$<BOOL:${OS_MACOS}>:AJAMac;AJA_MAC>"
+          "$<$<BOOL:${OS_LINUX}>:AJA_LINUX;AJALinux>"
+    )
   endif()
 endif()
 
 include(FeatureSummary)
 set_package_properties(
-  LibAJANTV2 PROPERTIES
+  LibAJANTV2
+  PROPERTIES
   URL "https://www.aja.com"
   DESCRIPTION
     "AJA NTV2 SDK - AJA simplifies professional digital video workflows with a line of award-winning products designed and manufactured in Grass Valley, CA."

@@ -9,10 +9,7 @@ macro(check_vlc_path)
     endif()
 
     target_include_directories(vlc-video PRIVATE "${VLC_PATH}/include/vlc")
-  elseif(
-    OS_LINUX
-    OR OS_FREEBSD
-    OR OS_OPENBSD)
+  elseif(OS_LINUX OR OS_FREEBSD OR OS_OPENBSD)
     find_package(PkgConfig QUIET)
     if(PKG_CONFIG_FOUND)
       pkg_check_modules(PC_Libvlc QUIET libvlc)
@@ -46,6 +43,4 @@ if(OS_WINDOWS)
   target_sources(vlc-video PRIVATE vlc-video.rc)
 endif()
 
-# cmake-format: off
 set_target_properties_obs(vlc-video PROPERTIES FOLDER plugins PREFIX "")
-# cmake-format: on

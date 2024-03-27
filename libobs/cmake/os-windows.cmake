@@ -21,45 +21,42 @@ target_include_directories(obs-winhandle INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}"
 
 target_sources(
   libobs
-  PRIVATE # cmake-format: sortable
-          audio-monitoring/win32/wasapi-enum-devices.c
-          audio-monitoring/win32/wasapi-monitoring-available.c
-          audio-monitoring/win32/wasapi-output.c
-          audio-monitoring/win32/wasapi-output.h
-          libobs.rc
-          obs-win-crash-handler.c
-          obs-windows.c
-          util/pipe-windows.c
-          util/platform-windows.c
-          util/threading-windows.c
-          util/threading-windows.h
-          util/windows/CoTaskMemPtr.hpp
-          util/windows/device-enum.c
-          util/windows/device-enum.h
-          util/windows/HRError.hpp
-          util/windows/obfuscate.c
-          util/windows/obfuscate.h
-          util/windows/win-registry.h
-          util/windows/win-version.h
-          util/windows/window-helpers.c
-          util/windows/window-helpers.h)
+  PRIVATE
+    audio-monitoring/win32/wasapi-enum-devices.c
+    audio-monitoring/win32/wasapi-monitoring-available.c
+    audio-monitoring/win32/wasapi-output.c
+    audio-monitoring/win32/wasapi-output.h
+    libobs.rc
+    obs-win-crash-handler.c
+    obs-windows.c
+    util/pipe-windows.c
+    util/platform-windows.c
+    util/threading-windows.c
+    util/threading-windows.h
+    util/windows/CoTaskMemPtr.hpp
+    util/windows/device-enum.c
+    util/windows/device-enum.h
+    util/windows/HRError.hpp
+    util/windows/obfuscate.c
+    util/windows/obfuscate.h
+    util/windows/win-registry.h
+    util/windows/win-version.h
+    util/windows/window-helpers.c
+    util/windows/window-helpers.h
+)
 
 target_compile_options(libobs PRIVATE $<$<COMPILE_LANGUAGE:C,CXX>:/EHc->)
 
-set_source_files_properties(obs-win-crash-handler.c PROPERTIES COMPILE_DEFINITIONS
-                                                               OBS_VERSION="${OBS_VERSION_CANONICAL}")
+set_source_files_properties(
+  obs-win-crash-handler.c
+  PROPERTIES COMPILE_DEFINITIONS OBS_VERSION="${OBS_VERSION_CANONICAL}"
+)
 
 target_link_libraries(
   libobs
-  PRIVATE Avrt
-          Dwmapi
-          Dxgi
-          winmm
-          Rpcrt4
-          OBS::obfuscate
-          OBS::winhandle
-          OBS::COMutils
-  PUBLIC OBS::w32-pthreads)
+  PRIVATE Avrt Dwmapi Dxgi winmm Rpcrt4 OBS::obfuscate OBS::winhandle OBS::COMutils
+  PUBLIC OBS::w32-pthreads
+)
 
 target_link_options(libobs PRIVATE /IGNORE:4098 /SAFESEH:NO)
 

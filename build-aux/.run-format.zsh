@@ -61,6 +61,24 @@ invoke_formatter() {
       local -a format_args=(-style=file -fallback-style=none)
       if (( _loglevel > 2 )) format_args+=(--verbose)
       ;;
+    gersemi)
+      local formatter=gersemi
+      if (( ${+commands[gersemi]} )) {
+        local gersemi_version=($(gersemi --version))
+
+        if ! is-at-least 0.12.0 ${gersemi_version[2]}; then
+          log_error "gersemi is not version 0.12.0 or above (found ${gersemi_version[2]}."
+          exit 2
+        fi
+      }
+
+      if (( ! #source_files )) source_files=((libobs|libobs-*|UI|plugins|deps|cmake)/**/(CMakeLists.txt|*.cmake)(.N))
+
+      source_files=(${source_files:#*/(obs-outputs/ftl-sdk|jansson|decklink/*/decklink-sdk|obs-websocket|obs-browser|win-dshow/libdshowcapture)/*})
+      source_files=(${source_files:#(cmake/Modules/*|*/legacy.cmake)})
+
+      local -a format_args=()
+      ;;
     cmake)
       local formatter=cmake-format
       if (( ${+commands[cmake-format]} )) {

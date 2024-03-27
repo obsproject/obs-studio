@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.22...3.25)
 option(ENABLE_PLUGINS "Enable building OBS plugins" ON)
 
 if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
-
   if(NOT ENABLE_PLUGINS)
     set_property(GLOBAL APPEND PROPERTY OBS_FEATURES_DISABLED "Plugin Support")
     return()
@@ -22,9 +21,7 @@ if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
   endmacro()
 
   macro(check_obs_websocket)
-    if(OS_WINDOWS
-       OR OS_MACOS
-       OR OS_LINUX)
+    if(OS_WINDOWS OR OS_MACOS OR OS_LINUX)
       if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/obs-websocket/cmake/macos/Info.plist.in")
         add_subdirectory(obs-websocket)
       elseif(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/obs-websocket/CMakeLists.txt")
@@ -38,9 +35,7 @@ if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
   if(OS_WINDOWS OR OS_MACOS)
     add_subdirectory(coreaudio-encoder)
   endif()
-  if(OS_WINDOWS
-     OR OS_MACOS
-     OR OS_LINUX)
+  if(OS_WINDOWS OR OS_MACOS OR OS_LINUX)
     add_subdirectory(decklink)
   endif()
   add_subdirectory(image-source)
@@ -68,9 +63,7 @@ if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
     add_subdirectory(obs-text)
   endif()
   add_subdirectory(obs-transitions)
-  if(OS_WINDOWS
-     OR OS_MACOS
-     OR OS_LINUX)
+  if(OS_WINDOWS OR OS_MACOS OR OS_LINUX)
     add_subdirectory(obs-vst)
   endif()
   add_subdirectory(obs-webrtc)
@@ -81,9 +74,7 @@ if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
     add_subdirectory(sndio)
   endif()
   add_subdirectory(text-freetype2)
-  if(OS_WINDOWS
-     OR OS_MACOS
-     OR OS_LINUX)
+  if(OS_WINDOWS OR OS_MACOS OR OS_LINUX)
     add_subdirectory(vlc-video)
   endif()
   if(OS_WINDOWS)

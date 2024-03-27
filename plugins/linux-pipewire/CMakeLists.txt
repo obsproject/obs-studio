@@ -23,17 +23,22 @@ add_library(OBS::pipewire ALIAS linux-pipewire)
 
 target_sources(
   linux-pipewire
-  PRIVATE formats.c
-          formats.h
-          linux-pipewire.c
-          pipewire.c
-          pipewire.h
-          portal.c
-          portal.h
-          screencast-portal.c
-          screencast-portal.h)
+  PRIVATE
+    formats.c
+    formats.h
+    linux-pipewire.c
+    pipewire.c
+    pipewire.h
+    portal.c
+    portal.h
+    screencast-portal.c
+    screencast-portal.h
+)
 
-target_link_libraries(linux-pipewire PRIVATE OBS::libobs OBS::obsglad PipeWire::PipeWire GIO::GIO Libdrm::Libdrm)
+target_link_libraries(
+  linux-pipewire
+  PRIVATE OBS::libobs OBS::obsglad PipeWire::PipeWire GIO::GIO Libdrm::Libdrm
+)
 
 if(PIPEWIRE_VERSION VERSION_GREATER_EQUAL 0.3.60)
   obs_status(STATUS "PipeWire 0.3.60+ found, enabling camera support")
