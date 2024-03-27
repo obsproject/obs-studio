@@ -29,6 +29,10 @@ struct video_frame {
 	uint32_t linesize[MAX_AV_PLANES];
 };
 
+EXPORT void video_frame_init2(struct video_frame *frame,
+			     enum video_format format, uint32_t width,
+			     uint32_t height, int32_t align);
+
 EXPORT void video_frame_init(struct video_frame *frame,
 			     enum video_format format, uint32_t width,
 			     uint32_t height);
@@ -42,13 +46,19 @@ static inline void video_frame_free(struct video_frame *frame)
 }
 
 static inline struct video_frame *
-video_frame_create(enum video_format format, uint32_t width, uint32_t height)
+video_frame_create2(enum video_format format, uint32_t width, uint32_t height, int32_t align)
 {
 	struct video_frame *frame;
 
 	frame = (struct video_frame *)bzalloc(sizeof(struct video_frame));
-	video_frame_init(frame, format, width, height);
+	video_frame_init2(frame, format, width, height, align);
 	return frame;
+}
+
+static inline struct video_frame *
+video_frame_create(enum video_format format, uint32_t width, uint32_t height)
+{
+	return video_frame_create2(format, width, height, 0);
 }
 
 static inline void video_frame_destroy(struct video_frame *frame)
