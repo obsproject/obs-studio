@@ -1495,6 +1495,14 @@ static void receive_video(void *param, struct video_data *frame)
 	enc_frame.frames = 1;
 	enc_frame.pts = encoder->cur_pts;
 
+	if (encoder->encoder_group &&
+	    encoder->encoder_group->force_idr_pts == encoder->cur_pts &&
+	    encoder->info.caps & OBS_ENCODER_CAP_FORCE_IDR) {
+		blog(LOG_DEBUG, "Forcing IDR on encoder \"%s\"",
+		     obs_encoder_get_name(encoder));
+		enc_frame.flags |= OBS_FRAME_FORCE_IDR;
+	}
+
 	if (do_encode(encoder, &enc_frame))
 		encoder->cur_pts +=
 			encoder->timebase_num * encoder->frame_rate_divisor;
@@ -2058,6 +2066,11 @@ uint32_t obs_encoder_get_roi_increment(const obs_encoder_t *encoder)
 	return encoder->roi_increment;
 }
 
+static inline bool encoder_supports_resync(const obs_encoder_t *enc)
+{
+	return !!(enc->info.caps & OBS_ENCODER_CAP_FORCE_IDR);
+}
+
 bool obs_encoder_group_keyframe_aligned_encoders(
 	obs_encoder_t *encoder, obs_encoder_t *encoder_to_be_grouped)
 {
@@ -2102,6 +2115,9 @@ bool obs_encoder_group_keyframe_aligned_encoders(
 		}
 
 		encoder->encoder_group->encoders_added = 1;
+		encoder->encoder_group->force_idr_pts = -1;
+		encoder->encoder_group->resync_supported =
+			encoder_supports_resync(encoder);
 	} else {
 		pthread_mutex_lock(&encoder->encoder_group->mutex);
 		unlock = true;
@@ -2118,6 +2134,9 @@ bool obs_encoder_group_keyframe_aligned_encoders(
 	}
 
 	encoder->encoder_group->encoders_added += 1;
+	encoder->encoder_group->resync_supported =
+		encoder->encoder_group->resync_supported &&
+		encoder_supports_resync(encoder_to_be_grouped);
 	encoder_to_be_grouped->encoder_group = encoder->encoder_group;
 
 	if (unlock)

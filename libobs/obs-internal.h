@@ -1248,6 +1248,9 @@ struct encoder_group {
 	uint32_t encoders_added;
 	uint32_t encoders_started;
 	uint64_t start_timestamp;
+	int64_t last_missing_pts;
+	bool resync_supported;
+	int64_t force_idr_pts;
 };
 
 struct obs_encoder {

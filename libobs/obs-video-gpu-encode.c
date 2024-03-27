@@ -161,6 +161,18 @@ static void *gpu_encode_thread(void *data)
 			if (encoder->info.encode_texture2) {
 				struct encoder_texture tex = {0};
 
+				/* Force IDR frame to reset GOP and resync grouped encoders */
+				if (encoder->encoder_group &&
+				    encoder->encoder_group->force_idr_pts ==
+					    encoder->cur_pts &&
+				    encoder->info.caps &
+					    OBS_ENCODER_CAP_FORCE_IDR) {
+					blog(LOG_DEBUG,
+					     "Forcing IDR on encoder \"%s\"",
+					     obs_encoder_get_name(encoder));
+					tex.flags |= OBS_FRAME_FORCE_IDR;
+				}
+
 				tex.handle = tf.handle;
 				tex.tex[0] = tf.tex;
 				tex.tex[1] = tf.tex_uv;
