@@ -78,7 +78,7 @@ endif()
 find_package_handle_standard_args(
   FFnvcodec
   REQUIRED_VARS FFnvcodec_INCLUDE_DIR
-  VERSION_VAR FFnvcodec_VERSION REASON_FAILURE_MESSAGE "${FFnvcodec_ERROR_REASON}")
+  VERSION_VAR FFnvcodec_VERSION HANDLE_VERSION_RANGE REASON_FAILURE_MESSAGE "${FFnvcodec_ERROR_REASON}")
 mark_as_advanced(FFnvcodec_INCLUDE_DIR)
 unset(FFnvcodec_ERROR_REASON)
 
