@@ -2799,6 +2799,29 @@
                 "max video bitrate": 12000,
                 "max audio bitrate": 320
             }
+        },
+        {
+            "name": "Hakuna Live - RTMP",
+            "servers": [
+                {
+                    "name": "Republic of Korea / Japan",
+                    "url": "rtmps://media-proxy.prod.an1.media.hpcnt.com/hakuna"
+                }
+            ],
+            "protocol": "RTMP",
+            "supported video codecs": [
+                "h264"
+            ],
+            "recommended": {
+                "keyint": 2,
+                "supported resolutions": [
+                    "1920x1080",
+                    "1280x720"
+                ],
+                "max video bitrate": 6000,
+                "max audio bitrate": 320,
+                "bframes": 0
+            }
         }
     ]
 }
