@@ -881,6 +881,7 @@ private:
 	void UpdatePause(bool activate = true);
 	void UpdateReplayBuffer(bool activate = true);
 
+	bool IsFFmpegOutputToURL() const;
 	bool OutputPathValid();
 	void OutputPathInvalidMessage();
 

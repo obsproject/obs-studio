@@ -7652,7 +7652,7 @@ void OBSBasic::StartRecording()
 		return;
 	}
 
-	if (LowDiskSpace()) {
+	if (!IsFFmpegOutputToURL() && LowDiskSpace()) {
 		DiskSpaceMessage();
 		ui->recordButton->setChecked(false);
 		return;
@@ -10887,7 +10887,7 @@ void OBSBasic::OutputPathInvalidMessage()
 				QTStr("Output.BadPath.Text"));
 }
 
-bool OBSBasic::OutputPathValid()
+bool OBSBasic::IsFFmpegOutputToURL() const
 {
 	const char *mode = config_get_string(Config(), "Output", "Mode");
 	if (strcmp(mode, "Advanced") == 0) {
@@ -10900,6 +10900,14 @@ bool OBSBasic::OutputPathValid()
 				return true;
 		}
 	}
+
+	return false;
+}
+
+bool OBSBasic::OutputPathValid()
+{
+	if (IsFFmpegOutputToURL())
+		return true;
 
 	const char *path = GetCurrentOutputPath();
 	return path && *path && QDir(path).exists();
