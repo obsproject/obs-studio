@@ -1,5 +1,5 @@
 /* -LICENSE-START-
-** Copyright (c) 2020 Blackmagic Design
+** Copyright (c) 2024 Blackmagic Design
 **
 ** Permission is hereby granted, free of charge, to any person or organization
 ** obtaining a copy of the software and accompanying documentation covered by
@@ -74,7 +74,9 @@ enum _BMDVideoConnection {
     bmdVideoConnectionOpticalSDI                                 = 1 << 2,
     bmdVideoConnectionComponent                                  = 1 << 3,
     bmdVideoConnectionComposite                                  = 1 << 4,
-    bmdVideoConnectionSVideo                                     = 1 << 5
+    bmdVideoConnectionSVideo                                     = 1 << 5,
+    bmdVideoConnectionEthernet                                   = 1 << 6,
+    bmdVideoConnectionOpticalEthernet                            = 1 << 7
 };
 
 /* Enum BMDAudioConnection - Audio connection types */
@@ -125,6 +127,8 @@ extern "C" {
 
 
 }
+
+
 
 #endif /* defined(__cplusplus) */
 #endif /* defined(BMD_DECKLINKAPITYPES_H) */
