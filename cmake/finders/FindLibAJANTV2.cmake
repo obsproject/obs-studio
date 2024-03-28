@@ -57,7 +57,7 @@ endif()
 
 find_path(
   LibAJANTV2_INCLUDE_DIR
-  NAMES ajalibraries
+  NAMES libajantv2
   HINTS ${PC_LibAJANTV2_INCLUDE_DIRS}
   PATHS /usr/include /usr/local/include
   DOC "LibAJANTV2 include directory")
@@ -105,11 +105,19 @@ if(LibAJANTV2_FOUND)
   list(
     APPEND
     LibAJANTV2_INCLUDE_DIRS
-    ${LibAJANTV2_INCLUDE_DIR}/ajalibraries
-    ${LibAJANTV2_INCLUDE_DIR}/ajalibraries/ajaanc
-    ${LibAJANTV2_INCLUDE_DIR}/ajalibraries/ajabase
-    ${LibAJANTV2_INCLUDE_DIR}/ajalibraries/ajantv2
-    ${LibAJANTV2_INCLUDE_DIR}/ajalibraries/ajantv2/includes)
+    ${LibAJANTV2_INCLUDE_DIR}/libajantv2
+    ${LibAJANTV2_INCLUDE_DIR}/libajantv2/ajaanc
+    ${LibAJANTV2_INCLUDE_DIR}/libajantv2/ajabase
+    ${LibAJANTV2_INCLUDE_DIR}/libajantv2/ajantv2
+    ${LibAJANTV2_INCLUDE_DIR}/libajantv2/ajantv2/includes)
+  if(CMAKE_HOST_SYSTEM_NAME MATCHES "Windows")
+    list(APPEND LibAJANTV2_INCLUDE_DIRS ${LibAJANTV2_INCLUDE_DIR}/libajantv2/ajantv2/src/win)
+  elseif(CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin")
+    list(APPEND LibAJANTV2_INCLUDE_DIRS ${LibAJANTV2_INCLUDE_DIR}/libajantv2/ajantv2/src/mac)
+  elseif(CMAKE_HOST_SYSTEM_NAME MATCHES "Linux")
+    list(APPEND LibAJANTV2_INCLUDE_DIRS ${LibAJANTV2_INCLUDE_DIR}/libajantv2/ajantv2/src/lin)
+  endif()
+
   set(LibAJANTV2_LIBRARIES ${LibAJANTV2_LIBRARY})
   mark_as_advanced(LibAJANTV2_INCLUDE_DIR LibAJANTV2_LIBRARY)
 
@@ -142,6 +150,20 @@ if(LibAJANTV2_FOUND)
     endif()
 
     set_target_properties(AJA::LibAJANTV2 PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${LibAJANTV2_INCLUDE_DIRS}")
+    set_target_properties(AJA::LibAJANTV2 PROPERTIES INTERFACE_LINK_OPTIONS $<$<PLATFORM_ID:Windows>:/IGNORE:4099>)
+    set_property(
+      TARGET AJA::LibAJANTV2
+      APPEND
+      PROPERTY INTERFACE_LINK_LIBRARIES
+               $<$<PLATFORM_ID:Windows>:netapi32.lib>
+               $<$<PLATFORM_ID:Windows>:setupapi.lib>
+               $<$<PLATFORM_ID:Windows>:shlwapi.lib>
+               $<$<PLATFORM_ID:Windows>:wbemuuid.lib>
+               $<$<PLATFORM_ID:Windows>:winmm.lib>
+               $<$<PLATFORM_ID:Windows>:ws2_32.lib>
+               "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,AppKit.framework>>"
+               "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,CoreFoundation.framework>>"
+               "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,IOKit.framework>>")
     set_property(
       TARGET AJA::LibAJANTV2
       APPEND
