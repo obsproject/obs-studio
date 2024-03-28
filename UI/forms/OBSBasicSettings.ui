@@ -3908,6 +3908,10 @@
                       </widget>
                      </widget>
                     </item>
+                    <item>
+                     <layout class="QVBoxLayout" name="advOutRecInfoLayout">
+                     </layout>
+                    </item>
                    </layout>
                   </widget>
                   <widget class="QWidget" name="advOutputAudioTracksTab">
