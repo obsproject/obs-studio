@@ -2706,8 +2706,14 @@
             ],
             "recommended": {
                 "keyint": 1,
-                "profile": "high",
-                "bframes": 0
+                "bframes": 0,
+                "max fps": 60,
+                "max video bitrate": 8000,
+                "max audio bitrate": 192,
+                "x264opts": "tune=zerolatency scenecut=0",
+                "supported resolutions": [
+                    "1920x1080"
+                ]
             }
         },
         {
