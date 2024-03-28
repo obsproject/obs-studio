@@ -799,8 +799,12 @@ ComPtr<IAudioClient> WASAPISource::InitClient(
 	DWORD flags = AUDCLNT_STREAMFLAGS_EVENTCALLBACK;
 	if (type != SourceType::Input)
 		flags |= AUDCLNT_STREAMFLAGS_LOOPBACK;
-	res = client->Initialize(AUDCLNT_SHAREMODE_SHARED, flags,
-				 BUFFER_TIME_100NS, 0, pFormat, nullptr);
+	if (type == SourceType::ProcessOutput)
+		flags |= AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM |
+			 AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY;
+
+	res = client->Initialize(AUDCLNT_SHAREMODE_SHARED, flags, 0, 0, pFormat,
+				 nullptr);
 	if (FAILED(res))
 		throw HRError("Failed to initialize audio client", res);
 
