@@ -2799,6 +2799,27 @@
                 "max video bitrate": 12000,
                 "max audio bitrate": 320
             }
+        },
+        {
+            "name": "Rooter",
+            "stream_key_link": "https://www.rooter.gg/studio",
+            "servers": [
+                {
+                    "name": "Server 1",
+                    "url": "rtmps://c2ee45b2888d.global-contribute.live-video.net:443/app/"
+                },
+                {
+                    "name": "Server 2",
+                    "url": "rtmps://rtmp-mumbai-in.rooter.io:443/show"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 7000
+            },
+            "supported video codecs": [
+                "h264"
+            ]
         }
     ]
 }
