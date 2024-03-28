@@ -10689,6 +10689,8 @@ void OBSBasic::PauseRecording()
 	obs_output_t *output = outputHandler->fileOutput;
 
 	if (obs_output_pause(output, true)) {
+		os_atomic_set_bool(&recording_paused, true);
+
 		pause->setAccessibleName(QTStr("Basic.Main.UnpauseRecording"));
 		pause->setToolTip(QTStr("Basic.Main.UnpauseRecording"));
 		pause->blockSignals(true);
@@ -10710,8 +10712,6 @@ void OBSBasic::PauseRecording()
 			trayIcon->setIcon(QIcon::fromTheme("obs-tray-paused",
 							   trayIconFile));
 		}
-
-		os_atomic_set_bool(&recording_paused, true);
 
 		auto replay = replayBufferButton ? replayBufferButton->second()
 						 : nullptr;
@@ -10735,6 +10735,8 @@ void OBSBasic::UnpauseRecording()
 	obs_output_t *output = outputHandler->fileOutput;
 
 	if (obs_output_pause(output, false)) {
+		os_atomic_set_bool(&recording_paused, false);
+
 		pause->setAccessibleName(QTStr("Basic.Main.PauseRecording"));
 		pause->setToolTip(QTStr("Basic.Main.PauseRecording"));
 		pause->blockSignals(true);
@@ -10756,8 +10758,6 @@ void OBSBasic::UnpauseRecording()
 			trayIcon->setIcon(QIcon::fromTheme("obs-tray-active",
 							   trayIconFile));
 		}
-
-		os_atomic_set_bool(&recording_paused, false);
 
 		auto replay = replayBufferButton ? replayBufferButton->second()
 						 : nullptr;
