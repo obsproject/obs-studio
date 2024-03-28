@@ -823,6 +823,7 @@ static void set_gpu_converted_data(struct video_frame *output,
 	case VIDEO_FORMAT_YVYU:
 	case VIDEO_FORMAT_YUY2:
 	case VIDEO_FORMAT_UYVY:
+	case VIDEO_FORMAT_UYVA:
 	case VIDEO_FORMAT_RGBA:
 	case VIDEO_FORMAT_BGRA:
 	case VIDEO_FORMAT_BGRX:

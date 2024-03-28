@@ -778,6 +778,7 @@ Functions used by outputs
            VIDEO_FORMAT_YVYU,
            VIDEO_FORMAT_YUY2, /* YUYV */
            VIDEO_FORMAT_UYVY,
+	       VIDEO_FORMAT_UYVA, /* two-plane, packed luma/chroma like UYVY and then alpha plane */
 
            /* packed uncompressed formats */
            VIDEO_FORMAT_RGBA,

@@ -94,6 +94,8 @@ enum video_format {
 
 	/* packed uncompressed 10-bit format */
 	VIDEO_FORMAT_R10L,
+	/* two-plane, packed luma/chroma like UYVY and then alpha plane */
+	VIDEO_FORMAT_UYVA,
 };
 
 enum video_trc {
@@ -148,6 +150,7 @@ static inline bool format_is_yuv(enum video_format format)
 	case VIDEO_FORMAT_YVYU:
 	case VIDEO_FORMAT_YUY2:
 	case VIDEO_FORMAT_UYVY:
+	case VIDEO_FORMAT_UYVA:
 	case VIDEO_FORMAT_I444:
 	case VIDEO_FORMAT_I412:
 	case VIDEO_FORMAT_I40A:
@@ -191,6 +194,8 @@ static inline const char *get_video_format_name(enum video_format format)
 		return "YUY2";
 	case VIDEO_FORMAT_UYVY:
 		return "UYVY";
+	case VIDEO_FORMAT_UYVA:
+		return "UYVA";
 	case VIDEO_FORMAT_RGBA:
 		return "RGBA";
 	case VIDEO_FORMAT_BGRA:
