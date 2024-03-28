@@ -179,6 +179,8 @@ static void *v4l2_thread(void *vptr)
 	int fps_num, fps_denom;
 	float ffps;
 	uint64_t timeout_usec;
+	const uint64_t first_frame_timeout_usec = 2000000;
+	bool frame_received = false;
 
 	blog(LOG_DEBUG, "%s: new capture thread", data->device_id);
 	os_set_thread_name("v4l2: capture");
@@ -210,7 +212,10 @@ static void *v4l2_thread(void *vptr)
 
 		/* Set timeout timevalue. */
 		tv.tv_sec = 0;
-		tv.tv_usec = timeout_usec;
+		tv.tv_usec = frame_received || timeout_usec >
+						       first_frame_timeout_usec
+				     ? timeout_usec
+				     : first_frame_timeout_usec;
 
 		r = select(data->dev + 1, &fds, NULL, NULL, &tv);
 		if (r < 0) {
@@ -219,6 +224,8 @@ static void *v4l2_thread(void *vptr)
 			blog(LOG_ERROR, "%s: select failed", data->device_id);
 			break;
 		} else if (r == 0) {
+			frame_received = false;
+
 			blog(LOG_ERROR, "%s: select timed out",
 			     data->device_id);
 
@@ -244,6 +251,8 @@ static void *v4l2_thread(void *vptr)
 
 			continue;
 		}
+
+		frame_received = true;
 
 		buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 		buf.memory = V4L2_MEMORY_MMAP;
