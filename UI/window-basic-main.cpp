@@ -10662,10 +10662,16 @@ bool SceneRenameDelegate::eventFilter(QObject *editor, QEvent *event)
 {
 	if (event->type() == QEvent::KeyPress) {
 		QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
-		if (keyEvent->key() == Qt::Key_Escape) {
+		switch (keyEvent->key()) {
+		case Qt::Key_Escape: {
 			QLineEdit *lineEdit = qobject_cast<QLineEdit *>(editor);
 			if (lineEdit)
 				lineEdit->undo();
+			break;
+		}
+		case Qt::Key_Tab:
+		case Qt::Key_Backtab:
+			return false;
 		}
 	}
 
