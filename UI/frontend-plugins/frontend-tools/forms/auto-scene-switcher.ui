@@ -106,7 +106,7 @@
      <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+        <enum>Qt::Orientation::Horizontal</enum>
        </property>
        <property name="sizeHint" stdset="0">
         <size>
@@ -121,10 +121,10 @@
    <item>
     <layout class="QFormLayout" name="formLayout">
      <property name="fieldGrowthPolicy">
-      <enum>QFormLayout::ExpandingFieldsGrow</enum>
+      <enum>QFormLayout::FieldGrowthPolicy::ExpandingFieldsGrow</enum>
      </property>
      <property name="labelAlignment">
-      <set>Qt::AlignRight|Qt::AlignTop|Qt::AlignTrailing</set>
+      <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTop|Qt::AlignmentFlag::AlignTrailing</set>
      </property>
      <item row="0" column="0">
       <widget class="QLabel" name="label">
@@ -138,7 +138,7 @@
         <string>SceneSwitcher.OnNoMatch</string>
        </property>
        <property name="alignment">
-        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+        <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
        </property>
       </widget>
      </item>
@@ -246,7 +246,7 @@
      <item row="3" column="0">
       <spacer name="horizontalSpacer_2">
        <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+        <enum>Qt::Orientation::Horizontal</enum>
        </property>
        <property name="sizeHint" stdset="0">
         <size>
@@ -266,10 +266,10 @@
      <item row="4" column="1">
       <spacer name="verticalSpacer">
        <property name="orientation">
-        <enum>Qt::Vertical</enum>
+        <enum>Qt::Orientation::Vertical</enum>
        </property>
        <property name="sizeType">
-        <enum>QSizePolicy::Preferred</enum>
+        <enum>QSizePolicy::Policy::Preferred</enum>
        </property>
        <property name="sizeHint" stdset="0">
         <size>
@@ -288,7 +288,7 @@
      </item>
     </layout>
    </item>
-   <item alignment="Qt::AlignRight">
+   <item alignment="Qt::AlignmentFlag::AlignRight">
     <widget class="QPushButton" name="close">
      <property name="text">
       <string>Close</string>

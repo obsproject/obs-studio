@@ -27,7 +27,7 @@
     <number>6</number>
    </property>
    <property name="sizeConstraint">
-    <enum>QLayout::SetMinimumSize</enum>
+    <enum>QLayout::SizeConstraint::SetMinimumSize</enum>
    </property>
    <item>
     <widget class="QTabWidget" name="tabWidget">
@@ -88,10 +88,10 @@
           </property>
           <layout class="QFormLayout" name="formLayout_2">
            <property name="fieldGrowthPolicy">
-            <enum>QFormLayout::ExpandingFieldsGrow</enum>
+            <enum>QFormLayout::FieldGrowthPolicy::ExpandingFieldsGrow</enum>
            </property>
            <property name="labelAlignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
            </property>
            <property name="topMargin">
             <number>9</number>
@@ -152,7 +152,7 @@
               </sizepolicy>
              </property>
              <property name="sizeAdjustPolicy">
-              <enum>QComboBox::AdjustToContentsOnFirstShow</enum>
+              <enum>QComboBox::SizeAdjustPolicy::AdjustToContentsOnFirstShow</enum>
              </property>
             </widget>
            </item>
@@ -204,7 +204,7 @@
                 <string>YouTube.Actions.MadeForKids.Help</string>
                </property>
                <property name="textFormat">
-                <enum>Qt::RichText</enum>
+                <enum>Qt::TextFormat::RichText</enum>
                </property>
               </widget>
              </item>
@@ -248,13 +248,13 @@
               </size>
              </property>
              <property name="frameShape">
-              <enum>QFrame::Box</enum>
+              <enum>QFrame::Shape::Box</enum>
              </property>
              <property name="text">
               <string/>
              </property>
              <property name="alignment">
-              <set>Qt::AlignCenter</set>
+              <set>Qt::AlignmentFlag::AlignCenter</set>
              </property>
             </widget>
            </item>
@@ -285,7 +285,7 @@
            <item row="26" column="1">
             <spacer name="verticalSpacer_2">
              <property name="orientation">
-              <enum>Qt::Vertical</enum>
+              <enum>Qt::Orientation::Vertical</enum>
              </property>
              <property name="sizeHint" stdset="0">
               <size>
@@ -299,7 +299,6 @@
             <widget class="QLabel" name="label_7">
              <property name="font">
               <font>
-               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
@@ -339,14 +338,14 @@
                 <string>YouTube.Actions.360Video.Help</string>
                </property>
                <property name="textFormat">
-                <enum>Qt::RichText</enum>
+                <enum>Qt::TextFormat::RichText</enum>
                </property>
               </widget>
              </item>
              <item>
               <spacer name="horizontalSpacer_10">
                <property name="orientation">
-                <enum>Qt::Horizontal</enum>
+                <enum>Qt::Orientation::Horizontal</enum>
                </property>
                <property name="sizeHint" stdset="0">
                 <size>
@@ -388,14 +387,14 @@
                 <string notr="true">&lt;a href=&quot;.&quot;&gt;(?)&lt;/a&gt;</string>
                </property>
                <property name="textFormat">
-                <enum>Qt::RichText</enum>
+                <enum>Qt::TextFormat::RichText</enum>
                </property>
               </widget>
              </item>
              <item>
               <spacer name="horizontalSpacer_9">
                <property name="orientation">
-                <enum>Qt::Horizontal</enum>
+                <enum>Qt::Orientation::Horizontal</enum>
                </property>
                <property name="sizeHint" stdset="0">
                 <size>
@@ -439,7 +438,7 @@
            <item row="10" column="1">
             <spacer name="horizontalSpacer">
              <property name="orientation">
-              <enum>Qt::Horizontal</enum>
+              <enum>Qt::Orientation::Horizontal</enum>
              </property>
              <property name="sizeHint" stdset="0">
               <size>
@@ -512,7 +511,7 @@
        <item>
         <widget class="QScrollArea" name="scrollArea">
          <property name="verticalScrollBarPolicy">
-          <enum>Qt::ScrollBarAsNeeded</enum>
+          <enum>Qt::ScrollBarPolicy::ScrollBarAsNeeded</enum>
          </property>
          <property name="widgetResizable">
           <bool>true</bool>
@@ -542,10 +541,10 @@
               <string>&lt;big&gt;Friday Fortnite Stream&lt;/big&gt;&lt;br/&gt;scheduled for 11/11/20 2:00pm</string>
              </property>
              <property name="textFormat">
-              <enum>Qt::RichText</enum>
+              <enum>Qt::TextFormat::RichText</enum>
              </property>
              <property name="alignment">
-              <set>Qt::AlignCenter</set>
+              <set>Qt::AlignmentFlag::AlignCenter</set>
              </property>
              <property name="margin">
               <number>4</number>
@@ -561,10 +560,10 @@
               <string>&lt;big&gt;Friday Fortnite Stream&lt;/big&gt;&lt;br/&gt;scheduled for 11/11/20 2:00pm</string>
              </property>
              <property name="textFormat">
-              <enum>Qt::RichText</enum>
+              <enum>Qt::TextFormat::RichText</enum>
              </property>
              <property name="alignment">
-              <set>Qt::AlignCenter</set>
+              <set>Qt::AlignmentFlag::AlignCenter</set>
              </property>
              <property name="margin">
               <number>4</number>
@@ -580,10 +579,10 @@
               <string>&lt;big&gt;Friday Fortnite Stream&lt;/big&gt;&lt;br/&gt;scheduled for 11/11/20 2:00pm</string>
              </property>
              <property name="textFormat">
-              <enum>Qt::RichText</enum>
+              <enum>Qt::TextFormat::RichText</enum>
              </property>
              <property name="alignment">
-              <set>Qt::AlignCenter</set>
+              <set>Qt::AlignmentFlag::AlignCenter</set>
              </property>
              <property name="margin">
               <number>4</number>
@@ -599,10 +598,10 @@
               <string>&lt;big&gt;Friday Fortnite Stream&lt;/big&gt;&lt;br/&gt;scheduled for 11/11/20 2:00pm</string>
              </property>
              <property name="textFormat">
-              <enum>Qt::RichText</enum>
+              <enum>Qt::TextFormat::RichText</enum>
              </property>
              <property name="alignment">
-              <set>Qt::AlignCenter</set>
+              <set>Qt::AlignmentFlag::AlignCenter</set>
              </property>
              <property name="margin">
               <number>4</number>
@@ -643,11 +642,11 @@
       </property>
       <item row="0" column="0">
        <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,2,0,6">
-        <property name="sizeConstraint">
-         <enum>QLayout::SetNoConstraint</enum>
-        </property>
         <property name="spacing">
          <number>10</number>
+        </property>
+        <property name="sizeConstraint">
+         <enum>QLayout::SizeConstraint::SetNoConstraint</enum>
         </property>
         <item>
          <widget class="QPushButton" name="cancelButton">

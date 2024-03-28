@@ -26,7 +26,7 @@
       </size>
      </property>
      <property name="orientation">
-      <enum>Qt::Vertical</enum>
+      <enum>Qt::Orientation::Vertical</enum>
      </property>
      <property name="childrenCollapsible">
       <bool>false</bool>
@@ -39,10 +39,10 @@
        </sizepolicy>
       </property>
       <property name="frameShape">
-       <enum>QFrame::NoFrame</enum>
+       <enum>QFrame::Shape::NoFrame</enum>
       </property>
       <property name="frameShadow">
-       <enum>QFrame::Plain</enum>
+       <enum>QFrame::Shadow::Plain</enum>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_7">
        <property name="spacing">
@@ -86,10 +86,10 @@
        </sizepolicy>
       </property>
       <property name="frameShape">
-       <enum>QFrame::NoFrame</enum>
+       <enum>QFrame::Shape::NoFrame</enum>
       </property>
       <property name="frameShadow">
-       <enum>QFrame::Plain</enum>
+       <enum>QFrame::Shadow::Plain</enum>
       </property>
       <layout class="QVBoxLayout" name="propertiesLayout">
        <property name="leftMargin">
@@ -108,10 +108,10 @@
      </widget>
     </widget>
    </item>
-   <item alignment="Qt::AlignBottom">
+   <item alignment="Qt::AlignmentFlag::AlignBottom">
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok|QDialogButtonBox::RestoreDefaults</set>
+      <set>QDialogButtonBox::StandardButton::Cancel|QDialogButtonBox::StandardButton::Ok|QDialogButtonBox::StandardButton::RestoreDefaults</set>
      </property>
     </widget>
    </item>

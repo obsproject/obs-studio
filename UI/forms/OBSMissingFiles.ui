@@ -47,7 +47,7 @@
    <item row="2" column="0">
     <widget class="QTableView" name="tableView">
      <property name="selectionMode">
-      <enum>QAbstractItemView::NoSelection</enum>
+      <enum>QAbstractItemView::SelectionMode::NoSelection</enum>
      </property>
      <attribute name="horizontalHeaderMinimumSectionSize">
       <number>23</number>
@@ -59,7 +59,7 @@
       <bool>false</bool>
      </attribute>
      <attribute name="verticalHeaderDefaultSectionSize">
-      <number>23</number>
+      <number>24</number>
      </attribute>
     </widget>
    </item>
@@ -77,7 +77,7 @@
        <item>
         <spacer name="horizontalSpacer">
          <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+          <enum>Qt::Orientation::Horizontal</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
