@@ -2,6 +2,7 @@ project(obs-ffmpeg)
 
 option(ENABLE_FFMPEG_LOGGING "Enables obs-ffmpeg logging" OFF)
 option(ENABLE_NEW_MPEGTS_OUTPUT "Use native SRT/RIST mpegts output" ON)
+option(ENABLE_NATIVE_NVENC "Use native NVENC implementation" ON)
 
 find_package(
   FFmpeg REQUIRED
@@ -112,6 +113,13 @@ elseif(OS_POSIX AND NOT OS_MACOS)
   find_package(Libpci REQUIRED)
   target_sources(obs-ffmpeg PRIVATE obs-ffmpeg-vaapi.c vaapi-utils.c vaapi-utils.h)
   target_link_libraries(obs-ffmpeg PRIVATE Libva::va Libva::drm LIBPCI::LIBPCI)
+
+  if(ENABLE_NATIVE_NVENC)
+    find_package(FFnvcodec 12.0.0.0...<12.2.0.0 REQUIRED)
+    target_sources(obs-ffmpeg PRIVATE obs-nvenc.c obs-nvenc.h obs-nvenc-helpers.c obs-nvenc-ver.h)
+    target_link_libraries(obs-ffmpeg PRIVATE FFnvcodec::FFnvcodec OBS::obsglad)
+    target_compile_definitions(obs-ffmpeg PRIVATE NVCODEC_AVAILABLE)
+  endif()
 endif()
 
 setup_plugin_target(obs-ffmpeg)
