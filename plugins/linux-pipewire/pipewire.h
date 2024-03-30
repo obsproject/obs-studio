@@ -39,6 +39,11 @@ struct obs_pipwire_connect_stream_info {
 	} video;
 };
 
+struct obs_pipewire_stream_impl {
+	void *stream;
+	void (*destroy)(void *stream);
+};
+
 obs_pipewire *
 obs_pipewire_connect_fd(int pipewire_fd,
 			const struct pw_registry_events *registry_events,

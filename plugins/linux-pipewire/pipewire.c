@@ -97,6 +97,7 @@ struct _obs_pipewire {
 
 struct _obs_pipewire_stream {
 	obs_pipewire *obs_pw;
+	struct obs_pipewire_stream_impl impl;
 	obs_source_t *source;
 
 	gs_texture_t *texture;
@@ -1190,9 +1191,9 @@ void obs_pipewire_destroy(obs_pipewire *obs_pw)
 		return;
 
 	while (obs_pw->streams->len > 0) {
-		obs_pipewire_stream *obs_pw_stream =
+		struct obs_pipewire_stream_impl *obs_pw_stream =
 			g_ptr_array_index(obs_pw->streams, 0);
-		obs_pipewire_stream_destroy(obs_pw_stream);
+		obs_pw_stream->destroy(obs_pw_stream->stream);
 	}
 	g_clear_pointer(&obs_pw->streams, g_ptr_array_unref);
 	teardown_pipewire(obs_pw);
@@ -1268,7 +1269,9 @@ obs_pipewire_stream *obs_pipewire_connect_stream(
 	pw_thread_loop_unlock(obs_pw->thread_loop);
 	bfree(params);
 
-	g_ptr_array_add(obs_pw->streams, obs_pw_stream);
+	obs_pw_stream->impl.stream = obs_pw_stream;
+	obs_pw_stream->impl.destroy = obs_pipewire_stream_destroy;
+	g_ptr_array_add(obs_pw->streams, &obs_pw_stream->impl);
 
 	return obs_pw_stream;
 }
@@ -1410,8 +1413,9 @@ void obs_pipewire_stream_set_cursor_visible(obs_pipewire_stream *obs_pw_stream,
 	obs_pw_stream->cursor.visible = cursor_visible;
 }
 
-void obs_pipewire_stream_destroy(obs_pipewire_stream *obs_pw_stream)
+void obs_pipewire_stream_destroy(void *stream)
 {
+	obs_pipewire_stream *obs_pw_stream = (obs_pipewire_stream*)stream;
 	uint32_t output_flags;
 
 	if (!obs_pw_stream)
