@@ -854,7 +854,7 @@ void OBSBasic::Save(const char *file)
 		obs_data_set_obj(saveData, "resolution", res);
 	}
 
-	if (!obs_data_save_json_safe(saveData, file, "tmp", "bak"))
+	if (!obs_data_save_json_pretty_safe(saveData, file, "tmp", "bak"))
 		blog(LOG_ERROR, "Could not save scene data to %s", file);
 }
 
