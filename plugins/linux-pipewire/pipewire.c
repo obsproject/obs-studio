@@ -1132,9 +1132,13 @@ obs_pipewire_connect_fd(int pipewire_fd,
 	pw_thread_loop_lock(obs_pw->thread_loop);
 
 	/* Core */
-	obs_pw->core = pw_context_connect_fd(
-		obs_pw->context, fcntl(obs_pw->pipewire_fd, F_DUPFD_CLOEXEC, 5),
-		NULL, 0);
+	if (pipewire_fd != -1) {
+		obs_pw->core = pw_context_connect_fd(
+			obs_pw->context, fcntl(obs_pw->pipewire_fd, F_DUPFD_CLOEXEC, 5),
+			NULL, 0);
+	} else {
+		obs_pw->core = pw_context_connect(obs_pw->context, NULL, 0);
+	}
 	if (!obs_pw->core) {
 		blog(LOG_WARNING, "Error creating PipeWire core: %m");
 		pw_thread_loop_unlock(obs_pw->thread_loop);
