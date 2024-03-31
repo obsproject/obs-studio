@@ -28,6 +28,12 @@ target_sources(
           linux-pipewire.c
           pipewire.c
           pipewire.h
+          pipewire-video.c
+          pipewire-video.h
+          pipewire-output.c
+          pipewire-output.h
+          virtualcam.c
+          virtualcam.h
           portal.c
           portal.h
           screencast-portal.c

@@ -25,6 +25,7 @@
 
 #include <pipewire/pipewire.h>
 #include "screencast-portal.h"
+#include "virtualcam.h"
 
 #if PW_CHECK_VERSION(0, 3, 60)
 #include "camera-portal.h"
@@ -50,6 +51,14 @@ bool obs_module_load(void)
 #endif
 
 	screencast_portal_load();
+
+	/**** load pipewire virtual camera and enable vcam ****/
+	obs_data_t *obs_settings = obs_data_create();
+	virtual_camera_load();
+	obs_data_set_bool(obs_settings, "vcamEnabled", true);
+	obs_apply_private_data(obs_settings);
+	obs_data_release(obs_settings);
+	/**** load pipewire virtual camera and enable vcam ****/
 
 	return true;
 }
