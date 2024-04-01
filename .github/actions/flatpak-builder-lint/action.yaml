@@ -2,7 +2,7 @@ name: Run flatpak-builder-lint
 description: Runs flatpak-builder-lint with exceptions
 inputs:
   artifact:
-    description: Type of artifact to lint (builddir, repo, manifest)
+    description: Type of artifact to lint (builddir, repo, manifest, appstream)
     required: true
   path:
     description: Path to flatpak-builder manifest or Flatpak build directory
@@ -23,6 +23,7 @@ runs:
           builddir);;
           repo);;
           manifest);;
+          appstream);;
           *)
             echo "::error::Given artifact type is incorrect"
             exit 2
@@ -40,6 +41,14 @@ runs:
         if [[ $exit_code != 0 && -z "$ret" ]]; then
           echo "::error::Error while running flatpak-builder-lint"
           exit 2
+        fi
+
+        if [[ ${{ inputs.artifact }} == "appstream" ]]; then
+          echo $ret
+
+          [[ $exit_code != 0 ]] && echo "::error::Flatpak appstream info is not valid"
+
+          exit $exit_code
         fi
 
         for ((i = 0 ; i < $(echo $ret | jq '.warnings | length') ; i++)); do

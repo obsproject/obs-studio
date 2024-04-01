@@ -385,12 +385,16 @@
             "name": "Vaughn Live / iNSTAGIB",
             "servers": [
                 {
-                    "name": "US: Chicago, IL",
-                    "url": "rtmp://live-ord.vaughnsoft.net/live"
-                },
-                {
                     "name": "US: Vint Hill, VA",
                     "url": "rtmp://live-iad.vaughnsoft.net/live"
+                },
+                {
+                    "name": "US: Vint Hill, VA #2",
+                    "url": "rtmp://live-iad2.vaughnsoft.net/live"
+                },
+                {
+                    "name": "US: Dallas, TX",
+                    "url": "rtmp://live-dfw.vaughnsoft.net/live"
                 },
                 {
                     "name": "US: Denver, CO",
@@ -409,11 +413,23 @@
                     "url": "rtmp://live-sea.vaughnsoft.net/live"
                 },
                 {
+                    "name": "CA: Toronto",
+                    "url": "rtmp://live-tor.vaughnsoft.net/live"
+                },
+                {
                     "name": "EU: Amsterdam, NL",
                     "url": "rtmp://live-ams.vaughnsoft.net/live"
                 },
                 {
                     "name": "EU: London, UK",
+                    "url": "rtmp://live-lhr.vaughnsoft.net/live"
+                },
+                {
+                    "name": "EU: Paris, FR",
+                    "url": "rtmp://live-lhr.vaughnsoft.net/live"
+                },
+                {
+                    "name": "Tokyo, JP",
                     "url": "rtmp://live-lhr.vaughnsoft.net/live"
                 }
             ],
@@ -430,12 +446,16 @@
             "name": "Breakers.TV",
             "servers": [
                 {
-                    "name": "US: Chicago, IL",
-                    "url": "rtmp://live-ord.vaughnsoft.net/live"
-                },
-                {
                     "name": "US: Vint Hill, VA",
                     "url": "rtmp://live-iad.vaughnsoft.net/live"
+                },
+                {
+                    "name": "US: Vint Hill, VA #2",
+                    "url": "rtmp://live-iad2.vaughnsoft.net/live"
+                },
+                {
+                    "name": "US: Dallas, TX",
+                    "url": "rtmp://live-dfw.vaughnsoft.net/live"
                 },
                 {
                     "name": "US: Denver, CO",
@@ -454,11 +474,23 @@
                     "url": "rtmp://live-sea.vaughnsoft.net/live"
                 },
                 {
+                    "name": "CA: Toronto",
+                    "url": "rtmp://live-tor.vaughnsoft.net/live"
+                },
+                {
                     "name": "EU: Amsterdam, NL",
                     "url": "rtmp://live-ams.vaughnsoft.net/live"
                 },
                 {
                     "name": "EU: London, UK",
+                    "url": "rtmp://live-lhr.vaughnsoft.net/live"
+                },
+                {
+                    "name": "EU: Paris, FR",
+                    "url": "rtmp://live-lhr.vaughnsoft.net/live"
+                },
+                {
+                    "name": "Tokyo, JP",
                     "url": "rtmp://live-lhr.vaughnsoft.net/live"
                 }
             ],
@@ -1156,12 +1188,8 @@
             ],
             "servers": [
                 {
-                    "name": "Global - Recommended",
+                    "name": "Default",
                     "url": "rtmps://live.sb.zone:443/live"
-                },
-                {
-                    "name": "Global - Legacy",
-                    "url": "rtmp://ingest-global.switchboard.zone/live"
                 }
             ],
             "recommended": {
@@ -2646,6 +2674,167 @@
                 "keyint": 2,
                 "max video bitrate": 10000,
                 "max audio bitrate": 192
+            }
+        },
+        {
+            "name": "Vault - by CommanderRoot",
+            "common": false,
+            "more_info_link": "https://vault.root-space.eu/",
+            "stream_key_link": "https://vault.root-space.eu/recordings",
+            "servers": [
+                {
+                    "name": "EU - Central",
+                    "url": "rtmp://ingest-eu-central.vault.root-space.eu/app"
+                },
+                {
+                    "name": "US - West",
+                    "url": "rtmp://ingest-us-west.vault.root-space.eu/app"
+                }
+            ],
+            "protocol": "RTMP",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 7800,
+                "max audio bitrate": 320,
+                "x264opts": "scenecut=0"
+            }
+        },
+        {
+            "name": "CHZZK",
+            "common": false,
+            "stream_key_link": "https://studio.chzzk.naver.com/setting",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://global-rtmp.lip2.navercorp.com:8080/relay"
+                }
+            ],
+            "supported video codecs": [
+                "h264"
+            ],
+            "recommended": {
+                "keyint": 1,
+                "profile": "high",
+                "bframes": 0
+            }
+        },
+        {
+            "name": "Streamway",
+            "common": false,
+            "more_info_link": "https://support.streamway.in/how-to-connect-obs-studio-to-streamway/",
+            "stream_key_link": "https://app.streamway.in/broadcasts",
+            "servers": [
+                {
+                    "name": "Primary",
+                    "url": "rtmp://injest.streamway.in/LiveApp"
+                },
+                {
+                    "name": "Backup",
+                    "url": "rtmps://bkp.streamway.in:443/live"
+                }
+            ],
+            "protocol": "RTMP",
+            "supported video codecs": [
+                "h264"
+            ],
+            "recommended": {
+                "keyint": 2
+            }
+        },
+        {
+            "name": "SharePlay.tv",
+            "common": false,
+            "stream_key_link": "https://playstudio.shareplay.tv/stream/settings",
+            "servers": [
+                {
+                    "name": "Default (Auto Detect)",
+                    "url": "rtmp://stream.shareplay.tv"
+                },
+                {
+                    "name": "Miami, Florida, USA",
+                    "url": "rtmp://live-us-mia-stream.shareplay.tv"
+                },
+                {
+                    "name": "Chicago, Illinois, USA",
+                    "url": "rtmp://live-us-ord-stream.shareplay.tv"
+                },
+                {
+                    "name": "Washington D.C., USA",
+                    "url": "rtmp://live-us-iad-stream.shareplay.tv"
+                },
+                {
+                    "name": "Los Angeles, California, USA",
+                    "url": "rtmp://live-us-lax-stream.shareplay.tv"
+                },
+                {
+                    "name": "Seattle, Washington, USA",
+                    "url": "rtmp://live-us-sea-stream.shareplay.tv"
+                },
+                {
+                    "name": "Paris, France",
+                    "url": "rtmp://live-fr-par-stream.shareplay.tv"
+                },
+                {
+                    "name": "Milan, Italy",
+                    "url": "rtmp://live-it-mil-stream.shareplay.tv"
+                },
+                {
+                    "name": "Sydney, Australia",
+                    "url": "rtmp://live-au-syd-stream.shareplay.tv"
+                },
+                {
+                    "name": "Toronto, Canada",
+                    "url": "rtmp://live-ca-yyz-stream.shareplay.tv"
+                },
+                {
+                    "name": "London, UK",
+                    "url": "rtmp://live-uk-lhr-stream.shareplay.tv"
+                },
+                {
+                    "name": "Atlanta, Georgia, USA",
+                    "url": "rtmp://live-us-atl-stream.shareplay.tv"
+                },
+                {
+                    "name": "Dallas, Texas, USA",
+                    "url": "rtmp://live-us-dfw-stream.shareplay.tv"
+                }
+            ],
+            "supported video codecs": [
+                "h264"
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 12000,
+                "max audio bitrate": 320
+            }
+        },
+        {
+            "name": "Hakuna Live - RTMP",
+            "servers": [
+                {
+                    "name": "Republic of Korea / Japan",
+                    "url": "rtmps://media-proxy.prod.an1.media.hpcnt.com/hakuna"
+                }
+            ],
+            "protocol": "RTMP",
+            "supported video codecs": [
+                "h264"
+            ],
+            "recommended": {
+                "keyint": 2,
+                "supported resolutions": [
+                    "1920x1080",
+                    "1280x720"
+                ],
+                "max video bitrate": 6000,
+                "max audio bitrate": 320,
+                "bframes": 0
             }
         }
     ]

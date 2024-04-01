@@ -337,16 +337,24 @@ static int decode_packet(struct mp_decode *d, int *got_frame)
 			return ret;
 		}
 
+		/* does not check for color format or other parameter changes which would require frame buffer realloc */
+		if (d->sw_frame->data[0] &&
+		    (d->sw_frame->width != d->hw_frame->width ||
+		     d->sw_frame->height != d->hw_frame->height)) {
+			blog(LOG_DEBUG,
+			     "MP: hardware frame size changed from %dx%d to %dx%d. reallocating frame",
+			     d->sw_frame->width, d->sw_frame->height,
+			     d->hw_frame->width, d->hw_frame->height);
+			av_frame_unref(d->sw_frame);
+		}
+
 		int err = av_hwframe_transfer_data(d->sw_frame, d->hw_frame, 0);
+		if (err == 0) {
+			err = av_frame_copy_props(d->sw_frame, d->hw_frame);
+		}
 		if (err) {
 			ret = 0;
 			*got_frame = false;
-		} else {
-			d->sw_frame->color_range = d->hw_frame->color_range;
-			d->sw_frame->color_primaries =
-				d->hw_frame->color_primaries;
-			d->sw_frame->color_trc = d->hw_frame->color_trc;
-			d->sw_frame->colorspace = d->hw_frame->colorspace;
 		}
 	}
 

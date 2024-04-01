@@ -2406,7 +2406,7 @@ bool save_transform_states(obs_scene_t *scene, obs_sceneitem_t *item,
 
 		struct obs_transform_info info;
 		struct obs_sceneitem_crop crop;
-		obs_sceneitem_get_info(item, &info);
+		obs_sceneitem_get_info2(item, &info);
 		obs_sceneitem_get_crop(item, &crop);
 
 		struct vec2 pos = info.pos;
@@ -2415,6 +2415,7 @@ bool save_transform_states(obs_scene_t *scene, obs_sceneitem_t *item,
 		uint32_t alignment = info.alignment;
 		uint32_t bounds_type = info.bounds_type;
 		uint32_t bounds_alignment = info.bounds_alignment;
+		bool crop_to_bounds = info.crop_to_bounds;
 		struct vec2 bounds = info.bounds;
 
 		obs_data_set_int(temp, "id", obs_sceneitem_get_id(item));
@@ -2425,6 +2426,7 @@ bool save_transform_states(obs_scene_t *scene, obs_sceneitem_t *item,
 		obs_data_set_int(temp, "bounds_type", bounds_type);
 		obs_data_set_vec2(temp, "bounds", &bounds);
 		obs_data_set_int(temp, "bounds_alignment", bounds_alignment);
+		obs_data_set_bool(temp, "crop_to_bounds", crop_to_bounds);
 		obs_data_set_int(temp, "top", crop.top);
 		obs_data_set_int(temp, "bottom", crop.bottom);
 		obs_data_set_int(temp, "left", crop.left);
@@ -2511,6 +2513,7 @@ void load_transform_states(obs_data_t *temp, void *vp_scene)
 	info.bounds_alignment =
 		(uint32_t)obs_data_get_int(temp, "bounds_alignment");
 	obs_data_get_vec2(temp, "bounds", &info.bounds);
+	info.crop_to_bounds = obs_data_get_bool(temp, "crop_to_bounds");
 	crop.top = (int)obs_data_get_int(temp, "top");
 	crop.bottom = (int)obs_data_get_int(temp, "bottom");
 	crop.left = (int)obs_data_get_int(temp, "left");
@@ -2518,7 +2521,7 @@ void load_transform_states(obs_data_t *temp, void *vp_scene)
 
 	obs_sceneitem_defer_update_begin(item);
 
-	obs_sceneitem_set_info(item, &info);
+	obs_sceneitem_set_info2(item, &info);
 	obs_sceneitem_set_crop(item, &crop);
 
 	obs_sceneitem_defer_update_end(item);
@@ -2836,12 +2839,43 @@ void obs_sceneitem_get_info(const obs_sceneitem_t *item,
 		info->bounds_type = item->bounds_type;
 		info->bounds_alignment = item->bounds_align;
 		info->bounds = item->bounds;
+	}
+}
+
+void obs_sceneitem_get_info2(const obs_sceneitem_t *item,
+			     struct obs_transform_info *info)
+{
+	if (item && info) {
+		info->pos = item->pos;
+		info->rot = item->rot;
+		info->scale = item->scale;
+		info->alignment = item->align;
+		info->bounds_type = item->bounds_type;
+		info->bounds_alignment = item->bounds_align;
+		info->bounds = item->bounds;
 		info->crop_to_bounds = item->crop_to_bounds;
 	}
 }
 
 void obs_sceneitem_set_info(obs_sceneitem_t *item,
 			    const struct obs_transform_info *info)
+{
+	if (item && info) {
+		item->pos = info->pos;
+		item->rot = info->rot;
+		if (isfinite(info->scale.x) && isfinite(info->scale.y)) {
+			item->scale = info->scale;
+		}
+		item->align = info->alignment;
+		item->bounds_type = info->bounds_type;
+		item->bounds_align = info->bounds_alignment;
+		item->bounds = info->bounds;
+		do_update_transform(item);
+	}
+}
+
+void obs_sceneitem_set_info2(obs_sceneitem_t *item,
+			     const struct obs_transform_info *info)
 {
 	if (item && info) {
 		item->pos = info->pos;

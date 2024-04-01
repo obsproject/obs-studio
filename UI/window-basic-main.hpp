@@ -881,6 +881,7 @@ private:
 	void UpdatePause(bool activate = true);
 	void UpdateReplayBuffer(bool activate = true);
 
+	bool IsFFmpegOutputToURL() const;
 	bool OutputPathValid();
 	void OutputPathInvalidMessage();
 
@@ -1042,6 +1043,7 @@ public:
 	void SetDisplayAffinity(QWindow *window);
 
 	QColor GetSelectionColor() const;
+	inline bool Closing() { return closing; }
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;

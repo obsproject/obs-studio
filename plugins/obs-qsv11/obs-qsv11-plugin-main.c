@@ -84,8 +84,8 @@ bool obs_module_load(void)
 	for (size_t i = 0; i < adapter_count; i++) {
 		struct adapter_info *adapter = &adapters[i];
 		avc_supported |= adapter->is_intel;
-		av1_supported |= adapter->supports_av1;
-		hevc_supported |= adapter->supports_hevc;
+		av1_supported |= adapter->is_intel && adapter->supports_av1;
+		hevc_supported |= adapter->is_intel && adapter->supports_hevc;
 	}
 
 	if (avc_supported) {

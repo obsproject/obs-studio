@@ -1885,11 +1885,16 @@ EXPORT uint32_t obs_sceneitem_get_bounds_alignment(const obs_sceneitem_t *item);
 EXPORT bool obs_sceneitem_get_bounds_crop(const obs_sceneitem_t *item);
 EXPORT void obs_sceneitem_get_bounds(const obs_sceneitem_t *item,
 				     struct vec2 *bounds);
-
-EXPORT void obs_sceneitem_get_info(const obs_sceneitem_t *item,
-				   struct obs_transform_info *info);
-EXPORT void obs_sceneitem_set_info(obs_sceneitem_t *item,
-				   const struct obs_transform_info *info);
+OBS_DEPRECATED EXPORT void
+obs_sceneitem_get_info(const obs_sceneitem_t *item,
+		       struct obs_transform_info *info);
+OBS_DEPRECATED EXPORT void
+obs_sceneitem_set_info(obs_sceneitem_t *item,
+		       const struct obs_transform_info *info);
+EXPORT void obs_sceneitem_get_info2(const obs_sceneitem_t *item,
+				    struct obs_transform_info *info);
+EXPORT void obs_sceneitem_set_info2(obs_sceneitem_t *item,
+				    const struct obs_transform_info *info);
 
 EXPORT void obs_sceneitem_get_draw_transform(const obs_sceneitem_t *item,
 					     struct matrix4 *transform);

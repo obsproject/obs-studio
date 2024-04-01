@@ -200,6 +200,41 @@ static bool create_video_stream(struct ffmpeg_data *data)
 			data->config.video_encoder))
 		return false;
 
+	closest_format = data->config.format;
+	if (data->vcodec->pix_fmts) {
+		const int has_alpha = closest_format == AV_PIX_FMT_BGRA;
+		closest_format = avcodec_find_best_pix_fmt_of_list(
+			data->vcodec->pix_fmts, closest_format, has_alpha,
+			NULL);
+	}
+
+	context = avcodec_alloc_context3(data->vcodec);
+	context->bit_rate = (int64_t)data->config.video_bitrate * 1000;
+	context->width = data->config.scale_width;
+	context->height = data->config.scale_height;
+	context->time_base = (AVRational){ovi.fps_den, ovi.fps_num};
+	context->framerate = (AVRational){ovi.fps_num, ovi.fps_den};
+	context->gop_size = data->config.gop_size;
+	context->pix_fmt = closest_format;
+	context->color_range = data->config.color_range;
+	context->color_primaries = data->config.color_primaries;
+	context->color_trc = data->config.color_trc;
+	context->colorspace = data->config.colorspace;
+	context->chroma_sample_location = determine_chroma_location(
+		closest_format, data->config.colorspace);
+	context->thread_count = 0;
+
+	data->video->time_base = context->time_base;
+	data->video->avg_frame_rate = (AVRational){ovi.fps_num, ovi.fps_den};
+
+	if (data->output->oformat->flags & AVFMT_GLOBALHEADER)
+		context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+
+	data->video_ctx = context;
+
+	if (!open_video_codec(data))
+		return false;
+
 	const enum AVColorTransferCharacteristic trc = data->config.color_trc;
 	const bool pq = trc == AVCOL_TRC_SMPTE2084;
 	const bool hlg = trc == AVCOL_TRC_ARIB_STD_B67;
@@ -252,41 +287,6 @@ static bool create_video_stream(struct ffmpeg_data *data)
 			(uint8_t *)mastering, sizeof(*mastering), 0);
 #endif
 	}
-
-	closest_format = data->config.format;
-	if (data->vcodec->pix_fmts) {
-		const int has_alpha = closest_format == AV_PIX_FMT_BGRA;
-		closest_format = avcodec_find_best_pix_fmt_of_list(
-			data->vcodec->pix_fmts, closest_format, has_alpha,
-			NULL);
-	}
-
-	context = avcodec_alloc_context3(data->vcodec);
-	context->bit_rate = (int64_t)data->config.video_bitrate * 1000;
-	context->width = data->config.scale_width;
-	context->height = data->config.scale_height;
-	context->time_base = (AVRational){ovi.fps_den, ovi.fps_num};
-	context->framerate = (AVRational){ovi.fps_num, ovi.fps_den};
-	context->gop_size = data->config.gop_size;
-	context->pix_fmt = closest_format;
-	context->color_range = data->config.color_range;
-	context->color_primaries = data->config.color_primaries;
-	context->color_trc = data->config.color_trc;
-	context->colorspace = data->config.colorspace;
-	context->chroma_sample_location = determine_chroma_location(
-		closest_format, data->config.colorspace);
-	context->thread_count = 0;
-
-	data->video->time_base = context->time_base;
-	data->video->avg_frame_rate = (AVRational){ovi.fps_num, ovi.fps_den};
-
-	if (data->output->oformat->flags & AVFMT_GLOBALHEADER)
-		context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
-
-	data->video_ctx = context;
-
-	if (!open_video_codec(data))
-		return false;
 
 	if (context->pix_fmt != data->config.format ||
 	    data->config.width != data->config.scale_width ||

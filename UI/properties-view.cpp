@@ -143,6 +143,9 @@ void OBSPropertiesView::RefreshProperties()
 	adjustSize();
 	SetScrollPos(h, v, hend, vend);
 
+	if (disableScrolling)
+		setMinimumHeight(widget->minimumSizeHint().height());
+
 	lastFocused.clear();
 	if (lastWidget) {
 		lastWidget->setFocus(Qt::OtherFocusReason);

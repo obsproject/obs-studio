@@ -16,7 +16,7 @@ const char *av_capture_get_text(const char *text_id)
 
 static void *av_capture_create(obs_data_t *settings, obs_source_t *source)
 {
-    OBSAVCaptureInfo *capture_data = bmalloc(sizeof(OBSAVCaptureInfo));
+    OBSAVCaptureInfo *capture_data = bzalloc(sizeof(OBSAVCaptureInfo));
     capture_data->isFastPath = false;
     capture_data->settings = settings;
     capture_data->source = source;
@@ -25,14 +25,12 @@ static void *av_capture_create(obs_data_t *settings, obs_source_t *source)
 
     OBSAVCapture *capture = [[OBSAVCapture alloc] initWithCaptureInfo:capture_data];
 
-    capture_data->capture = capture;
-
-    return capture_data;
+    return (void *) CFBridgingRetain(capture);
 }
 
 static void *av_fast_capture_create(obs_data_t *settings, obs_source_t *source)
 {
-    OBSAVCaptureInfo *capture_info = bmalloc(sizeof(OBSAVCaptureInfo));
+    OBSAVCaptureInfo *capture_info = bzalloc(sizeof(OBSAVCaptureInfo));
     capture_info->isFastPath = true;
     capture_info->settings = settings;
     capture_info->source = source;
@@ -47,17 +45,15 @@ static void *av_fast_capture_create(obs_data_t *settings, obs_source_t *source)
 
     OBSAVCapture *capture = [[OBSAVCapture alloc] initWithCaptureInfo:capture_info];
 
-    capture_info->capture = capture;
-
-    return capture_info;
+    return (void *) CFBridgingRetain(capture);
 }
 
-static const char *av_capture_get_name(void *capture_info_aliased __unused)
+static const char *av_capture_get_name(void *av_capture __unused)
 {
     return obs_module_text("AVCapture");
 }
 
-static const char *av_fast_capture_get_name(void *capture_info_aliased __unused)
+static const char *av_fast_capture_get_name(void *av_capture __unused)
 {
     return obs_module_text("AVCapture_Fast");
 }
@@ -79,9 +75,10 @@ static void av_fast_capture_set_defaults(obs_data_t *settings)
     obs_data_set_default_bool(settings, "enable_audio", true);
 }
 
-static obs_properties_t *av_capture_properties(void *capture_info_aliased)
+static obs_properties_t *av_capture_properties(void *av_capture)
 {
-    OBSAVCaptureInfo *capture_info = capture_info_aliased;
+    OBSAVCapture *capture = (__bridge OBSAVCapture *) (av_capture);
+    OBSAVCaptureInfo *capture_info = capture.captureInfo;
 
     obs_properties_t *properties = obs_properties_create();
 
@@ -106,35 +103,35 @@ static obs_properties_t *av_capture_properties(void *capture_info_aliased)
         bool isFastPath = capture_info->isFastPath;
 
         // Add Property Visibility and Callbacks
-        configure_property(device_list, true, true, properties_changed, capture_info);
+        configure_property(device_list, true, true, properties_changed, capture);
         configure_property(use_preset, !isFastPath, !isFastPath, (!isFastPath) ? properties_changed_use_preset : NULL,
-                           capture_info);
+                           capture);
         configure_property(preset_list, !isFastPath, !isFastPath, (!isFastPath) ? properties_changed_preset : NULL,
-                           capture_info);
+                           capture);
 
         configure_property(resolutions, isFastPath, isFastPath, NULL, NULL);
         configure_property(use_buffering, !isFastPath, !isFastPath, NULL, NULL);
         configure_property(frame_rates, isFastPath, isFastPath, NULL, NULL);
         configure_property(color_space, !isFastPath, !isFastPath, NULL, NULL);
         configure_property(video_range, !isFastPath, !isFastPath, NULL, NULL);
-        configure_property(input_format, !isFastPath, !isFastPath, NULL, NULL);
+        configure_property(input_format, true, true, NULL, NULL);
     }
 
     return properties;
 }
 
-static void av_capture_update(void *capture_info_aliased, obs_data_t *settings)
+static void av_capture_update(void *av_capture, obs_data_t *settings)
 {
-    OBSAVCaptureInfo *capture_info = capture_info_aliased;
-    OBSAVCapture *capture = capture_info->capture;
-    capture_info->settings = settings;
+    OBSAVCapture *capture = (__bridge OBSAVCapture *) (av_capture);
+    capture.captureInfo->settings = settings;
 
     [capture updateSessionwithError:NULL];
 }
 
-static void av_fast_capture_tick(void *capture_info_aliased, float seconds __unused)
+static void av_fast_capture_tick(void *av_capture, float seconds __unused)
 {
-    OBSAVCaptureInfo *capture_info = capture_info_aliased;
+    OBSAVCapture *capture = (__bridge OBSAVCapture *) (av_capture);
+    OBSAVCaptureInfo *capture_info = capture.captureInfo;
 
     if (!capture_info->currentSurface) {
         return;
@@ -174,9 +171,10 @@ static void av_fast_capture_tick(void *capture_info_aliased, float seconds __unu
     }
 }
 
-static void av_fast_capture_render(void *capture_info_aliased, gs_effect_t *effect __unused)
+static void av_fast_capture_render(void *av_capture, gs_effect_t *effect __unused)
 {
-    OBSAVCaptureInfo *capture_info = capture_info_aliased;
+    OBSAVCapture *capture = (__bridge OBSAVCapture *) (av_capture);
+    OBSAVCaptureInfo *capture_info = capture.captureInfo;
 
     if (!capture_info->texture) {
         return;
@@ -203,33 +201,36 @@ static void av_fast_capture_render(void *capture_info_aliased, gs_effect_t *effe
     gs_enable_framebuffer_srgb(previous);
 }
 
-static UInt32 av_fast_capture_get_width(void *capture_info_aliased)
+static UInt32 av_fast_capture_get_width(void *av_capture)
 {
-    OBSAVCaptureInfo *capture_info = capture_info_aliased;
+    OBSAVCapture *capture = (__bridge OBSAVCapture *) (av_capture);
+    OBSAVCaptureInfo *capture_info = capture.captureInfo;
 
     CGSize frameSize = capture_info->frameSize.size;
 
     return (UInt32) frameSize.width;
 }
 
-static UInt32 av_fast_capture_get_height(void *capture_info_aliased)
+static UInt32 av_fast_capture_get_height(void *av_capture)
 {
-    OBSAVCaptureInfo *capture_info = capture_info_aliased;
+    OBSAVCapture *capture = (__bridge OBSAVCapture *) (av_capture);
+    OBSAVCaptureInfo *capture_info = capture.captureInfo;
 
     CGSize frameSize = capture_info->frameSize.size;
 
     return (UInt32) frameSize.height;
 }
 
-static void av_capture_destroy(void *capture_info_aliased)
+static void av_capture_destroy(void *av_capture)
 {
-    OBSAVCaptureInfo *capture_info = capture_info_aliased;
+    OBSAVCapture *capture = (__bridge OBSAVCapture *) (av_capture);
 
-    if (!capture_info) {
+    if (!capture) {
         return;
     }
 
-    OBSAVCapture *capture = capture_info->capture;
+    OBSAVCaptureInfo *capture_info = capture.captureInfo;
+
     [capture stopCaptureSession];
     [capture.deviceInput.device unlockForConfiguration];
 
@@ -251,8 +252,9 @@ static void av_capture_destroy(void *capture_info_aliased)
         capture_info->sampleBufferDescription = NULL;
     }
 
-    capture_info->capture = NULL;
     bfree(capture_info);
+
+    CFBridgingRelease((__bridge CFTypeRef _Nullable)(capture));
 }
 
 #pragma mark - OBS Module API

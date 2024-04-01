@@ -108,6 +108,7 @@ private:
 	QWidget *lastWidget = nullptr;
 	bool deferUpdate;
 	bool enableDefer = true;
+	bool disableScrolling = false;
 
 	template<typename Sender, typename SenderParent, typename... Args>
 	QWidget *NewWidget(obs_property_t *prop, Sender *widget,
@@ -200,6 +201,12 @@ public:
 	inline void SetDeferrable(bool deferrable) { enableDefer = deferrable; }
 
 	inline OBSObject GetObject() const { return OBSGetStrongRef(weakObj); }
+
+	void setScrolling(bool enabled)
+	{
+		disableScrolling = !enabled;
+		RefreshProperties();
+	}
 
 #define Def_IsObject(type)                                \
 	inline bool IsObject(obs_##type##_t *type) const  \

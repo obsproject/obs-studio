@@ -267,7 +267,7 @@ void OBSBasicTransform::RefreshControls()
 
 	obs_transform_info osi;
 	obs_sceneitem_crop crop;
-	obs_sceneitem_get_info(item, &osi);
+	obs_sceneitem_get_info2(item, &osi);
 	obs_sceneitem_get_crop(item, &crop);
 
 	obs_source_t *source = obs_sceneitem_get_source(item);
@@ -347,7 +347,7 @@ void OBSBasicTransform::OnControlChanged()
 	double height = double(source_cy);
 
 	obs_transform_info oti;
-	obs_sceneitem_get_info(item, &oti);
+	obs_sceneitem_get_info2(item, &oti);
 
 	/* do not scale a source if it has 0 width/height */
 	if (source_cx != 0 && source_cy != 0) {
@@ -367,7 +367,7 @@ void OBSBasicTransform::OnControlChanged()
 	oti.crop_to_bounds = ui->cropToBounds->isChecked();
 
 	ignoreTransformSignal = true;
-	obs_sceneitem_set_info(item, &oti);
+	obs_sceneitem_set_info2(item, &oti);
 	ignoreTransformSignal = false;
 }
 

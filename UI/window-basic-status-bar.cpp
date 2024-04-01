@@ -42,6 +42,8 @@ OBSBasicStatusBar::OBSBasicStatusBar(QWidget *parent)
 	  streamingActivePixmap(QIcon(":/res/images/streaming-active.svg")
 					.pixmap(QSize(16, 16)))
 {
+	congestionArray.reserve(congestionUpdateSeconds);
+
 	statusWidget = new StatusBarWidget(this);
 	statusWidget->ui->delayInfo->setText("");
 	statusWidget->ui->droppedFrames->setText(
@@ -507,11 +509,11 @@ void OBSBasicStatusBar::StreamStarted(obs_output_t *output)
 {
 	streamOutput = output;
 
-	signal_handler_connect(obs_output_get_signal_handler(streamOutput),
-			       "reconnect", OBSOutputReconnect, this);
-	signal_handler_connect(obs_output_get_signal_handler(streamOutput),
-			       "reconnect_success", OBSOutputReconnectSuccess,
-			       this);
+	streamSigs.emplace_back(obs_output_get_signal_handler(streamOutput),
+				"reconnect", OBSOutputReconnect, this);
+	streamSigs.emplace_back(obs_output_get_signal_handler(streamOutput),
+				"reconnect_success", OBSOutputReconnectSuccess,
+				this);
 
 	retries = 0;
 	lastBytesSent = 0;
@@ -522,12 +524,7 @@ void OBSBasicStatusBar::StreamStarted(obs_output_t *output)
 void OBSBasicStatusBar::StreamStopped()
 {
 	if (streamOutput) {
-		signal_handler_disconnect(
-			obs_output_get_signal_handler(streamOutput),
-			"reconnect", OBSOutputReconnect, this);
-		signal_handler_disconnect(
-			obs_output_get_signal_handler(streamOutput),
-			"reconnect_success", OBSOutputReconnectSuccess, this);
+		streamSigs.clear();
 
 		ReconnectClear();
 		streamOutput = nullptr;

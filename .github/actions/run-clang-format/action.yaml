@@ -28,7 +28,7 @@ runs:
         echo ::group::Install Dependencies
         eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
         echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
-        echo "/home/linuxbrew/.linuxbrew/opt/clang-format@16/bin" >> $GITHUB_PATH
+        echo "/home/linuxbrew/.linuxbrew/opt/clang-format@17/bin" >> $GITHUB_PATH
         brew install --quiet zsh
         echo ::endgroup::
 
@@ -55,11 +55,11 @@ runs:
         }
 
         if (( ${changes[(I)(*.c|*.h|*.cpp|*.hpp|*.m|*.mm)]} )) {
-          print ::group::Install clang-format-16
-          brew install --quiet obsproject/tools/clang-format@16
+          print ::group::Install clang-format-17
+          brew install --quiet obsproject/tools/clang-format@17
           print ::endgroup::
 
-          print ::group::Run clang-format-16
-          ./build-aux/run-clang-format --fail-${{ inputs.failCondition }} --check
+          print ::group::Run clang-format-17
+          ./build-aux/run-clang-format --fail-${{ inputs.failCondition }} --check ${(M)changes:#(*.c|*.h|*.cpp|*.hpp|*.m|*.mm)}
           print ::endgroup::
         }

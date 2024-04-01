@@ -2,6 +2,8 @@
 
 #include <string>
 
+constexpr const char *VIRTUAL_CAM_ID = "virtualcam_output";
+
 enum VCamOutputType {
 	Invalid,
 	SceneOutput,

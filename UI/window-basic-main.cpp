@@ -1462,9 +1462,8 @@ static const double scaled_vals[] = {1.0,         1.25, (1.0 / 0.75), 1.5,
 				     2.5,         2.75, 3.0,          0.0};
 
 extern void CheckExistingCookieId();
-#if OBS_RELEASE_CANDIDATE == 0 && OBS_BETA == 0
-#define DEFAULT_CONTAINER "mkv"
-#elif defined(__APPLE__)
+
+#ifdef __APPLE__
 #define DEFAULT_CONTAINER "fragmented_mov"
 #else
 #define DEFAULT_CONTAINER "fragmented_mp4"
@@ -2069,8 +2068,8 @@ void OBSBasic::OBSInit()
 	cef_js_avail = cef && obs_browser_qcef_version() >= 3;
 #endif
 
-	OBSDataAutoRelease obsData = obs_get_private_data();
-	vcamEnabled = obs_data_get_bool(obsData, "vcamEnabled");
+	vcamEnabled =
+		(obs_get_output_flags(VIRTUAL_CAM_ID) & OBS_OUTPUT_VIDEO) != 0;
 	if (vcamEnabled) {
 		AddVCamButton();
 	}
@@ -7653,7 +7652,7 @@ void OBSBasic::StartRecording()
 		return;
 	}
 
-	if (LowDiskSpace()) {
+	if (!IsFFmpegOutputToURL() && LowDiskSpace()) {
 		DiskSpaceMessage();
 		ui->recordButton->setChecked(false);
 		return;
@@ -8666,7 +8665,7 @@ void OBSBasic::on_actionCopyTransform_triggered()
 {
 	OBSSceneItem item = GetCurrentSceneItem();
 
-	obs_sceneitem_get_info(item, &copiedTransformInfo);
+	obs_sceneitem_get_info2(item, &copiedTransformInfo);
 	obs_sceneitem_get_crop(item, &copiedCropInfo);
 
 	ui->actionPasteTransform->setEnabled(true);
@@ -8697,7 +8696,7 @@ void OBSBasic::on_actionPasteTransform_triggered()
 		OBSBasic *main = reinterpret_cast<OBSBasic *>(data);
 
 		obs_sceneitem_defer_update_begin(item);
-		obs_sceneitem_set_info(item, &main->copiedTransformInfo);
+		obs_sceneitem_set_info2(item, &main->copiedTransformInfo);
 		obs_sceneitem_set_crop(item, &main->copiedCropInfo);
 		obs_sceneitem_defer_update_end(item);
 
@@ -8735,8 +8734,9 @@ static bool reset_tr(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *)
 	info.alignment = OBS_ALIGN_TOP | OBS_ALIGN_LEFT;
 	info.bounds_type = OBS_BOUNDS_NONE;
 	info.bounds_alignment = OBS_ALIGN_CENTER;
+	info.crop_to_bounds = false;
 	vec2_set(&info.bounds, 0.0f, 0.0f);
-	obs_sceneitem_set_info(item, &info);
+	obs_sceneitem_set_info2(item, &info);
 
 	obs_sceneitem_crop crop = {};
 	obs_sceneitem_set_crop(item, &crop);
@@ -8979,8 +8979,9 @@ static bool CenterAlignSelectedItems(obs_scene_t * /* scene */,
 		 float(ovi.base_height));
 	itemInfo.bounds_type = boundsType;
 	itemInfo.bounds_alignment = OBS_ALIGN_CENTER;
+	itemInfo.crop_to_bounds = obs_sceneitem_get_bounds_crop(item);
 
-	obs_sceneitem_set_info(item, &itemInfo);
+	obs_sceneitem_set_info2(item, &itemInfo);
 
 	return true;
 }
@@ -9034,7 +9035,7 @@ void OBSBasic::CenterSelectedSceneItems(const CenterType &centerType)
 	for (int x = 0; x < selectedItems.count(); x++) {
 		OBSSceneItem item = ui->sources->Get(selectedItems[x].row());
 		obs_transform_info oti;
-		obs_sceneitem_get_info(item, &oti);
+		obs_sceneitem_get_info2(item, &oti);
 
 		obs_source_t *source = obs_sceneitem_get_source(item);
 		float width = float(obs_source_get_width(source)) * oti.scale.x;
@@ -9532,7 +9533,7 @@ void OBSBasic::on_resetDocks_triggered(bool force)
 	    !force)
 #endif
 	{
-		QMessageBox::StandardButton button = QMessageBox::question(
+		QMessageBox::StandardButton button = OBSMessageBox::question(
 			this, QTStr("ResetUIWarning.Title"),
 			QTStr("ResetUIWarning.Text"));
 
@@ -10021,7 +10022,7 @@ void OBSBasic::on_actionCopySource_triggered()
 
 		SourceCopyInfo copyInfo;
 		copyInfo.weak_source = OBSGetWeakRef(source);
-		obs_sceneitem_get_info(item, &copyInfo.transform);
+		obs_sceneitem_get_info2(item, &copyInfo.transform);
 		obs_sceneitem_get_crop(item, &copyInfo.crop);
 		copyInfo.blend_method = obs_sceneitem_get_blending_method(item);
 		copyInfo.blend_mode = obs_sceneitem_get_blending_mode(item);
@@ -10661,10 +10662,16 @@ bool SceneRenameDelegate::eventFilter(QObject *editor, QEvent *event)
 {
 	if (event->type() == QEvent::KeyPress) {
 		QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
-		if (keyEvent->key() == Qt::Key_Escape) {
+		switch (keyEvent->key()) {
+		case Qt::Key_Escape: {
 			QLineEdit *lineEdit = qobject_cast<QLineEdit *>(editor);
 			if (lineEdit)
 				lineEdit->undo();
+			break;
+		}
+		case Qt::Key_Tab:
+		case Qt::Key_Backtab:
+			return false;
 		}
 	}
 
@@ -10880,7 +10887,7 @@ void OBSBasic::OutputPathInvalidMessage()
 				QTStr("Output.BadPath.Text"));
 }
 
-bool OBSBasic::OutputPathValid()
+bool OBSBasic::IsFFmpegOutputToURL() const
 {
 	const char *mode = config_get_string(Config(), "Output", "Mode");
 	if (strcmp(mode, "Advanced") == 0) {
@@ -10893,6 +10900,14 @@ bool OBSBasic::OutputPathValid()
 				return true;
 		}
 	}
+
+	return false;
+}
+
+bool OBSBasic::OutputPathValid()
+{
+	if (IsFFmpegOutputToURL())
+		return true;
 
 	const char *path = GetCurrentOutputPath();
 	return path && *path && QDir(path).exists();

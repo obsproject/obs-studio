@@ -122,7 +122,7 @@ static void AddSource(void *_data, obs_scene_t *scene)
 	sceneitem = obs_scene_add(scene, data->source);
 
 	if (data->transform != nullptr)
-		obs_sceneitem_set_info(sceneitem, data->transform);
+		obs_sceneitem_set_info2(sceneitem, data->transform);
 	if (data->crop != nullptr)
 		obs_sceneitem_set_crop(sceneitem, data->crop);
 	if (data->blend_method != nullptr)

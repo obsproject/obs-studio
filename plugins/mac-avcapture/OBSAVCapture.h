@@ -36,7 +36,6 @@ typedef enum : NSUInteger {
 
 /// C struct for interaction with obs-module functions
 typedef struct av_capture {
-    id capture;
     IOSurfaceRef previousSurface;
     IOSurfaceRef currentSurface;
     OBSAVCaptureTexture *texture;

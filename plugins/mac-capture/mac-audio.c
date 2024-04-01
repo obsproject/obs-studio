@@ -266,7 +266,7 @@ static char **coreaudio_get_channel_names(struct coreaudio_data *ca)
 				    obs_module_text("CoreAudio.Channel.Device"),
 				    i + 1);
 		}
-		channel_names[i] = bstrdup_n(name.array, name.len + 1);
+		channel_names[i] = bstrdup_n(name.array, name.len);
 		dstr_free(&name);
 
 		if (cf_chan_name) {
@@ -467,11 +467,16 @@ static OSStatus input_callback(void *data,
 	if (!ca_success(stat, ca, "input_callback", "audio retrieval"))
 		return noErr;
 
-	for (UInt32 i = 0; i < ca->buf_list->mNumberBuffers; i++)
-		audio.data[i] = ca->buf_list->mBuffers[i].mData;
+	for (UInt32 i = 0; i < ca->buf_list->mNumberBuffers; i++) {
+		if (i < MAX_AUDIO_CHANNELS) {
+			audio.data[i] = ca->buf_list->mBuffers[i].mData;
+		}
+	}
 
 	audio.frames = frames;
-	audio.speakers = ca->buf_list->mNumberBuffers;
+	audio.speakers = (ca->buf_list->mNumberBuffers > MAX_AUDIO_CHANNELS)
+				 ? MAX_AUDIO_CHANNELS
+				 : ca->buf_list->mNumberBuffers;
 	audio.format = ca->format;
 	audio.samples_per_sec = ca->sample_rate;
 	static double factor = 0.;
@@ -811,11 +816,6 @@ static void coreaudio_uninit(struct coreaudio_data *ca)
 		bfree(ca->channel_names);
 		ca->channel_names = NULL;
 	}
-
-	if (ca->channel_map) {
-		bfree(ca->channel_map);
-		ca->channel_map = NULL;
-	}
 }
 
 /* ------------------------------------------------------------------------- */
@@ -854,6 +854,12 @@ static void coreaudio_destroy(void *data)
 		coreaudio_shutdown(ca);
 
 		os_event_destroy(ca->exit_event);
+
+		if (ca->channel_map) {
+			bfree(ca->channel_map);
+			ca->channel_map = NULL;
+		}
+
 		bfree(ca->device_name);
 		bfree(ca->device_uid);
 		bfree(ca);
@@ -863,10 +869,10 @@ static void coreaudio_destroy(void *data)
 static void coreaudio_set_channels(struct coreaudio_data *ca,
 				   obs_data_t *settings)
 {
-	ca->channel_map = bzalloc(sizeof(SInt32) * MAX_AV_PLANES);
+	ca->channel_map = bzalloc(sizeof(SInt32) * MAX_AUDIO_CHANNELS);
 
 	char *device_config_name = sanitize_device_name(ca->device_uid);
-	for (uint8_t i = 0; i < MAX_AV_PLANES; i++) {
+	for (uint8_t i = 0; i < MAX_AUDIO_CHANNELS; i++) {
 		char setting_name[128];
 		snprintf(setting_name, 128, "output-%s-%i", device_config_name,
 			 i + 1);

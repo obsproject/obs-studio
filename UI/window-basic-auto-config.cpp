@@ -852,11 +852,11 @@ void AutoConfigStreamPage::UpdateServerList()
 
 void AutoConfigStreamPage::UpdateCompleted()
 {
+	const bool custom = IsCustomService();
 	if (ui->stackedWidget->currentIndex() == (int)Section::Connect ||
-	    (ui->key->text().isEmpty() && !auth)) {
+	    (ui->key->text().isEmpty() && !auth && !custom)) {
 		ready = false;
 	} else {
-		bool custom = IsCustomService();
 		if (custom) {
 			ready = !ui->customServer->text().isEmpty();
 		} else {

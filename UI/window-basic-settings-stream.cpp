@@ -180,6 +180,28 @@ void OBSBasicSettings::LoadStream1Settings()
 				  Qt::QueuedConnection);
 }
 
+#define SRT_PROTOCOL "srt"
+#define RIST_PROTOCOL "rist"
+
+bool OBSBasicSettings::AllowsMultiTrack(const char *protocol)
+{
+	return astrcmpi_n(protocol, SRT_PROTOCOL, strlen(SRT_PROTOCOL)) == 0 ||
+	       astrcmpi_n(protocol, RIST_PROTOCOL, strlen(RIST_PROTOCOL)) == 0;
+}
+
+void OBSBasicSettings::SwapMultiTrack(const char *protocol)
+{
+	if (protocol) {
+		if (AllowsMultiTrack(protocol)) {
+			ui->advStreamTrackWidget->setCurrentWidget(
+				ui->streamMultiTracks);
+		} else {
+			ui->advStreamTrackWidget->setCurrentWidget(
+				ui->streamSingleTracks);
+		}
+	}
+}
+
 void OBSBasicSettings::SaveStream1Settings()
 {
 	bool customServer = IsCustomService();
@@ -255,7 +277,6 @@ void OBSBasicSettings::SaveStream1Settings()
 
 	main->SetService(newService);
 	main->SaveService();
-	LoadOutputSettings();
 	main->auth = auth;
 	if (!!main->auth) {
 		main->auth->LoadUI();
@@ -265,6 +286,7 @@ void OBSBasicSettings::SaveStream1Settings()
 	}
 
 	SaveCheckBox(ui->ignoreRecommended, "Stream1", "IgnoreRecommended");
+	SwapMultiTrack(QT_TO_UTF8(protocol));
 }
 
 void OBSBasicSettings::UpdateMoreInfoLink()
@@ -510,6 +532,13 @@ void OBSBasicSettings::on_service_currentIndexChanged(int idx)
 		if (idx == 0)
 			lastCustomServer = ui->customServer->text();
 	}
+
+	if (!IsCustomService()) {
+		ui->advStreamTrackWidget->setCurrentWidget(
+			ui->streamSingleTracks);
+	} else {
+		SwapMultiTrack(QT_TO_UTF8(protocol));
+	}
 }
 
 void OBSBasicSettings::on_customServer_textChanged(const QString &)
@@ -521,6 +550,8 @@ void OBSBasicSettings::on_customServer_textChanged(const QString &)
 
 	if (ServiceSupportsCodecCheck())
 		lastCustomServer = ui->customServer->text();
+
+	SwapMultiTrack(QT_TO_UTF8(protocol));
 }
 
 void OBSBasicSettings::ServiceChanged(bool resetFields)

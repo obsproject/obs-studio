@@ -53,6 +53,10 @@ runs:
           echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
           brew install --overwrite --quiet python3
         fi
+
+        python3 -m venv .venv
+
+        source .venv/bin/activate
         python3 -m pip install jsonschema json_source_map requests aiohttp
         echo ::endgroup::
 
@@ -66,6 +70,8 @@ runs:
         shopt -s extglob
 
         echo ::group::Run Validation
+
+        source .venv/bin/activate
         python3 -u \
           .github/scripts/utils.py/check-jsonschema.py \
           plugins/rtmp-services/data/@(services|package).json \
@@ -101,6 +107,8 @@ runs:
         API_SERVERS: ${{ inputs.checkApiServers }}
       run: |
         : Check for defunct services 📉
+
+        source .venv/bin/activate
         python3 -u .github/scripts/utils.py/check-services.py
 
     - uses: actions/upload-artifact@v4

@@ -22,10 +22,10 @@ static inline void reroute_wasapi_source(obs_source_t *wasapi,
 					 obs_source_t *target)
 {
 	proc_handler_t *ph = obs_source_get_proc_handler(wasapi);
-	calldata_t *cd = calldata_create();
-	calldata_set_ptr(cd, "target", target);
-	proc_handler_call(ph, "reroute_audio", cd);
-	calldata_free(cd);
+	calldata_t cd = {0};
+	calldata_set_ptr(&cd, "target", target);
+	proc_handler_call(ph, "reroute_audio", &cd);
+	calldata_free(&cd);
 }
 
 void setup_audio_source(obs_source_t *parent, obs_source_t **child,

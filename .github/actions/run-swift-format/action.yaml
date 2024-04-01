@@ -59,6 +59,6 @@ runs:
           print ::endgroup::
 
           print ::group::Run swift-format
-          ./build-aux/run-swift-format --fail-${{ inputs.failCondition }} --check
+          ./build-aux/run-swift-format --fail-${{ inputs.failCondition }} --check ${(M)changes:#(*.swift)}
           print ::endgroup::
         }
