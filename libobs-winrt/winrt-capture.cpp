@@ -392,7 +392,7 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 						Direct3D11::IDirect3DDevice>();
 	const winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool
 		frame_pool = winrt::Windows::Graphics::Capture::
-			Direct3D11CaptureFramePool::Create(
+			Direct3D11CaptureFramePool::CreateFreeThreaded(
 				device,
 				static_cast<winrt::Windows::Graphics::DirectX::
 						    DirectXPixelFormat>(

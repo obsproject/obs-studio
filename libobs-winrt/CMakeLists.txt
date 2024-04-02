@@ -11,13 +11,12 @@ target_include_directories(libobs-winrt-headers INTERFACE "${CMAKE_CURRENT_SOURC
 add_library(libobs-winrt MODULE)
 add_library(OBS::libobs-winrt ALIAS libobs-winrt)
 
-target_sources(libobs-winrt PRIVATE winrt-capture.cpp winrt-capture.h winrt-dispatch.cpp winrt-dispatch.h)
+target_sources(libobs-winrt PRIVATE winrt-capture.cpp winrt-capture.h)
 
 target_precompile_headers(
   libobs-winrt
   PRIVATE
   <d3d11.h>
-  <DispatcherQueue.h>
   <dwmapi.h>
   <obs-module.h>
   <util/windows/ComPtr.hpp>
