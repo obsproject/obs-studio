@@ -20,8 +20,15 @@ runs:
         echo "::notice::run-cmake-format action requires a macOS-based or Linux-based runner."
         exit 2
 
+    - name: Check for Changed Files ✅
+      uses: ./.github/actions/check-changes
+      id: checks
+      with:
+        checkGlob: "'*.cmake' '*CMakeLists.txt'"
+        diffFilter: 'ACM'
+
     - name: Install Dependencies 🛍️
-      if: runner.os == 'Linux'
+      if: runner.os == 'Linux' && fromJSON(steps.checks.outputs.hasChangedFiles)
       shell: bash
       run: |
         : Install Dependencies 🛍️
@@ -32,33 +39,21 @@ runs:
         echo ::endgroup::
 
     - name: Run cmake-format 🎛️
+      if: fromJSON(steps.checks.outputs.hasChangedFiles)
       id: result
       shell: zsh --no-rcs --errexit --pipefail {0}
       working-directory: ${{ github.workspace }}
       env:
-        GITHUB_EVENT_FORCED: ${{ github.event.forced }}
-        GITHUB_REF_BEFORE: ${{ github.event.before }}
+        CHANGED_FILES: ${{ steps.checks.outputs.changedFiles }}
       run: |
         : Run cmake-format 🎛️
         if (( ${+RUNNER_DEBUG} )) setopt XTRACE
 
-        if ! git cat-file -e ${GITHUB_REF_BEFORE} &> /dev/null; then
-          GITHUB_REF_BEFORE='4b825dc642cb6eb9a060e54bf8d69288fbee4904'
-        fi
+        print ::group::Install cmakelang
+        pip3 install cmakelang
+        print ::endgroup::
 
-        local -a changes=($(git diff --name-only HEAD~1 HEAD))
-        case ${GITHUB_EVENT_NAME} {
-          pull_request) changes=($(git diff --name-only origin/${GITHUB_BASE_REF} HEAD)) ;;
-          push) if [[ ${GITHUB_EVENT_FORCED} != true ]] changes=($(git diff --name-only ${GITHUB_REF_BEFORE} HEAD)) ;;
-          *) ;;
-        }
-
-        if (( ${changes[(I)*.cmake|*CMakeLists.txt]} )) {
-          print ::group::Install cmakelang
-          pip3 install cmakelang
-          print ::endgroup::
-
-          print ::group::Run cmake-format
-          ./build-aux/run-cmake-format --fail-${{ inputs.failCondition }} --check ${(M)changes:#(*.cmake|*CMakeLists.txt)}
-          print ::endgroup::
-        }
+        print ::group::Run cmake-format
+        local -a changes=(${(s:,:)CHANGED_FILES//[\[\]\'\"]/})
+        ./build-aux/run-cmake-format --fail-${{ inputs.failCondition }} --check ${changes}
+        print ::endgroup::
