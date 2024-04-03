@@ -334,6 +334,12 @@ OBSBasic::OBSBasic(QWidget *parent)
 	ui->previewDisabledWidget->setVisible(false);
 	ui->broadcastButton->setVisible(false);
 
+	/* Setup Studio Mode button connections */
+	connect(this, &OBSBasic::PreviewProgramModeChanged, ui->modeSwitch,
+		&QAbstractButton::setChecked);
+	connect(ui->modeSwitch, &QAbstractButton::clicked, this,
+		&OBSBasic::TogglePreviewProgramMode);
+
 	startingDockLayout = saveState();
 
 	statsDock = new OBSDock();

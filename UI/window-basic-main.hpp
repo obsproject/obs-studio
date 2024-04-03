@@ -1177,8 +1177,6 @@ private slots:
 	void ShowTransitionProperties();
 	void HideTransitionProperties();
 
-	void on_modeSwitch_clicked();
-
 	// Source Context Buttons
 	void on_sourcePropertiesButton_clicked();
 	void on_sourceFiltersButton_clicked();
@@ -1236,6 +1234,9 @@ private slots:
 	void RepairOldExtraDockName();
 	void RepairCustomExtraDockName();
 
+	/* Studio Mode toggle slot */
+	void TogglePreviewProgramMode();
+
 public slots:
 	void on_actionResetTransform_triggered();
 
@@ -1248,6 +1249,10 @@ public slots:
 	void UpdateContextBar(bool force = false);
 	void UpdateContextBarDeferred(bool force = false);
 	void UpdateContextBarVisibility();
+
+signals:
+	/* Studio Mode signal */
+	void PreviewProgramModeChanged(bool enabled);
 
 private:
 	std::unique_ptr<Ui::OBSBasic> ui;
