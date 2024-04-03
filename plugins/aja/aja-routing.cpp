@@ -295,7 +295,9 @@ bool Routing::ConfigureSourceRoute(const SourceProps &props, NTV2Mode mode,
 	if (!ParseRouteString(route_string, cnx))
 		return false;
 
-	card->ApplySignalRoute(cnx, false);
+	CNTV2SignalRouter sr;
+	sr.ResetFrom(cnx);
+	card->ApplySignalRoute(sr, false);
 
 	// Apply SDI widget settings
 	start_channel_index = GetIndexForNTV2Channel(init_channel);
@@ -441,7 +443,9 @@ bool Routing::ConfigureOutputRoute(const OutputProps &props, NTV2Mode mode,
 	if (!ParseRouteString(route_string, cnx))
 		return false;
 
-	card->ApplySignalRoute(cnx, false);
+	CNTV2SignalRouter sr;
+	sr.ResetFrom(cnx);
+	card->ApplySignalRoute(sr, false);
 
 	// Apply SDI widget settings
 	if (props.ioSelect != IOSelection::HDMIMonitorOut ||
