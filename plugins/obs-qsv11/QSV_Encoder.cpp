@@ -79,30 +79,7 @@ void qsv_encoder_version(unsigned short *major, unsigned short *minor)
 
 qsv_t *qsv_encoder_open(qsv_param_t *pParams, enum qsv_codec codec)
 {
-	obs_video_info ovi;
-	obs_get_video_info(&ovi);
-	size_t adapter_idx = ovi.adapter;
-
-	// Select current adapter - will be iGPU if exists due to adapter reordering
-	if (codec == QSV_CODEC_AV1 && !adapters[adapter_idx].supports_av1) {
-		for (size_t i = 0; i < 4; i++) {
-			if (adapters[i].supports_av1) {
-				adapter_idx = i;
-				break;
-			}
-		}
-	} else if (!adapters[adapter_idx].is_intel) {
-		for (size_t i = 0; i < 4; i++) {
-			if (adapters[i].is_intel) {
-				adapter_idx = i;
-				break;
-			}
-		}
-	}
-
-	bool isDGPU = adapters[adapter_idx].is_dgpu;
-
-	QSV_Encoder_Internal *pEncoder = new QSV_Encoder_Internal(ver, isDGPU);
+	QSV_Encoder_Internal *pEncoder = new QSV_Encoder_Internal(ver);
 	mfxStatus sts = pEncoder->Open(pParams, codec);
 	if (sts != MFX_ERR_NONE) {
 
@@ -189,12 +166,6 @@ qsv_t *qsv_encoder_open(qsv_param_t *pParams, enum qsv_codec codec)
 	}
 
 	return (qsv_t *)pEncoder;
-}
-
-bool qsv_encoder_is_dgpu(qsv_t *pContext)
-{
-	QSV_Encoder_Internal *pEncoder = (QSV_Encoder_Internal *)pContext;
-	return pEncoder->IsDGPU();
 }
 
 int qsv_encoder_headers(qsv_t *pContext, uint8_t **pSPS, uint8_t **pPPS,
