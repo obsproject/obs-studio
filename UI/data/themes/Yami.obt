@@ -990,6 +990,14 @@ QPushButton[themeID="replayBufferButton"],
     padding: var(--padding_large);
 }
 
+#pauseRecordButton,
+#saveReplayButton,
+#virtualCamConfigButton {
+    padding: var(--padding_large) var(--padding_large);
+    width: var(--input_height);
+    max-width: var(--input_height);
+}
+
 /* Primary Control Button Checked Coloring */
 #streamButton:!hover:!pressed:checked,
 #recordButton:!hover:!pressed:checked,

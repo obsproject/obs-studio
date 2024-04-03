@@ -101,6 +101,7 @@ target_sources(
           forms/OBSAbout.ui
           forms/OBSAdvAudio.ui
           forms/OBSBasic.ui
+          forms/OBSBasicControls.ui
           forms/OBSBasicFilters.ui
           forms/OBSBasicInteraction.ui
           forms/OBSBasicProperties.ui
@@ -167,6 +168,8 @@ target_sources(
           audio-encoders.cpp
           audio-encoders.hpp
           balance-slider.hpp
+          basic-controls.cpp
+          basic-controls.hpp
           clickable-label.hpp
           double-slider.cpp
           double-slider.hpp
@@ -189,13 +192,12 @@ target_sources(
           menu-button.cpp
           menu-button.hpp
           mute-checkbox.hpp
+          noncheckable-button.hpp
           plain-text-edit.cpp
           plain-text-edit.hpp
           properties-view.cpp
           properties-view.hpp
           properties-view.moc.hpp
-          record-button.cpp
-          record-button.hpp
           remote-text.cpp
           remote-text.hpp
           scene-tree.cpp

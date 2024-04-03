@@ -319,13 +319,8 @@ private:
 	QPointer<QWidget> extraBrowsers;
 	QPointer<QWidget> importer;
 
-	QPointer<QMenu> startStreamMenu;
-
 	QPointer<QPushButton> transitionButton;
-	QPointer<ControlsSplitButton> replayBufferButton;
-	QScopedPointer<QPushButton> pause;
 
-	QPointer<ControlsSplitButton> vcamButton;
 	bool vcamEnabled = false;
 	VCamConfig vcamConfig;
 
@@ -545,8 +540,6 @@ private:
 	void dragLeaveEvent(QDragLeaveEvent *event) override;
 	void dragMoveEvent(QDragMoveEvent *event) override;
 	void dropEvent(QDropEvent *event) override;
-
-	void ReplayBufferClicked();
 
 	bool sysTrayMinimizeToTray();
 
@@ -888,8 +881,6 @@ private:
 	void AutoRemux(QString input, bool no_show = false);
 
 	void UpdateIsRecordingPausable();
-	void UpdatePause(bool activate = true);
-	void UpdateReplayBuffer(bool activate = true);
 
 	bool IsFFmpegOutputToURL() const;
 	bool OutputPathValid();
@@ -933,7 +924,6 @@ public:
 	int ResetVideo();
 	bool ResetAudio();
 
-	void AddVCamButton();
 	void ResetOutputs();
 
 	void RefreshVolumeColors();
@@ -1132,11 +1122,6 @@ private slots:
 	void on_actionScaleCanvas_triggered();
 	void on_actionScaleOutput_triggered();
 
-	void on_streamButton_clicked();
-	void on_recordButton_clicked();
-	void VCamButtonClicked();
-	void VCamConfigButtonClicked();
-	void on_settingsButton_clicked();
 	void Screenshot(OBSSource source_ = nullptr);
 	void ScreenshotSelectedSource();
 	void ScreenshotProgram();
@@ -1198,8 +1183,6 @@ private slots:
 	void on_multiviewProjectorWindowed_triggered();
 	void on_sideDocks_toggled(bool side);
 
-	void PauseToggled();
-
 	void logUploadFinished(const QString &text, const QString &error);
 	void crashUploadFinished(const QString &text, const QString &error);
 	void openLogDialog(const QString &text, const bool crash);
@@ -1241,6 +1224,23 @@ private slots:
 	void RepairOldExtraDockName();
 	void RepairCustomExtraDockName();
 
+	/* Stream action (start/stop) slot */
+	void StreamActionTriggered();
+
+	/* Record action (start/stop) slot */
+	void RecordActionTriggered();
+
+	/* Record pause (pause/unpause) slot */
+	void RecordPauseToggled();
+
+	/* Replay Buffer action (start/stop) slot */
+	void ReplayBufferActionTriggered();
+
+	/* Virtual Cam action (start/stop) slots */
+	void VirtualCamActionTriggered();
+
+	void OpenVirtualCamConfig();
+
 	/* Studio Mode toggle slot */
 	void TogglePreviewProgramMode();
 
@@ -1259,21 +1259,43 @@ public slots:
 
 signals:
 	/* Streaming signals */
-	void StreamingStarting();
-	void StreamingStarted();
-	void StreamingStopped();
+	void StreamingPreparing();
+	void StreamingStarting(bool broadcastAutoStart);
+	void StreamingStarted(bool withDelay = false);
+	void StreamingStopping();
+	void StreamingStopped(bool withDelay = false);
+
+	/* Broadcast Flow signals */
+	void BroadcastFlowEnabled(bool enabled);
+	void BroadcastStreamReady(bool ready);
+	void BroadcastStreamActive();
+	void BroadcastStreamStarted(bool autoStop);
 
 	/* Recording signals */
-	void RecordingStarted();
+	void RecordingStarted(bool pausable = false);
 	void RecordingPaused();
 	void RecordingUnpaused();
+	void RecordingStopping();
 	void RecordingStopped();
+
+	/* Replay Buffer signals */
+	void ReplayBufEnabled(bool enabled);
+	void ReplayBufStarted();
+	void ReplayBufStopping();
+	void ReplayBufStopped();
+
+	/* Virtual Camera signals */
+	void VirtualCamEnabled();
+	void VirtualCamStarted();
+	void VirtualCamStopped();
 
 	/* Studio Mode signal */
 	void PreviewProgramModeChanged(bool enabled);
 
 private:
 	std::unique_ptr<Ui::OBSBasic> ui;
+
+	QPointer<OBSDock> controlsDock;
 
 public:
 	/* `undo_s` needs to be declared after `ui` to prevent an uninitialized
