@@ -71,7 +71,7 @@ find_package(CURL REQUIRED)
 add_subdirectory(frontend-plugins)
 add_executable(obs)
 
-find_qt(COMPONENTS Widgets Network Svg Xml COMPONENTS_LINUX Gui)
+find_qt(COMPONENTS Widgets Network Svg Xml COMPONENTS_LINUX Gui DBus)
 
 target_link_libraries(obs PRIVATE Qt::Widgets Qt::Svg Qt::Xml Qt::Network)
 
@@ -459,7 +459,7 @@ elseif(OS_MACOS)
 
 elseif(OS_POSIX)
   target_sources(obs PRIVATE platform-x11.cpp)
-  target_link_libraries(obs PRIVATE Qt::GuiPrivate)
+  target_link_libraries(obs PRIVATE Qt::GuiPrivate Qt::DBus)
 
   target_compile_definitions(obs PRIVATE OBS_INSTALL_PREFIX="${OBS_INSTALL_PREFIX}"
                                          "$<$<BOOL:${LINUX_PORTABLE}>:LINUX_PORTABLE>")
