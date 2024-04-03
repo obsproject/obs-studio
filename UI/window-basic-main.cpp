@@ -1983,6 +1983,34 @@ void OBSBasic::ResetOutputs()
 	"Failed to initialize video.  Your GPU may not be supported, " \
 	"or your graphics drivers may need to be updated."
 
+static inline void LogEncoders()
+{
+	constexpr uint32_t hide_flags = OBS_ENCODER_CAP_DEPRECATED |
+					OBS_ENCODER_CAP_INTERNAL;
+
+	auto list_encoders = [](obs_encoder_type type) {
+		size_t idx = 0;
+		const char *encoder_type;
+
+		while (obs_enum_encoder_types(idx++, &encoder_type)) {
+			if (obs_get_encoder_caps(encoder_type) & hide_flags ||
+			    obs_get_encoder_type(encoder_type) != type) {
+				continue;
+			}
+
+			blog(LOG_INFO, "\t- %s (%s)", encoder_type,
+			     obs_encoder_get_display_name(encoder_type));
+		}
+	};
+
+	blog(LOG_INFO, "---------------------------------");
+	blog(LOG_INFO, "Available Encoders:");
+	blog(LOG_INFO, "  Video Encoders:");
+	list_encoders(OBS_ENCODER_VIDEO);
+	blog(LOG_INFO, "  Audio Encoders:");
+	list_encoders(OBS_ENCODER_AUDIO);
+}
+
 void OBSBasic::OBSInit()
 {
 	ProfileScope("OBSBasic::OBSInit");
@@ -2078,6 +2106,8 @@ void OBSBasic::OBSInit()
 	InitBasicConfigDefaults2();
 
 	CheckForSimpleModeX264Fallback();
+
+	LogEncoders();
 
 	blog(LOG_INFO, STARTUP_SEPARATOR);
 
