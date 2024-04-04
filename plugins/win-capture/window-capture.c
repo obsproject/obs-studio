@@ -635,7 +635,8 @@ static void wc_tick(void *data, float seconds)
 	if (!obs_source_showing(wc->source))
 		return;
 
-	if (!wc->window || !IsWindow(wc->window)) {
+	if (!wc->window || !IsWindow(wc->window) ||
+	    !IsWindowVisible(wc->window)) {
 		if (wc->hooked) {
 			wc->hooked = false;
 
@@ -686,7 +687,7 @@ static void wc_tick(void *data, float seconds)
 		wc->previously_failed = false;
 		reset_capture = true;
 
-	} else if (IsIconic(wc->window) || !IsWindowVisible(wc->window)) {
+	} else if (IsIconic(wc->window)) {
 		return; /* If HWND is invisible, WGC module can't be initialized successfully */
 	}
 
