@@ -329,7 +329,7 @@ jobs:
 
   windows_build:
     name: '02 - Windows'
-    runs-on: [windows-2022]
+    runs-on: [self-hosted, Windows]
     needs: [sl_config, clang_check]
     if: ${{ github.repository == 'obsproject/obs-studio' }}
     strategy:
@@ -404,7 +404,7 @@ jobs:
   win64:
     needs: [sl_config]
     name: 'Windows 64-bit'
-    runs-on: windows-latest
+    runs-on: [self-hosted, Windows]
     strategy:
       matrix:
         ReleaseName: [release, debug]
@@ -436,7 +436,7 @@ jobs:
           Invoke-WebRequest -OutFile $zipfile "https://awscli.amazonaws.com/AWSCLIV2-$version.msi"
           Start-Process msiexec.exe -Wait -ArgumentList "/i $zipfile /qn"
           rm $zipfile
-        shell: pwsh
+        shell: powershell
       - name: Get the version of aws cli after install
         run: aws --version
         shell: powershell
@@ -446,8 +446,10 @@ jobs:
           submodules: 'recursive'
       - name: Get the version
         id: get_version
-        run: echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
-        shell: bash
+        run: |
+          $version = "${{ github.ref }}".Replace("refs/tags/", "")
+          echo "VERSION=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+        shell: powershell
       - name: Configure / Build 
         run: ./slobs_CI/win-build.cmd
         shell: cmd
@@ -455,8 +457,6 @@ jobs:
           ReleaseName: ${{matrix.ReleaseName}}
           BuildConfig: ${{matrix.BuildConfig}}
           CefBuildConfig: ${{matrix.CefBuildConfig}}
-      - name: Print downloaded artifact content for debugging
-        run: Get-ChildItem -Path ${{ github.workspace }} -Recurse | Select-Object Mode, LastWriteTime, Length, Name
       - name: Fetch symsrv-scripts
         if: startsWith(github.ref, 'refs/tags/')
         uses: actions/checkout@v3
@@ -538,7 +538,7 @@ jobs:
 
   windows_package:
     name: '03 - Windows Installer'
-    runs-on: [windows-latest]
+    runs-on: [self-hosted, Windows]
     needs: [windows_build]
     if: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' }}
     env:
