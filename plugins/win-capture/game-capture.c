@@ -865,9 +865,11 @@ static void game_capture_update(void *data, obs_data_t *settings)
 		}
 	}
 
-	dstr_copy(&gc->placeholder_text, placeholder_text);
-	dstr_copy(&gc->placeholder_wait_text, placeholder_wait_text);
-	dstr_copy(&gc->placeholder_error_text, placeholder_error_text);
+	if (dstr_is_empty(&gc->placeholder_text)) {
+		dstr_copy(&gc->placeholder_text, placeholder_text);
+		dstr_copy(&gc->placeholder_wait_text, placeholder_wait_text);
+		dstr_copy(&gc->placeholder_error_text, placeholder_error_text);
+	}
 
 	reset_capture = capture_needs_reset(&cfg, &gc->config);
 
