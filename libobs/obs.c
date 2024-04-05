@@ -47,6 +47,15 @@ static inline void make_video_info(struct video_output_info *vi,
 	vi->cache_size = 6;
 }
 
+#ifdef _WIN32
+// Fix for missing Windows dependency required by zlib
+EXPORT int __ms_vsnprintf(char *str, size_t size, const char *format,
+			  va_list ap)
+{
+	return vsnprintf(str, size, format, ap);
+}
+#endif
+
 static inline void calc_gpu_conversion_sizes(struct obs_core_video_mix *video)
 {
 	const struct video_output_info *info =

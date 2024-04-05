@@ -404,7 +404,7 @@ jobs:
   win64:
     needs: [sl_config]
     name: 'Windows 64-bit'
-    runs-on: [self-hosted, Windows]
+    runs-on: [windows-2022]
     strategy:
       matrix:
         ReleaseName: [release, debug]
@@ -538,7 +538,7 @@ jobs:
 
   windows_package:
     name: '03 - Windows Installer'
-    runs-on: [self-hosted, Windows]
+    runs-on: [windows-2022]
     needs: [windows_build]
     if: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' }}
     env:
