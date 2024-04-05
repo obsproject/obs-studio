@@ -8,8 +8,10 @@
 /* Dark Theme is a good place to start if you need */
 /* a template. */
 
-OBSThemeMeta {
-    dark: 'false';
+@OBSThemeMeta {
+    name: 'System';
+    id: 'com.obsproject.System';
+    author: 'Warchamp7';
 }
 
 /* We need to set back the icons, or the preview wont stick. */
@@ -211,31 +213,31 @@ OBSBasicSettings QListWidget::item {
 
 /* Locked CheckBox */
 
-QCheckBox[lockCheckBox=true] {
+LockedCheckBox {
     outline: none;
     background: transparent;
 }
 
-QCheckBox[lockCheckBox=true]::indicator:checked {
+LockedCheckBox::indicator:checked {
     image: url(:res/images/locked.svg);
 }
 
-QCheckBox[lockCheckBox=true]::indicator:unchecked {
+LockedCheckBox::indicator:unchecked {
     image: url(:res/images/unlocked.svg);
 }
 
 /* Visibility CheckBox */
 
-QCheckBox[visibilityCheckBox=true] {
+VisibilityCheckBox {
     outline: none;
     background: transparent;
 }
 
-QCheckBox[visibilityCheckBox=true]::indicator:checked {
+VisibilityCheckBox::indicator:checked {
     image: url(:res/images/visible.svg);
 }
 
-QCheckBox[visibilityCheckBox=true]::indicator:unchecked {
+VisibilityCheckBox::indicator:unchecked {
     image: url(:res/images/invisible.svg);
 }
 
