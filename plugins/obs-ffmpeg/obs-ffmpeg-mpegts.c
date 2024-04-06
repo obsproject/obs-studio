@@ -421,6 +421,12 @@ fail:
 	return err;
 }
 
+#if LIBAVFORMAT_VERSION_MAJOR >= 61
+typedef int (*write_packet_cb)(void *, const uint8_t *, int);
+#else
+typedef int (*write_packet_cb)(void *, uint8_t *, int);
+#endif
+
 static inline int allocate_custom_aviocontext(struct ffmpeg_output *stream,
 					      bool is_rist)
 {
@@ -437,13 +443,13 @@ static inline int allocate_custom_aviocontext(struct ffmpeg_output *stream,
 		return AVERROR(ENOMEM);
 	/* allocate custom avio_context */
 	if (is_rist)
-		s = avio_alloc_context(
-			buffer, buffer_size, AVIO_FLAG_WRITE, h, NULL,
-			(int (*)(void *, uint8_t *, int))librist_write, NULL);
+		s = avio_alloc_context(buffer, buffer_size, AVIO_FLAG_WRITE, h,
+				       NULL, (write_packet_cb)librist_write,
+				       NULL);
 	else
-		s = avio_alloc_context(
-			buffer, buffer_size, AVIO_FLAG_WRITE, h, NULL,
-			(int (*)(void *, uint8_t *, int))libsrt_write, NULL);
+		s = avio_alloc_context(buffer, buffer_size, AVIO_FLAG_WRITE, h,
+				       NULL, (write_packet_cb)libsrt_write,
+				       NULL);
 	if (!s)
 		goto fail;
 	s->max_packet_size = h->max_packet_size;
