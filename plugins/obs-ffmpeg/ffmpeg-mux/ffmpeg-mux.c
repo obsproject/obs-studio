@@ -886,7 +886,12 @@ static int64_t ffmpeg_mux_seek_av_buffer(void *opaque, int64_t offset,
 	return 0;
 }
 
+#if LIBAVFORMAT_VERSION_MAJOR >= 61
+static int ffmpeg_mux_write_av_buffer(void *opaque, const uint8_t *buf,
+				      int buf_size)
+#else
 static int ffmpeg_mux_write_av_buffer(void *opaque, uint8_t *buf, int buf_size)
+#endif
 {
 	struct ffmpeg_mux *ffm = opaque;
 
