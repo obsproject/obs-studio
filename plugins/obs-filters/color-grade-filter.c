@@ -382,7 +382,7 @@ static void color_grade_filter_defaults(obs_data_t *settings)
 
 static obs_properties_t *color_grade_filter_properties(void *data)
 {
-	struct lut_filter_data *s = data;
+	UNUSED_PARAMETER(data);
 	struct dstr path = {0};
 	const char *slash;
 
@@ -391,14 +391,10 @@ static obs_properties_t *color_grade_filter_properties(void *data)
 
 	dstr_cat(&filter_str, "PNG/Cube (*.cube *.png)");
 
-	if (s && s->file && *s->file) {
-		dstr_copy(&path, s->file);
-	} else {
-		char *lut_dir = obs_module_file("LUTs");
-		dstr_copy(&path, lut_dir);
-		dstr_cat_ch(&path, '/');
-		bfree(lut_dir);
-	}
+	char *lut_dir = obs_module_file("LUTs");
+	dstr_copy(&path, lut_dir);
+	dstr_cat_ch(&path, '/');
+	bfree(lut_dir);
 
 	dstr_replace(&path, "\\", "/");
 	slash = strrchr(path.array, '/');
