@@ -6950,7 +6950,7 @@ void OBSBasic::DisplayStreamStartError()
 	ui->streamButton->setChecked(false);
 
 	if (sysTrayStream) {
-		sysTrayStream->setText(ui->streamButton->text());
+		sysTrayStream->setText(QTStr("Basic.Main.StartStreaming"));
 		sysTrayStream->setEnabled(true);
 	}
 
@@ -7504,7 +7504,7 @@ void OBSBasic::StreamDelayStarting(int sec)
 	ui->streamButton->setChecked(true);
 
 	if (sysTrayStream) {
-		sysTrayStream->setText(ui->streamButton->text());
+		sysTrayStream->setText(QTStr("Basic.Main.StopStreaming"));
 		sysTrayStream->setEnabled(true);
 	}
 
@@ -7531,7 +7531,7 @@ void OBSBasic::StreamDelayStopping(int sec)
 	ui->streamButton->setChecked(false);
 
 	if (sysTrayStream) {
-		sysTrayStream->setText(ui->streamButton->text());
+		sysTrayStream->setText(QTStr("Basic.Main.StartStreaming"));
 		sysTrayStream->setEnabled(true);
 	}
 
@@ -7562,7 +7562,7 @@ void OBSBasic::StreamingStart()
 	ui->statusbar->StreamStarted(output);
 
 	if (sysTrayStream) {
-		sysTrayStream->setText(ui->streamButton->text());
+		sysTrayStream->setText(QTStr("Basic.Main.StopStreaming"));
 		sysTrayStream->setEnabled(true);
 	}
 
@@ -7601,7 +7601,7 @@ void OBSBasic::StreamStopping()
 	ui->streamButton->setText(QTStr("Basic.Main.StoppingStreaming"));
 
 	if (sysTrayStream)
-		sysTrayStream->setText(ui->streamButton->text());
+		sysTrayStream->setText(QTStr("Basic.Main.StoppingStreaming"));
 
 	streamingStopping = true;
 	if (api)
@@ -7664,7 +7664,7 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 	ui->streamButton->setChecked(false);
 
 	if (sysTrayStream) {
-		sysTrayStream->setText(ui->streamButton->text());
+		sysTrayStream->setText(QTStr("Basic.Main.StartStreaming"));
 		sysTrayStream->setEnabled(true);
 	}
 
@@ -7824,7 +7824,7 @@ void OBSBasic::RecordStopping()
 	ui->recordButton->setText(QTStr("Basic.Main.StoppingRecording"));
 
 	if (sysTrayRecord)
-		sysTrayRecord->setText(ui->recordButton->text());
+		sysTrayRecord->setText(QTStr("Basic.Main.StoppingRecording"));
 
 	recordingStopping = true;
 	if (api)
@@ -7849,7 +7849,7 @@ void OBSBasic::RecordingStart()
 	ui->recordButton->setChecked(true);
 
 	if (sysTrayRecord)
-		sysTrayRecord->setText(ui->recordButton->text());
+		sysTrayRecord->setText(QTStr("Basic.Main.StopRecording"));
 
 	recordingStopping = false;
 	if (api)
@@ -7872,7 +7872,7 @@ void OBSBasic::RecordingStop(int code, QString last_error)
 	ui->recordButton->setChecked(false);
 
 	if (sysTrayRecord)
-		sysTrayRecord->setText(ui->recordButton->text());
+		sysTrayRecord->setText(QTStr("Basic.Main.StartRecording"));
 
 	blog(LOG_INFO, RECORDING_STOP);
 
@@ -8029,7 +8029,7 @@ void OBSBasic::ReplayBufferStopping()
 
 	if (sysTrayReplayBuffer)
 		sysTrayReplayBuffer->setText(
-			replayBufferButton->first()->text());
+			QTStr("Basic.Main.StoppingReplayBuffer"));
 
 	replayBufferStopping = true;
 	if (api)
@@ -8060,7 +8060,7 @@ void OBSBasic::ReplayBufferStart()
 
 	if (sysTrayReplayBuffer)
 		sysTrayReplayBuffer->setText(
-			replayBufferButton->first()->text());
+			QTStr("Basic.Main.StopReplayBuffer"));
 
 	replayBufferStopping = false;
 	if (api)
@@ -8121,7 +8121,7 @@ void OBSBasic::ReplayBufferStop(int code)
 
 	if (sysTrayReplayBuffer)
 		sysTrayReplayBuffer->setText(
-			replayBufferButton->first()->text());
+			QTStr("Basic.Main.StartReplayBuffer"));
 
 	blog(LOG_INFO, REPLAY_BUFFER_STOP);
 
