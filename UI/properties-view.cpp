@@ -1813,17 +1813,21 @@ bool WidgetInfo::PathChanged(const char *setting)
 	obs_path_type type = obs_property_path_type(property);
 	const char *filter = obs_property_path_filter(property);
 	const char *default_path = obs_property_path_default_path(property);
+
+	QLineEdit *edit = static_cast<QLineEdit *>(widget);
+
+	QString startDir = edit->text();
+	if (startDir.isEmpty())
+		startDir = default_path;
+
 	QString path;
 
 	if (type == OBS_PATH_DIRECTORY)
-		path = SelectDirectory(view, QT_UTF8(desc),
-				       QT_UTF8(default_path));
+		path = SelectDirectory(view, QT_UTF8(desc), startDir);
 	else if (type == OBS_PATH_FILE)
-		path = OpenFile(view, QT_UTF8(desc), QT_UTF8(default_path),
-				QT_UTF8(filter));
+		path = OpenFile(view, QT_UTF8(desc), startDir, QT_UTF8(filter));
 	else if (type == OBS_PATH_FILE_SAVE)
-		path = SaveFile(view, QT_UTF8(desc), QT_UTF8(default_path),
-				QT_UTF8(filter));
+		path = SaveFile(view, QT_UTF8(desc), startDir, QT_UTF8(filter));
 
 #ifdef __APPLE__
 	// TODO: Revisit when QTBUG-42661 is fixed
@@ -1833,7 +1837,6 @@ bool WidgetInfo::PathChanged(const char *setting)
 	if (path.isEmpty())
 		return false;
 
-	QLineEdit *edit = static_cast<QLineEdit *>(widget);
 	edit->setText(path);
 	obs_data_set_string(view->settings, setting, QT_TO_UTF8(path));
 	return true;
