@@ -677,6 +677,8 @@ private:
 
 	void UpdatePreviewOverflowSettings();
 
+	bool streamingStarting = false;
+
 	bool recordingStarted = false;
 	bool isRecordingPausable = false;
 	bool recordingPaused = false;
@@ -1256,6 +1258,11 @@ public slots:
 	void UpdateContextBarVisibility();
 
 signals:
+	/* Streaming signals */
+	void StreamingStarting();
+	void StreamingStarted();
+	void StreamingStopped();
+
 	/* Recording signals */
 	void RecordingStarted();
 	void RecordingPaused();
