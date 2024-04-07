@@ -149,24 +149,17 @@ static const char *output_signals[] = {
 	"void stopping(ptr output)",
 	"void activate(ptr output)",
 	"void deactivate(ptr output)",
+	"void update(ptr output)",
 	"void reconnect(ptr output)",
 	"void reconnect_success(ptr output)",
 	NULL,
 };
 
-static bool init_output_handlers(struct obs_output *output, const char *name,
-				 obs_data_t *settings, obs_data_t *hotkey_data)
-{
-	if (!obs_context_data_init(&output->context, OBS_OBJ_TYPE_OUTPUT,
-				   settings, name, NULL, hotkey_data, false))
-		return false;
-
-	signal_handler_add_array(output->context.signals, output_signals);
-	return true;
-}
-
-obs_output_t *obs_output_create(const char *id, const char *name,
-				obs_data_t *settings, obs_data_t *hotkey_data)
+static obs_output_t *obs_output_create_internal(const char *id,
+						const char *name,
+						obs_data_t *settings,
+						obs_data_t *hotkey_data,
+						bool private)
 {
 	const struct obs_output_info *info = find_output(id);
 	struct obs_output *output;
@@ -188,9 +181,11 @@ obs_output_t *obs_output_create(const char *id, const char *name,
 		goto fail;
 	if (os_event_init(&output->stopping_event, OS_EVENT_TYPE_MANUAL) != 0)
 		goto fail;
-	if (!init_output_handlers(output, name, settings, hotkey_data))
+	if (!obs_context_data_init(&output->context, OBS_OBJ_TYPE_OUTPUT,
+				   settings, name, NULL, hotkey_data, private))
 		goto fail;
 
+	signal_handler_add_array(output->context.signals, output_signals);
 	os_event_signal(output->stopping_event);
 
 	if (!info) {
@@ -231,11 +226,27 @@ obs_output_t *obs_output_create(const char *id, const char *name,
 		blog(LOG_ERROR, "Failed to create output '%s'!", name);
 
 	blog(LOG_DEBUG, "output '%s' (%s) created", name, id);
+	if (!private) {
+		obs_output_dosignal(output, "output_create", NULL);
+	}
 	return output;
 
 fail:
 	obs_output_destroy(output);
 	return NULL;
+}
+
+obs_output_t *obs_output_create(const char *id, const char *name,
+				obs_data_t *settings, obs_data_t *hotkey_data)
+{
+	return obs_output_create_internal(id, name, settings, hotkey_data,
+					  false);
+}
+
+obs_output_t *obs_output_create_private(const char *id, const char *name,
+					obs_data_t *settings)
+{
+	return obs_output_create_internal(id, name, settings, NULL, true);
 }
 
 static inline void free_packets(struct obs_output *output)
@@ -268,6 +279,8 @@ void obs_output_destroy(obs_output_t *output)
 		os_event_wait(output->stopping_event);
 		if (data_capture_ending(output))
 			pthread_join(output->end_data_capture_thread, NULL);
+
+		obs_output_dosignal(output, "output_destroy", NULL);
 
 		if (output->service)
 			output->service->output = NULL;
@@ -583,6 +596,8 @@ void obs_output_update(obs_output_t *output, obs_data_t *settings)
 	if (output->info.update)
 		output->info.update(output->context.data,
 				    output->context.settings);
+
+	obs_output_dosignal(output, "output_update", "update");
 }
 
 obs_data_t *obs_output_get_settings(const obs_output_t *output)

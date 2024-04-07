@@ -295,6 +295,10 @@ Output Signals
 
    Called when the output deactivates (stops capturing data).
 
+**update** (ptr output)
+
+   Called when the output settings have been updated.
+
 **reconnect** (ptr output)
 
    Called when the output is reconnecting.
@@ -338,6 +342,25 @@ General Output Functions
                             none
    :param   hotkey_data:    Saved hotkey data for the output, or *NULL*
                             if none
+   :return:                 A reference to the newly created output, or
+                            *NULL* if failed
+
+---------------------
+
+.. function:: obs_output_t *obs_output_create_private(const char *id, const char *name, obs_data_t *settings)
+
+   Creates a 'private' output which is not enumerated by
+   :c:func:`obs_enum_outputs()`.
+
+   The "output" context is used for anything related to outputting the
+   final video/audio mix (E.g. streaming or recording).  Use
+   obs_output_release to release it.
+
+   :param   id:             The output type string identifier
+   :param   name:           The desired name of the output.  If this is
+                            not unique, it will be made to be unique
+   :param   settings:       The settings for the output, or *NULL* if
+                            none
    :return:                 A reference to the newly created output, or
                             *NULL* if failed
 

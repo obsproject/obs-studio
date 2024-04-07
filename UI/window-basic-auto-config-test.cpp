@@ -198,12 +198,12 @@ void AutoConfigTestPage::TestBandwidthThread()
 	const char *serverType = wiz->customServer ? "rtmp_custom"
 						   : "rtmp_common";
 
-	OBSEncoderAutoRelease vencoder = obs_video_encoder_create(
-		"obs_x264", "test_x264", nullptr, nullptr);
-	OBSEncoderAutoRelease aencoder = obs_audio_encoder_create(
-		"ffmpeg_aac", "test_aac", nullptr, 0, nullptr);
-	OBSServiceAutoRelease service = obs_service_create(
-		serverType, "test_service", nullptr, nullptr);
+	OBSEncoderAutoRelease vencoder = obs_video_encoder_create_private(
+		"obs_x264", "test_x264", nullptr);
+	OBSEncoderAutoRelease aencoder = obs_audio_encoder_create_private(
+		"ffmpeg_aac", "test_aac", nullptr, 0);
+	OBSServiceAutoRelease service =
+		obs_service_create_private(serverType, "test_service", nullptr);
 
 	/* -----------------------------------*/
 	/* configure settings                 */
@@ -323,15 +323,15 @@ void AutoConfigTestPage::TestBandwidthThread()
 	}
 
 	OBSOutputAutoRelease output =
-		obs_output_create(output_type, "test_stream", nullptr, nullptr);
+		obs_output_create_private(output_type, "test_stream", nullptr);
 	obs_output_update(output, output_settings);
 
 	const char *audio_codec = obs_output_get_supported_audio_codecs(output);
 
 	if (strcmp(audio_codec, "aac") != 0) {
 		const char *id = FindAudioEncoderFromCodec(audio_codec);
-		aencoder = obs_audio_encoder_create(id, "test_audio", nullptr,
-						    0, nullptr);
+		aencoder = obs_audio_encoder_create_private(id, "test_audio",
+							    nullptr, 0);
 	}
 
 	/* -----------------------------------*/
@@ -573,12 +573,12 @@ bool AutoConfigTestPage::TestSoftwareEncoding()
 	/* -----------------------------------*/
 	/* create obs objects                 */
 
-	OBSEncoderAutoRelease vencoder = obs_video_encoder_create(
-		"obs_x264", "test_x264", nullptr, nullptr);
-	OBSEncoderAutoRelease aencoder = obs_audio_encoder_create(
-		"ffmpeg_aac", "test_aac", nullptr, 0, nullptr);
+	OBSEncoderAutoRelease vencoder = obs_video_encoder_create_private(
+		"obs_x264", "test_x264", nullptr);
+	OBSEncoderAutoRelease aencoder = obs_audio_encoder_create_private(
+		"ffmpeg_aac", "test_aac", nullptr, 0);
 	OBSOutputAutoRelease output =
-		obs_output_create("null_output", "null", nullptr, nullptr);
+		obs_output_create_private("null_output", "null", nullptr);
 
 	/* -----------------------------------*/
 	/* configure settings                 */
@@ -1074,8 +1074,8 @@ void AutoConfigTestPage::FinalizeResults()
 		const char *serverType = wiz->customServer ? "rtmp_custom"
 							   : "rtmp_common";
 
-		OBSServiceAutoRelease service = obs_service_create(
-			serverType, "temp_service", nullptr, nullptr);
+		OBSServiceAutoRelease service = obs_service_create_private(
+			serverType, "temp_service", nullptr);
 
 		OBSDataAutoRelease service_settings = obs_data_create();
 		OBSDataAutoRelease vencoder_settings = obs_data_create();

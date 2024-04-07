@@ -2046,6 +2046,9 @@ EXPORT obs_output_t *obs_output_create(const char *id, const char *name,
 				       obs_data_t *settings,
 				       obs_data_t *hotkey_data);
 
+EXPORT obs_output_t *obs_output_create_private(const char *id, const char *name,
+					       obs_data_t *settings);
+
 /**
  * Adds/releases a reference to an output.  When the last reference is
  * released, the output is destroyed.
@@ -2389,6 +2392,10 @@ EXPORT obs_encoder_t *obs_video_encoder_create(const char *id, const char *name,
 					       obs_data_t *settings,
 					       obs_data_t *hotkey_data);
 
+EXPORT obs_encoder_t *obs_video_encoder_create_private(const char *id,
+						       const char *name,
+						       obs_data_t *settings);
+
 /**
  * Creates an audio encoder context
  *
@@ -2402,6 +2409,11 @@ EXPORT obs_encoder_t *obs_audio_encoder_create(const char *id, const char *name,
 					       obs_data_t *settings,
 					       size_t mixer_idx,
 					       obs_data_t *hotkey_data);
+
+EXPORT obs_encoder_t *obs_audio_encoder_create_private(const char *id,
+						       const char *name,
+						       obs_data_t *settings,
+						       size_t mixer_idx);
 
 /**
  * Adds/releases a reference to an encoder.  When the last reference is

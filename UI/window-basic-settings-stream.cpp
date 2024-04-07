@@ -733,8 +733,8 @@ OBSService OBSBasicSettings::SpawnTempService()
 		obs_data_set_string(settings, "key",
 				    QT_TO_UTF8(ui->key->text()));
 
-	OBSServiceAutoRelease newService = obs_service_create(
-		service_id, "temp_service", settings, nullptr);
+	OBSServiceAutoRelease newService = obs_service_create_private(
+		service_id, "temp_service", settings);
 	return newService.Get();
 }
 

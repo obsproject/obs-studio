@@ -1177,14 +1177,24 @@ struct obs_output {
 	float audio_data[MAX_AUDIO_CHANNELS][AUDIO_OUTPUT_FRAMES];
 };
 
-static inline void do_output_signal(struct obs_output *output,
-				    const char *signal)
+static inline void obs_output_dosignal(struct obs_output *output,
+				       const char *signal_obs,
+				       const char *signal_output)
 {
-	struct calldata params = {0};
-	calldata_set_ptr(&params, "output", output);
-	signal_handler_signal(output->context.signals, signal, &params);
-	calldata_free(&params);
+	struct calldata data;
+	uint8_t stack[128];
+
+	calldata_init_fixed(&data, stack, sizeof(stack));
+	calldata_set_ptr(&data, "output", output);
+	if (signal_obs && !output->context.private)
+		signal_handler_signal(obs->signals, signal_obs, &data);
+	if (signal_output)
+		signal_handler_signal(output->context.signals, signal_output,
+				      &data);
 }
+
+#define do_output_signal(output, signal) \
+	obs_output_dosignal(output, NULL, signal)
 
 extern void process_delay(void *data, struct encoder_packet *packet);
 extern void obs_output_cleanup_delay(obs_output_t *output);
@@ -1302,6 +1312,22 @@ struct obs_encoder {
 	bool reconfigure_requested;
 };
 
+static inline void obs_encoder_dosignal(struct obs_encoder *encoder,
+					const char *signal_obs,
+					const char *signal_encoder)
+{
+	struct calldata data;
+	uint8_t stack[128];
+
+	calldata_init_fixed(&data, stack, sizeof(stack));
+	calldata_set_ptr(&data, "encoder", encoder);
+	if (signal_obs && !encoder->context.private)
+		signal_handler_signal(obs->signals, signal_obs, &data);
+	if (signal_encoder)
+		signal_handler_signal(encoder->context.signals, signal_encoder,
+				      &data);
+}
+
 extern struct obs_encoder_info *find_encoder(const char *id);
 
 extern bool obs_encoder_initialize(obs_encoder_t *encoder);
@@ -1349,6 +1375,22 @@ struct obs_service {
 	bool destroy;
 	struct obs_output *output;
 };
+
+static inline void obs_service_dosignal(struct obs_service *service,
+					const char *signal_obs,
+					const char *signal_service)
+{
+	struct calldata data;
+	uint8_t stack[128];
+
+	calldata_init_fixed(&data, stack, sizeof(stack));
+	calldata_set_ptr(&data, "service", service);
+	if (signal_obs && !service->context.private)
+		signal_handler_signal(obs->signals, signal_obs, &data);
+	if (signal_service)
+		signal_handler_signal(service->context.signals, signal_service,
+				      &data);
+}
 
 extern const struct obs_service_info *find_service(const char *id);
 

@@ -734,6 +734,34 @@ Core OBS Signals
 
    Called when a hotkey's bindings has changed.
 
+**output_create** (ptr output)
+
+   Called when an output has been created.
+
+**output_destroy** (ptr output)
+
+   Called when an output has been destroyed.
+
+**output_update** (ptr output)
+
+   Called when output settings have been updated.
+
+**encoder_create** (ptr encoder)
+
+   Called when an encoder has been created.
+
+**encoder_destroy** (ptr encoder)
+
+   Called when an encoder has been destroyed.
+
+**service_create** (ptr service)
+
+   Called when a service has been created.
+
+**service_destroy** (ptr service)
+
+   Called when a service has been destroyed.
+
 ---------------------
 
 

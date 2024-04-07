@@ -241,6 +241,24 @@ General Service Functions
 
 ---------------------
 
+.. function:: obs_service_t *obs_service_create_private(const char *id, const char *name, obs_data_t *settings)
+
+   Creates a 'private' service which is not enumerated by
+   :c:func:`obs_enum_services()`.
+
+   The "service" context is used for encoding video/audio data.  Use
+   obs_service_release to release it.
+
+   :param   id:             The service type string identifier
+   :param   name:           The desired name of the service.  If this is
+                            not unique, it will be made to be unique
+   :param   settings:       The settings for the service, or *NULL* if
+                            none
+   :return:                 A reference to the newly created service, or
+                            *NULL* if failed
+
+---------------------
+
 .. function:: void obs_service_addref(obs_service_t *service)
 
    Adds a reference to a service.
