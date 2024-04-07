@@ -833,18 +833,11 @@ void OBSBasic::Save(const char *file)
 	}
 
 	if (api) {
-		if (safeModeModuleData) {
-			/* If we're in Safe Mode and have retained unloaded
-			 * plugin data, update the existing data object instead
-			 * of creating a new one. */
-			api->on_save(safeModeModuleData);
-			obs_data_set_obj(saveData, "modules",
-					 safeModeModuleData);
-		} else {
-			OBSDataAutoRelease moduleObj = obs_data_create();
-			api->on_save(moduleObj);
-			obs_data_set_obj(saveData, "modules", moduleObj);
-		}
+		if (!collectionModuleData)
+			collectionModuleData = obs_data_create();
+
+		api->on_save(collectionModuleData);
+		obs_data_set_obj(saveData, "modules", collectionModuleData);
 	}
 
 	if (lastOutputResolution) {
@@ -1133,11 +1126,9 @@ void OBSBasic::LoadData(obs_data_t *data, const char *file)
 	if (api)
 		api->on_preload(modulesObj);
 
-	if (safe_mode || disable_3p_plugins) {
-		/* Keep a reference to "modules" data so plugins that are not
-		 * loaded do not have their collection specific data lost. */
-		safeModeModuleData = obs_data_get_obj(data, "modules");
-	}
+	/* Keep a reference to "modules" data so plugins that are not loaded do
+	 * not have their collection specific data lost. */
+	collectionModuleData = obs_data_get_obj(data, "modules");
 
 	OBSDataArrayAutoRelease sceneOrder =
 		obs_data_get_array(data, "scene_order");
@@ -5010,7 +5001,7 @@ void OBSBasic::ClearSceneData()
 		outputHandler->UpdateVirtualCamOutputSource();
 	}
 
-	safeModeModuleData = nullptr;
+	collectionModuleData = nullptr;
 	lastScene = nullptr;
 	swapScene = nullptr;
 	programScene = nullptr;
