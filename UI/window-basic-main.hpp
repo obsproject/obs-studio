@@ -234,7 +234,7 @@ private:
 	QList<QPointer<QDockWidget>> oldExtraDocks;
 	QStringList oldExtraDockNames;
 
-	OBSDataAutoRelease safeModeModuleData;
+	OBSDataAutoRelease collectionModuleData;
 	std::vector<OBSDataAutoRelease> safeModeTransitions;
 
 	bool loaded = false;
