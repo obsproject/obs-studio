@@ -402,6 +402,12 @@ bool obs_transition_start(obs_source_t *transition,
 			(uint64_t)duration_ms * 1000000ULL;
 	}
 
+	if (transition->transition_sources[OBS_TRANSITION_SOURCE_B] != NULL)
+		set_source(
+			transition, OBS_TRANSITION_SOURCE_A,
+			transition->transition_sources[OBS_TRANSITION_SOURCE_B],
+			activate_transition);
+
 	set_source(transition, OBS_TRANSITION_SOURCE_B, dest,
 		   activate_transition);
 	if (dest == NULL && same_as_dest && !same_as_source) {
