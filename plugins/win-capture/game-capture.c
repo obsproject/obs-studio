@@ -201,8 +201,7 @@ struct game_capture {
 	gs_image_file2_t placeholder_image;
 	gs_texture_t *placeholder_text_texture;
 	struct dstr placeholder_image_path;
-	struct dstr
-		placeholder_text; // currently active placeholder message (if any)
+	struct dstr placeholder_text; // currently active placeholder message
 
 	struct dstr placeholder_wait_text;  // default message
 	struct dstr placeholder_error_text; // error message
@@ -900,7 +899,7 @@ static void game_capture_update(void *data, obs_data_t *settings)
 		gc->priority = gc->config.priority;
 	}
 
-	if (cfg.mode == CAPTURE_MODE_AUTO || cfg.mode == CAPTURE_MODE_WINDOW) {
+	if (cfg.mode == CAPTURE_MODE_AUTO) {
 		load_placeholder_image(gc);
 	} else {
 		unload_placeholder_image(gc);
@@ -2301,7 +2300,6 @@ static void game_capture_tick(void *data, float seconds)
 					dstr_copy(&gc->placeholder_text,
 						  gc->placeholder_error_text
 							  .array);
-					load_placeholder_image(gc);
 				}
 			} else {
 				if (dstr_cmpi(&gc->placeholder_text,
@@ -2312,7 +2310,6 @@ static void game_capture_tick(void *data, float seconds)
 					dstr_copy(
 						&gc->placeholder_text,
 						gc->placeholder_wait_text.array);
-					load_placeholder_image(gc);
 				}
 			}
 		}
