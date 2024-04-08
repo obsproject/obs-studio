@@ -2403,8 +2403,7 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 
 	struct game_capture *gc = data;
 	if (!gc->texture || !gc->active) {
-		if (gc->config.mode == CAPTURE_MODE_AUTO ||
-		    gc->config.mode == CAPTURE_MODE_WINDOW) {
+		if (gc->config.mode == CAPTURE_MODE_AUTO) {
 			if (gc->placeholder_image.image.texture) {
 				//draw placeholder image
 				gs_effect_t *effect;
@@ -2480,8 +2479,7 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 	gs_effect_t *const effect = obs_get_base_effect(
 		allow_transparency ? OBS_EFFECT_DEFAULT : OBS_EFFECT_OPAQUE);
 
-	if (gc->config.mode == CAPTURE_MODE_AUTO ||
-	    gc->config.mode == CAPTURE_MODE_WINDOW) {
+	if (gc->config.mode == CAPTURE_MODE_AUTO) {
 		float cx_scale = gc->config.base_width / (float)gc->cx;
 		float cy_scale = gc->config.base_height / (float)gc->cy;
 		gs_matrix_push();
@@ -2720,8 +2718,7 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 		gs_set_linear_srgb(previous);
 	}
 
-	if (gc->config.mode == CAPTURE_MODE_AUTO ||
-	    gc->config.mode == CAPTURE_MODE_WINDOW) {
+	if (gc->config.mode == CAPTURE_MODE_AUTO) {
 		gs_matrix_pop();
 	}
 }
@@ -2729,9 +2726,7 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 static uint32_t game_capture_width(void *data)
 {
 	struct game_capture *gc = data;
-	if (gc->config.mode == CAPTURE_MODE_AUTO ||
-	    (gc->config.mode == CAPTURE_MODE_WINDOW &&
-	     !gc->is_internal_source)) {
+	if (gc->config.mode == CAPTURE_MODE_AUTO) {
 		return gc->config.base_width;
 	}
 	return (gc->active && gc->capturing) ? gc->cx : 0;
@@ -2740,9 +2735,7 @@ static uint32_t game_capture_width(void *data)
 static uint32_t game_capture_height(void *data)
 {
 	struct game_capture *gc = data;
-	if (gc->config.mode == CAPTURE_MODE_AUTO ||
-	    (gc->config.mode == CAPTURE_MODE_WINDOW &&
-	     !gc->is_internal_source)) {
+	if (gc->config.mode == CAPTURE_MODE_AUTO) {
 		return gc->config.base_height;
 	}
 	return (gc->active && gc->capturing) ? gc->cy : 0;
