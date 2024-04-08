@@ -25,10 +25,12 @@ MODULE_EXPORT const char *obs_module_description(void)
 
 extern struct obs_source_info pulse_input_capture;
 extern struct obs_source_info pulse_output_capture;
+extern const struct obs_output_info pulse_output;
 
 bool obs_module_load(void)
 {
 	obs_register_source(&pulse_input_capture);
 	obs_register_source(&pulse_output_capture);
+	obs_register_output(&pulse_output);
 	return true;
 }
