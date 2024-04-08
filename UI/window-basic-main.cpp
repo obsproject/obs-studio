@@ -1462,9 +1462,8 @@ static const double scaled_vals[] = {1.0,         1.25, (1.0 / 0.75), 1.5,
 				     2.5,         2.75, 3.0,          0.0};
 
 extern void CheckExistingCookieId();
-#if OBS_RELEASE_CANDIDATE == 0 && OBS_BETA == 0
-#define DEFAULT_CONTAINER "mkv"
-#elif defined(__APPLE__)
+
+#ifdef __APPLE__
 #define DEFAULT_CONTAINER "fragmented_mov"
 #else
 #define DEFAULT_CONTAINER "fragmented_mp4"
@@ -2069,8 +2068,8 @@ void OBSBasic::OBSInit()
 	cef_js_avail = cef && obs_browser_qcef_version() >= 3;
 #endif
 
-	vcamEnabled =
-		(obs_get_output_flags(VIRTUAL_CAM_ID) & OBS_OUTPUT_VIDEO) != 0;
+	OBSDataAutoRelease obsData = obs_get_private_data();
+	vcamEnabled = obs_data_get_bool(obsData, "vcamEnabled");
 	if (vcamEnabled) {
 		AddVCamButton();
 	}
@@ -3090,6 +3089,11 @@ OBSSceneItem OBSBasic::GetSceneItem(QListWidgetItem *item)
 OBSSceneItem OBSBasic::GetCurrentSceneItem()
 {
 	return ui->sources->Get(GetTopSelectedSourceItem());
+}
+
+OBSSceneItem OBSBasic::GetSceneItem(int64_t idx)
+{
+	return ui->sources->Get(GetSelectedSourceItem(idx));
 }
 
 void OBSBasic::UpdatePreviewScalingMenu()
@@ -7653,7 +7657,7 @@ void OBSBasic::StartRecording()
 		return;
 	}
 
-	if (!IsFFmpegOutputToURL() && LowDiskSpace()) {
+	if (LowDiskSpace()) {
 		DiskSpaceMessage();
 		ui->recordButton->setChecked(false);
 		return;
@@ -8366,6 +8370,13 @@ int OBSBasic::GetTopSelectedSourceItem()
 	QModelIndexList selectedItems =
 		ui->sources->selectionModel()->selectedIndexes();
 	return selectedItems.count() ? selectedItems[0].row() : -1;
+}
+
+int OBSBasic::GetSelectedSourceItem(int64_t idx)
+{
+	QModelIndexList selectedItems =
+		ui->sources->selectionModel()->selectedIndexes();
+	return selectedItems.count() ? selectedItems[idx].row() : -1;
 }
 
 QModelIndexList OBSBasic::GetAllSelectedSourceItems()
@@ -10663,16 +10674,10 @@ bool SceneRenameDelegate::eventFilter(QObject *editor, QEvent *event)
 {
 	if (event->type() == QEvent::KeyPress) {
 		QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
-		switch (keyEvent->key()) {
-		case Qt::Key_Escape: {
+		if (keyEvent->key() == Qt::Key_Escape) {
 			QLineEdit *lineEdit = qobject_cast<QLineEdit *>(editor);
 			if (lineEdit)
 				lineEdit->undo();
-			break;
-		}
-		case Qt::Key_Tab:
-		case Qt::Key_Backtab:
-			return false;
 		}
 	}
 
@@ -10888,7 +10893,7 @@ void OBSBasic::OutputPathInvalidMessage()
 				QTStr("Output.BadPath.Text"));
 }
 
-bool OBSBasic::IsFFmpegOutputToURL() const
+bool OBSBasic::OutputPathValid()
 {
 	const char *mode = config_get_string(Config(), "Output", "Mode");
 	if (strcmp(mode, "Advanced") == 0) {
@@ -10901,14 +10906,6 @@ bool OBSBasic::IsFFmpegOutputToURL() const
 				return true;
 		}
 	}
-
-	return false;
-}
-
-bool OBSBasic::OutputPathValid()
-{
-	if (IsFFmpegOutputToURL())
-		return true;
 
 	const char *path = GetCurrentOutputPath();
 	return path && *path && QDir(path).exists();

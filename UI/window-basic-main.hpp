@@ -399,6 +399,7 @@ private:
 
 	OBSSceneItem GetSceneItem(QListWidgetItem *item);
 	OBSSceneItem GetCurrentSceneItem();
+	OBSSceneItem GetSceneItem(int64_t idx);
 
 	bool QueryRemoveSource(obs_source_t *source);
 
@@ -453,6 +454,7 @@ private:
 	void SaveProjectNow();
 
 	int GetTopSelectedSourceItem();
+	int GetSelectedSourceItem(int64_t idx);
 
 	QModelIndexList GetAllSelectedSourceItems();
 
@@ -881,7 +883,6 @@ private:
 	void UpdatePause(bool activate = true);
 	void UpdateReplayBuffer(bool activate = true);
 
-	bool IsFFmpegOutputToURL() const;
 	bool OutputPathValid();
 	void OutputPathInvalidMessage();
 
