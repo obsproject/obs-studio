@@ -301,14 +301,14 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 		controlLayout->setContentsMargins(0, 0, 0, 0);
 		controlLayout->setSpacing(0);
 
+		controlLayout->addWidget(mute);
+		controlLayout->setAlignment(mute, Qt::AlignVCenter);
+		// Add Headphone (audio monitoring) widget here
+
 		if (showConfig) {
 			controlLayout->addWidget(config);
 			controlLayout->setAlignment(config, Qt::AlignVCenter);
 		}
-
-		// Add Headphone (audio monitoring) widget here
-		controlLayout->addWidget(mute);
-		controlLayout->setAlignment(mute, Qt::AlignVCenter);
 
 		meterLayout->setContentsMargins(0, 0, 0, 0);
 		meterLayout->setSpacing(0);
