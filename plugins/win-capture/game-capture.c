@@ -203,9 +203,6 @@ struct game_capture {
 	struct dstr placeholder_image_path;
 	struct dstr placeholder_text; // currently active placeholder message
 
-	struct dstr placeholder_wait_text;  // default message
-	struct dstr placeholder_error_text; // error message
-
 	ipc_pipe_server_t pipe;
 	gs_texture_t *texture;
 	gs_texture_t *extra_texture;
@@ -249,6 +246,7 @@ struct graphics_offsets offsets64 = {0};
 
 static void unload_placeholder_image(struct game_capture *gc);
 static void load_placeholder_image(struct game_capture *gc);
+static void set_compat_info_visible(struct game_capture *gc, bool visible);
 
 static inline bool use_anticheat(struct game_capture *gc)
 {
@@ -528,8 +526,6 @@ static void game_capture_destroy(void *data)
 	close_handle(&gc->auto_capture.mutex);
 	dstr_free(&gc->placeholder_image_path);
 	dstr_free(&gc->placeholder_text);
-	dstr_free(&gc->placeholder_wait_text);
-	dstr_free(&gc->placeholder_error_text);
 	unload_placeholder_image(gc);
 
 	bfree(gc);
@@ -835,13 +831,8 @@ static void game_capture_update(void *data, obs_data_t *settings)
 		img_path =
 			obs_data_get_string(settings, SETTING_PLACEHOLDER_USR);
 	else {
-		if (cfg.mode == CAPTURE_MODE_WINDOW) {
-			img_path = obs_data_get_string(
-				settings, SETTING_PLACEHOLDER_WND_IMG);
-		} else {
-			img_path = obs_data_get_string(settings,
-						       SETTING_PLACEHOLDER_IMG);
-		}
+		img_path =
+			obs_data_get_string(settings, SETTING_PLACEHOLDER_IMG);
 	}
 
 	if (gc->placeholder_image_path.len == 0 ||
@@ -851,24 +842,11 @@ static void game_capture_update(void *data, obs_data_t *settings)
 	dstr_copy(&gc->placeholder_image_path, img_path);
 
 	if (!use_custom_placeholder) {
-		if (cfg.mode == CAPTURE_MODE_WINDOW) {
-			placeholder_wait_text = obs_data_get_string(
-				settings, SETTING_PLACEHOLDER_WND_MSG_WAIT);
-			placeholder_error_text = obs_data_get_string(
-				settings, SETTING_PLACEHOLDER_WND_MSG_ERR);
-
-			placeholder_text = placeholder_wait_text;
-		} else {
-			placeholder_text = obs_data_get_string(
-				settings, SETTING_PLACEHOLDER_MSG);
-		}
+		placeholder_text =
+			obs_data_get_string(settings, SETTING_PLACEHOLDER_MSG);
 	}
 
-	if (dstr_is_empty(&gc->placeholder_text)) {
-		dstr_copy(&gc->placeholder_text, placeholder_text);
-		dstr_copy(&gc->placeholder_wait_text, placeholder_wait_text);
-		dstr_copy(&gc->placeholder_error_text, placeholder_error_text);
-	}
+	dstr_copy(&gc->placeholder_text, placeholder_text);
 
 	reset_capture = capture_needs_reset(&cfg, &gc->config);
 
@@ -897,6 +875,8 @@ static void game_capture_update(void *data, obs_data_t *settings)
 		dstr_copy(&gc->class, gc->config.class);
 		dstr_copy(&gc->executable, gc->config.executable);
 		gc->priority = gc->config.priority;
+	} else {
+		set_compat_info_visible(gc, false);
 	}
 
 	if (cfg.mode == CAPTURE_MODE_AUTO) {
@@ -937,8 +917,6 @@ static void *game_capture_create(obs_data_t *settings, obs_source_t *source)
 
 	dstr_init(&gc->placeholder_image_path);
 	dstr_init(&gc->placeholder_text);
-	dstr_init(&gc->placeholder_wait_text);
-	dstr_init(&gc->placeholder_error_text);
 	gc->placeholder_text_texture = NULL;
 	const HMODULE hModuleUser32 = GetModuleHandle(L"User32.dll");
 	if (hModuleUser32) {
@@ -2177,6 +2155,15 @@ static void check_foreground_window(struct game_capture *gc, float seconds)
 	}
 }
 
+static bool is_compat_info_visible(struct game_capture *gc)
+{
+	obs_data_t *setings = obs_source_get_settings(gc->source);
+	bool visible = obs_data_get_bool(setings, COMPAT_INFO_VISIBLE);
+	obs_data_release(setings);
+
+	return visible;
+}
+
 static void set_compat_info_visible(struct game_capture *gc, bool visible)
 {
 	obs_data_t *setings = obs_source_get_settings(gc->source);
@@ -2291,25 +2278,12 @@ static void game_capture_tick(void *data, float seconds)
 
 		if (gc->config.mode == CAPTURE_MODE_WINDOW) {
 			if (gc->window) {
-				if (dstr_cmpi(
-					    &gc->placeholder_text,
-					    gc->placeholder_error_text.array) !=
-				    0) {
+				if (!is_compat_info_visible(gc)) {
 					set_compat_info_visible(gc, true);
-
-					dstr_copy(&gc->placeholder_text,
-						  gc->placeholder_error_text
-							  .array);
 				}
 			} else {
-				if (dstr_cmpi(&gc->placeholder_text,
-					      gc->placeholder_wait_text.array) !=
-				    0) {
+				if (is_compat_info_visible(gc)) {
 					set_compat_info_visible(gc, false);
-
-					dstr_copy(
-						&gc->placeholder_text,
-						gc->placeholder_wait_text.array);
 				}
 			}
 		}
