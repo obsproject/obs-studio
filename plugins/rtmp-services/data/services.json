@@ -1001,76 +1001,128 @@
         },
         {
             "name": "Chaturbate",
+            "stream_key_link": "https://chaturbate.com/b/?useExternalSoftware=true",
+            "more_info_link": "https://support.chaturbate.com/hc/en-us/articles/360037971952-How-do-I-set-up-OBS",
             "servers": [
                 {
                     "name": "Global Main Fastest - Recommended",
-                    "url": "rtmp://live.stream.highwebmedia.com/live-origin"
+                    "url": "rtmp://global.live.mmcdn.com/live-origin"
                 },
                 {
                     "name": "Global Backup",
-                    "url": "rtmp://live-backup.stream.highwebmedia.com/live-origin"
+                    "url": "rtmp://global-backup.live.mmcdn.com/live-origin"
                 },
                 {
-                    "name": "US West: Seattle, WA",
-                    "url": "rtmp://live-sea.stream.highwebmedia.com/live-origin"
-                },
-                {
-                    "name": "US West: Phoenix, AZ",
-                    "url": "rtmp://live-phx.stream.highwebmedia.com/live-origin"
-                },
-                {
-                    "name": "US Central: Salt Lake City, UT",
-                    "url": "rtmp://live-slc.stream.highwebmedia.com/live-origin"
-                },
-                {
-                    "name": "US Central: Chicago, IL",
-                    "url": "rtmp://live-chi.stream.highwebmedia.com/live-origin"
-                },
-                {
-                    "name": "US East: Atlanta, GA",
-                    "url": "rtmp://live-atl.stream.highwebmedia.com/live-origin"
-                },
-                {
-                    "name": "US East: Ashburn, VA",
-                    "url": "rtmp://live-ash.stream.highwebmedia.com/live-origin"
-                },
-                {
-                    "name": "South America: Sao Paulo, Brazil",
-                    "url": "rtmp://live-gru.stream.highwebmedia.com/live-origin"
-                },
-                {
-                    "name": "EU: Amsterdam, NL",
-                    "url": "rtmp://live-nld.stream.highwebmedia.com/live-origin"
-                },
-                {
-                    "name": "EU: Alblasserdam, NL",
-                    "url": "rtmp://live-alb.stream.highwebmedia.com/live-origin"
-                },
-                {
-                    "name": "EU: Frankfurt, DE",
-                    "url": "rtmp://live-fra.stream.highwebmedia.com/live-origin"
-                },
-                {
-                    "name": "EU: Belgrade, Serbia",
-                    "url": "rtmp://live-srb.stream.highwebmedia.com/live-origin"
+                    "name": "Asia: Mumbai, India",
+                    "url": "rtmp://bom.live.mmcdn.com/live-origin"
                 },
                 {
                     "name": "Asia: Singapore",
-                    "url": "rtmp://live-sin.stream.highwebmedia.com/live-origin"
+                    "url": "rtmp://sin.live.mmcdn.com/live-origin"
+                },
+                {
+                    "name": "Asia: Taiwan",
+                    "url": "rtmp://tsa.live.mmcdn.com/live-origin"
                 },
                 {
                     "name": "Asia: Tokyo, Japan",
-                    "url": "rtmp://live-nrt.stream.highwebmedia.com/live-origin"
+                    "url": "rtmp://nrt.live.mmcdn.com/live-origin"
                 },
                 {
-                    "name": "Australia: Sydney",
-                    "url": "rtmp://live-syd.stream.highwebmedia.com/live-origin"
+                    "name": "Australasia: Sydney, Australia",
+                    "url": "rtmp://syd.live.mmcdn.com/live-origin"
+                },
+                {
+                    "name": "EU East: Sofia, Bulgaria",
+                    "url": "rtmp://sof.live.mmcdn.com/live-origin"
+                },
+                {
+                    "name": "EU East: Warsaw, Poland",
+                    "url": "rtmp://waw.live.mmcdn.com/live-origin"
+                },
+                {
+                    "name": "EU North: Helsinki, Finland",
+                    "url": "rtmp://hel.live.mmcdn.com/live-origin"
+                },
+                {
+                    "name": "EU West: Amsterdam, Netherlands",
+                    "url": "rtmp://ams.live.mmcdn.com/live-origin"
+                },
+                {
+                    "name": "EU West: Frankfurt, Germany",
+                    "url": "rtmp://fra.live.mmcdn.com/live-origin"
+                },
+                {
+                    "name": "EU West: Madrid, Spain",
+                    "url": "rtmp://mad.live.mmcdn.com/live-origin"
+                },
+                {
+                    "name": "EU West: Milan, Italy",
+                    "url": "rtmp://mxp.live.mmcdn.com/live-origin"
+                },
+                {
+                    "name": "EU West: Rotterdam, Netherlands",
+                    "url": "rtmp://rtm.live.mmcdn.com/live-origin"
+                },
+                {
+                    "name": "South America: Bogota, Colombia",
+                    "url": "rtmp://bog.live.mmcdn.com/live-origin"
+                },
+                {
+                    "name": "South America: Sao Paulo, Brazil",
+                    "url": "rtmp://gru.live.mmcdn.com/live-origin"
+                },
+                {
+                    "name": "US Central: Austin, TX",
+                    "url": "rtmp://aus.live.mmcdn.com/live-origin"
+                },
+                {
+                    "name": "US Central: Chicago, IL",
+                    "url": "rtmp://chi.live.mmcdn.com/live-origin"
+                },
+                {
+                    "name": "US East: Ashburn, VA",
+                    "url": "rtmp://ash.live.mmcdn.com/live-origin"
+                },
+                {
+                    "name": "US East: Atlanta, GA",
+                    "url": "rtmp://atl.live.mmcdn.com/live-origin"
+                },
+                {
+                    "name": "US East: Miami, FL",
+                    "url": "rtmp://mia.live.mmcdn.com/live-origin"
+                },
+                {
+                    "name": "US West: Los Angeles, CA",
+                    "url": "rtmp://lax.live.mmcdn.com/live-origin"
+                },
+                {
+                    "name": "US West: Phoenix, AZ",
+                    "url": "rtmp://phx.live.mmcdn.com/live-origin"
+                },
+                {
+                    "name": "US West: Salt Lake City, UT",
+                    "url": "rtmp://slc.live.mmcdn.com/live-origin"
+                },
+                {
+                    "name": "US West: Seattle, WA",
+                    "url": "rtmp://sea.live.mmcdn.com/live-origin"
                 }
             ],
             "recommended": {
                 "keyint": 2,
                 "max video bitrate": 50000,
-                "max audio bitrate": 192
+                "max audio bitrate": 192,
+                "supported resolutions": [
+                    "3840x2160",
+                    "2560x1440",
+                    "1920x1080",
+                    "1280x720",
+                    "960x540",
+                    "852x480",
+                    "640x360"
+                ],
+                "max fps": 60
             },
             "supported video codecs": [
                 "h264"
