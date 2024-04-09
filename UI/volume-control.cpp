@@ -306,7 +306,6 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 			controlLayout->setAlignment(config, Qt::AlignVCenter);
 		}
 
-		controlLayout->addItem(new QSpacerItem(3, 0));
 		// Add Headphone (audio monitoring) widget here
 		controlLayout->addWidget(mute);
 		controlLayout->setAlignment(mute, Qt::AlignVCenter);
