@@ -202,6 +202,7 @@ void FilterChangeUndoRedo(void *vp, obs_data_t *nd_old_settings,
 {
 	obs_source_t *source = reinterpret_cast<obs_source_t *>(vp);
 	const char *source_uuid = obs_source_get_uuid(source);
+	const char *name = obs_source_get_name(source);
 	OBSBasic *main = OBSBasic::Get();
 
 	OBSDataAutoRelease redo_wrapper = obs_data_create();
@@ -235,8 +236,8 @@ void FilterChangeUndoRedo(void *vp, obs_data_t *nd_old_settings,
 
 	std::string undo_data = obs_data_get_json(undo_wrapper);
 	std::string redo_data = obs_data_get_json(redo_wrapper);
-	main->undo_s.add_action(QTStr("Undo.Filters").arg(source_uuid),
-				undo_redo, undo_redo, undo_data, redo_data);
+	main->undo_s.add_action(QTStr("Undo.Filters").arg(name), undo_redo,
+				undo_redo, undo_data, redo_data);
 
 	obs_source_update(source, new_settings);
 }
