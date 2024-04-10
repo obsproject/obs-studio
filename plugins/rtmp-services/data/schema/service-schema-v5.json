@@ -206,6 +206,10 @@
                         "type": "string",
                         "description": "Marketing name for eRTMP multitrack video (e.g., Enhanced Broadcasting for Twitch)"
                     },
+                    "multitrack_video_learn_more_link": {
+                        "$ref": "#/definitions/saneUrl",
+                        "description": "Link to additional information and privacy policy (for e.g., data sent to `multitrack_video_configuration_url`)"
+                    },
                     "alt_names": {
                         "type": "array",
                         "description": "Previous names of the service used for migrating existing users to the updated entry.",
