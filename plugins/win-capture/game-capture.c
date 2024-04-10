@@ -876,7 +876,8 @@ static void game_capture_update(void *data, obs_data_t *settings)
 		dstr_copy(&gc->executable, gc->config.executable);
 		gc->priority = gc->config.priority;
 	} else {
-		set_compat_info_visible(gc, false);
+		if (obs_data_get_bool(settings, COMPAT_INFO_VISIBLE))
+			set_compat_info_visible(gc, false);
 	}
 
 	if (cfg.mode == CAPTURE_MODE_AUTO) {
@@ -946,8 +947,6 @@ static void *game_capture_create(obs_data_t *settings, obs_source_t *source)
 				get_window_dpi_awareness_context;
 		}
 	}
-
-	obs_data_set_bool(settings, COMPAT_INFO_VISIBLE, false);
 
 	game_capture_update(gc, settings);
 	return gc;
@@ -2157,21 +2156,21 @@ static void check_foreground_window(struct game_capture *gc, float seconds)
 
 static bool is_compat_info_visible(struct game_capture *gc)
 {
-	obs_data_t *setings = obs_source_get_settings(gc->source);
-	bool visible = obs_data_get_bool(setings, COMPAT_INFO_VISIBLE);
-	obs_data_release(setings);
+	obs_data_t *settings = obs_source_get_settings(gc->source);
+	bool visible = obs_data_get_bool(settings, COMPAT_INFO_VISIBLE);
+	obs_data_release(settings);
 
 	return visible;
 }
 
 static void set_compat_info_visible(struct game_capture *gc, bool visible)
 {
-	obs_data_t *setings = obs_source_get_settings(gc->source);
+	obs_data_t *settings = obs_source_get_settings(gc->source);
 
-	obs_data_set_bool(setings, COMPAT_INFO_VISIBLE, visible);
+	obs_data_set_bool(settings, COMPAT_INFO_VISIBLE, visible);
 	streamlabs_force_source_ui_refresh(gc->source);
 
-	obs_data_release(setings);
+	obs_data_release(settings);
 }
 
 static void game_capture_tick(void *data, float seconds)
@@ -2755,6 +2754,9 @@ static void game_capture_defaults(obs_data_t *settings)
 				 (int)1080);
 	obs_data_set_default_bool(settings, SETTING_WINDOW_INTERNAL_MODE,
 				  false);
+
+	obs_data_set_default_bool(settings, COMPAT_INFO_VISIBLE, false);
+	obs_data_set_default_string(settings, SETTINGS_COMPAT_INFO, "");
 }
 
 static bool mode_callback(obs_properties_t *ppts, obs_property_t *p,
