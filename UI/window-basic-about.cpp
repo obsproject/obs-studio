@@ -108,7 +108,7 @@ void OBSAbout::ShowAbout()
 		std::string link = patron["link"].string_value();
 		int amount = patron["amount"].int_value();
 
-		if (top && amount < 10000) {
+		if (top && amount < 5000) {
 			text += "</p>";
 			top = false;
 		} else if (!first) {
