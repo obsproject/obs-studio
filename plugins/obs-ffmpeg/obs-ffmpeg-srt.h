@@ -150,7 +150,7 @@ static int libsrt_network_wait_fd(URLContext *h, int eid, int write)
 	int ret, len = 1, errlen = 1;
 	SRTSOCKET ready[1];
 	SRTSOCKET error[1];
-
+	SRTContext *s = (SRTContext *)h->priv_data;
 	if (write) {
 		ret = srt_epoll_wait(eid, error, &errlen, ready, &len,
 				     POLLING_TIME, 0, 0, 0, 0);
@@ -158,7 +158,7 @@ static int libsrt_network_wait_fd(URLContext *h, int eid, int write)
 		ret = srt_epoll_wait(eid, ready, &len, error, &errlen,
 				     POLLING_TIME, 0, 0, 0, 0);
 	}
-	if (len == 1 && errlen == 1) {
+	if (len == 1 && errlen == 1 && s->mode == SRT_MODE_CALLER) {
 		/* Socket reported in wsock AND rsock signifies an error. */
 		int reason = srt_getrejectreason(*ready);
 
@@ -232,7 +232,7 @@ static int libsrt_listen(int eid, SRTSOCKET fd, const struct sockaddr *addr,
 	if (srt_listen(fd, 1))
 		return libsrt_neterrno(h);
 
-	ret = libsrt_network_wait_fd_timeout(h, eid, 1, timeout,
+	ret = libsrt_network_wait_fd_timeout(h, eid, 0, timeout,
 					     &h->interrupt_callback);
 	if (ret < 0)
 		return ret;
@@ -462,7 +462,7 @@ static int libsrt_setup(URLContext *h, const char *uri)
 	char hostname[1024], proto[1024], path[1024];
 	char portstr[10];
 	int64_t open_timeout = 0;
-	int eid, write_eid;
+	int eid;
 	struct sockaddr_in la;
 
 	av_url_split(proto, sizeof(proto), NULL, 0, hostname, sizeof(hostname),
@@ -552,20 +552,23 @@ restart:
 		blog(LOG_DEBUG,
 		     "[obs-ffmpeg mpegts muxer / libsrt]: libsrt_socket_nonblock failed");
 
-	ret = write_eid = libsrt_epoll_create(h, fd, 1);
-	if (ret < 0)
-		goto fail1;
 	if (s->mode == SRT_MODE_LISTENER) {
+		int read_eid = ret = libsrt_epoll_create(h, fd, 0);
+		if (ret < 0)
+			goto fail1;
 		// multi-client
-		ret = libsrt_listen(write_eid, fd, cur_ai->ai_addr,
+		ret = libsrt_listen(read_eid, fd, cur_ai->ai_addr,
 				    (socklen_t)cur_ai->ai_addrlen, h,
 				    s->listen_timeout);
-		srt_epoll_release(write_eid);
+		srt_epoll_release(read_eid);
 		if (ret < 0)
 			goto fail1;
 		srt_close(fd);
 		fd = ret;
 	} else {
+		int write_eid = ret = libsrt_epoll_create(h, fd, 1);
+		if (ret < 0)
+			goto fail1;
 		if (s->mode == SRT_MODE_RENDEZVOUS) {
 			if (srt_bind(fd, (struct sockaddr *)&la,
 				     sizeof(struct sockaddr_in))) {
@@ -878,6 +881,8 @@ static int libsrt_write(URLContext *h, const uint8_t *buf, int size)
 static int libsrt_close(URLContext *h)
 {
 	SRTContext *s = (SRTContext *)h->priv_data;
+	if (!s)
+		return 0;
 	if (s->streamid)
 		av_freep(&s->streamid);
 	if (s->passphrase)

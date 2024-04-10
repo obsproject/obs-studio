@@ -63,16 +63,14 @@ void ffmpeg_mpegts_log_error(int log_level, struct ffmpeg_data *data,
 	blog(log_level, "%s", out);
 }
 
-static bool is_rist(struct ffmpeg_output *stream)
+static bool is_rist(const char *url)
 {
-	return !strncmp(stream->ff_data.config.url, RIST_PROTO,
-			sizeof(RIST_PROTO) - 1);
+	return !strncmp(url, RIST_PROTO, sizeof(RIST_PROTO) - 1);
 }
 
-static bool is_srt(struct ffmpeg_output *stream)
+static bool is_srt(const char *url)
 {
-	return !strncmp(stream->ff_data.config.url, SRT_PROTO,
-			sizeof(SRT_PROTO) - 1);
+	return !strncmp(url, SRT_PROTO, sizeof(SRT_PROTO) - 1);
 }
 
 static bool proto_is_allowed(struct ffmpeg_output *stream)
@@ -467,8 +465,8 @@ static inline int open_output_file(struct ffmpeg_output *stream,
 				   struct ffmpeg_data *data)
 {
 	int ret;
-	bool rist = is_rist(stream);
-	bool srt = is_srt(stream);
+	bool rist = data->config.is_rist;
+	bool srt = data->config.is_srt;
 	bool allowed_proto = proto_is_allowed(stream);
 	AVDictionary *dict = NULL;
 
@@ -591,10 +589,7 @@ static void close_audio(struct ffmpeg_data *data)
 static void close_mpegts_url(struct ffmpeg_output *stream, bool is_rist)
 {
 	int err = 0;
-	AVIOContext *s = stream->s;
-	if (!s)
-		return;
-	URLContext *h = s->opaque;
+	URLContext *h = stream->h;
 	if (!h)
 		return; /* can happen when opening the url fails */
 
@@ -608,10 +603,14 @@ static void close_mpegts_url(struct ffmpeg_output *stream, bool is_rist)
 	av_freep(h);
 
 	/* close custom avio_context for srt or rist */
-	avio_flush(stream->s);
-	stream->s->opaque = NULL;
-	av_freep(&stream->s->buffer);
-	avio_context_free(&stream->s);
+	AVIOContext *s = stream->s;
+	if (!s)
+		return;
+
+	avio_flush(s);
+	s->opaque = NULL;
+	av_freep(&s->buffer);
+	avio_context_free(&s);
 
 	if (err)
 		info("[ffmpeg mpegts muxer]: Error closing URL %s",
@@ -632,8 +631,8 @@ void ffmpeg_mpegts_data_free(struct ffmpeg_output *stream,
 	}
 
 	if (data->output) {
-		if (is_rist(stream) || is_srt(stream)) {
-			close_mpegts_url(stream, is_rist(stream));
+		if (data->config.is_rist || data->config.is_srt) {
+			close_mpegts_url(stream, data->config.is_rist);
 		} else {
 			avio_close(data->output->pb);
 		}
@@ -757,10 +756,9 @@ static void ffmpeg_mpegts_destroy(void *data)
 	struct ffmpeg_output *output = data;
 
 	if (output) {
+		ffmpeg_mpegts_full_stop(output);
 		if (output->connecting)
 			pthread_join(output->start_thread, NULL);
-
-		ffmpeg_mpegts_full_stop(output);
 
 		pthread_mutex_destroy(&output->write_mutex);
 		os_sem_destroy(output->write_sem);
@@ -910,7 +908,8 @@ static bool set_config(struct ffmpeg_output *stream)
 		service, OBS_SERVICE_CONNECT_INFO_ENCRYPT_PASSPHRASE);
 	config.format_name = "mpegts";
 	config.format_mime_type = "video/M2PT";
-
+	config.is_rist = is_rist(config.url);
+	config.is_srt = is_srt(config.url);
 	/* 2. video settings */
 
 	// 2.a) set width & height
@@ -1110,6 +1109,7 @@ static void ffmpeg_mpegts_full_stop(void *data)
 		obs_output_end_data_capture(output->output);
 		ffmpeg_mpegts_deactivate(output);
 	}
+	ffmpeg_mpegts_data_free(output, &output->ff_data);
 }
 
 static void ffmpeg_mpegts_stop(void *data, uint64_t ts)
@@ -1144,8 +1144,6 @@ static void ffmpeg_mpegts_deactivate(struct ffmpeg_output *output)
 	da_free(output->packets);
 
 	pthread_mutex_unlock(&output->write_mutex);
-
-	ffmpeg_mpegts_data_free(output, &output->ff_data);
 }
 
 static uint64_t ffmpeg_mpegts_total_bytes(void *data)
