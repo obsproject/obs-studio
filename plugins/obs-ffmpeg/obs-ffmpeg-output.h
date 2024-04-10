@@ -43,6 +43,8 @@ struct ffmpeg_cfg {
 	const char *password;
 	const char *stream_id;
 	const char *encrypt_passphrase;
+	bool is_srt;
+	bool is_rist;
 };
 
 struct ffmpeg_audio_info {
