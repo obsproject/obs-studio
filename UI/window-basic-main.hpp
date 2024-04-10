@@ -250,6 +250,7 @@ private:
 	obs_sceneitem_crop copiedCropInfo;
 	bool hasCopiedTransform = false;
 	OBSWeakSourceAutoRelease copySourceTransition;
+	int copySourceTransitionDuration;
 
 	bool closing = false;
 	bool clearingFailed = false;
@@ -487,7 +488,7 @@ private:
 	void CreateDefaultQuickTransitions();
 
 	void PasteShowHideTransition(obs_sceneitem_t *item, bool show,
-				     obs_source_t *tr);
+				     obs_source_t *tr, int duration);
 	QMenu *CreatePerSceneTransitionMenu();
 	QMenu *CreateVisibilityTransitionMenu(bool visible);
 
