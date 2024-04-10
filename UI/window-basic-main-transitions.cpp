@@ -1088,7 +1088,7 @@ void OBSBasic::HideTransitionProperties()
 }
 
 void OBSBasic::PasteShowHideTransition(obs_sceneitem_t *item, bool show,
-				       obs_source_t *tr)
+				       obs_source_t *tr, int duration)
 {
 	int64_t sceneItemId = obs_sceneitem_get_id(item);
 	std::string sceneUUID = obs_source_get_uuid(
@@ -1114,6 +1114,7 @@ void OBSBasic::PasteShowHideTransition(obs_sceneitem_t *item, bool show,
 	OBSSourceAutoRelease dup =
 		obs_source_duplicate(tr, obs_source_get_name(tr), true);
 	obs_sceneitem_set_transition(item, show, dup);
+	obs_sceneitem_set_transition_duration(item, show, duration);
 
 	OBSDataAutoRelease transitionData =
 		obs_sceneitem_transition_save(item, show);
@@ -1273,7 +1274,10 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 			reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 		OBSSceneItem item = main->GetCurrentSceneItem();
 		obs_source_t *tr = obs_sceneitem_get_transition(item, visible);
+		int trDur =
+			obs_sceneitem_get_transition_duration(item, visible);
 		main->copySourceTransition = obs_source_get_weak_source(tr);
+		main->copySourceTransitionDuration = trDur;
 	};
 	menu->addSeparator();
 	action = menu->addAction(QT_UTF8(Str("Copy")));
@@ -1285,6 +1289,7 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 		OBSBasic *main =
 			reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 		OBSSource tr = OBSGetStrongRef(main->copySourceTransition);
+		int trDuration = main->copySourceTransitionDuration;
 		if (!tr)
 			return;
 
@@ -1294,7 +1299,7 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 			if (!item)
 				continue;
 
-			PasteShowHideTransition(item, show, tr);
+			PasteShowHideTransition(item, show, tr, trDuration);
 		}
 	};
 
