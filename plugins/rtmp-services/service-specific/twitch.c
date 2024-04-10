@@ -34,6 +34,8 @@ struct service_ingests {
 
 static struct service_ingests twitch =
 	INGESTS_INITIALIZER("twitch_ingests.json", "twitch_ingests.new.json");
+static struct service_ingests amazon_ivs = INGESTS_INITIALIZER(
+	"amazon_ivs_ingests.json", "amazon_ivs_ingests.new.json");
 
 #undef INGESTS_INITIALIZER
 
@@ -262,4 +264,50 @@ void unload_service_data(struct service_ingests *si)
 void unload_twitch_data(void)
 {
 	unload_service_data(&twitch);
+}
+
+void init_amazon_ivs_data(void)
+{
+	init_service_data(&amazon_ivs);
+}
+
+void load_amazon_ivs_data(void)
+{
+	struct ingest def = {
+		.name = bstrdup("Default"),
+		.url = bstrdup(
+			"rtmps://ingest.global-contribute.live-video.net:443/app/")};
+	load_service_data(&amazon_ivs, "amazon_ivs_ingests.json", &def);
+}
+
+void unload_amazon_ivs_data(void)
+{
+	unload_service_data(&amazon_ivs);
+}
+
+void amazon_ivs_ingests_refresh(int seconds)
+{
+	service_ingests_refresh(
+		&amazon_ivs, seconds, "[amazon ivs ingest update] ",
+		"https://ingest.contribute.live-video.net/ingests");
+}
+
+void amazon_ivs_ingests_lock(void)
+{
+	pthread_mutex_lock(&amazon_ivs.mutex);
+}
+
+void amazon_ivs_ingests_unlock(void)
+{
+	pthread_mutex_unlock(&amazon_ivs.mutex);
+}
+
+size_t amazon_ivs_ingest_count(void)
+{
+	return amazon_ivs.cur_ingests.num;
+}
+
+struct twitch_ingest amazon_ivs_ingest(size_t idx)
+{
+	return get_ingest(&amazon_ivs, idx);
 }
