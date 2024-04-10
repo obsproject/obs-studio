@@ -49,7 +49,7 @@ private:
 
 	QScreen *screen = nullptr;
 
-	QPoint onMousePressMouseOffset;
+	QPointF onMousePressMouseOffset;
 
 private slots:
 	void EscapeTriggered();
