@@ -3,6 +3,7 @@
 struct twitch_ingest {
 	const char *name;
 	const char *url;
+	const char *rtmps_url;
 };
 
 extern void twitch_ingests_lock(void);
