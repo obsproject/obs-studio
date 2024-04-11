@@ -329,6 +329,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	setContextMenuPolicy(Qt::CustomContextMenu);
 
+	QEvent::registerEventType(QEvent::User + QEvent::Close);
+
 	api = InitializeAPIInterface(this);
 
 	ui->setupUi(this);
