@@ -40,6 +40,7 @@ static inline const char *get_string_val(json_t *service, const char *key);
 static inline int get_int_val(json_t *service, const char *key);
 
 extern void twitch_ingests_refresh(int seconds);
+extern void amazon_ivs_ingests_refresh(int seconds);
 
 static void ensure_valid_url(struct rtmp_common *service, json_t *json,
 			     obs_data_t *settings)
@@ -446,6 +447,55 @@ static inline bool fill_twitch_servers(obs_property_t *servers_prop)
 	return success;
 }
 
+static bool fill_amazon_ivs_servers_locked(obs_property_t *servers_prop)
+{
+	struct dstr name_buffer = {0};
+	size_t count = amazon_ivs_ingest_count();
+	bool rtmps_available = obs_is_output_protocol_registered("RTMPS");
+
+	if (rtmps_available) {
+		obs_property_list_add_string(
+			servers_prop, obs_module_text("Server.AutoRTMPS"),
+			"auto-rtmps");
+	}
+	obs_property_list_add_string(
+		servers_prop, obs_module_text("Server.AutoRTMP"), "auto-rtmp");
+
+	if (count <= 1)
+		return false;
+
+	if (rtmps_available) {
+		for (size_t i = 0; i < count; i++) {
+			struct twitch_ingest ing = amazon_ivs_ingest(i);
+			dstr_printf(&name_buffer, "%s (RTMPS)", ing.name);
+			obs_property_list_add_string(
+				servers_prop, name_buffer.array, ing.rtmps_url);
+		}
+	}
+
+	for (size_t i = 0; i < count; i++) {
+		struct twitch_ingest ing = amazon_ivs_ingest(i);
+		dstr_printf(&name_buffer, "%s (RTMP)", ing.name);
+		obs_property_list_add_string(servers_prop, name_buffer.array,
+					     ing.url);
+	}
+
+	dstr_free(&name_buffer);
+
+	return true;
+}
+
+static inline bool fill_amazon_ivs_servers(obs_property_t *servers_prop)
+{
+	bool success;
+
+	amazon_ivs_ingests_lock();
+	success = fill_amazon_ivs_servers_locked(servers_prop);
+	amazon_ivs_ingests_unlock();
+
+	return success;
+}
+
 static void fill_servers(obs_property_t *servers_prop, json_t *service,
 			 const char *name)
 {
@@ -474,6 +524,11 @@ static void fill_servers(obs_property_t *servers_prop, json_t *service,
 	if (strcmp(name, "Nimo TV") == 0) {
 		obs_property_list_add_string(
 			servers_prop, obs_module_text("Server.Auto"), "auto");
+	}
+
+	if (strcmp(name, "Amazon IVS") == 0) {
+		if (fill_amazon_ivs_servers(servers_prop))
+			return;
 	}
 
 	json_array_foreach (servers, index, server) {
@@ -822,6 +877,22 @@ static const char *rtmp_common_url(void *data)
 			twitch_ingests_unlock();
 
 			return ing.url;
+		}
+	}
+
+	if (service->service && strcmp(service->service, "Amazon IVS") == 0) {
+		if (service->server &&
+		    strncmp(service->server, "auto", 4) == 0) {
+			struct twitch_ingest ing;
+			bool rtmp = strcmp(service->server, "auto-rtmp") == 0;
+
+			amazon_ivs_ingests_refresh(3);
+
+			amazon_ivs_ingests_lock();
+			ing = amazon_ivs_ingest(0);
+			amazon_ivs_ingests_unlock();
+
+			return rtmp ? ing.url : ing.rtmps_url;
 		}
 	}
 
