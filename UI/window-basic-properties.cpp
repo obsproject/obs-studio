@@ -476,18 +476,9 @@ void OBSBasicProperties::reject()
 
 void OBSBasicProperties::closeEvent(QCloseEvent *event)
 {
-	if (!acceptClicked && (CheckSettings() != 0)) {
-		if (!ConfirmQuit()) {
-			event->ignore();
-			return;
-		}
-	}
-
 	QDialog::closeEvent(event);
-	if (!event->isAccepted())
-		return;
-
-	Cleanup();
+	if (event->isAccepted())
+		Cleanup();
 }
 
 bool OBSBasicProperties::nativeEvent(const QByteArray &, void *message,
