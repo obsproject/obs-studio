@@ -411,6 +411,8 @@ bool AutoConfigStreamPage::validatePage()
 		else if (IsYouTubeService(wiz->serviceName))
 			wiz->service = AutoConfig::Service::YouTube;
 #endif
+		else if (wiz->serviceName == "Amazon IVS")
+			wiz->service = AutoConfig::Service::AmazonIVS;
 		else
 			wiz->service = AutoConfig::Service::Other;
 	} else {
@@ -498,6 +500,7 @@ bool AutoConfigStreamPage::validatePage()
 
 	if (wiz->service != AutoConfig::Service::Twitch &&
 	    wiz->service != AutoConfig::Service::YouTube &&
+	    wiz->service != AutoConfig::Service::AmazonIVS &&
 	    wiz->bandwidthTest) {
 		QMessageBox::StandardButton button;
 #define WARNING_TEXT(x) QTStr("Basic.AutoConfig.StreamPage.StreamWarning." x)
@@ -774,7 +777,8 @@ void AutoConfigStreamPage::ServiceChanged()
 	reset_service_ui_fields(service);
 
 	/* Test three closest servers if "Auto" is available for Twitch */
-	if (service == "Twitch" && wiz->twitchAuto)
+	if ((service == "Twitch" && wiz->twitchAuto) ||
+	    (service == "Amazon IVS" && wiz->amazonIVSAuto))
 		regionBased = false;
 
 	ui->streamkeyPageLayout->removeWidget(ui->serverLabel);
@@ -1025,6 +1029,7 @@ AutoConfig::AutoConfig(QWidget *parent) : QWizard(parent)
 
 	proc_handler_t *ph = obs_get_proc_handler();
 	proc_handler_call(ph, "twitch_ingests_refresh", &cd);
+	proc_handler_call(ph, "amazon_ivs_ingests_refresh", &cd);
 	calldata_free(&cd);
 
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(parent);
@@ -1065,6 +1070,22 @@ AutoConfig::AutoConfig(QWidget *parent) : QWizard(parent)
 	obs_property_t *p = obs_properties_get(props, "server");
 	const char *first = obs_property_list_item_string(p, 0);
 	twitchAuto = strcmp(first, "auto") == 0;
+
+	obs_properties_destroy(props);
+
+	/* ----------------------------------------- */
+	/* check to see if Amazon IVS "auto" entries are available */
+
+	OBSDataAutoRelease amazonIVSSettings = obs_data_create();
+
+	obs_data_set_string(amazonIVSSettings, "service", "Amazon IVS");
+
+	props = obs_get_service_properties("rtmp_common");
+	obs_properties_apply_settings(props, amazonIVSSettings);
+
+	p = obs_properties_get(props, "server");
+	first = obs_property_list_item_string(p, 0);
+	amazonIVSAuto = strncmp(first, "auto", 4) == 0;
 
 	obs_properties_destroy(props);
 
