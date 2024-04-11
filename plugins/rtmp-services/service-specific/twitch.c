@@ -10,6 +10,7 @@
 struct ingest {
 	char *name;
 	char *url;
+	char *rtmps_url;
 };
 
 struct service_ingests {
@@ -49,6 +50,7 @@ static void free_ingests(struct service_ingests *si)
 		struct ingest *ingest = si->cur_ingests.array + i;
 		bfree(ingest->name);
 		bfree(ingest->url);
+		bfree(ingest->rtmps_url);
 	}
 
 	da_free(si->cur_ingests);
@@ -82,13 +84,17 @@ static bool load_ingests(struct service_ingests *si, const char *json,
 		json_t *item = json_array_get(ingests, i);
 		json_t *item_name = json_object_get(item, "name");
 		json_t *item_url = json_object_get(item, "url_template");
+		json_t *item_rtmps_url =
+			json_object_get(item, "url_template_secure");
 		struct ingest ingest = {0};
 		struct dstr url = {0};
+		struct dstr rtmps_url = {0};
 
 		if (!item_name || !item_url)
 			continue;
 
 		const char *url_str = json_string_value(item_url);
+		const char *rtmps_url_str = json_string_value(item_rtmps_url);
 		const char *name_str = json_string_value(item_name);
 
 		/* At the moment they currently mis-spell "deprecated",
@@ -100,8 +106,12 @@ static bool load_ingests(struct service_ingests *si, const char *json,
 		dstr_copy(&url, url_str);
 		dstr_replace(&url, "/{stream_key}", "");
 
+		dstr_copy(&rtmps_url, rtmps_url_str);
+		dstr_replace(&rtmps_url, "/{stream_key}", "");
+
 		ingest.name = bstrdup(name_str);
 		ingest.url = url.array;
+		ingest.rtmps_url = rtmps_url.array;
 
 		da_push_back(si->cur_ingests, &ingest);
 	}
@@ -168,6 +178,7 @@ struct twitch_ingest get_ingest(struct service_ingests *si, size_t idx)
 	if (si->cur_ingests.num <= idx) {
 		ingest.name = NULL;
 		ingest.url = NULL;
+		ingest.rtmps_url = NULL;
 	} else {
 		ingest = *(struct twitch_ingest *)(si->cur_ingests.array + idx);
 	}
