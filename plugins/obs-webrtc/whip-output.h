@@ -37,6 +37,8 @@ private:
 	void StartThread();
 	void SendDelete();
 	void StopThread(bool signal);
+	void ParseLinkHeader(std::string linkHeader,
+			     std::vector<rtc::IceServer> &iceServers);
 
 	void Send(void *data, uintptr_t size, uint64_t duration,
 		  std::shared_ptr<rtc::Track> track,

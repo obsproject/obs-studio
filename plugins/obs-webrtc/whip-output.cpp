@@ -224,8 +224,13 @@ bool WHIPOutput::Init()
  */
 bool WHIPOutput::Setup()
 {
+	rtc::Configuration cfg;
 
-	peer_connection = std::make_shared<rtc::PeerConnection>();
+#if RTC_VERSION_MAJOR == 0 && RTC_VERSION_MINOR > 20 || RTC_VERSION_MAJOR > 1
+	cfg.disableAutoGathering = true;
+#endif
+
+	peer_connection = std::make_shared<rtc::PeerConnection>(cfg);
 
 	peer_connection->onStateChange([this](rtc::PeerConnection::State state) {
 		switch (state) {
@@ -281,6 +286,68 @@ bool WHIPOutput::Setup()
 	peer_connection->setLocalDescription();
 
 	return true;
+}
+
+// Given a Link header extract URL/Username/Credential and create rtc::IceServer
+// <turn:turn.example.net>; username="user"; credential="myPassword";
+//
+// https://www.ietf.org/archive/id/draft-ietf-wish-whip-13.html#section-4.4
+void WHIPOutput::ParseLinkHeader(std::string val,
+				 std::vector<rtc::IceServer> &iceServers)
+{
+	std::string url, username, password;
+
+	auto extractUrl = [](std::string input) -> std::string {
+		auto head = input.find("<") + 1;
+		auto tail = input.find(">");
+
+		if (head == std::string::npos || tail == std::string::npos) {
+			return "";
+		}
+		return input.substr(head, tail - head);
+	};
+
+	auto extractValue = [](std::string input) -> std::string {
+		auto head = input.find("\"") + 1;
+		auto tail = input.find_last_of("\"");
+
+		if (head == std::string::npos || tail == std::string::npos) {
+			return "";
+		}
+		return input.substr(head, tail - head);
+	};
+
+	while (true) {
+		std::string token = val;
+		auto pos = token.find(";");
+		if (pos != std::string::npos) {
+			token = val.substr(0, pos);
+		}
+
+		if (token.find("<turn:", 0) == 0) {
+			url = extractUrl(token);
+		} else if (token.find("username=") != std::string::npos) {
+			username = extractValue(token);
+		} else if (token.find("credential=") != std::string::npos) {
+			password = extractValue(token);
+		}
+
+		if (pos == std::string::npos) {
+			break;
+		}
+		val.erase(0, pos + 1);
+	}
+
+	try {
+		auto iceServer = rtc::IceServer(url);
+		iceServer.username = username;
+		iceServer.password = password;
+		iceServers.push_back(iceServer);
+	} catch (const std::invalid_argument &err) {
+		do_log(LOG_WARNING,
+		       "Failed to construct ICE Server from %s: %s",
+		       val.c_str(), err.what());
+	}
 }
 
 bool WHIPOutput::Connect()
@@ -372,6 +439,25 @@ bool WHIPOutput::Connect()
 	CURLU *url_builder = curl_url();
 	auto last_location_header = location_headers.back();
 
+	// Parse Link headers to extract STUN/TURN server configuration URLs
+	struct curl_header *prev = nullptr;
+	struct curl_header *h = nullptr;
+	std::vector<rtc::IceServer> iceServers;
+	while ((h = curl_easy_nextheader(c, CURLH_HEADER, 0, prev))) {
+		if (astrcmpi("Link", h->name) == 0) {
+			auto value = std::string(h->value);
+			// Parse multiple links separated by ','
+			for (auto end = value.find(",");
+			     end != std::string::npos; end = value.find(",")) {
+				this->ParseLinkHeader(value.substr(0, end),
+						      iceServers);
+				value = value.substr(end + 1);
+			}
+			this->ParseLinkHeader(value, iceServers);
+		}
+		prev = h;
+	}
+
 	// If Location header doesn't start with `http` it is a relative URL.
 	// Construct a absolute URL using the host of the effective URL
 	if (last_location_header.find("http") != 0) {
@@ -446,6 +532,11 @@ bool WHIPOutput::Connect()
 		return false;
 	}
 	cleanup();
+
+#if RTC_VERSION_MAJOR == 0 && RTC_VERSION_MINOR > 20 || RTC_VERSION_MAJOR > 1
+	peer_connection->gatherLocalCandidates(iceServers);
+#endif
+
 	return true;
 }
 
