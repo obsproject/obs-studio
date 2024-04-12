@@ -775,6 +775,7 @@ static bool aac_encode(void *data, struct encoder_frame *frame,
 	packet->timebase_num = 1;
 	packet->timebase_den = (uint32_t)ca->samples_per_second;
 	packet->type = OBS_ENCODER_AUDIO;
+	packet->keyframe = true;
 	packet->size = out_desc.mDataByteSize;
 	packet->data = (uint8_t *)buffer_list.mBuffers[0].mData +
 		       out_desc.mStartOffset;
