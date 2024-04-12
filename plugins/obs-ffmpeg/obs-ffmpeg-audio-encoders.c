@@ -442,6 +442,7 @@ static bool do_encode(struct enc_encoder *enc, struct encoder_packet *packet,
 	packet->data = enc->packet_buffer.array;
 	packet->size = avpacket.size;
 	packet->type = OBS_ENCODER_AUDIO;
+	packet->keyframe = true;
 	packet->timebase_num = 1;
 	packet->timebase_den = (int32_t)enc->context->sample_rate;
 	av_packet_unref(&avpacket);
