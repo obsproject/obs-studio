@@ -5354,7 +5354,7 @@ void OBSBasicSettings::FillSimpleRecordingValues()
 		ui->simpleOutRecEncoder->addItem(
 			ENCODER_STR("Hardware.NVENC.H264"),
 			QString(SIMPLE_ENCODER_NVENC));
-	if (EncoderAvailable("jim_av1_nvenc"))
+	if (EncoderAvailable("obs_nvenc_av1_tex"))
 		ui->simpleOutRecEncoder->addItem(
 			ENCODER_STR("Hardware.NVENC.AV1"),
 			QString(SIMPLE_ENCODER_NVENC_AV1));
