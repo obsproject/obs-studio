@@ -475,6 +475,7 @@ elseif(OS_POSIX)
 
   if(OS_FREEBSD)
     target_link_libraries(obs PRIVATE procstat)
+    target_compile_options(obs PRIVATE -Wno-unqualified-std-cast-call)
   endif()
 
   if(OS_LINUX AND ENABLE_WHATSNEW)
