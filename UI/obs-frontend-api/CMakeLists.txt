@@ -19,7 +19,11 @@ elseif(OS_MACOS)
 endif()
 
 # cmake-format: off
-set_target_properties_obs(obs-frontend-api PROPERTIES FOLDER frontend PREFIX "" PUBLIC_HEADER obs-frontend-api.h)
+set_target_properties_obs(obs-frontend-api PROPERTIES FOLDER frontend PUBLIC_HEADER obs-frontend-api.h)
+
+if (OS_WINDOWS OR OS_MACOS)
+  set_property(TARGET obs-frontend-api PROPERTY PREFIX "")
+endif()
 # cmake-format: on
 
 target_export(obs-frontend-api)

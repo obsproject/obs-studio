@@ -194,8 +194,18 @@ bool GetDataFilePath(const char *data, string &output)
 			return true;
 	}
 
+	char *relative_data_path =
+		os_get_executable_path_ptr("../" OBS_DATA_PATH "/obs-studio/");
+
+	if (relative_data_path) {
+		bool result = check_path(data, relative_data_path, output);
+		bfree(relative_data_path);
+		return result;
+	}
+
 	if (check_path(data, OBS_DATA_PATH "/obs-studio/", output))
 		return true;
+
 	if (check_path(data, INSTALL_DATA_PATH, output))
 		return true;
 
