@@ -1967,6 +1967,10 @@ void OBSBasic::ResetOutputs()
 		if (sysTrayReplayBuffer)
 			sysTrayReplayBuffer->setEnabled(
 				!!outputHandler->replayBuffer);
+
+		if (sysTraySaveReplay)
+			sysTraySaveReplay->setEnabled(
+				!!outputHandler->replayBuffer);
 	} else {
 		outputHandler->Update();
 	}
@@ -7741,6 +7745,9 @@ void OBSBasic::RecordingStart()
 	OnActivate();
 	UpdatePause();
 
+	if (sysTrayPause)
+		sysTrayPause->setEnabled(!!pause);
+
 	blog(LOG_INFO, RECORDING_START);
 }
 
@@ -7752,6 +7759,11 @@ void OBSBasic::RecordingStop(int code, QString last_error)
 
 	if (sysTrayRecord)
 		sysTrayRecord->setText(ui->recordButton->text());
+
+	if (sysTrayPause) {
+		sysTrayPause->setEnabled(false);
+		sysTrayPause->setText(QTStr("Basic.Main.PauseRecording"));
+	}
 
 	blog(LOG_INFO, RECORDING_STOP);
 
@@ -7941,6 +7953,9 @@ void OBSBasic::ReplayBufferStart()
 		sysTrayReplayBuffer->setText(
 			replayBufferButton->first()->text());
 
+	if (sysTraySaveReplay)
+		sysTraySaveReplay->setEnabled(true);
+
 	replayBufferStopping = false;
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_REPLAY_BUFFER_STARTED);
@@ -8001,6 +8016,9 @@ void OBSBasic::ReplayBufferStop(int code)
 	if (sysTrayReplayBuffer)
 		sysTrayReplayBuffer->setText(
 			replayBufferButton->first()->text());
+
+	if (sysTraySaveReplay)
+		sysTraySaveReplay->setEnabled(false);
 
 	blog(LOG_INFO, REPLAY_BUFFER_STOP);
 
@@ -9908,10 +9926,17 @@ void OBSBasic::SystemTrayInit()
 		RecordingActive() ? QTStr("Basic.Main.StopRecording")
 				  : QTStr("Basic.Main.StartRecording"),
 		trayIcon.data());
+	sysTrayPause =
+		new QAction(os_atomic_load_bool(&recording_paused)
+				    ? QTStr("Basic.Main.UnpauseRecording")
+				    : QTStr("Basic.Main.PauseRecording"),
+			    trayIcon.data());
 	sysTrayReplayBuffer = new QAction(
 		ReplayBufferActive() ? QTStr("Basic.Main.StopReplayBuffer")
 				     : QTStr("Basic.Main.StartReplayBuffer"),
 		trayIcon.data());
+	sysTraySaveReplay =
+		new QAction(QTStr("Basic.Main.SaveReplay"), trayIcon.data());
 	sysTrayVirtualCam = new QAction(
 		VirtualCamActive() ? QTStr("Basic.Main.StopVirtualCam")
 				   : QTStr("Basic.Main.StartVirtualCam"),
@@ -9932,7 +9957,9 @@ void OBSBasic::SystemTrayInit()
 	trayMenu->addSeparator();
 	trayMenu->addAction(sysTrayStream);
 	trayMenu->addAction(sysTrayRecord);
+	trayMenu->addAction(sysTrayPause);
 	trayMenu->addAction(sysTrayReplayBuffer);
+	trayMenu->addAction(sysTraySaveReplay);
 	trayMenu->addAction(sysTrayVirtualCam);
 	trayMenu->addSeparator();
 	trayMenu->addAction(exit);
@@ -9941,6 +9968,9 @@ void OBSBasic::SystemTrayInit()
 
 	if (outputHandler && !outputHandler->replayBuffer)
 		sysTrayReplayBuffer->setEnabled(false);
+
+	sysTrayPause->setEnabled(!!pause && RecordingActive());
+	sysTraySaveReplay->setEnabled(ReplayBufferActive());
 
 	sysTrayVirtualCam->setEnabled(vcamEnabled);
 
@@ -9954,8 +9984,12 @@ void OBSBasic::SystemTrayInit()
 		&OBSBasic::on_streamButton_clicked);
 	connect(sysTrayRecord, &QAction::triggered, this,
 		&OBSBasic::on_recordButton_clicked);
+	connect(sysTrayPause.data(), &QAction::triggered, this,
+		&OBSBasic::PauseToggled);
 	connect(sysTrayReplayBuffer.data(), &QAction::triggered, this,
 		&OBSBasic::ReplayBufferClicked);
+	connect(sysTraySaveReplay.data(), &QAction::triggered, this,
+		&OBSBasic::ReplayBufferSave);
 	connect(sysTrayVirtualCam.data(), &QAction::triggered, this,
 		&OBSBasic::VCamButtonClicked);
 	connect(exit, &QAction::triggered, this, &OBSBasic::close);
@@ -10734,6 +10768,10 @@ void OBSBasic::PauseRecording()
 		pause->setChecked(true);
 		pause->blockSignals(false);
 
+		if (sysTrayPause)
+			sysTrayPause->setText(
+				QTStr("Basic.Main.UnpauseRecording"));
+
 		ui->statusbar->RecordingPaused();
 
 		TaskbarOverlaySetStatus(TaskbarOverlayStatusPaused);
@@ -10779,6 +10817,10 @@ void OBSBasic::UnpauseRecording()
 		pause->blockSignals(true);
 		pause->setChecked(false);
 		pause->blockSignals(false);
+
+		if (sysTrayPause)
+			sysTrayPause->setText(
+				QTStr("Basic.Main.PauseRecording"));
 
 		ui->statusbar->RecordingUnpaused();
 

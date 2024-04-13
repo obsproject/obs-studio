@@ -329,7 +329,9 @@ private:
 	QScopedPointer<QSystemTrayIcon> trayIcon;
 	QPointer<QAction> sysTrayStream;
 	QPointer<QAction> sysTrayRecord;
+	QPointer<QAction> sysTrayPause;
 	QPointer<QAction> sysTrayReplayBuffer;
+	QPointer<QAction> sysTraySaveReplay;
 	QPointer<QAction> sysTrayVirtualCam;
 	QPointer<QAction> showHide;
 	QPointer<QAction> exit;
