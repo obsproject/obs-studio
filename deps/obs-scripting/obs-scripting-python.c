@@ -1750,6 +1750,13 @@ bool obs_scripting_load_python(const char *python_path)
 	}
 	dstr_free(&resource_path);
 #else
+	char *relative_script_path =
+		os_get_executable_path_ptr("../" SCRIPT_DIR);
+	if (relative_script_path) {
+		add_to_python_path(relative_script_path);
+	}
+	bfree(relative_script_path);
+
 	char *absolute_script_path = os_get_abs_path_ptr(SCRIPT_DIR);
 	add_to_python_path(absolute_script_path);
 	bfree(absolute_script_path);
