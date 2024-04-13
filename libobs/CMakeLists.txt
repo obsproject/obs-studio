@@ -329,7 +329,6 @@ set(public_headers
     obs-source.h
     obs.h
     obs.hpp
-    util/apple/cfstring-utils.h
     util/array-serializer.h
     util/base.h
     util/bitstream.h
@@ -369,12 +368,17 @@ set(public_headers
     util/task.h
     util/text-lookup.h
     util/threading-posix.h
-    util/threading-windows.h
     util/threading.h
     util/uthash.h
     util/util.hpp
     util/util_uint128.h
-    util/util_uint64.h
+    util/util_uint64.h)
+
+if(OS_WINDOWS)
+  list(
+    APPEND
+    public_headers
+    util/threading-windows.h
     util/windows/ComPtr.hpp
     util/windows/CoTaskMemPtr.hpp
     util/windows/device-enum.h
@@ -383,6 +387,9 @@ set(public_headers
     util/windows/win-version.h
     util/windows/window-helpers.h
     util/windows/WinHandle.hpp)
+elseif(OS_MACOS)
+  list(APPEND public_headers util/apple/cfstring-utils.h)
+endif()
 
 if(ENABLE_HEVC)
   list(APPEND public_headers obs-hevc.h)
