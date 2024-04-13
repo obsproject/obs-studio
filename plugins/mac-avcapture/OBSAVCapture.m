@@ -359,7 +359,9 @@
             self.captureInfo->previousSurface = NULL;
         }
     } else {
-        obs_source_output_video(self.captureInfo->source, NULL);
+        if (self.captureInfo->source) {
+            obs_source_output_video(self.captureInfo->source, NULL);
+        }
     }
 }
 
