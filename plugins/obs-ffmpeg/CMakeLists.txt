@@ -5,6 +5,10 @@ legacy_check()
 option(ENABLE_FFMPEG_LOGGING "Enables obs-ffmpeg logging" OFF)
 option(ENABLE_NEW_MPEGTS_OUTPUT "Use native SRT/RIST mpegts output" ON)
 
+if(OS_LINUX)
+  option(ENABLE_NATIVE_NVENC "Use native NVENC implementation" ON)
+endif()
+
 include(cmake/dependencies.cmake)
 
 add_library(obs-ffmpeg MODULE)
@@ -23,9 +27,6 @@ target_sources(
           $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:obs-ffmpeg-vaapi.c>
           $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:vaapi-utils.c>
           $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:vaapi-utils.h>
-          $<$<PLATFORM_ID:Windows>:obs-nvenc-helpers.c>
-          $<$<PLATFORM_ID:Windows>:obs-nvenc.c>
-          $<$<PLATFORM_ID:Windows>:obs-nvenc.h>
           $<$<PLATFORM_ID:Windows>:texture-amf-opts.hpp>
           $<$<PLATFORM_ID:Windows>:texture-amf.cpp>
           obs-ffmpeg-audio-encoders.c
@@ -58,10 +59,9 @@ target_link_libraries(
           FFmpeg::avutil
           FFmpeg::swscale
           FFmpeg::swresample
-          $<$<PLATFORM_ID:Windows>:OBS::obs-nvenc-version>
+          $<TARGET_NAME_IF_EXISTS:OBS::obs-nvenc-native>
           $<$<PLATFORM_ID:Windows>:OBS::w32-pthreads>
           $<$<PLATFORM_ID:Windows>:AMF::AMF>
-          $<$<PLATFORM_ID:Windows>:FFnvcodec::FFnvcodec>
           $<$<PLATFORM_ID:Windows>:ws2_32>
           $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:Libva::va>
           $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:Libva::drm>

@@ -54,7 +54,9 @@ target_sources(
           audio-repack.hpp
           main.cpp)
 
-target_compile_options(aja-support PUBLIC $<$<COMPILE_LANG_AND_ID:CXX,AppleClang,Clang>:-Wno-deprecated-declarations>)
+target_compile_options(
+  aja-support PUBLIC $<$<COMPILE_LANG_AND_ID:CXX,AppleClang,Clang,GNU>:-Wno-deprecated-declarations>
+                     $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:-Wno-unused-variable>)
 
 target_link_libraries(
   aja
