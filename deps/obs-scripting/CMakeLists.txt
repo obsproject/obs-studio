@@ -50,5 +50,9 @@ if(OS_WINDOWS)
 endif()
 
 # cmake-format: off
-set_target_properties_obs(obs-scripting PROPERTIES FOLDER scripting PREFIX "")
+set_target_properties_obs(obs-scripting PROPERTIES FOLDER scripting)
+
+if (OS_WINDOWS OR OS_MACOS)
+  set_property(TARGET obs-scripting PROPERTY PREFIX "")
+endif()
 # cmake-format: on
