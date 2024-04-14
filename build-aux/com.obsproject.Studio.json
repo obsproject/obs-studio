@@ -75,7 +75,8 @@
             "buildsystem": "cmake-ninja",
             "builddir": true,
             "config-opts": [
-                "-DCMAKE_BUILD_TYPE=Release",
+                "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
+                "-DOBS_CMAKE_VERSION=3",
                 "-DENABLE_WAYLAND=ON",
                 "-DENABLE_BROWSER=ON",
                 "-DCEF_ROOT_DIR=/app/cef",
@@ -83,7 +84,6 @@
                 "-DENABLE_ALSA=OFF",
                 "-DENABLE_PULSEAUDIO=ON",
                 "-DENABLE_JACK=ON",
-                "-DENABLE_RTMPS=ON",
                 "-DENABLE_VLC=OFF",
                 "-DENABLE_AJA=ON",
                 "-DENABLE_LIBFDK=ON",
