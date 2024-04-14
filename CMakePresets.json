@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 3,
   "cmakeMinimumRequired": {
     "major": 3,
     "minor": 22,
@@ -10,10 +10,10 @@
       "name": "environmentVars",
       "hidden": true,
       "cacheVariables": {
-        "TWITCH_CLIENTID": {"type": "STRING", "value": "$penv{TWITCH_CLIENTID}"},
-        "TWITCH_HASH": {"type": "STRING", "value": "$penv{TWITCH_HASH}"},
         "RESTREAM_CLIENTID": {"type": "STRING", "value": "$penv{RESTREAM_CLIENTID}"},
         "RESTREAM_HASH": {"type": "STRING", "value": "$penv{RESTREAM_HASH}"},
+        "TWITCH_CLIENTID": {"type": "STRING", "value": "$penv{TWITCH_CLIENTID}"},
+        "TWITCH_HASH": {"type": "STRING", "value": "$penv{TWITCH_HASH}"},
         "YOUTUBE_CLIENTID": {"type": "STRING", "value": "$penv{YOUTUBE_CLIENTID}"},
         "YOUTUBE_CLIENTID_HASH": {"type": "STRING", "value": "$penv{YOUTUBE_CLIENTID_HASH}"},
         "YOUTUBE_SECRET": {"type": "STRING", "value": "$penv{YOUTUBE_SECRET}"},
@@ -33,16 +33,16 @@
       "generator": "Xcode",
       "binaryDir": "${sourceDir}/build_macos",
       "cacheVariables": {
-        "ENABLE_BROWSER": true,
         "CMAKE_OSX_DEPLOYMENT_TARGET": {"type": "STRING", "value": "11.0"},
-        "OBS_CODESIGN_TEAM": {"type": "STRING", "value": "$penv{CODESIGN_TEAM}"},
         "OBS_CODESIGN_IDENTITY": {"type": "STRING", "value": "$penv{CODESIGN_IDENT}"},
+        "OBS_CODESIGN_TEAM": {"type": "STRING", "value": "$penv{CODESIGN_TEAM}"},
         "OBS_PROVISIONING_PROFILE": {"type": "STRING", "value": "$penv{PROVISIONING_PROFILE}"},
         "VIRTUALCAM_DEVICE_UUID": {"type": "STRING", "value": "7626645E-4425-469E-9D8B-97E0FA59AC75"},
-        "VIRTUALCAM_SOURCE_UUID": {"type": "STRING", "value": "A8D7B8AA-65AD-4D21-9C42-66480DBFA8E1"},
         "VIRTUALCAM_SINK_UUID": {"type": "STRING", "value": "A3F16177-7044-4DD8-B900-72E2419F7A9A"},
+        "VIRTUALCAM_SOURCE_UUID": {"type": "STRING", "value": "A8D7B8AA-65AD-4D21-9C42-66480DBFA8E1"},
         "SPARKLE_APPCAST_URL": {"type": "STRING", "value": "https://obsproject.com/osx_update/updates_$(ARCHS)_v2.xml"},
-        "SPARKLE_PUBLIC_KEY": {"type": "STRING", "value": "HQ5/Ba9VHOuEWaM0jtVjZzgHKFJX9YTl+HNVpgNF0iM="}
+        "SPARKLE_PUBLIC_KEY": {"type": "STRING", "value": "HQ5/Ba9VHOuEWaM0jtVjZzgHKFJX9YTl+HNVpgNF0iM="},
+        "ENABLE_BROWSER": true
       }
     },
     {
@@ -56,75 +56,35 @@
       }
     },
     {
-      "name": "linux-aarch64",
-      "displayName": "Linux aarch64",
-      "description": "obs-studio for Linux (aarch64)",
+      "name": "ubuntu",
+      "displayName": "Ubuntu",
+      "description": "obs-studio for Ubuntu",
       "inherits": ["environmentVars"],
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
         "rhs": "Linux"
       },
-      "binaryDir": "${sourceDir}/build_aarch64",
+      "binaryDir": "${sourceDir}/build_ubuntu",
       "generator": "Ninja",
       "warnings": {"dev": true, "deprecated": true},
       "cacheVariables": {
-        "ENABLE_WAYLAND": true,
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_INSTALL_LIBDIR": "lib/CMAKE_SYSTEM_PROCESSOR-linux-gnu",
+        "OBS_CMAKE_VERSION": {"type": "STRING", "value": "3.0.0"},
+        "ENABLE_AJA": false,
+        "ENABLE_NATIVE_NVENC": false,
         "ENABLE_VLC": true,
-        "CMAKE_BUILD_TYPE": "Debug"
-      }
-    },
-    {
-      "name": "linux-ci-aarch64",
-      "inherits": ["linux-aarch64"],
-      "hidden": true,
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
-      }
-    },
-    {
-      "name": "linux-release-aarch64",
-      "displayName": "Linux aarch64 (Release)",
-      "description": "obs-studio for Linux (aarch64) - Release Configuration",
-      "inherits": "linux-aarch64",
-      "cacheVariables": {
-        "ENABLE_RELEASE_BUILD": true
-      }
-    },
-    {
-      "name": "linux-x86_64",
-      "displayName": "Linux x86_64",
-      "description": "obs-studio for Linux (x86_64)",
-      "inherits": ["environmentVars"],
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
-      },
-      "binaryDir": "${sourceDir}/build_x86_64",
-      "generator": "Ninja",
-      "warnings": {"dev": true, "deprecated": true},
-      "cacheVariables": {
         "ENABLE_WAYLAND": true,
-        "ENABLE_VLC": true,
-        "CMAKE_BUILD_TYPE": {"type": "STRING", "value": "Debug"}
+        "ENABLE_WEBRTC": false
       }
     },
     {
-      "name": "linux-ci-x86_64",
-      "inherits": ["linux-x86_64"],
+      "name": "ubuntu-ci",
+      "inherits": ["ubuntu"],
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
-      }
-    },
-    {
-      "name": "linux-release-x86_64",
-      "displayName": "Linux x86_64 (Release)",
-      "description": "obs-studio for Linux (x86_64) - Release Configuration",
-      "inherits": "linux-x86_64",
-      "cacheVariables": {
-        "ENABLE_RELEASE_BUILD": true,
-        "ENABLE_BROWSER": true
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_COMPILE_WARNING_AS_ERROR": true
       }
     },
     {
@@ -142,9 +102,9 @@
       "generator": "Visual Studio 17 2022",
       "cacheVariables": {
         "OBS_CMAKE_VERSION": {"type": "STRING", "value": "3.0.0"},
-        "ENABLE_BROWSER": true,
-        "VIRTUALCAM_GUID": {"type": "STRING", "value": "A3FCE0F5-3493-419F-958A-ABA1250EC20B"},
         "GPU_PRIORITY_VAL": {"type": "STRING", "value": "$penv{GPU_PRIORITY_VAL}"},
+        "VIRTUALCAM_GUID": {"type": "STRING", "value": "A3FCE0F5-3493-419F-958A-ABA1250EC20B"},
+        "ENABLE_BROWSER": true,
         "ENABLE_CCACHE": false
       }
     },
@@ -161,20 +121,6 @@
     }
   ],
   "buildPresets": [
-    {
-      "name": "linux-aarch64",
-      "configurePreset": "linux-aarch64",
-      "displayName": "Linux aarch64",
-      "description": "Linux build for aarch64 (aka arm64)",
-      "configuration": "RelWithDebInfo"
-    },
-    {
-      "name": "linux-x86_64",
-      "configurePreset": "linux-x86_64",
-      "displayName": "Linux x86_64",
-      "description": "Linux build for x86_64 (aka amd64)",
-      "configuration": "RelWithDebInfo"
-    },
     {
       "name": "windows-x64",
       "configurePreset": "windows-x64",
