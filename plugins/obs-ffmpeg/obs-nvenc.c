@@ -1109,7 +1109,6 @@ static bool init_encoder_hevc(struct nvenc_data *enc, obs_data_t *settings,
 static bool init_encoder_av1(struct nvenc_data *enc, obs_data_t *settings,
 			     int bf, bool compatibility)
 {
-	const char *rc = obs_data_get_string(settings, "rate_control");
 	int keyint_sec = (int)obs_data_get_int(settings, "keyint_sec");
 	bool lossless;
 
@@ -1117,7 +1116,6 @@ static bool init_encoder_av1(struct nvenc_data *enc, obs_data_t *settings,
 		return false;
 	}
 
-	NV_ENC_INITIALIZE_PARAMS *params = &enc->params;
 	NV_ENC_CONFIG *config = &enc->config;
 	NV_ENC_CONFIG_AV1 *av1_config = &config->encodeCodecConfig.av1Config;
 
