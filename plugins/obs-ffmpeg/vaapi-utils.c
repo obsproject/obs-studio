@@ -128,7 +128,6 @@ static uint32_t vaapi_display_ep_combo_rate_controls(VAProfile profile,
 						     VADisplay dpy,
 						     const char *device_path)
 {
-	bool ret = false;
 	VAStatus va_status;
 	VAConfigAttrib attrib[1];
 	attrib->type = VAConfigAttribRateControl;
