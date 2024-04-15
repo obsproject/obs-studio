@@ -48,7 +48,6 @@ struct ft2_source {
 	uint32_t outline_width;
 	uint32_t texbuf_x, texbuf_y;
 	uint32_t color[2];
-	uint32_t *colorbuf;
 
 	int32_t cur_scroll, scroll_speed;
 

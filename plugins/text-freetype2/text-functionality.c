@@ -30,16 +30,8 @@ extern uint32_t texbuf_w, texbuf_h;
 
 void draw_outlines(struct ft2_source *srcdata)
 {
-	// Horrible (hopefully temporary) solution for outlines.
-	uint32_t *tmp;
-
-	struct gs_vb_data *vdata = gs_vertexbuffer_get_data(srcdata->vbuf);
-
 	if (!srcdata->text)
 		return;
-
-	tmp = vdata->colors;
-	vdata->colors = srcdata->colorbuf;
 
 	gs_matrix_push();
 	for (int32_t i = 0; i < 8; i++) {
@@ -47,35 +39,23 @@ void draw_outlines(struct ft2_source *srcdata)
 				      0.0f);
 		draw_uv_vbuffer(srcdata->vbuf, srcdata->tex,
 				srcdata->draw_effect,
-				(uint32_t)wcslen(srcdata->text) * 6);
+				(uint32_t)wcslen(srcdata->text) * 6, false);
 	}
 	gs_matrix_identity();
 	gs_matrix_pop();
-
-	vdata->colors = tmp;
 }
 
 void draw_drop_shadow(struct ft2_source *srcdata)
 {
-	// Horrible (hopefully temporary) solution for drop shadow.
-	uint32_t *tmp;
-
-	struct gs_vb_data *vdata = gs_vertexbuffer_get_data(srcdata->vbuf);
-
 	if (!srcdata->text)
 		return;
-
-	tmp = vdata->colors;
-	vdata->colors = srcdata->colorbuf;
 
 	gs_matrix_push();
 	gs_matrix_translate3f(4.0f, 4.0f, 0.0f);
 	draw_uv_vbuffer(srcdata->vbuf, srcdata->tex, srcdata->draw_effect,
-			(uint32_t)wcslen(srcdata->text) * 6);
+			(uint32_t)wcslen(srcdata->text) * 6, false);
 	gs_matrix_identity();
 	gs_matrix_pop();
-
-	vdata->colors = tmp;
 }
 
 void set_up_vertex_buffer(struct ft2_source *srcdata)
@@ -147,6 +127,7 @@ void set_up_vertex_buffer(struct ft2_source *srcdata)
 
 skip_word_wrap:;
 	fill_vertex_buffer(srcdata);
+	gs_vertexbuffer_flush(srcdata->vbuf);
 	obs_leave_graphics();
 }
 
@@ -169,16 +150,6 @@ void fill_vertex_buffer(struct ft2_source *srcdata)
 	if (srcdata->outline_text) {
 		offset = 2;
 		dx = offset;
-	}
-
-	if (srcdata->colorbuf != NULL) {
-		bfree(srcdata->colorbuf);
-		srcdata->colorbuf = NULL;
-	}
-	srcdata->colorbuf =
-		bzalloc(sizeof(uint32_t) * wcslen(srcdata->text) * 6);
-	for (size_t i = 0; i < len * 6; i++) {
-		srcdata->colorbuf[i] = 0xFF000000;
 	}
 
 	for (size_t i = 0; i < len; i++) {
