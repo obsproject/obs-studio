@@ -240,8 +240,6 @@ static void ft2_source_destroy(void *data)
 		bfree(srcdata->text);
 	if (srcdata->texbuf != NULL)
 		bfree(srcdata->texbuf);
-	if (srcdata->colorbuf != NULL)
-		bfree(srcdata->colorbuf);
 	if (srcdata->text_file != NULL)
 		bfree(srcdata->text_file);
 
@@ -283,7 +281,7 @@ static void ft2_source_render(void *data, gs_effect_t *effect)
 		draw_drop_shadow(srcdata);
 
 	draw_uv_vbuffer(srcdata->vbuf, srcdata->tex, srcdata->draw_effect,
-			(uint32_t)wcslen(srcdata->text) * 6);
+			(uint32_t)wcslen(srcdata->text) * 6, true);
 
 	UNUSED_PARAMETER(effect);
 }
