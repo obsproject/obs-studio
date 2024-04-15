@@ -570,12 +570,17 @@ uint32_t get_ft2_text_width(wchar_t *text, struct ft2_source *srcdata)
 		const FT_UInt glyph_index =
 			FT_Get_Char_Index(srcdata->font_face, text[i]);
 
-		load_glyph(srcdata, glyph_index, get_render_mode(srcdata));
-
 		if (text[i] == L'\n')
 			w = 0;
 		else {
-			w += slot->advance.x >> 6;
+			if (src_glyph) {
+				// Use the cached values.
+				w += src_glyph->xadv;
+			} else {
+				load_glyph(srcdata, glyph_index,
+					   get_render_mode(srcdata));
+				w += slot->advance.x >> 6;
+			}
 			if (w > max_w)
 				max_w = w;
 		}
