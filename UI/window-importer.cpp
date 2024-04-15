@@ -30,7 +30,7 @@
 #include "qt-wrappers.hpp"
 #include "importers/importers.hpp"
 
-extern bool SceneCollectionExists(const char *findName);
+#include "scene-collections-util.hpp"
 
 enum ImporterColumn {
 	Selected,

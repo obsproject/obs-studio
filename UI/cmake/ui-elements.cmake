@@ -7,6 +7,7 @@ target_sources(
             clickable-label.hpp
             double-slider.cpp
             double-slider.hpp
+            doubleclick-eventfilter.hpp
             horizontal-scroll-area.cpp
             horizontal-scroll-area.hpp
             plain-text-edit.cpp
@@ -42,6 +43,18 @@ target_sources(
           focus-list.hpp
           hotkey-edit.cpp
           hotkey-edit.hpp
+          icon-label.hpp
+          idian/obs-actionrow.cpp
+          idian/obs-actionrow.hpp
+          idian/obs-controls.cpp
+          idian/obs-controls.hpp
+          idian/obs-groupbox.cpp
+          idian/obs-groupbox.hpp
+          idian/obs-propertieslist.cpp
+          idian/obs-propertieslist.hpp
+          idian/obs-toggleswitch.cpp
+          idian/obs-toggleswitch.hpp
+          idian/obs-widgets.hpp
           item-widget-helpers.cpp
           item-widget-helpers.hpp
           lineedit-autoresize.cpp

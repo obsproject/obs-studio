@@ -3,6 +3,7 @@
 #include "qt-wrappers.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-main-outputs.hpp"
+#include "scene-collections-util.hpp"
 
 #include <functional>
 
@@ -17,7 +18,6 @@ template<typename T> static T GetOBSRef(QListWidgetItem *item)
 }
 
 void EnumProfiles(function<bool(const char *, const char *)> &&cb);
-void EnumSceneCollections(function<bool(const char *, const char *)> &&cb);
 
 extern volatile bool streaming_active;
 extern volatile bool recording_active;
@@ -187,32 +187,27 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	void obs_frontend_set_current_scene_collection(
 		const char *collection) override
 	{
-		QList<QAction *> menuActions =
-			main->ui->sceneCollectionMenu->actions();
-		QString qstrCollection = QT_UTF8(collection);
+		BPtr current = obs_frontend_get_current_scene_collection();
+		if (strcmp(current, collection) == 0)
+			return;
 
-		for (int i = 0; i < menuActions.count(); i++) {
-			QAction *action = menuActions[i];
-			QVariant v = action->property("file_name");
-
-			if (v.typeName() != nullptr) {
-				if (action->text() == qstrCollection) {
-					action->trigger();
-					break;
-				}
+		auto setCollection = [&](const char *name, const char *file) {
+			if (strcmp(collection, name) == 0) {
+				main->ChangeSceneCollection(file);
+				return false;
 			}
-		}
+			return true;
+		};
+		EnumSceneCollections(setCollection);
 	}
 
 	bool obs_frontend_add_scene_collection(const char *name) override
 	{
-		bool success = false;
-		QMetaObject::invokeMethod(main, "AddSceneCollection",
-					  WaitConnection(),
-					  Q_RETURN_ARG(bool, success),
-					  Q_ARG(bool, true),
-					  Q_ARG(QString, QT_UTF8(name)));
-		return success;
+		if (!CreateSceneCollection(name))
+			return false;
+
+		obs_frontend_set_current_scene_collection(name);
+		return true;
 	}
 
 	void

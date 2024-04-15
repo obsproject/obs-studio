@@ -28,6 +28,7 @@
     <file>images/visible.svg</file>
     <file>images/help.svg</file>
     <file>images/help_light.svg</file>
+    <file>images/hide.svg</file>
     <file>images/revert.svg</file>
     <file>images/alert.svg</file>
     <file>images/warning.svg</file>
@@ -70,6 +71,9 @@
     <file>images/network-bad.svg</file>
     <file>images/network-disconnected.svg</file>
     <file>images/network-inactive.svg</file>
+    <file>images/check_round_outline.svg</file>
+    <file>images/vertical_arrows_updown.svg</file>
+    <file>images/checkmark.svg</file>
   </qresource>
   <qresource prefix="/settings">
     <file>images/settings/output.svg</file>

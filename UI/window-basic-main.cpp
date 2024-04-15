@@ -96,6 +96,10 @@
 #include "update/mac-update.hpp"
 #endif
 
+#ifdef ENABLE_WIDGET_PLAYGROUND
+#include "idian/widget-playground.hpp"
+#endif
+
 #include "ui_OBSBasic.h"
 #include "ui_ColorSelect.h"
 
@@ -443,6 +447,10 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 #ifdef __linux__
 	ui->actionE_xit->setShortcut(Qt::CTRL | Qt::Key_Q);
+#endif
+
+#ifndef ENABLE_WIDGET_PLAYGROUND
+	ui->widgetPlayground->setVisible(false);
 #endif
 
 	auto addNudge = [this](const QKeySequence &seq, MoveDir direction,
@@ -2175,7 +2183,7 @@ void OBSBasic::OBSInit()
 					  Qt::QueuedConnection,
 					  Q_ARG(bool, true));
 
-	RefreshSceneCollections();
+	RefreshSceneCollections(true);
 	RefreshProfiles();
 	disableSaving--;
 
@@ -2987,6 +2995,7 @@ OBSBasic::~OBSBasic()
 	delete transformWindow;
 	delete advAudioWindow;
 	delete about;
+	delete sceneCollectionsDialog;
 	delete remux;
 
 	obs_display_remove_draw_callback(ui->preview->GetDisplay(),
@@ -4932,7 +4941,9 @@ void OBSBasic::CloseDialogs()
 	QList<QDialog *> childDialogs = this->findChildren<QDialog *>();
 	if (!childDialogs.isEmpty()) {
 		for (int i = 0; i < childDialogs.size(); ++i) {
-			childDialogs.at(i)->close();
+			QDialog *dialog = childDialogs.at(i);
+			if (dialog != sceneCollectionsDialog.data())
+				dialog->close();
 		}
 	}
 
@@ -10433,6 +10444,16 @@ void OBSBasic::on_actionShowAbout_triggered()
 	about->show();
 
 	about->setAttribute(Qt::WA_DeleteOnClose, true);
+}
+
+void OBSBasic::on_widgetPlayground_triggered()
+{
+#ifdef ENABLE_WIDGET_PLAYGROUND
+	IdianPlayground playground(this);
+	playground.setModal(true);
+	playground.show();
+	playground.exec();
+#endif
 }
 
 void OBSBasic::ResizeOutputSizeOfSource()

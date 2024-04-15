@@ -49,6 +49,7 @@ include(cmake/feature-twitch.cmake)
 include(cmake/feature-restream.cmake)
 include(cmake/feature-youtube.cmake)
 include(cmake/feature-whatsnew.cmake)
+include(cmake/feature-widget-playground.cmake)
 
 add_subdirectory(frontend-plugins)
 
@@ -78,6 +79,8 @@ target_sources(
           platform.hpp
           qt-display.cpp
           qt-display.hpp
+          scene-collections-util.cpp
+          scene-collections-util.hpp
           ui-config.h
           ui-validation.cpp
           ui-validation.hpp)
