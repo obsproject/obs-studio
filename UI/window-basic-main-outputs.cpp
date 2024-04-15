@@ -1499,6 +1499,7 @@ struct AdvancedOutput : BasicOutputHandler {
 	inline void SetupFFmpeg();
 	void SetupOutputs() override;
 	int GetAudioBitrate(size_t i, const char *id) const;
+	bool GetAudioMono(size_t i) const;
 
 	virtual bool SetupStreaming(obs_service_t *service) override;
 	virtual bool StartStreaming(obs_service_t *service) override;
@@ -2075,6 +2076,7 @@ inline void AdvancedOutput::UpdateAudioSettings()
 		settings[i] = obs_data_create();
 		obs_data_set_int(settings[i], "bitrate",
 				 GetAudioBitrate(i, recAudioEncoder));
+		obs_data_set_bool(settings[i], "mono", GetAudioMono(i));
 
 		obs_encoder_update(recordTrack[i], settings[i]);
 
@@ -2137,6 +2139,15 @@ int AdvancedOutput::GetAudioBitrate(size_t i, const char *id) const
 	};
 	int bitrate = (int)config_get_uint(main->Config(), "AdvOut", names[i]);
 	return FindClosestAvailableAudioBitrate(id, bitrate);
+}
+
+bool AdvancedOutput::GetAudioMono(size_t i) const
+{
+	static const char *names[] = {
+		"Track1Mono", "Track2Mono", "Track3Mono",
+		"Track4Mono", "Track5Mono", "Track6Mono",
+	};
+	return config_get_bool(main->Config(), "AdvOut", names[i]);
 }
 
 inline void AdvancedOutput::SetupVodTrack(obs_service_t *service)

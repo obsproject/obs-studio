@@ -60,6 +60,7 @@ struct audio_mix {
 	DARRAY(struct audio_input) inputs;
 	float buffer[MAX_AUDIO_CHANNELS][AUDIO_OUTPUT_FRAMES];
 	float buffer_unclamped[MAX_AUDIO_CHANNELS][AUDIO_OUTPUT_FRAMES];
+	float volume_factor;
 };
 
 struct audio_output {
@@ -120,8 +121,13 @@ static inline void do_audio_output(struct audio_output *audio, size_t mix_idx,
 		float(*buf)[AUDIO_OUTPUT_FRAMES] =
 			input->conversion.allow_clipping ? mix->buffer_unclamped
 							 : mix->buffer;
-		for (size_t i = 0; i < audio->planes; i++)
+
+		for (size_t i = 0; i < audio->planes; i++) {
+			for (uint32_t frame = 0; frame < frames; frame++) {
+				buf[i][frame] *= mix->volume_factor;
+			}
 			data.data[i] = (uint8_t *)buf[i];
+		}
 
 		data.frames = frames;
 		data.timestamp = timestamp;
@@ -316,8 +322,14 @@ bool audio_output_connect(audio_t *audio, size_t mi,
 		input.callback = callback;
 		input.param = param;
 
+		mix->volume_factor = 1.0f;
+
 		if (conversion) {
 			input.conversion = *conversion;
+			if (conversion->mono) {
+				mix->volume_factor /=
+					sqrtf((float)audio->channels);
+			}
 		} else {
 			input.conversion.format = audio->info.format;
 			input.conversion.speakers = audio->info.speakers;

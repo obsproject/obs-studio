@@ -107,6 +107,7 @@ struct audio_convert_info {
 	enum audio_format format;
 	enum speaker_layout speakers;
 	bool allow_clipping;
+	bool mono;
 };
 
 static inline uint32_t get_audio_channels(enum speaker_layout speakers)

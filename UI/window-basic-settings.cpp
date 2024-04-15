@@ -506,17 +506,23 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advOutFFAEncoder,     COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFACfg,         EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack1Bitrate,  COMBO_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->advOutTrack1Mono,     CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack1Name,     EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack2Bitrate,  COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack2Name,     EDIT_CHANGED,   OUTPUTS_CHANGED);
+	HookWidget(ui->advOutTrack2Mono,     CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack3Bitrate,  COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack3Name,     EDIT_CHANGED,   OUTPUTS_CHANGED);
+	HookWidget(ui->advOutTrack3Mono,     CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack4Bitrate,  COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack4Name,     EDIT_CHANGED,   OUTPUTS_CHANGED);
+	HookWidget(ui->advOutTrack4Mono,     CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack5Bitrate,  COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack5Name,     EDIT_CHANGED,   OUTPUTS_CHANGED);
+	HookWidget(ui->advOutTrack5Mono,     CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack6Bitrate,  COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack6Name,     EDIT_CHANGED,   OUTPUTS_CHANGED);
+	HookWidget(ui->advOutTrack6Mono,     CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advReplayBuf,         CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advRBSecMax,          SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->advRBMegsMax,         SCROLL_CHANGED, OUTPUTS_CHANGED);
@@ -2371,6 +2377,18 @@ void OBSBasicSettings::LoadAdvOutputAudioSettings()
 		config_get_string(main->Config(), "AdvOut", "Track5Name");
 	const char *name6 =
 		config_get_string(main->Config(), "AdvOut", "Track6Name");
+	bool track1Mono =
+		config_get_bool(main->Config(), "AdvOut", "Track1Mono");
+	bool track2Mono =
+		config_get_bool(main->Config(), "AdvOut", "Track2Mono");
+	bool track3Mono =
+		config_get_bool(main->Config(), "AdvOut", "Track3Mono");
+	bool track4Mono =
+		config_get_bool(main->Config(), "AdvOut", "Track4Mono");
+	bool track5Mono =
+		config_get_bool(main->Config(), "AdvOut", "Track5Mono");
+	bool track6Mono =
+		config_get_bool(main->Config(), "AdvOut", "Track6Mono");
 
 	const char *encoder_id =
 		config_get_string(main->Config(), "AdvOut", "AudioEncoder");
@@ -2430,6 +2448,13 @@ void OBSBasicSettings::LoadAdvOutputAudioSettings()
 	ui->advOutTrack4Name->setText(name4);
 	ui->advOutTrack5Name->setText(name5);
 	ui->advOutTrack6Name->setText(name6);
+
+	ui->advOutTrack1Mono->setChecked(track1Mono);
+	ui->advOutTrack2Mono->setChecked(track2Mono);
+	ui->advOutTrack3Mono->setChecked(track3Mono);
+	ui->advOutTrack4Mono->setChecked(track4Mono);
+	ui->advOutTrack5Mono->setChecked(track5Mono);
+	ui->advOutTrack6Mono->setChecked(track6Mono);
 }
 
 void OBSBasicSettings::LoadOutputSettings()
@@ -3891,6 +3916,12 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveEdit(ui->advOutTrack4Name, "AdvOut", "Track4Name");
 	SaveEdit(ui->advOutTrack5Name, "AdvOut", "Track5Name");
 	SaveEdit(ui->advOutTrack6Name, "AdvOut", "Track6Name");
+	SaveCheckBox(ui->advOutTrack1Mono, "AdvOut", "Track1Mono");
+	SaveCheckBox(ui->advOutTrack2Mono, "AdvOut", "Track2Mono");
+	SaveCheckBox(ui->advOutTrack3Mono, "AdvOut", "Track3Mono");
+	SaveCheckBox(ui->advOutTrack4Mono, "AdvOut", "Track4Mono");
+	SaveCheckBox(ui->advOutTrack5Mono, "AdvOut", "Track5Mono");
+	SaveCheckBox(ui->advOutTrack6Mono, "AdvOut", "Track6Mono");
 
 	if (vodTrackCheckbox) {
 		SaveCheckBox(simpleVodTrack, "SimpleOutput", "VodTrackEnabled");

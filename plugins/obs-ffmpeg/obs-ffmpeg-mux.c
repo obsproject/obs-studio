@@ -216,9 +216,12 @@ static void add_audio_encoder_params(os_process_args_t *args,
 {
 	obs_data_t *settings = obs_encoder_get_settings(aencoder);
 	int bitrate = (int)obs_data_get_int(settings, "bitrate");
+	bool force_mono = obs_data_get_bool(settings, "mono");
 	audio_t *audio = obs_get_audio();
 
 	obs_data_release(settings);
+
+	int channels = force_mono ? 1 : (int)audio_output_get_channels(audio);
 
 	os_process_args_add_arg(args, obs_encoder_get_name(aencoder));
 	os_process_args_add_argf(args, "%d", bitrate);
@@ -226,8 +229,7 @@ static void add_audio_encoder_params(os_process_args_t *args,
 				 (int)obs_encoder_get_sample_rate(aencoder));
 	os_process_args_add_argf(args, "%d",
 				 (int)obs_encoder_get_frame_size(aencoder));
-	os_process_args_add_argf(args, "%d",
-				 (int)audio_output_get_channels(audio));
+	os_process_args_add_argf(args, "%d", channels);
 }
 
 static void log_muxer_params(struct ffmpeg_muxer *stream, const char *settings)

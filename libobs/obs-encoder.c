@@ -15,6 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include "obs-data.h"
 #include "obs.h"
 #include "obs-internal.h"
 #include "util/util_uint64.h"
@@ -163,6 +164,10 @@ static inline void get_audio_info(const struct obs_encoder *encoder,
 
 	if (encoder->info.get_audio_info)
 		encoder->info.get_audio_info(encoder->context.data, info);
+
+	obs_data_t *settings = obs_encoder_get_settings(encoder);
+	info->mono = obs_data_get_bool(settings, "mono");
+	obs_data_release(settings);
 }
 
 static inline void get_video_info(struct obs_encoder *encoder,

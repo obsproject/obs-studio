@@ -24,6 +24,7 @@
 #include <libavutil/channel_layout.h>
 #include <libavformat/avformat.h>
 
+#include "media-io/audio-io.h"
 #include "obs-ffmpeg-formats.h"
 #include "obs-ffmpeg-compat.h"
 
@@ -193,16 +194,18 @@ static bool initialize_codec(struct enc_encoder *enc)
 	return true;
 }
 
-static void init_sizes(struct enc_encoder *enc, audio_t *audio)
+static void init_sizes(struct enc_encoder *enc, audio_t *audio, bool force_mono)
 {
 	const struct audio_output_info *aoi;
 	enum audio_format format;
+	enum speaker_layout speakers;
 
 	aoi = audio_output_get_info(audio);
 	format = convert_ffmpeg_sample_format(enc->context->sample_fmt);
+	speakers = force_mono ? SPEAKERS_MONO : aoi->speakers;
 
-	enc->audio_planes = get_audio_planes(format, aoi->speakers);
-	enc->audio_size = get_audio_size(format, aoi->speakers, 1);
+	enc->audio_planes = get_audio_planes(format, speakers);
+	enc->audio_size = get_audio_size(format, speakers, 1);
 }
 
 #ifndef MIN
@@ -215,6 +218,7 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 {
 	struct enc_encoder *enc;
 	int bitrate = (int)obs_data_get_int(settings, "bitrate");
+	bool force_mono = obs_data_get_bool(settings, "mono");
 	audio_t *audio = obs_encoder_audio(encoder);
 
 	enc = bzalloc(sizeof(struct enc_encoder));
@@ -263,11 +267,13 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 	aoi = audio_output_get_info(audio);
 
 #if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(57, 24, 100)
-	enc->context->channels = (int)audio_output_get_channels(audio);
+	enc->context->channels =
+		force_mono ? 1 : (int)audio_output_get_channels(audio);
 #endif
 
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(59, 24, 100)
-	enc->context->channel_layout = convert_speaker_layout(aoi->speakers);
+	enc->context->channel_layout =
+		convert_speaker_layout(force_mono ? 1 : aoi->speakers);
 #else
 	av_channel_layout_default(&enc->context->ch_layout,
 				  (int)audio_output_get_channels(audio));
@@ -286,6 +292,9 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 	    astrcmpi(enc->type, "alac") == 0)
 		enc->context->ch_layout =
 			(AVChannelLayout)AV_CHANNEL_LAYOUT_7POINT1_WIDE_BACK;
+	if (force_mono)
+		enc->context->ch_layout =
+			(AVChannelLayout)AV_CHANNEL_LAYOUT_MONO;
 #endif
 
 	enc->context->sample_rate = audio_output_get_sample_rate(audio);
@@ -342,7 +351,7 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 	     (int64_t)enc->context->bit_rate / 1000,
 	     (int)enc->context->ch_layout.nb_channels, buf);
 #endif
-	init_sizes(enc, audio);
+	init_sizes(enc, audio, force_mono);
 
 	/* enable experimental FFmpeg encoder if the only one available */
 	enc->context->strict_std_compliance = -2;
