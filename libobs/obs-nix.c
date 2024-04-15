@@ -56,7 +56,7 @@ static const char *module_bin[] = {
 };
 
 static const char *module_data[] = {
-	OBS_DATA_PATH "/%module%",
+	OBS_DATA_PATH "/obs-plugins/%module%",
 	OBS_INSTALL_DATA_PATH "/obs-plugins/%module%",
 	FLATPAK_PLUGIN_PATH "/share/obs/obs-plugins/%module%",
 };
@@ -76,7 +76,9 @@ void add_default_module_paths(void)
 	if (module_bin_path && module_data_path) {
 		char *abs_module_bin_path =
 			os_get_abs_path_ptr(module_bin_path);
-		if (strcmp(abs_module_bin_path, OBS_INSTALL_PREFIX
+
+		if (abs_module_bin_path &&
+		    strcmp(abs_module_bin_path, OBS_INSTALL_PREFIX
 			   "/" OBS_PLUGIN_DESTINATION) != 0) {
 			obs_add_module_path(module_bin_path, module_data_path);
 		}
