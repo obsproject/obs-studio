@@ -94,6 +94,12 @@ inline constexpr const char *AUTOROTATION = "autorotation";
 inline constexpr const char *HW_DECODE = "hw_decode";
 } // namespace MFCaptureConstants
 
+enum BlurType {
+	NpuBlurType_None,
+	NpuBlurType_Standard,
+	NpuBlurType_Portrait,
+};
+
 enum ResType {
 	ResTypePreferred,
 	ResTypeCustom,
@@ -105,7 +111,7 @@ enum class BufferingType : int64_t {
 	Off,
 };
 
-enum class Action { None, Activate, ActivateBlock, Deactivate, Shutdown, SaveSettings, RestoreSettings };
+enum class Action { None, Activate, ActivateBlock, Deactivate, Shutdown, SaveSettings, RestoreSettings, NpuControl };
 
 struct FrameSize {
 	int width;
