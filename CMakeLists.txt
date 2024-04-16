@@ -34,21 +34,19 @@ if(CMAKE_HOST_SYSTEM_NAME MATCHES "(Darwin)" OR OBS_CMAKE_VERSION VERSION_GREATE
   return()
 endif()
 
-if(CMAKE_HOST_SYSTEM_NAME MATCHES "(Windows|Darwin)")
-  message(
-    DEPRECATION
-      "\n"
-      "============ LEGACY BUILD SYSTEM IS DEPRECATED ============"
-      "\n"
-      "You are using the legacy build system to build OBS Studio. "
-      "The legacy build system is unsupported and will be removed in the near future."
-      "\n"
-      "To migrate to the new build system, familiarize yourself with CMake presets "
-      "(https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html) and create "
-      "a user preset with your customized build settings, inheriting from one of the default presets."
-      "\n"
-      "============ LEGACY BUILD SYSTEM IS DEPRECATED ============")
-endif()
+message(
+  DEPRECATION
+    "\n"
+    "============ LEGACY BUILD SYSTEM IS DEPRECATED ============"
+    "\n"
+    "You are using the legacy build system to build OBS Studio. "
+    "The legacy build system is unsupported and will be removed in the near future."
+    "\n"
+    "To migrate to the new build system, familiarize yourself with CMake presets "
+    "(https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html) and create "
+    "a user preset with your customized build settings, inheriting from one of the default presets."
+    "\n"
+    "============ LEGACY BUILD SYSTEM IS DEPRECATED ============")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/Modules")
 include(VersionConfig)
