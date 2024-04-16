@@ -89,6 +89,12 @@ inline constexpr std::string_view kHwDecode = "hw_decode";
 inline constexpr long long kFpsHighest = 0LL;
 inline constexpr long long kFpsMatching = -1LL;
 
+enum BlurType {
+	NpuBlurType_None,
+	NpuBlurType_Standard,
+	NpuBlurType_Portrait,
+};
+
 enum ResType {
 	ResTypePreferred,
 	ResTypeCustom,
@@ -100,7 +106,7 @@ enum class BufferingType : int64_t {
 	Off,
 };
 
-enum class Action { None, Activate, ActivateBlock, Deactivate, Shutdown, SaveSettings, RestoreSettings };
+enum class Action { None, Activate, ActivateBlock, Deactivate, Shutdown, SaveSettings, RestoreSettings, NpuControl };
 
 struct FrameSize {
 	int width;
