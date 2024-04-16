@@ -23,7 +23,6 @@ const uint8_t video_payload_type = 96;
 
 WHIPOutput::WHIPOutput(obs_data_t *, obs_output_t *output)
 	: output(output),
-	  is_av1(false),
 	  endpoint_url(),
 	  bearer_token(),
 	  resource_url(),
@@ -54,13 +53,6 @@ WHIPOutput::~WHIPOutput()
 bool WHIPOutput::Start()
 {
 	std::lock_guard<std::mutex> l(start_stop_mutex);
-
-	auto encoder = obs_output_get_video_encoder2(output, 0);
-	if (encoder == nullptr) {
-		return false;
-	}
-
-	is_av1 = (strcmp("av1", obs_encoder_get_codec(encoder)) == 0);
 
 	if (!obs_output_can_begin_data_capture(output, 0))
 		return false;
@@ -148,16 +140,31 @@ void WHIPOutput::ConfigureVideoTrack(std::string media_stream_id,
 		ssrc, cname, video_payload_type,
 		rtc::H264RtpPacketizer::defaultClockRate);
 
-	if (is_av1) {
+	const obs_encoder_t *encoder = obs_output_get_video_encoder2(output, 0);
+	if (!encoder)
+		return;
+
+	const char *codec = obs_encoder_get_codec(encoder);
+	if (strcmp("h264", codec) == 0) {
+		video_description.addH264Codec(video_payload_type);
+		packetizer = std::make_shared<rtc::H264RtpPacketizer>(
+			rtc::H264RtpPacketizer::Separator::StartSequence,
+			rtp_config, MAX_VIDEO_FRAGMENT_SIZE);
+#if ENABLE_HEVC
+	} else if (strcmp("hevc", codec) == 0) {
+		video_description.addH265Codec(video_payload_type);
+		packetizer = std::make_shared<rtc::H265RtpPacketizer>(
+			rtc::H265RtpPacketizer::Separator::StartSequence,
+			rtp_config, MAX_VIDEO_FRAGMENT_SIZE);
+#endif
+	} else if (strcmp("av1", codec) == 0) {
 		video_description.addAV1Codec(video_payload_type);
 		packetizer = std::make_shared<rtc::AV1RtpPacketizer>(
 			rtc::AV1RtpPacketizer::Packetization::TemporalUnit,
 			rtp_config, MAX_VIDEO_FRAGMENT_SIZE);
 	} else {
-		video_description.addH264Codec(video_payload_type);
-		packetizer = std::make_shared<rtc::H264RtpPacketizer>(
-			rtc::H264RtpPacketizer::Separator::StartSequence,
-			rtp_config, MAX_VIDEO_FRAGMENT_SIZE);
+		do_log(LOG_ERROR, "Video codec not supported: %s", codec);
+		return;
 	}
 
 	video_sr_reporter = std::make_shared<rtc::RtcpSrReporter>(rtp_config);
