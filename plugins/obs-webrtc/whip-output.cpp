@@ -15,7 +15,6 @@ const char signaling_media_id_valid_char[] = "0123456789"
 
 const std::string user_agent = generate_user_agent();
 
-const char *audio_mid = "0";
 const uint8_t audio_payload_type = 111;
 
 const char *video_mid = "1";
@@ -24,6 +23,7 @@ const uint8_t video_payload_type = 96;
 WHIPOutput::WHIPOutput(obs_data_t *, obs_output_t *output)
 	: output(output),
 	  is_av1(false),
+	  num_audio_tracks(0),
 	  endpoint_url(),
 	  bearer_token(),
 	  resource_url(),
@@ -32,12 +32,11 @@ WHIPOutput::WHIPOutput(obs_data_t *, obs_output_t *output)
 	  start_stop_thread(),
 	  base_ssrc(generate_random_u32()),
 	  peer_connection(nullptr),
-	  audio_track(nullptr),
+	  audio_tracks({}),
 	  video_track(nullptr),
 	  total_bytes_sent(0),
 	  connect_time_ms(0),
 	  start_time_ns(0),
-	  last_audio_timestamp(0),
 	  last_video_timestamp(0)
 {
 }
@@ -55,12 +54,21 @@ bool WHIPOutput::Start()
 {
 	std::lock_guard<std::mutex> l(start_stop_mutex);
 
-	auto encoder = obs_output_get_video_encoder2(output, 0);
-	if (encoder == nullptr) {
+	for (;;) {
+		if (obs_output_get_audio_encoder(output, num_audio_tracks) ==
+		    nullptr) {
+			break;
+		}
+
+		num_audio_tracks++;
+	}
+
+	auto video_encoder = obs_output_get_video_encoder2(output, 0);
+	if (video_encoder == nullptr) {
 		return false;
 	}
 
-	is_av1 = (strcmp("av1", obs_encoder_get_codec(encoder)) == 0);
+	is_av1 = (strcmp("av1", obs_encoder_get_codec(video_encoder)) == 0);
 
 	if (!obs_output_can_begin_data_capture(output, 0))
 		return false;
@@ -92,10 +100,18 @@ void WHIPOutput::Data(struct encoder_packet *packet)
 	}
 
 	if (packet->type == OBS_ENCODER_AUDIO) {
-		int64_t duration = packet->dts_usec - last_audio_timestamp;
-		Send(packet->data, packet->size, duration, audio_track,
-		     audio_sr_reporter);
-		last_audio_timestamp = packet->dts_usec;
+		if (audio_tracks.size() <= packet->track_idx) {
+			do_log(LOG_ERROR,
+			       "Recieved audio for track that does not exist");
+			return;
+		}
+
+		auto track = audio_tracks.at(packet->track_idx);
+
+		int64_t duration = packet->dts_usec - track->last_timestamp;
+		Send(packet->data, packet->size, duration, track->track,
+		     track->sr_reporter);
+		track->last_timestamp = packet->dts_usec;
 	} else if (packet->type == OBS_ENCODER_VIDEO) {
 		int64_t duration = packet->dts_usec - last_video_timestamp;
 		Send(packet->data, packet->size, duration, video_track,
@@ -104,30 +120,43 @@ void WHIPOutput::Data(struct encoder_packet *packet)
 	}
 }
 
-void WHIPOutput::ConfigureAudioTrack(std::string media_stream_id,
-				     std::string cname)
+void WHIPOutput::ConfigureAudioTracks(std::string media_stream_id,
+				      std::string cname)
 {
-	auto media_stream_track_id = std::string(media_stream_id + "-audio");
+	for (int i = 0; i < num_audio_tracks; i++) {
+		auto media_stream_track_id = std::string(
+			media_stream_id + "-audio-" + std::to_string(i));
+		uint32_t ssrc = base_ssrc - i;
+		auto audio_mid = i;
+		if (i >= 1) {
+			audio_mid++;
+		}
 
-	uint32_t ssrc = base_ssrc;
+		rtc::Description::Audio audio_description(
+			std::to_string(audio_mid),
+			rtc::Description::Direction::SendOnly);
+		audio_description.addOpusCodec(audio_payload_type);
+		audio_description.addSSRC(ssrc, cname, media_stream_id,
+					  media_stream_track_id);
+		auto track = peer_connection->addTrack(audio_description);
 
-	rtc::Description::Audio audio_description(
-		audio_mid, rtc::Description::Direction::SendOnly);
-	audio_description.addOpusCodec(audio_payload_type);
-	audio_description.addSSRC(ssrc, cname, media_stream_id,
-				  media_stream_track_id);
-	audio_track = peer_connection->addTrack(audio_description);
+		auto rtp_config = std::make_shared<rtc::RtpPacketizationConfig>(
+			ssrc, cname, audio_payload_type,
+			rtc::OpusRtpPacketizer::DefaultClockRate);
+		auto packetizer =
+			std::make_shared<rtc::OpusRtpPacketizer>(rtp_config);
+		auto sr_reporter =
+			std::make_shared<rtc::RtcpSrReporter>(rtp_config);
+		auto nack_responder =
+			std::make_shared<rtc::RtcpNackResponder>();
 
-	auto rtp_config = std::make_shared<rtc::RtpPacketizationConfig>(
-		ssrc, cname, audio_payload_type,
-		rtc::OpusRtpPacketizer::DefaultClockRate);
-	auto packetizer = std::make_shared<rtc::OpusRtpPacketizer>(rtp_config);
-	audio_sr_reporter = std::make_shared<rtc::RtcpSrReporter>(rtp_config);
-	auto nack_responder = std::make_shared<rtc::RtcpNackResponder>();
+		packetizer->addToChain(sr_reporter);
+		packetizer->addToChain(nack_responder);
+		track->setMediaHandler(packetizer);
 
-	packetizer->addToChain(audio_sr_reporter);
-	packetizer->addToChain(nack_responder);
-	audio_track->setMediaHandler(packetizer);
+		audio_tracks.push_back(std::make_shared<TrackAndRTCP>(
+			std::move(track), std::move(sr_reporter)));
+	}
 }
 
 void WHIPOutput::ConfigureVideoTrack(std::string media_stream_id,
@@ -258,7 +287,7 @@ bool WHIPOutput::Setup()
 			[rand() % (sizeof(signaling_media_id_valid_char) - 1)];
 	}
 
-	ConfigureAudioTrack(media_stream_id, cname);
+	ConfigureAudioTracks(media_stream_id, cname);
 	ConfigureVideoTrack(media_stream_id, cname);
 
 	peer_connection->setLocalDescription();
@@ -443,7 +472,7 @@ void WHIPOutput::StartThread()
 	if (!Connect()) {
 		peer_connection->close();
 		peer_connection = nullptr;
-		audio_track = nullptr;
+		audio_tracks = {};
 		video_track = nullptr;
 		return;
 	}
@@ -516,7 +545,7 @@ void WHIPOutput::StopThread(bool signal)
 	if (peer_connection != nullptr) {
 		peer_connection->close();
 		peer_connection = nullptr;
-		audio_track = nullptr;
+		audio_tracks = {};
 		video_track = nullptr;
 	}
 
@@ -538,7 +567,6 @@ void WHIPOutput::StopThread(bool signal)
 	total_bytes_sent = 0;
 	connect_time_ms = 0;
 	start_time_ns = 0;
-	last_audio_timestamp = 0;
 	last_video_timestamp = 0;
 }
 
@@ -586,7 +614,8 @@ void register_whip_output()
 	struct obs_output_info info = {};
 
 	info.id = "whip_output";
-	info.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_SERVICE;
+	info.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_SERVICE |
+		     OBS_OUTPUT_MULTI_TRACK;
 	info.get_name = [](void *) -> const char * {
 		return obs_module_text("Output.Name");
 	};
