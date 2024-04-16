@@ -182,11 +182,14 @@ void OBSBasicSettings::LoadStream1Settings()
 
 #define SRT_PROTOCOL "srt"
 #define RIST_PROTOCOL "rist"
+#define WHIP_PROTOCOL "WHIP"
 
 bool OBSBasicSettings::AllowsMultiTrack(const char *protocol)
 {
 	return astrcmpi_n(protocol, SRT_PROTOCOL, strlen(SRT_PROTOCOL)) == 0 ||
-	       astrcmpi_n(protocol, RIST_PROTOCOL, strlen(RIST_PROTOCOL)) == 0;
+	       astrcmpi_n(protocol, RIST_PROTOCOL, strlen(RIST_PROTOCOL)) ==
+		       0 ||
+	       astrcmpi_n(protocol, WHIP_PROTOCOL, strlen(WHIP_PROTOCOL)) == 0;
 }
 
 void OBSBasicSettings::SwapMultiTrack(const char *protocol)
