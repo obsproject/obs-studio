@@ -91,6 +91,12 @@ constexpr const char *DEACTIVATE_WNS = "deactivate_when_not_showing";
 constexpr const char *AUTOROTATION = "autorotation";
 } // namespace
 
+enum BlurType {
+	NpuBlurType_None,
+	NpuBlurType_Standard,
+	NpuBlurType_Portrait,
+};
+
 enum ResType {
 	ResTypePreferred,
 	ResTypeCustom,
@@ -102,7 +108,7 @@ enum class BufferingType : int64_t {
 	Off,
 };
 
-enum class Action { None, Activate, ActivateBlock, Deactivate, Shutdown, SaveSettings, RestoreSettings };
+enum class Action { None, Activate, ActivateBlock, Deactivate, Shutdown, SaveSettings, RestoreSettings, NpuControl };
 
 struct MediaFoundationVideoInfo {
 	int minCX;
