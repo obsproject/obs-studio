@@ -71,7 +71,28 @@ const std::string_view TEXT_RANGE_DEFAULT = obs_module_text("ColorRange.Default"
 const std::string_view TEXT_RANGE_PARTIAL = obs_module_text("ColorRange.Partial");
 const std::string_view TEXT_RANGE_FULL = obs_module_text("ColorRange.Full");
 const char *TEXT_DWNS = obs_module_text("DeactivateWhenNotShowing");
+
+constexpr const char *INTELNPU_BLUR_TYPE = "intelnpu_blur_type";
+const char *TEXT_INTELNPU_BLUR_TYPE = obs_module_text("IntelNPU.BackgroundBlur");
+const char *TEXT_INTELNPU_BLUR_NONE = obs_module_text("IntelNPU.BlurNone");
+const char *TEXT_INTELNPU_BLUR_STANDARD = obs_module_text("IntelNPU.BlurStandard");
+const char *TEXT_INTELNPU_BLUR_PORTRAIT = obs_module_text("IntelNPU.Portrait");
+
+constexpr const char *INTELNPU_BACKGROUND_REMOVAL = "intelnpu_background_removal";
+const char *TEXT_INTELNPU_BACKGROUND_REMOVAL = obs_module_text("IntelNPU.BackgroundRemoval");
+
+constexpr const char *INTELNPU_AUTO_FRAMING = "intelnpu_auto_framing";
+const char *TEXT_INTELNPU_AUTO_FRAMING = obs_module_text("IntelNPU.AutoFraming");
+
+constexpr const char *INTELNPU_EYEGAZE_CORRECTION = "intelnpu_eyegaze_correction";
+const char *TEXT_INTELNPU_EYEGAZE_CORRECTION = obs_module_text("IntelNPU.EyeGazeCorrection");
 } // namespace
+
+enum BlurType {
+	NpuBlurType_None,
+	NpuBlurType_Standard,
+	NpuBlurType_Portrait,
+};
 
 enum ResType {
 	ResTypePreferred,
@@ -84,7 +105,7 @@ enum class BufferingType : int64_t {
 	Off,
 };
 
-enum class Action { None, Activate, ActivateBlock, Deactivate, Shutdown, SaveSettings, RestoreSettings };
+enum class Action { None, Activate, ActivateBlock, Deactivate, Shutdown, SaveSettings, RestoreSettings, NpuControl };
 
 struct MediaFoundationVideoInfo {
 	int minCX;
