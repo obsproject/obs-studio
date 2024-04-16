@@ -71,6 +71,29 @@ using namespace std;
 #define TEXT_RANGE_FULL obs_module_text("ColorRange.Full")
 #define TEXT_DWNS obs_module_text("DeactivateWhenNotShowing")
 
+#define INTELNPU_BLUR_TYPE "intelnpu_blur_type"
+#define TEXT_INTELNPU_BLUR_TYPE obs_module_text("IntelNPU.BackgroundBlur")
+#define TEXT_INTELNPU_BLUR_NONE obs_module_text("IntelNPU.BlurNone")
+#define TEXT_INTELNPU_BLUR_STANDARD obs_module_text("IntelNPU.BlurStandard")
+#define TEXT_INTELNPU_BLUR_PORTRAIT obs_module_text("IntelNPU.Portrait")
+
+#define INTELNPU_BACKGROUND_REMOVAL "intelnpu_background_removal"
+#define TEXT_INTELNPU_BACKGROUND_REMOVAL \
+	obs_module_text("IntelNPU.BackgroundRemoval")
+
+#define INTELNPU_AUTO_FRAMING "intelnpu_auto_framing"
+#define TEXT_INTELNPU_AUTO_FRAMING obs_module_text("IntelNPU.AutoFraming")
+
+#define INTELNPU_EYEGAZE_CORRECTION "intelnpu_eyegaze_correction"
+#define TEXT_INTELNPU_EYEGAZE_CORRECTION \
+	obs_module_text("IntelNPU.EyeGazeCorrection")
+
+enum BlurType {
+	NpuBlurType_None,
+	NpuBlurType_Standard,
+	NpuBlurType_Portrait,
+};
+
 enum ResType {
 	ResTypePreferred,
 	ResTypeCustom,
@@ -114,7 +137,8 @@ enum class Action {
 	Deactivate,
 	Shutdown,
 	SaveSettings,
-	RestoreSettings
+	RestoreSettings,
+	NpuControl
 };
 
 struct MediaFoundationVideoInfo {
@@ -490,6 +514,66 @@ void MediaFoundationSourceInput::MediaFoundationSourceLoop()
 		case Action::RestoreSettings:
 			if (_mfcaptureDevice) {
 				MF_RestoreDefaultSettings(_mfcaptureDevice);
+			}
+			break;
+		case Action::NpuControl:
+			if (_mfcaptureDevice) {
+
+				obs_data_t *settings;
+				settings = obs_source_get_settings(source);
+				bool blur, shallowfocus, mask;
+
+				int val = (int)obs_data_get_int(
+					settings, INTELNPU_BLUR_TYPE);
+				switch (val) {
+				case NpuBlurType_None:
+					blur = false;
+					shallowfocus = false;
+					break;
+				case NpuBlurType_Standard:
+					blur = true;
+					shallowfocus = false;
+					break;
+				case NpuBlurType_Portrait:
+					blur = true;
+					shallowfocus = true;
+					break;
+				}
+				mask = obs_data_get_bool(
+					settings, INTELNPU_BACKGROUND_REMOVAL);
+
+				bool _blur, _shallowfocus, _mask, _transparent;
+				MF_GetBlur(_mfcaptureDevice, _blur,
+					   _shallowfocus, _mask);
+				MF_GetTransparent(_mfcaptureDevice,
+						  _transparent);
+				if (_blur != blur ||
+				    _shallowfocus != shallowfocus ||
+				    _transparent != mask) {
+					MF_SetBlur(_mfcaptureDevice, blur,
+						   shallowfocus, mask);
+				}
+
+				bool autoframing = obs_data_get_bool(
+					settings, INTELNPU_AUTO_FRAMING);
+				bool _autoframing;
+				MF_GetAutoFraming(_mfcaptureDevice,
+						  _autoframing);
+				if (_autoframing != autoframing) {
+					MF_SetAutoFraming(_mfcaptureDevice,
+							  autoframing);
+				}
+
+				bool eyegaze = obs_data_get_bool(
+					settings, INTELNPU_EYEGAZE_CORRECTION);
+				bool _eyegaze;
+				MF_GetEyeGazeCorrection(_mfcaptureDevice,
+							_eyegaze);
+				if (_eyegaze != eyegaze) {
+					MF_SetEyeGazeCorrection(
+						_mfcaptureDevice, eyegaze);
+				}
+				obs_data_release(settings);
 			}
 			break;
 		case Action::None:;
@@ -1485,6 +1569,42 @@ static bool ActivateClicked(obs_properties_t *, obs_property_t *p, void *data)
 	return true;
 }
 
+bool NPUDetection()
+{
+	// You begin DXCore adapter enumeration by creating an adapter factory.
+	winrt::com_ptr<IDXCoreAdapterFactory> adapterFactory;
+	winrt::check_hresult(
+		::DXCoreCreateAdapterFactory(adapterFactory.put()));
+
+	// From the factory, retrieve a list of all the Direct3D 12 Core Compute adapters.
+	winrt::com_ptr<IDXCoreAdapterList> d3D12CoreComputeAdapters;
+	GUID attributes[]{DXCORE_ADAPTER_ATTRIBUTE_D3D12_CORE_COMPUTE};
+	winrt::check_hresult(adapterFactory->CreateAdapterList(
+		_countof(attributes), attributes,
+		d3D12CoreComputeAdapters.put()));
+
+	const uint32_t count{d3D12CoreComputeAdapters->GetAdapterCount()};
+
+	bool npuDetected = false;
+
+	for (uint32_t i = 0; i < count; ++i) {
+		winrt::com_ptr<IDXCoreAdapter> candidateAdapter;
+		winrt::check_hresult(d3D12CoreComputeAdapters->GetAdapter(
+			i, candidateAdapter.put()));
+
+		char description[256];
+		winrt::check_hresult(candidateAdapter->GetProperty(
+			DXCoreAdapterProperty::DriverDescription,
+			&description));
+
+		char npu[256] = "Intel(R) AI Boost";
+		if (strcmp(description, npu) == 0)
+			npuDetected = true;
+	}
+
+	return npuDetected;
+}
+
 static obs_properties_t *GetMediaFoundationSourceProperties(void *obj)
 {
 	MediaFoundationSourceInput *input =
@@ -1519,6 +1639,31 @@ static obs_properties_t *GetMediaFoundationSourceProperties(void *obj)
 				  ActivateClicked);
 
 	obs_properties_add_bool(ppts, DEACTIVATE_WNS, TEXT_DWNS);
+
+	/* ------------------------------------- */
+	/* Intel NPU AI effect settings */
+
+	if (NPUDetection()) {
+
+		p = obs_properties_add_list(ppts, INTELNPU_BLUR_TYPE,
+					    TEXT_INTELNPU_BLUR_TYPE,
+					    OBS_COMBO_TYPE_LIST,
+					    OBS_COMBO_FORMAT_INT);
+
+		obs_property_list_add_int(p, TEXT_INTELNPU_BLUR_NONE,
+					  NpuBlurType_None);
+		obs_property_list_add_int(p, TEXT_INTELNPU_BLUR_STANDARD,
+					  NpuBlurType_Standard);
+		obs_property_list_add_int(p, TEXT_INTELNPU_BLUR_PORTRAIT,
+					  NpuBlurType_Portrait);
+
+		obs_properties_add_bool(ppts, INTELNPU_BACKGROUND_REMOVAL,
+					TEXT_INTELNPU_BACKGROUND_REMOVAL);
+		obs_properties_add_bool(ppts, INTELNPU_AUTO_FRAMING,
+					TEXT_INTELNPU_AUTO_FRAMING);
+		obs_properties_add_bool(ppts, INTELNPU_EYEGAZE_CORRECTION,
+					TEXT_INTELNPU_EYEGAZE_CORRECTION);
+	}
 
 	/* ------------------------------------- */
 	/* video settings */
