@@ -78,6 +78,21 @@ SOFTWARE
 #define TEXT_RANGE_FULL obs_module_text("ColorRange.Full")
 #define TEXT_DWNS obs_module_text("DeactivateWhenNotShowing")
 
+#define INTELNPU_BLUR_TYPE "intelnpu_blur_type"
+#define TEXT_INTELNPU_BLUR_TYPE obs_module_text("IntelNPU.BackgroundBlur")
+#define TEXT_INTELNPU_BLUR_NONE obs_module_text("IntelNPU.BlurNone")
+#define TEXT_INTELNPU_BLUR_STANDARD obs_module_text("IntelNPU.BlurStandard")
+#define TEXT_INTELNPU_BLUR_PORTRAIT obs_module_text("IntelNPU.Portrait")
+
+#define INTELNPU_BACKGROUND_REMOVAL "intelnpu_background_removal"
+#define TEXT_INTELNPU_BACKGROUND_REMOVAL obs_module_text("IntelNPU.BackgroundRemoval")
+
+#define INTELNPU_AUTO_FRAMING "intelnpu_auto_framing"
+#define TEXT_INTELNPU_AUTO_FRAMING obs_module_text("IntelNPU.AutoFraming")
+
+#define INTELNPU_EYEGAZE_CORRECTION "intelnpu_eyegaze_correction"
+#define TEXT_INTELNPU_EYEGAZE_CORRECTION obs_module_text("IntelNPU.EyeGazeCorrection")
+
 #define MAKE_MEDIAFOUNDATION_FPS(fps) (10000000LL / (fps))
 #define MAKE_MEDIAFOUNDATION_FRACTIONAL_FPS(den, num) ((num) * 10000000LL / (den))
 #define DEVICE_INTERVAL_DIFF_LIMIT 20
@@ -771,6 +786,42 @@ long long GetOBSFPS()
 	return MAKE_MEDIAFOUNDATION_FRACTIONAL_FPS(ovi.fps_num, ovi.fps_den);
 }
 
+DEFINE_GUID(OBS_DXCORE_HARDWARE_TYPE_ATTRIBUTE_NPU, 0xd46140c4, 0xadd7, 0x451b, 0x9e, 0x56, 0x6, 0xfe, 0x8c, 0x3b, 0x58,
+	    0xed);
+
+bool NPUDetection()
+{
+	// You begin DXCore adapter enumeration by creating an adapter factory.
+	winrt::com_ptr<IDXCoreAdapterFactory> adapterFactory;
+	winrt::check_hresult(::DXCoreCreateAdapterFactory(adapterFactory.put()));
+
+	// From the factory, retrieve a list of all the Direct3D 12 Core Compute adapters.
+	winrt::com_ptr<IDXCoreAdapterList> d3D12CoreComputeAdapters;
+	GUID attributes[]{OBS_DXCORE_HARDWARE_TYPE_ATTRIBUTE_NPU};
+	winrt::check_hresult(
+		adapterFactory->CreateAdapterList(_countof(attributes), attributes, d3D12CoreComputeAdapters.put()));
+
+	const uint32_t count{d3D12CoreComputeAdapters->GetAdapterCount()};
+
+	bool npuDetected = false;
+
+	for (uint32_t i = 0; i < count; ++i) {
+		winrt::com_ptr<IDXCoreAdapter> candidateAdapter;
+		winrt::check_hresult(d3D12CoreComputeAdapters->GetAdapter(i, candidateAdapter.put()));
+
+		char description[256];
+		winrt::check_hresult(
+			candidateAdapter->GetProperty(DXCoreAdapterProperty::DriverDescription, &description));
+
+		char npu[256] = "Intel(R) AI Boost";
+		if (strcmp(description, npu) == 0) {
+			npuDetected = true;
+		}
+	}
+
+	return npuDetected;
+}
+
 obs_properties_t *GetMediaFoundationSourceProperties(void *obj)
 {
 	MediaFoundationSourceInput *input = static_cast<MediaFoundationSourceInput *>(obj);
@@ -803,6 +854,22 @@ obs_properties_t *GetMediaFoundationSourceProperties(void *obj)
 	obs_properties_add_button2(ppts, "activate", activateText, ActivateClicked, input);
 
 	obs_properties_add_bool(ppts, MFCaptureConstants::DEACTIVATE_WNS, TEXT_DWNS);
+
+	/* ------------------------------------- */
+	/* Intel NPU AI effect settings */
+
+	if (NPUDetection()) {
+		p = obs_properties_add_list(ppts, INTELNPU_BLUR_TYPE, TEXT_INTELNPU_BLUR_TYPE, OBS_COMBO_TYPE_LIST,
+					    OBS_COMBO_FORMAT_INT);
+
+		obs_property_list_add_int(p, TEXT_INTELNPU_BLUR_NONE, NpuBlurType_None);
+		obs_property_list_add_int(p, TEXT_INTELNPU_BLUR_STANDARD, NpuBlurType_Standard);
+		obs_property_list_add_int(p, TEXT_INTELNPU_BLUR_PORTRAIT, NpuBlurType_Portrait);
+
+		obs_properties_add_bool(ppts, INTELNPU_BACKGROUND_REMOVAL, TEXT_INTELNPU_BACKGROUND_REMOVAL);
+		obs_properties_add_bool(ppts, INTELNPU_AUTO_FRAMING, TEXT_INTELNPU_AUTO_FRAMING);
+		obs_properties_add_bool(ppts, INTELNPU_EYEGAZE_CORRECTION, TEXT_INTELNPU_EYEGAZE_CORRECTION);
+	}
 
 	/* ------------------------------------- */
 	/* video settings */
