@@ -896,6 +896,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	obs_properties_destroy(ppts);
 
+	ui->multitrackVideoNoticeBox->setVisible(false);
+
 	InitStreamPage();
 	InitAppearancePage();
 	LoadSettings(false);
@@ -4662,6 +4664,8 @@ void OBSBasicSettings::OutputsChanged()
 		outputsChanged = true;
 		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
+
+		UpdateMultitrackVideo();
 	}
 }
 
@@ -5420,6 +5424,7 @@ void OBSBasicSettings::SimpleRecordingQualityChanged()
 	ui->simpleOutRecFormat->setVisible(!losslessQuality);
 	ui->simpleOutRecFormatLabel->setVisible(!losslessQuality);
 
+	UpdateMultitrackVideo();
 	SimpleRecordingEncoderChanged();
 	SimpleReplayBufferChanged();
 }
@@ -6343,6 +6348,114 @@ void OBSBasicSettings::UpdateMultitrackVideo()
 		toggle_available && ui->enableMultitrackVideo->isChecked() &&
 		ui->multitrackVideoConfigOverrideEnable->isChecked());
 
+	auto update_simple_output_settings = [&](bool mtv_enabled) {
+		auto recording_uses_stream_encoder =
+			ui->simpleOutRecQuality->currentData().toString() ==
+			"Stream";
+		mtv_enabled = mtv_enabled && !recording_uses_stream_encoder;
+
+		ui->simpleOutputVBitrateLabel->setDisabled(mtv_enabled);
+		ui->simpleOutputVBitrate->setDisabled(mtv_enabled);
+
+		ui->simpleOutputABitrateLabel->setDisabled(mtv_enabled);
+		ui->simpleOutputABitrate->setDisabled(mtv_enabled);
+
+		ui->simpleOutStrEncoderLabel->setDisabled(mtv_enabled);
+		ui->simpleOutStrEncoder->setDisabled(mtv_enabled);
+
+		ui->simpleOutPresetLabel->setDisabled(mtv_enabled);
+		ui->simpleOutPreset->setDisabled(mtv_enabled);
+
+		ui->simpleOutCustomLabel->setDisabled(mtv_enabled);
+		ui->simpleOutCustom->setDisabled(mtv_enabled);
+
+		ui->simpleOutStrAEncoderLabel->setDisabled(mtv_enabled);
+		ui->simpleOutStrAEncoder->setDisabled(mtv_enabled);
+	};
+
+	auto update_advanced_output_settings = [&](bool mtv_enabled) {
+		auto recording_uses_stream_video_encoder =
+			ui->advOutRecEncoder->currentText() ==
+			TEXT_USE_STREAM_ENC;
+		auto recording_uses_stream_audio_encoder =
+			ui->advOutRecAEncoder->currentData() == "none";
+		auto disable_video = mtv_enabled &&
+				     !recording_uses_stream_video_encoder;
+		auto disable_audio = mtv_enabled &&
+				     !recording_uses_stream_audio_encoder;
+
+		ui->advOutAEncLabel->setDisabled(disable_audio);
+		ui->advOutAEncoder->setDisabled(disable_audio);
+
+		ui->advOutEncLabel->setDisabled(disable_video);
+		ui->advOutEncoder->setDisabled(disable_video);
+
+		ui->advOutUseRescale->setDisabled(disable_video);
+		ui->advOutRescale->setDisabled(disable_video);
+		ui->advOutRescaleFilter->setDisabled(disable_video);
+
+		if (streamEncoderProps)
+			streamEncoderProps->SetDisabled(disable_video);
+	};
+
+	auto update_advanced_output_audio_tracks = [&](bool mtv_enabled) {
+		auto vod_track_enabled = vodTrackCheckbox &&
+					 vodTrackCheckbox->isChecked();
+
+		auto vod_track_idx_enabled = [&](size_t idx) {
+			return vod_track_enabled && vodTrack[idx] &&
+			       vodTrack[idx]->isChecked();
+		};
+
+		auto track1_warning_visible = mtv_enabled &&
+					      (ui->advOutTrack1->isChecked() ||
+					       vod_track_idx_enabled(1));
+		auto track1_disabled = track1_warning_visible &&
+				       !ui->advOutRecTrack1->isChecked();
+		ui->advOutTrack1BitrateLabel->setDisabled(track1_disabled);
+		ui->advOutTrack1Bitrate->setDisabled(track1_disabled);
+
+		auto track2_warning_visible = mtv_enabled &&
+					      (ui->advOutTrack2->isChecked() ||
+					       vod_track_idx_enabled(2));
+		auto track2_disabled = track2_warning_visible &&
+				       !ui->advOutRecTrack2->isChecked();
+		ui->advOutTrack2BitrateLabel->setDisabled(track2_disabled);
+		ui->advOutTrack2Bitrate->setDisabled(track2_disabled);
+
+		auto track3_warning_visible = mtv_enabled &&
+					      (ui->advOutTrack3->isChecked() ||
+					       vod_track_idx_enabled(3));
+		auto track3_disabled = track3_warning_visible &&
+				       !ui->advOutRecTrack3->isChecked();
+		ui->advOutTrack3BitrateLabel->setDisabled(track3_disabled);
+		ui->advOutTrack3Bitrate->setDisabled(track3_disabled);
+
+		auto track4_warning_visible = mtv_enabled &&
+					      (ui->advOutTrack4->isChecked() ||
+					       vod_track_idx_enabled(4));
+		auto track4_disabled = track4_warning_visible &&
+				       !ui->advOutRecTrack4->isChecked();
+		ui->advOutTrack4BitrateLabel->setDisabled(track4_disabled);
+		ui->advOutTrack4Bitrate->setDisabled(track4_disabled);
+
+		auto track5_warning_visible = mtv_enabled &&
+					      (ui->advOutTrack5->isChecked() ||
+					       vod_track_idx_enabled(5));
+		auto track5_disabled = track5_warning_visible &&
+				       !ui->advOutRecTrack5->isChecked();
+		ui->advOutTrack5BitrateLabel->setDisabled(track5_disabled);
+		ui->advOutTrack5Bitrate->setDisabled(track5_disabled);
+
+		auto track6_warning_visible = mtv_enabled &&
+					      (ui->advOutTrack6->isChecked() ||
+					       vod_track_idx_enabled(6));
+		auto track6_disabled = track6_warning_visible &&
+				       !ui->advOutRecTrack6->isChecked();
+		ui->advOutTrack6BitrateLabel->setDisabled(track6_disabled);
+		ui->advOutTrack6Bitrate->setDisabled(track6_disabled);
+	};
+
 	if (available) {
 		OBSDataAutoRelease settings;
 		{
@@ -6384,6 +6497,26 @@ void OBSBasicSettings::UpdateMultitrackVideo()
 					.arg(multitrack_video_name,
 					     ui->service->currentText()));
 		}
+
+		auto disabled_text =
+			QTStr("Basic.Settings.MultitrackVideoDisabledSettings")
+				.arg(ui->service->currentText())
+				.arg(multitrack_video_name);
+
+		ui->multitrackVideoNotice->setText(disabled_text);
+
+		auto mtv_enabled = ui->enableMultitrackVideo->isChecked();
+		ui->multitrackVideoNoticeBox->setVisible(mtv_enabled);
+
+		update_simple_output_settings(mtv_enabled);
+		update_advanced_output_settings(mtv_enabled);
+		update_advanced_output_audio_tracks(mtv_enabled);
+	} else {
+		ui->multitrackVideoNoticeBox->setVisible(false);
+
+		update_simple_output_settings(false);
+		update_advanced_output_settings(false);
+		update_advanced_output_audio_tracks(false);
 	}
 }
 

@@ -1847,6 +1847,25 @@
              <number>0</number>
             </property>
             <item>
+             <widget class="QFrame" name="multitrackVideoNoticeBox">
+              <property name="themeID" stdset="0">
+               <string notr="true">notice</string>
+              </property>
+              <layout class="QVBoxLayout" name="multitrackVideoNoticeBoxLayout">
+               <item>
+                <widget class="QLabel" name="multitrackVideoNotice">
+                 <property name="text">
+                  <string>Basic.Settings.MultitrackVideoDisabledSettings</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
              <widget class="QFrame" name="widget">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
