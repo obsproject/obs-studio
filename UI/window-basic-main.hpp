@@ -58,6 +58,7 @@ class QListWidgetItem;
 class VolControl;
 class OBSBasicStats;
 class OBSBasicVCamConfig;
+class OBSSystemTrayIcon;
 
 #include "ui_OBSBasic.h"
 #include "ui_ColorSelect.h"
@@ -199,6 +200,7 @@ class OBSBasic : public OBSMainWindow {
 	friend struct BasicOutputHandler;
 	friend struct OBSStudioAPI;
 	friend class ScreenshotObj;
+	friend class OBSSystemTrayIcon;
 
 	enum class MoveDir { Up, Down, Left, Right };
 
@@ -324,14 +326,7 @@ private:
 	bool vcamEnabled = false;
 	VCamConfig vcamConfig;
 
-	QScopedPointer<QSystemTrayIcon> trayIcon;
-	QPointer<QAction> sysTrayStream;
-	QPointer<QAction> sysTrayRecord;
-	QPointer<QAction> sysTrayReplayBuffer;
-	QPointer<QAction> sysTrayVirtualCam;
-	QPointer<QAction> showHide;
-	QPointer<QAction> exit;
-	QPointer<QMenu> trayMenu;
+	QScopedPointer<OBSSystemTrayIcon> trayIcon;
 	QPointer<QMenu> previewProjector;
 	QPointer<QMenu> studioProgramProjector;
 	QPointer<QMenu> previewProjectorSource;
@@ -785,7 +780,6 @@ private slots:
 	void SetBlendingMethod();
 	void SetBlendingMode();
 
-	void IconActivated(QSystemTrayIcon::ActivationReason reason);
 	void SetShowing(bool showing);
 
 	void ToggleShowHide();
@@ -1291,6 +1285,9 @@ signals:
 
 	/* Studio Mode signal */
 	void PreviewProgramModeChanged(bool enabled);
+
+	/* Window visible signal */
+	void VisibilityChanged(bool visible);
 
 private:
 	std::unique_ptr<Ui::OBSBasic> ui;

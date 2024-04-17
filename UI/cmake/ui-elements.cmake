@@ -20,6 +20,8 @@ target_sources(
             slider-ignorewheel.hpp
             spinbox-ignorewheel.cpp
             spinbox-ignorewheel.hpp
+            system-tray-icon.cpp
+            system-tray-icon.hpp
             vertical-scroll-area.cpp
             vertical-scroll-area.hpp)
 

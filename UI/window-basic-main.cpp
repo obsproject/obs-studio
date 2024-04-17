@@ -76,6 +76,7 @@
 #include "ui-validation.hpp"
 #include "media-controls.hpp"
 #include "undo-stack-obs.hpp"
+#include "system-tray-icon.hpp"
 #include <fstream>
 #include <sstream>
 
@@ -2045,10 +2046,6 @@ void OBSBasic::ResetOutputs()
 
 		emit ReplayBufEnabled(outputHandler->replayBuffer);
 
-		if (sysTrayReplayBuffer)
-			sysTrayReplayBuffer->setEnabled(
-				!!outputHandler->replayBuffer);
-
 		UpdateIsRecordingPausable();
 	} else {
 		outputHandler->Update();
@@ -3066,7 +3063,6 @@ OBSBasic::~OBSBasic()
 	delete deinterlaceMenu;
 	delete perSceneTransitionMenu;
 	delete shortcutFilter;
-	delete trayMenu;
 	delete programOptions;
 	delete program;
 
@@ -5337,8 +5333,7 @@ void OBSBasic::changeEvent(QEvent *event)
 			(QWindowStateChangeEvent *)event;
 
 		if (isMinimized()) {
-			if (trayIcon && trayIcon->isVisible() &&
-			    sysTrayMinimizeToTray()) {
+			if (trayIcon && sysTrayMinimizeToTray()) {
 				ToggleShowHide();
 				return;
 			}
@@ -6954,11 +6949,6 @@ void OBSBasic::DisplayStreamStartError()
 
 	emit StreamingStopped();
 
-	if (sysTrayStream) {
-		sysTrayStream->setText(QTStr("Basic.Main.StartStreaming"));
-		sysTrayStream->setEnabled(true);
-	}
-
 	QMessageBox::critical(this, QTStr("Output.StartStreamFailed"), message);
 }
 
@@ -7104,11 +7094,6 @@ void OBSBasic::StartStreaming()
 
 	emit StreamingPreparing();
 
-	if (sysTrayStream) {
-		sysTrayStream->setEnabled(false);
-		sysTrayStream->setText("Basic.Main.PreparingStream");
-	}
-
 	auto holder = outputHandler->SetupStreaming(service);
 	auto future = holder.future.then(this, [&](bool setupStreamingResult) {
 		if (!setupStreamingResult) {
@@ -7122,9 +7107,6 @@ void OBSBasic::StartStreaming()
 		SaveProject();
 
 		emit StreamingStarting(autoStartBroadcast);
-
-		if (sysTrayStream)
-			sysTrayStream->setText("Basic.Main.Connecting");
 
 		if (!outputHandler->StartStreaming(service)) {
 			DisplayStreamStartError();
@@ -7294,19 +7276,6 @@ inline void OBSBasic::OnActivate(bool force)
 		lastOutputResolution = {ovi.base_width, ovi.base_height};
 
 		TaskbarOverlaySetStatus(TaskbarOverlayStatusActive);
-		if (trayIcon && trayIcon->isVisible()) {
-#ifdef __APPLE__
-			QIcon trayMask =
-				QIcon(":/res/images/tray_active_macos.svg");
-			trayMask.setIsMask(true);
-			trayIcon->setIcon(
-				QIcon::fromTheme("obs-tray", trayMask));
-#else
-			trayIcon->setIcon(QIcon::fromTheme(
-				"obs-tray-active",
-				QIcon(":/res/images/tray_active.png")));
-#endif
-		}
 	}
 }
 
@@ -7322,44 +7291,11 @@ inline void OBSBasic::OnDeactivate()
 		ClearProcessPriority();
 
 		TaskbarOverlaySetStatus(TaskbarOverlayStatusInactive);
-		if (trayIcon && trayIcon->isVisible()) {
-#ifdef __APPLE__
-			QIcon trayIconFile =
-				QIcon(":/res/images/obs_macos.svg");
-			trayIconFile.setIsMask(true);
-#else
-			QIcon trayIconFile = QIcon(":/res/images/obs.png");
-#endif
-			trayIcon->setIcon(
-				QIcon::fromTheme("obs-tray", trayIconFile));
-		}
-	} else if (outputHandler->Active() && trayIcon &&
-		   trayIcon->isVisible()) {
-		if (os_atomic_load_bool(&recording_paused)) {
-#ifdef __APPLE__
-			QIcon trayIconFile =
-				QIcon(":/res/images/obs_paused_macos.svg");
-			trayIconFile.setIsMask(true);
-#else
-			QIcon trayIconFile =
-				QIcon(":/res/images/obs_paused.png");
-#endif
-			trayIcon->setIcon(QIcon::fromTheme("obs-tray-paused",
-							   trayIconFile));
+	} else if (outputHandler->Active()) {
+		if (os_atomic_load_bool(&recording_paused))
 			TaskbarOverlaySetStatus(TaskbarOverlayStatusPaused);
-		} else {
-#ifdef __APPLE__
-			QIcon trayIconFile =
-				QIcon(":/res/images/tray_active_macos.svg");
-			trayIconFile.setIsMask(true);
-#else
-			QIcon trayIconFile =
-				QIcon(":/res/images/tray_active.png");
-#endif
-			trayIcon->setIcon(QIcon::fromTheme("obs-tray-active",
-							   trayIconFile));
+		else
 			TaskbarOverlaySetStatus(TaskbarOverlayStatusActive);
-		}
 	}
 }
 
@@ -7450,26 +7386,13 @@ void OBSBasic::ForceStopStreaming()
 void OBSBasic::StreamDelayStarting(int sec)
 {
 	emit StreamingStarted(true);
-
-	if (sysTrayStream) {
-		sysTrayStream->setText(QTStr("Basic.Main.StopStreaming"));
-		sysTrayStream->setEnabled(true);
-	}
-
 	ui->statusbar->StreamDelayStarting(sec);
-
 	OnActivate();
 }
 
 void OBSBasic::StreamDelayStopping(int sec)
 {
 	emit StreamingStopped(true);
-
-	if (sysTrayStream) {
-		sysTrayStream->setText(QTStr("Basic.Main.StartStreaming"));
-		sysTrayStream->setEnabled(true);
-	}
-
 	ui->statusbar->StreamDelayStopping(sec);
 
 	if (api)
@@ -7481,11 +7404,6 @@ void OBSBasic::StreamingStart()
 	emit StreamingStarted();
 	OBSOutputAutoRelease output = obs_frontend_get_streaming_output();
 	ui->statusbar->StreamStarted(output);
-
-	if (sysTrayStream) {
-		sysTrayStream->setText(QTStr("Basic.Main.StopStreaming"));
-		sysTrayStream->setEnabled(true);
-	}
 
 #ifdef YOUTUBE_ENABLED
 	if (!autoStartBroadcast) {
@@ -7520,10 +7438,6 @@ void OBSBasic::StreamingStart()
 void OBSBasic::StreamStopping()
 {
 	emit StreamingStopping();
-
-	if (sysTrayStream)
-		sysTrayStream->setText(QTStr("Basic.Main.StoppingStreaming"));
-
 	streamingStopping = true;
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_STREAMING_STOPPING);
@@ -7580,11 +7494,6 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 	ui->statusbar->StreamStopped();
 
 	emit StreamingStopped();
-
-	if (sysTrayStream) {
-		sysTrayStream->setText(QTStr("Basic.Main.StartStreaming"));
-		sysTrayStream->setEnabled(true);
-	}
 
 	streamingStopping = false;
 	if (api)
@@ -7732,9 +7641,6 @@ void OBSBasic::RecordStopping()
 {
 	emit RecordingStopping();
 
-	if (sysTrayRecord)
-		sysTrayRecord->setText(QTStr("Basic.Main.StoppingRecording"));
-
 	recordingStopping = true;
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_RECORDING_STOPPING);
@@ -7755,9 +7661,6 @@ void OBSBasic::RecordingStart()
 	ui->statusbar->RecordingStarted(outputHandler->fileOutput);
 	emit RecordingStarted(isRecordingPausable);
 
-	if (sysTrayRecord)
-		sysTrayRecord->setText(QTStr("Basic.Main.StopRecording"));
-
 	recordingStopping = false;
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_RECORDING_STARTED);
@@ -7774,9 +7677,6 @@ void OBSBasic::RecordingStop(int code, QString last_error)
 {
 	ui->statusbar->RecordingStopped();
 	emit RecordingStopped();
-
-	if (sysTrayRecord)
-		sysTrayRecord->setText(QTStr("Basic.Main.StartRecording"));
 
 	blog(LOG_INFO, RECORDING_STOP);
 
@@ -7924,10 +7824,6 @@ void OBSBasic::ReplayBufferStopping()
 
 	emit ReplayBufStopping();
 
-	if (sysTrayReplayBuffer)
-		sysTrayReplayBuffer->setText(
-			QTStr("Basic.Main.StoppingReplayBuffer"));
-
 	replayBufferStopping = true;
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_REPLAY_BUFFER_STOPPING);
@@ -7952,10 +7848,6 @@ void OBSBasic::ReplayBufferStart()
 		return;
 
 	emit ReplayBufStarted();
-
-	if (sysTrayReplayBuffer)
-		sysTrayReplayBuffer->setText(
-			QTStr("Basic.Main.StopReplayBuffer"));
 
 	replayBufferStopping = false;
 	if (api)
@@ -8010,10 +7902,6 @@ void OBSBasic::ReplayBufferStop(int code)
 		return;
 
 	emit ReplayBufStopped();
-
-	if (sysTrayReplayBuffer)
-		sysTrayReplayBuffer->setText(
-			QTStr("Basic.Main.StartReplayBuffer"));
 
 	blog(LOG_INFO, REPLAY_BUFFER_STOP);
 
@@ -8083,9 +7971,6 @@ void OBSBasic::OnVirtualCamStart()
 
 	emit VirtualCamStarted();
 
-	if (sysTrayVirtualCam)
-		sysTrayVirtualCam->setText(QTStr("Basic.Main.StopVirtualCam"));
-
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_VIRTUALCAM_STARTED);
 
@@ -8100,9 +7985,6 @@ void OBSBasic::OnVirtualCamStop(int)
 		return;
 
 	emit VirtualCamStopped();
-
-	if (sysTrayVirtualCam)
-		sysTrayVirtualCam->setText(QTStr("Basic.Main.StartVirtualCam"));
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_VIRTUALCAM_STOPPED);
@@ -9818,8 +9700,6 @@ void OBSBasic::SetShowing(bool showing)
 			}
 		}
 
-		if (showHide)
-			showHide->setText(QTStr("Basic.SystemTray.Show"));
 		QTimer::singleShot(0, this, &OBSBasic::hide);
 
 		if (previewEnabled)
@@ -9830,8 +9710,6 @@ void OBSBasic::SetShowing(bool showing)
 #endif
 
 	} else if (showing && !isVisible()) {
-		if (showHide)
-			showHide->setText(QTStr("Basic.SystemTray.Hide"));
 		QTimer::singleShot(0, this, &OBSBasic::show);
 
 		if (previewEnabled)
@@ -9863,6 +9741,8 @@ void OBSBasic::SetShowing(bool showing)
 			setWindowState(state);
 		}
 	}
+
+	emit VisibilityChanged(showing);
 }
 
 void OBSBasic::ToggleShowHide()
@@ -9877,116 +9757,16 @@ void OBSBasic::ToggleShowHide()
 	SetShowing(!showing);
 }
 
-void OBSBasic::SystemTrayInit()
-{
-#ifdef __APPLE__
-	QIcon trayIconFile = QIcon(":/res/images/obs_macos.svg");
-	trayIconFile.setIsMask(true);
-#else
-	QIcon trayIconFile = QIcon(":/res/images/obs.png");
-#endif
-	trayIcon.reset(new QSystemTrayIcon(
-		QIcon::fromTheme("obs-tray", trayIconFile), this));
-	trayIcon->setToolTip("OBS Studio");
-
-	showHide = new QAction(QTStr("Basic.SystemTray.Show"), trayIcon.data());
-	sysTrayStream = new QAction(
-		StreamingActive() ? QTStr("Basic.Main.StopStreaming")
-				  : QTStr("Basic.Main.StartStreaming"),
-		trayIcon.data());
-	sysTrayRecord = new QAction(
-		RecordingActive() ? QTStr("Basic.Main.StopRecording")
-				  : QTStr("Basic.Main.StartRecording"),
-		trayIcon.data());
-	sysTrayReplayBuffer = new QAction(
-		ReplayBufferActive() ? QTStr("Basic.Main.StopReplayBuffer")
-				     : QTStr("Basic.Main.StartReplayBuffer"),
-		trayIcon.data());
-	sysTrayVirtualCam = new QAction(
-		VirtualCamActive() ? QTStr("Basic.Main.StopVirtualCam")
-				   : QTStr("Basic.Main.StartVirtualCam"),
-		trayIcon.data());
-	exit = new QAction(QTStr("Exit"), trayIcon.data());
-
-	trayMenu = new QMenu;
-	previewProjector = new QMenu(QTStr("PreviewProjector"));
-	studioProgramProjector = new QMenu(QTStr("StudioProgramProjector"));
-	AddProjectorMenuMonitors(previewProjector, this,
-				 &OBSBasic::OpenPreviewProjector);
-	AddProjectorMenuMonitors(studioProgramProjector, this,
-				 &OBSBasic::OpenStudioProgramProjector);
-	trayMenu->addAction(showHide);
-	trayMenu->addSeparator();
-	trayMenu->addMenu(previewProjector);
-	trayMenu->addMenu(studioProgramProjector);
-	trayMenu->addSeparator();
-	trayMenu->addAction(sysTrayStream);
-	trayMenu->addAction(sysTrayRecord);
-	trayMenu->addAction(sysTrayReplayBuffer);
-	trayMenu->addAction(sysTrayVirtualCam);
-	trayMenu->addSeparator();
-	trayMenu->addAction(exit);
-	trayIcon->setContextMenu(trayMenu);
-	trayIcon->show();
-
-	if (outputHandler && !outputHandler->replayBuffer)
-		sysTrayReplayBuffer->setEnabled(false);
-
-	sysTrayVirtualCam->setEnabled(vcamEnabled);
-
-	if (Active())
-		OnActivate(true);
-
-	connect(trayIcon.data(), &QSystemTrayIcon::activated, this,
-		&OBSBasic::IconActivated);
-	connect(showHide, &QAction::triggered, this, &OBSBasic::ToggleShowHide);
-	connect(sysTrayStream, &QAction::triggered, this,
-		&OBSBasic::StreamActionTriggered);
-	connect(sysTrayRecord, &QAction::triggered, this,
-		&OBSBasic::RecordActionTriggered);
-	connect(sysTrayReplayBuffer.data(), &QAction::triggered, this,
-		&OBSBasic::ReplayBufferActionTriggered);
-	connect(sysTrayVirtualCam.data(), &QAction::triggered, this,
-		&OBSBasic::VirtualCamActionTriggered);
-	connect(exit, &QAction::triggered, this, &OBSBasic::close);
-}
-
-void OBSBasic::IconActivated(QSystemTrayIcon::ActivationReason reason)
-{
-	// Refresh projector list
-	previewProjector->clear();
-	studioProgramProjector->clear();
-	AddProjectorMenuMonitors(previewProjector, this,
-				 &OBSBasic::OpenPreviewProjector);
-	AddProjectorMenuMonitors(studioProgramProjector, this,
-				 &OBSBasic::OpenStudioProgramProjector);
-
-#ifdef __APPLE__
-	UNUSED_PARAMETER(reason);
-#else
-	if (reason == QSystemTrayIcon::Trigger) {
-		EnablePreviewDisplay(previewEnabled && !isVisible());
-		ToggleShowHide();
-	}
-#endif
-}
-
 void OBSBasic::SysTrayNotify(const QString &text,
 			     QSystemTrayIcon::MessageIcon n)
 {
-	if (trayIcon && trayIcon->isVisible() &&
-	    QSystemTrayIcon::supportsMessages()) {
-		QSystemTrayIcon::MessageIcon icon =
-			QSystemTrayIcon::MessageIcon(n);
-		trayIcon->showMessage("OBS Studio", text, icon, 10000);
-	}
+	if (trayIcon)
+		trayIcon->ShowNotification(text, n);
 }
 
 void OBSBasic::SystemTray(bool firstStarted)
 {
 	if (!QSystemTrayIcon::isSystemTrayAvailable())
-		return;
-	if (!trayIcon && !firstStarted)
 		return;
 
 	bool sysTrayWhenStarted = config_get_bool(
@@ -9994,13 +9774,25 @@ void OBSBasic::SystemTray(bool firstStarted)
 	bool sysTrayEnabled = config_get_bool(GetGlobalConfig(), "BasicWindow",
 					      "SysTrayEnabled");
 
-	if (firstStarted)
-		SystemTrayInit();
+	if (sysTrayEnabled) {
+		trayIcon.reset(new OBSSystemTrayIcon(this));
 
-	if (!sysTrayEnabled) {
-		trayIcon->hide();
-	} else {
-		trayIcon->show();
+		connect(trayIcon.data(),
+			&OBSSystemTrayIcon::VisibilityActionTriggered, this,
+			&OBSBasic::ToggleShowHide);
+		connect(trayIcon.data(),
+			&OBSSystemTrayIcon::StreamActionTriggered, this,
+			&OBSBasic::StreamActionTriggered);
+		connect(trayIcon.data(),
+			&OBSSystemTrayIcon::RecordActionTriggered, this,
+			&OBSBasic::RecordActionTriggered);
+		connect(trayIcon.data(),
+			&OBSSystemTrayIcon::ReplayBufferActionTriggered, this,
+			&OBSBasic::ReplayBufferActionTriggered);
+		connect(trayIcon.data(),
+			&OBSSystemTrayIcon::VirtualCamActionTriggered, this,
+			&OBSBasic::VirtualCamActionTriggered);
+
 		if (firstStarted && (sysTrayWhenStarted || opt_minimize_tray)) {
 			EnablePreviewDisplay(false);
 #ifdef __APPLE__
@@ -10008,12 +9800,9 @@ void OBSBasic::SystemTray(bool firstStarted)
 #endif
 			opt_minimize_tray = false;
 		}
+	} else {
+		trayIcon.reset();
 	}
-
-	if (isVisible())
-		showHide->setText(QTStr("Basic.SystemTray.Hide"));
-	else
-		showHide->setText(QTStr("Basic.SystemTray.Show"));
 }
 
 bool OBSBasic::sysTrayMinimizeToTray()
@@ -10725,18 +10514,6 @@ void OBSBasic::PauseRecording()
 		ui->statusbar->RecordingPaused();
 
 		TaskbarOverlaySetStatus(TaskbarOverlayStatusPaused);
-		if (trayIcon && trayIcon->isVisible()) {
-#ifdef __APPLE__
-			QIcon trayIconFile =
-				QIcon(":/res/images/obs_paused_macos.svg");
-			trayIconFile.setIsMask(true);
-#else
-			QIcon trayIconFile =
-				QIcon(":/res/images/obs_paused.png");
-#endif
-			trayIcon->setIcon(QIcon::fromTheme("obs-tray-paused",
-							   trayIconFile));
-		}
 
 		if (api)
 			api->on_event(OBS_FRONTEND_EVENT_RECORDING_PAUSED);
@@ -10763,18 +10540,6 @@ void OBSBasic::UnpauseRecording()
 		ui->statusbar->RecordingUnpaused();
 
 		TaskbarOverlaySetStatus(TaskbarOverlayStatusActive);
-		if (trayIcon && trayIcon->isVisible()) {
-#ifdef __APPLE__
-			QIcon trayIconFile =
-				QIcon(":/res/images/tray_active_macos.svg");
-			trayIconFile.setIsMask(true);
-#else
-			QIcon trayIconFile =
-				QIcon(":/res/images/tray_active.png");
-#endif
-			trayIcon->setIcon(QIcon::fromTheme("obs-tray-active",
-							   trayIconFile));
-		}
 
 		if (api)
 			api->on_event(OBS_FRONTEND_EVENT_RECORDING_UNPAUSED);

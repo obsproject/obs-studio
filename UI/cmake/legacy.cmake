@@ -211,6 +211,8 @@ target_sources(
           spinbox-ignorewheel.hpp
           source-tree.cpp
           source-tree.hpp
+          system-tray-icon.cpp
+          system-tray-icon.hpp
           url-push-button.cpp
           url-push-button.hpp
           undo-stack-obs.cpp
