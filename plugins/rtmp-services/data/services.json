@@ -2438,10 +2438,6 @@
                     "url": "rtmps://stream.ams.irl.run/ingest"
                 },
                 {
-                    "name": "Frankfurt, DE",
-                    "url": "rtmps://stream.fra.irl.run/ingest"
-                },
-                {
                     "name": "Singapore",
                     "url": "rtmps://stream.sin.irl.run/ingest"
                 },
