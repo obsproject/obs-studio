@@ -13,6 +13,7 @@
         "--share=ipc",
         "--filesystem=xdg-run/pipewire-0",
         "--filesystem=host",
+        "--filesystem=/run/usbmuxd:ro",
         "--talk-name=org.kde.StatusNotifierWatcher",
         "--talk-name=org.freedesktop.Flatpak",
         "--talk-name=org.freedesktop.Notifications",
