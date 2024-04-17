@@ -2738,7 +2738,7 @@ static void load_debug_privilege(void)
 
 #define CONFIG_PATH BASE_PATH "/config"
 
-#if defined(LINUX_PORTABLE) || defined(_WIN32)
+#if defined(LINUX_PORTABLE) || defined(ENABLE_RELOCATABLE) || defined(_WIN32)
 #define ALLOW_PORTABLE_MODE 1
 #else
 #define ALLOW_PORTABLE_MODE 0

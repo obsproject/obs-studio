@@ -1,5 +1,6 @@
 target_sources(obs-studio PRIVATE platform-x11.cpp)
-target_compile_definitions(obs-studio PRIVATE OBS_INSTALL_PREFIX="${OBS_INSTALL_PREFIX}")
+target_compile_definitions(obs-studio PRIVATE OBS_INSTALL_PREFIX="${OBS_INSTALL_PREFIX}"
+                                              "$<$<BOOL:${ENABLE_RELOCATABLE}>:ENABLE_RELOCATABLE>")
 target_link_libraries(obs-studio PRIVATE Qt::GuiPrivate)
 
 if(TARGET OBS::python)
