@@ -1746,7 +1746,7 @@
                         <number>9</number>
                        </property>
                        <item row="0" column="0">
-                        <widget class="QLabel" name="label_19">
+                        <widget class="QLabel" name="simpleOutputVBitrateLabel">
                          <property name="minimumSize">
                           <size>
                            <width>170</width>
@@ -1778,7 +1778,7 @@
                         </widget>
                        </item>
                        <item row="1" column="0">
-                        <widget class="QLabel" name="label_20">
+                        <widget class="QLabel" name="simpleOutputABitrateLabel">
                          <property name="text">
                           <string>Basic.Settings.Output.AudioBitrate</string>
                          </property>
@@ -1889,7 +1889,7 @@
                         </widget>
                        </item>
                        <item row="5" column="0">
-                        <widget class="QLabel" name="label_23">
+                        <widget class="QLabel" name="simpleOutCustomLabel">
                          <property name="text">
                           <string>Basic.Settings.Output.CustomEncoderSettings</string>
                          </property>
@@ -2537,7 +2537,7 @@
                             <number>8</number>
                            </property>
                            <item row="1" column="0">
-                            <widget class="QLabel" name="label_28">
+                            <widget class="QLabel" name="advStreamTrackWidgetLabel">
                              <property name="minimumSize">
                               <size>
                                <width>170</width>
@@ -4245,7 +4245,7 @@
                                </widget>
                               </item>
                               <item row="0" column="0">
-                               <widget class="QLabel" name="label_25">
+                               <widget class="QLabel" name="advOutTrack1BitrateLabel">
                                 <property name="minimumSize">
                                  <size>
                                   <width>170</width>
@@ -4297,7 +4297,7 @@
                                <number>9</number>
                               </property>
                               <item row="0" column="0">
-                               <widget class="QLabel" name="label_49">
+                               <widget class="QLabel" name="advOutTrack2BitrateLabel">
                                 <property name="minimumSize">
                                  <size>
                                   <width>170</width>
@@ -4437,7 +4437,7 @@
                                <number>9</number>
                               </property>
                               <item row="0" column="0">
-                               <widget class="QLabel" name="label_51">
+                               <widget class="QLabel" name="advOutTrack3BitrateLabel">
                                 <property name="minimumSize">
                                  <size>
                                   <width>170</width>
@@ -4577,7 +4577,7 @@
                                <number>9</number>
                               </property>
                               <item row="0" column="0">
-                               <widget class="QLabel" name="label_53">
+                               <widget class="QLabel" name="advOutTrack4BitrateLabel">
                                 <property name="minimumSize">
                                  <size>
                                   <width>170</width>
@@ -4717,7 +4717,7 @@
                                <number>9</number>
                               </property>
                               <item row="0" column="0">
-                               <widget class="QLabel" name="label_59">
+                               <widget class="QLabel" name="advOutTrack5BitrateLabel">
                                 <property name="minimumSize">
                                  <size>
                                   <width>170</width>
@@ -4857,7 +4857,7 @@
                                <number>9</number>
                               </property>
                               <item row="0" column="0">
-                               <widget class="QLabel" name="label_61">
+                               <widget class="QLabel" name="advOutTrack6BitrateLabel">
                                 <property name="minimumSize">
                                  <size>
                                   <width>170</width>
@@ -8251,7 +8251,7 @@
   <connection>
    <sender>simpleOutAdvanced</sender>
    <signal>toggled(bool)</signal>
-   <receiver>label_23</receiver>
+   <receiver>simpleOutCustomLabel</receiver>
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
