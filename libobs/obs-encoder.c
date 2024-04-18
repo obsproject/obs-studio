@@ -354,6 +354,9 @@ static void remove_connection(struct obs_encoder *encoder, bool shutdown)
 	if (encoder->encoder_group) {
 		pthread_mutex_lock(&encoder->encoder_group->mutex);
 		encoder->encoder_group->encoders_started -= 1;
+		if (encoder->encoder_group->encoders_started == 0)
+			encoder->encoder_group->start_timestamp = 0;
+
 		pthread_mutex_unlock(&encoder->encoder_group->mutex);
 	}
 
