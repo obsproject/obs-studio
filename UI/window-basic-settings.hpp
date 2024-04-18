@@ -195,6 +195,8 @@ private:
 		      const char *value);
 	void SaveSpinBox(QSpinBox *widget, const char *section,
 			 const char *value);
+	void SaveText(QPlainTextEdit *widget, const char *section,
+		      const char *value);
 	void SaveFormat(QComboBox *combo);
 	void SaveEncoder(QComboBox *combo, const char *section,
 			 const char *value);
@@ -275,7 +277,7 @@ private:
 
 	/* stream */
 	void InitStreamPage();
-	inline bool IsCustomService() const;
+	bool IsCustomService() const;
 	inline bool IsWHIP() const;
 	void LoadServices(bool showAll);
 	void OnOAuthStreamKeyConnected();
@@ -301,6 +303,7 @@ private:
 	bool IsCustomServer();
 
 private slots:
+	void UpdateMultitrackVideo();
 	void RecreateOutputResolutionWidget();
 	bool UpdateResFPSLimits();
 	void DisplayEnforceWarning(bool checked);

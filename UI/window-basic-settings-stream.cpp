@@ -45,7 +45,7 @@ enum class Section : int {
 	StreamKey,
 };
 
-inline bool OBSBasicSettings::IsCustomService() const
+bool OBSBasicSettings::IsCustomService() const
 {
 	return ui->service->currentData().toInt() == (int)ListOpt::Custom;
 }
@@ -96,6 +96,16 @@ void OBSBasicSettings::InitStreamPage()
 		&OBSBasicSettings::DisplayEnforceWarning);
 	connect(ui->ignoreRecommended, &QCheckBox::toggled, this,
 		&OBSBasicSettings::UpdateResFPSLimits);
+
+	connect(ui->enableMultitrackVideo, &QCheckBox::toggled, this,
+		&OBSBasicSettings::UpdateMultitrackVideo);
+	connect(ui->multitrackVideoMaximumAggregateBitrateAuto,
+		&QCheckBox::toggled, this,
+		&OBSBasicSettings::UpdateMultitrackVideo);
+	connect(ui->multitrackVideoMaximumVideoTracksAuto, &QCheckBox::toggled,
+		this, &OBSBasicSettings::UpdateMultitrackVideo);
+	connect(ui->multitrackVideoConfigOverrideEnable, &QCheckBox::toggled,
+		this, &OBSBasicSettings::UpdateMultitrackVideo);
 }
 
 void OBSBasicSettings::LoadStream1Settings()
@@ -155,6 +165,44 @@ void OBSBasicSettings::LoadStream1Settings()
 		ui->twitchAddonDropdown->setCurrentIndex(idx);
 	}
 
+	ui->enableMultitrackVideo->setChecked(config_get_bool(
+		main->Config(), "Stream1", "EnableMultitrackVideo"));
+
+	ui->multitrackVideoMaximumAggregateBitrateAuto->setChecked(
+		config_get_bool(main->Config(), "Stream1",
+				"MultitrackVideoMaximumAggregateBitrateAuto"));
+	if (config_has_user_value(main->Config(), "Stream1",
+				  "MultitrackVideoMaximumAggregateBitrate")) {
+		ui->multitrackVideoMaximumAggregateBitrate->setValue(
+			config_get_int(
+				main->Config(), "Stream1",
+				"MultitrackVideoMaximumAggregateBitrate"));
+	}
+
+	ui->multitrackVideoMaximumVideoTracksAuto->setChecked(
+		config_get_bool(main->Config(), "Stream1",
+				"MultitrackVideoMaximumVideoTracksAuto"));
+	if (config_has_user_value(main->Config(), "Stream1",
+				  "MultitrackVideoMaximumVideoTracks"))
+		ui->multitrackVideoMaximumVideoTracks->setValue(
+			config_get_int(main->Config(), "Stream1",
+				       "MultitrackVideoMaximumVideoTracks"));
+
+	ui->multitrackVideoStreamDumpEnable->setChecked(config_get_bool(
+		main->Config(), "Stream1", "MultitrackVideoStreamDumpEnabled"));
+
+	ui->multitrackVideoConfigOverrideEnable->setChecked(
+		config_get_bool(main->Config(), "Stream1",
+				"MultitrackVideoConfigOverrideEnabled"));
+	if (config_has_user_value(main->Config(), "Stream1",
+				  "MultitrackVideoConfigOverride"))
+		ui->multitrackVideoConfigOverride->setPlainText(
+			DeserializeConfigText(
+				config_get_string(
+					main->Config(), "Stream1",
+					"MultitrackVideoConfigOverride"))
+				.c_str());
+
 	UpdateServerList();
 
 	if (is_rtmp_common) {
@@ -187,6 +235,7 @@ void OBSBasicSettings::LoadStream1Settings()
 	UpdateMoreInfoLink();
 	UpdateVodTrackSetting();
 	UpdateServiceRecommendations();
+	UpdateMultitrackVideo();
 
 	bool streamActive = obs_frontend_streaming_active();
 	ui->streamPage->setEnabled(!streamActive);
@@ -315,6 +364,49 @@ void OBSBasicSettings::SaveStream1Settings()
 	}
 
 	SaveCheckBox(ui->ignoreRecommended, "Stream1", "IgnoreRecommended");
+
+	auto oldMultitrackVideoSetting = config_get_bool(
+		main->Config(), "Stream1", "EnableMultitrackVideo");
+
+	if (!IsCustomService()) {
+		OBSDataAutoRelease settings = obs_data_create();
+		obs_data_set_string(settings, "service",
+				    QT_TO_UTF8(ui->service->currentText()));
+		OBSServiceAutoRelease temp_service = obs_service_create_private(
+			"rtmp_common", "auto config query service", settings);
+		settings = obs_service_get_settings(temp_service);
+		auto available = obs_data_has_user_value(
+			settings, "multitrack_video_configuration_url");
+
+		if (available) {
+			SaveCheckBox(ui->enableMultitrackVideo, "Stream1",
+				     "EnableMultitrackVideo");
+		} else {
+			config_remove_value(main->Config(), "Stream1",
+					    "EnableMultitrackVideo");
+		}
+	} else {
+		SaveCheckBox(ui->enableMultitrackVideo, "Stream1",
+			     "EnableMultitrackVideo");
+	}
+	SaveCheckBox(ui->multitrackVideoMaximumAggregateBitrateAuto, "Stream1",
+		     "MultitrackVideoMaximumAggregateBitrateAuto");
+	SaveSpinBox(ui->multitrackVideoMaximumAggregateBitrate, "Stream1",
+		    "MultitrackVideoMaximumAggregateBitrate");
+	SaveCheckBox(ui->multitrackVideoMaximumVideoTracksAuto, "Stream1",
+		     "MultitrackVideoMaximumVideoTracksAuto");
+	SaveSpinBox(ui->multitrackVideoMaximumVideoTracks, "Stream1",
+		    "MultitrackVideoMaximumVideoTracks");
+	SaveCheckBox(ui->multitrackVideoStreamDumpEnable, "Stream1",
+		     "MultitrackVideoStreamDumpEnabled");
+	SaveCheckBox(ui->multitrackVideoConfigOverrideEnable, "Stream1",
+		     "MultitrackVideoConfigOverrideEnabled");
+	SaveText(ui->multitrackVideoConfigOverride, "Stream1",
+		 "MultitrackVideoConfigOverride");
+
+	if (oldMultitrackVideoSetting != ui->enableMultitrackVideo->isChecked())
+		main->ResetOutputs();
+
 	SwapMultiTrack(QT_TO_UTF8(protocol));
 }
 
@@ -555,6 +647,7 @@ void OBSBasicSettings::on_service_currentIndexChanged(int idx)
 
 	protocol = FindProtocol();
 	UpdateAdvNetworkGroup();
+	UpdateMultitrackVideo();
 
 	if (ServiceSupportsCodecCheck() && UpdateResFPSLimits()) {
 		lastServiceIdx = idx;
@@ -576,6 +669,7 @@ void OBSBasicSettings::on_customServer_textChanged(const QString &)
 
 	protocol = FindProtocol();
 	UpdateAdvNetworkGroup();
+	UpdateMultitrackVideo();
 
 	if (ServiceSupportsCodecCheck())
 		lastCustomServer = ui->customServer->text();
@@ -596,6 +690,10 @@ void OBSBasicSettings::ServiceChanged(bool resetFields)
 
 	if (resetFields || lastService != service.c_str()) {
 		reset_service_ui_fields(ui.get(), service, loading);
+
+		ui->enableMultitrackVideo->setChecked(config_get_bool(
+			main->Config(), "Stream1", "EnableMultitrackVideo"));
+		UpdateMultitrackVideo();
 	}
 
 	ui->useAuth->setVisible(custom);
@@ -605,8 +703,8 @@ void OBSBasicSettings::ServiceChanged(bool resetFields)
 	ui->authPwWidget->setVisible(custom);
 
 	if (custom || whip) {
-		ui->streamkeyPageLayout->insertRow(1, ui->serverLabel,
-						   ui->serverStackedWidget);
+		ui->destinationLayout->insertRow(1, ui->serverLabel,
+						 ui->serverStackedWidget);
 
 		ui->serverStackedWidget->setCurrentIndex(1);
 		ui->serverStackedWidget->setVisible(true);

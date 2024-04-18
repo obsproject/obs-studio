@@ -337,6 +337,7 @@ void RestrictResetBitrates(initializer_list<QComboBox *> boxes, int maxbitrate);
 #define GROUP_CHANGED   &QGroupBox::toggled
 #define SCROLL_CHANGED  &QSpinBox::valueChanged
 #define DSCROLL_CHANGED &QDoubleSpinBox::valueChanged
+#define TEXT_CHANGED    &QPlainTextEdit::textChanged
 
 #define GENERAL_CHANGED &OBSBasicSettings::GeneralChanged
 #define STREAM1_CHANGED &OBSBasicSettings::Stream1Changed
@@ -419,6 +420,14 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->authUsername,         EDIT_CHANGED,   STREAM1_CHANGED);
 	HookWidget(ui->authPw,               EDIT_CHANGED,   STREAM1_CHANGED);
 	HookWidget(ui->ignoreRecommended,    CHECK_CHANGED,  STREAM1_CHANGED);
+	HookWidget(ui->enableMultitrackVideo,      CHECK_CHANGED,  STREAM1_CHANGED);
+	HookWidget(ui->multitrackVideoMaximumAggregateBitrateAuto, CHECK_CHANGED,  STREAM1_CHANGED);
+	HookWidget(ui->multitrackVideoMaximumAggregateBitrate,     SCROLL_CHANGED, STREAM1_CHANGED);
+	HookWidget(ui->multitrackVideoMaximumVideoTracksAuto, CHECK_CHANGED,  STREAM1_CHANGED);
+	HookWidget(ui->multitrackVideoMaximumVideoTracks,     SCROLL_CHANGED, STREAM1_CHANGED);
+	HookWidget(ui->multitrackVideoStreamDumpEnable,            CHECK_CHANGED,  STREAM1_CHANGED);
+	HookWidget(ui->multitrackVideoConfigOverrideEnable,        CHECK_CHANGED,  STREAM1_CHANGED);
+	HookWidget(ui->multitrackVideoConfigOverride,              TEXT_CHANGED,   STREAM1_CHANGED);
 	HookWidget(ui->outputMode,           COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutputPath,     EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->simpleNoSpace,        CHECK_CHANGED,  OUTPUTS_CHANGED);
@@ -1066,6 +1075,21 @@ void OBSBasicSettings::SaveSpinBox(QSpinBox *widget, const char *section,
 {
 	if (WidgetChanged(widget))
 		config_set_int(main->Config(), section, value, widget->value());
+}
+
+void OBSBasicSettings::SaveText(QPlainTextEdit *widget, const char *section,
+				const char *value)
+{
+	if (!WidgetChanged(widget))
+		return;
+
+	auto utf8 = widget->toPlainText().toUtf8();
+
+	OBSDataAutoRelease safe_text = obs_data_create();
+	obs_data_set_string(safe_text, "text", utf8.constData());
+
+	config_set_string(main->Config(), section, value,
+			  obs_data_get_json(safe_text));
 }
 
 std::string DeserializeConfigText(const char *value)
@@ -6251,6 +6275,116 @@ void OBSBasicSettings::UpdateAdvNetworkGroup()
 	ui->enableNewSocketLoop->setVisible(enabled);
 	ui->enableLowLatencyMode->setVisible(enabled);
 #endif
+}
+
+extern bool MultitrackVideoDeveloperModeEnabled();
+
+void OBSBasicSettings::UpdateMultitrackVideo()
+{
+	// Technically, it should currently be safe to toggle multitrackVideo
+	// while not streaming (recording should be irrelevant), but practically
+	// output settings aren't currently being tracked with that degree of
+	// flexibility, so just disable everything while outputs are active.
+	auto toggle_available = !main->Active();
+
+	// FIXME: protocol is not updated properly for WHIP; what do?
+	auto available = protocol.startsWith("RTMP");
+
+	if (available && !IsCustomService()) {
+		OBSDataAutoRelease settings = obs_data_create();
+		obs_data_set_string(settings, "service",
+				    QT_TO_UTF8(ui->service->currentText()));
+		OBSServiceAutoRelease temp_service = obs_service_create_private(
+			"rtmp_common", "auto config query service", settings);
+		settings = obs_service_get_settings(temp_service);
+		available = obs_data_has_user_value(
+			settings, "multitrack_video_configuration_url");
+		if (!available && ui->enableMultitrackVideo->isChecked())
+			ui->enableMultitrackVideo->setChecked(false);
+	}
+
+	ui->multitrackVideoGroupBox->setVisible(available);
+
+	ui->enableMultitrackVideo->setEnabled(toggle_available);
+
+	ui->multitrackVideoMaximumAggregateBitrateLabel->setEnabled(
+		toggle_available && ui->enableMultitrackVideo->isChecked());
+	ui->multitrackVideoMaximumAggregateBitrateAuto->setEnabled(
+		toggle_available && ui->enableMultitrackVideo->isChecked());
+	ui->multitrackVideoMaximumAggregateBitrate->setEnabled(
+		toggle_available && ui->enableMultitrackVideo->isChecked() &&
+		!ui->multitrackVideoMaximumAggregateBitrateAuto->isChecked());
+
+	ui->multitrackVideoMaximumVideoTracksLabel->setEnabled(
+		toggle_available && ui->enableMultitrackVideo->isChecked());
+	ui->multitrackVideoMaximumVideoTracksAuto->setEnabled(
+		toggle_available && ui->enableMultitrackVideo->isChecked());
+	ui->multitrackVideoMaximumVideoTracks->setEnabled(
+		toggle_available && ui->enableMultitrackVideo->isChecked() &&
+		!ui->multitrackVideoMaximumVideoTracksAuto->isChecked());
+
+	ui->multitrackVideoStreamDumpEnable->setVisible(
+		available && MultitrackVideoDeveloperModeEnabled());
+	ui->multitrackVideoConfigOverrideEnable->setVisible(
+		available && MultitrackVideoDeveloperModeEnabled());
+	ui->multitrackVideoConfigOverrideLabel->setVisible(
+		available && MultitrackVideoDeveloperModeEnabled());
+	ui->multitrackVideoConfigOverride->setVisible(
+		available && MultitrackVideoDeveloperModeEnabled());
+
+	ui->multitrackVideoStreamDumpEnable->setEnabled(
+		toggle_available && ui->enableMultitrackVideo->isChecked());
+	ui->multitrackVideoConfigOverrideEnable->setEnabled(
+		toggle_available && ui->enableMultitrackVideo->isChecked());
+	ui->multitrackVideoConfigOverrideLabel->setEnabled(
+		toggle_available && ui->enableMultitrackVideo->isChecked() &&
+		ui->multitrackVideoConfigOverrideEnable->isChecked());
+	ui->multitrackVideoConfigOverride->setEnabled(
+		toggle_available && ui->enableMultitrackVideo->isChecked() &&
+		ui->multitrackVideoConfigOverrideEnable->isChecked());
+
+	if (available) {
+		OBSDataAutoRelease settings;
+		{
+			auto service_name = ui->service->currentText();
+			auto custom_server = ui->customServer->text().trimmed();
+
+			obs_properties_t *props =
+				obs_get_service_properties("rtmp_common");
+			obs_property_t *service =
+				obs_properties_get(props, "service");
+
+			settings = obs_data_create();
+
+			obs_data_set_string(settings, "service",
+					    QT_TO_UTF8(service_name));
+			obs_property_modified(service, settings);
+
+			obs_properties_destroy(props);
+		}
+
+		auto multitrack_video_name =
+			QTStr("Basic.Settings.Stream.MultitrackVideoLabel");
+		if (obs_data_has_user_value(settings, "multitrack_video_name"))
+			multitrack_video_name = obs_data_get_string(
+				settings, "multitrack_video_name");
+
+		ui->enableMultitrackVideo->setText(
+			QTStr("Basic.Settings.Stream.EnableMultitrackVideo")
+				.arg(multitrack_video_name));
+
+		if (obs_data_has_user_value(settings,
+					    "multitrack_video_disclaimer")) {
+			ui->multitrackVideoInfo->setVisible(true);
+			ui->multitrackVideoInfo->setText(obs_data_get_string(
+				settings, "multitrack_video_disclaimer"));
+		} else {
+			ui->multitrackVideoInfo->setText(
+				QTStr("MultitrackVideo.Info")
+					.arg(multitrack_video_name,
+					     ui->service->currentText()));
+		}
+	}
 }
 
 void OBSBasicSettings::SimpleStreamAudioEncoderChanged()
