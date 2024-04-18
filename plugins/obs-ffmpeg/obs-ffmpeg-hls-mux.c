@@ -100,6 +100,16 @@ static void *write_thread(void *data)
 {
 	struct ffmpeg_muxer *stream = data;
 
+	/* write headers and start capture */
+	os_atomic_set_bool(&stream->active, true);
+	os_atomic_set_bool(&stream->capturing, true);
+	stream->is_hls = true;
+	stream->total_bytes = 0;
+	stream->dropped_frames = 0;
+	stream->min_priority = 0;
+
+	obs_output_begin_data_capture(stream->output, 0);
+
 	while (os_sem_wait(stream->write_sem) == 0) {
 		if (os_event_try(stream->stop_event) == 0)
 			return NULL;
@@ -167,16 +177,6 @@ bool ffmpeg_hls_mux_start(void *data)
 						     write_thread, stream) == 0;
 	if (!stream->mux_thread_joinable)
 		return false;
-
-	/* write headers and start capture */
-	os_atomic_set_bool(&stream->active, true);
-	os_atomic_set_bool(&stream->capturing, true);
-	stream->is_hls = true;
-	stream->total_bytes = 0;
-	stream->dropped_frames = 0;
-	stream->min_priority = 0;
-
-	obs_output_begin_data_capture(stream->output, 0);
 
 	dstr_copy(&stream->printable_path, path_str);
 	info("Writing to path '%s'...", stream->printable_path.array);
