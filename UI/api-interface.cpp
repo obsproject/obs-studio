@@ -416,8 +416,8 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 		main->AddDockWidget(dock, Qt::RightDockWidgetArea);
 
-		dock->setFloating(true);
 		dock->setVisible(false);
+		dock->setFloating(true);
 
 		return true;
 	}
