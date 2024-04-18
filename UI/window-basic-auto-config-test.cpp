@@ -280,12 +280,45 @@ void AutoConfigTestPage::TestBandwidthThread()
 		servers.resize(2);
 	}
 
+	if (!wiz->serviceConfigServers.empty()) {
+		if (wiz->service == AutoConfig::Service::Twitch &&
+		    wiz->twitchAuto) {
+			// servers from Twitch service config replace the "auto" entry
+			servers.erase(servers.begin());
+		}
+
+		for (auto it = std::rbegin(wiz->serviceConfigServers);
+		     it != std::rend(wiz->serviceConfigServers); it++) {
+			auto same_server = std::find_if(
+				std::begin(servers), std::end(servers),
+				[&](const ServerInfo &si) {
+					return si.address == it->address;
+				});
+			if (same_server != std::end(servers))
+				servers.erase(same_server);
+			servers.emplace(std::begin(servers), it->name.c_str(),
+					it->address.c_str());
+		}
+
+		if (wiz->service == AutoConfig::Service::Twitch &&
+		    wiz->twitchAuto) {
+			// see above, only test 3 servers
+			// rtmps urls are currently counted as separate servers
+			servers.resize(3);
+		}
+	}
+
 	/* -----------------------------------*/
 	/* apply service settings             */
 
 	obs_service_update(service, service_settings);
 	obs_service_apply_encoder_settings(service, vencoder_settings,
 					   aencoder_settings);
+
+	if (wiz->multitrackVideo.testSuccessful) {
+		obs_data_set_int(vencoder_settings, "bitrate",
+				 wiz->startingBitrate);
+	}
 
 	/* -----------------------------------*/
 	/* create output                      */
@@ -823,6 +856,10 @@ bool AutoConfigTestPage::TestSoftwareEncoding()
 		upperBitrate /= 100;
 	}
 
+	if (wiz->testMultitrackVideo && wiz->multitrackVideo.testSuccessful &&
+	    !wiz->multitrackVideo.bitrate.has_value())
+		wiz->multitrackVideo.bitrate = wiz->idealBitrate;
+
 	if (wiz->idealBitrate > upperBitrate)
 		wiz->idealBitrate = upperBitrate;
 
@@ -1080,6 +1117,11 @@ void AutoConfigTestPage::FinalizeResults()
 		OBSDataAutoRelease service_settings = obs_data_create();
 		OBSDataAutoRelease vencoder_settings = obs_data_create();
 
+		if (wiz->testMultitrackVideo &&
+		    wiz->multitrackVideo.testSuccessful &&
+		    !wiz->multitrackVideo.bitrate.has_value())
+			wiz->multitrackVideo.bitrate = wiz->idealBitrate;
+
 		obs_data_set_int(vencoder_settings, "bitrate",
 				 wiz->idealBitrate);
 
@@ -1121,12 +1163,30 @@ void AutoConfigTestPage::FinalizeResults()
 		form->addRow(newLabel("Basic.AutoConfig.StreamPage.Server"),
 			     new QLabel(wiz->serverName.c_str(),
 					ui->finishPage));
-		form->addRow(newLabel("Basic.Settings.Output.VideoBitrate"),
-			     new QLabel(QString::number(wiz->idealBitrate),
-					ui->finishPage));
-		form->addRow(newLabel(TEST_RESULT_SE),
-			     new QLabel(encName(wiz->streamingEncoder),
-					ui->finishPage));
+		form->addRow(
+			newLabel("Basic.Settings.Stream.MultitrackVideoLabel"),
+			newLabel(wiz->multitrackVideo.testSuccessful ? "Yes"
+								     : "No"));
+
+		if (wiz->multitrackVideo.testSuccessful) {
+			form->addRow(
+				newLabel("Basic.Settings.Output.VideoBitrate"),
+				newLabel("Automatic"));
+			form->addRow(newLabel(TEST_RESULT_SE),
+				     newLabel("Automatic"));
+			form->addRow(
+				newLabel(
+					"Basic.AutoConfig.TestPage.Result.StreamingResolution"),
+				newLabel("Automatic"));
+		} else {
+			form->addRow(
+				newLabel("Basic.Settings.Output.VideoBitrate"),
+				new QLabel(QString::number(wiz->idealBitrate),
+					   ui->finishPage));
+			form->addRow(newLabel(TEST_RESULT_SE),
+				     new QLabel(encName(wiz->streamingEncoder),
+						ui->finishPage));
+		}
 	}
 
 	QString baseRes =
@@ -1168,6 +1228,8 @@ void AutoConfigTestPage::FinalizeResults()
 		     new QLabel(scaleRes, ui->finishPage));
 	form->addRow(newLabel("Basic.Settings.Video.FPS"),
 		     new QLabel(fpsStr, ui->finishPage));
+
+	// FIXME: form layout is super squished, probably need to set proper sizepolicy on all widgets?
 }
 
 #define STARTING_SEPARATOR \
