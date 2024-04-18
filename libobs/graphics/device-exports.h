@@ -180,6 +180,8 @@ EXPORT void device_debug_marker_begin(gs_device_t *device,
 EXPORT void device_debug_marker_end(gs_device_t *device);
 EXPORT bool device_is_monitor_hdr(gs_device_t *device, void *monitor);
 EXPORT bool device_shared_texture_available(void);
+EXPORT bool device_nv12_available(gs_device_t *device);
+EXPORT bool device_p010_available(gs_device_t *device);
 
 #ifdef __APPLE__
 EXPORT gs_texture_t *device_texture_create_from_iosurface(gs_device_t *device,
