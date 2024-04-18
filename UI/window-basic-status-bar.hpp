@@ -27,7 +27,7 @@ class OBSBasicStatusBar : public QStatusBar {
 private:
 	StatusBarWidget *statusWidget = nullptr;
 
-	obs_output_t *streamOutput = nullptr;
+	OBSWeakOutputAutoRelease streamOutput;
 	std::vector<OBSSignal> streamSigs;
 	obs_output_t *recordOutput = nullptr;
 	bool active = false;
