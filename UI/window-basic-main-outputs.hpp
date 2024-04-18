@@ -1,6 +1,12 @@
 #pragma once
 
+#include <memory>
 #include <string>
+
+#include <QFuture>
+
+#include "qt-helpers.hpp"
+#include "multitrack-video-output.hpp"
 
 class OBSBasic;
 
@@ -15,6 +21,17 @@ struct BasicOutputHandler {
 	bool replayBufferActive = false;
 	bool virtualCamActive = false;
 	OBSBasic *main;
+
+	std::unique_ptr<MultitrackVideoOutput> multitrackVideo;
+	bool multitrackVideoActive = false;
+
+	OBSOutputAutoRelease StreamingOutput() const
+	{
+		return (multitrackVideo && multitrackVideoActive)
+			       ? multitrackVideo->StreamingOutput()
+			       : OBSOutputAutoRelease{
+					 obs_output_get_ref(streamOutput)};
+	}
 
 	obs_view_t *virtualCamView = nullptr;
 	video_t *virtualCamVideo = nullptr;
@@ -46,7 +63,7 @@ struct BasicOutputHandler {
 
 	virtual ~BasicOutputHandler(){};
 
-	virtual bool SetupStreaming(obs_service_t *service) = 0;
+	virtual FutureHolder<bool> SetupStreaming(obs_service_t *service) = 0;
 	virtual bool StartStreaming(obs_service_t *service) = 0;
 	virtual bool StartRecording() = 0;
 	virtual bool StartReplayBuffer() { return false; }
@@ -70,7 +87,8 @@ struct BasicOutputHandler {
 	inline bool Active() const
 	{
 		return streamingActive || recordingActive || delayActive ||
-		       replayBufferActive || virtualCamActive;
+		       replayBufferActive || virtualCamActive ||
+		       multitrackVideoActive;
 	}
 
 protected:
@@ -79,6 +97,12 @@ protected:
 					 const char *container, bool noSpace,
 					 bool overwrite, const char *format,
 					 bool ffmpeg);
+
+	FutureHolder<std::optional<bool>>
+	SetupMultitrackVideo(obs_service_t *service,
+			     std::string audio_encoder_id,
+			     std::optional<size_t> vod_track_mixer);
+	OBSDataAutoRelease GenerateMultitrackVideoStreamDumpConfig();
 };
 
 BasicOutputHandler *CreateSimpleOutputHandler(OBSBasic *main);

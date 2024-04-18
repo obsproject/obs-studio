@@ -70,6 +70,8 @@ public slots:
 	}
 };
 
+std::string DeserializeConfigText(const char *value);
+
 class OBSBasicSettings : public QDialog {
 	Q_OBJECT
 	Q_PROPERTY(QIcon generalIcon READ GetGeneralIcon WRITE SetGeneralIcon

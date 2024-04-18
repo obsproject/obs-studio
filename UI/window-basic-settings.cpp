@@ -1068,6 +1068,12 @@ void OBSBasicSettings::SaveSpinBox(QSpinBox *widget, const char *section,
 		config_set_int(main->Config(), section, value, widget->value());
 }
 
+std::string DeserializeConfigText(const char *value)
+{
+	OBSDataAutoRelease data = obs_data_create_from_json(value);
+	return obs_data_get_string(data, "text");
+}
+
 void OBSBasicSettings::SaveGroupBox(QGroupBox *widget, const char *section,
 				    const char *value)
 {
