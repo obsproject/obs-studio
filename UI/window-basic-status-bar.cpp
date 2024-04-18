@@ -195,7 +195,11 @@ void OBSBasicStatusBar::UpdateBandwidth()
 	if (++seconds < bitrateUpdateSeconds)
 		return;
 
-	uint64_t bytesSent = obs_output_get_total_bytes(streamOutput);
+	OBSOutput output = OBSGetStrongRef(streamOutput);
+	if (!output)
+		return;
+
+	uint64_t bytesSent = obs_output_get_total_bytes(output);
 	uint64_t bytesSentTime = os_gettime_ns();
 
 	if (bytesSent < lastBytesSent)
@@ -338,8 +342,12 @@ void OBSBasicStatusBar::UpdateDroppedFrames()
 	if (!streamOutput)
 		return;
 
-	int totalDropped = obs_output_get_frames_dropped(streamOutput);
-	int totalFrames = obs_output_get_total_frames(streamOutput);
+	OBSOutput output = OBSGetStrongRef(streamOutput);
+	if (!output)
+		return;
+
+	int totalDropped = obs_output_get_frames_dropped(output);
+	int totalFrames = obs_output_get_total_frames(output);
 	double percent = (double)totalDropped / (double)totalFrames * 100.0;
 
 	if (!totalFrames)
@@ -356,7 +364,7 @@ void OBSBasicStatusBar::UpdateDroppedFrames()
 	/* ----------------------------------- *
 	 * calculate congestion color          */
 
-	float congestion = obs_output_get_congestion(streamOutput);
+	float congestion = obs_output_get_congestion(output);
 	float avgCongestion = (congestion + lastCongestion) * 0.5f;
 	if (avgCongestion < congestion)
 		avgCongestion = congestion;
@@ -425,7 +433,11 @@ void OBSBasicStatusBar::Reconnect(int seconds)
 	reconnectTimeout = seconds;
 
 	if (streamOutput) {
-		delaySecTotal = obs_output_get_active_delay(streamOutput);
+		OBSOutput output = OBSGetStrongRef(streamOutput);
+		if (!output)
+			return;
+
+		delaySecTotal = obs_output_get_active_delay(output);
 		UpdateDelayMsg();
 
 		retries++;
@@ -453,7 +465,11 @@ void OBSBasicStatusBar::ReconnectSuccess()
 	ReconnectClear();
 
 	if (streamOutput) {
-		delaySecTotal = obs_output_get_active_delay(streamOutput);
+		OBSOutput output = OBSGetStrongRef(streamOutput);
+		if (!output)
+			return;
+
+		delaySecTotal = obs_output_get_active_delay(output);
 		UpdateDelayMsg();
 		disconnected = false;
 		firstCongestionUpdate = true;
@@ -501,7 +517,8 @@ void OBSBasicStatusBar::StreamDelayStarting(int sec)
 	if (!main || !main->outputHandler)
 		return;
 
-	streamOutput = main->outputHandler->streamOutput;
+	OBSOutputAutoRelease output = obs_frontend_get_streaming_output();
+	streamOutput = obs_output_get_weak_output(output);
 
 	delaySecTotal = delaySecStarting = sec;
 	UpdateDelayMsg();
@@ -516,11 +533,11 @@ void OBSBasicStatusBar::StreamDelayStopping(int sec)
 
 void OBSBasicStatusBar::StreamStarted(obs_output_t *output)
 {
-	streamOutput = output;
+	streamOutput = obs_output_get_weak_output(output);
 
-	streamSigs.emplace_back(obs_output_get_signal_handler(streamOutput),
+	streamSigs.emplace_back(obs_output_get_signal_handler(output),
 				"reconnect", OBSOutputReconnect, this);
-	streamSigs.emplace_back(obs_output_get_signal_handler(streamOutput),
+	streamSigs.emplace_back(obs_output_get_signal_handler(output),
 				"reconnect_success", OBSOutputReconnectSuccess,
 				this);
 
