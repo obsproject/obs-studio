@@ -2180,10 +2180,13 @@ static inline void unpair_encoders(obs_output_t *output)
 
 		if (audio) {
 			pthread_mutex_lock(&audio->init_mutex);
+			const char *audio_name = obs_encoder_get_name(audio);
+			const char *audio_id = obs_encoder_get_id(audio);
+
 			blog(LOG_INFO,
 			     "unpair_encoders - audio: '%s' (%s) (%p)",
-			     obs_encoder_get_name(audio),
-			     obs_encoder_get_id(audio), audio);
+			     audio_name ? audio_name : "NULL",
+			     audio_id ? audio_id : "NULL", audio);
 
 			audio->paired_encoder = NULL;
 			pthread_mutex_unlock(&audio->init_mutex);
