@@ -14,6 +14,7 @@ target_precompile_headers(
   <DispatcherQueue.h>
   <dwmapi.h>
   <Windows.Graphics.Capture.Interop.h>
+  <windows.graphics.directx.direct3d11.interop.h>
   <winrt/Windows.Foundation.Metadata.h>
   <winrt/Windows.Graphics.Capture.h>
   <winrt/Windows.System.h>)
