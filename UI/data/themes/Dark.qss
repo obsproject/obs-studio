@@ -131,6 +131,27 @@ QMainWindow::separator {
 
 /* Dock Widget */
 
+OBSDock > QWidget {
+    border: 1px solid palette(base);
+    border-top: none;
+}
+
+#transitionsFrame {
+    padding: 4px;
+}
+
+#transitionsFrame > QWidget {
+    margin-bottom: 2px;
+}
+
+#controlsFrame {
+    padding: 4px 3px;
+}
+
+#controlsFrame QPushButton {
+    margin: 1px 1px;
+}
+
 QDockWidget {
     titlebar-close-icon: url(theme:Dark/close.svg);
     titlebar-normal-icon: url(theme:Dark/popout.svg);
