@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <spawn.h>
+#include <fcntl.h>
 
 #include "bmem.h"
 #include "pipe.h"
@@ -65,6 +66,11 @@ os_process_pipe_t *os_process_pipe_create(const char *cmd_line,
 
 		return NULL;
 	}
+
+	fcntl(mainfds[0], F_SETFD, FD_CLOEXEC);
+	fcntl(mainfds[1], F_SETFD, FD_CLOEXEC);
+	fcntl(errfds[0], F_SETFD, FD_CLOEXEC);
+	fcntl(errfds[1], F_SETFD, FD_CLOEXEC);
 
 	if (process_pipe.read_pipe) {
 		posix_spawn_file_actions_addclose(&file_actions, mainfds[0]);
