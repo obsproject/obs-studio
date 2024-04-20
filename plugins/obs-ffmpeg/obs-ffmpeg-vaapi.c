@@ -410,16 +410,12 @@ static inline enum gs_color_format drm_to_gs_color_format(int format)
 
 static void vaapi_destroy_surface(struct vaapi_surface *out)
 {
-	obs_enter_graphics();
-
 	for (uint32_t i = 0; i < out->num_textures; ++i) {
 		if (out->textures[i]) {
 			gs_texture_destroy(out->textures[i]);
 			out->textures[i] = NULL;
 		}
 	}
-
-	obs_leave_graphics();
 
 	av_frame_free(&out->frame);
 }
@@ -463,8 +459,6 @@ static bool vaapi_create_surface(struct vaapi_encoder *enc,
 		goto fail;
 	}
 
-	obs_enter_graphics();
-
 	for (uint32_t i = 0; i < desc.num_layers; ++i) {
 		unsigned int width = desc.width;
 		unsigned int height = desc.height;
@@ -488,8 +482,6 @@ static bool vaapi_create_surface(struct vaapi_encoder *enc,
 
 		out->num_textures++;
 	}
-
-	obs_leave_graphics();
 
 	for (uint32_t i = 0; i < desc.num_objects; ++i)
 		close(desc.objects[i].fd);
@@ -591,11 +583,11 @@ static inline bool vaapi_test_texencode(struct vaapi_encoder *enc)
 	    !obs_encoder_gpu_scaling_enabled(enc->encoder))
 		return false;
 
-	if (!vaapi_create_surface(enc, &surface))
-		return false;
-
+	obs_enter_graphics();
+	bool success = vaapi_create_surface(enc, &surface);
 	vaapi_destroy_surface(&surface);
-	return true;
+	obs_leave_graphics();
+	return success;
 }
 
 static void *vaapi_create_tex_internal(obs_data_t *settings,
@@ -840,19 +832,23 @@ static bool vaapi_encode_tex(void *data, struct encoder_texture *texture,
 
 	*received_packet = false;
 
+	obs_enter_graphics();
+
+	// Destroyed piecemeal to avoid taking the graphics lock again.
 	if (!vaapi_create_surface(enc, &surface)) {
 		warn("vaapi_encode_tex: failed to create texture hw frame");
+		obs_leave_graphics();
 		return false;
 	}
-
-	obs_enter_graphics();
 
 	for (uint32_t i = 0; i < surface.num_textures; ++i) {
 		if (!texture->tex[i]) {
 			warn("vaapi_encode_tex: unexpected number of textures");
+			obs_leave_graphics();
 			goto fail;
 		}
 		gs_copy_texture(surface.textures[i], texture->tex[i]);
+		gs_texture_destroy(surface.textures[i]);
 	}
 
 	gs_flush();
@@ -871,11 +867,11 @@ static bool vaapi_encode_tex(void *data, struct encoder_texture *texture,
 	if (!vaapi_encode_internal(enc, surface.frame, packet, received_packet))
 		goto fail;
 
-	vaapi_destroy_surface(&surface);
+	av_frame_free(&surface.frame);
 	return true;
 
 fail:
-	vaapi_destroy_surface(&surface);
+	av_frame_free(&surface.frame);
 	return false;
 }
 
