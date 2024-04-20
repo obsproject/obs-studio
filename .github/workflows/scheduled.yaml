@@ -105,8 +105,8 @@ jobs:
     permissions:
       security-events: write
 
-  upload-language-files:
-    name: Upload Language Files 🌐
+  update-crowdin-locales:
+    name: Update Locales on Crowdin 🇺🇸
     if: github.repository_owner == 'obsproject' && github.ref_name == 'master'
     runs-on: ubuntu-24.04
     steps:
@@ -151,12 +151,12 @@ jobs:
           baseRef: ${{ steps.nightly-checks.outputs.lastNightly }}
           checkGlob: '**/en-US.ini'
 
-      - name: Upload US English Language Files 🇺🇸
+      - name: Update Locales on Crowdin 🇺🇸
         if: steps.checks.outcome == 'success' && fromJSON(steps.checks.outputs.hasChangedFiles)
-        uses: obsproject/obs-crowdin-sync/upload@84628cad04d2423e02443c64965cb834b4c5a245
-        env:
-          CROWDIN_PAT: ${{ secrets.CROWDIN_SYNC_CROWDIN_PAT }}
-          GITHUB_EVENT_BEFORE: ${{ steps.nightly-checks.outputs.lastNightly }}
+        uses: ./.github/actions/update-crowdin-locales
+        with:
+          crowdinSecret: ${{ secrets.CROWDIN_SYNC_CROWDIN_PAT }}
+          changedFiles: ${{ steps.checks.outputs.changedFiles }}
 
   steam-upload:
     name: Upload Steam Builds 🚂
