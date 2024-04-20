@@ -129,6 +129,10 @@
 
     --spinbox_button_height: calc(var(--input_height) - 2px);
 
+    --volume_slider: calc(calc(6px + var(--font_base_value)) / 2);
+    --volume_slider_box: calc(var(--volume_slider) * 4);
+    --volume_slider_label: calc(var(--volume_slider) * 6);
+
     --scrollbar_size: 12px;
 
     /* Inputs / Controls */
@@ -295,13 +299,8 @@ SourceTree QWidget {
 
 /* Misc */
 
-QAbstractItemView,
-QStackedWidget#stackedMixerArea QWidget {
+QAbstractItemView {
     background-color: var(--bg_base);
-}
-
-QStackedWidget#stackedMixerArea QScrollBar {
-    background-color: var(--grey6);
 }
 
 QToolTip {
@@ -1208,6 +1207,89 @@ QSlider::handle:disabled {
 
 #stackedMixerArea QPushButton:pressed {
     background-color: var(--button_bg_down);
+}
+
+#stackedMixerArea {
+    border: none;
+    padding: 0px;
+    border-bottom: 1px solid #3c404b;
+}
+
+VolControl #volLabel {
+    padding: var(--padding_base) 0px var(--padding_base);
+    text-align: center;
+    font-size: var(--font_base);
+    color: var(--text_muted);
+}
+
+/* Horizontal Mixer */
+#hMixerScrollArea VolControl {
+    padding: 0px var(--padding_large);
+    border-bottom: 1px solid var(--border_color);
+}
+
+#hMixerScrollArea VolControl QSlider {
+    margin: 0px 0px;
+}
+
+#hMixerScrollArea VolControl QSlider::groove:horizontal {
+    background: var(--bg_window);
+    height: var(--volume_slider);
+}
+
+#hMixerScrollArea VolControl QPushButton {
+    margin-right: var(--padding_xlarge);
+}
+
+/* Vertical Mixer */
+#stackedMixerArea QScrollBar:vertical {
+    border-left: 1px solid var(--border_color);
+}
+
+#vMixerScrollArea VolControl {
+    padding: var(--padding_large) 0px var(--padding_base);
+    border-right: 1px solid var(--border_color);
+}
+
+#vMixerScrollArea VolControl QSlider {
+    width: var(--volume_slider_box);
+}
+
+#vMixerScrollArea VolControl #volLabel {
+    padding: var(--padding_base) 0px var(--padding_base);
+    min-width: var(--volume_slider_label);
+    max-width: var(--volume_slider_label);
+    margin-right: 0;
+    text-align: center;
+}
+
+#vMixerScrollArea VolControl QSlider::groove:vertical {
+    background: var(--bg_window);
+    width: var(--volume_slider);
+}
+
+#vMixerScrollArea VolControl #volMeterFrame {
+    padding: var(--padding_large) var(--padding_xlarge);
+}
+
+#vMixerScrollArea VolControl QLabel {
+    padding: 0px var(--padding_large);
+}
+
+#vMixerScrollArea VolControl QPushButton {
+    margin-right: var(--padding_xlarge);
+}
+
+#vMixerScrollArea VolControl MuteCheckBox {
+    margin-left: var(--padding_xlarge);
+}
+
+VolControl {
+    background: var(--bg_base);
+}
+
+VolumeMeter {
+    background: transparent;
 }
 
 VolumeMeter {
