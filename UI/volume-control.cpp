@@ -246,6 +246,9 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	volLabel = new QLabel();
 	mute = new MuteCheckBox();
 
+	volLabel->setObjectName("volLabel");
+	volLabel->setAlignment(Qt::AlignCenter);
+
 	QString sourceName = obs_source_get_name(source);
 	setObjectName(sourceName);
 
@@ -262,23 +265,27 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	}
 
 	QVBoxLayout *mainLayout = new QVBoxLayout;
-	mainLayout->setContentsMargins(4, 4, 4, 4);
-	mainLayout->setSpacing(2);
+	mainLayout->setContentsMargins(0, 0, 0, 0);
+	mainLayout->setSpacing(0);
 
 	if (vertical) {
 		QHBoxLayout *nameLayout = new QHBoxLayout;
 		QHBoxLayout *controlLayout = new QHBoxLayout;
 		QHBoxLayout *volLayout = new QHBoxLayout;
+		QFrame *meterFrame = new QFrame;
 		QHBoxLayout *meterLayout = new QHBoxLayout;
 
 		volMeter = new VolumeMeter(nullptr, obs_volmeter, true);
 		slider = new VolumeSlider(obs_fader, Qt::Vertical);
 		slider->setLayoutDirection(Qt::LeftToRight);
+		slider->setDisplayTicks(true);
 
 		nameLayout->setAlignment(Qt::AlignCenter);
 		meterLayout->setAlignment(Qt::AlignCenter);
 		controlLayout->setAlignment(Qt::AlignCenter);
 		volLayout->setAlignment(Qt::AlignCenter);
+
+		meterFrame->setObjectName("volMeterFrame");
 
 		nameLayout->setContentsMargins(0, 0, 0, 0);
 		nameLayout->setSpacing(0);
@@ -287,28 +294,38 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 		controlLayout->setContentsMargins(0, 0, 0, 0);
 		controlLayout->setSpacing(0);
 
+		controlLayout->setAlignment(mute, Qt::AlignVCenter);
+		// Add Headphone (audio monitoring) widget here
+		controlLayout->addWidget(mute);
+		controlLayout->addItem(
+			new QSpacerItem(0, 0, QSizePolicy::MinimumExpanding,
+					QSizePolicy::Minimum));
+
 		if (showConfig) {
 			controlLayout->addWidget(config);
 			controlLayout->setAlignment(config, Qt::AlignVCenter);
 		}
 
-		controlLayout->addItem(new QSpacerItem(3, 0));
-		// Add Headphone (audio monitoring) widget here
-		controlLayout->addWidget(mute);
-		controlLayout->setAlignment(mute, Qt::AlignVCenter);
-
 		meterLayout->setContentsMargins(0, 0, 0, 0);
 		meterLayout->setSpacing(0);
-		meterLayout->addWidget(volMeter);
 		meterLayout->addWidget(slider);
+		meterLayout->addItem(
+			new QSpacerItem(0, 0, QSizePolicy::MinimumExpanding,
+					QSizePolicy::Minimum));
+		meterLayout->addWidget(volMeter);
+
+		meterFrame->setLayout(meterLayout);
 
 		volLayout->setContentsMargins(0, 0, 0, 0);
 		volLayout->setSpacing(0);
 		volLayout->addWidget(volLabel);
+		volLayout->addItem(
+			new QSpacerItem(0, 0, QSizePolicy::MinimumExpanding,
+					QSizePolicy::Minimum));
 
 		mainLayout->addItem(nameLayout);
 		mainLayout->addItem(volLayout);
-		mainLayout->addItem(meterLayout);
+		mainLayout->addWidget(meterFrame);
 		mainLayout->addItem(controlLayout);
 
 		volMeter->setFocusProxy(slider);
@@ -316,17 +333,22 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 		// Default size can cause clipping of long names in vertical layout.
 		QFont font = nameLabel->font();
 		QFontInfo info(font);
-		font.setPointSizeF(0.8 * info.pointSizeF());
 		nameLabel->setFont(font);
 
 		setMaximumWidth(110);
 	} else {
 		QHBoxLayout *textLayout = new QHBoxLayout;
+		QFrame *meterFrame = new QFrame;
+		QHBoxLayout *meterLayout = new QHBoxLayout;
 		QHBoxLayout *botLayout = new QHBoxLayout;
 
 		volMeter = new VolumeMeter(nullptr, obs_volmeter, false);
+		volMeter->setSizePolicy(QSizePolicy::MinimumExpanding,
+					QSizePolicy::Preferred);
+
 		slider = new VolumeSlider(obs_fader, Qt::Horizontal);
 		slider->setLayoutDirection(Qt::LeftToRight);
+		slider->setDisplayTicks(true);
 
 		textLayout->setContentsMargins(0, 0, 0, 0);
 		textLayout->addWidget(nameLabel);
@@ -334,20 +356,28 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 		textLayout->setAlignment(nameLabel, Qt::AlignLeft);
 		textLayout->setAlignment(volLabel, Qt::AlignRight);
 
+		meterFrame->setObjectName("volMeterFrame");
+		meterFrame->setLayout(meterLayout);
+
+		meterLayout->setContentsMargins(0, 0, 0, 0);
+		meterLayout->setSpacing(0);
+
+		if (showConfig) {
+			meterLayout->addWidget(config);
+			meterLayout->setAlignment(config, Qt::AlignVCenter);
+		}
+		meterLayout->addWidget(volMeter);
+
 		botLayout->setContentsMargins(0, 0, 0, 0);
-		botLayout->setSpacing(5);
-		botLayout->addWidget(slider);
+		botLayout->setSpacing(0);
 		botLayout->addWidget(mute);
+		botLayout->addWidget(slider);
+
 		botLayout->setAlignment(slider, Qt::AlignVCenter);
 		botLayout->setAlignment(mute, Qt::AlignVCenter);
 
-		if (showConfig) {
-			botLayout->addWidget(config);
-			botLayout->setAlignment(config, Qt::AlignVCenter);
-		}
-
 		mainLayout->addItem(textLayout);
-		mainLayout->addWidget(volMeter);
+		mainLayout->addWidget(meterFrame);
 		mainLayout->addItem(botLayout);
 
 		volMeter->setFocusProxy(slider);
@@ -915,6 +945,10 @@ inline void VolumeMeter::doLayout()
 {
 	QMutexLocker locker(&dataMutex);
 
+	if (displayNrAudioChannels) {
+		int meterSize = std::floor(22 / displayNrAudioChannels);
+		setMeterThickness(std::clamp(meterSize, 3, 7));
+	}
 	recalculateLayout = false;
 
 	tickFont = font();
@@ -928,14 +962,14 @@ inline void VolumeMeter::doLayout()
 		// and a few pixels before the fader.
 		QRect scaleBounds = metrics.boundingRect("-88");
 		setMinimumSize(displayNrAudioChannels * (meterThickness + 1) -
-				       1 + 4 + scaleBounds.width() + 2,
-			       130);
+				       1 + 10 + scaleBounds.width() + 2,
+			       100);
 	} else {
 		// Each meter channel is meterThickness pixels high, plus one pixel
 		// between channels, but not after the last.
 		// Add 4 pixels for ticks, and space high enough to hold our label in
 		// this font, presuming that digits don't have descenders.
-		setMinimumSize(130,
+		setMinimumSize(100,
 			       displayNrAudioChannels * (meterThickness + 1) -
 				       1 + 4 + metrics.capHeight());
 	}
@@ -1085,14 +1119,6 @@ void VolumeMeter::paintHTicks(QPainter &painter, int x, int y, int width)
 
 		painter.drawLine(position, y, position, y + 2);
 	}
-
-	// Draw minor tick lines.
-	painter.setPen(minorTickColor);
-	for (int i = 0; i >= minimumLevel; i--) {
-		int position = int(x + width - (i * scale) - 1);
-		if (i % 5 != 0)
-			painter.drawLine(position, y, position, y + 1);
-	}
 }
 
 void VolumeMeter::paintVTicks(QPainter &painter, int x, int y, int height)
@@ -1110,23 +1136,15 @@ void VolumeMeter::paintVTicks(QPainter &painter, int x, int y, int height)
 
 		// Center the number on the tick, but don't overflow
 		if (i == 0) {
-			painter.drawText(x + 6, position + metrics.capHeight(),
+			painter.drawText(x + 10, position + metrics.capHeight(),
 					 str);
 		} else {
-			painter.drawText(x + 4,
+			painter.drawText(x + 8,
 					 position + (metrics.capHeight() / 2),
 					 str);
 		}
 
 		painter.drawLine(x, position, x + 2, position);
-	}
-
-	// Draw minor tick lines.
-	painter.setPen(minorTickColor);
-	for (int i = 0; i >= minimumLevel; i--) {
-		int position = y + int(i * scale) + METER_PADDING;
-		if (i % 5 != 0)
-			painter.drawLine(x, position, x + 1, position);
 	}
 }
 
@@ -1516,6 +1534,77 @@ VolumeSlider::VolumeSlider(obs_fader_t *fader, Qt::Orientation orientation,
 	: AbsoluteSlider(orientation, parent)
 {
 	fad = fader;
+}
+
+bool VolumeSlider::getDisplayTicks() const
+{
+	return displayTicks;
+}
+
+void VolumeSlider::setDisplayTicks(bool display)
+{
+	displayTicks = display;
+}
+
+void VolumeSlider::paintEvent(QPaintEvent *event)
+{
+	if (!getDisplayTicks()) {
+		QSlider::paintEvent(event);
+		return;
+	}
+
+	QPainter painter(this);
+	QColor *tickColor = new QColor;
+	tickColor->setRgb(91, 98, 115, 255);
+
+	obs_fader_conversion_t fader_db_to_def = obs_fader_db_to_def(fad);
+
+	QStyleOptionSlider opt;
+	initStyleOption(&opt);
+
+	QRect groove = style()->subControlRect(QStyle::CC_Slider, &opt,
+					       QStyle::SC_SliderGroove, this);
+	QRect handle = style()->subControlRect(QStyle::CC_Slider, &opt,
+					       QStyle::SC_SliderHandle, this);
+
+	if (orientation() == Qt::Horizontal) {
+		const int sliderWidth = groove.width() - handle.width();
+
+		float tickLength = groove.height() * 1.5;
+		tickLength = std::max((int)tickLength + groove.height(),
+				      8 + groove.height());
+
+		float yPos = groove.center().y() - (tickLength / 2) + 1;
+
+		for (int db = -10; db >= -90; db -= 10) {
+			float tickValue = fader_db_to_def(db);
+
+			float xPos = groove.left() + (tickValue * sliderWidth) +
+				     (handle.width() / 2);
+			painter.fillRect(xPos, yPos, 1, tickLength, *tickColor);
+		}
+	}
+
+	if (orientation() == Qt::Vertical) {
+		const int sliderHeight = groove.height() - handle.height();
+
+		float tickLength = groove.width() * 1.5;
+		tickLength = std::max((int)tickLength + groove.width(),
+				      8 + groove.width());
+
+		float xPos = groove.center().x() - (tickLength / 2) + 1;
+
+		for (int db = -10; db >= -96; db -= 10) {
+			float tickValue = fader_db_to_def(db);
+
+			float yPos = groove.height() + groove.top() -
+				     (tickValue * sliderHeight) -
+				     (handle.height() / 2);
+			painter.fillRect(xPos, yPos, tickLength, 1, *tickColor);
+		}
+	}
+
+	QSlider::paintEvent(event);
 }
 
 VolumeAccessibleInterface::VolumeAccessibleInterface(QWidget *w)
