@@ -57,3 +57,7 @@ indent_size = 2
 [*.ui]
 indent_style = space
 indent_size = 1
+
+[{*.obt,*.oha,*.ovt}]
+indent_style = space
+indent_size = 4
