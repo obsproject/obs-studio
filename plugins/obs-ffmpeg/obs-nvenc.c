@@ -47,6 +47,18 @@
 #define COMPATIBILITY_VERSION \
 	(NVENC_COMPAT_MAJOR_VER << 4 | NVENC_COMPAT_MINOR_VER)
 
+#define NV_ENC_CREATE_BITSTREAM_BUFFER_COMPAT_VER NVENCAPI_STRUCT_VERSION(1)
+#define NV_ENC_CAPS_PARAM_COMPAT_VER NVENCAPI_STRUCT_VERSION(1)
+#define NV_ENC_OPEN_ENCODE_SESSION_EX_PARAMS_COMPAT_VER \
+	NVENCAPI_STRUCT_VERSION(1)
+#define NV_ENCODE_API_FUNCTION_LIST_COMPAT_VER NVENCAPI_STRUCT_VERSION(2)
+#define NV_ENC_MAP_INPUT_RESOURCE_COMPAT_VER NVENCAPI_STRUCT_VERSION(4)
+#define NV_ENC_SEQUENCE_PARAM_PAYLOAD_COMPAT_VER NVENCAPI_STRUCT_VERSION(1)
+#define NV_ENC_PRESET_CONFIG_COMPAT_VER \
+	(NVENCAPI_STRUCT_VERSION(4) | (1u << 31))
+#define NV_ENC_RECONFIGURE_PARAMS_COMPAT_VER \
+	(NVENCAPI_STRUCT_VERSION(1) | (1u << 31))
+
 /* ========================================================================= */
 
 #define EXTRA_BUFFERS 5
@@ -172,7 +184,9 @@ struct nv_bitstream {
 static bool nv_bitstream_init(struct nvenc_data *enc, struct nv_bitstream *bs)
 {
 	NV_ENC_CREATE_BITSTREAM_BUFFER buf = {
-		NV_ENC_CREATE_BITSTREAM_BUFFER_VER};
+		enc->needs_compat_ver
+			? NV_ENC_CREATE_BITSTREAM_BUFFER_COMPAT_VER
+			: NV_ENC_CREATE_BITSTREAM_BUFFER_VER};
 
 	if (NV_FAILED(nv.nvEncCreateBitstreamBuffer(enc->session, &buf))) {
 		return false;
@@ -426,7 +440,9 @@ static inline int nv_get_cap(struct nvenc_data *enc, NV_ENC_CAPS cap)
 	if (!enc->session)
 		return 0;
 
-	NV_ENC_CAPS_PARAM param = {NV_ENC_CAPS_PARAM_VER};
+	NV_ENC_CAPS_PARAM param = {enc->needs_compat_ver
+					   ? NV_ENC_CAPS_PARAM_COMPAT_VER
+					   : NV_ENC_CAPS_PARAM_VER};
 	int v;
 
 	param.capsToQuery = cap;
@@ -451,7 +467,9 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 						      : bitrate * 1000;
 
 		NV_ENC_RECONFIGURE_PARAMS params = {0};
-		params.version = NV_ENC_RECONFIGURE_PARAMS_VER;
+		params.version = enc->needs_compat_ver
+					 ? NV_ENC_RECONFIGURE_PARAMS_COMPAT_VER
+					 : NV_ENC_RECONFIGURE_PARAMS_VER;
 		params.reInitEncodeParams = enc->params;
 		params.resetEncoder = 1;
 		params.forceIDR = 1;
@@ -768,8 +786,10 @@ static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings,
 	uint32_t config_ver = enc->needs_compat_ver ? NV_ENC_CONFIG_COMPAT_VER
 						    : NV_ENC_CONFIG_VER;
 
-	NV_ENC_PRESET_CONFIG preset_config = {NV_ENC_PRESET_CONFIG_VER,
-					      {config_ver}};
+	NV_ENC_PRESET_CONFIG preset_config = {
+		enc->needs_compat_ver ? NV_ENC_PRESET_CONFIG_COMPAT_VER
+				      : NV_ENC_PRESET_CONFIG_VER,
+		{config_ver}};
 
 	err = nv.nvEncGetEncodePresetConfigEx(enc->session, enc->codec_guid,
 					      nv_preset, nv_tuning,
@@ -1428,7 +1448,9 @@ static void *nvenc_create_internal(enum codec_type codec, obs_data_t *settings,
 	if (get_nvenc_ver() == COMPATIBILITY_VERSION) {
 		enc->needs_compat_ver = true;
 	}
-	NV_ENCODE_API_FUNCTION_LIST init = {NV_ENCODE_API_FUNCTION_LIST_VER};
+	NV_ENCODE_API_FUNCTION_LIST init = {
+		enc->needs_compat_ver ? NV_ENCODE_API_FUNCTION_LIST_COMPAT_VER
+				      : NV_ENCODE_API_FUNCTION_LIST_VER};
 
 	switch (enc->codec) {
 	case CODEC_H264:
@@ -1758,7 +1780,10 @@ static bool get_encoded_packet(struct nvenc_data *enc, bool finalize)
 			uint8_t buf[256];
 			uint32_t size = 0;
 
-			payload.version = NV_ENC_SEQUENCE_PARAM_PAYLOAD_VER;
+			payload.version =
+				enc->needs_compat_ver
+					? NV_ENC_SEQUENCE_PARAM_PAYLOAD_COMPAT_VER
+					: NV_ENC_SEQUENCE_PARAM_PAYLOAD_VER;
 			payload.spsppsBuffer = buf;
 			payload.inBufferSize = sizeof(buf);
 			payload.outSPSPPSPayloadSize = &size;
@@ -2023,7 +2048,9 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 	/* ------------------------------------ */
 	/* map output tex so nvenc can use it   */
 
-	NV_ENC_MAP_INPUT_RESOURCE map = {NV_ENC_MAP_INPUT_RESOURCE_VER};
+	NV_ENC_MAP_INPUT_RESOURCE map = {
+		enc->needs_compat_ver ? NV_ENC_MAP_INPUT_RESOURCE_COMPAT_VER
+				      : NV_ENC_MAP_INPUT_RESOURCE_VER};
 	map.registeredResource = nvtex->res;
 	if (NV_FAILED(nv.nvEncMapInputResource(enc->session, &map))) {
 		return false;
@@ -2158,7 +2185,9 @@ static bool nvenc_encode_tex2(void *data, struct encoder_texture *tex,
 	/* ------------------------------------ */
 	/* map output tex so nvenc can use it   */
 
-	NV_ENC_MAP_INPUT_RESOURCE map = {NV_ENC_MAP_INPUT_RESOURCE_VER};
+	NV_ENC_MAP_INPUT_RESOURCE map = {
+		enc->needs_compat_ver ? NV_ENC_MAP_INPUT_RESOURCE_COMPAT_VER
+				      : NV_ENC_MAP_INPUT_RESOURCE_VER};
 	map.registeredResource = surf->res;
 	map.mappedBufferFmt = p010 ? NV_ENC_BUFFER_FORMAT_YUV420_10BIT
 				   : NV_ENC_BUFFER_FORMAT_NV12;
@@ -2287,7 +2316,9 @@ static bool nvenc_encode_soft(void *data, struct encoder_frame *frame,
 	/* ------------------------------------ */
 	/* map output tex so nvenc can use it   */
 
-	NV_ENC_MAP_INPUT_RESOURCE map = {NV_ENC_MAP_INPUT_RESOURCE_VER};
+	NV_ENC_MAP_INPUT_RESOURCE map = {
+		enc->needs_compat_ver ? NV_ENC_MAP_INPUT_RESOURCE_COMPAT_VER
+				      : NV_ENC_MAP_INPUT_RESOURCE_VER};
 	map.registeredResource = surf->res;
 	map.mappedBufferFmt = enc->surface_format;
 
