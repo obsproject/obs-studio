@@ -306,6 +306,7 @@ static void build_command_line(struct ffmpeg_muxer *stream,
 	*args = os_process_args_create(exe);
 	bfree(exe);
 
+	dstr_copy(&stream->path, path);
 	os_process_args_add_arg(*args, path);
 	os_process_args_add_argf(*args, "%d", vencoder ? 1 : 0);
 	os_process_args_add_argf(*args, "%d", num_tracks);
