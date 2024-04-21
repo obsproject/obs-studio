@@ -162,7 +162,7 @@ void WHIPOutput::ConfigureVideoTrack(std::string media_stream_id,
 		packetizer = std::make_shared<rtc::H264RtpPacketizer>(
 			rtc::H264RtpPacketizer::Separator::StartSequence,
 			rtp_config, MAX_VIDEO_FRAGMENT_SIZE);
-#if ENABLE_HEVC
+#ifdef ENABLE_HEVC
 	} else if (strcmp("hevc", codec) == 0) {
 		video_description.addH265Codec(video_payload_type);
 		packetizer = std::make_shared<rtc::H265RtpPacketizer>(
@@ -632,7 +632,11 @@ void register_whip_output()
 	info.get_connect_time_ms = [](void *priv_data) -> int {
 		return static_cast<WHIPOutput *>(priv_data)->GetConnectTime();
 	};
+#ifdef ENABLE_HEVC
+	info.encoded_video_codecs = "h264;hevc;av1";
+#else
 	info.encoded_video_codecs = "h264;av1";
+#endif
 	info.encoded_audio_codecs = "opus";
 	info.protocols = "WHIP";
 
