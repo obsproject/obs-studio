@@ -207,9 +207,6 @@
           <property name="checkable">
            <bool>true</bool>
           </property>
-          <property name="themeID" stdset="0">
-           <string>replayBufferButton</string>
-          </property>
          </widget>
         </item>
         <item>
@@ -275,9 +272,6 @@
           </property>
           <property name="checkable">
            <bool>true</bool>
-          </property>
-          <property name="themeID" stdset="0">
-           <string>vcamButton</string>
           </property>
          </widget>
         </item>
