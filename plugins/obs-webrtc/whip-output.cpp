@@ -583,12 +583,12 @@ void WHIPOutput::Send(void *data, uintptr_t size, uint64_t duration,
 	// Set new timestamp
 	rtp_config->timestamp = rtp_config->timestamp + elapsed_timestamp;
 
-	// get elapsed time in clock rate from last RTCP sender report
+	// Get elapsed time in clock rate from last RTCP sender report
 	auto report_elapsed_timestamp =
 		rtp_config->timestamp -
 		rtcp_sr_reporter->lastReportedTimestamp();
 
-	// check if last report was at least 1 second ago
+	// Check if last report was at least 1 second ago
 	if (rtp_config->timestampToSeconds(report_elapsed_timestamp) > 1)
 		rtcp_sr_reporter->setNeedsToReport();
 
