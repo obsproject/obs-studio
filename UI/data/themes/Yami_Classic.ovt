@@ -205,7 +205,7 @@ MuteCheckBox::indicator:unchecked {
     icon-size: var(--icon_base_mixer), var(--icon_base_mixer);
 }
 
-MuteCheckBox::indicator:hover, 
+MuteCheckBox::indicator:hover,
 MuteCheckBox::indicator:unchecked:hover {
     icon-size: var(--icon_base_mixer), var(--icon_base_mixer);
 }

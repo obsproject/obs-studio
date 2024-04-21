@@ -93,12 +93,12 @@
 
     /* Layout */
     /* Configurable Values */
-    --font_base_value: 10;   // TODO: Min 8, Max 12, Step 1
-    --spacing_base_value: 4; // TODO: Min 2, Max 7, Step 1
-    --padding_base_value: 4; // TODO: Min 0.25, Max 10, Step 2
+    --font_base_value: 10;   /* TODO: Min 8, Max 12, Step 1 */
+    --spacing_base_value: 4; /* TODO: Min 2, Max 7, Step 1 */
+    --padding_base_value: 4; /* TODO: Min 0.25, Max 10, Step 2 */
 
-    --border_highlight: "transparent"; // TODO: Better Accessibility focus state
-    // TODO: Move Accessibilty Colors to Theme config system
+    --border_highlight: "transparent"; /* TODO: Better Accessibility focus state */
+    /* TODO: Move Accessibilty Colors to Theme config system */
 
     --font_base: calc(1pt * var(--font_base_value));
     --font_small: calc(0.9pt * var(--font_base_value));
@@ -184,12 +184,12 @@
 
     --highlight: rgb(42,130,218);
     --highlight_inactive: rgb(25,28,34);
-    
+
     /* Qt Palette variables can be set with the "palette_" prefix */
     --palette_window: var(--bg_window);
     --palette_windowText: var(--text);
     --palette_base: var(--bg_base);
-    
+
     --palette_light: var(--grey2);
     --palette_mid: var(--grey7);
     --palette_dark: var(--grey6);
@@ -208,7 +208,7 @@
     --palette_text_active: var(--text);
     --palette_text_disabled: var(--text_disabled);
     --palette_text_inactive: var(--text_inactive);
-    
+
     /*
     * Variables calculated at runtime (after all themes have been composed).
     *
@@ -778,7 +778,6 @@ QTabBar::tab:top:selected {
 }
 
 QTabBar::tab:bottom {
-    
 }
 
 QTabBar::tab:bottom:selected {
@@ -915,7 +914,7 @@ QSpinBox::up-button,
 QDoubleSpinBox::up-button {
     subcontrol-origin: padding;
     subcontrol-position: top right; /* position at the top right corner */
-    
+
     width: 32px;
     border-left: 1px solid var(--grey6);
     border-bottom: 1px solid transparent;
@@ -927,7 +926,7 @@ QSpinBox::down-button,
 QDoubleSpinBox::down-button {
     subcontrol-origin: padding;
     subcontrol-position: bottom right; /* position at the top right corner */
-    
+
     width: 32px;
     border-left: 1px solid var(--grey6);
     border-top: 1px solid var(--grey6);
@@ -1498,7 +1497,7 @@ MuteCheckBox::indicator:unchecked {
     icon-size: var(--icon_base), var(--icon_base);
 }
 
-MuteCheckBox::indicator:hover, 
+MuteCheckBox::indicator:hover,
 MuteCheckBox::indicator:unchecked:hover {
     background-color: var(--button_bg_hover);
     padding: var(--padding_base_border) var(--padding_base_border);
