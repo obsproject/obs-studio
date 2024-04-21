@@ -157,6 +157,10 @@
           <property name="accessibleName">
            <string>Basic.Main.PauseRecording</string>
           </property>
+          <property name="icon">
+           <iconset resource="obs.qrc">
+            <normaloff>:/res/images/media-pause.svg</normaloff>:/res/images/media-pause.svg</iconset>
+          </property>
           <property name="checkable">
            <bool>true</bool>
           </property>
@@ -226,6 +230,10 @@
           <property name="accessibleName">
            <string>Basic.Main.SaveReplay</string>
           </property>
+          <property name="icon">
+           <iconset resource="obs.qrc">
+            <normaloff>:/res/images/save.svg</normaloff>:/res/images/save.svg</iconset>
+          </property>
           <property name="themeID" stdset="0">
            <string>replayIconSmall</string>
           </property>
@@ -291,6 +299,10 @@
           </property>
           <property name="accessibleName">
            <string>Basic.Main.VirtualCamConfig</string>
+          </property>
+          <property name="icon">
+           <iconset resource="obs.qrc">
+            <normaloff>:/settings/images/settings/general.svg</normaloff>:/settings/images/settings/general.svg</iconset>
           </property>
           <property name="themeID" stdset="0">
            <string>configIconSmall</string>
