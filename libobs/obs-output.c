@@ -1522,7 +1522,7 @@ static size_t extract_itut_t35_buffer_from_sei(sei_t *sei, uint8_t **data_out)
 	sei_message_t *msg = sei_message_head(sei);
 	int payload_size = (int)sei_message_size(msg);
 	uint8_t *payload_data = sei_message_data(msg);
-	*data_out = malloc(payload_size);
+	*data_out = bmalloc(payload_size);
 	memcpy(*data_out, payload_data, payload_size);
 	return payload_size;
 }
@@ -1657,7 +1657,7 @@ static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 
 	if (avc || hevc || av1) {
 		if (avc || hevc) {
-			data = malloc(sei_render_size(&sei));
+			data = bmalloc(sei_render_size(&sei));
 			size = sei_render(&sei, data);
 		}
 		/* In each of these specs there is an identical structure that
@@ -1711,7 +1711,7 @@ static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 			}
 		}
 		if (data) {
-			free(data);
+			bfree(data);
 		}
 		obs_encoder_packet_release(out);
 
