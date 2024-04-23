@@ -51,6 +51,7 @@ struct obs_scene_item {
 	gs_texrender_t *item_render;
 	struct obs_sceneitem_crop crop;
 
+	bool absolute_coordinates;
 	struct vec2 pos;
 	struct vec2 scale;
 	struct vec2 scale_ref;
@@ -112,6 +113,7 @@ struct obs_scene {
 	uint32_t cx;
 	uint32_t cy;
 
+	bool absolute_coordinates;
 	uint32_t last_width;
 	uint32_t last_height;
 
