@@ -2678,6 +2678,9 @@ void OBSBasicPreview::ClampScrollingOffsets()
 	vec3_mulf(&offset, &offset, 0.5f);
 	vec3_maxf(&offset, &offset, 0.0f);
 
+	vec3_divf(&target, &target, 2.0f);
+	vec3_add(&offset, &offset, &target);
+
 	scrollingOffset.x = std::clamp(scrollingOffset.x, -offset.x, offset.x);
 	scrollingOffset.y = std::clamp(scrollingOffset.y, -offset.y, offset.y);
 }
