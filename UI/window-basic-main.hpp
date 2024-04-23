@@ -358,6 +358,10 @@ private:
 
 	std::atomic<obs_scene_t *> currentScene = nullptr;
 	std::optional<std::pair<uint32_t, uint32_t>> lastOutputResolution;
+	std::optional<std::pair<uint32_t, uint32_t>> migrationBaseResolution;
+	bool usingAbsoluteCoordinates = false;
+
+	void DisableRelativeCoordinates(bool disable);
 
 	void OnEvent(enum obs_frontend_event event);
 
@@ -377,8 +381,9 @@ private:
 	void UploadLog(const char *subdir, const char *file, const bool crash);
 
 	void Save(const char *file);
-	void LoadData(obs_data_t *data, const char *file);
-	void Load(const char *file);
+	void LoadData(obs_data_t *data, const char *file,
+		      bool remigrate = false);
+	void Load(const char *file, bool remigrate = false);
 
 	void InitHotkeys();
 	void CreateHotkeys();
@@ -1149,6 +1154,7 @@ private slots:
 	void on_actionRemoveSceneCollection_triggered();
 	void on_actionImportSceneCollection_triggered();
 	void on_actionExportSceneCollection_triggered();
+	void on_actionRemigrateSceneCollection_triggered();
 
 	void on_actionNewProfile_triggered();
 	void on_actionDupProfile_triggered();
