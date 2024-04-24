@@ -219,17 +219,15 @@ static void noise_suppress_destroy(void *data)
 		audio_resampler_destroy(ng->nvafx_resampler);
 		audio_resampler_destroy(ng->nvafx_resampler_back);
 	}
-	bfree(ng->model);
-	bfree(ng->sdk_path);
 	bfree((void *)ng->fx);
 	if (ng->nvafx_enabled) {
 		if (ng->use_nvafx)
 			pthread_join(ng->nvafx_thread, NULL);
 		pthread_mutex_unlock(&ng->nvafx_mutex);
 		pthread_mutex_destroy(&ng->nvafx_mutex);
-		bfree(ng->model);
-		bfree(ng->sdk_path);
 	}
+	bfree(ng->model);
+	bfree(ng->sdk_path);
 #endif
 
 	bfree(ng->copy_buffers[0]);
