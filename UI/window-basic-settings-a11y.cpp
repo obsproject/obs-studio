@@ -81,6 +81,7 @@ void OBSBasicSettings::LoadA11ySettings(bool presetChange)
 		selectRed = 0x3349F9;
 		selectGreen = 0xFF56C9;
 		selectBlue = 0xB09B44;
+		selectGray = 0xA9A9A9;
 
 		SetDefaultColors();
 	} else if (preset == COLOR_PRESET_CUSTOM) {
@@ -92,6 +93,8 @@ void OBSBasicSettings::LoadA11ySettings(bool presetChange)
 			config_get_int(config, "Accessibility", "SelectGreen");
 		selectBlue =
 			config_get_int(config, "Accessibility", "SelectBlue");
+		selectGray =
+			config_get_int(config, "Accessibility", "SelectGray");
 
 		mixerGreen =
 			config_get_int(config, "Accessibility", "MixerGreen");
@@ -123,6 +126,7 @@ void OBSBasicSettings::SaveA11ySettings()
 	config_set_int(config, "Accessibility", "SelectRed", selectRed);
 	config_set_int(config, "Accessibility", "SelectGreen", selectGreen);
 	config_set_int(config, "Accessibility", "SelectBlue", selectBlue);
+	config_set_int(config, "Accessibility", "SelectGray", selectGray);
 	config_set_int(config, "Accessibility", "MixerGreen", mixerGreen);
 	config_set_int(config, "Accessibility", "MixerYellow", mixerYellow);
 	config_set_int(config, "Accessibility", "MixerRed", mixerRed);
@@ -164,6 +168,7 @@ void OBSBasicSettings::UpdateA11yColors()
 	SetStyle(ui->color7, mixerGreenActive);
 	SetStyle(ui->color8, mixerYellowActive);
 	SetStyle(ui->color9, mixerRedActive);
+	SetStyle(ui->color10, selectGray);
 }
 
 void OBSBasicSettings::SetDefaultColors()
@@ -174,6 +179,8 @@ void OBSBasicSettings::SetDefaultColors()
 			       selectGreen);
 	config_set_default_int(config, "Accessibility", "SelectBlue",
 			       selectBlue);
+	config_set_default_int(config, "Accessibility", "SelectGray",
+			       selectGray);
 
 	config_set_default_int(config, "Accessibility", "MixerGreen",
 			       mixerGreen);
@@ -194,6 +201,7 @@ void OBSBasicSettings::ResetDefaultColors()
 	selectRed = 0x0000FF;
 	selectGreen = 0x00FF00;
 	selectBlue = 0xFF7F00;
+	selectGray = 0xA9A9A9;
 	mixerGreen = 0x267f26;
 	mixerYellow = 0x267f7f;
 	mixerRed = 0x26267f;
@@ -387,6 +395,27 @@ void OBSBasicSettings::on_choose9_clicked()
 		return;
 
 	mixerRedActive = color_to_int(color);
+
+	preset = COLOR_PRESET_CUSTOM;
+	bool block = ui->colorPreset->blockSignals(true);
+	ui->colorPreset->setCurrentIndex(ui->colorPreset->count() - 1);
+	ui->colorPreset->blockSignals(block);
+
+	A11yChanged();
+
+	UpdateA11yColors();
+}
+
+void OBSBasicSettings::on_choose10_clicked()
+{
+	QColor color = GetColor(
+		selectGray,
+		QTStr("Basic.Settings.Accessibility.ColorOverrides.SelectGray"));
+
+	if (!color.isValid())
+		return;
+
+	selectGray = color_to_int(color);
 
 	preset = COLOR_PRESET_CUSTOM;
 	bool block = ui->colorPreset->blockSignals(true);

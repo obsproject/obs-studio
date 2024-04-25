@@ -198,4 +198,6 @@ public:
 
 	void DrawSpacingHelpers();
 	void ClampScrollingOffsets();
+
+	void DrawPreviewGrid();
 };

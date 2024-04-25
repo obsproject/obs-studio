@@ -191,6 +191,12 @@ vec3 OBSBasicPreview::GetSnapOffset(const vec3 &tl, const vec3 &br)
 		GetGlobalConfig(), "BasicWindow", "ScreenSnapping");
 	const bool centerSnap = config_get_bool(
 		GetGlobalConfig(), "BasicWindow", "CenterSnapping");
+	const bool gridSnap = config_get_bool(GetGlobalConfig(), "BasicWindow",
+					      "GridSnapping");
+	const float gridSpacing = config_get_double(
+		GetGlobalConfig(), "BasicWindow", "GridSpacing");
+	const int showGrid =
+		config_get_int(GetGlobalConfig(), "BasicWindow", "ShowGrid");
 
 	const float clampDist = config_get_double(GetGlobalConfig(),
 						  "BasicWindow",
@@ -222,6 +228,78 @@ vec3 OBSBasicPreview::GetSnapOffset(const vec3 &tl, const vec3 &br)
 	if (centerSnap && fabsf(screenSize.y - (br.y - tl.y)) > clampDist &&
 	    fabsf(screenSize.y / 2.0f - centerY) < clampDist)
 		clampOffset.y = screenSize.y / 2.0f - centerY;
+
+	// Grid lines.
+	if (!gridSnap || !showGrid)
+		return clampOffset;
+
+	// returns the number with the lowest absolute value (excluding zero)
+	auto minAbs = [](float a, float b) {
+		if (a == 0)
+			return b;
+		else if (b == 0)
+			return a;
+		else
+			return (std::fabs(a) < std::fabs(b)) ? a : b;
+	};
+
+	float heightMid = screenSize.y / 2.0f;
+	float widthMid = screenSize.x / 2.0f;
+	float squareSize = screenSize.x * gridSpacing / 100.0f;
+
+	// snap to vertical grid lines
+	if (fabsf(tl.x - widthMid) < clampDist)
+		clampOffset.x = minAbs(clampOffset.x, -(tl.x - widthMid));
+	if (fabsf((screenSize.x - br.x) - widthMid) < clampDist)
+		clampOffset.x =
+			minAbs(clampOffset.x, (screenSize.x - br.x) - widthMid);
+	for (float gridLine = squareSize; gridLine <= widthMid;
+	     gridLine += squareSize) {
+		if (fabsf(tl.x - (widthMid - gridLine)) < clampDist)
+			clampOffset.x = minAbs(clampOffset.x,
+					       -(tl.x - (widthMid - gridLine)));
+		if (fabsf(tl.x - (widthMid + gridLine)) < clampDist)
+			clampOffset.x = minAbs(clampOffset.x,
+					       -(tl.x - (widthMid + gridLine)));
+		if (fabsf((screenSize.x - br.x) - (widthMid - gridLine)) <
+		    clampDist)
+			clampOffset.x = minAbs(clampOffset.x,
+					       (screenSize.x - br.x) -
+						       (widthMid - gridLine));
+		if (fabsf((screenSize.x - br.x) - (widthMid + gridLine)) <
+		    clampDist)
+			clampOffset.x = minAbs(clampOffset.x,
+					       (screenSize.x - br.x) -
+						       (widthMid + gridLine));
+	}
+
+	// snap to horizontal grid lines
+	if (fabsf(tl.y - heightMid) < clampDist)
+		clampOffset.y = minAbs(clampOffset.y, -(tl.y - heightMid));
+	if (fabsf((screenSize.y - br.y) - heightMid) < clampDist)
+		clampOffset.y = minAbs(clampOffset.y,
+				       (screenSize.y - br.y) - heightMid);
+	for (float gridLine = squareSize; gridLine <= heightMid;
+	     gridLine += squareSize) {
+		if (fabsf(tl.y - (heightMid - gridLine)) < clampDist)
+			clampOffset.y =
+				minAbs(clampOffset.y,
+				       -(tl.y - (heightMid - gridLine)));
+		if (fabsf(tl.y - (heightMid + gridLine)) < clampDist)
+			clampOffset.y =
+				minAbs(clampOffset.y,
+				       -(tl.y - (heightMid + gridLine)));
+		if (fabsf((screenSize.y - br.y) - (heightMid - gridLine)) <
+		    clampDist)
+			clampOffset.y = minAbs(clampOffset.y,
+					       (screenSize.y - br.y) -
+						       (heightMid - gridLine));
+		if (fabsf((screenSize.y - br.y) - (heightMid + gridLine)) <
+		    clampDist)
+			clampOffset.y = minAbs(clampOffset.y,
+					       (screenSize.y - br.y) -
+						       (heightMid + gridLine));
+	}
 
 	return clampOffset;
 }
@@ -1772,6 +1850,46 @@ static void DrawLine(float x1, float y1, float x2, float y2, float thickness,
 	gs_vertexbuffer_destroy(line);
 }
 
+void DrawDot(float x, float y, vec2 scale, float gapsBetweenGridLines)
+{
+	gs_vertex2f(x, y);
+
+	if (gapsBetweenGridLines > 3.0f)
+		for (float i = -1.0f; i <= 1.0f; i += 2) {
+			gs_vertex2f(x + i / scale.x, y);
+			gs_vertex2f(x, y + i / scale.y);
+		}
+
+	if (gapsBetweenGridLines > 5.0f)
+		for (float i = -1.0f; i <= 1.0f; i += 2)
+			for (float j = -1.0f; j <= 1.0f; j += 2)
+				gs_vertex2f(x + i / scale.x, y + j / scale.y);
+}
+
+static void DrawGridLine(float x1, float y1, float x2, float y2, vec2 scale,
+			 float gapsBetweenGridLines, float dotSpacing)
+{
+	float offX = (y1 == y2) ? dotSpacing : 0.0f;
+	float offY = (x1 == x2) ? dotSpacing * scale.x / scale.y : 0.0f;
+	float midX = (x1 + x2) / 2.0f;
+	float midY = (y1 + y2) / 2.0f;
+
+	gs_render_start(true);
+
+	for (int i = 0; i * offX <= midX && i * offY <= midY; i++) {
+		DrawDot(midX - i * offX, midY - i * offY, scale,
+			gapsBetweenGridLines);
+		DrawDot(midX + i * offX, midY + i * offY, scale,
+			gapsBetweenGridLines);
+	}
+
+	gs_vertbuffer_t *line = gs_render_save();
+
+	gs_load_vertexbuffer(line);
+	gs_draw(GS_POINTS, 0, 0);
+	gs_vertexbuffer_destroy(line);
+}
+
 static void DrawSquareAtPos(float x, float y, float pixelRatio)
 {
 	struct vec3 pos;
@@ -2171,6 +2289,11 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *, obs_sceneitem_t *item,
 			      info.bounds_type == OBS_BOUNDS_NONE;
 		DrawRotationHandle(prev->circleFill, info.rot + prev->groupRot,
 				   pixelRatio, invert);
+
+		// show grid if the setting is "when moving a source"
+		if (config_get_int(GetGlobalConfig(), "BasicWindow",
+				   "ShowGrid") == 2)
+			prev->DrawPreviewGrid();
 	}
 
 	gs_matrix_pop();
@@ -2272,6 +2395,12 @@ void OBSBasicPreview::DrawSceneEditing()
 	OBSScene scene = main->GetCurrentScene();
 
 	if (scene) {
+
+		// show grid if the setting is "always"
+		if (config_get_int(GetGlobalConfig(), "BasicWindow",
+				   "ShowGrid") == 1)
+			this->DrawPreviewGrid();
+
 		gs_matrix_push();
 		gs_matrix_scale3f(main->previewScale, main->previewScale, 1.0f);
 		obs_scene_enum_items(scene, DrawSelectedItem, this);
@@ -2680,4 +2809,55 @@ void OBSBasicPreview::ClampScrollingOffsets()
 
 	scrollingOffset.x = std::clamp(scrollingOffset.x, -offset.x, offset.x);
 	scrollingOffset.y = std::clamp(scrollingOffset.y, -offset.y, offset.y);
+}
+
+void OBSBasicPreview::DrawPreviewGrid()
+{
+	OBSBasic *main = OBSBasic::Get();
+
+	// get grid color
+	gs_effect_t *solid = obs_get_base_effect(OBS_EFFECT_SOLID);
+	QColor selColor = main->GetGridColor();
+	vec4 color;
+	vec4_set(&color, selColor.redF(), selColor.greenF(), selColor.blueF(),
+		 1.0f);
+	gs_effect_set_vec4(gs_effect_get_param_by_name(solid, "color"), &color);
+
+	gs_matrix_push();
+	gs_matrix_identity();
+	gs_matrix_scale3f(main->previewCX, main->previewCY, 1.0f);
+
+	vec2 scale;
+	vec2_set(&scale, main->previewCX, main->previewCY);
+	float gridSpacing = config_get_double(GetGlobalConfig(), "BasicWindow",
+					      "GridSpacing") /
+			    100.0f;
+	float offX = gridSpacing;
+	float offY = gridSpacing * scale.x / scale.y;
+
+	float gapsBetweenGridLines = std::max(
+		ceil(log2(400.0f * gridSpacing * main->previewScale)), 1.0f);
+	float dotSpacing = gridSpacing / gapsBetweenGridLines;
+
+	// draw horizontal and vertical center lines
+	DrawGridLine(0.5f, 0.0f, 0.5f, 1.0f, scale, gapsBetweenGridLines,
+		     dotSpacing);
+	DrawGridLine(0.0f, 0.5f, 1.0f, 0.5f, scale, gapsBetweenGridLines,
+		     dotSpacing);
+
+	// draw the rest of the grid
+	for (int i = 1; i * offX <= 0.5; i++) {
+		DrawGridLine(0.5f + i * offX, 0.0f, 0.5f + i * offX, 1.0f,
+			     scale, gapsBetweenGridLines, dotSpacing);
+		DrawGridLine(0.5f - i * offX, 0.0f, 0.5f - i * offX, 1.0f,
+			     scale, gapsBetweenGridLines, dotSpacing);
+	}
+	for (int i = 1; i * offY <= 0.5; i++) {
+		DrawGridLine(0.0f, 0.5f + i * offY, 1.0f, 0.5f + i * offY,
+			     scale, gapsBetweenGridLines, dotSpacing);
+		DrawGridLine(0.0f, 0.5f - i * offY, 1.0f, 0.5f - i * offY,
+			     scale, gapsBetweenGridLines, dotSpacing);
+	}
+
+	gs_matrix_pop();
 }

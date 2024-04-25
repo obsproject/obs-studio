@@ -11144,6 +11144,17 @@ QColor OBSBasic::GetHoverColor() const
 	}
 }
 
+QColor OBSBasic::GetGridColor() const
+{
+	if (config_get_bool(GetGlobalConfig(), "Accessibility",
+			    "OverrideColors")) {
+		return color_from_int(config_get_int(
+			GetGlobalConfig(), "Accessibility", "SelectGray"));
+	} else {
+		return QColor::fromRgb(169, 169, 169);
+	}
+}
+
 void OBSBasic::UpdatePreviewSpacingHelpers()
 {
 	drawSpacingHelpers = config_get_bool(

@@ -346,6 +346,7 @@ private:
 	uint32_t selectRed = 0x0000FF;
 	uint32_t selectGreen = 0x00FF00;
 	uint32_t selectBlue = 0xFF7F00;
+	uint32_t selectGray = 0xA9A9A9;
 	uint32_t mixerGreen = 0x267f26;
 	uint32_t mixerYellow = 0x267f7f;
 	uint32_t mixerRed = 0x26267f;
@@ -451,6 +452,7 @@ private slots:
 	void on_choose7_clicked();
 	void on_choose8_clicked();
 	void on_choose9_clicked();
+	void on_choose10_clicked();
 	void on_colorPreset_currentIndexChanged(int idx);
 
 	void GeneralChanged();
@@ -490,6 +492,9 @@ private slots:
 	void AdvReplayBufferChanged();
 
 	void SimpleStreamingEncoderChanged();
+
+	void SetGridSpacingEnabled(int index);
+	void SetGridSnappingEnabled();
 
 	OBSService SpawnTempService();
 

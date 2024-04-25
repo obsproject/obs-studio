@@ -662,6 +662,7 @@ private:
 
 	QColor GetCropColor() const;
 	QColor GetHoverColor() const;
+	QColor GetGridColor() const;
 
 	void UpdatePreviewSpacingHelpers();
 	bool drawSpacingHelpers = true;

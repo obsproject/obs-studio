@@ -393,6 +393,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->centerSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->sourceSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->snapDistance,         DSCROLL_CHANGED,GENERAL_CHANGED);
+	HookWidget(ui->showGrid,		     COMBO_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->gridSpacing,          DSCROLL_CHANGED,GENERAL_CHANGED);
+	HookWidget(ui->gridSnapping,     	 CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->overflowHide,         CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->overflowAlwaysVisible,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->overflowSelectionHide,CHECK_CHANGED,  GENERAL_CHANGED);
@@ -826,6 +829,12 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		&OBSBasicSettings::AdvReplayBufferChanged);
 	connect(ui->advRBSecMax, &QSpinBox::valueChanged, this,
 		&OBSBasicSettings::AdvReplayBufferChanged);
+	connect(ui->showGrid, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::SetGridSpacingEnabled);
+	connect(ui->showGrid, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::SetGridSnappingEnabled);
+	connect(ui->snappingEnabled, &QCheckBox::toggled, this,
+		&OBSBasicSettings::SetGridSnappingEnabled);
 
 	// GPU scaling filters
 	auto addScaleFilter = [&](const char *string, int value) -> void {
@@ -1422,6 +1431,18 @@ void OBSBasicSettings::LoadGeneralSettings()
 	double snapDistance = config_get_double(GetGlobalConfig(),
 						"BasicWindow", "SnapDistance");
 	ui->snapDistance->setValue(snapDistance);
+
+	int showGrid =
+		config_get_int(GetGlobalConfig(), "BasicWindow", "ShowGrid");
+	ui->showGrid->setCurrentIndex(showGrid);
+
+	double gridSpacing = config_get_double(GetGlobalConfig(), "BasicWindow",
+					       "GridSpacing");
+	ui->gridSpacing->setValue(gridSpacing);
+
+	bool gridSnapping = config_get_bool(GetGlobalConfig(), "BasicWindow",
+					    "GridSnapping");
+	ui->gridSnapping->setChecked(gridSnapping);
 
 	bool warnBeforeStreamStart = config_get_bool(
 		GetGlobalConfig(), "BasicWindow", "WarnBeforeStartingStream");
@@ -3356,6 +3377,15 @@ void OBSBasicSettings::SaveGeneralSettings()
 	if (WidgetChanged(ui->snapDistance))
 		config_set_double(GetGlobalConfig(), "BasicWindow",
 				  "SnapDistance", ui->snapDistance->value());
+	if (WidgetChanged(ui->showGrid))
+		config_set_int(GetGlobalConfig(), "BasicWindow", "ShowGrid",
+			       ui->showGrid->currentIndex());
+	if (WidgetChanged(ui->gridSpacing))
+		config_set_double(GetGlobalConfig(), "BasicWindow",
+				  "GridSpacing", ui->gridSpacing->value());
+	if (WidgetChanged(ui->gridSnapping))
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"GridSnapping", ui->gridSnapping->isChecked());
 	if (WidgetChanged(ui->overflowAlwaysVisible) ||
 	    WidgetChanged(ui->overflowHide) ||
 	    WidgetChanged(ui->overflowSelectionHide)) {
@@ -5682,6 +5712,18 @@ void OBSBasicSettings::AdvReplayBufferChanged()
 	ui->advReplayBuf->setEnabled(!lossless);
 
 	UpdateAutomaticReplayBufferCheckboxes();
+}
+
+void OBSBasicSettings::SetGridSpacingEnabled(int index)
+{
+	ui->gridSpacing->setEnabled(index);
+	ui->gridSpacingLabel->setEnabled(index);
+}
+
+void OBSBasicSettings::SetGridSnappingEnabled()
+{
+	ui->gridSnapping->setEnabled(ui->snappingEnabled->isChecked() &&
+				     ui->showGrid->currentIndex());
 }
 
 #define SIMPLE_OUTPUT_WARNING(str) \
