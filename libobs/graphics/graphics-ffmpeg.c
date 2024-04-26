@@ -370,6 +370,7 @@ static void *ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
 
 	if (info->format == AV_PIX_FMT_BGR0) {
 		data = ffmpeg_image_copy_data_straight(info, frame);
+
 	} else if (info->format == AV_PIX_FMT_RGBA ||
 		   info->format == AV_PIX_FMT_BGRA) {
 		if (alpha_mode == GS_IMAGE_ALPHA_STRAIGHT) {
@@ -401,6 +402,7 @@ static void *ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
 				}
 			}
 		}
+
 	} else if (info->format == AV_PIX_FMT_RGBA64BE) {
 		const size_t dst_linesize = (size_t)info->cx * 4;
 		data = bmalloc(info->cy * dst_linesize);
@@ -413,6 +415,7 @@ static void *ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
 		const uint8_t *src = frame->data[0];
 		uint16_t value[4];
 		float f[4];
+
 		if (alpha_mode == GS_IMAGE_ALPHA_STRAIGHT) {
 			for (int y = 0; y < info->cy; y++) {
 				for (size_t x = 0; x < row_elements; ++x) {
@@ -432,6 +435,7 @@ static void *ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
 
 				src += src_linesize - src_min_line;
 			}
+
 		} else if (alpha_mode == GS_IMAGE_ALPHA_PREMULTIPLY_SRGB) {
 			for (int y = 0; y < info->cy; y++) {
 				for (size_t x = 0; x < row_elements; ++x) {
@@ -454,6 +458,7 @@ static void *ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
 
 				src += src_linesize - src_min_line;
 			}
+
 		} else if (alpha_mode == GS_IMAGE_ALPHA_PREMULTIPLY) {
 			for (int y = 0; y < info->cy; y++) {
 				for (size_t x = 0; x < row_elements; ++x) {
@@ -477,6 +482,7 @@ static void *ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
 		}
 
 		info->format = AV_PIX_FMT_RGBA;
+
 	} else {
 		static const enum AVPixelFormat format = AV_PIX_FMT_BGRA;
 
