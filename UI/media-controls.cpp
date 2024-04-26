@@ -160,6 +160,7 @@ void MediaControls::MediaSliderReleased()
 			obs_source_media_set_time(source, GetSliderTime(seek));
 		}
 
+		UpdateLabels(seek);
 		seek = lastSeek = -1;
 	}
 
@@ -179,6 +180,7 @@ void MediaControls::MediaSliderMoved(int val)
 {
 	if (seekTimer.isActive()) {
 		seek = val;
+		UpdateLabels(seek);
 	}
 }
 
@@ -358,16 +360,7 @@ void MediaControls::SetSliderPosition()
 		sliderPosition = 0.0f;
 
 	ui->slider->setValue((int)sliderPosition);
-
-	ui->timerLabel->setText(FormatSeconds((int)(time / 1000.0f)));
-
-	if (!countDownTimer)
-		ui->durationLabel->setText(
-			FormatSeconds((int)(duration / 1000.0f)));
-	else
-		ui->durationLabel->setText(
-			QString("-") +
-			FormatSeconds((int)((duration - time) / 1000.0f)));
+	UpdateLabels((int)sliderPosition);
 }
 
 QString MediaControls::FormatSeconds(int totalSeconds)
@@ -534,4 +527,27 @@ void MediaControls::UpdateSlideCounter()
 		ui->timerLabel->setText("-");
 		ui->durationLabel->setText("-");
 	}
+}
+
+void MediaControls::UpdateLabels(int val)
+{
+	OBSSource source = OBSGetStrongRef(weakSource);
+	if (!source) {
+		return;
+	}
+
+	float duration = (float)obs_source_media_get_duration(source);
+	float percent = (float)val / (float)ui->slider->maximum();
+
+	float time = percent * duration;
+
+	ui->timerLabel->setText(FormatSeconds((int)(time / 1000.0f)));
+
+	if (!countDownTimer)
+		ui->durationLabel->setText(
+			FormatSeconds((int)(duration / 1000.0f)));
+	else
+		ui->durationLabel->setText(
+			QString("-") +
+			FormatSeconds((int)((duration - time) / 1000.0f)));
 }
