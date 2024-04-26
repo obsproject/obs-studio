@@ -95,6 +95,9 @@ Array Output Serializer
 
 Provides an output serializer used with dynamic arrays.
 
+.. versionchanged:: 30.2
+   Array output serializer now supports seeking.
+
 .. code:: cpp
 
    #include <util/array-serializer.h>
@@ -119,6 +122,13 @@ Array Output Serializer Functions
 
 ---------------------
 
+.. function:: void array_output_serializer_reset(struct array_output_data *data)
+
+   Resets serializer without freeing data.
+
+   .. versionadded:: 30.2
+
+---------------------
 
 File Input/Output Serializers
 =============================
