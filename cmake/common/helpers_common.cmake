@@ -255,10 +255,8 @@ function(find_qt_plugins)
   # cmake-format: off
   list(APPEND qt_plugins_Core platforms printsupport styles imageformats iconengines)
   # cmake-format: on
-  list(APPEND qt_plugins_Gui platforminputcontexts virtualkeyboard)
-  list(APPEND qt_plugins_Network bearer)
+  list(APPEND qt_plugins_Gui platforminputcontexts)
   list(APPEND qt_plugins_Sql sqldrivers)
-  list(APPEND qt_plugins_Multimedia mediaservice audio)
   list(APPEND qt_plugins_3dRender sceneparsers geometryloaders)
   list(APPEND qt_plugins_3dQuickRender renderplugins)
   list(APPEND qt_plugins_Positioning position)
