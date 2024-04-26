@@ -402,7 +402,7 @@ function(_bundle_dependencies target)
         endif()
       endforeach()
 
-      if(library MATCHES "Qt[56]?::.+")
+      if(library MATCHES "Qt6?::.+")
         find_qt_plugins(COMPONENT ${library} TARGET ${target} FOUND_VAR plugins_list)
       endif()
     endif()
