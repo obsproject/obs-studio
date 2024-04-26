@@ -64,6 +64,7 @@ private slots:
 	void MoveSliderBackwards(int seconds = 5);
 
 	void UpdateSlideCounter();
+	void UpdateLabels(int val);
 
 public slots:
 	void PlayMedia();
