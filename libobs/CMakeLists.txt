@@ -99,6 +99,8 @@ target_sources(
           util/bitstream.h
           util/bmem.c
           util/bmem.h
+          util/buffered-file-serializer.c
+          util/buffered-file-serializer.h
           util/c99defs.h
           util/cf-lexer.c
           util/cf-lexer.h
