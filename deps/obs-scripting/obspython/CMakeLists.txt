@@ -14,7 +14,13 @@ if(POLICY CMP0094)
   cmake_policy(SET CMP0094 NEW)
 endif()
 
-find_package(Python 3.8...<3.12 REQUIRED Interpreter Development)
+if(OS_LINUX
+   OR OS_FREEBSD
+   OR OS_OPENBSD)
+  find_package(Python 3.8 REQUIRED Interpreter Development)
+else()
+  find_package(Python 3.8...<3.12 REQUIRED Interpreter Development)
+endif()
 find_package(SWIG 4 REQUIRED)
 
 include(UseSWIG)
