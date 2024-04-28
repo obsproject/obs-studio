@@ -45,7 +45,7 @@ jobs:
           path: ${{ github.workspace }}/build
 
       - name: Run bouf 🥩
-        uses: ./repo/.github/actions/bouf
+        uses: ./repo/.github/actions/windows-signing
         with:
           gcpWorkloadIdentityProvider: ${{ secrets.GCP_IDENTITY_POOL }}
           gcpServiceAccountName: ${{ secrets.GCP_SERVICE_ACCOUNT_NAME }}
@@ -56,15 +56,15 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: obs-studio-windows-x64-${{ github.ref_name }}-signed
-          compression-level: 6
-          path: ${{ github.workspace }}/output/install
+          compression-level: 0
+          path: ${{ github.workspace }}/output/*-x64.zip
 
       - name: Upload PDBs
         uses: actions/upload-artifact@v4
         with:
           name: obs-studio-windows-x64-${{ github.ref_name }}-pdbs
-          compression-level: 9
-          path: ${{ github.workspace }}/output/pdbs
+          compression-level: 0
+          path: ${{ github.workspace }}/output/*-pdbs.zip
 
       - name: Upload Installer
         uses: actions/upload-artifact@v4
@@ -72,15 +72,3 @@ jobs:
           name: obs-studio-windows-x64-${{ github.ref_name }}-installer
           compression-level: 0
           path: ${{ github.workspace }}/output/*.exe
-
-      - name: Upload Updater Files
-        uses: actions/upload-artifact@v4
-        with:
-          name: obs-studio-windows-x64-${{ github.ref_name }}-patches
-          compression-level: 0
-          path: |
-            ${{ github.workspace }}/output/updater
-            ${{ github.workspace }}/output/*.json
-            ${{ github.workspace }}/output/*.sig
-            ${{ github.workspace }}/output/*.txt
-            ${{ github.workspace }}/output/*.rst
