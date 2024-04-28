@@ -3,14 +3,14 @@
 #include <QMouseEvent>
 #include "slider-ignorewheel.hpp"
 
-class MediaSlider : public SliderIgnoreScroll {
+class AbsoluteSlider : public SliderIgnoreScroll {
 	Q_OBJECT
 
 public:
-	MediaSlider(QWidget *parent = nullptr);
+	AbsoluteSlider(QWidget *parent = nullptr);
 
 signals:
-	void mediaSliderHovered(int value);
+	void absoluteSliderHovered(int value);
 
 protected:
 	virtual void mouseMoveEvent(QMouseEvent *event) override;

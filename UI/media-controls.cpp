@@ -58,14 +58,14 @@ MediaControls::MediaControls(QWidget *parent)
 		&MediaControls::SetSliderPosition);
 	connect(&seekTimer, &QTimer::timeout, this,
 		&MediaControls::SeekTimerCallback);
-	connect(ui->slider, &MediaSlider::sliderPressed, this,
-		&MediaControls::MediaSliderClicked);
-	connect(ui->slider, &MediaSlider::mediaSliderHovered, this,
-		&MediaControls::MediaSliderHovered);
-	connect(ui->slider, &MediaSlider::sliderReleased, this,
-		&MediaControls::MediaSliderReleased);
-	connect(ui->slider, &MediaSlider::sliderMoved, this,
-		&MediaControls::MediaSliderMoved);
+	connect(ui->slider, &AbsoluteSlider::sliderPressed, this,
+		&MediaControls::AbsoluteSliderClicked);
+	connect(ui->slider, &AbsoluteSlider::absoluteSliderHovered, this,
+		&MediaControls::AbsoluteSliderHovered);
+	connect(ui->slider, &AbsoluteSlider::sliderReleased, this,
+		&MediaControls::AbsoluteSliderReleased);
+	connect(ui->slider, &AbsoluteSlider::sliderMoved, this,
+		&MediaControls::AbsoluteSliderMoved);
 
 	countDownTimer = config_get_bool(App()->GlobalConfig(), "BasicWindow",
 					 "MediaControlsCountdownTimer");
@@ -126,7 +126,7 @@ int64_t MediaControls::GetSliderTime(int val)
 	return seekTo;
 }
 
-void MediaControls::MediaSliderClicked()
+void MediaControls::AbsoluteSliderClicked()
 {
 	OBSSource source = OBSGetStrongRef(weakSource);
 	if (!source) {
@@ -147,7 +147,7 @@ void MediaControls::MediaSliderClicked()
 	seekTimer.start(100);
 }
 
-void MediaControls::MediaSliderReleased()
+void MediaControls::AbsoluteSliderReleased()
 {
 	OBSSource source = OBSGetStrongRef(weakSource);
 	if (!source) {
@@ -170,13 +170,13 @@ void MediaControls::MediaSliderReleased()
 	}
 }
 
-void MediaControls::MediaSliderHovered(int val)
+void MediaControls::AbsoluteSliderHovered(int val)
 {
 	float seconds = ((float)GetSliderTime(val) / 1000.0f);
 	QToolTip::showText(QCursor::pos(), FormatSeconds((int)seconds), this);
 }
 
-void MediaControls::MediaSliderMoved(int val)
+void MediaControls::AbsoluteSliderMoved(int val)
 {
 	if (seekTimer.isActive()) {
 		seek = val;

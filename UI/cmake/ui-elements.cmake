@@ -31,6 +31,8 @@ target_link_libraries(obs-studio PRIVATE OBS::ui-support)
 target_sources(
   obs-studio
   PRIVATE # cmake-format: sortable
+          absolute-slider.cpp
+          absolute-slider.hpp
           adv-audio-control.cpp
           adv-audio-control.hpp
           audio-encoders.cpp
@@ -50,8 +52,6 @@ target_sources(
           log-viewer.hpp
           media-controls.cpp
           media-controls.hpp
-          media-slider.cpp
-          media-slider.hpp
           menu-button.cpp
           menu-button.hpp
           mute-checkbox.hpp
