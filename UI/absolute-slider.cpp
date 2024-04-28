@@ -1,8 +1,8 @@
 #include "slider-absoluteset-style.hpp"
-#include "media-slider.hpp"
+#include "absolute-slider.hpp"
 #include <QStyleFactory>
 
-MediaSlider::MediaSlider(QWidget *parent) : SliderIgnoreScroll(parent)
+AbsoluteSlider::AbsoluteSlider(QWidget *parent) : SliderIgnoreScroll(parent)
 {
 	installEventFilter(this);
 	setMouseTracking(true);
@@ -20,7 +20,7 @@ MediaSlider::MediaSlider(QWidget *parent) : SliderIgnoreScroll(parent)
 	this->setStyle(style);
 }
 
-void MediaSlider::mouseMoveEvent(QMouseEvent *event)
+void AbsoluteSlider::mouseMoveEvent(QMouseEvent *event)
 {
 	int val = minimum() +
 		  ((maximum() - minimum()) * event->pos().x()) / width();
@@ -30,12 +30,12 @@ void MediaSlider::mouseMoveEvent(QMouseEvent *event)
 	else if (val < minimum())
 		val = minimum();
 
-	emit mediaSliderHovered(val);
+	emit absoluteSliderHovered(val);
 	event->accept();
 	QSlider::mouseMoveEvent(event);
 }
 
-bool MediaSlider::eventFilter(QObject *obj, QEvent *event)
+bool AbsoluteSlider::eventFilter(QObject *obj, QEvent *event)
 {
 	if (event->type() == QEvent::KeyPress) {
 		QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
