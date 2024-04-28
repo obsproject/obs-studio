@@ -261,11 +261,11 @@ void video_frame_copy(struct video_frame *dst, const struct video_frame *src,
 			size_t linesize = src_linesize < dst_linesize
 						  ? src_linesize
 						  : dst_linesize;
-			for (uint32_t i = 0; i < heights[i]; i++) {
+			for (uint32_t y = 0; y < heights[i]; y++) {
 				uint8_t *src_pos =
-					src->data[i] + (src_linesize * i);
+					src->data[i] + (src_linesize * y);
 				uint8_t *dst_pos =
-					dst->data[i] + (dst_linesize * i);
+					dst->data[i] + (dst_linesize * y);
 				memcpy(dst_pos, src_pos, linesize);
 			}
 		}
