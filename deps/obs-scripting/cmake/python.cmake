@@ -7,6 +7,11 @@ if(ENABLE_SCRIPTING_PYTHON)
 
   if(OS_WINDOWS)
     find_package(Python 3.8...<3.11 REQUIRED Interpreter Development)
+  elseif(
+    OS_LINUX
+    OR OS_FREEBSD
+    OR OS_OPENBSD)
+    find_package(Python 3.8 REQUIRED Interpreter Development)
   else()
     find_package(Python 3.8...<3.12 REQUIRED Interpreter Development)
   endif()
