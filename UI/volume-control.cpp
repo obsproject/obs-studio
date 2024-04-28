@@ -3,15 +3,13 @@
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 #include "mute-checkbox.hpp"
-#include "slider-ignorewheel.hpp"
-#include "slider-absoluteset-style.hpp"
+#include "absolute-slider.hpp"
 #include "source-label.hpp"
 #include <QFontDatabase>
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QLabel>
 #include <QPainter>
-#include <QStyleFactory>
 
 using namespace std;
 
@@ -385,18 +383,6 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 
 	obs_fader_attach_source(obs_fader, source);
 	obs_volmeter_attach_source(obs_volmeter, source);
-
-	QString styleName = slider->style()->objectName();
-	QStyle *style;
-	style = QStyleFactory::create(styleName);
-	if (!style) {
-		style = new SliderAbsoluteSetStyle();
-	} else {
-		style = new SliderAbsoluteSetStyle(style);
-	}
-
-	style->setParent(slider);
-	slider->setStyle(style);
 
 	/* Call volume changed once to init the slider position and label */
 	VolumeChanged();
@@ -1520,14 +1506,14 @@ void VolumeMeterTimer::timerEvent(QTimerEvent *)
 }
 
 VolumeSlider::VolumeSlider(obs_fader_t *fader, QWidget *parent)
-	: SliderIgnoreScroll(parent)
+	: AbsoluteSlider(parent)
 {
 	fad = fader;
 }
 
 VolumeSlider::VolumeSlider(obs_fader_t *fader, Qt::Orientation orientation,
 			   QWidget *parent)
-	: SliderIgnoreScroll(orientation, parent)
+	: AbsoluteSlider(orientation, parent)
 {
 	fad = fader;
 }

@@ -62,8 +62,6 @@ target_sources(
           scene-tree.cpp
           scene-tree.hpp
           screenshot-obj.hpp
-          slider-absoluteset-style.cpp
-          slider-absoluteset-style.hpp
           source-label.cpp
           source-label.hpp
           source-tree.cpp
