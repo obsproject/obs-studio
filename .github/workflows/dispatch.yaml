@@ -12,6 +12,7 @@ on:
           - services
           - translations
           - documentation
+          - patches
       ref:
         description: GitHub reference to use for job
         type: string
@@ -26,6 +27,10 @@ on:
         required: false
       customAssetMacOSIntel:
         description: Custom macOS Intel build for Steam Upload
+        type: string
+        required: false
+      channel:
+        description: Channel to use when generating Windows update files
         type: string
         required: false
 permissions:
@@ -130,3 +135,17 @@ jobs:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           accountId: ${{ secrets.CF_ACCOUNT_ID }}
           command: pages publish . --project-name=${{ vars.CF_PAGES_PROJECT }} --commit-hash='${{ steps.setup.outputs.commitHash }}'
+
+  windows-patches:
+    name: Create Windows Patches 🩹
+    if: github.repository_owner == 'obsproject' && inputs.job == 'patches'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/windows-patches
+        with:
+          tagName: ${{ inputs.ref }}
+          workflowSecret: ${{ github.token }}
+          channel: ${{ inputs.channel }}
+          gcsAccessKeyId: ${{ secrets.GCS_ACCESS_KEY_ID }}
+          gcsAccessKeySecret: ${{ secrets.GCS_ACCESS_KEY_SECRET }}
