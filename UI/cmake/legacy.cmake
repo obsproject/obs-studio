@@ -201,8 +201,6 @@ target_sources(
           scene-tree.cpp
           scene-tree.hpp
           screenshot-obj.hpp
-          slider-absoluteset-style.cpp
-          slider-absoluteset-style.hpp
           slider-ignorewheel.cpp
           slider-ignorewheel.hpp
           source-label.cpp

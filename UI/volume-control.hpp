@@ -8,7 +8,7 @@
 #include <QList>
 #include <QMenu>
 #include <QAccessibleWidget>
-#include "slider-ignorewheel.hpp"
+#include "absolute-slider.hpp"
 
 class QPushButton;
 class VolumeMeterTimer;
@@ -333,7 +333,7 @@ public:
 	void refreshColors();
 };
 
-class VolumeSlider : public SliderIgnoreScroll {
+class VolumeSlider : public AbsoluteSlider {
 	Q_OBJECT
 
 public:

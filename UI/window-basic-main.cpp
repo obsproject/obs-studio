@@ -332,9 +332,6 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	ui->setupUi(this);
 	ui->previewDisabledWidget->setVisible(false);
-	QStyle *contextBarStyle = new OBSContextBarProxyStyle();
-	contextBarStyle->setParent(ui->contextContainer);
-	ui->contextContainer->setStyle(contextBarStyle);
 	ui->broadcastButton->setVisible(false);
 
 	startingDockLayout = saveState();
@@ -11142,19 +11139,6 @@ float OBSBasic::GetDevicePixelRatio()
 
 void OBSBasic::ThemeChanged()
 {
-	/* Since volume/media sliders are using QProxyStyle, they are not
-	* updated when themes are changed, so re-initialize them. */
-	vector<OBSSource> sources;
-	for (size_t i = 0; i != volumes.size(); i++)
-		sources.emplace_back(volumes[i]->GetSource());
-
-	ClearVolumeControls();
-
-	for (const auto &source : sources)
-		ActivateAudioSource(source);
-
-	UpdateContextBar(true);
-
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_THEME_CHANGED);
 }
