@@ -1,5 +1,5 @@
-name: Run bouf
-description: Generates signed OBS install files and updater files
+name: Run bouf Packaging
+description: Generates signed OBS install files
 inputs:
   gcpWorkloadIdentityProvider:
     description: GCP Identity Provider Pool ID
@@ -7,9 +7,6 @@ inputs:
   gcpServiceAccountName:
     description: Google service account name
     required: true
-  gcpManifestSigningKeyName:
-    description: Name of the manifest signing key in GCP KMS
-    required: false
   version:
     description: Version string (e.g., 30.0.0-rc1)
     required: true
@@ -30,9 +27,9 @@ runs:
     - name: Setup bouf
       shell: pwsh
       env:
-        BOUF_TAG: 'v0.6.2'
-        BOUF_HASH: '40ca34457a8ac60b9710a41b4cde2a0fc36d8740ab21b01d702069be2e1c5fb9'
-        BOUF_NSIS_HASH: '88958a9e4e0f3cb6f78e8359fdfa3343d050d5c2158e3ee77cb2cc4a8785ac61'
+        BOUF_TAG: 'v0.6.3'
+        BOUF_HASH: '7f1d266467620aa553a705391ee06128e8ee14af66129a0e64a282997fb6fd83'
+        BOUF_NSIS_HASH: 'a234126de89f122b6a552df3416de3eabcb4195217626c7f4eaec71b20fe36eb'
         GH_TOKEN: ${{ github.token }}
       run: |
         # Download bouf release
@@ -53,10 +50,10 @@ runs:
         Expand-Archive -Path $windows_zip -DestinationPath bin
         Expand-Archive -Path $nsis_zip -DestinationPath nsis
 
-    - name: Download Google CNG Provider
+    - name: Setup Google CNG Provider
       shell: pwsh
       env:
-        CNG_TAG: 'cng-v1.0'
+        CNG_TAG: 'cng-v1.1'
         GH_TOKEN: ${{ github.token }}
       run: |
         # Download Google CNG provider release from github
@@ -73,18 +70,10 @@ runs:
         # Finally, install the CNG provider
         Invoke-External msiexec /i $msiPath /qn /norestart
 
-    - name: Install pandoc and rclone
+    - name: Install rclone
       shell: pwsh
       run: |
         choco install rclone --version=1.64.2 -y --no-progress
-        choco install pandoc --version=3.1.9 -y --no-progress
-
-    - name: Prepare Release Notes
-      shell: pwsh
-      run: |
-        # Release notes are just the tag body on Windows
-        Set-Location repo
-        git tag -l --format='%(contents:body)' ${{ inputs.version }} > "${{ github.workspace }}/notes.rst"
     
     - name: 'Authenticate to Google Cloud'
       uses: 'google-github-actions/auth@5a50e581162a13f4baa8916d01180d2acbc04363'
@@ -92,15 +81,21 @@ runs:
         workload_identity_provider: ${{ inputs.gcpWorkloadIdentityProvider }}
         service_account: ${{ inputs.gcpServiceAccountName }}
 
-    - name: 'Set up Cloud SDK'
-      uses: 'google-github-actions/setup-gcloud@98ddc00a17442e89a24bbf282954a3b65ce6d200'
-
-    - name: Download Old Builds
+    - name: Download Previous Build
       shell: pwsh
       env:
         RCLONE_GCS_ENV_AUTH: 'true'
       run: |
-        rclone copy --transfers 100 :gcs:obs-builds "${{ github.workspace }}/old_builds"
+        . ${env:GITHUB_ACTION_PATH}\Ensure-Location.ps1
+        Ensure-Location "${{ github.workspace }}/old_builds"
+        rclone copy --transfers 100 ":gcs:obs-latest/${{ inputs.channel }}" .
+
+    - name: Download Presigned Game Capture Files (REMOVE AFTER 30.2!!)
+      shell: pwsh
+      env:
+        RCLONE_GCS_ENV_AUTH: 'true'
+      run: |
+        rclone copy :gcs:obs-game-capture "${{ github.workspace }}/build/data/obs-plugins/win-capture"
 
     - name: Run bouf
       shell: pwsh
@@ -110,24 +105,26 @@ runs:
            "--config",     "${env:GITHUB_ACTION_PATH}/config.toml",
            "--version",    "${{ inputs.version }}"
            "--branch",     "${{ inputs.channel }}"
-           "--notes-file", "${{ github.workspace }}/notes.rst"
            "-i",           "${{ github.workspace }}/build"
            "-p",           "${{ github.workspace }}/old_builds"
            "-o",           "${{ github.workspace }}/output"
+           "--packaging-only"
         )
         Invoke-External "${{ github.workspace }}\bouf\bin\bouf.exe" @boufArgs
 
-    - name: Sign Updater Manifest
+    - name: Sync Latest Build
       shell: pwsh
-      if: inputs.gcpManifestSigningKeyName != ''
+      env:
+        RCLONE_INCLUDE: '**/${{ inputs.version }}/**'
+        RCLONE_GCS_ENV_AUTH: 'true'
+        RCLONE_GCS_BUCKET_POLICY_ONLY: 'true'
       run: |
-        $gcloudArgs = @(
-           "--input-file",       "${{ github.workspace }}/output/manifest.json"
-           "--signature-file",   "${{ github.workspace }}/output/manifest.json.sig"
-           "--digest-algorithm", "sha512"
-           "--location",         "global"
-           "--keyring",          "production"
-           "--key",              "${{ inputs.gcpManifestSigningKeyName }}"
-           "--version",          "1"
-        )
-        gcloud kms asymmetric-sign @gcloudArgs
+        rclone sync --delete-excluded --transfers 100 "${{ github.workspace }}/old_builds" ":gcs:obs-latest/${{ inputs.channel }}"
+
+    - name: Upload Build to Archive
+      shell: pwsh
+      env:
+        RCLONE_GCS_ENV_AUTH: 'true'
+        RCLONE_GCS_BUCKET_POLICY_ONLY: 'true'
+      run: |
+        rclone copy --transfers 100 "${{ github.workspace }}/old_builds" ":gcs:obs-builds"

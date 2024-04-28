@@ -19,11 +19,13 @@ never_copy = [
 ]
 
 [prepare.codesign]
-sign_cert_file = "repo/.github/actions/bouf/prod.crt"
+sign_cert_file = "repo/.github/actions/windows-signing/prod.crt"
 sign_kms_key_id = "projects/ci-signing/locations/global/keyRings/production/cryptoKeys/release-sign-hsm/cryptoKeyVersions/1"
 sign_digest = "sha384"
 sign_ts_serv = "http://timestamp.digicert.com"
 sign_exts = ['exe', 'dll', 'pyd']
+sign_append = true
+sign_ts_algo = "sha256"
 
 [prepare.strip_pdbs]
 # PDBs to not strip
@@ -47,8 +49,7 @@ exclude_from_parallel = [
 nsis_script = "bouf/nsis/mp-installer.nsi"
 
 [package.zip]
-skip = true
-name = "OBS-Studio-{version}.zip"
+name = "OBS-Studio-{version}-x64.zip"
 pdb_name = "OBS-Studio-{version}-pdbs.zip"
 
 [package.updater]
