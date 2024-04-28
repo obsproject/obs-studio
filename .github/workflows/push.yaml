@@ -219,7 +219,7 @@ jobs:
     name: Create Release 🛫
     if: github.ref_type == 'tag'
     runs-on: ubuntu-22.04
-    needs: build-project
+    needs: [build-project, sign-windows-build]
     defaults:
       run:
         shell: bash
@@ -265,6 +265,9 @@ jobs:
           ubuntu_x86_64_artifact_name="obs-studio-ubuntu-22.04-x86_64-${commit_hash}"
           ubuntu_x86_64_debug_name="obs-studio-ubuntu-22.04-x86_64-${commit_hash}-dbgsym"
           ubuntu_sources_name="obs-studio-ubuntu-22.04-sources-${commit_hash}"
+          windows_artifact_name="obs-studio-windows-x64-${{ steps.check.outputs.version }}-signed"
+          windows_installer_name="obs-studio-windows-x64-${{ steps.check.outputs.version }}-installer"
+          windows_debug_name="obs-studio-windows-x64-${{ steps.check.outputs.version }}-pdbs"
 
           echo '::group::Renaming Artifacts'
           mv -v "${macos_arm64_artifact_name}/"obs-studio-*-macos-apple.dmg \
@@ -281,6 +284,12 @@ jobs:
             "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-x86_64-dbsym.ddeb
           mv -v "${ubuntu_sources_name}/"obs-studio-*-sources.tar.gz \
             "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Sources.tar.gz
+          mv -v "${windows_installer_name}/"OBS-Studio-*.exe \
+            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Windows-Installer.exe
+          mv -v "${windows_artifact_name}/"OBS-Studio-*.zip \
+            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Windows.zip
+          mv -v "${windows_debug_name}/"OBS-Studio-*-pdbs.zip \
+            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Windows-PDBs.zip
           echo '::endgroup::'
 
       - name: Generate Checksums 🪪
@@ -291,7 +300,7 @@ jobs:
           shopt -s extglob
 
           echo "### Checksums" > ${{ github.workspace }}/CHECKSUMS.txt
-          for file in ${{ github.workspace }}/@(*.deb|*.ddeb|*.dmg|*.tar.xz|*.tar.gz); do
+          for file in ${{ github.workspace }}/@(*.deb|*.ddeb|*.dmg|*.tar.xz|*.tar.gz|*.exe|*.zip); do
             echo "    ${file##*/}: $(sha256sum "${file}" | cut -d " " -f 1)" >> ${{ github.workspace }}/CHECKSUMS.txt
           done
 
@@ -311,3 +320,6 @@ jobs:
             ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-*.deb
             ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-*.ddeb
             ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Sources.tar.gz
+            ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Windows.zip
+            ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Windows-PDBs.zip
+            ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Windows-Installer.exe
