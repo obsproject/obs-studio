@@ -32,10 +32,12 @@ jobs:
             +([0-9]).+([0-9]).+([0-9]) )
               echo 'validTag=true' >> $GITHUB_OUTPUT
               echo 'flatpakMatrix=["beta", "stable"]' >> $GITHUB_OUTPUT
+              echo 'updateChannel=stable' >> $GITHUB_OUTPUT
               ;;
             +([0-9]).+([0-9]).+([0-9])-@(beta|rc)*([0-9]) )
               echo 'validTag=true' >> $GITHUB_OUTPUT
               echo 'flatpakMatrix=["beta"]' >> $GITHUB_OUTPUT
+              echo 'updateChannel=beta' >> $GITHUB_OUTPUT
               ;;
             *) echo 'validTag=false' >> $GITHUB_OUTPUT ;;
           esac
@@ -171,3 +173,18 @@ jobs:
           workflowSecret: ${{ github.token }}
           tagName: ${{ github.ref_name }}
           preview: false
+
+  windows-patches:
+    name: Create Windows Patches 🩹
+    needs: check-tag
+    if: github.repository_owner == 'obsproject' && fromJSON(needs.check-tag.outputs.validTag)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/windows-patches
+        with:
+          tagName: ${{ github.ref_name }}
+          workflowSecret: ${{ github.token }}
+          channel: ${{ needs.check-tag.outputs.updateChannel }}
+          gcsAccessKeyId: ${{ secrets.GCS_ACCESS_KEY_ID }}
+          gcsAccessKeySecret: ${{ secrets.GCS_ACCESS_KEY_SECRET }}

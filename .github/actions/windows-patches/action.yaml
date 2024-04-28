@@ -1,0 +1,111 @@
+name: Run bouf Patch Generation
+description: Generates OBS updater manifest and patches
+inputs:
+  gcsAccessKeyId:
+    description: GCS S3 Access Key ID
+    required: true
+  gcsAccessKeySecret:
+    description: GCS S3 Access Key Secret
+    required: true
+  workflowSecret:
+    description: GitHub API token to use for API calls
+    required: true
+  tagName:
+    description: GitHub Release tag
+    required: true
+  channel:
+    description: Update channel
+    required: false
+    default: 'stable'
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v4
+      with:
+        path: "repo"
+        fetch-depth: 0
+
+    - name: Download Release Artifact
+      shell: pwsh
+      env:
+        GH_TOKEN: ${{ inputs.workflowSecret }}
+      run: |
+        # Download OBS release
+        . ${env:GITHUB_ACTION_PATH}\Invoke-External.ps1
+        Invoke-External gh release download "${{ inputs.tagName }}" -p "*-Windows.zip"
+        Expand-Archive -Path "*-Windows.zip" -DestinationPath "${{ github.workspace }}/build"
+
+    - name: Setup bouf
+      shell: pwsh
+      env:
+        BOUF_TAG: 'v0.6.3'
+        BOUF_HASH: '7f1d266467620aa553a705391ee06128e8ee14af66129a0e64a282997fb6fd83'
+        BOUF_NSIS_HASH: 'a234126de89f122b6a552df3416de3eabcb4195217626c7f4eaec71b20fe36eb'
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        # Download bouf release
+        . ${env:GITHUB_ACTION_PATH}\Ensure-Location.ps1
+        . ${env:GITHUB_ACTION_PATH}\Invoke-External.ps1
+        Ensure-Location bouf
+        $windows_zip = "bouf-windows-${env:BOUF_TAG}.zip"
+        $nsis_zip = "bouf-nsis-${env:BOUF_TAG}.zip"
+        Invoke-External gh release download "${env:BOUF_TAG}" -R "obsproject/bouf" -p $windows_zip -p $nsis_zip
+        
+        if ((Get-FileHash $windows_zip -Algorithm SHA256).Hash -ne "${env:BOUF_HASH}") {
+          throw "bouf hash does not match."
+        }
+        if ((Get-FileHash $nsis_zip -Algorithm SHA256).Hash -ne "${env:BOUF_NSIS_HASH}") {
+          throw "NSIS package hash does not match."
+        }
+        
+        Expand-Archive -Path $windows_zip -DestinationPath bin
+        Expand-Archive -Path $nsis_zip -DestinationPath nsis
+
+    - name: Install rclone and pandoc
+      shell: pwsh
+      run: |
+        choco install rclone pandoc -y --no-progress
+
+    - name: Download Previous Builds
+      shell: pwsh
+      env:
+        RCLONE_TRANSFERS: '100'
+        RCLONE_FAST_LIST: 'true'
+        RCLONE_EXCLUDE: '{pdbs/**,**/${{ inputs.tagName }}/**}'
+        RCLONE_S3_PROVIDER: 'GCS'
+        RCLONE_S3_ACCESS_KEY_ID: '${{ inputs.gcsAccessKeyId }}'
+        RCLONE_S3_SECRET_ACCESS_KEY: '${{ inputs.gcsAccessKeySecret }}'
+        RCLONE_S3_ENDPOINT: 'https://storage.googleapis.com'
+      run: |
+        rclone -q copy ":s3:obs-builds" "${{ github.workspace }}/old_builds"
+
+    - name: Prepare Release Notes
+      shell: pwsh
+      run: |
+        # Release notes are just the tag body on Windows
+        Set-Location repo
+        git tag -l --format='%(contents:body)' ${{ inputs.version }} > "${{ github.workspace }}/notes.rst"
+
+    - name: Run bouf
+      shell: pwsh
+      run: |
+        . ${env:GITHUB_ACTION_PATH}\Invoke-External.ps1
+        $boufArgs = @(
+           "--config",     "${env:GITHUB_ACTION_PATH}/config.toml",
+           "--version",    "${{ inputs.tagName }}"
+           "--branch",     "${{ inputs.channel }}"
+           "--notes-file", "${{ github.workspace }}/notes.rst"
+           "-i",           "${{ github.workspace }}/build"
+           "-p",           "${{ github.workspace }}/old_builds"
+           "-o",           "${{ github.workspace }}/output"
+           "--updater-data-only"
+        )
+        Invoke-External "${{ github.workspace }}\bouf\bin\bouf.exe" @boufArgs
+
+    - name: Upload Outputs
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-updater-files
+        compression-level: 0
+        path: ${{ github.workspace }}/output
