@@ -42,7 +42,7 @@
 #include "obs-app.hpp"
 #include "obs-proxy-style.hpp"
 #include "log-viewer.hpp"
-#include "slider-ignorewheel.hpp"
+#include "volume-control.hpp"
 #include "window-basic-main.hpp"
 #ifdef __APPLE__
 #include "window-permissions.hpp"
