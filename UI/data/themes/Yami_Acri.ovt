@@ -48,15 +48,11 @@
     --button_border_hover: var(--button_bg_hover);
     --button_border_focus: var(--button_bg_hover);
 
-    --tab_bg: var(--input_bg);
-    --tab_bg_hover: var(--grey3);
-    --tab_bg_down: var(--grey7);
-    --tab_bg_disabled: var(--grey6);
+    --tab_bg_down: #162458;
 
-    --tab_border: var(--grey3);
-    --tab_border_hover: var(--grey1);
-    --tab_border_focus: var(--grey1);
-    --tab_border_selected: var(--primary_light);
+    --tab_border_hover: var(--primary_light);
+    --tab_border_focus: var(--input_border_focus);
+    --tab_border_selected: var(--primary);
 
     --scrollbar: var(--grey5);
     --scrollbar_hover: var(--primary_light);
