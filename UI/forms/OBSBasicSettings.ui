@@ -936,6 +936,15 @@
              <item>
               <widget class="QFrame" name="appearanceFrame">
                <layout class="QVBoxLayout" name="verticalLayout_30">
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
                 <item>
                  <widget class="QGroupBox" name="appearanceGeneral">
                   <property name="title">
@@ -945,6 +954,12 @@
                    <bool>false</bool>
                   </property>
                   <layout class="QFormLayout" name="formLayout_37">
+                   <property name="labelAlignment">
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                   </property>
+                   <property name="topMargin">
+                    <number>2</number>
+                   </property>
                    <item row="0" column="0">
                     <widget class="QLabel" name="label_45">
                      <property name="text">
@@ -973,6 +988,19 @@
                    </item>
                   </layout>
                  </widget>
+                </item>
+                <item>
+                 <spacer name="verticalSpacer_8">
+                  <property name="orientation">
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>20</width>
+                    <height>40</height>
+                   </size>
+                  </property>
+                 </spacer>
                 </item>
                </layout>
               </widget>
