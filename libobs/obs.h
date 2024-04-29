@@ -717,12 +717,18 @@ EXPORT obs_source_t *obs_get_output_source(uint32_t channel);
 /**
  * Adds scene to backstage view. It stays active, but is not visible on stream or recording.
  * The main use case is creation of various scene previews while user is able to change
- * current active scene. Use obs_remove_scene_from_backstage to clear resources.
+ * current active scene. Use appropriate obs_deactivate_... to clear resources.
+ *
+ * The whole scene is activated for scene projector.
+ * Videos only without a sound are activated in studio mode.
+ *
  */
-EXPORT void obs_add_scene_to_backstage(obs_source_t *source);
+EXPORT void obs_activate_scene_on_backstage(obs_source_t *source);
+EXPORT void obs_activate_videos_on_backstage(obs_source_t *source);
 
 /** Removes scene from backstage view. */
-EXPORT void obs_remove_scene_from_backstage(obs_source_t *source);
+EXPORT void obs_deactivate_scene_on_backstage(obs_source_t *source);
+EXPORT void obs_deactivate_videos_on_backstage(obs_source_t *source);
 
 /**
  * Enumerates all input sources

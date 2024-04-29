@@ -543,7 +543,6 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	const bool force_play_start =
 		obs_data_get_bool(settings, "force_play_start");
 	if (s->is_local_file && !active && input && force_play_start) {
-		obs_data_set_bool(settings, "force_play_start", false);
 		ffmpeg_source_play_pause(s, false);
 	}
 }
