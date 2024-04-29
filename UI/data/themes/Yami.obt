@@ -1099,7 +1099,7 @@ QPushButton:disabled {
 QToolButton:disabled,
 QPushButton[toolButton="true"]:disabled {
     background-color: var(--button_bg_disabled);
-    border-color: transparent;
+    border-color: var(--button_border);
 }
 
 QPushButton::menu-indicator {
