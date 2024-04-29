@@ -1187,9 +1187,10 @@ QSlider::handle:disabled {
 /* Volume Control */
 
 #stackedMixerArea QPushButton {
+    width: var(--icon_base);
+    height: var(--icon_base);
     background-color: var(--button_bg);
-    min-width: var(--icon_base);
-    padding: var(--padding_small) var(--padding_base);
+    padding: var(--padding_base_border) var(--padding_base_border);
     margin: 0px var(--spacing_base);
     border: 1px solid var(--button_border);
     border-radius: var(--border_radius);
