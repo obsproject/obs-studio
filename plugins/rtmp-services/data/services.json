@@ -2588,10 +2588,6 @@
                     "url": "rtmp://live2.masterstream.ir/live"
                 },
                 {
-                    "name": "Iran Server 3",
-                    "url": "rtmp://live3.masterstream.ir/live"
-                },
-                {
                     "name": "Iran Server 4",
                     "url": "rtmp://live4.masterstream.ir/live"
                 },
