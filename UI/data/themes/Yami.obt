@@ -1513,6 +1513,10 @@ MuteCheckBox::indicator:checked {
     image: url(theme:Dark/mute.svg);
 }
 
+MuteCheckBox::indicator:indeterminate {
+    image: url(theme:Dark/unassigned.svg);
+}
+
 MuteCheckBox::indicator:unchecked {
     image: url(theme:Dark/settings/audio.svg);
 }
