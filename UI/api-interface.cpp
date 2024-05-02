@@ -337,6 +337,23 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		}
 	}
 
+	bool obs_frontend_recording_add_chapter(const char *name) override
+	{
+		if (!os_atomic_load_bool(&recording_active) ||
+		    os_atomic_load_bool(&recording_paused))
+			return false;
+
+		proc_handler_t *ph = obs_output_get_proc_handler(
+			main->outputHandler->fileOutput);
+
+		calldata cd;
+		calldata_init(&cd);
+		calldata_set_string(&cd, "chapter_name", name);
+		bool result = proc_handler_call(ph, "add_chapter", &cd);
+		calldata_free(&cd);
+		return result;
+	}
+
 	void obs_frontend_replay_buffer_start(void) override
 	{
 		QMetaObject::invokeMethod(main, "StartReplayBuffer");
