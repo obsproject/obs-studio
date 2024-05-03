@@ -45,7 +45,6 @@
     ],
     "modules": [
         "modules/10-mbedtls.json",
-        "modules/20-aom.json",
         "modules/20-librist.json",
         "modules/20-nv-codec.json",
         "modules/20-srt.json",
