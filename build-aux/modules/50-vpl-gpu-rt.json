@@ -1,5 +1,5 @@
 {
-    "name": "onevpl-intel-gpu",
+    "name": "vpl-gpu-rt",
     "buildsystem": "cmake-ninja",
     "builddir": true,
     "config-opts": [
@@ -14,9 +14,9 @@
     "sources": [
         {
             "type": "git",
-            "url": "https://github.com/oneapi-src/oneVPL-intel-gpu.git",
-            "commit": "852fa9f705ef44c004d014548601f3804a6de705",
-            "tag": "intel-onevpl-23.4.3"
+            "url": "https://github.com/intel/vpl-gpu-rt.git",
+            "commit": "d74cb6391eaad4a2db9cbec6a8a335b6f1a555c4",
+            "tag": "intel-onevpl-24.2.2"
         },
         {
             "type": "shell",
