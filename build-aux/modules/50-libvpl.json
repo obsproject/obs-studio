@@ -4,13 +4,10 @@
     "builddir": true,
     "config-opts": [
         "-DCMAKE_BUILD_TYPE=Release",
-        "-DBUILD_DEV=ON",
-        "-DBUILD_PREVIEW=OFF",
-        "-DBUILD_TOOLS=OFF",
-        "-DBUILD_TOOLS_ONEVPL_EXPERIMENTAL=OFF",
-        "-DINSTALL_EXAMPLE_CODE=OFF",
+        "-DENABLE_LIBDIR_IN_RUNTIME_SEARCH=ON",
+        "-DINSTALL_DEV=ON",
         "-DBUILD_EXAMPLES=OFF",
-        "-DBUILD_DISPATCHER_ONEVPL_EXPERIMENTAL=OFF",
+        "-DBUILD_EXPERIMENTAL=OFF",
         "-DBUILD_SHARED_LIBS=ON"
     ],
     "cleanup": [
@@ -21,8 +18,8 @@
         {
             "type": "git",
             "url": "https://github.com/intel/libvpl.git",
-            "commit": "79ef61b11790c70941cfa4d167b5d20d3a4e9744",
-            "tag": "v2.10.1"
+            "commit": "11a9bbda5b22ac1c544da59b4007bb57f737b487",
+            "tag": "v2.11.0"
         }
     ]
 }
