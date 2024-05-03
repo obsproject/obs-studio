@@ -44,12 +44,19 @@ public:
 	}
 
 private:
+	struct ExtraViewsGuard {
+		std::map<std::string, video_t *> views_;
+
+		~ExtraViewsGuard();
+	};
+
 	struct OBSOutputObjects {
 		OBSOutputAutoRelease output_;
 		std::shared_ptr<obs_encoder_group_t> video_encoder_group_;
 		std::vector<OBSEncoderAutoRelease> audio_encoders_;
 		OBSServiceAutoRelease multitrack_video_service_;
 		OBSSignal start_signal, stop_signal, deactivate_signal;
+		std::shared_ptr<ExtraViewsGuard> extra_views_;
 	};
 
 	std::optional<OBSOutputObjects> take_current();

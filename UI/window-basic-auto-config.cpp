@@ -388,8 +388,9 @@ bool AutoConfigStreamPage::validatePage()
 		wiz->testMultitrackVideo = ui->useMultitrackVideo->isChecked();
 
 		if (wiz->testMultitrackVideo) {
+			std::map<std::string, video_t *> extra_views;
 			auto postData = constructGoLivePost(QString::fromStdString(wiz->key), std::nullopt,
-							    std::nullopt, false);
+							    std::nullopt, false, extra_views);
 
 			OBSDataAutoRelease service_settings = obs_service_get_settings(service);
 			auto multitrack_video_name = QTStr("Basic.Settings.Stream.MultitrackVideoLabel");
