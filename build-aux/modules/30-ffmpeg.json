@@ -25,16 +25,16 @@
         {
             "type": "git",
             "url": "https://github.com/FFmpeg/FFmpeg.git",
-            "tag": "n6.1.1",
-            "commit": "e38092ef9395d7049f871ef4d5411eb410e283e0",
+            "tag": "n7.0",
+            "commit": "083443d67cb159ce469e5d902346b8d0c2cd1c93",
             "disable-shallow-clone": true
         },
         {
             "type": "git",
             "dest": "obs-deps",
             "url": "https://github.com/obsproject/obs-deps.git",
-            "tag": "2023-06-22",
-            "commit": "d86fb6f86455d328f67e563d87f494bcf1ff6dca"
+            "tag": "2024-05-08",
+            "commit": "85173b23c575ea09cdf33bada01b1d38dd1251ea"
         },
         {
             "type": "shell",
