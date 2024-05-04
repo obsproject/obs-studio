@@ -593,9 +593,6 @@ static json_t *obs_data_to_json(obs_data_t *data)
 		enum obs_data_type type = obs_data_item_gettype(item);
 		const char *name = get_item_name(item);
 
-		if (!obs_data_item_has_user_value(item))
-			continue;
-
 		if (type == OBS_DATA_STRING)
 			set_json_string(json, name, item);
 		else if (type == OBS_DATA_NUMBER)
