@@ -170,7 +170,7 @@ void video_frame_get_plane_heights(uint32_t heights[MAX_AV_PLANES],
 		heights[0] = height;
 		heights[1] = height / 2;
 		heights[2] = height / 2;
-		heights[0] = height;
+		heights[3] = height;
 		break;
 
 	case VIDEO_FORMAT_I42A: /* four planes: all full height */
