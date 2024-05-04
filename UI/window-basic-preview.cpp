@@ -5,6 +5,7 @@
 #include <string>
 #include <graphics/vec4.h>
 #include <graphics/matrix4.h>
+#include <util/dstr.hpp>
 #include "window-basic-preview.hpp"
 #include "window-basic-main.hpp"
 #include "obs-app.hpp"
@@ -2331,7 +2332,7 @@ OBSBasicPreview *OBSBasicPreview::Get()
 	return OBSBasic::Get()->ui->preview;
 }
 
-static obs_source_t *CreateLabel(float pixelRatio)
+static obs_source_t *CreateLabel(float pixelRatio, int i)
 {
 	OBSDataAutoRelease settings = obs_data_create();
 	OBSDataAutoRelease font = obs_data_create();
@@ -2357,7 +2358,9 @@ static obs_source_t *CreateLabel(float pixelRatio)
 	const char *text_source_id = "text_ft2_source";
 #endif
 
-	return obs_source_create_private(text_source_id, NULL, settings);
+	DStr name;
+	dstr_printf(name, "Preview spacing label %d", i);
+	return obs_source_create_private(text_source_id, name, settings);
 }
 
 static void SetLabelText(int sourceIndex, int px)
@@ -2639,7 +2642,7 @@ void OBSBasicPreview::DrawSpacingHelpers()
 	float pixelRatio = main->GetDevicePixelRatio();
 	for (int i = 0; i < 4; i++) {
 		if (!spacerLabel[i])
-			spacerLabel[i] = CreateLabel(pixelRatio);
+			spacerLabel[i] = CreateLabel(pixelRatio, i);
 	}
 
 	vec3_set(&start, top.x, 0.0f, 1.0f);
