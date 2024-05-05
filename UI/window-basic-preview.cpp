@@ -1757,13 +1757,16 @@ static void DrawLine(float x1, float y1, float x2, float y2, float thickness,
 
 	gs_render_start(true);
 
-	gs_vertex2f(x1, y1);
-	gs_vertex2f(x1 + (xSide * (thickness / scale.x)),
-		    y1 + (ySide * (thickness / scale.y)));
-	gs_vertex2f(x2 + (xSide * (thickness / scale.x)),
-		    y2 + (ySide * (thickness / scale.y)));
-	gs_vertex2f(x2, y2);
-	gs_vertex2f(x1, y1);
+	gs_vertex2f(x1 - (xSide * (thickness / scale.x) / 2),
+		    y1 + (ySide * (thickness / scale.y) / 2));
+	gs_vertex2f(x1 + (xSide * (thickness / scale.x) / 2),
+		    y1 - (ySide * (thickness / scale.y) / 2));
+	gs_vertex2f(x2 + (xSide * (thickness / scale.x) / 2),
+		    y2 + (ySide * (thickness / scale.y) / 2));
+	gs_vertex2f(x2 - (xSide * (thickness / scale.x) / 2),
+		    y2 - (ySide * (thickness / scale.y) / 2));
+	gs_vertex2f(x1 - (xSide * (thickness / scale.x) / 2),
+		    y1 + (ySide * (thickness / scale.y) / 2));
 
 	gs_vertbuffer_t *line = gs_render_save();
 
