@@ -598,6 +598,13 @@ void register_whip_output()
 {
 	const uint32_t base_flags = OBS_OUTPUT_ENCODED | OBS_OUTPUT_SERVICE;
 
+	const char *audio_codecs = "opus";
+#ifdef ENABLE_HEVC
+	const char *video_codecs = "h264;hevc;av1";
+#else
+	const char *video_codecs = "h264;av1";
+#endif
+
 	struct obs_output_info info = {};
 	info.id = "whip_output";
 	info.flags = OBS_OUTPUT_AV | base_flags;
@@ -632,21 +639,20 @@ void register_whip_output()
 	info.get_connect_time_ms = [](void *priv_data) -> int {
 		return static_cast<WHIPOutput *>(priv_data)->GetConnectTime();
 	};
-#ifdef ENABLE_HEVC
-	info.encoded_video_codecs = "h264;hevc;av1";
-#else
-	info.encoded_video_codecs = "h264;av1";
-#endif
-	info.encoded_audio_codecs = "opus";
+	info.encoded_video_codecs = video_codecs;
+	info.encoded_audio_codecs = audio_codecs;
 	info.protocols = "WHIP";
 
 	obs_register_output(&info);
 
 	info.id = "whip_output_video";
 	info.flags = OBS_OUTPUT_VIDEO | base_flags;
+	info.encoded_audio_codecs = nullptr;
 	obs_register_output(&info);
 
 	info.id = "whip_output_audio";
 	info.flags = OBS_OUTPUT_AUDIO | base_flags;
+	info.encoded_video_codecs = nullptr;
+	info.encoded_audio_codecs = audio_codecs;
 	obs_register_output(&info);
 }
