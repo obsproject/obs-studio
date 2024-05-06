@@ -3833,14 +3833,8 @@ void OBSBasic::VolControlContextMenu()
 
 	copyFiltersAction.setEnabled(obs_source_filter_count(vol->GetSource()) >
 				     0);
-
-	OBSSourceAutoRelease source =
-		obs_weak_source_get_source(copyFiltersSource);
-	if (source) {
-		pasteFiltersAction.setEnabled(true);
-	} else {
-		pasteFiltersAction.setEnabled(false);
-	}
+	pasteFiltersAction.setEnabled(
+		!obs_weak_source_expired(copyFiltersSource));
 
 	QMenu popup;
 	vol->SetContextMenu(&popup);
