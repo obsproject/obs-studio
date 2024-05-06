@@ -158,10 +158,23 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 			out_stream->codecpar->channel_layout =
 				av_get_default_channel_layout(
 					in_stream->codecpar->channels);
+			/* The avutil default channel layout for 5 channels is
+			 * 5.0, which OBS does not support. Manually set 5
+			 * channels to 4.1. */
+			if (in_stream->codecpar->channels == 5)
+				out_stream->codecpar->channel_layout =
+					av_get_channel_layout("4.1");
 #else
 			av_channel_layout_default(
 				&out_stream->codecpar->ch_layout,
 				in_stream->codecpar->ch_layout.nb_channels);
+			/* The avutil default channel layout for 5 channels is
+			 * 5.0, which OBS does not support. Manually set 5
+			 * channels to 4.1. */
+			if (in_stream->codecpar->ch_layout.nb_channels == 5)
+				out_stream->codecpar->ch_layout =
+					(AVChannelLayout)
+						AV_CHANNEL_LAYOUT_4POINT1;
 #endif
 		}
 	}
