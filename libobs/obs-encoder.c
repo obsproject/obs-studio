@@ -416,6 +416,9 @@ static void obs_encoder_actually_destroy(obs_encoder_t *encoder)
 		if (encoder->fps_override)
 			video_output_free_frame_rate_divisor(
 				encoder->fps_override);
+		if (encoder->speakers_override)
+			audio_output_free_speaker_layout(
+				encoder->speakers_override);
 		bfree(encoder);
 	}
 }
@@ -1176,6 +1179,43 @@ static void encoder_set_video(obs_encoder_t *encoder, video_t *video)
 	}
 }
 
+bool obs_encoder_set_speaker_layout(obs_encoder_t *encoder,
+				    enum speaker_layout speakers)
+{
+	if (!obs_encoder_valid(encoder, "obs_encoder_set_speaker_layout"))
+		return false;
+	if (encoder->info.type != OBS_ENCODER_AUDIO) {
+		blog(LOG_WARNING,
+		     "obs_encoder_set_speaker_layout: "
+		     "encoder '%s' is not an audio encoder",
+		     obs_encoder_get_name(encoder));
+		return false;
+	}
+	if (encoder_active(encoder)) {
+		blog(LOG_WARNING,
+		     "encoder '%s': Cannot apply a new speaker layout "
+		     "while the encoder is active",
+		     obs_encoder_get_name(encoder));
+		return false;
+	}
+
+	if (encoder->speakers == speakers)
+		return true;
+
+	encoder->speakers = speakers;
+	if (encoder->speakers_override) {
+		audio_output_free_speaker_layout(encoder->speakers_override);
+		encoder->speakers_override = NULL;
+	}
+
+	if (encoder->media && speakers == SPEAKERS_UNKNOWN)
+		return true;
+
+	encoder->speakers_override = audio_output_create_with_speaker_layout(
+		encoder->media, encoder->speakers);
+	return true;
+}
+
 void obs_encoder_set_audio(obs_encoder_t *encoder, audio_t *audio)
 {
 	if (!obs_encoder_valid(encoder, "obs_encoder_set_audio"))
@@ -1195,10 +1235,21 @@ void obs_encoder_set_audio(obs_encoder_t *encoder, audio_t *audio)
 		return;
 	}
 
+	if (encoder->speakers_override) {
+		audio_output_free_speaker_layout(encoder->speakers_override);
+		encoder->speakers_override = NULL;
+	}
+
 	if (audio) {
 		encoder->media = audio;
 		encoder->timebase_num = 1;
 		encoder->timebase_den = audio_output_get_sample_rate(audio);
+
+		if (encoder->speakers != SPEAKERS_UNKNOWN) {
+			encoder->speakers_override =
+				audio_output_create_with_speaker_layout(
+					encoder->media, encoder->speakers);
+		}
 	} else {
 		encoder->media = NULL;
 		encoder->timebase_num = 0;
@@ -1248,7 +1299,8 @@ audio_t *obs_encoder_audio(const obs_encoder_t *encoder)
 		return NULL;
 	}
 
-	return encoder->media;
+	return encoder->speakers_override ? encoder->speakers_override
+					  : encoder->media;
 }
 
 bool obs_encoder_active(const obs_encoder_t *encoder)

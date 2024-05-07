@@ -1299,6 +1299,10 @@ struct obs_encoder {
 	uint32_t frame_rate_divisor_counter; // only used for GPU encoders
 	video_t *fps_override;
 
+	// allow changing speaker layout per encoder
+	enum speaker_layout speakers;
+	audio_t *speakers_override;
+
 	/* Regions of interest to prioritize during encoding */
 	pthread_mutex_t roi_mutex;
 	DARRAY(struct obs_encoder_roi) roi;

@@ -239,6 +239,11 @@ EXPORT uint32_t audio_output_get_sample_rate(const audio_t *audio);
 EXPORT const struct audio_output_info *
 audio_output_get_info(const audio_t *audio);
 
+EXPORT audio_t *
+audio_output_create_with_speaker_layout(audio_t *audio,
+					enum speaker_layout speakers);
+EXPORT void audio_output_free_speaker_layout(audio_t *audio);
+
 #ifdef __cplusplus
 }
 #endif

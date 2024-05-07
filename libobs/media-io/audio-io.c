@@ -77,6 +77,8 @@ struct audio_output {
 	void *input_param;
 	pthread_mutex_t input_mutex;
 	struct audio_mix mixes[MAX_AUDIO_MIXES];
+
+	struct audio_output *parent;
 };
 
 /* ------------------------------------------------------------------------- */
@@ -299,6 +301,20 @@ static inline bool audio_input_init(struct audio_input *input,
 	return true;
 }
 
+static const audio_t *get_const_root(const audio_t *audio)
+{
+	while (audio->parent)
+		audio = audio->parent;
+	return audio;
+}
+
+static audio_t *get_root(audio_t *audio)
+{
+	while (audio->parent)
+		audio = audio->parent;
+	return audio;
+}
+
 bool audio_output_connect(audio_t *audio, size_t mi,
 			  const struct audio_convert_info *conversion,
 			  audio_output_callback_t callback, void *param)
@@ -307,6 +323,9 @@ bool audio_output_connect(audio_t *audio, size_t mi,
 
 	if (!audio || mi >= MAX_AUDIO_MIXES)
 		return false;
+
+	struct audio_output_info *info = &audio->info;
+	audio = get_root(audio);
 
 	pthread_mutex_lock(&audio->input_mutex);
 
@@ -319,19 +338,19 @@ bool audio_output_connect(audio_t *audio, size_t mi,
 		if (conversion) {
 			input.conversion = *conversion;
 		} else {
-			input.conversion.format = audio->info.format;
-			input.conversion.speakers = audio->info.speakers;
+			input.conversion.format = info->format;
+			input.conversion.speakers = info->speakers;
 			input.conversion.samples_per_sec =
-				audio->info.samples_per_sec;
+				info->samples_per_sec;
 		}
 
 		if (input.conversion.format == AUDIO_FORMAT_UNKNOWN)
-			input.conversion.format = audio->info.format;
+			input.conversion.format = info->format;
 		if (input.conversion.speakers == SPEAKERS_UNKNOWN)
-			input.conversion.speakers = audio->info.speakers;
+			input.conversion.speakers = info->speakers;
 		if (input.conversion.samples_per_sec == 0)
 			input.conversion.samples_per_sec =
-				audio->info.samples_per_sec;
+				info->samples_per_sec;
 
 		success = audio_input_init(&input, audio);
 		if (success)
@@ -348,6 +367,8 @@ void audio_output_disconnect(audio_t *audio, size_t mix_idx,
 {
 	if (!audio || mix_idx >= MAX_AUDIO_MIXES)
 		return;
+
+	audio = get_root(audio);
 
 	pthread_mutex_lock(&audio->input_mutex);
 
@@ -437,10 +458,39 @@ const struct audio_output_info *audio_output_get_info(const audio_t *audio)
 	return audio ? &audio->info : NULL;
 }
 
+audio_t *audio_output_create_with_speaker_layout(audio_t *audio,
+						 enum speaker_layout speakers)
+{
+	if (!audio)
+		return NULL;
+
+	size_t channels = get_audio_channels(speakers);
+	if (audio->channels == channels)
+		return NULL;
+
+	audio_t *new_audio = bzalloc(sizeof(audio_t));
+	memcpy(new_audio, audio, sizeof(*new_audio));
+	new_audio->parent = audio;
+	new_audio->channels = channels;
+	new_audio->info.speakers = speakers;
+
+	return new_audio;
+}
+
+void audio_output_free_speaker_layout(audio_t *audio)
+{
+	if (!audio || !audio->parent)
+		return;
+
+	bfree(audio);
+}
+
 bool audio_output_active(const audio_t *audio)
 {
 	if (!audio)
 		return false;
+
+	audio = get_const_root(audio);
 
 	for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
 		const struct audio_mix *mix = &audio->mixes[mix_idx];
