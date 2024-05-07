@@ -255,11 +255,16 @@ static void *display_capture_create(obs_data_t *settings, obs_source_t *source)
     dc->source = source;
     dc->hide_cursor = !obs_data_get_bool(settings, "show_cursor");
 
-    dc->effect = obs_get_base_effect(OBS_EFFECT_DEFAULT_RECT);
+    obs_enter_graphics();
+
+    if (gs_get_device_type() == GS_DEVICE_OPENGL) {
+        dc->effect = obs_get_base_effect(OBS_EFFECT_DEFAULT_RECT);
+    } else {
+        dc->effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
+    }
+
     if (!dc->effect)
         goto fail;
-
-    obs_enter_graphics();
 
     struct gs_sampler_info info = {
         .filter = GS_FILTER_LINEAR,
