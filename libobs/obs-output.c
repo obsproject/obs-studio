@@ -378,6 +378,12 @@ bool obs_output_start(obs_output_t *output)
 	      obs_service_initialize(output->service, output)))
 		return false;
 
+	if (!obs_output_can_begin_data_capture(output, 0))
+		return false;
+
+	if (flag_encoded(output) && !obs_output_initialize_encoders(output, 0))
+		return false;
+
 	if (output->delay_sec) {
 		return obs_output_delay_start(output);
 	} else {
