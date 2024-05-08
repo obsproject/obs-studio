@@ -444,6 +444,22 @@ void obs_transition_set(obs_source_t *transition, obs_source_t *source)
 	if (!transition_valid(transition, "obs_transition_set"))
 		return;
 
+	if (source) {
+		blog(LOG_INFO, "obs_transition_set - transition: %s source: %s",
+		     obs_source_get_name(transition),
+		     obs_source_get_name(source));
+
+		if (!obs_source_enabled(source)) {
+			blog(LOG_WARNING,
+			     "obs_transition_set - source: %s is not enabled!",
+			     obs_source_get_name(source));
+		}
+	} else {
+		blog(LOG_INFO,
+		     "obs_transition_set - transition: %s source: (null)",
+		     obs_source_get_name(transition));
+	}
+
 	source = obs_source_get_ref(source);
 
 	lock_transition(transition);
@@ -467,8 +483,15 @@ void obs_transition_set(obs_source_t *transition, obs_source_t *source)
 		obs_source_release(s[i]);
 	}
 
-	if (source)
-		obs_source_add_active_child(transition, source);
+	if (source) {
+		const bool added =
+			obs_source_add_active_child(transition, source);
+		if (!added) {
+			blog(LOG_ERROR,
+			     "obs_transition_set - source: %s failed to activate as a child!",
+			     obs_source_get_name(source));
+		}
+	}
 }
 
 static float calc_time(obs_source_t *transition, uint64_t ts)

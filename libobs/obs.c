@@ -2247,8 +2247,6 @@ void obs_deactivate_scene_on_backstage(obs_source_t *source)
 		return;
 	}
 
-	blog(LOG_INFO, "obs_deactivate_scene_on_backstage - 0x%" PRIXPTR,
-	     (uintptr_t)source);
 	struct obs_view *backstage_view = &obs->data.backstage_view;
 
 	pthread_mutex_lock(&backstage_view->channels_mutex);
