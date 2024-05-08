@@ -194,7 +194,9 @@ source_group(
 
 set_target_properties(win-dshow PROPERTIES FOLDER "plugins/win-dshow")
 
-setup_plugin_target(win-dshow)
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+  setup_plugin_target(win-dshow)
+endif()
 
 if(ENABLE_VIRTUALCAM AND VIRTUALCAM_AVAILABLE)
   target_sources(win-dshow PRIVATE tiny-nv12-scale.c tiny-nv12-scale.h shared-memory-queue.c shared-memory-queue.h
@@ -208,12 +210,12 @@ if(ENABLE_VIRTUALCAM AND VIRTUALCAM_AVAILABLE)
 
   target_sources(win-dshow PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/config/virtualcam-guid.h)
 
-  configure_file(virtualcam-install.bat.in "${CMAKE_CURRENT_BINARY_DIR}/virtualcam-install.bat")
-
-  configure_file(virtualcam-uninstall.bat.in "${CMAKE_CURRENT_BINARY_DIR}/virtualcam-uninstall.bat")
-
-  add_target_resource(win-dshow "${CMAKE_CURRENT_BINARY_DIR}/virtualcam-install.bat" "obs-plugins/win-dshow/")
-  add_target_resource(win-dshow "${CMAKE_CURRENT_BINARY_DIR}/virtualcam-uninstall.bat" "obs-plugins/win-dshow/")
+  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    configure_file(virtualcam-install.bat.in "${CMAKE_CURRENT_BINARY_DIR}/virtualcam-install.bat")
+    configure_file(virtualcam-uninstall.bat.in "${CMAKE_CURRENT_BINARY_DIR}/virtualcam-uninstall.bat")
+    add_target_resource(win-dshow "${CMAKE_CURRENT_BINARY_DIR}/virtualcam-install.bat" "obs-plugins/win-dshow/")
+    add_target_resource(win-dshow "${CMAKE_CURRENT_BINARY_DIR}/virtualcam-uninstall.bat" "obs-plugins/win-dshow/")
+  endif()
 
   add_subdirectory(virtualcam-module)
 endif()

@@ -57,3 +57,11 @@ set_target_properties(obs-virtualcam-module PROPERTIES FOLDER "plugins/win-dshow
 set_target_properties(obs-virtualcam-module PROPERTIES OUTPUT_NAME "obs-virtualcam-module${_output_suffix}")
 
 add_target_resource(win-dshow "$<TARGET_FILE:obs-virtualcam-module>" "obs-plugins/win-dshow/")
+
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+  add_custom_command(
+    TARGET obs-virtualcam-module
+    POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" --build ${CMAKE_SOURCE_DIR}/build_x86 --config $<CONFIG> -t obs-virtualcam-module
+    COMMENT "Build 32-bit obs-virtualcam")
+endif()

@@ -12,6 +12,7 @@ if defined ReleaseName (
 
     set InstallPath=packed_build
     set BUILD_DIRECTORY=build
+		set BUILD_DIRECTORY_X86=build_x86
 )
 
 call slobs_CI\win-install-dependency.cmd
@@ -21,9 +22,11 @@ cd "%MAIN_DIR%"
 if defined ENABLE_OBS_UI (
     set ENABLE_UI=true
     set PREFIX_PATH=%DEPS_DIR%;%QT_PATH%
+		set PREFIX_PATH_X86=%DEPS_DIR_X86%
 ) else (
     set ENABLE_UI=false
     set PREFIX_PATH=%DEPS_DIR%
+		set PREFIX_PATH_X86=%DEPS_DIR_X86%
 )
 
 cmake -H. ^
@@ -31,6 +34,7 @@ cmake -H. ^
          -G"%CmakeGenerator%" -A x64 ^
          -DCMAKE_SYSTEM_VERSION="10.0.18363.657" ^
          -DCMAKE_INSTALL_PREFIX="%CD%\%InstallPath%" ^
+         -DBUILD_DIRECTORY_X86=%BUILD_DIRECTORY_X86% ^
          -DVLCPath="%VLC_DIR%" ^
          -DCEF_ROOT_DIR="%CEFPATH%" ^
          -DUSE_UI_LOOP=false ^
@@ -60,6 +64,7 @@ cmake -H. ^
          -Dabsl_DIR="%GRPC_DIST%\lib\cmake\absl" ^
          -DgRPC_DIR="%GRPC_DIST%\lib\cmake\grpc" ^
          -DCMAKE_PREFIX_PATH:PATH=%PREFIX_PATH% ^
+         -DPREFIX_PATH_X86:PATH=%PREFIX_PATH_X86% ^
          -DCMAKE_BUILD_TYPE=%BuildConfig% ^
          -DBUILD_FOR_DISTRIBUTION=true ^
          -DCURL_INCLUDE_DIR=%DEPS_DIR%/ ^
@@ -72,6 +77,8 @@ del /q /s %CD%\%InstallPath%
 cmake --build %CD%\%BUILD_DIRECTORY% --config %BuildConfig% -v
 cmake -S . -B %CD%\%BUILD_DIRECTORY% -DCOPIED_DEPENDENCIES=OFF -DCOPY_DEPENDENCIES=ON
 cmake --build %CD%\%BUILD_DIRECTORY% --target install --config %BuildConfig% -v
+cmake --build "%CD%\%BUILD_DIRECTORY_X86%\plugins\win-dshow" --target install --config %BuildConfig% -v
 
 cmake --build %CD%\%BUILD_DIRECTORY% --target check_dependencies --config %BuildConfig% -v
 if %errorlevel% neq 0 exit /b %errorlevel%
+

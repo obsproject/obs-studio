@@ -1,9 +1,14 @@
 
 set WORK_DIR=%CD%
 set SUBDIR=build\deps
+set SUBDIR_X86=build_x86\deps
 
 set DepsURL=https://obs-studio-deployment.s3-us-west-2.amazonaws.com/%WIN_DEPS_VERSION%.zip
 set DEPS_DIR=%CD%\%SUBDIR%\%WIN_DEPS_VERSION%
+
+set DepsURLX86=https://github.com/obsproject/obs-deps/releases/download/%WIN_DEPS_VERSION_X86%/windows-deps-%WIN_DEPS_VERSION_X86%-x86.zip
+set DEPS_FILENAME_X86=windows-deps-%WIN_DEPS_VERSION_X86%-x86
+set DEPS_DIR_X86=%CD%\%SUBDIR_X86%\%DEPS_FILENAME_X86%
 
 set VLCURL=https://obs-studio-deployment.s3-us-west-2.amazonaws.com/%VLC_VERSION%.zip
 set VLC_DIR=%CD%\%SUBDIR%\vlc
@@ -64,7 +69,7 @@ if exist webrtc_dist\ (
     7z x %WEBRTC_DIST%.7z -aoa -owebrtc_dist
 )
 
-if exist deps_bin\ (
+if exist %WIN_DEPS_VERSION%\ (
     echo "OBS binary dependencies already installed"
 ) else (
     if exist %WIN_DEPS_VERSION%.zip (curl -kLO %DepsURL% -f --retry 5 -z %WIN_DEPS_VERSION%.zip) else (curl -kLO %DepsURL% -f --retry 5 -C -)
@@ -104,6 +109,18 @@ if exist CEF\ (
 ) else (
     if exist %CefFileName%.zip (curl -kLO %CEFURL%/%CefFileName%.zip -f --retry 5 -z %CefFileName%.zip) else (curl -kLO %CEFURL%/%CefFileName%.zip -f --retry 5 -C -)
     7z x %CefFileName%.zip -aoa -o%CefFileName%
+)
+
+cd "%WORK_DIR%"
+
+mkdir %SUBDIR_X86%
+cd %SUBDIR_X86%
+
+if exist %WIN_DEPS_VERSION_X86%\ (
+    echo "OBS X86 binary dependencies already installed"
+) else (
+    if exist %DEPS_FILENAME_X86%.zip (curl -kLO %DepsURLX86% -f --retry 5 -z %DEPS_FILENAME_X86%.zip) else (curl -kLO %DepsURLX86% -f --retry 5 -C -)
+    7z x %DEPS_FILENAME_X86%.zip -aoa -o%DEPS_FILENAME_X86%
 )
 
 cd "%WORK_DIR%"

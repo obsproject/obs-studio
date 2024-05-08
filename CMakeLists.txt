@@ -97,17 +97,25 @@ if(INSTALLER_RUN)
 endif()
 
 # OBS sources and plugins
-add_subdirectory(deps)
-add_subdirectory(libobs-opengl)
-if(OS_WINDOWS)
-  add_subdirectory(libobs-d3d11)
-  add_subdirectory(libobs-winrt)
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+  add_subdirectory(deps)
+  add_subdirectory(libobs-opengl)
+  if(OS_WINDOWS)
+    add_subdirectory(libobs-d3d11)
+    add_subdirectory(libobs-winrt)
+  endif()
+  add_subdirectory(libobs)
+  add_subdirectory(plugins)
+else()
+  add_subdirectory(deps)
+  add_subdirectory(libobs)
+  add_subdirectory(plugins/win-dshow)
 endif()
-add_subdirectory(libobs)
-add_subdirectory(plugins)
 
 # OBS main app
-add_subdirectory(UI)
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+  add_subdirectory(UI)
+endif()
 
 # Tests
 if(ENABLE_UNIT_TESTS)
@@ -132,4 +140,39 @@ if(WIN32)
 		"-Ddeps_CMAKE_SOURCE_DIR=${CMAKE_SOURCE_DIR}"
 
 		-P "${CMAKE_SOURCE_DIR}/slobs_CI/check_libraries.cmake" )
+endif()
+
+# Configure 32-bit projects
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
+  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    execute_process(
+      COMMAND
+        "${CMAKE_COMMAND}"
+        -S ${CMAKE_CURRENT_SOURCE_DIR}
+        -B ${CMAKE_SOURCE_DIR}/build_x86
+        -G "${CMAKE_GENERATOR}" -A Win32
+        -DCMAKE_SYSTEM_VERSION:STRING='${CMAKE_SYSTEM_VERSION}'
+        -DCMAKE_INSTALL_PREFIX='${CMAKE_INSTALL_PREFIX}'
+        -DVLCPath="${VLCPath}"
+        -DCEF_ROOT_DIR="${CEF_ROOT_DIR}"
+        -DUSE_UI_LOOP=${USE_UI_LOOP}
+        -DENABLE_UI=${ENABLE_UI}
+        -DCOPIED_DEPENDENCIES=${COPIED_DEPENDENCIES}
+        -DCOPY_DEPENDENCIES=${COPY_DEPENDENCIES}
+        -DENABLE_SCRIPTING=${ENABLE_SCRIPTING}
+        -DGPU_PRIORITY_VAL=${GPU_PRIORITY_VAL}
+        -DBUILD_CAPTIONS=${BUILD_CAPTIONS}
+        -DCOMPILE_D3D12_HOOK=${COMPILE_D3D12_HOOK}
+        -DENABLE_BROWSER=OFF
+        -DCMAKE_PREFIX_PATH:PATH='${PREFIX_PATH_X86}'
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        -DBUILD_FOR_DISTRIBUTION=${BUILD_FOR_DISTRIBUTION}
+        -DCURL_INCLUDE_DIR=${CURL_INCLUDE_DIR}
+        -DENABLE_VLC=false
+        -DVIRTUALCAM_GUID:STRING=${VIRTUALCAM_GUID}
+        -DOBS_VERSION='${OBS_VERSION}'
+        -DOBS_VERSION_OVERRIDE='${OBS_VERSION_OVERRIDE}'
+        -DCMAKE_MESSAGE_LOG_LEVEL=${CMAKE_MESSAGE_LOG_LEVEL}
+      RESULT_VARIABLE _process_result COMMAND_ERROR_IS_FATAL ANY)
+  endif()
 endif()
