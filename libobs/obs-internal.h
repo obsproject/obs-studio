@@ -1244,7 +1244,12 @@ struct encoder_callback {
 
 struct obs_encoder_group {
 	pthread_mutex_t mutex;
-	uint32_t num_encoders;
+	/* allows group to be destroyed even if some encoders are active */
+	bool destroy_on_stop;
+
+	/* holds strong references to all encoders */
+	DARRAY(struct obs_encoder *) encoders;
+
 	uint32_t num_encoders_started;
 	uint64_t start_timestamp;
 };
