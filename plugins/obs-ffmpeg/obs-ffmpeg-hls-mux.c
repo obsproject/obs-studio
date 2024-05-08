@@ -118,11 +118,6 @@ bool ffmpeg_hls_mux_start(void *data)
 	obs_data_t *settings;
 	int keyint_sec;
 
-	if (!obs_output_can_begin_data_capture(stream->output, 0))
-		return false;
-	if (!obs_output_initialize_encoders(stream->output, 0))
-		return false;
-
 	service = obs_output_get_service(stream->output);
 	if (!service)
 		return false;

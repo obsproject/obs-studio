@@ -495,11 +495,6 @@ static bool flv_output_start(void *data)
 	obs_data_t *settings;
 	const char *path;
 
-	if (!obs_output_can_begin_data_capture(stream->output, 0))
-		return false;
-	if (!obs_output_initialize_encoders(stream->output, 0))
-		return false;
-
 	stream->got_first_packet = false;
 	stream->sent_headers = false;
 	os_atomic_set_bool(&stream->stopping, false);

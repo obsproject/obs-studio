@@ -251,11 +251,6 @@ static bool mp4_output_start(void *data)
 {
 	struct mp4_output *out = data;
 
-	if (!obs_output_can_begin_data_capture(out->output, 0))
-		return false;
-	if (!obs_output_initialize_encoders(out->output, 0))
-		return false;
-
 	os_atomic_set_bool(&out->stopping, false);
 
 	/* get path */

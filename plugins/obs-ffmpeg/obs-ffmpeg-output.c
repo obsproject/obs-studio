@@ -1212,9 +1212,6 @@ static bool try_connect(struct ffmpeg_output *output)
 
 	output->active = true;
 
-	if (!obs_output_can_begin_data_capture(output->output, 0))
-		return false;
-
 	ret = pthread_create(&output->write_thread, NULL, write_thread, output);
 	if (ret != 0) {
 		ffmpeg_log_error(LOG_WARNING, &output->ff_data,
