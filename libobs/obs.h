@@ -2346,12 +2346,12 @@ obs_output_set_audio_conversion(obs_output_t *output,
 				const struct audio_convert_info *conversion);
 
 /** Returns whether data capture can begin  */
-EXPORT bool obs_output_can_begin_data_capture(const obs_output_t *output,
-					      uint32_t flags);
+OBS_DEPRECATED EXPORT bool
+obs_output_can_begin_data_capture(const obs_output_t *output, uint32_t flags);
 
 /** Initializes encoders (if any) */
-EXPORT bool obs_output_initialize_encoders(obs_output_t *output,
-					   uint32_t flags);
+OBS_DEPRECATED EXPORT bool obs_output_initialize_encoders(obs_output_t *output,
+							  uint32_t flags);
 
 /**
  * Begins data capture from media/encoders.

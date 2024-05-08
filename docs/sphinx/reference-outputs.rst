@@ -912,6 +912,9 @@ Functions used by outputs
    :param flags: Reserved. Set this to 0.
    :return:      *true* if data capture can begin
 
+.. deprecated:: 30.2.0
+   Usage is no longer necessary.
+
 ---------------------
 
 .. function:: bool obs_output_initialize_encoders(obs_output_t *output, int flags)
@@ -923,6 +926,9 @@ Functions used by outputs
    :param output: The output
    :param flags: Reserved. Set this to 0.
    :return:      *true* if successful, *false* otherwise
+
+.. deprecated:: 30.2.0
+   Usage is no longer necessary.
 
 ---------------------
 
