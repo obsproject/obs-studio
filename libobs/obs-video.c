@@ -932,9 +932,11 @@ static inline void video_sleep(struct obs_core_video *video, uint64_t *p_time,
 			continue;
 
 		if (encoder->encoder_group) {
-			struct encoder_group *group = encoder->encoder_group;
+			struct obs_encoder_group *group =
+				encoder->encoder_group;
 			pthread_mutex_lock(&group->mutex);
-			if (group->encoders_added == group->encoders_started &&
+			if (group->num_encoders ==
+				    group->num_encoders_started &&
 			    !group->start_timestamp) {
 				group->start_timestamp = *p_time;
 			}
