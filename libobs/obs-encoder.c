@@ -325,11 +325,10 @@ static void add_connection(struct obs_encoder *encoder)
 	}
 
 	if (encoder->encoder_group) {
-		bool ready = false;
 		pthread_mutex_lock(&encoder->encoder_group->mutex);
-		encoder->encoder_group->encoders_started += 1;
-		ready = encoder->encoder_group->encoders_started ==
-			encoder->encoder_group->encoders_added;
+		encoder->encoder_group->num_encoders_started += 1;
+		bool ready = encoder->encoder_group->num_encoders_started ==
+			     encoder->encoder_group->num_encoders;
 		pthread_mutex_unlock(&encoder->encoder_group->mutex);
 		if (ready)
 			add_ready_encoder_group(encoder);
@@ -353,8 +352,8 @@ static void remove_connection(struct obs_encoder *encoder, bool shutdown)
 
 	if (encoder->encoder_group) {
 		pthread_mutex_lock(&encoder->encoder_group->mutex);
-		encoder->encoder_group->encoders_started -= 1;
-		if (encoder->encoder_group->encoders_started == 0)
+		encoder->encoder_group->num_encoders_started -= 1;
+		if (encoder->encoder_group->num_encoders_started == 0)
 			encoder->encoder_group->start_timestamp = 0;
 
 		pthread_mutex_unlock(&encoder->encoder_group->mutex);
@@ -396,14 +395,15 @@ static void obs_encoder_actually_destroy(obs_encoder_t *encoder)
 		     encoder->context.name);
 
 		if (encoder->encoder_group) {
-			struct encoder_group *group = encoder->encoder_group;
+			struct obs_encoder_group *group =
+				encoder->encoder_group;
 			bool release = false;
 
 			encoder->encoder_group = NULL;
 
 			pthread_mutex_lock(&group->mutex);
-			group->encoders_added -= 1;
-			release = group->encoders_added == 0;
+			group->num_encoders -= 1;
+			release = group->num_encoders == 0;
 			pthread_mutex_unlock(&group->mutex);
 
 			if (release) {
@@ -1461,7 +1461,7 @@ static void receive_video(void *param, struct video_data *frame)
 	struct encoder_frame enc_frame;
 
 	if (encoder->encoder_group && !encoder->start_ts) {
-		struct encoder_group *group = encoder->encoder_group;
+		struct obs_encoder_group *group = encoder->encoder_group;
 		bool ready = false;
 		pthread_mutex_lock(&group->mutex);
 		ready = group->start_timestamp == frame->timestamp;
@@ -2093,7 +2093,8 @@ bool obs_encoder_group_keyframe_aligned_encoders(
 
 	bool unlock = false;
 	if (!encoder->encoder_group) {
-		encoder->encoder_group = bzalloc(sizeof(struct encoder_group));
+		encoder->encoder_group =
+			bzalloc(sizeof(struct obs_encoder_group));
 		if (pthread_mutex_init(&encoder->encoder_group->mutex, NULL) <
 		    0) {
 			bfree(encoder->encoder_group);
@@ -2101,11 +2102,11 @@ bool obs_encoder_group_keyframe_aligned_encoders(
 			return false;
 		}
 
-		encoder->encoder_group->encoders_added = 1;
+		encoder->encoder_group->num_encoders = 1;
 	} else {
 		pthread_mutex_lock(&encoder->encoder_group->mutex);
 		unlock = true;
-		if (encoder->encoder_group->encoders_started != 0) {
+		if (encoder->encoder_group->num_encoders_started != 0) {
 			blog(LOG_ERROR,
 			     "obs_encoder_group_keyframe_aligned_encoders: "
 			     "Can't add encoder '%s' to active group "
@@ -2117,7 +2118,7 @@ bool obs_encoder_group_keyframe_aligned_encoders(
 		}
 	}
 
-	encoder->encoder_group->encoders_added += 1;
+	encoder->encoder_group->num_encoders += 1;
 	encoder_to_be_grouped->encoder_group = encoder->encoder_group;
 
 	if (unlock)
@@ -2156,12 +2157,12 @@ bool obs_encoder_group_remove_keyframe_aligned_encoder(
 		return false;
 	}
 
-	struct encoder_group *current_group = encoder->encoder_group;
-	struct encoder_group *free_group = NULL;
+	struct obs_encoder_group *current_group = encoder->encoder_group;
+	struct obs_encoder_group *free_group = NULL;
 
 	pthread_mutex_lock(&current_group->mutex);
 
-	if (current_group->encoders_started != 0) {
+	if (current_group->num_encoders_started != 0) {
 		blog(LOG_ERROR,
 		     "obs_encoder_group_remove_keyframe_aligned_encoder: "
 		     "could not ungroup encoder '%s' from '%s' while "
@@ -2172,9 +2173,9 @@ bool obs_encoder_group_remove_keyframe_aligned_encoder(
 		return false;
 	}
 
-	current_group->encoders_added -= 1;
+	current_group->num_encoders -= 1;
 	encoder_to_be_ungrouped->encoder_group = NULL;
-	if (current_group->encoders_added == 1) {
+	if (current_group->num_encoders == 1) {
 		free_group = current_group;
 		encoder->encoder_group = NULL;
 	}

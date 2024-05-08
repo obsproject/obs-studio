@@ -92,7 +92,7 @@ static void *gpu_encode_thread(void *data)
 			pkt.encoder = encoder;
 
 			if (encoder->encoder_group && !encoder->start_ts) {
-				struct encoder_group *group =
+				struct obs_encoder_group *group =
 					encoder->encoder_group;
 				bool ready = false;
 				pthread_mutex_lock(&group->mutex);
