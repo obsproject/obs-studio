@@ -188,18 +188,12 @@ void WHIPOutput::ConfigureVideoTrack(std::string media_stream_id,
 }
 
 /**
- * @brief Initialize encoders and store connect info provided by the service.
+ * @brief Store connect info provided by the service.
  *
  * @return bool
  */
 bool WHIPOutput::Init()
 {
-	if (!obs_output_can_begin_data_capture(output, 0))
-		return false;
-
-	if (!obs_output_initialize_encoders(output, 0))
-		return false;
-
 	obs_service_t *service = obs_output_get_service(output);
 	if (!service) {
 		obs_output_signal_stop(output, OBS_OUTPUT_ERROR);
