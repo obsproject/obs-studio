@@ -22,9 +22,21 @@ if(NOT DEFINED APPDATA_RELEASE_DATE)
   endif()
 endif()
 
-configure_file(cmake/linux/com.obsproject.Studio.appdata.xml.in com.obsproject.Studio.appdata.xml)
+if(NOT DEFINED GIT_HASH)
+  if(EXISTS "${CMAKE_SOURCE_DIR}/.git")
+    execute_process(
+      COMMAND git rev-parse HEAD
+      OUTPUT_VARIABLE GIT_HASH
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+  else()
+    set(GIT_HASH "master")
+  endif()
+endif()
 
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/com.obsproject.Studio.appdata.xml"
+configure_file(cmake/linux/com.obsproject.Studio.metainfo.xml.in com.obsproject.Studio.metainfo.xml)
+
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/com.obsproject.Studio.metainfo.xml"
         DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/metainfo")
 
 install(FILES cmake/linux/com.obsproject.Studio.desktop DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/applications")
