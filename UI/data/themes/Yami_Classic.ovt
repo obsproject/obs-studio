@@ -28,6 +28,9 @@
     --spacing_base_value: 2;
     --padding_base_value: 0.25;
 
+    /* OS Fixes */
+    --os_mac_font_base_value: 11;
+
     --icon_base: calc(6px + var(--font_base_value));
 
     --padding_wide: calc(18px + calc(0.25 * var(--padding_base_value)));
