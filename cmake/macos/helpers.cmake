@@ -149,6 +149,13 @@ function(set_target_properties_obs target)
       add_custom_command(
         TARGET ${target}
         POST_BUILD
+        COMMAND /usr/bin/sed -i '' 's/--font_base_value: 10\;/--font_base_value: 12\;/'
+                "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/themes/Yami.obt"
+        COMMENT "Patch Yami base theme to use larger default font base value on macOS")
+
+      add_custom_command(
+        TARGET ${target}
+        POST_BUILD
         COMMAND /bin/ln -fs obs-frontend-api.dylib libobs-frontend-api.1.dylib
         WORKING_DIRECTORY "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Frameworks"
         COMMENT "Create symlink for legacy obs-frontend-api")
