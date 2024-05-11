@@ -352,6 +352,8 @@ private:
 	uint32_t mixerGreenActive = 0x4cff4c;
 	uint32_t mixerYellowActive = 0x4cffff;
 	uint32_t mixerRedActive = 0x4c4cff;
+	uint32_t multiviewPreview = 0x00d000;
+	uint32_t multiviewProgram = 0x0000d0;
 
 	void SaveGeneralSettings();
 	void SaveStream1Settings();
@@ -451,6 +453,9 @@ private slots:
 	void on_choose7_clicked();
 	void on_choose8_clicked();
 	void on_choose9_clicked();
+	void on_chooseMultiviewPreview_clicked();
+	void on_chooseMultiviewProgram_clicked();
+
 	void on_colorPreset_currentIndexChanged(int idx);
 
 	void GeneralChanged();

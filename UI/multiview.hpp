@@ -50,8 +50,13 @@ private:
 	static const uint32_t outerColor = 0xFFD0D0D0;
 	static const uint32_t labelColor = 0xD91F1F1F;
 	static const uint32_t backgroundColor = 0xFF000000;
-	static const uint32_t previewColor = 0xFF00D000;
-	static const uint32_t programColor = 0xFFD00000;
+	static const uint32_t previewColorDefault = 0xFF00D000;
+	static const uint32_t programColorDefault = 0xFFD00000;
+
+	uint32_t previewColor = previewColorDefault;
+	uint32_t programColor = programColorDefault;
+
+	void RefreshColors();
 };
 
 static inline void startRegion(int vX, int vY, int vCX, int vCY, float oL,

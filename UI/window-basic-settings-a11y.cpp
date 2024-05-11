@@ -82,6 +82,9 @@ void OBSBasicSettings::LoadA11ySettings(bool presetChange)
 		selectGreen = 0xFF56C9;
 		selectBlue = 0xB09B44;
 
+		multiviewPreview = 0x742E94;
+		multiviewProgram = 0xBEAC63;
+
 		SetDefaultColors();
 	} else if (preset == COLOR_PRESET_CUSTOM) {
 		SetDefaultColors();
@@ -105,6 +108,11 @@ void OBSBasicSettings::LoadA11ySettings(bool presetChange)
 						   "MixerYellowActive");
 		mixerRedActive = config_get_int(config, "Accessibility",
 						"MixerRedActive");
+
+		multiviewPreview = config_get_int(config, "Accessibility",
+						  "MultiviewPreview");
+		multiviewProgram = config_get_int(config, "Accessibility",
+						  "MultiviewProgram");
 	}
 
 	UpdateA11yColors();
@@ -132,8 +140,13 @@ void OBSBasicSettings::SaveA11ySettings()
 		       mixerYellowActive);
 	config_set_int(config, "Accessibility", "MixerRedActive",
 		       mixerRedActive);
+	config_set_int(config, "Accessibility", "MultiviewPreview",
+		       multiviewPreview);
+	config_set_int(config, "Accessibility", "MultiviewProgram",
+		       multiviewProgram);
 
 	main->RefreshVolumeColors();
+	OBSProjector::UpdateMultiviewProjectors();
 }
 
 static void SetStyle(QLabel *label, uint32_t colorVal)
@@ -164,6 +177,8 @@ void OBSBasicSettings::UpdateA11yColors()
 	SetStyle(ui->color7, mixerGreenActive);
 	SetStyle(ui->color8, mixerYellowActive);
 	SetStyle(ui->color9, mixerRedActive);
+	SetStyle(ui->colorMultiviewPreview, multiviewPreview);
+	SetStyle(ui->colorMultiviewProgram, multiviewProgram);
 }
 
 void OBSBasicSettings::SetDefaultColors()
@@ -187,6 +202,11 @@ void OBSBasicSettings::SetDefaultColors()
 			       mixerYellowActive);
 	config_set_default_int(config, "Accessibility", "MixerRedActive",
 			       mixerRedActive);
+
+	config_set_default_int(config, "Accessibility",
+			       "MultiviewSelectPreview", multiviewPreview);
+	config_set_default_int(config, "Accessibility",
+			       "MultiviewSelectProgram", multiviewProgram);
 }
 
 void OBSBasicSettings::ResetDefaultColors()
@@ -200,6 +220,8 @@ void OBSBasicSettings::ResetDefaultColors()
 	mixerGreenActive = 0x4cff4c;
 	mixerYellowActive = 0x4cffff;
 	mixerRedActive = 0x4c4cff;
+	multiviewPreview = 0x00d000;
+	multiviewProgram = 0x0000d0;
 }
 
 void OBSBasicSettings::on_colorPreset_currentIndexChanged(int idx)
@@ -387,6 +409,48 @@ void OBSBasicSettings::on_choose9_clicked()
 		return;
 
 	mixerRedActive = color_to_int(color);
+
+	preset = COLOR_PRESET_CUSTOM;
+	bool block = ui->colorPreset->blockSignals(true);
+	ui->colorPreset->setCurrentIndex(ui->colorPreset->count() - 1);
+	ui->colorPreset->blockSignals(block);
+
+	A11yChanged();
+
+	UpdateA11yColors();
+}
+
+void OBSBasicSettings::on_chooseMultiviewPreview_clicked()
+{
+	QColor color = GetColor(
+		multiviewPreview,
+		QTStr("Basic.Settings.Accessibility.ColorOverrides.MultiviewPreview"));
+
+	if (!color.isValid())
+		return;
+
+	multiviewPreview = color_to_int(color);
+
+	preset = COLOR_PRESET_CUSTOM;
+	bool block = ui->colorPreset->blockSignals(true);
+	ui->colorPreset->setCurrentIndex(ui->colorPreset->count() - 1);
+	ui->colorPreset->blockSignals(block);
+
+	A11yChanged();
+
+	UpdateA11yColors();
+}
+
+void OBSBasicSettings::on_chooseMultiviewProgram_clicked()
+{
+	QColor color = GetColor(
+		multiviewProgram,
+		QTStr("Basic.Settings.Accessibility.ColorOverrides.MultiviewProgram"));
+
+	if (!color.isValid())
+		return;
+
+	multiviewProgram = color_to_int(color);
 
 	preset = COLOR_PRESET_CUSTOM;
 	bool block = ui->colorPreset->blockSignals(true);
