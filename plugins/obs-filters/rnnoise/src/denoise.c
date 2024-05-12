@@ -265,9 +265,9 @@ int rnnoise_init(DenoiseState *st, RNNModel *model) {
     st->rnn.model = model;
   else
     st->rnn.model = &rnnoise_model_orig;
-  st->rnn.vad_gru_state = calloc(sizeof(float), st->rnn.model->vad_gru_size);
-  st->rnn.noise_gru_state = calloc(sizeof(float), st->rnn.model->noise_gru_size);
-  st->rnn.denoise_gru_state = calloc(sizeof(float), st->rnn.model->denoise_gru_size);
+  st->rnn.vad_gru_state = calloc(st->rnn.model->vad_gru_size, sizeof(float));
+  st->rnn.noise_gru_state = calloc(st->rnn.model->noise_gru_size, sizeof(float));
+  st->rnn.denoise_gru_state = calloc(st->rnn.model->denoise_gru_size, sizeof(float));
   return 0;
 }
 
