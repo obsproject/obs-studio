@@ -21,7 +21,7 @@ public:
 	Multiview();
 	~Multiview();
 	void Update(MultiviewLayout multiviewLayout, bool drawLabel,
-		    bool drawSafeArea);
+		    bool drawSafeArea, uint32_t borderSize);
 	void Render(uint32_t cx, uint32_t cy);
 	OBSSource GetSourceByPosition(int x, int y);
 
@@ -41,10 +41,13 @@ private:
 
 	// Multiview position helpers
 	float thickness = 4;
+	float selectedThickness = 4;
 	float offset, thicknessx2 = thickness * 2, pvwprgCX, pvwprgCY, sourceX,
 		      sourceY, labelX, labelY, scenesCX, scenesCY, ppiCX, ppiCY,
-		      siX, siY, siCX, siCY, ppiScaleX, ppiScaleY, siScaleX,
-		      siScaleY, fw, fh, ratio;
+		      siX, siY, siCX, siCY, siSelX, siSelY, siSelCX, siSelCY,
+		      ppiScaleX, ppiScaleY, siScaleX, siScaleY, siScaleSelX,
+		      siScaleSelY, fw, fh, ratio,
+		      selectedThicknessx2 = selectedThickness * 2;
 
 	// argb colors
 	static const uint32_t outerColor = 0xFFD0D0D0;

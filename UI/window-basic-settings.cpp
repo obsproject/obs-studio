@@ -406,6 +406,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->multiviewDrawNames,   CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->multiviewDrawAreas,   CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->multiviewLayout,      COMBO_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->multiviewBorderSize,  SCROLL_CHANGED, GENERAL_CHANGED);
 	HookWidget(ui->theme, 		     COMBO_CHANGED,  APPEAR_CHANGED);
 	HookWidget(ui->themeVariant,	     COMBO_CHANGED,  APPEAR_CHANGED);
 	HookWidget(ui->service,              COMBO_CHANGED,  STREAM1_CHANGED);
@@ -1525,6 +1526,10 @@ void OBSBasicSettings::LoadGeneralSettings()
 	ui->multiviewLayout->setCurrentIndex(ui->multiviewLayout->findData(
 		QVariant::fromValue(config_get_int(
 			GetGlobalConfig(), "BasicWindow", "MultiviewLayout"))));
+
+	uint32_t multiviewBorderSize = config_get_uint(
+		GetGlobalConfig(), "BasicWindow", "MultiviewBorderSize");
+	ui->multiviewBorderSize->setValue(multiviewBorderSize);
 
 	prevLangIndex = ui->language->currentIndex();
 
@@ -3510,6 +3515,13 @@ void OBSBasicSettings::SaveGeneralSettings()
 		config_set_int(GetGlobalConfig(), "BasicWindow",
 			       "MultiviewLayout",
 			       ui->multiviewLayout->currentData().toInt());
+		multiviewChanged = true;
+	}
+
+	if (WidgetChanged(ui->multiviewBorderSize)) {
+		config_set_uint(GetGlobalConfig(), "BasicWindow",
+				"MultiviewBorderSize",
+				ui->multiviewBorderSize->value());
 		multiviewChanged = true;
 	}
 

@@ -65,11 +65,13 @@ static OBSSource CreateLabel(const char *name, size_t h)
 }
 
 void Multiview::Update(MultiviewLayout multiviewLayout, bool drawLabel,
-		       bool drawSafeArea)
+		       bool drawSafeArea, uint32_t borderSize)
 {
 	this->multiviewLayout = multiviewLayout;
 	this->drawLabel = drawLabel;
 	this->drawSafeArea = drawSafeArea;
+	selectedThickness = borderSize;
+	selectedThicknessx2 = borderSize * 2;
 
 	multiviewScenes.clear();
 	multiviewLabels.clear();
@@ -155,8 +157,12 @@ void Multiview::Update(MultiviewLayout multiviewLayout, bool drawLabel,
 
 	siCX = scenesCX - thicknessx2;
 	siCY = scenesCY - thicknessx2;
+	siSelCX = scenesCX - selectedThicknessx2;
+	siSelCY = scenesCY - selectedThicknessx2;
 	siScaleX = (scenesCX - thicknessx2) / fw;
 	siScaleY = (scenesCY - thicknessx2) / fh;
+	siScaleSelX = siSelCX / fw;
+	siScaleSelY = siSelCY / fh;
 
 	numSrcs = 0;
 	size_t i = 0;
@@ -311,6 +317,8 @@ void Multiview::Render(uint32_t cx, uint32_t cy)
 		}
 		siX = sourceX + thickness;
 		siY = sourceY + thickness;
+		siSelX = sourceX + selectedThickness;
+		siSelY = sourceY + selectedThickness;
 	};
 
 	auto calcPreviewProgram = [&](bool program) {
@@ -407,25 +415,41 @@ void Multiview::Render(uint32_t cx, uint32_t cy)
 
 		OBSSource src = OBSGetStrongRef(multiviewScenes[i]);
 
-		// We have a source. Now chose the proper highlight color
 		uint32_t colorVal = outerColor;
-		if (src == programSrc)
-			colorVal = programColor;
-		else if (src == previewSrc)
-			colorVal = studioMode ? previewColor : programColor;
+		float scnX = siX;
+		float scnY = siY;
+		float scnCX = siCX;
+		float scnCY = siCY;
+		float scnScaleX = siScaleX;
+		float scnScaleY = siScaleY;
+
+		if (src == programSrc || src == previewSrc) {
+			scnX = siSelX;
+			scnY = siSelY;
+			scnCX = siSelCX;
+			scnCY = siSelCY;
+			scnScaleX = siScaleSelX;
+			scnScaleY = siScaleSelY;
+
+			if (src == programSrc)
+				colorVal = programColor;
+			else if (src == previewSrc)
+				colorVal = studioMode ? previewColor
+						      : programColor;
+		}
 
 		// Paint the background
 		paintAreaWithColor(sourceX, sourceY, scenesCX, scenesCY,
 				   colorVal);
-		paintAreaWithColor(siX, siY, siCX, siCY, backgroundColor);
+		paintAreaWithColor(scnX, scnY, scnCX, scnCY, backgroundColor);
 
 		/* ----------- */
 
 		// Render the source
 		gs_matrix_push();
-		gs_matrix_translate3f(siX, siY, 0.0f);
-		gs_matrix_scale3f(siScaleX, siScaleY, 1.0f);
-		setRegion(siX, siY, siCX, siCY);
+		gs_matrix_translate3f(scnX, scnY, 0.0f);
+		gs_matrix_scale3f(scnScaleX, scnScaleY, 1.0f);
+		setRegion(scnX, scnY, scnCX, scnCY);
 		obs_source_video_render(src);
 		endRegion();
 		gs_matrix_pop();

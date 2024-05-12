@@ -345,7 +345,10 @@ void OBSProjector::UpdateMultiview()
 	transitionOnDoubleClick = config_get_bool(
 		GetGlobalConfig(), "BasicWindow", "TransitionOnDoubleClick");
 
-	multiview->Update(multiviewLayout, drawLabel, drawSafeArea);
+	uint32_t borderSize = config_get_uint(GetGlobalConfig(), "BasicWindow",
+					      "MultiviewBorderSize");
+
+	multiview->Update(multiviewLayout, drawLabel, drawSafeArea, borderSize);
 }
 
 void OBSProjector::UpdateProjectorTitle(QString name)

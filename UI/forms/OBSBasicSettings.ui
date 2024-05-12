@@ -874,6 +874,29 @@
                      </property>
                     </widget>
                    </item>
+                   <item row="4" column="0">
+                    <widget class="QLabel" name="label_multiviewBorderSize">
+                     <property name="text">
+                      <string>Basic.Settings.General.Multiview.BorderSize</string>
+                     </property>
+                     <property name="buddy">
+                      <cstring>multiviewBorderSize</cstring>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="4" column="1">
+                    <widget class="QSpinBox" name="multiviewBorderSize">
+                     <property name="minimum">
+                      <number>4</number>
+                     </property>
+                     <property name="maximum">
+                      <number>32</number>
+                     </property>
+                     <property name="value">
+                      <number>4</number>
+                     </property>
+                    </widget>
+                   </item>
                   </layout>
                  </widget>
                 </item>
@@ -8031,6 +8054,7 @@
   <tabstop>multiviewDrawNames</tabstop>
   <tabstop>multiviewDrawAreas</tabstop>
   <tabstop>multiviewLayout</tabstop>
+  <tabstop>multiviewBorderSize</tabstop>
   <tabstop>theme</tabstop>
   <tabstop>themeVariant</tabstop>
   <tabstop>service</tabstop>
