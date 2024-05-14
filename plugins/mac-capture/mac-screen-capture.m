@@ -1126,7 +1126,7 @@ enum gs_color_space screen_capture_video_get_color_space(
 #pragma mark - obs_source_info
 
 struct obs_source_info screen_capture_info = {
-	.id = "screen_capture",
+	.id = "mac_screen_capture",
 	.type = OBS_SOURCE_TYPE_INPUT,
 	.get_name = screen_capture_getname,
 
