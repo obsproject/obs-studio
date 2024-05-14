@@ -878,13 +878,13 @@ static void obs_free_video(void)
 		obs_free_video_mix(video);
 		obs->video.mixes.array[i] = NULL;
 	}
+	da_free(obs->video.mixes);
 	if (num_views > 0)
 		blog(LOG_WARNING, "Number of remaining views: %ld", num_views);
 	pthread_mutex_unlock(&obs->video.mixes_mutex);
 
 	pthread_mutex_destroy(&obs->video.mixes_mutex);
 	pthread_mutex_init_value(&obs->video.mixes_mutex);
-	da_free(obs->video.mixes);
 
 	for (size_t i = 0; i < obs->video.ready_encoder_groups.num; i++) {
 		obs_weak_encoder_release(
