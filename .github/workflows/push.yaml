@@ -262,9 +262,11 @@ jobs:
           macos_arm64_dsym_artifact_name="obs-studio-macos-arm64-${commit_hash}-dSYMs"
           macos_intel_artifact_name="obs-studio-macos-x86_64-${commit_hash}"
           macos_intel_dsym_artifact_name="obs-studio-macos-x86_64-${commit_hash}-dSYMs"
-          ubuntu_x86_64_artifact_name="obs-studio-ubuntu-22.04-x86_64-${commit_hash}"
-          ubuntu_x86_64_debug_name="obs-studio-ubuntu-22.04-x86_64-${commit_hash}-dbgsym"
-          ubuntu_sources_name="obs-studio-ubuntu-22.04-sources-${commit_hash}"
+          ubuntu_2204_x86_64_artifact_name="obs-studio-ubuntu-22.04-x86_64-${commit_hash}"
+          ubuntu_2204_x86_64_debug_name="obs-studio-ubuntu-22.04-x86_64-${commit_hash}-dbgsym"
+          ubuntu_2404_x86_64_artifact_name="obs-studio-ubuntu-24.04-x86_64-${commit_hash}"
+          ubuntu_2404_x86_64_debug_name="obs-studio-ubuntu-24.04-x86_64-${commit_hash}-dbgsym"
+          ubuntu_2404_sources_name="obs-studio-ubuntu-24.04-sources-${commit_hash}"
           windows_artifact_name="obs-studio-windows-x64-${{ steps.check.outputs.version }}-signed"
           windows_installer_name="obs-studio-windows-x64-${{ steps.check.outputs.version }}-installer"
           windows_debug_name="obs-studio-windows-x64-${{ steps.check.outputs.version }}-pdbs"
@@ -278,11 +280,15 @@ jobs:
             "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-macOS-Intel.dmg
           mv -v "${macos_intel_dsym_artifact_name}/"obs-studio-*-macos-intel-dSYMs.tar.xz \
             "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-macOS-Intel-dSYMs.tar.xz
-          mv -v "${ubuntu_x86_64_artifact_name}/"obs-studio-*-x86_64-linux-gnu.deb \
-            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-x86_64.deb
-          mv -v "${ubuntu_x86_64_debug_name}/"obs-studio-*-x86_64-linux-gnu-dbgsym.ddeb \
-            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-x86_64-dbsym.ddeb
-          mv -v "${ubuntu_sources_name}/"obs-studio-*-sources.tar.gz \
+          mv -v "${ubuntu_2204_x86_64_artifact_name}/"obs-studio-*-x86_64-linux-gnu.deb \
+            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-22.04-x86_64.deb
+          mv -v "${ubuntu_2204_x86_64_debug_name}/"obs-studio-*-x86_64-linux-gnu-dbgsym.ddeb \
+            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-22.04-x86_64-dbsym.ddeb
+          mv -v "${ubuntu_2404_x86_64_artifact_name}/"obs-studio-*-x86_64-linux-gnu.deb \
+            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-24.04-x86_64.deb
+          mv -v "${ubuntu_2404_x86_64_debug_name}/"obs-studio-*-x86_64-linux-gnu-dbgsym.ddeb \
+            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-24.04-x86_64-dbsym.ddeb
+          mv -v "${ubuntu_2404_sources_name}/"obs-studio-*-sources.tar.gz \
             "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Sources.tar.gz
           mv -v "${windows_installer_name}/"OBS-Studio-*.exe \
             "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Windows-Installer.exe
