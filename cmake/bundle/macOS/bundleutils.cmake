@@ -90,7 +90,7 @@ endif()
 # Codesign all binaries inside-out
 message(STATUS "OBS: Codesign dependencies")
 if(EXISTS "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/Frameworks/Chromium Embedded Framework.framework")
-  set(CEF_HELPER_OUTPUT_NAME "OBS Helper")
+  set(CEF_HELPER_OUTPUT_NAME "obs64 Helper")
   set(CEF_HELPER_APP_SUFFIXES ":" " (GPU):.gpu" " (Plugin):.plugin" " (Renderer):.renderer")
 
   foreach(_SUFFIXES ${CEF_HELPER_APP_SUFFIXES})
@@ -104,13 +104,13 @@ if(EXISTS "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/Frameworks/Chromium E
     execute_process(
       COMMAND
         /usr/bin/codesign --remove-signature
-        "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/Frameworks/OBS Helper${_NAME_SUFFIX}.app" ${_VERBOSE_FLAG}
+        "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/Frameworks/obs64 Helper${_NAME_SUFFIX}.app" ${_VERBOSE_FLAG}
         ${_QUIET_FLAG})
     execute_process(
       COMMAND
         /usr/bin/codesign --force --sign "${_CODESIGN_IDENTITY}" --deep --options runtime --entitlements
         "${_CODESIGN_ENTITLEMENTS}/entitlements-helper${_PLIST_SUFFIX}.plist"
-        "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/Frameworks/OBS Helper${_NAME_SUFFIX}.app" ${_VERBOSE_FLAG}
+        "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/Frameworks/obs64 Helper${_NAME_SUFFIX}.app" ${_VERBOSE_FLAG}
         ${_QUIET_FLAG})
   endforeach()
 endif()
