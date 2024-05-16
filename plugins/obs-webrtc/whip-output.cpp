@@ -21,6 +21,9 @@ const uint8_t audio_payload_type = 111;
 const char *video_mid = "1";
 const uint8_t video_payload_type = 96;
 
+// ~3 seconds of 8.5 Megabit video
+const int video_nack_buffer_size = 4000;
+
 WHIPOutput::WHIPOutput(obs_data_t *, obs_output_t *output)
 	: output(output),
 	  endpoint_url(),
@@ -181,7 +184,8 @@ void WHIPOutput::ConfigureVideoTrack(std::string media_stream_id,
 
 	video_sr_reporter = std::make_shared<rtc::RtcpSrReporter>(rtp_config);
 	packetizer->addToChain(video_sr_reporter);
-	packetizer->addToChain(std::make_shared<rtc::RtcpNackResponder>());
+	packetizer->addToChain(std::make_shared<rtc::RtcpNackResponder>(
+		video_nack_buffer_size));
 
 	video_track = peer_connection->addTrack(video_description);
 	video_track->setMediaHandler(packetizer);
