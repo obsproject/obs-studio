@@ -11,7 +11,6 @@ class YouTubeAppDock : public BrowserDock {
 
 public:
 	YouTubeAppDock(const QString &title);
-	~YouTubeAppDock();
 
 	enum streaming_mode_t { YTSM_ACCOUNT, YTSM_STREAM_KEY };
 
@@ -49,5 +48,4 @@ private:
 
 	QString channelId;
 	QPointer<QCefWidget> dockBrowser;
-	QCefCookieManager *cookieManager; // is not a Qt object
 };
