@@ -55,6 +55,14 @@ static inline void OpenBrowser(const QString auth_uri)
 	QDesktopServices::openUrl(url);
 }
 
+static void DeleteCookies()
+{
+	if (panel_cookies) {
+		panel_cookies->DeleteCookies("youtube.com", "");
+		panel_cookies->DeleteCookies("google.com", "");
+	}
+}
+
 void RegisterYoutubeAuth()
 {
 	for (auto &service : youtubeServices) {
@@ -64,7 +72,7 @@ void RegisterYoutubeAuth()
 				return std::make_shared<YoutubeApiWrappers>(
 					service);
 			},
-			YoutubeAuth::Login, []() { return; });
+			YoutubeAuth::Login, DeleteCookies);
 	}
 }
 
