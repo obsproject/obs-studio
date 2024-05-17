@@ -16,6 +16,7 @@ on:
 env:
   InstallPath: "packed_build"
   BUILD_DIRECTORY: "build"
+  BUILD_DIRECTORY_X86: "build_x86"
   RELEASE_BUCKET: "obsstudios3.streamlabs.com"
   PACKAGE_NAME: "libobs"
   CACHE_REVISION: '006'
