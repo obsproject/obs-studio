@@ -191,7 +191,6 @@ class OBSBasic : public OBSMainWindow {
 	friend class ExtraBrowsersModel;
 	friend class ExtraBrowsersDelegate;
 	friend class DeviceCaptureToolbar;
-	friend class DeviceToolbarPropertiesThread;
 	friend class OBSBasicSourceSelect;
 	friend class OBSYoutubeActions;
 	friend class OBSPermissions;
