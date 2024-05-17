@@ -60,6 +60,7 @@ public:
 
 	void SetChatId(const QString &chat_id, const std::string &api_chat_id);
 	void ResetChat();
+	void ReloadChat();
 
 	static std::shared_ptr<Auth> Login(QWidget *parent,
 					   const std::string &service);
