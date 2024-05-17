@@ -33,20 +33,11 @@ static constexpr const char *INGESTION_STOPPED = "INGESTION_STOPPED";
 
 YouTubeAppDock::YouTubeAppDock(const QString &title)
 	: BrowserDock(title),
-	  dockBrowser(nullptr),
-	  cookieManager(nullptr)
+	  dockBrowser(nullptr)
 {
 	cef->init_browser();
 	OBSBasic::InitBrowserPanelSafeBlock();
 	AddYouTubeAppDock();
-}
-
-YouTubeAppDock::~YouTubeAppDock()
-{
-	if (cookieManager) {
-		cookieManager->FlushStore();
-		delete cookieManager;
-	}
 }
 
 bool YouTubeAppDock::IsYTServiceSelected()
@@ -78,9 +69,12 @@ void YouTubeAppDock::SettingsUpdated(bool cleanup)
 
 	// definitely cleanup if YT switched off
 	if (!ytservice || cleanup) {
-		if (cookieManager)
-			cookieManager->DeleteCookies("", "");
+		if (panel_cookies) {
+			panel_cookies->DeleteCookies("youtube.com", "");
+			panel_cookies->DeleteCookies("google.com", "");
+		}
 	}
+
 	if (ytservice)
 		Update();
 }
@@ -135,16 +129,9 @@ void YouTubeAppDock::AddYouTubeAppDock()
 
 void YouTubeAppDock::CreateBrowserWidget(const std::string &url)
 {
-	std::string dir_name = std::string("obs_profile_cookies_youtube/") +
-			       config_get_string(OBSBasic::Get()->Config(),
-						 "Panels", "CookieId");
-	if (cookieManager)
-		delete cookieManager;
-	cookieManager = cef->create_cookie_manager(dir_name, true);
-
 	if (dockBrowser)
 		delete dockBrowser;
-	dockBrowser = cef->create_widget(this, url, cookieManager);
+	dockBrowser = cef->create_widget(this, url, panel_cookies);
 	if (!dockBrowser)
 		return;
 
@@ -152,6 +139,10 @@ void YouTubeAppDock::CreateBrowserWidget(const std::string &url)
 		dockBrowser->allowAllPopups(true);
 
 	this->SetWidget(dockBrowser);
+
+	QWidget::connect(dockBrowser.get(), &QCefWidget::urlChanged, this,
+			 &YouTubeAppDock::ReloadChatDock);
+
 	Update();
 }
 
@@ -344,6 +335,16 @@ void YouTubeAppDock::UpdateChannelId()
 				blog(LOG_ERROR, "YT: AccountConnected() Failed "
 						"to get channel id");
 			}
+		}
+	}
+}
+
+void YouTubeAppDock::ReloadChatDock()
+{
+	if (IsUserSignedIntoYT()) {
+		YoutubeApiWrappers *apiYouTube = GetYTApi();
+		if (apiYouTube) {
+			apiYouTube->ReloadChat();
 		}
 	}
 }
