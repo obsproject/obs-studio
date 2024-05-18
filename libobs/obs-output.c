@@ -2063,7 +2063,7 @@ static bool initialize_interleaved_packets(struct obs_output *output)
 		}
 	}
 	for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
-		if (output->audio_encoders[i]) {
+		if (output->audio_encoders[i] && audio[i]->dts > 0) {
 			output->audio_offsets[i] = audio[i]->dts;
 		}
 	}
