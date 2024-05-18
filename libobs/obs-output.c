@@ -1763,7 +1763,23 @@ static size_t get_interleaved_start_idx(struct obs_output *output)
 		}
 	}
 
-	return video_idx < idx ? video_idx : idx;
+	idx = video_idx < idx ? video_idx : idx;
+
+	/* Early AAC/Opus audio packets will be for "priming" the encoder and contain silence, but they should not be
+	 * discarded. Set the idx to the first audio packet if closest PTS was <= 0. */
+	size_t first_audio_idx = idx;
+	while (output->interleaved_packets.array[first_audio_idx].type != OBS_ENCODER_AUDIO)
+		first_audio_idx++;
+
+	if (output->interleaved_packets.array[first_audio_idx].pts <= 0) {
+		for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
+			int audio_idx = find_first_packet_type_idx(output, OBS_ENCODER_AUDIO, i);
+			if (audio_idx >= 0 && (size_t)audio_idx < idx)
+				idx = audio_idx;
+		}
+	}
+
+	return idx;
 }
 
 static int64_t get_encoder_duration(struct obs_encoder *encoder)
@@ -1830,10 +1846,16 @@ static int prune_premature_packets(struct obs_output *output)
 	return diff > duration_usec ? max_idx + 1 : 0;
 }
 
+#define DEBUG_STARTING_PACKETS 0
+
 static void discard_to_idx(struct obs_output *output, size_t idx)
 {
 	for (size_t i = 0; i < idx; i++) {
 		struct encoder_packet *packet = &output->interleaved_packets.array[i];
+#if DEBUG_STARTING_PACKETS == 1
+		blog(LOG_DEBUG, "discarding %s packet, dts: %lld, pts: %lld",
+		     packet->type == OBS_ENCODER_VIDEO ? "video" : "audio", packet->dts, packet->pts);
+#endif
 		if (packet->type == OBS_ENCODER_VIDEO) {
 			da_pop_front(output->encoder_packet_times[packet->track_idx]);
 		}
@@ -1842,8 +1864,6 @@ static void discard_to_idx(struct obs_output *output, size_t idx)
 
 	da_erase_range(output->interleaved_packets, 0, idx);
 }
-
-#define DEBUG_STARTING_PACKETS 0
 
 static bool prune_interleaved_packets(struct obs_output *output)
 {
