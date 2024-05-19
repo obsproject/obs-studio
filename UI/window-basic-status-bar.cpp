@@ -518,7 +518,7 @@ void OBSBasicStatusBar::StreamDelayStarting(int sec)
 		return;
 
 	OBSOutputAutoRelease output = obs_frontend_get_streaming_output();
-	streamOutput = obs_output_get_weak_output(output);
+	streamOutput = OBSGetWeakRef(output);
 
 	delaySecTotal = delaySecStarting = sec;
 	UpdateDelayMsg();
@@ -533,7 +533,7 @@ void OBSBasicStatusBar::StreamDelayStopping(int sec)
 
 void OBSBasicStatusBar::StreamStarted(obs_output_t *output)
 {
-	streamOutput = obs_output_get_weak_output(output);
+	streamOutput = OBSGetWeakRef(output);
 
 	streamSigs.emplace_back(obs_output_get_signal_handler(output),
 				"reconnect", OBSOutputReconnect, this);
