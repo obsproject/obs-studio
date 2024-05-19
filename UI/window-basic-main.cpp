@@ -5588,11 +5588,14 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 void OBSBasic::on_actionSceneListMode_triggered()
 {
 	ui->scenes->SetGridMode(false);
+	config_set_bool(App()->GlobalConfig(), "BasicWindow", "gridMode",
+			false);
 }
 
 void OBSBasic::on_actionSceneGridMode_triggered()
 {
 	ui->scenes->SetGridMode(true);
+	config_set_bool(App()->GlobalConfig(), "BasicWindow", "gridMode", true);
 }
 
 void OBSBasic::GridActionClicked()
@@ -9673,6 +9676,9 @@ void OBSBasic::on_resetUI_triggered()
 	ui->toggleStatusBar->setChecked(true);
 	ui->scenes->SetGridMode(false);
 	ui->actionSceneListMode->setChecked(true);
+
+	config_set_bool(App()->GlobalConfig(), "BasicWindow", "gridMode",
+			false);
 }
 
 void OBSBasic::on_multiviewProjectorWindowed_triggered()
