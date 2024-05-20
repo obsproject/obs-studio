@@ -665,6 +665,13 @@ Functions
 
 ---------------------------------------
 
+.. function:: void obs_frontend_replay_buffer_save_duration(int usec)
+
+   Save a shorter subset of the replay buffer if it is active. 
+   :param usec: Maximum duration to save in microseconds (saved buffer will usually be a bit shorter)
+
+----------------------------------------
+
 .. function:: bool obs_frontend_replay_buffer_active(void)
 
    :return: *true* if replay buffer active, *false* otherwise

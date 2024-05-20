@@ -193,6 +193,7 @@ EXPORT bool obs_frontend_recording_split_file(void);
 
 EXPORT void obs_frontend_replay_buffer_start(void);
 EXPORT void obs_frontend_replay_buffer_save(void);
+EXPORT void obs_frontend_replay_buffer_save_duration(long long usec);
 EXPORT void obs_frontend_replay_buffer_stop(void);
 EXPORT bool obs_frontend_replay_buffer_active(void);
 
