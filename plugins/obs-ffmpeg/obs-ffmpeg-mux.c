@@ -59,6 +59,7 @@ static inline void replay_buffer_clear(struct ffmpeg_muxer *stream)
 	stream->max_size = 0;
 	stream->max_time = 0;
 	stream->save_ts = 0;
+	stream->save_time = 0;
 	stream->keyframes = 0;
 }
 
@@ -971,6 +972,21 @@ static const char *replay_buffer_getname(void *type)
 	return obs_module_text("ReplayBuffer");
 }
 
+static void trigger_replay_save(struct ffmpeg_muxer *stream, int64_t time)
+{
+	if (os_atomic_load_bool(&stream->active)) {
+		obs_encoder_t *vencoder =
+			obs_output_get_video_encoder(stream->output);
+		if (obs_encoder_paused(vencoder)) {
+			info("Could not save buffer because encoders paused");
+			return;
+		}
+
+		stream->save_ts = os_gettime_ns() / 1000LL;
+		stream->save_time = time;
+	}
+}
+
 static void replay_buffer_hotkey(void *data, obs_hotkey_id id,
 				 obs_hotkey_t *hotkey, bool pressed)
 {
@@ -981,23 +997,20 @@ static void replay_buffer_hotkey(void *data, obs_hotkey_id id,
 		return;
 
 	struct ffmpeg_muxer *stream = data;
-
-	if (os_atomic_load_bool(&stream->active)) {
-		obs_encoder_t *vencoder =
-			obs_output_get_video_encoder(stream->output);
-		if (obs_encoder_paused(vencoder)) {
-			info("Could not save buffer because encoders paused");
-			return;
-		}
-
-		stream->save_ts = os_gettime_ns() / 1000LL;
-	}
+	trigger_replay_save(stream, 0);
 }
 
 static void save_replay_proc(void *data, calldata_t *cd)
 {
-	replay_buffer_hotkey(data, 0, NULL, true);
 	UNUSED_PARAMETER(cd);
+	trigger_replay_save(data, 0);
+}
+
+static void save_duration(void *data, calldata_t *cd)
+{
+	long long time;
+	calldata_get_int(cd, "usec", &time);
+	trigger_replay_save(data, (int64_t)time);
 }
 
 static void get_last_replay(void *data, calldata_t *cd)
@@ -1020,6 +1033,8 @@ static void *replay_buffer_create(obs_data_t *settings, obs_output_t *output)
 
 	proc_handler_t *ph = obs_output_get_proc_handler(output);
 	proc_handler_add(ph, "void save()", save_replay_proc, stream);
+	proc_handler_add(ph, "void save_duration(int usec)", save_duration,
+			 stream);
 	proc_handler_add(ph, "void get_last_replay(out string path)",
 			 get_last_replay, stream);
 
@@ -1223,9 +1238,28 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 	int64_t audio_offsets[MAX_AUDIO_MIXES] = {0};
 	int64_t audio_dts_offsets[MAX_AUDIO_MIXES] = {0};
 
+	int64_t start_dts = 0;
+	bool start_frame_found = false;
+	if (stream->save_time > 0) {
+		struct encoder_packet last_pkt;
+		deque_peek_back(&stream->packets, &last_pkt, size);
+		start_dts = last_pkt.dts_usec - stream->save_time;
+		stream->save_time = 0;
+	}
+
 	for (size_t i = 0; i < num_packets; i++) {
 		struct encoder_packet *pkt;
 		pkt = deque_data(&stream->packets, i * size);
+
+		if (start_dts > 0) {
+			if (pkt->keyframe && pkt->dts_usec > start_dts) {
+				start_frame_found = true;
+			}
+
+			if (!start_frame_found) {
+				continue;
+			}
+		}
 
 		if (pkt->type == OBS_ENCODER_VIDEO) {
 			if (!found_video) {

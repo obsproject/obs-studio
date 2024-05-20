@@ -33,6 +33,7 @@ struct ffmpeg_muxer {
 
 	/* replay buffer */
 	int64_t save_ts;
+	int64_t save_time;
 	int keyframes;
 	obs_hotkey_id hotkey;
 	volatile bool muxing;
