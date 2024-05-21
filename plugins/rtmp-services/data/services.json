@@ -2523,21 +2523,26 @@
         },
         {
             "name": "Joystick.TV",
-            "more_info_link": "https://support.joystick.tv/support/creator-support/setting-up-your-stream/",
+            "more_info_link": "https://support.joystick.tv/live_streaming/",
             "stream_key_link": "https://joystick.tv/stream-settings",
             "servers": [
                 {
-                    "name": "RTMP",
+                    "name": "North America",
                     "url": "rtmp://live.joystick.tv/live/"
+                },
+                {
+                    "name": "Europe",
+                    "url": "rtmp://eu.live.joystick.tv/live/"
                 }
             ],
             "recommended": {
                 "keyint": 2,
                 "max video bitrate": 7500,
                 "max audio bitrate": 192,
+                "max fps": 60,
                 "profile": "main",
                 "bframes": 0,
-                "x264opts": "tune=zerolatency"
+                "x264opts": "tune=zerolatency scenecut=0"
             },
             "supported video codecs": [
                 "h264"
