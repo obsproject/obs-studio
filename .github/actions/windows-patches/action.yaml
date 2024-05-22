@@ -33,8 +33,9 @@ runs:
       run: |
         # Download OBS release
         . ${env:GITHUB_ACTION_PATH}\Invoke-External.ps1
-        Invoke-External gh release download "${{ inputs.tagName }}" -p "*-Windows.zip"
-        Expand-Archive -Path "*-Windows.zip" -DestinationPath "${{ github.workspace }}/build"
+        Invoke-External gh release download "${{ inputs.tagName }}" -p "OBS-Studio-${{ inputs.tagName }}-Windows.zip"
+        Invoke-External gh attestation verify "OBS-Studio-${{ inputs.tagName }}-Windows.zip" --owner obsproject
+        Expand-Archive -Path "OBS-Studio-${{ inputs.tagName }}-Windows.zip" -DestinationPath "${{ github.workspace }}/build"
 
     - name: Setup bouf
       shell: pwsh
