@@ -1,19 +1,20 @@
 #pragma once
 
-#include <QList>
-#include <QVector>
-#include <QPointer>
-#include <QListView>
-#include <QCheckBox>
-#include <QStaticText>
-#include <QSvgRenderer>
-#include <QAbstractListModel>
-#include <QStyledItemDelegate>
 #include <obs.hpp>
 #include <obs-frontend-api.h>
+#include <obs.h>
+
+#include <QAbstractListModel>
+#include <QCheckBox>
+#include <QList>
+#include <QListView>
+#include <QPointer>
+#include <QStaticText>
+#include <QStyledItemDelegate>
+#include <QSvgRenderer>
+#include <QVector>
 
 class QLabel;
-class OBSSourceLabel;
 class QCheckBox;
 class QLineEdit;
 class SourceTree;
@@ -58,7 +59,7 @@ private:
 	QCheckBox *vis = nullptr;
 	QCheckBox *lock = nullptr;
 	QHBoxLayout *boxLayout = nullptr;
-	OBSSourceLabel *label = nullptr;
+	QLabel *label = nullptr;
 
 	QLineEdit *editor = nullptr;
 
@@ -80,6 +81,7 @@ private slots:
 
 	void VisibilityChanged(bool visible);
 	void LockedChanged(bool locked);
+	void Renamed(const QString &name);
 
 	void ExpandClicked(bool checked);
 
@@ -172,6 +174,13 @@ public:
 
 	void SelectItem(obs_sceneitem_t *sceneitem, bool select);
 
+	static bool get_selected_source_names(obs_scene_t *scene,
+					      obs_sceneitem_t *sceneitem,
+					      void *param);
+	void removeSourceFromScene(const QString &sourceName,
+				   const QString &sceneName);
+
+
 	bool MultipleBaseSelected() const;
 	bool GroupsSelected() const;
 	bool GroupedItemsSelected() const;
@@ -193,10 +202,17 @@ protected:
 	virtual void mouseDoubleClickEvent(QMouseEvent *event) override;
 	virtual void dropEvent(QDropEvent *event) override;
 	virtual void paintEvent(QPaintEvent *event) override;
+	virtual void mousePressEvent(QMouseEvent *event) override;
+	virtual void startDrag(Qt::DropActions supportedActions) override;
 
 	virtual void
 	selectionChanged(const QItemSelection &selected,
 			 const QItemSelection &deselected) override;
+	virtual void dragMoveEvent(QDragMoveEvent *event) override;
+	virtual void dragEnterEvent(QDragEnterEvent *event) override;
+
+private:
+	QPoint dragStartPosition;
 };
 
 class SourceTreeDelegate : public QStyledItemDelegate {

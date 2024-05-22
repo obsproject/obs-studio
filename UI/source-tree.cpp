@@ -1,26 +1,29 @@
-#include "window-basic-main.hpp"
 #include "obs-app.hpp"
-#include "source-tree.hpp"
-#include "qt-wrappers.hpp"
 #include "platform.hpp"
-#include "source-label.hpp"
+#include "qt-wrappers.hpp"
+#include "source-tree.hpp"
+#include "window-basic-main.hpp"
 
 #include <obs-frontend-api.h>
 #include <obs.h>
+#include <obs.hpp>
 
 #include <string>
 
+#include <QAccessible>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
-#include <QSpacerItem>
-#include <QPushButton>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
 #include <QMouseEvent>
-#include <QAccessible>
+#include <QPushButton>
+#include <QSpacerItem>
+#include <QVBoxLayout>
 
+#include <QDrag>
+#include <QMimeData>
 #include <QStylePainter>
 #include <QStyleOptionFocusRect>
+
 
 static inline OBSScene GetCurrentScene()
 {
@@ -97,7 +100,7 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 	lock->setAccessibleDescription(
 		QTStr("Basic.Main.Sources.LockDescription").arg(name));
 
-	label = new OBSSourceLabel(source);
+	label = new QLabel(QT_UTF8(name));
 	label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 	label->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 	label->setAttribute(Qt::WA_TranslucentBackground);
@@ -289,6 +292,15 @@ void SourceTreeItem::ReconnectSignals()
 
 	/* --------------------------------------------------------- */
 
+	auto renamed = [](void *data, calldata_t *cd) {
+		SourceTreeItem *this_ =
+			reinterpret_cast<SourceTreeItem *>(data);
+		const char *name = calldata_string(cd, "new_name");
+
+		QMetaObject::invokeMethod(this_, "Renamed",
+					  Q_ARG(QString, QT_UTF8(name)));
+	};
+
 	auto removeSource = [](void *data, calldata_t *) {
 		SourceTreeItem *this_ =
 			reinterpret_cast<SourceTreeItem *>(data);
@@ -299,6 +311,7 @@ void SourceTreeItem::ReconnectSignals()
 
 	obs_source_t *source = obs_sceneitem_get_source(sceneitem);
 	signal = obs_source_get_signal_handler(source);
+	sigs.emplace_back(signal, "rename", renamed, this);
 	sigs.emplace_back(signal, "remove", removeSource, this);
 }
 
@@ -461,6 +474,7 @@ void SourceTreeItem::ExitEditModeInternal(bool save)
 				redo, uuid, uuid);
 
 	obs_source_set_name(source, newName.c_str());
+	label->setText(QT_UTF8(newName.c_str()));
 }
 
 bool SourceTreeItem::eventFilter(QObject *object, QEvent *event)
@@ -497,6 +511,11 @@ void SourceTreeItem::LockedChanged(bool locked)
 {
 	lock->setChecked(locked);
 	OBSBasic::Get()->UpdateEditMenu();
+}
+
+void SourceTreeItem::Renamed(const QString &name)
+{
+	label->setText(name);
 }
 
 void SourceTreeItem::Update(bool force)
@@ -1049,6 +1068,8 @@ void SourceTreeModel::UpdateGroupState(bool update)
 
 SourceTree::SourceTree(QWidget *parent_) : QListView(parent_)
 {
+	setSelectionMode(QAbstractItemView::ExtendedSelection);
+	setDragEnabled(true);
 	SourceTreeModel *stm_ = new SourceTreeModel(this);
 	setModel(stm_);
 	setStyleSheet(QString(
@@ -1073,6 +1094,119 @@ void SourceTree::UpdateIcons()
 {
 	SourceTreeModel *stm = GetStm();
 	stm->SceneChanged();
+}
+
+void SourceTree::dragEnterEvent(QDragEnterEvent *event)
+{
+	if (event->mimeData()->hasFormat("application/indexes")) {
+		event->acceptProposedAction();
+	} else {
+		event->ignore();
+	}
+}
+
+void SourceTree::dragMoveEvent(QDragMoveEvent *event)
+{
+	if (event->mimeData()->hasFormat("application/indexes")) {
+		event->acceptProposedAction();
+	} else {
+		event->ignore();
+	}
+}
+
+void SourceTree::mousePressEvent(QMouseEvent *event)
+{
+	if (event->button() == Qt::LeftButton) {
+		dragStartPosition = event->pos();
+	}
+	QListView::mousePressEvent(event);
+}
+
+void SourceTree::startDrag(Qt::DropActions supportedActions)
+{
+	obs_source_t *current_scene_source = obs_frontend_get_current_scene();
+	if (!current_scene_source) {
+		return;
+	}
+
+	obs_scene_t *current_scene =
+		obs_scene_from_source(current_scene_source);
+	if (!current_scene) {
+		obs_source_release(current_scene_source);
+		return;
+	}
+
+	QStringList selectedSourceNames;
+	obs_scene_enum_items(current_scene, get_selected_source_names,
+			     &selectedSourceNames);
+	obs_source_release(current_scene_source);
+
+	if (selectedSourceNames.isEmpty()) {
+		return;
+	}
+
+	QByteArray itemData;
+	QDataStream dataStream(&itemData, QIODevice::WriteOnly);
+	dataStream << selectedSourceNames;
+	QMimeData *mimeData = new QMimeData;
+	mimeData->setData("application/indexes", itemData);
+
+	QDrag *drag = new QDrag(this);
+	drag->setMimeData(mimeData);
+
+	QRect boundingRect;
+	QModelIndexList indexes = selectedIndexes();
+	for (const QModelIndex &index : indexes) {
+		QRect rect = visualRect(index);
+		boundingRect = boundingRect.isNull()
+				       ? rect
+				       : boundingRect.united(rect);
+	}
+
+	QPixmap pixmap(boundingRect.size());
+	pixmap.fill(Qt::transparent);
+	QPainter painter(&pixmap);
+	painter.setRenderHint(QPainter::Antialiasing, true);
+
+	for (const QModelIndex &index : indexes) {
+		QRect rect = visualRect(index);
+		painter.save();
+		painter.translate(rect.topLeft() - boundingRect.topLeft());
+		itemDelegate()->paint(&painter, QStyleOptionViewItem(), index);
+		painter.restore();
+	}
+	painter.end();
+
+	QPixmap blueBox(pixmap.size());
+	blueBox.fill(QColor(0, 0, 153, 127));
+	QPainter boxPainter(&blueBox);
+	boxPainter.drawPixmap(0, 0, pixmap);
+	boxPainter.end();
+
+	drag->setPixmap(blueBox);
+	drag->setHotSpot(dragStartPosition - boundingRect.topLeft());
+
+	Qt::DropAction dropAction = drag->exec(supportedActions);
+}
+
+
+bool SourceTree::get_selected_source_names(obs_scene_t *scene,
+					   obs_sceneitem_t *sceneitem,
+					   void *param)
+{
+	QStringList *list = static_cast<QStringList *>(param);
+	if (obs_sceneitem_selected(sceneitem)) {
+		obs_source_t *source = obs_sceneitem_get_source(sceneitem);
+		if (!source) {
+			return true;
+		}
+		const char *name = obs_source_get_name(source);
+		if (!name) {
+			return true;
+		}
+		list->append(QString::fromUtf8(name));
+	}
+	return true;
 }
 
 void SourceTree::SetIconsVisible(bool visible)
@@ -1613,15 +1747,63 @@ void SourceTree::Remove(OBSSceneItem item, OBSScene scene)
 	GetStm()->Remove(item);
 	main->SaveProject();
 
+	obs_source_t *sceneSource = obs_scene_get_source(scene);
+	obs_source_t *itemSource = obs_sceneitem_get_source(item);
+
 	if (!main->SavingDisabled()) {
-		obs_source_t *sceneSource = obs_scene_get_source(scene);
-		obs_source_t *itemSource = obs_sceneitem_get_source(item);
 		blog(LOG_INFO, "User Removed source '%s' (%s) from scene '%s'",
 		     obs_source_get_name(itemSource),
 		     obs_source_get_id(itemSource),
 		     obs_source_get_name(sceneSource));
 	}
+
+	QString sourceName = QString::fromUtf8(obs_source_get_name(itemSource));
+	QString sceneName = QString::fromUtf8(obs_source_get_name(sceneSource));
+
+	removeSourceFromScene(sourceName, sceneName);
+
 }
+
+void SourceTree::removeSourceFromScene(const QString &sourceName,
+				       const QString &sceneName)
+{
+	if (sourceName.isEmpty()) {
+		return;
+	}
+
+	if (sceneName.isEmpty()) {
+		return;
+	}
+
+	obs_source_t *source = obs_get_source_by_name(qPrintable(sourceName));
+	if (!source) {
+		return;
+	}
+
+	obs_source_t *sceneSource =
+		obs_get_source_by_name(qPrintable(sceneName));
+	if (!sceneSource) {
+		obs_source_release(source);
+		return;
+	}
+
+	obs_scene_t *scene = obs_scene_from_source(sceneSource);
+	if (!scene) {
+		obs_source_release(source);
+		obs_source_release(sceneSource);
+		return;
+	}
+
+	obs_sceneitem_t *sceneItem =
+		obs_scene_find_source(scene, qPrintable(sourceName));
+	if (sceneItem) {
+		obs_sceneitem_remove(sceneItem);
+	}
+
+	obs_source_release(source);
+	obs_source_release(sceneSource);
+}
+
 
 void SourceTree::GroupSelectedItems()
 {

@@ -1,16 +1,25 @@
+#include "obs-frontend-api.h"
+#include "obs-source.h"
+#include "obs.h"
 #include "scene-tree.hpp"
+#include <obs-module.h>
 
-#include <QSizePolicy>
-#include <QScrollBar>
 #include <QDropEvent>
+#include <QMimeData>
 #include <QPushButton>
+#include <QScrollBar>
+#include <QSizePolicy>
 #include <QTimer>
 #include <cmath>
 
+
+OBS_DECLARE_MODULE()
+
 SceneTree::SceneTree(QWidget *parent_) : QListWidget(parent_)
 {
+	setAcceptDrops(true);
 	installEventFilter(this);
-	setDragDropMode(InternalMove);
+	setDragDropMode(DragDrop);
 	setMovement(QListView::Snap);
 }
 
@@ -104,10 +113,32 @@ void SceneTree::startDrag(Qt::DropActions supportedActions)
 
 void SceneTree::dropEvent(QDropEvent *event)
 {
-	if (event->source() != this) {
-		QListWidget::dropEvent(event);
-		return;
-	}
+	 if (event->mimeData()->hasFormat("application/indexes")) {
+		QByteArray encodedData = event->mimeData()->data(
+			"application/indexes");
+		QDataStream stream(&encodedData, QIODevice::ReadOnly);
+
+		QStringList sourceNames;
+		stream >> sourceNames;
+
+		QPoint dropPos = event->position().toPoint();
+		QListWidgetItem *sceneItem = itemAt(dropPos);
+
+		if (sceneItem) {
+			QString sceneName = sceneItem->text();
+
+			for (const QString &sourceName : sourceNames) {
+				if (!sceneName.isEmpty() &&
+				    !sourceName.isEmpty()) {
+
+					addSourceToScene(sourceName, sceneName);
+				}
+			}
+		}
+
+		event->setDropAction(Qt::MoveAction);
+		event->accept();
+	 }
 
 	if (gridMode) {
 		int scrollWid = verticalScrollBar()->sizeHint().width();
@@ -147,6 +178,34 @@ void SceneTree::dropEvent(QDropEvent *event)
 
 	QTimer::singleShot(100, [this]() { emit scenesReordered(); });
 }
+
+void SceneTree::addSourceToScene(const QString &sourceName,
+				 const QString &sceneName)
+{
+	obs_source_t *source = obs_get_source_by_name(qPrintable(sourceName));
+	if (!source) {
+		return;
+	}
+	obs_source_t *sceneSource =
+		obs_get_source_by_name(qPrintable(sceneName));
+	if (!sceneSource) {
+		obs_source_release(source);
+		return;
+	}
+
+	obs_scene_t *scene = obs_scene_from_source(sceneSource);
+	if (!scene) {
+		obs_source_release(source);      
+		obs_source_release(sceneSource);
+		return;
+	}
+
+	obs_sceneitem_t *sceneItem = obs_scene_add(scene, source);
+
+	obs_source_release(source);
+	obs_source_release(sceneSource);
+}
+
 
 void SceneTree::RepositionGrid(QDragMoveEvent *event)
 {
@@ -212,8 +271,33 @@ void SceneTree::RepositionGrid(QDragMoveEvent *event)
 	}
 }
 
+void SceneTree::dragEnterEvent(QDragEnterEvent *event)
+{
+	if (event->mimeData()->hasFormat("application/indexes")) {
+		event->setDropAction(Qt::MoveAction);
+		event->accept();
+	}
+
+	if (event->source() == this) {
+		event->setDropAction(Qt::MoveAction);
+		event->accept();
+	}
+
+	QListWidget::dragEnterEvent(event);
+}
+
 void SceneTree::dragMoveEvent(QDragMoveEvent *event)
 {
+	if (event->mimeData()->hasFormat("application/indexes")) {
+		event->setDropAction(Qt::MoveAction);
+		event->accept();
+	}
+
+	if (event->source() == this) {
+		event->setDropAction(Qt::MoveAction);
+		event->accept();
+	}
+
 	if (gridMode) {
 		RepositionGrid(event);
 	}

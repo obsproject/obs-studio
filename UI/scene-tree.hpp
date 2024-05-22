@@ -1,8 +1,8 @@
 #pragma once
 
-#include <QListWidget>
 #include <QEvent>
 #include <QItemDelegate>
+#include <QListWidget>
 
 class SceneTree : public QListWidget {
 	Q_OBJECT
@@ -26,6 +26,11 @@ public:
 
 	explicit SceneTree(QWidget *parent = nullptr);
 
+	QString GetSceneNameFromDrop(QDropEvent *event);
+	void handleDropEvent(const QString &sceneName);
+	void addSourceToScene(const QString &sourceName,
+			      const QString &sceneName);
+
 private:
 	void RepositionGrid(QDragMoveEvent *event = nullptr);
 
@@ -36,6 +41,7 @@ protected:
 	virtual void dropEvent(QDropEvent *event) override;
 	virtual void dragMoveEvent(QDragMoveEvent *event) override;
 	virtual void dragLeaveEvent(QDragLeaveEvent *event) override;
+	virtual void dragEnterEvent(QDragEnterEvent *event) override;
 	virtual void rowsInserted(const QModelIndex &parent, int start,
 				  int end) override;
 #if QT_VERSION < QT_VERSION_CHECK(6, 4, 3)
