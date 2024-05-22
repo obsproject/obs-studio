@@ -88,6 +88,14 @@ jobs:
     needs: cache-cleanup
     secrets: inherit
 
+  analyze-project:
+    name: Analyze 🔬
+    uses: ./.github/workflows/analyze-project.yaml
+    needs: cache-cleanup
+    secrets: inherit
+    permissions:
+      security-events: write
+
   upload-language-files:
     name: Upload Language Files 🌐
     if: github.repository_owner == 'obsproject' && github.ref_name == 'master'
