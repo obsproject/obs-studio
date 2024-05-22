@@ -211,6 +211,7 @@ void YoutubeAuth::ResetChat()
 {
 #ifdef BROWSER_AVAILABLE
 	if (chat && chat->cefWidget) {
+		chat->SetApiChatId("");
 		chat->cefWidget->setURL(YOUTUBE_CHAT_PLACEHOLDER_URL);
 	}
 #endif

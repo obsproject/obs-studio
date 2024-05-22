@@ -7531,6 +7531,11 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 #ifdef YOUTUBE_ENABLED
 	if (YouTubeAppDock::IsYTServiceSelected())
 		youtubeAppDock->IngestionStopped();
+	std::shared_ptr<YoutubeApiWrappers> ytAuth =
+		dynamic_pointer_cast<YoutubeApiWrappers>(auth);
+	if (ytAuth.get()) {
+		ytAuth->ResetChat();
+	}
 #endif
 
 	blog(LOG_INFO, STREAMING_STOP);
