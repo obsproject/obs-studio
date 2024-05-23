@@ -34,9 +34,9 @@ static OBSSource CreateLabel(const char *name, size_t h)
 	OBSDataAutoRelease font = obs_data_create();
 
 	std::string text;
-	text += " ";
+	text += "  ";
 	text += name;
-	text += " ";
+	text += "  ";
 
 #if defined(_WIN32)
 	obs_data_set_string(font, "face", "Arial");
@@ -51,6 +51,7 @@ static OBSSource CreateLabel(const char *name, size_t h)
 	obs_data_set_obj(settings, "font", font);
 	obs_data_set_string(settings, "text", text.c_str());
 	obs_data_set_bool(settings, "outline", false);
+	obs_data_set_int(settings, "opacity", 50);
 
 #ifdef _WIN32
 	const char *text_source_id = "text_gdiplus";
