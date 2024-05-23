@@ -88,8 +88,9 @@ static bool lookup_gettoken(struct lexer *lex, struct strref *str)
 		if (!str->array) {
 			/* comments are designated with a #, and end at LF */
 			if (ch == '#') {
-				while (ch != '\n' && ch != 0)
-					ch = *(++lex->offset);
+				while (*lex->offset != '\n' &&
+				       *lex->offset != 0)
+					++lex->offset;
 			} else if (temp.type == BASETOKEN_WHITESPACE) {
 				strref_copy(str, &temp.text);
 				break;
