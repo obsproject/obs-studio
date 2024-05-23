@@ -40,7 +40,7 @@ private:
 	std::vector<OBSSource> multiviewLabels;
 
 	// Multiview position helpers
-	float thickness = 4;
+	float thickness = 6;
 	float offset, thicknessx2 = thickness * 2, pvwprgCX, pvwprgCY, sourceX,
 		      sourceY, labelX, labelY, scenesCX, scenesCY, ppiCX, ppiCY,
 		      siX, siY, siCX, siCY, ppiScaleX, ppiScaleY, siScaleX,
