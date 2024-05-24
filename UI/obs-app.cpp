@@ -1987,12 +1987,6 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 #endif
 
 #if !defined(_WIN32) && !defined(__APPLE__)
-	/* NOTE: The Breeze Qt style plugin adds frame arround QDockWidget with
-	 * QPainter which can not be modifed. To avoid this the base style is
-	 * enforce to the Qt default style on Linux: Fusion. */
-
-	setenv("QT_STYLE_OVERRIDE", "Fusion", false);
-
 	/* NOTE: Users blindly set this, but this theme is incompatble with Qt6 and
 	 * crashes loading saved geometry. Just turn off this theme and let users complain OBS
 	 * looks ugly instead of crashing. */
