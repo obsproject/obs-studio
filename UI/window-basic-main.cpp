@@ -10098,6 +10098,26 @@ void OBSBasic::on_actionPasteDup_triggered()
 				  redo_data);
 }
 
+void OBSBasic::SourcePasteFilters(OBSSource source, OBSSource dstSource)
+{
+	if (source == dstSource)
+		return;
+
+	OBSDataArrayAutoRelease undo_array =
+		obs_source_backup_filters(dstSource);
+	obs_source_copy_filters(dstSource, source);
+	OBSDataArrayAutoRelease redo_array =
+		obs_source_backup_filters(dstSource);
+
+	const char *srcName = obs_source_get_name(source);
+	const char *dstName = obs_source_get_name(dstSource);
+	QString text =
+		QTStr("Undo.Filters.Paste.Multiple").arg(srcName, dstName);
+
+	CreateFilterPasteUndoRedoAction(text, dstSource, undo_array,
+					redo_array);
+}
+
 void OBSBasic::AudioMixerCopyFilters()
 {
 	QAction *action = reinterpret_cast<QAction *>(sender());
@@ -10117,10 +10137,7 @@ void OBSBasic::AudioMixerPasteFilters()
 	OBSSourceAutoRelease source =
 		obs_weak_source_get_source(copyFiltersSource);
 
-	if (source == dstSource)
-		return;
-
-	obs_source_copy_filters(dstSource, source);
+	SourcePasteFilters(source.Get(), dstSource);
 }
 
 void OBSBasic::SceneCopyFilters()
@@ -10136,10 +10153,7 @@ void OBSBasic::ScenePasteFilters()
 
 	OBSSource dstSource = GetCurrentSceneSource();
 
-	if (source == dstSource)
-		return;
-
-	obs_source_copy_filters(dstSource, source);
+	SourcePasteFilters(source.Get(), dstSource);
 }
 
 void OBSBasic::on_actionCopyFilters_triggered()
@@ -10197,22 +10211,7 @@ void OBSBasic::on_actionPasteFilters_triggered()
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 	OBSSource dstSource = obs_sceneitem_get_source(sceneItem);
 
-	if (source == dstSource)
-		return;
-
-	OBSDataArrayAutoRelease undo_array =
-		obs_source_backup_filters(dstSource);
-	obs_source_copy_filters(dstSource, source);
-	OBSDataArrayAutoRelease redo_array =
-		obs_source_backup_filters(dstSource);
-
-	const char *srcName = obs_source_get_name(source);
-	const char *dstName = obs_source_get_name(dstSource);
-	QString text =
-		QTStr("Undo.Filters.Paste.Multiple").arg(srcName, dstName);
-
-	CreateFilterPasteUndoRedoAction(text, dstSource, undo_array,
-					redo_array);
+	SourcePasteFilters(source.Get(), dstSource);
 }
 
 static void ConfirmColor(SourceTree *sources, const QColor &color,
