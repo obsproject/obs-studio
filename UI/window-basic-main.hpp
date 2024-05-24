@@ -848,7 +848,6 @@ private slots:
 	void TBarReleased();
 
 	void LockVolumeControl(bool lock);
-	void ThemeChanged();
 
 	void UpdateVirtualCamConfig(const VCamConfig &config);
 	void RestartVirtualCam(const VCamConfig &config);

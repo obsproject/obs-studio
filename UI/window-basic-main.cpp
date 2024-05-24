@@ -536,7 +536,10 @@ OBSBasic::OBSBasic(QWidget *parent)
 	connect(ui->broadcastButton, &QPushButton::clicked, this,
 		&OBSBasic::BroadcastButtonClicked);
 
-	connect(App(), &OBSApp::StyleChanged, this, &OBSBasic::ThemeChanged);
+	connect(App(), &OBSApp::StyleChanged, this, [this]() {
+		if (api)
+			api->on_event(OBS_FRONTEND_EVENT_THEME_CHANGED);
+	});
 
 	QActionGroup *actionGroup = new QActionGroup(this);
 	actionGroup->addAction(ui->actionSceneListMode);
@@ -11141,10 +11144,4 @@ void OBSBasic::UpdatePreviewSpacingHelpers()
 float OBSBasic::GetDevicePixelRatio()
 {
 	return dpi;
-}
-
-void OBSBasic::ThemeChanged()
-{
-	if (api)
-		api->on_event(OBS_FRONTEND_EVENT_THEME_CHANGED);
 }
