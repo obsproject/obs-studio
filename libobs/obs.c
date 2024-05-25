@@ -1117,6 +1117,8 @@ static const char *obs_signals[] = {
 	"void source_hide(ptr source)",
 	"void source_audio_activate(ptr source)",
 	"void source_audio_deactivate(ptr source)",
+	"void source_filter_add(ptr source, ptr filter)",
+	"void source_filter_remove(ptr source, ptr filter)",
 	"void source_rename(ptr source, string new_name, string prev_name)",
 	"void source_volume(ptr source, in out float volume)",
 	"void source_volume_level(ptr source, float level, float magnitude, "

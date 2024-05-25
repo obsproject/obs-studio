@@ -3218,6 +3218,7 @@ void obs_source_filter_add(obs_source_t *source, obs_source_t *filter)
 	calldata_set_ptr(&cd, "source", source);
 	calldata_set_ptr(&cd, "filter", filter);
 
+	signal_handler_signal(obs->signals, "source_filter_add", &cd);
 	signal_handler_signal(source->context.signals, "filter_add", &cd);
 
 	blog(LOG_DEBUG, "- filter '%s' (%s) added to source '%s'",
@@ -3256,6 +3257,7 @@ static bool obs_source_filter_remove_refless(obs_source_t *source,
 	calldata_set_ptr(&cd, "source", source);
 	calldata_set_ptr(&cd, "filter", filter);
 
+	signal_handler_signal(obs->signals, "source_filter_remove", &cd);
 	signal_handler_signal(source->context.signals, "filter_remove", &cd);
 
 	blog(LOG_DEBUG, "- filter '%s' (%s) removed from source '%s'",
