@@ -1074,6 +1074,21 @@ static bool get_device_name_from_pci(struct pci_access *pacc, char *pci_slot,
 	return false;
 }
 
+static bool vaapi_device_codec_supported(const char *path,
+					 enum codec_type codec)
+{
+	switch (codec) {
+	case CODEC_H264:
+		return vaapi_device_h264_supported(path);
+	case CODEC_HEVC:
+		return vaapi_device_hevc_supported(path);
+	case CODEC_AV1:
+		return vaapi_device_av1_supported(path);
+	default:
+		return false;
+	}
+}
+
 static obs_properties_t *vaapi_properties_internal(enum codec_type codec)
 {
 	obs_properties_t *props = obs_properties_create();
@@ -1122,7 +1137,7 @@ static obs_properties_t *vaapi_properties_internal(enum codec_type codec)
 					pacc, pci_slot, namebuf,
 					sizeof(namebuf));
 
-				if (!vaapi_device_h264_supported(path))
+				if (!vaapi_device_codec_supported(path, codec))
 					continue;
 
 				if (!name_found)
