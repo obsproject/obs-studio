@@ -1866,6 +1866,18 @@ void OBSBasic::InitOBSCallbacks()
 				    OBSBasic::SourceAudioDeactivated, this);
 	signalHandlers.emplace_back(obs_get_signal_handler(), "source_rename",
 				    OBSBasic::SourceRenamed, this);
+	signalHandlers.emplace_back(
+		obs_get_signal_handler(), "source_filter_add",
+		[](void *data, calldata_t *) {
+			static_cast<OBSBasic *>(data)->UpdateEditMenu();
+		},
+		this);
+	signalHandlers.emplace_back(
+		obs_get_signal_handler(), "source_filter_remove",
+		[](void *data, calldata_t *) {
+			static_cast<OBSBasic *>(data)->UpdateEditMenu();
+		},
+		this);
 }
 
 void OBSBasic::InitPrimitives()
