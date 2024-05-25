@@ -10123,6 +10123,12 @@ void OBSBasic::on_actionPasteDup_triggered()
 				  redo_data);
 }
 
+void OBSBasic::SourceCopyFilters(OBSSource source)
+{
+	copyFiltersSource = obs_source_get_weak_source(source);
+	ui->actionPasteFilters->setEnabled(true);
+}
+
 void OBSBasic::SourcePasteFilters(OBSSource source, OBSSource dstSource)
 {
 	if (source == dstSource)
@@ -10149,8 +10155,7 @@ void OBSBasic::AudioMixerCopyFilters()
 	VolControl *vol = action->property("volControl").value<VolControl *>();
 	obs_source_t *source = vol->GetSource();
 
-	copyFiltersSource = obs_source_get_weak_source(source);
-	ui->actionPasteFilters->setEnabled(true);
+	SourceCopyFilters(source);
 }
 
 void OBSBasic::AudioMixerPasteFilters()
@@ -10167,8 +10172,7 @@ void OBSBasic::AudioMixerPasteFilters()
 
 void OBSBasic::SceneCopyFilters()
 {
-	copyFiltersSource = obs_source_get_weak_source(GetCurrentSceneSource());
-	ui->actionPasteFilters->setEnabled(true);
+	SourceCopyFilters(GetCurrentSceneSource());
 }
 
 void OBSBasic::ScenePasteFilters()
@@ -10190,9 +10194,7 @@ void OBSBasic::on_actionCopyFilters_triggered()
 
 	OBSSource source = obs_sceneitem_get_source(item);
 
-	copyFiltersSource = obs_source_get_weak_source(source);
-
-	ui->actionPasteFilters->setEnabled(true);
+	SourceCopyFilters(source);
 }
 
 void OBSBasic::CreateFilterPasteUndoRedoAction(const QString &text,
