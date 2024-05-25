@@ -454,7 +454,12 @@ private slots:
 	void on_colorPreset_currentIndexChanged(int idx);
 
 	void GeneralChanged();
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+	void HideOBSWindowWarning(Qt::CheckState state);
+#else
 	void HideOBSWindowWarning(int state);
+#endif
 	void AudioChanged();
 	void AudioChangedRestart();
 	void ReloadAudioSources();
