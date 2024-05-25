@@ -790,8 +790,13 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		&OBSBasicSettings::SimpleReplayBufferChanged);
 	connect(ui->simpleRBSecMax, &QSpinBox::valueChanged, this,
 		&OBSBasicSettings::SimpleReplayBufferChanged);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+	connect(ui->advOutSplitFile, &QCheckBox::checkStateChanged, this,
+		&OBSBasicSettings::AdvOutSplitFileChanged);
+#else
 	connect(ui->advOutSplitFile, &QCheckBox::stateChanged, this,
 		&OBSBasicSettings::AdvOutSplitFileChanged);
+#endif
 	connect(ui->advOutSplitFileType, &QComboBox::currentIndexChanged, this,
 		&OBSBasicSettings::AdvOutSplitFileChanged);
 	connect(ui->advReplayBuf, &QCheckBox::toggled, this,
@@ -1360,8 +1365,13 @@ void OBSBasicSettings::LoadGeneralSettings()
 					"HideOBSWindowsFromCapture");
 		ui->hideOBSFromCapture->setChecked(hideWindowFromCapture);
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+		connect(ui->hideOBSFromCapture, &QCheckBox::checkStateChanged,
+			this, &OBSBasicSettings::HideOBSWindowWarning);
+#else
 		connect(ui->hideOBSFromCapture, &QCheckBox::stateChanged, this,
 			&OBSBasicSettings::HideOBSWindowWarning);
+#endif
 	}
 #endif
 
@@ -4713,7 +4723,11 @@ void OBSBasicSettings::SpeakerLayoutChanged(int idx)
 	UpdateAudioWarnings();
 }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+void OBSBasicSettings::HideOBSWindowWarning(Qt::CheckState state)
+#else
 void OBSBasicSettings::HideOBSWindowWarning(int state)
+#endif
 {
 	if (loading || state == Qt::Unchecked)
 		return;

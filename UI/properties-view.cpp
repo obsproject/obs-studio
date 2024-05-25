@@ -273,7 +273,11 @@ QWidget *OBSPropertiesView::AddCheckbox(obs_property_t *prop)
 
 	QCheckBox *checkbox = new QCheckBox(QT_UTF8(desc));
 	checkbox->setCheckState(val ? Qt::Checked : Qt::Unchecked);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+	return NewWidget(prop, checkbox, &QCheckBox::checkStateChanged);
+#else
 	return NewWidget(prop, checkbox, &QCheckBox::stateChanged);
+#endif
 }
 
 QWidget *OBSPropertiesView::AddText(obs_property_t *prop, QFormLayout *layout,
