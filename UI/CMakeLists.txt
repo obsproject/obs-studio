@@ -115,8 +115,11 @@ endif()
 foreach(graphics_library IN ITEMS opengl metal d3d11)
   string(TOUPPER ${graphics_library} graphics_library_U)
   if(TARGET OBS::libobs-${graphics_library})
-    target_compile_definitions(obs-studio
-                               PRIVATE DL_${graphics_library_U}="$<TARGET_FILE_NAME:OBS::libobs-${graphics_library}>")
+    target_compile_definitions(
+      obs-studio
+      PRIVATE
+        DL_${graphics_library_U}="$<$<IF:$<PLATFORM_ID:Windows>,TARGET_FILE_NAME,TARGET_SONAME_FILE_NAME>:OBS::libobs-${graphics_library}>"
+    )
   else()
     target_compile_definitions(obs-studio PRIVATE DL_${graphics_library_U}="")
   endif()
