@@ -1,19 +1,13 @@
-#include "obs-frontend-api.h"
-#include "obs-source.h"
-#include "obs.h"
 #include "scene-tree.hpp"
-#include <obs-module.h>
+#include "obs.h"
 
-#include <QDropEvent>
-#include <QMimeData>
-#include <QPushButton>
-#include <QScrollBar>
 #include <QSizePolicy>
+#include <QScrollBar>
+#include <QDropEvent>
+#include <QPushButton>
 #include <QTimer>
 #include <cmath>
-
-
-OBS_DECLARE_MODULE()
+#include <QMimeData>
 
 SceneTree::SceneTree(QWidget *parent_) : QListWidget(parent_)
 {
@@ -113,9 +107,9 @@ void SceneTree::startDrag(Qt::DropActions supportedActions)
 
 void SceneTree::dropEvent(QDropEvent *event)
 {
-	 if (event->mimeData()->hasFormat("application/indexes")) {
-		QByteArray encodedData = event->mimeData()->data(
-			"application/indexes");
+	if (event->mimeData()->hasFormat("application/indexes")) {
+		QByteArray encodedData =
+			event->mimeData()->data("application/indexes");
 		QDataStream stream(&encodedData, QIODevice::ReadOnly);
 
 		QStringList sourceNames;
@@ -138,7 +132,7 @@ void SceneTree::dropEvent(QDropEvent *event)
 
 		event->setDropAction(Qt::MoveAction);
 		event->accept();
-	 }
+	}
 
 	if (gridMode) {
 		int scrollWid = verticalScrollBar()->sizeHint().width();
@@ -195,7 +189,7 @@ void SceneTree::addSourceToScene(const QString &sourceName,
 
 	obs_scene_t *scene = obs_scene_from_source(sceneSource);
 	if (!scene) {
-		obs_source_release(source);      
+		obs_source_release(source);
 		obs_source_release(sceneSource);
 		return;
 	}
@@ -205,7 +199,6 @@ void SceneTree::addSourceToScene(const QString &sourceName,
 	obs_source_release(source);
 	obs_source_release(sceneSource);
 }
-
 
 void SceneTree::RepositionGrid(QDragMoveEvent *event)
 {

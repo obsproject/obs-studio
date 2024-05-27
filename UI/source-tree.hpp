@@ -1,18 +1,16 @@
 #pragma once
 
+#include <QList>
+#include <QVector>
+#include <QPointer>
+#include <QListView>
+#include <QCheckBox>
+#include <QStaticText>
+#include <QSvgRenderer>
+#include <QAbstractListModel>
+#include <QStyledItemDelegate>
 #include <obs.hpp>
 #include <obs-frontend-api.h>
-#include <obs.h>
-
-#include <QAbstractListModel>
-#include <QCheckBox>
-#include <QList>
-#include <QListView>
-#include <QPointer>
-#include <QStaticText>
-#include <QStyledItemDelegate>
-#include <QSvgRenderer>
-#include <QVector>
 
 class QLabel;
 class QCheckBox;
@@ -142,6 +140,7 @@ class SourceTree : public QListView {
 	QSvgRenderer iconNoSources;
 
 	OBSData undoSceneData;
+	QPoint dragStartPosition;
 
 	bool iconsVisible = true;
 
@@ -177,9 +176,9 @@ public:
 	static bool get_selected_source_names(obs_scene_t *scene,
 					      obs_sceneitem_t *sceneitem,
 					      void *param);
+
 	void removeSourceFromScene(const QString &sourceName,
 				   const QString &sceneName);
-
 
 	bool MultipleBaseSelected() const;
 	bool GroupsSelected() const;
@@ -210,9 +209,6 @@ protected:
 			 const QItemSelection &deselected) override;
 	virtual void dragMoveEvent(QDragMoveEvent *event) override;
 	virtual void dragEnterEvent(QDragEnterEvent *event) override;
-
-private:
-	QPoint dragStartPosition;
 };
 
 class SourceTreeDelegate : public QStyledItemDelegate {

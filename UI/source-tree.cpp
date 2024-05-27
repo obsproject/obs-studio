@@ -1,29 +1,28 @@
-#include "obs-app.hpp"
-#include "platform.hpp"
-#include "qt-wrappers.hpp"
-#include "source-tree.hpp"
 #include "window-basic-main.hpp"
+#include "obs-app.hpp"
+#include "source-tree.hpp"
+#include "qt-wrappers.hpp"
+#include "platform.hpp"
+#include "source-label.hpp"
 
 #include <obs-frontend-api.h>
 #include <obs.h>
-#include <obs.hpp>
 
 #include <string>
 
-#include <QAccessible>
-#include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
-#include <QMouseEvent>
-#include <QPushButton>
 #include <QSpacerItem>
+#include <QPushButton>
 #include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QMouseEvent>
+#include <QAccessible>
 
-#include <QDrag>
-#include <QMimeData>
 #include <QStylePainter>
 #include <QStyleOptionFocusRect>
-
+#include <QDrag>
+#include <QMimeData>
 
 static inline OBSScene GetCurrentScene()
 {
@@ -1186,11 +1185,10 @@ void SourceTree::startDrag(Qt::DropActions supportedActions)
 	drag->setPixmap(blueBox);
 	drag->setHotSpot(dragStartPosition - boundingRect.topLeft());
 
-	Qt::DropAction dropAction = drag->exec(supportedActions);
+	drag->exec(supportedActions);
 }
 
-
-bool SourceTree::get_selected_source_names(obs_scene_t *scene,
+bool SourceTree::get_selected_source_names(obs_scene_t * /*scene*/,
 					   obs_sceneitem_t *sceneitem,
 					   void *param)
 {
@@ -1208,6 +1206,7 @@ bool SourceTree::get_selected_source_names(obs_scene_t *scene,
 	}
 	return true;
 }
+
 
 void SourceTree::SetIconsVisible(bool visible)
 {
@@ -1761,7 +1760,6 @@ void SourceTree::Remove(OBSSceneItem item, OBSScene scene)
 	QString sceneName = QString::fromUtf8(obs_source_get_name(sceneSource));
 
 	removeSourceFromScene(sourceName, sceneName);
-
 }
 
 void SourceTree::removeSourceFromScene(const QString &sourceName,
@@ -1803,7 +1801,6 @@ void SourceTree::removeSourceFromScene(const QString &sourceName,
 	obs_source_release(source);
 	obs_source_release(sceneSource);
 }
-
 
 void SourceTree::GroupSelectedItems()
 {
