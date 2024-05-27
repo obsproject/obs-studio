@@ -1870,7 +1870,8 @@ static void amf_hevc_create_internal(amf_base *enc, obs_data_t *settings)
 		md->bluePrimary[1] = amf_hdr_primary(3, 50);
 		md->whitePoint[0] = amf_hdr_primary(3127, 10000);
 		md->whitePoint[1] = amf_hdr_primary(329, 1000);
-		md->minMasteringLuminance = 0;
+		md->minMasteringLuminance =
+			enc->codec == amf_codec_type::AV1 ? 0 : 1;
 		md->maxMasteringLuminance =
 			amf_make_lum(hdr_nominal_peak_level);
 		md->maxContentLightLevel = hdr_nominal_peak_level;
