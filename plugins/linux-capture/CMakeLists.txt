@@ -41,5 +41,5 @@ target_link_libraries(
           xcb::xcb-composite)
 
 # cmake-format: off
-set_target_properties_obs(linux-capture PROPERTIES FOLDER "plugins")
+set_target_properties_obs(linux-capture PROPERTIES FOLDER plugins PREFIX "")
 # cmake-format: on
