@@ -636,7 +636,8 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 		obsqsv->params.WhitePointY = 16450;
 		obsqsv->params.MaxDisplayMasteringLuminance =
 			hdr_nominal_peak_level * 10000;
-		obsqsv->params.MinDisplayMasteringLuminance = 0;
+		obsqsv->params.MinDisplayMasteringLuminance =
+			obsqsv->codec == QSV_CODEC_AV1 ? 0 : 1;
 
 		obsqsv->params.MaxContentLightLevel = hdr_nominal_peak_level;
 		obsqsv->params.MaxPicAverageLightLevel = hdr_nominal_peak_level;
