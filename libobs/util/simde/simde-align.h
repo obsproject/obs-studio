@@ -11,7 +11,7 @@
  **********************************************************************
  *
  * This is portability layer which should help iron out some
- * differences across various compilers, as well as various verisons of
+ * differences across various compilers, as well as various versions of
  * C and C++.
  *
  * It was originally developed for SIMD Everywhere
@@ -55,43 +55,43 @@
 #include "hedley.h"
 
 /* I know this seems a little silly, but some non-hosted compilers
- * don't have stddef.h, so we try to accomodate them. */
+ * don't have stddef.h, so we try to accommodate them. */
 #if !defined(SIMDE_ALIGN_SIZE_T_)
-#if defined(__SIZE_TYPE__)
-#define SIMDE_ALIGN_SIZE_T_ __SIZE_TYPE__
-#elif defined(__SIZE_T_TYPE__)
-#define SIMDE_ALIGN_SIZE_T_ __SIZE_TYPE__
-#elif defined(__cplusplus)
-#include <cstddef>
-#define SIMDE_ALIGN_SIZE_T_ size_t
-#else
-#include <stddef.h>
-#define SIMDE_ALIGN_SIZE_T_ size_t
-#endif
+  #if defined(__SIZE_TYPE__)
+    #define SIMDE_ALIGN_SIZE_T_ __SIZE_TYPE__
+  #elif defined(__SIZE_T_TYPE__)
+    #define SIMDE_ALIGN_SIZE_T_ __SIZE_TYPE__
+  #elif defined(__cplusplus)
+    #include <cstddef>
+    #define SIMDE_ALIGN_SIZE_T_ size_t
+  #else
+    #include <stddef.h>
+    #define SIMDE_ALIGN_SIZE_T_ size_t
+  #endif
 #endif
 
 #if !defined(SIMDE_ALIGN_INTPTR_T_)
-#if defined(__INTPTR_TYPE__)
-#define SIMDE_ALIGN_INTPTR_T_ __INTPTR_TYPE__
-#elif defined(__PTRDIFF_TYPE__)
-#define SIMDE_ALIGN_INTPTR_T_ __PTRDIFF_TYPE__
-#elif defined(__PTRDIFF_T_TYPE__)
-#define SIMDE_ALIGN_INTPTR_T_ __PTRDIFF_T_TYPE__
-#elif defined(__cplusplus)
-#include <cstddef>
-#define SIMDE_ALIGN_INTPTR_T_ ptrdiff_t
-#else
-#include <stddef.h>
-#define SIMDE_ALIGN_INTPTR_T_ ptrdiff_t
-#endif
+  #if defined(__INTPTR_TYPE__)
+    #define SIMDE_ALIGN_INTPTR_T_ __INTPTR_TYPE__
+  #elif defined(__PTRDIFF_TYPE__)
+    #define SIMDE_ALIGN_INTPTR_T_ __PTRDIFF_TYPE__
+  #elif defined(__PTRDIFF_T_TYPE__)
+    #define SIMDE_ALIGN_INTPTR_T_ __PTRDIFF_T_TYPE__
+  #elif defined(__cplusplus)
+    #include <cstddef>
+    #define SIMDE_ALIGN_INTPTR_T_ ptrdiff_t
+  #else
+    #include <stddef.h>
+    #define SIMDE_ALIGN_INTPTR_T_ ptrdiff_t
+  #endif
 #endif
 
 #if defined(SIMDE_ALIGN_DEBUG)
-#if defined(__cplusplus)
-#include <cstdio>
-#else
-#include <stdio.h>
-#endif
+  #if defined(__cplusplus)
+    #include <cstdio>
+  #else
+    #include <stdio.h>
+  #endif
 #endif
 
 /* SIMDE_ALIGN_OF(Type)
@@ -106,34 +106,41 @@
  * will not be defined, so if you can handle that situation sensibly
  * you may need to sprinkle some ifdefs into your code.
  */
-#if (defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)) || \
-	(0 && HEDLEY_HAS_FEATURE(c_alignof))
-#define SIMDE_ALIGN_OF(Type) _Alignof(Type)
-#elif (defined(__cplusplus) && (__cplusplus >= 201103L)) || \
-	(0 && HEDLEY_HAS_FEATURE(cxx_alignof))
-#define SIMDE_ALIGN_OF(Type) alignof(Type)
-#elif HEDLEY_GCC_VERSION_CHECK(2, 95, 0) ||                                    \
-	HEDLEY_ARM_VERSION_CHECK(4, 1, 0) ||                                   \
-	HEDLEY_INTEL_VERSION_CHECK(13, 0, 0) ||                                \
-	HEDLEY_SUNPRO_VERSION_CHECK(5, 13, 0) ||                               \
-	HEDLEY_TINYC_VERSION_CHECK(0, 9, 24) ||                                \
-	HEDLEY_PGI_VERSION_CHECK(19, 10, 0) ||                                 \
-	HEDLEY_CRAY_VERSION_CHECK(10, 0, 0) ||                                 \
-	HEDLEY_TI_ARMCL_VERSION_CHECK(16, 9, 0) ||                             \
-	HEDLEY_TI_CL2000_VERSION_CHECK(16, 9, 0) ||                            \
-	HEDLEY_TI_CL6X_VERSION_CHECK(8, 0, 0) ||                               \
-	HEDLEY_TI_CL7X_VERSION_CHECK(1, 2, 0) ||                               \
-	HEDLEY_TI_CL430_VERSION_CHECK(16, 9, 0) ||                             \
-	HEDLEY_TI_CLPRU_VERSION_CHECK(2, 3, 2) || defined(__IBM__ALIGNOF__) || \
-	defined(__clang__)
-#define SIMDE_ALIGN_OF(Type) __alignof__(Type)
-#elif HEDLEY_IAR_VERSION_CHECK(8, 40, 0)
-#define SIMDE_ALIGN_OF(Type) __ALIGNOF__(Type)
-#elif HEDLEY_MSVC_VERSION_CHECK(19, 0, 0)
-/* Probably goes back much further, but MS takes down their old docs.
+#if \
+    (defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)) || \
+    (0 && HEDLEY_HAS_FEATURE(c_alignof))
+  #define SIMDE_ALIGN_OF(Type) _Alignof(Type)
+#elif \
+    (defined(__cplusplus) && (__cplusplus >= 201103L)) || \
+    (0 && HEDLEY_HAS_FEATURE(cxx_alignof))
+  #define SIMDE_ALIGN_OF(Type) alignof(Type)
+#elif \
+    HEDLEY_GCC_VERSION_CHECK(2,95,0) || \
+    HEDLEY_ARM_VERSION_CHECK(4,1,0) || \
+    HEDLEY_INTEL_VERSION_CHECK(13,0,0) || \
+    HEDLEY_SUNPRO_VERSION_CHECK(5,13,0) || \
+    HEDLEY_TINYC_VERSION_CHECK(0,9,24) || \
+    HEDLEY_PGI_VERSION_CHECK(19,10,0) || \
+    HEDLEY_CRAY_VERSION_CHECK(10,0,0) || \
+    HEDLEY_TI_ARMCL_VERSION_CHECK(16,9,0) || \
+    HEDLEY_TI_CL2000_VERSION_CHECK(16,9,0) || \
+    HEDLEY_TI_CL6X_VERSION_CHECK(8,0,0) || \
+    HEDLEY_TI_CL7X_VERSION_CHECK(1,2,0) || \
+    HEDLEY_TI_CL430_VERSION_CHECK(16,9,0) || \
+    HEDLEY_TI_CLPRU_VERSION_CHECK(2,3,2) || \
+    HEDLEY_MCST_LCC_VERSION_CHECK(1,25,10) || \
+    defined(__IBM__ALIGNOF__) || \
+    defined(__clang__)
+  #define SIMDE_ALIGN_OF(Type) __alignof__(Type)
+#elif \
+  HEDLEY_IAR_VERSION_CHECK(8,40,0)
+  #define SIMDE_ALIGN_OF(Type) __ALIGNOF__(Type)
+#elif \
+  HEDLEY_MSVC_VERSION_CHECK(19,0,0)
+  /* Probably goes back much further, but MS takes down their old docs.
    * If you can verify that this works in earlier versions please let
    * me know! */
-#define SIMDE_ALIGN_OF(Type) __alignof(Type)
+  #define SIMDE_ALIGN_OF(Type) __alignof(Type)
 #endif
 
 /* SIMDE_ALIGN_MAXIMUM:
@@ -145,8 +152,8 @@
  *
  * Most compilers are okay with types which are aligned beyond what
  * they think is the maximum, as long as the alignment is a power
- * of two.  MSVC is the exception (of course), so we need to cap the
- * alignment requests at values that the implementation supports.
+ * of two.  Older versions of MSVC is the exception, so we need to cap
+ * the alignment requests at values that the implementation supports.
  *
  * XL C/C++ will accept values larger than 16 (which is the alignment
  * of an AltiVec vector), but will not reliably align to the larger
@@ -156,23 +163,27 @@
  * this macro should be left undefined, and the SIMDE_ALIGN_CAP
  * macro will just return the value passed to it. */
 #if !defined(SIMDE_ALIGN_MAXIMUM)
-#if defined(HEDLEY_MSVC_VERSION)
-#if defined(_M_IX86) || defined(_M_AMD64)
-#if HEDLEY_MSVC_VERSION_CHECK(19, 14, 0)
-#define SIMDE_ALIGN_PLATFORM_MAXIMUM 64
-#elif HEDLEY_MSVC_VERSION_CHECK(16, 0, 0)
-/* VS 2010 is really a guess based on Wikipedia; if anyone can
-         * test with old VS versions I'd really appreciate it. */
-#define SIMDE_ALIGN_PLATFORM_MAXIMUM 32
-#else
-#define SIMDE_ALIGN_PLATFORM_MAXIMUM 16
-#endif
-#elif defined(_M_ARM) || defined(_M_ARM64)
-#define SIMDE_ALIGN_PLATFORM_MAXIMUM 8
-#endif
-#elif defined(HEDLEY_IBM_VERSION)
-#define SIMDE_ALIGN_PLATFORM_MAXIMUM 16
-#endif
+  #if defined(HEDLEY_MSVC_VERSION)
+    #if HEDLEY_MSVC_VERSION_CHECK(19, 16, 0)
+      // Visual studio 2017 and newer does not need a max
+    #else
+      #if defined(_M_IX86) || defined(_M_AMD64)
+        #if HEDLEY_MSVC_VERSION_CHECK(19,14,0)
+          #define SIMDE_ALIGN_PLATFORM_MAXIMUM 64
+        #elif HEDLEY_MSVC_VERSION_CHECK(16,0,0)
+          /* VS 2010 is really a guess based on Wikipedia; if anyone can
+           * test with old VS versions I'd really appreciate it. */
+          #define SIMDE_ALIGN_PLATFORM_MAXIMUM 32
+        #else
+          #define SIMDE_ALIGN_PLATFORM_MAXIMUM 16
+        #endif
+      #elif defined(_M_ARM) || defined(_M_ARM64)
+        #define SIMDE_ALIGN_PLATFORM_MAXIMUM 8
+      #endif
+    #endif
+  #elif defined(HEDLEY_IBM_VERSION)
+    #define SIMDE_ALIGN_PLATFORM_MAXIMUM 16
+  #endif
 #endif
 
 /* You can mostly ignore these; they're intended for internal use.
@@ -180,34 +191,34 @@
  * a common use case I'll probably drop the trailing underscore
  * and make them part of the public API. */
 #if defined(SIMDE_ALIGN_PLATFORM_MAXIMUM)
-#if SIMDE_ALIGN_PLATFORM_MAXIMUM >= 64
-#define SIMDE_ALIGN_64_ 64
-#define SIMDE_ALIGN_32_ 32
-#define SIMDE_ALIGN_16_ 16
-#define SIMDE_ALIGN_8_ 8
-#elif SIMDE_ALIGN_PLATFORM_MAXIMUM >= 32
-#define SIMDE_ALIGN_64_ 32
-#define SIMDE_ALIGN_32_ 32
-#define SIMDE_ALIGN_16_ 16
-#define SIMDE_ALIGN_8_ 8
-#elif SIMDE_ALIGN_PLATFORM_MAXIMUM >= 16
-#define SIMDE_ALIGN_64_ 16
-#define SIMDE_ALIGN_32_ 16
-#define SIMDE_ALIGN_16_ 16
-#define SIMDE_ALIGN_8_ 8
-#elif SIMDE_ALIGN_PLATFORM_MAXIMUM >= 8
-#define SIMDE_ALIGN_64_ 8
-#define SIMDE_ALIGN_32_ 8
-#define SIMDE_ALIGN_16_ 8
-#define SIMDE_ALIGN_8_ 8
+  #if SIMDE_ALIGN_PLATFORM_MAXIMUM >= 64
+    #define SIMDE_ALIGN_64_ 64
+    #define SIMDE_ALIGN_32_ 32
+    #define SIMDE_ALIGN_16_ 16
+    #define SIMDE_ALIGN_8_ 8
+  #elif SIMDE_ALIGN_PLATFORM_MAXIMUM >= 32
+    #define SIMDE_ALIGN_64_ 32
+    #define SIMDE_ALIGN_32_ 32
+    #define SIMDE_ALIGN_16_ 16
+    #define SIMDE_ALIGN_8_ 8
+  #elif SIMDE_ALIGN_PLATFORM_MAXIMUM >= 16
+    #define SIMDE_ALIGN_64_ 16
+    #define SIMDE_ALIGN_32_ 16
+    #define SIMDE_ALIGN_16_ 16
+    #define SIMDE_ALIGN_8_ 8
+  #elif SIMDE_ALIGN_PLATFORM_MAXIMUM >= 8
+    #define SIMDE_ALIGN_64_ 8
+    #define SIMDE_ALIGN_32_ 8
+    #define SIMDE_ALIGN_16_ 8
+    #define SIMDE_ALIGN_8_ 8
+  #else
+    #error Max alignment expected to be >= 8
+  #endif
 #else
-#error Max alignment expected to be >= 8
-#endif
-#else
-#define SIMDE_ALIGN_64_ 64
-#define SIMDE_ALIGN_32_ 32
-#define SIMDE_ALIGN_16_ 16
-#define SIMDE_ALIGN_8_ 8
+  #define SIMDE_ALIGN_64_ 64
+  #define SIMDE_ALIGN_32_ 32
+  #define SIMDE_ALIGN_16_ 16
+  #define SIMDE_ALIGN_8_ 8
 #endif
 
 /**
@@ -216,12 +227,9 @@
  * Returns the minimum of Alignment or SIMDE_ALIGN_MAXIMUM.
  */
 #if defined(SIMDE_ALIGN_MAXIMUM)
-#define SIMDE_ALIGN_CAP(Alignment)                      \
-	(((Alignment) < (SIMDE_ALIGN_PLATFORM_MAXIMUM)) \
-		 ? (Alignment)                          \
-		 : (SIMDE_ALIGN_PLATFORM_MAXIMUM))
+  #define SIMDE_ALIGN_CAP(Alignment) (((Alignment) < (SIMDE_ALIGN_PLATFORM_MAXIMUM)) ? (Alignment) : (SIMDE_ALIGN_PLATFORM_MAXIMUM))
 #else
-#define SIMDE_ALIGN_CAP(Alignment) (Alignment)
+  #define SIMDE_ALIGN_CAP(Alignment) (Alignment)
 #endif
 
 /* SIMDE_ALIGN_TO(Alignment)
@@ -254,30 +262,34 @@
  * should use the SIMDE_ALIGN_TO_8/16/32/64 macros below instead of
  * SIMDE_ALIGN_TO(8/16/32/64).
  */
-#if HEDLEY_HAS_ATTRIBUTE(aligned) || HEDLEY_GCC_VERSION_CHECK(2, 95, 0) || \
-	HEDLEY_CRAY_VERSION_CHECK(8, 4, 0) ||                              \
-	HEDLEY_IBM_VERSION_CHECK(11, 1, 0) ||                              \
-	HEDLEY_INTEL_VERSION_CHECK(13, 0, 0) ||                            \
-	HEDLEY_PGI_VERSION_CHECK(19, 4, 0) ||                              \
-	HEDLEY_ARM_VERSION_CHECK(4, 1, 0) ||                               \
-	HEDLEY_TINYC_VERSION_CHECK(0, 9, 24) ||                            \
-	HEDLEY_TI_ARMCL_VERSION_CHECK(16, 9, 0) ||                         \
-	HEDLEY_TI_CL2000_VERSION_CHECK(16, 9, 0) ||                        \
-	HEDLEY_TI_CL6X_VERSION_CHECK(8, 0, 0) ||                           \
-	HEDLEY_TI_CL7X_VERSION_CHECK(1, 2, 0) ||                           \
-	HEDLEY_TI_CL430_VERSION_CHECK(16, 9, 0) ||                         \
-	HEDLEY_TI_CLPRU_VERSION_CHECK(2, 3, 2)
-#define SIMDE_ALIGN_TO(Alignment) \
-	__attribute__((__aligned__(SIMDE_ALIGN_CAP(Alignment))))
-#elif (defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L))
-#define SIMDE_ALIGN_TO(Alignment) _Alignas(SIMDE_ALIGN_CAP(Alignment))
-#elif (defined(__cplusplus) && (__cplusplus >= 201103L))
-#define SIMDE_ALIGN_TO(Alignment) alignas(SIMDE_ALIGN_CAP(Alignment))
-#elif defined(HEDLEY_MSVC_VERSION)
-#define SIMDE_ALIGN_TO(Alignment) __declspec(align(Alignment))
-/* Unfortunately MSVC can't handle __declspec(align(__alignof(Type)));
+#if \
+    HEDLEY_HAS_ATTRIBUTE(aligned) || \
+    HEDLEY_GCC_VERSION_CHECK(2,95,0) || \
+    HEDLEY_CRAY_VERSION_CHECK(8,4,0) || \
+    HEDLEY_IBM_VERSION_CHECK(11,1,0) || \
+    HEDLEY_INTEL_VERSION_CHECK(13,0,0) || \
+    HEDLEY_PGI_VERSION_CHECK(19,4,0) || \
+    HEDLEY_ARM_VERSION_CHECK(4,1,0) || \
+    HEDLEY_TINYC_VERSION_CHECK(0,9,24) || \
+    HEDLEY_TI_ARMCL_VERSION_CHECK(16,9,0) || \
+    HEDLEY_TI_CL2000_VERSION_CHECK(16,9,0) || \
+    HEDLEY_TI_CL6X_VERSION_CHECK(8,0,0) || \
+    HEDLEY_TI_CL7X_VERSION_CHECK(1,2,0) || \
+    HEDLEY_TI_CL430_VERSION_CHECK(16,9,0) || \
+    HEDLEY_TI_CLPRU_VERSION_CHECK(2,3,2)
+  #define SIMDE_ALIGN_TO(Alignment) __attribute__((__aligned__(SIMDE_ALIGN_CAP(Alignment))))
+#elif \
+    (defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L))
+  #define SIMDE_ALIGN_TO(Alignment) _Alignas(SIMDE_ALIGN_CAP(Alignment))
+#elif \
+    (defined(__cplusplus) && (__cplusplus >= 201103L))
+  #define SIMDE_ALIGN_TO(Alignment) alignas(SIMDE_ALIGN_CAP(Alignment))
+#elif \
+    defined(HEDLEY_MSVC_VERSION)
+  #define SIMDE_ALIGN_TO(Alignment) __declspec(align(Alignment))
+  /* Unfortunately MSVC can't handle __declspec(align(__alignof(Type)));
    * the alignment passed to the declspec has to be an integer. */
-#define SIMDE_ALIGN_OF_UNUSABLE_FOR_LIKE
+  #define SIMDE_ALIGN_OF_UNUSABLE_FOR_LIKE
 #endif
 #define SIMDE_ALIGN_TO_64 SIMDE_ALIGN_TO(SIMDE_ALIGN_64_)
 #define SIMDE_ALIGN_TO_32 SIMDE_ALIGN_TO(SIMDE_ALIGN_32_)
@@ -301,104 +313,67 @@
  *   #endif
  *   #include <.../simde-align.h>
  */
-#if HEDLEY_HAS_BUILTIN(__builtin_assume_aligned) || \
-	HEDLEY_GCC_VERSION_CHECK(4, 7, 0)
-#define SIMDE_ALIGN_ASSUME_TO_UNCHECKED(Pointer, Alignment)                   \
-	HEDLEY_REINTERPRET_CAST(                                              \
-		__typeof__(Pointer),                                          \
-		__builtin_assume_aligned(                                     \
-			HEDLEY_CONST_CAST(                                    \
-				void *, HEDLEY_REINTERPRET_CAST(const void *, \
-								Pointer)),    \
-			Alignment))
-#elif HEDLEY_INTEL_VERSION_CHECK(13, 0, 0)
-#define SIMDE_ALIGN_ASSUME_TO_UNCHECKED(Pointer, Alignment)           \
-	(__extension__({                                              \
-		__typeof__(v) simde_assume_aligned_t_ = (Pointer);    \
-		__assume_aligned(simde_assume_aligned_t_, Alignment); \
-		simde_assume_aligned_t_;                              \
-	}))
+#if \
+    HEDLEY_HAS_BUILTIN(__builtin_assume_aligned) || \
+    HEDLEY_GCC_VERSION_CHECK(4,7,0)
+  #define SIMDE_ALIGN_ASSUME_TO_UNCHECKED(Pointer, Alignment) \
+    HEDLEY_REINTERPRET_CAST(__typeof__(Pointer), __builtin_assume_aligned(HEDLEY_CONST_CAST(void*, HEDLEY_REINTERPRET_CAST(const void*, Pointer)), Alignment))
+#elif HEDLEY_INTEL_VERSION_CHECK(13,0,0)
+  #define SIMDE_ALIGN_ASSUME_TO_UNCHECKED(Pointer, Alignment) (__extension__ ({ \
+      __typeof__(v) simde_assume_aligned_t_ = (Pointer); \
+      __assume_aligned(simde_assume_aligned_t_, Alignment); \
+      simde_assume_aligned_t_; \
+    }))
 #elif defined(__cplusplus) && (__cplusplus > 201703L)
-#include <memory>
-#define SIMDE_ALIGN_ASSUME_TO_UNCHECKED(Pointer, Alignment) \
-	std::assume_aligned<Alignment>(Pointer)
+  #include <memory>
+  #define SIMDE_ALIGN_ASSUME_TO_UNCHECKED(Pointer, Alignment) std::assume_aligned<Alignment>(Pointer)
 #else
-#if defined(__cplusplus)
-template<typename T>
-HEDLEY_ALWAYS_INLINE static T *
-simde_align_assume_to_unchecked(T *ptr, const size_t alignment)
-#else
-HEDLEY_ALWAYS_INLINE static void *
-simde_align_assume_to_unchecked(void *ptr, const size_t alignment)
-#endif
-{
-	HEDLEY_ASSUME((HEDLEY_REINTERPRET_CAST(size_t, (ptr)) %
-		       SIMDE_ALIGN_CAP(alignment)) == 0);
-	return ptr;
-}
-#if defined(__cplusplus)
-#define SIMDE_ALIGN_ASSUME_TO_UNCHECKED(Pointer, Alignment) \
-	simde_align_assume_to_unchecked((Pointer), (Alignment))
-#else
-#define SIMDE_ALIGN_ASSUME_TO_UNCHECKED(Pointer, Alignment)                \
-	simde_align_assume_to_unchecked(                                   \
-		HEDLEY_CONST_CAST(void *, HEDLEY_REINTERPRET_CAST(         \
-						  const void *, Pointer)), \
-		(Alignment))
-#endif
+  #if defined(__cplusplus)
+    template<typename T> HEDLEY_ALWAYS_INLINE static T* simde_align_assume_to_unchecked(T* ptr, const size_t alignment)
+  #else
+    HEDLEY_ALWAYS_INLINE static void* simde_align_assume_to_unchecked(void* ptr, const size_t alignment)
+  #endif
+  {
+    HEDLEY_ASSUME((HEDLEY_REINTERPRET_CAST(size_t, (ptr)) % SIMDE_ALIGN_CAP(alignment)) == 0);
+    return ptr;
+  }
+  #if defined(__cplusplus)
+    #define SIMDE_ALIGN_ASSUME_TO_UNCHECKED(Pointer, Alignment) simde_align_assume_to_unchecked((Pointer), (Alignment))
+  #else
+    #define SIMDE_ALIGN_ASSUME_TO_UNCHECKED(Pointer, Alignment) simde_align_assume_to_unchecked(HEDLEY_CONST_CAST(void*, HEDLEY_REINTERPRET_CAST(const void*, Pointer)), (Alignment))
+  #endif
 #endif
 
 #if !defined(SIMDE_ALIGN_DEBUG)
-#define SIMDE_ALIGN_ASSUME_TO(Pointer, Alignment) \
-	SIMDE_ALIGN_ASSUME_TO_UNCHECKED(Pointer, Alignment)
+  #define SIMDE_ALIGN_ASSUME_TO(Pointer, Alignment) SIMDE_ALIGN_ASSUME_TO_UNCHECKED(Pointer, Alignment)
 #else
-#include <stdio.h>
-#if defined(__cplusplus)
-template<typename T>
-static HEDLEY_ALWAYS_INLINE T *
-simde_align_assume_to_checked_uncapped(T *ptr, const size_t alignment,
-				       const char *file, int line,
-				       const char *ptrname)
-#else
-static HEDLEY_ALWAYS_INLINE void *
-simde_align_assume_to_checked_uncapped(void *ptr, const size_t alignment,
-				       const char *file, int line,
-				       const char *ptrname)
-#endif
-{
-	if (HEDLEY_UNLIKELY(
-		    (HEDLEY_REINTERPRET_CAST(SIMDE_ALIGN_INTPTR_T_, (ptr)) %
-		     HEDLEY_STATIC_CAST(SIMDE_ALIGN_INTPTR_T_,
-					SIMDE_ALIGN_CAP(alignment))) != 0)) {
-		fprintf(stderr,
-			"%s:%d: alignment check failed for `%s' (%p %% %u == %u)\n",
-			file, line, ptrname,
-			HEDLEY_REINTERPRET_CAST(const void *, ptr),
-			HEDLEY_STATIC_CAST(unsigned int,
-					   SIMDE_ALIGN_CAP(alignment)),
-			HEDLEY_STATIC_CAST(
-				unsigned int,
-				HEDLEY_REINTERPRET_CAST(SIMDE_ALIGN_INTPTR_T_,
-							(ptr)) %
-					HEDLEY_STATIC_CAST(
-						SIMDE_ALIGN_INTPTR_T_,
-						SIMDE_ALIGN_CAP(alignment))));
-	}
+  #include <stdio.h>
+  #if defined(__cplusplus)
+    template<typename T>
+    static HEDLEY_ALWAYS_INLINE
+    T*
+    simde_align_assume_to_checked_uncapped(T* ptr, const size_t alignment, const char* file, int line, const char* ptrname)
+  #else
+    static HEDLEY_ALWAYS_INLINE
+    void*
+    simde_align_assume_to_checked_uncapped(void* ptr, const size_t alignment, const char* file, int line, const char* ptrname)
+  #endif
+  {
+    if (HEDLEY_UNLIKELY((HEDLEY_REINTERPRET_CAST(SIMDE_ALIGN_INTPTR_T_, (ptr)) % HEDLEY_STATIC_CAST(SIMDE_ALIGN_INTPTR_T_, SIMDE_ALIGN_CAP(alignment))) != 0)) {
+      fprintf(stderr, "%s:%d: alignment check failed for `%s' (%p %% %u == %u)\n",
+        file, line, ptrname, HEDLEY_REINTERPRET_CAST(const void*, ptr),
+        HEDLEY_STATIC_CAST(unsigned int, SIMDE_ALIGN_CAP(alignment)),
+        HEDLEY_STATIC_CAST(unsigned int, HEDLEY_REINTERPRET_CAST(SIMDE_ALIGN_INTPTR_T_, (ptr)) % HEDLEY_STATIC_CAST(SIMDE_ALIGN_INTPTR_T_, SIMDE_ALIGN_CAP(alignment))));
+    }
 
-	return ptr;
-}
+    return ptr;
+  }
 
-#if defined(__cplusplus)
-#define SIMDE_ALIGN_ASSUME_TO(Pointer, Alignment)                      \
-	simde_align_assume_to_checked_uncapped((Pointer), (Alignment), \
-					       __FILE__, __LINE__, #Pointer)
-#else
-#define SIMDE_ALIGN_ASSUME_TO(Pointer, Alignment)                          \
-	simde_align_assume_to_checked_uncapped(                            \
-		HEDLEY_CONST_CAST(void *, HEDLEY_REINTERPRET_CAST(         \
-						  const void *, Pointer)), \
-		(Alignment), __FILE__, __LINE__, #Pointer)
-#endif
+  #if defined(__cplusplus)
+    #define SIMDE_ALIGN_ASSUME_TO(Pointer, Alignment) simde_align_assume_to_checked_uncapped((Pointer), (Alignment), __FILE__, __LINE__, #Pointer)
+  #else
+    #define SIMDE_ALIGN_ASSUME_TO(Pointer, Alignment) simde_align_assume_to_checked_uncapped(HEDLEY_CONST_CAST(void*, HEDLEY_REINTERPRET_CAST(const void*, Pointer)), (Alignment), __FILE__, __LINE__, #Pointer)
+  #endif
 #endif
 
 /* SIMDE_ALIGN_LIKE(Type)
@@ -415,27 +390,25 @@ simde_align_assume_to_checked_uncapped(void *ptr, const size_t alignment,
  * mainly for MSVC, where __declspec(align()) can't handle anything
  * other than hard-coded numeric values.
  */
-#if defined(SIMDE_ALIGN_OF) && defined(SIMDE_ALIGN_TO) && \
-	!defined(SIMDE_ALIGN_OF_UNUSABLE_FOR_LIKE)
-#define SIMDE_ALIGN_LIKE(Type) SIMDE_ALIGN_TO(SIMDE_ALIGN_OF(Type))
-#define SIMDE_ALIGN_LIKE_64(Type) SIMDE_ALIGN_LIKE(Type)
-#define SIMDE_ALIGN_LIKE_32(Type) SIMDE_ALIGN_LIKE(Type)
-#define SIMDE_ALIGN_LIKE_16(Type) SIMDE_ALIGN_LIKE(Type)
-#define SIMDE_ALIGN_LIKE_8(Type) SIMDE_ALIGN_LIKE(Type)
+#if defined(SIMDE_ALIGN_OF) && defined(SIMDE_ALIGN_TO) && !defined(SIMDE_ALIGN_OF_UNUSABLE_FOR_LIKE)
+  #define SIMDE_ALIGN_LIKE(Type) SIMDE_ALIGN_TO(SIMDE_ALIGN_OF(Type))
+  #define SIMDE_ALIGN_LIKE_64(Type) SIMDE_ALIGN_LIKE(Type)
+  #define SIMDE_ALIGN_LIKE_32(Type) SIMDE_ALIGN_LIKE(Type)
+  #define SIMDE_ALIGN_LIKE_16(Type) SIMDE_ALIGN_LIKE(Type)
+  #define SIMDE_ALIGN_LIKE_8(Type) SIMDE_ALIGN_LIKE(Type)
 #else
-#define SIMDE_ALIGN_LIKE_64(Type) SIMDE_ALIGN_TO_64
-#define SIMDE_ALIGN_LIKE_32(Type) SIMDE_ALIGN_TO_32
-#define SIMDE_ALIGN_LIKE_16(Type) SIMDE_ALIGN_TO_16
-#define SIMDE_ALIGN_LIKE_8(Type) SIMDE_ALIGN_TO_8
+  #define SIMDE_ALIGN_LIKE_64(Type) SIMDE_ALIGN_TO_64
+  #define SIMDE_ALIGN_LIKE_32(Type) SIMDE_ALIGN_TO_32
+  #define SIMDE_ALIGN_LIKE_16(Type) SIMDE_ALIGN_TO_16
+  #define SIMDE_ALIGN_LIKE_8(Type) SIMDE_ALIGN_TO_8
 #endif
 
 /* SIMDE_ALIGN_ASSUME_LIKE(Pointer, Type)
  *
- * Tihs is similar to SIMDE_ALIGN_ASSUME_TO, except that it takes a
+ * This is similar to SIMDE_ALIGN_ASSUME_TO, except that it takes a
  * type instead of a numeric value. */
 #if defined(SIMDE_ALIGN_OF) && defined(SIMDE_ALIGN_ASSUME_TO)
-#define SIMDE_ALIGN_ASSUME_LIKE(Pointer, Type) \
-	SIMDE_ALIGN_ASSUME_TO(Pointer, SIMDE_ALIGN_OF(Type))
+  #define SIMDE_ALIGN_ASSUME_LIKE(Pointer, Type) SIMDE_ALIGN_ASSUME_TO(Pointer, SIMDE_ALIGN_OF(Type))
 #endif
 
 /* SIMDE_ALIGN_CAST(Type, Pointer)
@@ -451,19 +424,16 @@ simde_align_assume_to_checked_uncapped(void *ptr, const size_t alignment,
  * is specifically for data which isn't necessarily aligned to
  * _Alignof(__m128i).
  */
-#if HEDLEY_HAS_WARNING("-Wcast-align") || defined(__clang__) || \
-	HEDLEY_GCC_VERSION_CHECK(3, 4, 0)
-#define SIMDE_ALIGN_CAST(Type, Pointer)                                 \
-	(__extension__({                                                \
-		HEDLEY_DIAGNOSTIC_PUSH                                  \
-		_Pragma("GCC diagnostic ignored \"-Wcast-align\"")      \
-			Type simde_r_ =                                 \
-				HEDLEY_REINTERPRET_CAST(Type, Pointer); \
-		HEDLEY_DIAGNOSTIC_POP                                   \
-		simde_r_;                                               \
-	}))
+#if HEDLEY_HAS_WARNING("-Wcast-align") || defined(__clang__) || HEDLEY_GCC_VERSION_CHECK(3,4,0)
+  #define SIMDE_ALIGN_CAST(Type, Pointer) (__extension__({ \
+      HEDLEY_DIAGNOSTIC_PUSH \
+      _Pragma("GCC diagnostic ignored \"-Wcast-align\"") \
+      Type simde_r_ = HEDLEY_REINTERPRET_CAST(Type, Pointer); \
+      HEDLEY_DIAGNOSTIC_POP \
+      simde_r_; \
+    }))
 #else
-#define SIMDE_ALIGN_CAST(Type, Pointer) HEDLEY_REINTERPRET_CAST(Type, Pointer)
+  #define SIMDE_ALIGN_CAST(Type, Pointer) HEDLEY_REINTERPRET_CAST(Type, Pointer)
 #endif
 
 /* SIMDE_ALIGN_ASSUME_CAST(Type, Pointer)
@@ -475,7 +445,6 @@ simde_align_assume_to_checked_uncapped(void *ptr, const size_t alignment,
  * warnings from the compiler about casting to a type with greater
  * alignment requirements.
  */
-#define SIMDE_ALIGN_ASSUME_CAST(Type, Pointer) \
-	SIMDE_ALIGN_ASSUME_LIKE(SIMDE_ALIGN_CAST(Type, Pointer), Type)
+#define SIMDE_ALIGN_ASSUME_CAST(Type, Pointer) SIMDE_ALIGN_ASSUME_LIKE(SIMDE_ALIGN_CAST(Type, Pointer), Type)
 
 #endif /* !defined(SIMDE_ALIGN_H) */
