@@ -697,6 +697,9 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 	if (!ffmpegOutput) {
 		bool useReplayBuffer = config_get_bool(main->Config(),
 						       "SimpleOutput", "RecRB");
+		const char *recFormat = config_get_string(
+			main->Config(), "SimpleOutput", "RecFormat2");
+
 		if (useReplayBuffer) {
 			OBSDataAutoRelease hotkey;
 			const char *str = config_get_string(
@@ -728,8 +731,10 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 						  OBSReplayBufferSaved, this);
 		}
 
+		bool use_native = strcmp(recFormat, "hybrid_mp4") == 0;
 		fileOutput = obs_output_create(
-			"ffmpeg_muxer", "simple_file_output", nullptr, nullptr);
+			use_native ? "mp4_output" : "ffmpeg_muxer",
+			"simple_file_output", nullptr, nullptr);
 		if (!fileOutput)
 			throw "Failed to create recording output "
 			      "(simple output)";
@@ -1568,6 +1573,8 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 		config_get_string(main->Config(), "AdvOut", "RecEncoder");
 	const char *recAudioEncoder =
 		config_get_string(main->Config(), "AdvOut", "RecAudioEncoder");
+	const char *recFormat =
+		config_get_string(main->Config(), "AdvOut", "RecFormat2");
 #ifdef __APPLE__
 	translate_macvth264_encoder(streamEncoder);
 	translate_macvth264_encoder(recordEncoder);
@@ -1623,8 +1630,10 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 						  OBSReplayBufferSaved, this);
 		}
 
+		bool native_muxer = strcmp(recFormat, "hybrid_mp4") == 0;
 		fileOutput = obs_output_create(
-			"ffmpeg_muxer", "adv_file_output", nullptr, nullptr);
+			native_muxer ? "mp4_output" : "ffmpeg_muxer",
+			"adv_file_output", nullptr, nullptr);
 		if (!fileOutput)
 			throw "Failed to create recording output "
 			      "(advanced output)";

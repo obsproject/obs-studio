@@ -1157,6 +1157,7 @@ void OBSBasicSettings::LoadFormats()
 	ui->simpleOutRecFormat->addItem(FORMAT_STR("MKV"), "mkv");
 	ui->simpleOutRecFormat->addItem(FORMAT_STR("MP4"), "mp4");
 	ui->simpleOutRecFormat->addItem(FORMAT_STR("MOV"), "mov");
+	ui->simpleOutRecFormat->addItem(FORMAT_STR("hMP4"), "hybrid_mp4");
 	ui->simpleOutRecFormat->addItem(FORMAT_STR("fMP4"), "fragmented_mp4");
 	ui->simpleOutRecFormat->addItem(FORMAT_STR("fMOV"), "fragmented_mov");
 	ui->simpleOutRecFormat->addItem(FORMAT_STR("TS"), "mpegts");
@@ -1165,6 +1166,7 @@ void OBSBasicSettings::LoadFormats()
 	ui->advOutRecFormat->addItem(FORMAT_STR("MKV"), "mkv");
 	ui->advOutRecFormat->addItem(FORMAT_STR("MP4"), "mp4");
 	ui->advOutRecFormat->addItem(FORMAT_STR("MOV"), "mov");
+	ui->advOutRecFormat->addItem(FORMAT_STR("hMP4"), "hybrid_mp4");
 	ui->advOutRecFormat->addItem(FORMAT_STR("fMP4"), "fragmented_mp4");
 	ui->advOutRecFormat->addItem(FORMAT_STR("fMOV"), "fragmented_mov");
 	ui->advOutRecFormat->addItem(FORMAT_STR("TS"), "mpegts");
