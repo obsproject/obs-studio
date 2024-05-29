@@ -20,7 +20,7 @@ find_package(
   COMPONENTS avformat avutil swscale swresample
   OPTIONAL_COMPONENTS avcodec)
 find_package(ZLIB REQUIRED)
-find_package(Uthash REQUIRED)
+find_package(Uthash 1.9.8 REQUIRED)
 
 add_library(libobs SHARED)
 add_library(OBS::libobs ALIAS libobs)

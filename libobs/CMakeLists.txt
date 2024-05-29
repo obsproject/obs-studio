@@ -23,7 +23,7 @@ find_package(
 # cmake-format: on
 
 find_package(ZLIB REQUIRED)
-find_package(Uthash REQUIRED)
+find_package(Uthash 1.9.8 REQUIRED)
 
 if(ENABLE_UI)
   find_package(Qt6 REQUIRED Core)
