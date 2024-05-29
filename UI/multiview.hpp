@@ -2,6 +2,7 @@
 
 #include <obs.hpp>
 #include <vector>
+#include <multiviewAudioMeter.hpp>
 
 enum class MultiviewLayout : uint8_t {
 	HORIZONTAL_TOP_8_SCENES = 0,
@@ -15,20 +16,20 @@ enum class MultiviewLayout : uint8_t {
 	SCENES_ONLY_16_SCENES = 8,
 	SCENES_ONLY_25_SCENES = 9,
 };
-
 class Multiview {
 public:
 	Multiview();
 	~Multiview();
 	void Update(MultiviewLayout multiviewLayout, bool drawLabel,
-		    bool drawSafeArea);
+		    bool drawSafeArea, bool drawAudioMeter, int selectedNewAudio);
 	void Render(uint32_t cx, uint32_t cy);
 	OBSSource GetSourceByPosition(int x, int y);
 
 private:
-	bool drawLabel, drawSafeArea;
-	MultiviewLayout multiviewLayout;
+	bool drawLabel, drawSafeArea, drawAudioMeter;
 	size_t maxSrcs, numSrcs;
+	MultiviewLayout multiviewLayout;
+	MultiviewAudioMeter *audioMeter = nullptr;
 	gs_vertbuffer_t *actionSafeMargin = nullptr;
 	gs_vertbuffer_t *graphicsSafeMargin = nullptr;
 	gs_vertbuffer_t *fourByThreeSafeMargin = nullptr;
@@ -40,15 +41,15 @@ private:
 	std::vector<OBSSource> multiviewLabels;
 
 	// Multiview position helpers
-	float thickness = 4;
+	float thickness = 6;
 	float offset, thicknessx2 = thickness * 2, pvwprgCX, pvwprgCY, sourceX,
 		      sourceY, labelX, labelY, scenesCX, scenesCY, ppiCX, ppiCY,
 		      siX, siY, siCX, siCY, ppiScaleX, ppiScaleY, siScaleX,
 		      siScaleY, fw, fh, ratio;
 
 	// argb colors
-	static const uint32_t outerColor = 0xFFD0D0D0;
-	static const uint32_t labelColor = 0xD91F1F1F;
+	static const uint32_t outerColor = 0xFF999999;
+	static const uint32_t labelColor = 0x33000000;
 	static const uint32_t backgroundColor = 0xFF000000;
 	static const uint32_t previewColor = 0xFF00D000;
 	static const uint32_t programColor = 0xFFD00000;

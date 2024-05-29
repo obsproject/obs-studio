@@ -100,6 +100,9 @@
     --border_highlight: "transparent"; /* TODO: Better Accessibility focus state */
     /* TODO: Move Accessibilty Colors to Theme config system */
 
+    /* OS Fixes */
+    --os_mac_font_base_value: 12;
+
     --font_base: calc(1pt * var(--font_base_value));
     --font_small: calc(0.9pt * var(--font_base_value));
     --font_large: calc(1.1pt * var(--font_base_value));

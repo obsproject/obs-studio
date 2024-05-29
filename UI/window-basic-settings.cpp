@@ -405,6 +405,13 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->multiviewMouseSwitch, CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->multiviewDrawNames,   CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->multiviewDrawAreas,   CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->multiviewDrawAudioMeter, CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->multiviewOutTrack1,   CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->multiviewOutTrack2,   CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->multiviewOutTrack3,   CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->multiviewOutTrack4,   CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->multiviewOutTrack5,   CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->multiviewOutTrack6,   CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->multiviewLayout,      COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->theme, 		     COMBO_CHANGED,  APPEAR_CHANGED);
 	HookWidget(ui->themeVariant,	     COMBO_CHANGED,  APPEAR_CHANGED);
@@ -790,8 +797,13 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		&OBSBasicSettings::SimpleReplayBufferChanged);
 	connect(ui->simpleRBSecMax, &QSpinBox::valueChanged, this,
 		&OBSBasicSettings::SimpleReplayBufferChanged);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+	connect(ui->advOutSplitFile, &QCheckBox::checkStateChanged, this,
+		&OBSBasicSettings::AdvOutSplitFileChanged);
+#else
 	connect(ui->advOutSplitFile, &QCheckBox::stateChanged, this,
 		&OBSBasicSettings::AdvOutSplitFileChanged);
+#endif
 	connect(ui->advOutSplitFileType, &QComboBox::currentIndexChanged, this,
 		&OBSBasicSettings::AdvOutSplitFileChanged);
 	connect(ui->advReplayBuf, &QCheckBox::toggled, this,
@@ -1152,6 +1164,7 @@ void OBSBasicSettings::LoadFormats()
 	ui->simpleOutRecFormat->addItem(FORMAT_STR("MKV"), "mkv");
 	ui->simpleOutRecFormat->addItem(FORMAT_STR("MP4"), "mp4");
 	ui->simpleOutRecFormat->addItem(FORMAT_STR("MOV"), "mov");
+	ui->simpleOutRecFormat->addItem(FORMAT_STR("hMP4"), "hybrid_mp4");
 	ui->simpleOutRecFormat->addItem(FORMAT_STR("fMP4"), "fragmented_mp4");
 	ui->simpleOutRecFormat->addItem(FORMAT_STR("fMOV"), "fragmented_mov");
 	ui->simpleOutRecFormat->addItem(FORMAT_STR("TS"), "mpegts");
@@ -1160,6 +1173,7 @@ void OBSBasicSettings::LoadFormats()
 	ui->advOutRecFormat->addItem(FORMAT_STR("MKV"), "mkv");
 	ui->advOutRecFormat->addItem(FORMAT_STR("MP4"), "mp4");
 	ui->advOutRecFormat->addItem(FORMAT_STR("MOV"), "mov");
+	ui->advOutRecFormat->addItem(FORMAT_STR("hMP4"), "hybrid_mp4");
 	ui->advOutRecFormat->addItem(FORMAT_STR("fMP4"), "fragmented_mp4");
 	ui->advOutRecFormat->addItem(FORMAT_STR("fMOV"), "fragmented_mov");
 	ui->advOutRecFormat->addItem(FORMAT_STR("TS"), "mpegts");
@@ -1360,8 +1374,13 @@ void OBSBasicSettings::LoadGeneralSettings()
 					"HideOBSWindowsFromCapture");
 		ui->hideOBSFromCapture->setChecked(hideWindowFromCapture);
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+		connect(ui->hideOBSFromCapture, &QCheckBox::checkStateChanged,
+			this, &OBSBasicSettings::HideOBSWindowWarning);
+#else
 		connect(ui->hideOBSFromCapture, &QCheckBox::stateChanged, this,
 			&OBSBasicSettings::HideOBSWindowWarning);
+#endif
 	}
 #endif
 
@@ -1469,6 +1488,7 @@ void OBSBasicSettings::LoadGeneralSettings()
 
 	bool doubleClickSwitch = config_get_bool(
 		GetGlobalConfig(), "BasicWindow", "TransitionOnDoubleClick");
+
 	ui->doubleClickSwitch->setChecked(doubleClickSwitch);
 
 	bool studioPortraitLayout = config_get_bool(
@@ -1490,6 +1510,12 @@ void OBSBasicSettings::LoadGeneralSettings()
 	bool multiviewDrawAreas = config_get_bool(
 		GetGlobalConfig(), "BasicWindow", "MultiviewDrawAreas");
 	ui->multiviewDrawAreas->setChecked(multiviewDrawAreas);
+
+	bool multiviewDrawAudioMeter = config_get_bool(
+		GetGlobalConfig(), "BasicWindow", "MultiviewDrawAudioMeter");
+	ui->multiviewDrawAudioMeter->setChecked(multiviewDrawAudioMeter);
+
+	LoadMultiViewAudioMeterSettings();
 
 	ui->multiviewLayout->addItem(
 		QTStr("Basic.Settings.General.MultiviewLayout.Horizontal.Top"),
@@ -2071,6 +2097,17 @@ void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 	SwapMultiTrack(protocol);
 }
 
+void OBSBasicSettings::LoadMultiViewAudioMeterSettings()
+{
+	int audioMixes = config_get_int(GetGlobalConfig(), "BasicWindow",
+					"MultiviewAudioMeterSource");
+	ui->multiviewOutTrack1->setChecked(audioMixes & (1 << 0));
+	ui->multiviewOutTrack2->setChecked(audioMixes & (1 << 1));
+	ui->multiviewOutTrack3->setChecked(audioMixes & (1 << 2));
+	ui->multiviewOutTrack4->setChecked(audioMixes & (1 << 3));
+	ui->multiviewOutTrack5->setChecked(audioMixes & (1 << 4));
+	ui->multiviewOutTrack6->setChecked(audioMixes & (1 << 5));
+}
 OBSPropertiesView *
 OBSBasicSettings::CreateEncoderPropertyView(const char *encoder,
 					    const char *path, bool changed)
@@ -3388,6 +3425,7 @@ void OBSBasicSettings::SaveGeneralSettings()
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"TransitionOnDoubleClick",
 				ui->doubleClickSwitch->isChecked());
+
 	if (WidgetChanged(ui->automaticSearch))
 		config_set_bool(GetGlobalConfig(), "General",
 				"AutomaticCollectionSearch",
@@ -3503,6 +3541,26 @@ void OBSBasicSettings::SaveGeneralSettings()
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"MultiviewDrawAreas",
 				ui->multiviewDrawAreas->isChecked());
+		multiviewChanged = true;
+	}
+
+	if (WidgetChanged(ui->multiviewDrawAudioMeter)) {
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"MultiviewDrawAudioMeter",
+				ui->multiviewDrawAudioMeter->isChecked());
+		multiviewChanged = true;
+	}
+
+	if (WidgetChanged(ui->multiviewSingleTracks) ||
+	    WidgetChanged(ui->multiviewOutTrack1) ||
+	    WidgetChanged(ui->multiviewOutTrack2) ||
+	    WidgetChanged(ui->multiviewOutTrack3) ||
+	    WidgetChanged(ui->multiviewOutTrack4) ||
+	    WidgetChanged(ui->multiviewOutTrack5) ||
+	    WidgetChanged(ui->multiviewOutTrack6)) {
+		config_set_int(GetGlobalConfig(), "BasicWindow",
+			       "MultiviewAudioMeterSource",
+			       MultiviewGetSelectedAudioTracks());
 		multiviewChanged = true;
 	}
 
@@ -4713,7 +4771,11 @@ void OBSBasicSettings::SpeakerLayoutChanged(int idx)
 	UpdateAudioWarnings();
 }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+void OBSBasicSettings::HideOBSWindowWarning(Qt::CheckState state)
+#else
 void OBSBasicSettings::HideOBSWindowWarning(int state)
+#endif
 {
 	if (loading || state == Qt::Unchecked)
 		return;
@@ -6160,6 +6222,16 @@ int OBSBasicSettings::SimpleOutGetSelectedAudioTracks()
 	return tracks;
 }
 
+int OBSBasicSettings::MultiviewGetSelectedAudioTracks()
+{
+	int tracks = (ui->multiviewOutTrack1->isChecked() ? (1 << 0) : 0) |
+		     (ui->multiviewOutTrack2->isChecked() ? (1 << 1) : 0) |
+		     (ui->multiviewOutTrack3->isChecked() ? (1 << 2) : 0) |
+		     (ui->multiviewOutTrack4->isChecked() ? (1 << 3) : 0) |
+		     (ui->multiviewOutTrack5->isChecked() ? (1 << 4) : 0) |
+		     (ui->multiviewOutTrack6->isChecked() ? (1 << 5) : 0);
+	return tracks;
+}
 int OBSBasicSettings::AdvOutGetSelectedAudioTracks()
 {
 	int tracks = (ui->advOutRecTrack1->isChecked() ? (1 << 0) : 0) |

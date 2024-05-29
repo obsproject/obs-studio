@@ -702,6 +702,14 @@ Core OBS Signals
 
    Called when a source's audio becomes inactive.
 
+**source_filter_add** (ptr source, ptr filter)
+
+   Called when a filter is added to a source.
+
+**source_filter_remove** (ptr source, ptr filter)
+
+   Called when a filter is removed from a source.
+
 **source_transition_start** (ptr source)
 
    Called when a transition has started its transition.

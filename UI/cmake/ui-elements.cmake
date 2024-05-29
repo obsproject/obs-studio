@@ -31,6 +31,8 @@ target_link_libraries(obs-studio PRIVATE OBS::ui-support)
 target_sources(
   obs-studio
   PRIVATE # cmake-format: sortable
+          absolute-slider.cpp
+          absolute-slider.hpp
           adv-audio-control.cpp
           adv-audio-control.hpp
           audio-encoders.cpp
@@ -50,8 +52,6 @@ target_sources(
           log-viewer.hpp
           media-controls.cpp
           media-controls.hpp
-          media-slider.cpp
-          media-slider.hpp
           menu-button.cpp
           menu-button.hpp
           mute-checkbox.hpp
@@ -62,8 +62,6 @@ target_sources(
           scene-tree.cpp
           scene-tree.hpp
           screenshot-obj.hpp
-          slider-absoluteset-style.cpp
-          slider-absoluteset-style.hpp
           source-label.cpp
           source-label.hpp
           source-tree.cpp

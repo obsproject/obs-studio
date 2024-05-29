@@ -160,7 +160,9 @@ target_sources(
 
 target_sources(
   obs
-  PRIVATE adv-audio-control.cpp
+  PRIVATE absolute-slider.cpp
+          absolute-slider.hpp
+          adv-audio-control.cpp
           adv-audio-control.hpp
           audio-encoders.cpp
           audio-encoders.hpp
@@ -184,8 +186,6 @@ target_sources(
           log-viewer.hpp
           media-controls.cpp
           media-controls.hpp
-          media-slider.cpp
-          media-slider.hpp
           menu-button.cpp
           menu-button.hpp
           mute-checkbox.hpp
@@ -201,8 +201,6 @@ target_sources(
           scene-tree.cpp
           scene-tree.hpp
           screenshot-obj.hpp
-          slider-absoluteset-style.cpp
-          slider-absoluteset-style.hpp
           slider-ignorewheel.cpp
           slider-ignorewheel.hpp
           source-label.cpp

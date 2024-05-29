@@ -42,7 +42,7 @@
 #include "obs-app.hpp"
 #include "obs-proxy-style.hpp"
 #include "log-viewer.hpp"
-#include "slider-ignorewheel.hpp"
+#include "volume-control.hpp"
 #include "window-basic-main.hpp"
 #ifdef __APPLE__
 #include "window-permissions.hpp"
@@ -514,6 +514,11 @@ bool OBSApp::InitGlobalConfigDefaults()
 	config_set_default_bool(globalConfig, "BasicWindow",
 				"MultiviewDrawAreas", true);
 
+	config_set_default_bool(globalConfig, "BasicWindow",
+				"MultiviewDrawAudioMeter", true);
+
+	config_set_default_int(globalConfig, "BasicWindow",
+				"MultiviewAudioMeterSource", 1);
 #ifdef _WIN32
 	config_set_default_bool(globalConfig, "Audio", "DisableAudioDucking",
 				true);
@@ -1783,6 +1788,8 @@ string GetFormatExt(const char *container)
 	string ext = container;
 	if (ext == "fragmented_mp4")
 		ext = "mp4";
+	if (ext == "hybrid_mp4")
+		ext = "mp4";
 	else if (ext == "fragmented_mov")
 		ext = "mov";
 	else if (ext == "hls")
@@ -1987,12 +1994,6 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 #endif
 
 #if !defined(_WIN32) && !defined(__APPLE__)
-	/* NOTE: The Breeze Qt style plugin adds frame arround QDockWidget with
-	 * QPainter which can not be modifed. To avoid this the base style is
-	 * enforce to the Qt default style on Linux: Fusion. */
-
-	setenv("QT_STYLE_OVERRIDE", "Fusion", false);
-
 	/* NOTE: Users blindly set this, but this theme is incompatble with Qt6 and
 	 * crashes loading saved geometry. Just turn off this theme and let users complain OBS
 	 * looks ugly instead of crashing. */

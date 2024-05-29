@@ -406,25 +406,17 @@ static int handle_socket_read(struct rtmp_stream *stream)
 }
 
 static int send_packet(struct rtmp_stream *stream,
-		       struct encoder_packet *packet, bool is_header,
-		       size_t idx)
+		       struct encoder_packet *packet, bool is_header)
 {
 	uint8_t *data;
 	size_t size;
 	int ret = 0;
 
-	assert(idx < RTMP_MAX_STREAMS);
 	if (handle_socket_read(stream))
 		return -1;
 
-	if (idx > 0) {
-		flv_additional_packet_mux(
-			packet, is_header ? 0 : stream->start_dts_offset, &data,
-			&size, is_header, idx);
-	} else {
-		flv_packet_mux(packet, is_header ? 0 : stream->start_dts_offset,
-			       &data, &size, is_header);
-	}
+	flv_packet_mux(packet, is_header ? 0 : stream->start_dts_offset, &data,
+		       &size, is_header);
 
 #ifdef TEST_FRAMEDROPS
 	droptest_cap_data_rate(stream, size);
@@ -477,6 +469,37 @@ static int send_packet_ex(struct rtmp_stream *stream,
 		obs_encoder_packet_release(packet);
 
 	stream->total_bytes_sent += size;
+	return ret;
+}
+
+static int send_audio_packet_ex(struct rtmp_stream *stream,
+				struct encoder_packet *packet, bool is_header,
+				size_t idx)
+{
+	uint8_t *data;
+	size_t size = 0;
+	int ret = 0;
+
+	if (handle_socket_read(stream))
+		return -1;
+
+	if (is_header) {
+		flv_packet_audio_start(packet, stream->audio_codec[idx], &data,
+				       &size, idx);
+	} else {
+		flv_packet_audio_frames(packet, stream->audio_codec[idx],
+					stream->start_dts_offset, &data, &size,
+					idx);
+	}
+
+	ret = RTMP_Write(&stream->rtmp, (char *)data, (int)size, 0);
+	bfree(data);
+
+	if (is_header)
+		bfree(packet->data);
+	else
+		obs_encoder_packet_release(packet);
+
 	return ret;
 }
 
@@ -676,9 +699,12 @@ static void *send_thread(void *data)
 		      packet.track_idx != 0))) {
 			sent = send_packet_ex(stream, &packet, false, false,
 					      packet.track_idx);
+		} else if (packet.type == OBS_ENCODER_AUDIO &&
+			   packet.track_idx != 0) {
+			sent = send_audio_packet_ex(stream, &packet, false,
+						    packet.track_idx);
 		} else {
-			sent = send_packet(stream, &packet, false,
-					   packet.track_idx);
+			sent = send_packet(stream, &packet, false);
 		}
 
 		if (sent < 0) {
@@ -748,20 +774,6 @@ static void *send_thread(void *data)
 	return NULL;
 }
 
-static bool send_additional_meta_data(struct rtmp_stream *stream)
-{
-	uint8_t *meta_data;
-	size_t meta_data_size;
-	bool success = true;
-
-	flv_additional_meta_data(stream->output, &meta_data, &meta_data_size);
-	success = RTMP_Write(&stream->rtmp, (char *)meta_data,
-			     (int)meta_data_size, 0) >= 0;
-	bfree(meta_data);
-
-	return success;
-}
-
 static bool send_meta_data(struct rtmp_stream *stream)
 {
 	uint8_t *meta_data;
@@ -791,10 +803,16 @@ static bool send_audio_header(struct rtmp_stream *stream, size_t idx,
 		return true;
 	}
 
-	if (!obs_encoder_get_extra_data(aencoder, &header, &packet.size))
-		return false;
-	packet.data = bmemdup(header, packet.size);
-	return send_packet(stream, &packet, true, idx) >= 0;
+	if (obs_encoder_get_extra_data(aencoder, &header, &packet.size)) {
+		packet.data = bmemdup(header, packet.size);
+		if (idx == 0) {
+			return send_packet(stream, &packet, true) >= 0;
+		} else {
+			return send_audio_packet_ex(stream, &packet, true,
+						    idx) >= 0;
+		}
+	}
+	return false;
 }
 
 static bool send_video_header(struct rtmp_stream *stream, size_t idx)
@@ -825,7 +843,7 @@ static bool send_video_header(struct rtmp_stream *stream, size_t idx)
 		packet.size = obs_parse_avc_header(&packet.data, header, size);
 		// Always send H.264 on track 0 as old style for compatibility.
 		if (idx == 0) {
-			return send_packet(stream, &packet, true, idx) >= 0;
+			return send_packet(stream, &packet, true) >= 0;
 		} else {
 			return send_packet_ex(stream, &packet, true, false,
 					      idx) >= 0;
@@ -1117,18 +1135,6 @@ static int init_send(struct rtmp_stream *stream)
 		return OBS_OUTPUT_DISCONNECTED;
 	}
 
-	obs_encoder_t *aencoder = obs_output_get_audio_encoder(context, 1);
-	if (aencoder && !send_additional_meta_data(stream)) {
-		warn("Disconnected while attempting to send additional "
-		     "metadata");
-		return OBS_OUTPUT_DISCONNECTED;
-	}
-
-	if (obs_output_get_audio_encoder(context, 2) != NULL) {
-		warn("Additional audio streams not supported");
-		return OBS_OUTPUT_DISCONNECTED;
-	}
-
 	obs_output_begin_data_capture(stream->output, 0);
 
 	return OBS_OUTPUT_SUCCESS;
@@ -1334,6 +1340,15 @@ static bool init_connect(struct rtmp_stream *stream)
 	obs_encoder_t *aenc = obs_output_get_audio_encoder(stream->output, 0);
 	obs_data_t *vsettings = obs_encoder_get_settings(venc);
 	obs_data_t *asettings = obs_encoder_get_settings(aenc);
+	for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
+		obs_encoder_t *enc =
+			obs_output_get_audio_encoder(stream->output, i);
+		if (enc) {
+			const char *codec = obs_encoder_get_codec(enc);
+			stream->audio_codec[i] = to_audio_type(codec);
+		}
+	}
+
 	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
 		obs_encoder_t *enc =
 			obs_output_get_video_encoder2(stream->output, i);

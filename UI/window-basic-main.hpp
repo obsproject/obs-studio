@@ -191,7 +191,6 @@ class OBSBasic : public OBSMainWindow {
 	friend class ExtraBrowsersModel;
 	friend class ExtraBrowsersDelegate;
 	friend class DeviceCaptureToolbar;
-	friend class DeviceToolbarPropertiesThread;
 	friend class OBSBasicSourceSelect;
 	friend class OBSYoutubeActions;
 	friend class OBSPermissions;
@@ -460,7 +459,8 @@ private:
 	obs_hotkey_pair_id streamingHotkeys, recordingHotkeys, pauseHotkeys,
 		replayBufHotkeys, vcamHotkeys, togglePreviewHotkeys,
 		contextBarHotkeys;
-	obs_hotkey_id forceStreamingStopHotkey, splitFileHotkey;
+	obs_hotkey_id forceStreamingStopHotkey, splitFileHotkey,
+		addChapterHotkey;
 
 	void InitDefaultTransitions();
 	void InitTransition(obs_source_t *transition);
@@ -803,15 +803,15 @@ private slots:
 
 	void on_actionCopyFilters_triggered();
 	void on_actionPasteFilters_triggered();
+	void AudioMixerCopyFilters();
+	void AudioMixerPasteFilters();
+	void SourcePasteFilters(OBSSource source, OBSSource dstSource);
 
 	void ColorChange();
 
 	SourceTreeItem *GetItemWidgetFromSceneItem(obs_sceneitem_t *sceneItem);
 
 	void on_actionShowAbout_triggered();
-
-	void AudioMixerCopyFilters();
-	void AudioMixerPasteFilters();
 
 	void EnablePreview();
 	void DisablePreview();
@@ -848,7 +848,6 @@ private slots:
 	void TBarReleased();
 
 	void LockVolumeControl(bool lock);
-	void ThemeChanged();
 
 	void UpdateVirtualCamConfig(const VCamConfig &config);
 	void RestartVirtualCam(const VCamConfig &config);

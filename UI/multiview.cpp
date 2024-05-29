@@ -17,6 +17,11 @@ Multiview::~Multiview()
 		if (src)
 			obs_source_dec_showing(src);
 	}
+	if (audioMeter)
+	{
+		delete audioMeter;
+		audioMeter = nullptr;
+	}
 
 	obs_enter_graphics();
 	gs_vertexbuffer_destroy(actionSafeMargin);
@@ -51,6 +56,7 @@ static OBSSource CreateLabel(const char *name, size_t h)
 	obs_data_set_obj(settings, "font", font);
 	obs_data_set_string(settings, "text", text.c_str());
 	obs_data_set_bool(settings, "outline", false);
+	obs_data_set_int(settings, "opacity", 50);
 
 #ifdef _WIN32
 	const char *text_source_id = "text_gdiplus";
@@ -65,11 +71,13 @@ static OBSSource CreateLabel(const char *name, size_t h)
 }
 
 void Multiview::Update(MultiviewLayout multiviewLayout, bool drawLabel,
-		       bool drawSafeArea)
+		       bool drawSafeArea, bool drawAudioMeter,
+		       int selectedNewAudio)
 {
 	this->multiviewLayout = multiviewLayout;
 	this->drawLabel = drawLabel;
 	this->drawSafeArea = drawSafeArea;
+	this->drawAudioMeter = drawAudioMeter;
 
 	multiviewScenes.clear();
 	multiviewLabels.clear();
@@ -176,6 +184,18 @@ void Multiview::Update(MultiviewLayout multiviewLayout, bool drawLabel,
 
 		multiviewLabels.emplace_back(
 			CreateLabel(obs_source_get_name(src), h / 3));
+	}
+
+	if (this->drawAudioMeter) {
+		if (!audioMeter) {
+
+			audioMeter = new MultiviewAudioMeter();
+		}
+		audioMeter->ConnectAudioOutput(selectedNewAudio);
+	}
+	else {
+		delete audioMeter;
+		audioMeter = nullptr;
 	}
 
 	obs_frontend_source_list_free(&scenes);
@@ -319,7 +339,7 @@ void Multiview::Render(uint32_t cx, uint32_t cy)
 			sourceX = thickness + pvwprgCX / 2;
 			sourceY = thickness;
 			labelX = offset + pvwprgCX / 2;
-			labelY = pvwprgCY * 0.85f;
+			labelY = pvwprgCY;
 			if (program) {
 				sourceX += pvwprgCX;
 				labelX += pvwprgCX;
@@ -329,27 +349,27 @@ void Multiview::Render(uint32_t cx, uint32_t cy)
 			sourceX = thickness;
 			sourceY = pvwprgCY + thickness;
 			labelX = offset;
-			labelY = pvwprgCY * 1.85f;
+			labelY = pvwprgCY * 2;
 			if (program) {
 				sourceY = thickness;
-				labelY = pvwprgCY * 0.85f;
+				labelY = pvwprgCY;
 			}
 			break;
 		case MultiviewLayout::VERTICAL_RIGHT_8_SCENES:
 			sourceX = pvwprgCX + thickness;
 			sourceY = pvwprgCY + thickness;
 			labelX = pvwprgCX + offset;
-			labelY = pvwprgCY * 1.85f;
+			labelY = pvwprgCY * 2;
 			if (program) {
 				sourceY = thickness;
-				labelY = pvwprgCY * 0.85f;
+				labelY = pvwprgCY;
 			}
 			break;
 		case MultiviewLayout::HORIZONTAL_BOTTOM_8_SCENES:
 			sourceX = thickness;
 			sourceY = pvwprgCY + thickness;
 			labelX = offset;
-			labelY = pvwprgCY * 1.85f;
+			labelY = pvwprgCY * 2;
 			if (program) {
 				sourceX += pvwprgCX;
 				labelX += pvwprgCX;
@@ -366,7 +386,7 @@ void Multiview::Render(uint32_t cx, uint32_t cy)
 			sourceX = thickness;
 			sourceY = thickness;
 			labelX = offset;
-			labelY = pvwprgCY * 0.85f;
+			labelY = pvwprgCY;
 			if (program) {
 				sourceX += pvwprgCX;
 				labelX += pvwprgCX;
@@ -443,12 +463,16 @@ void Multiview::Render(uint32_t cx, uint32_t cy)
 		offset = labelOffset(multiviewLayout, label, scenesCX);
 
 		gs_matrix_push();
-		gs_matrix_translate3f(sourceX + offset,
-				      (scenesCY * 0.85f) + sourceY, 0.0f);
+		gs_matrix_translate3f(
+			sourceX + offset,
+			sourceY + scenesCY -
+				(obs_source_get_height(label) * ppiScaleY) -
+				(thickness * 3),
+			0.0f);
 		gs_matrix_scale3f(ppiScaleX, ppiScaleY, 1.0f);
 		drawBox(obs_source_get_width(label),
-			obs_source_get_height(label) + int(sourceY * 0.015f),
-			labelColor);
+			obs_source_get_height(label) + thicknessx2, labelColor);
+		gs_matrix_translate3f(0, thickness, 0.0f);
 		obs_source_video_render(label);
 		gs_matrix_pop();
 	}
@@ -498,12 +522,18 @@ void Multiview::Render(uint32_t cx, uint32_t cy)
 	// Draw the Label
 	if (drawLabel) {
 		gs_matrix_push();
-		gs_matrix_translate3f(labelX, labelY, 0.0f);
+		gs_matrix_translate3f(
+			labelX,
+			labelY -
+				(obs_source_get_height(previewLabel) *
+				 ppiScaleY) -
+				(thickness * 3),
+			0.0f);
 		gs_matrix_scale3f(ppiScaleX, ppiScaleY, 1.0f);
 		drawBox(obs_source_get_width(previewLabel),
-			obs_source_get_height(previewLabel) +
-				int(pvwprgCX * 0.015f),
+			obs_source_get_height(previewLabel) + thicknessx2,
 			labelColor);
+		gs_matrix_translate3f(0, thickness, 0.0f);
 		obs_source_video_render(previewLabel);
 		gs_matrix_pop();
 	}
@@ -531,14 +561,27 @@ void Multiview::Render(uint32_t cx, uint32_t cy)
 	// Draw the Label
 	if (drawLabel) {
 		gs_matrix_push();
-		gs_matrix_translate3f(labelX, labelY, 0.0f);
+		gs_matrix_translate3f(
+			labelX,
+			labelY -
+				(obs_source_get_height(programLabel) *
+				 ppiScaleY) -
+				(thickness * 3),
+			0.0f);
 		gs_matrix_scale3f(ppiScaleX, ppiScaleY, 1.0f);
 		drawBox(obs_source_get_width(programLabel),
-			obs_source_get_height(programLabel) +
-				int(pvwprgCX * 0.015f),
+			obs_source_get_height(programLabel) + thicknessx2,
 			labelColor);
+		gs_matrix_translate3f(0, thickness, 0.0f);
 		obs_source_video_render(programLabel);
 		gs_matrix_pop();
+	}
+
+	// Draw audioMeter on Program
+	if (drawAudioMeter) {
+		audioMeter->RenderAudioMeter(labelColor, sourceX, sourceY,
+					     ppiCX, ppiCY, ppiScaleX,
+					     ppiScaleY);
 	}
 
 	// Region for future usage with additional info.

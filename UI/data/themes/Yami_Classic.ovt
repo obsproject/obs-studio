@@ -28,6 +28,9 @@
     --spacing_base_value: 2;
     --padding_base_value: 0.25;
 
+    /* OS Fixes */
+    --os_mac_font_base_value: 11;
+
     --icon_base: calc(6px + var(--font_base_value));
 
     --padding_wide: calc(18px + calc(0.25 * var(--padding_base_value)));
@@ -198,16 +201,38 @@ QPushButton[toolButton="true"] {
     icon-size: var(--icon_base), var(--icon_base);
 }
 
+#stackedMixerArea QPushButton:!hover {
+    background-color: var(--bg_base);
+    border: none;
+}
+
+#stackedMixerArea QPushButton:hover {
+    background-color: var(--bg_base);
+    border: none;
+}
+
 MuteCheckBox::indicator,
 MuteCheckBox::indicator:unchecked {
+    background-color: var(--bg_base);
+    border: none;
     width: var(--icon_base_mixer);
     height: var(--icon_base_mixer);
     icon-size: var(--icon_base_mixer), var(--icon_base_mixer);
 }
 
+MuteCheckBox::indicator:checked {
+    background-color: var(--bg_base);
+}
+
+MuteCheckBox::indicator:checked:hover,
+MuteCheckBox::indicator:unchecked:hover {
+    background-color: var(--bg_base);
+}
+
 MuteCheckBox::indicator:hover,
 MuteCheckBox::indicator:unchecked:hover {
     icon-size: var(--icon_base_mixer), var(--icon_base_mixer);
+    border: none;
 }
 
 #contextContainer {

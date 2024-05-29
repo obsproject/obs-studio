@@ -285,6 +285,12 @@ bool obs_frontend_recording_split_file(void)
 				   : false;
 }
 
+bool obs_frontend_recording_add_chapter(const char *name)
+{
+	return !!callbacks_valid() ? c->obs_frontend_recording_add_chapter(name)
+				   : false;
+}
+
 void obs_frontend_replay_buffer_start(void)
 {
 	if (callbacks_valid())

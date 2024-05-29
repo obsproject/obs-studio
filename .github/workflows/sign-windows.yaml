@@ -52,6 +52,11 @@ jobs:
           version: ${{ github.ref_name }}
           channel: ${{ steps.setup.outputs.channel }}
 
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: ${{ github.workspace }}/output/*-x64.zip
+
       - name: Upload Signed Build
         uses: actions/upload-artifact@v4
         with:

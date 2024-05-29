@@ -3,10 +3,12 @@
   <id>com.obsproject.Studio</id>
   <launchable type="desktop-id">com.obsproject.Studio.desktop</launchable>
   <metadata_license>CC0-1.0</metadata_license>
-  <project_license>GPL-2.0</project_license>
+  <project_license>GPL-2.0-or-later</project_license>
   <name>OBS Studio</name>
-  <developer_name>OBS Project</developer_name>
-  <summary>Live streaming and video recording software</summary>
+  <developer id="com.obsproject">
+    <name>OBS Project</name>
+  </developer>
+  <summary>Live stream and record videos</summary>
   <description>
     <p>Free and open source software for video capturing, recording, and live streaming.</p>
     <p>Features:</p>
@@ -30,17 +32,37 @@
   <url type="bugtracker">https://github.com/obsproject/obs-studio/issues</url>
   <url type="donation">https://obsproject.com/contribute</url>
   <url type="translate">https://crowdin.com/project/obs-studio</url>
+
+  <recommends>
+    <internet>always</internet>
+    <control>pointing</control>
+    <control>keyboard</control>
+  </recommends>
+
+  <supports>
+    <internet>offline-only</internet>
+    <control>touch</control>
+  </supports>
+
   <screenshots>
     <screenshot type="default">
-      <image>https://obsproject.com/assets/images/OBSDemoApp2610.png</image>
+      <image>https://obsproject.com/assets/images/OBSDemoApp301Flathub.png</image>
+      <caption>The OBS Studio window showing a card game, the project website, a video, and a purple rectangle</caption>
     </screenshot>
   </screenshots>
+
+  <branding>
+    <color type="primary">#284cb8</color>
+  </branding>
+
   <content_rating type="oars-1.1"/>
-  <kudos>
-    <kudo>ModernToolkit</kudo>
-    <kudo>HiDpiIcon</kudo>
-  </kudos>
+
   <releases>
-    <release version="@OBS_VERSION@" date="@APPDATA_RELEASE_DATE@"/>
+    <release version="@OBS_VERSION@" date="@APPDATA_RELEASE_DATE@">
+      <url type="details">https://github.com/obsproject/obs-studio/releases/tag/@OBS_VERSION@</url>
+    </release>
   </releases>
+  <custom>
+    <value key="flathub::manifest">https://github.com/obsproject/obs-studio/blob/@GIT_HASH@/build-aux/</value>
+  </custom>
 </component>

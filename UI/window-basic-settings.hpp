@@ -315,6 +315,7 @@ private:
 	/* output */
 	void LoadSimpleOutputSettings();
 	void LoadAdvOutputStreamingSettings();
+	void LoadMultiViewAudioMeterSettings();
 	void LoadAdvOutputStreamingEncoderProperties();
 	void LoadAdvOutputRecordingSettings();
 	void LoadAdvOutputRecordingEncoderProperties();
@@ -400,6 +401,7 @@ private:
 	QIcon GetAdvancedIcon() const;
 
 	int CurrentFLVTrack();
+	int MultiviewGetSelectedAudioTracks();
 	int SimpleOutGetSelectedAudioTracks();
 	int AdvOutGetSelectedAudioTracks();
 	int AdvOutGetStreamingSelectedAudioTracks();
@@ -454,7 +456,12 @@ private slots:
 	void on_colorPreset_currentIndexChanged(int idx);
 
 	void GeneralChanged();
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+	void HideOBSWindowWarning(Qt::CheckState state);
+#else
 	void HideOBSWindowWarning(int state);
+#endif
 	void AudioChanged();
 	void AudioChangedRestart();
 	void ReloadAudioSources();

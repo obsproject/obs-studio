@@ -317,6 +317,19 @@ static vector<OBSThemeVariable> ParseThemeVariables(const char *themeData)
 		OBSThemeVariable var;
 		var.name = key;
 
+#ifdef _WIN32
+		const QString osPrefix = "os_win_";
+#elif __APPLE__
+		const QString osPrefix = "os_mac_";
+#else
+		const QString osPrefix = "os_lin_";
+#endif
+
+		if (key.startsWith(osPrefix) &&
+		    key.length() > osPrefix.length()) {
+			var.name = key.sliced(osPrefix.length());
+		}
+
 		ret = cf_next_token_should_be(cfp, ":", ";", nullptr);
 		if (ret != PARSE_SUCCESS)
 			continue;
@@ -917,7 +930,11 @@ static map<string, string> themeMigrations = {
 bool OBSApp::InitTheme()
 {
 	defaultPalette = palette();
+#if !defined(_WIN32) && !defined(__APPLE__)
+	setStyle(new OBSProxyStyle("Fusion"));
+#else
 	setStyle(new OBSProxyStyle());
+#endif
 
 	/* Set search paths for custom 'theme:' URI prefix */
 	string searchDir;

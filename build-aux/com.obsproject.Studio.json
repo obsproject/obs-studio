@@ -18,8 +18,7 @@
         "--talk-name=org.freedesktop.Notifications",
         "--talk-name=org.a11y.Bus",
         "--system-talk-name=org.freedesktop.Avahi",
-        "--env=VST_PATH=/app/extensions/Plugins/vst",
-        "--env=ONEVPL_SEARCH_PATH=/app/lib"
+        "--env=VST_PATH=/app/extensions/Plugins/vst"
     ],
     "add-extensions": {
         "com.obsproject.Studio.Plugin": {
@@ -45,7 +44,6 @@
     ],
     "modules": [
         "modules/10-mbedtls.json",
-        "modules/20-aom.json",
         "modules/20-librist.json",
         "modules/20-nv-codec.json",
         "modules/20-srt.json",
@@ -61,10 +59,10 @@
         "modules/50-libqrcodegencpp.json",
         "modules/50-libvpl.json",
         "modules/50-ntv2.json",
-        "modules/50-onevpl-intel-gpu.json",
         "modules/50-rnnoise.json",
         "modules/50-swig.json",
         "modules/50-v4l-utils.json",
+        "modules/50-vpl-gpu-rt.json",
         "modules/90-asio.json",
         "modules/90-nlohmann-json.json",
         "modules/90-uthash.json",

@@ -21,12 +21,24 @@
 
 #define MILLISECOND_DEN 1000
 
+enum audio_id_t {
+	AUDIO_CODEC_NONE = 0,
+	AUDIO_CODEC_AAC = 1,
+};
+
 enum video_id_t {
 	CODEC_NONE = 0, // not valid in rtmp
 	CODEC_H264 = 1, // legacy & Y2023 spec
 	CODEC_AV1,      // Y2023 spec
 	CODEC_HEVC,
 };
+
+static enum audio_id_t to_audio_type(const char *codec)
+{
+	if (strcmp(codec, "aac") == 0)
+		return AUDIO_CODEC_AAC;
+	return AUDIO_CODEC_NONE;
+}
 
 static enum video_id_t to_video_type(const char *codec)
 {
@@ -50,14 +62,8 @@ extern void write_file_info(FILE *file, int64_t duration_ms, int64_t size);
 
 extern void flv_meta_data(obs_output_t *context, uint8_t **output, size_t *size,
 			  bool write_header);
-extern void flv_additional_meta_data(obs_output_t *context, uint8_t **output,
-				     size_t *size);
 extern void flv_packet_mux(struct encoder_packet *packet, int32_t dts_offset,
 			   uint8_t **output, size_t *size, bool is_header);
-extern void flv_additional_packet_mux(struct encoder_packet *packet,
-				      int32_t dts_offset, uint8_t **output,
-				      size_t *size, bool is_header,
-				      size_t index);
 // Y2023 spec
 extern void flv_packet_start(struct encoder_packet *packet,
 			     enum video_id_t codec, uint8_t **output,
@@ -72,3 +78,9 @@ extern void flv_packet_metadata(enum video_id_t codec, uint8_t **output,
 				uint8_t color_primaries, int color_trc,
 				int color_space, int min_luminance,
 				int max_luminance, size_t idx);
+extern void flv_packet_audio_start(struct encoder_packet *packet,
+				   enum audio_id_t codec, uint8_t **output,
+				   size_t *size, size_t idx);
+extern void flv_packet_audio_frames(struct encoder_packet *packet,
+				    enum audio_id_t codec, int32_t dts_offset,
+				    uint8_t **output, size_t *size, size_t idx);

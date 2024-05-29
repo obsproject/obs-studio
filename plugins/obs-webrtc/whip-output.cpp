@@ -162,7 +162,7 @@ void WHIPOutput::ConfigureVideoTrack(std::string media_stream_id,
 		packetizer = std::make_shared<rtc::H264RtpPacketizer>(
 			rtc::H264RtpPacketizer::Separator::StartSequence,
 			rtp_config, MAX_VIDEO_FRAGMENT_SIZE);
-#if ENABLE_HEVC
+#ifdef ENABLE_HEVC
 	} else if (strcmp("hevc", codec) == 0) {
 		video_description.addH265Codec(video_payload_type);
 		packetizer = std::make_shared<rtc::H265RtpPacketizer>(
@@ -577,12 +577,12 @@ void WHIPOutput::Send(void *data, uintptr_t size, uint64_t duration,
 	// Set new timestamp
 	rtp_config->timestamp = rtp_config->timestamp + elapsed_timestamp;
 
-	// get elapsed time in clock rate from last RTCP sender report
+	// Get elapsed time in clock rate from last RTCP sender report
 	auto report_elapsed_timestamp =
 		rtp_config->timestamp -
 		rtcp_sr_reporter->lastReportedTimestamp();
 
-	// check if last report was at least 1 second ago
+	// Check if last report was at least 1 second ago
 	if (rtp_config->timestampToSeconds(report_elapsed_timestamp) > 1)
 		rtcp_sr_reporter->setNeedsToReport();
 
@@ -597,6 +597,13 @@ void WHIPOutput::Send(void *data, uintptr_t size, uint64_t duration,
 void register_whip_output()
 {
 	const uint32_t base_flags = OBS_OUTPUT_ENCODED | OBS_OUTPUT_SERVICE;
+
+	const char *audio_codecs = "opus";
+#ifdef ENABLE_HEVC
+	const char *video_codecs = "h264;hevc;av1";
+#else
+	const char *video_codecs = "h264;av1";
+#endif
 
 	struct obs_output_info info = {};
 	info.id = "whip_output";
@@ -632,17 +639,20 @@ void register_whip_output()
 	info.get_connect_time_ms = [](void *priv_data) -> int {
 		return static_cast<WHIPOutput *>(priv_data)->GetConnectTime();
 	};
-	info.encoded_video_codecs = "h264;av1";
-	info.encoded_audio_codecs = "opus";
+	info.encoded_video_codecs = video_codecs;
+	info.encoded_audio_codecs = audio_codecs;
 	info.protocols = "WHIP";
 
 	obs_register_output(&info);
 
 	info.id = "whip_output_video";
 	info.flags = OBS_OUTPUT_VIDEO | base_flags;
+	info.encoded_audio_codecs = nullptr;
 	obs_register_output(&info);
 
 	info.id = "whip_output_audio";
 	info.flags = OBS_OUTPUT_AUDIO | base_flags;
+	info.encoded_video_codecs = nullptr;
+	info.encoded_audio_codecs = audio_codecs;
 	obs_register_output(&info);
 }

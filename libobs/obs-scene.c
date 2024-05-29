@@ -239,6 +239,7 @@ static void scene_destroy(void *data)
 
 	pthread_mutex_destroy(&scene->video_mutex);
 	pthread_mutex_destroy(&scene->audio_mutex);
+	da_free(scene->mix_sources);
 	bfree(scene);
 }
 
@@ -1475,16 +1476,28 @@ static inline void mix_audio(float *p_out, float *p_in, size_t pos,
 		*(out++) += *(in++);
 }
 
-static bool scene_audio_render(void *data, uint64_t *ts_out,
-			       struct obs_source_audio_mix *audio_output,
-			       uint32_t mixers, size_t channels,
-			       size_t sample_rate)
+static inline struct scene_source_mix *get_source_mix(struct obs_scene *scene,
+						      struct obs_source *source)
+{
+	for (size_t i = 0; i < scene->mix_sources.num; i++) {
+		struct scene_source_mix *mix = &scene->mix_sources.array[i];
+		if (mix->source == source)
+			return mix;
+	}
+
+	return NULL;
+}
+
+static bool scene_audio_render_internal(
+	struct obs_scene *scene, struct obs_scene *parent, uint64_t *ts_out,
+	struct obs_source_audio_mix *audio_output, uint32_t mixers,
+	size_t channels, size_t sample_rate, float *parent_buf)
 {
 	uint64_t timestamp = 0;
 	float buf[AUDIO_OUTPUT_FRAMES];
 	struct obs_source_audio_mix child_audio;
-	struct obs_scene *scene = data;
 	struct obs_scene_item *item;
+	struct obs_scene *mix_scene = parent ? parent : scene;
 
 	audio_lock(scene);
 
@@ -1498,6 +1511,7 @@ static bool scene_audio_render(void *data, uint64_t *ts_out,
 			source = item->hide_transition;
 		else
 			source = item->source;
+
 		if (!obs_source_audio_pending(source) &&
 		    (item->visible ||
 		     transition_active(item->hide_transition))) {
@@ -1527,9 +1541,11 @@ static bool scene_audio_render(void *data, uint64_t *ts_out,
 	item = scene->first_item;
 	while (item) {
 		uint64_t source_ts;
-		size_t pos, count;
+		size_t pos;
 		bool apply_buf;
 		struct obs_source *source;
+		struct scene_source_mix *source_mix;
+
 		if (item->visible && transition_active(item->show_transition))
 			source = item->show_transition;
 		else if (!item->visible &&
@@ -1560,15 +1576,94 @@ static bool scene_audio_render(void *data, uint64_t *ts_out,
 			continue;
 		}
 
-		count = AUDIO_OUTPUT_FRAMES - pos;
-
 		if (!apply_buf && !item->visible &&
 		    !transition_active(item->hide_transition)) {
 			item = item->next;
 			continue;
 		}
 
-		obs_source_get_audio_mix(source, &child_audio);
+		size_t count = AUDIO_OUTPUT_FRAMES - pos;
+
+		/* Update buf so that parent mute state applies to all current
+		 * scene items as well */
+		if (parent_buf &&
+		    (!apply_buf ||
+		     memcmp(buf, parent_buf, sizeof(float) * count) != 0)) {
+			for (size_t i = 0; i < count; i++) {
+				if (!apply_buf) {
+					buf[i] = parent_buf[i];
+				} else {
+					buf[i] = buf[i] < parent_buf[i]
+							 ? buf[i]
+							 : parent_buf[i];
+				}
+			}
+
+			apply_buf = true;
+		}
+
+		/* If "source" is a group/scene and has no transition,
+		 * add their items to the current list */
+		if (source == item->source && (obs_source_is_group(source) ||
+					       obs_source_is_scene(source))) {
+			scene_audio_render_internal(source->context.data,
+						    mix_scene, NULL, NULL, 0, 0,
+						    sample_rate,
+						    apply_buf ? buf : NULL);
+			item = item->next;
+			continue;
+		}
+
+		source_mix = get_source_mix(mix_scene, item->source);
+
+		if (!source_mix) {
+			source_mix = da_push_back_new(mix_scene->mix_sources);
+			source_mix->source = item->source;
+			source_mix->transition = source != item->source ? source
+									: NULL;
+			source_mix->apply_buf = apply_buf;
+			source_mix->pos = pos;
+			source_mix->count = count;
+			if (apply_buf) {
+				memcpy(source_mix->buf, buf,
+				       sizeof(float) * source_mix->count);
+			}
+		} else {
+			/* Only transition audio if there are no
+			 * non-transitioning scene items. */
+			if (source_mix->transition && source == item->source)
+				source_mix->transition = NULL;
+			/* Only apply buf to mix if all scene items for this
+			 * source require it. */
+			source_mix->apply_buf = source_mix->apply_buf &&
+						apply_buf;
+			/* Update buf so that only highest value across all
+			 * items is used. */
+			if (source_mix->apply_buf &&
+			    memcmp(source_mix->buf, buf,
+				   source_mix->count * sizeof(float)) != 0) {
+				for (size_t i = 0; i < source_mix->count; i++) {
+					if (buf[i] > source_mix->buf[i])
+						source_mix->buf[i] = buf[i];
+				}
+			}
+		}
+
+		item = item->next;
+	}
+
+	if (!audio_output) {
+		audio_unlock(scene);
+		return true;
+	}
+
+	for (size_t i = 0; i < scene->mix_sources.num; i++) {
+		struct scene_source_mix *source_mix =
+			&scene->mix_sources.array[i];
+		obs_source_get_audio_mix(source_mix->transition
+						 ? source_mix->transition
+						 : source_mix->source,
+					 &child_audio);
 
 		for (size_t mix = 0; mix < MAX_AUDIO_MIXES; mix++) {
 			if ((mixers & (1 << mix)) == 0)
@@ -1578,21 +1673,34 @@ static bool scene_audio_render(void *data, uint64_t *ts_out,
 				float *out = audio_output->output[mix].data[ch];
 				float *in = child_audio.output[mix].data[ch];
 
-				if (apply_buf)
-					mix_audio_with_buf(out, in, buf, pos,
-							   count);
+				if (source_mix->apply_buf)
+					mix_audio_with_buf(out, in,
+							   source_mix->buf,
+							   source_mix->pos,
+							   source_mix->count);
 				else
-					mix_audio(out, in, pos, count);
+					mix_audio(out, in, source_mix->pos,
+						  source_mix->count);
 			}
 		}
-
-		item = item->next;
 	}
+
+	da_clear(scene->mix_sources);
 
 	*ts_out = timestamp;
 	audio_unlock(scene);
 
 	return true;
+}
+
+static bool scene_audio_render(void *data, uint64_t *ts_out,
+			       struct obs_source_audio_mix *audio_output,
+			       uint32_t mixers, size_t channels,
+			       size_t sample_rate)
+{
+	struct obs_scene *scene = data;
+	return scene_audio_render_internal(scene, NULL, ts_out, audio_output,
+					   mixers, channels, sample_rate, NULL);
 }
 
 enum gs_color_space

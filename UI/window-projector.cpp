@@ -21,8 +21,10 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 {
 	OBSSource source = GetSource();
 	if (source) {
-		destroyedSignal.Connect(obs_source_get_signal_handler(source),
-					"destroy", OBSSourceDestroyed, this);
+		sigs.emplace_back(obs_source_get_signal_handler(source),
+				  "rename", OBSSourceRenamed, this);
+		sigs.emplace_back(obs_source_get_signal_handler(source),
+				  "destroy", OBSSourceDestroyed, this);
 	}
 
 	isAlwaysOnTop = config_get_bool(GetGlobalConfig(), "BasicWindow",
@@ -106,6 +108,8 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 
 OBSProjector::~OBSProjector()
 {
+	sigs.clear();
+
 	bool isMultiview = type == ProjectorType::Multiview;
 	obs_display_remove_draw_callback(
 		GetDisplay(), isMultiview ? OBSRenderMultiview : OBSRender,
@@ -213,6 +217,17 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 		obs_render_main_texture();
 
 	endRegion();
+}
+
+void OBSProjector::OBSSourceRenamed(void *data, calldata_t *params)
+{
+	OBSProjector *window = reinterpret_cast<OBSProjector *>(data);
+	QString oldName = calldata_string(params, "prev_name");
+	QString newName = calldata_string(params, "new_name");
+
+	QMetaObject::invokeMethod(window, "RenameProjector",
+				  Q_ARG(QString, oldName),
+				  Q_ARG(QString, newName));
 }
 
 void OBSProjector::OBSSourceDestroyed(void *data, calldata_t *)
@@ -323,14 +338,18 @@ void OBSProjector::UpdateMultiview()
 
 	bool drawSafeArea = config_get_bool(GetGlobalConfig(), "BasicWindow",
 					    "MultiviewDrawAreas");
-
+	bool drawAudioMeter = config_get_bool(GetGlobalConfig(), "BasicWindow",
+					      "MultiviewDrawAudioMeter");
+	int selectedOutput = config_get_int(GetGlobalConfig(), "BasicWindow",
+					      "MultiviewAudioMeterSource");
 	mouseSwitching = config_get_bool(GetGlobalConfig(), "BasicWindow",
 					 "MultiviewMouseSwitch");
 
 	transitionOnDoubleClick = config_get_bool(
 		GetGlobalConfig(), "BasicWindow", "TransitionOnDoubleClick");
 
-	multiview->Update(multiviewLayout, drawLabel, drawSafeArea);
+	multiview->Update(multiviewLayout, drawLabel, drawSafeArea,
+			  drawAudioMeter, selectedOutput);
 }
 
 void OBSProjector::UpdateProjectorTitle(QString name)

@@ -3,14 +3,13 @@
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 #include "mute-checkbox.hpp"
-#include "slider-ignorewheel.hpp"
-#include "slider-absoluteset-style.hpp"
+#include "absolute-slider.hpp"
+#include "source-label.hpp"
 #include <QFontDatabase>
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QLabel>
 #include <QPainter>
-#include <QStyleFactory>
 
 using namespace std;
 
@@ -219,16 +218,6 @@ void VolControl::updateText()
 	slider->setAccessibleName(accText);
 }
 
-QString VolControl::GetName() const
-{
-	return nameLabel->text();
-}
-
-void VolControl::SetName(const QString &newName)
-{
-	nameLabel->setText(newName);
-}
-
 void VolControl::EmitConfigClicked()
 {
 	emit ConfigClicked();
@@ -253,7 +242,7 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	  vertical(vertical),
 	  contextMenu(nullptr)
 {
-	nameLabel = new QLabel();
+	nameLabel = new OBSSourceLabel(source);
 	volLabel = new QLabel();
 	mute = new MuteCheckBox();
 
@@ -379,14 +368,13 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	obs_fader_add_callback(obs_fader, OBSVolumeChanged, this);
 	obs_volmeter_add_callback(obs_volmeter, OBSVolumeLevel, this);
 
-	signal_handler_connect(obs_source_get_signal_handler(source), "mute",
-			       OBSVolumeMuted, this);
-	signal_handler_connect(obs_source_get_signal_handler(source),
-			       "audio_mixers", OBSMixersOrMonitoringChanged,
-			       this);
-	signal_handler_connect(obs_source_get_signal_handler(source),
-			       "audio_monitoring", OBSMixersOrMonitoringChanged,
-			       this);
+	sigs.emplace_back(obs_source_get_signal_handler(source), "mute",
+			  OBSVolumeMuted, this);
+	sigs.emplace_back(obs_source_get_signal_handler(source), "audio_mixers",
+			  OBSMixersOrMonitoringChanged, this);
+	sigs.emplace_back(obs_source_get_signal_handler(source),
+			  "audio_monitoring", OBSMixersOrMonitoringChanged,
+			  this);
 
 	QWidget::connect(slider, &VolumeSlider::valueChanged, this,
 			 &VolControl::SliderChanged);
@@ -395,18 +383,6 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 
 	obs_fader_attach_source(obs_fader, source);
 	obs_volmeter_attach_source(obs_volmeter, source);
-
-	QString styleName = slider->style()->objectName();
-	QStyle *style;
-	style = QStyleFactory::create(styleName);
-	if (!style) {
-		style = new SliderAbsoluteSetStyle();
-	} else {
-		style = new SliderAbsoluteSetStyle(style);
-	}
-
-	style->setParent(slider);
-	slider->setStyle(style);
 
 	/* Call volume changed once to init the slider position and label */
 	VolumeChanged();
@@ -422,14 +398,7 @@ VolControl::~VolControl()
 	obs_fader_remove_callback(obs_fader, OBSVolumeChanged, this);
 	obs_volmeter_remove_callback(obs_volmeter, OBSVolumeLevel, this);
 
-	signal_handler_disconnect(obs_source_get_signal_handler(source), "mute",
-				  OBSVolumeMuted, this);
-	signal_handler_disconnect(obs_source_get_signal_handler(source),
-				  "audio_mixers", OBSMixersOrMonitoringChanged,
-				  this);
-	signal_handler_disconnect(obs_source_get_signal_handler(source),
-				  "audio_monitoring",
-				  OBSMixersOrMonitoringChanged, this);
+	sigs.clear();
 
 	if (contextMenu)
 		contextMenu->close();
@@ -1534,4 +1503,78 @@ void VolumeMeterTimer::timerEvent(QTimerEvent *)
 			meter->update(meter->getBarRect());
 		}
 	}
+}
+
+VolumeSlider::VolumeSlider(obs_fader_t *fader, QWidget *parent)
+	: AbsoluteSlider(parent)
+{
+	fad = fader;
+}
+
+VolumeSlider::VolumeSlider(obs_fader_t *fader, Qt::Orientation orientation,
+			   QWidget *parent)
+	: AbsoluteSlider(orientation, parent)
+{
+	fad = fader;
+}
+
+VolumeAccessibleInterface::VolumeAccessibleInterface(QWidget *w)
+	: QAccessibleWidget(w)
+{
+}
+
+VolumeSlider *VolumeAccessibleInterface::slider() const
+{
+	return qobject_cast<VolumeSlider *>(object());
+}
+
+QString VolumeAccessibleInterface::text(QAccessible::Text t) const
+{
+	if (slider()->isVisible()) {
+		switch (t) {
+		case QAccessible::Text::Value:
+			return currentValue().toString();
+		default:
+			break;
+		}
+	}
+	return QAccessibleWidget::text(t);
+}
+
+QVariant VolumeAccessibleInterface::currentValue() const
+{
+	QString text;
+	float db = obs_fader_get_db(slider()->fad);
+
+	if (db < -96.0f)
+		text = "-inf dB";
+	else
+		text = QString::number(db, 'f', 1).append(" dB");
+
+	return text;
+}
+
+void VolumeAccessibleInterface::setCurrentValue(const QVariant &value)
+{
+	slider()->setValue(value.toInt());
+}
+
+QVariant VolumeAccessibleInterface::maximumValue() const
+{
+	return slider()->maximum();
+}
+
+QVariant VolumeAccessibleInterface::minimumValue() const
+{
+	return slider()->minimum();
+}
+
+QVariant VolumeAccessibleInterface::minimumStepSize() const
+{
+	return slider()->singleStep();
+}
+
+QAccessible::Role VolumeAccessibleInterface::role() const
+{
+	return QAccessible::Role::Slider;
 }

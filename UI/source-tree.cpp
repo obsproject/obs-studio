@@ -3,6 +3,7 @@
 #include "source-tree.hpp"
 #include "qt-wrappers.hpp"
 #include "platform.hpp"
+#include "source-label.hpp"
 
 #include <obs-frontend-api.h>
 #include <obs.h>
@@ -96,7 +97,7 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 	lock->setAccessibleDescription(
 		QTStr("Basic.Main.Sources.LockDescription").arg(name));
 
-	label = new QLabel(QT_UTF8(name));
+	label = new OBSSourceLabel(source);
 	label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 	label->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 	label->setAttribute(Qt::WA_TranslucentBackground);
@@ -288,15 +289,6 @@ void SourceTreeItem::ReconnectSignals()
 
 	/* --------------------------------------------------------- */
 
-	auto renamed = [](void *data, calldata_t *cd) {
-		SourceTreeItem *this_ =
-			reinterpret_cast<SourceTreeItem *>(data);
-		const char *name = calldata_string(cd, "new_name");
-
-		QMetaObject::invokeMethod(this_, "Renamed",
-					  Q_ARG(QString, QT_UTF8(name)));
-	};
-
 	auto removeSource = [](void *data, calldata_t *) {
 		SourceTreeItem *this_ =
 			reinterpret_cast<SourceTreeItem *>(data);
@@ -307,7 +299,6 @@ void SourceTreeItem::ReconnectSignals()
 
 	obs_source_t *source = obs_sceneitem_get_source(sceneitem);
 	signal = obs_source_get_signal_handler(source);
-	sigs.emplace_back(signal, "rename", renamed, this);
 	sigs.emplace_back(signal, "remove", removeSource, this);
 }
 
@@ -470,7 +461,6 @@ void SourceTreeItem::ExitEditModeInternal(bool save)
 				redo, uuid, uuid);
 
 	obs_source_set_name(source, newName.c_str());
-	label->setText(QT_UTF8(newName.c_str()));
 }
 
 bool SourceTreeItem::eventFilter(QObject *object, QEvent *event)
@@ -507,11 +497,6 @@ void SourceTreeItem::LockedChanged(bool locked)
 {
 	lock->setChecked(locked);
 	OBSBasic::Get()->UpdateEditMenu();
-}
-
-void SourceTreeItem::Renamed(const QString &name)
-{
-	label->setText(name);
 }
 
 void SourceTreeItem::Update(bool force)

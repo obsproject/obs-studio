@@ -332,9 +332,6 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	ui->setupUi(this);
 	ui->previewDisabledWidget->setVisible(false);
-	QStyle *contextBarStyle = new OBSContextBarProxyStyle();
-	contextBarStyle->setParent(ui->contextContainer);
-	ui->contextContainer->setStyle(contextBarStyle);
 	ui->broadcastButton->setVisible(false);
 
 	startingDockLayout = saveState();
@@ -539,7 +536,10 @@ OBSBasic::OBSBasic(QWidget *parent)
 	connect(ui->broadcastButton, &QPushButton::clicked, this,
 		&OBSBasic::BroadcastButtonClicked);
 
-	connect(App(), &OBSApp::StyleChanged, this, &OBSBasic::ThemeChanged);
+	connect(App(), &OBSApp::StyleChanged, this, [this]() {
+		if (api)
+			api->on_event(OBS_FRONTEND_EVENT_THEME_CHANGED);
+	});
 
 	QActionGroup *actionGroup = new QActionGroup(this);
 	actionGroup->addAction(ui->actionSceneListMode);
@@ -1866,6 +1866,18 @@ void OBSBasic::InitOBSCallbacks()
 				    OBSBasic::SourceAudioDeactivated, this);
 	signalHandlers.emplace_back(obs_get_signal_handler(), "source_rename",
 				    OBSBasic::SourceRenamed, this);
+	signalHandlers.emplace_back(
+		obs_get_signal_handler(), "source_filter_add",
+		[](void *data, calldata_t *) {
+			static_cast<OBSBasic *>(data)->UpdateEditMenu();
+		},
+		this);
+	signalHandlers.emplace_back(
+		obs_get_signal_handler(), "source_filter_remove",
+		[](void *data, calldata_t *) {
+			static_cast<OBSBasic *>(data)->UpdateEditMenu();
+		},
+		this);
 }
 
 void OBSBasic::InitPrimitives()
@@ -2796,6 +2808,23 @@ void OBSBasic::CreateHotkeys()
 		this);
 	LoadHotkey(splitFileHotkey, "OBSBasic.SplitFile");
 
+	/* Adding chapters is only supported by the native MP4 output */
+	const string_view output_id =
+		obs_output_get_id(outputHandler->fileOutput);
+	if (output_id == "mp4_output") {
+		addChapterHotkey = obs_hotkey_register_frontend(
+			"OBSBasic.AddChapterMarker",
+			Str("Basic.Main.AddChapterMarker"),
+			[](void *, obs_hotkey_id, obs_hotkey_t *,
+			   bool pressed) {
+				if (pressed)
+					obs_frontend_recording_add_chapter(
+						nullptr);
+			},
+			this);
+		LoadHotkey(addChapterHotkey, "OBSBasic.AddChapterMarker");
+	}
+
 	replayBufHotkeys = obs_hotkey_pair_register_frontend(
 		"OBSBasic.StartReplayBuffer",
 		Str("Basic.Main.StartReplayBuffer"),
@@ -2924,6 +2953,7 @@ void OBSBasic::ClearHotkeys()
 	obs_hotkey_pair_unregister(recordingHotkeys);
 	obs_hotkey_pair_unregister(pauseHotkeys);
 	obs_hotkey_unregister(splitFileHotkey);
+	obs_hotkey_unregister(addChapterHotkey);
 	obs_hotkey_pair_unregister(replayBufHotkeys);
 	obs_hotkey_pair_unregister(vcamHotkeys);
 	obs_hotkey_pair_unregister(togglePreviewHotkeys);
@@ -3338,16 +3368,6 @@ void OBSBasic::RenameSources(OBSSource source, QString newName,
 			     QString prevName)
 {
 	RenameListValues(ui->scenes, newName, prevName);
-
-	for (size_t i = 0; i < volumes.size(); i++) {
-		if (volumes[i]->GetName().compare(prevName) == 0)
-			volumes[i]->SetName(newName);
-	}
-
-	for (size_t i = 0; i < projectors.size(); i++) {
-		if (projectors[i]->GetSource() == source)
-			projectors[i]->RenameProjector(prevName, newName);
-	}
 
 	if (vcamConfig.type == VCamOutputType::SourceOutput &&
 	    prevName == QString::fromStdString(vcamConfig.source))
@@ -3833,14 +3853,8 @@ void OBSBasic::VolControlContextMenu()
 
 	copyFiltersAction.setEnabled(obs_source_filter_count(vol->GetSource()) >
 				     0);
-
-	OBSSourceAutoRelease source =
-		obs_weak_source_get_source(copyFiltersSource);
-	if (source) {
-		pasteFiltersAction.setEnabled(true);
-	} else {
-		pasteFiltersAction.setEnabled(false);
-	}
+	pasteFiltersAction.setEnabled(
+		!obs_weak_source_expired(copyFiltersSource));
 
 	QMenu popup;
 	vol->SetContextMenu(&popup);
@@ -5607,11 +5621,14 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 void OBSBasic::on_actionSceneListMode_triggered()
 {
 	ui->scenes->SetGridMode(false);
+	config_set_bool(App()->GlobalConfig(), "BasicWindow", "gridMode",
+			false);
 }
 
 void OBSBasic::on_actionSceneGridMode_triggered()
 {
 	ui->scenes->SetGridMode(true);
+	config_set_bool(App()->GlobalConfig(), "BasicWindow", "gridMode", true);
 }
 
 void OBSBasic::GridActionClicked()
@@ -9692,6 +9709,9 @@ void OBSBasic::on_resetUI_triggered()
 	ui->toggleStatusBar->setChecked(true);
 	ui->scenes->SetGridMode(false);
 	ui->actionSceneListMode->setChecked(true);
+
+	config_set_bool(App()->GlobalConfig(), "BasicWindow", "gridMode",
+			false);
 }
 
 void OBSBasic::on_multiviewProjectorWindowed_triggered()
@@ -10117,6 +10137,26 @@ void OBSBasic::on_actionPasteDup_triggered()
 				  redo_data);
 }
 
+void OBSBasic::SourcePasteFilters(OBSSource source, OBSSource dstSource)
+{
+	if (source == dstSource)
+		return;
+
+	OBSDataArrayAutoRelease undo_array =
+		obs_source_backup_filters(dstSource);
+	obs_source_copy_filters(dstSource, source);
+	OBSDataArrayAutoRelease redo_array =
+		obs_source_backup_filters(dstSource);
+
+	const char *srcName = obs_source_get_name(source);
+	const char *dstName = obs_source_get_name(dstSource);
+	QString text =
+		QTStr("Undo.Filters.Paste.Multiple").arg(srcName, dstName);
+
+	CreateFilterPasteUndoRedoAction(text, dstSource, undo_array,
+					redo_array);
+}
+
 void OBSBasic::AudioMixerCopyFilters()
 {
 	QAction *action = reinterpret_cast<QAction *>(sender());
@@ -10136,10 +10176,7 @@ void OBSBasic::AudioMixerPasteFilters()
 	OBSSourceAutoRelease source =
 		obs_weak_source_get_source(copyFiltersSource);
 
-	if (source == dstSource)
-		return;
-
-	obs_source_copy_filters(dstSource, source);
+	SourcePasteFilters(source.Get(), dstSource);
 }
 
 void OBSBasic::SceneCopyFilters()
@@ -10155,10 +10192,7 @@ void OBSBasic::ScenePasteFilters()
 
 	OBSSource dstSource = GetCurrentSceneSource();
 
-	if (source == dstSource)
-		return;
-
-	obs_source_copy_filters(dstSource, source);
+	SourcePasteFilters(source.Get(), dstSource);
 }
 
 void OBSBasic::on_actionCopyFilters_triggered()
@@ -10216,22 +10250,7 @@ void OBSBasic::on_actionPasteFilters_triggered()
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 	OBSSource dstSource = obs_sceneitem_get_source(sceneItem);
 
-	if (source == dstSource)
-		return;
-
-	OBSDataArrayAutoRelease undo_array =
-		obs_source_backup_filters(dstSource);
-	obs_source_copy_filters(dstSource, source);
-	OBSDataArrayAutoRelease redo_array =
-		obs_source_backup_filters(dstSource);
-
-	const char *srcName = obs_source_get_name(source);
-	const char *dstName = obs_source_get_name(dstSource);
-	QString text =
-		QTStr("Undo.Filters.Paste.Multiple").arg(srcName, dstName);
-
-	CreateFilterPasteUndoRedoAction(text, dstSource, undo_array,
-					redo_array);
+	SourcePasteFilters(source.Get(), dstSource);
 }
 
 static void ConfirmColor(SourceTree *sources, const QColor &color,
@@ -11154,23 +11173,4 @@ void OBSBasic::UpdatePreviewSpacingHelpers()
 float OBSBasic::GetDevicePixelRatio()
 {
 	return dpi;
-}
-
-void OBSBasic::ThemeChanged()
-{
-	/* Since volume/media sliders are using QProxyStyle, they are not
-	* updated when themes are changed, so re-initialize them. */
-	vector<OBSSource> sources;
-	for (size_t i = 0; i != volumes.size(); i++)
-		sources.emplace_back(volumes[i]->GetSource());
-
-	ClearVolumeControls();
-
-	for (const auto &source : sources)
-		ActivateAudioSource(source);
-
-	UpdateContextBar(true);
-
-	if (api)
-		api->on_event(OBS_FRONTEND_EVENT_THEME_CHANGED);
 }

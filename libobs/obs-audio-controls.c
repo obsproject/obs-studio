@@ -62,7 +62,6 @@ struct meter_cb {
 	obs_volmeter_updated_t callback;
 	void *param;
 };
-
 struct obs_volmeter {
 	pthread_mutex_t mutex;
 	obs_source_t *source;

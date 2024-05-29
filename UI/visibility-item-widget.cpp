@@ -1,6 +1,7 @@
 #include "visibility-item-widget.hpp"
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
+#include "source-label.hpp"
 #include <QListWidget>
 #include <QLineEdit>
 #include <QHBoxLayout>
@@ -12,11 +13,8 @@
 VisibilityItemWidget::VisibilityItemWidget(obs_source_t *source_)
 	: source(source_),
 	  enabledSignal(obs_source_get_signal_handler(source), "enable",
-			OBSSourceEnabled, this),
-	  renamedSignal(obs_source_get_signal_handler(source), "rename",
-			OBSSourceRenamed, this)
+			OBSSourceEnabled, this)
 {
-	const char *name = obs_source_get_name(source);
 	bool enabled = obs_source_enabled(source);
 
 	vis = new QCheckBox();
@@ -24,7 +22,7 @@ VisibilityItemWidget::VisibilityItemWidget(obs_source_t *source_)
 	vis->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 	vis->setChecked(enabled);
 
-	label = new QLabel(QT_UTF8(name));
+	label = new OBSSourceLabel(source);
 	label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
 	QHBoxLayout *itemLayout = new QHBoxLayout();
@@ -50,26 +48,10 @@ void VisibilityItemWidget::OBSSourceEnabled(void *param, calldata_t *data)
 				  Q_ARG(bool, enabled));
 }
 
-void VisibilityItemWidget::OBSSourceRenamed(void *param, calldata_t *data)
-{
-	VisibilityItemWidget *window =
-		reinterpret_cast<VisibilityItemWidget *>(param);
-	const char *name = calldata_string(data, "new_name");
-
-	QMetaObject::invokeMethod(window, "SourceRenamed",
-				  Q_ARG(QString, QT_UTF8(name)));
-}
-
 void VisibilityItemWidget::SourceEnabled(bool enabled)
 {
 	if (vis->isChecked() != enabled)
 		vis->setChecked(enabled);
-}
-
-void VisibilityItemWidget::SourceRenamed(QString name)
-{
-	if (label && name != label->text())
-		label->setText(name);
 }
 
 void VisibilityItemWidget::SetColor(const QColor &color, bool active_,

@@ -196,7 +196,7 @@ void video_frame_init(struct video_frame *frame, enum video_format format,
 	size_t size = 0;
 	uint32_t linesizes[MAX_AV_PLANES];
 	uint32_t heights[MAX_AV_PLANES];
-	size_t offsets[MAX_AV_PLANES - 1];
+	size_t offsets[MAX_AV_PLANES];
 	int alignment = base_get_alignment();
 
 	if (!frame)
