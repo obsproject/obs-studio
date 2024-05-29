@@ -752,10 +752,21 @@ os_inhibit_t *os_inhibit_sleep_create(const char *reason)
 
 #if defined(GIO_FOUND)
 	info->portal = portal_inhibit_info_create();
-	if (!info->portal)
-		info->dbus = dbus_sleep_info_create();
-#endif
+	if (!info->portal) {
+		/* In a Flatpak, only the portal can be used for inhibition. */
+		if (access("/.flatpak-info", F_OK) == 0) {
+			bfree(info);
+			return NULL;
+		}
 
+		info->dbus = dbus_sleep_info_create();
+	}
+
+	if (info->portal || info->dbus) {
+		info->reason = bstrdup(reason);
+		return info;
+	}
+#endif
 	os_event_init(&info->stop_event, OS_EVENT_TYPE_AUTO);
 	posix_spawnattr_init(&info->attr);
 
@@ -812,6 +823,10 @@ bool os_inhibit_sleep_set_active(os_inhibit_t *info, bool active)
 		portal_inhibit(info->portal, info->reason, active);
 	if (info->dbus)
 		dbus_inhibit_sleep(info->dbus, info->reason, active);
+	if (info->portal || info->dbus) {
+		info->active = active;
+		return true;
+	}
 #endif
 
 	if (!info->stop_event)
@@ -839,11 +854,19 @@ void os_inhibit_sleep_destroy(os_inhibit_t *info)
 	if (info) {
 		os_inhibit_sleep_set_active(info, false);
 #if defined(GIO_FOUND)
-		portal_inhibit_info_destroy(info->portal);
-		dbus_sleep_info_destroy(info->dbus);
-#endif
+		if (info->portal) {
+			portal_inhibit_info_destroy(info->portal);
+		} else if (info->dbus) {
+			dbus_sleep_info_destroy(info->dbus);
+		} else {
+			os_event_destroy(info->stop_event);
+			posix_spawnattr_destroy(&info->attr);
+		}
+#else
 		os_event_destroy(info->stop_event);
 		posix_spawnattr_destroy(&info->attr);
+#endif
+
 		bfree(info->reason);
 		bfree(info);
 	}
