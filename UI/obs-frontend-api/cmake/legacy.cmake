@@ -23,6 +23,10 @@ set_target_properties(
              SOVERSION "0"
              PUBLIC_HEADER obs-frontend-api.h)
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "LCC")
+  target_compile_options(obs-frontend-api PRIVATE -Wno-unused-parameter)
+endif()
+
 if(OS_WINDOWS)
   set(MODULE_DESCRIPTION "OBS Frontend API")
   configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in obs-frontend-api.rc)

@@ -98,6 +98,10 @@ elseif(OS_POSIX)
 
 endif()
 
+if(CMAKE_C_COMPILER_ID STREQUAL "LCC")
+  target_compile_options(obspython PRIVATE -Wno-ignored-qualifiers)
+endif()
+
 set_target_properties(
   obspython
   PROPERTIES FOLDER "scripting"

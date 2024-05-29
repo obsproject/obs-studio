@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # CMake < 3.21 only goes up to 11, but it's mostly identical to 17 anyway.
-if(${CMAKE_VERSION} VERSION_LESS "3.21.0")
+if(${CMAKE_VERSION} VERSION_LESS "3.21.0" OR ${CMAKE_C_COMPILER_ID} STREQUAL "LCC")
   set(CMAKE_C_STANDARD 11)
   set(CMAKE_C_STANDARD_REQUIRED ON)
 else()
@@ -115,7 +115,8 @@ else()
     -Wno-error=switch
     -Wformat
     -Wformat-security
-    -Wunused-parameter
+    "$<$<NOT:$<COMPILE_LANG_AND_ID:C,LCC>>:-Wunused-parameter>"
+    "$<$<COMPILE_LANG_AND_ID:C,LCC>:-Wno-unused-parameter>"
     -Wno-unused-function
     -Wno-missing-field-initializers
     -fno-strict-aliasing
@@ -166,27 +167,4 @@ else()
         -DSIMDE_ENABLE_OPENMP "$<$<AND:$<COMPILE_LANGUAGE:C>,$<BOOL:C_COMPILER_SUPPORTS_OPENMP_SIMD>>:-fopenmp-simd>"
         "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<BOOL:CXX_COMPILER_SUPPORTS_OPENMP_SIMD>>:-fopenmp-simd>")
   endif()
-endif()
-
-if(LOWERCASE_CMAKE_SYSTEM_PROCESSOR MATCHES "e2k")
-  foreach(
-    TEST_C_FLAG
-    "-Wno-unused-parameter"
-    "-Wno-ignored-qualifiers"
-    "-Wno-pointer-sign"
-    "-Wno-unused-variable"
-    "-Wno-sign-compare"
-    "-Wno-bad-return-value-type"
-    "-Wno-maybe-uninitialized")
-    check_c_compiler_flag(${TEST_C_FLAG} C_COMPILER_SUPPORTS_FLAG_${TEST_C_FLAG})
-    if(C_COMPILER_SUPPORTS_FLAG_${TEST_C_FLAG})
-      set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} ${TEST_C_FLAG})
-    endif()
-  endforeach()
-  foreach(TEST_CXX_FLAG "-Wno-invalid-offsetof" "-Wno-maybe-uninitialized")
-    check_cxx_compiler_flag(${TEST_CXX_FLAG} CXX_COMPILER_SUPPORTS_FLAG_${TEST_CXX_FLAG})
-    if(CXX_COMPILER_SUPPORTS_FLAG_${TEST_CXX_FLAG})
-      set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} ${TEST_CXX_FLAG})
-    endif()
-  endforeach()
 endif()

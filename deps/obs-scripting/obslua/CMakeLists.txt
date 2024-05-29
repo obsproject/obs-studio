@@ -33,6 +33,7 @@ target_compile_options(
           $<$<PLATFORM_ID:Windows>:/wd4267>
           $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wno-shorten-64-to-32>
           $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wno-unreachable-code>
+          $<$<COMPILE_LANG_AND_ID:C,LCC>:-Wno-ignored-qualifiers>
           $<$<COMPILE_LANG_AND_ID:C,GNU>:-Wno-maybe-uninitialized>)
 
 target_compile_definitions(obslua PRIVATE SWIG_TYPE_TABLE=obslua SWIG_LUA_INTERPRETER_NO_DEBUG

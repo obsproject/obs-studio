@@ -35,14 +35,15 @@ set(_obs_gcc_c_options
     -Wparentheses
     -Wuninitialized
     -Wunreachable-code
-    -Wunused-parameter
+    "$<$<NOT:$<COMPILE_LANG_AND_ID:C,LCC>>:-Wunused-parameter>"
+    "$<$<COMPILE_LANG_AND_ID:C,LCC>:-Wno-unused-parameter>"
     -Wunused-value
     -Wunused-variable
     -Wvla)
 
 add_compile_options(
   -fopenmp-simd
-  "$<$<COMPILE_LANG_AND_ID:C,GNU>:${_obs_gcc_c_options}>"
+  "$<$<COMPILE_LANG_AND_ID:C,GNU,LCC>:${_obs_gcc_c_options}>"
   "$<$<COMPILE_LANG_AND_ID:C,GNU>:-Wint-conversion;-Wno-missing-prototypes;-Wno-strict-prototypes;-Wpointer-sign>"
   "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:${_obs_gcc_c_options}>"
   "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:-Winvalid-offsetof;-Wno-overloaded-virtual>"

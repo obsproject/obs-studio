@@ -34,19 +34,20 @@ target_sources(
 
 target_compile_options(
   ftl-sdk
-  PRIVATE $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang,GNU>:-Wno-unused-parameter>
-          $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang,GNU>:-Wno-unused-variable>
-          $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang,GNU>:-Wno-sign-compare>
-          $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang,GNU>:-Wno-pointer-sign>
-          $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang,GNU>:-Wno-int-conversion>
+  PRIVATE $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang,GNU,LCC>:-Wno-unused-parameter>
+          $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang,GNU,LCC>:-Wno-unused-variable>
+          $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang,GNU,LCC>:-Wno-sign-compare>
+          $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang,GNU,LCC>:-Wno-pointer-sign>
+          $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang,GNU,LCC>:-Wno-int-conversion>
           $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wno-incompatible-function-pointer-types>
           $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wno-implicit-int-conversion>
           $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wno-shorten-64-to-32>
           $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wno-macro-redefined>
           $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wno-enum-conversion>
-          $<$<COMPILE_LANG_AND_ID:C,GNU>:-Wno-extra>
-          $<$<COMPILE_LANG_AND_ID:C,GNU>:-Wno-incompatible-pointer-types>
-          $<$<COMPILE_LANG_AND_ID:C,GNU>:-Wno-builtin-macro-redefined>)
+          $<$<COMPILE_LANG_AND_ID:C,LCC>:-Wno-maybe-uninitialized>
+          $<$<COMPILE_LANG_AND_ID:C,GNU,LCC>:-Wno-extra>
+          $<$<COMPILE_LANG_AND_ID:C,GNU,LCC>:-Wno-incompatible-pointer-types>
+          $<$<COMPILE_LANG_AND_ID:C,GNU,LCC>:-Wno-builtin-macro-redefined>)
 
 target_include_directories(
   ftl-sdk

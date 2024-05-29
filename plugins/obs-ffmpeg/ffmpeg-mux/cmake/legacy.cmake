@@ -18,6 +18,10 @@ if(ENABLE_FFMPEG_MUX_DEBUG)
   target_compile_definitions(obs-ffmpeg-mux PRIVATE ENABLE_FFMPEG_MUX_DEBUG)
 endif()
 
+if(CMAKE_C_COMPILER_ID STREQUAL "LCC")
+    target_compile_options(obs-ffmpeg-mux PRIVATE -Wno-deprecated-declarations)
+endif()
+
 set_target_properties(obs-ffmpeg-mux PROPERTIES FOLDER "plugins/obs-ffmpeg")
 
 setup_binary_target(obs-ffmpeg-mux)

@@ -184,6 +184,10 @@ elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ftl-sdk/CMakeLists.txt")
     endif()
   endif()
 
+  if(CMAKE_C_COMPILER_ID STREQUAL "LCC")
+    target_compile_options(obs-outputs PRIVATE -Wno-sign-compare -Wno-maybe-uninitialized -Wno-int-conversion)
+  endif()
+
   target_compile_definitions(obs-outputs PRIVATE FTL_FOUND)
 endif()
 

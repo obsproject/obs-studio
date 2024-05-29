@@ -18,6 +18,10 @@ elseif(OS_MACOS)
   set_target_properties(obs-frontend-api PROPERTIES SOVERSION 1)
 endif()
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "LCC")
+  target_compile_options(obs-frontend-api PRIVATE -Wno-unused-parameter)
+endif()
+
 # cmake-format: off
 set_target_properties_obs(obs-frontend-api PROPERTIES FOLDER frontend PUBLIC_HEADER obs-frontend-api.h)
 
