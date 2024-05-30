@@ -561,7 +561,7 @@ void OBSBasicStatusBar::StreamStopped()
 
 void OBSBasicStatusBar::RecordingStarted(obs_output_t *output)
 {
-	recordOutput = output;
+	recordOutput = OBSGetWeakRef(output);
 	Activate();
 }
 
