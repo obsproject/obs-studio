@@ -17,7 +17,7 @@ target_link_libraries(obs-ffmpeg-mux PRIVATE OBS::libobs FFmpeg::avcodec FFmpeg:
 target_compile_definitions(obs-ffmpeg-mux PRIVATE $<$<BOOL:${ENABLE_FFMPEG_MUX_DEBUG}>:ENABLE_FFMPEG_MUX_DEBUG>)
 
 if(CMAKE_C_COMPILER_ID STREQUAL "LCC")
-    target_compile_options(obs-ffmpeg-mux PRIVATE -Wno-deprecated-declarations)
+    target_compile_options(obs-ffmpeg-mux PRIVATE -Wno-error=deprecated-declarations)
 endif()
 
 set_target_properties_obs(obs-ffmpeg-mux PROPERTIES FOLDER plugins/obs-ffmpeg)

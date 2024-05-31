@@ -44,7 +44,6 @@ target_compile_options(
           $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wno-shorten-64-to-32>
           $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wno-macro-redefined>
           $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wno-enum-conversion>
-          $<$<COMPILE_LANG_AND_ID:C,LCC>:-Wno-maybe-uninitialized>
           $<$<COMPILE_LANG_AND_ID:C,GNU,LCC>:-Wno-extra>
           $<$<COMPILE_LANG_AND_ID:C,GNU,LCC>:-Wno-incompatible-pointer-types>
           $<$<COMPILE_LANG_AND_ID:C,GNU,LCC>:-Wno-builtin-macro-redefined>)

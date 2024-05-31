@@ -13,10 +13,10 @@ set(_obs_gcc_c_options
     # cmake-format: sortable
     $<$<BOOL:${OBS_COMPILE_DEPRECATION_AS_WARNING}>:-Wno-error=deprecated-declarations>
     -fno-strict-aliasing
-    -fopenmp-simd
+    "$<$<NOT:$<OR:$<COMPILE_LANG_AND_ID:C,LCC>,$<COMPILE_LANG_AND_ID:CXX,LCC>>>:-fopenmp-simd>"
     -Wdeprecated-declarations
     -Wempty-body
-    -Wenum-conversion
+    "$<$<NOT:$<OR:$<COMPILE_LANG_AND_ID:C,LCC>,$<COMPILE_LANG_AND_ID:CXX,LCC>>>:-Wenum-conversion>"
     -Werror=return-type
     -Wextra
     -Wformat
@@ -34,7 +34,7 @@ set(_obs_gcc_c_options
     -Wno-unused-label
     -Wparentheses
     -Wuninitialized
-    -Wunreachable-code
+    "$<$<NOT:$<COMPILE_LANG_AND_ID:C,LCC>>:-Wunreachable-code>"
     "$<$<NOT:$<COMPILE_LANG_AND_ID:C,LCC>>:-Wunused-parameter>"
     "$<$<COMPILE_LANG_AND_ID:C,LCC>:-Wno-unused-parameter>"
     -Wunused-value
@@ -42,11 +42,10 @@ set(_obs_gcc_c_options
     -Wvla)
 
 add_compile_options(
-  -fopenmp-simd
   "$<$<COMPILE_LANG_AND_ID:C,GNU,LCC>:${_obs_gcc_c_options}>"
-  "$<$<COMPILE_LANG_AND_ID:C,GNU>:-Wint-conversion;-Wno-missing-prototypes;-Wno-strict-prototypes;-Wpointer-sign>"
-  "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:${_obs_gcc_c_options}>"
-  "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:-Winvalid-offsetof;-Wno-overloaded-virtual>"
+  "$<$<COMPILE_LANG_AND_ID:C,GNU,LCC>:-Wint-conversion;-Wno-missing-prototypes;-Wno-strict-prototypes;-Wpointer-sign>"
+  "$<$<COMPILE_LANG_AND_ID:CXX,GNU,LCC>:${_obs_gcc_c_options}>"
+  "$<$<COMPILE_LANG_AND_ID:CXX,GNU,LCC>:-Winvalid-offsetof;-Wno-overloaded-virtual>"
   "$<$<COMPILE_LANG_AND_ID:C,Clang>:${_obs_clang_c_options}>"
   "$<$<COMPILE_LANG_AND_ID:CXX,Clang>:${_obs_clang_cxx_options}>")
 
@@ -88,4 +87,4 @@ else()
       CACHE STRING "Enable Clang time-trace (required Clang and Ninja)" FORCE)
 endif()
 
-add_compile_definitions($<$<CONFIG:DEBUG>:DEBUG> $<$<CONFIG:DEBUG>:_DEBUG> SIMDE_ENABLE_OPENMP)
+add_compile_definitions($<$<CONFIG:DEBUG>:DEBUG> $<$<CONFIG:DEBUG>:_DEBUG>)

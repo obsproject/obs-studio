@@ -279,6 +279,12 @@ function(target_export target)
 
     install(CODE "set(OBS_VERSION_CANONICAL ${OBS_VERSION_CANONICAL})" COMPONENT Development)
     install(CODE "set(CMAKE_C_STANDARD ${CMAKE_C_STANDARD})" COMPONENT Development)
+    check_c_compiler_flag("-fopenmp-simd" C_COMPILER_SUPPORTS_OPENMP_SIMD)
+    if(C_COMPILER_SUPPORTS_OPENMP_SIMD)
+      install(CODE "set(FOPENMP_SIMD_FLAG \"-fopenmp-simd\")" COMPONENT Development)
+    else()
+      install(CODE "set(FOPENMP_SIMD_FLAG \"\")" COMPONENT Development)
+    endif()
     install(
       CODE "configure_file(\"${CMAKE_CURRENT_SOURCE_DIR}/cmake/linux/${target}.pc.in\" \"${CMAKE_CURRENT_BINARY_DIR}/${target}.pc\" @ONLY)"
       COMPONENT Development)

@@ -177,15 +177,11 @@ elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ftl-sdk/CMakeLists.txt")
               -Wno-error=int-conversion
               -Wno-error=unused-parameter
               -Wno-error=deprecated-declarations
-              "$<$<COMPILE_LANG_AND_ID:C,GNU>:-Wno-error=maybe-uninitialized>"
+              "$<$<COMPILE_LANG_AND_ID:C,GNU,LCC>:-Wno-error=maybe-uninitialized>"
               "$<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wno-error=pointer-sign>")
     if((NOT CMAKE_C_COMPILER_ID STREQUAL "GNU") OR CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL "10")
       target_compile_options(obs-outputs PRIVATE -Wno-error=enum-conversion)
     endif()
-  endif()
-
-  if(CMAKE_C_COMPILER_ID STREQUAL "LCC")
-    target_compile_options(obs-outputs PRIVATE -Wno-sign-compare -Wno-maybe-uninitialized -Wno-int-conversion)
   endif()
 
   target_compile_definitions(obs-outputs PRIVATE FTL_FOUND)

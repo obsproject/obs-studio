@@ -58,6 +58,13 @@ function(export_target_pkgconf target)
     set(_TARGET_OPTIONS "")
   endif()
 
+  check_c_compiler_flag("-fopenmp-simd" C_COMPILER_SUPPORTS_OPENMP_SIMD)
+  if(C_COMPILER_SUPPORTS_OPENMP_SIMD)
+    set(FOPENMP_SIMD_FLAG "-fopenmp-simd")
+  else()
+    set(FOPENMP_SIMD_FLAG "")
+  endif()
+
   configure_file("${CMAKE_CURRENT_SOURCE_DIR}/pkgconfig/${target}.pc.in" "${target}.pc" @ONLY)
 
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${target}.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
