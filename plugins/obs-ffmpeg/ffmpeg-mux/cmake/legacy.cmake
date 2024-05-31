@@ -21,7 +21,7 @@ endif()
 set_target_properties(obs-ffmpeg-mux PROPERTIES FOLDER "plugins/obs-ffmpeg")
 
 if(CMAKE_C_COMPILER_ID STREQUAL "LCC")
-    target_compile_options(obs-ffmpeg-mux PRIVATE -Wno-error=deprecated-declarations)
+  target_compile_options(obs-ffmpeg-mux PRIVATE -Wno-error=deprecated-declarations)
 endif()
 
 setup_binary_target(obs-ffmpeg-mux)

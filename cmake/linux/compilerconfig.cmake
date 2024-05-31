@@ -11,12 +11,15 @@ mark_as_advanced(ENABLE_COMPILER_TRACE)
 # gcc options for C
 set(_obs_gcc_c_options
     # cmake-format: sortable
+    "$<$<COMPILE_LANG_AND_ID:C,LCC>:-Wno-unused-parameter>"
+    "$<$<NOT:$<COMPILE_LANG_AND_ID:C,LCC>>:-Wunreachable-code>"
+    "$<$<NOT:$<COMPILE_LANG_AND_ID:C,LCC>>:-Wunused-parameter>"
+    "$<$<NOT:$<OR:$<COMPILE_LANG_AND_ID:C,LCC>,$<COMPILE_LANG_AND_ID:CXX,LCC>>>:-fopenmp-simd>"
+    "$<$<NOT:$<OR:$<COMPILE_LANG_AND_ID:C,LCC>,$<COMPILE_LANG_AND_ID:CXX,LCC>>>:-Wenum-conversion>"
     $<$<BOOL:${OBS_COMPILE_DEPRECATION_AS_WARNING}>:-Wno-error=deprecated-declarations>
     -fno-strict-aliasing
-    "$<$<NOT:$<OR:$<COMPILE_LANG_AND_ID:C,LCC>,$<COMPILE_LANG_AND_ID:CXX,LCC>>>:-fopenmp-simd>"
     -Wdeprecated-declarations
     -Wempty-body
-    "$<$<NOT:$<OR:$<COMPILE_LANG_AND_ID:C,LCC>,$<COMPILE_LANG_AND_ID:CXX,LCC>>>:-Wenum-conversion>"
     -Werror=return-type
     -Wextra
     -Wformat
@@ -34,9 +37,6 @@ set(_obs_gcc_c_options
     -Wno-unused-label
     -Wparentheses
     -Wuninitialized
-    "$<$<NOT:$<COMPILE_LANG_AND_ID:C,LCC>>:-Wunreachable-code>"
-    "$<$<NOT:$<COMPILE_LANG_AND_ID:C,LCC>>:-Wunused-parameter>"
-    "$<$<COMPILE_LANG_AND_ID:C,LCC>:-Wno-unused-parameter>"
     -Wunused-value
     -Wunused-variable
     -Wvla)
