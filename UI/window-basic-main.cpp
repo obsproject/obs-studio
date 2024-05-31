@@ -9213,6 +9213,22 @@ void OBSBasic::TogglePreview()
 	EnablePreviewDisplay(previewEnabled);
 }
 
+void OBSBasic::TogglePreviewForWindowFocus(bool hasFocus)
+{
+	bool enablePreviewToggle = config_get_bool(
+		GetGlobalConfig(), "BasicWindow", "WindowFocusTogglePreview");
+
+	if (!hasFocus) {
+		previewEnabledWhileFocused = previewEnabled;
+
+		if (enablePreviewToggle) {
+			EnablePreviewDisplay(false);
+		}
+	} else if (enablePreviewToggle && previewEnabledWhileFocused) {
+		EnablePreviewDisplay(true);
+	}
+}
+
 void OBSBasic::EnablePreview()
 {
 	if (previewProgramMode)

@@ -393,6 +393,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->centerSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->sourceSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->snapDistance,         DSCROLL_CHANGED,GENERAL_CHANGED);
+	HookWidget(ui->windowFocusTogglePreview, CHECK_CHANGED, GENERAL_CHANGED);
 	HookWidget(ui->overflowHide,         CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->overflowAlwaysVisible,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->overflowSelectionHide,CHECK_CHANGED,  GENERAL_CHANGED);
@@ -1458,6 +1459,10 @@ void OBSBasicSettings::LoadGeneralSettings()
 	bool projectorAlwaysOnTop = config_get_bool(
 		GetGlobalConfig(), "BasicWindow", "ProjectorAlwaysOnTop");
 	ui->projectorAlwaysOnTop->setChecked(projectorAlwaysOnTop);
+
+	bool windowFocusTogglePreview = config_get_bool(
+		GetGlobalConfig(), "BasicWindow", "WindowFocusTogglePreview");
+	ui->windowFocusTogglePreview->setChecked(windowFocusTogglePreview);
 
 	bool overflowHide = config_get_bool(GetGlobalConfig(), "BasicWindow",
 					    "OverflowHidden");
@@ -3381,6 +3386,11 @@ void OBSBasicSettings::SaveGeneralSettings()
 				"OverflowSelectionHidden",
 				ui->overflowSelectionHide->isChecked());
 		main->UpdatePreviewOverflowSettings();
+	}
+	if (WidgetChanged(ui->windowFocusTogglePreview)) {
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"WindowFocusTogglePreview",
+				ui->windowFocusTogglePreview->isChecked());
 	}
 	if (WidgetChanged(ui->previewSafeAreas)) {
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
