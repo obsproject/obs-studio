@@ -118,6 +118,66 @@
         "CMAKE_COMPILE_WARNING_AS_ERROR": true,
         "ENABLE_CCACHE": false
       }
+    },
+    {
+      "name": "e2k-osl7.2",
+      "displayName": "OSL 7.2 on e2k",
+      "description": "obs-studio for OS Elbrus 7.2 on Elbrus (e2k)",
+      "inherits": ["environmentVars"],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "binaryDir": "${sourceDir}/build_osl",
+      "generator": "Ninja",
+      "warnings": {"dev": true, "deprecated": true},
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_INSTALL_LIBDIR": "lib/CMAKE_SYSTEM_PROCESSOR-linux-gnu",
+        "OBS_CMAKE_VERSION": {"type": "STRING", "value": "3.0.0"},
+        "OBS_COMPILE_DEPRECATION_AS_WARNING": true,
+        "ENABLE_WAYLAND": false,
+        "ENABLE_VST": false,
+        "ENABLE_DECKLINK": false,
+        "ENABLE_BROWSER": false,
+        "ENABLE_RNNOISE": false,
+        "ENABLE_AJA": false,
+        "ENABLE_NATIVE_NVENC": false,
+        "ENABLE_WEBSOCKET": false,
+        "ENABLE_QSV11": false,
+        "ENABLE_UI": false,
+        "ENABLE_PIPEWIRE": false,
+        "ENABLE_NEW_MPEGTS_OUTPUT": false,
+        "ENABLE_WEBRTC": false
+      }
+    },
+    {
+      "name": "e2k-alt10",
+      "displayName": "ALT P10 on e2k",
+      "description": "obs-studio for ALT Linux P10 on Elbrus (e2k)",
+      "inherits": ["environmentVars"],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "binaryDir": "${sourceDir}/build_alt",
+      "generator": "Ninja",
+      "warnings": {"dev": true, "deprecated": true},
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_INSTALL_LIBDIR": "lib/CMAKE_SYSTEM_PROCESSOR-linux-gnu",
+        "OBS_CMAKE_VERSION": {"type": "STRING", "value": "3.0.0"},
+        "OBS_COMPILE_DEPRECATION_AS_WARNING": true,
+        "ENABLE_BROWSER": false,
+        "ENABLE_AJA": false,
+        "ENABLE_WEBSOCKET": false,
+        "ENABLE_QSV11": false,
+        "ENABLE_UI": false,
+        "ENABLE_NEW_MPEGTS_OUTPUT": false,
+        "ENABLE_WEBRTC": false
+      }
     }
   ],
   "buildPresets": [
