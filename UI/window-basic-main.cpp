@@ -1306,6 +1306,15 @@ retryScene:
 		vcamConfig.source = obs_data_get_string(obj, "source");
 	}
 
+	if (obs_data_has_user_value(data, "resolution")) {
+		OBSDataAutoRelease res = obs_data_get_obj(data, "resolution");
+		if (obs_data_has_user_value(res, "x") &&
+		    obs_data_has_user_value(res, "y")) {
+			lastOutputResolution = {obs_data_get_int(res, "x"),
+						obs_data_get_int(res, "y")};
+		}
+	}
+
 	/* ---------------------- */
 
 	if (api)
