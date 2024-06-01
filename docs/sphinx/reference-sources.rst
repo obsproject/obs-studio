@@ -661,6 +661,8 @@ The following signals are defined for every source type:
 
    Called when a filter has been added to the source.
 
+   .. versionadded:: 30.0
+
 **filter_remove** (ptr source, ptr filter)
 
    Called when a filter has been removed from the source.

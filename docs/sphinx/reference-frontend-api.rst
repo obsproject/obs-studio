@@ -489,6 +489,8 @@ Functions
    :return: *true* if the dock was added, *false* if the id was already
             used
 
+   .. versionadded:: 30.0
+
 ---------------------------------------
 
 .. function:: void obs_frontend_remove_dock(const char *id)
@@ -496,6 +498,8 @@ Functions
    Removes the dock with this id from the UI.
 
    :param id: Unique identifier of the dock to remove.
+
+   .. versionadded:: 30.0
 
 ---------------------------------------
 
@@ -510,6 +514,8 @@ Functions
    :param dock: QDockWidget to add
    :return: *true* if the dock was added, *false* if the id was already
             used
+
+   .. versionadded:: 30.0
 
 ---------------------------------------
 
