@@ -1215,8 +1215,8 @@ General Source Functions
 
 ---------------------
 
-.. function:: obs_source_set_audio_active(obs_source_t *source, bool active)
-              obs_source_audio_active(const obs_source_t *source)
+.. function:: void obs_source_set_audio_active(obs_source_t *source, bool active)
+              bool obs_source_audio_active(const obs_source_t *source)
 
    Sets/gets the audio active status (controls whether the source is shown in the mixer).
 
