@@ -304,6 +304,8 @@ inappropriate or invalid.
    :return: An incremented reference to a data array object. Release
              with :c:func:`obs_data_array_release()`.
 
+   .. versionadded:: 30.1
+
 ---------------------
 
 

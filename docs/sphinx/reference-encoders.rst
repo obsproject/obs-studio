@@ -165,6 +165,7 @@ Encoder Definition Structure (obs_encoder_info)
    - **OBS_ENCODER_CAP_DEPRECATED** - Encoder is deprecated
    - **OBS_ENCODER_CAP_ROI** - Encoder supports region of interest feature
 
+      .. versionadded:: 30.1
 
 Encoder Packet Structure (encoder_packet)
 -----------------------------------------
@@ -272,6 +273,8 @@ Encoder Region of Interest Structure (obs_encoder_roi)
 .. struct:: obs_encoder_roi
 
    Encoder region of interest structure.
+
+   .. versionadded:: 30.1
 
 .. member:: uint32_t top
             uint32_t bottom
@@ -549,17 +552,23 @@ General Encoder Functions
 
    :return: *true* if adding succeeded, *false* otherwise.
 
+   .. versionadded:: 30.1
+
 ---------------------
 
 .. function:: bool obs_encoder_has_roi(obs_encoder_t *encoder)
 
    :return: *true* if encoder has ROI regions set, *false* otherwise.
 
+   .. versionadded:: 30.1
+
 ---------------------
 
 .. function:: void obs_encoder_clear_roi(obs_encoder_t *encoder)
 
     Clear region of interest list, if any.
+
+   .. versionadded:: 30.1
 
 ---------------------
 
@@ -569,6 +578,8 @@ General Encoder Functions
 
     **Note:** If the encoder has scaling enabled the struct passed to the callback will be scaled accordingly.
 
+   .. versionadded:: 30.1
+
 ---------------------
 
 .. function:: uint32_t obs_encoder_get_roi_increment(const obs_encoder_t *encoder)
@@ -576,6 +587,8 @@ General Encoder Functions
    Encoders shall refresh their ROI configuration if the increment value changes.
 
    :return: Increment/revision of ROI list
+
+   .. versionadded:: 30.1
 
 ---------------------
 

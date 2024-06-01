@@ -544,6 +544,8 @@ Video, Audio, and Graphics
 
    Resets all audio monitoring devices.
 
+   .. versionadded:: 30.1
+
 ---------------------
 
 .. function:: void obs_enum_audio_monitoring_devices(obs_enum_audio_device_cb cb, void *data)
@@ -922,3 +924,5 @@ Views
 .. function:: void obs_view_enum_video_info(obs_view_t *view, bool (*enum_proc)(void *, struct obs_video_info *), void *param)
 
    Enumerates all the video info of all mixes that use the specified mix.
+
+   .. versionadded:: 30.1
