@@ -16,6 +16,7 @@ class YoutubeChatDock : public BrowserDock {
 
 private:
 	std::string apiChatId;
+	bool isLoggedIn;
 	LineEditAutoResize *lineEdit;
 	QPushButton *sendButton;
 	QHBoxLayout *chatLayout;
@@ -26,9 +27,10 @@ public:
 	void SetApiChatId(const std::string &id);
 
 private slots:
+	void YoutubeCookieCheck();
 	void SendChatMessage();
 	void ShowErrorMessage(const QString &error);
-	void EnableChatInput();
+	void EnableChatInput(bool visible);
 };
 #endif
 
