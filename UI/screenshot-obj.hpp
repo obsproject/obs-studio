@@ -24,16 +24,19 @@ class ScreenshotObj : public QObject {
 	Q_OBJECT
 
 public:
-	ScreenshotObj(obs_source_t *source);
+	ScreenshotObj(obs_source_t *source, bool clipboard);
 	~ScreenshotObj() override;
 	void Screenshot();
 	void Download();
 	void Copy();
 	void MuxAndFinish();
 
-	gs_texrender_t *texrender = nullptr;
-	gs_stagesurf_t *stagesurf = nullptr;
+	gs_texrender_t *texrender_sdr = nullptr;
+	gs_stagesurf_t *stagesurf_sdr = nullptr;
+	gs_texrender_t *texrender_hdr = nullptr;
+	gs_stagesurf_t *stagesurf_hdr = nullptr;
 	OBSWeakSource weakSource;
+	bool use_clipboard = false;
 	std::string path;
 	QImage image;
 	std::vector<uint8_t> half_bytes;

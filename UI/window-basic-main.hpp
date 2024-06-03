@@ -1127,7 +1127,7 @@ private slots:
 	void VCamButtonClicked();
 	void VCamConfigButtonClicked();
 	void on_settingsButton_clicked();
-	void Screenshot(OBSSource source_ = nullptr);
+	void Screenshot(OBSSource source_);
 	void ScreenshotSelectedSource();
 	void ScreenshotProgram();
 	void ScreenshotScene();

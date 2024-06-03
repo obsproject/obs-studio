@@ -7528,6 +7528,29 @@
                      </property>
                     </spacer>
                    </item>
+                   <item row="4" column="0">
+                    <spacer name="clipboardScreenshotSpacer">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>170</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item row="4" column="1">
+                    <widget class="QCheckBox" name="clipboardScreenshot">
+                     <property name="text">
+                      <string>Basic.Settings.Output.Adv.Recording.ClipboardScreenshots</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
                   </layout>
                  </widget>
                 </item>
@@ -8161,6 +8184,7 @@
   <tabstop>autoRemux</tabstop>
   <tabstop>simpleRBPrefix</tabstop>
   <tabstop>simpleRBSuffix</tabstop>
+  <tabstop>clipboardScreenshot</tabstop>
   <tabstop>streamDelayEnable</tabstop>
   <tabstop>streamDelaySec</tabstop>
   <tabstop>streamDelayPreserve</tabstop>
