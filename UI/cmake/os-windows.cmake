@@ -6,7 +6,9 @@ if(NOT TARGET OBS::w32-pthreads)
   add_subdirectory("${CMAKE_SOURCE_DIR}/deps/w32-pthreads" "${CMAKE_BINARY_DIR}/deps/w32-pthreads")
 endif()
 
-find_package(MbedTLS)
+set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
+find_package(MbedTLS REQUIRED)
+set(CMAKE_FIND_PACKAGE_PREFER_CONFIG FALSE)
 find_package(Detours REQUIRED)
 find_package(nlohmann_json REQUIRED)
 
@@ -38,12 +40,12 @@ target_sources(obs-studio PRIVATE system-info-windows.cpp)
 
 target_link_libraries(
   obs-studio
-  PRIVATE crypt32 OBS::blake2 OBS::w32-pthreads MbedTLS::MbedTLS nlohmann_json::nlohmann_json Detours::Detours
+  PRIVATE crypt32 OBS::blake2 OBS::w32-pthreads MbedTLS::mbedtls nlohmann_json::nlohmann_json Detours::Detours
 )
 
 target_compile_definitions(obs-studio PRIVATE PSAPI_VERSION=2)
 
-target_link_options(obs-studio PRIVATE /IGNORE:4099)
+target_link_options(obs-studio PRIVATE /IGNORE:4099 $<$<CONFIG:DEBUG>:/NODEFAULTLIB:MSVCRT>)
 
 add_library(obs-update-helpers INTERFACE)
 add_library(OBS::update-helpers ALIAS obs-update-helpers)

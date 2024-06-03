@@ -6,14 +6,16 @@ if(ENABLE_WHATSNEW AND TARGET OBS::browser-panels)
   if(OS_MACOS)
     include(cmake/feature-macos-update.cmake)
   elseif(OS_LINUX)
+    set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
     find_package(MbedTLS REQUIRED)
+    set(CMAKE_FIND_PACKAGE_PREFER_CONFIG FALSE)
     find_package(nlohmann_json REQUIRED)
 
     if(NOT TARGET OBS::blake2)
       add_subdirectory("${CMAKE_SOURCE_DIR}/deps/blake2" "${CMAKE_BINARY_DIR}/deps/blake2")
     endif()
 
-    target_link_libraries(obs-studio PRIVATE MbedTLS::MbedTLS nlohmann_json::nlohmann_json OBS::blake2)
+    target_link_libraries(obs-studio PRIVATE MbedTLS::mbedtls nlohmann_json::nlohmann_json OBS::blake2)
 
     target_sources(
       obs-studio
