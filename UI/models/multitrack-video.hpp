@@ -202,8 +202,8 @@ struct Preferences {
 };
 
 struct PostData {
-	string service = "IVS";
-	string schema_version = "2023-05-10";
+	string service;
+	string schema_version;
 	string authentication;
 
 	Capabilities capabilities;
