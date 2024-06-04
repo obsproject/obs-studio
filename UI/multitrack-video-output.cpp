@@ -259,12 +259,11 @@ static bool encoder_available(const char *type)
 	return false;
 }
 
-static OBSEncoderAutoRelease create_video_encoder(
-	DStr &name_buffer, size_t encoder_index,
-	const GoLiveApi::EncoderConfiguration<
-		GoLiveApi::VideoEncoderConfiguration> &encoder_config)
+static OBSEncoderAutoRelease
+create_video_encoder(DStr &name_buffer, size_t encoder_index,
+		     const GoLiveApi::VideoEncoderConfiguration &encoder_config)
 {
-	auto encoder_type = encoder_config.config.type.c_str();
+	auto encoder_type = encoder_config.type.c_str();
 	if (!encoder_available(encoder_type)) {
 		blog(LOG_ERROR, "Encoder type '%s' not available",
 		     encoder_type);
@@ -276,8 +275,8 @@ static OBSEncoderAutoRelease create_video_encoder(
 	dstr_printf(name_buffer, "multitrack video video encoder %zu",
 		    encoder_index);
 
-	OBSDataAutoRelease encoder_settings =
-		obs_data_create_from_json(encoder_config.data.dump().c_str());
+	OBSDataAutoRelease encoder_settings = obs_data_create_from_json(
+		encoder_config.settings.dump().c_str());
 	obs_data_set_bool(encoder_settings, "disable_scenecut", true);
 
 	OBSEncoderAutoRelease video_encoder = obs_video_encoder_create(
@@ -301,22 +300,19 @@ static OBSEncoderAutoRelease create_video_encoder(
 				.arg(name_buffer->array, encoder_type));
 	}
 
-	adjust_video_encoder_scaling(ovi, video_encoder, encoder_config.config,
+	adjust_video_encoder_scaling(ovi, video_encoder, encoder_config,
 				     encoder_index);
-	adjust_encoder_frame_rate_divisor(ovi, video_encoder,
-					  encoder_config.config, encoder_index);
+	adjust_encoder_frame_rate_divisor(ovi, video_encoder, encoder_config,
+					  encoder_index);
 
 	return video_encoder;
 }
 
 static OBSEncoderAutoRelease create_audio_encoder(const char *name,
 						  const char *audio_encoder_id,
-						  uint32_t audio_bitrate,
+						  obs_data_t *settings,
 						  size_t mixer_idx)
 {
-	OBSDataAutoRelease settings = obs_data_create();
-	obs_data_set_int(settings, "bitrate", audio_bitrate);
-
 	OBSEncoderAutoRelease audio_encoder = obs_audio_encoder_create(
 		audio_encoder_id, name, settings, mixer_idx, nullptr);
 	if (!audio_encoder) {
@@ -758,10 +754,11 @@ create_audio_encoders(const GoLiveApi::Config &go_live_config,
 		for (size_t i = 0; i < configs.size(); i++) {
 			dstr_printf(encoder_name_buffer, "%s %zu", name_prefix,
 				    i);
+			OBSDataAutoRelease settings = obs_data_create_from_json(
+				configs[i].settings.dump().c_str());
 			OBSEncoderAutoRelease audio_encoder =
 				create_audio_encoder(encoder_name_buffer->array,
-						     audio_encoder_id,
-						     configs[i].config.bitrate,
+						     audio_encoder_id, settings,
 						     mixer_idx);
 			obs_output_set_audio_encoder(output, audio_encoder,
 						     output_encoder_index);

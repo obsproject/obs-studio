@@ -456,8 +456,17 @@ bool AutoConfigStreamPage::validatePage()
 			int multitrackVideoBitrate = 0;
 			for (auto &encoder_config :
 			     config.encoder_configurations) {
-				multitrackVideoBitrate +=
-					encoder_config.config.bitrate;
+				auto it =
+					encoder_config.settings.find("bitrate");
+				if (it == encoder_config.settings.end())
+					continue;
+
+				if (!it->is_number_integer())
+					continue;
+
+				int bitrate = 0;
+				it->get_to(bitrate);
+				multitrackVideoBitrate += bitrate;
 			}
 
 			// grab a streamkey from the go live config if we can
