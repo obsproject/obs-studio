@@ -109,18 +109,8 @@ using json = nlohmann::json;
 struct Client {
 	string name = "obs-studio";
 	string version;
-	bool vod_track_audio;
-	uint32_t width;
-	uint32_t height;
-	uint32_t fps_numerator;
-	uint32_t fps_denominator;
-	uint32_t canvas_width;
-	uint32_t canvas_height;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Client, name, version, vod_track_audio,
-				       width, height, fps_numerator,
-				       fps_denominator, canvas_width,
-				       canvas_height)
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Client, name, version)
 };
 
 struct Cpu {
@@ -182,23 +172,30 @@ struct System {
 };
 
 struct Capabilities {
-	Client client;
 	Cpu cpu;
 	Memory memory;
 	optional<GamingFeatures> gaming_features;
 	System system;
 	optional<std::vector<Gpu>> gpu;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Capabilities, client, cpu, memory,
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Capabilities, cpu, memory,
 				       gaming_features, system, gpu)
 };
 
 struct Preferences {
 	optional<uint64_t> maximum_aggregate_bitrate;
 	optional<uint32_t> maximum_video_tracks;
+	bool vod_track_audio;
+	uint32_t width;
+	uint32_t height;
+	media_frames_per_second framerate;
+	uint32_t canvas_width;
+	uint32_t canvas_height;
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Preferences, maximum_aggregate_bitrate,
-				       maximum_video_tracks)
+				       maximum_video_tracks, vod_track_audio,
+				       width, height, framerate, canvas_width,
+				       canvas_height)
 };
 
 struct PostData {
@@ -206,11 +203,12 @@ struct PostData {
 	string schema_version;
 	string authentication;
 
+	Client client;
 	Capabilities capabilities;
 	Preferences preferences;
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE(PostData, service, schema_version,
-				       authentication, capabilities,
+				       authentication, client, capabilities,
 				       preferences)
 };
 
@@ -259,47 +257,29 @@ struct VideoEncoderConfiguration {
 	string type;
 	uint32_t width;
 	uint32_t height;
-	uint32_t bitrate;
 	optional<media_frames_per_second> framerate;
 	optional<obs_scale_type> gpu_scale_type;
+	json settings;
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(VideoEncoderConfiguration,
 						    type, width, height,
-						    bitrate, framerate,
-						    gpu_scale_type)
+						    framerate, gpu_scale_type,
+						    settings)
 };
 
 struct AudioEncoderConfiguration {
 	string codec;
 	uint32_t track_id;
 	uint32_t channels;
-	uint32_t bitrate;
+	json settings;
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE(AudioEncoderConfiguration, codec,
-				       track_id, channels, bitrate)
-};
-
-template<typename T> struct EncoderConfiguration {
-	T config;
-	json data;
-
-	friend void to_json(nlohmann::json &nlohmann_json_j,
-			    const EncoderConfiguration<T> &nlohmann_json_t)
-	{
-		nlohmann_json_j = nlohmann_json_t.data;
-		to_json(nlohmann_json_j, nlohmann_json_t.config);
-	}
-	friend void from_json(const nlohmann::json &nlohmann_json_j,
-			      EncoderConfiguration<T> &nlohmann_json_t)
-	{
-		nlohmann_json_t.data = nlohmann_json_j;
-		nlohmann_json_j.get_to(nlohmann_json_t.config);
-	}
+				       track_id, channels, settings)
 };
 
 struct AudioConfigurations {
-	std::vector<EncoderConfiguration<AudioEncoderConfiguration>> live;
-	std::vector<EncoderConfiguration<AudioEncoderConfiguration>> vod;
+	std::vector<AudioEncoderConfiguration> live;
+	std::vector<AudioEncoderConfiguration> vod;
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(AudioConfigurations, live,
 						    vod)
@@ -309,8 +289,7 @@ struct Config {
 	Meta meta;
 	optional<Status> status;
 	std::vector<IngestEndpoint> ingest_endpoints;
-	std::vector<EncoderConfiguration<VideoEncoderConfiguration>>
-		encoder_configurations;
+	std::vector<VideoEncoderConfiguration> encoder_configurations;
 	AudioConfigurations audio_configurations;
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(Config, meta, status,
