@@ -386,7 +386,7 @@ static inline bool too_many_repeated_entries(fstream &logFile, const char *msg,
 static void do_log(int log_level, const char *msg, va_list args, void *param)
 {
 	fstream &logFile = *static_cast<fstream *>(param);
-	char str[4096];
+	char str[8192];
 
 #ifndef _WIN32
 	va_list args2;

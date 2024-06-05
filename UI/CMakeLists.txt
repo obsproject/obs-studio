@@ -84,6 +84,24 @@ target_sources(
           ui-validation.cpp
           ui-validation.hpp)
 
+target_sources(
+  obs-studio
+  PRIVATE # cmake-format: sortable
+          goliveapi-censoredjson.cpp
+          goliveapi-censoredjson.hpp
+          goliveapi-network.cpp
+          goliveapi-network.hpp
+          goliveapi-postdata.cpp
+          goliveapi-postdata.hpp
+          models/multitrack-video.hpp
+          multitrack-video-error.cpp
+          multitrack-video-error.hpp
+          multitrack-video-output.cpp
+          multitrack-video-output.hpp
+          qt-helpers.cpp
+          qt-helpers.hpp
+          system-info.hpp)
+
 if(OS_WINDOWS)
   include(cmake/os-windows.cmake)
 elseif(OS_MACOS)

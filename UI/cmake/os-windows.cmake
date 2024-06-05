@@ -33,6 +33,8 @@ target_sources(
           win-dll-blocklist.c
           win-update/updater/manifest.hpp)
 
+target_sources(obs-studio PRIVATE system-info-windows.cpp)
+
 target_link_libraries(obs-studio PRIVATE crypt32 OBS::blake2 OBS::w32-pthreads MbedTLS::MbedTLS
                                          nlohmann_json::nlohmann_json Detours::Detours)
 

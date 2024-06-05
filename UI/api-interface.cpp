@@ -482,6 +482,16 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	obs_output_t *obs_frontend_get_streaming_output(void) override
 	{
+		auto multitrackVideo =
+			main->outputHandler->multitrackVideo.get();
+		auto mtvOutput =
+			multitrackVideo
+				? obs_output_get_ref(
+					  multitrackVideo->StreamingOutput())
+				: nullptr;
+		if (mtvOutput)
+			return mtvOutput;
+
 		OBSOutput output = main->outputHandler->streamOutput.Get();
 		return obs_output_get_ref(output);
 	}

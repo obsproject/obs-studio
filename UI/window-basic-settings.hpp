@@ -70,6 +70,8 @@ public slots:
 	}
 };
 
+std::string DeserializeConfigText(const char *value);
+
 class OBSBasicSettings : public QDialog {
 	Q_OBJECT
 	Q_PROPERTY(QIcon generalIcon READ GetGeneralIcon WRITE SetGeneralIcon
@@ -193,6 +195,8 @@ private:
 		      const char *value);
 	void SaveSpinBox(QSpinBox *widget, const char *section,
 			 const char *value);
+	void SaveText(QPlainTextEdit *widget, const char *section,
+		      const char *value);
 	void SaveFormat(QComboBox *combo);
 	void SaveEncoder(QComboBox *combo, const char *section,
 			 const char *value);
@@ -273,7 +277,7 @@ private:
 
 	/* stream */
 	void InitStreamPage();
-	inline bool IsCustomService() const;
+	bool IsCustomService() const;
 	inline bool IsWHIP() const;
 	void LoadServices(bool showAll);
 	void OnOAuthStreamKeyConnected();
@@ -296,7 +300,10 @@ private:
 	/* Appearance */
 	void InitAppearancePage();
 
+	bool IsCustomServer();
+
 private slots:
+	void UpdateMultitrackVideo();
 	void RecreateOutputResolutionWidget();
 	bool UpdateResFPSLimits();
 	void DisplayEnforceWarning(bool checked);
@@ -306,6 +313,7 @@ private slots:
 	void on_disconnectAccount_clicked();
 	void on_useStreamKey_clicked();
 	void on_useAuth_toggled();
+	void on_server_currentIndexChanged(int index);
 
 	void on_hotkeyFilterReset_clicked();
 	void on_hotkeyFilterSearch_textChanged(const QString text);

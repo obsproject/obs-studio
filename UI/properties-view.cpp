@@ -245,6 +245,13 @@ OBSPropertiesView::OBSPropertiesView(OBSData settings_, const char *type_,
 				  Qt::QueuedConnection);
 }
 
+void OBSPropertiesView::SetDisabled(bool disabled)
+{
+	for (auto child : findChildren<QWidget *>()) {
+		child->setDisabled(disabled);
+	}
+}
+
 void OBSPropertiesView::resizeEvent(QResizeEvent *event)
 {
 	emit PropertiesResized();

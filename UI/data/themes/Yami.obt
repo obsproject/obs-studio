@@ -1376,6 +1376,11 @@ QLabel#errorLabel {
     font-weight: bold;
 }
 
+QFrame [themeID="notice"] {
+    background: var(--bg_preview);
+    border-radius: var(--border_radius);
+}
+
 /* About dialog */
 
 * [themeID="aboutName"] {
