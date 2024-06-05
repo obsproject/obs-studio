@@ -6403,8 +6403,8 @@ void OBSBasicSettings::UpdateMultitrackVideo()
 					 vodTrackCheckbox->isChecked();
 
 		auto vod_track_idx_enabled = [&](size_t idx) {
-			return vod_track_enabled && vodTrack[idx] &&
-			       vodTrack[idx]->isChecked();
+			return vod_track_enabled && vodTrack[idx - 1] &&
+			       vodTrack[idx - 1]->isChecked();
 		};
 
 		auto track1_warning_visible = mtv_enabled &&
