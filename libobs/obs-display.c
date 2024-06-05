@@ -235,6 +235,7 @@ static inline bool render_display_begin(struct obs_display *display,
 static inline void render_display_end()
 {
 	gs_end_scene();
+	gs_load_swapchain(NULL);
 }
 
 void render_display(struct obs_display *display)
@@ -273,11 +274,11 @@ void render_display(struct obs_display *display)
 
 		pthread_mutex_unlock(&display->draw_callbacks_mutex);
 
-		render_display_end();
-
 		GS_DEBUG_MARKER_END();
 
 		gs_present();
+
+		render_display_end();
 	}
 }
 
