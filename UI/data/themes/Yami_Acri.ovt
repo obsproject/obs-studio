@@ -147,8 +147,8 @@ QTabBar QToolButton {
 /* Primary Control Button Checked Coloring */
 #streamButton:!hover:!pressed:checked,
 #recordButton:!hover:!pressed:checked,
-QPushButton[themeID="replayBufferButton"]:!hover:!pressed:checked,
-QPushButton[themeID="vcamButton"]:!hover:!pressed:checked,
+#replayBufferButton:!hover:!pressed:checked,
+#virtualCamButton:!hover:!pressed:checked,
 #modeSwitch:!hover:!pressed:checked,
 #broadcastButton:!hover:!pressed:checked {
     background: var(--button_bg_red);
@@ -158,8 +158,8 @@ QPushButton[themeID="vcamButton"]:!hover:!pressed:checked,
 /* Primary Control Button Hover Coloring */
 #streamButton:hover:!pressed:checked,
 #recordButton:hover:!pressed:checked,
-QPushButton[themeID="replayBufferButton"]:!pressed:checked,
-QPushButton[themeID="vcamButton"]:!pressed:checked,
+#replayBufferButton:hover:!pressed:checked,
+#virtualCamButton:hover:!pressed:checked,
 #modeSwitch:hover:!pressed:checked,
 #broadcastButton:hover:!pressed:checked {
     background: var(--button_bg_red_hover);
@@ -168,8 +168,8 @@ QPushButton[themeID="vcamButton"]:!pressed:checked,
 /* Primary Control Button Checked + Pressed Coloring */
 #streamButton:pressed:checked,
 #recordButton:pressed:checked,
-QPushButton[themeID="replayBufferButton"]:pressed:checked,
-QPushButton[themeID="vcamButton"]:pressed:checked,
+#replayBufferButton:pressed:checked,
+#virtualCamButton:pressed:checked,
 #modeSwitch:pressed:checked,
 #broadcastButton:pressed:checked {
     background: var(--button_bg_red_down);

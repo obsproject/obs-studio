@@ -985,16 +985,24 @@ QDoubleSpinBox::down-arrow {
 
 #streamButton,
 #recordButton,
-QPushButton[themeID="replayBufferButton"],
+#replayBufferButton,
 #broadcastButton {
     padding: var(--padding_large);
+}
+
+#pauseRecordButton,
+#saveReplayButton,
+#virtualCamConfigButton {
+    padding: var(--padding_large) var(--padding_large);
+    width: var(--input_height);
+    max-width: var(--input_height);
 }
 
 /* Primary Control Button Checked Coloring */
 #streamButton:!hover:!pressed:checked,
 #recordButton:!hover:!pressed:checked,
-QPushButton[themeID="replayBufferButton"]:!hover:!pressed:checked,
-QPushButton[themeID="vcamButton"]:!hover:!pressed:checked,
+#replayBufferButton:!hover:!pressed:checked,
+#virtualCamButton:!hover:!pressed:checked,
 #modeSwitch:!hover:!pressed:checked,
 #broadcastButton:!hover:!pressed:checked {
     background: var(--primary);
@@ -1003,8 +1011,8 @@ QPushButton[themeID="vcamButton"]:!hover:!pressed:checked,
 /* Primary Control Button Hover Coloring */
 #streamButton:hover:!pressed:checked,
 #recordButton:hover:!pressed:checked,
-QPushButton[themeID="replayBufferButton"]:!pressed:checked,
-QPushButton[themeID="vcamButton"]:!pressed:checked,
+#replayBufferButton:!pressed:checked,
+#virtualCamButton:!pressed:checked,
 #modeSwitch:hover:!pressed:checked,
 #broadcastButton:hover:!pressed:checked {
     background: var(--primary_light);
