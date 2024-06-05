@@ -55,8 +55,8 @@ runs:
         )
         & "C:\Program Files (x86)\PVS-Studio\PVS-Studio_Cmd.exe" @pvsParams
         
-        # Success and CodeErrorsFound are fine as error codes, we only care if it is anything but those
-        $pvs_result = $LASTEXITCODE -band (-bnot [PVSErrorCodes]::CodeErrorsFound)
+        # Success, LicenseExpiringSoon, and CodeErrorsFound are fine as error codes, we only care if it is anything but those
+        $pvs_result = $LASTEXITCODE -band (-bnot ([PVSErrorCodes]::CodeErrorsFound -bor [PVSErrorCodes]::LicenseExpiringSoon))
         if ($pvs_result -ne 0) {
             Write-Output "PVS-Studio Errors: $([PVSErrorCodes]$pvs_result)"
         }
