@@ -1021,6 +1021,10 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	UpdateAudioWarnings();
 	UpdateAdvNetworkGroup();
+
+	ui->audioMsg->setVisible(false);
+	ui->advancedMsg->setVisible(false);
+	ui->advancedMsg2->setVisible(false);
 }
 
 OBSBasicSettings::~OBSBasicSettings()
@@ -2836,24 +2840,30 @@ void OBSBasicSettings::UpdateColorFormatSpaceWarning()
 		if ((format == "P010") || (format == "P216") ||
 		    (format == "P416")) {
 			ui->advancedMsg2->clear();
+			ui->advancedMsg2->setVisible(false);
 		} else if (format == "I010") {
 			ui->advancedMsg2->setText(
 				QTStr("Basic.Settings.Advanced.FormatWarning"));
+			ui->advancedMsg2->setVisible(true);
 		} else {
 			ui->advancedMsg2->setText(QTStr(
 				"Basic.Settings.Advanced.FormatWarning2100"));
+			ui->advancedMsg2->setVisible(true);
 		}
 		break;
 	default:
 		if (format == "NV12") {
 			ui->advancedMsg2->clear();
+			ui->advancedMsg2->setVisible(false);
 		} else if ((format == "I010") || (format == "P010") ||
 			   (format == "P216") || (format == "P416")) {
 			ui->advancedMsg2->setText(QTStr(
 				"Basic.Settings.Advanced.FormatWarningPreciseSdr"));
+			ui->advancedMsg2->setVisible(true);
 		} else {
 			ui->advancedMsg2->setText(
 				QTStr("Basic.Settings.Advanced.FormatWarning"));
+			ui->advancedMsg2->setVisible(true);
 		}
 	}
 }
@@ -4680,6 +4690,8 @@ void OBSBasicSettings::AudioChanged()
 
 void OBSBasicSettings::AudioChangedRestart()
 {
+	ui->audioMsg->setVisible(false);
+
 	if (!loading) {
 		int currentChannelIndex = ui->channelSetup->currentIndex();
 		int currentSampleRateIndex = ui->sampleRate->currentIndex();
@@ -4691,6 +4703,7 @@ void OBSBasicSettings::AudioChangedRestart()
 		    currentLLAudioBufVal != llBufferingEnabled) {
 			ui->audioMsg->setText(
 				QTStr("Basic.Settings.ProgramRestart"));
+			ui->audioMsg->setVisible(true);
 		} else {
 			ui->audioMsg->setText("");
 		}
@@ -6022,6 +6035,7 @@ void OBSBasicSettings::UpdateAudioWarnings()
 	}
 
 	ui->audioMsg_2->setText(text);
+	ui->audioMsg_2->setVisible(!text.isEmpty());
 }
 
 void OBSBasicSettings::LowLatencyBufferingChanged(bool checked)

@@ -127,13 +127,14 @@
 
     --padding_base_border: calc(var(--padding_base) + 1px);
 
-    --spinbox_button_height: calc(var(--input_height) - 2px);
+    --spinbox_button_height: calc(var(--input_height_half) - 1px);
 
     --volume_slider: calc(calc(6px + var(--font_base_value)) / 2);
     --volume_slider_box: calc(var(--volume_slider) * 4);
     --volume_slider_label: calc(var(--volume_slider) * 6);
 
     --scrollbar_size: 12px;
+    --settings_scrollbar_size: calc(var(--scrollbar_size) + 9px);
 
     /* Inputs / Controls */
     --border_color: var(--grey4);
@@ -449,6 +450,16 @@ OBSBasicSettings QListWidget {
 OBSBasicSettings QListWidget::item {
     border-radius: var(--border_radius);
     padding: var(--padding_large);
+}
+
+OBSBasicSettings QScrollBar:vertical {
+  width: var(--settings_scrollbar_size);
+  margin-left: 9px;
+}
+
+OBSBasicSettings QScrollBar:horizontal {
+  height: var(--settings_scrollbar_size);
+  margin-top: 9px;
 }
 
 /* Settings properties view */
@@ -798,7 +809,6 @@ QDateTimeEdit {
     border-radius: var(--border_radius);
     padding: var(--padding_large) var(--padding_large);
     padding-left: 10px;
-    max-height: var(--input_height);
 }
 
 QComboBox QAbstractItemView::item:selected,
@@ -861,6 +871,7 @@ QPlainTextEdit {
     border: none;
     border-radius: var(--border_radius);
     padding: var(--input_padding) var(--padding_small) var(--input_padding) var(--input_padding);
+    padding-left: 8px;
     border: 1px solid var(--input_bg);
     height: var(--input_height);
 }
@@ -890,10 +901,9 @@ QDoubleSpinBox {
     background-color: var(--input_bg);
     border: 1px solid var(--input_bg);
     border-radius: var(--border_radius);
-    margin-right: var(--spacing_base);
     padding: var(--input_padding) 0px var(--input_padding) var(--input_padding);
-    height: var(--spinbox_button_height);
-    max-height: var(--spinbox_button_height);
+    padding-left: 8px;
+    max-height: var(--input_height);
 }
 
 QSpinBox:hover,
@@ -914,10 +924,11 @@ QDoubleSpinBox::up-button {
     subcontrol-position: top right; /* position at the top right corner */
 
     width: 32px;
+    height: var(--spinbox_button_height);
     border-left: 1px solid var(--grey6);
     border-bottom: 1px solid transparent;
     border-radius: 0px;
-    margin-top: -1px;
+    border-top-right-radius: var(--border_radius_small);
 }
 
 QSpinBox::down-button,
@@ -926,10 +937,11 @@ QDoubleSpinBox::down-button {
     subcontrol-position: bottom right; /* position at the top right corner */
 
     width: 32px;
+    height: var(--spinbox_button_height);
     border-left: 1px solid var(--grey6);
     border-top: 1px solid var(--grey6);
     border-radius: 0px;
-    margin-bottom: -1px;
+    border-bottom-right-radius: var(--border_radius_small);
 }
 
 QSpinBox::up-button:hover,
@@ -1384,9 +1396,14 @@ QLabel#errorLabel {
     font-weight: bold;
 }
 
-QFrame [themeID="notice"] {
+QFrame [noticeFrame="true"] {
     background: var(--bg_preview);
     border-radius: var(--border_radius);
+    padding: var(--padding_xlarge) var(--padding_large);
+}
+
+QFrame [noticeFrame="true"] QLabel {
+    padding: var(--padding_large) 0px;
 }
 
 /* About dialog */
