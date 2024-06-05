@@ -7099,12 +7099,6 @@ void OBSBasic::StartStreaming()
 		}
 	}
 
-	auto setStreamText = [&](const QString &text) {
-		ui->streamButton->setText(text);
-		if (sysTrayStream)
-			sysTrayStream->setText(text);
-	};
-
 	emit StreamingStarting();
 	ui->streamButton->setEnabled(false);
 	ui->streamButton->setChecked(false);
@@ -7112,75 +7106,77 @@ void OBSBasic::StartStreaming()
 	if (sysTrayStream)
 		sysTrayStream->setEnabled(false);
 
-	setStreamText(QTStr("Basic.Main.PreparingStream"));
+	ui->streamButton->setText("Basic.Main.PreparingStream");
+	if (sysTrayStream)
+		sysTrayStream->setText("Basic.Main.PreparingStream");
 
 	auto holder = outputHandler->SetupStreaming(service);
-	auto future = holder.future.then(
-		this, [&, setStreamText](bool setupStreamingResult) {
-			if (!setupStreamingResult) {
-				DisplayStreamStartError();
-				return;
-			}
+	auto future = holder.future.then(this, [&](bool setupStreamingResult) {
+		if (!setupStreamingResult) {
+			DisplayStreamStartError();
+			return;
+		}
 
-			if (api)
-				api->on_event(
-					OBS_FRONTEND_EVENT_STREAMING_STARTING);
+		if (api)
+			api->on_event(OBS_FRONTEND_EVENT_STREAMING_STARTING);
 
-			SaveProject();
+		SaveProject();
 
-			setStreamText(QTStr("Basic.Main.Connecting"));
+		ui->streamButton->setText("Basic.Main.Connecting");
+		if (sysTrayStream)
+			sysTrayStream->setText("Basic.Main.Connecting");
 
-			if (!outputHandler->StartStreaming(service)) {
-				DisplayStreamStartError();
-				return;
-			}
+		if (!outputHandler->StartStreaming(service)) {
+			DisplayStreamStartError();
+			return;
+		}
 
-			if (!autoStartBroadcast) {
+		if (!autoStartBroadcast) {
+			ui->broadcastButton->setText(
+				QTStr("Basic.Main.StartBroadcast"));
+			ui->broadcastButton->setProperty("broadcastState",
+							 "ready");
+			ui->broadcastButton->style()->unpolish(
+				ui->broadcastButton);
+			ui->broadcastButton->style()->polish(
+				ui->broadcastButton);
+			// well, we need to disable button while stream is not active
+			ui->broadcastButton->setEnabled(false);
+		} else {
+			if (!autoStopBroadcast) {
 				ui->broadcastButton->setText(
-					QTStr("Basic.Main.StartBroadcast"));
-				ui->broadcastButton->setProperty(
-					"broadcastState", "ready");
-				ui->broadcastButton->style()->unpolish(
-					ui->broadcastButton);
-				ui->broadcastButton->style()->polish(
-					ui->broadcastButton);
-				// well, we need to disable button while stream is not active
-				ui->broadcastButton->setEnabled(false);
+					QTStr("Basic.Main.StopBroadcast"));
 			} else {
-				if (!autoStopBroadcast) {
-					ui->broadcastButton->setText(QTStr(
-						"Basic.Main.StopBroadcast"));
-				} else {
-					ui->broadcastButton->setText(QTStr(
-						"Basic.Main.AutoStopEnabled"));
-					ui->broadcastButton->setEnabled(false);
-				}
-				ui->broadcastButton->setProperty(
-					"broadcastState", "active");
-				ui->broadcastButton->style()->unpolish(
-					ui->broadcastButton);
-				ui->broadcastButton->style()->polish(
-					ui->broadcastButton);
-				broadcastActive = true;
+				ui->broadcastButton->setText(
+					QTStr("Basic.Main.AutoStopEnabled"));
+				ui->broadcastButton->setEnabled(false);
 			}
+			ui->broadcastButton->setProperty("broadcastState",
+							 "active");
+			ui->broadcastButton->style()->unpolish(
+				ui->broadcastButton);
+			ui->broadcastButton->style()->polish(
+				ui->broadcastButton);
+			broadcastActive = true;
+		}
 
-			bool recordWhenStreaming = config_get_bool(
-				GetGlobalConfig(), "BasicWindow",
-				"RecordWhenStreaming");
-			if (recordWhenStreaming)
-				StartRecording();
+		bool recordWhenStreaming =
+			config_get_bool(GetGlobalConfig(), "BasicWindow",
+					"RecordWhenStreaming");
+		if (recordWhenStreaming)
+			StartRecording();
 
-			bool replayBufferWhileStreaming = config_get_bool(
-				GetGlobalConfig(), "BasicWindow",
-				"ReplayBufferWhileStreaming");
-			if (replayBufferWhileStreaming)
-				StartReplayBuffer();
+		bool replayBufferWhileStreaming =
+			config_get_bool(GetGlobalConfig(), "BasicWindow",
+					"ReplayBufferWhileStreaming");
+		if (replayBufferWhileStreaming)
+			StartReplayBuffer();
 
 #ifdef YOUTUBE_ENABLED
-			if (!autoStartBroadcast)
-				OBSBasic::ShowYouTubeAutoStartWarning();
+		if (!autoStartBroadcast)
+			OBSBasic::ShowYouTubeAutoStartWarning();
 #endif
-		});
+	});
 	startStreamingFuture = {holder.cancelAll, future};
 }
 
