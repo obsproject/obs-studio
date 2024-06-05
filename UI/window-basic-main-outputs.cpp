@@ -2426,7 +2426,7 @@ std::shared_future<void> BasicOutputHandler::SetupMultitrackVideo(obs_service_t 
 
 	std::optional<std::string> custom_rtmp_url;
 	auto server = obs_data_get_string(settings, "server");
-	if (strcmp(server, "auto") != 0) {
+	if (strncmp(server, "auto", 4) != 0) {
 		custom_rtmp_url = server;
 	}
 
