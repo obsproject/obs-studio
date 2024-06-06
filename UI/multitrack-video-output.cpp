@@ -398,9 +398,9 @@ void MultitrackVideoOutput::PrepareStreaming(
 	auto multitrack_video_name =
 		QTStr("Basic.Settings.Stream.MultitrackVideoLabel");
 	if (obs_data_has_user_value(service_settings,
-				    "ertmp_multitrack_video_name")) {
+				    "multitrack_video_name")) {
 		multitrack_video_name = obs_data_get_string(
-			service_settings, "ertmp_multitrack_video_name");
+			service_settings, "multitrack_video_name");
 	}
 
 	auto auto_config_url_data = auto_config_url.toUtf8();
@@ -637,7 +637,7 @@ bool MultitrackVideoOutput::HandleIncompatibleSettings(
 			QString(" %1. %2\n").arg(num).arg(QTStr(name));
 
 		where_to_disable +=
-			QString(" %1. [%2 > %3 > %4]\n")
+			QString(" %1. [%2 → %3 → %4]\n")
 				.arg(num)
 				.arg(QTStr("Settings"))
 				.arg(QTStr("Basic.Settings.Advanced"))
@@ -667,12 +667,11 @@ bool MultitrackVideoOutput::HandleIncompatibleSettings(
 	QMessageBox mb(parent);
 	mb.setIcon(QMessageBox::Critical);
 	mb.setWindowTitle(QTStr("MultitrackVideo.IncompatibleSettings.Title"));
-	mb.setText(
-		QString(QTStr("MultitrackVideo.IncompatibleSettings.Text"))
-			.arg(obs_data_get_string(service_settings,
-						 "ertmp_multitrack_video_name"))
-			.arg(incompatible_settings)
-			.arg(where_to_disable));
+	mb.setText(QString(QTStr("MultitrackVideo.IncompatibleSettings.Text"))
+			   .arg(obs_data_get_string(service_settings,
+						    "multitrack_video_name"))
+			   .arg(incompatible_settings)
+			   .arg(where_to_disable));
 	auto this_stream = mb.addButton(
 		QTStr("MultitrackVideo.IncompatibleSettings.DisableAndStartStreaming"),
 		QMessageBox::AcceptRole);
