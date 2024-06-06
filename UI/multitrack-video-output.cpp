@@ -701,9 +701,6 @@ bool MultitrackVideoOutput::HandleIncompatibleSettings(
 		useDelay = false;
 		enableNewSocketLoop = false;
 		enableDynBitrate = false;
-		useDelay = false;
-		enableNewSocketLoop = false;
-		enableDynBitrate = false;
 
 		if (mb.clickedButton() == all_streams) {
 			config_set_bool(config, "Output", "DelayEnable", false);
