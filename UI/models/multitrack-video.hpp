@@ -146,13 +146,11 @@ struct Gpu {
 	uint32_t device_id;
 	uint64_t dedicated_video_memory;
 	uint64_t shared_system_memory;
-	string luid;
 	optional<string> driver_version;
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Gpu, model, vendor_id, device_id,
 				       dedicated_video_memory,
-				       shared_system_memory, luid,
-				       driver_version)
+				       shared_system_memory, driver_version)
 };
 
 struct GamingFeatures {

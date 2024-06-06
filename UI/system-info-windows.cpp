@@ -23,7 +23,6 @@ static std::optional<std::vector<GoLiveApi::Gpu>> system_gpu_data()
 
 	std::vector<GoLiveApi::Gpu> adapter_info;
 
-	DStr luid_buffer;
 	for (i = 0; factory->EnumAdapters1(i, adapter.Assign()) == S_OK; ++i) {
 		DXGI_ADAPTER_DESC desc;
 		char name[512] = "";
@@ -47,11 +46,6 @@ static std::optional<std::vector<GoLiveApi::Gpu>> system_gpu_data()
 
 		data.dedicated_video_memory = desc.DedicatedVideoMemory;
 		data.shared_system_memory = desc.SharedSystemMemory;
-
-		dstr_printf(luid_buffer, "luid_0x%08X_0x%08X",
-			    desc.AdapterLuid.HighPart,
-			    desc.AdapterLuid.LowPart);
-		data.luid = luid_buffer->array;
 
 		/* driver version */
 		LARGE_INTEGER umd;
