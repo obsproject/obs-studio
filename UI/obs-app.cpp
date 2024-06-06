@@ -350,7 +350,7 @@ static inline bool too_many_repeated_entries(fstream &logFile, const char *msg,
 	static mutex log_mutex;
 	static const char *last_msg_ptr = nullptr;
 	static int last_char_sum = 0;
-	static char cmp_str[4096];
+	static char cmp_str[8192];
 	static int rep_count = 0;
 
 	int new_sum = sum_chars(output_str);
@@ -376,7 +376,8 @@ static inline bool too_many_repeated_entries(fstream &logFile, const char *msg,
 	}
 
 	last_msg_ptr = msg;
-	strcpy(cmp_str, output_str);
+	strncpy(cmp_str, output_str, sizeof(cmp_str));
+	cmp_str[sizeof(cmp_str) - 1] = 0;
 	last_char_sum = new_sum;
 	rep_count = 0;
 
