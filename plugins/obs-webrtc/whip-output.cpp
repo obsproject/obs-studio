@@ -362,7 +362,7 @@ bool WHIPOutput::Connect()
 	}
 
 	std::string read_buffer;
-	std::vector<std::string> location_headers;
+	std::vector<std::string> http_headers;
 
 	auto offer_sdp =
 		std::string(peer_connection->localDescription().value());
@@ -379,9 +379,8 @@ bool WHIPOutput::Connect()
 	CURL *c = curl_easy_init();
 	curl_easy_setopt(c, CURLOPT_WRITEFUNCTION, curl_writefunction);
 	curl_easy_setopt(c, CURLOPT_WRITEDATA, (void *)&read_buffer);
-	curl_easy_setopt(c, CURLOPT_HEADERFUNCTION,
-			 curl_header_location_function);
-	curl_easy_setopt(c, CURLOPT_HEADERDATA, (void *)&location_headers);
+	curl_easy_setopt(c, CURLOPT_HEADERFUNCTION, curl_header_function);
+	curl_easy_setopt(c, CURLOPT_HEADERDATA, (void *)&http_headers);
 	curl_easy_setopt(c, CURLOPT_HTTPHEADER, headers);
 	curl_easy_setopt(c, CURLOPT_URL, endpoint_url.c_str());
 	curl_easy_setopt(c, CURLOPT_POST, 1L);
@@ -428,7 +427,18 @@ bool WHIPOutput::Connect()
 	long redirect_count = 0;
 	curl_easy_getinfo(c, CURLINFO_REDIRECT_COUNT, &redirect_count);
 
-	if (location_headers.size() < static_cast<size_t>(redirect_count) + 1) {
+	std::string last_location_header;
+	size_t location_header_count = 0;
+	for (auto &http_header : http_headers) {
+		auto value = value_for_header("location", http_header);
+		if (value.empty())
+			continue;
+
+		location_header_count++;
+		last_location_header = value;
+	}
+
+	if (location_header_count < static_cast<size_t>(redirect_count) + 1) {
 		do_log(LOG_ERROR,
 		       "WHIP server did not provide a resource URL via the Location header");
 		cleanup();
@@ -437,25 +447,21 @@ bool WHIPOutput::Connect()
 	}
 
 	CURLU *url_builder = curl_url();
-	auto last_location_header = location_headers.back();
 
 	// Parse Link headers to extract STUN/TURN server configuration URLs
-	struct curl_header *prev = nullptr;
-	struct curl_header *h = nullptr;
 	std::vector<rtc::IceServer> iceServers;
-	while ((h = curl_easy_nextheader(c, CURLH_HEADER, 0, prev))) {
-		if (astrcmpi("Link", h->name) == 0) {
-			auto value = std::string(h->value);
-			// Parse multiple links separated by ','
-			for (auto end = value.find(",");
-			     end != std::string::npos; end = value.find(",")) {
-				this->ParseLinkHeader(value.substr(0, end),
-						      iceServers);
-				value = value.substr(end + 1);
-			}
-			this->ParseLinkHeader(value, iceServers);
+	for (auto &http_header : http_headers) {
+		auto value = value_for_header("link", http_header);
+		if (value.empty())
+			continue;
+
+		// Parse multiple links separated by ','
+		for (auto end = value.find(","); end != std::string::npos;
+		     end = value.find(",")) {
+			this->ParseLinkHeader(value.substr(0, end), iceServers);
+			value = value.substr(end + 1);
 		}
-		prev = h;
+		this->ParseLinkHeader(value, iceServers);
 	}
 
 	// If Location header doesn't start with `http` it is a relative URL.
