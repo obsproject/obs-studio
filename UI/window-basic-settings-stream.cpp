@@ -802,7 +802,7 @@ void OBSBasicSettings::UpdateServerList()
 		ui->server->addItem(name, server);
 	}
 
-	if (serviceName == "Twitch") {
+	if (serviceName == "Twitch" || serviceName == "Amazon IVS") {
 		ui->server->addItem(
 			QTStr("Basic.Settings.Stream.SpecifyCustomServer"),
 			CustomServerUUID());
