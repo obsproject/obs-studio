@@ -129,9 +129,9 @@
 
     --spinbox_button_height: calc(var(--input_height) - 2px);
 
-    --volume_slider: calc(calc(6px + var(--font_base_value)) / 2);
+    --volume_slider: calc(calc(10px + var(--font_base_value)) / 4);
     --volume_slider_box: calc(var(--volume_slider) * 4);
-    --volume_slider_label: calc(var(--volume_slider) * 6);
+    --volume_slider_label: calc(var(--volume_slider_box) * 2);
 
     --scrollbar_size: 12px;
 
@@ -1197,7 +1197,7 @@ QSlider::handle:disabled {
     height: var(--icon_base);
     background-color: var(--button_bg);
     padding: var(--padding_base_border) var(--padding_base_border);
-    margin: 0px var(--spacing_base);
+    margin: 0px;
     border: 1px solid var(--button_border);
     border-radius: var(--border_radius);
     icon-size: var(--icon_base), var(--icon_base);
@@ -1232,21 +1232,17 @@ VolControl #volLabel {
 
 /* Horizontal Mixer */
 #hMixerScrollArea VolControl {
-    padding: 0px var(--padding_large);
+    padding: 0px var(--padding_xlarge) var(--padding_base);
     border-bottom: 1px solid var(--border_color);
 }
 
 #hMixerScrollArea VolControl QSlider {
-    margin: 0px 0px;
+    margin: 0px 0px var(--padding_base);
 }
 
 #hMixerScrollArea VolControl QSlider::groove:horizontal {
     background: var(--bg_window);
     height: var(--volume_slider);
-}
-
-#hMixerScrollArea VolControl QPushButton {
-    margin-right: var(--padding_xlarge);
 }
 
 /* Vertical Mixer */
@@ -1261,13 +1257,14 @@ VolControl #volLabel {
 
 #vMixerScrollArea VolControl QSlider {
     width: var(--volume_slider_box);
+    margin: 0px var(--padding_xlarge);
 }
 
 #vMixerScrollArea VolControl #volLabel {
     padding: var(--padding_base) 0px var(--padding_base);
     min-width: var(--volume_slider_label);
     max-width: var(--volume_slider_label);
-    margin-right: 0;
+    margin-left: var(--padding_xlarge);
     text-align: center;
 }
 
@@ -1277,7 +1274,7 @@ VolControl #volLabel {
 }
 
 #vMixerScrollArea VolControl #volMeterFrame {
-    padding: var(--padding_large) var(--padding_xlarge);
+    padding: var(--padding_large) var(--padding_xlarge) var(--padding_large) 0px;
 }
 
 #vMixerScrollArea VolControl QLabel {
@@ -1586,7 +1583,7 @@ MuteCheckBox::indicator:unchecked {
     height: var(--icon_base);
     background-color: var(--button_bg);
     padding: var(--padding_base_border) var(--padding_base_border);
-    margin: 0px var(--spacing_base);
+    margin: 0px;
     border: 1px solid var(--button_border);
     border-radius: var(--border_radius);
     icon-size: var(--icon_base), var(--icon_base);
@@ -1596,7 +1593,7 @@ MuteCheckBox::indicator:hover,
 MuteCheckBox::indicator:unchecked:hover {
     background-color: var(--button_bg_hover);
     padding: var(--padding_base_border) var(--padding_base_border);
-    margin: 0px var(--spacing_base);
+    margin: 0px;
     border: 1px solid var(--button_border_hover);
     icon-size: var(--icon_base), var(--icon_base);
 }
