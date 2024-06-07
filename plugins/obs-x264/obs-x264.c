@@ -858,6 +858,9 @@ static bool obs_x264_encode(void *data, struct encoder_frame *frame,
 	if (obs_encoder_has_roi(obsx264->encoder))
 		add_roi(obsx264, &pic);
 
+	if (frame->flags & OBS_FRAME_FORCE_IDR)
+		pic.i_type = X264_TYPE_IDR;
+
 	ret = x264_encoder_encode(obsx264->context, &nals, &nal_count,
 				  (frame ? &pic : NULL), &pic_out);
 	if (ret < 0) {
@@ -930,5 +933,6 @@ struct obs_encoder_info obs_x264_encoder = {
 	.get_extra_data = obs_x264_extra_data,
 	.get_sei_data = obs_x264_sei,
 	.get_video_info = obs_x264_video_info,
-	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI,
+	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI |
+		OBS_ENCODER_CAP_FORCE_IDR,
 };
