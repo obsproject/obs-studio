@@ -144,34 +144,6 @@ create_service(const GoLiveApi::Config &go_live_config,
 	return service;
 }
 
-static void ensure_directory_exists(std::string &path)
-{
-	replace(path.begin(), path.end(), '\\', '/');
-
-	size_t last = path.rfind('/');
-	if (last == std::string::npos)
-		return;
-
-	std::string directory = path.substr(0, last);
-	os_mkdirs(directory.c_str());
-}
-
-std::string GetOutputFilename(const std::string &path, const char *format)
-{
-	std::string strPath;
-	strPath += path;
-
-	char lastChar = strPath.back();
-	if (lastChar != '/' && lastChar != '\\')
-		strPath += "/";
-
-	strPath += BPtr<char>{
-		os_generate_formatted_filename("flv", false, format)};
-	ensure_directory_exists(strPath);
-
-	return strPath;
-}
-
 static OBSOutputAutoRelease create_output()
 {
 	OBSOutputAutoRelease output = obs_output_create(
