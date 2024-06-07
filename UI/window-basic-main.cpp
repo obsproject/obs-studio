@@ -5104,7 +5104,6 @@ void OBSBasic::ClearSceneData()
 
 	clipboard.clear();
 	filtersClipboard.clear();
-	copyFilter = nullptr;
 
 	auto cb = [](void *, obs_source_t *source) {
 		obs_source_remove(source);

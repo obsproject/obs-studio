@@ -945,7 +945,7 @@ void OBSBasicFilters::CustomContextMenu(const QPoint &pos, bool async)
 	}
 
 	QAction *pasteAction = new QAction(QTStr("Paste"));
-	pasteAction->setEnabled(main->copyFilter);
+	pasteAction->setEnabled(!main->filtersClipboard.empty());
 	connect(pasteAction, &QAction::triggered, this,
 		&OBSBasicFilters::PasteFilter);
 	pasteAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_V));
@@ -1165,26 +1165,13 @@ void OBSBasicFilters::CopyFilter()
 	else
 		filter = GetFilter(ui->effectFilters->currentRow(), false);
 
-	main->copyFilter = OBSGetWeakRef(filter);
+	main->filtersClipboard.clear();
+	main->filtersClipboard.push_back(OBSGetWeakRef(filter));
 }
 
 void OBSBasicFilters::PasteFilter()
 {
-	OBSSource filter = OBSGetStrongRef(main->copyFilter);
-	if (!filter)
-		return;
-
-	OBSDataArrayAutoRelease undo_array = obs_source_backup_filters(source);
-	obs_source_copy_single_filter(source, filter);
-	OBSDataArrayAutoRelease redo_array = obs_source_backup_filters(source);
-
-	const char *filterName = obs_source_get_name(filter);
-	const char *sourceName = obs_source_get_name(source);
-	QString text =
-		QTStr("Undo.Filters.Paste.Single").arg(filterName, sourceName);
-
-	main->CreateFilterPasteUndoRedoAction(text, source, undo_array,
-					      redo_array);
+	main->SourcePasteFilters(source);
 }
 
 void OBSBasicFilters::delete_filter(OBSSource filter)

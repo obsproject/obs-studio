@@ -245,7 +245,6 @@ private:
 	ContextBarSize contextBarSize = ContextBarSize_Normal;
 
 	std::deque<SourceCopyInfo> clipboard;
-	std::vector<OBSWeakSource> filtersClipboard;
 	bool copyVisible = true;
 	obs_transform_info copiedTransformInfo;
 	obs_sceneitem_crop copiedCropInfo;
@@ -807,8 +806,6 @@ private slots:
 	void on_actionPasteFilters_triggered();
 	void AudioMixerCopyFilters();
 	void AudioMixerPasteFilters();
-	void SourceCopyFilters(OBSSource source);
-	void SourcePasteFilters(OBSSource dstSource);
 
 	void ColorChange();
 
@@ -1016,7 +1013,9 @@ public:
 	QIcon GetGroupIcon() const;
 	QIcon GetSceneIcon() const;
 
-	OBSWeakSource copyFilter;
+	std::vector<OBSWeakSource> filtersClipboard;
+	void SourceCopyFilters(OBSSource source);
+	void SourcePasteFilters(OBSSource dstSource);
 
 	void ShowStatusBarMessage(const QString &message);
 
