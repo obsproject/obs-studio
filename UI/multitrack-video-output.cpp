@@ -688,6 +688,9 @@ bool MultitrackVideoOutput::HandleIncompatibleSettings(
 		return true;
 	}
 
+	MultitrackVideoOutput::ReleaseOnMainThread(take_current());
+	MultitrackVideoOutput::ReleaseOnMainThread(take_current_stream_dump());
+
 	return false;
 }
 
