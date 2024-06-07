@@ -128,7 +128,8 @@ GoLiveApi::Config DownloadGoLiveConfig(QWidget *parent, QString url,
 
 QString MultitrackVideoAutoConfigURL(obs_service_t *service)
 {
-	static const QString url = [service]() -> QString {
+	static const std::optional<QString> cli_url =
+		[]() -> std::optional<QString> {
 		auto args = qApp->arguments();
 		for (int i = 0; i < args.length() - 1; i++) {
 			if (args[i] == "--config-url" &&
@@ -136,10 +137,17 @@ QString MultitrackVideoAutoConfigURL(obs_service_t *service)
 				return args[i + 1];
 			}
 		}
-		OBSDataAutoRelease settings = obs_service_get_settings(service);
-		return obs_data_get_string(
-			settings, "multitrack_video_configuration_url");
+		return std::nullopt;
 	}();
+
+	QString url;
+	if (cli_url.has_value()) {
+		url = *cli_url;
+	} else {
+		OBSDataAutoRelease settings = obs_service_get_settings(service);
+		url = obs_data_get_string(settings,
+					  "multitrack_video_configuration_url");
+	}
 
 	blog(LOG_INFO, "Go live URL: %s", url.toUtf8().constData());
 	return url;
