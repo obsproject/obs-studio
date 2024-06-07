@@ -189,11 +189,21 @@ static OBSOutputAutoRelease create_output()
 
 static OBSOutputAutoRelease create_recording_output(obs_data_t *settings)
 {
-	OBSOutputAutoRelease output = obs_output_create(
-		"flv_output", "flv multitrack video", settings, nullptr);
+	OBSOutputAutoRelease output;
+	bool useMP4 = obs_data_get_bool(settings, "use_mp4");
 
-	if (!output)
-		blog(LOG_ERROR, "Failed to create multitrack video flv output");
+	if (useMP4) {
+		output = obs_output_create("mp4_output", "mp4 multitrack video",
+					   settings, nullptr);
+	} else {
+		output = obs_output_create("flv_output", "flv multitrack video",
+					   settings, nullptr);
+	}
+
+	if (!output) {
+		blog(LOG_ERROR, "Failed to create multitrack video %s output",
+		     useMP4 ? "mp4" : "flv");
+	}
 
 	return output;
 }

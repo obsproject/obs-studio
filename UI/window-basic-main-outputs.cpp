@@ -2854,16 +2854,26 @@ OBSDataAutoRelease BasicOutputHandler::GenerateMultitrackVideoStreamDumpConfig()
 						       "FilenameFormatting");
 	bool overwriteIfExists =
 		config_get_bool(main->Config(), "Output", "OverwriteIfExists");
+	bool useMP4 = config_get_bool(main->Config(), "Stream1",
+				      "MultitrackVideoStreamDumpAsMP4");
 
 	string f;
 
 	OBSDataAutoRelease settings = obs_data_create();
 	f = GetFormatString(filenameFormat, nullptr, nullptr);
-	string strPath = GetRecordingFilename(path, "flv", noSpace,
-					      overwriteIfExists, f.c_str(),
+	string strPath = GetRecordingFilename(path, useMP4 ? "mp4" : "flv",
+					      noSpace, overwriteIfExists,
+					      f.c_str(),
 					      // never remux stream dump
 					      false);
 	obs_data_set_string(settings, "path", strPath.c_str());
+
+	if (useMP4) {
+		obs_data_set_bool(settings, "use_mp4", true);
+		obs_data_set_string(settings, "muxer_settings",
+				    "write_encoder_info=1");
+	}
+
 	return settings;
 }
 
