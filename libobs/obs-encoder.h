@@ -37,6 +37,7 @@ typedef struct obs_encoder obs_encoder_t;
 #define OBS_ENCODER_CAP_DYN_BITRATE (1 << 2)
 #define OBS_ENCODER_CAP_INTERNAL (1 << 3)
 #define OBS_ENCODER_CAP_ROI (1 << 4)
+#define OBS_ENCODER_CAP_FORCE_IDR (1 << 5)
 
 /** Specifies the encoder type */
 enum obs_encoder_type {
@@ -91,6 +92,12 @@ struct encoder_packet {
 	obs_encoder_t *encoder;
 };
 
+/** Specifies flags to be applied to next frame */
+typedef enum obs_frame_flags {
+	OBS_FRAME_NONE = 0,
+	OBS_FRAME_FORCE_IDR = 1 << 0,
+} obs_frame_flags;
+
 /** Encoder input frame */
 struct encoder_frame {
 	/** Data for the frame/audio */
@@ -104,6 +111,9 @@ struct encoder_frame {
 
 	/** Presentation timestamp */
 	int64_t pts;
+
+	/** Frame flags */
+	obs_frame_flags flags;
 };
 
 /** Encoder region of interest */
@@ -131,6 +141,8 @@ struct encoder_texture {
 	uint32_t handle;
 	/** Textures, length determined by format */
 	struct gs_texture *tex[4];
+	/** Frame flags */
+	obs_frame_flags flags;
 };
 
 /**
