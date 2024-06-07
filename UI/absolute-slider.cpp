@@ -65,9 +65,6 @@ bool AbsoluteSlider::eventFilter(QObject *obj, QEvent *event)
 		}
 	}
 
-	if (event->type() == QEvent::Wheel)
-		return true;
-
 	return QSlider::eventFilter(obj, event);
 }
 
