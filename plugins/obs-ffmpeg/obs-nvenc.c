@@ -1905,7 +1905,7 @@ static void add_roi(struct nvenc_data *enc, NV_ENC_PIC_PARAMS *params)
 }
 
 static bool nvenc_encode_shared(struct nvenc_data *enc, struct nv_bitstream *bs,
-				void *pic, int64_t pts,
+				void *pic, int64_t pts, obs_frame_flags flags,
 				struct encoder_packet *packet,
 				bool *received_packet)
 {
@@ -1927,6 +1927,10 @@ static bool nvenc_encode_shared(struct nvenc_data *enc, struct nv_bitstream *bs,
 					   ? NV_ENC_BUFFER_FORMAT_YUV420_10BIT
 					   : NV_ENC_BUFFER_FORMAT_NV12;
 	}
+
+	/* Force IDR if requested */
+	if (flags & OBS_FRAME_FORCE_IDR)
+		params.encodePicFlags = NV_ENC_PIC_FLAG_FORCEIDR;
 
 	/* Add ROI map if enabled */
 	if (obs_encoder_has_roi(enc->encoder))
@@ -1978,8 +1982,8 @@ static bool nvenc_encode_shared(struct nvenc_data *enc, struct nv_bitstream *bs,
 }
 
 #ifdef _WIN32
-static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
-			     uint64_t lock_key, uint64_t *next_key,
+static bool nvenc_encode_tex(void *data, struct encoder_texture *tex,
+			     int64_t pts, uint64_t lock_key, uint64_t *next_key,
 			     struct encoder_packet *packet,
 			     bool *received_packet)
 {
@@ -1991,7 +1995,7 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 	struct nv_texture *nvtex;
 	struct nv_bitstream *bs;
 
-	if (handle == GS_INVALID_HANDLE) {
+	if (tex->handle == GS_INVALID_HANDLE) {
 		error("Encode failed: bad texture handle");
 		*next_key = lock_key;
 		return false;
@@ -2000,7 +2004,7 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 	bs = &enc->bitstreams.array[enc->next_bitstream];
 	nvtex = &enc->textures.array[enc->next_bitstream];
 
-	input_tex = get_tex_from_handle(enc, handle, &km);
+	input_tex = get_tex_from_handle(enc, tex->handle, &km);
 	output_tex = nvtex->tex;
 
 	if (!input_tex) {
@@ -2034,8 +2038,8 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 	/* ------------------------------------ */
 	/* do actual encode call                */
 
-	return nvenc_encode_shared(enc, bs, nvtex->mapped_res, pts, packet,
-				   received_packet);
+	return nvenc_encode_shared(enc, bs, nvtex->mapped_res, pts, tex->flags,
+				   packet, received_packet);
 }
 
 #else
@@ -2171,8 +2175,8 @@ static bool nvenc_encode_tex2(void *data, struct encoder_texture *tex,
 	/* ------------------------------------ */
 	/* do actual encode call                */
 
-	return nvenc_encode_shared(enc, bs, surf->mapped_res, pts, packet,
-				   received_packet);
+	return nvenc_encode_shared(enc, bs, surf->mapped_res, pts, tex->flags,
+				   packet, received_packet);
 }
 #endif
 
@@ -2300,7 +2304,7 @@ static bool nvenc_encode_soft(void *data, struct encoder_frame *frame,
 	/* do actual encode call                */
 
 	return nvenc_encode_shared(enc, bs, surf->mapped_res, frame->pts,
-				   packet, received_packet);
+				   frame->flags, packet, received_packet);
 }
 
 static void nvenc_soft_video_info(void *data, struct video_scale_info *info)
@@ -2349,13 +2353,13 @@ struct obs_encoder_info h264_nvenc_info = {
 	.codec = "h264",
 	.type = OBS_ENCODER_VIDEO,
 	.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE |
-		OBS_ENCODER_CAP_ROI,
+		OBS_ENCODER_CAP_ROI | OBS_ENCODER_CAP_FORCE_IDR,
 	.get_name = h264_nvenc_get_name,
 	.create = h264_nvenc_create,
 	.destroy = nvenc_destroy,
 	.update = nvenc_update,
 #ifdef _WIN32
-	.encode_texture = nvenc_encode_tex,
+	.encode_texture2 = nvenc_encode_tex,
 #else
 	.encode_texture2 = nvenc_encode_tex2,
 #endif
@@ -2371,13 +2375,13 @@ struct obs_encoder_info hevc_nvenc_info = {
 	.codec = "hevc",
 	.type = OBS_ENCODER_VIDEO,
 	.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE |
-		OBS_ENCODER_CAP_ROI,
+		OBS_ENCODER_CAP_ROI | OBS_ENCODER_CAP_FORCE_IDR,
 	.get_name = hevc_nvenc_get_name,
 	.create = hevc_nvenc_create,
 	.destroy = nvenc_destroy,
 	.update = nvenc_update,
 #ifdef _WIN32
-	.encode_texture = nvenc_encode_tex,
+	.encode_texture2 = nvenc_encode_tex,
 #else
 	.encode_texture2 = nvenc_encode_tex2,
 #endif
@@ -2393,13 +2397,13 @@ struct obs_encoder_info av1_nvenc_info = {
 	.codec = "av1",
 	.type = OBS_ENCODER_VIDEO,
 	.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE |
-		OBS_ENCODER_CAP_ROI,
+		OBS_ENCODER_CAP_ROI | OBS_ENCODER_CAP_FORCE_IDR,
 	.get_name = av1_nvenc_get_name,
 	.create = av1_nvenc_create,
 	.destroy = nvenc_destroy,
 	.update = nvenc_update,
 #ifdef _WIN32
-	.encode_texture = nvenc_encode_tex,
+	.encode_texture2 = nvenc_encode_tex,
 #else
 	.encode_texture2 = nvenc_encode_tex2,
 #endif
@@ -2413,7 +2417,7 @@ struct obs_encoder_info h264_nvenc_soft_info = {
 	.codec = "h264",
 	.type = OBS_ENCODER_VIDEO,
 	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI |
-		OBS_ENCODER_CAP_INTERNAL,
+		OBS_ENCODER_CAP_INTERNAL | OBS_ENCODER_CAP_FORCE_IDR,
 	.get_name = h264_nvenc_soft_get_name,
 	.create = h264_nvenc_soft_create,
 	.destroy = nvenc_destroy,
@@ -2432,7 +2436,7 @@ struct obs_encoder_info hevc_nvenc_soft_info = {
 	.codec = "hevc",
 	.type = OBS_ENCODER_VIDEO,
 	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI |
-		OBS_ENCODER_CAP_INTERNAL,
+		OBS_ENCODER_CAP_INTERNAL | OBS_ENCODER_CAP_FORCE_IDR,
 	.get_name = hevc_nvenc_soft_get_name,
 	.create = hevc_nvenc_soft_create,
 	.destroy = nvenc_destroy,
@@ -2451,7 +2455,7 @@ struct obs_encoder_info av1_nvenc_soft_info = {
 	.codec = "av1",
 	.type = OBS_ENCODER_VIDEO,
 	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI |
-		OBS_ENCODER_CAP_INTERNAL,
+		OBS_ENCODER_CAP_INTERNAL | OBS_ENCODER_CAP_FORCE_IDR,
 	.get_name = av1_nvenc_soft_get_name,
 	.create = av1_nvenc_soft_create,
 	.destroy = nvenc_destroy,
