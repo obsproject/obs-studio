@@ -114,8 +114,16 @@ create_service(const GoLiveApi::Config &go_live_config,
 				    str->len - (found - str->array));
 	}
 
+	/* The stream key itself may contain query parameters, such as
+	 * "bandwidthtest" that need to be carried over. */
+	QUrl parsed_key{stream_key};
+	QUrlQuery key_query{parsed_key};
+
 	QUrl parsed_url{url};
 	QUrlQuery parsed_query{parsed_url};
+
+	for (const auto &[key, value] : key_query.queryItems())
+		parsed_query.addQueryItem(key, value);
 
 	if (!go_live_config.meta.config_id.empty()) {
 		parsed_query.addQueryItem(
@@ -123,14 +131,12 @@ create_service(const GoLiveApi::Config &go_live_config,
 			QString::fromStdString(go_live_config.meta.config_id));
 	}
 
-	auto key_with_param = stream_key;
-	if (!parsed_query.isEmpty())
-		key_with_param += "?" + parsed_query.toString();
+	parsed_key.setQuery(parsed_query);
 
 	OBSDataAutoRelease settings = obs_data_create();
 	obs_data_set_string(settings, "server", str->array);
 	obs_data_set_string(settings, "key",
-			    key_with_param.toUtf8().constData());
+			    parsed_key.toString().toUtf8().constData());
 
 	auto service = obs_service_create(
 		"rtmp_custom", "multitrack video service", settings, nullptr);
