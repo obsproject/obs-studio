@@ -249,6 +249,10 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	volLabel->setObjectName("volLabel");
 	volLabel->setAlignment(Qt::AlignCenter);
 
+#ifdef __APPLE__
+	mute->setAttribute(Qt::WA_LayoutUsesWidgetRect);
+#endif
+
 	QString sourceName = obs_source_get_name(source);
 	setObjectName(sourceName);
 
