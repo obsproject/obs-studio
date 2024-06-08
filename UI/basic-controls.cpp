@@ -117,7 +117,7 @@ OBSBasicControls::OBSBasicControls(OBSBasic *main)
 
 	connect(main, &OBSBasic::ReplayBufStarted, this,
 		&OBSBasicControls::ReplayBufferStarted);
-	connect(main, &OBSBasic::ReplayBufferStopping, this,
+	connect(main, &OBSBasic::ReplayBufStopping, this,
 		&OBSBasicControls::ReplayBufferStopping);
 	connect(main, &OBSBasic::ReplayBufStopped, this,
 		&OBSBasicControls::ReplayBufferStopped);
