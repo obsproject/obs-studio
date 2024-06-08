@@ -1640,18 +1640,15 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 			QHBoxLayout *boxLayout = new QHBoxLayout(newWidget);
 			boxLayout->setContentsMargins(0, 0, 0, 0);
 			boxLayout->setAlignment(Qt::AlignLeft);
-#ifdef __APPLE__
-			/* TODO: This fixes the issue of tooltip not aligning
-			 * correcty on macOS, the root cause needs further
-			 * investigation. */
-			boxLayout->setSpacing(10);
-#else
 			boxLayout->setSpacing(0);
-#endif
+
 			QCheckBox *check = qobject_cast<QCheckBox *>(widget);
 			check->setText(desc);
 			check->setToolTip(
 				obs_property_long_description(property));
+#ifdef __APPLE__
+			check->setAttribute(Qt::WA_LayoutUsesWidgetRect);
+#endif
 
 			QLabel *help = new QLabel(check);
 			help->setText(bStr.arg(file));
