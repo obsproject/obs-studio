@@ -46,17 +46,7 @@ private:
 	QPointer<QCheckBox> mixer5;
 	QPointer<QCheckBox> mixer6;
 
-	OBSSignal volChangedSignal;
-	OBSSignal syncOffsetSignal;
-	OBSSignal flagsSignal;
-	OBSSignal monitoringTypeSignal;
-	OBSSignal mixersSignal;
-	OBSSignal activateSignal;
-	OBSSignal deactivateSignal;
-	OBSSignal audioActivateSignal;
-	OBSSignal audioDeactivateSignal;
-	OBSSignal balChangedSignal;
-	OBSSignal renameSignal;
+	std::vector<OBSSignal> sigs;
 
 	static void OBSSourceActivated(void *param, calldata_t *calldata);
 	static void OBSSourceDeactivated(void *param, calldata_t *calldata);

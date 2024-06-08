@@ -51,28 +51,22 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	mixer5 = new QCheckBox();
 	mixer6 = new QCheckBox();
 
-	activateSignal.Connect(handler, "activate", OBSSourceActivated, this);
-	deactivateSignal.Connect(handler, "deactivate", OBSSourceDeactivated,
-				 this);
-	audioActivateSignal.Connect(handler, "audio_activate",
-				    OBSSourceActivated, this);
-	audioDeactivateSignal.Connect(handler, "audio_deactivate",
-				      OBSSourceDeactivated, this);
-	volChangedSignal.Connect(handler, "volume", OBSSourceVolumeChanged,
-				 this);
-	syncOffsetSignal.Connect(handler, "audio_sync", OBSSourceSyncChanged,
-				 this);
-	flagsSignal.Connect(handler, "update_flags", OBSSourceFlagsChanged,
-			    this);
+	sigs.emplace_back(handler, "activate", OBSSourceActivated, this);
+	sigs.emplace_back(handler, "deactivate", OBSSourceDeactivated, this);
+	sigs.emplace_back(handler, "audio_activate", OBSSourceActivated, this);
+	sigs.emplace_back(handler, "audio_deactivate", OBSSourceDeactivated,
+			  this);
+	sigs.emplace_back(handler, "volume", OBSSourceVolumeChanged, this);
+	sigs.emplace_back(handler, "audio_sync", OBSSourceSyncChanged, this);
+	sigs.emplace_back(handler, "update_flags", OBSSourceFlagsChanged, this);
 	if (obs_audio_monitoring_available())
-		monitoringTypeSignal.Connect(handler, "audio_monitoring",
-					     OBSSourceMonitoringTypeChanged,
-					     this);
-	mixersSignal.Connect(handler, "audio_mixers", OBSSourceMixersChanged,
-			     this);
-	balChangedSignal.Connect(handler, "audio_balance",
-				 OBSSourceBalanceChanged, this);
-	renameSignal.Connect(handler, "rename", OBSSourceRenamed, this);
+		sigs.emplace_back(handler, "audio_monitoring",
+				  OBSSourceMonitoringTypeChanged, this);
+	sigs.emplace_back(handler, "audio_mixers", OBSSourceMixersChanged,
+			  this);
+	sigs.emplace_back(handler, "audio_balance", OBSSourceBalanceChanged,
+			  this);
+	sigs.emplace_back(handler, "rename", OBSSourceRenamed, this);
 
 	hlayout = new QHBoxLayout();
 	hlayout->setContentsMargins(0, 0, 0, 0);
