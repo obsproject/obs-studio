@@ -12,18 +12,16 @@ Q_DECLARE_METATYPE(OBSSource);
 OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	: QDialog(parent),
 	  ui(new Ui::OBSAdvAudio),
-	  sourceAddedSignal(obs_get_signal_handler(), "source_audio_activate",
-			    OBSSourceAdded, this),
-	  sourceRemovedSignal(obs_get_signal_handler(),
-			      "source_audio_deactivate", OBSSourceRemoved,
-			      this),
-	  sourceActivatedSignal(obs_get_signal_handler(), "source_activate",
-				OBSSourceActivated, this),
-	  sourceDeactivatedSignal(obs_get_signal_handler(), "source_deactivate",
-				  OBSSourceRemoved, this),
 	  showInactive(false)
 {
 	ui->setupUi(this);
+
+	signal_handler_t *sh = obs_get_signal_handler();
+	sigs.emplace_back(sh, "source_audio_activate", OBSSourceAdded, this);
+	sigs.emplace_back(sh, "source_audio_deactivate", OBSSourceRemoved,
+			  this);
+	sigs.emplace_back(sh, "source_activate", OBSSourceActivated, this);
+	sigs.emplace_back(sh, "source_deactivate", OBSSourceRemoved, this);
 
 	VolumeType volType = (VolumeType)config_get_int(
 		GetGlobalConfig(), "BasicWindow", "AdvAudioVolumeType");
@@ -158,35 +156,25 @@ void OBSBasicAdvAudio::SetShowInactive(bool show)
 
 	showInactive = show;
 
-	sourceAddedSignal.Disconnect();
-	sourceRemovedSignal.Disconnect();
-	sourceActivatedSignal.Disconnect();
-	sourceDeactivatedSignal.Disconnect();
+	sigs.clear();
+	signal_handler_t *sh = obs_get_signal_handler();
 
 	if (showInactive) {
-		sourceAddedSignal.Connect(obs_get_signal_handler(),
-					  "source_create", OBSSourceAdded,
-					  this);
-		sourceRemovedSignal.Connect(obs_get_signal_handler(),
-					    "source_remove", OBSSourceRemoved,
-					    this);
+		sigs.emplace_back(sh, "source_create", OBSSourceAdded, this);
+		sigs.emplace_back(sh, "source_remove", OBSSourceRemoved, this);
 
 		obs_enum_sources(EnumSources, this);
 
 		SetIconsVisible(showVisible);
 	} else {
-		sourceAddedSignal.Connect(obs_get_signal_handler(),
-					  "source_audio_activate",
-					  OBSSourceAdded, this);
-		sourceRemovedSignal.Connect(obs_get_signal_handler(),
-					    "source_audio_deactivate",
-					    OBSSourceRemoved, this);
-		sourceActivatedSignal.Connect(obs_get_signal_handler(),
-					      "source_activate",
-					      OBSSourceActivated, this);
-		sourceDeactivatedSignal.Connect(obs_get_signal_handler(),
-						"source_deactivate",
-						OBSSourceRemoved, this);
+		sigs.emplace_back(sh, "source_audio_activate", OBSSourceAdded,
+				  this);
+		sigs.emplace_back(sh, "source_audio_deactivate",
+				  OBSSourceRemoved, this);
+		sigs.emplace_back(sh, "source_activate", OBSSourceActivated,
+				  this);
+		sigs.emplace_back(sh, "source_deactivate", OBSSourceRemoved,
+				  this);
 
 		for (size_t i = 0; i < controls.size(); i++) {
 			const auto source = controls[i]->GetSource();
