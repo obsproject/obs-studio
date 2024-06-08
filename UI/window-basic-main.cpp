@@ -2889,22 +2889,14 @@ void OBSBasic::CreateHotkeys()
 		this);
 	LoadHotkey(splitFileHotkey, "OBSBasic.SplitFile");
 
-	/* Adding chapters is only supported by the native MP4 output */
-	const string_view output_id =
-		obs_output_get_id(outputHandler->fileOutput);
-	if (output_id == "mp4_output") {
-		addChapterHotkey = obs_hotkey_register_frontend(
-			"OBSBasic.AddChapterMarker",
-			Str("Basic.Main.AddChapterMarker"),
-			[](void *, obs_hotkey_id, obs_hotkey_t *,
-			   bool pressed) {
-				if (pressed)
-					obs_frontend_recording_add_chapter(
-						nullptr);
-			},
-			this);
-		LoadHotkey(addChapterHotkey, "OBSBasic.AddChapterMarker");
-	}
+	addChapterHotkey = obs_hotkey_register_frontend(
+		"OBSBasic.AddChapterMarker", Str("Basic.Main.AddChapterMarker"),
+		[](void *, obs_hotkey_id, obs_hotkey_t *, bool pressed) {
+			if (pressed)
+				obs_frontend_recording_add_chapter(nullptr);
+		},
+		this);
+	LoadHotkey(addChapterHotkey, "OBSBasic.AddChapterMarker");
 
 	replayBufHotkeys = obs_hotkey_pair_register_frontend(
 		"OBSBasic.StartReplayBuffer",
