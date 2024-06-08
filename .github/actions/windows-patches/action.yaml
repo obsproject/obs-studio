@@ -86,7 +86,7 @@ runs:
       run: |
         # Release notes are just the tag body on Windows
         Set-Location repo
-        git tag -l --format='%(contents:body)' ${{ inputs.version }} > "${{ github.workspace }}/notes.rst"
+        git tag -l --format='%(contents:body)' ${{ inputs.tagName }} > "${{ github.workspace }}/notes.rst"
 
     - name: Run bouf
       shell: pwsh
