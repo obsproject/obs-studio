@@ -36,7 +36,15 @@ if(MSVC)
   target_link_options(updater PRIVATE "LINKER:/IGNORE:4098")
 endif()
 
-target_link_libraries(updater PRIVATE OBS::blake2 nlohmann_json::nlohmann_json zstd::libzstd_static comctl32 shell32
-                                      winhttp)
+target_link_libraries(
+  updater
+  PRIVATE OBS::blake2
+          nlohmann_json::nlohmann_json
+          zstd::libzstd_static
+          comctl32
+          shell32
+          version
+          winhttp
+          wintrust)
 
 set_target_properties(updater PROPERTIES FOLDER "frontend")
