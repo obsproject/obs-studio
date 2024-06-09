@@ -57,6 +57,7 @@
 #ifdef _WIN32
 #include <windows.h>
 #include <filesystem>
+#include <util/windows/win-version.h>
 #else
 #include <signal.h>
 #include <pthread.h>
@@ -2901,6 +2902,35 @@ void OBSApp::commitData(QSessionManager &manager)
 }
 #endif
 
+#ifdef _WIN32
+static constexpr char vcRunErrorTitle[] = "Outdated Visual C++ Runtime";
+static constexpr char vcRunErrorMsg[] =
+	"OBS Studio requires a newer version of the Microsoft Visual C++ "
+	"Redistributables.\n\nYou will now be directed to the download page.";
+static constexpr char vcRunInstallerUrl[] =
+	"https://obsproject.com/visual-studio-2022-runtimes";
+
+static bool vc_runtime_outdated()
+{
+	win_version_info ver;
+	if (!get_dll_ver(L"msvcp140.dll", &ver))
+		return true;
+	/* Major is always 14 (hence 140.dll), so we only care about minor. */
+	if (ver.minor >= 40)
+		return false;
+
+	int choice = MessageBoxA(NULL, vcRunErrorMsg, vcRunErrorTitle,
+				 MB_OKCANCEL | MB_ICONERROR | MB_TASKMODAL);
+	if (choice == IDOK) {
+		/* Open the URL in the default browser. */
+		ShellExecuteA(NULL, "open", vcRunInstallerUrl, NULL, NULL,
+			      SW_SHOWNORMAL);
+	}
+
+	return true;
+}
+#endif
+
 int main(int argc, char *argv[])
 {
 #ifndef _WIN32
@@ -2927,6 +2957,9 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef _WIN32
+	// Abort as early as possible if MSVC runtime is outdated
+	if (vc_runtime_outdated())
+		return 1;
 	// Try to keep this as early as possible
 	install_dll_blocklist_hook();
 
