@@ -40,4 +40,8 @@ target_link_libraries(
 # zstd is hardcoded with /DEFAULTLIB:LIBCMT
 target_link_options(updater PRIVATE /NODEFAULTLIB:LIBCMT)
 
-set_target_properties(updater PROPERTIES FOLDER frontend OUTPUT_NAME updater)
+set_target_properties(
+  updater
+  PROPERTIES FOLDER frontend
+             OUTPUT_NAME updater
+             MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
