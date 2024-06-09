@@ -270,14 +270,22 @@ static inline bool cuda_error_check(struct nvenc_data *enc, CUresult res,
 	if (res == CUDA_SUCCESS)
 		return true;
 
+	struct dstr message = {0};
+
 	const char *name, *desc;
 	if (cuda_get_error_desc(res, &name, &desc)) {
-		error("%s: CUDA call \"%s\" failed with %s (%d): %s", func,
-		      call, name, res, desc);
+		dstr_printf(&message,
+			    "%s: CUDA call \"%s\" failed with %s (%d): %s",
+			    func, call, name, res, desc);
 	} else {
-		error("%s: CUDA call \"%s\" failed with %d", func, call, res);
+		dstr_printf(&message, "%s: CUDA call \"%s\" failed with %d",
+			    func, call, res);
 	}
 
+	error("%s", message.array);
+	obs_encoder_set_last_error(enc->encoder, message.array);
+
+	dstr_free(&message);
 	return false;
 }
 
