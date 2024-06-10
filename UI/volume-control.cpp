@@ -300,24 +300,16 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 		controlLayout->setContentsMargins(0, 0, 0, 0);
 		controlLayout->setSpacing(0);
 
-		controlLayout->setAlignment(mute, Qt::AlignVCenter);
 		// Add Headphone (audio monitoring) widget here
 		controlLayout->addWidget(mute);
-		controlLayout->addItem(
-			new QSpacerItem(0, 0, QSizePolicy::MinimumExpanding,
-					QSizePolicy::Minimum));
 
 		if (showConfig) {
 			controlLayout->addWidget(config);
-			controlLayout->setAlignment(config, Qt::AlignVCenter);
 		}
 
 		meterLayout->setContentsMargins(0, 0, 0, 0);
 		meterLayout->setSpacing(0);
 		meterLayout->addWidget(slider);
-		meterLayout->addItem(
-			new QSpacerItem(0, 0, QSizePolicy::MinimumExpanding,
-					QSizePolicy::Minimum));
 		meterLayout->addWidget(volMeter);
 
 		meterFrame->setLayout(meterLayout);
