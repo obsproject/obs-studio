@@ -27,9 +27,9 @@ runs:
     - name: Setup bouf
       shell: pwsh
       env:
-        BOUF_TAG: 'v0.6.3'
-        BOUF_HASH: '7f1d266467620aa553a705391ee06128e8ee14af66129a0e64a282997fb6fd83'
-        BOUF_NSIS_HASH: 'a234126de89f122b6a552df3416de3eabcb4195217626c7f4eaec71b20fe36eb'
+        BOUF_TAG: 'v0.6.3-nsis-update'
+        BOUF_HASH: 'c5b58f613e7d7ad8090900cbd6b5f4b057528ee9f0b7e4ba52038ddfdd50b924'
+        BOUF_NSIS_HASH: 'd77cda42d33af77774beddb3fd6edb89e75050f03c174260df7d66bc8247334f'
         GH_TOKEN: ${{ github.token }}
       run: |
         # Download bouf release
