@@ -1,6 +1,7 @@
 #include "multitrack-video-error.hpp"
 
 #include <QMessageBox>
+#include <QPushButton>
 #include "obs-app.hpp"
 
 MultitrackVideoError MultitrackVideoError::critical(QString error)
@@ -31,9 +32,12 @@ bool MultitrackVideoError::ShowDialog(
 			QTStr("FailedToStartStream.WarningRetryNonMultitrackVideo")
 				.arg(multitrack_video_name));
 		mb.setIcon(QMessageBox::Warning);
-		mb.setStandardButtons(QMessageBox::StandardButton::Yes |
-				      QMessageBox::StandardButton::No);
-		return mb.exec() == QMessageBox::StandardButton::Yes;
+		QAbstractButton *yesButton =
+			mb.addButton(QTStr("Yes"), QMessageBox::YesRole);
+		mb.addButton(QTStr("No"), QMessageBox::NoRole);
+		mb.exec();
+
+		return mb.clickedButton() == yesButton;
 	} else if (type == Type::Critical) {
 		mb.setText(error);
 		mb.setIcon(QMessageBox::Critical);
