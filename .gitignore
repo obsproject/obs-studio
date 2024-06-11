@@ -14,8 +14,8 @@
 !/UI
 !.cirrus.xml
 !.clang-format
-!.cmake-format.json
 !.editorconfig
+!.gersemirc
 !.git-blame-ignore-devs
 !.gitmodules
 !.gitignore
