@@ -396,13 +396,13 @@ QCalendarWidget QToolButton {
 QCalendarWidget #qt_calendar_prevmonth {
     padding: 2px;
     qproperty-icon: url(theme:Dark/left.svg);
-    icon-size: 16px, 16px;
+    icon-size: 16px;
 }
 
 QCalendarWidget #qt_calendar_nextmonth {
     padding: 2px;
     qproperty-icon: url(theme:Dark/right.svg);
-    icon-size: 16px, 16px;
+    icon-size: 16px;
 }
 
 /* Status Bar */

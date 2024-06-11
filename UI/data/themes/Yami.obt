@@ -649,12 +649,12 @@ QScrollBar::handle:horizontal {
 
 QPushButton#sourcePropertiesButton {
     qproperty-icon: url(theme:Dark/settings/general.svg);
-    icon-size: var(--icon_base), var(--icon_base);
+    icon-size: var(--icon_base);
 }
 
 QPushButton#sourceFiltersButton {
     qproperty-icon: url(theme:Dark/filter.svg);
-    icon-size: var(--icon_base), var(--icon_base);
+    icon-size: var(--icon_base);
 }
 
 /* Scenes and Sources toolbar */
@@ -1041,7 +1041,7 @@ QPushButton {
     height: var(--input_height);
     max-height: var(--input_height);
     padding: var(--input_padding) var(--padding_wide);
-    icon-size: var(--icon_base), var(--icon_base);
+    icon-size: var(--icon_base);
 }
 
 QPushButton {
@@ -1059,7 +1059,7 @@ QPushButton[toolButton="true"] {
     margin: 0px var(--spacing_base);
     border: 1px solid var(--button_border);
     border-radius: var(--border_radius);
-    icon-size: var(--icon_base), var(--icon_base);
+    icon-size: var(--icon_base);
 }
 
 QToolButton:last-child,
@@ -1212,7 +1212,7 @@ QSlider::handle:disabled {
     margin: 0px;
     border: 1px solid var(--button_border);
     border-radius: var(--border_radius);
-    icon-size: var(--icon_base), var(--icon_base);
+    icon-size: var(--icon_base);
 }
 
 /* This is an incredibly cursed but necessary fix */
@@ -1603,7 +1603,7 @@ MuteCheckBox::indicator:unchecked {
     margin: 0px;
     border: 1px solid var(--button_border);
     border-radius: var(--border_radius);
-    icon-size: var(--icon_base), var(--icon_base);
+    icon-size: var(--icon_base);
 }
 
 MuteCheckBox::indicator:hover,
@@ -1612,7 +1612,7 @@ MuteCheckBox::indicator:unchecked:hover {
     padding: var(--padding_base_border) var(--padding_base_border);
     margin: 0px;
     border: 1px solid var(--button_border_hover);
-    icon-size: var(--icon_base), var(--icon_base);
+    icon-size: var(--icon_base);
 }
 
 MuteCheckBox::indicator:pressed,
@@ -1883,13 +1883,13 @@ QCalendarWidget QToolButton {
 QCalendarWidget #qt_calendar_prevmonth {
     padding: var(--padding_small);
     qproperty-icon: url(theme:Dark/left.svg);
-    icon-size: var(--icon_base), var(--icon_base);
+    icon-size: var(--icon_base);
 }
 
 QCalendarWidget #qt_calendar_nextmonth {
     padding: var(--padding_small);
     qproperty-icon: url(theme:Dark/right.svg);
-    icon-size: var(--icon_base), var(--icon_base);
+    icon-size: var(--icon_base);
 }
 
 QCalendarWidget QToolButton:hover {

@@ -202,7 +202,7 @@ QPushButton[toolButton="true"] {
 #stackedMixerArea QPushButton {
     min-width: var(--icon_base);
     padding: var(--padding_large) var(--padding_large);
-    icon-size: var(--icon_base), var(--icon_base);
+    icon-size: var(--icon_base);
 }
 
 #stackedMixerArea QPushButton:!hover {
@@ -221,7 +221,7 @@ MuteCheckBox::indicator:unchecked {
     border: none;
     width: var(--icon_base_mixer);
     height: var(--icon_base_mixer);
-    icon-size: var(--icon_base_mixer), var(--icon_base_mixer);
+    icon-size: var(--icon_base_mixer);
 }
 
 MuteCheckBox::indicator:checked {
@@ -235,7 +235,7 @@ MuteCheckBox::indicator:unchecked:hover {
 
 MuteCheckBox::indicator:hover,
 MuteCheckBox::indicator:unchecked:hover {
-    icon-size: var(--icon_base_mixer), var(--icon_base_mixer);
+    icon-size: var(--icon_base_mixer);
     border: none;
 }
 
