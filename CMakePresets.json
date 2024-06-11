@@ -52,7 +52,8 @@
       "inherits": ["macos"],
       "warnings": {"dev": true, "deprecated": true},
       "cacheVariables": {
-        "CMAKE_COMPILE_WARNING_AS_ERROR": true
+        "CMAKE_COMPILE_WARNING_AS_ERROR": true,
+        "ENABLE_CCACHE": true
       }
     },
     {
@@ -83,7 +84,8 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "CMAKE_COMPILE_WARNING_AS_ERROR": true,
-        "CMAKE_COLOR_DIAGNOSTICS": true
+        "CMAKE_COLOR_DIAGNOSTICS": true,
+        "ENABLE_CCACHE": true
       }
     },
     {
@@ -102,8 +104,7 @@
       "cacheVariables": {
         "GPU_PRIORITY_VAL": {"type": "STRING", "value": "$penv{GPU_PRIORITY_VAL}"},
         "VIRTUALCAM_GUID": {"type": "STRING", "value": "A3FCE0F5-3493-419F-958A-ABA1250EC20B"},
-        "ENABLE_BROWSER": true,
-        "ENABLE_CCACHE": false
+        "ENABLE_BROWSER": true
       }
     },
     {
@@ -113,8 +114,7 @@
       "inherits": ["windows-x64"],
       "warnings": {"dev": true, "deprecated": true},
       "cacheVariables": {
-        "CMAKE_COMPILE_WARNING_AS_ERROR": true,
-        "ENABLE_CCACHE": false
+        "CMAKE_COMPILE_WARNING_AS_ERROR": true
       }
     }
   ],
