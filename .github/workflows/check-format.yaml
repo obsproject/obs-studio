@@ -26,15 +26,15 @@ jobs:
         with:
           failCondition: error
 
-  cmake-format:
+  gersemi:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: cmake-format Check 🎛️
-        id: cmake-format
-        uses: ./.github/actions/run-cmake-format
+      - name: gersemi Check 🎛️
+        id: gersemi
+        uses: ./.github/actions/run-gersemi
         with:
           failCondition: error
 
