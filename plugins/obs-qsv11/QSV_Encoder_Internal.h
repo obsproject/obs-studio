@@ -116,6 +116,7 @@ private:
 	mfxU16 m_nPPSBufferSize;
 	mfxVideoParam m_parameter;
 	std::vector<mfxExtBuffer *> extendedBuffers;
+	mfxExtCodingOption3 m_co3;
 	mfxExtCodingOption2 m_co2;
 	mfxExtCodingOption m_co;
 	mfxExtHEVCParam m_ExtHEVCParam{};
