@@ -23,13 +23,13 @@ Example of use:
 ./build-aux/run-clang-format
 ```
 
-### `run-cmake-format`
+### `run-gersemi-format`
 
-This script allows to check the formatting and/or format of the CMake files and requires ZSH and `cmakelang` (`cmake-format`) Python package.
+This script allows to check the formatting and/or format of the CMake files and requires ZSH and `gersemi` Python package.
 
 Example of use:
 ```sh
-./build-aux/run-cmake-format
+./build-aux/run-gersemi
 ```
 
 ### `run-swift-format`
