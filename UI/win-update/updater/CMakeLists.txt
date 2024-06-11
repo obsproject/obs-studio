@@ -44,4 +44,4 @@ set_target_properties(
   updater
   PROPERTIES FOLDER frontend
              OUTPUT_NAME updater
-             MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+             MSVC_RUNTIME_LIBRARY "MultiThreaded")
