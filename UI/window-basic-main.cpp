@@ -8407,13 +8407,8 @@ void OBSBasic::ProgramViewContextMenuRequested()
 				 &OBSBasic::OpenStudioProgramProjector);
 
 	popup.addMenu(studioProgramProjector);
-
-	QAction *studioProgramWindow =
-		popup.addAction(QTStr("StudioProgramWindow"), this,
-				&OBSBasic::OpenStudioProgramWindow);
-
-	popup.addAction(studioProgramWindow);
-
+	popup.addAction(QTStr("StudioProgramWindow"), this,
+			&OBSBasic::OpenStudioProgramWindow);
 	popup.addAction(QTStr("Screenshot.StudioProgram"), this,
 			&OBSBasic::ScreenshotProgram);
 
