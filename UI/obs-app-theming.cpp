@@ -485,6 +485,16 @@ void OBSApp::FindThemes()
 				break;
 			}
 
+			if (parent->id == theme.id ||
+			    theme.dependencies.contains(parent->id)) {
+				blog(LOG_ERROR,
+				     R"(Dependency chain of "%s" ("%s") contains recursion!)",
+				     QT_TO_UTF8(theme.id),
+				     QT_TO_UTF8(parent->id));
+				invalid.insert(theme.id);
+				break;
+			}
+
 			/* Mark this theme as a variant of first parent that is a base theme. */
 			if (!theme.isBaseTheme && parent->isBaseTheme &&
 			    theme.parent.isEmpty())
