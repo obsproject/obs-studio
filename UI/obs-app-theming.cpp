@@ -417,7 +417,6 @@ static vector<OBSThemeVariable> ParseThemeVariables(const char *themeData)
 void OBSApp::FindThemes()
 {
 	string themeDir;
-	themeDir.resize(512);
 
 	QStringList filters;
 	filters << "*.obt" // OBS Base Theme
@@ -435,6 +434,7 @@ void OBSApp::FindThemes()
 			delete theme;
 	}
 
+	themeDir.resize(1024);
 	if (GetConfigPath(themeDir.data(), themeDir.capacity(),
 			  "obs-studio/themes/") > 0) {
 		QDirIterator it(QT_UTF8(themeDir.c_str()), filters,
