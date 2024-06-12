@@ -2922,6 +2922,21 @@
                 "keyint": 2,
                 "x264opts": "scenecut=0"
             }
+        },
+        {
+            "name": "Prism",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://global-rtmp.lip2.navercorp.com:8080/relay"
+                }
+            ],
+            "supported video codecs": [
+                "h264"
+            ],
+            "recommended": {
+                "keyint": 3
+            }
         }
     ]
 }
