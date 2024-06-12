@@ -417,6 +417,7 @@ static vector<OBSThemeVariable> ParseThemeVariables(const char *themeData)
 void OBSApp::FindThemes()
 {
 	string themeDir;
+	unique_ptr<OBSTheme> theme;
 
 	QStringList filters;
 	filters << "*.obt" // OBS Base Theme
@@ -427,11 +428,9 @@ void OBSApp::FindThemes()
 	GetDataFilePath("themes/", themeDir);
 	QDirIterator it(QString::fromStdString(themeDir), filters, QDir::Files);
 	while (it.hasNext()) {
-		OBSTheme *theme = ParseThemeMeta(it.next());
+		theme.reset(ParseThemeMeta(it.next()));
 		if (theme && !themes.contains(theme->id))
 			themes[theme->id] = std::move(*theme);
-		else
-			delete theme;
 	}
 
 	themeDir.resize(1024);
@@ -441,11 +440,9 @@ void OBSApp::FindThemes()
 				QDir::Files);
 
 		while (it.hasNext()) {
-			OBSTheme *theme = ParseThemeMeta(it.next());
+			theme.reset(ParseThemeMeta(it.next()));
 			if (theme && !themes.contains(theme->id))
 				themes[theme->id] = std::move(*theme);
-			else
-				delete theme;
 		}
 	}
 
