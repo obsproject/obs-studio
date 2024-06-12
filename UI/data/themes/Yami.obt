@@ -477,7 +477,7 @@ OBSDock > QWidget {
 }
 
 #transitionsFrame {
-    padding: 4px 8px;
+    padding: var(--padding_large);
 }
 
 OBSDock QLabel {
@@ -827,7 +827,7 @@ QComboBox::drop-down,
 QDateTimeEdit::drop-down {
     border:none;
     border-left: 1px solid var(--grey6);
-    width: 32px;
+    width: var(--input_height);
 }
 
 QComboBox::down-arrow,
@@ -923,7 +923,7 @@ QDoubleSpinBox::up-button {
     subcontrol-origin: padding;
     subcontrol-position: top right; /* position at the top right corner */
 
-    width: 32px;
+    width: var(--input_height);
     height: var(--spinbox_button_height);
     border-left: 1px solid var(--grey6);
     border-bottom: 1px solid transparent;
@@ -936,7 +936,7 @@ QDoubleSpinBox::down-button {
     subcontrol-origin: padding;
     subcontrol-position: bottom right; /* position at the top right corner */
 
-    width: 32px;
+    width: var(--input_height);
     height: var(--spinbox_button_height);
     border-left: 1px solid var(--grey6);
     border-top: 1px solid var(--grey6);
@@ -1078,6 +1078,8 @@ QPushButton:hover {
 
 QToolButton:hover,
 QToolButton:focus,
+QPushButton[toolButton="true"]:hover,
+QPushButton[toolButton="true"]:focus,
 MuteCheckBox::indicator:hover,
 MuteCheckBox::indicator:focus {
     border-color: var(--button_border);
@@ -1104,7 +1106,9 @@ QPushButton:pressed:hover {
 }
 
 QToolButton:pressed,
-QToolButton:pressed:hover {
+QToolButton:pressed:hover,
+QPushButton[toolButton="true"]:pressed,
+QPushButton[toolButton="true"]:pressed:hover {
     background-color: var(--button_bg_down);
     border-color: var(--button_border);
 }
@@ -1275,7 +1279,6 @@ VolControl #volLabel {
 #vMixerScrollArea VolControl #volLabel {
     padding: var(--padding_base) 0px var(--padding_base);
     min-width: var(--volume_slider_label);
-    max-width: var(--volume_slider_label);
     margin-left: var(--padding_xlarge);
     text-align: center;
 }

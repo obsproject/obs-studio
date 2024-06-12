@@ -11,7 +11,7 @@
     --grey2: rgb(134,135,134);
     --grey3: rgb(122,121,122);
     --grey4: rgb(76,76,76);
-    --grey5: rgb(88,87,88);
+    --grey5: rgb(70,69,70);
     --grey6: rgb(31,30,31);
     --grey7: rgb(58,57,58);
     --grey8: rgb(46,45,46);
@@ -31,7 +31,11 @@
     /* OS Fixes */
     --os_mac_font_base_value: 11;
 
+    --font_small: calc(0.8pt * var(--font_base_value));
+
     --icon_base: calc(6px + var(--font_base_value));
+
+    --padding_xlarge: calc(2px + calc(0.5px * var(--padding_base_value)));
 
     --padding_wide: calc(18px + calc(0.25 * var(--padding_base_value)));
     --padding_menu: calc(8px + calc(1 * var(--padding_base_value)));
@@ -45,14 +49,14 @@
     --border_radius_large: 2px;
 
     --input_bg: var(--grey4);
-    --input_bg_hover: var(--grey5);
+    --input_bg_hover: var(--grey1);
     --input_bg_focus: var(--grey6);
 
     --list_item_bg_selected: var(--primary);
     --list_item_bg_hover: var(--primary_light);
 
     --input_border: var(--grey4);
-    --input_border_hover: var(--grey5);
+    --input_border_hover: var(--grey1);
     --input_border_focus: var(--grey6);
 
     --spacing_input: var(--spacing_base);
@@ -91,17 +95,27 @@ QStatusBar {
     background-color: var(--bg_window);
 }
 
+OBSDock > QWidget {
+  border-top: 1px solid var(--border_color);
+  padding-top: var(--spacing_large);
+}
+
 QDockWidget {
     font-weight: normal;
 }
 
 QDockWidget::title {
+    background-color: var(--grey5);
     padding: var(--dock_title_padding);
     text-align: center;
 }
 
 QDockWidget > QWidget {
     background: var(--bg_window);
+}
+
+#transitionsFrame {
+    padding: var(--padding_xlarge);
 }
 
 SceneTree::item,
@@ -193,10 +207,18 @@ OBSBasicSettings QListWidget::item {
     padding: 4px;
 }
 
+QPushButton:checked {
+  border-color: var(--primary);
+}
+
 QToolButton,
 QPushButton[toolButton="true"] {
     background-color: var(--bg_window);
     border-color: var(--bg_window);
+}
+
+#stackedMixerArea QScrollArea {
+  background: var(--bg_base);
 }
 
 #stackedMixerArea QPushButton {
@@ -213,6 +235,33 @@ QPushButton[toolButton="true"] {
 #stackedMixerArea QPushButton:hover {
     background-color: var(--bg_base);
     border: none;
+}
+
+#hMixerScrollArea VolControl {
+    padding: 0px 2px;
+    margin-bottom: 1px;
+}
+
+#hMixerScrollArea QLabel {
+  margin: var(--padding_xlarge) 0px;
+}
+
+#hMixerScrollArea #volMeterFrame {
+  margin-top: var(--spacing_large);
+}
+
+#vMixerScrollArea VolControl {
+    padding: 0px var(--padding_xlarge) var(--spacing_large);
+    border-right: 1px solid var(--bg_window);
+}
+
+#vMixerScrollArea QLabel {
+  font-size: var(--font_small);
+  margin: var(--padding_xlarge) 0px;
+}
+
+#vMixerScrollArea #volLabel {
+  font-size: var(--font_base);
 }
 
 MuteCheckBox::indicator,
@@ -254,4 +303,8 @@ VolumeMeter {
     qproperty-majorTickColor: var(--text);
     qproperty-minorTickColor: rgb(122,121,122); /* light */
     qproperty-meterThickness: 3;
+}
+
+OBSBasicStats {
+    background: var(--bg_window);
 }
