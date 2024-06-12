@@ -180,6 +180,7 @@ jobs:
     if: github.repository_owner == 'obsproject' && fromJSON(needs.check-tag.outputs.validTag)
     runs-on: windows-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/windows-patches
         with:
           tagName: ${{ github.ref_name }}
