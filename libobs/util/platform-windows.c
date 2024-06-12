@@ -494,12 +494,15 @@ static int os_get_path_internal(char *dst, size_t size, const char *name,
 
 	SHGetFolderPathW(NULL, folder, NULL, SHGFP_TYPE_CURRENT, path_utf16);
 
-	if (os_wcs_to_utf8(path_utf16, 0, dst, size) != 0) {
+	size_t out_len = os_wcs_to_utf8(path_utf16, 0, dst, size);
+	if (out_len) {
 		if (!name || !*name) {
 			return (int)strlen(dst);
 		}
 
-		if (strcat_s(dst, size, "\\") == 0) {
+		size -= out_len;
+		if (size && strcat_s(dst, size, "\\") == 0) {
+			size -= sizeof('\\');
 			if (strcat_s(dst, size, name) == 0) {
 				return (int)strlen(dst);
 			}
