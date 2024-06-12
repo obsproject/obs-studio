@@ -44,42 +44,42 @@ struct CFParser {
 	cf_parser *operator->() { return &cfp; }
 };
 
-static OBSTheme *ParseThemeMeta(const QString &path)
+static optional<OBSTheme> ParseThemeMeta(const QString &path)
 {
 	QFile themeFile(path);
 	if (!themeFile.open(QIODeviceBase::ReadOnly))
-		return nullptr;
+		return nullopt;
 
-	OBSTheme *meta = nullptr;
+	OBSTheme meta;
 	const QByteArray data = themeFile.readAll();
 	CFParser cfp;
 	int ret;
 
 	if (!cf_parser_parse(cfp, data.constData(), QT_TO_UTF8(path)))
-		return nullptr;
+		return nullopt;
 
 	if (cf_token_is(cfp, "@") || cf_go_to_token(cfp, "@", nullptr)) {
 		while (cf_next_token(cfp)) {
-			if (cf_token_is(cfp, "OBSThemeMeta"))
+			if (cf_token_is(cfp, "OBSThemeMeta")) {
 				break;
+			}
 
 			if (!cf_go_to_token(cfp, "@", nullptr))
-				return nullptr;
+				return nullopt;
 		}
 
+		if (!cf_token_is(cfp, "OBSThemeMeta"))
+			return nullopt;
+
 		if (!cf_next_token(cfp))
-			return nullptr;
+			return nullopt;
 
 		if (!cf_token_is(cfp, "{"))
-			return nullptr;
-
-		meta = new OBSTheme();
+			return nullopt;
 
 		for (;;) {
-			if (!cf_next_token(cfp)) {
-				delete meta;
-				return nullptr;
-			}
+			if (!cf_next_token(cfp))
+				return nullopt;
 
 			ret = cf_token_is_type(cfp, CFTOKEN_NAME, "name",
 					       nullptr);
@@ -93,10 +93,8 @@ static OBSTheme *ParseThemeMeta(const QString &path)
 			if (ret != PARSE_SUCCESS)
 				continue;
 
-			if (!cf_next_token(cfp)) {
-				delete meta;
-				return nullptr;
-			}
+			if (!cf_next_token(cfp))
+				return nullopt;
 
 			ret = cf_token_is_type(cfp, CFTOKEN_STRING, "value",
 					       ";");
@@ -109,39 +107,34 @@ static OBSTheme *ParseThemeMeta(const QString &path)
 
 			if (str) {
 				if (name == "dark")
-					meta->isDark = strcmp(str, "true") == 0;
+					meta.isDark = strcmp(str, "true") == 0;
 				else if (name == "extends")
-					meta->extends = str;
+					meta.extends = str;
 				else if (name == "author")
-					meta->author = str;
+					meta.author = str;
 				else if (name == "id")
-					meta->id = str;
+					meta.id = str;
 				else if (name == "name")
-					meta->name = str;
+					meta.name = str;
 			}
 
-			if (!cf_go_to_token(cfp, ";", nullptr)) {
-				delete meta;
-				return nullptr;
-			}
+			if (!cf_go_to_token(cfp, ";", nullptr))
+				return nullopt;
 		}
 	}
 
-	if (meta) {
-		auto filepath = filesystem::u8path(path.toStdString());
-		meta->isBaseTheme = filepath.extension() == ".obt";
-		meta->filename = filepath.stem();
+	auto filepath = filesystem::u8path(path.toStdString());
+	meta.isBaseTheme = filepath.extension() == ".obt";
+	meta.filename = filepath.stem();
 
-		if (meta->id.isEmpty() || meta->name.isEmpty() ||
-		    (!meta->isBaseTheme && meta->extends.isEmpty())) {
-			/* Theme is invalid */
-			delete meta;
-			meta = nullptr;
-		} else {
-			meta->location = absolute(filepath);
-			meta->isHighContrast = path.endsWith(".oha");
-			meta->isVisible = !path.contains("System");
-		}
+	if (meta.id.isEmpty() || meta.name.isEmpty() ||
+	    (!meta.isBaseTheme && meta.extends.isEmpty())) {
+		/* Theme is invalid */
+		return nullopt;
+	} else {
+		meta.location = absolute(filepath);
+		meta.isHighContrast = path.endsWith(".oha");
+		meta.isVisible = !path.contains("System");
 	}
 
 	return meta;
@@ -417,7 +410,6 @@ static vector<OBSThemeVariable> ParseThemeVariables(const char *themeData)
 void OBSApp::FindThemes()
 {
 	string themeDir;
-	unique_ptr<OBSTheme> theme;
 
 	QStringList filters;
 	filters << "*.obt" // OBS Base Theme
@@ -428,7 +420,7 @@ void OBSApp::FindThemes()
 	GetDataFilePath("themes/", themeDir);
 	QDirIterator it(QString::fromStdString(themeDir), filters, QDir::Files);
 	while (it.hasNext()) {
-		theme.reset(ParseThemeMeta(it.next()));
+		auto theme = ParseThemeMeta(it.next());
 		if (theme && !themes.contains(theme->id))
 			themes[theme->id] = std::move(*theme);
 	}
@@ -440,7 +432,7 @@ void OBSApp::FindThemes()
 				QDir::Files);
 
 		while (it.hasNext()) {
-			theme.reset(ParseThemeMeta(it.next()));
+			auto theme = ParseThemeMeta(it.next());
 			if (theme && !themes.contains(theme->id))
 				themes[theme->id] = std::move(*theme);
 		}
