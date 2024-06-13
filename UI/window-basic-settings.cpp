@@ -4829,10 +4829,13 @@ void RestrictResetBitrates(initializer_list<QComboBox *> boxes, int maxbitrate)
 
 void OBSBasicSettings::AdvancedChangedRestart()
 {
+	ui->advancedMsg->setVisible(false);
+
 	if (!loading) {
 		advancedChanged = true;
 		ui->advancedMsg->setText(
 			QTStr("Basic.Settings.ProgramRestart"));
+		ui->advancedMsg->setVisible(true);
 		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
 	}
