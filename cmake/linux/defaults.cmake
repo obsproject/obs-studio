@@ -31,7 +31,7 @@ set(OBS_CMAKE_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake")
 
 # Set additional paths used by OBS for self-discovery
 set(OBS_PLUGIN_PATH "${CMAKE_INSTALL_LIBDIR}/obs-plugins")
-set(OBS_SCRIPT_PLUGIN_PATH "../${CMAKE_INSTALL_LIBDIR}/obs-scripting")
+set(OBS_SCRIPT_PLUGIN_PATH "${CMAKE_INSTALL_LIBDIR}/obs-scripting")
 set(OBS_DATA_PATH "${OBS_DATA_DESTINATION}")
 set(OBS_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
