@@ -127,7 +127,7 @@ create_service(const GoLiveApi::Config &go_live_config,
 
 	if (!go_live_config.meta.config_id.empty()) {
 		parsed_query.addQueryItem(
-			"obsConfigId",
+			"clientConfigId",
 			QString::fromStdString(go_live_config.meta.config_id));
 	}
 
