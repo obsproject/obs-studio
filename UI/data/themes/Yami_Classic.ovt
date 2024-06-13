@@ -113,6 +113,10 @@ QMenu::item {
     padding: var(--padding_menu_y) var(--padding_menu);
 }
 
+QMenu::item {
+    padding-right: 20px;
+}
+
 QGroupBox {
     background: var(--bg_window);
     border: 1px solid var(--border_color);
