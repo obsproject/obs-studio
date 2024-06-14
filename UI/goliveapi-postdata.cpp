@@ -36,6 +36,8 @@ constructGoLivePost(QString streamKey,
 
 		preferences.canvas_width = ovi.base_width;
 		preferences.canvas_height = ovi.base_height;
+
+		preferences.composition_gpu_index = ovi.adapter;
 	}
 
 	if (maximum_aggregate_bitrate.has_value())
