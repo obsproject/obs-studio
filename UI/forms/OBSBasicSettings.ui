@@ -1670,6 +1670,9 @@
                          <verstretch>0</verstretch>
                         </sizepolicy>
                        </property>
+                       <property name="suffix">
+                        <string notr="true"> Kbps</string>
+                       </property>
                        <property name="minimum">
                         <number>500</number>
                        </property>
