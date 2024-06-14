@@ -731,6 +731,40 @@ create_audio_encoders(const GoLiveApi::Config &go_live_config,
 		      const char *audio_encoder_id, size_t main_audio_mixer,
 		      std::optional<size_t> vod_track_mixer)
 {
+	speaker_layout speakers = SPEAKERS_UNKNOWN;
+	obs_audio_info oai = {};
+	if (obs_get_audio_info(&oai))
+		speakers = oai.speakers;
+
+	auto sanitize_audio_channels = [&](obs_encoder_t *encoder,
+					   uint32_t channels) {
+		speaker_layout target_speakers = SPEAKERS_UNKNOWN;
+		for (size_t i = 0; i <= (size_t)SPEAKERS_7POINT1; i++) {
+			if (get_audio_channels((speaker_layout)i) != channels)
+				continue;
+
+			target_speakers = (speaker_layout)i;
+			break;
+		}
+		if (target_speakers == SPEAKERS_UNKNOWN) {
+			blog(LOG_WARNING,
+			     "MultitrackVideoOutput: Could not find "
+			     "speaker layout for %" PRIu32 "channels "
+			     "while configuring encoder '%s'",
+			     channels, obs_encoder_get_name(encoder));
+			return;
+		}
+		if (speakers != SPEAKERS_UNKNOWN &&
+		    channels > get_audio_channels(speakers))
+			return;
+
+		obs_encoder_set_speaker_layout(encoder, target_speakers);
+		blog(LOG_INFO,
+		     "MultitrackVideoOutput: setting encoder '%s' "
+		     "to %" PRIu32 " channels ",
+		     obs_encoder_get_name(encoder), channels);
+	};
+
 	using encoder_configs_type =
 		decltype(go_live_config.audio_configurations.live);
 	DStr encoder_name_buffer;
@@ -756,6 +790,10 @@ create_audio_encoders(const GoLiveApi::Config &go_live_config,
 				create_audio_encoder(encoder_name_buffer->array,
 						     audio_encoder_id, settings,
 						     mixer_idx);
+
+			sanitize_audio_channels(audio_encoder,
+						configs[i].channels);
+
 			obs_output_set_audio_encoder(output, audio_encoder,
 						     output_encoder_index);
 			if (recording_output)
