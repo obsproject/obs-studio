@@ -777,8 +777,10 @@ create_audio_encoders(const GoLiveApi::Config &go_live_config,
 	if (!vod_track_mixer.has_value())
 		return;
 
+	// we already check for empty inside of `create_encoders`
+	encoder_configs_type empty = {};
 	create_encoders("multitrack video vod audio",
-			go_live_config.audio_configurations.vod,
+			go_live_config.audio_configurations.vod.value_or(empty),
 			*vod_track_mixer);
 
 	return;

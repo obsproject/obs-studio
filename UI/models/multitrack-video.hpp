@@ -279,7 +279,7 @@ struct AudioEncoderConfiguration {
 
 struct AudioConfigurations {
 	std::vector<AudioEncoderConfiguration> live;
-	std::vector<AudioEncoderConfiguration> vod;
+	optional<std::vector<AudioEncoderConfiguration>> vod;
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(AudioConfigurations, live,
 						    vod)
