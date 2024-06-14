@@ -6325,6 +6325,9 @@ void OBSBasicSettings::UpdateMultitrackVideo()
 			ui->enableMultitrackVideo->setChecked(false);
 	}
 
+	if (IsCustomService())
+		available = available && MultitrackVideoDeveloperModeEnabled();
+
 	ui->multitrackVideoGroupBox->setVisible(available);
 
 	ui->enableMultitrackVideo->setEnabled(toggle_available);
