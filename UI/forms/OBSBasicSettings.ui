@@ -1674,13 +1674,13 @@
                         <string notr="true"> Kbps</string>
                        </property>
                        <property name="minimum">
-                        <number>500</number>
+                        <number>0</number>
                        </property>
                        <property name="maximum">
                         <number>1000000</number>
                        </property>
                        <property name="value">
-                        <number>8000</number>
+                        <number>0</number>
                        </property>
                       </widget>
                      </item>
