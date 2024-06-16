@@ -246,15 +246,14 @@ static inline int get_sws_range(enum AVColorRange r)
 
 static bool mp_media_init_scaling(mp_media_t *m)
 {
-	int space = get_sws_colorspace(m->v.decoder->colorspace);
-	int range = get_sws_range(m->v.decoder->color_range);
+	int space = get_sws_colorspace(m->v.frame->colorspace);
+	int range = get_sws_range(m->v.frame->color_range);
 	const int *coeff = sws_getCoefficients(space);
 
-	m->swscale = sws_getCachedContext(NULL, m->v.decoder->width,
-					  m->v.decoder->height,
-					  m->v.decoder->pix_fmt,
-					  m->v.decoder->width,
-					  m->v.decoder->height, m->scale_format,
+	m->swscale = sws_getCachedContext(NULL, m->v.frame->width,
+					  m->v.frame->height,
+					  m->v.frame->format, m->v.frame->width,
+					  m->v.frame->height, m->scale_format,
 					  SWS_POINT, NULL, NULL, NULL);
 	if (!m->swscale) {
 		blog(LOG_WARNING, "MP: Failed to initialize scaler");
@@ -265,7 +264,7 @@ static bool mp_media_init_scaling(mp_media_t *m)
 				 FIXED_1_0, FIXED_1_0);
 
 	int ret = av_image_alloc(m->scale_pic, m->scale_linesizes,
-				 m->v.decoder->width, m->v.decoder->height,
+				 m->v.frame->width, m->v.frame->height,
 				 m->scale_format, 32);
 	if (ret < 0) {
 		blog(LOG_WARNING, "MP: Failed to create scale pic data");
