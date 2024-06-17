@@ -63,6 +63,9 @@ static void *gpu_encode_thread(void *data)
 		next_key = tf.lock_key;
 
 		video_output_inc_texture_frames(video->video);
+		if (video->video != obs->video.main_mix->video)
+			video_output_inc_texture_frames(
+				obs->video.main_mix->video);
 
 		for (size_t i = 0; i < video->gpu_encoders.num; i++) {
 			obs_encoder_t *encoder = obs_encoder_get_ref(
@@ -186,6 +189,9 @@ static void *gpu_encode_thread(void *data)
 					 sizeof(tf));
 
 			video_output_inc_texture_skipped_frames(video->video);
+			if (video->video != obs->video.main_mix->video)
+				video_output_inc_texture_skipped_frames(
+					obs->video.main_mix->video);
 		} else {
 			deque_push_back(&video->gpu_encoder_avail_queue, &tf,
 					sizeof(tf));
