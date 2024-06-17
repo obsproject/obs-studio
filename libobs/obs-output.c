@@ -2172,16 +2172,17 @@ static bool purge_encoder_group_keyframe_data(obs_output_t *output, size_t idx)
 
 /* Check whether keyframes are emitted from all grouped encoders, and log
  * if keyframes haven't been emitted from all grouped encoders. */
-static void
+static bool
 check_encoder_group_keyframe_alignment(obs_output_t *output,
 				       struct encoder_packet *packet)
 {
 	size_t idx = 0;
 	struct keyframe_group_data insert_data = {0};
+	bool success = true;
 
 	if (!packet->keyframe || packet->type != OBS_ENCODER_VIDEO ||
 	    !packet->encoder->encoder_group)
-		return;
+		return success;
 
 	for (; idx < output->keyframe_group_tracking.num;) {
 		struct keyframe_group_data *data =
@@ -2203,6 +2204,17 @@ check_encoder_group_keyframe_alignment(obs_output_t *output,
 				     obs_output_get_name(output), data->pts,
 				     obs_encoder_get_name(packet->encoder),
 				     packet->track_idx);
+				success = false;
+
+				pthread_mutex_lock(
+					&packet->encoder->encoder_group->mutex);
+				if (data->pts > packet->encoder->encoder_group
+							->last_missing_pts) {
+					packet->encoder->encoder_group
+						->last_missing_pts = data->pts;
+				}
+				pthread_mutex_unlock(
+					&packet->encoder->encoder_group->mutex);
 			}
 
 			data->seen_on_track[packet->track_idx] =
@@ -2216,7 +2228,7 @@ check_encoder_group_keyframe_alignment(obs_output_t *output,
 		data->seen_on_track[packet->track_idx] =
 			KEYFRAME_TRACK_STATUS_SEEN;
 		purge_encoder_group_keyframe_data(output, idx);
-		return;
+		return success;
 	}
 
 	insert_data.group_id = (uintptr_t)packet->encoder->encoder_group;
@@ -2230,6 +2242,51 @@ check_encoder_group_keyframe_alignment(obs_output_t *output,
 	pthread_mutex_unlock(&packet->encoder->encoder_group->mutex);
 
 	da_insert(output->keyframe_group_tracking, idx, &insert_data);
+
+	return success;
+}
+
+static void create_encoder_resync_pts(obs_output_t *output,
+				      struct encoder_packet *packet)
+{
+	obs_encoder_t *enc = packet->encoder;
+	struct encoder_group *group = enc->encoder_group;
+
+	if (!group->resync_supported)
+		return;
+
+	/* There already is a future sync point, no need to do anything */
+	if (group->force_idr_pts > packet->pts ||
+	    group->force_idr_pts > group->last_missing_pts)
+		return;
+
+	uint32_t largest_divisor = 0;
+	int64_t last_div_pts = 0;
+
+	/* Find encoder with latest PTS and frame rate divisor */
+	for (size_t idx = 0; idx < MAX_OUTPUT_VIDEO_ENCODERS; idx++) {
+		obs_encoder_t *venc = output->video_encoders[idx];
+		if (!venc || venc->encoder_group != group)
+			continue;
+
+		uint32_t div = venc->frame_rate_divisor;
+		if (div > largest_divisor) {
+			largest_divisor = div;
+			last_div_pts = venc->cur_pts;
+		} else if (div == largest_divisor &&
+			   venc->cur_pts > last_div_pts) {
+			last_div_pts = venc->cur_pts;
+		}
+	}
+
+	/* Select a frame sufficiently far into the future that applies to all
+	 * encoders, even those with divisor, and set that as the resync point. */
+	pthread_mutex_lock(&group->mutex);
+	group->force_idr_pts =
+		last_div_pts + (240LL * enc->timebase_num * largest_divisor);
+	blog(LOG_DEBUG, "Creating encoder resync point at %" PRId64,
+	     group->force_idr_pts);
+	pthread_mutex_unlock(&group->mutex);
 }
 
 static void interleave_packets(void *data, struct encoder_packet *packet)
@@ -2264,7 +2321,8 @@ static void interleave_packets(void *data, struct encoder_packet *packet)
 					 output->received_video[i];
 	}
 
-	check_encoder_group_keyframe_alignment(output, packet);
+	if (!check_encoder_group_keyframe_alignment(output, packet))
+		create_encoder_resync_pts(output, packet);
 
 	was_started = output->received_audio && received_video;
 

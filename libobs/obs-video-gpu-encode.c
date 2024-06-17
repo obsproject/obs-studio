@@ -137,6 +137,18 @@ static void *gpu_encode_thread(void *data)
 			if (skip)
 				continue;
 
+			if (tf.skip) {
+				/* Skip frame but increment PTS to maintain
+				 * sync if encoder already started. */
+				if (encoder->start_ts) {
+					encoder->cur_pts +=
+						encoder->timebase_num *
+						encoder->frame_rate_divisor;
+				}
+
+				continue;
+			}
+
 			if (!encoder->start_ts)
 				encoder->start_ts = timestamp;
 
@@ -148,6 +160,18 @@ static void *gpu_encode_thread(void *data)
 			profile_start(gpu_encode_frame_name);
 			if (encoder->info.encode_texture2) {
 				struct encoder_texture tex = {0};
+
+				/* Force IDR frame to reset GOP and resync grouped encoders */
+				if (encoder->encoder_group &&
+				    encoder->encoder_group->force_idr_pts ==
+					    encoder->cur_pts &&
+				    encoder->info.caps &
+					    OBS_ENCODER_CAP_FORCE_IDR) {
+					blog(LOG_DEBUG,
+					     "Forcing IDR on encoder \"%s\"",
+					     obs_encoder_get_name(encoder));
+					tex.flags |= OBS_FRAME_FORCE_IDR;
+				}
 
 				tex.handle = tf.handle;
 				tex.tex[0] = tf.tex;
@@ -182,9 +206,13 @@ static void *gpu_encode_thread(void *data)
 
 		if (--tf.count) {
 			tf.timestamp += interval;
-			deque_push_front(&video->gpu_encoder_queue, &tf,
-					 sizeof(tf));
-
+			deque_push_back(&video->gpu_encoder_queue, &tf,
+					sizeof(tf));
+			if (tf.skip) {
+				video_output_inc_texture_skipped_frames(
+					video->video);
+			}
+		} else if (tf.skip) {
 			video_output_inc_texture_skipped_frames(video->video);
 		} else {
 			deque_push_back(&video->gpu_encoder_avail_queue, &tf,
@@ -243,7 +271,8 @@ bool init_gpu_encoding(struct obs_core_video_mix *video)
 
 		struct obs_tex_frame frame = {.tex = tex,
 					      .tex_uv = tex_uv,
-					      .handle = handle};
+					      .handle = handle,
+					      .skip = false};
 
 		deque_push_back(&video->gpu_encoder_avail_queue, &frame,
 				sizeof(frame));
