@@ -116,13 +116,15 @@ create_service(const GoLiveApi::Config &go_live_config,
 
 	/* The stream key itself may contain query parameters, such as
 	 * "bandwidthtest" that need to be carried over. */
+	QUrl parsed_user_key{in_stream_key};
+	QUrlQuery user_key_query{parsed_user_key};
+
 	QUrl parsed_key{stream_key};
-	QUrlQuery key_query{parsed_key};
 
 	QUrl parsed_url{url};
 	QUrlQuery parsed_query{parsed_url};
 
-	for (const auto &[key, value] : key_query.queryItems())
+	for (const auto &[key, value] : user_key_query.queryItems())
 		parsed_query.addQueryItem(key, value);
 
 	if (!go_live_config.meta.config_id.empty()) {
