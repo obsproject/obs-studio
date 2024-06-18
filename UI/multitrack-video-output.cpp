@@ -8,6 +8,7 @@
 #include <obs-app.hpp>
 #include <obs.hpp>
 #include <remote-text.hpp>
+#include <window-basic-main.hpp>
 
 #include <algorithm>
 #include <cinttypes>
@@ -331,7 +332,8 @@ struct OBSOutputs {
 };
 
 static OBSOutputs
-SetupOBSOutput(obs_data_t *dump_stream_to_file_config,
+SetupOBSOutput(QWidget *parent, const QString &multitrack_video_name,
+	       obs_data_t *dump_stream_to_file_config,
 	       const GoLiveApi::Config &go_live_config,
 	       std::vector<OBSEncoderAutoRelease> &audio_encoders,
 	       std::shared_ptr<obs_encoder_group_t> &video_encoder_group,
@@ -465,7 +467,8 @@ void MultitrackVideoOutput::PrepareStreaming(
 
 	std::vector<OBSEncoderAutoRelease> audio_encoders;
 	std::shared_ptr<obs_encoder_group_t> video_encoder_group;
-	auto outputs = SetupOBSOutput(dump_stream_to_file_config, output_config,
+	auto outputs = SetupOBSOutput(parent, multitrack_video_name,
+				      dump_stream_to_file_config, output_config,
 				      audio_encoders, video_encoder_group,
 				      audio_encoder_id, main_audio_mixer,
 				      vod_track_mixer);
@@ -730,8 +733,46 @@ create_audio_encoders(const GoLiveApi::Config &go_live_config,
 		      std::vector<OBSEncoderAutoRelease> &audio_encoders,
 		      obs_output_t *output, obs_output_t *recording_output,
 		      const char *audio_encoder_id, size_t main_audio_mixer,
-		      std::optional<size_t> vod_track_mixer)
+		      std::optional<size_t> vod_track_mixer,
+		      std::vector<speaker_layout> &speaker_layouts,
+		      speaker_layout &current_layout)
 {
+	speaker_layout speakers = SPEAKERS_UNKNOWN;
+	obs_audio_info oai = {};
+	if (obs_get_audio_info(&oai))
+		speakers = oai.speakers;
+
+	current_layout = speakers;
+
+	auto sanitize_audio_channels = [&](obs_encoder_t *encoder,
+					   uint32_t channels) {
+		speaker_layout target_speakers = SPEAKERS_UNKNOWN;
+		for (size_t i = 0; i <= (size_t)SPEAKERS_7POINT1; i++) {
+			if (get_audio_channels((speaker_layout)i) != channels)
+				continue;
+
+			target_speakers = (speaker_layout)i;
+			break;
+		}
+		if (target_speakers == SPEAKERS_UNKNOWN) {
+			blog(LOG_WARNING,
+			     "MultitrackVideoOutput: Could not find "
+			     "speaker layout for %" PRIu32 "channels "
+			     "while configuring encoder '%s'",
+			     channels, obs_encoder_get_name(encoder));
+			return;
+		}
+		if (speakers != SPEAKERS_UNKNOWN &&
+		    (channels > get_audio_channels(speakers) ||
+		     speakers == target_speakers))
+			return;
+
+		auto it = std::find(std::begin(speaker_layouts),
+				    std::end(speaker_layouts), target_speakers);
+		if (it == std::end(speaker_layouts))
+			speaker_layouts.push_back(target_speakers);
+	};
+
 	using encoder_configs_type =
 		decltype(go_live_config.audio_configurations.live);
 	DStr encoder_name_buffer;
@@ -757,6 +798,10 @@ create_audio_encoders(const GoLiveApi::Config &go_live_config,
 				create_audio_encoder(encoder_name_buffer->array,
 						     audio_encoder_id, settings,
 						     mixer_idx);
+
+			sanitize_audio_channels(audio_encoder,
+						configs[i].channels);
+
 			obs_output_set_audio_encoder(output, audio_encoder,
 						     output_encoder_index);
 			if (recording_output)
@@ -784,8 +829,80 @@ create_audio_encoders(const GoLiveApi::Config &go_live_config,
 	return;
 }
 
+static const char *speaker_layout_to_string(speaker_layout layout)
+{
+	switch (layout) {
+	case SPEAKERS_MONO:
+		return "Mono";
+	case SPEAKERS_2POINT1:
+		return "2.1";
+	case SPEAKERS_4POINT0:
+		return "4.0";
+	case SPEAKERS_4POINT1:
+		return "4.1";
+	case SPEAKERS_5POINT1:
+		return "5.1";
+	case SPEAKERS_7POINT1:
+		return "7.1";
+	case SPEAKERS_UNKNOWN:
+	case SPEAKERS_STEREO:
+		return "Stereo";
+	}
+
+	return "Stereo";
+}
+
+static void handle_speaker_layout_issues(
+	QWidget *parent, const QString &multitrack_video_name,
+	const std::vector<speaker_layout> &requested_layouts,
+	speaker_layout layout)
+{
+	if (requested_layouts.empty())
+		return;
+
+	QString message;
+	if (requested_layouts.size() == 1) {
+		message =
+			QTStr("MultitrackVideo.IncompatibleSettings.AudioChannelsSingle")
+				.arg(QTStr(speaker_layout_to_string(
+					requested_layouts.front())));
+	} else {
+		message =
+			QTStr("MultitrackVideo.IncompatibleSettings.AudioChannelsMultiple")
+				.arg(multitrack_video_name);
+	}
+
+	QMetaObject::invokeMethod(
+		parent,
+		[&] {
+			QMessageBox mb(parent);
+			mb.setIcon(QMessageBox::Critical);
+			mb.setWindowTitle(QTStr(
+				"MultitrackVideo.IncompatibleSettings.Title"));
+			mb.setText(
+				QTStr("MultitrackVideo.IncompatibleSettings.AudioChannels")
+					.arg(multitrack_video_name)
+					.arg(QTStr(speaker_layout_to_string(
+						layout)))
+					.arg(message));
+
+			mb.setStandardButtons(
+				QMessageBox::StandardButton::Cancel);
+
+			mb.exec();
+		},
+		BlockingConnectionTypeFor(parent));
+
+	blog(LOG_INFO,
+	     "MultitrackVideoOutput: Attempted to start stream with incompatible "
+	     "audio channel setting. Action taken: cancel");
+
+	throw MultitrackVideoError::cancel();
+}
+
 static OBSOutputs
-SetupOBSOutput(obs_data_t *dump_stream_to_file_config,
+SetupOBSOutput(QWidget *parent, const QString &multitrack_video_name,
+	       obs_data_t *dump_stream_to_file_config,
 	       const GoLiveApi::Config &go_live_config,
 	       std::vector<OBSEncoderAutoRelease> &audio_encoders,
 	       std::shared_ptr<obs_encoder_group_t> &video_encoder_group,
@@ -803,9 +920,15 @@ SetupOBSOutput(obs_data_t *dump_stream_to_file_config,
 				   recording_output))
 		return {nullptr, nullptr};
 
+	std::vector<speaker_layout> requested_speaker_layouts;
+	speaker_layout current_layout = SPEAKERS_UNKNOWN;
 	create_audio_encoders(go_live_config, audio_encoders, output,
 			      recording_output, audio_encoder_id,
-			      main_audio_mixer, vod_track_mixer);
+			      main_audio_mixer, vod_track_mixer,
+			      requested_speaker_layouts, current_layout);
+
+	handle_speaker_layout_issues(parent, multitrack_video_name,
+				     requested_speaker_layouts, current_layout);
 
 	return {std::move(output), std::move(recording_output)};
 }
