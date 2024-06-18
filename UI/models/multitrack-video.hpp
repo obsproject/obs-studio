@@ -109,8 +109,9 @@ using json = nlohmann::json;
 struct Client {
 	string name = "obs-studio";
 	string version;
+	std::vector<string> supported_codecs;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Client, name, version)
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Client, name, version, supported_codecs)
 };
 
 struct Cpu {
