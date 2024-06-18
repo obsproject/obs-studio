@@ -49,6 +49,7 @@ target_sources(
           obs-av1.h
           obs-avc.c
           obs-avc.h
+          obs-config.h
           obs-data.c
           obs-data.h
           obs-defs.h
