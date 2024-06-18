@@ -335,7 +335,7 @@ SetupOBSOutput(obs_data_t *dump_stream_to_file_config,
 	       const GoLiveApi::Config &go_live_config,
 	       std::vector<OBSEncoderAutoRelease> &audio_encoders,
 	       std::shared_ptr<obs_encoder_group_t> &video_encoder_group,
-	       const char *audio_encoder_id,
+	       const char *audio_encoder_id, size_t main_audio_mixer,
 	       std::optional<size_t> vod_track_mixer);
 static void SetupSignalHandlers(bool recording, MultitrackVideoOutput *self,
 				obs_output_t *output, OBSSignal &start,
@@ -348,7 +348,7 @@ void MultitrackVideoOutput::PrepareStreaming(
 	std::optional<uint32_t> maximum_aggregate_bitrate,
 	std::optional<uint32_t> maximum_video_tracks,
 	std::optional<std::string> custom_config,
-	obs_data_t *dump_stream_to_file_config,
+	obs_data_t *dump_stream_to_file_config, size_t main_audio_mixer,
 	std::optional<size_t> vod_track_mixer)
 {
 	{
@@ -467,7 +467,8 @@ void MultitrackVideoOutput::PrepareStreaming(
 	std::shared_ptr<obs_encoder_group_t> video_encoder_group;
 	auto outputs = SetupOBSOutput(dump_stream_to_file_config, output_config,
 				      audio_encoders, video_encoder_group,
-				      audio_encoder_id, vod_track_mixer);
+				      audio_encoder_id, main_audio_mixer,
+				      vod_track_mixer);
 	auto output = std::move(outputs.output);
 	auto recording_output = std::move(outputs.recording_output);
 	if (!output)
@@ -728,7 +729,7 @@ static void
 create_audio_encoders(const GoLiveApi::Config &go_live_config,
 		      std::vector<OBSEncoderAutoRelease> &audio_encoders,
 		      obs_output_t *output, obs_output_t *recording_output,
-		      const char *audio_encoder_id,
+		      const char *audio_encoder_id, size_t main_audio_mixer,
 		      std::optional<size_t> vod_track_mixer)
 {
 	using encoder_configs_type =
@@ -768,7 +769,8 @@ create_audio_encoders(const GoLiveApi::Config &go_live_config,
 	};
 
 	create_encoders("multitrack video live audio",
-			go_live_config.audio_configurations.live, 0);
+			go_live_config.audio_configurations.live,
+			main_audio_mixer);
 
 	if (!vod_track_mixer.has_value())
 		return;
@@ -787,7 +789,7 @@ SetupOBSOutput(obs_data_t *dump_stream_to_file_config,
 	       const GoLiveApi::Config &go_live_config,
 	       std::vector<OBSEncoderAutoRelease> &audio_encoders,
 	       std::shared_ptr<obs_encoder_group_t> &video_encoder_group,
-	       const char *audio_encoder_id,
+	       const char *audio_encoder_id, size_t main_audio_mixer,
 	       std::optional<size_t> vod_track_mixer)
 {
 
@@ -803,7 +805,7 @@ SetupOBSOutput(obs_data_t *dump_stream_to_file_config,
 
 	create_audio_encoders(go_live_config, audio_encoders, output,
 			      recording_output, audio_encoder_id,
-			      vod_track_mixer);
+			      main_audio_mixer, vod_track_mixer);
 
 	return {std::move(output), std::move(recording_output)};
 }
