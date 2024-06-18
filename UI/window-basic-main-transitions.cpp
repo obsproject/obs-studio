@@ -267,10 +267,8 @@ void OBSBasic::TransitionStopped()
 	EnableTransitionWidgets(true);
 	UpdatePreviewProgramIndicators();
 
-	if (api) {
-		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_STOPPED);
-		api->on_event(OBS_FRONTEND_EVENT_SCENE_CHANGED);
-	}
+	OnEvent(OBS_FRONTEND_EVENT_TRANSITION_STOPPED);
+	OnEvent(OBS_FRONTEND_EVENT_SCENE_CHANGED);
 
 	swapScene = nullptr;
 }
@@ -371,8 +369,7 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force,
 
 	if (force) {
 		obs_transition_set(transition, source);
-		if (api)
-			api->on_event(OBS_FRONTEND_EVENT_SCENE_CHANGED);
+		OnEvent(OBS_FRONTEND_EVENT_SCENE_CHANGED);
 	} else {
 		int duration = ui->transitionDuration->value();
 
@@ -450,8 +447,7 @@ void OBSBasic::SetTransition(OBSSource transition)
 	ui->transitionRemove->setEnabled(configurable);
 	ui->transitionProps->setEnabled(configurable);
 
-	if (api)
-		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_CHANGED);
+	OnEvent(OBS_FRONTEND_EVENT_TRANSITION_CHANGED);
 }
 
 OBSSource OBSBasic::GetCurrentTransition()
@@ -509,9 +505,7 @@ void OBSBasic::AddTransition(const char *id)
 		CreatePropertiesWindow(source);
 		obs_source_release(source);
 
-		if (api)
-			api->on_event(
-				OBS_FRONTEND_EVENT_TRANSITION_LIST_CHANGED);
+		OnEvent(OBS_FRONTEND_EVENT_TRANSITION_LIST_CHANGED);
 
 		ClearQuickTransitionWidgets();
 		RefreshQuickTransitions();
@@ -566,8 +560,7 @@ void OBSBasic::on_transitionRemove_clicked()
 
 	ui->transitions->removeItem(idx);
 
-	if (api)
-		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_LIST_CHANGED);
+	OnEvent(OBS_FRONTEND_EVENT_TRANSITION_LIST_CHANGED);
 
 	ClearQuickTransitionWidgets();
 	RefreshQuickTransitions();
@@ -607,9 +600,7 @@ void OBSBasic::RenameTransition(OBSSource transition)
 	if (idx != -1) {
 		ui->transitions->setItemText(idx, QT_UTF8(name.c_str()));
 
-		if (api)
-			api->on_event(
-				OBS_FRONTEND_EVENT_TRANSITION_LIST_CHANGED);
+		OnEvent(OBS_FRONTEND_EVENT_TRANSITION_LIST_CHANGED);
 
 		ClearQuickTransitionWidgets();
 		RefreshQuickTransitions();
@@ -643,9 +634,7 @@ void OBSBasic::on_transitionProps_clicked()
 
 void OBSBasic::on_transitionDuration_valueChanged()
 {
-	if (api) {
-		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_DURATION_CHANGED);
-	}
+	OnEvent(OBS_FRONTEND_EVENT_TRANSITION_DURATION_CHANGED);
 }
 
 QuickTransition *OBSBasic::GetQuickTransition(int id)
@@ -714,9 +703,7 @@ void OBSBasic::SetCurrentScene(OBSSource scene, bool force)
 					outputHandler
 						->UpdateVirtualCamOutputSource();
 
-				if (api)
-					api->on_event(
-						OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
+				OnEvent(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
 				break;
 			}
 		}
@@ -968,8 +955,7 @@ void OBSBasic::TBarChanged(int value)
 	obs_transition_set_manual_time(transition,
 				       (float)value / T_BAR_PRECISION_F);
 
-	if (api)
-		api->on_event(OBS_FRONTEND_EVENT_TBAR_VALUE_CHANGED);
+	OnEvent(OBS_FRONTEND_EVENT_TBAR_VALUE_CHANGED);
 }
 
 int OBSBasic::GetTbarPosition()
@@ -1668,8 +1654,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 		ui->previewLayout->setAlignment(programOptions,
 						Qt::AlignCenter);
 
-		if (api)
-			api->on_event(OBS_FRONTEND_EVENT_STUDIO_MODE_ENABLED);
+		OnEvent(OBS_FRONTEND_EVENT_STUDIO_MODE_ENABLED);
 
 		blog(LOG_INFO, "Switched to Preview/Program mode");
 		blog(LOG_INFO, "-----------------------------"
@@ -1707,8 +1692,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 		ui->transitions->setEnabled(true);
 		tBarActive = false;
 
-		if (api)
-			api->on_event(OBS_FRONTEND_EVENT_STUDIO_MODE_DISABLED);
+		OnEvent(OBS_FRONTEND_EVENT_STUDIO_MODE_DISABLED);
 
 		blog(LOG_INFO, "Switched to regular Preview mode");
 		blog(LOG_INFO, "-----------------------------"
