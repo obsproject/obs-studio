@@ -35,6 +35,7 @@ public:
 			      std::optional<uint32_t> maximum_video_tracks,
 			      std::optional<std::string> custom_config,
 			      obs_data_t *dump_stream_to_file_config,
+			      size_t main_audio_mixer,
 			      std::optional<size_t> vod_track_mixer);
 	signal_handler_t *StreamingSignalHandler();
 	void StartedStreaming();
