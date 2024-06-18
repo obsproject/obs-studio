@@ -1131,7 +1131,15 @@ static void get_fullscreen_window(struct game_capture *gc)
 		return;
 	}
 
-	if (rect.left == mi.rcMonitor.left && rect.right == mi.rcMonitor.right && rect.bottom == mi.rcMonitor.bottom &&
+	/* some apps extend their windows ~1px beyond the monitor's
+	 * supported resolution to circumvent certain exclusive
+	 * fullscreen-related issues caused either by their graphics
+	 * library, Windows itself, or both; thus, we use a strict
+	 * comparison to check the coordinates of the top-left corner
+	 * of a window against those of a monitor, and a more relaxed
+	 * one to check the bottom-right corner, allowing it to extend
+	 * slightly past the edge of the monitor */
+	if (rect.left == mi.rcMonitor.left && rect.right >= mi.rcMonitor.right && rect.bottom >= mi.rcMonitor.bottom &&
 	    rect.top == mi.rcMonitor.top) {
 		setup_window(gc, window);
 	} else {
