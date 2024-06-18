@@ -24,6 +24,32 @@ constructGoLivePost(QString streamKey,
 	client.name = "obs-studio";
 	client.version = obs_get_version_string();
 
+	auto add_codec = [&](const char *codec) {
+		auto it = std::find(std::begin(client.supported_codecs),
+				    std::end(client.supported_codecs), codec);
+		if (it != std::end(client.supported_codecs))
+			return;
+
+		client.supported_codecs.push_back(codec);
+	};
+
+	const char *encoder_id = nullptr;
+	for (size_t i = 0; obs_enum_encoder_types(i, &encoder_id); i++) {
+		auto codec = obs_get_encoder_codec(encoder_id);
+		if (!codec)
+			continue;
+
+		if (qstricmp(codec, "h264") == 0) {
+			add_codec("h264");
+#ifdef ENABLE_HEVC
+		} else if (qstricmp(codec, "hevc")) {
+			add_codec("h265");
+#endif
+		} else if (qstricmp(codec, "av1")) {
+			add_codec("av1");
+		}
+	}
+
 	auto &preferences = post_data.preferences;
 	preferences.vod_track_audio = vod_track_enabled;
 
