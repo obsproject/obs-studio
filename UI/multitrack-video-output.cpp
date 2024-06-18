@@ -507,9 +507,9 @@ void MultitrackVideoOutput::PrepareStreaming(
 			const std::lock_guard current_stream_dump_lock{
 				current_stream_dump_mutex};
 			current_stream_dump.emplace(OBSOutputObjects{
-				std::move(recording_output),
 				video_encoder_group,
 				std::move(recording_audio_encoders),
+				std::move(recording_output),
 				nullptr,
 				std::move(start_recording),
 				std::move(stop_recording),
@@ -520,9 +520,9 @@ void MultitrackVideoOutput::PrepareStreaming(
 
 	const std::lock_guard current_lock{current_mutex};
 	current.emplace(OBSOutputObjects{
-		std::move(output),
 		video_encoder_group,
 		std::move(audio_encoders),
+		std::move(output),
 		std::move(multitrack_video_service),
 		std::move(start_streaming),
 		std::move(stop_streaming),
