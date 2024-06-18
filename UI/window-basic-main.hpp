@@ -359,6 +359,8 @@ private:
 	std::atomic<obs_scene_t *> currentScene = nullptr;
 	std::optional<std::pair<uint32_t, uint32_t>> lastOutputResolution;
 
+	void OnEvent(enum obs_frontend_event event);
+
 	void UpdateMultiviewProjectorMenu();
 
 	void DrawBackdrop(float cx, float cy);
