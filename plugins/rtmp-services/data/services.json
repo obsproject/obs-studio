@@ -2922,6 +2922,103 @@
                 "keyint": 2,
                 "x264opts": "scenecut=0"
             }
+        },
+        {
+            "name": "Dolby Millicast",
+            "common": false,
+            "more_info_link": "https://docs.dolby.io/streaming-apis/docs/using-obs",
+            "stream_key_link": "https://streaming.dolby.io",
+            "servers": [
+                {
+                    "name": "Global (RTMPS)",
+                    "url": "rtmps://rtmp-auto.millicast.com:443/v2/pub"
+                },
+                {
+                    "name": "Global (RTMP)",
+                    "url": "rtmp://rtmp-auto.millicast.com:1935/v2/pub"
+                },
+                {
+                    "name": "Amsterdam, Netherlands (RTMPS)",
+                    "url": "rtmps://rtmp-ams-1.millicast.com:443/v2/pub"
+                },
+                {
+                    "name": "Amsterdam, Netherlands (RTMP)",
+                    "url": "rtmp://rtmp-ams-1.millicast.com:1935/v2/pub"
+                },
+                {
+                    "name": "Bangalore, India (RTMPS)",
+                    "url": "rtmps://rtmp-blr-1.millicast.com:443/v2/pub"
+                },
+                {
+                    "name": "Bangalore, India (RTMP)",
+                    "url": "rtmp://rtmp-blr-1.millicast.com:1935/v2/pub"
+                },
+                {
+                    "name": "Frankfurt, Germany (RTMPS)",
+                    "url": "rtmps://rtmp-fra-1.millicast.com:443/v2/pub"
+                },
+                {
+                    "name": "Frankfurt, Germany (RTMP)",
+                    "url": "rtmp://rtmp-fra-1.millicast.com:1935/v2/pub"
+                },
+                {
+                    "name": "Ashburn, Virginia, USA (RTMPS)",
+                    "url": "rtmps://rtmp-iad-1.millicast.com:443/v2/pub"
+                },
+                {
+                    "name": "Ashburn, Virginia, USA (RTMP)",
+                    "url": "rtmp://rtmp-iad-1.millicast.com:1935/v2/pub"
+                },
+                {
+                    "name": "London, England (RTMPS)",
+                    "url": "rtmps://rtmp-lon-1.millicast.com:443/v2/pub"
+                },
+                {
+                    "name": "London, England (RTMP)",
+                    "url": "rtmp://rtmp-lon-1.millicast.com:1935/v2/pub"
+                },
+                {
+                    "name": "Phoenix, AZ, USA (RTMPS)",
+                    "url": "rtmps://rtmp-phx-1.millicast.com:443/v2/pub"
+                },
+                {
+                    "name": "Phoenix, AZ, USA (RTMP)",
+                    "url": "rtmp://rtmp-phx-1.millicast.com:1935/v2/pub"
+                },
+                {
+                    "name": "Sao Paulo, Brazil (RTMPS)",
+                    "url": "rtmps://rtmp-sao-1.millicast.com:443/v2/pub"
+                },
+                {
+                    "name": "Sao Paulo, Brazil (RTMP)",
+                    "url": "rtmp://rtmp-sao-1.millicast.com:1935/v2/pub"
+                },
+                {
+                    "name": "Singapore (RTMPS)",
+                    "url": "rtmps://rtmp-sgp-1.millicast.com:443/v2/pub"
+                },
+                {
+                    "name": "Singapore (RTMP)",
+                    "url": "rtmp://rtmp-sgp-1.millicast.com:1935/v2/pub"
+                },
+                {
+                    "name": "Sydney, Australia (RTMPS)",
+                    "url": "rtmps://rtmp-syd-1.millicast.com:443/v2/pub"
+                },
+                {
+                    "name": "Sydney, Australia (RTMP)",
+                    "url": "rtmp://rtmp-syd-1.millicast.com:1935/v2/pub"
+                }
+            ],
+            "supported video codecs": [
+                "h264",
+                "hevc",
+                "av1"
+            ],
+            "recommended": {
+                "keyint": 1,
+                "bframes": 0
+            }
         }
     ]
 }
