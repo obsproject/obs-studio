@@ -786,13 +786,18 @@ void obs_encoder_start(obs_encoder_t *encoder,
 	pthread_mutex_unlock(&encoder->init_mutex);
 }
 
-static inline void obs_encoder_stop_internal(
-	obs_encoder_t *encoder,
-	void (*new_packet)(void *param, struct encoder_packet *packet),
-	void *param)
+void obs_encoder_stop(obs_encoder_t *encoder,
+		      void (*new_packet)(void *param,
+					 struct encoder_packet *packet),
+		      void *param)
 {
 	bool last = false;
 	size_t idx;
+
+	if (!obs_encoder_valid(encoder, "obs_encoder_stop"))
+		return;
+	if (!obs_ptr_valid(new_packet, "obs_encoder_stop"))
+		return;
 
 	pthread_mutex_lock(&encoder->init_mutex);
 	pthread_mutex_lock(&encoder->callbacks_mutex);
@@ -833,21 +838,6 @@ static inline void obs_encoder_stop_internal(
 	}
 
 	pthread_mutex_unlock(&encoder->init_mutex);
-}
-
-void obs_encoder_stop(obs_encoder_t *encoder,
-		      void (*new_packet)(void *param,
-					 struct encoder_packet *packet),
-		      void *param)
-{
-	bool destroyed;
-
-	if (!obs_encoder_valid(encoder, "obs_encoder_stop"))
-		return;
-	if (!obs_ptr_valid(new_packet, "obs_encoder_stop"))
-		return;
-
-	obs_encoder_stop_internal(encoder, new_packet, param);
 }
 
 const char *obs_encoder_get_codec(const obs_encoder_t *encoder)
