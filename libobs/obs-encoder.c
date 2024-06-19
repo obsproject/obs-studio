@@ -353,15 +353,9 @@ static void remove_connection(struct obs_encoder *encoder, bool shutdown)
 
 	if (encoder->encoder_group) {
 		pthread_mutex_lock(&encoder->encoder_group->mutex);
-		if (--encoder->encoder_group->num_encoders_started == 0) {
+		if (--encoder->encoder_group->num_encoders_started == 0)
 			encoder->encoder_group->start_timestamp = 0;
-			if (encoder->encoder_group->destroy_on_stop)
-				obs_encoder_group_actually_destroy(
-					encoder->encoder_group);
-		}
-
-		if (encoder->encoder_group)
-			pthread_mutex_unlock(&encoder->encoder_group->mutex);
+		pthread_mutex_unlock(&encoder->encoder_group->mutex);
 	}
 
 	/* obs_encoder_shutdown locks init_mutex, so don't call it on encode
@@ -792,7 +786,7 @@ void obs_encoder_start(obs_encoder_t *encoder,
 	pthread_mutex_unlock(&encoder->init_mutex);
 }
 
-static inline bool obs_encoder_stop_internal(
+static inline void obs_encoder_stop_internal(
 	obs_encoder_t *encoder,
 	void (*new_packet)(void *param, struct encoder_packet *packet),
 	void *param)
@@ -800,6 +794,7 @@ static inline bool obs_encoder_stop_internal(
 	bool last = false;
 	size_t idx;
 
+	pthread_mutex_lock(&encoder->init_mutex);
 	pthread_mutex_lock(&encoder->callbacks_mutex);
 
 	idx = get_callback_idx(encoder, new_packet, param);
@@ -812,15 +807,32 @@ static inline bool obs_encoder_stop_internal(
 
 	if (last) {
 		remove_connection(encoder, true);
+		pthread_mutex_unlock(&encoder->init_mutex);
 
-		if (encoder->destroy_on_stop) {
-			pthread_mutex_unlock(&encoder->init_mutex);
+		struct obs_encoder_group *group = encoder->encoder_group;
+
+		if (encoder->destroy_on_stop)
 			obs_encoder_actually_destroy(encoder);
-			return true;
+
+		/* Destroying the group all the way back here prevents a race
+		 * where destruction of the group can prematurely destroy the
+		 * encoder within internal functions. This is the point where it
+		 * is safe to destroy the group, even if the encoder is then
+		 * also destroyed. */
+		if (group) {
+			pthread_mutex_lock(&group->mutex);
+			if (group->destroy_on_stop &&
+			    group->num_encoders_started == 0)
+				obs_encoder_group_actually_destroy(group);
+			else
+				pthread_mutex_unlock(&group->mutex);
 		}
+
+		/* init_mutex already unlocked */
+		return;
 	}
 
-	return false;
+	pthread_mutex_unlock(&encoder->init_mutex);
 }
 
 void obs_encoder_stop(obs_encoder_t *encoder,
@@ -835,10 +847,7 @@ void obs_encoder_stop(obs_encoder_t *encoder,
 	if (!obs_ptr_valid(new_packet, "obs_encoder_stop"))
 		return;
 
-	pthread_mutex_lock(&encoder->init_mutex);
-	destroyed = obs_encoder_stop_internal(encoder, new_packet, param);
-	if (!destroyed)
-		pthread_mutex_unlock(&encoder->init_mutex);
+	obs_encoder_stop_internal(encoder, new_packet, param);
 }
 
 const char *obs_encoder_get_codec(const obs_encoder_t *encoder)
