@@ -371,6 +371,8 @@ static void remove_connection(struct obs_encoder *encoder, bool shutdown)
 	 * up again */
 	if (shutdown)
 		obs_encoder_shutdown(encoder);
+	encoder->initialized = false;
+
 	set_encoder_active(encoder, false);
 }
 
@@ -810,7 +812,6 @@ static inline bool obs_encoder_stop_internal(
 
 	if (last) {
 		remove_connection(encoder, true);
-		encoder->initialized = false;
 
 		if (encoder->destroy_on_stop) {
 			pthread_mutex_unlock(&encoder->init_mutex);
@@ -1334,7 +1335,6 @@ void full_stop(struct obs_encoder *encoder)
 		pthread_mutex_unlock(&encoder->callbacks_mutex);
 
 		remove_connection(encoder, false);
-		encoder->initialized = false;
 	}
 }
 
