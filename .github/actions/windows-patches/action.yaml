@@ -25,6 +25,7 @@ runs:
       with:
         path: "repo"
         fetch-depth: 0
+        ref: ${{ inputs.tagName }}
 
     - name: Download Release Artifact
       shell: pwsh
