@@ -4,6 +4,8 @@
 <dict>
 	<key>NSHighResolutionCapable</key>
 	<true/>
+	<key>NSCameraReactionEffectsEnabled</key>
+	<false/>
 	<key>LSAppNapIsDisabled</key>
 	<true/>
 	<key>SUFeedURL</key>
