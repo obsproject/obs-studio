@@ -1339,6 +1339,8 @@ struct obs_encoder {
 
 	/* reconfigure encoder at next possible opportunity */
 	bool reconfigure_requested;
+
+	bool is_full_stop;
 };
 
 extern struct obs_encoder_info *find_encoder(const char *id);

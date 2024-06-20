@@ -811,6 +811,7 @@ static inline bool obs_encoder_stop_internal(
 	if (last) {
 		remove_connection(encoder, true);
 		encoder->initialized = false;
+		encoder->is_full_stop = false;
 
 		if (encoder->destroy_on_stop) {
 			pthread_mutex_unlock(&encoder->init_mutex);
@@ -1318,10 +1319,20 @@ static inline void send_packet(struct obs_encoder *encoder,
 void full_stop(struct obs_encoder *encoder)
 {
 	if (encoder) {
+		if (encoder->is_full_stop) {
+			return;
+		}
+		encoder->is_full_stop = true;
+
 		pthread_mutex_lock(&encoder->outputs_mutex);
 		for (size_t i = 0; i < encoder->outputs.num; i++) {
 			struct obs_output *output = encoder->outputs.array[i];
-			obs_output_force_stop(output);
+
+			/* If checked "Enable Replay Buffer" from settings,
+			 * but not start it, don't invoke stop function */
+			if (obs_output_active(output)) {
+				obs_output_force_stop(output);
+			}
 
 			pthread_mutex_lock(&output->interleaved_mutex);
 			output->info.encoded_packet(output->context.data, NULL);
@@ -1329,12 +1340,17 @@ void full_stop(struct obs_encoder *encoder)
 		}
 		pthread_mutex_unlock(&encoder->outputs_mutex);
 
-		pthread_mutex_lock(&encoder->callbacks_mutex);
-		da_free(encoder->callbacks);
-		pthread_mutex_unlock(&encoder->callbacks_mutex);
-
-		remove_connection(encoder, false);
-		encoder->initialized = false;
+		/* Not need invoke "remove_connection",
+		 * it cause thread deadlock.
+		 *
+		 * call stack as:
+		 * gpu_encode_thread->send_off_encoder_packet
+		 * ->full_stop->remove_connection->stop_gpu_encode.
+		 * 
+		 * It will invoke "stop_gpu_encode" finally,
+		 * try stop itself in same thread, 100% deadlock,
+		 * Actually, encoder thread will invoke "remove_connection"
+		 * if last callback is removed. */
 	}
 }
 
