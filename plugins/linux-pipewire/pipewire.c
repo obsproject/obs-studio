@@ -173,11 +173,6 @@ static void update_pw_versions(obs_pipewire *obs_pw, const char *version)
 
 static void teardown_pipewire(obs_pipewire *obs_pw)
 {
-	if (obs_pw->thread_loop) {
-		pw_thread_loop_wait(obs_pw->thread_loop);
-		pw_thread_loop_stop(obs_pw->thread_loop);
-	}
-
 	g_clear_pointer(&obs_pw->context, pw_context_destroy);
 	g_clear_pointer(&obs_pw->thread_loop, pw_thread_loop_destroy);
 
