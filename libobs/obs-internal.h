@@ -754,6 +754,8 @@ struct obs_source {
 	uint64_t last_sys_timestamp;
 	bool async_rendered;
 
+	bool on_backstage;
+
 	/* audio */
 	bool audio_failed;
 	bool audio_pending;

@@ -1491,7 +1491,7 @@ static inline bool source_muted(obs_source_t *source, uint64_t os_time)
 	bool push_to_talk_active = source->user_push_to_talk_pressed ||
 				   os_time < source->push_to_talk_stop_time;
 
-	return !source->enabled || source->user_muted ||
+	return source->on_backstage || !source->enabled || source->user_muted ||
 	       (source->push_to_mute_enabled && push_to_mute_active) ||
 	       (source->push_to_talk_enabled && !push_to_talk_active);
 }

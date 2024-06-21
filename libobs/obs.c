@@ -2113,19 +2113,14 @@ void *obs_create_ui(const char *name, const char *task, const char *target,
 	return callback ? callback->create(data, ui_data) : NULL;
 }
 
-static bool activate_videos_callback(obs_scene_t *scene, obs_sceneitem_t *item,
-				     void *p)
+static bool handle_videos_callback(obs_scene_t *scene, obs_sceneitem_t *item,
+				   void *data)
 {
 	UNUSED_PARAMETER(scene);
-	bool play = (bool)p;
+	bool backstage = (bool)data;
 
 	obs_source_t *source = obs_sceneitem_get_source(item);
 	if (!source) {
-		return true;
-	}
-
-	const bool sourceVisible = obs_sceneitem_visible(item);
-	if (!sourceVisible) {
 		return true;
 	}
 
@@ -2134,41 +2129,17 @@ static bool activate_videos_callback(obs_scene_t *scene, obs_sceneitem_t *item,
 		return true;
 	}
 
-	const long activate_refs = os_atomic_load_long(&source->activate_refs);
-
-	if (play) {
-		obs_data_t *settings = obs_source_get_settings(source);
-		obs_data_set_bool(settings, "was_muted",
-				  obs_source_muted(source));
-
-		// No one have activated yet
-		if (activate_refs == 0) {
-			obs_source_set_muted(source, true);
-			obs_source_activate(source, MAIN_VIEW);
-			obs_data_set_bool(settings, "was_activated", true);
-		}
-
-		obs_data_release(settings);
+	if (backstage) {
+		source->on_backstage = true;
 	} else {
+		source->on_backstage = false;
+
 		obs_data_t *settings = obs_source_get_settings(source);
-		const bool was_muted = obs_data_get_bool(settings, "was_muted");
-		const bool was_activated =
-			obs_data_get_bool(settings, "was_activated");
 		const bool restart_on_activate =
 			obs_data_get_bool(settings, "restart_on_activate");
-
 		if (restart_on_activate) {
 			obs_source_media_restart(source);
 		}
-
-		if (was_activated) {
-			obs_source_deactivate(source, MAIN_VIEW);
-			obs_data_set_bool(settings, "was_activated", false);
-			obs_source_set_muted(source, was_muted);
-		}
-
-		obs_data_set_bool(settings, "force_play_start", false);
-
 		obs_data_release(settings);
 	}
 
@@ -2221,13 +2192,38 @@ void obs_activate_scene_on_backstage(obs_source_t *source)
 	}
 }
 
+static void handle_transition_sources_callback(obs_source_t *parent,
+					       obs_source_t *child, void *data)
+{
+	UNUSED_PARAMETER(parent);
+	bool backstage = (bool)data;
+
+	if (obs_source_get_type(child) != OBS_SOURCE_TYPE_SCENE) {
+		return;
+	}
+
+	if (backstage) {
+		child->on_backstage = true;
+	} else {
+		child->on_backstage = false;
+	}
+}
+
 void obs_activate_videos_on_backstage(obs_source_t *source)
 {
 	blog(LOG_INFO, "obs_activate_videos_on_backstage - 0x%" PRIXPTR " - %s",
 	     (uintptr_t)source, obs_source_get_name(source));
 
-	obs_scene_t *scene = obs_scene_from_source(source);
-	obs_scene_enum_items(scene, activate_videos_callback, (void *)1);
+	if (obs_source_get_type(source) == OBS_SOURCE_TYPE_TRANSITION) {
+		obs_source_activate(source, MAIN_VIEW);
+
+		obs_source_enum_active_tree(
+			source, handle_transition_sources_callback, (void *)1);
+	} else if (obs_source_get_type(source) == OBS_SOURCE_TYPE_SCENE) {
+		source->on_backstage = true;
+		obs_scene_t *scene = obs_scene_from_source(source);
+		obs_scene_enum_items(scene, handle_videos_callback, (void *)1);
+	}
 }
 
 void obs_deactivate_scene_on_backstage(obs_source_t *source)
@@ -2279,8 +2275,15 @@ void obs_deactivate_videos_on_backstage(obs_source_t *source)
 	     "obs_deactivate_videos_on_backstage - 0x%" PRIXPTR " - %s",
 	     (uintptr_t)source, obs_source_get_name(source));
 
-	obs_scene_t *scene = obs_scene_from_source(source);
-	obs_scene_enum_items(scene, activate_videos_callback, (void *)0);
+	if (obs_source_get_type(source) == OBS_SOURCE_TYPE_TRANSITION) {
+		obs_source_deactivate(source, MAIN_VIEW);
+		obs_source_enum_active_tree(
+			source, handle_transition_sources_callback, (void *)0);
+
+	} else if (obs_source_get_type(source) == OBS_SOURCE_TYPE_SCENE) {
+		obs_scene_t *scene = obs_scene_from_source(source);
+		obs_scene_enum_items(scene, handle_videos_callback, (void *)0);
+	}
 }
 
 obs_source_t *obs_get_output_source(uint32_t channel)

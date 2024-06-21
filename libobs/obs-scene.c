@@ -2310,6 +2310,25 @@ obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
 	if (!item)
 		return NULL;
 
+	if (scene->source->on_backstage) {
+		source->on_backstage = scene->source->on_backstage;
+		obs_source_t *output_source = obs_get_output_source(0);
+		if (obs_source_get_type(output_source) ==
+		    OBS_SOURCE_TYPE_TRANSITION) {
+			obs_source_t *old = output_source;
+			output_source =
+				obs_transition_get_active_source(output_source);
+			obs_source_release(old);
+		}
+
+		if (scene->source != output_source) {
+			source->on_backstage = scene->source->on_backstage;
+		}
+
+		source->on_backstage = scene->source->on_backstage;
+		obs_source_release(output_source);
+	}
+
 	calldata_init_fixed(&params, stack, sizeof(stack));
 	calldata_set_ptr(&params, "scene", scene);
 	calldata_set_ptr(&params, "item", item);
