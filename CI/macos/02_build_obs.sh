@@ -152,6 +152,7 @@ _configure_obs() {
         -DENABLE_SCRIPTING=false \
         -DENABLE_BROWSER=true \
         -DENABLE_VLC=ON \
+        -DENABLE_WEBSOCKET=OFF \
         -DBROWSER_FRONTEND_API_SUPPORT=false \
         -DENABLE_BROWSER_PANELS=false \
         -DENABLE_SERVICE_UPDATES=true \

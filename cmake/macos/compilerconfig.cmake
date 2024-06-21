@@ -23,10 +23,14 @@ set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
+# The flags below break some dynamic libraries
+# inluding libobs-opengl.dylib by not exporting necessary functions.
+# We will just comment the flags for simplicity for now to be sure
+# all symbols are available.
 # Set symbols to be hidden by default for C and C++
-set(CMAKE_CXX_VISIBILITY_PRESET hidden)
-set(CMAKE_C_VISIBILITY_PRESET hidden)
-set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
+#set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+#set(CMAKE_C_VISIBILITY_PRESET hidden)
+#set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
 
 # Add default C and C++ compiler options if Xcode generator is not used
 if(NOT XCODE)

@@ -15,11 +15,18 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wfour-char-constants"
+
 #include "gl-subsystem.h"
+//#define GL_SILENCE_DEPRECATION
 #include <OpenGL/OpenGL.h>
 
 #import <Cocoa/Cocoa.h>
 #import <AppKit/AppKit.h>
+
+//#include "util/darray.h"
 
 struct gl_windowinfo {
 	NSView *view;
@@ -35,9 +42,26 @@ struct gl_platform {
 
 static NSOpenGLContext *gl_context_create(NSOpenGLContext *share)
 {
-	NSOpenGLPixelFormatAttribute attributes[] = {
-		NSOpenGLPFADoubleBuffer, NSOpenGLPFAOpenGLProfile,
-		NSOpenGLProfileVersion3_2Core, 0};
+	unsigned attrib_count = 0;
+
+#define ADD_ATTR(x)                                                           \
+	{                                                                     \
+		attributes[attrib_count++] = (NSOpenGLPixelFormatAttribute)x; \
+	}
+#define ADD_ATTR2(x, y)      \
+	{                    \
+		ADD_ATTR(x); \
+		ADD_ATTR(y); \
+	}
+
+	NSOpenGLPixelFormatAttribute attributes[40];
+
+	ADD_ATTR(NSOpenGLPFADoubleBuffer);
+	ADD_ATTR2(NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core);
+	ADD_ATTR(0);
+
+#undef ADD_ATTR2
+#undef ADD_ATTR
 
 	NSOpenGLPixelFormat *pf;
 	pf = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
@@ -60,9 +84,11 @@ static NSOpenGLContext *gl_context_create(NSOpenGLContext *share)
 	return context;
 }
 
-struct gl_platform *gl_platform_create(gs_device_t *device __unused,
-				       uint32_t adapter __unused)
+struct gl_platform *gl_platform_create(gs_device_t *device, uint32_t adapter)
 {
+	UNUSED_PARAMETER(device);
+	UNUSED_PARAMETER(adapter);
+
 	NSOpenGLContext *context = gl_context_create(nil);
 	if (!context) {
 		blog(LOG_ERROR, "gl_context_create failed");
@@ -71,8 +97,7 @@ struct gl_platform *gl_platform_create(gs_device_t *device __unused,
 
 	[context makeCurrentContext];
 	GLint interval = 0;
-	[context setValues:&interval
-		forParameter:NSOpenGLContextParameterSwapInterval];
+	[context setValues:&interval forParameter:NSOpenGLCPSwapInterval];
 	const bool success = gladLoadGL() != 0;
 
 	if (!success) {
@@ -118,14 +143,9 @@ bool gl_platform_init_swapchain(struct gs_swap_chain *swap)
 		CGLLockContext(context_obj);
 
 		[context makeCurrentContext];
-
-#pragma clang diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-		[context setView:swap->wi->view];
-#pragma clang diagnostic pop
 		GLint interval = 0;
 		[context setValues:&interval
-			forParameter:NSOpenGLContextParameterSwapInterval];
+			forParameter:NSOpenGLCPSwapInterval];
 		gl_gen_framebuffers(1, &swap->wi->fbo);
 		gl_bind_framebuffer(GL_FRAMEBUFFER, swap->wi->fbo);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
@@ -178,13 +198,6 @@ struct gl_windowinfo *gl_windowinfo_create(const struct gs_init_data *info)
 
 	struct gl_windowinfo *wi = bzalloc(sizeof(struct gl_windowinfo));
 
-	wi->view = info->window.view;
-	wi->view.window.colorSpace = NSColorSpace.sRGBColorSpace;
-#pragma clang diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-	wi->view.wantsBestResolutionOpenGLSurface = YES;
-#pragma clang diagnostic pop
-
 	return wi;
 }
 
@@ -204,10 +217,6 @@ void gl_update(gs_device_t *device)
 	NSOpenGLContext *parent = device->plat->context;
 	NSOpenGLContext *context = swap->wi->context;
 	dispatch_async(dispatch_get_main_queue(), ^() {
-		if (!swap || !swap->wi) {
-			return;
-		}
-
 		CGLContextObj parent_obj = [parent CGLContextObj];
 		CGLLockContext(parent_obj);
 
@@ -295,8 +304,36 @@ void device_load_swapchain(gs_device_t *device, gs_swapchain_t *swap)
 	}
 }
 
-bool device_is_present_ready(gs_device_t *device __unused)
+void write_iosurface(gs_device_t *device)
 {
+	gs_swapchain_t *swap = device->cur_swap;
+	if (!swap->wi->surfaceID)
+		return;
+
+	IOSurfaceRef surface =
+		IOSurfaceLookup((IOSurfaceID)swap->wi->surfaceID);
+	if (!surface)
+		return;
+
+	IOSurfaceLock(surface, 0, NULL);
+	void *data = IOSurfaceGetBaseAddress(surface);
+
+	if (!data) {
+		blog(LOG_ERROR, "gl-cocoa: failed to write in the IOSurface");
+		return;
+	}
+
+	glReadPixels(0, 0, IOSurfaceGetBytesPerRow(surface) / 4,
+		     IOSurfaceGetHeight(surface), GL_BGRA,
+		     GL_UNSIGNED_INT_8_8_8_8_REV, data);
+	gl_success("glReadPixels");
+
+	IOSurfaceUnlock(surface, 0, NULL);
+}
+
+bool device_is_present_ready(gs_device_t *device)
+{
+	UNUSED_PARAMETER(device);
 	return true;
 }
 
@@ -308,12 +345,7 @@ void device_present(gs_device_t *device)
 	CGLLockContext([device->cur_swap->wi->context CGLContextObj]);
 
 	[device->cur_swap->wi->context makeCurrentContext];
-	gl_bind_framebuffer(GL_READ_FRAMEBUFFER, device->cur_swap->wi->fbo);
-	gl_bind_framebuffer(GL_DRAW_FRAMEBUFFER, 0);
-	const uint32_t width = device->cur_swap->info.cx;
-	const uint32_t height = device->cur_swap->info.cy;
-	glBlitFramebuffer(0, 0, width, height, 0, height, width, 0,
-			  GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	write_iosurface(device);
 	[device->cur_swap->wi->context flushBuffer];
 	glFlush();
 	[NSOpenGLContext clearCurrentContext];
@@ -323,8 +355,11 @@ void device_present(gs_device_t *device)
 	[device->plat->context makeCurrentContext];
 }
 
-bool device_is_monitor_hdr(gs_device_t *device __unused, void *monitor __unused)
+bool device_is_monitor_hdr(gs_device_t *device, void *monitor)
 {
+	UNUSED_PARAMETER(device);
+	UNUSED_PARAMETER(monitor);
+
 	return false;
 }
 
@@ -344,17 +379,10 @@ gs_texture_t *device_texture_create_from_iosurface(gs_device_t *device,
 	struct gs_texture_2d *tex = bzalloc(sizeof(struct gs_texture_2d));
 
 	OSType pf = IOSurfaceGetPixelFormat(ref);
-
-	FourCharCode l10r_code = 0;
-	l10r_code = ('l' << 24) | ('1' << 16) | ('0' << 8) | 'r';
-
-	FourCharCode bgra_code = 0;
-	bgra_code = ('B' << 24) | ('G' << 16) | ('R' << 8) | 'A';
-
-	const bool l10r = pf == l10r_code;
+	const bool l10r = pf == 'l10r';
 	if (pf == 0)
 		blog(LOG_ERROR, "Invalid IOSurface Buffer");
-	else if ((pf != bgra_code) && !l10r)
+	else if ((pf != 'BGRA') && !l10r)
 		blog(LOG_ERROR, "Unexpected pixel format: %d (%c%c%c%c)", pf,
 		     pf >> 24, pf >> 16, pf >> 8, pf);
 
@@ -373,8 +401,8 @@ gs_texture_t *device_texture_create_from_iosurface(gs_device_t *device,
 	tex->base.is_dynamic = false;
 	tex->base.is_render_target = false;
 	tex->base.gen_mipmaps = false;
-	tex->width = (uint32_t)IOSurfaceGetWidth(ref);
-	tex->height = (uint32_t)IOSurfaceGetHeight(ref);
+	tex->width = IOSurfaceGetWidth(ref);
+	tex->height = IOSurfaceGetHeight(ref);
 
 	if (!gl_gen_textures(1, &tex->base.texture))
 		goto fail;
@@ -433,25 +461,19 @@ bool gs_texture_rebind_iosurface(gs_texture_t *texture, void *iosurf)
 	if (!iosurf)
 		return false;
 
-	FourCharCode l10r_code = 0;
-	l10r_code = ('l' << 24) | ('1' << 16) | ('0' << 8) | 'r';
-
-	FourCharCode bgra_code = 0;
-	bgra_code = ('B' << 24) | ('G' << 16) | ('R' << 8) | 'A';
-
 	struct gs_texture_2d *tex = (struct gs_texture_2d *)texture;
 	IOSurfaceRef ref = (IOSurfaceRef)iosurf;
 
 	OSType pf = IOSurfaceGetPixelFormat(ref);
 	if (pf == 0) {
 		blog(LOG_ERROR, "Invalid IOSurface buffer");
-	} else if ((pf != bgra_code) && (pf != l10r_code)) {
+	} else if ((pf != 'BGRA') && (pf != 'l10r')) {
 		blog(LOG_ERROR, "Unexpected pixel format: %d (%c%c%c%c)", pf,
 		     pf >> 24, pf >> 16, pf >> 8, pf);
 	}
 
-	tex->width = (uint32_t)IOSurfaceGetWidth(ref);
-	tex->height = (uint32_t)IOSurfaceGetHeight(ref);
+	tex->width = IOSurfaceGetWidth(ref);
+	tex->height = IOSurfaceGetHeight(ref);
 
 	if (!gl_bind_texture(tex->base.gl_target, tex->base.texture))
 		return false;
@@ -476,3 +498,34 @@ bool gs_texture_rebind_iosurface(gs_texture_t *texture, void *iosurf)
 
 	return true;
 }
+
+uint32_t create_iosurface(gs_device_t *device, uint32_t width, uint32_t height)
+{
+	gs_swapchain_t *swap = device->cur_swap;
+	if (!swap)
+		return 0;
+
+	swap->wi->surfaceID = 0;
+	NSDictionary *surfaceAttributes = [[NSDictionary alloc]
+		initWithObjectsAndKeys:
+			[NSNumber numberWithBool:YES],
+			(NSString *)kIOSurfaceIsGlobal,
+			[NSNumber numberWithUnsignedInteger:(NSUInteger)width],
+			(NSString *)kIOSurfaceWidth,
+			[NSNumber numberWithUnsignedInteger:(NSUInteger)height],
+			(NSString *)kIOSurfaceHeight,
+			[NSNumber numberWithUnsignedInteger:4U],
+			(NSString *)kIOSurfaceBytesPerElement, nil];
+
+	IOSurfaceRef _surfaceRef =
+		IOSurfaceCreate((CFDictionaryRef)surfaceAttributes);
+
+	if (_surfaceRef)
+		swap->wi->surfaceID = IOSurfaceGetID(_surfaceRef);
+
+	[surfaceAttributes release];
+
+	return swap->wi->surfaceID;
+}
+
+#pragma clang diagnostic pop

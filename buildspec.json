@@ -60,12 +60,12 @@
             }
         },
         "webrtc": {
-            "version": "m94-b230130",
+            "version": "m94-b240619",
             "baseUrl": "https://obs-studio-deployment.s3-us-west-2.amazonaws.com",
             "label": "webrtc",
             "hashes": {
-                "macos-x86_64": "82E191FF7BA3116D9CDF525FC3772B23C1F7CCAA866EF3B1EE4B3F6B0B805E0E",
-                "macos-arm64": "856A16784AC2E4F1FE09E5D3482D5438AF0CA94B8715CAA8D6FFEAFDF22BB9E6"
+                "macos-x86_64": "9D8BB7654A125423D773A59047673C8C36DD95136094E08B98B68B2CE924A099",
+                "macos-arm64": "04900D78FECE1ECB5F271E2E57D2A3E8B1AF4E068ED453EF629035832E5EF357"
             }
         }
     },
