@@ -1371,11 +1371,18 @@ static bool init_encoder(struct nvenc_data *enc, enum codec_type codec,
 	int bf = (int)obs_data_get_int(settings, "bf");
 	const bool support_10bit =
 		nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_10BIT_ENCODE);
+	const bool support_444 =
+		nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_YUV444_ENCODE);
 	const int bf_max = nv_get_cap(enc, NV_ENC_CAPS_NUM_MAX_BFRAMES);
 
 	video_t *video = obs_encoder_video(enc->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
 	enc->in_format = get_preferred_format(voi->format);
+
+	if (enc->in_format == VIDEO_FORMAT_I444 && !support_444) {
+		NV_FAIL(obs_module_text("NVENC.444Unsupported"));
+		return false;
+	}
 
 	if (is_10_bit(enc) && !support_10bit) {
 		NV_FAIL(obs_module_text("NVENC.10bitUnsupported"));
