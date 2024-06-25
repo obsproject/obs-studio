@@ -219,7 +219,7 @@ static enum video_format convert_vlc_video_format(char *chroma, bool *full)
 	return VIDEO_FORMAT_BGRA;
 }
 
-static inline unsigned get_format_lines(enum video_format format,
+static inline unsigned  get_format_lines(enum video_format format,
 					unsigned height, size_t plane)
 {
 	switch (format) {
