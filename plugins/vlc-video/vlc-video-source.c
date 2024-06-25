@@ -747,7 +747,7 @@ static void vlcs_update(void *data, obs_data_t *settings)
 	}
 
 	/* ------------------------------------- */
-	/* clean up and, if enabled, restart playback  */
+	/* clean up and, if enabled, restart playback */
 
 	free_files(&old_files);
 
