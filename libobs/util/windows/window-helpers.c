@@ -326,7 +326,8 @@ bool ms_is_uwp_window(HWND hwnd)
 	if (!GetClassNameW(hwnd, name, sizeof(name) / sizeof(wchar_t)))
 		return false;
 
-	return wcscmp(name, L"ApplicationFrameWindow") == 0;
+	return wcscmp(name, L"ApplicationFrameWindow") == 0 ||
+	       wcscmp(name, L"WinUIDesktopWin32WindowClass") == 0;
 }
 
 HWND ms_get_uwp_actual_window(HWND parent)
@@ -499,7 +500,8 @@ static bool is_generic_class(const char *current_class)
 
 static bool is_uwp_class(const char *window_class)
 {
-	return strcmp(window_class, "Windows.UI.Core.CoreWindow") == 0;
+	return strcmp(window_class, "Windows.UI.Core.CoreWindow") == 0 ||
+	       strcmp(window_class, "WinUIDesktopWin32WindowClass") == 0;
 }
 
 HWND ms_find_window(enum window_search_mode mode, enum window_priority priority,
