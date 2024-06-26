@@ -2226,7 +2226,7 @@ check_encoder_group_keyframe_alignment(obs_output_t *output,
 
 	pthread_mutex_lock(&packet->encoder->encoder_group->mutex);
 	insert_data.required_tracks =
-		packet->encoder->encoder_group->encoders_started;
+		packet->encoder->encoder_group->num_encoders_started;
 	pthread_mutex_unlock(&packet->encoder->encoder_group->mutex);
 
 	da_insert(output->keyframe_group_tracking, idx, &insert_data);

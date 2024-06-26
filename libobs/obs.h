@@ -46,6 +46,7 @@ struct obs_scene;
 struct obs_scene_item;
 struct obs_output;
 struct obs_encoder;
+struct obs_encoder_group;
 struct obs_service;
 struct obs_module;
 struct obs_fader;
@@ -59,6 +60,7 @@ typedef struct obs_scene obs_scene_t;
 typedef struct obs_scene_item obs_sceneitem_t;
 typedef struct obs_output obs_output_t;
 typedef struct obs_encoder obs_encoder_t;
+typedef struct obs_encoder_group obs_encoder_group_t;
 typedef struct obs_service obs_service_t;
 typedef struct obs_module obs_module_t;
 typedef struct obs_fader obs_fader_t;
@@ -2607,10 +2609,16 @@ EXPORT void obs_encoder_set_last_error(obs_encoder_t *encoder,
 
 EXPORT uint64_t obs_encoder_get_pause_offset(const obs_encoder_t *encoder);
 
-EXPORT bool obs_encoder_group_keyframe_aligned_encoders(
-	obs_encoder_t *encoder, obs_encoder_t *encoder_to_be_grouped);
-EXPORT bool obs_encoder_group_remove_keyframe_aligned_encoder(
-	obs_encoder_t *encoder, obs_encoder_t *encoder_to_be_ungrouped);
+/**
+ * Creates an "encoder group", allowing synchronized startup of encoders within
+ * the group. Encoder groups are single owner, and hold strong references to
+ * encoders within the group. Calling destroy on an active group will not actually
+ * destroy the group until it becomes completely inactive.
+ */
+EXPORT bool obs_encoder_set_group(obs_encoder_t *encoder,
+				  obs_encoder_group_t *group);
+EXPORT obs_encoder_group_t *obs_encoder_group_create();
+EXPORT void obs_encoder_group_destroy(obs_encoder_group_t *group);
 
 /* ------------------------------------------------------------------------- */
 /* Stream Services */

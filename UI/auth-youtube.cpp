@@ -350,7 +350,7 @@ std::shared_ptr<Auth> YoutubeAuth::Login(QWidget *owner,
 }
 
 #ifdef BROWSER_AVAILABLE
-void YoutubeChatDock::SetWidget(QCefWidget *widget_)
+YoutubeChatDock::YoutubeChatDock(const QString &title) : BrowserDock(title)
 {
 	lineEdit = new LineEditAutoResize();
 	lineEdit->setVisible(false);
@@ -364,6 +364,14 @@ void YoutubeChatDock::SetWidget(QCefWidget *widget_)
 	chatLayout->addWidget(lineEdit, 1);
 	chatLayout->addWidget(sendButton);
 
+	QWidget::connect(lineEdit, &LineEditAutoResize::returnPressed, this,
+			 &YoutubeChatDock::SendChatMessage);
+	QWidget::connect(sendButton, &QPushButton::pressed, this,
+			 &YoutubeChatDock::SendChatMessage);
+}
+
+void YoutubeChatDock::SetWidget(QCefWidget *widget_)
+{
 	QVBoxLayout *layout = new QVBoxLayout();
 	layout->setContentsMargins(0, 0, 0, 0);
 	layout->addWidget(widget_, 1);
@@ -372,11 +380,6 @@ void YoutubeChatDock::SetWidget(QCefWidget *widget_)
 	QWidget *widget = new QWidget();
 	widget->setLayout(layout);
 	setWidget(widget);
-
-	QWidget::connect(lineEdit, &LineEditAutoResize::returnPressed, this,
-			 &YoutubeChatDock::SendChatMessage);
-	QWidget::connect(sendButton, &QPushButton::pressed, this,
-			 &YoutubeChatDock::SendChatMessage);
 
 	cefWidget.reset(widget_);
 }

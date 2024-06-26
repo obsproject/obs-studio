@@ -28,7 +28,7 @@ target_include_directories(updater PRIVATE "${CMAKE_SOURCE_DIR}/libobs" "${CMAKE
 
 target_link_libraries(
   updater
-  PRIVATE OBS::blake2
+  PRIVATE OBS::blake2_static
           nlohmann_json::nlohmann_json
           zstd::libzstd_static
           comctl32
@@ -38,10 +38,10 @@ target_link_libraries(
           wintrust)
 
 # zstd is hardcoded with /DEFAULTLIB:LIBCMT
-target_link_options(updater PRIVATE /NODEFAULTLIB:LIBCMT)
+target_link_options(updater PRIVATE $<$<CONFIG:DEBUG>:/NODEFAULTLIB:LIBCMT>)
 
 set_target_properties(
   updater
   PROPERTIES FOLDER frontend
              OUTPUT_NAME updater
-             MSVC_RUNTIME_LIBRARY "MultiThreaded")
+             MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")

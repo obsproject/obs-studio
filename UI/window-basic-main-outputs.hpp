@@ -98,10 +98,9 @@ protected:
 					 bool overwrite, const char *format,
 					 bool ffmpeg);
 
-	FutureHolder<std::optional<bool>>
-	SetupMultitrackVideo(obs_service_t *service,
-			     std::string audio_encoder_id,
-			     std::optional<size_t> vod_track_mixer);
+	FutureHolder<std::optional<bool>> SetupMultitrackVideo(
+		obs_service_t *service, std::string audio_encoder_id,
+		size_t main_audio_mixer, std::optional<size_t> vod_track_mixer);
 	OBSDataAutoRelease GenerateMultitrackVideoStreamDumpConfig();
 };
 

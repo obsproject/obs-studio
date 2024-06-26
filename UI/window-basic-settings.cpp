@@ -4829,10 +4829,13 @@ void RestrictResetBitrates(initializer_list<QComboBox *> boxes, int maxbitrate)
 
 void OBSBasicSettings::AdvancedChangedRestart()
 {
+	ui->advancedMsg->setVisible(false);
+
 	if (!loading) {
 		advancedChanged = true;
 		ui->advancedMsg->setText(
 			QTStr("Basic.Settings.ProgramRestart"));
+		ui->advancedMsg->setVisible(true);
 		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
 	}
@@ -6321,6 +6324,13 @@ void OBSBasicSettings::UpdateMultitrackVideo()
 		if (!available && ui->enableMultitrackVideo->isChecked())
 			ui->enableMultitrackVideo->setChecked(false);
 	}
+
+#ifndef _WIN32
+	available = available && MultitrackVideoDeveloperModeEnabled();
+#endif
+
+	if (IsCustomService())
+		available = available && MultitrackVideoDeveloperModeEnabled();
 
 	ui->multitrackVideoGroupBox->setVisible(available);
 

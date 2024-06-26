@@ -1549,7 +1549,7 @@ extern void CheckExistingCookieId();
 #elif OBS_RELEASE_CANDIDATE == 0 && OBS_BETA == 0
 #define DEFAULT_CONTAINER "mkv"
 #else
-#define DEFAULT_CONTAINER "fragmented_mp4"
+#define DEFAULT_CONTAINER "hybrid_mp4"
 #endif
 
 bool OBSBasic::InitBasicConfigDefaults()
@@ -8407,13 +8407,8 @@ void OBSBasic::ProgramViewContextMenuRequested()
 				 &OBSBasic::OpenStudioProgramProjector);
 
 	popup.addMenu(studioProgramProjector);
-
-	QAction *studioProgramWindow =
-		popup.addAction(QTStr("StudioProgramWindow"), this,
-				&OBSBasic::OpenStudioProgramWindow);
-
-	popup.addAction(studioProgramWindow);
-
+	popup.addAction(QTStr("StudioProgramWindow"), this,
+			&OBSBasic::OpenStudioProgramWindow);
 	popup.addAction(QTStr("Screenshot.StudioProgram"), this,
 			&OBSBasic::ScreenshotProgram);
 

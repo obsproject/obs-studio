@@ -1242,10 +1242,15 @@ struct encoder_callback {
 	void *param;
 };
 
-struct encoder_group {
+struct obs_encoder_group {
 	pthread_mutex_t mutex;
-	uint32_t encoders_added;
-	uint32_t encoders_started;
+	/* allows group to be destroyed even if some encoders are active */
+	bool destroy_on_stop;
+
+	/* holds strong references to all encoders */
+	DARRAY(struct obs_encoder *) encoders;
+
+	uint32_t num_encoders_started;
 	uint64_t start_timestamp;
 };
 
@@ -1314,7 +1319,7 @@ struct obs_encoder {
 	uint64_t start_ts;
 
 	/* track encoders that are part of a gop-aligned multi track group */
-	struct encoder_group *encoder_group;
+	struct obs_encoder_group *encoder_group;
 
 	pthread_mutex_t outputs_mutex;
 	DARRAY(obs_output_t *) outputs;
