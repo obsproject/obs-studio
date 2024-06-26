@@ -2287,7 +2287,7 @@ FutureHolder<bool> AdvancedOutput::SetupStreaming(obs_service_t *service)
 	const char *audio_encoder_id =
 		config_get_string(main->Config(), "AdvOut", "AudioEncoder");
 	int streamTrackIndex =
-		config_get_int(main->Config(), "AdvOut", "TrackIndex");
+		config_get_int(main->Config(), "AdvOut", "TrackIndex") - 1;
 
 	auto holder =
 		SetupMultitrackVideo(service, audio_encoder_id,
