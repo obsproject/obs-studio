@@ -571,7 +571,7 @@ float3 YUV_to_RGB(float3 yuv)
 float3 PSUYVY_Reverse(FragTexTex frag_in) : TARGET
 {
 	float2 y01 = image.Load(int3(frag_in.uvuv.xy, 0)).yw;
-	float2 cbcr = image.Sample(def_sampler, frag_in.uvuv.zw, 0).zx;
+	float2 cbcr = image.Sample(def_sampler, frag_in.uvuv.zw, 0.0).zx;
 	float leftover = frac(frag_in.uvuv.x);
 	float y = (leftover < 0.5) ? y01.x : y01.y;
 	float3 yuv = float3(y, cbcr);
@@ -582,7 +582,7 @@ float3 PSUYVY_Reverse(FragTexTex frag_in) : TARGET
 float3 PSYUY2_Reverse(FragTexTex frag_in) : TARGET
 {
 	float2 y01 = image.Load(int3(frag_in.uvuv.xy, 0)).zx;
-	float2 cbcr = image.Sample(def_sampler, frag_in.uvuv.zw, 0).yw;
+	float2 cbcr = image.Sample(def_sampler, frag_in.uvuv.zw, 0.0).yw;
 	float leftover = frac(frag_in.uvuv.x);
 	float y = (leftover < 0.5) ? y01.x : y01.y;
 	float3 yuv = float3(y, cbcr);
@@ -593,7 +593,7 @@ float3 PSYUY2_Reverse(FragTexTex frag_in) : TARGET
 float4 PSYUY2_PQ_Reverse(FragTexTex frag_in) : TARGET
 {
 	float2 y01 = image.Load(int3(frag_in.uvuv.xy, 0)).zx;
-	float2 cbcr = image.Sample(def_sampler, frag_in.uvuv.zw, 0).yw;
+	float2 cbcr = image.Sample(def_sampler, frag_in.uvuv.zw, 0.0).yw;
 	float leftover = frac(frag_in.uvuv.x);
 	float y = (leftover < 0.5) ? y01.x : y01.y;
 	float3 yuv = float3(y, cbcr);
@@ -606,7 +606,7 @@ float4 PSYUY2_PQ_Reverse(FragTexTex frag_in) : TARGET
 float4 PSYUY2_HLG_Reverse(FragTexTex frag_in) : TARGET
 {
 	float2 y01 = image.Load(int3(frag_in.uvuv.xy, 0)).zx;
-	float2 cbcr = image.Sample(def_sampler, frag_in.uvuv.zw, 0).yw;
+	float2 cbcr = image.Sample(def_sampler, frag_in.uvuv.zw, 0.0).yw;
 	float leftover = frac(frag_in.uvuv.x);
 	float y = (leftover < 0.5) ? y01.x : y01.y;
 	float3 yuv = float3(y, cbcr);
@@ -619,7 +619,7 @@ float4 PSYUY2_HLG_Reverse(FragTexTex frag_in) : TARGET
 float3 PSYVYU_Reverse(FragTexTex frag_in) : TARGET
 {
 	float2 y01 = image.Load(int3(frag_in.uvuv.xy, 0)).zx;
-	float2 cbcr = image.Sample(def_sampler, frag_in.uvuv.zw, 0).wy;
+	float2 cbcr = image.Sample(def_sampler, frag_in.uvuv.zw, 0.0).wy;
 	float leftover = frac(frag_in.uvuv.x);
 	float y = (leftover < 0.5) ? y01.x : y01.y;
 	float3 yuv = float3(y, cbcr);
@@ -764,7 +764,7 @@ float4 PSPlanar444_12LE_PQ_Reverse(FragPos frag_in) : TARGET
 	float cb = image1.Load(xy0).x;
 	float cr = image2.Load(xy0).x;
 	float3 yuv = float3(y, cb, cr);
-	yuv *= 65535. / 4095;
+	yuv *= 65535. / 4095.;
 	float3 pq = YUV_to_RGB(yuv);
 	float3 hdr2020 = st2084_to_linear_eetf(pq, hdr_lw, hdr_lmax) * maximum_over_sdr_white_nits;
 	float3 rgb = rec2020_to_rec709(hdr2020);
@@ -778,7 +778,7 @@ float4 PSPlanar444_12LE_HLG_Reverse(FragPos frag_in) : TARGET
 	float cb = image1.Load(xy0).x;
 	float cr = image2.Load(xy0).x;
 	float3 yuv = float3(y, cb, cr);
-	yuv *= 65535. / 4095;
+	yuv *= 65535. / 4095.;
 	float3 hlg = YUV_to_RGB(yuv);
 	float3 hdr2020 = hlg_to_linear(hlg, hlg_exponent) * maximum_over_sdr_white_nits;
 	float3 rgb = rec2020_to_rec709(hdr2020);
