@@ -568,7 +568,7 @@ float3 YUV_to_RGB(float3 yuv)
 	return float3(r, g, b);
 }
 
-float3 PSUYVY_Reverse(FragTexTex frag_in) : TARGET
+float4 PSUYVY_Reverse(FragTexTex frag_in) : TARGET
 {
 	float2 y01 = image.Load(int3(frag_in.uvuv.xy, 0)).yw;
 	float2 cbcr = image.Sample(def_sampler, frag_in.uvuv.zw, 0.0).zx;
@@ -576,10 +576,10 @@ float3 PSUYVY_Reverse(FragTexTex frag_in) : TARGET
 	float y = (leftover < 0.5) ? y01.x : y01.y;
 	float3 yuv = float3(y, cbcr);
 	float3 rgb = YUV_to_RGB(yuv);
-	return rgb;
+	return float4(rgb, 1.);
 }
 
-float3 PSYUY2_Reverse(FragTexTex frag_in) : TARGET
+float4 PSYUY2_Reverse(FragTexTex frag_in) : TARGET
 {
 	float2 y01 = image.Load(int3(frag_in.uvuv.xy, 0)).zx;
 	float2 cbcr = image.Sample(def_sampler, frag_in.uvuv.zw, 0.0).yw;
@@ -587,7 +587,7 @@ float3 PSYUY2_Reverse(FragTexTex frag_in) : TARGET
 	float y = (leftover < 0.5) ? y01.x : y01.y;
 	float3 yuv = float3(y, cbcr);
 	float3 rgb = YUV_to_RGB(yuv);
-	return rgb;
+	return float4(rgb, 1.);
 }
 
 float4 PSYUY2_PQ_Reverse(FragTexTex frag_in) : TARGET
@@ -616,7 +616,7 @@ float4 PSYUY2_HLG_Reverse(FragTexTex frag_in) : TARGET
 	return float4(rgb, 1.);
 }
 
-float3 PSYVYU_Reverse(FragTexTex frag_in) : TARGET
+float4 PSYVYU_Reverse(FragTexTex frag_in) : TARGET
 {
 	float2 y01 = image.Load(int3(frag_in.uvuv.xy, 0)).zx;
 	float2 cbcr = image.Sample(def_sampler, frag_in.uvuv.zw, 0.0).wy;
@@ -624,17 +624,17 @@ float3 PSYVYU_Reverse(FragTexTex frag_in) : TARGET
 	float y = (leftover < 0.5) ? y01.x : y01.y;
 	float3 yuv = float3(y, cbcr);
 	float3 rgb = YUV_to_RGB(yuv);
-	return rgb;
+	return float4(rgb, 1.);
 }
 
-float3 PSPlanar420_Reverse(VertTexPos frag_in) : TARGET
+float4 PSPlanar420_Reverse(VertTexPos frag_in) : TARGET
 {
 	float y = image.Load(int3(frag_in.pos.xy, 0)).x;
 	float cb = image1.Sample(def_sampler, frag_in.uv).x;
 	float cr = image2.Sample(def_sampler, frag_in.uv).x;
 	float3 yuv = float3(y, cb, cr);
 	float3 rgb = YUV_to_RGB(yuv);
-	return rgb;
+	return float4(rgb, 1.);
 }
 
 float4 PSPlanar420_PQ_Reverse(VertTexPos frag_in) : TARGET
@@ -673,14 +673,14 @@ float4 PSPlanar420A_Reverse(VertTexPos frag_in) : TARGET
 	return rgba;
 }
 
-float3 PSPlanar422_Reverse(VertTexPos frag_in) : TARGET
+float4 PSPlanar422_Reverse(VertTexPos frag_in) : TARGET
 {
 	float y = image.Load(int3(frag_in.pos.xy, 0)).x;
 	float cb = image1.Sample(def_sampler, frag_in.uv).x;
 	float cr = image2.Sample(def_sampler, frag_in.uv).x;
 	float3 yuv = float3(y, cb, cr);
 	float3 rgb = YUV_to_RGB(yuv);
-	return rgb;
+	return float4(rgb, 1.);
 }
 
 float4 PSPlanar422_10LE_Reverse(VertTexPos frag_in) : TARGET
@@ -733,7 +733,7 @@ float4 PSPlanar422A_Reverse(VertTexPos frag_in) : TARGET
 	return rgba;
 }
 
-float3 PSPlanar444_Reverse(FragPos frag_in) : TARGET
+float4 PSPlanar444_Reverse(FragPos frag_in) : TARGET
 {
 	int3 xy0 = int3(frag_in.pos.xy, 0);
 	float y = image.Load(xy0).x;
@@ -741,7 +741,7 @@ float3 PSPlanar444_Reverse(FragPos frag_in) : TARGET
 	float cr = image2.Load(xy0).x;
 	float3 yuv = float3(y, cb, cr);
 	float3 rgb = YUV_to_RGB(yuv);
-	return rgb;
+	return float4(rgb, 1.);
 }
 
 float4 PSPlanar444_12LE_Reverse(FragPos frag_in) : TARGET
@@ -818,13 +818,13 @@ float4 PSAYUV_Reverse(FragPos frag_in) : TARGET
 	return rgba;
 }
 
-float3 PSNV12_Reverse(VertTexPos frag_in) : TARGET
+float4 PSNV12_Reverse(VertTexPos frag_in) : TARGET
 {
 	float y = image.Load(int3(frag_in.pos.xy, 0)).x;
 	float2 cbcr = image1.Sample(def_sampler, frag_in.uv).xy;
 	float3 yuv = float3(y, cbcr);
 	float3 rgb = YUV_to_RGB(yuv);
-	return rgb;
+	return float4(rgb, 1.);
 }
 
 float4 PSNV12_PQ_Reverse(VertTexPos frag_in) : TARGET
@@ -1011,17 +1011,17 @@ float4 PSV210_HLG_2020_709_Reverse(FragPos frag_in) : TARGET
 	return float4(rgb, 1.);
 }
 
-float3 PSY800_Limited(FragPos frag_in) : TARGET
+float4 PSY800_Limited(FragPos frag_in) : TARGET
 {
 	float limited = image.Load(int3(frag_in.pos.xy, 0)).x;
 	float full = (255.0 / 219.0) * limited - (16.0 / 219.0);
-	return float3(full, full, full);
+	return float4(full, full, full, 1.0);
 }
 
-float3 PSY800_Full(FragPos frag_in) : TARGET
+float4 PSY800_Full(FragPos frag_in) : TARGET
 {
 	float3 full = image.Load(int3(frag_in.pos.xy, 0)).xxx;
-	return full;
+	return float4(full, 1.0);
 }
 
 float4 PSRGB_Limited(FragPos frag_in) : TARGET
@@ -1031,7 +1031,7 @@ float4 PSRGB_Limited(FragPos frag_in) : TARGET
 	return rgba;
 }
 
-float3 PSBGR3_Limited(FragPos frag_in) : TARGET
+float4 PSBGR3_Limited(FragPos frag_in) : TARGET
 {
 	float x = frag_in.pos.x * 3.0;
 	float y = frag_in.pos.y;
@@ -1040,10 +1040,10 @@ float3 PSBGR3_Limited(FragPos frag_in) : TARGET
 	float r = image.Load(int3(x + 1.0, y, 0)).x;
 	float3 rgb = float3(r, g, b);
 	rgb = (255.0 / 219.0) * rgb - (16.0 / 219.0);
-	return rgb;
+	return float4(rgb, 1.);
 }
 
-float3 PSBGR3_Full(FragPos frag_in) : TARGET
+float4 PSBGR3_Full(FragPos frag_in) : TARGET
 {
 	float x = frag_in.pos.x * 3.0;
 	float y = frag_in.pos.y;
@@ -1051,7 +1051,7 @@ float3 PSBGR3_Full(FragPos frag_in) : TARGET
 	float g = image.Load(int3(x, y, 0)).x;
 	float r = image.Load(int3(x + 1.0, y, 0)).x;
 	float3 rgb = float3(r, g, b);
-	return rgb;
+	return float4(rgb, 1.);
 }
 
 float3 compute_r10l_reverse(float2 pos, bool limited)
