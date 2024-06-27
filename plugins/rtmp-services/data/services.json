@@ -1503,38 +1503,23 @@
             "name": "Lightcast.com",
             "servers": [
                 {
-                    "name": "North America / East",
-                    "url": "rtmp://us-east.live.lightcast.com/202E1F/default"
+                    "name": "North America 1",
+                    "url": "rtmp://ingest-na1.live.lightcast.com/in"
                 },
                 {
-                    "name": "North America / West",
-                    "url": "rtmp://us-west.live.lightcast.com/202E1F/default"
+                    "name": "North America 2",
+                    "url": "rtmp://ingest-na2.live.lightcast.com/in"
                 },
                 {
-                    "name": "Europe / Amsterdam",
-                    "url": "rtmp://europe.live.lightcast.com/202E1F/default"
-                },
-                {
-                    "name": "Europe / Frankfurt",
-                    "url": "rtmp://europe-fra.live.lightcast.com/202E1F/default"
-                },
-                {
-                    "name": "Europe / Stockholm",
-                    "url": "rtmp://europe-sto.live.lightcast.com/202E1F/default"
-                },
-                {
-                    "name": "Asia / Hong Kong",
-                    "url": "rtmp://asia.live.lightcast.com/202E1F/default"
-                },
-                {
-                    "name": "Australia / Sydney",
-                    "url": "rtmp://australia.live.lightcast.com/202E1F/default"
+                    "name": "Europe",
+                    "url": "rtmp://ingest-eu1.live.lightcast.com/in"
                 }
             ],
             "recommended": {
                 "keyint": 2,
                 "max video bitrate": 6000,
-                "max audio bitrate": 160
+                "max audio bitrate": 320,
+                "x264opts": "scenecut=0"
             },
             "supported video codecs": [
                 "h264"
