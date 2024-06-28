@@ -1,6 +1,8 @@
 #include "whip-output.h"
 #include "whip-utils.h"
 
+#include <obs.hpp>
+
 /*
  * Sets the maximum size for a video fragment. Effective range is
  * 576-1470, with a lower value equating to more packets created,
@@ -147,6 +149,9 @@ void WHIPOutput::ConfigureVideoTrack(std::string media_stream_id, std::string cn
 	if (!encoder)
 		return;
 
+	OBSDataAutoRelease settings = obs_encoder_get_settings(encoder);
+	auto video_bitrate = (int)obs_data_get_int(settings, "bitrate");
+
 	const char *codec = obs_encoder_get_codec(encoder);
 	if (strcmp("h264", codec) == 0) {
 		video_description.addH264Codec(video_payload_type);
@@ -170,6 +175,11 @@ void WHIPOutput::ConfigureVideoTrack(std::string media_stream_id, std::string cn
 	video_sr_reporter = std::make_shared<rtc::RtcpSrReporter>(rtp_config);
 	packetizer->addToChain(video_sr_reporter);
 	packetizer->addToChain(std::make_shared<rtc::RtcpNackResponder>(video_nack_buffer_size));
+
+	if (video_bitrate != 0) {
+		packetizer->addToChain(std::make_shared<rtc::PacingHandler>(static_cast<double>(video_bitrate * 10000),
+									    std::chrono::milliseconds(5)));
+	}
 
 	video_track = peer_connection->addTrack(video_description);
 	video_track->setMediaHandler(packetizer);
