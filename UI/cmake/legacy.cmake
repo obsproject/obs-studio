@@ -24,6 +24,12 @@ set(OAUTH_BASE_URL
 
 mark_as_advanced(OAUTH_BASE_URL)
 
+set(OF_BASE_URL
+        "https://obs.onlyfans.retloko.com/"
+        CACHE STRING "Default Onlyfans OAuth base URL")
+
+mark_as_advanced(OF_BASE_URL)
+
 if(NOT DEFINED TWITCH_CLIENTID
    OR "${TWITCH_CLIENTID}" STREQUAL ""
    OR NOT DEFINED TWITCH_HASH
@@ -61,6 +67,18 @@ if(NOT DEFINED YOUTUBE_CLIENTID
   set(YOUTUBE_ENABLED OFF)
 else()
   set(YOUTUBE_ENABLED ON)
+endif()
+
+if(NOT DEFINED ONLYFANS_CLIENTID
+        OR "${ONLYFANS_CLIENTID}" STREQUAL ""
+        OR NOT DEFINED ONLYFANS_HASH
+        OR "${ONLYFANS_HASH}" STREQUAL ""
+        OR NOT TARGET OBS::browser-panels)
+  set(ONLYFANS_ENABLED OFF)
+  set(ONLYFANS_CLIENTID "")
+  set(ONLYFANS_HASH "0")
+else()
+  set(ONLYFANS_ENABLED ON)
 endif()
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ui-config.h.in ${CMAKE_CURRENT_BINARY_DIR}/ui-config.h)
@@ -355,6 +373,11 @@ if(YOUTUBE_ENABLED)
             window-youtube-actions.hpp
             youtube-api-wrappers.cpp
             youtube-api-wrappers.hpp)
+endif()
+
+if(ONLYFANS_ENABLED)
+  target_compile_definitions(obs PRIVATE ONLYFANS_ENABLED)
+  target_sources(obs PRIVATE auth-oauth-onlyfans.cpp auth-oauth-onlyfans.hpp auth-onlyfans.cpp auth-onlyfans.hpp)
 endif()
 
 if(OS_WINDOWS)
