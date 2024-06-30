@@ -38,36 +38,71 @@
             "no-autodownload": true
         }
     },
-    "cleanup": [
-        "/share/man",
-        "*.la"
-    ],
     "modules": [
-        "modules/10-mbedtls.json",
-        "modules/20-librist.json",
-        "modules/20-nv-codec.json",
-        "modules/20-srt.json",
-        "modules/20-svt-av1.json",
-        "modules/20-x264.json",
-        "modules/30-ffmpeg.json",
-        "modules/40-luajit.json",
-        "modules/40-plog.json",
-        "modules/40-usrsctp.json",
-        "modules/50-intel-media-sdk.json",
-        "modules/50-jansson.json",
-        "modules/50-libdatachannel.json",
-        "modules/50-libqrcodegencpp.json",
-        "modules/50-libvpl.json",
-        "modules/50-ntv2.json",
-        "modules/50-rnnoise.json",
-        "modules/50-swig.json",
-        "modules/50-v4l-utils.json",
-        "modules/50-vpl-gpu-rt.json",
-        "modules/90-asio.json",
-        "modules/90-nlohmann-json.json",
-        "modules/90-uthash.json",
-        "modules/90-websocketpp.json",
-        "modules/99-cef.json",
+        {
+            "name": "obs-deps-base",
+            "buildsystem": "simple",
+            "build-commands": [
+                "tar -xvf base.tar.xz -C /"
+            ],
+            "sources": [
+                {
+                    "type": "file",
+                    "dest-filename": "base.tar.xz",
+                    "url": "https://github.com/tytan652/obs-deps-bst/releases/download/2025-05-03/flatpak-base-x86_64-2025-05-03.tar.xz",
+                    "sha256": "b2a0ef8de5329a26a417393f1a7fda7ac9d18096839f9cec9fba7fc30e4cef07"
+                }
+            ]
+        },
+        {
+            "name": "obs-deps-devels",
+            "buildsystem": "simple",
+            "build-commands": [
+                "tar -xvf devel.tar.xz -C /",
+                "tar -xvf devtools.tar.xz -C /"
+            ],
+            "cleanup": [
+                "*"
+            ],
+            "sources": [
+                {
+                    "type": "file",
+                    "dest-filename": "devel.tar.xz",
+                    "url": "https://github.com/tytan652/obs-deps-bst/releases/download/2025-05-03/flatpak-devel-x86_64-2025-05-03.tar.xz",
+                    "sha256": "f33438e2b0cad6b210a2b151e8fdcd938485e925dcf74239898758bbf13d45b5"
+                },
+                {
+                    "type": "file",
+                    "dest-filename": "devtools.tar.xz",
+                    "url": "https://github.com/tytan652/obs-deps-bst/releases/download/2025-05-03/flatpak-devtools-x86_64-2025-05-03.tar.xz",
+                    "sha256": "7864064f4e624b4bb44d34d172a7b357fef0e3b2cd85de4d7104a54439f70a25"
+                }
+            ]
+        },
+        {
+            "name": "cef",
+            "build-options": {
+                "no-debuginfo": true
+            },
+            "buildsystem": "simple",
+            "build-commands": [
+                "mkdir -p /app/cef/libcef_dll_wrapper",
+                "cp -R ./include /app/cef",
+                "cp -R ./Release /app/cef",
+                "cp -R ./Resources /app/cef",
+                "cp -R ./build/libcef_dll_wrapper/libcef_dll_wrapper.a /app/cef/libcef_dll_wrapper"
+            ],
+            "cleanup": [
+                "*"
+            ],
+            "sources": [
+                {
+                    "type": "archive",
+                    "url": "https://cdn-fastly.obsproject.com/downloads/cef_binary_6533_linux_x86_64_v3.tar.xz",
+                    "sha256": "cb7225c7a937ac4cdc9c41700061f45cccc640d696902357782e57f8250bf43a"
+                }
+            ]
+        },
         {
             "name": "obs",
             "buildsystem": "cmake-ninja",
