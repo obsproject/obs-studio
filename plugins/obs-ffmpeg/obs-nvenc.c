@@ -1377,7 +1377,12 @@ static bool init_encoder(struct nvenc_data *enc, enum codec_type codec,
 
 	video_t *video = obs_encoder_video(enc->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
-	enc->in_format = get_preferred_format(voi->format);
+	enum video_format pref_format =
+		obs_encoder_get_preferred_video_format(enc->encoder);
+	if (pref_format == VIDEO_FORMAT_NONE)
+		pref_format = voi->format;
+
+	enc->in_format = get_preferred_format(pref_format);
 
 	if (enc->in_format == VIDEO_FORMAT_I444 && !support_444) {
 		NV_FAIL(obs_module_text("NVENC.444Unsupported"));
