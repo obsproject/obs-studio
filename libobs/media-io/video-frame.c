@@ -133,14 +133,14 @@ void video_frame_get_plane_heights(uint32_t heights[MAX_AV_PLANES],
 	case VIDEO_FORMAT_I420: /* three planes: full height, half height, half height */
 	case VIDEO_FORMAT_I010:
 		heights[0] = height;
-		heights[1] = height / 2;
-		heights[2] = height / 2;
+		heights[1] = HALF(height);
+		heights[2] = HALF(height);
 		break;
 
 	case VIDEO_FORMAT_NV12: /* two planes: full height, half height */
 	case VIDEO_FORMAT_P010:
 		heights[0] = height;
-		heights[1] = height / 2;
+		heights[1] = HALF(height);
 		break;
 
 	case VIDEO_FORMAT_Y800: /* one plane: full height */
@@ -168,8 +168,8 @@ void video_frame_get_plane_heights(uint32_t heights[MAX_AV_PLANES],
 
 	case VIDEO_FORMAT_I40A: /* four planes: full height, half height, half height, full height */
 		heights[0] = height;
-		heights[1] = height / 2;
-		heights[2] = height / 2;
+		heights[1] = HALF(height);
+		heights[2] = HALF(height);
 		heights[3] = height;
 		break;
 
