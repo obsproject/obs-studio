@@ -2609,14 +2609,15 @@ EXPORT void obs_encoder_set_last_error(obs_encoder_t *encoder,
 
 EXPORT uint64_t obs_encoder_get_pause_offset(const obs_encoder_t *encoder);
 
+EXPORT obs_encoder_group_t *obs_encoder_get_group(obs_encoder_t *encoder);
+EXPORT bool obs_encoder_set_group(obs_encoder_t *encoder,
+				  obs_encoder_group_t *group);
 /**
  * Creates an "encoder group", allowing synchronized startup of encoders within
  * the group. Encoder groups are single owner, and hold strong references to
  * encoders within the group. Calling destroy on an active group will not actually
  * destroy the group until it becomes completely inactive.
  */
-EXPORT bool obs_encoder_set_group(obs_encoder_t *encoder,
-				  obs_encoder_group_t *group);
 EXPORT obs_encoder_group_t *obs_encoder_group_create();
 EXPORT void obs_encoder_group_destroy(obs_encoder_group_t *group);
 
