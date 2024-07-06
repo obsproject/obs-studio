@@ -179,9 +179,6 @@ static inline void get_video_info(struct obs_encoder *encoder,
 
 	if (encoder->info.get_video_info)
 		encoder->info.get_video_info(encoder->context.data, info);
-
-	if (info->width != voi->width || info->height != voi->height)
-		obs_encoder_set_scaled_size(encoder, info->width, info->height);
 }
 
 static inline bool gpu_encode_available(const struct obs_encoder *encoder)
