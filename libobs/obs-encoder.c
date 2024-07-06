@@ -179,6 +179,16 @@ static inline void get_video_info(struct obs_encoder *encoder,
 
 	if (encoder->info.get_video_info)
 		encoder->info.get_video_info(encoder->context.data, info);
+
+	/**
+	 * Prevent video output from performing an actual scale. If GPU scaling is
+	 * enabled, the voi will contain the scaled size. Therefore, GPU scaling
+	 * takes priority over self-scaling functionality.
+	 */
+	if ((encoder->info.caps & OBS_ENCODER_CAP_SELF_SCALE) != 0) {
+		info->width = voi->width;
+		info->height = voi->height;
+	}
 }
 
 static inline bool gpu_encode_available(const struct obs_encoder *encoder)
