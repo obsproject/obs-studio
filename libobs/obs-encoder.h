@@ -37,6 +37,7 @@ typedef struct obs_encoder obs_encoder_t;
 #define OBS_ENCODER_CAP_DYN_BITRATE (1 << 2)
 #define OBS_ENCODER_CAP_INTERNAL (1 << 3)
 #define OBS_ENCODER_CAP_ROI (1 << 4)
+#define OBS_ENCODER_CAP_SCALING (1 << 5)
 
 /** Specifies the encoder type */
 enum obs_encoder_type {
