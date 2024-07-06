@@ -934,6 +934,14 @@ void obs_register_encoder_s(const struct obs_encoder_info *info, size_t size)
 		goto error;
 	}
 
+	if (((info->caps & OBS_ENCODER_CAP_PASS_TEXTURE) != 0 &&
+	     info->caps & OBS_ENCODER_CAP_SCALING) != 0) {
+		encoder_warn(
+			"Texture encoders cannot self-scale. Encoder id '%s' not registered.",
+			info->id);
+		goto error;
+	}
+
 #define CHECK_REQUIRED_VAL_(info, val, func) \
 	CHECK_REQUIRED_VAL(struct obs_encoder_info, info, val, func)
 	CHECK_REQUIRED_VAL_(info, get_name, obs_register_encoder);
