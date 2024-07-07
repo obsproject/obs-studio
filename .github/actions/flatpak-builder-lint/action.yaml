@@ -51,15 +51,16 @@ runs:
           exit $exit_code
         fi
 
-        for ((i = 0 ; i < $(echo $ret | jq '.warnings | length') ; i++)); do
+        n_warnings=$(echo $ret | jq '.warnings | length')
+        for ((i = 0 ; i < n_warnings ; i++)); do
           warning=$(echo $ret | jq ".warnings[$i]")
           echo "::warning::$warning found in the Flatpak ${{ inputs.artifact }}"
         done
 
         n_errors=$(echo $ret | jq '.errors | length')
-        for ((i = 0 ; i < $n_errors ; i++)); do
+        for ((i = 0 ; i < n_errors ; i++)); do
           error=$(echo $ret | jq ".errors[$i]")
           echo "::error::$error found in the Flatpak ${{ inputs.artifact }}"
         done
 
-        [[ $n_errors == 0 ]] || exit 2
+        [[ -z $n_errors || $n_errors == 0 ]] || exit 2
