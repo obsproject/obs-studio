@@ -307,6 +307,9 @@ extern void RegisterRestreamAuth();
 #ifdef YOUTUBE_ENABLED
 extern void RegisterYoutubeAuth();
 #endif
+#ifdef ONLYFANS_ENABLED
+extern void RegisterOnlyfansAuth();
+#endif // ONLYFANS_ENABLED
 
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow(parent),
@@ -323,6 +326,9 @@ OBSBasic::OBSBasic(QWidget *parent)
 #endif
 #ifdef YOUTUBE_ENABLED
 	RegisterYoutubeAuth();
+#endif
+#ifdef ONLYFANS_ENABLED
+	RegisterOnlyfansAuth();
 #endif
 
 	setAcceptDrops(true);
