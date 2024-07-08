@@ -1,7 +1,6 @@
 #pragma once
 
 #include <obs.hpp>
-#include <QFuture>
 #include <QString>
 
 #include "models/multitrack-video.hpp"

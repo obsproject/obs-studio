@@ -1,14 +1,14 @@
 #pragma once
 
+#include <future>
 #include <memory>
 #include <string>
 
-#include <QFuture>
-
-#include "qt-helpers.hpp"
 #include "multitrack-video-output.hpp"
 
 class OBSBasic;
+
+using SetupStreamingContinuation_t = std::function<void(bool)>;
 
 struct BasicOutputHandler {
 	OBSOutputAutoRelease fileOutput;
@@ -63,7 +63,9 @@ struct BasicOutputHandler {
 
 	virtual ~BasicOutputHandler(){};
 
-	virtual FutureHolder<bool> SetupStreaming(obs_service_t *service) = 0;
+	virtual std::shared_future<void>
+	SetupStreaming(obs_service_t *service,
+		       SetupStreamingContinuation_t continuation) = 0;
 	virtual bool StartStreaming(obs_service_t *service) = 0;
 	virtual bool StartRecording() = 0;
 	virtual bool StartReplayBuffer() { return false; }
@@ -98,9 +100,10 @@ protected:
 					 bool overwrite, const char *format,
 					 bool ffmpeg);
 
-	FutureHolder<std::optional<bool>> SetupMultitrackVideo(
+	std::shared_future<void> SetupMultitrackVideo(
 		obs_service_t *service, std::string audio_encoder_id,
-		size_t main_audio_mixer, std::optional<size_t> vod_track_mixer);
+		size_t main_audio_mixer, std::optional<size_t> vod_track_mixer,
+		std::function<void(std::optional<bool>)> continuation);
 	OBSDataAutoRelease GenerateMultitrackVideoStreamDumpConfig();
 };
 

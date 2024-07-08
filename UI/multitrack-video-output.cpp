@@ -35,7 +35,6 @@
 #include "goliveapi-postdata.hpp"
 #include "goliveapi-network.hpp"
 #include "multitrack-video-error.hpp"
-#include "qt-helpers.hpp"
 #include "models/multitrack-video.hpp"
 
 Qt::ConnectionType BlockingConnectionTypeFor(QObject *object)
