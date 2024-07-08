@@ -390,59 +390,63 @@ static void remove_cr(wchar_t *source)
 	source[j] = '\0';
 }
 
-void load_text_from_file(struct ft2_source *srcdata, const char *filename)
-{
-	FILE *tmp_file = NULL;
-	uint32_t filesize = 0;
-	char *tmp_read = NULL;
-	uint16_t header = 0;
-	size_t bytes_read;
 
-	tmp_file = os_fopen(filename, "rb");
-	if (tmp_file == NULL) {
-		if (!srcdata->file_load_failed) {
-			blog(LOG_WARNING, "Failed to open file %s", filename);
-			srcdata->file_load_failed = true;
-		}
-		return;
-	}
-	fseek(tmp_file, 0, SEEK_END);
-	filesize = (uint32_t)ftell(tmp_file);
-	fseek(tmp_file, 0, SEEK_SET);
-	bytes_read = fread(&header, 1, 2, tmp_file);
+void load_text_from_file(struct ft2_source *srcdata, const char *filename) {
+    FILE *tmp_file = NULL;
+    uint32_t filesize = 0;
+    char *tmp_read = NULL;
+    uint16_t header = 0;
+    size_t bytes_read;
 
-	if (bytes_read == 2 && header == 0xFEFF) {
-		// File is already in UTF-16 format
-		if (srcdata->text != NULL) {
-			bfree(srcdata->text);
-			srcdata->text = NULL;
-		}
-		srcdata->text = bzalloc(filesize);
-		bytes_read = fread(srcdata->text, filesize - 2, 1, tmp_file);
+    tmp_file = os_fopen(filename, "rb");
+    if (tmp_file == NULL) {
+        if (!srcdata->file_load_failed) {
+            blog(LOG_WARNING, "Failed to open file %s", filename);
+            srcdata->file_load_failed = true;
+        }
+        return;
+    }
+    
+    fseek(tmp_file, 0, SEEK_END);
+    filesize = (uint32_t)ftell(tmp_file);
+    fseek(tmp_file, 0, SEEK_SET);
+    bytes_read = fread(&header, 1, 2, tmp_file);
 
-		bfree(tmp_read);
-		fclose(tmp_file);
+    if (bytes_read == 2 && header == 0xFEFF) {
+        // File is already in UTF-16 format
+        if (srcdata->text != NULL) {
+            bfree(srcdata->text);
+            srcdata->text = NULL;
+        }
+        srcdata->text = bzalloc(filesize);
+        bytes_read = fread(srcdata->text, filesize - 2, 1, tmp_file);
 
-		return;
-	}
+        // Ensure null-termination of the string
+        srcdata->text[(filesize - 2) / sizeof(wchar_t)] = L'\0';
 
-	fseek(tmp_file, 0, SEEK_SET);
+        bfree(tmp_read);
+        fclose(tmp_file);
 
-	tmp_read = bzalloc(filesize + 1);
-	bytes_read = fread(tmp_read, filesize, 1, tmp_file);
-	fclose(tmp_file);
+        return;
+    }
 
-	if (srcdata->text != NULL) {
-		bfree(srcdata->text);
-		srcdata->text = NULL;
-	}
-	srcdata->text = bzalloc((strlen(tmp_read) + 1) * sizeof(wchar_t));
-	os_utf8_to_wcs(tmp_read, strlen(tmp_read), srcdata->text,
-		       (strlen(tmp_read) + 1));
+    fseek(tmp_file, 0, SEEK_SET);
 
-	remove_cr(srcdata->text);
-	bfree(tmp_read);
+    tmp_read = bzalloc(filesize + 1);
+    bytes_read = fread(tmp_read, filesize, 1, tmp_file);
+    fclose(tmp_file);
+
+    if (srcdata->text != NULL) {
+        bfree(srcdata->text);
+        srcdata->text = NULL;
+    }
+    srcdata->text = bzalloc((strlen(tmp_read) + 1) * sizeof(wchar_t));
+    os_utf8_to_wcs(tmp_read, strlen(tmp_read), srcdata->text, (strlen(tmp_read) + 1));
+
+    remove_cr(srcdata->text);
+    bfree(tmp_read);
 }
+
 
 void read_from_end(struct ft2_source *srcdata, const char *filename)
 {
