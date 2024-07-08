@@ -2038,7 +2038,9 @@ void OBSBasic::ResetOutputs()
 	bool advOut = astrcmpi(mode, "Advanced") == 0;
 
 	if ((!outputHandler || !outputHandler->Active()) &&
-	    startStreamingFuture.future.isFinished()) {
+	    (!setupStreamingGuard.valid() ||
+	     setupStreamingGuard.wait_for(std::chrono::seconds{0}) ==
+		     std::future_status::ready)) {
 		outputHandler.reset();
 		outputHandler.reset(advOut ? CreateAdvancedOutputHandler(this)
 					   : CreateSimpleOutputHandler(this));
@@ -5170,18 +5172,11 @@ void OBSBasic::ClearSceneData()
 
 void OBSBasic::closeEvent(QCloseEvent *event)
 {
-	if (!startStreamingFuture.future.isFinished() &&
-	    !startStreamingFuture.future.isCanceled()) {
-		startStreamingFuture.future.onCanceled(
-			this, [basic = QPointer{this}] {
-				if (basic)
-					basic->close();
-			});
-		startStreamingFuture.cancelAll();
-		event->ignore();
-		return;
-	} else if (startStreamingFuture.future.isCanceled() &&
-		   !startStreamingFuture.future.isFinished()) {
+	/* Wait for multitrack video stream to start/finish processing in the background */
+	if (setupStreamingGuard.valid() &&
+	    setupStreamingGuard.wait_for(std::chrono::seconds{0}) !=
+		    std::future_status::ready) {
+		QTimer::singleShot(1000, this, &OBSBasic::close);
 		event->ignore();
 		return;
 	}
@@ -7153,9 +7148,8 @@ void OBSBasic::StartStreaming()
 #endif
 	};
 
-	auto holder = outputHandler->SetupStreaming(service);
-	auto future = holder.future.then(this, finish_stream_setup);
-	startStreamingFuture = {holder.cancelAll, future};
+	setupStreamingGuard =
+		outputHandler->SetupStreaming(service, finish_stream_setup);
 }
 
 void OBSBasic::BroadcastButtonClicked()

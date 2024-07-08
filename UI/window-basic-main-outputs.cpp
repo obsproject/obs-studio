@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <cinttypes>
 #include <QMessageBox>
-#include <QPromise>
+#include <QThreadPool>
 #include "qt-wrappers.hpp"
 #include "audio-encoders.hpp"
 #include "multitrack-video-error.hpp"
@@ -180,6 +180,28 @@ static void OBSDeactivateVirtualCam(void *data, calldata_t * /* params */)
 	BasicOutputHandler *output = static_cast<BasicOutputHandler *>(data);
 	output->DestroyVirtualCamView();
 }
+
+/* ------------------------------------------------------------------------ */
+
+struct StartMultitrackVideoStreamingGuard {
+	StartMultitrackVideoStreamingGuard()
+	{
+		future = guard.get_future().share();
+	};
+	~StartMultitrackVideoStreamingGuard() { guard.set_value(); }
+
+	std::shared_future<void> GetFuture() const { return future; }
+
+	static std::shared_future<void> MakeReadyFuture()
+	{
+		StartMultitrackVideoStreamingGuard guard;
+		return guard.GetFuture();
+	}
+
+private:
+	std::promise<void> guard;
+	std::shared_future<void> future;
+};
 
 /* ------------------------------------------------------------------------ */
 
@@ -520,8 +542,9 @@ struct SimpleOutput : BasicOutputHandler {
 	bool IsVodTrackEnabled(obs_service_t *service);
 	void SetupVodTrack(obs_service_t *service);
 
-	virtual FutureHolder<bool>
-	SetupStreaming(obs_service_t *service) override;
+	virtual std::shared_future<void>
+	SetupStreaming(obs_service_t *service,
+		       SetupStreamingContinuation_t continuation) override;
 	virtual bool StartStreaming(obs_service_t *service) override;
 	virtual bool StartRecording() override;
 	virtual bool StartReplayBuffer() override;
@@ -1118,7 +1141,9 @@ const char *FindAudioEncoderFromCodec(const char *type)
 	return nullptr;
 }
 
-FutureHolder<bool> SimpleOutput::SetupStreaming(obs_service_t *service)
+std::shared_future<void>
+SimpleOutput::SetupStreaming(obs_service_t *service,
+			     SetupStreamingContinuation_t continuation)
 {
 	if (!Active())
 		SetupOutputs();
@@ -1130,8 +1155,10 @@ FutureHolder<bool> SimpleOutput::SetupStreaming(obs_service_t *service)
 	/* --------------------- */
 
 	const char *type = GetStreamOutputType(service);
-	if (!type)
-		return {[] {}, CreateFuture().then([] { return false; })};
+	if (!type) {
+		continuation(false);
+		return StartMultitrackVideoStreamingGuard::MakeReadyFuture();
+	}
 
 	auto audio_bitrate = GetAudioBitrate();
 	auto vod_track_mixer = IsVodTrackEnabled(service) ? std::optional{1}
@@ -1182,12 +1209,11 @@ FutureHolder<bool> SimpleOutput::SetupStreaming(obs_service_t *service)
 		return true;
 	};
 
-	auto holder = SetupMultitrackVideo(
+	return SetupMultitrackVideo(
 		service, GetSimpleAACEncoderForBitrate(audio_bitrate), 0,
-		vod_track_mixer);
-	auto future = PreventFutureDeadlock(holder.future)
-			      .then(main, handle_multitrack_video_result);
-	return {holder.cancelAll, future};
+		vod_track_mixer, [&, continuation](std::optional<bool> res) {
+			continuation(handle_multitrack_video_result(res));
+		});
 }
 
 static inline bool ServiceSupportsVodTrack(const char *service);
@@ -1567,8 +1593,9 @@ struct AdvancedOutput : BasicOutputHandler {
 	void SetupOutputs() override;
 	int GetAudioBitrate(size_t i, const char *id) const;
 
-	virtual FutureHolder<bool>
-	SetupStreaming(obs_service_t *service) override;
+	virtual std::shared_future<void>
+	SetupStreaming(obs_service_t *service,
+		       SetupStreamingContinuation_t continuation) override;
 	virtual bool StartStreaming(obs_service_t *service) override;
 	virtual bool StartRecording() override;
 	virtual bool StartReplayBuffer() override;
@@ -2247,7 +2274,9 @@ inline void AdvancedOutput::SetupVodTrack(obs_service_t *service)
 		clear_archive_encoder(streamOutput, ADV_ARCHIVE_NAME);
 }
 
-FutureHolder<bool> AdvancedOutput::SetupStreaming(obs_service_t *service)
+std::shared_future<void>
+AdvancedOutput::SetupStreaming(obs_service_t *service,
+			       SetupStreamingContinuation_t continuation)
 {
 	int multiTrackAudioMixes = config_get_int(main->Config(), "AdvOut",
 						  "StreamMultiTrackAudioMixes");
@@ -2272,8 +2301,10 @@ FutureHolder<bool> AdvancedOutput::SetupStreaming(obs_service_t *service)
 	/* --------------------- */
 
 	const char *type = GetStreamOutputType(service);
-	if (!type)
-		return {[] {}, CreateFuture().then(main, [] { return false; })};
+	if (!type) {
+		continuation(false);
+		return StartMultitrackVideoStreamingGuard::MakeReadyFuture();
+	}
 
 	const char *audio_encoder_id =
 		config_get_string(main->Config(), "AdvOut", "AudioEncoder");
@@ -2339,13 +2370,13 @@ FutureHolder<bool> AdvancedOutput::SetupStreaming(obs_service_t *service)
 		return true;
 	};
 
-	auto holder =
-		SetupMultitrackVideo(service, audio_encoder_id,
-				     static_cast<size_t>(streamTrackIndex),
-				     VodTrackMixerIdx(service));
-	auto future = PreventFutureDeadlock(holder.future)
-			      .then(main, handle_multitrack_video_result);
-	return {holder.cancelAll, future};
+	return SetupMultitrackVideo(
+		service, audio_encoder_id,
+		static_cast<size_t>(streamTrackIndex),
+		VodTrackMixerIdx(service),
+		[&, continuation](std::optional<bool> res) {
+			continuation(handle_multitrack_video_result(res));
+		});
 }
 
 bool AdvancedOutput::StartStreaming(obs_service_t *service)
@@ -2683,14 +2714,17 @@ std::string BasicOutputHandler::GetRecordingFilename(
 
 extern std::string DeserializeConfigText(const char *text);
 
-FutureHolder<std::optional<bool>> BasicOutputHandler::SetupMultitrackVideo(
+std::shared_future<void> BasicOutputHandler::SetupMultitrackVideo(
 	obs_service_t *service, std::string audio_encoder_id,
-	size_t main_audio_mixer, std::optional<size_t> vod_track_mixer)
+	size_t main_audio_mixer, std::optional<size_t> vod_track_mixer,
+	std::function<void(std::optional<bool>)> continuation)
 {
-	if (!multitrackVideo)
-		return {[] {}, CreateFuture().then([] {
-				return std::optional<bool>{std::nullopt};
-			})};
+	auto start_streaming_guard =
+		std::make_shared<StartMultitrackVideoStreamingGuard>();
+	if (!multitrackVideo) {
+		continuation(std::nullopt);
+		return start_streaming_guard->GetFuture();
+	}
 
 	multitrackVideoActive = false;
 
@@ -2751,10 +2785,11 @@ FutureHolder<std::optional<bool>> BasicOutputHandler::SetupMultitrackVideo(
 
 	auto stream_dump_config = GenerateMultitrackVideoStreamDumpConfig();
 
-	auto continue_on_main_thread =
-		[&, service = OBSService{service}](
-			std::optional<MultitrackVideoError> error)
-		-> std::optional<bool> {
+	auto continue_on_main_thread = [&, start_streaming_guard,
+					service = OBSService{service},
+					continuation = std::move(continuation)](
+					       std::optional<MultitrackVideoError>
+						       error) {
 		if (error) {
 			OBSDataAutoRelease service_settings =
 				obs_service_get_settings(service);
@@ -2769,8 +2804,8 @@ FutureHolder<std::optional<bool>> BasicOutputHandler::SetupMultitrackVideo(
 
 			multitrackVideoActive = false;
 			if (!error->ShowDialog(main, multitrack_video_name))
-				return false;
-			return std::nullopt;
+				return continuation(false);
+			return continuation(std::nullopt);
 		}
 
 		multitrackVideoActive = true;
@@ -2786,16 +2821,16 @@ FutureHolder<std::optional<bool>> BasicOutputHandler::SetupMultitrackVideo(
 				       OBSStartStreaming, this);
 		stopStreaming.Connect(signal_handler, "stop", OBSStopStreaming,
 				      this);
-		return true;
+		return continuation(true);
 	};
 
-	auto firstFuture = CreateFuture().then(
-		QThreadPool::globalInstance(),
+	QThreadPool::globalInstance()->start(
 		[=, multitrackVideo = multitrackVideo.get(),
 		 service_name = std::string{service_name},
 		 service = OBSService{service},
-		 stream_dump_config = std::move(stream_dump_config)]()
-			-> std::optional<MultitrackVideoError> {
+		 stream_dump_config = OBSData{stream_dump_config},
+		 start_streaming_guard = start_streaming_guard]() mutable {
+			std::optional<MultitrackVideoError> error;
 			try {
 				multitrackVideo->PrepareStreaming(
 					main, service_name.c_str(), service,
@@ -2805,16 +2840,16 @@ FutureHolder<std::optional<bool>> BasicOutputHandler::SetupMultitrackVideo(
 					maximum_video_tracks, custom_config,
 					stream_dump_config, main_audio_mixer,
 					vod_track_mixer);
-			} catch (const MultitrackVideoError &error) {
-				return error;
+			} catch (const MultitrackVideoError &error_) {
+				error.emplace(error_);
 			}
-			return std::nullopt;
+
+			QMetaObject::invokeMethod(main, [=] {
+				continue_on_main_thread(error);
+			});
 		});
 
-	auto secondFuture = firstFuture.then(main, continue_on_main_thread);
-
-	return {[=]() mutable { firstFuture.cancel(); },
-		PreventFutureDeadlock(secondFuture)};
+	return start_streaming_guard->GetFuture();
 }
 
 OBSDataAutoRelease BasicOutputHandler::GenerateMultitrackVideoStreamDumpConfig()

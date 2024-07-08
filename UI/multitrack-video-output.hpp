@@ -4,12 +4,11 @@
 #include <util/config-file.h>
 
 #include <atomic>
+#include <mutex>
 #include <optional>
 #include <vector>
 
-#include <qobject.h>
-#include <QFuture>
-#include <QFutureSynchronizer>
+#include <QObject>
 
 #define NOMINMAX
 

@@ -98,8 +98,6 @@ target_sources(
           multitrack-video-error.hpp
           multitrack-video-output.cpp
           multitrack-video-output.hpp
-          qt-helpers.cpp
-          qt-helpers.hpp
           system-info.hpp)
 
 if(OS_WINDOWS)
