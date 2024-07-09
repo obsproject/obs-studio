@@ -19,16 +19,10 @@ runs:
       working-directory: ${{ inputs.workingDirectory }}
       run: |
         : Check artifact input
-        case "${{ inputs.artifact }}" in
-          builddir);;
-          repo);;
-          manifest);;
-          appstream);;
-          *)
-            echo "::error::Given artifact type is incorrect"
-            exit 2
-            ;;
-        esac
+        if ! [[ "${{ inputs.artifact }}" =~ builddir|repo|manifest|appstream ]]; then
+          echo "::error::Given artifact type is incorrect"
+          exit 2
+        fi
 
     - name: Run flatpak-builder-lint
       id: result
@@ -36,31 +30,46 @@ runs:
       working-directory: ${{ inputs.workingDirectory }}
       run: |
         : Run flatpak-builder-lint
-        exit_code=0
-        ret=$(flatpak-builder-lint --exceptions ${{ inputs.artifact }} ${{ inputs.path }}) || exit_code=$?
-        if [[ $exit_code != 0 && -z "$ret" ]]; then
+
+        return=0
+        result="$(flatpak-builder-lint --exceptions ${{ inputs.artifact }} ${{ inputs.path }})" || return=$?
+
+        if [[ ${return} != 0 && -z "${result}" ]]; then
           echo "::error::Error while running flatpak-builder-lint"
           exit 2
         fi
 
-        if [[ ${{ inputs.artifact }} == "appstream" ]]; then
-          echo $ret
+        if [[ "${{ inputs.artifact }}" == "appstream" ]]; then
+          echo "${result}"
 
-          [[ $exit_code != 0 ]] && echo "::error::Flatpak appstream info is not valid"
+          if [[ ${return} != 0 ]]; then echo "::error::Flatpak appstream info is not valid"; fi
 
-          exit $exit_code
+          exit ${return}
         fi
 
-        n_warnings=$(echo $ret | jq '.warnings | length')
-        for ((i = 0 ; i < n_warnings ; i++)); do
-          warning=$(echo $ret | jq ".warnings[$i]")
-          echo "::warning::$warning found in the Flatpak ${{ inputs.artifact }}"
-        done
+        # This jq command selects any available array under the 'warnings' key in the JSON document
+        # or provides an empty array as a fallback if the key is not present. This array is then
+        # piped to the 'map' function to apply a transformation to every element in the array,
+        # converting it to a string prefixed with the output level, the actual element value, and
+        # finally the suffix string defined in 'template'.
+        #
+        # The result of this expression is concatenated with a similar expression doing the same
+        # but for the 'errors' key and its associated array.
+        #
+        # The second jq invocation then selects each element of the array and outputs it directly,
+        # which will be strings of the formats:
+        #
+        # * '::warning:: <original warning> <template text>'
+        # * '::error:: <original error> <template text>'
+        #
+        # If no warnings or errors were found, only empty arrays were used for 'map' and thus
+        # only an empty result array is generated.
 
-        n_errors=$(echo $ret | jq '.errors | length')
-        for ((i = 0 ; i < n_errors ; i++)); do
-          error=$(echo $ret | jq ".errors[$i]")
-          echo "::error::$error found in the Flatpak ${{ inputs.artifact }}"
-        done
+        template=" found in the Flatpak ${{ inputs.artifact }}"
+        while read -r log_line; do
+          if [[ "${log_line}" ]]; then echo "${log_line}"; fi
+        done <<< "$(echo "${result}" \
+          | jq -r '(.warnings // [] | try map("::warning:: " + . + "${template}")) + (.errors // [] | try map("::error:: " + . + "${template}"))' \
+          | jq -r '.[]')"
 
-        [[ -z $n_errors || $n_errors == 0 ]] || exit 2
+        exit ${return}
