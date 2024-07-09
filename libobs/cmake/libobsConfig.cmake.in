@@ -2,9 +2,12 @@
 
 include(CMakeFindDependencyMacro)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/finders")
+
 if(MSVC)
   find_dependency(w32-pthreads REQUIRED)
 endif()
+find_dependency(SIMDe REQUIRED)
 find_dependency(Threads REQUIRED)
 
 include("${CMAKE_CURRENT_LIST_DIR}/@TARGETS_EXPORT_NAME@.cmake")
