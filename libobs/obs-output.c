@@ -18,6 +18,7 @@
 #include <inttypes.h>
 #include "util/platform.h"
 #include "util/util_uint64.h"
+#include "util/array-serializer.h"
 #include "graphics/math-extra.h"
 #include "obs.h"
 #include "obs-internal.h"
@@ -265,6 +266,20 @@ static void destroy_caption_track(struct caption_track_data **ctrack_ptr)
 	*ctrack_ptr = NULL;
 }
 
+static void destroy_metrics_track(struct metrics_data **metrics_track_ptr)
+{
+	if (!metrics_track_ptr || !*metrics_track_ptr) {
+		return;
+	}
+	struct metrics_data *m_track = *metrics_track_ptr;
+	for (uint8_t i = 0; i < BPM_MAX_SEI; ++i) {
+		array_output_serializer_free(&m_track->sei_payload[i]);
+	}
+	pthread_mutex_destroy(&m_track->metrics_mutex);
+	bfree(m_track);
+	*metrics_track_ptr = NULL;
+}
+
 void obs_output_destroy(obs_output_t *output)
 {
 	if (output) {
@@ -295,6 +310,10 @@ void obs_output_destroy(obs_output_t *output)
 				destroy_caption_track(
 					&output->caption_tracks[i]);
 			}
+			if (output->metrics_tracks[i]) {
+				destroy_metrics_track(
+					&output->metrics_tracks[i]);
+			}
 		}
 
 		for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
@@ -305,6 +324,9 @@ void obs_output_destroy(obs_output_t *output)
 		}
 
 		da_free(output->keyframe_group_tracking);
+
+		for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++)
+			da_free(output->bpm_frame_times[i]);
 
 		clear_raw_audio_buffers(output);
 
@@ -363,6 +385,25 @@ bool obs_output_actual_start(obs_output_t *output)
 		deque_init(&ctrack->caption_data);
 		pthread_mutex_unlock(&ctrack->caption_mutex);
 	}
+
+	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+		struct metrics_data *mtrack = output->metrics_tracks[i];
+		if (!mtrack) {
+			continue;
+		}
+		pthread_mutex_lock(&mtrack->metrics_mutex);
+		mtrack->rendition_frames_input.diff = 0;
+		mtrack->rendition_frames_output.diff = 0;
+		mtrack->rendition_frames_skipped.diff = 0;
+		mtrack->session_frames_rendered.diff = 0;
+		mtrack->session_frames_output.diff = 0;
+		mtrack->session_frames_dropped.diff = 0;
+		mtrack->session_frames_lagged.diff = 0;
+		memset(mtrack->pirts.rfc3339_str, 0,
+		       sizeof(mtrack->pirts.rfc3339_str));
+		pthread_mutex_unlock(&mtrack->metrics_mutex);
+	}
+
 	return success;
 }
 
@@ -1006,6 +1047,18 @@ static struct caption_track_data *create_caption_track()
 	return rval;
 }
 
+static struct metrics_data *create_metrics_track()
+{
+	struct metrics_data *rval = bzalloc(sizeof(struct metrics_data));
+	pthread_mutex_init_value(&rval->metrics_mutex);
+
+	if (pthread_mutex_init(&rval->metrics_mutex, NULL) != 0) {
+		bfree(rval);
+		rval = NULL;
+	}
+	return rval;
+}
+
 void obs_output_set_video_encoder2(obs_output_t *output, obs_encoder_t *encoder,
 				   size_t idx)
 {
@@ -1049,6 +1102,13 @@ void obs_output_set_video_encoder2(obs_output_t *output, obs_encoder_t *encoder,
 		output->caption_tracks[idx] = create_caption_track();
 	} else {
 		output->caption_tracks[idx] = NULL;
+	}
+
+	destroy_metrics_track(&output->metrics_tracks[idx]);
+	if (encoder != NULL) {
+		output->metrics_tracks[idx] = create_metrics_track();
+	} else {
+		output->metrics_tracks[idx] = NULL;
 	}
 
 	// Set preferred resolution on the default index to preserve old behavior
@@ -1340,6 +1400,26 @@ void obs_output_set_audio_conversion(
 	output->audio_conversion_set = true;
 }
 
+// Enable or disable broadcast performance metrics reporting
+void obs_output_enable_bpm(obs_output_t *output, bool bpm_enable)
+{
+	if (!obs_output_valid(output, "obs_output_enable_bpm"))
+		return;
+	if (!log_flag_encoded(output, __FUNCTION__, false) ||
+	    !log_flag_video(output, __FUNCTION__) ||
+	    !log_flag_service(output, __FUNCTION__))
+		return;
+	if (active(output))
+		return;
+
+	os_atomic_set_bool(&output->enable_bpm, bpm_enable);
+}
+
+static inline bool bpm_enabled(const struct obs_output *output)
+{
+	return os_atomic_load_bool(&output->enable_bpm);
+}
+
 static inline bool video_valid(const struct obs_output *output)
 {
 	if (flag_encoded(output)) {
@@ -1466,8 +1546,10 @@ static inline void check_received(struct obs_output *output,
 	}
 }
 
-static inline void apply_interleaved_packet_offset(struct obs_output *output,
-						   struct encoder_packet *out)
+static inline void
+apply_interleaved_packet_offset(struct obs_output *output,
+				struct encoder_packet *out,
+				struct bpm_frame_time *frame_time)
 {
 	int64_t offset;
 
@@ -1481,6 +1563,8 @@ static inline void apply_interleaved_packet_offset(struct obs_output *output,
 
 	out->dts -= offset;
 	out->pts -= offset;
+	if (frame_time)
+		frame_time->pts -= offset;
 
 	/* convert the newly adjusted dts to relative dts time to ensure proper
 	 * interleaving.  if we're using an audio encoder that's already been
@@ -1511,12 +1595,12 @@ static inline bool has_higher_opposing_ts(struct obs_output *output,
 			  output->highest_audio_ts > packet->dts_usec);
 }
 
-static size_t extract_itut_t35_buffer_from_sei(sei_t *sei, uint8_t **data_out)
+static size_t extract_buffer_from_sei(sei_t *sei, uint8_t **data_out)
 {
 	if (!sei || !sei->head) {
 		return 0;
 	}
-	/* We should only need to get one payload, because the SEI that was 
+	/* We should only need to get one payload, because the SEI that was
 	 * generated should only have one message, so no need to iterate. If
 	 * we did iterate, we would need to generate multiple OBUs. */
 	sei_message_t *msg = sei_message_head(sei);
@@ -1701,9 +1785,9 @@ static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 		} else if (av1) {
 			uint8_t *obu_buffer = NULL;
 			size_t obu_buffer_size = 0;
-			size = extract_itut_t35_buffer_from_sei(&sei, &data);
-			metadata_obu_itu_t35(data, size, &obu_buffer,
-					     &obu_buffer_size);
+			size = extract_buffer_from_sei(&sei, &data);
+			metadata_obu(data, size, &obu_buffer, &obu_buffer_size,
+				     METADATA_TYPE_ITUT_T35);
 			if (obu_buffer) {
 				da_push_back_array(out_data, obu_buffer,
 						   obu_buffer_size);
@@ -1721,6 +1805,581 @@ static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 	}
 	sei_free(&sei);
 	return avc || hevc || av1;
+}
+
+static void render_metrics_time(struct metrics_time *m_time)
+{
+	/* Generate the RFC3339 time string from the timespec struct, for example:
+	 *
+	 *   "2024-05-31T12:26:03.591Z"
+	 */
+	memset(&m_time->rfc3339_str, 0, sizeof(m_time->rfc3339_str));
+	strftime(m_time->rfc3339_str, sizeof(m_time->rfc3339_str),
+		 "%Y-%m-%dT%T", gmtime(&m_time->tspec.tv_sec));
+	sprintf(m_time->rfc3339_str + strlen(m_time->rfc3339_str), ".%03ldZ",
+		m_time->tspec.tv_nsec / 1000000);
+	m_time->valid = true;
+}
+
+static bool update_metrics(struct obs_output *output,
+			   const struct encoder_packet *pkt)
+{
+	if (!output || !pkt)
+		return false;
+
+	struct metrics_data *m_track = output->metrics_tracks[pkt->track_idx];
+	if (!m_track) {
+		blog(LOG_DEBUG,
+		     "Metrics track for index: %lu had not be initialized",
+		     pkt->track_idx);
+		return false;
+	}
+
+	// Get the timestamp to be used for packet interleave request time
+	uint64_t cur_time = os_gettime_ns();
+
+	// Perform reads on all the counters as close together as possible
+	m_track->session_frames_output.curr =
+		obs_output_get_total_frames(output);
+	m_track->session_frames_dropped.curr =
+		obs_output_get_frames_dropped(output);
+	m_track->session_frames_rendered.curr = obs_get_total_frames();
+	m_track->session_frames_lagged.curr = obs_get_lagged_frames();
+
+	const video_t *video = obs_encoder_video(pkt->encoder);
+	if (video) {
+		/* video_output_get_total_frames() returns the number of frames
+		 * before the framerate decimator. For example, if the OBS session
+		 * is rendering at 60fps, and the rendition is set for 30 fps,
+		 * the counter will increment by 60 per second, not 30 per second.
+		 * For metrics we will consider this value to be the number of
+		 * frames input to the obs_encoder_t instance.
+		 */
+		m_track->rendition_frames_input.curr =
+			video_output_get_total_frames(video);
+		m_track->rendition_frames_skipped.curr =
+			video_output_get_skipped_frames(video);
+		/* obs_encoder_get_encoded_frames() returns the number of frames
+		 * successfully encoded by the obs_encoder_t instance.
+		 */
+		m_track->rendition_frames_output.curr =
+			obs_encoder_get_encoded_frames(
+				output->video_encoders[pkt->track_idx]);
+	} else {
+		m_track->rendition_frames_input.curr = 0;
+		m_track->rendition_frames_skipped.curr = 0;
+		m_track->rendition_frames_output.curr = 0;
+		blog(LOG_ERROR, "update_metrics(): *video_t==null");
+	}
+
+	// Set the diff values to 0 if PTS is 0
+	if (pkt->pts == 0) {
+		m_track->session_frames_output.diff = 0;
+		m_track->session_frames_dropped.diff = 0;
+		m_track->session_frames_rendered.diff = 0;
+		m_track->session_frames_lagged.diff = 0;
+		m_track->rendition_frames_input.diff = 0;
+		m_track->rendition_frames_skipped.diff = 0;
+		m_track->rendition_frames_output.diff = 0;
+		blog(LOG_DEBUG, "update_metrics(): Setting diffs to 0");
+	} else {
+		// Calculate diff's
+		m_track->session_frames_output.diff =
+			m_track->session_frames_output.curr -
+			m_track->session_frames_output.ref;
+		m_track->session_frames_dropped.diff =
+			m_track->session_frames_dropped.curr -
+			m_track->session_frames_dropped.ref;
+		m_track->session_frames_rendered.diff =
+			m_track->session_frames_rendered.curr -
+			m_track->session_frames_rendered.ref;
+		m_track->session_frames_lagged.diff =
+			m_track->session_frames_lagged.curr -
+			m_track->session_frames_lagged.ref;
+		m_track->rendition_frames_input.diff =
+			m_track->rendition_frames_input.curr -
+			m_track->rendition_frames_input.ref;
+		m_track->rendition_frames_skipped.diff =
+			m_track->rendition_frames_skipped.curr -
+			m_track->rendition_frames_skipped.ref;
+		m_track->rendition_frames_output.diff =
+			m_track->rendition_frames_output.curr -
+			m_track->rendition_frames_output.ref;
+	}
+
+	// Update the reference values
+	m_track->session_frames_output.ref =
+		m_track->session_frames_output.curr;
+	m_track->session_frames_dropped.ref =
+		m_track->session_frames_dropped.curr;
+	m_track->session_frames_rendered.ref =
+		m_track->session_frames_rendered.curr;
+	m_track->session_frames_lagged.ref =
+		m_track->session_frames_lagged.curr;
+	m_track->rendition_frames_input.ref =
+		m_track->rendition_frames_input.curr;
+	m_track->rendition_frames_skipped.ref =
+		m_track->rendition_frames_skipped.curr;
+	m_track->rendition_frames_output.ref =
+		m_track->rendition_frames_output.curr;
+
+	/* BPM Timestamp Message */
+	m_track->cts.valid = false;
+	m_track->ferts.valid = false;
+	m_track->fercts.valid = false;
+
+	/* Iterate through the array of BPM frame timing metrics
+	 * to find a matching PTS entry, then copy it for metrics
+	 * message generation.
+	 */
+	bool found = false;
+	struct bpm_frame_time bpm_ft_local = {0};
+	for (size_t i = 0; i < output->bpm_frame_times[pkt->track_idx].num;
+	     i++) {
+		struct bpm_frame_time *bpm_ft =
+			&output->bpm_frame_times[pkt->track_idx].array[i];
+		if (bpm_ft->pts == pkt->pts) {
+			bpm_ft_local = *bpm_ft;
+			/* update_metrics() is only called on keyframes, so it
+                         * should be safe to assume that all timestamps up until
+                         * this timestamp have been processed already.
+                         */
+			da_erase_range(output->bpm_frame_times[pkt->track_idx],
+				       0, i + 1);
+			found = true;
+			break;
+		}
+	}
+
+	if (found == false) {
+		blog(LOG_DEBUG,
+		     "%s: BPM frame timing for PTS %" PRId64 " not found ",
+		     __FUNCTION__, pkt->pts);
+	} else {
+		/* Generate the timestamp representations for CTS, FER, and FERC.
+		 * Check if each is non-zero and that temporal consistency is correct:
+		 *   FEC > FERC > CTS
+		 * FEC and FERC depends on CTS, and FERC depends on FER, so ensure
+		 * we only signal an integral set of timestamps.
+		 */
+		os_nstime_to_timespec(bpm_ft_local.cts, &m_track->cts.tspec);
+		render_metrics_time(&m_track->cts);
+		if (bpm_ft_local.fer && (bpm_ft_local.fer > bpm_ft_local.cts)) {
+			os_nstime_to_timespec(bpm_ft_local.fer,
+					      &m_track->ferts.tspec);
+			render_metrics_time(&m_track->ferts);
+			if (bpm_ft_local.ferc &&
+			    (bpm_ft_local.ferc > bpm_ft_local.fer)) {
+				os_nstime_to_timespec(bpm_ft_local.ferc,
+						      &m_track->fercts.tspec);
+				render_metrics_time(&m_track->fercts);
+			}
+		}
+	}
+
+	// Always generate the timestamp representation for PIR
+	m_track->pirts.valid = false;
+	os_nstime_to_timespec(cur_time, &m_track->pirts.tspec);
+	render_metrics_time(&m_track->pirts);
+
+	/* Log the BPM timestamp information. This provides
+	 * visibility into the client latency when OBS is started
+	 * with "--verbose" and "--unfiltered_log".
+	 */
+	blog(LOG_DEBUG,
+	     "BPM TS: %s, trk %lu: [CTS|FER-CTS|FERC-FER|PIR-CTS]:[%" PRIu64
+	     " ms|%" PRIu64 " ms|%" PRIu64 " us|%" PRIu64
+	     " ms], [dts|pts]:[%" PRId64 "|%" PRId64 "]",
+	     obs_encoder_get_name(pkt->encoder), pkt->track_idx,
+	     bpm_ft_local.cts / 1000000,
+	     (bpm_ft_local.fer - bpm_ft_local.cts) / 1000000,
+	     (bpm_ft_local.ferc - bpm_ft_local.fer) / 1000,
+	     (cur_time - bpm_ft_local.cts) / 1000000, pkt->dts, pkt->pts);
+
+	return true;
+}
+
+// Broadcast Performance Metrics timestamp types
+enum bpm_ts_type {
+	BPM_TS_RFC3339 = 1, // RFC3339 timestamp string
+	BPM_TS_DURATION,    // Duration since epoch in milliseconds (64-bit)
+	BPM_TS_DELTA        // Delta timestamp in nanoseconds (64-bit)
+};
+
+// Broadcast Performance Metrics timestamp event tags
+enum bpm_ts_event_tag {
+	BPM_TS_EVENT_CTS = 1, // Composition Time Event
+	BPM_TS_EVENT_FER,     // Frame Encode Request Event
+	BPM_TS_EVENT_FERC,    // Frame Encode Request Complete Event
+	BPM_TS_EVENT_PIR      // Packet Interleave Request Event
+};
+
+// Broadcast Performance Session Metrics types
+enum bpm_sm_type {
+	BPM_SM_FRAMES_RENDERED = 1, // Frames rendered by compositor
+	BPM_SM_FRAMES_LAGGED,       // Frames lagged by compositor
+	BPM_SM_FRAMES_DROPPED,      // Frames dropped due to network congestion
+	BPM_SM_FRAMES_OUTPUT // Total frames output (sum of all video encoder rendition sinks)
+};
+
+// Broadcast Performance Encoded Rendition Metrics types
+enum bpm_erm_type {
+	BPM_ERM_FRAMES_INPUT = 1, // Frames input to the encoder rendition
+	BPM_ERM_FRAMES_SKIPPED,   // Frames skippped by the encoder rendition
+	BPM_ERM_FRAMES_OUTPUT // Frames output (encoded) by the encoder rendition
+};
+
+#define SEI_UUID_SIZE 16
+static const uint8_t bpm_ts_uuid[SEI_UUID_SIZE] = {0x0a, 0xec, 0xff, 0xe7,
+						   0x52, 0x72, 0x4e, 0x2f,
+						   0xa6, 0x2f, 0xd1, 0x9c,
+						   0xd6, 0x1a, 0x93, 0xb5};
+static const uint8_t bpm_sm_uuid[SEI_UUID_SIZE] = {0xca, 0x60, 0xe7, 0x1c,
+						   0x6a, 0x8b, 0x43, 0x88,
+						   0xa3, 0x77, 0x15, 0x1d,
+						   0xf7, 0xbf, 0x8a, 0xc2};
+static const uint8_t bpm_erm_uuid[SEI_UUID_SIZE] = {0xf1, 0xfb, 0xc1, 0xd5,
+						    0x10, 0x1e, 0x4f, 0xb5,
+						    0xa6, 0x1e, 0xb8, 0xce,
+						    0x3c, 0x07, 0xb8, 0xc0};
+
+void bpm_ts_sei_render(struct metrics_data *m_track)
+{
+	uint8_t num_timestamps = 0;
+	struct serializer s;
+
+	m_track->sei_rendered[BPM_TS_SEI] = false;
+
+	// Initialize the output array here; caller is responsible to free it
+	array_output_serializer_init(&s, &m_track->sei_payload[BPM_TS_SEI]);
+
+	// Write the UUID for this SEI message
+	s_write(&s, bpm_ts_uuid, sizeof(bpm_ts_uuid));
+
+	// Determine how many timestamps are valid
+	if (m_track->cts.valid)
+		num_timestamps++;
+	if (m_track->ferts.valid)
+		num_timestamps++;
+	if (m_track->fercts.valid)
+		num_timestamps++;
+	if (m_track->pirts.valid)
+		num_timestamps++;
+
+	/* Encode number of timestamps for this SEI. Upper 4 bits are
+	 * set to b0000 (reserved); lower 4-bits num_timestamps - 1.
+	 */
+	s_w8(&s, (num_timestamps - 1) & 0x0F);
+
+	if (m_track->cts.valid) {
+		// Timestamp type
+		s_w8(&s, BPM_TS_RFC3339);
+		// Write the timestamp event tag (Composition Time Event)
+		s_w8(&s, BPM_TS_EVENT_CTS);
+		// Write the RFC3339-formatted string, including the null terminator
+		s_write(&s, m_track->cts.rfc3339_str,
+			strlen(m_track->cts.rfc3339_str) + 1);
+	}
+
+	if (m_track->ferts.valid) {
+		// Timestamp type
+		s_w8(&s, BPM_TS_RFC3339);
+		// Write the timestamp event tag (Frame Encode Request Event)
+		s_w8(&s, BPM_TS_EVENT_FER);
+		// Write the RFC3339-formatted string, including the null terminator
+		s_write(&s, m_track->ferts.rfc3339_str,
+			strlen(m_track->ferts.rfc3339_str) + 1);
+	}
+
+	if (m_track->fercts.valid) {
+		// Timestamp type
+		s_w8(&s, BPM_TS_RFC3339);
+		// Write the timestamp event tag (Frame Encode Request Complete Event)
+		s_w8(&s, BPM_TS_EVENT_FERC);
+		// Write the RFC3339-formatted string, including the null terminator
+		s_write(&s, m_track->fercts.rfc3339_str,
+			strlen(m_track->fercts.rfc3339_str) + 1);
+	}
+
+	if (m_track->pirts.valid) {
+		// Timestamp type
+		s_w8(&s, BPM_TS_RFC3339);
+		// Write the timestamp event tag (Packet Interleave Request Event)
+		s_w8(&s, BPM_TS_EVENT_PIR);
+		// Write the RFC3339-formatted string, including the null terminator
+		s_write(&s, m_track->pirts.rfc3339_str,
+			strlen(m_track->pirts.rfc3339_str) + 1);
+	}
+	m_track->sei_rendered[BPM_TS_SEI] = true;
+}
+
+void bpm_sm_sei_render(struct metrics_data *m_track)
+{
+	uint8_t num_timestamps = 0;
+	uint8_t num_counters = 0;
+	struct serializer s;
+
+	m_track->sei_rendered[BPM_SM_SEI] = false;
+
+	// Initialize the output array here; caller is responsible to free it
+	array_output_serializer_init(&s, &m_track->sei_payload[BPM_SM_SEI]);
+
+	// Write the UUID for this SEI message
+	s_write(&s, bpm_sm_uuid, sizeof(bpm_sm_uuid));
+
+	// Encode number of timestamps for this SEI
+	num_timestamps = 1;
+	// Upper 4 bits are set to b0000 (reserved); lower 4-bits num_timestamps - 1
+	s_w8(&s, (num_timestamps - 1) & 0x0F);
+	// Timestamp type
+	s_w8(&s, BPM_TS_RFC3339);
+
+	/* Write the timestamp event tag (Packet Interleave Request Event).
+	 * Use the PIR_TS timestamp because the data was all collected at that time.
+	 */
+	s_w8(&s, BPM_TS_EVENT_PIR);
+	// Write the RFC3339-formatted string, including the null terminator
+	s_write(&s, m_track->pirts.rfc3339_str,
+		strlen(m_track->pirts.rfc3339_str) + 1);
+
+	// Session metrics has 4 counters
+	num_counters = 4;
+	/* Send all the counters with a tag(8-bit):value(32-bit) configuration.
+	 * Upper 4 bits are set to b0000 (reserved); lower 4-bits num_counters - 1.
+	 */
+	s_w8(&s, (num_counters - 1) & 0x0F);
+	s_w8(&s, BPM_SM_FRAMES_RENDERED);
+	s_wb32(&s, m_track->session_frames_rendered.diff);
+	s_w8(&s, BPM_SM_FRAMES_LAGGED);
+	s_wb32(&s, m_track->session_frames_lagged.diff);
+	s_w8(&s, BPM_SM_FRAMES_DROPPED);
+	s_wb32(&s, m_track->session_frames_dropped.diff);
+	s_w8(&s, BPM_SM_FRAMES_OUTPUT);
+	s_wb32(&s, m_track->session_frames_output.diff);
+
+	m_track->sei_rendered[BPM_SM_SEI] = true;
+}
+
+void bpm_erm_sei_render(struct metrics_data *m_track)
+{
+	uint8_t num_timestamps = 0;
+	uint8_t num_counters = 0;
+	struct serializer s;
+
+	m_track->sei_rendered[BPM_ERM_SEI] = false;
+
+	// Initialize the output array here; caller is responsible to free it
+	array_output_serializer_init(&s, &m_track->sei_payload[BPM_ERM_SEI]);
+
+	// Write the UUID for this SEI message
+	s_write(&s, bpm_erm_uuid, sizeof(bpm_erm_uuid));
+
+	// Encode number of timestamps for this SEI
+	num_timestamps = 1;
+	// Upper 4 bits are set to b0000 (reserved); lower 4-bits num_timestamps - 1
+	s_w8(&s, (num_timestamps - 1) & 0x0F);
+	// Timestamp type
+	s_w8(&s, BPM_TS_RFC3339);
+
+	/* Write the timestamp event tag (Packet Interleave Request Event).
+	 * Use the PIRTS timestamp because the data was all collected at that time.
+	 */
+	s_w8(&s, BPM_TS_EVENT_PIR);
+	// Write the RFC3339-formatted string, including the null terminator
+	s_write(&s, m_track->pirts.rfc3339_str,
+		strlen(m_track->pirts.rfc3339_str) + 1);
+
+	// Encoder rendition metrics has 3 counters
+	num_counters = 3;
+	/* Send all the counters with a tag(8-bit):value(32-bit) configuration.
+	 * Upper 4 bits are set to b0000 (reserved); lower 4-bits num_counters - 1.
+	 */
+	s_w8(&s, (num_counters - 1) & 0x0F);
+	s_w8(&s, BPM_ERM_FRAMES_INPUT);
+	s_wb32(&s, m_track->rendition_frames_input.diff);
+	s_w8(&s, BPM_ERM_FRAMES_SKIPPED);
+	s_wb32(&s, m_track->rendition_frames_skipped.diff);
+	s_w8(&s, BPM_ERM_FRAMES_OUTPUT);
+	s_wb32(&s, m_track->rendition_frames_output.diff);
+
+	m_track->sei_rendered[BPM_ERM_SEI] = true;
+}
+
+// process_metrics() will update and insert unregistered SEI messages into the encoded video bitstream.
+static bool process_metrics(struct obs_output *output,
+			    struct encoder_packet *out)
+{
+	struct encoder_packet backup = *out;
+	sei_t sei;
+	uint8_t *data = NULL;
+	size_t size;
+	long ref = 1;
+	bool avc = false;
+	bool hevc = false;
+	bool av1 = false;
+
+	if (strcmp(out->encoder->info.codec, "h264") == 0) {
+		avc = true;
+	} else if (strcmp(out->encoder->info.codec, "av1") == 0) {
+		av1 = true;
+#ifdef ENABLE_HEVC
+	} else if (strcmp(out->encoder->info.codec, "hevc") == 0) {
+		hevc = true;
+#endif
+	}
+
+	struct metrics_data *m_track = output->metrics_tracks[out->track_idx];
+	if (!m_track) {
+		blog(LOG_DEBUG,
+		     "Metrics track for index: %lu had not be initialized",
+		     out->track_idx);
+		return false;
+	}
+
+	// Update the metrics for this track
+	if (!update_metrics(output, out)) {
+		// Something went wrong; log it and return
+		blog(LOG_DEBUG, "update_metrics() for track index: %lu failed",
+		     out->track_idx);
+		return false;
+	}
+
+#ifdef ENABLE_HEVC
+	uint8_t hevc_nal_header[2];
+	if (hevc) {
+		size_t nal_header_index_start = 4;
+		// Skip past the annex-b start code
+		if (memcmp(out->data, nal_start + 1, 3) == 0) {
+			nal_header_index_start = 3;
+		} else if (memcmp(out->data, nal_start, 4) == 0) {
+			nal_header_index_start = 4;
+
+		} else {
+			/* We shouldn't ever see this unless we start getting
+			 * packets without annex-b start codes. */
+			blog(LOG_DEBUG,
+			     "Annex-B start code not found, we may not "
+			     "generate a valid hevc nal unit header "
+			     "for our caption");
+			return false;
+		}
+		/* We will use the same 2 byte NAL unit header for the SEI,
+		 * but swap the NAL types out. */
+		hevc_nal_header[0] = out->data[nal_header_index_start];
+		hevc_nal_header[1] = out->data[nal_header_index_start + 1];
+	}
+#endif
+	// Create array for the original packet data + the SEI appended data
+	DARRAY(uint8_t) out_data;
+	da_init(out_data);
+
+	// Copy the original packet
+	da_push_back_array(out_data, (uint8_t *)&ref, sizeof(ref));
+	da_push_back_array(out_data, out->data, out->size);
+
+	// Build the SEI metrics message payload
+	bpm_ts_sei_render(m_track);
+	bpm_sm_sei_render(m_track);
+	bpm_erm_sei_render(m_track);
+
+	// Iterate over all the BPM SEI types
+	for (uint8_t i = 0; i < BPM_MAX_SEI; ++i) {
+		// Create and inject the syntax specific SEI messages in the bitstream if the rendering was successful
+		if (m_track->sei_rendered[i]) {
+			// Send one SEI message per NALU or OBU
+			sei_init(&sei, 0.0);
+
+			// Generate the formatted SEI message
+			sei_message_t *msg = sei_message_new(
+				sei_type_user_data_unregistered,
+				m_track->sei_payload[i].bytes.array,
+				m_track->sei_payload[i].bytes.num);
+			sei_message_append(&sei, msg);
+
+			// Free the SEI payload buffer in the metrics track
+			array_output_serializer_free(&m_track->sei_payload[i]);
+
+			// Update for any codec specific syntax and add to the output bitstream
+			if (avc || hevc || av1) {
+				if (avc || hevc) {
+					data = bmalloc(sei_render_size(&sei));
+					size = sei_render(&sei, data);
+				}
+				/* In each of these specs there is an identical structure that
+				 * carries user private metadata. We have an AVC SEI wrapped
+				 * version of that here. We will strip it out and repackage
+				 * it slightly to fit the different codec carrying mechanisms.
+				 * A slightly modified SEI for HEVC and a metadata OBU for AV1.
+				 */
+				if (avc) {
+					/* TODO: SEI should come after AUD/SPS/PPS,
+					 * but before any VCL */
+					da_push_back_array(out_data, nal_start,
+							   4);
+					da_push_back_array(out_data, data,
+							   size);
+#ifdef ENABLE_HEVC
+				} else if (hevc) {
+					/* Only first NAL (VPS/PPS/SPS) should use the 4 byte
+					 * start code. SEIs use 3 byte version */
+					da_push_back_array(out_data,
+							   nal_start + 1, 3);
+					/* nal_unit_header( ) {
+					 * forbidden_zero_bit       f(1)
+					 * nal_unit_type            u(6)
+					 * nuh_layer_id             u(6)
+					 * nuh_temporal_id_plus1    u(3)
+					 * }
+					 */
+					const uint8_t prefix_sei_nal_type = 39;
+					/* The first bit is always 0, so we just need to
+					 * save the last bit off the original header and
+					 * add the SEI NAL type. */
+					uint8_t first_byte =
+						(prefix_sei_nal_type << 1) |
+						(0x01 & hevc_nal_header[0]);
+					hevc_nal_header[0] = first_byte;
+					/* The HEVC NAL unit header is 2 byte instead of
+					 * one, otherwise everything else is the
+					 * same. */
+					da_push_back_array(out_data,
+							   hevc_nal_header, 2);
+					da_push_back_array(out_data, &data[1],
+							   size - 1);
+#endif
+				} else if (av1) {
+					uint8_t *obu_buffer = NULL;
+					size_t obu_buffer_size = 0;
+					size = extract_buffer_from_sei(&sei,
+								       &data);
+					metadata_obu(
+						data, size, &obu_buffer,
+						&obu_buffer_size,
+						METADATA_TYPE_USER_PRIVATE_6);
+					if (obu_buffer) {
+						da_push_back_array(
+							out_data, obu_buffer,
+							obu_buffer_size);
+						bfree(obu_buffer);
+					}
+				}
+				if (data) {
+					bfree(data);
+				}
+			}
+			sei_free(&sei);
+		}
+	}
+	obs_encoder_packet_release(out);
+
+	*out = backup;
+	out->data = (uint8_t *)out_data.array + sizeof(ref);
+	out->size = out_data.num - sizeof(ref);
+
+	if (avc || hevc || av1) {
+		return true;
+	}
+	return false;
 }
 
 static inline void send_interleaved(struct obs_output *output)
@@ -1769,6 +2428,21 @@ static inline void send_interleaved(struct obs_output *output)
 			}
 		}
 		pthread_mutex_unlock(&ctrack->caption_mutex);
+
+		/* Insert BPM only when a keyframe is detected and
+		 * only for services that enabled metrics delivery.
+		 */
+		if (bpm_enabled(output) && out.keyframe) {
+			struct metrics_data *m_track =
+				output->metrics_tracks[out.track_idx];
+			pthread_mutex_lock(&m_track->metrics_mutex);
+			// Update the metrics and generate BPM messages
+			if (!process_metrics(output, &out)) {
+				blog(LOG_DEBUG,
+				     "process_metrics(): BPM injection failed");
+			}
+			pthread_mutex_unlock(&m_track->metrics_mutex);
+		}
 	}
 
 	output->info.encoded_packet(output->context.data, &out);
@@ -1898,6 +2572,10 @@ static void discard_to_idx(struct obs_output *output, size_t idx)
 	for (size_t i = 0; i < idx; i++) {
 		struct encoder_packet *packet =
 			&output->interleaved_packets.array[i];
+		if (packet->type == OBS_ENCODER_VIDEO) {
+			da_pop_front(
+				output->bpm_frame_times[packet->track_idx]);
+		}
 		obs_encoder_packet_release(packet);
 	}
 
@@ -2085,7 +2763,7 @@ static bool initialize_interleaved_packets(struct obs_output *output)
 	for (size_t i = 0; i < output->interleaved_packets.num; i++) {
 		struct encoder_packet *packet =
 			&output->interleaved_packets.array[i];
-		apply_interleaved_packet_offset(output, packet);
+		apply_interleaved_packet_offset(output, packet, NULL);
 	}
 
 	return true;
@@ -2232,12 +2910,24 @@ check_encoder_group_keyframe_alignment(obs_output_t *output,
 	da_insert(output->keyframe_group_tracking, idx, &insert_data);
 }
 
-static void interleave_packets(void *data, struct encoder_packet *packet)
+static void apply_bpm_offsets(struct obs_output *output)
+{
+	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+		for (size_t j = 0; j < output->bpm_frame_times[i].num; j++) {
+			output->bpm_frame_times[i].array[j].pts -=
+				output->video_offsets[i];
+		}
+	}
+}
+
+static void interleave_packets(void *data, struct encoder_packet *packet,
+			       struct bpm_frame_time *encoder_frame_time)
 {
 	struct obs_output *output = data;
 	struct encoder_packet out;
 	bool was_started;
 	bool received_video;
+	struct bpm_frame_time *frame_time = NULL;
 
 	if (!active(output))
 		return;
@@ -2273,8 +2963,14 @@ static void interleave_packets(void *data, struct encoder_packet *packet)
 	else
 		obs_encoder_packet_create_instance(&out, packet);
 
+	if (encoder_frame_time && output->enable_bpm) {
+		frame_time = da_push_back_new(
+			output->bpm_frame_times[packet->track_idx]);
+		*frame_time = *encoder_frame_time;
+	}
+
 	if (was_started)
-		apply_interleaved_packet_offset(output, &out);
+		apply_interleaved_packet_offset(output, &out, frame_time);
 	else
 		check_received(output, packet);
 
@@ -2294,6 +2990,7 @@ static void interleave_packets(void *data, struct encoder_packet *packet)
 			if (prune_interleaved_packets(output)) {
 				if (initialize_interleaved_packets(output)) {
 					resort_interleaved_packets(output);
+					apply_bpm_offsets(output);
 					send_interleaved(output);
 				}
 			}
@@ -2307,8 +3004,10 @@ static void interleave_packets(void *data, struct encoder_packet *packet)
 	pthread_mutex_unlock(&output->interleaved_mutex);
 }
 
-static void default_encoded_callback(void *param, struct encoder_packet *packet)
+static void default_encoded_callback(void *param, struct encoder_packet *packet,
+				     struct bpm_frame_time *frame_time)
 {
+	UNUSED_PARAMETER(frame_time);
 	struct obs_output *output = param;
 
 	if (data_active(output)) {
@@ -2479,6 +3178,10 @@ static void reset_packet_data(obs_output_t *output)
 {
 	output->received_audio = false;
 	output->highest_audio_ts = 0;
+
+	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+		output->bpm_frame_times[i].num = 0;
+	}
 
 	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
 		output->received_video[i] = false;

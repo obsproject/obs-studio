@@ -40,6 +40,7 @@ static void *gpu_encode_thread(void *data)
 		uint64_t lock_key;
 		uint64_t next_key;
 		size_t lock_count = 0;
+		uint64_t bpm_fer_ts = 0;
 
 		if (os_atomic_load_bool(&video->gpu_encode_stop))
 			break;
@@ -145,6 +146,11 @@ static void *gpu_encode_thread(void *data)
 			else
 				next_key++;
 
+			/* Get the BPM frame encode request timestamp. This
+			 * needs to be read just before the hardware encode
+			 * is requested. */
+			bpm_fer_ts = os_gettime_ns();
+
 			profile_start(gpu_encode_frame_name);
 			if (encoder->info.encode_texture2) {
 				struct encoder_texture tex = {0};
@@ -165,8 +171,31 @@ static void *gpu_encode_thread(void *data)
 			}
 			profile_end(gpu_encode_frame_name);
 
+			/* Generate and enqueue the BPM frame timing metrics, namely
+			 * the CTS (composition time), FER (frame encode request), FERC
+			 * (frame encode request complete) and current PTS. PTS is used to
+			 * associate the BPM frame timing data with the encode packet. */
+			if (tf.timestamp) {
+				struct bpm_frame_time *bpm_ft =
+					da_push_back_new(
+						encoder->bpm_frame_times);
+				// Get the frame encode request complete timestamp
+				if (success) {
+					bpm_ft->ferc = os_gettime_ns();
+				} else {
+					// Encode had error, set ferc to 0
+					bpm_ft->ferc = 0;
+				}
+
+				bpm_ft->pts = encoder->cur_pts;
+				bpm_ft->cts = tf.timestamp;
+				bpm_ft->fer = bpm_fer_ts;
+			}
+
 			send_off_encoder_packet(encoder, success, received,
 						&pkt);
+			if (received)
+				da_pop_front(encoder->bpm_frame_times);
 
 			lock_key = next_key;
 
