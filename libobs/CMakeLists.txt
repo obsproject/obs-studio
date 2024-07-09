@@ -7,6 +7,7 @@ if(OS_WINDOWS AND NOT OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_VS_PLATFORM_NAME)
   return()
 endif()
 
+find_package(SIMDe REQUIRED)
 find_package(Threads REQUIRED)
 
 find_package(FFmpeg 6.1 REQUIRED avformat avutil swscale swresample OPTIONAL_COMPONENTS avcodec)
@@ -138,25 +139,6 @@ target_sources(
 target_sources(
   libobs
   PRIVATE
-    util/simde/check.h
-    util/simde/debug-trap.h
-    util/simde/hedley.h
-    util/simde/simde-align.h
-    util/simde/simde-arch.h
-    util/simde/simde-common.h
-    util/simde/simde-constify.h
-    util/simde/simde-detect-clang.h
-    util/simde/simde-diagnostic.h
-    util/simde/simde-features.h
-    util/simde/simde-math.h
-    util/simde/x86/mmx.h
-    util/simde/x86/sse.h
-    util/simde/x86/sse2.h
-)
-
-target_sources(
-  libobs
-  PRIVATE
     callback/calldata.c
     callback/calldata.h
     callback/decl.c
@@ -260,7 +242,7 @@ target_link_libraries(
     jansson::jansson
     Uthash::Uthash
     ZLIB::ZLIB
-  PUBLIC Threads::Threads
+  PUBLIC SIMDe::SIMDe Threads::Threads
 )
 
 if(OS_WINDOWS)
@@ -354,21 +336,6 @@ set(
   util/profiler.h
   util/profiler.hpp
   util/serializer.h
-  util/simde/check.h
-  util/simde/debug-trap.h
-  util/simde/hedley.h
-  util/simde/simde-align.h
-  util/simde/simde-arch.h
-  util/simde/simde-common.h
-  util/simde/simde-constify.h
-  util/simde/simde-detect-clang.h
-  util/simde/simde-diagnostic.h
-  util/simde/simde-features.h
-  util/simde/simde-math.h
-  util/simde/x86/mmx.h
-  util/simde/x86/sse.h
-  util/simde/x86/sse2.h
-  util/source-profiler.h
   util/sse-intrin.h
   util/task.h
   util/text-lookup.h
