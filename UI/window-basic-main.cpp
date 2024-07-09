@@ -7109,8 +7109,7 @@ void OBSBasic::StartStreaming()
 		sysTrayStream->setText("Basic.Main.PreparingStream");
 	}
 
-	auto holder = outputHandler->SetupStreaming(service);
-	auto future = holder.future.then(this, [&](bool setupStreamingResult) {
+	auto finish_stream_setup = [&](bool setupStreamingResult) {
 		if (!setupStreamingResult) {
 			DisplayStreamStartError();
 			return;
@@ -7152,7 +7151,10 @@ void OBSBasic::StartStreaming()
 		if (!autoStartBroadcast)
 			OBSBasic::ShowYouTubeAutoStartWarning();
 #endif
-	});
+	};
+
+	auto holder = outputHandler->SetupStreaming(service);
+	auto future = holder.future.then(this, finish_stream_setup);
 	startStreamingFuture = {holder.cancelAll, future};
 }
 
