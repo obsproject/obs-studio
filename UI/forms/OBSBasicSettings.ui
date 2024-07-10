@@ -219,6 +219,9 @@
                    <string>Basic.Settings.General</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_32">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="labelAlignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
@@ -280,6 +283,9 @@
                    <string>Basic.Settings.General.Updater</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_20">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="labelAlignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
@@ -338,6 +344,9 @@
                    <string>Basic.Settings.Output</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_2">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="labelAlignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
@@ -430,6 +439,9 @@
                    <bool>false</bool>
                   </property>
                   <layout class="QFormLayout" name="formLayout_21">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="labelAlignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
@@ -524,6 +536,9 @@
                    <string>Basic.Settings.General.Projectors</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_28">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="labelAlignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
@@ -583,6 +598,9 @@
                    <string>Basic.Settings.General.SysTray</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_29">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="labelAlignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
@@ -641,6 +659,9 @@
                    <string>StudioMode.Preview</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_35">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="labelAlignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
@@ -704,6 +725,9 @@
                    <string>Basic.Settings.General.Importers</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_36">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="labelAlignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
@@ -739,6 +763,9 @@
                    <string>Basic.TogglePreviewProgramMode</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_31">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="labelAlignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
@@ -791,6 +818,9 @@
                    <string>Basic.Settings.General.Multiview</string>
                   </property>
                   <layout class="QFormLayout" name="formLayoutMultiview">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="labelAlignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
@@ -955,6 +985,9 @@
                    <bool>false</bool>
                   </property>
                   <layout class="QFormLayout" name="formLayout_37">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="labelAlignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
@@ -1042,6 +1075,9 @@
          <item>
           <widget class="QFrame" name="widget_5">
            <layout class="QFormLayout" name="topStreamLayout">
+            <property name="fieldGrowthPolicy">
+             <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+            </property>
             <property name="labelAlignment">
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
             </property>
@@ -1142,6 +1178,9 @@
                 <string>Basic.Settings.Stream.Destination</string>
                </property>
                <layout class="QFormLayout" name="loginPageLayout">
+                <property name="fieldGrowthPolicy">
+                 <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                </property>
                 <property name="topMargin">
                  <number>2</number>
                 </property>
@@ -1262,7 +1301,7 @@
                <x>0</x>
                <y>0</y>
                <width>987</width>
-               <height>809</height>
+               <height>791</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="streamkeyPageLayout">
@@ -1646,6 +1685,9 @@
                  </item>
                  <item>
                   <layout class="QFormLayout" name="formLayout_27">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <item row="1" column="0">
                     <widget class="QLabel" name="multitrackVideoMaximumAggregateBitrateLabel">
                      <property name="text">
@@ -2071,7 +2113,7 @@
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>509</width>
+                     <width>755</width>
                      <height>609</height>
                     </rect>
                    </property>
@@ -2100,6 +2142,9 @@
                        <string>Basic.Settings.Output.Adv.Streaming</string>
                       </property>
                       <layout class="QFormLayout" name="simpleStreamingLayout">
+                       <property name="fieldGrowthPolicy">
+                        <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                       </property>
                        <property name="labelAlignment">
                         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                        </property>
@@ -2293,6 +2338,9 @@
                        <string>Basic.Settings.Output.Adv.Recording</string>
                       </property>
                       <layout class="QFormLayout" name="formLayout_6">
+                       <property name="fieldGrowthPolicy">
+                        <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                       </property>
                        <property name="labelAlignment">
                         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                        </property>
@@ -2659,6 +2707,9 @@
                        <bool>true</bool>
                       </property>
                       <layout class="QFormLayout" name="formLayout_24">
+                       <property name="fieldGrowthPolicy">
+                        <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                       </property>
                        <property name="labelAlignment">
                         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                        </property>
@@ -2847,8 +2898,8 @@
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>424</width>
-                         <height>175</height>
+                         <width>766</width>
+                         <height>592</height>
                         </rect>
                        </property>
                        <layout class="QVBoxLayout" name="verticalLayout_14">
@@ -2870,6 +2921,9 @@
                            <string>Basic.Settings.Output.Adv.Streaming.Settings</string>
                           </property>
                           <layout class="QFormLayout" name="advOutTopLayout">
+                           <property name="fieldGrowthPolicy">
+                            <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                           </property>
                            <property name="labelAlignment">
                             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                            </property>
@@ -2910,7 +2964,7 @@
                               </sizepolicy>
                              </property>
                              <property name="currentIndex">
-                              <number>1</number>
+                              <number>0</number>
                              </property>
                              <widget class="QFrame" name="streamSingleTracks">
                               <layout class="QHBoxLayout" name="horizontalLayout_7">
@@ -3143,6 +3197,9 @@
                     <item>
                      <widget class="QFrame" name="advOutRecTypeContainer">
                       <layout class="QFormLayout" name="formLayout_9">
+                       <property name="fieldGrowthPolicy">
+                        <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                       </property>
                        <property name="labelAlignment">
                         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                        </property>
@@ -3247,8 +3304,8 @@
                             <rect>
                              <x>0</x>
                              <y>0</y>
-                             <width>509</width>
-                             <height>371</height>
+                             <width>766</width>
+                             <height>558</height>
                             </rect>
                            </property>
                            <property name="sizePolicy">
@@ -3276,6 +3333,9 @@
                                <string>Basic.Settings.Output.Adv.Recording.Settings</string>
                               </property>
                               <layout class="QFormLayout" name="formLayout_16">
+                               <property name="fieldGrowthPolicy">
+                                <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                               </property>
                                <property name="labelAlignment">
                                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                                </property>
@@ -3885,8 +3945,8 @@
                             <rect>
                              <x>0</x>
                              <y>0</y>
-                             <width>625</width>
-                             <height>467</height>
+                             <width>766</width>
+                             <height>558</height>
                             </rect>
                            </property>
                            <layout class="QVBoxLayout" name="verticalLayout_27">
@@ -4422,8 +4482,8 @@
                            <rect>
                             <x>0</x>
                             <y>0</y>
-                            <width>258</width>
-                            <height>510</height>
+                            <width>766</width>
+                            <height>592</height>
                            </rect>
                           </property>
                           <layout class="QVBoxLayout" name="verticalLayout_28">
@@ -4454,6 +4514,9 @@
                               <string>Basic.Settings.Output.Adv.Audio.Track1</string>
                              </property>
                              <layout class="QFormLayout" name="formLayout_10">
+                              <property name="fieldGrowthPolicy">
+                               <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                              </property>
                               <property name="labelAlignment">
                                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                               </property>
@@ -4591,6 +4654,9 @@
                               <string>Basic.Settings.Output.Adv.Audio.Track2</string>
                              </property>
                              <layout class="QFormLayout" name="formLayout_11">
+                              <property name="fieldGrowthPolicy">
+                               <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                              </property>
                               <property name="labelAlignment">
                                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                               </property>
@@ -4728,6 +4794,9 @@
                               <string>Basic.Settings.Output.Adv.Audio.Track3</string>
                              </property>
                              <layout class="QFormLayout" name="formLayout_12">
+                              <property name="fieldGrowthPolicy">
+                               <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                              </property>
                               <property name="labelAlignment">
                                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                               </property>
@@ -4865,6 +4934,9 @@
                               <string>Basic.Settings.Output.Adv.Audio.Track4</string>
                              </property>
                              <layout class="QFormLayout" name="formLayout_13">
+                              <property name="fieldGrowthPolicy">
+                               <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                              </property>
                               <property name="labelAlignment">
                                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                               </property>
@@ -5002,6 +5074,9 @@
                               <string>Basic.Settings.Output.Adv.Audio.Track5</string>
                              </property>
                              <layout class="QFormLayout" name="formLayout_25">
+                              <property name="fieldGrowthPolicy">
+                               <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                              </property>
                               <property name="labelAlignment">
                                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                               </property>
@@ -5139,6 +5214,9 @@
                               <string>Basic.Settings.Output.Adv.Audio.Track6</string>
                              </property>
                              <layout class="QFormLayout" name="formLayout_26">
+                              <property name="fieldGrowthPolicy">
+                               <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                              </property>
                               <property name="labelAlignment">
                                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                               </property>
@@ -5350,6 +5428,9 @@
                           </sizepolicy>
                          </property>
                          <layout class="QFormLayout" name="formLayout_30">
+                          <property name="fieldGrowthPolicy">
+                           <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                          </property>
                           <property name="labelAlignment">
                            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                           </property>
@@ -5483,8 +5564,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>590</width>
-              <height>511</height>
+              <width>772</width>
+              <height>636</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_50">
@@ -5521,6 +5602,9 @@
                    <string>Basic.Settings.General</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_52">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="labelAlignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
@@ -5630,6 +5714,9 @@
                    <string>Basic.Settings.Audio.Devices</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_53">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="labelAlignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
@@ -5759,6 +5846,9 @@
                    <string>Basic.Settings.Audio.Meters</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_54">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="labelAlignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
@@ -5845,6 +5935,9 @@
                    <string>Basic.Settings.Advanced</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_56">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="labelAlignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
@@ -5903,6 +5996,9 @@
                    <string>Basic.Settings.Hotkeys</string>
                   </property>
                   <layout class="QFormLayout" name="audioSourceLayout">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="labelAlignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
@@ -5986,6 +6082,9 @@
             <string>Basic.Settings.General</string>
            </property>
            <layout class="QFormLayout" name="formLayout_15">
+            <property name="fieldGrowthPolicy">
+             <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+            </property>
             <property name="labelAlignment">
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
             </property>
@@ -6125,6 +6224,9 @@
             <item row="3" column="1">
              <widget class="QStackedWidget" name="fpsTypes">
               <property name="lineWidth">
+               <number>0</number>
+              </property>
+              <property name="currentIndex">
                <number>0</number>
               </property>
               <widget class="QWidget" name="page">
@@ -6444,8 +6546,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>178</width>
-              <height>16</height>
+              <width>770</width>
+              <height>642</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_33">
@@ -6464,6 +6566,9 @@
              <item>
               <widget class="QFrame" name="hotkeyScrollFrame">
                <layout class="QFormLayout" name="hotkeyFormLayout">
+                <property name="fieldGrowthPolicy">
+                 <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                </property>
                 <property name="leftMargin">
                  <number>0</number>
                 </property>
@@ -6534,8 +6639,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>696</width>
-              <height>347</height>
+              <width>772</width>
+              <height>680</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_42">
@@ -6571,6 +6676,9 @@
                   <bool>false</bool>
                  </property>
                  <layout class="QFormLayout" name="formLayout_8">
+                  <property name="fieldGrowthPolicy">
+                   <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                  </property>
                   <property name="labelAlignment">
                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                   </property>
@@ -7440,7 +7548,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>695</width>
+              <width>755</width>
               <height>952</height>
              </rect>
             </property>
@@ -7478,6 +7586,9 @@
                    <string>Basic.Settings.General</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_22">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="labelAlignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
@@ -7526,6 +7637,9 @@
                    <string>Basic.Settings.Video</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_14">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="labelAlignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
@@ -7762,6 +7876,9 @@
                    <string>Basic.Settings.Output.Adv.Recording</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_17">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="labelAlignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
@@ -7872,6 +7989,9 @@
                    <string>Basic.Settings.Advanced.StreamDelay</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_18">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="labelAlignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
@@ -7986,6 +8106,9 @@
                    <string>Basic.Settings.Output.Reconnect</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_19">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="labelAlignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
@@ -8089,6 +8212,9 @@
                    <string>Basic.Settings.Advanced.Network</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_23">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="labelAlignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
@@ -8177,6 +8303,9 @@
                    <string>Basic.Main.Sources</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_34">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="labelAlignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
@@ -8212,6 +8341,9 @@
                    <string>Basic.Settings.Hotkeys</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_33">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="labelAlignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
