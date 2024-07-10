@@ -2980,6 +2980,22 @@
                 "keyint": 1,
                 "bframes": 0
             }
+        },
+        {
+            "name": "BitChute",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmps://livestream.bitchute.com:443/live/"
+                }
+            ],
+            "supported video codecs": [
+                "h264"
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 6000
+            }
         }
     ]
 }
