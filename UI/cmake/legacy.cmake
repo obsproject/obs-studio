@@ -295,8 +295,6 @@ target_sources(
           multitrack-video-error.hpp
           multitrack-video-output.cpp
           multitrack-video-output.hpp
-          qt-helpers.cpp
-          qt-helpers.hpp
           system-info.hpp)
 
 target_sources(obs PRIVATE importers/importers.cpp importers/importers.hpp importers/classic.cpp importers/sl.cpp
