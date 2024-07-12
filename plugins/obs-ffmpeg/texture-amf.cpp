@@ -575,7 +575,7 @@ static void convert_to_encoder_packet(amf_base *enc, AMFDataPtr &data,
 	packet->dts = convert_to_obs_ts(enc, data->GetPts());
 	packet->keyframe = type == AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR;
 
-	if (enc->dts_offset)
+	if (enc->dts_offset && enc->codec != amf_codec_type::AV1)
 		packet->dts -= enc->dts_offset;
 }
 
