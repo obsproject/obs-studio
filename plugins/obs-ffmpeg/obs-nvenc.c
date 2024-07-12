@@ -1980,8 +1980,9 @@ static bool nvenc_encode_shared(struct nvenc_data *enc, struct nv_bitstream *bs,
 		int64_t dts;
 		deque_pop_front(&enc->dts_list, &dts, sizeof(dts));
 
-		/* subtract bframe delay from dts */
-		dts -= (int64_t)enc->bframes * packet->timebase_num;
+		/* subtract bframe delay from dts for H.264 and HEVC */
+		if (enc->codec != CODEC_AV1)
+			dts -= (int64_t)enc->bframes * packet->timebase_num;
 
 		*received_packet = true;
 		packet->data = enc->packet_data.array;
