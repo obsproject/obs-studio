@@ -220,7 +220,7 @@ bool GetDataFilePath(const char *data, string &output)
 
 string GetDefaultVideoSavePath()
 {
-	return string(getenv("HOME"));
+	return string(getenv("HOME")) + "/OBS Studio";
 }
 
 vector<string> GetPreferredLocales()
