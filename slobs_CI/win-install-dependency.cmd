@@ -28,11 +28,11 @@ set OPENSSL_DIST_NAME=openssl-1.1.1c-x64
 set OPENSSL_LOCAL_PATH=%CD%\%SUBDIR%\openssl_dist
 set OPENSSL_URI=https://s3-us-west-2.amazonaws.com/streamlabs-obs-updater-deps/%OPENSSL_DIST_NAME%.7z
 
-set WEBRTC_DIST=webrtc_dist_m94_vs2022
+set WEBRTC_DIST=webrtc-m120-win-x64
 set WEBRTC_DIR=%CD%\%SUBDIR%\webrtc_dist\webrtc_dist
 set WEBRTC_URL=https://obs-studio-deployment.s3-us-west-2.amazonaws.com/%WEBRTC_DIST%.7z
 
-set MEDIASOUPCLIENT=libmediasoupclient_dist_8b36a915
+set MEDIASOUPCLIENT=libmediasoupclient-3.4.3-win-x64
 set MEDIASOUPCLIENT_DIR=%CD%\%SUBDIR%\libmediasoupclient_dist\libmediasoupclient_dist
 set MEDIASOUPCLIENT_URL=https://obs-studio-deployment.s3-us-west-2.amazonaws.com/%MEDIASOUPCLIENT%.7z
 
