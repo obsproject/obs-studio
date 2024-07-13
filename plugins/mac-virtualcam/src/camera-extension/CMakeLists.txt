@@ -51,6 +51,7 @@ set_target_xcode_properties(
              MARKETING_VERSION ${OBS_VERSION_CANONICAL}
              COPY_PHASE_STRIP NO
              GENERATE_INFOPLIST_FILE YES
+             INFOPLIST_KEY_CFBundleDisplayName "OBS Virtual Camera"
              INFOPLIST_KEY_NSHumanReadableCopyright "(c) 2022-${CURRENT_YEAR} Sebastian Beckmann, Patrick Heyer"
              INFOPLIST_KEY_NSSystemExtensionUsageDescription "This Camera Extension enables virtual camera functionality in OBS Studio.")
 # cmake-format: on
