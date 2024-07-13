@@ -107,10 +107,12 @@ static bool can_stage(struct gs_stage_surface *dst, struct gs_texture_2d *src)
 	return true;
 }
 
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(USE_GLES)
 
 /* Apparently for mac, PBOs won't do an asynchronous transfer unless you use
- * FBOs along with glReadPixels, which is really dumb. */
+ * FBOs along with glReadPixels, which is really dumb.
+ * glGetTexImage is not available in OpenGL ES, so use this codepath instead.
+ */
 void device_stage_texture(gs_device_t *device, gs_stagesurf_t *dst,
 			  gs_texture_t *src)
 {

@@ -118,10 +118,13 @@ static void APIENTRY gl_debug_proc(GLenum source, GLenum type, GLuint id,
 
 static void gl_enable_debug()
 {
+#ifndef USE_GLES
 	if (GLAD_GL_VERSION_4_3) {
 		glDebugMessageCallback(gl_debug_proc, NULL);
 		gl_enable(GL_DEBUG_OUTPUT);
-	} else if (GLAD_GL_ARB_debug_output) {
+	} else
+#endif
+		if (GLAD_GL_ARB_debug_output) {
 		glDebugMessageCallbackARB(gl_debug_proc, NULL);
 	} else {
 		blog(LOG_DEBUG, "Failed to set GL debug callback as it is "
@@ -134,11 +137,19 @@ static void gl_enable_debug() {}
 
 static bool gl_init_extensions(struct gs_device *device)
 {
+#ifdef USE_GLES
+	if (!GLAD_GL_ES_VERSION_3_2) {
+		blog(LOG_ERROR,
+		     "obs-studio requires OpenGL ES version 3.2 or higher.");
+		return false;
+	}
+#else
 	if (!GLAD_GL_VERSION_3_3) {
 		blog(LOG_ERROR,
 		     "obs-studio requires OpenGL version 3.3 or higher.");
 		return false;
 	}
+#endif
 
 	gl_enable_debug();
 
@@ -148,6 +159,34 @@ static bool gl_init_extensions(struct gs_device *device)
 		return false;
 	}
 
+#ifdef USE_GLES
+	if (!GLAD_GL_EXT_texture_format_BGRA8888) {
+		blog(LOG_ERROR,
+		     "OpenGL ES extension EXT_texture_format_BGRA8888 "
+		     "is required.");
+		return false;
+	}
+
+	if (!GLAD_GL_EXT_texture_norm16) {
+		blog(LOG_WARNING,
+		     "OpenGL ES extension EXT_texture_norm16 "
+		     "is recommended but missing, expect functionality loss.");
+	}
+
+	if (!GLAD_GL_EXT_disjoint_timer_query) {
+		blog(LOG_WARNING,
+		     "OpenGL ES extension EXT_disjoint_timer_query "
+		     "is recommended but missing, expect functionality loss.");
+	}
+
+	if (!GLAD_GL_OES_mapbuffer) {
+		blog(LOG_ERROR, "OpenGL ES extension OES_mapbuffer "
+				"is required.");
+		return false;
+	}
+
+	device->copy_type = COPY_TYPE_ARB;
+#else
 	gl_enable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
 	if (GLAD_GL_VERSION_4_3 || GLAD_GL_ARB_copy_image)
@@ -156,6 +195,7 @@ static bool gl_init_extensions(struct gs_device *device)
 		device->copy_type = COPY_TYPE_NV;
 	else
 		device->copy_type = COPY_TYPE_FBO_BLIT;
+#endif
 
 	return true;
 }
@@ -939,17 +979,28 @@ void device_enable_framebuffer_srgb(gs_device_t *device, bool enable)
 {
 	UNUSED_PARAMETER(device);
 
+#ifdef USE_GLES
+	if (enable)
+		gl_enable(GL_FRAMEBUFFER_SRGB_EXT);
+	else
+		gl_disable(GL_FRAMEBUFFER_SRGB_EXT);
+#else
 	if (enable)
 		gl_enable(GL_FRAMEBUFFER_SRGB);
 	else
 		gl_disable(GL_FRAMEBUFFER_SRGB);
+#endif
 }
 
 bool device_framebuffer_srgb_enabled(gs_device_t *device)
 {
 	UNUSED_PARAMETER(device);
 
+#ifdef USE_GLES
+	const GLboolean enabled = glIsEnabled(GL_FRAMEBUFFER_SRGB_EXT);
+#else
 	const GLboolean enabled = glIsEnabled(GL_FRAMEBUFFER_SRGB);
+#endif
 	gl_success("glIsEnabled");
 	return enabled == GL_TRUE;
 }
@@ -1179,7 +1230,11 @@ void device_clear(gs_device_t *device, uint32_t clear_flags,
 	}
 
 	if (clear_flags & GS_CLEAR_DEPTH) {
+#ifdef USE_GLES
+		glClearDepthf(depth);
+#else
 		glClearDepth(depth);
+#endif
 		gl_flags |= GL_DEPTH_BUFFER_BIT;
 	}
 
@@ -1586,18 +1641,37 @@ void gs_timer_destroy(gs_timer_t *timer)
 
 void gs_timer_begin(gs_timer_t *timer)
 {
+#ifdef USE_GLES
+	glQueryCounterEXT(timer->queries[0], GL_TIMESTAMP_EXT);
+#else
 	glQueryCounter(timer->queries[0], GL_TIMESTAMP);
+#endif
 	gl_success("glQueryCounter");
 }
 
 void gs_timer_end(gs_timer_t *timer)
 {
+#ifdef USE_GLES
+	glQueryCounterEXT(timer->queries[1], GL_TIMESTAMP_EXT);
+#else
 	glQueryCounter(timer->queries[1], GL_TIMESTAMP);
+#endif
 	gl_success("glQueryCounter");
 }
 
 bool gs_timer_get_data(gs_timer_t *timer, uint64_t *ticks)
 {
+#ifdef USE_GLES
+	GLuint available = 0;
+	glGetQueryObjectuiv(timer->queries[1], GL_QUERY_RESULT_AVAILABLE,
+			    &available);
+
+	GLuint begin, end;
+	glGetQueryObjectuiv(timer->queries[0], GL_QUERY_RESULT, &begin);
+	gl_success("glGetQueryObjectui64v");
+	glGetQueryObjectuiv(timer->queries[1], GL_QUERY_RESULT, &end);
+	gl_success("glGetQueryObjectui64v");
+#else
 	GLint available = 0;
 	glGetQueryObjectiv(timer->queries[1], GL_QUERY_RESULT_AVAILABLE,
 			   &available);
@@ -1607,7 +1681,7 @@ bool gs_timer_get_data(gs_timer_t *timer, uint64_t *ticks)
 	gl_success("glGetQueryObjectui64v");
 	glGetQueryObjectui64v(timer->queries[1], GL_QUERY_RESULT, &end);
 	gl_success("glGetQueryObjectui64v");
-
+#endif
 	*ticks = end - begin;
 	return true;
 }

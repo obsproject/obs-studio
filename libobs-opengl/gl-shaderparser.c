@@ -89,8 +89,10 @@ static bool gl_write_type_n(struct gl_shader_parser *glsp, const char *type,
 		dstr_cat(&glsp->gl_string, "sampler3D");
 	else if (cmp_type(type, len, "texture_cube", 12) == 0)
 		dstr_cat(&glsp->gl_string, "samplerCube");
+#ifndef USE_GLES
 	else if (cmp_type(type, len, "texture_rect", 12) == 0)
 		dstr_cat(&glsp->gl_string, "sampler2DRect");
+#endif
 	else
 		return false;
 
@@ -776,7 +778,14 @@ static bool gl_shader_buildstring(struct gl_shader_parser *glsp)
 		return false;
 	}
 
+#ifdef USE_GLES
+	dstr_copy(&glsp->gl_string, "#version 320 es\n"
+				    "precision highp float;\n"
+				    "precision highp sampler2D;\n"
+				    "precision highp sampler3D;\n\n");
+#else
 	dstr_copy(&glsp->gl_string, "#version 330\n\n");
+#endif
 	dstr_cat(&glsp->gl_string, "const bool obs_glsl_compile = true;\n\n");
 	dstr_cat(&glsp->gl_string,
 		 "vec4 obs_load_2d(sampler2D s, ivec3 p_lod)\n");

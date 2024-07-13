@@ -33,3 +33,5 @@ bool gl_egl_enum_adapters(EGLDisplay display,
 					   uint32_t id),
 			  void *param);
 uint32_t gs_get_adapter_count();
+
+void *gl_egl_loader(const char *name);

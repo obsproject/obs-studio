@@ -46,9 +46,15 @@ typedef unsigned long drm_handle_t;
 
 #endif
 
+#ifdef USE_GLES
+#include <dlfcn.h>
+
+/* glEGLImageTargetTexture2DOES is part of GLES glad */
+#else
 typedef void(APIENTRYP PFNGLEGLIMAGETARGETTEXTURE2DOESPROC)(
 	GLenum target, GLeglImageOES image);
 static PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOES;
+#endif
 
 static bool find_gl_extension(const char *extension)
 {
@@ -65,6 +71,7 @@ static bool find_gl_extension(const char *extension)
 
 static bool init_egl_image_target_texture_2d_ext(void)
 {
+#ifndef USE_GLES
 	static bool initialized = false;
 
 	if (!initialized) {
@@ -79,6 +86,7 @@ static bool init_egl_image_target_texture_2d_ext(void)
 			(PFNGLEGLIMAGETARGETTEXTURE2DOESPROC)eglGetProcAddress(
 				"glEGLImageTargetTexture2DOES");
 	}
+#endif
 
 	if (!glEGLImageTargetTexture2DOES)
 		return false;
@@ -481,3 +489,14 @@ const char *gl_egl_error_to_string(EGLint error_number)
 		break;
 	}
 }
+
+#ifdef USE_GLES
+void *gl_egl_loader(const char *name)
+{
+	void *ret = eglGetProcAddress(name);
+	if (ret == NULL) {
+		ret = dlsym(RTLD_DEFAULT, name);
+	}
+	return ret;
+}
+#endif

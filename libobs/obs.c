@@ -571,12 +571,14 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 	video->default_effect = gs_effect_create_from_file(filename, NULL);
 	bfree(filename);
 
+#ifndef USE_GLES
 	if (gs_get_device_type() == GS_DEVICE_OPENGL) {
 		filename = obs_find_data_file("default_rect.effect");
 		video->default_rect_effect =
 			gs_effect_create_from_file(filename, NULL);
 		bfree(filename);
 	}
+#endif
 
 	filename = obs_find_data_file("opaque.effect");
 	video->opaque_effect = gs_effect_create_from_file(filename, NULL);
@@ -624,10 +626,12 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 
 	if (!video->default_effect)
 		success = false;
+#ifndef USE_GLES
 	if (gs_get_device_type() == GS_DEVICE_OPENGL) {
 		if (!video->default_rect_effect)
 			success = false;
 	}
+#endif
 	if (!video->opaque_effect)
 		success = false;
 	if (!video->solid_effect)

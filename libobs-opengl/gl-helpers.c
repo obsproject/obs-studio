@@ -112,7 +112,9 @@ bool gl_copy_texture(struct gs_device *device, struct gs_texture *dst,
 				   dst_x, dst_y, 0, width, height, 1);
 		success = gl_success("glCopyImageSubData");
 
-	} else if (device->copy_type == COPY_TYPE_NV) {
+	}
+#ifndef USE_GLES
+	else if (device->copy_type == COPY_TYPE_NV) {
 		glCopyImageSubDataNV(src->texture, src->gl_target, 0, src_x,
 				     src_y, 0, dst->texture, dst->gl_target, 0,
 				     dst_x, dst_y, 0, width, height, 1);
@@ -124,6 +126,7 @@ bool gl_copy_texture(struct gs_device *device, struct gs_texture *dst,
 		if (!success)
 			blog(LOG_ERROR, "gl_copy_texture failed");
 	}
+#endif
 
 	return success;
 }

@@ -42,12 +42,19 @@ static const int ctx_attribs[] = {
 	EGL_CONTEXT_OPENGL_DEBUG,
 	EGL_TRUE,
 #endif
+#ifdef USE_GLES
+	EGL_CONTEXT_MAJOR_VERSION,
+	3,
+	EGL_CONTEXT_MINOR_VERSION,
+	0,
+#else
 	EGL_CONTEXT_OPENGL_PROFILE_MASK,
 	EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT,
 	EGL_CONTEXT_MAJOR_VERSION,
 	3,
 	EGL_CONTEXT_MINOR_VERSION,
 	3,
+#endif
 	EGL_NONE,
 };
 
@@ -62,7 +69,11 @@ static const EGLint ctx_config_attribs[] = {EGL_STENCIL_SIZE,
 					    EGL_ALPHA_SIZE,
 					    0,
 					    EGL_RENDERABLE_TYPE,
+#ifdef USE_GLES
+					    EGL_OPENGL_ES3_BIT_KHR,
+#else
 					    EGL_OPENGL_BIT,
+#endif
 					    EGL_SURFACE_TYPE,
 					    EGL_WINDOW_BIT | EGL_PBUFFER_BIT,
 					    EGL_NONE};
@@ -178,7 +189,11 @@ static bool gl_context_create(struct gl_platform *plat)
 	int egl_min = 0, egl_maj = 0;
 	bool success = false;
 
+#ifdef USE_GLES
+	eglBindAPI(EGL_OPENGL_ES_API);
+#else
 	eglBindAPI(EGL_OPENGL_API);
+#endif
 
 	edisplay = get_egl_display(plat);
 
@@ -358,7 +373,11 @@ static struct gl_platform *gl_x11_egl_platform_create(gs_device_t *device,
 		goto fail_make_current;
 	}
 
+#ifdef USE_GLES
+	if (!gladLoadGLES2Loader(gl_egl_loader)) {
+#else
 	if (!gladLoadGL()) {
+#endif
 		blog(LOG_ERROR, "Failed to load OpenGL entry functions.");
 		goto fail_load_gl;
 	}

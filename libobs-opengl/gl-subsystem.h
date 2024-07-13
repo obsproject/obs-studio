@@ -41,10 +41,17 @@ static inline GLenum convert_gs_format(enum gs_color_format format)
 		return GL_RED;
 	case GS_RGBA:
 		return GL_RGBA;
+#ifdef USE_GLES
+	case GS_BGRX:
+		return GL_BGRA_EXT;
+	case GS_BGRA:
+		return GL_BGRA_EXT;
+#else
 	case GS_BGRX:
 		return GL_BGRA;
 	case GS_BGRA:
 		return GL_BGRA;
+#endif
 	case GS_R10G10B10A2:
 		return GL_RGBA;
 	case GS_RGBA16:
@@ -73,10 +80,17 @@ static inline GLenum convert_gs_format(enum gs_color_format format)
 		return GL_RGBA;
 	case GS_RGBA_UNORM:
 		return GL_RGBA;
+#ifdef USE_GLES
+	case GS_BGRX_UNORM:
+		return GL_BGRA_EXT;
+	case GS_BGRA_UNORM:
+		return GL_BGRA_EXT;
+#else
 	case GS_BGRX_UNORM:
 		return GL_BGRA;
 	case GS_BGRA_UNORM:
 		return GL_BGRA;
+#endif
 	case GS_RG16:
 		return GL_RG;
 	case GS_UNKNOWN:
@@ -95,16 +109,31 @@ static inline GLenum convert_gs_internal_format(enum gs_color_format format)
 		return GL_R8;
 	case GS_RGBA:
 		return GL_SRGB8_ALPHA8;
+#if USE_GLES
+	case GS_BGRX:
+		/* sized BGRA internal formats aren't present until Jun 2024 */
+		return GL_BGRA_EXT;
+	case GS_BGRA:
+		return GL_BGRA_EXT;
+#else
 	case GS_BGRX:
 		return GL_SRGB8;
 	case GS_BGRA:
 		return GL_SRGB8_ALPHA8;
+#endif
 	case GS_R10G10B10A2:
 		return GL_RGB10_A2;
+#if USE_GLES
+	case GS_RGBA16:
+		return GL_RGBA16_EXT;
+	case GS_R16:
+		return GL_R16_EXT;
+#else
 	case GS_RGBA16:
 		return GL_RGBA16;
 	case GS_R16:
 		return GL_R16;
+#endif
 	case GS_RGBA16F:
 		return GL_RGBA16F;
 	case GS_RGBA32F:
@@ -131,8 +160,13 @@ static inline GLenum convert_gs_internal_format(enum gs_color_format format)
 		return GL_RGB;
 	case GS_BGRA_UNORM:
 		return GL_RGBA;
+#if USE_GLES
+	case GS_RG16:
+		return GL_RG16_EXT;
+#else
 	case GS_RG16:
 		return GL_RG16;
+#endif
 	case GS_UNKNOWN:
 		return 0;
 	}
@@ -388,7 +422,12 @@ static inline GLint convert_address_mode(enum gs_address_mode mode)
 	case GS_ADDRESS_BORDER:
 		return GL_CLAMP_TO_BORDER;
 	case GS_ADDRESS_MIRRORONCE:
+#ifdef USE_GLES
+		// TODO: GLES does not support this
+		return GL_REPEAT;
+#else
 		return GL_MIRROR_CLAMP_EXT;
+#endif
 	}
 
 	return GL_REPEAT;

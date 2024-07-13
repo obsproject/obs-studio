@@ -22,12 +22,17 @@
 #include <obs-module.h>
 #include <obs-nix-platform.h>
 #include <glad/glad.h>
+#include <glad/glad_egl.h>
 
 #include <pipewire/pipewire.h>
 #include "screencast-portal.h"
 
 #if PW_CHECK_VERSION(0, 3, 60)
 #include "camera-portal.h"
+#endif
+
+#ifdef USE_GLES
+#include <dlfcn.h>
 #endif
 
 OBS_DECLARE_MODULE()
@@ -37,10 +42,25 @@ MODULE_EXPORT const char *obs_module_description(void)
 	return "PipeWire based sources/outputs";
 }
 
+#ifdef USE_GLES
+static void *egl_loader(const char *name)
+{
+	void *ret = eglGetProcAddress(name);
+	if (ret == NULL) {
+		ret = dlsym(RTLD_DEFAULT, name);
+	}
+	return ret;
+}
+#endif
+
 bool obs_module_load(void)
 {
 	obs_enter_graphics();
+#ifdef USE_GLES
+	gladLoadGLES2Loader(egl_loader);
+#else
 	gladLoadGL();
+#endif
 	obs_leave_graphics();
 
 	pw_init(NULL, NULL);

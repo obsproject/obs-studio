@@ -203,9 +203,15 @@ bool gs_texture_map(gs_texture_t *tex, uint8_t **ptr, uint32_t *linesize)
 	if (!gl_bind_buffer(GL_PIXEL_UNPACK_BUFFER, tex2d->unpack_buffer))
 		goto fail;
 
+#ifdef USE_GLES
+	*ptr = glMapBufferOES(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
+	if (!gl_success("glMapBufferOES"))
+		goto fail;
+#else
 	*ptr = glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
 	if (!gl_success("glMapBuffer"))
 		goto fail;
+#endif
 
 	gl_bind_buffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
@@ -227,10 +233,15 @@ void gs_texture_unmap(gs_texture_t *tex)
 	if (!gl_bind_buffer(GL_PIXEL_UNPACK_BUFFER, tex2d->unpack_buffer))
 		goto failed;
 
+#ifdef USE_GLES
+	glUnmapBufferOES(GL_PIXEL_UNPACK_BUFFER);
+	if (!gl_success("glUnmapBufferOES"))
+		goto failed;
+#else
 	glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
 	if (!gl_success("glUnmapBuffer"))
 		goto failed;
-
+#endif
 	if (!gl_bind_texture(GL_TEXTURE_2D, tex2d->base.texture))
 		goto failed;
 
@@ -251,6 +262,12 @@ failed:
 
 bool gs_texture_is_rect(const gs_texture_t *tex)
 {
+#ifdef USE_GLES
+	UNUSED_PARAMETER(tex);
+
+	/* OpenGL ES has no rectangle textures */
+	return false;
+#else
 	if (tex->type == GS_TEXTURE_3D)
 		return false;
 
@@ -261,6 +278,7 @@ bool gs_texture_is_rect(const gs_texture_t *tex)
 
 	const struct gs_texture_2d *tex2d = (const struct gs_texture_2d *)tex;
 	return tex2d->base.gl_target == GL_TEXTURE_RECTANGLE;
+#endif
 }
 
 void *gs_texture_get_obj(gs_texture_t *tex)

@@ -27,7 +27,11 @@
 static const EGLint config_attribs_native[] = {EGL_SURFACE_TYPE,
 					       EGL_WINDOW_BIT,
 					       EGL_RENDERABLE_TYPE,
+#ifdef USE_GLES
+					       EGL_OPENGL_ES3_BIT_KHR,
+#else
 					       EGL_OPENGL_BIT,
+#endif
 					       EGL_STENCIL_SIZE,
 					       0,
 					       EGL_DEPTH_SIZE,
@@ -43,7 +47,11 @@ static const EGLint config_attribs_native[] = {EGL_SURFACE_TYPE,
 static const EGLint config_attribs[] = {EGL_SURFACE_TYPE,
 					EGL_WINDOW_BIT,
 					EGL_RENDERABLE_TYPE,
+#ifdef USE_GLES
+					EGL_OPENGL_ES3_BIT_KHR,
+#else
 					EGL_OPENGL_BIT,
+#endif
 					EGL_STENCIL_SIZE,
 					0,
 					EGL_DEPTH_SIZE,
@@ -59,12 +67,19 @@ static const EGLint ctx_attribs[] = {
 	EGL_CONTEXT_OPENGL_DEBUG,
 	EGL_TRUE,
 #endif
+#ifdef USE_GLES
+	EGL_CONTEXT_MAJOR_VERSION,
+	3,
+	EGL_CONTEXT_MINOR_VERSION,
+	0,
+#else
 	EGL_CONTEXT_OPENGL_PROFILE_MASK,
 	EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT,
 	EGL_CONTEXT_MAJOR_VERSION,
 	3,
 	EGL_CONTEXT_MINOR_VERSION,
 	3,
+#endif
 	EGL_NONE};
 
 static const EGLint khr_ctx_attribs[] = {
@@ -72,12 +87,19 @@ static const EGLint khr_ctx_attribs[] = {
 	EGL_CONTEXT_FLAGS_KHR,
 	EGL_CONTEXT_OPENGL_DEBUG_BIT_KHR,
 #endif
+#ifdef USE_GLES
+	EGL_CONTEXT_MAJOR_VERSION_KHR,
+	3,
+	EGL_CONTEXT_MINOR_VERSION_KHR,
+	0,
+#else
 	EGL_CONTEXT_OPENGL_PROFILE_MASK_KHR,
 	EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT_KHR,
 	EGL_CONTEXT_MAJOR_VERSION_KHR,
 	3,
 	EGL_CONTEXT_MINOR_VERSION_KHR,
 	3,
+#endif
 	EGL_NONE};
 
 struct gl_windowinfo {
@@ -116,7 +138,11 @@ static void gl_wayland_egl_windowinfo_destroy(struct gl_windowinfo *info)
 static bool egl_make_current(EGLDisplay display, EGLSurface surface,
 			     EGLContext context)
 {
+#ifdef USE_GLES
+	if (eglBindAPI(EGL_OPENGL_ES_API) == EGL_FALSE) {
+#else
 	if (eglBindAPI(EGL_OPENGL_API) == EGL_FALSE) {
+#endif
 		blog(LOG_ERROR, "eglBindAPI failed");
 	}
 
@@ -124,10 +150,10 @@ static bool egl_make_current(EGLDisplay display, EGLSurface surface,
 		blog(LOG_ERROR, "eglMakeCurrent failed");
 		return false;
 	}
-
+#ifndef USE_GLES
 	if (surface != EGL_NO_SURFACE)
 		glDrawBuffer(GL_BACK);
-
+#endif
 	return true;
 }
 
@@ -136,7 +162,11 @@ static bool egl_context_create(struct gl_platform *plat, const EGLint *attribs)
 	bool success = false;
 	EGLint num_config;
 
+#ifdef USE_GLES
+	if (eglBindAPI(EGL_OPENGL_ES_API) == EGL_FALSE) {
+#else
 	if (eglBindAPI(EGL_OPENGL_API) == EGL_FALSE) {
+#endif
 		blog(LOG_ERROR, "eglBindAPI failed");
 	}
 
@@ -229,18 +259,28 @@ static struct gl_platform *gl_wayland_egl_platform_create(gs_device_t *device,
 		goto fail_context_create;
 	}
 
+#ifndef USE_GLES
 	if (!gladLoadGL()) {
 		blog(LOG_ERROR, "Failed to load OpenGL entry functions.");
 		goto fail_load_gl;
 	}
+#endif
 
 	if (!gladLoadEGL()) {
 		blog(LOG_ERROR, "Unable to load EGL entry functions.");
 		goto fail_load_egl;
 	}
 
+#ifdef USE_GLES
+	if (!gladLoadGLES2Loader(gl_egl_loader)) {
+		blog(LOG_ERROR, "Failed to load OpenGL ES entry functions.");
+		goto fail_load_gles;
+	}
+#endif
+
 	goto success;
 
+fail_load_gles:
 fail_load_egl:
 fail_load_gl:
 	egl_context_destroy(plat);
