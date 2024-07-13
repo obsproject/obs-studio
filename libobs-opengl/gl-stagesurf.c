@@ -208,11 +208,18 @@ gs_stagesurface_get_color_format(const gs_stagesurf_t *stagesurf)
 bool gs_stagesurface_map(gs_stagesurf_t *stagesurf, uint8_t **data,
 			 uint32_t *linesize)
 {
+	GLsizeiptr length;
+
+	length = stagesurf->width * stagesurf->height *
+		 stagesurf->bytes_per_pixel;
+
 	if (!gl_bind_buffer(GL_PIXEL_PACK_BUFFER, stagesurf->pack_buffer))
 		goto fail;
 
-	*data = glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
-	if (!gl_success("glMapBuffer"))
+	*data = glMapBufferRange(GL_PIXEL_PACK_BUFFER, 0, length,
+				 GL_MAP_READ_BIT);
+
+	if (!gl_success("glMapBufferRange"))
 		goto fail;
 
 	gl_bind_buffer(GL_PIXEL_PACK_BUFFER, 0);
