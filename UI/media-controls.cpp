@@ -267,9 +267,19 @@ void MediaControls::RefreshControls()
 	uint32_t flags = 0;
 	const char *id = nullptr;
 
+	obs_data_t *settings = obs_source_get_settings(source);
+	bool sourceIsActive = obs_source_active(source);
+	bool closeWhenInactive =
+		obs_data_get_bool(settings, "close_when_inactive");
+
 	if (source) {
 		flags = obs_source_get_output_flags(source);
 		id = obs_source_get_unversioned_id(source);
+	}
+
+	if (!sourceIsActive && closeWhenInactive) {
+		SetPausedState();
+		return;
 	}
 
 	if (!source || !(flags & OBS_SOURCE_CONTROLLABLE_MEDIA)) {
