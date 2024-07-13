@@ -782,20 +782,24 @@ static bool gl_shader_buildstring(struct gl_shader_parser *glsp)
 		 "vec4 obs_load_2d(sampler2D s, ivec3 p_lod)\n");
 	dstr_cat(&glsp->gl_string, "{\n");
 	dstr_cat(&glsp->gl_string, "\tint lod = p_lod.z;\n");
-	dstr_cat(&glsp->gl_string, "\tvec2 size = textureSize(s, lod);\n");
+	dstr_cat(&glsp->gl_string,
+		 "\tvec2 size = vec2(textureSize(s, lod));\n");
 	dstr_cat(&glsp->gl_string,
 		 "\tvec2 p = (vec2(p_lod.xy) + 0.5) / size;\n");
-	dstr_cat(&glsp->gl_string, "\tvec4 color = textureLod(s, p, lod);\n");
+	dstr_cat(&glsp->gl_string,
+		 "\tvec4 color = textureLod(s, p, float(lod));\n");
 	dstr_cat(&glsp->gl_string, "\treturn color;\n");
 	dstr_cat(&glsp->gl_string, "}\n\n");
 	dstr_cat(&glsp->gl_string,
 		 "vec4 obs_load_3d(sampler3D s, ivec4 p_lod)\n");
 	dstr_cat(&glsp->gl_string, "{\n");
 	dstr_cat(&glsp->gl_string, "\tint lod = p_lod.w;\n");
-	dstr_cat(&glsp->gl_string, "\tvec3 size = textureSize(s, lod);\n");
+	dstr_cat(&glsp->gl_string,
+		 "\tvec3 size = vec3(textureSize(s, lod));\n");
 	dstr_cat(&glsp->gl_string,
 		 "\tvec3 p = (vec3(p_lod.xyz) + 0.5) / size;\n");
-	dstr_cat(&glsp->gl_string, "\tvec4 color = textureLod(s, p, lod);\n");
+	dstr_cat(&glsp->gl_string,
+		 "\tvec4 color = textureLod(s, p, float(lod));\n");
 	dstr_cat(&glsp->gl_string, "\treturn color;\n");
 	dstr_cat(&glsp->gl_string, "}\n\n");
 	gl_write_params(glsp);
