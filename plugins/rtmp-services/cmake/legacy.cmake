@@ -17,8 +17,6 @@ target_sources(
   rtmp-services
   PRIVATE service-specific/twitch.c
           service-specific/twitch.h
-          service-specific/younow.c
-          service-specific/younow.h
           service-specific/nimotv.c
           service-specific/nimotv.h
           service-specific/showroom.c
