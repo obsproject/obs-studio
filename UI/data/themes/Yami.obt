@@ -890,7 +890,9 @@ QPlainTextEdit:focus {
     border-color: var(--input_border_focus);
 }
 
-QTextEdit:!editable {
+QTextEdit:!editable,
+QTextEdit:!editable:hover,
+QTextEdit:!editable:focus {
     background-color: var(--input_bg);
 }
 
