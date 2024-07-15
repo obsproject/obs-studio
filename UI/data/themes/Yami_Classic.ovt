@@ -171,6 +171,12 @@ QPlainTextEdit:hover {
     background-color: var(--input_bg_focus);
 }
 
+QTextEdit:!editable,
+QTextEdit:!editable:hover,
+QTextEdit:!editable:focus {
+    background-color: var(--input_bg_focus);
+}
+
 QSpinBox,
 QDoubleSpinBox {
     background-color: var(--input_bg_focus);
