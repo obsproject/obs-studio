@@ -31,7 +31,7 @@
     /* OS Fixes */
     --os_mac_font_base_value: 11;
 
-    --font_small: calc(0.8pt * var(--font_base_value));
+    --font_small: calc(0.75pt * var(--font_base_value));
 
     --icon_base: calc(6px + var(--font_base_value));
 
@@ -296,6 +296,13 @@ MuteCheckBox::indicator:unchecked:hover {
 
 #contextContainer {
   background-color: var(--bg_window);
+}
+
+#stackedMixerArea QPushButton,
+#stackedMixerArea QPushButton:!hover {
+    width: var(--icon_base_mixer);
+    height: var(--icon_base_mixer);
+    padding: var(--spacing_base);
 }
 
 VolumeMeter {

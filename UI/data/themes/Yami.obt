@@ -129,7 +129,7 @@
 
     --spinbox_button_height: calc(var(--input_height_half) - 1px);
 
-    --volume_slider: calc(calc(10px + var(--font_base_value)) / 4);
+    --volume_slider: calc(calc(4px + var(--font_base_value)) / 4);
     --volume_slider_box: calc(var(--volume_slider) * 4);
     --volume_slider_label: calc(var(--volume_slider_box) * 2);
 
