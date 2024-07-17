@@ -129,7 +129,7 @@ jobs:
           submodules: 'recursive'
           path: 'obs-studio'
           fetch-depth: 0
-      - name: Print results of config job 
+      - name: Print results of config job
         run: |
           echo "create_artifacts=${{ fromJSON(needs.sl_config.outputs.create_artifacts) }}"
           echo "upload_libobs=${{ fromJSON(needs.sl_config.outputs.upload_libobs) }}"
@@ -428,7 +428,23 @@ jobs:
     steps:
       - name: 'Add msbuild to PATH'
         uses: microsoft/setup-msbuild@v1
-      - name: Get the version of aws cli 
+      - name: Install build components
+        run: |
+          # For versions update see here: https://learn.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-build-tools?view=vs-2022
+          Set-Location "C:\Program Files (x86)\Microsoft Visual Studio\Installer\"
+          $InstallPath = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
+          $componentsToInstall= @(
+          "Microsoft.VisualStudio.Component.VC.v141.x86.x64"
+          "Microsoft.VisualStudio.Component.VC.14.39.17.9.x86.x64"
+          "Microsoft.VisualStudio.Component.VC.14.39.17.9.ATL"
+          )
+          [string]$workloadArgs = $componentsToInstall | ForEach-Object {" --add " +  $_}
+          $Arguments = ('/c', "vs_installer.exe", 'modify', '--installPath', "`"$InstallPath`"",$workloadArgs, '--quiet', '--norestart', '--nocache')
+          # should be run twice
+          $process = Start-Process -FilePath cmd.exe -ArgumentList $Arguments -Wait -PassThru -WindowStyle Hidden
+          $process = Start-Process -FilePath cmd.exe -ArgumentList $Arguments -Wait -PassThru -WindowStyle Hidden
+        shell: powershell
+      - name: Get the version of aws cli
         run: aws --version
         shell: powershell
       - name: Install specific version of AWS CLI
@@ -452,7 +468,7 @@ jobs:
           $version = "${{ github.ref }}".Replace("refs/tags/", "")
           echo "VERSION=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
         shell: powershell
-      - name: Configure / Build 
+      - name: Configure / Build
         run: ./slobs_CI/win-build.cmd
         shell: cmd
         env:

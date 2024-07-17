@@ -70,7 +70,7 @@ jobs:
 
           echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
           sudo xcode-select --switch /Applications/Xcode_15.1.app/Contents/Developer
-      - name: Configure / Build 
+      - name: Configure / Build
         run: ./slobs_CI/build-script-osx.sh
         env:
           ReleaseName: ${{matrix.ReleaseName}}
@@ -126,7 +126,23 @@ jobs:
     steps:
       - name: 'Add msbuild to PATH'
         uses: microsoft/setup-msbuild@v1
-      - name: Get the version of aws cli 
+      - name: Install build components
+        run: |
+          # For versions update see here: https://learn.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-build-tools?view=vs-2022
+          Set-Location "C:\Program Files (x86)\Microsoft Visual Studio\Installer\"
+          $InstallPath = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
+          $componentsToInstall= @(
+          "Microsoft.VisualStudio.Component.VC.v141.x86.x64"
+          "Microsoft.VisualStudio.Component.VC.14.39.17.9.x86.x64"
+          "Microsoft.VisualStudio.Component.VC.14.39.17.9.ATL"
+          )
+          [string]$workloadArgs = $componentsToInstall | ForEach-Object {" --add " +  $_}
+          $Arguments = ('/c', "vs_installer.exe", 'modify', '--installPath', "`"$InstallPath`"",$workloadArgs, '--quiet', '--norestart', '--nocache')
+          # should be run twice
+          $process = Start-Process -FilePath cmd.exe -ArgumentList $Arguments -Wait -PassThru -WindowStyle Hidden
+          $process = Start-Process -FilePath cmd.exe -ArgumentList $Arguments -Wait -PassThru -WindowStyle Hidden
+        shell: powershell
+      - name: Get the version of aws cli
         run: aws --version
         shell: powershell
       - name: Install specific version of AWS CLI
@@ -148,7 +164,7 @@ jobs:
         id: get_version
         run: echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
         shell: bash
-      - name: Configure / Build 
+      - name: Configure / Build
         run: ./slobs_CI/win-build.cmd
         shell: cmd
         env:
