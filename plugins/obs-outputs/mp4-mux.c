@@ -1718,6 +1718,10 @@ static size_t mp4_write_trak(struct mp4_mux *mux, struct mp4_track *track,
 	struct serializer *s = mux->serializer;
 	int64_t start = serializer_get_pos(s);
 
+	/* If track has no data, omit it from full moov. */
+	if (!fragmented && !track->chunks.num)
+		return 0;
+
 	write_box(s, 0, "trak");
 
 	// tkhd
@@ -2409,7 +2413,7 @@ static void write_packets(struct mp4_mux *mux, struct mp4_track *track)
 	struct serializer *s = mux->serializer;
 
 	size_t count = track->packets.size / sizeof(struct encoder_packet);
-	if (!count)
+	if (!count || !track->fragment_samples.num)
 		return;
 
 	struct chunk *chk = da_push_back_new(track->chunks);

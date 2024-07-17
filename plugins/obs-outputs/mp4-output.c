@@ -112,20 +112,23 @@ static inline void ts_offset_update(struct mp4_output *out,
 				    struct encoder_packet *packet)
 {
 	int64_t *offset;
+	int64_t ts;
 	bool *found;
 
 	if (packet->type == OBS_ENCODER_VIDEO) {
 		offset = &out->video_pts_offsets[packet->track_idx];
 		found = &out->found_video[packet->track_idx];
+		ts = packet->pts;
 	} else {
 		offset = &out->audio_dts_offsets[packet->track_idx];
 		found = &out->found_audio[packet->track_idx];
+		ts = packet->dts;
 	}
 
 	if (*found)
 		return;
 
-	*offset = packet->dts;
+	*offset = ts;
 	*found = true;
 }
 

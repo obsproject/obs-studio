@@ -129,7 +129,7 @@
 
     --spinbox_button_height: calc(var(--input_height_half) - 1px);
 
-    --volume_slider: calc(calc(10px + var(--font_base_value)) / 4);
+    --volume_slider: calc(calc(4px + var(--font_base_value)) / 4);
     --volume_slider_box: calc(var(--volume_slider) * 4);
     --volume_slider_label: calc(var(--volume_slider_box) * 2);
 
@@ -477,7 +477,7 @@ OBSDock > QWidget {
 }
 
 #transitionsFrame {
-    padding: 4px 8px;
+    padding: var(--padding_large);
 }
 
 OBSDock QLabel {
@@ -827,7 +827,7 @@ QComboBox::drop-down,
 QDateTimeEdit::drop-down {
     border:none;
     border-left: 1px solid var(--grey6);
-    width: 32px;
+    width: var(--input_height);
 }
 
 QComboBox::down-arrow,
@@ -890,7 +890,9 @@ QPlainTextEdit:focus {
     border-color: var(--input_border_focus);
 }
 
-QTextEdit:!editable {
+QTextEdit:!editable,
+QTextEdit:!editable:hover,
+QTextEdit:!editable:focus {
     background-color: var(--input_bg);
 }
 
@@ -923,7 +925,7 @@ QDoubleSpinBox::up-button {
     subcontrol-origin: padding;
     subcontrol-position: top right; /* position at the top right corner */
 
-    width: 32px;
+    width: var(--input_height);
     height: var(--spinbox_button_height);
     border-left: 1px solid var(--grey6);
     border-bottom: 1px solid transparent;
@@ -936,7 +938,7 @@ QDoubleSpinBox::down-button {
     subcontrol-origin: padding;
     subcontrol-position: bottom right; /* position at the top right corner */
 
-    width: 32px;
+    width: var(--input_height);
     height: var(--spinbox_button_height);
     border-left: 1px solid var(--grey6);
     border-top: 1px solid var(--grey6);
@@ -1078,6 +1080,8 @@ QPushButton:hover {
 
 QToolButton:hover,
 QToolButton:focus,
+QPushButton[toolButton="true"]:hover,
+QPushButton[toolButton="true"]:focus,
 MuteCheckBox::indicator:hover,
 MuteCheckBox::indicator:focus {
     border-color: var(--button_border);
@@ -1104,7 +1108,9 @@ QPushButton:pressed:hover {
 }
 
 QToolButton:pressed,
-QToolButton:pressed:hover {
+QToolButton:pressed:hover,
+QPushButton[toolButton="true"]:pressed,
+QPushButton[toolButton="true"]:pressed:hover {
     background-color: var(--button_bg_down);
     border-color: var(--button_border);
 }
@@ -1275,7 +1281,6 @@ VolControl #volLabel {
 #vMixerScrollArea VolControl #volLabel {
     padding: var(--padding_base) 0px var(--padding_base);
     min-width: var(--volume_slider_label);
-    max-width: var(--volume_slider_label);
     margin-left: var(--padding_xlarge);
     text-align: center;
 }
@@ -1529,13 +1534,16 @@ QGroupBox::indicator:unchecked:disabled {
 QCheckBox[lockCheckBox=true] {
     outline: none;
     background: transparent;
+    max-width: var(--icon_base);
+    max-height: var(--icon_base);
+    padding: var(--padding_base);
+    border: 1px solid transparent;
+    margin-left: var(--spacing_large);
 }
 
 QCheckBox[lockCheckBox=true]::indicator {
     width: var(--icon_base);
     height: var(--icon_base);
-    padding: 1px;
-    border: 1px solid transparent;
     border-radius: 4px;
 }
 
@@ -1549,8 +1557,8 @@ QCheckBox[lockCheckBox=true]::indicator:unchecked:hover {
     image: url(:res/images/unlocked.svg);
 }
 
-QCheckBox[lockCheckBox=true]::indicator:hover,
-QCheckBox[lockCheckBox=true]::indicator:focus {
+QCheckBox[lockCheckBox=true]:hover,
+QCheckBox[lockCheckBox=true]:focus {
     border: 1px solid var(--border_highlight);
 }
 
@@ -1559,13 +1567,16 @@ QCheckBox[lockCheckBox=true]::indicator:focus {
 QCheckBox[visibilityCheckBox=true] {
     outline: none;
     background: transparent;
+    max-width: var(--icon_base);
+    max-height: var(--icon_base);
+    padding: var(--padding_base);
+    border: 1px solid transparent;
+    margin-left: var(--spacing_large);
 }
 
 QCheckBox[visibilityCheckBox=true]::indicator {
     width: var(--icon_base);
     height: var(--icon_base);
-    padding: 1px;
-    border: 1px solid transparent;
     border-radius: 4px;
 }
 
@@ -1579,8 +1590,8 @@ QCheckBox[visibilityCheckBox=true]::indicator:unchecked:hover {
     image: url(:res/images/invisible.svg);
 }
 
-QCheckBox[visibilityCheckBox=true]::indicator:hover,
-QCheckBox[visibilityCheckBox=true]::indicator:focus {
+QCheckBox[visibilityCheckBox=true]:hover,
+QCheckBox[visibilityCheckBox=true]:focus {
     border: 1px solid var(--border_highlight);
 }
 

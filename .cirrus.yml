@@ -9,7 +9,7 @@ env:
 
 task:
   install_script:
-  - pkg-install -y
+  - pkg install -y
     cmake ninja binutils pkgconf curl
     ffmpeg qt6-base qt6-svg jansson libsysinfo e2fsprogs-libuuid pulseaudio
     alsa-lib pipewire v4l_compat libpci librist srt nlohmann-json uthash

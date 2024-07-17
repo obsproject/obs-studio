@@ -77,6 +77,7 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 		iconLabel->setPixmap(pixmap);
 		iconLabel->setEnabled(sourceVisible);
 		iconLabel->setStyleSheet("background: none");
+		iconLabel->setProperty("TH_Source_Icon", true);
 	}
 
 	vis = new QCheckBox();
@@ -111,6 +112,7 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 	boxLayout = new QHBoxLayout();
 
 	boxLayout->setContentsMargins(0, 0, 0, 0);
+	boxLayout->setSpacing(0);
 	if (iconLabel) {
 		boxLayout->addWidget(iconLabel);
 		boxLayout->addSpacing(2);

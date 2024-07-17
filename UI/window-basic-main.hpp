@@ -23,10 +23,10 @@
 #include <QWidgetAction>
 #include <QSystemTrayIcon>
 #include <QStyledItemDelegate>
-#include <QFuture>
 #include <obs.hpp>
 #include <vector>
 #include <memory>
+#include <future>
 #include "window-main.hpp"
 #include "window-basic-interaction.hpp"
 #include "window-basic-vcam.hpp"
@@ -43,7 +43,6 @@
 #include "auth-base.hpp"
 #include "log-viewer.hpp"
 #include "undo-stack-obs.hpp"
-#include "qt-helpers.hpp"
 
 #include <obs-frontend-internal.hpp>
 
@@ -286,7 +285,7 @@ private:
 
 	OBSService service;
 	std::unique_ptr<BasicOutputHandler> outputHandler;
-	FutureHolder<void> startStreamingFuture;
+	std::shared_future<void> setupStreamingGuard;
 	bool streamingStopping = false;
 	bool recordingStopping = false;
 	bool replayBufferStopping = false;
