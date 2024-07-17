@@ -130,7 +130,7 @@ static void s_wstring(struct serializer *s, const char *str)
 static inline void s_wtimestamp(struct serializer *s, int32_t i32)
 {
 	s_wb24(s, (uint32_t)(i32 & 0xFFFFFF));
-	s_w8(s, (uint32_t)(i32 >> 24) & 0x7F);
+	s_w8(s, (uint32_t)(i32 >> 24) & 0xFF);
 }
 
 static inline double encoder_bitrate(obs_encoder_t *encoder)
@@ -340,7 +340,7 @@ static void flv_video(struct serializer *s, int32_t dts_offset,
 
 	s_wb24(s, (uint32_t)packet->size + 5);
 	s_wb24(s, (uint32_t)time_ms);
-	s_w8(s, (time_ms >> 24) & 0x7F);
+	s_w8(s, (time_ms >> 24) & 0xFF);
 	s_wb24(s, 0);
 
 	/* these are the 5 extra bytes mentioned above */
@@ -373,7 +373,7 @@ static void flv_audio(struct serializer *s, int32_t dts_offset,
 
 	s_wb24(s, (uint32_t)packet->size + 2);
 	s_wb24(s, (uint32_t)time_ms);
-	s_w8(s, (time_ms >> 24) & 0x7F);
+	s_w8(s, (time_ms >> 24) & 0xFF);
 	s_wb24(s, 0);
 
 	/* these are the two extra bytes mentioned above */
@@ -436,7 +436,7 @@ void flv_packet_audio_ex(struct encoder_packet *packet,
 
 	s_wb24(&s, (uint32_t)packet->size + header_metadata_size);
 	s_wb24(&s, (uint32_t)time_ms);
-	s_w8(&s, (time_ms >> 24) & 0x7F);
+	s_w8(&s, (time_ms >> 24) & 0xFF);
 	s_wb24(&s, 0);
 
 	s_w8(&s, AUDIO_HEADER_EX |
