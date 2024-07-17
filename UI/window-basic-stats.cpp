@@ -373,8 +373,7 @@ void OBSBasicStats::Update()
 
 	/* ------------------ */
 
-	const obs_encoder_t *encoder =
-		obs_output_get_video_encoder(recOutput);
+	const obs_encoder_t *encoder = obs_output_get_video_encoder(recOutput);
 	const video_t *encoder_video = obs_encoder_parent_video(encoder);
 	uint32_t total_encoded =
 		encoder_video ? video_output_get_total_frames(encoder_video)
