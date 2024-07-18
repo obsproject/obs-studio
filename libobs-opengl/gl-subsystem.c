@@ -1522,13 +1522,21 @@ void gs_swapchain_destroy(gs_swapchain_t *swapchain)
 bool device_nv12_available(gs_device_t *device)
 {
 	UNUSED_PARAMETER(device);
+#ifdef _WIN32
+	return false;
+#else
 	return true; // always a split R8,R8G8 texture.
+#endif
 }
 
 bool device_p010_available(gs_device_t *device)
 {
 	UNUSED_PARAMETER(device);
+#ifdef _WIN32
+	return false;
+#else
 	return true; // always a split R16,R16G16 texture.
+#endif
 }
 
 uint32_t gs_voltexture_get_width(const gs_texture_t *voltex)
