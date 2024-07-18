@@ -1314,7 +1314,7 @@ static bool init_connect(struct rtmp_stream *stream)
 	stream->total_bytes_sent = 0;
 	stream->dropped_frames = 0;
 	stream->min_priority = 0;
-	stream->got_first_video = false;
+	stream->got_first_packet = false;
 
 	settings = obs_output_get_settings(stream->output);
 	dstr_copy(&stream->path,
@@ -1761,10 +1761,10 @@ static void rtmp_stream_data(void *data, struct encoder_packet *packet)
 	}
 
 	if (packet->type == OBS_ENCODER_VIDEO) {
-		if (!stream->got_first_video) {
+		if (!stream->got_first_packet) {
 			stream->start_dts_offset =
 				get_ms_time(packet, packet->dts);
-			stream->got_first_video = true;
+			stream->got_first_packet = true;
 		}
 
 		switch (stream->video_codec[packet->track_idx]) {
@@ -1788,6 +1788,12 @@ static void rtmp_stream_data(void *data, struct encoder_packet *packet)
 			break;
 		}
 	} else {
+		if (!stream->got_first_packet) {
+			stream->start_dts_offset =
+				get_ms_time(packet, packet->dts);
+			stream->got_first_packet = true;
+		}
+
 		obs_encoder_packet_ref(&new_packet, packet);
 	}
 

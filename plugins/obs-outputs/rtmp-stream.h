@@ -60,7 +60,7 @@ struct rtmp_stream {
 	struct deque packets;
 	bool sent_headers;
 
-	bool got_first_video;
+	bool got_first_packet;
 	int64_t start_dts_offset;
 
 	volatile bool connecting;

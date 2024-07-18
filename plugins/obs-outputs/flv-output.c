@@ -51,7 +51,7 @@ struct flv_output {
 
 	pthread_mutex_t mutex;
 
-	bool got_first_video;
+	bool got_first_packet;
 	int32_t start_dts_offset;
 };
 
@@ -500,7 +500,7 @@ static bool flv_output_start(void *data)
 	if (!obs_output_initialize_encoders(stream->output, 0))
 		return false;
 
-	stream->got_first_video = false;
+	stream->got_first_packet = false;
 	stream->sent_headers = false;
 	os_atomic_set_bool(&stream->stopping, false);
 
@@ -579,10 +579,10 @@ static void flv_output_data(void *data, struct encoder_packet *packet)
 	}
 
 	if (packet->type == OBS_ENCODER_VIDEO) {
-		if (!stream->got_first_video) {
+		if (!stream->got_first_packet) {
 			stream->start_dts_offset =
 				get_ms_time(packet, packet->dts);
-			stream->got_first_video = true;
+			stream->got_first_packet = true;
 		}
 
 		switch (stream->video_codec[packet->track_idx]) {
@@ -616,6 +616,12 @@ static void flv_output_data(void *data, struct encoder_packet *packet)
 		}
 		obs_encoder_packet_release(&parsed_packet);
 	} else {
+		if (!stream->got_first_packet) {
+			stream->start_dts_offset =
+				get_ms_time(packet, packet->dts);
+			stream->got_first_packet = true;
+		}
+
 		if (packet->track_idx != 0) {
 			write_audio_packet_ex(stream, packet, false,
 					      packet->track_idx);
