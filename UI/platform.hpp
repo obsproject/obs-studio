@@ -104,6 +104,7 @@ void InstallNSApplicationSubclass();
 void InstallNSThreadLocks();
 void disableColorSpaceConversion(QWidget *window);
 void SetMacOSDarkMode(bool dark);
+bool shouldCreateDefaultAudioSource();
 
 MacPermissionStatus CheckPermissionWithPrompt(MacPermissionType type,
 					      bool prompt_for_permission);
