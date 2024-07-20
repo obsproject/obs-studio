@@ -997,6 +997,10 @@ void OBSBasic::CreateFirstRunSources()
 	bool hasDesktopAudio = HasAudioDevices(App()->OutputAudioSource());
 	bool hasInputAudio = HasAudioDevices(App()->InputAudioSource());
 
+#ifdef __APPLE__
+	hasDesktopAudio = hasDesktopAudio && shouldCreateDefaultAudioSource();
+#endif
+
 	if (hasDesktopAudio)
 		ResetAudioDevice(App()->OutputAudioSource(), "default",
 				 Str("Basic.DesktopDevice1"), 1);
