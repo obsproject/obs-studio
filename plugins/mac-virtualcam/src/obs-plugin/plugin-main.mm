@@ -306,7 +306,12 @@ static bool virtualcam_output_start(void *data)
                                                delegate.lastErrorMessage]
                         .UTF8String);
             } else {
-                obs_output_set_last_error(vcam->output, obs_module_text("Error.SystemExtension.NotInstalled"));
+                if (@available(macOS 15.0, *)) {
+                    obs_output_set_last_error(vcam->output,
+                                              obs_module_text("Error.SystemExtension.NotInstalled.MacOS15"));
+                } else {
+                    obs_output_set_last_error(vcam->output, obs_module_text("Error.SystemExtension.NotInstalled"));
+                }
             }
 
             return false;
