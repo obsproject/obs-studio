@@ -27,7 +27,7 @@
 /* clang-format off */
 
 #define S_RATIO                         "ratio"
-#define S_THRESHOLD                     "threshold"
+#define S_FILTER_THRESHOLD              "threshold"
 #define S_ATTACK_TIME                   "attack_time"
 #define S_RELEASE_TIME                  "release_time"
 #define S_OUTPUT_GAIN                   "output_gain"
@@ -190,7 +190,7 @@ static void compressor_update(void *data, obs_data_t *s)
 	const char *sidechain_name = obs_data_get_string(s, S_SIDECHAIN_SOURCE);
 
 	cd->ratio = (float)obs_data_get_double(s, S_RATIO);
-	cd->threshold = (float)obs_data_get_double(s, S_THRESHOLD);
+	cd->threshold = (float)obs_data_get_double(s, S_FILTER_THRESHOLD);
 	cd->attack_gain = gain_coefficient(sample_rate, attack_time_ms / MS_IN_S_F);
 	cd->release_gain = gain_coefficient(sample_rate, release_time_ms / MS_IN_S_F);
 	cd->output_gain = db_to_mul(output_gain_db);
@@ -438,7 +438,7 @@ static struct obs_audio_data *compressor_filter_audio(void *data, struct obs_aud
 static void compressor_defaults(obs_data_t *s)
 {
 	obs_data_set_default_double(s, S_RATIO, 10.0f);
-	obs_data_set_default_double(s, S_THRESHOLD, -18.0f);
+	obs_data_set_default_double(s, S_FILTER_THRESHOLD, -18.0f);
 	obs_data_set_default_int(s, S_ATTACK_TIME, 6);
 	obs_data_set_default_int(s, S_RELEASE_TIME, 60);
 	obs_data_set_default_double(s, S_OUTPUT_GAIN, 0.0f);
@@ -477,8 +477,8 @@ static obs_properties_t *compressor_properties(void *data)
 
 	p = obs_properties_add_float_slider(props, S_RATIO, TEXT_RATIO, MIN_RATIO, MAX_RATIO, 0.5);
 	obs_property_float_set_suffix(p, ":1");
-	p = obs_properties_add_float_slider(props, S_THRESHOLD, TEXT_THRESHOLD, MIN_THRESHOLD_DB, MAX_THRESHOLD_DB,
-					    0.1);
+	p = obs_properties_add_float_slider(props, S_FILTER_THRESHOLD, TEXT_THRESHOLD, MIN_THRESHOLD_DB,
+					    MAX_THRESHOLD_DB, 0.1);
 	obs_property_float_set_suffix(p, " dB");
 	p = obs_properties_add_int_slider(props, S_ATTACK_TIME, TEXT_ATTACK_TIME, MIN_ATK_RLS_MS, MAX_ATK_MS, 1);
 	obs_property_int_set_suffix(p, " ms");
