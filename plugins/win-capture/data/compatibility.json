@@ -547,6 +547,20 @@
             "window_capture_wgc": false,
             "message": "Honkai: Star Rail may require OBS to be run as admin to use Game Capture.",
             "url": "https://obsproject.com/kb/game-capture-troubleshooting"
+        },
+        {
+            "name": "Zenless Zone Zero",
+            "translation_key": "Compatibility.GameCapture.Admin",
+            "severity": 1,
+            "executable": "ZenlessZoneZero.exe",
+            "window_class": "",
+            "window_title": "",
+            "match_flags": 1,
+            "game_capture": true,
+            "window_capture": false,
+            "window_capture_wgc": false,
+            "message": "Zenless Zone Zero may require OBS to be run as admin to use Game Capture.",
+            "url": "https://obsproject.com/kb/game-capture-troubleshooting"
         }
     ]
 }
