@@ -27,33 +27,43 @@ enum AVHWDeviceType hw_priority[] = {
 	AV_HWDEVICE_TYPE_VIDEOTOOLBOX, AV_HWDEVICE_TYPE_NONE,
 };
 
-static bool has_hw_type(const AVCodec *c, enum AVHWDeviceType type,
+static bool has_hw_type(const AVCodec **c, enum AVHWDeviceType type,
 			enum AVPixelFormat *hw_format)
 {
-	for (int i = 0;; i++) {
-		const AVCodecHWConfig *config = avcodec_get_hw_config(c, i);
-		if (!config) {
-			break;
-		}
+	const AVCodec *codec = NULL;
+	void *iterator = NULL;
+	while ((codec = av_codec_iterate(&iterator))) {
+		if (codec->id != (*c)->id ||
+		    codec->type != AVMEDIA_TYPE_VIDEO ||
+		    !av_codec_is_decoder(codec))
+			continue;
+		for (int i = 0;; i++) {
+			const AVCodecHWConfig *config =
+				avcodec_get_hw_config(codec, i);
+			if (!config) {
+				break;
+			}
 
-		if (config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX &&
-		    config->device_type == type) {
-			*hw_format = config->pix_fmt;
-			return true;
+			if (config->methods &
+				    AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX &&
+			    config->device_type == type) {
+				*hw_format = config->pix_fmt;
+				*c = codec;
+				return true;
+			}
 		}
 	}
 
 	return false;
 }
 
-static void init_hw_decoder(struct mp_decode *d, AVCodecContext *c)
+static void init_hw_decoder(struct mp_decode *d, AVBufferRef **hw_ctx)
 {
 	enum AVHWDeviceType *priority = hw_priority;
-	AVBufferRef *hw_ctx = NULL;
 
 	while (*priority != AV_HWDEVICE_TYPE_NONE) {
-		if (has_hw_type(d->codec, *priority, &d->hw_format)) {
-			int ret = av_hwdevice_ctx_create(&hw_ctx, *priority,
+		if (has_hw_type(&d->codec, *priority, &d->hw_format)) {
+			int ret = av_hwdevice_ctx_create(hw_ctx, *priority,
 							 NULL, NULL, 0);
 			if (ret == 0)
 				break;
@@ -61,17 +71,13 @@ static void init_hw_decoder(struct mp_decode *d, AVCodecContext *c)
 
 		priority++;
 	}
-
-	if (hw_ctx) {
-		c->hw_device_ctx = av_buffer_ref(hw_ctx);
-		c->opaque = d;
-		d->hw_ctx = hw_ctx;
-		d->hw = true;
-	}
 }
 
 static int mp_open_codec(struct mp_decode *d, bool hw)
 {
+	AVBufferRef *hw_ctx = NULL;
+	if (hw)
+		init_hw_decoder(d, &hw_ctx);
 	AVCodecContext *c;
 	int ret;
 
@@ -86,9 +92,12 @@ static int mp_open_codec(struct mp_decode *d, bool hw)
 		goto fail;
 
 	d->hw = false;
-
-	if (hw)
-		init_hw_decoder(d, c);
+	if (hw_ctx) {
+		c->hw_device_ctx = av_buffer_ref(hw_ctx);
+		c->opaque = d;
+		d->hw_ctx = hw_ctx;
+		d->hw = true;
+	}
 
 	if (c->thread_count == 1 && c->codec_id != AV_CODEC_ID_PNG &&
 	    c->codec_id != AV_CODEC_ID_TIFF &&
