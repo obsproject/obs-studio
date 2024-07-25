@@ -47,6 +47,10 @@ Source Definition Structure (obs_source_info)
    - **OBS_SOURCE_TYPE_FILTER**     - Filter
    - **OBS_SOURCE_TYPE_TRANSITION** - Transition
 
+.. member:: const char *obs_source_info.subcategory
+
+   Subcategory string for the Source to be put in at in the Popup UI.
+
 .. member:: uint32_t obs_source_info.output_flags
 
    Source output capability flags (required).
@@ -974,6 +978,12 @@ General Source Functions
 
    Gets/sets the hidden property that determines whether it should be hidden from the user.
    Used when the source is still alive but should not be referenced.
+
+---------------------
+
+.. function:: const char *obs_source_get_subcategory_name(const char *id)
+
+   Gets the subcategory string from :c:member:`obs_source_info.subcategory`.
 
 ---------------------
 

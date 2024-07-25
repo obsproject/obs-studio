@@ -1332,3 +1332,10 @@ public:
 protected:
 	virtual bool eventFilter(QObject *editor, QEvent *event) override;
 };
+
+#ifndef CUSTOM_SUBCATEGORY_MAP
+#define CUSTOM_SUBCATEGORY_MAP
+struct Custom_Subcategory_info {
+	QMenu *m_QMenu_ref;
+};
+#endif

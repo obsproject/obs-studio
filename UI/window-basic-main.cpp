@@ -6290,6 +6290,8 @@ QMenu *OBSBasic::CreateAddSourcePopupMenu()
 	bool foundDeprecated = false;
 	size_t idx = 0;
 
+	std::map<const char *, Custom_Subcategory_info> customSubcategory_MAP;
+
 	QMenu *popup = new QMenu(QTStr("Add"), this);
 	QMenu *deprecated = new QMenu(QTStr("Deprecated"), popup);
 
@@ -6329,11 +6331,48 @@ QMenu *OBSBasic::CreateAddSourcePopupMenu()
 		const char *name = obs_source_get_display_name(type);
 		uint32_t caps = obs_get_source_output_flags(type);
 
+		const char *subcategoryName =
+			obs_source_get_subcategory_name(type);
+
+		if (subcategoryName != NULL) {
+
+			if (strcmp(subcategoryName, "Deprecated") == 0) {
+				/* This allows plugin creators to put
+				*  their Sources into Deprecated as well */
+				addSource(deprecated, unversioned_type, name);
+				foundDeprecated = true;
+			} else {
+				// If it doesn't already exist
+				if (customSubcategory_MAP.count(
+					    subcategoryName) == 0) {
+					Custom_Subcategory_info
+						custSubcategory_info;
+
+					QMenu *SubcategoryMenu = new QMenu(
+						QTStr(subcategoryName));
+
+					custSubcategory_info.m_QMenu_ref =
+						SubcategoryMenu;
+
+					customSubcategory_MAP[subcategoryName] =
+						custSubcategory_info;
+				}
+
+				QMenu *submenu =
+					customSubcategory_MAP[subcategoryName]
+						.m_QMenu_ref;
+
+				addSource(submenu, unversioned_type, name);
+			}
+		}
+
 		if ((caps & OBS_SOURCE_CAP_DISABLED) != 0)
 			continue;
 
 		if ((caps & OBS_SOURCE_DEPRECATED) == 0) {
-			addSource(popup, unversioned_type, name);
+			if (subcategoryName == NULL) {
+				addSource(popup, unversioned_type, name);
+			};
 		} else {
 			addSource(deprecated, unversioned_type, name);
 			foundDeprecated = true;
@@ -6349,6 +6388,16 @@ QMenu *OBSBasic::CreateAddSourcePopupMenu()
 	connect(addGroup, &QAction::triggered,
 		[this]() { AddSource("group"); });
 	popup->addAction(addGroup);
+
+	// Custom Subcategories
+	if (customSubcategory_MAP.size() >= 1) {
+		popup->addSeparator();
+
+		for (const auto &entry : customSubcategory_MAP) {
+			QMenu *submenu = entry.second.m_QMenu_ref;
+			popup->addMenu(submenu);
+		}
+	}
 
 	if (!foundDeprecated) {
 		delete deprecated;

@@ -234,6 +234,9 @@ struct obs_source_info {
 	/** Source output flags */
 	uint32_t output_flags;
 
+	/** Custom Subcategory string for the popup GUI */
+	const char *subcategory;
+
 	/**
 	 * Get the translated name of the source type
 	 *

@@ -961,6 +961,12 @@ obs_properties_t *obs_source_properties(const obs_source_t *source)
 	return NULL;
 }
 
+const char *obs_source_get_subcategory_name(const char *id)
+{
+	const struct obs_source_info *info = get_source_info(id);
+	return info ? info->subcategory : NULL;
+}
+
 uint32_t obs_source_get_output_flags(const obs_source_t *source)
 {
 	return obs_source_valid(source, "obs_source_get_output_flags")
