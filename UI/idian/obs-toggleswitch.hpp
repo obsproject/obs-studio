@@ -24,17 +24,21 @@
 #include <QPainter>
 #include <QMouseEvent>
 #include <QAbstractButton>
+#include <QStyleOptionButton>
+#include <QAccessibleWidget>
 
 class OBSToggleSwitch : public QAbstractButton {
 	Q_OBJECT
 	Q_PROPERTY(int xpos MEMBER xPos WRITE setPos)
-	Q_PROPERTY(QColor backgroundInactive MEMBER backgroundInactive
+	Q_PROPERTY(QColor background MEMBER backgroundInactive DESIGNABLE true)
+	Q_PROPERTY(QColor background_hover MEMBER backgroundInactiveHover
 			   DESIGNABLE true)
-	Q_PROPERTY(
-		QColor backgroundActive MEMBER backgroundActive DESIGNABLE true)
-	Q_PROPERTY(QColor handle MEMBER handle DESIGNABLE true)
-	Q_PROPERTY(int margin MEMBER margin DESIGNABLE true)
-	Q_PROPERTY(int height MEMBER targetHeight DESIGNABLE true)
+	Q_PROPERTY(QColor background_checked MEMBER backgroundActive
+			   DESIGNABLE true)
+	Q_PROPERTY(QColor background_checked_hover MEMBER backgroundActiveHover
+			   DESIGNABLE true)
+	Q_PROPERTY(QColor handleColor MEMBER handleColor DESIGNABLE true)
+	Q_PROPERTY(int handleSize MEMBER handleSize DESIGNABLE true)
 	Q_PROPERTY(float blend MEMBER blend WRITE setBlend DESIGNABLE false)
 
 public:
@@ -60,8 +64,9 @@ public:
 
 protected:
 	void paintEvent(QPaintEvent *) override;
-
+	void showEvent(QShowEvent *) override;
 	void enterEvent(QEnterEvent *) override;
+	void leaveEvent(QEvent *) override;
 
 private slots:
 	void onClicked(bool checked);
@@ -71,7 +76,6 @@ private:
 	int onPos;
 	int offPos;
 	int margin;
-	int targetHeight;
 
 	float blend = 0.0f;
 
@@ -79,9 +83,13 @@ private:
 	bool manualStatus = false;
 	bool manualStatusChange = false;
 
+	void updateBackgroundColor();
 	QColor backgroundInactive;
+	QColor backgroundInactiveHover;
 	QColor backgroundActive;
-	QColor handle;
+	QColor backgroundActiveHover;
+	QColor handleColor;
+	int handleSize = 18;
 
 	QPropertyAnimation *animation = nullptr;
 	QPropertyAnimation *blendAnimation = nullptr;

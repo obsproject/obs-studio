@@ -45,7 +45,7 @@ IdianPlayground::IdianPlayground(QWidget *parent)
 	tmp->setSuffix(cbox);
 	test->properties()->addRow(tmp);
 
-	cbox = new QComboBox;
+	cbox = new OBSComboBox;
 	cbox->addItem("Test 3");
 	cbox->addItem("Test 4");
 	tmp = new OBSActionRow("Row with a dropdown", "And a subtitle!");

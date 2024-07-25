@@ -193,6 +193,23 @@
     --highlight: rgb(42,130,218);
     --highlight_inactive: rgb(25,28,34);
 
+    --action_row_base: calc(var(--input_height_base) * 0.8);
+    --action_row_height: calc(var(--action_row_base) + calc(var(--action_row_padding) * 2));
+    --action_row_border: 3px;
+    --action_row_input_width: calc(var(--action_row_base) * 4);
+    --action_row_collapse: calc(var(--action_row_base) + var(--padding_large));
+    --action_row_collapse_radius: calc(var(--action_row_collapse) / 2);
+    --action_row_padding: calc(var(--padding_large) * 2);
+    --action_row_padding_x: calc(var(--action_row_padding) * 1.5);
+    --action_row_padding_nested: calc(var(--action_row_padding) * 3);
+
+    --toggle_border: 1;
+    --toggle_margin: 3;
+    --toggle_width: calc(var(--action_row_base) * 2px);
+    --toggle_height: calc(var(--action_row_base) * 1px);
+    --toggle_handle: calc(calc(calc(var(--toggle_height) * 1) - calc(var(--toggle_border) * 2)) - var(--toggle_margin));
+    --toggle_radius: calc(var(--toggle_height) / 2);
+
     /* Qt Palette variables can be set with the "palette_" prefix */
     --palette_window: var(--bg_window);
     --palette_windowText: var(--text);
@@ -1238,7 +1255,7 @@ QSlider::handle:disabled {
 #stackedMixerArea {
     border: none;
     padding: 0px;
-    border-bottom: 1px solid #3c404b;
+    border-bottom: 1px solid var(--grey4);
 }
 
 VolControl #volLabel {
@@ -1962,4 +1979,185 @@ OBSBasicStats {
 /* Advanced audio dialog */
 OBSBasicAdvAudio #scrollAreaWidgetContents {
     background: var(--bg_base);
+}
+
+/* Idian Widgets */
+OBSGroupBox {
+    border-radius: var(--border_radius);
+    font-weight: bold;
+    margin: 0px 0px var(--spacing_base);
+}
+
+OBSGroupBox > QLabel.title {
+    font-weight: bold;
+    padding: var(--padding_large) 0px;
+}
+
+OBSGroupBox > QLabel.subtitle {
+    color: var(--text_muted);
+    padding: var(--spacing_small) 0px;
+}
+
+OBSPropertiesList {
+    border-width: 0px;
+    padding: 0px;
+    margin: var(--spacing_base) 0px;
+}
+
+OBSActionRow {
+    background: var(--grey5);
+    margin: 0;
+    padding: var(--action_row_padding) var(--action_row_padding_x);
+    min-height: var(--input_height);
+}
+
+OBSActionRow[TH_Event_States="true"]:hover {
+    background: var(--grey4);
+    border-color: var(--grey4);
+}
+
+OBSActionRow[first="true"] {
+    border-top-left-radius: var(--border_radius);
+    border-top-right-radius: var(--border_radius);
+}
+
+OBSActionRow[last="true"] {
+    border-bottom-left-radius: var(--border_radius);
+    border-bottom-right-radius: var(--border_radius);
+}
+
+OBSActionRow > QLabel {
+    font-weight: 500;
+    max-height: var(--input_height);
+}
+
+OBSActionRow > QLabel.subtitle {
+    font-size: var(--font_small);
+    color: var(--text_muted);
+}
+
+OBSToggleSwitch {
+    qproperty-background: var(--grey6);
+    qproperty-background_hover: var(--grey7);
+    qproperty-background_checked: var(--primary);
+    qproperty-background_checked_hover: var(--primary_light);
+
+    min-width: var(--toggle_width);
+    min-height: var(--toggle_height);
+
+    border-radius: var(--toggle_radius);
+
+    qproperty-handleColor: var(--white1);
+    qproperty-handleSize: var(--toggle_handle);
+
+    border: 2px solid transparent;
+}
+
+OBSToggleSwitch:hover {
+    border-color: var(--grey1);
+}
+
+OBSToggleSwitch:hover:checked {
+    border-color: var(--white1);
+}
+
+OBSActionRow QComboBox {
+    min-height: var(--action_row_base);
+    max-height: var(--action_row_base);
+    min-width: var(--action_row_input_width);
+    padding: 0px;
+    padding-left: var(--padding_xlarge);
+    margin: 0;
+}
+
+OBSActionRow QPushButton {
+    margin: 0;
+}
+
+OBSActionRow QComboBox {
+    border: 2px solid transparent;
+}
+
+OBSActionRow QComboBox:hover,
+OBSActionRow QComboBox:selected,
+OBSActionRow QComboBox::on {
+    border-color: var(--white1);
+}
+
+OBSActionRow QComboBox::drop-down {
+    border: none;
+}
+
+OBSActionRow QComboBox::down-arrow {
+    image: url(theme:Dark/collapse.svg);
+}
+
+OBSActionRow QComboBox QAbstractItemView::item:hover,
+OBSActionRow QComboBox QAbstractItemView::item:selected {
+    background-color: var(--list_item_bg_selected);
+    padding: var(--padding_base) var(--padding_large);
+}
+
+OBSActionRow QComboBox QAbstractItemView::item {
+    background-color: var(--bg_base);
+    padding: var(--padding_base) var(--padding_large);
+}
+
+OBSPropertiesListSpacer {
+    max-height: 1px;
+    min-height: 1px;
+    background-color: var(--bg_window);
+}
+
+#OBSActionRowExpand {
+    background: var(--grey5);
+    border-radius: var(--action_row_collapse_radius);
+    min-width: var(--action_row_collapse);
+    max-width: var(--action_row_collapse);
+    min-height: var(--action_row_collapse);
+    max-height: var(--action_row_collapse);
+}
+
+#OBSActionRowExpand:hover {
+    border: 2px solid var(--grey1);
+}
+
+OBSCollapsibleActionRow {
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+OBSCollapsibleActionRow OBSPropertiesList {
+    border-radius: 0;
+    border-left: 1px solid var(--grey5);
+    border-right: 1px solid var(--grey5);
+    margin: 1px 0px 3px;
+}
+
+OBSCollapsibleActionRow OBSPropertiesList OBSActionRow {
+    padding-left: var(--action_row_padding_nested);
+}
+
+OBSCollapsibleActionRow OBSActionRow[last="true"],
+OBSCollapsibleActionRow OBSActionRow[first="true"] {
+    border-radius: 0px;
+}
+
+OBSCollapsibleActionRow OBSPropertiesList OBSToggleSwitch {
+    qproperty-background: var(--grey7);
+    qproperty-background_hover: var(--grey6);
+}
+
+OBSActionRow[TH_Event_States="true"]:focus {
+    border: 1px solid var(--highlight);
+}
+
+OBSToggleSwitch:focus {
+    border-color: var(--highlight);
+}
+
+OBSActionRow QComboBox:focus,
+OBSActionRow QComboBox:on {
+    border: 1px solid var(--highlight);
 }

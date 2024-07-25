@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2023 by Dennis Sädtler <dennis@obsproject.com>
+    Copyright (C) 2024 by Taylor Giampaolo <warchamp7@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,21 +17,27 @@
 
 #pragma once
 
-/*
-* Idian - A family of custom widgets for OBS implementing the "Yami" UI design.
-*
-* (OBS Idian, get it?)
-*/
+#include <QComboBox>
+#include <QAbstractItemView>
 
-#include "obs-actionrow.hpp"
-#include "obs-combobox.hpp"
-#include "obs-controls.hpp"
-#include "obs-groupbox.hpp"
-#include "obs-propertieslist.hpp"
-#include "obs-toggleswitch.hpp"
+class OBSComboBox : public QComboBox {
+	Q_OBJECT
 
-/// Note: This file serves as an all-in-one include for custom OBS widgets.
-///       It is not intended to define any widgets by itself.
+public:
+	OBSComboBox(QWidget *parent = nullptr);
 
-/// Note 2: These widgets are still heavily work in progress. They should not
-///         yet be used outside of the demo and scene collection dialogues.
+	void showFocused();
+	void hideFocused();
+
+public Q_SLOTS:
+	void onToggle();
+
+signals:
+	void toggle();
+
+private:
+	void mousePressEvent(QMouseEvent *e) override;
+	void mouseReleaseEvent(QMouseEvent *e) override;
+	void keyReleaseEvent(QKeyEvent *e) override;
+	void focusOutEvent(QFocusEvent *e) override;
+};

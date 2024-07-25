@@ -16,6 +16,7 @@
 ******************************************************************************/
 
 #include "obs-toggleswitch.hpp"
+#include <util/base.h>
 
 #define UNUSED_PARAMETER(param) (void)param
 
@@ -31,20 +32,24 @@ static QColor blendColors(const QColor &color1, const QColor &color2,
 
 OBSToggleSwitch::OBSToggleSwitch(QWidget *parent)
 	: QAbstractButton(parent),
-	  targetHeight(24),
-	  margin(6),
 	  animation(new QPropertyAnimation(this, "xpos", this)),
 	  blendAnimation(new QPropertyAnimation(this, "blend", this))
 {
-	offPos = targetHeight / 2;
-	onPos = 2 * targetHeight - targetHeight / 2;
+	offPos = rect().width() / 2 - 18;
+	onPos = rect().width() / 2 + 18;
 	xPos = offPos;
+	margin = 3;
 
 	setCheckable(true);
-	setFocusPolicy(Qt::TabFocus);
+	setAccessibleName("ToggleSwitch");
 
 	connect(this, &OBSToggleSwitch::clicked, this,
 		&OBSToggleSwitch::onClicked);
+
+	connect(animation, &QVariantAnimation::valueChanged, this,
+		&OBSToggleSwitch::updateBackgroundColor);
+	connect(blendAnimation, &QVariantAnimation::valueChanged, this,
+		&OBSToggleSwitch::updateBackgroundColor);
 }
 
 OBSToggleSwitch::OBSToggleSwitch(bool defaultState, QWidget *parent)
@@ -56,27 +61,59 @@ OBSToggleSwitch::OBSToggleSwitch(bool defaultState, QWidget *parent)
 		xPos = onPos;
 }
 
-void OBSToggleSwitch::paintEvent(QPaintEvent *e)
+void OBSToggleSwitch::updateBackgroundColor()
 {
-	UNUSED_PARAMETER(e);
+	QColor offColor = underMouse() ? backgroundInactiveHover
+				       : backgroundInactive;
+	QColor onColor = underMouse() ? backgroundActiveHover
+				      : backgroundActive;
 
-	QPainter p(this);
-	p.setPen(Qt::NoPen);
-
-	p.setOpacity((isEnabled() || waiting) ? 1.0f : 0.5f);
 	if (!manualStatusChange) {
 		int offset = isChecked() ? 0 : offPos;
 		blend = (float)(xPos - offset) / (float)(onPos);
 	}
 
-	p.setBrush(blendColors(backgroundInactive, backgroundActive, blend));
-	p.setRenderHint(QPainter::Antialiasing, true);
-	p.drawRoundedRect(QRect(0, 0, 2 * targetHeight, targetHeight),
-			  targetHeight / 2, targetHeight / 2);
+	QColor bg = blendColors(offColor, onColor, blend);
+	setStyleSheet("background: " + bg.name());
+}
 
-	p.setBrush(handle);
-	p.drawEllipse(QRectF(xPos - (targetHeight / 2 - margin / 2), margin / 2,
-			     targetHeight - margin, targetHeight - margin));
+void OBSToggleSwitch::paintEvent(QPaintEvent *e)
+{
+	UNUSED_PARAMETER(e);
+
+	QStyleOptionButton opt;
+	opt.initFrom(this);
+	QPainter p(this);
+
+	bool showChecked = isChecked();
+	if (waiting) {
+		showChecked = !showChecked;
+	}
+
+	opt.state.setFlag(QStyle::State_On, showChecked);
+	opt.state.setFlag(QStyle::State_Off, !showChecked);
+
+	opt.state.setFlag(QStyle::State_Sunken, true);
+
+	style()->drawPrimitive(QStyle::PE_PanelButtonCommand, &opt, &p, this);
+
+	p.setRenderHint(QPainter::Antialiasing, true);
+
+	p.setBrush(handleColor);
+	p.drawEllipse(QRectF(xPos, margin, handleSize, handleSize));
+}
+
+void OBSToggleSwitch::showEvent(QShowEvent *e)
+{
+	margin = (rect().height() - handleSize) / 2;
+
+	offPos = margin;
+	onPos = rect().width() - handleSize - margin;
+
+	xPos = isChecked() ? onPos : offPos;
+
+	updateBackgroundColor();
+	style()->polish(this);
 }
 
 void OBSToggleSwitch::onClicked(bool checked)
@@ -126,10 +163,17 @@ void OBSToggleSwitch::setStatus(bool status)
 void OBSToggleSwitch::enterEvent(QEnterEvent *e)
 {
 	setCursor(Qt::PointingHandCursor);
+	updateBackgroundColor();
 	QAbstractButton::enterEvent(e);
+}
+
+void OBSToggleSwitch::leaveEvent(QEvent *e)
+{
+	updateBackgroundColor();
+	QAbstractButton::leaveEvent(e);
 }
 
 QSize OBSToggleSwitch::sizeHint() const
 {
-	return QSize(2 * targetHeight, targetHeight);
+	return QSize(2 * handleSize, handleSize);
 }

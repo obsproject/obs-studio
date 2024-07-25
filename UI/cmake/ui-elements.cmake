@@ -42,6 +42,8 @@ target_sources(
           hotkey-edit.hpp
           idian/obs-actionrow.cpp
           idian/obs-actionrow.hpp
+          idian/obs-combobox.hpp
+          idian/obs-combobox.cpp
           idian/obs-controls.cpp
           idian/obs-controls.hpp
           idian/obs-groupbox.cpp

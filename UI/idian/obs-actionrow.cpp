@@ -16,19 +16,24 @@
 ******************************************************************************/
 
 #include <QComboBox>
+#include <QApplication>
 #include <QSizePolicy>
 
 #include "obs-actionrow.hpp"
+#include <util/base.h>
 
 OBSActionRow::OBSActionRow(const QString &name, QWidget *parent)
 	: OBSActionBaseClass(parent)
 {
 	layout = new QGridLayout(this);
-	layout->setVerticalSpacing(2);
+	layout->setVerticalSpacing(0);
+	layout->setContentsMargins(0, 0, 0, 0);
 
 	QSizePolicy policy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+	setFocusPolicy(Qt::StrongFocus);
 	setSizePolicy(policy);
 	setLayout(layout);
+	setAccessibleName(name);
 
 	layout->setColumnMinimumWidth(0, 0);
 	layout->setColumnStretch(0, 0);
@@ -110,6 +115,16 @@ void OBSActionRow::setSuffixEnabled(bool enabled)
 	_suffix->setVisible(enabled);
 }
 
+void OBSActionRow::setChangeCursor(bool change)
+{
+	changeCursor = change;
+	setProperty("TH_Event_States", change);
+
+	QEvent event(QEvent::StyleChange);
+	QApplication::sendEvent(this, &event);
+	update();
+}
+
 void OBSActionRow::mouseReleaseEvent(QMouseEvent *e)
 {
 	if (e->button() & Qt::LeftButton) {
@@ -118,26 +133,37 @@ void OBSActionRow::mouseReleaseEvent(QMouseEvent *e)
 	QFrame::mouseReleaseEvent(e);
 }
 
+void OBSActionRow::keyReleaseEvent(QKeyEvent *e)
+{
+	if (e->key() == Qt::Key_Space || e->key() == Qt::Key_Enter) {
+		emit clicked();
+	}
+	QFrame::keyReleaseEvent(e);
+}
+
 void OBSActionRow::autoConnectWidget(QWidget *w)
 {
-	/* Set label's buddy to connected widget */
-	if (!nameLbl->buddy())
-		nameLbl->setBuddy(w);
+	setAccessibleName(nameLbl->text());
 
 	/* If element is a QAbstractButton subclass, and checkable,
 	 * forward clicks on the widget. */
 	QAbstractButton *abtn = dynamic_cast<QAbstractButton *>(w);
 	if (abtn && abtn->isCheckable()) {
+		setChangeCursor(true);
+		setFocusProxy(abtn);
+
+		// Pass click to button
 		connect(this, &OBSActionRow::clicked, abtn,
 			&QAbstractButton::click);
 		return;
 	}
 
 	// Otherwise, if it's a QComboBox, popup the menu
-	QComboBox *cbx = dynamic_cast<QComboBox *>(w);
+	OBSComboBox *cbx = dynamic_cast<OBSComboBox *>(w);
 	if (cbx) {
-		connect(this, &OBSActionRow::clicked, cbx,
-			&QComboBox::showPopup);
+		setChangeCursor(false);
+		setFocusProxy(cbx);
+
 		return;
 	}
 }
@@ -175,12 +201,19 @@ OBSCollapsibleActionRow::OBSCollapsibleActionRow(const QString &name,
 
 	extendIcon = new QLabel(this);
 	extendIcon->setPixmap(extendDown);
+	extendIcon->setAlignment(Qt::AlignCenter);
+	extendIcon->setObjectName("OBSActionRowExpand");
+
+	ar->setFocusPolicy(Qt::TabFocus);
+	ar->setChangeCursor(true);
 
 	if (toggleable) {
 		plist->setEnabled(false);
 		sw = new OBSToggleSwitch(false);
 		QWidget *multiSuffix = new QWidget(ar);
 		QHBoxLayout *multiLayout = new QHBoxLayout;
+
+		sw->setFocusPolicy(Qt::StrongFocus);
 
 		// ToDo: make switch buddy of toggleswitch and a11y for extend button
 		multiLayout->setContentsMargins(0, 0, 0, 0);

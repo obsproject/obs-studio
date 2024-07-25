@@ -27,6 +27,7 @@
 
 #include "obs-propertieslist.hpp"
 #include "obs-toggleswitch.hpp"
+#include "obs-combobox.hpp"
 
 /**
 * Base class mostly so adding stuff to a list is easier
@@ -67,11 +68,14 @@ public:
 	void setPrefixEnabled(bool enabled);
 	void setSuffixEnabled(bool enabled);
 
+	void setChangeCursor(bool change);
+
 signals:
 	void clicked();
 
 protected:
 	void mouseReleaseEvent(QMouseEvent *) override;
+	void keyReleaseEvent(QKeyEvent *) override;
 	bool hasSubtitle() const { return descLbl != nullptr; }
 
 private:
@@ -84,6 +88,7 @@ private:
 	QWidget *_suffix = nullptr;
 
 	void autoConnectWidget(QWidget *w);
+	bool changeCursor = false;
 };
 
 /**

@@ -20,7 +20,8 @@
 OBSGroupBox::OBSGroupBox(QWidget *parent) : QFrame(parent)
 {
 	layout = new QGridLayout(this);
-	layout->setVerticalSpacing(6);
+	layout->setVerticalSpacing(0);
+	layout->setContentsMargins(0, 0, 0, 0);
 
 	plist = new OBSPropertiesList(this);
 
