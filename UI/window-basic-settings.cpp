@@ -393,9 +393,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->centerSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->sourceSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->snapDistance,         DSCROLL_CHANGED,GENERAL_CHANGED);
-	HookWidget(ui->showGrid,		     COMBO_CHANGED,  GENERAL_CHANGED);
-	HookWidget(ui->gridSpacing,          DSCROLL_CHANGED,GENERAL_CHANGED);
-	HookWidget(ui->gridSnapping,     	 CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->gridDisplayMode,      COMBO_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->gridSpacing,          SCROLL_CHANGED,GENERAL_CHANGED);
+	HookWidget(ui->gridSnapping,         CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->overflowHide,         CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->overflowAlwaysVisible,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->overflowSelectionHide,CHECK_CHANGED,  GENERAL_CHANGED);
@@ -829,9 +829,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		&OBSBasicSettings::AdvReplayBufferChanged);
 	connect(ui->advRBSecMax, &QSpinBox::valueChanged, this,
 		&OBSBasicSettings::AdvReplayBufferChanged);
-	connect(ui->showGrid, &QComboBox::currentIndexChanged, this,
-		&OBSBasicSettings::SetGridSpacingEnabled);
-	connect(ui->showGrid, &QComboBox::currentIndexChanged, this,
+	connect(ui->gridDisplayMode, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::HandleGridSpacingEnabled);
+	connect(ui->gridDisplayMode, &QComboBox::currentIndexChanged, this,
 		&OBSBasicSettings::SetGridSnappingEnabled);
 	connect(ui->snappingEnabled, &QCheckBox::toggled, this,
 		&OBSBasicSettings::SetGridSnappingEnabled);
@@ -1432,11 +1432,11 @@ void OBSBasicSettings::LoadGeneralSettings()
 						"BasicWindow", "SnapDistance");
 	ui->snapDistance->setValue(snapDistance);
 
-	int showGrid =
-		config_get_int(GetGlobalConfig(), "BasicWindow", "ShowGrid");
-	ui->showGrid->setCurrentIndex(showGrid);
+	int gridDisplayMode =
+		config_get_int(GetGlobalConfig(), "BasicWindow", "GridDisplayMode");
+	ui->gridDisplayMode->setCurrentIndex(gridDisplayMode);
 
-	double gridSpacing = config_get_double(GetGlobalConfig(), "BasicWindow",
+	int gridSpacing = config_get_int(GetGlobalConfig(), "BasicWindow",
 					       "GridSpacing");
 	ui->gridSpacing->setValue(gridSpacing);
 
@@ -3377,11 +3377,11 @@ void OBSBasicSettings::SaveGeneralSettings()
 	if (WidgetChanged(ui->snapDistance))
 		config_set_double(GetGlobalConfig(), "BasicWindow",
 				  "SnapDistance", ui->snapDistance->value());
-	if (WidgetChanged(ui->showGrid))
-		config_set_int(GetGlobalConfig(), "BasicWindow", "ShowGrid",
-			       ui->showGrid->currentIndex());
+	if (WidgetChanged(ui->gridDisplayMode))
+		config_set_int(GetGlobalConfig(), "BasicWindow", "GridDisplayMode",
+			       ui->gridDisplayMode->currentIndex());
 	if (WidgetChanged(ui->gridSpacing))
-		config_set_double(GetGlobalConfig(), "BasicWindow",
+		config_set_int(GetGlobalConfig(), "BasicWindow",
 				  "GridSpacing", ui->gridSpacing->value());
 	if (WidgetChanged(ui->gridSnapping))
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
@@ -5714,16 +5714,24 @@ void OBSBasicSettings::AdvReplayBufferChanged()
 	UpdateAutomaticReplayBufferCheckboxes();
 }
 
-void OBSBasicSettings::SetGridSpacingEnabled(int index)
+void OBSBasicSettings::HandleGridSpacingEnabled(int displayMode)
 {
-	ui->gridSpacing->setEnabled(index);
-	ui->gridSpacingLabel->setEnabled(index);
+	if (displayMode == 0)
+		SetGridSpacingEnabled(false);
+	else
+		SetGridSpacingEnabled(true);
+}
+
+void OBSBasicSettings::SetGridSpacingEnabled(bool spacing)
+{
+	ui->gridSpacing->setEnabled(spacing);
+	ui->gridSpacingLabel->setEnabled(spacing);
 }
 
 void OBSBasicSettings::SetGridSnappingEnabled()
 {
 	ui->gridSnapping->setEnabled(ui->snappingEnabled->isChecked() &&
-				     ui->showGrid->currentIndex());
+				     ui->gridDisplayMode->currentIndex() != 0);
 }
 
 #define SIMPLE_OUTPUT_WARNING(str) \

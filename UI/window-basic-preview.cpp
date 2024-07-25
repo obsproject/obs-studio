@@ -193,10 +193,10 @@ vec3 OBSBasicPreview::GetSnapOffset(const vec3 &tl, const vec3 &br)
 		GetGlobalConfig(), "BasicWindow", "CenterSnapping");
 	const bool gridSnap = config_get_bool(GetGlobalConfig(), "BasicWindow",
 					      "GridSnapping");
-	const float gridSpacing = config_get_double(
+	const int gridSpacing = config_get_int(
 		GetGlobalConfig(), "BasicWindow", "GridSpacing");
-	const int showGrid =
-		config_get_int(GetGlobalConfig(), "BasicWindow", "ShowGrid");
+	const int gridDisplayMode =
+		config_get_int(GetGlobalConfig(), "BasicWindow", "GridDisplayMode");
 
 	const float clampDist = config_get_double(GetGlobalConfig(),
 						  "BasicWindow",
@@ -230,7 +230,7 @@ vec3 OBSBasicPreview::GetSnapOffset(const vec3 &tl, const vec3 &br)
 		clampOffset.y = screenSize.y / 2.0f - centerY;
 
 	// Grid lines.
-	if (!gridSnap || !showGrid)
+	if (!gridSnap || gridDisplayMode == 0)
 		return clampOffset;
 
 	// returns the number with the lowest absolute value (excluding zero)
@@ -245,7 +245,6 @@ vec3 OBSBasicPreview::GetSnapOffset(const vec3 &tl, const vec3 &br)
 
 	float heightMid = screenSize.y / 2.0f;
 	float widthMid = screenSize.x / 2.0f;
-	float squareSize = screenSize.x * gridSpacing / 100.0f;
 
 	// snap to vertical grid lines
 	if (fabsf(tl.x - widthMid) < clampDist)
@@ -253,8 +252,8 @@ vec3 OBSBasicPreview::GetSnapOffset(const vec3 &tl, const vec3 &br)
 	if (fabsf((screenSize.x - br.x) - widthMid) < clampDist)
 		clampOffset.x =
 			minAbs(clampOffset.x, (screenSize.x - br.x) - widthMid);
-	for (float gridLine = squareSize; gridLine <= widthMid;
-	     gridLine += squareSize) {
+	for (float gridLine = gridSpacing; gridLine <= widthMid;
+	     gridLine += gridSpacing) {
 		if (fabsf(tl.x - (widthMid - gridLine)) < clampDist)
 			clampOffset.x = minAbs(clampOffset.x,
 					       -(tl.x - (widthMid - gridLine)));
@@ -279,8 +278,8 @@ vec3 OBSBasicPreview::GetSnapOffset(const vec3 &tl, const vec3 &br)
 	if (fabsf((screenSize.y - br.y) - heightMid) < clampDist)
 		clampOffset.y = minAbs(clampOffset.y,
 				       (screenSize.y - br.y) - heightMid);
-	for (float gridLine = squareSize; gridLine <= heightMid;
-	     gridLine += squareSize) {
+	for (float gridLine = gridSpacing; gridLine <= heightMid;
+	     gridLine += gridSpacing) {
 		if (fabsf(tl.y - (heightMid - gridLine)) < clampDist)
 			clampOffset.y =
 				minAbs(clampOffset.y,
@@ -1850,46 +1849,6 @@ static void DrawLine(float x1, float y1, float x2, float y2, float thickness,
 	gs_vertexbuffer_destroy(line);
 }
 
-void DrawDot(float x, float y, vec2 scale, float gapsBetweenGridLines)
-{
-	gs_vertex2f(x, y);
-
-	if (gapsBetweenGridLines > 3.0f)
-		for (float i = -1.0f; i <= 1.0f; i += 2) {
-			gs_vertex2f(x + i / scale.x, y);
-			gs_vertex2f(x, y + i / scale.y);
-		}
-
-	if (gapsBetweenGridLines > 5.0f)
-		for (float i = -1.0f; i <= 1.0f; i += 2)
-			for (float j = -1.0f; j <= 1.0f; j += 2)
-				gs_vertex2f(x + i / scale.x, y + j / scale.y);
-}
-
-static void DrawGridLine(float x1, float y1, float x2, float y2, vec2 scale,
-			 float gapsBetweenGridLines, float dotSpacing)
-{
-	float offX = (y1 == y2) ? dotSpacing : 0.0f;
-	float offY = (x1 == x2) ? dotSpacing * scale.x / scale.y : 0.0f;
-	float midX = (x1 + x2) / 2.0f;
-	float midY = (y1 + y2) / 2.0f;
-
-	gs_render_start(true);
-
-	for (int i = 0; i * offX <= midX && i * offY <= midY; i++) {
-		DrawDot(midX - i * offX, midY - i * offY, scale,
-			gapsBetweenGridLines);
-		DrawDot(midX + i * offX, midY + i * offY, scale,
-			gapsBetweenGridLines);
-	}
-
-	gs_vertbuffer_t *line = gs_render_save();
-
-	gs_load_vertexbuffer(line);
-	gs_draw(GS_POINTS, 0, 0);
-	gs_vertexbuffer_destroy(line);
-}
-
 static void DrawSquareAtPos(float x, float y, float pixelRatio)
 {
 	struct vec3 pos;
@@ -2292,7 +2251,7 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *, obs_sceneitem_t *item,
 
 		// show grid if the setting is "when moving a source"
 		if (config_get_int(GetGlobalConfig(), "BasicWindow",
-				   "ShowGrid") == 2)
+				   "GridDisplayMode") == 2)
 			prev->DrawPreviewGrid();
 	}
 
@@ -2398,7 +2357,7 @@ void OBSBasicPreview::DrawSceneEditing()
 
 		// show grid if the setting is "always"
 		if (config_get_int(GetGlobalConfig(), "BasicWindow",
-				   "ShowGrid") == 1)
+				   "GridDisplayMode") == 1)
 			this->DrawPreviewGrid();
 
 		gs_matrix_push();
@@ -2826,37 +2785,26 @@ void OBSBasicPreview::DrawPreviewGrid()
 	gs_matrix_push();
 	gs_matrix_identity();
 	gs_matrix_scale3f(main->previewCX, main->previewCY, 1.0f);
-
+	vec2 screenSize = GetOBSScreenSize();
 	vec2 scale;
 	vec2_set(&scale, main->previewCX, main->previewCY);
-	float gridSpacing = config_get_double(GetGlobalConfig(), "BasicWindow",
-					      "GridSpacing") /
-			    100.0f;
-	float offX = gridSpacing;
-	float offY = gridSpacing * scale.x / scale.y;
-
-	float gapsBetweenGridLines = std::max(
-		ceil(log2(400.0f * gridSpacing * main->previewScale)), 1.0f);
-	float dotSpacing = gridSpacing / gapsBetweenGridLines;
+	int gridSpacing = config_get_int(GetGlobalConfig(), "BasicWindow",
+                      "GridSpacing");
+	float offX = gridSpacing / screenSize.x;
+	float offY = gridSpacing / screenSize.y;
 
 	// draw horizontal and vertical center lines
-	DrawGridLine(0.5f, 0.0f, 0.5f, 1.0f, scale, gapsBetweenGridLines,
-		     dotSpacing);
-	DrawGridLine(0.0f, 0.5f, 1.0f, 0.5f, scale, gapsBetweenGridLines,
-		     dotSpacing);
+	DrawLine(0.5f, 0.0f, 0.5f, 1.0f, 1.0f, scale);
+	DrawLine(0.0f, 0.5f, 1.0f, 0.5f, 1.0f, scale);
 
 	// draw the rest of the grid
 	for (int i = 1; i * offX <= 0.5; i++) {
-		DrawGridLine(0.5f + i * offX, 0.0f, 0.5f + i * offX, 1.0f,
-			     scale, gapsBetweenGridLines, dotSpacing);
-		DrawGridLine(0.5f - i * offX, 0.0f, 0.5f - i * offX, 1.0f,
-			     scale, gapsBetweenGridLines, dotSpacing);
+		DrawLine(0.5f + i * offX, 0.0f, 0.5f + i * offX, 1.0f, 1.0f, scale);
+		DrawLine(0.5f - i * offX, 0.0f, 0.5f - i * offX, 1.0f, 1.0f, scale);
 	}
 	for (int i = 1; i * offY <= 0.5; i++) {
-		DrawGridLine(0.0f, 0.5f + i * offY, 1.0f, 0.5f + i * offY,
-			     scale, gapsBetweenGridLines, dotSpacing);
-		DrawGridLine(0.0f, 0.5f - i * offY, 1.0f, 0.5f - i * offY,
-			     scale, gapsBetweenGridLines, dotSpacing);
+		DrawLine(0.0f, 0.5f + i * offY, 1.0f, 0.5f + i * offY, 1.0f, scale);
+		DrawLine(0.0f, 0.5f - i * offY, 1.0f, 0.5f - i * offY, 1.0f, scale);
 	}
 
 	gs_matrix_pop();

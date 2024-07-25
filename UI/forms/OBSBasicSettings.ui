@@ -452,90 +452,21 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="2" column="1">
-                    <widget class="QCheckBox" name="screenSnapping">
+                   <item row="1" column="0">
+                    <widget class="QLabel" name="showGridLabel">
                      <property name="text">
-                      <string>Basic.Settings.General.ScreenSnapping</string>
-                     </property>
-                     <property name="checked">
-                      <bool>true</bool>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="4" column="1">
-                    <widget class="QCheckBox" name="centerSnapping">
-                     <property name="text">
-                      <string>Basic.Settings.General.CenterSnapping</string>
-                     </property>
-                     <property name="checked">
-                      <bool>true</bool>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="3" column="1">
-                    <widget class="QCheckBox" name="sourceSnapping">
-                     <property name="text">
-                      <string>Basic.Settings.General.SourceSnapping</string>
-                     </property>
-                     <property name="checked">
-                      <bool>true</bool>
+                      <string>Basic.Settings.General.PreviewGrid</string>
                      </property>
                     </widget>
                    </item>
                    <item row="1" column="1">
-                    <widget class="QDoubleSpinBox" name="snapDistance">
-                     <property name="decimals">
-                      <number>1</number>
-                     </property>
-                     <property name="singleStep">
-                      <double>0.500000000000000</double>
-                     </property>
-                     <property name="value">
-                      <double>10.000000000000000</double>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="1" column="0">
-                    <widget class="QLabel" name="label_9">
-                     <property name="text">
-                      <string>Basic.Settings.General.SnapDistance</string>
-                     </property>
-                     <property name="buddy">
-                      <cstring>snapDistance</cstring>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="3" column="0">
-                    <spacer name="horizontalSpacer_4">
-                     <property name="orientation">
-                      <enum>Qt::Horizontal</enum>
-                     </property>
-                     <property name="sizeType">
-                      <enum>QSizePolicy::Fixed</enum>
-                     </property>
-                     <property name="sizeHint" stdset="0">
-                      <size>
-                       <width>170</width>
-                       <height>5</height>
-                      </size>
-                     </property>
-                    </spacer>
-                   </item>
-                   <item row="6" column="0">
-                    <widget class="QLabel" name="showGridLabel">
-                     <property name="text">
-                      <string>Basic.Settings.General.ShowGrid</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="6" column="1">
-                    <widget class="QComboBox" name="showGrid">
+                    <widget class="QComboBox" name="gridDisplayMode">
                      <property name="enabled">
                       <bool>true</bool>
                      </property>
                      <item>
                       <property name="text">
-                       <string>Basic.Settings.General.NeverShowGrid</string>
+                       <string>Basic.Settings.General.PreviewGridDisabled</string>
                       </property>
                      </item>
                      <item>
@@ -550,7 +481,7 @@
                      </item>
                     </widget>
                    </item>
-                   <item row="7" column="0">
+                   <item row="2" column="0">
                     <widget class="QLabel" name="gridSpacingLabel">
                      <property name="enabled">
                       <bool>false</bool>
@@ -560,30 +491,96 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="7" column="1">
-                    <widget class="QDoubleSpinBox" name="gridSpacing">
+                   <item row="2" column="1">
+                    <widget class="QSpinBox" name="gridSpacing">
                      <property name="enabled">
                       <bool>false</bool>
                      </property>
+                     <property name="suffix">
+                      <string> pixels</string>
+                     </property>
+                     <property name="minimum">
+                      <number>50</number>
+                     </property>
+                     <property name="maximum">
+                      <number>1000</number>
+                     </property>
+                     <property name="singleStep">
+                      <number>1</number>
+                     </property>
+                     <property name="value">
+                      <number>200</number>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="4" column="1">
+                    <widget class="QCheckBox" name="screenSnapping">
+                     <property name="text">
+                      <string>Basic.Settings.General.ScreenSnapping</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="6" column="1">
+                    <widget class="QCheckBox" name="centerSnapping">
+                     <property name="text">
+                      <string>Basic.Settings.General.CenterSnapping</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="5" column="1">
+                    <widget class="QCheckBox" name="sourceSnapping">
+                     <property name="text">
+                      <string>Basic.Settings.General.SourceSnapping</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="3" column="1">
+                    <widget class="QDoubleSpinBox" name="snapDistance">
                      <property name="decimals">
                       <number>1</number>
                      </property>
-                     <property name="minimum">
-                      <double>1.000000000000000</double>
-                     </property>
-                     <property name="maximum">
-                      <double>50.000000000000000</double>
-                     </property>
                      <property name="singleStep">
                       <double>0.500000000000000</double>
-                     </property>
-                     <property name="stepType">
-                      <enum>QAbstractSpinBox::DefaultStepType</enum>
                      </property>
                      <property name="value">
                       <double>10.000000000000000</double>
                      </property>
                     </widget>
+                   </item>
+                   <item row="3" column="0">
+                    <widget class="QLabel" name="label_9">
+                     <property name="text">
+                      <string>Basic.Settings.General.SnapDistance</string>
+                     </property>
+                     <property name="buddy">
+                      <cstring>snapDistance</cstring>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="5" column="0">
+                    <spacer name="horizontalSpacer_4">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeType">
+                      <enum>QSizePolicy::Fixed</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>170</width>
+                       <height>5</height>
+                      </size>
+                     </property>
+                    </spacer>
                    </item>
                    <item row="8" column="1">
                     <widget class="QCheckBox" name="gridSnapping">
@@ -8143,7 +8140,7 @@
   <tabstop>screenSnapping</tabstop>
   <tabstop>sourceSnapping</tabstop>
   <tabstop>centerSnapping</tabstop>
-  <tabstop>showGrid</tabstop>
+  <tabstop>gridDisplayMode</tabstop>
   <tabstop>gridSpacing</tabstop>
   <tabstop>gridSnapping</tabstop>
   <tabstop>hideProjectorCursor</tabstop>

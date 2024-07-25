@@ -474,7 +474,7 @@ bool OBSApp::InitGlobalConfigDefaults()
 				false);
 	config_set_default_double(globalConfig, "BasicWindow", "SnapDistance",
 				  10.0);
-	config_set_default_int(globalConfig, "BasicWindow", "ShowGrid", 0);
+	config_set_default_int(globalConfig, "BasicWindow", "GridDisplayMode", 0);
 	config_set_default_double(globalConfig, "BasicWindow", "GridSpacing",
 				  10.0);
 	config_set_default_bool(globalConfig, "BasicWindow", "GridSnapping",

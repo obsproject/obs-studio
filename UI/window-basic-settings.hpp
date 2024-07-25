@@ -493,7 +493,8 @@ private slots:
 
 	void SimpleStreamingEncoderChanged();
 
-	void SetGridSpacingEnabled(int index);
+	void HandleGridSpacingEnabled(int index);
+	void SetGridSpacingEnabled(bool spacing);
 	void SetGridSnappingEnabled();
 
 	OBSService SpawnTempService();
