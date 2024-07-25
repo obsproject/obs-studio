@@ -40,6 +40,17 @@ target_sources(
           horizontal-scroll-area.hpp
           hotkey-edit.cpp
           hotkey-edit.hpp
+          idian/obs-actionrow.cpp
+          idian/obs-actionrow.hpp
+          idian/obs-controls.cpp
+          idian/obs-controls.hpp
+          idian/obs-groupbox.cpp
+          idian/obs-groupbox.hpp
+          idian/obs-propertieslist.cpp
+          idian/obs-propertieslist.hpp
+          idian/obs-toggleswitch.cpp
+          idian/obs-toggleswitch.hpp
+          idian/obs-widgets.hpp
           item-widget-helpers.cpp
           item-widget-helpers.hpp
           lineedit-autoresize.cpp
