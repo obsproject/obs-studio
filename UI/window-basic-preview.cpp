@@ -193,10 +193,10 @@ vec3 OBSBasicPreview::GetSnapOffset(const vec3 &tl, const vec3 &br)
 		GetGlobalConfig(), "BasicWindow", "CenterSnapping");
 	const bool gridSnap = config_get_bool(GetGlobalConfig(), "BasicWindow",
 					      "GridSnapping");
-	const int gridSpacing = config_get_int(
-		GetGlobalConfig(), "BasicWindow", "GridSpacing");
-	const int gridDisplayMode =
-		config_get_int(GetGlobalConfig(), "BasicWindow", "GridDisplayMode");
+	const int gridSpacing =
+		config_get_int(GetGlobalConfig(), "BasicWindow", "GridSpacing");
+	const int gridDisplayMode = config_get_int(
+		GetGlobalConfig(), "BasicWindow", "GridDisplayMode");
 
 	const float clampDist = config_get_double(GetGlobalConfig(),
 						  "BasicWindow",
@@ -2788,8 +2788,8 @@ void OBSBasicPreview::DrawPreviewGrid()
 	vec2 screenSize = GetOBSScreenSize();
 	vec2 scale;
 	vec2_set(&scale, main->previewCX, main->previewCY);
-	int gridSpacing = config_get_int(GetGlobalConfig(), "BasicWindow",
-                      "GridSpacing");
+	int gridSpacing =
+		config_get_int(GetGlobalConfig(), "BasicWindow", "GridSpacing");
 	float offX = gridSpacing / screenSize.x;
 	float offY = gridSpacing / screenSize.y;
 
@@ -2799,12 +2799,16 @@ void OBSBasicPreview::DrawPreviewGrid()
 
 	// draw the rest of the grid
 	for (int i = 1; i * offX <= 0.5; i++) {
-		DrawLine(0.5f + i * offX, 0.0f, 0.5f + i * offX, 1.0f, 1.0f, scale);
-		DrawLine(0.5f - i * offX, 0.0f, 0.5f - i * offX, 1.0f, 1.0f, scale);
+		DrawLine(0.5f + i * offX, 0.0f, 0.5f + i * offX, 1.0f, 1.0f,
+			 scale);
+		DrawLine(0.5f - i * offX, 0.0f, 0.5f - i * offX, 1.0f, 1.0f,
+			 scale);
 	}
 	for (int i = 1; i * offY <= 0.5; i++) {
-		DrawLine(0.0f, 0.5f + i * offY, 1.0f, 0.5f + i * offY, 1.0f, scale);
-		DrawLine(0.0f, 0.5f - i * offY, 1.0f, 0.5f - i * offY, 1.0f, scale);
+		DrawLine(0.0f, 0.5f + i * offY, 1.0f, 0.5f + i * offY, 1.0f,
+			 scale);
+		DrawLine(0.0f, 0.5f - i * offY, 1.0f, 0.5f - i * offY, 1.0f,
+			 scale);
 	}
 
 	gs_matrix_pop();

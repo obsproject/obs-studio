@@ -1432,12 +1432,12 @@ void OBSBasicSettings::LoadGeneralSettings()
 						"BasicWindow", "SnapDistance");
 	ui->snapDistance->setValue(snapDistance);
 
-	int gridDisplayMode =
-		config_get_int(GetGlobalConfig(), "BasicWindow", "GridDisplayMode");
+	int gridDisplayMode = config_get_int(GetGlobalConfig(), "BasicWindow",
+					     "GridDisplayMode");
 	ui->gridDisplayMode->setCurrentIndex(gridDisplayMode);
 
-	int gridSpacing = config_get_int(GetGlobalConfig(), "BasicWindow",
-					       "GridSpacing");
+	int gridSpacing =
+		config_get_int(GetGlobalConfig(), "BasicWindow", "GridSpacing");
 	ui->gridSpacing->setValue(gridSpacing);
 
 	bool gridSnapping = config_get_bool(GetGlobalConfig(), "BasicWindow",
@@ -3378,11 +3378,12 @@ void OBSBasicSettings::SaveGeneralSettings()
 		config_set_double(GetGlobalConfig(), "BasicWindow",
 				  "SnapDistance", ui->snapDistance->value());
 	if (WidgetChanged(ui->gridDisplayMode))
-		config_set_int(GetGlobalConfig(), "BasicWindow", "GridDisplayMode",
+		config_set_int(GetGlobalConfig(), "BasicWindow",
+			       "GridDisplayMode",
 			       ui->gridDisplayMode->currentIndex());
 	if (WidgetChanged(ui->gridSpacing))
-		config_set_int(GetGlobalConfig(), "BasicWindow",
-				  "GridSpacing", ui->gridSpacing->value());
+		config_set_int(GetGlobalConfig(), "BasicWindow", "GridSpacing",
+			       ui->gridSpacing->value());
 	if (WidgetChanged(ui->gridSnapping))
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"GridSnapping", ui->gridSnapping->isChecked());
