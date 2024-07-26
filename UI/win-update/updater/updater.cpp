@@ -379,7 +379,7 @@ bool DownloadWorkerThread()
 	const DWORD compressionFlags = WINHTTP_DECOMPRESSION_FLAG_ALL;
 
 	HttpHandle hSession = WinHttpOpen(L"OBS Studio Updater/3.0",
-					  WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+					  WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
 					  WINHTTP_NO_PROXY_NAME,
 					  WINHTTP_NO_PROXY_BYPASS, 0);
 	if (!hSession) {
@@ -1138,7 +1138,7 @@ static bool UpdateVSRedists()
 	const DWORD compressionFlags = WINHTTP_DECOMPRESSION_FLAG_ALL;
 
 	HttpHandle hSession = WinHttpOpen(L"OBS Studio Updater/3.0",
-					  WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+					  WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
 					  WINHTTP_NO_PROXY_NAME,
 					  WINHTTP_NO_PROXY_BYPASS, 0);
 	if (!hSession) {
