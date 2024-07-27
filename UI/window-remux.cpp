@@ -487,7 +487,8 @@ void RemuxQueueModel::checkInputPath(int row)
 		if (entry.state == RemuxEntryState::Ready)
 			entry.targetPath = QDir::toNativeSeparators(
 				fileInfo.path() + QDir::separator() +
-				fileInfo.completeBaseName() + newExt);
+				remuxSuffix + fileInfo.completeBaseName() +
+				remuxPrefix + newExt);
 	}
 
 	if (entry.state == RemuxEntryState::Ready && isProcessing)
@@ -642,9 +643,10 @@ void RemuxQueueModel::finishEntry(bool success)
   The actual remux window implementation
 **********************************************************/
 
-OBSRemux::OBSRemux(const char *path, QWidget *parent, bool autoRemux_)
+OBSRemux::OBSRemux(const char *path, QWidget *parent, bool autoRemux_,
+		   QString remuxSuffix_, QString remuxPrefix_)
 	: QDialog(parent),
-	  queueModel(new RemuxQueueModel),
+	  queueModel(new RemuxQueueModel(parent, remuxSuffix_, remuxPrefix_)),
 	  worker(new RemuxWorker()),
 	  ui(new Ui::OBSRemux),
 	  recPath(path),

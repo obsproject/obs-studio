@@ -5607,8 +5607,13 @@ void OBSBasic::on_actionRemux_triggered()
 				   : config_get_string(activeConfiguration,
 						       "AdvOut", "RecFilePath");
 
+	const QString remuxSuffix =
+		QT_UTF8(config_get_string(basicConfig, "Video", "RemuxSuffix"));
+	const QString remuxPrefix =
+		QT_UTF8(config_get_string(basicConfig, "Video", "RemuxPrefix"));
+
 	OBSRemux *remuxDlg;
-	remuxDlg = new OBSRemux(path, this);
+	remuxDlg = new OBSRemux(path, this, false, remuxSuffix, remuxPrefix);
 	remuxDlg->show();
 	remux = remuxDlg;
 }
@@ -7876,10 +7881,20 @@ void OBSBasic::AutoRemux(QString input, bool no_show)
 		return;
 	}
 
-	QString path = fi.path();
+	QString output = fi.path() + "/";
+	const char *remuxPrefix =
+		config_get_string(config, "Video", "RemuxPrefix");
+	const char *remuxSuffix =
+		config_get_string(config, "Video", "RemuxSuffix");
 
-	QString output = input;
-	output.resize(output.size() - suffix.size());
+	if (remuxPrefix) {
+		output += QT_UTF8(remuxPrefix);
+	}
+	output += fi.baseName();
+	if (remuxSuffix) {
+		output += QT_UTF8(remuxSuffix);
+	}
+	output += ".";
 
 	const obs_encoder_t *videoEncoder =
 		obs_output_get_video_encoder(outputHandler->fileOutput);
@@ -7895,6 +7910,7 @@ void OBSBasic::AutoRemux(QString input, bool no_show)
 	} else {
 		output += "mp4";
 	}
+	QString path = QFileInfo(output).path();
 
 	OBSRemux *remux = new OBSRemux(QT_TO_UTF8(path), this, true);
 	if (!no_show)
