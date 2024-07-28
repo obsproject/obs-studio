@@ -17,34 +17,25 @@
 
 #pragma once
 
-#include <QComboBox>
-#include <QAbstractItemView>
+#include <QCheckBox>
 
 #include "obs-widgets-base.hpp"
 
-class OBSComboBox : public QComboBox, public OBSWidgetUtils {
-	Q_OBJECT
+class OBSCheckBox : public QCheckBox, public OBSWidgetUtils {
+	Q_OBJECT;
 
 public:
-	OBSComboBox(QWidget *parent = nullptr);
-
-public Q_SLOTS:
-	void onToggle();
-
-signals:
-	void toggle();
+	OBSCheckBox(QWidget *parent = nullptr);
 
 protected:
-	void mousePressEvent(QMouseEvent *e) override;
-	void mouseReleaseEvent(QMouseEvent *e) override;
 	void focusInEvent(QFocusEvent *e) override
 	{
 		OBSWidgetUtils::showKeyFocused(e);
-		QComboBox::focusInEvent(e);
+		QAbstractButton::focusInEvent(e);
 	}
 	void focusOutEvent(QFocusEvent *e) override
 	{
 		OBSWidgetUtils::hideKeyFocused(e);
-		QComboBox::focusOutEvent(e);
+		QAbstractButton::focusOutEvent(e);
 	}
 };

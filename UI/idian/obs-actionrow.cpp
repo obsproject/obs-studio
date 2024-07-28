@@ -21,6 +21,7 @@
 
 #include "obs-actionrow.hpp"
 #include <util/base.h>
+#include <QSvgRenderer>
 
 OBSActionRow::OBSActionRow(const QString &name, QWidget *parent)
 	: OBSActionBaseClass(parent)
@@ -42,7 +43,7 @@ OBSActionRow::OBSActionRow(const QString &name, QWidget *parent)
 
 	nameLbl = new QLabel();
 	nameLbl->setText(name);
-	nameLbl->setProperty("class", "title");
+	OBSWidgetUtils::addClass(nameLbl, "title");
 
 	layout->addWidget(nameLbl, 0, 1, Qt::AlignLeft);
 }
@@ -53,7 +54,8 @@ OBSActionRow::OBSActionRow(const QString &name, const QString &desc,
 {
 	descLbl = new QLabel();
 	descLbl->setText(desc);
-	descLbl->setProperty("class", "subtitle");
+	OBSWidgetUtils::addClass(descLbl, "subtitle");
+	setAccessibleDescription(desc);
 
 	layout->addWidget(descLbl, 1, 1, Qt::AlignLeft);
 }
@@ -118,11 +120,40 @@ void OBSActionRow::setSuffixEnabled(bool enabled)
 void OBSActionRow::setChangeCursor(bool change)
 {
 	changeCursor = change;
-	setProperty("TH_Event_States", change);
+	OBSWidgetUtils::toggleClass("cursorPointer", change);
 
-	QEvent event(QEvent::StyleChange);
-	QApplication::sendEvent(this, &event);
-	update();
+	style()->unpolish(this);
+	style()->polish(this);
+}
+
+void OBSActionRow::enterEvent(QEnterEvent *e)
+{
+	if (changeCursor) {
+		setCursor(Qt::PointingHandCursor);
+	}
+
+	OBSWidgetUtils::addClass(QString("hover"));
+	style()->unpolish(this);
+	style()->polish(this);
+
+	if (hasPrefix() || hasSuffix()) {
+		OBSWidgetUtils::polishChildren();
+	}
+
+	OBSActionBaseClass::enterEvent(e);
+}
+
+void OBSActionRow::leaveEvent(QEvent *e)
+{
+	OBSWidgetUtils::removeClass("hover");
+	style()->unpolish(this);
+	style()->polish(this);
+
+	if (hasPrefix() || hasSuffix()) {
+		OBSWidgetUtils::polishChildren();
+	}
+
+	OBSActionBaseClass::leaveEvent(e);
 }
 
 void OBSActionRow::mouseReleaseEvent(QMouseEvent *e)
@@ -158,7 +189,7 @@ void OBSActionRow::autoConnectWidget(QWidget *w)
 		return;
 	}
 
-	// Otherwise, if it's a QComboBox, popup the menu
+	// If it's a QComboBox, popup the menu
 	OBSComboBox *cbx = dynamic_cast<OBSComboBox *>(w);
 	if (cbx) {
 		setChangeCursor(false);
@@ -166,6 +197,44 @@ void OBSActionRow::autoConnectWidget(QWidget *w)
 
 		return;
 	}
+
+	// Disable row focus for DoubleSpinBox
+	OBSDoubleSpinBox *sbx = dynamic_cast<OBSDoubleSpinBox *>(w);
+	if (sbx) {
+		setFocusProxy(sbx);
+
+		return;
+	}
+}
+
+/*
+* Button for expanding a collapsible ActionRow
+*/
+OBSActionCollapseButton::OBSActionCollapseButton(QWidget *parent)
+{
+	setCheckable(true);
+}
+
+void OBSActionCollapseButton::paintEvent(QPaintEvent *e)
+{
+	UNUSED_PARAMETER(e);
+
+	QStyleOptionButton opt;
+	opt.initFrom(this);
+	QPainter p(this);
+
+	bool checked = isChecked();
+
+	opt.state.setFlag(QStyle::State_On, checked);
+	opt.state.setFlag(QStyle::State_Off, !checked);
+
+	opt.state.setFlag(QStyle::State_Sunken, checked);
+
+	p.setRenderHint(QPainter::Antialiasing, true);
+	p.setRenderHint(QPainter::SmoothPixmapTransform, true);
+
+	style()->drawPrimitive(QStyle::PE_PanelButtonCommand, &opt, &p, this);
+	style()->drawPrimitive(QStyle::PE_IndicatorCheckBox, &opt, &p, this);
 }
 
 /*
@@ -193,18 +262,9 @@ OBSCollapsibleActionRow::OBSCollapsibleActionRow(const QString &name,
 	plist->setVisible(false);
 	layout->addWidget(plist);
 
-	// ToDo, make this a property
-	extendDown = QPixmap(":res/images/hide.svg");
-	QTransform tr;
-	tr.rotate(180);
-	extendUp = extendDown.transformed(tr);
+	collapseBtn = new OBSActionCollapseButton(this);
+	collapseBtn->setFocusProxy(this);
 
-	extendIcon = new QLabel(this);
-	extendIcon->setPixmap(extendDown);
-	extendIcon->setAlignment(Qt::AlignCenter);
-	extendIcon->setObjectName("OBSActionRowExpand");
-
-	ar->setFocusPolicy(Qt::TabFocus);
 	ar->setChangeCursor(true);
 
 	if (toggleable) {
@@ -218,7 +278,7 @@ OBSCollapsibleActionRow::OBSCollapsibleActionRow(const QString &name,
 		// ToDo: make switch buddy of toggleswitch and a11y for extend button
 		multiLayout->setContentsMargins(0, 0, 0, 0);
 		multiLayout->addWidget(sw);
-		multiLayout->addWidget(extendIcon);
+		multiLayout->addWidget(collapseBtn);
 
 		multiSuffix->setLayout(multiLayout);
 
@@ -226,8 +286,11 @@ OBSCollapsibleActionRow::OBSCollapsibleActionRow(const QString &name,
 		connect(sw, &OBSToggleSwitch::toggled, plist,
 			&OBSPropertiesList::setEnabled);
 	} else {
-		ar->setSuffix(extendIcon);
+		ar->setSuffix(collapseBtn);
 	}
+
+	connect(collapseBtn, &QAbstractButton::clicked, this,
+		&OBSCollapsibleActionRow::toggleVisibility);
 
 	connect(ar, &OBSActionRow::clicked, this,
 		&OBSCollapsibleActionRow::toggleVisibility);
@@ -238,7 +301,7 @@ void OBSCollapsibleActionRow::toggleVisibility()
 	bool visible = !plist->isVisible();
 
 	plist->setVisible(visible);
-	extendIcon->setPixmap(visible ? extendUp : extendDown);
+	collapseBtn->setChecked(visible);
 }
 
 void OBSCollapsibleActionRow::addRow(OBSActionBaseClass *ar)

@@ -24,6 +24,7 @@
 */
 
 #include "obs-actionrow.hpp"
+#include "obs-checkbox.hpp"
 #include "obs-combobox.hpp"
 #include "obs-controls.hpp"
 #include "obs-groupbox.hpp"

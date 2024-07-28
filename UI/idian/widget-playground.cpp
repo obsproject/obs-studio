@@ -16,8 +16,6 @@
 ******************************************************************************/
 
 #include <QTimer>
-#include <QCheckBox>
-#include <QComboBox>
 
 #include "obs-widgets.hpp"
 #include "widget-playground.hpp"
@@ -34,7 +32,7 @@ IdianPlayground::IdianPlayground(QWidget *parent)
 	OBSGroupBox *test;
 	OBSActionRow *tmp;
 
-	QComboBox *cbox = new QComboBox;
+	OBSComboBox *cbox = new OBSComboBox;
 	cbox->addItem("Test 1");
 	cbox->addItem("Test 2");
 
@@ -74,11 +72,11 @@ IdianPlayground::IdianPlayground(QWidget *parent)
 	//QTimer::singleShot(10000, this, [=]() { test->properties()->clear(); });
 
 	tmp = new OBSActionRow("Box 1");
-	tmp->setPrefix(new QCheckBox);
+	tmp->setPrefix(new OBSCheckBox);
 	test->properties()->addRow(tmp);
 
 	tmp = new OBSActionRow("Box 2");
-	tmp->setPrefix(new QCheckBox);
+	tmp->setPrefix(new OBSCheckBox);
 	test->properties()->addRow(tmp);
 
 	ui->scrollAreaWidgetContents->layout()->addWidget(test);

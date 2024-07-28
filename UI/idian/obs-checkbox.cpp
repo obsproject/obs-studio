@@ -15,36 +15,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#pragma once
+#include "obs-checkbox.hpp"
 
-#include <QComboBox>
-#include <QAbstractItemView>
-
-#include "obs-widgets-base.hpp"
-
-class OBSComboBox : public QComboBox, public OBSWidgetUtils {
-	Q_OBJECT
-
-public:
-	OBSComboBox(QWidget *parent = nullptr);
-
-public Q_SLOTS:
-	void onToggle();
-
-signals:
-	void toggle();
-
-protected:
-	void mousePressEvent(QMouseEvent *e) override;
-	void mouseReleaseEvent(QMouseEvent *e) override;
-	void focusInEvent(QFocusEvent *e) override
-	{
-		OBSWidgetUtils::showKeyFocused(e);
-		QComboBox::focusInEvent(e);
-	}
-	void focusOutEvent(QFocusEvent *e) override
-	{
-		OBSWidgetUtils::hideKeyFocused(e);
-		QComboBox::focusOutEvent(e);
-	}
-};
+OBSCheckBox::OBSCheckBox(QWidget *parent)
+	: QCheckBox(parent),
+	  OBSWidgetUtils(this)
+{
+}

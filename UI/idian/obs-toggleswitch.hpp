@@ -27,7 +27,9 @@
 #include <QStyleOptionButton>
 #include <QAccessibleWidget>
 
-class OBSToggleSwitch : public QAbstractButton {
+#include "obs-widgets-base.hpp"
+
+class OBSToggleSwitch : public QAbstractButton, public OBSWidgetUtils {
 	Q_OBJECT
 	Q_PROPERTY(int xpos MEMBER xPos WRITE setPos)
 	Q_PROPERTY(QColor background MEMBER backgroundInactive DESIGNABLE true)
@@ -67,6 +69,16 @@ protected:
 	void showEvent(QShowEvent *) override;
 	void enterEvent(QEnterEvent *) override;
 	void leaveEvent(QEvent *) override;
+	void focusInEvent(QFocusEvent *e) override
+	{
+		OBSWidgetUtils::showKeyFocused(e);
+		QAbstractButton::focusInEvent(e);
+	}
+	void focusOutEvent(QFocusEvent *e) override
+	{
+		OBSWidgetUtils::hideKeyFocused(e);
+		QAbstractButton::focusOutEvent(e);
+	}
 
 private slots:
 	void onClicked(bool checked);

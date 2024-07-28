@@ -15,9 +15,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include "obs-widgets-base.hpp"
 #include "obs-groupbox.hpp"
 
-OBSGroupBox::OBSGroupBox(QWidget *parent) : QFrame(parent)
+OBSGroupBox::OBSGroupBox(QWidget *parent) : QFrame(parent), OBSWidgetUtils(this)
 {
 	layout = new QGridLayout(this);
 	layout->setVerticalSpacing(0);
@@ -40,7 +41,7 @@ OBSGroupBox::OBSGroupBox(const QString &name, QWidget *parent)
 
 	nameLbl = new QLabel();
 	nameLbl->setText(name);
-	nameLbl->setProperty("class", "title");
+	OBSWidgetUtils::addClass(nameLbl, "title");
 
 	layout->addWidget(nameLbl, 0, 0, Qt::AlignLeft);
 }
@@ -62,7 +63,7 @@ OBSGroupBox::OBSGroupBox(const QString &name, const QString &desc,
 {
 	descLbl = new QLabel();
 	descLbl->setText(desc);
-	descLbl->setProperty("class", "subtitle");
+	OBSWidgetUtils::addClass("subtitle");
 	layout->addWidget(descLbl, 1, 0, Qt::AlignLeft);
 }
 

@@ -16,11 +16,12 @@
 ******************************************************************************/
 
 #include "obs-combobox.hpp"
-#include <util/base.h>
 
 #define UNUSED_PARAMETER(param) (void)param
 
-OBSComboBox::OBSComboBox(QWidget *parent) : QComboBox(parent)
+OBSComboBox::OBSComboBox(QWidget *parent)
+	: QComboBox(parent),
+	  OBSWidgetUtils(this)
 {
 	connect(this, &OBSComboBox::toggle, this, &OBSComboBox::onToggle);
 }
@@ -34,14 +35,6 @@ void OBSComboBox::onToggle()
 	}
 }
 
-void OBSComboBox::keyReleaseEvent(QKeyEvent *e)
-{
-	if (hasFocus()) {
-		showFocused();
-	}
-	QComboBox::keyReleaseEvent(e);
-}
-
 void OBSComboBox::mousePressEvent(QMouseEvent *e)
 {
 	UNUSED_PARAMETER(e);
@@ -51,26 +44,4 @@ void OBSComboBox::mouseReleaseEvent(QMouseEvent *e)
 {
 	showPopup();
 	QComboBox::mouseReleaseEvent(e);
-}
-
-void OBSComboBox::focusOutEvent(QFocusEvent *e)
-{
-	hideFocused();
-	QComboBox::focusOutEvent(e);
-}
-
-void OBSComboBox::showFocused()
-{
-	setProperty("TH_Focus", true);
-
-	style()->unpolish(this);
-	style()->polish(this);
-}
-
-void OBSComboBox::hideFocused()
-{
-	setProperty("TH_Focus", false);
-
-	style()->unpolish(this);
-	style()->polish(this);
 }

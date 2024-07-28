@@ -33,7 +33,8 @@ static QColor blendColors(const QColor &color1, const QColor &color2,
 OBSToggleSwitch::OBSToggleSwitch(QWidget *parent)
 	: QAbstractButton(parent),
 	  animation(new QPropertyAnimation(this, "xpos", this)),
-	  blendAnimation(new QPropertyAnimation(this, "blend", this))
+	  blendAnimation(new QPropertyAnimation(this, "blend", this)),
+	  OBSWidgetUtils(this)
 {
 	offPos = rect().width() / 2 - 18;
 	onPos = rect().width() / 2 + 18;
@@ -63,10 +64,10 @@ OBSToggleSwitch::OBSToggleSwitch(bool defaultState, QWidget *parent)
 
 void OBSToggleSwitch::updateBackgroundColor()
 {
-	QColor offColor = underMouse() ? backgroundInactiveHover
-				       : backgroundInactive;
-	QColor onColor = underMouse() ? backgroundActiveHover
-				      : backgroundActive;
+	QColor offColor = underMouse() && isEnabled() ? backgroundInactiveHover
+						      : backgroundInactive;
+	QColor onColor = underMouse() && isEnabled() ? backgroundActiveHover
+						     : backgroundActive;
 
 	if (!manualStatusChange) {
 		int offset = isChecked() ? 0 : offPos;
@@ -114,6 +115,8 @@ void OBSToggleSwitch::showEvent(QShowEvent *e)
 
 	updateBackgroundColor();
 	style()->polish(this);
+
+	QAbstractButton::showEvent(e);
 }
 
 void OBSToggleSwitch::onClicked(bool checked)

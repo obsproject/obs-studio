@@ -97,7 +97,9 @@
     --spacing_base_value: 4; /* TODO: Min 2, Max 7, Step 1 */
     --padding_base_value: 4; /* TODO: Min 0.25, Max 10, Step 2 */
 
-    --border_highlight: "transparent"; /* TODO: Better Accessibility focus state */
+    --highlight_width: 1px;
+    --highlight_width_large: 2px;
+    --highlight_color: var(--primary_lighter); /* TODO: Better Accessibility focus state */
     /* TODO: Move Accessibilty Colors to Theme config system */
 
     /* OS Fixes */
@@ -121,6 +123,9 @@
     --padding_large: calc(1px * var(--padding_base_value));
     --padding_xlarge: calc(1.75px * var(--padding_base_value));
     --padding_small: calc(0.25px * var(--padding_base_value));
+
+    /* SourceTree padding is weird so we need to subtract the border size */
+    --padding_sourcetree: calc(var(--padding_large) - var(--highlight_width));
 
     --padding_wide: calc(8px + calc(2 * var(--padding_base_value)));
     --padding_menu: calc(4px + calc(2 * var(--padding_base_value)));
@@ -159,6 +164,7 @@
     --list_item_bg_hover: var(--primary_light);
 
     --input_border: var(--grey1);
+    --input_border_width: 1px;
     --input_border_hover: var(--grey1);
     --input_border_focus: var(--primary);
 
@@ -169,6 +175,7 @@
     --button_bg_down: var(--grey7);
     --button_bg_disabled: var(--grey6);
 
+    --button_border_width: var(--input_border_width);
     --button_border: var(--button_bg);
     --button_border_hover: var(--grey1);
     --button_border_focus: var(--grey1);
@@ -180,7 +187,7 @@
 
     --tab_border: var(--border_color);
     --tab_border_hover: var(--button_border_hover);
-    --tab_border_focus: var(--button_border_focus);
+    --tab_border_focus: var(--primary_lighter);
     --tab_border_selected: var(--primary);
 
     --scrollbar: var(--grey4);
@@ -189,9 +196,6 @@
     --scrollbar_border: var(--grey2);
 
     --separator_hover: var(--white1);
-
-    --highlight: rgb(42,130,218);
-    --highlight_inactive: rgb(25,28,34);
 
     --action_row_base: calc(var(--input_height_base) * 0.8);
     --action_row_height: calc(var(--action_row_base) + calc(var(--action_row_padding) * 2));
@@ -371,12 +375,16 @@ QMenu,
 SceneTree,
 SourceTree {
     padding: var(--spacing_base);
+    outline: none;
 }
 
 QListWidget::item,
-SourceTreeItem,
 SceneTree::item {
     padding: var(--padding_large) var(--padding_large);
+}
+
+SourceTreeItem {
+    padding: var(--padding_sourcetree) var(--padding_large);
 }
 
 QMenu::item {
@@ -388,12 +396,12 @@ QMenu::item {
 }
 
 QListWidget::item,
-SourceTreeItem,
 QMenu::item,
-SceneTree::item {
+SceneTree::item,
+SourceTreeItem {
     border-radius: var(--border_radius);
     color: var(--text);
-    border: 1px solid transparent;
+    border: var(--highlight_width) solid transparent;
 }
 
 SourceTree::item {
@@ -401,11 +409,17 @@ SourceTree::item {
     color: var(--text);
 }
 
+SourceTree::item:hover,
+SourceTree::item:focus:selected {
+    border: var(--highlight_width) solid transparent;
+}
+
 QMenu::item:selected,
 QListWidget::item:selected,
 SceneTree::item:selected,
 SourceTree::item:selected {
     background-color: var(--primary);
+    border-color: var(--primary);
 }
 
 QMenu::item:hover,
@@ -417,18 +431,16 @@ QListWidget::item:selected:hover,
 SceneTree::item:selected:hover,
 SourceTree::item:selected:hover {
     background-color: var(--primary_light);
-    color: var(--text);
+    border-color: var(--highlight_color);
 }
 
 QMenu::item:focus,
 QListWidget::item:focus,
-SceneTree::item:focus,
 SourceTree::item:focus,
 QMenu::item:selected:focus,
 QListWidget::item:selected:focus,
-SceneTree::item:selected:focus,
 SourceTree::item:selected:focus {
-    border: 1px solid var(--border_highlight);
+    border-color: var(--highlight_color);
 }
 
 QListWidget::item:disabled,
@@ -447,14 +459,14 @@ SourceTree QLineEdit {
     padding:  0;
     padding-bottom: 1px;
     margin: 0;
-    border: 1px solid var(--white1);
+    border: var(--input_border_width) solid var(--white1);
     border-radius: var(--border_radius);
 }
 
 QListWidget QLineEdit:focus,
 SceneTree QLineEdit:focus,
 SourceTree QLineEdit:focus {
-    border: 1px solid var(--grey1);
+    border: var(--input_border_width) solid var(--grey1);
 }
 
 /* Settings QList */
@@ -751,6 +763,10 @@ QTabWidget::pane { /* The tab widget frame */
     border-top: 4px solid var(--tab_bg);
 }
 
+QTabBar {
+    outline: none;
+}
+
 QTabWidget::tab-bar {
     alignment: left;
 }
@@ -822,7 +838,7 @@ QComboBox,
 QDateTimeEdit {
     background-color: var(--input_bg);
     border-style: solid;
-    border: 1px solid var(--input_bg);
+    border: var(--input_border_width) solid var(--input_bg);
     border-radius: var(--border_radius);
     padding: var(--padding_large) var(--padding_large);
     padding-left: 10px;
@@ -889,7 +905,7 @@ QPlainTextEdit {
     border-radius: var(--border_radius);
     padding: var(--input_padding) var(--padding_small) var(--input_padding) var(--input_padding);
     padding-left: 8px;
-    border: 1px solid var(--input_bg);
+    border: var(--input_border_width) solid var(--input_bg);
     height: var(--input_height);
 }
 
@@ -918,7 +934,7 @@ QTextEdit:!editable:focus {
 QSpinBox,
 QDoubleSpinBox {
     background-color: var(--input_bg);
-    border: 1px solid var(--input_bg);
+    border: var(--input_border_width) solid var(--input_bg);
     border-radius: var(--border_radius);
     padding: var(--input_padding) 0px var(--input_padding) var(--input_padding);
     padding-left: 8px;
@@ -1064,11 +1080,11 @@ QPushButton {
 }
 
 QPushButton {
-    border: 1px solid var(--button_border);
+    border: var(--button_border_width) solid var(--button_border);
 }
 
 QToolButton {
-    border: 1px solid var(--button_border);
+    border: var(--button_border_width) solid var(--button_border);
 }
 
 QToolButton,
@@ -1076,7 +1092,7 @@ QPushButton[toolButton="true"] {
     background-color: var(--button_bg);
     padding: var(--padding_base) var(--padding_base);
     margin: 0px var(--spacing_base);
-    border: 1px solid var(--button_border);
+    border: var(--highlight_width) solid var(--button_border);
     border-radius: var(--border_radius);
     icon-size: var(--icon_base);
 }
@@ -1089,6 +1105,7 @@ QPushButton[toolButton="true"]:last-child {
 QPushButton:hover,
 QPushButton:focus {
     border-color: var(--button_border_hover);
+    outline: none;
 }
 
 QPushButton:hover {
@@ -1101,7 +1118,7 @@ QPushButton[toolButton="true"]:hover,
 QPushButton[toolButton="true"]:focus,
 MuteCheckBox::indicator:hover,
 MuteCheckBox::indicator:focus {
-    border-color: var(--button_border);
+    border-color: var(--button_border_hover);
     background-color: var(--button_bg_hover);
 }
 
@@ -1233,7 +1250,7 @@ QSlider::handle:disabled {
     background-color: var(--button_bg);
     padding: var(--padding_base_border) var(--padding_base_border);
     margin: 0px;
-    border: 1px solid var(--button_border);
+    border: var(--highlight_width) solid var(--button_border);
     border-radius: var(--border_radius);
     icon-size: var(--icon_base);
 }
@@ -1554,14 +1571,14 @@ QCheckBox[lockCheckBox=true] {
     max-width: var(--icon_base);
     max-height: var(--icon_base);
     padding: var(--padding_base);
-    border: 1px solid transparent;
+    border: var(--highlight_width) solid transparent;
+    border-radius: var(--border_radius);
     margin-left: var(--spacing_large);
 }
 
 QCheckBox[lockCheckBox=true]::indicator {
     width: var(--icon_base);
     height: var(--icon_base);
-    border-radius: 4px;
 }
 
 QCheckBox[lockCheckBox=true]::indicator:checked,
@@ -1576,7 +1593,7 @@ QCheckBox[lockCheckBox=true]::indicator:unchecked:hover {
 
 QCheckBox[lockCheckBox=true]:hover,
 QCheckBox[lockCheckBox=true]:focus {
-    border: 1px solid var(--border_highlight);
+    border-color: var(--highlight_color);
 }
 
 /* Visibility CheckBox */
@@ -1587,14 +1604,14 @@ QCheckBox[visibilityCheckBox=true] {
     max-width: var(--icon_base);
     max-height: var(--icon_base);
     padding: var(--padding_base);
-    border: 1px solid transparent;
+    border: var(--highlight_width) solid transparent;
+    border-radius: var(--border_radius);
     margin-left: var(--spacing_large);
 }
 
 QCheckBox[visibilityCheckBox=true]::indicator {
     width: var(--icon_base);
     height: var(--icon_base);
-    border-radius: 4px;
 }
 
 QCheckBox[visibilityCheckBox=true]::indicator:checked,
@@ -1609,7 +1626,7 @@ QCheckBox[visibilityCheckBox=true]::indicator:unchecked:hover {
 
 QCheckBox[visibilityCheckBox=true]:hover,
 QCheckBox[visibilityCheckBox=true]:focus {
-    border: 1px solid var(--border_highlight);
+    border-color: var(--highlight_color);
 }
 
 * [themeID="revertIcon"] {
@@ -1629,7 +1646,7 @@ MuteCheckBox::indicator:unchecked {
     background-color: var(--button_bg);
     padding: var(--padding_base_border) var(--padding_base_border);
     margin: 0px;
-    border: 1px solid var(--button_border);
+    border: var(--highlight_width) solid var(--button_border);
     border-radius: var(--border_radius);
     icon-size: var(--icon_base);
 }
@@ -1639,7 +1656,7 @@ MuteCheckBox::indicator:unchecked:hover {
     background-color: var(--button_bg_hover);
     padding: var(--padding_base_border) var(--padding_base_border);
     margin: 0px;
-    border: 1px solid var(--button_border_hover);
+    border: var(--highlight_width) solid var(--button_border_hover);
     icon-size: var(--icon_base);
 }
 
@@ -1720,12 +1737,13 @@ QCheckBox[sourceTreeSubItem=true] {
     min-height: var(--icon_base);
 }
 
-QCheckBox[sourceTreeSubItem=true]::indicator {
+QCheckBox[sourceTreeSubItem=true]::indicator,
+QCheckBox[sourceTreeSubItem=true]::indicator:hover {
     width: var(--icon_base);
     height: var(--icon_base);
     padding: 0px;
-    border: 1px solid transparent;
-    border-radius: 4px;
+    border: var(--highlight_width) solid transparent;
+    border-radius: var(--border_radius);
     margin-left: -1px;
 }
 
@@ -1741,7 +1759,7 @@ QCheckBox[sourceTreeSubItem=true]::indicator:unchecked:hover {
 
 QCheckBox[sourceTreeSubItem=true]::indicator:hover,
 QCheckBox[sourceTreeSubItem=true]::indicator:focus {
-    border: 1px solid var(--border_highlight);
+    border-color: var(--highlight_color);
 }
 
 /* Source Icons */
@@ -1985,23 +2003,23 @@ OBSBasicAdvAudio #scrollAreaWidgetContents {
 OBSGroupBox {
     border-radius: var(--border_radius);
     font-weight: bold;
-    margin: 0px 0px var(--spacing_base);
+    margin: 0 0 var(--spacing_base);
 }
 
 OBSGroupBox > QLabel.title {
     font-weight: bold;
-    padding: var(--padding_large) 0px;
+    padding: var(--padding_large) 0;
 }
 
 OBSGroupBox > QLabel.subtitle {
     color: var(--text_muted);
-    padding: var(--spacing_small) 0px;
+    padding: var(--spacing_small) 0;
 }
 
 OBSPropertiesList {
-    border-width: 0px;
-    padding: 0px;
-    margin: var(--spacing_base) 0px;
+    border-width: 0;
+    padding: 0;
+    margin: var(--spacing_base) 0;
 }
 
 OBSActionRow {
@@ -2011,9 +2029,10 @@ OBSActionRow {
     min-height: var(--input_height);
 }
 
-OBSActionRow[TH_Event_States="true"]:hover {
+OBSActionRow.cursorPointer:hover,
+OBSActionRow.keyFocus {
     background: var(--grey4);
-    border-color: var(--grey4);
+    border: var(--highlight_width_large) solid var(--grey4);
 }
 
 OBSActionRow[first="true"] {
@@ -2036,6 +2055,11 @@ OBSActionRow > QLabel.subtitle {
     color: var(--text_muted);
 }
 
+OBSActionRow.keyFocus,
+OBSActionRow.keyFocus:hover {
+    border-color: var(--highlight_color);
+}
+
 OBSToggleSwitch {
     qproperty-background: var(--grey6);
     qproperty-background_hover: var(--grey7);
@@ -2050,14 +2074,20 @@ OBSToggleSwitch {
     qproperty-handleColor: var(--white1);
     qproperty-handleSize: var(--toggle_handle);
 
-    border: 2px solid transparent;
+    border: var(--highlight_width_large) solid transparent;
 }
 
-OBSToggleSwitch:hover {
+OBSActionRow.hover > OBSToggleSwitch,
+OBSActionRow OBSToggleSwitch:hover {
     border-color: var(--grey1);
 }
 
-OBSToggleSwitch:hover:checked {
+OBSActionRow OBSToggleSwitch.keyFocus {
+    border-color: var(--highlight_color);
+}
+
+OBSActionRow.hover > OBSToggleSwitch:checked,
+OBSActionRow OBSToggleSwitch:checked:hover {
     border-color: var(--white1);
 }
 
@@ -2065,23 +2095,25 @@ OBSActionRow QComboBox {
     min-height: var(--action_row_base);
     max-height: var(--action_row_base);
     min-width: var(--action_row_input_width);
-    padding: 0px;
+    padding: 0;
     padding-left: var(--padding_xlarge);
     margin: 0;
 }
 
-OBSActionRow QPushButton {
-    margin: 0;
-}
-
 OBSActionRow QComboBox {
-    border: 2px solid transparent;
+    border: var(--highlight_width_large) solid transparent;
 }
 
-OBSActionRow QComboBox:hover,
-OBSActionRow QComboBox:selected,
-OBSActionRow QComboBox::on {
-    border-color: var(--white1);
+OBSActionRow QComboBox:focus {
+    border-color: transparent;
+}
+
+OBSActionRow QComboBox:hover {
+    border-color: var(--grey1);
+}
+
+OBSActionRow QComboBox.keyFocus {
+    border-color: var(--highlight_color);
 }
 
 OBSActionRow QComboBox::drop-down {
@@ -2092,10 +2124,8 @@ OBSActionRow QComboBox::down-arrow {
     image: url(theme:Dark/collapse.svg);
 }
 
-OBSActionRow QComboBox QAbstractItemView::item:hover,
-OBSActionRow QComboBox QAbstractItemView::item:selected {
-    background-color: var(--list_item_bg_selected);
-    padding: var(--padding_base) var(--padding_large);
+OBSActionRow QComboBox QAbstractItemView {
+    outline: none;
 }
 
 OBSActionRow QComboBox QAbstractItemView::item {
@@ -2103,23 +2133,53 @@ OBSActionRow QComboBox QAbstractItemView::item {
     padding: var(--padding_base) var(--padding_large);
 }
 
+OBSActionRow QComboBox QAbstractItemView::item:hover,
+OBSActionRow QComboBox QAbstractItemView::item:selected {
+    background-color: var(--list_item_bg_selected);
+    padding: var(--padding_base) var(--padding_large);
+}
+
+OBSActionRow QPushButton {
+    margin: 0;
+}
+
 OBSPropertiesListSpacer {
-    max-height: 1px;
-    min-height: 1px;
+    max-height: var(--spacing_small);
+    min-height: var(--spacing_small);
     background-color: var(--bg_window);
 }
 
-#OBSActionRowExpand {
-    background: var(--grey5);
-    border-radius: var(--action_row_collapse_radius);
-    min-width: var(--action_row_collapse);
-    max-width: var(--action_row_collapse);
-    min-height: var(--action_row_collapse);
-    max-height: var(--action_row_collapse);
+OBSActionRow OBSCheckBox {
+    outline: none;
 }
 
-#OBSActionRowExpand:hover {
-    border: 2px solid var(--grey1);
+OBSActionRow OBSCheckBox::indicator,
+OBSActionRow OBSCheckBox::indicator:unchecked:hover {
+    border: var(--highlight_width_large) solid transparent;
+    border-radius: var(--border_radius);
+}
+
+OBSActionRow.hover > OBSCheckBox::indicator,
+OBSActionRow > OBSCheckBox::indicator:unchecked:hover,
+OBSActionRow > OBSCheckBox::indicator:hover {
+    border-color: var(--grey1);
+}
+
+OBSActionRow.hover > OBSCheckBox::indicator:unchecked,
+OBSCheckBox.keyFocus::indicator:unchecked {
+    image: url(theme:Yami/checkbox_unchecked_focus.svg);
+}
+
+OBSActionRow OBSCheckBox.keyFocus::indicator,
+OBSActionRow.hover > OBSCheckBox::indicator {
+    image: url(theme:Yami/checkbox_checked_focus.svg);
+}
+
+OBSActionRow OBSCheckBox.keyFocus::indicator,
+OBSActionRow OBSCheckBox.keyFocus::indicator:unchecked,
+OBSActionRow OBSCheckBox.keyFocus::indicator:hover,
+OBSActionRow OBSCheckBox.keyFocus::indicator:unchecked:hover {
+    border-color: var(--highlight_color);
 }
 
 OBSCollapsibleActionRow {
@@ -2132,7 +2192,7 @@ OBSCollapsibleActionRow OBSPropertiesList {
     border-radius: 0;
     border-left: 1px solid var(--grey5);
     border-right: 1px solid var(--grey5);
-    margin: 1px 0px 3px;
+    margin: var(--spacing_small) 0 var(--spacing_base);
 }
 
 OBSCollapsibleActionRow OBSPropertiesList OBSActionRow {
@@ -2141,7 +2201,7 @@ OBSCollapsibleActionRow OBSPropertiesList OBSActionRow {
 
 OBSCollapsibleActionRow OBSActionRow[last="true"],
 OBSCollapsibleActionRow OBSActionRow[first="true"] {
-    border-radius: 0px;
+    border-radius: 0;
 }
 
 OBSCollapsibleActionRow OBSPropertiesList OBSToggleSwitch {
@@ -2149,15 +2209,31 @@ OBSCollapsibleActionRow OBSPropertiesList OBSToggleSwitch {
     qproperty-background_hover: var(--grey6);
 }
 
-OBSActionRow[TH_Event_States="true"]:focus {
-    border: 1px solid var(--highlight);
+OBSActionCollapseButton {
+    background: transparent;
+    min-width: var(--action_row_collapse);
+    max-width: var(--action_row_collapse);
+    min-height: var(--action_row_collapse);
+    max-height: var(--action_row_collapse);
+    border: none;
 }
 
-OBSToggleSwitch:focus {
-    border-color: var(--highlight);
+OBSActionCollapseButton::indicator {
+    background: var(--grey5);
+    border-radius: var(--action_row_collapse_radius);
+    padding: var(--padding_large);
+    image: url(theme:Dark/down.svg);
+    border: var(--highlight_width_large) solid var(--grey5);
 }
 
-OBSActionRow QComboBox:focus,
-OBSActionRow QComboBox:on {
-    border: 1px solid var(--highlight);
+OBSActionCollapseButton::indicator:checked {
+    image: url(theme:Dark/up.svg);
+}
+
+OBSActionCollapseButton::indicator:hover {
+    border-color: var(--grey1);
+}
+
+OBSActionRow.cursorPointer.hover OBSActionCollapseButton::indicator {
+    border-color: var(--grey1);
 }

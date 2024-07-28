@@ -52,6 +52,8 @@ OBSDoubleSpinBox::OBSDoubleSpinBox(QWidget *parent) : QFrame(parent)
 	decr->setObjectName("obsSpinBoxButton");
 	layout->addWidget(decr);
 
+	setFocusProxy(decr);
+
 	sbox = new QDoubleSpinBox();
 	sbox->setObjectName("obsSpinBox");
 	sbox->setButtonSymbols(QAbstractSpinBox::NoButtons);

@@ -25,18 +25,25 @@
 #include <QMouseEvent>
 #include <QCheckBox>
 
+#include "obs-widgets-base.hpp"
 #include "obs-propertieslist.hpp"
 #include "obs-toggleswitch.hpp"
 #include "obs-combobox.hpp"
+#include "obs-controls.hpp"
 
 /**
 * Base class mostly so adding stuff to a list is easier
 */
-class OBSActionBaseClass : public QFrame {
+class OBSActionBaseClass : public QFrame, public OBSWidgetUtils {
 	Q_OBJECT
 
 public:
-	OBSActionBaseClass(QWidget *parent = nullptr) : QFrame(parent){};
+	OBSActionBaseClass(QWidget *parent = nullptr)
+		: QFrame(parent),
+		  OBSWidgetUtils(this)
+	{
+		setAccessibleName("");
+	};
 };
 
 /**
@@ -62,6 +69,9 @@ public:
 	void setPrefix(QWidget *w, bool auto_connect = true);
 	void setSuffix(QWidget *w, bool auto_connect = true);
 
+	bool hasPrefix() { return _prefix; }
+	bool hasSuffix() { return _suffix; }
+
 	QWidget *prefix() const { return _prefix; }
 	QWidget *suffix() const { return _suffix; }
 
@@ -74,9 +84,22 @@ signals:
 	void clicked();
 
 protected:
+	void enterEvent(QEnterEvent *) override;
+	void leaveEvent(QEvent *) override;
 	void mouseReleaseEvent(QMouseEvent *) override;
 	void keyReleaseEvent(QKeyEvent *) override;
 	bool hasSubtitle() const { return descLbl != nullptr; }
+
+	void focusInEvent(QFocusEvent *e) override
+	{
+		OBSWidgetUtils::showKeyFocused(e);
+		QFrame::focusInEvent(e);
+	}
+	void focusOutEvent(QFocusEvent *e) override
+	{
+		OBSWidgetUtils::hideKeyFocused(e);
+		QFrame::focusOutEvent(e);
+	}
 
 private:
 	QGridLayout *layout;
@@ -89,6 +112,23 @@ private:
 
 	void autoConnectWidget(QWidget *w);
 	bool changeCursor = false;
+};
+
+/**
+* Collapsible row expand button
+*/
+class OBSActionCollapseButton : public QAbstractButton {
+	Q_OBJECT
+
+public:
+	OBSActionCollapseButton(QWidget *parent = nullptr);
+
+private:
+	QPixmap extendDown;
+	QPixmap extendUp;
+
+protected:
+	void paintEvent(QPaintEvent *) override;
 };
 
 /**
@@ -108,6 +148,18 @@ public:
 
 	void addRow(OBSActionBaseClass *ar);
 
+protected:
+	void focusInEvent(QFocusEvent *e) override
+	{
+		OBSWidgetUtils::showKeyFocused(e);
+		QFrame::focusInEvent(e);
+	}
+	void focusOutEvent(QFocusEvent *e) override
+	{
+		OBSWidgetUtils::hideKeyFocused(e);
+		QFrame::focusOutEvent(e);
+	}
+
 private:
 	void toggleVisibility();
 
@@ -115,9 +167,9 @@ private:
 	QPixmap extendUp;
 
 	QVBoxLayout *layout;
-	QLabel *extendIcon;
 
 	OBSActionRow *ar;
+	OBSActionCollapseButton *collapseBtn;
 	OBSToggleSwitch *sw = nullptr;
 	OBSPropertiesList *plist;
 };

@@ -26,7 +26,7 @@
 #include "obs-propertieslist.hpp"
 #include "obs-toggleswitch.hpp"
 
-class OBSGroupBox : public QFrame {
+class OBSGroupBox : public QFrame, public OBSWidgetUtils {
 	Q_OBJECT
 
 public:
