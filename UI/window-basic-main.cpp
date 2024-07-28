@@ -1166,6 +1166,11 @@ void OBSBasic::Load(const char *file)
 	if (!data) {
 		disableSaving--;
 		blog(LOG_INFO, "No scene file found, creating default scene");
+		const string name = filesystem::u8path(file).stem().u8string();
+		config_set_string(App()->GlobalConfig(), "Basic",
+				  "SceneCollection", name.c_str());
+		config_set_string(App()->GlobalConfig(), "Basic",
+				  "SceneCollectionFile", name.c_str());
 		CreateDefaultScene(true);
 		SaveProject();
 		return;
