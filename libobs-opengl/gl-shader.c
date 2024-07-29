@@ -25,11 +25,6 @@
 #include "gl-subsystem.h"
 #include "gl-shaderparser.h"
 
-static inline void shader_param_init(struct gs_shader_param *param)
-{
-	memset(param, 0, sizeof(struct gs_shader_param));
-}
-
 static inline void shader_param_free(struct gs_shader_param *param)
 {
 	bfree(param->name);
