@@ -136,8 +136,6 @@ static const char *obs_qsv_getname_hevc(void *type_data)
 	return "QuickSync HEVC";
 }
 
-static void obs_qsv_stop(void *data);
-
 static void clear_data(struct obs_qsv *obsqsv)
 {
 	if (obsqsv->context) {
@@ -239,13 +237,6 @@ static inline void add_translated_strings(obs_property_t *list,
 #define TEXT_ICQ_QUALITY obs_module_text("ICQQuality")
 #define TEXT_KEYINT_SEC obs_module_text("KeyframeIntervalSec")
 #define TEXT_BFRAMES obs_module_text("BFrames")
-
-static inline bool is_skl_or_greater_platform()
-{
-	enum qsv_cpu_platform plat = qsv_get_cpu_platform();
-	return (plat >= QSV_CPU_PLATFORM_SKL ||
-		plat == QSV_CPU_PLATFORM_UNKNOWN);
-}
 
 static bool update_latency(obs_data_t *settings)
 {
