@@ -2043,11 +2043,6 @@ static inline void *obs_service_addref_safe_(void *ref)
 	return obs_service_get_ref(ref);
 }
 
-static inline void *obs_id_(void *data)
-{
-	return data;
-}
-
 obs_source_t *obs_get_source_by_name(const char *name)
 {
 	return get_context_by_name(&obs->data.public_sources, name,
