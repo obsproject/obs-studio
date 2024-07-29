@@ -87,19 +87,6 @@ config_t *config_create(const char *file)
 	return config;
 }
 
-static inline void remove_ref_whitespace(struct strref *ref)
-{
-	if (ref->array) {
-		while (ref->len && is_whitespace(*ref->array)) {
-			ref->array++;
-			ref->len--;
-		}
-
-		while (ref->len && is_whitespace(ref->array[ref->len - 1]))
-			ref->len--;
-	}
-}
-
 static bool config_parse_string(struct lexer *lex, struct strref *ref, char end)
 {
 	bool success = end != 0;
