@@ -70,8 +70,10 @@ static bool alsa_devices_changed(obs_properties_t *props, obs_property_t *p,
 static obs_properties_t *alsa_get_properties(void *);
 static void *alsa_create(obs_data_t *, obs_source_t *);
 static void alsa_destroy(void *);
+#if SHUTDOWN_ON_DEACTIVATE
 static void alsa_activate(void *);
 static void alsa_deactivate(void *);
+#endif
 static void alsa_get_defaults(obs_data_t *);
 static void alsa_update(void *, obs_data_t *);
 
