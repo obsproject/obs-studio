@@ -1165,12 +1165,34 @@ void OBSBasic::Load(const char *file)
 	obs_data_t *data = obs_data_create_from_json_file_safe(file, "bak");
 	if (!data) {
 		disableSaving--;
-		blog(LOG_INFO, "No scene file found, creating default scene");
-		const string name = filesystem::u8path(file).stem().u8string();
+		const auto path = filesystem::u8path(file);
+		const string name = path.stem().u8string();
+		/* Check if file exists but failed to load. */
+		if (filesystem::exists(path)) {
+			/* Assume the file is corrupt and rename it to allow
+			 * for manual recovery if possible. */
+			auto newPath = path;
+			newPath.concat(".invalid");
+
+			blog(LOG_WARNING,
+			     "File exists but appears to be corrupt, renaming "
+			     "to \"%s\" before continuing.",
+			     newPath.filename().u8string().c_str());
+
+			error_code ec;
+			filesystem::rename(path, newPath, ec);
+			if (ec) {
+				blog(LOG_ERROR,
+				     "Failed renaming corrupt file with %d",
+				     ec.value());
+			}
+		}
+
 		config_set_string(App()->GlobalConfig(), "Basic",
 				  "SceneCollection", name.c_str());
 		config_set_string(App()->GlobalConfig(), "Basic",
 				  "SceneCollectionFile", name.c_str());
+		blog(LOG_INFO, "No scene file found, creating default scene");
 		CreateDefaultScene(true);
 		SaveProject();
 		return;
