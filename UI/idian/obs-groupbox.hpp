@@ -47,6 +47,9 @@ public:
 
 	void addRow(OBSActionBaseClass *ar) const;
 
+	void setCheckable(bool check);
+	bool isCheckable() { return checkable; }
+
 private:
 	QGridLayout *layout = nullptr;
 
@@ -56,4 +59,5 @@ private:
 	OBSPropertiesList *plist = nullptr;
 
 	OBSToggleSwitch *toggleSwitch = nullptr;
+	bool checkable = false;
 };

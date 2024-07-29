@@ -46,17 +46,6 @@ OBSGroupBox::OBSGroupBox(const QString &name, QWidget *parent)
 	layout->addWidget(nameLbl, 0, 0, Qt::AlignLeft);
 }
 
-OBSGroupBox::OBSGroupBox(const QString &name, bool checkable, QWidget *parent)
-	: OBSGroupBox(name, parent)
-{
-	if (checkable) {
-		toggleSwitch = new OBSToggleSwitch(true);
-		layout->addWidget(toggleSwitch, 0, 1, Qt::AlignRight);
-		connect(toggleSwitch, &OBSToggleSwitch::toggled, this,
-			[=](bool checked) { plist->setEnabled(checked); });
-	}
-}
-
 OBSGroupBox::OBSGroupBox(const QString &name, const QString &desc,
 			 QWidget *parent)
 	: OBSGroupBox(name, parent)
@@ -67,19 +56,24 @@ OBSGroupBox::OBSGroupBox(const QString &name, const QString &desc,
 	layout->addWidget(descLbl, 1, 0, Qt::AlignLeft);
 }
 
-OBSGroupBox::OBSGroupBox(const QString &name, const QString &desc,
-			 bool checkable, QWidget *parent)
-	: OBSGroupBox(name, desc, parent)
+void OBSGroupBox::addRow(OBSActionBaseClass *ar) const
 {
-	if (checkable) {
+	plist->addRow(ar);
+}
+
+void OBSGroupBox::setCheckable(bool check)
+{
+	checkable = check;
+
+	if (checkable && !toggleSwitch) {
 		toggleSwitch = new OBSToggleSwitch(true);
 		layout->addWidget(toggleSwitch, 0, 1, 2, 1, Qt::AlignRight);
 		connect(toggleSwitch, &OBSToggleSwitch::toggled, this,
 			[=](bool checked) { plist->setEnabled(checked); });
 	}
-}
 
-void OBSGroupBox::addRow(OBSActionBaseClass *ar) const
-{
-	plist->addRow(ar);
+	if (!checkable && toggleSwitch) {
+		layout->removeWidget(toggleSwitch);
+		toggleSwitch->deleteLater();
+	}
 }
