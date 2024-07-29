@@ -11,11 +11,6 @@ enum ColorPreset {
 	COLOR_PRESET_CUSTOM = 99,
 };
 
-static inline bool WidgetChanged(QWidget *widget)
-{
-	return widget->property("changed").toBool();
-}
-
 static inline QColor color_from_int(long long val)
 {
 	return QColor(val & 0xff, (val >> 8) & 0xff, (val >> 16) & 0xff,
