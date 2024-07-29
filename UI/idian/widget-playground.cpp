@@ -58,10 +58,14 @@ IdianPlayground::IdianPlayground(QWidget *parent)
 	tmp = new OBSActionRow("Delayed toggle switch",
 			       "The state can be set separately");
 	auto tswitch = new OBSToggleSwitch;
-	tswitch->setManualStatusChange(true);
-	connect(tswitch, &OBSToggleSwitch::toggled, this, [=](bool toggled) {
-		QTimer::singleShot(1000,
-				   [=]() { tswitch->setStatus(toggled); });
+	tswitch->setDelayed(true);
+	connect(tswitch, &OBSToggleSwitch::pendingChecked, this, [=]() {
+		// Do async enable stuff, then set toggle status when complete
+		QTimer::singleShot(1000, [=]() { tswitch->setStatus(true); });
+	});
+	connect(tswitch, &OBSToggleSwitch::pendingUnchecked, this, [=]() {
+		// Do async disable stuff, then set toggle status when complete
+		QTimer::singleShot(1000, [=]() { tswitch->setStatus(false); });
 	});
 	tmp->setSuffix(tswitch);
 	test->properties()->addRow(tmp);

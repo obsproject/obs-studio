@@ -61,14 +61,26 @@ public:
 		update();
 	}
 
-	void setManualStatusChange(bool manual) { manualStatusChange = manual; }
+	void setDelayed(bool state);
+	bool isDelayed() { return delayed; }
+
 	void setStatus(bool status);
+	void setPending(bool pending); 
+
+public slots:
+	void click();
+
+signals:
+	void pendingChecked();
+	void pendingUnchecked();
 
 protected:
 	void paintEvent(QPaintEvent *) override;
 	void showEvent(QShowEvent *) override;
 	void enterEvent(QEnterEvent *) override;
 	void leaveEvent(QEvent *) override;
+	void keyReleaseEvent(QKeyEvent *) override;
+	void mouseReleaseEvent(QMouseEvent *) override;
 	void focusInEvent(QFocusEvent *e) override
 	{
 		OBSWidgetUtils::showKeyFocused(e);
@@ -91,9 +103,10 @@ private:
 
 	float blend = 0.0f;
 
-	bool waiting = false;
-	bool manualStatus = false;
-	bool manualStatusChange = false;
+	bool delayed = false;
+	bool pendingStatus = false;
+
+	void animateHandlePosition();
 
 	void updateBackgroundColor();
 	QColor backgroundInactive;
@@ -103,6 +116,6 @@ private:
 	QColor handleColor;
 	int handleSize = 18;
 
-	QPropertyAnimation *animation = nullptr;
-	QPropertyAnimation *blendAnimation = nullptr;
+	QPropertyAnimation *animHandle = nullptr;
+	QPropertyAnimation *animBgColor = nullptr;
 };

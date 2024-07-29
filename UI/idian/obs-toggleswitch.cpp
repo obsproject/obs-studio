@@ -32,8 +32,8 @@ static QColor blendColors(const QColor &color1, const QColor &color2,
 
 OBSToggleSwitch::OBSToggleSwitch(QWidget *parent)
 	: QAbstractButton(parent),
-	  animation(new QPropertyAnimation(this, "xpos", this)),
-	  blendAnimation(new QPropertyAnimation(this, "blend", this)),
+	  animHandle(new QPropertyAnimation(this, "xpos", this)),
+	  animBgColor(new QPropertyAnimation(this, "blend", this)),
 	  OBSWidgetUtils(this)
 {
 	offPos = rect().width() / 2 - 18;
@@ -44,12 +44,14 @@ OBSToggleSwitch::OBSToggleSwitch(QWidget *parent)
 	setCheckable(true);
 	setAccessibleName("ToggleSwitch");
 
+	installEventFilter(this);
+
 	connect(this, &OBSToggleSwitch::clicked, this,
 		&OBSToggleSwitch::onClicked);
 
-	connect(animation, &QVariantAnimation::valueChanged, this,
+	connect(animHandle, &QVariantAnimation::valueChanged, this,
 		&OBSToggleSwitch::updateBackgroundColor);
-	connect(blendAnimation, &QVariantAnimation::valueChanged, this,
+	connect(animBgColor, &QVariantAnimation::valueChanged, this,
 		&OBSToggleSwitch::updateBackgroundColor);
 }
 
@@ -57,24 +59,43 @@ OBSToggleSwitch::OBSToggleSwitch(bool defaultState, QWidget *parent)
 	: OBSToggleSwitch(parent)
 {
 	setChecked(defaultState);
-	manualStatus = defaultState;
-	if (defaultState)
+	if (defaultState) {
 		xPos = onPos;
+	}
+}
+
+void OBSToggleSwitch::animateHandlePosition()
+{
+	animHandle->setStartValue(xPos);
+
+	int endPos = onPos;
+
+	if ((!isDelayed() && !isChecked()) || (isDelayed() && !pendingStatus))
+		endPos = offPos;
+
+	animHandle->setEndValue(endPos);
+
+	animHandle->setDuration(120);
+	animHandle->start();
 }
 
 void OBSToggleSwitch::updateBackgroundColor()
 {
-	QColor offColor = underMouse() && isEnabled() ? backgroundInactiveHover
-						      : backgroundInactive;
-	QColor onColor = underMouse() && isEnabled() ? backgroundActiveHover
-						     : backgroundActive;
+	QColor offColor = underMouse() ? backgroundInactiveHover
+				       : backgroundInactive;
+	QColor onColor = underMouse() ? backgroundActiveHover
+				      : backgroundActive;
 
-	if (!manualStatusChange) {
+	if (!isDelayed()) {
 		int offset = isChecked() ? 0 : offPos;
 		blend = (float)(xPos - offset) / (float)(onPos);
 	}
 
 	QColor bg = blendColors(offColor, onColor, blend);
+
+	if (!isEnabled())
+		bg = backgroundInactive;
+
 	setStyleSheet("background: " + bg.name());
 }
 
@@ -87,8 +108,8 @@ void OBSToggleSwitch::paintEvent(QPaintEvent *e)
 	QPainter p(this);
 
 	bool showChecked = isChecked();
-	if (waiting) {
-		showChecked = !showChecked;
+	if (isDelayed()) {
+		showChecked = pendingStatus;
 	}
 
 	opt.state.setFlag(QStyle::State_On, showChecked);
@@ -119,48 +140,63 @@ void OBSToggleSwitch::showEvent(QShowEvent *e)
 	QAbstractButton::showEvent(e);
 }
 
+void OBSToggleSwitch::click()
+{
+	if (!isDelayed())
+		QAbstractButton::click();
+
+	if (isChecked() == pendingStatus)
+		setPending(!isChecked());
+}
+
 void OBSToggleSwitch::onClicked(bool checked)
 {
-	if (manualStatusChange) {
-		// ToDo: figure out a prettier way of accomplishing this
-		waiting = true;
-		setEnabled(false);
-	}
+	if (delayed)
+		return;
 
-	if (checked) {
-		animation->setStartValue(xPos);
-		animation->setEndValue(onPos);
-	} else {
-		animation->setStartValue(xPos);
-		animation->setEndValue(offPos);
-	}
-
-	animation->setDuration(120);
-	animation->start();
+	setPending(checked);
 }
 
 void OBSToggleSwitch::setStatus(bool status)
 {
-	if (!manualStatusChange)
-		return;
-	if (status == manualStatus)
+	if (status == isChecked() && status == pendingStatus)
 		return;
 
-	setEnabled(true);
-	waiting = false;
-	manualStatus = status;
+	pendingStatus = status;
+	setChecked(status);
 
-	if (manualStatus) {
-		blendAnimation->setStartValue(0.0f);
-		blendAnimation->setEndValue(1.0f);
+	if (isChecked()) {
+		animBgColor->setStartValue(0.0f);
+		animBgColor->setEndValue(1.0f);
 	} else {
-		blendAnimation->setStartValue(1.0f);
-		blendAnimation->setEndValue(0.0f);
+		animBgColor->setStartValue(1.0f);
+		animBgColor->setEndValue(0.0f);
 	}
 
-	blendAnimation->setEasingCurve(QEasingCurve::InOutCubic);
-	blendAnimation->setDuration(240);
-	blendAnimation->start();
+	animBgColor->setEasingCurve(QEasingCurve::InOutCubic);
+	animBgColor->setDuration(240);
+	animBgColor->start();
+}
+
+void OBSToggleSwitch::setPending(bool pending)
+{
+	pendingStatus = pending;
+	animateHandlePosition();
+
+	if (!isDelayed())
+		return;
+
+	if (pending) {
+		emit pendingChecked();
+	} else {
+		emit pendingUnchecked();
+	}
+}
+
+void OBSToggleSwitch::setDelayed(bool state)
+{
+	delayed = state;
+	pendingStatus = isChecked();
 }
 
 void OBSToggleSwitch::enterEvent(QEnterEvent *e)
@@ -174,6 +210,34 @@ void OBSToggleSwitch::leaveEvent(QEvent *e)
 {
 	updateBackgroundColor();
 	QAbstractButton::leaveEvent(e);
+}
+
+void OBSToggleSwitch::keyReleaseEvent(QKeyEvent *e)
+{
+	if (!isDelayed()) {
+		QAbstractButton::keyReleaseEvent(e);
+		return;
+	}
+
+	if (e->key() != Qt::Key_Space) {
+		return;
+	}
+
+	click();
+}
+
+void OBSToggleSwitch::mouseReleaseEvent(QMouseEvent *e)
+{
+	if (!isDelayed()) {
+		QAbstractButton::mouseReleaseEvent(e);
+		return;
+	}
+
+	if (e->button() != Qt::LeftButton) {
+		return;
+	}
+
+	click();
 }
 
 QSize OBSToggleSwitch::sizeHint() const
