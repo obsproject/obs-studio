@@ -69,7 +69,7 @@ obs_to_ffmpeg_video_format(enum video_format format)
 	}
 }
 
-static enum AVChromaLocation
+static inline enum AVChromaLocation
 determine_chroma_location(enum AVPixelFormat pix_fmt,
 			  enum AVColorSpace colorspace)
 {
