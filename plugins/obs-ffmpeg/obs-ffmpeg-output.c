@@ -565,6 +565,7 @@ static inline const char *safe_str(const char *s)
 		return s;
 }
 
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
 static enum AVCodecID get_codec_id(const char *name, int id)
 {
 	const AVCodec *codec;
@@ -582,7 +583,6 @@ static enum AVCodecID get_codec_id(const char *name, int id)
 	return codec->id;
 }
 
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
 static void set_encoder_ids(struct ffmpeg_data *data)
 {
 	data->output->oformat->video_codec = get_codec_id(
