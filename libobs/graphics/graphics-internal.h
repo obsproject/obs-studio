@@ -25,6 +25,10 @@
 
 struct gs_exports {
 	const char *(*device_get_name)(void);
+	const char *(*gpu_get_driver_version)(void);
+	const char *(*gpu_get_renderer)(void);
+	uint64_t (*gpu_get_dmem)(void);
+	uint64_t (*gpu_get_smem)(void);
 	int (*device_get_type)(void);
 	bool (*device_enum_adapters)(gs_device_t *device, bool (*callback)(void *, const char *, uint32_t), void *);
 	const char *(*device_preprocessor_name)(void);

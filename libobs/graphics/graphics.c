@@ -297,6 +297,26 @@ const char *gs_get_device_name(void)
 	return gs_valid("gs_get_device_name") ? thread_graphics->exports.device_get_name() : NULL;
 }
 
+const char *gs_get_driver_version(void)
+{
+	return gs_valid("gs_get_driver_version") ? thread_graphics->exports.gpu_get_driver_version() : NULL;
+}
+
+const char *gs_get_renderer(void)
+{
+	return gs_valid("gs_get_renderer") ? thread_graphics->exports.gpu_get_renderer() : NULL;
+}
+
+uint64_t gs_get_gpu_dmem(void)
+{
+	return gs_valid("gs_get_gpu_dmem") ? thread_graphics->exports.gpu_get_dmem() : 0;
+}
+
+uint64_t gs_get_gpu_smem(void)
+{
+	return gs_valid("gs_get_gpu_smem") ? thread_graphics->exports.gpu_get_smem() : 0;
+}
+
 int gs_get_device_type(void)
 {
 	return gs_valid("gs_get_device_type") ? thread_graphics->exports.device_get_type() : -1;
