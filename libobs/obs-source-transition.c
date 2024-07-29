@@ -318,26 +318,6 @@ obs_source_t *obs_transition_get_active_source(obs_source_t *transition)
 	return ret;
 }
 
-static inline bool activate_child(obs_source_t *transition, size_t idx)
-{
-	bool success = true;
-
-	lock_transition(transition);
-
-	if (transition->transition_sources[idx] &&
-	    !transition->transition_source_active[idx]) {
-
-		success = obs_source_add_active_child(
-			transition, transition->transition_sources[idx]);
-		if (success)
-			transition->transition_source_active[idx] = true;
-	}
-
-	unlock_transition(transition);
-
-	return success;
-}
-
 static bool activate_transition(obs_source_t *transition, size_t idx,
 				obs_source_t *child)
 {
@@ -637,19 +617,6 @@ static inline void copy_transition_state(obs_source_t *transition,
 
 	state->transitioning_video = transition->transitioning_video;
 	state->transitioning_audio = transition->transitioning_audio;
-}
-
-static inline void enum_child(obs_source_t *tr, obs_source_t *child,
-			      obs_source_enum_proc_t enum_callback, void *param)
-{
-	if (!child)
-		return;
-
-	if (child->context.data && child->info.enum_active_sources)
-		child->info.enum_active_sources(child->context.data,
-						enum_callback, param);
-
-	enum_callback(tr, child, param);
 }
 
 void obs_transition_enum_sources(obs_source_t *transition,

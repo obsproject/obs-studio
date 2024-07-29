@@ -161,12 +161,6 @@ static void allocate_audio_mix_buffer(struct obs_source *source)
 	}
 }
 
-static inline bool is_async_video_source(const struct obs_source *source)
-{
-	return (source->info.output_flags & OBS_SOURCE_ASYNC_VIDEO) ==
-	       OBS_SOURCE_ASYNC_VIDEO;
-}
-
 static inline bool is_audio_source(const struct obs_source *source)
 {
 	return source->info.output_flags & OBS_SOURCE_AUDIO;
@@ -2364,12 +2358,6 @@ static inline void set_eparam(gs_effect_t *effect, const char *name, float val)
 {
 	gs_eparam_t *param = gs_effect_get_param_by_name(effect, name);
 	gs_effect_set_float(param, val);
-}
-
-static inline void set_eparami(gs_effect_t *effect, const char *name, int val)
-{
-	gs_eparam_t *param = gs_effect_get_param_by_name(effect, name);
-	gs_effect_set_int(param, val);
 }
 
 static bool update_async_texrender(struct obs_source *source,
