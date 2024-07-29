@@ -2,12 +2,12 @@
 #include <QScreen>
 
 #include <obs.hpp>
+#include <qt-wrappers.hpp>
 
 #include <nlohmann/json.hpp>
 
 #include "window-basic-auto-config.hpp"
 #include "window-basic-main.hpp"
-#include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 #include "url-push-button.hpp"
 

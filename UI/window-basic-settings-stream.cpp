@@ -1,12 +1,12 @@
 #include <QMessageBox>
 #include <QUrl>
 #include <QUuid>
+#include <qt-wrappers.hpp>
 
 #include "window-basic-settings.hpp"
 #include "obs-frontend-api.h"
 #include "obs-app.hpp"
 #include "window-basic-main.hpp"
-#include "qt-wrappers.hpp"
 #include "url-push-button.hpp"
 
 #ifdef BROWSER_AVAILABLE

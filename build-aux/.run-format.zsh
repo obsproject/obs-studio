@@ -54,7 +54,7 @@ invoke_formatter() {
         exit 2
       fi
 
-      if (( ! #source_files )) source_files=((libobs|libobs-*|UI|plugins|deps)/**/*.(c|cpp|h|hpp|m|mm)(.N))
+      if (( ! #source_files )) source_files=((libobs|libobs-*|UI|plugins|deps|shared)/**/*.(c|cpp|h|hpp|m|mm)(.N))
 
       source_files=(${source_files:#*/(obs-websocket/deps|decklink/*/decklink-sdk|mac-syphon/syphon-framework|obs-outputs/ftl-sdk|win-dshow/libdshowcapture)/*})
 
@@ -75,7 +75,7 @@ invoke_formatter() {
         exit 2
       }
 
-      if (( ! #source_files )) source_files=((libobs|libobs-*|UI|plugins|deps|cmake)/**/(CMakeLists.txt|*.cmake)(.N))
+      if (( ! #source_files )) source_files=((libobs|libobs-*|UI|plugins|deps|shared|cmake)/**/(CMakeLists.txt|*.cmake)(.N))
 
       source_files=(${source_files:#*/(obs-outputs/ftl-sdk|jansson|decklink/*/decklink-sdk|obs-websocket|obs-browser|win-dshow/libdshowcapture)/*})
 

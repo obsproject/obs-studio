@@ -13,6 +13,10 @@ add_library(OBS::rtmp-services ALIAS rtmp-services)
 
 find_package(Jansson 2.5 REQUIRED)
 
+if(NOT TARGET OBS::file-updater)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/file-updater" "${CMAKE_BINARY_DIR}/shared/file-updater")
+endif()
+
 target_sources(
   rtmp-services
   PRIVATE service-specific/twitch.c

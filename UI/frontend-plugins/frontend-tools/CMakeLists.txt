@@ -14,6 +14,18 @@ endif()
 add_library(frontend-tools MODULE)
 add_library(OBS::frontend-tools ALIAS frontend-tools)
 
+if(NOT TARGET OBS::properties-view)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/properties-view" "${CMAKE_BINARY_DIR}/shared/properties-view")
+endif()
+
+if(NOT TARGET OBS::qt-plain-text-edit)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/plain-text-edit" "${CMAKE_BINARY_DIR}/shared/qt/plain-text-edit")
+endif()
+
+if(NOT TARGET OBS::qt-wrappers)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/wrappers" "${CMAKE_BINARY_DIR}/shared/qt/wrappers")
+endif()
+
 target_sources(
   frontend-tools
   PRIVATE # cmake-format: sortable
@@ -45,13 +57,15 @@ target_link_libraries(
   frontend-tools
   PRIVATE OBS::frontend-api
           OBS::libobs
-          OBS::ui-support
+          OBS::properties-view
+          OBS::qt-plain-text-edit
+          OBS::qt-wrappers
           Qt::Widgets
           "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,Cocoa>>"
           $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:X11::X11>
           $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:Qt::GuiPrivate>)
 
-add_subdirectory("${CMAKE_SOURCE_DIR}/deps/obs-scripting" "${CMAKE_BINARY_DIR}/deps/obs-scripting")
+add_subdirectory("${CMAKE_SOURCE_DIR}/shared/obs-scripting" "${CMAKE_BINARY_DIR}/shared/obs-scripting")
 
 if(ENABLE_SCRIPTING AND TARGET OBS::scripting)
   target_sources(frontend-tools PRIVATE scripts.cpp scripts.hpp)

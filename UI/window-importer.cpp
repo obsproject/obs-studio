@@ -26,8 +26,8 @@
 #include <QStyledItemDelegate>
 #include <QDirIterator>
 #include <QDropEvent>
+#include <qt-wrappers.hpp>
 
-#include "qt-wrappers.hpp"
 #include "importers/importers.hpp"
 
 extern bool SceneCollectionExists(const char *findName);

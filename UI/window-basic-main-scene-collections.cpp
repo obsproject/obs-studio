@@ -21,11 +21,11 @@
 #include <QVariant>
 #include <QFileDialog>
 #include <QStandardPaths>
+#include <qt-wrappers.hpp>
 #include "item-widget-helpers.hpp"
 #include "window-basic-main.hpp"
 #include "window-importer.hpp"
 #include "window-namedialog.hpp"
-#include "qt-wrappers.hpp"
 
 using namespace std;
 

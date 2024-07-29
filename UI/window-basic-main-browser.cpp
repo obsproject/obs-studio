@@ -18,8 +18,8 @@
 #include <QDir>
 #include <QThread>
 #include <QMessageBox>
+#include <qt-wrappers.hpp>
 #include "window-basic-main.hpp"
-#include "qt-wrappers.hpp"
 
 #include <random>
 

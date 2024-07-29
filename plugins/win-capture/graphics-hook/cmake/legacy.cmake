@@ -6,6 +6,10 @@ find_package(Vulkan REQUIRED)
 add_library(graphics-hook MODULE)
 add_library(OBS::graphics-hook ALIAS graphics-hook)
 
+if(NOT TARGET OBS::ipc-util)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/ipc-util" "${CMAKE_BINARY_DIR}/shared/ipc-util")
+endif()
+
 target_sources(
   graphics-hook
   PRIVATE graphics-hook.c

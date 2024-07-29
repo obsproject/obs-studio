@@ -36,6 +36,7 @@
 #include <QScrollBar>
 #include <QTextStream>
 #include <QActionGroup>
+#include <qt-wrappers.hpp>
 
 #include <util/dstr.h>
 #include <util/util.hpp>
@@ -67,7 +68,6 @@
 #include "window-youtube-actions.hpp"
 #include "youtube-api-wrappers.hpp"
 #endif
-#include "qt-wrappers.hpp"
 #include "context-bar-controls.hpp"
 #include "obs-proxy-style.hpp"
 #include "display-helpers.hpp"

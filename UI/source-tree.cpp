@@ -1,10 +1,10 @@
 #include "window-basic-main.hpp"
 #include "obs-app.hpp"
 #include "source-tree.hpp"
-#include "qt-wrappers.hpp"
 #include "platform.hpp"
 #include "source-label.hpp"
 
+#include <qt-wrappers.hpp>
 #include <obs-frontend-api.h>
 #include <obs.h>
 
