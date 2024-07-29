@@ -236,9 +236,9 @@ static void noise_suppress_destroy(void *data)
 	bfree(ng);
 }
 
+#ifdef LIBNVAFX_ENABLED
 static bool nvafx_initialize_internal(void *data)
 {
-#ifdef LIBNVAFX_ENABLED
 	struct noise_suppress_data *ng = data;
 	NvAFX_Status err;
 
@@ -320,16 +320,12 @@ static bool nvafx_initialize_internal(void *data)
 failure:
 	ng->use_nvafx = false;
 	return false;
-
-#else
-	UNUSED_PARAMETER(data);
-	return false;
-#endif
 }
+#endif
 
+#ifdef LIBNVAFX_ENABLED
 static void *nvafx_initialize(void *data)
 {
-#ifdef LIBNVAFX_ENABLED
 	struct noise_suppress_data *ng = data;
 	NvAFX_Status err;
 
@@ -382,12 +378,8 @@ failure:
 	pthread_mutex_unlock(&nvafx_initializer_mutex);
 	pthread_mutex_unlock(&ng->nvafx_mutex);
 	return NULL;
-
-#else
-	UNUSED_PARAMETER(data);
-	return NULL;
-#endif
 }
+#endif
 
 static inline void alloc_channel(struct noise_suppress_data *ng,
 				 uint32_t sample_rate, size_t channel,
