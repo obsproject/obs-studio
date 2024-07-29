@@ -1601,25 +1601,6 @@
             ]
         },
         {
-            "name": "YouNow",
-            "common": false,
-            "protocol": "FTL",
-            "servers": [
-                {
-                    "name": "younow.com",
-                    "url": "https://api.younow.com/php/api/broadcast/ingest?id="
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "output": "ftl_output",
-                "max audio bitrate": 160,
-                "max video bitrate": 7000,
-                "profile": "main",
-                "bframes": 0
-            }
-        },
-        {
             "name": "Steam",
             "common": false,
             "servers": [

@@ -32,9 +32,7 @@ target_sources(
           service-specific/showroom.c
           service-specific/showroom.h
           service-specific/twitch.c
-          service-specific/twitch.h
-          service-specific/younow.c
-          service-specific/younow.h)
+          service-specific/twitch.h)
 
 target_compile_definitions(rtmp-services PRIVATE SERVICES_URL="${RTMP_SERVICES_URL}"
                                                  $<$<BOOL:${ENABLE_SERVICE_UPDATES}>:ENABLE_SERVICE_UPDATES>)
