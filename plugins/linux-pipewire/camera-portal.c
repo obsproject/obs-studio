@@ -108,23 +108,6 @@ static GDBusProxy *get_camera_portal_proxy(void)
 	return camera_proxy;
 }
 
-static uint32_t get_camera_version(void)
-{
-	g_autoptr(GVariant) cached_version = NULL;
-	uint32_t version;
-
-	ensure_camera_portal_proxy();
-
-	if (!camera_proxy)
-		return 0;
-
-	cached_version =
-		g_dbus_proxy_get_cached_property(camera_proxy, "version");
-	version = cached_version ? g_variant_get_uint32(cached_version) : 0;
-
-	return version;
-}
-
 /* ------------------------------------------------- */
 
 struct camera_device {
