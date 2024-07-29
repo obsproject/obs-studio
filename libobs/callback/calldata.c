@@ -41,12 +41,6 @@
  * direct referencing.
  */
 
-static inline void cd_serialize(uint8_t **pos, void *ptr, size_t size)
-{
-	memcpy(ptr, *pos, size);
-	*pos += size;
-}
-
 static inline size_t cd_serialize_size(uint8_t **pos)
 {
 	size_t size = 0;
