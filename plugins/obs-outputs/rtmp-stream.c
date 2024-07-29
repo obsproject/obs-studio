@@ -350,6 +350,7 @@ static void droptest_cap_data_rate(struct rtmp_stream *stream, size_t size)
 }
 #endif
 
+#ifdef _WIN32
 static int socket_queue_data(RTMPSockBuf *sb, const char *data, int len,
 			     void *arg)
 {
@@ -384,6 +385,7 @@ retry_send:
 
 	return len;
 }
+#endif // _WIN32
 
 static int handle_socket_read(struct rtmp_stream *stream)
 {
@@ -639,7 +641,6 @@ static void dbr_set_bitrate(struct rtmp_stream *stream);
 
 #ifdef _WIN32
 #define socklen_t int
-#endif
 
 static void log_sndbuf_size(struct rtmp_stream *stream)
 {
@@ -651,6 +652,7 @@ static void log_sndbuf_size(struct rtmp_stream *stream)
 		info("Socket send buffer is %d bytes", cur_sendbuf_size);
 	}
 }
+#endif
 
 static void *send_thread(void *data)
 {
@@ -658,7 +660,7 @@ static void *send_thread(void *data)
 
 	os_set_thread_name("rtmp-stream: send_thread");
 
-#if defined(_WIN32)
+#ifdef _WIN32
 	log_sndbuf_size(stream);
 #endif
 
@@ -733,7 +735,7 @@ static void *send_thread(void *data)
 		send_footers(stream); // Y2023 spec
 	}
 
-#if defined(_WIN32)
+#ifdef _WIN32
 	log_sndbuf_size(stream);
 #endif
 
