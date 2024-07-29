@@ -74,8 +74,6 @@ static const char *obs_x264_getname(void *unused)
 	return "x264";
 }
 
-static void obs_x264_stop(void *data);
-
 static void clear_data(struct obs_x264 *obsx264)
 {
 	if (obsx264->context) {
