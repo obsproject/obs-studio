@@ -184,17 +184,17 @@ static inline void free_lua_obs_callback(struct lua_obs_callback *cb)
 
 /* ------------------------------------------------ */
 
-static int is_ptr(lua_State *script, int idx)
+static inline int is_ptr(lua_State *script, int idx)
 {
 	return lua_isuserdata(script, idx) || lua_isnil(script, idx);
 }
 
-static int is_table(lua_State *script, int idx)
+static inline int is_table(lua_State *script, int idx)
 {
 	return lua_istable(script, idx);
 }
 
-static int is_function(lua_State *script, int idx)
+static inline int is_function(lua_State *script, int idx)
 {
 	return lua_isfunction(script, idx);
 }
