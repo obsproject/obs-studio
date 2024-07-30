@@ -2569,34 +2569,6 @@
                     "url": "rtmp://auto.masterstream.ir/live"
                 },
                 {
-                    "name": "Iran Server 1",
-                    "url": "rtmp://live1.masterstream.ir/live"
-                },
-                {
-                    "name": "Iran Server 2",
-                    "url": "rtmp://live2.masterstream.ir/live"
-                },
-                {
-                    "name": "Iran Server 3",
-                    "url": "rtmp://live3.masterstream.ir/live"
-                },
-                {
-                    "name": "Iran Server 4",
-                    "url": "rtmp://live4.masterstream.ir/live"
-                },
-                {
-                    "name": "Iran Server 5",
-                    "url": "rtmp://live5.masterstream.ir/live"
-                },
-                {
-                    "name": "Iran Server 6",
-                    "url": "rtmp://live6.masterstream.ir/live"
-                },
-                {
-                    "name": "Iran Server 7",
-                    "url": "rtmp://live7.masterstream.ir/live"
-                },
-                {
                     "name": "Turkey Server 1",
                     "url": "rtmp://tr-live1.masterstream.ir/live"
                 }
@@ -2887,7 +2859,9 @@
         },
         {
             "name": "Amazon IVS",
-            "supported video codecs": ["h264"],
+            "supported video codecs": [
+                "h264"
+            ],
             "servers": [
                 {
                     "name": "Global (RTMPS, recommended)",
