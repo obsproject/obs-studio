@@ -1240,8 +1240,9 @@ bool SimpleOutput::IsVodTrackEnabled(obs_service_t *service)
 		config_get_bool(main->Config(), "SimpleOutput", "UseAdvanced");
 	bool enable = config_get_bool(main->Config(), "SimpleOutput",
 				      "VodTrackEnabled");
-	bool enableForCustomServer = config_get_bool(
-		GetGlobalConfig(), "General", "EnableCustomServerVodTrack");
+	bool enableForCustomServer =
+		config_get_bool(App()->GetUserConfig(), "General",
+				"EnableCustomServerVodTrack");
 
 	OBSDataAutoRelease settings = obs_service_get_settings(service);
 	const char *name = obs_data_get_string(settings, "service");
@@ -2246,8 +2247,9 @@ AdvancedOutput::VodTrackMixerIdx(obs_service_t *service)
 		config_get_bool(main->Config(), "AdvOut", "VodTrackEnabled");
 	int vodTrackIndex =
 		config_get_int(main->Config(), "AdvOut", "VodTrackIndex");
-	bool enableForCustomServer = config_get_bool(
-		GetGlobalConfig(), "General", "EnableCustomServerVodTrack");
+	bool enableForCustomServer =
+		config_get_bool(App()->GetUserConfig(), "General",
+				"EnableCustomServerVodTrack");
 
 	const char *id = obs_service_get_id(service);
 	if (strcmp(id, "rtmp_custom") == 0) {

@@ -1032,8 +1032,9 @@ void OBSBasicSettings::on_server_currentIndexChanged(int /*index*/)
 
 void OBSBasicSettings::UpdateVodTrackSetting()
 {
-	bool enableForCustomServer = config_get_bool(
-		GetGlobalConfig(), "General", "EnableCustomServerVodTrack");
+	bool enableForCustomServer =
+		config_get_bool(App()->GetUserConfig(), "General",
+				"EnableCustomServerVodTrack");
 	bool enableVodTrack = ui->service->currentText() == "Twitch";
 	bool wasEnabled = !!vodTrackCheckbox;
 

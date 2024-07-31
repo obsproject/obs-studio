@@ -53,9 +53,9 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 			OBSBasicProperties::SourceRenamed, this),
 	  oldSettings(obs_data_create())
 {
-	int cx = (int)config_get_int(App()->GlobalConfig(), "PropertiesWindow",
+	int cx = (int)config_get_int(App()->GetAppConfig(), "PropertiesWindow",
 				     "cx");
-	int cy = (int)config_get_int(App()->GlobalConfig(), "PropertiesWindow",
+	int cy = (int)config_get_int(App()->GetAppConfig(), "PropertiesWindow",
 				     "cy");
 
 	enum obs_source_type type = obs_source_get_type(source);
@@ -450,9 +450,9 @@ void OBSBasicProperties::DrawTransitionPreview(void *data, uint32_t cx,
 
 void OBSBasicProperties::Cleanup()
 {
-	config_set_int(App()->GlobalConfig(), "PropertiesWindow", "cx",
+	config_set_int(App()->GetAppConfig(), "PropertiesWindow", "cx",
 		       width());
-	config_set_int(App()->GlobalConfig(), "PropertiesWindow", "cy",
+	config_set_int(App()->GetAppConfig(), "PropertiesWindow", "cy",
 		       height());
 
 	obs_display_remove_draw_callback(ui->preview->GetDisplay(),

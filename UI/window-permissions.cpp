@@ -96,7 +96,7 @@ void OBSPermissions::on_accessibilityPermissionButton_clicked()
 
 void OBSPermissions::on_continueButton_clicked()
 {
-	config_set_int(GetGlobalConfig(), "General",
+	config_set_int(App()->GetAppConfig(), "General",
 		       "MacOSPermissionsDialogLastShown",
 		       MACOS_PERMISSIONS_DIALOG_VERSION);
 	close();

@@ -91,7 +91,8 @@ class OBSApp : public QApplication {
 private:
 	std::string locale;
 
-	ConfigFile globalConfig;
+	ConfigFile appConfig;
+	ConfigFile userConfig;
 	TextLookup textLookup;
 	QPointer<OBSMainWindow> mainWindow;
 	profiler_name_store_t *profilerNameStore = nullptr;
@@ -112,6 +113,15 @@ private:
 
 	bool InitGlobalConfig();
 	bool InitGlobalConfigDefaults();
+	bool InitGlobalLocationDefaults();
+
+	bool MigrateGlobalSettings();
+	bool MigrateLegacySettings(uint32_t lastVersion);
+
+	bool InitUserConfig(std::string &userConfigLocation,
+			    uint32_t lastVersion);
+	void InitUserConfigDefaults();
+
 	bool InitLocale();
 	bool InitTheme();
 
@@ -154,7 +164,11 @@ public:
 
 	inline QMainWindow *GetMainWindow() const { return mainWindow.data(); }
 
-	inline config_t *GlobalConfig() const { return globalConfig; }
+	inline config_t *GetAppConfig() const { return appConfig; }
+	inline config_t *GetUserConfig() const { return userConfig; }
+	std::string userConfigLocation;
+	std::string userScenesLocation;
+	std::string userProfilesLocation;
 
 	inline const char *GetLocale() const { return locale.c_str(); }
 
@@ -235,8 +249,8 @@ signals:
 	void StyleChanged();
 };
 
-int GetConfigPath(char *path, size_t size, const char *name);
-char *GetConfigPathPtr(const char *name);
+int GetAppConfigPath(char *path, size_t size, const char *name);
+char *GetAppConfigPathPtr(const char *name);
 
 int GetProgramDataPath(char *path, size_t size, const char *name);
 char *GetProgramDataPathPtr(const char *name);
@@ -244,11 +258,6 @@ char *GetProgramDataPathPtr(const char *name);
 inline OBSApp *App()
 {
 	return static_cast<OBSApp *>(qApp);
-}
-
-inline config_t *GetGlobalConfig()
-{
-	return App()->GlobalConfig();
 }
 
 std::vector<std::pair<std::string, std::string>> GetLocaleNames();
@@ -266,13 +275,6 @@ bool GetClosestUnusedFileName(std::string &path, const char *extension);
 bool GetUnusedSceneCollectionFile(std::string &name, std::string &file);
 
 bool WindowPositionValid(QRect rect);
-
-static inline int GetProfilePath(char *path, size_t size, const char *file)
-{
-	OBSMainWindow *window =
-		reinterpret_cast<OBSMainWindow *>(App()->GetMainWindow());
-	return window->GetProfilePath(path, size, file);
-}
 
 extern bool portable_mode;
 extern bool steam;

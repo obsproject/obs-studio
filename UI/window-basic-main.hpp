@@ -308,7 +308,7 @@ private:
 	int previewCX = 0, previewCY = 0;
 	float previewScale = 0.0f;
 
-	ConfigFile basicConfig;
+	ConfigFile activeConfiguration;
 
 	std::vector<SavedProjectorInfo *> savedProjectorsArray;
 	std::vector<OBSProjector *> projectors;

@@ -473,7 +473,7 @@ void OBSBasic::ClearExtraBrowserDocks()
 void OBSBasic::LoadExtraBrowserDocks()
 {
 	const char *jsonStr = config_get_string(
-		App()->GlobalConfig(), "BasicWindow", "ExtraBrowserDocks");
+		App()->GetUserConfig(), "BasicWindow", "ExtraBrowserDocks");
 
 	std::string err;
 	Json json = Json::parse(jsonStr, err);
@@ -511,7 +511,7 @@ void OBSBasic::SaveExtraBrowserDocks()
 	}
 
 	std::string output = Json(array).dump();
-	config_set_string(App()->GlobalConfig(), "BasicWindow",
+	config_set_string(App()->GetUserConfig(), "BasicWindow",
 			  "ExtraBrowserDocks", output.c_str());
 }
 
