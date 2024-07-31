@@ -1606,6 +1606,7 @@ void VolumeSlider::paintEvent(QPaintEvent *event)
 	}
 
 	QSlider::paintEvent(event);
+	delete tickColor;
 }
 
 VolumeAccessibleInterface::VolumeAccessibleInterface(QWidget *w)
