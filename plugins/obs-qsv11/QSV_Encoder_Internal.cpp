@@ -177,6 +177,25 @@ mfxStatus QSV_Encoder_Internal::Open(qsv_param_t *pParams, enum qsv_codec codec)
 	return sts;
 }
 
+PRAGMA_WARN_PUSH
+PRAGMA_WARN_DEPRECATION
+static inline bool IsAV1ScreenContentSupport(const mfxPlatform &platform,
+					     const mfxVersion &version)
+{
+#if defined(_WIN32)
+	//AV1_SCREEN_CONTENT_TOOLS API is introduced in VPL version 2.11
+	if ((version.Major >= 2 && version.Minor >= 11) &&
+	    (platform.CodeName >= MFX_PLATFORM_LUNARLAKE &&
+	     platform.CodeName != MFX_PLATFORM_ALDERLAKE_N &&
+	     platform.CodeName != MFX_PLATFORM_ARROWLAKE))
+		return true;
+#endif
+	(void)platform;
+	(void)version;
+	return false;
+}
+PRAGMA_WARN_POP
+
 mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 					   enum qsv_codec codec)
 {
@@ -327,6 +346,22 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 		m_ExtAv1TileParam.NumTileColumns = 2;
 		extendedBuffers.push_back((mfxExtBuffer *)&m_ExtAv1TileParam);
 	}
+
+	PRAGMA_WARN_PUSH
+	PRAGMA_WARN_DEPRECATION
+	if (codec == QSV_CODEC_AV1 &&
+	    isAV1ScreenContentSupport(platform, m_ver)) {
+		memset(&m_ExtAv1ScreenContentTools, 0,
+		       sizeof(m_ExtAv1ScreenContentTools));
+		m_ExtAv1ScreenContentTools.Header.BufferId =
+			MFX_EXTBUFF_AV1_SCREEN_CONTENT_TOOLS;
+		m_ExtAv1ScreenContentTools.Header.BufferSz =
+			sizeof(m_ExtAv1ScreenContentTools);
+		m_ExtAv1ScreenContentTools.Palette = MFX_CODINGOPTION_ON;
+		extendedBuffers.push_back(
+			(mfxExtBuffer *)&m_ExtAv1ScreenContentTools);
+	}
+	PRAGMA_WARN_POP
 
 #if defined(_WIN32)
 	// TODO: Ask about this one on VAAPI too.
