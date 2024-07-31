@@ -20,8 +20,7 @@
 #include "obs-propertieslist.hpp"
 #include "obs-actionrow.hpp"
 
-OBSPropertiesList::OBSPropertiesList(QWidget *parent)
-	: QFrame(parent)
+OBSPropertiesList::OBSPropertiesList(QWidget *parent) : QFrame(parent)
 {
 	layout = new QVBoxLayout();
 	layout->setSpacing(0);
