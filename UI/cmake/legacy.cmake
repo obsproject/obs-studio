@@ -211,6 +211,8 @@ target_sources(
           menu-button.hpp
           mute-checkbox.hpp
           noncheckable-button.hpp
+          preview-controls.cpp
+          preview-controls.hpp
           remote-text.cpp
           remote-text.hpp
           scene-tree.cpp
