@@ -21,8 +21,7 @@
 #include "obs-actionrow.hpp"
 
 OBSPropertiesList::OBSPropertiesList(QWidget *parent)
-	: QFrame(parent),
-	  OBSWidgetUtils(this)
+	: QFrame(parent)
 {
 	layout = new QVBoxLayout();
 	layout->setSpacing(0);

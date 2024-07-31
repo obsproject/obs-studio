@@ -25,7 +25,7 @@
 
 class OBSActionBaseClass;
 
-class OBSPropertiesList : public QFrame, public OBSWidgetUtils {
+class OBSPropertiesList : public QFrame {
 	Q_OBJECT
 
 public:
