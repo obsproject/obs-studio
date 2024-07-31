@@ -23,18 +23,18 @@
 #include <util/base.h>
 #include <QSvgRenderer>
 
-OBSActionRow::OBSActionRow(const QString &name, QWidget *parent)
-	: OBSActionBaseClass(parent)
+OBSActionRow::OBSActionRow(QWidget *parent) : OBSActionBaseClass(parent)
 {
 	layout = new QGridLayout(this);
 	layout->setVerticalSpacing(0);
 	layout->setContentsMargins(0, 0, 0, 0);
 
-	QSizePolicy policy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+	labelLayout = new QVBoxLayout();
+	labelLayout->setSpacing(0);
+	labelLayout->setContentsMargins(0, 0, 0, 0);
+
 	setFocusPolicy(Qt::StrongFocus);
-	setSizePolicy(policy);
 	setLayout(layout);
-	setAccessibleName(name);
 
 	layout->setColumnMinimumWidth(0, 0);
 	layout->setColumnStretch(0, 0);
@@ -42,36 +42,30 @@ OBSActionRow::OBSActionRow(const QString &name, QWidget *parent)
 	layout->setColumnStretch(2, 55);
 
 	nameLbl = new QLabel();
-	nameLbl->setText(name);
+	nameLbl->setVisible(false);
 	OBSWidgetUtils::addClass(nameLbl, "title");
 
-	layout->addWidget(nameLbl, 0, 1, Qt::AlignLeft);
-}
-
-OBSActionRow::OBSActionRow(const QString &name, const QString &desc,
-			   QWidget *parent)
-	: OBSActionRow(name, parent)
-{
 	descLbl = new QLabel();
-	descLbl->setText(desc);
-	OBSWidgetUtils::addClass(descLbl, "subtitle");
-	setAccessibleDescription(desc);
+	descLbl->setVisible(false);
+	OBSWidgetUtils::addClass(descLbl, "description");
 
-	layout->addWidget(descLbl, 1, 1, Qt::AlignLeft);
+	labelLayout->addWidget(nameLbl);
+	labelLayout->addWidget(descLbl);
+
+	layout->addLayout(labelLayout, 0, 1, Qt::AlignLeft);
 }
 
 void OBSActionRow::setPrefix(QWidget *w, bool auto_connect)
 {
 	setSuffixEnabled(false);
 
-	int rowspan = !!descLbl ? 2 : 1;
 	_prefix = w;
 
 	if (auto_connect)
 		this->autoConnectWidget(w);
 
 	_prefix->setParent(this);
-	layout->addWidget(_prefix, 0, 0, rowspan, 1, Qt::AlignLeft);
+	layout->addWidget(_prefix, 0, 0, Qt::AlignLeft);
 	layout->setColumnStretch(0, 3);
 }
 
@@ -79,15 +73,13 @@ void OBSActionRow::setSuffix(QWidget *w, bool auto_connect)
 {
 	setPrefixEnabled(false);
 
-	int rowspan = !!descLbl ? 2 : 1;
 	_suffix = w;
 
 	if (auto_connect)
 		this->autoConnectWidget(w);
 
 	_suffix->setParent(this);
-	layout->addWidget(_suffix, 0, 2, rowspan, 1,
-			  Qt::AlignRight | Qt::AlignVCenter);
+	layout->addWidget(_suffix, 0, 2, Qt::AlignRight | Qt::AlignVCenter);
 }
 
 void OBSActionRow::setPrefixEnabled(bool enabled)
@@ -117,24 +109,55 @@ void OBSActionRow::setSuffixEnabled(bool enabled)
 	_suffix->setVisible(enabled);
 }
 
+void OBSActionRow::setTitle(QString name)
+{
+	nameLbl->setText(name);
+	setAccessibleName(name);
+	showTitle(true);
+}
+
+void OBSActionRow::setDescription(QString desc)
+{
+	descLbl->setText(desc);
+	setAccessibleDescription(desc);
+	showDescription(true);
+}
+
+void OBSActionRow::showTitle(bool visible)
+{
+	nameLbl->setVisible(visible);
+}
+
+void OBSActionRow::showDescription(bool visible)
+{
+	descLbl->setVisible(visible);
+}
+
+void OBSActionRow::setHighlight(QWidget *w)
+{
+	highlightWidget = w;
+	OBSWidgetUtils::addClass(w, "row-highlight");
+}
+
 void OBSActionRow::setChangeCursor(bool change)
 {
 	changeCursor = change;
 	OBSWidgetUtils::toggleClass("cursorPointer", change);
-
-	style()->unpolish(this);
-	style()->polish(this);
 }
 
 void OBSActionRow::enterEvent(QEnterEvent *e)
 {
+	if (!isEnabled())
+		return;
+
 	if (changeCursor) {
 		setCursor(Qt::PointingHandCursor);
 	}
 
-	OBSWidgetUtils::addClass(QString("hover"));
-	style()->unpolish(this);
-	style()->polish(this);
+	OBSWidgetUtils::addClass("hover");
+
+	if (highlightWidget)
+		OBSWidgetUtils::repolish(highlightWidget);
 
 	if (hasPrefix() || hasSuffix()) {
 		OBSWidgetUtils::polishChildren();
@@ -146,8 +169,9 @@ void OBSActionRow::enterEvent(QEnterEvent *e)
 void OBSActionRow::leaveEvent(QEvent *e)
 {
 	OBSWidgetUtils::removeClass("hover");
-	style()->unpolish(this);
-	style()->polish(this);
+
+	if (highlightWidget)
+		OBSWidgetUtils::repolish(highlightWidget);
 
 	if (hasPrefix() || hasSuffix()) {
 		OBSWidgetUtils::polishChildren();
@@ -175,34 +199,29 @@ void OBSActionRow::keyReleaseEvent(QKeyEvent *e)
 void OBSActionRow::autoConnectWidget(QWidget *w)
 {
 	setAccessibleName(nameLbl->text());
+	setFocusProxy(w);
 
-	/* If element is a QAbstractButton subclass, and checkable,
-	 * forward clicks on the widget. */
+	setHighlight(w);
+
+	/* If element is an OBSToggleSwitch and checkable, forward
+	 * clicks to the widget */
+	OBSToggleSwitch *tgle = dynamic_cast<OBSToggleSwitch *>(w);
+	if (tgle && tgle->isCheckable()) {
+		setChangeCursor(true);
+
+		connect(this, &OBSActionRow::clicked, tgle,
+			&OBSToggleSwitch::click);
+		return;
+	}
+
+	/* If element is any other QAbstractButton subclass,
+	 * and checkable, forward clicks to the widget. */
 	QAbstractButton *abtn = dynamic_cast<QAbstractButton *>(w);
 	if (abtn && abtn->isCheckable()) {
 		setChangeCursor(true);
-		setFocusProxy(abtn);
 
-		// Pass click to button
 		connect(this, &OBSActionRow::clicked, abtn,
 			&QAbstractButton::click);
-		return;
-	}
-
-	// If it's a QComboBox, popup the menu
-	OBSComboBox *cbx = dynamic_cast<OBSComboBox *>(w);
-	if (cbx) {
-		setChangeCursor(false);
-		setFocusProxy(cbx);
-
-		return;
-	}
-
-	// Disable row focus for DoubleSpinBox
-	OBSDoubleSpinBox *sbx = dynamic_cast<OBSDoubleSpinBox *>(w);
-	if (sbx) {
-		setFocusProxy(sbx);
-
 		return;
 	}
 }
@@ -211,6 +230,8 @@ void OBSActionRow::autoConnectWidget(QWidget *w)
 * Button for expanding a collapsible ActionRow
 */
 OBSActionCollapseButton::OBSActionCollapseButton(QWidget *parent)
+	: QAbstractButton(parent),
+	  OBSWidgetUtils(this)
 {
 	setCheckable(true);
 }
@@ -237,12 +258,7 @@ void OBSActionCollapseButton::paintEvent(QPaintEvent *e)
 	style()->drawPrimitive(QStyle::PE_IndicatorCheckBox, &opt, &p, this);
 }
 
-/*
-* ActionRow variant that can be expanded to show another properties list
-*/
-OBSCollapsibleActionRow::OBSCollapsibleActionRow(const QString &name,
-						 const QString &desc,
-						 bool toggleable,
+OBSCollapsibleContainer::OBSCollapsibleContainer(const QString &name,
 						 QWidget *parent)
 	: OBSActionBaseClass(parent)
 {
@@ -251,52 +267,81 @@ OBSCollapsibleActionRow::OBSCollapsibleActionRow(const QString &name,
 	layout->setSpacing(0);
 	setLayout(layout);
 
-	if (desc != nullptr)
-		ar = new OBSActionRow(name, desc, this);
-	else
-		ar = new OBSActionRow(name, this);
+	rowWidget = new OBSCollapsibleRow();
+	rowLayout = new QHBoxLayout();
+	rowLayout->setContentsMargins(0, 0, 0, 0);
+	rowLayout->setSpacing(0);
+	rowWidget->setLayout(rowLayout);
 
-	layout->addWidget(ar);
+	ar = new OBSActionRow();
+	ar->setTitle(name);
+	ar->setChangeCursor(false);
+
+	rowLayout->addWidget(ar);
 
 	plist = new OBSPropertiesList(this);
 	plist->setVisible(false);
-	layout->addWidget(plist);
+
+	collapseFrame = new QFrame();
+	btnLayout = new QHBoxLayout();
+	btnLayout->setContentsMargins(0, 0, 0, 0);
+	btnLayout->setSpacing(0);
+	collapseFrame->setLayout(btnLayout);
+	OBSWidgetUtils::addClass(collapseFrame, "btn-frame");
+	ar->setHighlight(collapseFrame);
 
 	collapseBtn = new OBSActionCollapseButton(this);
-	collapseBtn->setFocusProxy(this);
+	btnLayout->addWidget(collapseBtn);
 
-	ar->setChangeCursor(true);
+	rowLayout->addWidget(collapseFrame);
 
-	if (toggleable) {
-		plist->setEnabled(false);
-		sw = new OBSToggleSwitch(false);
-		QWidget *multiSuffix = new QWidget(ar);
-		QHBoxLayout *multiLayout = new QHBoxLayout;
+	layout->addWidget(rowWidget);
+	layout->addWidget(plist);
 
-		sw->setFocusPolicy(Qt::StrongFocus);
-
-		// ToDo: make switch buddy of toggleswitch and a11y for extend button
-		multiLayout->setContentsMargins(0, 0, 0, 0);
-		multiLayout->addWidget(sw);
-		multiLayout->addWidget(collapseBtn);
-
-		multiSuffix->setLayout(multiLayout);
-
-		ar->setSuffix(multiSuffix, false);
-		connect(sw, &OBSToggleSwitch::toggled, plist,
-			&OBSPropertiesList::setEnabled);
-	} else {
-		ar->setSuffix(collapseBtn);
-	}
+	ar->setFocusProxy(collapseBtn);
 
 	connect(collapseBtn, &QAbstractButton::clicked, this,
-		&OBSCollapsibleActionRow::toggleVisibility);
+		&OBSCollapsibleContainer::toggleVisibility);
 
-	connect(ar, &OBSActionRow::clicked, this,
-		&OBSCollapsibleActionRow::toggleVisibility);
+	connect(ar, &OBSActionRow::clicked, collapseBtn,
+		&QAbstractButton::click);
 }
 
-void OBSCollapsibleActionRow::toggleVisibility()
+/*
+* ActionRow variant that can be expanded to show another properties list
+*/
+OBSCollapsibleContainer::OBSCollapsibleContainer(const QString &name,
+						 const QString &desc,
+						 QWidget *parent)
+	: OBSCollapsibleContainer(name, parent)
+{
+	ar->setDescription(desc);
+}
+
+void OBSCollapsibleContainer::setCheckable(bool check)
+{
+	checkable = check;
+
+	if (checkable && !toggleSwitch) {
+		plist->setEnabled(false);
+		OBSWidgetUtils::polishChildren(plist);
+
+		toggleSwitch = new OBSToggleSwitch(false);
+
+		ar->setSuffix(toggleSwitch, false);
+		connect(toggleSwitch, &OBSToggleSwitch::toggled, plist,
+			&OBSPropertiesList::setEnabled);
+	}
+
+	if (!checkable && toggleSwitch) {
+		plist->setEnabled(true);
+		OBSWidgetUtils::polishChildren(plist);
+
+		ar->suffix()->deleteLater();
+	}
+}
+
+void OBSCollapsibleContainer::toggleVisibility()
 {
 	bool visible = !plist->isVisible();
 
@@ -304,7 +349,31 @@ void OBSCollapsibleActionRow::toggleVisibility()
 	collapseBtn->setChecked(visible);
 }
 
-void OBSCollapsibleActionRow::addRow(OBSActionBaseClass *ar)
+void OBSCollapsibleContainer::addRow(OBSActionBaseClass *ar)
 {
 	plist->addRow(ar);
+}
+
+OBSCollapsibleRow::OBSCollapsibleRow(QWidget *parent)
+	: QWidget(parent),
+	  OBSWidgetUtils(this)
+{
+}
+
+void OBSCollapsibleRow::enterEvent(QEnterEvent *e)
+{
+	setCursor(Qt::PointingHandCursor);
+
+	OBSWidgetUtils::addClass("hover");
+	OBSWidgetUtils::polishChildren();
+
+	QWidget::enterEvent(e);
+}
+
+void OBSCollapsibleRow::leaveEvent(QEvent *e)
+{
+	OBSWidgetUtils::removeClass("hover");
+	OBSWidgetUtils::polishChildren();
+
+	QWidget::leaveEvent(e);
 }

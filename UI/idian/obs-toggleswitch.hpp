@@ -65,7 +65,7 @@ public:
 	bool isDelayed() { return delayed; }
 
 	void setStatus(bool status);
-	void setPending(bool pending); 
+	void setPending(bool pending);
 
 public slots:
 	void click();
@@ -75,6 +75,7 @@ signals:
 	void pendingUnchecked();
 
 protected:
+	void changeEvent(QEvent *event);
 	void paintEvent(QPaintEvent *) override;
 	void showEvent(QShowEvent *) override;
 	void enterEvent(QEnterEvent *) override;

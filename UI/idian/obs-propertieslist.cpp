@@ -20,11 +20,14 @@
 #include "obs-propertieslist.hpp"
 #include "obs-actionrow.hpp"
 
-OBSPropertiesList::OBSPropertiesList(QWidget *parent) : QFrame(parent)
+OBSPropertiesList::OBSPropertiesList(QWidget *parent)
+	: QFrame(parent),
+	  OBSWidgetUtils(this)
 {
 	layout = new QVBoxLayout();
 	layout->setSpacing(0);
 	layout->setContentsMargins(0, 0, 0, 0);
+	setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
 
 	rowsList = QList<OBSActionBaseClass *>();
 
@@ -42,16 +45,16 @@ void OBSPropertiesList::addRow(OBSActionBaseClass *ar)
 
 	// Custom properties to work around :first and :last not existing.
 	if (!first) {
-		ar->setProperty("first", true);
+		OBSWidgetUtils::addClass(ar, "first");
 		first = ar;
 	}
 
 	// Remove last property from existing last item
 	if (last)
-		last->setProperty("last", QVariant());
+		OBSWidgetUtils::removeClass(last, "last");
 
 	// Most recently added item is also always last
-	ar->setProperty("last", true);
+	OBSWidgetUtils::addClass(ar, "last");
 	last = ar;
 
 	ar->setParent(this);

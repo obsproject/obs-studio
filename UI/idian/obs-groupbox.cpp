@@ -20,45 +20,91 @@
 
 OBSGroupBox::OBSGroupBox(QWidget *parent) : QFrame(parent), OBSWidgetUtils(this)
 {
-	layout = new QGridLayout(this);
-	layout->setVerticalSpacing(0);
+	layout = new QVBoxLayout(this);
+	layout->setSpacing(0);
 	layout->setContentsMargins(0, 0, 0, 0);
+
+	headerContainer = new QWidget();
+	headerLayout = new QHBoxLayout();
+	headerLayout->setSpacing(0);
+	headerLayout->setContentsMargins(0, 0, 0, 0);
+	headerContainer->setLayout(headerLayout);
+	OBSWidgetUtils::addClass(headerContainer, "header");
+
+	labelContainer = new QWidget();
+	labelLayout = new QVBoxLayout();
+	labelLayout->setSpacing(0);
+	labelLayout->setContentsMargins(0, 0, 0, 0);
+	labelContainer->setLayout(labelLayout);
+	labelContainer->setSizePolicy(QSizePolicy::MinimumExpanding,
+				      QSizePolicy::Preferred);
+
+	controlContainer = new QWidget();
+	controlLayout = new QVBoxLayout();
+	controlLayout->setSpacing(0);
+	controlLayout->setContentsMargins(0, 0, 0, 0);
+	controlContainer->setLayout(controlLayout);
+
+	headerLayout->addWidget(labelContainer);
+	headerLayout->addWidget(controlContainer);
+
+	contentsContainer = new QWidget();
+	contentsLayout = new QVBoxLayout();
+	contentsLayout->setSpacing(0);
+	contentsLayout->setContentsMargins(0, 0, 0, 0);
+	contentsContainer->setLayout(contentsLayout);
+	OBSWidgetUtils::addClass(contentsContainer, "contents");
+
+	layout->addWidget(headerContainer);
+	layout->addWidget(contentsContainer);
 
 	plist = new OBSPropertiesList(this);
 
-	QSizePolicy policy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-	setSizePolicy(policy);
 	setLayout(layout);
 	setMinimumWidth(300);
 	setMaximumWidth(600);
 
-	layout->addWidget(plist, 2, 0, -1, -1);
-}
-
-OBSGroupBox::OBSGroupBox(const QString &name, QWidget *parent)
-	: OBSGroupBox(parent)
-{
+	contentsLayout->addWidget(plist);
+	/*contentsContainer->setSizePolicy(policy);*/
 
 	nameLbl = new QLabel();
-	nameLbl->setText(name);
 	OBSWidgetUtils::addClass(nameLbl, "title");
+	nameLbl->setVisible(false);
+	labelLayout->addWidget(nameLbl);
 
-	layout->addWidget(nameLbl, 0, 0, Qt::AlignLeft);
-}
-
-OBSGroupBox::OBSGroupBox(const QString &name, const QString &desc,
-			 QWidget *parent)
-	: OBSGroupBox(name, parent)
-{
 	descLbl = new QLabel();
-	descLbl->setText(desc);
-	OBSWidgetUtils::addClass("subtitle");
-	layout->addWidget(descLbl, 1, 0, Qt::AlignLeft);
+	OBSWidgetUtils::addClass(descLbl, "description");
+	descLbl->setVisible(false);
+	labelLayout->addWidget(descLbl);
 }
 
 void OBSGroupBox::addRow(OBSActionBaseClass *ar) const
 {
 	plist->addRow(ar);
+}
+
+void OBSGroupBox::setTitle(QString name)
+{
+	nameLbl->setText(name);
+	setAccessibleName(name);
+	showTitle(true);
+}
+
+void OBSGroupBox::setDescription(QString desc)
+{
+	descLbl->setText(desc);
+	setAccessibleDescription(desc);
+	showDescription(true);
+}
+
+void OBSGroupBox::showTitle(bool visible)
+{
+	nameLbl->setVisible(visible);
+}
+
+void OBSGroupBox::showDescription(bool visible)
+{
+	descLbl->setVisible(visible);
 }
 
 void OBSGroupBox::setCheckable(bool check)
@@ -67,13 +113,13 @@ void OBSGroupBox::setCheckable(bool check)
 
 	if (checkable && !toggleSwitch) {
 		toggleSwitch = new OBSToggleSwitch(true);
-		layout->addWidget(toggleSwitch, 0, 1, 2, 1, Qt::AlignRight);
+		controlLayout->addWidget(toggleSwitch);
 		connect(toggleSwitch, &OBSToggleSwitch::toggled, this,
 			[=](bool checked) { plist->setEnabled(checked); });
 	}
 
 	if (!checkable && toggleSwitch) {
-		layout->removeWidget(toggleSwitch);
+		controlLayout->removeWidget(toggleSwitch);
 		toggleSwitch->deleteLater();
 	}
 }

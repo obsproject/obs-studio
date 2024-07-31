@@ -99,6 +99,12 @@ void OBSToggleSwitch::updateBackgroundColor()
 	setStyleSheet("background: " + bg.name());
 }
 
+void OBSToggleSwitch::changeEvent(QEvent *event)
+{
+	if (event->type() == QEvent::EnabledChange)
+		updateBackgroundColor();
+}
+
 void OBSToggleSwitch::paintEvent(QPaintEvent *e)
 {
 	UNUSED_PARAMETER(e);

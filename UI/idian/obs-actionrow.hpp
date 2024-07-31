@@ -62,9 +62,7 @@ class OBSActionRow : public OBSActionBaseClass {
 	Q_OBJECT
 
 public:
-	OBSActionRow(const QString &name, QWidget *parent = nullptr);
-	OBSActionRow(const QString &name, const QString &desc,
-		     QWidget *parent = nullptr);
+	OBSActionRow(QWidget *parent = nullptr);
 
 	void setPrefix(QWidget *w, bool auto_connect = true);
 	void setSuffix(QWidget *w, bool auto_connect = true);
@@ -78,6 +76,14 @@ public:
 	void setPrefixEnabled(bool enabled);
 	void setSuffixEnabled(bool enabled);
 
+	void setTitle(QString name);
+	void setDescription(QString desc);
+
+	void showTitle(bool visible);
+	void showDescription(bool visible);
+
+	void setHighlight(QWidget *w);
+
 	void setChangeCursor(bool change);
 
 signals:
@@ -88,7 +94,7 @@ protected:
 	void leaveEvent(QEvent *) override;
 	void mouseReleaseEvent(QMouseEvent *) override;
 	void keyReleaseEvent(QKeyEvent *) override;
-	bool hasSubtitle() const { return descLbl != nullptr; }
+	bool hasDescription() const { return descLbl != nullptr; }
 
 	void focusInEvent(QFocusEvent *e) override
 	{
@@ -104,11 +110,15 @@ protected:
 private:
 	QGridLayout *layout;
 
+	QVBoxLayout *labelLayout = nullptr;
+
 	QLabel *nameLbl = nullptr;
 	QLabel *descLbl = nullptr;
 
 	QWidget *_prefix = nullptr;
 	QWidget *_suffix = nullptr;
+
+	QWidget *highlightWidget = nullptr;
 
 	void autoConnectWidget(QWidget *w);
 	bool changeCursor = false;
@@ -117,7 +127,7 @@ private:
 /**
 * Collapsible row expand button
 */
-class OBSActionCollapseButton : public QAbstractButton {
+class OBSActionCollapseButton : public QAbstractButton, public OBSWidgetUtils {
 	Q_OBJECT
 
 public:
@@ -129,36 +139,59 @@ private:
 
 protected:
 	void paintEvent(QPaintEvent *) override;
+	void focusInEvent(QFocusEvent *e) override
+	{
+		OBSWidgetUtils::showKeyFocused(e);
+		QAbstractButton::focusInEvent(e);
+	}
+	void focusOutEvent(QFocusEvent *e) override
+	{
+		OBSWidgetUtils::hideKeyFocused(e);
+		QAbstractButton::focusOutEvent(e);
+	}
+};
+
+class OBSCollapsibleRow : public QWidget, public OBSWidgetUtils {
+	Q_OBJECT
+
+public:
+	OBSCollapsibleRow(QWidget *parent = nullptr);
+
+signals:
+	void clicked();
+
+protected:
+	void enterEvent(QEnterEvent *) override;
+	void leaveEvent(QEvent *) override;
+	void focusInEvent(QFocusEvent *e) override
+	{
+		OBSWidgetUtils::showKeyFocused(e);
+		QWidget::focusInEvent(e);
+	}
+	void focusOutEvent(QFocusEvent *e) override
+	{
+		OBSWidgetUtils::hideKeyFocused(e);
+		QWidget::focusOutEvent(e);
+	}
 };
 
 /**
 * Collapsible Generic OBS property container
 */
-class OBSCollapsibleActionRow : public OBSActionBaseClass {
+class OBSCollapsibleContainer : public OBSActionBaseClass {
 	Q_OBJECT
 
 public:
 	// ToDo: Figure out a better way to handle those options
-	OBSCollapsibleActionRow(const QString &name,
+	OBSCollapsibleContainer(const QString &name, QWidget *parent = nullptr);
+	OBSCollapsibleContainer(const QString &name,
 				const QString &desc = nullptr,
-				bool toggleable = false,
 				QWidget *parent = nullptr);
 
-	OBSToggleSwitch *getSwitch() const { return sw; }
+	void setCheckable(bool check);
+	bool isCheckable() { return checkable; }
 
 	void addRow(OBSActionBaseClass *ar);
-
-protected:
-	void focusInEvent(QFocusEvent *e) override
-	{
-		OBSWidgetUtils::showKeyFocused(e);
-		QFrame::focusInEvent(e);
-	}
-	void focusOutEvent(QFocusEvent *e) override
-	{
-		OBSWidgetUtils::hideKeyFocused(e);
-		QFrame::focusOutEvent(e);
-	}
 
 private:
 	void toggleVisibility();
@@ -167,9 +200,15 @@ private:
 	QPixmap extendUp;
 
 	QVBoxLayout *layout;
+	OBSCollapsibleRow *rowWidget;
+	QHBoxLayout *rowLayout;
 
 	OBSActionRow *ar;
+	QFrame *collapseFrame;
+	QHBoxLayout *btnLayout;
 	OBSActionCollapseButton *collapseBtn;
-	OBSToggleSwitch *sw = nullptr;
 	OBSPropertiesList *plist;
+
+	OBSToggleSwitch *toggleSwitch = nullptr;
+	bool checkable = false;
 };

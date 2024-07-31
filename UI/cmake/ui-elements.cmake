@@ -42,10 +42,10 @@ target_sources(
           hotkey-edit.hpp
           idian/obs-actionrow.cpp
           idian/obs-actionrow.hpp
-          idian/obs-checkbox.hpp
           idian/obs-checkbox.cpp
-          idian/obs-combobox.hpp
+          idian/obs-checkbox.hpp
           idian/obs-combobox.cpp
+          idian/obs-combobox.hpp
           idian/obs-controls.cpp
           idian/obs-controls.hpp
           idian/obs-groupbox.cpp
@@ -54,8 +54,8 @@ target_sources(
           idian/obs-propertieslist.hpp
           idian/obs-toggleswitch.cpp
           idian/obs-toggleswitch.hpp
-          idian/obs-widgets.hpp
           idian/obs-widgets-base.hpp
+          idian/obs-widgets.hpp
           item-widget-helpers.cpp
           item-widget-helpers.hpp
           lineedit-autoresize.cpp

@@ -2006,12 +2006,12 @@ OBSGroupBox {
     margin: 0 0 var(--spacing_base);
 }
 
-OBSGroupBox > QLabel.title {
+OBSGroupBox .header .title {
     font-weight: bold;
     padding: var(--padding_large) 0;
 }
 
-OBSGroupBox > QLabel.subtitle {
+OBSGroupBox .header .description {
     color: var(--text_muted);
     padding: var(--spacing_small) 0;
 }
@@ -2026,38 +2026,38 @@ OBSActionRow {
     background: var(--grey5);
     margin: 0;
     padding: var(--action_row_padding) var(--action_row_padding_x);
-    min-height: var(--input_height);
 }
 
-OBSActionRow.cursorPointer:hover,
 OBSActionRow.keyFocus {
     background: var(--grey4);
     border: var(--highlight_width_large) solid var(--grey4);
 }
 
-OBSActionRow[first="true"] {
+OBSActionRow.cursorPointer.hover {
+    background: var(--grey4);
+    border: var(--highlight_width_large) solid var(--grey1);
+}
+
+OBSActionRow.first {
     border-top-left-radius: var(--border_radius);
     border-top-right-radius: var(--border_radius);
 }
 
-OBSActionRow[last="true"] {
+OBSActionRow.last {
     border-bottom-left-radius: var(--border_radius);
     border-bottom-right-radius: var(--border_radius);
 }
 
-OBSActionRow > QLabel {
+OBSActionRow > QWidget QLabel {
+    background: red;
+    margin: 4px;
     font-weight: 500;
     max-height: var(--input_height);
 }
 
-OBSActionRow > QLabel.subtitle {
+OBSActionRow > QLabel.description {
     font-size: var(--font_small);
     color: var(--text_muted);
-}
-
-OBSActionRow.keyFocus,
-OBSActionRow.keyFocus:hover {
-    border-color: var(--highlight_color);
 }
 
 OBSToggleSwitch {
@@ -2077,8 +2077,8 @@ OBSToggleSwitch {
     border: var(--highlight_width_large) solid transparent;
 }
 
-OBSActionRow.hover > OBSToggleSwitch,
-OBSActionRow OBSToggleSwitch:hover {
+OBSActionRow OBSToggleSwitch:hover,
+OBSActionRow.hover > OBSToggleSwitch.row-highlight {
     border-color: var(--grey1);
 }
 
@@ -2086,8 +2086,8 @@ OBSActionRow OBSToggleSwitch.keyFocus {
     border-color: var(--highlight_color);
 }
 
-OBSActionRow.hover > OBSToggleSwitch:checked,
-OBSActionRow OBSToggleSwitch:checked:hover {
+OBSActionRow OBSToggleSwitch:checked:hover,
+OBSActionRow.hover OBSToggleSwitch.row-highlight:checked {
     border-color: var(--white1);
 }
 
@@ -2159,13 +2159,13 @@ OBSActionRow OBSCheckBox::indicator:unchecked:hover {
     border-radius: var(--border_radius);
 }
 
-OBSActionRow.hover > OBSCheckBox::indicator,
+OBSActionRow.hover > OBSCheckBox.row-highlight::indicator,
 OBSActionRow > OBSCheckBox::indicator:unchecked:hover,
 OBSActionRow > OBSCheckBox::indicator:hover {
     border-color: var(--grey1);
 }
 
-OBSActionRow.hover > OBSCheckBox::indicator:unchecked,
+OBSActionRow.hover > OBSCheckBox.row-highlight::indicator:unchecked,
 OBSCheckBox.keyFocus::indicator:unchecked {
     image: url(theme:Yami/checkbox_unchecked_focus.svg);
 }
@@ -2182,29 +2182,33 @@ OBSActionRow OBSCheckBox.keyFocus::indicator:unchecked:hover {
     border-color: var(--highlight_color);
 }
 
-OBSCollapsibleActionRow {
+OBSCollapsibleContainer {
     margin: 0;
     padding: 0;
     border: none;
 }
 
-OBSCollapsibleActionRow OBSPropertiesList {
+OBSCollapsibleContainer.keyFocus {
+    border: var(--highlight_width_large) solid var(--highlight_color);
+}
+
+OBSCollapsibleContainer OBSPropertiesList {
     border-radius: 0;
     border-left: 1px solid var(--grey5);
     border-right: 1px solid var(--grey5);
     margin: var(--spacing_small) 0 var(--spacing_base);
 }
 
-OBSCollapsibleActionRow OBSPropertiesList OBSActionRow {
+OBSCollapsibleContainer OBSPropertiesList OBSActionRow {
     padding-left: var(--action_row_padding_nested);
 }
 
-OBSCollapsibleActionRow OBSActionRow[last="true"],
-OBSCollapsibleActionRow OBSActionRow[first="true"] {
+OBSCollapsibleContainer OBSActionRow.first,
+OBSCollapsibleContainer OBSActionRow.last {
     border-radius: 0;
 }
 
-OBSCollapsibleActionRow OBSPropertiesList OBSToggleSwitch {
+OBSCollapsibleContainer OBSPropertiesList OBSToggleSwitch {
     qproperty-background: var(--grey7);
     qproperty-background_hover: var(--grey6);
 }
@@ -2230,10 +2234,33 @@ OBSActionCollapseButton::indicator:checked {
     image: url(theme:Dark/up.svg);
 }
 
-OBSActionCollapseButton::indicator:hover {
-    border-color: var(--grey1);
+OBSActionCollapseButton.keyFocus,
+OBSActionCollapseButton.keyFocus::indicator {
+    border-color: var(--highlight_color);
 }
 
-OBSActionRow.cursorPointer.hover OBSActionCollapseButton::indicator {
+OBSCollapsibleContainer .btn-frame {
+    background: var(--grey5);
+    padding: var(--action_row_padding) var(--action_row_padding_x);
+}
+
+OBSCollapsibleContainer.hover .btn-frame {
+    background: var(--grey4);
+}
+
+OBSCollapsibleRow.hover OBSActionRow,
+OBSCollapsibleRow.hover OBSActionRow.hover {
+    background: var(--grey4);
+    border: 2px solid var(--grey1);
+    border-right: none;
+}
+
+OBSCollapsibleRow.hover .row-highlight {
+    background: var(--grey4);
+    border: 2px solid var(--grey1);
+    border-left: none;
+}
+
+OBSCollapsibleRow.hover OBSActionCollapseButton::indicator {
     border-color: var(--grey1);
 }

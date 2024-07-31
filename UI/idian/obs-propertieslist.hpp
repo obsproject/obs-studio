@@ -21,9 +21,11 @@
 #include <QWidget>
 #include <QLayout>
 
+#include "obs-widgets-base.hpp"
+
 class OBSActionBaseClass;
 
-class OBSPropertiesList : public QFrame {
+class OBSPropertiesList : public QFrame, public OBSWidgetUtils {
 	Q_OBJECT
 
 public:

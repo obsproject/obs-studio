@@ -31,13 +31,6 @@ class OBSGroupBox : public QFrame, public OBSWidgetUtils {
 
 public:
 	OBSGroupBox(QWidget *parent = nullptr);
-	OBSGroupBox(const QString &name, QWidget *parent = nullptr);
-	OBSGroupBox(const QString &name, bool checkable,
-		    QWidget *parent = nullptr);
-	OBSGroupBox(const QString &name, const QString &desc,
-		    QWidget *parent = nullptr);
-	OBSGroupBox(const QString &name, const QString &desc,
-		    bool checkable = false, QWidget *parent = nullptr);
 
 	OBSPropertiesList *properties() const { return plist; }
 
@@ -47,11 +40,27 @@ public:
 
 	void addRow(OBSActionBaseClass *ar) const;
 
+	void setTitle(QString name);
+	void setDescription(QString desc);
+
+	void showTitle(bool visible);
+	void showDescription(bool visible);
+
 	void setCheckable(bool check);
 	bool isCheckable() { return checkable; }
 
 private:
-	QGridLayout *layout = nullptr;
+	QVBoxLayout *layout = nullptr;
+
+	QWidget *headerContainer = nullptr;
+	QHBoxLayout *headerLayout = nullptr;
+	QWidget *labelContainer = nullptr;
+	QVBoxLayout *labelLayout = nullptr;
+	QWidget *controlContainer = nullptr;
+	QVBoxLayout *controlLayout = nullptr;
+
+	QWidget *contentsContainer = nullptr;
+	QVBoxLayout *contentsLayout = nullptr;
 
 	QLabel *nameLbl = nullptr;
 	QLabel *descLbl = nullptr;

@@ -29,6 +29,8 @@ IdianPlayground::IdianPlayground(QWidget *parent)
 {
 	ui->setupUi(this);
 
+	setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
+
 	OBSGroupBox *test;
 	OBSActionRow *tmp;
 
@@ -39,24 +41,29 @@ IdianPlayground::IdianPlayground(QWidget *parent)
 	/* Group box 1 */
 	test = new OBSGroupBox(this);
 
-	tmp = new OBSActionRow("Row with a dropdown");
+	tmp = new OBSActionRow();
+	tmp->setTitle("Row with a dropdown");
 	tmp->setSuffix(cbox);
 	test->properties()->addRow(tmp);
 
 	cbox = new OBSComboBox;
 	cbox->addItem("Test 3");
 	cbox->addItem("Test 4");
-	tmp = new OBSActionRow("Row with a dropdown", "And a subtitle!");
+	tmp = new OBSActionRow();
+	tmp->setTitle("Row with a dropdown");
+	tmp->setDescription("And a subtitle!");
 	tmp->setSuffix(cbox);
 	test->properties()->addRow(tmp);
 
-	tmp = new OBSActionRow("Toggle Switch");
+	tmp = new OBSActionRow();
+	tmp->setTitle("Toggle Switch");
 	tmp->setSuffix(new OBSToggleSwitch());
 	test->properties()->addRow(tmp);
 	ui->scrollAreaWidgetContents->layout()->addWidget(test);
 
-	tmp = new OBSActionRow("Delayed toggle switch",
-			       "The state can be set separately");
+	tmp = new OBSActionRow();
+	tmp->setTitle("Delayed toggle switch");
+	tmp->setDescription("The state can be set separately");
 	auto tswitch = new OBSToggleSwitch;
 	tswitch->setDelayed(true);
 	connect(tswitch, &OBSToggleSwitch::pendingChecked, this, [=]() {
@@ -71,41 +78,50 @@ IdianPlayground::IdianPlayground(QWidget *parent)
 	test->properties()->addRow(tmp);
 
 	/* Group box 2 */
-	test = new OBSGroupBox("Just a few checkboxes", this);
+	test = new OBSGroupBox();
+	test->setTitle("Just a few checkboxes");
 
 	//QTimer::singleShot(10000, this, [=]() { test->properties()->clear(); });
 
-	tmp = new OBSActionRow("Box 1");
+	tmp = new OBSActionRow();
+	tmp->setTitle("Box 1");
 	tmp->setPrefix(new OBSCheckBox);
 	test->properties()->addRow(tmp);
 
-	tmp = new OBSActionRow("Box 2");
+	tmp = new OBSActionRow();
+	tmp->setTitle("Box 2");
 	tmp->setPrefix(new OBSCheckBox);
 	test->properties()->addRow(tmp);
 
 	ui->scrollAreaWidgetContents->layout()->addWidget(test);
 
 	/* Group box 2 */
-	test = new OBSGroupBox("Another Group",
-			       "With a subtitle", this);
+	test = new OBSGroupBox();
+	test->setTitle("Another Group");
+	test->setDescription("With a subtitle");
 
-	tmp = new OBSActionRow("Placeholder");
+	tmp = new OBSActionRow();
+	tmp->setTitle("Placeholder");
 	tmp->setSuffix(new OBSToggleSwitch);
 	test->properties()->addRow(tmp);
 
-	OBSCollapsibleActionRow *tmp2 = new OBSCollapsibleActionRow(
-		"A Collapsible row!", nullptr, true, this);
+	OBSCollapsibleContainer *tmp2 = new OBSCollapsibleContainer(
+		"A Collapsible row!", nullptr, this);
+	tmp2->setCheckable(true);
 	test->addRow(tmp2);
 
-	tmp = new OBSActionRow("Spin box demo");
+	tmp = new OBSActionRow();
+	tmp->setTitle("Spin box demo");
 	tmp->setSuffix(new OBSDoubleSpinBox());
 	tmp2->addRow(tmp);
 
-	tmp = new OBSActionRow("Just another placeholder");
+	tmp = new OBSActionRow();
+	tmp->setTitle("Just another placeholder");
 	tmp->setSuffix(new OBSToggleSwitch(true));
 	tmp2->addRow(tmp);
 
-	tmp = new OBSActionRow("Placeholder 2");
+	tmp = new OBSActionRow();
+	tmp->setTitle("Placeholder 2");
 	tmp->setSuffix(new OBSToggleSwitch);
 	test->properties()->addRow(tmp);
 
@@ -114,4 +130,15 @@ IdianPlayground::IdianPlayground(QWidget *parent)
 	ui->scrollAreaWidgetContents->layout()->addWidget(test);
 	ui->scrollAreaWidgetContents->layout()->setAlignment(Qt::AlignTop |
 							     Qt::AlignHCenter);
+
+	/* Test Checkable Group */
+	OBSGroupBox *test2 = new OBSGroupBox();
+	test2->setTitle("Checkable Group");
+	test2->setDescription("Description goes here");
+	test2->setCheckable(true);
+	ui->scrollAreaWidgetContents->layout()->addWidget(test2);
+
+	/*QTimer::singleShot(5000, this, [=]() {
+		test2->setCheckable(false);
+	});*/
 }

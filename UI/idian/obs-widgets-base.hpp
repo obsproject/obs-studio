@@ -30,7 +30,7 @@ class OBSWidgetUtils {
 
 private:
 	QRegularExpression classRegex =
-		QRegularExpression("^[a-zA-Z][a-zA-Z0-9]*$");
+		QRegularExpression("^[a-zA-Z][a-zA-Z0-9_-]*$");
 
 	bool classNameIsValid(const QString &name)
 	{
@@ -39,9 +39,9 @@ private:
 	}
 
 public:
-	QWidget *widget = nullptr;
+	QWidget *parent = nullptr;
 
-	OBSWidgetUtils(QWidget *w) { widget = w; }
+	OBSWidgetUtils(QWidget *w) { parent = w; }
 
 	/*
 	 * Set a custom property whenever the widget has
@@ -64,44 +64,58 @@ public:
 	};
 
 	/*
-	* Force all children widgets to repaint
-	*/
-	void polishChildren()
+	 * Force all children widgets to repaint
+	 */
+	void polishChildren() { polishChildren(parent); }
+	void polishChildren(QWidget *widget)
 	{
-		QStyle *const style = widget->style();
 		for (QWidget *child : widget->findChildren<QWidget *>()) {
-			style->unpolish(child);
-			style->polish(child);
+			repolish(child);
 		}
 	}
 
-	void addClass(QWidget *widget, const QString &name)
+	void repolish() { repolish(parent); }
+	void repolish(QWidget *widget)
 	{
-		if (!classNameIsValid(name)) {
+		parent->style()->unpolish(widget);
+		parent->style()->polish(widget);
+	}
+
+	/*
+	 * Adds a style class to the widget
+	 */
+	void addClass(const QString &classname) { addClass(parent, classname); }
+	void addClass(QWidget *widget, const QString &classname)
+	{
+		if (!classNameIsValid(classname)) {
 			return;
 		}
 
 		QVariant current = widget->property("class");
 
 		QStringList classList = current.toString().split(" ");
-		if (classList.contains(name)) {
+		if (classList.contains(classname)) {
 			return;
 		}
 
 		classList.removeDuplicates();
-		classList.append(name);
+		classList.append(classname);
 
 		widget->setProperty("class", classList.join(" "));
 
-		widget->style()->unpolish(widget);
-		widget->style()->polish(widget);
+		repolish(widget);
 	}
 
-	void addClass(const QString &name) { addClass(widget, name); }
-
-	void removeClass(QWidget *widget, const QString &name)
+	/*
+	 * Removes a style class from a widget
+	 */
+	void removeClass(const QString &classname)
 	{
-		if (!classNameIsValid(name)) {
+		removeClass(parent, classname);
+	}
+	void removeClass(QWidget *widget, const QString &classname)
+	{
+		if (!classNameIsValid(classname)) {
 			return;
 		}
 
@@ -111,32 +125,31 @@ public:
 		}
 
 		QStringList classList = current.toString().split(" ");
-		if (!classList.contains(name, Qt::CaseSensitive)) {
+		if (!classList.contains(classname, Qt::CaseSensitive)) {
 			return;
 		}
 
 		classList.removeDuplicates();
-		classList.removeAll(name);
+		classList.removeAll(classname);
 
 		widget->setProperty("class", classList.join(" "));
 
-		widget->style()->unpolish(widget);
-		widget->style()->polish(widget);
+		repolish(widget);
 	}
 
-	void removeClass(const QString &name) { removeClass(widget, name); }
-
-	void toggleClass(QWidget *widget, const QString &name, bool toggle)
+	/*
+	 * Forces the addition or removal of a style class from a widget
+	 */
+	void toggleClass(const QString &classname, bool toggle)
+	{
+		toggleClass(parent, classname, toggle);
+	}
+	void toggleClass(QWidget *widget, const QString &classname, bool toggle)
 	{
 		if (toggle) {
-			addClass(widget, name);
+			addClass(widget, classname);
 		} else {
-			removeClass(widget, name);
+			removeClass(widget, classname);
 		}
-	}
-
-	void toggleClass(const QString &name, bool toggle)
-	{
-		toggleClass(widget, name, toggle);
 	}
 };
