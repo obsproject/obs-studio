@@ -16,7 +16,6 @@ template<typename T> static T GetOBSRef(QListWidgetItem *item)
 	return item->data(static_cast<int>(QtDataRole::OBSRef)).value<T>();
 }
 
-void EnumProfiles(function<bool(const char *, const char *)> &&cb);
 void EnumSceneCollections(function<bool(const char *, const char *)> &&cb);
 
 extern volatile bool streaming_active;
@@ -218,29 +217,24 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	void
 	obs_frontend_get_profiles(std::vector<std::string> &strings) override
 	{
-		auto addProfile = [&](const char *name, const char *) {
-			strings.emplace_back(name);
-			return true;
-		};
+		const OBSProfileCache &profiles = main->GetProfileCache();
 
-		EnumProfiles(addProfile);
+		for (auto &[profileName, profile] : profiles) {
+			strings.emplace_back(profileName);
+		}
 	}
 
 	char *obs_frontend_get_current_profile(void) override
 	{
-		const char *name = config_get_string(App()->GlobalConfig(),
-						     "Basic", "Profile");
-		return bstrdup(name);
+		const OBSProfile &profile = main->GetCurrentProfile();
+		return bstrdup(profile.name.c_str());
 	}
 
 	char *obs_frontend_get_current_profile_path(void) override
 	{
-		char profilePath[512];
-		int ret = GetProfilePath(profilePath, sizeof(profilePath), "");
-		if (ret <= 0)
-			return nullptr;
+		const OBSProfile &profile = main->GetCurrentProfile();
 
-		return bstrdup(profilePath);
+		return bstrdup(profile.path.u8string().c_str());
 	}
 
 	void obs_frontend_set_current_profile(const char *profile) override
@@ -510,353 +504,323 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	config_t *obs_frontend_get_profile_config(void) override
 	{
-		return main->basicConfig;
-		config_t *obs_frontend_get_global_config(void) override
-		{
-			blog(LOG_WARNING,
-			     "DEPRECATION: obs_frontend_get_global_config is deprecated. Read from global or user configuration explicitly instead.");
-			return App()->GetAppConfig();
-		}
-
-		config_t *obs_frontend_get_app_config(void) override
-		{
-			return App()->GetAppConfig();
-		}
-
-		config_t *obs_frontend_get_user_config(void) override
-		{
-			return App()->GetUserConfig();
-		}
-
-		void obs_frontend_open_projector(const char *type, int monitor,
-						 const char *geometry,
-						 const char *name) override
-		{
-			SavedProjectorInfo proj = {
-				ProjectorType::Preview,
-				monitor,
-				geometry ? geometry : "",
-				name ? name : "",
-			};
-			if (type) {
-				if (astrcmpi(type, "Source") == 0)
-					proj.type = ProjectorType::Source;
-				else if (astrcmpi(type, "Scene") == 0)
-					proj.type = ProjectorType::Scene;
-				else if (astrcmpi(type, "StudioProgram") == 0)
-					proj.type =
-						ProjectorType::StudioProgram;
-				else if (astrcmpi(type, "Multiview") == 0)
-					proj.type = ProjectorType::Multiview;
-			}
-			QMetaObject::invokeMethod(
-				main, "OpenSavedProjector", WaitConnection(),
-				Q_ARG(SavedProjectorInfo *, &proj));
-		}
-
-		void obs_frontend_save(void) override
-		{
-			main->SaveProject();
-		}
-
-		void obs_frontend_defer_save_begin(void) override
-		{
-			QMetaObject::invokeMethod(main, "DeferSaveBegin");
-		}
-
-		void obs_frontend_defer_save_end(void) override
-		{
-			QMetaObject::invokeMethod(main, "DeferSaveEnd");
-		}
-
-		void obs_frontend_add_save_callback(
-			obs_frontend_save_cb callback, void *private_data)
-			override
-		{
-			size_t idx = GetCallbackIdx(saveCallbacks, callback,
-						    private_data);
-			if (idx == (size_t)-1)
-				saveCallbacks.emplace_back(callback,
-							   private_data);
-		}
-
-		void obs_frontend_remove_save_callback(
-			obs_frontend_save_cb callback, void *private_data)
-			override
-		{
-			size_t idx = GetCallbackIdx(saveCallbacks, callback,
-						    private_data);
-			if (idx == (size_t)-1)
-				return;
-
-			saveCallbacks.erase(saveCallbacks.begin() + idx);
-		}
-
-		void obs_frontend_add_preload_callback(
-			obs_frontend_save_cb callback, void *private_data)
-			override
-		{
-			size_t idx = GetCallbackIdx(preloadCallbacks, callback,
-						    private_data);
-			if (idx == (size_t)-1)
-				preloadCallbacks.emplace_back(callback,
-							      private_data);
-		}
-
-		void obs_frontend_remove_preload_callback(
-			obs_frontend_save_cb callback, void *private_data)
-			override
-		{
-			size_t idx = GetCallbackIdx(preloadCallbacks, callback,
-						    private_data);
-			if (idx == (size_t)-1)
-				return;
-
-			preloadCallbacks.erase(preloadCallbacks.begin() + idx);
-		}
-
-		void obs_frontend_push_ui_translation(
-			obs_frontend_translate_ui_cb translate) override
-		{
-			App()->PushUITranslation(translate);
-		}
-
-		void obs_frontend_pop_ui_translation(void) override
-		{
-			App()->PopUITranslation();
-		}
-
-		void obs_frontend_set_streaming_service(obs_service_t * service)
-			override
-		{
-			main->SetService(service);
-		}
-
-		obs_service_t *obs_frontend_get_streaming_service(void) override
-		{
-			return main->GetService();
-		}
-
-		void obs_frontend_save_streaming_service(void) override
-		{
-			main->SaveService();
-		}
-
-		bool obs_frontend_preview_program_mode_active(void) override
-		{
-			return main->IsPreviewProgramMode();
-		}
-
-		void obs_frontend_set_preview_program_mode(bool enable) override
-		{
-			main->SetPreviewProgramMode(enable);
-		}
-
-		void obs_frontend_preview_program_trigger_transition(void)
-			override
-		{
-			QMetaObject::invokeMethod(main, "TransitionClicked");
-		}
-
-		bool obs_frontend_preview_enabled(void) override
-		{
-			return main->previewEnabled;
-		}
-
-		void obs_frontend_set_preview_enabled(bool enable) override
-		{
-			if (main->previewEnabled != enable)
-				main->EnablePreviewDisplay(enable);
-		}
-
-		obs_source_t *obs_frontend_get_current_preview_scene(void)
-			override
-		{
-			if (main->IsPreviewProgramMode()) {
-				OBSSource source =
-					main->GetCurrentSceneSource();
-				return obs_source_get_ref(source);
-			}
-
-			return nullptr;
-		}
-
-		void obs_frontend_set_current_preview_scene(obs_source_t *
-							    scene) override
-		{
-			if (main->IsPreviewProgramMode()) {
-				QMetaObject::invokeMethod(
-					main, "SetCurrentScene",
-					Q_ARG(OBSSource, OBSSource(scene)),
-					Q_ARG(bool, false));
-			}
-		}
-
-		void obs_frontend_take_screenshot(void) override
-		{
-			QMetaObject::invokeMethod(main, "Screenshot");
-		}
-
-		void obs_frontend_take_source_screenshot(obs_source_t * source)
-			override
-		{
-			QMetaObject::invokeMethod(main, "Screenshot",
-						  Q_ARG(OBSSource,
-							OBSSource(source)));
-		}
-
-		obs_output_t *obs_frontend_get_virtualcam_output(void) override
-		{
-			OBSOutput output =
-				main->outputHandler->virtualCam.Get();
-			return obs_output_get_ref(output);
-		}
-
-		void obs_frontend_start_virtualcam(void) override
-		{
-			QMetaObject::invokeMethod(main, "StartVirtualCam");
-		}
-
-		void obs_frontend_stop_virtualcam(void) override
-		{
-			QMetaObject::invokeMethod(main, "StopVirtualCam");
-		}
-
-		bool obs_frontend_virtualcam_active(void) override
-		{
-			return os_atomic_load_bool(&virtualcam_active);
-		}
-
-		void obs_frontend_reset_video(void) override
-		{
-			main->ResetVideo();
-		}
-
-		void obs_frontend_open_source_properties(obs_source_t * source)
-			override
-		{
-			QMetaObject::invokeMethod(main, "OpenProperties",
-						  Q_ARG(OBSSource,
-							OBSSource(source)));
-		}
-
-		void obs_frontend_open_source_filters(obs_source_t * source)
-			override
-		{
-			QMetaObject::invokeMethod(main, "OpenFilters",
-						  Q_ARG(OBSSource,
-							OBSSource(source)));
-		}
-
-		void obs_frontend_open_source_interaction(obs_source_t * source)
-			override
-		{
-			QMetaObject::invokeMethod(main, "OpenInteraction",
-						  Q_ARG(OBSSource,
-							OBSSource(source)));
-		}
-
-		void obs_frontend_open_sceneitem_edit_transform(
-			obs_sceneitem_t * item) override
-		{
-			QMetaObject::invokeMethod(main, "OpenEditTransform",
-						  Q_ARG(OBSSceneItem,
-							OBSSceneItem(item)));
-		}
-
-		char *obs_frontend_get_current_record_output_path(void) override
-		{
-			const char *recordOutputPath =
-				main->GetCurrentOutputPath();
-
-			return bstrdup(recordOutputPath);
-		}
-
-		const char *obs_frontend_get_locale_string(const char *string)
-			override
-		{
-			return Str(string);
-		}
-
-		bool obs_frontend_is_theme_dark(void) override
-		{
-			return App()->IsThemeDark();
-		}
-
-		char *obs_frontend_get_last_recording(void) override
-		{
-			return bstrdup(
-				main->outputHandler->lastRecordingPath.c_str());
-		}
-
-		char *obs_frontend_get_last_screenshot(void) override
-		{
-			return bstrdup(main->lastScreenshot.c_str());
-		}
-
-		char *obs_frontend_get_last_replay(void) override
-		{
-			return bstrdup(main->lastReplay.c_str());
-		}
-
-		void obs_frontend_add_undo_redo_action(
-			const char *name, const undo_redo_cb undo,
-			const undo_redo_cb redo, const char *undo_data,
-			const char *redo_data, bool repeatable) override
-		{
-			main->undo_s.add_action(
-				name,
-				[undo](const std::string &data) {
-					undo(data.c_str());
-				},
-				[redo](const std::string &data) {
-					redo(data.c_str());
-				},
-				undo_data, redo_data, repeatable);
-		}
-
-		void on_load(obs_data_t * settings) override
-		{
-			for (size_t i = saveCallbacks.size(); i > 0; i--) {
-				auto cb = saveCallbacks[i - 1];
-				cb.callback(settings, false, cb.private_data);
-			}
-		}
-
-		void on_preload(obs_data_t * settings) override
-		{
-			for (size_t i = preloadCallbacks.size(); i > 0; i--) {
-				auto cb = preloadCallbacks[i - 1];
-				cb.callback(settings, false, cb.private_data);
-			}
-		}
-
-		void on_save(obs_data_t * settings) override
-		{
-			for (size_t i = saveCallbacks.size(); i > 0; i--) {
-				auto cb = saveCallbacks[i - 1];
-				cb.callback(settings, true, cb.private_data);
-			}
-		}
-
-		void on_event(enum obs_frontend_event event) override
-		{
-			if (main->disableSaving &&
-			    event !=
-				    OBS_FRONTEND_EVENT_SCENE_COLLECTION_CLEANUP &&
-			    event != OBS_FRONTEND_EVENT_EXIT)
-				return;
-
-			for (size_t i = callbacks.size(); i > 0; i--) {
-				auto cb = callbacks[i - 1];
-				cb.callback(event, cb.private_data);
-			}
-		}
-	};
-
-	obs_frontend_callbacks *InitializeAPIInterface(OBSBasic *main)
-	{
-		obs_frontend_callbacks *api = new OBSStudioAPI(main);
-		obs_frontend_set_callbacks_internal(api);
-		return api;
+		return main->activeConfiguration;
 	}
+
+	config_t *obs_frontend_get_global_config(void) override
+	{
+		blog(LOG_WARNING,
+		     "DEPRECATION: obs_frontend_get_global_config is deprecated. Read from global or user configuration explicitly instead.");
+		return App()->GetAppConfig();
+	}
+
+	config_t *obs_frontend_get_app_config(void) override
+	{
+		return App()->GetAppConfig();
+	}
+
+	config_t *obs_frontend_get_user_config(void) override
+	{
+		return App()->GetUserConfig();
+	}
+
+	void obs_frontend_open_projector(const char *type, int monitor,
+					 const char *geometry,
+					 const char *name) override
+	{
+		SavedProjectorInfo proj = {
+			ProjectorType::Preview,
+			monitor,
+			geometry ? geometry : "",
+			name ? name : "",
+		};
+		if (type) {
+			if (astrcmpi(type, "Source") == 0)
+				proj.type = ProjectorType::Source;
+			else if (astrcmpi(type, "Scene") == 0)
+				proj.type = ProjectorType::Scene;
+			else if (astrcmpi(type, "StudioProgram") == 0)
+				proj.type = ProjectorType::StudioProgram;
+			else if (astrcmpi(type, "Multiview") == 0)
+				proj.type = ProjectorType::Multiview;
+		}
+		QMetaObject::invokeMethod(main, "OpenSavedProjector",
+					  WaitConnection(),
+					  Q_ARG(SavedProjectorInfo *, &proj));
+	}
+
+	void obs_frontend_save(void) override { main->SaveProject(); }
+
+	void obs_frontend_defer_save_begin(void) override
+	{
+		QMetaObject::invokeMethod(main, "DeferSaveBegin");
+	}
+
+	void obs_frontend_defer_save_end(void) override
+	{
+		QMetaObject::invokeMethod(main, "DeferSaveEnd");
+	}
+
+	void obs_frontend_add_save_callback(obs_frontend_save_cb callback,
+					    void *private_data) override
+	{
+		size_t idx =
+			GetCallbackIdx(saveCallbacks, callback, private_data);
+		if (idx == (size_t)-1)
+			saveCallbacks.emplace_back(callback, private_data);
+	}
+
+	void obs_frontend_remove_save_callback(obs_frontend_save_cb callback,
+					       void *private_data) override
+	{
+		size_t idx =
+			GetCallbackIdx(saveCallbacks, callback, private_data);
+		if (idx == (size_t)-1)
+			return;
+
+		saveCallbacks.erase(saveCallbacks.begin() + idx);
+	}
+
+	void obs_frontend_add_preload_callback(obs_frontend_save_cb callback,
+					       void *private_data) override
+	{
+		size_t idx = GetCallbackIdx(preloadCallbacks, callback,
+					    private_data);
+		if (idx == (size_t)-1)
+			preloadCallbacks.emplace_back(callback, private_data);
+	}
+
+	void obs_frontend_remove_preload_callback(obs_frontend_save_cb callback,
+						  void *private_data) override
+	{
+		size_t idx = GetCallbackIdx(preloadCallbacks, callback,
+					    private_data);
+		if (idx == (size_t)-1)
+			return;
+
+		preloadCallbacks.erase(preloadCallbacks.begin() + idx);
+	}
+
+	void obs_frontend_push_ui_translation(
+		obs_frontend_translate_ui_cb translate) override
+	{
+		App()->PushUITranslation(translate);
+	}
+
+	void obs_frontend_pop_ui_translation(void) override
+	{
+		App()->PopUITranslation();
+	}
+
+	void obs_frontend_set_streaming_service(obs_service_t *service) override
+	{
+		main->SetService(service);
+	}
+
+	obs_service_t *obs_frontend_get_streaming_service(void) override
+	{
+		return main->GetService();
+	}
+
+	void obs_frontend_save_streaming_service(void) override
+	{
+		main->SaveService();
+	}
+
+	bool obs_frontend_preview_program_mode_active(void) override
+	{
+		return main->IsPreviewProgramMode();
+	}
+
+	void obs_frontend_set_preview_program_mode(bool enable) override
+	{
+		main->SetPreviewProgramMode(enable);
+	}
+
+	void obs_frontend_preview_program_trigger_transition(void) override
+	{
+		QMetaObject::invokeMethod(main, "TransitionClicked");
+	}
+
+	bool obs_frontend_preview_enabled(void) override
+	{
+		return main->previewEnabled;
+	}
+
+	void obs_frontend_set_preview_enabled(bool enable) override
+	{
+		if (main->previewEnabled != enable)
+			main->EnablePreviewDisplay(enable);
+	}
+
+	obs_source_t *obs_frontend_get_current_preview_scene(void) override
+	{
+		if (main->IsPreviewProgramMode()) {
+			OBSSource source = main->GetCurrentSceneSource();
+			return obs_source_get_ref(source);
+		}
+
+		return nullptr;
+	}
+
+	void
+	obs_frontend_set_current_preview_scene(obs_source_t *scene) override
+	{
+		if (main->IsPreviewProgramMode()) {
+			QMetaObject::invokeMethod(main, "SetCurrentScene",
+						  Q_ARG(OBSSource,
+							OBSSource(scene)),
+						  Q_ARG(bool, false));
+		}
+	}
+
+	void obs_frontend_take_screenshot(void) override
+	{
+		QMetaObject::invokeMethod(main, "Screenshot");
+	}
+
+	void obs_frontend_take_source_screenshot(obs_source_t *source) override
+	{
+		QMetaObject::invokeMethod(main, "Screenshot",
+					  Q_ARG(OBSSource, OBSSource(source)));
+	}
+
+	obs_output_t *obs_frontend_get_virtualcam_output(void) override
+	{
+		OBSOutput output = main->outputHandler->virtualCam.Get();
+		return obs_output_get_ref(output);
+	}
+
+	void obs_frontend_start_virtualcam(void) override
+	{
+		QMetaObject::invokeMethod(main, "StartVirtualCam");
+	}
+
+	void obs_frontend_stop_virtualcam(void) override
+	{
+		QMetaObject::invokeMethod(main, "StopVirtualCam");
+	}
+
+	bool obs_frontend_virtualcam_active(void) override
+	{
+		return os_atomic_load_bool(&virtualcam_active);
+	}
+
+	void obs_frontend_reset_video(void) override { main->ResetVideo(); }
+
+	void obs_frontend_open_source_properties(obs_source_t *source) override
+	{
+		QMetaObject::invokeMethod(main, "OpenProperties",
+					  Q_ARG(OBSSource, OBSSource(source)));
+	}
+
+	void obs_frontend_open_source_filters(obs_source_t *source) override
+	{
+		QMetaObject::invokeMethod(main, "OpenFilters",
+					  Q_ARG(OBSSource, OBSSource(source)));
+	}
+
+	void obs_frontend_open_source_interaction(obs_source_t *source) override
+	{
+		QMetaObject::invokeMethod(main, "OpenInteraction",
+					  Q_ARG(OBSSource, OBSSource(source)));
+	}
+
+	void obs_frontend_open_sceneitem_edit_transform(
+		obs_sceneitem_t *item) override
+	{
+		QMetaObject::invokeMethod(main, "OpenEditTransform",
+					  Q_ARG(OBSSceneItem,
+						OBSSceneItem(item)));
+	}
+
+	char *obs_frontend_get_current_record_output_path(void) override
+	{
+		const char *recordOutputPath = main->GetCurrentOutputPath();
+
+		return bstrdup(recordOutputPath);
+	}
+
+	const char *obs_frontend_get_locale_string(const char *string) override
+	{
+		return Str(string);
+	}
+
+	bool obs_frontend_is_theme_dark(void) override
+	{
+		return App()->IsThemeDark();
+	}
+
+	char *obs_frontend_get_last_recording(void) override
+	{
+		return bstrdup(main->outputHandler->lastRecordingPath.c_str());
+	}
+
+	char *obs_frontend_get_last_screenshot(void) override
+	{
+		return bstrdup(main->lastScreenshot.c_str());
+	}
+
+	char *obs_frontend_get_last_replay(void) override
+	{
+		return bstrdup(main->lastReplay.c_str());
+	}
+
+	void obs_frontend_add_undo_redo_action(const char *name,
+					       const undo_redo_cb undo,
+					       const undo_redo_cb redo,
+					       const char *undo_data,
+					       const char *redo_data,
+					       bool repeatable) override
+	{
+		main->undo_s.add_action(
+			name,
+			[undo](const std::string &data) { undo(data.c_str()); },
+			[redo](const std::string &data) { redo(data.c_str()); },
+			undo_data, redo_data, repeatable);
+	}
+
+	void on_load(obs_data_t *settings) override
+	{
+		for (size_t i = saveCallbacks.size(); i > 0; i--) {
+			auto cb = saveCallbacks[i - 1];
+			cb.callback(settings, false, cb.private_data);
+		}
+	}
+
+	void on_preload(obs_data_t *settings) override
+	{
+		for (size_t i = preloadCallbacks.size(); i > 0; i--) {
+			auto cb = preloadCallbacks[i - 1];
+			cb.callback(settings, false, cb.private_data);
+		}
+	}
+
+	void on_save(obs_data_t *settings) override
+	{
+		for (size_t i = saveCallbacks.size(); i > 0; i--) {
+			auto cb = saveCallbacks[i - 1];
+			cb.callback(settings, true, cb.private_data);
+		}
+	}
+
+	void on_event(enum obs_frontend_event event) override
+	{
+		if (main->disableSaving &&
+		    event != OBS_FRONTEND_EVENT_SCENE_COLLECTION_CLEANUP &&
+		    event != OBS_FRONTEND_EVENT_EXIT)
+			return;
+
+		for (size_t i = callbacks.size(); i > 0; i--) {
+			auto cb = callbacks[i - 1];
+			cb.callback(event, cb.private_data);
+		}
+	}
+};
+
+obs_frontend_callbacks *InitializeAPIInterface(OBSBasic *main)
+{
+	obs_frontend_callbacks *api = new OBSStudioAPI(main);
+	obs_frontend_set_callbacks_internal(api);
+	return api;
+}

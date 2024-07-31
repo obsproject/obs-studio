@@ -609,109 +609,41 @@ static bool MakeUserDirs()
 	return true;
 }
 
+constexpr std::string_view OBSProfileSubDirectory = "obs-studio/basic/profiles";
+constexpr std::string_view OBSScenesSubDirectory = "obs-studio/basic/scenes";
+
 static bool MakeUserProfileDirs()
 {
-	char path[512];
+	const std::filesystem::path userProfilePath{
+		std::filesystem::path(App()->userProfilesLocation) /
+		OBSProfileSubDirectory.data()};
+	const std::filesystem::path userScenesPath{
+		std::filesystem::path(App()->userScenesLocation) /
+		OBSScenesSubDirectory.data()};
 
-	if (GetConfigPath(path, sizeof(path), "obs-studio/basic/profiles") <= 0)
-		return false;
-	if (!do_mkdir(path))
-		return false;
+	if (!filesystem::exists(userProfilePath)) {
+		try {
+			filesystem::create_directories(userProfilePath);
+		} catch (const filesystem::filesystem_error &error) {
+			blog(LOG_ERROR,
+			     "Failed to create user profile directory '%s'\n%s",
+			     userProfilePath.c_str(), error.what());
+			return false;
+		}
+	}
 
-	if (GetConfigPath(path, sizeof(path), "obs-studio/basic/scenes") <= 0)
-		return false;
-	if (!do_mkdir(path))
-		return false;
+	if (!filesystem::exists(userScenesPath)) {
+		try {
+			filesystem::create_directories(userScenesPath);
+		} catch (const filesystem::filesystem_error &error) {
+			blog(LOG_ERROR,
+			     "Failed to create user scene collection directory '%s'\n%s",
+			     userScenesPath.c_str(), error.what());
+			return false;
+		}
+	}
 
 	return true;
-}
-
-static string GetProfileDirFromName(const char *name)
-{
-	string outputPath;
-	os_glob_t *glob;
-	char path[512];
-
-	if (GetConfigPath(path, sizeof(path), "obs-studio/basic/profiles") <= 0)
-		return outputPath;
-
-	strcat(path, "/*");
-
-	if (os_glob(path, 0, &glob) != 0)
-		return outputPath;
-
-	for (size_t i = 0; i < glob->gl_pathc; i++) {
-		struct os_globent ent = glob->gl_pathv[i];
-		if (!ent.directory)
-			continue;
-
-		strcpy(path, ent.path);
-		strcat(path, "/basic.ini");
-
-		ConfigFile config;
-		if (config.Open(path, CONFIG_OPEN_EXISTING) != 0)
-			continue;
-
-		const char *curName =
-			config_get_string(config, "General", "Name");
-		if (astrcmpi(curName, name) == 0) {
-			outputPath = ent.path;
-			break;
-		}
-	}
-
-	os_globfree(glob);
-
-	if (!outputPath.empty()) {
-		replace(outputPath.begin(), outputPath.end(), '\\', '/');
-		const char *start = strrchr(outputPath.c_str(), '/');
-		if (start)
-			outputPath.erase(0, start - outputPath.c_str() + 1);
-	}
-
-	return outputPath;
-}
-
-static string GetSceneCollectionFileFromName(const char *name)
-{
-	string outputPath;
-	os_glob_t *glob;
-	char path[512];
-
-	if (GetConfigPath(path, sizeof(path), "obs-studio/basic/scenes") <= 0)
-		return outputPath;
-
-	strcat(path, "/*.json");
-
-	if (os_glob(path, 0, &glob) != 0)
-		return outputPath;
-
-	for (size_t i = 0; i < glob->gl_pathc; i++) {
-		struct os_globent ent = glob->gl_pathv[i];
-		if (ent.directory)
-			continue;
-
-		OBSDataAutoRelease data =
-			obs_data_create_from_json_file_safe(ent.path, "bak");
-		const char *curName = obs_data_get_string(data, "name");
-
-		if (astrcmpi(name, curName) == 0) {
-			outputPath = ent.path;
-			break;
-		}
-	}
-
-	os_globfree(glob);
-
-	if (!outputPath.empty()) {
-		outputPath.resize(outputPath.size() - 5);
-		replace(outputPath.begin(), outputPath.end(), '\\', '/');
-		const char *start = strrchr(outputPath.c_str(), '/');
-		if (start)
-			outputPath.erase(0, start - outputPath.c_str() + 1);
-	}
-
-	return outputPath;
 }
 
 bool OBSApp::UpdatePre22MultiviewLayout(const char *layout)
@@ -1198,56 +1130,76 @@ OBSApp::~OBSApp()
 static void move_basic_to_profiles(void)
 {
 	char path[512];
-	char new_path[512];
-	os_glob_t *glob;
 
-	/* if not first time use */
-	if (GetConfigPath(path, 512, "obs-studio/basic") <= 0)
+	if (GetAppConfigPath(path, 512, "obs-studio/basic") <= 0) {
 		return;
-	if (!os_file_exists(path))
-		return;
-
-	/* if the profiles directory doesn't already exist */
-	if (GetConfigPath(new_path, 512, "obs-studio/basic/profiles") <= 0)
-		return;
-	if (os_file_exists(new_path))
-		return;
-
-	if (os_mkdir(new_path) == MKDIR_ERROR)
-		return;
-
-	strcat(new_path, "/");
-	strcat(new_path, Str("Untitled"));
-	if (os_mkdir(new_path) == MKDIR_ERROR)
-		return;
-
-	strcat(path, "/*.*");
-	if (os_glob(path, 0, &glob) != 0)
-		return;
-
-	strcpy(path, new_path);
-
-	for (size_t i = 0; i < glob->gl_pathc; i++) {
-		struct os_globent ent = glob->gl_pathv[i];
-		char *file;
-
-		if (ent.directory)
-			continue;
-
-		file = strrchr(ent.path, '/');
-		if (!file++)
-			continue;
-
-		if (astrcmpi(file, "scenes.json") == 0)
-			continue;
-
-		strcpy(new_path, path);
-		strcat(new_path, "/");
-		strcat(new_path, file);
-		os_rename(ent.path, new_path);
 	}
 
-	os_globfree(glob);
+	const filesystem::path basicPath{path};
+
+	if (!filesystem::exists(basicPath)) {
+		return;
+	}
+
+	const string &userProfileLocation = App()->userProfilesLocation;
+
+	const filesystem::path profilesPath{userProfileLocation +
+					    "/obs-studio/basic/profiles"};
+
+	if (filesystem::exists(profilesPath)) {
+		return;
+	}
+
+	try {
+		filesystem::create_directories(profilesPath);
+	} catch (const filesystem::filesystem_error &error) {
+		blog(LOG_ERROR,
+		     "Failed to create profiles directory for migration from basic profile\n%s",
+		     error.what());
+		return;
+	}
+
+	const filesystem::path newProfilePath{profilesPath / Str("Untitled")};
+
+	try {
+		filesystem::create_directory(newProfilePath);
+	} catch (const filesystem::filesystem_error &error) {
+		blog(LOG_ERROR,
+		     "Failed to create profile directory for 'Untitled'\n%s",
+		     error.what());
+		return;
+	}
+
+	for (auto &entry : filesystem::directory_iterator(basicPath)) {
+		if (entry.is_directory()) {
+			continue;
+		}
+
+		if (entry.path().filename() == "scenes.json") {
+			continue;
+		}
+
+		const filesystem::path destinationFile =
+			newProfilePath / entry.path().filename();
+
+		try {
+			filesystem::copy(entry.path(), destinationFile);
+		} catch (const filesystem::filesystem_error &error) {
+			blog(LOG_ERROR,
+			     "Failed to copy basic profile file '%s' to new profile 'Untitled'\n%s",
+			     entry.path().filename().c_str(), error.what());
+
+			error_code errorCode;
+			filesystem::remove_all(newProfilePath, errorCode);
+
+			if (errorCode) {
+				blog(LOG_ERROR,
+				     "Failed to clean up new profile directory for 'Untitled'");
+			}
+
+			return;
+		}
+	}
 }
 
 static void move_basic_to_scene_collections(void)
