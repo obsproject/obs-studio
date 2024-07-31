@@ -75,7 +75,7 @@ signals:
 	void pendingUnchecked();
 
 protected:
-	void changeEvent(QEvent *event);
+	void changeEvent(QEvent *event) override;
 	void paintEvent(QPaintEvent *) override;
 	void showEvent(QShowEvent *) override;
 	void enterEvent(QEnterEvent *) override;
