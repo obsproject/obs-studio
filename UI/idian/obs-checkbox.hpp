@@ -33,6 +33,7 @@ protected:
 		OBSWidgetUtils::showKeyFocused(e);
 		QAbstractButton::focusInEvent(e);
 	}
+
 	void focusOutEvent(QFocusEvent *e) override
 	{
 		OBSWidgetUtils::hideKeyFocused(e);

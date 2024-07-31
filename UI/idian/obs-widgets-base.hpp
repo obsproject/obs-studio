@@ -55,18 +55,20 @@ public:
 		} else {
 			removeClass("keyFocus");
 		}
-	};
+	}
+
 	void hideKeyFocused(QFocusEvent *e)
 	{
 		if (e->reason() != Qt::PopupFocusReason) {
 			removeClass("keyFocus");
 		}
-	};
+	}
 
 	/*
 	 * Force all children widgets to repaint
 	 */
 	void polishChildren() { polishChildren(parent); }
+
 	void polishChildren(QWidget *widget)
 	{
 		for (QWidget *child : widget->findChildren<QWidget *>()) {
@@ -75,6 +77,7 @@ public:
 	}
 
 	void repolish() { repolish(parent); }
+
 	void repolish(QWidget *widget)
 	{
 		parent->style()->unpolish(widget);
@@ -85,6 +88,7 @@ public:
 	 * Adds a style class to the widget
 	 */
 	void addClass(const QString &classname) { addClass(parent, classname); }
+
 	void addClass(QWidget *widget, const QString &classname)
 	{
 		if (!classNameIsValid(classname)) {
@@ -113,6 +117,7 @@ public:
 	{
 		removeClass(parent, classname);
 	}
+
 	void removeClass(QWidget *widget, const QString &classname)
 	{
 		if (!classNameIsValid(classname)) {
@@ -144,6 +149,7 @@ public:
 	{
 		toggleClass(parent, classname, toggle);
 	}
+
 	void toggleClass(QWidget *widget, const QString &classname, bool toggle)
 	{
 		if (toggle) {

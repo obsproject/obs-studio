@@ -82,11 +82,13 @@ protected:
 	void leaveEvent(QEvent *) override;
 	void keyReleaseEvent(QKeyEvent *) override;
 	void mouseReleaseEvent(QMouseEvent *) override;
+
 	void focusInEvent(QFocusEvent *e) override
 	{
 		OBSWidgetUtils::showKeyFocused(e);
 		QAbstractButton::focusInEvent(e);
 	}
+
 	void focusOutEvent(QFocusEvent *e) override
 	{
 		OBSWidgetUtils::hideKeyFocused(e);

@@ -37,11 +37,13 @@ signals:
 protected:
 	void mousePressEvent(QMouseEvent *e) override;
 	void mouseReleaseEvent(QMouseEvent *e) override;
+
 	void focusInEvent(QFocusEvent *e) override
 	{
 		OBSWidgetUtils::showKeyFocused(e);
 		QComboBox::focusInEvent(e);
 	}
+
 	void focusOutEvent(QFocusEvent *e) override
 	{
 		OBSWidgetUtils::hideKeyFocused(e);

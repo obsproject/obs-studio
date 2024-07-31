@@ -101,6 +101,7 @@ protected:
 		OBSWidgetUtils::showKeyFocused(e);
 		QFrame::focusInEvent(e);
 	}
+
 	void focusOutEvent(QFocusEvent *e) override
 	{
 		OBSWidgetUtils::hideKeyFocused(e);
@@ -139,11 +140,13 @@ private:
 
 protected:
 	void paintEvent(QPaintEvent *) override;
+
 	void focusInEvent(QFocusEvent *e) override
 	{
 		OBSWidgetUtils::showKeyFocused(e);
 		QAbstractButton::focusInEvent(e);
 	}
+
 	void focusOutEvent(QFocusEvent *e) override
 	{
 		OBSWidgetUtils::hideKeyFocused(e);
@@ -163,11 +166,13 @@ signals:
 protected:
 	void enterEvent(QEnterEvent *) override;
 	void leaveEvent(QEvent *) override;
+
 	void focusInEvent(QFocusEvent *e) override
 	{
 		OBSWidgetUtils::showKeyFocused(e);
 		QWidget::focusInEvent(e);
 	}
+
 	void focusOutEvent(QFocusEvent *e) override
 	{
 		OBSWidgetUtils::hideKeyFocused(e);
