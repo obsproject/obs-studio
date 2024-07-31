@@ -462,6 +462,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 			ResizePreview(ovi.base_width, ovi.base_height);
 
 		UpdateContextBarVisibility();
+		UpdatePreviewScrollbars();
 		dpi = devicePixelRatioF();
 	};
 	dpi = devicePixelRatioF();
@@ -1355,6 +1356,7 @@ retryScene:
 		ui->preview->SetScrollingOffset(scrollOffX, scrollOffY);
 	}
 	ui->preview->SetFixedScaling(fixedScaling);
+
 	emit ui->preview->DisplayResized();
 
 	if (vcamEnabled) {
@@ -4993,8 +4995,10 @@ void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)
 	obs_get_video_info(&ovi);
 
 	if (isFixedScaling) {
-		ui->preview->ClampScrollingOffsets();
 		previewScale = ui->preview->GetScalingAmount();
+
+		ui->preview->ClampScrollingOffsets();
+
 		GetCenterPosFromFixedScale(
 			int(cx), int(cy),
 			targetSize.width() - PREVIEW_EDGE_SIZE * 2,
@@ -9766,6 +9770,7 @@ void OBSBasic::on_actionScaleWindow_triggered()
 {
 	ui->preview->SetFixedScaling(false);
 	ui->preview->ResetScrollingOffset();
+
 	emit ui->preview->DisplayResized();
 }
 
@@ -9787,7 +9792,6 @@ void OBSBasic::on_actionScaleOutput_triggered()
 	int32_t approxScalingLevel =
 		int32_t(round(log(scalingAmount) / log(ZOOM_SENSITIVITY)));
 	ui->preview->SetScalingLevel(approxScalingLevel);
-	ui->preview->SetScalingAmount(scalingAmount);
 	emit ui->preview->DisplayResized();
 }
 
@@ -11089,4 +11093,30 @@ void OBSBasic::UpdatePreviewSpacingHelpers()
 float OBSBasic::GetDevicePixelRatio()
 {
 	return dpi;
+}
+
+void OBSBasic::UpdatePreviewScrollbars()
+{
+	if (!ui->preview->IsFixedScaling()) {
+		ui->previewXScrollBar->setRange(0, 0);
+		ui->previewYScrollBar->setRange(0, 0);
+	}
+}
+
+void OBSBasic::on_previewXScrollBar_valueChanged(int value)
+{
+	ui->preview->updatingXScrollBar = true;
+	ui->preview->scrollingOffset.x = float(-value);
+
+	emit ui->preview->DisplayResized();
+	ui->preview->updatingXScrollBar = false;
+}
+
+void OBSBasic::on_previewYScrollBar_valueChanged(int value)
+{
+	ui->preview->updatingYScrollBar = true;
+	ui->preview->scrollingOffset.y = float(-value);
+
+	emit ui->preview->DisplayResized();
+	ui->preview->updatingYScrollBar = false;
 }

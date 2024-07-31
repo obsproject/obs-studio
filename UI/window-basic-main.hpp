@@ -668,6 +668,7 @@ private:
 	std::string lastReplay;
 
 	void UpdatePreviewOverflowSettings();
+	void UpdatePreviewScrollbars();
 
 	bool streamingStarting = false;
 
@@ -807,6 +808,9 @@ private slots:
 	void AudioMixerCopyFilters();
 	void AudioMixerPasteFilters();
 	void SourcePasteFilters(OBSSource source, OBSSource dstSource);
+
+	void on_previewXScrollBar_valueChanged(int value);
+	void on_previewYScrollBar_valueChanged(int value);
 
 	void ColorChange();
 
