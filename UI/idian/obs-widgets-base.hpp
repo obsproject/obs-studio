@@ -26,13 +26,12 @@
  * Helpers for OBS Idian widgets
  */
 
+static const QRegularExpression classRegex =
+	QRegularExpression("^[a-zA-Z][a-zA-Z0-9_-]*$");
+
 class OBSWidgetUtils {
 
-private:
-	QRegularExpression classRegex =
-		QRegularExpression("^[a-zA-Z][a-zA-Z0-9_-]*$");
-
-	bool classNameIsValid(const QString &name)
+	static bool classNameIsValid(const QString &name)
 	{
 		QRegularExpressionMatch match = classRegex.match(name);
 		return match.hasMatch();
@@ -69,7 +68,7 @@ public:
 	 */
 	void polishChildren() { polishChildren(parent); }
 
-	void polishChildren(QWidget *widget)
+	static void polishChildren(QWidget *widget)
 	{
 		for (QWidget *child : widget->findChildren<QWidget *>()) {
 			repolish(child);
@@ -78,10 +77,10 @@ public:
 
 	void repolish() { repolish(parent); }
 
-	void repolish(QWidget *widget)
+	static void repolish(QWidget *widget)
 	{
-		parent->style()->unpolish(widget);
-		parent->style()->polish(widget);
+		widget->style()->unpolish(widget);
+		widget->style()->polish(widget);
 	}
 
 	/*
@@ -89,7 +88,7 @@ public:
 	 */
 	void addClass(const QString &classname) { addClass(parent, classname); }
 
-	void addClass(QWidget *widget, const QString &classname)
+	static void addClass(QWidget *widget, const QString &classname)
 	{
 		if (!classNameIsValid(classname)) {
 			return;
@@ -118,7 +117,7 @@ public:
 		removeClass(parent, classname);
 	}
 
-	void removeClass(QWidget *widget, const QString &classname)
+	static void removeClass(QWidget *widget, const QString &classname)
 	{
 		if (!classNameIsValid(classname)) {
 			return;
@@ -150,7 +149,8 @@ public:
 		toggleClass(parent, classname, toggle);
 	}
 
-	void toggleClass(QWidget *widget, const QString &classname, bool toggle)
+	static void toggleClass(QWidget *widget, const QString &classname,
+				bool toggle)
 	{
 		if (toggle) {
 			addClass(widget, classname);
