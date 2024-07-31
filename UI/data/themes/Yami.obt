@@ -105,6 +105,7 @@
 
     --font_base: calc(1pt * var(--font_base_value));
     --font_small: calc(0.9pt * var(--font_base_value));
+    --font_xsmall: calc(0.85pt * var(--font_base_value));
     --font_large: calc(1.1pt * var(--font_base_value));
     --font_xlarge: calc(1.5pt * var(--font_base_value));
 
@@ -632,6 +633,11 @@ QScrollBar::handle:vertical {
 
 QScrollBar::handle:horizontal {
     min-width: 32px;
+}
+
+QScrollBar::handle:disabled {
+    background: transparent;
+    border-color: transparent;
 }
 
 /* Source Context Bar */
@@ -1962,4 +1968,51 @@ OBSBasicStats {
 /* Advanced audio dialog */
 OBSBasicAdvAudio #scrollAreaWidgetContents {
     background: var(--bg_base);
+}
+
+#previewScalePercent,
+#previewScalingMode {
+    background: transparent;
+    color: var(--text_muted);
+    font-size: var(--font_xsmall);
+    height: 14px;
+    max-height: 14px;
+    padding: 0px var(--padding_xlarge);
+    margin: 0;
+    border: none;
+    border-radius: 0;
+}
+
+#previewXContainer {
+    border: 1px solid var(--grey6);
+}
+
+#previewScalingMode {
+    border: 1px solid var(--grey6);
+}
+
+#previewScalingMode:hover,
+#previewScalingMode:focus {
+    border-color: var(--input_border_hover);
+}
+
+#previewXScrollBar,
+#previewYScrollBar {
+    background: transparent;
+    border: 1px solid var(--grey6);
+    border-radius: 0;
+}
+
+#previewXScrollBar {
+    border-left: none;
+    height: 16px;
+}
+
+#previewXScrollBar::handle,
+#previewYScrollBar::handle {
+    margin: 3px;
+}
+
+#previewYScrollBar {
+    width: 16px;
 }
