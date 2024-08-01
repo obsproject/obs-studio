@@ -210,6 +210,9 @@ mfxStatus simple_gethdl(mfxHDL pthis, mfxMemId mid, mfxHDL *handle)
 
 mfxStatus simple_free(mfxHDL pthis, mfxFrameAllocResponse *response)
 {
+	if (response == nullptr)
+		return MFX_ERR_NULL_PTR;
+
 	if (response->mids == nullptr || response->NumFrameActual == 0)
 		return MFX_ERR_NONE;
 
