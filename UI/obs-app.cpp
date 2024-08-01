@@ -1868,6 +1868,34 @@ string GetFormatString(const char *format, const char *prefix,
 	return f;
 }
 
+string GetFullPathString(const char *filename, const char *prefix,
+			 const char *suffix)
+{
+	QFileInfo fi(filename);
+
+	QString output("");
+
+	if (prefix && *prefix) {
+		output += QT_UTF8(prefix);
+	}
+	output += fi.baseName();
+	if (suffix && *suffix) {
+		output += QT_UTF8(suffix);
+	}
+	output += "." + fi.suffix();
+
+	string f = QT_TO_UTF8(output);
+
+	remove_reserved_file_characters(f);
+
+	output = fi.path() + QDir::separator() + QString::fromStdString(f);
+
+	string path = QT_TO_UTF8(QFileInfo(output).path());
+	path += "/";
+
+	return output.toStdString();
+}
+
 string GetFormatExt(const char *container)
 {
 	string ext = container;

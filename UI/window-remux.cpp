@@ -476,19 +476,23 @@ void RemuxQueueModel::checkInputPath(int row)
 		else
 			entry.state = RemuxEntryState::InvalidPath;
 
-		QString newExt = ".mp4";
+		QString newExt = "mp4";
 		QString suffix = fileInfo.suffix();
 
 		if (suffix.contains("mov", Qt::CaseInsensitive) ||
 		    suffix.contains("mp4", Qt::CaseInsensitive)) {
-			newExt = ".remuxed." + suffix;
+			newExt = "remuxed." + suffix;
 		}
 
-		if (entry.state == RemuxEntryState::Ready)
-			entry.targetPath = QDir::toNativeSeparators(
-				fileInfo.path() + QDir::separator() +
-				remuxSuffix + fileInfo.completeBaseName() +
-				remuxPrefix + newExt);
+		if (entry.state == RemuxEntryState::Ready) {
+			QString output = QString::fromStdString(
+				GetFullPathString(QT_TO_UTF8(entry.sourcePath),
+						  remuxPrefix, remuxSuffix));
+			output.resize(output.size() - suffix.length());
+
+			entry.targetPath =
+				QDir::toNativeSeparators(output + newExt);
+		}
 	}
 
 	if (entry.state == RemuxEntryState::Ready && isProcessing)
@@ -644,9 +648,9 @@ void RemuxQueueModel::finishEntry(bool success)
 **********************************************************/
 
 OBSRemux::OBSRemux(const char *path, QWidget *parent, bool autoRemux_,
-		   QString remuxSuffix_, QString remuxPrefix_)
+		   const char *remuxPrefix_, const char *remuxSuffix_)
 	: QDialog(parent),
-	  queueModel(new RemuxQueueModel(parent, remuxSuffix_, remuxPrefix_)),
+	  queueModel(new RemuxQueueModel(parent, remuxPrefix_, remuxSuffix_)),
 	  worker(new RemuxWorker()),
 	  ui(new Ui::OBSRemux),
 	  recPath(path),
@@ -888,6 +892,9 @@ void OBSRemux::remuxNextEntry()
 
 	QString inputPath, outputPath;
 	if (queueModel->beginNextEntry(inputPath, outputPath)) {
+		QDir dir(QFileInfo(outputPath).path());
+		if (!dir.exists())
+			dir.mkpath(".");
 		emit remux(inputPath, outputPath);
 	} else {
 		queueModel->autoRemux = autoRemux;
