@@ -87,11 +87,10 @@ struct compressor_data {
 	float slope;
 
 	pthread_mutex_t sidechain_update_mutex;
-	
+
 	size_t max_sidechain_frames;
-    //struct sidechain sidechain;
-    
-    DARRAY(struct sidechain) sidechains;
+
+	DARRAY(struct sidechain) sidechains;
 };
 
 /* -------------------------------------------------------- */
@@ -130,10 +129,12 @@ static inline void get_sidechain_data(struct compressor_data *cd, const uint32_t
 
 clear:
 	for (size_t ix = 0; ix < cd->sidechains.num; ix += 1) {
-		//struct sidechain *sidechain = &cd->sidechains.array[ix];
+		struct sidechain *sidechain = &cd->sidechains.array[ix];
+		pthread_mutex_lock(&sidechain->mutex);
 		for (size_t i = 0; i < cd->num_channels; i++) {
-			//memset(sidechain->buf[i], 0, data_size);
+			memset(sidechain->buf[i], 0, data_size);
 		}
+		pthread_mutex_unlock(&sidechain->mutex);
 	}
 }
 
@@ -144,9 +145,12 @@ static void resize_env_buffer(struct compressor_data *cd, size_t len)
 
 	for (size_t ix = 0; ix < cd->sidechains.num; ix += 1) {
 		struct sidechain *sidechain = &cd->sidechains.array[ix];
+		pthread_mutex_lock(&sidechain->mutex);
 		for (size_t i = 0; i < cd->num_channels; i++) {
+
 			sidechain->buf[i] = brealloc(sidechain->buf[i], len * sizeof(float));
 		}
+		pthread_mutex_unlock(&sidechain->mutex);
 	}
 }
 
@@ -197,91 +201,90 @@ unlock:
 	pthread_mutex_unlock(&sidechain->mutex);
 }
 
-static void clear_sidechains(struct compressor_data *cd) {
-    size_t sidechain_count = cd->sidechains.num;
-    for (size_t ix = 0; ix < sidechain_count; ix += 1) {
-        struct sidechain *sidechain = &cd->sidechains.array[ix];
-        
-        obs_source_t *old_source = obs_weak_source_get_source(sidechain->weak_ref);
-        
-        if (old_source) {
-            obs_source_remove_audio_capture_callback(old_source, sidechain_capture, cd);
-            obs_source_release(old_source);
-        }
-        
-        if (sidechain->weak_ref) {
-            obs_weak_source_release(sidechain->weak_ref);
-            sidechain->weak_ref = NULL;
-        }
-        
-        if (sidechain->name) {
-            bfree(sidechain->name);
-            sidechain->name = NULL;
-        }
-    }
-    
-    da_clear(cd->sidechains);
+static void clear_sidechains(struct compressor_data *cd)
+{
+	size_t sidechain_count = cd->sidechains.num;
+	for (size_t ix = 0; ix < sidechain_count; ix += 1) {
+		struct sidechain *sidechain = &cd->sidechains.array[ix];
+
+		obs_source_t *old_source = obs_weak_source_get_source(sidechain->weak_ref);
+
+		if (old_source) {
+			obs_source_remove_audio_capture_callback(old_source, sidechain_capture, sidechain);
+			obs_source_release(old_source);
+		}
+
+		if (sidechain->weak_ref) {
+			obs_weak_source_release(sidechain->weak_ref);
+			sidechain->weak_ref = NULL;
+		}
+
+		if (sidechain->name) {
+			bfree(sidechain->name);
+			sidechain->name = NULL;
+		}
+
+		pthread_mutex_destroy(&sidechain->mutex);
+	}
+
+	da_clear(cd->sidechains);
 }
 
 static void compressor_update(void *data, obs_data_t *s)
 {
-    struct compressor_data *cd = data;
+	struct compressor_data *cd = data;
 
-    const uint32_t sample_rate = audio_output_get_sample_rate(obs_get_audio());
-    const size_t num_channels = audio_output_get_channels(obs_get_audio());
-    const float attack_time_ms = (float)obs_data_get_int(s, S_ATTACK_TIME);
-    const float release_time_ms =
-        (float)obs_data_get_int(s, S_RELEASE_TIME);
-    const float output_gain_db =
-        (float)obs_data_get_double(s, S_OUTPUT_GAIN);
-    obs_data_array_t *sidechain_names =
-        obs_data_get_array(s, S_SIDECHAIN_SOURCE);
-    size_t sidechain_count = obs_data_array_count(sidechain_names);
+	const uint32_t sample_rate = audio_output_get_sample_rate(obs_get_audio());
+	const size_t num_channels = audio_output_get_channels(obs_get_audio());
+	const float attack_time_ms = (float)obs_data_get_int(s, S_ATTACK_TIME);
+	const float release_time_ms = (float)obs_data_get_int(s, S_RELEASE_TIME);
+	const float output_gain_db = (float)obs_data_get_double(s, S_OUTPUT_GAIN);
+	obs_data_array_t *sidechain_names = obs_data_get_array(s, S_SIDECHAIN_SOURCE);
+	size_t sidechain_count = obs_data_array_count(sidechain_names);
 
-    cd->ratio = (float)obs_data_get_double(s, S_RATIO);
-    cd->threshold = (float)obs_data_get_double(s, S_THRESHOLD);
-    cd->attack_gain = gain_coefficient(sample_rate, attack_time_ms / MS_IN_S_F);
-    cd->release_gain = gain_coefficient(sample_rate, release_time_ms / MS_IN_S_F);
-    cd->output_gain = db_to_mul(output_gain_db);
-    cd->num_channels = num_channels;
-    cd->sample_rate = sample_rate;
-    cd->slope = 1.0f - (1.0f / cd->ratio);
-    
-    // reset callbacks and cleanup after ourselves before updating list
-    clear_sidechains(cd);
-    
-    size_t erased_count = 0;
-    for (size_t ix = 0; ix < sidechain_count; ix += 1) {
-        obs_data_t *source = obs_data_array_item(sidechain_names, ix);
-        const char *sidechain_name = obs_data_get_string(source, "value");
-        
-        bool valid_sidechain = *sidechain_name &&
-            strcmp(sidechain_name, "none") != 0;
-        if (!valid_sidechain) {
-            continue;
-        }
-        
-        pthread_mutex_lock(&cd->sidechain_update_mutex);
-        
-        struct sidechain *sidechain = da_push_back_new(cd->sidechains);
+	cd->ratio = (float)obs_data_get_double(s, S_RATIO);
+	cd->threshold = (float)obs_data_get_double(s, S_THRESHOLD);
+	cd->attack_gain = gain_coefficient(sample_rate, attack_time_ms / MS_IN_S_F);
+	cd->release_gain = gain_coefficient(sample_rate, release_time_ms / MS_IN_S_F);
+	cd->output_gain = db_to_mul(output_gain_db);
+	cd->num_channels = num_channels;
+	cd->sample_rate = sample_rate;
+	cd->slope = 1.0f - (1.0f / cd->ratio);
 
-        if (pthread_mutex_init(&sidechain->mutex, NULL) != 0) {
-            blog(LOG_ERROR, "Failed to create mutex for sidechain");
-            da_erase(cd->sidechains, (ix - erased_count));
-            erased_count += 1;
-        }
-        
-        sidechain->num_channels = num_channels;
-        sidechain->name = bstrdup(sidechain_name);
-        sidechain->weak_ref = NULL;
-        
-        pthread_mutex_unlock(&cd->sidechain_update_mutex);
-        
-    }
+	// reset callbacks and cleanup after ourselves before updating list
+	pthread_mutex_lock(&cd->sidechain_update_mutex);
+	clear_sidechains(cd);
+	pthread_mutex_unlock(&cd->sidechain_update_mutex);
 
-    size_t sample_len = sample_rate * DEFAULT_AUDIO_BUF_MS / MS_IN_S;
-    if (cd->envelope_buf_len == 0)
-        resize_env_buffer(cd, sample_len);
+	size_t erased_count = 0;
+	for (size_t ix = 0; ix < sidechain_count; ix += 1) {
+		obs_data_t *source = obs_data_array_item(sidechain_names, ix);
+		const char *sidechain_name = obs_data_get_string(source, "value");
+
+		bool valid_sidechain = *sidechain_name && strcmp(sidechain_name, "none") != 0;
+		if (!valid_sidechain) {
+			continue;
+		}
+
+		pthread_mutex_lock(&cd->sidechain_update_mutex);
+
+		struct sidechain *sidechain = da_push_back_new(cd->sidechains);
+
+		if (pthread_mutex_init(&sidechain->mutex, NULL) != 0) {
+			blog(LOG_ERROR, "Failed to create mutex for sidechain");
+			da_erase(cd->sidechains, (ix - erased_count));
+			erased_count += 1;
+		}
+
+		sidechain->num_channels = num_channels;
+		sidechain->name = bstrdup(sidechain_name);
+		sidechain->weak_ref = NULL;
+
+		pthread_mutex_unlock(&cd->sidechain_update_mutex);
+	}
+	size_t sample_len = sample_rate * DEFAULT_AUDIO_BUF_MS / MS_IN_S;
+
+	resize_env_buffer(cd, sample_len);
 }
 
 static void *compressor_create(obs_data_t *settings, obs_source_t *filter)
@@ -295,8 +298,8 @@ static void *compressor_create(obs_data_t *settings, obs_source_t *filter)
 		bfree(cd);
 		return NULL;
 	}
-    
-    da_init(cd->sidechains);
+
+	da_init(cd->sidechains);
 
 	compressor_update(cd, settings);
 	return cd;
@@ -304,9 +307,9 @@ static void *compressor_create(obs_data_t *settings, obs_source_t *filter)
 
 static void compressor_destroy(void *data)
 {
-    UNUSED_PARAMETER(data);
-    return;
-    /*
+	UNUSED_PARAMETER(data);
+	return;
+	/*
 	struct compressor_data *cd = data;
 
 	if (cd->sidechain.weak_ref) {
@@ -371,32 +374,34 @@ static void analyze_sidechain(struct compressor_data *cd, const uint32_t num_sam
 
 	const float attack_gain = cd->attack_gain;
 	const float release_gain = cd->release_gain;
-    
-    memset(cd->envelope_buf, 0, num_samples * sizeof(cd->envelope_buf[0]));
 
-    for (size_t chan = 0; chan < cd->num_channels; ++chan) {
-        for (size_t sidechain_ix = 0; sidechain_ix < cd->sidechains.num; sidechain_ix += 1) {
-            float **sidechain_buf = cd->sidechains.array[sidechain_ix].buf;
-            if (!sidechain_buf[chan])
-                continue;
-            
-            float *envelope_buf = cd->envelope_buf;
-            float env = cd->envelope;
-            for (uint32_t i = 0; i < num_samples; ++i) {
-                const float env_in = fabsf(sidechain_buf[chan][i]);
-                
-                if (env < env_in) {
-                    env = env_in + attack_gain * (env - env_in);
-                } else {
-                    env = env_in + release_gain * (env - env_in);
-                }
-                envelope_buf[i] = fmaxf(envelope_buf[i], env);
-            }
-            // we don't need to check any other sidechains if we have successfully found one.
-            goto continue_outer;
-        }
-    continue_outer:;
-    }
+	memset(cd->envelope_buf, 0, num_samples * sizeof(cd->envelope_buf[0]));
+
+	for (size_t chan = 0; chan < cd->num_channels; ++chan) {
+		for (size_t sidechain_ix = 0; sidechain_ix < cd->sidechains.num; sidechain_ix += 1) {
+			float **sidechain_buf = cd->sidechains.array[sidechain_ix].buf;
+			if (!sidechain_buf[chan])
+				continue;
+
+			float *envelope_buf = cd->envelope_buf;
+			float env = cd->envelope;
+			for (uint32_t i = 0; i < num_samples; ++i) {
+				const float env_in = fabsf(sidechain_buf[chan][i]);
+
+				if (env < env_in) {
+					env = env_in + attack_gain * (env - env_in);
+				} else {
+					env = env_in + release_gain * (env - env_in);
+				}
+				envelope_buf[i] = fmaxf(envelope_buf[i], env);
+			}
+			// we don't need to check any other sidechains if we have successfully found one.
+			// TODO(Ben): the goal of this logic is to short-circuit the check, but this logic unfortunately
+			// is applied to a /muted/ source too...
+			//goto continue_outer;
+		}
+	continue_outer:;
+	}
 	cd->envelope = cd->envelope_buf[num_samples - 1];
 }
 
@@ -417,27 +422,27 @@ static inline void process_compression(const struct compressor_data *cd, float *
 
 static void compressor_tick(void *data, float seconds)
 {
-    UNUSED_PARAMETER(seconds);
+	UNUSED_PARAMETER(seconds);
 
-    struct compressor_data *cd = data;
-    size_t sidechain_count = cd->sidechains.num;
-    for (size_t ix = 0; ix < sidechain_count; ix += 1) {
-        struct sidechain *sidechain = &cd->sidechains.array[ix];
-        // is this a sidechain just created by update()?
-        if (sidechain->name && !sidechain->weak_ref) {
-            obs_source_t *source = obs_get_source_by_name(sidechain->name);
-            obs_weak_source_t *weak_sidechain = obs_source_get_weak_source(source);
-            
-            pthread_mutex_lock(&cd->sidechain_update_mutex);
-            
-            sidechain->weak_ref = weak_sidechain;
-            
-            pthread_mutex_unlock(&cd->sidechain_update_mutex);
-            
-            obs_source_add_audio_capture_callback(source, sidechain_capture, cd);
-            obs_source_release(source);
-        }
-    }
+	struct compressor_data *cd = data;
+	size_t sidechain_count = cd->sidechains.num;
+	for (size_t ix = 0; ix < sidechain_count; ix += 1) {
+		struct sidechain *sidechain = &cd->sidechains.array[ix];
+		// is this a sidechain just created by update()?
+		if (sidechain->name && !sidechain->weak_ref) {
+			pthread_mutex_lock(&cd->sidechain_update_mutex);
+
+			obs_source_t *source = obs_get_source_by_name(sidechain->name);
+			obs_weak_source_t *weak_sidechain = obs_source_get_weak_source(source);
+
+			sidechain->weak_ref = weak_sidechain;
+
+			pthread_mutex_unlock(&cd->sidechain_update_mutex);
+
+			obs_source_add_audio_capture_callback(source, sidechain_capture, sidechain);
+			obs_source_release(source);
+		}
+	}
 }
 
 static struct obs_audio_data *compressor_filter_audio(void *data, struct obs_audio_data *audio)
