@@ -63,6 +63,7 @@ build() {
   local config='RelWithDebInfo'
   local -r -a _valid_configs=(Debug RelWithDebInfo Release MinSizeRel)
   local -i codesign=0
+  local -i analyze=0
 
   local -a args
   while (( # )) {
@@ -76,6 +77,7 @@ build() {
     }
     case ${1} {
       --) shift; args+=($@); break ;;
+      -a|--analyze) analyze=1; shift ;;
       -t|--target)
         if (( ! ${_valid_targets[(Ie)${2}]} )) {
           log_error "Invalid value %B${2}%b for option %B${1}%b"
@@ -176,16 +178,32 @@ build() {
         -exportPath ${project_root}/build_macos
       )
 
-      pushd build_macos
-      if [[ ${GITHUB_EVENT_NAME} == push && ${GITHUB_REF_NAME} =~ [0-9]+.[0-9]+.[0-9]+(-(rc|beta).+)? ]] {
-        run_xcodebuild ${archive_args}
-        run_xcodebuild ${export_args}
-      } else {
-        run_xcodebuild ${build_args}
+      local -a analyze_args=(
+        CLANG_ANALYZER_OUTPUT=sarif
+        CLANG_ANALYZER_OUTPUT_DIR=${project_root}/analytics
+        -project obs-studio.xcodeproj
+        -target obs-studio
+        -destination "generic/platform=macOS,name=Any Mac"
+        -configuration ${config}
+        -parallelizeTargets
+        -hideShellScriptEnvironment
+        analyze
+      )
 
-        rm -rf OBS.app
-        mkdir OBS.app
-        ditto UI/${config}/OBS.app OBS.app
+      pushd build_macos
+      if (( analyze )) {
+        run_xcodebuild ${analyze_args}
+      } else {
+        if [[ ${GITHUB_EVENT_NAME} == push && ${GITHUB_REF_NAME} =~ [0-9]+.[0-9]+.[0-9]+(-(rc|beta).+)? ]] {
+          run_xcodebuild ${archive_args}
+          run_xcodebuild ${export_args}
+        } else {
+          run_xcodebuild ${build_args}
+
+          rm -rf OBS.app
+          mkdir OBS.app
+          ditto UI/${config}/OBS.app OBS.app
+        }
       }
       popd
       ;;

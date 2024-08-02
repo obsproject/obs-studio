@@ -38,3 +38,77 @@ jobs:
           pvsKey: ${{ secrets.PVS_KEY }}
           target: x64
           config: Debug
+
+  macos:
+    name: macOS 🍏 (clang-analyze)
+    runs-on: macos-14
+    defaults:
+      run:
+        shell: zsh --no-rcs --errexit --pipefail {0}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Set Up Code Signing 🔑
+        uses: ./.github/actions/setup-macos-codesigning
+        id: codesign
+        with:
+          codesignIdentity: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+          codesignCertificate: ${{ secrets.MACOS_SIGNING_CERT }}
+          certificatePassword: ${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}
+          keychainPassword: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
+          provisioningProfile: ${{ secrets.MACOS_SIGNING_PROVISIONING_PROFILE }}
+          notarizationUser: ${{ secrets.MACOS_NOTARIZATION_USERNAME }}
+          notarizationPassword: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
+
+      - name: Build OBS Studio 🧱
+        env:
+          TWITCH_CLIENTID: ${{ secrets.TWITCH_CLIENT_ID }}
+          TWITCH_HASH: ${{ secrets.TWITCH_HASH }}
+          RESTREAM_CLIENTID: ${{ secrets.RESTREAM_CLIENTID }}
+          RESTREAM_HASH: ${{ secrets.RESTREAM_HASH }}
+          YOUTUBE_CLIENTID: ${{ secrets.YOUTUBE_CLIENTID }}
+          YOUTUBE_CLIENTID_HASH: ${{ secrets.YOUTUBE_CLIENTID_HASH }}
+          YOUTUBE_SECRET: ${{ secrets.YOUTUBE_SECRET }}
+          YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
+          CODESIGN_IDENT: ${{ steps.codesign.outputs.codesignIdent }}
+          CODESIGN_TEAM: ${{ steps.codesign.outputs.codesignTeam }}
+          PROVISIONING_PROFILE: ${{ steps.codesign.outputs.provisioningProfileUUID }}
+        run: |
+          : Run macOS Build
+
+          local -a build_args=(
+            --config Debug
+            --target macos-arm64
+            --codesign
+            --analyze
+          )
+          if (( ${+RUNNER_DEBUG} )) build_args+=(--debug)
+
+          git fetch origin --no-tags --no-recurse-submodules -q
+          .github/scripts/build-macos ${build_args}
+      - name: Compile Analytics Data 📊
+        run: |
+          : Compile Analytics Data 📊
+
+          local analytics_root='${{ github.workspace }}/analytics'
+
+          local -a analytics_files=(${analytics_root}/StaticAnalyzer/obs-studio/**/*.plist)
+
+          for file (${analytics_files}) {
+            mv ${file} ${analytics_root}/${${file:t}//plist/sarif}
+          }
+
+          pushd ${analytics_root}
+
+          npx @microsoft/sarif-multitool merge *.sarif
+
+          popd
+
+      - name: Upload SARIF report files 📦
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "${{ github.workspace }}/analytics/merged.sarif"
+          category: 'clang-analyze (macOS Apple Silicon)'
