@@ -5,9 +5,11 @@ if(CMAKE_HOST_SYSTEM_NAME MATCHES "(Darwin)" OR OBS_CMAKE_VERSION VERSION_GREATE
 
   project(obs-studio VERSION ${OBS_VERSION_CANONICAL})
 
-  if(CMAKE_HOST_SYSTEM_NAME MATCHES "(Windows)" AND CMAKE_SIZEOF_VOID_P EQUAL 4)
-    include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/32bit/projects.cmake")
-    return()
+  if(CMAKE_HOST_SYSTEM_NAME MATCHES "Windows")
+    include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/windows/architecture.cmake")
+    if(NOT OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_GENERATOR_PLATFORM)
+      return()
+    endif()
   endif()
 
   include(compilerconfig)

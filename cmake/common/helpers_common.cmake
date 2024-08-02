@@ -138,7 +138,7 @@ function(_handle_generator_expression_dependency library)
     if(TARGET ${gen_target})
       set(${var_FOUND_VAR} "${gen_target}")
     endif()
-  elseif(library MATCHES "\\$<.*Qt6::EntryPointPrivate>" OR library MATCHES "\\$<.*Qt6::QDarwin.+PermissionPlugin>")
+  elseif(library MATCHES "\\$<.*Qt6::(EntryPointPrivate|QDarwin.*PermissionPlugin)>")
     set(${var_FOUND_VAR} "${var_FOUND_VAR}-SKIP")
   else()
     # Unknown or unimplemented generator expression found. Abort script run to either add to ignore list or implement

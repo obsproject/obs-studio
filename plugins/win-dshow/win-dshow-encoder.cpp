@@ -2,7 +2,11 @@
 #include <obs-avc.h>
 #include <util/darray.h>
 #include <util/dstr.hpp>
+#ifdef OBS_LEGACY
 #include "libdshowcapture/dshowcapture.hpp"
+#else
+#include <dshowcapture.hpp>
+#endif
 
 using namespace DShow;
 using namespace std;

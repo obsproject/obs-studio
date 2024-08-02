@@ -1,23 +1,36 @@
+if(NOT TARGET OBS::obfuscate)
+  add_library(obs-obfuscate INTERFACE)
+  add_library(OBS::obfuscate ALIAS obs-obfuscate)
+  target_sources(obs-obfuscate INTERFACE util/windows/obfuscate.c util/windows/obfuscate.h)
+  target_include_directories(obs-obfuscate INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
+endif()
+
+if(NOT TARGET OBS::comutils)
+  add_library(obs-comutils INTERFACE)
+  add_library(OBS::COMutils ALIAS obs-comutils)
+  target_sources(obs-comutils INTERFACE util/windows/ComPtr.hpp)
+  target_include_directories(obs-comutils INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
+endif()
+
+if(NOT TARGET OBS::winhandle)
+  add_library(obs-winhandle INTERFACE)
+  add_library(OBS::winhandle ALIAS obs-winhandle)
+  target_sources(obs-winhandle INTERFACE util/windows/WinHandle.hpp)
+  target_include_directories(obs-winhandle INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
+endif()
+
+if(NOT TARGET OBS::threading-windows)
+  add_library(obs-threading-windows INTERFACE)
+  add_library(OBS::threading-windows ALIAS obs-threading-windows)
+  target_sources(obs-threading-windows INTERFACE util/threading-windows.h)
+  target_include_directories(obs-threading-windows INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
+endif()
+
 if(NOT TARGET OBS::w32-pthreads)
   add_subdirectory("${CMAKE_SOURCE_DIR}/deps/w32-pthreads" "${CMAKE_BINARY_DIR}/deps/w32-pthreads")
 endif()
 
 configure_file(cmake/windows/obs-module.rc.in libobs.rc)
-
-add_library(obs-obfuscate INTERFACE)
-add_library(OBS::obfuscate ALIAS obs-obfuscate)
-target_sources(obs-obfuscate INTERFACE util/windows/obfuscate.c util/windows/obfuscate.h)
-target_include_directories(obs-obfuscate INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
-
-add_library(obs-comutils INTERFACE)
-add_library(OBS::COMutils ALIAS obs-comutils)
-target_sources(obs-comutils INTERFACE util/windows/ComPtr.hpp)
-target_include_directories(obs-comutils INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
-
-add_library(obs-winhandle INTERFACE)
-add_library(OBS::winhandle ALIAS obs-winhandle)
-target_sources(obs-winhandle INTERFACE util/windows/WinHandle.hpp)
-target_include_directories(obs-winhandle INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
 
 target_sources(
   libobs
@@ -37,8 +50,6 @@ target_sources(
     util/windows/device-enum.c
     util/windows/device-enum.h
     util/windows/HRError.hpp
-    util/windows/obfuscate.c
-    util/windows/obfuscate.h
     util/windows/win-registry.h
     util/windows/win-version.h
     util/windows/window-helpers.c

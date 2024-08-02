@@ -26,7 +26,7 @@ function(set_target_properties_obs target)
     elseif(target STREQUAL inject-helper OR target STREQUAL get-graphics-offsets)
       set(OBS_EXECUTABLE_DESTINATION "${OBS_DATA_DESTINATION}/obs-plugins/win-capture")
 
-      _target_install_obs(${target} DESTINATION ${OBS_EXECUTABLE_DESTINATION} 32BIT)
+      _target_install_obs(${target} DESTINATION ${OBS_EXECUTABLE_DESTINATION} x86)
     endif()
 
     _target_install_obs(${target} DESTINATION ${OBS_EXECUTABLE_DESTINATION})
@@ -66,11 +66,11 @@ function(set_target_properties_obs target)
       target_add_resource(graphics-hook "${CMAKE_CURRENT_SOURCE_DIR}/obs-vulkan64.json" "${target_destination}")
       target_add_resource(graphics-hook "${CMAKE_CURRENT_SOURCE_DIR}/obs-vulkan32.json" "${target_destination}")
 
-      _target_install_obs(${target} DESTINATION ${target_destination} 32BIT)
+      _target_install_obs(${target} DESTINATION ${target_destination} x86)
     elseif(target STREQUAL obs-virtualcam-module)
       set(target_destination "${OBS_DATA_DESTINATION}/obs-plugins/win-dshow")
 
-      _target_install_obs(${target} DESTINATION ${target_destination} 32BIT)
+      _target_install_obs(${target} DESTINATION ${target_destination} x86)
     else()
       set(target_destination "${OBS_PLUGIN_DESTINATION}")
     endif()
@@ -171,12 +171,12 @@ endfunction()
 
 # _target_install_obs: Helper function to install build artifacts to rundir and install location
 function(_target_install_obs target)
-  set(options "32BIT")
+  set(options "x86" "x64")
   set(oneValueArgs "DESTINATION" "LIBRARY_DESTINATION" "HEADER_DESTINATION")
   set(multiValueArgs "")
   cmake_parse_arguments(PARSE_ARGV 0 _TIO "${options}" "${oneValueArgs}" "${multiValueArgs}")
 
-  if(_TIO_32BIT)
+  if(_TIO_x86)
     get_target_property(target_type ${target} TYPE)
     if(target_type STREQUAL EXECUTABLE)
       set(suffix exe)
@@ -189,10 +189,31 @@ function(_target_install_obs target)
     set(32bit_project_path "${OBS_SOURCE_DIR}/build_x86/${project_path}")
     set(target_file "${32bit_project_path}/$<CONFIG>/${target}32.${suffix}")
     set(target_pdb_file "${32bit_project_path}/$<CONFIG>/${target}32.pdb")
-    set(comment "Copy ${target} (32-bit) to destination")
+    set(comment "Copy ${target} (x86) to destination")
 
     install(
       FILES "${32bit_project_path}/$<CONFIG>/${target}32.${suffix}"
+      DESTINATION "${_TIO_DESTINATION}"
+      COMPONENT Runtime
+      OPTIONAL
+    )
+  elseif(_TIO_x64)
+    get_target_property(target_type ${target} TYPE)
+    if(target_type STREQUAL EXECUTABLE)
+      set(suffix exe)
+    else()
+      set(suffix dll)
+    endif()
+
+    cmake_path(RELATIVE_PATH CMAKE_CURRENT_SOURCE_DIR BASE_DIRECTORY "${OBS_SOURCE_DIR}" OUTPUT_VARIABLE project_path)
+
+    set(32bit_project_path "${OBS_SOURCE_DIR}/build_x64/${project_path}")
+    set(target_file "${32bit_project_path}/$<CONFIG>/${target}64.${suffix}")
+    set(target_pdb_file "${32bit_project_path}/$<CONFIG>/${target}64.pdb")
+    set(comment "Copy ${target} (x64) to destination")
+
+    install(
+      FILES "${32bit_project_path}/$<CONFIG>/${target}64.${suffix}"
       DESTINATION "${_TIO_DESTINATION}"
       COMPONENT Runtime
       OPTIONAL

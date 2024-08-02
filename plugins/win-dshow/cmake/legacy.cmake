@@ -10,9 +10,7 @@ if(NOT ENABLE_VIRTUALCAM)
 endif()
 
 if(ENABLE_VIRTUALCAM AND NOT VIRTUALCAM_GUID)
-  set(VIRTUALCAM_GUID
-      ""
-      CACHE STRING "Virtual Camera GUID" FORCE)
+  set(VIRTUALCAM_GUID "" CACHE STRING "Virtual Camera GUID" FORCE)
   mark_as_advanced(VIRTUALCAM_GUID)
 endif()
 
@@ -23,8 +21,10 @@ find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil)
 add_library(win-dshow MODULE)
 add_library(OBS::dshow ALIAS win-dshow)
 
-target_sources(win-dshow PRIVATE encode-dstr.hpp win-dshow.cpp win-dshow-encoder.cpp dshow-plugin.cpp ffmpeg-decode.c
-                                 ffmpeg-decode.h)
+target_sources(
+  win-dshow
+  PRIVATE encode-dstr.hpp win-dshow.cpp win-dshow-encoder.cpp dshow-plugin.cpp ffmpeg-decode.c ffmpeg-decode.h
+)
 
 add_library(libdshowcapture-external INTERFACE)
 add_library(libdshowcapture INTERFACE)
@@ -33,44 +33,51 @@ add_library(OBS::libdshowcapture ALIAS libdshowcapture)
 
 target_sources(
   libdshowcapture-external
-  INTERFACE libdshowcapture/external/capture-device-support/Library/EGAVResult.cpp
-            libdshowcapture/external/capture-device-support/Library/ElgatoUVCDevice.cpp
-            libdshowcapture/external/capture-device-support/Library/win/EGAVHIDImplementation.cpp
-            libdshowcapture/external/capture-device-support/SampleCode/DriverInterface.cpp)
+  INTERFACE
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/external/capture-device-support/Library/EGAVResult.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/external/capture-device-support/Library/ElgatoUVCDevice.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/external/capture-device-support/Library/win/EGAVHIDImplementation.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/external/capture-device-support/SampleCode/DriverInterface.cpp
+)
 
 target_sources(
   libdshowcapture
-  INTERFACE libdshowcapture/dshowcapture.hpp
-            libdshowcapture/source/capture-filter.cpp
-            libdshowcapture/source/capture-filter.hpp
-            libdshowcapture/source/output-filter.cpp
-            libdshowcapture/source/output-filter.hpp
-            libdshowcapture/source/dshowcapture.cpp
-            libdshowcapture/source/dshowencode.cpp
-            libdshowcapture/source/device.cpp
-            libdshowcapture/source/device.hpp
-            libdshowcapture/source/device-vendor.cpp
-            libdshowcapture/source/encoder.cpp
-            libdshowcapture/source/encoder.hpp
-            libdshowcapture/source/dshow-base.cpp
-            libdshowcapture/source/dshow-base.hpp
-            libdshowcapture/source/dshow-demux.cpp
-            libdshowcapture/source/dshow-demux.hpp
-            libdshowcapture/source/dshow-device-defs.hpp
-            libdshowcapture/source/dshow-enum.cpp
-            libdshowcapture/source/dshow-enum.hpp
-            libdshowcapture/source/dshow-formats.cpp
-            libdshowcapture/source/dshow-formats.hpp
-            libdshowcapture/source/dshow-media-type.cpp
-            libdshowcapture/source/dshow-encoded-device.cpp
-            libdshowcapture/source/dshow-media-type.hpp
-            libdshowcapture/source/log.cpp
-            libdshowcapture/source/log.hpp
-            libdshowcapture/source/external/IVideoCaptureFilter.h)
+  INTERFACE
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/dshowcapture.hpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/source/capture-filter.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/source/capture-filter.hpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/source/output-filter.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/source/output-filter.hpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/source/dshowcapture.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/source/dshowencode.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/source/device.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/source/device.hpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/source/device-vendor.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/source/encoder.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/source/encoder.hpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/source/dshow-base.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/source/dshow-base.hpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/source/dshow-demux.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/source/dshow-demux.hpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/source/dshow-device-defs.hpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/source/dshow-enum.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/source/dshow-enum.hpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/source/dshow-formats.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/source/dshow-formats.hpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/source/dshow-media-type.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/source/dshow-encoded-device.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/source/dshow-media-type.hpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/source/log.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/source/log.hpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/source/external/IVideoCaptureFilter.h
+)
 
 target_include_directories(
-  libdshowcapture INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/libdshowcapture
-                            ${CMAKE_CURRENT_SOURCE_DIR}/libdshowcapture/external/capture-device-support/Library)
+  libdshowcapture
+  INTERFACE
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/external/capture-device-support/Library
+)
 
 target_compile_definitions(libdshowcapture-external INTERFACE _UP_WINDOWS=1)
 target_compile_definitions(libdshowcapture INTERFACE _UP_WINDOWS=1)
@@ -82,8 +89,10 @@ configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in win-dsh
 
 target_sources(win-dshow PRIVATE win-dshow.rc)
 
-target_compile_definitions(win-dshow PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_WARNINGS
-                                             OBS_LEGACY)
+target_compile_definitions(
+  win-dshow
+  PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_WARNINGS OBS_LEGACY
+)
 
 set(VIRTUALCAM_AVAILABLE OFF)
 if(ENABLE_VIRTUALCAM)
@@ -109,11 +118,13 @@ if(ENABLE_VIRTUALCAM)
         string(LENGTH ${GUID_VALS_DATA3} GUID_VALS_DATA3_LENGTH)
         string(LENGTH ${GUID_VALS_DATA4} GUID_VALS_DATA4_LENGTH)
         string(LENGTH ${GUID_VALS_DATA5} GUID_VALS_DATA5_LENGTH)
-        if(GUID_VALS_DATA1_LENGTH EQUAL 8
-           AND GUID_VALS_DATA2_LENGTH EQUAL 4
-           AND GUID_VALS_DATA3_LENGTH EQUAL 4
-           AND GUID_VALS_DATA4_LENGTH EQUAL 4
-           AND GUID_VALS_DATA5_LENGTH EQUAL 12)
+        if(
+          GUID_VALS_DATA1_LENGTH EQUAL 8
+          AND GUID_VALS_DATA2_LENGTH EQUAL 4
+          AND GUID_VALS_DATA3_LENGTH EQUAL 4
+          AND GUID_VALS_DATA4_LENGTH EQUAL 4
+          AND GUID_VALS_DATA5_LENGTH EQUAL 12
+        )
           set(GUID_VAL01 ${GUID_VALS_DATA1})
           set(GUID_VAL02 ${GUID_VALS_DATA2})
           set(GUID_VAL03 ${GUID_VALS_DATA3})
@@ -139,70 +150,82 @@ endif()
 
 target_link_libraries(
   win-dshow
-  PRIVATE OBS::libobs
-          OBS::w32-pthreads
-          OBS::libdshowcapture-external
-          OBS::libdshowcapture
-          setupapi
-          strmiids
-          ksuser
-          winmm
-          wmcodecdspuuid
-          FFmpeg::avcodec
-          FFmpeg::avutil)
+  PRIVATE
+    OBS::libobs
+    OBS::w32-pthreads
+    OBS::libdshowcapture-external
+    OBS::libdshowcapture
+    setupapi
+    strmiids
+    ksuser
+    winmm
+    wmcodecdspuuid
+    FFmpeg::avcodec
+    FFmpeg::avutil
+)
 
 source_group(
   "libdshowcapture-external\\Source Files"
-  FILES libdshowcapture/external/capture-device-support/Library/EGAVResult.cpp
-        libdshowcapture/external/capture-device-support/Library/ElgatoUVCDevice.cpp
-        libdshowcapture/external/capture-device-support/Library/win/EGAVHIDImplementation.cpp
-        libdshowcapture/external/capture-device-support/SampleCode/DriverInterface.cpp)
+  FILES
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/external/capture-device-support/Library/EGAVResult.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/external/capture-device-support/Library/ElgatoUVCDevice.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/external/capture-device-support/Library/win/EGAVHIDImplementation.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/external/capture-device-support/SampleCode/DriverInterface.cpp
+)
 source_group(
   "libdshowcapture\\Source Files"
-  FILES libdshowcapture/source/capture-filter.cpp
-        libdshowcapture/source/output-filter.cpp
-        libdshowcapture/source/dshowcapture.cpp
-        libdshowcapture/source/dshowencode.cpp
-        libdshowcapture/source/device.cpp
-        libdshowcapture/source/device-vendor.cpp
-        libdshowcapture/source/encoder.cpp
-        libdshowcapture/source/dshow-base.cpp
-        libdshowcapture/source/dshow-demux.cpp
-        libdshowcapture/source/dshow-enum.cpp
-        libdshowcapture/source/dshow-formats.cpp
-        libdshowcapture/source/dshow-media-type.cpp
-        libdshowcapture/source/dshow-encoded-device.cpp
-        libdshowcapture/source/log.cpp)
+  FILES
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/capture-filter.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/output-filter.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/dshowcapture.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/dshowencode.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/device.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/device-vendor.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/encoder.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/dshow-base.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/dshow-demux.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/dshow-enum.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/dshow-formats.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/dshow-media-type.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/dshow-encoded-device.cpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/log.cpp
+)
 source_group(
   "libdshowcapture\\Header Files"
-  FILES libdshowcapture/dshowcapture.hpp
-        libdshowcapture/source/capture-filter.hpp
-        libdshowcapture/source/output-filter.hpp
-        libdshowcapture/source/device.hpp
-        libdshowcapture/source/encoder.hpp
-        libdshowcapture/source/dshow-base.hpp
-        libdshowcapture/source/dshow-demux.hpp
-        libdshowcapture/source/dshow-device-defs.hpp
-        libdshowcapture/source/dshow-enum.hpp
-        libdshowcapture/source/dshow-formats.hpp
-        libdshowcapture/source/dshow-media-type.hpp
-        libdshowcapture/source/log.hpp
-        libdshowcapture/source/external/IVideoCaptureFilter.h)
+  FILES
+    libdshowcapture/dshowcapture.hpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/capture-filter.hpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/output-filter.hpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/device.hpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/encoder.hpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/dshow-base.hpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/dshow-demux.hpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/dshow-device-defs.hpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/dshow-enum.hpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/dshow-formats.hpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/dshow-media-type.hpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/log.hpp
+    ${CMAKE_SOURCE_DIR}/deps/libdshowcapture/src/external/IVideoCaptureFilter.h
+)
 
 set_target_properties(win-dshow PROPERTIES FOLDER "plugins/win-dshow")
 
 setup_plugin_target(win-dshow)
 
 if(ENABLE_VIRTUALCAM AND VIRTUALCAM_AVAILABLE)
-  target_sources(win-dshow PRIVATE tiny-nv12-scale.c tiny-nv12-scale.h shared-memory-queue.c shared-memory-queue.h
-                                   virtualcam.c)
+  target_sources(
+    win-dshow
+    PRIVATE tiny-nv12-scale.c tiny-nv12-scale.h shared-memory-queue.c shared-memory-queue.h virtualcam.c
+  )
 
   target_compile_definitions(win-dshow PRIVATE VIRTUALCAM_AVAILABLE)
 
   target_include_directories(win-dshow PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/config)
 
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/virtualcam-module/virtualcam-guid.h.in
-                 ${CMAKE_CURRENT_BINARY_DIR}/config/virtualcam-guid.h)
+  configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/virtualcam-module/virtualcam-guid.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/config/virtualcam-guid.h
+  )
 
   target_sources(win-dshow PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/config/virtualcam-guid.h)
 
