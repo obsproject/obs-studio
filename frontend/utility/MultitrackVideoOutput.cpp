@@ -545,7 +545,7 @@ void MultitrackVideoOutput::StopStreaming()
 }
 
 bool MultitrackVideoOutput::HandleIncompatibleSettings(QWidget *parent, config_t *config, obs_service_t *service,
-						       bool &enableNewSocketLoop, bool &enableDynBitrate)
+						       bool &enableDynBitrate)
 {
 	QString incompatible_settings;
 	QString where_to_disable;
@@ -570,10 +570,6 @@ bool MultitrackVideoOutput::HandleIncompatibleSettings(QWidget *parent, config_t
 		num += 1;
 	};
 
-#ifdef _WIN32
-	check_setting(enableNewSocketLoop, "Basic.Settings.Advanced.Network.EnableNewSocketLoop",
-		      "Basic.Settings.Advanced.Network");
-#endif
 	check_setting(enableDynBitrate, "Basic.Settings.Output.DynamicBitrate.Beta", "Basic.Settings.Advanced.Network");
 
 	if (incompatible_settings.isEmpty())
@@ -609,13 +605,9 @@ bool MultitrackVideoOutput::HandleIncompatibleSettings(QWidget *parent, config_t
 	     incompatible_settings_list.toUtf8().constData(), action);
 
 	if (mb.clickedButton() == this_stream || mb.clickedButton() == all_streams) {
-		enableNewSocketLoop = false;
 		enableDynBitrate = false;
 
 		if (mb.clickedButton() == all_streams) {
-#ifdef _WIN32
-			config_set_bool(config, "Output", "NewSocketLoopEnable", false);
-#endif
 			config_set_bool(config, "Output", "DynamicBitrate", false);
 		}
 
