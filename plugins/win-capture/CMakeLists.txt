@@ -1,23 +1,14 @@
 cmake_minimum_required(VERSION 3.24...3.25)
 
-if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
-  add_library(hook-config INTERFACE)
-  add_library(OBS::hook-config ALIAS hook-config)
-  target_sources(hook-config INTERFACE graphics-hook-ver.h graphics-hook-info.h hook-helpers.h)
-  target_include_directories(hook-config INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
+legacy_check()
 
-  add_library(inject-library INTERFACE)
-  add_library(OBS::inject-library ALIAS inject-library)
-  target_sources(inject-library INTERFACE inject-library.c inject-library.h)
-  target_include_directories(inject-library INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
-
-  add_library(d3d8-api INTERFACE)
-  add_library(OBS::d3d8-api ALIAS d3d8-api)
-  target_sources(d3d8-api INTERFACE d3d8-api/d3d8.h d3d8-api/d3d8caps.h d3d8-api/d3d8types.h)
-  target_include_directories(d3d8-api INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/d3d8-api")
+if(NOT TARGET OBS::obfuscate)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/libobs" "${CMAKE_BINARY_DIR}/libobs")
 endif()
 
-legacy_check()
+if(NOT TARGET OBS::inject-library)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/obs-inject-library" "${CMAKE_BINARY_DIR}/shared/obs-inject-library")
+endif()
 
 option(ENABLE_COMPAT_UPDATES "Checks for capture compatibility data updates" ON)
 
