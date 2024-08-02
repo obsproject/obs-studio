@@ -56,7 +56,7 @@ invoke_formatter() {
 
       if (( ! #source_files )) source_files=((libobs|libobs-*|UI|plugins|deps|shared)/**/*.(c|cpp|h|hpp|m|mm)(.N))
 
-      source_files=(${source_files:#*/(obs-websocket/deps|decklink/*/decklink-sdk|mac-syphon/syphon-framework|win-dshow/libdshowcapture)/*})
+      source_files=(${source_files:#*/(obs-websocket/deps|decklink/*/decklink-sdk|mac-syphon/syphon-framework|libdshowcapture)/*})
 
       local -a format_args=(-style=file -fallback-style=none)
       if (( _loglevel > 2 )) format_args+=(--verbose)
@@ -104,7 +104,7 @@ invoke_formatter() {
 
       if (( ! #source_files )) source_files=(CMakeLists.txt (libobs|libobs-*|UI|plugins|deps|shared|cmake|test)/**/(CMakeLists.txt|*.cmake)(.N))
 
-      source_files=(${source_files:#*/(jansson|decklink/*/decklink-sdk|obs-websocket|obs-browser|win-dshow/libdshowcapture)/*})
+      source_files=(${source_files:#*/(jansson|decklink/*/decklink-sdk|obs-websocket|obs-browser|libdshowcapture)/*})
       source_files=(${source_files:#(cmake/Modules/*|*/legacy.cmake)})
 
       check_files() {

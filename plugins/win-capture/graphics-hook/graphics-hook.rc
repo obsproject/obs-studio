@@ -11,7 +11,7 @@
  *
  * THIS IS YOUR ONLY WARNING. */
 
-#include "../graphics-hook-ver.h"
+#include <graphics-hook-ver.h>
 
 1 VERSIONINFO
 FILEVERSION HOOK_VER_MAJOR,HOOK_VER_MINOR,HOOK_VER_PATCH,0
