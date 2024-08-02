@@ -674,14 +674,11 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 #ifdef _WIN32
 	bool enableNewSocketLoop = config_get_bool(main->Config(), "Output", "NewSocketLoopEnable");
 	bool enableLowLatencyMode = config_get_bool(main->Config(), "Output", "LowLatencyEnable");
-#else
-	bool enableNewSocketLoop = false;
 #endif
 	bool enableDynBitrate = config_get_bool(main->Config(), "Output", "DynamicBitrate");
 
 	if (multitrackVideo && multitrackVideoActive &&
-	    !multitrackVideo->HandleIncompatibleSettings(main, main->Config(), service, enableNewSocketLoop,
-							 enableDynBitrate)) {
+	    !multitrackVideo->HandleIncompatibleSettings(main, main->Config(), service, enableDynBitrate)) {
 		multitrackVideoActive = false;
 		return false;
 	}
