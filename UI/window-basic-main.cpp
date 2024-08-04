@@ -470,6 +470,33 @@ OBSBasic::OBSBasic(QWidget *parent)
 	connect(windowHandle(), &QWindow::screenChanged, displayResize);
 	connect(ui->preview, &OBSQTDisplay::DisplayResized, displayResize);
 
+	/* TODO: Move these into window-basic-preview */
+	/* Preview Scaling label */
+	connect(ui->preview, &OBSBasicPreview::scalingChanged,
+		ui->previewScalePercent,
+		&OBSPreviewScalingLabel::on_previewScaleChanged);
+	connect(ui->preview, &OBSQTDisplay::DisplayResized,
+		ui->previewScalePercent,
+		&OBSPreviewScalingLabel::on_previewResized);
+
+	/* Preview Scaling dropdown */
+	connect(ui->preview, &OBSBasicPreview::scalingChanged,
+		ui->previewScalingMode,
+		&OBSPreviewScalingComboBox::on_previewScaleChanged);
+
+	connect(ui->preview, &OBSBasicPreview::fixedScalingChanged,
+		ui->previewScalingMode,
+		&OBSPreviewScalingComboBox::on_previewFixedScalingChanged);
+
+	connect(ui->previewScalingMode,
+		&OBSPreviewScalingComboBox::currentIndexChanged, this,
+		&OBSBasic::on_previewScalingMode_changed);
+
+	connect(this, &OBSBasic::CanvasResized, ui->previewScalingMode,
+		&OBSPreviewScalingComboBox::on_canvasResized);
+	connect(this, &OBSBasic::OutputResized, ui->previewScalingMode,
+		&OBSPreviewScalingComboBox::on_outputResized);
+
 	delete shortcutFilter;
 	shortcutFilter = CreateShortcutFilter();
 	installEventFilter(shortcutFilter);
@@ -4906,6 +4933,9 @@ int OBSBasic::ResetVideo()
 		obs_set_video_levels(sdr_white_level, hdr_nominal_peak_level);
 		OBSBasicStats::InitializeValues();
 		OBSProjector::UpdateMultiviewProjectors();
+
+		emit CanvasResized(ovi.base_width, ovi.base_height);
+		emit OutputResized(ovi.output_width, ovi.output_height);
 	}
 
 	return ret;
@@ -5014,6 +5044,8 @@ void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)
 					     PREVIEW_EDGE_SIZE * 2,
 				     previewX, previewY, previewScale);
 	}
+
+	ui->preview->SetScalingAmount(previewScale);
 
 	previewX += float(PREVIEW_EDGE_SIZE);
 	previewY += float(PREVIEW_EDGE_SIZE);
@@ -9174,7 +9206,7 @@ void OBSBasic::on_actionHorizontalCenter_triggered()
 void OBSBasic::EnablePreviewDisplay(bool enable)
 {
 	obs_display_set_enabled(ui->preview->GetDisplay(), enable);
-	ui->preview->setVisible(enable);
+	ui->previewContainer->setVisible(enable);
 	ui->previewDisabledWidget->setVisible(!enable);
 }
 
@@ -9778,6 +9810,7 @@ void OBSBasic::on_actionScaleCanvas_triggered()
 {
 	ui->preview->SetFixedScaling(true);
 	ui->preview->SetScalingLevel(0);
+
 	emit ui->preview->DisplayResized();
 }
 
@@ -9791,7 +9824,8 @@ void OBSBasic::on_actionScaleOutput_triggered()
 	// log base ZOOM_SENSITIVITY of x = log(x) / log(ZOOM_SENSITIVITY)
 	int32_t approxScalingLevel =
 		int32_t(round(log(scalingAmount) / log(ZOOM_SENSITIVITY)));
-	ui->preview->SetScalingLevel(approxScalingLevel);
+	ui->preview->SetScalingLevelAndAmount(approxScalingLevel,
+					      scalingAmount);
 	emit ui->preview->DisplayResized();
 }
 
@@ -11119,4 +11153,33 @@ void OBSBasic::on_previewYScrollBar_valueChanged(int value)
 
 	emit ui->preview->DisplayResized();
 	ui->preview->updatingYScrollBar = false;
+}
+
+void OBSBasic::on_previewScalingMode_changed(int value)
+{
+	if (value == 0) {
+		ui->preview->SetFixedScaling(false);
+		ui->preview->ResetScrollingOffset();
+	}
+
+	if (value == 1) {
+		ui->preview->SetFixedScaling(true);
+		ui->preview->SetScalingLevel(0);
+	}
+
+	if (value == 2) {
+		ui->preview->SetFixedScaling(true);
+
+		obs_video_info ovi;
+		obs_get_video_info(&ovi);
+
+		float scalingAmount =
+			float(ovi.output_width) / float(ovi.base_width);
+		int32_t approxScalingLevel = int32_t(
+			round(log(scalingAmount) / log(ZOOM_SENSITIVITY)));
+		ui->preview->SetScalingLevelAndAmount(approxScalingLevel,
+						      scalingAmount);
+	}
+
+	emit ui->preview->DisplayResized();
 }

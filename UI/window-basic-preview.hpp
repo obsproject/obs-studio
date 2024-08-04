@@ -8,6 +8,7 @@
 #include <vector>
 #include "qt-display.hpp"
 #include "obs-app.hpp"
+#include "window-basic-preview-controls.hpp"
 
 class OBSBasic;
 class QMouseEvent;
@@ -157,11 +158,14 @@ public:
 			return;
 
 		fixedScaling = newFixedScalingVal;
+		emit fixedScalingChanged(fixedScaling);
 	}
 	inline bool IsFixedScaling() const { return fixedScaling; }
 
 	void SetScalingLevel(int32_t newScalingLevelVal);
 	void SetScalingAmount(float newScalingAmountVal);
+	void SetScalingLevelAndAmount(int32_t newScalingLevelVal,
+				      float newScalingAmountVal);
 	inline int32_t GetScalingLevel() const { return scalingLevel; }
 	inline float GetScalingAmount() const { return scalingAmount; }
 
@@ -206,4 +210,8 @@ public:
 	void ClampScrollingOffsets();
 	void UpdateXScrollBar(float cx);
 	void UpdateYScrollBar(float cy);
+
+signals:
+	void scalingChanged(float scalingAmount);
+	void fixedScalingChanged(bool isFixed);
 };

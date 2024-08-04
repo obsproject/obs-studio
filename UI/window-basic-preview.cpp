@@ -2327,7 +2327,21 @@ void OBSBasicPreview::SetScalingAmount(float newScalingAmountVal)
 {
 	scrollingOffset.x *= newScalingAmountVal / scalingAmount;
 	scrollingOffset.y *= newScalingAmountVal / scalingAmount;
+
+	if (scalingAmount == newScalingAmountVal)
+		return;
+
 	scalingAmount = newScalingAmountVal;
+	emit scalingChanged(scalingAmount);
+}
+
+void OBSBasicPreview::SetScalingLevelAndAmount(int32_t newScalingLevelVal,
+					       float newScalingAmountVal)
+{
+	newScalingLevelVal = std::clamp(newScalingLevelVal, -MAX_SCALING_LEVEL,
+					MAX_SCALING_LEVEL);
+	scalingLevel = newScalingLevelVal;
+	SetScalingAmount(newScalingAmountVal);
 }
 
 OBSBasicPreview *OBSBasicPreview::Get()

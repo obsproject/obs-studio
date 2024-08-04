@@ -812,6 +812,8 @@ private slots:
 	void on_previewXScrollBar_valueChanged(int value);
 	void on_previewYScrollBar_valueChanged(int value);
 
+	void on_previewScalingMode_changed(int value);
+
 	void ColorChange();
 
 	SourceTreeItem *GetItemWidgetFromSceneItem(obs_sceneitem_t *sceneItem);
@@ -1294,6 +1296,8 @@ signals:
 
 	/* Studio Mode signal */
 	void PreviewProgramModeChanged(bool enabled);
+	void CanvasResized(uint32_t width, uint32_t height);
+	void OutputResized(uint32_t width, uint32_t height);
 
 private:
 	std::unique_ptr<Ui::OBSBasic> ui;

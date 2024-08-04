@@ -23,6 +23,8 @@ target_sources(
           window-basic-main-transitions.cpp
           window-basic-main.cpp
           window-basic-main.hpp
+          window-basic-preview-controls.cpp
+          window-basic-preview-controls.hpp
           window-basic-preview.cpp
           window-basic-preview.hpp
           window-basic-properties.cpp
