@@ -251,10 +251,10 @@ struct glyph_info *init_glyph(FT_GlyphSlot slot, const uint32_t dx,
 	return glyph;
 }
 
-uint8_t get_pixel_value(const unsigned char *buf_row,
-			FT_Render_Mode render_mode, const uint32_t x)
+uint8_t get_pixel_value(const unsigned char *buf_row, FT_Pixel_Mode pixel_mode,
+			const uint32_t x)
 {
-	if (render_mode == FT_RENDER_MODE_NORMAL) {
+	if (pixel_mode == FT_PIXEL_MODE_GRAY) {
 		return buf_row[x];
 	}
 
@@ -264,8 +264,7 @@ uint8_t get_pixel_value(const unsigned char *buf_row,
 	return pixel_set ? 255 : 0;
 }
 
-void rasterize(struct ft2_source *srcdata, FT_GlyphSlot slot,
-	       const FT_Render_Mode render_mode, const uint32_t dx,
+void rasterize(struct ft2_source *srcdata, FT_GlyphSlot slot, const uint32_t dx,
 	       const uint32_t dy)
 {
 	/**
@@ -274,7 +273,7 @@ void rasterize(struct ft2_source *srcdata, FT_GlyphSlot slot,
 	 *
 	 * Source: https://www.freetype.org/freetype2/docs/reference/ft2-basic_types.html
 	 */
-	const int pitch = abs(slot->bitmap.pitch);
+	const uint32_t pitch = abs(slot->bitmap.pitch);
 
 	for (uint32_t y = 0; y < slot->bitmap.rows; y++) {
 		const uint32_t row_start = y * pitch;
@@ -284,7 +283,7 @@ void rasterize(struct ft2_source *srcdata, FT_GlyphSlot slot,
 			const uint32_t row_pixel_position = dx + x;
 			const uint8_t pixel_value =
 				get_pixel_value(&slot->bitmap.buffer[row_start],
-						render_mode, x);
+						slot->bitmap.pixel_mode, x);
 			srcdata->texbuf[row_pixel_position + row] = pixel_value;
 		}
 	}
@@ -335,7 +334,7 @@ void cache_glyphs(struct ft2_source *srcdata, wchar_t *cache_glyphs)
 		}
 
 		src_glyph = init_glyph(slot, dx, dy, g_w, g_h);
-		rasterize(srcdata, slot, render_mode, dx, dy);
+		rasterize(srcdata, slot, dx, dy);
 
 		dx += (g_w + 1);
 		if (dx >= texbuf_w) {
