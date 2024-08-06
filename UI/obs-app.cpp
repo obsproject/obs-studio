@@ -603,6 +603,15 @@ static bool MakeUserProfileDirs()
 	return true;
 }
 
+static bool MakeRecordingDir()
+{
+	string path = GetDefaultVideoSavePath();
+	if (!do_mkdir(path.c_str()))
+		return false;
+
+	return true;
+}
+
 static string GetProfileDirFromName(const char *name)
 {
 	string outputPath;
@@ -1181,6 +1190,8 @@ void OBSApp::AppInit()
 
 	if (!MakeUserDirs())
 		throw "Failed to create required user directories";
+	if (!MakeRecordingDir())
+		throw "Failed to create recording directory";
 	if (!InitGlobalConfig())
 		throw "Failed to initialize global config";
 	if (!InitLocale())

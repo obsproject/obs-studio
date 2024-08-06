@@ -58,14 +58,20 @@ void CheckIfAlreadyRunning(bool &already_running)
 
 string GetDefaultVideoSavePath()
 {
-    NSFileManager *fm = [NSFileManager defaultManager];
-    NSURL *url = [fm URLForDirectory:NSMoviesDirectory inDomain:NSUserDomainMask appropriateForURL:nil create:true
-                               error:nil];
+    NSFileManager *defaultManager = [NSFileManager defaultManager];
+    NSURL *moviesDirectory = [defaultManager URLForDirectory:NSMoviesDirectory inDomain:NSUserDomainMask
+                                           appropriateForURL:nil
+                                                      create:YES
+                                                       error:nil];
 
-    if (!url)
-        return getenv("HOME");
+    if (moviesDirectory) {
+        const string videoSavePath =
+            [moviesDirectory URLByAppendingPathComponent:@"OBS-Studio" isDirectory:YES].path.fileSystemRepresentation;
 
-    return url.path.fileSystemRepresentation;
+        return videoSavePath;
+    }
+
+    return getenv("HOME");
 }
 
 vector<string> GetPreferredLocales()
