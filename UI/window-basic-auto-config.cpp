@@ -174,8 +174,16 @@ AutoConfigVideoPage::AutoConfigVideoPage(QWidget *parent)
 
 		// Calculate physical screen resolution based on the virtual screen resolution
 		// They might differ if scaling is enabled, e.g. for HiDPI screens
-		as_width = round(as_width * screen->devicePixelRatio());
-		as_height = round(as_height * screen->devicePixelRatio());
+		// NOTE: On Wayland, QScreen.size is physical rather than logical, so skip it
+
+#if !defined(__APPLE__) && !defined(_WIN32)
+		if (!QApplication::platformName().contains("wayland"))
+#endif
+		{
+			as_width = round(as_width * screen->devicePixelRatio());
+			as_height =
+				round(as_height * screen->devicePixelRatio());
+		}
 
 		encRes = as_width << 16 | as_height;
 
