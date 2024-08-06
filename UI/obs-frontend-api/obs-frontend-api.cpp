@@ -356,6 +356,26 @@ bool obs_frontend_add_custom_qdock(const char *id, void *dock)
 				   : false;
 }
 
+bool obs_frontend_is_browser_available(void)
+{
+	return !!callbacks_valid() ? c->obs_frontend_is_browser_available()
+				   : false;
+}
+
+bool obs_frontend_add_browser_dock(const char *id, const char *title,
+				   struct obs_frontend_browser_params *params)
+{
+	return !!callbacks_valid()
+		       ? c->obs_frontend_add_browser_dock(id, title, params)
+		       : false;
+}
+
+void obs_frontend_change_browser_dock_url(const char *id, const char *url)
+{
+	if (callbacks_valid())
+		c->obs_frontend_change_browser_dock_url(id, url);
+}
+
 void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
 				     void *private_data)
 {

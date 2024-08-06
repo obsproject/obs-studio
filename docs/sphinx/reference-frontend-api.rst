@@ -219,6 +219,22 @@ Structures/Enumerations
 
       obs_frontend_source_list_free(&scenes);
 
+.. type:: struct obs_frontend_browser_params
+
+   - const char* **url**
+   - struct dstr **startup_script**
+   - DARRAY(char*) **force_popup_urls**
+
+.. code:: cpp
+
+   struct obs_frontend_browser_params params = {0};
+
+   params.url = "https://obsproject.com/";
+
+   obs_frontend_add_browser_dock("example", "Example", &params);
+
+   obs_frontend_browser_params_free(&params);
+
 .. type:: void (*obs_frontend_cb)(void *private_data)
 
    Frontend tool menu callback
@@ -248,6 +264,14 @@ Functions
    Releases sources within a source list and frees the list.
 
    :param source_list: Source list to free
+
+---------------------------------------
+
+.. function:: void obs_frontend_browser_params_free(struct obs_frontend_browser_params *params)
+
+   Frees the startup script and force popup URLs if not empty.
+
+   :param params: Browser parameters with dynamic types to free
 
 ---------------------------------------
 
@@ -522,6 +546,39 @@ Functions
             used
 
    .. versionadded:: 30.0
+
+---------------------------------------
+
+.. function:: bool obs_frontend_is_browser_available(void)
+
+   :return: If browser feature is available (built with obs-browser or
+            not runnning under Wayland)
+
+---------------------------------------
+
+.. function:: bool obs_frontend_add_browser_dock(const char *id, const char *title, struct obs_frontend_browser_params* params)
+
+   Adds a browser dock with the widget to the UI with a toggle in the Docks
+   menu.
+
+   Note: Use :c:func:`obs_frontend_remove_dock` to remove the dock
+         and the id from the UI.
+
+   :param id: Unique identifier of the dock
+   :param title: Window title of the dock
+   :param params: Parameters of the browser widget
+   :return: *true* if the dock was added, *false* if the id was already
+            used
+
+---------------------------------------
+
+.. function:: void obs_frontend_change_browser_dock_url(const char *id, const char *url)
+
+   Change the URL of browser dock created with
+   :c:func:`obs_frontend_add_browser_dock`.
+
+   :param id: Unique identifier of the targeted browser dock
+   :param url: New URL
 
 ---------------------------------------
 

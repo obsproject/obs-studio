@@ -74,6 +74,13 @@ struct obs_frontend_callbacks {
 	virtual bool obs_frontend_add_custom_qdock(const char *id,
 						   void *dock) = 0;
 
+	virtual bool obs_frontend_is_browser_available(void) = 0;
+	virtual bool obs_frontend_add_browser_dock(
+		const char *id, const char *title,
+		struct obs_frontend_browser_params *params) = 0;
+	virtual void obs_frontend_change_browser_dock_url(const char *id,
+							  const char *url) = 0;
+
 	virtual void
 	obs_frontend_add_event_callback(obs_frontend_event_cb callback,
 					void *private_data) = 0;

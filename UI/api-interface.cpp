@@ -6,6 +6,10 @@
 
 #include <functional>
 
+#ifdef ENABLE_WAYLAND
+#include <obs-nix-platform.h>
+#endif
+
 using namespace std;
 
 Q_DECLARE_METATYPE(OBSScene);
@@ -460,6 +464,76 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		main->AddCustomDockWidget(d);
 
 		return true;
+	}
+
+	bool obs_frontend_is_browser_available(void) override
+	{
+#ifdef BROWSER_AVAILABLE
+#ifdef ENABLE_WAYLAND
+		return (obs_get_nix_platform() != OBS_NIX_PLATFORM_WAYLAND);
+#else
+		return true;
+#endif
+#else
+		return false;
+#endif
+	}
+
+	bool obs_frontend_add_browser_dock(
+		const char *id, const char *title,
+		struct obs_frontend_browser_params *params) override
+	{
+#ifdef BROWSER_AVAILABLE
+		if (!obs_frontend_is_browser_available())
+			return false;
+
+		if (main->IsDockObjectNameUsed(QT_UTF8(id))) {
+			blog(LOG_WARNING,
+			     "Dock id '%s' already used!  "
+			     "Duplicate library?",
+			     id);
+			return false;
+		}
+
+		PluginBrowserParams dock;
+		dock.id = QT_UTF8(id);
+		dock.title = QT_UTF8(title);
+
+		dock.url = QT_UTF8(params->url);
+
+		for (size_t i = 0; i < params->force_popup_urls.num; i++)
+			dock.forcePopupUrls.append(
+				params->force_popup_urls.array[i]);
+
+		dock.startupScript = QT_UTF8(params->startup_script.array);
+
+		if (main->IsBrowserInitialised())
+			main->AddPluginBrowserDock(dock);
+		else
+			main->StorePluginBrowserDock(dock);
+
+		return true;
+#else
+		UNUSED_PARAMETER(id);
+		UNUSED_PARAMETER(title);
+		UNUSED_PARAMETER(params);
+
+		return false;
+#endif
+	}
+
+	void obs_frontend_change_browser_dock_url(const char *id,
+						  const char *url) override
+	{
+#ifdef BROWSER_AVAILABLE
+		if (!id && !url)
+			return;
+
+		main->ChangePluginBrowserDockUrl(id, url);
+#else
+		UNUSED_PARAMETER(id);
+		UNUSED_PARAMETER(url);
+#endif
 	}
 
 	void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
