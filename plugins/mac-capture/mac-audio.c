@@ -692,7 +692,8 @@ static bool coreaudio_init(struct coreaudio_data *ca)
 	if (!coreaudio_start(ca))
 		goto fail;
 
-	blog(LOG_INFO, "coreaudio: Device '%s' [%" PRIu32 " Hz] initialized", ca->device_name, ca->sample_rate);
+	blog(LOG_INFO, "coreaudio: Device '%s' [%" PRIu32 " Hz] initialized (source: %s)", ca->device_name,
+	     ca->sample_rate, obs_source_get_name(ca->source));
 	return ca->au_initialized;
 
 fail:
