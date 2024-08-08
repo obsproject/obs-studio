@@ -1,4 +1,4 @@
-#include "double-slider.hpp"
+#include "moc_double-slider.cpp"
 
 #include <cmath>
 
