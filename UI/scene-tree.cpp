@@ -1,4 +1,4 @@
-#include "scene-tree.hpp"
+#include "moc_scene-tree.cpp"
 
 #include <QSizePolicy>
 #include <QScrollBar>

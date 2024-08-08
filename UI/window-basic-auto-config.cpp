@@ -6,7 +6,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include "window-basic-auto-config.hpp"
+#include "moc_window-basic-auto-config.cpp"
 #include "window-basic-main.hpp"
 #include "obs-app.hpp"
 #include "url-push-button.hpp"

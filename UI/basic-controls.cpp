@@ -1,4 +1,4 @@
-#include "basic-controls.hpp"
+#include "moc_basic-controls.cpp"
 
 #include "window-basic-main.hpp"
 

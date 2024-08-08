@@ -1,4 +1,4 @@
-#include "auth-twitch.hpp"
+#include "moc_auth-twitch.cpp"
 
 #include <QRegularExpression>
 #include <QPushButton>

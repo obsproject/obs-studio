@@ -1,5 +1,5 @@
 #include <QResizeEvent>
-#include "horizontal-scroll-area.hpp"
+#include "moc_horizontal-scroll-area.cpp"
 
 void HScrollArea::resizeEvent(QResizeEvent *event)
 {

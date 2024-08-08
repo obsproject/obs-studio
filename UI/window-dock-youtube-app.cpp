@@ -2,7 +2,7 @@
 
 #include "window-basic-main.hpp"
 #include "youtube-api-wrappers.hpp"
-#include "window-dock-youtube-app.hpp"
+#include "moc_window-dock-youtube-app.cpp"
 
 #include "ui-config.h"
 #include "qt-wrappers.hpp"

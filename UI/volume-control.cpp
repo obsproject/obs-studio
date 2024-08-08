@@ -1,5 +1,5 @@
 #include "window-basic-main.hpp"
-#include "volume-control.hpp"
+#include "moc_volume-control.cpp"
 #include "obs-app.hpp"
 #include "mute-checkbox.hpp"
 #include "absolute-slider.hpp"

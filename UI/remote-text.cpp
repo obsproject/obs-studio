@@ -18,7 +18,7 @@
 #include <util/curl/curl-helper.h>
 #include <qt-wrappers.hpp>
 #include "obs-app.hpp"
-#include "remote-text.hpp"
+#include "moc_remote-text.cpp"
 
 using namespace std;
 
