@@ -31,6 +31,10 @@ target_sources(
           formats.c
           formats.h
           linux-pipewire.c
+          pipewire-audio-capture-app.c
+          pipewire-audio-capture-device.c
+          pipewire-audio.c
+          pipewire-audio.h
           pipewire.c
           pipewire.h
           portal.c
