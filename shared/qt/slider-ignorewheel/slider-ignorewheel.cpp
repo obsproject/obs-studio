@@ -1,4 +1,4 @@
-#include "slider-ignorewheel.hpp"
+#include "moc_slider-ignorewheel.cpp"
 
 SliderIgnoreScroll::SliderIgnoreScroll(QWidget *parent) : QSlider(parent)
 {

@@ -1,4 +1,4 @@
-#include <plain-text-edit.hpp>
+#include "moc_plain-text-edit.cpp"
 #include <QFontDatabase>
 
 OBSPlainTextEdit::OBSPlainTextEdit(QWidget *parent, bool monospace)
