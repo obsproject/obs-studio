@@ -1,5 +1,5 @@
 #include <QResizeEvent>
-#include "vertical-scroll-area.hpp"
+#include "moc_vertical-scroll-area.cpp"
 
 void VScrollArea::resizeEvent(QResizeEvent *event)
 {
