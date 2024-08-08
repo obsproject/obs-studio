@@ -124,7 +124,7 @@ elseif(OS_POSIX AND NOT OS_MACOS)
   target_link_libraries(obs-ffmpeg PRIVATE Libva::va Libva::drm LIBPCI::LIBPCI Libdrm::Libdrm)
 
   if(ENABLE_NATIVE_NVENC)
-    find_package(FFnvcodec 12.0.0.0...<12.2.0.0 REQUIRED)
+    find_package(FFnvcodec 12.0.0.0...<12.3.0.0 REQUIRED)
     target_sources(obs-ffmpeg PRIVATE obs-nvenc.c obs-nvenc.h obs-nvenc-helpers.c obs-nvenc-ver.h)
     target_link_libraries(obs-ffmpeg PRIVATE FFnvcodec::FFnvcodec OBS::obsglad)
     target_compile_definitions(obs-ffmpeg PRIVATE NVCODEC_AVAILABLE)
