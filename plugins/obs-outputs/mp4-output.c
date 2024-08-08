@@ -434,6 +434,12 @@ static void mp4_output_stop(void *data, uint64_t ts)
 	os_atomic_set_bool(&out->stopping, true);
 }
 
+static void mp4_mux_destroy_task(void *ptr)
+{
+	struct mp4_mux *muxer = ptr;
+	mp4_mux_destroy(muxer);
+}
+
 static void mp4_output_actual_stop(struct mp4_output *out, int code)
 {
 	os_atomic_set_bool(&out->active, false);
@@ -457,7 +463,8 @@ static void mp4_output_actual_stop(struct mp4_output *out, int code)
 
 	/* Flush/close output file and destroy muxer */
 	buffered_file_serializer_free(&out->serializer);
-	mp4_mux_destroy(out->muxer);
+	obs_queue_task(OBS_TASK_DESTROY, mp4_mux_destroy_task, out->muxer,
+		       false);
 	out->muxer = NULL;
 
 	/* Clear chapter data */
