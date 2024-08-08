@@ -217,7 +217,7 @@ static CFDataRef obs_to_vt_masteringdisplay(uint32_t hdr_nominal_peak_level)
 	mdcv.white_point[1] = __builtin_bswap16(16450);
 	mdcv.max_display_mastering_luminance =
 		__builtin_bswap32(hdr_nominal_peak_level * 10000);
-	mdcv.min_display_mastering_luminance = 0;
+	mdcv.min_display_mastering_luminance = 1;
 
 	UInt8 bytes[sizeof(struct mastering_display_colour_volume)];
 	memcpy(bytes, &mdcv, sizeof(bytes));
