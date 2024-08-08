@@ -26,8 +26,13 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
+
+#if defined(__APPLE__) && !defined(__arm64__)
+#include <immintrin.h>
+#endif
+
 #define SIMDE_ENABLE_NATIVE_ALIASES
 PRAGMA_WARN_PUSH
-#include "simde/x86/sse2.h"
+#include <simde/x86/sse2.h>
 PRAGMA_WARN_POP
 #endif
