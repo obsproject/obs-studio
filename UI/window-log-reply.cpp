@@ -19,7 +19,7 @@
 #include <QUrl>
 #include <QUrlQuery>
 #include <QDesktopServices>
-#include "window-log-reply.hpp"
+#include "moc_window-log-reply.cpp"
 #include "obs-app.hpp"
 
 OBSLogReply::OBSLogReply(QWidget *parent, const QString &url, const bool crash)

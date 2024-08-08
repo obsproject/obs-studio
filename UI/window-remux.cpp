@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "window-remux.hpp"
+#include "moc_window-remux.cpp"
 
 #include "obs-app.hpp"
 

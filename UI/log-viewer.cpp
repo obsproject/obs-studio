@@ -10,7 +10,7 @@
 #include <string>
 #include <qt-wrappers.hpp>
 
-#include "log-viewer.hpp"
+#include "moc_log-viewer.cpp"
 
 OBSLogViewer::OBSLogViewer(QWidget *parent)
 	: QDialog(parent),

@@ -4,6 +4,7 @@
 #include <QMenu>
 #include <QScreen>
 #include <qt-wrappers.hpp>
+#include "moc_window-projector.cpp"
 #include "obs-app.hpp"
 #include "window-basic-main.hpp"
 #include "display-helpers.hpp"

@@ -7,7 +7,7 @@
 #include <cmath>
 #include <qt-wrappers.hpp>
 #include "obs-app.hpp"
-#include "adv-audio-control.hpp"
+#include "moc_adv-audio-control.cpp"
 #include "window-basic-main.hpp"
 
 #ifndef NSEC_PER_MSEC
