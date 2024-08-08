@@ -13,7 +13,8 @@ macro(check_vlc_path)
     NAMES vlc/libvlc.h
     HINTS ${PC_Libvlc_INCLUDEDIR} ${VLC_PATH}/include
     PATHS /usr/include /usr/local/include
-    DOC "LibVLC include directory")
+    DOC "LibVLC include directory"
+  )
 
   if(LibVLC_INCLUDE_DIR)
     target_include_directories(vlc-video PRIVATE "${LibVLC_INCLUDE_DIR}")
@@ -44,6 +45,4 @@ if(OS_WINDOWS)
   target_sources(vlc-video PRIVATE vlc-video.rc)
 endif()
 
-# cmake-format: off
 set_target_properties_obs(vlc-video PROPERTIES FOLDER plugins PREFIX "")
-# cmake-format: on

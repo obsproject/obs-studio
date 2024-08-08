@@ -36,11 +36,6 @@ The following cache variables may also be set:
 
 #]=======================================================================]
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-lint: disable=C0301
-# cmake-format: on
-
 include(FindPackageHandleStandardArgs)
 
 find_package(PkgConfig QUIET)
@@ -54,14 +49,16 @@ find_path(
   HINTS ${PC_Libdrm_INCLUDE_DIRS}
   PATHS /usr/include /usr/local/include
   PATH_SUFFIXES libdrm
-  DOC "Libdrm include directory")
+  DOC "Libdrm include directory"
+)
 
 find_library(
   Libdrm_LIBRARY
   NAMES drm libdrm
   HINTS ${PC_Libdrm_LIBRARY_DIRS}
   PATHS /usr/lib /usr/local/lib
-  DOC "Libdrm location")
+  DOC "Libdrm location"
+)
 
 if(PC_Libdrm_VERSION VERSION_GREATER 0)
   set(Libdrm_VERSION ${PC_Libdrm_VERSION})
@@ -75,7 +72,9 @@ endif()
 find_package_handle_standard_args(
   Libdrm
   REQUIRED_VARS Libdrm_LIBRARY Libdrm_INCLUDE_DIR
-  VERSION_VAR Libdrm_VERSION REASON_FAILURE_MESSAGE "Ensure that libdrm is installed on the system.")
+  VERSION_VAR Libdrm_VERSION
+  REASON_FAILURE_MESSAGE "Ensure that libdrm is installed on the system."
+)
 mark_as_advanced(Libdrm_INCLUDE_DIR Libdrm_LIBRARY)
 
 if(Libdrm_FOUND)
@@ -90,16 +89,19 @@ if(Libdrm_FOUND)
 
     set_target_properties(
       Libdrm::Libdrm
-      PROPERTIES INTERFACE_COMPILE_OPTIONS "${PC_Libdrm_CFLAGS_OTHER}"
-                 INTERFACE_INCLUDE_DIRECTORIES "${Libdrm_INCLUDE_DIR}"
-                 VERSION ${Libdrm_VERSION})
+      PROPERTIES
+        INTERFACE_COMPILE_OPTIONS "${PC_Libdrm_CFLAGS_OTHER}"
+        INTERFACE_INCLUDE_DIRECTORIES "${Libdrm_INCLUDE_DIR}"
+        VERSION ${Libdrm_VERSION}
+    )
   endif()
 endif()
 
 include(FeatureSummary)
 set_package_properties(
-  Libdrm PROPERTIES
-  URL "https://gitlab.freedesktop.org/mesa/drm"
-  DESCRIPTION
-    "A low-level library, typically used by graphics drivers such as the Mesa drivers, the X drivers, libva and similar projects."
+  Libdrm
+  PROPERTIES
+    URL "https://gitlab.freedesktop.org/mesa/drm"
+    DESCRIPTION
+      "A low-level library, typically used by graphics drivers such as the Mesa drivers, the X drivers, libva and similar projects."
 )

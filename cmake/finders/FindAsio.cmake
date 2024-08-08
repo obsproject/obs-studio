@@ -31,11 +31,6 @@ The following cache variables may also be set:
 
 #]=======================================================================]
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-lint: disable=C0301
-# cmake-format: on
-
 include(FindPackageHandleStandardArgs)
 
 find_package(PkgConfig QUIET)
@@ -48,16 +43,26 @@ find_path(
   NAMES asio.hpp
   HINTS ${PC_Asio_INCLUDE_DIRS}
   PATHS /usr/include /usr/local/include
-  DOC "Asio include directory")
+  DOC "Asio include directory"
+)
 
 if(PC_Asio_VERSION VERSION_GREATER 0)
   set(Asio_VERSION ${PC_Asio_VERSION})
 elseif(EXISTS "${Asio_INCLUDE_DIR}/asio/version.hpp")
-  file(STRINGS "${Asio_INCLUDE_DIR}/asio/version.hpp" _version_string
-       REGEX "#define[ \t]+ASIO_VERSION[ \t]+[0-9]+[ \t]+\\/\\/[ \t][0-9]+\\.[0-9]+\\.[0-9]+")
+  file(
+    STRINGS
+    "${Asio_INCLUDE_DIR}/asio/version.hpp"
+    _version_string
+    REGEX "#define[ \t]+ASIO_VERSION[ \t]+[0-9]+[ \t]+\\/\\/[ \t][0-9]+\\.[0-9]+\\.[0-9]+"
+  )
 
-  string(REGEX REPLACE "#define[ \t]+ASIO_VERSION[ \t]+[0-9]+[ \t]+\\/\\/[ \t]([0-9]+\\.[0-9]+\\.[0-9]+)" "\\1"
-                       Asio_VERSION "${_version_string}")
+  string(
+    REGEX REPLACE
+    "#define[ \t]+ASIO_VERSION[ \t]+[0-9]+[ \t]+\\/\\/[ \t]([0-9]+\\.[0-9]+\\.[0-9]+)"
+    "\\1"
+    Asio_VERSION
+    "${_version_string}"
+  )
 else()
   if(NOT Asio_FIND_QUIETLY)
     message(AUTHOR_WARNING "Failed to find Asio version.")
@@ -74,7 +79,9 @@ endif()
 find_package_handle_standard_args(
   Asio
   REQUIRED_VARS Asio_INCLUDE_DIR
-  VERSION_VAR Asio_VERSION REASON_FAILURE_MESSAGE "${Asio_ERROR_REASON}")
+  VERSION_VAR Asio_VERSION
+  REASON_FAILURE_MESSAGE "${Asio_ERROR_REASON}"
+)
 mark_as_advanced(Asio_INCLUDE_DIR)
 unset(Asio_ERROR_REASON)
 
@@ -87,8 +94,9 @@ endif()
 
 include(FeatureSummary)
 set_package_properties(
-  Asio PROPERTIES
-  URL "http://think-async.com/Asio"
-  DESCRIPTION
-    "Asio is a cross-platform C++ library for network and low-level I/O programming that provides developers with a consistent asynchronous model using a modern C++ approach."
+  Asio
+  PROPERTIES
+    URL "http://think-async.com/Asio"
+    DESCRIPTION
+      "Asio is a cross-platform C++ library for network and low-level I/O programming that provides developers with a consistent asynchronous model using a modern C++ approach."
 )

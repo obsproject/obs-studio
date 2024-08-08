@@ -16,19 +16,18 @@ target_sources(libobs-winrt PRIVATE winrt-capture.cpp winrt-capture.h winrt-disp
 target_precompile_headers(
   libobs-winrt
   PRIVATE
-  <d3d11.h>
-  <DispatcherQueue.h>
-  <dwmapi.h>
-  <obs-module.h>
-  <util/windows/ComPtr.hpp>
-  <Windows.Graphics.Capture.Interop.h>
-  <windows.graphics.directx.direct3d11.interop.h>
-  <winrt/Windows.Foundation.Metadata.h>
-  <winrt/Windows.Graphics.Capture.h>
-  <winrt/Windows.System.h>)
+    <d3d11.h>
+    <DispatcherQueue.h>
+    <dwmapi.h>
+    <obs-module.h>
+    <util/windows/ComPtr.hpp>
+    <Windows.Graphics.Capture.Interop.h>
+    <windows.graphics.directx.direct3d11.interop.h>
+    <winrt/Windows.Foundation.Metadata.h>
+    <winrt/Windows.Graphics.Capture.h>
+    <winrt/Windows.System.h>
+)
 
 target_link_libraries(libobs-winrt PRIVATE OBS::libobs OBS::COMutils Dwmapi windowsapp)
 
-# cmake-format: off
 set_target_properties_obs(libobs-winrt PROPERTIES FOLDER core)
-# cmake-format: on

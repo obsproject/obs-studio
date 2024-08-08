@@ -4,9 +4,7 @@ if(NOT ENABLE_VIRTUALCAM)
 endif()
 
 if(NOT VIRTUALCAM_GUID)
-  set(VIRTUALCAM_GUID
-      ""
-      CACHE STRING "Virtual Camera GUID" FORCE)
+  set(VIRTUALCAM_GUID "" CACHE STRING "Virtual Camera GUID" FORCE)
   mark_as_advanced(VIRTUALCAM_GUID)
 
   message(WARNING "Empty Virtual Camera GUID set.")

@@ -36,11 +36,6 @@ The following cache variables may also be set:
 
 #]=======================================================================]
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-lint: disable=C0301
-# cmake-format: on
-
 include(FindPackageHandleStandardArgs)
 
 find_package(PkgConfig QUIET)
@@ -54,7 +49,8 @@ macro(libsrt_set_soname)
     execute_process(
       COMMAND sh -c "otool -D '${Libsrt_LIBRARY}' | grep -v '${Libsrt_LIBRARY}'"
       OUTPUT_VARIABLE _output
-      RESULT_VARIABLE _result)
+      RESULT_VARIABLE _result
+    )
 
     if(_result EQUAL 0 AND _output MATCHES "^@rpath/")
       set_property(TARGET Libsrt::Libsrt PROPERTY IMPORTED_SONAME "${_output}")
@@ -63,7 +59,8 @@ macro(libsrt_set_soname)
     execute_process(
       COMMAND sh -c "objdump -p '${Libsrt_LIBRARY}' | grep SONAME"
       OUTPUT_VARIABLE _output
-      RESULT_VARIABLE _result)
+      RESULT_VARIABLE _result
+    )
 
     if(_result EQUAL 0)
       string(REGEX REPLACE "[ \t]+SONAME[ \t]+([^ \t]+)" "\\1" _soname "${_output}")
@@ -80,7 +77,8 @@ find_path(
   NAMES srt.h srt/srt.h
   HINTS ${PC_Libsrt_INCLUDE_DIRS}
   PATHS /usr/include /usr/local/include
-  DOC "Libsrt include directory")
+  DOC "Libsrt include directory"
+)
 
 if(PC_Libsrt_VERSION VERSION_GREATER 0)
   set(Libsrt_VERSION ${PC_Libsrt_VERSION})
@@ -99,7 +97,8 @@ find_library(
   NAMES srt libsrt
   HINTS ${PC_Libsrt_LIBRARY_DIRS}
   PATHS /usr/lib /usr/local/lib
-  DOC "Libsrt location")
+  DOC "Libsrt location"
+)
 
 if(CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin|Windows")
   set(Libsrt_ERROR_REASON "Ensure that obs-deps is provided as part of CMAKE_PREFIX_PATH.")
@@ -110,7 +109,9 @@ endif()
 find_package_handle_standard_args(
   Libsrt
   REQUIRED_VARS Libsrt_LIBRARY Libsrt_INCLUDE_DIR
-  VERSION_VAR Libsrt_VERSION REASON_FAILURE_MESSAGE "${Libsrt_ERROR_REASON}")
+  VERSION_VAR Libsrt_VERSION
+  REASON_FAILURE_MESSAGE "${Libsrt_ERROR_REASON}"
+)
 mark_as_advanced(Libsrt_INCLUDE_DIR Libsrt_LIBRARY)
 unset(Libsrt_ERROR_REASON)
 
@@ -125,15 +126,20 @@ if(Libsrt_FOUND)
       set_property(TARGET Libsrt::Libsrt PROPERTY IMPORTED_LIBNAME "${Libsrt_LIBRARY}")
     endif()
 
-    set_target_properties(Libsrt::Libsrt PROPERTIES INTERFACE_COMPILE_OPTIONS "${PC_Libsrt_CFLAGS_OTHER}"
-                                                    INTERFACE_INCLUDE_DIRECTORIES "${Libsrt_INCLUDE_DIR}")
+    set_target_properties(
+      Libsrt::Libsrt
+      PROPERTIES
+        INTERFACE_COMPILE_OPTIONS "${PC_Libsrt_CFLAGS_OTHER}"
+        INTERFACE_INCLUDE_DIRECTORIES "${Libsrt_INCLUDE_DIR}"
+    )
   endif()
 endif()
 
 include(FeatureSummary)
 set_package_properties(
-  Libsrt PROPERTIES
-  URL "https://www.srtalliance.org"
-  DESCRIPTION
-    "Secure Reliable Transport (SRT) is a transport protocol for ultra low (sub-second) latency live video and audio streaming, as well as for generic bulk data transfer."
+  Libsrt
+  PROPERTIES
+    URL "https://www.srtalliance.org"
+    DESCRIPTION
+      "Secure Reliable Transport (SRT) is a transport protocol for ultra low (sub-second) latency live video and audio streaming, as well as for generic bulk data transfer."
 )

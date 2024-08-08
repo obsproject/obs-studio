@@ -31,22 +31,17 @@ The following cache variables may also be set:
 
 #]=======================================================================]
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-lint: disable=C0301
-# cmake-format: on
-
 include(FindPackageHandleStandardArgs)
 
-find_path(
-  AMF_INCLUDE_DIR
-  NAMES AMF/core/Factory.h
-  PATHS /usr/include /usr/local/include
-  DOC "AMF include directory")
+find_path(AMF_INCLUDE_DIR NAMES AMF/core/Factory.h PATHS /usr/include /usr/local/include DOC "AMF include directory")
 
 if(EXISTS "${AMF_INCLUDE_DIR}/AMF/core/Version.h")
-  file(STRINGS "${AMF_INCLUDE_DIR}/AMF/core/Version.h" _version_string
-       REGEX "^.*VERSION_(MAJOR|MINOR|RELEASE|BUILD_NUM)[ \t]+[0-9]+[ \t]*$")
+  file(
+    STRINGS
+    "${AMF_INCLUDE_DIR}/AMF/core/Version.h"
+    _version_string
+    REGEX "^.*VERSION_(MAJOR|MINOR|RELEASE|BUILD_NUM)[ \t]+[0-9]+[ \t]*$"
+  )
 
   string(REGEX REPLACE ".*VERSION_MAJOR[ \t]+([0-9]+).*" "\\1" _version_major "${_version_string}")
   string(REGEX REPLACE ".*VERSION_MINOR[ \t]+([0-9]+).*" "\\1" _version_minor "${_version_string}")
@@ -72,7 +67,9 @@ endif()
 find_package_handle_standard_args(
   AMF
   REQUIRED_VARS AMF_INCLUDE_DIR
-  VERSION_VAR AMF_VERSION REASON_FAILURE_MESSAGE "${AMF_ERROR_REASON}")
+  VERSION_VAR AMF_VERSION
+  REASON_FAILURE_MESSAGE "${AMF_ERROR_REASON}"
+)
 mark_as_advanced(AMF_INCLUDE_DIR)
 unset(AMF_ERROR_REASON)
 
@@ -85,8 +82,9 @@ endif()
 
 include(FeatureSummary)
 set_package_properties(
-  AMF PROPERTIES
-  URL "https://github.com/GPUOpen-LibrariesAndSDKs/AMF"
-  DESCRIPTION
-    "AMF is a light-weight, portable multimedia framework that abstracts away most of the platform and API-specific details and allows for easy implementation of multimedia applications using a variety of technologies, such as DirectX 11, OpenGL, and OpenCL and facilitates an efficient interop between them."
+  AMF
+  PROPERTIES
+    URL "https://github.com/GPUOpen-LibrariesAndSDKs/AMF"
+    DESCRIPTION
+      "AMF is a light-weight, portable multimedia framework that abstracts away most of the platform and API-specific details and allows for easy implementation of multimedia applications using a variety of technologies, such as DirectX 11, OpenGL, and OpenCL and facilitates an efficient interop between them."
 )

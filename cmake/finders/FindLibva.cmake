@@ -42,11 +42,6 @@ The following cache variables may also be set:
 
 #]=======================================================================]
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-lint: disable=C0301
-# cmake-format: on
-
 include(FindPackageHandleStandardArgs)
 
 find_package(PkgConfig QUIET)
@@ -61,27 +56,34 @@ find_path(
   HINTS ${PC_Libva_INCLUDE_DIRS}
   PATHS /usr/include/ /usr/local/include
   PATH_SUFFIXES va
-  DOC "Libva include directory")
+  DOC "Libva include directory"
+)
 
 find_library(
   Libva_LIBRARY
   NAMES libva va
   HINTS ${PC_Libva_LIBRARY_DIRS}
   PATHS /usr/lib /usr/local/lib
-  DOC "Libva location")
+  DOC "Libva location"
+)
 
 find_library(
   LibvaDrm_LIBRARY
   NAMES libva-drm va-drm
   HINTS ${PC_LibvaDrm_LIBRARY_DIRS}
   PATHS /usr/lib /usr/local/lib
-  DOC "Libva-drm location")
+  DOC "Libva-drm location"
+)
 
 if(PC_Libva_VERSION VERSION_GREATER 0)
   set(Libva_VERSION ${PC_Libva_VERSION})
 elseif(EXISTS "${Libva_INCLUDE_DIR}/va_version.h")
-  file(STRINGS "${Libva_INCLUDE_DIR}/va_version.h" _VERSION_STRING
-       REGEX "^.*(MAJOR|MINOR|MICRO)_VERSION[ \t]+[0-9]+[ \t]*$")
+  file(
+    STRINGS
+    "${Libva_INCLUDE_DIR}/va_version.h"
+    _VERSION_STRING
+    REGEX "^.*(MAJOR|MINOR|MICRO)_VERSION[ \t]+[0-9]+[ \t]*$"
+  )
   string(REGEX REPLACE ".*MAJOR_VERSION[ \t]+([0-9]+).*" "\\1" VERSION_MAJOR "${_VERSION_STRING}")
   string(REGEX REPLACE ".*MINOR_VERSION[ \t]+([0-9]+).*" "\\1" VERSION_MINOR "${_VERSION_STRING}")
   string(REGEX REPLACE ".*MICRO_VERSION[ \t]+([0-9]+).*" "\\1" VERSION_MICRO "${_VERSION_STRING}")
@@ -97,7 +99,9 @@ endif()
 find_package_handle_standard_args(
   Libva
   REQUIRED_VARS Libva_LIBRARY Libva_INCLUDE_DIR
-  VERSION_VAR Libva_VERSION REASON_FAILURE_MESSAGE "Ensure that libva is installed on the system.")
+  VERSION_VAR Libva_VERSION
+  REASON_FAILURE_MESSAGE "Ensure that libva is installed on the system."
+)
 mark_as_advanced(Libva_INCLUDE_DIR Libva_LIBRARY)
 
 if(Libva_FOUND)
@@ -112,9 +116,11 @@ if(Libva_FOUND)
 
     set_target_properties(
       Libva::va
-      PROPERTIES INTERFACE_COMPILE_OPTIONS "${PC_Libva_CFLAGS_OTHER}"
-                 INTERFACE_INCLUDE_DIRECTORIES "${Libva_INCLUDE_DIR}"
-                 VERSION ${Libva_VERSION})
+      PROPERTIES
+        INTERFACE_COMPILE_OPTIONS "${PC_Libva_CFLAGS_OTHER}"
+        INTERFACE_INCLUDE_DIRECTORIES "${Libva_INCLUDE_DIR}"
+        VERSION ${Libva_VERSION}
+    )
   endif()
 
   if(LibvaDrm_LIBRARY)
@@ -129,17 +135,20 @@ if(Libva_FOUND)
 
       set_target_properties(
         Libva::drm
-        PROPERTIES INTERFACE_COMPILE_OPTIONS "${PC_LibvaDrm_CFLAGS_OTHER}"
-                   INTERFACE_INCLUDE_DIRECTORIES "${Libva_INCLUDE_DIR}"
-                   VERSION ${Libva_VERSION})
+        PROPERTIES
+          INTERFACE_COMPILE_OPTIONS "${PC_LibvaDrm_CFLAGS_OTHER}"
+          INTERFACE_INCLUDE_DIRECTORIES "${Libva_INCLUDE_DIR}"
+          VERSION ${Libva_VERSION}
+      )
     endif()
   endif()
 endif()
 
 include(FeatureSummary)
 set_package_properties(
-  Libva PROPERTIES
-  URL "https://01.org/intel-media-for-linux"
-  DESCRIPTION
-    "An implementation for VA-API (Video Acceleration API) - an open-source library which provides access to graphics hardware acceleration capabilities."
+  Libva
+  PROPERTIES
+    URL "https://01.org/intel-media-for-linux"
+    DESCRIPTION
+      "An implementation for VA-API (Video Acceleration API) - an open-source library which provides access to graphics hardware acceleration capabilities."
 )

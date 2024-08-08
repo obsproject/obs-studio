@@ -61,12 +61,6 @@ The following cache variables may also be set:
 
 #]=======================================================================]
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-lint: disable=C0301
-# cmake-lint: disable=C0307
-# cmake-format: on
-
 include(FindPackageHandleStandardArgs)
 
 find_package(PkgConfig QUIET)
@@ -80,7 +74,8 @@ macro(MbedTLS_set_soname component)
     execute_process(
       COMMAND sh -c "otool -D '${Mbed${component}_LIBRARY}' | grep -v '${Mbed${component}_LIBRARY}'"
       OUTPUT_VARIABLE _output
-      RESULT_VARIABLE _result)
+      RESULT_VARIABLE _result
+    )
 
     if(_result EQUAL 0 AND _output MATCHES "^@rpath/")
       set_property(TARGET MbedTLS::Mbed${component} PROPERTY IMPORTED_SONAME "${_output}")
@@ -89,7 +84,8 @@ macro(MbedTLS_set_soname component)
     execute_process(
       COMMAND sh -c "objdump -p '${Mbed${component}_LIBRARY}' | grep SONAME"
       OUTPUT_VARIABLE _output
-      RESULT_VARIABLE _result)
+      RESULT_VARIABLE _result
+    )
 
     if(_result EQUAL 0)
       string(REGEX REPLACE "[ \t]+SONAME[ \t]+([^ \t]+)" "\\1" _soname "${_output}")
@@ -106,20 +102,39 @@ find_path(
   NAMES mbedtls/ssl.h
   HINTS "${PC_MbedTLS_INCLUDE_DIRS}"
   PATHS /usr/include /usr/local/include
-  DOC "MbedTLS include directory")
+  DOC "MbedTLS include directory"
+)
 
 if(PC_MbedTLS_VERSION VERSION_GREATER 0)
   set(MbedTLS_VERSION ${PC_MbedTLS_VERSION})
 elseif(EXISTS "${MbedTLS_INCLUDE_DIR}/mbedtls/build_info.h")
-  file(STRINGS "${MbedTLS_INCLUDE_DIR}/mbedtls/build_info.h" _VERSION_STRING
-       REGEX "#define[ \t]+MBEDTLS_VERSION_STRING[ \t]+.+")
-  string(REGEX REPLACE ".*#define[ \t]+MBEDTLS_VERSION_STRING[ \t]+\"(.+)\".*" "\\1" MbedTLS_VERSION
-                       "${_VERSION_STRING}")
+  file(
+    STRINGS
+    "${MbedTLS_INCLUDE_DIR}/mbedtls/build_info.h"
+    _VERSION_STRING
+    REGEX "#define[ \t]+MBEDTLS_VERSION_STRING[ \t]+.+"
+  )
+  string(
+    REGEX REPLACE
+    ".*#define[ \t]+MBEDTLS_VERSION_STRING[ \t]+\"(.+)\".*"
+    "\\1"
+    MbedTLS_VERSION
+    "${_VERSION_STRING}"
+  )
 elseif(EXISTS "${MbedTLS_INCLUDE_DIR}/mbedtls/version.h")
-  file(STRINGS "${MbedTLS_INCLUDE_DIR}/mbedtls/version.h" _VERSION_STRING
-       REGEX "#define[ \t]+MBEDTLS_VERSION_STRING[ \t]+.+")
-  string(REGEX REPLACE ".*#define[ \t]+MBEDTLS_VERSION_STRING[ \t]+\"(.+)\".*" "\\1" MbedTLS_VERSION
-                       "${_VERSION_STRING}")
+  file(
+    STRINGS
+    "${MbedTLS_INCLUDE_DIR}/mbedtls/version.h"
+    _VERSION_STRING
+    REGEX "#define[ \t]+MBEDTLS_VERSION_STRING[ \t]+.+"
+  )
+  string(
+    REGEX REPLACE
+    ".*#define[ \t]+MBEDTLS_VERSION_STRING[ \t]+\"(.+)\".*"
+    "\\1"
+    MbedTLS_VERSION
+    "${_VERSION_STRING}"
+  )
 else()
   if(NOT MbedTLS_FIND_QUIETLY)
     message(AUTHOR_WARNING "Failed to find MbedTLS version.")
@@ -132,25 +147,26 @@ find_library(
   NAMES libmbedtls mbedtls
   HINTS "${PC_MbedTLS_LIBRARY_DIRS}"
   PATHS /usr/lib /usr/local/lib
-  DOC "MbedTLS location")
+  DOC "MbedTLS location"
+)
 
 find_library(
   MbedCrypto_LIBRARY
   NAMES libmbedcrypto mbedcrypto
   HINTS "${PC_MbedTLS_LIBRARY_DIRS}"
   PATHS /usr/lib /usr/local/lib
-  DOC "MbedCrypto location")
+  DOC "MbedCrypto location"
+)
 
 find_library(
   MbedX509_LIBRARY
   NAMES libmbedx509 mbedx509
   HINTS "${PC_MbedTLS_LIBRARY_DIRS}"
   PATHS /usr/lib /usr/local/lib
-  DOC "MbedX509 location")
+  DOC "MbedX509 location"
+)
 
-if(MbedTLS_LIBRARY
-   AND NOT MbedCrypto_LIBRARY
-   AND NOT MbedX509_LIBRARY)
+if(MbedTLS_LIBRARY AND NOT MbedCrypto_LIBRARY AND NOT MbedX509_LIBRARY)
   set(CMAKE_REQUIRED_LIBRARIES "${MbedTLS_LIBRARY}")
   set(CMAKE_REQUIRED_INCLUDES "${MbedTLS_INCLUDE_DIR}")
 
@@ -170,14 +186,18 @@ if(MbedTLS_INCLUDES_X509 AND MbedTLS_INCLUDES_CRYPTO)
   find_package_handle_standard_args(
     MbedTLS
     REQUIRED_VARS MbedTLS_LIBRARY MbedTLS_INCLUDE_DIR
-    VERSION_VAR MbedTLS_VERSION REASON_FAILURE_MESSAGE "${MbedTLS_ERROR_REASON}")
+    VERSION_VAR MbedTLS_VERSION
+    REASON_FAILURE_MESSAGE "${MbedTLS_ERROR_REASON}"
+  )
   mark_as_advanced(MbedTLS_LIBRARY MbedTLS_INCLUDE_DIR)
   list(APPEND _COMPONENTS TLS)
 else()
   find_package_handle_standard_args(
     MbedTLS
     REQUIRED_VARS MbedTLS_LIBRARY MbedCrypto_LIBRARY MbedX509_LIBRARY MbedTLS_INCLUDE_DIR
-    VERSION_VAR MbedTLS_VERSION REASON_FAILURE_MESSAGE "${MbedTLS_ERROR_REASON}")
+    VERSION_VAR MbedTLS_VERSION
+    REASON_FAILURE_MESSAGE "${MbedTLS_ERROR_REASON}"
+  )
   mark_as_advanced(MbedTLS_LIBRARY MbedCrypto_LIBRARY MbedX509_LIBRARY MbedTLS_INCLUDE_DIR)
   list(APPEND _COMPONENTS TLS Crypto X509)
 endif()
@@ -197,10 +217,12 @@ if(MbedTLS_FOUND)
       mbedtls_set_soname(${component})
       set_target_properties(
         MbedTLS::MbedTLS
-        PROPERTIES INTERFACE_COMPILE_OPTIONS "${PC_MbedTLS_CFLAGS_OTHER}"
-                   INTERFACE_INCLUDE_DIRECTORIES "${MbedTLS_INCLUDE_DIR}"
-                   INTERFACE_LINK_OPTIONS "$<$<AND:$<PLATFORM_ID:Windows>,$<CONFIG:DEBUG>>:/NODEFAULTLIB:MSVCRT>"
-                   VERSION ${MbedTLS_VERSION})
+        PROPERTIES
+          INTERFACE_COMPILE_OPTIONS "${PC_MbedTLS_CFLAGS_OTHER}"
+          INTERFACE_INCLUDE_DIRECTORIES "${MbedTLS_INCLUDE_DIR}"
+          INTERFACE_LINK_OPTIONS "$<$<AND:$<PLATFORM_ID:Windows>,$<CONFIG:DEBUG>>:/NODEFAULTLIB:MSVCRT>"
+          VERSION ${MbedTLS_VERSION}
+      )
     endif()
   endforeach()
 
@@ -214,8 +236,9 @@ endif()
 
 include(FeatureSummary)
 set_package_properties(
-  MbedTLS PROPERTIES
-  URL "https://www.trustedfirmware.org/projects/mbed-tls"
-  DESCRIPTION
-    "A C library implementing cryptographic primitives, X.509 certificate manipulation, and the SSL/TLS and DTLS protocols."
+  MbedTLS
+  PROPERTIES
+    URL "https://www.trustedfirmware.org/projects/mbed-tls"
+    DESCRIPTION
+      "A C library implementing cryptographic primitives, X.509 certificate manipulation, and the SSL/TLS and DTLS protocols."
 )

@@ -134,12 +134,6 @@ The following cache variables may also be set:
 
 #]=======================================================================]
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-lint: disable=C0301
-# cmake-lint: disable=R0915
-# cmake-format: on
-
 include(FindPackageHandleStandardArgs)
 
 find_package(PkgConfig QUIET)
@@ -167,7 +161,8 @@ list(
   xcb-xtest
   xcb-xv
   xcb-xinput
-  xcb-xinerama)
+  xcb-xinerama
+)
 list(
   APPEND
   _Xcb_HEADERS
@@ -191,7 +186,8 @@ list(
   xtest.h
   xv.h
   xinput.h
-  xinerama.h)
+  xinerama.h
+)
 
 if(NOT Xcb_FIND_COMPONENTS)
   set(Xcb_FIND_COMPONENTS ${_Xcb_DEFAULT_COMPONENTS})
@@ -212,14 +208,16 @@ macro(Xcb_find_component component)
       NAMES "xcb/${COMPONENT_HEADER}"
       HINTS ${PC_Xcb_${COMPONENT_NAME}_INCLUDE_DIRS}
       PATHS /usr/include /usr/local/include
-      DOC "XCB component ${COMPONENT_NAME} include directory")
+      DOC "XCB component ${COMPONENT_NAME} include directory"
+    )
 
     find_library(
       Xcb_${COMPONENT_NAME}_LIBRARY
       NAMES "${COMPONENT_NAME}"
       HINTS ${PC_Xcb_${COMPONENT_NAME}_LIBRARY_DIRS}
       PATHS /usr/lib /usr/local/lib
-      DOC "XCB component ${COMPONENT_NAME} location")
+      DOC "XCB component ${COMPONENT_NAME} location"
+    )
 
     if(PC_Xcb_${COMPONENT_NAME}_VERSION VERSION_GREATER 0)
       set(Xcb_${COMPONENT_NAME}_VERSION ${PC_Xcb_${COMPONENT_NAME}_VERSION})
@@ -247,9 +245,11 @@ macro(Xcb_find_component component)
 
       set_target_properties(
         xcb::${COMPONENT_NAME}
-        PROPERTIES INTERFACE_COMPILE_OPTIONS "${PC_Xcb_${COMPONENT_NAME}_CFLAGS_OTHER}"
-                   INTERFACE_INCLUDE_DIRECTORIES "${Xcb_${COMPONENT_NAME}_INCLUDE_DIR}"
-                   VERSION ${Xcb_${COMPONENT_NAME}_VERSION})
+        PROPERTIES
+          INTERFACE_COMPILE_OPTIONS "${PC_Xcb_${COMPONENT_NAME}_CFLAGS_OTHER}"
+          INTERFACE_INCLUDE_DIRECTORIES "${Xcb_${COMPONENT_NAME}_INCLUDE_DIR}"
+          VERSION ${Xcb_${COMPONENT_NAME}_VERSION}
+      )
       list(APPEND Xcb_COMPONENTS xcb::${COMPONENT_NAME})
       list(APPEND Xcb_LIBRARIES ${Xcb_${COMPONENT_NAME}_LIBRARY})
       list(APPEND Xcb_INCLUDE_DIRS ${Xcb_${COMPONENT_NAME}_INCLUDE_DIR})
@@ -288,15 +288,18 @@ find_package_handle_standard_args(
   Xcb
   REQUIRED_VARS Xcb_LIBRARIES Xcb_INCLUDE_DIRS
   VERSION_VAR Xcb_VERSION
-  HANDLE_COMPONENTS REASON_FAILURE_MESSAGE "Ensure xcb is installed on the system.")
+  HANDLE_COMPONENTS
+  REASON_FAILURE_MESSAGE "Ensure xcb is installed on the system."
+)
 
 unset(_Xcb_DEFAULT_COMPONENTS)
 unset(_Xcb_HEADERS)
 
 include(FeatureSummary)
 set_package_properties(
-  Xcb PROPERTIES
-  URL "https://xcb.freedesktop.org"
-  DESCRIPTION
-    "A replacement for Xlib featuring a small footprint, latency hiding, direct access to the protocol, improved threading support, and extensibility."
+  Xcb
+  PROPERTIES
+    URL "https://xcb.freedesktop.org"
+    DESCRIPTION
+      "A replacement for Xlib featuring a small footprint, latency hiding, direct access to the protocol, improved threading support, and extensibility."
 )
