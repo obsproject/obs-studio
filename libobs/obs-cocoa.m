@@ -668,14 +668,13 @@ fail:
 
 static void handle_monitor_event(obs_hotkeys_platform_t *plat, NSEvent *event)
 {
-    if (event.type == NSEventTypeFlagsChanged) {
-        NSEventModifierFlags flags = event.modifierFlags;
-        plat->is_key_down[OBS_KEY_CAPSLOCK] = !!(flags & NSEventModifierFlagCapsLock);
-        plat->is_key_down[OBS_KEY_SHIFT] = !!(flags & NSEventModifierFlagShift);
-        plat->is_key_down[OBS_KEY_ALT] = !!(flags & NSEventModifierFlagOption);
-        plat->is_key_down[OBS_KEY_META] = !!(flags & NSEventModifierFlagCommand);
-        plat->is_key_down[OBS_KEY_CONTROL] = !!(flags & NSEventModifierFlagControl);
-    } else if (event.type == NSEventTypeKeyDown || event.type == NSEventTypeKeyUp) {
+    NSEventModifierFlags flags = event.modifierFlags;
+    plat->is_key_down[OBS_KEY_CAPSLOCK] = !!(flags & NSEventModifierFlagCapsLock);
+    plat->is_key_down[OBS_KEY_SHIFT] = !!(flags & NSEventModifierFlagShift);
+    plat->is_key_down[OBS_KEY_ALT] = !!(flags & NSEventModifierFlagOption);
+    plat->is_key_down[OBS_KEY_META] = !!(flags & NSEventModifierFlagCommand);
+    plat->is_key_down[OBS_KEY_CONTROL] = !!(flags & NSEventModifierFlagControl);
+    if (event.type == NSEventTypeKeyDown || event.type == NSEventTypeKeyUp) {
         plat->is_key_down[obs_key_from_virtual_key(event.keyCode)] = (event.type == NSEventTypeKeyDown);
     }
 }
