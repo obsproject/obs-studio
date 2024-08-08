@@ -1,4 +1,4 @@
-#include "auth-base.hpp"
+#include "moc_auth-base.cpp"
 #include "window-basic-main.hpp"
 
 #include <vector>

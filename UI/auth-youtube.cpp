@@ -1,4 +1,4 @@
-#include "auth-youtube.hpp"
+#include "moc_auth-youtube.cpp"
 
 #include <iostream>
 #include <QMessageBox>

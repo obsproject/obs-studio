@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "window-importer.hpp"
+#include "moc_window-importer.cpp"
 
 #include "obs-app.hpp"
 

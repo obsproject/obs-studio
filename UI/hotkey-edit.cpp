@@ -16,7 +16,7 @@
 ******************************************************************************/
 
 #include "window-basic-settings.hpp"
-#include "hotkey-edit.hpp"
+#include "moc_hotkey-edit.cpp"
 
 #include <util/dstr.hpp>
 #include <QPointer>

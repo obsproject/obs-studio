@@ -1,4 +1,4 @@
-#include "url-push-button.hpp"
+#include "moc_url-push-button.cpp"
 
 #include <QUrl>
 #include <QMouseEvent>

@@ -1,4 +1,4 @@
-#include "absolute-slider.hpp"
+#include "moc_absolute-slider.cpp"
 
 AbsoluteSlider::AbsoluteSlider(QWidget *parent) : SliderIgnoreScroll(parent)
 {

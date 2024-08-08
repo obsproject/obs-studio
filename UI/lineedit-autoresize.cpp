@@ -1,4 +1,4 @@
-#include "lineedit-autoresize.hpp"
+#include "moc_lineedit-autoresize.cpp"
 
 LineEditAutoResize::LineEditAutoResize() : m_maxLength(32767)
 {

@@ -1,4 +1,4 @@
-#include "auth-oauth.hpp"
+#include "moc_auth-oauth.cpp"
 
 #include <QPushButton>
 #include <QHBoxLayout>

@@ -1,4 +1,4 @@
-#include "qt-display.hpp"
+#include "moc_qt-display.cpp"
 #include "display-helpers.hpp"
 #include <QWindow>
 #include <QScreen>

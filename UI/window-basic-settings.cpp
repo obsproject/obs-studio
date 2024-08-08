@@ -44,7 +44,7 @@
 #include "platform.hpp"
 #include "properties-view.hpp"
 #include "window-basic-main.hpp"
-#include "window-basic-settings.hpp"
+#include "moc_window-basic-settings.cpp"
 #include "window-basic-main-outputs.hpp"
 #include "window-projector.hpp"
 

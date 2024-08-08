@@ -1,4 +1,4 @@
-#include "ui-validation.hpp"
+#include "moc_ui-validation.cpp"
 
 #include <obs.hpp>
 #include <QString>

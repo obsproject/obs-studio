@@ -1,4 +1,4 @@
-#include "shared-update.hpp"
+#include "moc_shared-update.cpp"
 #include "crypto-helpers.hpp"
 #include "update-helpers.hpp"
 #include "obs-app.hpp"

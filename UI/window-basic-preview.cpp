@@ -6,7 +6,7 @@
 #include <graphics/vec4.h>
 #include <graphics/matrix4.h>
 #include <util/dstr.hpp>
-#include "window-basic-preview.hpp"
+#include "moc_window-basic-preview.cpp"
 #include "window-basic-main.hpp"
 #include "obs-app.hpp"
 #include "platform.hpp"

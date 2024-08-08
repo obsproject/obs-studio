@@ -1,4 +1,4 @@
-#include "auth-restream.hpp"
+#include "moc_auth-restream.cpp"
 
 #include <QPushButton>
 #include <QHBoxLayout>

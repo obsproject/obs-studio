@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "window-missing-files.hpp"
+#include "moc_window-missing-files.cpp"
 #include "window-basic-main.hpp"
 
 #include "obs-app.hpp"

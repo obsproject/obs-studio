@@ -1,4 +1,4 @@
-#include <auth-listener.hpp>
+#include "moc_auth-listener.cpp"
 
 #include <QRegularExpression>
 #include <QRegularExpressionMatch>

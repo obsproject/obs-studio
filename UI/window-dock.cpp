@@ -1,4 +1,4 @@
-#include "window-dock.hpp"
+#include "moc_window-dock.cpp"
 #include "obs-app.hpp"
 #include "window-basic-main.hpp"
 

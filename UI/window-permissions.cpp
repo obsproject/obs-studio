@@ -16,7 +16,7 @@
 ******************************************************************************/
 
 #include <QLabel>
-#include "window-permissions.hpp"
+#include "moc_window-permissions.cpp"
 #include "obs-app.hpp"
 
 OBSPermissions::OBSPermissions(QWidget *parent, MacPermissionStatus capture,

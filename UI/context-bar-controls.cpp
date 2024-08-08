@@ -1,5 +1,5 @@
 #include "window-basic-main.hpp"
-#include "context-bar-controls.hpp"
+#include "moc_context-bar-controls.cpp"
 #include "obs-app.hpp"
 
 #include <qt-wrappers.hpp>

@@ -2,7 +2,7 @@
 #include <QPixmap>
 #include "obs-app.hpp"
 #include "window-basic-main.hpp"
-#include "window-basic-status-bar.hpp"
+#include "moc_window-basic-status-bar.cpp"
 #include "window-basic-main-outputs.hpp"
 #include "qt-wrappers.hpp"
 #include "platform.hpp"
