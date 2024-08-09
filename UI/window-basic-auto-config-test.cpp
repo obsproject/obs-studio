@@ -221,7 +221,8 @@ void AutoConfigTestPage::TestBandwidthThread()
 	OBSDataAutoRelease output_settings = obs_data_create();
 
 	std::string key = wiz->key;
-	if (wiz->service == AutoConfig::Service::Twitch) {
+	if (wiz->service == AutoConfig::Service::Twitch ||
+	    wiz->service == AutoConfig::Service::AmazonIVS) {
 		string_depad_key(key);
 		key += "?bandwidthtest";
 	} else if (wiz->serviceName == "Restream.io" ||
@@ -266,8 +267,10 @@ void AutoConfigTestPage::TestBandwidthThread()
 	    wiz->serviceName == "Nimo TV") {
 		servers.resize(1);
 
-	} else if (wiz->service == AutoConfig::Service::Twitch &&
-		   wiz->twitchAuto) {
+	} else if ((wiz->service == AutoConfig::Service::Twitch &&
+		    wiz->twitchAuto) ||
+		   (wiz->service == AutoConfig::Service::AmazonIVS &&
+		    wiz->amazonIVSAuto)) {
 		/* if using Twitch and "Auto" is available, test 3 closest
 		 * server */
 		servers.erase(servers.begin() + 1);
