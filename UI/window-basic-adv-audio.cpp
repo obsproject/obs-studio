@@ -3,7 +3,7 @@
 #include "item-widget-helpers.hpp"
 #include "adv-audio-control.hpp"
 #include "obs-app.hpp"
-#include "qt-wrappers.hpp"
+#include <qt-wrappers.hpp>
 
 #include "ui_OBSAdvAudio.h"
 

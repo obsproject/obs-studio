@@ -128,6 +128,9 @@
                <property name="themeID" stdset="0">
                 <string>addIconSmall</string>
                </property>
+               <property name="toolButton" stdset="0">
+                <bool>true</bool>
+               </property>
               </widget>
              </item>
              <item>
@@ -156,6 +159,9 @@
                </property>
                <property name="themeID" stdset="0">
                 <string>removeIconSmall</string>
+               </property>
+               <property name="toolButton" stdset="0">
+                <bool>true</bool>
                </property>
               </widget>
              </item>
@@ -186,6 +192,9 @@
                <property name="themeID" stdset="0">
                 <string>upArrowIconSmall</string>
                </property>
+               <property name="toolButton" stdset="0">
+                <bool>true</bool>
+               </property>
               </widget>
              </item>
              <item>
@@ -214,6 +223,9 @@
                </property>
                <property name="themeID" stdset="0">
                 <string>downArrowIconSmall</string>
+               </property>
+               <property name="toolButton" stdset="0">
+                <bool>true</bool>
                </property>
               </widget>
              </item>
@@ -350,6 +362,9 @@
                <property name="themeID" stdset="0">
                 <string>addIconSmall</string>
                </property>
+               <property name="toolButton" stdset="0">
+                <bool>true</bool>
+               </property>
               </widget>
              </item>
              <item>
@@ -378,6 +393,9 @@
                </property>
                <property name="themeID" stdset="0">
                 <string>removeIconSmall</string>
+               </property>
+               <property name="toolButton" stdset="0">
+                <bool>true</bool>
                </property>
               </widget>
              </item>
@@ -408,6 +426,9 @@
                <property name="themeID" stdset="0">
                 <string>upArrowIconSmall</string>
                </property>
+               <property name="toolButton" stdset="0">
+                <bool>true</bool>
+               </property>
               </widget>
              </item>
              <item>
@@ -436,6 +457,9 @@
                </property>
                <property name="themeID" stdset="0">
                 <string>downArrowIconSmall</string>
+               </property>
+               <property name="toolButton" stdset="0">
+                <bool>true</bool>
                </property>
               </widget>
              </item>

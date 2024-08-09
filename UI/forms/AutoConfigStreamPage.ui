@@ -330,7 +330,73 @@
          </layout>
         </widget>
        </item>
-       <item row="2" column="0">
+       <item row="2" column="1">
+        <widget class="QPushButton" name="connectAccount2">
+         <property name="cursor">
+          <cursorShape>PointingHandCursor</cursorShape>
+         </property>
+         <property name="text">
+          <string>Basic.AutoConfig.StreamPage.ConnectAccount</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="connectedAccountLabel">
+         <property name="text">
+          <string>Basic.AutoConfig.StreamPage.ConnectedAccount</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <layout class="QHBoxLayout" name="horizontalLayout_6">
+         <property name="leftMargin">
+          <number>7</number>
+         </property>
+         <property name="rightMargin">
+          <number>7</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="connectedAccountText">
+           <property name="font">
+            <font>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>Auth.LoadingChannel.Title</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="disconnectAccount">
+           <property name="text">
+            <string>Basic.AutoConfig.StreamPage.DisconnectAccount</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="4" column="0">
+        <spacer name="horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>0</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="4" column="1">
+        <widget class="QPushButton" name="useStreamKeyAdv">
+         <property name="text">
+          <string>Basic.AutoConfig.StreamPage.UseStreamKeyAdvanced</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
         <widget class="QLabel" name="bitrateLabel">
          <property name="text">
           <string>Basic.Settings.Output.VideoBitrate</string>
@@ -340,7 +406,7 @@
          </property>
         </widget>
        </item>
-       <item row="2" column="1">
+       <item row="5" column="1">
         <widget class="QSpinBox" name="bitrate">
          <property name="suffix">
           <string notr="true"/>
@@ -356,7 +422,7 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="1">
+       <item row="6" column="1">
         <widget class="QCheckBox" name="preferHardware">
          <property name="toolTip">
           <string>Basic.AutoConfig.StreamPage.PreferHardwareEncoding.ToolTip</string>
@@ -369,7 +435,7 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="1">
+       <item row="7" column="1">
         <widget class="QCheckBox" name="doBandwidthTest">
          <property name="text">
           <string>Basic.AutoConfig.StreamPage.PerformBandwidthTest</string>
@@ -379,7 +445,49 @@
          </property>
         </widget>
        </item>
-       <item row="6" column="1">
+       <item row="8" column="1">
+        <widget class="QCheckBox" name="useMultitrackVideo">
+         <property name="text">
+          <string>Basic.AutoConfig.StreamPage.UseMultitrackVideo</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="1">
+        <widget class="QLabel" name="multitrackVideoInfo">
+         <property name="text">
+          <string>MultitrackVideo.Info</string>
+         </property>
+         <property name="textFormat">
+          <enum>Qt::RichText</enum>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+         <property name="openExternalLinks">
+          <bool>true</bool>
+         </property>
+         <property name="sizePolicy">
+          <enum>QSizePolicy::MinimumExpanding, QSizePolicy::Minimum</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="10" column="1">
+        <spacer name="verticalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>6</width>
+           <height>6</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="11" column="1">
         <widget class="QGroupBox" name="region">
          <property name="title">
           <string>BandwidthTest.Region</string>
@@ -414,85 +522,6 @@
            </widget>
           </item>
          </layout>
-        </widget>
-       </item>
-       <item row="7" column="1">
-        <widget class="QPushButton" name="connectAccount2">
-         <property name="cursor">
-          <cursorShape>PointingHandCursor</cursorShape>
-         </property>
-         <property name="text">
-          <string>Basic.AutoConfig.StreamPage.ConnectAccount</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="1">
-        <spacer name="verticalSpacer_2">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>6</width>
-           <height>6</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="8" column="1">
-        <layout class="QHBoxLayout" name="horizontalLayout_6">
-         <property name="leftMargin">
-          <number>7</number>
-         </property>
-         <property name="rightMargin">
-          <number>7</number>
-         </property>
-         <item>
-          <widget class="QLabel" name="connectedAccountText">
-           <property name="font">
-            <font>
-             <bold>true</bold>
-            </font>
-           </property>
-           <property name="text">
-            <string>Auth.LoadingChannel.Title</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="disconnectAccount">
-           <property name="text">
-            <string>Basic.AutoConfig.StreamPage.DisconnectAccount</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="8" column="0">
-        <widget class="QLabel" name="connectedAccountLabel">
-         <property name="text">
-          <string>Basic.AutoConfig.StreamPage.ConnectedAccount</string>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="0">
-        <spacer name="horizontalSpacer">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="9" column="1">
-        <widget class="QPushButton" name="useStreamKeyAdv">
-         <property name="text">
-          <string>Basic.AutoConfig.StreamPage.UseStreamKeyAdvanced</string>
-         </property>
         </widget>
        </item>
       </layout>

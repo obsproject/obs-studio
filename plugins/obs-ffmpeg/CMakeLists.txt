@@ -5,8 +5,8 @@ legacy_check()
 option(ENABLE_FFMPEG_LOGGING "Enables obs-ffmpeg logging" OFF)
 option(ENABLE_NEW_MPEGTS_OUTPUT "Use native SRT/RIST mpegts output" ON)
 
-if(OS_LINUX)
-  option(ENABLE_NATIVE_NVENC "Use native NVENC implementation" ON)
+if(OS_LINUX OR OS_WINDOWS)
+  option(ENABLE_FFMPEG_NVENC "Enable legacy FFmpeg NVENC encoder" OFF)
 endif()
 
 include(cmake/dependencies.cmake)
@@ -20,6 +20,7 @@ target_sources(
   obs-ffmpeg
   PRIVATE # cmake-format: sortable
           $<$<BOOL:${ENABLE_FFMPEG_LOGGING}>:obs-ffmpeg-logging.c>
+          $<$<BOOL:${ENABLE_FFMPEG_NVENC}>:obs-ffmpeg-nvenc.c>
           $<$<BOOL:${ENABLE_NEW_MPEGTS_OUTPUT}>:obs-ffmpeg-mpegts.c>
           $<$<BOOL:${ENABLE_NEW_MPEGTS_OUTPUT}>:obs-ffmpeg-rist.h>
           $<$<BOOL:${ENABLE_NEW_MPEGTS_OUTPUT}>:obs-ffmpeg-srt.h>
@@ -36,7 +37,6 @@ target_sources(
           obs-ffmpeg-hls-mux.c
           obs-ffmpeg-mux.c
           obs-ffmpeg-mux.h
-          obs-ffmpeg-nvenc.c
           obs-ffmpeg-output.c
           obs-ffmpeg-output.h
           obs-ffmpeg-source.c
@@ -44,8 +44,11 @@ target_sources(
           obs-ffmpeg.c)
 
 target_compile_options(obs-ffmpeg PRIVATE $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wno-shorten-64-to-32>)
-target_compile_definitions(obs-ffmpeg PRIVATE $<$<BOOL:${ENABLE_FFMPEG_LOGGING}>:ENABLE_FFMPEG_LOGGING>
-                                              $<$<BOOL:${ENABLE_NEW_MPEGTS_OUTPUT}>:NEW_MPEGTS_OUTPUT>)
+target_compile_definitions(
+  obs-ffmpeg
+  PRIVATE $<$<BOOL:${ENABLE_FFMPEG_LOGGING}>:ENABLE_FFMPEG_LOGGING>
+          $<$<BOOL:${ENABLE_FFMPEG_NVENC}>:ENABLE_FFMPEG_NVENC>
+          $<$<BOOL:${ENABLE_NEW_MPEGTS_OUTPUT}>:NEW_MPEGTS_OUTPUT>)
 
 target_link_libraries(
   obs-ffmpeg
@@ -59,7 +62,6 @@ target_link_libraries(
           FFmpeg::avutil
           FFmpeg::swscale
           FFmpeg::swresample
-          $<TARGET_NAME_IF_EXISTS:OBS::obs-nvenc-native>
           $<$<PLATFORM_ID:Windows>:OBS::w32-pthreads>
           $<$<PLATFORM_ID:Windows>:AMF::AMF>
           $<$<PLATFORM_ID:Windows>:ws2_32>

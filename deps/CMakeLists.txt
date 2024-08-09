@@ -1,13 +1,7 @@
 if(OS_WINDOWS)
-  add_subdirectory(ipc-util)
   add_subdirectory(w32-pthreads)
 endif()
 
 add_subdirectory(blake2)
-add_subdirectory(file-updater)
 add_subdirectory(glad)
-add_subdirectory(happy-eyeballs)
 add_subdirectory(libcaption)
-add_subdirectory(media-playback)
-add_subdirectory(obs-scripting)
-add_subdirectory(opts-parser)

@@ -15,6 +15,12 @@ skip_sign = true
 patch_type = "zstd"
 compress_files = true
 
+# Prevent some legacy plugins from being marked as deleted
+exclude_from_removal = [
+    "enc-amf",
+    "win-mf",
+]
+
 [package]
 
 [package.installer]

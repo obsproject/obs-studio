@@ -256,6 +256,7 @@ extern "C"
         uint8_t m_hasAbsTimestamp;	/* timestamp absolute or relative? */
         int m_nChannel;
         uint32_t m_nTimeStamp;	/* timestamp */
+        uint32_t m_nLastWireTimeStamp; /* timestamp that was encoded when sending */
         int32_t m_nInfoField2;	/* last 4 bytes in a long header */
         uint32_t m_nBodySize;
         uint32_t m_nBytesRead;

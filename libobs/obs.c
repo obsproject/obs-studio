@@ -878,13 +878,13 @@ static void obs_free_video(void)
 		obs_free_video_mix(video);
 		obs->video.mixes.array[i] = NULL;
 	}
+	da_free(obs->video.mixes);
 	if (num_views > 0)
 		blog(LOG_WARNING, "Number of remaining views: %ld", num_views);
 	pthread_mutex_unlock(&obs->video.mixes_mutex);
 
 	pthread_mutex_destroy(&obs->video.mixes_mutex);
 	pthread_mutex_init_value(&obs->video.mixes_mutex);
-	da_free(obs->video.mixes);
 
 	for (size_t i = 0; i < obs->video.ready_encoder_groups.num; i++) {
 		obs_weak_encoder_release(
@@ -1117,6 +1117,8 @@ static const char *obs_signals[] = {
 	"void source_hide(ptr source)",
 	"void source_audio_activate(ptr source)",
 	"void source_audio_deactivate(ptr source)",
+	"void source_filter_add(ptr source, ptr filter)",
+	"void source_filter_remove(ptr source, ptr filter)",
 	"void source_rename(ptr source, string new_name, string prev_name)",
 	"void source_volume(ptr source, in out float volume)",
 	"void source_volume_level(ptr source, float level, float magnitude, "
@@ -2039,11 +2041,6 @@ static inline void *obs_encoder_addref_safe_(void *ref)
 static inline void *obs_service_addref_safe_(void *ref)
 {
 	return obs_service_get_ref(ref);
-}
-
-static inline void *obs_id_(void *data)
-{
-	return data;
 }
 
 obs_source_t *obs_get_source_by_name(const char *name)

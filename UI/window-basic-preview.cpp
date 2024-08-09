@@ -654,7 +654,7 @@ void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 
 void OBSBasicPreview::UpdateCursor(uint32_t &flags)
 {
-	if (obs_sceneitem_locked(stretchItem)) {
+	if (!stretchItem || obs_sceneitem_locked(stretchItem)) {
 		unsetCursor();
 		return;
 	}

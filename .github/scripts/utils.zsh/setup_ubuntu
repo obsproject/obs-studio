@@ -62,6 +62,8 @@ mkdir -p ${_target} && pushd ${_target}
 XZ_OPT=-T0 tar --strip-components 1 -xJf ../${_filename} && log_status "${deps_label} extracted."
 popd
 
+log_group 'Installing obs-studio build dependencies from apt...'
+
 local suffix
 if [[ ${CPUTYPE} != ${target##*-} ]] {
   local -A arch_mappings=(

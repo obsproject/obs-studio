@@ -5,14 +5,8 @@
 #include <libavformat/avformat.h>
 
 #ifdef _WIN32
+#define INITGUID
 #include <dxgi.h>
-#include <util/windows/win-version.h>
-#endif
-
-#if defined(_WIN32) || defined(NVCODEC_AVAILABLE)
-#include "obs-nvenc.h"
-
-#define OBS_NVENC_AVAILABLE
 #endif
 
 #if !defined(_WIN32) && !defined(__APPLE__)
@@ -41,9 +35,11 @@ extern struct obs_encoder_info pcm24_encoder_info;
 extern struct obs_encoder_info pcm32_encoder_info;
 extern struct obs_encoder_info alac_encoder_info;
 extern struct obs_encoder_info flac_encoder_info;
+#ifdef ENABLE_FFMPEG_NVENC
 extern struct obs_encoder_info h264_nvenc_encoder_info;
 #ifdef ENABLE_HEVC
 extern struct obs_encoder_info hevc_nvenc_encoder_info;
+#endif
 #endif
 extern struct obs_encoder_info svt_av1_encoder_info;
 extern struct obs_encoder_info aom_av1_encoder_info;
@@ -59,11 +55,10 @@ extern struct obs_encoder_info hevc_vaapi_encoder_tex_info;
 #endif
 #endif
 
-#ifndef __APPLE__
+#ifdef ENABLE_FFMPEG_NVENC
 
 static const char *nvenc_check_name = "nvenc_check";
 
-#if defined(_WIN32) || defined(__linux__)
 static const int blacklisted_adapters[] = {
 	0x1298, // GK208M [GeForce GT 720M]
 	0x1140, // GF117M [GeForce 610M/710M/810M/820M / GT 620M/625M/630M/720M]
@@ -127,9 +122,8 @@ static bool is_blacklisted(const int device_id)
 
 	return false;
 }
-#endif
 
-#if defined(_WIN32)
+#ifdef _WIN32
 typedef HRESULT(WINAPI *create_dxgi_proc)(const IID *, IDXGIFactory1 **);
 
 static bool nvenc_device_available(void)
@@ -243,10 +237,6 @@ static bool nvenc_device_available(void)
 }
 #endif
 
-#ifdef OBS_NVENC_AVAILABLE
-extern bool load_nvenc_lib(void);
-#endif
-
 static bool nvenc_codec_exists(const char *name, const char *fallback)
 {
 	const AVCodec *nvenc = avcodec_find_encoder_by_name(name);
@@ -256,7 +246,7 @@ static bool nvenc_codec_exists(const char *name, const char *fallback)
 	return nvenc != NULL;
 }
 
-static bool nvenc_supported(bool *out_h264, bool *out_hevc, bool *out_av1)
+static bool nvenc_supported(bool *out_h264, bool *out_hevc)
 {
 	profile_start(nvenc_check_name);
 
@@ -267,13 +257,18 @@ static bool nvenc_supported(bool *out_h264, bool *out_hevc, bool *out_av1)
 	const bool hevc = false;
 #endif
 
-	bool av1 = false;
-
 	bool success = h264 || hevc;
 	if (success) {
-#ifdef OBS_NVENC_AVAILABLE
-		success = nvenc_device_available() && load_nvenc_lib();
-		av1 = success && (get_nvenc_ver() >= ((12 << 4) | 0));
+#ifdef _WIN32
+		success = nvenc_device_available();
+#elif defined(__linux__)
+		success = nvenc_device_available();
+		if (success) {
+			void *const lib = os_dlopen("libnvidia-encode.so.1");
+			success = lib != NULL;
+			if (success)
+				os_dlclose(lib);
+		}
 #else
 		void *const lib = os_dlopen("libnvidia-encode.so.1");
 		success = lib != NULL;
@@ -284,7 +279,6 @@ static bool nvenc_supported(bool *out_h264, bool *out_hevc, bool *out_av1)
 		if (success) {
 			*out_h264 = h264;
 			*out_hevc = hevc;
-			*out_av1 = av1;
 		}
 	}
 
@@ -334,11 +328,6 @@ static bool hevc_vaapi_supported(void)
 #endif
 #endif
 
-#ifdef OBS_NVENC_AVAILABLE
-extern void obs_nvenc_load(bool h264, bool hevc, bool av1);
-extern void obs_nvenc_unload(void);
-#endif
-
 #ifdef _WIN32
 extern void amf_load(void);
 extern void amf_unload(void);
@@ -375,16 +364,12 @@ bool obs_module_load(void)
 	obs_register_encoder(&pcm32_encoder_info);
 	obs_register_encoder(&alac_encoder_info);
 	obs_register_encoder(&flac_encoder_info);
-#ifndef __APPLE__
+#ifdef ENABLE_FFMPEG_NVENC
 	bool h264 = false;
 	bool hevc = false;
-	bool av1 = false;
-	if (nvenc_supported(&h264, &hevc, &av1)) {
+	if (nvenc_supported(&h264, &hevc)) {
 		blog(LOG_INFO, "NVENC supported");
 
-#ifdef OBS_NVENC_AVAILABLE
-		obs_nvenc_load(h264, hevc, av1);
-#endif
 		if (h264)
 			obs_register_encoder(&h264_nvenc_encoder_info);
 #ifdef ENABLE_HEVC
@@ -446,8 +431,5 @@ void obs_module_unload(void)
 
 #ifdef _WIN32
 	amf_unload();
-#endif
-#ifdef OBS_NVENC_AVAILABLE
-	obs_nvenc_unload();
 #endif
 }

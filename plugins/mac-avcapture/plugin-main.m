@@ -284,23 +284,22 @@ bool obs_module_load(void)
 
     obs_register_source(&av_capture_info);
 
-    struct obs_source_info av_capture_sync_info = {.id = "macos-avcapture-fast",
-                                                   .type = OBS_SOURCE_TYPE_INPUT,
-                                                   .output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
-                                                                   OBS_SOURCE_AUDIO | OBS_SOURCE_SRGB |
-                                                                   OBS_SOURCE_DO_NOT_DUPLICATE,
-                                                   .create = av_fast_capture_create,
-                                                   .get_name = av_fast_capture_get_name,
-                                                   .get_defaults = av_fast_capture_set_defaults,
-                                                   .get_properties = av_capture_properties,
-                                                   .update = av_capture_update,
-                                                   .destroy = av_capture_destroy,
-                                                   .video_tick = av_fast_capture_tick,
-                                                   .video_render = av_fast_capture_render,
-                                                   .get_width = av_fast_capture_get_width,
-                                                   .get_height = av_fast_capture_get_height,
-                                                   .icon_type = OBS_ICON_TYPE_CAMERA
-
+    struct obs_source_info av_capture_sync_info = {
+        .id = "macos-avcapture-fast",
+        .type = OBS_SOURCE_TYPE_INPUT,
+        .output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW | OBS_SOURCE_AUDIO | OBS_SOURCE_SRGB |
+                        OBS_SOURCE_DO_NOT_DUPLICATE,
+        .create = av_fast_capture_create,
+        .get_name = av_fast_capture_get_name,
+        .get_defaults = av_fast_capture_set_defaults,
+        .get_properties = av_capture_properties,
+        .update = av_capture_update,
+        .destroy = av_capture_destroy,
+        .video_tick = av_fast_capture_tick,
+        .video_render = av_fast_capture_render,
+        .get_width = av_fast_capture_get_width,
+        .get_height = av_fast_capture_get_height,
+        .icon_type = OBS_ICON_TYPE_CAMERA,
     };
 
     obs_register_source(&av_capture_sync_info);

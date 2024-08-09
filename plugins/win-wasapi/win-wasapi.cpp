@@ -1109,16 +1109,7 @@ bool WASAPISource::ProcessCaptureData()
 			sawBadTimestamp = true;
 		}
 
-		if (flags & AUDCLNT_BUFFERFLAGS_DATA_DISCONTINUITY) {
-			/* libobs should handle discontinuities fine. */
-			blog(LOG_DEBUG, "[WASAPISource::ProcessCaptureData]"
-					" Discontinuity flag is set.");
-		}
-
 		if (flags & AUDCLNT_BUFFERFLAGS_SILENT) {
-			blog(LOG_DEBUG, "[WASAPISource::ProcessCaptureData]"
-					" Silent flag is set.");
-
 			/* buffer size = frame size * number of frames
 			 * frame size = channels * sample size
 			 * sample size = 4 bytes (always float per InitFormat) */

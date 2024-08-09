@@ -25,6 +25,7 @@ runs:
       with:
         path: "repo"
         fetch-depth: 0
+        ref: ${{ inputs.tagName }}
 
     - name: Download Release Artifact
       shell: pwsh
@@ -33,15 +34,16 @@ runs:
       run: |
         # Download OBS release
         . ${env:GITHUB_ACTION_PATH}\Invoke-External.ps1
-        Invoke-External gh release download "${{ inputs.tagName }}" -p "*-Windows.zip"
-        Expand-Archive -Path "*-Windows.zip" -DestinationPath "${{ github.workspace }}/build"
+        Invoke-External gh release download "${{ inputs.tagName }}" -p "OBS-Studio-${{ inputs.tagName }}-Windows.zip"
+        Invoke-External gh attestation verify "OBS-Studio-${{ inputs.tagName }}-Windows.zip" --owner obsproject
+        Expand-Archive -Path "OBS-Studio-${{ inputs.tagName }}-Windows.zip" -DestinationPath "${{ github.workspace }}/build"
 
     - name: Setup bouf
       shell: pwsh
       env:
-        BOUF_TAG: 'v0.6.3'
-        BOUF_HASH: '7f1d266467620aa553a705391ee06128e8ee14af66129a0e64a282997fb6fd83'
-        BOUF_NSIS_HASH: 'a234126de89f122b6a552df3416de3eabcb4195217626c7f4eaec71b20fe36eb'
+        BOUF_TAG: 'v0.6.4'
+        BOUF_HASH: 'aca6810e741dc38ff843fab7b25a0ad8570ee84f5595132cf0cc4a5b0131b4c4'
+        BOUF_NSIS_HASH: 'ed453784486556bd959d56743a8478ad3f68fe0305e9b43ac19d8771d0515257'
         GH_TOKEN: ${{ github.token }}
       run: |
         # Download bouf release
@@ -85,7 +87,10 @@ runs:
       run: |
         # Release notes are just the tag body on Windows
         Set-Location repo
-        git tag -l --format='%(contents:body)' ${{ inputs.version }} > "${{ github.workspace }}/notes.rst"
+        git tag -l --format='%(contents:subject)' ${{ inputs.tagName }} > "${{ github.workspace }}/notes.rst"
+        Write-Output "###################################################" >> "${{ github.workspace }}/notes.rst"
+        Write-Output "" >> "${{ github.workspace }}/notes.rst"
+        git tag -l --format='%(contents:body)' ${{ inputs.tagName }} >> "${{ github.workspace }}/notes.rst"
 
     - name: Run bouf
       shell: pwsh

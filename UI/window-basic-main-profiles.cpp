@@ -21,10 +21,10 @@
 #include <QMessageBox>
 #include <QVariant>
 #include <QFileDialog>
+#include <qt-wrappers.hpp>
 #include "window-basic-main.hpp"
 #include "window-basic-auto-config.hpp"
 #include "window-namedialog.hpp"
-#include "qt-wrappers.hpp"
 
 extern void DestroyPanelCookieManager();
 extern void DuplicateCurrentCookieProfile(ConfigFile &config);

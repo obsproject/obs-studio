@@ -23,7 +23,6 @@
                             "RTMP",
                             "RTMPS",
                             "HLS",
-                            "FTL",
                             "SRT",
                             "RIST",
                             "WHIP"
@@ -124,7 +123,6 @@
                                 "enum": [
                                     "rtmp_output",
                                     "ffmpeg_hls_muxer",
-                                    "ftl_output",
                                     "ffmpeg_mpegts_muxer"
                                 ]
                             },
@@ -235,7 +233,7 @@
                     },
                     {
                         "$comment": "Require recommended output field if protocol field is not RTMP(S)",
-                        "if": { "required": ["protocol"], "properties": { "protocol": { "pattern": "^(HLS|SRT|RIST|FTL|WHIP)$" } } },
+                        "if": { "required": ["protocol"], "properties": { "protocol": { "pattern": "^(HLS|SRT|RIST|WHIP)$" } } },
                         "then": { "properties": { "recommended": { "required": ["output"] } } }
                     }
                 ]

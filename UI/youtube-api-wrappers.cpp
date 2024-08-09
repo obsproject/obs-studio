@@ -6,11 +6,11 @@
 
 #include <string>
 #include <iostream>
+#include <qt-wrappers.hpp>
 
 #include "auth-youtube.hpp"
 #include "obs-app.hpp"
 #include "window-basic-main.hpp"
-#include "qt-wrappers.hpp"
 #include "remote-text.hpp"
 #include "ui-config.h"
 #include "obf.h"

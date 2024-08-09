@@ -277,7 +277,7 @@ endif()
 
 if(EXISTS "${FFmpeg_avutil_INCLUDE_DIR}/libavutil/ffversion.h")
   file(STRINGS "${FFmpeg_avutil_INCLUDE_DIR}/libavutil/ffversion.h" _version_string
-       REGEX "^.*FFMPEG_VERSION[ \t]+\"n?[0-9a-z\\.-]+\"[ \t]*$")
+       REGEX "^.*FFMPEG_VERSION[ \t]+\"n?[0-9a-z\\~.-]+\"[ \t]*$")
   string(REGEX REPLACE ".*FFMPEG_VERSION[ \t]+\"n?([0-9]+\\.[0-9]).*\".*" "\\1" FFmpeg_VERSION "${_version_string}")
 endif()
 

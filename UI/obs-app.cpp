@@ -30,6 +30,8 @@
 #include <util/cf-parser.h>
 #include <obs-config.h>
 #include <obs.hpp>
+#include <qt-wrappers.hpp>
+#include <slider-ignorewheel.hpp>
 
 #include <QDir>
 #include <QFile>
@@ -38,11 +40,10 @@
 #include <QProcess>
 #include <QAccessible>
 
-#include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 #include "obs-proxy-style.hpp"
 #include "log-viewer.hpp"
-#include "slider-ignorewheel.hpp"
+#include "volume-control.hpp"
 #include "window-basic-main.hpp"
 #ifdef __APPLE__
 #include "window-permissions.hpp"
@@ -57,6 +58,7 @@
 #ifdef _WIN32
 #include <windows.h>
 #include <filesystem>
+#include <util/windows/win-version.h>
 #else
 #include <signal.h>
 #include <pthread.h>
@@ -350,7 +352,6 @@ static inline bool too_many_repeated_entries(fstream &logFile, const char *msg,
 	static mutex log_mutex;
 	static const char *last_msg_ptr = nullptr;
 	static int last_char_sum = 0;
-	static char cmp_str[4096];
 	static int rep_count = 0;
 
 	int new_sum = sum_chars(output_str);
@@ -376,7 +377,6 @@ static inline bool too_many_repeated_entries(fstream &logFile, const char *msg,
 	}
 
 	last_msg_ptr = msg;
-	strcpy(cmp_str, output_str);
 	last_char_sum = new_sum;
 	rep_count = 0;
 
@@ -386,7 +386,7 @@ static inline bool too_many_repeated_entries(fstream &logFile, const char *msg,
 static void do_log(int log_level, const char *msg, va_list args, void *param)
 {
 	fstream &logFile = *static_cast<fstream *>(param);
-	char str[4096];
+	char str[8192];
 
 #ifndef _WIN32
 	va_list args2;
@@ -1783,6 +1783,8 @@ string GetFormatExt(const char *container)
 	string ext = container;
 	if (ext == "fragmented_mp4")
 		ext = "mp4";
+	if (ext == "hybrid_mp4")
+		ext = "mp4";
 	else if (ext == "fragmented_mov")
 		ext = "mov";
 	else if (ext == "hls")
@@ -1987,12 +1989,6 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 #endif
 
 #if !defined(_WIN32) && !defined(__APPLE__)
-	/* NOTE: The Breeze Qt style plugin adds frame arround QDockWidget with
-	 * QPainter which can not be modifed. To avoid this the base style is
-	 * enforce to the Qt default style on Linux: Fusion. */
-
-	setenv("QT_STYLE_OVERRIDE", "Fusion", false);
-
 	/* NOTE: Users blindly set this, but this theme is incompatble with Qt6 and
 	 * crashes loading saved geometry. Just turn off this theme and let users complain OBS
 	 * looks ugly instead of crashing. */
@@ -2000,7 +1996,8 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	if (platform_theme && strcmp(platform_theme, "qt5ct") == 0)
 		unsetenv("QT_QPA_PLATFORMTHEME");
 
-#if defined(ENABLE_WAYLAND) && defined(USE_XDG)
+#if defined(ENABLE_WAYLAND) && defined(USE_XDG) && \
+	QT_VERSION < QT_VERSION_CHECK(6, 3, 0)
 	/* NOTE: Qt doesn't use the Wayland platform on GNOME, so we have to
 	 * force it using the QT_QPA_PLATFORM env var. It's still possible to
 	 * use other QPA platforms using this env var, or the -platform command
@@ -2518,330 +2515,6 @@ static inline bool arg_is(const char *arg, const char *long_form,
 	       (short_form && strcmp(arg, short_form) == 0);
 }
 
-static bool update_ffmpeg_output(ConfigFile &config)
-{
-	if (config_has_user_value(config, "AdvOut", "FFOutputToFile"))
-		return false;
-
-	const char *url = config_get_string(config, "AdvOut", "FFURL");
-	if (!url)
-		return false;
-
-	bool isActualURL = strstr(url, "://") != nullptr;
-	if (isActualURL)
-		return false;
-
-	string urlStr = url;
-	string extension;
-
-	for (size_t i = urlStr.length(); i > 0; i--) {
-		size_t idx = i - 1;
-
-		if (urlStr[idx] == '.') {
-			extension = &urlStr[i];
-		}
-
-		if (urlStr[idx] == '\\' || urlStr[idx] == '/') {
-			urlStr[idx] = 0;
-			break;
-		}
-	}
-
-	if (urlStr.empty() || extension.empty())
-		return false;
-
-	config_remove_value(config, "AdvOut", "FFURL");
-	config_set_string(config, "AdvOut", "FFFilePath", urlStr.c_str());
-	config_set_string(config, "AdvOut", "FFExtension", extension.c_str());
-	config_set_bool(config, "AdvOut", "FFOutputToFile", true);
-	return true;
-}
-
-static bool move_reconnect_settings(ConfigFile &config, const char *sec)
-{
-	bool changed = false;
-
-	if (config_has_user_value(config, sec, "Reconnect")) {
-		bool reconnect = config_get_bool(config, sec, "Reconnect");
-		config_set_bool(config, "Output", "Reconnect", reconnect);
-		changed = true;
-	}
-	if (config_has_user_value(config, sec, "RetryDelay")) {
-		int delay = (int)config_get_uint(config, sec, "RetryDelay");
-		config_set_uint(config, "Output", "RetryDelay", delay);
-		changed = true;
-	}
-	if (config_has_user_value(config, sec, "MaxRetries")) {
-		int retries = (int)config_get_uint(config, sec, "MaxRetries");
-		config_set_uint(config, "Output", "MaxRetries", retries);
-		changed = true;
-	}
-
-	return changed;
-}
-
-static bool update_reconnect(ConfigFile &config)
-{
-	if (!config_has_user_value(config, "Output", "Mode"))
-		return false;
-
-	const char *mode = config_get_string(config, "Output", "Mode");
-	if (!mode)
-		return false;
-
-	const char *section = (strcmp(mode, "Advanced") == 0) ? "AdvOut"
-							      : "SimpleOutput";
-
-	if (move_reconnect_settings(config, section)) {
-		config_remove_value(config, "SimpleOutput", "Reconnect");
-		config_remove_value(config, "SimpleOutput", "RetryDelay");
-		config_remove_value(config, "SimpleOutput", "MaxRetries");
-		config_remove_value(config, "AdvOut", "Reconnect");
-		config_remove_value(config, "AdvOut", "RetryDelay");
-		config_remove_value(config, "AdvOut", "MaxRetries");
-		return true;
-	}
-
-	return false;
-}
-
-static void convert_nvenc_h264_presets(obs_data_t *data)
-{
-	const char *preset = obs_data_get_string(data, "preset");
-	const char *rc = obs_data_get_string(data, "rate_control");
-
-	// If already using SDK10+ preset, return early.
-	if (astrcmpi_n(preset, "p", 1) == 0) {
-		obs_data_set_string(data, "preset2", preset);
-		return;
-	}
-
-	if (astrcmpi(rc, "lossless") == 0 && astrcmpi(preset, "mq")) {
-		obs_data_set_string(data, "preset2", "p3");
-		obs_data_set_string(data, "tune", "lossless");
-		obs_data_set_string(data, "multipass", "disabled");
-
-	} else if (astrcmpi(rc, "lossless") == 0 && astrcmpi(preset, "hp")) {
-		obs_data_set_string(data, "preset2", "p2");
-		obs_data_set_string(data, "tune", "lossless");
-		obs_data_set_string(data, "multipass", "disabled");
-
-	} else if (astrcmpi(preset, "mq") == 0) {
-		obs_data_set_string(data, "preset2", "p5");
-		obs_data_set_string(data, "tune", "hq");
-		obs_data_set_string(data, "multipass", "qres");
-
-	} else if (astrcmpi(preset, "hq") == 0) {
-		obs_data_set_string(data, "preset2", "p5");
-		obs_data_set_string(data, "tune", "hq");
-		obs_data_set_string(data, "multipass", "disabled");
-
-	} else if (astrcmpi(preset, "default") == 0) {
-		obs_data_set_string(data, "preset2", "p3");
-		obs_data_set_string(data, "tune", "hq");
-		obs_data_set_string(data, "multipass", "disabled");
-
-	} else if (astrcmpi(preset, "hp") == 0) {
-		obs_data_set_string(data, "preset2", "p1");
-		obs_data_set_string(data, "tune", "hq");
-		obs_data_set_string(data, "multipass", "disabled");
-
-	} else if (astrcmpi(preset, "ll") == 0) {
-		obs_data_set_string(data, "preset2", "p3");
-		obs_data_set_string(data, "tune", "ll");
-		obs_data_set_string(data, "multipass", "disabled");
-
-	} else if (astrcmpi(preset, "llhq") == 0) {
-		obs_data_set_string(data, "preset2", "p4");
-		obs_data_set_string(data, "tune", "ll");
-		obs_data_set_string(data, "multipass", "disabled");
-
-	} else if (astrcmpi(preset, "llhp") == 0) {
-		obs_data_set_string(data, "preset2", "p2");
-		obs_data_set_string(data, "tune", "ll");
-		obs_data_set_string(data, "multipass", "disabled");
-	}
-}
-
-static void convert_nvenc_hevc_presets(obs_data_t *data)
-{
-	const char *preset = obs_data_get_string(data, "preset");
-	const char *rc = obs_data_get_string(data, "rate_control");
-
-	// If already using SDK10+ preset, return early.
-	if (astrcmpi_n(preset, "p", 1) == 0) {
-		obs_data_set_string(data, "preset2", preset);
-		return;
-	}
-
-	if (astrcmpi(rc, "lossless") == 0 && astrcmpi(preset, "mq")) {
-		obs_data_set_string(data, "preset2", "p5");
-		obs_data_set_string(data, "tune", "lossless");
-		obs_data_set_string(data, "multipass", "disabled");
-
-	} else if (astrcmpi(rc, "lossless") == 0 && astrcmpi(preset, "hp")) {
-		obs_data_set_string(data, "preset2", "p3");
-		obs_data_set_string(data, "tune", "lossless");
-		obs_data_set_string(data, "multipass", "disabled");
-
-	} else if (astrcmpi(preset, "mq") == 0) {
-		obs_data_set_string(data, "preset2", "p6");
-		obs_data_set_string(data, "tune", "hq");
-		obs_data_set_string(data, "multipass", "qres");
-
-	} else if (astrcmpi(preset, "hq") == 0) {
-		obs_data_set_string(data, "preset2", "p6");
-		obs_data_set_string(data, "tune", "hq");
-		obs_data_set_string(data, "multipass", "disabled");
-
-	} else if (astrcmpi(preset, "default") == 0) {
-		obs_data_set_string(data, "preset2", "p5");
-		obs_data_set_string(data, "tune", "hq");
-		obs_data_set_string(data, "multipass", "disabled");
-
-	} else if (astrcmpi(preset, "hp") == 0) {
-		obs_data_set_string(data, "preset2", "p1");
-		obs_data_set_string(data, "tune", "hq");
-		obs_data_set_string(data, "multipass", "disabled");
-
-	} else if (astrcmpi(preset, "ll") == 0) {
-		obs_data_set_string(data, "preset2", "p3");
-		obs_data_set_string(data, "tune", "ll");
-		obs_data_set_string(data, "multipass", "disabled");
-
-	} else if (astrcmpi(preset, "llhq") == 0) {
-		obs_data_set_string(data, "preset2", "p4");
-		obs_data_set_string(data, "tune", "ll");
-		obs_data_set_string(data, "multipass", "disabled");
-
-	} else if (astrcmpi(preset, "llhp") == 0) {
-		obs_data_set_string(data, "preset2", "p2");
-		obs_data_set_string(data, "tune", "ll");
-		obs_data_set_string(data, "multipass", "disabled");
-	}
-}
-
-static void convert_28_1_encoder_setting(const char *encoder, const char *file)
-{
-	OBSDataAutoRelease data =
-		obs_data_create_from_json_file_safe(file, "bak");
-	bool modified = false;
-
-	if (astrcmpi(encoder, "jim_nvenc") == 0 ||
-	    astrcmpi(encoder, "ffmpeg_nvenc") == 0) {
-
-		if (obs_data_has_user_value(data, "preset") &&
-		    !obs_data_has_user_value(data, "preset2")) {
-			convert_nvenc_h264_presets(data);
-
-			modified = true;
-		}
-	} else if (astrcmpi(encoder, "jim_hevc_nvenc") == 0 ||
-		   astrcmpi(encoder, "ffmpeg_hevc_nvenc") == 0) {
-
-		if (obs_data_has_user_value(data, "preset") &&
-		    !obs_data_has_user_value(data, "preset2")) {
-			convert_nvenc_hevc_presets(data);
-
-			modified = true;
-		}
-	}
-
-	if (modified)
-		obs_data_save_json_safe(data, file, "tmp", "bak");
-}
-
-bool update_nvenc_presets(ConfigFile &config)
-{
-	if (config_has_user_value(config, "SimpleOutput", "NVENCPreset2") ||
-	    !config_has_user_value(config, "SimpleOutput", "NVENCPreset"))
-		return false;
-
-	const char *streamEncoder =
-		config_get_string(config, "SimpleOutput", "StreamEncoder");
-	const char *nvencPreset =
-		config_get_string(config, "SimpleOutput", "NVENCPreset");
-
-	OBSDataAutoRelease data = obs_data_create();
-	obs_data_set_string(data, "preset", nvencPreset);
-
-	if (astrcmpi(streamEncoder, "nvenc_hevc") == 0) {
-		convert_nvenc_hevc_presets(data);
-	} else {
-		convert_nvenc_h264_presets(data);
-	}
-
-	config_set_string(config, "SimpleOutput", "NVENCPreset2",
-			  obs_data_get_string(data, "preset2"));
-
-	return true;
-}
-
-static void upgrade_settings(void)
-{
-	char path[512];
-	int pathlen = GetConfigPath(path, 512, "obs-studio/basic/profiles");
-
-	if (pathlen <= 0)
-		return;
-	if (!os_file_exists(path))
-		return;
-
-	os_dir_t *dir = os_opendir(path);
-	if (!dir)
-		return;
-
-	struct os_dirent *ent = os_readdir(dir);
-
-	while (ent) {
-		if (ent->directory && strcmp(ent->d_name, ".") != 0 &&
-		    strcmp(ent->d_name, "..") != 0) {
-			strcat(path, "/");
-			strcat(path, ent->d_name);
-			strcat(path, "/basic.ini");
-
-			ConfigFile config;
-			int ret;
-
-			ret = config.Open(path, CONFIG_OPEN_EXISTING);
-			if (ret == CONFIG_SUCCESS) {
-				if (update_ffmpeg_output(config) ||
-				    update_reconnect(config)) {
-					config_save_safe(config, "tmp",
-							 nullptr);
-				}
-			}
-
-			if (config) {
-				const char *sEnc = config_get_string(
-					config, "AdvOut", "Encoder");
-				const char *rEnc = config_get_string(
-					config, "AdvOut", "RecEncoder");
-
-				/* replace "cbr" option with "rate_control" for
-				 * each profile's encoder data */
-				path[pathlen] = 0;
-				strcat(path, "/");
-				strcat(path, ent->d_name);
-				strcat(path, "/recordEncoder.json");
-				convert_28_1_encoder_setting(rEnc, path);
-
-				path[pathlen] = 0;
-				strcat(path, "/");
-				strcat(path, ent->d_name);
-				strcat(path, "/streamEncoder.json");
-				convert_28_1_encoder_setting(sEnc, path);
-			}
-
-			path[pathlen] = 0;
-		}
-
-		ent = os_readdir(dir);
-	}
-
-	os_closedir(dir);
-}
-
 static void check_safe_mode_sentinel(void)
 {
 #ifndef NDEBUG
@@ -2906,6 +2579,35 @@ void OBSApp::commitData(QSessionManager &manager)
 }
 #endif
 
+#ifdef _WIN32
+static constexpr char vcRunErrorTitle[] = "Outdated Visual C++ Runtime";
+static constexpr char vcRunErrorMsg[] =
+	"OBS Studio requires a newer version of the Microsoft Visual C++ "
+	"Redistributables.\n\nYou will now be directed to the download page.";
+static constexpr char vcRunInstallerUrl[] =
+	"https://obsproject.com/visual-studio-2022-runtimes";
+
+static bool vc_runtime_outdated()
+{
+	win_version_info ver;
+	if (!get_dll_ver(L"msvcp140.dll", &ver))
+		return true;
+	/* Major is always 14 (hence 140.dll), so we only care about minor. */
+	if (ver.minor >= 40)
+		return false;
+
+	int choice = MessageBoxA(NULL, vcRunErrorMsg, vcRunErrorTitle,
+				 MB_OKCANCEL | MB_ICONERROR | MB_TASKMODAL);
+	if (choice == IDOK) {
+		/* Open the URL in the default browser. */
+		ShellExecuteA(NULL, "open", vcRunInstallerUrl, NULL, NULL,
+			      SW_SHOWNORMAL);
+	}
+
+	return true;
+}
+#endif
+
 int main(int argc, char *argv[])
 {
 #ifndef _WIN32
@@ -2932,6 +2634,9 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef _WIN32
+	// Abort as early as possible if MSVC runtime is outdated
+	if (vc_runtime_outdated())
+		return 1;
 	// Try to keep this as early as possible
 	install_dll_blocklist_hook();
 
@@ -3093,7 +2798,6 @@ int main(int argc, char *argv[])
 #endif
 
 	check_safe_mode_sentinel();
-	upgrade_settings();
 
 	fstream logFile;
 

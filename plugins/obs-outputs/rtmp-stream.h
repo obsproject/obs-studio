@@ -60,7 +60,7 @@ struct rtmp_stream {
 	struct deque packets;
 	bool sent_headers;
 
-	bool got_first_video;
+	bool got_first_packet;
 	int64_t start_dts_offset;
 
 	volatile bool connecting;
@@ -114,6 +114,7 @@ struct rtmp_stream {
 	long dbr_inc_bitrate;
 	bool dbr_enabled;
 
+	enum audio_id_t audio_codec[MAX_OUTPUT_AUDIO_ENCODERS];
 	enum video_id_t video_codec[MAX_OUTPUT_VIDEO_ENCODERS];
 
 	RTMP rtmp;

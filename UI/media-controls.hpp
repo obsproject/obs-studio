@@ -4,7 +4,7 @@
 #include <QTimer>
 #include <vector>
 #include <obs.hpp>
-#include "qt-wrappers.hpp"
+#include <qt-wrappers.hpp>
 
 class Ui_MediaControls;
 
@@ -45,10 +45,10 @@ private slots:
 	void on_previousButton_clicked();
 	void on_durationLabel_clicked();
 
-	void MediaSliderClicked();
-	void MediaSliderReleased();
-	void MediaSliderHovered(int val);
-	void MediaSliderMoved(int val);
+	void AbsoluteSliderClicked();
+	void AbsoluteSliderReleased();
+	void AbsoluteSliderHovered(int val);
+	void AbsoluteSliderMoved(int val);
 	void SetSliderPosition();
 	void SetPlayingState();
 	void SetPausedState();

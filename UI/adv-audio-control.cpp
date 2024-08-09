@@ -5,7 +5,7 @@
 #include <QComboBox>
 #include <QCheckBox>
 #include <cmath>
-#include "qt-wrappers.hpp"
+#include <qt-wrappers.hpp>
 #include "obs-app.hpp"
 #include "adv-audio-control.hpp"
 #include "window-basic-main.hpp"

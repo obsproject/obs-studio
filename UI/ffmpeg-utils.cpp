@@ -185,6 +185,20 @@ static const unordered_map<string, unordered_set<string>> codec_compat = {
 		 "pcm_f32le",
 #endif
 	 }},
+	// Not part of FFmpeg, see obs-outputs module
+	{"hybrid_mp4",
+	 {
+		 "h264",
+		 "hevc",
+		 "av1",
+		 "aac",
+		 "opus",
+		 "alac",
+		 "flac",
+		 "pcm_s16le",
+		 "pcm_s24le",
+		 "pcm_f32le",
+	 }},
 	{"mov",
 	 {
 		 "h264",

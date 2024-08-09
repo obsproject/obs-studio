@@ -55,8 +55,8 @@ function(set_target_properties_obs target)
   elseif(target_type STREQUAL SHARED_LIBRARY)
     set_target_properties(
       ${target}
-      PROPERTIES VERSION ${OBS_VERSION_MAJOR}
-                 SOVERSION ${OBS_VERSION_CANONICAL}
+      PROPERTIES VERSION ${OBS_VERSION_CANONICAL}
+                 SOVERSION ${OBS_VERSION_MAJOR}
                  BUILD_RPATH "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_LIBRARY_DESTINATION}"
                  INSTALL_RPATH "${OBS_LIBRARY_RPATH}")
 
@@ -73,6 +73,8 @@ function(set_target_properties_obs target)
       POST_BUILD
       COMMAND "${CMAKE_COMMAND}" -E make_directory "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_LIBRARY_DESTINATION}"
       COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_FILE:${target}>"
+              "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_LIBRARY_DESTINATION}/"
+      COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_SONAME_FILE:${target}>"
               "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_LIBRARY_DESTINATION}/"
       COMMENT "Copy ${target} to library directory (${OBS_LIBRARY_DESTINATION})"
       VERBATIM)
@@ -98,12 +100,12 @@ function(set_target_properties_obs target)
 
   elseif(target_type STREQUAL MODULE_LIBRARY)
     if(target STREQUAL obs-browser)
-      set_target_properties(${target} PROPERTIES VERSION 0 SOVERSION ${OBS_VERSION_CANONICAL})
+      set_target_properties(${target} PROPERTIES VERSION 0 SOVERSION ${OBS_VERSION_MAJOR})
     else()
       set_target_properties(
         ${target}
         PROPERTIES VERSION 0
-                   SOVERSION ${OBS_VERSION_CANONICAL}
+                   SOVERSION ${OBS_VERSION_MAJOR}
                    BUILD_RPATH "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_LIBRARY_DESTINATION}"
                    INSTALL_RPATH "${OBS_MODULE_RPATH}")
     endif()

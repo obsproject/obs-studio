@@ -71,6 +71,28 @@ find_package(CURL REQUIRED)
 add_subdirectory(frontend-plugins)
 add_executable(obs)
 
+if(NOT TARGET OBS::properties-view)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/properties-view" "${CMAKE_BINARY_DIR}/shared/properties-view")
+endif()
+
+if(NOT TARGET OBS::qt-plain-text-edit)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/plain-text-edit" "${CMAKE_BINARY_DIR}/shared/qt/plain-text-edit")
+endif()
+
+if(NOT TARGET OBS::qt-slider-ignorewheel)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/slider-ignorewheel"
+                   "${CMAKE_BINARY_DIR}/shared/qt/slider-ignorewheel")
+endif()
+
+if(NOT TARGET OBS::qt-vertical-scroll-area)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/vertical-scroll-area"
+                   "${CMAKE_BINARY_DIR}/shared/qt/vertical-scroll-area")
+endif()
+
+if(NOT TARGET OBS::qt-wrappers)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/wrappers" "${CMAKE_BINARY_DIR}/shared/qt/wrappers")
+endif()
+
 find_qt(COMPONENTS Widgets Network Svg Xml COMPONENTS_LINUX Gui DBus)
 
 target_link_libraries(obs PRIVATE Qt::Widgets Qt::Svg Qt::Xml Qt::Network)
@@ -101,6 +123,7 @@ target_sources(
           forms/OBSAbout.ui
           forms/OBSAdvAudio.ui
           forms/OBSBasic.ui
+          forms/OBSBasicControls.ui
           forms/OBSBasicFilters.ui
           forms/OBSBasicInteraction.ui
           forms/OBSBasicProperties.ui
@@ -146,8 +169,6 @@ target_sources(
           platform.hpp
           qt-display.cpp
           qt-display.hpp
-          qt-wrappers.cpp
-          qt-wrappers.hpp
           ui-validation.cpp
           ui-validation.hpp
           multiview.cpp
@@ -160,14 +181,16 @@ target_sources(
 
 target_sources(
   obs
-  PRIVATE adv-audio-control.cpp
+  PRIVATE absolute-slider.cpp
+          absolute-slider.hpp
+          adv-audio-control.cpp
           adv-audio-control.hpp
           audio-encoders.cpp
           audio-encoders.hpp
           balance-slider.hpp
+          basic-controls.cpp
+          basic-controls.hpp
           clickable-label.hpp
-          double-slider.cpp
-          double-slider.hpp
           horizontal-scroll-area.cpp
           horizontal-scroll-area.hpp
           item-widget-helpers.cpp
@@ -184,31 +207,17 @@ target_sources(
           log-viewer.hpp
           media-controls.cpp
           media-controls.hpp
-          media-slider.cpp
-          media-slider.hpp
           menu-button.cpp
           menu-button.hpp
           mute-checkbox.hpp
-          plain-text-edit.cpp
-          plain-text-edit.hpp
-          properties-view.cpp
-          properties-view.hpp
-          properties-view.moc.hpp
-          record-button.cpp
-          record-button.hpp
+          noncheckable-button.hpp
           remote-text.cpp
           remote-text.hpp
           scene-tree.cpp
           scene-tree.hpp
           screenshot-obj.hpp
-          slider-absoluteset-style.cpp
-          slider-absoluteset-style.hpp
-          slider-ignorewheel.cpp
-          slider-ignorewheel.hpp
           source-label.cpp
           source-label.hpp
-          spinbox-ignorewheel.cpp
-          spinbox-ignorewheel.hpp
           source-tree.cpp
           source-tree.hpp
           url-push-button.cpp
@@ -217,8 +226,6 @@ target_sources(
           undo-stack-obs.hpp
           volume-control.cpp
           volume-control.hpp
-          vertical-scroll-area.cpp
-          vertical-scroll-area.hpp
           visibility-item-widget.cpp
           visibility-item-widget.hpp)
 
@@ -282,6 +289,21 @@ target_sources(
           window-remux.cpp
           window-remux.hpp)
 
+target_sources(
+  obs
+  PRIVATE # cmake-format: sortable
+          goliveapi-censoredjson.cpp
+          goliveapi-censoredjson.hpp
+          goliveapi-network.cpp
+          goliveapi-network.hpp
+          goliveapi-postdata.cpp
+          goliveapi-postdata.hpp
+          multitrack-video-error.cpp
+          multitrack-video-error.hpp
+          multitrack-video-output.cpp
+          multitrack-video-output.hpp
+          system-info.hpp)
+
 target_sources(obs PRIVATE importers/importers.cpp importers/importers.hpp importers/classic.cpp importers/sl.cpp
                            importers/studio.cpp importers/xsplit.cpp)
 
@@ -289,8 +311,19 @@ target_compile_features(obs PRIVATE cxx_std_17)
 
 target_include_directories(obs PRIVATE ${CMAKE_SOURCE_DIR}/deps/json11)
 
-target_link_libraries(obs PRIVATE CURL::libcurl FFmpeg::avcodec FFmpeg::avutil FFmpeg::avformat OBS::libobs
-                                  OBS::frontend-api)
+target_link_libraries(
+  obs
+  PRIVATE CURL::libcurl
+          FFmpeg::avcodec
+          FFmpeg::avutil
+          FFmpeg::avformat
+          OBS::libobs
+          OBS::frontend-api
+          OBS::qt-wrappers
+          OBS::qt-plain-text-edit
+          OBS::qt-vertical-scroll-area
+          OBS::qt-slider-ignorewheel
+          OBS::properties-view)
 
 set_target_properties(obs PROPERTIES FOLDER "frontend")
 
@@ -368,6 +401,8 @@ if(OS_WINDOWS)
             win-update/updater/manifest.hpp
             ${CMAKE_BINARY_DIR}/obs.rc)
 
+  target_sources(obs PRIVATE system-info-windows.cpp)
+
   find_package(MbedTLS)
   target_link_libraries(obs PRIVATE Mbedtls::Mbedtls nlohmann_json::nlohmann_json OBS::blake2 Detours::Detours)
 
@@ -428,6 +463,8 @@ elseif(OS_MACOS)
   target_sources(obs PRIVATE platform-osx.mm)
   target_sources(obs PRIVATE forms/OBSPermissions.ui window-permissions.cpp window-permissions.hpp)
 
+  target_sources(obs PRIVATE system-info-macos.mm)
+
   if(ENABLE_WHATSNEW)
     find_library(SECURITY Security)
     find_package(nlohmann_json REQUIRED)
@@ -464,6 +501,8 @@ elseif(OS_POSIX)
   target_sources(obs PRIVATE platform-x11.cpp)
   target_link_libraries(obs PRIVATE Qt::GuiPrivate Qt::DBus)
 
+  target_sources(obs PRIVATE system-info-posix.cpp)
+
   target_compile_definitions(obs PRIVATE OBS_INSTALL_PREFIX="${OBS_INSTALL_PREFIX}"
                                          "$<$<BOOL:${LINUX_PORTABLE}>:LINUX_PORTABLE>")
   if(TARGET obspython)
@@ -481,16 +520,22 @@ elseif(OS_POSIX)
     target_compile_options(obs PRIVATE -Wno-unqualified-std-cast-call)
   endif()
 
-  if(OS_LINUX AND ENABLE_WHATSNEW)
-    find_package(MbedTLS)
-    find_package(nlohmann_json REQUIRED)
-    if(NOT MBEDTLS_FOUND)
-      obs_status(FATAL_ERROR "mbedTLS not found, but required for WhatsNew support on Linux")
+  if(OS_LINUX)
+    if(USE_XDG)
+      target_compile_definitions(obs PRIVATE USE_XDG)
     endif()
 
-    target_sources(obs PRIVATE update/crypto-helpers.hpp update/crypto-helpers-mbedtls.cpp update/shared-update.cpp
-                               update/shared-update.hpp update/update-helpers.cpp update/update-helpers.hpp)
-    target_link_libraries(obs PRIVATE Mbedtls::Mbedtls nlohmann_json::nlohmann_json OBS::blake2)
+    if(ENABLE_WHATSNEW)
+      find_package(MbedTLS)
+      find_package(nlohmann_json REQUIRED)
+      if(NOT MBEDTLS_FOUND)
+        obs_status(FATAL_ERROR "mbedTLS not found, but required for WhatsNew support on Linux")
+      endif()
+
+      target_sources(obs PRIVATE update/crypto-helpers.hpp update/crypto-helpers-mbedtls.cpp update/shared-update.cpp
+                                 update/shared-update.hpp update/update-helpers.cpp update/update-helpers.hpp)
+      target_link_libraries(obs PRIVATE Mbedtls::Mbedtls nlohmann_json::nlohmann_json OBS::blake2)
+    endif()
   endif()
 endif()
 

@@ -16,9 +16,9 @@
 ******************************************************************************/
 
 #include "window-namedialog.hpp"
-#include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 
+#include <qt-wrappers.hpp>
 #include <QVBoxLayout>
 
 NameDialog::NameDialog(QWidget *parent) : QDialog(parent)

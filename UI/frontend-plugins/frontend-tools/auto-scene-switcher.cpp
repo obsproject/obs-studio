@@ -513,6 +513,11 @@ static void OBSEvent(enum obs_frontend_event event, void *)
 
 extern "C" void InitSceneSwitcher()
 {
+#if !defined(__APPLE__) && !defined(_WIN32)
+	if (QApplication::platformName().contains("wayland"))
+		return;
+#endif
+
 	QAction *action = (QAction *)obs_frontend_add_tools_menu_qaction(
 		obs_module_text("SceneSwitcher"));
 

@@ -1,7 +1,5 @@
 #pragma once
 
-#cmakedefine USE_XDG
-
 #define OAUTH_BASE_URL "@OAUTH_BASE_URL@"
 
 #define TWITCH_CLIENTID "@TWITCH_CLIENTID@"

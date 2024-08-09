@@ -20,7 +20,23 @@
 static size_t array_output_write(void *param, const void *data, size_t size)
 {
 	struct array_output_data *output = param;
-	da_push_back_array(output->bytes, (uint8_t *)data, size);
+
+	if (output->cur_pos < output->bytes.num) {
+		size_t new_size = output->cur_pos + size;
+
+		if (new_size > output->bytes.num) {
+			darray_ensure_capacity(sizeof(uint8_t),
+					       &output->bytes.da, new_size);
+			output->bytes.num = new_size;
+		}
+
+		memcpy(output->bytes.array + output->cur_pos, data, size);
+		output->cur_pos += size;
+	} else {
+		da_push_back_array(output->bytes, (uint8_t *)data, size);
+		output->cur_pos += size;
+	}
+
 	return size;
 }
 
@@ -28,6 +44,33 @@ static int64_t array_output_get_pos(void *param)
 {
 	struct array_output_data *data = param;
 	return (int64_t)data->bytes.num;
+}
+
+static int64_t array_output_seek(void *param, int64_t offset,
+				 enum serialize_seek_type seek_type)
+{
+	struct array_output_data *output = param;
+
+	size_t new_pos = 0;
+
+	switch (seek_type) {
+	case SERIALIZE_SEEK_START:
+		new_pos = offset;
+		break;
+	case SERIALIZE_SEEK_CURRENT:
+		new_pos = output->cur_pos + offset;
+		break;
+	case SERIALIZE_SEEK_END:
+		new_pos = output->bytes.num - offset;
+		break;
+	}
+
+	if (new_pos > output->bytes.num)
+		return -1;
+
+	output->cur_pos = new_pos;
+
+	return (int64_t)new_pos;
 }
 
 void array_output_serializer_init(struct serializer *s,
@@ -38,9 +81,16 @@ void array_output_serializer_init(struct serializer *s,
 	s->data = data;
 	s->write = array_output_write;
 	s->get_pos = array_output_get_pos;
+	s->seek = array_output_seek;
 }
 
 void array_output_serializer_free(struct array_output_data *data)
 {
 	da_free(data->bytes);
+}
+
+void array_output_serializer_reset(struct array_output_data *data)
+{
+	da_clear(data->bytes);
+	data->cur_pos = 0;
 }

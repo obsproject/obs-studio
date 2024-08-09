@@ -1601,25 +1601,6 @@
             ]
         },
         {
-            "name": "YouNow",
-            "common": false,
-            "protocol": "FTL",
-            "servers": [
-                {
-                    "name": "younow.com",
-                    "url": "https://api.younow.com/php/api/broadcast/ingest?id="
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "output": "ftl_output",
-                "max audio bitrate": 160,
-                "max video bitrate": 7000,
-                "profile": "main",
-                "bframes": 0
-            }
-        },
-        {
             "name": "Steam",
             "common": false,
             "servers": [
@@ -2523,21 +2504,26 @@
         },
         {
             "name": "Joystick.TV",
-            "more_info_link": "https://support.joystick.tv/support/creator-support/setting-up-your-stream/",
+            "more_info_link": "https://support.joystick.tv/live_streaming/",
             "stream_key_link": "https://joystick.tv/stream-settings",
             "servers": [
                 {
-                    "name": "RTMP",
+                    "name": "North America",
                     "url": "rtmp://live.joystick.tv/live/"
+                },
+                {
+                    "name": "Europe",
+                    "url": "rtmp://eu.live.joystick.tv/live/"
                 }
             ],
             "recommended": {
                 "keyint": 2,
                 "max video bitrate": 7500,
                 "max audio bitrate": 192,
+                "max fps": 60,
                 "profile": "main",
                 "bframes": 0,
-                "x264opts": "tune=zerolatency"
+                "x264opts": "tune=zerolatency scenecut=0"
             },
             "supported video codecs": [
                 "h264"
@@ -2579,40 +2565,20 @@
             "stream_key_link": "https://masterstream.ir/managestreams.php",
             "servers": [
                 {
-                    "name": "Auto (Iran Servers)",
-                    "url": "rtmp://auto.masterstream.ir/live"
+                    "name": "Iran Server 1 - Bandwidth Required",
+                    "url": "rtmp://live-vip1.masterstream.ir/live"
                 },
                 {
-                    "name": "Iran Server 1",
-                    "url": "rtmp://live1.masterstream.ir/live"
-                },
-                {
-                    "name": "Iran Server 2",
-                    "url": "rtmp://live2.masterstream.ir/live"
-                },
-                {
-                    "name": "Iran Server 3",
-                    "url": "rtmp://live3.masterstream.ir/live"
-                },
-                {
-                    "name": "Iran Server 4",
-                    "url": "rtmp://live4.masterstream.ir/live"
-                },
-                {
-                    "name": "Iran Server 5",
-                    "url": "rtmp://live5.masterstream.ir/live"
-                },
-                {
-                    "name": "Iran Server 6",
-                    "url": "rtmp://live6.masterstream.ir/live"
-                },
-                {
-                    "name": "Iran Server 7",
-                    "url": "rtmp://live7.masterstream.ir/live"
+                    "name": "Iran Server 2 - Bandwidth Required",
+                    "url": "rtmp://live-vip2.masterstream.ir/live"
                 },
                 {
                     "name": "Turkey Server 1",
                     "url": "rtmp://tr-live1.masterstream.ir/live"
+                },
+                {
+                    "name": "Russia Server 1",
+                    "url": "rtmp://ru-live1.masterstream.ir/live"
                 }
             ],
             "protocol": "RTMP",
@@ -2821,6 +2787,197 @@
                 ],
                 "max video bitrate": 6000,
                 "max audio bitrate": 320,
+                "bframes": 0
+            }
+        },
+        {
+            "name": "sheeta",
+            "common": false,
+            "more_info_link": "https://partner-support.sheeta.com/hc/ja/articles/4404573942425-%E7%94%9F%E6%94%BE%E9%80%81%E3%81%AE%E9%85%8D%E4%BF%A1%E6%96%B9%E6%B3%95",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://lsm.sheeta.com:1935/lsm"
+                }
+            ],
+            "protocol": "RTMP",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
+            "recommended": {
+                "keyint": 1,
+                "profile": "main",
+                "supported resolutions": [
+                    "1920x1080",
+                    "1280x720",
+                    "854x480",
+                    "640x480"
+                ],
+                "bitrate matrix": [
+                    {
+                        "res": "1920x1080",
+                        "fps": 30,
+                        "max bitrate": 6000
+                    },
+                    {
+                        "res": "1280x720",
+                        "fps": 30,
+                        "max bitrate": 4700
+                    },
+                    {
+                        "res": "854x480",
+                        "fps": 30,
+                        "max bitrate": 3400
+                    },
+                    {
+                        "res": "640x480",
+                        "fps": 30,
+                        "max bitrate": 3400
+                    },
+                    {
+                        "res": "1920x1080",
+                        "fps": 60,
+                        "max bitrate": 9000
+                    },
+                    {
+                        "res": "1280x720",
+                        "fps": 60,
+                        "max bitrate": 7000
+                    },
+                    {
+                        "res": "854x480",
+                        "fps": 60,
+                        "max bitrate": 5000
+                    },
+                    {
+                        "res": "640x480",
+                        "fps": 60,
+                        "max bitrate": 5000
+                    }
+                ],
+                "max fps": 60,
+                "max video bitrate": 9000,
+                "max audio bitrate": 512,
+                "x264opts": "scenecut=0",
+                "output": "rtmp_output"
+            }
+        },
+        {
+            "name": "Amazon IVS",
+            "supported video codecs": ["h264"],
+            "servers": [
+                {
+                    "name": "Global (RTMPS, recommended)",
+                    "url": "rtmps://ingest.global-contribute.live-video.net:443/app"
+                },
+                {
+                    "name": "Global (RTMP)",
+                    "url": "rtmp://ingest.global-contribute.live-video.net/app"
+                }
+            ],
+            "multitrack_video_configuration_url": "https://ingest.contribute.live-video.net/api/v3/GetClientConfiguration",
+            "recommended": {
+                "keyint": 2,
+                "x264opts": "scenecut=0"
+            }
+        },
+        {
+            "name": "Dolby Millicast",
+            "common": false,
+            "more_info_link": "https://docs.dolby.io/streaming-apis/docs/using-obs",
+            "stream_key_link": "https://streaming.dolby.io",
+            "servers": [
+                {
+                    "name": "Global (RTMPS)",
+                    "url": "rtmps://rtmp-auto.millicast.com:443/v2/pub"
+                },
+                {
+                    "name": "Global (RTMP)",
+                    "url": "rtmp://rtmp-auto.millicast.com:1935/v2/pub"
+                },
+                {
+                    "name": "Amsterdam, Netherlands (RTMPS)",
+                    "url": "rtmps://rtmp-ams-1.millicast.com:443/v2/pub"
+                },
+                {
+                    "name": "Amsterdam, Netherlands (RTMP)",
+                    "url": "rtmp://rtmp-ams-1.millicast.com:1935/v2/pub"
+                },
+                {
+                    "name": "Bangalore, India (RTMPS)",
+                    "url": "rtmps://rtmp-blr-1.millicast.com:443/v2/pub"
+                },
+                {
+                    "name": "Bangalore, India (RTMP)",
+                    "url": "rtmp://rtmp-blr-1.millicast.com:1935/v2/pub"
+                },
+                {
+                    "name": "Frankfurt, Germany (RTMPS)",
+                    "url": "rtmps://rtmp-fra-1.millicast.com:443/v2/pub"
+                },
+                {
+                    "name": "Frankfurt, Germany (RTMP)",
+                    "url": "rtmp://rtmp-fra-1.millicast.com:1935/v2/pub"
+                },
+                {
+                    "name": "Ashburn, Virginia, USA (RTMPS)",
+                    "url": "rtmps://rtmp-iad-1.millicast.com:443/v2/pub"
+                },
+                {
+                    "name": "Ashburn, Virginia, USA (RTMP)",
+                    "url": "rtmp://rtmp-iad-1.millicast.com:1935/v2/pub"
+                },
+                {
+                    "name": "London, England (RTMPS)",
+                    "url": "rtmps://rtmp-lon-1.millicast.com:443/v2/pub"
+                },
+                {
+                    "name": "London, England (RTMP)",
+                    "url": "rtmp://rtmp-lon-1.millicast.com:1935/v2/pub"
+                },
+                {
+                    "name": "Phoenix, AZ, USA (RTMPS)",
+                    "url": "rtmps://rtmp-phx-1.millicast.com:443/v2/pub"
+                },
+                {
+                    "name": "Phoenix, AZ, USA (RTMP)",
+                    "url": "rtmp://rtmp-phx-1.millicast.com:1935/v2/pub"
+                },
+                {
+                    "name": "Sao Paulo, Brazil (RTMPS)",
+                    "url": "rtmps://rtmp-sao-1.millicast.com:443/v2/pub"
+                },
+                {
+                    "name": "Sao Paulo, Brazil (RTMP)",
+                    "url": "rtmp://rtmp-sao-1.millicast.com:1935/v2/pub"
+                },
+                {
+                    "name": "Singapore (RTMPS)",
+                    "url": "rtmps://rtmp-sgp-1.millicast.com:443/v2/pub"
+                },
+                {
+                    "name": "Singapore (RTMP)",
+                    "url": "rtmp://rtmp-sgp-1.millicast.com:1935/v2/pub"
+                },
+                {
+                    "name": "Sydney, Australia (RTMPS)",
+                    "url": "rtmps://rtmp-syd-1.millicast.com:443/v2/pub"
+                },
+                {
+                    "name": "Sydney, Australia (RTMP)",
+                    "url": "rtmp://rtmp-syd-1.millicast.com:1935/v2/pub"
+                }
+            ],
+            "supported video codecs": [
+                "h264",
+                "hevc",
+                "av1"
+            ],
+            "recommended": {
+                "keyint": 1,
                 "bframes": 0
             }
         }

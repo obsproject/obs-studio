@@ -18,6 +18,8 @@
 #include "manifest.hpp"
 
 #include <psapi.h>
+#include <WinTrust.h>
+#include <SoftPub.h>
 
 #include <util/windows/CoTaskMemPtr.hpp>
 
@@ -39,6 +41,9 @@ constexpr const wchar_t *kCDNUpdateBaseUrl =
 	L"https://cdn-fastly.obsproject.com/update_studio";
 constexpr const wchar_t *kPatchManifestURL =
 	L"https://obsproject.com/update_studio/getpatchmanifest";
+constexpr const wchar_t *kVSRedistURL =
+	L"https://aka.ms/vs/17/release/vc_redist.x64.exe";
+constexpr const wchar_t *kMSHostname = L"aka.ms";
 
 /* ----------------------------------------------------------------------- */
 
@@ -72,44 +77,28 @@ void FreeWinHttpHandle(HINTERNET handle)
 
 /* ----------------------------------------------------------------------- */
 
-static inline bool HasVS2019Redist2()
+static bool IsVSRedistOutdated()
 {
-	wchar_t base[MAX_PATH];
-	wchar_t path[MAX_PATH];
-	WIN32_FIND_DATAW wfd;
-	HANDLE handle;
+	VS_FIXEDFILEINFO *info = nullptr;
+	UINT len = 0;
+	vector<std::byte> buf;
 
-	SHGetFolderPathW(NULL, CSIDL_SYSTEM, NULL, SHGFP_TYPE_CURRENT, base);
+	const wchar_t vc_dll[] = L"msvcp140";
 
-#define check_dll_installed(dll)                                    \
-	do {                                                        \
-		StringCbCopyW(path, sizeof(path), base);            \
-		StringCbCatW(path, sizeof(path), L"\\" dll ".dll"); \
-		handle = FindFirstFileW(path, &wfd);                \
-		if (handle == INVALID_HANDLE_VALUE) {               \
-			return false;                               \
-		} else {                                            \
-			FindClose(handle);                          \
-		}                                                   \
-	} while (false)
+	auto size = GetFileVersionInfoSize(vc_dll, nullptr);
+	if (!size)
+		return true;
 
-	check_dll_installed(L"msvcp140");
-	check_dll_installed(L"vcruntime140");
-	check_dll_installed(L"vcruntime140_1");
+	buf.resize(size);
+	if (!GetFileVersionInfo(vc_dll, 0, size, buf.data()))
+		return true;
 
-#undef check_dll_installed
+	bool success = VerQueryValue(buf.data(), L"\\",
+				     reinterpret_cast<LPVOID *>(&info), &len);
+	if (!success || !info || !len)
+		return true;
 
-	return true;
-}
-
-static bool HasVS2019Redist()
-{
-	PVOID old = nullptr;
-	bool redirect = !!Wow64DisableWow64FsRedirection(&old);
-	bool success = HasVS2019Redist2();
-	if (redirect)
-		Wow64RevertWow64FsRedirection(old);
-	return success;
+	return LOWORD(info->dwFileVersionMS) < 40;
 }
 
 static void Status(const wchar_t *fmt, ...)
@@ -1139,7 +1128,7 @@ try {
 	return false;
 }
 
-static bool UpdateVS2019Redists(const string &vc_redist_hash)
+static bool UpdateVSRedists()
 {
 	/* ------------------------------------------ *
 	 * Initialize session                         */
@@ -1153,7 +1142,7 @@ static bool UpdateVS2019Redists(const string &vc_redist_hash)
 					  WINHTTP_NO_PROXY_NAME,
 					  WINHTTP_NO_PROXY_BYPASS, 0);
 	if (!hSession) {
-		Status(L"Update failed: Couldn't open obsproject.com");
+		Status(L"VC Redist Update failed: Couldn't create session");
 		return false;
 	}
 
@@ -1163,10 +1152,10 @@ static bool UpdateVS2019Redists(const string &vc_redist_hash)
 	WinHttpSetOption(hSession, WINHTTP_OPTION_DECOMPRESSION,
 			 (LPVOID)&compressionFlags, sizeof(compressionFlags));
 
-	HttpHandle hConnect = WinHttpConnect(hSession, kCDNHostname,
+	HttpHandle hConnect = WinHttpConnect(hSession, kMSHostname,
 					     INTERNET_DEFAULT_HTTPS_PORT, 0);
 	if (!hConnect) {
-		Status(L"Update failed: Couldn't connect to %S", kCDNHostname);
+		Status(L"Update failed: Couldn't connect to %S", kMSHostname);
 		return false;
 	}
 
@@ -1180,54 +1169,50 @@ static bool UpdateVS2019Redists(const string &vc_redist_hash)
 	/* ------------------------------------------ *
 	 * Download redist                            */
 
-	Status(L"Downloading Visual C++ 2019 Redistributable");
-
-	wstring sourceURL =
-		L"https://cdn-fastly.obsproject.com/downloads/VC_redist.x64.exe";
+	Status(L"Downloading Visual C++ Redistributable");
 
 	wstring destPath;
 	destPath += tempPath;
 	destPath += L"\\VC_redist.x64.exe";
 
-	if (!HTTPGetFile(hConnect, sourceURL.c_str(), destPath.c_str(),
+	if (!HTTPGetFile(hConnect, kVSRedistURL, destPath.c_str(),
 			 L"Accept-Encoding: gzip", &responseCode)) {
 
 		DeleteFile(destPath.c_str());
 		Status(L"Update failed: Could not download "
 		       L"%s (error code %d)",
-		       L"Visual C++ 2019 Redistributable", responseCode);
+		       L"Visual C++ Redistributable", responseCode);
 		return false;
 	}
 
 	/* ------------------------------------------ *
-	 * Get expected hash                          */
+	 * Verify file signature                      */
 
-	B2Hash expectedHash;
-	StringToHash(vc_redist_hash, expectedHash);
+	GUID action = WINTRUST_ACTION_GENERIC_VERIFY_V2;
 
-	/* ------------------------------------------ *
-	 * Get download hash                          */
+	WINTRUST_FILE_INFO fileInfo = {};
+	fileInfo.cbStruct = sizeof(fileInfo);
+	fileInfo.pcwszFilePath = destPath.c_str();
 
-	B2Hash downloadHash;
-	if (!CalculateFileHash(destPath.c_str(), downloadHash)) {
+	WINTRUST_DATA data = {};
+	data.cbStruct = sizeof(data);
+	data.dwUIChoice = WTD_UI_NONE;
+	data.dwUnionChoice = WTD_CHOICE_FILE;
+	data.dwStateAction = WTD_STATEACTION_VERIFY;
+	data.pFile = &fileInfo;
+
+	LONG result = WinVerifyTrust(nullptr, &action, &data);
+
+	if (result != ERROR_SUCCESS) {
+		Status(L"Update failed: Signature verification failed for "
+		       L"%s (error code %d / %d)",
+		       L"Visual C++ Redistributable", result, GetLastError());
 		DeleteFile(destPath.c_str());
-		Status(L"Update failed: Couldn't verify integrity of %s",
-		       L"Visual C++ 2019 Redistributable");
 		return false;
 	}
 
 	/* ------------------------------------------ *
-	 * If hashes do not match, integrity failed   */
-
-	if (downloadHash == expectedHash) {
-		DeleteFile(destPath.c_str());
-		Status(L"Update failed: Couldn't verify integrity of %s",
-		       L"Visual C++ 2019 Redistributable");
-		return false;
-	}
-
-	/* ------------------------------------------ *
-	 * If hashes match, install redist            */
+	 * If verification succeeded, install redist  */
 
 	wchar_t commandline[MAX_PATH + MAX_PATH];
 	StringCbPrintf(commandline, sizeof(commandline),
@@ -1241,7 +1226,7 @@ static bool UpdateVS2019Redists(const string &vc_redist_hash)
 					nullptr, false, CREATE_NO_WINDOW,
 					nullptr, nullptr, &si, &pi);
 	if (success) {
-		Status(L"Installing %s...", L"Visual C++ 2019 Redistributable");
+		Status(L"Installing %s...", L"Visual C++ Redistributable");
 
 		CloseHandle(pi.hThread);
 		WaitForSingleObject(pi.hProcess, INFINITE);
@@ -1249,7 +1234,7 @@ static bool UpdateVS2019Redists(const string &vc_redist_hash)
 	} else {
 		Status(L"Update failed: Could not execute "
 		       L"%s (error code %d)",
-		       L"Visual C++ 2019 Redistributable", (int)GetLastError());
+		       L"Visual C++ Redistributable", (int)GetLastError());
 	}
 
 	DeleteFile(destPath.c_str());
@@ -1514,10 +1499,10 @@ static bool Update(wchar_t *cmdLine)
 	}
 
 	/* ------------------------------------- *
-	 * Check for VS2019 redistributables     */
+	 * Check VS redistributables version     */
 
-	if (!HasVS2019Redist()) {
-		if (!UpdateVS2019Redists(manifest.vc2019_redist_x64)) {
+	if (IsVSRedistOutdated()) {
+		if (!UpdateVSRedists()) {
 			return false;
 		}
 	}

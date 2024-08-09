@@ -27,7 +27,7 @@ static void *crash_param = NULL;
 static void def_log_handler(int log_level, const char *format, va_list args,
 			    void *param)
 {
-	char out[4096];
+	char out[8192];
 	vsnprintf(out, sizeof(out), format, args);
 
 	switch (log_level) {

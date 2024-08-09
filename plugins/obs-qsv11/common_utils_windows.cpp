@@ -33,26 +33,31 @@ mfxStatus Initialize(mfxVersion ver, mfxSession *pSession,
 	obs_video_info ovi;
 	obs_get_video_info(&ovi);
 	mfxU32 adapter_idx = ovi.adapter;
+	mfxU32 idx_adjustment = 0;
 
 	// Select current adapter - will be iGPU if exists due to adapter reordering
 	if (codec == QSV_CODEC_AV1 && !adapters[adapter_idx].supports_av1) {
-		for (mfxU32 i = 0; i < 4; i++) {
+		for (mfxU32 i = 0; i < MAX_ADAPTERS; i++) {
+			if (!adapters[i].is_intel) {
+				idx_adjustment++;
+				continue;
+			}
 			if (adapters[i].supports_av1) {
 				adapter_idx = i;
 				break;
 			}
 		}
 	} else if (!adapters[adapter_idx].is_intel) {
-		for (mfxU32 i = 0; i < 4; i++) {
+		for (mfxU32 i = 0; i < MAX_ADAPTERS; i++) {
 			if (adapters[i].is_intel) {
 				adapter_idx = i;
 				break;
 			}
+			idx_adjustment++;
 		}
 	}
 
-	adapter_index = adapter_idx;
-
+	adapter_idx -= idx_adjustment;
 	mfxStatus sts = MFX_ERR_NONE;
 	mfxVariant impl;
 

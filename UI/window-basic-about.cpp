@@ -1,7 +1,7 @@
 #include "window-basic-about.hpp"
 #include "window-basic-main.hpp"
-#include "qt-wrappers.hpp"
 #include "remote-text.hpp"
+#include <qt-wrappers.hpp>
 #include <util/util.hpp>
 #include <util/platform.h>
 #include <platform.hpp>

@@ -161,12 +161,6 @@ static void allocate_audio_mix_buffer(struct obs_source *source)
 	}
 }
 
-static inline bool is_async_video_source(const struct obs_source *source)
-{
-	return (source->info.output_flags & OBS_SOURCE_ASYNC_VIDEO) ==
-	       OBS_SOURCE_ASYNC_VIDEO;
-}
-
 static inline bool is_audio_source(const struct obs_source *source)
 {
 	return source->info.output_flags & OBS_SOURCE_AUDIO;
@@ -2366,12 +2360,6 @@ static inline void set_eparam(gs_effect_t *effect, const char *name, float val)
 	gs_effect_set_float(param, val);
 }
 
-static inline void set_eparami(gs_effect_t *effect, const char *name, int val)
-{
-	gs_eparam_t *param = gs_effect_get_param_by_name(effect, name);
-	gs_effect_set_int(param, val);
-}
-
 static bool update_async_texrender(struct obs_source *source,
 				   const struct obs_source_frame *frame,
 				   gs_texture_t *tex[MAX_AV_PLANES],
@@ -3218,6 +3206,7 @@ void obs_source_filter_add(obs_source_t *source, obs_source_t *filter)
 	calldata_set_ptr(&cd, "source", source);
 	calldata_set_ptr(&cd, "filter", filter);
 
+	signal_handler_signal(obs->signals, "source_filter_add", &cd);
 	signal_handler_signal(source->context.signals, "filter_add", &cd);
 
 	blog(LOG_DEBUG, "- filter '%s' (%s) added to source '%s'",
@@ -3256,6 +3245,7 @@ static bool obs_source_filter_remove_refless(obs_source_t *source,
 	calldata_set_ptr(&cd, "source", source);
 	calldata_set_ptr(&cd, "filter", filter);
 
+	signal_handler_signal(obs->signals, "source_filter_remove", &cd);
 	signal_handler_signal(source->context.signals, "filter_remove", &cd);
 
 	blog(LOG_DEBUG, "- filter '%s' (%s) removed from source '%s'",

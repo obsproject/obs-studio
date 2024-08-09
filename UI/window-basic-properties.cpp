@@ -18,10 +18,10 @@
 #include "obs-app.hpp"
 #include "window-basic-properties.hpp"
 #include "window-basic-main.hpp"
-#include "qt-wrappers.hpp"
 #include "display-helpers.hpp"
-#include "properties-view.hpp"
 
+#include <qt-wrappers.hpp>
+#include <properties-view.hpp>
 #include <QCloseEvent>
 #include <QScreen>
 #include <QWindow>

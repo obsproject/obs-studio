@@ -494,7 +494,7 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 	return true;
 }
 
-obs_properties_t *nvenc_properties_internal(enum codec_type codec, bool ffmpeg)
+obs_properties_t *nvenc_properties_internal(enum codec_type codec)
 {
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *p;
@@ -587,15 +587,6 @@ obs_properties_t *nvenc_properties_internal(enum codec_type codec, bool ffmpeg)
 	}
 #undef add_profile
 
-	if (!ffmpeg) {
-		p = obs_properties_add_bool(props, "lookahead",
-					    obs_module_text("NVENC.LookAhead"));
-		obs_property_set_long_description(
-			p, obs_module_text("NVENC.LookAhead.ToolTip"));
-		p = obs_properties_add_bool(props, "repeat_headers",
-					    "repeat_headers");
-		obs_property_set_visible(p, false);
-	}
 	p = obs_properties_add_bool(
 		props, "psycho_aq",
 		obs_module_text("NVENC.PsychoVisualTuning"));
@@ -610,37 +601,17 @@ obs_properties_t *nvenc_properties_internal(enum codec_type codec, bool ffmpeg)
 	return props;
 }
 
-obs_properties_t *h264_nvenc_properties(void *unused)
-{
-	UNUSED_PARAMETER(unused);
-	return nvenc_properties_internal(CODEC_H264, false);
-}
-
-#ifdef ENABLE_HEVC
-obs_properties_t *hevc_nvenc_properties(void *unused)
-{
-	UNUSED_PARAMETER(unused);
-	return nvenc_properties_internal(CODEC_HEVC, false);
-}
-#endif
-
-obs_properties_t *av1_nvenc_properties(void *unused)
-{
-	UNUSED_PARAMETER(unused);
-	return nvenc_properties_internal(CODEC_AV1, false);
-}
-
 obs_properties_t *h264_nvenc_properties_ffmpeg(void *unused)
 {
 	UNUSED_PARAMETER(unused);
-	return nvenc_properties_internal(CODEC_H264, true);
+	return nvenc_properties_internal(CODEC_H264);
 }
 
 #ifdef ENABLE_HEVC
 obs_properties_t *hevc_nvenc_properties_ffmpeg(void *unused)
 {
 	UNUSED_PARAMETER(unused);
-	return nvenc_properties_internal(CODEC_HEVC, true);
+	return nvenc_properties_internal(CODEC_HEVC);
 }
 #endif
 
@@ -676,11 +647,7 @@ struct obs_encoder_info h264_nvenc_encoder_info = {
 	.get_extra_data = nvenc_extra_data,
 	.get_sei_data = nvenc_sei_data,
 	.get_video_info = nvenc_video_info,
-#if defined(_WIN32) || defined(NVCODEC_AVAILABLE)
-	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_INTERNAL,
-#else
 	.caps = OBS_ENCODER_CAP_DYN_BITRATE,
-#endif
 };
 
 #ifdef ENABLE_HEVC
@@ -698,10 +665,6 @@ struct obs_encoder_info hevc_nvenc_encoder_info = {
 	.get_extra_data = nvenc_extra_data,
 	.get_sei_data = nvenc_sei_data,
 	.get_video_info = nvenc_video_info,
-#if defined(_WIN32) || defined(NVCODEC_AVAILABLE)
-	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_INTERNAL,
-#else
 	.caps = OBS_ENCODER_CAP_DYN_BITRATE,
-#endif
 };
 #endif

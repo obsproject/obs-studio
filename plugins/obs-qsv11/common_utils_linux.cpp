@@ -210,6 +210,9 @@ mfxStatus simple_gethdl(mfxHDL pthis, mfxMemId mid, mfxHDL *handle)
 
 mfxStatus simple_free(mfxHDL pthis, mfxFrameAllocResponse *response)
 {
+	if (response == nullptr)
+		return MFX_ERR_NULL_PTR;
+
 	if (response->mids == nullptr || response->NumFrameActual == 0)
 		return MFX_ERR_NONE;
 
@@ -489,29 +492,6 @@ static uint32_t vaapi_check_support(VADisplay display, VAProfile profile,
 	}
 
 	return (rc & VA_RC_CBR || rc & VA_RC_CQP || rc & VA_RC_VBR);
-}
-
-static bool vaapi_supports_h264(VADisplay display)
-{
-	bool ret = false;
-	ret |= vaapi_check_support(display, VAProfileH264ConstrainedBaseline,
-				   VAEntrypointEncSlice);
-	ret |= vaapi_check_support(display, VAProfileH264Main,
-				   VAEntrypointEncSlice);
-	ret |= vaapi_check_support(display, VAProfileH264High,
-				   VAEntrypointEncSlice);
-
-	if (!ret) {
-		ret |= vaapi_check_support(display,
-					   VAProfileH264ConstrainedBaseline,
-					   VAEntrypointEncSliceLP);
-		ret |= vaapi_check_support(display, VAProfileH264Main,
-					   VAEntrypointEncSliceLP);
-		ret |= vaapi_check_support(display, VAProfileH264High,
-					   VAEntrypointEncSliceLP);
-	}
-
-	return ret;
 }
 
 static bool vaapi_supports_av1(VADisplay display)

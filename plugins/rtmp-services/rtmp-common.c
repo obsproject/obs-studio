@@ -6,7 +6,6 @@
 
 #include "rtmp-format-ver.h"
 #include "service-specific/twitch.h"
-#include "service-specific/younow.h"
 #include "service-specific/nimotv.h"
 #include "service-specific/showroom.h"
 #include "service-specific/dacast.h"
@@ -823,12 +822,6 @@ static const char *rtmp_common_url(void *data)
 			twitch_ingests_unlock();
 
 			return ing.url;
-		}
-	}
-
-	if (service->service && strcmp(service->service, "YouNow") == 0) {
-		if (service->server && service->key) {
-			return younow_get_ingest(service->server, service->key);
 		}
 	}
 

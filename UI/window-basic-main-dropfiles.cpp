@@ -9,9 +9,9 @@
 #include <QSettings>
 #endif
 #include <string>
+#include <qt-wrappers.hpp>
 
 #include "window-basic-main.hpp"
-#include "qt-wrappers.hpp"
 
 using namespace std;
 
