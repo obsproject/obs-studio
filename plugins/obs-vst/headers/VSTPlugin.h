@@ -99,6 +99,7 @@ public:
 	obs_audio_data *process(struct obs_audio_data *audio);
 	bool openInterfaceWhenActive = false;
 	bool vstLoaded();
+	int32_t getUniqueID();
 
 	bool isEditorOpen();
 	void onEditorClosed();
