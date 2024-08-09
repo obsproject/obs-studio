@@ -67,6 +67,8 @@ target_sources(
           display-helpers.hpp
           ffmpeg-utils.cpp
           ffmpeg-utils.hpp
+          log-redaction.cpp
+          log-redaction.hpp
           multiview.cpp
           multiview.hpp
           obf.c
