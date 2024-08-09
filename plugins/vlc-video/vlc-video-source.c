@@ -15,6 +15,7 @@
 #define S_PLAYLIST                     "playlist"
 #define S_LOOP                         "loop"
 #define S_SHUFFLE                      "shuffle"
+#define S_RESTART_STREAM	       "restart_stream"
 #define S_BEHAVIOR                     "playback_behavior"
 #define S_BEHAVIOR_STOP_RESTART        "stop_restart"
 #define S_BEHAVIOR_PAUSE_UNPAUSE       "pause_unpause"
@@ -28,6 +29,7 @@
 #define T_PLAYLIST                     T_("Playlist")
 #define T_LOOP                         T_("LoopPlaylist")
 #define T_SHUFFLE                      T_("Shuffle")
+#define T_RESTART_STREAM               T_("RestartStream")
 #define T_BEHAVIOR                     T_("PlaybackBehavior")
 #define T_BEHAVIOR_STOP_RESTART        T_("PlaybackBehavior.StopRestart")
 #define T_BEHAVIOR_PAUSE_UNPAUSE       T_("PlaybackBehavior.PauseUnpause")
@@ -69,6 +71,7 @@ struct vlc_source {
 	enum behavior behavior;
 	bool loop;
 	bool shuffle;
+	bool restart_stream;
 
 	obs_hotkey_id play_pause_hotkey;
 	obs_hotkey_id restart_hotkey;
@@ -703,7 +706,11 @@ static void vlcs_update(void *data, obs_data_t *settings)
 	/* ------------------------------------- */
 	/* update settings data */
 
-	libvlc_media_list_player_stop_(c->media_list_player);
+	c->restart_stream = obs_data_get_bool(settings, S_RESTART_STREAM);
+
+	if (c->restart_stream) {
+		libvlc_media_list_player_stop_(c->media_list_player);
+	}
 
 	pthread_mutex_lock(&c->mutex);
 	old_files = c->files;
@@ -740,7 +747,7 @@ static void vlcs_update(void *data, obs_data_t *settings)
 	}
 
 	/* ------------------------------------- */
-	/* clean up and restart playback */
+	/* clean up and, if enabled, restart playback  */
 
 	free_files(&old_files);
 
@@ -760,11 +767,13 @@ static void vlcs_update(void *data, obs_data_t *settings)
 		c->media_list_player, c->loop ? libvlc_playback_mode_loop
 					      : libvlc_playback_mode_default);
 
-	if (c->files.num && (c->behavior == BEHAVIOR_ALWAYS_PLAY ||
-			     obs_source_active(c->source)))
-		libvlc_media_list_player_play_(c->media_list_player);
-	else
-		obs_source_output_video(c->source, NULL);
+	if (c->restart_stream) {
+		if (c->files.num && (c->behavior == BEHAVIOR_ALWAYS_PLAY ||
+				     obs_source_active(c->source)))
+			libvlc_media_list_player_play_(c->media_list_player);
+		else
+			obs_source_output_video(c->source, NULL);
+	}
 
 	obs_data_array_release(array);
 }
@@ -1050,6 +1059,7 @@ static void vlcs_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_bool(settings, S_LOOP, true);
 	obs_data_set_default_bool(settings, S_SHUFFLE, false);
+	obs_data_set_default_bool(settings, S_RESTART_STREAM, true);
 	obs_data_set_default_string(settings, S_BEHAVIOR,
 				    S_BEHAVIOR_STOP_RESTART);
 	obs_data_set_default_int(settings, S_NETWORK_CACHING, 400);
@@ -1070,6 +1080,7 @@ static obs_properties_t *vlcs_properties(void *data)
 	obs_properties_set_flags(ppts, OBS_PROPERTIES_DEFER_UPDATE);
 	obs_properties_add_bool(ppts, S_LOOP, T_LOOP);
 	obs_properties_add_bool(ppts, S_SHUFFLE, T_SHUFFLE);
+	obs_properties_add_bool(ppts, S_RESTART_STREAM, T_RESTART_STREAM);
 
 	if (c) {
 		pthread_mutex_lock(&c->mutex);
