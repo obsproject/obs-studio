@@ -2046,6 +2046,13 @@ uint32_t obs_encoder_get_roi_increment(const obs_encoder_t *encoder)
 	return encoder->roi_increment;
 }
 
+obs_encoder_group_t *obs_encoder_get_group(obs_encoder_t *encoder)
+{
+	return obs_encoder_valid(encoder, "obs_encoder_get_group")
+		       ? encoder->encoder_group
+		       : NULL;
+}
+
 bool obs_encoder_set_group(obs_encoder_t *encoder, obs_encoder_group_t *group)
 {
 	if (!obs_encoder_valid(encoder, "obs_encoder_set_group"))
