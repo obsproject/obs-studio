@@ -256,6 +256,7 @@ struct obs_tex_frame {
 	uint64_t lock_key;
 	int count;
 	bool released;
+	bool skip;
 };
 
 struct obs_task_info {
