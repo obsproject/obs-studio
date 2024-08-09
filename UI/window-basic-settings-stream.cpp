@@ -112,6 +112,8 @@ void OBSBasicSettings::LoadStream1Settings()
 {
 	bool ignoreRecommended =
 		config_get_bool(main->Config(), "Stream1", "IgnoreRecommended");
+	bool enableSimulcast =
+		config_get_bool(main->Config(), "Stream1", "EnableSimulcast");
 
 	obs_service_t *service_obj = main->GetService();
 	const char *type = obs_service_get_type(service_obj);
@@ -224,10 +226,13 @@ void OBSBasicSettings::LoadStream1Settings()
 	if (use_custom_server)
 		ui->serviceCustomServer->setText(server);
 
-	if (is_whip)
+	if (is_whip) {
 		ui->key->setText(bearer_token);
-	else
+		ui->enableSimulcast->show();
+	} else {
 		ui->key->setText(key);
+		ui->enableSimulcast->hide();
+	}
 
 	ServiceChanged(true);
 
@@ -241,6 +246,7 @@ void OBSBasicSettings::LoadStream1Settings()
 	ui->streamPage->setEnabled(!streamActive);
 
 	ui->ignoreRecommended->setChecked(ignoreRecommended);
+	ui->enableSimulcast->setChecked(enableSimulcast);
 
 	loading = false;
 
@@ -365,6 +371,10 @@ void OBSBasicSettings::SaveStream1Settings()
 
 	SaveCheckBox(ui->ignoreRecommended, "Stream1", "IgnoreRecommended");
 
+	auto oldSimulcastSetting =
+		config_get_bool(main->Config(), "Stream1", "EnableSimulcast");
+	SaveCheckBox(ui->enableSimulcast, "Stream1", "EnableSimulcast");
+
 	auto oldMultitrackVideoSetting = config_get_bool(
 		main->Config(), "Stream1", "EnableMultitrackVideo");
 
@@ -404,7 +414,9 @@ void OBSBasicSettings::SaveStream1Settings()
 	SaveText(ui->multitrackVideoConfigOverride, "Stream1",
 		 "MultitrackVideoConfigOverride");
 
-	if (oldMultitrackVideoSetting != ui->enableMultitrackVideo->isChecked())
+	if (oldMultitrackVideoSetting !=
+		    ui->enableMultitrackVideo->isChecked() ||
+	    oldSimulcastSetting != ui->enableSimulcast->isChecked())
 		main->ResetOutputs();
 
 	SwapMultiTrack(QT_TO_UTF8(protocol));
@@ -660,6 +672,12 @@ void OBSBasicSettings::on_service_currentIndexChanged(int idx)
 			ui->streamSingleTracks);
 	} else {
 		SwapMultiTrack(QT_TO_UTF8(protocol));
+	}
+
+	if (IsWHIP()) {
+		ui->enableSimulcast->show();
+	} else {
+		ui->enableSimulcast->hide();
 	}
 }
 

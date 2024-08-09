@@ -420,6 +420,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->authUsername,         EDIT_CHANGED,   STREAM1_CHANGED);
 	HookWidget(ui->authPw,               EDIT_CHANGED,   STREAM1_CHANGED);
 	HookWidget(ui->ignoreRecommended,    CHECK_CHANGED,  STREAM1_CHANGED);
+	HookWidget(ui->enableSimulcast,      CHECK_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->enableMultitrackVideo,      CHECK_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->multitrackVideoMaximumAggregateBitrateAuto, CHECK_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->multitrackVideoMaximumAggregateBitrate,     SCROLL_CHANGED, STREAM1_CHANGED);

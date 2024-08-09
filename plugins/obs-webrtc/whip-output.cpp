@@ -24,6 +24,14 @@ const uint8_t video_payload_type = 96;
 // ~3 seconds of 8.5 Megabit video
 const int video_nack_buffer_size = 4000;
 
+const std::string rtpHeaderExtUriMid = "urn:ietf:params:rtp-hdrext:sdes:mid";
+const std::string rtpHeaderExtUriRid =
+	"urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id";
+
+const std::string highRid = "h";
+const std::string medRid = "m";
+const std::string lowRid = "l";
+
 WHIPOutput::WHIPOutput(obs_data_t *, obs_output_t *output)
 	: output(output),
 	  endpoint_url(),
@@ -39,8 +47,7 @@ WHIPOutput::WHIPOutput(obs_data_t *, obs_output_t *output)
 	  total_bytes_sent(0),
 	  connect_time_ms(0),
 	  start_time_ns(0),
-	  last_audio_timestamp(0),
-	  last_video_timestamp(0)
+	  last_audio_timestamp(0)
 {
 }
 
@@ -56,6 +63,27 @@ WHIPOutput::~WHIPOutput()
 bool WHIPOutput::Start()
 {
 	std::lock_guard<std::mutex> l(start_stop_mutex);
+
+	for (size_t idx = 0; idx < 5; idx++) {
+		auto encoder = obs_output_get_video_encoder2(output, idx);
+		if (encoder == nullptr) {
+			break;
+		}
+
+		auto v = std::make_shared<videoLayerState>();
+		if (idx == 0) {
+			v->ssrc = base_ssrc + 1;
+			v->rid = highRid;
+		} else if (idx == 1) {
+			v->ssrc = base_ssrc + 2;
+			v->rid = medRid;
+		} else if (idx == 2) {
+			v->ssrc = base_ssrc + 3;
+			v->rid = lowRid;
+		}
+
+		videoLayerStates[obs_encoder_get_width(encoder)] = v;
+	}
 
 	if (!obs_output_can_begin_data_capture(output, 0))
 		return false;
@@ -92,10 +120,28 @@ void WHIPOutput::Data(struct encoder_packet *packet)
 		     audio_sr_reporter);
 		last_audio_timestamp = packet->dts_usec;
 	} else if (video_track && packet->type == OBS_ENCODER_VIDEO) {
-		int64_t duration = packet->dts_usec - last_video_timestamp;
+		auto rtp_config = video_sr_reporter->rtpConfig;
+		auto videoLayerState =
+			videoLayerStates[obs_encoder_get_width(packet->encoder)];
+		if (videoLayerState == nullptr) {
+			Stop(false);
+			obs_output_signal_stop(output, OBS_OUTPUT_ENCODE_ERROR);
+			return;
+		}
+
+		rtp_config->sequenceNumber = videoLayerState->sequenceNumber;
+		rtp_config->ssrc = videoLayerState->ssrc;
+		rtp_config->rid = videoLayerState->rid;
+		rtp_config->timestamp = videoLayerState->rtpTimestamp;
+		int64_t duration =
+			packet->dts_usec - videoLayerState->lastVideoTimestamp;
+
 		Send(packet->data, packet->size, duration, video_track,
 		     video_sr_reporter);
-		last_video_timestamp = packet->dts_usec;
+
+		videoLayerState->sequenceNumber = rtp_config->sequenceNumber;
+		videoLayerState->lastVideoTimestamp = packet->dts_usec;
+		videoLayerState->rtpTimestamp = rtp_config->timestamp;
 	}
 }
 
@@ -151,9 +197,24 @@ void WHIPOutput::ConfigureVideoTrack(std::string media_stream_id,
 	video_description.addSSRC(ssrc, cname, media_stream_id,
 				  media_stream_track_id);
 
+	video_description.addExtMap(
+		rtc::Description::Entry::ExtMap(1, rtpHeaderExtUriMid));
+	video_description.addExtMap(
+		rtc::Description::Entry::ExtMap(2, rtpHeaderExtUriRid));
+
+	if (videoLayerStates.size() >= 2) {
+		for (auto i = videoLayerStates.rbegin();
+		     i != videoLayerStates.rend(); i++) {
+			video_description.addRid(i->second->rid);
+		}
+	}
+
 	auto rtp_config = std::make_shared<rtc::RtpPacketizationConfig>(
 		ssrc, cname, video_payload_type,
 		rtc::H264RtpPacketizer::defaultClockRate);
+	rtp_config->midId = 1;
+	rtp_config->ridId = 2;
+	rtp_config->mid = video_mid;
 
 	const obs_encoder_t *encoder = obs_output_get_video_encoder2(output, 0);
 	if (!encoder)
@@ -653,7 +714,7 @@ void WHIPOutput::StopThread(bool signal)
 	connect_time_ms = 0;
 	start_time_ns = 0;
 	last_audio_timestamp = 0;
-	last_video_timestamp = 0;
+	videoLayerStates.clear();
 }
 
 void WHIPOutput::Send(void *data, uintptr_t size, uint64_t duration,
@@ -697,7 +758,8 @@ void WHIPOutput::Send(void *data, uintptr_t size, uint64_t duration,
 
 void register_whip_output()
 {
-	const uint32_t base_flags = OBS_OUTPUT_ENCODED | OBS_OUTPUT_SERVICE;
+	const uint32_t base_flags = OBS_OUTPUT_ENCODED | OBS_OUTPUT_SERVICE |
+				    OBS_OUTPUT_MULTI_TRACK_AV;
 
 	const char *audio_codecs = "opus";
 #ifdef ENABLE_HEVC

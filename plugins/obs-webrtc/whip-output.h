@@ -13,6 +13,14 @@
 
 #include <rtc/rtc.hpp>
 
+struct videoLayerState {
+	uint16_t sequenceNumber;
+	uint32_t rtpTimestamp;
+	int64_t lastVideoTimestamp;
+	uint32_t ssrc;
+	std::string rid;
+};
+
 class WHIPOutput {
 public:
 	WHIPOutput(obs_data_t *settings, obs_output_t *output);
@@ -62,11 +70,12 @@ private:
 	std::shared_ptr<rtc::RtcpSrReporter> audio_sr_reporter;
 	std::shared_ptr<rtc::RtcpSrReporter> video_sr_reporter;
 
+	std::map<uint32_t, std::shared_ptr<videoLayerState>> videoLayerStates;
+
 	std::atomic<size_t> total_bytes_sent;
 	std::atomic<int> connect_time_ms;
 	int64_t start_time_ns;
 	int64_t last_audio_timestamp;
-	int64_t last_video_timestamp;
 };
 
 void register_whip_output();
