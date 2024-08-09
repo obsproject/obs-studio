@@ -3002,8 +3002,6 @@ void obs_output_signal_stop(obs_output_t *output, int code)
 		obs_output_end_data_capture_internal(output, false);
 		output_reconnect(output);
 	} else {
-		if (delay_active(output))
-			os_atomic_set_bool(&output->delay_active, false);
 		obs_output_end_data_capture(output);
 	}
 }
