@@ -62,6 +62,8 @@ enum obs_frontend_event {
 	OBS_FRONTEND_EVENT_SCENE_COLLECTION_RENAMED,
 	OBS_FRONTEND_EVENT_THEME_CHANGED,
 	OBS_FRONTEND_EVENT_SCREENSHOT_TAKEN,
+
+	OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVING,
 };
 
 /* ------------------------------------------------------------------------- */

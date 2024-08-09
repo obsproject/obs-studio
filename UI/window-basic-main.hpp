@@ -457,7 +457,7 @@ private:
 		replayBufHotkeys, vcamHotkeys, togglePreviewHotkeys,
 		contextBarHotkeys;
 	obs_hotkey_id forceStreamingStopHotkey, splitFileHotkey,
-		addChapterHotkey;
+		addChapterHotkey, replayBufSaveHotkey;
 
 	void InitDefaultTransitions();
 	void InitTransition(obs_source_t *transition);
