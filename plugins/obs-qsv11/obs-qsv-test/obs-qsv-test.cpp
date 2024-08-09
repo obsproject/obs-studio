@@ -1,3 +1,4 @@
+#define ONEVPL_EXPERIMENTAL
 #include <vpl/mfxstructures.h>
 #include <vpl/mfxadapter.h>
 #include <vpl/mfxvideo++.h>
