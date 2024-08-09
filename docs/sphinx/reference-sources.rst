@@ -176,6 +176,14 @@ Source Definition Structure (obs_source_info)
      to have its properties shown on creation (prefers to rely on
      defaults first)
 
+   - **OBS_TRANSITION_HAS_AUDIO** - Transition has child sources with
+     audio. Hint for the UI to enable advanced audio controls.
+     Transitions using this can implement a `transition_audio_update`
+     procedure to apply the audio properties from the transition's
+     settings to the child sources, or rely on `source_update`.
+
+     .. versionadded:: next
+
 .. member:: const char *(*obs_source_info.get_name)(void *type_data)
 
    Get the translated name of the source type.

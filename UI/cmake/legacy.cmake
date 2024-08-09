@@ -128,6 +128,7 @@ target_sources(
           forms/OBSBasicInteraction.ui
           forms/OBSBasicProperties.ui
           forms/OBSBasicSettings.ui
+          forms/OBSBasicTransitionAudio.ui
           forms/OBSBasicSourceSelect.ui
           forms/OBSBasicTransform.ui
           forms/OBSBasicVCamConfig.ui
@@ -269,6 +270,8 @@ target_sources(
           window-basic-status-bar.hpp
           window-basic-transform.cpp
           window-basic-transform.hpp
+          window-basic-transition-audio.cpp
+          window-basic-transition-audio.hpp
           window-basic-preview.hpp
           window-basic-vcam.hpp
           window-basic-vcam-config.cpp
