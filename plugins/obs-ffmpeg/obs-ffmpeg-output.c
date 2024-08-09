@@ -442,6 +442,8 @@ static inline bool open_output_file(struct ffmpeg_data *data)
 {
 	const AVOutputFormat *format = data->output->oformat;
 	int ret;
+	const char *metadata_prefix = "metadata_";
+	const size_t len_metadata_prefix = strlen(metadata_prefix);
 
 	AVDictionary *dict = NULL;
 	if ((ret = av_dict_parse_string(&dict, data->config.muxer_settings, "=",
@@ -476,6 +478,27 @@ static inline bool open_output_file(struct ffmpeg_data *data)
 			av_dict_free(&dict);
 			return false;
 		}
+	}
+
+	// Handle metdata if requested by the user.
+	// We need to do this before the header write
+	if (av_dict_count(dict) > 0) {
+		struct dstr meta_str = {0};
+		AVDictionaryEntry *meta_entry = NULL;
+		while ((meta_entry = av_dict_get(dict, metadata_prefix,
+						 meta_entry,
+						 AV_DICT_IGNORE_SUFFIX))) {
+			if (strlen(meta_entry->key) > len_metadata_prefix) {
+				dstr_catf(&meta_str, "\n\t%s=%s",
+					  meta_entry->key, meta_entry->value);
+				av_dict_set(&data->output->metadata,
+					    (char *)(meta_entry->key +
+						     len_metadata_prefix),
+					    meta_entry->value, 0);
+			}
+		}
+		blog(LOG_INFO, "Using metadata settings: %s", meta_str.array);
+		dstr_free(&meta_str);
 	}
 
 	ret = avformat_write_header(data->output, &dict);
