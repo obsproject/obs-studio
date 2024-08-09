@@ -745,10 +745,10 @@ static void *ffmpeg_mux_io_thread(void *data)
 
 		// Loop to write in chunk_size chunks
 		for (;;) {
+			pthread_mutex_lock(&ffm->io.data_mutex);
+
 			shutting_down = os_atomic_load_bool(
 				&ffm->io.shutdown_requested);
-
-			pthread_mutex_lock(&ffm->io.data_mutex);
 
 			// Fetch as many writes as possible from the deque
 			// and fill up our local chunk. This may involve seeking
