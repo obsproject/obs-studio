@@ -1,5 +1,5 @@
 #include "window-basic-main.hpp"
-#include "media-controls.hpp"
+#include "moc_media-controls.cpp"
 #include "obs-app.hpp"
 #include <QToolTip>
 #include <QStyle>

@@ -1,4 +1,4 @@
-#include "youtube-api-wrappers.hpp"
+#include "moc_youtube-api-wrappers.cpp"
 
 #include <QUrl>
 #include <QMimeDatabase>

@@ -1,4 +1,4 @@
-#include "visibility-item-widget.hpp"
+#include "moc_visibility-item-widget.cpp"
 #include "obs-app.hpp"
 #include "source-label.hpp"
 

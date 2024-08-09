@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "qt-wrappers.hpp"
+#include "moc_qt-wrappers.cpp"
 
 #include <graphics/graphics.h>
 #include <util/threading.h>

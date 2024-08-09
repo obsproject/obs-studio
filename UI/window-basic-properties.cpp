@@ -16,7 +16,7 @@
 ******************************************************************************/
 
 #include "obs-app.hpp"
-#include "window-basic-properties.hpp"
+#include "moc_window-basic-properties.cpp"
 #include "window-basic-main.hpp"
 #include "display-helpers.hpp"
 

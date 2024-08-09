@@ -1,6 +1,6 @@
 #include "obs-frontend-api/obs-frontend-api.h"
 
-#include "window-basic-stats.hpp"
+#include "moc_window-basic-stats.cpp"
 #include "window-basic-main.hpp"
 #include "platform.hpp"
 #include "obs-app.hpp"

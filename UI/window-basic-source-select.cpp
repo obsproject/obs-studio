@@ -18,7 +18,7 @@
 #include <QMessageBox>
 #include <qt-wrappers.hpp>
 #include "window-basic-main.hpp"
-#include "window-basic-source-select.hpp"
+#include "moc_window-basic-source-select.cpp"
 #include "obs-app.hpp"
 
 struct AddSourceData {

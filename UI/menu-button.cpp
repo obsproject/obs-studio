@@ -1,7 +1,7 @@
 #include <QMenu>
 #include <QKeyEvent>
 #include <QMouseEvent>
-#include "menu-button.hpp"
+#include "moc_menu-button.cpp"
 
 void MenuButton::keyPressEvent(QKeyEvent *event)
 {

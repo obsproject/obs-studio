@@ -1,4 +1,4 @@
-#include "undo-stack-obs.hpp"
+#include "moc_undo-stack-obs.cpp"
 
 #include <util/util.hpp>
 

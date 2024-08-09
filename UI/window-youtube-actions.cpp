@@ -1,5 +1,5 @@
 #include "window-basic-main.hpp"
-#include "window-youtube-actions.hpp"
+#include "moc_window-youtube-actions.cpp"
 
 #include "obs-app.hpp"
 #include "youtube-api-wrappers.hpp"

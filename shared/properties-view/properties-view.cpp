@@ -26,7 +26,7 @@
 #include <QDesktopServices>
 #include "double-slider.hpp"
 #include "spinbox-ignorewheel.hpp"
-#include "properties-view.hpp"
+#include "moc_properties-view.cpp"
 #include "properties-view.moc.hpp"
 
 #include <qt-wrappers.hpp>
