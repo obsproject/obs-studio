@@ -498,8 +498,10 @@ elseif(OS_MACOS)
   set_source_files_properties(platform-osx.mm PROPERTIES COMPILE_FLAGS -fobjc-arc)
 
 elseif(OS_POSIX)
+  find_package(glib REQUIRED)
+
   target_sources(obs PRIVATE platform-x11.cpp)
-  target_link_libraries(obs PRIVATE Qt::GuiPrivate Qt::DBus)
+  target_link_libraries(obs PRIVATE Qt::GuiPrivate Qt::DBus glib::glib)
 
   target_sources(obs PRIVATE system-info-posix.cpp)
 
