@@ -1242,8 +1242,9 @@ bool SimpleOutput::IsVodTrackEnabled(obs_service_t *service)
 		config_get_bool(main->Config(), "SimpleOutput", "UseAdvanced");
 	bool enable = config_get_bool(main->Config(), "SimpleOutput",
 				      "VodTrackEnabled");
-	bool enableForCustomServer = config_get_bool(
-		GetGlobalConfig(), "General", "EnableCustomServerVodTrack");
+	bool enableForCustomServer =
+		config_get_bool(App()->GetUserConfig(), "General",
+				"EnableCustomServerVodTrack");
 
 	OBSDataAutoRelease settings = obs_service_get_settings(service);
 	const char *name = obs_data_get_string(settings, "service");
@@ -1611,19 +1612,28 @@ struct AdvancedOutput : BasicOutputHandler {
 
 static OBSData GetDataFromJsonFile(const char *jsonFile)
 {
-	char fullPath[512];
+	const OBSBasic *basic =
+		reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+
+	const OBSProfile &currentProfile = basic->GetCurrentProfile();
+
+	const std::filesystem::path jsonFilePath{currentProfile.path /
+						 jsonFile};
+
 	OBSDataAutoRelease data = nullptr;
 
-	int ret = GetProfilePath(fullPath, sizeof(fullPath), jsonFile);
-	if (ret > 0) {
-		BPtr<char> jsonData = os_quick_read_utf8_file(fullPath);
+	if (!jsonFilePath.empty()) {
+		BPtr<char> jsonData = os_quick_read_utf8_file(
+			jsonFilePath.u8string().c_str());
+
 		if (!!jsonData) {
 			data = obs_data_create_from_json(jsonData);
 		}
 	}
 
-	if (!data)
+	if (!data) {
 		data = obs_data_create();
+	}
 
 	return data.Get();
 }
@@ -2248,8 +2258,9 @@ AdvancedOutput::VodTrackMixerIdx(obs_service_t *service)
 		config_get_bool(main->Config(), "AdvOut", "VodTrackEnabled");
 	int vodTrackIndex =
 		config_get_int(main->Config(), "AdvOut", "VodTrackIndex");
-	bool enableForCustomServer = config_get_bool(
-		GetGlobalConfig(), "General", "EnableCustomServerVodTrack");
+	bool enableForCustomServer =
+		config_get_bool(App()->GetUserConfig(), "General",
+				"EnableCustomServerVodTrack");
 
 	const char *id = obs_service_get_id(service);
 	if (strcmp(id, "rtmp_custom") == 0) {

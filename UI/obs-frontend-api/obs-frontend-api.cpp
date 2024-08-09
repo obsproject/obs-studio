@@ -394,10 +394,22 @@ config_t *obs_frontend_get_profile_config(void)
 				   : nullptr;
 }
 
+config_t *obs_frontend_get_app_config(void)
+{
+	return !!callbacks_valid() ? c->obs_frontend_get_app_config() : nullptr;
+}
+
+config_t *obs_frontend_get_user_config(void)
+{
+	return !!callbacks_valid() ? c->obs_frontend_get_user_config()
+				   : nullptr;
+}
+
 config_t *obs_frontend_get_global_config(void)
 {
-	return !!callbacks_valid() ? c->obs_frontend_get_global_config()
-				   : nullptr;
+	blog(LOG_WARNING,
+	     "DEPRECATION: obs_frontend_get_global_config is deprecated. Read from global or user configuration explicitly instead.");
+	return !!callbacks_valid() ? c->obs_frontend_get_app_config() : nullptr;
 }
 
 void obs_frontend_open_projector(const char *type, int monitor,

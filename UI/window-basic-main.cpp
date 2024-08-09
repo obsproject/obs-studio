@@ -191,11 +191,11 @@ static void AddExtraModulePaths()
 	int ret = GetProgramDataPath(base_module_dir, sizeof(base_module_dir),
 				     "obs-studio/plugins/%module%");
 #elif defined(__APPLE__)
-	int ret = GetConfigPath(base_module_dir, sizeof(base_module_dir),
-				"obs-studio/plugins/%module%.plugin");
+	int ret = GetAppConfigPath(base_module_dir, sizeof(base_module_dir),
+				   "obs-studio/plugins/%module%.plugin");
 #else
-	int ret = GetConfigPath(base_module_dir, sizeof(base_module_dir),
-				"obs-studio/plugins/%module%");
+	int ret = GetAppConfigPath(base_module_dir, sizeof(base_module_dir),
+				   "obs-studio/plugins/%module%");
 #endif
 
 	if (ret <= 0)
@@ -219,8 +219,8 @@ static void AddExtraModulePaths()
 
 	/* Legacy User Application Support Search Path */
 	char user_legacy_module_dir[PATH_MAX];
-	GetConfigPath(user_legacy_module_dir, sizeof(user_legacy_module_dir),
-		      "obs-studio/plugins/%module%");
+	GetAppConfigPath(user_legacy_module_dir, sizeof(user_legacy_module_dir),
+			 "obs-studio/plugins/%module%");
 	std::string path_user_legacy = user_legacy_module_dir;
 	obs_add_module_path((path_user_legacy + "/bin").c_str(),
 			    (path_user_legacy + "/data").c_str());
@@ -446,7 +446,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	ui->scenes->setAttribute(Qt::WA_MacShowFocusRect, false);
 	ui->sources->setAttribute(Qt::WA_MacShowFocusRect, false);
 
-	bool sceneGrid = config_get_bool(App()->GlobalConfig(), "BasicWindow",
+	bool sceneGrid = config_get_bool(App()->GetUserConfig(), "BasicWindow",
 					 "gridMode");
 	ui->scenes->SetGridMode(sceneGrid);
 
@@ -577,7 +577,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	QPoint curPos;
 
 	//restore parent window geometry
-	const char *geometry = config_get_string(App()->GlobalConfig(),
+	const char *geometry = config_get_string(App()->GetUserConfig(),
 						 "BasicWindow", "geometry");
 	if (geometry != NULL) {
 		QByteArray byteArray =
@@ -703,7 +703,7 @@ static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder,
 	const char *programName = obs_source_get_name(curProgramScene);
 
 	const char *sceneCollection = config_get_string(
-		App()->GlobalConfig(), "Basic", "SceneCollection");
+		App()->GetUserConfig(), "Basic", "SceneCollection");
 
 	obs_data_set_string(saveData, "current_scene", sceneName);
 	obs_data_set_string(saveData, "current_program_scene", programName);
@@ -763,8 +763,8 @@ void OBSBasic::copyActionsDynamicProperties()
 
 void OBSBasic::UpdateVolumeControlsDecayRate()
 {
-	double meterDecayRate =
-		config_get_double(basicConfig, "Audio", "MeterDecayRate");
+	double meterDecayRate = config_get_double(activeConfiguration, "Audio",
+						  "MeterDecayRate");
 
 	for (size_t i = 0; i < volumes.size(); i++) {
 		volumes[i]->SetMeterDecayRate(meterDecayRate);
@@ -774,7 +774,7 @@ void OBSBasic::UpdateVolumeControlsDecayRate()
 void OBSBasic::UpdateVolumeControlsPeakMeterType()
 {
 	uint32_t peakMeterTypeIdx =
-		config_get_uint(basicConfig, "Audio", "PeakMeterType");
+		config_get_uint(activeConfiguration, "Audio", "PeakMeterType");
 
 	enum obs_peak_meter_type peakMeterType;
 	switch (peakMeterTypeIdx) {
@@ -1188,12 +1188,16 @@ void OBSBasic::Load(const char *file)
 			}
 		}
 
-		config_set_string(App()->GlobalConfig(), "Basic",
+		config_set_string(App()->GetUserConfig(), "Basic",
 				  "SceneCollection", name.c_str());
-		config_set_string(App()->GlobalConfig(), "Basic",
+		config_set_string(App()->GetUserConfig(), "Basic",
 				  "SceneCollectionFile", name.c_str());
 		blog(LOG_INFO, "No scene file found, creating default scene");
-		CreateDefaultScene(true);
+
+		bool hasFirstRun = config_get_bool(App()->GetUserConfig(),
+						   "General", "FirstRun");
+
+		CreateDefaultScene(!hasFirstRun);
 		SaveProject();
 		return;
 	}
@@ -1266,7 +1270,7 @@ void OBSBasic::LoadData(obs_data_t *data, const char *file)
 		transitionName = obs_source_get_name(fadeTransition);
 
 	const char *curSceneCollection = config_get_string(
-		App()->GlobalConfig(), "Basic", "SceneCollection");
+		App()->GetUserConfig(), "Basic", "SceneCollection");
 
 	obs_data_set_default_string(data, "name", curSceneCollection);
 
@@ -1338,8 +1342,8 @@ retryScene:
 
 	/* ------------------- */
 
-	bool projectorSave = config_get_bool(GetGlobalConfig(), "BasicWindow",
-					     "SaveProjectors");
+	bool projectorSave = config_get_bool(App()->GetUserConfig(),
+					     "BasicWindow", "SaveProjectors");
 
 	if (projectorSave) {
 		OBSDataArrayAutoRelease savedProjectors =
@@ -1357,10 +1361,10 @@ retryScene:
 	std::string file_base = strrchr(file, '/') + 1;
 	file_base.erase(file_base.size() - 5, 5);
 
-	config_set_string(App()->GlobalConfig(), "Basic", "SceneCollection",
+	config_set_string(App()->GetUserConfig(), "Basic", "SceneCollection",
 			  name);
-	config_set_string(App()->GlobalConfig(), "Basic", "SceneCollectionFile",
-			  file_base.c_str());
+	config_set_string(App()->GetUserConfig(), "Basic",
+			  "SceneCollectionFile", file_base.c_str());
 
 	OBSDataArrayAutoRelease quickTransitionData =
 		obs_data_get_array(data, "quick_transitions");
@@ -1476,18 +1480,17 @@ retryScene:
 	}
 }
 
-#define SERVICE_PATH "service.json"
+constexpr std::string_view OBSServiceFileName = "service.json";
 
 void OBSBasic::SaveService()
 {
 	if (!service)
 		return;
 
-	char serviceJsonPath[512];
-	int ret = GetProfilePath(serviceJsonPath, sizeof(serviceJsonPath),
-				 SERVICE_PATH);
-	if (ret <= 0)
-		return;
+	const OBSProfile &currentProfile = GetCurrentProfile();
+
+	const std::filesystem::path jsonFilePath{currentProfile.path /
+						 OBSServiceFileName.data()};
 
 	OBSDataAutoRelease data = obs_data_create();
 	OBSDataAutoRelease settings = obs_service_get_settings(service);
@@ -1495,26 +1498,34 @@ void OBSBasic::SaveService()
 	obs_data_set_string(data, "type", obs_service_get_type(service));
 	obs_data_set_obj(data, "settings", settings);
 
-	if (!obs_data_save_json_safe(data, serviceJsonPath, "tmp", "bak"))
+	if (!obs_data_save_json_safe(data, jsonFilePath.u8string().c_str(),
+				     "tmp", "bak")) {
 		blog(LOG_WARNING, "Failed to save service");
+	}
 }
 
 bool OBSBasic::LoadService()
 {
+	OBSDataAutoRelease data;
+
+	try {
+		const OBSProfile &currentProfile = GetCurrentProfile();
+
+		const std::filesystem::path jsonFilePath{
+			currentProfile.path / OBSServiceFileName.data()};
+
+		data = obs_data_create_from_json_file_safe(
+			jsonFilePath.u8string().c_str(), "bak");
+
+		if (!data) {
+			return false;
+		}
+	} catch (const std::invalid_argument &error) {
+		blog(LOG_ERROR, "%s", error.what());
+		return false;
+	}
+
 	const char *type;
-
-	char serviceJsonPath[512];
-	int ret = GetProfilePath(serviceJsonPath, sizeof(serviceJsonPath),
-				 SERVICE_PATH);
-	if (ret <= 0)
-		return false;
-
-	OBSDataAutoRelease data =
-		obs_data_create_from_json_file_safe(serviceJsonPath, "bak");
-
-	if (!data)
-		return false;
-
 	obs_data_set_default_string(data, "type", "rtmp_common");
 	type = obs_data_get_string(data, "type");
 
@@ -1530,19 +1541,20 @@ bool OBSBasic::LoadService()
 
 	/* Enforce Opus on WHIP if needed */
 	if (strcmp(obs_service_get_protocol(service), "WHIP") == 0) {
-		const char *option = config_get_string(
-			basicConfig, "SimpleOutput", "StreamAudioEncoder");
+		const char *option = config_get_string(activeConfiguration,
+						       "SimpleOutput",
+						       "StreamAudioEncoder");
 		if (strcmp(option, "opus") != 0)
-			config_set_string(basicConfig, "SimpleOutput",
+			config_set_string(activeConfiguration, "SimpleOutput",
 					  "StreamAudioEncoder", "opus");
 
-		option = config_get_string(basicConfig, "AdvOut",
+		option = config_get_string(activeConfiguration, "AdvOut",
 					   "AudioEncoder");
 
 		const char *encoder_codec = obs_get_encoder_codec(option);
 		if (!encoder_codec || strcmp(encoder_codec, "opus") != 0)
-			config_set_string(basicConfig, "AdvOut", "AudioEncoder",
-					  "ffmpeg_opus");
+			config_set_string(activeConfiguration, "AdvOut",
+					  "AudioEncoder", "ffmpeg_opus");
 	}
 
 	return true;
@@ -1597,7 +1609,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 	cy *= devicePixelRatioF();
 
 	bool oldResolutionDefaults = config_get_bool(
-		App()->GlobalConfig(), "General", "Pre19Defaults");
+		App()->GetUserConfig(), "General", "Pre19Defaults");
 
 	/* use 1920x1080 for new default base res if main monitor is above
 	 * 1920x1080, but don't apply for people from older builds -- only to
@@ -1611,62 +1623,74 @@ bool OBSBasic::InitBasicConfigDefaults()
 
 	/* ----------------------------------------------------- */
 	/* move over old FFmpeg track settings                   */
-	if (config_has_user_value(basicConfig, "AdvOut", "FFAudioTrack") &&
-	    !config_has_user_value(basicConfig, "AdvOut", "Pre22.1Settings")) {
+	if (config_has_user_value(activeConfiguration, "AdvOut",
+				  "FFAudioTrack") &&
+	    !config_has_user_value(activeConfiguration, "AdvOut",
+				   "Pre22.1Settings")) {
 
-		int track = (int)config_get_int(basicConfig, "AdvOut",
+		int track = (int)config_get_int(activeConfiguration, "AdvOut",
 						"FFAudioTrack");
-		config_set_int(basicConfig, "AdvOut", "FFAudioMixes",
+		config_set_int(activeConfiguration, "AdvOut", "FFAudioMixes",
 			       1LL << (track - 1));
-		config_set_bool(basicConfig, "AdvOut", "Pre22.1Settings", true);
+		config_set_bool(activeConfiguration, "AdvOut",
+				"Pre22.1Settings", true);
 		changed = true;
 	}
 
 	/* ----------------------------------------------------- */
 	/* move over mixer values in advanced if older config */
-	if (config_has_user_value(basicConfig, "AdvOut", "RecTrackIndex") &&
-	    !config_has_user_value(basicConfig, "AdvOut", "RecTracks")) {
+	if (config_has_user_value(activeConfiguration, "AdvOut",
+				  "RecTrackIndex") &&
+	    !config_has_user_value(activeConfiguration, "AdvOut",
+				   "RecTracks")) {
 
-		uint64_t track =
-			config_get_uint(basicConfig, "AdvOut", "RecTrackIndex");
+		uint64_t track = config_get_uint(activeConfiguration, "AdvOut",
+						 "RecTrackIndex");
 		track = 1ULL << (track - 1);
-		config_set_uint(basicConfig, "AdvOut", "RecTracks", track);
-		config_remove_value(basicConfig, "AdvOut", "RecTrackIndex");
+		config_set_uint(activeConfiguration, "AdvOut", "RecTracks",
+				track);
+		config_remove_value(activeConfiguration, "AdvOut",
+				    "RecTrackIndex");
 		changed = true;
 	}
 
 	/* ----------------------------------------------------- */
 	/* set twitch chat extensions to "both" if prev version  */
 	/* is under 24.1                                         */
-	if (config_get_bool(GetGlobalConfig(), "General", "Pre24.1Defaults") &&
-	    !config_has_user_value(basicConfig, "Twitch", "AddonChoice")) {
-		config_set_int(basicConfig, "Twitch", "AddonChoice", 3);
+	if (config_get_bool(App()->GetUserConfig(), "General",
+			    "Pre24.1Defaults") &&
+	    !config_has_user_value(activeConfiguration, "Twitch",
+				   "AddonChoice")) {
+		config_set_int(activeConfiguration, "Twitch", "AddonChoice", 3);
 		changed = true;
 	}
 
 	/* ----------------------------------------------------- */
 	/* move bitrate enforcement setting to new value         */
-	if (config_has_user_value(basicConfig, "SimpleOutput",
+	if (config_has_user_value(activeConfiguration, "SimpleOutput",
 				  "EnforceBitrate") &&
-	    !config_has_user_value(basicConfig, "Stream1",
+	    !config_has_user_value(activeConfiguration, "Stream1",
 				   "IgnoreRecommended") &&
-	    !config_has_user_value(basicConfig, "Stream1", "MovedOldEnforce")) {
-		bool enforce = config_get_bool(basicConfig, "SimpleOutput",
-					       "EnforceBitrate");
-		config_set_bool(basicConfig, "Stream1", "IgnoreRecommended",
-				!enforce);
-		config_set_bool(basicConfig, "Stream1", "MovedOldEnforce",
-				true);
+	    !config_has_user_value(activeConfiguration, "Stream1",
+				   "MovedOldEnforce")) {
+		bool enforce = config_get_bool(
+			activeConfiguration, "SimpleOutput", "EnforceBitrate");
+		config_set_bool(activeConfiguration, "Stream1",
+				"IgnoreRecommended", !enforce);
+		config_set_bool(activeConfiguration, "Stream1",
+				"MovedOldEnforce", true);
 		changed = true;
 	}
 
 	/* ----------------------------------------------------- */
 	/* enforce minimum retry delay of 1 second prior to 27.1 */
-	if (config_has_user_value(basicConfig, "Output", "RetryDelay")) {
-		int retryDelay =
-			config_get_uint(basicConfig, "Output", "RetryDelay");
+	if (config_has_user_value(activeConfiguration, "Output",
+				  "RetryDelay")) {
+		int retryDelay = config_get_uint(activeConfiguration, "Output",
+						 "RetryDelay");
 		if (retryDelay < 1) {
-			config_set_uint(basicConfig, "Output", "RetryDelay", 1);
+			config_set_uint(activeConfiguration, "Output",
+					"RetryDelay", 1);
 			changed = true;
 		}
 	}
@@ -1675,15 +1699,15 @@ bool OBSBasic::InitBasicConfigDefaults()
 	/* Migrate old container selection (if any) to new key.  */
 
 	auto MigrateFormat = [&](const char *section) {
-		bool has_old_key = config_has_user_value(basicConfig, section,
-							 "RecFormat");
-		bool has_new_key = config_has_user_value(basicConfig, section,
-							 "RecFormat2");
+		bool has_old_key = config_has_user_value(activeConfiguration,
+							 section, "RecFormat");
+		bool has_new_key = config_has_user_value(activeConfiguration,
+							 section, "RecFormat2");
 		if (!has_new_key && !has_old_key)
 			return;
 
 		string old_format = config_get_string(
-			basicConfig, section,
+			activeConfiguration, section,
 			has_new_key ? "RecFormat2" : "RecFormat");
 		string new_format = old_format;
 		if (old_format == "ts")
@@ -1696,8 +1720,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 			new_format = "fragmented_mov";
 
 		if (new_format != old_format || !has_new_key) {
-			config_set_string(basicConfig, section, "RecFormat2",
-					  new_format.c_str());
+			config_set_string(activeConfiguration, section,
+					  "RecFormat2", new_format.c_str());
 			changed = true;
 		}
 	};
@@ -1708,137 +1732,175 @@ bool OBSBasic::InitBasicConfigDefaults()
 	/* ----------------------------------------------------- */
 	/* Migrate output scale setting to GPU scaling options.  */
 
-	if (config_get_bool(basicConfig, "AdvOut", "Rescale") &&
-	    !config_has_user_value(basicConfig, "AdvOut", "RescaleFilter")) {
-		config_set_int(basicConfig, "AdvOut", "RescaleFilter",
+	if (config_get_bool(activeConfiguration, "AdvOut", "Rescale") &&
+	    !config_has_user_value(activeConfiguration, "AdvOut",
+				   "RescaleFilter")) {
+		config_set_int(activeConfiguration, "AdvOut", "RescaleFilter",
 			       OBS_SCALE_BILINEAR);
 	}
 
-	if (config_get_bool(basicConfig, "AdvOut", "RecRescale") &&
-	    !config_has_user_value(basicConfig, "AdvOut", "RecRescaleFilter")) {
-		config_set_int(basicConfig, "AdvOut", "RecRescaleFilter",
-			       OBS_SCALE_BILINEAR);
+	if (config_get_bool(activeConfiguration, "AdvOut", "RecRescale") &&
+	    !config_has_user_value(activeConfiguration, "AdvOut",
+				   "RecRescaleFilter")) {
+		config_set_int(activeConfiguration, "AdvOut",
+			       "RecRescaleFilter", OBS_SCALE_BILINEAR);
 	}
 
 	/* ----------------------------------------------------- */
 
-	if (changed)
-		config_save_safe(basicConfig, "tmp", nullptr);
+	if (changed) {
+		activeConfiguration.SaveSafe("tmp");
+	}
 
 	/* ----------------------------------------------------- */
 
-	config_set_default_string(basicConfig, "Output", "Mode", "Simple");
+	config_set_default_string(activeConfiguration, "Output", "Mode",
+				  "Simple");
 
-	config_set_default_bool(basicConfig, "Stream1", "IgnoreRecommended",
-				false);
-	config_set_default_bool(basicConfig, "Stream1", "EnableMultitrackVideo",
-				false);
-	config_set_default_bool(basicConfig, "Stream1",
+	config_set_default_bool(activeConfiguration, "Stream1",
+				"IgnoreRecommended", false);
+	config_set_default_bool(activeConfiguration, "Stream1",
+				"EnableMultitrackVideo", false);
+	config_set_default_bool(activeConfiguration, "Stream1",
 				"MultitrackVideoMaximumAggregateBitrateAuto",
 				true);
-	config_set_default_bool(basicConfig, "Stream1",
+	config_set_default_bool(activeConfiguration, "Stream1",
 				"MultitrackVideoMaximumVideoTracksAuto", true);
 
-	config_set_default_string(basicConfig, "SimpleOutput", "FilePath",
+	config_set_default_string(activeConfiguration, "SimpleOutput",
+				  "FilePath",
 				  GetDefaultVideoSavePath().c_str());
-	config_set_default_string(basicConfig, "SimpleOutput", "RecFormat2",
-				  DEFAULT_CONTAINER);
-	config_set_default_uint(basicConfig, "SimpleOutput", "VBitrate", 2500);
-	config_set_default_uint(basicConfig, "SimpleOutput", "ABitrate", 160);
-	config_set_default_bool(basicConfig, "SimpleOutput", "UseAdvanced",
-				false);
-	config_set_default_string(basicConfig, "SimpleOutput", "Preset",
+	config_set_default_string(activeConfiguration, "SimpleOutput",
+				  "RecFormat2", DEFAULT_CONTAINER);
+	config_set_default_uint(activeConfiguration, "SimpleOutput", "VBitrate",
+				2500);
+	config_set_default_uint(activeConfiguration, "SimpleOutput", "ABitrate",
+				160);
+	config_set_default_bool(activeConfiguration, "SimpleOutput",
+				"UseAdvanced", false);
+	config_set_default_string(activeConfiguration, "SimpleOutput", "Preset",
 				  "veryfast");
-	config_set_default_string(basicConfig, "SimpleOutput", "NVENCPreset2",
-				  "p5");
-	config_set_default_string(basicConfig, "SimpleOutput", "RecQuality",
-				  "Stream");
-	config_set_default_bool(basicConfig, "SimpleOutput", "RecRB", false);
-	config_set_default_int(basicConfig, "SimpleOutput", "RecRBTime", 20);
-	config_set_default_int(basicConfig, "SimpleOutput", "RecRBSize", 512);
-	config_set_default_string(basicConfig, "SimpleOutput", "RecRBPrefix",
-				  "Replay");
-	config_set_default_string(basicConfig, "SimpleOutput",
+	config_set_default_string(activeConfiguration, "SimpleOutput",
+				  "NVENCPreset2", "p5");
+	config_set_default_string(activeConfiguration, "SimpleOutput",
+				  "RecQuality", "Stream");
+	config_set_default_bool(activeConfiguration, "SimpleOutput", "RecRB",
+				false);
+	config_set_default_int(activeConfiguration, "SimpleOutput", "RecRBTime",
+			       20);
+	config_set_default_int(activeConfiguration, "SimpleOutput", "RecRBSize",
+			       512);
+	config_set_default_string(activeConfiguration, "SimpleOutput",
+				  "RecRBPrefix", "Replay");
+	config_set_default_string(activeConfiguration, "SimpleOutput",
 				  "StreamAudioEncoder", "aac");
-	config_set_default_string(basicConfig, "SimpleOutput",
+	config_set_default_string(activeConfiguration, "SimpleOutput",
 				  "RecAudioEncoder", "aac");
-	config_set_default_uint(basicConfig, "SimpleOutput", "RecTracks",
-				(1 << 0));
+	config_set_default_uint(activeConfiguration, "SimpleOutput",
+				"RecTracks", (1 << 0));
 
-	config_set_default_bool(basicConfig, "AdvOut", "ApplyServiceSettings",
-				true);
-	config_set_default_bool(basicConfig, "AdvOut", "UseRescale", false);
-	config_set_default_uint(basicConfig, "AdvOut", "TrackIndex", 1);
-	config_set_default_uint(basicConfig, "AdvOut", "VodTrackIndex", 2);
-	config_set_default_string(basicConfig, "AdvOut", "Encoder", "obs_x264");
+	config_set_default_bool(activeConfiguration, "AdvOut",
+				"ApplyServiceSettings", true);
+	config_set_default_bool(activeConfiguration, "AdvOut", "UseRescale",
+				false);
+	config_set_default_uint(activeConfiguration, "AdvOut", "TrackIndex", 1);
+	config_set_default_uint(activeConfiguration, "AdvOut", "VodTrackIndex",
+				2);
+	config_set_default_string(activeConfiguration, "AdvOut", "Encoder",
+				  "obs_x264");
 
-	config_set_default_string(basicConfig, "AdvOut", "RecType", "Standard");
+	config_set_default_string(activeConfiguration, "AdvOut", "RecType",
+				  "Standard");
 
-	config_set_default_string(basicConfig, "AdvOut", "RecFilePath",
+	config_set_default_string(activeConfiguration, "AdvOut", "RecFilePath",
 				  GetDefaultVideoSavePath().c_str());
-	config_set_default_string(basicConfig, "AdvOut", "RecFormat2",
+	config_set_default_string(activeConfiguration, "AdvOut", "RecFormat2",
 				  DEFAULT_CONTAINER);
-	config_set_default_bool(basicConfig, "AdvOut", "RecUseRescale", false);
-	config_set_default_uint(basicConfig, "AdvOut", "RecTracks", (1 << 0));
-	config_set_default_string(basicConfig, "AdvOut", "RecEncoder", "none");
-	config_set_default_uint(basicConfig, "AdvOut", "FLVTrack", 1);
-	config_set_default_uint(basicConfig, "AdvOut",
+	config_set_default_bool(activeConfiguration, "AdvOut", "RecUseRescale",
+				false);
+	config_set_default_uint(activeConfiguration, "AdvOut", "RecTracks",
+				(1 << 0));
+	config_set_default_string(activeConfiguration, "AdvOut", "RecEncoder",
+				  "none");
+	config_set_default_uint(activeConfiguration, "AdvOut", "FLVTrack", 1);
+	config_set_default_uint(activeConfiguration, "AdvOut",
 				"StreamMultiTrackAudioMixes", 1);
-	config_set_default_bool(basicConfig, "AdvOut", "FFOutputToFile", true);
-	config_set_default_string(basicConfig, "AdvOut", "FFFilePath",
+	config_set_default_bool(activeConfiguration, "AdvOut", "FFOutputToFile",
+				true);
+	config_set_default_string(activeConfiguration, "AdvOut", "FFFilePath",
 				  GetDefaultVideoSavePath().c_str());
-	config_set_default_string(basicConfig, "AdvOut", "FFExtension", "mp4");
-	config_set_default_uint(basicConfig, "AdvOut", "FFVBitrate", 2500);
-	config_set_default_uint(basicConfig, "AdvOut", "FFVGOPSize", 250);
-	config_set_default_bool(basicConfig, "AdvOut", "FFUseRescale", false);
-	config_set_default_bool(basicConfig, "AdvOut", "FFIgnoreCompat", false);
-	config_set_default_uint(basicConfig, "AdvOut", "FFABitrate", 160);
-	config_set_default_uint(basicConfig, "AdvOut", "FFAudioMixes", 1);
+	config_set_default_string(activeConfiguration, "AdvOut", "FFExtension",
+				  "mp4");
+	config_set_default_uint(activeConfiguration, "AdvOut", "FFVBitrate",
+				2500);
+	config_set_default_uint(activeConfiguration, "AdvOut", "FFVGOPSize",
+				250);
+	config_set_default_bool(activeConfiguration, "AdvOut", "FFUseRescale",
+				false);
+	config_set_default_bool(activeConfiguration, "AdvOut", "FFIgnoreCompat",
+				false);
+	config_set_default_uint(activeConfiguration, "AdvOut", "FFABitrate",
+				160);
+	config_set_default_uint(activeConfiguration, "AdvOut", "FFAudioMixes",
+				1);
 
-	config_set_default_uint(basicConfig, "AdvOut", "Track1Bitrate", 160);
-	config_set_default_uint(basicConfig, "AdvOut", "Track2Bitrate", 160);
-	config_set_default_uint(basicConfig, "AdvOut", "Track3Bitrate", 160);
-	config_set_default_uint(basicConfig, "AdvOut", "Track4Bitrate", 160);
-	config_set_default_uint(basicConfig, "AdvOut", "Track5Bitrate", 160);
-	config_set_default_uint(basicConfig, "AdvOut", "Track6Bitrate", 160);
+	config_set_default_uint(activeConfiguration, "AdvOut", "Track1Bitrate",
+				160);
+	config_set_default_uint(activeConfiguration, "AdvOut", "Track2Bitrate",
+				160);
+	config_set_default_uint(activeConfiguration, "AdvOut", "Track3Bitrate",
+				160);
+	config_set_default_uint(activeConfiguration, "AdvOut", "Track4Bitrate",
+				160);
+	config_set_default_uint(activeConfiguration, "AdvOut", "Track5Bitrate",
+				160);
+	config_set_default_uint(activeConfiguration, "AdvOut", "Track6Bitrate",
+				160);
 
-	config_set_default_uint(basicConfig, "AdvOut", "RecSplitFileTime", 15);
-	config_set_default_uint(basicConfig, "AdvOut", "RecSplitFileSize",
-				2048);
+	config_set_default_uint(activeConfiguration, "AdvOut",
+				"RecSplitFileTime", 15);
+	config_set_default_uint(activeConfiguration, "AdvOut",
+				"RecSplitFileSize", 2048);
 
-	config_set_default_bool(basicConfig, "AdvOut", "RecRB", false);
-	config_set_default_uint(basicConfig, "AdvOut", "RecRBTime", 20);
-	config_set_default_int(basicConfig, "AdvOut", "RecRBSize", 512);
+	config_set_default_bool(activeConfiguration, "AdvOut", "RecRB", false);
+	config_set_default_uint(activeConfiguration, "AdvOut", "RecRBTime", 20);
+	config_set_default_int(activeConfiguration, "AdvOut", "RecRBSize", 512);
 
-	config_set_default_uint(basicConfig, "Video", "BaseCX", cx);
-	config_set_default_uint(basicConfig, "Video", "BaseCY", cy);
+	config_set_default_uint(activeConfiguration, "Video", "BaseCX", cx);
+	config_set_default_uint(activeConfiguration, "Video", "BaseCY", cy);
 
 	/* don't allow BaseCX/BaseCY to be susceptible to defaults changing */
-	if (!config_has_user_value(basicConfig, "Video", "BaseCX") ||
-	    !config_has_user_value(basicConfig, "Video", "BaseCY")) {
-		config_set_uint(basicConfig, "Video", "BaseCX", cx);
-		config_set_uint(basicConfig, "Video", "BaseCY", cy);
-		config_save_safe(basicConfig, "tmp", nullptr);
+	if (!config_has_user_value(activeConfiguration, "Video", "BaseCX") ||
+	    !config_has_user_value(activeConfiguration, "Video", "BaseCY")) {
+		config_set_uint(activeConfiguration, "Video", "BaseCX", cx);
+		config_set_uint(activeConfiguration, "Video", "BaseCY", cy);
+		config_save_safe(activeConfiguration, "tmp", nullptr);
 	}
 
-	config_set_default_string(basicConfig, "Output", "FilenameFormatting",
+	config_set_default_string(activeConfiguration, "Output",
+				  "FilenameFormatting",
 				  "%CCYY-%MM-%DD %hh-%mm-%ss");
 
-	config_set_default_bool(basicConfig, "Output", "DelayEnable", false);
-	config_set_default_uint(basicConfig, "Output", "DelaySec", 20);
-	config_set_default_bool(basicConfig, "Output", "DelayPreserve", true);
+	config_set_default_bool(activeConfiguration, "Output", "DelayEnable",
+				false);
+	config_set_default_uint(activeConfiguration, "Output", "DelaySec", 20);
+	config_set_default_bool(activeConfiguration, "Output", "DelayPreserve",
+				true);
 
-	config_set_default_bool(basicConfig, "Output", "Reconnect", true);
-	config_set_default_uint(basicConfig, "Output", "RetryDelay", 2);
-	config_set_default_uint(basicConfig, "Output", "MaxRetries", 25);
+	config_set_default_bool(activeConfiguration, "Output", "Reconnect",
+				true);
+	config_set_default_uint(activeConfiguration, "Output", "RetryDelay", 2);
+	config_set_default_uint(activeConfiguration, "Output", "MaxRetries",
+				25);
 
-	config_set_default_string(basicConfig, "Output", "BindIP", "default");
-	config_set_default_string(basicConfig, "Output", "IPFamily",
+	config_set_default_string(activeConfiguration, "Output", "BindIP",
+				  "default");
+	config_set_default_string(activeConfiguration, "Output", "IPFamily",
 				  "IPv4+IPv6");
-	config_set_default_bool(basicConfig, "Output", "NewSocketLoopEnable",
-				false);
-	config_set_default_bool(basicConfig, "Output", "LowLatencyEnable",
-				false);
+	config_set_default_bool(activeConfiguration, "Output",
+				"NewSocketLoopEnable", false);
+	config_set_default_bool(activeConfiguration, "Output",
+				"LowLatencyEnable", false);
 
 	int i = 0;
 	uint32_t scale_cx = cx;
@@ -1852,44 +1914,55 @@ bool OBSBasic::InitBasicConfigDefaults()
 		scale_cy = uint32_t(double(cy) / scale);
 	}
 
-	config_set_default_uint(basicConfig, "Video", "OutputCX", scale_cx);
-	config_set_default_uint(basicConfig, "Video", "OutputCY", scale_cy);
+	config_set_default_uint(activeConfiguration, "Video", "OutputCX",
+				scale_cx);
+	config_set_default_uint(activeConfiguration, "Video", "OutputCY",
+				scale_cy);
 
 	/* don't allow OutputCX/OutputCY to be susceptible to defaults
 	 * changing */
-	if (!config_has_user_value(basicConfig, "Video", "OutputCX") ||
-	    !config_has_user_value(basicConfig, "Video", "OutputCY")) {
-		config_set_uint(basicConfig, "Video", "OutputCX", scale_cx);
-		config_set_uint(basicConfig, "Video", "OutputCY", scale_cy);
-		config_save_safe(basicConfig, "tmp", nullptr);
+	if (!config_has_user_value(activeConfiguration, "Video", "OutputCX") ||
+	    !config_has_user_value(activeConfiguration, "Video", "OutputCY")) {
+		config_set_uint(activeConfiguration, "Video", "OutputCX",
+				scale_cx);
+		config_set_uint(activeConfiguration, "Video", "OutputCY",
+				scale_cy);
+		config_save_safe(activeConfiguration, "tmp", nullptr);
 	}
 
-	config_set_default_uint(basicConfig, "Video", "FPSType", 0);
-	config_set_default_string(basicConfig, "Video", "FPSCommon", "30");
-	config_set_default_uint(basicConfig, "Video", "FPSInt", 30);
-	config_set_default_uint(basicConfig, "Video", "FPSNum", 30);
-	config_set_default_uint(basicConfig, "Video", "FPSDen", 1);
-	config_set_default_string(basicConfig, "Video", "ScaleType", "bicubic");
-	config_set_default_string(basicConfig, "Video", "ColorFormat", "NV12");
-	config_set_default_string(basicConfig, "Video", "ColorSpace", "709");
-	config_set_default_string(basicConfig, "Video", "ColorRange",
+	config_set_default_uint(activeConfiguration, "Video", "FPSType", 0);
+	config_set_default_string(activeConfiguration, "Video", "FPSCommon",
+				  "30");
+	config_set_default_uint(activeConfiguration, "Video", "FPSInt", 30);
+	config_set_default_uint(activeConfiguration, "Video", "FPSNum", 30);
+	config_set_default_uint(activeConfiguration, "Video", "FPSDen", 1);
+	config_set_default_string(activeConfiguration, "Video", "ScaleType",
+				  "bicubic");
+	config_set_default_string(activeConfiguration, "Video", "ColorFormat",
+				  "NV12");
+	config_set_default_string(activeConfiguration, "Video", "ColorSpace",
+				  "709");
+	config_set_default_string(activeConfiguration, "Video", "ColorRange",
 				  "Partial");
-	config_set_default_uint(basicConfig, "Video", "SdrWhiteLevel", 300);
-	config_set_default_uint(basicConfig, "Video", "HdrNominalPeakLevel",
-				1000);
+	config_set_default_uint(activeConfiguration, "Video", "SdrWhiteLevel",
+				300);
+	config_set_default_uint(activeConfiguration, "Video",
+				"HdrNominalPeakLevel", 1000);
 
-	config_set_default_string(basicConfig, "Audio", "MonitoringDeviceId",
-				  "default");
+	config_set_default_string(activeConfiguration, "Audio",
+				  "MonitoringDeviceId", "default");
 	config_set_default_string(
-		basicConfig, "Audio", "MonitoringDeviceName",
+		activeConfiguration, "Audio", "MonitoringDeviceName",
 		Str("Basic.Settings.Advanced.Audio.MonitoringDevice"
 		    ".Default"));
-	config_set_default_uint(basicConfig, "Audio", "SampleRate", 48000);
-	config_set_default_string(basicConfig, "Audio", "ChannelSetup",
+	config_set_default_uint(activeConfiguration, "Audio", "SampleRate",
+				48000);
+	config_set_default_string(activeConfiguration, "Audio", "ChannelSetup",
 				  "Stereo");
-	config_set_default_double(basicConfig, "Audio", "MeterDecayRate",
-				  VOLUME_METER_DECAY_FAST);
-	config_set_default_uint(basicConfig, "Audio", "PeakMeterType", 0);
+	config_set_default_double(activeConfiguration, "Audio",
+				  "MeterDecayRate", VOLUME_METER_DECAY_FAST);
+	config_set_default_uint(activeConfiguration, "Audio", "PeakMeterType",
+				0);
 
 	CheckExistingCookieId();
 
@@ -1900,16 +1973,16 @@ extern bool EncoderAvailable(const char *encoder);
 
 void OBSBasic::InitBasicConfigDefaults2()
 {
-	bool oldEncDefaults = config_get_bool(App()->GlobalConfig(), "General",
+	bool oldEncDefaults = config_get_bool(App()->GetUserConfig(), "General",
 					      "Pre23Defaults");
 	bool useNV = EncoderAvailable("ffmpeg_nvenc") && !oldEncDefaults;
 
-	config_set_default_string(basicConfig, "SimpleOutput", "StreamEncoder",
-				  useNV ? SIMPLE_ENCODER_NVENC
-					: SIMPLE_ENCODER_X264);
-	config_set_default_string(basicConfig, "SimpleOutput", "RecEncoder",
-				  useNV ? SIMPLE_ENCODER_NVENC
-					: SIMPLE_ENCODER_X264);
+	config_set_default_string(
+		activeConfiguration, "SimpleOutput", "StreamEncoder",
+		useNV ? SIMPLE_ENCODER_NVENC : SIMPLE_ENCODER_X264);
+	config_set_default_string(
+		activeConfiguration, "SimpleOutput", "RecEncoder",
+		useNV ? SIMPLE_ENCODER_NVENC : SIMPLE_ENCODER_X264);
 
 	const char *aac_default = "ffmpeg_aac";
 	if (EncoderAvailable("CoreAudio_AAC"))
@@ -1917,47 +1990,81 @@ void OBSBasic::InitBasicConfigDefaults2()
 	else if (EncoderAvailable("libfdk_aac"))
 		aac_default = "libfdk_aac";
 
-	config_set_default_string(basicConfig, "AdvOut", "AudioEncoder",
-				  aac_default);
-	config_set_default_string(basicConfig, "AdvOut", "RecAudioEncoder",
+	config_set_default_string(activeConfiguration, "AdvOut", "AudioEncoder",
 				  aac_default);
 }
+
+constexpr std::string_view OBSProfilePath = "/obs-studio/basic/profiles/";
+constexpr std::string_view OBSProfileSettingsFile = "basic.ini";
 
 bool OBSBasic::InitBasicConfig()
 {
 	ProfileScope("OBSBasic::InitBasicConfig");
 
-	char configPath[512];
+	RefreshProfiles(true);
 
-	int ret = GetProfilePath(configPath, sizeof(configPath), "");
-	if (ret <= 0) {
-		OBSErrorBox(nullptr, "Failed to get profile path");
-		return false;
-	}
+	try {
+		const OBSProfile &currentProfile = GetCurrentProfile();
 
-	if (os_mkdir(configPath) == MKDIR_ERROR) {
-		OBSErrorBox(nullptr, "Failed to create profile path");
-		return false;
-	}
+		int code = activeConfiguration.Open(
+			currentProfile.profileFile.u8string().c_str(),
+			CONFIG_OPEN_ALWAYS);
+		if (code != CONFIG_SUCCESS) {
+			OBSErrorBox(NULL, "Failed to open basic.ini: %d", code);
+			return false;
+		}
+	} catch (const std::invalid_argument &) {
+		const std::string_view profileDirectory{config_get_string(
+			App()->GetUserConfig(), "Basic", "ProfileDir")};
 
-	ret = GetProfilePath(configPath, sizeof(configPath), "basic.ini");
-	if (ret <= 0) {
-		OBSErrorBox(nullptr, "Failed to get basic.ini path");
-		return false;
-	}
+		std::string profileLocation;
+		profileLocation.reserve(App()->userProfilesLocation.size() +
+					OBSProfilePath.size() +
+					profileDirectory.size());
+		profileLocation.append(App()->userProfilesLocation)
+			.append(OBSProfilePath)
+			.append(profileDirectory);
+		const std::filesystem::path profilePath{profileLocation};
 
-	int code = basicConfig.Open(configPath, CONFIG_OPEN_ALWAYS);
-	if (code != CONFIG_SUCCESS) {
-		OBSErrorBox(NULL, "Failed to open basic.ini: %d", code);
-		return false;
-	}
+		if (!std::filesystem::exists(profilePath)) {
+			try {
+				std::filesystem::create_directories(
+					profilePath);
+			} catch (
+				const std::filesystem::filesystem_error &error) {
+				blog(LOG_DEBUG, "%s", error.what());
+				OBSErrorBox(nullptr,
+					    "Failed to create profile path");
+				return false;
+			}
+		}
 
-	if (config_get_string(basicConfig, "General", "Name") == nullptr) {
-		const char *curName = config_get_string(App()->GlobalConfig(),
-							"Basic", "Profile");
+		const std::filesystem::path userProfileFile{
+			profilePath / OBSProfileSettingsFile.data()};
 
-		config_set_string(basicConfig, "General", "Name", curName);
-		basicConfig.SaveSafe("tmp");
+		if (userProfileFile.empty()) {
+			OBSErrorBox(nullptr, "Failed to get basic.ini path");
+			return false;
+		}
+
+		int code = activeConfiguration.Open(
+			userProfileFile.u8string().c_str(), CONFIG_OPEN_ALWAYS);
+		if (code != CONFIG_SUCCESS) {
+			OBSErrorBox(NULL, "Failed to open basic.ini: %d", code);
+			return false;
+		}
+
+		if (config_get_string(activeConfiguration, "General", "Name") ==
+		    nullptr) {
+			const char *curName = config_get_string(
+				App()->GetUserConfig(), "Basic", "Profile");
+
+			config_set_string(activeConfiguration, "General",
+					  "Name", curName);
+			activeConfiguration.SaveSafe("tmp");
+		}
+
+		RefreshProfiles(true);
 	}
 
 	return InitBasicConfigDefaults();
@@ -2056,7 +2163,8 @@ void OBSBasic::ResetOutputs()
 {
 	ProfileScope("OBSBasic::ResetOutputs");
 
-	const char *mode = config_get_string(basicConfig, "Output", "Mode");
+	const char *mode =
+		config_get_string(activeConfiguration, "Output", "Mode");
 	bool advOut = astrcmpi(mode, "Advanced") == 0;
 
 	if ((!outputHandler || !outputHandler->Active()) &&
@@ -2124,28 +2232,12 @@ void OBSBasic::OBSInit()
 {
 	ProfileScope("OBSBasic::OBSInit");
 
-	const char *sceneCollection = config_get_string(
-		App()->GlobalConfig(), "Basic", "SceneCollectionFile");
-	char savePath[1024];
-	char fileName[1024];
-	int ret;
-
-	if (!sceneCollection)
-		throw "Failed to get scene collection name";
-
-	ret = snprintf(fileName, sizeof(fileName),
-		       "obs-studio/basic/scenes/%s.json", sceneCollection);
-	if (ret <= 0)
-		throw "Failed to create scene collection file name";
-
-	ret = GetConfigPath(savePath, sizeof(savePath), fileName);
-	if (ret <= 0)
-		throw "Failed to get scene collection json file path";
-
 	if (!InitBasicConfig())
 		throw "Failed to load basic.ini";
 	if (!ResetAudio())
 		throw "Failed to initialize audio";
+
+	int ret = 0;
 
 	ret = ResetVideo();
 
@@ -2164,9 +2256,9 @@ void OBSBasic::OBSInit()
 	/* load audio monitoring */
 	if (obs_audio_monitoring_available()) {
 		const char *device_name = config_get_string(
-			basicConfig, "Audio", "MonitoringDeviceName");
-		const char *device_id = config_get_string(basicConfig, "Audio",
-							  "MonitoringDeviceId");
+			activeConfiguration, "Audio", "MonitoringDeviceName");
+		const char *device_id = config_get_string(
+			activeConfiguration, "Audio", "MonitoringDeviceId");
 
 		obs_set_audio_monitoring_device(device_name, device_id);
 
@@ -2191,6 +2283,12 @@ void OBSBasic::OBSInit()
 	} else {
 		AddExtraModulePaths();
 	}
+
+	/* Modules can access frontend information (i.e. profile and scene collection data) during their initialization, and some modules (e.g. obs-websockets) are known to use the filesystem location of the current profile in their own code.
+     
+     Thus the profile and scene collection discovery needs to happen before any access to that information (but after intializing global settings) to ensure legacy code gets valid path information.
+     */
+	RefreshSceneCollections(true);
 
 	blog(LOG_INFO, "---------------------------------");
 	obs_load_all_modules2(&mfi);
@@ -2229,14 +2327,14 @@ void OBSBasic::OBSInit()
 	InitPrimitives();
 
 	sceneDuplicationMode = config_get_bool(
-		App()->GlobalConfig(), "BasicWindow", "SceneDuplicationMode");
-	swapScenesMode = config_get_bool(App()->GlobalConfig(), "BasicWindow",
+		App()->GetUserConfig(), "BasicWindow", "SceneDuplicationMode");
+	swapScenesMode = config_get_bool(App()->GetUserConfig(), "BasicWindow",
 					 "SwapScenesMode");
 	editPropertiesMode = config_get_bool(
-		App()->GlobalConfig(), "BasicWindow", "EditPropertiesMode");
+		App()->GetUserConfig(), "BasicWindow", "EditPropertiesMode");
 
 	if (!opt_studio_mode) {
-		SetPreviewProgramMode(config_get_bool(App()->GlobalConfig(),
+		SetPreviewProgramMode(config_get_bool(App()->GetUserConfig(),
 						      "BasicWindow",
 						      "PreviewProgramMode"));
 	} else {
@@ -2244,14 +2342,14 @@ void OBSBasic::OBSInit()
 		opt_studio_mode = false;
 	}
 
-#define SET_VISIBILITY(name, control)                                         \
-	do {                                                                  \
-		if (config_has_user_value(App()->GlobalConfig(),              \
-					  "BasicWindow", name)) {             \
-			bool visible = config_get_bool(App()->GlobalConfig(), \
-						       "BasicWindow", name);  \
-			ui->control->setChecked(visible);                     \
-		}                                                             \
+#define SET_VISIBILITY(name, control)                                          \
+	do {                                                                   \
+		if (config_has_user_value(App()->GetUserConfig(),              \
+					  "BasicWindow", name)) {              \
+			bool visible = config_get_bool(App()->GetUserConfig(), \
+						       "BasicWindow", name);   \
+			ui->control->setChecked(visible);                      \
+		}                                                              \
 	} while (false)
 
 	SET_VISIBILITY("ShowListboxToolbars", toggleListboxToolbars);
@@ -2259,11 +2357,11 @@ void OBSBasic::OBSInit()
 #undef SET_VISIBILITY
 
 	bool sourceIconsVisible = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "ShowSourceIcons");
+		App()->GetUserConfig(), "BasicWindow", "ShowSourceIcons");
 	ui->toggleSourceIcons->setChecked(sourceIconsVisible);
 
 	bool contextVisible = config_get_bool(
-		App()->GlobalConfig(), "BasicWindow", "ShowContextToolbars");
+		App()->GetUserConfig(), "BasicWindow", "ShowContextToolbars");
 	ui->toggleContextBar->setChecked(contextVisible);
 	ui->contextContainer->setVisible(contextVisible);
 	if (contextVisible)
@@ -2273,13 +2371,25 @@ void OBSBasic::OBSInit()
 	{
 		ProfileScope("OBSBasic::Load");
 		disableSaving--;
-		Load(savePath);
+
+		try {
+			const OBSSceneCollection &currentCollection =
+				GetCurrentSceneCollection();
+			ActivateSceneCollection(currentCollection);
+		} catch (const std::invalid_argument &) {
+			const std::string collectionName =
+				config_get_string(App()->GetUserConfig(),
+						  "Basic", "SceneCollection");
+
+			SetupNewSceneCollection(collectionName);
+		}
+
 		disableSaving++;
 	}
 
 	loaded = true;
 
-	previewEnabled = config_get_bool(App()->GlobalConfig(), "BasicWindow",
+	previewEnabled = config_get_bool(App()->GetUserConfig(), "BasicWindow",
 					 "PreviewEnabled");
 
 	if (!previewEnabled && !IsPreviewProgramMode())
@@ -2291,8 +2401,6 @@ void OBSBasic::OBSInit()
 					  Qt::QueuedConnection,
 					  Q_ARG(bool, true));
 
-	RefreshSceneCollections();
-	RefreshProfiles();
 	disableSaving--;
 
 	auto addDisplay = [this](OBSQTDisplay *window) {
@@ -2308,10 +2416,10 @@ void OBSBasic::OBSInit()
 
 	/* Show the main window, unless the tray icon isn't available
 	 * or neither the setting nor flag for starting minimized is set. */
-	bool sysTrayEnabled = config_get_bool(App()->GlobalConfig(),
+	bool sysTrayEnabled = config_get_bool(App()->GetUserConfig(),
 					      "BasicWindow", "SysTrayEnabled");
 	bool sysTrayWhenStarted = config_get_bool(
-		App()->GlobalConfig(), "BasicWindow", "SysTrayWhenStarted");
+		App()->GetUserConfig(), "BasicWindow", "SysTrayWhenStarted");
 	bool hideWindowOnStart = QSystemTrayIcon::isSystemTrayAvailable() &&
 				 sysTrayEnabled &&
 				 (opt_minimize_tray || sysTrayWhenStarted);
@@ -2323,8 +2431,8 @@ void OBSBasic::OBSInit()
 		show();
 #endif
 
-	bool alwaysOnTop = config_get_bool(App()->GlobalConfig(), "BasicWindow",
-					   "AlwaysOnTop");
+	bool alwaysOnTop = config_get_bool(App()->GetUserConfig(),
+					   "BasicWindow", "AlwaysOnTop");
 
 #ifdef ENABLE_WAYLAND
 	bool isWayland = obs_get_nix_platform() == OBS_NIX_PLATFORM_WAYLAND;
@@ -2381,7 +2489,7 @@ void OBSBasic::OBSInit()
 #endif
 
 	const char *dockStateStr = config_get_string(
-		App()->GlobalConfig(), "BasicWindow", "DockState");
+		App()->GetUserConfig(), "BasicWindow", "DockState");
 
 	if (!dockStateStr) {
 		on_resetDocks_triggered(true);
@@ -2392,28 +2500,29 @@ void OBSBasic::OBSInit()
 			on_resetDocks_triggered(true);
 	}
 
-	bool pre23Defaults = config_get_bool(App()->GlobalConfig(), "General",
+	bool pre23Defaults = config_get_bool(App()->GetUserConfig(), "General",
 					     "Pre23Defaults");
 	if (pre23Defaults) {
 		bool resetDockLock23 = config_get_bool(
-			App()->GlobalConfig(), "General", "ResetDockLock23");
+			App()->GetUserConfig(), "General", "ResetDockLock23");
 		if (!resetDockLock23) {
-			config_set_bool(App()->GlobalConfig(), "General",
+			config_set_bool(App()->GetUserConfig(), "General",
 					"ResetDockLock23", true);
-			config_remove_value(App()->GlobalConfig(),
+			config_remove_value(App()->GetUserConfig(),
 					    "BasicWindow", "DocksLocked");
-			config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+			config_save_safe(App()->GetUserConfig(), "tmp",
+					 nullptr);
 		}
 	}
 
-	bool docksLocked = config_get_bool(App()->GlobalConfig(), "BasicWindow",
-					   "DocksLocked");
+	bool docksLocked = config_get_bool(App()->GetUserConfig(),
+					   "BasicWindow", "DocksLocked");
 	on_lockDocks_toggled(docksLocked);
 	ui->lockDocks->blockSignals(true);
 	ui->lockDocks->setChecked(docksLocked);
 	ui->lockDocks->blockSignals(false);
 
-	bool sideDocks = config_get_bool(App()->GlobalConfig(), "BasicWindow",
+	bool sideDocks = config_get_bool(App()->GetUserConfig(), "BasicWindow",
 					 "SideDocks");
 	on_sideDocks_toggled(sideDocks);
 	ui->sideDocks->blockSignals(true);
@@ -2428,15 +2537,15 @@ void OBSBasic::OBSInit()
 	disableColorSpaceConversion(this);
 #endif
 
-	bool has_last_version = config_has_user_value(App()->GlobalConfig(),
+	bool has_last_version = config_has_user_value(App()->GetUserConfig(),
 						      "General", "LastVersion");
 	bool first_run =
-		config_get_bool(App()->GlobalConfig(), "General", "FirstRun");
+		config_get_bool(App()->GetUserConfig(), "General", "FirstRun");
 
 	if (!first_run) {
-		config_set_bool(App()->GlobalConfig(), "General", "FirstRun",
+		config_set_bool(App()->GetUserConfig(), "General", "FirstRun",
 				true);
-		config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+		config_save_safe(App()->GetUserConfig(), "tmp", nullptr);
 	}
 
 	if (!first_run && !has_last_version && !Active())
@@ -2446,21 +2555,22 @@ void OBSBasic::OBSInit()
 #if (defined(_WIN32) || defined(__APPLE__)) && \
 	(OBS_RELEASE_CANDIDATE > 0 || OBS_BETA > 0)
 	/* Automatically set branch to "beta" the first time a pre-release build is run. */
-	if (!config_get_bool(App()->GlobalConfig(), "General",
+	if (!config_get_bool(App()->GetUserConfig(), "General",
 			     "AutoBetaOptIn")) {
-		config_set_string(App()->GlobalConfig(), "General",
+		config_set_string(App()->GetUserConfig(), "General",
 				  "UpdateBranch", "beta");
-		config_set_bool(App()->GlobalConfig(), "General",
+		config_set_bool(App()->GetUserConfig(), "General",
 				"AutoBetaOptIn", true);
-		config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+		config_save_safe(App()->GetUserConfig(), "tmp", nullptr);
 	}
 #endif
 	TimedCheckForUpdates();
 
-	ToggleMixerLayout(config_get_bool(App()->GlobalConfig(), "BasicWindow",
+	ToggleMixerLayout(config_get_bool(App()->GetUserConfig(), "BasicWindow",
 					  "VerticalVolControl"));
 
-	if (config_get_bool(basicConfig, "General", "OpenStatsOnStartup"))
+	if (config_get_bool(activeConfiguration, "General",
+			    "OpenStatsOnStartup"))
 		on_stats_triggered();
 
 	OBSBasicStats::InitializeValues();
@@ -2567,7 +2677,7 @@ void OBSBasic::OnFirstLoad()
 	Auth::Load();
 
 	bool showLogViewerOnStartup = config_get_bool(
-		App()->GlobalConfig(), "LogViewer", "ShowLogStartup");
+		App()->GetUserConfig(), "LogViewer", "ShowLogStartup");
 
 	if (showLogViewerOnStartup)
 		on_actionViewCurrentLog_triggered();
@@ -2635,28 +2745,28 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 	constexpr uint64_t currentVersion = (uint64_t)LIBOBS_API_VER << 16ULL |
 					    OBS_RELEASE_CANDIDATE << 8ULL |
 					    OBS_BETA;
-	uint64_t lastVersion = config_get_uint(App()->GlobalConfig(), "General",
+	uint64_t lastVersion = config_get_uint(App()->GetAppConfig(), "General",
 					       lastInfoVersion);
 	int current_version_increment = -1;
 
 	if ((lastVersion & ~0xFFFF0000ULL) <
 	    (currentVersion & ~0xFFFF0000ULL)) {
-		config_set_int(App()->GlobalConfig(), "General",
+		config_set_int(App()->GetAppConfig(), "General",
 			       "InfoIncrement", -1);
-		config_set_uint(App()->GlobalConfig(), "General",
+		config_set_uint(App()->GetAppConfig(), "General",
 				lastInfoVersion, currentVersion);
 	} else {
 		current_version_increment = config_get_int(
-			App()->GlobalConfig(), "General", "InfoIncrement");
+			App()->GetAppConfig(), "General", "InfoIncrement");
 	}
 
 	if (info_increment <= current_version_increment) {
 		return;
 	}
 
-	config_set_int(App()->GlobalConfig(), "General", "InfoIncrement",
+	config_set_int(App()->GetAppConfig(), "General", "InfoIncrement",
 		       info_increment);
-	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+	config_save_safe(App()->GetAppConfig(), "tmp", nullptr);
 
 	cef->init_browser();
 
@@ -2800,7 +2910,7 @@ void OBSBasic::CreateHotkeys()
 
 	auto LoadHotkeyData = [&](const char *name) -> OBSData {
 		const char *info =
-			config_get_string(basicConfig, "Hotkeys", name);
+			config_get_string(activeConfiguration, "Hotkeys", name);
 		if (!info)
 			return {};
 
@@ -2822,16 +2932,16 @@ void OBSBasic::CreateHotkeys()
 				  const char *name1,
 				  const char *oldName = NULL) {
 		if (oldName) {
-			const auto info = config_get_string(basicConfig,
+			const auto info = config_get_string(activeConfiguration,
 							    "Hotkeys", oldName);
 			if (info) {
-				config_set_string(basicConfig, "Hotkeys", name0,
-						  info);
-				config_set_string(basicConfig, "Hotkeys", name1,
-						  info);
-				config_remove_value(basicConfig, "Hotkeys",
-						    oldName);
-				config_save(basicConfig);
+				config_set_string(activeConfiguration,
+						  "Hotkeys", name0, info);
+				config_set_string(activeConfiguration,
+						  "Hotkeys", name1, info);
+				config_remove_value(activeConfiguration,
+						    "Hotkeys", oldName);
+				activeConfiguration.Save();
 			}
 		}
 		OBSDataArrayAutoRelease array0 =
@@ -3144,26 +3254,27 @@ OBSBasic::~OBSBasic()
 	 * expect or want it to. */
 	QApplication::sendPostedEvents(nullptr);
 
-	config_set_int(App()->GlobalConfig(), "General", "LastVersion",
+	config_set_int(App()->GetAppConfig(), "General", "LastVersion",
 		       LIBOBS_API_VER);
+	config_save_safe(App()->GetAppConfig(), "tmp", nullptr);
 
-	config_set_bool(App()->GlobalConfig(), "BasicWindow", "PreviewEnabled",
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "PreviewEnabled",
 			previewEnabled);
-	config_set_bool(App()->GlobalConfig(), "BasicWindow", "AlwaysOnTop",
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "AlwaysOnTop",
 			ui->actionAlwaysOnTop->isChecked());
-	config_set_bool(App()->GlobalConfig(), "BasicWindow",
+	config_set_bool(App()->GetUserConfig(), "BasicWindow",
 			"SceneDuplicationMode", sceneDuplicationMode);
-	config_set_bool(App()->GlobalConfig(), "BasicWindow", "SwapScenesMode",
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "SwapScenesMode",
 			swapScenesMode);
-	config_set_bool(App()->GlobalConfig(), "BasicWindow",
+	config_set_bool(App()->GetUserConfig(), "BasicWindow",
 			"EditPropertiesMode", editPropertiesMode);
-	config_set_bool(App()->GlobalConfig(), "BasicWindow",
+	config_set_bool(App()->GetUserConfig(), "BasicWindow",
 			"PreviewProgramMode", IsPreviewProgramMode());
-	config_set_bool(App()->GlobalConfig(), "BasicWindow", "DocksLocked",
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "DocksLocked",
 			ui->lockDocks->isChecked());
-	config_set_bool(App()->GlobalConfig(), "BasicWindow", "SideDocks",
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "SideDocks",
 			ui->sideDocks->isChecked());
-	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+	config_save_safe(App()->GetUserConfig(), "tmp", nullptr);
 
 #ifdef BROWSER_AVAILABLE
 	DestroyPanelCookieManager();
@@ -3201,26 +3312,14 @@ void OBSBasic::SaveProjectDeferred()
 
 	projectChanged = false;
 
-	const char *sceneCollection = config_get_string(
-		App()->GlobalConfig(), "Basic", "SceneCollectionFile");
+	try {
+		const OBSSceneCollection &currentCollection =
+			GetCurrentSceneCollection();
 
-	char savePath[1024];
-	char fileName[1024];
-	int ret;
-
-	if (!sceneCollection)
-		return;
-
-	ret = snprintf(fileName, sizeof(fileName),
-		       "obs-studio/basic/scenes/%s.json", sceneCollection);
-	if (ret <= 0)
-		return;
-
-	ret = GetConfigPath(savePath, sizeof(savePath), fileName);
-	if (ret <= 0)
-		return;
-
-	Save(savePath);
+		Save(currentCollection.collectionFile.u8string().c_str());
+	} catch (const std::invalid_argument &error) {
+		blog(LOG_ERROR, "%s", error.what());
+	}
 }
 
 OBSSource OBSBasic::GetProgramSource()
@@ -3896,7 +3995,7 @@ void OBSBasic::VolControlContextMenu()
 	QAction toggleControlLayoutAction(QTStr("VerticalLayout"), this);
 	toggleControlLayoutAction.setCheckable(true);
 	toggleControlLayoutAction.setChecked(config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "VerticalVolControl"));
+		App()->GetUserConfig(), "BasicWindow", "VerticalVolControl"));
 
 	/* ------------------- */
 
@@ -3995,7 +4094,7 @@ void OBSBasic::StackedMixerAreaContextMenuRequested()
 	QAction toggleControlLayoutAction(QTStr("VerticalLayout"), this);
 	toggleControlLayoutAction.setCheckable(true);
 	toggleControlLayoutAction.setChecked(config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "VerticalVolControl"));
+		App()->GetUserConfig(), "BasicWindow", "VerticalVolControl"));
 
 	/* ------------------- */
 
@@ -4035,10 +4134,10 @@ void OBSBasic::ToggleMixerLayout(bool vertical)
 
 void OBSBasic::ToggleVolControlLayout()
 {
-	bool vertical = !config_get_bool(GetGlobalConfig(), "BasicWindow",
+	bool vertical = !config_get_bool(App()->GetUserConfig(), "BasicWindow",
 					 "VerticalVolControl");
-	config_set_bool(GetGlobalConfig(), "BasicWindow", "VerticalVolControl",
-			vertical);
+	config_set_bool(App()->GetUserConfig(), "BasicWindow",
+			"VerticalVolControl", vertical);
 	ToggleMixerLayout(vertical);
 
 	// We need to store it so we can delete current and then add
@@ -4062,18 +4161,18 @@ void OBSBasic::ActivateAudioSource(OBSSource source)
 	if (!obs_source_audio_active(source))
 		return;
 
-	bool vertical = config_get_bool(GetGlobalConfig(), "BasicWindow",
+	bool vertical = config_get_bool(App()->GetUserConfig(), "BasicWindow",
 					"VerticalVolControl");
 	VolControl *vol = new VolControl(source, true, vertical);
 
 	vol->EnableSlider(!SourceVolumeLocked(source));
 
-	double meterDecayRate =
-		config_get_double(basicConfig, "Audio", "MeterDecayRate");
+	double meterDecayRate = config_get_double(activeConfiguration, "Audio",
+						  "MeterDecayRate");
 	vol->SetMeterDecayRate(meterDecayRate);
 
 	uint32_t peakMeterTypeIdx =
-		config_get_uint(basicConfig, "Audio", "PeakMeterType");
+		config_get_uint(activeConfiguration, "Audio", "PeakMeterType");
 
 	enum obs_peak_meter_type peakMeterType;
 	switch (peakMeterTypeIdx) {
@@ -4155,21 +4254,21 @@ void OBSBasic::TimedCheckForUpdates()
 {
 	if (App()->IsUpdaterDisabled())
 		return;
-	if (!config_get_bool(App()->GlobalConfig(), "General",
+	if (!config_get_bool(App()->GetUserConfig(), "General",
 			     "EnableAutoUpdates"))
 		return;
 
 #if defined(ENABLE_SPARKLE_UPDATER)
 	CheckForUpdates(false);
 #elif _WIN32
-	long long lastUpdate = config_get_int(App()->GlobalConfig(), "General",
+	long long lastUpdate = config_get_int(App()->GetAppConfig(), "General",
 					      "LastUpdateCheck");
 	uint32_t lastVersion =
-		config_get_int(App()->GlobalConfig(), "General", "LastVersion");
+		config_get_int(App()->GetAppConfig(), "General", "LastVersion");
 
 	if (lastVersion < LIBOBS_API_VER) {
 		lastUpdate = 0;
-		config_set_int(App()->GlobalConfig(), "General",
+		config_set_int(App()->GetAppConfig(), "General",
 			       "LastUpdateCheck", 0);
 	}
 
@@ -4786,10 +4885,10 @@ static inline int AttemptToResetVideo(struct obs_video_info *ovi)
 	return obs_reset_video(ovi);
 }
 
-static inline enum obs_scale_type GetScaleType(ConfigFile &basicConfig)
+static inline enum obs_scale_type GetScaleType(ConfigFile &activeConfiguration)
 {
 	const char *scaleTypeStr =
-		config_get_string(basicConfig, "Video", "ScaleType");
+		config_get_string(activeConfiguration, "Video", "ScaleType");
 
 	if (astrcmpi(scaleTypeStr, "bilinear") == 0)
 		return OBS_SCALE_BILINEAR;
@@ -4847,7 +4946,7 @@ static inline enum video_colorspace GetVideoColorSpaceFromName(const char *name)
 void OBSBasic::ResetUI()
 {
 	bool studioPortraitLayout = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "StudioPortraitLayout");
+		App()->GetUserConfig(), "BasicWindow", "StudioPortraitLayout");
 
 	if (studioPortraitLayout)
 		ui->previewLayout->setDirection(QBoxLayout::BottomToTop);
@@ -4870,43 +4969,43 @@ int OBSBasic::ResetVideo()
 	GetConfigFPS(ovi.fps_num, ovi.fps_den);
 
 	const char *colorFormat =
-		config_get_string(basicConfig, "Video", "ColorFormat");
+		config_get_string(activeConfiguration, "Video", "ColorFormat");
 	const char *colorSpace =
-		config_get_string(basicConfig, "Video", "ColorSpace");
+		config_get_string(activeConfiguration, "Video", "ColorSpace");
 	const char *colorRange =
-		config_get_string(basicConfig, "Video", "ColorRange");
+		config_get_string(activeConfiguration, "Video", "ColorRange");
 
 	ovi.graphics_module = App()->GetRenderModule();
-	ovi.base_width =
-		(uint32_t)config_get_uint(basicConfig, "Video", "BaseCX");
-	ovi.base_height =
-		(uint32_t)config_get_uint(basicConfig, "Video", "BaseCY");
-	ovi.output_width =
-		(uint32_t)config_get_uint(basicConfig, "Video", "OutputCX");
-	ovi.output_height =
-		(uint32_t)config_get_uint(basicConfig, "Video", "OutputCY");
+	ovi.base_width = (uint32_t)config_get_uint(activeConfiguration, "Video",
+						   "BaseCX");
+	ovi.base_height = (uint32_t)config_get_uint(activeConfiguration,
+						    "Video", "BaseCY");
+	ovi.output_width = (uint32_t)config_get_uint(activeConfiguration,
+						     "Video", "OutputCX");
+	ovi.output_height = (uint32_t)config_get_uint(activeConfiguration,
+						      "Video", "OutputCY");
 	ovi.output_format = GetVideoFormatFromName(colorFormat);
 	ovi.colorspace = GetVideoColorSpaceFromName(colorSpace);
 	ovi.range = astrcmpi(colorRange, "Full") == 0 ? VIDEO_RANGE_FULL
 						      : VIDEO_RANGE_PARTIAL;
 	ovi.adapter =
-		config_get_uint(App()->GlobalConfig(), "Video", "AdapterIdx");
+		config_get_uint(App()->GetUserConfig(), "Video", "AdapterIdx");
 	ovi.gpu_conversion = true;
-	ovi.scale_type = GetScaleType(basicConfig);
+	ovi.scale_type = GetScaleType(activeConfiguration);
 
 	if (ovi.base_width < 32 || ovi.base_height < 32) {
 		ovi.base_width = 1920;
 		ovi.base_height = 1080;
-		config_set_uint(basicConfig, "Video", "BaseCX", 1920);
-		config_set_uint(basicConfig, "Video", "BaseCY", 1080);
+		config_set_uint(activeConfiguration, "Video", "BaseCX", 1920);
+		config_set_uint(activeConfiguration, "Video", "BaseCY", 1080);
 	}
 
 	if (ovi.output_width < 32 || ovi.output_height < 32) {
 		ovi.output_width = ovi.base_width;
 		ovi.output_height = ovi.base_height;
-		config_set_uint(basicConfig, "Video", "OutputCX",
+		config_set_uint(activeConfiguration, "Video", "OutputCX",
 				ovi.base_width);
-		config_set_uint(basicConfig, "Video", "OutputCY",
+		config_set_uint(activeConfiguration, "Video", "OutputCY",
 				ovi.base_height);
 	}
 
@@ -4922,9 +5021,9 @@ int OBSBasic::ResetVideo()
 			ResizeProgram(ovi.base_width, ovi.base_height);
 
 		const float sdr_white_level = (float)config_get_uint(
-			basicConfig, "Video", "SdrWhiteLevel");
+			activeConfiguration, "Video", "SdrWhiteLevel");
 		const float hdr_nominal_peak_level = (float)config_get_uint(
-			basicConfig, "Video", "HdrNominalPeakLevel");
+			activeConfiguration, "Video", "HdrNominalPeakLevel");
 		obs_set_video_levels(sdr_white_level, hdr_nominal_peak_level);
 		OBSBasicStats::InitializeValues();
 		OBSProjector::UpdateMultiviewProjectors();
@@ -4939,10 +5038,10 @@ bool OBSBasic::ResetAudio()
 
 	struct obs_audio_info2 ai = {};
 	ai.samples_per_sec =
-		config_get_uint(basicConfig, "Audio", "SampleRate");
+		config_get_uint(activeConfiguration, "Audio", "SampleRate");
 
 	const char *channelSetupStr =
-		config_get_string(basicConfig, "Audio", "ChannelSetup");
+		config_get_string(activeConfiguration, "Audio", "ChannelSetup");
 
 	if (strcmp(channelSetupStr, "Mono") == 0)
 		ai.speakers = SPEAKERS_MONO;
@@ -4960,7 +5059,7 @@ bool OBSBasic::ResetAudio()
 		ai.speakers = SPEAKERS_STEREO;
 
 	bool lowLatencyAudioBuffering = config_get_bool(
-		GetGlobalConfig(), "Audio", "LowLatencyAudioBuffering");
+		App()->GetUserConfig(), "Audio", "LowLatencyAudioBuffering");
 	if (lowLatencyAudioBuffering) {
 		ai.max_buffering_ms = 20;
 		ai.fixed_buffering = true;
@@ -5222,12 +5321,12 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 #endif
 
 	if (isVisible())
-		config_set_string(App()->GlobalConfig(), "BasicWindow",
+		config_set_string(App()->GetUserConfig(), "BasicWindow",
 				  "geometry",
 				  saveGeometry().toBase64().constData());
 
-	bool confirmOnExit =
-		config_get_bool(GetGlobalConfig(), "General", "ConfirmOnExit");
+	bool confirmOnExit = config_get_bool(App()->GetUserConfig(), "General",
+					     "ConfirmOnExit");
 
 	if (confirmOnExit && outputHandler && outputHandler->Active() &&
 	    !clearingFailed) {
@@ -5294,7 +5393,7 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 
 	delete extraBrowsers;
 
-	config_set_string(App()->GlobalConfig(), "BasicWindow", "DockState",
+	config_set_string(App()->GetUserConfig(), "BasicWindow", "DockState",
 			  saveState().toBase64().constData());
 
 #ifdef BROWSER_AVAILABLE
@@ -5372,15 +5471,18 @@ void OBSBasic::changeEvent(QEvent *event)
 
 void OBSBasic::on_actionShow_Recordings_triggered()
 {
-	const char *mode = config_get_string(basicConfig, "Output", "Mode");
-	const char *type = config_get_string(basicConfig, "AdvOut", "RecType");
+	const char *mode =
+		config_get_string(activeConfiguration, "Output", "Mode");
+	const char *type =
+		config_get_string(activeConfiguration, "AdvOut", "RecType");
 	const char *adv_path =
 		strcmp(type, "Standard")
-			? config_get_string(basicConfig, "AdvOut", "FFFilePath")
-			: config_get_string(basicConfig, "AdvOut",
+			? config_get_string(activeConfiguration, "AdvOut",
+					    "FFFilePath")
+			: config_get_string(activeConfiguration, "AdvOut",
 					    "RecFilePath");
 	const char *path = strcmp(mode, "Advanced")
-				   ? config_get_string(basicConfig,
+				   ? config_get_string(activeConfiguration,
 						       "SimpleOutput",
 						       "FilePath")
 				   : adv_path;
@@ -5395,13 +5497,14 @@ void OBSBasic::on_actionRemux_triggered()
 		return;
 	}
 
-	const char *mode = config_get_string(basicConfig, "Output", "Mode");
+	const char *mode =
+		config_get_string(activeConfiguration, "Output", "Mode");
 	const char *path = strcmp(mode, "Advanced")
-				   ? config_get_string(basicConfig,
+				   ? config_get_string(activeConfiguration,
 						       "SimpleOutput",
 						       "FilePath")
-				   : config_get_string(basicConfig, "AdvOut",
-						       "RecFilePath");
+				   : config_get_string(activeConfiguration,
+						       "AdvOut", "RecFilePath");
 
 	OBSRemux *remuxDlg;
 	remuxDlg = new OBSRemux(path, this);
@@ -5501,7 +5604,7 @@ void OBSBasic::on_actionAdvAudioProperties_triggered()
 		return;
 	}
 
-	bool iconsVisible = config_get_bool(App()->GlobalConfig(),
+	bool iconsVisible = config_get_bool(App()->GetUserConfig(),
 					    "BasicWindow", "ShowSourceIcons");
 
 	advAudioWindow = new OBSBasicAdvAudio(this);
@@ -5524,7 +5627,7 @@ void OBSBasic::on_actionMixerToolbarMenu_triggered()
 	QAction toggleControlLayoutAction(QTStr("VerticalLayout"), this);
 	toggleControlLayoutAction.setCheckable(true);
 	toggleControlLayoutAction.setChecked(config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "VerticalVolControl"));
+		App()->GetUserConfig(), "BasicWindow", "VerticalVolControl"));
 	connect(&toggleControlLayoutAction, &QAction::changed, this,
 		&OBSBasic::ToggleVolControlLayout, Qt::DirectConnection);
 
@@ -5727,14 +5830,15 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 void OBSBasic::on_actionSceneListMode_triggered()
 {
 	ui->scenes->SetGridMode(false);
-	config_set_bool(App()->GlobalConfig(), "BasicWindow", "gridMode",
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "gridMode",
 			false);
 }
 
 void OBSBasic::on_actionSceneGridMode_triggered()
 {
 	ui->scenes->SetGridMode(true);
-	config_set_bool(App()->GlobalConfig(), "BasicWindow", "gridMode", true);
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "gridMode",
+			true);
 }
 
 void OBSBasic::GridActionClicked()
@@ -5747,7 +5851,7 @@ void OBSBasic::GridActionClicked()
 	else
 		ui->actionSceneListMode->setChecked(true);
 
-	config_set_bool(App()->GlobalConfig(), "BasicWindow", "gridMode",
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "gridMode",
 			gridMode);
 }
 
@@ -6271,7 +6375,7 @@ void OBSBasic::on_scenes_itemDoubleClicked(QListWidgetItem *witem)
 
 	if (IsPreviewProgramMode()) {
 		bool doubleClickSwitch =
-			config_get_bool(App()->GlobalConfig(), "BasicWindow",
+			config_get_bool(App()->GetUserConfig(), "BasicWindow",
 					"TransitionOnDoubleClick");
 
 		if (doubleClickSwitch)
@@ -6661,7 +6765,7 @@ void OBSBasic::on_actionMoveToBottom_triggered()
 static BPtr<char> ReadLogFile(const char *subdir, const char *log)
 {
 	char logDir[512];
-	if (GetConfigPath(logDir, sizeof(logDir), subdir) <= 0)
+	if (GetAppConfigPath(logDir, sizeof(logDir), subdir) <= 0)
 		return nullptr;
 
 	string path = logDir;
@@ -6716,7 +6820,7 @@ void OBSBasic::UploadLog(const char *subdir, const char *file, const bool crash)
 void OBSBasic::on_actionShowLogs_triggered()
 {
 	char logDir[512];
-	if (GetConfigPath(logDir, sizeof(logDir), "obs-studio/logs") <= 0)
+	if (GetAppConfigPath(logDir, sizeof(logDir), "obs-studio/logs") <= 0)
 		return;
 
 	QUrl url = QUrl::fromLocalFile(QT_UTF8(logDir));
@@ -6749,7 +6853,7 @@ void OBSBasic::on_actionViewCurrentLog_triggered()
 void OBSBasic::on_actionShowCrashLogs_triggered()
 {
 	char logDir[512];
-	if (GetConfigPath(logDir, sizeof(logDir), "obs-studio/crashes") <= 0)
+	if (GetAppConfigPath(logDir, sizeof(logDir), "obs-studio/crashes") <= 0)
 		return;
 
 	QUrl url = QUrl::fromLocalFile(QT_UTF8(logDir));
@@ -7075,13 +7179,14 @@ void OBSBasic::ShowYouTubeAutoStartWarning()
 		msgbox.exec();
 
 		if (cb->isChecked()) {
-			config_set_bool(App()->GlobalConfig(), "General",
+			config_set_bool(App()->GetUserConfig(), "General",
 					"WarnedAboutYouTubeAutoStart", true);
-			config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+			config_save_safe(App()->GetUserConfig(), "tmp",
+					 nullptr);
 		}
 	};
 
-	bool warned = config_get_bool(App()->GlobalConfig(), "General",
+	bool warned = config_get_bool(App()->GetUserConfig(), "General",
 				      "WarnedAboutYouTubeAutoStart");
 	if (!warned) {
 		QMetaObject::invokeMethod(App(), "Exec", Qt::QueuedConnection,
@@ -7153,13 +7258,13 @@ void OBSBasic::StartStreaming()
 		}
 
 		bool recordWhenStreaming =
-			config_get_bool(GetGlobalConfig(), "BasicWindow",
+			config_get_bool(App()->GetUserConfig(), "BasicWindow",
 					"RecordWhenStreaming");
 		if (recordWhenStreaming)
 			StartRecording();
 
 		bool replayBufferWhileStreaming =
-			config_get_bool(GetGlobalConfig(), "BasicWindow",
+			config_get_bool(App()->GetUserConfig(), "BasicWindow",
 					"ReplayBufferWhileStreaming");
 		if (replayBufferWhileStreaming)
 			StartReplayBuffer();
@@ -7212,7 +7317,8 @@ void OBSBasic::BroadcastButtonClicked()
 		emit BroadcastStreamStarted(autoStopBroadcast);
 	} else if (!autoStopBroadcast) {
 #ifdef YOUTUBE_ENABLED
-		bool confirm = config_get_bool(GetGlobalConfig(), "BasicWindow",
+		bool confirm = config_get_bool(App()->GetUserConfig(),
+					       "BasicWindow",
 					       "WarnBeforeStoppingStream");
 		if (confirm && isVisible()) {
 			QMessageBox::StandardButton button = OBSMessageBox::question(
@@ -7277,7 +7383,7 @@ void OBSBasic::SetupBroadcast()
 #ifdef _WIN32
 static inline void UpdateProcessPriority()
 {
-	const char *priority = config_get_string(App()->GlobalConfig(),
+	const char *priority = config_get_string(App()->GetAppConfig(),
 						 "General", "ProcessPriority");
 	if (priority && strcmp(priority, "Normal") != 0)
 		SetProcessPriority(priority);
@@ -7285,7 +7391,7 @@ static inline void UpdateProcessPriority()
 
 static inline void ClearProcessPriority()
 {
-	const char *priority = config_get_string(App()->GlobalConfig(),
+	const char *priority = config_get_string(App()->GetAppConfig(),
 						 "General", "ProcessPriority");
 	if (priority && strcmp(priority, "Normal") != 0)
 		SetProcessPriority("Normal");
@@ -7407,17 +7513,18 @@ void OBSBasic::StopStreaming()
 	OnDeactivate();
 
 	bool recordWhenStreaming = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "RecordWhenStreaming");
+		App()->GetUserConfig(), "BasicWindow", "RecordWhenStreaming");
 	bool keepRecordingWhenStreamStops =
-		config_get_bool(GetGlobalConfig(), "BasicWindow",
+		config_get_bool(App()->GetUserConfig(), "BasicWindow",
 				"KeepRecordingWhenStreamStops");
 	if (recordWhenStreaming && !keepRecordingWhenStreamStops)
 		StopRecording();
 
-	bool replayBufferWhileStreaming = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "ReplayBufferWhileStreaming");
+	bool replayBufferWhileStreaming =
+		config_get_bool(App()->GetUserConfig(), "BasicWindow",
+				"ReplayBufferWhileStreaming");
 	bool keepReplayBufferStreamStops =
-		config_get_bool(GetGlobalConfig(), "BasicWindow",
+		config_get_bool(App()->GetUserConfig(), "BasicWindow",
 				"KeepReplayBufferStreamStops");
 	if (replayBufferWhileStreaming && !keepReplayBufferStreamStops)
 		StopReplayBuffer();
@@ -7449,17 +7556,18 @@ void OBSBasic::ForceStopStreaming()
 	OnDeactivate();
 
 	bool recordWhenStreaming = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "RecordWhenStreaming");
+		App()->GetUserConfig(), "BasicWindow", "RecordWhenStreaming");
 	bool keepRecordingWhenStreamStops =
-		config_get_bool(GetGlobalConfig(), "BasicWindow",
+		config_get_bool(App()->GetUserConfig(), "BasicWindow",
 				"KeepRecordingWhenStreamStops");
 	if (recordWhenStreaming && !keepRecordingWhenStreamStops)
 		StopRecording();
 
-	bool replayBufferWhileStreaming = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "ReplayBufferWhileStreaming");
+	bool replayBufferWhileStreaming =
+		config_get_bool(App()->GetUserConfig(), "BasicWindow",
+				"ReplayBufferWhileStreaming");
 	bool keepReplayBufferStreamStops =
-		config_get_bool(GetGlobalConfig(), "BasicWindow",
+		config_get_bool(App()->GetUserConfig(), "BasicWindow",
 				"KeepReplayBufferStreamStops");
 	if (replayBufferWhileStreaming && !keepReplayBufferStreamStops)
 		StopReplayBuffer();
@@ -7888,13 +7996,14 @@ void OBSBasic::ShowReplayBufferPauseWarning()
 		msgbox.exec();
 
 		if (cb->isChecked()) {
-			config_set_bool(App()->GlobalConfig(), "General",
+			config_set_bool(App()->GetUserConfig(), "General",
 					"WarnedAboutReplayBufferPausing", true);
-			config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+			config_save_safe(App()->GetUserConfig(), "tmp",
+					 nullptr);
 		}
 	};
 
-	bool warned = config_get_bool(App()->GlobalConfig(), "General",
+	bool warned = config_get_bool(App()->GetUserConfig(), "General",
 				      "WarnedAboutReplayBufferPausing");
 	if (!warned) {
 		QMetaObject::invokeMethod(App(), "Exec", Qt::QueuedConnection,
@@ -8140,7 +8249,8 @@ void OBSBasic::OnVirtualCamStop(int)
 void OBSBasic::StreamActionTriggered()
 {
 	if (outputHandler->StreamingActive()) {
-		bool confirm = config_get_bool(GetGlobalConfig(), "BasicWindow",
+		bool confirm = config_get_bool(App()->GetUserConfig(),
+					       "BasicWindow",
 					       "WarnBeforeStoppingStream");
 
 #ifdef YOUTUBE_ENABLED
@@ -8192,7 +8302,8 @@ void OBSBasic::StreamActionTriggered()
 			return;
 		}
 
-		bool confirm = config_get_bool(GetGlobalConfig(), "BasicWindow",
+		bool confirm = config_get_bool(App()->GetUserConfig(),
+					       "BasicWindow",
 					       "WarnBeforeStartingStream");
 
 		bool bwtest = false;
@@ -8234,7 +8345,8 @@ void OBSBasic::StreamActionTriggered()
 void OBSBasic::RecordActionTriggered()
 {
 	if (outputHandler->RecordingActive()) {
-		bool confirm = config_get_bool(GetGlobalConfig(), "BasicWindow",
+		bool confirm = config_get_bool(App()->GetUserConfig(),
+					       "BasicWindow",
 					       "WarnBeforeStoppingRecord");
 
 		if (confirm && isVisible()) {
@@ -8359,7 +8471,7 @@ void OBSBasic::on_actionShowWhatsNew_triggered()
 	if (!cef)
 		return;
 
-	config_set_int(App()->GlobalConfig(), "General", "InfoIncrement", -1);
+	config_set_int(App()->GetUserConfig(), "General", "InfoIncrement", -1);
 
 	WhatsNewInfoThread *wnit = new WhatsNewInfoThread();
 	connect(wnit, &WhatsNewInfoThread::Result, this,
@@ -8380,22 +8492,24 @@ void OBSBasic::on_actionReleaseNotes_triggered()
 
 void OBSBasic::on_actionShowSettingsFolder_triggered()
 {
-	char path[512];
-	int ret = GetConfigPath(path, 512, "obs-studio");
-	if (ret <= 0)
-		return;
+	const std::filesystem::path userConfigPath{
+		std::filesystem::path{App()->userConfigLocation} /
+		"obs-studio"};
+	const QString userConfigLocation =
+		QString::fromStdString(userConfigPath.string());
 
-	QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+	QDesktopServices::openUrl(QUrl::fromLocalFile(userConfigLocation));
 }
 
 void OBSBasic::on_actionShowProfileFolder_triggered()
 {
-	char path[512];
-	int ret = GetProfilePath(path, 512, "");
-	if (ret <= 0)
-		return;
+	const std::filesystem::path userProfilePath{
+		std::filesystem::path{App()->userProfilesLocation} /
+		"obs-studio/basic/profiles"};
+	const QString userProfileLocation =
+		QString::fromStdString(userProfilePath.string());
 
-	QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+	QDesktopServices::openUrl(QUrl::fromLocalFile(userProfileLocation));
 }
 
 int OBSBasic::GetTopSelectedSourceItem()
@@ -8482,7 +8596,8 @@ void OBSBasic::ToggleAlwaysOnTop()
 
 void OBSBasic::GetFPSCommon(uint32_t &num, uint32_t &den) const
 {
-	const char *val = config_get_string(basicConfig, "Video", "FPSCommon");
+	const char *val =
+		config_get_string(activeConfiguration, "Video", "FPSCommon");
 
 	if (strcmp(val, "10") == 0) {
 		num = 10;
@@ -8519,25 +8634,26 @@ void OBSBasic::GetFPSCommon(uint32_t &num, uint32_t &den) const
 
 void OBSBasic::GetFPSInteger(uint32_t &num, uint32_t &den) const
 {
-	num = (uint32_t)config_get_uint(basicConfig, "Video", "FPSInt");
+	num = (uint32_t)config_get_uint(activeConfiguration, "Video", "FPSInt");
 	den = 1;
 }
 
 void OBSBasic::GetFPSFraction(uint32_t &num, uint32_t &den) const
 {
-	num = (uint32_t)config_get_uint(basicConfig, "Video", "FPSNum");
-	den = (uint32_t)config_get_uint(basicConfig, "Video", "FPSDen");
+	num = (uint32_t)config_get_uint(activeConfiguration, "Video", "FPSNum");
+	den = (uint32_t)config_get_uint(activeConfiguration, "Video", "FPSDen");
 }
 
 void OBSBasic::GetFPSNanoseconds(uint32_t &num, uint32_t &den) const
 {
 	num = 1000000000;
-	den = (uint32_t)config_get_uint(basicConfig, "Video", "FPSNS");
+	den = (uint32_t)config_get_uint(activeConfiguration, "Video", "FPSNS");
 }
 
 void OBSBasic::GetConfigFPS(uint32_t &num, uint32_t &den) const
 {
-	uint32_t type = config_get_uint(basicConfig, "Video", "FPSType");
+	uint32_t type =
+		config_get_uint(activeConfiguration, "Video", "FPSType");
 
 	if (type == 1) //"Integer"
 		GetFPSInteger(num, den);
@@ -8553,7 +8669,7 @@ void OBSBasic::GetConfigFPS(uint32_t &num, uint32_t &den) const
 
 config_t *OBSBasic::Config() const
 {
-	return basicConfig;
+	return activeConfiguration;
 }
 
 #ifdef YOUTUBE_ENABLED
@@ -9347,7 +9463,8 @@ OBSProjector *OBSBasic::OpenProjector(obs_source_t *source, int monitor,
 	if (monitor > 9 || monitor > QGuiApplication::screens().size() - 1)
 		return nullptr;
 
-	bool closeProjectors = config_get_bool(GetGlobalConfig(), "BasicWindow",
+	bool closeProjectors = config_get_bool(App()->GetUserConfig(),
+					       "BasicWindow",
 					       "CloseExistingProjectors");
 
 	if (closeProjectors && monitor > -1) {
@@ -9502,9 +9619,9 @@ void OBSBasic::UpdateTitleBar()
 	stringstream name;
 
 	const char *profile =
-		config_get_string(App()->GlobalConfig(), "Basic", "Profile");
+		config_get_string(App()->GetUserConfig(), "Basic", "Profile");
 	const char *sceneCollection = config_get_string(
-		App()->GlobalConfig(), "Basic", "SceneCollection");
+		App()->GetUserConfig(), "Basic", "SceneCollection");
 
 	name << "OBS ";
 	if (previewProgramMode)
@@ -9525,8 +9642,8 @@ void OBSBasic::UpdateTitleBar()
 int OBSBasic::GetProfilePath(char *path, size_t size, const char *file) const
 {
 	char profiles_path[512];
-	const char *profile =
-		config_get_string(App()->GlobalConfig(), "Basic", "ProfileDir");
+	const char *profile = config_get_string(App()->GetUserConfig(), "Basic",
+						"ProfileDir");
 	int ret;
 
 	if (!profile)
@@ -9536,7 +9653,7 @@ int OBSBasic::GetProfilePath(char *path, size_t size, const char *file) const
 	if (!file)
 		file = "";
 
-	ret = GetConfigPath(profiles_path, 512, "obs-studio/basic/profiles");
+	ret = GetAppConfigPath(profiles_path, 512, "obs-studio/basic/profiles");
 	if (ret <= 0)
 		return ret;
 
@@ -9701,7 +9818,7 @@ void OBSBasic::on_resetUI_triggered()
 	ui->scenes->SetGridMode(false);
 	ui->actionSceneListMode->setChecked(true);
 
-	config_set_bool(App()->GlobalConfig(), "BasicWindow", "gridMode",
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "gridMode",
 			false);
 }
 
@@ -9716,7 +9833,7 @@ void OBSBasic::on_toggleListboxToolbars_toggled(bool visible)
 	ui->scenesToolbar->setVisible(visible);
 	ui->mixerToolbar->setVisible(visible);
 
-	config_set_bool(App()->GlobalConfig(), "BasicWindow",
+	config_set_bool(App()->GetUserConfig(), "BasicWindow",
 			"ShowListboxToolbars", visible);
 }
 
@@ -9734,7 +9851,7 @@ void OBSBasic::HideContextBar()
 
 void OBSBasic::on_toggleContextBar_toggled(bool visible)
 {
-	config_set_bool(App()->GlobalConfig(), "BasicWindow",
+	config_set_bool(App()->GetUserConfig(), "BasicWindow",
 			"ShowContextToolbars", visible);
 	this->ui->contextContainer->setVisible(visible);
 	UpdateContextBar(true);
@@ -9744,7 +9861,7 @@ void OBSBasic::on_toggleStatusBar_toggled(bool visible)
 {
 	ui->statusbar->setVisible(visible);
 
-	config_set_bool(App()->GlobalConfig(), "BasicWindow", "ShowStatusBar",
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "ShowStatusBar",
 			visible);
 }
 
@@ -9754,8 +9871,8 @@ void OBSBasic::on_toggleSourceIcons_toggled(bool visible)
 	if (advAudioWindow != nullptr)
 		advAudioWindow->SetIconsVisible(visible);
 
-	config_set_bool(App()->GlobalConfig(), "BasicWindow", "ShowSourceIcons",
-			visible);
+	config_set_bool(App()->GetUserConfig(), "BasicWindow",
+			"ShowSourceIcons", visible);
 }
 
 void OBSBasic::on_actionLockPreview_triggered()
@@ -9818,7 +9935,7 @@ void OBSBasic::on_actionScaleOutput_triggered()
 void OBSBasic::SetShowing(bool showing)
 {
 	if (!showing && isVisible()) {
-		config_set_string(App()->GlobalConfig(), "BasicWindow",
+		config_set_string(App()->GetUserConfig(), "BasicWindow",
 				  "geometry",
 				  saveGeometry().toBase64().constData());
 
@@ -10003,9 +10120,9 @@ void OBSBasic::SystemTray(bool firstStarted)
 		return;
 
 	bool sysTrayWhenStarted = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "SysTrayWhenStarted");
-	bool sysTrayEnabled = config_get_bool(GetGlobalConfig(), "BasicWindow",
-					      "SysTrayEnabled");
+		App()->GetUserConfig(), "BasicWindow", "SysTrayWhenStarted");
+	bool sysTrayEnabled = config_get_bool(App()->GetUserConfig(),
+					      "BasicWindow", "SysTrayEnabled");
 
 	if (firstStarted)
 		SystemTrayInit();
@@ -10031,7 +10148,7 @@ void OBSBasic::SystemTray(bool firstStarted)
 
 bool OBSBasic::sysTrayMinimizeToTray()
 {
-	return config_get_bool(GetGlobalConfig(), "BasicWindow",
+	return config_get_bool(App()->GetUserConfig(), "BasicWindow",
 			       "SysTrayMinimizeToTray");
 }
 
@@ -10469,14 +10586,14 @@ void OBSBasic::ResizeOutputSizeOfSource()
 	int width = obs_source_get_width(source);
 	int height = obs_source_get_height(source);
 
-	config_set_uint(basicConfig, "Video", "BaseCX", width);
-	config_set_uint(basicConfig, "Video", "BaseCY", height);
-	config_set_uint(basicConfig, "Video", "OutputCX", width);
-	config_set_uint(basicConfig, "Video", "OutputCY", height);
+	config_set_uint(activeConfiguration, "Video", "BaseCX", width);
+	config_set_uint(activeConfiguration, "Video", "BaseCY", height);
+	config_set_uint(activeConfiguration, "Video", "OutputCX", width);
+	config_set_uint(activeConfiguration, "Video", "OutputCY", height);
 
 	ResetVideo();
 	ResetOutputs();
-	config_save_safe(basicConfig, "tmp", nullptr);
+	activeConfiguration.SaveSafe("tmp");
 	on_actionFitToScreen_triggered();
 }
 
@@ -10811,25 +10928,26 @@ void OBSBasic::RecordPauseToggled()
 
 void OBSBasic::UpdateIsRecordingPausable()
 {
-	const char *mode = config_get_string(basicConfig, "Output", "Mode");
+	const char *mode =
+		config_get_string(activeConfiguration, "Output", "Mode");
 	bool adv = astrcmpi(mode, "Advanced") == 0;
 	bool shared = true;
 
 	if (adv) {
-		const char *recType =
-			config_get_string(basicConfig, "AdvOut", "RecType");
+		const char *recType = config_get_string(activeConfiguration,
+							"AdvOut", "RecType");
 
 		if (astrcmpi(recType, "FFmpeg") == 0) {
-			shared = config_get_bool(basicConfig, "AdvOut",
+			shared = config_get_bool(activeConfiguration, "AdvOut",
 						 "FFOutputToFile");
 		} else {
 			const char *recordEncoder = config_get_string(
-				basicConfig, "AdvOut", "RecEncoder");
+				activeConfiguration, "AdvOut", "RecEncoder");
 			shared = astrcmpi(recordEncoder, "none") == 0;
 		}
 	} else {
 		const char *quality = config_get_string(
-			basicConfig, "SimpleOutput", "RecQuality");
+			activeConfiguration, "SimpleOutput", "RecQuality");
 		shared = strcmp(quality, "Stream") == 0;
 	}
 
@@ -11016,17 +11134,17 @@ void OBSBasic::ShowStatusBarMessage(const QString &message)
 
 void OBSBasic::UpdatePreviewSafeAreas()
 {
-	drawSafeAreas = config_get_bool(App()->GlobalConfig(), "BasicWindow",
+	drawSafeAreas = config_get_bool(App()->GetUserConfig(), "BasicWindow",
 					"ShowSafeAreas");
 }
 
 void OBSBasic::UpdatePreviewOverflowSettings()
 {
-	bool hidden = config_get_bool(App()->GlobalConfig(), "BasicWindow",
+	bool hidden = config_get_bool(App()->GetUserConfig(), "BasicWindow",
 				      "OverflowHidden");
-	bool select = config_get_bool(App()->GlobalConfig(), "BasicWindow",
+	bool select = config_get_bool(App()->GetUserConfig(), "BasicWindow",
 				      "OverflowSelectionHidden");
-	bool always = config_get_bool(App()->GlobalConfig(), "BasicWindow",
+	bool always = config_get_bool(App()->GetUserConfig(), "BasicWindow",
 				      "OverflowAlwaysVisible");
 
 	ui->preview->SetOverflowHidden(hidden);
@@ -11039,7 +11157,7 @@ void OBSBasic::SetDisplayAffinity(QWindow *window)
 	if (!SetDisplayAffinitySupported())
 		return;
 
-	bool hideFromCapture = config_get_bool(App()->GlobalConfig(),
+	bool hideFromCapture = config_get_bool(App()->GetUserConfig(),
 					       "BasicWindow",
 					       "HideOBSWindowsFromCapture");
 
@@ -11073,10 +11191,10 @@ static inline QColor color_from_int(long long val)
 
 QColor OBSBasic::GetSelectionColor() const
 {
-	if (config_get_bool(GetGlobalConfig(), "Accessibility",
+	if (config_get_bool(App()->GetUserConfig(), "Accessibility",
 			    "OverrideColors")) {
 		return color_from_int(config_get_int(
-			GetGlobalConfig(), "Accessibility", "SelectRed"));
+			App()->GetUserConfig(), "Accessibility", "SelectRed"));
 	} else {
 		return QColor::fromRgb(255, 0, 0);
 	}
@@ -11084,10 +11202,11 @@ QColor OBSBasic::GetSelectionColor() const
 
 QColor OBSBasic::GetCropColor() const
 {
-	if (config_get_bool(GetGlobalConfig(), "Accessibility",
+	if (config_get_bool(App()->GetUserConfig(), "Accessibility",
 			    "OverrideColors")) {
-		return color_from_int(config_get_int(
-			GetGlobalConfig(), "Accessibility", "SelectGreen"));
+		return color_from_int(config_get_int(App()->GetUserConfig(),
+						     "Accessibility",
+						     "SelectGreen"));
 	} else {
 		return QColor::fromRgb(0, 255, 0);
 	}
@@ -11095,10 +11214,10 @@ QColor OBSBasic::GetCropColor() const
 
 QColor OBSBasic::GetHoverColor() const
 {
-	if (config_get_bool(GetGlobalConfig(), "Accessibility",
+	if (config_get_bool(App()->GetUserConfig(), "Accessibility",
 			    "OverrideColors")) {
 		return color_from_int(config_get_int(
-			GetGlobalConfig(), "Accessibility", "SelectBlue"));
+			App()->GetUserConfig(), "Accessibility", "SelectBlue"));
 	} else {
 		return QColor::fromRgb(0, 127, 255);
 	}
@@ -11107,10 +11226,64 @@ QColor OBSBasic::GetHoverColor() const
 void OBSBasic::UpdatePreviewSpacingHelpers()
 {
 	drawSpacingHelpers = config_get_bool(
-		App()->GlobalConfig(), "BasicWindow", "SpacingHelpersEnabled");
+		App()->GetUserConfig(), "BasicWindow", "SpacingHelpersEnabled");
 }
 
 float OBSBasic::GetDevicePixelRatio()
 {
 	return dpi;
+}
+
+// MARK: - Generic UI Helper Functions
+
+OBSPromptResult OBSBasic::PromptForName(const OBSPromptRequest &request,
+					const OBSPromptCallback &callback)
+{
+	OBSPromptResult result;
+
+	for (;;) {
+		result.success = false;
+
+		if (request.withOption && !request.optionPrompt.empty()) {
+			result.optionValue = request.optionValue;
+
+			result.success = NameDialog::AskForNameWithOption(
+				this, request.title.c_str(),
+				request.prompt.c_str(), result.promptValue,
+				request.optionPrompt.c_str(),
+				result.optionValue,
+				(request.promptValue.empty()
+					 ? nullptr
+					 : request.promptValue.c_str()));
+
+		} else {
+			result.success = NameDialog::AskForName(
+				this, request.title.c_str(),
+				request.prompt.c_str(), result.promptValue,
+				(request.promptValue.empty()
+					 ? nullptr
+					 : request.promptValue.c_str()));
+		}
+
+		if (!result.success) {
+			break;
+		}
+
+		if (result.promptValue.empty()) {
+			OBSMessageBox::warning(this,
+					       QTStr("NoNameEntered.Title"),
+					       QTStr("NoNameEntered.Text"));
+			continue;
+		}
+
+		if (!callback(result)) {
+			OBSMessageBox::warning(this, QTStr("NameExists.Title"),
+					       QTStr("NameExists.Text"));
+			continue;
+		}
+
+		break;
+	}
+
+	return result;
 }

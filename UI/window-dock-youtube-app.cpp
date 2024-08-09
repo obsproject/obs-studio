@@ -431,16 +431,16 @@ void YouTubeAppDock::CleanupYouTubeUrls()
 	// remove legacy YouTube Browser Docks (once)
 
 	bool youtube_cleanup_done = config_get_bool(
-		App()->GlobalConfig(), "General", "YtDockCleanupDone");
+		App()->GetUserConfig(), "General", "YtDockCleanupDone");
 
 	if (youtube_cleanup_done)
 		return;
 
-	config_set_bool(App()->GlobalConfig(), "General", "YtDockCleanupDone",
+	config_set_bool(App()->GetUserConfig(), "General", "YtDockCleanupDone",
 			true);
 
 	const char *jsonStr = config_get_string(
-		App()->GlobalConfig(), "BasicWindow", "ExtraBrowserDocks");
+		App()->GetUserConfig(), "BasicWindow", "ExtraBrowserDocks");
 	if (!jsonStr)
 		return;
 
@@ -472,7 +472,7 @@ void YouTubeAppDock::CleanupYouTubeUrls()
 		OBSMessageBox::warning(OBSBasic::Get(), msg_title, msg_text);
 
 		std::string output = save_array.dump();
-		config_set_string(App()->GlobalConfig(), "BasicWindow",
+		config_set_string(App()->GetUserConfig(), "BasicWindow",
 				  "ExtraBrowserDocks", output.c_str());
 	}
 }

@@ -1855,10 +1855,11 @@ int OBSBasic::GetOverrideTransitionDuration(OBSSource source)
 
 void OBSBasic::UpdatePreviewProgramIndicators()
 {
-	bool labels = previewProgramMode ? config_get_bool(GetGlobalConfig(),
-							   "BasicWindow",
-							   "StudioModeLabels")
-					 : false;
+	bool labels = previewProgramMode
+			      ? config_get_bool(App()->GetUserConfig(),
+						"BasicWindow",
+						"StudioModeLabels")
+			      : false;
 
 	ui->previewLabel->setVisible(labels);
 

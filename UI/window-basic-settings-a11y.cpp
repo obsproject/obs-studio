@@ -43,7 +43,7 @@ QColor OBSBasicSettings::GetColor(uint32_t colorVal, QString label)
 
 void OBSBasicSettings::LoadA11ySettings(bool presetChange)
 {
-	config_t *config = GetGlobalConfig();
+	config_t *config = App()->GetUserConfig();
 
 	loading = true;
 	if (!presetChange) {
@@ -109,7 +109,7 @@ void OBSBasicSettings::LoadA11ySettings(bool presetChange)
 
 void OBSBasicSettings::SaveA11ySettings()
 {
-	config_t *config = GetGlobalConfig();
+	config_t *config = App()->GetUserConfig();
 
 	config_set_bool(config, "Accessibility", "OverrideColors",
 			ui->colorsGroupBox->isChecked());
@@ -163,7 +163,7 @@ void OBSBasicSettings::UpdateA11yColors()
 
 void OBSBasicSettings::SetDefaultColors()
 {
-	config_t *config = GetGlobalConfig();
+	config_t *config = App()->GetUserConfig();
 	config_set_default_int(config, "Accessibility", "SelectRed", selectRed);
 	config_set_default_int(config, "Accessibility", "SelectGreen",
 			       selectGreen);

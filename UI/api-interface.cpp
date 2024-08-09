@@ -16,9 +16,6 @@ template<typename T> static T GetOBSRef(QListWidgetItem *item)
 	return item->data(static_cast<int>(QtDataRole::OBSRef)).value<T>();
 }
 
-void EnumProfiles(function<bool(const char *, const char *)> &&cb);
-void EnumSceneCollections(function<bool(const char *, const char *)> &&cb);
-
 extern volatile bool streaming_active;
 extern volatile bool recording_active;
 extern volatile bool recording_paused;
@@ -169,19 +166,17 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	void obs_frontend_get_scene_collections(
 		std::vector<std::string> &strings) override
 	{
-		auto addCollection = [&](const char *name, const char *) {
-			strings.emplace_back(name);
-			return true;
-		};
-
-		EnumSceneCollections(addCollection);
+		for (auto &[collectionName, collection] :
+		     main->GetSceneCollectionCache()) {
+			strings.emplace_back(collectionName);
+		}
 	}
 
 	char *obs_frontend_get_current_scene_collection(void) override
 	{
-		const char *cur_name = config_get_string(
-			App()->GlobalConfig(), "Basic", "SceneCollection");
-		return bstrdup(cur_name);
+		const OBSSceneCollection &currentCollection =
+			main->GetCurrentSceneCollection();
+		return bstrdup(currentCollection.name.c_str());
 	}
 
 	void obs_frontend_set_current_scene_collection(
@@ -207,10 +202,9 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	bool obs_frontend_add_scene_collection(const char *name) override
 	{
 		bool success = false;
-		QMetaObject::invokeMethod(main, "AddSceneCollection",
+		QMetaObject::invokeMethod(main, "NewSceneCollection",
 					  WaitConnection(),
 					  Q_RETURN_ARG(bool, success),
-					  Q_ARG(bool, true),
 					  Q_ARG(QString, QT_UTF8(name)));
 		return success;
 	}
@@ -218,29 +212,24 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	void
 	obs_frontend_get_profiles(std::vector<std::string> &strings) override
 	{
-		auto addProfile = [&](const char *name, const char *) {
-			strings.emplace_back(name);
-			return true;
-		};
+		const OBSProfileCache &profiles = main->GetProfileCache();
 
-		EnumProfiles(addProfile);
+		for (auto &[profileName, profile] : profiles) {
+			strings.emplace_back(profileName);
+		}
 	}
 
 	char *obs_frontend_get_current_profile(void) override
 	{
-		const char *name = config_get_string(App()->GlobalConfig(),
-						     "Basic", "Profile");
-		return bstrdup(name);
+		const OBSProfile &profile = main->GetCurrentProfile();
+		return bstrdup(profile.name.c_str());
 	}
 
 	char *obs_frontend_get_current_profile_path(void) override
 	{
-		char profilePath[512];
-		int ret = GetProfilePath(profilePath, sizeof(profilePath), "");
-		if (ret <= 0)
-			return nullptr;
+		const OBSProfile &profile = main->GetCurrentProfile();
 
-		return bstrdup(profilePath);
+		return bstrdup(profile.path.u8string().c_str());
 	}
 
 	void obs_frontend_set_current_profile(const char *profile) override
@@ -510,12 +499,24 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	config_t *obs_frontend_get_profile_config(void) override
 	{
-		return main->basicConfig;
+		return main->activeConfiguration;
 	}
 
 	config_t *obs_frontend_get_global_config(void) override
 	{
-		return App()->GlobalConfig();
+		blog(LOG_WARNING,
+		     "DEPRECATION: obs_frontend_get_global_config is deprecated. Read from global or user configuration explicitly instead.");
+		return App()->GetAppConfig();
+	}
+
+	config_t *obs_frontend_get_app_config(void) override
+	{
+		return App()->GetAppConfig();
+	}
+
+	config_t *obs_frontend_get_user_config(void) override
+	{
+		return App()->GetUserConfig();
 	}
 
 	void obs_frontend_open_projector(const char *type, int monitor,

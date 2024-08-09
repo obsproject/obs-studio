@@ -307,7 +307,7 @@ RunOnceMutex CheckIfAlreadyRunning(bool &already_running)
 		char absPath[512];
 		*path = 0;
 		*absPath = 0;
-		GetConfigPath(path, sizeof(path), "");
+		GetAppConfigPath(path, sizeof(path), "");
 		os_get_abs_path(path, absPath, sizeof(absPath));
 		name = "OBSStudioPortable";
 		name += absPath;
