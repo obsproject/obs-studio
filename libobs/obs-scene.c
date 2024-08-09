@@ -24,7 +24,7 @@
 
 const struct obs_source_info group_info;
 
-static void resize_group(obs_sceneitem_t *group);
+static void resize_group(obs_sceneitem_t *group, bool scene_resize);
 static void resize_scene(obs_scene_t *scene);
 static void signal_parent(obs_scene_t *parent, const char *name,
 			  calldata_t *params);
@@ -353,6 +353,134 @@ void add_alignment(struct vec2 *v, uint32_t align, int cx, int cy)
 		v->y += (float)(cy / 2);
 }
 
+static uint32_t scene_getwidth(void *data);
+static uint32_t scene_getheight(void *data);
+
+static inline void get_scene_dimensions(const obs_sceneitem_t *item, float *x,
+					float *y)
+{
+	obs_scene_t *parent = item->parent;
+	if (parent->is_group) {
+		*x = (float)obs->video.main_mix->ovi.base_width;
+		*y = (float)obs->video.main_mix->ovi.base_height;
+	} else {
+		*x = (float)scene_getwidth(parent);
+		*y = (float)scene_getheight(parent);
+	}
+}
+
+/* Rounds absolute pixel values to next .5 */
+static inline void nudge_abs_values(struct vec2 *dst, const struct vec2 *v)
+{
+	dst->x = floorf(v->x * 2.0f + 0.5f) / 2.0f;
+	dst->y = floorf(v->y * 2.0f + 0.5f) / 2.0f;
+}
+
+static inline void pos_from_absolute(struct vec2 *dst, const struct vec2 *v,
+				     const obs_sceneitem_t *item)
+{
+	float x, y;
+	get_scene_dimensions(item, &x, &y);
+	/* Scaled so that shorter side is [-1, 1] */
+	if (x < y) {
+		dst->x = 2 * v->x / x - 1.0f;
+		dst->y = (2 * v->y - y) / x;
+	} else {
+		dst->x = (2 * v->x - x) / y;
+		dst->y = 2 * v->y / y - 1.0f;
+	}
+}
+
+static inline void pos_to_absolute(struct vec2 *dst, const struct vec2 *v,
+				   const obs_sceneitem_t *item)
+{
+	float x, y;
+	get_scene_dimensions(item, &x, &y);
+	if (x < y) {
+		dst->x = (v->x * x + x) / 2;
+		dst->y = (v->y * x + y) / 2;
+	} else {
+		dst->x = (v->x * y + x) / 2;
+		dst->y = (v->y * y + y) / 2;
+	}
+
+	/* In order for group resizing to behave properly they need all the precision
+	 * they can get, so do not nudge their values. */
+	if (!item->is_group && !item->parent->is_group)
+		nudge_abs_values(dst, dst);
+}
+
+static inline void size_from_absolute(struct vec2 *dst, const struct vec2 *v,
+				      const obs_sceneitem_t *item)
+{
+	float x, y;
+	get_scene_dimensions(item, &x, &y);
+	/* The short side of the canvas is from [-1, 1] so 2.0f * aspect is the
+	 * full longer side (depending on aspect ratio). */
+	if (x < y) {
+		dst->x = 2 * v->x / x;
+		dst->y = (2 * v->y) / x;
+	} else {
+		dst->x = (2 * v->x) / y;
+		dst->y = 2 * v->y / y;
+	}
+}
+
+static inline void size_to_absolute(struct vec2 *dst, const struct vec2 *v,
+				    const obs_sceneitem_t *item)
+{
+	float x, y;
+	get_scene_dimensions(item, &x, &y);
+	if (x < y) {
+		dst->x = (v->x * x) / 2;
+		dst->y = (v->y * x) / 2;
+	} else {
+		dst->x = (v->x * y) / 2;
+		dst->y = (v->y * y) / 2;
+	}
+
+	if (!item->is_group && !item->parent->is_group)
+		nudge_abs_values(dst, dst);
+}
+
+/* Return item's scale value scaled from original to current canvas size */
+static inline void item_canvas_scale(struct vec2 *dst,
+				     const obs_sceneitem_t *item)
+{
+	/* Groups will themselves resize so their items do not need to be rescaled. */
+	if (item->is_group) {
+		vec2_copy(dst, &item->scale);
+		return;
+	}
+
+	float x, y;
+	get_scene_dimensions(item, &x, &y);
+	/* Divide largest side of canvas and reference to get the scale factor */
+	float canvas = x < y ? x : y;
+	float ref = item->scale_ref.x < item->scale_ref.y ? item->scale_ref.x
+							  : item->scale_ref.y;
+	float scale_factor = canvas / ref;
+	vec2_mulf(dst, &item->scale, scale_factor);
+}
+
+/* Return scale value scaled to original canvas size */
+static inline void item_relative_scale(struct vec2 *dst, const struct vec2 *v,
+				       const obs_sceneitem_t *item)
+{
+	if (item->is_group) {
+		vec2_copy(dst, v);
+		return;
+	}
+
+	float x, y;
+	get_scene_dimensions(item, &x, &y);
+	float canvas = x < y ? x : y;
+	float ref = item->scale_ref.x < item->scale_ref.y ? item->scale_ref.x
+							  : item->scale_ref.y;
+	float scale_factor = ref / canvas;
+	vec2_mulf(dst, v, scale_factor);
+}
+
 static inline bool crop_to_bounds(const struct obs_scene_item *item)
 {
 	return item->crop_to_bounds &&
@@ -365,15 +493,21 @@ static void calculate_bounds_data(struct obs_scene_item *item,
 				  struct vec2 *origin, struct vec2 *scale,
 				  uint32_t *cx, uint32_t *cy)
 {
+	struct vec2 bounds;
+	if (item->absolute_coordinates)
+		vec2_copy(&bounds, &item->bounds);
+	else
+		size_to_absolute(&bounds, &item->bounds, item);
+
 	float width = (float)(*cx) * fabsf(scale->x);
 	float height = (float)(*cy) * fabsf(scale->y);
 	float item_aspect = width / height;
-	float bounds_aspect = item->bounds.x / item->bounds.y;
+	float bounds_aspect = bounds.x / bounds.y;
 	uint32_t bounds_type = item->bounds_type;
 	float width_diff, height_diff;
 
 	if (item->bounds_type == OBS_BOUNDS_MAX_ONLY)
-		if (width > item->bounds.x || height > item->bounds.y)
+		if (width > bounds.x || height > bounds.y)
 			bounds_type = OBS_BOUNDS_SCALE_INNER;
 
 	if (bounds_type == OBS_BOUNDS_SCALE_INNER ||
@@ -384,30 +518,29 @@ static void calculate_bounds_data(struct obs_scene_item *item,
 		if (item->bounds_type == OBS_BOUNDS_SCALE_OUTER)
 			use_width = !use_width;
 
-		mul = use_width ? item->bounds.x / width
-				: item->bounds.y / height;
+		mul = use_width ? bounds.x / width : bounds.y / height;
 
 		vec2_mulf(scale, scale, mul);
 
 	} else if (bounds_type == OBS_BOUNDS_SCALE_TO_WIDTH) {
-		vec2_mulf(scale, scale, item->bounds.x / width);
+		vec2_mulf(scale, scale, bounds.x / width);
 
 	} else if (bounds_type == OBS_BOUNDS_SCALE_TO_HEIGHT) {
-		vec2_mulf(scale, scale, item->bounds.y / height);
+		vec2_mulf(scale, scale, bounds.y / height);
 
 	} else if (bounds_type == OBS_BOUNDS_STRETCH) {
-		scale->x = copysignf(item->bounds.x / (float)(*cx), scale->x);
-		scale->y = copysignf(item->bounds.y / (float)(*cy), scale->y);
+		scale->x = copysignf(bounds.x / (float)(*cx), scale->x);
+		scale->y = copysignf(bounds.y / (float)(*cy), scale->y);
 	}
 
 	width = (float)(*cx) * scale->x;
 	height = (float)(*cy) * scale->y;
 
 	/* Disregards flip when calculating size diff */
-	width_diff = item->bounds.x - fabsf(width);
-	height_diff = item->bounds.y - fabsf(height);
-	*cx = (uint32_t)item->bounds.x;
-	*cy = (uint32_t)item->bounds.y;
+	width_diff = bounds.x - fabsf(width);
+	height_diff = bounds.y - fabsf(height);
+	*cx = (uint32_t)bounds.x;
+	*cy = (uint32_t)bounds.y;
 
 	add_alignment(origin, item->bounds_align, (int)-width_diff,
 		      (int)-height_diff);
@@ -490,6 +623,21 @@ static inline uint32_t calc_cy(const struct obs_scene_item *item,
 	return (crop_cy > height) ? 2 : (height - crop_cy);
 }
 
+#ifdef _DEBUG
+static inline void log_matrix(const struct matrix4 *mat, const char *name)
+{
+	blog(LOG_DEBUG,
+	     "Matrix \"%s\":\n"
+	     "┏ %9.4f %9.4f %9.4f %9.4f ┓\n"
+	     "┃ %9.4f %9.4f %9.4f %9.4f ┃\n"
+	     "┃ %9.4f %9.4f %9.4f %9.4f ┃\n"
+	     "┗ %9.4f %9.4f %9.4f %9.4f ┛",
+	     name, mat->x.x, mat->x.y, mat->x.z, mat->x.w, mat->y.x, mat->y.y,
+	     mat->y.z, mat->y.w, mat->z.x, mat->z.y, mat->z.z, mat->z.w,
+	     mat->t.x, mat->t.y, mat->t.z, mat->t.w);
+}
+#endif
+
 static void update_item_transform(struct obs_scene_item *item, bool update_tex)
 {
 	uint32_t width;
@@ -499,6 +647,7 @@ static void update_item_transform(struct obs_scene_item *item, bool update_tex)
 	struct vec2 base_origin;
 	struct vec2 origin;
 	struct vec2 scale;
+	struct vec2 position;
 	struct calldata params;
 	uint8_t stack[128];
 
@@ -512,7 +661,6 @@ static void update_item_transform(struct obs_scene_item *item, bool update_tex)
 	height = obs_source_get_height(item->source);
 	cx = calc_cx(item, width);
 	cy = calc_cy(item, height);
-	scale = item->scale;
 	item->last_width = width;
 	item->last_height = height;
 
@@ -521,6 +669,14 @@ static void update_item_transform(struct obs_scene_item *item, bool update_tex)
 
 	vec2_zero(&base_origin);
 	vec2_zero(&origin);
+
+	if (!item->absolute_coordinates) {
+		item_canvas_scale(&scale, item);
+		pos_to_absolute(&position, &item->pos, item);
+	} else {
+		scale = item->scale;
+		position = item->pos;
+	}
 
 	/* ----------------------- */
 
@@ -541,17 +697,26 @@ static void update_item_transform(struct obs_scene_item *item, bool update_tex)
 	matrix4_rotate_aa4f(&item->draw_transform, &item->draw_transform, 0.0f,
 			    0.0f, 1.0f, RAD(item->rot));
 	matrix4_translate3f(&item->draw_transform, &item->draw_transform,
-			    item->pos.x, item->pos.y, 0.0f);
+			    position.x, position.y, 0.0f);
+
+#ifdef _DEBUG
+	blog(LOG_DEBUG, "Transform updated for \"%s\":",
+	     obs_source_get_name(item->source));
+	log_matrix(&item->draw_transform, "draw_transform");
+#endif
 
 	item->output_scale = scale;
 
 	/* ----------------------- */
 
 	if (item->bounds_type != OBS_BOUNDS_NONE) {
-		vec2_copy(&scale, &item->bounds);
+		if (!item->absolute_coordinates)
+			size_to_absolute(&scale, &item->bounds, item);
+		else
+			vec2_copy(&scale, &item->bounds);
 	} else {
-		scale.x = (float)width * item->scale.x;
-		scale.y = (float)height * item->scale.y;
+		scale.x *= (float)width;
+		scale.y *= (float)height;
 	}
 
 	item->box_scale = scale;
@@ -566,7 +731,11 @@ static void update_item_transform(struct obs_scene_item *item, bool update_tex)
 	matrix4_rotate_aa4f(&item->box_transform, &item->box_transform, 0.0f,
 			    0.0f, 1.0f, RAD(item->rot));
 	matrix4_translate3f(&item->box_transform, &item->box_transform,
-			    item->pos.x, item->pos.y, 0.0f);
+			    position.x, position.y, 0.0f);
+
+#ifdef _DEBUG
+	log_matrix(&item->draw_transform, "box_transform");
+#endif
 
 	/* ----------------------- */
 
@@ -925,10 +1094,9 @@ static void scene_video_tick(void *data, float seconds)
 }
 
 /* assumes video lock */
-static void
-update_transforms_and_prune_sources(obs_scene_t *scene,
-				    obs_scene_item_ptr_array_t *remove_items,
-				    obs_sceneitem_t *group_sceneitem)
+static void update_transforms_and_prune_sources(
+	obs_scene_t *scene, obs_scene_item_ptr_array_t *remove_items,
+	obs_sceneitem_t *group_sceneitem, bool scene_size_changed)
 {
 	struct obs_scene_item *item = scene->first_item;
 	bool rebuild_group =
@@ -951,12 +1119,13 @@ update_transforms_and_prune_sources(obs_scene_t *scene,
 
 			video_lock(group_scene);
 			update_transforms_and_prune_sources(group_scene,
-							    remove_items, item);
+							    remove_items, item,
+							    scene_size_changed);
 			video_unlock(group_scene);
 		}
 
 		if (os_atomic_load_bool(&item->update_transform) ||
-		    source_size_changed(item)) {
+		    source_size_changed(item) || scene_size_changed) {
 
 			update_item_transform(item, true);
 			rebuild_group = true;
@@ -966,7 +1135,20 @@ update_transforms_and_prune_sources(obs_scene_t *scene,
 	}
 
 	if (rebuild_group && group_sceneitem)
-		resize_group(group_sceneitem);
+		resize_group(group_sceneitem, scene_size_changed);
+}
+
+static inline bool scene_size_changed(obs_scene_t *scene)
+{
+	uint32_t width = scene_getwidth(scene);
+	uint32_t height = scene_getheight(scene);
+
+	if (width == scene->last_width && height == scene->last_height)
+		return false;
+
+	scene->last_width = width;
+	scene->last_height = height;
+	return true;
 }
 
 static void scene_video_render(void *data, gs_effect_t *effect)
@@ -980,7 +1162,9 @@ static void scene_video_render(void *data, gs_effect_t *effect)
 	video_lock(scene);
 
 	if (!scene->is_group) {
-		update_transforms_and_prune_sources(scene, &remove_items, NULL);
+		bool size_changed = scene_size_changed(scene);
+		update_transforms_and_prune_sources(scene, &remove_items, NULL,
+						    size_changed);
 	}
 
 	gs_blend_state_push();
@@ -1091,8 +1275,20 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 	item->align = (uint32_t)obs_data_get_int(item_data, "align");
 	visible = obs_data_get_bool(item_data, "visible");
 	lock = obs_data_get_bool(item_data, "locked");
-	obs_data_get_vec2(item_data, "pos", &item->pos);
-	obs_data_get_vec2(item_data, "scale", &item->scale);
+
+	if (!item->absolute_coordinates &&
+	    obs_data_has_user_value(item_data, "pos_rel") &&
+	    obs_data_has_user_value(item_data, "scale_rel") &&
+	    obs_data_has_user_value(item_data, "scale_ref")) {
+		obs_data_get_vec2(item_data, "pos_rel", &item->pos);
+		obs_data_get_vec2(item_data, "scale_rel", &item->scale);
+		obs_data_get_vec2(item_data, "scale_ref", &item->scale_ref);
+	} else {
+		obs_data_get_vec2(item_data, "pos", &item->pos);
+		if (!item->absolute_coordinates)
+			pos_from_absolute(&item->pos, &item->pos, item);
+		obs_data_get_vec2(item_data, "scale", &item->scale);
+	}
 
 	obs_data_release(item->private_settings);
 	item->private_settings =
@@ -1109,6 +1305,15 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 		(uint32_t)obs_data_get_int(item_data, "bounds_align");
 	item->crop_to_bounds = obs_data_get_bool(item_data, "bounds_crop");
 	obs_data_get_vec2(item_data, "bounds", &item->bounds);
+
+	if (!item->absolute_coordinates &&
+	    obs_data_has_user_value(item_data, "bounds_rel")) {
+		obs_data_get_vec2(item_data, "bounds_rel", &item->bounds);
+	} else {
+		obs_data_get_vec2(item_data, "bounds", &item->bounds);
+		if (!item->absolute_coordinates)
+			size_from_absolute(&item->bounds, &item->bounds, item);
+	}
 
 	item->crop.left = (uint32_t)obs_data_get_int(item_data, "crop_left");
 	item->crop.top = (uint32_t)obs_data_get_int(item_data, "crop_top");
@@ -1192,6 +1397,9 @@ static void scene_load(void *data, obs_data_t *settings)
 	if (obs_data_has_user_value(settings, "id_counter"))
 		scene->id_counter = obs_data_get_int(settings, "id_counter");
 
+	scene->absolute_coordinates = obs_data_get_bool(obs->data.private_data,
+							"AbsoluteCoordinates");
+
 	if (!items)
 		return;
 
@@ -1231,19 +1439,38 @@ static void scene_save_item(obs_data_array_t *array,
 	obs_data_set_bool(item_data, "visible", item->user_visible);
 	obs_data_set_bool(item_data, "locked", item->locked);
 	obs_data_set_double(item_data, "rot", rot);
-	obs_data_set_vec2(item_data, "pos", &pos);
-	obs_data_set_vec2(item_data, "scale", &scale);
+	obs_data_set_vec2(item_data, "scale_ref", &item->scale_ref);
 	obs_data_set_int(item_data, "align", (int)item->align);
 	obs_data_set_int(item_data, "bounds_type", (int)item->bounds_type);
 	obs_data_set_int(item_data, "bounds_align", (int)item->bounds_align);
 	obs_data_set_bool(item_data, "bounds_crop", item->crop_to_bounds);
-	obs_data_set_vec2(item_data, "bounds", &item->bounds);
 	obs_data_set_int(item_data, "crop_left", (int)item->crop.left);
 	obs_data_set_int(item_data, "crop_top", (int)item->crop.top);
 	obs_data_set_int(item_data, "crop_right", (int)item->crop.right);
 	obs_data_set_int(item_data, "crop_bottom", (int)item->crop.bottom);
 	obs_data_set_int(item_data, "id", item->id);
 	obs_data_set_bool(item_data, "group_item_backup", !!backup_group);
+
+	if (!item->absolute_coordinates) {
+		/* For backwards compatibility, also store absolute values. */
+		struct vec2 tmp_abs;
+
+		pos_to_absolute(&tmp_abs, &pos, item);
+		obs_data_set_vec2(item_data, "pos", &tmp_abs);
+		obs_data_set_vec2(item_data, "pos_rel", &pos);
+
+		item_canvas_scale(&tmp_abs, item);
+		obs_data_set_vec2(item_data, "scale", &tmp_abs);
+		obs_data_set_vec2(item_data, "scale_rel", &scale);
+
+		size_to_absolute(&tmp_abs, &item->bounds, item);
+		obs_data_set_vec2(item_data, "bounds", &tmp_abs);
+		obs_data_set_vec2(item_data, "bounds_rel", &item->bounds);
+	} else {
+		obs_data_set_vec2(item_data, "pos", &pos);
+		obs_data_set_vec2(item_data, "scale", &scale);
+		obs_data_set_vec2(item_data, "bounds", &item->bounds);
+	}
 
 	if (item->is_group) {
 		obs_scene_t *group_scene = item->source->context.data;
@@ -2326,8 +2553,11 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 	item->is_group = strcmp(source->info.id, group_info.id) == 0;
 	item->private_settings = obs_data_create();
 	item->toggle_visibility = OBS_INVALID_HOTKEY_PAIR_ID;
+	item->absolute_coordinates = scene->absolute_coordinates;
 	os_atomic_set_long(&item->active_refs, 1);
 	vec2_set(&item->scale, 1.0f, 1.0f);
+	vec2_set(&item->scale_ref, (float)scene_getwidth(scene),
+		 (float)scene_getheight(scene));
 	matrix4_identity(&item->draw_transform);
 	matrix4_identity(&item->box_transform);
 
@@ -2708,7 +2938,23 @@ bool obs_sceneitem_selected(const obs_sceneitem_t *item)
 void obs_sceneitem_set_pos(obs_sceneitem_t *item, const struct vec2 *pos)
 {
 	if (item) {
-		vec2_copy(&item->pos, pos);
+		if (!item->absolute_coordinates)
+			pos_from_absolute(&item->pos, pos, item);
+		else
+			vec2_copy(&item->pos, pos);
+
+		do_update_transform(item);
+	}
+}
+
+void obs_sceneitem_set_pos2(obs_sceneitem_t *item, const struct vec2 *pos)
+{
+	if (item) {
+		if (!item->absolute_coordinates)
+			vec2_copy(&item->pos, pos);
+		else
+			pos_to_absolute(&item->pos, pos, item);
+
 		do_update_transform(item);
 	}
 }
@@ -2724,7 +2970,11 @@ void obs_sceneitem_set_rot(obs_sceneitem_t *item, float rot)
 void obs_sceneitem_set_scale(obs_sceneitem_t *item, const struct vec2 *scale)
 {
 	if (item) {
-		vec2_copy(&item->scale, scale);
+		if (!item->absolute_coordinates)
+			item_relative_scale(&item->scale, scale, item);
+		else
+			vec2_copy(&item->scale, scale);
+
 		do_update_transform(item);
 	}
 }
@@ -2888,15 +3138,47 @@ void obs_sceneitem_set_bounds_crop(obs_sceneitem_t *item, bool crop)
 void obs_sceneitem_set_bounds(obs_sceneitem_t *item, const struct vec2 *bounds)
 {
 	if (item) {
-		item->bounds = *bounds;
+		if (!item->absolute_coordinates)
+			size_from_absolute(&item->bounds, bounds, item);
+		else
+			vec2_copy(&item->bounds, bounds);
+
+		do_update_transform(item);
+	}
+}
+
+void obs_sceneitem_set_bounds2(obs_sceneitem_t *item, const struct vec2 *bounds)
+{
+	if (item) {
+		if (!item->absolute_coordinates)
+			vec2_copy(&item->bounds, bounds);
+		else
+			size_to_absolute(&item->bounds, bounds, item);
+
 		do_update_transform(item);
 	}
 }
 
 void obs_sceneitem_get_pos(const obs_sceneitem_t *item, struct vec2 *pos)
 {
-	if (item)
+	if (!item)
+		return;
+
+	if (!item->absolute_coordinates)
+		pos_to_absolute(pos, &item->pos, item);
+	else
 		vec2_copy(pos, &item->pos);
+}
+
+void obs_sceneitem_get_pos2(const obs_sceneitem_t *item, struct vec2 *pos)
+{
+	if (!item)
+		return;
+
+	if (!item->absolute_coordinates)
+		vec2_copy(pos, &item->pos);
+	else
+		pos_from_absolute(pos, &item->pos, item);
 }
 
 float obs_sceneitem_get_rot(const obs_sceneitem_t *item)
@@ -2906,7 +3188,12 @@ float obs_sceneitem_get_rot(const obs_sceneitem_t *item)
 
 void obs_sceneitem_get_scale(const obs_sceneitem_t *item, struct vec2 *scale)
 {
-	if (item)
+	if (!item)
+		return;
+
+	if (!item->absolute_coordinates)
+		item_canvas_scale(scale, item);
+	else
 		vec2_copy(scale, &item->scale);
 }
 
@@ -2932,21 +3219,49 @@ bool obs_sceneitem_get_bounds_crop(const obs_sceneitem_t *item)
 
 void obs_sceneitem_get_bounds(const obs_sceneitem_t *item, struct vec2 *bounds)
 {
-	if (item)
-		*bounds = item->bounds;
+	if (!item)
+		return;
+
+	if (!item->absolute_coordinates)
+		size_to_absolute(bounds, &item->bounds, item);
+	else
+		vec2_copy(bounds, &item->bounds);
+}
+
+void obs_sceneitem_get_bounds2(const obs_sceneitem_t *item, struct vec2 *bounds)
+{
+	if (!item)
+		return;
+
+	if (!item->absolute_coordinates)
+		vec2_copy(bounds, &item->bounds);
+	else
+		size_from_absolute(bounds, &item->bounds, item);
+}
+
+static inline void scene_item_get_info_internal(const obs_sceneitem_t *item,
+						struct obs_transform_info *info)
+{
+	if (!item->absolute_coordinates) {
+		pos_to_absolute(&info->pos, &item->pos, item);
+		item_canvas_scale(&info->scale, item);
+		size_to_absolute(&info->bounds, &item->bounds, item);
+	} else {
+		info->pos = item->pos;
+		info->scale = item->scale;
+		info->bounds = item->bounds;
+	}
+	info->rot = item->rot;
+	info->alignment = item->align;
+	info->bounds_type = item->bounds_type;
+	info->bounds_alignment = item->bounds_align;
 }
 
 void obs_sceneitem_get_info(const obs_sceneitem_t *item,
 			    struct obs_transform_info *info)
 {
 	if (item && info) {
-		info->pos = item->pos;
-		info->rot = item->rot;
-		info->scale = item->scale;
-		info->alignment = item->align;
-		info->bounds_type = item->bounds_type;
-		info->bounds_alignment = item->bounds_align;
-		info->bounds = item->bounds;
+		scene_item_get_info_internal(item, info);
 	}
 }
 
@@ -2954,30 +3269,61 @@ void obs_sceneitem_get_info2(const obs_sceneitem_t *item,
 			     struct obs_transform_info *info)
 {
 	if (item && info) {
-		info->pos = item->pos;
+		scene_item_get_info_internal(item, info);
+		info->crop_to_bounds = item->crop_to_bounds;
+	}
+}
+
+void obs_sceneitem_get_info3(const obs_sceneitem_t *item,
+			     struct obs_transform_info *info)
+{
+	if (item && info) {
+		if (!item->absolute_coordinates) {
+			info->pos = item->pos;
+			item_canvas_scale(&info->scale, item);
+			info->bounds = item->bounds;
+		} else {
+			pos_from_absolute(&info->pos, &item->pos, item);
+			item_relative_scale(&info->scale, &item->scale, item);
+			size_from_absolute(&info->bounds, &item->bounds, item);
+		}
 		info->rot = item->rot;
-		info->scale = item->scale;
 		info->alignment = item->align;
 		info->bounds_type = item->bounds_type;
 		info->bounds_alignment = item->bounds_align;
-		info->bounds = item->bounds;
 		info->crop_to_bounds = item->crop_to_bounds;
 	}
+}
+
+static inline void
+scene_item_set_info_internal(obs_sceneitem_t *item,
+			     const struct obs_transform_info *info)
+{
+	if (!item->absolute_coordinates) {
+		pos_from_absolute(&item->pos, &info->pos, item);
+		size_from_absolute(&item->bounds, &info->bounds, item);
+		if (isfinite(info->scale.x) && isfinite(info->scale.y)) {
+			item_relative_scale(&item->scale, &info->scale, item);
+		}
+	} else {
+		item->pos = info->pos;
+		item->bounds = info->bounds;
+		if (isfinite(info->scale.x) && isfinite(info->scale.y)) {
+			item->scale = info->scale;
+		}
+	}
+
+	item->rot = info->rot;
+	item->align = info->alignment;
+	item->bounds_type = info->bounds_type;
+	item->bounds_align = info->bounds_alignment;
 }
 
 void obs_sceneitem_set_info(obs_sceneitem_t *item,
 			    const struct obs_transform_info *info)
 {
 	if (item && info) {
-		item->pos = info->pos;
-		item->rot = info->rot;
-		if (isfinite(info->scale.x) && isfinite(info->scale.y)) {
-			item->scale = info->scale;
-		}
-		item->align = info->alignment;
-		item->bounds_type = info->bounds_type;
-		item->bounds_align = info->bounds_alignment;
-		item->bounds = info->bounds;
+		scene_item_set_info_internal(item, info);
 		do_update_transform(item);
 	}
 }
@@ -2986,15 +3332,37 @@ void obs_sceneitem_set_info2(obs_sceneitem_t *item,
 			     const struct obs_transform_info *info)
 {
 	if (item && info) {
-		item->pos = info->pos;
-		item->rot = info->rot;
-		if (isfinite(info->scale.x) && isfinite(info->scale.y)) {
-			item->scale = info->scale;
+		scene_item_set_info_internal(item, info);
+		item->crop_to_bounds = info->crop_to_bounds;
+		do_update_transform(item);
+	}
+}
+
+void obs_sceneitem_set_info3(obs_sceneitem_t *item,
+			     const struct obs_transform_info *info)
+{
+	if (item && info) {
+		if (!item->absolute_coordinates) {
+			item->pos = info->pos;
+			item->bounds = info->bounds;
+			if (isfinite(info->scale.x) &&
+			    isfinite(info->scale.y)) {
+				item_relative_scale(&item->scale, &info->scale,
+						    item);
+			}
+		} else {
+			pos_to_absolute(&item->pos, &info->pos, item);
+			size_to_absolute(&item->bounds, &info->bounds, item);
+			if (isfinite(info->scale.x) &&
+			    isfinite(info->scale.y)) {
+				item_canvas_scale(&item->scale, item);
+			}
 		}
+
+		item->rot = info->rot;
 		item->align = info->alignment;
 		item->bounds_type = info->bounds_type;
 		item->bounds_align = info->bounds_alignment;
-		item->bounds = info->bounds;
 		item->crop_to_bounds = info->crop_to_bounds;
 		do_update_transform(item);
 	}
@@ -3468,10 +3836,18 @@ static bool resize_scene_base(obs_scene_t *scene, struct vec2 *minv,
 	}
 
 	item = scene->first_item;
-	while (item) {
-		vec2_sub(&item->pos, &item->pos, minv);
-		update_item_transform(item, false);
-		item = item->next;
+	if (item) {
+		struct vec2 minv_rel;
+		if (!item->absolute_coordinates)
+			size_from_absolute(&minv_rel, minv, item);
+		else
+			vec2_copy(&minv_rel, minv);
+
+		while (item) {
+			vec2_sub(&item->pos, &item->pos, &minv_rel);
+			update_item_transform(item, false);
+			item = item->next;
+		}
 	}
 
 	vec2_sub(scale, maxv, minv);
@@ -3489,7 +3865,7 @@ static void resize_scene(obs_scene_t *scene)
 }
 
 /* assumes group scene and parent scene is locked */
-static void resize_group(obs_sceneitem_t *group)
+static void resize_group(obs_sceneitem_t *group, bool scene_resize)
 {
 	obs_scene_t *scene = group->source->context.data;
 	struct vec2 minv;
@@ -3502,7 +3878,7 @@ static void resize_group(obs_sceneitem_t *group)
 	if (!resize_scene_base(scene, &minv, &maxv, &scale))
 		return;
 
-	if (group->bounds_type == OBS_BOUNDS_NONE) {
+	if (group->bounds_type == OBS_BOUNDS_NONE && !scene_resize) {
 		struct vec2 new_pos;
 
 		if ((group->align & OBS_ALIGN_LEFT) != 0)
@@ -3520,6 +3896,8 @@ static void resize_group(obs_sceneitem_t *group)
 			new_pos.y = (maxv.y - minv.y) * 0.5f + minv.y;
 
 		transform_val(&new_pos, &group->draw_transform);
+		if (!group->absolute_coordinates)
+			pos_from_absolute(&new_pos, &new_pos, group);
 		vec2_copy(&group->pos, &new_pos);
 	}
 
@@ -3587,7 +3965,7 @@ obs_sceneitem_t *obs_scene_insert_group(obs_scene_t *scene, const char *name,
 		apply_group_transform(items[idx], item);
 	}
 	items[0]->prev = NULL;
-	resize_group(item);
+	resize_group(item, false);
 	full_unlock(sub_scene);
 	full_unlock(scene);
 
@@ -3734,7 +4112,7 @@ void obs_sceneitem_group_add_item(obs_sceneitem_t *group, obs_sceneitem_t *item)
 
 	apply_group_transform(item, group);
 
-	resize_group(group);
+	resize_group(group, false);
 
 	full_unlock(groupscene);
 	full_unlock(scene);
@@ -3763,7 +4141,7 @@ void obs_sceneitem_group_remove_item(obs_sceneitem_t *group,
 	detach_sceneitem(item);
 	attach_sceneitem(scene, item, NULL);
 
-	resize_group(group);
+	resize_group(group, false);
 
 	full_unlock(groupscene);
 	full_unlock(scene);
@@ -3946,7 +4324,7 @@ bool obs_scene_reorder_items2(obs_scene_t *scene,
 				sub_prev = sub_item;
 			}
 
-			resize_group(info->item);
+			resize_group(info->item, false);
 			full_unlock(sub_scene);
 			obs_scene_release(sub_scene);
 		}
@@ -4238,7 +4616,7 @@ void obs_scene_prune_sources(obs_scene_t *scene)
 	da_init(remove_items);
 
 	video_lock(scene);
-	update_transforms_and_prune_sources(scene, &remove_items, NULL);
+	update_transforms_and_prune_sources(scene, &remove_items, NULL, false);
 	video_unlock(scene);
 
 	for (size_t i = 0; i < remove_items.num; i++)

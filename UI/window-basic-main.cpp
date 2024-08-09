@@ -930,7 +930,16 @@ void OBSBasic::Save(const char *file)
 		obs_data_set_obj(saveData, "resolution", res);
 	}
 
-	if (!obs_data_save_json_safe(saveData, file, "tmp", "bak"))
+	obs_data_set_int(saveData, "version", usingAbsoluteCoordinates ? 1 : 2);
+
+	if (migrationBaseResolution && !usingAbsoluteCoordinates) {
+		OBSDataAutoRelease res = obs_data_create();
+		obs_data_set_int(res, "x", migrationBaseResolution->first);
+		obs_data_set_int(res, "y", migrationBaseResolution->second);
+		obs_data_set_obj(saveData, "migration_resolution", res);
+	}
+
+	if (!obs_data_save_json_pretty_safe(saveData, file, "tmp", "bak"))
 		blog(LOG_ERROR, "Could not save scene data to %s", file);
 }
 
@@ -1007,6 +1016,20 @@ void OBSBasic::CreateFirstRunSources()
 				 Str("Basic.AuxDevice1"), 3);
 }
 
+void OBSBasic::DisableRelativeCoordinates(bool enable)
+{
+	/* Allow disabling relative positioning to allow loading collections
+	 * that cannot yet be migrated. */
+	OBSDataAutoRelease priv = obs_get_private_data();
+	obs_data_set_bool(priv, "AbsoluteCoordinates", enable);
+	usingAbsoluteCoordinates = enable;
+
+	ui->actionRemigrateSceneCollection->setText(
+		enable ? QTStr("Basic.MainMenu.SceneCollection.Migrate")
+		       : QTStr("Basic.MainMenu.SceneCollection.Remigrate"));
+	ui->actionRemigrateSceneCollection->setEnabled(enable);
+}
+
 void OBSBasic::CreateDefaultScene(bool firstStart)
 {
 	disableSaving++;
@@ -1017,6 +1040,7 @@ void OBSBasic::CreateDefaultScene(bool firstStart)
 	ui->transitionDuration->setValue(300);
 	SetTransition(fadeTransition);
 
+	DisableRelativeCoordinates(false);
 	OBSSceneAutoRelease scene = obs_scene_create(Str("Basic.Scene"));
 
 	if (firstStart)
@@ -1157,10 +1181,11 @@ void OBSBasic::LogScenes()
 	blog(LOG_INFO, "------------------------------------------------");
 }
 
-void OBSBasic::Load(const char *file)
+void OBSBasic::Load(const char *file, bool remigrate)
 {
 	disableSaving++;
 	lastOutputResolution.reset();
+	migrationBaseResolution.reset();
 
 	obs_data_t *data = obs_data_create_from_json_file_safe(file, "bak");
 	if (!data) {
@@ -1198,7 +1223,7 @@ void OBSBasic::Load(const char *file)
 		return;
 	}
 
-	LoadData(data, file);
+	LoadData(data, file, remigrate);
 }
 
 static inline void AddMissingFiles(void *data, obs_source_t *source)
@@ -1210,7 +1235,7 @@ static inline void AddMissingFiles(void *data, obs_source_t *source)
 	obs_missing_files_destroy(sf);
 }
 
-void OBSBasic::LoadData(obs_data_t *data, const char *file)
+void OBSBasic::LoadData(obs_data_t *data, const char *file, bool remigrate)
 {
 	ClearSceneData();
 	ClearContextBar();
@@ -1291,9 +1316,84 @@ void OBSBasic::LoadData(obs_data_t *data, const char *file)
 		obs_data_array_push_back_array(sources, groups);
 	}
 
+	/* Reset relative coordinate data if forcefully remigrating */
+	if (remigrate) {
+		obs_data_set_int(data, "version", 1);
+		obs_data_array_enum(
+			sources,
+			[](obs_data_t *data, void *) -> void {
+				const char *id =
+					obs_data_get_string(data, "id");
+				if (strcmp(id, "scene") != 0 &&
+				    strcmp(id, "group") != 0)
+					return;
+
+				OBSDataAutoRelease settings =
+					obs_data_get_obj(data, "settings");
+				OBSDataArrayAutoRelease items =
+					obs_data_get_array(settings, "items");
+
+				obs_data_array_enum(
+					items,
+					[](obs_data_t *data, void *) {
+						obs_data_unset_user_value(
+							data, "pos_rel");
+						obs_data_unset_user_value(
+							data, "scale_rel");
+						obs_data_unset_user_value(
+							data, "scale_ref");
+						obs_data_unset_user_value(
+							data, "bounds_rel");
+					},
+					nullptr);
+			},
+			nullptr);
+	}
+
+	bool resetVideo = false;
+	bool disableRelativeCoords = false;
+	obs_video_info ovi;
+
+	int64_t version = obs_data_get_int(data, "version");
+	OBSDataAutoRelease res = obs_data_get_obj(data, "resolution");
+	if (res) {
+		lastOutputResolution = {obs_data_get_int(res, "x"),
+					obs_data_get_int(res, "y")};
+	}
+
+	/* Only migrate legacy collection if resolution is saved. */
+	if (version < 2 && res) {
+		obs_get_video_info(&ovi);
+
+		uint32_t width = obs_data_get_int(res, "x");
+		uint32_t height = obs_data_get_int(res, "y");
+
+		migrationBaseResolution = {width, height};
+
+		if (ovi.base_height != height || ovi.base_width != width) {
+			ovi.base_width = width;
+			ovi.base_height = height;
+
+			/* Attempt to reset to last known canvas resolution for migration. */
+			resetVideo = obs_reset_video(&ovi) == OBS_VIDEO_SUCCESS;
+			disableRelativeCoords = !resetVideo;
+		}
+	} else if (version < 2) {
+		disableRelativeCoords = true;
+	} else if (OBSDataAutoRelease migration_res =
+			   obs_data_get_obj(data, "migration_resolution")) {
+		migrationBaseResolution = {obs_data_get_int(migration_res, "x"),
+					   obs_data_get_int(migration_res,
+							    "y")};
+	}
+
+	DisableRelativeCoordinates(disableRelativeCoords);
+
 	obs_missing_files_t *files = obs_missing_files_create();
 	obs_load_sources(sources, AddMissingFiles, files);
 
+	if (resetVideo)
+		ResetVideo();
 	if (transitions)
 		LoadTransitions(transitions, AddMissingFiles, files);
 	if (sceneOrder)
@@ -4928,6 +5028,13 @@ int OBSBasic::ResetVideo()
 		obs_set_video_levels(sdr_white_level, hdr_nominal_peak_level);
 		OBSBasicStats::InitializeValues();
 		OBSProjector::UpdateMultiviewProjectors();
+
+		bool canMigrate =
+			usingAbsoluteCoordinates ||
+			(migrationBaseResolution &&
+			 (migrationBaseResolution->first != ovi.base_width ||
+			  migrationBaseResolution->second != ovi.base_height));
+		ui->actionRemigrateSceneCollection->setEnabled(canMigrate);
 	}
 
 	return ret;
