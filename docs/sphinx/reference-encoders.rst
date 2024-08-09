@@ -403,6 +403,12 @@ General Encoder Functions
 
 ---------------------
 
+.. function:: const char *obs_encoder_get_uuid(const obs_encoder_t *encoder)
+
+   :return: The UUID of the encoder
+
+---------------------
+
 .. function:: const char *obs_encoder_get_codec(const obs_encoder_t *encoder)
               const char *obs_get_encoder_codec(const char *id)
 

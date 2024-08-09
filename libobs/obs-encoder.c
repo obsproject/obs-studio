@@ -458,6 +458,13 @@ void obs_encoder_set_name(obs_encoder_t *encoder, const char *name)
 		obs_context_data_setname(&encoder->context, name);
 }
 
+const char *obs_encoder_get_uuid(const obs_encoder_t *encoder)
+{
+	return obs_encoder_valid(encoder, "obs_encoder_get_uuid")
+		       ? encoder->context.uuid
+		       : NULL;
+}
+
 static inline obs_data_t *get_defaults(const struct obs_encoder_info *info)
 {
 	obs_data_t *settings = obs_data_create();

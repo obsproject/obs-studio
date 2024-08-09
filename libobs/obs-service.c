@@ -123,6 +123,13 @@ const char *obs_service_get_name(const obs_service_t *service)
 		       : NULL;
 }
 
+const char *obs_service_get_uuid(const obs_service_t *service)
+{
+	return obs_service_valid(service, "obs_service_get_uuid")
+		       ? service->context.uuid
+		       : NULL;
+}
+
 static inline obs_data_t *get_defaults(const struct obs_service_info *info)
 {
 	obs_data_t *settings = obs_data_create();

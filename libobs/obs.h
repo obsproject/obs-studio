@@ -724,11 +724,20 @@ EXPORT obs_source_t *obs_get_transition_by_uuid(const char *uuid);
 /** Gets an output by its name. */
 EXPORT obs_output_t *obs_get_output_by_name(const char *name);
 
+/** Gets an output by its UUID. */
+EXPORT obs_output_t *obs_get_output_by_uuid(const char *uuid);
+
 /** Gets an encoder by its name. */
 EXPORT obs_encoder_t *obs_get_encoder_by_name(const char *name);
 
+/** Gets an output by its UUID. */
+EXPORT obs_encoder_t *obs_get_encoder_by_uuid(const char *uuid);
+
 /** Gets an service by its name. */
 EXPORT obs_service_t *obs_get_service_by_name(const char *name);
+
+/** Gets a service by its UUID. */
+EXPORT obs_service_t *obs_get_service_by_uuid(const char *uuid);
 
 enum obs_base_effect {
 	OBS_EFFECT_DEFAULT,         /**< RGB/YUV */
@@ -2066,6 +2075,7 @@ EXPORT bool obs_weak_output_references_output(obs_weak_output_t *weak,
 					      obs_output_t *output);
 
 EXPORT const char *obs_output_get_name(const obs_output_t *output);
+EXPORT const char *obs_output_get_uuid(const obs_output_t *output);
 
 /** Starts the output. */
 EXPORT bool obs_output_start(obs_output_t *output);
@@ -2424,6 +2434,7 @@ EXPORT bool obs_weak_encoder_references_encoder(obs_weak_encoder_t *weak,
 
 EXPORT void obs_encoder_set_name(obs_encoder_t *encoder, const char *name);
 EXPORT const char *obs_encoder_get_name(const obs_encoder_t *encoder);
+EXPORT const char *obs_encoder_get_uuid(const obs_encoder_t *encoder);
 
 /** Returns the codec of an encoder by the id */
 EXPORT const char *obs_get_encoder_codec(const char *id);
@@ -2651,6 +2662,7 @@ EXPORT bool obs_weak_service_references_service(obs_weak_service_t *weak,
 						obs_service_t *service);
 
 EXPORT const char *obs_service_get_name(const obs_service_t *service);
+EXPORT const char *obs_service_get_uuid(const obs_service_t *service);
 
 /** Gets the default settings for a service */
 EXPORT obs_data_t *obs_service_defaults(const char *id);

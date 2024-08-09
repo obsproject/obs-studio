@@ -330,6 +330,13 @@ const char *obs_output_get_name(const obs_output_t *output)
 		       : NULL;
 }
 
+const char *obs_output_get_uuid(const obs_output_t *output)
+{
+	return obs_output_valid(output, "obs_output_get_uuid")
+		       ? output->context.uuid
+		       : NULL;
+}
+
 bool obs_output_actual_start(obs_output_t *output)
 {
 	bool success = false;
