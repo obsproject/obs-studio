@@ -31,7 +31,9 @@ add_library(OBS::avcapture ALIAS mac-avcapture)
 
 target_sources(
   mac-avcapture
-  PRIVATE plugin-main.m
+  PRIVATE AVCaptureDeviceFormat+OBSListable.m
+          AVCaptureDeviceFormat+OBSListable.h
+          plugin-main.m
           plugin-main.h
           plugin-properties.m
           plugin-properties.h
