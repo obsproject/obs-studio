@@ -1,26 +1,31 @@
 #include "nvenc-internal.h"
 
 #include <stdio.h>
+#include <inttypes.h>
 
 /* NVIDIA uses bitfields for a variety of options. As it is not possible to
  * use offsetof() or similar with those we resort to macros here to avoid too
  * much boilerplate. */
 
-#define APPLY_BIT_OPT(opt_name, bits)                                     \
-	if (strcmp(opt->name, #opt_name) == 0) {                          \
-		uint32_t old_val = nv_conf->opt_name;                     \
-		nv_conf->opt_name = strtol(opt->value, NULL, 10);         \
-		blog(LOG_DEBUG, "[obs-nvenc] Changing: \"%s\": %u -> %u", \
-		     #opt_name, old_val, nv_conf->opt_name);              \
-		return true;                                              \
+#define APPLY_BIT_OPT(opt_name, bits)                                                \
+	if (strcmp(opt->name, #opt_name) == 0) {                                     \
+		uint32_t old_val = nv_conf->opt_name;                                \
+		nv_conf->opt_name = strtol(opt->value, NULL, 10);                    \
+		blog(LOG_DEBUG,                                                      \
+		     "[obs-nvenc] Changing parameter: \"%s\": %u -> %u (%d bit(s))", \
+		     #opt_name, old_val, nv_conf->opt_name, bits);                   \
+		return true;                                                         \
 	}
 
-#define APPLY_INT_OPT(opt_name, type)                                         \
-	if (strcmp(opt->name, #opt_name) == 0) {                              \
-		blog(LOG_DEBUG, "[obs-nvenc] Changing \"%s\": %d -> %s (%s)", \
-		     #opt_name, nv_conf->opt_name, opt->value, #type);        \
-		nv_conf->opt_name = (type)strtol(opt->value, NULL, 10);       \
-		return true;                                                  \
+#define APPLY_INT_OPT(opt_name, type, format)                           \
+	if (strcmp(opt->name, #opt_name) == 0) {                        \
+		type old_val = nv_conf->opt_name;                       \
+		nv_conf->opt_name = (type)strtol(opt->value, NULL, 10); \
+		blog(LOG_DEBUG,                                         \
+		     "[obs-nvenc] Changing parameter: \"%s\": %" format \
+		     " -> %" format " (%s)",                            \
+		     #opt_name, old_val, nv_conf->opt_name, #type);     \
+		return true;                                            \
 	}
 
 static void parse_qp_opt(const char *name, const char *val, NV_ENC_QP *qp_opt)
@@ -58,16 +63,16 @@ static bool apply_rc_opt(const struct obs_option *opt,
 	APPLY_QP_OPT(maxQP)
 	APPLY_QP_OPT(initialRCQP)
 
-	APPLY_INT_OPT(averageBitRate, uint32_t)
-	APPLY_INT_OPT(maxBitRate, uint32_t)
-	APPLY_INT_OPT(vbvBufferSize, uint32_t)
-	APPLY_INT_OPT(vbvInitialDelay, uint32_t)
+	APPLY_INT_OPT(averageBitRate, uint32_t, PRIu32)
+	APPLY_INT_OPT(maxBitRate, uint32_t, PRIu32)
+	APPLY_INT_OPT(vbvBufferSize, uint32_t, PRIu32)
+	APPLY_INT_OPT(vbvInitialDelay, uint32_t, PRIu32)
 
-	APPLY_INT_OPT(targetQuality, uint8_t)
-	APPLY_INT_OPT(targetQualityLSB, uint8_t)
+	APPLY_INT_OPT(targetQuality, uint8_t, PRIu8)
+	APPLY_INT_OPT(targetQualityLSB, uint8_t, PRIu8)
 
-	APPLY_INT_OPT(cbQPIndexOffset, int8_t)
-	APPLY_INT_OPT(crQPIndexOffset, int8_t)
+	APPLY_INT_OPT(cbQPIndexOffset, int8_t, PRIi8)
+	APPLY_INT_OPT(crQPIndexOffset, int8_t, PRIi8)
 
 	APPLY_BIT_OPT(enableMinQP, 1)
 	APPLY_BIT_OPT(enableMaxQP, 1)
@@ -90,8 +95,8 @@ static bool apply_rc_opt(const struct obs_option *opt,
 
 static bool apply_conf_opt(const struct obs_option *opt, NV_ENC_CONFIG *nv_conf)
 {
-	APPLY_INT_OPT(gopLength, uint32_t)
-	APPLY_INT_OPT(frameIntervalP, int32_t)
+	APPLY_INT_OPT(gopLength, uint32_t, PRIu32)
+	APPLY_INT_OPT(frameIntervalP, int32_t, PRIi32)
 
 	return false;
 }
@@ -129,8 +134,8 @@ static bool apply_h264_opt(struct obs_option *opt, NV_ENC_CONFIG_H264 *nv_conf)
 		return true;
 	}
 
-	APPLY_INT_OPT(idrPeriod, uint32_t)
-	APPLY_INT_OPT(useBFramesAsRef, NV_ENC_BFRAME_REF_MODE)
+	APPLY_INT_OPT(idrPeriod, uint32_t, PRIu32)
+	APPLY_INT_OPT(useBFramesAsRef, NV_ENC_BFRAME_REF_MODE, PRIu32)
 
 	APPLY_BIT_OPT(enableFillerDataInsertion, 1)
 
@@ -144,9 +149,9 @@ static bool apply_hevc_opt(struct obs_option *opt, NV_ENC_CONFIG_HEVC *nv_conf)
 		return true;
 	}
 
-	APPLY_INT_OPT(tier, uint32_t)
-	APPLY_INT_OPT(idrPeriod, uint32_t)
-	APPLY_INT_OPT(useBFramesAsRef, NV_ENC_BFRAME_REF_MODE)
+	APPLY_INT_OPT(tier, uint32_t, PRIu32)
+	APPLY_INT_OPT(idrPeriod, uint32_t, PRIu32)
+	APPLY_INT_OPT(useBFramesAsRef, NV_ENC_BFRAME_REF_MODE, PRIu32)
 #ifdef NVENC_12_2_OR_LATER
 	APPLY_INT_OPT(tfLevel, NV_ENC_TEMPORAL_FILTER_LEVEL)
 #endif
@@ -158,12 +163,12 @@ static bool apply_hevc_opt(struct obs_option *opt, NV_ENC_CONFIG_HEVC *nv_conf)
 
 static bool apply_av1_opt(struct obs_option *opt, NV_ENC_CONFIG_AV1 *nv_conf)
 {
-	APPLY_INT_OPT(level, uint32_t)
-	APPLY_INT_OPT(tier, uint32_t)
-	APPLY_INT_OPT(numTileColumns, uint32_t)
-	APPLY_INT_OPT(numTileRows, uint32_t)
-	APPLY_INT_OPT(idrPeriod, uint32_t)
-	APPLY_INT_OPT(useBFramesAsRef, NV_ENC_BFRAME_REF_MODE)
+	APPLY_INT_OPT(level, uint32_t, PRIu32)
+	APPLY_INT_OPT(tier, uint32_t, PRIu32)
+	APPLY_INT_OPT(numTileColumns, uint32_t, PRIu32)
+	APPLY_INT_OPT(numTileRows, uint32_t, PRIu32)
+	APPLY_INT_OPT(idrPeriod, uint32_t, PRIu32)
+	APPLY_INT_OPT(useBFramesAsRef, NV_ENC_BFRAME_REF_MODE, PRIu32)
 
 	APPLY_BIT_OPT(enableBitstreamPadding, 1)
 
