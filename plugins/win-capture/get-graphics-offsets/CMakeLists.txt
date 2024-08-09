@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.24...3.25)
 
-legacy_check()
-
 if(NOT TARGET OBS::d3d8-api)
   add_subdirectory("${CMAKE_SOURCE_DIR}/shared/obs-d3d8-api" obs-d3d8-api)
 endif()
