@@ -669,12 +669,51 @@ static inline void copy_data(AVFrame *pic, const struct encoder_frame *frame,
 	}
 }
 
+static void roi_cb(void *param, struct obs_encoder_roi *roi)
+{
+	struct darray *da = param;
+	darray_push_back(sizeof(struct obs_encoder_roi), da, roi);
+}
+
+static void add_roi(struct vaapi_encoder *enc, AVFrame *frame)
+{
+	DARRAY(struct obs_encoder_roi) rois;
+	da_init(rois);
+	obs_encoder_enum_roi(enc->encoder, roi_cb, &rois);
+
+	AVRegionOfInterest *roi;
+	AVBufferRef *roi_ref = av_buffer_alloc(sizeof(*roi) * rois.num);
+	if (!roi_ref)
+		goto out;
+
+	roi = (AVRegionOfInterest *)roi_ref->data;
+	for (size_t i = 0; i < rois.num; ++i) {
+		roi[i] = (AVRegionOfInterest){
+			.self_size = sizeof(*roi),
+			.top = rois.array[i].top,
+			.bottom = rois.array[i].bottom,
+			.left = rois.array[i].left,
+			.right = rois.array[i].right,
+			.qoffset = av_d2q(-1.0 * rois.array[i].priority, 1000),
+		};
+	}
+	if (!av_frame_new_side_data_from_buf(
+		    frame, AV_FRAME_DATA_REGIONS_OF_INTEREST, roi_ref))
+		av_buffer_unref(&roi_ref);
+
+out:
+	da_free(rois);
+}
+
 static bool vaapi_encode_internal(struct vaapi_encoder *enc, AVFrame *frame,
 				  struct encoder_packet *packet,
 				  bool *received_packet)
 {
 	int got_packet;
 	int ret;
+
+	if (obs_encoder_has_roi(enc->encoder))
+		add_roi(enc, frame);
 
 	ret = avcodec_send_frame(enc->context, frame);
 	if (ret == 0 || ret == AVERROR(EAGAIN))
@@ -1311,7 +1350,7 @@ struct obs_encoder_info h264_vaapi_encoder_info = {
 	.get_extra_data = vaapi_extra_data,
 	.get_sei_data = vaapi_sei_data,
 	.get_video_info = vaapi_video_info,
-	.caps = OBS_ENCODER_CAP_INTERNAL,
+	.caps = OBS_ENCODER_CAP_INTERNAL | OBS_ENCODER_CAP_ROI,
 };
 
 struct obs_encoder_info h264_vaapi_encoder_tex_info = {
@@ -1327,7 +1366,7 @@ struct obs_encoder_info h264_vaapi_encoder_tex_info = {
 	.get_extra_data = vaapi_extra_data,
 	.get_sei_data = vaapi_sei_data,
 	.get_video_info = vaapi_video_info,
-	.caps = OBS_ENCODER_CAP_PASS_TEXTURE,
+	.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_ROI,
 };
 
 struct obs_encoder_info av1_vaapi_encoder_info = {
@@ -1343,7 +1382,7 @@ struct obs_encoder_info av1_vaapi_encoder_info = {
 	.get_extra_data = vaapi_extra_data,
 	.get_sei_data = vaapi_sei_data,
 	.get_video_info = vaapi_video_info,
-	.caps = OBS_ENCODER_CAP_INTERNAL,
+	.caps = OBS_ENCODER_CAP_INTERNAL | OBS_ENCODER_CAP_ROI,
 };
 
 struct obs_encoder_info av1_vaapi_encoder_tex_info = {
@@ -1359,7 +1398,7 @@ struct obs_encoder_info av1_vaapi_encoder_tex_info = {
 	.get_extra_data = vaapi_extra_data,
 	.get_sei_data = vaapi_sei_data,
 	.get_video_info = vaapi_video_info,
-	.caps = OBS_ENCODER_CAP_PASS_TEXTURE,
+	.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_ROI,
 };
 
 #ifdef ENABLE_HEVC
@@ -1376,7 +1415,7 @@ struct obs_encoder_info hevc_vaapi_encoder_info = {
 	.get_extra_data = vaapi_extra_data,
 	.get_sei_data = vaapi_sei_data,
 	.get_video_info = vaapi_video_info,
-	.caps = OBS_ENCODER_CAP_INTERNAL,
+	.caps = OBS_ENCODER_CAP_INTERNAL | OBS_ENCODER_CAP_ROI,
 };
 
 struct obs_encoder_info hevc_vaapi_encoder_tex_info = {
@@ -1392,6 +1431,6 @@ struct obs_encoder_info hevc_vaapi_encoder_tex_info = {
 	.get_extra_data = vaapi_extra_data,
 	.get_sei_data = vaapi_sei_data,
 	.get_video_info = vaapi_video_info,
-	.caps = OBS_ENCODER_CAP_PASS_TEXTURE,
+	.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_ROI,
 };
 #endif
