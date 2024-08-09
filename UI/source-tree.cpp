@@ -1216,6 +1216,46 @@ void SourceTree::dropEvent(QDropEvent *event)
 	}
 
 	/* --------------------------------------- */
+	/* remember to hide items if dropping on   */
+	/* an invisible group                      */
+
+	bool dropOnInvisible = false;
+	if (dropGroup) {
+		obs_source_t *group = obs_sceneitem_get_source(dropGroup);
+		dropOnInvisible = !obs_source_showing(group);
+	}
+
+	/* --------------------------------------- */
+	/* hide item sources if dropped into an    */
+	/* invisible group and show item sources   */
+	/* if the source is user visible and if it */
+	/* was dragged from an invisible group     */
+	/* into a new visible parent               */
+
+	if (dropOnInvisible) {
+		for (int i = 0; i < indices.size(); i++) {
+			obs_sceneitem_t *item = items[indices[i].row()];
+
+			if (!obs_sceneitem_is_group(item)) {
+				obs_source_t *source =
+					obs_sceneitem_get_source(item);
+
+				if (obs_source_showing(source))
+					obs_source_dec_active(source);
+			}
+		}
+	} else {
+		for (int i = 0; i < indices.size(); i++) {
+			obs_sceneitem_t *item = items[indices[i].row()];
+			obs_source_t *source = obs_sceneitem_get_source(item);
+
+			if (!obs_source_showing(source) &&
+			    obs_sceneitem_visible(item))
+				obs_source_inc_active(source);
+		}
+	}
+
+	/* --------------------------------------- */
 	/* determine if any base group is selected */
 
 	bool hasGroups = false;
