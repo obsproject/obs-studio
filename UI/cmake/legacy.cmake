@@ -181,6 +181,31 @@ target_sources(
 
 target_sources(
   obs
+  PRIVATE idian/obs-actionrow.hpp
+          idian/obs-checkbox.hpp
+          idian/obs-combobox.hpp
+          idian/obs-controls.hpp
+          idian/obs-groupbox.hpp
+          idian/obs-propertieslist.hpp
+          idian/obs-toggleswitch.hpp
+          idian/obs-widgets.hpp
+          idian/obs-widgets-base.hpp
+          idian/obs-actionrow.cpp
+          idian/obs-checkbox.cpp
+          idian/obs-combobox.cpp
+          idian/obs-controls.cpp
+          idian/obs-groupbox.cpp
+          idian/obs-propertieslist.cpp
+          idian/obs-toggleswitch.cpp)
+
+option(ENABLE_WIDGET_PLAYGROUND "Enable building custom widget demo window" OFF)
+if(ENABLE_WIDGET_PLAYGROUND)
+  target_compile_definitions(obs PRIVATE ENABLE_WIDGET_PLAYGROUND)
+  target_sources(obs PRIVATE forms/IdianPlayground.ui idian/widget-playground.hpp idian/widget-playground.cpp)
+endif()
+
+target_sources(
+  obs
   PRIVATE absolute-slider.cpp
           absolute-slider.hpp
           adv-audio-control.cpp

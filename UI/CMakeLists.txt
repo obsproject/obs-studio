@@ -49,6 +49,7 @@ include(cmake/feature-twitch.cmake)
 include(cmake/feature-restream.cmake)
 include(cmake/feature-youtube.cmake)
 include(cmake/feature-whatsnew.cmake)
+include(cmake/feature-widget-playground.cmake)
 
 add_subdirectory(frontend-plugins)
 
