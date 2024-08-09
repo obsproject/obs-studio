@@ -480,6 +480,12 @@ Functions
    Adds a dock with the widget to the UI with a toggle in the Docks
    menu.
 
+   When the dock is closed, a custom QEvent of type `QEvent::User + QEvent::Close`
+   is sent to the widget to enable it to react to the event (e.g., unload elements
+   to save resources).
+   A generic QShowEvent is already sent by default when the widget is being
+   shown (e.g., dock opened).
+
    Note: Use :c:func:`obs_frontend_remove_dock` to remove the dock
          and the id from the UI.
 
@@ -489,6 +495,8 @@ Functions
    :return: *true* if the dock was added, *false* if the id was already
             used
 
+   .. versionadded:: 30.0
+
 ---------------------------------------
 
 .. function:: void obs_frontend_remove_dock(const char *id)
@@ -496,6 +504,8 @@ Functions
    Removes the dock with this id from the UI.
 
    :param id: Unique identifier of the dock to remove.
+
+   .. versionadded:: 30.0
 
 ---------------------------------------
 
@@ -510,6 +520,8 @@ Functions
    :param dock: QDockWidget to add
    :return: *true* if the dock was added, *false* if the id was already
             used
+
+   .. versionadded:: 30.0
 
 ---------------------------------------
 
@@ -644,6 +656,17 @@ Functions
             does not mean that splitting has finished or guarantee that it
             split successfully), *false* if recording is inactive or paused
             or if file splitting is disabled.
+
+---------------------------------------
+
+.. function:: bool obs_frontend_recording_add_chapter(const char *name)
+
+   Asks OBS to insert a chapter marker at the current output time into the recording.
+
+   :param name: The name for the chapter, may be *NULL* to use an automatically generated name ("Unnamed <Chapter number>" or localized equivalent).
+   :return: *true* if insertion was successful, *false* if recording is inactive, paused, or if chapter insertion is not supported by the current output.
+
+   .. versionadded:: 30.2
 
 ---------------------------------------
 

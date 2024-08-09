@@ -306,28 +306,16 @@ static const char *image_filter =
 
 static obs_properties_t *image_source_properties(void *data)
 {
-	struct image_source *s = data;
-	struct dstr path = {0};
+	UNUSED_PARAMETER(data);
 
 	obs_properties_t *props = obs_properties_create();
 
-	if (s && s->file && *s->file) {
-		const char *slash;
-
-		dstr_copy(&path, s->file);
-		dstr_replace(&path, "\\", "/");
-		slash = strrchr(path.array, '/');
-		if (slash)
-			dstr_resize(&path, slash - path.array + 1);
-	}
-
 	obs_properties_add_path(props, "file", obs_module_text("File"),
-				OBS_PATH_FILE, image_filter, path.array);
+				OBS_PATH_FILE, image_filter, NULL);
 	obs_properties_add_bool(props, "unload",
 				obs_module_text("UnloadWhenNotShowing"));
 	obs_properties_add_bool(props, "linear_alpha",
 				obs_module_text("LinearAlpha"));
-	dstr_free(&path);
 
 	return props;
 }

@@ -88,3 +88,4 @@ typedef [v1_enum] enum	_BMDDeckLinkStatusID_v11_5_1 {
 
     HRESULT GetHardwareReferenceClock ([in] BMDTimeScale desiredTimeScale, [out] BMDTimeValue* hardwareTime, [out] BMDTimeValue* timeInFrame, [out] BMDTimeValue* ticksPerFrame);
 };
+

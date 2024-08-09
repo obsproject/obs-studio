@@ -78,6 +78,30 @@ General Functions
 
 ---------------------
 
+.. function:: const char *obs_data_get_json_with_defaults(obs_data_t *data)
+
+   Same as :c:func:`obs_data_get_json()` but default values are also serialized.
+
+   :return: Json string for this object
+
+---------------------
+
+.. function:: const char *obs_data_get_json_pretty(obs_data_t *data)
+
+   Same as :c:func:`obs_data_get_json()` but the JSON data is pretty-printed.
+
+   :return: Json string for this object
+
+---------------------
+
+.. function:: const char *obs_data_get_json_pretty_with_defaults(obs_data_t *data)
+
+   Same as :c:func:`obs_data_get_json_pretty()` but default values are also serialized.
+
+   :return: Json string for this object
+
+---------------------
+
 .. function:: const char *obs_data_get_last_json(obs_data_t *data)
 
    Returns the last json string generated for this data object. Does not
@@ -279,6 +303,8 @@ inappropriate or invalid.
 
    :return: An incremented reference to a data array object. Release
              with :c:func:`obs_data_array_release()`.
+
+   .. versionadded:: 30.1
 
 ---------------------
 

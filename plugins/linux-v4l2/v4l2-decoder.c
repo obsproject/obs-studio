@@ -78,7 +78,9 @@ void v4l2_destroy_decoder(struct v4l2_decoder *decoder)
 	}
 
 	if (decoder->context) {
+#if LIBAVCODEC_VERSION_MAJOR < 61
 		avcodec_close(decoder->context);
+#endif
 		avcodec_free_context(&decoder->context);
 	}
 }

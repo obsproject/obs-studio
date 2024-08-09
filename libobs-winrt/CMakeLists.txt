@@ -22,6 +22,7 @@ target_precompile_headers(
   <obs-module.h>
   <util/windows/ComPtr.hpp>
   <Windows.Graphics.Capture.Interop.h>
+  <windows.graphics.directx.direct3d11.interop.h>
   <winrt/Windows.Foundation.Metadata.h>
   <winrt/Windows.Graphics.Capture.h>
   <winrt/Windows.System.h>)

@@ -274,12 +274,15 @@ function(target_export target)
   set(exclude_variant EXCLUDE_FROM_ALL)
   _target_export(${target})
 
-  install(
-    FILES "$<TARGET_PDB_FILE:${target}>"
-    CONFIGURATIONS RelWithDebInfo Debug Release
-    DESTINATION "${OBS_EXECUTABLE_DESTINATION}"
-    COMPONENT Development
-    OPTIONAL)
+  get_target_property(target_type ${target} TYPE)
+  if(NOT target_type STREQUAL INTERFACE_LIBRARY)
+    install(
+      FILES "$<TARGET_PDB_FILE:${target}>"
+      CONFIGURATIONS RelWithDebInfo Debug Release
+      DESTINATION "${OBS_EXECUTABLE_DESTINATION}"
+      COMPONENT Development
+      OPTIONAL)
+  endif()
 endfunction()
 
 # Helper function to add resources into bundle
@@ -399,7 +402,7 @@ function(_bundle_dependencies target)
         endif()
       endforeach()
 
-      if(library MATCHES "Qt[56]?::.+")
+      if(library MATCHES "Qt6?::.+")
         find_qt_plugins(COMPONENT ${library} TARGET ${target} FOUND_VAR plugins_list)
       endif()
     endif()

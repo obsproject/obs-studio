@@ -40,5 +40,5 @@ private:
 	QTimer *streamingTimerDisplay;
 	QTimer *recordingTimerDisplay;
 
-	int recordingTimeLeft;
+	int recordingTimeLeft = -1;
 };

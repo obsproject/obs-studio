@@ -17,9 +17,14 @@ if(NOT DEFINED OBS_VERSION_OVERRIDE)
     execute_process(
       COMMAND git describe --always --tags --dirty=-modified
       OUTPUT_VARIABLE _OBS_VERSION
+      ERROR_VARIABLE _GIT_DESCRIBE_ERR
       WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
       RESULT_VARIABLE _OBS_VERSION_RESULT
       OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+    if(_GIT_DESCRIBE_ERR)
+      message(FATAL_ERROR "Could not fetch OBS version tag from git.\n" ${_GIT_DESCRIBE_ERR})
+    endif()
 
     if(_OBS_VERSION_RESULT EQUAL 0)
       if(${_OBS_VERSION} MATCHES "rc[0-9]+$")
@@ -100,12 +105,14 @@ set(BUILD_NUMBER_CACHE
     CACHE INTERNAL "OBS build number cache file")
 
 # Read build number from cache file or manual override
-if(NOT DEFINED OBS_BUILD_NUMBER AND EXISTS ${BUILD_NUMBER_CACHE})
-  file(READ ${BUILD_NUMBER_CACHE} OBS_BUILD_NUMBER)
-  math(EXPR OBS_BUILD_NUMBER "${OBS_BUILD_NUMBER}+1")
-elseif(NOT DEFINED OBS_BUILD_NUMBER)
-  set(OBS_BUILD_NUMBER "1")
+if(NOT DEFINED OBS_BUILD_NUMBER)
+  if(EXISTS ${BUILD_NUMBER_CACHE})
+    file(READ ${BUILD_NUMBER_CACHE} OBS_BUILD_NUMBER)
+    math(EXPR OBS_BUILD_NUMBER "${OBS_BUILD_NUMBER}+1")
+  else()
+    set(OBS_BUILD_NUMBER "1")
+  endif()
+  file(WRITE ${BUILD_NUMBER_CACHE} "${OBS_BUILD_NUMBER}")
 endif()
-file(WRITE ${BUILD_NUMBER_CACHE} "${OBS_BUILD_NUMBER}")
 
 message(STATUS "OBS:  Application Version: ${OBS_VERSION} - Build Number: ${OBS_BUILD_NUMBER}")

@@ -649,9 +649,19 @@ The following signals are defined for every source type:
 
    Called when the audio mixers have changed.
 
+**audio_activate** (ptr source)
+
+   Called when the source's audio becomes active.
+
+**audio_deactivate** (ptr source)
+
+   Called when the source's audio becomes inactive.
+
 **filter_add** (ptr source, ptr filter)
 
    Called when a filter has been added to the source.
+
+   .. versionadded:: 30.0
 
 **filter_remove** (ptr source, ptr filter)
 
@@ -708,8 +718,6 @@ The following signals are defined for every source type:
 
 Source-specific Signals
 -----------------------
-
-The following signals are defined for specific sources only:
 
 **slide_changed** (int index, string path)
 
@@ -1206,6 +1214,13 @@ General Source Functions
    :param order: | OBS_MONITORING_TYPE_NONE - Do not monitor
                  | OBS_MONITORING_TYPE_MONITOR_ONLY - Send to monitor device, no outputs
                  | OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT - Send to monitor device and outputs
+
+---------------------
+
+.. function:: void obs_source_set_audio_active(obs_source_t *source, bool active)
+              bool obs_source_audio_active(const obs_source_t *source)
+
+   Sets/gets the audio active status (controls whether the source is shown in the mixer).
 
 ---------------------
 

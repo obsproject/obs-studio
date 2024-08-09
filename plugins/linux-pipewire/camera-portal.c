@@ -108,23 +108,6 @@ static GDBusProxy *get_camera_portal_proxy(void)
 	return camera_proxy;
 }
 
-static uint32_t get_camera_version(void)
-{
-	g_autoptr(GVariant) cached_version = NULL;
-	uint32_t version;
-
-	ensure_camera_portal_proxy();
-
-	if (!camera_proxy)
-		return 0;
-
-	cached_version =
-		g_dbus_proxy_get_cached_property(camera_proxy, "version");
-	version = cached_version ? g_variant_get_uint32(cached_version) : 0;
-
-	return version;
-}
-
 /* ------------------------------------------------- */
 
 struct camera_device {
@@ -690,7 +673,6 @@ static void framerate_list(struct camera_device *dev, uint32_t pixelformat,
 			   const struct spa_rectangle *resolution,
 			   obs_property_t *prop)
 {
-	g_autoptr(GHashTable) framerates_map = NULL;
 	g_autoptr(GArray) framerates = NULL;
 	struct param *p;
 	obs_data_t *data;
@@ -703,9 +685,7 @@ static void framerate_list(struct camera_device *dev, uint32_t pixelformat,
 		struct obs_pw_video_format obs_pw_video_format;
 		enum spa_choice_type choice;
 		const struct spa_pod_prop *prop;
-		struct spa_pod_parser pod_parser;
 		struct spa_rectangle this_resolution;
-		struct spa_fraction framerate;
 		struct spa_pod *framerate_pod;
 		uint32_t media_subtype;
 		uint32_t media_type;
@@ -1259,7 +1239,6 @@ static const char *pipewire_camera_get_name(void *data)
 static void *pipewire_camera_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct camera_portal_source *camera_source;
-	bool set;
 
 	camera_source = bzalloc(sizeof(struct camera_portal_source));
 	camera_source->source = source;

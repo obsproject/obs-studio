@@ -35,7 +35,7 @@ void ffmpeg_hls_mux_destroy(void *data)
 		os_event_destroy(stream->stop_event);
 
 		da_free(stream->mux_packets);
-		circlebuf_free(&stream->packets);
+		deque_free(&stream->packets);
 
 		os_process_pipe_destroy(stream->pipe);
 		dstr_free(&stream->path);
@@ -77,7 +77,7 @@ static bool process_packet(struct ffmpeg_muxer *stream)
 	pthread_mutex_lock(&stream->write_mutex);
 
 	if (stream->packets.size) {
-		circlebuf_pop_front(&stream->packets, &packet, sizeof(packet));
+		deque_pop_front(&stream->packets, &packet, sizeof(packet));
 		has_packet = true;
 	}
 
@@ -180,33 +180,33 @@ bool ffmpeg_hls_mux_start(void *data)
 static bool write_packet_to_buf(struct ffmpeg_muxer *stream,
 				struct encoder_packet *packet)
 {
-	circlebuf_push_back(&stream->packets, packet,
-			    sizeof(struct encoder_packet));
+	deque_push_back(&stream->packets, packet,
+			sizeof(struct encoder_packet));
 	return true;
 }
 
 static void drop_frames(struct ffmpeg_muxer *stream, int highest_priority)
 {
-	struct circlebuf new_buf = {0};
+	struct deque new_buf = {0};
 	int num_frames_dropped = 0;
 
-	circlebuf_reserve(&new_buf, sizeof(struct encoder_packet) * 8);
+	deque_reserve(&new_buf, sizeof(struct encoder_packet) * 8);
 
 	while (stream->packets.size) {
 		struct encoder_packet packet;
-		circlebuf_pop_front(&stream->packets, &packet, sizeof(packet));
+		deque_pop_front(&stream->packets, &packet, sizeof(packet));
 
 		/* do not drop audio data or video keyframes */
 		if (packet.type == OBS_ENCODER_AUDIO ||
 		    packet.drop_priority >= highest_priority) {
-			circlebuf_push_back(&new_buf, &packet, sizeof(packet));
+			deque_push_back(&new_buf, &packet, sizeof(packet));
 		} else {
 			num_frames_dropped++;
 			obs_encoder_packet_release(&packet);
 		}
 	}
 
-	circlebuf_free(&stream->packets);
+	deque_free(&stream->packets);
 	stream->packets = new_buf;
 
 	if (stream->min_priority < highest_priority)
@@ -222,7 +222,7 @@ static bool find_first_video_packet(struct ffmpeg_muxer *stream,
 
 	for (size_t i = 0; i < count; i++) {
 		struct encoder_packet *cur =
-			circlebuf_data(&stream->packets, i * sizeof(*first));
+			deque_data(&stream->packets, i * sizeof(*first));
 		if (cur->type == OBS_ENCODER_VIDEO && !cur->keyframe) {
 			*first = *cur;
 			return true;

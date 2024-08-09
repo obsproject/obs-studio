@@ -1,8 +1,8 @@
 #include "window-extra-browsers.hpp"
 #include "window-dock-browser.hpp"
 #include "window-basic-main.hpp"
-#include "qt-wrappers.hpp"
 
+#include <qt-wrappers.hpp>
 #include <QLineEdit>
 #include <QHBoxLayout>
 #include <QUuid>

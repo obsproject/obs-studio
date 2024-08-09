@@ -26,7 +26,8 @@
 struct gs_exports {
 	const char *(*device_get_name)(void);
 	int (*device_get_type)(void);
-	bool (*device_enum_adapters)(bool (*callback)(void *, const char *,
+	bool (*device_enum_adapters)(gs_device_t *device,
+				     bool (*callback)(void *, const char *,
 						      uint32_t),
 				     void *);
 	const char *(*device_preprocessor_name)(void);
@@ -273,6 +274,16 @@ struct gs_exports {
 
 	bool (*device_nv12_available)(gs_device_t *device);
 	bool (*device_p010_available)(gs_device_t *device);
+	bool (*device_texture_create_nv12)(gs_device_t *device,
+					   gs_texture_t **tex_y,
+					   gs_texture_t **tex_uv,
+					   uint32_t width, uint32_t height,
+					   uint32_t flags);
+	bool (*device_texture_create_p010)(gs_device_t *device,
+					   gs_texture_t **tex_y,
+					   gs_texture_t **tex_uv,
+					   uint32_t width, uint32_t height,
+					   uint32_t flags);
 
 	bool (*device_is_monitor_hdr)(gs_device_t *device, void *monitor);
 
@@ -280,6 +291,8 @@ struct gs_exports {
 					  const char *markername,
 					  const float color[4]);
 	void (*device_debug_marker_end)(gs_device_t *device);
+
+	uint32_t (*gs_get_adapter_count)(void);
 
 #ifdef __APPLE__
 	/* OSX/Cocoa specific functions */
@@ -311,7 +324,6 @@ struct gs_exports {
 		gs_duplicator_t *duplicator);
 	float (*gs_duplicator_get_sdr_white_level)(gs_duplicator_t *duplicator);
 
-	uint32_t (*gs_get_adapter_count)(void);
 	bool (*device_can_adapter_fast_clear)(gs_device_t *device);
 
 	gs_texture_t *(*device_texture_create_gdi)(gs_device_t *device,
@@ -331,16 +343,6 @@ struct gs_exports {
 	int (*device_texture_acquire_sync)(gs_texture_t *tex, uint64_t key,
 					   uint32_t ms);
 	int (*device_texture_release_sync)(gs_texture_t *tex, uint64_t key);
-	bool (*device_texture_create_nv12)(gs_device_t *device,
-					   gs_texture_t **tex_y,
-					   gs_texture_t **tex_uv,
-					   uint32_t width, uint32_t height,
-					   uint32_t flags);
-	bool (*device_texture_create_p010)(gs_device_t *device,
-					   gs_texture_t **tex_y,
-					   gs_texture_t **tex_uv,
-					   uint32_t width, uint32_t height,
-					   uint32_t flags);
 
 	gs_stagesurf_t *(*device_stagesurface_create_nv12)(gs_device_t *device,
 							   uint32_t width,

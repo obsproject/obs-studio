@@ -49,11 +49,11 @@ static inline void replay_buffer_clear(struct ffmpeg_muxer *stream)
 {
 	while (stream->packets.size > 0) {
 		struct encoder_packet pkt;
-		circlebuf_pop_front(&stream->packets, &pkt, sizeof(pkt));
+		deque_pop_front(&stream->packets, &pkt, sizeof(pkt));
 		obs_encoder_packet_release(&pkt);
 	}
 
-	circlebuf_free(&stream->packets);
+	deque_free(&stream->packets);
 	stream->cur_size = 0;
 	stream->cur_time = 0;
 	stream->max_size = 0;
@@ -72,7 +72,7 @@ static void ffmpeg_mux_destroy(void *data)
 	for (size_t i = 0; i < stream->mux_packets.num; i++)
 		obs_encoder_packet_release(&stream->mux_packets.array[i]);
 	da_free(stream->mux_packets);
-	circlebuf_free(&stream->packets);
+	deque_free(&stream->packets);
 
 	os_process_pipe_destroy(stream->pipe);
 	dstr_free(&stream->path);
@@ -134,7 +134,8 @@ bool active(struct ffmpeg_muxer *stream)
 }
 
 static void add_video_encoder_params(struct ffmpeg_muxer *stream,
-				     struct dstr *cmd, obs_encoder_t *vencoder)
+				     os_process_args_t *args,
+				     obs_encoder_t *vencoder)
 {
 	obs_data_t *settings = obs_encoder_get_settings(vencoder);
 	int bitrate = (int)obs_data_get_int(settings, "bitrate");
@@ -185,41 +186,48 @@ static void add_video_encoder_params(struct ffmpeg_muxer *stream,
 	const enum AVColorRange range = (info->range == VIDEO_RANGE_FULL)
 						? AVCOL_RANGE_JPEG
 						: AVCOL_RANGE_MPEG;
+	const enum AVChromaLocation chroma_location = determine_chroma_location(
+		obs_to_ffmpeg_video_format(info->format), spc);
 
 	const int max_luminance =
 		(trc == AVCOL_TRC_SMPTE2084)
 			? (int)obs_get_video_hdr_nominal_peak_level()
 			: ((trc == AVCOL_TRC_ARIB_STD_B67) ? 1000 : 0);
 
-	dstr_catf(cmd, "%s %d %d %d %d %d %d %d %d %d %d %d %d ",
-		  obs_encoder_get_codec(vencoder), bitrate,
-		  obs_output_get_width(stream->output),
-		  obs_output_get_height(stream->output), (int)pri, (int)trc,
-		  (int)spc, (int)range,
-		  (int)determine_chroma_location(
-			  obs_to_ffmpeg_video_format(info->format), spc),
-		  max_luminance, (int)info->fps_num, (int)info->fps_den,
-		  (int)codec_tag);
+	os_process_args_add_arg(args, obs_encoder_get_codec(vencoder));
+	os_process_args_add_argf(args, "%d", bitrate);
+	os_process_args_add_argf(args, "%d",
+				 obs_output_get_width(stream->output));
+	os_process_args_add_argf(args, "%d",
+				 obs_output_get_height(stream->output));
+	os_process_args_add_argf(args, "%d", (int)pri);
+	os_process_args_add_argf(args, "%d", (int)trc);
+	os_process_args_add_argf(args, "%d", (int)spc);
+	os_process_args_add_argf(args, "%d", (int)range);
+	os_process_args_add_argf(args, "%d", (int)chroma_location);
+	os_process_args_add_argf(args, "%d", max_luminance);
+	os_process_args_add_argf(args, "%d", (int)info->fps_num);
+	os_process_args_add_argf(args, "%d", (int)info->fps_den);
+	os_process_args_add_argf(args, "%d", codec_tag);
 }
 
-static void add_audio_encoder_params(struct dstr *cmd, obs_encoder_t *aencoder)
+static void add_audio_encoder_params(os_process_args_t *args,
+				     obs_encoder_t *aencoder)
 {
 	obs_data_t *settings = obs_encoder_get_settings(aencoder);
 	int bitrate = (int)obs_data_get_int(settings, "bitrate");
 	audio_t *audio = obs_get_audio();
-	struct dstr name = {0};
 
 	obs_data_release(settings);
 
-	dstr_copy(&name, obs_encoder_get_name(aencoder));
-	dstr_replace(&name, "\"", "\"\"");
-
-	dstr_catf(cmd, "\"%s\" %d %d %d %d ", name.array, bitrate,
-		  (int)obs_encoder_get_sample_rate(aencoder),
-		  (int)obs_encoder_get_frame_size(aencoder),
-		  (int)audio_output_get_channels(audio));
-
-	dstr_free(&name);
+	os_process_args_add_arg(args, obs_encoder_get_name(aencoder));
+	os_process_args_add_argf(args, "%d", bitrate);
+	os_process_args_add_argf(args, "%d",
+				 (int)obs_encoder_get_sample_rate(aencoder));
+	os_process_args_add_argf(args, "%d",
+				 (int)obs_encoder_get_frame_size(aencoder));
+	os_process_args_add_argf(args, "%d",
+				 (int)audio_output_get_channels(audio));
 }
 
 static void log_muxer_params(struct ffmpeg_muxer *stream, const char *settings)
@@ -250,15 +258,15 @@ static void log_muxer_params(struct ffmpeg_muxer *stream, const char *settings)
 	av_dict_free(&dict);
 }
 
-static void add_stream_key(struct dstr *cmd, struct ffmpeg_muxer *stream)
+static void add_stream_key(os_process_args_t *args, struct ffmpeg_muxer *stream)
 {
-	dstr_catf(cmd, "\"%s\" ",
-		  dstr_is_empty(&stream->stream_key)
-			  ? ""
-			  : stream->stream_key.array);
+	os_process_args_add_arg(args, dstr_is_empty(&stream->stream_key)
+					      ? ""
+					      : stream->stream_key.array);
 }
 
-static void add_muxer_params(struct dstr *cmd, struct ffmpeg_muxer *stream)
+static void add_muxer_params(os_process_args_t *args,
+			     struct ffmpeg_muxer *stream)
 {
 	struct dstr mux = {0};
 
@@ -272,16 +280,13 @@ static void add_muxer_params(struct dstr *cmd, struct ffmpeg_muxer *stream)
 	}
 
 	log_muxer_params(stream, mux.array);
-
-	dstr_replace(&mux, "\"", "\\\"");
-
-	dstr_catf(cmd, "\"%s\" ", mux.array ? mux.array : "");
+	os_process_args_add_arg(args, mux.array ? mux.array : "");
 
 	dstr_free(&mux);
 }
 
-static void build_command_line(struct ffmpeg_muxer *stream, struct dstr *cmd,
-			       const char *path)
+static void build_command_line(struct ffmpeg_muxer *stream,
+			       os_process_args_t **args, const char *path)
 {
 	obs_encoder_t *vencoder = obs_output_get_video_encoder(stream->output);
 	obs_encoder_t *aencoders[MAX_AUDIO_MIXES];
@@ -297,39 +302,37 @@ static void build_command_line(struct ffmpeg_muxer *stream, struct dstr *cmd,
 		num_tracks++;
 	}
 
-	dstr_init_move_array(cmd, os_get_executable_path_ptr(FFMPEG_MUX));
-	dstr_insert_ch(cmd, 0, '\"');
-	dstr_cat(cmd, "\" \"");
+	char *exe = os_get_executable_path_ptr(FFMPEG_MUX);
+	*args = os_process_args_create(exe);
+	bfree(exe);
 
 	dstr_copy(&stream->path, path);
-	dstr_replace(&stream->path, "\"", "\"\"");
-	dstr_cat_dstr(cmd, &stream->path);
-
-	dstr_catf(cmd, "\" %d %d ", vencoder ? 1 : 0, num_tracks);
+	os_process_args_add_arg(*args, path);
+	os_process_args_add_argf(*args, "%d", vencoder ? 1 : 0);
+	os_process_args_add_argf(*args, "%d", num_tracks);
 
 	if (vencoder)
-		add_video_encoder_params(stream, cmd, vencoder);
+		add_video_encoder_params(stream, *args, vencoder);
 
 	if (num_tracks) {
-		const char *codec = obs_encoder_get_codec(aencoders[0]);
-		dstr_cat(cmd, codec);
-		dstr_cat(cmd, " ");
+		os_process_args_add_arg(*args,
+					obs_encoder_get_codec(aencoders[0]));
 
 		for (int i = 0; i < num_tracks; i++) {
-			add_audio_encoder_params(cmd, aencoders[i]);
+			add_audio_encoder_params(*args, aencoders[i]);
 		}
 	}
 
-	add_stream_key(cmd, stream);
-	add_muxer_params(cmd, stream);
+	add_stream_key(*args, stream);
+	add_muxer_params(*args, stream);
 }
 
 void start_pipe(struct ffmpeg_muxer *stream, const char *path)
 {
-	struct dstr cmd;
-	build_command_line(stream, &cmd, path);
-	stream->pipe = os_process_pipe_create(cmd.array, "w");
-	dstr_free(&cmd);
+	os_process_args_t *args = NULL;
+	build_command_line(stream, &args, path);
+	stream->pipe = os_process_pipe_create2(args, "w");
+	os_process_args_destroy(args);
 }
 
 static void set_file_not_readable_error(struct ffmpeg_muxer *stream,
@@ -521,8 +524,8 @@ int deactivate(struct ffmpeg_muxer *stream, int code)
 
 		while (stream->packets.size) {
 			struct encoder_packet packet;
-			circlebuf_pop_front(&stream->packets, &packet,
-					    sizeof(packet));
+			deque_pop_front(&stream->packets, &packet,
+					sizeof(packet));
 			obs_encoder_packet_release(&packet);
 		}
 
@@ -1064,7 +1067,7 @@ static bool purge_front(struct ffmpeg_muxer *stream)
 	if (!stream->packets.size)
 		return false;
 
-	circlebuf_pop_front(&stream->packets, &pkt, sizeof(pkt));
+	deque_pop_front(&stream->packets, &pkt, sizeof(pkt));
 
 	keyframe = pkt.type == OBS_ENCODER_VIDEO && pkt.keyframe;
 
@@ -1076,7 +1079,7 @@ static bool purge_front(struct ffmpeg_muxer *stream)
 		stream->cur_time = 0;
 	} else {
 		struct encoder_packet first;
-		circlebuf_peek_front(&stream->packets, &first, sizeof(first));
+		deque_peek_front(&stream->packets, &first, sizeof(first));
 		stream->cur_time = first.dts_usec;
 		stream->cur_size -= (int64_t)pkt.size;
 	}
@@ -1093,8 +1096,7 @@ static inline void purge(struct ffmpeg_muxer *stream)
 		for (;;) {
 			if (!stream->packets.size)
 				return;
-			circlebuf_peek_front(&stream->packets, &pkt,
-					     sizeof(pkt));
+			deque_peek_front(&stream->packets, &pkt, sizeof(pkt));
 			if (pkt.type == OBS_ENCODER_VIDEO && pkt.keyframe)
 				return;
 
@@ -1223,7 +1225,7 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 
 	for (size_t i = 0; i < num_packets; i++) {
 		struct encoder_packet *pkt;
-		pkt = circlebuf_data(&stream->packets, i * size);
+		pkt = deque_data(&stream->packets, i * size);
 
 		if (pkt->type == OBS_ENCODER_VIDEO) {
 			if (!found_video) {
@@ -1299,7 +1301,7 @@ static void replay_buffer_data(void *data, struct encoder_packet *packet)
 		stream->cur_time = pkt.dts_usec;
 	stream->cur_size += pkt.size;
 
-	circlebuf_push_back(&stream->packets, packet, sizeof(*packet));
+	deque_push_back(&stream->packets, packet, sizeof(*packet));
 
 	if (packet->type == OBS_ENCODER_VIDEO && packet->keyframe)
 		stream->keyframes++;

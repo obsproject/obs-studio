@@ -107,52 +107,6 @@ function(target_disable target)
   set_property(GLOBAL APPEND PROPERTY OBS_MODULES_DISABLED ${target})
 endfunction()
 
-# find_qt: Macro to find best possible Qt version for use with the project:
-macro(find_qt)
-  set(multiValueArgs COMPONENTS COMPONENTS_WIN COMPONENTS_MAC COMPONENTS_LINUX)
-  cmake_parse_arguments(find_qt "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-
-  # Do not use versionless targets in the first step to avoid Qt::Core being clobbered by later opportunistic
-  # find_package runs
-  set(QT_NO_CREATE_VERSIONLESS_TARGETS TRUE)
-
-  message(DEBUG "Attempting to find Qt 6")
-  find_package(
-    Qt6
-    COMPONENTS Core
-    REQUIRED)
-
-  # Enable versionless targets for the remaining Qt components
-  set(QT_NO_CREATE_VERSIONLESS_TARGETS FALSE)
-
-  set(qt_components ${find_qt_COMPONENTS})
-  if(OS_WINDOWS)
-    list(APPEND qt_components ${find_qt_COMPONENTS_WIN})
-  elseif(OS_MACOS)
-    list(APPEND qt_components ${find_qt_COMPONENTS_MAC})
-  else()
-    list(APPEND qt_components ${find_qt_COMPONENTS_LINUX})
-  endif()
-  message(DEBUG "Trying to find Qt components ${qt_components}...")
-
-  find_package(Qt6 REQUIRED ${qt_components})
-
-  list(APPEND qt_components Core)
-
-  if("Gui" IN_LIST find_qt_COMPONENTS_LINUX)
-    list(APPEND qt_components "GuiPrivate")
-  endif()
-
-  # Check for versionless targets of each requested component and create if necessary
-  foreach(component IN LISTS qt_components)
-    message(DEBUG "Checking for target Qt::${component}")
-    if(NOT TARGET Qt::${component} AND TARGET Qt6::${component})
-      add_library(Qt::${component} INTERFACE IMPORTED)
-      set_target_properties(Qt::${component} PROPERTIES INTERFACE_LINK_LIBRARIES Qt6::${component})
-    endif()
-  endforeach()
-endmacro()
-
 # _handle_generator_expression_dependency: Helper function to yield dependency from a generator expression
 function(_handle_generator_expression_dependency library)
   set(oneValueArgs FOUND_VAR)
@@ -301,10 +255,8 @@ function(find_qt_plugins)
   # cmake-format: off
   list(APPEND qt_plugins_Core platforms printsupport styles imageformats iconengines)
   # cmake-format: on
-  list(APPEND qt_plugins_Gui platforminputcontexts virtualkeyboard)
-  list(APPEND qt_plugins_Network bearer)
+  list(APPEND qt_plugins_Gui platforminputcontexts)
   list(APPEND qt_plugins_Sql sqldrivers)
-  list(APPEND qt_plugins_Multimedia mediaservice audio)
   list(APPEND qt_plugins_3dRender sceneparsers geometryloaders)
   list(APPEND qt_plugins_3dQuickRender renderplugins)
   list(APPEND qt_plugins_Positioning position)
@@ -518,15 +470,18 @@ macro(legacy_check)
   endif()
 endmacro()
 
-# add_obs_plugin: Add plugin subdirectory if host platform is in specified list of supported platforms
+# add_obs_plugin: Add plugin subdirectory if host platform is in specified list of supported platforms and architectures
 function(add_obs_plugin target)
   set(options WITH_MESSAGE)
   set(oneValueArgs "")
-  set(multiValueArgs PLATFORMS)
+  set(multiValueArgs PLATFORMS ARCHITECTURES)
   cmake_parse_arguments(PARSE_ARGV 0 _AOP "${options}" "${oneValueArgs}" "${multiValueArgs}")
 
   set(found_platform FALSE)
   list(LENGTH _AOP_PLATFORMS _AOP_NUM_PLATFORMS)
+
+  set(found_architecture FALSE)
+  list(LENGTH _AOP_ARCHITECTURES _AOP_NUM_ARCHITECTURES)
 
   if(_AOP_NUM_PLATFORMS EQUAL 0)
     set(found_platform TRUE)
@@ -540,7 +495,25 @@ function(add_obs_plugin target)
     endforeach()
   endif()
 
-  if(found_platform)
+  if(_AOP_NUM_ARCHITECTURES EQUAL 0)
+    set(found_architecture TRUE)
+  else()
+    foreach(architecture IN LISTS _AOP_ARCHITECTURES)
+      if(OS_WINDOWS)
+        if("${architecture}" STREQUAL CMAKE_GENERATOR_PLATFORM)
+          set(found_architecture TRUE)
+        endif()
+      elseif(OS_MACOS)
+        if("${architecture}" IN_LIST CMAKE_OSX_ARCHITECTURES)
+          set(found_architecture TRUE)
+        endif()
+      elseif("${architecture}" STREQUAL CMAKE_SYSTEM_PROCESSOR)
+        set(found_architecture TRUE)
+      endif()
+    endforeach()
+  endif()
+
+  if(found_platform AND found_architecture)
     add_subdirectory(${target})
   elseif(_AOP_WITH_MESSAGE)
     add_custom_target(${target} COMMENT "Dummy target for unavailable module ${target}")

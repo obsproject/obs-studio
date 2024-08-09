@@ -34,7 +34,7 @@
  *
  * Reset to zero each major version
  */
-#define LIBOBS_API_MINOR_VER 0
+#define LIBOBS_API_MINOR_VER 2
 
 /*
  * Increment if backward-compatible bug fix
@@ -62,4 +62,4 @@
 #define OBS_BETA 0
 #endif
 
-#define OBS_INSTALL_DATA_PATH OBS_INSTALL_PREFIX OBS_DATA_PATH
+#define OBS_INSTALL_DATA_PATH OBS_INSTALL_PREFIX "/" OBS_DATA_PATH

@@ -198,7 +198,7 @@ bool build_application_list(struct screen_capture *sc, obs_properties_t *props)
 
 #pragma mark - audio/video
 
-void screen_stream_video_update(struct screen_capture *sc, CMSampleBufferRef sample_buffer)
+API_AVAILABLE(macos(12.5)) void screen_stream_video_update(struct screen_capture *sc, CMSampleBufferRef sample_buffer)
 {
     bool frame_detail_errored = false;
     float scale_factor = 1.0f;

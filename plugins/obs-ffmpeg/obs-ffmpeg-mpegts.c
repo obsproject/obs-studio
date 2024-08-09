@@ -16,7 +16,7 @@
 ******************************************************************************/
 
 #include <obs-module.h>
-#include <util/circlebuf.h>
+#include <util/deque.h>
 #include <util/threading.h>
 #include <util/dstr.h>
 #include <util/darray.h>
@@ -156,6 +156,38 @@ static bool create_video_stream(struct ffmpeg_output *stream,
 	}
 	if (!new_stream(data, &data->video, name))
 		return false;
+
+	context = avcodec_alloc_context3(NULL);
+	context->codec_type = codec->type;
+	context->codec_id = codec->id;
+	context->bit_rate = (int64_t)data->config.video_bitrate * 1000;
+	context->width = data->config.scale_width;
+	context->height = data->config.scale_height;
+	context->coded_width = data->config.scale_width;
+	context->coded_height = data->config.scale_height;
+	context->time_base = (AVRational){ovi.fps_den, ovi.fps_num};
+	context->gop_size = data->config.gop_size;
+	context->pix_fmt = data->config.format;
+	context->color_range = data->config.color_range;
+	context->color_primaries = data->config.color_primaries;
+	context->color_trc = data->config.color_trc;
+	context->colorspace = data->config.colorspace;
+	context->chroma_sample_location = determine_chroma_location(
+		data->config.format, data->config.colorspace);
+	context->thread_count = 0;
+
+	data->video->time_base = context->time_base;
+#if LIBAVFORMAT_VERSION_MAJOR < 59
+	data->video->codec->time_base = context->time_base;
+#endif
+	data->video->avg_frame_rate = av_inv_q(context->time_base);
+
+	data->video_ctx = context;
+	data->config.width = data->config.scale_width;
+	data->config.height = data->config.scale_height;
+
+	avcodec_parameters_from_context(data->video->codecpar, context);
+
 	const bool pq = data->config.color_trc == AVCOL_TRC_SMPTE2084;
 	const bool hlg = data->config.color_trc == AVCOL_TRC_ARIB_STD_B67;
 	if (pq || hlg) {
@@ -207,36 +239,6 @@ static bool create_video_stream(struct ffmpeg_output *stream,
 			(uint8_t *)mastering, sizeof(*mastering), 0);
 #endif
 	}
-	context = avcodec_alloc_context3(NULL);
-	context->codec_type = codec->type;
-	context->codec_id = codec->id;
-	context->bit_rate = (int64_t)data->config.video_bitrate * 1000;
-	context->width = data->config.scale_width;
-	context->height = data->config.scale_height;
-	context->coded_width = data->config.scale_width;
-	context->coded_height = data->config.scale_height;
-	context->time_base = (AVRational){ovi.fps_den, ovi.fps_num};
-	context->gop_size = data->config.gop_size;
-	context->pix_fmt = data->config.format;
-	context->color_range = data->config.color_range;
-	context->color_primaries = data->config.color_primaries;
-	context->color_trc = data->config.color_trc;
-	context->colorspace = data->config.colorspace;
-	context->chroma_sample_location = determine_chroma_location(
-		data->config.format, data->config.colorspace);
-	context->thread_count = 0;
-
-	data->video->time_base = context->time_base;
-#if LIBAVFORMAT_VERSION_MAJOR < 59
-	data->video->codec->time_base = context->time_base;
-#endif
-	data->video->avg_frame_rate = av_inv_q(context->time_base);
-
-	data->video_ctx = context;
-	data->config.width = data->config.scale_width;
-	data->config.height = data->config.scale_height;
-
-	avcodec_parameters_from_context(data->video->codecpar, context);
 
 	return true;
 }
@@ -419,6 +421,12 @@ fail:
 	return err;
 }
 
+#if LIBAVFORMAT_VERSION_MAJOR >= 61
+typedef int (*write_packet_cb)(void *, const uint8_t *, int);
+#else
+typedef int (*write_packet_cb)(void *, uint8_t *, int);
+#endif
+
 static inline int allocate_custom_aviocontext(struct ffmpeg_output *stream,
 					      bool is_rist)
 {
@@ -435,13 +443,13 @@ static inline int allocate_custom_aviocontext(struct ffmpeg_output *stream,
 		return AVERROR(ENOMEM);
 	/* allocate custom avio_context */
 	if (is_rist)
-		s = avio_alloc_context(
-			buffer, buffer_size, AVIO_FLAG_WRITE, h, NULL,
-			(int (*)(void *, uint8_t *, int))librist_write, NULL);
+		s = avio_alloc_context(buffer, buffer_size, AVIO_FLAG_WRITE, h,
+				       NULL, (write_packet_cb)librist_write,
+				       NULL);
 	else
-		s = avio_alloc_context(
-			buffer, buffer_size, AVIO_FLAG_WRITE, h, NULL,
-			(int (*)(void *, uint8_t *, int))libsrt_write, NULL);
+		s = avio_alloc_context(buffer, buffer_size, AVIO_FLAG_WRITE, h,
+				       NULL, (write_packet_cb)libsrt_write,
+				       NULL);
 	if (!s)
 		goto fail;
 	s->max_packet_size = h->max_packet_size;
@@ -568,7 +576,7 @@ static void close_audio(struct ffmpeg_data *data)
 {
 	for (int idx = 0; idx < data->num_audio_streams; idx++) {
 		for (size_t i = 0; i < MAX_AV_PLANES; i++)
-			circlebuf_free(&data->excess_frames[idx][i]);
+			deque_free(&data->excess_frames[idx][i]);
 
 		if (data->samples[idx][0])
 			av_freep(&data->samples[idx][0]);

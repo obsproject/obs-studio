@@ -20,14 +20,14 @@
 #include <QToolTip>
 #include <QMessageBox>
 #include <util/dstr.hpp>
+#include <qt-wrappers.hpp>
+#include <slider-ignorewheel.hpp>
 #include "window-basic-main.hpp"
 #include "window-basic-main-outputs.hpp"
 #include "window-basic-vcam-config.hpp"
 #include "display-helpers.hpp"
 #include "window-namedialog.hpp"
 #include "menu-button.hpp"
-#include "slider-ignorewheel.hpp"
-#include "qt-wrappers.hpp"
 
 #include "obs-hotkey.h"
 
@@ -445,7 +445,8 @@ void OBSBasic::SetTransition(OBSSource transition)
 	ui->transitionDurationLabel->setVisible(!fixed);
 	ui->transitionDuration->setVisible(!fixed);
 
-	bool configurable = obs_source_configurable(transition);
+	bool configurable = transition ? obs_source_configurable(transition)
+				       : false;
 	ui->transitionRemove->setEnabled(configurable);
 	ui->transitionProps->setEnabled(configurable);
 
@@ -976,7 +977,7 @@ int OBSBasic::GetTbarPosition()
 	return tBar->value();
 }
 
-void OBSBasic::on_modeSwitch_clicked()
+void OBSBasic::TogglePreviewProgramMode()
 {
 	SetPreviewProgramMode(!IsPreviewProgramMode());
 }
@@ -1088,7 +1089,7 @@ void OBSBasic::HideTransitionProperties()
 }
 
 void OBSBasic::PasteShowHideTransition(obs_sceneitem_t *item, bool show,
-				       obs_source_t *tr)
+				       obs_source_t *tr, int duration)
 {
 	int64_t sceneItemId = obs_sceneitem_get_id(item);
 	std::string sceneUUID = obs_source_get_uuid(
@@ -1114,6 +1115,7 @@ void OBSBasic::PasteShowHideTransition(obs_sceneitem_t *item, bool show,
 	OBSSourceAutoRelease dup =
 		obs_source_duplicate(tr, obs_source_get_name(tr), true);
 	obs_sceneitem_set_transition(item, show, dup);
+	obs_sceneitem_set_transition_duration(item, show, duration);
 
 	OBSDataAutoRelease transitionData =
 		obs_sceneitem_transition_save(item, show);
@@ -1183,6 +1185,8 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 		if (id.isNull() || id.isEmpty()) {
 			obs_sceneitem_set_transition(sceneItem, visible,
 						     nullptr);
+			obs_sceneitem_set_transition_duration(sceneItem,
+							      visible, 0);
 		} else {
 			OBSSource tr = obs_sceneitem_get_transition(sceneItem,
 								    visible);
@@ -1273,7 +1277,10 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 			reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 		OBSSceneItem item = main->GetCurrentSceneItem();
 		obs_source_t *tr = obs_sceneitem_get_transition(item, visible);
+		int trDur =
+			obs_sceneitem_get_transition_duration(item, visible);
 		main->copySourceTransition = obs_source_get_weak_source(tr);
+		main->copySourceTransitionDuration = trDur;
 	};
 	menu->addSeparator();
 	action = menu->addAction(QT_UTF8(Str("Copy")));
@@ -1285,6 +1292,7 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 		OBSBasic *main =
 			reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 		OBSSource tr = OBSGetStrongRef(main->copySourceTransition);
+		int trDuration = main->copySourceTransitionDuration;
 		if (!tr)
 			return;
 
@@ -1294,7 +1302,7 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 			if (!item)
 				continue;
 
-			PasteShowHideTransition(item, show, tr);
+			PasteShowHideTransition(item, show, tr, trDuration);
 		}
 	};
 
@@ -1600,8 +1608,8 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 	if (IsPreviewProgramMode() == enabled)
 		return;
 
-	ui->modeSwitch->setChecked(enabled);
 	os_atomic_set_bool(&previewProgramMode, enabled);
+	emit PreviewProgramModeChanged(enabled);
 
 	if (IsPreviewProgramMode()) {
 		if (!previewEnabled)

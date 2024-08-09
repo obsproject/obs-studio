@@ -23,6 +23,10 @@ if(NOT TARGET OBS::aja-support)
   add_subdirectory("${CMAKE_SOURCE_DIR}/plugins/aja" "${CMAKE_BINARY_DIR}/plugins/aja")
 endif()
 
+if(NOT TARGET OBS::properties-view)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/properties-view" "${CMAKE_BINARY_DIR}/shared/properties-view")
+endif()
+
 add_library(aja-output-ui MODULE)
 add_library(OBS::aja-output-ui ALIAS aja-output-ui)
 
@@ -40,17 +44,9 @@ target_link_libraries(
   PRIVATE OBS::libobs
           OBS::aja-support
           OBS::frontend-api
-          OBS::ui-support
+          OBS::properties-view
           Qt::Widgets
           AJA::LibAJANTV2
-          $<$<PLATFORM_ID:Windows>:ws2_32.lib>
-          $<$<PLATFORM_ID:Windows>:setupapi.lib>
-          $<$<PLATFORM_ID:Windows>:Winmm.lib>
-          $<$<PLATFORM_ID:Windows>:netapi32.lib>
-          $<$<PLATFORM_ID:Windows>:Shlwapi.lib>
-          "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,AppKit.framework>>"
-          "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,CoreFoundation.framework>>"
-          "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,IOKit.framework>>"
           $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:X11::X11>
           $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:Qt::GuiPrivate>)
 

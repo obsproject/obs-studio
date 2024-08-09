@@ -5,6 +5,7 @@
 #include <string>
 #include <graphics/vec4.h>
 #include <graphics/matrix4.h>
+#include <util/dstr.hpp>
 #include "window-basic-preview.hpp"
 #include "window-basic-main.hpp"
 #include "obs-app.hpp"
@@ -653,7 +654,7 @@ void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 
 void OBSBasicPreview::UpdateCursor(uint32_t &flags)
 {
-	if (obs_sceneitem_locked(stretchItem)) {
+	if (!stretchItem || obs_sceneitem_locked(stretchItem)) {
 		unsetCursor();
 		return;
 	}
@@ -1757,13 +1758,16 @@ static void DrawLine(float x1, float y1, float x2, float y2, float thickness,
 
 	gs_render_start(true);
 
-	gs_vertex2f(x1, y1);
-	gs_vertex2f(x1 + (xSide * (thickness / scale.x)),
-		    y1 + (ySide * (thickness / scale.y)));
-	gs_vertex2f(x2 + (xSide * (thickness / scale.x)),
-		    y2 + (ySide * (thickness / scale.y)));
-	gs_vertex2f(x2, y2);
-	gs_vertex2f(x1, y1);
+	gs_vertex2f(x1 - (xSide * (thickness / scale.x) / 2),
+		    y1 + (ySide * (thickness / scale.y) / 2));
+	gs_vertex2f(x1 + (xSide * (thickness / scale.x) / 2),
+		    y1 - (ySide * (thickness / scale.y) / 2));
+	gs_vertex2f(x2 + (xSide * (thickness / scale.x) / 2),
+		    y2 + (ySide * (thickness / scale.y) / 2));
+	gs_vertex2f(x2 - (xSide * (thickness / scale.x) / 2),
+		    y2 - (ySide * (thickness / scale.y) / 2));
+	gs_vertex2f(x1 - (xSide * (thickness / scale.x) / 2),
+		    y1 + (ySide * (thickness / scale.y) / 2));
 
 	gs_vertbuffer_t *line = gs_render_save();
 
@@ -1969,7 +1973,7 @@ bool OBSBasicPreview::DrawSelectedOverflow(obs_scene_t *, obs_sceneitem_t *item,
 	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_DEFAULT, "DrawSelectedOverflow");
 
 	obs_transform_info info;
-	obs_sceneitem_get_info(item, &info);
+	obs_sceneitem_get_info2(item, &info);
 
 	gs_effect_t *solid = obs_get_base_effect(OBS_EFFECT_REPEAT);
 	gs_eparam_t *image = gs_effect_get_param_by_name(solid, "image");
@@ -2013,7 +2017,7 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *, obs_sceneitem_t *item,
 		matrix4 mat;
 		obs_transform_info groupInfo;
 		obs_sceneitem_get_draw_transform(item, &mat);
-		obs_sceneitem_get_info(item, &groupInfo);
+		obs_sceneitem_get_info2(item, &groupInfo);
 
 		prev->groupRot = groupInfo.rot;
 
@@ -2095,7 +2099,7 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *, obs_sceneitem_t *item,
 	boxScale.y *= curTransform.y.y;
 
 	obs_transform_info info;
-	obs_sceneitem_get_info(item, &info);
+	obs_sceneitem_get_info2(item, &info);
 
 	gs_matrix_push();
 	gs_matrix_mul(&boxTransform);
@@ -2331,7 +2335,7 @@ OBSBasicPreview *OBSBasicPreview::Get()
 	return OBSBasic::Get()->ui->preview;
 }
 
-static obs_source_t *CreateLabel(float pixelRatio)
+static obs_source_t *CreateLabel(float pixelRatio, int i)
 {
 	OBSDataAutoRelease settings = obs_data_create();
 	OBSDataAutoRelease font = obs_data_create();
@@ -2357,7 +2361,9 @@ static obs_source_t *CreateLabel(float pixelRatio)
 	const char *text_source_id = "text_ft2_source";
 #endif
 
-	return obs_source_create_private(text_source_id, NULL, settings);
+	DStr name;
+	dstr_printf(name, "Preview spacing label %d", i);
+	return obs_source_create_private(text_source_id, name, settings);
 }
 
 static void SetLabelText(int sourceIndex, int px)
@@ -2523,7 +2529,7 @@ void OBSBasicPreview::DrawSpacingHelpers()
 	obs_sceneitem_get_box_transform(item, &boxTransform);
 
 	obs_transform_info oti;
-	obs_sceneitem_get_info(item, &oti);
+	obs_sceneitem_get_info2(item, &oti);
 
 	obs_video_info ovi;
 	obs_get_video_info(&ovi);
@@ -2545,7 +2551,7 @@ void OBSBasicPreview::DrawSpacingHelpers()
 
 	if (parentGroup) {
 		obs_transform_info groupOti;
-		obs_sceneitem_get_info(parentGroup, &groupOti);
+		obs_sceneitem_get_info2(parentGroup, &groupOti);
 
 		//Correct the scene item rotation angle
 		rot = oti.rot + groupOti.rot;
@@ -2639,7 +2645,7 @@ void OBSBasicPreview::DrawSpacingHelpers()
 	float pixelRatio = main->GetDevicePixelRatio();
 	for (int i = 0; i < 4; i++) {
 		if (!spacerLabel[i])
-			spacerLabel[i] = CreateLabel(pixelRatio);
+			spacerLabel[i] = CreateLabel(pixelRatio, i);
 	}
 
 	vec3_set(&start, top.x, 0.0f, 1.0f);
@@ -2677,6 +2683,9 @@ void OBSBasicPreview::ClampScrollingOffsets()
 
 	vec3_mulf(&offset, &offset, 0.5f);
 	vec3_maxf(&offset, &offset, 0.0f);
+
+	vec3_divf(&target, &target, 2.0f);
+	vec3_add(&offset, &offset, &target);
 
 	scrollingOffset.x = std::clamp(scrollingOffset.x, -offset.x, offset.x);
 	scrollingOffset.y = std::clamp(scrollingOffset.y, -offset.y, offset.y);

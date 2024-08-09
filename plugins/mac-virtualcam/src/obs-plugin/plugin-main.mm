@@ -306,7 +306,12 @@ static bool virtualcam_output_start(void *data)
                                                delegate.lastErrorMessage]
                         .UTF8String);
             } else {
-                obs_output_set_last_error(vcam->output, obs_module_text("Error.SystemExtension.NotInstalled"));
+                if (@available(macOS 15.0, *)) {
+                    obs_output_set_last_error(vcam->output,
+                                              obs_module_text("Error.SystemExtension.NotInstalled.MacOS15"));
+                } else {
+                    obs_output_set_last_error(vcam->output, obs_module_text("Error.SystemExtension.NotInstalled"));
+                }
             }
 
             return false;
@@ -551,11 +556,6 @@ struct obs_output_info virtualcam_output_info = {
 bool obs_module_load(void)
 {
     obs_register_output(&virtualcam_output_info);
-
-    obs_data_t *obs_settings = obs_data_create();
-    obs_data_set_bool(obs_settings, "vcamEnabled", true);
-    obs_apply_private_data(obs_settings);
-    obs_data_release(obs_settings);
 
     return true;
 }

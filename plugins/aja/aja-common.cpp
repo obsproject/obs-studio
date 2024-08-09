@@ -201,12 +201,11 @@ void populate_video_format_list(NTV2DeviceID deviceID, obs_property_t *list,
 	}
 }
 
-void populate_pixel_format_list(NTV2DeviceID deviceID, obs_property_t *list)
+void populate_pixel_format_list(NTV2DeviceID deviceID,
+				const std::vector<NTV2PixelFormat> &fmts,
+				obs_property_t *list)
 {
-	const NTV2PixelFormat supported_pix_fmts[] = {kDefaultAJAPixelFormat,
-						      NTV2_FBF_24BIT_BGR};
-
-	for (auto &&pf : supported_pix_fmts) {
+	for (auto &&pf : fmts) {
 		if (NTV2DeviceCanDoFrameBufferFormat(deviceID, pf)) {
 			obs_property_list_add_int(
 				list,
@@ -300,6 +299,8 @@ video_format AJAPixelFormatToOBSVideoFormat(NTV2PixelFormat pf)
 		obs_video_format = VIDEO_FORMAT_BGRA;
 		break;
 	case NTV2_FBF_10BIT_YCBCR:
+		obs_video_format = VIDEO_FORMAT_V210;
+		break;
 	case NTV2_FBF_10BIT_RGB:
 	case NTV2_FBF_8BIT_YCBCR_YUY2:
 	case NTV2_FBF_10BIT_DPX:

@@ -1,44 +1,43 @@
-add_library(obs-ui-support INTERFACE)
-add_library(OBS::ui-support ALIAS obs-ui-support)
+if(NOT TARGET OBS::properties-view)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/properties-view" "${CMAKE_BINARY_DIR}/shared/properties-view")
+endif()
 
-target_sources(
-  obs-ui-support
-  INTERFACE # cmake-format: sortable
-            clickable-label.hpp
-            double-slider.cpp
-            double-slider.hpp
-            horizontal-scroll-area.cpp
-            horizontal-scroll-area.hpp
-            plain-text-edit.cpp
-            plain-text-edit.hpp
-            properties-view.cpp
-            properties-view.hpp
-            properties-view.moc.hpp
-            qt-wrappers.cpp
-            qt-wrappers.hpp
-            slider-ignorewheel.cpp
-            slider-ignorewheel.hpp
-            spinbox-ignorewheel.cpp
-            spinbox-ignorewheel.hpp
-            vertical-scroll-area.cpp
-            vertical-scroll-area.hpp)
+if(NOT TARGET OBS::qt-plain-text-edit)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/plain-text-edit" "${CMAKE_BINARY_DIR}/shared/qt/plain-text-edit")
+endif()
 
-target_include_directories(obs-ui-support INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
+if(NOT TARGET OBS::qt-slider-ignorewheel)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/slider-ignorewheel"
+                   "${CMAKE_BINARY_DIR}/shared/qt/slider-ignorewheel")
+endif()
 
-target_link_libraries(obs-studio PRIVATE OBS::ui-support)
+if(NOT TARGET OBS::qt-vertical-scroll-area)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/vertical-scroll-area"
+                   "${CMAKE_BINARY_DIR}/shared/qt/vertical-scroll-area")
+endif()
+
+target_link_libraries(obs-studio PRIVATE OBS::properties-view OBS::qt-plain-text-edit OBS::qt-slider-ignorewheel
+                                         OBS::qt-vertical-scroll-area)
 
 target_sources(
   obs-studio
   PRIVATE # cmake-format: sortable
+          absolute-slider.cpp
+          absolute-slider.hpp
           adv-audio-control.cpp
           adv-audio-control.hpp
           audio-encoders.cpp
           audio-encoders.hpp
           balance-slider.hpp
+          basic-controls.cpp
+          basic-controls.hpp
+          clickable-label.hpp
           context-bar-controls.cpp
           context-bar-controls.hpp
           focus-list.cpp
           focus-list.hpp
+          horizontal-scroll-area.cpp
+          horizontal-scroll-area.hpp
           hotkey-edit.cpp
           hotkey-edit.hpp
           item-widget-helpers.cpp
@@ -49,20 +48,15 @@ target_sources(
           log-viewer.hpp
           media-controls.cpp
           media-controls.hpp
-          media-slider.cpp
-          media-slider.hpp
           menu-button.cpp
           menu-button.hpp
           mute-checkbox.hpp
-          record-button.cpp
-          record-button.hpp
+          noncheckable-button.hpp
           remote-text.cpp
           remote-text.hpp
           scene-tree.cpp
           scene-tree.hpp
           screenshot-obj.hpp
-          slider-absoluteset-style.cpp
-          slider-absoluteset-style.hpp
           source-label.cpp
           source-label.hpp
           source-tree.cpp

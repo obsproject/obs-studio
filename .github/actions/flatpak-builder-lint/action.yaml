@@ -2,15 +2,11 @@ name: Run flatpak-builder-lint
 description: Runs flatpak-builder-lint with exceptions
 inputs:
   artifact:
-    description: Type of artifact to lint (builddir, repo, manifest)
+    description: Type of artifact to lint (builddir, repo, manifest, appstream)
     required: true
   path:
     description: Path to flatpak-builder manifest or Flatpak build directory
     required: true
-  validateToPublish:
-    description: If false, turns some errors to non-errors for non-publish workflow
-    required: false
-    default: true
   workingDirectory:
     description: Working directory to clone flatpak-builder-lint
     required: false
@@ -27,28 +23,12 @@ runs:
           builddir);;
           repo);;
           manifest);;
+          appstream);;
           *)
             echo "::error::Given artifact type is incorrect"
             exit 2
             ;;
         esac
-
-    - uses: actions/checkout@v3
-      with:
-        repository: flathub/flatpak-builder-lint
-        ref: v2.0.13
-        path: flatpak-builder-lint
-        set-safe-directory: ${{ inputs.workingDirectory }}
-
-    - name: Install Dependencies 🛍️
-      shell: bash
-      working-directory: ${{ inputs.workingDirectory }}
-      run: |
-        : Install Dependencies 🛍️
-        echo ::group::Install Dependencies
-        dnf install -y -q poetry jq
-        poetry -q -C flatpak-builder-lint install
-        echo ::endgroup::
 
     - name: Run flatpak-builder-lint
       id: result
@@ -57,27 +37,30 @@ runs:
       run: |
         : Run flatpak-builder-lint
         exit_code=0
-        ret=$(poetry -C flatpak-builder-lint run flatpak-builder-lint --exceptions ${{ inputs.artifact }} ${{ inputs.path }}) || exit_code=$?
+        ret=$(flatpak-builder-lint --exceptions ${{ inputs.artifact }} ${{ inputs.path }}) || exit_code=$?
         if [[ $exit_code != 0 && -z "$ret" ]]; then
           echo "::error::Error while running flatpak-builder-lint"
           exit 2
         fi
 
-        for ((i = 0 ; i < $(echo $ret | jq '.warnings | length') ; i++)); do
+        if [[ ${{ inputs.artifact }} == "appstream" ]]; then
+          echo $ret
+
+          [[ $exit_code != 0 ]] && echo "::error::Flatpak appstream info is not valid"
+
+          exit $exit_code
+        fi
+
+        n_warnings=$(echo $ret | jq '.warnings | length')
+        for ((i = 0 ; i < n_warnings ; i++)); do
           warning=$(echo $ret | jq ".warnings[$i]")
           echo "::warning::$warning found in the Flatpak ${{ inputs.artifact }}"
         done
 
         n_errors=$(echo $ret | jq '.errors | length')
-        for ((i = 0 ; i < $(echo $ret | jq '.errors | length') ; i++)); do
+        for ((i = 0 ; i < n_errors ; i++)); do
           error=$(echo $ret | jq ".errors[$i]")
-
-          if [[ "${{ inputs.validateToPublish }}" == "false" && "${error//\"}" == "appstream-screenshots-not-mirrored" ]]; then
-            echo "::notice::$error found and ignored in the Flatpak ${{ inputs.artifact }}"
-            n_errors=$(($n_errors-1))
-          else
-            echo "::error::$error found in the Flatpak ${{ inputs.artifact }}"
-          fi
+          echo "::error::$error found in the Flatpak ${{ inputs.artifact }}"
         done
 
-        [[ $n_errors == 0 ]] || exit 2
+        [[ -z $n_errors || $n_errors == 0 ]] || exit 2

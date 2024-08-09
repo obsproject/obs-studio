@@ -7,6 +7,10 @@ endif()
 add_library(decklink-output-ui MODULE)
 add_library(OBS::decklink-output-ui ALIAS decklink-output-ui)
 
+if(NOT TARGET OBS::properties-view)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/properties-view" "${CMAKE_BINARY_DIR}/shared/properties-view")
+endif()
+
 find_qt(COMPONENTS Widgets COMPONENTS_LINUX Gui)
 
 set_target_properties(
@@ -22,29 +26,10 @@ endif()
 
 target_sources(decklink-output-ui PRIVATE forms/output.ui)
 
-target_sources(
-  decklink-output-ui
-  PRIVATE DecklinkOutputUI.cpp
-          DecklinkOutputUI.h
-          decklink-ui-main.cpp
-          decklink-ui-main.h
-          ${CMAKE_SOURCE_DIR}/UI/double-slider.cpp
-          ${CMAKE_SOURCE_DIR}/UI/double-slider.hpp
-          ${CMAKE_SOURCE_DIR}/UI/plain-text-edit.hpp
-          ${CMAKE_SOURCE_DIR}/UI/plain-text-edit.cpp
-          ${CMAKE_SOURCE_DIR}/UI/properties-view.hpp
-          ${CMAKE_SOURCE_DIR}/UI/properties-view.cpp
-          ${CMAKE_SOURCE_DIR}/UI/properties-view.moc.hpp
-          ${CMAKE_SOURCE_DIR}/UI/qt-wrappers.hpp
-          ${CMAKE_SOURCE_DIR}/UI/qt-wrappers.cpp
-          ${CMAKE_SOURCE_DIR}/UI/spinbox-ignorewheel.cpp
-          ${CMAKE_SOURCE_DIR}/UI/spinbox-ignorewheel.hpp
-          ${CMAKE_SOURCE_DIR}/UI/slider-ignorewheel.cpp
-          ${CMAKE_SOURCE_DIR}/UI/slider-ignorewheel.hpp
-          ${CMAKE_SOURCE_DIR}/UI/vertical-scroll-area.hpp
-          ${CMAKE_SOURCE_DIR}/UI/vertical-scroll-area.cpp)
+target_sources(decklink-output-ui PRIVATE DecklinkOutputUI.cpp DecklinkOutputUI.h decklink-ui-main.cpp
+                                          decklink-ui-main.h)
 
-target_link_libraries(decklink-output-ui PRIVATE OBS::libobs OBS::frontend-api Qt::Widgets)
+target_link_libraries(decklink-output-ui PRIVATE OBS::libobs OBS::frontend-api OBS::properties-view Qt::Widgets)
 
 target_compile_features(decklink-output-ui PRIVATE cxx_std_17)
 

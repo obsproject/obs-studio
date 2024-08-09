@@ -47,24 +47,19 @@ const char *get_module_extension(void)
 	return ".so";
 }
 
-#ifdef __LP64__
-#define BIT_STRING "64bit"
-#else
-#define BIT_STRING "32bit"
-#endif
-
 #define FLATPAK_PLUGIN_PATH "/app/plugins"
 
 static const char *module_bin[] = {
+	"../../obs-plugins/64bit",
 	OBS_INSTALL_PREFIX "/" OBS_PLUGIN_DESTINATION,
-	"../../obs-plugins/" BIT_STRING,
 	FLATPAK_PLUGIN_PATH "/" OBS_PLUGIN_DESTINATION,
 };
 
 static const char *module_data[] = {
-	OBS_INSTALL_DATA_PATH "/obs-plugins/%module%",
 	OBS_DATA_PATH "/obs-plugins/%module%",
-	FLATPAK_PLUGIN_PATH "/share/obs/obs-plugins/%module%"};
+	OBS_INSTALL_DATA_PATH "/obs-plugins/%module%",
+	FLATPAK_PLUGIN_PATH "/share/obs/obs-plugins/%module%",
+};
 
 static const int module_patterns_size =
 	sizeof(module_bin) / sizeof(module_bin[0]);
@@ -73,8 +68,29 @@ static const struct obs_nix_hotkeys_vtable *hotkeys_vtable = NULL;
 
 void add_default_module_paths(void)
 {
-	for (int i = 0; i < module_patterns_size; i++)
+	char *module_bin_path =
+		os_get_executable_path_ptr("../" OBS_PLUGIN_PATH);
+	char *module_data_path = os_get_executable_path_ptr(
+		"../" OBS_DATA_PATH "/obs-plugins/%module%");
+
+	if (module_bin_path && module_data_path) {
+		char *abs_module_bin_path =
+			os_get_abs_path_ptr(module_bin_path);
+
+		if (abs_module_bin_path &&
+		    strcmp(abs_module_bin_path, OBS_INSTALL_PREFIX
+			   "/" OBS_PLUGIN_DESTINATION) != 0) {
+			obs_add_module_path(module_bin_path, module_data_path);
+		}
+		bfree(abs_module_bin_path);
+	}
+
+	bfree(module_bin_path);
+	bfree(module_data_path);
+
+	for (int i = 0; i < module_patterns_size; i++) {
 		obs_add_module_path(module_bin[i], module_data[i]);
+	}
 }
 
 /*
@@ -88,6 +104,18 @@ char *find_libobs_data_file(const char *file)
 
 	if (check_path(file, OBS_DATA_PATH "/libobs/", &output))
 		return output.array;
+
+	char *relative_data_path =
+		os_get_executable_path_ptr("../" OBS_DATA_PATH "/libobs/");
+	if (relative_data_path) {
+		bool found = check_path(file, relative_data_path, &output);
+
+		bfree(relative_data_path);
+
+		if (found) {
+			return output.array;
+		}
+	}
 
 	if (OBS_INSTALL_PREFIX[0] != 0) {
 		if (check_path(file, OBS_INSTALL_DATA_PATH "/libobs/", &output))

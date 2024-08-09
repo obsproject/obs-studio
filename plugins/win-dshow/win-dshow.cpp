@@ -1308,7 +1308,7 @@ static inline void AddCap(vector<Resolution> &resolutions, const VideoInfo &cap)
 }
 
 #define MAKE_DSHOW_FPS(fps) (10000000LL / (fps))
-#define MAKE_DSHOW_FRACTIONAL_FPS(den, num) ((num)*10000000LL / (den))
+#define MAKE_DSHOW_FRACTIONAL_FPS(den, num) ((num) * 10000000LL / (den))
 
 static long long GetOBSFPS()
 {

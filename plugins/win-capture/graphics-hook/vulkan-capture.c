@@ -2213,6 +2213,7 @@ static void VKAPI_CALL OBS_DestroySurfaceKHR(VkInstance inst, VkSurfaceKHR surf,
 	destroy_surface(inst, surf, ac);
 }
 
+/* clang-format off */
 #define GETPROCADDR(func)               \
 	if (!strcmp(pName, "vk" #func)) \
 		return (PFN_vkVoidFunction)&OBS_##func;
@@ -2220,6 +2221,7 @@ static void VKAPI_CALL OBS_DestroySurfaceKHR(VkInstance inst, VkSurfaceKHR surf,
 #define GETPROCADDR_IF_SUPPORTED(func)  \
 	if (!strcmp(pName, "vk" #func)) \
 		return funcs->func ? (PFN_vkVoidFunction)&OBS_##func : NULL;
+/* clang-format on */
 
 static PFN_vkVoidFunction VKAPI_CALL OBS_GetDeviceProcAddr(VkDevice device,
 							   const char *pName)

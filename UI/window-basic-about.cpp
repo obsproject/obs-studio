@@ -1,7 +1,7 @@
 #include "window-basic-about.hpp"
 #include "window-basic-main.hpp"
-#include "qt-wrappers.hpp"
 #include "remote-text.hpp"
+#include <qt-wrappers.hpp>
 #include <util/util.hpp>
 #include <util/platform.h>
 #include <platform.hpp>
@@ -108,7 +108,7 @@ void OBSAbout::ShowAbout()
 		std::string link = patron["link"].string_value();
 		int amount = patron["amount"].int_value();
 
-		if (top && amount < 10000) {
+		if (top && amount < 5000) {
 			text += "</p>";
 			top = false;
 		} else if (!first) {

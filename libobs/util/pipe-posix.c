@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <spawn.h>
+#include <fcntl.h>
 
 #include "bmem.h"
 #include "pipe.h"
@@ -30,14 +31,14 @@ struct os_process_pipe {
 	FILE *err_file;
 };
 
-os_process_pipe_t *os_process_pipe_create(const char *cmd_line,
-					  const char *type)
+os_process_pipe_t *os_process_pipe_create_internal(const char *bin, char **argv,
+						   const char *type)
 {
 	struct os_process_pipe process_pipe = {0};
 	struct os_process_pipe *out;
 	posix_spawn_file_actions_t file_actions;
 
-	if (!cmd_line || !type) {
+	if (!bin || !argv || !type) {
 		return NULL;
 	}
 
@@ -66,6 +67,11 @@ os_process_pipe_t *os_process_pipe_create(const char *cmd_line,
 		return NULL;
 	}
 
+	fcntl(mainfds[0], F_SETFD, FD_CLOEXEC);
+	fcntl(mainfds[1], F_SETFD, FD_CLOEXEC);
+	fcntl(errfds[0], F_SETFD, FD_CLOEXEC);
+	fcntl(errfds[1], F_SETFD, FD_CLOEXEC);
+
 	if (process_pipe.read_pipe) {
 		posix_spawn_file_actions_addclose(&file_actions, mainfds[0]);
 		if (mainfds[1] != STDOUT_FILENO) {
@@ -88,9 +94,8 @@ os_process_pipe_t *os_process_pipe_create(const char *cmd_line,
 					 STDERR_FILENO);
 
 	int pid;
-	char *argv[4] = {"sh", "-c", (char *)cmd_line, NULL};
-
-	int ret = posix_spawn(&pid, "/bin/sh", &file_actions, NULL, argv, NULL);
+	int ret = posix_spawn(&pid, bin, &file_actions, NULL,
+			      (char *const *)argv, NULL);
 
 	posix_spawn_file_actions_destroy(&file_actions);
 
@@ -119,6 +124,23 @@ os_process_pipe_t *os_process_pipe_create(const char *cmd_line,
 	out = bmalloc(sizeof(os_process_pipe_t));
 	*out = process_pipe;
 	return out;
+}
+
+os_process_pipe_t *os_process_pipe_create(const char *cmd_line,
+					  const char *type)
+{
+	if (!cmd_line)
+		return NULL;
+
+	char *argv[3] = {"-c", (char *)cmd_line, NULL};
+	return os_process_pipe_create_internal("/bin/sh", argv, type);
+}
+
+os_process_pipe_t *os_process_pipe_create2(const os_process_args_t *args,
+					   const char *type)
+{
+	char **argv = os_process_args_get_argv(args);
+	return os_process_pipe_create_internal(argv[0], argv, type);
 }
 
 int os_process_pipe_destroy(os_process_pipe_t *pp)

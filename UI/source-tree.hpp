@@ -13,6 +13,7 @@
 #include <obs-frontend-api.h>
 
 class QLabel;
+class OBSSourceLabel;
 class QCheckBox;
 class QLineEdit;
 class SourceTree;
@@ -57,7 +58,7 @@ private:
 	QCheckBox *vis = nullptr;
 	QCheckBox *lock = nullptr;
 	QHBoxLayout *boxLayout = nullptr;
-	QLabel *label = nullptr;
+	OBSSourceLabel *label = nullptr;
 
 	QLineEdit *editor = nullptr;
 
@@ -65,15 +66,7 @@ private:
 
 	SourceTree *tree;
 	OBSSceneItem sceneitem;
-	OBSSignal sceneRemoveSignal;
-	OBSSignal itemRemoveSignal;
-	OBSSignal groupReorderSignal;
-	OBSSignal selectSignal;
-	OBSSignal deselectSignal;
-	OBSSignal visibleSignal;
-	OBSSignal lockedSignal;
-	OBSSignal renameSignal;
-	OBSSignal removeSignal;
+	std::vector<OBSSignal> sigs;
 
 	virtual void paintEvent(QPaintEvent *event) override;
 
@@ -87,7 +80,6 @@ private slots:
 
 	void VisibilityChanged(bool visible);
 	void LockedChanged(bool locked);
-	void Renamed(const QString &name);
 
 	void ExpandClicked(bool checked);
 
@@ -190,7 +182,7 @@ public:
 public slots:
 	inline void ReorderItems() { GetStm()->ReorderItems(); }
 	inline void RefreshItems() { GetStm()->SceneChanged(); }
-	void Remove(OBSSceneItem item);
+	void Remove(OBSSceneItem item, OBSScene scene);
 	void GroupSelectedItems();
 	void UngroupSelectedGroups();
 	void AddGroup();

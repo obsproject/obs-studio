@@ -19,6 +19,7 @@
 
 #include "platform.h"
 #include "bmem.h"
+#include "dstr.h"
 #include "pipe.h"
 
 struct os_process_pipe {
@@ -143,6 +144,69 @@ error:
 	CloseHandle(output);
 	CloseHandle(input);
 	return NULL;
+}
+
+static inline void add_backslashes(struct dstr *str, size_t count)
+{
+	while (count--)
+		dstr_cat_ch(str, '\\');
+}
+
+os_process_pipe_t *os_process_pipe_create2(const os_process_args_t *args,
+					   const char *type)
+{
+	struct dstr cmd_line = {0};
+
+	/* Convert list to command line as Windows does not have any API that
+	 * allows us to just pass argc/argv. */
+	char **argv = os_process_args_get_argv(args);
+
+	/* Based on Python subprocess module implementation. */
+	while (*argv) {
+		size_t bs_count = 0;
+		const char *arg = *argv;
+		bool needs_quotes = strlen(arg) == 0 ||
+				    strstr(arg, " ") != NULL ||
+				    strstr(arg, "\t") != NULL;
+
+		if (cmd_line.len)
+			dstr_cat_ch(&cmd_line, ' ');
+		if (needs_quotes)
+			dstr_cat_ch(&cmd_line, '"');
+
+		while (*arg) {
+			if (*arg == '\\') {
+				bs_count++;
+			} else if (*arg == '"') {
+				add_backslashes(&cmd_line, bs_count * 2);
+				dstr_cat(&cmd_line, "\\\"");
+				bs_count = 0;
+			} else {
+				if (bs_count) {
+					add_backslashes(&cmd_line, bs_count);
+					bs_count = 0;
+				}
+				dstr_cat_ch(&cmd_line, *arg);
+			}
+
+			arg++;
+		}
+
+		if (bs_count)
+			add_backslashes(&cmd_line, bs_count);
+
+		if (needs_quotes) {
+			add_backslashes(&cmd_line, bs_count);
+			dstr_cat_ch(&cmd_line, '"');
+		}
+
+		argv++;
+	}
+
+	os_process_pipe_t *ret = os_process_pipe_create(cmd_line.array, type);
+
+	dstr_free(&cmd_line);
+	return ret;
 }
 
 int os_process_pipe_destroy(os_process_pipe_t *pp)

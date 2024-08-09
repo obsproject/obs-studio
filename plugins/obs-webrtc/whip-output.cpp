@@ -21,6 +21,9 @@ const uint8_t audio_payload_type = 111;
 const char *video_mid = "1";
 const uint8_t video_payload_type = 96;
 
+// ~3 seconds of 8.5 Megabit video
+const int video_nack_buffer_size = 4000;
+
 WHIPOutput::WHIPOutput(obs_data_t *, obs_output_t *output)
 	: output(output),
 	  endpoint_url(),
@@ -83,12 +86,12 @@ void WHIPOutput::Data(struct encoder_packet *packet)
 		return;
 	}
 
-	if (packet->type == OBS_ENCODER_AUDIO) {
+	if (audio_track && packet->type == OBS_ENCODER_AUDIO) {
 		int64_t duration = packet->dts_usec - last_audio_timestamp;
 		Send(packet->data, packet->size, duration, audio_track,
 		     audio_sr_reporter);
 		last_audio_timestamp = packet->dts_usec;
-	} else if (packet->type == OBS_ENCODER_VIDEO) {
+	} else if (video_track && packet->type == OBS_ENCODER_VIDEO) {
 		int64_t duration = packet->dts_usec - last_video_timestamp;
 		Send(packet->data, packet->size, duration, video_track,
 		     video_sr_reporter);
@@ -99,6 +102,12 @@ void WHIPOutput::Data(struct encoder_packet *packet)
 void WHIPOutput::ConfigureAudioTrack(std::string media_stream_id,
 				     std::string cname)
 {
+	if (!obs_output_get_audio_encoder(output, 0)) {
+		do_log(LOG_DEBUG,
+		       "Not configuring audio track: Audio encoder not assigned");
+		return;
+	}
+
 	auto media_stream_track_id = std::string(media_stream_id + "-audio");
 
 	uint32_t ssrc = base_ssrc;
@@ -112,62 +121,83 @@ void WHIPOutput::ConfigureAudioTrack(std::string media_stream_id,
 
 	auto rtp_config = std::make_shared<rtc::RtpPacketizationConfig>(
 		ssrc, cname, audio_payload_type,
-		rtc::OpusRtpPacketizer::defaultClockRate);
+		rtc::OpusRtpPacketizer::DefaultClockRate);
 	auto packetizer = std::make_shared<rtc::OpusRtpPacketizer>(rtp_config);
 	audio_sr_reporter = std::make_shared<rtc::RtcpSrReporter>(rtp_config);
 	auto nack_responder = std::make_shared<rtc::RtcpNackResponder>();
 
-	auto opus_handler =
-		std::make_shared<rtc::OpusPacketizationHandler>(packetizer);
-	opus_handler->addToChain(audio_sr_reporter);
-	opus_handler->addToChain(nack_responder);
-	audio_track->setMediaHandler(opus_handler);
+	packetizer->addToChain(audio_sr_reporter);
+	packetizer->addToChain(nack_responder);
+	audio_track->setMediaHandler(packetizer);
 }
 
 void WHIPOutput::ConfigureVideoTrack(std::string media_stream_id,
 				     std::string cname)
 {
+	if (!obs_output_get_video_encoder(output)) {
+		do_log(LOG_DEBUG,
+		       "Not configuring video track: Video encoder not assigned");
+		return;
+	}
+
 	auto media_stream_track_id = std::string(media_stream_id + "-video");
+	std::shared_ptr<rtc::RtpPacketizer> packetizer;
 
 	// More predictable SSRC values between audio and video
 	uint32_t ssrc = base_ssrc + 1;
 
 	rtc::Description::Video video_description(
 		video_mid, rtc::Description::Direction::SendOnly);
-	video_description.addH264Codec(video_payload_type);
 	video_description.addSSRC(ssrc, cname, media_stream_id,
 				  media_stream_track_id);
-	video_track = peer_connection->addTrack(video_description);
 
 	auto rtp_config = std::make_shared<rtc::RtpPacketizationConfig>(
 		ssrc, cname, video_payload_type,
 		rtc::H264RtpPacketizer::defaultClockRate);
-	auto packetizer = std::make_shared<rtc::H264RtpPacketizer>(
-		rtc::H264RtpPacketizer::Separator::StartSequence, rtp_config,
-		MAX_VIDEO_FRAGMENT_SIZE);
-	video_sr_reporter = std::make_shared<rtc::RtcpSrReporter>(rtp_config);
-	auto nack_responder = std::make_shared<rtc::RtcpNackResponder>();
 
-	auto h264_handler =
-		std::make_shared<rtc::H264PacketizationHandler>(packetizer);
-	h264_handler->addToChain(video_sr_reporter);
-	h264_handler->addToChain(nack_responder);
-	video_track->setMediaHandler(h264_handler);
+	const obs_encoder_t *encoder = obs_output_get_video_encoder2(output, 0);
+	if (!encoder)
+		return;
+
+	const char *codec = obs_encoder_get_codec(encoder);
+	if (strcmp("h264", codec) == 0) {
+		video_description.addH264Codec(video_payload_type);
+		packetizer = std::make_shared<rtc::H264RtpPacketizer>(
+			rtc::H264RtpPacketizer::Separator::StartSequence,
+			rtp_config, MAX_VIDEO_FRAGMENT_SIZE);
+#ifdef ENABLE_HEVC
+	} else if (strcmp("hevc", codec) == 0) {
+		video_description.addH265Codec(video_payload_type);
+		packetizer = std::make_shared<rtc::H265RtpPacketizer>(
+			rtc::H265RtpPacketizer::Separator::StartSequence,
+			rtp_config, MAX_VIDEO_FRAGMENT_SIZE);
+#endif
+	} else if (strcmp("av1", codec) == 0) {
+		video_description.addAV1Codec(video_payload_type);
+		packetizer = std::make_shared<rtc::AV1RtpPacketizer>(
+			rtc::AV1RtpPacketizer::Packetization::TemporalUnit,
+			rtp_config, MAX_VIDEO_FRAGMENT_SIZE);
+	} else {
+		do_log(LOG_ERROR, "Video codec not supported: %s", codec);
+		return;
+	}
+
+	video_sr_reporter = std::make_shared<rtc::RtcpSrReporter>(rtp_config);
+	packetizer->addToChain(video_sr_reporter);
+	packetizer->addToChain(std::make_shared<rtc::RtcpNackResponder>(
+		video_nack_buffer_size));
+
+	video_track = peer_connection->addTrack(video_description);
+	video_track->setMediaHandler(packetizer);
 }
 
 /**
- * @brief Initialize encoders and store connect info provided by the service.
+ * @brief Store connect info provided by the service.
  *
  * @return bool
  */
 bool WHIPOutput::Init()
 {
-	if (!obs_output_can_begin_data_capture(output, 0))
-		return false;
-
-	if (!obs_output_initialize_encoders(output, 0))
-		return false;
-
 	obs_service_t *service = obs_output_get_service(output);
 	if (!service) {
 		obs_output_signal_stop(output, OBS_OUTPUT_ERROR);
@@ -194,8 +224,13 @@ bool WHIPOutput::Init()
  */
 bool WHIPOutput::Setup()
 {
+	rtc::Configuration cfg;
 
-	peer_connection = std::make_shared<rtc::PeerConnection>();
+#if RTC_VERSION_MAJOR == 0 && RTC_VERSION_MINOR > 20 || RTC_VERSION_MAJOR > 1
+	cfg.disableAutoGathering = true;
+#endif
+
+	peer_connection = std::make_shared<rtc::PeerConnection>(cfg);
 
 	peer_connection->onStateChange([this](rtc::PeerConnection::State state) {
 		switch (state) {
@@ -253,6 +288,68 @@ bool WHIPOutput::Setup()
 	return true;
 }
 
+// Given a Link header extract URL/Username/Credential and create rtc::IceServer
+// <turn:turn.example.net>; username="user"; credential="myPassword";
+//
+// https://www.ietf.org/archive/id/draft-ietf-wish-whip-13.html#section-4.4
+void WHIPOutput::ParseLinkHeader(std::string val,
+				 std::vector<rtc::IceServer> &iceServers)
+{
+	std::string url, username, password;
+
+	auto extractUrl = [](std::string input) -> std::string {
+		auto head = input.find("<") + 1;
+		auto tail = input.find(">");
+
+		if (head == std::string::npos || tail == std::string::npos) {
+			return "";
+		}
+		return input.substr(head, tail - head);
+	};
+
+	auto extractValue = [](std::string input) -> std::string {
+		auto head = input.find("\"") + 1;
+		auto tail = input.find_last_of("\"");
+
+		if (head == std::string::npos || tail == std::string::npos) {
+			return "";
+		}
+		return input.substr(head, tail - head);
+	};
+
+	while (true) {
+		std::string token = val;
+		auto pos = token.find(";");
+		if (pos != std::string::npos) {
+			token = val.substr(0, pos);
+		}
+
+		if (token.find("<turn:", 0) == 0) {
+			url = extractUrl(token);
+		} else if (token.find("username=") != std::string::npos) {
+			username = extractValue(token);
+		} else if (token.find("credential=") != std::string::npos) {
+			password = extractValue(token);
+		}
+
+		if (pos == std::string::npos) {
+			break;
+		}
+		val.erase(0, pos + 1);
+	}
+
+	try {
+		auto iceServer = rtc::IceServer(url);
+		iceServer.username = username;
+		iceServer.password = password;
+		iceServers.push_back(iceServer);
+	} catch (const std::invalid_argument &err) {
+		do_log(LOG_WARNING,
+		       "Failed to construct ICE Server from %s: %s",
+		       val.c_str(), err.what());
+	}
+}
+
 bool WHIPOutput::Connect()
 {
 	struct curl_slist *headers = NULL;
@@ -265,7 +362,7 @@ bool WHIPOutput::Connect()
 	}
 
 	std::string read_buffer;
-	std::vector<std::string> location_headers;
+	std::vector<std::string> http_headers;
 
 	auto offer_sdp =
 		std::string(peer_connection->localDescription().value());
@@ -277,12 +374,13 @@ bool WHIPOutput::Connect()
 	// Add user-agent to our requests
 	headers = curl_slist_append(headers, user_agent.c_str());
 
+	char error_buffer[CURL_ERROR_SIZE] = {};
+
 	CURL *c = curl_easy_init();
 	curl_easy_setopt(c, CURLOPT_WRITEFUNCTION, curl_writefunction);
 	curl_easy_setopt(c, CURLOPT_WRITEDATA, (void *)&read_buffer);
-	curl_easy_setopt(c, CURLOPT_HEADERFUNCTION,
-			 curl_header_location_function);
-	curl_easy_setopt(c, CURLOPT_HEADERDATA, (void *)&location_headers);
+	curl_easy_setopt(c, CURLOPT_HEADERFUNCTION, curl_header_function);
+	curl_easy_setopt(c, CURLOPT_HEADERDATA, (void *)&http_headers);
 	curl_easy_setopt(c, CURLOPT_HTTPHEADER, headers);
 	curl_easy_setopt(c, CURLOPT_URL, endpoint_url.c_str());
 	curl_easy_setopt(c, CURLOPT_POST, 1L);
@@ -290,6 +388,7 @@ bool WHIPOutput::Connect()
 	curl_easy_setopt(c, CURLOPT_TIMEOUT, 8L);
 	curl_easy_setopt(c, CURLOPT_FOLLOWLOCATION, 1L);
 	curl_easy_setopt(c, CURLOPT_UNRESTRICTED_AUTH, 1L);
+	curl_easy_setopt(c, CURLOPT_ERRORBUFFER, error_buffer);
 
 	auto cleanup = [&]() {
 		curl_easy_cleanup(c);
@@ -298,8 +397,9 @@ bool WHIPOutput::Connect()
 
 	CURLcode res = curl_easy_perform(c);
 	if (res != CURLE_OK) {
-		do_log(LOG_ERROR,
-		       "Connect failed: CURL returned result not CURLE_OK");
+		do_log(LOG_ERROR, "Connect failed: %s",
+		       error_buffer[0] ? error_buffer
+				       : curl_easy_strerror(res));
 		cleanup();
 		obs_output_signal_stop(output, OBS_OUTPUT_CONNECT_FAILED);
 		return false;
@@ -327,7 +427,18 @@ bool WHIPOutput::Connect()
 	long redirect_count = 0;
 	curl_easy_getinfo(c, CURLINFO_REDIRECT_COUNT, &redirect_count);
 
-	if (location_headers.size() < static_cast<size_t>(redirect_count) + 1) {
+	std::string last_location_header;
+	size_t location_header_count = 0;
+	for (auto &http_header : http_headers) {
+		auto value = value_for_header("location", http_header);
+		if (value.empty())
+			continue;
+
+		location_header_count++;
+		last_location_header = value;
+	}
+
+	if (location_header_count < static_cast<size_t>(redirect_count) + 1) {
 		do_log(LOG_ERROR,
 		       "WHIP server did not provide a resource URL via the Location header");
 		cleanup();
@@ -336,7 +447,22 @@ bool WHIPOutput::Connect()
 	}
 
 	CURLU *url_builder = curl_url();
-	auto last_location_header = location_headers.back();
+
+	// Parse Link headers to extract STUN/TURN server configuration URLs
+	std::vector<rtc::IceServer> iceServers;
+	for (auto &http_header : http_headers) {
+		auto value = value_for_header("link", http_header);
+		if (value.empty())
+			continue;
+
+		// Parse multiple links separated by ','
+		for (auto end = value.find(","); end != std::string::npos;
+		     end = value.find(",")) {
+			this->ParseLinkHeader(value.substr(0, end), iceServers);
+			value = value.substr(end + 1);
+		}
+		this->ParseLinkHeader(value, iceServers);
+	}
 
 	// If Location header doesn't start with `http` it is a relative URL.
 	// Construct a absolute URL using the host of the effective URL
@@ -384,8 +510,39 @@ bool WHIPOutput::Connect()
 	response.erase(0, response.find("v=0"));
 
 	rtc::Description answer(response, "answer");
-	peer_connection->setRemoteDescription(answer);
+	try {
+		peer_connection->setRemoteDescription(answer);
+	} catch (const std::invalid_argument &err) {
+		do_log(LOG_ERROR, "WHIP server responded with invalid SDP: %s",
+		       err.what());
+		cleanup();
+		struct dstr error_message;
+		dstr_init_copy(&error_message,
+			       obs_module_text("Error.InvalidSDP"));
+		dstr_replace(&error_message, "%1", err.what());
+		obs_output_set_last_error(output, error_message.array);
+		dstr_free(&error_message);
+		obs_output_signal_stop(output, OBS_OUTPUT_CONNECT_FAILED);
+		return false;
+	} catch (const std::exception &err) {
+		do_log(LOG_ERROR, "Failed to set remote description: %s",
+		       err.what());
+		cleanup();
+		struct dstr error_message;
+		dstr_init_copy(&error_message,
+			       obs_module_text("Error.NoRemoteDescription"));
+		dstr_replace(&error_message, "%1", err.what());
+		obs_output_set_last_error(output, error_message.array);
+		dstr_free(&error_message);
+		obs_output_signal_stop(output, OBS_OUTPUT_CONNECT_FAILED);
+		return false;
+	}
 	cleanup();
+
+#if RTC_VERSION_MAJOR == 0 && RTC_VERSION_MINOR > 20 || RTC_VERSION_MAJOR > 1
+	peer_connection->gatherLocalCandidates(iceServers);
+#endif
+
 	return true;
 }
 
@@ -428,11 +585,14 @@ void WHIPOutput::SendDelete()
 	// Add user-agent to our requests
 	headers = curl_slist_append(headers, user_agent.c_str());
 
+	char error_buffer[CURL_ERROR_SIZE] = {};
+
 	CURL *c = curl_easy_init();
 	curl_easy_setopt(c, CURLOPT_HTTPHEADER, headers);
 	curl_easy_setopt(c, CURLOPT_URL, resource_url.c_str());
 	curl_easy_setopt(c, CURLOPT_CUSTOMREQUEST, "DELETE");
 	curl_easy_setopt(c, CURLOPT_TIMEOUT, 8L);
+	curl_easy_setopt(c, CURLOPT_ERRORBUFFER, error_buffer);
 
 	auto cleanup = [&]() {
 		curl_easy_cleanup(c);
@@ -442,8 +602,9 @@ void WHIPOutput::SendDelete()
 	CURLcode res = curl_easy_perform(c);
 	if (res != CURLE_OK) {
 		do_log(LOG_WARNING,
-		       "DELETE request for resource URL failed. Reason: %s",
-		       curl_easy_strerror(res));
+		       "DELETE request for resource URL failed: %s",
+		       error_buffer[0] ? error_buffer
+				       : curl_easy_strerror(res));
 		cleanup();
 		return;
 	}
@@ -517,12 +678,12 @@ void WHIPOutput::Send(void *data, uintptr_t size, uint64_t duration,
 	// Set new timestamp
 	rtp_config->timestamp = rtp_config->timestamp + elapsed_timestamp;
 
-	// get elapsed time in clock rate from last RTCP sender report
+	// Get elapsed time in clock rate from last RTCP sender report
 	auto report_elapsed_timestamp =
 		rtp_config->timestamp -
 		rtcp_sr_reporter->lastReportedTimestamp();
 
-	// check if last report was at least 1 second ago
+	// Check if last report was at least 1 second ago
 	if (rtp_config->timestampToSeconds(report_elapsed_timestamp) > 1)
 		rtcp_sr_reporter->setNeedsToReport();
 
@@ -536,10 +697,18 @@ void WHIPOutput::Send(void *data, uintptr_t size, uint64_t duration,
 
 void register_whip_output()
 {
-	struct obs_output_info info = {};
+	const uint32_t base_flags = OBS_OUTPUT_ENCODED | OBS_OUTPUT_SERVICE;
 
+	const char *audio_codecs = "opus";
+#ifdef ENABLE_HEVC
+	const char *video_codecs = "h264;hevc;av1";
+#else
+	const char *video_codecs = "h264;av1";
+#endif
+
+	struct obs_output_info info = {};
 	info.id = "whip_output";
-	info.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_SERVICE;
+	info.flags = OBS_OUTPUT_AV | base_flags;
 	info.get_name = [](void *) -> const char * {
 		return obs_module_text("Output.Name");
 	};
@@ -571,9 +740,20 @@ void register_whip_output()
 	info.get_connect_time_ms = [](void *priv_data) -> int {
 		return static_cast<WHIPOutput *>(priv_data)->GetConnectTime();
 	};
-	info.encoded_video_codecs = "h264";
-	info.encoded_audio_codecs = "opus";
+	info.encoded_video_codecs = video_codecs;
+	info.encoded_audio_codecs = audio_codecs;
 	info.protocols = "WHIP";
 
+	obs_register_output(&info);
+
+	info.id = "whip_output_video";
+	info.flags = OBS_OUTPUT_VIDEO | base_flags;
+	info.encoded_audio_codecs = nullptr;
+	obs_register_output(&info);
+
+	info.id = "whip_output_audio";
+	info.flags = OBS_OUTPUT_AUDIO | base_flags;
+	info.encoded_video_codecs = nullptr;
+	info.encoded_audio_codecs = audio_codecs;
 	obs_register_output(&info);
 }

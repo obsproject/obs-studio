@@ -46,4 +46,6 @@ add_library(OBS::virtualcam ALIAS obs-virtualcam-module)
 target_sources(obs-virtualcam-module PRIVATE cmake/windows/virtualcam-module32.def)
 target_link_libraries(obs-virtualcam-module PRIVATE _virtualcam)
 
+set_property(TARGET obs-virtualcam-module PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
 set_property(TARGET obs-virtualcam-module PROPERTY OUTPUT_NAME obs-virtualcam-module32)

@@ -17,11 +17,7 @@ private:
 	OBSBasic *main;
 	OBSSceneItem item;
 	OBSSignal channelChangedSignal;
-	OBSSignal transformSignal;
-	OBSSignal removeSignal;
-	OBSSignal selectSignal;
-	OBSSignal deselectSignal;
-	OBSSignal lockSignal;
+	std::vector<OBSSignal> sigs;
 
 	std::string undo_data;
 

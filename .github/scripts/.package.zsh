@@ -51,7 +51,7 @@ package() {
   local -r -a _valid_targets=(
     macos-x86_64
     macos-arm64
-    linux-x86_64
+    ubuntu-x86_64
   )
 
   local config='RelWithDebInfo'
@@ -208,7 +208,7 @@ package() {
 
     log_group
 
-  } elif [[ ${host_os} == linux ]] {
+  } elif [[ ${host_os} == ubuntu ]] {
     local cmake_bin='/usr/bin/cmake'
     local -a cmake_args=()
     if (( debug )) cmake_args+=(--verbose)
@@ -216,11 +216,11 @@ package() {
     if (( package )) {
       log_group "Packaging obs-studio..."
       pushd ${project_root}
-      ${cmake_bin} --build build_${target##*-} --config ${config} -t package ${cmake_args}
-      output_name="${output_name}-${target##*-}-linux-gnu"
+      ${cmake_bin} --build build_${target%%-*} --config ${config} --target package ${cmake_args}
+      output_name="${output_name}-${target##*-}-ubuntu-gnu"
 
-      pushd ${project_root}/build_${target##*-}
-      local -a files=(obs-studio-*-Linux*.(ddeb|deb))
+      pushd ${project_root}/build_${target%%-*}
+      local -a files=(obs-studio-*-Linux*.(ddeb|deb|ddeb.sha256|deb.sha256))
       for file (${files}) {
         mv ${file} ${file//obs-studio-*-Linux/${output_name}}
       }
@@ -228,12 +228,25 @@ package() {
       popd
     } else {
       log_group "Archiving obs-studio..."
-      output_name="${output_name}-${target##*-}-linux-gnu"
+      output_name="${output_name}-${target##*-}-ubuntu-gnu"
 
-      pushd ${project_root}/build_${target##*-}/install/${config}
-      XZ_OPT=-T0 tar -cvJf ${project_root}/build_${target##*-}/${output_name}.tar.xz (bin|lib|share)
+      pushd ${project_root}/build_${target%%-*}/install/${config}
+      XZ_OPT=-T0 tar -cvJf ${project_root}/build_${target%%-*}/${output_name}.tar.xz (bin|lib|share)
       popd
     }
+
+    pushd ${project_root}
+    ${cmake_bin} --build build_${target%%-*} --config ${config} --target package_source ${cmake_args}
+    output_name="${output_name}-sources"
+
+    pushd ${project_root}/build_${target%%-*}
+    local -a files=(obs-studio-*-sources.tar.*)
+    for file (${files}) {
+      mv ${file} ${file//obs-studio-*-sources/${output_name}}
+    }
+    popd
+    popd
+
     log_group
   }
 }
