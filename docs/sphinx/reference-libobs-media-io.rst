@@ -503,6 +503,23 @@ FFmpeg wrapper to resample audio.
 
 ---------------------
 
+.. function:: void audio_resampler_set_compensation_error(audio_resampler_t *resampler, int error_ns)
+
+   Activate resampling compensation and set current error.
+
+   :param resampler: Audio resampler object
+   :param error_ns:  Current error in nanosecond
+
+---------------------
+
+.. function:: void audio_resampler_disable_compensation(audio_resampler_t *resampler)
+
+   Deactivate resampling compensation.
+
+   :param resampler: Audio resampler object
+
+---------------------
+
 .. function:: bool audio_resampler_resample(audio_resampler_t *resampler, uint8_t *output[], uint32_t *out_frames, uint64_t *ts_offset, const uint8_t *const input[], uint32_t in_frames)
 
    Resamples audio frames.
