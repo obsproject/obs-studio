@@ -100,6 +100,7 @@ static bool unfiltered_log = false;
 bool opt_start_streaming = false;
 bool opt_start_recording = false;
 bool opt_studio_mode = false;
+bool opt_no_studio_mode = false;
 bool opt_start_replaybuffer = false;
 bool opt_start_virtualcam = false;
 bool opt_minimize_tray = false;
@@ -2718,6 +2719,9 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--studio-mode", nullptr)) {
 			opt_studio_mode = true;
 
+		} else if (arg_is(argv[i], "--no-studio-mode", nullptr)) {
+			opt_no_studio_mode = true;
+
 		} else if (arg_is(argv[i], "--allow-opengl", nullptr)) {
 			opt_allow_opengl = true;
 
@@ -2743,6 +2747,7 @@ int main(int argc, char *argv[])
 				"--profile <string>: Use specific profile.\n"
 				"--scene <string>: Start with specific scene.\n\n"
 				"--studio-mode: Enable studio mode.\n"
+				"--no-studio-mode: Disable studio mode.\n"
 				"--minimize-to-tray: Minimize to system tray.\n"
 #if ALLOW_PORTABLE_MODE
 				"--portable, -p: Use portable mode.\n"
@@ -2771,6 +2776,12 @@ int main(int argc, char *argv[])
 				  << App()->GetVersionString(false) << "\n";
 			exit(0);
 		}
+	}
+
+	if (opt_studio_mode && opt_no_studio_mode) {
+		std::cout
+			<< "Can't use \"--studio-mode\" and \"--no-studio-mode\" together.\n";
+		exit(1);
 	}
 
 #if ALLOW_PORTABLE_MODE
