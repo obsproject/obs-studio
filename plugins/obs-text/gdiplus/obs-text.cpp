@@ -764,6 +764,12 @@ inline void TextSource::Update(obs_data_t *s)
 	uint32_t new_bk_color = obs_data_get_uint32(s, S_BKCOLOR);
 	uint32_t new_bk_opacity = obs_data_get_uint32(s, S_BKOPACITY);
 
+	Align new_align = align;
+	VAlign new_valign = valign;
+
+	wstring old_text = text;
+	bool needs_render = false;
+
 	/* ----------------------------- */
 
 	wstring new_face = to_wide(font_face);
@@ -780,6 +786,8 @@ inline void TextSource::Update(obs_data_t *s)
 		strikeout = new_strikeout;
 
 		UpdateFont();
+
+		needs_render = true;
 	}
 
 	/* ----------------------------- */
@@ -788,6 +796,16 @@ inline void TextSource::Update(obs_data_t *s)
 	new_color2 = rgb_to_bgr(new_color2);
 	new_o_color = rgb_to_bgr(new_o_color);
 	new_bk_color = rgb_to_bgr(new_bk_color);
+
+	if (color != new_color || opacity != new_opacity ||
+	    (gradient && color2 != new_color2) ||
+	    (gradient && opacity2 != new_opacity2) ||
+	    gradient_dir != new_grad_dir || vertical != new_vertical ||
+	    bk_color != new_bk_color || bk_opacity != new_bk_opacity ||
+	    use_extents != new_extents || wrap != new_extents_wrap ||
+	    extents_cx != n_extents_cx || extents_cy != n_extents_cy ||
+	    antialiasing != new_antialiasing)
+		needs_render = true;
 
 	color = new_color;
 	opacity = new_opacity;
@@ -831,26 +849,43 @@ inline void TextSource::Update(obs_data_t *s)
 	}
 	TransformText();
 
+	if (old_text != text || use_outline != new_outline ||
+	    outline_color != new_o_color || outline_opacity != new_o_opacity ||
+	    outline_size != roundf(float(new_o_size)))
+		needs_render = true;
+
 	use_outline = new_outline;
 	outline_color = new_o_color;
 	outline_opacity = new_o_opacity;
 	outline_size = roundf(float(new_o_size));
 
 	if (strcmp(align_str, S_ALIGN_CENTER) == 0)
-		align = Align::Center;
+		new_align = Align::Center;
 	else if (strcmp(align_str, S_ALIGN_RIGHT) == 0)
-		align = Align::Right;
+		new_align = Align::Right;
 	else
-		align = Align::Left;
+		new_align = Align::Left;
+
+	if (align != new_align) {
+		align = new_align;
+		needs_render = true;
+	}
 
 	if (strcmp(valign_str, S_VALIGN_CENTER) == 0)
-		valign = VAlign::Center;
+		new_valign = VAlign::Center;
 	else if (strcmp(valign_str, S_VALIGN_BOTTOM) == 0)
-		valign = VAlign::Bottom;
+		new_valign = VAlign::Bottom;
 	else
-		valign = VAlign::Top;
+		new_valign = VAlign::Top;
 
-	RenderText();
+	if (valign != new_valign) {
+		valign = new_valign;
+		needs_render = true;
+	}
+
+	if (needs_render)
+		RenderText();
+
 	update_time_elapsed = 0.0f;
 
 	/* ----------------------------- */
@@ -870,9 +905,12 @@ inline void TextSource::Tick(float seconds)
 		update_time_elapsed = 0.0f;
 
 		if (update_file) {
+			wstring old_text = text;
 			LoadFileText();
 			TransformText();
-			RenderText();
+			if (old_text != text)
+				RenderText();
+
 			update_file = false;
 		}
 
