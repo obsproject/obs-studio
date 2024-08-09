@@ -1,20 +1,23 @@
 #include "obs-nvenc.h"
+#include "nvenc-helpers.h"
+
 #include <util/platform.h>
 #include <util/threading.h>
 #include <util/config-file.h>
 #include <util/dstr.h>
 #include <util/pipe.h>
 
-#ifdef _WIN32
-#include <util/windows/device-enum.h>
-#endif
-
 static void *nvenc_lib = NULL;
-static void *cuda_lib = NULL;
 static pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
 NV_ENCODE_API_FUNCTION_LIST nv = {NV_ENCODE_API_FUNCTION_LIST_VER};
 NV_CREATE_INSTANCE_FUNC nv_create_instance = NULL;
-CudaFunctions *cu = NULL;
+
+/* Will be populated with results from obs-nvenc-test */
+static struct encoder_caps encoder_capabilities[3];
+static bool codec_supported[3];
+static int num_devices;
+static int driver_version_major;
+static int driver_version_minor;
 
 #define error(format, ...) blog(LOG_ERROR, "[obs-nvenc] " format, ##__VA_ARGS__)
 
@@ -61,19 +64,19 @@ bool nv_failed2(obs_encoder_t *encoder, void *session, NVENCSTATUS err,
 
 	switch (err) {
 	case NV_ENC_ERR_OUT_OF_MEMORY:
-		obs_encoder_set_last_error(
-			encoder, obs_module_text("NVENC.TooManySessions"));
+		obs_encoder_set_last_error(encoder,
+					   obs_module_text("TooManySessions"));
 		break;
 
 	case NV_ENC_ERR_NO_ENCODE_DEVICE:
 	case NV_ENC_ERR_UNSUPPORTED_DEVICE:
 		obs_encoder_set_last_error(
-			encoder, obs_module_text("NVENC.UnsupportedDevice"));
+			encoder, obs_module_text("UnsupportedDevice"));
 		break;
 
 	case NV_ENC_ERR_INVALID_VERSION:
-		obs_encoder_set_last_error(
-			encoder, obs_module_text("NVENC.OutdatedDriver"));
+		obs_encoder_set_last_error(encoder,
+					   obs_module_text("OutdatedDriver"));
 		break;
 
 	default:
@@ -122,28 +125,9 @@ static void *load_nv_func(const char *func)
 	return func_ptr;
 }
 
-bool load_cuda_lib(void)
-{
-#ifdef _WIN32
-	cuda_lib = os_dlopen("nvcuda.dll");
-#else
-	cuda_lib = os_dlopen("libcuda.so.1");
-#endif
-	return cuda_lib != NULL;
-}
-
-static void *load_cuda_func(const char *func)
-{
-	void *func_ptr = os_dlsym(cuda_lib, func);
-	if (!func_ptr) {
-		error("Could not load function: %s", func);
-	}
-	return func_ptr;
-}
-
 typedef NVENCSTATUS(NVENCAPI *NV_MAX_VER_FUNC)(uint32_t *);
 
-uint32_t get_nvenc_ver(void)
+static uint32_t get_nvenc_ver(void)
 {
 	static NV_MAX_VER_FUNC nv_max_ver = NULL;
 	static bool failed = false;
@@ -227,11 +211,9 @@ static inline bool init_nvenc_internal(obs_encoder_t *encoder)
 		return false;
 	}
 
-	uint32_t supported_ver = (NVENC_COMPAT_MAJOR_VER << 4) |
-				 NVENC_COMPAT_MINOR_VER;
-	if (supported_ver > ver) {
-		obs_encoder_set_last_error(
-			encoder, obs_module_text("NVENC.OutdatedDriver"));
+	if (ver < NVCODEC_CONFIGURED_VERSION) {
+		obs_encoder_set_last_error(encoder,
+					   obs_module_text("OutdatedDriver"));
 
 		error("Current driver version does not support this NVENC "
 		      "version, please upgrade your driver");
@@ -255,95 +237,6 @@ static inline bool init_nvenc_internal(obs_encoder_t *encoder)
 	return true;
 }
 
-typedef struct cuda_function {
-	ptrdiff_t offset;
-	const char *name;
-} cuda_function;
-
-static const cuda_function cuda_functions[] = {
-	{offsetof(CudaFunctions, cuInit), "cuInit"},
-
-	{offsetof(CudaFunctions, cuDeviceGetCount), "cuDeviceGetCount"},
-	{offsetof(CudaFunctions, cuDeviceGet), "cuDeviceGet"},
-	{offsetof(CudaFunctions, cuDeviceGetAttribute), "cuDeviceGetAttribute"},
-
-	{offsetof(CudaFunctions, cuCtxCreate), "cuCtxCreate_v2"},
-	{offsetof(CudaFunctions, cuCtxDestroy), "cuCtxDestroy_v2"},
-	{offsetof(CudaFunctions, cuCtxPushCurrent), "cuCtxPushCurrent_v2"},
-	{offsetof(CudaFunctions, cuCtxPopCurrent), "cuCtxPopCurrent_v2"},
-
-	{offsetof(CudaFunctions, cuArray3DCreate), "cuArray3DCreate_v2"},
-	{offsetof(CudaFunctions, cuArrayDestroy), "cuArrayDestroy"},
-	{offsetof(CudaFunctions, cuMemcpy2D), "cuMemcpy2D_v2"},
-
-	{offsetof(CudaFunctions, cuGetErrorName), "cuGetErrorName"},
-	{offsetof(CudaFunctions, cuGetErrorString), "cuGetErrorString"},
-
-	{offsetof(CudaFunctions, cuMemHostRegister), "cuMemHostRegister_v2"},
-	{offsetof(CudaFunctions, cuMemHostUnregister), "cuMemHostUnregister"},
-
-#ifndef _WIN32
-	{offsetof(CudaFunctions, cuGLGetDevices), "cuGLGetDevices_v2"},
-	{offsetof(CudaFunctions, cuGraphicsGLRegisterImage),
-	 "cuGraphicsGLRegisterImage"},
-	{offsetof(CudaFunctions, cuGraphicsUnregisterResource),
-	 "cuGraphicsUnregisterResource"},
-	{offsetof(CudaFunctions, cuGraphicsMapResources),
-	 "cuGraphicsMapResources"},
-	{offsetof(CudaFunctions, cuGraphicsUnmapResources),
-	 "cuGraphicsUnmapResources"},
-	{offsetof(CudaFunctions, cuGraphicsSubResourceGetMappedArray),
-	 "cuGraphicsSubResourceGetMappedArray"},
-#endif
-};
-
-static const size_t num_cuda_funcs =
-	sizeof(cuda_functions) / sizeof(cuda_function);
-
-static bool init_cuda_internal(obs_encoder_t *encoder)
-{
-	static bool initialized = false;
-	static bool success = false;
-
-	if (initialized)
-		return success;
-	initialized = true;
-
-	if (!load_cuda_lib()) {
-		obs_encoder_set_last_error(encoder,
-					   "Loading CUDA library failed.");
-		return false;
-	}
-
-	cu = bzalloc(sizeof(CudaFunctions));
-
-	for (size_t idx = 0; idx < num_cuda_funcs; idx++) {
-		const cuda_function func = cuda_functions[idx];
-		void *fptr = load_cuda_func(func.name);
-
-		if (!fptr) {
-			error("Failed to find CUDA function: %s", func.name);
-			obs_encoder_set_last_error(
-				encoder, "Loading CUDA functions failed.");
-			return false;
-		}
-
-		*(uintptr_t *)((uintptr_t)cu + func.offset) = (uintptr_t)fptr;
-	}
-
-	success = true;
-	return true;
-}
-
-bool cuda_get_error_desc(CUresult res, const char **name, const char **desc)
-{
-	if (cu->cuGetErrorName(res, name) != CUDA_SUCCESS ||
-	    cu->cuGetErrorString(res, desc) != CUDA_SUCCESS)
-		return false;
-
-	return true;
-}
-
 bool init_nvenc(obs_encoder_t *encoder)
 {
 	bool success;
@@ -355,53 +248,71 @@ bool init_nvenc(obs_encoder_t *encoder)
 	return success;
 }
 
-bool init_cuda(obs_encoder_t *encoder)
+struct encoder_caps *get_encoder_caps(enum codec_type codec)
 {
-	bool success;
-
-	pthread_mutex_lock(&init_mutex);
-	success = init_cuda_internal(encoder);
-	pthread_mutex_unlock(&init_mutex);
-
-	return success;
+	struct encoder_caps *caps = &encoder_capabilities[codec];
+	return caps;
 }
 
-extern struct obs_encoder_info h264_nvenc_info;
-#ifdef ENABLE_HEVC
-extern struct obs_encoder_info hevc_nvenc_info;
-#endif
-extern struct obs_encoder_info av1_nvenc_info;
+int num_encoder_devices(void)
+{
+	return num_devices;
+}
 
-extern struct obs_encoder_info h264_nvenc_soft_info;
-#ifdef ENABLE_HEVC
-extern struct obs_encoder_info hevc_nvenc_soft_info;
-#endif
-extern struct obs_encoder_info av1_nvenc_soft_info;
+bool is_codec_supported(enum codec_type codec)
+{
+	return codec_supported[codec];
+}
 
+bool has_broken_split_encoding(void)
+{
+	/* CBR padding and tearing artifacts with split encoding are fixed in
+	 * driver versions 555+, previous ones should be considered broken. */
+	return driver_version_major < 555;
+}
+
+static void read_codec_caps(config_t *config, enum codec_type codec,
+			    const char *section)
+{
+	struct encoder_caps *caps = &encoder_capabilities[codec];
+
+	codec_supported[codec] =
+		config_get_bool(config, section, "codec_supported");
+	if (!codec_supported[codec])
+		return;
+
+	caps->bframes = (int)config_get_int(config, section, "bframes");
+	caps->bref_modes = (int)config_get_int(config, section, "bref");
+	caps->engines = (int)config_get_int(config, section, "engines");
+	caps->max_width = (int)config_get_int(config, section, "max_width");
+	caps->max_height = (int)config_get_int(config, section, "max_height");
+	caps->temporal_filter =
+		(int)config_get_int(config, section, "temporal_filter");
+	caps->lookahead_level =
+		(int)config_get_int(config, section, "lookahead_level");
+
+	caps->dyn_bitrate = config_get_bool(config, section, "dynamic_bitrate");
+	caps->lookahead = config_get_bool(config, section, "lookahead");
+	caps->lossless = config_get_bool(config, section, "lossless");
+	caps->temporal_aq = config_get_bool(config, section, "temporal_aq");
+	caps->ten_bit = config_get_bool(config, section, "10bit");
+	caps->four_four_four = config_get_bool(config, section, "yuv_444");
+}
+
+static bool nvenc_check(void)
+{
 #ifdef _WIN32
-static bool enum_luids(void *param, uint32_t idx, uint64_t luid)
-{
-	struct dstr *cmd = param;
-	dstr_catf(cmd, " %llX", luid);
-	UNUSED_PARAMETER(idx);
-	return true;
-}
-
-static bool av1_supported(void)
-{
 	char *test_exe = os_get_executable_path_ptr("obs-nvenc-test.exe");
-	struct dstr cmd = {0};
+#else
+	char *test_exe = os_get_executable_path_ptr("obs-nvenc-test");
+#endif
+	os_process_args_t *args;
 	struct dstr caps_str = {0};
-	bool av1_supported = false;
 	config_t *config = NULL;
 
-	dstr_init_move_array(&cmd, test_exe);
-	dstr_insert_ch(&cmd, 0, '\"');
-	dstr_cat(&cmd, "\"");
+	args = os_process_args_create(test_exe);
 
-	enum_graphics_device_luids(enum_luids, &cmd);
-
-	os_process_pipe_t *pp = os_process_pipe_create(cmd.array, "r");
+	os_process_pipe_t *pp = os_process_pipe_create2(args, "r");
 	if (!pp) {
 		blog(LOG_WARNING, "[NVENC] Failed to launch the NVENC "
 				  "test process I guess");
@@ -423,8 +334,7 @@ static bool av1_supported(void)
 	if (dstr_is_empty(&caps_str)) {
 		blog(LOG_WARNING,
 		     "[NVENC] Seems the NVENC test subprocess crashed. "
-		     "Better there than here I guess. Let's just "
-		     "skip NVENC AV1 detection then I suppose.");
+		     "Better there than here I guess. ");
 		goto fail;
 	}
 
@@ -433,57 +343,67 @@ static bool av1_supported(void)
 		goto fail;
 	}
 
-	const char *error = config_get_string(config, "error", "string");
-	if (error) {
-		blog(LOG_WARNING, "[NVENC] AV1 test process failed: %s", error);
+	bool success = config_get_bool(config, "general", "nvenc_supported");
+	if (!success) {
+		const char *error =
+			config_get_string(config, "general", "reason");
+		blog(LOG_WARNING, "[NVENC] Test process failed: %s",
+		     error ? error : "unknown");
 		goto fail;
 	}
 
-	uint32_t adapter_count = (uint32_t)config_num_sections(config);
-	bool avc_supported = false;
-	bool hevc_supported = false;
+	num_devices = (int)config_get_int(config, "general", "nvenc_devices");
+	read_codec_caps(config, CODEC_H264, "h264");
+	read_codec_caps(config, CODEC_HEVC, "hevc");
+	read_codec_caps(config, CODEC_AV1, "av1");
 
-	/* for now, just check AV1 support on device 0 */
-	av1_supported = config_get_bool(config, "0", "supports_av1");
+	const char *nvenc_ver =
+		config_get_string(config, "general", "nvenc_ver");
+	const char *cuda_ver = config_get_string(config, "general", "cuda_ver");
+	const char *driver_ver =
+		config_get_string(config, "general", "driver_ver");
+	/* Parse out major/minor for some brokenness checks  */
+	sscanf(driver_ver, "%d.%d", &driver_version_major,
+	       &driver_version_minor);
+
+	blog(LOG_INFO,
+	     "[obs-nvenc] NVENC version: %d.%d (compiled) / %s (driver), "
+	     "CUDA driver version: %s, AV1 supported: %s",
+	     NVCODEC_CONFIGURED_VERSION >> 4, NVCODEC_CONFIGURED_VERSION & 0xf,
+	     nvenc_ver, cuda_ver,
+	     codec_supported[CODEC_AV1] ? "true" : "false");
 
 fail:
 	if (config)
 		config_close(config);
+
+	bfree(test_exe);
 	dstr_free(&caps_str);
-	dstr_free(&cmd);
+	os_process_args_destroy(args);
 
-	return av1_supported;
+	return true;
 }
-#else
-bool av1_supported()
+
+static const char *nvenc_check_name = "nvenc_check";
+bool nvenc_supported(void)
 {
-	return get_nvenc_ver() >= ((12 << 4) | 0);
-}
-#endif
+	bool success;
 
-void obs_nvenc_load(bool h264, bool hevc, bool av1)
+	profile_start(nvenc_check_name);
+	success = load_nvenc_lib() && nvenc_check();
+	profile_end(nvenc_check_name);
+
+	return success;
+}
+
+void obs_nvenc_load(void)
 {
 	pthread_mutex_init(&init_mutex, NULL);
-	if (h264) {
-		obs_register_encoder(&h264_nvenc_info);
-		obs_register_encoder(&h264_nvenc_soft_info);
-	}
-#ifdef ENABLE_HEVC
-	if (hevc) {
-		obs_register_encoder(&hevc_nvenc_info);
-		obs_register_encoder(&hevc_nvenc_soft_info);
-	}
-#endif
-	if (av1 && av1_supported()) {
-		obs_register_encoder(&av1_nvenc_info);
-		obs_register_encoder(&av1_nvenc_soft_info);
-	} else {
-		blog(LOG_WARNING, "[NVENC] AV1 is not supported");
-	}
+	register_encoders();
+	register_compat_encoders();
 }
 
 void obs_nvenc_unload(void)
 {
-	bfree(cu);
 	pthread_mutex_destroy(&init_mutex);
 }

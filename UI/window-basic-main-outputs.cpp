@@ -609,15 +609,17 @@ const char *get_simple_output_encoder(const char *encoder)
 	} else if (strcmp(encoder, SIMPLE_ENCODER_AMD_AV1) == 0) {
 		return "av1_texture_amf";
 	} else if (strcmp(encoder, SIMPLE_ENCODER_NVENC) == 0) {
-		return EncoderAvailable("jim_nvenc") ? "jim_nvenc"
-						     : "ffmpeg_nvenc";
+		return EncoderAvailable("obs_nvenc_h264_tex")
+			       ? "obs_nvenc_h264_tex"
+			       : "ffmpeg_nvenc";
 #ifdef ENABLE_HEVC
 	} else if (strcmp(encoder, SIMPLE_ENCODER_NVENC_HEVC) == 0) {
-		return EncoderAvailable("jim_hevc_nvenc") ? "jim_hevc_nvenc"
-							  : "ffmpeg_hevc_nvenc";
+		return EncoderAvailable("obs_nvenc_hevc_tex")
+			       ? "obs_nvenc_hevc_tex"
+			       : "ffmpeg_hevc_nvenc";
 #endif
 	} else if (strcmp(encoder, SIMPLE_ENCODER_NVENC_AV1) == 0) {
-		return "jim_av1_nvenc";
+		return "obs_nvenc_av1_tex";
 	} else if (strcmp(encoder, SIMPLE_ENCODER_APPLE_H264) == 0) {
 		return "com.apple.videotoolbox.videoencoder.ave.avc";
 #ifdef ENABLE_HEVC
@@ -1848,7 +1850,7 @@ void AdvancedOutput::UpdateStreamSettings()
 		blog(LOG_WARNING, "User is ignoring service settings.");
 	}
 
-	if (dynBitrate && astrcmpi(streamEncoder, "jim_nvenc") == 0)
+	if (dynBitrate && strstr(streamEncoder, "nvenc") != nullptr)
 		obs_data_set_bool(settings, "lookahead", false);
 
 	video_t *video = obs_get_video();

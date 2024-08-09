@@ -36,32 +36,6 @@ elseif(
   find_package(Libdrm REQUIRED)
 endif()
 
-if(OS_WINDOWS OR (OS_LINUX AND ENABLE_NATIVE_NVENC))
-  add_library(obs-nvenc-version INTERFACE)
-  add_library(OBS::obs-nvenc-version ALIAS obs-nvenc-version)
-  target_sources(obs-nvenc-version INTERFACE obs-nvenc-ver.h)
-  target_include_directories(obs-nvenc-version INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
-
-  find_package(FFnvcodec 12.0.0.0...<12.2.0.0 REQUIRED)
-
-  if(OS_LINUX AND NOT TARGET OBS::glad)
-    add_subdirectory("${CMAKE_SOURCE_DIR}/deps/glad" "${CMAKE_BINARY_DIR}/deps/glad")
-  endif()
-
-  add_library(obs-nvenc-native INTERFACE)
-  add_library(OBS::obs-nvenc-native ALIAS obs-nvenc-native)
-  target_sources(obs-nvenc-native INTERFACE obs-nvenc-helpers.c obs-nvenc.c obs-nvenc.h)
-  target_compile_definitions(obs-nvenc-native INTERFACE $<$<PLATFORM_ID:Linux>:NVCODEC_AVAILABLE>)
-  target_include_directories(obs-nvenc-native INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
-
-  target_link_libraries(obs-nvenc-native INTERFACE FFnvcodec::FFnvcodec OBS::obs-nvenc-version
-                                                   $<$<PLATFORM_ID:Linux>:OBS::glad>)
-
-  if(OS_WINDOWS)
-    add_subdirectory(obs-nvenc-test)
-  endif()
-endif()
-
 if(ENABLE_NEW_MPEGTS_OUTPUT)
   find_package(Librist QUIET)
   find_package(Libsrt QUIET)
