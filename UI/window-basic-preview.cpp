@@ -2327,7 +2327,21 @@ void OBSBasicPreview::SetScalingAmount(float newScalingAmountVal)
 {
 	scrollingOffset.x *= newScalingAmountVal / scalingAmount;
 	scrollingOffset.y *= newScalingAmountVal / scalingAmount;
+
+	if (scalingAmount == newScalingAmountVal)
+		return;
+
 	scalingAmount = newScalingAmountVal;
+	emit scalingChanged(scalingAmount);
+}
+
+void OBSBasicPreview::SetScalingLevelAndAmount(int32_t newScalingLevelVal,
+					       float newScalingAmountVal)
+{
+	newScalingLevelVal = std::clamp(newScalingLevelVal, -MAX_SCALING_LEVEL,
+					MAX_SCALING_LEVEL);
+	scalingLevel = newScalingLevelVal;
+	SetScalingAmount(newScalingAmountVal);
 }
 
 OBSBasicPreview *OBSBasicPreview::Get()
@@ -2689,4 +2703,47 @@ void OBSBasicPreview::ClampScrollingOffsets()
 
 	scrollingOffset.x = std::clamp(scrollingOffset.x, -offset.x, offset.x);
 	scrollingOffset.y = std::clamp(scrollingOffset.y, -offset.y, offset.y);
+
+	UpdateXScrollBar(offset.x);
+	UpdateYScrollBar(offset.y);
+}
+
+void OBSBasicPreview::UpdateXScrollBar(float cx)
+{
+	if (updatingXScrollBar)
+		return;
+
+	OBSBasic *main = OBSBasic::Get();
+
+	if (!main->ui->previewXScrollBar->isVisible())
+		return;
+
+	main->ui->previewXScrollBar->setRange(int(-cx), int(cx));
+
+	QSize targetSize = GetPixelSize(this);
+	main->ui->previewXScrollBar->setPageStep(targetSize.width() /
+						 std::min(scalingAmount, 1.0f));
+
+	QSignalBlocker sig(main->ui->previewXScrollBar);
+	main->ui->previewXScrollBar->setValue(int(-scrollingOffset.x));
+}
+
+void OBSBasicPreview::UpdateYScrollBar(float cy)
+{
+	if (updatingYScrollBar)
+		return;
+
+	OBSBasic *main = OBSBasic::Get();
+
+	if (!main->ui->previewYScrollBar->isVisible())
+		return;
+
+	main->ui->previewYScrollBar->setRange(int(-cy), int(cy));
+
+	QSize targetSize = GetPixelSize(this);
+	main->ui->previewYScrollBar->setPageStep(targetSize.height() /
+						 std::min(scalingAmount, 1.0f));
+
+	QSignalBlocker sig(main->ui->previewYScrollBar);
+	main->ui->previewYScrollBar->setValue(int(-scrollingOffset.y));
 }

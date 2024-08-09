@@ -270,6 +270,8 @@ target_sources(
           window-basic-transform.cpp
           window-basic-transform.hpp
           window-basic-preview.hpp
+          window-basic-preview-controls.cpp
+          window-basic-preview-controls.hpp
           window-basic-vcam.hpp
           window-basic-vcam-config.cpp
           window-basic-vcam-config.hpp

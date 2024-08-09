@@ -8,6 +8,7 @@
 #include <vector>
 #include "qt-display.hpp"
 #include "obs-app.hpp"
+#include "window-basic-preview-controls.hpp"
 
 class OBSBasic;
 class QMouseEvent;
@@ -18,8 +19,8 @@ class QMouseEvent;
 #define ITEM_BOTTOM (1 << 3)
 #define ITEM_ROT (1 << 4)
 
-#define MAX_SCALING_LEVEL 20
-#define MAX_SCALING_AMOUNT 10.0f
+#define MAX_SCALING_LEVEL 32
+#define MAX_SCALING_AMOUNT 8.0f
 #define ZOOM_SENSITIVITY pow(MAX_SCALING_AMOUNT, 1.0f / MAX_SCALING_LEVEL)
 
 #define SPACER_LABEL_MARGIN 6.0f
@@ -42,6 +43,7 @@ class OBSBasicPreview : public OBSQTDisplay {
 
 	friend class SourceTree;
 	friend class SourceTreeItem;
+	friend class OBSBasic;
 
 private:
 	obs_sceneitem_crop startCrop;
@@ -81,6 +83,8 @@ private:
 	int32_t scalingLevel = 0;
 	float scalingAmount = 1.0f;
 	float groupRot = 0.0f;
+	bool updatingXScrollBar = false;
+	bool updatingYScrollBar = false;
 
 	std::vector<obs_sceneitem_t *> hoveredPreviewItems;
 	std::vector<obs_sceneitem_t *> selectedItems;
@@ -150,12 +154,18 @@ public:
 
 	inline void SetFixedScaling(bool newFixedScalingVal)
 	{
+		if (fixedScaling == newFixedScalingVal)
+			return;
+
 		fixedScaling = newFixedScalingVal;
+		emit fixedScalingChanged(fixedScaling);
 	}
 	inline bool IsFixedScaling() const { return fixedScaling; }
 
 	void SetScalingLevel(int32_t newScalingLevelVal);
 	void SetScalingAmount(float newScalingAmountVal);
+	void SetScalingLevelAndAmount(int32_t newScalingLevelVal,
+				      float newScalingAmountVal);
 	inline int32_t GetScalingLevel() const { return scalingLevel; }
 	inline float GetScalingAmount() const { return scalingAmount; }
 
@@ -198,4 +208,10 @@ public:
 
 	void DrawSpacingHelpers();
 	void ClampScrollingOffsets();
+	void UpdateXScrollBar(float cx);
+	void UpdateYScrollBar(float cy);
+
+signals:
+	void scalingChanged(float scalingAmount);
+	void fixedScalingChanged(bool isFixed);
 };

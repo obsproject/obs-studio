@@ -668,6 +668,7 @@ private:
 	std::string lastReplay;
 
 	void UpdatePreviewOverflowSettings();
+	void UpdatePreviewScrollbars();
 
 	bool streamingStarting = false;
 
@@ -807,6 +808,11 @@ private slots:
 	void AudioMixerCopyFilters();
 	void AudioMixerPasteFilters();
 	void SourcePasteFilters(OBSSource source, OBSSource dstSource);
+
+	void on_previewXScrollBar_valueChanged(int value);
+	void on_previewYScrollBar_valueChanged(int value);
+
+	void on_previewScalingMode_changed(int value);
 
 	void ColorChange();
 
@@ -1290,6 +1296,8 @@ signals:
 
 	/* Studio Mode signal */
 	void PreviewProgramModeChanged(bool enabled);
+	void CanvasResized(uint32_t width, uint32_t height);
+	void OutputResized(uint32_t width, uint32_t height);
 
 private:
 	std::unique_ptr<Ui::OBSBasic> ui;
