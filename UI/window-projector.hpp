@@ -1,8 +1,11 @@
 #pragma once
 
+#include <QSize>
 #include <obs.hpp>
 #include "qt-display.hpp"
 #include "multiview.hpp"
+#include <QMenu>
+#include <vector>
 
 enum class ProjectorType {
 	Source,
@@ -46,11 +49,19 @@ private:
 	void SetMonitor(int monitor);
 
 	QScreen *screen = nullptr;
+	QSize GetTargetSize();
+	QMenu *GetWindowResizeMenu();
+	std::pair<int, int> GetScaledSize(int scale);
+	QRect GetScreenSize();
+	std::vector<int> GetResizeScalePresets();
 
 private slots:
 	void EscapeTriggered();
 	void OpenFullScreenProjector();
 	void ResizeToContent();
+	void ResizeToScale(int scale);
+	void ResizeToResolution(int width, int height);
+	void OpenCustomWindowSizeDialog();
 	void OpenWindowedProjector();
 	void AlwaysOnTopToggled(bool alwaysOnTop);
 	void ScreenRemoved(QScreen *screen_);
@@ -70,4 +81,5 @@ public:
 	bool IsAlwaysOnTop() const;
 	bool IsAlwaysOnTopOverridden() const;
 	void SetIsAlwaysOnTop(bool isAlwaysOnTop, bool isOverridden);
+	std::vector<std::pair<int, int>> GetResizeResolutionPresets();
 };

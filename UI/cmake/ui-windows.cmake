@@ -54,6 +54,8 @@ target_sources(
           window-missing-files.hpp
           window-namedialog.cpp
           window-namedialog.hpp
+          window-projector-custom-size-setting.cpp
+          window-projector-custom-size-setting.hpp
           window-projector.cpp
           window-projector.hpp
           window-remux.cpp

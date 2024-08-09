@@ -46,6 +46,8 @@ class OBSHotkeyWidget;
 #define VOLUME_METER_DECAY_MEDIUM 11.76
 #define VOLUME_METER_DECAY_SLOW 8.57
 
+bool ConvertResText(const char *res, uint32_t &cx, uint32_t &cy);
+
 class SilentUpdateCheckBox : public QCheckBox {
 	Q_OBJECT
 
