@@ -192,6 +192,12 @@ vec3 OBSBasicPreview::GetSnapOffset(const vec3 &tl, const vec3 &br)
 		GetGlobalConfig(), "BasicWindow", "ScreenSnapping");
 	const bool centerSnap = config_get_bool(
 		GetGlobalConfig(), "BasicWindow", "CenterSnapping");
+	const bool gridSnap = config_get_bool(GetGlobalConfig(), "BasicWindow",
+					      "GridSnapping");
+	const int gridSpacing =
+		config_get_int(GetGlobalConfig(), "BasicWindow", "GridSpacing");
+	const int gridDisplayMode = config_get_int(
+		GetGlobalConfig(), "BasicWindow", "GridDisplayMode");
 
 	const float clampDist = config_get_double(GetGlobalConfig(),
 						  "BasicWindow",
@@ -223,6 +229,77 @@ vec3 OBSBasicPreview::GetSnapOffset(const vec3 &tl, const vec3 &br)
 	if (centerSnap && fabsf(screenSize.y - (br.y - tl.y)) > clampDist &&
 	    fabsf(screenSize.y / 2.0f - centerY) < clampDist)
 		clampOffset.y = screenSize.y / 2.0f - centerY;
+
+	// Grid lines.
+	if (!gridSnap || gridDisplayMode == 0)
+		return clampOffset;
+
+	// returns the number with the lowest absolute value (excluding zero)
+	auto minAbs = [](float a, float b) {
+		if (a == 0)
+			return b;
+		else if (b == 0)
+			return a;
+		else
+			return (std::fabs(a) < std::fabs(b)) ? a : b;
+	};
+
+	float heightMid = screenSize.y / 2.0f;
+	float widthMid = screenSize.x / 2.0f;
+
+	// snap to vertical grid lines
+	if (fabsf(tl.x - widthMid) < clampDist)
+		clampOffset.x = minAbs(clampOffset.x, -(tl.x - widthMid));
+	if (fabsf((screenSize.x - br.x) - widthMid) < clampDist)
+		clampOffset.x =
+			minAbs(clampOffset.x, (screenSize.x - br.x) - widthMid);
+	for (float gridLine = gridSpacing; gridLine <= widthMid;
+	     gridLine += gridSpacing) {
+		if (fabsf(tl.x - (widthMid - gridLine)) < clampDist)
+			clampOffset.x = minAbs(clampOffset.x,
+					       -(tl.x - (widthMid - gridLine)));
+		if (fabsf(tl.x - (widthMid + gridLine)) < clampDist)
+			clampOffset.x = minAbs(clampOffset.x,
+					       -(tl.x - (widthMid + gridLine)));
+		if (fabsf((screenSize.x - br.x) - (widthMid - gridLine)) <
+		    clampDist)
+			clampOffset.x = minAbs(clampOffset.x,
+					       (screenSize.x - br.x) -
+						       (widthMid - gridLine));
+		if (fabsf((screenSize.x - br.x) - (widthMid + gridLine)) <
+		    clampDist)
+			clampOffset.x = minAbs(clampOffset.x,
+					       (screenSize.x - br.x) -
+						       (widthMid + gridLine));
+	}
+
+	// snap to horizontal grid lines
+	if (fabsf(tl.y - heightMid) < clampDist)
+		clampOffset.y = minAbs(clampOffset.y, -(tl.y - heightMid));
+	if (fabsf((screenSize.y - br.y) - heightMid) < clampDist)
+		clampOffset.y = minAbs(clampOffset.y,
+				       (screenSize.y - br.y) - heightMid);
+	for (float gridLine = gridSpacing; gridLine <= heightMid;
+	     gridLine += gridSpacing) {
+		if (fabsf(tl.y - (heightMid - gridLine)) < clampDist)
+			clampOffset.y =
+				minAbs(clampOffset.y,
+				       -(tl.y - (heightMid - gridLine)));
+		if (fabsf(tl.y - (heightMid + gridLine)) < clampDist)
+			clampOffset.y =
+				minAbs(clampOffset.y,
+				       -(tl.y - (heightMid + gridLine)));
+		if (fabsf((screenSize.y - br.y) - (heightMid - gridLine)) <
+		    clampDist)
+			clampOffset.y = minAbs(clampOffset.y,
+					       (screenSize.y - br.y) -
+						       (heightMid - gridLine));
+		if (fabsf((screenSize.y - br.y) - (heightMid + gridLine)) <
+		    clampDist)
+			clampOffset.y = minAbs(clampOffset.y,
+					       (screenSize.y - br.y) -
+						       (heightMid + gridLine));
+	}
 
 	return clampOffset;
 }
@@ -2175,6 +2252,11 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *, obs_sceneitem_t *item,
 			      info.bounds_type == OBS_BOUNDS_NONE;
 		DrawRotationHandle(prev->circleFill, info.rot + prev->groupRot,
 				   pixelRatio, invert);
+
+		// show grid if the setting is "when moving a source"
+		if (config_get_int(GetGlobalConfig(), "BasicWindow",
+				   "GridDisplayMode") == 2)
+			prev->DrawPreviewGrid();
 	}
 
 	gs_matrix_pop();
@@ -2276,6 +2358,12 @@ void OBSBasicPreview::DrawSceneEditing()
 	OBSScene scene = main->GetCurrentScene();
 
 	if (scene) {
+
+		// show grid if the setting is "always"
+		if (config_get_int(GetGlobalConfig(), "BasicWindow",
+				   "GridDisplayMode") == 1)
+			this->DrawPreviewGrid();
+
 		gs_matrix_push();
 		gs_matrix_scale3f(main->previewScale, main->previewScale, 1.0f);
 		obs_scene_enum_items(scene, DrawSelectedItem, this);
@@ -2689,4 +2777,48 @@ void OBSBasicPreview::ClampScrollingOffsets()
 
 	scrollingOffset.x = std::clamp(scrollingOffset.x, -offset.x, offset.x);
 	scrollingOffset.y = std::clamp(scrollingOffset.y, -offset.y, offset.y);
+}
+
+void OBSBasicPreview::DrawPreviewGrid()
+{
+	OBSBasic *main = OBSBasic::Get();
+
+	// get grid color
+	gs_effect_t *solid = obs_get_base_effect(OBS_EFFECT_SOLID);
+	QColor selColor = main->GetGridColor();
+	vec4 color;
+	vec4_set(&color, selColor.redF(), selColor.greenF(), selColor.blueF(),
+		 1.0f);
+	gs_effect_set_vec4(gs_effect_get_param_by_name(solid, "color"), &color);
+
+	gs_matrix_push();
+	gs_matrix_identity();
+	gs_matrix_scale3f(main->previewCX, main->previewCY, 1.0f);
+	vec2 screenSize = GetOBSScreenSize();
+	vec2 scale;
+	vec2_set(&scale, main->previewCX, main->previewCY);
+	int gridSpacing =
+		config_get_int(GetGlobalConfig(), "BasicWindow", "GridSpacing");
+	float offX = gridSpacing / screenSize.x;
+	float offY = gridSpacing / screenSize.y;
+
+	// draw horizontal and vertical center lines
+	DrawLine(0.5f, 0.0f, 0.5f, 1.0f, 1.0f, scale);
+	DrawLine(0.0f, 0.5f, 1.0f, 0.5f, 1.0f, scale);
+
+	// draw the rest of the grid
+	for (int i = 1; i * offX <= 0.5; i++) {
+		DrawLine(0.5f + i * offX, 0.0f, 0.5f + i * offX, 1.0f, 1.0f,
+			 scale);
+		DrawLine(0.5f - i * offX, 0.0f, 0.5f - i * offX, 1.0f, 1.0f,
+			 scale);
+	}
+	for (int i = 1; i * offY <= 0.5; i++) {
+		DrawLine(0.0f, 0.5f + i * offY, 1.0f, 0.5f + i * offY, 1.0f,
+			 scale);
+		DrawLine(0.0f, 0.5f - i * offY, 1.0f, 0.5f - i * offY, 1.0f,
+			 scale);
+	}
+
+	gs_matrix_pop();
 }
