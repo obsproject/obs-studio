@@ -168,8 +168,7 @@ bool OBSBasic::AddSceneCollection(bool create_new, const QString &qname)
 		RefreshSceneCollections();
 	};
 
-	if (api)
-		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING);
+	OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING);
 
 	new_collection(file, name);
 
@@ -179,10 +178,8 @@ bool OBSBasic::AddSceneCollection(bool create_new, const QString &qname)
 
 	UpdateTitleBar();
 
-	if (api) {
-		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_LIST_CHANGED);
-		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED);
-	}
+	OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_LIST_CHANGED);
+	OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED);
 
 	return true;
 }
@@ -294,8 +291,7 @@ void OBSBasic::on_actionRenameSceneCollection_triggered()
 	UpdateTitleBar();
 	RefreshSceneCollections();
 
-	if (api)
-		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_RENAMED);
+	OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_RENAMED);
 }
 
 void OBSBasic::on_actionRemoveSceneCollection_triggered()
@@ -339,8 +335,7 @@ void OBSBasic::on_actionRemoveSceneCollection_triggered()
 		return;
 	}
 
-	if (api)
-		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING);
+	OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING);
 
 	oldFile.insert(0, path);
 	/* os_rename() overwrites if necessary, only the .bak file will remain. */
@@ -360,10 +355,8 @@ void OBSBasic::on_actionRemoveSceneCollection_triggered()
 
 	UpdateTitleBar();
 
-	if (api) {
-		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_LIST_CHANGED);
-		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED);
-	}
+	OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_LIST_CHANGED);
+	OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED);
 }
 
 void OBSBasic::on_actionImportSceneCollection_triggered()
@@ -461,8 +454,7 @@ void OBSBasic::ChangeSceneCollection()
 		return;
 	}
 
-	if (api)
-		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING);
+	OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING);
 
 	SaveProjectNow();
 
@@ -480,6 +472,5 @@ void OBSBasic::ChangeSceneCollection()
 
 	UpdateTitleBar();
 
-	if (api)
-		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED);
+	OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED);
 }

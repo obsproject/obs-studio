@@ -224,6 +224,7 @@ class OBSBasic : public OBSMainWindow {
 
 private:
 	obs_frontend_callbacks *api = nullptr;
+	void OnEvent(enum obs_frontend_event event);
 
 	std::shared_ptr<Auth> auth;
 

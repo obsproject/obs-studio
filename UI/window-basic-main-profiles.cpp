@@ -305,8 +305,8 @@ bool OBSBasic::CreateProfile(const std::string &newName, bool create_new,
 		return false;
 	}
 
-	if (api && !rename)
-		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGING);
+	if (!rename)
+		OnEvent(OBS_FRONTEND_EVENT_PROFILE_CHANGING);
 
 	config_set_string(App()->GlobalConfig(), "Basic", "Profile",
 			  newName.c_str());
@@ -355,9 +355,9 @@ bool OBSBasic::CreateProfile(const std::string &newName, bool create_new,
 		wizard.exec();
 	}
 
-	if (api && !rename) {
-		api->on_event(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
-		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
+	if (!rename) {
+		OnEvent(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
+		OnEvent(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
 	}
 	return true;
 }
@@ -451,8 +451,7 @@ void OBSBasic::DeleteProfile(const QString &profileName)
 	DeleteProfile(name.c_str(), profileDir);
 	RefreshProfiles();
 	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
-	if (api)
-		api->on_event(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
+	OnEvent(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
 }
 
 void OBSBasic::RefreshProfiles()
@@ -539,8 +538,7 @@ void OBSBasic::on_actionRenameProfile_triggered()
 		RefreshProfiles();
 	}
 
-	if (api)
-		api->on_event(OBS_FRONTEND_EVENT_PROFILE_RENAMED);
+	OnEvent(OBS_FRONTEND_EVENT_PROFILE_RENAMED);
 }
 
 void OBSBasic::on_actionRemoveProfile_triggered(bool skipConfirmation)
@@ -589,8 +587,7 @@ void OBSBasic::on_actionRemoveProfile_triggered(bool skipConfirmation)
 		return;
 	}
 
-	if (api)
-		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGING);
+	OnEvent(OBS_FRONTEND_EVENT_PROFILE_CHANGING);
 
 	newPath.resize(newPath_len);
 
@@ -626,10 +623,8 @@ void OBSBasic::on_actionRemoveProfile_triggered(bool skipConfirmation)
 
 	Auth::Load();
 
-	if (api) {
-		api->on_event(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
-		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
-	}
+	OnEvent(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
+	OnEvent(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
 
 	if (needsRestart) {
 		QMessageBox::StandardButton button = OBSMessageBox::question(
@@ -768,8 +763,7 @@ void OBSBasic::ChangeProfile()
 		return;
 	}
 
-	if (api)
-		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGING);
+	OnEvent(OBS_FRONTEND_EVENT_PROFILE_CHANGING);
 
 	path.resize(path_len);
 
@@ -811,8 +805,7 @@ void OBSBasic::ChangeProfile()
 	blog(LOG_INFO, "Switched to profile '%s' (%s)", newName, newDir);
 	blog(LOG_INFO, "------------------------------------------------");
 
-	if (api)
-		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
+	OnEvent(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
 
 	if (needsRestart) {
 		QMessageBox::StandardButton button = OBSMessageBox::question(
