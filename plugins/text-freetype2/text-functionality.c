@@ -395,6 +395,8 @@ void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 	FILE *tmp_file = NULL;
 	uint32_t filesize = 0;
 	char *tmp_read = NULL;
+	char *sanitized = NULL;
+	size_t sanitized_length = 0;
 	uint16_t header = 0;
 	size_t bytes_read;
 
@@ -429,19 +431,28 @@ void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 	fseek(tmp_file, 0, SEEK_SET);
 
 	tmp_read = bzalloc(filesize + 1);
-	bytes_read = fread(tmp_read, filesize, 1, tmp_file);
+	bytes_read = fread(tmp_read, 1, filesize, tmp_file);
 	fclose(tmp_file);
 
+	sanitized = bzalloc(bytes_read + 1);
+	for (size_t i = 0; i < bytes_read; i++) {
+		if (tmp_read[i] != '\0') {
+			sanitized[sanitized_length] = tmp_read[i];
+			sanitized_length++;
+		}
+	}
+	sanitized[sanitized_length] = '\0';
 	if (srcdata->text != NULL) {
 		bfree(srcdata->text);
 		srcdata->text = NULL;
 	}
-	srcdata->text = bzalloc((strlen(tmp_read) + 1) * sizeof(wchar_t));
-	os_utf8_to_wcs(tmp_read, strlen(tmp_read), srcdata->text,
-		       (strlen(tmp_read) + 1));
+	srcdata->text = bzalloc((sanitized_length + 1) * sizeof(wchar_t));
+	os_utf8_to_wcs(sanitized, sanitized_length, srcdata->text,
+		       (sanitized_length + 1));
 
 	remove_cr(srcdata->text);
 	bfree(tmp_read);
+	bfree(sanitized);
 }
 
 void read_from_end(struct ft2_source *srcdata, const char *filename)
