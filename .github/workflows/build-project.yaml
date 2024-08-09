@@ -87,6 +87,9 @@ jobs:
           print '::group::Clean Homebrew Environment'
           local -a to_remove=()
 
+          rm -rf /opt/homebrew/etc/openldap
+          rm -rf /usr/local/homebrew/etc/openldap
+
           for formula (curl) {
             if [[ -d ${HOMEBREW_PREFIX}/opt/${formula} ]] to_remove+=(${formula})
           }
