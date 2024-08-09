@@ -20,7 +20,7 @@
 
 #include "../util/threading.h"
 #include "../util/darray.h"
-#include "../util/circlebuf.h"
+#include "../util/deque.h"
 #include "../util/platform.h"
 #include "../util/profiler.h"
 #include "../util/util_uint64.h"

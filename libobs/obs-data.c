@@ -554,18 +554,18 @@ static inline void set_json_bool(json_t *json, const char *name,
 	json_object_set_new(json, name, val ? json_true() : json_false());
 }
 
-static json_t *obs_data_to_json(obs_data_t *data);
+static json_t *obs_data_to_json(obs_data_t *data, bool with_defaults);
 
 static inline void set_json_obj(json_t *json, const char *name,
-				obs_data_item_t *item)
+				obs_data_item_t *item, bool with_defaults)
 {
 	obs_data_t *obj = obs_data_item_get_obj(item);
-	json_object_set_new(json, name, obs_data_to_json(obj));
+	json_object_set_new(json, name, obs_data_to_json(obj, with_defaults));
 	obs_data_release(obj);
 }
 
 static inline void set_json_array(json_t *json, const char *name,
-				  obs_data_item_t *item)
+				  obs_data_item_t *item, bool with_defaults)
 {
 	json_t *jarray = json_array();
 	obs_data_array_t *array = obs_data_item_get_array(item);
@@ -573,7 +573,7 @@ static inline void set_json_array(json_t *json, const char *name,
 
 	for (size_t idx = 0; idx < count; idx++) {
 		obs_data_t *sub_item = obs_data_array_item(array, idx);
-		json_t *jitem = obs_data_to_json(sub_item);
+		json_t *jitem = obs_data_to_json(sub_item, with_defaults);
 		json_array_append_new(jarray, jitem);
 		obs_data_release(sub_item);
 	}
@@ -582,7 +582,7 @@ static inline void set_json_array(json_t *json, const char *name,
 	obs_data_array_release(array);
 }
 
-static json_t *obs_data_to_json(obs_data_t *data)
+static json_t *obs_data_to_json(obs_data_t *data, bool with_defaults)
 {
 	json_t *json = json_object();
 
@@ -593,7 +593,7 @@ static json_t *obs_data_to_json(obs_data_t *data)
 		enum obs_data_type type = obs_data_item_gettype(item);
 		const char *name = get_item_name(item);
 
-		if (!obs_data_item_has_user_value(item))
+		if (!with_defaults && !obs_data_item_has_user_value(item))
 			continue;
 
 		if (type == OBS_DATA_STRING)
@@ -603,9 +603,9 @@ static json_t *obs_data_to_json(obs_data_t *data)
 		else if (type == OBS_DATA_BOOLEAN)
 			set_json_bool(json, name, item);
 		else if (type == OBS_DATA_OBJECT)
-			set_json_obj(json, name, item);
+			set_json_obj(json, name, item, with_defaults);
 		else if (type == OBS_DATA_ARRAY)
-			set_json_array(json, name, item);
+			set_json_array(json, name, item, with_defaults);
 	}
 
 	return json;
@@ -716,36 +716,48 @@ void obs_data_release(obs_data_t *data)
 		obs_data_destroy(data);
 }
 
-const char *obs_data_get_json(obs_data_t *data)
+static const char *obs_data_get_json_internal(obs_data_t *data, bool pretty,
+					      bool with_defaults)
 {
 	if (!data)
 		return NULL;
+
+	size_t flags = JSON_PRESERVE_ORDER;
+
+	if (pretty)
+		flags |= JSON_INDENT(4);
+	else
+		flags |= JSON_COMPACT;
 
 	/* NOTE: don't use libobs bfree for json text */
 	free(data->json);
 	data->json = NULL;
 
-	json_t *root = obs_data_to_json(data);
-	data->json = json_dumps(root, JSON_PRESERVE_ORDER | JSON_COMPACT);
+	json_t *root = obs_data_to_json(data, with_defaults);
+	data->json = json_dumps(root, flags);
 	json_decref(root);
 
 	return data->json;
 }
 
+const char *obs_data_get_json(obs_data_t *data)
+{
+	return obs_data_get_json_internal(data, false, false);
+}
+
+const char *obs_data_get_json_with_defaults(obs_data_t *data)
+{
+	return obs_data_get_json_internal(data, false, true);
+}
+
 const char *obs_data_get_json_pretty(obs_data_t *data)
 {
-	if (!data)
-		return NULL;
+	return obs_data_get_json_internal(data, true, false);
+}
 
-	/* NOTE: don't use libobs bfree for json text */
-	free(data->json);
-	data->json = NULL;
-
-	json_t *root = obs_data_to_json(data);
-	data->json = json_dumps(root, JSON_PRESERVE_ORDER | JSON_INDENT(4));
-	json_decref(root);
-
-	return data->json;
+const char *obs_data_get_json_pretty_with_defaults(obs_data_t *data)
+{
+	return obs_data_get_json_internal(data, true, true);
 }
 
 const char *obs_data_get_last_json(obs_data_t *data)

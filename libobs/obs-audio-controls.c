@@ -36,8 +36,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define CLAMP(x, min, max) ((x) < min ? min : ((x) > max ? max : (x)))
 
-typedef float (*obs_fader_conversion_t)(const float val);
-
 struct fader_cb {
 	obs_fader_changed_t callback;
 	void *param;
@@ -942,4 +940,9 @@ float obs_mul_to_db(float mul)
 float obs_db_to_mul(float db)
 {
 	return db_to_mul(db);
+}
+
+obs_fader_conversion_t obs_fader_db_to_def(obs_fader_t *fader)
+{
+	return fader->db_to_def;
 }

@@ -6,7 +6,11 @@ find_package(MbedTLS REQUIRED)
 find_package(ZLIB REQUIRED)
 
 if(NOT TARGET happy-eyeballs)
-  add_subdirectory("${CMAKE_SOURCE_DIR}/deps/happy-eyeballs" "${CMAKE_BINARY_DIR}/deps/happy-eyeballs")
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/happy-eyeballs" "${CMAKE_BINARY_DIR}/shared/happy-eyeballs")
+endif()
+
+if(NOT TARGET OBS::opts-parser)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/opts-parser" "${CMAKE_BINARY_DIR}/shared/opts-parser")
 endif()
 
 add_library(obs-outputs MODULE)
@@ -36,6 +40,10 @@ target_sources(
           librtmp/rtmp.c
           librtmp/rtmp.h
           librtmp/rtmp_sys.h
+          mp4-mux-internal.h
+          mp4-mux.c
+          mp4-mux.h
+          mp4-output.c
           net-if.c
           net-if.h
           null-output.c
@@ -60,6 +68,7 @@ target_link_libraries(
   obs-outputs
   PRIVATE OBS::libobs
           OBS::happy-eyeballs
+          OBS::opts-parser
           MbedTLS::MbedTLS
           ZLIB::ZLIB
           $<$<PLATFORM_ID:Windows>:OBS::w32-pthreads>
@@ -77,8 +86,6 @@ if(OS_WINDOWS)
   configure_file(cmake/windows/obs-module.rc.in obs-outputs.rc)
   target_sources(obs-outputs PRIVATE obs-outputs.rc)
 endif()
-
-include(cmake/ftl.cmake)
 
 # cmake-format: off
 set_target_properties_obs(obs-outputs PROPERTIES FOLDER plugins/obs-outputs PREFIX "")

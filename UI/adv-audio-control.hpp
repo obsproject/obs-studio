@@ -53,6 +53,8 @@ private:
 	OBSSignal mixersSignal;
 	OBSSignal activateSignal;
 	OBSSignal deactivateSignal;
+	OBSSignal audioActivateSignal;
+	OBSSignal audioDeactivateSignal;
 	OBSSignal balChangedSignal;
 	OBSSignal renameSignal;
 

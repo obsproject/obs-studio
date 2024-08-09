@@ -82,8 +82,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>783</width>
-            <height>666</height>
+            <width>795</width>
+            <height>657</height>
            </rect>
           </property>
           <layout class="QFormLayout" name="formLayout_2">
@@ -299,7 +299,6 @@
             <widget class="QLabel" name="label_7">
              <property name="font">
               <font>
-               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
@@ -522,8 +521,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>218</width>
-            <height>200</height>
+            <width>191</width>
+            <height>216</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -643,11 +642,11 @@
       </property>
       <item row="0" column="0">
        <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,2,0,6">
-        <property name="sizeConstraint">
-         <enum>QLayout::SetNoConstraint</enum>
-        </property>
         <property name="spacing">
          <number>10</number>
+        </property>
+        <property name="sizeConstraint">
+         <enum>QLayout::SetNoConstraint</enum>
         </property>
         <item>
          <widget class="QPushButton" name="cancelButton">

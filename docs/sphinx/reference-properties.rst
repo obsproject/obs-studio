@@ -209,6 +209,8 @@ Property Object Functions
                           - **OBS_COMBO_TYPE_LIST** - Not editable. Displayed as combo box.
                           - **OBS_COMBO_TYPE_RADIO** - Not editable. Displayed as radio buttons.
 
+                              .. versionadded:: 30.0
+
    :param    format:      Can be one of the following values:
 
                           - **OBS_COMBO_FORMAT_INT** - Integer list
@@ -216,6 +218,8 @@ Property Object Functions
                             list
                           - **OBS_COMBO_FORMAT_STRING** - String list
                           - **OBS_COMBO_FORMAT_BOOL** - Boolean list
+
+                              .. versionadded:: 30.0
 
    :return:               The property
 

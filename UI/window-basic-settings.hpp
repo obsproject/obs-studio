@@ -28,6 +28,7 @@
 
 #include "auth-base.hpp"
 #include "ffmpeg-utils.hpp"
+#include "obs-app-theming.hpp"
 
 class OBSBasic;
 class QAbstractButton;
@@ -35,6 +36,7 @@ class QRadioButton;
 class QComboBox;
 class QCheckBox;
 class QLabel;
+class QButtonGroup;
 class OBSPropertiesView;
 class OBSHotkeyWidget;
 
@@ -68,10 +70,14 @@ public slots:
 	}
 };
 
+std::string DeserializeConfigText(const char *value);
+
 class OBSBasicSettings : public QDialog {
 	Q_OBJECT
 	Q_PROPERTY(QIcon generalIcon READ GetGeneralIcon WRITE SetGeneralIcon
 			   DESIGNABLE true)
+	Q_PROPERTY(QIcon appearanceIcon READ GetAppearanceIcon WRITE
+			   SetAppearanceIcon DESIGNABLE true)
 	Q_PROPERTY(QIcon streamIcon READ GetStreamIcon WRITE SetStreamIcon
 			   DESIGNABLE true)
 	Q_PROPERTY(QIcon outputIcon READ GetOutputIcon WRITE SetOutputIcon
@@ -87,6 +93,19 @@ class OBSBasicSettings : public QDialog {
 	Q_PROPERTY(QIcon advancedIcon READ GetAdvancedIcon WRITE SetAdvancedIcon
 			   DESIGNABLE true)
 
+	enum Pages {
+		GENERAL,
+		APPEARANCE,
+		STREAM,
+		OUTPUT,
+		AUDIO,
+		VIDEO,
+		HOTKEYS,
+		ACCESSIBILITY,
+		ADVANCED,
+		NUM_PAGES
+	};
+
 private:
 	OBSBasic *main;
 
@@ -101,12 +120,12 @@ private:
 	bool videoChanged = false;
 	bool hotkeysChanged = false;
 	bool a11yChanged = false;
+	bool appearanceChanged = false;
 	bool advancedChanged = false;
 	int pageIndex = 0;
 	bool loading = true;
 	bool forceAuthReload = false;
 	bool forceUpdateCheck = false;
-	std::string savedTheme;
 	int sampleRateIndex = 0;
 	int channelIndex = 0;
 	bool llBufferingEnabled = false;
@@ -119,6 +138,8 @@ private:
 
 	static constexpr uint32_t ENCODER_HIDE_FLAGS =
 		(OBS_ENCODER_CAP_DEPRECATED | OBS_ENCODER_CAP_INTERNAL);
+
+	OBSTheme *savedTheme = nullptr;
 
 	std::vector<FFmpegFormat> formats;
 
@@ -174,6 +195,8 @@ private:
 		      const char *value);
 	void SaveSpinBox(QSpinBox *widget, const char *section,
 			 const char *value);
+	void SaveText(QPlainTextEdit *widget, const char *section,
+		      const char *value);
 	void SaveFormat(QComboBox *combo);
 	void SaveEncoder(QComboBox *combo, const char *section,
 			 const char *value);
@@ -185,9 +208,9 @@ private:
 
 	inline bool Changed() const
 	{
-		return generalChanged || outputsChanged || stream1Changed ||
-		       audioChanged || videoChanged || advancedChanged ||
-		       hotkeysChanged || a11yChanged;
+		return generalChanged || appearanceChanged || outputsChanged ||
+		       stream1Changed || audioChanged || videoChanged ||
+		       advancedChanged || hotkeysChanged || a11yChanged;
 	}
 
 	inline void EnableApplyButton(bool en)
@@ -205,6 +228,7 @@ private:
 		hotkeysChanged = false;
 		a11yChanged = false;
 		advancedChanged = false;
+		appearanceChanged = false;
 		EnableApplyButton(false);
 	}
 
@@ -238,6 +262,7 @@ private:
 	void
 	LoadHotkeySettings(obs_hotkey_id ignoreKey = OBS_INVALID_HOTKEY_ID);
 	void LoadA11ySettings(bool presetChange = false);
+	void LoadAppearanceSettings(bool reload = false);
 	void LoadAdvancedSettings();
 	void LoadSettings(bool changedOnly);
 
@@ -247,12 +272,12 @@ private:
 
 	/* general */
 	void LoadLanguageList();
-	void LoadThemeList();
+	void LoadThemeList(bool firstLoad);
 	void LoadBranchesList();
 
 	/* stream */
 	void InitStreamPage();
-	inline bool IsCustomService() const;
+	bool IsCustomService() const;
 	inline bool IsWHIP() const;
 	void LoadServices(bool showAll);
 	void OnOAuthStreamKeyConnected();
@@ -272,7 +297,13 @@ private:
 	void UpdateMoreInfoLink();
 	void UpdateAdvNetworkGroup();
 
+	/* Appearance */
+	void InitAppearancePage();
+
+	bool IsCustomServer();
+
 private slots:
+	void UpdateMultitrackVideo();
 	void RecreateOutputResolutionWidget();
 	bool UpdateResFPSLimits();
 	void DisplayEnforceWarning(bool checked);
@@ -282,6 +313,7 @@ private slots:
 	void on_disconnectAccount_clicked();
 	void on_useStreamKey_clicked();
 	void on_useAuth_toggled();
+	void on_server_currentIndexChanged(int index);
 
 	void on_hotkeyFilterReset_clicked();
 	void on_hotkeyFilterSearch_textChanged(const QString text);
@@ -336,6 +368,7 @@ private:
 	void SaveVideoSettings();
 	void SaveHotkeySettings();
 	void SaveA11ySettings();
+	void SaveAppearanceSettings();
 	void SaveAdvancedSettings();
 	void SaveSettings();
 
@@ -355,6 +388,7 @@ private:
 	void UpdateYouTubeAppDockSettings();
 
 	QIcon generalIcon;
+	QIcon appearanceIcon;
 	QIcon streamIcon;
 	QIcon outputIcon;
 	QIcon audioIcon;
@@ -364,6 +398,7 @@ private:
 	QIcon advancedIcon;
 
 	QIcon GetGeneralIcon() const;
+	QIcon GetAppearanceIcon() const;
 	QIcon GetStreamIcon() const;
 	QIcon GetOutputIcon() const;
 	QIcon GetAudioIcon() const;
@@ -383,8 +418,12 @@ private:
 	bool ServiceAndACodecCompatible();
 	bool ServiceSupportsCodecCheck();
 
+	inline bool AllowsMultiTrack(const char *protocol);
+	void SwapMultiTrack(const char *protocol);
+
 private slots:
 	void on_theme_activated(int idx);
+	void on_themeVariant_activated(int idx);
 
 	void on_listWidget_itemSelectionChanged();
 	void on_buttonBox_clicked(QAbstractButton *button);
@@ -423,7 +462,12 @@ private slots:
 	void on_colorPreset_currentIndexChanged(int idx);
 
 	void GeneralChanged();
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+	void HideOBSWindowWarning(Qt::CheckState state);
+#else
 	void HideOBSWindowWarning(int state);
+#endif
 	void AudioChanged();
 	void AudioChangedRestart();
 	void ReloadAudioSources();
@@ -439,6 +483,7 @@ private slots:
 	bool ScanDuplicateHotkeys(QFormLayout *layout);
 	void ReloadHotkeys(obs_hotkey_id ignoreKey = OBS_INVALID_HOTKEY_ID);
 	void A11yChanged();
+	void AppearanceChanged();
 	void AdvancedChanged();
 	void AdvancedChangedRestart();
 
@@ -462,6 +507,7 @@ private slots:
 	OBSService SpawnTempService();
 
 	void SetGeneralIcon(const QIcon &icon);
+	void SetAppearanceIcon(const QIcon &icon);
 	void SetStreamIcon(const QIcon &icon);
 	void SetOutputIcon(const QIcon &icon);
 	void SetAudioIcon(const QIcon &icon);
@@ -477,6 +523,7 @@ private slots:
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
+	virtual void showEvent(QShowEvent *event) override;
 	void reject() override;
 
 public:

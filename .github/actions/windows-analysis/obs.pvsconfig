@@ -1,0 +1,10 @@
+//V_EXCLUDE_PATH */.deps/*
+//V_EXCLUDE_PATH */blake2/*
+//V_EXCLUDE_PATH */json11/*
+//V_EXCLUDE_PATH */simde/*
+//V_EXCLUDE_PATH */w32-pthreads/*
+//V_EXCLUDE_PATH */plugins/obs-browser/*
+//V_EXCLUDE_PATH */plugins/obs-outputs/ftl-sdk/*
+//V_EXCLUDE_PATH */plugins/obs-websocket/*
+//V_EXCLUDE_PATH */plugins/win-dshow/libdshowcapture/*
+//V_EXCLUDE_PATH *_autogen/*

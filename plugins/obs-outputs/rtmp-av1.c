@@ -33,10 +33,18 @@
 #define AV1_OBU_TILE_GROUP 4
 #define AV1_OBU_TILE_LIST 8
 #define AV1_OBU_FRAME 6
+#define AV1_OBU_FRAME_HEADER 3
 
 #define FF_PROFILE_AV1_MAIN 0
 #define FF_PROFILE_AV1_HIGH 1
 #define FF_PROFILE_AV1_PROFESSIONAL 2
+
+enum frame_type {
+	AV1_KEY_FRAME,
+	AV1_INTER_FRAME,
+	AV1_INTRA_FRAME,
+	AV1_SWITCH_FRAME,
+};
 
 typedef struct AV1SequenceParameters {
 	uint8_t profile;
@@ -536,19 +544,47 @@ size_t obs_parse_av1_header(uint8_t **header, const uint8_t *data, size_t size)
 	return output.bytes.num;
 }
 
+static void compute_av1_keyframe_priority(const uint8_t *buf, bool *is_keyframe,
+					  int *priority)
+{
+	/* Skip if the packet already has a priority, e.g., assigned by the
+	 * encoder implementation (currently QSV/AMF). */
+	if (*priority)
+		return;
+
+	Av1GetBitContext gb;
+
+	init_get_bits8(&gb, buf, 1);
+
+	// show_existing_frame
+	if (get_bit1(&gb))
+		return;
+
+	enum frame_type type = get_bits(&gb, 2);
+	bool show_frame = get_bit1(&gb);
+
+	switch (type) {
+	case AV1_KEY_FRAME:
+		*is_keyframe = true;
+		*priority = 3;
+		break;
+	case AV1_INTER_FRAME:
+		*priority = show_frame ? 1 : 2;
+		break;
+	case AV1_INTRA_FRAME:
+		*priority = 3;
+		break;
+	case AV1_SWITCH_FRAME:
+		*priority = 2;
+		break;
+	}
+}
+
 static void serialize_av1_data(struct serializer *s, const uint8_t *data,
 			       size_t size, bool *is_keyframe, int *priority)
 {
-	(void)is_keyframe;
-	(void)priority;
 	uint8_t *buf = (uint8_t *)data;
 	uint8_t *end = (uint8_t *)data + size;
-	enum {
-		START_NOT_FOUND,
-		START_FOUND,
-		END_FOUND,
-		OFFSET_IMPOSSIBLE,
-	} state = START_NOT_FOUND;
 
 	while (buf < end) {
 		int64_t obu_size;
@@ -564,15 +600,13 @@ static void serialize_av1_data(struct serializer *s, const uint8_t *data,
 		case AV1_OBU_TEMPORAL_DELIMITER:
 		case AV1_OBU_REDUNDANT_FRAME_HEADER:
 		case AV1_OBU_TILE_LIST:
-			if (state == START_FOUND)
-				state = END_FOUND;
 			break;
+		case AV1_OBU_FRAME:
+		case AV1_OBU_FRAME_HEADER:
+			compute_av1_keyframe_priority(buf + start_pos,
+						      is_keyframe, priority);
+			/* Falls through. */
 		default:
-			if (state == START_NOT_FOUND) {
-				state = START_FOUND;
-			} else if (state == END_FOUND) {
-				state = OFFSET_IMPOSSIBLE;
-			}
 			s_write(s, buf, len);
 			size += len;
 			break;

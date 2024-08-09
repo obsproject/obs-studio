@@ -2,7 +2,7 @@
 #include "window-basic-main.hpp"
 #include "obs-frontend-api.h"
 #include "obs-app.hpp"
-#include "qt-wrappers.hpp"
+#include <qt-wrappers.hpp>
 #include <QColorDialog>
 
 enum ColorPreset {
@@ -10,11 +10,6 @@ enum ColorPreset {
 	COLOR_PRESET_COLOR_BLIND_1,
 	COLOR_PRESET_CUSTOM = 99,
 };
-
-static inline bool WidgetChanged(QWidget *widget)
-{
-	return widget->property("changed").toBool();
-}
 
 static inline QColor color_from_int(long long val)
 {

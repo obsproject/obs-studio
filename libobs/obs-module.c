@@ -707,16 +707,30 @@ cleanup:
 		da_push_back(dest, &data);                              \
 	} while (false)
 
-#define CHECK_REQUIRED_VAL(type, info, val, func)                       \
-	do {                                                            \
-		if ((offsetof(type, val) + sizeof(info->val) > size) || \
-		    !info->val) {                                       \
-			blog(LOG_ERROR,                                 \
-			     "Required value '" #val "' for "           \
-			     "'%s' not found.  " #func " failed.",      \
-			     info->id);                                 \
-			goto error;                                     \
-		}                                                       \
+#define HAS_VAL(type, info, val) \
+	((offsetof(type, val) + sizeof(info->val) <= size) && info->val)
+
+#define CHECK_REQUIRED_VAL(type, info, val, func)                  \
+	do {                                                       \
+		if (!HAS_VAL(type, info, val)) {                   \
+			blog(LOG_ERROR,                            \
+			     "Required value '" #val "' for "      \
+			     "'%s' not found.  " #func " failed.", \
+			     info->id);                            \
+			goto error;                                \
+		}                                                  \
+	} while (false)
+
+#define CHECK_REQUIRED_VAL_EITHER(type, info, val1, val2, func)     \
+	do {                                                        \
+		if (!HAS_VAL(type, info, val1) &&                   \
+		    !HAS_VAL(type, info, val2)) {                   \
+			blog(LOG_ERROR,                             \
+			     "Neither '" #val1 "' nor '" #val2 "' " \
+			     "for '%s' found.  " #func " failed.",  \
+			     info->id);                             \
+			goto error;                                 \
+		}                                                   \
 	} while (false)
 
 #define HANDLE_ERROR(size_var, structure, info)                            \
@@ -927,7 +941,9 @@ void obs_register_encoder_s(const struct obs_encoder_info *info, size_t size)
 	CHECK_REQUIRED_VAL_(info, destroy, obs_register_encoder);
 
 	if ((info->caps & OBS_ENCODER_CAP_PASS_TEXTURE) != 0)
-		CHECK_REQUIRED_VAL_(info, encode_texture, obs_register_encoder);
+		CHECK_REQUIRED_VAL_EITHER(struct obs_encoder_info, info,
+					  encode_texture, encode_texture2,
+					  obs_register_encoder);
 	else
 		CHECK_REQUIRED_VAL_(info, encode, obs_register_encoder);
 

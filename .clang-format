@@ -181,7 +181,7 @@ ReferenceAlignment: Right
 RemoveSemicolon: false
 RequiresClausePosition: WithPreceding
 RequiresExpressionIndentation: OuterScope
-SeparateDefinitionBlocks: Always
+SeparateDefinitionBlocks: Leave
 ShortNamespaceLines: 1
 SortIncludes: false
 #SortUsingDeclarations: LexicographicNumeric

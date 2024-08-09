@@ -2,9 +2,9 @@
 #include "window-youtube-actions.hpp"
 
 #include "obs-app.hpp"
-#include "qt-wrappers.hpp"
 #include "youtube-api-wrappers.hpp"
 
+#include <qt-wrappers.hpp>
 #include <QToolTip>
 #include <QDateTime>
 #include <QDesktopServices>
@@ -67,10 +67,17 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth,
 		[](const QString &link) { QDesktopServices::openUrl(link); });
 
 	ui->scheduledTime->setVisible(false);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+	connect(ui->checkScheduledLater, &QCheckBox::checkStateChanged, this,
+		[&](Qt::CheckState state)
+#else
 	connect(ui->checkScheduledLater, &QCheckBox::stateChanged, this,
-		[&](int state) {
-			ui->scheduledTime->setVisible(state);
-			if (state) {
+		[&](int state)
+#endif
+		{
+			const bool checked = (state == Qt::Checked);
+			ui->scheduledTime->setVisible(checked);
+			if (checked) {
 				ui->checkAutoStart->setVisible(true);
 				ui->checkAutoStop->setVisible(true);
 				ui->helpAutoStartStop->setVisible(true);

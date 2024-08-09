@@ -68,10 +68,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
 #define debug(format, ...) do_log(LOG_DEBUG, format, ##__VA_ARGS__)
 
-mfxHDL QSV_Encoder_Internal::g_DX_Handle = NULL;
+mfxHDL QSV_Encoder_Internal::g_GFX_Handle = NULL;
 mfxU16 QSV_Encoder_Internal::g_numEncodersOpen = 0;
 
-QSV_Encoder_Internal::QSV_Encoder_Internal(mfxVersion &version, bool isDGPU)
+QSV_Encoder_Internal::QSV_Encoder_Internal(mfxVersion &version,
+					   bool useTexAlloc)
 	: m_pmfxSurfaces(NULL),
 	  m_pmfxENC(NULL),
 	  m_nSPSBufferSize(1024),
@@ -81,8 +82,10 @@ QSV_Encoder_Internal::QSV_Encoder_Internal(mfxVersion &version, bool isDGPU)
 	  m_nTaskIdx(0),
 	  m_nFirstSyncTask(0),
 	  m_outBitstream(),
-	  m_isDGPU(isDGPU),
-	  m_sessionData(NULL)
+	  m_bUseD3D11(false),
+	  m_bUseTexAlloc(useTexAlloc),
+	  m_sessionData(NULL),
+	  m_ver(version)
 {
 	mfxVariant tempImpl;
 	mfxStatus sts;
@@ -109,7 +112,6 @@ QSV_Encoder_Internal::QSV_Encoder_Internal(mfxVersion &version, bool isDGPU)
 		cfg, (const mfxU8 *)"mfxImplDescription.AccelerationMode",
 		tempImpl);
 #else
-	m_bUseTexAlloc = false;
 	tempImpl.Type = MFX_VARIANT_TYPE_U32;
 	tempImpl.Data.U32 = MFX_ACCEL_MODE_VIA_VAAPI;
 	MFXSetConfigFilterProperty(
@@ -140,18 +142,13 @@ mfxStatus QSV_Encoder_Internal::Open(qsv_param_t *pParams, enum qsv_codec codec)
 {
 	mfxStatus sts = MFX_ERR_NONE;
 
-#if defined(_WIN32)
-	if (m_bUseD3D11)
-		// Use D3D11 surface
+	if (m_bUseD3D11 | m_bUseTexAlloc)
+		// Use texture surface
 		sts = Initialize(m_ver, &m_session, &m_mfxAllocator,
-				 &g_DX_Handle, false, codec, &m_sessionData);
+				 &g_GFX_Handle, false, codec, &m_sessionData);
 	else
-		sts = Initialize(m_ver, &m_session, NULL, NULL, NULL, codec,
+		sts = Initialize(m_ver, &m_session, NULL, NULL, false, codec,
 				 &m_sessionData);
-#else
-	sts = Initialize(m_ver, &m_session, NULL, NULL, false, codec,
-			 &m_sessionData);
-#endif
 
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -276,10 +273,6 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 	else
 		m_co2.RepeatPPS = MFX_CODINGOPTION_OFF;
 
-	memset(&m_co3, 0, sizeof(mfxExtCodingOption3));
-	m_co3.Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
-	m_co3.Header.BufferSz = sizeof(m_co3);
-
 	if (pParams->nbFrames > 1)
 		m_co2.BRefType = MFX_B_REF_PYRAMID;
 
@@ -307,16 +300,9 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 		    m_mfxEncParams.mfx.LowPower == MFX_CODINGOPTION_ON) {
 			m_co2.LookAheadDepth = pParams->nLADEPTH;
 		}
-		// CQM to follow UI setting
-		if (pParams->bCQM && !pParams->bRepeatHeaders) {
-			m_co3.AdaptiveCQM = MFX_CODINGOPTION_ON;
-		} else {
-			m_co3.AdaptiveCQM = MFX_CODINGOPTION_OFF;
-		}
 	}
 
 	extendedBuffers.push_back((mfxExtBuffer *)&m_co2);
-	extendedBuffers.push_back((mfxExtBuffer *)&m_co3);
 
 	if (codec == QSV_CODEC_HEVC) {
 		if ((pParams->nWidth & 15) || (pParams->nHeight & 15)) {
@@ -329,6 +315,17 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 			extendedBuffers.push_back(
 				(mfxExtBuffer *)&m_ExtHEVCParam);
 		}
+	}
+
+	constexpr uint32_t pixelcount_4k = 3840 * 2160;
+	/* If size is 4K+, set tile columns per frame to 2. */
+	if (codec == QSV_CODEC_AV1 &&
+	    (pParams->nWidth * pParams->nHeight) >= pixelcount_4k) {
+		memset(&m_ExtAv1TileParam, 0, sizeof(m_ExtAv1TileParam));
+		m_ExtAv1TileParam.Header.BufferId = MFX_EXTBUFF_AV1_TILE_PARAM;
+		m_ExtAv1TileParam.Header.BufferSz = sizeof(m_ExtAv1TileParam);
+		m_ExtAv1TileParam.NumTileColumns = 2;
+		extendedBuffers.push_back((mfxExtBuffer *)&m_ExtAv1TileParam);
 	}
 
 #if defined(_WIN32)
@@ -801,7 +798,7 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY,
 	return sts;
 }
 
-mfxStatus QSV_Encoder_Internal::Encode_tex(uint64_t ts, uint32_t tex_handle,
+mfxStatus QSV_Encoder_Internal::Encode_tex(uint64_t ts, void *tex,
 					   uint64_t lock_key,
 					   uint64_t *next_key,
 					   mfxBitstream **pBS)
@@ -838,7 +835,7 @@ mfxStatus QSV_Encoder_Internal::Encode_tex(uint64_t ts, uint32_t tex_handle,
 	if (m_bUseTexAlloc) {
 		// mfxU64 isn't consistent with stdint, requiring a cast to be multi-platform.
 		sts = simple_copytex(m_mfxAllocator.pthis, pSurface->Data.MemId,
-				     tex_handle, lock_key, (mfxU64 *)next_key);
+				     tex, lock_key, (mfxU64 *)next_key);
 		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 	}
 
@@ -923,7 +920,7 @@ mfxStatus QSV_Encoder_Internal::ClearData()
 
 	if ((m_bUseTexAlloc) && (g_numEncodersOpen <= 0)) {
 		Release();
-		g_DX_Handle = NULL;
+		g_GFX_Handle = NULL;
 	}
 	MFXVideoENCODE_Close(m_session);
 	ReleaseSessionData(m_sessionData);

@@ -19,9 +19,9 @@
 #include <sstream>
 #include "obs-config.h"
 #include "obs-app.hpp"
-#include "qt-wrappers.hpp"
 #include "platform.hpp"
 
+#include <qt-wrappers.hpp>
 #include <util/windows/win-version.h>
 #include <util/platform.h>
 
@@ -493,4 +493,15 @@ void TaskbarOverlaySetStatus(TaskbarOverlayStatus status)
 	taskbarIcon->SetOverlayIcon(hwnd, hicon, nullptr);
 	DestroyIcon(hicon);
 	taskbarIcon->Release();
+}
+
+bool HighContrastEnabled()
+{
+	HIGHCONTRAST hc = {};
+	hc.cbSize = sizeof(HIGHCONTRAST);
+
+	if (SystemParametersInfo(SPI_GETHIGHCONTRAST, hc.cbSize, &hc, 0))
+		return hc.dwFlags & HCF_HIGHCONTRASTON;
+
+	return false;
 }

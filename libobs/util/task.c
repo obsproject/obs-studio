@@ -1,7 +1,7 @@
 #include "task.h"
 #include "bmem.h"
 #include "threading.h"
-#include "circlebuf.h"
+#include "deque.h"
 
 struct os_task_queue {
 	pthread_t thread;
@@ -13,7 +13,7 @@ struct os_task_queue {
 	os_event_t *wait_event;
 
 	pthread_mutex_t mutex;
-	struct circlebuf tasks;
+	struct deque tasks;
 };
 
 struct os_task_info {
@@ -66,7 +66,7 @@ bool os_task_queue_queue_task(os_task_queue_t *tq, os_task_t task, void *param)
 		return false;
 
 	pthread_mutex_lock(&tq->mutex);
-	circlebuf_push_back(&tq->tasks, &ti, sizeof(ti));
+	deque_push_back(&tq->tasks, &ti, sizeof(ti));
 	pthread_mutex_unlock(&tq->mutex);
 	os_sem_post(tq->sem);
 	return true;
@@ -94,7 +94,7 @@ void os_task_queue_destroy(os_task_queue_t *tq)
 	os_event_destroy(tq->wait_event);
 	os_sem_destroy(tq->sem);
 	pthread_mutex_destroy(&tq->mutex);
-	circlebuf_free(&tq->tasks);
+	deque_free(&tq->tasks);
 	bfree(tq);
 }
 
@@ -111,7 +111,7 @@ bool os_task_queue_wait(os_task_queue_t *tq)
 	pthread_mutex_lock(&tq->mutex);
 	tq->waiting = true;
 	tq->tasks_processed = false;
-	circlebuf_push_back(&tq->tasks, &ti, sizeof(ti));
+	deque_push_back(&tq->tasks, &ti, sizeof(ti));
 	pthread_mutex_unlock(&tq->mutex);
 
 	os_sem_post(tq->sem);
@@ -140,14 +140,14 @@ static void *tiny_tubular_task_thread(void *param)
 		struct os_task_info ti;
 
 		pthread_mutex_lock(&tq->mutex);
-		circlebuf_pop_front(&tq->tasks, &ti, sizeof(ti));
+		deque_pop_front(&tq->tasks, &ti, sizeof(ti));
 		if (tq->tasks.size && ti.task == wait_for_thread) {
-			circlebuf_push_back(&tq->tasks, &ti, sizeof(ti));
-			circlebuf_pop_front(&tq->tasks, &ti, sizeof(ti));
+			deque_push_back(&tq->tasks, &ti, sizeof(ti));
+			deque_pop_front(&tq->tasks, &ti, sizeof(ti));
 		}
 		if (tq->tasks.size && ti.task == stop_thread) {
-			circlebuf_push_back(&tq->tasks, &ti, sizeof(ti));
-			circlebuf_pop_front(&tq->tasks, &ti, sizeof(ti));
+			deque_push_back(&tq->tasks, &ti, sizeof(ti));
+			deque_pop_front(&tq->tasks, &ti, sizeof(ti));
 		}
 		if (tq->waiting) {
 			if (ti.task == wait_for_thread) {

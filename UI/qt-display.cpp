@@ -1,16 +1,24 @@
 #include "qt-display.hpp"
-#include "qt-wrappers.hpp"
 #include "display-helpers.hpp"
 #include <QWindow>
 #include <QScreen>
 #include <QResizeEvent>
 #include <QShowEvent>
 
+#include <qt-wrappers.hpp>
 #include <obs-config.h>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#endif
+
+#if !defined(_WIN32) && !defined(__APPLE__)
+#include <obs-nix-platform.h>
+#endif
+
+#ifdef ENABLE_WAYLAND
+#include <qpa/qplatformnativeinterface.h>
 #endif
 
 class SurfaceEventFilter : public QObject {
@@ -60,6 +68,38 @@ static inline QColor rgba_to_color(uint32_t rgba)
 {
 	return QColor::fromRgb(rgba & 0xFF, (rgba >> 8) & 0xFF,
 			       (rgba >> 16) & 0xFF, (rgba >> 24) & 0xFF);
+}
+
+static bool QTToGSWindow(QWindow *window, gs_window &gswindow)
+{
+	bool success = true;
+
+#ifdef _WIN32
+	gswindow.hwnd = (HWND)window->winId();
+#elif __APPLE__
+	gswindow.view = (id)window->winId();
+#else
+	switch (obs_get_nix_platform()) {
+	case OBS_NIX_PLATFORM_X11_EGL:
+		gswindow.id = window->winId();
+		gswindow.display = obs_get_nix_platform_display();
+		break;
+#ifdef ENABLE_WAYLAND
+	case OBS_NIX_PLATFORM_WAYLAND: {
+		QPlatformNativeInterface *native =
+			QGuiApplication::platformNativeInterface();
+		gswindow.display =
+			native->nativeResourceForWindow("surface", window);
+		success = gswindow.display != nullptr;
+		break;
+	}
+#endif
+	default:
+		success = false;
+		break;
+	}
+#endif
+	return success;
 }
 
 OBSQTDisplay::OBSQTDisplay(QWidget *parent, Qt::WindowFlags flags)

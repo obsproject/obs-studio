@@ -35,8 +35,15 @@ enum portal_cursor_mode {
 	PORTAL_CURSOR_MODE_METADATA = 1 << 2,
 };
 
+enum obs_portal_capture_type {
+	OBS_PORTAL_CAPTURE_TYPE_MONITOR = PORTAL_CAPTURE_TYPE_MONITOR,
+	OBS_PORTAL_CAPTURE_TYPE_WINDOW = PORTAL_CAPTURE_TYPE_WINDOW,
+	OBS_PORTAL_CAPTURE_TYPE_UNIFIED = PORTAL_CAPTURE_TYPE_MONITOR |
+					  PORTAL_CAPTURE_TYPE_WINDOW,
+};
+
 struct screencast_portal_capture {
-	enum portal_capture_type capture_type;
+	enum obs_portal_capture_type capture_type;
 
 	GCancellable *cancellable;
 
@@ -139,18 +146,19 @@ static uint32_t get_screencast_version(void)
 
 /* ------------------------------------------------- */
 
-static const char *capture_type_to_string(enum portal_capture_type capture_type)
+static const char *
+capture_type_to_string(enum obs_portal_capture_type capture_type)
 {
 	switch (capture_type) {
-	case PORTAL_CAPTURE_TYPE_MONITOR:
-		return "desktop";
-	case PORTAL_CAPTURE_TYPE_WINDOW:
+	case OBS_PORTAL_CAPTURE_TYPE_MONITOR:
+		return "monitor";
+	case OBS_PORTAL_CAPTURE_TYPE_WINDOW:
 		return "window";
-	case PORTAL_CAPTURE_TYPE_VIRTUAL:
+	case OBS_PORTAL_CAPTURE_TYPE_UNIFIED:
+		return "monitor and window";
 	default:
 		return "unknown";
 	}
-	return "unknown";
 }
 
 /* ------------------------------------------------- */
@@ -285,8 +293,7 @@ static void on_start_response_received_cb(GVariant *parameters, void *user_data)
 		obs_source_save(capture->source);
 	}
 
-	blog(LOG_INFO, "[pipewire] %s selected, setting up screencast",
-	     capture_type_to_string(capture->capture_type));
+	blog(LOG_INFO, "[pipewire] source selected, setting up screencast");
 
 	open_pipewire_remote(capture);
 }
@@ -582,7 +589,7 @@ static void *screencast_portal_desktop_capture_create(obs_data_t *settings,
 	struct screencast_portal_capture *capture;
 
 	capture = bzalloc(sizeof(struct screencast_portal_capture));
-	capture->capture_type = PORTAL_CAPTURE_TYPE_MONITOR;
+	capture->capture_type = OBS_PORTAL_CAPTURE_TYPE_MONITOR;
 	capture->cursor_visible = obs_data_get_bool(settings, "ShowCursor");
 	capture->restore_token =
 		bstrdup(obs_data_get_string(settings, "RestoreToken"));
@@ -598,7 +605,24 @@ static void *screencast_portal_window_capture_create(obs_data_t *settings,
 	struct screencast_portal_capture *capture;
 
 	capture = bzalloc(sizeof(struct screencast_portal_capture));
-	capture->capture_type = PORTAL_CAPTURE_TYPE_WINDOW;
+	capture->capture_type = OBS_PORTAL_CAPTURE_TYPE_WINDOW;
+	capture->cursor_visible = obs_data_get_bool(settings, "ShowCursor");
+	capture->restore_token =
+		bstrdup(obs_data_get_string(settings, "RestoreToken"));
+	capture->source = source;
+
+	init_screencast_capture(capture);
+
+	return capture;
+}
+
+static void *screencast_portal_capture_create(obs_data_t *settings,
+					      obs_source_t *source)
+{
+	struct screencast_portal_capture *capture;
+
+	capture = bzalloc(sizeof(struct screencast_portal_capture));
+	capture->capture_type = OBS_PORTAL_CAPTURE_TYPE_UNIFIED;
 	capture->cursor_visible = obs_data_get_bool(settings, "ShowCursor");
 	capture->restore_token =
 		bstrdup(obs_data_get_string(settings, "RestoreToken"));
@@ -657,13 +681,15 @@ static obs_properties_t *screencast_portal_capture_get_properties(void *data)
 	obs_properties_t *properties;
 
 	switch (capture->capture_type) {
-	case PORTAL_CAPTURE_TYPE_MONITOR:
+	case OBS_PORTAL_CAPTURE_TYPE_MONITOR:
 		reload_string_id = "PipeWireSelectMonitor";
 		break;
-	case PORTAL_CAPTURE_TYPE_WINDOW:
+	case OBS_PORTAL_CAPTURE_TYPE_WINDOW:
 		reload_string_id = "PipeWireSelectWindow";
 		break;
-	case PORTAL_CAPTURE_TYPE_VIRTUAL:
+	case OBS_PORTAL_CAPTURE_TYPE_UNIFIED:
+		reload_string_id = "PipeWireSelectScreenCast";
+		break;
 	default:
 		return NULL;
 	}
@@ -744,21 +770,21 @@ void screencast_portal_load(void)
 		(available_capture_types & PORTAL_CAPTURE_TYPE_WINDOW) != 0;
 
 	if (available_capture_types == 0) {
-		blog(LOG_INFO, "[pipewire] No captures available");
+		blog(LOG_INFO, "[pipewire] No capture sources available");
 		return;
 	}
 
-	blog(LOG_INFO, "[pipewire] Available captures:");
+	blog(LOG_INFO, "[pipewire] Available capture sources:");
 	if (desktop_capture_available)
-		blog(LOG_INFO, "[pipewire]     - Desktop capture");
+		blog(LOG_INFO, "[pipewire]     - Monitor source");
 	if (window_capture_available)
-		blog(LOG_INFO, "[pipewire]     - Window capture");
+		blog(LOG_INFO, "[pipewire]     - Window source");
 
 	// Desktop capture
 	const struct obs_source_info screencast_portal_desktop_capture_info = {
 		.id = "pipewire-desktop-capture-source",
 		.type = OBS_SOURCE_TYPE_INPUT,
-		.output_flags = OBS_SOURCE_VIDEO,
+		.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CAP_OBSOLETE,
 		.get_name = screencast_portal_desktop_capture_get_name,
 		.create = screencast_portal_desktop_capture_create,
 		.destroy = screencast_portal_capture_destroy,
@@ -780,7 +806,7 @@ void screencast_portal_load(void)
 	const struct obs_source_info screencast_portal_window_capture_info = {
 		.id = "pipewire-window-capture-source",
 		.type = OBS_SOURCE_TYPE_INPUT,
-		.output_flags = OBS_SOURCE_VIDEO,
+		.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CAP_OBSOLETE,
 		.get_name = screencast_portal_window_capture_get_name,
 		.create = screencast_portal_window_capture_create,
 		.destroy = screencast_portal_capture_destroy,
@@ -797,6 +823,27 @@ void screencast_portal_load(void)
 	};
 	if (window_capture_available)
 		obs_register_source(&screencast_portal_window_capture_info);
+
+	// Screen capture (monitor and window)
+	const struct obs_source_info screencast_portal_capture_info = {
+		.id = "pipewire-screen-capture-source",
+		.type = OBS_SOURCE_TYPE_INPUT,
+		.output_flags = OBS_SOURCE_VIDEO,
+		.get_name = screencast_portal_desktop_capture_get_name,
+		.create = screencast_portal_capture_create,
+		.destroy = screencast_portal_capture_destroy,
+		.save = screencast_portal_capture_save,
+		.get_defaults = screencast_portal_capture_get_defaults,
+		.get_properties = screencast_portal_capture_get_properties,
+		.update = screencast_portal_capture_update,
+		.show = screencast_portal_capture_show,
+		.hide = screencast_portal_capture_hide,
+		.get_width = screencast_portal_capture_get_width,
+		.get_height = screencast_portal_capture_get_height,
+		.video_render = screencast_portal_capture_video_render,
+		.icon_type = OBS_ICON_TYPE_DESKTOP_CAPTURE,
+	};
+	obs_register_source(&screencast_portal_capture_info);
 }
 
 void screencast_portal_unload(void)

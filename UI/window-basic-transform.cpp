@@ -71,9 +71,13 @@ OBSBasicTransform::OBSBasicTransform(OBSSceneItem item, OBSBasic *parent)
 		   &OBSBasicTransform::OnCropChanged);
 	HookWidget(ui->cropBottom, ISCROLL_CHANGED,
 		   &OBSBasicTransform::OnCropChanged);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+	HookWidget(ui->cropToBounds, &QCheckBox::checkStateChanged,
+		   &OBSBasicTransform::OnControlChanged);
+#else
 	HookWidget(ui->cropToBounds, &QCheckBox::stateChanged,
 		   &OBSBasicTransform::OnControlChanged);
-
+#endif
 	ui->buttonBox->button(QDialogButtonBox::Close)->setDefault(true);
 
 	connect(ui->buttonBox->button(QDialogButtonBox::Reset),
@@ -123,27 +127,23 @@ OBSBasicTransform::~OBSBasicTransform()
 
 void OBSBasicTransform::SetScene(OBSScene scene)
 {
-	transformSignal.Disconnect();
-	selectSignal.Disconnect();
-	deselectSignal.Disconnect();
-	removeSignal.Disconnect();
-	lockSignal.Disconnect();
+	sigs.clear();
 
 	if (scene) {
 		OBSSource source = obs_scene_get_source(scene);
 		signal_handler_t *signal =
 			obs_source_get_signal_handler(source);
 
-		transformSignal.Connect(signal, "item_transform",
-					OBSSceneItemTransform, this);
-		removeSignal.Connect(signal, "item_remove", OBSSceneItemRemoved,
-				     this);
-		selectSignal.Connect(signal, "item_select", OBSSceneItemSelect,
-				     this);
-		deselectSignal.Connect(signal, "item_deselect",
-				       OBSSceneItemDeselect, this);
-		lockSignal.Connect(signal, "item_locked", OBSSceneItemLocked,
-				   this);
+		sigs.emplace_back(signal, "item_transform",
+				  OBSSceneItemTransform, this);
+		sigs.emplace_back(signal, "item_remove", OBSSceneItemRemoved,
+				  this);
+		sigs.emplace_back(signal, "item_select", OBSSceneItemSelect,
+				  this);
+		sigs.emplace_back(signal, "item_deselect", OBSSceneItemDeselect,
+				  this);
+		sigs.emplace_back(signal, "item_locked", OBSSceneItemLocked,
+				  this);
 	}
 }
 
@@ -271,7 +271,7 @@ void OBSBasicTransform::RefreshControls()
 
 	obs_transform_info osi;
 	obs_sceneitem_crop crop;
-	obs_sceneitem_get_info(item, &osi);
+	obs_sceneitem_get_info2(item, &osi);
 	obs_sceneitem_get_crop(item, &crop);
 
 	obs_source_t *source = obs_sceneitem_get_source(item);
@@ -351,7 +351,7 @@ void OBSBasicTransform::OnControlChanged()
 	double height = double(source_cy);
 
 	obs_transform_info oti;
-	obs_sceneitem_get_info(item, &oti);
+	obs_sceneitem_get_info2(item, &oti);
 
 	/* do not scale a source if it has 0 width/height */
 	if (source_cx != 0 && source_cy != 0) {
@@ -371,7 +371,7 @@ void OBSBasicTransform::OnControlChanged()
 	oti.crop_to_bounds = ui->cropToBounds->isChecked();
 
 	ignoreTransformSignal = true;
-	obs_sceneitem_set_info(item, &oti);
+	obs_sceneitem_set_info2(item, &oti);
 	ignoreTransformSignal = false;
 }
 

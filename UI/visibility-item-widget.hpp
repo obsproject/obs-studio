@@ -9,28 +9,25 @@ class QLineEdit;
 class QListWidget;
 class QListWidgetItem;
 class QCheckBox;
+class OBSSourceLabel;
 
 class VisibilityItemWidget : public QWidget {
 	Q_OBJECT
 
 private:
 	OBSSource source;
-	QLabel *label = nullptr;
+	OBSSourceLabel *label = nullptr;
 	QCheckBox *vis = nullptr;
-	QString oldName;
 
 	OBSSignal enabledSignal;
-	OBSSignal renamedSignal;
 
 	bool active = false;
 	bool selected = false;
 
 	static void OBSSourceEnabled(void *param, calldata_t *data);
-	static void OBSSourceRenamed(void *param, calldata_t *data);
 
 private slots:
 	void SourceEnabled(bool enabled);
-	void SourceRenamed(QString name);
 
 public:
 	VisibilityItemWidget(obs_source_t *source);

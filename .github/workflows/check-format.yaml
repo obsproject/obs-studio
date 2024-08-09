@@ -5,7 +5,7 @@ jobs:
   clang-format:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: clang-format Check 🐉
@@ -15,9 +15,9 @@ jobs:
           failCondition: error
 
   swift-format:
-    runs-on: macos-13
+    runs-on: macos-14
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: swift-format Check 🔥
@@ -29,7 +29,7 @@ jobs:
   cmake-format:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: cmake-format Check 🎛️
@@ -41,7 +41,7 @@ jobs:
   flatpak-validator:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Flatpak Manifest Check 📦
@@ -53,7 +53,7 @@ jobs:
   qt-xml-validator:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Qt XML Check 🖼️

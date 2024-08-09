@@ -1,6 +1,6 @@
 #include <obs-module.h>
 #include <util/platform.h>
-#include <util/circlebuf.h>
+#include <util/deque.h>
 #include <util/dstr.h>
 #include <util/threading.h>
 #include <inttypes.h>
@@ -57,10 +57,10 @@ struct rtmp_stream {
 	obs_output_t *output;
 
 	pthread_mutex_t packets_mutex;
-	struct circlebuf packets;
+	struct deque packets;
 	bool sent_headers;
 
-	bool got_first_video;
+	bool got_first_packet;
 	int64_t start_dts_offset;
 
 	volatile bool connecting;
@@ -96,14 +96,14 @@ struct rtmp_stream {
 	int dropped_frames;
 
 #ifdef TEST_FRAMEDROPS
-	struct circlebuf droptest_info;
+	struct deque droptest_info;
 	uint64_t droptest_last_key_check;
 	size_t droptest_max;
 	size_t droptest_size;
 #endif
 
 	pthread_mutex_t dbr_mutex;
-	struct circlebuf dbr_frames;
+	struct deque dbr_frames;
 	size_t dbr_data_size;
 	uint64_t dbr_inc_timeout;
 	long audio_bitrate;
@@ -114,7 +114,8 @@ struct rtmp_stream {
 	long dbr_inc_bitrate;
 	bool dbr_enabled;
 
-	enum video_id_t video_codec;
+	enum audio_id_t audio_codec[MAX_OUTPUT_AUDIO_ENCODERS];
+	enum video_id_t video_codec[MAX_OUTPUT_VIDEO_ENCODERS];
 
 	RTMP rtmp;
 

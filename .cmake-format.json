@@ -41,6 +41,14 @@
           }
         }
       }
+    },
+    "add_obs_plugin": {
+      "pargs": 1,
+      "flags": ["WITH_MESSAGE"],
+      "kwargs": {
+        "PLATFORMS": "+",
+        "ARCHITECTURES": "+"
+      }
     }
   }
 }

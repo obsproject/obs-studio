@@ -363,23 +363,19 @@ int64_t os_get_free_space(const char *path)
     if (path) {
         NSURL *fileURL = [NSURL fileURLWithPath:@(path)];
 
-        NSDictionary *values = [fileURL resourceValuesForKeys:@[NSURLVolumeIsLocalKey] error:nil];
+        NSArray *availableCapacityKeys = @[
+            NSURLVolumeAvailableCapacityKey, NSURLVolumeAvailableCapacityForImportantUsageKey,
+            NSURLVolumeAvailableCapacityForOpportunisticUsageKey
+        ];
 
-        BOOL isLocalVolume = [values[NSURLVolumeIsLocalKey] boolValue];
+        NSDictionary *values = [fileURL resourceValuesForKeys:availableCapacityKeys error:nil];
 
-        NSURLResourceKey volumeKey;
+        NSNumber *availableImportantSpace = values[NSURLVolumeAvailableCapacityForImportantUsageKey];
+        NSNumber *availableSpace = values[NSURLVolumeAvailableCapacityKey];
 
-        if (isLocalVolume) {
-            volumeKey = NSURLVolumeAvailableCapacityForOpportunisticUsageKey;
+        if (availableImportantSpace.longValue > 0) {
+            return availableImportantSpace.longValue;
         } else {
-            volumeKey = NSURLVolumeAvailableCapacityKey;
-        }
-
-        values = [fileURL resourceValuesForKeys:@[volumeKey] error:nil];
-
-        NSNumber *availableSpace = values[volumeKey];
-
-        if (availableSpace) {
             return availableSpace.longValue;
         }
     }

@@ -33,7 +33,7 @@ jobs:
     permissions:
       checks: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -57,7 +57,7 @@ jobs:
     permissions:
       checks: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -81,7 +81,7 @@ jobs:
     if: github.repository_owner == 'obsproject' && (github.ref_name == 'master' || github.ref_type == 'tag')
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -115,7 +115,7 @@ jobs:
           : Get Commit Hash 🆔
           echo "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: OBS Studio Docs (No Extensions) ${{ steps.setup.outputs.commitHash }}
           path: docs
@@ -139,7 +139,7 @@ jobs:
   create-appcast:
     name: Create Sparkle Appcast 🎙️
     if: github.repository_owner == 'obsproject' && github.ref_type == 'tag'
-    runs-on: macos-13
+    runs-on: macos-14
     needs: build-project
     strategy:
       fail-fast: false
@@ -149,7 +149,7 @@ jobs:
       run:
         shell: zsh --no-rcs --errexit --pipefail {0}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
@@ -172,7 +172,7 @@ jobs:
           print "channel=${channel}" >> $GITHUB_OUTPUT
 
       - name: Download Artifact 📥
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: obs-studio-macos-${{ matrix.target }}-${{ steps.setup.outputs.commitHash }}
 
@@ -189,105 +189,38 @@ jobs:
           customLink: 'https://obsproject.com/'
 
       - name: Upload Artifacts 📡
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: macos-sparkle-update
+          name: macos-sparkle-update-${{ matrix.target }}
           path: ${{ github.workspace }}/output
 
-  create-windows-update:
-    name: Create Windows Update 🥩
+  merge-appcasts:
+    runs-on: ubuntu-22.04
+    needs: create-appcast
+    steps:
+      - name: Merge Appcasts
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: macos-sparkle-update
+          pattern: macos-sparkle-update-*
+          delete-merged: true
+
+  sign-windows-build:
+    name: Windows Signing ✍️
+    uses: obsproject/obs-studio/.github/workflows/sign-windows.yaml@d2b05a6e0c6a0f51c42f247efd581bed8f4a1877
     if: github.repository_owner == 'obsproject' && github.ref_type == 'tag'
-    runs-on: windows-2022
     needs: build-project
     permissions:
       contents: 'read'
       id-token: 'write'
-    defaults:
-      run:
-        shell: pwsh
-    environment:
-      name: bouf
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          path: "repo"
-          fetch-depth: 0
-          ref: ${{ github.ref }}
-
-      - name: Set Up Environment 🔧
-        id: setup
-        env:
-          BOUF_ACTION_HASH: '4b421d1fa51cbf35f9c68f80795be3468dc480d47989c0bf713c39a7d62dec9e'
-        run: |
-          $channel = if ($env:GITHUB_REF_NAME -match "(beta|rc)") { "beta" } else { "stable" }
-          $shortHash = $env:GITHUB_SHA.Substring(0,9)
-          "channel=${channel}" >> $env:GITHUB_OUTPUT
-          "commitHash=${shortHash}" >> $env:GITHUB_OUTPUT
-          
-          # Ensure files in action haven't been modified
-          $folderHash = ''
-          $files = Get-ChildItem "${{ github.workspace }}\repo\.github\actions\bouf"
-          foreach ($file in $files) {
-            $folderHash += (Get-FileHash $file -Algorithm SHA256).Hash
-          }
-          # This is stupid but so is powershell
-          $stream = [IO.MemoryStream]::new([byte[]][char[]]$folderHash)
-          if ((Get-FileHash -InputStream $stream -Algorithm SHA256).Hash -ne "$env:BOUF_ACTION_HASH") {
-            throw "bouf action folder hash does not match."
-          }
-
-      - name: Download Artifact 📥
-        uses: actions/download-artifact@v3
-        with:
-          name: obs-studio-windows-x64-${{ steps.setup.outputs.commitHash }}
-          path: ${{ github.workspace }}/build
-
-      - name: Run bouf 🥩
-        uses: ./repo/.github/actions/bouf
-        with:
-          gcpWorkloadIdentityProvider: ${{ secrets.GCP_IDENTITY_POOL }}
-          gcpServiceAccountName: ${{ secrets.GCP_SERVICE_ACCOUNT_NAME }}
-          version: ${{ github.ref_name }}
-          channel: ${{ steps.setup.outputs.channel }}
-
-      - name: Upload Signed Build
-        uses: actions/upload-artifact@v4
-        with:
-          name: obs-studio-windows-x64-${{ github.ref_name }}-signed
-          compression-level: 6
-          path: ${{ github.workspace }}/output/install
-
-      - name: Upload PDBs
-        uses: actions/upload-artifact@v4
-        with:
-          name: obs-studio-windows-x64-${{ github.ref_name }}-pdbs
-          compression-level: 9
-          path: ${{ github.workspace }}/output/pdbs
-
-      - name: Upload Installer
-        uses: actions/upload-artifact@v4
-        with:
-          name: obs-studio-windows-x64-${{ github.ref_name }}-installer
-          compression-level: 0
-          path: ${{ github.workspace }}/output/*.exe
-
-      - name: Upload Updater Files
-        uses: actions/upload-artifact@v4
-        with:
-          name: obs-studio-windows-x64-${{ github.ref_name }}-patches
-          compression-level: 0
-          path: |
-            ${{ github.workspace }}/output/updater
-            ${{ github.workspace }}/output/*.json
-            ${{ github.workspace }}/output/*.sig
-            ${{ github.workspace }}/output/*.txt
-            ${{ github.workspace }}/output/*.rst
+      attestations: 'write'
+    secrets: inherit
 
   create-release:
     name: Create Release 🛫
     if: github.ref_type == 'tag'
     runs-on: ubuntu-22.04
-    needs: build-project
+    needs: [build-project, sign-windows-build]
     defaults:
       run:
         shell: bash
@@ -314,7 +247,7 @@ jobs:
           esac
 
       - name: Download Build Artifacts 📥
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         if: ${{ fromJSON(steps.check.outputs.validTag) }}
 
       - name: Rename Files 🏷️
@@ -330,8 +263,14 @@ jobs:
           macos_arm64_dsym_artifact_name="obs-studio-macos-arm64-${commit_hash}-dSYMs"
           macos_intel_artifact_name="obs-studio-macos-x86_64-${commit_hash}"
           macos_intel_dsym_artifact_name="obs-studio-macos-x86_64-${commit_hash}-dSYMs"
-          ubuntu_x86_64_artifact_name="obs-studio-ubuntu-22.04-x86_64-${commit_hash}"
-          ubuntu_x86_64_debug_name="obs-studio-ubuntu-22.04-x86_64-${commit_hash}-dbgsym"
+          ubuntu_2204_x86_64_artifact_name="obs-studio-ubuntu-22.04-x86_64-${commit_hash}"
+          ubuntu_2204_x86_64_debug_name="obs-studio-ubuntu-22.04-x86_64-${commit_hash}-dbgsym"
+          ubuntu_2404_x86_64_artifact_name="obs-studio-ubuntu-24.04-x86_64-${commit_hash}"
+          ubuntu_2404_x86_64_debug_name="obs-studio-ubuntu-24.04-x86_64-${commit_hash}-dbgsym"
+          ubuntu_2404_sources_name="obs-studio-ubuntu-24.04-sources-${commit_hash}"
+          windows_artifact_name="obs-studio-windows-x64-${{ steps.check.outputs.version }}-signed"
+          windows_installer_name="obs-studio-windows-x64-${{ steps.check.outputs.version }}-installer"
+          windows_debug_name="obs-studio-windows-x64-${{ steps.check.outputs.version }}-pdbs"
 
           echo '::group::Renaming Artifacts'
           mv -v "${macos_arm64_artifact_name}/"obs-studio-*-macos-apple.dmg \
@@ -342,10 +281,22 @@ jobs:
             "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-macOS-Intel.dmg
           mv -v "${macos_intel_dsym_artifact_name}/"obs-studio-*-macos-intel-dSYMs.tar.xz \
             "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-macOS-Intel-dSYMs.tar.xz
-          mv -v "${ubuntu_x86_64_artifact_name}/"obs-studio-*-x86_64-linux-gnu.deb \
-            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-x86_64.deb
-          mv -v "${ubuntu_x86_64_debug_name}/"obs-studio-*-x86_64-linux-gnu-dbgsym.ddeb \
-            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-x86_64-dbsym.ddeb
+          mv -v "${ubuntu_2204_x86_64_artifact_name}/"obs-studio-*-x86_64-ubuntu-gnu.deb \
+            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-22.04-x86_64.deb
+          mv -v "${ubuntu_2204_x86_64_debug_name}/"obs-studio-*-x86_64-ubuntu-gnu-dbgsym.ddeb \
+            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-22.04-x86_64-dbsym.ddeb
+          mv -v "${ubuntu_2404_x86_64_artifact_name}/"obs-studio-*-x86_64-ubuntu-gnu.deb \
+            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-24.04-x86_64.deb
+          mv -v "${ubuntu_2404_x86_64_debug_name}/"obs-studio-*-x86_64-ubuntu-gnu-dbgsym.ddeb \
+            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-24.04-x86_64-dbsym.ddeb
+          mv -v "${ubuntu_2404_sources_name}/"obs-studio-*-sources.tar.gz \
+            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Sources.tar.gz
+          mv -v "${windows_installer_name}/"OBS-Studio-*.exe \
+            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Windows-Installer.exe
+          mv -v "${windows_artifact_name}/"OBS-Studio-*.zip \
+            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Windows.zip
+          mv -v "${windows_debug_name}/"OBS-Studio-*-pdbs.zip \
+            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Windows-PDBs.zip
           echo '::endgroup::'
 
       - name: Generate Checksums 🪪
@@ -356,14 +307,14 @@ jobs:
           shopt -s extglob
 
           echo "### Checksums" > ${{ github.workspace }}/CHECKSUMS.txt
-          for file in ${{ github.workspace }}/@(*.deb|*.ddeb|*.dmg|*.tar.xz); do
+          for file in ${{ github.workspace }}/@(*.deb|*.ddeb|*.dmg|*.tar.xz|*.tar.gz|*.exe|*.zip); do
             echo "    ${file##*/}: $(sha256sum "${file}" | cut -d " " -f 1)" >> ${{ github.workspace }}/CHECKSUMS.txt
           done
 
       - name: Create Release 🛫
         if: fromJSON(steps.check.outputs.validTag)
         id: create_release
-        uses: softprops/action-gh-release@d4e8205d7e959a9107da6396278b2f1f07af0f9b
+        uses: softprops/action-gh-release@9d7c94cfd0a1f3ed45544c887983e9fa900f0564
         with:
           draft: true
           prerelease: ${{ fromJSON(steps.check.outputs.prerelease) }}
@@ -375,3 +326,7 @@ jobs:
             ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-macOS-*-dSYMs.tar.xz
             ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-*.deb
             ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-*.ddeb
+            ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Sources.tar.gz
+            ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Windows.zip
+            ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Windows-PDBs.zip
+            ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Windows-Installer.exe

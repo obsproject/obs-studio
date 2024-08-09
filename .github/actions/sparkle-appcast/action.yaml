@@ -150,15 +150,22 @@ runs:
         print -n '${{ inputs.sparklePrivateKey }}' >> eddsa_private.key
         local feed_url='${{ steps.builds.outputs.feedUrl }}'
         local arch=${${${(s:_:)feed_url:t}[2]}//x86/x86_64}
+        local sparkle_options=(
+          --verbose
+          --ed-key-file eddsa_private.key
+          --download-url-prefix '${{ inputs.urlPrefix }}/'
+          --full-release-notes-url "${feed_url//updates_*/notes_${{ inputs.channel }}.html}"
+          --maximum-versions 0
+          --maximum-deltas '${{ inputs.count }}'
+          --channel '${{ inputs.channel }}'
+        )
+
+        if [[ '${{ inputs.channel }}' == 'stable' ]] {
+          sparkle_options+=(--phased-rollout-interval 86400)
+        }
 
         Sparkle/bin/generate_appcast \
-          --verbose \
-          --ed-key-file eddsa_private.key \
-          --download-url-prefix '${{ inputs.urlPrefix }}/' \
-          --full-release-notes-url "${feed_url//updates_*/notes_${{ inputs.channel }}.html}" \
-          --maximum-versions 0 \
-          --maximum-deltas ${{ inputs.count }} \
-          --channel '${{ inputs.channel }}' \
+          ${sparkle_options} \
           builds
 
         local -a deltas=(builds/*.delta(N))

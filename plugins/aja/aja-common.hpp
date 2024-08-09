@@ -44,6 +44,7 @@ populate_video_format_list(NTV2DeviceID deviceID, obs_property_t *list,
 			   NTV2VideoFormat genlockFormat = NTV2_FORMAT_UNKNOWN,
 			   bool want4KHFR = false, bool matchFPS = false);
 extern void populate_pixel_format_list(NTV2DeviceID deviceID,
+				       const std::vector<NTV2PixelFormat> &fmts,
 				       obs_property_t *list);
 extern void populate_sdi_transport_list(obs_property_t *list,
 					NTV2DeviceID deviceID,

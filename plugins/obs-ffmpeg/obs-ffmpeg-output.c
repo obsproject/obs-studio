@@ -16,7 +16,7 @@
 ******************************************************************************/
 
 #include <obs-module.h>
-#include <util/circlebuf.h>
+#include <util/deque.h>
 #include <util/threading.h>
 #include <util/dstr.h>
 #include <util/darray.h>
@@ -200,6 +200,41 @@ static bool create_video_stream(struct ffmpeg_data *data)
 			data->config.video_encoder))
 		return false;
 
+	closest_format = data->config.format;
+	if (data->vcodec->pix_fmts) {
+		const int has_alpha = closest_format == AV_PIX_FMT_BGRA;
+		closest_format = avcodec_find_best_pix_fmt_of_list(
+			data->vcodec->pix_fmts, closest_format, has_alpha,
+			NULL);
+	}
+
+	context = avcodec_alloc_context3(data->vcodec);
+	context->bit_rate = (int64_t)data->config.video_bitrate * 1000;
+	context->width = data->config.scale_width;
+	context->height = data->config.scale_height;
+	context->time_base = (AVRational){ovi.fps_den, ovi.fps_num};
+	context->framerate = (AVRational){ovi.fps_num, ovi.fps_den};
+	context->gop_size = data->config.gop_size;
+	context->pix_fmt = closest_format;
+	context->color_range = data->config.color_range;
+	context->color_primaries = data->config.color_primaries;
+	context->color_trc = data->config.color_trc;
+	context->colorspace = data->config.colorspace;
+	context->chroma_sample_location = determine_chroma_location(
+		closest_format, data->config.colorspace);
+	context->thread_count = 0;
+
+	data->video->time_base = context->time_base;
+	data->video->avg_frame_rate = (AVRational){ovi.fps_num, ovi.fps_den};
+
+	if (data->output->oformat->flags & AVFMT_GLOBALHEADER)
+		context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+
+	data->video_ctx = context;
+
+	if (!open_video_codec(data))
+		return false;
+
 	const enum AVColorTransferCharacteristic trc = data->config.color_trc;
 	const bool pq = trc == AVCOL_TRC_SMPTE2084;
 	const bool hlg = trc == AVCOL_TRC_ARIB_STD_B67;
@@ -252,41 +287,6 @@ static bool create_video_stream(struct ffmpeg_data *data)
 			(uint8_t *)mastering, sizeof(*mastering), 0);
 #endif
 	}
-
-	closest_format = data->config.format;
-	if (data->vcodec->pix_fmts) {
-		const int has_alpha = closest_format == AV_PIX_FMT_BGRA;
-		closest_format = avcodec_find_best_pix_fmt_of_list(
-			data->vcodec->pix_fmts, closest_format, has_alpha,
-			NULL);
-	}
-
-	context = avcodec_alloc_context3(data->vcodec);
-	context->bit_rate = (int64_t)data->config.video_bitrate * 1000;
-	context->width = data->config.scale_width;
-	context->height = data->config.scale_height;
-	context->time_base = (AVRational){ovi.fps_den, ovi.fps_num};
-	context->framerate = (AVRational){ovi.fps_num, ovi.fps_den};
-	context->gop_size = data->config.gop_size;
-	context->pix_fmt = closest_format;
-	context->color_range = data->config.color_range;
-	context->color_primaries = data->config.color_primaries;
-	context->color_trc = data->config.color_trc;
-	context->colorspace = data->config.colorspace;
-	context->chroma_sample_location = determine_chroma_location(
-		closest_format, data->config.colorspace);
-	context->thread_count = 0;
-
-	data->video->time_base = context->time_base;
-	data->video->avg_frame_rate = (AVRational){ovi.fps_num, ovi.fps_den};
-
-	if (data->output->oformat->flags & AVFMT_GLOBALHEADER)
-		context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
-
-	data->video_ctx = context;
-
-	if (!open_video_codec(data))
-		return false;
 
 	if (context->pix_fmt != data->config.format ||
 	    data->config.width != data->config.scale_width ||
@@ -409,6 +409,11 @@ static bool create_audio_stream(struct ffmpeg_data *data, int idx)
 	data->audio_infos[idx].stream = stream;
 	data->audio_infos[idx].ctx = context;
 
+	if (data->config.audio_stream_names[idx] &&
+	    *data->config.audio_stream_names[idx] != '\0')
+		av_dict_set(&stream->metadata, "title",
+			    data->config.audio_stream_names[idx], 0);
+
 	return open_audio_codec(data, idx);
 }
 
@@ -515,7 +520,7 @@ static void close_audio(struct ffmpeg_data *data)
 {
 	for (int idx = 0; idx < data->num_audio_streams; idx++) {
 		for (size_t i = 0; i < MAX_AV_PLANES; i++)
-			circlebuf_free(&data->excess_frames[idx][i]);
+			deque_free(&data->excess_frames[idx][i]);
 
 		if (data->samples[idx][0])
 			av_freep(&data->samples[idx][0]);
@@ -560,6 +565,7 @@ static inline const char *safe_str(const char *s)
 		return s;
 }
 
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
 static enum AVCodecID get_codec_id(const char *name, int id)
 {
 	const AVCodec *codec;
@@ -577,7 +583,6 @@ static enum AVCodecID get_codec_id(const char *name, int id)
 	return codec->id;
 }
 
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
 static void set_encoder_ids(struct ffmpeg_data *data)
 {
 	data->output->oformat->video_codec = get_codec_id(
@@ -961,15 +966,14 @@ static void receive_audio(void *param, size_t mix_idx, struct audio_data *frame)
 	frame_size_bytes = (size_t)data->frame_size * data->audio_size;
 
 	for (size_t i = 0; i < data->audio_planes; i++)
-		circlebuf_push_back(&data->excess_frames[track_order][i],
-				    in.data[i], in.frames * data->audio_size);
+		deque_push_back(&data->excess_frames[track_order][i],
+				in.data[i], in.frames * data->audio_size);
 
 	while (data->excess_frames[track_order][0].size >= frame_size_bytes) {
 		for (size_t i = 0; i < data->audio_planes; i++)
-			circlebuf_pop_front(
-				&data->excess_frames[track_order][i],
-				data->samples[track_order][i],
-				frame_size_bytes);
+			deque_pop_front(&data->excess_frames[track_order][i],
+					data->samples[track_order][i],
+					frame_size_bytes);
 
 		encode_audio(output, track_order, context, data->audio_size);
 	}
@@ -1169,6 +1173,27 @@ static bool try_connect(struct ffmpeg_output *output)
 		config.scale_width = config.width;
 	if (!config.scale_height)
 		config.scale_height = config.height;
+
+	obs_data_array_t *audioNames =
+		obs_data_get_array(settings, "audio_names");
+	if (audioNames) {
+		for (size_t i = 0, idx = 0; i < MAX_AUDIO_MIXES; i++) {
+			if ((config.audio_tracks & (1 << i)) == 0)
+				continue;
+
+			obs_data_t *item_data =
+				obs_data_array_item(audioNames, i);
+			config.audio_stream_names[idx] =
+				obs_data_get_string(item_data, "name");
+			obs_data_release(item_data);
+
+			idx++;
+		}
+		obs_data_array_release(audioNames);
+	} else {
+		for (int idx = 0; idx < config.audio_mix_count; idx++)
+			config.audio_stream_names[idx] = NULL;
+	}
 
 	success = ffmpeg_data_init(&output->ff_data, &config);
 	obs_data_release(settings);

@@ -70,8 +70,10 @@ static bool alsa_devices_changed(obs_properties_t *props, obs_property_t *p,
 static obs_properties_t *alsa_get_properties(void *);
 static void *alsa_create(obs_data_t *, obs_source_t *);
 static void alsa_destroy(void *);
+#if SHUTDOWN_ON_DEACTIVATE
 static void alsa_activate(void *);
 static void alsa_deactivate(void *);
+#endif
 static void alsa_get_defaults(obs_data_t *);
 static void alsa_update(void *, obs_data_t *);
 
@@ -317,14 +319,20 @@ obs_properties_t *alsa_get_properties(void *unused)
 		obs_property_list_add_string(devices, descr, name);
 
 	next:
-		if (name != NULL)
-			free(name), name = NULL;
+		if (name != NULL) {
+			free(name);
+			name = NULL;
+		}
 
-		if (descr != NULL)
-			free(descr), descr = NULL;
+		if (descr != NULL) {
+			free(descr);
+			descr = NULL;
+		}
 
-		if (io != NULL)
-			free(io), io = NULL;
+		if (io != NULL) {
+			free(io);
+			io = NULL;
+		}
 
 		++hint;
 	}
@@ -412,11 +420,14 @@ void _alsa_close(struct alsa_data *data)
 
 	if (data->handle) {
 		snd_pcm_drop(data->handle);
-		snd_pcm_close(data->handle), data->handle = NULL;
+		snd_pcm_close(data->handle);
+		data->handle = NULL;
 	}
 
-	if (data->buffer)
-		bfree(data->buffer), data->buffer = NULL;
+	if (data->buffer) {
+		bfree(data->buffer);
+		data->buffer = NULL;
+	}
 }
 
 bool _alsa_configure(struct alsa_data *data)

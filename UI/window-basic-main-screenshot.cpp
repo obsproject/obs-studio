@@ -17,7 +17,8 @@
 
 #include "window-basic-main.hpp"
 #include "screenshot-obj.hpp"
-#include "qt-wrappers.hpp"
+
+#include <qt-wrappers.hpp>
 
 #ifdef _WIN32
 #include <wincodec.h>

@@ -35,6 +35,21 @@ MODULE_EXPORT const char *obs_module_description(void)
 
 uint32_t texbuf_w = 2048, texbuf_h = 2048;
 
+static const char *ft2_source_get_name(void *unused);
+static void *ft2_source_create(obs_data_t *settings, obs_source_t *source);
+static void ft2_source_destroy(void *data);
+static void ft2_source_update(void *data, obs_data_t *settings);
+static obs_missing_files_t *ft2_missing_files(void *data);
+
+static void ft2_source_render(void *data, gs_effect_t *effect);
+static void ft2_video_tick(void *data, float seconds);
+static uint32_t ft2_source_get_width(void *data);
+static uint32_t ft2_source_get_height(void *data);
+
+static void ft2_source_defaults_v1(obs_data_t *settings);
+static void ft2_source_defaults_v2(obs_data_t *settings);
+static obs_properties_t *ft2_source_properties(void *unused);
+
 static struct obs_source_info freetype2_source_info_v1 = {
 	.id = "text_ft2_source",
 	.type = OBS_SOURCE_TYPE_INPUT,
@@ -240,8 +255,6 @@ static void ft2_source_destroy(void *data)
 		bfree(srcdata->text);
 	if (srcdata->texbuf != NULL)
 		bfree(srcdata->texbuf);
-	if (srcdata->colorbuf != NULL)
-		bfree(srcdata->colorbuf);
 	if (srcdata->text_file != NULL)
 		bfree(srcdata->text_file);
 
@@ -283,7 +296,7 @@ static void ft2_source_render(void *data, gs_effect_t *effect)
 		draw_drop_shadow(srcdata);
 
 	draw_uv_vbuffer(srcdata->vbuf, srcdata->tex, srcdata->draw_effect,
-			(uint32_t)wcslen(srcdata->text) * 6);
+			(uint32_t)wcslen(srcdata->text) * 6, true);
 
 	UNUSED_PARAMETER(effect);
 }

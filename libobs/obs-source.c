@@ -161,12 +161,6 @@ static void allocate_audio_mix_buffer(struct obs_source *source)
 	}
 }
 
-static inline bool is_async_video_source(const struct obs_source *source)
-{
-	return (source->info.output_flags & OBS_SOURCE_ASYNC_VIDEO) ==
-	       OBS_SOURCE_ASYNC_VIDEO;
-}
-
 static inline bool is_audio_source(const struct obs_source *source)
 {
 	return source->info.output_flags & OBS_SOURCE_AUDIO;
@@ -724,7 +718,7 @@ static void obs_source_destroy_defer(struct obs_source *source)
 	for (i = 0; i < MAX_AV_PLANES; i++)
 		bfree(source->audio_data.data[i]);
 	for (i = 0; i < MAX_AUDIO_CHANNELS; i++)
-		circlebuf_free(&source->audio_input_buf[i]);
+		deque_free(&source->audio_input_buf[i]);
 	audio_resampler_destroy(source->resampler);
 	bfree(source->audio_output_buf[0][0]);
 	bfree(source->audio_mix_buf[0]);
@@ -1410,8 +1404,8 @@ static void reset_audio_data(obs_source_t *source, uint64_t os_time)
 {
 	for (size_t i = 0; i < MAX_AUDIO_CHANNELS; i++) {
 		if (source->audio_input_buf[i].size)
-			circlebuf_pop_front(&source->audio_input_buf[i], NULL,
-					    source->audio_input_buf[i].size);
+			deque_pop_front(&source->audio_input_buf[i], NULL,
+					source->audio_input_buf[i].size);
 	}
 
 	source->last_audio_input_buf_size = 0;
@@ -1485,11 +1479,11 @@ static void source_output_audio_place(obs_source_t *source,
 		return;
 
 	for (size_t i = 0; i < channels; i++) {
-		circlebuf_place(&source->audio_input_buf[i], buf_placement,
-				in->data[i], size);
-		circlebuf_pop_back(&source->audio_input_buf[i], NULL,
-				   source->audio_input_buf[i].size -
-					   (buf_placement + size));
+		deque_place(&source->audio_input_buf[i], buf_placement,
+			    in->data[i], size);
+		deque_pop_back(&source->audio_input_buf[i], NULL,
+			       source->audio_input_buf[i].size -
+				       (buf_placement + size));
 	}
 
 	source->last_audio_input_buf_size = 0;
@@ -1507,8 +1501,7 @@ static inline void source_output_audio_push_back(obs_source_t *source,
 		return;
 
 	for (size_t i = 0; i < channels; i++)
-		circlebuf_push_back(&source->audio_input_buf[i], in->data[i],
-				    size);
+		deque_push_back(&source->audio_input_buf[i], in->data[i], size);
 
 	/* reset audio input buffer size to ensure that audio doesn't get
 	 * perpetually cut */
@@ -1577,7 +1570,6 @@ static void source_output_audio_data(obs_source_t *source,
 		}
 	}
 
-	source->last_audio_ts = in.timestamp;
 	source->next_audio_ts_min =
 		in.timestamp + conv_frames_to_time(sample_rate, in.frames);
 
@@ -2366,12 +2358,6 @@ static inline void set_eparam(gs_effect_t *effect, const char *name, float val)
 {
 	gs_eparam_t *param = gs_effect_get_param_by_name(effect, name);
 	gs_effect_set_float(param, val);
-}
-
-static inline void set_eparami(gs_effect_t *effect, const char *name, int val)
-{
-	gs_eparam_t *param = gs_effect_get_param_by_name(effect, name);
-	gs_effect_set_int(param, val);
 }
 
 static bool update_async_texrender(struct obs_source *source,
@@ -3220,6 +3206,7 @@ void obs_source_filter_add(obs_source_t *source, obs_source_t *filter)
 	calldata_set_ptr(&cd, "source", source);
 	calldata_set_ptr(&cd, "filter", filter);
 
+	signal_handler_signal(obs->signals, "source_filter_add", &cd);
 	signal_handler_signal(source->context.signals, "filter_add", &cd);
 
 	blog(LOG_DEBUG, "- filter '%s' (%s) added to source '%s'",
@@ -3258,6 +3245,7 @@ static bool obs_source_filter_remove_refless(obs_source_t *source,
 	calldata_set_ptr(&cd, "source", source);
 	calldata_set_ptr(&cd, "filter", filter);
 
+	signal_handler_signal(obs->signals, "source_filter_remove", &cd);
 	signal_handler_signal(source->context.signals, "filter_remove", &cd);
 
 	blog(LOG_DEBUG, "- filter '%s' (%s) removed from source '%s'",
@@ -5728,8 +5716,8 @@ static inline void process_audio_source_tick(obs_source_t *source,
 	}
 
 	for (size_t ch = 0; ch < channels; ch++)
-		circlebuf_peek_front(&source->audio_input_buf[ch],
-				     source->audio_output_buf[0][ch], size);
+		deque_peek_front(&source->audio_input_buf[ch],
+				 source->audio_output_buf[0][ch], size);
 
 	pthread_mutex_unlock(&source->audio_buf_mutex);
 

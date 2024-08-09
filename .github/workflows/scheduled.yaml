@@ -12,13 +12,13 @@ jobs:
   services-availability:
     name: Check Service Availability 🛜
     if: github.repository_owner == 'obsproject'
-    runs-on: macos-13
+    runs-on: macos-14
     permissions:
       checks: write
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Set Up Homebrew 🍺
@@ -88,12 +88,20 @@ jobs:
     needs: cache-cleanup
     secrets: inherit
 
+  analyze-project:
+    name: Analyze 🔬
+    uses: ./.github/workflows/analyze-project.yaml
+    needs: cache-cleanup
+    secrets: inherit
+    permissions:
+      security-events: write
+
   upload-language-files:
     name: Upload Language Files 🌐
     if: github.repository_owner == 'obsproject' && github.ref_name == 'master'
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
@@ -116,6 +124,7 @@ jobs:
           fi
 
       - name: Check for Changed Files ✅
+        if: fromJSON(steps.nightly-checks.outputs.passed)
         uses: ./.github/actions/check-changes
         id: checks
         with:
@@ -123,7 +132,7 @@ jobs:
           checkGlob: '**/en-US.ini'
 
       - name: Upload US English Language Files 🇺🇸
-        if: fromJSON(steps.checks.outputs.hasChangedFiles) && fromJSON(steps.nightly-checks.outputs.passed)
+        if: fromJSON(steps.nightly-checks.outputs.passed) && steps.checks.outputs.passed == 'true'
         uses: obsproject/obs-crowdin-sync/upload@30b5446e3b5eb19595aa68a81ddf896a857302cf
         env:
           CROWDIN_PAT: ${{ secrets.CROWDIN_SYNC_CROWDIN_PAT }}
@@ -133,12 +142,12 @@ jobs:
     name: Upload Steam Builds 🚂
     needs: [build-project]
     if: github.repository_owner == 'obsproject'
-    runs-on: macos-13
+    runs-on: macos-14
     defaults:
       run:
         shell: zsh --no-rcs --errexit --pipefail {0}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Check Nightly Runs ☑️
         id: checks

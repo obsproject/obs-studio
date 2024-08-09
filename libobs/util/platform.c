@@ -429,8 +429,7 @@ size_t os_wcs_to_utf8(const wchar_t *str, size_t len, char *dst,
 			return 0;
 
 		if (out_len)
-			out_len =
-				wchar_to_utf8(str, in_len, dst, out_len + 1, 0);
+			out_len = wchar_to_utf8(str, in_len, dst, out_len, 0);
 
 		dst[out_len] = 0;
 	}

@@ -390,7 +390,6 @@ void xcomp_create_pixmap(xcb_connection_t *conn, struct xcompcap *s,
 	if (depth != 32) {
 		s->exclude_alpha = true;
 	}
-	xcb_window_t root = geom->root;
 	free(geom);
 
 	uint32_t vert_borders = s->crop_top + s->crop_bot + 2 * s->border;

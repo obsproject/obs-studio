@@ -1016,10 +1016,13 @@ EnumD3DAdapters(bool (*callback)(void *, const char *, uint32_t), void *param)
 	}
 }
 
-bool device_enum_adapters(bool (*callback)(void *param, const char *name,
+bool device_enum_adapters(gs_device_t *device,
+			  bool (*callback)(void *param, const char *name,
 					   uint32_t id),
 			  void *param)
 {
+	UNUSED_PARAMETER(device);
+
 	try {
 		EnumD3DAdapters(callback, param);
 		return true;
