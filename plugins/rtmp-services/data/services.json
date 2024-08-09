@@ -2942,6 +2942,28 @@
                 "keyint": 1,
                 "bframes": 0
             }
+        },
+        {
+            "name": "NFHS Network",
+            "more_info_link": "https://support.nfhsnetwork.com/hc/en-us",
+            "stream_key_link": "https://console.nfhsnetwork.com/nfhs-events/",
+            "servers": [
+                {
+                    "name": "Manual Broadcasts",
+                    "url": "rtmp://video.nfhsnetwork.com/manual"
+                }
+            ],
+            "recommended": {
+                "supported resolutions": [
+                    "1920x1080",
+                    "1280x720",
+                    "640x360"
+                ],
+                "max fps": 60
+            },
+            "supported video codecs": [
+                "h264"
+            ]
         }
     ]
 }
