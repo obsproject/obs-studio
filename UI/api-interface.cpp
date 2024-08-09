@@ -774,6 +774,24 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 			undo_data, redo_data, repeatable);
 	}
 
+	void obs_frontend_copy_sceneitem(obs_sceneitem_t *item) override
+	{
+		main->clipboard.clear();
+		main->CopySceneItem(item);
+		main->UpdateEditMenu();
+	}
+
+	bool obs_frontend_can_paste_sceneitem(bool duplicate) override
+	{
+		return main->CanPasteSceneItem(duplicate);
+	}
+
+	void obs_frontend_paste_sceneitem(obs_scene_t *scene,
+					  bool duplicate) override
+	{
+		main->PasteSceneItem(scene, duplicate);
+	}
+
 	void on_load(obs_data_t *settings) override
 	{
 		for (size_t i = saveCallbacks.size(); i > 0; i--) {

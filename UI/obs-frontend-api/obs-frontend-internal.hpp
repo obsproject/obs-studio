@@ -168,6 +168,11 @@ struct obs_frontend_callbacks {
 						       const char *undo_data,
 						       const char *redo_data,
 						       bool repeatable) = 0;
+
+	virtual void obs_frontend_copy_sceneitem(obs_sceneitem_t *item) = 0;
+	virtual bool obs_frontend_can_paste_sceneitem(bool duplicate) = 0;
+	virtual void obs_frontend_paste_sceneitem(obs_scene_t *scene,
+						  bool duplicate) = 0;
 };
 
 EXPORT void

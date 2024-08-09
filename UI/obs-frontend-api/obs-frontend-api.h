@@ -253,6 +253,10 @@ EXPORT void obs_frontend_add_undo_redo_action(
 	const char *name, const undo_redo_cb undo, const undo_redo_cb redo,
 	const char *undo_data, const char *redo_data, bool repeatable);
 
+EXPORT void obs_frontend_copy_sceneitem(obs_sceneitem_t *item);
+EXPORT bool obs_frontend_can_paste_sceneitem(bool duplicate);
+EXPORT void obs_frontend_paste_sceneitem(obs_scene_t *scene, bool duplicate);
+
 /* ------------------------------------------------------------------------- */
 
 #ifdef __cplusplus
