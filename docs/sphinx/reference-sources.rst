@@ -1547,6 +1547,10 @@ Functions used by sources
 
    Outputs asynchronous video data.  Set to NULL to deactivate the texture.
 
+   NOTE: Non-YUV formats will always be treated as full range with this function!
+   
+   Use obs_source_output_video2 instead if partial range support is desired for non-YUV video formats.
+
    Relevant data types used with this function:
 
 .. code:: cpp
@@ -1636,6 +1640,97 @@ Functions used by sources
 
 ---------------------
 
+.. function:: void obs_source_output_video2(obs_source_t *source, const struct obs_source_frame2 *frame)
+
+   Outputs asynchronous video data.  Set to NULL to deactivate the texture.
+
+   Relevant data types used with this function:
+
+.. code:: cpp
+
+   enum video_format {
+           VIDEO_FORMAT_NONE,
+
+           /* planar 4:2:0 formats */
+           VIDEO_FORMAT_I420, /* three-plane */
+           VIDEO_FORMAT_NV12, /* two-plane, luma and packed chroma */
+
+           /* packed 4:2:2 formats */
+           VIDEO_FORMAT_YVYU,
+           VIDEO_FORMAT_YUY2, /* YUYV */
+           VIDEO_FORMAT_UYVY,
+
+           /* packed uncompressed formats */
+           VIDEO_FORMAT_RGBA,
+           VIDEO_FORMAT_BGRA,
+           VIDEO_FORMAT_BGRX,
+           VIDEO_FORMAT_Y800, /* grayscale */
+
+           /* planar 4:4:4 */
+           VIDEO_FORMAT_I444,
+
+           /* more packed uncompressed formats */
+           VIDEO_FORMAT_BGR3,
+
+           /* planar 4:2:2 */
+           VIDEO_FORMAT_I422,
+
+           /* planar 4:2:0 with alpha */
+           VIDEO_FORMAT_I40A,
+
+           /* planar 4:2:2 with alpha */
+           VIDEO_FORMAT_I42A,
+
+           /* planar 4:4:4 with alpha */
+           VIDEO_FORMAT_YUVA,
+
+           /* packed 4:4:4 with alpha */
+           VIDEO_FORMAT_AYUV,
+
+           /* planar 4:2:0 format, 10 bpp */
+           VIDEO_FORMAT_I010, /* three-plane */
+           VIDEO_FORMAT_P010, /* two-plane, luma and packed chroma */
+
+           /* planar 4:2:2 format, 10 bpp */
+           VIDEO_FORMAT_I210,
+
+           /* planar 4:4:4 format, 12 bpp */
+           VIDEO_FORMAT_I412,
+
+           /* planar 4:4:4:4 format, 12 bpp */
+           VIDEO_FORMAT_YA2L,
+
+           /* planar 4:2:2 format, 16 bpp */
+           VIDEO_FORMAT_P216, /* two-plane, luma and packed chroma */
+
+           /* planar 4:4:4 format, 16 bpp */
+           VIDEO_FORMAT_P416, /* two-plane, luma and packed chroma */
+
+           /* packed 4:2:2 format, 10 bpp */
+           VIDEO_FORMAT_V210,
+
+           /* packed uncompressed 10-bit format */
+           VIDEO_FORMAT_R10L,
+   };
+
+   struct obs_source_frame2 {
+           uint8_t             *data[MAX_AV_PLANES];
+           uint32_t            linesize[MAX_AV_PLANES];
+           uint32_t            width;
+           uint32_t            height;
+           uint64_t            timestamp;
+
+           enum video_format        format;
+	   enum video_range_type    range;
+           float                    color_matrix[16];
+           float                    color_range_min[3];
+           float                    color_range_max[3];
+           bool                     flip;
+           uint8_t                  flags;
+           uint8_t                  trc; /* enum video_trc */
+   };
+
+---------------------
 .. function:: void obs_source_set_async_rotation(obs_source_t *source, long rotation)
 
    Allows the ability to set rotation (0, 90, 180, -90, 270) for an
@@ -1645,6 +1740,16 @@ Functions used by sources
 ---------------------
 
 .. function:: void obs_source_preload_video(obs_source_t *source, const struct obs_source_frame *frame)
+
+   Preloads a video frame to ensure a frame is ready for playback as
+   soon as video playback starts.
+
+   Use obs_source_preload_video2 instead if partial range support is
+   desired for non-YUV video formats.
+
+---------------------
+
+.. function:: void obs_source_preload_video2(obs_source_t *source, const struct obs_source_frame2 *frame)
 
    Preloads a video frame to ensure a frame is ready for playback as
    soon as video playback starts.
