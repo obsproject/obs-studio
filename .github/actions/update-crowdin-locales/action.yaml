@@ -1,0 +1,24 @@
+name: Update locales on Crowdin
+description: Updates the US English locales on Crowdin.
+runs:
+  using: composite
+  steps:
+    - name: Check Runner Operating System 🏃‍♂️
+      if: runner.os != 'Linux'
+      shell: bash
+      run: |
+        echo "::warning::Action requires Linux-based runner."
+        exit 2
+
+    - name: Install and Configure Python 🐍
+      shell: bash
+      run: |
+        python3 -m venv .venv
+        source .venv/bin/activate
+        python3 -m pip install crowdin-api-client
+
+    - name: Update Locales on Crowdin 🇺🇸
+      shell: bash
+      run: |
+        source .venv/bin/activate
+        python3 .github/scripts/utils.py/update-crowdin-locales.py
