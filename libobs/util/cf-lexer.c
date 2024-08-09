@@ -839,6 +839,31 @@ static inline void append_end_token(cf_token_array_t *tokens)
 	da_push_back(*tokens, &end);
 }
 
+static void cf_preprocess_line(struct cf_preprocessor *pp,
+			       struct cf_token **p_cur_token)
+{
+	struct cf_token *cur_token = *p_cur_token;
+
+	if (pp->ignore_state) {
+		go_to_newline(p_cur_token);
+		return;
+	}
+
+	next_token(&cur_token, true);
+	if (cur_token->type != CFTOKEN_NUM) {
+		cf_adderror_expecting(pp, cur_token, "number");
+		go_to_newline(&cur_token);
+		goto exit;
+	}
+
+	while (cur_token->type != CFTOKEN_NEWLINE &&
+	       cur_token->type != CFTOKEN_NONE)
+		cur_token++;
+
+exit:
+	*p_cur_token = cur_token;
+}
+
 static void cf_preprocess_define(struct cf_preprocessor *pp,
 				 struct cf_token **p_cur_token)
 {
@@ -986,6 +1011,9 @@ static bool cf_preprocessor(struct cf_preprocessor *pp, bool if_block,
 
 	if (strref_cmp(&cur_token->str, "include") == 0) {
 		cf_preprocess_include(pp, p_cur_token);
+
+	} else if (strref_cmp(&cur_token->str, "line") == 0) {
+		cf_preprocess_line(pp, p_cur_token);
 
 	} else if (strref_cmp(&cur_token->str, "define") == 0) {
 		cf_preprocess_define(pp, p_cur_token);
