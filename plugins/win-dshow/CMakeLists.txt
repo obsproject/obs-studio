@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.24...3.25)
 
-legacy_check()
-
 find_package(FFmpeg REQUIRED avcodec avutil)
 
 add_library(win-dshow MODULE)

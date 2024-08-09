@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.24...3.25)
 
-legacy_check()
-
 option(ENABLE_VIRTUALCAM "Enable Windows Virtual Camera" ON)
 if(NOT ENABLE_VIRTUALCAM)
   target_disable_feature(obs-virtualcam-module "Virtual Camera Support")

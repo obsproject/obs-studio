@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.24...3.25)
 
-legacy_check()
-
 add_library(win-wasapi MODULE)
 add_library(OBS::wasapi ALIAS win-wasapi)
 
