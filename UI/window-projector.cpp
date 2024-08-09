@@ -31,7 +31,13 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 					"ProjectorAlwaysOnTop");
 
 	if (isAlwaysOnTop)
-		setWindowFlags(Qt::WindowStaysOnTopHint);
+		setWindowFlag(Qt::WindowStaysOnTopHint, isAlwaysOnTop);
+
+	hideFrame = config_get_bool(GetGlobalConfig(), "BasicWindow",
+				    "HideProjectorFrame");
+
+	if (hideFrame)
+		setWindowFlag(Qt::FramelessWindowHint, hideFrame);
 
 	// Mark the window as a projector so SetDisplayAffinity
 	// can skip it
@@ -150,6 +156,38 @@ void OBSProjector::SetHideCursor()
 		setCursor(Qt::BlankCursor);
 	else
 		setCursor(Qt::ArrowCursor);
+}
+
+void OBSProjector::SetHideFrame(bool hideFrame)
+{
+	if (isFullScreen())
+		return;
+
+	// Calculate the current content position.
+	QRect contentBox = geometry();
+
+	// Calculate the current window geometry position.
+	QPoint contentPos = pos();
+
+	// Only update window if setting changed.
+	if (this->hideFrame != hideFrame) {
+		setWindowFlag(Qt::FramelessWindowHint, hideFrame);
+
+		// Restore the window.
+		showNormal();
+
+		// Keep content in the same screen location.
+		if (hideFrame) {
+			move(contentPos.x(), contentPos.y());
+		} else {
+			QPoint offset = QPoint(contentPos.x() - geometry().x(),
+					       contentPos.y() - geometry().y());
+			move(contentPos.x() + offset.x(),
+			     contentPos.y() + offset.y());
+		}
+	}
+
+	this->hideFrame = hideFrame;
 }
 
 void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
@@ -287,6 +325,19 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 			popup.addAction(QTStr("ResizeProjectorWindowToContent"),
 					this, &OBSProjector::ResizeToContent);
 		}
+
+		QAction *hideFrameAction =
+			new QAction(QTStr("HideProjectorFrame"), this);
+		hideFrameAction->setCheckable(true);
+		hideFrameAction->setChecked(hideFrame);
+		if (isFullScreen()) {
+			hideFrameAction->setDisabled(true);
+		}
+
+		connect(hideFrameAction, &QAction::toggled, this,
+			&OBSProjector::SetHideFrame);
+
+		popup.addAction(hideFrameAction);
 
 		QAction *alwaysOnTopButton = new QAction(
 			QTStr("Basic.MainMenu.View.AlwaysOnTop"), this);
