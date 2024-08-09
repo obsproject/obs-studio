@@ -3042,6 +3042,19 @@ void OBSBasic::CreateHotkeys()
 		"OBSBasic.SelectedSourceScreenshot",
 		Str("Screenshot.SourceHotkey"), screenshotSource, this);
 	LoadHotkey(sourceScreenshotHotkey, "OBSBasic.SelectedSourceScreenshot");
+
+	auto screenshotCurrentScene = [](void *data, obs_hotkey_id,
+					 obs_hotkey_t *, bool pressed) {
+		if (pressed)
+			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data),
+						  "ScreenshotScene",
+						  Qt::QueuedConnection);
+	};
+
+	previewScreenshotHotkey = obs_hotkey_register_frontend(
+		"OBSBasic.ScreenshotScene", Str("Screenshot.PreviewHotkey"),
+		screenshotCurrentScene, this);
+	LoadHotkey(previewScreenshotHotkey, "OBSBasic.ScreenshotScene");
 }
 
 void OBSBasic::ClearHotkeys()
@@ -3060,6 +3073,7 @@ void OBSBasic::ClearHotkeys()
 	obs_hotkey_unregister(transitionHotkey);
 	obs_hotkey_unregister(statsHotkey);
 	obs_hotkey_unregister(screenshotHotkey);
+	obs_hotkey_unregister(previewScreenshotHotkey);
 	obs_hotkey_unregister(sourceScreenshotHotkey);
 }
 
