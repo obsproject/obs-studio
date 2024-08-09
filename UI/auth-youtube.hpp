@@ -11,14 +11,21 @@
 #include "window-dock-browser.hpp"
 #include "lineedit-autoresize.hpp"
 #include <QHBoxLayout>
+#include <QTimerEvent>
+
 class YoutubeChatDock : public BrowserDock {
 	Q_OBJECT
 
 private:
 	std::string apiChatId;
+	int awaitLoginTimer;
+	bool isLoggedIn;
 	LineEditAutoResize *lineEdit;
 	QPushButton *sendButton;
 	QHBoxLayout *chatLayout;
+
+protected:
+	void timerEvent(QTimerEvent *event);
 
 public:
 	YoutubeChatDock(const QString &title);
@@ -28,7 +35,7 @@ public:
 private slots:
 	void SendChatMessage();
 	void ShowErrorMessage(const QString &error);
-	void EnableChatInput();
+	void EnableChatInput(bool visible = true);
 };
 #endif
 
