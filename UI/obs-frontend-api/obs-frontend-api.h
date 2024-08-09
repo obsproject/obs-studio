@@ -98,6 +98,7 @@ obs_frontend_source_list_free(struct obs_frontend_source_list *source_list)
 
 #ifndef SWIG
 
+EXPORT void obs_frontend_close_main_window(void);
 EXPORT void *obs_frontend_get_main_window(void);
 EXPORT void *obs_frontend_get_main_window_handle(void);
 EXPORT void *obs_frontend_get_system_tray(void);

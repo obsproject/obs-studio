@@ -58,6 +58,12 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	inline OBSStudioAPI(OBSBasic *main_) : main(main_) {}
 
+	void obs_frontend_close_main_window(void) override
+	{
+		blog(LOG_INFO, "Closing main window via the API...");
+		QMetaObject::invokeMethod(main, "close");
+	}
+
 	void *obs_frontend_get_main_window(void) override
 	{
 		return (void *)main;
