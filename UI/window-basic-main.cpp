@@ -1203,6 +1203,8 @@ void OBSBasic::Load(const char *file)
 
 static inline void AddMissingFiles(void *data, obs_source_t *source)
 {
+	if (!data)
+		return;
 	obs_missing_files_t *f = (obs_missing_files_t *)data;
 	obs_missing_files_t *sf = obs_source_get_missing_files(source);
 
@@ -1291,7 +1293,10 @@ void OBSBasic::LoadData(obs_data_t *data, const char *file)
 		obs_data_array_push_back_array(sources, groups);
 	}
 
-	obs_missing_files_t *files = obs_missing_files_create();
+	obs_missing_files_t *files = NULL;
+	if (!App()->IsMissingFilesCheckDisabled())
+		files = obs_missing_files_create();
+
 	obs_load_sources(sources, AddMissingFiles, files);
 
 	if (transitions)
@@ -1462,7 +1467,7 @@ retryScene:
 
 	LogScenes();
 
-	if (!App()->IsMissingFilesCheckDisabled())
+	if (files)
 		ShowMissingFilesDialog(files);
 
 	disableSaving--;
