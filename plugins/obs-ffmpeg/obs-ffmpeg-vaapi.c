@@ -234,6 +234,7 @@ static const rc_mode_t *get_rc_mode(const char *name)
 		{.name = "CBR", .qp = false, .bitrate = true, .maxrate = false},
 		{.name = "CQP", .qp = true, .bitrate = false, .maxrate = false},
 		{.name = "VBR", .qp = false, .bitrate = true, .maxrate = true},
+		{.name = "QVBR", .qp = true, .bitrate = true, .maxrate = true},
 		{0}};
 
 	const rc_mode_t *rc_mode = RC_MODES;
@@ -1020,6 +1021,9 @@ static bool vaapi_device_modified(obs_properties_t *ppts, obs_property_t *p,
 
 	if (vaapi_device_rc_supported(profile, va_dpy, VA_RC_VBR, device))
 		obs_property_list_add_string(rc_p, "VBR", "VBR");
+
+	if (vaapi_device_rc_supported(profile, va_dpy, VA_RC_QVBR, device))
+		obs_property_list_add_string(rc_p, "QVBR", "QVBR");
 
 	if (vaapi_device_rc_supported(profile, va_dpy, VA_RC_CQP, device))
 		obs_property_list_add_string(rc_p, "CQP", "CQP");
