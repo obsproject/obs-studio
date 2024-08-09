@@ -164,8 +164,8 @@ Encoder Definition Structure (obs_encoder_info)
 
    - **OBS_ENCODER_CAP_DEPRECATED** - Encoder is deprecated
    - **OBS_ENCODER_CAP_ROI** - Encoder supports region of interest feature
+   - **OBS_ENCODER_CAP_SELF_SCALE** - Encoder supports scaling internally
 
-      .. versionadded:: 30.1
 
 Encoder Packet Structure (encoder_packet)
 -----------------------------------------
