@@ -364,6 +364,17 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		QMetaObject::invokeMethod(main, "ReplayBufferSave");
 	}
 
+	void obs_frontend_replay_buffer_save_duration(long long usec) override
+	{
+		proc_handler_t *ph = obs_output_get_proc_handler(
+			main->outputHandler->replayBuffer);
+		uint8_t stack[128];
+		calldata cd;
+		calldata_init_fixed(&cd, stack, sizeof(stack));
+		calldata_set_int(&cd, "usec", usec);
+		proc_handler_call(ph, "save_duration", &cd);
+	}
+
 	void obs_frontend_replay_buffer_stop(void) override
 	{
 		QMetaObject::invokeMethod(main, "StopReplayBuffer");
