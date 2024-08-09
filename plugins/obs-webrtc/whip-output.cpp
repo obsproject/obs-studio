@@ -214,6 +214,9 @@ bool WHIPOutput::Init()
 	bearer_token = obs_service_get_connect_info(
 		service, OBS_SERVICE_CONNECT_INFO_BEARER_TOKEN);
 
+	// Enable metrics delivery
+	obs_output_enable_bpm(output, true);
+
 	return true;
 }
 

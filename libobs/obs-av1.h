@@ -22,6 +22,15 @@ enum {
 	OBS_OBU_PADDING = 15,
 };
 
+enum av1_obu_metadata_type {
+	METADATA_TYPE_HDR_CLL = 1,
+	METADATA_TYPE_HDR_MDCV,
+	METADATA_TYPE_SCALABILITY,
+	METADATA_TYPE_ITUT_T35,
+	METADATA_TYPE_TIMECODE,
+	METADATA_TYPE_USER_PRIVATE_6
+};
+
 /* Helpers for parsing AV1 OB units.  */
 
 EXPORT bool obs_av1_keyframe(const uint8_t *data, size_t size);
@@ -33,6 +42,9 @@ EXPORT void obs_extract_av1_headers(const uint8_t *packet, size_t size,
 EXPORT void metadata_obu_itu_t35(const uint8_t *itut_t35_buffer,
 				 size_t itut_bufsize, uint8_t **out_buffer,
 				 size_t *outbuf_size);
+EXPORT void metadata_obu(const uint8_t *source_buffer, size_t source_bufsize,
+			 uint8_t **out_buffer, size_t *outbuf_size,
+			 uint8_t metadata_type);
 
 #ifdef __cplusplus
 }

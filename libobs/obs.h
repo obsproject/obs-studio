@@ -2326,6 +2326,8 @@ EXPORT const char *obs_get_output_supported_video_codecs(const char *id);
 
 EXPORT const char *obs_get_output_supported_audio_codecs(const char *id);
 
+EXPORT void obs_output_enable_bpm(obs_output_t *output, bool bpm_enable);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by outputs */
 
@@ -2502,6 +2504,9 @@ EXPORT enum obs_scale_type obs_encoder_get_scale_type(obs_encoder_t *encoder);
 
 /** For video encoders, returns the frame rate divisor (default is 1) */
 EXPORT uint32_t obs_encoder_get_frame_rate_divisor(const obs_encoder_t *encoder);
+
+/** For video encoders, returns the number of frames encoded */
+EXPORT uint32_t obs_encoder_get_encoded_frames(const obs_encoder_t *encoder);
 
 /** For audio encoders, returns the sample rate of the audio */
 EXPORT uint32_t obs_encoder_get_sample_rate(const obs_encoder_t *encoder);

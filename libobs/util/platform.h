@@ -205,6 +205,10 @@ EXPORT uint64_t os_get_proc_virtual_size(void);
 
 EXPORT char *os_generate_uuid(void);
 
+EXPORT
+struct timespec *os_nstime_to_timespec(uint64_t timestamp,
+				       struct timespec *storage);
+
 /* clang-format off */
 #ifdef __APPLE__
 # define ARCH_BITS 64
