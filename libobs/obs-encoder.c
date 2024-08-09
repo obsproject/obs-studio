@@ -576,6 +576,20 @@ obs_data_t *obs_encoder_get_settings(const obs_encoder_t *encoder)
 	return encoder->context.settings;
 }
 
+signal_handler_t *obs_encoder_get_signal_handler(const obs_encoder_t *encoder)
+{
+	return obs_encoder_valid(encoder, "obs_encoder_get_signal_handler")
+		       ? encoder->context.signals
+		       : NULL;
+}
+
+proc_handler_t *obs_encoder_get_proc_handler(const obs_encoder_t *encoder)
+{
+	return obs_encoder_valid(encoder, "obs_encoder_get_proc_handler")
+		       ? encoder->context.procs
+		       : NULL;
+}
+
 static inline void reset_audio_buffers(struct obs_encoder *encoder)
 {
 	free_audio_buffers(encoder);

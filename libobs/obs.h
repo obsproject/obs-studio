@@ -2548,6 +2548,14 @@ EXPORT bool obs_encoder_get_extra_data(const obs_encoder_t *encoder,
 /** Returns the current settings for this encoder */
 EXPORT obs_data_t *obs_encoder_get_settings(const obs_encoder_t *encoder);
 
+/** Returns the signal handler for the encoder */
+EXPORT signal_handler_t *
+obs_encoder_get_signal_handler(const obs_encoder_t *encoder);
+
+/** Returns the procedure handler for the encoder */
+EXPORT proc_handler_t *
+obs_encoder_get_proc_handler(const obs_encoder_t *encoder);
+
 /** Sets the video output context to be used with this encoder */
 EXPORT void obs_encoder_set_video(obs_encoder_t *encoder, video_t *video);
 
