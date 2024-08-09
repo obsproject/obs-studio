@@ -643,6 +643,9 @@ Primary signal/procedure handlers
 Core OBS Signals
 ----------------
 
+Use :c:func:`signal_handler_connect()` to connect callbacks to the following
+core OBS signals:
+
 **source_create** (ptr source)
 
    Called when a source has been created.
