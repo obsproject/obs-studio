@@ -274,7 +274,6 @@ static inline int GetProfilePath(char *path, size_t size, const char *file)
 	return window->GetProfilePath(path, size, file);
 }
 
-extern bool portable_mode;
 extern bool steam;
 extern bool safe_mode;
 extern bool disable_3p_plugins;

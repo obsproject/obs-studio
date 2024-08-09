@@ -183,7 +183,7 @@ static void AddExtraModulePaths()
 				    data_path_with_module_suffix.c_str());
 	}
 
-	if (portable_mode)
+	if (App()->IsPortableMode())
 		return;
 
 	char base_module_dir[512];
