@@ -592,6 +592,16 @@ General Encoder Functions
 
 ---------------------
 
+.. function:: bool obs_encoder_set_speaker_layout(obs_encoder_t *encoder, enum speaker_layout speakers)
+
+   Set speaker layout for this audio encoder. Causes audio data to be resampled if different from the base libobs audio config.
+
+   *SPEAKERS_UNKNOWN* is the default value, and causes the encoder to process audio using the base libobs audio config.
+
+   :return: *true* if successful, *false* otherwise, e.g., if encoder is active or not an audio encoder
+
+---------------------
+
 
 Functions used by encoders
 --------------------------
