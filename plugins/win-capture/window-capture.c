@@ -126,6 +126,7 @@ static const char *wgc_partial_match_classes[] = {
 static const char *wgc_whole_match_classes[] = {
 	"ApplicationFrameWindow",
 	"Windows.UI.Core.CoreWindow",
+	"WinUIDesktopWin32WindowClass",
 	"GAMINGSERVICESUI_HOSTING_WINDOW_CLASS",
 	"XLMAIN",            /* Microsoft Excel */
 	"PPTFrameClass",     /* Microsoft PowerPoint */
