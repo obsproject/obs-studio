@@ -133,6 +133,15 @@ void SetAlwaysOnTop(QWidget *window, bool enable)
     window->show();
 }
 
+bool shouldCreateDefaultAudioSource(void)
+{
+    if (@available(macOS 13, *)) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
 bool SetDisplayAffinitySupported(void)
 {
     // Not implemented yet
