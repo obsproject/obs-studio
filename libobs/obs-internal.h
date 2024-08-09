@@ -464,6 +464,8 @@ struct obs_core_hotkeys {
 	char *push_to_talk;
 	char *sceneitem_show;
 	char *sceneitem_hide;
+	char *sceneitem_show_hold;
+	char *sceneitem_hide_hold;
 };
 
 typedef DARRAY(struct obs_source_info) obs_source_info_array_t;

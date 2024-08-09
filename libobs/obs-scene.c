@@ -34,6 +34,8 @@ static inline bool crop_enabled(const struct obs_sceneitem_crop *crop);
 static inline bool item_texture_enabled(const struct obs_scene_item *item);
 static void init_hotkeys(obs_scene_t *scene, obs_sceneitem_t *item,
 			 const char *name);
+static void init_hold_hotkeys(obs_scene_t *scene, obs_sceneitem_t *item,
+			      const char *name);
 
 typedef DARRAY(struct obs_scene_item *) obs_scene_item_ptr_array_t;
 
@@ -2197,6 +2199,44 @@ static bool hotkey_hide_sceneitem(void *data, obs_hotkey_pair_id id,
 	return false;
 }
 
+static void hotkey_show_hold(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
+			     bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
+
+	obs_sceneitem_t *si = sceneitem_get_ref(data);
+
+	if (!si)
+		return;
+
+	if (pressed && !si->user_visible)
+		obs_sceneitem_set_visible(si, true);
+	else if (!pressed && si->user_visible)
+		obs_sceneitem_set_visible(si, false);
+
+	obs_sceneitem_release(si);
+}
+
+static void hotkey_hide_hold(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
+			     bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
+
+	obs_sceneitem_t *si = sceneitem_get_ref(data);
+
+	if (!si)
+		return;
+
+	if (pressed && si->user_visible)
+		obs_sceneitem_set_visible(si, false);
+	else if (!pressed && !si->user_visible)
+		obs_sceneitem_set_visible(si, true);
+
+	obs_sceneitem_release(si);
+}
+
 static void init_hotkeys(obs_scene_t *scene, obs_sceneitem_t *item,
 			 const char *name)
 {
@@ -2244,6 +2284,40 @@ static void init_hotkeys(obs_scene_t *scene, obs_sceneitem_t *item,
 	dstr_free(&hide_desc);
 }
 
+static void init_hold_hotkeys(obs_scene_t *scene, obs_sceneitem_t *item,
+			      const char *name)
+{
+	struct dstr show_hold = {0};
+	struct dstr hide_hold = {0};
+	struct dstr show_hold_desc = {0};
+	struct dstr hide_hold_desc = {0};
+
+	dstr_copy(&show_hold, obs->hotkeys.sceneitem_show_hold);
+	dstr_replace(&show_hold, "%1", name);
+	dstr_copy(&hide_hold, obs->hotkeys.sceneitem_hide_hold);
+	dstr_replace(&hide_hold, "%1", name);
+
+	dstr_copy(&show_hold_desc, obs->hotkeys.sceneitem_show_hold);
+	dstr_replace(&show_hold_desc, "%1", name);
+	dstr_copy(&hide_hold_desc, obs->hotkeys.sceneitem_hide_hold);
+	dstr_replace(&hide_hold_desc, "%1", name);
+
+	item->show_hold = obs_hotkey_register_source(scene->source,
+						     show_hold.array,
+						     show_hold_desc.array,
+						     hotkey_show_hold, item);
+
+	item->hide_hold = obs_hotkey_register_source(scene->source,
+						     hide_hold.array,
+						     hide_hold_desc.array,
+						     hotkey_hide_hold, item);
+
+	dstr_free(&show_hold);
+	dstr_free(&hide_hold);
+	dstr_free(&show_hold_desc);
+	dstr_free(&hide_hold_desc);
+}
+
 static void sceneitem_rename_hotkey(const obs_sceneitem_t *scene_item,
 				    const char *new_name)
 {
@@ -2262,12 +2336,43 @@ static void sceneitem_rename_hotkey(const obs_sceneitem_t *scene_item,
 	dstr_free(&hide_desc);
 }
 
+static void sceneitem_rename_hold_hotkey(const obs_sceneitem_t *scene_item,
+					 const char *new_name)
+{
+	struct dstr show_hold = {0};
+	struct dstr hide_hold = {0};
+	struct dstr show_hold_desc = {0};
+	struct dstr hide_hold_desc = {0};
+
+	dstr_copy(&show_hold, "libobs.show_hold_scene_item.%1");
+	dstr_replace(&show_hold, "%1", new_name);
+	dstr_copy(&hide_hold, "libobs.hide_hold_scene_item.%1");
+	dstr_replace(&hide_hold, "%1", new_name);
+
+	obs_hotkey_set_name(scene_item->show_hold, show_hold.array);
+	obs_hotkey_set_name(scene_item->hide_hold, hide_hold.array);
+
+	dstr_copy(&show_hold_desc, obs->hotkeys.sceneitem_show_hold);
+	dstr_replace(&show_hold_desc, "%1", new_name);
+	dstr_copy(&hide_hold_desc, obs->hotkeys.sceneitem_hide_hold);
+	dstr_replace(&hide_hold_desc, "%1", new_name);
+
+	obs_hotkey_set_description(scene_item->show_hold, show_hold_desc.array);
+	obs_hotkey_set_description(scene_item->hide_hold, hide_hold_desc.array);
+
+	dstr_free(&show_hold);
+	dstr_free(&hide_hold);
+	dstr_free(&show_hold_desc);
+	dstr_free(&hide_hold_desc);
+}
+
 static void sceneitem_renamed(void *param, calldata_t *data)
 {
 	obs_sceneitem_t *scene_item = param;
 	const char *name = calldata_string(data, "new_name");
 
 	sceneitem_rename_hotkey(scene_item, name);
+	sceneitem_rename_hold_hotkey(scene_item, name);
 }
 
 static inline bool source_has_audio(obs_source_t *source)
@@ -2326,6 +2431,8 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 	item->is_group = strcmp(source->info.id, group_info.id) == 0;
 	item->private_settings = obs_data_create();
 	item->toggle_visibility = OBS_INVALID_HOTKEY_PAIR_ID;
+	item->show_hold = OBS_INVALID_HOTKEY_ID;
+	item->hide_hold = OBS_INVALID_HOTKEY_ID;
 	os_atomic_set_long(&item->active_refs, 1);
 	vec2_set(&item->scale, 1.0f, 1.0f);
 	matrix4_identity(&item->draw_transform);
@@ -2362,8 +2469,11 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 
 	full_unlock(scene);
 
-	if (!scene->source->context.private)
-		init_hotkeys(scene, item, obs_source_get_name(source));
+	if (!scene->source->context.private) {
+		const char *name = obs_source_get_name(source);
+		init_hotkeys(scene, item, name);
+		init_hold_hotkeys(scene, item, name);
+	}
 
 	signal_handler_connect(obs_source_get_signal_handler(source), "rename",
 			       sceneitem_renamed, item);
@@ -2402,6 +2512,8 @@ static void obs_sceneitem_destroy(obs_sceneitem_t *item)
 		}
 		obs_data_release(item->private_settings);
 		obs_hotkey_pair_unregister(item->toggle_visibility);
+		obs_hotkey_unregister(item->show_hold);
+		obs_hotkey_unregister(item->hide_hold);
 		pthread_mutex_destroy(&item->actions_mutex);
 		signal_handler_disconnect(
 			obs_source_get_signal_handler(item->source), "rename",

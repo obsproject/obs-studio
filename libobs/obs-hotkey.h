@@ -151,6 +151,10 @@ obs_hotkeys_set_audio_hotkeys_translations(const char *mute, const char *unmute,
 EXPORT void obs_hotkeys_set_sceneitem_hotkeys_translations(const char *show,
 							   const char *hide);
 
+EXPORT void
+obs_hotkeys_set_sceneitem_hold_hotkeys_translations(const char *show_hold,
+						    const char *hide_hold);
+
 /* registering hotkeys (giving hotkeys a name and a function) */
 
 typedef void (*obs_hotkey_func)(void *data, obs_hotkey_id id,

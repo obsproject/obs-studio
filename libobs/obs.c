@@ -1168,6 +1168,8 @@ static inline bool obs_init_hotkeys(void)
 	hotkeys->push_to_talk = bstrdup("Push-to-talk");
 	hotkeys->sceneitem_show = bstrdup("Show '%1'");
 	hotkeys->sceneitem_hide = bstrdup("Hide '%1'");
+	hotkeys->sceneitem_show_hold = bstrdup("Push-to-show '%1'");
+	hotkeys->sceneitem_hide_hold = bstrdup("Push-to-hide '%1'");
 
 	if (!obs_hotkeys_platform_init(hotkeys))
 		return false;
@@ -1215,6 +1217,8 @@ static inline void obs_free_hotkeys(void)
 	bfree(hotkeys->push_to_talk);
 	bfree(hotkeys->sceneitem_show);
 	bfree(hotkeys->sceneitem_hide);
+	bfree(hotkeys->sceneitem_show_hold);
+	bfree(hotkeys->sceneitem_hide_hold);
 
 	obs_hotkey_name_map_free();
 
