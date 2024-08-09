@@ -1384,7 +1384,37 @@ bool OBSApp::OBSInit()
 			ResetHotkeyState(state == Qt::ApplicationActive);
 		});
 	ResetHotkeyState(applicationState() == Qt::ApplicationActive);
+
+	connect(this, &QApplication::focusChanged, this,
+		&OBSApp::WidgetFocusChanged);
 	return true;
+}
+
+static bool IsWidgetEditable(QWidget *widget)
+{
+	if (qobject_cast<QLineEdit *>(widget) ||
+	    qobject_cast<QTextEdit *>(widget) ||
+	    qobject_cast<QPlainTextEdit *>(widget) ||
+	    qobject_cast<OBSPlainTextEdit *>(widget) ||
+	    qobject_cast<QSpinBox *>(widget) ||
+	    qobject_cast<QDoubleSpinBox *>(widget))
+		return true;
+	else
+		return false;
+}
+
+void OBSApp::WidgetFocusChanged(QWidget *, QWidget *now)
+{
+	if (disableFocusSignal)
+		return;
+
+	if (!hotkeysDisabled && IsWidgetEditable(now)) {
+		DisableHotkeys();
+		hotkeysDisabled = true;
+	} else if (hotkeysDisabled) {
+		UpdateHotkeyFocusSetting();
+		hotkeysDisabled = false;
+	}
 }
 
 string OBSApp::GetVersionString(bool platform) const
