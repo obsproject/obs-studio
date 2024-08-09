@@ -267,3 +267,86 @@ pa_stream *pulse_stream_new(const char *name, const pa_sample_spec *ss,
 	pulse_unlock();
 	return s;
 }
+
+/* Wait for callback to finish
+   TODO: Finish refactoring by replacing the copy-pasted code in four
+         pre-existing functions above with calls to this.
+*/
+static int_fast32_t pulse_op_tail(pa_operation *op)
+{
+	if (!op) {
+		pulse_unlock();
+		return -1;
+	}
+	while (pa_operation_get_state(op) == PA_OPERATION_RUNNING)
+		pulse_wait();
+	pa_operation_unref(op);
+
+	pulse_unlock();
+
+	return 0;
+}
+
+int_fast32_t pulse_get_sink_info(pa_sink_info_cb_t cb, const char *name,
+				 void *userdata)
+{
+	if (pulse_context_ready() < 0)
+		return -1;
+
+	pulse_lock();
+
+	return pulse_op_tail(pa_context_get_sink_info_by_name(
+		pulse_context, name, cb, userdata));
+}
+
+static void module_load_cb(pa_context *c, uint32_t idx, void *userdata)
+{
+	UNUSED_PARAMETER(c);
+	blog(LOG_INFO, "Module loaded: %d", (int)idx);
+	*(uint32_t *)userdata = idx;
+	pulse_signal(0);
+}
+
+int_fast32_t pulse_load_module(const char *name, const char *argument)
+{
+	if (pulse_context_ready() < 0)
+		return -1;
+
+	pulse_lock();
+
+	uint32_t idx = -1;
+	int32_t result = pulse_op_tail(pa_context_load_module(
+		pulse_context, name, argument, module_load_cb, &idx));
+	if (result < 0)
+		return -1;
+	return idx;
+}
+
+static void module_unload_cb(pa_context *c, int success, void *userdata)
+{
+	UNUSED_PARAMETER(c);
+	UNUSED_PARAMETER(success);
+	blog(LOG_INFO, "Module unloaded: %d", success);
+	*(int *)userdata = success;
+	pulse_signal(0);
+}
+
+int_fast32_t pulse_unload_module(uint32_t idx)
+{
+	if (pulse_context_ready() < 0)
+		return -1;
+
+	pulse_lock();
+
+	int success = -1;
+	int32_t result = pulse_op_tail(pa_context_unload_module(
+		pulse_context, idx, module_unload_cb, &success));
+	if (result < 0)
+		return -1;
+	return success;
+}
+
+int pulse_errno()
+{
+	return pa_context_errno(pulse_context);
+}
