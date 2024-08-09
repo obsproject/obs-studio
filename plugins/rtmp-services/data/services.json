@@ -2768,29 +2768,6 @@
             }
         },
         {
-            "name": "Hakuna Live - RTMP",
-            "servers": [
-                {
-                    "name": "Republic of Korea / Japan",
-                    "url": "rtmps://media-proxy.prod.an1.media.hpcnt.com/hakuna"
-                }
-            ],
-            "protocol": "RTMP",
-            "supported video codecs": [
-                "h264"
-            ],
-            "recommended": {
-                "keyint": 2,
-                "supported resolutions": [
-                    "1920x1080",
-                    "1280x720"
-                ],
-                "max video bitrate": 6000,
-                "max audio bitrate": 320,
-                "bframes": 0
-            }
-        },
-        {
             "name": "sheeta",
             "common": false,
             "more_info_link": "https://partner-support.sheeta.com/hc/ja/articles/4404573942425-%E7%94%9F%E6%94%BE%E9%80%81%E3%81%AE%E9%85%8D%E4%BF%A1%E6%96%B9%E6%B3%95",
