@@ -77,7 +77,9 @@ static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 
 	for (size_t i = 0; i < data->sources_to_tick.num; i++) {
 		obs_source_t *s = data->sources_to_tick.array[i];
+		const uint64_t start = source_profiler_source_tick_start();
 		obs_source_video_tick(s, seconds);
+		source_profiler_source_tick_end(s, start);
 		obs_source_release(s);
 	}
 
@@ -1212,6 +1214,7 @@ bool obs_graphics_thread_loop(struct obs_graphics_context *context)
 	update_active_states();
 
 	profile_start(context->video_thread_name);
+	source_profiler_frame_begin();
 
 	gs_enter_context(obs->video.graphics);
 	gs_begin_frame();
@@ -1230,6 +1233,7 @@ bool obs_graphics_thread_loop(struct obs_graphics_context *context)
 	}
 #endif
 
+	source_profiler_render_begin();
 	profile_start(output_frame_name);
 	output_frames();
 	profile_end(output_frame_name);
@@ -1237,11 +1241,13 @@ bool obs_graphics_thread_loop(struct obs_graphics_context *context)
 	profile_start(render_displays_name);
 	render_displays();
 	profile_end(render_displays_name);
+	source_profiler_render_end();
 
 	execute_graphics_tasks();
 
 	frame_time_ns = os_gettime_ns() - frame_start;
 
+	source_profiler_frame_collect();
 	profile_end(context->video_thread_name);
 
 	profile_reenable_thread();

@@ -14,5 +14,6 @@ Platform/Utility API Reference (libobs/util)
    reference-libobs-util-platform
    reference-libobs-util-profiler
    reference-libobs-util-serializers
+   reference-libobs-util-source-profiler
    reference-libobs-util-text-lookup
    reference-libobs-util-threading

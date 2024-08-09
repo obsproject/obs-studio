@@ -668,6 +668,8 @@ void obs_source_destroy(struct obs_source *source)
 		obs_context_data_remove_name(&source->context,
 					     &obs->data.public_sources);
 
+	source_profiler_remove_source(source);
+
 	/* defer source destroy */
 	os_task_queue_queue_task(obs->destruction_task_thread,
 				 (os_task_t)obs_source_destroy_defer, source);
@@ -2579,6 +2581,7 @@ static void obs_source_update_async_video(obs_source_t *source)
 				source->async_update_texture = false;
 			}
 
+			source->async_last_rendered_ts = frame->timestamp;
 			obs_source_release_frame(source, frame);
 		}
 	}
@@ -2609,6 +2612,10 @@ static void rotate_async_video(obs_source_t *source, long rotation)
 static inline void obs_source_render_async_video(obs_source_t *source)
 {
 	if (source->async_textures[0] && source->async_active) {
+		gs_timer_t *timer = NULL;
+		const uint64_t start =
+			source_profiler_source_render_begin(&timer);
+
 		const enum gs_color_space source_space = convert_video_space(
 			source->async_format, source->async_trc);
 
@@ -2718,6 +2725,8 @@ static inline void obs_source_render_async_video(obs_source_t *source)
 		gs_technique_end(tech);
 
 		gs_set_linear_srgb(previous);
+
+		source_profiler_source_render_end(source, start, timer);
 	}
 }
 
@@ -2786,6 +2795,9 @@ static uint32_t get_base_height(const obs_source_t *source)
 
 static void source_render(obs_source_t *source, gs_effect_t *effect)
 {
+	gs_timer_t *timer = NULL;
+	const uint64_t start = source_profiler_source_render_begin(&timer);
+
 	void *const data = source->context.data;
 	const enum gs_color_space current_space = gs_get_color_space();
 	const enum gs_color_space source_space =
@@ -2912,6 +2924,7 @@ static void source_render(obs_source_t *source, gs_effect_t *effect)
 	} else {
 		source->info.video_render(data, effect);
 	}
+	source_profiler_source_render_end(source, start, timer);
 }
 
 void obs_source_default_render(obs_source_t *source)
@@ -3696,6 +3709,8 @@ obs_source_output_video_internal(obs_source_t *source,
 		pthread_mutex_unlock(&source->async_mutex);
 		return;
 	}
+
+	source_profiler_async_frame_received(source);
 
 	struct obs_source_frame *output = cache_video(source, frame);
 
@@ -6307,4 +6322,9 @@ void obs_source_restore_filters(obs_source_t *source, obs_data_array_t *array)
 	}
 
 	da_free(cur_filters);
+}
+
+uint64_t obs_source_get_last_async_ts(const obs_source_t *source)
+{
+	return source->async_last_rendered_ts;
 }
