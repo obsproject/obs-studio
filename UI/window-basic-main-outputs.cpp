@@ -874,7 +874,22 @@ void SimpleOutput::Update()
 					   audioSettings);
 
 	if (!enforceBitrate) {
-		blog(LOG_INFO, "User is ignoring service bitrate limits.");
+		int maxVBitrate, maxABitrate;
+		obs_service_get_max_bitrate(main->GetService(), &maxVBitrate,
+					    &maxABitrate);
+
+		std::string videoBitrateStr =
+			maxVBitrate > 0 ? std::to_string(maxVBitrate) : "None";
+		std::string audioBitrateStr =
+			maxABitrate > 0 ? std::to_string(maxABitrate) : "None";
+
+		blog(LOG_INFO,
+		     "User is ignoring service bitrate limits.\n"
+		     "Service Recommendations:\n"
+		     "\tvideo bitrate: %s\n"
+		     "\taudio bitrate: %s",
+		     videoBitrateStr.c_str(), audioBitrateStr.c_str());
+
 		obs_data_set_int(videoSettings, "bitrate", videoBitrate);
 		obs_data_set_int(audioSettings, "bitrate", audioBitrate);
 	}
@@ -1837,8 +1852,23 @@ void AdvancedOutput::UpdateStreamSettings()
 		obs_service_apply_encoder_settings(main->GetService(), settings,
 						   nullptr);
 		if (!enforceBitrate) {
+			int MaxVBitrate, MaxABitrate;
+			obs_service_get_max_bitrate(main->GetService(),
+						    &MaxVBitrate, &MaxABitrate);
+
+			std::string videoBitrateStr =
+				MaxVBitrate > 0 ? std::to_string(MaxVBitrate)
+						: "None";
+			std::string audioBitrateStr =
+				MaxABitrate > 0 ? std::to_string(MaxABitrate)
+						: "None";
+
 			blog(LOG_INFO,
-			     "User is ignoring service bitrate limits.");
+			     "User is ignoring service bitrate limits.\n"
+			     "Service Recommendations:\n"
+			     "\tvideo bitrate: %s\n"
+			     "\taudio bitrate: %s",
+			     videoBitrateStr.c_str(), audioBitrateStr.c_str());
 			obs_data_set_int(settings, "bitrate", bitrate);
 		}
 
