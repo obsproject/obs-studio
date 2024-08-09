@@ -286,7 +286,7 @@ static void add_muxer_params(os_process_args_t *args,
 }
 
 static void build_command_line(struct ffmpeg_muxer *stream,
-			       os_process_args_t **args, const char *path)
+			       os_process_args_t **args)
 {
 	obs_encoder_t *vencoder = obs_output_get_video_encoder(stream->output);
 	obs_encoder_t *aencoders[MAX_AUDIO_MIXES];
@@ -306,8 +306,7 @@ static void build_command_line(struct ffmpeg_muxer *stream,
 	*args = os_process_args_create(exe);
 	bfree(exe);
 
-	dstr_copy(&stream->path, path);
-	os_process_args_add_arg(*args, path);
+	os_process_args_add_arg(*args, stream->path.array);
 	os_process_args_add_argf(*args, "%d", vencoder ? 1 : 0);
 	os_process_args_add_argf(*args, "%d", num_tracks);
 
@@ -327,10 +326,10 @@ static void build_command_line(struct ffmpeg_muxer *stream,
 	add_muxer_params(*args, stream);
 }
 
-void start_pipe(struct ffmpeg_muxer *stream, const char *path)
+void start_pipe(struct ffmpeg_muxer *stream)
 {
 	os_process_args_t *args = NULL;
-	build_command_line(stream, &args, path);
+	build_command_line(stream, &args);
 	stream->pipe = os_process_pipe_create2(args, "w");
 	os_process_args_destroy(args);
 }
@@ -390,11 +389,67 @@ inline static void ts_offset_update(struct ffmpeg_muxer *stream,
 	stream->found_audio[packet->track_idx] = true;
 }
 
-static inline void update_encoder_settings(struct ffmpeg_muxer *stream,
-					   const char *path)
+static void find_best_filename(struct dstr *path, bool space)
+{
+	int num = 2;
+
+	if (!os_file_exists(path->array))
+		return;
+
+	const char *ext = strrchr(path->array, '.');
+	if (!ext)
+		return;
+
+	size_t extstart = ext - path->array;
+	struct dstr testpath;
+	dstr_init_copy_dstr(&testpath, path);
+	for (;;) {
+		dstr_resize(&testpath, extstart);
+		dstr_catf(&testpath, space ? " (%d)" : "_%d", num++);
+		dstr_cat(&testpath, ext);
+
+		if (!os_file_exists(testpath.array)) {
+			dstr_free(path);
+			dstr_init_move(path, &testpath);
+			break;
+		}
+	}
+}
+
+static void generate_filename(struct ffmpeg_muxer *stream, bool overwrite)
+{
+	obs_data_t *settings = obs_output_get_settings(stream->output);
+	const char *dir = obs_data_get_string(settings, "directory");
+	const char *fmt = obs_data_get_string(settings, "format");
+	const char *ext = obs_data_get_string(settings, "extension");
+	bool space = obs_data_get_bool(settings, "allow_spaces");
+	char *filename = os_generate_formatted_filename(ext, space, fmt);
+	char *slash;
+
+	dstr_copy(&stream->path, dir);
+	dstr_replace(&stream->path, "\\", "/");
+	if (stream->path.len && dstr_end(&stream->path) != '/')
+		dstr_cat_ch(&stream->path, '/');
+	dstr_cat(&stream->path, filename);
+
+	slash = (stream->path.len) ? strrchr(stream->path.array, '/') : NULL;
+	if (slash) {
+		*slash = 0;
+		os_mkdirs(stream->path.array);
+		*slash = '/';
+	}
+
+	if (stream->path.len && !overwrite)
+		find_best_filename(&stream->path, space);
+
+	bfree(filename);
+	obs_data_release(settings);
+}
+
+static inline void update_encoder_settings(struct ffmpeg_muxer *stream)
 {
 	obs_encoder_t *vencoder = obs_output_get_video_encoder(stream->output);
-	const char *ext = strrchr(path, '.');
+	const char *ext = strrchr(stream->path.array, '.');
 
 	/* if using m3u8, repeat headers */
 	if (ext && strcmp(ext, ".m3u8") == 0) {
@@ -408,14 +463,7 @@ static inline void update_encoder_settings(struct ffmpeg_muxer *stream,
 static inline bool ffmpeg_mux_start_internal(struct ffmpeg_muxer *stream,
 					     obs_data_t *settings)
 {
-	const char *path = obs_data_get_string(settings, "path");
-
-	update_encoder_settings(stream, path);
-
-	if (!obs_output_can_begin_data_capture(stream->output, 0))
-		return false;
-	if (!obs_output_initialize_encoders(stream->output, 0))
-		return false;
+	const char *path;
 
 	if (stream->is_network) {
 		obs_service_t *service;
@@ -424,40 +472,61 @@ static inline bool ffmpeg_mux_start_internal(struct ffmpeg_muxer *stream,
 			return false;
 		path = obs_service_get_connect_info(
 			service, OBS_SERVICE_CONNECT_INFO_SERVER_URL);
+		dstr_copy(&stream->path, path);
 		stream->split_file = false;
 	} else {
-
-		stream->max_time =
-			obs_data_get_int(settings, "max_time_sec") * 1000000LL;
+		stream->sent_headers = false;
+		stream->cur_size = 0;
+		stream->cur_time = 0;
 		stream->max_size = obs_data_get_int(settings, "max_size_mb") *
 				   (1024 * 1024);
+		stream->max_time =
+			obs_data_get_int(settings, "max_time_sec") * 1000000LL;
 		stream->split_file = obs_data_get_bool(settings, "split_file");
 		stream->allow_overwrite =
 			obs_data_get_bool(settings, "allow_overwrite");
-		stream->cur_size = 0;
-		stream->sent_headers = false;
-	}
 
-	ts_offset_clear(stream);
+		// Path may be specified to avoid generating the first filename here
+		path = obs_data_get_string(settings, "path");
+		if (strlen(path) != 0) {
+			dstr_copy(&stream->path, path);
+		} else {
+			generate_filename(stream, stream->allow_overwrite);
+			if (!stream->path.len) {
+				obs_output_set_last_error(
+					stream->output,
+					obs_module_text(
+						"FilenameGenerationFailed"));
+				warn("generate_filename() created an empty path");
+				return false;
+			}
+		}
 
-	if (!stream->is_network) {
 		/* ensure output path is writable to avoid generic error
 		 * message.
 		 *
 		 * TODO: remove once ffmpeg-mux is refactored to pass
 		 * errors back */
-		FILE *test_file = os_fopen(path, "wb");
+		FILE *test_file = os_fopen(stream->path.array, "wb");
 		if (!test_file) {
-			set_file_not_readable_error(stream, settings, path);
+			set_file_not_readable_error(stream, settings,
+						    stream->path.array);
 			return false;
 		}
-
 		fclose(test_file);
-		os_unlink(path);
+		os_unlink(stream->path.array);
 	}
 
-	start_pipe(stream, path);
+	ts_offset_clear(stream);
 
+	update_encoder_settings(stream);
+
+	if (!obs_output_can_begin_data_capture(stream->output, 0))
+		return false;
+	if (!obs_output_initialize_encoders(stream->output, 0))
+		return false;
+
+	start_pipe(stream);
 	if (!stream->pipe) {
 		obs_output_set_last_error(
 			stream->output, obs_module_text("HelperProcessFailed"));
@@ -582,64 +651,6 @@ static void signal_failure(struct ffmpeg_muxer *stream)
 	os_atomic_set_bool(&stream->capturing, false);
 }
 
-static void find_best_filename(struct dstr *path, bool space)
-{
-	int num = 2;
-
-	if (!os_file_exists(path->array))
-		return;
-
-	const char *ext = strrchr(path->array, '.');
-	if (!ext)
-		return;
-
-	size_t extstart = ext - path->array;
-	struct dstr testpath;
-	dstr_init_copy_dstr(&testpath, path);
-	for (;;) {
-		dstr_resize(&testpath, extstart);
-		dstr_catf(&testpath, space ? " (%d)" : "_%d", num++);
-		dstr_cat(&testpath, ext);
-
-		if (!os_file_exists(testpath.array)) {
-			dstr_free(path);
-			dstr_init_move(path, &testpath);
-			break;
-		}
-	}
-}
-
-static void generate_filename(struct ffmpeg_muxer *stream, struct dstr *dst,
-			      bool overwrite)
-{
-	obs_data_t *settings = obs_output_get_settings(stream->output);
-	const char *dir = obs_data_get_string(settings, "directory");
-	const char *fmt = obs_data_get_string(settings, "format");
-	const char *ext = obs_data_get_string(settings, "extension");
-	bool space = obs_data_get_bool(settings, "allow_spaces");
-
-	char *filename = os_generate_formatted_filename(ext, space, fmt);
-
-	dstr_copy(dst, dir);
-	dstr_replace(dst, "\\", "/");
-	if (dstr_end(dst) != '/')
-		dstr_cat_ch(dst, '/');
-	dstr_cat(dst, filename);
-
-	char *slash = strrchr(dst->array, '/');
-	if (slash) {
-		*slash = 0;
-		os_mkdirs(dst->array);
-		*slash = '/';
-	}
-
-	if (!overwrite)
-		find_best_filename(dst, space);
-
-	bfree(filename);
-	obs_data_release(settings);
-}
-
 bool write_packet(struct ffmpeg_muxer *stream, struct encoder_packet *packet)
 {
 	bool is_video = packet->type == OBS_ENCODER_VIDEO;
@@ -731,6 +742,32 @@ bool send_headers(struct ffmpeg_muxer *stream)
 	return true;
 }
 
+static bool send_new_filename(struct ffmpeg_muxer *stream, const char *filename)
+{
+	size_t ret;
+	uint32_t size = (uint32_t)strlen(filename);
+	struct ffm_packet_info info = {.type = FFM_PACKET_CHANGE_FILE,
+				       .size = size};
+
+	ret = os_process_pipe_write(stream->pipe, (const uint8_t *)&info,
+				    sizeof(info));
+	if (ret != sizeof(info)) {
+		warn("os_process_pipe_write for info structure failed");
+		signal_failure(stream);
+		return false;
+	}
+
+	ret = os_process_pipe_write(stream->pipe, (const uint8_t *)filename,
+				    size);
+	if (ret != size) {
+		warn("os_process_pipe_write for packet data failed");
+		signal_failure(stream);
+		return false;
+	}
+
+	return true;
+}
+
 static inline bool should_split(struct ffmpeg_muxer *stream,
 				struct encoder_packet *packet)
 {
@@ -758,48 +795,29 @@ static inline bool should_split(struct ffmpeg_muxer *stream,
 	return false;
 }
 
-static bool send_new_filename(struct ffmpeg_muxer *stream, const char *filename)
-{
-	size_t ret;
-	uint32_t size = (uint32_t)strlen(filename);
-	struct ffm_packet_info info = {.type = FFM_PACKET_CHANGE_FILE,
-				       .size = size};
-
-	ret = os_process_pipe_write(stream->pipe, (const uint8_t *)&info,
-				    sizeof(info));
-	if (ret != sizeof(info)) {
-		warn("os_process_pipe_write for info structure failed");
-		signal_failure(stream);
-		return false;
-	}
-
-	ret = os_process_pipe_write(stream->pipe, (const uint8_t *)filename,
-				    size);
-	if (ret != size) {
-		warn("os_process_pipe_write for packet data failed");
-		signal_failure(stream);
-		return false;
-	}
-
-	return true;
-}
-
 static bool prepare_split_file(struct ffmpeg_muxer *stream,
 			       struct encoder_packet *packet)
 {
-	generate_filename(stream, &stream->path, stream->allow_overwrite);
+	calldata_t cd = {0};
+	signal_handler_t *sh;
+	struct dstr last_file;
+
+	dstr_init_copy_dstr(&last_file, &stream->path);
+	generate_filename(stream, stream->allow_overwrite);
 	info("Changing output file to '%s'", stream->path.array);
 
 	if (!send_new_filename(stream, stream->path.array)) {
 		warn("Failed to send new file name");
+		dstr_free(&last_file);
 		return false;
 	}
 
-	calldata_t cd = {0};
-	signal_handler_t *sh = obs_output_get_signal_handler(stream->output);
+	sh = obs_output_get_signal_handler(stream->output);
+	calldata_set_string(&cd, "last_file", last_file.array);
 	calldata_set_string(&cd, "next_file", stream->path.array);
 	signal_handler_signal(sh, "file_changed", &cd);
 	calldata_free(&cd);
+	dstr_free(&last_file);
 
 	if (!send_headers(stream))
 		return false;
@@ -1157,7 +1175,7 @@ static void *replay_buffer_mux_thread(void *data)
 	struct ffmpeg_muxer *stream = data;
 	bool error = false;
 
-	start_pipe(stream, stream->path.array);
+	start_pipe(stream);
 
 	if (!stream->pipe) {
 		warn("Failed to create process pipe");
@@ -1247,7 +1265,7 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 			      audio_dts_offsets);
 	}
 
-	generate_filename(stream, &stream->path, true);
+	generate_filename(stream, true);
 
 	os_atomic_set_bool(&stream->muxing, true);
 	stream->mux_thread_joinable = pthread_create(&stream->mux_thread, NULL,
