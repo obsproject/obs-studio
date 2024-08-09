@@ -1,10 +1,6 @@
 #include <windows.h>
 #include <stdbool.h>
-#ifdef OBS_LEGACY
-#include "../../libobs/util/windows/obfuscate.h"
-#else
 #include <util/windows/obfuscate.h>
-#endif
 #include "inject-library.h"
 
 typedef HANDLE(WINAPI *create_remote_thread_t)(HANDLE, LPSECURITY_ATTRIBUTES,

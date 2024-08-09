@@ -24,7 +24,7 @@ set(CMAKE_FIND_PACKAGE_TARGETS_GLOBAL TRUE)
 include(buildspec)
 include(cpackconfig)
 
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+if(CMAKE_GENERATOR_PLATFORM STREQUAL x64)
   execute_process(
     COMMAND
       "${CMAKE_COMMAND}" -S ${CMAKE_CURRENT_SOURCE_DIR} -B ${CMAKE_SOURCE_DIR}/build_x86 -A Win32 -G
