@@ -1862,15 +1862,15 @@ static void DrawStripedLine(float x1, float y1, float x2, float y2,
 		float dy;
 
 		if (x1 < x2) {
-			dx = std::min(xx1 + 7.5f * offX, x2);
+			dx = (std::min)(xx1 + 7.5f * offX, x2);
 		} else {
-			dx = std::max(xx1 + 7.5f * offX, x2);
+			dx = (std::max)(xx1 + 7.5f * offX, x2);
 		}
 
 		if (y1 < y2) {
-			dy = std::min(yy1 + 7.5f * offY, y2);
+			dy = (std::min)(yy1 + 7.5f * offY, y2);
 		} else {
-			dy = std::max(yy1 + 7.5f * offY, y2);
+			dy = (std::max)(yy1 + 7.5f * offY, y2);
 		}
 
 		gs_vertex2f(xx1, yy1);

@@ -50,7 +50,7 @@ void OBSBasicSettings::LoadA11ySettings(bool presetChange)
 		preset = config_get_int(config, "Accessibility", "ColorPreset");
 
 		bool block = ui->colorPreset->blockSignals(true);
-		ui->colorPreset->setCurrentIndex(std::min(
+		ui->colorPreset->setCurrentIndex((std::min)(
 			preset, (uint32_t)ui->colorPreset->count() - 1));
 		ui->colorPreset->blockSignals(block);
 

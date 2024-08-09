@@ -1155,8 +1155,8 @@ void VolumeMeter::paintVTicks(QPainter &painter, int x, int y, int height)
 
 inline int VolumeMeter::convertToInt(float number)
 {
-	constexpr int min = std::numeric_limits<int>::min();
-	constexpr int max = std::numeric_limits<int>::max();
+	constexpr int min = (std::numeric_limits<int>::min)();
+	constexpr int max = (std::numeric_limits<int>::max)();
 
 	// NOTE: Conversion from 'const int' to 'float' changes max value from 2147483647 to 2147483648
 	if (number >= (float)max)
@@ -1573,8 +1573,8 @@ void VolumeSlider::paintEvent(QPaintEvent *event)
 		const int sliderWidth = groove.width() - handle.width();
 
 		float tickLength = groove.height() * 1.5;
-		tickLength = std::max((int)tickLength + groove.height(),
-				      8 + groove.height());
+		tickLength = (std::max)((int)tickLength + groove.height(),
+					8 + groove.height());
 
 		float yPos = groove.center().y() - (tickLength / 2) + 1;
 
@@ -1591,8 +1591,8 @@ void VolumeSlider::paintEvent(QPaintEvent *event)
 		const int sliderHeight = groove.height() - handle.height();
 
 		float tickLength = groove.width() * 1.5;
-		tickLength = std::max((int)tickLength + groove.width(),
-				      8 + groove.width());
+		tickLength = (std::max)((int)tickLength + groove.width(),
+					8 + groove.width());
 
 		float xPos = groove.center().x() - (tickLength / 2) + 1;
 
