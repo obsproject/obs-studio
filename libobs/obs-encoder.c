@@ -799,6 +799,10 @@ void obs_encoder_stop(obs_encoder_t *encoder,
 	if (!obs_ptr_valid(new_packet, "obs_encoder_stop"))
 		return;
 
+	/* Ensure encoder is not destroyed elsewhere before we are done with it
+	 * by adding a reference of our own. */
+	obs_encoder_addref(encoder);
+
 	pthread_mutex_lock(&encoder->init_mutex);
 	pthread_mutex_lock(&encoder->callbacks_mutex);
 
@@ -818,6 +822,8 @@ void obs_encoder_stop(obs_encoder_t *encoder,
 
 		if (encoder->destroy_on_stop)
 			obs_encoder_actually_destroy(encoder);
+		else
+			obs_encoder_release(encoder);
 
 		/* Destroying the group all the way back here prevents a race
 		 * where destruction of the group can prematurely destroy the
@@ -832,12 +838,10 @@ void obs_encoder_stop(obs_encoder_t *encoder,
 			else
 				pthread_mutex_unlock(&group->mutex);
 		}
-
-		/* init_mutex already unlocked */
-		return;
+	} else {
+		pthread_mutex_unlock(&encoder->init_mutex);
+		obs_encoder_release(encoder);
 	}
-
-	pthread_mutex_unlock(&encoder->init_mutex);
 }
 
 const char *obs_encoder_get_codec(const obs_encoder_t *encoder)
