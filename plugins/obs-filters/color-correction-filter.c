@@ -30,6 +30,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define SETTING_COLOR                  "color"
 #define SETTING_COLOR_MULTIPLY         "color_multiply"
 #define SETTING_COLOR_ADD              "color_add"
+#define SETTING_WHITE_BALANCE_RED      "white_balance_red"
+#define SETTING_WHITE_BALANCE_GREEN    "white_balance_green"
+#define SETTING_WHITE_BALANCE_BLUE     "white_balance_blue"
 
 #define TEXT_SDR_ONLY_INFO             obs_module_text("SdrOnlyInfo")
 #define TEXT_GAMMA                     obs_module_text("Gamma")
@@ -41,6 +44,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define TEXT_COLOR                     obs_module_text("Color")
 #define TEXT_COLOR_MULTIPLY            obs_module_text("ColorMultiply")
 #define TEXT_COLOR_ADD                 obs_module_text("ColorAdd")
+#define TEXT_WHITE_BALANCE_RED         obs_module_text("White Balance Red")
+#define TEXT_WHITE_BALANCE_GREEN       obs_module_text("White Balance Green")
+#define TEXT_WHITE_BALANCE_BLUE        obs_module_text("White Balance Blue")
 
 /* clang-format on */
 
@@ -53,6 +59,7 @@ struct color_correction_filter_data {
 	gs_eparam_t *final_matrix_param;
 
 	float gamma;
+	float white_balance;
 
 	/* Pre-Computes */
 	struct matrix4 con_matrix;
@@ -74,6 +81,7 @@ struct color_correction_filter_data_v2 {
 	gs_eparam_t *final_matrix_param;
 
 	float gamma;
+	float white_balance;
 
 	/* Pre-Computes */
 	struct matrix4 con_matrix;
@@ -244,6 +252,24 @@ static void color_correction_filter_update_v1(void *data, obs_data_t *settings)
 	filter->color_matrix.t.y = color_v4.w * color_v4.y;
 	filter->color_matrix.t.z = color_v4.w * color_v4.z;
 
+	/* Now we retrieve the white balance settings */
+	float white_balance_red =
+		(float)obs_data_get_double(settings, SETTING_WHITE_BALANCE_RED);
+	float white_balance_green = (float)obs_data_get_double(
+		settings, SETTING_WHITE_BALANCE_GREEN);
+	float white_balance_blue = (float)obs_data_get_double(
+		settings, SETTING_WHITE_BALANCE_BLUE);
+
+	/* Next we calculate gains for red, green, and blue channels */
+	float red_gain = 1.0f + white_balance_red;
+	float green_gain = 1.0f + white_balance_green;
+	float blue_gain = 1.0f + white_balance_blue;
+
+	/* Finally we construct the white balance matrix */
+	struct matrix4 white_balance_matrix = {
+		red_gain, 0.0f, 0.0f,      0.0f, 0.0f, green_gain, 0.0f, 0.0f,
+		0.0f,     0.0f, blue_gain, 0.0f, 0.0f, 0.0f,       0.0f, 1.0f};
+
 	/* First we apply the Contrast & Brightness matrix. */
 	matrix4_mul(&filter->final_matrix, &filter->bright_matrix,
 		    &filter->con_matrix);
@@ -253,9 +279,12 @@ static void color_correction_filter_update_v1(void *data, obs_data_t *settings)
 	/* Next we apply the Hue+Opacity matrix. */
 	matrix4_mul(&filter->final_matrix, &filter->final_matrix,
 		    &filter->hue_op_matrix);
-	/* Lastly we apply the Color Wash matrix. */
+	/* Now we apply the Color Wash matrix. */
 	matrix4_mul(&filter->final_matrix, &filter->final_matrix,
 		    &filter->color_matrix);
+	/* Lastly we apply the White Balance matrix */
+	matrix4_mul(&filter->final_matrix, &filter->final_matrix,
+		    &white_balance_matrix);
 }
 
 static void color_correction_filter_update_v2(void *data, obs_data_t *settings)
@@ -400,6 +429,24 @@ static void color_correction_filter_update_v2(void *data, obs_data_t *settings)
 	filter->color_matrix.t.y = color_add_v4.y;
 	filter->color_matrix.t.z = color_add_v4.z;
 
+	/* Now we retrieve the white balance settings */
+	float white_balance_red =
+		(float)obs_data_get_double(settings, SETTING_WHITE_BALANCE_RED);
+	float white_balance_green = (float)obs_data_get_double(
+		settings, SETTING_WHITE_BALANCE_GREEN);
+	float white_balance_blue = (float)obs_data_get_double(
+		settings, SETTING_WHITE_BALANCE_BLUE);
+
+	/* Next we calculate gains for red, green, and blue channels */
+	float red_gain = 1.0f + white_balance_red;
+	float green_gain = 1.0f + white_balance_green;
+	float blue_gain = 1.0f + white_balance_blue;
+
+	/* Finally we construct the white balance matrix */
+	struct matrix4 white_balance_matrix = {
+		red_gain, 0.0f, 0.0f,      0.0f, 0.0f, green_gain, 0.0f, 0.0f,
+		0.0f,     0.0f, blue_gain, 0.0f, 0.0f, 0.0f,       0.0f, 1.0f};
+
 	/* First we apply the Contrast & Brightness matrix. */
 	matrix4_mul(&filter->final_matrix, &filter->con_matrix,
 		    &filter->bright_matrix);
@@ -409,9 +456,12 @@ static void color_correction_filter_update_v2(void *data, obs_data_t *settings)
 	/* Next we apply the Hue+Opacity matrix. */
 	matrix4_mul(&filter->final_matrix, &filter->final_matrix,
 		    &filter->hue_op_matrix);
-	/* Lastly we apply the Color Wash matrix. */
+	/* Now we apply the Color Wash matrix. */
 	matrix4_mul(&filter->final_matrix, &filter->final_matrix,
 		    &filter->color_matrix);
+	/* Lastly we apply the White Balance matrix*/
+	matrix4_mul(&filter->final_matrix, &filter->final_matrix,
+		    &white_balance_matrix);
 }
 
 /*
@@ -476,6 +526,8 @@ static void *color_correction_filter_create_v1(obs_data_t *settings,
 	matrix4_identity(&filter->bright_matrix);
 	matrix4_identity(&filter->color_matrix);
 
+	filter->white_balance = 0.0f;
+
 	/* Here we enter the GPU drawing/shader portion of our code. */
 	obs_enter_graphics();
 
@@ -537,6 +589,8 @@ static void *color_correction_filter_create_v2(obs_data_t *settings,
 	vec3_set(&filter->half_unit, 0.5f, 0.5f, 0.5f);
 	matrix4_identity(&filter->bright_matrix);
 	matrix4_identity(&filter->color_matrix);
+
+	filter->white_balance = 0.0f;
 
 	/* Here we enter the GPU drawing/shader portion of our code. */
 	obs_enter_graphics();
@@ -661,6 +715,15 @@ static obs_properties_t *color_correction_filter_properties_v1(void *data)
 					-180.0, 180.0, 0.01);
 	obs_properties_add_int_slider(props, SETTING_OPACITY, TEXT_OPACITY, 0,
 				      100, 1);
+	obs_properties_add_float_slider(props, SETTING_WHITE_BALANCE_RED,
+					TEXT_WHITE_BALANCE_RED, -1.0, 1.0,
+					0.01);
+	obs_properties_add_float_slider(props, SETTING_WHITE_BALANCE_GREEN,
+					TEXT_WHITE_BALANCE_GREEN, -1.0, 1.0,
+					0.01);
+	obs_properties_add_float_slider(props, SETTING_WHITE_BALANCE_BLUE,
+					TEXT_WHITE_BALANCE_BLUE, -1.0, 1.0,
+					0.01);
 
 	obs_properties_add_color_alpha(props, SETTING_COLOR, TEXT_COLOR);
 
@@ -688,6 +751,15 @@ static obs_properties_t *color_correction_filter_properties_v2(void *data)
 					-180.0, 180.0, 0.01);
 	obs_properties_add_float_slider(props, SETTING_OPACITY, TEXT_OPACITY,
 					0.0, 1.0, 0.0001);
+	obs_properties_add_float_slider(props, SETTING_WHITE_BALANCE_RED,
+					TEXT_WHITE_BALANCE_RED, -1.0, 1.0,
+					0.01);
+	obs_properties_add_float_slider(props, SETTING_WHITE_BALANCE_GREEN,
+					TEXT_WHITE_BALANCE_GREEN, -1.0, 1.0,
+					0.01);
+	obs_properties_add_float_slider(props, SETTING_WHITE_BALANCE_BLUE,
+					TEXT_WHITE_BALANCE_BLUE, -1.0, 1.0,
+					0.01);
 
 	obs_properties_add_color(props, SETTING_COLOR_MULTIPLY,
 				 TEXT_COLOR_MULTIPLY);
@@ -713,6 +785,9 @@ static void color_correction_filter_defaults_v1(obs_data_t *settings)
 	obs_data_set_default_double(settings, SETTING_HUESHIFT, 0.0);
 	obs_data_set_default_int(settings, SETTING_OPACITY, 100);
 	obs_data_set_default_int(settings, SETTING_COLOR, 0x00FFFFFF);
+	obs_data_set_default_double(settings, SETTING_WHITE_BALANCE_RED, 0.0);
+	obs_data_set_default_double(settings, SETTING_WHITE_BALANCE_GREEN, 0.0);
+	obs_data_set_default_double(settings, SETTING_WHITE_BALANCE_BLUE, 0.0);
 }
 
 static void color_correction_filter_defaults_v2(obs_data_t *settings)
@@ -725,6 +800,9 @@ static void color_correction_filter_defaults_v2(obs_data_t *settings)
 	obs_data_set_default_double(settings, SETTING_OPACITY, 1.0);
 	obs_data_set_default_int(settings, SETTING_COLOR_MULTIPLY, 0x00FFFFFF);
 	obs_data_set_default_int(settings, SETTING_COLOR_ADD, 0x00000000);
+	obs_data_set_default_double(settings, SETTING_WHITE_BALANCE_RED, 0.0);
+	obs_data_set_default_double(settings, SETTING_WHITE_BALANCE_GREEN, 0.0);
+	obs_data_set_default_double(settings, SETTING_WHITE_BALANCE_BLUE, 0.0);
 }
 
 static enum gs_color_space color_correction_filter_get_color_space(
