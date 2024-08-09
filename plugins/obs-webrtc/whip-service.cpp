@@ -34,6 +34,14 @@ void WHIPService::ApplyEncoderSettings(obs_data_t *video_settings, obs_data_t *)
 	if (video_settings) {
 		obs_data_set_int(video_settings, "bf", 0);
 		obs_data_set_bool(video_settings, "repeat_headers", true);
+
+		const char *profile =
+			obs_data_get_string(video_settings, "profile");
+		if (profile == nullptr || profile[0] == '\0') {
+			obs_data_set_string(video_settings, "profile", "main");
+			blog(LOG_INFO,
+			     "[obs-webrtc] no H264 profile set, default to main");
+		}
 	}
 }
 
