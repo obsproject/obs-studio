@@ -75,6 +75,8 @@ void Multiview::Update(MultiviewLayout multiviewLayout, bool drawLabel,
 	multiviewScenes.clear();
 	multiviewLabels.clear();
 
+	RefreshColors();
+
 	struct obs_video_info ovi;
 	obs_get_video_info(&ovi);
 
@@ -774,4 +776,32 @@ OBSSource Multiview::GetSourceByPosition(int x, int y)
 	if (pos < 0 || pos >= (int)numSrcs)
 		return nullptr;
 	return OBSGetStrongRef(multiviewScenes[pos]);
+}
+
+void Multiview::RefreshColors()
+{
+	static const auto set_alpha = [&](uint32_t colorVal, uint8_t alpha) {
+		return (colorVal & 0x00FFFFFF) | (alpha << 24);
+	};
+
+	static const auto abgr_to_argb = [&](uint32_t colorVal) {
+		return (colorVal & 0xFF00FF00) | ((colorVal & 0xFF) << 16) |
+		       ((colorVal & 0xFF0000) >> 16);
+	};
+
+	if (config_get_bool(GetGlobalConfig(), "Accessibility",
+			    "OverrideColors")) {
+		previewColor = abgr_to_argb(config_get_int(GetGlobalConfig(),
+							   "Accessibility",
+							   "MultiviewPreview"));
+		programColor = abgr_to_argb(config_get_int(GetGlobalConfig(),
+							   "Accessibility",
+							   "MultiviewProgram"));
+	} else {
+		previewColor = previewColorDefault;
+		programColor = programColorDefault;
+	}
+
+	previewColor = set_alpha(previewColor, 0xFF);
+	programColor = set_alpha(programColor, 0xFF);
 }
