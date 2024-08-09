@@ -716,6 +716,13 @@
                      </property>
                     </widget>
                    </item>
+                   <item row="5" column="1">
+                    <widget class="QCheckBox" name="windowFocusTogglePreview">
+                     <property name="text">
+                      <string>Basic.Settings.General.WindowFocusTogglePreview</string>
+                     </property>
+                    </widget>
+                   </item>
                   </layout>
                  </widget>
                 </item>
@@ -8502,6 +8509,7 @@
   <tabstop>overflowSelectionHide</tabstop>
   <tabstop>previewSafeAreas</tabstop>
   <tabstop>previewSpacingHelpers</tabstop>
+  <tabstop>windowFocusTogglePreview</tabstop>
   <tabstop>automaticSearch</tabstop>
   <tabstop>doubleClickSwitch</tabstop>
   <tabstop>studioPortraitLayout</tabstop>

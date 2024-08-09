@@ -1488,6 +1488,16 @@ bool OBSApp::TranslateString(const char *lookupVal, const char **out) const
 // caring where they are coming from (e.g. plugins).
 bool OBSApp::notify(QObject *receiver, QEvent *e)
 {
+	if (e->type() == QEvent::ActivationChange) {
+		OBSBasic *main = reinterpret_cast<OBSBasic *>(GetMainWindow());
+
+		if (main) {
+			bool hasFocus = QApplication::activeWindow() != nullptr;
+
+			main->TogglePreviewForWindowFocus(hasFocus);
+		}
+	}
+
 	QWidget *w;
 	QWindow *window;
 	int windowType;
