@@ -3950,8 +3950,7 @@ void OBSBasic::VolControlContextMenu()
 
 	copyFiltersAction.setEnabled(obs_source_filter_count(vol->GetSource()) >
 				     0);
-	pasteFiltersAction.setEnabled(
-		!obs_weak_source_expired(copyFiltersSource));
+	pasteFiltersAction.setEnabled(!filtersClipboard.empty());
 
 	QMenu popup;
 	vol->SetContextMenu(&popup);
@@ -5120,7 +5119,7 @@ void OBSBasic::ClearSceneData()
 	prevFTBSource = nullptr;
 
 	clipboard.clear();
-	copyFiltersSource = nullptr;
+	filtersClipboard.clear();
 	copyFilter = nullptr;
 
 	auto cb = [](void *, obs_source_t *source) {
@@ -5632,8 +5631,7 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 			&OBSBasic::SceneCopyFilters);
 		QAction *pasteFilters =
 			new QAction(QTStr("Paste.Filters"), this);
-		pasteFilters->setEnabled(
-			!obs_weak_source_expired(copyFiltersSource));
+		pasteFilters->setEnabled(!filtersClipboard.empty());
 		connect(pasteFilters, &QAction::triggered, this,
 			&OBSBasic::ScenePasteFilters);
 
@@ -8652,8 +8650,8 @@ void OBSBasic::UpdateEditMenu()
 	ui->actionPasteTransform->setEnabled(
 		canTransformMultiple && hasCopiedTransform && videoCount > 0);
 	ui->actionCopyFilters->setEnabled(filter_count > 0);
-	ui->actionPasteFilters->setEnabled(
-		!obs_weak_source_expired(copyFiltersSource) && totalCount > 0);
+	ui->actionPasteFilters->setEnabled(!filtersClipboard.empty() &&
+					   totalCount > 0);
 	ui->actionPasteRef->setEnabled(!!clipboard.size());
 	ui->actionPasteDup->setEnabled(allowPastingDuplicate);
 
@@ -10128,21 +10126,61 @@ void OBSBasic::on_actionPasteDup_triggered()
 				  redo_data);
 }
 
-void OBSBasic::SourcePasteFilters(OBSSource source, OBSSource dstSource)
+void OBSBasic::SourceCopyFilters(OBSSource source)
 {
-	if (source == dstSource)
-		return;
+	filtersClipboard.clear();
+	filtersClipboard.reserve(obs_source_filter_count(source));
+	obs_source_enum_filters(
+		source,
+		[](obs_source_t *, obs_source_t *filter, void *param) {
+			auto filters =
+				static_cast<std::vector<OBSWeakSource> *>(
+					param);
+			filters->push_back(OBSGetWeakRef(filter));
+		},
+		&filtersClipboard);
+	ui->actionPasteFilters->setEnabled(true);
+}
 
+void OBSBasic::SourcePasteFilters(OBSSource dstSource)
+{
 	OBSDataArrayAutoRelease undo_array =
 		obs_source_backup_filters(dstSource);
-	obs_source_copy_filters(dstSource, source);
+
+	int copiedFiltersCount = 0;
+	OBSSource copiedFilter = nullptr;
+	for (auto &weakFilter : filtersClipboard) {
+		if (obs_weak_source_expired(weakFilter)) {
+			continue;
+		}
+		OBSSource filter = OBSGetStrongRef(weakFilter);
+		obs_source_copy_single_filter(dstSource, filter);
+
+		if (copiedFiltersCount == 0) {
+			copiedFilter = filter;
+		}
+		copiedFiltersCount++;
+	}
+
+	if (copiedFiltersCount == 0) {
+		return;
+	}
+
 	OBSDataArrayAutoRelease redo_array =
 		obs_source_backup_filters(dstSource);
 
-	const char *srcName = obs_source_get_name(source);
 	const char *dstName = obs_source_get_name(dstSource);
-	QString text =
-		QTStr("Undo.Filters.Paste.Multiple").arg(srcName, dstName);
+
+	QString text;
+	if (copiedFiltersCount == 1) {
+		const char *filterName = obs_source_get_name(copiedFilter);
+		text = QTStr("Undo.Filters.Paste.Single")
+			       .arg(filterName, dstName);
+	} else {
+		text = QTStr("Undo.Filters.Paste.Multiple")
+			       .arg(QString::number(copiedFiltersCount),
+				    dstName);
+	}
 
 	CreateFilterPasteUndoRedoAction(text, dstSource, undo_array,
 					redo_array);
@@ -10154,36 +10192,25 @@ void OBSBasic::AudioMixerCopyFilters()
 	VolControl *vol = action->property("volControl").value<VolControl *>();
 	obs_source_t *source = vol->GetSource();
 
-	copyFiltersSource = obs_source_get_weak_source(source);
-	ui->actionPasteFilters->setEnabled(true);
+	SourceCopyFilters(source);
 }
 
 void OBSBasic::AudioMixerPasteFilters()
 {
 	QAction *action = reinterpret_cast<QAction *>(sender());
 	VolControl *vol = action->property("volControl").value<VolControl *>();
-	obs_source_t *dstSource = vol->GetSource();
-
-	OBSSourceAutoRelease source =
-		obs_weak_source_get_source(copyFiltersSource);
-
-	SourcePasteFilters(source.Get(), dstSource);
+	OBSSource dstSource = vol->GetSource();
+	SourcePasteFilters(dstSource);
 }
 
 void OBSBasic::SceneCopyFilters()
 {
-	copyFiltersSource = obs_source_get_weak_source(GetCurrentSceneSource());
-	ui->actionPasteFilters->setEnabled(true);
+	SourceCopyFilters(GetCurrentSceneSource());
 }
 
 void OBSBasic::ScenePasteFilters()
 {
-	OBSSourceAutoRelease source =
-		obs_weak_source_get_source(copyFiltersSource);
-
-	OBSSource dstSource = GetCurrentSceneSource();
-
-	SourcePasteFilters(source.Get(), dstSource);
+	SourcePasteFilters(GetCurrentSceneSource());
 }
 
 void OBSBasic::on_actionCopyFilters_triggered()
@@ -10195,9 +10222,7 @@ void OBSBasic::on_actionCopyFilters_triggered()
 
 	OBSSource source = obs_sceneitem_get_source(item);
 
-	copyFiltersSource = obs_source_get_weak_source(source);
-
-	ui->actionPasteFilters->setEnabled(true);
+	SourceCopyFilters(source);
 }
 
 void OBSBasic::CreateFilterPasteUndoRedoAction(const QString &text,
@@ -10235,13 +10260,9 @@ void OBSBasic::CreateFilterPasteUndoRedoAction(const QString &text,
 
 void OBSBasic::on_actionPasteFilters_triggered()
 {
-	OBSSourceAutoRelease source =
-		obs_weak_source_get_source(copyFiltersSource);
-
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 	OBSSource dstSource = obs_sceneitem_get_source(sceneItem);
-
-	SourcePasteFilters(source.Get(), dstSource);
+	SourcePasteFilters(dstSource);
 }
 
 static void ConfirmColor(SourceTree *sources, const QColor &color,
