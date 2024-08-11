@@ -194,6 +194,7 @@ static int build_addr_list(const char *hostname, int port,
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
+	hints.ai_flags = AI_ADDRCONFIG;
 
 	if (context->bind_addr_len == sizeof(struct sockaddr_in))
 		hints.ai_family = AF_INET;
