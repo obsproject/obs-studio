@@ -511,25 +511,22 @@ void OBSApp::FindThemes()
 static bool ResolveVariable(const QHash<QString, OBSThemeVariable> &vars,
 			    OBSThemeVariable &var)
 {
-	const OBSThemeVariable *varPtr = &var;
-	const OBSThemeVariable *realVar = varPtr;
+	if (var.type != OBSThemeVariable::Alias)
+		return true;
 
-	while (realVar->type == OBSThemeVariable::Alias) {
-		QString newKey = realVar->value.toString();
+	QString key = var.value.toString();
+	while (vars[key].type == OBSThemeVariable::Alias) {
+		key = vars[key].value.toString();
 
-		if (!vars.contains(newKey)) {
+		if (!vars.contains(key)) {
 			blog(LOG_ERROR,
 			     R"(Variable "%s" (aliased by "%s") does not exist!)",
-			     QT_TO_UTF8(newKey), QT_TO_UTF8(var.name));
+			     QT_TO_UTF8(key), QT_TO_UTF8(var.name));
 			return false;
 		}
-
-		const OBSThemeVariable &newVar = vars[newKey];
-		realVar = &newVar;
 	}
 
-	if (realVar != varPtr)
-		var = *realVar;
+	var = vars[key];
 
 	return true;
 }
