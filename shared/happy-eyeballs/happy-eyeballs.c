@@ -497,6 +497,7 @@ int happy_eyeballs_create(struct happy_eyeballs_ctx **context)
 
 	ctx->socket_fd = INVALID_SOCKET;
 	da_init(ctx->candidates);
+	da_reserve(ctx->candidates, HAPPY_EYEBALLS_MAX_ATTEMPTS);
 
 	/* race_completed_event will be signalled when there is a winner or all
 	 * attempts have failed */
