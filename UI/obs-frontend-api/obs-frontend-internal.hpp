@@ -53,6 +53,7 @@ struct obs_frontend_callbacks {
 	virtual void obs_frontend_recording_pause(bool pause) = 0;
 	virtual bool obs_frontend_recording_paused(void) = 0;
 	virtual bool obs_frontend_recording_split_file(void) = 0;
+	virtual bool obs_frontend_recording_add_chapter(const char *name) = 0;
 
 	virtual void obs_frontend_replay_buffer_start(void) = 0;
 	virtual void obs_frontend_replay_buffer_save(void) = 0;
@@ -65,6 +66,13 @@ struct obs_frontend_callbacks {
 						      void *private_data) = 0;
 
 	virtual void *obs_frontend_add_dock(void *dock) = 0;
+
+	virtual bool obs_frontend_add_dock_by_id(const char *id,
+						 const char *title,
+						 void *widget) = 0;
+	virtual void obs_frontend_remove_dock(const char *id) = 0;
+	virtual bool obs_frontend_add_custom_qdock(const char *id,
+						   void *dock) = 0;
 
 	virtual void
 	obs_frontend_add_event_callback(obs_frontend_event_cb callback,

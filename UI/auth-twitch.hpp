@@ -13,8 +13,6 @@ class BrowserDock;
 class TwitchAuth : public OAuthStreamKey {
 	Q_OBJECT
 
-	friend class TwitchLogin;
-
 	bool uiLoaded = false;
 
 	std::string name;

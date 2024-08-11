@@ -23,40 +23,35 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 void EditorWidget::buildEffectContainer(AEffect *effect)
 {
-	NSView *view =
-		[[NSView alloc] initWithFrame:NSMakeRect(0, 0, 300, 300)];
-	cocoaViewContainer =
-		QWidget::createWindowContainer(QWindow::fromWinId(WId(view)));
-	cocoaViewContainer->move(0, 0);
-	cocoaViewContainer->resize(300, 300);
-	cocoaViewContainer->show();
+    NSView *view = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 300, 300)];
+    cocoaViewContainer = QWidget::createWindowContainer(QWindow::fromWinId(WId(view)));
+    cocoaViewContainer->move(0, 0);
+    cocoaViewContainer->resize(300, 300);
+    cocoaViewContainer->show();
 
-	QGridLayout *hblParams = new QGridLayout();
-	hblParams->setContentsMargins(0, 0, 0, 0);
-	hblParams->setSpacing(0);
-	hblParams->addWidget(cocoaViewContainer);
+    QGridLayout *hblParams = new QGridLayout();
+    hblParams->setContentsMargins(0, 0, 0, 0);
+    hblParams->setSpacing(0);
+    hblParams->addWidget(cocoaViewContainer);
 
-	VstRect *vstRect = nullptr;
-	effect->dispatcher(effect, effEditGetRect, 0, 0, &vstRect, 0);
-	if (vstRect) {
-		NSRect frame = NSMakeRect(vstRect->left, vstRect->top,
-					  vstRect->right, vstRect->bottom);
+    VstRect *vstRect = nullptr;
+    effect->dispatcher(effect, effEditGetRect, 0, 0, &vstRect, 0);
+    if (vstRect) {
+        NSRect frame = NSMakeRect(vstRect->left, vstRect->top, vstRect->right, vstRect->bottom);
 
-		[view setFrame:frame];
+        [view setFrame:frame];
 
-		cocoaViewContainer->resize(vstRect->right - vstRect->left,
-					   vstRect->bottom - vstRect->top);
+        cocoaViewContainer->resize(vstRect->right - vstRect->left, vstRect->bottom - vstRect->top);
 
-		setFixedSize(vstRect->right - vstRect->left,
-			     vstRect->bottom - vstRect->top);
-	}
+        setFixedSize(vstRect->right - vstRect->left, vstRect->bottom - vstRect->top);
+    }
 
-	effect->dispatcher(effect, effEditOpen, 0, 0, view, 0);
+    effect->dispatcher(effect, effEditOpen, 0, 0, view, 0);
 
-	setLayout(hblParams);
+    setLayout(hblParams);
 }
 
 void EditorWidget::handleResizeRequest(int width, int height)
 {
-	setFixedSize(width, height);
+    setFixedSize(width, height);
 }

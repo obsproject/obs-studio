@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -27,7 +27,7 @@ static void *crash_param = NULL;
 static void def_log_handler(int log_level, const char *format, va_list args,
 			    void *param)
 {
-	char out[4096];
+	char out[8192];
 	vsnprintf(out, sizeof(out), format, args);
 
 	switch (log_level) {

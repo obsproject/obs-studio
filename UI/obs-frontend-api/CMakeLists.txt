@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16...3.25)
+cmake_minimum_required(VERSION 3.22...3.25)
 
 legacy_check()
 
@@ -18,6 +18,12 @@ elseif(OS_MACOS)
   set_target_properties(obs-frontend-api PROPERTIES SOVERSION 1)
 endif()
 
-set_target_properties_obs(obs-frontend-api PROPERTIES FOLDER frontend PREFIX "" PUBLIC_HEADER obs-frontend-api.h)
+# cmake-format: off
+set_target_properties_obs(obs-frontend-api PROPERTIES FOLDER frontend PUBLIC_HEADER obs-frontend-api.h)
+
+if (OS_WINDOWS OR OS_MACOS)
+  set_property(TARGET obs-frontend-api PROPERTY PREFIX "")
+endif()
+# cmake-format: on
 
 target_export(obs-frontend-api)

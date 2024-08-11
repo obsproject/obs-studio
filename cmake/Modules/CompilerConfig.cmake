@@ -5,6 +5,20 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# CMake < 3.21 only goes up to 11, but it's mostly identical to 17 anyway.
+if(${CMAKE_VERSION} VERSION_LESS "3.21.0")
+  set(CMAKE_C_STANDARD 11)
+  set(CMAKE_C_STANDARD_REQUIRED ON)
+else()
+  set(CMAKE_C_STANDARD 17)
+  set(CMAKE_C_STANDARD_REQUIRED ON)
+endif()
+
+# TODO/FIXME: Investigate disabling C extensions on Linux/POSIX
+if(OS_MACOS OR NOT OS_POSIX)
+  set(CMAKE_C_EXTENSIONS OFF)
+endif()
+
 # Set compile options for MSVC
 if(OS_WINDOWS AND MSVC)
   if(NOT EXISTS "${CMAKE_BINARY_DIR}/ALL_BUILD.vcxproj.user")
@@ -66,8 +80,7 @@ if(OS_WINDOWS AND MSVC)
     /utf-8
     /permissive-
     /Zc:__cplusplus
-    /Zc:preprocessor
-    /std:c17)
+    /Zc:preprocessor)
 
   add_link_options(
     "LINKER:/Brepro" "LINKER:/OPT:REF" "LINKER:/WX" "$<$<NOT:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>>:LINKER\:/SAFESEH\:NO>"
@@ -87,6 +100,13 @@ else()
   endif()
 
   option(CALM_DEPRECATION "Keep deprecated-declarations as warnings" OFF)
+  #[[
+    Note about -Wmaybe-uninitialized on GCC, this warning seems to be subject of various regressions and false positives. This
+    warning is set to not turn into an error.
+
+    - https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105562 for 12.1.0
+    - https://github.com/obsproject/obs-studio/issues/8850 for 13.1.1
+  ]]
   add_compile_options(
     -Werror
     -Wextra
@@ -104,19 +124,13 @@ else()
     "$<$<CONFIG:DEBUG>:-DDEBUG=1;-D_DEBUG=1>"
     "$<$<COMPILE_LANG_AND_ID:CXX,AppleClang,Clang>:-Wnull-conversion;-fcolor-diagnostics;-Wno-error=shorten-64-to-32>"
     "$<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wnull-conversion;-fcolor-diagnostics;-Wno-error=shorten-64-to-32>"
-    "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:-Wconversion-null>"
+    "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:-Wconversion-null;-Wno-error=maybe-uninitialized>"
+    "$<$<COMPILE_LANG_AND_ID:C,GNU>:-Wno-error=maybe-uninitialized>"
     "$<$<BOOL:${CALM_DEPRECATION}>:-Wno-error=deprecated-declarations>")
 
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    # GCC on aarch64 emits type-limits warnings that do not appear on x86_64
-    if(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
-      add_compile_options(-Wno-error=type-limits)
-    endif()
-
-    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105562
-    if(CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL "12.1.0")
-      add_compile_options(-Wno-error=maybe-uninitialized)
-    endif()
+  # GCC on aarch64 emits type-limits warnings that do not appear on x86_64
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+    add_compile_options(-Wno-error=type-limits)
   endif()
 
   if(OBS_CODESIGN_LINKER)

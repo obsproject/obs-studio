@@ -2,6 +2,7 @@
 
 #include <obs-properties.h>
 #include <util/c99defs.h>
+#include <util/dstr.h>
 #include <Windows.h>
 
 #ifdef __cplusplus

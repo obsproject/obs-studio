@@ -1,5 +1,0 @@
-brew "cmake"
-brew "ccache"
-brew "ninja"
-brew "coreutils"
-brew "xcbeautify"

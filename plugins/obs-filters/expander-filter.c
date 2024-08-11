@@ -5,7 +5,7 @@
 #include <obs-module.h>
 #include <media-io/audio-math.h>
 #include <util/platform.h>
-#include <util/circlebuf.h>
+#include <util/deque.h>
 #include <util/threading.h>
 
 /* -------------------------------------------------------- */
@@ -45,7 +45,6 @@
 #define TEXT_DETECTOR                   MT_("Expander.Detector")
 #define TEXT_PEAK                       MT_("Expander.Peak")
 #define TEXT_RMS                        MT_("Expander.RMS")
-#define TEXT_NONE                       MT_("Expander.None")
 #define TEXT_PRESETS                    MT_("Expander.Presets")
 #define TEXT_PRESETS_EXP                MT_("Expander.Presets.Expander")
 #define TEXT_PRESETS_GATE               MT_("Expander.Presets.Gate")

@@ -124,8 +124,9 @@ static blocked_module_t blocked_modules[] = {
 	// Wacom / Other tablet driver, locks up UI
 	{L"\\wintab32.dll", 0, 0, TS_IGNORE},
 
-	// Adobe Dynamic Link (Adobe CC), crashes in its own thread
-	{L"\\mc_trans_video_imagescaler.dll", 0, 0, TS_IGNORE},
+	// MainConcept Image Scaler, crashes in its own thread. Block versions
+	// older than the one Elgato uses (2016-02-15).
+	{L"\\mc_trans_video_imagescaler.dll", 0, 1455495131, TS_LESS_THAN},
 
 	// Weird Polish banking "security" software, breaks UI
 	{L"\\wslbscr64.dll", 0, 0, TS_IGNORE},
@@ -151,6 +152,10 @@ static blocked_module_t blocked_modules[] = {
 	// Bandicam, doesn't unhook cleanly and freezes preview
 	// Reference: https://github.com/obsproject/obs-studio/issues/8552
 	{L"\\bdcam64.dll", 0, 0, TS_IGNORE},
+
+	// "Citrix ICAService" that crashes during DShow enumeration
+	// Reference: https://obsproject.com/forum/threads/165863/
+	{L"\\ctxdsendpoints64.dll", 0, 0, TS_IGNORE},
 
 	// Generic named unity capture filter. Unfortunately only a forked version
 	// has a critical fix to prevent deadlocks during enumeration. We block
@@ -178,6 +183,12 @@ static blocked_module_t blocked_modules[] = {
 	// Reference: https://github.com/obsproject/obs-studio/issues/8552
 	{L"\\holisticmotioncapturefilter64bit.dll", 0, 1680044549,
 	 TS_LESS_THAN},
+
+	// Elgato Stream Deck plugin < 2024-02-01
+	// Blocking all previous versions because they have undefined behavior
+	// that results in crashes.
+	// Reference: https://github.com/obsproject/obs-studio/issues/10245
+	{L"\\streamdeckplugin.dll", 0, 1706745600, TS_LESS_THAN},
 };
 
 static bool is_module_blocked(wchar_t *dll, uint32_t timestamp)

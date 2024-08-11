@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,9 +16,9 @@
 ******************************************************************************/
 
 #include <QMessageBox>
+#include <qt-wrappers.hpp>
 #include "window-basic-main.hpp"
 #include "window-basic-source-select.hpp"
-#include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 
 struct AddSourceData {
@@ -33,7 +33,7 @@ struct AddSourceData {
 bool OBSBasicSourceSelect::EnumSources(void *data, obs_source_t *source)
 {
 	if (obs_source_is_hidden(source))
-		return false;
+		return true;
 
 	OBSBasicSourceSelect *window =
 		static_cast<OBSBasicSourceSelect *>(data);
@@ -122,7 +122,7 @@ static void AddSource(void *_data, obs_scene_t *scene)
 	sceneitem = obs_scene_add(scene, data->source);
 
 	if (data->transform != nullptr)
-		obs_sceneitem_set_info(sceneitem, data->transform);
+		obs_sceneitem_set_info2(sceneitem, data->transform);
 	if (data->crop != nullptr)
 		obs_sceneitem_set_crop(sceneitem, data->crop);
 	if (data->blend_method != nullptr)
@@ -367,6 +367,8 @@ static inline const char *GetSourceDisplayName(const char *id)
 {
 	if (strcmp(id, "scene") == 0)
 		return Str("Basic.Scene");
+	else if (strcmp(id, "group") == 0)
+		return Str("Group");
 	const char *v_id = obs_get_latest_input_type_id(id);
 	return obs_source_get_display_name(v_id);
 }
@@ -406,6 +408,26 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_,
 
 	installEventFilter(CreateShortcutFilter());
 
+	connect(ui->createNew, &QRadioButton::pressed, [&]() {
+		QPushButton *button =
+			ui->buttonBox->button(QDialogButtonBox::Ok);
+		if (!button->isEnabled())
+			button->setEnabled(true);
+	});
+	connect(ui->selectExisting, &QRadioButton::pressed, [&]() {
+		QPushButton *button =
+			ui->buttonBox->button(QDialogButtonBox::Ok);
+		bool enabled = ui->sourceList->selectedItems().size() != 0;
+		if (button->isEnabled() != enabled)
+			button->setEnabled(enabled);
+	});
+	connect(ui->sourceList, &QListWidget::itemSelectionChanged, [&]() {
+		QPushButton *button =
+			ui->buttonBox->button(QDialogButtonBox::Ok);
+		if (!button->isEnabled())
+			button->setEnabled(true);
+	});
+
 	if (strcmp(id_, "scene") == 0) {
 		OBSBasic *main =
 			reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
@@ -415,6 +437,7 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_,
 		ui->createNew->setChecked(false);
 		ui->createNew->setEnabled(false);
 		ui->sourceName->setEnabled(false);
+		ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
 
 		int count = main->ui->scenes->count();
 		for (int i = 0; i < count; i++) {

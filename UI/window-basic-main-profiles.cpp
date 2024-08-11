@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2015 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -21,10 +21,10 @@
 #include <QMessageBox>
 #include <QVariant>
 #include <QFileDialog>
+#include <qt-wrappers.hpp>
 #include "window-basic-main.hpp"
 #include "window-basic-auto-config.hpp"
 #include "window-namedialog.hpp"
-#include "qt-wrappers.hpp"
 
 extern void DestroyPanelCookieManager();
 extern void DuplicateCurrentCookieProfile(ConfigFile &config);
@@ -305,8 +305,8 @@ bool OBSBasic::CreateProfile(const std::string &newName, bool create_new,
 		return false;
 	}
 
-	if (api && !rename)
-		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGING);
+	if (!rename)
+		OnEvent(OBS_FRONTEND_EVENT_PROFILE_CHANGING);
 
 	config_set_string(App()->GlobalConfig(), "Basic", "Profile",
 			  newName.c_str());
@@ -317,6 +317,10 @@ bool OBSBasic::CreateProfile(const std::string &newName, bool create_new,
 	if (create_new) {
 		auth.reset();
 		DestroyPanelCookieManager();
+#ifdef YOUTUBE_ENABLED
+		if (youtubeAppDock)
+			DeleteYouTubeAppDock();
+#endif
 	} else if (!rename) {
 		DuplicateCurrentCookieProfile(config);
 	}
@@ -351,9 +355,9 @@ bool OBSBasic::CreateProfile(const std::string &newName, bool create_new,
 		wizard.exec();
 	}
 
-	if (api && !rename) {
-		api->on_event(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
-		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
+	if (!rename) {
+		OnEvent(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
+		OnEvent(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
 	}
 	return true;
 }
@@ -447,8 +451,7 @@ void OBSBasic::DeleteProfile(const QString &profileName)
 	DeleteProfile(name.c_str(), profileDir);
 	RefreshProfiles();
 	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
-	if (api)
-		api->on_event(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
+	OnEvent(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
 }
 
 void OBSBasic::RefreshProfiles()
@@ -535,8 +538,7 @@ void OBSBasic::on_actionRenameProfile_triggered()
 		RefreshProfiles();
 	}
 
-	if (api)
-		api->on_event(OBS_FRONTEND_EVENT_PROFILE_RENAMED);
+	OnEvent(OBS_FRONTEND_EVENT_PROFILE_RENAMED);
 }
 
 void OBSBasic::on_actionRemoveProfile_triggered(bool skipConfirmation)
@@ -585,8 +587,7 @@ void OBSBasic::on_actionRemoveProfile_triggered(bool skipConfirmation)
 		return;
 	}
 
-	if (api)
-		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGING);
+	OnEvent(OBS_FRONTEND_EVENT_PROFILE_CHANGING);
 
 	newPath.resize(newPath_len);
 
@@ -622,10 +623,8 @@ void OBSBasic::on_actionRemoveProfile_triggered(bool skipConfirmation)
 
 	Auth::Load();
 
-	if (api) {
-		api->on_event(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
-		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
-	}
+	OnEvent(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
+	OnEvent(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
 
 	if (needsRestart) {
 		QMessageBox::StandardButton button = OBSMessageBox::question(
@@ -764,8 +763,7 @@ void OBSBasic::ChangeProfile()
 		return;
 	}
 
-	if (api)
-		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGING);
+	OnEvent(OBS_FRONTEND_EVENT_PROFILE_CHANGING);
 
 	path.resize(path_len);
 
@@ -782,6 +780,10 @@ void OBSBasic::ChangeProfile()
 	Auth::Save();
 	auth.reset();
 	DestroyPanelCookieManager();
+#ifdef YOUTUBE_ENABLED
+	if (youtubeAppDock)
+		DeleteYouTubeAppDock();
+#endif
 
 	config.Swap(basicConfig);
 	InitBasicConfigDefaults();
@@ -793,14 +795,17 @@ void OBSBasic::ChangeProfile()
 	UpdateVolumeControlsDecayRate();
 
 	Auth::Load();
+#ifdef YOUTUBE_ENABLED
+	if (YouTubeAppDock::IsYTServiceSelected() && !youtubeAppDock)
+		NewYouTubeAppDock();
+#endif
 
 	CheckForSimpleModeX264Fallback();
 
 	blog(LOG_INFO, "Switched to profile '%s' (%s)", newName, newDir);
 	blog(LOG_INFO, "------------------------------------------------");
 
-	if (api)
-		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
+	OnEvent(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
 
 	if (needsRestart) {
 		QMessageBox::StandardButton button = OBSMessageBox::question(
@@ -837,7 +842,7 @@ void OBSBasic::CheckForSimpleModeX264Fallback()
 	const char *id;
 
 	while (obs_enum_encoder_types(idx++, &id)) {
-		if (strcmp(id, "amd_amf_h264") == 0)
+		if (strcmp(id, "h264_texture_amf") == 0)
 			amd_supported = true;
 		else if (strcmp(id, "obs_qsv11") == 0)
 			qsv_supported = true;

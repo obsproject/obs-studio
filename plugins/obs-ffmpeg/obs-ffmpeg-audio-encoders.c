@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 ******************************************************************************/
 
 #include <util/base.h>
-#include <util/circlebuf.h>
+#include <util/deque.h>
 #include <util/darray.h>
 #include <util/dstr.h>
 #include <obs-module.h>
@@ -210,15 +210,12 @@ static void init_sizes(struct enc_encoder *enc, audio_t *audio)
 #endif
 
 static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
-			const char *type, const char *alt)
+			const char *type, const char *alt,
+			enum AVSampleFormat sample_format)
 {
 	struct enc_encoder *enc;
 	int bitrate = (int)obs_data_get_int(settings, "bitrate");
 	audio_t *audio = obs_encoder_audio(encoder);
-
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
-	avcodec_register_all();
-#endif
 
 	enc = bzalloc(sizeof(struct enc_encoder));
 	enc->encoder = encoder;
@@ -274,18 +271,45 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 #else
 	av_channel_layout_default(&enc->context->ch_layout,
 				  (int)audio_output_get_channels(audio));
+	/* The avutil default channel layout for 5 channels is 5.0, which OBS
+	 * does not support. Manually set 5 channels to 4.1. */
 	if (aoi->speakers == SPEAKERS_4POINT1)
 		enc->context->ch_layout =
 			(AVChannelLayout)AV_CHANNEL_LAYOUT_4POINT1;
+	/* AAC, ALAC, & FLAC default to 3.0 for 3 channels instead of 2.1.
+	 * Tell the encoder to deal with 2.1 as if it were 3.0. */
 	if (aoi->speakers == SPEAKERS_2POINT1)
 		enc->context->ch_layout =
 			(AVChannelLayout)AV_CHANNEL_LAYOUT_SURROUND;
+	// ALAC supports 7.1 wide instead of regular 7.1.
+	if (aoi->speakers == SPEAKERS_7POINT1 &&
+	    astrcmpi(enc->type, "alac") == 0)
+		enc->context->ch_layout =
+			(AVChannelLayout)AV_CHANNEL_LAYOUT_7POINT1_WIDE_BACK;
 #endif
 
 	enc->context->sample_rate = audio_output_get_sample_rate(audio);
-	enc->context->sample_fmt = enc->codec->sample_fmts
-					   ? enc->codec->sample_fmts[0]
-					   : AV_SAMPLE_FMT_FLTP;
+
+	if (enc->codec->sample_fmts) {
+		/* Check if the requested format is actually available for the specified
+		 * encoder. This may not always be the case due to FFmpeg changes or a
+		 * fallback being used (for example, when libopus is unavailable). */
+		const enum AVSampleFormat *fmt = enc->codec->sample_fmts;
+		while (*fmt != AV_SAMPLE_FMT_NONE) {
+			if (*fmt == sample_format) {
+				enc->context->sample_fmt = *fmt;
+				break;
+			}
+			fmt++;
+		}
+
+		/* Fall back to default if requested format was not found. */
+		if (enc->context->sample_fmt == AV_SAMPLE_FMT_NONE)
+			enc->context->sample_fmt = enc->codec->sample_fmts[0];
+	} else {
+		/* Fall back to planar float if codec does not specify formats. */
+		enc->context->sample_fmt = AV_SAMPLE_FMT_FLTP;
+	}
 
 	/* check to make sure sample rate is supported */
 	if (enc->codec->supported_samplerates) {
@@ -323,7 +347,7 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 	/* enable experimental FFmpeg encoder if the only one available */
 	enc->context->strict_std_compliance = -2;
 
-	enc->context->flags = CODEC_FLAG_GLOBAL_H;
+	enc->context->flags = AV_CODEC_FLAG_GLOBAL_HEADER;
 
 	if (initialize_codec(enc))
 		return enc;
@@ -335,37 +359,41 @@ fail:
 
 static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return enc_create(settings, encoder, "aac", NULL);
+	return enc_create(settings, encoder, "aac", NULL, AV_SAMPLE_FMT_NONE);
 }
 
 static void *opus_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return enc_create(settings, encoder, "libopus", "opus");
+	return enc_create(settings, encoder, "libopus", "opus",
+			  AV_SAMPLE_FMT_FLT);
 }
 
 static void *pcm_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return enc_create(settings, encoder, "pcm_s16le", NULL);
+	return enc_create(settings, encoder, "pcm_s16le", NULL,
+			  AV_SAMPLE_FMT_NONE);
 }
 
 static void *pcm24_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return enc_create(settings, encoder, "pcm_s24le", NULL);
+	return enc_create(settings, encoder, "pcm_s24le", NULL,
+			  AV_SAMPLE_FMT_NONE);
 }
 
 static void *pcm32_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return enc_create(settings, encoder, "pcm_f32le", NULL);
+	return enc_create(settings, encoder, "pcm_f32le", NULL,
+			  AV_SAMPLE_FMT_NONE);
 }
 
 static void *alac_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return enc_create(settings, encoder, "alac", NULL);
+	return enc_create(settings, encoder, "alac", NULL, AV_SAMPLE_FMT_S32P);
 }
 
 static void *flac_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return enc_create(settings, encoder, "flac", NULL);
+	return enc_create(settings, encoder, "flac", NULL, AV_SAMPLE_FMT_S16);
 }
 
 static bool do_encode(struct enc_encoder *enc, struct encoder_packet *packet,
@@ -398,7 +426,6 @@ static bool do_encode(struct enc_encoder *enc, struct encoder_packet *packet,
 
 	enc->total_samples += enc->frame_size;
 
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 40, 101)
 	ret = avcodec_send_frame(enc->context, enc->aframe);
 	if (ret == 0)
 		ret = avcodec_receive_packet(enc->context, &avpacket);
@@ -407,10 +434,6 @@ static bool do_encode(struct enc_encoder *enc, struct encoder_packet *packet,
 
 	if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN))
 		ret = 0;
-#else
-	ret = avcodec_encode_audio2(enc->context, &avpacket, enc->aframe,
-				    &got_packet);
-#endif
 	if (ret < 0) {
 		warn("avcodec_encode_audio2 failed: %s", av_err2str(ret));
 		return false;
@@ -428,9 +451,10 @@ static bool do_encode(struct enc_encoder *enc, struct encoder_packet *packet,
 	packet->data = enc->packet_buffer.array;
 	packet->size = avpacket.size;
 	packet->type = OBS_ENCODER_AUDIO;
+	packet->keyframe = true;
 	packet->timebase_num = 1;
 	packet->timebase_den = (int32_t)enc->context->sample_rate;
-	av_free_packet(&avpacket);
+	av_packet_unref(&avpacket);
 	return true;
 }
 

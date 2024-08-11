@@ -1,125 +1,60 @@
-option(ENABLE_QSV11 "Build Intel QSV11 Hardware Encoder." TRUE)
+cmake_minimum_required(VERSION 3.22...3.25)
 
+legacy_check()
+
+option(ENABLE_QSV11 "Build Intel QSV11 Hardware Encoder." TRUE)
 if(NOT ENABLE_QSV11)
-  obs_status(DISABLED "obs-qsv11")
+  target_disable_feature(obs-qsv11 "Intel QSV11 Hardware Encoder")
+  target_disable(obs-qsv11)
   return()
 endif()
-
-project(obs-qsv11)
 
 add_library(obs-qsv11 MODULE)
 add_library(OBS::qsv11 ALIAS obs-qsv11)
 
-add_library(libmfx INTERFACE)
-add_library(OBS::libmfx ALIAS libmfx)
+find_package(VPL 2.6 REQUIRED)
 
-target_sources(
-  libmfx
-  INTERFACE libmfx/src/main.cpp
-            libmfx/src/mfx_critical_section.cpp
-            libmfx/src/mfx_dispatcher.cpp
-            libmfx/src/mfx_dispatcher_log.cpp
-            libmfx/src/mfx_driver_store_loader.cpp
-            libmfx/src/mfx_dxva2_device.cpp
-            libmfx/src/mfx_function_table.cpp
-            libmfx/src/mfx_library_iterator.cpp
-            libmfx/src/mfx_load_dll.cpp
-            libmfx/src/mfx_load_plugin.cpp
-            libmfx/src/mfx_plugin_hive.cpp
-            libmfx/src/mfx_win_reg_key.cpp
-            libmfx/include/msdk/include/mfxadapter.h
-            libmfx/include/msdk/include/mfxastructures.h
-            libmfx/include/msdk/include/mfxaudio.h
-            libmfx/include/msdk/include/mfxaudio++.h
-            libmfx/include/msdk/include/mfxcommon.h
-            libmfx/include/msdk/include/mfxdefs.h
-            libmfx/include/msdk/include/mfxjpeg.h
-            libmfx/include/msdk/include/mfxmvc.h
-            libmfx/include/msdk/include/mfxplugin.h
-            libmfx/include/msdk/include/mfxplugin++.h
-            libmfx/include/msdk/include/mfxsession.h
-            libmfx/include/msdk/include/mfxstructures.h
-            libmfx/include/msdk/include/mfxvideo.h
-            libmfx/include/msdk/include/mfxvideo++.h
-            libmfx/include/msdk/include/mfxvstructures.h
-            libmfx/include/mfx_critical_section.h
-            libmfx/include/mfx_dispatcher.h
-            libmfx/include/mfx_dispatcher_defs.h
-            libmfx/include/mfx_dispatcher_log.h
-            libmfx/include/mfx_driver_store_loader.h
-            libmfx/include/mfx_dxva2_device.h
-            libmfx/include/mfx_exposed_functions_list.h
-            libmfx/include/mfx_library_iterator.h
-            libmfx/include/mfx_load_dll.h
-            libmfx/include/mfx_load_plugin.h
-            libmfx/include/mfx_plugin_hive.h
-            libmfx/include/mfx_vector.h
-            libmfx/include/mfx_win_reg_key.h
-            libmfx/include/mfxaudio_exposed_functions_list.h)
-
-target_include_directories(libmfx INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/libmfx/include/msdk/include
-                                            ${CMAKE_CURRENT_SOURCE_DIR}/libmfx/include)
+if(OS_LINUX)
+  find_package(Libva REQUIRED)
+endif()
 
 target_sources(
   obs-qsv11
-  PRIVATE obs-qsv11.c
-          obs-qsv11-plugin-main.c
-          common_directx9.cpp
-          common_directx9.h
-          common_directx11.cpp
-          common_directx11.h
+  PRIVATE # cmake-format: sortable
+          $<$<PLATFORM_ID:Linux>:common_utils_linux.cpp>
+          $<$<PLATFORM_ID:Windows>:common_directx11.cpp>
+          $<$<PLATFORM_ID:Windows>:common_directx11.h>
+          $<$<PLATFORM_ID:Windows>:common_utils_windows.cpp>
           common_utils.cpp
           common_utils.h
-          common_utils_windows.cpp
-          device_directx9.cpp
-          device_directx9.h
+          obs-qsv11-plugin-main.c
+          obs-qsv11.c
           QSV_Encoder.cpp
           QSV_Encoder.h
           QSV_Encoder_Internal.cpp
-          QSV_Encoder_Internal.h
-          bits/linux_defs.h
-          bits/windows_defs.h)
+          QSV_Encoder_Internal.h)
+
+target_compile_definitions(obs-qsv11 PRIVATE $<$<PLATFORM_ID:Windows>:DX11_D3D>)
 
 target_link_libraries(
   obs-qsv11
   PRIVATE OBS::libobs
-          OBS::libmfx
-          d3d9
-          d3d11
-          dxva2
-          dxgi
-          dxguid)
+          VPL::VPL
+          $<$<PLATFORM_ID:Linux>:Libva::va>
+          $<$<PLATFORM_ID:Linux>:Libva::drm>
+          $<$<PLATFORM_ID:Windows>:d3d11>
+          $<$<PLATFORM_ID:Windows>:dxgi>
+          $<$<PLATFORM_ID:Windows>:dxguid>)
 
-target_compile_definitions(obs-qsv11 PRIVATE DX11_D3D)
+target_link_options(obs-qsv11 PRIVATE $<$<PLATFORM_ID:Windows>:/IGNORE:4099>)
 
 if(OS_WINDOWS)
   add_subdirectory(obs-qsv-test)
 
-  set(MODULE_DESCRIPTION "OBS QSV encoder")
-  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in obs-qsv11.rc)
-
+  configure_file(cmake/windows/obs-module.rc.in obs-qsv11.rc)
   target_sources(obs-qsv11 PRIVATE obs-qsv11.rc)
-
-  target_compile_definitions(obs-qsv11 PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_WARNINGS)
 endif()
 
-set_target_properties(obs-qsv11 PROPERTIES FOLDER "plugins/obs-qsv11")
-
-file(GLOB _OBS_QSV11_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.c ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
-file(GLOB _OBS_QSV11_HEADER_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.h ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
-
-source_group("obs-qsv11\\Source Files" FILES ${_OBS_QSV11_SOURCE_FILES})
-source_group("obs-qsv11\\Header Files" FILES ${_OBS_QSV11_HEADER_FILES})
-
-get_target_property(_LIBMFX_SOURCES OBS::libmfx INTERFACE_SOURCES)
-
-foreach(_LIBMFX_SOURCE ${_LIBMFX_SOURCES})
-  get_filename_component(_EXT ${_LIBMFX_SOURCE} EXT)
-  if(${_EXT} STREQUAL "hpp" OR ${_EXT} STREQUAL "h")
-    source_group("libmfx\\Header Files" FILES ${_LIBMFX_SOURCE})
-  elseif(${_EXT} STREQUAL "cpp" OR ${_EXT} STREQUAL "c")
-    source_group("libmfx\\Source Files" FILES ${_LIBMFX_SOURCE})
-  endif()
-endforeach()
-
-setup_plugin_target(obs-qsv11)
+# cmake-format: off
+set_target_properties_obs(obs-qsv11 PROPERTIES FOLDER plugins/obs-qsv11 PREFIX "")
+# cmake-format: on

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -40,12 +40,6 @@
  *   Strings and string sizes always include the null terminator to allow for
  * direct referencing.
  */
-
-static inline void cd_serialize(uint8_t **pos, void *ptr, size_t size)
-{
-	memcpy(ptr, *pos, size);
-	*pos += size;
-}
 
 static inline size_t cd_serialize_size(uint8_t **pos)
 {

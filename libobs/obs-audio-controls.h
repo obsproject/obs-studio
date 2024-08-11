@@ -282,6 +282,10 @@ EXPORT void obs_volmeter_remove_callback(obs_volmeter_t *volmeter,
 EXPORT float obs_mul_to_db(float mul);
 EXPORT float obs_db_to_mul(float db);
 
+typedef float (*obs_fader_conversion_t)(const float val);
+
+EXPORT obs_fader_conversion_t obs_fader_db_to_def(obs_fader_t *fader);
+
 #ifdef __cplusplus
 }
 #endif

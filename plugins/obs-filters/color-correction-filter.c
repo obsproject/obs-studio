@@ -416,7 +416,7 @@ static void color_correction_filter_update_v2(void *data, obs_data_t *settings)
 
 /*
  * Since this is C we have to be careful when destroying/removing items from
- * OBS. Jim has added several useful functions to help keep memory leaks to
+ * OBS. Lain has added several useful functions to help keep memory leaks to
  * a minimum, and handle the destruction and construction of these filters.
  */
 static void color_correction_filter_destroy_v1(void *data)

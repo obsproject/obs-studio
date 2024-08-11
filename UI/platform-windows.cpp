@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,9 +19,9 @@
 #include <sstream>
 #include "obs-config.h"
 #include "obs-app.hpp"
-#include "qt-wrappers.hpp"
 #include "platform.hpp"
 
+#include <qt-wrappers.hpp>
 #include <util/windows/win-version.h>
 #include <util/platform.h>
 
@@ -493,4 +493,15 @@ void TaskbarOverlaySetStatus(TaskbarOverlayStatus status)
 	taskbarIcon->SetOverlayIcon(hwnd, hicon, nullptr);
 	DestroyIcon(hicon);
 	taskbarIcon->Release();
+}
+
+bool HighContrastEnabled()
+{
+	HIGHCONTRAST hc = {};
+	hc.cbSize = sizeof(HIGHCONTRAST);
+
+	if (SystemParametersInfo(SPI_GETHIGHCONTRAST, hc.cbSize, &hc, 0))
+		return hc.dwFlags & HCF_HIGHCONTRASTON;
+
+	return false;
 }

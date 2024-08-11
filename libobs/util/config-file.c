@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -85,19 +85,6 @@ config_t *config_create(const char *file)
 
 	config->file = bstrdup(file);
 	return config;
-}
-
-static inline void remove_ref_whitespace(struct strref *ref)
-{
-	if (ref->array) {
-		while (ref->len && is_whitespace(*ref->array)) {
-			ref->array++;
-			ref->len--;
-		}
-
-		while (ref->len && is_whitespace(ref->array[ref->len - 1]))
-			ref->len--;
-	}
 }
 
 static bool config_parse_string(struct lexer *lex, struct strref *ref, char end)

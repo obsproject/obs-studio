@@ -54,8 +54,8 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-#include "mfxastructures.h"
-#include "mfxvideo++.h"
+#include <vpl/mfxstructures.h>
+#include <vpl/mfxvideo++.h>
 #include "QSV_Encoder.h"
 #include "common_utils.h"
 
@@ -63,7 +63,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class QSV_Encoder_Internal {
 public:
-	QSV_Encoder_Internal(mfxIMPL &impl, mfxVersion &version, bool isDGPU);
+	QSV_Encoder_Internal(mfxVersion &version, bool useTexAlloc);
 	~QSV_Encoder_Internal();
 
 	mfxStatus Open(qsv_param_t *pParams, enum qsv_codec codec);
@@ -74,15 +74,15 @@ public:
 	mfxStatus Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pDataUV,
 			 uint32_t strideY, uint32_t strideUV,
 			 mfxBitstream **pBS);
-	mfxStatus Encode_tex(uint64_t ts, uint32_t tex_handle,
-			     uint64_t lock_key, uint64_t *next_key,
-			     mfxBitstream **pBS);
+	mfxStatus Encode_tex(uint64_t ts, void *tex, uint64_t lock_key,
+			     uint64_t *next_key, mfxBitstream **pBS);
 	mfxStatus ClearData();
 	mfxStatus Reset(qsv_param_t *pParams, enum qsv_codec codec);
 	mfxStatus ReconfigureEncoder();
 	bool UpdateParams(qsv_param_t *pParams);
-
-	bool IsDGPU() const { return m_isDGPU; }
+	void AddROI(mfxU32 left, mfxU32 top, mfxU32 right, mfxU32 bottom,
+		    mfxI16 delta);
+	void ClearROI();
 
 protected:
 	mfxStatus InitParams(qsv_param_t *pParams, enum qsv_codec codec);
@@ -99,9 +99,9 @@ protected:
 	int GetFreeTaskIndex(Task *pTaskPool, mfxU16 nPoolSize);
 
 private:
-	mfxIMPL m_impl;
 	mfxVersion m_ver;
-	MFXVideoSession m_session;
+	mfxSession m_session;
+	void *m_sessionData;
 	mfxFrameAllocator m_mfxAllocator;
 	mfxVideoParam m_mfxEncParams;
 	mfxFrameAllocResponse m_mfxResponse;
@@ -116,10 +116,10 @@ private:
 	mfxU16 m_nPPSBufferSize;
 	mfxVideoParam m_parameter;
 	std::vector<mfxExtBuffer *> extendedBuffers;
-	mfxExtCodingOption3 m_co3;
 	mfxExtCodingOption2 m_co2;
 	mfxExtCodingOption m_co;
 	mfxExtHEVCParam m_ExtHEVCParam{};
+	mfxExtAV1TileParam m_ExtAv1TileParam{};
 	mfxExtVideoSignalInfo m_ExtVideoSignalInfo{};
 	mfxExtChromaLocInfo m_ExtChromaLocInfo{};
 	mfxExtMasteringDisplayColourVolume m_ExtMasteringDisplayColourVolume{};
@@ -129,11 +129,13 @@ private:
 	int m_nTaskIdx;
 	int m_nFirstSyncTask;
 	mfxBitstream m_outBitstream;
-	bool m_bIsWindows8OrGreater;
 	bool m_bUseD3D11;
-	bool m_bD3D9HACK;
-	bool m_isDGPU;
+	bool m_bUseTexAlloc;
 	static mfxU16 g_numEncodersOpen;
 	static mfxHDL
-		g_DX_Handle; // we only want one handle for all instances to use;
+		g_GFX_Handle; // we only want one handle for all instances to use;
+
+	mfxEncodeCtrl m_ctrl;
+	mfxExtEncoderROI m_roi;
+	std::vector<mfxExtBuffer *> m_extbuf;
 };

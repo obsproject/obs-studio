@@ -1,0 +1,323 @@
+@OBSThemeMeta {
+    name: 'Classic';
+    id: 'com.obsproject.Yami.Classic';
+    extends: 'com.obsproject.Yami';
+    author: 'Warchamp7';
+    dark: 'true';
+}
+
+@OBSThemeVars {
+    --grey1: rgb(97,97,97);
+    --grey2: rgb(134,135,134);
+    --grey3: rgb(122,121,122);
+    --grey4: rgb(76,76,76);
+    --grey5: rgb(70,69,70);
+    --grey6: rgb(31,30,31);
+    --grey7: rgb(58,57,58);
+    --grey8: rgb(46,45,46);
+
+    --bg_window: var(--grey7);
+    --bg_base: var(--grey6);
+    --bg_preview: rgb(76,76,76);
+
+    --primary: rgb(25,52,76);
+    --primary_light: rgb(33,71,109);
+
+    /* Layout */
+    --font_base_value: 9;
+    --spacing_base_value: 2;
+    --padding_base_value: 0.25;
+
+    /* OS Fixes */
+    --os_mac_font_base_value: 11;
+
+    --font_small: calc(0.75pt * var(--font_base_value));
+
+    --icon_base: calc(6px + var(--font_base_value));
+
+    --padding_xlarge: calc(2px + calc(0.5px * var(--padding_base_value)));
+
+    --padding_wide: calc(18px + calc(0.25 * var(--padding_base_value)));
+    --padding_menu: calc(8px + calc(1 * var(--padding_base_value)));
+
+    --input_height_base: calc(1px + calc(var(--input_font_scale) + var(--input_font_padding)));
+
+    --border_color: var(--grey6);
+
+    --border_radius: 2px;
+    --border_radius_small: 1px;
+    --border_radius_large: 2px;
+
+    --input_bg: var(--grey4);
+    --input_bg_hover: var(--grey1);
+    --input_bg_focus: var(--grey6);
+
+    --list_item_bg_selected: var(--primary);
+    --list_item_bg_hover: var(--primary_light);
+
+    --input_border: var(--grey4);
+    --input_border_hover: var(--grey1);
+    --input_border_focus: var(--grey6);
+
+    --spacing_input: var(--spacing_base);
+
+    --button_bg: var(--input_bg);
+    --button_bg_hover: var(--grey3);
+    --button_bg_down: var(--grey7);
+    --button_bg_disabled: var(--grey8);
+
+    --button_border: var(--button_bg);
+    --button_border_hover: var(--grey1);
+    --button_border_focus: var(--grey1);
+
+    --tab_bg: var(--input_bg);
+    --tab_bg_hover: var(--grey3);
+    --tab_bg_down: var(--grey7);
+    --tab_bg_disabled: var(--grey8);
+
+    --tab_border: var(--grey1);
+    --tab_border_hover: var(--grey1);
+    --tab_border_focus: var(--grey1);
+    --tab_border_selected: var(--primary);
+
+    --scrollbar: var(--grey4);
+    --scrollbar_hover: var(--grey3);
+    --scrollbar_down: var(--grey8);
+    --scrollbar_border: var(--grey2);
+
+    /* Variant Extras */
+    --dock_title_padding: calc(2px + var(--padding_base));
+    --icon_base_mixer: calc(2px + var(--icon_base));
+    --padding_menu_y: calc(3px + calc(1 * var(--padding_base_value)));
+}
+
+QStatusBar {
+    background-color: var(--bg_window);
+}
+
+OBSDock > QWidget {
+  border-top: 1px solid var(--border_color);
+  padding-top: var(--spacing_large);
+}
+
+QDockWidget {
+    font-weight: normal;
+}
+
+QDockWidget::title {
+    background-color: var(--grey5);
+    padding: var(--dock_title_padding);
+    text-align: center;
+}
+
+QDockWidget > QWidget {
+    background: var(--bg_window);
+}
+
+#transitionsFrame {
+    padding: var(--padding_xlarge);
+}
+
+SceneTree::item,
+SourceTreeItem {
+    border-width: 0px;
+}
+
+QMenu::item {
+    padding: var(--padding_menu_y) var(--padding_menu);
+}
+
+QMenu::item {
+    padding-right: 20px;
+}
+
+QGroupBox {
+    background: var(--bg_window);
+    border: 1px solid var(--border_color);
+}
+
+QTabWidget::pane {
+    border-width: 1px;
+}
+
+QTabBar::tab {
+    border-color: var(--tab_bg);
+    padding: 3px 6px;
+}
+
+QComboBox:hover,
+QComboBox:focus,
+QDateTimeEdit:hover,
+QDateTimeEdit:selected {
+    background-color: var(--input_bg_hover);
+}
+
+QComboBox:on,
+QDateTimeEdit:on,
+QComboBox:editable:focus {
+    background-color: var(--input_bg_focus);
+}
+
+QLineEdit,
+QTextEdit,
+QPlainTextEdit {
+    background-color: var(--input_bg_focus);
+    padding-left: 8px;
+}
+
+QLineEdit:hover,
+QTextEdit:hover,
+QPlainTextEdit:hover {
+    background-color: var(--input_bg_focus);
+}
+
+QTextEdit:!editable,
+QTextEdit:!editable:hover,
+QTextEdit:!editable:focus {
+    background-color: var(--input_bg_focus);
+}
+
+QSpinBox,
+QDoubleSpinBox {
+    background-color: var(--input_bg_focus);
+    border-width: 1px;
+    padding-left: 8px;
+    height: var(--input_height);
+    max-height: var(--input_height);
+}
+
+QSpinBox:hover,
+QDoubleSpinBox:hover {
+    background-color: var(--input_bg_focus);
+}
+
+QSpinBox::up-button:disabled,
+QSpinBox::up-button:off,
+QDoubleSpinBox::up-button:disabled,
+QDoubleSpinBox::up-button:off {
+    margin-top: 0px;
+}
+
+QSpinBox::down-button:disabled,
+QSpinBox::down-button:off,
+QDoubleSpinBox::down-button:disabled,
+QDoubleSpinBox::down-button:off {
+    margin-bottom: 0px;
+}
+
+OBSBasicSettings #PropertiesContainer {
+    background-color: var(--bg_window);
+}
+
+OBSBasicSettings QListWidget::item {
+    padding: 4px;
+}
+
+QPushButton:checked {
+  border-color: var(--primary);
+}
+
+QToolButton,
+QPushButton[toolButton="true"] {
+    background-color: var(--bg_window);
+    border-color: var(--bg_window);
+}
+
+#stackedMixerArea QScrollArea {
+  background: var(--bg_base);
+}
+
+#stackedMixerArea QPushButton {
+    min-width: var(--icon_base);
+    padding: var(--padding_large) var(--padding_large);
+    icon-size: var(--icon_base);
+}
+
+#stackedMixerArea QPushButton:!hover {
+    background-color: var(--bg_base);
+    border: none;
+}
+
+#stackedMixerArea QPushButton:hover {
+    background-color: var(--bg_base);
+    border: none;
+}
+
+#hMixerScrollArea VolControl {
+    padding: 0px 2px;
+    margin-bottom: 1px;
+}
+
+#hMixerScrollArea QLabel {
+  margin: var(--padding_xlarge) 0px;
+}
+
+#hMixerScrollArea #volMeterFrame {
+  margin-top: var(--spacing_large);
+}
+
+#vMixerScrollArea VolControl {
+    padding: 0px var(--padding_xlarge) var(--spacing_large);
+    border-right: 1px solid var(--bg_window);
+}
+
+#vMixerScrollArea QLabel {
+  font-size: var(--font_small);
+  margin: var(--padding_xlarge) 0px;
+}
+
+#vMixerScrollArea #volLabel {
+  font-size: var(--font_base);
+}
+
+MuteCheckBox::indicator,
+MuteCheckBox::indicator:unchecked {
+    background-color: var(--bg_base);
+    border: none;
+    width: var(--icon_base_mixer);
+    height: var(--icon_base_mixer);
+    icon-size: var(--icon_base_mixer);
+}
+
+MuteCheckBox::indicator:checked {
+    background-color: var(--bg_base);
+}
+
+MuteCheckBox::indicator:checked:hover,
+MuteCheckBox::indicator:unchecked:hover {
+    background-color: var(--bg_base);
+}
+
+MuteCheckBox::indicator:hover,
+MuteCheckBox::indicator:unchecked:hover {
+    icon-size: var(--icon_base_mixer);
+    border: none;
+}
+
+#contextContainer {
+  background-color: var(--bg_window);
+}
+
+#stackedMixerArea QPushButton,
+#stackedMixerArea QPushButton:!hover {
+    width: var(--icon_base_mixer);
+    height: var(--icon_base_mixer);
+    padding: var(--spacing_base);
+}
+
+VolumeMeter {
+    qproperty-backgroundNominalColor: rgb(38,127,38);
+    qproperty-backgroundWarningColor: rgb(127,127,38);
+    qproperty-backgroundErrorColor: rgb(127,38,38);
+    qproperty-foregroundNominalColor: rgb(76,255,76);
+    qproperty-foregroundWarningColor: rgb(255,255,76);
+    qproperty-foregroundErrorColor: rgb(255,76,76);
+    qproperty-magnitudeColor: rgb(0,0,0);
+    qproperty-majorTickColor: var(--text);
+    qproperty-minorTickColor: rgb(122,121,122); /* light */
+    qproperty-meterThickness: 3;
+}
+
+OBSBasicStats {
+    background: var(--bg_window);
+}

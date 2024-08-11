@@ -2,12 +2,14 @@
 
 #include <obs-module.h>
 #include <obs-hotkey.h>
-#include <util/circlebuf.h>
+#include <util/deque.h>
 #include <util/darray.h>
 #include <util/dstr.h>
 #include <util/pipe.h>
 #include <util/platform.h>
 #include <util/threading.h>
+
+typedef DARRAY(struct encoder_packet) mux_packets_t;
 
 struct ffmpeg_muxer {
 	obs_output_t *output;
@@ -34,7 +36,7 @@ struct ffmpeg_muxer {
 	int keyframes;
 	obs_hotkey_id hotkey;
 	volatile bool muxing;
-	DARRAY(struct encoder_packet) mux_packets;
+	mux_packets_t mux_packets;
 
 	/* split file */
 	bool found_video;
@@ -47,7 +49,7 @@ struct ffmpeg_muxer {
 	/* these are accessed both by replay buffer and by HLS */
 	pthread_t mux_thread;
 	bool mux_thread_joinable;
-	struct circlebuf packets;
+	struct deque packets;
 
 	/* HLS only */
 	int keyint_sec;

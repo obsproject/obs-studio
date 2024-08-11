@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -161,12 +161,6 @@ static void allocate_audio_mix_buffer(struct obs_source *source)
 	}
 }
 
-static inline bool is_async_video_source(const struct obs_source *source)
-{
-	return (source->info.output_flags & OBS_SOURCE_ASYNC_VIDEO) ==
-	       OBS_SOURCE_ASYNC_VIDEO;
-}
-
 static inline bool is_audio_source(const struct obs_source *source)
 {
 	return source->info.output_flags & OBS_SOURCE_AUDIO;
@@ -193,6 +187,7 @@ static bool obs_source_init(struct obs_source *source)
 	pthread_mutex_init_value(&source->audio_buf_mutex);
 	pthread_mutex_init_value(&source->audio_cb_mutex);
 	pthread_mutex_init_value(&source->caption_cb_mutex);
+	pthread_mutex_init_value(&source->media_actions_mutex);
 
 	if (pthread_mutex_init_recursive(&source->filter_mutex) != 0)
 		return false;
@@ -207,6 +202,8 @@ static bool obs_source_init(struct obs_source *source)
 	if (pthread_mutex_init_recursive(&source->async_mutex) != 0)
 		return false;
 	if (pthread_mutex_init(&source->caption_cb_mutex, NULL) != 0)
+		return false;
+	if (pthread_mutex_init(&source->media_actions_mutex, NULL) != 0)
 		return false;
 
 	if (is_audio_source(source) || is_composite_source(source))
@@ -366,8 +363,7 @@ obs_source_create_internal(const char *id, const char *name, const char *uuid,
 		 *
 		 * XXX: Fix design flaws with filters */
 		if (info->type == OBS_SOURCE_TYPE_FILTER)
-		private
-		= true;
+		private = true;
 	}
 
 	source->mute_unmute_key = OBS_INVALID_HOTKEY_PAIR_ID;
@@ -409,11 +405,11 @@ obs_source_create_internal(const char *id, const char *name, const char *uuid,
 	source->flags = source->default_flags;
 	source->enabled = true;
 
+	obs_source_init_finalize(source);
 	if (!private) {
 		obs_source_dosignal(source, "source_create", NULL);
 	}
 
-	obs_source_init_finalize(source);
 	return source;
 
 fail:
@@ -722,7 +718,7 @@ static void obs_source_destroy_defer(struct obs_source *source)
 	for (i = 0; i < MAX_AV_PLANES; i++)
 		bfree(source->audio_data.data[i]);
 	for (i = 0; i < MAX_AUDIO_CHANNELS; i++)
-		circlebuf_free(&source->audio_input_buf[i]);
+		deque_free(&source->audio_input_buf[i]);
 	audio_resampler_destroy(source->resampler);
 	bfree(source->audio_output_buf[0][0]);
 	bfree(source->audio_mix_buf[0]);
@@ -738,6 +734,7 @@ static void obs_source_destroy_defer(struct obs_source *source)
 	da_free(source->async_cache);
 	da_free(source->async_frames);
 	da_free(source->filters);
+	da_free(source->media_actions);
 	pthread_mutex_destroy(&source->filter_mutex);
 	pthread_mutex_destroy(&source->audio_actions_mutex);
 	pthread_mutex_destroy(&source->audio_buf_mutex);
@@ -745,6 +742,7 @@ static void obs_source_destroy_defer(struct obs_source *source)
 	pthread_mutex_destroy(&source->audio_mutex);
 	pthread_mutex_destroy(&source->caption_cb_mutex);
 	pthread_mutex_destroy(&source->async_mutex);
+	pthread_mutex_destroy(&source->media_actions_mutex);
 	obs_data_release(source->private_settings);
 	obs_context_data_free(&source->context);
 
@@ -1211,6 +1209,59 @@ static void filter_frame(obs_source_t *source,
 	*ref_frame = frame;
 }
 
+void process_media_actions(obs_source_t *source)
+{
+	struct media_action action = {0};
+
+	for (;;) {
+		pthread_mutex_lock(&source->media_actions_mutex);
+		if (source->media_actions.num) {
+			action = source->media_actions.array[0];
+			da_pop_front(source->media_actions);
+		} else {
+			action.type = MEDIA_ACTION_NONE;
+		}
+		pthread_mutex_unlock(&source->media_actions_mutex);
+
+		switch (action.type) {
+		case MEDIA_ACTION_NONE:
+			return;
+		case MEDIA_ACTION_PLAY_PAUSE:
+			source->info.media_play_pause(source->context.data,
+						      action.pause);
+
+			if (action.pause)
+				obs_source_dosignal(source, NULL,
+						    "media_pause");
+			else
+				obs_source_dosignal(source, NULL, "media_play");
+			break;
+
+		case MEDIA_ACTION_RESTART:
+			source->info.media_restart(source->context.data);
+			obs_source_dosignal(source, NULL, "media_restart");
+			break;
+
+		case MEDIA_ACTION_STOP:
+			source->info.media_stop(source->context.data);
+			obs_source_dosignal(source, NULL, "media_stopped");
+			break;
+		case MEDIA_ACTION_NEXT:
+			source->info.media_next(source->context.data);
+			obs_source_dosignal(source, NULL, "media_next");
+			break;
+		case MEDIA_ACTION_PREVIOUS:
+			source->info.media_previous(source->context.data);
+			obs_source_dosignal(source, NULL, "media_previous");
+			break;
+		case MEDIA_ACTION_SET_TIME:
+			source->info.media_set_time(source->context.data,
+						    action.ms);
+			break;
+		}
+	}
+}
+
 static void async_tick(obs_source_t *source)
 {
 	uint64_t sys_time = obs->video.video_time;
@@ -1253,6 +1304,9 @@ void obs_source_video_tick(obs_source_t *source, float seconds)
 
 	if ((source->info.output_flags & OBS_SOURCE_ASYNC) != 0)
 		async_tick(source);
+
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) != 0)
+		process_media_actions(source);
 
 	if (os_atomic_load_long(&source->defer_update_count) > 0)
 		obs_source_deferred_update(source);
@@ -1350,8 +1404,8 @@ static void reset_audio_data(obs_source_t *source, uint64_t os_time)
 {
 	for (size_t i = 0; i < MAX_AUDIO_CHANNELS; i++) {
 		if (source->audio_input_buf[i].size)
-			circlebuf_pop_front(&source->audio_input_buf[i], NULL,
-					    source->audio_input_buf[i].size);
+			deque_pop_front(&source->audio_input_buf[i], NULL,
+					source->audio_input_buf[i].size);
 	}
 
 	source->last_audio_input_buf_size = 0;
@@ -1425,11 +1479,11 @@ static void source_output_audio_place(obs_source_t *source,
 		return;
 
 	for (size_t i = 0; i < channels; i++) {
-		circlebuf_place(&source->audio_input_buf[i], buf_placement,
-				in->data[i], size);
-		circlebuf_pop_back(&source->audio_input_buf[i], NULL,
-				   source->audio_input_buf[i].size -
-					   (buf_placement + size));
+		deque_place(&source->audio_input_buf[i], buf_placement,
+			    in->data[i], size);
+		deque_pop_back(&source->audio_input_buf[i], NULL,
+			       source->audio_input_buf[i].size -
+				       (buf_placement + size));
 	}
 
 	source->last_audio_input_buf_size = 0;
@@ -1447,8 +1501,7 @@ static inline void source_output_audio_push_back(obs_source_t *source,
 		return;
 
 	for (size_t i = 0; i < channels; i++)
-		circlebuf_push_back(&source->audio_input_buf[i], in->data[i],
-				    size);
+		deque_push_back(&source->audio_input_buf[i], in->data[i], size);
 
 	/* reset audio input buffer size to ensure that audio doesn't get
 	 * perpetually cut */
@@ -1517,7 +1570,6 @@ static void source_output_audio_data(obs_source_t *source,
 		}
 	}
 
-	source->last_audio_ts = in.timestamp;
 	source->next_audio_ts_min =
 		in.timestamp + conv_frames_to_time(sample_rate, in.frames);
 
@@ -1592,6 +1644,7 @@ enum convert_type {
 	CONVERT_I010,
 	CONVERT_P010,
 	CONVERT_V210,
+	CONVERT_R10L,
 };
 
 static inline enum convert_type get_convert_type(enum video_format format,
@@ -1651,6 +1704,9 @@ static inline enum convert_type get_convert_type(enum video_format format,
 
 	case VIDEO_FORMAT_V210:
 		return CONVERT_V210;
+
+	case VIDEO_FORMAT_R10L:
+		return CONVERT_R10L;
 
 	case VIDEO_FORMAT_P216:
 	case VIDEO_FORMAT_P416:
@@ -1959,6 +2015,16 @@ static inline bool set_v210_sizes(struct obs_source *source,
 	return true;
 }
 
+static inline bool set_r10l_sizes(struct obs_source *source,
+				  const struct obs_source_frame *frame)
+{
+	source->async_convert_width[0] = frame->width;
+	source->async_convert_height[0] = frame->height;
+	source->async_texture_formats[0] = GS_BGRA_UNORM;
+	source->async_channel_count = 1;
+	return true;
+}
+
 static inline bool init_gpu_conversion(struct obs_source *source,
 				       const struct obs_source_frame *frame)
 {
@@ -2018,6 +2084,9 @@ static inline bool init_gpu_conversion(struct obs_source *source,
 
 	case CONVERT_V210:
 		return set_v210_sizes(source, frame);
+
+	case CONVERT_R10L:
+		return set_r10l_sizes(source, frame);
 
 	case CONVERT_NONE:
 		assert(false && "No conversion requested");
@@ -2112,6 +2181,7 @@ static void upload_raw_frame(gs_texture_t *tex[MAX_AV_PLANES],
 	case CONVERT_I010:
 	case CONVERT_P010:
 	case CONVERT_V210:
+	case CONVERT_R10L:
 		for (size_t c = 0; c < MAX_AV_PLANES; c++) {
 			if (tex[c])
 				gs_texture_set_image(tex[c], frame->data[c],
@@ -2245,6 +2315,20 @@ static const char *select_conversion_technique(enum video_format format,
 		}
 	}
 
+	case VIDEO_FORMAT_R10L: {
+		switch (trc) {
+		case VIDEO_TRC_PQ:
+			return full_range ? "R10L_PQ_2020_709_Full_Reverse"
+					  : "R10L_PQ_2020_709_Limited_Reverse";
+		case VIDEO_TRC_HLG:
+			return full_range ? "R10L_HLG_2020_709_Full_Reverse"
+					  : "R10L_HLG_2020_709_Limited_Reverse";
+		default:
+			return full_range ? "R10L_SRGB_Full_Reverse"
+					  : "R10L_SRGB_Limited_Reverse";
+		}
+	}
+
 	case VIDEO_FORMAT_BGRA:
 	case VIDEO_FORMAT_BGRX:
 	case VIDEO_FORMAT_RGBA:
@@ -2274,12 +2358,6 @@ static inline void set_eparam(gs_effect_t *effect, const char *name, float val)
 {
 	gs_eparam_t *param = gs_effect_get_param_by_name(effect, name);
 	gs_effect_set_float(param, val);
-}
-
-static inline void set_eparami(gs_effect_t *effect, const char *name, int val)
-{
-	gs_eparam_t *param = gs_effect_get_param_by_name(effect, name);
-	gs_effect_set_int(param, val);
 }
 
 static bool update_async_texrender(struct obs_source *source,
@@ -3128,10 +3206,15 @@ void obs_source_filter_add(obs_source_t *source, obs_source_t *filter)
 	calldata_set_ptr(&cd, "source", source);
 	calldata_set_ptr(&cd, "filter", filter);
 
+	signal_handler_signal(obs->signals, "source_filter_add", &cd);
 	signal_handler_signal(source->context.signals, "filter_add", &cd);
 
 	blog(LOG_DEBUG, "- filter '%s' (%s) added to source '%s'",
 	     filter->context.name, filter->info.id, source->context.name);
+
+	if (filter->info.filter_add)
+		filter->info.filter_add(filter->context.data,
+					filter->filter_parent);
 }
 
 static bool obs_source_filter_remove_refless(obs_source_t *source,
@@ -3162,6 +3245,7 @@ static bool obs_source_filter_remove_refless(obs_source_t *source,
 	calldata_set_ptr(&cd, "source", source);
 	calldata_set_ptr(&cd, "filter", filter);
 
+	signal_handler_signal(obs->signals, "source_filter_remove", &cd);
 	signal_handler_signal(source->context.signals, "filter_remove", &cd);
 
 	blog(LOG_DEBUG, "- filter '%s' (%s) removed from source '%s'",
@@ -3225,6 +3309,19 @@ static size_t find_prev_filter(obs_source_t *source, obs_source_t *filter,
 		return find_prev_filter(source, filter, cur_idx - 1);
 }
 
+static void reorder_filter_targets(obs_source_t *source)
+{
+	/* reorder filter targets, not the nicest way of dealing with things */
+	for (size_t i = 0; i < source->filters.num; i++) {
+		obs_source_t *next_filter =
+			(i == source->filters.num - 1)
+				? source
+				: source->filters.array[i + 1];
+
+		source->filters.array[i]->filter_target = next_filter;
+	}
+}
+
 /* moves filters above/below matching filter types */
 static bool move_filter_dir(obs_source_t *source, obs_source_t *filter,
 			    enum obs_order_movement movement)
@@ -3258,15 +3355,7 @@ static bool move_filter_dir(obs_source_t *source, obs_source_t *filter,
 		da_move_item(source->filters, idx, 0);
 	}
 
-	/* reorder filter targets, not the nicest way of dealing with things */
-	for (size_t i = 0; i < source->filters.num; i++) {
-		obs_source_t *next_filter =
-			(i == source->filters.num - 1)
-				? source
-				: source->filters.array[i + 1];
-
-		source->filters.array[i]->filter_target = next_filter;
-	}
+	reorder_filter_targets(source);
 
 	return true;
 }
@@ -3283,6 +3372,53 @@ void obs_source_filter_set_order(obs_source_t *source, obs_source_t *filter,
 
 	pthread_mutex_lock(&source->filter_mutex);
 	success = move_filter_dir(source, filter, movement);
+	pthread_mutex_unlock(&source->filter_mutex);
+
+	if (success)
+		obs_source_dosignal(source, NULL, "reorder_filters");
+}
+
+int obs_source_filter_get_index(obs_source_t *source, obs_source_t *filter)
+{
+	if (!obs_source_valid(source, "obs_source_filter_get_index"))
+		return -1;
+	if (!obs_ptr_valid(filter, "obs_source_filter_get_index"))
+		return -1;
+
+	size_t idx;
+
+	pthread_mutex_lock(&source->filter_mutex);
+	idx = da_find(source->filters, &filter, 0);
+	pthread_mutex_unlock(&source->filter_mutex);
+
+	return idx != DARRAY_INVALID ? (int)idx : -1;
+}
+
+static bool set_filter_index(obs_source_t *source, obs_source_t *filter,
+			     size_t index)
+{
+	size_t idx = da_find(source->filters, &filter, 0);
+	if (idx == DARRAY_INVALID)
+		return false;
+
+	da_move_item(source->filters, idx, index);
+	reorder_filter_targets(source);
+
+	return true;
+}
+
+void obs_source_filter_set_index(obs_source_t *source, obs_source_t *filter,
+				 size_t index)
+{
+	bool success;
+
+	if (!obs_source_valid(source, "obs_source_filter_set_index"))
+		return;
+	if (!obs_ptr_valid(filter, "obs_source_filter_set_index"))
+		return;
+
+	pthread_mutex_lock(&source->filter_mutex);
+	success = set_filter_index(source, filter, index);
 	pthread_mutex_unlock(&source->filter_mutex);
 
 	if (success)
@@ -3406,6 +3542,7 @@ static void copy_frame_data(struct obs_source_frame *dst,
 	case VIDEO_FORMAT_BGR3:
 	case VIDEO_FORMAT_AYUV:
 	case VIDEO_FORMAT_V210:
+	case VIDEO_FORMAT_R10L:
 		copy_frame_data_plane(dst, src, 0, dst->height);
 		break;
 
@@ -4168,7 +4305,8 @@ static bool ready_async_frame(obs_source_t *source, uint64_t sys_time)
 		 * helps smooth out async rendering to frame boundaries.  In
 		 * other words, tries to keep the framerate as smooth as
 		 * possible */
-		if ((source->last_frame_ts - next_frame->timestamp) < 2000000)
+		if (frame &&
+		    (source->last_frame_ts - next_frame->timestamp) < 2000000)
 			break;
 
 		if (frame)
@@ -5578,8 +5716,8 @@ static inline void process_audio_source_tick(obs_source_t *source,
 	}
 
 	for (size_t ch = 0; ch < channels; ch++)
-		circlebuf_peek_front(&source->audio_input_buf[ch],
-				     source->audio_output_buf[0][ch], size);
+		deque_peek_front(&source->audio_input_buf[ch],
+				 source->audio_output_buf[0][ch], size);
 
 	pthread_mutex_unlock(&source->audio_buf_mutex);
 
@@ -5678,6 +5816,32 @@ void obs_source_get_audio_mix(const obs_source_t *source,
 				source->audio_output_buf[mix][ch];
 		}
 	}
+}
+
+void obs_source_add_audio_pause_callback(obs_source_t *source,
+					 signal_callback_t callback,
+					 void *param)
+{
+	if (!obs_source_valid(source, "obs_source_add_audio_pause_callback"))
+		return;
+
+	signal_handler_t *handler = obs_source_get_signal_handler(source);
+
+	signal_handler_connect(handler, "media_pause", callback, param);
+	signal_handler_connect(handler, "media_stopped", callback, param);
+}
+
+void obs_source_remove_audio_pause_callback(obs_source_t *source,
+					    signal_callback_t callback,
+					    void *param)
+{
+	if (!obs_source_valid(source, "obs_source_remove_audio_pause_callback"))
+		return;
+
+	signal_handler_t *handler = obs_source_get_signal_handler(source);
+
+	signal_handler_disconnect(handler, "media_pause", callback, param);
+	signal_handler_disconnect(handler, "media_stopped", callback, param);
 }
 
 void obs_source_add_audio_capture_callback(obs_source_t *source,
@@ -5882,15 +6046,19 @@ void obs_source_media_play_pause(obs_source_t *source, bool pause)
 	if (!data_valid(source, "obs_source_media_play_pause"))
 		return;
 
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
+		return;
 	if (!source->info.media_play_pause)
 		return;
 
-	source->info.media_play_pause(source->context.data, pause);
+	struct media_action action = {
+		.type = MEDIA_ACTION_PLAY_PAUSE,
+		.pause = pause,
+	};
 
-	if (pause)
-		obs_source_dosignal(source, NULL, "media_pause");
-	else
-		obs_source_dosignal(source, NULL, "media_play");
+	pthread_mutex_lock(&source->media_actions_mutex);
+	da_push_back(source->media_actions, &action);
+	pthread_mutex_unlock(&source->media_actions_mutex);
 }
 
 void obs_source_media_restart(obs_source_t *source)
@@ -5898,12 +6066,18 @@ void obs_source_media_restart(obs_source_t *source)
 	if (!data_valid(source, "obs_source_media_restart"))
 		return;
 
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
+		return;
 	if (!source->info.media_restart)
 		return;
 
-	source->info.media_restart(source->context.data);
+	struct media_action action = {
+		.type = MEDIA_ACTION_RESTART,
+	};
 
-	obs_source_dosignal(source, NULL, "media_restart");
+	pthread_mutex_lock(&source->media_actions_mutex);
+	da_push_back(source->media_actions, &action);
+	pthread_mutex_unlock(&source->media_actions_mutex);
 }
 
 void obs_source_media_stop(obs_source_t *source)
@@ -5911,12 +6085,18 @@ void obs_source_media_stop(obs_source_t *source)
 	if (!data_valid(source, "obs_source_media_stop"))
 		return;
 
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
+		return;
 	if (!source->info.media_stop)
 		return;
 
-	source->info.media_stop(source->context.data);
+	struct media_action action = {
+		.type = MEDIA_ACTION_STOP,
+	};
 
-	obs_source_dosignal(source, NULL, "media_stopped");
+	pthread_mutex_lock(&source->media_actions_mutex);
+	da_push_back(source->media_actions, &action);
+	pthread_mutex_unlock(&source->media_actions_mutex);
 }
 
 void obs_source_media_next(obs_source_t *source)
@@ -5924,12 +6104,18 @@ void obs_source_media_next(obs_source_t *source)
 	if (!data_valid(source, "obs_source_media_next"))
 		return;
 
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
+		return;
 	if (!source->info.media_next)
 		return;
 
-	source->info.media_next(source->context.data);
+	struct media_action action = {
+		.type = MEDIA_ACTION_NEXT,
+	};
 
-	obs_source_dosignal(source, NULL, "media_next");
+	pthread_mutex_lock(&source->media_actions_mutex);
+	da_push_back(source->media_actions, &action);
+	pthread_mutex_unlock(&source->media_actions_mutex);
 }
 
 void obs_source_media_previous(obs_source_t *source)
@@ -5937,12 +6123,18 @@ void obs_source_media_previous(obs_source_t *source)
 	if (!data_valid(source, "obs_source_media_previous"))
 		return;
 
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
+		return;
 	if (!source->info.media_previous)
 		return;
 
-	source->info.media_previous(source->context.data);
+	struct media_action action = {
+		.type = MEDIA_ACTION_PREVIOUS,
+	};
 
-	obs_source_dosignal(source, NULL, "media_previous");
+	pthread_mutex_lock(&source->media_actions_mutex);
+	da_push_back(source->media_actions, &action);
+	pthread_mutex_unlock(&source->media_actions_mutex);
 }
 
 int64_t obs_source_media_get_duration(obs_source_t *source)
@@ -5950,6 +6142,8 @@ int64_t obs_source_media_get_duration(obs_source_t *source)
 	if (!data_valid(source, "obs_source_media_get_duration"))
 		return 0;
 
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
+		return 0;
 	if (source->info.media_get_duration)
 		return source->info.media_get_duration(source->context.data);
 	else
@@ -5961,6 +6155,8 @@ int64_t obs_source_media_get_time(obs_source_t *source)
 	if (!data_valid(source, "obs_source_media_get_time"))
 		return 0;
 
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
+		return 0;
 	if (source->info.media_get_time)
 		return source->info.media_get_time(source->context.data);
 	else
@@ -5971,14 +6167,26 @@ void obs_source_media_set_time(obs_source_t *source, int64_t ms)
 {
 	if (!data_valid(source, "obs_source_media_set_time"))
 		return;
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
+		return;
+	if (!source->info.media_set_time)
+		return;
 
-	if (source->info.media_set_time)
-		source->info.media_set_time(source->context.data, ms);
+	struct media_action action = {
+		.type = MEDIA_ACTION_SET_TIME,
+		.ms = ms,
+	};
+
+	pthread_mutex_lock(&source->media_actions_mutex);
+	da_push_back(source->media_actions, &action);
+	pthread_mutex_unlock(&source->media_actions_mutex);
 }
 
 enum obs_media_state obs_source_media_get_state(obs_source_t *source)
 {
 	if (!data_valid(source, "obs_source_media_get_state"))
+		return OBS_MEDIA_STATE_NONE;
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
 		return OBS_MEDIA_STATE_NONE;
 
 	if (source->info.media_get_state)
@@ -5991,6 +6199,8 @@ void obs_source_media_started(obs_source_t *source)
 {
 	if (!obs_source_valid(source, "obs_source_media_started"))
 		return;
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
+		return;
 
 	obs_source_dosignal(source, NULL, "media_started");
 }
@@ -5998,6 +6208,8 @@ void obs_source_media_started(obs_source_t *source)
 void obs_source_media_ended(obs_source_t *source)
 {
 	if (!obs_source_valid(source, "obs_source_media_ended"))
+		return;
+	if ((source->info.output_flags & OBS_SOURCE_CONTROLLABLE_MEDIA) == 0)
 		return;
 
 	obs_source_dosignal(source, NULL, "media_ended");

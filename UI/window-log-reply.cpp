@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -23,7 +23,8 @@
 #include "obs-app.hpp"
 
 OBSLogReply::OBSLogReply(QWidget *parent, const QString &url, const bool crash)
-	: QDialog(parent), ui(new Ui::OBSLogReply)
+	: QDialog(parent),
+	  ui(new Ui::OBSLogReply)
 {
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 	ui->setupUi(this);

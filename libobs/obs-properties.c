@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -44,6 +44,7 @@ struct list_item {
 		char *str;
 		long long ll;
 		double d;
+		bool b;
 	};
 };
 
@@ -359,22 +360,23 @@ void obs_properties_remove_by_name(obs_properties_t *props, const char *name)
 	}
 }
 
-void obs_properties_apply_settings_internal(obs_properties_t *props,
-					    obs_data_t *settings,
-					    obs_properties_t *realprops)
-{
-	struct obs_property *p, *tmp;
+typedef DARRAY(struct obs_property *) obs_property_da_t;
 
-	HASH_ITER (hh, props->properties, p, tmp) {
+void obs_properties_apply_settings_internal(
+	obs_properties_t *props, obs_property_da_t *properties_with_callback)
+{
+	struct obs_property *p = props->properties;
+
+	while (p) {
 		if (p->type == OBS_PROPERTY_GROUP) {
 			obs_properties_apply_settings_internal(
-				obs_property_group_content(p), settings,
-				realprops);
+				obs_property_group_content(p),
+				properties_with_callback);
 		}
-		if (p->modified)
-			p->modified(realprops, p, settings);
-		else if (p->modified2)
-			p->modified2(p->priv, realprops, p, settings);
+		if (p->modified || p->modified2)
+			da_push_back((*properties_with_callback), &p);
+
+		p = p->hh.next;
 	}
 }
 
@@ -384,7 +386,23 @@ void obs_properties_apply_settings(obs_properties_t *props,
 	if (!props)
 		return;
 
-	obs_properties_apply_settings_internal(props, settings, props);
+	obs_property_da_t properties_with_callback;
+	da_init(properties_with_callback);
+
+	obs_properties_apply_settings_internal(props,
+					       &properties_with_callback);
+
+	while (properties_with_callback.num > 0) {
+		struct obs_property *p = *(struct obs_property **)da_end(
+			properties_with_callback);
+		if (p->modified)
+			p->modified(props, p, settings);
+		else if (p->modified2)
+			p->modified2(p->priv, props, p, settings);
+		da_pop_back(properties_with_callback);
+	}
+
+	da_free(properties_with_callback);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1149,6 +1167,8 @@ static size_t add_item(struct list_data *data, const char *name,
 		item.ll = *(const long long *)val;
 	else if (data->format == OBS_COMBO_FORMAT_FLOAT)
 		item.d = *(const double *)val;
+	else if (data->format == OBS_COMBO_FORMAT_BOOL)
+		item.b = *(const bool *)val;
 	else
 		item.str = bstrdup(val);
 
@@ -1165,6 +1185,8 @@ static void insert_item(struct list_data *data, size_t idx, const char *name,
 		item.ll = *(const long long *)val;
 	else if (data->format == OBS_COMBO_FORMAT_FLOAT)
 		item.d = *(const double *)val;
+	else if (data->format == OBS_COMBO_FORMAT_BOOL)
+		item.b = *(const bool *)val;
 	else
 		item.str = bstrdup(val);
 
@@ -1198,6 +1220,14 @@ size_t obs_property_list_add_float(obs_property_t *p, const char *name,
 	return 0;
 }
 
+size_t obs_property_list_add_bool(obs_property_t *p, const char *name, bool val)
+{
+	struct list_data *data = get_list_data(p);
+	if (data && data->format == OBS_COMBO_FORMAT_BOOL)
+		return add_item(data, name, &val);
+	return 0;
+}
+
 void obs_property_list_insert_string(obs_property_t *p, size_t idx,
 				     const char *name, const char *val)
 {
@@ -1219,6 +1249,14 @@ void obs_property_list_insert_float(obs_property_t *p, size_t idx,
 {
 	struct list_data *data = get_list_data(p);
 	if (data && data->format == OBS_COMBO_FORMAT_FLOAT)
+		insert_item(data, idx, name, &val);
+}
+
+void obs_property_list_insert_bool(obs_property_t *p, size_t idx,
+				   const char *name, bool val)
+{
+	struct list_data *data = get_list_data(p);
+	if (data && data->format == OBS_COMBO_FORMAT_BOOL)
 		insert_item(data, idx, name, &val);
 }
 
@@ -1277,6 +1315,13 @@ double obs_property_list_item_float(obs_property_t *p, size_t idx)
 {
 	struct list_data *data = get_list_fmt_data(p, OBS_COMBO_FORMAT_FLOAT);
 	return (data && idx < data->items.num) ? data->items.array[idx].d : 0.0;
+}
+
+bool obs_property_list_item_bool(obs_property_t *p, size_t idx)
+{
+	struct list_data *data = get_list_fmt_data(p, OBS_COMBO_FORMAT_BOOL);
+	return (data && idx < data->items.num) ? data->items.array[idx].d
+					       : false;
 }
 
 enum obs_editable_list_type obs_property_editable_list_type(obs_property_t *p)

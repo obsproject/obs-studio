@@ -4,6 +4,10 @@
 // Utility functions, not directly tied to Intel Media SDK functionality
 //
 
+struct adapter_info adapters[MAX_ADAPTERS] = {0};
+size_t adapter_count = 0;
+size_t adapter_index = 0;
+
 void PrintErrString(int err, const char *filestr, int line)
 {
 	switch (err) {

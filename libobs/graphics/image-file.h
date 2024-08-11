@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2016 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -94,33 +94,33 @@ EXPORT bool gs_image_file4_tick(gs_image_file4_t *if4,
 				uint64_t elapsed_time_ns);
 EXPORT void gs_image_file4_update_texture(gs_image_file4_t *if4);
 
-static void gs_image_file2_free(gs_image_file2_t *if2)
+static inline void gs_image_file2_free(gs_image_file2_t *if2)
 {
 	gs_image_file_free(&if2->image);
 	if2->mem_usage = 0;
 }
 
-static void gs_image_file2_init_texture(gs_image_file2_t *if2)
+static inline void gs_image_file2_init_texture(gs_image_file2_t *if2)
 {
 	gs_image_file_init_texture(&if2->image);
 }
 
-static void gs_image_file3_free(gs_image_file3_t *if3)
+static inline void gs_image_file3_free(gs_image_file3_t *if3)
 {
 	gs_image_file2_free(&if3->image2);
 }
 
-static void gs_image_file3_init_texture(gs_image_file3_t *if3)
+static inline void gs_image_file3_init_texture(gs_image_file3_t *if3)
 {
 	gs_image_file2_init_texture(&if3->image2);
 }
 
-static void gs_image_file4_free(gs_image_file4_t *if4)
+static inline void gs_image_file4_free(gs_image_file4_t *if4)
 {
 	gs_image_file3_free(&if4->image3);
 }
 
-static void gs_image_file4_init_texture(gs_image_file4_t *if4)
+static inline void gs_image_file4_init_texture(gs_image_file4_t *if4)
 {
 	gs_image_file3_init_texture(&if4->image3);
 }

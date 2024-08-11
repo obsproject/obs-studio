@@ -157,9 +157,13 @@ Service Definition Structure
             the data manually (typically best to use strlist_split to
             generate this)
 
+   .. versionadded:: 29.1
+
 .. member:: const char *(*obs_service_info.get_protocol)(void *data)
 
    :return: The protocol used by the service
+
+   .. versionadded:: 29.1
 
 .. member:: const char *(*obs_service_info.get_connect_info)(void *data, uint32_t type)
 
@@ -184,13 +188,19 @@ Service Definition Structure
 
    Irrelevant or unused types can return `NULL`.
 
+   .. versionadded:: 29.1
+
 .. member:: bool (*obs_service_info.can_try_to_connect)(void *data)
+
+   (Optional)
 
    :return: If the service has all the needed connection info to be
             able to connect.
 
    NOTE: If not set, :c:func:`obs_service_can_try_to_connect()`
    returns *true* by default.
+
+   .. versionadded:: 29.1
 
 General Service Functions
 -------------------------
@@ -368,11 +378,15 @@ General Service Functions
             codecs for the service, terminated with a *NULL* pointer.
             Does not need to be freed
 
+   .. versionadded:: 29.1
+
 ---------------------
 
 .. function:: const char *obs_service_get_protocol(const obs_service_t *service)
 
    :return: Protocol currently used for this service
+
+   .. versionadded:: 29.1
 
 ---------------------
 
@@ -380,17 +394,27 @@ General Service Functions
 
    :return: The output type that should be preferred with this service
 
+   .. versionadded:: 29.1
+
+---------------------
+
 .. function:: const char *obs_service_get_connect_info(const obs_service_t *service, uint32_t type)
 
    :param type: Check :c:member:`obs_service_info.get_connect_info` for
                 type values.
    :return: Connection info related to the type value.
 
+   .. versionadded:: 29.1
+
+---------------------
+
 .. function:: bool obs_service_can_try_to_connect(const obs_service_t *service)
 
    :return: If the service has all the needed connection info to be
             able to connect. Returns `true` if
             :c:member:`obs_service_info.can_try_to_connect` is not set.
+
+   .. versionadded:: 29.1
 
 .. ---------------------------------------------------------------------------
 

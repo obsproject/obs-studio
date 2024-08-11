@@ -74,7 +74,8 @@ struct locale_info {
 	inline locale_info() {}
 	inline locale_info(const locale_info &) = delete;
 	inline locale_info(locale_info &&li)
-		: name(std::move(li.name)), id(li.id)
+		: name(std::move(li.name)),
+		  id(li.id)
 	{
 	}
 };
@@ -85,7 +86,8 @@ static bool valid_lang(LANGID id);
 /* ------------------------------------------------------------------------- */
 
 CaptionsDialog::CaptionsDialog(QWidget *parent)
-	: QDialog(parent), ui(new Ui_CaptionsDialog)
+	: QDialog(parent),
+	  ui(new Ui_CaptionsDialog)
 {
 	ui->setupUi(this);
 

@@ -22,9 +22,9 @@
 #include <QPointer>
 #include <QStyle>
 #include <QAction>
+#include <qt-wrappers.hpp>
 
 #include "obs-app.hpp"
-#include "qt-wrappers.hpp"
 
 void OBSHotkeyEdit::keyPressEvent(QKeyEvent *event)
 {
@@ -333,7 +333,7 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 			 [&, CurrentIndex] { RemoveEdit(CurrentIndex()); });
 
 	QHBoxLayout *subLayout = new QHBoxLayout;
-	subLayout->setContentsMargins(0, 4, 0, 0);
+	subLayout->setContentsMargins(0, 2, 0, 2);
 	subLayout->addWidget(edit);
 	subLayout->addWidget(revert);
 	subLayout->addWidget(clear);
@@ -439,11 +439,7 @@ static inline void updateStyle(QWidget *widget)
 	widget->update();
 }
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 void OBSHotkeyWidget::enterEvent(QEnterEvent *event)
-#else
-void OBSHotkeyWidget::enterEvent(QEvent *event)
-#endif
 {
 	if (!label)
 		return;
@@ -472,11 +468,7 @@ void OBSHotkeyLabel::highlightPair(bool highlight)
 	updateStyle(this);
 }
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 void OBSHotkeyLabel::enterEvent(QEnterEvent *event)
-#else
-void OBSHotkeyLabel::enterEvent(QEvent *event)
-#endif
 {
 
 	if (!pairPartner)

@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -24,11 +24,6 @@
 #include <graphics/matrix4.h>
 #include "gl-subsystem.h"
 #include "gl-shaderparser.h"
-
-static inline void shader_param_init(struct gs_shader_param *param)
-{
-	memset(param, 0, sizeof(struct gs_shader_param));
-}
 
 static inline void shader_param_free(struct gs_shader_param *param)
 {

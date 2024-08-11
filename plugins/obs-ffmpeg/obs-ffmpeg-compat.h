@@ -12,28 +12,7 @@
 	 (LIBAVCODEC_VERSION_MICRO >= 100 &&                    \
 	  LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(a, d, e)))
 
-#if !LIBAVCODEC_VERSION_CHECK(54, 28, 0, 59, 100)
-#define avcodec_free_frame av_freep
-#endif
-
-#if LIBAVCODEC_VERSION_INT < 0x371c01
-#define av_frame_alloc avcodec_alloc_frame
-#define av_frame_unref avcodec_get_frame_defaults
-#define av_frame_free avcodec_free_frame
-#endif
-
-#if LIBAVCODEC_VERSION_MAJOR >= 57
-#define av_free_packet av_packet_unref
-#endif
-
-#if LIBAVCODEC_VERSION_MAJOR >= 58
 #if LIBAVCODEC_VERSION_MAJOR < 60
 #define CODEC_CAP_TRUNC AV_CODEC_CAP_TRUNCATED
 #define CODEC_FLAG_TRUNC AV_CODEC_FLAG_TRUNCATED
-#endif
-#define CODEC_FLAG_GLOBAL_H AV_CODEC_FLAG_GLOBAL_HEADER
-#else
-#define CODEC_CAP_TRUNC CODEC_CAP_TRUNCATED
-#define CODEC_FLAG_TRUNC CODEC_FLAG_TRUNCATED
-#define CODEC_FLAG_GLOBAL_H CODEC_FLAG_GLOBAL_HEADER
 #endif

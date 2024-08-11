@@ -1,6 +1,6 @@
 project(rtmp-services)
 
-option(ENABLE_SERVICE_UPDATES "Checks for service updates" OFF)
+option(ENABLE_SERVICE_UPDATES "Checks for service updates" ON)
 
 set(RTMP_SERVICES_URL
     "https://obsproject.com/obs2_update/rtmp-services"
@@ -11,12 +11,16 @@ mark_as_advanced(RTMP_SERVICES_URL)
 add_library(rtmp-services MODULE)
 add_library(OBS::rtmp-services ALIAS rtmp-services)
 
+find_package(Jansson 2.5 REQUIRED)
+
+if(NOT TARGET OBS::file-updater)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/file-updater" "${CMAKE_BINARY_DIR}/shared/file-updater")
+endif()
+
 target_sources(
   rtmp-services
   PRIVATE service-specific/twitch.c
           service-specific/twitch.h
-          service-specific/younow.c
-          service-specific/younow.h
           service-specific/nimotv.c
           service-specific/nimotv.h
           service-specific/showroom.c
@@ -28,7 +32,7 @@ target_sources(
           rtmp-services-main.c
           rtmp-format-ver.h)
 
-target_compile_definitions(rtmp-services PRIVATE RTMP_SERVICES_URL="${RTMP_SERVICES_URL}"
+target_compile_definitions(rtmp-services PRIVATE SERVICES_URL="${RTMP_SERVICES_URL}"
                                                  $<$<BOOL:${ENABLE_SERVICE_UPDATES}>:ENABLE_SERVICE_UPDATES>)
 
 target_include_directories(rtmp-services PRIVATE ${CMAKE_BINARY_DIR}/config)

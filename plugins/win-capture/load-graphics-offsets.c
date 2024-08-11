@@ -163,6 +163,7 @@ bool load_graphics_offsets(bool is32bit, bool use_hook_address_cache,
 	struct dstr config_ini = {0};
 	struct dstr offset_exe = {0};
 	struct dstr str = {0};
+	struct dstr cmd = {0};
 	os_process_pipe_t *pp;
 	bool success = false;
 	char data[2048];
@@ -177,7 +178,11 @@ bool load_graphics_offsets(bool is32bit, bool use_hook_address_cache,
 	dstr_cat(&offset_exe, is32bit ? "32.exe" : "64.exe");
 	offset_exe_path = obs_module_file(offset_exe.array);
 
-	pp = os_process_pipe_create(offset_exe_path, "r");
+	dstr_init_move_array(&cmd, offset_exe_path);
+	dstr_insert_ch(&cmd, 0, '\"');
+	dstr_cat(&cmd, "\"");
+
+	pp = os_process_pipe_create(cmd.array, "r");
 	if (!pp) {
 		blog(LOG_INFO, "load_graphics_offsets: Failed to start '%s'",
 		     offset_exe.array);
@@ -219,9 +224,9 @@ bool load_graphics_offsets(bool is32bit, bool use_hook_address_cache,
 	os_process_pipe_destroy(pp);
 
 error:
-	bfree(offset_exe_path);
 	dstr_free(&offset_exe);
 	dstr_free(&str);
+	dstr_free(&cmd);
 	return success;
 }
 

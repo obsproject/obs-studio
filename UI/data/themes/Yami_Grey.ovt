@@ -1,0 +1,18 @@
+@OBSThemeMeta {
+    name: 'Grey';
+    id: 'com.obsproject.Yami.Grey';
+    extends: 'com.obsproject.Yami';
+    author: 'Warchamp7';
+    dark: 'true';
+}
+
+@OBSThemeVars {
+    --grey1: rgb(97,97,97);
+    --grey2: rgb(87,87,87);
+    --grey3: rgb(77,77,77);
+    --grey4: rgb(67,67,67);
+    --grey5: rgb(57,57,57);
+    --grey6: rgb(47,47,47);
+    --grey7: rgb(33,33,33);
+    --grey8: rgb(21,21,21);
+}

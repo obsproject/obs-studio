@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2020 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,8 @@
 
 #include "window-basic-main.hpp"
 #include "screenshot-obj.hpp"
-#include "qt-wrappers.hpp"
+
+#include <qt-wrappers.hpp>
 
 #ifdef _WIN32
 #include <wincodec.h>
@@ -56,9 +57,7 @@ ScreenshotObj::~ScreenshotObj()
 
 			main->lastScreenshot = path;
 
-			if (main->api)
-				main->api->on_event(
-					OBS_FRONTEND_EVENT_SCREENSHOT_TAKEN);
+			main->OnEvent(OBS_FRONTEND_EVENT_SCREENSHOT_TAKEN);
 		}
 	}
 }
@@ -68,8 +67,8 @@ void ScreenshotObj::Screenshot()
 	OBSSource source = OBSGetStrongRef(weakSource);
 
 	if (source) {
-		cx = obs_source_get_base_width(source);
-		cy = obs_source_get_base_height(source);
+		cx = obs_source_get_width(source);
+		cy = obs_source_get_height(source);
 	} else {
 		obs_video_info ovi;
 		obs_get_video_info(&ovi);

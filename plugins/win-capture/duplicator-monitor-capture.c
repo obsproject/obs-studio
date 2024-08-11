@@ -5,8 +5,13 @@
 #include <util/threading.h>
 
 #include "cursor-capture.h"
+#ifdef OBS_LEGACY
 #include "../../libobs/util/platform.h"
 #include "../../libobs-winrt/winrt-capture.h"
+#else
+#include <util/platform.h>
+#include <winrt-capture.h>
+#endif
 
 #define do_log(level, format, ...)                                \
 	blog(level, "[duplicator-monitor-capture: '%s'] " format, \

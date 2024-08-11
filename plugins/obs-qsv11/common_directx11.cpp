@@ -1,11 +1,13 @@
 #include "common_directx11.h"
 
+#include <obs.h>
+#include <obs-encoder.h>
 #include <map>
 
-ID3D11Device *g_pD3D11Device;
-ID3D11DeviceContext *g_pD3D11Ctx;
-IDXGIFactory2 *g_pDXGIFactory;
-IDXGIAdapter *g_pAdapter;
+ID3D11Device *g_pD3D11Device = nullptr;
+ID3D11DeviceContext *g_pD3D11Ctx = nullptr;
+IDXGIFactory2 *g_pDXGIFactory = nullptr;
+IDXGIAdapter *g_pAdapter = nullptr;
 
 std::map<mfxMemId *, mfxHDL> allocResponses;
 std::map<mfxHDL, mfxFrameAllocResponse> allocDecodeResponses;
@@ -136,7 +138,7 @@ CComPtr<ID3D11DeviceContext> GetHWDeviceContext()
 	return g_pD3D11Ctx;
 }
 
-/* (Hugh) Functions currently unused */
+/* (Lain) Functions currently unused */
 #if 0
 void ClearYUVSurfaceD3D(mfxMemId memId)
 {
@@ -433,10 +435,11 @@ mfxStatus simple_unlock(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
 	return MFX_ERR_NONE;
 }
 
-mfxStatus simple_copytex(mfxHDL pthis, mfxMemId mid, mfxU32 tex_handle,
-			 mfxU64 lock_key, mfxU64 *next_key)
+mfxStatus simple_copytex(mfxHDL pthis, mfxMemId mid, void *tex, mfxU64 lock_key,
+			 mfxU64 *next_key)
 {
 	pthis; // To suppress warning for this unused parameter
+	struct encoder_texture *ptex = (struct encoder_texture *)tex;
 
 	CustomMemId *memId = (CustomMemId *)mid;
 	ID3D11Texture2D *pSurface = (ID3D11Texture2D *)memId->memId;
@@ -445,7 +448,7 @@ mfxStatus simple_copytex(mfxHDL pthis, mfxMemId mid, mfxU32 tex_handle,
 	ID3D11Texture2D *input_tex;
 	HRESULT hr;
 
-	hr = g_pD3D11Device->OpenSharedResource((HANDLE)(uintptr_t)tex_handle,
+	hr = g_pD3D11Device->OpenSharedResource((HANDLE)(uintptr_t)ptex->handle,
 						IID_ID3D11Texture2D,
 						(void **)&input_tex);
 	if (FAILED(hr)) {

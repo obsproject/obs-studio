@@ -228,7 +228,8 @@ struct DShowInput {
 	}
 
 	inline DShowInput(obs_source_t *source_, obs_data_t *settings)
-		: source(source_), device(InitGraph::False)
+		: source(source_),
+		  device(InitGraph::False)
 	{
 		memset(&audio, 0, sizeof(audio));
 		memset(&frame, 0, sizeof(frame));
@@ -500,7 +501,9 @@ void DShowInput::OnEncodedVideoData(enum AVCodecID id, unsigned char *data,
 
 	if (!ffmpeg_decode_valid(video_decoder)) {
 		if (ffmpeg_decode_init(video_decoder, id, hw_decode) < 0) {
-			blog(LOG_WARNING, "Could not initialize video decoder");
+			blog(LOG_WARNING,
+			     "%s: Could not initialize video decoder",
+			     obs_source_get_name(source));
 			return;
 		}
 	}
@@ -509,7 +512,8 @@ void DShowInput::OnEncodedVideoData(enum AVCodecID id, unsigned char *data,
 	bool success = ffmpeg_decode_video(video_decoder, data, size, &ts, cs,
 					   frame.range, &frame, &got_output);
 	if (!success) {
-		blog(LOG_WARNING, "Error decoding video");
+		blog(LOG_WARNING, "%s: Error decoding video",
+		     obs_source_get_name(source));
 		return;
 	}
 
@@ -632,7 +636,9 @@ void DShowInput::OnEncodedAudioData(enum AVCodecID id, unsigned char *data,
 {
 	if (!ffmpeg_decode_valid(audio_decoder)) {
 		if (ffmpeg_decode_init(audio_decoder, id, false) < 0) {
-			blog(LOG_WARNING, "Could not initialize audio decoder");
+			blog(LOG_WARNING,
+			     "%s: Could not initialize audio decoder",
+			     obs_source_get_name(source));
 			return;
 		}
 	}
@@ -642,7 +648,8 @@ void DShowInput::OnEncodedAudioData(enum AVCodecID id, unsigned char *data,
 		bool success = ffmpeg_decode_audio(audio_decoder, data, size,
 						   &audio, &got_output);
 		if (!success) {
-			blog(LOG_WARNING, "Error decoding audio");
+			blog(LOG_WARNING, "%s: Error decoding audio",
+			     obs_source_get_name(source));
 			return;
 		}
 
@@ -1026,13 +1033,16 @@ bool DShowInput::UpdateAudioConfig(obs_data_t *settings)
 
 	if (useCustomAudio) {
 		DeviceId id;
-		if (!DecodeDeviceId(id, audio_device_id.c_str()))
+		if (!DecodeDeviceId(id, audio_device_id.c_str())) {
+			obs_source_set_audio_active(source, false);
 			return false;
+		}
 
 		audioConfig.name = id.name;
 		audioConfig.path = id.path;
 
 	} else if (!deviceHasAudio) {
+		obs_source_set_audio_active(source, false);
 		return true;
 	}
 
@@ -1049,8 +1059,12 @@ bool DShowInput::UpdateAudioConfig(obs_data_t *settings)
 		(AudioMode)obs_data_get_int(settings, AUDIO_OUTPUT_MODE);
 
 	bool success = device.SetAudioConfig(&audioConfig);
-	if (!success)
+	if (!success) {
+		obs_source_set_audio_active(source, false);
 		return false;
+	}
+
+	obs_source_set_audio_active(source, true);
 
 	BPtr<char> name_utf8;
 	os_wcs_to_utf8_ptr(audioConfig.name.c_str(), audioConfig.name.size(),
@@ -1135,12 +1149,15 @@ DShowInput::GetColorRange(obs_data_t *settings) const
 
 inline bool DShowInput::Activate(obs_data_t *settings)
 {
-	if (!device.ResetGraph())
+	if (!device.ResetGraph()) {
+		obs_source_set_audio_active(source, false);
 		return false;
+	}
 
 	if (!UpdateVideoConfig(settings)) {
 		blog(LOG_WARNING, "%s: Video configuration failed",
 		     obs_source_get_name(source));
+		obs_source_set_audio_active(source, false);
 		return false;
 	}
 
@@ -1291,7 +1308,7 @@ static inline void AddCap(vector<Resolution> &resolutions, const VideoInfo &cap)
 }
 
 #define MAKE_DSHOW_FPS(fps) (10000000LL / (fps))
-#define MAKE_DSHOW_FRACTIONAL_FPS(den, num) ((num)*10000000LL / (den))
+#define MAKE_DSHOW_FRACTIONAL_FPS(den, num) ((num) * 10000000LL / (den))
 
 static long long GetOBSFPS()
 {

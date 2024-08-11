@@ -1,6 +1,18 @@
-find_qt(COMPONENTS Widgets Network Svg Xml COMPONENTS_LINUX Gui)
+# cmake-format: off
+find_package(Qt6 REQUIRED Widgets Network Svg Xml)
+# cmake-format: on
 
-target_link_libraries(obs-studio PRIVATE Qt::Widgets Qt::Svg Qt::Xml Qt::Network)
+if(OS_LINUX
+   OR OS_FREEBSD
+   OR OS_OPENBSD)
+  find_package(Qt6 REQUIRED Gui DBus)
+endif()
+
+if(NOT TARGET OBS::qt-wrappers)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/wrappers" "${CMAKE_BINARY_DIR}/shared/qt/wrappers")
+endif()
+
+target_link_libraries(obs-studio PRIVATE Qt::Widgets Qt::Svg Qt::Xml Qt::Network OBS::qt-wrappers)
 
 set_target_properties(
   obs-studio
@@ -14,7 +26,7 @@ set_property(
   PROPERTY AUTOUIC_SEARCH_PATHS forms forms/source-toolbar)
 
 set(_qt_sources
-    forms/obs.qrc
+    # cmake-format: sortable
     forms/AutoConfigFinishPage.ui
     forms/AutoConfigStartPage.ui
     forms/AutoConfigStartPage.ui
@@ -22,11 +34,14 @@ set(_qt_sources
     forms/AutoConfigTestPage.ui
     forms/AutoConfigVideoPage.ui
     forms/ColorSelect.ui
+    forms/obs.qrc
     forms/OBSAbout.ui
     forms/OBSAdvAudio.ui
     forms/OBSBasic.ui
+    forms/OBSBasicControls.ui
     forms/OBSBasicFilters.ui
     forms/OBSBasicInteraction.ui
+    forms/OBSBasicProperties.ui
     forms/OBSBasicSettings.ui
     forms/OBSBasicSourceSelect.ui
     forms/OBSBasicTransform.ui
@@ -34,6 +49,7 @@ set(_qt_sources
     forms/OBSExtraBrowsers.ui
     forms/OBSImporter.ui
     forms/OBSLogReply.ui
+    forms/OBSLogViewer.ui
     forms/OBSMissingFiles.ui
     forms/OBSRemux.ui
     forms/OBSUpdate.ui

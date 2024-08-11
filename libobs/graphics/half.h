@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2020 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -51,7 +51,7 @@ struct half {
 };
 
 /* adapted from DirectXMath XMConvertFloatToHalf */
-static struct half half_from_float(float f)
+static inline struct half half_from_float(float f)
 {
 	uint32_t Result;
 
@@ -90,7 +90,7 @@ static struct half half_from_float(float f)
 	return h;
 }
 
-static struct half half_from_bits(uint16_t u)
+static inline struct half half_from_bits(uint16_t u)
 {
 	struct half h;
 	h.u = u;

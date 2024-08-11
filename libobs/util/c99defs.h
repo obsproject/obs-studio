@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -52,28 +52,23 @@
 #endif
 
 #ifdef _MSC_VER
-#define PRAGMA_WARN_PUSH __pragma(warning(push))
-#define PRAGMA_WARN_POP __pragma(warning(pop))
-#define PRAGMA_WARN_DEPRECATION
-#define PRAGMA_WARN_STRINGOP_OVERFLOW
+#define PRAGMA_WARN_PUSH _Pragma("warning(push)")
+#define PRAGMA_WARN_POP _Pragma("warning(pop)")
+#define PRAGMA_WARN_DEPRECATION _Pragma("warning(disable: 4996)")
 #elif defined(__clang__)
 #define PRAGMA_WARN_PUSH _Pragma("clang diagnostic push")
 #define PRAGMA_WARN_POP _Pragma("clang diagnostic pop")
 #define PRAGMA_WARN_DEPRECATION \
 	_Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"")
-#define PRAGMA_WARN_STRINGOP_OVERFLOW
 #elif defined(__GNUC__)
 #define PRAGMA_WARN_PUSH _Pragma("GCC diagnostic push")
 #define PRAGMA_WARN_POP _Pragma("GCC diagnostic pop")
 #define PRAGMA_WARN_DEPRECATION \
 	_Pragma("GCC diagnostic warning \"-Wdeprecated-declarations\"")
-#define PRAGMA_WARN_STRINGOP_OVERFLOW \
-	_Pragma("GCC diagnostic warning \"-Wstringop-overflow\"")
 #else
 #define PRAGMA_WARN_PUSH
 #define PRAGMA_WARN_POP
 #define PRAGMA_WARN_DEPRECATION
-#define PRAGMA_WARN_STRINGOP_OVERFLOW
 #endif
 
 #include <stddef.h>

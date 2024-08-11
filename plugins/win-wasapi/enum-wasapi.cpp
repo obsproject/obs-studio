@@ -30,6 +30,7 @@ string GetDeviceName(IMMDevice *device)
 			device_name.resize(size);
 			os_wcs_to_utf8(nameVar.pwszVal, len, &device_name[0],
 				       size);
+			PropVariantClear(&nameVar);
 		}
 	}
 

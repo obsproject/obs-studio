@@ -21,7 +21,7 @@ set_target_properties(
              AUTOUIC ON
              AUTORCC ON)
 
-if(_QT_VERSION EQUAL 6 AND OS_WINDOWS)
+if(OS_WINDOWS)
   set_target_properties(obs-vst PROPERTIES AUTORCC_OPTIONS "--format-version;1")
 endif()
 

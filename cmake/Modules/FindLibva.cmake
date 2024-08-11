@@ -67,4 +67,5 @@ if(LIBVA_FOUND)
 
     set_target_properties(Libva::drm PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${LIBVA_INCLUDE_DIRS}")
   endif()
+
 endif()

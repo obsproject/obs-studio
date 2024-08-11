@@ -1,0 +1,13 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: libobs
+Description: OBS Studio core compositor library
+Version: @OBS_VERSION_CANONICAL@
+
+Requires:
+Libs: -L${libdir} -lobs
+Libs.private: -pthread -lm
+Cflags: -I${includedir} -std=gnu@CMAKE_C_STANDARD@ -fPIC -fvisibility=hidden -fopenmp-simd -Werror

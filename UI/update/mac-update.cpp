@@ -1,22 +1,18 @@
 #include "update-helpers.hpp"
 #include "shared-update.hpp"
-#include "qt-wrappers.hpp"
 #include "mac-update.hpp"
 #include "obs-app.hpp"
 
 #include <string>
 
+#include <qt-wrappers.hpp>
 #include <QMessageBox>
 
 /* ------------------------------------------------------------------------ */
 
-#ifndef MAC_BRANCHES_URL
-#define MAC_BRANCHES_URL "https://obsproject.com/update_studio/branches.json"
-#endif
-
-#ifndef MAC_DEFAULT_BRANCH
-#define MAC_DEFAULT_BRANCH "stable"
-#endif
+static const char *MAC_BRANCHES_URL =
+	"https://obsproject.com/update_studio/branches.json";
+static const char *MAC_DEFAULT_BRANCH = "stable";
 
 /* ------------------------------------------------------------------------ */
 

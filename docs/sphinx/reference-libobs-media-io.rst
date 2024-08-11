@@ -60,6 +60,8 @@ Video Handler
 
    - VIDEO_FORMAT_V210
 
+   - VIDEO_FORMAT_R10L
+
 ---------------------
 
 .. enum:: video_trc

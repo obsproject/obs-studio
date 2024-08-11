@@ -13,20 +13,6 @@ struct d3d11_data {
 	bool using_shtex;
 	bool multisampled;
 
-	ID3D11Texture2D *scale_tex;
-	ID3D11ShaderResourceView *scale_resource;
-
-	ID3D11VertexShader *vertex_shader;
-	ID3D11InputLayout *vertex_layout;
-	ID3D11PixelShader *pixel_shader;
-
-	ID3D11SamplerState *sampler_state;
-	ID3D11BlendState *blend_state;
-	ID3D11DepthStencilState *zstencil_state;
-	ID3D11RasterizerState *raster_state;
-
-	ID3D11Buffer *vertex_buffer;
-
 	union {
 		/* shared texture */
 		struct {
@@ -51,27 +37,6 @@ static struct d3d11_data data = {};
 
 void d3d11_free(void)
 {
-	if (data.scale_tex)
-		data.scale_tex->Release();
-	if (data.scale_resource)
-		data.scale_resource->Release();
-	if (data.vertex_shader)
-		data.vertex_shader->Release();
-	if (data.vertex_layout)
-		data.vertex_layout->Release();
-	if (data.pixel_shader)
-		data.pixel_shader->Release();
-	if (data.sampler_state)
-		data.sampler_state->Release();
-	if (data.blend_state)
-		data.blend_state->Release();
-	if (data.zstencil_state)
-		data.zstencil_state->Release();
-	if (data.raster_state)
-		data.raster_state->Release();
-	if (data.vertex_buffer)
-		data.vertex_buffer->Release();
-
 	capture_free();
 
 	if (data.using_shtex) {

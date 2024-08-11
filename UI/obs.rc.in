@@ -15,7 +15,7 @@ BEGIN
       VALUE "ProductName", "OBS Studio"
       VALUE "ProductVersion", "${UI_VERSION}"
       VALUE "Comments", "Free and open source software for video recording and live streaming"
-      VALUE "LegalCopyright", "(C) Hugh Bailey"
+      VALUE "LegalCopyright", "(C) Lain Bailey"
     END
   END
 

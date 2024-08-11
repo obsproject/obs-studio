@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -39,7 +39,6 @@ static inline void text_item_destroy(struct text_item *item)
 /* ------------------------------------------------------------------------- */
 
 struct text_lookup {
-	struct dstr language;
 	struct text_item *items;
 };
 
@@ -89,8 +88,9 @@ static bool lookup_gettoken(struct lexer *lex, struct strref *str)
 		if (!str->array) {
 			/* comments are designated with a #, and end at LF */
 			if (ch == '#') {
-				while (ch != '\n' && ch != 0)
-					ch = *(++lex->offset);
+				while (*lex->offset != '\n' &&
+				       *lex->offset != 0)
+					++lex->offset;
 			} else if (temp.type == BASETOKEN_WHITESPACE) {
 				strref_copy(str, &temp.text);
 				break;
@@ -263,8 +263,6 @@ void text_lookup_destroy(lookup_t *lookup)
 			HASH_DELETE(hh, lookup->items, item);
 			text_item_destroy(item);
 		}
-
-		dstr_free(&lookup->language);
 		bfree(lookup);
 	}
 }

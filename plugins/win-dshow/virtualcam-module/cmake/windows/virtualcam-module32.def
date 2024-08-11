@@ -1,0 +1,8 @@
+LIBRARY     obs-virtualcam-module32.dll
+EXPORTS
+            DllMain                 PRIVATE
+            DllGetClassObject       PRIVATE
+            DllCanUnloadNow         PRIVATE
+            DllRegisterServer       PRIVATE
+            DllUnregisterServer     PRIVATE
+            DllInstall              PRIVATE

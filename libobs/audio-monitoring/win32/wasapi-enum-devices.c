@@ -71,6 +71,7 @@ static bool get_device_info(obs_enum_audio_device_cb cb, void *data,
 	os_wcs_to_utf8(name_var.pwszVal, 0, utf8_name, 512);
 
 	cont = cb(data, utf8_name, utf8_id);
+	PropVariantClear(&name_var);
 
 fail:
 	safe_release(store);

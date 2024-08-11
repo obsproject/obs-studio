@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2014 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -429,8 +429,7 @@ size_t os_wcs_to_utf8(const wchar_t *str, size_t len, char *dst,
 			return 0;
 
 		if (out_len)
-			out_len =
-				wchar_to_utf8(str, in_len, dst, out_len + 1, 0);
+			out_len = wchar_to_utf8(str, in_len, dst, out_len, 0);
 
 		dst[out_len] = 0;
 	}
@@ -796,8 +795,11 @@ char *os_generate_formatted_filename(const char *extension, bool space,
 	if (!space)
 		dstr_replace(&sf, " ", "_");
 
-	dstr_cat_ch(&sf, '.');
-	dstr_cat(&sf, extension);
+	if (extension && *extension) {
+		dstr_cat_ch(&sf, '.');
+		dstr_cat(&sf, extension);
+	}
+
 	dstr_free(&c);
 
 	if (sf.len > 255)

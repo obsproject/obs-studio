@@ -1,0 +1,26 @@
+IDI_ICON1 ICON DISCARDABLE "cmake/windows/obs-studio.ico"
+
+1 VERSIONINFO
+FILEVERSION ${OBS_VERSION_MAJOR},${OBS_VERSION_MINOR},${OBS_VERSION_PATCH},0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904B0"
+    BEGIN
+      VALUE "CompanyName", "OBS"
+      VALUE "FileDescription", "OBS Studio"
+      VALUE "FileVersion", "${OBS_VERSION_CANONICAL}"
+      VALUE "InternalName", "obs"
+      VALUE "OriginalFilename", "obs"
+      VALUE "ProductName", "OBS Studio"
+      VALUE "ProductVersion", "${OBS_VERSION_CANONICAL}"
+      VALUE "Comments", "Free and open source software for video recording and live streaming"
+      VALUE "LegalCopyright", "${OBS_LEGAL_COPYRIGHT}"
+    END
+  END
+
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x0409, 0x04B0
+  END
+END

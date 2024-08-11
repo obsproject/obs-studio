@@ -145,16 +145,17 @@ struct compat_result *check_compatibility(const char *win_title,
 		const char *j_title = get_string_val(entry, "window_title");
 		const char *j_class = get_string_val(entry, "window_class");
 
-		if (win_class && (match_flags & MATCH_CLASS) &&
-		    strcmp(win_class, j_class) != 0)
+		if ((match_flags & MATCH_CLASS) &&
+		    (!win_class || strcmp(win_class, j_class) != 0))
 			continue;
-		if (exe && (match_flags & MATCH_EXE) &&
-		    astrcmpi(exe, j_exe) != 0)
+		if ((match_flags & MATCH_EXE) &&
+		    (!exe || astrcmpi(exe, j_exe) != 0))
 			continue;
 		/* Title supports partial matches as some games append additional
 		 * information after the title, e.g., "Minecraft 1.18". */
-		if (win_title && (match_flags & MATCH_TITLE) &&
-		    astrcmpi_n(win_title, j_title, strlen(j_title)) != 0)
+		if ((match_flags & MATCH_TITLE) &&
+		    (!win_title ||
+		     astrcmpi_n(win_title, j_title, strlen(j_title)) != 0))
 			continue;
 
 		/* Attempt to translate and compile message */

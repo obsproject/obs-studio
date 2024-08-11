@@ -96,7 +96,7 @@ void VSTPlugin::createChannelBuffers(size_t count)
 	cleanupChannelBuffers();
 
 	int blocksize = BLOCK_SIZE;
-	numChannels = (std::max)((size_t)0, count);
+	numChannels = std::max((size_t)0, count);
 
 	if (numChannels > 0) {
 		inputs = (float **)bmalloc(sizeof(float *) * numChannels);
@@ -170,8 +170,7 @@ void VSTPlugin::loadEffectFromPath(const std::string &path)
 			return;
 		}
 
-		int maxchans =
-			(std::max)(effect->numInputs, effect->numOutputs);
+		int maxchans = std::max(effect->numInputs, effect->numOutputs);
 		// sanity check
 		if (maxchans < 0 || maxchans > 256) {
 			blog(LOG_WARNING,

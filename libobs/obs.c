@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -179,7 +179,6 @@ static bool obs_init_gpu_conversion(struct obs_core_video_mix *video)
 	video->convert_textures[0] = NULL;
 	video->convert_textures[1] = NULL;
 	video->convert_textures[2] = NULL;
-#ifdef _WIN32
 	video->convert_textures_encode[0] = NULL;
 	video->convert_textures_encode[1] = NULL;
 	video->convert_textures_encode[2] = NULL;
@@ -200,7 +199,6 @@ static bool obs_init_gpu_conversion(struct obs_core_video_mix *video)
 			return false;
 		}
 	}
-#endif
 
 	bool success = true;
 
@@ -297,13 +295,11 @@ static bool obs_init_gpu_conversion(struct obs_core_video_mix *video)
 				gs_texture_destroy(video->convert_textures[c]);
 				video->convert_textures[c] = NULL;
 			}
-#ifdef _WIN32
 			if (video->convert_textures_encode[c]) {
 				gs_texture_destroy(
 					video->convert_textures_encode[c]);
 				video->convert_textures_encode[c] = NULL;
 			}
-#endif
 		}
 	}
 
@@ -540,6 +536,8 @@ gs_effect_t *obs_load_effect(gs_effect_t **effect, const char *file)
 	return *effect;
 }
 
+static const char *shader_comp_name = "shader compilation";
+static const char *obs_init_graphics_name = "obs_init_graphics";
 static int obs_init_graphics(struct obs_video_info *ovi)
 {
 	struct obs_core_video *video = &obs->video;
@@ -549,9 +547,13 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 	bool success = true;
 	int errorcode;
 
+	profile_start(obs_init_graphics_name);
+
 	errorcode =
 		gs_create(&video->graphics, ovi->graphics_module, ovi->adapter);
 	if (errorcode != GS_SUCCESS) {
+		profile_end(obs_init_graphics_name);
+
 		switch (errorcode) {
 		case GS_ERROR_MODULE_NOT_FOUND:
 			return OBS_VIDEO_MODULE_NOT_FOUND;
@@ -562,6 +564,7 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 		}
 	}
 
+	profile_start(shader_comp_name);
 	gs_enter_context(video->graphics);
 
 	char *filename = obs_find_data_file("default.effect");
@@ -639,6 +642,9 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 		success = false;
 
 	gs_leave_context();
+	profile_end(shader_comp_name);
+	profile_end(obs_init_graphics_name);
+
 	return success ? OBS_VIDEO_SUCCESS : OBS_VIDEO_FAIL;
 }
 
@@ -740,6 +746,8 @@ static int obs_init_video(struct obs_video_info *ovi)
 
 	if (pthread_mutex_init(&video->task_mutex, NULL) < 0)
 		return OBS_VIDEO_FAIL;
+	if (pthread_mutex_init(&video->encoder_group_mutex, NULL) < 0)
+		return OBS_VIDEO_FAIL;
 	if (pthread_mutex_init(&video->mixes_mutex, NULL) < 0)
 		return OBS_VIDEO_FAIL;
 
@@ -748,7 +756,10 @@ static int obs_init_video(struct obs_video_info *ovi)
 
 	int errorcode;
 #ifdef __APPLE__
-	errorcode = pthread_create(&video->video_thread, NULL,
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+	pthread_attr_set_qos_class_np(&attr, QOS_CLASS_USER_INTERACTIVE, 0);
+	errorcode = pthread_create(&video->video_thread, &attr,
 				   obs_graphics_thread_autorelease, obs);
 #else
 	errorcode = pthread_create(&video->video_thread, NULL,
@@ -817,12 +828,10 @@ static void obs_free_render_textures(struct obs_core_video_mix *video)
 			gs_texture_destroy(video->convert_textures[c]);
 			video->convert_textures[c] = NULL;
 		}
-#ifdef _WIN32
 		if (video->convert_textures_encode[c]) {
 			gs_texture_destroy(video->convert_textures_encode[c]);
 			video->convert_textures_encode[c] = NULL;
 		}
-#endif
 	}
 
 	gs_texture_destroy(video->output_texture);
@@ -840,8 +849,8 @@ void obs_free_video_mix(struct obs_core_video_mix *video)
 
 		obs_free_render_textures(video);
 
-		circlebuf_free(&video->vframe_info_buffer);
-		circlebuf_free(&video->vframe_info_buffer_gpu);
+		deque_free(&video->vframe_info_buffer);
+		deque_free(&video->vframe_info_buffer_gpu);
 
 		video->texture_rendered = false;
 		memset(video->textures_copied, 0,
@@ -869,17 +878,26 @@ static void obs_free_video(void)
 		obs_free_video_mix(video);
 		obs->video.mixes.array[i] = NULL;
 	}
+	da_free(obs->video.mixes);
 	if (num_views > 0)
 		blog(LOG_WARNING, "Number of remaining views: %ld", num_views);
 	pthread_mutex_unlock(&obs->video.mixes_mutex);
 
 	pthread_mutex_destroy(&obs->video.mixes_mutex);
 	pthread_mutex_init_value(&obs->video.mixes_mutex);
-	da_free(obs->video.mixes);
+
+	for (size_t i = 0; i < obs->video.ready_encoder_groups.num; i++) {
+		obs_weak_encoder_release(
+			obs->video.ready_encoder_groups.array[i]);
+	}
+	da_free(obs->video.ready_encoder_groups);
+
+	pthread_mutex_destroy(&obs->video.encoder_group_mutex);
+	pthread_mutex_init_value(&obs->video.encoder_group_mutex);
 
 	pthread_mutex_destroy(&obs->video.task_mutex);
 	pthread_mutex_init_value(&obs->video.task_mutex);
-	circlebuf_free(&obs->video.tasks);
+	deque_free(&obs->video.tasks);
 }
 
 static void obs_free_graphics(void)
@@ -927,7 +945,7 @@ static bool obs_init_audio(struct audio_output_info *ai)
 		return false;
 
 	struct obs_task_info audio_init = {.task = set_audio_thread};
-	circlebuf_push_back(&audio->tasks, &audio_init, sizeof(audio_init));
+	deque_push_back(&audio->tasks, &audio_init, sizeof(audio_init));
 
 	audio->monitoring_device_name = bstrdup("Default");
 	audio->monitoring_device_id = bstrdup("default");
@@ -959,14 +977,14 @@ static void obs_free_audio(void)
 	if (audio->audio)
 		audio_output_close(audio->audio);
 
-	circlebuf_free(&audio->buffered_timestamps);
+	deque_free(&audio->buffered_timestamps);
 	da_free(audio->render_order);
 	da_free(audio->root_nodes);
 
 	da_free(audio->monitors);
 	bfree(audio->monitoring_device_name);
 	bfree(audio->monitoring_device_id);
-	circlebuf_free(&audio->tasks);
+	deque_free(&audio->tasks);
 	pthread_mutex_destroy(&audio->task_mutex);
 	pthread_mutex_destroy(&audio->monitoring_mutex);
 
@@ -1083,6 +1101,7 @@ static void obs_free_data(void)
 	for (size_t i = 0; i < data->protocols.num; i++)
 		bfree(data->protocols.array[i]);
 	da_free(data->protocols);
+	da_free(data->sources_to_tick);
 }
 
 static const char *obs_signals[] = {
@@ -1098,6 +1117,8 @@ static const char *obs_signals[] = {
 	"void source_hide(ptr source)",
 	"void source_audio_activate(ptr source)",
 	"void source_audio_deactivate(ptr source)",
+	"void source_filter_add(ptr source, ptr filter)",
+	"void source_filter_remove(ptr source, ptr filter)",
 	"void source_rename(ptr source, string new_name, string prev_name)",
 	"void source_volume(ptr source, in out float volume)",
 	"void source_volume_level(ptr source, float level, float magnitude, "
@@ -1228,6 +1249,7 @@ static bool obs_init(const char *locale, const char *module_config_path,
 	pthread_mutex_init_value(&obs->audio.monitoring_mutex);
 	pthread_mutex_init_value(&obs->audio.task_mutex);
 	pthread_mutex_init_value(&obs->video.task_mutex);
+	pthread_mutex_init_value(&obs->video.encoder_group_mutex);
 	pthread_mutex_init_value(&obs->video.mixes_mutex);
 
 	obs->name_store_owned = !store;
@@ -1401,8 +1423,6 @@ void obs_shutdown(void)
 	FREE_REGISTERED_TYPES(obs_output_info, obs->output_types);
 	FREE_REGISTERED_TYPES(obs_encoder_info, obs->encoder_types);
 	FREE_REGISTERED_TYPES(obs_service_info, obs->service_types);
-	FREE_REGISTERED_TYPES(obs_modal_ui, obs->modal_ui_callbacks);
-	FREE_REGISTERED_TYPES(obs_modeless_ui, obs->modeless_ui_callbacks);
 
 #undef FREE_REGISTERED_TYPES
 
@@ -1436,6 +1456,10 @@ void obs_shutdown(void)
 	for (size_t i = 0; i < obs->module_paths.num; i++)
 		free_module_path(obs->module_paths.array + i);
 	da_free(obs->module_paths);
+
+	for (size_t i = 0; i < obs->safe_modules.num; i++)
+		bfree(obs->safe_modules.array[i]);
+	da_free(obs->safe_modules);
 
 	if (obs->name_store_owned)
 		profiler_name_store_free(obs->name_store);
@@ -1789,66 +1813,6 @@ video_t *obs_get_video(void)
 	return obs->video.main_mix->video;
 }
 
-/* TODO: optimize this later so it's not just O(N) string lookups */
-static inline struct obs_modal_ui *
-get_modal_ui_callback(const char *id, const char *task, const char *target)
-{
-	for (size_t i = 0; i < obs->modal_ui_callbacks.num; i++) {
-		struct obs_modal_ui *callback =
-			obs->modal_ui_callbacks.array + i;
-
-		if (strcmp(callback->id, id) == 0 &&
-		    strcmp(callback->task, task) == 0 &&
-		    strcmp(callback->target, target) == 0)
-			return callback;
-	}
-
-	return NULL;
-}
-
-static inline struct obs_modeless_ui *
-get_modeless_ui_callback(const char *id, const char *task, const char *target)
-{
-	for (size_t i = 0; i < obs->modeless_ui_callbacks.num; i++) {
-		struct obs_modeless_ui *callback;
-		callback = obs->modeless_ui_callbacks.array + i;
-
-		if (strcmp(callback->id, id) == 0 &&
-		    strcmp(callback->task, task) == 0 &&
-		    strcmp(callback->target, target) == 0)
-			return callback;
-	}
-
-	return NULL;
-}
-
-int obs_exec_ui(const char *name, const char *task, const char *target,
-		void *data, void *ui_data)
-{
-	struct obs_modal_ui *callback;
-	int errorcode = OBS_UI_NOTFOUND;
-
-	if (!obs)
-		return errorcode;
-
-	callback = get_modal_ui_callback(name, task, target);
-	if (callback) {
-		bool success = callback->exec(data, ui_data);
-		errorcode = success ? OBS_UI_SUCCESS : OBS_UI_CANCEL;
-	}
-
-	return errorcode;
-}
-
-void *obs_create_ui(const char *name, const char *task, const char *target,
-		    void *data, void *ui_data)
-{
-	struct obs_modeless_ui *callback;
-
-	callback = get_modeless_ui_callback(name, task, target);
-	return callback ? callback->create(data, ui_data) : NULL;
-}
-
 obs_source_t *obs_get_output_source(uint32_t channel)
 {
 	return obs_view_get_source(&obs->data.main_view, channel);
@@ -2079,11 +2043,6 @@ static inline void *obs_service_addref_safe_(void *ref)
 	return obs_service_get_ref(ref);
 }
 
-static inline void *obs_id_(void *data)
-{
-	return data;
-}
-
 obs_source_t *obs_get_source_by_name(const char *name)
 {
 	return get_context_by_name(&obs->data.public_sources, name,
@@ -2123,7 +2082,14 @@ obs_source_t *obs_get_transition_by_name(const char *name)
 
 obs_source_t *obs_get_transition_by_uuid(const char *uuid)
 {
-	return obs_get_source_by_uuid(uuid);
+	obs_source_t *source = obs_get_source_by_uuid(uuid);
+
+	if (source && source->info.type == OBS_SOURCE_TYPE_TRANSITION)
+		return source;
+	else if (source)
+		obs_source_release(source);
+
+	return NULL;
 }
 
 obs_output_t *obs_get_output_by_name(const char *name)
@@ -2498,6 +2464,7 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	int m_type = (int)obs_source_get_monitoring_type(source);
 	int di_mode = (int)obs_source_get_deinterlace_mode(source);
 	int di_order = (int)obs_source_get_deinterlace_field_order(source);
+	DARRAY(obs_source_t *) filters_copy;
 
 	obs_source_save(source);
 	hotkeys = obs_hotkeys_save_source(source);
@@ -2538,19 +2505,31 @@ obs_data_t *obs_save_source(obs_source_t *source)
 		obs_transition_save(source, source_data);
 
 	pthread_mutex_lock(&source->filter_mutex);
+	da_init(filters_copy);
+	da_reserve(filters_copy, source->filters.num);
 
-	if (source->filters.num) {
-		for (size_t i = source->filters.num; i > 0; i--) {
-			obs_source_t *filter = source->filters.array[i - 1];
+	for (size_t i = 0; i < source->filters.num; i++) {
+		obs_source_t *filter =
+			obs_source_get_ref(source->filters.array[i]);
+		if (filter)
+			da_push_back(filters_copy, &filter);
+	}
+
+	pthread_mutex_unlock(&source->filter_mutex);
+
+	if (filters_copy.num) {
+		for (size_t i = filters_copy.num; i > 0; i--) {
+			obs_source_t *filter = filters_copy.array[i - 1];
 			obs_data_t *filter_data = obs_save_source(filter);
 			obs_data_array_push_back(filters, filter_data);
 			obs_data_release(filter_data);
+			obs_source_release(filter);
 		}
 
 		obs_data_set_array(source_data, "filters", filters);
 	}
 
-	pthread_mutex_unlock(&source->filter_mutex);
+	da_free(filters_copy);
 
 	obs_data_release(settings);
 	obs_data_array_release(filters);
@@ -2993,6 +2972,21 @@ bool obs_obj_is_private(void *obj)
 	return context->private;
 }
 
+void obs_reset_audio_monitoring(void)
+{
+	if (!obs_audio_monitoring_available())
+		return;
+
+	pthread_mutex_lock(&obs->audio.monitoring_mutex);
+
+	for (size_t i = 0; i < obs->audio.monitors.num; i++) {
+		struct audio_monitor *monitor = obs->audio.monitors.array[i];
+		audio_monitor_reset(monitor);
+	}
+
+	pthread_mutex_unlock(&obs->audio.monitoring_mutex);
+}
+
 bool obs_set_audio_monitoring_device(const char *name, const char *id)
 {
 	if (!name || !id || !*name || !*id)
@@ -3014,10 +3008,7 @@ bool obs_set_audio_monitoring_device(const char *name, const char *id)
 	obs->audio.monitoring_device_name = bstrdup(name);
 	obs->audio.monitoring_device_id = bstrdup(id);
 
-	for (size_t i = 0; i < obs->audio.monitors.num; i++) {
-		struct audio_monitor *monitor = obs->audio.monitors.array[i];
-		audio_monitor_reset(monitor);
-	}
+	obs_reset_audio_monitoring();
 
 	pthread_mutex_unlock(&obs->audio.monitoring_mutex);
 	return true;
@@ -3121,13 +3112,15 @@ struct obs_core_video_mix *get_mix_for_video(video_t *v)
 }
 
 void start_raw_video(video_t *v, const struct video_scale_info *conversion,
+		     uint32_t frame_rate_divisor,
 		     void (*callback)(void *param, struct video_data *frame),
 		     void *param)
 {
 	struct obs_core_video_mix *video = get_mix_for_video(v);
 	if (video)
 		os_atomic_inc_long(&video->raw_active);
-	video_output_connect(v, conversion, callback, param);
+	video_output_connect2(v, conversion, frame_rate_divisor, callback,
+			      param);
 }
 
 void stop_raw_video(video_t *v,
@@ -3145,8 +3138,16 @@ void obs_add_raw_video_callback(const struct video_scale_info *conversion,
 						 struct video_data *frame),
 				void *param)
 {
+	obs_add_raw_video_callback2(conversion, 1, callback, param);
+}
+
+void obs_add_raw_video_callback2(
+	const struct video_scale_info *conversion, uint32_t frame_rate_divisor,
+	void (*callback)(void *param, struct video_data *frame), void *param)
+{
 	struct obs_core_video_mix *video = obs->video.main_mix;
-	start_raw_video(video->video, conversion, callback, param);
+	start_raw_video(video->video, conversion, frame_rate_divisor, callback,
+			param);
 }
 
 void obs_remove_raw_video_callback(void (*callback)(void *param,
@@ -3355,7 +3356,7 @@ void obs_queue_task(enum obs_task_type type, obs_task_t task, void *param,
 			struct obs_task_info info = {task, param};
 
 			pthread_mutex_lock(&video->task_mutex);
-			circlebuf_push_back(&video->tasks, &info, sizeof(info));
+			deque_push_back(&video->tasks, &info, sizeof(info));
 			pthread_mutex_unlock(&video->task_mutex);
 
 		} else if (type == OBS_TASK_AUDIO) {
@@ -3363,7 +3364,7 @@ void obs_queue_task(enum obs_task_type type, obs_task_t task, void *param,
 			struct obs_task_info info = {task, param};
 
 			pthread_mutex_lock(&audio->task_mutex);
-			circlebuf_push_back(&audio->tasks, &info, sizeof(info));
+			deque_push_back(&audio->tasks, &info, sizeof(info));
 			pthread_mutex_unlock(&audio->task_mutex);
 
 		} else if (type == OBS_TASK_DESTROY) {

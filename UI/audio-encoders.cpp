@@ -58,7 +58,9 @@ static void HandleListProperty(obs_property_t *prop, const char *id,
 
 static void HandleSampleRate(obs_property_t *prop, const char *id)
 {
-	auto ReleaseData = [](obs_data_t *data) { obs_data_release(data); };
+	auto ReleaseData = [](obs_data_t *data) {
+		obs_data_release(data);
+	};
 	std::unique_ptr<obs_data_t, decltype(ReleaseData)> data{
 		obs_encoder_defaults(id), ReleaseData};
 
@@ -388,6 +390,8 @@ const std::vector<int> &GetAudioEncoderBitrates(const char *id)
 
 int FindClosestAvailableAudioBitrate(const char *id, int bitrate)
 {
+	PopulateBitrateLists();
+
 	int prev = 0;
 	int next = INVALID_BITRATE;
 	std::string encoder = id;

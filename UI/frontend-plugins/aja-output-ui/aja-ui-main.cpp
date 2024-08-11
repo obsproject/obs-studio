@@ -412,7 +412,9 @@ void addOutputUI(void)
 	ajaOutputUI = new AJAOutputUI(window);
 	obs_frontend_pop_ui_translation();
 
-	auto cb = []() { ajaOutputUI->ShowHideDialog(); };
+	auto cb = []() {
+		ajaOutputUI->ShowHideDialog();
+	};
 
 	action->connect(action, &QAction::triggered, cb);
 }

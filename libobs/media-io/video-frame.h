@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,6 +19,10 @@
 
 #include "../util/bmem.h"
 #include "video-io.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct video_frame {
 	uint8_t *data[MAX_AV_PLANES];
@@ -58,3 +62,7 @@ static inline void video_frame_destroy(struct video_frame *frame)
 EXPORT void video_frame_copy(struct video_frame *dst,
 			     const struct video_frame *src,
 			     enum video_format format, uint32_t height);
+
+#ifdef __cplusplus
+}
+#endif

@@ -186,7 +186,7 @@ struct gs_texture *gl_egl_create_texture_from_eglimage(
 
 	struct gs_texture *texture = NULL;
 	texture = gs_texture_create(width, height, color_format, 1, NULL,
-				    GS_GL_DUMMYTEX);
+				    GS_GL_DUMMYTEX | GS_RENDER_TARGET);
 	const GLuint gltex = *(GLuint *)gs_texture_get_obj(texture);
 
 	gl_bind_texture(GL_TEXTURE_2D, gltex);
@@ -202,6 +202,53 @@ struct gs_texture *gl_egl_create_texture_from_eglimage(
 	gl_bind_texture(GL_TEXTURE_2D, 0);
 
 	return texture;
+}
+
+bool gl_egl_enum_adapters(EGLDisplay display,
+			  bool (*callback)(void *param, const char *name,
+					   uint32_t id),
+			  void *param)
+{
+	EGLDeviceEXT display_dev;
+	if (eglQueryDisplayAttribEXT(display, EGL_DEVICE_EXT,
+				     (EGLAttrib *)&display_dev) &&
+	    eglGetError() == EGL_SUCCESS) {
+		const char *display_node = eglQueryDeviceStringEXT(
+			display_dev, EGL_DRM_RENDER_NODE_FILE_EXT);
+		if (eglGetError() != EGL_SUCCESS || display_node == NULL) {
+			display_node = "/Software";
+		}
+		if (!callback(param, display_node, 0)) {
+			return true;
+		}
+	}
+
+	EGLint num_devices = 0;
+	EGLDeviceEXT devices[32];
+	if (!eglQueryDevicesEXT(32, devices, &num_devices)) {
+		eglGetError();
+		return true;
+	}
+
+	for (int i = 0; i < num_devices; i++) {
+		const char *node = eglQueryDeviceStringEXT(
+			devices[i], EGL_DRM_RENDER_NODE_FILE_EXT);
+		if (node == NULL || eglGetError() != EGL_SUCCESS) {
+			// Do not enumerate additional software renderers.
+			continue;
+		}
+		if (!callback(param, node, i + 1)) {
+			return true;
+		}
+	}
+	return true;
+}
+
+uint32_t gs_get_adapter_count()
+{
+	EGLint num_devices = 0;
+	eglQueryDevicesEXT(0, NULL, &num_devices);
+	return 1 + num_devices; // Display + devices.
 }
 
 struct gs_texture *

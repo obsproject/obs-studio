@@ -57,8 +57,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'OBS Studio'
-copyright = '2017-2022, Hugh Bailey'
-author = 'Hugh Bailey'
+copyright = '2017-2022, Lain Bailey'
+author = 'Lain Bailey'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -176,7 +176,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'OBSStudio.tex', 'OBS Studio Documentation',
-     'Hugh Bailey', 'manual'),
+     'Lain Bailey', 'manual'),
 ]
 
 
