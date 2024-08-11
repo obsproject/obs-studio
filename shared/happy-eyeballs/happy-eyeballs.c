@@ -650,11 +650,11 @@ int happy_eyeballs_timedwait(struct happy_eyeballs_ctx *context,
 	return status;
 }
 
-int happy_eyeballs_destroy(struct happy_eyeballs_ctx *context)
+static void *destroy_thread(void *param)
 {
-	if (context == NULL)
-		return STATUS_INVALID_ARGUMENT;
+	struct happy_eyeballs_ctx *context = param;
 
+	os_set_thread_name("happy-eyeballs destroy thread");
 #ifdef _WIN32
 #define SHUT_RDWR SD_BOTH
 #else
@@ -698,6 +698,21 @@ int happy_eyeballs_destroy(struct happy_eyeballs_ctx *context)
 
 	da_free(context->candidates);
 	free(context);
+
+	return NULL;
+}
+
+int happy_eyeballs_destroy(struct happy_eyeballs_ctx *context)
+{
+	if (context == NULL)
+		return STATUS_INVALID_ARGUMENT;
+
+	/* The destroy happens asynchronously in another thread due to the
+	 * connect() call blocking on Windows. */
+	pthread_t thread;
+	pthread_create(&thread, NULL, destroy_thread, context);
+	pthread_detach(thread);
+
 	return STATUS_SUCCESS;
 }
 
