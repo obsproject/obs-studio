@@ -2174,9 +2174,12 @@ void OBSBasicSettings::LoadAdvOutputStreamingEncoderProperties()
 	if (!SetComboByValue(ui->advOutEncoder, type)) {
 		uint32_t caps = obs_get_encoder_caps(type);
 		if ((caps & ENCODER_HIDE_FLAGS) != 0) {
-			const char *name = obs_encoder_get_display_name(type);
+			QString encName =
+				QT_UTF8(obs_encoder_get_display_name(type));
+			if (caps & OBS_ENCODER_CAP_DEPRECATED)
+				encName += " (" + QTStr("Deprecated") + ")";
 
-			ui->advOutEncoder->insertItem(0, QT_UTF8(name),
+			ui->advOutEncoder->insertItem(0, encName,
 						      QT_UTF8(type));
 			SetComboByValue(ui->advOutEncoder, type);
 		}
@@ -2292,9 +2295,12 @@ void OBSBasicSettings::LoadAdvOutputRecordingEncoderProperties()
 	if (!SetComboByValue(ui->advOutRecEncoder, type)) {
 		uint32_t caps = obs_get_encoder_caps(type);
 		if ((caps & ENCODER_HIDE_FLAGS) != 0) {
-			const char *name = obs_encoder_get_display_name(type);
+			QString encName =
+				QT_UTF8(obs_encoder_get_display_name(type));
+			if (caps & OBS_ENCODER_CAP_DEPRECATED)
+				encName += " (" + QTStr("Deprecated") + ")";
 
-			ui->advOutRecEncoder->insertItem(1, QT_UTF8(name),
+			ui->advOutRecEncoder->insertItem(1, encName,
 							 QT_UTF8(type));
 			SetComboByValue(ui->advOutRecEncoder, type);
 		} else {
@@ -5082,6 +5088,11 @@ static void DisableIncompatibleCodecs(QComboBox *cbox, const QString &format,
 		/* Something has gone horribly wrong and there's no encoder */
 		if (encoderId.empty())
 			continue;
+
+		if (obs_get_encoder_caps(encoderId.c_str()) &
+		    OBS_ENCODER_CAP_DEPRECATED) {
+			encDisplayName += " (" + QTStr("Deprecated") + ")";
+		}
 
 		const char *codec = obs_get_encoder_codec(encoderId.c_str());
 
