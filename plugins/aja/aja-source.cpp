@@ -580,7 +580,7 @@ bool AJASource::ReadWireFormats(NTV2DeviceID device_id, IOSelection io_select,
 			mCard->WaitForInputVerticalInterrupt(channel);
 			VPIDData vpid_data;
 			if (ReadChannelVPIDs(channel, vpid_data))
-				vpids.push_back(vpid_data);
+				vpids.emplace_back(vpid_data);
 		} else if (NTV2_INPUT_SOURCE_IS_HDMI(src)) {
 			mCard->WaitForInputVerticalInterrupt(channel);
 

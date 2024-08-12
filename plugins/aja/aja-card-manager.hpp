@@ -8,7 +8,7 @@
 #include <ajantv2/includes/ntv2publicinterface.h>
 
 #include <memory>
-#include <map>
+#include <unordered_map>
 #include <mutex>
 #include <vector>
 
@@ -18,7 +18,7 @@ class AJASource;
 
 namespace aja {
 
-using ChannelPwnz = std::map<std::string, int32_t>;
+using ChannelPwnz = std::unordered_map<std::string, int32_t>;
 
 /* A CardEntry for each physical AJA card is added to a map retained by the CardManager.
  * Each CardEntry itself maintains a map representing the AJA card "Channels" the are

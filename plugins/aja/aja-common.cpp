@@ -151,25 +151,25 @@ void populate_video_format_list(NTV2DeviceID deviceID, obs_property_t *list,
 {
 	VideoFormatList videoFormats = {};
 	VideoStandardList orderedStandards = {};
-	orderedStandards.push_back(NTV2_STANDARD_525);
-	orderedStandards.push_back(NTV2_STANDARD_625);
+	orderedStandards.emplace_back(NTV2_STANDARD_525);
+	orderedStandards.emplace_back(NTV2_STANDARD_625);
 	if (NTV2DeviceCanDoHDVideo(deviceID)) {
-		orderedStandards.push_back(NTV2_STANDARD_720);
-		orderedStandards.push_back(NTV2_STANDARD_1080);
-		orderedStandards.push_back(NTV2_STANDARD_1080p);
-		orderedStandards.push_back(NTV2_STANDARD_2K);
-		orderedStandards.push_back(NTV2_STANDARD_2Kx1080p);
-		orderedStandards.push_back(NTV2_STANDARD_2Kx1080i);
+		orderedStandards.emplace_back(NTV2_STANDARD_720);
+		orderedStandards.emplace_back(NTV2_STANDARD_1080);
+		orderedStandards.emplace_back(NTV2_STANDARD_1080p);
+		orderedStandards.emplace_back(NTV2_STANDARD_2K);
+		orderedStandards.emplace_back(NTV2_STANDARD_2Kx1080p);
+		orderedStandards.emplace_back(NTV2_STANDARD_2Kx1080i);
 	}
 	if (NTV2DeviceCanDo4KVideo(deviceID)) {
-		orderedStandards.push_back(NTV2_STANDARD_3840i);
-		orderedStandards.push_back(NTV2_STANDARD_3840x2160p);
+		orderedStandards.emplace_back(NTV2_STANDARD_3840i);
+		orderedStandards.emplace_back(NTV2_STANDARD_3840x2160p);
 		if (want4KHFR)
-			orderedStandards.push_back(NTV2_STANDARD_3840HFR);
-		orderedStandards.push_back(NTV2_STANDARD_4096i);
-		orderedStandards.push_back(NTV2_STANDARD_4096x2160p);
+			orderedStandards.emplace_back(NTV2_STANDARD_3840HFR);
+		orderedStandards.emplace_back(NTV2_STANDARD_4096i);
+		orderedStandards.emplace_back(NTV2_STANDARD_4096x2160p);
 		if (want4KHFR)
-			orderedStandards.push_back(NTV2_STANDARD_4096HFR);
+			orderedStandards.emplace_back(NTV2_STANDARD_4096HFR);
 	}
 
 	aja::GetSortedVideoFormats(deviceID, orderedStandards, videoFormats);
@@ -350,10 +350,10 @@ void GetSortedVideoFormats(NTV2DeviceID id, const VideoStandardList &standards,
 		if (id != DEVICE_ID_NOTFOUND &&
 		    NTV2DeviceCanDoVideoFormat(id, fmt)) {
 			if (videoFormatMap.count(standard)) {
-				videoFormatMap.at(standard).push_back(fmt);
+				videoFormatMap.at(standard).emplace_back(fmt);
 			} else {
 				std::vector<NTV2VideoFormat> v;
-				v.push_back(fmt);
+				v.emplace_back(fmt);
 				videoFormatMap.insert(
 					std::pair<NTV2Standard,
 						  std::vector<NTV2VideoFormat>>(
@@ -388,7 +388,7 @@ void GetSortedVideoFormats(NTV2DeviceID id, const VideoStandardList &standards,
 			     i < videoFormatMap.at(standard).size(); i++) {
 				NTV2VideoFormat vf =
 					videoFormatMap.at(standard).at(i);
-				videoFormats.push_back(vf);
+				videoFormats.emplace_back(vf);
 			}
 		}
 	}

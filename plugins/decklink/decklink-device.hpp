@@ -2,16 +2,16 @@
 
 #include "decklink-device-mode.hpp"
 
-#include <map>
+#include <unordered_map>
 #include <string>
 #include <vector>
 #include <stdint.h>
 
 class DeckLinkDevice {
 	ComPtr<IDeckLink> device;
-	std::map<long long, DeckLinkDeviceMode *> inputModeIdMap;
+	std::unordered_map<long long, DeckLinkDeviceMode *> inputModeIdMap;
 	std::vector<DeckLinkDeviceMode *> inputModes;
-	std::map<long long, DeckLinkDeviceMode *> outputModeIdMap;
+	std::unordered_map<long long, DeckLinkDeviceMode *> outputModeIdMap;
 	std::vector<DeckLinkDeviceMode *> outputModes;
 	std::string name;
 	std::string displayName;

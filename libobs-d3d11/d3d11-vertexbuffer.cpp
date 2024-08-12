@@ -131,8 +131,8 @@ void gs_vertex_buffer::BuildBuffers()
 		InitBuffer(tverts->width * sizeof(float), vbd.data->num,
 			   tverts->array, &buffer);
 
-		uvBuffers.push_back(buffer);
-		uvSizes.push_back(tverts->width * sizeof(float));
+		uvBuffers.emplace_back(buffer);
+		uvSizes.emplace_back(tverts->width * sizeof(float));
 	}
 }
 

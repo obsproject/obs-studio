@@ -65,7 +65,7 @@ DeckLinkDeviceDiscovery::DeckLinkDeviceArrived(IDeckLink *device)
 
 	std::lock_guard<std::recursive_mutex> lock(deviceMutex);
 
-	devices.push_back(newDev);
+	devices.emplace_back(newDev);
 
 	for (DeviceChangeInfo &cb : callbacks)
 		cb.callback(cb.param, newDev, true);

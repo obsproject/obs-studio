@@ -749,7 +749,7 @@ ID3D11DepthStencilState *gs_device::AddZStencilState()
 		throw HRError("Failed to create depth stencil state", hr);
 
 	state = savedState.state;
-	zstencilStates.push_back(savedState);
+	zstencilStates.emplace_back(savedState);
 
 	return state;
 }
@@ -774,7 +774,7 @@ ID3D11RasterizerState *gs_device::AddRasterState()
 		throw HRError("Failed to create rasterizer state", hr);
 
 	state = savedState.state;
-	rasterStates.push_back(savedState);
+	rasterStates.emplace_back(savedState);
 
 	return state;
 }
@@ -819,7 +819,7 @@ ID3D11BlendState *gs_device::AddBlendState()
 		throw HRError("Failed to create blend state", hr);
 
 	state = savedState.state;
-	blendStates.push_back(savedState);
+	blendStates.emplace_back(savedState);
 
 	return state;
 }
@@ -2833,7 +2833,7 @@ void device_projection_push(gs_device_t *device)
 {
 	mat4float mat;
 	memcpy(&mat, &device->curProjMatrix, sizeof(matrix4));
-	device->projStack.push_back(mat);
+	device->projStack.emplace_back(mat);
 }
 
 void device_projection_pop(gs_device_t *device)

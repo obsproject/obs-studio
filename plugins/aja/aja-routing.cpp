@@ -41,7 +41,7 @@ bool Routing::ParseRouteString(const std::string &route,
 
 	lines = aja::split(route_strip, ';');
 	if (lines.empty())
-		lines.push_back(route_strip);
+		lines.emplace_back(route_strip);
 
 	int32_t parse_ok = 0;
 	for (const auto &l : lines) {

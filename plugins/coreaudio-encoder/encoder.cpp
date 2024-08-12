@@ -1186,7 +1186,7 @@ static vector<UInt32> get_samplerates(DStr &log, ca_encoder *ca)
 		    end(samplerates)) {
 			log_to_dstr(log, ca, "Adding sample rate %u\n",
 				    static_cast<uint32_t>(rate));
-			samplerates.push_back(rate);
+			samplerates.emplace_back(rate);
 		} else {
 			log_to_dstr(log, ca, "Sample rate %u already added\n",
 				    static_cast<uint32_t>(rate));
@@ -1265,7 +1265,7 @@ static vector<UInt32> get_bitrates(DStr &log, ca_encoder *ca,
 		    end(bitrates)) {
 			log_to_dstr(log, ca, "Adding bitrate %u\n",
 				    static_cast<uint32_t>(bitrate));
-			bitrates.push_back(bitrate);
+			bitrates.emplace_back(bitrate);
 		} else {
 			log_to_dstr(log, ca, "Bitrate %u already added\n",
 				    static_cast<uint32_t>(bitrate));
@@ -1328,7 +1328,7 @@ static void add_bitrates(obs_property_t *prop, ca_encoder *ca,
 					 *selected * 1000) != end(bitrates);
 
 		if (!selected_in_range)
-			bitrates.push_back(*selected * 1000);
+			bitrates.emplace_back(*selected * 1000);
 	}
 
 	sort(begin(bitrates), end(bitrates));

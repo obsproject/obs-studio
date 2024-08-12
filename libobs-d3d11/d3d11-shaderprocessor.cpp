@@ -89,7 +89,7 @@ static void AddInputLayoutVar(shader_var *var,
 		}
 	}
 
-	layout.push_back(ied);
+	layout.emplace_back(ied);
 }
 
 static inline bool SetSlot(vector<D3D11_INPUT_ELEMENT_DESC> &layout,
@@ -175,7 +175,7 @@ static inline void AddParam(shader_var &var, vector<gs_shader_param> &params,
 	    strcmp(var.type, "sampler") == 0)
 		return;
 
-	params.push_back(gs_shader_param(var, texCounter));
+	params.emplace_back(gs_shader_param(var, texCounter));
 }
 
 void ShaderProcessor::BuildParams(vector<gs_shader_param> &params)

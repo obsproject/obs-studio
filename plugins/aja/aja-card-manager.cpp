@@ -335,7 +335,7 @@ bool CardEntry::AcquireInputSelection(IOSelection io, NTV2DeviceID id,
 			blog(LOG_DEBUG, "Source %s acquired channel %s",
 			     owner.c_str(),
 			     NTV2ChannelToString(acqChan).c_str());
-			acquiredChannels.push_back(acqChan);
+			acquiredChannels.emplace_back(acqChan);
 		} else {
 			blog(LOG_DEBUG,
 			     "Source %s could not acquire channel %s",
@@ -389,7 +389,7 @@ bool CardEntry::AcquireOutputSelection(IOSelection io, NTV2DeviceID id,
 			blog(LOG_DEBUG, "Output %s acquired channel %s",
 			     owner.c_str(),
 			     NTV2ChannelToString(hdmiMonChannel).c_str());
-			acquiredChannels.push_back(hdmiMonChannel);
+			acquiredChannels.emplace_back(hdmiMonChannel);
 		} else {
 			blog(LOG_DEBUG,
 			     "Output %s could not acquire channel %s",
@@ -404,7 +404,7 @@ bool CardEntry::AcquireOutputSelection(IOSelection io, NTV2DeviceID id,
 			blog(LOG_DEBUG, "Output %s acquired channel %s",
 			     owner.c_str(),
 			     NTV2ChannelToString(sdiMonChannel).c_str());
-			acquiredChannels.push_back(sdiMonChannel);
+			acquiredChannels.emplace_back(sdiMonChannel);
 		} else {
 			blog(LOG_DEBUG,
 			     "Output %s could not acquire channel %s",
@@ -416,7 +416,7 @@ bool CardEntry::AcquireOutputSelection(IOSelection io, NTV2DeviceID id,
 		for (auto &&dst : outputDests) {
 			auto acqChan = NTV2OutputDestinationToChannel(dst);
 			if (AcquireChannel(acqChan, NTV2_MODE_DISPLAY, owner)) {
-				acquiredChannels.push_back(acqChan);
+				acquiredChannels.emplace_back(acqChan);
 				blog(LOG_DEBUG, "Output %s acquired channel %s",
 				     owner.c_str(),
 				     NTV2ChannelToString(acqChan).c_str());

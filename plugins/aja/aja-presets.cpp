@@ -1807,17 +1807,17 @@ bool RoutingConfigurator::FindFirstPreset(ConnectionKind kind, NTV2DeviceID id,
 			    p.second.is_rgb == is_rgb &&
 			    p.second.vpid_standard == standard &&
 			    p.second.hdmi_wire_format == hwf) {
-				query.push_back(p);
+				query.emplace_back(p);
 			}
 		}
 		RoutingPresets device_presets;
 		RoutingPresets non_device_presets;
 		for (auto &q : query) {
 			if (q.second.device_ids.size() == 0)
-				non_device_presets.push_back(q.second);
+				non_device_presets.emplace_back(q.second);
 			for (const auto &device_id : q.second.device_ids) {
 				if (device_id == id) {
-					device_presets.push_back(q.second);
+					device_presets.emplace_back(q.second);
 					break;
 				}
 			}

@@ -146,7 +146,7 @@ try {
 	/* parse expected LUID order                                 */
 
 	for (int i = 1; i < argc; i++) {
-		luid_order.push_back(strtoull(argv[i], NULL, 16));
+		luid_order.emplace_back(strtoull(argv[i], NULL, 16));
 	}
 
 	/* --------------------------------------------------------- */

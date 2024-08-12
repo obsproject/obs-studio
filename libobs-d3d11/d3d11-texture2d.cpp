@@ -40,7 +40,7 @@ void gs_texture_2d::InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd)
 			newSRD.pSysMem = data[curTex++].data();
 			newSRD.SysMemPitch = newRowSize;
 			newSRD.SysMemSlicePitch = newTexSize;
-			srd.push_back(newSRD);
+			srd.emplace_back(newSRD);
 
 			newRowSize /= 2;
 			newTexSize /= 4;

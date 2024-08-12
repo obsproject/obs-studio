@@ -708,7 +708,7 @@ struct JsonParser final {
 
             while (1) {
                 i--;
-                data.push_back(parse_json(depth + 1));
+                data.emplace_back(parse_json(depth + 1));
                 if (failed)
                     return Json();
 
@@ -752,7 +752,7 @@ vector<Json> Json::parse_multi(const string &in,
     parser_stop_pos = 0;
     vector<Json> json_vec;
     while (parser.i != in.size() && !parser.failed) {
-        json_vec.push_back(parser.parse_json(0));
+        json_vec.emplace_back(parser.parse_json(0));
         if (parser.failed)
             break;
 

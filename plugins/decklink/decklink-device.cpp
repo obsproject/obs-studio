@@ -40,7 +40,7 @@ bool DeckLinkDevice::Init()
 		    !!detectable) {
 			DeckLinkDeviceMode *mode =
 				new DeckLinkDeviceMode("Auto", MODE_ID_AUTO);
-			inputModes.push_back(mode);
+			inputModes.emplace_back(mode);
 			inputModeIdMap[MODE_ID_AUTO] = mode;
 		}
 	}
@@ -61,7 +61,7 @@ bool DeckLinkDevice::Init()
 				DeckLinkDeviceMode *mode =
 					new DeckLinkDeviceMode(displayMode,
 							       modeId);
-				inputModes.push_back(mode);
+				inputModes.emplace_back(mode);
 				inputModeIdMap[modeId] = mode;
 				++modeId;
 			}
@@ -97,7 +97,7 @@ bool DeckLinkDevice::Init()
 				DeckLinkDeviceMode *mode =
 					new DeckLinkDeviceMode(displayMode,
 							       modeId);
-				outputModes.push_back(mode);
+				outputModes.emplace_back(mode);
 				outputModeIdMap[modeId] = mode;
 				++modeId;
 			}

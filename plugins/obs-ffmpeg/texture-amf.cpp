@@ -151,7 +151,7 @@ struct amf_texencode : amf_base, public AMFSurfaceObserver {
 
 		auto it = active_textures.find(surf);
 		if (it != active_textures.end()) {
-			available_textures.push_back(it->second);
+			available_textures.emplace_back(it->second);
 			active_textures.erase(it);
 		}
 	}
@@ -183,7 +183,7 @@ struct amf_fallback : amf_base, public AMFSurfaceObserver {
 
 		auto it = active_buffers.find(surf);
 		if (it != active_buffers.end()) {
-			available_buffers.push_back(std::move(it->second));
+			available_buffers.emplace_back(std::move(it->second));
 			active_buffers.erase(it);
 		}
 	}
@@ -392,7 +392,7 @@ static void get_tex_from_handle(amf_texencode *enc, uint32_t handle,
 	tex->SetEvictionPriority(DXGI_RESOURCE_PRIORITY_MAXIMUM);
 
 	struct handle_tex new_ht = {handle, tex, km};
-	enc->input_textures.push_back(std::move(new_ht));
+	enc->input_textures.emplace_back(std::move(new_ht));
 
 	*km_out = km.Detach();
 	*tex_out = tex.Detach();
@@ -721,7 +721,7 @@ static void amf_encode_base(amf_base *enc, AMFSurface *amf_surf,
 		do {
 			res = enc->amf_encoder->QueryOutput(&new_packet);
 			if (new_packet)
-				queued_packets.push_back(new_packet);
+				queued_packets.emplace_back(new_packet);
 
 			if (res != AMF_REPEAT && res != AMF_OK) {
 				throw amf_error("QueryOutput failed", res);
