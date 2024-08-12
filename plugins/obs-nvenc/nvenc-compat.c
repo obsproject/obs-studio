@@ -15,20 +15,10 @@
 /* ------------------------------------------------------------------------- */
 /* Actual redirector implementation.                                         */
 
-static void migrate_settings(obs_data_t *settings, enum codec_type codec)
+static void migrate_settings(obs_data_t *settings)
 {
-	struct encoder_caps *caps = get_encoder_caps(codec);
-
 	const char *preset = obs_data_get_string(settings, "preset2");
 	obs_data_set_string(settings, "preset", preset);
-
-	const char *rc = obs_data_get_string(settings, "rate_control");
-	/* Old NVENC allowed lossless even if unsupported,
-	 * and just emulated it via CQP 0, do the same here. */
-	if (!caps->lossless && strcmp(rc, "lossless") == 0) {
-		obs_data_set_string(settings, "rate_control", "CQP");
-		obs_data_set_int(settings, "cqp", 0);
-	}
 
 	obs_data_set_bool(settings, "adaptive_quantization",
 			  obs_data_get_bool(settings, "psycho_aq"));
@@ -44,7 +34,7 @@ static void *nvenc_reroute(enum codec_type codec, obs_data_t *settings,
 			   obs_encoder_t *encoder, bool texture)
 {
 	/* Update settings object to v2 encoder configuration */
-	migrate_settings(settings, codec);
+	migrate_settings(settings);
 
 	switch (codec) {
 	case CODEC_H264:
