@@ -683,12 +683,17 @@ void obs_encoder_shutdown(obs_encoder_t *encoder)
 	if (encoder->context.data) {
 		encoder->info.destroy(encoder->context.data);
 		encoder->context.data = NULL;
-		da_free(encoder->paired_encoders);
 		encoder->first_received = false;
 		encoder->offset_usec = 0;
 		encoder->start_ts = 0;
 		encoder->frame_rate_divisor_counter = 0;
 		maybe_clear_encoder_core_video_mix(encoder);
+
+		for (size_t i = 0; i < encoder->paired_encoders.num; i++) {
+			obs_weak_encoder_release(
+				encoder->paired_encoders.array[i]);
+		}
+		da_free(encoder->paired_encoders);
 	}
 	obs_encoder_set_last_error(encoder, NULL);
 	pthread_mutex_unlock(&encoder->init_mutex);
@@ -1420,7 +1425,6 @@ static void receive_video(void *param, struct video_data *frame)
 	profile_start(receive_video_name);
 
 	struct obs_encoder *encoder = param;
-	struct obs_encoder **paired = encoder->paired_encoders.array;
 	struct encoder_frame enc_frame;
 
 	if (encoder->encoder_group && !encoder->start_ts) {
@@ -1435,10 +1439,18 @@ static void receive_video(void *param, struct video_data *frame)
 
 	if (!encoder->first_received && encoder->paired_encoders.num) {
 		for (size_t i = 0; i < encoder->paired_encoders.num; i++) {
-			if (!paired[i]->first_received ||
-			    paired[i]->first_raw_ts > frame->timestamp) {
+			obs_encoder_t *paired = obs_weak_encoder_get_encoder(
+				encoder->paired_encoders.array[i]);
+			if (!paired)
+				continue;
+
+			if (!paired->first_received ||
+			    paired->first_raw_ts > frame->timestamp) {
+				obs_encoder_release(paired);
 				goto wait_for_audio;
 			}
+
+			obs_encoder_release(paired);
 		}
 	}
 
@@ -1528,8 +1540,10 @@ static bool buffer_audio(struct obs_encoder *encoder, struct audio_data *data)
 
 	struct obs_encoder *paired_encoder = NULL;
 	/* Audio encoders can only be paired to one video encoder */
-	if (encoder->paired_encoders.num)
-		paired_encoder = encoder->paired_encoders.array[0];
+	if (encoder->paired_encoders.num) {
+		paired_encoder = obs_weak_encoder_get_encoder(
+			encoder->paired_encoders.array[0]);
+	}
 
 	if (!encoder->start_ts && paired_encoder) {
 		uint64_t end_ts = data->timestamp;
@@ -1570,6 +1584,7 @@ static bool buffer_audio(struct obs_encoder *encoder, struct audio_data *data)
 
 fail:
 	push_back_audio(encoder, data, size, offset_size);
+	obs_encoder_release(paired_encoder);
 
 	profile_end(buffer_audio_name);
 	return success;
