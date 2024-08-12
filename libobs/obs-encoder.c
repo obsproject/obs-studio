@@ -386,7 +386,7 @@ static inline void free_audio_buffers(struct obs_encoder *encoder)
 	}
 }
 
-static void obs_encoder_actually_destroy(obs_encoder_t *encoder)
+void obs_encoder_destroy(obs_encoder_t *encoder)
 {
 	if (encoder) {
 		pthread_mutex_lock(&encoder->outputs_mutex);
@@ -424,28 +424,6 @@ static void obs_encoder_actually_destroy(obs_encoder_t *encoder)
 			video_output_free_frame_rate_divisor(
 				encoder->fps_override);
 		bfree(encoder);
-	}
-}
-
-/* does not actually destroy the encoder until all connections to it have been
- * removed. (full reference counting really would have been superfluous) */
-void obs_encoder_destroy(obs_encoder_t *encoder)
-{
-	if (encoder) {
-		bool destroy;
-
-		obs_context_data_remove(&encoder->context);
-
-		pthread_mutex_lock(&encoder->init_mutex);
-		pthread_mutex_lock(&encoder->callbacks_mutex);
-		destroy = encoder->callbacks.num == 0;
-		if (!destroy)
-			encoder->destroy_on_stop = true;
-		pthread_mutex_unlock(&encoder->callbacks_mutex);
-		pthread_mutex_unlock(&encoder->init_mutex);
-
-		if (destroy)
-			obs_encoder_actually_destroy(encoder);
 	}
 }
 
@@ -822,9 +800,6 @@ void obs_encoder_stop(obs_encoder_t *encoder,
 		pthread_mutex_unlock(&encoder->init_mutex);
 
 		struct obs_encoder_group *group = encoder->encoder_group;
-
-		if (encoder->destroy_on_stop)
-			obs_encoder_actually_destroy(encoder);
 
 		/* Destroying the group all the way back here prevents a race
 		 * where destruction of the group can prematurely destroy the
