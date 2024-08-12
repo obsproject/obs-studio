@@ -59,21 +59,21 @@ static void *nvenc_reroute(enum codec_type codec, obs_data_t *settings,
 static const char *h264_nvenc_get_name(void *type_data)
 {
 	UNUSED_PARAMETER(type_data);
-	return "NVIDIA NVENC H.264 (deprecated)";
+	return "NVIDIA NVENC H.264";
 }
 
 #ifdef ENABLE_HEVC
 static const char *hevc_nvenc_get_name(void *type_data)
 {
 	UNUSED_PARAMETER(type_data);
-	return "NVIDIA NVENC HEVC (deprecated)";
+	return "NVIDIA NVENC HEVC";
 }
 #endif
 
 static const char *av1_nvenc_get_name(void *type_data)
 {
 	UNUSED_PARAMETER(type_data);
-	return "NVIDIA NVENC AV1 (deprecated)";
+	return "NVIDIA NVENC AV1";
 }
 
 static void *h264_nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
