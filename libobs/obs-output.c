@@ -2656,8 +2656,12 @@ static inline void pair_encoders(obs_output_t *output)
 
 		pthread_mutex_lock(&audio->init_mutex);
 		if (!audio->active && !audio->paired_encoders.num) {
-			da_push_back(video->paired_encoders, &audio);
-			da_push_back(audio->paired_encoders, &video);
+			obs_weak_encoder_t *weak_audio =
+				obs_encoder_get_weak_encoder(audio);
+			obs_weak_encoder_t *weak_video =
+				obs_encoder_get_weak_encoder(video);
+			da_push_back(video->paired_encoders, &weak_audio);
+			da_push_back(audio->paired_encoders, &weak_video);
 		}
 		pthread_mutex_unlock(&audio->init_mutex);
 	}

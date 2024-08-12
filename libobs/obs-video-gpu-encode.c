@@ -82,7 +82,7 @@ static void *gpu_encode_thread(void *data)
 			uint32_t skip = 0;
 
 			obs_encoder_t *encoder = encoders.array[i];
-			struct obs_encoder **paired =
+			obs_weak_encoder_t **paired =
 				encoder->paired_encoders.array;
 			size_t num_paired = encoder->paired_encoders.num;
 
@@ -105,13 +105,21 @@ static void *gpu_encode_thread(void *data)
 			if (!encoder->first_received && num_paired) {
 				bool wait_for_audio = false;
 
-				for (size_t idx = 0; idx < num_paired; idx++) {
-					if (!paired[idx]->first_received ||
-					    paired[idx]->first_raw_ts >
-						    timestamp) {
+				for (size_t idx = 0;
+				     !wait_for_audio && idx < num_paired;
+				     idx++) {
+					obs_encoder_t *enc =
+						obs_weak_encoder_get_encoder(
+							paired[idx]);
+					if (!enc)
+						continue;
+
+					if (!enc->first_received ||
+					    enc->first_raw_ts > timestamp) {
 						wait_for_audio = true;
-						break;
 					}
+
+					obs_encoder_release(enc);
 				}
 
 				if (wait_for_audio)
