@@ -994,16 +994,16 @@ static inline bool HasAudioDevices(const char *source_id)
 
 void OBSBasic::CreateFirstRunSources()
 {
+#ifndef __APPLE__
 	bool hasDesktopAudio = HasAudioDevices(App()->OutputAudioSource());
-	bool hasInputAudio = HasAudioDevices(App()->InputAudioSource());
-
-#ifdef __APPLE__
-	hasDesktopAudio = hasDesktopAudio && shouldCreateDefaultAudioSource();
-#endif
 
 	if (hasDesktopAudio)
 		ResetAudioDevice(App()->OutputAudioSource(), "default",
 				 Str("Basic.DesktopDevice1"), 1);
+#endif
+
+	bool hasInputAudio = HasAudioDevices(App()->InputAudioSource());
+
 	if (hasInputAudio)
 		ResetAudioDevice(App()->InputAudioSource(), "default",
 				 Str("Basic.AuxDevice1"), 3);
