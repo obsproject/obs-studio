@@ -290,6 +290,7 @@ void obs_output_destroy(obs_output_t *output)
 			if (output->video_encoders[i]) {
 				obs_encoder_remove_output(
 					output->video_encoders[i], output);
+				obs_encoder_release(output->video_encoders[i]);
 			}
 			if (output->caption_tracks[i]) {
 				destroy_caption_track(
@@ -301,6 +302,7 @@ void obs_output_destroy(obs_output_t *output)
 			if (output->audio_encoders[i]) {
 				obs_encoder_remove_output(
 					output->audio_encoders[i], output);
+				obs_encoder_release(output->audio_encoders[i]);
 			}
 		}
 
@@ -970,14 +972,18 @@ void obs_output_remove_encoder_internal(struct obs_output *output,
 	if (encoder->info.type == OBS_ENCODER_VIDEO) {
 		for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
 			obs_encoder_t *video = output->video_encoders[i];
-			if (video == encoder)
+			if (video == encoder) {
 				output->video_encoders[i] = NULL;
+				obs_encoder_release(video);
+			}
 		}
 	} else if (encoder->info.type == OBS_ENCODER_AUDIO) {
 		for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
 			obs_encoder_t *audio = output->audio_encoders[i];
-			if (audio == encoder)
+			if (audio == encoder) {
 				output->audio_encoders[i] = NULL;
+				obs_encoder_release(audio);
+			}
 		}
 	}
 }
@@ -1041,8 +1047,10 @@ void obs_output_set_video_encoder2(obs_output_t *output, obs_encoder_t *encoder,
 		return;
 
 	obs_encoder_remove_output(output->video_encoders[idx], output);
-	obs_encoder_add_output(encoder, output);
-	output->video_encoders[idx] = encoder;
+	obs_encoder_release(output->video_encoders[idx]);
+
+	output->video_encoders[idx] = obs_encoder_get_ref(encoder);
+	obs_encoder_add_output(output->video_encoders[idx], output);
 
 	destroy_caption_track(&output->caption_tracks[idx]);
 	if (encoder != NULL) {
@@ -1104,8 +1112,10 @@ void obs_output_set_audio_encoder(obs_output_t *output, obs_encoder_t *encoder,
 		return;
 
 	obs_encoder_remove_output(output->audio_encoders[idx], output);
-	obs_encoder_add_output(encoder, output);
-	output->audio_encoders[idx] = encoder;
+	obs_encoder_release(output->audio_encoders[idx]);
+
+	output->audio_encoders[idx] = obs_encoder_get_ref(encoder);
+	obs_encoder_add_output(output->audio_encoders[idx], output);
 }
 
 obs_encoder_t *obs_output_get_video_encoder2(const obs_output_t *output,
