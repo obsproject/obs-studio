@@ -598,8 +598,8 @@ void obs_frontend_add_undo_redo_action(const char *name, const undo_redo_cb undo
 		c->obs_frontend_add_undo_redo_action(name, undo, redo, undo_data, redo_data, repeatable);
 }
 
-void obs_frontend_multitrack_video_register(const char *name, multitrack_video_start_cb start_video,
-					    multitrack_video_stop_cb stop_video, void *private_data)
+void obs_frontend_multitrack_video_register(const char *name, obs_frontend_multitrack_video_start_cb start_video,
+					    obs_frontend_multitrack_video_stop_cb stop_video, void *private_data)
 {
 	if (callbacks_valid())
 		c->obs_frontend_multitrack_video_register(name, start_video, stop_video, private_data);

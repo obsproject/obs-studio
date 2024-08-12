@@ -10102,8 +10102,8 @@ const std::vector<MultitrackVideoViewInfo> &OBSBasic::GetAdditionalMultitrackVid
 	return multitrackVideoViews;
 }
 
-void OBSBasic::MultitrackVideoRegister(const char *name, multitrack_video_start_cb start_video,
-				       multitrack_video_stop_cb stop_video, void *private_data)
+void OBSBasic::MultitrackVideoRegister(const char *name, obs_frontend_multitrack_video_start_cb start_video,
+				       obs_frontend_multitrack_video_stop_cb stop_video, void *private_data)
 {
 	MultitrackVideoUnregister(name);
 	multitrackVideoViews.push_back({name, start_video, stop_video, private_data});
