@@ -234,6 +234,7 @@ static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings)
 	bool cqvbr = astrcmpi(enc->props.rate_control, "CQVBR") == 0;
 	bool vbr = cqvbr || astrcmpi(enc->props.rate_control, "VBR") == 0;
 	bool lossless = strcmp(enc->props.rate_control, "lossless") == 0;
+	bool cqp = strcmp(enc->props.rate_control, "CQP") == 0;
 
 	NVENCSTATUS err;
 
@@ -255,6 +256,7 @@ static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings)
 		nv_multipass = NV_ENC_MULTI_PASS_DISABLED;
 		enc->props.adaptive_quantization = false;
 		enc->props.cqp = 0;
+		enc->props.rate_control = "Lossless";
 	}
 
 	/* -------------------------- */
@@ -354,7 +356,7 @@ static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings)
 	config->rcParams.maxBitRate = vbr ? max_bitrate * 1000 : bitrate * 1000;
 	config->rcParams.vbvBufferSize = bitrate * 1000;
 
-	if (strcmp(enc->props.rate_control, "CQP") == 0 || lossless) {
+	if (cqp || lossless) {
 		int cqp_val = enc->codec == CODEC_AV1 ? (int)enc->props.cqp * 4
 						      : (int)enc->props.cqp;
 
@@ -380,34 +382,47 @@ static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings)
 	config->rcParams.qpMapMode = NV_ENC_QP_MAP_DELTA;
 
 	/* -------------------------- */
-	/* initialize                 */
+	/* log settings	              */
 
-	info("settings:\n"
-	     "\tcodec:        %s\n"
-	     "\trate_control: %s\n"
-	     "\tbitrate:      %d\n"
-	     "\tmax_bitrate:  %d\n"
-	     "\tcq/cqp:       %ld\n"
-	     "\tkeyint:       %d\n"
-	     "\tpreset:       %s\n"
-	     "\ttuning:       %s\n"
-	     "\tmultipass:    %s\n"
-	     "\tprofile:      %s\n"
-	     "\twidth:        %d\n"
-	     "\theight:       %d\n"
-	     "\tb-frames:     %ld\n"
-	     "\tb-ref-mode:   %ld\n"
-	     "\tlookahead:    %s (%d)\n"
-	     "\taq:           %s\n"
-	     "\tsplit encode: %ld\n"
-	     "\tuser opts:    %s\n",
-	     get_codec_name(enc->codec), enc->props.rate_control, bitrate,
-	     max_bitrate, vbr ? enc->props.target_quality : enc->props.cqp,
-	     gop_size, enc->props.preset, enc->props.tune, enc->props.multipass,
-	     enc->props.profile, enc->cx, enc->cy, enc->props.bf,
-	     enc->props.bframe_ref_mode, lookahead ? "true" : "false",
-	     rc_lookahead, enc->props.adaptive_quantization ? "true" : "false",
-	     enc->props.split_encode, enc->props.opts_str);
+	struct dstr log = {0};
+
+	dstr_catf(&log, "\tcodec:        %s\n", get_codec_name(enc->codec));
+	dstr_catf(&log, "\trate_control: %s\n", enc->props.rate_control);
+
+	if (bitrate && !cqvbr)
+		dstr_catf(&log, "\tbitrate:      %d\n", bitrate);
+	if (vbr)
+		dstr_catf(&log, "\tmax_bitrate:  %d\n", max_bitrate);
+	if (cqp)
+		dstr_catf(&log, "\tcqp:          %ld\n", enc->props.cqp);
+	if (cqvbr) {
+		dstr_catf(&log, "\tcq:           %ld\n",
+			  enc->props.target_quality);
+	}
+
+	dstr_catf(&log, "\tkeyint:       %d\n", gop_size);
+	dstr_catf(&log, "\tpreset:       %s\n", enc->props.preset);
+	dstr_catf(&log, "\ttuning:       %s\n", enc->props.tune);
+	dstr_catf(&log, "\tmultipass:    %s\n", enc->props.multipass);
+	dstr_catf(&log, "\tprofile:      %s\n", enc->props.profile);
+	dstr_catf(&log, "\twidth:        %d\n", enc->cx);
+	dstr_catf(&log, "\theight:       %d\n", enc->cy);
+	dstr_catf(&log, "\tb-frames:     %ld\n", enc->props.bf);
+	dstr_catf(&log, "\tb-ref-mode:   %ld\n", enc->props.bframe_ref_mode);
+	dstr_catf(&log, "\tlookahead:    %s (%d frames)\n",
+		  lookahead ? "true" : "false", rc_lookahead);
+	dstr_catf(&log, "\taq:           %s\n",
+		  enc->props.adaptive_quantization ? "true" : "false");
+
+	if (enc->props.split_encode) {
+		dstr_catf(&log, "\tsplit encode: %ld\n",
+			  enc->props.split_encode);
+	}
+	if (enc->props.opts.count)
+		dstr_catf(&log, "\tuser opts:    %s\n", enc->props.opts_str);
+
+	info("settings:\n%s", log.array);
+	dstr_free(&log);
 
 	return true;
 }
