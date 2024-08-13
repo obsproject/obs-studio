@@ -1,5 +1,9 @@
 #include "whip-output.h"
-#include "whip-utils.h"
+#include "webrtc-utils.h"
+
+#define do_log(level, format, ...)                              \
+	blog(level, "[obs-webrtc] [whip_output: '%s'] " format, \
+	     obs_output_get_name(output), ##__VA_ARGS__)
 
 /*
  * Sets the maximum size for a video fragment. Effective range is
@@ -12,8 +16,6 @@ const int signaling_media_id_length = 16;
 const char signaling_media_id_valid_char[] = "0123456789"
 					     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 					     "abcdefghijklmnopqrstuvwxyz";
-
-const std::string user_agent = generate_user_agent();
 
 const char *audio_mid = "0";
 const uint8_t audio_payload_type = 111;
@@ -288,264 +290,6 @@ bool WHIPOutput::Setup()
 	return true;
 }
 
-// Given a Link header extract URL/Username/Credential and create rtc::IceServer
-// <turn:turn.example.net>; username="user"; credential="myPassword";
-//
-// https://www.ietf.org/archive/id/draft-ietf-wish-whip-13.html#section-4.4
-void WHIPOutput::ParseLinkHeader(std::string val,
-				 std::vector<rtc::IceServer> &iceServers)
-{
-	std::string url, username, password;
-
-	auto extractUrl = [](std::string input) -> std::string {
-		auto head = input.find("<") + 1;
-		auto tail = input.find(">");
-
-		if (head == std::string::npos || tail == std::string::npos) {
-			return "";
-		}
-		return input.substr(head, tail - head);
-	};
-
-	auto extractValue = [](std::string input) -> std::string {
-		auto head = input.find("\"") + 1;
-		auto tail = input.find_last_of("\"");
-
-		if (head == std::string::npos || tail == std::string::npos) {
-			return "";
-		}
-		return input.substr(head, tail - head);
-	};
-
-	while (true) {
-		std::string token = val;
-		auto pos = token.find(";");
-		if (pos != std::string::npos) {
-			token = val.substr(0, pos);
-		}
-
-		if (token.find("<turn:", 0) == 0) {
-			url = extractUrl(token);
-		} else if (token.find("username=") != std::string::npos) {
-			username = extractValue(token);
-		} else if (token.find("credential=") != std::string::npos) {
-			password = extractValue(token);
-		}
-
-		if (pos == std::string::npos) {
-			break;
-		}
-		val.erase(0, pos + 1);
-	}
-
-	try {
-		auto iceServer = rtc::IceServer(url);
-		iceServer.username = username;
-		iceServer.password = password;
-		iceServers.push_back(iceServer);
-	} catch (const std::invalid_argument &err) {
-		do_log(LOG_WARNING,
-		       "Failed to construct ICE Server from %s: %s",
-		       val.c_str(), err.what());
-	}
-}
-
-bool WHIPOutput::Connect()
-{
-	struct curl_slist *headers = NULL;
-	headers = curl_slist_append(headers, "Content-Type: application/sdp");
-	if (!bearer_token.empty()) {
-		auto bearer_token_header =
-			std::string("Authorization: Bearer ") + bearer_token;
-		headers =
-			curl_slist_append(headers, bearer_token_header.c_str());
-	}
-
-	std::string read_buffer;
-	std::vector<std::string> http_headers;
-
-	auto offer_sdp =
-		std::string(peer_connection->localDescription().value());
-
-#ifdef DEBUG_SDP
-	do_log(LOG_DEBUG, "Offer SDP:\n%s", offer_sdp.c_str());
-#endif
-
-	// Add user-agent to our requests
-	headers = curl_slist_append(headers, user_agent.c_str());
-
-	char error_buffer[CURL_ERROR_SIZE] = {};
-
-	CURL *c = curl_easy_init();
-	curl_easy_setopt(c, CURLOPT_WRITEFUNCTION, curl_writefunction);
-	curl_easy_setopt(c, CURLOPT_WRITEDATA, (void *)&read_buffer);
-	curl_easy_setopt(c, CURLOPT_HEADERFUNCTION, curl_header_function);
-	curl_easy_setopt(c, CURLOPT_HEADERDATA, (void *)&http_headers);
-	curl_easy_setopt(c, CURLOPT_HTTPHEADER, headers);
-	curl_easy_setopt(c, CURLOPT_URL, endpoint_url.c_str());
-	curl_easy_setopt(c, CURLOPT_POST, 1L);
-	curl_easy_setopt(c, CURLOPT_COPYPOSTFIELDS, offer_sdp.c_str());
-	curl_easy_setopt(c, CURLOPT_TIMEOUT, 8L);
-	curl_easy_setopt(c, CURLOPT_FOLLOWLOCATION, 1L);
-	curl_easy_setopt(c, CURLOPT_UNRESTRICTED_AUTH, 1L);
-	curl_easy_setopt(c, CURLOPT_ERRORBUFFER, error_buffer);
-
-	auto cleanup = [&]() {
-		curl_easy_cleanup(c);
-		curl_slist_free_all(headers);
-	};
-
-	CURLcode res = curl_easy_perform(c);
-	if (res != CURLE_OK) {
-		do_log(LOG_ERROR, "Connect failed: %s",
-		       error_buffer[0] ? error_buffer
-				       : curl_easy_strerror(res));
-		cleanup();
-		obs_output_signal_stop(output, OBS_OUTPUT_CONNECT_FAILED);
-		return false;
-	}
-
-	long response_code;
-	curl_easy_getinfo(c, CURLINFO_RESPONSE_CODE, &response_code);
-	if (response_code != 201) {
-		do_log(LOG_ERROR,
-		       "Connect failed: HTTP endpoint returned response code %ld",
-		       response_code);
-		cleanup();
-		obs_output_signal_stop(output, OBS_OUTPUT_INVALID_STREAM);
-		return false;
-	}
-
-	if (read_buffer.empty()) {
-		do_log(LOG_ERROR,
-		       "Connect failed: No data returned from HTTP endpoint request");
-		cleanup();
-		obs_output_signal_stop(output, OBS_OUTPUT_CONNECT_FAILED);
-		return false;
-	}
-
-	long redirect_count = 0;
-	curl_easy_getinfo(c, CURLINFO_REDIRECT_COUNT, &redirect_count);
-
-	std::string last_location_header;
-	size_t location_header_count = 0;
-	for (auto &http_header : http_headers) {
-		auto value = value_for_header("location", http_header);
-		if (value.empty())
-			continue;
-
-		location_header_count++;
-		last_location_header = value;
-	}
-
-	if (location_header_count < static_cast<size_t>(redirect_count) + 1) {
-		do_log(LOG_ERROR,
-		       "WHIP server did not provide a resource URL via the Location header");
-		cleanup();
-		obs_output_signal_stop(output, OBS_OUTPUT_CONNECT_FAILED);
-		return false;
-	}
-
-	CURLU *url_builder = curl_url();
-
-	// Parse Link headers to extract STUN/TURN server configuration URLs
-	std::vector<rtc::IceServer> iceServers;
-	for (auto &http_header : http_headers) {
-		auto value = value_for_header("link", http_header);
-		if (value.empty())
-			continue;
-
-		// Parse multiple links separated by ','
-		for (auto end = value.find(","); end != std::string::npos;
-		     end = value.find(",")) {
-			this->ParseLinkHeader(value.substr(0, end), iceServers);
-			value = value.substr(end + 1);
-		}
-		this->ParseLinkHeader(value, iceServers);
-	}
-
-	// If Location header doesn't start with `http` it is a relative URL.
-	// Construct a absolute URL using the host of the effective URL
-	if (last_location_header.find("http") != 0) {
-		char *effective_url = nullptr;
-		curl_easy_getinfo(c, CURLINFO_EFFECTIVE_URL, &effective_url);
-		if (effective_url == nullptr) {
-			do_log(LOG_ERROR, "Failed to build Resource URL");
-			cleanup();
-			obs_output_signal_stop(output,
-					       OBS_OUTPUT_CONNECT_FAILED);
-			return false;
-		}
-
-		curl_url_set(url_builder, CURLUPART_URL, effective_url, 0);
-		curl_url_set(url_builder, CURLUPART_PATH,
-			     last_location_header.c_str(), 0);
-		curl_url_set(url_builder, CURLUPART_QUERY, "", 0);
-	} else {
-		curl_url_set(url_builder, CURLUPART_URL,
-			     last_location_header.c_str(), 0);
-	}
-
-	char *url = nullptr;
-	CURLUcode rc = curl_url_get(url_builder, CURLUPART_URL, &url,
-				    CURLU_NO_DEFAULT_PORT);
-	if (rc) {
-		do_log(LOG_ERROR,
-		       "WHIP server provided a invalid resource URL via the Location header");
-		cleanup();
-		obs_output_signal_stop(output, OBS_OUTPUT_CONNECT_FAILED);
-		return false;
-	}
-
-	resource_url = url;
-	curl_free(url);
-	do_log(LOG_DEBUG, "WHIP Resource URL is: %s", resource_url.c_str());
-	curl_url_cleanup(url_builder);
-
-#ifdef DEBUG_SDP
-	do_log(LOG_DEBUG, "Answer SDP:\n%s", read_buffer.c_str());
-#endif
-
-	auto response = std::string(read_buffer);
-	response.erase(0, response.find("v=0"));
-
-	rtc::Description answer(response, "answer");
-	try {
-		peer_connection->setRemoteDescription(answer);
-	} catch (const std::invalid_argument &err) {
-		do_log(LOG_ERROR, "WHIP server responded with invalid SDP: %s",
-		       err.what());
-		cleanup();
-		struct dstr error_message;
-		dstr_init_copy(&error_message,
-			       obs_module_text("Error.InvalidSDP"));
-		dstr_replace(&error_message, "%1", err.what());
-		obs_output_set_last_error(output, error_message.array);
-		dstr_free(&error_message);
-		obs_output_signal_stop(output, OBS_OUTPUT_CONNECT_FAILED);
-		return false;
-	} catch (const std::exception &err) {
-		do_log(LOG_ERROR, "Failed to set remote description: %s",
-		       err.what());
-		cleanup();
-		struct dstr error_message;
-		dstr_init_copy(&error_message,
-			       obs_module_text("Error.NoRemoteDescription"));
-		dstr_replace(&error_message, "%1", err.what());
-		obs_output_set_last_error(output, error_message.array);
-		dstr_free(&error_message);
-		obs_output_signal_stop(output, OBS_OUTPUT_CONNECT_FAILED);
-		return false;
-	}
-	cleanup();
-
-#if RTC_VERSION_MAJOR == 0 && RTC_VERSION_MINOR > 20 || RTC_VERSION_MAJOR > 1
-	peer_connection->gatherLocalCandidates(iceServers);
-#endif
-
-	return true;
-}
-
 void WHIPOutput::StartThread()
 {
 	if (!Init())
@@ -554,7 +298,61 @@ void WHIPOutput::StartThread()
 	if (!Setup())
 		return;
 
-	if (!Connect()) {
+	char error_buffer[CURL_ERROR_SIZE] = {};
+	CURLcode curl_code;
+	auto status = send_offer(bearer_token, endpoint_url, peer_connection,
+				 resource_url, &curl_code, error_buffer);
+
+	if (status != webrtc_network_status::Success) {
+		if (status == webrtc_network_status::ConnectFailed) {
+			do_log(LOG_WARNING, "Connect failed: %s",
+			       error_buffer[0] ? error_buffer
+					       : curl_easy_strerror(curl_code));
+		} else if (status ==
+			   webrtc_network_status::InvalidHTTPStatusCode) {
+			do_log(LOG_ERROR,
+			       "Connect failed: HTTP endpoint returned non-201 response code");
+		} else if (status == webrtc_network_status::NoHTTPData) {
+			do_log(LOG_ERROR,
+			       "Connect failed: No data returned from HTTP endpoint request");
+		} else if (status == webrtc_network_status::NoLocationHeader) {
+			do_log(LOG_ERROR,
+			       "WHIP server did not provide a resource URL via the Location header");
+		} else if (status ==
+			   webrtc_network_status::FailedToBuildResourceURL) {
+			do_log(LOG_ERROR, "Failed to build Resource URL");
+		} else if (status ==
+			   webrtc_network_status::InvalidLocationHeader) {
+			do_log(LOG_ERROR,
+			       "WHIP server provided a invalid resource URL via the Location header");
+		} else if (status == webrtc_network_status::InvalidAnswer) {
+			do_log(LOG_WARNING,
+			       "WHIP server responded with invalid SDP: %s",
+			       error_buffer);
+
+			struct dstr error_message;
+			dstr_init_copy(&error_message,
+				       obs_module_text("Error.InvalidSDP"));
+			dstr_replace(&error_message, "%1", error_buffer);
+			obs_output_set_last_error(output, error_message.array);
+			dstr_free(&error_message);
+		} else if (status ==
+			   webrtc_network_status::SetRemoteDescriptionFailed) {
+			do_log(LOG_WARNING,
+			       "Failed to set remote description: %s",
+			       error_buffer);
+
+			struct dstr error_message;
+			dstr_init_copy(
+				&error_message,
+				obs_module_text("Error.NoRemoteDescription"));
+			dstr_replace(&error_message, "%1", error_buffer);
+			obs_output_set_last_error(output, error_message.array);
+			dstr_free(&error_message);
+		}
+
+		obs_output_signal_stop(output, OBS_OUTPUT_CONNECT_FAILED);
+
 		peer_connection->close();
 		peer_connection = nullptr;
 		audio_track = nullptr;
@@ -562,6 +360,7 @@ void WHIPOutput::StartThread()
 		return;
 	}
 
+	do_log(LOG_DEBUG, "WHIP Resource URL is: %s", resource_url.c_str());
 	obs_output_begin_data_capture(output, 0);
 	running = true;
 }
@@ -574,55 +373,23 @@ void WHIPOutput::SendDelete()
 		return;
 	}
 
-	struct curl_slist *headers = NULL;
-	if (!bearer_token.empty()) {
-		auto bearer_token_header =
-			std::string("Authorization: Bearer ") + bearer_token;
-		headers =
-			curl_slist_append(headers, bearer_token_header.c_str());
-	}
-
-	// Add user-agent to our requests
-	headers = curl_slist_append(headers, user_agent.c_str());
-
 	char error_buffer[CURL_ERROR_SIZE] = {};
-
-	CURL *c = curl_easy_init();
-	curl_easy_setopt(c, CURLOPT_HTTPHEADER, headers);
-	curl_easy_setopt(c, CURLOPT_URL, resource_url.c_str());
-	curl_easy_setopt(c, CURLOPT_CUSTOMREQUEST, "DELETE");
-	curl_easy_setopt(c, CURLOPT_TIMEOUT, 8L);
-	curl_easy_setopt(c, CURLOPT_ERRORBUFFER, error_buffer);
-
-	auto cleanup = [&]() {
-		curl_easy_cleanup(c);
-		curl_slist_free_all(headers);
-	};
-
-	CURLcode res = curl_easy_perform(c);
-	if (res != CURLE_OK) {
+	CURLcode curl_code;
+	auto status = send_delete(bearer_token, resource_url, &curl_code,
+				  error_buffer);
+	if (status == webrtc_network_status::Success) {
+		do_log(LOG_DEBUG,
+		       "Successfully performed DELETE request for resource URL");
+		resource_url.clear();
+	} else if (status == webrtc_network_status::DeleteFailed) {
 		do_log(LOG_WARNING,
-		       "DELETE request for resource URL failed: %s",
+		       "DELETE request for resource URL failed. Reason: %s",
 		       error_buffer[0] ? error_buffer
-				       : curl_easy_strerror(res));
-		cleanup();
-		return;
-	}
-
-	long response_code;
-	curl_easy_getinfo(c, CURLINFO_RESPONSE_CODE, &response_code);
-	if (response_code != 200) {
+				       : curl_easy_strerror(curl_code));
+	} else if (status == webrtc_network_status::InvalidHTTPStatusCode) {
 		do_log(LOG_WARNING,
-		       "DELETE request for resource URL failed. HTTP Code: %ld",
-		       response_code);
-		cleanup();
-		return;
+		       "DELETE request for resource URL returned non-200 Status Code");
 	}
-
-	do_log(LOG_DEBUG,
-	       "Successfully performed DELETE request for resource URL");
-	resource_url.clear();
-	cleanup();
 }
 
 void WHIPOutput::StopThread(bool signal)
