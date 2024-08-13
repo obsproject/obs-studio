@@ -2,6 +2,7 @@
  *
  * Copyright 2021 columbarius <co1umbarius@protonmail.com>
  * Copyright 2021 Georges Basile Stavracas Neto <georges.stavracas@gmail.com>
+ * Copyright 2022 Dimitris Papaioannou <dimtpap@protonmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,6 +26,7 @@
 
 #include <pipewire/pipewire.h>
 #include "screencast-portal.h"
+#include "pipewire-audio.h"
 
 #if PW_CHECK_VERSION(0, 3, 60)
 #include "camera-portal.h"
@@ -50,6 +52,9 @@ bool obs_module_load(void)
 #endif
 
 	screencast_portal_load();
+
+	pipewire_audio_capture_load();
+	pipewire_audio_capture_app_load();
 
 	return true;
 }
