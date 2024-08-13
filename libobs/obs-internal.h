@@ -908,6 +908,7 @@ extern void obs_transition_enum_sources(obs_source_t *transition,
 					void *param);
 extern void obs_transition_save(obs_source_t *source, obs_data_t *data);
 extern void obs_transition_load(obs_source_t *source, obs_data_t *data);
+extern void obs_transition_recalculate_size(obs_source_t *transition);
 
 struct audio_monitor *audio_monitor_create(obs_source_t *source);
 void audio_monitor_reset(struct audio_monitor *monitor);

@@ -185,7 +185,7 @@ static inline void recalculate_transition_matrices(obs_source_t *transition)
 	recalculate_transition_matrix(transition, 1);
 }
 
-static void recalculate_transition_size(obs_source_t *transition)
+void obs_transition_recalculate_size(obs_source_t *transition)
 {
 	uint32_t cx = 0, cy = 0;
 	obs_source_t *child;
@@ -275,7 +275,7 @@ set_source(obs_source_t *transition, enum obs_transition_target target,
 	if (add_success) {
 		if (transition->transition_cx == 0 ||
 		    transition->transition_cy == 0) {
-			recalculate_transition_size(transition);
+			obs_transition_recalculate_size(transition);
 			recalculate_transition_matrices(transition);
 		}
 	} else {
@@ -414,7 +414,7 @@ bool obs_transition_start(obs_source_t *transition,
 	obs_source_dosignal(transition, "source_transition_start",
 			    "transition_start");
 
-	recalculate_transition_size(transition);
+	obs_transition_recalculate_size(transition);
 	recalculate_transition_matrices(transition);
 
 	return true;
@@ -644,7 +644,7 @@ void obs_transition_load(obs_source_t *tr, obs_data_t *data)
 	tr->transition_cy = (uint32_t)cy;
 	unlock_transition(tr);
 
-	recalculate_transition_size(tr);
+	obs_transition_recalculate_size(tr);
 	recalculate_transition_matrices(tr);
 }
 
@@ -770,7 +770,7 @@ void obs_transition_video_render2(
 	if (!transition_valid(transition, "obs_transition_video_render"))
 		return;
 
-	recalculate_transition_size(transition);
+	obs_transition_recalculate_size(transition);
 	recalculate_transition_matrices(transition);
 
 	if (trylock_textures(transition) == 0) {
@@ -919,7 +919,7 @@ bool obs_transition_video_render_direct(obs_source_t *transition,
 	if (!transition_valid(transition, "obs_transition_video_render"))
 		return false;
 
-	recalculate_transition_size(transition);
+	obs_transition_recalculate_size(transition);
 	recalculate_transition_matrices(transition);
 
 	t = get_video_time(transition);
