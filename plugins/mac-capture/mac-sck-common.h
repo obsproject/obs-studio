@@ -52,7 +52,6 @@ struct API_AVAILABLE(macos(12.5)) screen_capture {
     SCShareableContent *shareable_content;
     ScreenCaptureDelegate *capture_delegate;
 
-    os_event_t *disp_finished;
     os_event_t *stream_start_completed;
     os_sem_t *shareable_content_available;
     IOSurfaceRef current, prev;
