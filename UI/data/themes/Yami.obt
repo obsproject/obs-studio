@@ -2050,13 +2050,6 @@ OBSActionRow.last {
     border-bottom-right-radius: var(--border_radius);
 }
 
-OBSActionRow > QWidget QLabel {
-    background: red;
-    margin: 4px;
-    font-weight: 500;
-    max-height: var(--input_height);
-}
-
 OBSActionRow > QLabel.description {
     font-size: var(--font_small);
     color: var(--text_muted);
