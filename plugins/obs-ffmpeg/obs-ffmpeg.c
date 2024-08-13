@@ -90,8 +90,6 @@ static const int blacklisted_adapters[] = {
 	0x134b, // GM108M [GeForce 940MX]
 	0x1399, // GM107M [GeForce 945M]
 	0x1348, // GM108M [GeForce 945M / 945A]
-	0x1d01, // GP108 [GeForce GT 1030]
-	0x0fc5, // GK107 [GeForce GT 1030]
 	0x174e, // GM108M [GeForce MX110]
 	0x174d, // GM108M [GeForce MX130]
 	0x1d10, // GP108M [GeForce MX150]
