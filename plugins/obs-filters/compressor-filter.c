@@ -224,6 +224,11 @@ static void clear_sidechains(struct compressor_data *cd)
 			sidechain->name = NULL;
 		}
 
+		for (size_t ix = 0; ix < MAX_AUDIO_CHANNELS; ix += 1) {
+			deque_free(&sidechain->data[ix]);
+			bfree(sidechain->buf[ix]);
+		}
+
 		pthread_mutex_destroy(&sidechain->mutex);
 	}
 
@@ -307,32 +312,17 @@ static void *compressor_create(obs_data_t *settings, obs_source_t *filter)
 
 static void compressor_destroy(void *data)
 {
-	UNUSED_PARAMETER(data);
-	return;
-	/*
+
 	struct compressor_data *cd = data;
 
-	if (cd->sidechain.weak_ref) {
-		obs_source_t *sidechain = get_sidechain(cd);
-		if (sidechain) {
-			obs_source_remove_audio_capture_callback(sidechain, sidechain_capture, cd);
-			obs_source_release(sidechain);
-		}
-
-		obs_weak_source_release(cd->sidechain.weak_ref);
-	}
-
-	for (size_t i = 0; i < MAX_AUDIO_CHANNELS; i++) {
-		deque_free(&cd->sidechain.data[i]);
-		bfree(cd->sidechain.buf[i]);
-	}
-	pthread_mutex_destroy(&cd->sidechain.mutex);
 	pthread_mutex_destroy(&cd->sidechain_update_mutex);
 
-	bfree(cd->sidechain.name);
+	clear_sidechains(cd);
+
+	da_free(cd->sidechains);
+
 	bfree(cd->envelope_buf);
 	bfree(cd);
-     */
 }
 
 static void analyze_envelope(struct compressor_data *cd, float **samples, const uint32_t num_samples)
