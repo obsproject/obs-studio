@@ -60,14 +60,14 @@
 /* -------------------------------------------------------- */
 
 struct sidechain {
-    pthread_mutex_t mutex;
-    struct deque data[MAX_AUDIO_CHANNELS];
-    float *buf[MAX_AUDIO_CHANNELS];
-    char *name;
-    obs_weak_source_t *weak_ref;
-    uint64_t check_time;
-    size_t max_frames;
-    size_t num_channels;
+	pthread_mutex_t mutex;
+	struct deque data[MAX_AUDIO_CHANNELS];
+	float *buf[MAX_AUDIO_CHANNELS];
+	char *name;
+	obs_weak_source_t *weak_ref;
+	uint64_t check_time;
+	size_t max_frames;
+	size_t num_channels;
 };
 
 struct compressor_data {
@@ -96,27 +96,32 @@ struct compressor_data {
 /* -------------------------------------------------------- */
 
 static inline void get_sidechain_data(struct compressor_data *cd, const uint32_t num_samples)
+
 {
 	size_t data_size = cd->envelope_buf_len * sizeof(float);
 	if (!data_size)
 		return;
 
-	pthread_mutex_lock(&sidechain->mutex);
-	if (sidechain->max_frames < num_samples)
-		sidechain->max_frames = num_samples;
+	for (size_t ix = 0; ix < cd->sidechains.num; ix += 1) {
+		struct sidechain *sidechain = &cd->sidechains.array[ix];
 
-	if (sidechain->data[0].size < data_size) {
-		for (size_t i = 0; i < cd->num_channels; i++) {
-			memset(sidechain->buf[i], 0, data_size);
+		pthread_mutex_lock(&sidechain->mutex);
+		if (sidechain->max_frames < num_samples)
+			sidechain->max_frames = num_samples;
+
+		if (sidechain->data[0].size < data_size) {
+			for (size_t i = 0; i < cd->num_channels; i++) {
+				memset(sidechain->buf[i], 0, data_size);
+			}
+			pthread_mutex_unlock(&sidechain->mutex);
+			continue;
 		}
+
+		for (size_t i = 0; i < cd->num_channels; i++)
+			deque_pop_front(&sidechain->data[i], sidechain->buf[i], data_size);
+
 		pthread_mutex_unlock(&sidechain->mutex);
-		continue;
 	}
-
-	for (size_t i = 0; i < cd->num_channels; i++)
-		deque_pop_front(&sidechain->data[i], sidechain->buf[i], data_size);
-
-	pthread_mutex_unlock(&sidechain->mutex);
 }
 
 static void resize_env_buffer(struct compressor_data *cd, size_t len)
@@ -128,7 +133,6 @@ static void resize_env_buffer(struct compressor_data *cd, size_t len)
 		struct sidechain *sidechain = &cd->sidechains.array[ix];
 		pthread_mutex_lock(&sidechain->mutex);
 		for (size_t i = 0; i < cd->num_channels; i++) {
-
 			sidechain->buf[i] = brealloc(sidechain->buf[i], len * sizeof(float));
 		}
 		pthread_mutex_unlock(&sidechain->mutex);
@@ -223,6 +227,7 @@ static void compressor_update(void *data, obs_data_t *s)
 	const uint32_t sample_rate = audio_output_get_sample_rate(obs_get_audio());
 	const size_t num_channels = audio_output_get_channels(obs_get_audio());
 	const float attack_time_ms = (float)obs_data_get_int(s, S_ATTACK_TIME);
+
 	const float release_time_ms = (float)obs_data_get_int(s, S_RELEASE_TIME);
 	const float output_gain_db = (float)obs_data_get_double(s, S_OUTPUT_GAIN);
 	obs_data_array_t *sidechain_names = obs_data_get_array(s, S_SIDECHAIN_SOURCE);
@@ -346,7 +351,10 @@ static void analyze_sidechain(struct compressor_data *cd, const uint32_t num_sam
 	const float attack_gain = cd->attack_gain;
 	const float release_gain = cd->release_gain;
 
+	memset(cd->envelope_buf, 0, num_samples * sizeof(cd->envelope_buf[0]));
+
 	for (size_t chan = 0; chan < cd->num_channels; ++chan) {
+		bool compression_applied = false;
 		for (size_t sidechain_ix = 0; sidechain_ix < cd->sidechains.num; sidechain_ix += 1) {
 			float **sidechain_buf = cd->sidechains.array[sidechain_ix].buf;
 			if (!sidechain_buf[chan])
@@ -354,22 +362,25 @@ static void analyze_sidechain(struct compressor_data *cd, const uint32_t num_sam
 
 			float *envelope_buf = cd->envelope_buf;
 			float env = cd->envelope;
+
 			for (uint32_t i = 0; i < num_samples; ++i) {
 				const float env_in = fabsf(sidechain_buf[chan][i]);
 
 				if (env < env_in) {
 					env = env_in + attack_gain * (env - env_in);
+					compression_applied = true;
 				} else {
 					env = env_in + release_gain * (env - env_in);
 				}
 				envelope_buf[i] = fmaxf(envelope_buf[i], env);
 			}
-			// we don't need to check any other sidechains if we have successfully found one.
-			// TODO(Ben): the goal of this logic is to short-circuit the check, but this logic unfortunately
-			// is applied to a /muted/ source too...
-			//goto continue_outer;
+			// if the threshold was reached on the channel already, there's no need to continue
+			// with other sidechains.
+			if (compression_applied) {
+				goto continue_outer;
+			}
 		}
-		//continue_outer:;
+	continue_outer:;
 	}
 	cd->envelope = cd->envelope_buf[num_samples - 1];
 }
