@@ -13,7 +13,7 @@ add_library(linux-pulseaudio MODULE)
 add_library(OBS::pulseaudio ALIAS linux-pulseaudio)
 
 target_sources(linux-pulseaudio PRIVATE # cmake-format: sortable
-                                        linux-pulseaudio.c pulse-input.c pulse-wrapper.c)
+                                        linux-pulseaudio.c pulse-input.c pulse-output.c pulse-utils.c pulse-wrapper.c)
 target_link_libraries(linux-pulseaudio PRIVATE OBS::libobs PulseAudio::PulseAudio)
 
 set_target_properties_obs(linux-pulseaudio PROPERTIES FOLDER plugins PREFIX "")

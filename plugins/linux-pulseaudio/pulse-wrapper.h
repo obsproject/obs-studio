@@ -149,3 +149,43 @@ int_fast32_t pulse_get_server_info(pa_server_info_cb_t cb, void *userdata);
  */
 pa_stream *pulse_stream_new(const char *name, const pa_sample_spec *ss,
 			    const pa_channel_map *map);
+
+/**
+ * Request source information from a specific sink
+ *
+ * The function will block until the operation was executed and the mainloop
+ * called the provided callback function.
+ *
+ * @param cb pointer to the callback function
+ * @param name the sink name to get information for
+ * @param userdata pointer to userdata the callback will be called with
+ *
+ * @return negative on error
+ *
+ * @note The function will block until the server context is ready.
+ *
+ * @warning call without active locks
+ */
+int_fast32_t pulse_get_sink_info(pa_sink_info_cb_t cb, const char *name,
+				 void *userdata);
+
+/** Load module into pulseaudio
+ *
+ * @param name name of module
+ * @param argument string with arguments to pass to module
+ *
+ * @return negative on error, module index on success
+ */
+int_fast32_t pulse_load_module(const char *name, const char *argument);
+
+/** Remove module from pulseaudio
+ *
+ * @param idx module index previously returned by pulse_module_load()
+ */
+int_fast32_t pulse_unload_module(uint32_t idx);
+
+/** Get the last pulseaudio error code from the wrapped context
+ *
+ * @return error code suitable for passing to pa_strerror()
+*/
+int pulse_errno();
