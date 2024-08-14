@@ -65,6 +65,16 @@ API_AVAILABLE(macos(12.5)) static void sck_video_capture_destroy(void *data)
     if (sc->capture_delegate) {
         [sc->capture_delegate release];
     }
+
+    if (sc->picker_observer) {
+        [sc->picker_observer disable];
+        [sc->picker_observer release];
+    }
+
+    if (sc->picked_filter) {
+        [sc->picked_filter release];
+    }
+
     [sc->application_id release];
 
     pthread_mutex_destroy(&sc->mutex);
@@ -191,6 +201,14 @@ API_AVAILABLE(macos(12.5)) static bool init_screen_stream(struct screen_capture 
 
             set_display_mode(sc, target_display);
         } break;
+        case ScreenCaptureAutomaticStream: {
+            if (sc->picked_filter) {
+                content_filter = sc->picked_filter;
+                [content_filter retain];
+            } else {
+                content_filter = NULL;
+            }
+        } break;
     }
     os_sem_post(sc->shareable_content_available);
 
@@ -214,6 +232,12 @@ API_AVAILABLE(macos(12.5)) static bool init_screen_stream(struct screen_capture 
             os_event_init(&sc->stream_start_completed, OS_EVENT_TYPE_MANUAL);
             return true;
         }
+    }
+
+    os_event_init(&sc->stream_start_completed, OS_EVENT_TYPE_MANUAL);
+
+    if (!content_filter) {
+        return true;
     }
 
     sc->disp = [[SCStream alloc] initWithFilter:content_filter configuration:sc->stream_properties
@@ -243,7 +267,6 @@ API_AVAILABLE(macos(12.5)) static bool init_screen_stream(struct screen_capture 
             return !did_add_output;
         }
     }
-    os_event_init(&sc->stream_start_completed, OS_EVENT_TYPE_MANUAL);
 
     __block BOOL did_stream_start = NO;
     [sc->disp startCaptureWithCompletionHandler:^(NSError *_Nullable error) {
@@ -276,7 +299,7 @@ API_AVAILABLE(macos(12.5)) static void *sck_video_capture_create(obs_data_t *set
     sc->audio_only = false;
 
     os_sem_init(&sc->shareable_content_available, 1);
-    screen_capture_build_content_list(sc, sc->capture_type == ScreenCaptureDisplayStream);
+    screen_capture_build_content_list(sc, sc->capture_type);
 
     sc->capture_delegate = [[ScreenCaptureDelegate alloc] init];
     sc->capture_delegate.sc = sc;
@@ -289,6 +312,13 @@ API_AVAILABLE(macos(12.5)) static void *sck_video_capture_create(obs_data_t *set
 
     sc->application_id = [[NSString alloc] initWithUTF8String:obs_data_get_string(settings, "application")];
     pthread_mutex_init(&sc->mutex, NULL);
+
+    if (@available(macOS 14.0, *)) {
+        OBSSharingPickerObserver *observer = [[OBSSharingPickerObserver alloc] init];
+        observer.sc = sc;
+        [observer enable];
+        sc->picker_observer = observer;
+    }
 
     if (!init_screen_stream(sc))
         goto fail;
@@ -394,7 +424,12 @@ static void sck_video_capture_defaults(obs_data_t *settings)
     CFRelease(display_uuid);
 
     obs_data_set_default_string(settings, "application", NULL);
-    obs_data_set_default_int(settings, "type", ScreenCaptureDisplayStream);
+    if (@available(macOS 14.0, *)) {
+        obs_data_set_default_int(settings, "type", ScreenCaptureAutomaticStream);
+    } else {
+        obs_data_set_default_int(settings, "type", ScreenCaptureDisplayStream);
+    }
+
     obs_data_set_default_int(settings, "window", kCGNullWindowID);
     obs_data_set_default_bool(settings, "show_cursor", true);
     obs_data_set_default_bool(settings, "hide_obs", false);
@@ -443,7 +478,19 @@ API_AVAILABLE(macos(12.5)) static void sck_video_capture_update(void *data, obs_
                     return;
                 }
             } break;
+            case ScreenCaptureAutomaticStream: {
+                if (sc->hide_cursor != show_cursor) {
+                    [application_id release];
+                    return;
+                }
+            } break;
         }
+    }
+
+    if (sc->capture_type != ScreenCaptureAutomaticStream && capture_type == ScreenCaptureAutomaticStream) {
+        sc->capture_type = capture_type;
+        sc->capture_failed = false;
+        return;
     }
 
     obs_enter_graphics();
@@ -482,7 +529,7 @@ static bool content_settings_changed(void *data, obs_properties_t *props, obs_pr
 
     if (sc->capture_type != capture_type_id) {
         switch (capture_type_id) {
-            case 0: {
+            case ScreenCaptureDisplayStream: {
                 obs_property_set_visible(display_list, true);
                 obs_property_set_visible(window_list, false);
                 obs_property_set_visible(app_list, false);
@@ -495,7 +542,7 @@ static bool content_settings_changed(void *data, obs_properties_t *props, obs_pr
                 }
                 break;
             }
-            case 1: {
+            case ScreenCaptureWindowStream: {
                 obs_property_set_visible(display_list, false);
                 obs_property_set_visible(window_list, true);
                 obs_property_set_visible(app_list, false);
@@ -508,7 +555,7 @@ static bool content_settings_changed(void *data, obs_properties_t *props, obs_pr
                 }
                 break;
             }
-            case 2: {
+            case ScreenCaptureApplicationStream: {
                 obs_property_set_visible(display_list, true);
                 obs_property_set_visible(app_list, true);
                 obs_property_set_visible(window_list, false);
@@ -521,6 +568,19 @@ static bool content_settings_changed(void *data, obs_properties_t *props, obs_pr
                 }
                 break;
             }
+            case ScreenCaptureAutomaticStream: {
+                obs_property_set_visible(display_list, false);
+                obs_property_set_visible(app_list, false);
+                obs_property_set_visible(window_list, false);
+                obs_property_set_visible(empty, false);
+                obs_property_set_visible(hidden, false);
+                obs_property_set_visible(hide_obs, true);
+
+                if (capture_type_error) {
+                    obs_property_set_visible(capture_type_error, false);
+                }
+                break;
+            }
         }
     }
 
@@ -528,7 +588,7 @@ static bool content_settings_changed(void *data, obs_properties_t *props, obs_pr
     sc->show_hidden_windows = obs_data_get_bool(settings, "show_hidden_windows");
     sc->hide_obs = obs_data_get_bool(settings, "hide_obs");
 
-    screen_capture_build_content_list(sc, capture_type_id == ScreenCaptureDisplayStream);
+    screen_capture_build_content_list(sc, capture_type_id);
     build_display_list(sc, props);
     build_window_list(sc, props);
     build_application_list(sc, props);
@@ -537,7 +597,7 @@ static bool content_settings_changed(void *data, obs_properties_t *props, obs_pr
 }
 
 API_AVAILABLE(macos(12.5))
-static bool reactivate_capture(obs_properties_t *props __unused, obs_property_t *property, void *data)
+static bool reactivate_capture(obs_properties_t *props, obs_property_t *property, void *data)
 {
     struct screen_capture *sc = data;
     if (!sc->capture_failed) {
@@ -551,6 +611,30 @@ static bool reactivate_capture(obs_properties_t *props __unused, obs_property_t 
     init_screen_stream(sc);
     obs_leave_graphics();
     obs_property_set_enabled(property, false);
+
+    if (@available(macOS 14.0, *)) {
+        if (sc->capture_type == ScreenCaptureAutomaticStream) {
+            [sc->picker_observer enable];
+
+            obs_property_t *show_picker_button = obs_properties_get(props, "show_picker");
+            obs_property_set_enabled(show_picker_button, true);
+        }
+    }
+
+    return true;
+}
+
+API_AVAILABLE(macos(14.0))
+static bool show_picker(obs_properties_t *props __unused, obs_property_t *property __unused, void *data)
+{
+    struct screen_capture *sc = data;
+
+    if (sc->disp) {
+        [sc->picker_observer showPicker:sc->disp];
+    } else {
+        [sc->picker_observer showPicker];
+    }
+
     return true;
 }
 
@@ -563,9 +647,13 @@ API_AVAILABLE(macos(12.5)) static obs_properties_t *sck_video_capture_properties
     obs_property_t *capture_type = obs_properties_add_list(props, "type", obs_module_text("SCK.Method"),
                                                            OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
-    obs_property_list_add_int(capture_type, obs_module_text("DisplayCapture"), 0);
-    obs_property_list_add_int(capture_type, obs_module_text("WindowCapture"), 1);
-    obs_property_list_add_int(capture_type, obs_module_text("ApplicationCapture"), 2);
+    if (@available(macOS 14.0, *)) {
+        obs_property_list_add_int(capture_type, obs_module_text("PickedCapture"), ScreenCaptureAutomaticStream);
+    }
+
+    obs_property_list_add_int(capture_type, obs_module_text("DisplayCapture"), ScreenCaptureDisplayStream);
+    obs_property_list_add_int(capture_type, obs_module_text("WindowCapture"), ScreenCaptureWindowStream);
+    obs_property_list_add_int(capture_type, obs_module_text("ApplicationCapture"), ScreenCaptureApplicationStream);
 
     obs_property_t *display_list = obs_properties_add_list(
         props, "display_uuid", obs_module_text("DisplayCapture.Display"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
@@ -585,6 +673,19 @@ API_AVAILABLE(macos(12.5)) static obs_properties_t *sck_video_capture_properties
     obs_properties_add_bool(props, "show_cursor", obs_module_text("DisplayCapture.ShowCursor"));
 
     obs_property_t *hide_obs = obs_properties_add_bool(props, "hide_obs", obs_module_text("DisplayCapture.HideOBS"));
+
+    if (@available(macOS 14.0, *)) {
+        obs_property_t *show_picker_button =
+            obs_properties_add_button2(props, "show_picker", obs_module_text("SCK.ShowPicker"), show_picker, sc);
+        obs_property_set_enabled(show_picker_button, sc->capture_type == ScreenCaptureAutomaticStream);
+        obs_property_set_enabled(show_picker_button, false);
+
+        if (sc) {
+            obs_property_set_enabled(show_picker_button,
+                                     sc->capture_type == ScreenCaptureAutomaticStream && !sc->capture_failed);
+        }
+    }
+
     obs_property_t *reactivate =
         obs_properties_add_button2(props, "reactivate_capture", obs_module_text("SCK.Restart"), reactivate_capture, sc);
     obs_property_set_enabled(reactivate, sc->capture_failed);
@@ -595,7 +696,7 @@ API_AVAILABLE(macos(12.5)) static obs_properties_t *sck_video_capture_properties
         obs_property_set_modified_callback2(hidden, content_settings_changed, sc);
 
         switch (sc->capture_type) {
-            case 0: {
+            case ScreenCaptureDisplayStream: {
                 obs_property_set_visible(display_list, true);
                 obs_property_set_visible(window_list, false);
                 obs_property_set_visible(app_list, false);
@@ -604,7 +705,7 @@ API_AVAILABLE(macos(12.5)) static obs_properties_t *sck_video_capture_properties
                 obs_property_set_visible(hide_obs, true);
                 break;
             }
-            case 1: {
+            case ScreenCaptureWindowStream: {
                 obs_property_set_visible(display_list, false);
                 obs_property_set_visible(window_list, true);
                 obs_property_set_visible(app_list, false);
@@ -613,7 +714,7 @@ API_AVAILABLE(macos(12.5)) static obs_properties_t *sck_video_capture_properties
                 obs_property_set_visible(hide_obs, false);
                 break;
             }
-            case 2: {
+            case ScreenCaptureApplicationStream: {
                 obs_property_set_visible(display_list, true);
                 obs_property_set_visible(app_list, true);
                 obs_property_set_visible(window_list, false);
@@ -622,9 +723,18 @@ API_AVAILABLE(macos(12.5)) static obs_properties_t *sck_video_capture_properties
                 obs_property_set_visible(hide_obs, false);
                 break;
             }
+            case ScreenCaptureAutomaticStream: {
+                obs_property_set_visible(display_list, false);
+                obs_property_set_visible(app_list, false);
+                obs_property_set_visible(window_list, false);
+                obs_property_set_visible(empty, false);
+                obs_property_set_visible(hidden, false);
+                obs_property_set_visible(hide_obs, true);
+            }
         }
 
         obs_property_set_modified_callback2(empty, content_settings_changed, sc);
+        obs_property_set_modified_callback2(hide_obs, content_settings_changed, sc);
     }
 
     if (@available(macOS 13.0, *))
@@ -650,6 +760,10 @@ API_AVAILABLE(macos(12.5)) static obs_properties_t *sck_video_capture_properties
                     break;
                 }
                 case ScreenCaptureApplicationStream: {
+                    obs_property_set_visible(capture_type_error, true);
+                    break;
+                }
+                case ScreenCaptureAutomaticStream: {
                     obs_property_set_visible(capture_type_error, true);
                     break;
                 }

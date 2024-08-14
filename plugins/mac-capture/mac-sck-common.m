@@ -44,15 +44,172 @@ bool is_screen_capture_available(void)
 
     MACCAP_LOG(LOG_WARNING, "%s", errorMessage.UTF8String);
 
+    [self.sc->picker_observer disable];
     self.sc->capture_failed = true;
     obs_source_update_properties(self.sc->source);
 }
 
 @end
 
+@implementation OBSSharingPickerObserver
+
+- (void)enable
+{
+    if (!self.picker) {
+        self.picker = SCContentSharingPicker.sharedPicker;
+        self.picker.active = YES;
+
+        if (!self.observerAdded) {
+            [self.picker addObserver:self];
+            self.observerAdded = YES;
+        }
+    } else {
+        self.observerAdded = NO;
+    }
+}
+
+- (void)disable
+{
+    if (self.picker && self.observerAdded) {
+        [self.picker removeObserver:self];
+    }
+    self.picker = NULL;
+}
+
+- (void)showPicker
+{
+    [self.picker present];
+}
+
+- (void)showPicker:(SCStream *)stream
+{
+    SCContentSharingPickerConfiguration *config = [[SCContentSharingPickerConfiguration alloc] init];
+
+    if (self.sc->hide_obs) {
+        config.excludedBundleIDs = @[[NSBundle mainBundle].bundleIdentifier];
+    }
+
+    [self.picker setConfiguration:config forStream:stream];
+
+    [self.picker presentPickerForStream:stream];
+}
+
+- (void)contentSharingPicker:(SCContentSharingPicker *)picker
+         didUpdateWithFilter:(SCContentFilter *)filter
+                   forStream:(SCStream *)stream
+{
+    if (stream) {
+        if (stream == self.sc->disp) {
+            [stream updateContentFilter:filter completionHandler:nil];
+            self.sc->picked_filter = filter;
+            [self.sc->picked_filter retain];
+
+            if (self.sc->capture_type != ScreenCaptureAutomaticStream) {
+                obs_data_t *settings = obs_source_get_settings(self.sc->source);
+                obs_data_set_int(settings, "type", ScreenCaptureAutomaticStream);
+                obs_source_update(self.sc->source, settings);
+            }
+        }
+    } else {
+        NSString *pickerType = NULL;
+
+        switch (self.sc->capture_type) {
+            case ScreenCaptureDisplayStream: {
+                pickerType = @"Display Capture";
+                break;
+            }
+            case ScreenCaptureWindowStream: {
+                pickerType = @"Window Capture";
+                break;
+            }
+            case ScreenCaptureApplicationStream: {
+                pickerType = @"Application Capture";
+                break;
+            }
+            default: {
+                self.sc->frame = CGRectZero;
+                self.sc->stream_properties = [[SCStreamConfiguration alloc] init];
+
+                CGColorRef background = CGColorGetConstantColor(kCGColorClear);
+                [self.sc->stream_properties setQueueDepth:8];
+                [self.sc->stream_properties setShowsCursor:!self.sc->hide_cursor];
+                [self.sc->stream_properties setColorSpaceName:kCGColorSpaceDisplayP3];
+                [self.sc->stream_properties setBackgroundColor:background];
+                FourCharCode l10r_type = 0;
+                l10r_type = ('l' << 24) | ('1' << 16) | ('0' << 8) | 'r';
+                [self.sc->stream_properties setPixelFormat:l10r_type];
+
+                [self.sc->stream_properties setCapturesAudio:YES];
+                [self.sc->stream_properties setExcludesCurrentProcessAudio:YES];
+                [self.sc->stream_properties setChannelCount:2];
+
+                self.sc->disp = [[SCStream alloc] initWithFilter:filter configuration:self.sc->stream_properties
+                                                        delegate:self.sc->capture_delegate];
+
+                NSError *addStreamOutputError = nil;
+
+                BOOL success = [self.sc->disp addStreamOutput:self.sc->capture_delegate type:SCStreamOutputTypeScreen
+                                           sampleHandlerQueue:nil
+                                                        error:&addStreamOutputError];
+                if (!success) {
+                    MACCAP_ERR("didUpdateWithFilter: Failed to add stream output with error %s\n",
+                               [[addStreamOutputError localizedFailureReason]
+                                   cStringUsingEncoding:NSUTF8StringEncoding]);
+                    [addStreamOutputError release];
+                    return;
+                }
+
+                success = [self.sc->disp addStreamOutput:self.sc->capture_delegate type:SCStreamOutputTypeAudio
+                                      sampleHandlerQueue:nil
+                                                   error:&addStreamOutputError];
+
+                if (!success) {
+                    MACCAP_ERR("didUpdateWithFilter: Failed to add audio stream output with error %s\n",
+                               [[addStreamOutputError localizedFailureReason]
+                                   cStringUsingEncoding:NSUTF8StringEncoding]);
+                    [addStreamOutputError release];
+                    return;
+                }
+
+                [self.sc->disp startCaptureWithCompletionHandler:^(NSError *_Nullable error) {
+                    if (error) {
+                        MACCAP_ERR("didUpdateWithFilter: Failed to start capture with error %s\n",
+                                   [[error localizedFailureReason] cStringUsingEncoding:NSUTF8StringEncoding]);
+                        [self.sc->disp release];
+                        self.sc->disp = NULL;
+                    }
+                }];
+
+                self.sc->picked_filter = filter;
+                [self.sc->picked_filter retain];
+
+                return;
+            }
+        }
+
+        blog(LOG_WARNING, "Attempted to use macOS screen sharing picker to change capture of type %s",
+             pickerType.UTF8String);
+    }
+}
+
+- (void)contentSharingPicker:(nonnull SCContentSharingPicker *)picker didCancelForStream:(nullable SCStream *)stream
+{
+    return;
+}
+
+- (void)contentSharingPickerStartDidFailWithError:(nonnull NSError *)error
+{
+    if (error) {
+        MACCAP_ERR("didFailWithError: Sharing picker failed with error %s\n",
+                   [[error localizedFailureReason] cStringUsingEncoding:NSUTF8StringEncoding]);
+    }
+}
+
+@end
+
 #pragma mark - obs_properties
 
-void screen_capture_build_content_list(struct screen_capture *sc, bool display_capture)
+void screen_capture_build_content_list(struct screen_capture *sc, ScreenCaptureStreamType captureType)
 {
     typedef void (^shareable_content_callback)(SCShareableContent *, NSError *);
     shareable_content_callback new_content_received = ^void(SCShareableContent *shareable_content, NSError *error) {
@@ -71,9 +228,15 @@ void screen_capture_build_content_list(struct screen_capture *sc, bool display_c
 
     os_sem_wait(sc->shareable_content_available);
     [sc->shareable_content release];
-    BOOL onScreenWindowsOnly = (display_capture) ? NO : !sc->show_hidden_windows;
-    [SCShareableContent getShareableContentExcludingDesktopWindows:YES onScreenWindowsOnly:onScreenWindowsOnly
-                                                 completionHandler:new_content_received];
+
+    if (captureType != ScreenCaptureAutomaticStream) {
+        BOOL onScreenWindowsOnly = (captureType == ScreenCaptureDisplayStream) ? NO : !sc->show_hidden_windows;
+        [SCShareableContent getShareableContentExcludingDesktopWindows:YES onScreenWindowsOnly:onScreenWindowsOnly
+                                                     completionHandler:new_content_received];
+        return;
+    }
+
+    os_sem_post(sc->shareable_content_available);
 }
 
 bool build_display_list(struct screen_capture *sc, obs_properties_t *props)
@@ -205,8 +368,8 @@ API_AVAILABLE(macos(12.5)) void screen_stream_video_update(struct screen_capture
     CGRect window_rect = {};
 
     CFArrayRef attachments_array = CMSampleBufferGetSampleAttachmentsArray(sample_buffer, false);
-    if (sc->capture_type == ScreenCaptureWindowStream && attachments_array != NULL &&
-        CFArrayGetCount(attachments_array) > 0) {
+    if ((sc->capture_type == ScreenCaptureWindowStream || sc->capture_type == ScreenCaptureAutomaticStream) &&
+        attachments_array != NULL && CFArrayGetCount(attachments_array) > 0) {
         CFDictionaryRef attachments_dict = CFArrayGetValueAtIndex(attachments_array, 0);
         if (attachments_dict != NULL) {
             CFTypeRef frame_scale_factor = CFDictionaryGetValue(attachments_dict, SCStreamFrameInfoScaleFactor);
@@ -255,7 +418,7 @@ API_AVAILABLE(macos(12.5)) void screen_stream_video_update(struct screen_capture
         bool needs_to_update_properties = false;
 
         if (!frame_detail_errored) {
-            if (sc->capture_type == ScreenCaptureWindowStream) {
+            if ((sc->capture_type == ScreenCaptureWindowStream || sc->capture_type == ScreenCaptureAutomaticStream)) {
                 if ((sc->frame.size.width != window_rect.size.width) ||
                     (sc->frame.size.height != window_rect.size.height)) {
                     sc->frame.size.width = window_rect.size.width;

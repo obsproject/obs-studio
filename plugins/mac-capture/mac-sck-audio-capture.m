@@ -183,12 +183,13 @@ API_AVAILABLE(macos(13.0)) static void *sck_audio_capture_create(obs_data_t *set
     sc->audio_capture_type = (unsigned int) obs_data_get_int(settings, "type");
 
     os_sem_init(&sc->shareable_content_available, 1);
-    screen_capture_build_content_list(sc, sc->capture_type == ScreenCaptureAudioDesktopStream);
+    screen_capture_build_content_list(sc, sc->capture_type);
 
     sc->capture_delegate = [[ScreenCaptureDelegate alloc] init];
     sc->capture_delegate.sc = sc;
 
     sc->display = CGMainDisplayID();
+    sc->picker_observer = NULL;
 
     sc->application_id = [[NSString alloc] initWithUTF8String:obs_data_get_string(settings, "application")];
     pthread_mutex_init(&sc->mutex, NULL);
@@ -221,7 +222,7 @@ static bool audio_capture_method_changed(void *data, obs_properties_t *props, ob
         }
         case ScreenCaptureAudioApplicationStream: {
             obs_property_set_visible(app_list, true);
-            screen_capture_build_content_list(sc, capture_type_id == ScreenCaptureAudioDesktopStream);
+            screen_capture_build_content_list(sc, capture_type_id);
             build_application_list(sc, props);
             break;
         }
@@ -255,8 +256,9 @@ API_AVAILABLE(macos(13.0)) static obs_properties_t *sck_audio_capture_properties
     obs_property_t *capture_type = obs_properties_add_list(props, "type", obs_module_text("SCK.Method"),
                                                            OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
-    obs_property_list_add_int(capture_type, obs_module_text("DesktopAudioCapture"), 0);
-    obs_property_list_add_int(capture_type, obs_module_text("ApplicationAudioCapture"), 1);
+    obs_property_list_add_int(capture_type, obs_module_text("DesktopAudioCapture"), ScreenCaptureAudioDesktopStream);
+    obs_property_list_add_int(capture_type, obs_module_text("ApplicationAudioCapture"),
+                              ScreenCaptureAudioApplicationStream);
 
     obs_property_set_modified_callback2(capture_type, audio_capture_method_changed, data);
 
