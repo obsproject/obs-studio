@@ -802,9 +802,6 @@ static int obs_init_video()
 
 		if (!obs_record_view_add(&obs->data.record_view, ovi))
 			return OBS_VIDEO_FAIL;
-
-		if (!obs_record_view_add(&obs->data.backstage_view, ovi))
-			return OBS_VIDEO_FAIL;
 	}
 
 	int errorcode;
@@ -1078,8 +1075,6 @@ static bool obs_init_data(void)
 		goto fail;
 	if (!obs_view_init(&data->record_view))
 		goto fail;
-	if (!obs_view_init(&data->backstage_view))
-		goto fail;
 
 	data->sources = NULL;
 	data->public_sources = NULL;
@@ -1140,8 +1135,6 @@ static void obs_free_data(void)
 	obs_main_view_free(&data->stream_view);
 	obs_view_remove(&data->record_view);
 	obs_main_view_free(&data->record_view);
-	obs_view_remove(&data->backstage_view);
-	obs_main_view_free(&data->backstage_view);
 
 	blog(LOG_INFO, "Freeing OBS context data");
 
@@ -2163,30 +2156,7 @@ void obs_activate_scene_on_backstage(obs_source_t *source)
 		return;
 	}
 
-	struct obs_view *backstage_view = &obs->data.backstage_view;
-
-	pthread_mutex_lock(&backstage_view->channels_mutex);
-
-	size_t channel = MAX_CHANNELS;
-	for (size_t i = 0; i < MAX_CHANNELS; ++i) {
-		if (!backstage_view->channels[i]) {
-			channel = i;
-			break;
-		}
-	}
-
-	if (channel == MAX_CHANNELS) {
-		blog(LOG_WARNING,
-		     "obs_activate_scene_on_backstage - no free slots left for scenes");
-		pthread_mutex_unlock(&backstage_view->channels_mutex);
-		return;
-	}
-
 	source = obs_source_get_ref(source);
-	backstage_view->channels[channel] = source;
-
-	pthread_mutex_unlock(&backstage_view->channels_mutex);
-
 	if (source) {
 		obs_source_activate(source, MAIN_VIEW);
 	}
@@ -2243,30 +2213,8 @@ void obs_deactivate_scene_on_backstage(obs_source_t *source)
 		return;
 	}
 
-	struct obs_view *backstage_view = &obs->data.backstage_view;
-
-	pthread_mutex_lock(&backstage_view->channels_mutex);
-
-	obs_source_t *found_source = NULL;
-	for (size_t i = 0; i < MAX_CHANNELS; ++i) {
-		if (backstage_view->channels[i] == source) {
-			found_source = source;
-			backstage_view->channels[i] = NULL;
-			break;
-		}
-	}
-
-	if (!found_source) {
-		blog(LOG_WARNING,
-		     "obs_deactivate_scene_on_backstage - scene not found on backstage");
-		pthread_mutex_unlock(&backstage_view->channels_mutex);
-		return;
-	}
-
-	pthread_mutex_unlock(&backstage_view->channels_mutex);
-
-	obs_source_deactivate(found_source, MAIN_VIEW);
-	obs_source_release(found_source);
+	obs_source_deactivate(source, MAIN_VIEW);
+	obs_source_release(source);
 }
 
 void obs_deactivate_videos_on_backstage(obs_source_t *source)
