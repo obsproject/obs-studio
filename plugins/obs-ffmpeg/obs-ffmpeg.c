@@ -377,6 +377,7 @@ bool obs_module_load(void)
 			obs_register_encoder(&hevc_nvenc_encoder_info);
 #endif
 	}
+#endif
 
 #ifdef _WIN32
 	amf_load();
@@ -413,7 +414,6 @@ bool obs_module_load(void)
 	} else {
 		blog(LOG_INFO, "FFmpeg VAAPI HEVC encoding not supported");
 	}
-#endif
 #endif
 #endif
 
