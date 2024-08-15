@@ -58,9 +58,9 @@ static inline size_t convert_time_to_frames(size_t sample_rate, uint64_t t)
 	return (size_t)util_mul_div64(t, sample_rate, 1000000000ULL);
 }
 
-static inline void mix_audio(struct audio_output_data *mixes,
-			     obs_source_t *source, size_t channels,
-			     size_t sample_rate, struct ts_info *ts)
+static void mix_audio(struct audio_data_mixes_outputs *mixes,
+		      obs_source_t *source, size_t channels, size_t sample_rate,
+		      struct ts_info *ts)
 {
 	size_t total_floats = AUDIO_OUTPUT_FRAMES;
 	size_t start_point = 0;
@@ -76,19 +76,27 @@ static inline void mix_audio(struct audio_output_data *mixes,
 
 		total_floats -= start_point;
 	}
+	for (size_t canvas_idx = 0; canvas_idx < mixes->outputs.num;
+	     canvas_idx++) {
+		for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
+			for (size_t ch = 0; ch < channels; ch++) {
+				register float *mix =
+					mixes->outputs.array[canvas_idx]
+						.output[mix_idx]
+						.data[ch];
+				register float *aud =
+					get_source_audio_output_buf(source,
+								    canvas_idx,
+								    mix_idx,
+								    ch);
+				register float *end;
 
-	for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
-		for (size_t ch = 0; ch < channels; ch++) {
-			register float *mix = mixes[mix_idx].data[ch];
-			register float *aud =
-				source->audio_output_buf[mix_idx][ch];
-			register float *end;
+				mix += start_point;
+				end = aud + total_floats;
 
-			mix += start_point;
-			end = aud + total_floats;
-
-			while (aud < end)
-				*(mix++) += *(aud++);
+				while (aud < end)
+					*(mix++) += *(aud++);
+			}
 		}
 	}
 }
@@ -530,7 +538,7 @@ static inline void execute_audio_tasks(void)
 
 bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in,
 		    uint64_t *out_ts, uint32_t mixers,
-		    struct audio_output_data *mixes)
+		    struct audio_data_mixes_outputs *mixes)
 {
 	struct obs_core_data *data = &obs->data;
 	struct obs_core_audio *audio = &obs->audio;
@@ -646,7 +654,8 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in,
 
 			pthread_mutex_lock(&source->audio_buf_mutex);
 
-			if (source->audio_output_buf[0][0] && source->audio_ts)
+			if (get_source_audio_output_buf(source, 0, 0, 0) &&
+			    source->audio_ts)
 				mix_audio(mixes, source, channels, sample_rate,
 					  &ts);
 

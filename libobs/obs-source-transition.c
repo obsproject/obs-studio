@@ -1025,6 +1025,51 @@ static void process_audio(obs_source_t *transition, obs_source_t *child,
 	}
 }
 
+static void process_audio_do(obs_source_t *transition, obs_source_t *child,
+			     struct audio_data_mixes_outputs *audio,
+			     uint64_t min_ts, uint32_t mixers, size_t channels,
+			     size_t sample_rate,
+			     obs_transition_audio_mix_callback_t mix)
+{
+	bool valid = child && !child->audio_pending && child->audio_ts;
+	struct obs_source_audio_mix child_audio;
+	uint64_t ts;
+	size_t pos;
+
+	if (!valid)
+		return;
+
+	ts = child->audio_ts;
+	obs_source_get_audio_mix(child, &child_audio);
+	pos = (size_t)ns_to_audio_frames(sample_rate, ts - min_ts);
+
+	if (pos > AUDIO_OUTPUT_FRAMES)
+		return;
+
+	for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
+		for (size_t canvas_idx = 0; canvas_idx < audio->outputs.num;
+		     canvas_idx++) {
+			struct audio_output_data *output =
+				&audio->outputs.array[canvas_idx]
+					 .output[mix_idx];
+			struct audio_output_data *input =
+				&child_audio.output[mix_idx];
+
+			if ((mixers & (1 << mix_idx)) == 0)
+				continue;
+
+			for (size_t ch = 0; ch < channels; ch++) {
+				float *out = output->data[ch];
+				float *in = input->data[ch];
+
+				mix_child(transition, out + pos, in,
+					  AUDIO_OUTPUT_FRAMES - pos,
+					  sample_rate, ts, mix);
+			}
+		}
+	}
+}
+
 static inline uint64_t calc_min_ts(obs_source_t *sources[2])
 {
 	uint64_t min_ts = 0;
@@ -1105,7 +1150,7 @@ bool obs_transition_audio_render(obs_source_t *transition, uint64_t *ts_out,
 					      sample_rate, mix_b);
 		} else if (state.s[0]) {
 			memcpy(audio->output[0].data[0],
-			       state.s[0]->audio_output_buf[0][0],
+			       get_source_audio_output_buf(state.s[0], 0, 0, 0),
 			       TOTAL_AUDIO_SIZE);
 		}
 
@@ -1120,6 +1165,81 @@ bool obs_transition_audio_render(obs_source_t *transition, uint64_t *ts_out,
 	return !!min_ts;
 }
 
+bool obs_transition_audio_render_do(obs_source_t *transition, uint64_t *ts_out,
+				    struct audio_data_mixes_outputs *audio,
+				    uint32_t mixers, size_t channels,
+				    size_t sample_rate,
+				    obs_transition_audio_mix_callback_t mix_a,
+				    obs_transition_audio_mix_callback_t mix_b)
+{
+	obs_source_t *sources[2];
+	struct transition_state state = {0};
+	bool stopped = false;
+	uint64_t min_ts;
+	float t;
+
+	if (!transition_valid(transition, "obs_transition_audio_render"))
+		return false;
+
+	blog(LOG_INFO, "[AUDIO_CANVAS] obs_transition_audio_render_do started");
+	lock_transition(transition);
+
+	sources[0] = transition->transition_sources[0];
+	sources[1] = transition->transition_sources[1];
+
+	min_ts = calc_min_ts(sources);
+
+	if (min_ts) {
+		t = calc_time(transition, min_ts);
+
+		if (t >= 1.0f && transition->transitioning_audio)
+			stopped = stop_audio(transition);
+
+		sources[0] = transition->transition_sources[0];
+		sources[1] = transition->transition_sources[1];
+		min_ts = calc_min_ts(sources);
+		if (min_ts)
+			copy_transition_state(transition, &state);
+
+	} else if (!transition->transitioning_video &&
+		   transition->transitioning_audio) {
+		stopped = stop_audio(transition);
+	}
+
+	unlock_transition(transition);
+
+	if (min_ts) {
+		if (state.transitioning_audio) {
+			if (state.s[0])
+				process_audio_do(transition, state.s[0], audio,
+						 min_ts, mixers, channels,
+						 sample_rate, mix_a);
+			if (state.s[1])
+				process_audio_do(transition, state.s[1], audio,
+						 min_ts, mixers, channels,
+						 sample_rate, mix_b);
+		} else if (state.s[0]) {
+			for (size_t canvas_idx = 0;
+			     canvas_idx < audio->outputs.num; canvas_idx++) {
+				memcpy(audio->outputs.array[canvas_idx]
+					       .output[0]
+					       .data[0],
+				       get_source_audio_output_buf(
+					       state.s[0], canvas_idx, 0, 0),
+				       TOTAL_AUDIO_SIZE);
+			}
+		}
+
+		obs_source_release(state.s[0]);
+		obs_source_release(state.s[1]);
+	}
+
+	if (stopped)
+		handle_stop(transition);
+
+	*ts_out = min_ts;
+	return !!min_ts;
+}
 void obs_transition_enable_fixed(obs_source_t *transition, bool enable,
 				 uint32_t duration)
 {

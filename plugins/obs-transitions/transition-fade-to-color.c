@@ -172,6 +172,16 @@ static bool fade_to_color_audio_render(void *data, uint64_t *ts_out,
 					   mix_b);
 }
 
+static bool fade_to_color_audio_render_do(
+	void *data, uint64_t *ts_out, struct audio_data_mixes_outputs *audio,
+	uint32_t mixers, size_t channels, size_t sample_rate)
+{
+	struct fade_to_color_info *fade_to_color = data;
+	return obs_transition_audio_render_do(fade_to_color->source, ts_out,
+					      audio, mixers, channels,
+					      sample_rate, mix_a, mix_b);
+}
+
 static obs_properties_t *fade_to_color_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
@@ -218,6 +228,7 @@ struct obs_source_info fade_to_color_transition = {
 	.update = fade_to_color_update,
 	.video_render = fade_to_color_video_render,
 	.audio_render = fade_to_color_audio_render,
+	.audio_render_do = fade_to_color_audio_render_do,
 	.get_properties = fade_to_color_properties,
 	.get_defaults = fade_to_color_defaults,
 	.video_get_color_space = fade_to_color_video_get_color_space,

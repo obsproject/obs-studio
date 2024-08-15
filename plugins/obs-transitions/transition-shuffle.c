@@ -114,6 +114,16 @@ static bool shuffle_audio_render(void *data, uint64_t *ts_out,
 	return obs_transition_audio_render(pm->source, ts_out, audio, mixers,
 					   channels, sample_rate, mix_a, mix_b);
 }
+static bool shuffle_audio_render_do(void *data, uint64_t *ts_out,
+				    struct audio_data_mixes_outputs *audio,
+				    uint32_t mixers, size_t channels,
+				    size_t sample_rate)
+{
+	struct shuffle_info *pm = data;
+	return obs_transition_audio_render_do(pm->source, ts_out, audio, mixers,
+					      channels, sample_rate, mix_a,
+					      mix_b);
+}
 
 static enum gs_color_space
 shuffle_video_get_color_space(void *data, size_t count,
@@ -149,6 +159,7 @@ struct obs_source_info shuffle_transition = {
 	.update = shuffle_update,
 	.video_render = shuffle_video_render,
 	.audio_render = shuffle_audio_render,
+	.audio_render_do = shuffle_audio_render_do,
 	.get_properties = shuffle_properties,
 	.get_defaults = shuffle_defaults,
 	.video_get_color_space = shuffle_video_get_color_space,

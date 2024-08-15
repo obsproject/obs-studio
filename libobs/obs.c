@@ -2779,6 +2779,22 @@ enum obs_audio_rendering_mode obs_get_audio_rendering_mode(void)
 		return obs->audio_rendering_mode;
 }
 
+void obs_set_audio_rendering_canvas(struct obs_video_info *ovi)
+{
+	if (!obs)
+		return;
+
+	obs->audio_rendering_canvas = ovi;
+}
+
+struct obs_video_info *obs_get_audio_rendering_canvas(void)
+{
+	if (!obs)
+		return NULL;
+	else
+		return obs->audio_rendering_canvas;
+}
+
 void obs_set_video_rendering_canvas(struct obs_video_info *ovi)
 {
 	if (!obs)

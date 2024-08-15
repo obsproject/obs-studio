@@ -129,6 +129,17 @@ static bool swipe_audio_render(void *data, uint64_t *ts_out,
 					   channels, sample_rate, mix_a, mix_b);
 }
 
+static bool swipe_audio_render_do(void *data, uint64_t *ts_out,
+				  struct audio_data_mixes_outputs *audio,
+				  uint32_t mixers, size_t channels,
+				  size_t sample_rate)
+{
+	struct swipe_info *swipe = data;
+	return obs_transition_audio_render_do(swipe->source, ts_out, audio,
+					      mixers, channels, sample_rate,
+					      mix_a, mix_b);
+}
+
 static obs_properties_t *swipe_properties(void *data)
 {
 	obs_properties_t *ppts = obs_properties_create();
@@ -172,6 +183,7 @@ struct obs_source_info swipe_transition = {
 	.update = swipe_update,
 	.video_render = swipe_video_render,
 	.audio_render = swipe_audio_render,
+	.audio_render_do = swipe_audio_render_do,
 	.get_properties = swipe_properties,
 	.video_get_color_space = swipe_video_get_color_space,
 };

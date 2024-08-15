@@ -20,6 +20,7 @@
 #include "media-io-defs.h"
 #include "../util/c99defs.h"
 #include "../util/util_uint64.h"
+#include "../util/darray.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -85,10 +86,14 @@ struct audio_output_data {
 	float *data[MAX_AUDIO_CHANNELS];
 };
 
+struct audio_data_mixes_outputs {
+	DARRAY(struct obs_source_audio_mix) outputs;
+};
+
 typedef bool (*audio_input_callback_t)(void *param, uint64_t start_ts,
 				       uint64_t end_ts, uint64_t *new_ts,
 				       uint32_t active_mixers,
-				       struct audio_output_data *mixes);
+				       struct audio_data_mixes_outputs *mixes);
 
 struct audio_output_info {
 	const char *name;

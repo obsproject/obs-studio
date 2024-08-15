@@ -596,6 +596,60 @@ static bool stinger_audio_render(void *data, uint64_t *ts_out,
 	return true;
 }
 
+static bool stinger_audio_render_do(void *data, uint64_t *ts_out,
+				    struct audio_data_mixes_outputs *audio,
+				    uint32_t mixers, size_t channels,
+				    size_t sample_rate)
+{
+	struct stinger_info *s = data;
+	uint64_t ts = 0;
+
+	if (!s) {
+		return false;
+	}
+
+	if (!obs_source_audio_pending(s->media_source)) {
+		ts = obs_source_get_audio_timestamp(s->media_source);
+		if (!ts)
+			return false;
+	}
+
+	bool success = obs_transition_audio_render_do(s->source, ts_out, audio,
+						      mixers, channels,
+						      sample_rate, s->mix_a,
+						      s->mix_b);
+	if (!ts)
+		return success;
+
+	if (!*ts_out || ts < *ts_out)
+		*ts_out = ts;
+
+	struct obs_source_audio_mix child_audio;
+	obs_source_get_audio_mix(s->media_source, &child_audio);
+	for (size_t canvas_idx = 0; canvas_idx < audio->outputs.num;
+	     canvas_idx++) {
+		for (size_t mix = 0; mix < MAX_AUDIO_MIXES; mix++) {
+			if ((mixers & (1 << mix)) == 0)
+				continue;
+
+			for (size_t ch = 0; ch < channels; ch++) {
+				register float *out =
+					audio->outputs.array[canvas_idx]
+						.output[mix]
+						.data[ch];
+				register float *in =
+					child_audio.output[mix].data[ch];
+				register float *end = in + AUDIO_OUTPUT_FRAMES;
+
+				while (in < end)
+					*(out++) += *(in++);
+			}
+		}
+	}
+
+	return true;
+}
+
 static void stinger_transition_start(void *data)
 {
 	struct stinger_info *s = data;
@@ -1002,6 +1056,7 @@ struct obs_source_info stinger_transition = {
 	.video_render = stinger_video_render,
 	.video_tick = stinger_video_tick,
 	.audio_render = stinger_audio_render,
+	.audio_render_do = stinger_audio_render_do,
 	.missing_files = stinger_missing_files,
 	.get_properties = stinger_properties,
 	.enum_active_sources = stinger_enum_active_sources,

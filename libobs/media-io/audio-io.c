@@ -57,10 +57,18 @@ static inline void audio_input_free(struct audio_input *input)
 	audio_resampler_destroy(input->resampler);
 }
 
+struct audio_mix_buffer {
+	float data[MAX_AUDIO_CHANNELS][AUDIO_OUTPUT_FRAMES];
+};
+
 struct audio_mix {
 	DARRAY(struct audio_input) inputs;
-	float buffer[MAX_AUDIO_CHANNELS][AUDIO_OUTPUT_FRAMES];
-	float buffer_unclamped[MAX_AUDIO_CHANNELS][AUDIO_OUTPUT_FRAMES];
+	struct audio_mix_buffer buffer_unclamped;
+};
+
+struct audio_mix_outputs {
+	void *canvas;
+	struct audio_mix_buffer buffers[MAX_AUDIO_MIXES];
 };
 
 struct audio_output {
@@ -78,6 +86,7 @@ struct audio_output {
 	void *input_param;
 	pthread_mutex_t input_mutex;
 	struct audio_mix mixes[MAX_AUDIO_MIXES];
+	DARRAY(struct audio_mix_outputs) mixes_outputs;
 };
 
 /* ------------------------------------------------------------------------- */
@@ -107,20 +116,46 @@ static bool resample_audio_output(struct audio_input *input,
 	return success;
 }
 
-static inline void do_audio_output(struct audio_output *audio, size_t mix_idx,
-				   uint64_t timestamp, uint32_t frames)
+struct audio_mix_buffer *get_audio_mix(struct audio_output *audio,
+				       size_t mix_idx, void *canvas)
 {
+	struct audio_mix_buffer *ret = NULL;
+	for (size_t canvas_idx = 0; canvas_idx < audio->mixes_outputs.num;
+	     canvas_idx++) {
+		struct audio_mix_outputs *output_mixes =
+			audio->mixes_outputs.array + canvas_idx;
+		if (ret == NULL || output_mixes->canvas == canvas) {
+			ret = &output_mixes->buffers[mix_idx];
+		}
+	}
+	return ret;
+}
+
+static void do_audio_output(struct audio_output *audio, size_t mix_idx,
+			    uint64_t timestamp, uint32_t frames)
+{
+	struct audio_mix_buffer *output_mix =
+		get_audio_mix(audio, mix_idx, obs_get_audio_rendering_canvas());
 	struct audio_mix *mix = &audio->mixes[mix_idx];
 	struct audio_data data;
 
+	if (mix == NULL || output_mix == NULL) {
+		return;
+	}
 	pthread_mutex_lock(&audio->input_mutex);
+	for (size_t input_idx = mix->inputs.num; input_idx > 0; input_idx--) {
+		struct audio_input *input = mix->inputs.array + (input_idx - 1);
 
-	for (size_t i = mix->inputs.num; i > 0; i--) {
-		struct audio_input *input = mix->inputs.array + (i - 1);
-
+		struct obs_encoder *encoder = input->param;
+		if (encoder && encoder->video &&
+		    encoder->video->ovi != obs_get_audio_rendering_canvas()) {
+			continue;
+		}
 		float(*buf)[AUDIO_OUTPUT_FRAMES] =
-			input->conversion.allow_clipping ? mix->buffer_unclamped
-							 : mix->buffer;
+			input->conversion.allow_clipping
+				? mix->buffer_unclamped.data
+				: output_mix->data;
+
 		for (size_t i = 0; i < audio->planes; i++)
 			data.data[i] = (uint8_t *)buf[i];
 
@@ -134,11 +169,13 @@ static inline void do_audio_output(struct audio_output *audio, size_t mix_idx,
 	pthread_mutex_unlock(&audio->input_mutex);
 }
 
-static inline void clamp_audio_output(struct audio_output *audio, size_t bytes)
+static void clamp_audio_output(struct audio_output *audio, size_t bytes)
 {
 	size_t float_size = bytes / sizeof(float);
 
 	for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
+		struct audio_mix_buffer *output_mix = get_audio_mix(
+			audio, mix_idx, obs_get_audio_rendering_canvas());
 		struct audio_mix *mix = &audio->mixes[mix_idx];
 
 		/* do not process mixing if a specific mix is inactive */
@@ -146,10 +183,11 @@ static inline void clamp_audio_output(struct audio_output *audio, size_t bytes)
 			continue;
 
 		for (size_t plane = 0; plane < audio->planes; plane++) {
-			float *mix_data = mix->buffer[plane];
+			float *mix_data = output_mix->data[plane];
 			float *mix_end = &mix_data[float_size];
 			/* Unclamped mix is copied directly. */
-			memcpy(mix->buffer_unclamped[plane], mix_data, bytes);
+			memcpy(mix->buffer_unclamped.data[plane], mix_data,
+			       bytes);
 
 			while (mix_data < mix_end) {
 				float val = *mix_data;
@@ -162,21 +200,41 @@ static inline void clamp_audio_output(struct audio_output *audio, size_t bytes)
 	}
 }
 
+void prepare_mixes_outputs(size_t canvases, struct audio_output *audio)
+{
+	if (canvases != audio->mixes_outputs.num) {
+		da_resize(audio->mixes_outputs, canvases);
+	}
+
+	for (size_t canvas_idx = 0; canvas_idx < canvases; canvas_idx++) {
+		struct obs_video_info *ovi = NULL;
+		if (obs->video.canvases.num == canvases)
+			ovi = obs->video.canvases.array[canvas_idx];
+		struct audio_mix_outputs *mixes =
+			audio->mixes_outputs.array + canvas_idx;
+		mixes->canvas = ovi;
+	}
+}
+
 static void input_and_output(struct audio_output *audio, uint64_t audio_time,
 			     uint64_t prev_time)
 {
 	size_t bytes = AUDIO_OUTPUT_FRAMES * audio->block_size;
-	struct audio_output_data data[MAX_AUDIO_MIXES];
+	struct audio_data_mixes_outputs data;
 	uint32_t active_mixes = 0;
 	uint64_t new_ts = 0;
 	bool success;
+	size_t canvases = get_audio_outputs_reqired();
 
-	memset(data, 0, sizeof(data));
+	source_audio_mix_data_init(&data, canvases);
+	source_audio_mix_data_clean(&data);
 
 #ifdef DEBUG_AUDIO
 	blog(LOG_DEBUG, "audio_time: %llu, prev_time: %llu, bytes: %lu",
 	     audio_time, prev_time, bytes);
 #endif
+
+	prepare_mixes_outputs(canvases, audio);
 
 	/* get mixers */
 	pthread_mutex_lock(&audio->input_mutex);
@@ -186,28 +244,42 @@ static void input_and_output(struct audio_output *audio, uint64_t audio_time,
 	}
 	pthread_mutex_unlock(&audio->input_mutex);
 
+	source_audio_mix_data_clean(&data);
 	/* clear mix buffers */
 	for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
-		struct audio_mix *mix = &audio->mixes[mix_idx];
+		for (size_t canvas_idx = 0; canvas_idx < canvases;
+		     canvas_idx++) {
+			struct audio_mix_buffer *mix =
+				&audio->mixes_outputs.array[canvas_idx]
+					 .buffers[mix_idx];
 
-		memset(mix->buffer, 0, sizeof(mix->buffer));
+			memset(mix->data, 0, sizeof(mix->data));
 
-		for (size_t i = 0; i < audio->planes; i++)
-			data[mix_idx].data[i] = mix->buffer[i];
+			for (size_t i = 0; i < audio->planes; i++)
+				data.outputs.array[canvas_idx]
+					.output[mix_idx]
+					.data[i] = mix->data[i];
+		}
 	}
 
 	/* get new audio data */
 	success = audio->input_cb(audio->input_param, prev_time, audio_time,
-				  &new_ts, active_mixes, data);
+				  &new_ts, active_mixes, &data);
+	source_audio_mix_data_release(&data);
 	if (!success)
 		return;
 
-	/* clamps audio data to -1.0..1.0 */
-	clamp_audio_output(audio, bytes);
+	for (size_t canvas_idx = 0; canvas_idx < canvases; canvas_idx++) {
+		obs_set_audio_rendering_canvas(
+			audio->mixes_outputs.array[canvas_idx].canvas);
 
-	/* output */
-	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++)
-		do_audio_output(audio, i, new_ts, AUDIO_OUTPUT_FRAMES);
+		/* clamps audio data to -1.0..1.0 */
+		clamp_audio_output(audio, bytes);
+
+		/* output audio*/
+		for (size_t i = 0; i < MAX_AUDIO_MIXES; i++)
+			do_audio_output(audio, i, new_ts, AUDIO_OUTPUT_FRAMES);
+	}
 }
 
 static void *audio_thread(void *param)
@@ -390,6 +462,10 @@ int audio_output_open(audio_t **audio, struct audio_output_info *info)
 	out->block_size = (planar ? 1 : out->channels) *
 			  get_audio_bytes_per_channel(info->format);
 
+	size_t canvases = get_audio_outputs_reqired();
+	da_init(out->mixes_outputs);
+	da_resize(out->mixes_outputs, canvases);
+
 	if (pthread_mutex_init_recursive(&out->input_mutex) != 0)
 		goto fail0;
 	if (os_event_init(&out->stop_event, OS_EVENT_TYPE_MANUAL) != 0)
@@ -432,6 +508,7 @@ void audio_output_close(audio_t *audio)
 
 		da_free(mix->inputs);
 	}
+	da_free(audio->mixes_outputs);
 	bfree(audio);
 }
 

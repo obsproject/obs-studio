@@ -212,6 +212,17 @@ bool luma_wipe_audio_render(void *data, uint64_t *ts_out,
 					   channels, sample_rate, mix_a, mix_b);
 }
 
+bool luma_wipe_audio_render_do(void *data, uint64_t *ts_out,
+			       struct audio_data_mixes_outputs *audio,
+			       uint32_t mixers, size_t channels,
+			       size_t sample_rate)
+{
+	struct luma_wipe_info *lwipe = data;
+	return obs_transition_audio_render_do(lwipe->source, ts_out, audio,
+					      mixers, channels, sample_rate,
+					      mix_a, mix_b);
+}
+
 static enum gs_color_space
 luma_wipe_video_get_color_space(void *data, size_t count,
 				const enum gs_color_space *preferred_spaces)
@@ -232,6 +243,7 @@ struct obs_source_info luma_wipe_transition = {
 	.update = luma_wipe_update,
 	.video_render = luma_wipe_video_render,
 	.audio_render = luma_wipe_audio_render,
+	.audio_render_do = luma_wipe_audio_render_do,
 	.get_properties = luma_wipe_properties,
 	.get_defaults = luma_wipe_defaults,
 	.video_get_color_space = luma_wipe_video_get_color_space,

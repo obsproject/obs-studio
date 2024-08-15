@@ -124,6 +124,17 @@ static bool fade_audio_render(void *data, uint64_t *ts_out,
 					   channels, sample_rate, mix_a, mix_b);
 }
 
+static bool fade_audio_render_do(void *data, uint64_t *ts_out,
+				 struct audio_data_mixes_outputs *audio,
+				 uint32_t mixers, size_t channels,
+				 size_t sample_rate)
+{
+	struct fade_info *fade = data;
+	return obs_transition_audio_render_do(fade->source, ts_out, audio,
+					      mixers, channels, sample_rate,
+					      mix_a, mix_b);
+}
+
 static enum gs_color_space
 fade_video_get_color_space(void *data, size_t count,
 			   const enum gs_color_space *preferred_spaces)
@@ -150,5 +161,6 @@ struct obs_source_info fade_transition = {
 	.destroy = fade_destroy,
 	.video_render = fade_video_render,
 	.audio_render = fade_audio_render,
+	.audio_render_do = fade_audio_render_do,
 	.video_get_color_space = fade_video_get_color_space,
 };

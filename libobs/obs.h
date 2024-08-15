@@ -863,6 +863,10 @@ EXPORT void obs_set_audio_rendering_mode(enum obs_audio_rendering_mode mode);
 /** Gets current audio rendering mode */
 EXPORT enum obs_audio_rendering_mode obs_get_audio_rendering_mode(void);
 
+/** Sets/Gets current audio rendering canvas*/
+EXPORT struct obs_video_info *obs_get_audio_rendering_canvas(void);
+EXPORT void obs_set_audio_rendering_canvas(struct obs_video_info *ovi);
+
 /** Sets/Gets current video rendering canvas*/
 EXPORT void obs_set_video_rendering_canvas(struct obs_video_info *ovi);
 EXPORT struct obs_video_info *obs_get_video_rendering_canvas(void);
@@ -1811,6 +1815,13 @@ obs_transition_audio_render(obs_source_t *transition, uint64_t *ts_out,
 			    size_t channels, size_t sample_rate,
 			    obs_transition_audio_mix_callback_t mix_a_callback,
 			    obs_transition_audio_mix_callback_t mix_b_callback);
+
+EXPORT bool obs_transition_audio_render_do(
+	obs_source_t *transition, uint64_t *ts_out,
+	struct audio_data_mixes_outputs *audio, uint32_t mixers,
+	size_t channels, size_t sample_rate,
+	obs_transition_audio_mix_callback_t mix_a_callback,
+	obs_transition_audio_mix_callback_t mix_b_callback);
 
 /* swaps transition sources and textures as an optimization and to reduce
  * memory usage when switching between transitions */
