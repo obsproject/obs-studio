@@ -50,6 +50,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	mixer4 = new QCheckBox();
 	mixer5 = new QCheckBox();
 	mixer6 = new QCheckBox();
+	showMixer = new QCheckBox();
 
 	sigs.emplace_back(handler, "activate", OBSSourceActivated, this);
 	sigs.emplace_back(handler, "deactivate", OBSSourceDeactivated, this);
@@ -252,6 +253,22 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	connectMixer(mixer5, 4);
 	connectMixer(mixer6, 5);
 
+	showMixer->setChecked(main->SourceMixerHidden(source));
+	showMixer->setAccessibleName(
+		QTStr("Basic.AdvAudio.HideMixer").arg(sourceName));
+
+	auto showMixerToggled = [this, main](bool checked) {
+		main->SetSourceMixerHidden(source, checked);
+	};
+	connect(showMixer, &QCheckBox::clicked, this, showMixerToggled);
+
+	auto showMixerUpdated = [this](OBSSource source_, bool hidden) {
+		if (source_ == source)
+			showMixer->setChecked(hidden);
+	};
+	connect(main, &OBSBasic::SourceMixerVisiblityChanged, this,
+		showMixerUpdated);
+
 	setObjectName(sourceName);
 }
 
@@ -267,6 +284,7 @@ OBSAdvAudioCtrl::~OBSAdvAudioCtrl()
 	if (obs_audio_monitoring_available())
 		monitoringType->deleteLater();
 	mixerContainer->deleteLater();
+	showMixer->deleteLater();
 }
 
 void OBSAdvAudioCtrl::ShowAudioControl(QGridLayout *layout)
@@ -277,6 +295,7 @@ void OBSAdvAudioCtrl::ShowAudioControl(QGridLayout *layout)
 	layout->addWidget(iconLabel, lastRow, idx++);
 	layout->addWidget(nameLabel, lastRow, idx++);
 	layout->addWidget(active, lastRow, idx++);
+	layout->addWidget(showMixer, lastRow, idx++);
 	layout->addWidget(stackedWidget, lastRow, idx++);
 	layout->addWidget(forceMono, lastRow, idx++);
 	layout->addWidget(balanceContainer, lastRow, idx++);

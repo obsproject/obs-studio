@@ -45,6 +45,7 @@ private:
 	QPointer<QCheckBox> mixer4;
 	QPointer<QCheckBox> mixer5;
 	QPointer<QCheckBox> mixer6;
+	QPointer<QCheckBox> showMixer;
 
 	std::vector<OBSSignal> sigs;
 
