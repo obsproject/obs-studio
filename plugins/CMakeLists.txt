@@ -68,7 +68,6 @@ if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
     obs-qsv11
     PLATFORMS WINDOWS LINUX
     ARCHITECTURES x64 x86_64
-    WITH_MESSAGE
   )
   add_obs_plugin(obs-text PLATFORMS WINDOWS)
   add_obs_plugin(obs-transitions)
