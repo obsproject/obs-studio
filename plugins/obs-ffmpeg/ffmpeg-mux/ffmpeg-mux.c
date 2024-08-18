@@ -482,13 +482,6 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 		(AVRational){ffm->params.fps_den, ffm->params.fps_num};
 
 	ffm->video_stream->time_base = context->time_base;
-#if LIBAVFORMAT_VERSION_MAJOR < 59
-	// codec->time_base may still be used if LIBAVFORMAT_VERSION_MAJOR < 59
-	PRAGMA_WARN_PUSH
-	PRAGMA_WARN_DEPRECATION
-	ffm->video_stream->codec->time_base = context->time_base;
-	PRAGMA_WARN_POP
-#endif
 	ffm->video_stream->avg_frame_rate = av_inv_q(context->time_base);
 
 	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
@@ -503,17 +496,11 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 			av_content_light_metadata_alloc(&content_size);
 		content->MaxCLL = max_luminance;
 		content->MaxFALL = max_luminance;
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 31, 102)
-		av_stream_add_side_data(ffm->video_stream,
-					AV_PKT_DATA_CONTENT_LIGHT_LEVEL,
-					(uint8_t *)content, content_size);
-#else
 		av_packet_side_data_add(
 			&ffm->video_stream->codecpar->coded_side_data,
 			&ffm->video_stream->codecpar->nb_coded_side_data,
 			AV_PKT_DATA_CONTENT_LIGHT_LEVEL, (uint8_t *)content,
 			content_size, 0);
-#endif
 
 		AVMasteringDisplayMetadata *const mastering =
 			av_mastering_display_metadata_alloc();
@@ -529,18 +516,11 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 		mastering->max_luminance = av_make_q(max_luminance, 1);
 		mastering->has_primaries = 1;
 		mastering->has_luminance = 1;
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 31, 102)
-		av_stream_add_side_data(ffm->video_stream,
-					AV_PKT_DATA_MASTERING_DISPLAY_METADATA,
-					(uint8_t *)mastering,
-					sizeof(*mastering));
-#else
 		av_packet_side_data_add(
 			&ffm->video_stream->codecpar->coded_side_data,
 			&ffm->video_stream->codecpar->nb_coded_side_data,
 			AV_PKT_DATA_MASTERING_DISPLAY_METADATA,
 			(uint8_t *)mastering, sizeof(*mastering), 0);
-#endif
 	}
 
 	ffm->video_ctx = context;
@@ -586,9 +566,6 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 		context->bit_rate = (int64_t)ffm->audio[idx].abitrate * 1000;
 
 	channels = ffm->audio[idx].channels;
-#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(57, 24, 100)
-	context->channels = channels;
-#endif
 	context->sample_rate = ffm->audio[idx].sample_rate;
 	if (!(codec->capabilities & AV_CODEC_CAP_VARIABLE_FRAME_SIZE))
 		context->frame_size = ffm->audio[idx].frame_size;
@@ -596,17 +573,10 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 	context->time_base = stream->time_base;
 	context->extradata = extradata;
 	context->extradata_size = ffm->audio_header[idx].size;
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(59, 24, 100)
-	context->channel_layout = av_get_default_channel_layout(channels);
-	//avutil default channel layout for 5 channels is 5.0 ; fix for 4.1
-	if (channels == 5)
-		context->channel_layout = av_get_channel_layout("4.1");
-#else
 	av_channel_layout_default(&context->ch_layout, channels);
 	//avutil default channel layout for 5 channels is 5.0 ; fix for 4.1
 	if (channels == 5)
 		context->ch_layout = (AVChannelLayout)AV_CHANNEL_LAYOUT_4POINT1;
-#endif
 	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
 		context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
@@ -937,11 +907,7 @@ static int ffmpeg_mux_write_av_buffer(void *opaque, uint8_t *buf, int buf_size)
 
 static inline int open_output_file(struct ffmpeg_mux *ffm)
 {
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
-	AVOutputFormat *format = ffm->output->oformat;
-#else
 	const AVOutputFormat *format = ffm->output->oformat;
-#endif
 	int ret;
 
 	if ((format->flags & AVFMT_NOFILE) == 0) {
@@ -1033,11 +999,7 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 
 static int ffmpeg_mux_init_context(struct ffmpeg_mux *ffm)
 {
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
-	AVOutputFormat *output_format;
-#else
 	const AVOutputFormat *output_format;
-#endif
 	int ret;
 	bool is_http = false;
 	is_http = (strncmp(ffm->params.file, HTTP_PROTO,
@@ -1073,16 +1035,6 @@ static int ffmpeg_mux_init_context(struct ffmpeg_mux *ffm)
 			av_err2str(ret));
 		return FFM_ERROR;
 	}
-
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
-	ffm->output->oformat->video_codec = AV_CODEC_ID_NONE;
-	ffm->output->oformat->audio_codec = AV_CODEC_ID_NONE;
-#endif
-
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(60, 0, 100)
-	/* Allow FLAC/OPUS in MP4 */
-	ffm->output->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
-#endif
 
 	if (!init_streams(ffm)) {
 		free_avformat(ffm);

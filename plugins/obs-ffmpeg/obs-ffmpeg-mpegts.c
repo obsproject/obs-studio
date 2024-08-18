@@ -175,9 +175,6 @@ static bool create_video_stream(struct ffmpeg_output *stream,
 	context->thread_count = 0;
 
 	data->video->time_base = context->time_base;
-#if LIBAVFORMAT_VERSION_MAJOR < 59
-	data->video->codec->time_base = context->time_base;
-#endif
 	data->video->avg_frame_rate = av_inv_q(context->time_base);
 
 	data->video_ctx = context;
@@ -198,17 +195,11 @@ static bool create_video_stream(struct ffmpeg_output *stream,
 			av_content_light_metadata_alloc(&content_size);
 		content->MaxCLL = hdr_nominal_peak_level;
 		content->MaxFALL = hdr_nominal_peak_level;
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 31, 102)
-		av_stream_add_side_data(data->video,
-					AV_PKT_DATA_CONTENT_LIGHT_LEVEL,
-					(uint8_t *)content, content_size);
-#else
 		av_packet_side_data_add(
 			&data->video->codecpar->coded_side_data,
 			&data->video->codecpar->nb_coded_side_data,
 			AV_PKT_DATA_CONTENT_LIGHT_LEVEL, (uint8_t *)content,
 			content_size, 0);
-#endif
 
 		AVMasteringDisplayMetadata *const mastering =
 			av_mastering_display_metadata_alloc();
@@ -224,18 +215,11 @@ static bool create_video_stream(struct ffmpeg_output *stream,
 		mastering->max_luminance = av_make_q(hdr_nominal_peak_level, 1);
 		mastering->has_primaries = 1;
 		mastering->has_luminance = 1;
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 31, 102)
-		av_stream_add_side_data(data->video,
-					AV_PKT_DATA_MASTERING_DISPLAY_METADATA,
-					(uint8_t *)mastering,
-					sizeof(*mastering));
-#else
 		av_packet_side_data_add(
 			&data->video->codecpar->coded_side_data,
 			&data->video->codecpar->nb_coded_side_data,
 			AV_PKT_DATA_MASTERING_DISPLAY_METADATA,
 			(uint8_t *)mastering, sizeof(*mastering), 0);
-#endif
 	}
 
 	return true;
@@ -270,23 +254,11 @@ static bool create_audio_stream(struct ffmpeg_output *stream,
 	context->bit_rate = (int64_t)data->config.audio_bitrates[idx] * 1000;
 	context->time_base = (AVRational){1, aoi.samples_per_sec};
 	channels = get_audio_channels(aoi.speakers);
-#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(57, 24, 100)
-	context->channels = get_audio_channels(aoi.speakers);
-#endif
 	context->sample_rate = aoi.samples_per_sec;
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(59, 24, 100)
-	context->channel_layout =
-		av_get_default_channel_layout(context->channels);
-
-	//avutil default channel layout for 5 channels is 5.0 ; fix for 4.1
-	if (aoi.speakers == SPEAKERS_4POINT1)
-		context->channel_layout = av_get_channel_layout("4.1");
-#else
 	av_channel_layout_default(&context->ch_layout, channels);
 	if (aoi.speakers == SPEAKERS_4POINT1)
 		context->ch_layout = (AVChannelLayout)AV_CHANNEL_LAYOUT_4POINT1;
-#endif
 
 	context->sample_fmt = AV_SAMPLE_FMT_S16;
 	context->frame_size = data->config.frame_size;
@@ -662,13 +634,8 @@ bool ffmpeg_mpegts_data_init(struct ffmpeg_output *stream,
 
 	avformat_network_init();
 
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
-	AVOutputFormat *output_format;
-#else
-	const AVOutputFormat *output_format;
-#endif
-
-	output_format = av_guess_format("mpegts", NULL, "video/M2PT");
+	const AVOutputFormat *output_format =
+		av_guess_format("mpegts", NULL, "video/M2PT");
 
 	if (output_format == NULL) {
 		ffmpeg_mpegts_log_error(LOG_WARNING, data,
