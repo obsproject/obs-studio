@@ -16,7 +16,7 @@ jobs:
   check-tag:
     name: Check Release Tag
     if: github.repository_owner == 'obsproject'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     outputs:
       validTag: ${{ steps.check.outputs.validTag }}
       flatpakMatrix: ${{ steps.check.outputs.flatpakMatrix }}
@@ -47,7 +47,7 @@ jobs:
     name: Flathub 📦
     needs: check-tag
     if: github.repository_owner == 'obsproject' && fromJSON(needs.check-tag.outputs.validTag)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     defaults:
       run:
         shell: bash

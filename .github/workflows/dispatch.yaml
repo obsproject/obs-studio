@@ -59,7 +59,7 @@ jobs:
   download-language-files:
     name: Download Language Files 🌐
     if: github.repository_owner == 'obsproject' && inputs.job == 'translations'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     env:
       CROWDIN_PAT: ${{ secrets.CROWDIN_SYNC_CROWDIN_PAT }}
     steps:
@@ -91,7 +91,7 @@ jobs:
   update-documentation:
     name: Update Documentation 📖
     if: github.repository_owner == 'obsproject' && inputs.job == 'documentation'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/generate-docs
@@ -99,7 +99,7 @@ jobs:
   update-documentation-cloudflare:
     name: Update Documentation for Cloudflare ☁️
     if: github.repository_owner == 'obsproject' && inputs.job == 'documentation'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/generate-docs
@@ -109,7 +109,7 @@ jobs:
   deploy-documentation:
     name: Deploy Documentation to Cloudflare ☁️
     if: github.repository_owner == 'obsproject' && inputs.job == 'documentation'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: update-documentation-cloudflare
     defaults:
       run:
