@@ -1,12 +1,6 @@
-if(OS_WINDOWS OR OS_MACOS)
-  set(ffmpeg_version 6)
-else()
-  set(ffmpeg_version 4.4)
-endif()
-
 find_package(
   FFmpeg
-  ${ffmpeg_version}
+  6.1
   REQUIRED avcodec avfilter avdevice avutil swscale avformat swresample
 )
 
