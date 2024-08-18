@@ -24,6 +24,10 @@ if(NOT TARGET OBS::qt-slider-ignorewheel)
   )
 endif()
 
+if(NOT TARGET OBS::qt-icon-label)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/icon-label" "${CMAKE_BINARY_DIR}/shared/qt/icon-label")
+endif()
+
 add_library(properties-view INTERFACE)
 add_library(OBS::properties-view ALIAS properties-view)
 
@@ -53,6 +57,7 @@ target_link_libraries(
     OBS::qt-plain-text-edit
     OBS::qt-vertical-scroll-area
     OBS::qt-slider-ignorewheel
+    OBS::qt-icon-label
     Qt::Core
     Qt::Widgets
 )
