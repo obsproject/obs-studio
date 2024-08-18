@@ -100,12 +100,8 @@ bool FFCodecAndFormatCompatible(const char *codec, const char *format)
 	if (!codec || !format)
 		return false;
 
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
-	AVOutputFormat *output_format;
-#else
-	const AVOutputFormat *output_format;
-#endif
-	output_format = av_guess_format(format, nullptr, nullptr);
+	const AVOutputFormat *output_format =
+		av_guess_format(format, nullptr, nullptr);
 	if (!output_format)
 		return false;
 
@@ -114,13 +110,8 @@ bool FFCodecAndFormatCompatible(const char *codec, const char *format)
 	if (!codec_desc)
 		return false;
 
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(60, 0, 100)
-	return avformat_query_codec(output_format, codec_desc->id,
-				    FF_COMPLIANCE_EXPERIMENTAL) == 1;
-#else
 	return avformat_query_codec(output_format, codec_desc->id,
 				    FF_COMPLIANCE_NORMAL) == 1;
-#endif
 }
 
 static const unordered_set<string> builtin_codecs = {
@@ -163,12 +154,9 @@ static const unordered_map<string, unordered_set<string>> codec_compat = {
 		 "opus",
 		 "alac",
 		 "flac",
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(60, 5, 100)
-		 // PCM in MP4 is only supported in FFmpeg > 6.0
 		 "pcm_s16le",
 		 "pcm_s24le",
 		 "pcm_f32le",
-#endif
 	 }},
 	{"fragmented_mp4",
 	 {
@@ -179,11 +167,9 @@ static const unordered_map<string, unordered_set<string>> codec_compat = {
 		 "opus",
 		 "alac",
 		 "flac",
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(60, 5, 100)
 		 "pcm_s16le",
 		 "pcm_s24le",
 		 "pcm_f32le",
-#endif
 	 }},
 	// Not part of FFmpeg, see obs-outputs module
 	{"hybrid_mp4",
