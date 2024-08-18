@@ -40,7 +40,7 @@ static enum AVPixelFormat get_hw_format(AVCodecContext *ctx,
 	return AV_PIX_FMT_NONE;
 }
 
-int v4l2_init_decoder(struct v4l2_decoder *decoder, int pixfmt)
+int v4l2_init_decoder(struct v4l2_decoder *decoder, int pixfmt, bool hwaccel)
 {
 	if (pixfmt == V4L2_PIX_FMT_MJPEG) {
 		decoder->codec = avcodec_find_decoder(AV_CODEC_ID_MJPEG);
@@ -74,7 +74,8 @@ int v4l2_init_decoder(struct v4l2_decoder *decoder, int pixfmt)
 	decoder->context->flags2 |= AV_CODEC_FLAG2_FAST;
 	decoder->context->opaque = decoder;
 
-	if (pixfmt == V4L2_PIX_FMT_MJPEG || pixfmt == V4L2_PIX_FMT_H264) {
+	if (hwaccel &&
+	    (pixfmt == V4L2_PIX_FMT_MJPEG || pixfmt == V4L2_PIX_FMT_H264)) {
 		for (int i = 0;; i++) {
 			const AVCodecHWConfig *config =
 				avcodec_get_hw_config(decoder->codec, i);
