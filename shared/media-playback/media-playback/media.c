@@ -62,10 +62,8 @@ static inline enum video_format convert_pixel_format(int f)
 		return VIDEO_FORMAT_I42A;
 	case AV_PIX_FMT_YUVA444P:
 		return VIDEO_FORMAT_YUVA;
-#if LIBAVUTIL_BUILD >= AV_VERSION_INT(56, 31, 100)
 	case AV_PIX_FMT_YUVA444P12LE:
 		return VIDEO_FORMAT_YA2L;
-#endif
 	case AV_PIX_FMT_BGR0:
 		return VIDEO_FORMAT_BGRX;
 	case AV_PIX_FMT_P010LE:
@@ -362,16 +360,10 @@ void mp_media_next_audio(mp_media_t *m)
 	struct mp_decode *d = &m->a;
 	struct obs_source_audio audio = {0};
 	AVFrame *f = d->frame;
-	int channels;
+	int channels = f->ch_layout.nb_channels;
 
 	if (!mp_media_can_play_frame(m, d))
 		return;
-
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 19, 100)
-	channels = f->channels;
-#else
-	channels = f->ch_layout.nb_channels;
-#endif
 
 	d->frame_ready = false;
 	if (!m->a_cb)
@@ -503,12 +495,7 @@ void mp_media_next_video(mp_media_t *m, bool preload)
 	}
 
 	if (!m->is_local_file && !d->got_first_keyframe) {
-
-#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(58, 29, 100)
-		if (!f->key_frame)
-#else
 		if (!(f->flags & AV_FRAME_FLAG_KEY))
-#endif
 			return;
 
 		d->got_first_keyframe = true;
@@ -694,11 +681,7 @@ static int interrupt_callback(void *data)
 
 static bool init_avformat(mp_media_t *m)
 {
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
-	AVInputFormat *format = NULL;
-#else
 	const AVInputFormat *format = NULL;
-#endif
 
 	if (m->format_name && *m->format_name) {
 		format = av_find_input_format(m->format_name);
