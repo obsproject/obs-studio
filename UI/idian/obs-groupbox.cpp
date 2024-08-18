@@ -61,8 +61,6 @@ OBSGroupBox::OBSGroupBox(QWidget *parent) : QFrame(parent), OBSWidgetUtils(this)
 	plist = new OBSPropertiesList(this);
 
 	setLayout(layout);
-	setMinimumWidth(300);
-	setMaximumWidth(600);
 
 	contentsLayout->addWidget(plist);
 	/*contentsContainer->setSizePolicy(policy);*/

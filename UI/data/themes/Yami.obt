@@ -2004,6 +2004,8 @@ OBSGroupBox {
     border-radius: var(--border_radius);
     font-weight: bold;
     margin: 0 0 var(--spacing_base);
+    min-width: 300px;
+    max-width: 600px;
 }
 
 OBSGroupBox .header .title {
