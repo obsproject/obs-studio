@@ -23,47 +23,6 @@
 
 #include <nlohmann/json.hpp>
 
-/* From whatsnew.hpp */
-#ifndef NLOHMANN_DEFINE_TYPE_INTRUSIVE
-#define NLOHMANN_DEFINE_TYPE_INTRUSIVE(Type, ...)                             \
-	friend void to_json(nlohmann::json &nlohmann_json_j,                  \
-			    const Type &nlohmann_json_t)                      \
-	{                                                                     \
-		NLOHMANN_JSON_EXPAND(                                         \
-			NLOHMANN_JSON_PASTE(NLOHMANN_JSON_TO, __VA_ARGS__))   \
-	}                                                                     \
-	friend void from_json(const nlohmann::json &nlohmann_json_j,          \
-			      Type &nlohmann_json_t)                          \
-	{                                                                     \
-		NLOHMANN_JSON_EXPAND(                                         \
-			NLOHMANN_JSON_PASTE(NLOHMANN_JSON_FROM, __VA_ARGS__)) \
-	}
-#endif
-
-#ifndef NLOHMANN_JSON_FROM_WITH_DEFAULT
-#define NLOHMANN_JSON_FROM_WITH_DEFAULT(v1) \
-	nlohmann_json_t.v1 =                \
-		nlohmann_json_j.value(#v1, nlohmann_json_default_obj.v1);
-#endif
-
-#ifndef NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT
-#define NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(Type, ...)              \
-	friend void to_json(nlohmann::json &nlohmann_json_j,                \
-			    const Type &nlohmann_json_t)                    \
-	{                                                                   \
-		NLOHMANN_JSON_EXPAND(                                       \
-			NLOHMANN_JSON_PASTE(NLOHMANN_JSON_TO, __VA_ARGS__)) \
-	}                                                                   \
-	friend void from_json(const nlohmann::json &nlohmann_json_j,        \
-			      Type &nlohmann_json_t)                        \
-	{                                                                   \
-		Type nlohmann_json_default_obj;                             \
-		NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(                   \
-			NLOHMANN_JSON_FROM_WITH_DEFAULT, __VA_ARGS__))      \
-	}
-
-#endif
-
 /*
  * Support for (de-)serialising std::optional
  * From https://github.com/nlohmann/json/issues/1749#issuecomment-1731266676
