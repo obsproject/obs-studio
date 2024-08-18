@@ -5606,13 +5606,7 @@ QList<QString> OBSBasic::GetProjectorMenuMonitorsFormatted()
 		QRect screenGeometry = screen->geometry();
 		qreal ratio = screen->devicePixelRatio();
 		QString name = "";
-#if defined(_WIN32) && QT_VERSION < QT_VERSION_CHECK(6, 4, 0)
-		QTextStream fullname(&name);
-		fullname << GetMonitorName(screen->name());
-		fullname << " (";
-		fullname << (i + 1);
-		fullname << ")";
-#elif defined(__APPLE__) || defined(_WIN32)
+#if defined(__APPLE__) || defined(_WIN32)
 		name = screen->name();
 #else
 		name = screen->model().simplified();

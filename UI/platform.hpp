@@ -76,9 +76,6 @@ public:
 	RunOnceMutex &operator=(RunOnceMutex &&rom);
 };
 
-#if QT_VERSION < QT_VERSION_CHECK(6, 4, 0)
-QString GetMonitorName(const QString &id);
-#endif
 bool IsRunningOnWine();
 #endif
 
