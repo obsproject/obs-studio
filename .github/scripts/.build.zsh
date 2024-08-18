@@ -216,7 +216,6 @@ build() {
         -DCEF_ROOT_DIR:PATH="${project_root}/.deps/cef_binary_${CEF_VERSION}_${target//ubuntu-/linux_}"
       )
 
-      if (( ! UBUNTU_2210_OR_LATER )) cmake_args+=(-DENABLE_NEW_MPEGTS_OUTPUT:BOOL=OFF)
       if [[ ${target##*-} == aarch64 ]] cmake-args+=(-DENABLE_QSV11:BOOL=OFF)
 
       cmake_build_args+=(build_${target%%-*} --config ${config} --parallel)

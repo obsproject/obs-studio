@@ -101,11 +101,10 @@ sudo apt-get install -y --no-install-recommends \
   libasound2-dev libfdk-aac-dev libfontconfig-dev libfreetype6-dev libjack-jackd2-dev \
   libpulse-dev libsndio-dev libspeexdsp-dev libudev-dev libv4l-dev libva-dev libvlc-dev \
   libpci-dev libdrm-dev \
-  nlohmann-json3-dev libwebsocketpp-dev libasio-dev libqrcodegencpp-dev
+  nlohmann-json3-dev libwebsocketpp-dev libasio-dev libqrcodegencpp-dev \
+  libffmpeg-nvenc-dev librist-dev libsrt-openssl-dev
 
 if [[ ${target##*-} == x86_64 ]] sudo apt-get install -y --no-install-recommends libvpl-dev libvpl2
-
-if (( UBUNTU_2210_OR_LATER )) sudo apt-get install -y --no-install-recommends librist-dev libsrt-openssl-dev
 
 local -a _qt_packages=()
 
