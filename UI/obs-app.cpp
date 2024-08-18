@@ -1995,20 +1995,6 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	const char *platform_theme = getenv("QT_QPA_PLATFORMTHEME");
 	if (platform_theme && strcmp(platform_theme, "qt5ct") == 0)
 		unsetenv("QT_QPA_PLATFORMTHEME");
-
-#if defined(ENABLE_WAYLAND) && defined(USE_XDG) && \
-	QT_VERSION < QT_VERSION_CHECK(6, 3, 0)
-	/* NOTE: Qt doesn't use the Wayland platform on GNOME, so we have to
-	 * force it using the QT_QPA_PLATFORM env var. It's still possible to
-	 * use other QPA platforms using this env var, or the -platform command
-	 * line option. Remove after Qt 6.3 is everywhere. */
-
-	const char *desktop = getenv("XDG_CURRENT_DESKTOP");
-	const char *session_type = getenv("XDG_SESSION_TYPE");
-	if (session_type && desktop && strstr(desktop, "GNOME") != nullptr &&
-	    strcmp(session_type, "wayland") == 0)
-		setenv("QT_QPA_PLATFORM", "wayland", false);
-#endif
 #endif
 
 	/* NOTE: This disables an optimisation in Qt that attempts to determine if
