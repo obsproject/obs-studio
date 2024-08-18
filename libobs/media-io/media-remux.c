@@ -22,15 +22,9 @@
 #include "../util/platform.h"
 
 #include <libavformat/avformat.h>
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(59, 20, 100)
 #include <libavcodec/version.h>
-#endif
 #include <sys/types.h>
 #include <sys/stat.h>
-
-#ifndef FF_API_BUFFER_SIZE_T
-#define FF_API_BUFFER_SIZE_T (LIBAVUTIL_VERSION_MAJOR < 57)
-#endif
 
 struct media_remux_job {
 	int64_t in_size;
@@ -91,43 +85,6 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 			return false;
 		}
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 31, 102)
-#if FF_API_BUFFER_SIZE_T
-		int content_size;
-#else
-		size_t content_size;
-#endif
-		const uint8_t *const content_src = av_stream_get_side_data(
-			in_stream, AV_PKT_DATA_CONTENT_LIGHT_LEVEL,
-			&content_size);
-		if (content_src) {
-			uint8_t *const content_dst = av_stream_new_side_data(
-				out_stream, AV_PKT_DATA_CONTENT_LIGHT_LEVEL,
-				content_size);
-			if (content_dst)
-				memcpy(content_dst, content_src, content_size);
-		}
-
-#if FF_API_BUFFER_SIZE_T
-		int mastering_size;
-#else
-		size_t mastering_size;
-#endif
-		const uint8_t *const mastering_src = av_stream_get_side_data(
-			in_stream, AV_PKT_DATA_MASTERING_DISPLAY_METADATA,
-			&mastering_size);
-		if (mastering_src) {
-			uint8_t *const mastering_dst = av_stream_new_side_data(
-				out_stream,
-				AV_PKT_DATA_MASTERING_DISPLAY_METADATA,
-				mastering_size);
-			if (mastering_dst) {
-				memcpy(mastering_dst, mastering_src,
-				       mastering_size);
-			}
-		}
-#endif
-
 		ret = avcodec_parameters_copy(out_stream->codecpar,
 					      in_stream->codecpar);
 
@@ -154,17 +111,7 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 		}
 
 		if (in_stream->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(59, 24, 100)
-			out_stream->codecpar->channel_layout =
-				av_get_default_channel_layout(
-					in_stream->codecpar->channels);
-			/* The avutil default channel layout for 5 channels is
-			 * 5.0, which OBS does not support. Manually set 5
-			 * channels to 4.1. */
-			if (in_stream->codecpar->channels == 5)
-				out_stream->codecpar->channel_layout =
-					av_get_channel_layout("4.1");
-#else
+
 			av_channel_layout_default(
 				&out_stream->codecpar->ch_layout,
 				in_stream->codecpar->ch_layout.nb_channels);
@@ -175,7 +122,6 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 				out_stream->codecpar->ch_layout =
 					(AVChannelLayout)
 						AV_CHANNEL_LAYOUT_4POINT1;
-#endif
 		}
 	}
 
