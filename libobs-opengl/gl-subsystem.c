@@ -348,17 +348,31 @@ gs_swapchain_t *device_swapchain_create(gs_device_t *device, const struct gs_ini
 	swap->wi = gl_windowinfo_create(info);
 	if (!swap->wi) {
 		blog(LOG_ERROR, "device_swapchain_create (GL) failed");
-		gs_swapchain_destroy(swap);
+		device_swapchain_destroy(swap);
 		return NULL;
 	}
 
 	if (!gl_platform_init_swapchain(swap)) {
 		blog(LOG_ERROR, "gl_platform_init_swapchain  failed");
-		gs_swapchain_destroy(swap);
+		device_swapchain_destroy(swap);
 		return NULL;
 	}
 
 	return swap;
+}
+
+void device_swapchain_destroy(gs_swapchain_t *swapchain)
+{
+	if (!swapchain)
+		return;
+
+	if (swapchain->device->cur_swap == swapchain)
+		device_load_swapchain(swapchain->device, NULL);
+
+	gl_platform_cleanup_swapchain(swapchain);
+
+	gl_windowinfo_destroy(swapchain->wi);
+	bfree(swapchain);
 }
 
 void device_resize(gs_device_t *device, uint32_t cx, uint32_t cy)
@@ -1487,20 +1501,6 @@ void device_debug_marker_end(gs_device_t *device)
 	UNUSED_PARAMETER(device);
 
 	glPopDebugGroupKHR();
-}
-
-void gs_swapchain_destroy(gs_swapchain_t *swapchain)
-{
-	if (!swapchain)
-		return;
-
-	if (swapchain->device->cur_swap == swapchain)
-		device_load_swapchain(swapchain->device, NULL);
-
-	gl_platform_cleanup_swapchain(swapchain);
-
-	gl_windowinfo_destroy(swapchain->wi);
-	bfree(swapchain);
 }
 
 bool device_nv12_available(gs_device_t *device)

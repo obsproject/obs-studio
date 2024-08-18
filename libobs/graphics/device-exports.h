@@ -38,6 +38,7 @@ EXPORT void device_enter_context(gs_device_t *device);
 EXPORT void device_leave_context(gs_device_t *device);
 EXPORT void *device_get_device_obj(gs_device_t *device);
 EXPORT gs_swapchain_t *device_swapchain_create(gs_device_t *device, const struct gs_init_data *data);
+EXPORT void device_swapchain_destroy(gs_swapchain_t *swapchain);
 EXPORT void device_resize(gs_device_t *device, uint32_t x, uint32_t y);
 EXPORT enum gs_color_space device_get_color_space(gs_device_t *device);
 EXPORT void device_update_color_space(gs_device_t *device);

@@ -1456,6 +1456,14 @@ gs_swapchain_t *device_swapchain_create(gs_device_t *device, const struct gs_ini
 	return swap;
 }
 
+void device_swapchain_destroy(gs_swapchain_t *swapchain)
+{
+	if (swapchain->device->curSwapChain == swapchain)
+		device_load_swapchain(swapchain->device, nullptr);
+
+	delete swapchain;
+}
+
 static void device_resize_internal(gs_device_t *device, uint32_t cx, uint32_t cy, gs_color_space space)
 {
 	try {
@@ -2594,14 +2602,6 @@ void device_projection_pop(gs_device_t *device)
 	const mat4float &mat = device->projStack.back();
 	memcpy(&device->curProjMatrix, &mat, sizeof(matrix4));
 	device->projStack.pop_back();
-}
-
-void gs_swapchain_destroy(gs_swapchain_t *swapchain)
-{
-	if (swapchain->device->curSwapChain == swapchain)
-		device_load_swapchain(swapchain->device, nullptr);
-
-	delete swapchain;
 }
 
 void gs_texture_destroy(gs_texture_t *tex)
