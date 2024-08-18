@@ -114,14 +114,9 @@ static uint16_t get_max_luminance(const AVStream *stream)
 {
 	uint32_t max_luminance = 0;
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 31, 102)
-	for (int i = 0; i < stream->nb_side_data; i++) {
-		const AVPacketSideData *const sd = &stream->side_data[i];
-#else
 	for (int i = 0; i < stream->codecpar->nb_coded_side_data; i++) {
 		const AVPacketSideData *const sd =
 			&stream->codecpar->coded_side_data[i];
-#endif
 		switch (sd->type) {
 		case AV_PKT_DATA_MASTERING_DISPLAY_METADATA: {
 			const AVMasteringDisplayMetadata *mastering =
@@ -216,11 +211,6 @@ bool mp_decode_init(mp_media_t *m, enum AVMediaType type, bool hw)
 	} else {
 		d->in_frame = d->sw_frame;
 	}
-
-#if LIBAVCODEC_VERSION_MAJOR < 60
-	if (d->codec->capabilities & CODEC_CAP_TRUNC)
-		d->decoder->flags |= CODEC_FLAG_TRUNC;
-#endif
 
 	d->orig_pkt = av_packet_alloc();
 	d->pkt = av_packet_alloc();
@@ -428,11 +418,8 @@ bool mp_decode_next(struct mp_decode *d)
 				av_rescale_q(d->in_frame->best_effort_timestamp,
 					     d->stream->time_base,
 					     (AVRational){1, 1000000000});
-#if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(57, 30, 100)
+
 		int64_t duration = d->in_frame->duration;
-#else
-		int64_t duration = d->in_frame->pkt_duration;
-#endif
 		if (!duration)
 			duration = get_estimated_duration(d, last_pts);
 		else
