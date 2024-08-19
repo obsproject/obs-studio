@@ -175,7 +175,10 @@ obs_properties_t *nvenc_properties_internal(enum codec_type codec)
 #define add_tune(val) \
 	obs_property_list_add_string(p, obs_module_text("Tuning." val), val)
 #ifdef NVENC_12_2_OR_LATER
-	if (codec == CODEC_HEVC)
+	/* The UHQ tune is only supported on Turing or later.
+	 * It uses the temporal filtering feature, so we can use its
+	 * availability as an indicator that we are on a supported GPU. */
+	if (codec == CODEC_HEVC && caps->temporal_filter)
 		add_tune("uhq");
 #endif
 	add_tune("hq");
