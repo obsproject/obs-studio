@@ -123,7 +123,7 @@ create_encoder(const char *id, enum obs_encoder_type type, const char *name,
 
 	blog(LOG_DEBUG, "encoder '%s' (%s) created", name, id);
 
-	if (ei->caps & OBS_ENCODER_CAP_DEPRECATED) {
+	if (ei && ei->caps & OBS_ENCODER_CAP_DEPRECATED) {
 		blog(LOG_WARNING,
 		     "Encoder ID '%s' is deprecated and may be removed in a future version.",
 		     id);
