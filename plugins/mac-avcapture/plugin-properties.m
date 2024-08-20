@@ -7,6 +7,7 @@
 
 #import "OBSAVCapture.h"
 #import "plugin-properties.h"
+#import "AVCaptureDeviceFormat+OBSListable.h"
 
 extern const char *av_capture_get_text(const char *text_id);
 
@@ -135,7 +136,7 @@ bool properties_changed_use_preset(OBSAVCapture *capture, obs_properties_t *prop
         properties_changed_preset(capture, properties, preset_list, settings);
     }
 
-    const char *update_properties[5] = {"resolution", "frame_rate", "color_space", "video_range", "input_format"};
+    const char *update_properties[2] = {"frame_rate", "supported_format"};
 
     size_t number_of_properties = sizeof(update_properties) / sizeof(update_properties[0]);
 
@@ -276,250 +277,54 @@ bool properties_update_config(OBSAVCapture *capture, obs_properties_t *propertie
     AVCaptureDevice *device = [AVCaptureDevice deviceWithUniqueID:[OBSAVCapture stringFromSettings:settings
                                                                                        withSetting:@"device"]];
 
-    obs_property_t *prop_resolution = obs_properties_get(properties, "resolution");
     obs_property_t *prop_framerate = obs_properties_get(properties, "frame_rate");
+    obs_property_t *prop_format = obs_properties_get(properties, "supported_format");
+    obs_property_t *prop_effects_warning = obs_properties_get(properties, "effects_warning");
 
-    obs_property_list_clear(prop_resolution);
     obs_property_frame_rate_clear(prop_framerate);
-
-    obs_property_t *prop_input_format = NULL;
-    obs_property_t *prop_color_space = NULL;
-    obs_property_t *prop_video_range = NULL;
-
-    prop_input_format = obs_properties_get(properties, "input_format");
-    obs_property_list_clear(prop_input_format);
-
-    if (!capture.isFastPath) {
-        prop_color_space = obs_properties_get(properties, "color_space");
-        prop_video_range = obs_properties_get(properties, "video_range");
-
-        obs_property_list_clear(prop_video_range);
-        obs_property_list_clear(prop_color_space);
-    }
-
-    CMVideoDimensions resolution = [OBSAVCapture dimensionsFromSettings:settings];
-
-    if (resolution.width == 0 || resolution.height == 0) {
-        [capture AVCaptureLog:LOG_DEBUG withFormat:@"No valid resolution found in settings"];
-    }
+    obs_property_list_clear(prop_format);
+    obs_property_list_clear(prop_effects_warning);
 
     struct media_frames_per_second fps;
     if (!obs_data_get_frames_per_second(settings, "frame_rate", &fps, NULL)) {
         [capture AVCaptureLog:LOG_DEBUG withFormat:@"No valid framerate found in settings"];
     }
 
-    CMTime time = {.value = fps.denominator, .timescale = fps.numerator, .flags = 1};
+    const char *selectedFormatData = obs_data_get_string(settings, "supported_format");
+    NSString *selectedFormatString = [NSString stringWithCString:selectedFormatData encoding:NSUTF8StringEncoding];
 
-    int input_format = 0;
-    int color_space = 0;
-    int video_range = 0;
-
-    NSMutableArray *inputFormats = NULL;
-    NSMutableArray *colorSpaces = NULL;
-    NSMutableArray *videoRanges = NULL;
-
-    input_format = (int) obs_data_get_int(settings, "input_format");
-    inputFormats = [[NSMutableArray alloc] init];
-
-    if (!capture.isFastPath) {
-        color_space = (int) obs_data_get_int(settings, "color_space");
-        video_range = (int) obs_data_get_int(settings, "video_range");
-
-        colorSpaces = [[NSMutableArray alloc] init];
-        videoRanges = [[NSMutableArray alloc] init];
-    }
-
-    NSMutableArray *resolutions = [[NSMutableArray alloc] init];
     NSMutableArray *frameRates = [[NSMutableArray alloc] init];
 
-    BOOL hasFoundResolution = NO;
-    BOOL hasFoundFramerate = NO;
-    BOOL hasFoundInputFormat = NO;
-    BOOL hasFoundColorSpace = capture.isFastPath;
-    BOOL hasFoundVideoRange = capture.isFastPath;
-
-    CFPropertyListRef priorColorPrimary = @"";
-
     if (device) {
-        // Iterate over all formats reported by the device and gather them for property lists
-        for (AVCaptureDeviceFormat *format in device.formats) {
-            if (!capture.isFastPath) {
-                FourCharCode formatSubType = CMFormatDescriptionGetMediaSubType(format.formatDescription);
+        NSSortDescriptor *aspectSort = [[NSSortDescriptor alloc] initWithKey:@"aspectRatioComparisonValue"
+                                                                   ascending:false];
+        NSSortDescriptor *pixelBandwidthSort = [[NSSortDescriptor alloc] initWithKey:@"pixelBandwidthComparisonValue"
+                                                                           ascending:false];
+        NSSortDescriptor *bppSort = [[NSSortDescriptor alloc] initWithKey:@"bitsPerPixel" ascending:true];
+        NSArray<NSSortDescriptor *> *sortArray =
+            [NSArray arrayWithObjects:aspectSort, pixelBandwidthSort, bppSort, nil];
+        for (AVCaptureDeviceFormat *format in [device.formats sortedArrayUsingDescriptors:sortArray]) {
+            NSString *enumeratedFormatString = format.obsPropertyListDescription;
+            NSString *internalRepresentation = format.obsPropertyListInternalRepresentation;
+            obs_property_list_add_string(prop_format, enumeratedFormatString.UTF8String,
+                                         internalRepresentation.UTF8String);
+            if ([selectedFormatString isEqualToString:internalRepresentation]) {
+                for (AVFrameRateRange *range in format.videoSupportedFrameRateRanges) {
+                    struct media_frames_per_second min_fps = {
+                        .numerator = (uint32_t) clamp_Uint(range.maxFrameDuration.timescale, 0, UINT32_MAX),
+                        .denominator = (uint32_t) clamp_Uint(range.maxFrameDuration.value, 0, UINT32_MAX)};
+                    struct media_frames_per_second max_fps = {
+                        .numerator = (uint32_t) clamp_Uint(range.minFrameDuration.timescale, 0, UINT32_MAX),
+                        .denominator = (uint32_t) clamp_Uint(range.minFrameDuration.value, 0, UINT32_MAX)};
 
-                NSString *formatDescription = [OBSAVCapture stringFromSubType:formatSubType];
-                int device_format = [OBSAVCapture formatFromSubtype:formatSubType];
-                int device_range;
-                const char *range_description;
-
-                if ([OBSAVCapture isFullRangeFormat:formatSubType]) {
-                    device_range = VIDEO_RANGE_FULL;
-                    range_description = av_capture_get_text("VideoRange.Full");
-                } else {
-                    device_range = VIDEO_RANGE_PARTIAL;
-                    range_description = av_capture_get_text("VideoRange.Partial");
-                }
-
-                if (!hasFoundInputFormat && input_format == device_format) {
-                    hasFoundInputFormat = YES;
-                }
-
-                if (!hasFoundVideoRange && video_range == device_range) {
-                    hasFoundVideoRange = YES;
-                }
-
-                if (![inputFormats containsObject:@(formatSubType)]) {
-                    obs_property_list_add_int(prop_input_format, formatDescription.UTF8String, device_format);
-                    [inputFormats addObject:@(formatSubType)];
-                }
-
-                if (![videoRanges containsObject:@(range_description)]) {
-                    obs_property_list_add_int(prop_video_range, range_description, device_range);
-                    [videoRanges addObject:@(range_description)];
-                }
-
-                int device_color_space = [OBSAVCapture colorspaceFromDescription:format.formatDescription];
-
-                if (![colorSpaces containsObject:@(device_color_space)]) {
-                    obs_property_list_add_int(prop_color_space,
-                                              [OBSAVCapture stringFromColorspace:device_color_space].UTF8String,
-                                              device_color_space);
-                    [colorSpaces addObject:@(device_color_space)];
-                }
-
-                if (!hasFoundColorSpace && device_color_space == color_space) {
-                    hasFoundColorSpace = YES;
-                }
-            } else {
-                FourCharCode formatSubType = CMFormatDescriptionGetMediaSubType(format.formatDescription);
-
-                NSString *formatDescription = [OBSAVCapture stringFromSubType:formatSubType];
-                int device_format = [OBSAVCapture formatFromSubtype:formatSubType];
-
-                if (!hasFoundInputFormat && input_format == device_format) {
-                    hasFoundInputFormat = YES;
-                }
-
-                if (![inputFormats containsObject:@(formatSubType)]) {
-                    obs_property_list_add_int(prop_input_format, formatDescription.UTF8String, device_format);
-                    [inputFormats addObject:@(formatSubType)];
-                }
-            }
-
-            CMVideoDimensions formatDimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription);
-
-            NSDictionary *resolutionData =
-                @{@"width": @(formatDimensions.width),
-                  @"height": @(formatDimensions.height)};
-
-            if (![resolutions containsObject:resolutionData]) {
-                [resolutions addObject:resolutionData];
-            }
-
-            if (!hasFoundResolution && formatDimensions.width == resolution.width &&
-                formatDimensions.height == resolution.height) {
-                hasFoundResolution = YES;
-            }
-
-            // Only iterate over available framerates if input format, color space, and resolution are matching
-            if (hasFoundInputFormat && hasFoundColorSpace && hasFoundResolution) {
-                CFComparisonResult isColorPrimaryMatch = kCFCompareEqualTo;
-
-                CFPropertyListRef colorPrimary = CMFormatDescriptionGetExtension(
-                    format.formatDescription, kCMFormatDescriptionExtension_ColorPrimaries);
-
-                if (colorPrimary) {
-                    isColorPrimaryMatch = CFStringCompare(colorPrimary, priorColorPrimary, 0);
-                }
-
-                if (isColorPrimaryMatch != kCFCompareEqualTo || !hasFoundFramerate) {
-                    for (AVFrameRateRange *range in format.videoSupportedFrameRateRanges.reverseObjectEnumerator) {
-                        FourCharCode formatSubType = CMFormatDescriptionGetMediaSubType(format.formatDescription);
-                        int device_format = [OBSAVCapture formatFromSubtype:formatSubType];
-
-                        if (input_format == device_format) {
-                            struct media_frames_per_second min_fps = {
-                                .numerator = (uint32_t) clamp_Uint(range.maxFrameDuration.timescale, 0, UINT32_MAX),
-                                .denominator = (uint32_t) clamp_Uint(range.maxFrameDuration.value, 0, UINT32_MAX)};
-                            struct media_frames_per_second max_fps = {
-                                .numerator = (uint32_t) clamp_Uint(range.minFrameDuration.timescale, 0, UINT32_MAX),
-                                .denominator = (uint32_t) clamp_Uint(range.minFrameDuration.value, 0, UINT32_MAX)};
-
-                            if (![frameRates containsObject:range]) {
-                                obs_property_frame_rate_fps_range_add(prop_framerate, min_fps, max_fps);
-                                [frameRates addObject:range];
-                            }
-
-                            if (!hasFoundFramerate && CMTimeCompare(range.maxFrameDuration, time) >= 0 &&
-                                CMTimeCompare(range.minFrameDuration, time) <= 0) {
-                                hasFoundFramerate = YES;
-                            }
-                        }
+                    if (![frameRates containsObject:range]) {
+                        obs_property_frame_rate_fps_range_add(prop_framerate, min_fps, max_fps);
+                        [frameRates addObject:range];
                     }
-
-                    priorColorPrimary = colorPrimary;
                 }
             }
-        }
-
-        // Add resolutions in reverse order (formats reported by macOS are sorted with lowest resolution first)
-        for (NSDictionary *resolutionData in resolutions.reverseObjectEnumerator) {
-            NSError *error;
-            NSData *jsonData = [NSJSONSerialization dataWithJSONObject:resolutionData options:0 error:&error];
-
-            int width = [[resolutionData objectForKey:@"width"] intValue];
-            int height = [[resolutionData objectForKey:@"height"] intValue];
-
-            obs_property_list_add_string(
-                prop_resolution, [NSString stringWithFormat:@"%dx%d", width, height].UTF8String,
-                [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding].UTF8String);
-        }
-
-        // Add currently selected values in disabled state if they are not supported by the device
-        size_t index;
-
-        FourCharCode formatSubType = [OBSAVCapture fourCharCodeFromFormat:input_format withRange:video_range];
-        if (!hasFoundInputFormat) {
-            NSString *formatDescription = [OBSAVCapture stringFromSubType:formatSubType];
-
-            index = obs_property_list_add_int(prop_input_format, formatDescription.UTF8String, input_format);
-            obs_property_list_item_disable(prop_input_format, index, true);
-        }
-
-        if (!capture.isFastPath) {
-            if (!hasFoundVideoRange) {
-                int device_range;
-                const char *range_description;
-
-                if ([OBSAVCapture isFullRangeFormat:formatSubType]) {
-                    device_range = VIDEO_RANGE_FULL;
-                    range_description = av_capture_get_text("VideoRange.Full");
-                } else {
-                    device_range = VIDEO_RANGE_PARTIAL;
-                    range_description = av_capture_get_text("VideoRange.Partial");
-                }
-
-                index = obs_property_list_add_int(prop_video_range, range_description, device_range);
-                obs_property_list_item_disable(prop_video_range, index, true);
-            }
-
-            if (!hasFoundColorSpace) {
-                index = obs_property_list_add_int(
-                    prop_color_space, [OBSAVCapture stringFromColorspace:color_space].UTF8String, color_space);
-                obs_property_list_item_disable(prop_color_space, index, true);
-            }
-        }
-
-        if (!hasFoundResolution) {
-            NSDictionary *resolutionData = @{@"width": @(resolution.width), @"height": @(resolution.height)};
-
-            NSError *error;
-            NSData *jsonData = [NSJSONSerialization dataWithJSONObject:resolutionData options:0 error:&error];
-
-            index = obs_property_list_add_string(
-                prop_resolution, [NSString stringWithFormat:@"%dx%d", resolution.width, resolution.height].UTF8String,
-                [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding].UTF8String);
-            obs_property_list_item_disable(prop_resolution, index, true);
         }
     }
+
     return true;
 }
