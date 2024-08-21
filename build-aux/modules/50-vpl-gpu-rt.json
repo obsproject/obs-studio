@@ -15,8 +15,8 @@
         {
             "type": "git",
             "url": "https://github.com/intel/vpl-gpu-rt.git",
-            "commit": "d74cb6391eaad4a2db9cbec6a8a335b6f1a555c4",
-            "tag": "intel-onevpl-24.2.2"
+            "commit": "e0b981d1bf8ca4f9d346089d530cc149c09e10df",
+            "tag": "intel-onevpl-24.2.5"
         },
         {
             "type": "shell",
