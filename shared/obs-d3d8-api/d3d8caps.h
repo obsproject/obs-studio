@@ -182,7 +182,7 @@ typedef struct _D3DCAPS8
 #define D3DPMISCCAPS_CLIPTLVERTS        0x00000200L /* device will clip post-transformed vertex primitives */
 #define D3DPMISCCAPS_TSSARGTEMP         0x00000400L /* device supports D3DTA_TEMP for temporary register */
 #define D3DPMISCCAPS_BLENDOP            0x00000800L /* device supports D3DRS_BLENDOP */
-#define D3DPMISCCAPS_NULLREFERENCE      0x00001000L /* Reference Device that doesnt render */
+#define D3DPMISCCAPS_NULLREFERENCE      0x00001000L /* Reference Device that doesn't render */
 
 //
 // LineCaps

@@ -3550,7 +3550,7 @@ SAVC(audio);
 static int
 HandleMetadata(RTMP *r, char *body, unsigned int len)
 {
-    /* allright we get some info here, so parse it and print it */
+    /* alright we get some info here, so parse it and print it */
     /* also keep duration or filesize to make a nice progress bar */
 
     AMFObject obj;
@@ -4841,7 +4841,7 @@ Read_1_Packet(RTMP *r, char *buf, unsigned int buflen)
                         }
                     }
 
-                    /* hande FLV streams, even though the server resends the
+                    /* handle FLV streams, even though the server resends the
                      * keyframe as an extra video packet it is also included
                      * in the first FLV stream chunk and we have to compare
                      * it and filter it out !!

@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 
-// Most of this file shouldnt be accessed from C.
+// Most of this file shouldn't be accessed from C.
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus

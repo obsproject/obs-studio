@@ -88,7 +88,7 @@ static bool apply_rc_opt(const struct obs_option *opt,
 	APPLY_INT_OPT(lookaheadLevel, NV_ENC_LOOKAHEAD_LEVEL, PRIu32)
 #endif
 
-	/* Macros above will return true if succesfully evaluated.
+	/* Macros above will return true if successfully evaluated.
 	 * Otherwise, return false if option unknown/unsupported. */
 	return false;
 }

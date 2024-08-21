@@ -48,7 +48,7 @@ enum spa_meta_videotransform_value {
 	SPA_META_TRANSFORMATION_270,      /**< 270 degree counter-clockwise */
 	SPA_META_TRANSFORMATION_Flipped, /**< 180 degree flipped around the vertical axis. Equivalent
 						  * to a reflexion through the vertical line splitting the
-						  * bufffer in two equal sized parts */
+						  * buffer in two equal sized parts */
 	SPA_META_TRANSFORMATION_Flipped90, /**< flip then rotate around 90 degree counter-clockwise */
 	SPA_META_TRANSFORMATION_Flipped180, /**< flip then rotate around 180 degree counter-clockwise */
 	SPA_META_TRANSFORMATION_Flipped270, /**< flip then rotate around 270 degree counter-clockwise */
