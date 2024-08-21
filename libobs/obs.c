@@ -2153,12 +2153,6 @@ proc_handler_t *obs_get_proc_handler(void)
 	return obs->procs;
 }
 
-/* OBS_DEPRECATED */
-void obs_render_main_view(void)
-{
-	obs_view_render(&obs->data.main_view);
-}
-
 static void obs_render_main_texture_internal(enum gs_blend_type src_c,
 					     enum gs_blend_type dest_c,
 					     enum gs_blend_type src_a,
