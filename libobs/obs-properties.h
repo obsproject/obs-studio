@@ -433,11 +433,6 @@ EXPORT obs_properties_t *obs_property_group_content(obs_property_t *p);
 EXPORT enum obs_button_type obs_property_button_type(obs_property_t *p);
 EXPORT const char *obs_property_button_url(obs_property_t *p);
 
-#ifndef SWIG
-OBS_DEPRECATED
-EXPORT enum obs_text_type obs_proprety_text_type(obs_property_t *p);
-#endif
-
 #ifdef __cplusplus
 }
 #endif
