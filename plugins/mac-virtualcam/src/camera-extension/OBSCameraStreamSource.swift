@@ -85,7 +85,7 @@ class OBSCameraStreamSource: NSObject, CMIOExtensionStreamSource {
 
     func stopStream() throws {
         guard let deviceSource = device.source as? OBSCameraDeviceSource else {
-            fatalError("Unexpcted source type \(String(describing: device.source))")
+            fatalError("Unexpected source type \(String(describing: device.source))")
         }
         deviceSource.stopStreaming()
     }

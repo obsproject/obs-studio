@@ -470,7 +470,7 @@ bool _alsa_configure(struct alsa_data *data)
 	}
 #undef FORMAT_SIZE
 	if (!format_found) {
-		blog(LOG_ERROR, "device doesnt support any OBS formats");
+		blog(LOG_ERROR, "device doesn't support any OBS formats");
 		return false;
 	}
 	snd_pcm_hw_params_set_format(data->handle, hwparams, data->format);

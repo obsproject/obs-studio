@@ -113,7 +113,7 @@ char *sfnt_name_to_utf8(FT_SfntName *sfnt_name)
 	iconv_t ic = iconv_open("UTF-8", charset);
 	if (ic == (iconv_t)-1) {
 		blog(LOG_DEBUG,
-		     "couldn't intialize font code page "
+		     "couldn't initialize font code page "
 		     "conversion:  '%s' to 'utf-8': errno = %d",
 		     charset, (int)errno);
 		return NULL;
