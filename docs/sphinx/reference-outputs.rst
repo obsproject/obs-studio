@@ -734,6 +734,44 @@ General Output Functions
 
 ---------------------
 
+.. function:: void obs_output_add_packet_callback(obs_output_t *output, void (*packet_cb)(obs_output_t *output,
+              struct encoder_packet *pkt, struct encoder_packet_time *pkt_time, void *param), void *param)
+
+   Register a packet callback function for the output. The callback is invoked for each compressed
+   packet just before sending to the service. This packet callback mechanism is the preferred method
+   for all packet-level processing that is not required to be implemented in libobs. Any reallocation
+   of the packet buffer, if necessary, must be done with functions in `libobs\util\bmem.h`, otherwise
+   a memory leak may occur. Never use `memset()` to clear the packet buffer, as the buffer data is
+   needed for subsequent callback processing.
+
+   :param output:     The output to register the packet_cb() function against
+   :param packet_cb:  Function pointer to the callback function
+   :param param:      Data passed to the callback
+   :return:           When the callback is added
+
+   packet_cb() arguments:
+   :param output:     The output associated with the invoked callback function
+   :param pkt:        Compressed data packet (audio or video)
+   :param pkt_time:   encoder_packet_time structure associated with the data packet
+   :param param:      Data passed to the callback
+
+   .. versionadded:: 31.0
+
+---------------------
+
+.. function:: void obs_output_remove_packet_callback(obs_output_t *output, void (*packet_cb)(obs_output_t *output,
+              struct encoder_packet *pkt, struct encoder_packet_time *pkt_time, void *param), void *param)
+
+   Remove a packet callback function for the output, that had been previously registered with
+   `obs_output_add_packet_callback()`.
+
+   :param output:     The output to remove the packet_cb() function against
+   :param packet_cb:  Function pointer to the callback function
+   :param param:      Data passed to the callback
+   :return:           When the callback is removed
+
+   .. versionadded:: 31.0
+
 Functions used by outputs
 -------------------------
 

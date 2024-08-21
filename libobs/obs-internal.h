@@ -74,6 +74,12 @@ struct rendered_callback {
 	void *param;
 };
 
+struct packet_callback {
+	void (*packet_cb)(obs_output_t *output, struct encoder_packet *pkt,
+			  struct encoder_packet_time *pkt_time, void *param);
+	void *param;
+};
+
 /* ------------------------------------------------------------------------- */
 /* validity checks */
 
@@ -1190,7 +1196,12 @@ struct obs_output {
 	// captions are output per track
 	struct caption_track_data *caption_tracks[MAX_OUTPUT_VIDEO_ENCODERS];
 
-	DARRAY(struct encoder_packet_time) encoder_packet_times[MAX_OUTPUT_VIDEO_ENCODERS];
+	DARRAY(struct encoder_packet_time)
+	encoder_packet_times[MAX_OUTPUT_VIDEO_ENCODERS];
+
+	/* Packet callbacks */
+	pthread_mutex_t pkt_callbacks_mutex;
+	DARRAY(struct packet_callback) pkt_callbacks;
 
 	bool valid;
 
