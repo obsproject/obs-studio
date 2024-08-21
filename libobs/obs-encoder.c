@@ -1814,14 +1814,6 @@ obs_encoder_get_preferred_video_format(const obs_encoder_t *encoder)
 	return encoder->preferred_format;
 }
 
-void obs_encoder_addref(obs_encoder_t *encoder)
-{
-	if (!encoder)
-		return;
-
-	obs_ref_addref(&encoder->context.control->ref);
-}
-
 void obs_encoder_release(obs_encoder_t *encoder)
 {
 	if (!encoder)

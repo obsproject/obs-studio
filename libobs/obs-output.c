@@ -3022,14 +3022,6 @@ void obs_output_signal_stop(obs_output_t *output, int code)
 	}
 }
 
-void obs_output_addref(obs_output_t *output)
-{
-	if (!output)
-		return;
-
-	obs_ref_addref(&output->context.control->ref);
-}
-
 void obs_output_release(obs_output_t *output)
 {
 	if (!output)

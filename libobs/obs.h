@@ -1030,7 +1030,6 @@ EXPORT obs_source_t *obs_source_duplicate(obs_source_t *source,
  * Adds/releases a reference to a source.  When the last reference is
  * released, the source is destroyed.
  */
-OBS_EXTERNAL_DEPRECATED EXPORT void obs_source_addref(obs_source_t *source);
 EXPORT void obs_source_release(obs_source_t *source);
 
 EXPORT void obs_weak_source_addref(obs_weak_source_t *weak);
@@ -1735,7 +1734,6 @@ enum obs_scene_duplicate_type {
 EXPORT obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name,
 					enum obs_scene_duplicate_type type);
 
-OBS_EXTERNAL_DEPRECATED EXPORT void obs_scene_addref(obs_scene_t *scene);
 EXPORT void obs_scene_release(obs_scene_t *scene);
 
 EXPORT obs_scene_t *obs_scene_get_ref(obs_scene_t *scene);
@@ -2040,7 +2038,6 @@ EXPORT obs_output_t *obs_output_create(const char *id, const char *name,
  * Adds/releases a reference to an output.  When the last reference is
  * released, the output is destroyed.
  */
-OBS_EXTERNAL_DEPRECATED EXPORT void obs_output_addref(obs_output_t *output);
 EXPORT void obs_output_release(obs_output_t *output);
 
 EXPORT void obs_weak_output_addref(obs_weak_output_t *weak);
@@ -2397,7 +2394,6 @@ EXPORT obs_encoder_t *obs_audio_encoder_create(const char *id, const char *name,
  * Adds/releases a reference to an encoder.  When the last reference is
  * released, the encoder is destroyed.
  */
-OBS_EXTERNAL_DEPRECATED EXPORT void obs_encoder_addref(obs_encoder_t *encoder);
 EXPORT void obs_encoder_release(obs_encoder_t *encoder);
 
 EXPORT void obs_weak_encoder_addref(obs_weak_encoder_t *weak);
@@ -2615,7 +2611,6 @@ EXPORT obs_service_t *obs_service_create_private(const char *id,
  * Adds/releases a reference to a service.  When the last reference is
  * released, the service is destroyed.
  */
-OBS_EXTERNAL_DEPRECATED EXPORT void obs_service_addref(obs_service_t *service);
 EXPORT void obs_service_release(obs_service_t *service);
 
 EXPORT void obs_weak_service_addref(obs_weak_service_t *weak);

@@ -932,6 +932,7 @@ obs_source_create_set_last_ver(const char *id, const char *name,
 			       obs_data_t *hotkey_data, uint32_t last_obs_ver,
 			       bool is_private);
 extern void obs_source_destroy(struct obs_source *source);
+extern void obs_source_addref(obs_source_t *source);
 
 enum view_type {
 	MAIN_VIEW,
