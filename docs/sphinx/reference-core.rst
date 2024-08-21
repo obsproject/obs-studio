@@ -501,14 +501,6 @@ Video, Audio, and Graphics
 
 ---------------------
 
-.. function:: void obs_render_main_view(void)
-
-   Renders the main view.
-
-   Note: This function is deprecated.
-
----------------------
-
 .. function:: void obs_render_main_texture(void)
 
    Renders the main output texture.  Useful for rendering a preview pane

@@ -752,12 +752,6 @@ EXPORT signal_handler_t *obs_get_signal_handler(void);
 /** Returns the primary obs procedure handler */
 EXPORT proc_handler_t *obs_get_proc_handler(void);
 
-#ifndef SWIG
-/** Renders the main view */
-OBS_DEPRECATED
-EXPORT void obs_render_main_view(void);
-#endif
-
 /** Renders the last main output texture */
 EXPORT void obs_render_main_texture(void);
 
