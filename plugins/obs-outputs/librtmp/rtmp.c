@@ -3835,7 +3835,7 @@ RTMP_ReadPacket(RTMP *r, RTMPPacket *packet)
         int tmp;
         if (ReadN(r, (char *)&hbuf[1], 2) != 2)
         {
-            RTMP_Log(RTMP_LOGERROR, "%s, failed to read RTMP packet header 3nd byte",
+            RTMP_Log(RTMP_LOGERROR, "%s, failed to read RTMP packet header 3rd byte",
                      __FUNCTION__);
             return FALSE;
         }
@@ -5146,7 +5146,7 @@ stopKeyframeSearch:
                     {
 #ifdef _DEBUG
                         RTMP_Log(RTMP_LOGWARNING,
-                                 "Tag and data size are not consitent, writing tag size according to dataSize+11: %d",
+                                 "Tag and data size are not consistent, writing tag size according to dataSize+11: %d",
                                  dataSize + 11);
 #endif
 
