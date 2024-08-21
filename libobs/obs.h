@@ -2493,6 +2493,9 @@ EXPORT enum obs_scale_type obs_encoder_get_scale_type(obs_encoder_t *encoder);
 /** For video encoders, returns the frame rate divisor (default is 1) */
 EXPORT uint32_t obs_encoder_get_frame_rate_divisor(const obs_encoder_t *encoder);
 
+/** For video encoders, returns the number of frames encoded */
+EXPORT uint32_t obs_encoder_get_encoded_frames(const obs_encoder_t *encoder);
+
 /** For audio encoders, returns the sample rate of the audio */
 EXPORT uint32_t obs_encoder_get_sample_rate(const obs_encoder_t *encoder);
 

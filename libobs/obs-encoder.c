@@ -857,6 +857,13 @@ enum obs_encoder_type obs_get_encoder_type(const char *id)
 	return info ? info->type : OBS_ENCODER_AUDIO;
 }
 
+uint32_t obs_encoder_get_encoded_frames(const obs_encoder_t *encoder)
+{
+	return obs_encoder_valid(encoder, "obs_output_get_encoded_frames")
+		       ? encoder->encoded_frames
+		       : 0;
+}
+
 void obs_encoder_set_scaled_size(obs_encoder_t *encoder, uint32_t width,
 				 uint32_t height)
 {
@@ -1393,6 +1400,10 @@ void send_off_encoder_packet(obs_encoder_t *encoder, bool success,
 		}
 
 		pthread_mutex_unlock(&encoder->callbacks_mutex);
+
+		// Count number of video frames successfully encoded
+		if (pkt->type == OBS_ENCODER_VIDEO)
+			encoder->encoded_frames++;
 	}
 }
 
