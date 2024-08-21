@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.24...3.25)
 
-legacy_check()
-
 add_library(libobs-d3d11 MODULE)
 add_library(OBS::libobs-d3d11 ALIAS libobs-d3d11)
 
