@@ -15,7 +15,6 @@
 
 using namespace std;
 
-#define CLAMP(x, min, max) ((x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
 #define FADER_PRECISION 4096.0
 
 // Size of the audio indicator in pixels
@@ -1004,8 +1003,9 @@ VolumeMeter::calculateBallisticsForChannel(int channelNr, uint64_t ts,
 		// 20 dB / 1.7 seconds for Medium Profile (Type I PPM)
 		// 24 dB / 2.8 seconds for Slow Profile (Type II PPM)
 		float decay = float(peakDecayRate * timeSinceLastRedraw);
-		displayPeak[channelNr] = CLAMP(displayPeak[channelNr] - decay,
-					       currentPeak[channelNr], 0);
+		displayPeak[channelNr] =
+			std::clamp(displayPeak[channelNr] - decay,
+				   currentPeak[channelNr], 0.f);
 	}
 
 	if (currentPeak[channelNr] >= displayPeakHold[channelNr] ||
@@ -1060,8 +1060,8 @@ VolumeMeter::calculateBallisticsForChannel(int channelNr, uint64_t ts,
 			      (timeSinceLastRedraw / magnitudeIntegrationTime) *
 			      0.99);
 		displayMagnitude[channelNr] =
-			CLAMP(displayMagnitude[channelNr] + attack,
-			      (float)minimumLevel, 0);
+			std::clamp(displayMagnitude[channelNr] + attack,
+				   (float)minimumLevel, 0.f);
 	}
 }
 
