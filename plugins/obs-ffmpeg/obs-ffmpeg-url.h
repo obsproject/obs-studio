@@ -137,6 +137,5 @@ enum type {
 	debug = 7 //issue w/ libobs so LOG_DEBUG is removed
 };
 }
-class Logger;
 } // namespace srt_logging
 #endif
