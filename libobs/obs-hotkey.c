@@ -1188,15 +1188,6 @@ void obs_hotkey_enable_background_press(bool enable)
 	unlock();
 }
 
-void obs_hotkey_enable_strict_modifiers(bool enable)
-{
-	if (!lock())
-		return;
-
-	obs->hotkeys.strict_modifiers = enable;
-	unlock();
-}
-
 struct obs_query_hotkeys_helper {
 	uint32_t modifiers;
 	bool no_press;
