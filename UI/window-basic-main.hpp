@@ -749,6 +749,8 @@ public slots:
 	void PauseRecording();
 	void UnpauseRecording();
 
+	void UpdateEditMenu();
+
 private slots:
 
 	void on_actionMainUndo_triggered();
@@ -1044,8 +1046,6 @@ public:
 					     obs_source_t *source,
 					     obs_data_array_t *undo_array,
 					     obs_data_array_t *redo_array);
-
-	void UpdateEditMenu();
 
 	void SetDisplayAffinity(QWindow *window);
 
