@@ -178,12 +178,15 @@ obs_output_t *obs_output_create(const char *id, const char *name,
 	pthread_mutex_init_value(&output->interleaved_mutex);
 	pthread_mutex_init_value(&output->delay_mutex);
 	pthread_mutex_init_value(&output->pause.mutex);
+	pthread_mutex_init_value(&output->pkt_callbacks_mutex);
 
 	if (pthread_mutex_init(&output->interleaved_mutex, NULL) != 0)
 		goto fail;
 	if (pthread_mutex_init(&output->delay_mutex, NULL) != 0)
 		goto fail;
 	if (pthread_mutex_init(&output->pause.mutex, NULL) != 0)
+		goto fail;
+	if (pthread_mutex_init(&output->pkt_callbacks_mutex, NULL) != 0)
 		goto fail;
 	if (os_event_init(&output->stopping_event, OS_EVENT_TYPE_MANUAL) != 0)
 		goto fail;
@@ -312,12 +315,15 @@ void obs_output_destroy(obs_output_t *output)
 		for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++)
 			da_free(output->encoder_packet_times[i]);
 
+		da_free(output->pkt_callbacks);
+
 		clear_raw_audio_buffers(output);
 
 		os_event_destroy(output->stopping_event);
 		pthread_mutex_destroy(&output->pause.mutex);
 		pthread_mutex_destroy(&output->interleaved_mutex);
 		pthread_mutex_destroy(&output->delay_mutex);
+		pthread_mutex_destroy(&output->pkt_callbacks_mutex);
 		os_event_destroy(output->reconnect_stop_event);
 		obs_context_data_free(&output->context);
 		deque_free(&output->delay_data);
@@ -1824,6 +1830,21 @@ static inline void send_interleaved(struct obs_output *output)
 			     __FUNCTION__, out.track_idx);
 		}
 	}
+
+	/* Iterate the registered packet callback(s) and invoke
+	 * each one. The caption track logic further above should
+	 * eventually migrate to the packet callback mechanism.
+	 */
+	pthread_mutex_lock(&output->pkt_callbacks_mutex);
+	for (size_t i = 0; i < output->pkt_callbacks.num; ++i) {
+		struct packet_callback *const callback =
+			&output->pkt_callbacks.array[i];
+		// Packet interleave request timestamp
+		ept_local.pir = os_gettime_ns();
+		callback->packet_cb(output, &out, found_ept ? &ept_local : NULL,
+				    callback->param);
+	}
+	pthread_mutex_unlock(&output->pkt_callbacks_mutex);
 
 	output->info.encoded_packet(output->context.data, &out);
 	obs_encoder_packet_release(&out);
@@ -3391,4 +3412,30 @@ const char *obs_get_output_supported_audio_codecs(const char *id)
 {
 	const struct obs_output_info *info = find_output(id);
 	return info ? info->encoded_audio_codecs : NULL;
+}
+
+void obs_output_add_packet_callback(
+	obs_output_t *output,
+	void (*packet_cb)(obs_output_t *output, struct encoder_packet *pkt,
+			  struct encoder_packet_time *pkt_time, void *param),
+	void *param)
+{
+	struct packet_callback data = {packet_cb, param};
+
+	pthread_mutex_lock(&output->pkt_callbacks_mutex);
+	da_insert(output->pkt_callbacks, 0, &data);
+	pthread_mutex_unlock(&output->pkt_callbacks_mutex);
+}
+
+void obs_output_remove_packet_callback(
+	obs_output_t *output,
+	void (*packet_cb)(obs_output_t *output, struct encoder_packet *pkt,
+			  struct encoder_packet_time *pkt_time, void *param),
+	void *param)
+{
+	struct packet_callback data = {packet_cb, param};
+
+	pthread_mutex_lock(&output->pkt_callbacks_mutex);
+	da_erase_item(output->pkt_callbacks, &data);
+	pthread_mutex_unlock(&output->pkt_callbacks_mutex);
 }

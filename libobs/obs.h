@@ -2326,6 +2326,24 @@ EXPORT const char *obs_get_output_supported_video_codecs(const char *id);
 
 EXPORT const char *obs_get_output_supported_audio_codecs(const char *id);
 
+/* Add/remove packet-processing callbacks that are invoked in
+ * send_interleaved(), before forwarding packets to the output service.
+ * This provides a mechanism to perform packet processing outside of
+ * libobs, however any callback function registering with this API should keep
+ * keep code to a minimum and understand it is running synchronously with the
+ * calling thread.
+ */
+EXPORT void obs_output_add_packet_callback(
+	obs_output_t *output,
+	void (*packet_cb)(obs_output_t *output, struct encoder_packet *pkt,
+			  struct encoder_packet_time *pkt_time, void *param),
+	void *param);
+EXPORT void obs_output_remove_packet_callback(
+	obs_output_t *output,
+	void (*packet_cb)(obs_output_t *output, struct encoder_packet *pkt,
+			  struct encoder_packet_time *pkt_time, void *param),
+	void *param);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by outputs */
 
