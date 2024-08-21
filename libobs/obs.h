@@ -746,12 +746,6 @@ enum obs_base_effect {
 /** Returns a commonly used base effect */
 EXPORT gs_effect_t *obs_get_base_effect(enum obs_base_effect effect);
 
-#ifndef SWIG
-/* DEPRECATED: gets texture_rect default effect */
-OBS_DEPRECATED
-EXPORT gs_effect_t *obs_get_default_rect_effect(void);
-#endif
-
 /** Returns the primary obs signal handler */
 EXPORT signal_handler_t *obs_get_signal_handler(void);
 
