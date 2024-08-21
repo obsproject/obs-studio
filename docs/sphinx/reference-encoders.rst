@@ -351,15 +351,6 @@ General Encoder Functions
 
 ---------------------
 
-.. function:: void obs_encoder_addref(obs_encoder_t *encoder)
-
-   Adds a reference to an encoder.
-
-.. deprecated:: 27.2.0
-   Use :c:func:`obs_encoder_get_ref()` instead.
-
----------------------
-
 .. function:: obs_encoder_t *obs_encoder_get_ref(obs_encoder_t *encoder)
 
    Returns an incremented reference if still valid, otherwise returns

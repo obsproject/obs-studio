@@ -197,15 +197,6 @@ General Scene Functions
 
 ---------------------
 
-.. function:: void obs_scene_addref(obs_scene_t *scene)
-
-   Adds a reference to a scene.
-
-.. deprecated:: 27.2.0
-   Use :c:func:`obs_scene_get_ref()` instead.
-
----------------------
-
 .. function:: obs_scene_t *obs_scene_get_ref(obs_scene_t *scene)
 
    Returns an incremented reference if still valid, otherwise returns

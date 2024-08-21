@@ -2197,7 +2197,7 @@ obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name,
 	return new_scene;
 }
 
-void obs_scene_addref(obs_scene_t *scene)
+static inline void obs_scene_addref(obs_scene_t *scene)
 {
 	if (scene)
 		obs_source_addref(scene->source);

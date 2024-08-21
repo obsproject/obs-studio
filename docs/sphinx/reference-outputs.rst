@@ -343,15 +343,6 @@ General Output Functions
 
 ---------------------
 
-.. function:: void obs_output_addref(obs_output_t *output)
-
-   Adds a reference to an output.
-
-.. deprecated:: 27.2.0
-   Use :c:func:`obs_output_get_ref()` instead.
-
----------------------
-
 .. function:: obs_output_t *obs_output_get_ref(obs_output_t *output)
 
    Returns an incremented reference if still valid, otherwise returns

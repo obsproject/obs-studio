@@ -322,14 +322,6 @@ void obs_service_apply_encoder_settings(obs_service_t *service,
 						     audio_encoder_settings);
 }
 
-void obs_service_addref(obs_service_t *service)
-{
-	if (!service)
-		return;
-
-	obs_ref_addref(&service->context.control->ref);
-}
-
 void obs_service_release(obs_service_t *service)
 {
 	if (!service)
