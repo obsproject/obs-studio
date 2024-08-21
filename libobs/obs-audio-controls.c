@@ -861,29 +861,6 @@ void obs_volmeter_set_peak_meter_type(obs_volmeter_t *volmeter,
 	pthread_mutex_unlock(&volmeter->mutex);
 }
 
-void obs_volmeter_set_update_interval(obs_volmeter_t *volmeter,
-				      const unsigned int ms)
-{
-	if (!volmeter || !ms)
-		return;
-
-	pthread_mutex_lock(&volmeter->mutex);
-	volmeter->update_ms = ms;
-	pthread_mutex_unlock(&volmeter->mutex);
-}
-
-unsigned int obs_volmeter_get_update_interval(obs_volmeter_t *volmeter)
-{
-	if (!volmeter)
-		return 0;
-
-	pthread_mutex_lock(&volmeter->mutex);
-	const unsigned int interval = volmeter->update_ms;
-	pthread_mutex_unlock(&volmeter->mutex);
-
-	return interval;
-}
-
 int obs_volmeter_get_nr_channels(obs_volmeter_t *volmeter)
 {
 	int source_nr_audio_channels;
