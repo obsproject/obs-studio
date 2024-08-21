@@ -94,7 +94,7 @@ size_t scc_to_608(scc_t** scc, const utf8_char_t* data)
 
     if (4 == sscanf(data, "%2d:%2d:%2d%*1[:;]%2d", &hh, &mm, &ss, &ff)) {
         data += 12, size += 12;
-        // Get length of the remaining charcters
+        // Get length of the remaining characters
         llen = utf8_line_length(data);
         llen = utf8_trimmed_length(data, llen);
         unsigned int max_cc_count = 1 + ((unsigned int)llen / 5);

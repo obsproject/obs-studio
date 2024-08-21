@@ -30,8 +30,8 @@ extern "C" {
 #include <inttypes.h>
 #include <stddef.h>
 
-// These types exist to make the code more self dcoumenting
-// utf8_char_t point is a null teminate string of utf8 encodecd chars
+// These types exist to make the code more self documenting
+// utf8_char_t point is a null terminate string of utf8 encodecd chars
 //
 // utf8_size_t is the length of a string in chars
 // size_t is bytes
@@ -40,21 +40,21 @@ typedef size_t utf8_size_t;
 /*! \brief
     \param
 
-    Skiped continuation bytes
+    Skipped continuation bytes
 */
 
 const utf8_char_t* utf8_char_next(const utf8_char_t* c);
 /*! \brief
     \param
 
-    returnes the length of the char in bytes
+    returns the length of the char in bytes
 */
 size_t utf8_char_length(const utf8_char_t* c);
 
 /*! \brief
     \param
 
-    returns 1 if first charcter is white space
+    returns 1 if first character is white space
 */
 int utf8_char_whitespace(const utf8_char_t* c);
 
@@ -62,7 +62,7 @@ int utf8_char_whitespace(const utf8_char_t* c);
     \param
 
     returns length of the string in bytes
-    size is number of charcter to count (0 to count until NULL term)
+    size is number of character to count (0 to count until NULL term)
 */
 size_t utf8_string_length(const utf8_char_t* data, utf8_size_t size);
 /*! \brief
@@ -73,20 +73,20 @@ size_t utf8_char_copy(utf8_char_t* dst, const utf8_char_t* src);
 /*! \brief
     \param
 
-    returnes the number of utf8 charcters in a string givne the numbe of bytes
+    returns the number of utf8 characters in a string given the number of bytes
     to coutn until the a null terminator, pass 0 for size
 */
 utf8_size_t utf8_char_count(const char* data, size_t size);
 /*! \brief
     \param
 
-    returnes the length of the line in bytes triming not printable characters at the end
+    returns the length of the line in bytes trimming not printable characters at the end
 */
-utf8_size_t utf8_trimmed_length(const utf8_char_t* data, utf8_size_t charcters);
+utf8_size_t utf8_trimmed_length(const utf8_char_t* data, utf8_size_t characters);
 /*! \brief
     \param
 
-    returns the length in bytes of the line including the new line charcter(s)
+    returns the length in bytes of the line including the new line character(s)
     auto detects between windows(CRLF), unix(LF), mac(CR) and riscos (LFCR) line endings
 */
 size_t utf8_line_length(const utf8_char_t* data);
@@ -107,7 +107,7 @@ int utf8_line_count(const utf8_char_t* data);
 /*! \brief
     \param
     size in/out. In the the max seize, out is the size read;
-    returns number of new lins in teh string
+    returns number of new lines in the string
 */
 #define UFTF_DEFAULT_MAX_FILE_SIZE = (50 * 1024 * 1024);
 

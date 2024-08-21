@@ -47,7 +47,7 @@ typedef struct {
     double dts, cts;
     libcaption_stauts_t status;
     // Priority queue for out of order frame processing
-    // Should probablly be a linked list
+    // Should probably be a linked list
     size_t front;
     size_t latent;
     cea708_t cea708[MAX_REFRENCE_FRAMES];

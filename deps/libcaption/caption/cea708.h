@@ -93,7 +93,7 @@ static const uint32_t DTG1 = (('D' << 24) | ('T' << 16) | ('G' << 8) | '1');
 /*! \brief
     \param
 */
-int cea708_init(cea708_t* cea708, double timestamp); // will confgure using HLS compatiable defaults
+int cea708_init(cea708_t* cea708, double timestamp); // will configure using HLS compatible defaults
 /*! \brief
     \param
 */
