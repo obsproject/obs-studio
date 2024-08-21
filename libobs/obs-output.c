@@ -1536,7 +1536,7 @@ static inline bool has_higher_opposing_ts(struct obs_output *output,
 			  output->highest_audio_ts > packet->dts_usec);
 }
 
-static size_t extract_itut_t35_buffer_from_sei(sei_t *sei, uint8_t **data_out)
+static size_t extract_buffer_from_sei(sei_t *sei, uint8_t **data_out)
 {
 	if (!sei || !sei->head) {
 		return 0;
@@ -1726,9 +1726,9 @@ static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 		} else if (av1) {
 			uint8_t *obu_buffer = NULL;
 			size_t obu_buffer_size = 0;
-			size = extract_itut_t35_buffer_from_sei(&sei, &data);
-			metadata_obu_itut_t35(data, size, &obu_buffer,
-					      &obu_buffer_size);
+			size = extract_buffer_from_sei(&sei, &data);
+			metadata_obu(data, size, &obu_buffer, &obu_buffer_size,
+				     METADATA_TYPE_ITUT_T35);
 			if (obu_buffer) {
 				da_push_back_array(out_data, obu_buffer,
 						   obu_buffer_size);

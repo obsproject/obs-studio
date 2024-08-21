@@ -1319,6 +1319,9 @@ struct obs_encoder {
 	uint32_t frame_rate_divisor_counter; // only used for GPU encoders
 	video_t *fps_override;
 
+	// Number of frames successfully encoded
+	uint32_t encoded_frames;
+
 	/* Regions of interest to prioritize during encoding */
 	pthread_mutex_t roi_mutex;
 	DARRAY(struct obs_encoder_roi) roi;
