@@ -2229,16 +2229,6 @@ gs_texture_t *obs_get_main_texture(void)
 	return video->render_texture;
 }
 
-void obs_set_master_volume(float volume)
-{
-	UNUSED_PARAMETER(volume);
-}
-
-float obs_get_master_volume(void)
-{
-	return 1.f;
-}
-
 static obs_source_t *obs_load_source_type(obs_data_t *source_data,
 					  bool is_private)
 {

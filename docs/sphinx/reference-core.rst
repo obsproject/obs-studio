@@ -508,24 +508,6 @@ Video, Audio, and Graphics
 
 ---------------------
 
-.. function:: void obs_set_master_volume(float volume)
-
-   No-op, only exists to keep ABI compatibility.
-
-   .. deprecated:: 29.0
-
----------------------
-
-.. function:: float obs_get_master_volume(void)
-
-   No-op, only exists to keep ABI compatibility.
-
-   :return: Always returns 1
-
-   .. deprecated:: 29.0
-
----------------------
-
 .. function:: bool obs_audio_monitoring_available(void)
 
    :return: Whether audio monitoring is supported and available on the current platform

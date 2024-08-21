@@ -762,12 +762,6 @@ EXPORT void obs_render_main_texture_src_color_only(void);
  * is unavailable. */
 EXPORT gs_texture_t *obs_get_main_texture(void);
 
-/** Sets the master user volume */
-OBS_DEPRECATED EXPORT void obs_set_master_volume(float volume);
-
-/** Gets the master user volume */
-OBS_DEPRECATED EXPORT float obs_get_master_volume(void);
-
 /** Saves a source to settings data */
 EXPORT obs_data_t *obs_save_source(obs_source_t *source);
 
