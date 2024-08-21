@@ -310,42 +310,6 @@ General Service Functions
 
 ---------------------
 
-.. function:: const char *obs_service_get_url(const obs_service_t *service)
-
-  :return: The URL currently used for this service
-
-.. deprecated:: 29.1.0
-   Use :c:func:`obs_service_get_connect_info()` instead.
-
----------------------
-
-.. function:: const char *obs_service_get_key(const obs_service_t *service)
-
-  :return: Stream key (if any) currently used for this service
-
-.. deprecated:: 29.1.0
-   Use :c:func:`obs_service_get_connect_info()` instead.
-
----------------------
-
-.. function:: const char *obs_service_get_username(const obs_service_t *service)
-
-   :return: User name (if any) currently used for this service
-
-.. deprecated:: 29.1.0
-   Use :c:func:`obs_service_get_connect_info()` instead.
-
----------------------
-
-.. function:: const char *obs_service_get_password(const obs_service_t *service)
-
-   :return: Password (if any) currently used for this service
-
-.. deprecated:: 29.1.0
-   Use :c:func:`obs_service_get_connect_info()` instead.
-
----------------------
-
 .. function:: void obs_service_apply_encoder_settings(obs_service_t *service, obs_data_t *video_encoder_settings, obs_data_t *audio_encoder_settings)
 
    Applies service-specific video encoder settings.
