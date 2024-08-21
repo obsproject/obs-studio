@@ -11,7 +11,7 @@
  **********************************************************************
  *
  * This is portability layer which should help iron out some
- * differences across various compilers, as well as various verisons of
+ * differences across various compilers, as well as various versions of
  * C and C++.
  *
  * It was originally developed for SIMD Everywhere
@@ -55,7 +55,7 @@
 #include "hedley.h"
 
 /* I know this seems a little silly, but some non-hosted compilers
- * don't have stddef.h, so we try to accomodate them. */
+ * don't have stddef.h, so we try to accommodate them. */
 #if !defined(SIMDE_ALIGN_SIZE_T_)
 #if defined(__SIZE_TYPE__)
 #define SIMDE_ALIGN_SIZE_T_ __SIZE_TYPE__
@@ -431,7 +431,7 @@ simde_align_assume_to_checked_uncapped(void *ptr, const size_t alignment,
 
 /* SIMDE_ALIGN_ASSUME_LIKE(Pointer, Type)
  *
- * Tihs is similar to SIMDE_ALIGN_ASSUME_TO, except that it takes a
+ * This is similar to SIMDE_ALIGN_ASSUME_TO, except that it takes a
  * type instead of a numeric value. */
 #if defined(SIMDE_ALIGN_OF) && defined(SIMDE_ALIGN_ASSUME_TO)
 #define SIMDE_ALIGN_ASSUME_LIKE(Pointer, Type) \

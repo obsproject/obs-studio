@@ -53,8 +53,8 @@ typedef struct gif_frame {
     unsigned char disposal_method;        /**< how the previous frame should be disposed; affects plotting */
     bool transparency;             /**< whether we acknowledge transparency */
     unsigned char transparency_index;    /**< the index designating a transparent pixel */
-    unsigned int redraw_x;            /**< x co-ordinate of redraw rectangle */
-    unsigned int redraw_y;            /**< y co-ordinate of redraw rectangle */
+    unsigned int redraw_x;            /**< x coordinate of redraw rectangle */
+    unsigned int redraw_y;            /**< y coordinate of redraw rectangle */
     unsigned int redraw_width;        /**< width of redraw rectangle */
     unsigned int redraw_height;        /**< height of redraw rectangle */
 } gif_frame;

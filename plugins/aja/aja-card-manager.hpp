@@ -75,7 +75,7 @@ using CardEntries = std::map<std::string, CardEntryPtr>;
  * state on exit, and maintains a map of CardEntry objects corresponding to each physical card.
  * Each CardEntry object holds a pointer to the CNTV2Card instance and a map of NTV2Channels
  * that are "owned" by each plugin instance. NTV2Channels are essentially treated as indices
- * for various firwmare Widgets and sub-systems throughout the AJA NTV2 SDK.
+ * for various firmware Widgets and sub-systems throughout the AJA NTV2 SDK.
  */
 class CardManager {
 public:

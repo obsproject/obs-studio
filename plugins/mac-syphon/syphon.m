@@ -85,7 +85,7 @@ static inline NSDictionary *find_by_uuid(NSArray *arr, NSString *uuid)
  * public header!": They don't. Or at least I couldnt't find anything. The
  * definitions inside of Syphon are only in SyphonPrivate.h/m, and nowhere
  * else. When we had Syphon as a submodule we abused this by using extern, but
- * now that we use a prebuilt framework and as such no longer can acceess the
+ * now that we use a prebuilt framework and as such no longer can access the
  * private headers and sources directly, that's no longer possible. Other
  * projects sometimes copy SyphonPrivate.h entirely (with the full definitions
  * of everything), but for our purpose these strings are enough. */

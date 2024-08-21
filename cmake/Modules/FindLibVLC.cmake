@@ -41,7 +41,7 @@ find_library(
     ../bin)
 
 include(FindPackageHandleStandardArgs)
-# OBS doesnt depend on linking, so we dont include VLC_LIB here as required.
+# OBS doesn't depend on linking, so we dont include VLC_LIB here as required.
 find_package_handle_standard_args(LibVLC DEFAULT_MSG VLC_INCLUDE_DIR)
 mark_as_advanced(VLC_INCLUDE_DIR VLC_LIB)
 

@@ -592,7 +592,7 @@ static void d3d9_capture(IDirect3DDevice9 *device,
 	}
 }
 
-/* this is used just in case Present calls PresentEx or vise versa. */
+/* this is used just in case Present calls PresentEx or vice versa. */
 static int present_recurse = 0;
 
 static inline void present_begin(IDirect3DDevice9 *device,

@@ -37,7 +37,7 @@
  * constant.
  *
  * As long as the value you pass to the function in constant, pretty
- * much any copmiler shouldn't have a problem generating exactly the
+ * much any compiler shouldn't have a problem generating exactly the
  * same code as if you had used an ICE.
  *
  * This is intended to be used in the SIMDe implementations of

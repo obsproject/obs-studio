@@ -1119,7 +1119,7 @@ AMF3_Decode(AMFObject *obj, const char *pBuffer, int nSize, int bAMFData)
             }
         }
 
-        /* add as referencable object */
+        /* add as referenceable object */
 
         if (cd.cd_externalizable)
         {

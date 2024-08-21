@@ -4,7 +4,7 @@
 /*
  * Sets the maximum size for a video fragment. Effective range is
  * 576-1470, with a lower value equating to more packets created,
- * but also better network compatability.
+ * but also better network compatibility.
  */
 static uint16_t MAX_VIDEO_FRAGMENT_SIZE = 1200;
 
