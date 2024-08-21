@@ -1984,25 +1984,6 @@ obs_group_or_scene_from_source(const obs_source_t *source)
 EXPORT void obs_sceneitem_defer_group_resize_begin(obs_sceneitem_t *item);
 EXPORT void obs_sceneitem_defer_group_resize_end(obs_sceneitem_t *item);
 
-EXPORT void obs_sceneitem_set_show_transition(obs_sceneitem_t *item,
-					      obs_source_t *transition);
-EXPORT void obs_sceneitem_set_show_transition_duration(obs_sceneitem_t *item,
-						       uint32_t duration_ms);
-OBS_DEPRECATED EXPORT obs_source_t *
-obs_sceneitem_get_show_transition(obs_sceneitem_t *item);
-OBS_DEPRECATED EXPORT uint32_t
-obs_sceneitem_get_show_transition_duration(obs_sceneitem_t *item);
-OBS_DEPRECATED EXPORT void
-obs_sceneitem_set_hide_transition(obs_sceneitem_t *item,
-				  obs_source_t *transition);
-OBS_DEPRECATED EXPORT void
-obs_sceneitem_set_hide_transition_duration(obs_sceneitem_t *item,
-					   uint32_t duration_ms);
-OBS_DEPRECATED EXPORT obs_source_t *
-obs_sceneitem_get_hide_transition(obs_sceneitem_t *item);
-OBS_DEPRECATED EXPORT uint32_t
-obs_sceneitem_get_hide_transition_duration(obs_sceneitem_t *item);
-
 EXPORT void obs_sceneitem_set_transition(obs_sceneitem_t *item, bool show,
 					 obs_source_t *transition);
 EXPORT obs_source_t *obs_sceneitem_get_transition(obs_sceneitem_t *item,
