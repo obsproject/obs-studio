@@ -5484,9 +5484,11 @@ void OBSBasicSettings::SimpleStreamingEncoderChanged()
 
 		const char *name =
 			get_simple_output_encoder(QT_TO_UTF8(encoder));
+		const bool isFFmpegEncoder = strncmp(name, "ffmpeg_", 7) == 0;
 		obs_properties_t *props = obs_get_encoder_properties(name);
 
-		obs_property_t *p = obs_properties_get(props, "preset2");
+		obs_property_t *p = obs_properties_get(
+			props, isFFmpegEncoder ? "preset2" : "preset");
 		size_t num = obs_property_list_item_count(p);
 		for (size_t i = 0; i < num; i++) {
 			const char *name = obs_property_list_item_name(p, i);
