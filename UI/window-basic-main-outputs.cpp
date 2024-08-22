@@ -819,6 +819,7 @@ void SimpleOutput::Update()
 					       "x264Settings");
 	const char *encoder = config_get_string(main->Config(), "SimpleOutput",
 						"StreamEncoder");
+	const char *encoder_id = obs_encoder_get_id(videoStreaming);
 	const char *presetType;
 	const char *preset;
 
@@ -855,11 +856,14 @@ void SimpleOutput::Update()
 	}
 
 	preset = config_get_string(main->Config(), "SimpleOutput", presetType);
-	obs_data_set_string(videoSettings,
-			    (strcmp(presetType, "NVENCPreset2") == 0)
-				    ? "preset2"
-				    : "preset",
-			    preset);
+
+	/* Only use preset2 for legacy/FFmpeg NVENC Encoder. */
+	if (strncmp(encoder_id, "ffmpeg_", 7) == 0 &&
+	    strcmp(presetType, "NVENCPreset2") == 0) {
+		obs_data_set_string(videoSettings, "preset2", preset);
+	} else {
+		obs_data_set_string(videoSettings, "preset", preset);
+	}
 
 	obs_data_set_string(videoSettings, "rate_control", "CBR");
 	obs_data_set_int(videoSettings, "bitrate", videoBitrate);
