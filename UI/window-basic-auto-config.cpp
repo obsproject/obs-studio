@@ -422,79 +422,91 @@ bool AutoConfigStreamPage::validatePage()
 	if (wiz->service == AutoConfig::Service::Twitch) {
 		wiz->testMultitrackVideo = ui->useMultitrackVideo->isChecked();
 
-		auto postData =
-			constructGoLivePost(QString::fromStdString(wiz->key),
-					    std::nullopt, std::nullopt, false);
+		if (wiz->testMultitrackVideo) {
+			auto postData = constructGoLivePost(
+				QString::fromStdString(wiz->key), std::nullopt,
+				std::nullopt, false);
 
-		OBSDataAutoRelease service_settings =
-			obs_service_get_settings(service);
-		auto multitrack_video_name =
-			QTStr("Basic.Settings.Stream.MultitrackVideoLabel");
-		if (obs_data_has_user_value(service_settings,
-					    "multitrack_video_name")) {
-			multitrack_video_name = obs_data_get_string(
-				service_settings, "multitrack_video_name");
-		}
-
-		try {
-			auto config = DownloadGoLiveConfig(
-				this, MultitrackVideoAutoConfigURL(service),
-				postData, multitrack_video_name);
-
-			for (const auto &endpoint : config.ingest_endpoints) {
-				if (qstrnicmp("RTMP", endpoint.protocol.c_str(),
-					      4) != 0)
-					continue;
-
-				std::string address = endpoint.url_template;
-				auto pos = address.find("/{stream_key}");
-				if (pos != address.npos)
-					address.erase(pos);
-
-				wiz->serviceConfigServers.push_back(
-					{address, address});
+			OBSDataAutoRelease service_settings =
+				obs_service_get_settings(service);
+			auto multitrack_video_name = QTStr(
+				"Basic.Settings.Stream.MultitrackVideoLabel");
+			if (obs_data_has_user_value(service_settings,
+						    "multitrack_video_name")) {
+				multitrack_video_name = obs_data_get_string(
+					service_settings,
+					"multitrack_video_name");
 			}
 
-			int multitrackVideoBitrate = 0;
-			for (auto &encoder_config :
-			     config.encoder_configurations) {
-				auto it =
-					encoder_config.settings.find("bitrate");
-				if (it == encoder_config.settings.end())
-					continue;
+			try {
+				auto config = DownloadGoLiveConfig(
+					this,
+					MultitrackVideoAutoConfigURL(service),
+					postData, multitrack_video_name);
 
-				if (!it->is_number_integer())
-					continue;
+				for (const auto &endpoint :
+				     config.ingest_endpoints) {
+					if (qstrnicmp("RTMP",
+						      endpoint.protocol.c_str(),
+						      4) != 0)
+						continue;
 
-				int bitrate = 0;
-				it->get_to(bitrate);
-				multitrackVideoBitrate += bitrate;
-			}
+					std::string address =
+						endpoint.url_template;
+					auto pos =
+						address.find("/{stream_key}");
+					if (pos != address.npos)
+						address.erase(pos);
 
-			// grab a streamkey from the go live config if we can
-			for (auto &endpoint : config.ingest_endpoints) {
-				const char *p = endpoint.protocol.c_str();
-				const char *auth =
-					endpoint.authentication
-						? endpoint.authentication
-							  ->c_str()
-						: nullptr;
-				if (qstrnicmp("RTMP", p, 4) == 0 && auth &&
-				    *auth) {
-					wiz->key = auth;
-					break;
+					wiz->serviceConfigServers.push_back(
+						{address, address});
 				}
-			}
 
-			if (multitrackVideoBitrate > 0) {
-				wiz->startingBitrate = multitrackVideoBitrate;
-				wiz->idealBitrate = multitrackVideoBitrate;
-				wiz->multitrackVideo.targetBitrate =
-					multitrackVideoBitrate;
-				wiz->multitrackVideo.testSuccessful = true;
+				int multitrackVideoBitrate = 0;
+				for (auto &encoder_config :
+				     config.encoder_configurations) {
+					auto it = encoder_config.settings.find(
+						"bitrate");
+					if (it == encoder_config.settings.end())
+						continue;
+
+					if (!it->is_number_integer())
+						continue;
+
+					int bitrate = 0;
+					it->get_to(bitrate);
+					multitrackVideoBitrate += bitrate;
+				}
+
+				// grab a streamkey from the go live config if we can
+				for (auto &endpoint : config.ingest_endpoints) {
+					const char *p =
+						endpoint.protocol.c_str();
+					const char *auth =
+						endpoint.authentication
+							? endpoint.authentication
+								  ->c_str()
+							: nullptr;
+					if (qstrnicmp("RTMP", p, 4) == 0 &&
+					    auth && *auth) {
+						wiz->key = auth;
+						break;
+					}
+				}
+
+				if (multitrackVideoBitrate > 0) {
+					wiz->startingBitrate =
+						multitrackVideoBitrate;
+					wiz->idealBitrate =
+						multitrackVideoBitrate;
+					wiz->multitrackVideo.targetBitrate =
+						multitrackVideoBitrate;
+					wiz->multitrackVideo.testSuccessful =
+						true;
+				}
+			} catch (const MultitrackVideoError & /*err*/) {
+				// FIXME: do something sensible
 			}
-		} catch (const MultitrackVideoError & /*err*/) {
-			// FIXME: do something sensible
 		}
 	}
 
