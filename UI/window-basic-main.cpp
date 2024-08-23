@@ -2398,6 +2398,7 @@ void OBSBasic::OBSInit()
 			ui->scenesDock->toggleViewAction());
 
 		LoadExtraBrowserDocks();
+		LoadStoredPluginBrowserDock();
 	}
 #endif
 
@@ -10568,6 +10569,10 @@ void OBSBasic::RemoveDockWidget(const QString &name)
 		extraDockNames.removeAt(idx);
 		extraDocks[idx].reset();
 		extraDocks.removeAt(idx);
+#ifdef BROWSER_AVAILABLE
+		if (pluginBrowserDockNames.contains(name))
+			pluginBrowserDockNames.removeAll(name);
+#endif
 	} else if (extraCustomDockNames.contains(name)) {
 		int idx = extraCustomDockNames.indexOf(name);
 		extraCustomDockNames.removeAt(idx);
@@ -10588,6 +10593,9 @@ bool OBSBasic::IsDockObjectNameUsed(const QString &name)
 	list << oldExtraDockNames;
 	list << extraDockNames;
 	list << extraCustomDockNames;
+#ifdef BROWSER_AVAILABLE
+	list << pluginBrowserDockNames;
+#endif
 
 	return list.contains(name);
 }
