@@ -303,6 +303,12 @@ void obs_frontend_replay_buffer_save(void)
 		c->obs_frontend_replay_buffer_save();
 }
 
+void obs_frontend_replay_buffer_save_duration(long long usec)
+{
+	if (callbacks_valid())
+		c->obs_frontend_replay_buffer_save_duration(usec);
+}
+
 void obs_frontend_replay_buffer_stop(void)
 {
 	if (callbacks_valid())
