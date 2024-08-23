@@ -5,10 +5,6 @@ find_package(OpenGL REQUIRED)
 add_library(obsglad OBJECT)
 add_library(OBS::glad ALIAS obsglad)
 
-if(OBS_CMAKE_VERSION VERSION_LESS 3.0.0)
-  add_library(OBS::obsglad ALIAS obsglad)
-endif()
-
 target_sources(
   obsglad
   PRIVATE
