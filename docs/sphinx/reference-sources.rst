@@ -1217,6 +1217,20 @@ General Source Functions
 
 ---------------------
 
+.. function:: uint64_t obs_source_get_next_audio_timestamp(const obs_source_t *source)
+
+   Gets the next audio timestamp.
+   This timestamp indicates the timestamp that the the next call of
+   :c:member:`obs_source_output_audio` should provide. If the difference
+   between the timestamp provided by :c:member:`obs_source_output_audio`
+   and the next audio timestamp is less than 70 ms, the audio will be
+   placed seamlessly.
+
+.. deprecated:: experimental
+   This is a stopgap solution until a complete solution is implemented.
+
+---------------------
+
 .. function:: void obs_source_set_audio_active(obs_source_t *source, bool active)
               bool obs_source_audio_active(const obs_source_t *source)
 

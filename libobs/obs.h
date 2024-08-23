@@ -1591,6 +1591,11 @@ EXPORT uint64_t obs_source_get_audio_timestamp(const obs_source_t *source);
 EXPORT void obs_source_get_audio_mix(const obs_source_t *source,
 				     struct obs_source_audio_mix *audio);
 
+/** Gets next_audio_ts_min as a stopgap solution until a complete solution to
+ * process the asynchronous audio is implemented. */
+OBS_DEPRECATED EXPORT uint64_t
+obs_source_get_next_audio_timestamp(const obs_source_t *source);
+
 EXPORT void obs_source_set_async_unbuffered(obs_source_t *source,
 					    bool unbuffered);
 EXPORT bool obs_source_async_unbuffered(const obs_source_t *source);
