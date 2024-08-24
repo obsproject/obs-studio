@@ -1973,6 +1973,11 @@ OBSBasicAdvAudio #scrollAreaWidgetContents {
     border-color: var(--input_border_hover);
 }
 
+#previewScalingMode:on {
+    background-color: var(--input_bg_focus);
+    border-color: var(--input_border_focus);
+}
+
 #previewXScrollBar,
 #previewYScrollBar {
     background: transparent;
@@ -1992,4 +1997,31 @@ OBSBasicAdvAudio #scrollAreaWidgetContents {
 
 #previewYScrollBar {
     width: 16px;
+}
+
+#previewZoomInButton {
+    border: none;
+    border-radius: 0px;
+    outline: none;
+}
+
+#previewZoomOutButton {
+    border: none;
+    border-radius: 0px;
+    outline: none;
+}
+
+#previewZoomInButton:!hover,
+#previewZoomOutButton:!hover {
+    background-color: transparent;
+}
+
+#previewZoomInButton:pressed,
+#previewZoomOutButton:pressed {
+    background-color: var(--button_bg);
+}
+
+#previewZoomInButton:focus,
+#previewZoomOutButton:focus {
+    border: 1px solid var(--input_border_hover);
 }
