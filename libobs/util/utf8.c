@@ -133,7 +133,7 @@ static int utf8_forbidden(unsigned char octet)
 size_t utf8_to_wchar(const char *in, size_t insize, wchar_t *out,
 		     size_t outsize, int flags)
 {
-	unsigned char *p, *lim;
+	const unsigned char *p, *lim;
 	wchar_t *wlim, high;
 	size_t n, total, i, n_bits;
 
@@ -141,8 +141,8 @@ size_t utf8_to_wchar(const char *in, size_t insize, wchar_t *out,
 		return 0;
 
 	total = 0;
-	p = (unsigned char *)in;
-	lim = (insize != 0) ? (p + insize) : (unsigned char *)-1;
+	p = (const unsigned char *)in;
+	lim = (insize != 0) ? (p + insize) : (const unsigned char *)-1;
 	wlim = out == NULL ? NULL : out + outsize;
 
 	for (; p < lim; p += n) {
@@ -262,15 +262,16 @@ size_t utf8_to_wchar(const char *in, size_t insize, wchar_t *out,
 size_t wchar_to_utf8(const wchar_t *in, size_t insize, char *out,
 		     size_t outsize, int flags)
 {
-	wchar_t *w, *wlim, ch = 0;
+	const wchar_t *w, *wlim;
+	wchar_t ch = 0;
 	unsigned char *p, *lim, *oc;
 	size_t total, n;
 
 	if (in == NULL || (outsize == 0 && out != NULL))
 		return 0;
 
-	w = (wchar_t *)in;
-	wlim = (insize != 0) ? (w + insize) : (wchar_t *)-1;
+	w = in;
+	wlim = (insize != 0) ? (w + insize) : (const wchar_t *)-1;
 	p = (unsigned char *)out;
 	lim = out == NULL ? NULL : p + outsize;
 	total = 0;
