@@ -237,17 +237,8 @@ obs_data_array_t *OBSBasic::SaveQuickTransitions()
 
 obs_source_t *OBSBasic::FindTransition(const char *name)
 {
-	for (int i = 0; i < ui->transitions->count(); i++) {
-		OBSSource tr = ui->transitions->itemData(i).value<OBSSource>();
-		if (!tr)
-			continue;
-
-		const char *trName = obs_source_get_name(tr);
-		if (strcmp(trName, name) == 0)
-			return tr;
-	}
-
-	return nullptr;
+	OBSSourceAutoRelease source = obs_get_transition_by_name(name);
+	return source.Get();
 }
 
 void OBSBasic::TransitionToScene(OBSScene scene, bool force)
