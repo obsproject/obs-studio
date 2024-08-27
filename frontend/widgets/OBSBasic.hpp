@@ -915,7 +915,6 @@ public slots:
 	 * -------------------------------------
 	 */
 private:
-	std::vector<SavedProjectorInfo *> savedProjectorsArray;
 	std::vector<OBSProjector *> projectors;
 	QPointer<QMenu> previewProjector;
 	QPointer<QMenu> previewProjectorSource;
@@ -942,7 +941,6 @@ private slots:
 	void OpenSceneWindow();
 
 public:
-	void OpenSavedProjectors();
 	void DeleteProjector(OBSProjector *projector);
 
 	static QList<QString> GetProjectorMenuMonitorsFormatted();

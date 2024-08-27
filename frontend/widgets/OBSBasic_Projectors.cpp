@@ -63,25 +63,20 @@ obs_data_array_t *OBSBasic::SaveProjectors()
 
 void OBSBasic::LoadSavedProjectors(obs_data_array_t *array)
 {
-	for (SavedProjectorInfo *info : savedProjectorsArray) {
-		delete info;
-	}
-	savedProjectorsArray.clear();
-
 	size_t num = obs_data_array_count(array);
 
 	for (size_t i = 0; i < num; i++) {
 		OBSDataAutoRelease data = obs_data_array_item(array, i);
+		SavedProjectorInfo info = {};
 
-		SavedProjectorInfo *info = new SavedProjectorInfo();
-		info->monitor = obs_data_get_int(data, "monitor");
-		info->type = static_cast<ProjectorType>(obs_data_get_int(data, "type"));
-		info->geometry = std::string(obs_data_get_string(data, "geometry"));
-		info->name = std::string(obs_data_get_string(data, "name"));
-		info->alwaysOnTop = obs_data_get_bool(data, "alwaysOnTop");
-		info->alwaysOnTopOverridden = obs_data_get_bool(data, "alwaysOnTopOverridden");
+		info.monitor = obs_data_get_int(data, "monitor");
+		info.type = static_cast<ProjectorType>(obs_data_get_int(data, "type"));
+		info.geometry = std::string(obs_data_get_string(data, "geometry"));
+		info.name = std::string(obs_data_get_string(data, "name"));
+		info.alwaysOnTop = obs_data_get_bool(data, "alwaysOnTop");
+		info.alwaysOnTopOverridden = obs_data_get_bool(data, "alwaysOnTopOverridden");
 
-		savedProjectorsArray.emplace_back(info);
+		OpenSavedProjector(&info);
 	}
 }
 
@@ -223,13 +218,6 @@ void OBSBasic::OpenSceneWindow()
 	OBSSource source = obs_scene_get_source(scene);
 
 	OpenProjector(obs_scene_get_source(scene), -1, ProjectorType::Scene);
-}
-
-void OBSBasic::OpenSavedProjectors()
-{
-	for (SavedProjectorInfo *info : savedProjectorsArray) {
-		OpenSavedProjector(info);
-	}
 }
 
 void OBSBasic::OpenSavedProjector(SavedProjectorInfo *info)
