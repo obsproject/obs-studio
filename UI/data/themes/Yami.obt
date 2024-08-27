@@ -1390,7 +1390,7 @@ QLabel#errorLabel {
 }
 
 * [themeID="warning"] {
-    color: var(--danger);
+    color: var(--warning);
     font-weight: bold;
 }
 
