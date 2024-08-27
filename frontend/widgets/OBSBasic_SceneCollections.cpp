@@ -1279,7 +1279,6 @@ retryScene:
 
 		if (savedProjectors) {
 			LoadSavedProjectors(savedProjectors);
-			OpenSavedProjectors();
 			activateWindow();
 		}
 	}

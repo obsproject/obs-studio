@@ -566,7 +566,6 @@ void OBSBasic::ResetProjectors()
 	OBSDataArrayAutoRelease savedProjectorList = SaveProjectors();
 	ClearProjectors();
 	LoadSavedProjectors(savedProjectorList);
-	OpenSavedProjectors();
 }
 
 void OBSBasic::UpdatePreviewSafeAreas()
