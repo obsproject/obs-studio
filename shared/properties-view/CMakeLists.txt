@@ -40,10 +40,6 @@ target_sources(
 )
 target_include_directories(properties-view INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
 
-if(OS_LINUX AND Qt6_VERSION VERSION_LESS 6.3)
-  target_compile_options(properties-view INTERFACE -Wno-error=enum-conversion)
-endif()
-
 target_link_libraries(
   properties-view
   INTERFACE
