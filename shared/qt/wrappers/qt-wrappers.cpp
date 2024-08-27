@@ -17,7 +17,6 @@
 
 #include "moc_qt-wrappers.cpp"
 
-#include <graphics/graphics.h>
 #include <util/threading.h>
 #include <QWidget>
 #include <QLayout>
