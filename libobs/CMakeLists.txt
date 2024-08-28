@@ -4,6 +4,11 @@ legacy_check()
 
 include(cmake/obs-version.cmake)
 
+if(OS_WINDOWS AND NOT OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_GENERATOR_PLATFORM)
+  include(cmake/os-windows.cmake)
+  return()
+endif()
+
 find_package(Threads REQUIRED)
 
 find_package(FFmpeg 6.1 REQUIRED avformat avutil swscale swresample OPTIONAL_COMPONENTS avcodec)
