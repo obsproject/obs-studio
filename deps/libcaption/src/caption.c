@@ -279,7 +279,7 @@ libcaption_stauts_t caption_frame_decode_text(caption_frame_t* frame, uint16_t c
     size_t chars = eia608_to_utf8(cc_data, &chan, &char1[0], &char2[0]);
 
     if (eia608_is_westeu(cc_data)) {
-        // Extended charcters replace the previous charcter for back compatibility
+        // Extended characters replace the previous character for back compatibility
         caption_frame_backspace(frame);
     }
 
@@ -310,7 +310,7 @@ libcaption_stauts_t caption_frame_decode(caption_frame_t* frame, uint16_t cc_dat
         frame->timestamp = timestamp;
     }
 
-    // skip duplicate controll commands. We also skip duplicate specialna to match the behaviour of iOS/vlc
+    // skip duplicate control commands. We also skip duplicate specialna to match the behaviour of iOS/vlc
     if ((eia608_is_specialna(cc_data) || eia608_is_control(cc_data)) && cc_data == frame->state.cc_data) {
         frame->status = LIBCAPTION_OK;
         return frame->status;
@@ -361,7 +361,7 @@ int caption_frame_from_text(caption_frame_t* frame, const utf8_char_t* data)
             data += s, size -= (ssize_t)s;
         }
 
-        // get charcter count for wrap (or orest of line)
+        // get character count for wrap (or orest of line)
         utf8_size_t char_count = utf8_wrap_length(data, SCREEN_COLS);
         // write to caption frame
         for (size_t c = 0; c < char_count; ++c) {

@@ -83,7 +83,7 @@ set(CMAKE_XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT[variant=RelWithDebInfo] dwarf
 set(CMAKE_XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT[variant=Release] dwarf-with-dsym)
 set(CMAKE_XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT[variant=MinSizeRel] dwarf-with-dsym)
 
-# Make all symbols hidden by default (currently overriden by CMake's compiler flags)
+# Make all symbols hidden by default (currently overridden by CMake's compiler flags)
 set(CMAKE_XCODE_ATTRIBUTE_GCC_SYMBOLS_PRIVATE_EXTERN YES)
 set(CMAKE_XCODE_ATTRIBUTE_GCC_INLINES_ARE_PRIVATE_EXTERN YES)
 

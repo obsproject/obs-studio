@@ -98,7 +98,7 @@
     --padding_base_value: 4; /* TODO: Min 0.25, Max 10, Step 2 */
 
     --border_highlight: "transparent"; /* TODO: Better Accessibility focus state */
-    /* TODO: Move Accessibilty Colors to Theme config system */
+    /* TODO: Move Accessibility Colors to Theme config system */
 
     /* OS Fixes */
     --os_mac_font_base_value: 12;

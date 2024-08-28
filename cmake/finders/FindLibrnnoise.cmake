@@ -100,7 +100,7 @@ find_library(
 if(CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin|Windows")
   set(Librnnoise_ERROR_REASON "Ensure that obs-deps is provided as part of CMAKE_PREFIX_PATH.")
 elseif(CMAKE_HOST_SYSTEM_NAME MATCHES "Linux|FreeBSD")
-  set(Librnnoise_ERROR_REASON "Ensure librnnoise libraries are available in local libary paths.")
+  set(Librnnoise_ERROR_REASON "Ensure librnnoise libraries are available in local library paths.")
 endif()
 
 find_package_handle_standard_args(

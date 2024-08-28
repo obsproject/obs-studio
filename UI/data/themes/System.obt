@@ -14,7 +14,7 @@
     author: 'Warchamp7';
 }
 
-/* We need to set back the icons, or the preview wont stick. */
+/* We need to set back the icons, or the preview won't stick. */
 
 * [themeID="addIconSmall"] {
     qproperty-icon: url(:/res/images/plus.svg);

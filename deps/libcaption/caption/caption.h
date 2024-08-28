@@ -85,7 +85,7 @@ typedef struct {
 
 /*!
     \brief Initializes an allocated caption_frame_t instance
-    \param frame Pointer to prealocated caption_frame_t object
+    \param frame Pointer to preallocated caption_frame_t object
 */
 void caption_frame_init(caption_frame_t* frame);
 /*! \brief
@@ -105,13 +105,13 @@ static inline int caption_frame_rollup(caption_frame_t* frame) { return _caption
     \param
 */
 static inline double caption_frame_timestamp(caption_frame_t* frame) { return frame->timestamp; }
-/*! \brief Writes a single charcter to a caption_frame_t object
-    \param frame A pointer to an allocted and initialized caption_frame_t object
-    \param row Row position to write charcter, must be between 0 and SCREEN_ROWS-1
-    \param col Column position to write charcter, must be between 0 and SCREEN_ROWS-1
-    \param style Style to apply to charcter
+/*! \brief Writes a single character to a caption_frame_t object
+    \param frame A pointer to an allocated and initialized caption_frame_t object
+    \param row Row position to write character, must be between 0 and SCREEN_ROWS-1
+    \param col Column position to write character, must be between 0 and SCREEN_ROWS-1
+    \param style Style to apply to character
     \param underline Set underline attribute, 0 = off any other value = on
-    \param c pointer to a single valid utf8 charcter. Bytes are automatically determined, and a NULL terminator is not required
+    \param c pointer to a single valid utf8 character. Bytes are automatically determined, and a NULL terminator is not required
 */
 int caption_frame_write_char(caption_frame_t* frame, int row, int col, eia608_style_t style, int underline, const utf8_char_t* c);
 /*! \brief

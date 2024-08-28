@@ -821,7 +821,7 @@ static inline void mp4_write_audio_sample_entry(struct mp4_mux *mux,
 	s_wb16(s, (uint32_t)channels); // channelcount
 
 	/* OBS FLAC is currently always 16 bit, ALAC always 24, this may change
-	 * in the futrure and should be handled differently then.
+	 * in the future and should be handled differently then.
 	 * That being said thoes codecs are self-describing so in most cases it
 	 * shouldn't matter either way. */
 	s_wb16(s, alac ? 24 : 16); // samplesize
@@ -881,7 +881,7 @@ static size_t mp4_write_mp4a(struct mp4_mux *mux, struct mp4_track *track,
 	// esds
 	mp4_write_esds(mux, track);
 
-	/* Write channel layout for version 1 sample entires */
+	/* Write channel layout for version 1 sample entries */
 	if (version == 1)
 		mp4_write_chnl(mux, track);
 
@@ -2388,11 +2388,11 @@ static void process_packets(struct mp4_mux *mux, struct mp4_track *track,
 		if (pkt->keyframe)
 			da_push_back(track->sync_samples, &track->samples);
 
-		/* Only require ctts box if offet is non-zero */
+		/* Only require ctts box if offset is non-zero */
 		if (offset && !track->needs_ctts)
 			track->needs_ctts = true;
 
-		/* If dts-pts offset matche sprevious, increment counter,
+		/* If dts-pts offset matches previous, increment counter,
 		 * otherwise create a new entry. */
 		if (track->offsets.num == 0 ||
 		    track->offsets.array[track->offsets.num - 1].offset !=

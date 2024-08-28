@@ -159,7 +159,7 @@ typedef struct av_capture_info {
 /// Reads a C-character pointer from user settings and converts it into an [NSString](https://developer.apple.com/documentation/foundation/nsstring?language=objc) instance.
 /// - Parameters:
 ///   - settings: Pointer to user settings struct used by ``libobs``
-///   - setting: String identifer for setting
+///   - setting: String identifier for setting
 ///   - widthDefault: Optional fallback value to use if C-character pointer read from settings is invalid
 /// - Returns: New [NSString](https://developer.apple.com/documentation/foundation/nsstring?language=objc) instance created from user setting if setting represented a valid C character pointer.
 + (NSString *)stringFromSettings:(void *)settings withSetting:(NSString *)setting withDefault:(NSString *)defaultValue;

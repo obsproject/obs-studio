@@ -77,7 +77,7 @@ OBSBasicControls::OBSBasicControls(OBSBasic *main)
 		[this]() { emit this->ForceStopStreamMenuActionClicked(); },
 		Qt::DirectConnection);
 
-	/* Set up default visibilty */
+	/* Set up default visibility */
 	ui->broadcastButton->setVisible(false);
 	ui->pauseRecordButton->setVisible(false);
 	ui->replayBufferButton->setVisible(false);

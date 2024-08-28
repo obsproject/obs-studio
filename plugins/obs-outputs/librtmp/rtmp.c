@@ -3550,7 +3550,7 @@ SAVC(audio);
 static int
 HandleMetadata(RTMP *r, char *body, unsigned int len)
 {
-    /* allright we get some info here, so parse it and print it */
+    /* alright we get some info here, so parse it and print it */
     /* also keep duration or filesize to make a nice progress bar */
 
     AMFObject obj;
@@ -3835,7 +3835,7 @@ RTMP_ReadPacket(RTMP *r, RTMPPacket *packet)
         int tmp;
         if (ReadN(r, (char *)&hbuf[1], 2) != 2)
         {
-            RTMP_Log(RTMP_LOGERROR, "%s, failed to read RTMP packet header 3nd byte",
+            RTMP_Log(RTMP_LOGERROR, "%s, failed to read RTMP packet header 3rd byte",
                      __FUNCTION__);
             return FALSE;
         }
@@ -4841,7 +4841,7 @@ Read_1_Packet(RTMP *r, char *buf, unsigned int buflen)
                         }
                     }
 
-                    /* hande FLV streams, even though the server resends the
+                    /* handle FLV streams, even though the server resends the
                      * keyframe as an extra video packet it is also included
                      * in the first FLV stream chunk and we have to compare
                      * it and filter it out !!
@@ -5146,7 +5146,7 @@ stopKeyframeSearch:
                     {
 #ifdef _DEBUG
                         RTMP_Log(RTMP_LOGWARNING,
-                                 "Tag and data size are not consitent, writing tag size according to dataSize+11: %d",
+                                 "Tag and data size are not consistent, writing tag size according to dataSize+11: %d",
                                  dataSize + 11);
 #endif
 

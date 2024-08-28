@@ -2325,8 +2325,8 @@ void OBSBasic::OBSInit()
 #endif
 	struct obs_module_failure_info mfi;
 
-	/* Safe Mode disables third-party plugins so we don't need to add earch
-	 * paths outside the OBS bundle/installation. */
+	/* Safe Mode disables third-party plugins so we don't need to add each
+	 * path outside the OBS bundle/installation. */
 	if (safe_mode || disable_3p_plugins) {
 		SetSafeModuleNames();
 	} else {
