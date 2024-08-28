@@ -9,6 +9,7 @@
 #include "service-specific/nimotv.h"
 #include "service-specific/showroom.h"
 #include "service-specific/dacast.h"
+#include "service-specific/amazon-ivs.h"
 
 struct rtmp_common {
 	char *service;
@@ -429,8 +430,9 @@ static bool fill_twitch_servers_locked(obs_property_t *servers_prop)
 		return false;
 
 	for (size_t i = 0; i < count; i++) {
-		struct twitch_ingest ing = twitch_ingest(i);
-		obs_property_list_add_string(servers_prop, ing.name, ing.url);
+		struct ingest twitch_ing = twitch_ingest(i);
+		obs_property_list_add_string(servers_prop, twitch_ing.name,
+					     twitch_ing.url);
 	}
 
 	return true;
@@ -466,18 +468,20 @@ static bool fill_amazon_ivs_servers_locked(obs_property_t *servers_prop)
 
 	if (rtmps_available) {
 		for (size_t i = 0; i < count; i++) {
-			struct twitch_ingest ing = amazon_ivs_ingest(i);
-			dstr_printf(&name_buffer, "%s (RTMPS)", ing.name);
-			obs_property_list_add_string(
-				servers_prop, name_buffer.array, ing.rtmps_url);
+			struct ingest amazon_ivs_ing = amazon_ivs_ingest(i);
+			dstr_printf(&name_buffer, "%s (RTMPS)",
+				    amazon_ivs_ing.name);
+			obs_property_list_add_string(servers_prop,
+						     name_buffer.array,
+						     amazon_ivs_ing.rtmps_url);
 		}
 	}
 
 	for (size_t i = 0; i < count; i++) {
-		struct twitch_ingest ing = amazon_ivs_ingest(i);
-		dstr_printf(&name_buffer, "%s (RTMP)", ing.name);
+		struct ingest amazon_ivs_ing = amazon_ivs_ingest(i);
+		dstr_printf(&name_buffer, "%s (RTMP)", amazon_ivs_ing.name);
 		obs_property_list_add_string(servers_prop, name_buffer.array,
-					     ing.url);
+					     amazon_ivs_ing.url);
 	}
 
 	dstr_free(&name_buffer);
@@ -868,31 +872,32 @@ static const char *rtmp_common_url(void *data)
 
 	if (service->service && strcmp(service->service, "Twitch") == 0) {
 		if (service->server && strcmp(service->server, "auto") == 0) {
-			struct twitch_ingest ing;
+			struct ingest twitch_ing;
 
 			twitch_ingests_refresh(3);
 
 			twitch_ingests_lock();
-			ing = twitch_ingest(0);
+			twitch_ing = twitch_ingest(0);
 			twitch_ingests_unlock();
 
-			return ing.url;
+			return twitch_ing.url;
 		}
 	}
 
 	if (service->service && strcmp(service->service, "Amazon IVS") == 0) {
 		if (service->server &&
 		    strncmp(service->server, "auto", 4) == 0) {
-			struct twitch_ingest ing;
+			struct ingest amazon_ivs_ing;
 			bool rtmp = strcmp(service->server, "auto-rtmp") == 0;
 
 			amazon_ivs_ingests_refresh(3);
 
 			amazon_ivs_ingests_lock();
-			ing = amazon_ivs_ingest(0);
+			amazon_ivs_ing = amazon_ivs_ingest(0);
 			amazon_ivs_ingests_unlock();
 
-			return rtmp ? ing.url : ing.rtmps_url;
+			return rtmp ? amazon_ivs_ing.url
+				    : amazon_ivs_ing.rtmps_url;
 		}
 	}
 

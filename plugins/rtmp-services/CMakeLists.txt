@@ -29,10 +29,14 @@ target_sources(
     rtmp-custom.c
     rtmp-format-ver.h
     rtmp-services-main.c
+    service-specific/amazon-ivs.c
+    service-specific/amazon-ivs.h
     service-specific/dacast.c
     service-specific/dacast.h
     service-specific/nimotv.c
     service-specific/nimotv.h
+    service-specific/service-ingest.c
+    service-specific/service-ingest.h
     service-specific/showroom.c
     service-specific/showroom.h
     service-specific/twitch.c
