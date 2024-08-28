@@ -2558,6 +2558,10 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 	matrix4_identity(&item->draw_transform);
 	matrix4_identity(&item->box_transform);
 
+	/* Ensure initial position is still top-left corner in relative mode. */
+	if (!item->absolute_coordinates)
+		pos_from_absolute(&item->pos, &item->pos, item);
+
 	if (source_has_audio(source)) {
 		item->visible = false;
 		da_push_back(item->audio_actions, &action);
