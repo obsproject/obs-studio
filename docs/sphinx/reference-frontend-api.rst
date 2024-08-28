@@ -239,11 +239,11 @@ Structures/Enumerations
 
    Undo redo callback
 
-.. type:: video_t *(*multitrack_video_start_cb)(void *private_data)
+.. type:: video_t *(*obs_frontend_multitrack_video_start_cb)(const char *name, void *private_data)
 
    Multitrack video start callback
 
-.. type:: void (*multitrack_video_stop_cb)(video_t *video, void *private_data)
+.. type:: void (*obs_frontend_multitrack_video_stop_cb)(const char *name, video_t *video, void *private_data)
 
    Multitrack video stop callback
 
@@ -983,7 +983,7 @@ Functions
 
 ---------------------------------------
 
-.. function:: void obs_frontend_multitrack_video_register(const char *name, multitrack_video_start_cb start_video, multitrack_video_stop_cb stop_video, void *private_data)
+.. function:: void obs_frontend_multitrack_video_register(const char *name, obs_frontend_multitrack_video_start_cb start_video, obs_frontend_multitrack_video_stop_cb stop_video, void *private_data)
 
    :param name: Name to register
    :param start_video: Callback to get video to use
