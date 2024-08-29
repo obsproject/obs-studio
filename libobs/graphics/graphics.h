@@ -499,6 +499,8 @@ struct gs_init_data {
 
 #define GS_DEVICE_OPENGL 1
 #define GS_DEVICE_DIRECT3D_11 2
+// not implement
+#define GS_DEVICE_DIRECT3D_12 2
 
 EXPORT const char *gs_get_device_name(void);
 EXPORT int gs_get_device_type(void);
