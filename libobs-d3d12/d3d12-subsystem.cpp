@@ -39,7 +39,7 @@ struct UnsupportedHWError : HRError {
 #pragma warning(disable : 4316)
 #endif
 
-static inline void LogD3D11ErrorDetails(HRError error, gs_device_t *device)
+static inline void LogD3D12ErrorDetails(HRError error, gs_device_t *device)
 {
 	if (error.hr == DXGI_ERROR_DEVICE_REMOVED) {
 		HRESULT DeviceRemovedReason =
@@ -125,15 +125,21 @@ make_swap_desc(gs_device *device, DXGI_SWAP_CHAIN_DESC &desc,
 	return space;
 }
 
-void gs_device::InitFactory() {}
+void gs_device::InitFactory()
+{
+	HRESULT hr = CreateDXGIFactory2(0, IID_PPV_ARGS(&factory));
+	if (FAILED(hr))
+		throw UnsupportedHWError("Failed to create DXGIFactory6", hr);
+}
 
-void gs_device::InitAdapter(uint32_t adapterIdx) {}
-
-const static D3D_FEATURE_LEVEL featureLevels[] = {
-	D3D_FEATURE_LEVEL_12_0, D3D_FEATURE_LEVEL_12_1, D3D_FEATURE_LEVEL_12_2};
-
-#define NV12_CX 128
-#define NV12_CY 128
+void gs_device::InitAdapter(uint32_t adapterIdx)
+{
+	HRESULT hr = factory->EnumAdapterByGpuPreference(
+		adapterIdx, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE,
+		IID_PPV_ARGS(&adapter));
+	if (FAILED(hr))
+		throw UnsupportedHWError("Failed to enumerate DXGIAdapter4", hr);
+}
 
 bool gs_device::HasBadNV12Output()
 try {
@@ -147,13 +153,23 @@ try {
 	return false;
 }
 
-void gs_device::InitDevice(uint32_t adapterIdx) {}
+void gs_device::InitDevice(uint32_t adapterIdx) {
+	DXGI_ADAPTER_DESC3 desc;
+	HRESULT hr = adapter->GetDesc3(&desc);
+	if (hr != S_OK) {
+		throw UnsupportedHWError("Adapter4 Failed to GetDesc", hr);
+	}
+	// todo log desc info
+	hr = D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_12_2, IID_PPV_ARGS(&device));
+	if (FAILED(hr)) {
+		throw UnsupportedHWError("Failed to D3D12CreateDevice", hr);
+	}
+}
 
-void gs_device::UpdateZStencilState() {}
+void gs_device::UpdatePipelineState() {
 
-void gs_device::UpdateRasterState() {}
+}
 
-void gs_device::UpdateBlendState() {}
 
 void gs_device::UpdateViewProjMatrix()
 {
@@ -172,7 +188,7 @@ void gs_device::UpdateViewProjMatrix()
 void gs_device::FlushOutputViews() {}
 
 gs_device::gs_device(uint32_t adapterIdx)
-	: curToplogy(D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED)
+	: curToplogy(D3D_PRIMITIVE_TOPOLOGY_UNDEFINED)
 {
 	matrix4_identity(&curProjMatrix);
 	matrix4_identity(&curViewMatrix);
@@ -214,8 +230,9 @@ int device_create(gs_device_t **p_device, uint32_t adapter)
 	int errorcode = GS_SUCCESS;
 
 	try {
+		blog(LOG_INFO, "----------------------------------");
+		blog(LOG_INFO, "Initializing D3D12...");
 		device = new gs_device(adapter);
-
 	} catch (const UnsupportedHWError &error) {
 		blog(LOG_ERROR, "device_create (D3D12): %s (%08lX)", error.str,
 		     error.hr);

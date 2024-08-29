@@ -19,12 +19,8 @@ target_link_libraries(libobs-d3d12 PRIVATE OBS::libobs)
 
 set_target_properties_obs(
   libobs-d3d12
-  PROPERTIES
-  FOLDER
-  core
-  VERSION
-  0
-  SOVERSION
-  ${OBS_VERSION_MAJOR}
-  COMPILE_WARNING_AS_ERROR
-  FALSE)
+  PROPERTIES FOLDER core
+             VERSION 0
+             SOVERSION ${OBS_VERSION_MAJOR}
+             COMPILE_WARNING_AS_ERROR FALSE
+)
