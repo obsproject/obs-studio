@@ -521,7 +521,7 @@ struct gs_pixel_shader : gs_shader {
 struct gs_swap_chain : gs_obj {
 	HWND hwnd;
 	gs_init_data initData;
-	DXGI_SWAP_CHAIN_DESC swapDesc = {};
+	DXGI_SWAP_CHAIN_DESC1 swapDesc = {};
 	gs_color_space space;
 
 	gs_texture_2d target;
@@ -534,7 +534,6 @@ struct gs_swap_chain : gs_obj {
 	void Resize(uint32_t cx, uint32_t cy, gs_color_format format);
 	void Init();
 	// todo
-	void Rebuild(ID3D12Device *dev);
 
 	gs_swap_chain(gs_device *device, const gs_init_data *data);
 	virtual ~gs_swap_chain();
@@ -555,25 +554,24 @@ struct BlendState {
 
 	inline BlendState()
 		: blendEnabled(true),
-		  srcFactorC(GS_BLEND_SRCALPHA),
-		  destFactorC(GS_BLEND_INVSRCALPHA),
-		  srcFactorA(GS_BLEND_ONE),
-		  destFactorA(GS_BLEND_INVSRCALPHA),
-		  op(GS_BLEND_OP_ADD),
-		  redEnabled(true),
-		  greenEnabled(true),
-		  blueEnabled(true),
-		  alphaEnabled(true)
+		srcFactorC(GS_BLEND_SRCALPHA),
+		destFactorC(GS_BLEND_INVSRCALPHA),
+		srcFactorA(GS_BLEND_ONE),
+		destFactorA(GS_BLEND_INVSRCALPHA),
+		op(GS_BLEND_OP_ADD),
+		redEnabled(true),
+		greenEnabled(true),
+		blueEnabled(true),
+		alphaEnabled(true)
 	{
 	}
 
-	inline BlendState(const BlendState &state)
+	inline BlendState(const BlendState& state)
 	{
 		memcpy(this, &state, sizeof(BlendState));
 	}
 };
 
-struct SavedBlendState : BlendState {};
 
 struct StencilSide {
 	gs_depth_test test;
@@ -583,9 +581,9 @@ struct StencilSide {
 
 	inline StencilSide()
 		: test(GS_ALWAYS),
-		  fail(GS_KEEP),
-		  zfail(GS_KEEP),
-		  zpass(GS_KEEP)
+		fail(GS_KEEP),
+		zfail(GS_KEEP),
+		zpass(GS_KEEP)
 	{
 	}
 };
@@ -602,20 +600,18 @@ struct ZStencilState {
 
 	inline ZStencilState()
 		: depthEnabled(true),
-		  depthWriteEnabled(true),
-		  depthFunc(GS_LESS),
-		  stencilEnabled(false),
-		  stencilWriteEnabled(true)
+		depthWriteEnabled(true),
+		depthFunc(GS_LESS),
+		stencilEnabled(false),
+		stencilWriteEnabled(true)
 	{
 	}
 
-	inline ZStencilState(const ZStencilState &state)
+	inline ZStencilState(const ZStencilState& state)
 	{
 		memcpy(this, &state, sizeof(ZStencilState));
 	}
 };
-
-struct SavedZStencilState : ZStencilState {};
 
 struct RasterState {
 	gs_cull_mode cullMode;
@@ -623,13 +619,11 @@ struct RasterState {
 
 	inline RasterState() : cullMode(GS_BACK), scissorEnabled(false) {}
 
-	inline RasterState(const RasterState &state)
+	inline RasterState(const RasterState& state)
 	{
 		memcpy(this, &state, sizeof(RasterState));
 	}
 };
-
-struct SavedRasterState : RasterState {};
 
 struct mat4float {
 	float mat[16];
@@ -649,10 +643,16 @@ struct gs_monitor_color_info {
 	}
 };
 
+struct SavedPipelineState {
+	ComPtr<ID3D12PipelineState> pipeline_state;
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC desc;
+};
+
 struct gs_device {
 	ComPtr<IDXGIFactory6> factory;
 	ComPtr<IDXGIAdapter4> adapter;
 	ComPtr<ID3D12Device1> device;
+	ComPtr<ID3D12CommandQueue> commandQueue;
 	ComPtr<ID3D12GraphicsCommandList2> context;
 	uint32_t adpIdx = 0;
 	bool nv12Supported = false;
@@ -676,19 +676,16 @@ struct gs_device {
 	gs_vertex_buffer *lastVertexBuffer = nullptr;
 	gs_vertex_shader *lastVertexShader = nullptr;
 
+	// pipeline state
 	bool zstencilStateChanged = true;
 	bool rasterStateChanged = true;
 	bool blendStateChanged = true;
 	ZStencilState zstencilState;
 	RasterState rasterState;
 	BlendState blendState;
-	std::vector<SavedZStencilState> zstencilStates;
-	std::vector<SavedRasterState> rasterStates;
-	std::vector<SavedBlendState> blendStates;
-	// ID3D12DepthStencilState *curDepthStencilState = nullptr;
-	// ID3D12RasterizerState *curRasterState = nullptr;
-	// ID3D12BlendState *curBlendState = nullptr;
+	std::vector<SavedPipelineState> SavedPipelineState;
 	D3D_PRIMITIVE_TOPOLOGY curToplogy;
+	ComPtr<ID3D12PipelineState> currentPipelineState;
 
 	gs_rect viewport;
 
@@ -707,18 +704,9 @@ struct gs_device {
 	void InitAdapter(uint32_t adapterIdx);
 	void InitDevice(uint32_t adapterIdx);
 
-	// ID3D11DepthStencilState *AddZStencilState();
-	// ID3D11RasterizerState *AddRasterState();
-	// ID3D11BlendState *AddBlendState();
-	void UpdateZStencilState();
-	void UpdateRasterState();
-	void UpdateBlendState();
+	void UpdatePipelineState();
 
 	void LoadVertexBufferData();
-
-	// void CopyTex(ID3D11Texture2D *dst, uint32_t dst_x, uint32_t dst_y,
-	//	     gs_texture_t *src, uint32_t src_x, uint32_t src_y,
-	//	     uint32_t src_w, uint32_t src_h);
 
 	void UpdateViewProjMatrix();
 
