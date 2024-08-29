@@ -978,7 +978,8 @@ void device_copy_texture_region(gs_device_t *device, gs_texture_t *dst,
 		goto fail;
 	}
 
-	if (dst->format != src->format) {
+	if (gs_generalize_format(dst->format) !=
+	    gs_generalize_format(src->format)) {
 		blog(LOG_ERROR, "Source and destination formats do not match");
 		goto fail;
 	}
