@@ -3987,7 +3987,7 @@
                                 <number>9</number>
                                </property>
                                <item row="0" column="0" colspan="2">
-                                <widget class="QLabel" name="label_10">
+                                <widget class="QLabel" name="label_19">
                                  <property name="text">
                                   <string>Basic.Settings.Output.Adv.FFmpeg.CustomModeWarning</string>
                                  </property>
