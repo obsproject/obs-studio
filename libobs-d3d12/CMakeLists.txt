@@ -17,8 +17,6 @@ target_compile_definitions(
 
 target_link_libraries(libobs-d3d12 PRIVATE OBS::libobs)
 
-# target_enable_feature(libobs "Direct3D 12 renderer")
-
 set_target_properties_obs(
   libobs-d3d12
   PROPERTIES
