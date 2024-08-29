@@ -51,10 +51,10 @@ OAuthLogin::OAuthLogin(QWidget *parent, const std::string &url, bool token)
 		return;
 	}
 
-	connect(cefWidget, SIGNAL(titleChanged(const QString &)), this,
-		SLOT(setWindowTitle(const QString &)));
-	connect(cefWidget, SIGNAL(urlChanged(const QString &)), this,
-		SLOT(urlChanged(const QString &)));
+	connect(cefWidget, &QCefWidget::titleChanged, this,
+		&OAuthLogin::setWindowTitle);
+	connect(cefWidget, &QCefWidget::urlChanged, this,
+		&OAuthLogin::urlChanged);
 
 	QPushButton *close = new QPushButton(QTStr("Cancel"));
 	connect(close, &QAbstractButton::clicked, this, &QDialog::reject);
