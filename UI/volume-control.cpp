@@ -1008,7 +1008,7 @@ VolumeMeter::calculateBallisticsForChannel(int channelNr, uint64_t ts,
 		float decay = float(peakDecayRate * timeSinceLastRedraw);
 		displayPeak[channelNr] =
 			std::clamp(displayPeak[channelNr] - decay,
-				   currentPeak[channelNr], 0.f);
+				   std::min(currentPeak[channelNr], 0.f), 0.f);
 	}
 
 	if (currentPeak[channelNr] >= displayPeakHold[channelNr] ||
