@@ -2836,8 +2836,8 @@ void OBSBasic::ShowWhatsNew(const QString &url)
 		return;
 	}
 
-	connect(cefWidget, SIGNAL(titleChanged(const QString &)), dlg,
-		SLOT(setWindowTitle(const QString &)));
+	connect(cefWidget, &QCefWidget::titleChanged, dlg,
+		&QDialog::setWindowTitle);
 
 	QPushButton *close = new QPushButton(QTStr("Close"));
 	connect(close, &QAbstractButton::clicked, dlg, &QDialog::accept);
