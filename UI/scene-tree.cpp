@@ -16,7 +16,7 @@ SceneTree::SceneTree(QWidget *parent_) : QListWidget(parent_)
 
 void SceneTree::SetGridMode(bool grid)
 {
-	parent()->setProperty("gridMode", grid);
+	parent()->setProperty("class", grid ? "list-grid" : "");
 	gridMode = grid;
 
 	if (gridMode) {

@@ -164,8 +164,8 @@
           <property name="checkable">
            <bool>true</bool>
           </property>
-          <property name="themeID" stdset="0">
-           <string>pauseIconSmall</string>
+          <property name="class" stdset="0">
+           <string>icon-media-pause</string>
           </property>
          </widget>
         </item>
@@ -234,8 +234,8 @@
            <iconset resource="obs.qrc">
             <normaloff>:/res/images/save.svg</normaloff>:/res/images/save.svg</iconset>
           </property>
-          <property name="themeID" stdset="0">
-           <string>replayIconSmall</string>
+          <property name="class" stdset="0">
+           <string>icon-save</string>
           </property>
          </widget>
         </item>
@@ -304,8 +304,8 @@
            <iconset resource="obs.qrc">
             <normaloff>:/settings/images/settings/general.svg</normaloff>:/settings/images/settings/general.svg</iconset>
           </property>
-          <property name="themeID" stdset="0">
-           <string>configIconSmall</string>
+          <property name="class" stdset="0">
+           <string>icon-gear</string>
           </property>
          </widget>
         </item>

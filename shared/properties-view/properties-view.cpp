@@ -394,9 +394,9 @@ QWidget *OBSPropertiesView::AddText(obs_property_t *prop, QFormLayout *layout,
 		info_label->setWordWrap(obs_property_text_info_word_wrap(prop));
 
 		if (info_type == OBS_TEXT_INFO_WARNING)
-			info_label->setObjectName("warningLabel");
+			info_label->setProperty("class", "text-warning");
 		else if (info_type == OBS_TEXT_INFO_ERROR)
-			info_label->setObjectName("errorLabel");
+			info_label->setProperty("class", "text-danger");
 
 		if (label)
 			label->setObjectName(info_label->objectName());
@@ -431,7 +431,6 @@ void OBSPropertiesView::AddPath(obs_property_t *prop, QFormLayout *layout,
 		button->setEnabled(false);
 	}
 
-	button->setProperty("themeID", "settingsButtons");
 	edit->setText(QT_UTF8(val));
 	edit->setReadOnly(true);
 	edit->setToolTip(QT_UTF8(obs_property_long_description(prop)));
@@ -742,7 +741,7 @@ static void NewButton(QLayout *layout, WidgetInfo *info, const char *themeIcon,
 		      void (WidgetInfo::*method)())
 {
 	QPushButton *button = new QPushButton();
-	button->setProperty("themeID", themeIcon);
+	button->setProperty("class", themeIcon);
 	button->setFlat(true);
 	button->setProperty("toolButton", true);
 
@@ -790,15 +789,11 @@ void OBSPropertiesView::AddEditableList(obs_property_t *prop,
 		[info]() { info->EditableListChanged(); });
 
 	QVBoxLayout *sideLayout = new QVBoxLayout();
-	NewButton(sideLayout, info, "addIconSmall", &WidgetInfo::EditListAdd);
-	NewButton(sideLayout, info, "removeIconSmall",
-		  &WidgetInfo::EditListRemove);
-	NewButton(sideLayout, info, "configIconSmall",
-		  &WidgetInfo::EditListEdit);
-	NewButton(sideLayout, info, "upArrowIconSmall",
-		  &WidgetInfo::EditListUp);
-	NewButton(sideLayout, info, "downArrowIconSmall",
-		  &WidgetInfo::EditListDown);
+	NewButton(sideLayout, info, "icon-plus", &WidgetInfo::EditListAdd);
+	NewButton(sideLayout, info, "icon-trash", &WidgetInfo::EditListRemove);
+	NewButton(sideLayout, info, "icon-gear", &WidgetInfo::EditListEdit);
+	NewButton(sideLayout, info, "icon-up", &WidgetInfo::EditListUp);
+	NewButton(sideLayout, info, "icon-down", &WidgetInfo::EditListDown);
 	sideLayout->addStretch(0);
 
 	QHBoxLayout *subLayout = new QHBoxLayout();
@@ -816,7 +811,6 @@ QWidget *OBSPropertiesView::AddButton(obs_property_t *prop)
 	const char *desc = obs_property_description(prop);
 
 	QPushButton *button = new QPushButton(QT_UTF8(desc));
-	button->setProperty("themeID", "settingsButtons");
 	button->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 	return NewWidget(prop, button, &QPushButton::clicked);
 }
@@ -837,7 +831,6 @@ void OBSPropertiesView::AddColorInternal(obs_property_t *prop,
 		colorLabel->setEnabled(false);
 	}
 
-	button->setProperty("themeID", "settingsButtons");
 	button->setText(tr("Basic.PropertiesWindow.SelectColor"));
 	button->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
@@ -939,7 +932,6 @@ void OBSPropertiesView::AddFont(obs_property_t *prop, QFormLayout *layout,
 	font = fontLabel->font();
 	MakeQFont(font_obj, font, true);
 
-	button->setProperty("themeID", "settingsButtons");
 	button->setText(tr("Basic.PropertiesWindow.SelectFont"));
 	button->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
@@ -1413,7 +1405,7 @@ static void UpdateFPSLabels(OBSFrameRatePropertyWidget *w)
 		w->currentFPS->setHidden(true);
 		w->timePerFrame->setHidden(true);
 		if (!option)
-			w->warningLabel->setObjectName("errorLabel");
+			w->warningLabel->setProperty("class", "text-danger");
 
 		return;
 	}
@@ -1423,9 +1415,9 @@ static void UpdateFPSLabels(OBSFrameRatePropertyWidget *w)
 
 	media_frames_per_second match{};
 	if (!option && !matches_ranges(match, *valid_fps, w->fps_ranges, true))
-		w->warningLabel->setObjectName("errorLabel");
+		w->warningLabel->setProperty("class", "text-danger");
 	else
-		w->warningLabel->setObjectName("");
+		w->warningLabel->setProperty("class", "");
 
 	auto convert_to_fps = media_frames_per_second_to_fps;
 	auto convert_to_frame_interval =
@@ -2235,7 +2227,6 @@ public:
 		if (browse) {
 			QPushButton *browseButton =
 				new QPushButton(tr("Browse"));
-			browseButton->setProperty("themeID", "settingsButtons");
 			topLayout->addWidget(browseButton);
 			topLayout->setAlignment(browseButton, Qt::AlignVCenter);
 

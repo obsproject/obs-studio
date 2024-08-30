@@ -317,10 +317,10 @@ void SetComboItemEnabled(QComboBox *c, int idx, bool enabled)
 			       : Qt::NoItemFlags);
 }
 
-void setThemeID(QWidget *widget, const QString &themeID)
+void setClasses(QWidget *widget, const QString &newClasses)
 {
-	if (widget->property("themeID").toString() != themeID) {
-		widget->setProperty("themeID", themeID);
+	if (widget->property("class").toString() != newClasses) {
+		widget->setProperty("class", newClasses);
 
 		/* force style sheet recalculation */
 		QString qss = widget->styleSheet();

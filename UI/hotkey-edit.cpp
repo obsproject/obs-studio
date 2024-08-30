@@ -293,12 +293,12 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 	edit->setToolTip(toolTip);
 
 	auto revert = new QPushButton;
-	revert->setProperty("themeID", "revertIcon");
+	revert->setProperty("class", "icon-revert");
 	revert->setToolTip(QTStr("Revert"));
 	revert->setEnabled(false);
 
 	auto clear = new QPushButton;
-	clear->setProperty("themeID", "clearIconSmall");
+	clear->setProperty("class", "icon-clear");
 	clear->setToolTip(QTStr("Clear"));
 	clear->setEnabled(!obs_key_combination_is_empty(combo));
 
@@ -311,11 +311,11 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 		});
 
 	auto add = new QPushButton;
-	add->setProperty("themeID", "addIconSmall");
+	add->setProperty("class", "icon-plus");
 	add->setToolTip(QTStr("Add"));
 
 	auto remove = new QPushButton;
-	remove->setProperty("themeID", "removeIconSmall");
+	remove->setProperty("class", "icon-trash");
 	remove->setToolTip(QTStr("Remove"));
 	remove->setEnabled(removeButtons.size() > 0);
 
@@ -462,9 +462,9 @@ void OBSHotkeyLabel::highlightPair(bool highlight)
 	if (!pairPartner)
 		return;
 
-	pairPartner->setProperty("hotkeyPairHover", highlight);
+	pairPartner->setProperty("class", highlight ? "text-bright" : "");
 	updateStyle(pairPartner);
-	setProperty("hotkeyPairHover", highlight);
+	setProperty("class", highlight ? "text-bright" : "");
 	updateStyle(this);
 }
 

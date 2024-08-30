@@ -77,23 +77,19 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 		iconLabel->setPixmap(pixmap);
 		iconLabel->setEnabled(sourceVisible);
 		iconLabel->setStyleSheet("background: none");
-		iconLabel->setProperty("TH_Source_Icon", true);
+		iconLabel->setProperty("class", "source-icon");
 	}
 
 	vis = new QCheckBox();
-	vis->setProperty("visibilityCheckBox", true);
-	vis->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+	vis->setProperty("class", "checkbox-icon indicator-visibility");
 	vis->setChecked(sourceVisible);
-	vis->setStyleSheet("background: none");
 	vis->setAccessibleName(QTStr("Basic.Main.Sources.Visibility"));
 	vis->setAccessibleDescription(
 		QTStr("Basic.Main.Sources.VisibilityDescription").arg(name));
 
 	lock = new QCheckBox();
-	lock->setProperty("lockCheckBox", true);
-	lock->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+	lock->setProperty("class", "checkbox-icon indicator-lock");
 	lock->setChecked(obs_sceneitem_locked(sceneitem));
-	lock->setStyleSheet("background: none");
 	lock->setAccessibleName(QTStr("Basic.Main.Sources.Lock"));
 	lock->setAccessibleDescription(
 		QTStr("Basic.Main.Sources.LockDescription").arg(name));
@@ -557,11 +553,7 @@ void SourceTreeItem::Update(bool force)
 
 	} else if (type == Type::Group) {
 		expand = new QCheckBox();
-		expand->setProperty("sourceTreeSubItem", true);
-		expand->setSizePolicy(QSizePolicy::Maximum,
-				      QSizePolicy::Maximum);
-		expand->setMaximumSize(10, 16);
-		expand->setMinimumSize(10, 0);
+		expand->setProperty("class", "checkbox-icon indicator-expand");
 #ifdef __APPLE__
 		expand->setAttribute(Qt::WA_LayoutUsesWidgetRect);
 #endif

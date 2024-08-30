@@ -48,10 +48,10 @@ MediaControls::MediaControls(QWidget *parent)
 	  ui(new Ui::MediaControls)
 {
 	ui->setupUi(this);
-	ui->playPauseButton->setProperty("themeID", "playIcon");
-	ui->previousButton->setProperty("themeID", "previousIcon");
-	ui->nextButton->setProperty("themeID", "nextIcon");
-	ui->stopButton->setProperty("themeID", "stopIcon");
+	ui->playPauseButton->setProperty("class", "icon-media-play");
+	ui->previousButton->setProperty("class", "icon-media-prev");
+	ui->nextButton->setProperty("class", "icon-media-next");
+	ui->stopButton->setProperty("class", "icon-media-stop");
 	setFocusPolicy(Qt::StrongFocus);
 
 	connect(&mediaTimer, &QTimer::timeout, this,
@@ -213,7 +213,7 @@ void MediaControls::StopMediaTimer()
 void MediaControls::SetPlayingState()
 {
 	ui->slider->setEnabled(true);
-	ui->playPauseButton->setProperty("themeID", "pauseIcon");
+	ui->playPauseButton->setProperty("class", "icon-media-pause");
 	ui->playPauseButton->style()->unpolish(ui->playPauseButton);
 	ui->playPauseButton->style()->polish(ui->playPauseButton);
 	ui->playPauseButton->setToolTip(
@@ -227,7 +227,7 @@ void MediaControls::SetPlayingState()
 
 void MediaControls::SetPausedState()
 {
-	ui->playPauseButton->setProperty("themeID", "playIcon");
+	ui->playPauseButton->setProperty("class", "icon-media-play");
 	ui->playPauseButton->style()->unpolish(ui->playPauseButton);
 	ui->playPauseButton->style()->polish(ui->playPauseButton);
 	ui->playPauseButton->setToolTip(
@@ -238,7 +238,7 @@ void MediaControls::SetPausedState()
 
 void MediaControls::SetRestartState()
 {
-	ui->playPauseButton->setProperty("themeID", "restartIcon");
+	ui->playPauseButton->setProperty("class", "icon-media-restart");
 	ui->playPauseButton->style()->unpolish(ui->playPauseButton);
 	ui->playPauseButton->style()->polish(ui->playPauseButton);
 	ui->playPauseButton->setToolTip(
