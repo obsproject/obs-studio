@@ -19,7 +19,7 @@ VisibilityItemWidget::VisibilityItemWidget(obs_source_t *source_)
 	bool enabled = obs_source_enabled(source);
 
 	vis = new QCheckBox();
-	vis->setProperty("visibilityCheckBox", true);
+	vis->setProperty("class", "checkbox-icon indicator-visibility");
 	vis->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 	vis->setChecked(enabled);
 
@@ -32,7 +32,6 @@ VisibilityItemWidget::VisibilityItemWidget(obs_source_t *source_)
 	itemLayout->setContentsMargins(0, 0, 0, 0);
 
 	setLayout(itemLayout);
-	setStyleSheet("background-color: rgba(255, 255, 255, 0);");
 
 	connect(vis, &QCheckBox::clicked, [this](bool visible) {
 		obs_source_set_enabled(source, visible);

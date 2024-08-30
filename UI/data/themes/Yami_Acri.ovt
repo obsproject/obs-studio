@@ -187,19 +187,19 @@ OBSQTDisplay {
     qproperty-displayBackgroundColor: var(--grey5);
 }
 
-*[gridMode="true"] SceneTree::item:selected {
+.list-grid SceneTree::item:selected {
     background-color: var(--button_bg_red);
 }
 
-*[gridMode="true"] SceneTree::item:checked {
+.list-grid SceneTree::item:checked {
     background-color: var(--button_bg_red);
 }
 
-*[gridMode="true"] SceneTree::item:hover {
+.list-grid SceneTree::item:hover {
     background-color: var(--button_bg_red_down);
 }
 
-*[gridMode="true"] SceneTree::item:selected:hover {
+.list-grid SceneTree::item:selected:hover {
     background-color: var(--button_bg_red_hover);
 }
 

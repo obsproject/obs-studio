@@ -262,14 +262,12 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth,
 						     QString(),
 						     Qt::FindDirectChildrenOnly)) {
 
-						i->setProperty(
-							"isSelectedEvent",
-							"false");
+						i->setProperty("class", "");
 						i->style()->unpolish(i);
 						i->style()->polish(i);
 					}
-					label->setProperty("isSelectedEvent",
-							   "true");
+					label->setProperty("class",
+							   "row-selected");
 					label->style()->unpolish(label);
 					label->style()->polish(label);
 

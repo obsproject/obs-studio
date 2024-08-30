@@ -83,8 +83,8 @@
              <property name="flat">
               <bool>true</bool>
              </property>
-             <property name="themeID" stdset="0">
-              <string notr="true">addIconSmall</string>
+             <property name="class" stdset="0">
+              <string notr="true">icon-plus</string>
              </property>
              <property name="toolButton" stdset="0">
               <bool>true</bool>
@@ -117,8 +117,8 @@
              <property name="flat">
               <bool>true</bool>
              </property>
-             <property name="themeID" stdset="0">
-              <string notr="true">removeIconSmall</string>
+             <property name="class" stdset="0">
+              <string notr="true">icon-trash</string>
              </property>
              <property name="toolButton" stdset="0">
               <bool>true</bool>
@@ -151,8 +151,8 @@
              <property name="flat">
               <bool>true</bool>
              </property>
-             <property name="themeID" stdset="0">
-              <string notr="true">refreshIconSmall</string>
+             <property name="class" stdset="0">
+              <string notr="true">icon-refresh</string>
              </property>
              <property name="toolButton" stdset="0">
               <bool>true</bool>

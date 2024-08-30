@@ -1980,8 +1980,8 @@
             </property>
             <item>
              <widget class="QFrame" name="multitrackVideoNoticeBox">
-              <property name="noticeFrame" stdset="0">
-               <bool>true</bool>
+              <property name="class" stdset="0">
+               <string notr="true">frame-notice</string>
               </property>
               <layout class="QVBoxLayout" name="multitrackVideoNoticeBoxLayout">
                <property name="leftMargin">
@@ -3991,11 +3991,11 @@
                                  <property name="text">
                                   <string>Basic.Settings.Output.Adv.FFmpeg.CustomModeWarning</string>
                                  </property>
-                                 <property name="themeID" stdset="0">
-                                  <string notr="true">warning</string>
-                                 </property>
                                  <property name="wordWrap">
                                   <bool>true</bool>
+                                 </property>
+                                 <property name="class" stdset="0">
+                                  <string notr="true">text-warning</string>
                                  </property>
                                 </widget>
                                </item>
@@ -5420,8 +5420,8 @@
                          <property name="text">
                           <string>Basic.Settings.Output.ReplayBuffer.UnavailableCustomFFmpeg</string>
                          </property>
-                         <property name="themeID" stdset="0">
-                          <string>warning</string>
+                         <property name="class" stdset="0">
+                          <string>text-warning</string>
                          </property>
                         </widget>
                        </item>
@@ -6049,8 +6049,8 @@
            <property name="wordWrap">
             <bool>true</bool>
            </property>
-           <property name="themeID" stdset="0">
-            <string>error</string>
+           <property name="class" stdset="0">
+            <string>text-danger</string>
            </property>
           </widget>
          </item>
@@ -6062,8 +6062,8 @@
            <property name="wordWrap">
             <bool>true</bool>
            </property>
-           <property name="themeID" stdset="0">
-            <string notr="true">warning</string>
+           <property name="class" stdset="0">
+            <string notr="true">text-warning</string>
            </property>
           </widget>
          </item>
@@ -6454,8 +6454,8 @@
            <property name="wordWrap">
             <bool>true</bool>
            </property>
-           <property name="themeID" stdset="0">
-            <string>error</string>
+           <property name="class" stdset="0">
+            <string>text-danger</string>
            </property>
           </widget>
          </item>
@@ -6539,11 +6539,8 @@
              <property name="flat">
               <bool>false</bool>
              </property>
-             <property name="themeID" stdset="0">
-              <string>revertIcon</string>
-             </property>
-             <property name="toolButton" stdset="0">
-              <bool>true</bool>
+             <property name="class" stdset="0">
+              <string>btn-tool icon-revert</string>
              </property>
             </widget>
            </item>
@@ -8435,8 +8432,8 @@
               <property name="wordWrap">
                <bool>true</bool>
               </property>
-              <property name="themeID" stdset="0">
-               <string>error</string>
+              <property name="class" stdset="0">
+               <string>text-danger</string>
               </property>
              </widget>
             </item>
@@ -8448,8 +8445,8 @@
               <property name="wordWrap">
                <bool>true</bool>
               </property>
-              <property name="themeID" stdset="0">
-               <string>error</string>
+              <property name="class" stdset="0">
+               <string>text-danger</string>
               </property>
              </widget>
             </item>

@@ -768,7 +768,7 @@ void OBSBasic::CreateProgramOptions()
 	layout->setSpacing(4);
 
 	QPushButton *configTransitions = new QPushButton();
-	configTransitions->setProperty("themeID", "menuIconSmall");
+	configTransitions->setProperty("class", "icon-dots-vert");
 
 	QHBoxLayout *mainButtonLayout = new QHBoxLayout();
 	mainButtonLayout->setSpacing(2);
@@ -781,7 +781,7 @@ void OBSBasic::CreateProgramOptions()
 	quickTransitions->setSpacing(2);
 
 	QPushButton *addQuickTransition = new QPushButton();
-	addQuickTransition->setProperty("themeID", "addIconSmall");
+	addQuickTransition->setProperty("class", "icon-plus");
 
 	QLabel *quickTransitionsLabel = new QLabel(QTStr("QuickTransitions"));
 	quickTransitionsLabel->setSizePolicy(QSizePolicy::Expanding,
@@ -797,7 +797,7 @@ void OBSBasic::CreateProgramOptions()
 	tBar->setMinimum(0);
 	tBar->setMaximum(T_BAR_PRECISION - 1);
 
-	tBar->setProperty("themeID", "tBarSlider");
+	tBar->setProperty("class", "slider-tbar");
 
 	connect(tBar, &QSlider::valueChanged, this, &OBSBasic::TBarChanged);
 	connect(tBar, &QSlider::sliderReleased, this, &OBSBasic::TBarReleased);
@@ -1636,7 +1636,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 			new QLabel(QTStr("StudioMode.ProgramSceneLabel"), this);
 		programLabel->setSizePolicy(QSizePolicy::Ignored,
 					    QSizePolicy::Preferred);
-		programLabel->setProperty("themeID", "previewProgramLabels");
+		programLabel->setProperty("class", "label-preview-title");
 
 		programWidget = new QWidget();
 		programLayout = new QVBoxLayout();

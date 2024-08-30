@@ -5248,8 +5248,9 @@ void OBSBasicSettings::AdvOutRecCheckWarnings()
 	if (!errorMsg.isEmpty() || !warningMsg.isEmpty()) {
 		advOutRecWarning = new QLabel(
 			errorMsg.isEmpty() ? warningMsg : errorMsg, this);
-		advOutRecWarning->setObjectName(
-			errorMsg.isEmpty() ? "warningLabel" : "errorLabel");
+		advOutRecWarning->setProperty("class", errorMsg.isEmpty()
+							       ? "text-warning"
+							       : "text-danger");
 		advOutRecWarning->setWordWrap(true);
 
 		ui->advOutRecInfoLayout->addWidget(advOutRecWarning);
@@ -5649,7 +5650,8 @@ void OBSBasicSettings::SimpleReplayBufferChanged()
 				QTStr(ESTIMATE_TOO_LARGE_STR)
 					.arg(QString::number(int(memMB)),
 					     QString::number(int(memMaxMB))));
-			ui->simpleRBEstimate->setObjectName("warningLabel");
+			ui->simpleRBEstimate->setProperty("class",
+							  "text-warning");
 		}
 	} else {
 		ui->simpleRBEstimate->setText(QTStr(ESTIMATE_UNKNOWN_STR));
@@ -5749,7 +5751,7 @@ void OBSBasicSettings::AdvReplayBufferChanged()
 				QTStr(ESTIMATE_TOO_LARGE_STR)
 					.arg(QString::number(int(memMB)),
 					     QString::number(int(memMaxMB))));
-			ui->advRBEstimate->setObjectName("warningLabel");
+			ui->advRBEstimate->setProperty("class", "text-warning");
 		}
 	} else {
 		ui->advRBMegsMax->setVisible(true);
@@ -5981,7 +5983,7 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 		return;
 
 	simpleOutRecWarning = new QLabel(warning, this);
-	simpleOutRecWarning->setObjectName("warningLabel");
+	simpleOutRecWarning->setProperty("class", "text-warning");
 	simpleOutRecWarning->setWordWrap(true);
 	ui->simpleOutInfoLayout->addWidget(simpleOutRecWarning);
 }

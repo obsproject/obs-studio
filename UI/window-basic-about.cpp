@@ -54,12 +54,12 @@ OBSAbout::OBSAbout(QWidget *parent) : QDialog(parent), ui(new Ui::OBSAbout)
 	ui->authors->setText("<a href='#'>" + QTStr("About.Authors") + "</a>");
 	ui->license->setText("<a href='#'>" + QTStr("About.License") + "</a>");
 
-	ui->name->setProperty("themeID", "aboutName");
-	ui->version->setProperty("themeID", "aboutVersion");
-	ui->about->setProperty("themeID", "aboutHLayout");
-	ui->authors->setProperty("themeID", "aboutHLayout");
-	ui->license->setProperty("themeID", "aboutHLayout");
-	ui->info->setProperty("themeID", "aboutInfo");
+	ui->name->setProperty("class", "text-heading");
+	ui->version->setProperty("class", "text-large");
+	ui->about->setProperty("class", "bg-base");
+	ui->authors->setProperty("class", "bg-base");
+	ui->license->setProperty("class", "bg-base");
+	ui->info->setProperty("class", "");
 
 	connect(ui->about, &ClickableLabel::clicked, this,
 		&OBSAbout::ShowAbout);
