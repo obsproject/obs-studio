@@ -368,6 +368,10 @@ bool obs_output_actual_start(obs_output_t *output)
 	return success;
 }
 
+static bool can_begin_data_capture(const struct obs_output *output);
+static inline bool initialize_audio_encoders(obs_output_t *output);
+static inline bool initialize_video_encoders(obs_output_t *output);
+
 bool obs_output_start(obs_output_t *output)
 {
 	if (!obs_output_valid(output, "obs_output_start"))
@@ -379,6 +383,23 @@ bool obs_output_start(obs_output_t *output)
 	    !(obs_service_can_try_to_connect(output->service) &&
 	      obs_service_initialize(output->service, output)))
 		return false;
+
+	/* this block of logic is likely flawed. please investigate! */
+	if (!delay_active(output)) {
+		if (active(output))
+			return false;
+		if (data_capture_ending(output))
+			pthread_join(output->end_data_capture_thread, NULL);
+		if (!can_begin_data_capture(output))
+			return false;
+	}
+
+	if (flag_encoded(output)) {
+		if (flag_audio(output) && !initialize_audio_encoders(output))
+			return false;
+		if (flag_video(output) && !initialize_video_encoders(output))
+			return false;
+	}
 
 	if (output->delay_sec) {
 		return obs_output_delay_start(output);

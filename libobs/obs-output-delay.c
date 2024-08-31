@@ -137,17 +137,6 @@ void process_delay(void *data, struct encoder_packet *packet)
 		;
 }
 
-void obs_output_signal_delay(obs_output_t *output, const char *signal)
-{
-	struct calldata params;
-	uint8_t stack[128];
-
-	calldata_init_fixed(&params, stack, sizeof(stack));
-	calldata_set_ptr(&params, "output", output);
-	calldata_set_int(&params, "sec", output->active_delay_ns / 1000000000);
-	signal_handler_signal(output->context.signals, signal, &params);
-}
-
 bool obs_output_delay_start(obs_output_t *output)
 {
 	struct delay_data dd = {
@@ -155,24 +144,11 @@ bool obs_output_delay_start(obs_output_t *output)
 		.ts = os_gettime_ns(),
 	};
 
-	if (!delay_active(output)) {
-		bool can_begin = obs_output_can_begin_data_capture(output, 0);
-		if (!can_begin)
-			return false;
-		if (!obs_output_initialize_encoders(output, 0))
-			return false;
-	}
-
 	pthread_mutex_lock(&output->delay_mutex);
 	deque_push_back(&output->delay_data, &dd, sizeof(dd));
 	pthread_mutex_unlock(&output->delay_mutex);
 
 	os_atomic_inc_long(&output->delay_restart_refs);
-
-	if (delay_active(output)) {
-		do_output_signal(output, "starting");
-		return true;
-	}
 
 	if (!obs_output_begin_data_capture(output, 0)) {
 		obs_output_cleanup_delay(output);

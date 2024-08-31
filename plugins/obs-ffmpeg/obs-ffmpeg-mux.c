@@ -412,11 +412,6 @@ static inline bool ffmpeg_mux_start_internal(struct ffmpeg_muxer *stream,
 
 	update_encoder_settings(stream, path);
 
-	if (!obs_output_can_begin_data_capture(stream->output, 0))
-		return false;
-	if (!obs_output_initialize_encoders(stream->output, 0))
-		return false;
-
 	if (stream->is_network) {
 		obs_service_t *service;
 		service = obs_output_get_service(stream->output);
@@ -1040,11 +1035,6 @@ static void replay_buffer_destroy(void *data)
 static bool replay_buffer_start(void *data)
 {
 	struct ffmpeg_muxer *stream = data;
-
-	if (!obs_output_can_begin_data_capture(stream->output, 0))
-		return false;
-	if (!obs_output_initialize_encoders(stream->output, 0))
-		return false;
 
 	obs_data_t *s = obs_output_get_settings(stream->output);
 	stream->max_time = obs_data_get_int(s, "max_time_sec") * 1000000LL;
