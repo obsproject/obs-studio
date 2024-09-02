@@ -767,7 +767,9 @@ static int cmp_wi(const void *a, const void *b)
 {
 	struct WindowInfo *awi = (struct WindowInfo *)a;
 	struct WindowInfo *bwi = (struct WindowInfo *)b;
-	return strcmp(awi->name_lower.array, bwi->name_lower.array);
+	const char *a_name = awi->name_lower.array ? awi->name_lower.array : "";
+	const char *b_name = bwi->name_lower.array ? bwi->name_lower.array : "";
+	return strcmp(a_name, b_name);
 }
 
 static obs_properties_t *xcompcap_props(void *unused)
