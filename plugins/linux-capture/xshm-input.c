@@ -32,6 +32,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define blog(level, msg, ...) blog(level, "xshm-input: " msg, ##__VA_ARGS__)
 
+#define INVALID_DISPLAY (-1)
+
 struct xshm_data {
 	obs_source_t *source;
 
@@ -41,7 +43,7 @@ struct xshm_data {
 	xcb_xcursor_t *cursor;
 
 	char *server;
-	uint_fast32_t screen_id;
+	int_fast32_t screen_id;
 	int_fast32_t x_org;
 	int_fast32_t y_org;
 	int_fast32_t width;
@@ -225,6 +227,16 @@ static void xshm_capture_start(struct xshm_data *data)
 	const char *server = (data->advanced && *data->server) ? data->server
 							       : NULL;
 
+	if (data->screen_id == -1) {
+		if (data->texture) {
+			gs_texture_destroy(data->texture);
+			data->texture = NULL;
+		}
+		data->adj_width = 0;
+		data->adj_height = 0;
+		return;
+	}
+
 	data->xcb = xcb_connect(server, NULL);
 	if (!data->xcb || xcb_connection_has_error(data->xcb)) {
 		blog(LOG_ERROR, "Unable to open X display !");
@@ -288,15 +300,26 @@ static void xshm_update(void *vptr, obs_data_t *settings)
 /**
  * Get the default settings for the capture
  */
-static void xshm_defaults(obs_data_t *defaults)
+static void xshm_defaults(obs_data_t *defaults, int ver)
 {
-	obs_data_set_default_int(defaults, "screen", 0);
+	obs_data_set_default_int(defaults, "screen",
+				 ver == 1 ? 0 : INVALID_DISPLAY);
 	obs_data_set_default_bool(defaults, "show_cursor", true);
 	obs_data_set_default_bool(defaults, "advanced", false);
 	obs_data_set_default_int(defaults, "cut_top", 0);
 	obs_data_set_default_int(defaults, "cut_left", 0);
 	obs_data_set_default_int(defaults, "cut_right", 0);
 	obs_data_set_default_int(defaults, "cut_bot", 0);
+}
+
+static void xshm_defaults_v1(obs_data_t *defaults)
+{
+	xshm_defaults(defaults, 1);
+}
+
+static void xshm_defaults_v2(obs_data_t *defaults)
+{
+	xshm_defaults(defaults, 2);
 }
 
 /**
@@ -334,6 +357,13 @@ static bool xshm_server_changed(obs_properties_t *props, obs_property_t *p,
 	server = (advanced && *server) ? server : NULL;
 
 	obs_property_list_clear(screens);
+
+	if (old_screen == INVALID_DISPLAY) {
+		obs_property_list_add_int(screens,
+					  obs_module_text("SelectADisplay"),
+					  INVALID_DISPLAY);
+		obs_property_list_item_disable(screens, 0, true);
+	}
 
 	xcb_connection_t *xcb = xcb_connect(server, NULL);
 	if (!xcb || xcb_connection_has_error(xcb)) {
@@ -579,12 +609,31 @@ struct obs_source_info xshm_input = {
 	.id = "xshm_input",
 	.type = OBS_SOURCE_TYPE_INPUT,
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
+			OBS_SOURCE_DO_NOT_DUPLICATE | OBS_SOURCE_SRGB |
+			OBS_SOURCE_CAP_OBSOLETE,
+	.get_name = xshm_getname,
+	.create = xshm_create,
+	.destroy = xshm_destroy,
+	.update = xshm_update,
+	.get_defaults = xshm_defaults_v1,
+	.get_properties = xshm_properties,
+	.video_tick = xshm_video_tick,
+	.video_render = xshm_video_render,
+	.get_width = xshm_getwidth,
+	.get_height = xshm_getheight,
+	.icon_type = OBS_ICON_TYPE_DESKTOP_CAPTURE,
+};
+
+struct obs_source_info xshm_input_v2 = {
+	.id = "xshm_input_v2",
+	.type = OBS_SOURCE_TYPE_INPUT,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
 			OBS_SOURCE_DO_NOT_DUPLICATE | OBS_SOURCE_SRGB,
 	.get_name = xshm_getname,
 	.create = xshm_create,
 	.destroy = xshm_destroy,
 	.update = xshm_update,
-	.get_defaults = xshm_defaults,
+	.get_defaults = xshm_defaults_v2,
 	.get_properties = xshm_properties,
 	.video_tick = xshm_video_tick,
 	.video_render = xshm_video_render,
