@@ -772,6 +772,17 @@ static int cmp_wi(const void *a, const void *b)
 	return strcmp(a_name, b_name);
 }
 
+static inline bool compare_ids(const char *id1, const char *id2)
+{
+	if (!id1 || !id2)
+		return false;
+
+	id1 = strstr(id1, "\r\n");
+	id2 = strstr(id2, "\r\n");
+
+	return id1 && id2 && strcmp(id1, id2) == 0;
+}
+
 static obs_properties_t *xcompcap_props(void *unused)
 {
 	UNUSED_PARAMETER(unused);
