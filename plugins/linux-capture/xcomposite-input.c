@@ -69,6 +69,8 @@ struct xcompcap {
 };
 
 static void xcompcap_update(void *data, obs_data_t *settings);
+static xcb_window_t convert_encoded_window_id(const char *str, char **p_wname,
+					      char **p_wcls);
 
 xcb_atom_t get_atom(xcb_connection_t *conn, const char *name)
 {
@@ -278,19 +280,9 @@ struct darray xcomp_top_level_windows(xcb_connection_t *conn)
 	return res.da;
 }
 
-xcb_window_t xcomp_find_window(xcb_connection_t *conn, Display *disp,
-			       const char *str)
+static xcb_window_t convert_encoded_window_id(const char *str, char **p_wname,
+					      char **p_wcls)
 {
-	xcb_window_t ret = 0;
-	DARRAY(xcb_window_t) tlw = {0};
-	tlw.da = xcomp_top_level_windows(conn);
-	if (!str || strlen(str) == 0) {
-		if (tlw.num > 0)
-			ret = *(xcb_window_t *)darray_item(sizeof(xcb_window_t),
-							   &tlw.da, 0);
-		goto cleanup1;
-	}
-
 	size_t markSize = strlen(WIN_STRING_DIV);
 
 	const char *firstMark = strstr(str, WIN_STRING_DIV);
@@ -302,19 +294,45 @@ xcb_window_t xcomp_find_window(xcb_connection_t *conn, Display *disp,
 	const char *thirdStr = secondMark + markSize;
 
 	// wstr only consists of the window-id
-	if (!firstMark)
+	if (!firstMark) {
+		*p_wname = NULL;
+		*p_wcls = NULL;
 		return (xcb_window_t)atol(str);
+	}
 
 	// wstr also contains window-name and window-class
 	char *wname = bzalloc(secondMark - secondStr + 1);
 	char *wcls = bzalloc(strEnd - thirdStr + 1);
 	memcpy(wname, secondStr, secondMark - secondStr);
 	memcpy(wcls, thirdStr, strEnd - thirdStr);
-	ret = (xcb_window_t)strtol(str, NULL, 10);
+	xcb_window_t ret = (xcb_window_t)strtol(str, NULL, 10);
+
+	*p_wname = wname;
+	*p_wcls = wcls;
+	return ret;
+}
+
+xcb_window_t xcomp_find_window(xcb_connection_t *conn, Display *disp,
+			       const char *str)
+{
+	xcb_window_t ret = 0;
+	char *wname = NULL;
+	char *wcls = NULL;
+	DARRAY(xcb_window_t) tlw = {0};
+
+	tlw.da = xcomp_top_level_windows(conn);
+	if (!str || strlen(str) == 0) {
+		if (tlw.num > 0)
+			ret = *(xcb_window_t *)darray_item(sizeof(xcb_window_t),
+							   &tlw.da, 0);
+		goto cleanup;
+	}
+
+	ret = convert_encoded_window_id(str, &wname, &wcls);
 
 	// first try to find a match by the window-id
 	if (da_find(tlw, &ret, 0) != DARRAY_INVALID) {
-		goto cleanup2;
+		goto cleanup;
 	}
 
 	// then try to find a match by name & class
@@ -331,7 +349,7 @@ xcb_window_t xcomp_find_window(xcb_connection_t *conn, Display *disp,
 		dstr_free(&cwcls);
 		if (found) {
 			ret = cwin;
-			goto cleanup2;
+			goto cleanup;
 		}
 	}
 
@@ -339,10 +357,9 @@ xcb_window_t xcomp_find_window(xcb_connection_t *conn, Display *disp,
 	     "Did not find new window id for Name '%s' or Class '%s'", wname,
 	     wcls);
 
-cleanup2:
+cleanup:
 	bfree(wname);
 	bfree(wcls);
-cleanup1:
 	da_free(tlw);
 	return ret;
 }
