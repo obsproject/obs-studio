@@ -38,6 +38,8 @@
 
 #define RESET_INTERVAL_SEC 3.0f
 
+#define INVALID_DISPLAY "DUMMY"
+
 typedef BOOL (*PFN_winrt_capture_supported)();
 typedef BOOL (*PFN_winrt_capture_cursor_toggle_supported)();
 typedef struct winrt_capture *(*PFN_winrt_capture_init_monitor)(
@@ -416,7 +418,7 @@ static void duplicator_capture_destroy(void *data)
 static void duplicator_capture_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_int(settings, "method", METHOD_AUTO);
-	obs_data_set_default_string(settings, "monitor_id", "DUMMY");
+	obs_data_set_default_string(settings, "monitor_id", INVALID_DISPLAY);
 	obs_data_set_default_int(settings, "monitor_wgc", 0);
 	obs_data_set_default_bool(settings, "capture_cursor", true);
 	obs_data_set_default_bool(settings, "force_sdr", false);
@@ -904,6 +906,13 @@ static obs_properties_t *duplicator_capture_properties(void *data)
 	obs_property_t *monitors = obs_properties_add_list(
 		props, "monitor_id", TEXT_MONITOR, OBS_COMBO_TYPE_LIST,
 		OBS_COMBO_FORMAT_STRING);
+
+	if (capture && strcmp(capture->monitor_id, INVALID_DISPLAY) == 0) {
+		obs_property_list_add_string(monitors,
+					     obs_module_text("SelectADisplay"),
+					     INVALID_DISPLAY);
+		obs_property_list_item_disable(monitors, 0, true);
+	}
 
 	obs_properties_add_bool(props, "capture_cursor", TEXT_CAPTURE_CURSOR);
 	obs_properties_add_bool(props, "force_sdr", TEXT_FORCE_SDR);
