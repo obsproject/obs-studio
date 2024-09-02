@@ -23,7 +23,7 @@
 #include <util/darray.h>
 
 #define WIN_STRING_DIV "\r\n"
-#define FIND_WINDOW_INTERVAL 0.5
+#define FIND_WINDOW_INTERVAL 2.0
 
 static Display *disp = NULL;
 static xcb_connection_t *conn = NULL;
