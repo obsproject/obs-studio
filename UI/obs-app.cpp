@@ -1220,27 +1220,48 @@ static void move_basic_to_profiles(void)
 static void move_basic_to_scene_collections(void)
 {
 	char path[512];
-	char new_path[512];
 
-	if (GetConfigPath(path, 512, "obs-studio/basic") <= 0)
+	if (GetAppConfigPath(path, 512, "obs-studio/basic") <= 0) {
 		return;
-	if (!os_file_exists(path))
-		return;
+	}
 
-	if (GetConfigPath(new_path, 512, "obs-studio/basic/scenes") <= 0)
-		return;
-	if (os_file_exists(new_path))
-		return;
+	const std::filesystem::path basicPath = std::filesystem::u8path(path);
 
-	if (os_mkdir(new_path) == MKDIR_ERROR)
+	if (!std::filesystem::exists(basicPath)) {
 		return;
+	}
 
-	strcat(path, "/scenes.json");
-	strcat(new_path, "/");
-	strcat(new_path, Str("Untitled"));
-	strcat(new_path, ".json");
+	const std::filesystem::path sceneCollectionPath =
+		App()->userScenesLocation /
+		std::filesystem::u8path("obs-studio/basic/scenes");
 
-	os_rename(path, new_path);
+	if (std::filesystem::exists(sceneCollectionPath)) {
+		return;
+	}
+
+	try {
+		std::filesystem::create_directories(sceneCollectionPath);
+	} catch (const std::filesystem::filesystem_error &error) {
+		blog(LOG_ERROR,
+		     "Failed to create scene collection directory for migration from basic scene collection\n%s",
+		     error.what());
+		return;
+	}
+
+	const std::filesystem::path sourceFile =
+		basicPath / std::filesystem::u8path("scenes.json");
+	const std::filesystem::path destinationFile =
+		(sceneCollectionPath / std::filesystem::u8path(Str("Untitled")))
+			.replace_extension(".json");
+
+	try {
+		std::filesystem::rename(sourceFile, destinationFile);
+	} catch (const std::filesystem::filesystem_error &error) {
+		blog(LOG_ERROR,
+		     "Failed to rename basic scene collection file:\n%s",
+		     error.what());
+		return;
+	}
 }
 
 void OBSApp::AppInit()
@@ -2521,36 +2542,6 @@ bool GetClosestUnusedFileName(std::string &path, const char *extension)
 		}
 	} while (os_file_exists(path.c_str()));
 
-	return true;
-}
-
-bool GetUnusedSceneCollectionFile(std::string &name, std::string &file)
-{
-	char path[512];
-	int ret;
-
-	if (!GetFileSafeName(name.c_str(), file)) {
-		blog(LOG_WARNING, "Failed to create safe file name for '%s'",
-		     name.c_str());
-		return false;
-	}
-
-	ret = GetConfigPath(path, sizeof(path), "obs-studio/basic/scenes/");
-	if (ret <= 0) {
-		blog(LOG_WARNING, "Failed to get scene collection config path");
-		return false;
-	}
-
-	file.insert(0, path);
-
-	if (!GetClosestUnusedFileName(file, "json")) {
-		blog(LOG_WARNING, "Failed to get closest file name for %s",
-		     file.c_str());
-		return false;
-	}
-
-	file.erase(file.size() - 5, 5);
-	file.erase(0, strlen(path));
 	return true;
 }
 
