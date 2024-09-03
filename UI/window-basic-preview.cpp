@@ -192,17 +192,17 @@ vec3 OBSBasicPreview::GetSnapOffset(const vec3 &tl, const vec3 &br)
 
 	vec3_zero(&clampOffset);
 
-	const bool snap = config_get_bool(GetGlobalConfig(), "BasicWindow",
+	const bool snap = config_get_bool(App()->GetUserConfig(), "BasicWindow",
 					  "SnappingEnabled");
 	if (snap == false)
 		return clampOffset;
 
 	const bool screenSnap = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "ScreenSnapping");
+		App()->GetUserConfig(), "BasicWindow", "ScreenSnapping");
 	const bool centerSnap = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "CenterSnapping");
+		App()->GetUserConfig(), "BasicWindow", "CenterSnapping");
 
-	const float clampDist = config_get_double(GetGlobalConfig(),
+	const float clampDist = config_get_double(App()->GetUserConfig(),
 						  "BasicWindow",
 						  "SnapDistance") /
 				main->previewScale;
@@ -995,10 +995,10 @@ void OBSBasicPreview::SnapItemMovement(vec2 &offset)
 
 	vec3 snapOffset = GetSnapOffset(data.tl, data.br);
 
-	const bool snap = config_get_bool(GetGlobalConfig(), "BasicWindow",
+	const bool snap = config_get_bool(App()->GetUserConfig(), "BasicWindow",
 					  "SnappingEnabled");
 	const bool sourcesSnap = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "SourceSnapping");
+		App()->GetUserConfig(), "BasicWindow", "SourceSnapping");
 	if (snap == false)
 		return;
 	if (sourcesSnap == false) {
@@ -1007,7 +1007,7 @@ void OBSBasicPreview::SnapItemMovement(vec2 &offset)
 		return;
 	}
 
-	const float clampDist = config_get_double(GetGlobalConfig(),
+	const float clampDist = config_get_double(App()->GetUserConfig(),
 						  "BasicWindow",
 						  "SnapDistance") /
 				main->previewScale;

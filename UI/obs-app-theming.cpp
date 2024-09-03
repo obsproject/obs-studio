@@ -409,7 +409,6 @@ static vector<OBSThemeVariable> ParseThemeVariables(const char *themeData)
 
 void OBSApp::FindThemes()
 {
-	string themeDir;
 
 	QStringList filters;
 	filters << "*.obt" // OBS Base Theme
@@ -417,18 +416,24 @@ void OBSApp::FindThemes()
 		<< "*.oha" // OBS High-contrast Adjustment layer
 		;
 
-	GetDataFilePath("themes/", themeDir);
-	QDirIterator it(QString::fromStdString(themeDir), filters, QDir::Files);
-	while (it.hasNext()) {
-		auto theme = ParseThemeMeta(it.next());
-		if (theme && !themes.contains(theme->id))
-			themes[theme->id] = std::move(*theme);
+	{
+		string themeDir;
+		GetDataFilePath("themes/", themeDir);
+		QDirIterator it(QString::fromStdString(themeDir), filters,
+				QDir::Files);
+		while (it.hasNext()) {
+			auto theme = ParseThemeMeta(it.next());
+			if (theme && !themes.contains(theme->id))
+				themes[theme->id] = std::move(*theme);
+		}
 	}
 
-	themeDir.resize(1024);
-	if (GetConfigPath(themeDir.data(), themeDir.capacity(),
-			  "obs-studio/themes/") > 0) {
-		QDirIterator it(QT_UTF8(themeDir.c_str()), filters,
+	{
+		const std::string themeDir =
+			App()->userConfigLocation.u8string() +
+			"/obs-studio/themes";
+
+		QDirIterator it(QString::fromStdString(themeDir), filters,
 				QDir::Files);
 
 		while (it.hasNext()) {
@@ -876,7 +881,8 @@ bool OBSApp::SetTheme(const QString &name)
 
 	filesystem::path debugOut;
 	char configPath[512];
-	if (GetConfigPath(configPath, sizeof(configPath), filename.c_str())) {
+	if (GetAppConfigPath(configPath, sizeof(configPath),
+			     filename.c_str())) {
 		debugOut = absolute(filesystem::u8path(configPath));
 		filesystem::create_directories(debugOut.parent_path());
 	}
@@ -940,7 +946,7 @@ bool OBSApp::InitTheme()
 	}
 
 	char userDir[512];
-	if (GetConfigPath(userDir, sizeof(userDir), "obs-studio/themes")) {
+	if (GetAppConfigPath(userDir, sizeof(userDir), "obs-studio/themes")) {
 		auto configSearchDir = filesystem::u8path(userDir);
 		QDir::addSearchPath("theme", absolute(configSearchDir));
 	}
@@ -948,7 +954,7 @@ bool OBSApp::InitTheme()
 	/* Load list of themes and read their metadata */
 	FindThemes();
 
-	if (config_get_bool(globalConfig, "Appearance", "AutoReload")) {
+	if (config_get_bool(userConfig, "Appearance", "AutoReload")) {
 		/* Set up Qt file watcher to automatically reload themes */
 		themeWatcher = new QFileSystemWatcher(this);
 		connect(themeWatcher.get(), &QFileSystemWatcher::fileChanged,
@@ -956,19 +962,19 @@ bool OBSApp::InitTheme()
 	}
 
 	/* Migrate old theme config key */
-	if (config_has_user_value(globalConfig, "General", "CurrentTheme3") &&
-	    !config_has_user_value(globalConfig, "Appearance", "Theme")) {
-		const char *old = config_get_string(globalConfig, "General",
+	if (config_has_user_value(userConfig, "General", "CurrentTheme3") &&
+	    !config_has_user_value(userConfig, "Appearance", "Theme")) {
+		const char *old = config_get_string(userConfig, "General",
 						    "CurrentTheme3");
 
 		if (themeMigrations.count(old)) {
-			config_set_string(globalConfig, "Appearance", "Theme",
+			config_set_string(userConfig, "Appearance", "Theme",
 					  themeMigrations[old].c_str());
 		}
 	}
 
 	QString themeName =
-		config_get_string(globalConfig, "Appearance", "Theme");
+		config_get_string(userConfig, "Appearance", "Theme");
 
 	if (themeName.isEmpty() || !GetTheme(themeName)) {
 		if (!themeName.isEmpty()) {

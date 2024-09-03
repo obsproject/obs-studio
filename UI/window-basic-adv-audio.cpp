@@ -24,7 +24,7 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	sigs.emplace_back(sh, "source_deactivate", OBSSourceRemoved, this);
 
 	VolumeType volType = (VolumeType)config_get_int(
-		GetGlobalConfig(), "BasicWindow", "AdvAudioVolumeType");
+		App()->GetUserConfig(), "BasicWindow", "AdvAudioVolumeType");
 
 	if (volType == VolumeType::Percent)
 		ui->usePercent->setChecked(true);
@@ -140,8 +140,8 @@ void OBSBasicAdvAudio::on_usePercent_toggled(bool checked)
 	for (size_t i = 0; i < controls.size(); i++)
 		controls[i]->SetVolumeWidget(type);
 
-	config_set_int(GetGlobalConfig(), "BasicWindow", "AdvAudioVolumeType",
-		       (int)type);
+	config_set_int(App()->GetUserConfig(), "BasicWindow",
+		       "AdvAudioVolumeType", (int)type);
 }
 
 void OBSBasicAdvAudio::on_activeOnly_toggled(bool checked)

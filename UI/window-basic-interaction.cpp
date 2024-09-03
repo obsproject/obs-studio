@@ -44,10 +44,10 @@ OBSBasicInteraction::OBSBasicInteraction(QWidget *parent, OBSSource source_)
 			OBSBasicInteraction::SourceRenamed, this),
 	  eventFilter(BuildEventFilter())
 {
-	int cx = (int)config_get_int(App()->GlobalConfig(), "InteractionWindow",
-				     "cx");
-	int cy = (int)config_get_int(App()->GlobalConfig(), "InteractionWindow",
-				     "cy");
+	int cx = (int)config_get_int(App()->GetUserConfig(),
+				     "InteractionWindow", "cx");
+	int cy = (int)config_get_int(App()->GetUserConfig(),
+				     "InteractionWindow", "cy");
 
 	Qt::WindowFlags flags = windowFlags();
 	Qt::WindowFlags helpFlag = Qt::WindowContextHelpButtonHint;
@@ -166,9 +166,9 @@ void OBSBasicInteraction::closeEvent(QCloseEvent *event)
 	if (!event->isAccepted())
 		return;
 
-	config_set_int(App()->GlobalConfig(), "InteractionWindow", "cx",
+	config_set_int(App()->GetAppConfig(), "InteractionWindow", "cx",
 		       width());
-	config_set_int(App()->GlobalConfig(), "InteractionWindow", "cy",
+	config_set_int(App()->GetAppConfig(), "InteractionWindow", "cy",
 		       height());
 
 	obs_display_remove_draw_callback(ui->preview->GetDisplay(),

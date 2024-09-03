@@ -125,7 +125,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	stackedWidget->addWidget(percent);
 
 	VolumeType volType = (VolumeType)config_get_int(
-		GetGlobalConfig(), "BasicWindow", "AdvAudioVolumeType");
+		App()->GetUserConfig(), "BasicWindow", "AdvAudioVolumeType");
 
 	SetVolumeWidget(volType);
 

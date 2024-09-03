@@ -113,7 +113,7 @@ ScriptLogWindow::ScriptLogWindow() : QDialog(nullptr)
 
 	resize(600, 400);
 
-	config_t *global_config = obs_frontend_get_global_config();
+	config_t *global_config = obs_frontend_get_user_config();
 	const char *geom =
 		config_get_string(global_config, "ScriptLogWindow", "geometry");
 	if (geom != nullptr) {
@@ -129,7 +129,7 @@ ScriptLogWindow::ScriptLogWindow() : QDialog(nullptr)
 
 ScriptLogWindow::~ScriptLogWindow()
 {
-	config_t *global_config = obs_frontend_get_global_config();
+	config_t *global_config = obs_frontend_get_user_config();
 	config_set_string(global_config, "ScriptLogWindow", "geometry",
 			  saveGeometry().toBase64().constData());
 }
@@ -189,7 +189,7 @@ ScriptsTool::ScriptsTool() : QDialog(nullptr), ui(new Ui_ScriptsTool)
 	RefreshLists();
 
 #if PYTHON_UI
-	config_t *config = obs_frontend_get_global_config();
+	config_t *config = obs_frontend_get_user_config();
 	const char *path =
 		config_get_string(config, "Python", "Path" ARCH_NAME);
 	ui->pythonPath->setText(path);
@@ -207,16 +207,15 @@ ScriptsTool::ScriptsTool() : QDialog(nullptr), ui(new Ui_ScriptsTool)
 				      QSizePolicy::Expanding);
 	ui->propertiesLayout->addWidget(propertiesView);
 
-	config_t *global_config = obs_frontend_get_global_config();
-	int row =
-		config_get_int(global_config, "scripts-tool", "prevScriptRow");
+	config_t *user_config = obs_frontend_get_user_config();
+	int row = config_get_int(user_config, "scripts-tool", "prevScriptRow");
 	ui->scripts->setCurrentRow(row);
 }
 
 ScriptsTool::~ScriptsTool()
 {
-	config_t *global_config = obs_frontend_get_global_config();
-	config_set_int(global_config, "scripts-tool", "prevScriptRow",
+	config_t *user_config = obs_frontend_get_user_config();
+	config_set_int(user_config, "scripts-tool", "prevScriptRow",
 		       ui->scripts->currentRow());
 }
 
@@ -465,7 +464,7 @@ void ScriptsTool::on_pythonPathBrowse_clicked()
 	QByteArray array = newPath.toUtf8();
 	const char *path = array.constData();
 
-	config_t *config = obs_frontend_get_global_config();
+	config_t *config = obs_frontend_get_user_config();
 	config_set_string(config, "Python", "Path" ARCH_NAME, path);
 
 	ui->pythonPath->setText(newPath);
@@ -685,7 +684,7 @@ extern "C" void InitScripts()
 		obs_module_text("Scripts"));
 
 #if PYTHON_UI
-	config_t *config = obs_frontend_get_global_config();
+	config_t *config = obs_frontend_get_user_config();
 	const char *python_path =
 		config_get_string(config, "Python", "Path" ARCH_NAME);
 
