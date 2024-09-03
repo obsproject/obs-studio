@@ -7,7 +7,7 @@ if(OS_WINDOWS)
   option(ENABLE_NVVFX "Enable building with NVIDIA Video Effects SDK (requires redistributable to be installed)" ON)
 
   if(ENABLE_NVAFX)
-    target_enable_feature(nv-filters "NVIDIA Audio FX support" LIBNVAFX_ENABLED HAS_NOISEREDUCTION)
+    target_enable_feature(nv-filters "NVIDIA Audio FX support" LIBNVAFX_ENABLED)
     target_sources(nv-filters PRIVATE nvidia-audiofx-filter.c)
   else()
     target_disable_feature(nv-filters "NVIDIA Audio FX support")
