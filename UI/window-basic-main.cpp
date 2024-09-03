@@ -162,6 +162,8 @@ template<typename T> static void SetOBSRef(QListWidgetItem *item, T &&val)
 		      QVariant::fromValue(val));
 }
 
+constexpr std::string_view OBSProfilePath = "/obs-studio/basic/profiles/";
+
 static void AddExtraModulePaths()
 {
 	string plugins_path, plugins_data_path;
@@ -786,8 +788,8 @@ void OBSBasic::copyActionsDynamicProperties()
 
 void OBSBasic::UpdateVolumeControlsDecayRate()
 {
-	double meterDecayRate =
-		config_get_double(basicConfig, "Audio", "MeterDecayRate");
+	double meterDecayRate = config_get_double(activeConfiguration, "Audio",
+						  "MeterDecayRate");
 
 	for (size_t i = 0; i < volumes.size(); i++) {
 		volumes[i]->SetMeterDecayRate(meterDecayRate);
@@ -797,7 +799,7 @@ void OBSBasic::UpdateVolumeControlsDecayRate()
 void OBSBasic::UpdateVolumeControlsPeakMeterType()
 {
 	uint32_t peakMeterTypeIdx =
-		config_get_uint(basicConfig, "Audio", "PeakMeterType");
+		config_get_uint(activeConfiguration, "Audio", "PeakMeterType");
 
 	enum obs_peak_meter_type peakMeterType;
 	switch (peakMeterTypeIdx) {
@@ -1616,18 +1618,18 @@ retryScene:
 	OnEvent(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
 }
 
-#define SERVICE_PATH "service.json"
+constexpr std::string_view OBSServiceFileName = "service.json";
 
 void OBSBasic::SaveService()
 {
 	if (!service)
 		return;
 
-	char serviceJsonPath[512];
-	int ret = GetProfilePath(serviceJsonPath, sizeof(serviceJsonPath),
-				 SERVICE_PATH);
-	if (ret <= 0)
-		return;
+	const OBSProfile &currentProfile = GetCurrentProfile();
+
+	const std::filesystem::path jsonFilePath =
+		currentProfile.path /
+		std::filesystem::u8path(OBSServiceFileName);
 
 	OBSDataAutoRelease data = obs_data_create();
 	OBSDataAutoRelease settings = obs_service_get_settings(service);
@@ -1635,26 +1637,35 @@ void OBSBasic::SaveService()
 	obs_data_set_string(data, "type", obs_service_get_type(service));
 	obs_data_set_obj(data, "settings", settings);
 
-	if (!obs_data_save_json_safe(data, serviceJsonPath, "tmp", "bak"))
+	if (!obs_data_save_json_safe(data, jsonFilePath.u8string().c_str(),
+				     "tmp", "bak")) {
 		blog(LOG_WARNING, "Failed to save service");
+	}
 }
 
 bool OBSBasic::LoadService()
 {
+	OBSDataAutoRelease data;
+
+	try {
+		const OBSProfile &currentProfile = GetCurrentProfile();
+
+		const std::filesystem::path jsonFilePath =
+			currentProfile.path /
+			std::filesystem::u8path(OBSServiceFileName);
+
+		data = obs_data_create_from_json_file_safe(
+			jsonFilePath.u8string().c_str(), "bak");
+
+		if (!data) {
+			return false;
+		}
+	} catch (const std::invalid_argument &error) {
+		blog(LOG_ERROR, "%s", error.what());
+		return false;
+	}
+
 	const char *type;
-
-	char serviceJsonPath[512];
-	int ret = GetProfilePath(serviceJsonPath, sizeof(serviceJsonPath),
-				 SERVICE_PATH);
-	if (ret <= 0)
-		return false;
-
-	OBSDataAutoRelease data =
-		obs_data_create_from_json_file_safe(serviceJsonPath, "bak");
-
-	if (!data)
-		return false;
-
 	obs_data_set_default_string(data, "type", "rtmp_common");
 	type = obs_data_get_string(data, "type");
 
@@ -1670,19 +1681,20 @@ bool OBSBasic::LoadService()
 
 	/* Enforce Opus on WHIP if needed */
 	if (strcmp(obs_service_get_protocol(service), "WHIP") == 0) {
-		const char *option = config_get_string(
-			basicConfig, "SimpleOutput", "StreamAudioEncoder");
+		const char *option = config_get_string(activeConfiguration,
+						       "SimpleOutput",
+						       "StreamAudioEncoder");
 		if (strcmp(option, "opus") != 0)
-			config_set_string(basicConfig, "SimpleOutput",
+			config_set_string(activeConfiguration, "SimpleOutput",
 					  "StreamAudioEncoder", "opus");
 
-		option = config_get_string(basicConfig, "AdvOut",
+		option = config_get_string(activeConfiguration, "AdvOut",
 					   "AudioEncoder");
 
 		const char *encoder_codec = obs_get_encoder_codec(option);
 		if (!encoder_codec || strcmp(encoder_codec, "opus") != 0)
-			config_set_string(basicConfig, "AdvOut", "AudioEncoder",
-					  "ffmpeg_opus");
+			config_set_string(activeConfiguration, "AdvOut",
+					  "AudioEncoder", "ffmpeg_opus");
 	}
 
 	return true;
@@ -1751,27 +1763,34 @@ bool OBSBasic::InitBasicConfigDefaults()
 
 	/* ----------------------------------------------------- */
 	/* move over old FFmpeg track settings                   */
-	if (config_has_user_value(basicConfig, "AdvOut", "FFAudioTrack") &&
-	    !config_has_user_value(basicConfig, "AdvOut", "Pre22.1Settings")) {
+	if (config_has_user_value(activeConfiguration, "AdvOut",
+				  "FFAudioTrack") &&
+	    !config_has_user_value(activeConfiguration, "AdvOut",
+				   "Pre22.1Settings")) {
 
-		int track = (int)config_get_int(basicConfig, "AdvOut",
+		int track = (int)config_get_int(activeConfiguration, "AdvOut",
 						"FFAudioTrack");
-		config_set_int(basicConfig, "AdvOut", "FFAudioMixes",
+		config_set_int(activeConfiguration, "AdvOut", "FFAudioMixes",
 			       1LL << (track - 1));
-		config_set_bool(basicConfig, "AdvOut", "Pre22.1Settings", true);
+		config_set_bool(activeConfiguration, "AdvOut",
+				"Pre22.1Settings", true);
 		changed = true;
 	}
 
 	/* ----------------------------------------------------- */
 	/* move over mixer values in advanced if older config */
-	if (config_has_user_value(basicConfig, "AdvOut", "RecTrackIndex") &&
-	    !config_has_user_value(basicConfig, "AdvOut", "RecTracks")) {
+	if (config_has_user_value(activeConfiguration, "AdvOut",
+				  "RecTrackIndex") &&
+	    !config_has_user_value(activeConfiguration, "AdvOut",
+				   "RecTracks")) {
 
-		uint64_t track =
-			config_get_uint(basicConfig, "AdvOut", "RecTrackIndex");
+		uint64_t track = config_get_uint(activeConfiguration, "AdvOut",
+						 "RecTrackIndex");
 		track = 1ULL << (track - 1);
-		config_set_uint(basicConfig, "AdvOut", "RecTracks", track);
-		config_remove_value(basicConfig, "AdvOut", "RecTrackIndex");
+		config_set_uint(activeConfiguration, "AdvOut", "RecTracks",
+				track);
+		config_remove_value(activeConfiguration, "AdvOut",
+				    "RecTrackIndex");
 		changed = true;
 	}
 
@@ -1779,34 +1798,39 @@ bool OBSBasic::InitBasicConfigDefaults()
 	/* set twitch chat extensions to "both" if prev version  */
 	/* is under 24.1                                         */
 	if (config_get_bool(App()->GetUserConfig(), "General",
-	    !config_has_user_value(basicConfig, "Twitch", "AddonChoice")) {
-		config_set_int(basicConfig, "Twitch", "AddonChoice", 3);
+			    "Pre24.1Defaults") &&
+	    !config_has_user_value(activeConfiguration, "Twitch",
+				   "AddonChoice")) {
+		config_set_int(activeConfiguration, "Twitch", "AddonChoice", 3);
 		changed = true;
 	}
 
 	/* ----------------------------------------------------- */
 	/* move bitrate enforcement setting to new value         */
-	if (config_has_user_value(basicConfig, "SimpleOutput",
+	if (config_has_user_value(activeConfiguration, "SimpleOutput",
 				  "EnforceBitrate") &&
-	    !config_has_user_value(basicConfig, "Stream1",
+	    !config_has_user_value(activeConfiguration, "Stream1",
 				   "IgnoreRecommended") &&
-	    !config_has_user_value(basicConfig, "Stream1", "MovedOldEnforce")) {
-		bool enforce = config_get_bool(basicConfig, "SimpleOutput",
-					       "EnforceBitrate");
-		config_set_bool(basicConfig, "Stream1", "IgnoreRecommended",
-				!enforce);
-		config_set_bool(basicConfig, "Stream1", "MovedOldEnforce",
-				true);
+	    !config_has_user_value(activeConfiguration, "Stream1",
+				   "MovedOldEnforce")) {
+		bool enforce = config_get_bool(
+			activeConfiguration, "SimpleOutput", "EnforceBitrate");
+		config_set_bool(activeConfiguration, "Stream1",
+				"IgnoreRecommended", !enforce);
+		config_set_bool(activeConfiguration, "Stream1",
+				"MovedOldEnforce", true);
 		changed = true;
 	}
 
 	/* ----------------------------------------------------- */
 	/* enforce minimum retry delay of 1 second prior to 27.1 */
-	if (config_has_user_value(basicConfig, "Output", "RetryDelay")) {
-		int retryDelay =
-			config_get_uint(basicConfig, "Output", "RetryDelay");
+	if (config_has_user_value(activeConfiguration, "Output",
+				  "RetryDelay")) {
+		int retryDelay = config_get_uint(activeConfiguration, "Output",
+						 "RetryDelay");
 		if (retryDelay < 1) {
-			config_set_uint(basicConfig, "Output", "RetryDelay", 1);
+			config_set_uint(activeConfiguration, "Output",
+					"RetryDelay", 1);
 			changed = true;
 		}
 	}
@@ -1815,15 +1839,15 @@ bool OBSBasic::InitBasicConfigDefaults()
 	/* Migrate old container selection (if any) to new key.  */
 
 	auto MigrateFormat = [&](const char *section) {
-		bool has_old_key = config_has_user_value(basicConfig, section,
-							 "RecFormat");
-		bool has_new_key = config_has_user_value(basicConfig, section,
-							 "RecFormat2");
+		bool has_old_key = config_has_user_value(activeConfiguration,
+							 section, "RecFormat");
+		bool has_new_key = config_has_user_value(activeConfiguration,
+							 section, "RecFormat2");
 		if (!has_new_key && !has_old_key)
 			return;
 
 		string old_format = config_get_string(
-			basicConfig, section,
+			activeConfiguration, section,
 			has_new_key ? "RecFormat2" : "RecFormat");
 		string new_format = old_format;
 		if (old_format == "ts")
@@ -1836,8 +1860,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 			new_format = "fragmented_mov";
 
 		if (new_format != old_format || !has_new_key) {
-			config_set_string(basicConfig, section, "RecFormat2",
-					  new_format.c_str());
+			config_set_string(activeConfiguration, section,
+					  "RecFormat2", new_format.c_str());
 			changed = true;
 		}
 	};
@@ -1848,137 +1872,175 @@ bool OBSBasic::InitBasicConfigDefaults()
 	/* ----------------------------------------------------- */
 	/* Migrate output scale setting to GPU scaling options.  */
 
-	if (config_get_bool(basicConfig, "AdvOut", "Rescale") &&
-	    !config_has_user_value(basicConfig, "AdvOut", "RescaleFilter")) {
-		config_set_int(basicConfig, "AdvOut", "RescaleFilter",
+	if (config_get_bool(activeConfiguration, "AdvOut", "Rescale") &&
+	    !config_has_user_value(activeConfiguration, "AdvOut",
+				   "RescaleFilter")) {
+		config_set_int(activeConfiguration, "AdvOut", "RescaleFilter",
 			       OBS_SCALE_BILINEAR);
 	}
 
-	if (config_get_bool(basicConfig, "AdvOut", "RecRescale") &&
-	    !config_has_user_value(basicConfig, "AdvOut", "RecRescaleFilter")) {
-		config_set_int(basicConfig, "AdvOut", "RecRescaleFilter",
-			       OBS_SCALE_BILINEAR);
+	if (config_get_bool(activeConfiguration, "AdvOut", "RecRescale") &&
+	    !config_has_user_value(activeConfiguration, "AdvOut",
+				   "RecRescaleFilter")) {
+		config_set_int(activeConfiguration, "AdvOut",
+			       "RecRescaleFilter", OBS_SCALE_BILINEAR);
 	}
 
 	/* ----------------------------------------------------- */
 
-	if (changed)
-		config_save_safe(basicConfig, "tmp", nullptr);
+	if (changed) {
+		activeConfiguration.SaveSafe("tmp");
+	}
 
 	/* ----------------------------------------------------- */
 
-	config_set_default_string(basicConfig, "Output", "Mode", "Simple");
+	config_set_default_string(activeConfiguration, "Output", "Mode",
+				  "Simple");
 
-	config_set_default_bool(basicConfig, "Stream1", "IgnoreRecommended",
-				false);
-	config_set_default_bool(basicConfig, "Stream1", "EnableMultitrackVideo",
-				false);
-	config_set_default_bool(basicConfig, "Stream1",
+	config_set_default_bool(activeConfiguration, "Stream1",
+				"IgnoreRecommended", false);
+	config_set_default_bool(activeConfiguration, "Stream1",
+				"EnableMultitrackVideo", false);
+	config_set_default_bool(activeConfiguration, "Stream1",
 				"MultitrackVideoMaximumAggregateBitrateAuto",
 				true);
-	config_set_default_bool(basicConfig, "Stream1",
+	config_set_default_bool(activeConfiguration, "Stream1",
 				"MultitrackVideoMaximumVideoTracksAuto", true);
 
-	config_set_default_string(basicConfig, "SimpleOutput", "FilePath",
+	config_set_default_string(activeConfiguration, "SimpleOutput",
+				  "FilePath",
 				  GetDefaultVideoSavePath().c_str());
-	config_set_default_string(basicConfig, "SimpleOutput", "RecFormat2",
-				  DEFAULT_CONTAINER);
-	config_set_default_uint(basicConfig, "SimpleOutput", "VBitrate", 2500);
-	config_set_default_uint(basicConfig, "SimpleOutput", "ABitrate", 160);
-	config_set_default_bool(basicConfig, "SimpleOutput", "UseAdvanced",
-				false);
-	config_set_default_string(basicConfig, "SimpleOutput", "Preset",
+	config_set_default_string(activeConfiguration, "SimpleOutput",
+				  "RecFormat2", DEFAULT_CONTAINER);
+	config_set_default_uint(activeConfiguration, "SimpleOutput", "VBitrate",
+				2500);
+	config_set_default_uint(activeConfiguration, "SimpleOutput", "ABitrate",
+				160);
+	config_set_default_bool(activeConfiguration, "SimpleOutput",
+				"UseAdvanced", false);
+	config_set_default_string(activeConfiguration, "SimpleOutput", "Preset",
 				  "veryfast");
-	config_set_default_string(basicConfig, "SimpleOutput", "NVENCPreset2",
-				  "p5");
-	config_set_default_string(basicConfig, "SimpleOutput", "RecQuality",
-				  "Stream");
-	config_set_default_bool(basicConfig, "SimpleOutput", "RecRB", false);
-	config_set_default_int(basicConfig, "SimpleOutput", "RecRBTime", 20);
-	config_set_default_int(basicConfig, "SimpleOutput", "RecRBSize", 512);
-	config_set_default_string(basicConfig, "SimpleOutput", "RecRBPrefix",
-				  "Replay");
-	config_set_default_string(basicConfig, "SimpleOutput",
+	config_set_default_string(activeConfiguration, "SimpleOutput",
+				  "NVENCPreset2", "p5");
+	config_set_default_string(activeConfiguration, "SimpleOutput",
+				  "RecQuality", "Stream");
+	config_set_default_bool(activeConfiguration, "SimpleOutput", "RecRB",
+				false);
+	config_set_default_int(activeConfiguration, "SimpleOutput", "RecRBTime",
+			       20);
+	config_set_default_int(activeConfiguration, "SimpleOutput", "RecRBSize",
+			       512);
+	config_set_default_string(activeConfiguration, "SimpleOutput",
+				  "RecRBPrefix", "Replay");
+	config_set_default_string(activeConfiguration, "SimpleOutput",
 				  "StreamAudioEncoder", "aac");
-	config_set_default_string(basicConfig, "SimpleOutput",
+	config_set_default_string(activeConfiguration, "SimpleOutput",
 				  "RecAudioEncoder", "aac");
-	config_set_default_uint(basicConfig, "SimpleOutput", "RecTracks",
-				(1 << 0));
+	config_set_default_uint(activeConfiguration, "SimpleOutput",
+				"RecTracks", (1 << 0));
 
-	config_set_default_bool(basicConfig, "AdvOut", "ApplyServiceSettings",
-				true);
-	config_set_default_bool(basicConfig, "AdvOut", "UseRescale", false);
-	config_set_default_uint(basicConfig, "AdvOut", "TrackIndex", 1);
-	config_set_default_uint(basicConfig, "AdvOut", "VodTrackIndex", 2);
-	config_set_default_string(basicConfig, "AdvOut", "Encoder", "obs_x264");
+	config_set_default_bool(activeConfiguration, "AdvOut",
+				"ApplyServiceSettings", true);
+	config_set_default_bool(activeConfiguration, "AdvOut", "UseRescale",
+				false);
+	config_set_default_uint(activeConfiguration, "AdvOut", "TrackIndex", 1);
+	config_set_default_uint(activeConfiguration, "AdvOut", "VodTrackIndex",
+				2);
+	config_set_default_string(activeConfiguration, "AdvOut", "Encoder",
+				  "obs_x264");
 
-	config_set_default_string(basicConfig, "AdvOut", "RecType", "Standard");
+	config_set_default_string(activeConfiguration, "AdvOut", "RecType",
+				  "Standard");
 
-	config_set_default_string(basicConfig, "AdvOut", "RecFilePath",
+	config_set_default_string(activeConfiguration, "AdvOut", "RecFilePath",
 				  GetDefaultVideoSavePath().c_str());
-	config_set_default_string(basicConfig, "AdvOut", "RecFormat2",
+	config_set_default_string(activeConfiguration, "AdvOut", "RecFormat2",
 				  DEFAULT_CONTAINER);
-	config_set_default_bool(basicConfig, "AdvOut", "RecUseRescale", false);
-	config_set_default_uint(basicConfig, "AdvOut", "RecTracks", (1 << 0));
-	config_set_default_string(basicConfig, "AdvOut", "RecEncoder", "none");
-	config_set_default_uint(basicConfig, "AdvOut", "FLVTrack", 1);
-	config_set_default_uint(basicConfig, "AdvOut",
+	config_set_default_bool(activeConfiguration, "AdvOut", "RecUseRescale",
+				false);
+	config_set_default_uint(activeConfiguration, "AdvOut", "RecTracks",
+				(1 << 0));
+	config_set_default_string(activeConfiguration, "AdvOut", "RecEncoder",
+				  "none");
+	config_set_default_uint(activeConfiguration, "AdvOut", "FLVTrack", 1);
+	config_set_default_uint(activeConfiguration, "AdvOut",
 				"StreamMultiTrackAudioMixes", 1);
-	config_set_default_bool(basicConfig, "AdvOut", "FFOutputToFile", true);
-	config_set_default_string(basicConfig, "AdvOut", "FFFilePath",
+	config_set_default_bool(activeConfiguration, "AdvOut", "FFOutputToFile",
+				true);
+	config_set_default_string(activeConfiguration, "AdvOut", "FFFilePath",
 				  GetDefaultVideoSavePath().c_str());
-	config_set_default_string(basicConfig, "AdvOut", "FFExtension", "mp4");
-	config_set_default_uint(basicConfig, "AdvOut", "FFVBitrate", 2500);
-	config_set_default_uint(basicConfig, "AdvOut", "FFVGOPSize", 250);
-	config_set_default_bool(basicConfig, "AdvOut", "FFUseRescale", false);
-	config_set_default_bool(basicConfig, "AdvOut", "FFIgnoreCompat", false);
-	config_set_default_uint(basicConfig, "AdvOut", "FFABitrate", 160);
-	config_set_default_uint(basicConfig, "AdvOut", "FFAudioMixes", 1);
+	config_set_default_string(activeConfiguration, "AdvOut", "FFExtension",
+				  "mp4");
+	config_set_default_uint(activeConfiguration, "AdvOut", "FFVBitrate",
+				2500);
+	config_set_default_uint(activeConfiguration, "AdvOut", "FFVGOPSize",
+				250);
+	config_set_default_bool(activeConfiguration, "AdvOut", "FFUseRescale",
+				false);
+	config_set_default_bool(activeConfiguration, "AdvOut", "FFIgnoreCompat",
+				false);
+	config_set_default_uint(activeConfiguration, "AdvOut", "FFABitrate",
+				160);
+	config_set_default_uint(activeConfiguration, "AdvOut", "FFAudioMixes",
+				1);
 
-	config_set_default_uint(basicConfig, "AdvOut", "Track1Bitrate", 160);
-	config_set_default_uint(basicConfig, "AdvOut", "Track2Bitrate", 160);
-	config_set_default_uint(basicConfig, "AdvOut", "Track3Bitrate", 160);
-	config_set_default_uint(basicConfig, "AdvOut", "Track4Bitrate", 160);
-	config_set_default_uint(basicConfig, "AdvOut", "Track5Bitrate", 160);
-	config_set_default_uint(basicConfig, "AdvOut", "Track6Bitrate", 160);
+	config_set_default_uint(activeConfiguration, "AdvOut", "Track1Bitrate",
+				160);
+	config_set_default_uint(activeConfiguration, "AdvOut", "Track2Bitrate",
+				160);
+	config_set_default_uint(activeConfiguration, "AdvOut", "Track3Bitrate",
+				160);
+	config_set_default_uint(activeConfiguration, "AdvOut", "Track4Bitrate",
+				160);
+	config_set_default_uint(activeConfiguration, "AdvOut", "Track5Bitrate",
+				160);
+	config_set_default_uint(activeConfiguration, "AdvOut", "Track6Bitrate",
+				160);
 
-	config_set_default_uint(basicConfig, "AdvOut", "RecSplitFileTime", 15);
-	config_set_default_uint(basicConfig, "AdvOut", "RecSplitFileSize",
-				2048);
+	config_set_default_uint(activeConfiguration, "AdvOut",
+				"RecSplitFileTime", 15);
+	config_set_default_uint(activeConfiguration, "AdvOut",
+				"RecSplitFileSize", 2048);
 
-	config_set_default_bool(basicConfig, "AdvOut", "RecRB", false);
-	config_set_default_uint(basicConfig, "AdvOut", "RecRBTime", 20);
-	config_set_default_int(basicConfig, "AdvOut", "RecRBSize", 512);
+	config_set_default_bool(activeConfiguration, "AdvOut", "RecRB", false);
+	config_set_default_uint(activeConfiguration, "AdvOut", "RecRBTime", 20);
+	config_set_default_int(activeConfiguration, "AdvOut", "RecRBSize", 512);
 
-	config_set_default_uint(basicConfig, "Video", "BaseCX", cx);
-	config_set_default_uint(basicConfig, "Video", "BaseCY", cy);
+	config_set_default_uint(activeConfiguration, "Video", "BaseCX", cx);
+	config_set_default_uint(activeConfiguration, "Video", "BaseCY", cy);
 
 	/* don't allow BaseCX/BaseCY to be susceptible to defaults changing */
-	if (!config_has_user_value(basicConfig, "Video", "BaseCX") ||
-	    !config_has_user_value(basicConfig, "Video", "BaseCY")) {
-		config_set_uint(basicConfig, "Video", "BaseCX", cx);
-		config_set_uint(basicConfig, "Video", "BaseCY", cy);
-		config_save_safe(basicConfig, "tmp", nullptr);
+	if (!config_has_user_value(activeConfiguration, "Video", "BaseCX") ||
+	    !config_has_user_value(activeConfiguration, "Video", "BaseCY")) {
+		config_set_uint(activeConfiguration, "Video", "BaseCX", cx);
+		config_set_uint(activeConfiguration, "Video", "BaseCY", cy);
+		config_save_safe(activeConfiguration, "tmp", nullptr);
 	}
 
-	config_set_default_string(basicConfig, "Output", "FilenameFormatting",
+	config_set_default_string(activeConfiguration, "Output",
+				  "FilenameFormatting",
 				  "%CCYY-%MM-%DD %hh-%mm-%ss");
 
-	config_set_default_bool(basicConfig, "Output", "DelayEnable", false);
-	config_set_default_uint(basicConfig, "Output", "DelaySec", 20);
-	config_set_default_bool(basicConfig, "Output", "DelayPreserve", true);
+	config_set_default_bool(activeConfiguration, "Output", "DelayEnable",
+				false);
+	config_set_default_uint(activeConfiguration, "Output", "DelaySec", 20);
+	config_set_default_bool(activeConfiguration, "Output", "DelayPreserve",
+				true);
 
-	config_set_default_bool(basicConfig, "Output", "Reconnect", true);
-	config_set_default_uint(basicConfig, "Output", "RetryDelay", 2);
-	config_set_default_uint(basicConfig, "Output", "MaxRetries", 25);
+	config_set_default_bool(activeConfiguration, "Output", "Reconnect",
+				true);
+	config_set_default_uint(activeConfiguration, "Output", "RetryDelay", 2);
+	config_set_default_uint(activeConfiguration, "Output", "MaxRetries",
+				25);
 
-	config_set_default_string(basicConfig, "Output", "BindIP", "default");
-	config_set_default_string(basicConfig, "Output", "IPFamily",
+	config_set_default_string(activeConfiguration, "Output", "BindIP",
+				  "default");
+	config_set_default_string(activeConfiguration, "Output", "IPFamily",
 				  "IPv4+IPv6");
-	config_set_default_bool(basicConfig, "Output", "NewSocketLoopEnable",
-				false);
-	config_set_default_bool(basicConfig, "Output", "LowLatencyEnable",
-				false);
+	config_set_default_bool(activeConfiguration, "Output",
+				"NewSocketLoopEnable", false);
+	config_set_default_bool(activeConfiguration, "Output",
+				"LowLatencyEnable", false);
 
 	int i = 0;
 	uint32_t scale_cx = cx;
@@ -1992,44 +2054,55 @@ bool OBSBasic::InitBasicConfigDefaults()
 		scale_cy = uint32_t(double(cy) / scale);
 	}
 
-	config_set_default_uint(basicConfig, "Video", "OutputCX", scale_cx);
-	config_set_default_uint(basicConfig, "Video", "OutputCY", scale_cy);
+	config_set_default_uint(activeConfiguration, "Video", "OutputCX",
+				scale_cx);
+	config_set_default_uint(activeConfiguration, "Video", "OutputCY",
+				scale_cy);
 
 	/* don't allow OutputCX/OutputCY to be susceptible to defaults
 	 * changing */
-	if (!config_has_user_value(basicConfig, "Video", "OutputCX") ||
-	    !config_has_user_value(basicConfig, "Video", "OutputCY")) {
-		config_set_uint(basicConfig, "Video", "OutputCX", scale_cx);
-		config_set_uint(basicConfig, "Video", "OutputCY", scale_cy);
-		config_save_safe(basicConfig, "tmp", nullptr);
+	if (!config_has_user_value(activeConfiguration, "Video", "OutputCX") ||
+	    !config_has_user_value(activeConfiguration, "Video", "OutputCY")) {
+		config_set_uint(activeConfiguration, "Video", "OutputCX",
+				scale_cx);
+		config_set_uint(activeConfiguration, "Video", "OutputCY",
+				scale_cy);
+		config_save_safe(activeConfiguration, "tmp", nullptr);
 	}
 
-	config_set_default_uint(basicConfig, "Video", "FPSType", 0);
-	config_set_default_string(basicConfig, "Video", "FPSCommon", "30");
-	config_set_default_uint(basicConfig, "Video", "FPSInt", 30);
-	config_set_default_uint(basicConfig, "Video", "FPSNum", 30);
-	config_set_default_uint(basicConfig, "Video", "FPSDen", 1);
-	config_set_default_string(basicConfig, "Video", "ScaleType", "bicubic");
-	config_set_default_string(basicConfig, "Video", "ColorFormat", "NV12");
-	config_set_default_string(basicConfig, "Video", "ColorSpace", "709");
-	config_set_default_string(basicConfig, "Video", "ColorRange",
+	config_set_default_uint(activeConfiguration, "Video", "FPSType", 0);
+	config_set_default_string(activeConfiguration, "Video", "FPSCommon",
+				  "30");
+	config_set_default_uint(activeConfiguration, "Video", "FPSInt", 30);
+	config_set_default_uint(activeConfiguration, "Video", "FPSNum", 30);
+	config_set_default_uint(activeConfiguration, "Video", "FPSDen", 1);
+	config_set_default_string(activeConfiguration, "Video", "ScaleType",
+				  "bicubic");
+	config_set_default_string(activeConfiguration, "Video", "ColorFormat",
+				  "NV12");
+	config_set_default_string(activeConfiguration, "Video", "ColorSpace",
+				  "709");
+	config_set_default_string(activeConfiguration, "Video", "ColorRange",
 				  "Partial");
-	config_set_default_uint(basicConfig, "Video", "SdrWhiteLevel", 300);
-	config_set_default_uint(basicConfig, "Video", "HdrNominalPeakLevel",
-				1000);
+	config_set_default_uint(activeConfiguration, "Video", "SdrWhiteLevel",
+				300);
+	config_set_default_uint(activeConfiguration, "Video",
+				"HdrNominalPeakLevel", 1000);
 
-	config_set_default_string(basicConfig, "Audio", "MonitoringDeviceId",
-				  "default");
+	config_set_default_string(activeConfiguration, "Audio",
+				  "MonitoringDeviceId", "default");
 	config_set_default_string(
-		basicConfig, "Audio", "MonitoringDeviceName",
+		activeConfiguration, "Audio", "MonitoringDeviceName",
 		Str("Basic.Settings.Advanced.Audio.MonitoringDevice"
 		    ".Default"));
-	config_set_default_uint(basicConfig, "Audio", "SampleRate", 48000);
-	config_set_default_string(basicConfig, "Audio", "ChannelSetup",
+	config_set_default_uint(activeConfiguration, "Audio", "SampleRate",
+				48000);
+	config_set_default_string(activeConfiguration, "Audio", "ChannelSetup",
 				  "Stereo");
-	config_set_default_double(basicConfig, "Audio", "MeterDecayRate",
-				  VOLUME_METER_DECAY_FAST);
-	config_set_default_uint(basicConfig, "Audio", "PeakMeterType", 0);
+	config_set_default_double(activeConfiguration, "Audio",
+				  "MeterDecayRate", VOLUME_METER_DECAY_FAST);
+	config_set_default_uint(activeConfiguration, "Audio", "PeakMeterType",
+				0);
 
 	CheckExistingCookieId();
 
@@ -2044,12 +2117,12 @@ void OBSBasic::InitBasicConfigDefaults2()
 					      "Pre23Defaults");
 	bool useNV = EncoderAvailable("ffmpeg_nvenc") && !oldEncDefaults;
 
-	config_set_default_string(basicConfig, "SimpleOutput", "StreamEncoder",
-				  useNV ? SIMPLE_ENCODER_NVENC
-					: SIMPLE_ENCODER_X264);
-	config_set_default_string(basicConfig, "SimpleOutput", "RecEncoder",
-				  useNV ? SIMPLE_ENCODER_NVENC
-					: SIMPLE_ENCODER_X264);
+	config_set_default_string(
+		activeConfiguration, "SimpleOutput", "StreamEncoder",
+		useNV ? SIMPLE_ENCODER_NVENC : SIMPLE_ENCODER_X264);
+	config_set_default_string(
+		activeConfiguration, "SimpleOutput", "RecEncoder",
+		useNV ? SIMPLE_ENCODER_NVENC : SIMPLE_ENCODER_X264);
 
 	const char *aac_default = "ffmpeg_aac";
 	if (EncoderAvailable("CoreAudio_AAC"))
@@ -2057,47 +2130,37 @@ void OBSBasic::InitBasicConfigDefaults2()
 	else if (EncoderAvailable("libfdk_aac"))
 		aac_default = "libfdk_aac";
 
-	config_set_default_string(basicConfig, "AdvOut", "AudioEncoder",
+	config_set_default_string(activeConfiguration, "AdvOut", "AudioEncoder",
 				  aac_default);
-	config_set_default_string(basicConfig, "AdvOut", "RecAudioEncoder",
-				  aac_default);
+	config_set_default_string(activeConfiguration, "AdvOut",
+				  "RecAudioEncoder", aac_default);
 }
 
 bool OBSBasic::InitBasicConfig()
 {
 	ProfileScope("OBSBasic::InitBasicConfig");
 
-	char configPath[512];
+	RefreshProfiles(true);
 
-	int ret = GetProfilePath(configPath, sizeof(configPath), "");
-	if (ret <= 0) {
-		OBSErrorBox(nullptr, "Failed to get profile path");
-		return false;
-	}
+	std::string currentProfileName{
+		config_get_string(App()->GetUserConfig(), "Basic", "Profile")};
 
-	if (os_mkdir(configPath) == MKDIR_ERROR) {
-		OBSErrorBox(nullptr, "Failed to create profile path");
-		return false;
-	}
+	auto foundProfile = GetProfileByName(currentProfileName);
 
-	ret = GetProfilePath(configPath, sizeof(configPath), "basic.ini");
-	if (ret <= 0) {
-		OBSErrorBox(nullptr, "Failed to get basic.ini path");
-		return false;
-	}
+	if (!foundProfile) {
+		const OBSProfile &newProfile =
+			CreateProfile(currentProfileName);
 
-	int code = basicConfig.Open(configPath, CONFIG_OPEN_ALWAYS);
-	if (code != CONFIG_SUCCESS) {
-		OBSErrorBox(NULL, "Failed to open basic.ini: %d", code);
-		return false;
-	}
-
-	if (config_get_string(basicConfig, "General", "Name") == nullptr) {
-		const char *curName = config_get_string(App()->GlobalConfig(),
-							"Basic", "Profile");
-
-		config_set_string(basicConfig, "General", "Name", curName);
-		basicConfig.SaveSafe("tmp");
+		ActivateProfile(newProfile);
+	} else {
+		// TODO: Remove duplicate code from OBS initialization and just use ActivateProfile here instead
+		int code = activeConfiguration.Open(
+			foundProfile.value().profileFile.u8string().c_str(),
+			CONFIG_OPEN_ALWAYS);
+		if (code != CONFIG_SUCCESS) {
+			OBSErrorBox(NULL, "Failed to open basic.ini: %d", code);
+			return false;
+		}
 	}
 
 	return InitBasicConfigDefaults();
@@ -2200,7 +2263,8 @@ void OBSBasic::ResetOutputs()
 {
 	ProfileScope("OBSBasic::ResetOutputs");
 
-	const char *mode = config_get_string(basicConfig, "Output", "Mode");
+	const char *mode =
+		config_get_string(activeConfiguration, "Output", "Mode");
 	bool advOut = astrcmpi(mode, "Advanced") == 0;
 
 	if ((!outputHandler || !outputHandler->Active()) &&
@@ -2308,9 +2372,9 @@ void OBSBasic::OBSInit()
 	/* load audio monitoring */
 	if (obs_audio_monitoring_available()) {
 		const char *device_name = config_get_string(
-			basicConfig, "Audio", "MonitoringDeviceName");
-		const char *device_id = config_get_string(basicConfig, "Audio",
-							  "MonitoringDeviceId");
+			activeConfiguration, "Audio", "MonitoringDeviceName");
+		const char *device_id = config_get_string(
+			activeConfiguration, "Audio", "MonitoringDeviceId");
 
 		obs_set_audio_monitoring_device(device_name, device_id);
 
@@ -2437,7 +2501,6 @@ void OBSBasic::OBSInit()
 					  Q_ARG(bool, true));
 
 	RefreshSceneCollections();
-	RefreshProfiles();
 	disableSaving--;
 
 	auto addDisplay = [this](OBSQTDisplay *window) {
@@ -2606,7 +2669,8 @@ void OBSBasic::OBSInit()
 	ToggleMixerLayout(config_get_bool(App()->GetUserConfig(), "BasicWindow",
 					  "VerticalVolControl"));
 
-	if (config_get_bool(basicConfig, "General", "OpenStatsOnStartup"))
+	if (config_get_bool(activeConfiguration, "General",
+			    "OpenStatsOnStartup"))
 		on_stats_triggered();
 
 	OBSBasicStats::InitializeValues();
@@ -2945,7 +3009,7 @@ void OBSBasic::CreateHotkeys()
 
 	auto LoadHotkeyData = [&](const char *name) -> OBSData {
 		const char *info =
-			config_get_string(basicConfig, "Hotkeys", name);
+			config_get_string(activeConfiguration, "Hotkeys", name);
 		if (!info)
 			return {};
 
@@ -2967,16 +3031,16 @@ void OBSBasic::CreateHotkeys()
 				  const char *name1,
 				  const char *oldName = NULL) {
 		if (oldName) {
-			const auto info = config_get_string(basicConfig,
+			const auto info = config_get_string(activeConfiguration,
 							    "Hotkeys", oldName);
 			if (info) {
-				config_set_string(basicConfig, "Hotkeys", name0,
-						  info);
-				config_set_string(basicConfig, "Hotkeys", name1,
-						  info);
-				config_remove_value(basicConfig, "Hotkeys",
-						    oldName);
-				config_save(basicConfig);
+				config_set_string(activeConfiguration,
+						  "Hotkeys", name0, info);
+				config_set_string(activeConfiguration,
+						  "Hotkeys", name1, info);
+				config_remove_value(activeConfiguration,
+						    "Hotkeys", oldName);
+				activeConfiguration.Save();
 			}
 		}
 		OBSDataArrayAutoRelease array0 =
@@ -4205,12 +4269,12 @@ void OBSBasic::ActivateAudioSource(OBSSource source)
 
 	vol->EnableSlider(!SourceVolumeLocked(source));
 
-	double meterDecayRate =
-		config_get_double(basicConfig, "Audio", "MeterDecayRate");
+	double meterDecayRate = config_get_double(activeConfiguration, "Audio",
+						  "MeterDecayRate");
 	vol->SetMeterDecayRate(meterDecayRate);
 
 	uint32_t peakMeterTypeIdx =
-		config_get_uint(basicConfig, "Audio", "PeakMeterType");
+		config_get_uint(activeConfiguration, "Audio", "PeakMeterType");
 
 	enum obs_peak_meter_type peakMeterType;
 	switch (peakMeterTypeIdx) {
@@ -4922,10 +4986,10 @@ static inline int AttemptToResetVideo(struct obs_video_info *ovi)
 	return obs_reset_video(ovi);
 }
 
-static inline enum obs_scale_type GetScaleType(ConfigFile &basicConfig)
+static inline enum obs_scale_type GetScaleType(ConfigFile &activeConfiguration)
 {
 	const char *scaleTypeStr =
-		config_get_string(basicConfig, "Video", "ScaleType");
+		config_get_string(activeConfiguration, "Video", "ScaleType");
 
 	if (astrcmpi(scaleTypeStr, "bilinear") == 0)
 		return OBS_SCALE_BILINEAR;
@@ -5006,43 +5070,43 @@ int OBSBasic::ResetVideo()
 	GetConfigFPS(ovi.fps_num, ovi.fps_den);
 
 	const char *colorFormat =
-		config_get_string(basicConfig, "Video", "ColorFormat");
+		config_get_string(activeConfiguration, "Video", "ColorFormat");
 	const char *colorSpace =
-		config_get_string(basicConfig, "Video", "ColorSpace");
+		config_get_string(activeConfiguration, "Video", "ColorSpace");
 	const char *colorRange =
-		config_get_string(basicConfig, "Video", "ColorRange");
+		config_get_string(activeConfiguration, "Video", "ColorRange");
 
 	ovi.graphics_module = App()->GetRenderModule();
-	ovi.base_width =
-		(uint32_t)config_get_uint(basicConfig, "Video", "BaseCX");
-	ovi.base_height =
-		(uint32_t)config_get_uint(basicConfig, "Video", "BaseCY");
-	ovi.output_width =
-		(uint32_t)config_get_uint(basicConfig, "Video", "OutputCX");
-	ovi.output_height =
-		(uint32_t)config_get_uint(basicConfig, "Video", "OutputCY");
+	ovi.base_width = (uint32_t)config_get_uint(activeConfiguration, "Video",
+						   "BaseCX");
+	ovi.base_height = (uint32_t)config_get_uint(activeConfiguration,
+						    "Video", "BaseCY");
+	ovi.output_width = (uint32_t)config_get_uint(activeConfiguration,
+						     "Video", "OutputCX");
+	ovi.output_height = (uint32_t)config_get_uint(activeConfiguration,
+						      "Video", "OutputCY");
 	ovi.output_format = GetVideoFormatFromName(colorFormat);
 	ovi.colorspace = GetVideoColorSpaceFromName(colorSpace);
 	ovi.range = astrcmpi(colorRange, "Full") == 0 ? VIDEO_RANGE_FULL
 						      : VIDEO_RANGE_PARTIAL;
 	ovi.adapter =
-		config_get_uint(App()->GlobalConfig(), "Video", "AdapterIdx");
+		config_get_uint(App()->GetUserConfig(), "Video", "AdapterIdx");
 	ovi.gpu_conversion = true;
-	ovi.scale_type = GetScaleType(basicConfig);
+	ovi.scale_type = GetScaleType(activeConfiguration);
 
 	if (ovi.base_width < 32 || ovi.base_height < 32) {
 		ovi.base_width = 1920;
 		ovi.base_height = 1080;
-		config_set_uint(basicConfig, "Video", "BaseCX", 1920);
-		config_set_uint(basicConfig, "Video", "BaseCY", 1080);
+		config_set_uint(activeConfiguration, "Video", "BaseCX", 1920);
+		config_set_uint(activeConfiguration, "Video", "BaseCY", 1080);
 	}
 
 	if (ovi.output_width < 32 || ovi.output_height < 32) {
 		ovi.output_width = ovi.base_width;
 		ovi.output_height = ovi.base_height;
-		config_set_uint(basicConfig, "Video", "OutputCX",
+		config_set_uint(activeConfiguration, "Video", "OutputCX",
 				ovi.base_width);
-		config_set_uint(basicConfig, "Video", "OutputCY",
+		config_set_uint(activeConfiguration, "Video", "OutputCY",
 				ovi.base_height);
 	}
 
@@ -5058,9 +5122,9 @@ int OBSBasic::ResetVideo()
 			ResizeProgram(ovi.base_width, ovi.base_height);
 
 		const float sdr_white_level = (float)config_get_uint(
-			basicConfig, "Video", "SdrWhiteLevel");
+			activeConfiguration, "Video", "SdrWhiteLevel");
 		const float hdr_nominal_peak_level = (float)config_get_uint(
-			basicConfig, "Video", "HdrNominalPeakLevel");
+			activeConfiguration, "Video", "HdrNominalPeakLevel");
 		obs_set_video_levels(sdr_white_level, hdr_nominal_peak_level);
 		OBSBasicStats::InitializeValues();
 		OBSProjector::UpdateMultiviewProjectors();
@@ -5085,10 +5149,10 @@ bool OBSBasic::ResetAudio()
 
 	struct obs_audio_info2 ai = {};
 	ai.samples_per_sec =
-		config_get_uint(basicConfig, "Audio", "SampleRate");
+		config_get_uint(activeConfiguration, "Audio", "SampleRate");
 
 	const char *channelSetupStr =
-		config_get_string(basicConfig, "Audio", "ChannelSetup");
+		config_get_string(activeConfiguration, "Audio", "ChannelSetup");
 
 	if (strcmp(channelSetupStr, "Mono") == 0)
 		ai.speakers = SPEAKERS_MONO;
@@ -5519,15 +5583,18 @@ void OBSBasic::changeEvent(QEvent *event)
 
 void OBSBasic::on_actionShow_Recordings_triggered()
 {
-	const char *mode = config_get_string(basicConfig, "Output", "Mode");
-	const char *type = config_get_string(basicConfig, "AdvOut", "RecType");
+	const char *mode =
+		config_get_string(activeConfiguration, "Output", "Mode");
+	const char *type =
+		config_get_string(activeConfiguration, "AdvOut", "RecType");
 	const char *adv_path =
 		strcmp(type, "Standard")
-			? config_get_string(basicConfig, "AdvOut", "FFFilePath")
-			: config_get_string(basicConfig, "AdvOut",
+			? config_get_string(activeConfiguration, "AdvOut",
+					    "FFFilePath")
+			: config_get_string(activeConfiguration, "AdvOut",
 					    "RecFilePath");
 	const char *path = strcmp(mode, "Advanced")
-				   ? config_get_string(basicConfig,
+				   ? config_get_string(activeConfiguration,
 						       "SimpleOutput",
 						       "FilePath")
 				   : adv_path;
@@ -5542,13 +5609,14 @@ void OBSBasic::on_actionRemux_triggered()
 		return;
 	}
 
-	const char *mode = config_get_string(basicConfig, "Output", "Mode");
+	const char *mode =
+		config_get_string(activeConfiguration, "Output", "Mode");
 	const char *path = strcmp(mode, "Advanced")
-				   ? config_get_string(basicConfig,
+				   ? config_get_string(activeConfiguration,
 						       "SimpleOutput",
 						       "FilePath")
-				   : config_get_string(basicConfig, "AdvOut",
-						       "RecFilePath");
+				   : config_get_string(activeConfiguration,
+						       "AdvOut", "RecFilePath");
 
 	OBSRemux *remuxDlg;
 	remuxDlg = new OBSRemux(path, this);
@@ -8507,12 +8575,16 @@ void OBSBasic::on_actionShowSettingsFolder_triggered()
 
 void OBSBasic::on_actionShowProfileFolder_triggered()
 {
-	char path[512];
-	int ret = GetProfilePath(path, 512, "");
-	if (ret <= 0)
-		return;
+	std::string userProfilePath;
+	userProfilePath.reserve(App()->userProfilesLocation.u8string().size() +
+				OBSProfilePath.size());
+	userProfilePath.append(App()->userProfilesLocation.u8string())
+		.append(OBSProfilePath);
 
-	QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+	const QString userProfileLocation =
+		QString::fromStdString(userProfilePath);
+
+	QDesktopServices::openUrl(QUrl::fromLocalFile(userProfileLocation));
 }
 
 int OBSBasic::GetTopSelectedSourceItem()
@@ -8599,7 +8671,8 @@ void OBSBasic::ToggleAlwaysOnTop()
 
 void OBSBasic::GetFPSCommon(uint32_t &num, uint32_t &den) const
 {
-	const char *val = config_get_string(basicConfig, "Video", "FPSCommon");
+	const char *val =
+		config_get_string(activeConfiguration, "Video", "FPSCommon");
 
 	if (strcmp(val, "10") == 0) {
 		num = 10;
@@ -8636,25 +8709,26 @@ void OBSBasic::GetFPSCommon(uint32_t &num, uint32_t &den) const
 
 void OBSBasic::GetFPSInteger(uint32_t &num, uint32_t &den) const
 {
-	num = (uint32_t)config_get_uint(basicConfig, "Video", "FPSInt");
+	num = (uint32_t)config_get_uint(activeConfiguration, "Video", "FPSInt");
 	den = 1;
 }
 
 void OBSBasic::GetFPSFraction(uint32_t &num, uint32_t &den) const
 {
-	num = (uint32_t)config_get_uint(basicConfig, "Video", "FPSNum");
-	den = (uint32_t)config_get_uint(basicConfig, "Video", "FPSDen");
+	num = (uint32_t)config_get_uint(activeConfiguration, "Video", "FPSNum");
+	den = (uint32_t)config_get_uint(activeConfiguration, "Video", "FPSDen");
 }
 
 void OBSBasic::GetFPSNanoseconds(uint32_t &num, uint32_t &den) const
 {
 	num = 1000000000;
-	den = (uint32_t)config_get_uint(basicConfig, "Video", "FPSNS");
+	den = (uint32_t)config_get_uint(activeConfiguration, "Video", "FPSNS");
 }
 
 void OBSBasic::GetConfigFPS(uint32_t &num, uint32_t &den) const
 {
-	uint32_t type = config_get_uint(basicConfig, "Video", "FPSType");
+	uint32_t type =
+		config_get_uint(activeConfiguration, "Video", "FPSType");
 
 	if (type == 1) //"Integer"
 		GetFPSInteger(num, den);
@@ -8670,7 +8744,7 @@ void OBSBasic::GetConfigFPS(uint32_t &num, uint32_t &den) const
 
 config_t *OBSBasic::Config() const
 {
-	return basicConfig;
+	return activeConfiguration;
 }
 
 #ifdef YOUTUBE_ENABLED
@@ -10589,14 +10663,14 @@ void OBSBasic::ResizeOutputSizeOfSource()
 	int width = obs_source_get_width(source);
 	int height = obs_source_get_height(source);
 
-	config_set_uint(basicConfig, "Video", "BaseCX", width);
-	config_set_uint(basicConfig, "Video", "BaseCY", height);
-	config_set_uint(basicConfig, "Video", "OutputCX", width);
-	config_set_uint(basicConfig, "Video", "OutputCY", height);
+	config_set_uint(activeConfiguration, "Video", "BaseCX", width);
+	config_set_uint(activeConfiguration, "Video", "BaseCY", height);
+	config_set_uint(activeConfiguration, "Video", "OutputCX", width);
+	config_set_uint(activeConfiguration, "Video", "OutputCY", height);
 
 	ResetVideo();
 	ResetOutputs();
-	config_save_safe(basicConfig, "tmp", nullptr);
+	activeConfiguration.SaveSafe("tmp");
 	on_actionFitToScreen_triggered();
 }
 
@@ -10929,25 +11003,26 @@ void OBSBasic::RecordPauseToggled()
 
 void OBSBasic::UpdateIsRecordingPausable()
 {
-	const char *mode = config_get_string(basicConfig, "Output", "Mode");
+	const char *mode =
+		config_get_string(activeConfiguration, "Output", "Mode");
 	bool adv = astrcmpi(mode, "Advanced") == 0;
 	bool shared = true;
 
 	if (adv) {
-		const char *recType =
-			config_get_string(basicConfig, "AdvOut", "RecType");
+		const char *recType = config_get_string(activeConfiguration,
+							"AdvOut", "RecType");
 
 		if (astrcmpi(recType, "FFmpeg") == 0) {
-			shared = config_get_bool(basicConfig, "AdvOut",
+			shared = config_get_bool(activeConfiguration, "AdvOut",
 						 "FFOutputToFile");
 		} else {
 			const char *recordEncoder = config_get_string(
-				basicConfig, "AdvOut", "RecEncoder");
+				activeConfiguration, "AdvOut", "RecEncoder");
 			shared = astrcmpi(recordEncoder, "none") == 0;
 		}
 	} else {
 		const char *quality = config_get_string(
-			basicConfig, "SimpleOutput", "RecQuality");
+			activeConfiguration, "SimpleOutput", "RecQuality");
 		shared = strcmp(quality, "Stream") == 0;
 	}
 
@@ -11271,4 +11346,58 @@ void OBSBasic::PreviewScalingModeChanged(int value)
 		on_actionScaleOutput_triggered();
 		break;
 	};
+}
+
+// MARK: - Generic UI Helper Functions
+
+OBSPromptResult OBSBasic::PromptForName(const OBSPromptRequest &request,
+					const OBSPromptCallback &callback)
+{
+	OBSPromptResult result;
+
+	for (;;) {
+		result.success = false;
+
+		if (request.withOption && !request.optionPrompt.empty()) {
+			result.optionValue = request.optionValue;
+
+			result.success = NameDialog::AskForNameWithOption(
+				this, request.title.c_str(),
+				request.prompt.c_str(), result.promptValue,
+				request.optionPrompt.c_str(),
+				result.optionValue,
+				(request.promptValue.empty()
+					 ? nullptr
+					 : request.promptValue.c_str()));
+
+		} else {
+			result.success = NameDialog::AskForName(
+				this, request.title.c_str(),
+				request.prompt.c_str(), result.promptValue,
+				(request.promptValue.empty()
+					 ? nullptr
+					 : request.promptValue.c_str()));
+		}
+
+		if (!result.success) {
+			break;
+		}
+
+		if (result.promptValue.empty()) {
+			OBSMessageBox::warning(this,
+					       QTStr("NoNameEntered.Title"),
+					       QTStr("NoNameEntered.Text"));
+			continue;
+		}
+
+		if (!callback(result)) {
+			OBSMessageBox::warning(this, QTStr("NameExists.Title"),
+					       QTStr("NameExists.Text"));
+			continue;
+		}
+
+		break;
+	}
+
+	return result;
 }

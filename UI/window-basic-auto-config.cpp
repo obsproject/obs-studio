@@ -39,18 +39,24 @@ extern QCefCookieManager *panel_cookies;
 
 /* ------------------------------------------------------------------------- */
 
-#define SERVICE_PATH "service.json"
+constexpr std::string_view OBSServiceFileName = "service.json";
 
 static OBSData OpenServiceSettings(std::string &type)
 {
-	char serviceJsonPath[512];
-	int ret = GetProfilePath(serviceJsonPath, sizeof(serviceJsonPath),
-				 SERVICE_PATH);
-	if (ret <= 0)
-		return OBSData();
+	const OBSBasic *basic =
+		reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+	const OBSProfile &currentProfile = basic->GetCurrentProfile();
 
-	OBSDataAutoRelease data =
-		obs_data_create_from_json_file_safe(serviceJsonPath, "bak");
+	const std::filesystem::path jsonFilePath =
+		currentProfile.path /
+		std::filesystem::u8path(OBSServiceFileName);
+
+	if (!std::filesystem::exists(jsonFilePath)) {
+		return OBSData();
+	}
+
+	OBSDataAutoRelease data = obs_data_create_from_json_file_safe(
+		jsonFilePath.u8string().c_str(), "bak");
 
 	obs_data_set_default_string(data, "type", "rtmp_common");
 	type = obs_data_get_string(data, "type");
