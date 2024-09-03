@@ -165,6 +165,8 @@ struct OBSPromptRequest {
 using OBSPromptCallback = std::function<bool(const OBSPromptResult &result)>;
 
 using OBSProfileCache = std::map<std::string, OBSProfile>;
+using OBSSceneCollectionCache = std::map<std::string, OBSSceneCollection>;
+
 class ColorSelect : public QWidget {
 
 public:
@@ -471,8 +473,6 @@ private:
 	void ToggleVolControlLayout();
 	void ToggleMixerLayout(bool vertical);
 
-	void RefreshSceneCollections();
-	void ChangeSceneCollection();
 	void LogScenes();
 	void SaveProjectNow();
 
@@ -760,8 +760,6 @@ public slots:
 			       bool manual = false);
 	void SetCurrentScene(OBSSource scene, bool force = false);
 
-	bool AddSceneCollection(bool create_new,
-				const QString &name = QString());
 	void UpdatePatronJson(const QString &text, const QString &error);
 
 	void ShowContextBar();
@@ -1163,14 +1161,6 @@ private slots:
 	void ProgramViewContextMenuRequested();
 	void on_previewDisabledWidget_customContextMenuRequested();
 
-	void on_actionNewSceneCollection_triggered();
-	void on_actionDupSceneCollection_triggered();
-	void on_actionRenameSceneCollection_triggered();
-	void on_actionRemoveSceneCollection_triggered();
-	void on_actionImportSceneCollection_triggered();
-	void on_actionExportSceneCollection_triggered();
-	void on_actionRemigrateSceneCollection_triggered();
-
 	void on_actionShowSettingsFolder_triggered();
 	void on_actionShowProfileFolder_triggered();
 
@@ -1398,6 +1388,54 @@ public slots:
 	bool CreateNewProfile(const QString &name);
 	bool CreateDuplicateProfile(const QString &name);
 	void DeleteProfile(const QString &profileName);
+
+	// MARK: - OBS Scene Collection Management
+private:
+	OBSSceneCollectionCache collections{};
+
+	void SetupNewSceneCollection(const std::string &collectionName);
+	void SetupDuplicateSceneCollection(const std::string &collectionName);
+	void SetupRenameSceneCollection(const std::string &collectionName);
+
+	const OBSSceneCollection &
+	CreateSceneCollection(const std::string &collectionName);
+	void RemoveSceneCollection(OBSSceneCollection collection);
+
+	bool CreateDuplicateSceneCollection(const QString &name);
+	void DeleteSceneCollection(const QString &name);
+	void ChangeSceneCollection();
+
+	void RefreshSceneCollectionCache();
+
+	void RefreshSceneCollections(bool refreshCache = false);
+	void ActivateSceneCollection(const OBSSceneCollection &collection);
+
+public:
+	inline const OBSSceneCollectionCache &
+	GetSceneCollectionCache() const noexcept
+	{
+		return collections;
+	};
+
+	const OBSSceneCollection &GetCurrentSceneCollection() const;
+
+	std::optional<OBSSceneCollection>
+	GetSceneCollectionByName(const std::string &collectionName) const;
+	std::optional<OBSSceneCollection>
+	GetSceneCollectionByFileName(const std::string &fileName) const;
+
+private slots:
+	void on_actionNewSceneCollection_triggered();
+	void on_actionDupSceneCollection_triggered();
+	void on_actionRenameSceneCollection_triggered();
+	void
+	on_actionRemoveSceneCollection_triggered(bool skipConfirmation = false);
+	void on_actionImportSceneCollection_triggered();
+	void on_actionExportSceneCollection_triggered();
+	void on_actionRemigrateSceneCollection_triggered();
+
+public slots:
+	bool CreateNewSceneCollection(const QString &name);
 };
 
 extern bool cef_js_avail;

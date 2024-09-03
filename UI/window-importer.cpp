@@ -536,8 +536,11 @@ void OBSImporter::browseImport()
 
 bool GetUnusedName(std::string &name)
 {
-	if (!SceneCollectionExists(name.c_str()))
+	OBSBasic *basic = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+
+	if (!basic->GetSceneCollectionByName(name)) {
 		return false;
+	}
 
 	std::string newName;
 	int inc = 2;
@@ -545,18 +548,21 @@ bool GetUnusedName(std::string &name)
 		newName = name;
 		newName += " ";
 		newName += std::to_string(inc++);
-	} while (SceneCollectionExists(newName.c_str()));
+	} while (basic->GetSceneCollectionByName(newName));
 
 	name = newName;
 	return true;
 }
 
+constexpr std::string_view OBSSceneCollectionPath = "obs-studio/basic/scenes/";
+
 void OBSImporter::importCollections()
 {
 	setEnabled(false);
 
-	char dst[512];
-	GetConfigPath(dst, 512, "obs-studio/basic/scenes/");
+	const std::filesystem::path sceneCollectionLocation =
+		App()->userScenesLocation /
+		std::filesystem::u8path(OBSSceneCollectionPath);
 
 	for (int i = 0; i < optionsModel->rowCount() - 1; i++) {
 		int selected = optionsModel->index(i, ImporterColumn::Selected)
@@ -591,22 +597,35 @@ void OBSImporter::importCollections()
 				out = newOut;
 			}
 
-			GetUnusedSceneCollectionFile(name, file);
+			std::string fileName;
+			if (!GetFileSafeName(name.c_str(), fileName)) {
+				blog(LOG_WARNING,
+				     "Failed to create safe file name for '%s'",
+				     fileName.c_str());
+			}
 
-			std::string save = dst;
-			save += "/";
-			save += file;
-			save += ".json";
+			std::string collectionFile;
+			collectionFile.reserve(
+				sceneCollectionLocation.u8string().size() +
+				fileName.size());
+			collectionFile
+				.append(sceneCollectionLocation.u8string())
+				.append(fileName);
+
+			if (!GetClosestUnusedFileName(collectionFile, "json")) {
+				blog(LOG_WARNING,
+				     "Failed to get closest file name for %s",
+				     fileName.c_str());
+			}
 
 			std::string out_str = json11::Json(out).dump();
 
-			bool success = os_quick_write_utf8_file(save.c_str(),
-								out_str.c_str(),
-								out_str.size(),
-								false);
+			bool success = os_quick_write_utf8_file(
+				collectionFile.c_str(), out_str.c_str(),
+				out_str.size(), false);
 
 			blog(LOG_INFO, "Import Scene Collection: %s (%s) - %s",
-			     name.c_str(), file.c_str(),
+			     name.c_str(), fileName.c_str(),
 			     success ? "SUCCESS" : "FAILURE");
 		}
 	}
