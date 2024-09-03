@@ -208,7 +208,9 @@ EXPORT obs_output_t *obs_frontend_get_recording_output(void);
 EXPORT obs_output_t *obs_frontend_get_replay_buffer_output(void);
 
 EXPORT config_t *obs_frontend_get_profile_config(void);
-EXPORT config_t *obs_frontend_get_global_config(void);
+OBS_DEPRECATED EXPORT config_t *obs_frontend_get_global_config(void);
+EXPORT config_t *obs_frontend_get_app_config(void);
+EXPORT config_t *obs_frontend_get_user_config(void);
 
 EXPORT void obs_frontend_set_streaming_service(obs_service_t *service);
 EXPORT obs_service_t *obs_frontend_get_streaming_service(void);

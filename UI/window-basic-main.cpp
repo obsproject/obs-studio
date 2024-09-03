@@ -191,11 +191,11 @@ static void AddExtraModulePaths()
 	int ret = GetProgramDataPath(base_module_dir, sizeof(base_module_dir),
 				     "obs-studio/plugins/%module%");
 #elif defined(__APPLE__)
-	int ret = GetConfigPath(base_module_dir, sizeof(base_module_dir),
-				"obs-studio/plugins/%module%.plugin");
+	int ret = GetAppConfigPath(base_module_dir, sizeof(base_module_dir),
+				   "obs-studio/plugins/%module%.plugin");
 #else
-	int ret = GetConfigPath(base_module_dir, sizeof(base_module_dir),
-				"obs-studio/plugins/%module%");
+	int ret = GetAppConfigPath(base_module_dir, sizeof(base_module_dir),
+				   "obs-studio/plugins/%module%");
 #endif
 
 	if (ret <= 0)
@@ -219,8 +219,8 @@ static void AddExtraModulePaths()
 
 	/* Legacy User Application Support Search Path */
 	char user_legacy_module_dir[PATH_MAX];
-	GetConfigPath(user_legacy_module_dir, sizeof(user_legacy_module_dir),
-		      "obs-studio/plugins/%module%");
+	GetAppConfigPath(user_legacy_module_dir, sizeof(user_legacy_module_dir),
+			 "obs-studio/plugins/%module%");
 	std::string path_user_legacy = user_legacy_module_dir;
 	obs_add_module_path((path_user_legacy + "/bin").c_str(),
 			    (path_user_legacy + "/data").c_str());
@@ -446,7 +446,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	ui->scenes->setAttribute(Qt::WA_MacShowFocusRect, false);
 	ui->sources->setAttribute(Qt::WA_MacShowFocusRect, false);
 
-	bool sceneGrid = config_get_bool(App()->GlobalConfig(), "BasicWindow",
+	bool sceneGrid = config_get_bool(App()->GetUserConfig(), "BasicWindow",
 					 "gridMode");
 	ui->scenes->SetGridMode(sceneGrid);
 
@@ -602,7 +602,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	QPoint curPos;
 
 	//restore parent window geometry
-	const char *geometry = config_get_string(App()->GlobalConfig(),
+	const char *geometry = config_get_string(App()->GetUserConfig(),
 						 "BasicWindow", "geometry");
 	if (geometry != NULL) {
 		QByteArray byteArray =
@@ -726,7 +726,7 @@ static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder,
 	const char *programName = obs_source_get_name(curProgramScene);
 
 	const char *sceneCollection = config_get_string(
-		App()->GlobalConfig(), "Basic", "SceneCollection");
+		App()->GetUserConfig(), "Basic", "SceneCollection");
 
 	obs_data_set_string(saveData, "current_scene", sceneName);
 	obs_data_set_string(saveData, "current_program_scene", programName);
@@ -1244,12 +1244,16 @@ void OBSBasic::Load(const char *file, bool remigrate)
 			}
 		}
 
-		config_set_string(App()->GlobalConfig(), "Basic",
+		config_set_string(App()->GetUserConfig(), "Basic",
 				  "SceneCollection", name.c_str());
-		config_set_string(App()->GlobalConfig(), "Basic",
+		config_set_string(App()->GetUserConfig(), "Basic",
 				  "SceneCollectionFile", name.c_str());
 		blog(LOG_INFO, "No scene file found, creating default scene");
-		CreateDefaultScene(true);
+
+		bool hasFirstRun = config_get_bool(App()->GetUserConfig(),
+						   "General", "FirstRun");
+
+		CreateDefaultScene(!hasFirstRun);
 		SaveProject();
 		return;
 	}
@@ -1342,7 +1346,7 @@ void OBSBasic::LoadData(obs_data_t *data, const char *file, bool remigrate)
 		transitionName = obs_source_get_name(fadeTransition);
 
 	const char *curSceneCollection = config_get_string(
-		App()->GlobalConfig(), "Basic", "SceneCollection");
+		App()->GetUserConfig(), "Basic", "SceneCollection");
 
 	obs_data_set_default_string(data, "name", curSceneCollection);
 
@@ -1475,8 +1479,8 @@ retryScene:
 
 	/* ------------------- */
 
-	bool projectorSave = config_get_bool(GetGlobalConfig(), "BasicWindow",
-					     "SaveProjectors");
+	bool projectorSave = config_get_bool(App()->GetUserConfig(),
+					     "BasicWindow", "SaveProjectors");
 
 	if (projectorSave) {
 		OBSDataArrayAutoRelease savedProjectors =
@@ -1494,10 +1498,10 @@ retryScene:
 	std::string file_base = strrchr(file, '/') + 1;
 	file_base.erase(file_base.size() - 5, 5);
 
-	config_set_string(App()->GlobalConfig(), "Basic", "SceneCollection",
+	config_set_string(App()->GetUserConfig(), "Basic", "SceneCollection",
 			  name);
-	config_set_string(App()->GlobalConfig(), "Basic", "SceneCollectionFile",
-			  file_base.c_str());
+	config_set_string(App()->GetUserConfig(), "Basic",
+			  "SceneCollectionFile", file_base.c_str());
 
 	OBSDataArrayAutoRelease quickTransitionData =
 		obs_data_get_array(data, "quick_transitions");
@@ -1733,7 +1737,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 	cy *= devicePixelRatioF();
 
 	bool oldResolutionDefaults = config_get_bool(
-		App()->GlobalConfig(), "General", "Pre19Defaults");
+		App()->GetUserConfig(), "General", "Pre19Defaults");
 
 	/* use 1920x1080 for new default base res if main monitor is above
 	 * 1920x1080, but don't apply for people from older builds -- only to
@@ -1774,7 +1778,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 	/* ----------------------------------------------------- */
 	/* set twitch chat extensions to "both" if prev version  */
 	/* is under 24.1                                         */
-	if (config_get_bool(GetGlobalConfig(), "General", "Pre24.1Defaults") &&
+	if (config_get_bool(App()->GetUserConfig(), "General",
 	    !config_has_user_value(basicConfig, "Twitch", "AddonChoice")) {
 		config_set_int(basicConfig, "Twitch", "AddonChoice", 3);
 		changed = true;
@@ -2036,7 +2040,7 @@ extern bool EncoderAvailable(const char *encoder);
 
 void OBSBasic::InitBasicConfigDefaults2()
 {
-	bool oldEncDefaults = config_get_bool(App()->GlobalConfig(), "General",
+	bool oldEncDefaults = config_get_bool(App()->GetUserConfig(), "General",
 					      "Pre23Defaults");
 	bool useNV = EncoderAvailable("ffmpeg_nvenc") && !oldEncDefaults;
 
@@ -2370,14 +2374,14 @@ void OBSBasic::OBSInit()
 	InitPrimitives();
 
 	sceneDuplicationMode = config_get_bool(
-		App()->GlobalConfig(), "BasicWindow", "SceneDuplicationMode");
-	swapScenesMode = config_get_bool(App()->GlobalConfig(), "BasicWindow",
+		App()->GetUserConfig(), "BasicWindow", "SceneDuplicationMode");
+	swapScenesMode = config_get_bool(App()->GetUserConfig(), "BasicWindow",
 					 "SwapScenesMode");
 	editPropertiesMode = config_get_bool(
-		App()->GlobalConfig(), "BasicWindow", "EditPropertiesMode");
+		App()->GetUserConfig(), "BasicWindow", "EditPropertiesMode");
 
 	if (!opt_studio_mode) {
-		SetPreviewProgramMode(config_get_bool(App()->GlobalConfig(),
+		SetPreviewProgramMode(config_get_bool(App()->GetUserConfig(),
 						      "BasicWindow",
 						      "PreviewProgramMode"));
 	} else {
@@ -2385,14 +2389,14 @@ void OBSBasic::OBSInit()
 		opt_studio_mode = false;
 	}
 
-#define SET_VISIBILITY(name, control)                                         \
-	do {                                                                  \
-		if (config_has_user_value(App()->GlobalConfig(),              \
-					  "BasicWindow", name)) {             \
-			bool visible = config_get_bool(App()->GlobalConfig(), \
-						       "BasicWindow", name);  \
-			ui->control->setChecked(visible);                     \
-		}                                                             \
+#define SET_VISIBILITY(name, control)                                          \
+	do {                                                                   \
+		if (config_has_user_value(App()->GetUserConfig(),              \
+					  "BasicWindow", name)) {              \
+			bool visible = config_get_bool(App()->GetUserConfig(), \
+						       "BasicWindow", name);   \
+			ui->control->setChecked(visible);                      \
+		}                                                              \
 	} while (false)
 
 	SET_VISIBILITY("ShowListboxToolbars", toggleListboxToolbars);
@@ -2400,11 +2404,11 @@ void OBSBasic::OBSInit()
 #undef SET_VISIBILITY
 
 	bool sourceIconsVisible = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "ShowSourceIcons");
+		App()->GetUserConfig(), "BasicWindow", "ShowSourceIcons");
 	ui->toggleSourceIcons->setChecked(sourceIconsVisible);
 
 	bool contextVisible = config_get_bool(
-		App()->GlobalConfig(), "BasicWindow", "ShowContextToolbars");
+		App()->GetUserConfig(), "BasicWindow", "ShowContextToolbars");
 	ui->toggleContextBar->setChecked(contextVisible);
 	ui->contextContainer->setVisible(contextVisible);
 	if (contextVisible)
@@ -2420,7 +2424,7 @@ void OBSBasic::OBSInit()
 
 	loaded = true;
 
-	previewEnabled = config_get_bool(App()->GlobalConfig(), "BasicWindow",
+	previewEnabled = config_get_bool(App()->GetUserConfig(), "BasicWindow",
 					 "PreviewEnabled");
 
 	if (!previewEnabled && !IsPreviewProgramMode())
@@ -2449,10 +2453,10 @@ void OBSBasic::OBSInit()
 
 	/* Show the main window, unless the tray icon isn't available
 	 * or neither the setting nor flag for starting minimized is set. */
-	bool sysTrayEnabled = config_get_bool(App()->GlobalConfig(),
+	bool sysTrayEnabled = config_get_bool(App()->GetUserConfig(),
 					      "BasicWindow", "SysTrayEnabled");
 	bool sysTrayWhenStarted = config_get_bool(
-		App()->GlobalConfig(), "BasicWindow", "SysTrayWhenStarted");
+		App()->GetUserConfig(), "BasicWindow", "SysTrayWhenStarted");
 	bool hideWindowOnStart = QSystemTrayIcon::isSystemTrayAvailable() &&
 				 sysTrayEnabled &&
 				 (opt_minimize_tray || sysTrayWhenStarted);
@@ -2464,8 +2468,8 @@ void OBSBasic::OBSInit()
 		show();
 #endif
 
-	bool alwaysOnTop = config_get_bool(App()->GlobalConfig(), "BasicWindow",
-					   "AlwaysOnTop");
+	bool alwaysOnTop = config_get_bool(App()->GetUserConfig(),
+					   "BasicWindow", "AlwaysOnTop");
 
 #ifdef ENABLE_WAYLAND
 	bool isWayland = obs_get_nix_platform() == OBS_NIX_PLATFORM_WAYLAND;
@@ -2522,7 +2526,7 @@ void OBSBasic::OBSInit()
 #endif
 
 	const char *dockStateStr = config_get_string(
-		App()->GlobalConfig(), "BasicWindow", "DockState");
+		App()->GetUserConfig(), "BasicWindow", "DockState");
 
 	if (!dockStateStr) {
 		on_resetDocks_triggered(true);
@@ -2533,28 +2537,29 @@ void OBSBasic::OBSInit()
 			on_resetDocks_triggered(true);
 	}
 
-	bool pre23Defaults = config_get_bool(App()->GlobalConfig(), "General",
+	bool pre23Defaults = config_get_bool(App()->GetUserConfig(), "General",
 					     "Pre23Defaults");
 	if (pre23Defaults) {
 		bool resetDockLock23 = config_get_bool(
-			App()->GlobalConfig(), "General", "ResetDockLock23");
+			App()->GetUserConfig(), "General", "ResetDockLock23");
 		if (!resetDockLock23) {
-			config_set_bool(App()->GlobalConfig(), "General",
+			config_set_bool(App()->GetUserConfig(), "General",
 					"ResetDockLock23", true);
-			config_remove_value(App()->GlobalConfig(),
+			config_remove_value(App()->GetUserConfig(),
 					    "BasicWindow", "DocksLocked");
-			config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+			config_save_safe(App()->GetUserConfig(), "tmp",
+					 nullptr);
 		}
 	}
 
-	bool docksLocked = config_get_bool(App()->GlobalConfig(), "BasicWindow",
-					   "DocksLocked");
+	bool docksLocked = config_get_bool(App()->GetUserConfig(),
+					   "BasicWindow", "DocksLocked");
 	on_lockDocks_toggled(docksLocked);
 	ui->lockDocks->blockSignals(true);
 	ui->lockDocks->setChecked(docksLocked);
 	ui->lockDocks->blockSignals(false);
 
-	bool sideDocks = config_get_bool(App()->GlobalConfig(), "BasicWindow",
+	bool sideDocks = config_get_bool(App()->GetUserConfig(), "BasicWindow",
 					 "SideDocks");
 	on_sideDocks_toggled(sideDocks);
 	ui->sideDocks->blockSignals(true);
@@ -2569,15 +2574,15 @@ void OBSBasic::OBSInit()
 	disableColorSpaceConversion(this);
 #endif
 
-	bool has_last_version = config_has_user_value(App()->GlobalConfig(),
+	bool has_last_version = config_has_user_value(App()->GetUserConfig(),
 						      "General", "LastVersion");
 	bool first_run =
-		config_get_bool(App()->GlobalConfig(), "General", "FirstRun");
+		config_get_bool(App()->GetUserConfig(), "General", "FirstRun");
 
 	if (!first_run) {
-		config_set_bool(App()->GlobalConfig(), "General", "FirstRun",
+		config_set_bool(App()->GetUserConfig(), "General", "FirstRun",
 				true);
-		config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+		config_save_safe(App()->GetUserConfig(), "tmp", nullptr);
 	}
 
 	if (!first_run && !has_last_version && !Active())
@@ -2587,18 +2592,18 @@ void OBSBasic::OBSInit()
 #if (defined(_WIN32) || defined(__APPLE__)) && \
 	(OBS_RELEASE_CANDIDATE > 0 || OBS_BETA > 0)
 	/* Automatically set branch to "beta" the first time a pre-release build is run. */
-	if (!config_get_bool(App()->GlobalConfig(), "General",
+	if (!config_get_bool(App()->GetUserConfig(), "General",
 			     "AutoBetaOptIn")) {
-		config_set_string(App()->GlobalConfig(), "General",
+		config_set_string(App()->GetUserConfig(), "General",
 				  "UpdateBranch", "beta");
-		config_set_bool(App()->GlobalConfig(), "General",
+		config_set_bool(App()->GetUserConfig(), "General",
 				"AutoBetaOptIn", true);
-		config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+		config_save_safe(App()->GetUserConfig(), "tmp", nullptr);
 	}
 #endif
 	TimedCheckForUpdates();
 
-	ToggleMixerLayout(config_get_bool(App()->GlobalConfig(), "BasicWindow",
+	ToggleMixerLayout(config_get_bool(App()->GetUserConfig(), "BasicWindow",
 					  "VerticalVolControl"));
 
 	if (config_get_bool(basicConfig, "General", "OpenStatsOnStartup"))
@@ -2707,7 +2712,7 @@ void OBSBasic::OnFirstLoad()
 	Auth::Load();
 
 	bool showLogViewerOnStartup = config_get_bool(
-		App()->GlobalConfig(), "LogViewer", "ShowLogStartup");
+		App()->GetUserConfig(), "LogViewer", "ShowLogStartup");
 
 	if (showLogViewerOnStartup)
 		on_actionViewCurrentLog_triggered();
@@ -2775,28 +2780,28 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 	constexpr uint64_t currentVersion = (uint64_t)LIBOBS_API_VER << 16ULL |
 					    OBS_RELEASE_CANDIDATE << 8ULL |
 					    OBS_BETA;
-	uint64_t lastVersion = config_get_uint(App()->GlobalConfig(), "General",
+	uint64_t lastVersion = config_get_uint(App()->GetAppConfig(), "General",
 					       lastInfoVersion);
 	int current_version_increment = -1;
 
 	if ((lastVersion & ~0xFFFF0000ULL) <
 	    (currentVersion & ~0xFFFF0000ULL)) {
-		config_set_int(App()->GlobalConfig(), "General",
+		config_set_int(App()->GetAppConfig(), "General",
 			       "InfoIncrement", -1);
-		config_set_uint(App()->GlobalConfig(), "General",
+		config_set_uint(App()->GetAppConfig(), "General",
 				lastInfoVersion, currentVersion);
 	} else {
 		current_version_increment = config_get_int(
-			App()->GlobalConfig(), "General", "InfoIncrement");
+			App()->GetAppConfig(), "General", "InfoIncrement");
 	}
 
 	if (info_increment <= current_version_increment) {
 		return;
 	}
 
-	config_set_int(App()->GlobalConfig(), "General", "InfoIncrement",
+	config_set_int(App()->GetAppConfig(), "General", "InfoIncrement",
 		       info_increment);
-	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+	config_save_safe(App()->GetAppConfig(), "tmp", nullptr);
 
 	cef->init_browser();
 
@@ -3284,26 +3289,27 @@ OBSBasic::~OBSBasic()
 	 * expect or want it to. */
 	QApplication::sendPostedEvents(nullptr);
 
-	config_set_int(App()->GlobalConfig(), "General", "LastVersion",
+	config_set_int(App()->GetAppConfig(), "General", "LastVersion",
 		       LIBOBS_API_VER);
+	config_save_safe(App()->GetAppConfig(), "tmp", nullptr);
 
-	config_set_bool(App()->GlobalConfig(), "BasicWindow", "PreviewEnabled",
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "PreviewEnabled",
 			previewEnabled);
-	config_set_bool(App()->GlobalConfig(), "BasicWindow", "AlwaysOnTop",
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "AlwaysOnTop",
 			ui->actionAlwaysOnTop->isChecked());
-	config_set_bool(App()->GlobalConfig(), "BasicWindow",
+	config_set_bool(App()->GetUserConfig(), "BasicWindow",
 			"SceneDuplicationMode", sceneDuplicationMode);
-	config_set_bool(App()->GlobalConfig(), "BasicWindow", "SwapScenesMode",
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "SwapScenesMode",
 			swapScenesMode);
-	config_set_bool(App()->GlobalConfig(), "BasicWindow",
+	config_set_bool(App()->GetUserConfig(), "BasicWindow",
 			"EditPropertiesMode", editPropertiesMode);
-	config_set_bool(App()->GlobalConfig(), "BasicWindow",
+	config_set_bool(App()->GetUserConfig(), "BasicWindow",
 			"PreviewProgramMode", IsPreviewProgramMode());
-	config_set_bool(App()->GlobalConfig(), "BasicWindow", "DocksLocked",
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "DocksLocked",
 			ui->lockDocks->isChecked());
-	config_set_bool(App()->GlobalConfig(), "BasicWindow", "SideDocks",
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "SideDocks",
 			ui->sideDocks->isChecked());
-	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+	config_save_safe(App()->GetUserConfig(), "tmp", nullptr);
 
 #ifdef BROWSER_AVAILABLE
 	DestroyPanelCookieManager();
@@ -4027,7 +4033,7 @@ void OBSBasic::VolControlContextMenu()
 	QAction toggleControlLayoutAction(QTStr("VerticalLayout"), this);
 	toggleControlLayoutAction.setCheckable(true);
 	toggleControlLayoutAction.setChecked(config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "VerticalVolControl"));
+		App()->GetUserConfig(), "BasicWindow", "VerticalVolControl"));
 
 	/* ------------------- */
 
@@ -4126,7 +4132,7 @@ void OBSBasic::StackedMixerAreaContextMenuRequested()
 	QAction toggleControlLayoutAction(QTStr("VerticalLayout"), this);
 	toggleControlLayoutAction.setCheckable(true);
 	toggleControlLayoutAction.setChecked(config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "VerticalVolControl"));
+		App()->GetUserConfig(), "BasicWindow", "VerticalVolControl"));
 
 	/* ------------------- */
 
@@ -4166,10 +4172,10 @@ void OBSBasic::ToggleMixerLayout(bool vertical)
 
 void OBSBasic::ToggleVolControlLayout()
 {
-	bool vertical = !config_get_bool(GetGlobalConfig(), "BasicWindow",
+	bool vertical = !config_get_bool(App()->GetUserConfig(), "BasicWindow",
 					 "VerticalVolControl");
-	config_set_bool(GetGlobalConfig(), "BasicWindow", "VerticalVolControl",
-			vertical);
+	config_set_bool(App()->GetUserConfig(), "BasicWindow",
+			"VerticalVolControl", vertical);
 	ToggleMixerLayout(vertical);
 
 	// We need to store it so we can delete current and then add
@@ -4193,7 +4199,7 @@ void OBSBasic::ActivateAudioSource(OBSSource source)
 	if (!obs_source_audio_active(source))
 		return;
 
-	bool vertical = config_get_bool(GetGlobalConfig(), "BasicWindow",
+	bool vertical = config_get_bool(App()->GetUserConfig(), "BasicWindow",
 					"VerticalVolControl");
 	VolControl *vol = new VolControl(source, true, vertical);
 
@@ -4286,21 +4292,21 @@ void OBSBasic::TimedCheckForUpdates()
 {
 	if (App()->IsUpdaterDisabled())
 		return;
-	if (!config_get_bool(App()->GlobalConfig(), "General",
+	if (!config_get_bool(App()->GetUserConfig(), "General",
 			     "EnableAutoUpdates"))
 		return;
 
 #if defined(ENABLE_SPARKLE_UPDATER)
 	CheckForUpdates(false);
 #elif _WIN32
-	long long lastUpdate = config_get_int(App()->GlobalConfig(), "General",
+	long long lastUpdate = config_get_int(App()->GetAppConfig(), "General",
 					      "LastUpdateCheck");
 	uint32_t lastVersion =
-		config_get_int(App()->GlobalConfig(), "General", "LastVersion");
+		config_get_int(App()->GetAppConfig(), "General", "LastVersion");
 
 	if (lastVersion < LIBOBS_API_VER) {
 		lastUpdate = 0;
-		config_set_int(App()->GlobalConfig(), "General",
+		config_set_int(App()->GetAppConfig(), "General",
 			       "LastUpdateCheck", 0);
 	}
 
@@ -4977,7 +4983,7 @@ static inline enum video_colorspace GetVideoColorSpaceFromName(const char *name)
 void OBSBasic::ResetUI()
 {
 	bool studioPortraitLayout = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "StudioPortraitLayout");
+		App()->GetUserConfig(), "BasicWindow", "StudioPortraitLayout");
 
 	if (studioPortraitLayout)
 		ui->previewLayout->setDirection(QBoxLayout::BottomToTop);
@@ -5100,7 +5106,7 @@ bool OBSBasic::ResetAudio()
 		ai.speakers = SPEAKERS_STEREO;
 
 	bool lowLatencyAudioBuffering = config_get_bool(
-		GetGlobalConfig(), "Audio", "LowLatencyAudioBuffering");
+		App()->GetUserConfig(), "Audio", "LowLatencyAudioBuffering");
 	if (lowLatencyAudioBuffering) {
 		ai.max_buffering_ms = 20;
 		ai.fixed_buffering = true;
@@ -5365,12 +5371,12 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 #endif
 
 	if (isVisible())
-		config_set_string(App()->GlobalConfig(), "BasicWindow",
+		config_set_string(App()->GetUserConfig(), "BasicWindow",
 				  "geometry",
 				  saveGeometry().toBase64().constData());
 
-	bool confirmOnExit =
-		config_get_bool(GetGlobalConfig(), "General", "ConfirmOnExit");
+	bool confirmOnExit = config_get_bool(App()->GetUserConfig(), "General",
+					     "ConfirmOnExit");
 
 	if (confirmOnExit && outputHandler && outputHandler->Active() &&
 	    !clearingFailed) {
@@ -5437,7 +5443,7 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 
 	delete extraBrowsers;
 
-	config_set_string(App()->GlobalConfig(), "BasicWindow", "DockState",
+	config_set_string(App()->GetUserConfig(), "BasicWindow", "DockState",
 			  saveState().toBase64().constData());
 
 #ifdef BROWSER_AVAILABLE
@@ -5642,7 +5648,7 @@ void OBSBasic::on_actionAdvAudioProperties_triggered()
 		return;
 	}
 
-	bool iconsVisible = config_get_bool(App()->GlobalConfig(),
+	bool iconsVisible = config_get_bool(App()->GetUserConfig(),
 					    "BasicWindow", "ShowSourceIcons");
 
 	advAudioWindow = new OBSBasicAdvAudio(this);
@@ -5665,7 +5671,7 @@ void OBSBasic::on_actionMixerToolbarMenu_triggered()
 	QAction toggleControlLayoutAction(QTStr("VerticalLayout"), this);
 	toggleControlLayoutAction.setCheckable(true);
 	toggleControlLayoutAction.setChecked(config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "VerticalVolControl"));
+		App()->GetUserConfig(), "BasicWindow", "VerticalVolControl"));
 	connect(&toggleControlLayoutAction, &QAction::changed, this,
 		&OBSBasic::ToggleVolControlLayout, Qt::DirectConnection);
 
@@ -5861,14 +5867,15 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 void OBSBasic::on_actionSceneListMode_triggered()
 {
 	ui->scenes->SetGridMode(false);
-	config_set_bool(App()->GlobalConfig(), "BasicWindow", "gridMode",
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "gridMode",
 			false);
 }
 
 void OBSBasic::on_actionSceneGridMode_triggered()
 {
 	ui->scenes->SetGridMode(true);
-	config_set_bool(App()->GlobalConfig(), "BasicWindow", "gridMode", true);
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "gridMode",
+			true);
 }
 
 void OBSBasic::GridActionClicked()
@@ -5881,7 +5888,7 @@ void OBSBasic::GridActionClicked()
 	else
 		ui->actionSceneListMode->setChecked(true);
 
-	config_set_bool(App()->GlobalConfig(), "BasicWindow", "gridMode",
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "gridMode",
 			gridMode);
 }
 
@@ -6405,7 +6412,7 @@ void OBSBasic::on_scenes_itemDoubleClicked(QListWidgetItem *witem)
 
 	if (IsPreviewProgramMode()) {
 		bool doubleClickSwitch =
-			config_get_bool(App()->GlobalConfig(), "BasicWindow",
+			config_get_bool(App()->GetUserConfig(), "BasicWindow",
 					"TransitionOnDoubleClick");
 
 		if (doubleClickSwitch)
@@ -6795,7 +6802,7 @@ void OBSBasic::on_actionMoveToBottom_triggered()
 static BPtr<char> ReadLogFile(const char *subdir, const char *log)
 {
 	char logDir[512];
-	if (GetConfigPath(logDir, sizeof(logDir), subdir) <= 0)
+	if (GetAppConfigPath(logDir, sizeof(logDir), subdir) <= 0)
 		return nullptr;
 
 	string path = logDir;
@@ -6850,7 +6857,7 @@ void OBSBasic::UploadLog(const char *subdir, const char *file, const bool crash)
 void OBSBasic::on_actionShowLogs_triggered()
 {
 	char logDir[512];
-	if (GetConfigPath(logDir, sizeof(logDir), "obs-studio/logs") <= 0)
+	if (GetAppConfigPath(logDir, sizeof(logDir), "obs-studio/logs") <= 0)
 		return;
 
 	QUrl url = QUrl::fromLocalFile(QT_UTF8(logDir));
@@ -6883,7 +6890,7 @@ void OBSBasic::on_actionViewCurrentLog_triggered()
 void OBSBasic::on_actionShowCrashLogs_triggered()
 {
 	char logDir[512];
-	if (GetConfigPath(logDir, sizeof(logDir), "obs-studio/crashes") <= 0)
+	if (GetAppConfigPath(logDir, sizeof(logDir), "obs-studio/crashes") <= 0)
 		return;
 
 	QUrl url = QUrl::fromLocalFile(QT_UTF8(logDir));
@@ -7208,13 +7215,14 @@ void OBSBasic::ShowYouTubeAutoStartWarning()
 		msgbox.exec();
 
 		if (cb->isChecked()) {
-			config_set_bool(App()->GlobalConfig(), "General",
+			config_set_bool(App()->GetUserConfig(), "General",
 					"WarnedAboutYouTubeAutoStart", true);
-			config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+			config_save_safe(App()->GetUserConfig(), "tmp",
+					 nullptr);
 		}
 	};
 
-	bool warned = config_get_bool(App()->GlobalConfig(), "General",
+	bool warned = config_get_bool(App()->GetUserConfig(), "General",
 				      "WarnedAboutYouTubeAutoStart");
 	if (!warned) {
 		QMetaObject::invokeMethod(App(), "Exec", Qt::QueuedConnection,
@@ -7285,13 +7293,13 @@ void OBSBasic::StartStreaming()
 		}
 
 		bool recordWhenStreaming =
-			config_get_bool(GetGlobalConfig(), "BasicWindow",
+			config_get_bool(App()->GetUserConfig(), "BasicWindow",
 					"RecordWhenStreaming");
 		if (recordWhenStreaming)
 			StartRecording();
 
 		bool replayBufferWhileStreaming =
-			config_get_bool(GetGlobalConfig(), "BasicWindow",
+			config_get_bool(App()->GetUserConfig(), "BasicWindow",
 					"ReplayBufferWhileStreaming");
 		if (replayBufferWhileStreaming)
 			StartReplayBuffer();
@@ -7344,7 +7352,8 @@ void OBSBasic::BroadcastButtonClicked()
 		emit BroadcastStreamStarted(autoStopBroadcast);
 	} else if (!autoStopBroadcast) {
 #ifdef YOUTUBE_ENABLED
-		bool confirm = config_get_bool(GetGlobalConfig(), "BasicWindow",
+		bool confirm = config_get_bool(App()->GetUserConfig(),
+					       "BasicWindow",
 					       "WarnBeforeStoppingStream");
 		if (confirm && isVisible()) {
 			QMessageBox::StandardButton button = OBSMessageBox::question(
@@ -7409,7 +7418,7 @@ void OBSBasic::SetupBroadcast()
 #ifdef _WIN32
 static inline void UpdateProcessPriority()
 {
-	const char *priority = config_get_string(App()->GlobalConfig(),
+	const char *priority = config_get_string(App()->GetAppConfig(),
 						 "General", "ProcessPriority");
 	if (priority && strcmp(priority, "Normal") != 0)
 		SetProcessPriority(priority);
@@ -7417,7 +7426,7 @@ static inline void UpdateProcessPriority()
 
 static inline void ClearProcessPriority()
 {
-	const char *priority = config_get_string(App()->GlobalConfig(),
+	const char *priority = config_get_string(App()->GetAppConfig(),
 						 "General", "ProcessPriority");
 	if (priority && strcmp(priority, "Normal") != 0)
 		SetProcessPriority("Normal");
@@ -7539,17 +7548,18 @@ void OBSBasic::StopStreaming()
 	OnDeactivate();
 
 	bool recordWhenStreaming = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "RecordWhenStreaming");
+		App()->GetUserConfig(), "BasicWindow", "RecordWhenStreaming");
 	bool keepRecordingWhenStreamStops =
-		config_get_bool(GetGlobalConfig(), "BasicWindow",
+		config_get_bool(App()->GetUserConfig(), "BasicWindow",
 				"KeepRecordingWhenStreamStops");
 	if (recordWhenStreaming && !keepRecordingWhenStreamStops)
 		StopRecording();
 
-	bool replayBufferWhileStreaming = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "ReplayBufferWhileStreaming");
+	bool replayBufferWhileStreaming =
+		config_get_bool(App()->GetUserConfig(), "BasicWindow",
+				"ReplayBufferWhileStreaming");
 	bool keepReplayBufferStreamStops =
-		config_get_bool(GetGlobalConfig(), "BasicWindow",
+		config_get_bool(App()->GetUserConfig(), "BasicWindow",
 				"KeepReplayBufferStreamStops");
 	if (replayBufferWhileStreaming && !keepReplayBufferStreamStops)
 		StopReplayBuffer();
@@ -7581,17 +7591,18 @@ void OBSBasic::ForceStopStreaming()
 	OnDeactivate();
 
 	bool recordWhenStreaming = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "RecordWhenStreaming");
+		App()->GetUserConfig(), "BasicWindow", "RecordWhenStreaming");
 	bool keepRecordingWhenStreamStops =
-		config_get_bool(GetGlobalConfig(), "BasicWindow",
+		config_get_bool(App()->GetUserConfig(), "BasicWindow",
 				"KeepRecordingWhenStreamStops");
 	if (recordWhenStreaming && !keepRecordingWhenStreamStops)
 		StopRecording();
 
-	bool replayBufferWhileStreaming = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "ReplayBufferWhileStreaming");
+	bool replayBufferWhileStreaming =
+		config_get_bool(App()->GetUserConfig(), "BasicWindow",
+				"ReplayBufferWhileStreaming");
 	bool keepReplayBufferStreamStops =
-		config_get_bool(GetGlobalConfig(), "BasicWindow",
+		config_get_bool(App()->GetUserConfig(), "BasicWindow",
 				"KeepReplayBufferStreamStops");
 	if (replayBufferWhileStreaming && !keepReplayBufferStreamStops)
 		StopReplayBuffer();
@@ -7997,13 +8008,14 @@ void OBSBasic::ShowReplayBufferPauseWarning()
 		msgbox.exec();
 
 		if (cb->isChecked()) {
-			config_set_bool(App()->GlobalConfig(), "General",
+			config_set_bool(App()->GetUserConfig(), "General",
 					"WarnedAboutReplayBufferPausing", true);
-			config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+			config_save_safe(App()->GetUserConfig(), "tmp",
+					 nullptr);
 		}
 	};
 
-	bool warned = config_get_bool(App()->GlobalConfig(), "General",
+	bool warned = config_get_bool(App()->GetUserConfig(), "General",
 				      "WarnedAboutReplayBufferPausing");
 	if (!warned) {
 		QMetaObject::invokeMethod(App(), "Exec", Qt::QueuedConnection,
@@ -8242,7 +8254,8 @@ void OBSBasic::OnVirtualCamStop(int)
 void OBSBasic::StreamActionTriggered()
 {
 	if (outputHandler->StreamingActive()) {
-		bool confirm = config_get_bool(GetGlobalConfig(), "BasicWindow",
+		bool confirm = config_get_bool(App()->GetUserConfig(),
+					       "BasicWindow",
 					       "WarnBeforeStoppingStream");
 
 #ifdef YOUTUBE_ENABLED
@@ -8294,7 +8307,8 @@ void OBSBasic::StreamActionTriggered()
 			return;
 		}
 
-		bool confirm = config_get_bool(GetGlobalConfig(), "BasicWindow",
+		bool confirm = config_get_bool(App()->GetUserConfig(),
+					       "BasicWindow",
 					       "WarnBeforeStartingStream");
 
 		bool bwtest = false;
@@ -8336,7 +8350,8 @@ void OBSBasic::StreamActionTriggered()
 void OBSBasic::RecordActionTriggered()
 {
 	if (outputHandler->RecordingActive()) {
-		bool confirm = config_get_bool(GetGlobalConfig(), "BasicWindow",
+		bool confirm = config_get_bool(App()->GetUserConfig(),
+					       "BasicWindow",
 					       "WarnBeforeStoppingRecord");
 
 		if (confirm && isVisible()) {
@@ -8461,7 +8476,7 @@ void OBSBasic::on_actionShowWhatsNew_triggered()
 	if (!cef)
 		return;
 
-	config_set_int(App()->GlobalConfig(), "General", "InfoIncrement", -1);
+	config_set_int(App()->GetUserConfig(), "General", "InfoIncrement", -1);
 
 	WhatsNewInfoThread *wnit = new WhatsNewInfoThread();
 	connect(wnit, &WhatsNewInfoThread::Result, this,
@@ -8482,12 +8497,12 @@ void OBSBasic::on_actionReleaseNotes_triggered()
 
 void OBSBasic::on_actionShowSettingsFolder_triggered()
 {
-	char path[512];
-	int ret = GetConfigPath(path, 512, "obs-studio");
-	if (ret <= 0)
-		return;
+	const std::string userConfigPath =
+		App()->userConfigLocation.u8string() + "/obs-studio";
+	const QString userConfigLocation =
+		QString::fromStdString(userConfigPath);
 
-	QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+	QDesktopServices::openUrl(QUrl::fromLocalFile(userConfigLocation));
 }
 
 void OBSBasic::on_actionShowProfileFolder_triggered()
@@ -9449,7 +9464,8 @@ OBSProjector *OBSBasic::OpenProjector(obs_source_t *source, int monitor,
 	if (monitor > 9 || monitor > QGuiApplication::screens().size() - 1)
 		return nullptr;
 
-	bool closeProjectors = config_get_bool(GetGlobalConfig(), "BasicWindow",
+	bool closeProjectors = config_get_bool(App()->GetUserConfig(),
+					       "BasicWindow",
 					       "CloseExistingProjectors");
 
 	if (closeProjectors && monitor > -1) {
@@ -9604,9 +9620,9 @@ void OBSBasic::UpdateTitleBar()
 	stringstream name;
 
 	const char *profile =
-		config_get_string(App()->GlobalConfig(), "Basic", "Profile");
+		config_get_string(App()->GetUserConfig(), "Basic", "Profile");
 	const char *sceneCollection = config_get_string(
-		App()->GlobalConfig(), "Basic", "SceneCollection");
+		App()->GetUserConfig(), "Basic", "SceneCollection");
 
 	name << "OBS ";
 	if (previewProgramMode)
@@ -9627,8 +9643,8 @@ void OBSBasic::UpdateTitleBar()
 int OBSBasic::GetProfilePath(char *path, size_t size, const char *file) const
 {
 	char profiles_path[512];
-	const char *profile =
-		config_get_string(App()->GlobalConfig(), "Basic", "ProfileDir");
+	const char *profile = config_get_string(App()->GetUserConfig(), "Basic",
+						"ProfileDir");
 	int ret;
 
 	if (!profile)
@@ -9638,7 +9654,7 @@ int OBSBasic::GetProfilePath(char *path, size_t size, const char *file) const
 	if (!file)
 		file = "";
 
-	ret = GetConfigPath(profiles_path, 512, "obs-studio/basic/profiles");
+	ret = GetAppConfigPath(profiles_path, 512, "obs-studio/basic/profiles");
 	if (ret <= 0)
 		return ret;
 
@@ -9803,7 +9819,7 @@ void OBSBasic::on_resetUI_triggered()
 	ui->scenes->SetGridMode(false);
 	ui->actionSceneListMode->setChecked(true);
 
-	config_set_bool(App()->GlobalConfig(), "BasicWindow", "gridMode",
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "gridMode",
 			false);
 }
 
@@ -9818,7 +9834,7 @@ void OBSBasic::on_toggleListboxToolbars_toggled(bool visible)
 	ui->scenesToolbar->setVisible(visible);
 	ui->mixerToolbar->setVisible(visible);
 
-	config_set_bool(App()->GlobalConfig(), "BasicWindow",
+	config_set_bool(App()->GetUserConfig(), "BasicWindow",
 			"ShowListboxToolbars", visible);
 }
 
@@ -9836,7 +9852,7 @@ void OBSBasic::HideContextBar()
 
 void OBSBasic::on_toggleContextBar_toggled(bool visible)
 {
-	config_set_bool(App()->GlobalConfig(), "BasicWindow",
+	config_set_bool(App()->GetUserConfig(), "BasicWindow",
 			"ShowContextToolbars", visible);
 	this->ui->contextContainer->setVisible(visible);
 	UpdateContextBar(true);
@@ -9846,7 +9862,7 @@ void OBSBasic::on_toggleStatusBar_toggled(bool visible)
 {
 	ui->statusbar->setVisible(visible);
 
-	config_set_bool(App()->GlobalConfig(), "BasicWindow", "ShowStatusBar",
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "ShowStatusBar",
 			visible);
 }
 
@@ -9856,8 +9872,8 @@ void OBSBasic::on_toggleSourceIcons_toggled(bool visible)
 	if (advAudioWindow != nullptr)
 		advAudioWindow->SetIconsVisible(visible);
 
-	config_set_bool(App()->GlobalConfig(), "BasicWindow", "ShowSourceIcons",
-			visible);
+	config_set_bool(App()->GetUserConfig(), "BasicWindow",
+			"ShowSourceIcons", visible);
 }
 
 void OBSBasic::on_actionLockPreview_triggered()
@@ -9922,7 +9938,7 @@ void OBSBasic::on_actionScaleOutput_triggered()
 void OBSBasic::SetShowing(bool showing)
 {
 	if (!showing && isVisible()) {
-		config_set_string(App()->GlobalConfig(), "BasicWindow",
+		config_set_string(App()->GetUserConfig(), "BasicWindow",
 				  "geometry",
 				  saveGeometry().toBase64().constData());
 
@@ -10107,9 +10123,9 @@ void OBSBasic::SystemTray(bool firstStarted)
 		return;
 
 	bool sysTrayWhenStarted = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "SysTrayWhenStarted");
-	bool sysTrayEnabled = config_get_bool(GetGlobalConfig(), "BasicWindow",
-					      "SysTrayEnabled");
+		App()->GetUserConfig(), "BasicWindow", "SysTrayWhenStarted");
+	bool sysTrayEnabled = config_get_bool(App()->GetUserConfig(),
+					      "BasicWindow", "SysTrayEnabled");
 
 	if (firstStarted)
 		SystemTrayInit();
@@ -10135,7 +10151,7 @@ void OBSBasic::SystemTray(bool firstStarted)
 
 bool OBSBasic::sysTrayMinimizeToTray()
 {
-	return config_get_bool(GetGlobalConfig(), "BasicWindow",
+	return config_get_bool(App()->GetUserConfig(), "BasicWindow",
 			       "SysTrayMinimizeToTray");
 }
 
@@ -11118,17 +11134,17 @@ void OBSBasic::ShowStatusBarMessage(const QString &message)
 
 void OBSBasic::UpdatePreviewSafeAreas()
 {
-	drawSafeAreas = config_get_bool(App()->GlobalConfig(), "BasicWindow",
+	drawSafeAreas = config_get_bool(App()->GetUserConfig(), "BasicWindow",
 					"ShowSafeAreas");
 }
 
 void OBSBasic::UpdatePreviewOverflowSettings()
 {
-	bool hidden = config_get_bool(App()->GlobalConfig(), "BasicWindow",
+	bool hidden = config_get_bool(App()->GetUserConfig(), "BasicWindow",
 				      "OverflowHidden");
-	bool select = config_get_bool(App()->GlobalConfig(), "BasicWindow",
+	bool select = config_get_bool(App()->GetUserConfig(), "BasicWindow",
 				      "OverflowSelectionHidden");
-	bool always = config_get_bool(App()->GlobalConfig(), "BasicWindow",
+	bool always = config_get_bool(App()->GetUserConfig(), "BasicWindow",
 				      "OverflowAlwaysVisible");
 
 	ui->preview->SetOverflowHidden(hidden);
@@ -11141,7 +11157,7 @@ void OBSBasic::SetDisplayAffinity(QWindow *window)
 	if (!SetDisplayAffinitySupported())
 		return;
 
-	bool hideFromCapture = config_get_bool(App()->GlobalConfig(),
+	bool hideFromCapture = config_get_bool(App()->GetUserConfig(),
 					       "BasicWindow",
 					       "HideOBSWindowsFromCapture");
 
@@ -11175,10 +11191,10 @@ static inline QColor color_from_int(long long val)
 
 QColor OBSBasic::GetSelectionColor() const
 {
-	if (config_get_bool(GetGlobalConfig(), "Accessibility",
+	if (config_get_bool(App()->GetUserConfig(), "Accessibility",
 			    "OverrideColors")) {
 		return color_from_int(config_get_int(
-			GetGlobalConfig(), "Accessibility", "SelectRed"));
+			App()->GetUserConfig(), "Accessibility", "SelectRed"));
 	} else {
 		return QColor::fromRgb(255, 0, 0);
 	}
@@ -11186,10 +11202,11 @@ QColor OBSBasic::GetSelectionColor() const
 
 QColor OBSBasic::GetCropColor() const
 {
-	if (config_get_bool(GetGlobalConfig(), "Accessibility",
+	if (config_get_bool(App()->GetUserConfig(), "Accessibility",
 			    "OverrideColors")) {
-		return color_from_int(config_get_int(
-			GetGlobalConfig(), "Accessibility", "SelectGreen"));
+		return color_from_int(config_get_int(App()->GetUserConfig(),
+						     "Accessibility",
+						     "SelectGreen"));
 	} else {
 		return QColor::fromRgb(0, 255, 0);
 	}
@@ -11197,10 +11214,10 @@ QColor OBSBasic::GetCropColor() const
 
 QColor OBSBasic::GetHoverColor() const
 {
-	if (config_get_bool(GetGlobalConfig(), "Accessibility",
+	if (config_get_bool(App()->GetUserConfig(), "Accessibility",
 			    "OverrideColors")) {
 		return color_from_int(config_get_int(
-			GetGlobalConfig(), "Accessibility", "SelectBlue"));
+			App()->GetUserConfig(), "Accessibility", "SelectBlue"));
 	} else {
 		return QColor::fromRgb(0, 127, 255);
 	}
@@ -11209,7 +11226,7 @@ QColor OBSBasic::GetHoverColor() const
 void OBSBasic::UpdatePreviewSpacingHelpers()
 {
 	drawSpacingHelpers = config_get_bool(
-		App()->GlobalConfig(), "BasicWindow", "SpacingHelpersEnabled");
+		App()->GetUserConfig(), "BasicWindow", "SpacingHelpersEnabled");
 }
 
 float OBSBasic::GetDevicePixelRatio()

@@ -112,8 +112,8 @@ try {
 
 bool GetBranchAndUrl(string &selectedBranch, string &manifestUrl)
 {
-	const char *config_branch =
-		config_get_string(GetGlobalConfig(), "General", "UpdateBranch");
+	const char *config_branch = config_get_string(
+		App()->GetAppConfig(), "General", "UpdateBranch");
 	if (!config_branch)
 		return true;
 
@@ -219,8 +219,8 @@ try {
 	 * check branch and get manifest url   */
 
 	if (!GetBranchAndUrl(branch, manifestUrl)) {
-		config_set_string(GetGlobalConfig(), "General", "UpdateBranch",
-				  WIN_DEFAULT_BRANCH);
+		config_set_string(App()->GetAppConfig(), "General",
+				  "UpdateBranch", WIN_DEFAULT_BRANCH);
 		info(QTStr("Updater.BranchNotFound.Title"),
 		     QTStr("Updater.BranchNotFound.Text"));
 	}
@@ -264,7 +264,7 @@ try {
 	 * skip this version if set to skip    */
 
 	const char *skipUpdateVer = config_get_string(
-		GetGlobalConfig(), "General", "SkipUpdateVersion");
+		App()->GetAppConfig(), "General", "SkipUpdateVersion");
 	if (!manualUpdate && !repairMode && skipUpdateVer &&
 	    updateVer == skipUpdateVer)
 		return;
@@ -288,13 +288,13 @@ try {
 		if (queryResult == OBSUpdate::No) {
 			if (!manualUpdate) {
 				long long t = (long long)time(nullptr);
-				config_set_int(GetGlobalConfig(), "General",
+				config_set_int(App()->GetAppConfig(), "General",
 					       "LastUpdateCheck", t);
 			}
 			return;
 
 		} else if (queryResult == OBSUpdate::Skip) {
-			config_set_string(GetGlobalConfig(), "General",
+			config_set_string(App()->GetAppConfig(), "General",
 					  "SkipUpdateVersion",
 					  updateVer.c_str());
 			return;
@@ -314,7 +314,7 @@ try {
 	 * execute updater                     */
 
 	BPtr<char> updateFilePath =
-		GetConfigPathPtr("obs-studio\\updates\\updater.exe");
+		GetAppConfigPathPtr("obs-studio\\updates\\updater.exe");
 	BPtr<wchar_t> wUpdateFilePath;
 
 	size_t size = os_utf8_to_wcs_ptr(updateFilePath, 0, &wUpdateFilePath);
@@ -366,8 +366,8 @@ try {
 
 	/* force OBS to perform another update check immediately after updating
 	 * in case of issues with the new version */
-	config_set_int(GetGlobalConfig(), "General", "LastUpdateCheck", 0);
-	config_set_string(GetGlobalConfig(), "General", "SkipUpdateVersion",
+	config_set_int(App()->GetAppConfig(), "General", "LastUpdateCheck", 0);
+	config_set_string(App()->GetAppConfig(), "General", "SkipUpdateVersion",
 			  "0");
 
 	QMetaObject::invokeMethod(App()->GetMainWindow(), "close");

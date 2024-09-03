@@ -18,8 +18,8 @@ static const char *MAC_DEFAULT_BRANCH = "stable";
 
 bool GetBranch(std::string &selectedBranch)
 {
-	const char *config_branch =
-		config_get_string(GetGlobalConfig(), "General", "UpdateBranch");
+	const char *config_branch = config_get_string(
+		App()->GetAppConfig(), "General", "UpdateBranch");
 	if (!config_branch)
 		return true;
 
@@ -70,8 +70,8 @@ try {
 	 * Validate branch selection           */
 
 	if (!GetBranch(branch)) {
-		config_set_string(GetGlobalConfig(), "General", "UpdateBranch",
-				  MAC_DEFAULT_BRANCH);
+		config_set_string(App()->GetAppConfig(), "General",
+				  "UpdateBranch", MAC_DEFAULT_BRANCH);
 		info(QTStr("Updater.BranchNotFound.Title"),
 		     QTStr("Updater.BranchNotFound.Text"));
 	}

@@ -147,8 +147,8 @@ std::string GetProgramGUID()
 	/* NOTE: this is an arbitrary random number that we use to count the
 	 * number of unique OBS installations and is not associated with any
 	 * kind of identifiable information */
-	const char *pguid =
-		config_get_string(GetGlobalConfig(), "General", "InstallGUID");
+	const char *pguid = config_get_string(App()->GetAppConfig(), "General",
+					      "InstallGUID");
 	std::string guid;
 	if (pguid)
 		guid = pguid;
@@ -157,7 +157,7 @@ std::string GetProgramGUID()
 		GenerateGUID(guid);
 
 		if (!guid.empty())
-			config_set_string(GetGlobalConfig(), "General",
+			config_set_string(App()->GetAppConfig(), "General",
 					  "InstallGUID", guid.c_str());
 	}
 
@@ -220,7 +220,7 @@ bool FetchAndVerifyFile(const char *name, const char *file, const char *url,
 	uint8_t fileHash[BLAKE2_HASH_LENGTH];
 	bool success;
 
-	BPtr<char> filePath = GetConfigPathPtr(file);
+	BPtr<char> filePath = GetAppConfigPathPtr(file);
 
 	if (!extraHeaders.empty()) {
 		headers.insert(headers.end(), extraHeaders.begin(),
