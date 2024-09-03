@@ -1616,19 +1616,28 @@ struct AdvancedOutput : BasicOutputHandler {
 
 static OBSData GetDataFromJsonFile(const char *jsonFile)
 {
-	char fullPath[512];
+	const OBSBasic *basic =
+		reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+
+	const OBSProfile &currentProfile = basic->GetCurrentProfile();
+
+	const std::filesystem::path jsonFilePath =
+		currentProfile.path / std::filesystem::u8path(jsonFile);
+
 	OBSDataAutoRelease data = nullptr;
 
-	int ret = GetProfilePath(fullPath, sizeof(fullPath), jsonFile);
-	if (ret > 0) {
-		BPtr<char> jsonData = os_quick_read_utf8_file(fullPath);
+	if (!jsonFilePath.empty()) {
+		BPtr<char> jsonData = os_quick_read_utf8_file(
+			jsonFilePath.u8string().c_str());
+
 		if (!!jsonData) {
 			data = obs_data_create_from_json(jsonData);
 		}
 	}
 
-	if (!data)
+	if (!data) {
 		data = obs_data_create();
+	}
 
 	return data.Get();
 }
