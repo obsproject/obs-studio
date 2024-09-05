@@ -221,6 +221,8 @@ build() {
       cmake_build_args+=(build_${target%%-*} --config ${config} --parallel)
       cmake_install_args+=(build_${target%%-*} --prefix ${project_root}/build_${target%%-*}/install/${config})
 
+      export CLICOLOR_FORCE=1
+
       log_group "Configuring ${product_name}..."
       ${cmake_bin} -S ${project_root} ${cmake_args}
 
