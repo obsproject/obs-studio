@@ -10,8 +10,8 @@
         {
             "type": "git",
             "url": "https://github.com/chriskohlhoff/asio.git",
-            "tag": "asio-1-30-2",
-            "commit": "12e0ce9e0500bf0f247dbd1ae894272656456079"
+            "tag": "asio-1-31-0",
+            "commit": "1f534288b4be0be2dd664aab43882a0aa3106a1d"
         }
     ]
 }
