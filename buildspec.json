@@ -1,25 +1,25 @@
 {
     "dependencies": {
         "prebuilt": {
-            "version": "2024-08-08",
+            "version": "2024-09-05",
             "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
             "label": "Pre-Built obs-deps",
             "hashes": {
-                "macos-universal": "6faaa5737fc80087e13bd5cdff4df820359fff7bef7141a59e7170fdab8ce36f",
-                "windows-x64": "2b14cbf46064939d56a57f952d22b80d18b2a982c8bd6a2d30044452b8e99b1a",
-                "windows-x86": "334d08d4d59704372773c981d4f426661798bb2f4d3c5432a6f61d6368235b45"
+                "macos-universal": "d637141e6082106b6c8d67b8bf64175739bddb1f31a324c77e8fbf8488b7c33c",
+                "windows-x64": "85a45cacca0853fef9444b6e99c529e81ce896ce3e3318edf458fd7ad78eed89",
+                "windows-x86": "db3feabfeaf9e09d92f6b6eed026cd8d292406286f968c4036906aa96ded44cd"
             }
         },
         "qt6": {
-            "version": "2024-08-08",
+            "version": "2024-09-05",
             "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
             "label": "Pre-Built Qt6",
             "hashes": {
-                "macos-universal": "aca8e9888be610926abcf601718d9ec9a70ca7e5c7df102174de6572c56cee83",
-                "windows-x64": "169cf5f8218fc0be51dbe7d900e8c4f95b96e7c72b915e3de0b223a0560b94f7"
+                "macos-universal": "12b6f45f5d44715b1e434c1fba00d21680d4d0b529a2e900e206d96ed4bb66ae",
+                "windows-x64": "0344d771dd36d42b2f13e76268c2d7c03152f6fd822e90c8124e27785a966658"
             },
             "debugSymbols": {
-                "windows-x64": "9dbc41ddb9fe50954b76a606d27003c51cec3a19584d43883fc01770e7c7be90"
+                "windows-x64": "12b6f45f5d44715b1e434c1fba00d21680d4d0b529a2e900e206d96ed4bb66ae"
             }
         },
         "cef": {
@@ -37,10 +37,10 @@
     },
     "tools": {
         "sparkle": {
-            "version": "2.6.2",
+            "version": "2.6.4",
             "baseUrl": "https://github.com/sparkle-project/Sparkle/releases/download",
             "label": "Sparkle 2",
-            "hash": "2300a7dc2545a4968e54621b7f351d388ddf1a5cb49e79f6c99e9a09d826f5e8"
+            "hash": "50612a06038abc931f16011d7903b8326a362c1074dabccb718404ce8e585f0b"
         },
         "ccache-win": {
             "version": "4.8.1",
