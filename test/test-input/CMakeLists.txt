@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.22...3.25)
 
-legacy_check()
-
 option(ENABLE_TEST_INPUT "Build test sources" OFF)
 
 if(NOT ENABLE_TEST_INPUT)

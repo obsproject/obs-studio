@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.22...3.25)
 
-legacy_check()
-
 macro(check_vlc_path)
   find_package(PkgConfig QUIET)
   if(PKG_CONFIG_FOUND)

@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.22...3.25)
 
-legacy_check()
-
 if(NOT ENABLE_SCRIPTING)
   target_disable_feature(obs-scripting "Scripting support")
   return()

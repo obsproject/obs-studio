@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.22...3.25)
 
-legacy_check()
-
 if(NOT ENABLE_AJA)
   target_disable(aja-output-ui)
   return()

@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.22...3.25)
 
-legacy_check()
-
 add_subdirectory(obs-frontend-api)
 
 option(ENABLE_UI "Enable building with UI (requires Qt)" ON)

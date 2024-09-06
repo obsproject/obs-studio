@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.22...3.25)
 
-legacy_check()
-
 option(ENABLE_SERVICE_UPDATES "Checks for service updates" ON)
 
 set(
