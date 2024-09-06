@@ -443,6 +443,12 @@ General Encoder Functions
 
 ---------------------
 
+.. function:: size_t obs_encoder_get_mixer_index(const obs_encoder_t *encoder)
+
+   :return: The mixer index for the audio track which is encoded by the encoder
+
+---------------------
+
 .. function:: void obs_encoder_set_preferred_video_format(obs_encoder_t *encoder, enum video_format format)
               enum video_format obs_encoder_get_preferred_video_format(const obs_encoder_t *encoder)
 
