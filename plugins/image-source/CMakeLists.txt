@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.22...3.25)
 
-legacy_check()
-
 add_library(image-source MODULE)
 add_library(OBS::image-source ALIAS image-source)
 

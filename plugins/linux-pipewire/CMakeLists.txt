@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.22...3.25)
 
-legacy_check()
-
 option(ENABLE_PIPEWIRE "Enable PipeWire support" ON)
 if(NOT ENABLE_PIPEWIRE)
   target_disable(linux-pipewire)

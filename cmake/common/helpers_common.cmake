@@ -435,13 +435,6 @@ function(check_uuid uuid_string return_value)
   set(${return_value} ${valid_uuid} PARENT_SCOPE)
 endfunction()
 
-# legacy_check: Check if new CMake framework was not enabled and load legacy rules instead
-macro(legacy_check)
-  if(OBS_CMAKE_VERSION VERSION_LESS 3.0.0)
-    message(FATAL_ERROR "CMake version changed between CMakeLists.txt.")
-  endif()
-endmacro()
-
 # add_obs_plugin: Add plugin subdirectory if host platform is in specified list of supported platforms and architectures
 function(add_obs_plugin target)
   set(options WITH_MESSAGE)

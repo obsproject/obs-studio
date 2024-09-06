@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.24...3.25)
 
-legacy_check()
-
 find_package(AMF 1.4.29 REQUIRED)
 
 add_executable(obs-amf-test)

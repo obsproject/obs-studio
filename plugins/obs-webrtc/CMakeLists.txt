@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.22...3.25)
 
-legacy_check()
-
 option(ENABLE_WEBRTC "Enable WebRTC Output support" ON)
 if(NOT ENABLE_WEBRTC)
   target_disable(obs-webrtc)
