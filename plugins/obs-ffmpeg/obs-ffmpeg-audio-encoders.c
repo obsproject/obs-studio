@@ -288,9 +288,11 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 
 	char buf[256];
 	av_channel_layout_describe(&enc->context->ch_layout, buf, 256);
-	info("bitrate: %" PRId64 ", channels: %d, channel_layout: %s\n",
+	info("bitrate: %" PRId64
+	     ", channels: %d, channel_layout: %s, track: %d\n",
 	     (int64_t)enc->context->bit_rate / 1000,
-	     (int)enc->context->ch_layout.nb_channels, buf);
+	     (int)enc->context->ch_layout.nb_channels, buf,
+	     (int)obs_encoder_get_mixer_index(enc->encoder) + 1);
 	init_sizes(enc, audio);
 
 	/* enable experimental FFmpeg encoder if the only one available */
