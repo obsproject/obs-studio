@@ -2502,6 +2502,9 @@ EXPORT uint32_t obs_encoder_get_sample_rate(const obs_encoder_t *encoder);
 /** For audio encoders, returns the frame size of the audio packet */
 EXPORT size_t obs_encoder_get_frame_size(const obs_encoder_t *encoder);
 
+/** For audio encoders, returns the mixer index */
+EXPORT size_t obs_encoder_get_mixer_index(const obs_encoder_t *encoder);
+
 /**
  * Sets the preferred video format for a video encoder.  If the encoder can use
  * the format specified, it will force a conversion to that format if the

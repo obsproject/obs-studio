@@ -1117,6 +1117,22 @@ size_t obs_encoder_get_frame_size(const obs_encoder_t *encoder)
 	return encoder->framesize;
 }
 
+size_t obs_encoder_get_mixer_index(const obs_encoder_t *encoder)
+{
+	if (!obs_encoder_valid(encoder, "obs_encoder_get_mixer_index"))
+		return 0;
+
+	if (encoder->info.type != OBS_ENCODER_AUDIO) {
+		blog(LOG_WARNING,
+		     "obs_encoder_get_mixer_index: "
+		     "encoder '%s' is not an audio encoder",
+		     obs_encoder_get_name(encoder));
+		return 0;
+	}
+
+	return encoder->mixer_idx;
+}
+
 void obs_encoder_set_video(obs_encoder_t *encoder, video_t *video)
 {
 
