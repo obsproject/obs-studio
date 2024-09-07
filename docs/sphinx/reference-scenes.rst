@@ -326,6 +326,11 @@ Scene Item Functions
 
    :return: The sceneitem associated with a source in a scene. Returns NULL if not found.
 
+   .. deprecated:: 31.0
+      This function is problematic because there can be multiple items of the same source in a scene.
+      In that case, which of those this function will return is undefined.
+      If this is the behavior you need, manually use :c:func:`obs_scene_enum_items` instead.
+
 ---------------------
 
 .. function:: void obs_sceneitem_set_id(obs_sceneitem_t *item);
