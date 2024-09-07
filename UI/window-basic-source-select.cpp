@@ -22,12 +22,16 @@
 #include "obs-app.hpp"
 
 struct AddSourceData {
+	/* Input data */
 	obs_source_t *source;
 	bool visible;
 	obs_transform_info *transform = nullptr;
 	obs_sceneitem_crop *crop = nullptr;
 	obs_blending_method *blend_method = nullptr;
 	obs_blending_type *blend_mode = nullptr;
+
+	/* Return data */
+	obs_sceneitem_t *scene_item = nullptr;
 };
 
 bool OBSBasicSourceSelect::EnumSources(void *data, obs_source_t *source)
@@ -132,6 +136,8 @@ static void AddSource(void *_data, obs_scene_t *scene)
 		obs_sceneitem_set_blending_mode(sceneitem, *data->blend_mode);
 
 	obs_sceneitem_set_visible(sceneitem, data->visible);
+
+	data->scene_item = sceneitem;
 }
 
 char *get_new_source_name(const char *name, const char *format)
@@ -201,7 +207,8 @@ static void AddExisting(const char *name, bool visible, bool duplicate,
 }
 
 bool AddNew(QWidget *parent, const char *id, const char *name,
-	    const bool visible, OBSSource &newSource)
+	    const bool visible, OBSSource &newSource,
+	    OBSSceneItem &newSceneItem)
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 	OBSScene scene = main->GetCurrentScene();
@@ -228,6 +235,7 @@ bool AddNew(QWidget *parent, const char *id, const char *name,
 			obs_leave_graphics();
 
 			newSource = source;
+			newSceneItem = data.scene_item;
 
 			/* set monitoring if source monitors by default */
 			uint32_t flags = obs_source_get_output_flags(source);
@@ -304,12 +312,12 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 			return;
 		}
 
+		OBSSceneItem item;
 		if (!AddNew(this, id, QT_TO_UTF8(ui->sourceName->text()),
-			    visible, newSource))
+			    visible, newSource, item))
 			return;
 
-		OBSBasic *main =
-			reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+		OBSBasic *main = OBSBasic::Get();
 		std::string scene_name =
 			obs_source_get_name(main->GetCurrentSceneSource());
 		auto undo = [scene_name, main](const std::string &data) {
@@ -323,8 +331,6 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 		};
 		OBSDataAutoRelease wrapper = obs_data_create();
 		obs_data_set_string(wrapper, "id", id);
-		OBSSceneItemAutoRelease item = obs_scene_sceneitem_from_source(
-			main->GetCurrentScene(), newSource);
 		obs_data_set_int(wrapper, "item_id",
 				 obs_sceneitem_get_id(item));
 		obs_data_set_string(
@@ -340,12 +346,10 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 			OBSDataAutoRelease dat =
 				obs_data_create_from_json(data.c_str());
 			OBSSource source;
+			OBSSceneItem item;
 			AddNew(NULL, obs_data_get_string(dat, "id"),
 			       obs_data_get_string(dat, "name"),
-			       obs_data_get_bool(dat, "visible"), source);
-			OBSSceneItemAutoRelease item =
-				obs_scene_sceneitem_from_source(
-					main->GetCurrentScene(), source);
+			       obs_data_get_bool(dat, "visible"), source, item);
 			obs_sceneitem_set_id(item, (int64_t)obs_data_get_int(
 							   dat, "item_id"));
 		};
