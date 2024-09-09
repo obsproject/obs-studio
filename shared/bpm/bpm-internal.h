@@ -98,7 +98,9 @@ struct output_metrics_link {
 	struct metrics_data *metrics_tracks[MAX_OUTPUT_VIDEO_ENCODERS];
 };
 
+static pthread_once_t bpm_once = PTHREAD_ONCE_INIT;
 static pthread_mutex_t bpm_metrics_mutex;
+
 /* This DARRAY is used for creating an association between the output_t
  * and the BPM metrics track data for each output that requires BPM injection.
  */

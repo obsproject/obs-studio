@@ -565,10 +565,17 @@ static bool bpm_get_track(obs_output_t *output, size_t track,
 	return found;
 }
 
+static void bpm_init(void)
+{
+	pthread_mutex_init_value(&bpm_metrics_mutex);
+	da_init(bpm_metrics);
+}
+
 void bpm_destroy(obs_output_t *output)
 {
 	int64_t idx = -1;
 
+	pthread_once(&bpm_once, bpm_init);
 	pthread_mutex_lock(&bpm_metrics_mutex);
 
 	// Walk the DARRAY looking for the index that matches the output
@@ -600,12 +607,6 @@ void bpm_destroy(obs_output_t *output)
 	pthread_mutex_unlock(&bpm_metrics_mutex);
 }
 
-static void bpm_init(void)
-{
-	pthread_mutex_init_value(&bpm_metrics_mutex);
-	da_init(bpm_metrics);
-}
-
 /* bpm_inject() is the callback function that needs to be registered
  * with each output needing Broadcast Performance Metrics injected
  * into the video bitstream, using SEI (AVC/HEVC) and OBU (AV1) syntax.
@@ -615,8 +616,7 @@ void bpm_inject(obs_output_t *output, struct encoder_packet *pkt,
 {
 	UNUSED_PARAMETER(param);
 
-	static pthread_once_t once = PTHREAD_ONCE_INIT;
-	pthread_once(&once, bpm_init);
+	pthread_once(&bpm_once, bpm_init);
 
 	if (!output || !pkt) {
 		blog(LOG_DEBUG,
