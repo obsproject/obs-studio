@@ -888,13 +888,14 @@ static void *nvenc_create_base(enum codec_type codec, obs_data_t *settings,
 	 * option as it may cause issues for people.
 	 */
 	const int gpu = (int)obs_data_get_int(settings, "device");
+	const bool gpu_set = obs_data_has_user_value(settings, "device");
 #ifndef _WIN32
 	const bool force_tex = obs_data_get_bool(settings, "force_cuda_tex");
 #else
 	const bool force_tex = false;
 #endif
 
-	if (gpu != -1 && texture && !force_tex) {
+	if (gpu_set && gpu != -1 && texture && !force_tex) {
 		blog(LOG_INFO,
 		     "[obs-nvenc] different GPU selected by user, falling back "
 		     "to non-texture encoder");
