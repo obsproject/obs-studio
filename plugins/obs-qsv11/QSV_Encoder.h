@@ -56,6 +56,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
+#define ONEVPL_EXPERIMENTAL
 #include <vpl/mfxstructures.h>
 #include <vpl/mfxadapter.h>
 #include <stdint.h>

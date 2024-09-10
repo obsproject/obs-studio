@@ -195,6 +195,22 @@ static inline bool HasOptimizedBRCSupport(const mfxPlatform &platform,
 	UNUSED_PARAMETER(rateControl);
 	return false;
 }
+
+static inline bool HasAV1ScreenContentSupport(const mfxPlatform &platform,
+					      const mfxVersion &version)
+{
+#if (MFX_VERSION_MAJOR >= 2 && MFX_VERSION_MINOR >= 12) || MFX_VERSION_MAJOR > 2
+	// Platform enums needed are introduced in VPL version 2.12
+	if ((version.Major >= 2 && version.Minor >= 12) || version.Major > 2)
+		if (platform.CodeName >= MFX_PLATFORM_LUNARLAKE &&
+		    platform.CodeName != MFX_PLATFORM_ALDERLAKE_N &&
+		    platform.CodeName != MFX_PLATFORM_ARROWLAKE)
+			return true;
+#endif
+	UNUSED_PARAMETER(platform);
+	UNUSED_PARAMETER(version);
+	return false;
+}
 PRAGMA_WARN_POP
 
 mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
@@ -371,6 +387,22 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 		m_ExtAv1TileParam.NumTileColumns = 2;
 		extendedBuffers.push_back((mfxExtBuffer *)&m_ExtAv1TileParam);
 	}
+
+	// AV1_SCREEN_CONTENT_TOOLS API is introduced in VPL version 2.11
+#if (MFX_VERSION_MAJOR >= 2 && MFX_VERSION_MINOR >= 11) || MFX_VERSION_MAJOR > 2
+	if (codec == QSV_CODEC_AV1 &&
+	    HasAV1ScreenContentSupport(platform, m_ver)) {
+		memset(&m_ExtAV1ScreenContentTools, 0,
+		       sizeof(m_ExtAV1ScreenContentTools));
+		m_ExtAV1ScreenContentTools.Header.BufferId =
+			MFX_EXTBUFF_AV1_SCREEN_CONTENT_TOOLS;
+		m_ExtAV1ScreenContentTools.Header.BufferSz =
+			sizeof(m_ExtAV1ScreenContentTools);
+		m_ExtAV1ScreenContentTools.Palette = MFX_CODINGOPTION_ON;
+		extendedBuffers.push_back(
+			(mfxExtBuffer *)&m_ExtAV1ScreenContentTools);
+	}
+#endif
 
 #if defined(_WIN32)
 	// TODO: Ask about this one on VAAPI too.
