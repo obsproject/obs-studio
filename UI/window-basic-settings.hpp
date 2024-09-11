@@ -348,18 +348,17 @@ private:
 	/* a11y */
 	void UpdateA11yColors();
 	void SetDefaultColors();
-	void ResetDefaultColors();
 	QColor GetColor(uint32_t colorVal, QString label);
-	uint32_t preset = 0;
-	uint32_t selectRed = 0x0000FF;
-	uint32_t selectGreen = 0x00FF00;
-	uint32_t selectBlue = 0xFF7F00;
-	uint32_t mixerGreen = 0x267f26;
-	uint32_t mixerYellow = 0x267f7f;
-	uint32_t mixerRed = 0x26267f;
-	uint32_t mixerGreenActive = 0x4cff4c;
-	uint32_t mixerYellowActive = 0x4cffff;
-	uint32_t mixerRedActive = 0x4c4cff;
+	uint32_t preset;
+	uint32_t selectRed;
+	uint32_t selectGreen;
+	uint32_t selectBlue;
+	uint32_t mixerGreen;
+	uint32_t mixerYellow;
+	uint32_t mixerRed;
+	uint32_t mixerGreenActive;
+	uint32_t mixerYellowActive;
+	uint32_t mixerRedActive;
 
 	void SaveGeneralSettings();
 	void SaveStream1Settings();
@@ -450,6 +449,7 @@ private slots:
 
 	void on_disableOSXVSync_clicked();
 
+	void UpdateColorsAndChanged();
 	void on_choose1_clicked();
 	void on_choose2_clicked();
 	void on_choose3_clicked();
