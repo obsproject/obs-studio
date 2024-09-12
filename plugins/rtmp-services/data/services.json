@@ -3469,14 +3469,6 @@
                     "url": "rtmp://rtmp-auto.millicast.com:1935/v2/pub"
                 },
                 {
-                    "name": "Amsterdam, Netherlands (RTMPS)",
-                    "url": "rtmps://rtmp-ams-1.millicast.com:443/v2/pub"
-                },
-                {
-                    "name": "Amsterdam, Netherlands (RTMP)",
-                    "url": "rtmp://rtmp-ams-1.millicast.com:1935/v2/pub"
-                },
-                {
                     "name": "Bangalore, India (RTMPS)",
                     "url": "rtmps://rtmp-blr-1.millicast.com:443/v2/pub"
                 },
