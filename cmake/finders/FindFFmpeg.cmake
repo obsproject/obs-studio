@@ -93,11 +93,6 @@ The following cache variables may also be set:
 
 #]=======================================================================]
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-lint: disable=C0307
-# cmake-format: on
-
 include(FindPackageHandleStandardArgs)
 
 set(

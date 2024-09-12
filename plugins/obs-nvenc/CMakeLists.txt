@@ -27,7 +27,7 @@ add_subdirectory(obs-nvenc-test)
 
 target_sources(
   obs-nvenc
-  PRIVATE # cmake-format: sortable
+  PRIVATE
     $<$<PLATFORM_ID:Linux>:nvenc-opengl.c>
     $<$<PLATFORM_ID:Windows>:nvenc-d3d11.c>
     cuda-helpers.c
@@ -56,6 +56,4 @@ if(OS_WINDOWS)
   target_sources(obs-nvenc PRIVATE obs-nvenc.rc)
 endif()
 
-# cmake-format: off
 set_target_properties_obs(obs-nvenc PROPERTIES FOLDER plugins/obs-nvenc PREFIX "")
-# cmake-format: on
