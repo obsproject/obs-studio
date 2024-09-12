@@ -2197,7 +2197,7 @@ obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name,
 	return new_scene;
 }
 
-void obs_scene_addref(obs_scene_t *scene)
+static inline void obs_scene_addref(obs_scene_t *scene)
 {
 	if (scene)
 		obs_source_addref(scene->source);
@@ -2557,6 +2557,10 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 		 (float)scene_getheight(scene));
 	matrix4_identity(&item->draw_transform);
 	matrix4_identity(&item->box_transform);
+
+	/* Ensure initial position is still top-left corner in relative mode. */
+	if (!item->absolute_coordinates)
+		pos_from_absolute(&item->pos, &item->pos, item);
 
 	if (source_has_audio(source)) {
 		item->visible = false;
@@ -4401,72 +4405,6 @@ void obs_sceneitem_force_update_transform(obs_sceneitem_t *item)
 
 	if (os_atomic_set_bool(&item->update_transform, false))
 		update_item_transform(item, false);
-}
-
-void obs_sceneitem_set_show_transition(obs_sceneitem_t *item,
-				       obs_source_t *transition)
-{
-	if (!item)
-		return;
-	if (item->show_transition)
-		obs_source_release(item->show_transition);
-
-	item->show_transition = obs_source_get_ref(transition);
-}
-
-void obs_sceneitem_set_show_transition_duration(obs_sceneitem_t *item,
-						uint32_t duration_ms)
-{
-	if (!item)
-		return;
-	item->show_transition_duration = duration_ms;
-}
-
-obs_source_t *obs_sceneitem_get_show_transition(obs_sceneitem_t *item)
-{
-	if (!item)
-		return NULL;
-	return item->show_transition;
-}
-
-uint32_t obs_sceneitem_get_show_transition_duration(obs_sceneitem_t *item)
-{
-	if (!item)
-		return 0;
-	return item->show_transition_duration;
-}
-
-void obs_sceneitem_set_hide_transition(obs_sceneitem_t *item,
-				       obs_source_t *transition)
-{
-	if (!item)
-		return;
-	if (item->hide_transition)
-		obs_source_release(item->hide_transition);
-
-	item->hide_transition = obs_source_get_ref(transition);
-}
-
-void obs_sceneitem_set_hide_transition_duration(obs_sceneitem_t *item,
-						uint32_t duration_ms)
-{
-	if (!item)
-		return;
-	item->hide_transition_duration = duration_ms;
-}
-
-obs_source_t *obs_sceneitem_get_hide_transition(obs_sceneitem_t *item)
-{
-	if (!item)
-		return NULL;
-	return item->hide_transition;
-}
-
-uint32_t obs_sceneitem_get_hide_transition_duration(obs_sceneitem_t *item)
-{
-	if (!item)
-		return 0;
-	return item->hide_transition_duration;
 }
 
 void obs_sceneitem_set_transition(obs_sceneitem_t *item, bool show,

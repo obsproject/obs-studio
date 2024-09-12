@@ -45,6 +45,56 @@ enum obs_encoder_type {
 	OBS_ENCODER_VIDEO  /**< The encoder provides a video codec */
 };
 
+/* encoder_packet_time is used for timestamping events associated
+ * with each video frame. This is useful for deriving absolute
+ * timestamps (i.e. wall-clock based formats) and measuring latency.
+ *
+ * For each frame, there are four events of interest, described in
+ * the encoder_packet_time struct, namely cts, fer, ferc, and pir.
+ * The timebase of these four events is os_gettime_ns(), which provides
+ * very high resolution timestamping, and the ability to convert the
+ * timing to any other time format.
+ *
+ * Each frame follows a timeline in the following temporal order:
+ *   CTS, FER, FERC, PIR
+ *
+ * PTS is the integer-based monotonically increasing value that is used
+ * to associate an encoder_packet_time entry with a specific encoder_packet.
+ */
+struct encoder_packet_time {
+	/* PTS used to associate uncompressed frames with encoded packets. */
+	int64_t pts;
+
+	/* Composition timestamp is when the frame was rendered,
+	 * captured via os_gettime_ns().
+	 */
+	uint64_t cts;
+
+	/* FERC (Frame Encode Request) is when the frame was
+	 * submitted to the encoder for encoding via the encode
+	 * callback (e.g. encode_texture2()), captured via os_gettime_ns().
+	 */
+	uint64_t fer;
+
+	/* FERC (Frame Encode Request Complete) is when
+	 * the associated FER event completed. If the encode
+	 * is synchronous with the call, this means FERC - FEC
+	 * measures the actual encode time, otherwise if the
+	 * encode is asynchronous, it measures the pipeline
+	 * delay between encode request and encode complete.
+	 * FERC is also captured via os_gettime_ns().
+	 */
+	uint64_t ferc;
+
+	/* PIR (Packet Interleave Request) is when the encoded packet
+	 * is interleaved with the stream. PIR is captured via
+	 * os_gettime_ns(). The difference between PIR and CTS gives
+	 * the total latency between frame rendering
+	 * and packet interleaving.
+	 */
+	uint64_t pir;
+};
+
 /** Encoder output packet */
 struct encoder_packet {
 	uint8_t *data; /**< Packet data */

@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.22...3.25)
 
-legacy_check()
-
 add_library(libobs-opengl SHARED)
 add_library(OBS::libobs-opengl ALIAS libobs-opengl)
 

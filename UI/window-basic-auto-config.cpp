@@ -411,6 +411,8 @@ bool AutoConfigStreamPage::validatePage()
 		else if (IsYouTubeService(wiz->serviceName))
 			wiz->service = AutoConfig::Service::YouTube;
 #endif
+		else if (wiz->serviceName == "Amazon IVS")
+			wiz->service = AutoConfig::Service::AmazonIVS;
 		else
 			wiz->service = AutoConfig::Service::Other;
 	} else {
@@ -420,84 +422,97 @@ bool AutoConfigStreamPage::validatePage()
 	if (wiz->service == AutoConfig::Service::Twitch) {
 		wiz->testMultitrackVideo = ui->useMultitrackVideo->isChecked();
 
-		auto postData =
-			constructGoLivePost(QString::fromStdString(wiz->key),
-					    std::nullopt, std::nullopt, false);
+		if (wiz->testMultitrackVideo) {
+			auto postData = constructGoLivePost(
+				QString::fromStdString(wiz->key), std::nullopt,
+				std::nullopt, false);
 
-		OBSDataAutoRelease service_settings =
-			obs_service_get_settings(service);
-		auto multitrack_video_name =
-			QTStr("Basic.Settings.Stream.MultitrackVideoLabel");
-		if (obs_data_has_user_value(service_settings,
-					    "multitrack_video_name")) {
-			multitrack_video_name = obs_data_get_string(
-				service_settings, "multitrack_video_name");
-		}
-
-		try {
-			auto config = DownloadGoLiveConfig(
-				this, MultitrackVideoAutoConfigURL(service),
-				postData, multitrack_video_name);
-
-			for (const auto &endpoint : config.ingest_endpoints) {
-				if (qstrnicmp("RTMP", endpoint.protocol.c_str(),
-					      4) != 0)
-					continue;
-
-				std::string address = endpoint.url_template;
-				auto pos = address.find("/{stream_key}");
-				if (pos != address.npos)
-					address.erase(pos);
-
-				wiz->serviceConfigServers.push_back(
-					{address, address});
+			OBSDataAutoRelease service_settings =
+				obs_service_get_settings(service);
+			auto multitrack_video_name = QTStr(
+				"Basic.Settings.Stream.MultitrackVideoLabel");
+			if (obs_data_has_user_value(service_settings,
+						    "multitrack_video_name")) {
+				multitrack_video_name = obs_data_get_string(
+					service_settings,
+					"multitrack_video_name");
 			}
 
-			int multitrackVideoBitrate = 0;
-			for (auto &encoder_config :
-			     config.encoder_configurations) {
-				auto it =
-					encoder_config.settings.find("bitrate");
-				if (it == encoder_config.settings.end())
-					continue;
+			try {
+				auto config = DownloadGoLiveConfig(
+					this,
+					MultitrackVideoAutoConfigURL(service),
+					postData, multitrack_video_name);
 
-				if (!it->is_number_integer())
-					continue;
+				for (const auto &endpoint :
+				     config.ingest_endpoints) {
+					if (qstrnicmp("RTMP",
+						      endpoint.protocol.c_str(),
+						      4) != 0)
+						continue;
 
-				int bitrate = 0;
-				it->get_to(bitrate);
-				multitrackVideoBitrate += bitrate;
-			}
+					std::string address =
+						endpoint.url_template;
+					auto pos =
+						address.find("/{stream_key}");
+					if (pos != address.npos)
+						address.erase(pos);
 
-			// grab a streamkey from the go live config if we can
-			for (auto &endpoint : config.ingest_endpoints) {
-				const char *p = endpoint.protocol.c_str();
-				const char *auth =
-					endpoint.authentication
-						? endpoint.authentication
-							  ->c_str()
-						: nullptr;
-				if (qstrnicmp("RTMP", p, 4) == 0 && auth &&
-				    *auth) {
-					wiz->key = auth;
-					break;
+					wiz->serviceConfigServers.push_back(
+						{address, address});
 				}
-			}
 
-			if (multitrackVideoBitrate > 0) {
-				wiz->startingBitrate = multitrackVideoBitrate;
-				wiz->idealBitrate = multitrackVideoBitrate;
-				wiz->multitrackVideo.targetBitrate =
-					multitrackVideoBitrate;
-				wiz->multitrackVideo.testSuccessful = true;
+				int multitrackVideoBitrate = 0;
+				for (auto &encoder_config :
+				     config.encoder_configurations) {
+					auto it = encoder_config.settings.find(
+						"bitrate");
+					if (it == encoder_config.settings.end())
+						continue;
+
+					if (!it->is_number_integer())
+						continue;
+
+					int bitrate = 0;
+					it->get_to(bitrate);
+					multitrackVideoBitrate += bitrate;
+				}
+
+				// grab a streamkey from the go live config if we can
+				for (auto &endpoint : config.ingest_endpoints) {
+					const char *p =
+						endpoint.protocol.c_str();
+					const char *auth =
+						endpoint.authentication
+							? endpoint.authentication
+								  ->c_str()
+							: nullptr;
+					if (qstrnicmp("RTMP", p, 4) == 0 &&
+					    auth && *auth) {
+						wiz->key = auth;
+						break;
+					}
+				}
+
+				if (multitrackVideoBitrate > 0) {
+					wiz->startingBitrate =
+						multitrackVideoBitrate;
+					wiz->idealBitrate =
+						multitrackVideoBitrate;
+					wiz->multitrackVideo.targetBitrate =
+						multitrackVideoBitrate;
+					wiz->multitrackVideo.testSuccessful =
+						true;
+				}
+			} catch (const MultitrackVideoError & /*err*/) {
+				// FIXME: do something sensible
 			}
-		} catch (const MultitrackVideoError & /*err*/) {
-			// FIXME: do something sensible
 		}
 	}
 
 	if (wiz->service != AutoConfig::Service::Twitch &&
 	    wiz->service != AutoConfig::Service::YouTube &&
+	    wiz->service != AutoConfig::Service::AmazonIVS &&
 	    wiz->bandwidthTest) {
 		QMessageBox::StandardButton button;
 #define WARNING_TEXT(x) QTStr("Basic.AutoConfig.StreamPage.StreamWarning." x)
@@ -774,7 +789,8 @@ void AutoConfigStreamPage::ServiceChanged()
 	reset_service_ui_fields(service);
 
 	/* Test three closest servers if "Auto" is available for Twitch */
-	if (service == "Twitch" && wiz->twitchAuto)
+	if ((service == "Twitch" && wiz->twitchAuto) ||
+	    (service == "Amazon IVS" && wiz->amazonIVSAuto))
 		regionBased = false;
 
 	ui->streamkeyPageLayout->removeWidget(ui->serverLabel);
@@ -1025,6 +1041,7 @@ AutoConfig::AutoConfig(QWidget *parent) : QWizard(parent)
 
 	proc_handler_t *ph = obs_get_proc_handler();
 	proc_handler_call(ph, "twitch_ingests_refresh", &cd);
+	proc_handler_call(ph, "amazon_ivs_ingests_refresh", &cd);
 	calldata_free(&cd);
 
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(parent);
@@ -1065,6 +1082,22 @@ AutoConfig::AutoConfig(QWidget *parent) : QWizard(parent)
 	obs_property_t *p = obs_properties_get(props, "server");
 	const char *first = obs_property_list_item_string(p, 0);
 	twitchAuto = strcmp(first, "auto") == 0;
+
+	obs_properties_destroy(props);
+
+	/* ----------------------------------------- */
+	/* check to see if Amazon IVS "auto" entries are available */
+
+	OBSDataAutoRelease amazonIVSSettings = obs_data_create();
+
+	obs_data_set_string(amazonIVSSettings, "service", "Amazon IVS");
+
+	props = obs_get_service_properties("rtmp_common");
+	obs_properties_apply_settings(props, amazonIVSSettings);
+
+	p = obs_properties_get(props, "server");
+	first = obs_property_list_item_string(p, 0);
+	amazonIVSAuto = strncmp(first, "auto", 4) == 0;
 
 	obs_properties_destroy(props);
 

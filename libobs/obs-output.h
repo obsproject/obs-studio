@@ -21,6 +21,7 @@
 extern "C" {
 #endif
 
+/* obs_output_info.flags definitions */
 #define OBS_OUTPUT_VIDEO (1 << 0)
 #define OBS_OUTPUT_AUDIO (1 << 1)
 #define OBS_OUTPUT_AV (OBS_OUTPUT_VIDEO | OBS_OUTPUT_AUDIO)

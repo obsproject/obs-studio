@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.22...3.25)
 
-legacy_check()
-
 add_subdirectory(obs-frontend-api)
 
 option(ENABLE_UI "Enable building with UI (requires Qt)" ON)
@@ -20,12 +18,24 @@ if(NOT TARGET OBS::json11)
   add_subdirectory("${CMAKE_SOURCE_DIR}/deps/json11" "${CMAKE_BINARY_DIR}/deps/json11")
 endif()
 
+if(NOT TARGET OBS::bpm)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/bpm" "${CMAKE_BINARY_DIR}/shared/bpm")
+endif()
+
 add_executable(obs-studio)
 add_executable(OBS::studio ALIAS obs-studio)
 
 target_link_libraries(
   obs-studio
-  PRIVATE CURL::libcurl FFmpeg::avcodec FFmpeg::avutil FFmpeg::avformat OBS::libobs OBS::frontend-api OBS::json11
+  PRIVATE
+    CURL::libcurl
+    FFmpeg::avcodec
+    FFmpeg::avutil
+    FFmpeg::avformat
+    OBS::bpm
+    OBS::libobs
+    OBS::frontend-api
+    OBS::json11
 )
 
 include(cmake/ui-qt.cmake)

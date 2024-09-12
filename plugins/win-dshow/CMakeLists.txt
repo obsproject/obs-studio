@@ -44,14 +44,14 @@ target_link_libraries(
     winmm
 )
 
+add_subdirectory(virtualcam-module)
+
 if(TARGET OBS::virtualcam AND TARGET OBS::virtualcam-guid)
   target_sources(win-dshow PRIVATE virtualcam.c)
-  target_link_libraries(win-dshow PRIVATE OBS::virtualcam-interface OBS::virtualcam-guid)
+  target_link_libraries(win-dshow PRIVATE OBS::virtualcam-guid)
   target_compile_definitions(win-dshow PRIVATE VIRTUALCAM_AVAILABLE)
 
   add_dependencies(win-dshow obs-virtualcam-module)
 endif()
 
 set_target_properties_obs(win-dshow PROPERTIES FOLDER plugins/win-dshow PREFIX "")
-
-add_subdirectory(virtualcam-module)

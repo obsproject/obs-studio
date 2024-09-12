@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.22...3.25)
 
-legacy_check()
-
 add_library(obs-transitions MODULE)
 add_library(OBS::transition ALIAS obs-transitions)
 

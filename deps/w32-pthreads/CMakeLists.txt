@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.24...3.25)
 
-legacy_check()
-
 add_library(w32-pthreads SHARED EXCLUDE_FROM_ALL)
 add_library(OBS::w32-pthreads ALIAS w32-pthreads)
 

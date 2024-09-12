@@ -324,7 +324,8 @@ void WHIPOutput::ParseLinkHeader(std::string val,
 			token = val.substr(0, pos);
 		}
 
-		if (token.find("<turn:", 0) == 0) {
+		if ((token.find("<stun:", 0) == 0) ||
+		    (token.find("<turn:", 0) == 0)) {
 			url = extractUrl(token);
 		} else if (token.find("username=") != std::string::npos) {
 			username = extractValue(token);

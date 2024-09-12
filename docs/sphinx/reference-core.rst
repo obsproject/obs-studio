@@ -501,36 +501,10 @@ Video, Audio, and Graphics
 
 ---------------------
 
-.. function:: void obs_render_main_view(void)
-
-   Renders the main view.
-
-   Note: This function is deprecated.
-
----------------------
-
 .. function:: void obs_render_main_texture(void)
 
    Renders the main output texture.  Useful for rendering a preview pane
    of the main output.
-
----------------------
-
-.. function:: void obs_set_master_volume(float volume)
-
-   No-op, only exists to keep ABI compatibility.
-
-   .. deprecated:: 29.0
-
----------------------
-
-.. function:: float obs_get_master_volume(void)
-
-   No-op, only exists to keep ABI compatibility.
-
-   :return: Always returns 1
-
-   .. deprecated:: 29.0
 
 ---------------------
 

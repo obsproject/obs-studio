@@ -1,6 +1,5 @@
 #pragma once
 
-#include <obs.hpp>
 #include <QSlider>
 #include <QInputEvent>
 #include <QtCore/QObject>

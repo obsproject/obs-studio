@@ -18,6 +18,7 @@
 #include <inttypes.h>
 #include "util/platform.h"
 #include "util/util_uint64.h"
+#include "util/array-serializer.h"
 #include "graphics/math-extra.h"
 #include "obs.h"
 #include "obs-internal.h"
@@ -177,12 +178,15 @@ obs_output_t *obs_output_create(const char *id, const char *name,
 	pthread_mutex_init_value(&output->interleaved_mutex);
 	pthread_mutex_init_value(&output->delay_mutex);
 	pthread_mutex_init_value(&output->pause.mutex);
+	pthread_mutex_init_value(&output->pkt_callbacks_mutex);
 
 	if (pthread_mutex_init(&output->interleaved_mutex, NULL) != 0)
 		goto fail;
 	if (pthread_mutex_init(&output->delay_mutex, NULL) != 0)
 		goto fail;
 	if (pthread_mutex_init(&output->pause.mutex, NULL) != 0)
+		goto fail;
+	if (pthread_mutex_init(&output->pkt_callbacks_mutex, NULL) != 0)
 		goto fail;
 	if (os_event_init(&output->stopping_event, OS_EVENT_TYPE_MANUAL) != 0)
 		goto fail;
@@ -308,12 +312,18 @@ void obs_output_destroy(obs_output_t *output)
 
 		da_free(output->keyframe_group_tracking);
 
+		for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++)
+			da_free(output->encoder_packet_times[i]);
+
+		da_free(output->pkt_callbacks);
+
 		clear_raw_audio_buffers(output);
 
 		os_event_destroy(output->stopping_event);
 		pthread_mutex_destroy(&output->pause.mutex);
 		pthread_mutex_destroy(&output->interleaved_mutex);
 		pthread_mutex_destroy(&output->delay_mutex);
+		pthread_mutex_destroy(&output->pkt_callbacks_mutex);
 		os_event_destroy(output->reconnect_stop_event);
 		obs_context_data_free(&output->context);
 		deque_free(&output->delay_data);
@@ -365,6 +375,7 @@ bool obs_output_actual_start(obs_output_t *output)
 		deque_init(&ctrack->caption_data);
 		pthread_mutex_unlock(&ctrack->caption_mutex);
 	}
+
 	return success;
 }
 
@@ -1476,8 +1487,10 @@ static inline void check_received(struct obs_output *output,
 	}
 }
 
-static inline void apply_interleaved_packet_offset(struct obs_output *output,
-						   struct encoder_packet *out)
+static inline void
+apply_interleaved_packet_offset(struct obs_output *output,
+				struct encoder_packet *out,
+				struct encoder_packet_time *packet_time)
 {
 	int64_t offset;
 
@@ -1491,6 +1504,8 @@ static inline void apply_interleaved_packet_offset(struct obs_output *output,
 
 	out->dts -= offset;
 	out->pts -= offset;
+	if (packet_time)
+		packet_time->pts -= offset;
 
 	/* convert the newly adjusted dts to relative dts time to ensure proper
 	 * interleaving.  if we're using an audio encoder that's already been
@@ -1521,12 +1536,12 @@ static inline bool has_higher_opposing_ts(struct obs_output *output,
 			  output->highest_audio_ts > packet->dts_usec);
 }
 
-static size_t extract_itut_t35_buffer_from_sei(sei_t *sei, uint8_t **data_out)
+static size_t extract_buffer_from_sei(sei_t *sei, uint8_t **data_out)
 {
 	if (!sei || !sei->head) {
 		return 0;
 	}
-	/* We should only need to get one payload, because the SEI that was 
+	/* We should only need to get one payload, because the SEI that was
 	 * generated should only have one message, so no need to iterate. If
 	 * we did iterate, we would need to generate multiple OBUs. */
 	sei_message_t *msg = sei_message_head(sei);
@@ -1711,9 +1726,9 @@ static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 		} else if (av1) {
 			uint8_t *obu_buffer = NULL;
 			size_t obu_buffer_size = 0;
-			size = extract_itut_t35_buffer_from_sei(&sei, &data);
-			metadata_obu_itu_t35(data, size, &obu_buffer,
-					     &obu_buffer_size);
+			size = extract_buffer_from_sei(&sei, &data);
+			metadata_obu(data, size, &obu_buffer, &obu_buffer_size,
+				     METADATA_TYPE_ITUT_T35);
 			if (obu_buffer) {
 				da_push_back_array(out_data, obu_buffer,
 						   obu_buffer_size);
@@ -1736,6 +1751,8 @@ static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 static inline void send_interleaved(struct obs_output *output)
 {
 	struct encoder_packet out = output->interleaved_packets.array[0];
+	struct encoder_packet_time ept_local = {0};
+	bool found_ept = false;
 
 	/* do not send an interleaved packet if there's no packet of the
 	 * opposing type of a higher timestamp in the interleave buffer.
@@ -1779,7 +1796,55 @@ static inline void send_interleaved(struct obs_output *output)
 			}
 		}
 		pthread_mutex_unlock(&ctrack->caption_mutex);
+
+		/* Iterate the array of encoder packet times to
+		 * find a matching PTS entry, and drain the array.
+		 * Packet timing currently applies to video only.
+		 */
+		struct encoder_packet_time *ept = NULL;
+		size_t num_ept =
+			output->encoder_packet_times[out.track_idx].num;
+		if (num_ept) {
+			for (size_t i = 0; i < num_ept; i++) {
+				ept = &output->encoder_packet_times[out.track_idx]
+					       .array[i];
+				if (ept->pts == out.pts) {
+					ept_local = *ept;
+					da_erase(output->encoder_packet_times
+							 [out.track_idx],
+						 i);
+					found_ept = true;
+					break;
+				}
+			}
+			if (found_ept == false) {
+				blog(LOG_DEBUG,
+				     "%s: Track %lu encoder packet timing for PTS%" PRId64
+				     " not found.",
+				     __FUNCTION__, out.track_idx, out.pts);
+			}
+		} else {
+			// encoder_packet_times should not be empty; log if so.
+			blog(LOG_DEBUG,
+			     "%s: Track %lu encoder packet timing array empty.",
+			     __FUNCTION__, out.track_idx);
+		}
 	}
+
+	/* Iterate the registered packet callback(s) and invoke
+	 * each one. The caption track logic further above should
+	 * eventually migrate to the packet callback mechanism.
+	 */
+	pthread_mutex_lock(&output->pkt_callbacks_mutex);
+	for (size_t i = 0; i < output->pkt_callbacks.num; ++i) {
+		struct packet_callback *const callback =
+			&output->pkt_callbacks.array[i];
+		// Packet interleave request timestamp
+		ept_local.pir = os_gettime_ns();
+		callback->packet_cb(output, &out, found_ept ? &ept_local : NULL,
+				    callback->param);
+	}
+	pthread_mutex_unlock(&output->pkt_callbacks_mutex);
 
 	output->info.encoded_packet(output->context.data, &out);
 	obs_encoder_packet_release(&out);
@@ -1908,6 +1973,10 @@ static void discard_to_idx(struct obs_output *output, size_t idx)
 	for (size_t i = 0; i < idx; i++) {
 		struct encoder_packet *packet =
 			&output->interleaved_packets.array[i];
+		if (packet->type == OBS_ENCODER_VIDEO) {
+			da_pop_front(
+				output->encoder_packet_times[packet->track_idx]);
+		}
 		obs_encoder_packet_release(packet);
 	}
 
@@ -2095,7 +2164,7 @@ static bool initialize_interleaved_packets(struct obs_output *output)
 	for (size_t i = 0; i < output->interleaved_packets.num; i++) {
 		struct encoder_packet *packet =
 			&output->interleaved_packets.array[i];
-		apply_interleaved_packet_offset(output, packet);
+		apply_interleaved_packet_offset(output, packet, NULL);
 	}
 
 	return true;
@@ -2242,12 +2311,25 @@ check_encoder_group_keyframe_alignment(obs_output_t *output,
 	da_insert(output->keyframe_group_tracking, idx, &insert_data);
 }
 
-static void interleave_packets(void *data, struct encoder_packet *packet)
+static void apply_ept_offsets(struct obs_output *output)
+{
+	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+		for (size_t j = 0; j < output->encoder_packet_times[i].num;
+		     j++) {
+			output->encoder_packet_times[i].array[j].pts -=
+				output->video_offsets[i];
+		}
+	}
+}
+
+static void interleave_packets(void *data, struct encoder_packet *packet,
+			       struct encoder_packet_time *packet_time)
 {
 	struct obs_output *output = data;
 	struct encoder_packet out;
 	bool was_started;
 	bool received_video;
+	struct encoder_packet_time *output_packet_time = NULL;
 
 	if (!active(output))
 		return;
@@ -2283,8 +2365,15 @@ static void interleave_packets(void *data, struct encoder_packet *packet)
 	else
 		obs_encoder_packet_create_instance(&out, packet);
 
+	if (packet_time) {
+		output_packet_time = da_push_back_new(
+			output->encoder_packet_times[packet->track_idx]);
+		*output_packet_time = *packet_time;
+	}
+
 	if (was_started)
-		apply_interleaved_packet_offset(output, &out);
+		apply_interleaved_packet_offset(output, &out,
+						output_packet_time);
 	else
 		check_received(output, packet);
 
@@ -2304,6 +2393,7 @@ static void interleave_packets(void *data, struct encoder_packet *packet)
 			if (prune_interleaved_packets(output)) {
 				if (initialize_interleaved_packets(output)) {
 					resort_interleaved_packets(output);
+					apply_ept_offsets(output);
 					send_interleaved(output);
 				}
 			}
@@ -2317,8 +2407,10 @@ static void interleave_packets(void *data, struct encoder_packet *packet)
 	pthread_mutex_unlock(&output->interleaved_mutex);
 }
 
-static void default_encoded_callback(void *param, struct encoder_packet *packet)
+static void default_encoded_callback(void *param, struct encoder_packet *packet,
+				     struct encoder_packet_time *packet_time)
 {
+	UNUSED_PARAMETER(packet_time);
 	struct obs_output *output = param;
 
 	if (data_active(output)) {
@@ -2489,6 +2581,10 @@ static void reset_packet_data(obs_output_t *output)
 {
 	output->received_audio = false;
 	output->highest_audio_ts = 0;
+
+	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+		output->encoder_packet_times[i].num = 0;
+	}
 
 	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
 		output->received_video[i] = false;
@@ -3022,14 +3118,6 @@ void obs_output_signal_stop(obs_output_t *output, int code)
 	}
 }
 
-void obs_output_addref(obs_output_t *output)
-{
-	if (!output)
-		return;
-
-	obs_ref_addref(&output->context.control->ref);
-}
-
 void obs_output_release(obs_output_t *output)
 {
 	if (!output)
@@ -3316,4 +3404,30 @@ const char *obs_get_output_supported_audio_codecs(const char *id)
 {
 	const struct obs_output_info *info = find_output(id);
 	return info ? info->encoded_audio_codecs : NULL;
+}
+
+void obs_output_add_packet_callback(
+	obs_output_t *output,
+	void (*packet_cb)(obs_output_t *output, struct encoder_packet *pkt,
+			  struct encoder_packet_time *pkt_time, void *param),
+	void *param)
+{
+	struct packet_callback data = {packet_cb, param};
+
+	pthread_mutex_lock(&output->pkt_callbacks_mutex);
+	da_insert(output->pkt_callbacks, 0, &data);
+	pthread_mutex_unlock(&output->pkt_callbacks_mutex);
+}
+
+void obs_output_remove_packet_callback(
+	obs_output_t *output,
+	void (*packet_cb)(obs_output_t *output, struct encoder_packet *pkt,
+			  struct encoder_packet_time *pkt_time, void *param),
+	void *param)
+{
+	struct packet_callback data = {packet_cb, param};
+
+	pthread_mutex_lock(&output->pkt_callbacks_mutex);
+	da_erase_item(output->pkt_callbacks, &data);
+	pthread_mutex_unlock(&output->pkt_callbacks_mutex);
 }

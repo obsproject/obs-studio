@@ -64,6 +64,7 @@ bool nv_failed2(obs_encoder_t *encoder, void *session, NVENCSTATUS err,
 
 	switch (err) {
 	case NV_ENC_ERR_OUT_OF_MEMORY:
+	case NV_ENC_ERR_INCOMPATIBLE_CLIENT_KEY:
 		obs_encoder_set_last_error(encoder,
 					   obs_module_text("TooManySessions"));
 		break;
@@ -309,6 +310,7 @@ static bool nvenc_check(void)
 	os_process_args_t *args;
 	struct dstr caps_str = {0};
 	config_t *config = NULL;
+	bool success = false;
 
 	args = os_process_args_create(test_exe);
 
@@ -343,7 +345,7 @@ static bool nvenc_check(void)
 		goto fail;
 	}
 
-	bool success = config_get_bool(config, "general", "nvenc_supported");
+	success = config_get_bool(config, "general", "nvenc_supported");
 	if (!success) {
 		const char *error =
 			config_get_string(config, "general", "reason");

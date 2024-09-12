@@ -23,7 +23,7 @@
 #include <util/darray.h>
 
 #define WIN_STRING_DIV "\r\n"
-#define FIND_WINDOW_INTERVAL 0.5
+#define FIND_WINDOW_INTERVAL 2.0
 
 static Display *disp = NULL;
 static xcb_connection_t *conn = NULL;
@@ -69,6 +69,8 @@ struct xcompcap {
 };
 
 static void xcompcap_update(void *data, obs_data_t *settings);
+static xcb_window_t convert_encoded_window_id(const char *str, char **p_wname,
+					      char **p_wcls);
 
 xcb_atom_t get_atom(xcb_connection_t *conn, const char *name)
 {
@@ -278,19 +280,9 @@ struct darray xcomp_top_level_windows(xcb_connection_t *conn)
 	return res.da;
 }
 
-xcb_window_t xcomp_find_window(xcb_connection_t *conn, Display *disp,
-			       const char *str)
+static xcb_window_t convert_encoded_window_id(const char *str, char **p_wname,
+					      char **p_wcls)
 {
-	xcb_window_t ret = 0;
-	DARRAY(xcb_window_t) tlw = {0};
-	tlw.da = xcomp_top_level_windows(conn);
-	if (!str || strlen(str) == 0) {
-		if (tlw.num > 0)
-			ret = *(xcb_window_t *)darray_item(sizeof(xcb_window_t),
-							   &tlw.da, 0);
-		goto cleanup1;
-	}
-
 	size_t markSize = strlen(WIN_STRING_DIV);
 
 	const char *firstMark = strstr(str, WIN_STRING_DIV);
@@ -302,19 +294,42 @@ xcb_window_t xcomp_find_window(xcb_connection_t *conn, Display *disp,
 	const char *thirdStr = secondMark + markSize;
 
 	// wstr only consists of the window-id
-	if (!firstMark)
+	if (!firstMark) {
+		*p_wname = NULL;
+		*p_wcls = NULL;
 		return (xcb_window_t)atol(str);
+	}
 
 	// wstr also contains window-name and window-class
 	char *wname = bzalloc(secondMark - secondStr + 1);
 	char *wcls = bzalloc(strEnd - thirdStr + 1);
 	memcpy(wname, secondStr, secondMark - secondStr);
 	memcpy(wcls, thirdStr, strEnd - thirdStr);
-	ret = (xcb_window_t)strtol(str, NULL, 10);
+	xcb_window_t ret = (xcb_window_t)strtol(str, NULL, 10);
+
+	*p_wname = wname;
+	*p_wcls = wcls;
+	return ret;
+}
+
+xcb_window_t xcomp_find_window(xcb_connection_t *conn, Display *disp,
+			       const char *str)
+{
+	xcb_window_t ret = 0;
+	char *wname = NULL;
+	char *wcls = NULL;
+	DARRAY(xcb_window_t) tlw = {0};
+
+	if (!str || strlen(str) == 0) {
+		goto cleanup;
+	}
+
+	ret = convert_encoded_window_id(str, &wname, &wcls);
 
 	// first try to find a match by the window-id
+	tlw.da = xcomp_top_level_windows(conn);
 	if (da_find(tlw, &ret, 0) != DARRAY_INVALID) {
-		goto cleanup2;
+		goto cleanup;
 	}
 
 	// then try to find a match by name & class
@@ -331,7 +346,7 @@ xcb_window_t xcomp_find_window(xcb_connection_t *conn, Display *disp,
 		dstr_free(&cwcls);
 		if (found) {
 			ret = cwin;
-			goto cleanup2;
+			goto cleanup;
 		}
 	}
 
@@ -339,10 +354,9 @@ xcb_window_t xcomp_find_window(xcb_connection_t *conn, Display *disp,
 	     "Did not find new window id for Name '%s' or Class '%s'", wname,
 	     wcls);
 
-cleanup2:
+cleanup:
 	bfree(wname);
 	bfree(wcls);
-cleanup1:
 	da_free(tlw);
 	return ret;
 }
@@ -750,12 +764,25 @@ static int cmp_wi(const void *a, const void *b)
 {
 	struct WindowInfo *awi = (struct WindowInfo *)a;
 	struct WindowInfo *bwi = (struct WindowInfo *)b;
-	return strcmp(awi->name_lower.array, bwi->name_lower.array);
+	const char *a_name = awi->name_lower.array ? awi->name_lower.array : "";
+	const char *b_name = bwi->name_lower.array ? bwi->name_lower.array : "";
+	return strcmp(a_name, b_name);
 }
 
-static obs_properties_t *xcompcap_props(void *unused)
+static inline bool compare_ids(const char *id1, const char *id2)
 {
-	UNUSED_PARAMETER(unused);
+	if (!id1 || !id2)
+		return false;
+
+	id1 = strstr(id1, "\r\n");
+	id2 = strstr(id2, "\r\n");
+
+	return id1 && id2 && strcmp(id1, id2) == 0;
+}
+
+static obs_properties_t *xcompcap_props(void *data)
+{
+	struct xcompcap *s = (struct xcompcap *)data;
 
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *prop;
@@ -766,7 +793,47 @@ static obs_properties_t *xcompcap_props(void *unused)
 				       OBS_COMBO_FORMAT_STRING);
 
 	DARRAY(struct WindowInfo) window_strings = {0};
+	bool had_window_saved = false;
+
+	if (s) {
+		had_window_saved = s->windowName && *s->windowName;
+		if (had_window_saved) {
+			char *wname;
+			char *wcls;
+
+			convert_encoded_window_id(s->windowName, &wname, &wcls);
+			bfree(wcls);
+
+			struct dstr name = {0};
+			struct dstr desc = {0};
+			struct dstr name_lower = {0};
+
+			dstr_copy(&name,
+				  wname ? wname
+					: obs_module_text("UnknownWindow"));
+			bfree(wname);
+
+			dstr_copy(&desc, s->windowName);
+			dstr_copy_dstr(&name_lower, &name);
+			dstr_to_lower(&name_lower);
+
+			da_push_back(
+				window_strings,
+				(&(struct WindowInfo){name_lower, name, desc}));
+		} else {
+			struct dstr select_window_str;
+			dstr_init_copy(&select_window_str,
+				       obs_module_text("SelectAWindow"));
+			da_push_back(window_strings,
+				     (&(struct WindowInfo){{0},
+							   select_window_str,
+							   {0}}));
+		}
+	}
+
 	struct darray windows = xcomp_top_level_windows(conn);
+	bool window_found = false;
+
 	for (size_t w = 0; w < windows.num; w++) {
 		xcb_window_t win = *(xcb_window_t *)darray_item(
 			sizeof(xcb_window_t), &windows, w);
@@ -783,26 +850,40 @@ static obs_properties_t *xcompcap_props(void *unused)
 		dstr_init_copy_dstr(&name_lower, &name);
 		dstr_to_lower(&name_lower);
 
-		da_push_back(window_strings,
-			     (&(struct WindowInfo){name_lower, name, desc}));
+		if (!had_window_saved ||
+		    (s && !compare_ids(desc.array, s->windowName)))
+			da_push_back(
+				window_strings,
+				(&(struct WindowInfo){name_lower, name, desc}));
+		else {
+			window_found = true;
+			dstr_free(&name);
+			dstr_free(&name_lower);
+			dstr_free(&desc);
+		}
 	}
 	darray_free(&windows);
 
-	qsort(window_strings.array, window_strings.num,
-	      sizeof(struct WindowInfo), cmp_wi);
+	if (window_strings.num > 2)
+		qsort(window_strings.array + 1, window_strings.num - 1,
+		      sizeof(struct WindowInfo), cmp_wi);
 
 	for (size_t i = 0; i < window_strings.num; i++) {
-		struct WindowInfo *s = (struct WindowInfo *)darray_item(
+		struct WindowInfo *w = (struct WindowInfo *)darray_item(
 			sizeof(struct WindowInfo), &window_strings.da, i);
 
-		obs_property_list_add_string(prop, s->name.array,
-					     s->desc.array);
+		obs_property_list_add_string(prop, w->name.array,
+					     w->desc.array);
 
-		dstr_free(&s->name_lower);
-		dstr_free(&s->name);
-		dstr_free(&s->desc);
+		dstr_free(&w->name_lower);
+		dstr_free(&w->name);
+		dstr_free(&w->desc);
 	}
 	da_free(window_strings);
+
+	if (!had_window_saved || !window_found) {
+		obs_property_list_item_disable(prop, 0, true);
+	}
 
 	prop = obs_properties_add_int(props, "cut_top",
 				      obs_module_text("CropTop"), 0, 4096, 1);

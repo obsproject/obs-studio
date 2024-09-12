@@ -1494,11 +1494,6 @@ obs_property_frame_rate_fps_range_max(obs_property_t *p, size_t idx)
 		       : (struct media_frames_per_second){0};
 }
 
-enum obs_text_type obs_proprety_text_type(obs_property_t *p)
-{
-	return obs_property_text_type(p);
-}
-
 enum obs_group_type obs_property_group_type(obs_property_t *p)
 {
 	struct group_data *data = get_type_data(p, OBS_PROPERTY_GROUP);

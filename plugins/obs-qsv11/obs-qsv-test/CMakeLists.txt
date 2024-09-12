@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.24...3.25)
 
-legacy_check()
-
 add_executable(obs-qsv-test)
 
 find_package(VPL 2.6 REQUIRED)

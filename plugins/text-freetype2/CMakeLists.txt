@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.22...3.25)
 
-legacy_check()
-
 option(ENABLE_FREETYPE "Enable FreeType text plugin" ON)
 
 if(NOT ENABLE_FREETYPE)

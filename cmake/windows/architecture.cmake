@@ -25,10 +25,6 @@ if(OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_GENERATOR_PLATFORM)
     )
   endif()
 else()
-  # legacy_check: Stub macro for child architecture builds
-  macro(legacy_check)
-  endmacro()
-
   # target_disable_feature: Stub macro for child architecture builds
   macro(target_disable_feature)
   endmacro()

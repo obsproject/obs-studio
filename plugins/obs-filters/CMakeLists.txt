@@ -1,13 +1,7 @@
 cmake_minimum_required(VERSION 3.22...3.25)
 
-legacy_check()
-
 add_library(obs-filters MODULE)
 add_library(OBS::filters ALIAS obs-filters)
-
-if(OS_WINDOWS)
-  target_enable_feature(obs-filters "NVIDIA Audio FX support" LIBNVAFX_ENABLED HAS_NOISEREDUCTION)
-endif()
 
 target_sources(
   obs-filters
@@ -41,6 +35,7 @@ include(cmake/speexdsp.cmake)
 include(cmake/rnnoise.cmake)
 
 if(OS_WINDOWS)
+  include(cmake/nvidia.cmake)
   configure_file(cmake/windows/obs-module.rc.in obs-filters.rc)
   target_sources(obs-filters PRIVATE obs-filters.rc)
 endif()

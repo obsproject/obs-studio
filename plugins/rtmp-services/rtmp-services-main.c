@@ -59,6 +59,11 @@ extern void load_twitch_data(void);
 extern void unload_twitch_data(void);
 extern void twitch_ingests_refresh(int seconds);
 
+extern void init_amazon_ivs_data(void);
+extern void load_amazon_ivs_data(void);
+extern void unload_amazon_ivs_data(void);
+extern void amazon_ivs_ingests_refresh(int seconds);
+
 static void refresh_callback(void *unused, calldata_t *cd)
 {
 	int seconds = (int)calldata_int(cd, "seconds");
@@ -72,10 +77,24 @@ static void refresh_callback(void *unused, calldata_t *cd)
 	UNUSED_PARAMETER(unused);
 }
 
+static void amazon_ivs_refresh_callback(void *unused, calldata_t *cd)
+{
+	int seconds = (int)calldata_int(cd, "seconds");
+	if (seconds <= 0)
+		seconds = 3;
+	if (seconds > 10)
+		seconds = 10;
+
+	amazon_ivs_ingests_refresh(seconds);
+
+	UNUSED_PARAMETER(unused);
+}
+
 bool obs_module_load(void)
 {
 	init_twitch_data();
 	init_dacast_data();
+	init_amazon_ivs_data();
 
 	dstr_copy(&module_name, "rtmp-services plugin (libobs ");
 	dstr_cat(&module_name, obs_get_version_string());
@@ -84,6 +103,8 @@ bool obs_module_load(void)
 	proc_handler_t *ph = obs_get_proc_handler();
 	proc_handler_add(ph, "void twitch_ingests_refresh(int seconds)",
 			 refresh_callback, NULL);
+	proc_handler_add(ph, "void amazon_ivs_ingests_refresh(int seconds)",
+			 amazon_ivs_refresh_callback, NULL);
 
 #if defined(ENABLE_SERVICE_UPDATES)
 	char *local_dir = obs_module_file("");
@@ -100,6 +121,7 @@ bool obs_module_load(void)
 	}
 
 	load_twitch_data();
+	load_amazon_ivs_data();
 
 	bfree(local_dir);
 	bfree(cache_dir);
@@ -116,5 +138,6 @@ void obs_module_unload(void)
 	unload_twitch_data();
 	free_showroom_data();
 	unload_dacast_data();
+	unload_amazon_ivs_data();
 	dstr_free(&module_name);
 }

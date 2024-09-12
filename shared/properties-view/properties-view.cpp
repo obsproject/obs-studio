@@ -33,6 +33,7 @@
 #include <qt-wrappers.hpp>
 #include <plain-text-edit.hpp>
 #include <slider-ignorewheel.hpp>
+#include <icon-label.hpp>
 #include <cstdlib>
 #include <initializer_list>
 #include <obs-data.h>
@@ -277,15 +278,46 @@ QWidget *OBSPropertiesView::AddCheckbox(obs_property_t *prop)
 {
 	const char *name = obs_property_name(prop);
 	const char *desc = obs_property_description(prop);
+	const char *long_desc = obs_property_long_description(prop);
 	bool val = obs_data_get_bool(settings, name);
 
 	QCheckBox *checkbox = new QCheckBox(QT_UTF8(desc));
 	checkbox->setCheckState(val ? Qt::Checked : Qt::Unchecked);
+
 #if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
-	return NewWidget(prop, checkbox, &QCheckBox::checkStateChanged);
+	QWidget *widget =
+		NewWidget(prop, checkbox, &QCheckBox::checkStateChanged);
 #else
-	return NewWidget(prop, checkbox, &QCheckBox::stateChanged);
+	QWidget *widget = NewWidget(prop, checkbox, &QCheckBox::stateChanged);
 #endif
+
+	if (!long_desc) {
+		return widget;
+	}
+
+	QString file = !obs_frontend_is_theme_dark()
+			       ? ":/res/images/help.svg"
+			       : ":/res/images/help_light.svg";
+
+	IconLabel *help = new IconLabel(checkbox);
+	help->setIcon(QIcon(file));
+	help->setToolTip(long_desc);
+
+#ifdef __APPLE__
+	checkbox->setAttribute(Qt::WA_LayoutUsesWidgetRect);
+#endif
+
+	widget = new QWidget();
+	QHBoxLayout *layout = new QHBoxLayout(widget);
+	layout->setContentsMargins(0, 0, 0, 0);
+	layout->setAlignment(Qt::AlignLeft);
+	layout->setSpacing(0);
+
+	layout->addWidget(checkbox);
+	layout->addWidget(help);
+	widget->setLayout(layout);
+
+	return widget;
 }
 
 QWidget *OBSPropertiesView::AddText(obs_property_t *prop, QFormLayout *layout,
@@ -1625,53 +1657,30 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 	if (!obs_property_enabled(property))
 		widget->setEnabled(false);
 
-	if (obs_property_long_description(property)) {
+	QWidget *leftWidget = label;
+	if (obs_property_long_description(property) && label) {
 		QString file = !obs_frontend_is_theme_dark()
 				       ? ":/res/images/help.svg"
 				       : ":/res/images/help_light.svg";
-		if (label) {
-			QString lStr = "<html>%1 <img src='%2' style=' \
-				vertical-align: bottom;  \
-				' /></html>";
 
-			label->setText(lStr.arg(label->text(), file));
-			label->setToolTip(
-				obs_property_long_description(property));
-		} else if (type == OBS_PROPERTY_BOOL) {
+		QWidget *newWidget = new QWidget();
+		newWidget->setToolTip(obs_property_long_description(property));
 
-			QString bStr = "<html> <img src='%1' style=' \
-				vertical-align: bottom;  \
-				' /></html>";
+		QHBoxLayout *boxLayout = new QHBoxLayout(newWidget);
+		boxLayout->setContentsMargins(0, 0, 0, 0);
+		boxLayout->setAlignment(Qt::AlignLeft);
+		boxLayout->setSpacing(0);
 
-			const char *desc = obs_property_description(property);
+		IconLabel *help = new IconLabel(newWidget);
+		help->setIcon(QIcon(file));
+		help->setToolTip(obs_property_long_description(property));
 
-			QWidget *newWidget = new QWidget();
-
-			QHBoxLayout *boxLayout = new QHBoxLayout(newWidget);
-			boxLayout->setContentsMargins(0, 0, 0, 0);
-			boxLayout->setAlignment(Qt::AlignLeft);
-			boxLayout->setSpacing(0);
-
-			QCheckBox *check = qobject_cast<QCheckBox *>(widget);
-			check->setText(desc);
-			check->setToolTip(
-				obs_property_long_description(property));
-#ifdef __APPLE__
-			check->setAttribute(Qt::WA_LayoutUsesWidgetRect);
-#endif
-
-			QLabel *help = new QLabel(check);
-			help->setText(bStr.arg(file));
-			help->setToolTip(
-				obs_property_long_description(property));
-
-			boxLayout->addWidget(check);
-			boxLayout->addWidget(help);
-			widget = newWidget;
-		}
+		boxLayout->addWidget(label);
+		boxLayout->addWidget(help);
+		leftWidget = newWidget;
 	}
 
-	layout->addRow(label, widget);
+	layout->addRow(leftWidget, widget);
 
 	if (!lastFocused.empty())
 		if (lastFocused.compare(name) == 0)

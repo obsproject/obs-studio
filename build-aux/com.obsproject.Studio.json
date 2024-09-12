@@ -74,11 +74,9 @@
             "builddir": true,
             "config-opts": [
                 "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
-                "-DOBS_CMAKE_VERSION=3",
                 "-DENABLE_WAYLAND=ON",
                 "-DENABLE_BROWSER=ON",
                 "-DCEF_ROOT_DIR=/app/cef",
-                "-DUSE_XDG=ON",
                 "-DENABLE_ALSA=OFF",
                 "-DENABLE_PULSEAUDIO=ON",
                 "-DENABLE_JACK=ON",
@@ -100,7 +98,8 @@
             ],
             "post-install": [
                 "install -d /app/plugins",
-                "install -d /app/extensions/Plugins"
+                "install -d /app/extensions/Plugins",
+                "rm -rf /app/cef # Skip stripping original CEF library"
             ],
             "sources": [
                 {

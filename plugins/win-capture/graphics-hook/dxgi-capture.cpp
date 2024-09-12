@@ -48,7 +48,8 @@ static void STDMETHODCALLTYPE SwapChainDestructed(void *pData)
 		dxgi_possible_swap_queue_count = 0;
 		dxgi_present_attempted = false;
 
-		data.free();
+		if (data.free)
+			data.free();
 		data.free = nullptr;
 	}
 }
@@ -187,7 +188,8 @@ static void update_mismatch_count(bool match)
 			dxgi_possible_swap_queue_count = 0;
 			dxgi_present_attempted = false;
 
-			data.free();
+			if (data.free)
+				data.free();
 			data.free = nullptr;
 
 			swap_chain_mismatch_count = 0;

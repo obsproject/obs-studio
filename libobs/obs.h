@@ -746,23 +746,11 @@ enum obs_base_effect {
 /** Returns a commonly used base effect */
 EXPORT gs_effect_t *obs_get_base_effect(enum obs_base_effect effect);
 
-#ifndef SWIG
-/* DEPRECATED: gets texture_rect default effect */
-OBS_DEPRECATED
-EXPORT gs_effect_t *obs_get_default_rect_effect(void);
-#endif
-
 /** Returns the primary obs signal handler */
 EXPORT signal_handler_t *obs_get_signal_handler(void);
 
 /** Returns the primary obs procedure handler */
 EXPORT proc_handler_t *obs_get_proc_handler(void);
-
-#ifndef SWIG
-/** Renders the main view */
-OBS_DEPRECATED
-EXPORT void obs_render_main_view(void);
-#endif
 
 /** Renders the last main output texture */
 EXPORT void obs_render_main_texture(void);
@@ -773,12 +761,6 @@ EXPORT void obs_render_main_texture_src_color_only(void);
 /** Returns the last main output texture.  This can return NULL if the texture
  * is unavailable. */
 EXPORT gs_texture_t *obs_get_main_texture(void);
-
-/** Sets the master user volume */
-OBS_DEPRECATED EXPORT void obs_set_master_volume(float volume);
-
-/** Gets the master user volume */
-OBS_DEPRECATED EXPORT float obs_get_master_volume(void);
 
 /** Saves a source to settings data */
 EXPORT obs_data_t *obs_save_source(obs_source_t *source);
@@ -1042,7 +1024,6 @@ EXPORT obs_source_t *obs_source_duplicate(obs_source_t *source,
  * Adds/releases a reference to a source.  When the last reference is
  * released, the source is destroyed.
  */
-OBS_EXTERNAL_DEPRECATED EXPORT void obs_source_addref(obs_source_t *source);
 EXPORT void obs_source_release(obs_source_t *source);
 
 EXPORT void obs_weak_source_addref(obs_weak_source_t *weak);
@@ -1747,7 +1728,6 @@ enum obs_scene_duplicate_type {
 EXPORT obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name,
 					enum obs_scene_duplicate_type type);
 
-OBS_EXTERNAL_DEPRECATED EXPORT void obs_scene_addref(obs_scene_t *scene);
 EXPORT void obs_scene_release(obs_scene_t *scene);
 
 EXPORT obs_scene_t *obs_scene_get_ref(obs_scene_t *scene);
@@ -2011,25 +1991,6 @@ obs_group_or_scene_from_source(const obs_source_t *source)
 EXPORT void obs_sceneitem_defer_group_resize_begin(obs_sceneitem_t *item);
 EXPORT void obs_sceneitem_defer_group_resize_end(obs_sceneitem_t *item);
 
-EXPORT void obs_sceneitem_set_show_transition(obs_sceneitem_t *item,
-					      obs_source_t *transition);
-EXPORT void obs_sceneitem_set_show_transition_duration(obs_sceneitem_t *item,
-						       uint32_t duration_ms);
-OBS_DEPRECATED EXPORT obs_source_t *
-obs_sceneitem_get_show_transition(obs_sceneitem_t *item);
-OBS_DEPRECATED EXPORT uint32_t
-obs_sceneitem_get_show_transition_duration(obs_sceneitem_t *item);
-OBS_DEPRECATED EXPORT void
-obs_sceneitem_set_hide_transition(obs_sceneitem_t *item,
-				  obs_source_t *transition);
-OBS_DEPRECATED EXPORT void
-obs_sceneitem_set_hide_transition_duration(obs_sceneitem_t *item,
-					   uint32_t duration_ms);
-OBS_DEPRECATED EXPORT obs_source_t *
-obs_sceneitem_get_hide_transition(obs_sceneitem_t *item);
-OBS_DEPRECATED EXPORT uint32_t
-obs_sceneitem_get_hide_transition_duration(obs_sceneitem_t *item);
-
 EXPORT void obs_sceneitem_set_transition(obs_sceneitem_t *item, bool show,
 					 obs_source_t *transition);
 EXPORT obs_source_t *obs_sceneitem_get_transition(obs_sceneitem_t *item,
@@ -2065,7 +2026,6 @@ EXPORT obs_output_t *obs_output_create(const char *id, const char *name,
  * Adds/releases a reference to an output.  When the last reference is
  * released, the output is destroyed.
  */
-OBS_EXTERNAL_DEPRECATED EXPORT void obs_output_addref(obs_output_t *output);
 EXPORT void obs_output_release(obs_output_t *output);
 
 EXPORT void obs_weak_output_addref(obs_weak_output_t *weak);
@@ -2339,6 +2299,24 @@ EXPORT const char *obs_get_output_supported_video_codecs(const char *id);
 
 EXPORT const char *obs_get_output_supported_audio_codecs(const char *id);
 
+/* Add/remove packet-processing callbacks that are invoked in
+ * send_interleaved(), before forwarding packets to the output service.
+ * This provides a mechanism to perform packet processing outside of
+ * libobs, however any callback function registering with this API should keep
+ * keep code to a minimum and understand it is running synchronously with the
+ * calling thread.
+ */
+EXPORT void obs_output_add_packet_callback(
+	obs_output_t *output,
+	void (*packet_cb)(obs_output_t *output, struct encoder_packet *pkt,
+			  struct encoder_packet_time *pkt_time, void *param),
+	void *param);
+EXPORT void obs_output_remove_packet_callback(
+	obs_output_t *output,
+	void (*packet_cb)(obs_output_t *output, struct encoder_packet *pkt,
+			  struct encoder_packet_time *pkt_time, void *param),
+	void *param);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by outputs */
 
@@ -2422,7 +2400,6 @@ EXPORT obs_encoder_t *obs_audio_encoder_create(const char *id, const char *name,
  * Adds/releases a reference to an encoder.  When the last reference is
  * released, the encoder is destroyed.
  */
-OBS_EXTERNAL_DEPRECATED EXPORT void obs_encoder_addref(obs_encoder_t *encoder);
 EXPORT void obs_encoder_release(obs_encoder_t *encoder);
 
 EXPORT void obs_weak_encoder_addref(obs_weak_encoder_t *weak);
@@ -2516,6 +2493,9 @@ EXPORT enum obs_scale_type obs_encoder_get_scale_type(obs_encoder_t *encoder);
 /** For video encoders, returns the frame rate divisor (default is 1) */
 EXPORT uint32_t obs_encoder_get_frame_rate_divisor(const obs_encoder_t *encoder);
 
+/** For video encoders, returns the number of frames encoded */
+EXPORT uint32_t obs_encoder_get_encoded_frames(const obs_encoder_t *encoder);
+
 /** For audio encoders, returns the sample rate of the audio */
 EXPORT uint32_t obs_encoder_get_sample_rate(const obs_encoder_t *encoder);
 
@@ -2596,16 +2576,6 @@ EXPORT const char *obs_encoder_get_id(const obs_encoder_t *encoder);
 EXPORT uint32_t obs_get_encoder_caps(const char *encoder_id);
 EXPORT uint32_t obs_encoder_get_caps(const obs_encoder_t *encoder);
 
-#ifndef SWIG
-/** Duplicates an encoder packet */
-OBS_DEPRECATED
-EXPORT void obs_duplicate_encoder_packet(struct encoder_packet *dst,
-					 const struct encoder_packet *src);
-
-OBS_DEPRECATED
-EXPORT void obs_free_encoder_packet(struct encoder_packet *packet);
-#endif
-
 EXPORT void obs_encoder_packet_ref(struct encoder_packet *dst,
 				   struct encoder_packet *src);
 EXPORT void obs_encoder_packet_release(struct encoder_packet *packet);
@@ -2650,7 +2620,6 @@ EXPORT obs_service_t *obs_service_create_private(const char *id,
  * Adds/releases a reference to a service.  When the last reference is
  * released, the service is destroyed.
  */
-OBS_EXTERNAL_DEPRECATED EXPORT void obs_service_addref(obs_service_t *service);
 EXPORT void obs_service_release(obs_service_t *service);
 
 EXPORT void obs_weak_service_addref(obs_weak_service_t *weak);
@@ -2686,22 +2655,6 @@ EXPORT void obs_service_update(obs_service_t *service, obs_data_t *settings);
 /** Returns the current settings for this service */
 EXPORT obs_data_t *obs_service_get_settings(const obs_service_t *service);
 
-/** Returns the URL for this service context */
-OBS_DEPRECATED EXPORT const char *
-obs_service_get_url(const obs_service_t *service);
-
-/** Returns the stream key (if any) for this service context */
-OBS_DEPRECATED EXPORT const char *
-obs_service_get_key(const obs_service_t *service);
-
-/** Returns the username (if any) for this service context */
-OBS_DEPRECATED EXPORT const char *
-obs_service_get_username(const obs_service_t *service);
-
-/** Returns the password (if any) for this service context */
-OBS_DEPRECATED EXPORT const char *
-obs_service_get_password(const obs_service_t *service);
-
 /**
  * Applies service-specific video encoder settings.
  *
@@ -2730,11 +2683,6 @@ obs_service_get_supported_video_codecs(const obs_service_t *service);
 
 EXPORT const char **
 obs_service_get_supported_audio_codecs(const obs_service_t *service);
-
-/* NOTE: This function is temporary and should be removed/replaced at a later
- * date. */
-OBS_DEPRECATED EXPORT const char *
-obs_service_get_output_type(const obs_service_t *service);
 
 /** Returns the protocol for this service context */
 EXPORT const char *obs_service_get_protocol(const obs_service_t *service);

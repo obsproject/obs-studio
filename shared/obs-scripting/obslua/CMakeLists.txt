@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.22...3.25)
 
-legacy_check()
-
 if(POLICY CMP0078)
   cmake_policy(SET CMP0078 NEW)
 endif()

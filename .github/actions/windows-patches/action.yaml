@@ -109,7 +109,7 @@ runs:
         Invoke-External "${{ github.workspace }}\bouf\bin\bouf.exe" @boufArgs
 
     - name: Upload Outputs
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v4.3.5
       with:
         name: windows-updater-files
         compression-level: 0
