@@ -3,7 +3,7 @@
 This folder contains:
 - Various formatting scripts:
   - `run-clang-format` which formats C/C++/ObjC/ObjC++ files
-  - `run-cmake-format` which formats CMake files
+  - `run-gersemi` which formats CMake files
   - `run-swift-format` which formats Swift files
   - `format-manifest.py` which formats Flatpak manifest JSON files
 - The Flatpak manifest used to build OBS Studio
@@ -23,7 +23,7 @@ Example of use:
 ./build-aux/run-clang-format
 ```
 
-### `run-gersemi-format`
+### `run-gersemi`
 
 This script allows to check the formatting and/or format of the CMake files and requires ZSH and `gersemi` Python package.
 
