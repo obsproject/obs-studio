@@ -105,7 +105,7 @@ private:
 	void *m_sessionData;
 	mfxFrameAllocator m_mfxAllocator;
 	mfxVideoParam m_mfxEncParams;
-	mfxFrameAllocResponse m_mfxResponse;
+	mfxFrameAllocResponse m_mfxResponse{};
 	mfxFrameSurface1 **m_pmfxSurfaces;
 	mfxU16 m_nSurfNum;
 	MFXVideoENCODE *m_pmfxENC;
