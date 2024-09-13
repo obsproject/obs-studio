@@ -210,7 +210,6 @@ build() {
       local cmake_bin='/usr/bin/cmake'
       cmake_args+=(
         --preset ubuntu-ci
-        --toolchain ${project_root}/cmake/linux/toolchain-${target##*-}-gcc.cmake
         -DENABLE_BROWSER:BOOL=ON
         -DCEF_ROOT_DIR:PATH="${project_root}/.deps/cef_binary_${CEF_VERSION}_${target//ubuntu-/linux_}"
       )
