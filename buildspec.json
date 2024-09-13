@@ -49,15 +49,5 @@
             "hash": "ca59770e9f46b59d6bec6e7036a17a27d601a0a5a0a721fe8e03fea734ccf732"
         }
     },
-    "platformConfig": {
-        "ubuntu-x86_64": {
-            "qtVersion": 6,
-            "generator": "Ninja"
-        },
-        "ubuntu-aarch64": {
-            "qtVersion": 6,
-            "generator": "Ninja"
-        }
-    },
     "name": "obs-studio"
 }
