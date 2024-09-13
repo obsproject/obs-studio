@@ -45,6 +45,15 @@ jobs:
         run: |
           : Remove Stale Ccache Caches
 
+          # The jq expressions below use multiple 'select' calls to filter
+          # each item in the array with the 'actions_caches' key.
+          # First it only selects objects whose 'ref' element has the value
+          # 'refs/heads/master', of those objects only those whose 'key'
+          # value matches the specifies expression, before finally only
+          # selecting the 'id' and 'key' elements for a new object.
+          # The final 'join' command combines both elements with a semicolon
+          # into a raw string which can then be parsed directly.
+
           echo '::group::Processing master branch cache entries'
           while IFS=";" read -r cache_id cache_name; do
             if [[ "${cache_name}" ]]; then
@@ -114,6 +123,17 @@ jobs:
           : Check Nightly Runs ☑️
           if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
 
+          # This 'gh' command retrieves the last 2 runs of the workflow defined
+          # by 'scheduled.yaml' and retrieve only the 'headSha' value of the
+          # JSON response payload.
+          #
+          # As this job runs in context of the same workflow, the first element
+          # of the workflow list will be the currently active run.
+          #
+          # The jq expression then selects the 'headSha' element of the second
+          # element in the array, which is the SHA-1 hash of the commit used
+          # for the immediately prior run of this workflow.
+
           last_nightly=$(gh run list --workflow scheduled.yaml --limit 2 --json headSha --jq '.[1].headSha')
 
           if [[ "${GITHUB_SHA}" == "${last_nightly}" ]]; then
@@ -156,6 +176,17 @@ jobs:
         run: |
           : Check Nightly Runs ☑️
           if (( ${+RUNNER_DEBUG} )) setopt XTRACE
+
+          # This 'gh' command retrieves the last 2 runs of the workflow defined
+          # by 'scheduled.yaml' and retrieve only the 'headSha' value of the
+          # JSON response payload.
+          #
+          # As this job runs in context of the same workflow, the first element
+          # of the workflow list will be the currently active run.
+          #
+          # The jq expression then selects the 'headSha' element of the second
+          # element in the array, which is the SHA-1 hash of the commit used
+          # for the immediately prior run of this workflow.
 
           local last_nightly=$(gh run list --workflow scheduled.yaml --limit 2 --json headSha --jq '.[1].headSha')
 

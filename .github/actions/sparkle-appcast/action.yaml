@@ -110,6 +110,23 @@ runs:
         hdiutil detach ${mount_point}
 
         curl -s -L -O ${feed_url}
+
+        # The Xpath Xplained:
+        #
+        # //rss/channel/item              - Select every <item> node, under a
+        #                                   <channel> node, under a <rss> node,
+        #                                   which:
+        # [*...]                          - Has a child node, which
+        # [local-name()='channel']        - Has the local name "channel"
+        #                                   (required to match the
+        #                                   namespaced sparkle:channel node),
+        #                                   which in turn has
+        # [text()='${{ inputs.channel}']  - A text node that contains the
+        #                                   content of inputs.channel
+        # /enclosure/@url                 - Then select the "url" attribute of
+        #                                   every <enclosure> node under
+        #                                   these matching <item> nodes
+
         local -a artifacts=($(\
           xmllint \
             -xpath "//rss/channel/item[*[local-name()='channel'][text()='${{ inputs.channel }}']]/enclosure/@url" \
