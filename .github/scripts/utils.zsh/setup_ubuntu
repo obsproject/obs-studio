@@ -64,18 +64,6 @@ popd
 
 log_group 'Installing obs-studio build dependencies from apt...'
 
-local suffix
-if [[ ${CPUTYPE} != ${target##*-} ]] {
-  local -A arch_mappings=(
-    aarch64 arm64
-    x86_64 amd64
-  )
-
-  suffix=":${arch_mappings[${target##*-}]}"
-  sudo apt-get install -y --no-install-recommends \
-    gcc-${${target##*-}//_/-}-linux-gnu g++-${${target##*-}//_/-}-linux-gnu
-}
-
 sudo apt-get install -y --no-install-recommends \
   build-essential libglib2.0-dev \
   lsb-release dh-cmake \

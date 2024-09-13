@@ -57,7 +57,6 @@ build() {
     macos-x86_64
     macos-arm64
     ubuntu-x86_64
-    ubuntu-aarch64
   )
 
   local config='RelWithDebInfo'
@@ -215,8 +214,6 @@ build() {
         -DENABLE_BROWSER:BOOL=ON
         -DCEF_ROOT_DIR:PATH="${project_root}/.deps/cef_binary_${CEF_VERSION}_${target//ubuntu-/linux_}"
       )
-
-      if [[ ${target##*-} == aarch64 ]] cmake-args+=(-DENABLE_QSV11:BOOL=OFF)
 
       cmake_build_args+=(build_${target%%-*} --config ${config} --parallel)
       cmake_install_args+=(build_${target%%-*} --prefix ${project_root}/build_${target%%-*}/install/${config})
