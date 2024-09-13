@@ -35,35 +35,27 @@ runs:
     - name: Register Annotations 📝
       uses: korelstar/xmllint-problem-matcher@1bd292d642ddf3d369d02aaa8b262834d61198c0
 
+    - name: Check for Changed Files ✅
+      uses: ./.github/actions/check-changes
+      id: checks
+      with:
+        checkGlob: 'UI/forms/**/*.ui'
+
     - name: Validate XML 💯
+      if: fromJSON(steps.checks.outputs.hasChangedFiles)
+      id: result
       shell: bash
       env:
-        GITHUB_EVENT_FORCED: ${{ github.event.forced }}
-        GITHUB_REF_BEFORE: ${{ github.event.before }}
+        CHANGED_FILES: ${{ steps.checks.outputs.changedFiles }}
       run: |
         : Validate XML 💯
         if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
-        shopt -s extglob
-        shopt -s globstar
 
-        if ! git cat-file -e "${GITHUB_REF_BEFORE}" &> /dev/null; then
-          GITHUB_REF_BEFORE='4b825dc642cb6eb9a060e54bf8d69288fbee4904'
-        fi
+        CHANGED_FILES=($(echo "${CHANGED_FILES//[\[\]\'\"]/}" | tr "," "\n"))
 
-        changes=($(git diff --name-only HEAD~1 HEAD -- UI/forms/**/*.ui))
-        case "${GITHUB_EVENT_NAME}" in
-          pull_request) changes=($(git diff --name-only origin/"${GITHUB_BASE_REF}" HEAD -- UI/forms/**/*.ui)) ;;
-          push)
-            if [[ "${GITHUB_EVENT_FORCED}" == false ]]; then
-              changes=($(git diff --name-only ${GITHUB_REF_BEFORE} HEAD -- UI/forms/**/*.ui))
-            fi
-            ;;
-          *) ;;
-        esac
-
-        if (( ${#changes[@]} )); then
+        if (( ${#CHANGED_FILES[@]} )); then
           if [[ '${{ inputs.failCondition }}' == never ]]; then set +e; fi
           xmllint \
             --schema ${{ github.workspace }}/UI/forms/XML-Schema-Qt5.15.xsd \
-            --noout "${changes[@]}"
+            --noout "${CHANGED_FILES[@]}"
         fi
