@@ -129,7 +129,7 @@ jobs:
           echo "/previous/:major.:minor https://:major-:minor.${{ vars.CF_PAGES_PROJECT }}.pages.dev 302" >> docs/_redirects
 
       - name: Publish to Live Page
-        uses: cloudflare/wrangler-action@4c10c1822abba527d820b29e6333e7f5dac2cabd
+        uses: cloudflare/wrangler-action@f84a562284fc78278ff9052435d9526f9c718361
         with:
           workingDirectory: docs
           apiToken: ${{ secrets.CF_API_TOKEN }}
