@@ -2668,6 +2668,7 @@ static void obs_sceneitem_remove_internal(obs_sceneitem_t *item)
 	obs_scene_t *parent = item->parent;
 	item->removed = true;
 
+	obs_sceneitem_select(item, false);
 	set_visibility(item, false);
 
 	detach_sceneitem(item);
