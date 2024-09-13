@@ -340,15 +340,6 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - uses: actions/cache@v4
-        id: ccache-cache
-        if: github.event_name == 'pull_request'
-        with:
-          path: ${{ github.workspace }}/.ccache
-          key: ${{ runner.os }}-ccache-x86_64-${{ needs.check-event.outputs.config }}
-          restore-keys: |
-            ${{ runner.os }}-ccache-x86_64-
-
       - name: Build OBS Studio 🧱
         uses: ./.github/actions/build-obs
         env:
