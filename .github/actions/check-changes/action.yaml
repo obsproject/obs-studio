@@ -45,6 +45,11 @@ runs:
         shopt -s extglob
         shopt -s dotglob
 
+        # 4b825dc642cb6eb9a060e54bf8d69288fbee4904 is a "hidden" sha1 hash of
+        # the "empty tree", retrived via 'git hash-object -t tree /dev/null',
+        # and used here as a last-resort fallback to always provide a valid
+        # git ref.
+
         if [[ "${GIT_BASE_REF}" ]]; then
           if ! git cat-file -e "${GIT_BASE_REF}" &> /dev/null; then
             echo "::warning::Provided base reference ${GIT_BASE_REF} is invalid"
