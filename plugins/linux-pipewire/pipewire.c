@@ -361,6 +361,12 @@ static bool build_format_params(obs_pipewire_stream *obs_pw_stream, struct spa_p
 	uint32_t params_count = 0;
 
 	const struct spa_pod **params;
+
+	if (!obs_pw_stream->format_info.num) {
+		blog(LOG_ERROR, "[pipewire] No format found while building param pointers");
+		return false;
+	}
+
 	params = bzalloc(2 * obs_pw_stream->format_info.num * sizeof(struct spa_pod *));
 
 	if (!params) {
