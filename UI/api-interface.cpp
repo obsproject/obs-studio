@@ -202,7 +202,7 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	bool obs_frontend_add_scene_collection(const char *name) override
 	{
 		bool success = false;
-		QMetaObject::invokeMethod(main, "NewSceneCollection",
+		QMetaObject::invokeMethod(main, "CreateNewSceneCollection",
 					  WaitConnection(),
 					  Q_RETURN_ARG(bool, success),
 					  Q_ARG(QString, QT_UTF8(name)));
@@ -252,13 +252,13 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	void obs_frontend_create_profile(const char *name) override
 	{
-		QMetaObject::invokeMethod(main, "NewProfile",
+		QMetaObject::invokeMethod(main, "CreateNewProfile",
 					  Q_ARG(QString, name));
 	}
 
 	void obs_frontend_duplicate_profile(const char *name) override
 	{
-		QMetaObject::invokeMethod(main, "DuplicateProfile",
+		QMetaObject::invokeMethod(main, "CreateDuplicateProfile",
 					  Q_ARG(QString, name));
 	}
 
