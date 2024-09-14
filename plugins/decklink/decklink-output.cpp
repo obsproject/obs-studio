@@ -32,15 +32,30 @@ static void *decklink_output_create(obs_data_t *settings, obs_output_t *output)
 		DeckLinkDeviceMode *mode =
 			device->FindOutputMode(decklinkOutput->modeID);
 
+		ComPtr<IDeckLinkOutput> output_;
+		device->GetOutput(&output_);
+
+		BMDDisplayMode *actualMode = nullptr;
+		decklink_bool_t modeSupportsBGRA = false;
+		output_->DoesSupportVideoMode(bmdVideoConnectionUnspecified,
+					      mode->GetDisplayMode(),
+					      bmdFormat8BitBGRA,
+					      bmdNoVideoOutputConversion,
+					      bmdSupportedVideoModeDefault,
+					      actualMode, &modeSupportsBGRA);
+
+		const bool supportsHDR = (device->GetSupportsHDRMetadata() &&
+					  !decklinkOutput->force_sdr);
+
 		struct video_scale_info to = {};
-		to.format = VIDEO_FORMAT_BGRA;
+		to.format = (modeSupportsBGRA || supportsHDR)
+				    ? VIDEO_FORMAT_BGRA
+				    : VIDEO_FORMAT_UYVY;
 		to.width = mode->GetWidth();
 		to.height = mode->GetHeight();
-		to.range = VIDEO_RANGE_FULL;
-		to.colorspace = (device->GetSupportsHDRMetadata() &&
-				 !decklinkOutput->force_sdr)
-					? VIDEO_CS_2100_PQ
-					: VIDEO_CS_709;
+		to.range = modeSupportsBGRA ? VIDEO_RANGE_FULL
+					    : VIDEO_RANGE_PARTIAL;
+		to.colorspace = supportsHDR ? VIDEO_CS_2100_PQ : VIDEO_CS_709;
 
 		obs_output_set_video_conversion(output, &to);
 	}
@@ -257,9 +272,8 @@ static bool decklink_output_device_changed(obs_properties_t *props,
 	return true;
 }
 
-static obs_properties_t *decklink_output_properties(void *unused)
+static obs_properties_t *decklink_output_properties(void *)
 {
-	UNUSED_PARAMETER(unused);
 	obs_properties_t *props = obs_properties_create();
 
 	obs_property_t *list = obs_properties_add_list(props, DEVICE_HASH,

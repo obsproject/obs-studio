@@ -76,6 +76,21 @@ static inline enum video_format ConvertPixelFormat(BMDPixelFormat format)
 	}
 }
 
+static inline int PixelFormatByteSize(BMDPixelFormat format)
+{
+	switch (format) {
+	case bmdFormat8BitBGRA:
+	case bmdFormat8BitARGB:
+	case bmdFormat10BitRGB:
+	case bmdFormat10BitRGBXLE:
+	case bmdFormat10BitRGBX:
+		return 4;
+	default:
+	case bmdFormat8BitYUV:
+		return 2;
+	}
+}
+
 static inline int ConvertChannelFormat(speaker_layout format)
 {
 	switch (format) {
@@ -604,11 +619,19 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 		return false;
 	}
 
+	BMDDisplayMode *actualMode = nullptr;
+	decklink_bool_t modeSupportsBGRA = false;
+	output_->DoesSupportVideoMode(
+		bmdVideoConnectionUnspecified, mode_->GetDisplayMode(),
+		bmdFormat8BitBGRA, bmdNoVideoOutputConversion,
+		bmdSupportedVideoModeDefault, actualMode, &modeSupportsBGRA);
+
 	ComPtr<IDeckLinkKeyer> deckLinkKeyer;
 	if (device->GetKeyer(&deckLinkKeyer)) {
 		const int keyerMode = device->GetKeyerMode();
-		if (keyerMode) {
-			deckLinkKeyer->Enable(keyerMode == 1);
+		if (keyerMode && modeSupportsBGRA) {
+			const bool isExternal = keyerMode == 1;
+			deckLinkKeyer->Enable(isExternal);
 			deckLinkKeyer->SetLevel(255);
 		} else {
 			deckLinkKeyer->Disable();
@@ -618,7 +641,25 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 	frameQueueDecklinkToObs.reset();
 	frameQueueObsToDecklink.reset();
 
-	const int rowSize = decklinkOutput->GetWidth() * 4;
+	struct obs_video_info ovi;
+	const enum video_colorspace colorspace =
+		obs_get_video_info(&ovi) ? ovi.colorspace : VIDEO_CS_DEFAULT;
+
+	const bool source_hdr = (colorspace == VIDEO_CS_2100_PQ) ||
+				(colorspace == VIDEO_CS_2100_HLG);
+	const bool enable_hdr =
+		source_hdr &&
+		(obs_output_get_video_conversion(decklinkOutput->GetOutput())
+			 ->colorspace == VIDEO_CS_2100_PQ);
+
+	BMDPixelFormat pixelFormat = modeSupportsBGRA ? bmdFormat8BitBGRA
+						      : bmdFormat8BitYUV;
+	if (enable_hdr) {
+		pixelFormat = bmdFormat10BitRGBXLE;
+	}
+
+	const int rowSize =
+		decklinkOutput->GetWidth() * PixelFormatByteSize(pixelFormat);
 	const int frameSize = rowSize * decklinkOutput->GetHeight();
 	for (std::vector<uint8_t> &blob : frameBlobs) {
 		blob.assign(frameSize, 0);
@@ -626,17 +667,6 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 	}
 	activeBlob = nullptr;
 
-	struct obs_video_info ovi;
-	const enum video_colorspace colorspace =
-		obs_get_video_info(&ovi) ? ovi.colorspace : VIDEO_CS_DEFAULT;
-	const bool source_hdr = (colorspace == VIDEO_CS_2100_PQ) ||
-				(colorspace == VIDEO_CS_2100_HLG);
-	const bool enable_hdr =
-		source_hdr &&
-		(obs_output_get_video_conversion(decklinkOutput->GetOutput())
-			 ->colorspace == VIDEO_CS_2100_PQ);
-	BMDPixelFormat pixelFormat = enable_hdr ? bmdFormat10BitRGBXLE
-						: bmdFormat8BitBGRA;
 	const int64_t minimumPrerollFrames =
 		std::max(device->GetMinimumPrerollFrames(), INT64_C(3));
 	for (int64_t i = 0; i < minimumPrerollFrames; ++i) {
