@@ -1595,7 +1595,7 @@ void OBSBasicSettings::LoadRendererList()
 {
 #ifdef _WIN32
 	const char *renderer =
-		config_get_string(App()->GetUserConfig(), "Video", "Renderer");
+		config_get_string(App()->GetAppConfig(), "Video", "Renderer");
 
 	ui->renderer->addItem(QT_UTF8("Direct3D 11"));
 	if (opt_allow_opengl || strcmp(renderer, "OpenGL") == 0)
@@ -2983,16 +2983,16 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	}
 
 #ifdef __APPLE__
-	bool disableOSXVSync = config_get_bool(App()->GetUserConfig(), "Video",
+	bool disableOSXVSync = config_get_bool(App()->GetAppConfig(), "Video",
 					       "DisableOSXVSync");
-	bool resetOSXVSync = config_get_bool(App()->GetUserConfig(), "Video",
+	bool resetOSXVSync = config_get_bool(App()->GetAppConfig(), "Video",
 					     "ResetOSXVSyncOnExit");
 	ui->disableOSXVSync->setChecked(disableOSXVSync);
 	ui->resetOSXVSync->setChecked(resetOSXVSync);
 	ui->resetOSXVSync->setEnabled(disableOSXVSync);
 #elif _WIN32
 	bool disableAudioDucking = config_get_bool(
-		App()->GetUserConfig(), "Audio", "DisableAudioDucking");
+		App()->GetAppConfig(), "Audio", "DisableAudioDucking");
 	ui->disableAudioDucking->setChecked(disableAudioDucking);
 
 	const char *processPriority = config_get_string(
@@ -3628,7 +3628,7 @@ void OBSBasicSettings::SaveAdvancedSettings()
 
 #ifdef _WIN32
 	if (WidgetChanged(ui->renderer))
-		config_set_string(App()->GetUserConfig(), "Video", "Renderer",
+		config_set_string(App()->GetAppConfig(), "Video", "Renderer",
 				  QT_TO_UTF8(ui->renderer->currentText()));
 
 	std::string priority =
@@ -3656,12 +3656,12 @@ void OBSBasicSettings::SaveAdvancedSettings()
 #ifdef __APPLE__
 	if (WidgetChanged(ui->disableOSXVSync)) {
 		bool disable = ui->disableOSXVSync->isChecked();
-		config_set_bool(App()->GetUserConfig(), "Video",
+		config_set_bool(App()->GetAppConfig(), "Video",
 				"DisableOSXVSync", disable);
 		EnableOSXVSync(!disable);
 	}
 	if (WidgetChanged(ui->resetOSXVSync))
-		config_set_bool(App()->GetUserConfig(), "Video",
+		config_set_bool(App()->GetAppConfig(), "Video",
 				"ResetOSXVSyncOnExit",
 				ui->resetOSXVSync->isChecked());
 #endif
@@ -3681,7 +3681,7 @@ void OBSBasicSettings::SaveAdvancedSettings()
 #ifdef _WIN32
 	if (WidgetChanged(ui->disableAudioDucking)) {
 		bool disable = ui->disableAudioDucking->isChecked();
-		config_set_bool(App()->GetUserConfig(), "Audio",
+		config_set_bool(App()->GetAppConfig(), "Audio",
 				"DisableAudioDucking", disable);
 		DisableAudioDucking(disable);
 	}
