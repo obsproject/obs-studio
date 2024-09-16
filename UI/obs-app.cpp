@@ -1116,7 +1116,7 @@ OBSApp::~OBSApp()
 {
 #ifdef _WIN32
 	bool disableAudioDucking =
-		config_get_bool(userConfig, "Audio", "DisableAudioDucking");
+		config_get_bool(appConfig, "Audio", "DisableAudioDucking");
 	if (disableAudioDucking)
 		DisableAudioDucking(false);
 #else
@@ -1127,9 +1127,9 @@ OBSApp::~OBSApp()
 
 #ifdef __APPLE__
 	bool vsyncDisabled =
-		config_get_bool(userConfig, "Video", "DisableOSXVSync");
+		config_get_bool(appConfig, "Video", "DisableOSXVSync");
 	bool resetVSync =
-		config_get_bool(userConfig, "Video", "ResetOSXVSyncOnExit");
+		config_get_bool(appConfig, "Video", "ResetOSXVSyncOnExit");
 	if (vsyncDisabled && resetVSync)
 		EnableOSXVSync(true);
 #endif
@@ -1304,13 +1304,13 @@ void OBSApp::AppInit()
 
 #ifdef _WIN32
 	bool disableAudioDucking =
-		config_get_bool(userConfig, "Audio", "DisableAudioDucking");
+		config_get_bool(appConfig, "Audio", "DisableAudioDucking");
 	if (disableAudioDucking)
 		DisableAudioDucking(true);
 #endif
 
 #ifdef __APPLE__
-	if (config_get_bool(userConfig, "Video", "DisableOSXVSync"))
+	if (config_get_bool(appConfig, "Video", "DisableOSXVSync"))
 		EnableOSXVSync(false);
 #endif
 
@@ -1326,7 +1326,7 @@ void OBSApp::AppInit()
 const char *OBSApp::GetRenderModule() const
 {
 	const char *renderer =
-		config_get_string(userConfig, "Video", "Renderer");
+		config_get_string(appConfig, "Video", "Renderer");
 
 	return (astrcmpi(renderer, "Direct3D 11") == 0) ? DL_D3D11 : DL_OPENGL;
 }
