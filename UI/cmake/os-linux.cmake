@@ -1,5 +1,8 @@
 target_sources(obs-studio PRIVATE platform-x11.cpp)
-target_compile_definitions(obs-studio PRIVATE USE_XDG OBS_INSTALL_PREFIX="${OBS_INSTALL_PREFIX}")
+target_compile_definitions(
+  obs-studio
+  PRIVATE USE_XDG OBS_INSTALL_PREFIX="${OBS_INSTALL_PREFIX}" $<$<BOOL:${ENABLE_PORTABLE_CONFIG}>:ENABLE_PORTABLE_CONFIG>
+)
 target_link_libraries(obs-studio PRIVATE Qt::GuiPrivate Qt::DBus)
 
 target_sources(obs-studio PRIVATE system-info-posix.cpp)
