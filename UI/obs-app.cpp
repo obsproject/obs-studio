@@ -720,12 +720,24 @@ bool OBSApp::InitGlobalConfig()
 	InitGlobalConfigDefaults();
 	InitGlobalLocationDefaults();
 
-	userConfigLocation = std::filesystem::u8path(
-		config_get_string(appConfig, "Locations", "Configuration"));
-	userScenesLocation = std::filesystem::u8path(
-		config_get_string(appConfig, "Locations", "SceneCollections"));
-	userProfilesLocation = std::filesystem::u8path(
-		config_get_string(appConfig, "Locations", "Profiles"));
+	if (IsPortableMode()) {
+		userConfigLocation = std::filesystem::u8path(
+			config_get_default_string(appConfig, "Locations",
+						  "Configuration"));
+		userScenesLocation = std::filesystem::u8path(
+			config_get_default_string(appConfig, "Locations",
+						  "SceneCollections"));
+		userProfilesLocation = std::filesystem::u8path(
+			config_get_default_string(appConfig, "Locations",
+						  "Profiles"));
+	} else {
+		userConfigLocation = std::filesystem::u8path(config_get_string(
+			appConfig, "Locations", "Configuration"));
+		userScenesLocation = std::filesystem::u8path(config_get_string(
+			appConfig, "Locations", "SceneCollections"));
+		userProfilesLocation = std::filesystem::u8path(
+			config_get_string(appConfig, "Locations", "Profiles"));
+	}
 
 	bool userConfigResult = InitUserConfig(userConfigLocation, lastVersion);
 
@@ -2434,7 +2446,7 @@ static void load_debug_privilege(void)
 
 #define CONFIG_PATH BASE_PATH "/config"
 
-#if defined(LINUX_PORTABLE) || defined(_WIN32)
+#if defined(ENABLE_PORTABLE_CONFIG) || defined(_WIN32)
 #define ALLOW_PORTABLE_MODE 1
 #else
 #define ALLOW_PORTABLE_MODE 0
