@@ -3043,6 +3043,12 @@ static void output_reconnect(struct obs_output *output)
 {
 	int ret;
 
+	if (reconnecting(output) &&
+	    os_event_try(output->reconnect_stop_event) != EAGAIN) {
+		os_atomic_set_bool(&output->reconnecting, false);
+		return;
+	}
+
 	if (!reconnecting(output)) {
 		output->reconnect_retry_cur_msec =
 			output->reconnect_retry_sec * 1000;
