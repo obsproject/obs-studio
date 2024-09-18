@@ -36,6 +36,8 @@ set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
 # Use common bundle-relative RPATH for installed targets
 set(CMAKE_INSTALL_RPATH "@executable_path/../Frameworks")
+# Ignore any dependent packages installed via Homebrew
+list(APPEND CMAKE_IGNORE_PREFIX_PATH "/opt/homebrew" "/usr/local")
 
 # Used for library exports only (obs-frontend-api)
 set(OBS_LIBRARY_DESTINATION "lib")
