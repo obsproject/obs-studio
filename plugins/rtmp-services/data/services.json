@@ -2199,23 +2199,6 @@
             ]
         },
         {
-            "name": "Autistici.org Live",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://live.autistici.org/ingest"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 2500,
-                "max audio bitrate": 128
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
             "name": "PhoneLiveStreaming",
             "stream_key_link": "https://app.phonelivestreaming.com/media/rtmp",
             "servers": [
@@ -2244,25 +2227,6 @@
             "recommended": {
                 "keyint": 2,
                 "max video bitrate": 5000,
-                "max audio bitrate": 160
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
-            "name": "Mildom",
-            "more_info_link": "https://support.mildom.com/hc/ja/articles/360056569954",
-            "stream_key_link": "https://www.mildom.com/creator/live",
-            "servers": [
-                {
-                    "name": "Global",
-                    "url": "rtmp://txlvb-push.mildom.tv/live"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 6000,
                 "max audio bitrate": 160
             },
             "supported video codecs": [
@@ -2829,7 +2793,9 @@
         },
         {
             "name": "Amazon IVS",
-            "supported video codecs": ["h264"],
+            "supported video codecs": [
+                "h264"
+            ],
             "servers": [
                 {
                     "name": "Asia: China, Hong Kong (6) (RTMPS)",
