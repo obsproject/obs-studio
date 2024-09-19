@@ -78,6 +78,7 @@ struct v4l2_data {
 	int64_t resolution;
 	int64_t framerate;
 	int color_range;
+	bool hwaccel;
 
 	/* internal data */
 	obs_source_t *source;
@@ -320,6 +321,7 @@ static void v4l2_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "buffering", true);
 	obs_data_set_default_bool(settings, "auto_reset", false);
 	obs_data_set_default_int(settings, "timeout_frames", 5);
+	obs_data_set_default_int(settings, "hwaccel", 0);
 }
 
 /**
@@ -889,6 +891,9 @@ static obs_properties_t *v4l2_properties(void *vptr)
 	obs_properties_add_bool(props, "buffering",
 				obs_module_text("UseBuffering"));
 
+	obs_properties_add_bool(props, "hwaccel",
+				obs_module_text("Try VAAPI acceleration"));
+
 	obs_properties_add_bool(props, "auto_reset",
 				obs_module_text("AutoresetOnTimeout"));
 
@@ -1050,7 +1055,8 @@ static void v4l2_init(struct v4l2_data *data)
 
 	if (data->pixfmt == V4L2_PIX_FMT_MJPEG ||
 	    data->pixfmt == V4L2_PIX_FMT_H264) {
-		if (v4l2_init_decoder(&data->decoder, data->pixfmt) < 0) {
+		if (v4l2_init_decoder(&data->decoder, data->pixfmt,
+				      data->hwaccel) < 0) {
 			blog(LOG_ERROR, "Failed to initialize decoder");
 			goto fail;
 		}
@@ -1124,6 +1130,7 @@ static bool v4l2_settings_changed(struct v4l2_data *data, obs_data_t *settings)
 
 		res |= data->color_range !=
 		       obs_data_get_int(settings, "color_range");
+		res |= data->hwaccel != obs_data_get_bool(settings, "hwaccel");
 	} else {
 		res = true;
 	}
@@ -1161,6 +1168,7 @@ static void v4l2_update(void *vptr, obs_data_t *settings)
 	data->color_range = obs_data_get_int(settings, "color_range");
 	data->auto_reset = obs_data_get_bool(settings, "auto_reset");
 	data->timeout_frames = obs_data_get_int(settings, "timeout_frames");
+	data->hwaccel = obs_data_get_bool(settings, "hwaccel");
 
 	v4l2_update_source_flags(data, settings);
 

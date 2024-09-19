@@ -24,6 +24,7 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libavutil/pixfmt.h>
+#include <libavutil/pixdesc.h>
 
 /**
  * Data structure for decoder
@@ -33,6 +34,7 @@ struct v4l2_decoder {
 	AVCodecContext *context;
 	AVPacket *packet;
 	AVFrame *frame;
+	enum AVPixelFormat hw_pix_fmt;
 };
 
 /**
@@ -43,7 +45,7 @@ struct v4l2_decoder {
  * @param pixfmt which codec is used
  * @return non-zero on failure
  */
-int v4l2_init_decoder(struct v4l2_decoder *decoder, int pixfmt);
+int v4l2_init_decoder(struct v4l2_decoder *decoder, int pixfmt, bool hwaccel);
 
 /**
  * Free any data associated with the decoder.
