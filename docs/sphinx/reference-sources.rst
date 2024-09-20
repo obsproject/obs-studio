@@ -410,6 +410,15 @@ Source Definition Structure (obs_source_info)
    :param event:       Key event properties
    :param focus:       Key event type (true if mouse-up)
 
+.. member:: void (*obs_source_info.filter_add)(void *data, obs_source_t *source)
+
+   Called when the filter is added to a source.
+
+   (Optional)
+
+   :param  data:   Filter data
+   :param  source: Source that the filter is being added to
+
 .. member:: void (*obs_source_info.filter_remove)(void *data, obs_source_t *source)
 
    Called when the filter is removed from a source.
@@ -535,8 +544,10 @@ Source Definition Structure (obs_source_info)
 
 .. _source_signal_handler_reference:
 
-Source Signals
---------------
+Common Source Signals
+---------------------
+
+The following signals are defined for every source type:
 
 **destroy** (ptr *source*)
 
@@ -616,7 +627,11 @@ Source Signals
 
 **update_properties** (ptr source)
 
-   Called when the properties of the source have been updated.
+   Called to signal to any properties view (or other users of the source's
+   obs_properties_t) that the presentable properties of the source have changed
+   and should be re-queried via obs_source_properties.
+   Does not mean that the source's *settings* (as configured by the user) have
+   changed. For that, use the `update` signal instead.
 
 **update_flags** (ptr source, int flags)
 
@@ -634,9 +649,19 @@ Source Signals
 
    Called when the audio mixers have changed.
 
+**audio_activate** (ptr source)
+
+   Called when the source's audio becomes active.
+
+**audio_deactivate** (ptr source)
+
+   Called when the source's audio becomes inactive.
+
 **filter_add** (ptr source, ptr filter)
 
    Called when a filter has been added to the source.
+
+   .. versionadded:: 30.0
 
 **filter_remove** (ptr source, ptr filter)
 
@@ -658,37 +683,159 @@ Source Signals
 
    Called when a transition has stopped.
 
-**media_started**
+**media_started** (ptr source)
 
    Called when media has started.
 
-**media_ended**
+**media_ended** (ptr source)
 
    Called when media has ended.
 
-**media_pause**
+**media_pause** (ptr source)
 
    Called when media has been paused.
 
-**media_play**
+**media_play** (ptr source)
 
    Called when media starts playing.
 
-**media_restart**
+**media_restart** (ptr source)
 
    Called when the playing of media has been restarted.
 
-**media_stopped**
+**media_stopped** (ptr source)
 
    Called when the playing of media has been stopped.
 
-**media_next**
+**media_next** (ptr source)
 
    Called when the media source switches to the next media.
 
-**media_previous**
+**media_previous** (ptr source)
 
    Called when the media source switches to the previous media.
+
+
+Source-specific Signals
+-----------------------
+
+**slide_changed** (int index, string path)
+
+   Called when the source's currently displayed image changes.
+
+   :Defined by: - Image Slide Show
+
+-----------------------
+
+**hooked** (ptr source, string title, string class, string executable)
+
+   Called when the source successfully captures an existing window.
+
+   :Defined by: - Window Capture (Windows)
+                - Game Capture (Windows)
+                - Application Audio Output Capture (Windows)
+
+-----------------------
+
+**hooked** (ptr source, string name, string class)
+
+   Called when the source successfully captures an existing window.
+
+   :Defined by: - Window Capture (Xcomposite)
+
+-----------------------
+
+**unhooked** (ptr source)
+
+   Called when the source stops capturing.
+
+   :Defined by: - Window Capture (Windows)
+                - Game Capture (Windows)
+                - Application Audio Output Capture (Windows)
+                - Window Capture (Xcomposite)
+
+-----------------------
+
+
+Source-specific Procedures
+--------------------------
+
+The following procedures are defined for specific sources only:
+
+**current_index** (out int current_index)
+
+   Returns the index of the currently displayed image in the slideshow.
+
+   :Defined by: - Image Slide Show
+
+-----------------------
+
+**total_files** (out int total_files)
+
+   Returns the total number of image files in the slideshow.
+
+   :Defined by: - Image Slide Show
+
+-----------------------
+
+**get_hooked** (out bool hooked, out string title, out string class, out string executable)
+
+   Returns whether the source is currently capturing a window and if yes, which.
+
+   :Defined by: - Window Capture (Windows)
+                - Game Capture (Windows)
+                - Application audio output capture (Windows)
+
+-----------------------
+
+**get_hooked** (out bool hooked, out string name, out string class)
+
+   Returns whether the source is currently capturing a window and if yes, which.
+
+   :Defined by: - Window Capture (Xcomposite)
+
+-----------------------
+
+**get_metadata** (in string tag_id, out string tag_data)
+
+   For a given metadata tag, returns the data associated with it.
+
+   :Defined by: - VLC Video Source
+
+-----------------------
+
+**restart** ()
+
+   Restarts the media.
+
+   :Defined by: - Media Source
+
+-----------------------
+
+**get_duration** (out int duration)
+
+   Returns the total duration of the media file, in nanoseconds.
+
+   :Defined by: - Media Source
+
+-----------------------
+
+**get_nb_frames** (out int num_frames)
+
+   Returns the total number of frames in the media file.
+
+   :Defined by: - Media Source
+
+-----------------------
+
+**activate** (in bool active)
+
+   Activates or deactivates the device.
+
+   :Defined by: - Video Capture Device Source (Windows)
+
+-----------------------
+
 
 General Source Functions
 ------------------------
@@ -950,6 +1097,8 @@ General Source Functions
 
    :return: The UUID of the source
 
+   .. versionadded:: 29.1
+
 ---------------------
 
 .. function:: void obs_source_set_name(obs_source_t *source, const char *name)
@@ -1065,6 +1214,13 @@ General Source Functions
    :param order: | OBS_MONITORING_TYPE_NONE - Do not monitor
                  | OBS_MONITORING_TYPE_MONITOR_ONLY - Send to monitor device, no outputs
                  | OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT - Send to monitor device and outputs
+
+---------------------
+
+.. function:: void obs_source_set_audio_active(obs_source_t *source, bool active)
+              bool obs_source_audio_active(const obs_source_t *source)
+
+   Sets/gets the audio active status (controls whether the source is shown in the mixer).
 
 ---------------------
 
@@ -1455,6 +1611,9 @@ Functions used by sources
 
            /* packed 4:2:2 format, 10 bpp */
            VIDEO_FORMAT_V210,
+
+           /* packed uncompressed 10-bit format */
+           VIDEO_FORMAT_R10L,
    };
 
    struct obs_source_frame {
@@ -1506,7 +1665,9 @@ Functions used by sources
 
 .. function:: void obs_source_update_properties(obs_source_t *source)
 
-   Signal an update to any currently used properties.
+   Signals to any currently opened properties views (or other users of the
+   source's obs_properties_t) that the source's presentable properties have
+   changed and that the view should be updated.
 
 ---------------------
 
@@ -1535,17 +1696,19 @@ Filters
 .. function:: obs_source_t *obs_filter_get_parent(const obs_source_t *filter)
 
    If the source is a filter, returns the parent source of the filter.
-   The parent source is the source being filtered.
+   The parent source is the source being filtered. Does not increment the
+   reference.
 
    Only guaranteed to be valid inside of the video_render, filter_audio,
-   filter_video, and filter_remove callbacks.
+   filter_video, filter_add, and filter_remove callbacks.
 
 ---------------------
 
 .. function:: obs_source_t *obs_filter_get_target(const obs_source_t *filter)
 
    If the source is a filter, returns the target source of the filter.
-   The target source is the next source in the filter chain.
+   The target source is the next source in the filter chain. Does not increment
+   the reference.
 
    Only guaranteed to be valid inside of the video_render, filter_audio,
    filter_video, and filter_remove callbacks.
@@ -1578,6 +1741,23 @@ Filters
 
 ---------------------
 
+.. function:: void obs_source_filter_set_index(obs_source_t *source, obs_source_t *filter, size_t index)
+
+   Moves a filter to the specified index in the filters array.
+
+   :param index: | The index to move the filter to.
+
+   .. versionadded:: 30.0
+
+---------------------
+
+.. function:: int obs_source_filter_get_index(obs_source_t *source, obs_source_t *filter)
+
+   Gets the index of the specified filter.
+
+   :return: Index of the filter or -1 if it is invalid/not found.
+
+   .. versionadded:: 30.0
 
 Functions used by filters
 -------------------------

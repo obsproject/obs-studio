@@ -1,11 +1,12 @@
 #include "lineedit-autoresize.hpp"
 
-LineEditAutoResize::LineEditAutoResize()
+LineEditAutoResize::LineEditAutoResize() : m_maxLength(32767)
 {
-	connect(this, SIGNAL(textChanged()), this, SLOT(checkTextLength()));
+	connect(this, &LineEditAutoResize::textChanged, this,
+		&LineEditAutoResize::checkTextLength);
 	connect(document()->documentLayout(),
-		SIGNAL(documentSizeChanged(const QSizeF &)), this,
-		SLOT(resizeVertically(const QSizeF &)));
+		&QAbstractTextDocumentLayout::documentSizeChanged, this,
+		&LineEditAutoResize::resizeVertically);
 }
 
 void LineEditAutoResize::checkTextLength()

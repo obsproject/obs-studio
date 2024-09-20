@@ -18,7 +18,7 @@ set_target_properties(
              AUTORCC ON
              AUTOUIC_SEARCH_PATHS "forms")
 
-if(_QT_VERSION EQUAL 6 AND OS_WINDOWS)
+if(OS_WINDOWS)
   set_target_properties(aja-output-ui PROPERTIES AUTORCC_OPTIONS "--format-version;1")
 endif()
 

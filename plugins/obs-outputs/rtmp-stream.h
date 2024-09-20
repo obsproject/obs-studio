@@ -1,6 +1,6 @@
 #include <obs-module.h>
 #include <util/platform.h>
-#include <util/circlebuf.h>
+#include <util/deque.h>
 #include <util/dstr.h>
 #include <util/threading.h>
 #include <inttypes.h>
@@ -28,6 +28,7 @@
 #define OPT_PFRAME_DROP_THRESHOLD "pframe_drop_threshold_ms"
 #define OPT_MAX_SHUTDOWN_TIME_SEC "max_shutdown_time_sec"
 #define OPT_BIND_IP "bind_ip"
+#define OPT_IP_FAMILY "ip_family"
 #define OPT_NEWSOCKETLOOP_ENABLED "new_socket_loop_enabled"
 #define OPT_LOWLATENCY_ENABLED "low_latency_mode_enabled"
 #define OPT_METADATA_MULTITRACK "metadata_multitrack"
@@ -56,10 +57,10 @@ struct rtmp_stream {
 	obs_output_t *output;
 
 	pthread_mutex_t packets_mutex;
-	struct circlebuf packets;
+	struct deque packets;
 	bool sent_headers;
 
-	bool got_first_video;
+	bool got_first_packet;
 	int64_t start_dts_offset;
 
 	volatile bool connecting;
@@ -81,6 +82,7 @@ struct rtmp_stream {
 	struct dstr username, password;
 	struct dstr encoder_name;
 	struct dstr bind_ip;
+	socklen_t addrlen_hint; /* hint IPv4 vs IPv6 */
 
 	/* frame drop variables */
 	int64_t drop_threshold_usec;
@@ -94,14 +96,14 @@ struct rtmp_stream {
 	int dropped_frames;
 
 #ifdef TEST_FRAMEDROPS
-	struct circlebuf droptest_info;
+	struct deque droptest_info;
 	uint64_t droptest_last_key_check;
 	size_t droptest_max;
 	size_t droptest_size;
 #endif
 
 	pthread_mutex_t dbr_mutex;
-	struct circlebuf dbr_frames;
+	struct deque dbr_frames;
 	size_t dbr_data_size;
 	uint64_t dbr_inc_timeout;
 	uint64_t dbr_low_timeout;
@@ -115,7 +117,8 @@ struct rtmp_stream {
 	long dbr_inc_bitrate;
 	bool dbr_enabled;
 
-	enum video_id_t video_codec;
+	enum audio_id_t audio_codec[MAX_OUTPUT_AUDIO_ENCODERS];
+	enum video_id_t video_codec[MAX_OUTPUT_VIDEO_ENCODERS];
 
 	RTMP rtmp;
 
@@ -139,7 +142,7 @@ void *socket_thread_windows(void *data);
 #endif
 
 /* Adapted from FFmpeg's libavutil/pixfmt.h
- * 
+ *
  * Renamed to make it apparent that these are not imported as this module does
  * not use or link against FFmpeg.
  */

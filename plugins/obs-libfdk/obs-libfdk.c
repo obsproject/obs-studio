@@ -273,6 +273,7 @@ static bool libfdk_encode(void *data, struct encoder_frame *frame,
 	packet->data = enc->packet_buffer;
 	packet->size = out_args.numOutBytes;
 	packet->type = OBS_ENCODER_AUDIO;
+	packet->keyframe = true;
 	packet->timebase_num = 1;
 	packet->timebase_den = enc->sample_rate;
 

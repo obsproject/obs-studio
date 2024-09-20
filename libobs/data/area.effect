@@ -117,13 +117,6 @@ float4 PSDrawAreaRGBAMultiplyTonemap(FragData frag_in) : TARGET
 	return rgba;
 }
 
-float4 PSDrawAreaRGBADivide(FragData frag_in) : TARGET
-{
-	float4 rgba = DrawArea(frag_in);
-	rgba.rgb *= max(1. / rgba.a, 0.);
-	return rgba;
-}
-
 float4 DrawAreaUpscale(FragData frag_in)
 {
 	float2 uv = frag_in.uv;
@@ -217,15 +210,6 @@ technique DrawMultiplyTonemap
 	{
 		vertex_shader = VSDefault(vert_in);
 		pixel_shader  = PSDrawAreaRGBAMultiplyTonemap(frag_in);
-	}
-}
-
-technique DrawAlphaDivide
-{
-	pass
-	{
-		vertex_shader = VSDefault(vert_in);
-		pixel_shader  = PSDrawAreaRGBADivide(frag_in);
 	}
 }
 

@@ -13,7 +13,8 @@
 #include "qt-wrappers.hpp"
 
 OBSLogViewer::OBSLogViewer(QWidget *parent)
-	: QDialog(parent), ui(new Ui::OBSLogViewer)
+	: QDialog(parent),
+	  ui(new Ui::OBSLogViewer)
 {
 	setWindowFlags(windowFlags() & Qt::WindowMaximizeButtonHint &
 		       ~Qt::WindowContextHelpButtonHint);
@@ -66,9 +67,6 @@ void OBSLogViewer::InitLog()
 
 	if (file.open(QIODevice::ReadOnly)) {
 		QTextStream in(&file);
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-		in.setCodec("UTF-8");
-#endif
 
 		QTextDocument *doc = ui->textArea->document();
 		QTextCursor cursor(doc);

@@ -73,8 +73,8 @@ void AJAOutputUI::SetupPropertiesView()
 	ui->propertiesLayout->addWidget(propertiesView);
 	obs_data_release(settings);
 
-	connect(propertiesView, SIGNAL(Changed()), this,
-		SLOT(PropertiesChanged()));
+	connect(propertiesView, &OBSPropertiesView::Changed, this,
+		&AJAOutputUI::PropertiesChanged);
 }
 
 void AJAOutputUI::SaveSettings(const char *filename, obs_data_t *settings)
@@ -130,8 +130,8 @@ void AJAOutputUI::SetupPreviewPropertiesView()
 	ui->previewPropertiesLayout->addWidget(previewPropertiesView);
 	obs_data_release(settings);
 
-	connect(previewPropertiesView, SIGNAL(Changed()), this,
-		SLOT(PreviewPropertiesChanged()));
+	connect(previewPropertiesView, &OBSPropertiesView::Changed, this,
+		&AJAOutputUI::PreviewPropertiesChanged);
 }
 
 void AJAOutputUI::on_outputButton_clicked()
@@ -269,6 +269,6 @@ void AJAOutputUI::SetupMiscPropertiesView()
 
 	ui->miscPropertiesLayout->addWidget(miscPropertiesView);
 	obs_data_release(settings);
-	connect(miscPropertiesView, SIGNAL(Changed()), this,
-		SLOT(MiscPropertiesChanged()));
+	connect(miscPropertiesView, &OBSPropertiesView::Changed, this,
+		&AJAOutputUI::MiscPropertiesChanged);
 }

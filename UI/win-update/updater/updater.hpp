@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -36,12 +36,15 @@
 #include <blake2.h>
 #include <zstd.h>
 
+#include <array>
 #include <string>
+#include <vector>
 
 #include "helpers.hpp"
 
-#define BLAKE2_HASH_LENGTH 20
-#define BLAKE2_HASH_STR_LENGTH ((BLAKE2_HASH_LENGTH * 2) + 1)
+constexpr uint8_t kBlake2HashLength = 20;
+constexpr uint8_t kBlake2StrLength = kBlake2HashLength * 2;
+using B2Hash = std::array<std::byte, kBlake2HashLength>;
 
 #if defined _M_IX86
 #pragma comment(linker, "/manifestdependency:\"type='win32' "       \
@@ -73,28 +76,30 @@
 #endif
 
 #include <util/windows/WinHandle.hpp>
-#include <json11.hpp>
 #include "resource.h"
 
 bool HTTPGetFile(HINTERNET hConnect, const wchar_t *url,
 		 const wchar_t *outputPath, const wchar_t *extraHeaders,
 		 int *responseCode);
+bool HTTPGetBuffer(HINTERNET hConnect, const wchar_t *url,
+		   const wchar_t *extraHeaders, std::vector<std::byte> &out,
+		   int *responseCode);
 bool HTTPPostData(const wchar_t *url, const BYTE *data, int dataLen,
 		  const wchar_t *extraHeaders, int *responseCode,
 		  std::string &response);
 
-void HashToString(const BYTE *in, wchar_t *out);
-void StringToHash(const wchar_t *in, BYTE *out);
+void HashToString(const B2Hash &in, std::string &out);
+void StringToHash(const std::string &in, B2Hash &out);
 
-bool CalculateFileHash(const wchar_t *path, BYTE *hash);
+bool CalculateFileHash(const wchar_t *path, B2Hash &hash);
 
-int ApplyPatch(ZSTD_DCtx *ctx, LPCTSTR patchFile, LPCTSTR targetFile);
-int DecompressFile(ZSTD_DCtx *ctx, LPCTSTR tempFile, size_t newSize);
+int ApplyPatch(ZSTD_DCtx *zstdCtx, const std::byte *patch_data,
+	       size_t patch_size, const wchar_t *targetFile);
 
 extern HWND hwndMain;
 extern HCRYPTPROV hProvider;
-extern int totalFileSize;
-extern int completedFileSize;
+extern size_t totalFileSize;
+extern size_t completedFileSize;
 extern HANDLE cancelRequested;
 
 #pragma pack(push, r1, 1)

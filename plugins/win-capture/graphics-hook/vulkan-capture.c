@@ -397,7 +397,7 @@ static void remove_free_framebuffer_data(struct vk_data *data,
 					 const VkAllocationCallbacks *ac)
 {
 	struct vk_swap_data *const framebuffer_data =
-		(struct vk_swap_data *)remove_obj_data(&data->swaps,
+		(struct vk_swap_data *)remove_obj_data(&data->framebuffers,
 						       (uint64_t)framebuffer);
 	vk_free(ac, framebuffer_data);
 }
@@ -1796,7 +1796,6 @@ OBS_CreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *cinfo,
 	if ((res == VK_SUCCESS) && (count > 0)) {
 		struct vk_swap_data *swap_data = alloc_swap_data(ac);
 		if (swap_data) {
-			init_swap_data(swap_data, data, sc);
 			swap_data->swap_images = vk_alloc(
 				ac, count * sizeof(VkImage), _Alignof(VkImage),
 				VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
@@ -1816,6 +1815,7 @@ OBS_CreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *cinfo,
 			swap_data->shtex_info = NULL;
 			swap_data->d3d11_tex = NULL;
 			swap_data->captured = false;
+			init_swap_data(swap_data, data, sc);
 		}
 	}
 
@@ -1826,25 +1826,22 @@ static VkResult VKAPI_CALL
 OBS_CreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
 		    const VkAllocationCallbacks *pAllocator, VkImageView *pView)
 {
+	bool from_swap_chain = false;
+
 	struct vk_data *const data = get_device_data(device);
-	const PFN_vkCreateImageView func = data->funcs.CreateImageView;
-	VkResult result = func(device, pCreateInfo, pAllocator, pView);
-	if (data->valid && (result == VK_SUCCESS)) {
+	if (data->valid) {
 		struct vk_swap_data *swap = swap_walk_begin(data);
 
 		while (swap) {
-			bool match = false;
 			for (uint32_t i = 0, count = swap->image_count;
 			     i < count; ++i) {
-				match = swap->swap_images[i] ==
-					pCreateInfo->image;
-				if (match)
+				from_swap_chain = swap->swap_images[i] ==
+						  pCreateInfo->image;
+				if (from_swap_chain)
 					break;
 			}
-			if (match) {
-				add_swap_view_data(data, *pView, pAllocator);
+			if (from_swap_chain)
 				break;
-			}
 
 			swap = swap_walk_next(swap);
 		}
@@ -1852,6 +1849,27 @@ OBS_CreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
 		swap_walk_end(data);
 	}
 
+	if (from_swap_chain) {
+		const void *pCurrent = pCreateInfo->pNext;
+		while (pCurrent) {
+			VkBaseInStructure baseIn;
+			memcpy(&baseIn, pCurrent, sizeof(baseIn));
+			if (baseIn.sType ==
+			    VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO) {
+				((VkImageViewUsageCreateInfo *)pCurrent)
+					->usage |=
+					VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+				break;
+			}
+
+			pCurrent = baseIn.pNext;
+		}
+	}
+
+	const PFN_vkCreateImageView func = data->funcs.CreateImageView;
+	VkResult result = func(device, pCreateInfo, pAllocator, pView);
+	if ((result == VK_SUCCESS) && from_swap_chain)
+		add_swap_view_data(data, *pView, pAllocator);
 	return result;
 }
 
@@ -2100,8 +2118,8 @@ OBS_CmdBeginRenderPass(VkCommandBuffer commandBuffer,
 {
 	struct vk_data *const data =
 		get_device_data_by_command_buffer(commandBuffer);
+	VkRenderPassBeginInfo alternateBegin;
 	if (data->valid) {
-		VkRenderPassBeginInfo alternateBegin;
 		pRenderPassBegin = process_render_pass_begin_info(
 			pRenderPassBegin, &alternateBegin, data);
 	}
@@ -2117,8 +2135,8 @@ OBS_CmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer,
 {
 	struct vk_data *const data =
 		get_device_data_by_command_buffer(commandBuffer);
+	VkRenderPassBeginInfo alternateBegin;
 	if (data->valid) {
-		VkRenderPassBeginInfo alternateBegin;
 		pRenderPassBegin = process_render_pass_begin_info(
 			pRenderPassBegin, &alternateBegin, data);
 	}
@@ -2134,8 +2152,8 @@ OBS_CmdBeginRenderPass2(VkCommandBuffer commandBuffer,
 {
 	struct vk_data *const data =
 		get_device_data_by_command_buffer(commandBuffer);
+	VkRenderPassBeginInfo alternateBegin;
 	if (data->valid) {
-		VkRenderPassBeginInfo alternateBegin;
 		pRenderPassBegin = process_render_pass_begin_info(
 			pRenderPassBegin, &alternateBegin, data);
 	}
@@ -2195,6 +2213,7 @@ static void VKAPI_CALL OBS_DestroySurfaceKHR(VkInstance inst, VkSurfaceKHR surf,
 	destroy_surface(inst, surf, ac);
 }
 
+/* clang-format off */
 #define GETPROCADDR(func)               \
 	if (!strcmp(pName, "vk" #func)) \
 		return (PFN_vkVoidFunction)&OBS_##func;
@@ -2202,6 +2221,7 @@ static void VKAPI_CALL OBS_DestroySurfaceKHR(VkInstance inst, VkSurfaceKHR surf,
 #define GETPROCADDR_IF_SUPPORTED(func)  \
 	if (!strcmp(pName, "vk" #func)) \
 		return funcs->func ? (PFN_vkVoidFunction)&OBS_##func : NULL;
+/* clang-format on */
 
 static PFN_vkVoidFunction VKAPI_CALL OBS_GetDeviceProcAddr(VkDevice device,
 							   const char *pName)

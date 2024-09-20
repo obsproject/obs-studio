@@ -4,9 +4,6 @@
 #include <windows.h>
 #include <Wincrypt.h>
 
-#include <cstdint>
-#include <string>
-
 /* ------------------------------------------------------------------------ */
 
 template<typename T, void freefunc(T)> class CustomHandle {

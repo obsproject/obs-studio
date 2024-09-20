@@ -59,12 +59,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "QSV_Encoder.h"
 #include "QSV_Encoder_Internal.h"
+#include "common_utils.h"
 #include <obs-module.h>
 #include <string>
 #include <atomic>
-#include <intrin.h>
+
+#include <dxgi.h>
 #include <d3d11.h>
-#include <dxgi1_2.h>
 #include <wrl/client.h>
 
 #define do_log(level, format, ...) \
@@ -178,37 +179,11 @@ void qsv_encoder_version(unsigned short *major, unsigned short *minor)
 	*minor = ver.Minor;
 }
 
-qsv_t *qsv_encoder_open(qsv_param_t *pParams, enum qsv_codec codec)
+qsv_t *qsv_encoder_open(qsv_param_t *pParams, enum qsv_codec codec,
+			bool useTexAlloc)
 {
-	mfxIMPL impl_list[4] = {MFX_IMPL_HARDWARE, MFX_IMPL_HARDWARE2,
-				MFX_IMPL_HARDWARE3, MFX_IMPL_HARDWARE4};
-
-	obs_video_info ovi;
-	obs_get_video_info(&ovi);
-	size_t adapter_idx = ovi.adapter;
-
-	// Select current adapter - will be iGPU if exists due to adapter reordering
-	if (codec == QSV_CODEC_AV1 && !adapters[adapter_idx].supports_av1) {
-		for (size_t i = 0; i < 4; i++) {
-			if (adapters[i].supports_av1) {
-				adapter_idx = i;
-				break;
-			}
-		}
-	} else if (!adapters[adapter_idx].is_intel) {
-		for (size_t i = 0; i < 4; i++) {
-			if (adapters[i].is_intel) {
-				adapter_idx = i;
-				break;
-			}
-		}
-	}
-
-	bool isDGPU = adapters[adapter_idx].is_dgpu;
-	impl = impl_list[adapter_idx];
-
 	QSV_Encoder_Internal *pEncoder =
-		new QSV_Encoder_Internal(impl, ver, isDGPU);
+		new QSV_Encoder_Internal(ver, useTexAlloc);
 	mfxStatus sts = pEncoder->Open(pParams, codec);
 	if (sts != MFX_ERR_NONE) {
 
@@ -235,7 +210,7 @@ qsv_t *qsv_encoder_open(qsv_param_t *pParams, enum qsv_codec codec)
 			WARN_ERR(MFX_ERR_NOT_FOUND,
 				 "Specified object/item/sync point not found.");
 			WARN_ERR(MFX_ERR_MEMORY_ALLOC,
-				 "Gailed to allocate memory");
+				 "Failed to allocate memory");
 			WARN_ERR(MFX_ERR_LOCK_MEMORY,
 				 "failed to lock the memory block "
 				 "(external allocator).");
@@ -297,12 +272,6 @@ qsv_t *qsv_encoder_open(qsv_param_t *pParams, enum qsv_codec codec)
 	return (qsv_t *)pEncoder;
 }
 
-bool qsv_encoder_is_dgpu(qsv_t *pContext)
-{
-	QSV_Encoder_Internal *pEncoder = (QSV_Encoder_Internal *)pContext;
-	return pEncoder->IsDGPU();
-}
-
 int qsv_encoder_headers(qsv_t *pContext, uint8_t **pSPS, uint8_t **pPPS,
 			uint16_t *pnSPS, uint16_t *pnPPS)
 {
@@ -310,6 +279,22 @@ int qsv_encoder_headers(qsv_t *pContext, uint8_t **pSPS, uint8_t **pPPS,
 	pEncoder->GetSPSPPS(pSPS, pPPS, pnSPS, pnPPS);
 
 	return 0;
+}
+
+void qsv_encoder_add_roi(qsv_t *pContext, const obs_encoder_roi *roi)
+{
+	QSV_Encoder_Internal *pEncoder = (QSV_Encoder_Internal *)pContext;
+
+	/* QP value is range 0..51 */
+	// ToDo figure out if this is different for AV1
+	mfxI16 delta = (mfxI16)(-51.0f * roi->priority);
+	pEncoder->AddROI(roi->left, roi->top, roi->right, roi->bottom, delta);
+}
+
+void qsv_encoder_clear_roi(qsv_t *pContext)
+{
+	QSV_Encoder_Internal *pEncoder = (QSV_Encoder_Internal *)pContext;
+	pEncoder->ClearROI();
 }
 
 int qsv_encoder_encode(qsv_t *pContext, uint64_t ts, uint8_t *pDataY,
@@ -331,14 +316,14 @@ int qsv_encoder_encode(qsv_t *pContext, uint64_t ts, uint8_t *pDataY,
 		return -1;
 }
 
-int qsv_encoder_encode_tex(qsv_t *pContext, uint64_t ts, uint32_t tex_handle,
+int qsv_encoder_encode_tex(qsv_t *pContext, uint64_t ts, void *tex,
 			   uint64_t lock_key, uint64_t *next_key,
 			   mfxBitstream **pBS)
 {
 	QSV_Encoder_Internal *pEncoder = (QSV_Encoder_Internal *)pContext;
 	mfxStatus sts = MFX_ERR_NONE;
 
-	sts = pEncoder->Encode_tex(ts, tex_handle, lock_key, next_key, pBS);
+	sts = pEncoder->Encode_tex(ts, tex, lock_key, next_key, pBS);
 
 	if (sts == MFX_ERR_NONE)
 		return 0;
@@ -393,7 +378,7 @@ enum qsv_cpu_platform qsv_get_cpu_platform()
 	using std::string;
 
 	int cpuInfo[4];
-	__cpuid(cpuInfo, 0);
+	util_cpuid(cpuInfo, 0);
 
 	string vendor;
 	vendor += string((char *)&cpuInfo[1], 4);
@@ -403,9 +388,10 @@ enum qsv_cpu_platform qsv_get_cpu_platform()
 	if (vendor != "GenuineIntel")
 		return QSV_CPU_PLATFORM_UNKNOWN;
 
-	__cpuid(cpuInfo, 1);
-	BYTE model = ((cpuInfo[0] >> 4) & 0xF) + ((cpuInfo[0] >> 12) & 0xF0);
-	BYTE family = ((cpuInfo[0] >> 8) & 0xF) + ((cpuInfo[0] >> 20) & 0xFF);
+	util_cpuid(cpuInfo, 1);
+	uint8_t model = ((cpuInfo[0] >> 4) & 0xF) + ((cpuInfo[0] >> 12) & 0xF0);
+	uint8_t family =
+		((cpuInfo[0] >> 8) & 0xF) + ((cpuInfo[0] >> 20) & 0xFF);
 
 	// See Intel 64 and IA-32 Architectures Software Developer's Manual,
 	// Vol 3C Table 35-1

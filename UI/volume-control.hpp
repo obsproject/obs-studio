@@ -3,14 +3,16 @@
 #include <obs.hpp>
 #include <QWidget>
 #include <QPaintEvent>
-#include <QSharedPointer>
 #include <QTimer>
 #include <QMutex>
 #include <QList>
 #include <QMenu>
+#include <QAccessibleWidget>
+#include "absolute-slider.hpp"
 
 class QPushButton;
 class VolumeMeterTimer;
+class VolumeSlider;
 
 class VolumeMeter : public QWidget {
 	Q_OBJECT
@@ -94,13 +96,10 @@ class VolumeMeter : public QWidget {
 
 	friend class VolControl;
 
-private slots:
-	void ClipEnding();
-
 private:
 	obs_volmeter_t *obs_volmeter;
-	static QWeakPointer<VolumeMeterTimer> updateTimer;
-	QSharedPointer<VolumeMeterTimer> updateTimerRef;
+	static std::weak_ptr<VolumeMeterTimer> updateTimer;
+	std::shared_ptr<VolumeMeterTimer> updateTimerRef;
 
 	inline void resetLevels();
 	inline void doLayout();
@@ -274,24 +273,26 @@ protected:
 };
 
 class QLabel;
-class QSlider;
+class VolumeSlider;
 class MuteCheckBox;
+class OBSSourceLabel;
 
-class VolControl : public QWidget {
+class VolControl : public QFrame {
 	Q_OBJECT
 
 private:
 	OBSSource source;
-	QLabel *nameLabel;
+	std::vector<OBSSignal> sigs;
+	OBSSourceLabel *nameLabel;
 	QLabel *volLabel;
 	VolumeMeter *volMeter;
-	QSlider *slider;
+	VolumeSlider *slider;
 	MuteCheckBox *mute;
 	QPushButton *config = nullptr;
 	float levelTotal;
 	float levelCount;
-	obs_fader_t *obs_fader;
-	obs_volmeter_t *obs_volmeter;
+	OBSFader obs_fader;
+	OBSVolMeter obs_volmeter;
 	bool vertical;
 	QMenu *contextMenu;
 
@@ -324,9 +325,6 @@ public:
 
 	inline obs_source_t *GetSource() const { return source; }
 
-	QString GetName() const;
-	void SetName(const QString &newName);
-
 	void SetMeterDecayRate(qreal q);
 	void setPeakMeterType(enum obs_peak_meter_type peakMeterType);
 
@@ -334,4 +332,46 @@ public:
 	inline void SetContextMenu(QMenu *cm) { contextMenu = cm; }
 
 	void refreshColors();
+};
+
+class VolumeSlider : public AbsoluteSlider {
+	Q_OBJECT
+
+public:
+	obs_fader_t *fad;
+
+	VolumeSlider(obs_fader_t *fader, QWidget *parent = nullptr);
+	VolumeSlider(obs_fader_t *fader, Qt::Orientation orientation,
+		     QWidget *parent = nullptr);
+
+	bool getDisplayTicks() const;
+	void setDisplayTicks(bool display);
+
+private:
+	bool displayTicks = false;
+	QColor tickColor;
+
+protected:
+	virtual void paintEvent(QPaintEvent *event) override;
+};
+
+class VolumeAccessibleInterface : public QAccessibleWidget {
+
+public:
+	VolumeAccessibleInterface(QWidget *w);
+
+	QVariant currentValue() const;
+	void setCurrentValue(const QVariant &value);
+
+	QVariant maximumValue() const;
+	QVariant minimumValue() const;
+
+	QVariant minimumStepSize() const;
+
+private:
+	VolumeSlider *slider() const;
+
+protected:
+	virtual QAccessible::Role role() const override;
+	virtual QString text(QAccessible::Text t) const override;
 };

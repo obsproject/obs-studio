@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 #include "../util/threading.h"
 #include "../util/darray.h"
-#include "../util/circlebuf.h"
+#include "../util/deque.h"
 #include "../util/platform.h"
 #include "../util/profiler.h"
 #include "../util/util_uint64.h"
@@ -534,20 +534,20 @@ bool audio_output_active(const audio_t *audio)
 
 size_t audio_output_get_block_size(const audio_t *audio)
 {
-	return audio ? audio->block_size : 0;
+	return audio->block_size;
 }
 
 size_t audio_output_get_planes(const audio_t *audio)
 {
-	return audio ? audio->planes : 0;
+	return audio->planes;
 }
 
 size_t audio_output_get_channels(const audio_t *audio)
 {
-	return audio ? audio->channels : 0;
+	return audio->channels;
 }
 
 uint32_t audio_output_get_sample_rate(const audio_t *audio)
 {
-	return audio ? audio->info.samples_per_sec : 0;
+	return audio->info.samples_per_sec;
 }

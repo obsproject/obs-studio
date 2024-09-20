@@ -27,12 +27,12 @@
 #import "OBSDALPlugIn.h"
 
 @interface OBSDALStream () {
-	CMSimpleQueueRef _queue;
-	CFTypeRef _clock;
-	NSImage *_testCardImage;
-	dispatch_source_t _frameDispatchSource;
-	NSSize _testCardSize;
-	Float64 _fps;
+    CMSimpleQueueRef _queue;
+    CFTypeRef _clock;
+    NSImage *_testCardImage;
+    dispatch_source_t _frameDispatchSource;
+    NSSize _testCardSize;
+    Float64 _fps;
 }
 
 @property CMIODeviceStreamQueueAlteredProc alteredProc;
@@ -48,555 +48,489 @@
 
 @implementation OBSDALStream
 
-#define DEFAULT_FPS 30.0
-#define DEFAULT_WIDTH 1280
+#define DEFAULT_FPS    30.0
+#define DEFAULT_WIDTH  1280
 #define DEFAULT_HEIGHT 720
 
 - (instancetype _Nonnull)init
 {
-	self = [super init];
-	if (self) {
-		_frameDispatchSource = dispatch_source_create(
-			DISPATCH_SOURCE_TYPE_TIMER, 0, 0,
-			dispatch_get_global_queue(
-				DISPATCH_QUEUE_PRIORITY_DEFAULT, 0));
-		__weak __typeof(self) wself = self;
-		dispatch_source_set_event_handler(_frameDispatchSource, ^{
-			[wself fillFrame];
-		});
-	}
-	return self;
+    self = [super init];
+    if (self) {
+        _frameDispatchSource = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0,
+                                                      dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0));
+        __weak __typeof(self) wself = self;
+        dispatch_source_set_event_handler(_frameDispatchSource, ^{
+            [wself fillFrame];
+        });
+    }
+    return self;
 }
 
 - (void)dealloc
 {
-	DLog(@"Stream Dealloc");
-	CMIOStreamClockInvalidate(_clock);
-	CFRelease(_clock);
-	_clock = NULL;
-	CFRelease(_queue);
-	_queue = NULL;
-	dispatch_suspend(_frameDispatchSource);
+    DLog(@"Stream Dealloc");
+    CMIOStreamClockInvalidate(_clock);
+    CFRelease(_clock);
+    _clock = NULL;
+    CFRelease(_queue);
+    _queue = NULL;
+    dispatch_suspend(_frameDispatchSource);
 }
 
 - (void)startServingDefaultFrames
 {
-	DLogFunc(@"");
-	_testCardImage = nil;
-	_testCardSize = NSZeroSize;
-	_fps = 0;
-	dispatch_time_t startTime = dispatch_time(DISPATCH_TIME_NOW, 0);
-	uint64_t intervalTime = (int64_t)(NSEC_PER_SEC / self.fps);
-	dispatch_source_set_timer(_frameDispatchSource, startTime, intervalTime,
-				  0);
-	dispatch_resume(_frameDispatchSource);
+    DLogFunc(@"");
+    _testCardImage = nil;
+    _testCardSize = NSZeroSize;
+    _fps = 0;
+    dispatch_time_t startTime = dispatch_time(DISPATCH_TIME_NOW, 0);
+    uint64_t intervalTime = (int64_t) (NSEC_PER_SEC / self.fps);
+    dispatch_source_set_timer(_frameDispatchSource, startTime, intervalTime, 0);
+    dispatch_resume(_frameDispatchSource);
 }
 
 - (void)stopServingDefaultFrames
 {
-	DLogFunc(@"");
-	dispatch_suspend(_frameDispatchSource);
+    DLogFunc(@"");
+    dispatch_suspend(_frameDispatchSource);
 }
 
 - (CMSimpleQueueRef)queue
 {
-	if (_queue == NULL) {
-		// Allocate a one-second long queue, which we can use our FPS constant for.
-		OSStatus err = CMSimpleQueueCreate(kCFAllocatorDefault,
-						   (int32_t)self.fps, &_queue);
-		if (err != noErr) {
-			DLog(@"Err %d in CMSimpleQueueCreate", err);
-		}
-	}
-	return _queue;
+    if (_queue == NULL) {
+        // Allocate a one-second long queue, which we can use our FPS constant for.
+        OSStatus err = CMSimpleQueueCreate(kCFAllocatorDefault, (int32_t) self.fps, &_queue);
+        if (err != noErr) {
+            DLog(@"Err %d in CMSimpleQueueCreate", err);
+        }
+    }
+    return _queue;
 }
 
 - (CFTypeRef)clock
 {
-	if (_clock == NULL) {
-		OSStatus err = CMIOStreamClockCreate(
-			kCFAllocatorDefault,
-			CFSTR("obs-mac-virtualcam::Stream::clock"),
-			(__bridge void *)self, CMTimeMake(1, 10), 100, 10,
-			&_clock);
-		if (err != noErr) {
-			DLog(@"Error %d from CMIOStreamClockCreate", err);
-		}
-	}
-	return _clock;
+    if (_clock == NULL) {
+        OSStatus err = CMIOStreamClockCreate(kCFAllocatorDefault, CFSTR("obs-mac-virtualcam::Stream::clock"),
+                                             (__bridge void *) self, CMTimeMake(1, 10), 100, 10, &_clock);
+        if (err != noErr) {
+            DLog(@"Error %d from CMIOStreamClockCreate", err);
+        }
+    }
+    return _clock;
 }
 
 - (NSSize)testCardSize
 {
-	if (NSEqualSizes(_testCardSize, NSZeroSize)) {
-		NSUserDefaults *defaults =
-			[NSUserDefaults standardUserDefaults];
-		NSInteger width = [[defaults objectForKey:kTestCardWidthKey]
-			integerValue];
-		NSInteger height = [[defaults objectForKey:kTestCardHeightKey]
-			integerValue];
-		if (width == 0 || height == 0) {
-			_testCardSize =
-				NSMakeSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
-		} else {
-			_testCardSize = NSMakeSize(width, height);
-		}
-	}
-	return _testCardSize;
+    if (NSEqualSizes(_testCardSize, NSZeroSize)) {
+        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+        NSInteger width = [[defaults objectForKey:kTestCardWidthKey] integerValue];
+        NSInteger height = [[defaults objectForKey:kTestCardHeightKey] integerValue];
+        if (width == 0 || height == 0) {
+            _testCardSize = NSMakeSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+        } else {
+            _testCardSize = NSMakeSize(width, height);
+        }
+    }
+    return _testCardSize;
 }
 
 - (Float64)fps
 {
-	if (_fps == 0) {
-		NSUserDefaults *defaults =
-			[NSUserDefaults standardUserDefaults];
-		double fps =
-			[[defaults objectForKey:kTestCardFPSKey] doubleValue];
-		if (fps == 0) {
-			_fps = DEFAULT_FPS;
-		} else {
-			_fps = fps;
-		}
-	}
-	return _fps;
+    if (_fps == 0) {
+        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+        double fps = [[defaults objectForKey:kTestCardFPSKey] doubleValue];
+        if (fps == 0) {
+            _fps = DEFAULT_FPS;
+        } else {
+            _fps = fps;
+        }
+    }
+    return _fps;
 }
 
 - (NSImage *)testCardImage
 {
-	if (_testCardImage == nil) {
-		NSString *bundlePath = [[NSBundle
-			bundleForClass:[OBSDALStream class]] bundlePath];
-		NSString *placeHolderPath = [bundlePath
-			stringByAppendingString:
-				@"/Contents/Resources/placeholder.png"];
-		NSFileManager *fileManager = [NSFileManager defaultManager];
-		NSURL *homeUrl = [fileManager homeDirectoryForCurrentUser];
-		NSURL *customUrl = [homeUrl
-			URLByAppendingPathComponent:
-				@"Library/Application Support/obs-studio/plugin_config/mac-virtualcam/placeholder.png"];
-		NSString *customPlaceHolder = customUrl.path;
-		if ([fileManager isReadableFileAtPath:customPlaceHolder])
-			placeHolderPath = customPlaceHolder;
-		DLog(@"PlaceHolder:%@", placeHolderPath);
-		NSImage *placeholderImage = [[NSImage alloc]
-			initWithContentsOfFile:placeHolderPath];
+    if (_testCardImage == nil) {
+        NSString *bundlePath = [[NSBundle bundleForClass:[OBSDALStream class]] bundlePath];
+        NSString *placeHolderPath = [bundlePath stringByAppendingString:@"/Contents/Resources/placeholder.png"];
+        NSFileManager *fileManager = [NSFileManager defaultManager];
+        NSURL *homeUrl = [fileManager homeDirectoryForCurrentUser];
+        NSURL *customUrl =
+            [homeUrl URLByAppendingPathComponent:
+                         @"Library/Application Support/obs-studio/plugin_config/mac-virtualcam/placeholder.png"];
+        NSString *customPlaceHolder = customUrl.path;
+        if ([fileManager isReadableFileAtPath:customPlaceHolder])
+            placeHolderPath = customPlaceHolder;
+        DLog(@"PlaceHolder:%@", placeHolderPath);
+        NSImage *placeholderImage = [[NSImage alloc] initWithContentsOfFile:placeHolderPath];
 
-		NSBitmapImageRep *rep = [[NSBitmapImageRep alloc]
-			initWithBitmapDataPlanes:NULL
-				      pixelsWide:(NSInteger)
-							 self.testCardSize.width
-				      pixelsHigh:(NSInteger)self.testCardSize
-							 .height
-				   bitsPerSample:8
-				 samplesPerPixel:4
-					hasAlpha:YES
-					isPlanar:NO
-				  colorSpaceName:NSCalibratedRGBColorSpace
-				     bytesPerRow:0
-				    bitsPerPixel:0];
-		rep.size = self.testCardSize;
+        NSBitmapImageRep *rep = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL
+                                                                        pixelsWide:(NSInteger) self.testCardSize.width
+                                                                        pixelsHigh:(NSInteger) self.testCardSize.height
+                                                                     bitsPerSample:8
+                                                                   samplesPerPixel:4
+                                                                          hasAlpha:YES
+                                                                          isPlanar:NO
+                                                                    colorSpaceName:NSCalibratedRGBColorSpace
+                                                                       bytesPerRow:0
+                                                                      bitsPerPixel:0];
+        rep.size = self.testCardSize;
 
-		double hScale =
-			placeholderImage.size.width / self.testCardSize.width;
-		double vScale =
-			placeholderImage.size.height / self.testCardSize.height;
+        double hScale = placeholderImage.size.width / self.testCardSize.width;
+        double vScale = placeholderImage.size.height / self.testCardSize.height;
 
-		double scaling = fmax(hScale, vScale);
+        double scaling = fmax(hScale, vScale);
 
-		double newWidth = placeholderImage.size.width / scaling;
-		double newHeight = placeholderImage.size.height / scaling;
+        double newWidth = placeholderImage.size.width / scaling;
+        double newHeight = placeholderImage.size.height / scaling;
 
-		double leftOffset = (self.testCardSize.width - newWidth) / 2;
-		double topOffset = (self.testCardSize.height - newHeight) / 2;
+        double leftOffset = (self.testCardSize.width - newWidth) / 2;
+        double topOffset = (self.testCardSize.height - newHeight) / 2;
 
-		[NSGraphicsContext saveGraphicsState];
-		[NSGraphicsContext
-			setCurrentContext:
-				[NSGraphicsContext
-					graphicsContextWithBitmapImageRep:rep]];
+        [NSGraphicsContext saveGraphicsState];
+        [NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithBitmapImageRep:rep]];
 
-		NSColor *backgroundColor = [NSColor blackColor];
-		[backgroundColor set];
-		NSRectFill(NSMakeRect(0, 0, self.testCardSize.width,
-				      self.testCardSize.height));
+        NSColor *backgroundColor = [NSColor blackColor];
+        [backgroundColor set];
+        NSRectFill(NSMakeRect(0, 0, self.testCardSize.width, self.testCardSize.height));
 
-		[placeholderImage drawInRect:NSMakeRect(leftOffset, topOffset,
-							newWidth, newHeight)
-				    fromRect:NSZeroRect
-				   operation:NSCompositingOperationCopy
-				    fraction:1.0];
-		[NSGraphicsContext restoreGraphicsState];
+        [placeholderImage drawInRect:NSMakeRect(leftOffset, topOffset, newWidth, newHeight) fromRect:NSZeroRect
+                           operation:NSCompositingOperationCopy
+                            fraction:1.0];
+        [NSGraphicsContext restoreGraphicsState];
 
-		NSImage *testCardImage =
-			[[NSImage alloc] initWithSize:self.testCardSize];
-		[testCardImage addRepresentation:rep];
+        NSImage *testCardImage = [[NSImage alloc] initWithSize:self.testCardSize];
+        [testCardImage addRepresentation:rep];
 
-		_testCardImage = testCardImage;
-	}
-	return _testCardImage;
+        _testCardImage = testCardImage;
+    }
+    return _testCardImage;
 }
 
-- (CMSimpleQueueRef)copyBufferQueueWithAlteredProc:
-			    (CMIODeviceStreamQueueAlteredProc)alteredProc
-				     alteredRefCon:(void *)alteredRefCon
+- (CMSimpleQueueRef)copyBufferQueueWithAlteredProc:(CMIODeviceStreamQueueAlteredProc)alteredProc
+                                     alteredRefCon:(void *)alteredRefCon
 {
-	self.alteredProc = alteredProc;
-	self.alteredRefCon = alteredRefCon;
+    self.alteredProc = alteredProc;
+    self.alteredRefCon = alteredRefCon;
 
-	// Retain this since it's a copy operation
-	CFRetain(self.queue);
+    // Retain this since it's a copy operation
+    CFRetain(self.queue);
 
-	return self.queue;
+    return self.queue;
 }
 
 - (CVPixelBufferRef)createPixelBufferWithTestAnimation
 {
-	int width = (int)self.testCardSize.width;
-	int height = (int)self.testCardSize.height;
+    int width = (int) self.testCardSize.width;
+    int height = (int) self.testCardSize.height;
 
-	NSDictionary *options = [NSDictionary
-		dictionaryWithObjectsAndKeys:
-			[NSNumber numberWithBool:YES],
-			kCVPixelBufferCGImageCompatibilityKey,
-			[NSNumber numberWithBool:YES],
-			kCVPixelBufferCGBitmapContextCompatibilityKey, nil];
-	CVPixelBufferRef pxbuffer = NULL;
-	CVReturn status = CVPixelBufferCreate(kCFAllocatorDefault, width,
-					      height, kCVPixelFormatType_32ARGB,
-					      (__bridge CFDictionaryRef)options,
-					      &pxbuffer);
+    NSDictionary *options = [NSDictionary
+        dictionaryWithObjectsAndKeys:[NSNumber numberWithBool:YES], kCVPixelBufferCGImageCompatibilityKey,
+                                     [NSNumber numberWithBool:YES], kCVPixelBufferCGBitmapContextCompatibilityKey, nil];
+    CVPixelBufferRef pxbuffer = NULL;
+    CVReturn status = CVPixelBufferCreate(kCFAllocatorDefault, width, height, kCVPixelFormatType_32ARGB,
+                                          (__bridge CFDictionaryRef) options, &pxbuffer);
 
-	NSParameterAssert(status == kCVReturnSuccess && pxbuffer != NULL);
+    NSParameterAssert(status == kCVReturnSuccess && pxbuffer != NULL);
 
-	CVPixelBufferLockBaseAddress(pxbuffer, 0);
-	void *pxdata = CVPixelBufferGetBaseAddressOfPlane(pxbuffer, 0);
-	NSParameterAssert(pxdata != NULL);
+    CVPixelBufferLockBaseAddress(pxbuffer, 0);
+    void *pxdata = CVPixelBufferGetBaseAddressOfPlane(pxbuffer, 0);
+    NSParameterAssert(pxdata != NULL);
 
-	CGColorSpaceRef rgbColorSpace = CGColorSpaceCreateDeviceRGB();
-	CGContextRef context = CGBitmapContextCreate(
-		pxdata, width, height, 8,
-		CVPixelBufferGetBytesPerRowOfPlane(pxbuffer, 0), rgbColorSpace,
-		kCGImageAlphaPremultipliedFirst | kCGImageByteOrder32Big);
-	CFRelease(rgbColorSpace);
-	NSParameterAssert(context);
+    CGColorSpaceRef rgbColorSpace = CGColorSpaceCreateDeviceRGB();
+    CGContextRef context = CGBitmapContextCreate(pxdata, width, height, 8,
+                                                 CVPixelBufferGetBytesPerRowOfPlane(pxbuffer, 0), rgbColorSpace,
+                                                 kCGImageAlphaPremultipliedFirst | kCGImageByteOrder32Big);
+    CFRelease(rgbColorSpace);
+    NSParameterAssert(context);
 
-	NSGraphicsContext *nsContext = [NSGraphicsContext
-		graphicsContextWithCGContext:context
-				     flipped:NO];
-	[NSGraphicsContext setCurrentContext:nsContext];
+    NSGraphicsContext *nsContext = [NSGraphicsContext graphicsContextWithCGContext:context flipped:NO];
+    [NSGraphicsContext setCurrentContext:nsContext];
 
-	NSRect rect = NSMakeRect(0, 0, self.testCardImage.size.width,
-				 self.testCardImage.size.height);
-	CGImageRef image = [self.testCardImage CGImageForProposedRect:&rect
-							      context:nsContext
-								hints:nil];
-	CGContextDrawImage(context,
-			   CGRectMake(0, 0, CGImageGetWidth(image),
-				      CGImageGetHeight(image)),
-			   image);
+    NSRect rect = NSMakeRect(0, 0, self.testCardImage.size.width, self.testCardImage.size.height);
+    CGImageRef image = [self.testCardImage CGImageForProposedRect:&rect context:nsContext hints:nil];
+    CGContextDrawImage(context, CGRectMake(0, 0, CGImageGetWidth(image), CGImageGetHeight(image)), image);
 
-	//	DrawDialWithFrame(
-	//		NSMakeRect(0, 0, width, height),
-	//		(int(self.fps) - self.sequenceNumber % int(self.fps)) * 360 /
-	//			int(self.fps));
+    //	DrawDialWithFrame(
+    //		NSMakeRect(0, 0, width, height),
+    //		(int(self.fps) - self.sequenceNumber % int(self.fps)) * 360 /
+    //			int(self.fps));
 
-	CGContextRelease(context);
+    CGContextRelease(context);
 
-	CVPixelBufferUnlockBaseAddress(pxbuffer, 0);
+    CVPixelBufferUnlockBaseAddress(pxbuffer, 0);
 
-	return pxbuffer;
+    return pxbuffer;
 }
 
 - (void)fillFrame
 {
-	if (CMSimpleQueueGetFullness(self.queue) >= 1.0) {
-		return;
-	}
+    if (CMSimpleQueueGetFullness(self.queue) >= 1.0) {
+        return;
+    }
 
-	CVPixelBufferRef pixelBuffer =
-		[self createPixelBufferWithTestAnimation];
+    CVPixelBufferRef pixelBuffer = [self createPixelBufferWithTestAnimation];
 
-	uint64_t hostTime = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
-	CMSampleTimingInfo timingInfo =
-		CMSampleTimingInfoForTimestamp(hostTime, (uint32_t)self.fps, 1);
+    uint64_t hostTime = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+    CMSampleTimingInfo timingInfo = CMSampleTimingInfoForTimestamp(hostTime, (uint32_t) self.fps, 1);
 
-	OSStatus err = CMIOStreamClockPostTimingEvent(
-		timingInfo.presentationTimeStamp, hostTime, true, self.clock);
-	if (err != noErr) {
-		DLog(@"CMIOStreamClockPostTimingEvent err %d", err);
-	}
+    OSStatus err = CMIOStreamClockPostTimingEvent(timingInfo.presentationTimeStamp, hostTime, true, self.clock);
+    if (err != noErr) {
+        DLog(@"CMIOStreamClockPostTimingEvent err %d", err);
+    }
 
-	CMFormatDescriptionRef format;
-	CMVideoFormatDescriptionCreateForImageBuffer(kCFAllocatorDefault,
-						     pixelBuffer, &format);
+    CMFormatDescriptionRef format;
+    CMVideoFormatDescriptionCreateForImageBuffer(kCFAllocatorDefault, pixelBuffer, &format);
 
-	self.sequenceNumber = CMIOGetNextSequenceNumber(self.sequenceNumber);
+    self.sequenceNumber = CMIOGetNextSequenceNumber(self.sequenceNumber);
 
-	CMSampleBufferRef buffer;
-	err = CMIOSampleBufferCreateForImageBuffer(
-		kCFAllocatorDefault, pixelBuffer, format, &timingInfo,
-		self.sequenceNumber, kCMIOSampleBufferNoDiscontinuities,
-		&buffer);
-	CFRelease(pixelBuffer);
-	CFRelease(format);
-	if (err != noErr) {
-		DLog(@"CMIOSampleBufferCreateForImageBuffer err %d", err);
-	}
+    CMSampleBufferRef buffer;
+    err = CMIOSampleBufferCreateForImageBuffer(kCFAllocatorDefault, pixelBuffer, format, &timingInfo,
+                                               self.sequenceNumber, kCMIOSampleBufferNoDiscontinuities, &buffer);
+    CFRelease(pixelBuffer);
+    CFRelease(format);
+    if (err != noErr) {
+        DLog(@"CMIOSampleBufferCreateForImageBuffer err %d", err);
+    }
 
-	CMSimpleQueueEnqueue(self.queue, buffer);
+    CMSimpleQueueEnqueue(self.queue, buffer);
 
-	// Inform the clients that the queue has been altered
-	if (self.alteredProc != NULL) {
-		(self.alteredProc)(self.objectId, buffer, self.alteredRefCon);
-	}
+    // Inform the clients that the queue has been altered
+    if (self.alteredProc != NULL) {
+        (self.alteredProc)(self.objectId, buffer, self.alteredRefCon);
+    }
 }
 
 - (void)queuePixelBuffer:(CVPixelBufferRef)frame
-	       timestamp:(uint64_t)timestamp
-	    fpsNumerator:(uint32_t)fpsNumerator
-	  fpsDenominator:(uint32_t)fpsDenominator
+               timestamp:(uint64_t)timestamp
+            fpsNumerator:(uint32_t)fpsNumerator
+          fpsDenominator:(uint32_t)fpsDenominator
 {
-	if (CMSimpleQueueGetFullness(self.queue) >= 1.0) {
-		DLog(@"Queue is full, bailing out");
-		return;
-	}
-	OSStatus err = noErr;
+    if (CMSimpleQueueGetFullness(self.queue) >= 1.0) {
+        DLog(@"Queue is full, bailing out");
+        return;
+    }
+    OSStatus err = noErr;
 
-	CMSampleTimingInfo timingInfo = CMSampleTimingInfoForTimestamp(
-		timestamp, fpsNumerator, fpsDenominator);
+    CMSampleTimingInfo timingInfo = CMSampleTimingInfoForTimestamp(timestamp, fpsNumerator, fpsDenominator);
 
-	err = CMIOStreamClockPostTimingEvent(
-		timingInfo.presentationTimeStamp,
-		clock_gettime_nsec_np(CLOCK_UPTIME_RAW), true, self.clock);
-	if (err != noErr) {
-		DLog(@"CMIOStreamClockPostTimingEvent err %d", err);
-	}
+    err = CMIOStreamClockPostTimingEvent(timingInfo.presentationTimeStamp, clock_gettime_nsec_np(CLOCK_UPTIME_RAW),
+                                         true, self.clock);
+    if (err != noErr) {
+        DLog(@"CMIOStreamClockPostTimingEvent err %d", err);
+    }
 
-	self.sequenceNumber = CMIOGetNextSequenceNumber(self.sequenceNumber);
+    self.sequenceNumber = CMIOGetNextSequenceNumber(self.sequenceNumber);
 
-	CMSampleBufferRef sampleBuffer;
+    CMSampleBufferRef sampleBuffer;
 
-	// Generate the video format description from that pixel buffer
-	CMVideoFormatDescriptionRef format;
-	err = CMVideoFormatDescriptionCreateForImageBuffer(kCFAllocatorDefault,
-							   frame, &format);
-	if (err != noErr) {
-		DLog(@"CMVideoFormatDescriptionCreateForImageBuffer err %d",
-		     err);
-		return;
-	}
+    // Generate the video format description from that pixel buffer
+    CMVideoFormatDescriptionRef format;
+    err = CMVideoFormatDescriptionCreateForImageBuffer(kCFAllocatorDefault, frame, &format);
+    if (err != noErr) {
+        DLog(@"CMVideoFormatDescriptionCreateForImageBuffer err %d", err);
+        return;
+    }
 
-	err = CMIOSampleBufferCreateForImageBuffer(
-		kCFAllocatorDefault, frame, format, &timingInfo,
-		self.sequenceNumber, kCMIOSampleBufferNoDiscontinuities,
-		&sampleBuffer);
+    err = CMIOSampleBufferCreateForImageBuffer(kCFAllocatorDefault, frame, format, &timingInfo, self.sequenceNumber,
+                                               kCMIOSampleBufferNoDiscontinuities, &sampleBuffer);
 
-	CFRelease(format);
+    CFRelease(format);
 
-	if (err != noErr) {
-		DLog(@"CMIOSampleBufferCreateForImageBuffer err %d", err);
-		return;
-	}
+    if (err != noErr) {
+        DLog(@"CMIOSampleBufferCreateForImageBuffer err %d", err);
+        return;
+    }
 
-	err = CMSimpleQueueEnqueue(self.queue, sampleBuffer);
+    err = CMSimpleQueueEnqueue(self.queue, sampleBuffer);
 
-	if (err != noErr) {
-		CFRelease(sampleBuffer);
+    if (err != noErr) {
+        CFRelease(sampleBuffer);
 
-		DLog(@"CMSimpleQueueEnqueue err %d", err);
-		return;
-	}
+        DLog(@"CMSimpleQueueEnqueue err %d", err);
+        return;
+    }
 
-	// Inform the clients that the queue has been altered
-	if (self.alteredProc != NULL) {
-		(self.alteredProc)(self.objectId, sampleBuffer,
-				   self.alteredRefCon);
-	}
+    // Inform the clients that the queue has been altered
+    if (self.alteredProc != NULL) {
+        (self.alteredProc)(self.objectId, sampleBuffer, self.alteredRefCon);
+    }
 }
 
 - (CMVideoFormatDescriptionRef)getFormatDescription
 {
-	CMVideoFormatDescriptionRef formatDescription;
-	OSStatus err = CMVideoFormatDescriptionCreate(
-		kCFAllocatorDefault,
-		kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange,
-		(int32_t)self.testCardSize.width,
-		(int32_t)self.testCardSize.height, NULL, &formatDescription);
-	if (err != noErr) {
-		DLog(@"Error %d from CMVideoFormatDescriptionCreate", err);
-	}
-	return formatDescription;
+    CMVideoFormatDescriptionRef formatDescription;
+    OSStatus err = CMVideoFormatDescriptionCreate(kCFAllocatorDefault, kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange,
+                                                  (int32_t) self.testCardSize.width, (int32_t) self.testCardSize.height,
+                                                  NULL, &formatDescription);
+    if (err != noErr) {
+        DLog(@"Error %d from CMVideoFormatDescriptionCreate", err);
+    }
+    return formatDescription;
 }
 
 #pragma mark - CMIOObject
 
 - (UInt32)getPropertyDataSizeWithAddress:(CMIOObjectPropertyAddress)address
-		       qualifierDataSize:(UInt32)qualifierDataSize
-			   qualifierData:(nonnull const void *)qualifierData
+                       qualifierDataSize:(UInt32)qualifierDataSize
+                           qualifierData:(nonnull const void *)qualifierData
 {
-	switch (address.mSelector) {
-	case kCMIOStreamPropertyInitialPresentationTimeStampForLinkedAndSyncedAudio:
-		return sizeof(CMTime);
-	case kCMIOStreamPropertyOutputBuffersNeededForThrottledPlayback:
-		return sizeof(UInt32);
-	case kCMIOObjectPropertyName:
-		return sizeof(CFStringRef);
-	case kCMIOObjectPropertyManufacturer:
-		return sizeof(CFStringRef);
-	case kCMIOObjectPropertyElementName:
-		return sizeof(CFStringRef);
-	case kCMIOObjectPropertyElementCategoryName:
-		return sizeof(CFStringRef);
-	case kCMIOObjectPropertyElementNumberName:
-		return sizeof(CFStringRef);
-	case kCMIOStreamPropertyDirection:
-		return sizeof(UInt32);
-	case kCMIOStreamPropertyTerminalType:
-		return sizeof(UInt32);
-	case kCMIOStreamPropertyStartingChannel:
-		return sizeof(UInt32);
-	case kCMIOStreamPropertyLatency:
-		return sizeof(UInt32);
-	case kCMIOStreamPropertyFormatDescriptions:
-		return sizeof(CFArrayRef);
-	case kCMIOStreamPropertyFormatDescription:
-		return sizeof(CMFormatDescriptionRef);
-	case kCMIOStreamPropertyFrameRateRanges:
-		return sizeof(AudioValueRange);
-	case kCMIOStreamPropertyFrameRate:
-	case kCMIOStreamPropertyFrameRates:
-		return sizeof(Float64);
-	case kCMIOStreamPropertyMinimumFrameRate:
-		return sizeof(Float64);
-	case kCMIOStreamPropertyClock:
-		return sizeof(CFTypeRef);
-	default:
-		return 0;
-	};
+    switch (address.mSelector) {
+        case kCMIOStreamPropertyInitialPresentationTimeStampForLinkedAndSyncedAudio:
+            return sizeof(CMTime);
+        case kCMIOStreamPropertyOutputBuffersNeededForThrottledPlayback:
+            return sizeof(UInt32);
+        case kCMIOObjectPropertyName:
+            return sizeof(CFStringRef);
+        case kCMIOObjectPropertyManufacturer:
+            return sizeof(CFStringRef);
+        case kCMIOObjectPropertyElementName:
+            return sizeof(CFStringRef);
+        case kCMIOObjectPropertyElementCategoryName:
+            return sizeof(CFStringRef);
+        case kCMIOObjectPropertyElementNumberName:
+            return sizeof(CFStringRef);
+        case kCMIOStreamPropertyDirection:
+            return sizeof(UInt32);
+        case kCMIOStreamPropertyTerminalType:
+            return sizeof(UInt32);
+        case kCMIOStreamPropertyStartingChannel:
+            return sizeof(UInt32);
+        case kCMIOStreamPropertyLatency:
+            return sizeof(UInt32);
+        case kCMIOStreamPropertyFormatDescriptions:
+            return sizeof(CFArrayRef);
+        case kCMIOStreamPropertyFormatDescription:
+            return sizeof(CMFormatDescriptionRef);
+        case kCMIOStreamPropertyFrameRateRanges:
+            return sizeof(AudioValueRange);
+        case kCMIOStreamPropertyFrameRate:
+        case kCMIOStreamPropertyFrameRates:
+            return sizeof(Float64);
+        case kCMIOStreamPropertyMinimumFrameRate:
+            return sizeof(Float64);
+        case kCMIOStreamPropertyClock:
+            return sizeof(CFTypeRef);
+        default:
+            return 0;
+    };
 }
 
 - (void)getPropertyDataWithAddress:(CMIOObjectPropertyAddress)address
-		 qualifierDataSize:(UInt32)qualifierDataSize
-		     qualifierData:(nonnull const void *)qualifierData
-			  dataSize:(UInt32)dataSize
-			  dataUsed:(nonnull UInt32 *)dataUsed
-			      data:(nonnull void *)data
+                 qualifierDataSize:(UInt32)qualifierDataSize
+                     qualifierData:(nonnull const void *)qualifierData
+                          dataSize:(UInt32)dataSize
+                          dataUsed:(nonnull UInt32 *)dataUsed
+                              data:(nonnull void *)data
 {
-	switch (address.mSelector) {
-	case kCMIOObjectPropertyName:
-		*static_cast<CFStringRef *>(data) = CFSTR("OBS Virtual Camera");
-		*dataUsed = sizeof(CFStringRef);
-		break;
-	case kCMIOObjectPropertyElementName:
-		*static_cast<CFStringRef *>(data) =
-			CFSTR("OBS Virtual Camera Stream Element");
-		*dataUsed = sizeof(CFStringRef);
-		break;
-	case kCMIOObjectPropertyManufacturer:
-	case kCMIOObjectPropertyElementCategoryName:
-	case kCMIOObjectPropertyElementNumberName:
-	case kCMIOStreamPropertyTerminalType:
-	case kCMIOStreamPropertyStartingChannel:
-	case kCMIOStreamPropertyLatency:
-	case kCMIOStreamPropertyInitialPresentationTimeStampForLinkedAndSyncedAudio:
-	case kCMIOStreamPropertyOutputBuffersNeededForThrottledPlayback:
-		break;
-	case kCMIOStreamPropertyDirection:
-		*static_cast<UInt32 *>(data) = 1;
-		*dataUsed = sizeof(UInt32);
-		break;
-	case kCMIOStreamPropertyFormatDescriptions:
-		*static_cast<CFArrayRef *>(
-			data) = (__bridge_retained CFArrayRef)[NSArray
-			arrayWithObject:(__bridge_transfer NSObject *)
-						[self getFormatDescription]];
-		*dataUsed = sizeof(CFArrayRef);
-		break;
-	case kCMIOStreamPropertyFormatDescription:
-		*static_cast<CMVideoFormatDescriptionRef *>(data) =
-			[self getFormatDescription];
-		*dataUsed = sizeof(CMVideoFormatDescriptionRef);
-		break;
-	case kCMIOStreamPropertyFrameRateRanges:
-		AudioValueRange range;
-		range.mMinimum = self.fps;
-		range.mMaximum = self.fps;
-		*static_cast<AudioValueRange *>(data) = range;
-		*dataUsed = sizeof(AudioValueRange);
-		break;
-	case kCMIOStreamPropertyFrameRate:
-	case kCMIOStreamPropertyFrameRates:
-		*static_cast<Float64 *>(data) = self.fps;
-		*dataUsed = sizeof(Float64);
-		break;
-	case kCMIOStreamPropertyMinimumFrameRate:
-		*static_cast<Float64 *>(data) = self.fps;
-		*dataUsed = sizeof(Float64);
-		break;
-	case kCMIOStreamPropertyClock:
-		*static_cast<CFTypeRef *>(data) = self.clock;
-		// This one was incredibly tricky and cost me many hours to find. It seems that DAL expects
-		// the clock to be retained when returned. It's unclear why, and that seems inconsistent
-		// with other properties that don't have the same behavior. But this is what Apple's sample
-		// code does.
-		// https://github.com/lvsti/CoreMediaIO-DAL-Example/blob/0392cb/Sources/Extras/CoreMediaIO/DeviceAbstractionLayer/Devices/DP/Properties/CMIO_DP_Property_Clock.cpp#L75
-		CFRetain(*static_cast<CFTypeRef *>(data));
-		*dataUsed = sizeof(CFTypeRef);
-		break;
-	default:
-		*dataUsed = 0;
-	};
+    switch (address.mSelector) {
+        case kCMIOObjectPropertyName:
+            *static_cast<CFStringRef *>(data) = CFSTR("OBS Virtual Camera");
+            *dataUsed = sizeof(CFStringRef);
+            break;
+        case kCMIOObjectPropertyElementName:
+            *static_cast<CFStringRef *>(data) = CFSTR("OBS Virtual Camera Stream Element");
+            *dataUsed = sizeof(CFStringRef);
+            break;
+        case kCMIOObjectPropertyManufacturer:
+        case kCMIOObjectPropertyElementCategoryName:
+        case kCMIOObjectPropertyElementNumberName:
+        case kCMIOStreamPropertyTerminalType:
+        case kCMIOStreamPropertyStartingChannel:
+        case kCMIOStreamPropertyLatency:
+        case kCMIOStreamPropertyInitialPresentationTimeStampForLinkedAndSyncedAudio:
+        case kCMIOStreamPropertyOutputBuffersNeededForThrottledPlayback:
+            break;
+        case kCMIOStreamPropertyDirection:
+            *static_cast<UInt32 *>(data) = 1;
+            *dataUsed = sizeof(UInt32);
+            break;
+        case kCMIOStreamPropertyFormatDescriptions:
+            *static_cast<CFArrayRef *>(data) = (__bridge_retained CFArrayRef)
+                [NSArray arrayWithObject:(__bridge_transfer NSObject *) [self getFormatDescription]];
+            *dataUsed = sizeof(CFArrayRef);
+            break;
+        case kCMIOStreamPropertyFormatDescription:
+            *static_cast<CMVideoFormatDescriptionRef *>(data) = [self getFormatDescription];
+            *dataUsed = sizeof(CMVideoFormatDescriptionRef);
+            break;
+        case kCMIOStreamPropertyFrameRateRanges:
+            AudioValueRange range;
+            range.mMinimum = self.fps;
+            range.mMaximum = self.fps;
+            *static_cast<AudioValueRange *>(data) = range;
+            *dataUsed = sizeof(AudioValueRange);
+            break;
+        case kCMIOStreamPropertyFrameRate:
+        case kCMIOStreamPropertyFrameRates:
+            *static_cast<Float64 *>(data) = self.fps;
+            *dataUsed = sizeof(Float64);
+            break;
+        case kCMIOStreamPropertyMinimumFrameRate:
+            *static_cast<Float64 *>(data) = self.fps;
+            *dataUsed = sizeof(Float64);
+            break;
+        case kCMIOStreamPropertyClock:
+            *static_cast<CFTypeRef *>(data) = self.clock;
+            // This one was incredibly tricky and cost me many hours to find. It seems that DAL expects
+            // the clock to be retained when returned. It's unclear why, and that seems inconsistent
+            // with other properties that don't have the same behavior. But this is what Apple's sample
+            // code does.
+            // https://github.com/lvsti/CoreMediaIO-DAL-Example/blob/0392cb/Sources/Extras/CoreMediaIO/DeviceAbstractionLayer/Devices/DP/Properties/CMIO_DP_Property_Clock.cpp#L75
+            CFRetain(*static_cast<CFTypeRef *>(data));
+            *dataUsed = sizeof(CFTypeRef);
+            break;
+        default:
+            *dataUsed = 0;
+    };
 }
 
 - (BOOL)hasPropertyWithAddress:(CMIOObjectPropertyAddress)address
 {
-	switch (address.mSelector) {
-	case kCMIOObjectPropertyName:
-	case kCMIOObjectPropertyElementName:
-	case kCMIOStreamPropertyFormatDescriptions:
-	case kCMIOStreamPropertyFormatDescription:
-	case kCMIOStreamPropertyFrameRateRanges:
-	case kCMIOStreamPropertyFrameRate:
-	case kCMIOStreamPropertyFrameRates:
-	case kCMIOStreamPropertyMinimumFrameRate:
-	case kCMIOStreamPropertyClock:
-		return true;
-	case kCMIOObjectPropertyManufacturer:
-	case kCMIOObjectPropertyElementCategoryName:
-	case kCMIOObjectPropertyElementNumberName:
-	case kCMIOStreamPropertyDirection:
-	case kCMIOStreamPropertyTerminalType:
-	case kCMIOStreamPropertyStartingChannel:
-	case kCMIOStreamPropertyLatency:
-	case kCMIOStreamPropertyInitialPresentationTimeStampForLinkedAndSyncedAudio:
-	case kCMIOStreamPropertyOutputBuffersNeededForThrottledPlayback:
-		DLog(@"TODO: %@",
-		     [OBSDALObjectStore
-			     StringFromPropertySelector:address.mSelector]);
-		return false;
-	default:
-		return false;
-	};
+    switch (address.mSelector) {
+        case kCMIOObjectPropertyName:
+        case kCMIOObjectPropertyElementName:
+        case kCMIOStreamPropertyFormatDescriptions:
+        case kCMIOStreamPropertyFormatDescription:
+        case kCMIOStreamPropertyFrameRateRanges:
+        case kCMIOStreamPropertyFrameRate:
+        case kCMIOStreamPropertyFrameRates:
+        case kCMIOStreamPropertyMinimumFrameRate:
+        case kCMIOStreamPropertyClock:
+            return true;
+        case kCMIOObjectPropertyManufacturer:
+        case kCMIOObjectPropertyElementCategoryName:
+        case kCMIOObjectPropertyElementNumberName:
+        case kCMIOStreamPropertyDirection:
+        case kCMIOStreamPropertyTerminalType:
+        case kCMIOStreamPropertyStartingChannel:
+        case kCMIOStreamPropertyLatency:
+        case kCMIOStreamPropertyInitialPresentationTimeStampForLinkedAndSyncedAudio:
+        case kCMIOStreamPropertyOutputBuffersNeededForThrottledPlayback:
+            DLog(@"TODO: %@", [OBSDALObjectStore StringFromPropertySelector:address.mSelector]);
+            return false;
+        default:
+            return false;
+    };
 }
 
 - (BOOL)isPropertySettableWithAddress:(CMIOObjectPropertyAddress)address
 {
-	switch (address.mSelector) {
-	case kCMIOStreamPropertyFormatDescription:
-	case kCMIOStreamPropertyFrameRate:
-		// Suppress error logs complaining about the application not being able to set the desired format or frame rate.
-		return true;
-	default:
-		return false;
-	}
+    switch (address.mSelector) {
+        case kCMIOStreamPropertyFormatDescription:
+        case kCMIOStreamPropertyFrameRate:
+            // Suppress error logs complaining about the application not being able to set the desired format or frame rate.
+            return true;
+        default:
+            return false;
+    }
 }
 
 - (void)setPropertyDataWithAddress:(CMIOObjectPropertyAddress)address
-		 qualifierDataSize:(UInt32)qualifierDataSize
-		     qualifierData:(nonnull const void *)qualifierData
-			  dataSize:(UInt32)dataSize
-			      data:(nonnull const void *)data
-{
-}
+                 qualifierDataSize:(UInt32)qualifierDataSize
+                     qualifierData:(nonnull const void *)qualifierData
+                          dataSize:(UInt32)dataSize
+                              data:(nonnull const void *)data
+{}
 
 @end

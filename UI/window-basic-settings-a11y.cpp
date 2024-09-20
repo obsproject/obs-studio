@@ -50,6 +50,7 @@ void OBSBasicSettings::LoadA11ySettings(bool presetChange)
 {
 	config_t *config = GetGlobalConfig();
 
+	loading = true;
 	if (!presetChange) {
 		preset = config_get_int(config, "Accessibility", "ColorPreset");
 
@@ -107,6 +108,8 @@ void OBSBasicSettings::LoadA11ySettings(bool presetChange)
 	}
 
 	UpdateA11yColors();
+
+	loading = false;
 }
 
 void OBSBasicSettings::SaveA11ySettings()
@@ -133,26 +136,25 @@ void OBSBasicSettings::SaveA11ySettings()
 	main->RefreshVolumeColors();
 }
 
-#define SetStyle(label, colorVal)                                             \
-	color = color_from_int(colorVal);                                     \
-	color.setAlpha(255);                                                  \
-	palette = QPalette(color);                                            \
-	label->setFrameStyle(QFrame::Sunken | QFrame::Panel);                 \
-	label->setText(color.name(QColor::HexRgb));                           \
-	label->setPalette(palette);                                           \
-	label->setStyleSheet(QString("background-color: %1; color: %2;")      \
-				     .arg(palette.color(QPalette::Window)     \
-						  .name(QColor::HexRgb))      \
-				     .arg(palette.color(QPalette::WindowText) \
-						  .name(QColor::HexRgb)));    \
-	label->setAutoFillBackground(true);                                   \
+static void SetStyle(QLabel *label, uint32_t colorVal)
+{
+	QColor color = color_from_int(colorVal);
+	color.setAlpha(255);
+	QPalette palette = QPalette(color);
+	label->setFrameStyle(QFrame::Sunken | QFrame::Panel);
+	label->setText(color.name(QColor::HexRgb));
+	label->setPalette(palette);
+	label->setStyleSheet(QString("background-color: %1; color: %2;")
+				     .arg(palette.color(QPalette::Window)
+						  .name(QColor::HexRgb))
+				     .arg(palette.color(QPalette::WindowText)
+						  .name(QColor::HexRgb)));
+	label->setAutoFillBackground(true);
 	label->setAlignment(Qt::AlignCenter);
+}
 
 void OBSBasicSettings::UpdateA11yColors()
 {
-	QPalette palette;
-	QColor color;
-
 	SetStyle(ui->color1, selectRed);
 	SetStyle(ui->color2, selectGreen);
 	SetStyle(ui->color3, selectBlue);

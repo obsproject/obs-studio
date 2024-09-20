@@ -1,15 +1,14 @@
 {
     "dependencies": {
         "prebuilt": {
-            "version": "2023-08-31sl1",
+            "version": "2024-09-10v4",
             "baseUrl": "https://obs-studio-deployment.s3-us-west-2.amazonaws.com",
             "label": "Pre-Built obs-deps",
             "hashes": {
-                "macos-x86_64": "E450C64D6C02CA8C4BFD822F7C4E8601CDD5FC4DE4AFDA2F8C184306F460A301",
-                "macos-arm64": "32FABD48C5D4C889AA110981D98DE126EFDD09B53F872A2ACB33850E00AED9DE",
-                "macos-universal": "CA432F903C3604ACC7EA6DFD7609EAD801A50D0C0BAA845B5B0D981CCC54F0BB",
-                "windows-x64": "c13a14a1acc4224b21304d97b63da4121de1ed6981297e50496fbc474abc0503",
-                "linux-x86_64": "056425a8a7a4a0c242ed5ab9c1eba4dd6b004386877de4304524e7bea11c0ee2"
+                "macos-x86_64": "2af70b15cb55a8e04745427dd713eec410016f1222dde614cbc23037dfe9bda5",
+                "macos-arm64": "498bc517c474f45dfd84c645213df05663c839b0a264a903a62d10d9384d1fa1",
+                "macos-universal": "233eb864c5b6827a1704af9af4fbd536e2bfda61716caed3727514f10595fd6e",
+                "windows-x64": "2c09490bffb8f896cf4ce8db4e50779455705d7566b3662c76a37d20866d2397"
             }
         },
         "qt6": {
@@ -17,13 +16,13 @@
             "baseUrl": "https://obs-studio-deployment.s3-us-west-2.amazonaws.com",
             "label": "Pre-Built Qt6",
             "hashes": {
-                "macos-x86_64": "4E531A98F67DEF5A578265D01CC1B4AACBD2DF40016833DCB7C75FDBE3E2DBD9",
-                "macos-arm64": "07838B282F9669D27224A1CBF3A139EB7A0B5A76CCCC9D9D20CCB9C469A9DBD8",
-                "macos-universal": "4E34FB948B36C43B93E026EE1C0E71D01948F09C2C536300F4B0EDB3E7638F03",
-                "windows-x64": "4d39364b8a8dee5aa24fcebd8440d5c22bb4551c6b440ffeacce7d61f2ed1add"
+                "macos-x86_64": "82118c65905ba373849c56682d8a0da3e7d4f83a9c22be5a3dfef29a20a7e152",
+                "macos-arm64": "72460fbc0875b75c9d605454434d9fcfc23a47cc23b3592215047fa6a555a222",
+                "macos-universal": "b53ec9b86c95e0883d7ba920cf87a5f86c00db4da36fe9316e375e2c1e61149b",
+                "windows-x64": "b91f0d0ea2ebbbd006a5a1a0bf82a0ffaec24282cfe75a095c3a4ba4b47f7714"
             },
             "debugSymbols": {
-                "windows-x64": "f34ee5067be19ed370268b15c53684b7b8aaa867dc800b68931df905d679e31f"
+                "windows-x64": "7400a4d195e16d0220d43c1cc296c6ff288118826b34ac4c74a1e069c9b1ea68"
             }
         },
         "cef": {

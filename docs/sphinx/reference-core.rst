@@ -340,6 +340,8 @@ Libobs Objects
    Increments the source reference counter, use
    :c:func:`obs_source_release()` to release it when complete.
 
+   .. versionadded:: 29.1
+
 ---------------------
 
 .. function:: obs_source_t *obs_get_transition_by_name(const char *name)
@@ -357,6 +359,8 @@ Libobs Objects
 
    Increments the source reference counter, use
    :c:func:`obs_source_release()` to release it when complete.
+
+   .. versionadded:: 29.1
 
 ---------------------
 
@@ -536,6 +540,14 @@ Video, Audio, and Graphics
 
 ---------------------
 
+.. function:: void obs_reset_audio_monitoring(void)
+
+   Resets all audio monitoring devices.
+
+   .. versionadded:: 30.1
+
+---------------------
+
 .. function:: void obs_enum_audio_monitoring_devices(obs_enum_audio_device_cb cb, void *data)
 
    Enumerates audio devices which can be used for audio monitoring.
@@ -579,6 +591,8 @@ Video, Audio, and Graphics
 
    Adds/removes a main rendered callback.  Allows using the result of
    the main stream/recording output.
+
+   .. versionadded:: 29.1
 
 ---------------------
 
@@ -681,6 +695,22 @@ Core OBS Signals
 **source_volume** (ptr source, in out float volume)
 
    Called when a source's volume has changed.
+
+**source_audio_activate** (ptr source)
+
+   Called when a source's audio becomes active.
+
+**source_audio_deactivate** (ptr source)
+
+   Called when a source's audio becomes inactive.
+
+**source_filter_add** (ptr source, ptr filter)
+
+   Called when a filter is added to a source.
+
+**source_filter_remove** (ptr source, ptr filter)
+
+   Called when a filter is removed from a source.
 
 **source_transition_start** (ptr source)
 
@@ -883,6 +913,16 @@ Views
 
 .. function:: bool obs_view_get_video_info(obs_view_t *view, struct obs_video_info *ovi)
 
-   Gets the video settings currently in use for this view context.
+   Gets the video settings of the first matching mix currently in use for this view context.
 
    :return: *false* if no video
+
+   .. deprecated:: 3X.X
+
+---------------------
+
+.. function:: void obs_view_enum_video_info(obs_view_t *view, bool (*enum_proc)(void *, struct obs_video_info *), void *param)
+
+   Enumerates all the video info of all mixes that use the specified mix.
+
+   .. versionadded:: 30.1

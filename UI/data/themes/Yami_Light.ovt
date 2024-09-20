@@ -1,0 +1,313 @@
+@OBSThemeMeta {
+    name: 'Light';
+    id: 'com.obsproject.Yami.Light';
+    extends: 'com.obsproject.Yami';
+    author: 'Warchamp7';
+    dark: 'false';
+}
+
+@OBSThemeVars {
+    --grey1: rgb(140,140,140);
+    --grey2: rgb(254,254,254);
+    --grey3: rgb(254,254,254);
+    --grey4: rgb(243,243,243);
+    --grey5: rgb(236,236,236);
+    --grey6: rgb(229,229,229);
+    --grey7: rgb(211,211,211);
+    --grey8: rgb(193,193,193);
+
+    --primary: rgb(140,181,255);
+    --primary_light: rgb(178,207,255);
+    --primary_dark: rgb(22,31,65);
+
+    --bg_window: var(--grey7);
+    --bg_base: var(--grey6);
+    --bg_preview: var(--grey8);
+
+    --text: var(--black1);
+    --text_light: var(--black3);
+    --text_muted: var(--black4);
+
+    --text_disabled: var(--text_muted);
+    --text_inactive: var(--text_light);
+
+    --input_bg_hover: var(--grey3);
+    --input_bg_focus: var(--grey3);
+
+    --separator_hover: var(--black1);
+}
+
+VolumeMeter {
+    qproperty-backgroundNominalColor: rgb(66,112,24);
+    qproperty-backgroundWarningColor: rgb(112,91,28);
+    qproperty-backgroundErrorColor: rgb(112,39,53);
+    qproperty-foregroundNominalColor: rgb(115,189,49);
+    qproperty-foregroundWarningColor: rgb(189,144,9);
+    qproperty-foregroundErrorColor: rgb(189,47,73);
+    qproperty-magnitudeColor: rgb(0,0,0);
+    qproperty-majorTickColor: palette(text);
+    qproperty-minorTickColor: palette(light);
+}
+
+QMenu::right-arrow {
+    image: url(theme:Light/expand.svg);
+}
+
+QDockWidget {
+    titlebar-close-icon: url(theme:Light/close.svg);
+    titlebar-normal-icon: url(theme:Light/popout.svg);
+}
+
+QPushButton#sourcePropertiesButton {
+    qproperty-icon: url(theme:Light/settings/general.svg);
+}
+
+QPushButton#sourceFiltersButton {
+    qproperty-icon: url(theme:Light/filter.svg);
+}
+
+* [themeID="addIconSmall"] {
+    qproperty-icon: url(theme:Light/plus.svg);
+}
+
+* [themeID="removeIconSmall"] {
+    qproperty-icon: url(theme:Light/trash.svg);
+}
+
+* [themeID="clearIconSmall"] {
+    qproperty-icon: url(theme:Light/entry-clear.svg);
+}
+
+* [themeID="propertiesIconSmall"] {
+    qproperty-icon: url(theme:Light/settings/general.svg);
+}
+
+* [themeID="configIconSmall"] {
+    qproperty-icon: url(theme:Light/settings/general.svg);
+}
+
+* [themeID="menuIconSmall"] {
+    qproperty-icon: url(theme:Light/dots-vert.svg);
+}
+
+* [themeID="refreshIconSmall"] {
+    qproperty-icon: url(theme:Light/refresh.svg);
+}
+
+* [themeID="cogsIcon"] {
+    qproperty-icon: url(theme:Light/cogs.svg);
+}
+
+#sourceInteractButton {
+    qproperty-icon: url(theme:Light/interact.svg);
+}
+
+* [themeID="upArrowIconSmall"] {
+    qproperty-icon: url(theme:Light/up.svg);
+}
+
+* [themeID="downArrowIconSmall"] {
+    qproperty-icon: url(theme:Light/down.svg);
+}
+
+* [themeID="pauseIconSmall"] {
+    qproperty-icon: url(theme:Light/media-pause.svg);
+}
+
+* [themeID="filtersIcon"] {
+    qproperty-icon: url(theme:Light/filter.svg);
+}
+
+QToolBarExtension {
+    qproperty-icon: url(theme:Light/dots-vert.svg);
+}
+
+QComboBox::down-arrow,
+QDateTimeEdit::down-arrow {
+    image: url(theme:Light/collapse.svg);
+}
+
+QComboBox::down-arrow:editable,
+QDateTimeEdit::down-arrow:editable {
+    image: url(theme:Light/collapse.svg);
+}
+
+QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {
+    image: url(theme:Light/up.svg);
+}
+
+QSpinBox::down-arrow, QDoubleSpinBox::down-arrow {
+    image: url(theme:Light/down.svg);
+}
+
+QPushButton::menu-indicator {
+    image: url(theme:Light/down.svg);
+}
+
+OBSBasicSettings {
+    qproperty-generalIcon: url(theme:Light/settings/general.svg);
+    qproperty-appearanceIcon: url(theme:Light/settings/appearance.svg);
+    qproperty-streamIcon: url(theme:Light/settings/stream.svg);
+    qproperty-outputIcon: url(theme:Light/settings/output.svg);
+    qproperty-audioIcon: url(theme:Light/settings/audio.svg);
+    qproperty-videoIcon: url(theme:Light/settings/video.svg);
+    qproperty-hotkeysIcon: url(theme:Light/settings/hotkeys.svg);
+    qproperty-accessibilityIcon: url(theme:Light/settings/accessibility.svg);
+    qproperty-advancedIcon: url(theme:Light/settings/advanced.svg);
+}
+
+QCheckBox::indicator:unchecked,
+QGroupBox::indicator:unchecked {
+    image: url(theme:Light/checkbox_unchecked.svg);
+}
+
+QCheckBox::indicator:unchecked:hover,
+QGroupBox::indicator:unchecked:hover {
+    image: url(theme:Light/checkbox_unchecked_focus.svg);
+}
+
+QCheckBox::indicator:checked,
+QGroupBox::indicator:checked {
+    image: url(theme:Light/checkbox_checked.svg);
+}
+
+QCheckBox::indicator:checked:hover,
+QGroupBox::indicator:checked:hover {
+    image: url(theme:Light/checkbox_checked_focus.svg);
+}
+
+QCheckBox::indicator:checked:disabled,
+QGroupBox::indicator:checked:disabled {
+    image: url(theme:Light/checkbox_checked_disabled.svg);
+}
+
+QCheckBox::indicator:unchecked:disabled,
+QGroupBox::indicator:unchecked:disabled {
+    image: url(theme:Light/checkbox_unchecked_disabled.svg);
+}
+
+QCheckBox[lockCheckBox=true]::indicator:checked,
+QCheckBox[lockCheckBox=true]::indicator:checked:hover {
+    image: url(theme:Light/locked.svg);
+}
+
+QCheckBox[visibilityCheckBox=true]::indicator:checked,
+QCheckBox[visibilityCheckBox=true]::indicator:checked:hover {
+    image: url(theme:Light/visible.svg);
+}
+
+* [themeID="revertIcon"] {
+    qproperty-icon: url(theme:Light/revert.svg);
+}
+
+MuteCheckBox::indicator:checked {
+    image: url(theme:Light/mute.svg);
+}
+
+MuteCheckBox::indicator:unchecked {
+    image: url(theme:Light/settings/audio.svg);
+}
+
+MuteCheckBox::indicator:unchecked:hover {
+    image: url(theme:Light/settings/audio.svg);
+}
+
+MuteCheckBox::indicator:unchecked:focus {
+    image: url(theme:Light/settings/audio.svg);
+}
+
+MuteCheckBox::indicator:checked:hover {
+    image: url(theme:Light/mute.svg);
+}
+
+MuteCheckBox::indicator:checked:focus {
+    image: url(theme:Light/mute.svg);
+}
+
+MuteCheckBox::indicator:checked:disabled {
+    image: url(theme:Light/mute.svg);
+}
+
+MuteCheckBox::indicator:unchecked:disabled {
+    image: url(theme:Light/settings/audio.svg);
+}
+
+QCheckBox[sourceTreeSubItem=true]::indicator:checked,
+QCheckBox[sourceTreeSubItem=true]::indicator:checked:hover {
+    image: url(theme:Light/expand.svg);
+}
+
+QCheckBox[sourceTreeSubItem=true]::indicator:unchecked,
+QCheckBox[sourceTreeSubItem=true]::indicator:unchecked:hover {
+    image: url(theme:Light/collapse.svg);
+}
+
+/* Source Icons */
+OBSBasic {
+    qproperty-imageIcon: url(theme:Light/sources/image.svg);
+    qproperty-colorIcon: url(theme:Light/sources/brush.svg);
+    qproperty-slideshowIcon: url(theme:Light/sources/slideshow.svg);
+    qproperty-audioInputIcon: url(theme:Light/sources/microphone.svg);
+    qproperty-audioOutputIcon: url(theme:Light/settings/audio.svg);
+    qproperty-desktopCapIcon: url(theme:Light/settings/video.svg);
+    qproperty-windowCapIcon: url(theme:Light/sources/window.svg);
+    qproperty-gameCapIcon: url(theme:Light/sources/gamepad.svg);
+    qproperty-cameraIcon: url(theme:Light/sources/camera.svg);
+    qproperty-textIcon: url(theme:Light/sources/text.svg);
+    qproperty-mediaIcon: url(theme:Light/sources/media.svg);
+    qproperty-browserIcon: url(theme:Light/sources/globe.svg);
+    qproperty-groupIcon: url(theme:Light/sources/group.svg);
+    qproperty-sceneIcon: url(theme:Light/sources/scene.svg);
+    qproperty-defaultIcon: url(theme:Light/sources/default.svg);
+    qproperty-audioProcessOutputIcon: url(theme:Light/sources/windowaudio.svg);
+}
+
+* [themeID="replayIconSmall"] {
+    qproperty-icon: url(theme:Light/save.svg);
+}
+
+/* Media icons */
+* [themeID="playIcon"] {
+    qproperty-icon: url(theme:Light/media/media_play.svg);
+}
+
+* [themeID="pauseIcon"] {
+    qproperty-icon: url(theme:Light/media/media_pause.svg);
+}
+
+* [themeID="restartIcon"] {
+    qproperty-icon: url(theme:Light/media/media_restart.svg);
+}
+
+* [themeID="stopIcon"] {
+    qproperty-icon: url(theme:Light/media/media_stop.svg);
+}
+
+* [themeID="nextIcon"] {
+    qproperty-icon: url(theme:Light/media/media_next.svg);
+}
+
+* [themeID="previousIcon"] {
+    qproperty-icon: url(theme:Light/media/media_previous.svg);
+}
+
+/* YouTube Integration */
+OBSYoutubeActions {
+    qproperty-thumbPlaceholder: url(theme:Light/sources/image.svg);
+}
+
+QDateTimeEdit::down-arrow {
+    image: url(theme:Light/down.svg);
+}
+
+#qt_calendar_monthbutton::menu-indicator {
+    image: url(theme:Light/down.svg);
+}
+
+QCalendarWidget #qt_calendar_prevmonth {
+    qproperty-icon: url(theme:Light/left.svg);
+}
+
+QCalendarWidget #qt_calendar_nextmonth {
+    qproperty-icon: url(theme:Light/right.svg);
+}

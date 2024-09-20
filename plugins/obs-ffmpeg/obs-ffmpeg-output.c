@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 ******************************************************************************/
 
 #include <obs-module.h>
-#include <util/circlebuf.h>
+#include <util/deque.h>
 #include <util/threading.h>
 #include <util/dstr.h>
 #include <util/darray.h>
@@ -163,9 +163,7 @@ static bool open_video_codec(struct ffmpeg_data *data)
 		return false;
 	}
 
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
 	avcodec_parameters_from_context(data->video->codecpar, context);
-#endif
 
 	return true;
 }
@@ -202,43 +200,6 @@ static bool create_video_stream(struct ffmpeg_data *data)
 			data->config.video_encoder))
 		return false;
 
-	const enum AVColorTransferCharacteristic trc = data->config.color_trc;
-	const bool pq = trc == AVCOL_TRC_SMPTE2084;
-	const bool hlg = trc == AVCOL_TRC_ARIB_STD_B67;
-	if (pq || hlg) {
-		const int hdr_nominal_peak_level =
-			pq ? (int)obs_get_video_hdr_nominal_peak_level()
-			   : (hlg ? 1000 : 0);
-
-		size_t content_size;
-		AVContentLightMetadata *const content =
-			av_content_light_metadata_alloc(&content_size);
-		content->MaxCLL = hdr_nominal_peak_level;
-		content->MaxFALL = hdr_nominal_peak_level;
-		av_stream_add_side_data(data->video,
-					AV_PKT_DATA_CONTENT_LIGHT_LEVEL,
-					(uint8_t *)content, content_size);
-
-		AVMasteringDisplayMetadata *const mastering =
-			av_mastering_display_metadata_alloc();
-		mastering->display_primaries[0][0] = av_make_q(17, 25);
-		mastering->display_primaries[0][1] = av_make_q(8, 25);
-		mastering->display_primaries[1][0] = av_make_q(53, 200);
-		mastering->display_primaries[1][1] = av_make_q(69, 100);
-		mastering->display_primaries[2][0] = av_make_q(3, 20);
-		mastering->display_primaries[2][1] = av_make_q(3, 50);
-		mastering->white_point[0] = av_make_q(3127, 10000);
-		mastering->white_point[1] = av_make_q(329, 1000);
-		mastering->min_luminance = av_make_q(0, 1);
-		mastering->max_luminance = av_make_q(hdr_nominal_peak_level, 1);
-		mastering->has_primaries = 1;
-		mastering->has_luminance = 1;
-		av_stream_add_side_data(data->video,
-					AV_PKT_DATA_MASTERING_DISPLAY_METADATA,
-					(uint8_t *)mastering,
-					sizeof(*mastering));
-	}
-
 	closest_format = data->config.format;
 	if (data->vcodec->pix_fmts) {
 		const int has_alpha = closest_format == AV_PIX_FMT_BGRA;
@@ -247,11 +208,7 @@ static bool create_video_stream(struct ffmpeg_data *data)
 			NULL);
 	}
 
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
 	context = avcodec_alloc_context3(data->vcodec);
-#else
-	context = data->video->codec;
-#endif
 	context->bit_rate = (int64_t)data->config.video_bitrate * 1000;
 	context->width = data->config.scale_width;
 	context->height = data->config.scale_height;
@@ -270,14 +227,68 @@ static bool create_video_stream(struct ffmpeg_data *data)
 	context->thread_count = 0;
 
 	data->video->time_base = context->time_base;
+	data->video->avg_frame_rate = (AVRational){ovi.fps_num, ovi.fps_den};
 
 	if (data->output->oformat->flags & AVFMT_GLOBALHEADER)
-		context->flags |= CODEC_FLAG_GLOBAL_H;
+		context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
 	data->video_ctx = context;
 
 	if (!open_video_codec(data))
 		return false;
+
+	const enum AVColorTransferCharacteristic trc = data->config.color_trc;
+	const bool pq = trc == AVCOL_TRC_SMPTE2084;
+	const bool hlg = trc == AVCOL_TRC_ARIB_STD_B67;
+	if (pq || hlg) {
+		const int hdr_nominal_peak_level =
+			pq ? (int)obs_get_video_hdr_nominal_peak_level()
+			   : (hlg ? 1000 : 0);
+
+		size_t content_size;
+		AVContentLightMetadata *const content =
+			av_content_light_metadata_alloc(&content_size);
+		content->MaxCLL = hdr_nominal_peak_level;
+		content->MaxFALL = hdr_nominal_peak_level;
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 31, 102)
+		av_stream_add_side_data(data->video,
+					AV_PKT_DATA_CONTENT_LIGHT_LEVEL,
+					(uint8_t *)content, content_size);
+#else
+		av_packet_side_data_add(
+			&data->video->codecpar->coded_side_data,
+			&data->video->codecpar->nb_coded_side_data,
+			AV_PKT_DATA_CONTENT_LIGHT_LEVEL, (uint8_t *)content,
+			content_size, 0);
+#endif
+
+		AVMasteringDisplayMetadata *const mastering =
+			av_mastering_display_metadata_alloc();
+		mastering->display_primaries[0][0] = av_make_q(17, 25);
+		mastering->display_primaries[0][1] = av_make_q(8, 25);
+		mastering->display_primaries[1][0] = av_make_q(53, 200);
+		mastering->display_primaries[1][1] = av_make_q(69, 100);
+		mastering->display_primaries[2][0] = av_make_q(3, 20);
+		mastering->display_primaries[2][1] = av_make_q(3, 50);
+		mastering->white_point[0] = av_make_q(3127, 10000);
+		mastering->white_point[1] = av_make_q(329, 1000);
+		mastering->min_luminance = av_make_q(0, 1);
+		mastering->max_luminance = av_make_q(hdr_nominal_peak_level, 1);
+		mastering->has_primaries = 1;
+		mastering->has_luminance = 1;
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 31, 102)
+		av_stream_add_side_data(data->video,
+					AV_PKT_DATA_MASTERING_DISPLAY_METADATA,
+					(uint8_t *)mastering,
+					sizeof(*mastering));
+#else
+		av_packet_side_data_add(
+			&data->video->codecpar->coded_side_data,
+			&data->video->codecpar->nb_coded_side_data,
+			AV_PKT_DATA_MASTERING_DISPLAY_METADATA,
+			(uint8_t *)mastering, sizeof(*mastering), 0);
+#endif
+	}
 
 	if (context->pix_fmt != data->config.format ||
 	    data->config.width != data->config.scale_width ||
@@ -340,10 +351,8 @@ static bool open_audio_codec(struct ffmpeg_data *data, int idx)
 		return false;
 	}
 
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
 	avcodec_parameters_from_context(data->audio_infos[idx].stream->codecpar,
 					context);
-#endif
 
 	return true;
 }
@@ -365,11 +374,7 @@ static bool create_audio_stream(struct ffmpeg_data *data, int idx)
 			data->config.audio_encoder))
 		return false;
 
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
 	context = avcodec_alloc_context3(data->acodec);
-#else
-	context = stream->codec;
-#endif
 	context->bit_rate = (int64_t)data->config.audio_bitrate * 1000;
 	context->time_base = (AVRational){1, aoi.samples_per_sec};
 #if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(57, 24, 100)
@@ -401,10 +406,15 @@ static bool create_audio_stream(struct ffmpeg_data *data, int idx)
 	data->audio_size = get_audio_size(data->audio_format, aoi.speakers, 1);
 
 	if (data->output->oformat->flags & AVFMT_GLOBALHEADER)
-		context->flags |= CODEC_FLAG_GLOBAL_H;
+		context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
 	data->audio_infos[idx].stream = stream;
 	data->audio_infos[idx].ctx = context;
+
+	if (data->config.audio_stream_names[idx] &&
+	    *data->config.audio_stream_names[idx] != '\0')
+		av_dict_set(&stream->metadata, "title",
+			    data->config.audio_stream_names[idx], 0);
 
 	return open_audio_codec(data, idx);
 }
@@ -512,7 +522,7 @@ static void close_audio(struct ffmpeg_data *data)
 {
 	for (int idx = 0; idx < data->num_audio_streams; idx++) {
 		for (size_t i = 0; i < MAX_AV_PLANES; i++)
-			circlebuf_free(&data->excess_frames[idx][i]);
+			deque_free(&data->excess_frames[idx][i]);
 
 		if (data->samples[idx][0])
 			av_freep(&data->samples[idx][0]);
@@ -596,9 +606,6 @@ bool ffmpeg_data_init(struct ffmpeg_data *data, struct ffmpeg_cfg *config)
 	if (!config->url || !*config->url)
 		return false;
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
-	av_register_all();
-#endif
 	avformat_network_init();
 
 	is_rtmp = (astrcmpi_n(config->url, "rtmp://", 7) == 0);
@@ -795,63 +802,43 @@ static void receive_video(void *param, struct video_data *frame)
 
 	packet = av_packet_alloc();
 
-#if LIBAVFORMAT_VERSION_MAJOR < 58
-	if (data->output->flags & AVFMT_RAWPICTURE) {
-		packet->flags |= AV_PKT_FLAG_KEY;
-		packet->stream_index = data->video->index;
-		packet->data = data->vframe->data[0];
-		packet->size = sizeof(AVPicture);
+	data->vframe->pts = data->total_frames;
+	ret = avcodec_send_frame(context, data->vframe);
+	if (ret == 0)
+		ret = avcodec_receive_packet(context, packet);
+
+	got_packet = (ret == 0);
+
+	if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN))
+		ret = 0;
+
+	if (ret < 0) {
+		blog(LOG_WARNING,
+		     "receive_video: Error encoding "
+		     "video: %s",
+		     av_err2str(ret));
+		//FIXME: stop the encode with an error
+		goto fail;
+	}
+
+	if (!ret && got_packet && packet->size) {
+		packet->pts = rescale_ts(packet->pts, context,
+					 data->video->time_base);
+		packet->dts = rescale_ts(packet->dts, context,
+					 data->video->time_base);
+		packet->duration = (int)av_rescale_q(packet->duration,
+						     context->time_base,
+						     data->video->time_base);
 
 		pthread_mutex_lock(&output->write_mutex);
 		da_push_back(output->packets, &packet);
 		packet = NULL;
 		pthread_mutex_unlock(&output->write_mutex);
 		os_sem_post(output->write_sem);
-
 	} else {
-#endif
-		data->vframe->pts = data->total_frames;
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 40, 101)
-		ret = avcodec_send_frame(context, data->vframe);
-		if (ret == 0)
-			ret = avcodec_receive_packet(context, packet);
-
-		got_packet = (ret == 0);
-
-		if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN))
-			ret = 0;
-#else
-	ret = avcodec_encode_video2(context, packet, data->vframe, &got_packet);
-#endif
-		if (ret < 0) {
-			blog(LOG_WARNING,
-			     "receive_video: Error encoding "
-			     "video: %s",
-			     av_err2str(ret));
-			//FIXME: stop the encode with an error
-			goto fail;
-		}
-
-		if (!ret && got_packet && packet->size) {
-			packet->pts = rescale_ts(packet->pts, context,
-						 data->video->time_base);
-			packet->dts = rescale_ts(packet->dts, context,
-						 data->video->time_base);
-			packet->duration = (int)av_rescale_q(
-				packet->duration, context->time_base,
-				data->video->time_base);
-
-			pthread_mutex_lock(&output->write_mutex);
-			da_push_back(output->packets, &packet);
-			packet = NULL;
-			pthread_mutex_unlock(&output->write_mutex);
-			os_sem_post(output->write_sem);
-		} else {
-			ret = 0;
-		}
-#if LIBAVFORMAT_VERSION_MAJOR < 58
+		ret = 0;
 	}
-#endif
+
 	if (ret != 0) {
 		blog(LOG_WARNING, "receive_video: Error writing video: %s",
 		     av_err2str(ret));
@@ -901,7 +888,6 @@ static void encode_audio(struct ffmpeg_output *output, int idx,
 
 	packet = av_packet_alloc();
 
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 40, 101)
 	ret = avcodec_send_frame(context, data->aframe[idx]);
 	if (ret == 0)
 		ret = avcodec_receive_packet(context, packet);
@@ -910,10 +896,7 @@ static void encode_audio(struct ffmpeg_output *output, int idx,
 
 	if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN))
 		ret = 0;
-#else
-	ret = avcodec_encode_audio2(context, packet, data->aframe[idx],
-				    &got_packet);
-#endif
+
 	if (ret < 0) {
 		blog(LOG_WARNING, "encode_audio: Error encoding audio: %s",
 		     av_err2str(ret));
@@ -985,15 +968,14 @@ static void receive_audio(void *param, size_t mix_idx, struct audio_data *frame)
 	frame_size_bytes = (size_t)data->frame_size * data->audio_size;
 
 	for (size_t i = 0; i < data->audio_planes; i++)
-		circlebuf_push_back(&data->excess_frames[track_order][i],
-				    in.data[i], in.frames * data->audio_size);
+		deque_push_back(&data->excess_frames[track_order][i],
+				in.data[i], in.frames * data->audio_size);
 
 	while (data->excess_frames[track_order][0].size >= frame_size_bytes) {
 		for (size_t i = 0; i < data->audio_planes; i++)
-			circlebuf_pop_front(
-				&data->excess_frames[track_order][i],
-				data->samples[track_order][i],
-				frame_size_bytes);
+			deque_pop_front(&data->excess_frames[track_order][i],
+					data->samples[track_order][i],
+					frame_size_bytes);
 
 		encode_audio(output, track_order, context, data->audio_size);
 	}
@@ -1196,6 +1178,27 @@ static bool try_connect(struct ffmpeg_output *output)
 
 	config.fps_den = voi->fps_den;
 	config.fps_num = voi->fps_num;
+
+	obs_data_array_t *audioNames =
+		obs_data_get_array(settings, "audio_names");
+	if (audioNames) {
+		for (size_t i = 0, idx = 0; i < MAX_AUDIO_MIXES; i++) {
+			if ((config.audio_tracks & (1 << i)) == 0)
+				continue;
+
+			obs_data_t *item_data =
+				obs_data_array_item(audioNames, i);
+			config.audio_stream_names[idx] =
+				obs_data_get_string(item_data, "name");
+			obs_data_release(item_data);
+
+			idx++;
+		}
+		obs_data_array_release(audioNames);
+	} else {
+		for (int idx = 0; idx < config.audio_mix_count; idx++)
+			config.audio_stream_names[idx] = NULL;
+	}
 
 	success = ffmpeg_data_init(&output->ff_data, &config);
 	obs_data_release(settings);

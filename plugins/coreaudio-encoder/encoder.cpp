@@ -112,6 +112,7 @@ struct ca_encoder {
 
 	uint64_t total_samples = 0;
 	uint64_t samples_per_second = 0;
+	uint32_t priming_samples = 0;
 
 	vector<uint8_t> extra_data;
 
@@ -125,7 +126,7 @@ struct ca_encoder {
 };
 typedef struct ca_encoder ca_encoder;
 
-}
+} // namespace
 
 namespace std {
 
@@ -152,7 +153,7 @@ template<> struct default_delete<remove_pointer<AudioConverterRef>::type> {
 	}
 };
 
-}
+} // namespace std
 
 template<typename T>
 using cf_ptr = unique_ptr<typename remove_pointer<T>::type>;
@@ -595,6 +596,11 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 		ca->converter, kAudioConverterCurrentOutputStreamDescription,
 		&size, &out));
 
+	AudioConverterPrimeInfo primeInfo;
+	size = sizeof(primeInfo);
+	STATUS_CHECK(AudioConverterGetProperty(
+		ca->converter, kAudioConverterPrimeInfo, &size, &primeInfo));
+
 	/*
 	 * Fix channel map differences between CoreAudio AAC, FFmpeg, Wav
 	 * New channel mappings below assume 2.1, 4.0, 4.1, 5.1, 7.1 resp.
@@ -649,6 +655,7 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 	ca->in_bytes_required = ca->in_packets * ca->in_frame_size;
 
 	ca->out_frames_per_packet = out.mFramesPerPacket;
+	ca->priming_samples = primeInfo.leadingFrames;
 
 	ca->output_buffer_size = out.mBytesPerPacket;
 
@@ -770,11 +777,12 @@ static bool aac_encode(void *data, struct encoder_frame *frame,
 	if (!(*received_packet = packets > 0))
 		return true;
 
-	packet->pts = ca->total_samples;
-	packet->dts = ca->total_samples;
+	packet->pts = ca->total_samples - ca->priming_samples;
+	packet->dts = ca->total_samples - ca->priming_samples;
 	packet->timebase_num = 1;
 	packet->timebase_den = (uint32_t)ca->samples_per_second;
 	packet->type = OBS_ENCODER_AUDIO;
+	packet->keyframe = true;
 	packet->size = out_desc.mDataByteSize;
 	packet->data = (uint8_t *)buffer_list.mBuffers[0].mData +
 		       out_desc.mStartOffset;
@@ -1408,8 +1416,7 @@ bool obs_module_load(void)
 	CA_LOG(LOG_INFO, "Adding CoreAudio AAC encoder");
 #endif
 
-	struct obs_encoder_info aac_info {
-	};
+	struct obs_encoder_info aac_info {};
 	aac_info.id = "CoreAudio_AAC";
 	aac_info.type = OBS_ENCODER_AUDIO;
 	aac_info.codec = "aac";

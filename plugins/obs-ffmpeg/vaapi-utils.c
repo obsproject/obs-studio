@@ -99,6 +99,7 @@ VADisplay vaapi_open_device(int *fd, const char *device_path,
 	if (va_status != VA_STATUS_SUCCESS) {
 		blog(LOG_ERROR, "VAAPI: Failed to initialize display in %s",
 		     func_name);
+		vaapi_close_device(fd, va_dpy);
 		return NULL;
 	}
 
@@ -128,7 +129,6 @@ static uint32_t vaapi_display_ep_combo_rate_controls(VAProfile profile,
 						     VADisplay dpy,
 						     const char *device_path)
 {
-	bool ret = false;
 	VAStatus va_status;
 	VAConfigAttrib attrib[1];
 	attrib->type = VAConfigAttribRateControl;
@@ -180,6 +180,37 @@ bool vaapi_device_rc_supported(VAProfile profile, VADisplay dpy, uint32_t rc,
 	ret = vaapi_display_ep_combo_rate_controls(
 		profile, VAEntrypointEncSliceLP, dpy, device_path);
 	if (ret & rc)
+		return true;
+
+	return false;
+}
+
+static bool vaapi_display_ep_bframe_supported(VAProfile profile,
+					      VAEntrypoint entrypoint,
+					      VADisplay dpy)
+{
+	VAStatus va_status;
+	VAConfigAttrib attrib[1];
+	attrib->type = VAConfigAttribEncMaxRefFrames;
+
+	va_status = vaGetConfigAttributes(dpy, profile, entrypoint, attrib, 1);
+
+	if (va_status == VA_STATUS_SUCCESS &&
+	    attrib->value != VA_ATTRIB_NOT_SUPPORTED)
+		return attrib->value >> 16;
+
+	return false;
+}
+
+bool vaapi_device_bframe_supported(VAProfile profile, VADisplay dpy)
+{
+	bool ret = vaapi_display_ep_bframe_supported(profile,
+						     VAEntrypointEncSlice, dpy);
+	if (ret)
+		return true;
+	ret = vaapi_display_ep_bframe_supported(profile, VAEntrypointEncSliceLP,
+						dpy);
+	if (ret)
 		return true;
 
 	return false;
@@ -259,6 +290,61 @@ const char *vaapi_get_h264_default_device()
 	}
 
 	return default_h264_device;
+}
+
+bool vaapi_display_av1_supported(VADisplay dpy, const char *device_path)
+{
+	bool ret = false;
+
+	CHECK_PROFILE(ret, VAProfileAV1Profile0, dpy, device_path);
+
+	if (!ret) {
+		CHECK_PROFILE_LP(ret, VAProfileAV1Profile0, dpy, device_path);
+	}
+
+	return ret;
+}
+
+bool vaapi_device_av1_supported(const char *device_path)
+{
+	bool ret = false;
+	VADisplay va_dpy;
+
+	int drm_fd = -1;
+
+	va_dpy = vaapi_open_device(&drm_fd, device_path,
+				   "vaapi_device_av1_supported");
+	if (!va_dpy)
+		return false;
+
+	ret = vaapi_display_av1_supported(va_dpy, device_path);
+
+	vaapi_close_device(&drm_fd, va_dpy);
+
+	return ret;
+}
+
+const char *vaapi_get_av1_default_device()
+{
+	static const char *default_av1_device = NULL;
+
+	if (!default_av1_device) {
+		bool ret = false;
+		char path[32] = "/dev/dri/renderD1";
+		for (int i = 28;; i++) {
+			sprintf(path, "/dev/dri/renderD1%d", i);
+			if (access(path, F_OK) != 0)
+				break;
+
+			ret = vaapi_device_av1_supported(path);
+			if (ret) {
+				default_av1_device = strdup(path);
+				break;
+			}
+		}
+	}
+
+	return default_av1_device;
 }
 
 #ifdef ENABLE_HEVC

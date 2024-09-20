@@ -20,6 +20,10 @@ target_sources(
           flv-mux.c
           flv-mux.h
           flv-output.c
+          mp4-mux-internal.h
+          mp4-mux.c
+          mp4-mux.h
+          mp4-output.c
           net-if.c
           net-if.h
           null-output.c
@@ -51,7 +55,7 @@ if(ENABLE_HEVC)
   target_sources(obs-outputs PRIVATE rtmp-hevc.c rtmp-hevc.h)
 endif()
 
-target_link_libraries(obs-outputs PRIVATE OBS::libobs)
+target_link_libraries(obs-outputs PRIVATE OBS::libobs OBS::happy-eyeballs OBS::opts-parser)
 
 set_target_properties(obs-outputs PROPERTIES FOLDER "plugins" PREFIX "")
 
@@ -127,6 +131,7 @@ if(FTL_FOUND)
 
 elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ftl-sdk/CMakeLists.txt")
   find_package(CURL REQUIRED)
+  find_package(Jansson 2.5 REQUIRED)
   obs_status(ENABLED "ftl ouputs (bundled ftl-sdk)")
 
   target_compile_definitions(obs-outputs PRIVATE FTL_STATIC_COMPILE)

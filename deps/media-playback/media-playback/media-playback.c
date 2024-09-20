@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -83,6 +83,23 @@ void media_playback_stop(media_playback_t *mp)
 		mp_cache_stop(&mp->cache);
 	else
 		mp_media_stop(&mp->media);
+}
+
+void media_playback_set_looping(media_playback_t *mp, bool looping)
+{
+	if (mp->is_cached)
+		mp->cache.looping = looping;
+	else
+		mp->media.looping = looping;
+}
+
+void media_playback_set_is_linear_alpha(media_playback_t *mp,
+					bool is_linear_alpha)
+{
+	if (mp->is_cached)
+		mp->cache.m.is_linear_alpha = is_linear_alpha;
+	else
+		mp->media.is_linear_alpha = is_linear_alpha;
 }
 
 void media_playback_preload_frame(media_playback_t *mp)

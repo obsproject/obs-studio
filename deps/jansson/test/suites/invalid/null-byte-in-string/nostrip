@@ -1,2 +1,0 @@
-The embedded NULL byte breaks json_loads(), which is used instead of
-json_loadf() in the stripped tests.

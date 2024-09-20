@@ -53,6 +53,8 @@ private:
 	OBSSignal mixersSignal;
 	OBSSignal activateSignal;
 	OBSSignal deactivateSignal;
+	OBSSignal audioActivateSignal;
+	OBSSignal audioDeactivateSignal;
 	OBSSignal balChangedSignal;
 	OBSSignal renameSignal;
 
@@ -93,11 +95,5 @@ public slots:
 	void balanceChanged(int val);
 	void syncOffsetChanged(int milliseconds);
 	void monitoringTypeChanged(int index);
-	void mixer1Changed(bool checked);
-	void mixer2Changed(bool checked);
-	void mixer3Changed(bool checked);
-	void mixer4Changed(bool checked);
-	void mixer5Changed(bool checked);
-	void mixer6Changed(bool checked);
 	void ResetBalance();
 };

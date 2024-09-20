@@ -223,7 +223,8 @@ function(export_target target)
     PUBLIC_HEADER DESTINATION "${OBS_INCLUDE_DESTINATION}"
                   COMPONENT obs_libraries)
 
-  if(MSVC)
+  get_target_property(target_type ${target} TYPE)
+  if(MSVC AND NOT target_type STREQUAL INTERFACE_LIBRARY)
     install(
       FILES $<TARGET_PDB_FILE:${target}>
       CONFIGURATIONS "RelWithDebInfo" "Debug"

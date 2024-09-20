@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -25,7 +25,8 @@ extern "C" {
 
 EXPORT const char *device_get_name(void);
 EXPORT int device_get_type(void);
-EXPORT bool device_enum_adapters(bool (*callback)(void *param, const char *name,
+EXPORT bool device_enum_adapters(gs_device_t *device,
+				 bool (*callback)(void *param, const char *name,
 						  uint32_t id),
 				 void *param);
 EXPORT const char *device_preprocessor_name(void);
@@ -179,6 +180,8 @@ EXPORT void device_debug_marker_begin(gs_device_t *device,
 EXPORT void device_debug_marker_end(gs_device_t *device);
 EXPORT bool device_is_monitor_hdr(gs_device_t *device, void *monitor);
 EXPORT bool device_shared_texture_available(void);
+EXPORT bool device_nv12_available(gs_device_t *device);
+EXPORT bool device_p010_available(gs_device_t *device);
 
 #ifdef __APPLE__
 EXPORT gs_texture_t *device_texture_create_from_iosurface(gs_device_t *device,

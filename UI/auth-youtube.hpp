@@ -21,6 +21,7 @@ private:
 	QHBoxLayout *chatLayout;
 
 public:
+	YoutubeChatDock(const QString &title);
 	void SetWidget(QCefWidget *widget_);
 	void SetApiChatId(const std::string &id);
 
@@ -43,7 +44,7 @@ class YoutubeAuth : public OAuthStreamKey {
 	std::string section;
 
 #ifdef BROWSER_AVAILABLE
-	YoutubeChatDock *chat;
+	YoutubeChatDock *chat = nullptr;
 #endif
 
 	virtual bool RetryLogin() override;

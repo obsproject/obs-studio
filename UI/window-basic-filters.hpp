@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2015 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -87,11 +87,7 @@ private slots:
 	void ReorderFilters();
 	void RenameAsyncFilter();
 	void RenameEffectFilter();
-	void DuplicateAsyncFilter();
-	void DuplicateEffectFilter();
 	void ResetFilters();
-
-	void AddFilterFromAction();
 
 	void on_addAsyncFilter_clicked();
 	void on_removeAsyncFilter_clicked();
@@ -115,11 +111,12 @@ private slots:
 
 	void on_actionRenameFilter_triggered();
 
-	void AsyncFilterNameEdited(QWidget *editor);
-	void EffectFilterNameEdited(QWidget *editor);
-
 	void CopyFilter();
 	void PasteFilter();
+
+	void FiltersMoved(const QModelIndex &srcParent, int srcIdxStart,
+			  int srcIdxEnd, const QModelIndex &dstParent,
+			  int dstIdx);
 
 public:
 	OBSBasicFilters(QWidget *parent, OBSSource source_);
@@ -135,11 +132,6 @@ public:
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 	virtual bool nativeEvent(const QByteArray &eventType, void *message,
 				 qintptr *result) override;
-#else
-	virtual bool nativeEvent(const QByteArray &eventType, void *message,
-				 long *result) override;
-#endif
 };

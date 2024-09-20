@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -21,6 +21,12 @@
 #include <graphics/vec3.h>
 #include <graphics/matrix3.h>
 #include <graphics/matrix4.h>
+#include <util/platform.h>
+#include <util/util.hpp>
+
+#include <filesystem>
+#include <fstream>
+#include <d3dcompiler.h>
 
 void gs_vertex_shader::GetBuffersExpected(
 	const vector<D3D11_INPUT_ELEMENT_DESC> &inputs)
@@ -200,35 +206,118 @@ void gs_shader::BuildConstantBuffer()
 		gs_shader_set_default(&params[i]);
 }
 
+static uint64_t fnv1a_hash(const char *str, size_t len)
+{
+	const uint64_t FNV_OFFSET = 14695981039346656037ULL;
+	const uint64_t FNV_PRIME = 1099511628211ULL;
+	uint64_t hash = FNV_OFFSET;
+	for (size_t i = 0; i < len; i++) {
+		hash ^= (uint64_t)str[i];
+		hash *= FNV_PRIME;
+	}
+	return hash;
+}
+
 void gs_shader::Compile(const char *shaderString, const char *file,
 			const char *target, ID3D10Blob **shader)
 {
 	ComPtr<ID3D10Blob> errorsBlob;
 	HRESULT hr;
 
+	bool is_cached = false;
+	char hashstr[20];
+
 	if (!shaderString)
 		throw "No shader string specified";
 
-	hr = device->d3dCompile(shaderString, strlen(shaderString), file, NULL,
-				NULL, "main", target,
-				D3D10_SHADER_OPTIMIZATION_LEVEL1, 0, shader,
+	size_t shaderStrLen = strlen(shaderString);
+	uint64_t hash = fnv1a_hash(shaderString, shaderStrLen);
+	snprintf(hashstr, sizeof(hashstr), "%02llx", hash);
+
+	BPtr program_data =
+		os_get_program_data_path_ptr("obs-studio/shader-cache");
+	auto cachePath = filesystem::u8path(program_data.Get()) / hashstr;
+	// Increment if on-disk format changes
+	cachePath += ".v2";
+
+	std::fstream cacheFile;
+	cacheFile.exceptions(fstream::badbit | fstream::eofbit);
+
+	if (filesystem::exists(cachePath) && !filesystem::is_empty(cachePath))
+		cacheFile.open(cachePath, ios::in | ios::binary | ios::ate);
+
+	if (cacheFile.is_open()) {
+		uint64_t checksum;
+
+		try {
+			streampos len = cacheFile.tellg();
+			// Not enough data for checksum + shader
+			if (len <= sizeof(checksum))
+				throw length_error("File truncated");
+
+			cacheFile.seekg(0, ios::beg);
+
+			len -= sizeof(checksum);
+			D3DCreateBlob(len, shader);
+			cacheFile.read((char *)(*shader)->GetBufferPointer(),
+				       len);
+			uint64_t calculated_checksum = fnv1a_hash(
+				(char *)(*shader)->GetBufferPointer(), len);
+
+			cacheFile.read((char *)&checksum, sizeof(checksum));
+			if (calculated_checksum != checksum)
+				throw exception("Checksum mismatch");
+
+			is_cached = true;
+		} catch (const exception &e) {
+			// Something went wrong reading the cache file, delete it
+			blog(LOG_WARNING,
+			     "Loading shader cache file failed with \"%s\": %s",
+			     e.what(), file);
+			cacheFile.close();
+			filesystem::remove(cachePath);
+		}
+	}
+
+	if (!is_cached) {
+		hr = D3DCompile(shaderString, shaderStrLen, file, NULL, NULL,
+				"main", target,
+				D3D10_SHADER_OPTIMIZATION_LEVEL3, 0, shader,
 				errorsBlob.Assign());
-	if (FAILED(hr)) {
-		if (errorsBlob != NULL && errorsBlob->GetBufferSize())
-			throw ShaderError(errorsBlob, hr);
-		else
-			throw HRError("Failed to compile shader", hr);
+		if (FAILED(hr)) {
+			if (errorsBlob != NULL && errorsBlob->GetBufferSize())
+				throw ShaderError(errorsBlob, hr);
+			else
+				throw HRError("Failed to compile shader", hr);
+		}
+
+		cacheFile.open(cachePath, ios::out | ios::binary);
+		if (cacheFile.is_open()) {
+			try {
+				uint64_t calculated_checksum = fnv1a_hash(
+					(char *)(*shader)->GetBufferPointer(),
+					(*shader)->GetBufferSize());
+
+				cacheFile.write(
+					(char *)(*shader)->GetBufferPointer(),
+					(*shader)->GetBufferSize());
+				cacheFile.write((char *)&calculated_checksum,
+						sizeof(calculated_checksum));
+			} catch (const exception &e) {
+				blog(LOG_WARNING,
+				     "Writing shader cache file failed with \"%s\": %s",
+				     e.what(), file);
+				cacheFile.close();
+				filesystem::remove(cachePath);
+			}
+		}
 	}
 
 #ifdef DISASSEMBLE_SHADERS
 	ComPtr<ID3D10Blob> asmBlob;
 
-	if (!device->d3dDisassemble)
-		return;
-
-	hr = device->d3dDisassemble((*shader)->GetBufferPointer(),
-				    (*shader)->GetBufferSize(), 0, nullptr,
-				    &asmBlob);
+	hr = D3DDisassemble((*shader)->GetBufferPointer(),
+			    (*shader)->GetBufferSize(), 0, nullptr, &asmBlob);
 
 	if (SUCCEEDED(hr) && !!asmBlob && asmBlob->GetBufferSize()) {
 		blog(LOG_INFO, "=============================================");

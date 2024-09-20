@@ -271,7 +271,8 @@ obs_properties_t *alsa_get_properties(void *unused)
 					  OBS_COMBO_TYPE_LIST,
 					  OBS_COMBO_FORMAT_STRING);
 
-	obs_property_list_add_string(devices, "Default", "default");
+	obs_property_list_add_string(devices, obs_module_text("Default"),
+				     "default");
 
 	obs_properties_add_text(props, "custom_pcm", obs_module_text("PCM"),
 				OBS_TEXT_DEFAULT);
@@ -316,18 +317,25 @@ obs_properties_t *alsa_get_properties(void *unused)
 		obs_property_list_add_string(devices, descr, name);
 
 	next:
-		if (name != NULL)
-			free(name), name = NULL;
+		if (name != NULL) {
+			free(name);
+			name = NULL;
+		}
 
-		if (descr != NULL)
-			free(descr), descr = NULL;
+		if (descr != NULL) {
+			free(descr);
+			descr = NULL;
+		}
 
-		if (io != NULL)
-			free(io), io = NULL;
+		if (io != NULL) {
+			free(io);
+			io = NULL;
+		}
 
 		++hint;
 	}
-	obs_property_list_add_string(devices, "Custom", "__custom__");
+	obs_property_list_add_string(devices, obs_module_text("Custom"),
+				     "__custom__");
 
 	snd_device_name_free_hint(hints);
 
@@ -410,11 +418,14 @@ void _alsa_close(struct alsa_data *data)
 
 	if (data->handle) {
 		snd_pcm_drop(data->handle);
-		snd_pcm_close(data->handle), data->handle = NULL;
+		snd_pcm_close(data->handle);
+		data->handle = NULL;
 	}
 
-	if (data->buffer)
-		bfree(data->buffer), data->buffer = NULL;
+	if (data->buffer) {
+		bfree(data->buffer);
+		data->buffer = NULL;
+	}
 }
 
 bool _alsa_configure(struct alsa_data *data)

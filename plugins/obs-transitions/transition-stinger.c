@@ -87,6 +87,8 @@ static void stinger_update(void *data, obs_data_t *settings)
 	obs_data_set_bool(media_settings, "full_decode", preload);
 	obs_data_set_bool(media_settings, "is_stinger", true);
 	obs_data_set_int(media_settings, "volume", volume);
+	obs_data_set_bool(media_settings, "is_track_matte",
+			  s->track_matte_enabled);
 
 	obs_source_release(s->media_source);
 	struct dstr name;
@@ -871,6 +873,13 @@ static obs_properties_t *stinger_properties(void *data)
 		p, obs_module_text("TransitionPointTypeFrame"), TIMING_FRAME);
 
 	obs_property_set_modified_callback(p, transition_point_type_modified);
+
+	obs_properties_add_bool(ppts, "hw_decode",
+				obs_module_text("HardwareDecode"));
+	p = obs_properties_add_bool(ppts, "preload",
+				    obs_module_text("PreloadVideoToRam"));
+	obs_property_set_long_description(
+		p, obs_module_text("PreloadVideoToRam.Description"));
 
 	obs_properties_add_bool(ppts, "hw_decode",
 				obs_module_text("HardwareDecode"));

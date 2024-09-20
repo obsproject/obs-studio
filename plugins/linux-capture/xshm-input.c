@@ -180,7 +180,7 @@ static int_fast32_t xshm_update_geometry(struct xshm_data *data)
 static const char *xshm_getname(void *unused)
 {
 	UNUSED_PARAMETER(unused);
-	return obs_module_text("X11SharedMemoryScreenInput");
+	return obs_module_text("X11SharedMemoryDisplayInput");
 }
 
 /**
@@ -376,8 +376,8 @@ static bool xshm_server_changed(obs_properties_t *props, obs_property_t *p,
 		}
 
 		dstr_printf(&screen_info,
-			    "Screen %s (%" PRIuFAST32 "x%" PRIuFAST32
-			    " @ %" PRIuFAST32 ",%" PRIuFAST32 ")",
+			    "%s (%" PRIuFAST32 "x%" PRIuFAST32 " @ %" PRIuFAST32
+			    ",%" PRIuFAST32 ")",
 			    name, w, h, x, y);
 
 		if (name != name_tmp)
@@ -390,7 +390,7 @@ static bool xshm_server_changed(obs_properties_t *props, obs_property_t *p,
 
 	/* handle missing screen */
 	if (old_screen + 1 > count) {
-		dstr_printf(&screen_info, "Screen %" PRIuFAST32 " (not found)",
+		dstr_printf(&screen_info, "Display %" PRIuFAST32 " (not found)",
 			    old_screen);
 		size_t index = obs_property_list_add_int(
 			screens, screen_info.array, old_screen);
@@ -415,7 +415,7 @@ static obs_properties_t *xshm_properties(void *vptr)
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *prop;
 
-	obs_properties_add_list(props, "screen", obs_module_text("Screen"),
+	obs_properties_add_list(props, "screen", obs_module_text("Display"),
 				OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_properties_add_bool(props, "show_cursor",
 				obs_module_text("CaptureCursor"));

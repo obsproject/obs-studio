@@ -251,7 +251,7 @@ void TwitchAuth::LoadUI()
 	QSize size = main->frameSize();
 	QPoint pos = main->pos();
 
-	BrowserDock *chat = new BrowserDock();
+	BrowserDock *chat = new BrowserDock(QTStr("Auth.Chat"));
 	chat->setObjectName(TWITCH_CHAT_DOCK_NAME);
 	chat->resize(300, 600);
 	chat->setMinimumSize(200, 300);
@@ -340,7 +340,7 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	url += name;
 	url += "/stream-manager/edit-stream-info";
 
-	BrowserDock *info = new BrowserDock();
+	BrowserDock *info = new BrowserDock(QTStr("Auth.StreamInfo"));
 	info->setObjectName(TWITCH_INFO_DOCK_NAME);
 	info->resize(300, 650);
 	info->setMinimumSize(200, 300);
@@ -359,7 +359,7 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	url += name;
 	url += "/dashboard/live/stats";
 
-	BrowserDock *stats = new BrowserDock();
+	BrowserDock *stats = new BrowserDock(QTStr("TwitchAuth.Stats"));
 	stats->setObjectName(TWITCH_STATS_DOCK_NAME);
 	stats->resize(200, 250);
 	stats->setMinimumSize(200, 150);
@@ -379,7 +379,7 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	url += "/stream-manager/activity-feed";
 	url += "?uuid=" + uuid;
 
-	BrowserDock *feed = new BrowserDock();
+	BrowserDock *feed = new BrowserDock(QTStr("TwitchAuth.Feed"));
 	feed->setObjectName(TWITCH_FEED_DOCK_NAME);
 	feed->resize(300, 650);
 	feed->setMinimumSize(200, 300);

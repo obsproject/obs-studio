@@ -2,6 +2,7 @@ project(obs-ffmpeg)
 
 option(ENABLE_FFMPEG_LOGGING "Enables obs-ffmpeg logging" OFF)
 option(ENABLE_NEW_MPEGTS_OUTPUT "Use native SRT/RIST mpegts output" ON)
+option(ENABLE_NATIVE_NVENC "Use native NVENC implementation" ON)
 
 find_package(
   FFmpeg REQUIRED
@@ -18,8 +19,8 @@ add_library(OBS::ffmpeg ALIAS obs-ffmpeg)
 
 add_subdirectory(ffmpeg-mux)
 if(ENABLE_NEW_MPEGTS_OUTPUT)
-  find_package(Librist QUIET)
-  find_package(Libsrt QUIET)
+  find_package(Librist)
+  find_package(Libsrt)
 
   if(NOT TARGET Librist::Librist AND NOT TARGET Libsrt::Libsrt)
     obs_status(
@@ -42,6 +43,7 @@ target_sources(
           obs-ffmpeg-av1.c
           obs-ffmpeg-nvenc.c
           obs-ffmpeg-output.c
+          obs-ffmpeg-output.h
           obs-ffmpeg-mux.c
           obs-ffmpeg-mux.h
           obs-ffmpeg-hls-mux.c
@@ -83,6 +85,7 @@ set_target_properties(obs-ffmpeg PROPERTIES FOLDER "plugins/obs-ffmpeg" PREFIX "
 
 if(OS_WINDOWS)
   find_package(AMF 1.4.29 REQUIRED)
+  find_package(FFnvcodec 12 REQUIRED)
 
   add_subdirectory(obs-amf-test)
   add_subdirectory(obs-nvenc-test)
@@ -90,7 +93,7 @@ if(OS_WINDOWS)
   if(MSVC)
     target_link_libraries(obs-ffmpeg PRIVATE OBS::w32-pthreads)
   endif()
-  target_link_libraries(obs-ffmpeg PRIVATE AMF::AMF)
+  target_link_libraries(obs-ffmpeg PRIVATE AMF::AMF FFnvcodec::FFnvcodec)
 
   set(MODULE_DESCRIPTION "OBS FFmpeg module")
   configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in obs-ffmpeg.rc)
@@ -99,17 +102,25 @@ if(OS_WINDOWS)
     obs-ffmpeg
     PRIVATE texture-amf.cpp
             texture-amf-opts.hpp
-            jim-nvenc.c
-            jim-nvenc.h
-            jim-nvenc-helpers.c
-            jim-nvenc-ver.h
+            obs-nvenc.c
+            obs-nvenc.h
+            obs-nvenc-helpers.c
+            obs-nvenc-ver.h
             obs-ffmpeg.rc)
 
 elseif(OS_POSIX AND NOT OS_MACOS)
   find_package(Libva REQUIRED)
   find_package(Libpci REQUIRED)
+  find_package(Libdrm REQUIRED)
   target_sources(obs-ffmpeg PRIVATE obs-ffmpeg-vaapi.c vaapi-utils.c vaapi-utils.h)
-  target_link_libraries(obs-ffmpeg PRIVATE Libva::va Libva::drm LIBPCI::LIBPCI)
+  target_link_libraries(obs-ffmpeg PRIVATE Libva::va Libva::drm LIBPCI::LIBPCI Libdrm::Libdrm)
+
+  if(ENABLE_NATIVE_NVENC)
+    find_package(FFnvcodec 12.0.0.0...<12.2.0.0 REQUIRED)
+    target_sources(obs-ffmpeg PRIVATE obs-nvenc.c obs-nvenc.h obs-nvenc-helpers.c obs-nvenc-ver.h)
+    target_link_libraries(obs-ffmpeg PRIVATE FFnvcodec::FFnvcodec OBS::obsglad)
+    target_compile_definitions(obs-ffmpeg PRIVATE NVCODEC_AVAILABLE)
+  endif()
 endif()
 
 setup_plugin_target(obs-ffmpeg)

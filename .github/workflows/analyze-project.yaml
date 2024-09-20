@@ -1,0 +1,40 @@
+name: Analyze Project
+on:
+  workflow_call:
+jobs:
+  windows:
+    name: Windows 🪟 (PVS-Studio)
+    runs-on: windows-2022
+    if: github.repository_owner == 'obsproject'
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Build OBS Studio 🧱
+        uses: ./.github/actions/build-obs
+        env:
+          TWITCH_CLIENTID: ${{ secrets.TWITCH_CLIENT_ID }}
+          TWITCH_HASH: ${{ secrets.TWITCH_HASH }}
+          RESTREAM_CLIENTID: ${{ secrets.RESTREAM_CLIENTID }}
+          RESTREAM_HASH: ${{ secrets.RESTREAM_HASH }}
+          YOUTUBE_CLIENTID: ${{ secrets.YOUTUBE_CLIENTID }}
+          YOUTUBE_CLIENTID_HASH: ${{ secrets.YOUTUBE_CLIENTID_HASH }}
+          YOUTUBE_SECRET: ${{ secrets.YOUTUBE_SECRET }}
+          YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
+          GPU_PRIORITY_VAL: ${{ secrets.GPU_PRIORITY_VAL }}
+        with:
+          target: x64
+          config: Debug
+
+      - name: Run PVS-Studio Analysis
+        uses: ./.github/actions/windows-analysis
+        with:
+          pvsUsername: ${{ secrets.PVS_NAME }}
+          pvsKey: ${{ secrets.PVS_KEY }}
+          target: x64
+          config: Debug

@@ -21,78 +21,33 @@ void SliderIgnoreScroll::wheelEvent(QWheelEvent *event)
 		QSlider::wheelEvent(event);
 }
 
-VolumeSlider::VolumeSlider(obs_fader_t *fader, QWidget *parent)
-	: SliderIgnoreScroll(parent)
+void SliderIgnoreClick::mousePressEvent(QMouseEvent *event)
 {
-	fad = fader;
-}
-
-VolumeSlider::VolumeSlider(obs_fader_t *fader, Qt::Orientation orientation,
-			   QWidget *parent)
-	: SliderIgnoreScroll(orientation, parent)
-{
-	fad = fader;
-}
-
-VolumeAccessibleInterface::VolumeAccessibleInterface(QWidget *w)
-	: QAccessibleWidget(w)
-{
-}
-
-VolumeSlider *VolumeAccessibleInterface::slider() const
-{
-	return qobject_cast<VolumeSlider *>(object());
-}
-
-QString VolumeAccessibleInterface::text(QAccessible::Text t) const
-{
-	if (slider()->isVisible()) {
-		switch (t) {
-		case QAccessible::Text::Value:
-			return currentValue().toString();
-		default:
-			break;
-		}
+	QStyleOptionSlider styleOption;
+	initStyleOption(&styleOption);
+	QRect handle = style()->subControlRect(QStyle::CC_Slider, &styleOption,
+					       QStyle::SC_SliderHandle, this);
+	if (handle.contains(event->position().toPoint())) {
+		SliderIgnoreScroll::mousePressEvent(event);
+		dragging = true;
+	} else {
+		event->accept();
 	}
-	return QAccessibleWidget::text(t);
 }
 
-QVariant VolumeAccessibleInterface::currentValue() const
+void SliderIgnoreClick::mouseReleaseEvent(QMouseEvent *event)
 {
-	QString text;
-	float db = obs_fader_get_db(slider()->fad);
-
-	if (db < -96.0f)
-		text = "-inf dB";
-	else
-		text = QString::number(db, 'f', 1).append(" dB");
-
-	return text;
+	dragging = false;
+	SliderIgnoreScroll::mouseReleaseEvent(event);
 }
 
-void VolumeAccessibleInterface::setCurrentValue(const QVariant &value)
+void SliderIgnoreClick::mouseMoveEvent(QMouseEvent *event)
 {
-	slider()->setValue(value.toInt());
-}
-
-QVariant VolumeAccessibleInterface::maximumValue() const
-{
-	return slider()->maximum();
-}
-
-QVariant VolumeAccessibleInterface::minimumValue() const
-{
-	return slider()->minimum();
-}
-
-QVariant VolumeAccessibleInterface::minimumStepSize() const
-{
-	return slider()->singleStep();
-}
-
-QAccessible::Role VolumeAccessibleInterface::role() const
-{
-	return QAccessible::Role::Slider;
+	if (dragging) {
+		SliderIgnoreScroll::mouseMoveEvent(event);
+	} else {
+		event->accept();
+	}
 }
 
 void SliderIgnoreClick::mousePressEvent(QMouseEvent *event)

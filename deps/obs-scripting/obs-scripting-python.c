@@ -1,6 +1,6 @@
 /******************************************************************************
     Copyright (C) 2015 by Andrew Skinner <obs@theandyroid.com>
-    Copyright (C) 2017 by Hugh Bailey <jim@obsproject.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -499,7 +499,7 @@ static PyObject *obs_python_remove_tick_callback(PyObject *self, PyObject *args)
 
 	if (!script) {
 		PyErr_SetString(PyExc_RuntimeError,
-				"No active script, report this to Jim");
+				"No active script, report this to Lain");
 		return NULL;
 	}
 
@@ -524,7 +524,7 @@ static PyObject *obs_python_add_tick_callback(PyObject *self, PyObject *args)
 
 	if (!script) {
 		PyErr_SetString(PyExc_RuntimeError,
-				"No active script, report this to Jim");
+				"No active script, report this to Lain");
 		return NULL;
 	}
 
@@ -577,7 +577,7 @@ static PyObject *obs_python_signal_handler_disconnect(PyObject *self,
 
 	if (!script) {
 		PyErr_SetString(PyExc_RuntimeError,
-				"No active script, report this to Jim");
+				"No active script, report this to Lain");
 		return NULL;
 	}
 
@@ -623,7 +623,7 @@ static PyObject *obs_python_signal_handler_connect(PyObject *self,
 
 	if (!script) {
 		PyErr_SetString(PyExc_RuntimeError,
-				"No active script, report this to Jim");
+				"No active script, report this to Lain");
 		return NULL;
 	}
 
@@ -682,7 +682,7 @@ static PyObject *obs_python_signal_handler_disconnect_global(PyObject *self,
 
 	if (!script) {
 		PyErr_SetString(PyExc_RuntimeError,
-				"No active script, report this to Jim");
+				"No active script, report this to Lain");
 		return NULL;
 	}
 
@@ -724,7 +724,7 @@ static PyObject *obs_python_signal_handler_connect_global(PyObject *self,
 
 	if (!script) {
 		PyErr_SetString(PyExc_RuntimeError,
-				"No active script, report this to Jim");
+				"No active script, report this to Lain");
 		return NULL;
 	}
 
@@ -822,7 +822,7 @@ static PyObject *hotkey_unregister(PyObject *self, PyObject *args)
 
 	if (!script) {
 		PyErr_SetString(PyExc_RuntimeError,
-				"No active script, report this to Jim");
+				"No active script, report this to Lain");
 		return NULL;
 	}
 
@@ -1706,6 +1706,11 @@ bool obs_scripting_load_python(const char *python_path)
 	PySys_SetArgv(argc, argv);
 	PRAGMA_WARN_POP
 
+#ifdef __APPLE__
+	PyRun_SimpleString("import sys");
+	PyRun_SimpleString("sys.dont_write_bytecode = True");
+#endif
+
 #ifdef DEBUG_PYTHON_STARTUP
 	/* ---------------------------------------------- */
 	/* Debug logging to file if startup is failing    */
@@ -1745,6 +1750,13 @@ bool obs_scripting_load_python(const char *python_path)
 	}
 	dstr_free(&resource_path);
 #else
+	char *relative_script_path =
+		os_get_executable_path_ptr("../" SCRIPT_DIR);
+	if (relative_script_path) {
+		add_to_python_path(relative_script_path);
+	}
+	bfree(relative_script_path);
+
 	char *absolute_script_path = os_get_abs_path_ptr(SCRIPT_DIR);
 	add_to_python_path(absolute_script_path);
 	bfree(absolute_script_path);

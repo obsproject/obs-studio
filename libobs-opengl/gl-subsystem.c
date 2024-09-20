@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
     Copyright (C) 2014 by Zachary Lund <admin@computerquip.com>
 
     This program is free software: you can redistribute it and/or modify
@@ -1517,6 +1517,26 @@ void gs_swapchain_destroy(gs_swapchain_t *swapchain)
 
 	gl_windowinfo_destroy(swapchain->wi);
 	bfree(swapchain);
+}
+
+bool device_nv12_available(gs_device_t *device)
+{
+	UNUSED_PARAMETER(device);
+#ifdef _WIN32
+	return false;
+#else
+	return true; // always a split R8,R8G8 texture.
+#endif
+}
+
+bool device_p010_available(gs_device_t *device)
+{
+	UNUSED_PARAMETER(device);
+#ifdef _WIN32
+	return false;
+#else
+	return true; // always a split R16,R16G16 texture.
+#endif
 }
 
 uint32_t gs_voltexture_get_width(const gs_texture_t *voltex)

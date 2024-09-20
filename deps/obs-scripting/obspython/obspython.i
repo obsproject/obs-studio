@@ -25,6 +25,7 @@
 #include <util/base.h>
 #include "obspython.h"
 #include <util/platform.h>
+#include <util/config-file.h>
 
 #if defined(ENABLE_UI)
 #include "obs-frontend-api.h"
@@ -125,6 +126,7 @@ static inline void wrap_blog(int log_level, const char *message)
 %include "util/bmem.h"
 %include "util/base.h"
 %include "util/platform.h"
+%include "util/config-file.h"
 
 #if defined(ENABLE_UI)
 %include "obs-frontend-api.h"

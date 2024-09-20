@@ -47,12 +47,12 @@ struct xcompcap {
 	int crop_left;
 	int crop_right;
 	int crop_bot;
-	bool swapRedBlue;
 	bool include_border;
 	bool exclude_alpha;
 
 	float window_check_time;
 	bool window_changed;
+	bool window_hooked;
 
 	uint32_t width;
 	uint32_t height;
@@ -360,27 +360,6 @@ void xcomp_cleanup_pixmap(Display *disp, struct xcompcap *s)
 	}
 }
 
-static enum gs_color_format gs_format_from_tex()
-{
-	GLint iformat = 0;
-	// consider GL_ARB_internalformat_query
-	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT,
-				 &iformat);
-
-	// These formats are known to be wrong on Intel platforms. We intentionally
-	// use swapped internal formats here to preserve historic behavior which
-	// swapped colors accidentally and because D3D11 would not support a
-	// GS_RGBX format.
-	switch (iformat) {
-	case GL_RGB:
-		return GS_BGRX_UNORM;
-	case GL_RGBA:
-		return GS_RGBA_UNORM;
-	default:
-		return GS_RGBA_UNORM;
-	}
-}
-
 static int silence_x11_errors(Display *display, XErrorEvent *err)
 {
 	UNUSED_PARAMETER(display);
@@ -411,7 +390,6 @@ void xcomp_create_pixmap(xcb_connection_t *conn, struct xcompcap *s,
 	if (depth != 32) {
 		s->exclude_alpha = true;
 	}
-	xcb_window_t root = geom->root;
 	free(geom);
 
 	uint32_t vert_borders = s->crop_top + s->crop_bot + 2 * s->border;
@@ -552,6 +530,27 @@ void watcher_unload()
 	da_free(watcher_registry);
 }
 
+static void xcompcap_get_hooked(void *data, calldata_t *cd)
+{
+	struct xcompcap *s = data;
+	if (!s)
+		return;
+
+	calldata_set_bool(cd, "hooked", s->window_hooked);
+
+	if (s->window_hooked) {
+		struct dstr wname = xcomp_window_name(conn, disp, s->win);
+		struct dstr wcls = xcomp_window_class(conn, s->win);
+		calldata_set_string(cd, "name", wname.array);
+		calldata_set_string(cd, "class", wcls.array);
+		dstr_free(&wname);
+		dstr_free(&wcls);
+	} else {
+		calldata_set_string(cd, "name", "");
+		calldata_set_string(cd, "class", "");
+	}
+}
+
 static uint32_t xcompcap_get_width(void *data)
 {
 	struct xcompcap *s = (struct xcompcap *)data;
@@ -581,10 +580,22 @@ static void *xcompcap_create(obs_data_t *settings, obs_source_t *source)
 	pthread_mutex_init(&s->lock, NULL);
 	s->show_cursor = true;
 	s->source = source;
+	s->window_hooked = false;
 
 	obs_enter_graphics();
 	s->cursor = xcb_xcursor_init(conn);
 	obs_leave_graphics();
+
+	signal_handler_t *sh = obs_source_get_signal_handler(source);
+	signal_handler_add(sh, "void unhooked(ptr source)");
+	signal_handler_add(
+		sh, "void hooked(ptr source, string name, string class)");
+
+	proc_handler_t *ph = obs_source_get_proc_handler(source);
+	proc_handler_add(
+		ph,
+		"void get_hooked(out bool hooked, out string name, out string class)",
+		xcompcap_get_hooked, s);
 
 	xcompcap_update(s, settings);
 	return s;
@@ -624,6 +635,17 @@ static void xcompcap_video_tick(void *data, float seconds)
 	while ((event = xcb_poll_for_queued_event(conn)))
 		watcher_process(event);
 
+	// Send an unhooked signal if the window isn't found anymore
+	if (s->window_hooked && !xcomp_window_exists(conn, s->win)) {
+		s->window_hooked = false;
+
+		signal_handler_t *sh = obs_source_get_signal_handler(s->source);
+		calldata_t data = {0};
+		calldata_set_ptr(&data, "source", s->source);
+		signal_handler_signal(sh, "unhooked", &data);
+		calldata_free(&data);
+	}
+
 	// Reacquire window after interval or immediately if reconfigured.
 	s->window_check_time += seconds;
 	bool window_lost = !xcomp_window_exists(conn, s->win) || !s->gltex;
@@ -634,6 +656,25 @@ static void xcompcap_video_tick(void *data, float seconds)
 		s->window_changed = false;
 		s->window_check_time = 0.0;
 		s->win = xcomp_find_window(conn, disp, s->windowName);
+
+		// Send a hooked signal if a new window has been found
+		if (!s->window_hooked && xcomp_window_exists(conn, s->win)) {
+			s->window_hooked = true;
+
+			signal_handler_t *sh =
+				obs_source_get_signal_handler(s->source);
+			calldata_t data = {0};
+			calldata_set_ptr(&data, "source", s->source);
+			struct dstr wname =
+				xcomp_window_name(conn, disp, s->win);
+			struct dstr wcls = xcomp_window_class(conn, s->win);
+			calldata_set_string(&data, "name", wname.array);
+			calldata_set_string(&data, "class", wcls.array);
+			signal_handler_signal(sh, "hooked", &data);
+			dstr_free(&wname);
+			dstr_free(&wcls);
+			calldata_free(&data);
+		}
 
 		watcher_register(conn, s);
 		xcomp_cleanup_pixmap(disp, s);
@@ -779,9 +820,6 @@ static obs_properties_t *xcompcap_props(void *unused)
 		props, "cut_bot", obs_module_text("CropBottom"), 0, 4096, 1);
 	obs_property_int_set_suffix(prop, " px");
 
-	obs_properties_add_bool(props, "swap_redblue",
-				obs_module_text("SwapRedBlue"));
-
 	obs_properties_add_bool(props, "show_cursor",
 				obs_module_text("CaptureCursor"));
 
@@ -801,7 +839,6 @@ static void xcompcap_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "cut_left", 0);
 	obs_data_set_default_int(settings, "cut_right", 0);
 	obs_data_set_default_int(settings, "cut_bot", 0);
-	obs_data_set_default_bool(settings, "swap_redblue", false);
 	obs_data_set_default_bool(settings, "show_cursor", true);
 	obs_data_set_default_bool(settings, "include_border", false);
 	obs_data_set_default_bool(settings, "exclude_alpha", false);
@@ -813,18 +850,45 @@ static void xcompcap_update(void *data, obs_data_t *settings)
 
 	obs_enter_graphics();
 	pthread_mutex_lock(&s->lock);
+	char *prev_name = bstrdup(s->windowName);
 
 	s->crop_top = obs_data_get_int(settings, "cut_top");
 	s->crop_left = obs_data_get_int(settings, "cut_left");
 	s->crop_right = obs_data_get_int(settings, "cut_right");
 	s->crop_bot = obs_data_get_int(settings, "cut_bot");
-	s->swapRedBlue = obs_data_get_bool(settings, "swap_redblue");
 	s->show_cursor = obs_data_get_bool(settings, "show_cursor");
 	s->include_border = obs_data_get_bool(settings, "include_border");
 	s->exclude_alpha = obs_data_get_bool(settings, "exclude_alpha");
 
 	s->windowName = obs_data_get_string(settings, "capture_window");
+	if (s->window_hooked && strcmp(prev_name, s->windowName) != 0) {
+		s->window_hooked = false;
+
+		signal_handler_t *sh = obs_source_get_signal_handler(s->source);
+		calldata_t data = {0};
+		calldata_set_ptr(&data, "source", s->source);
+		signal_handler_signal(sh, "unhooked", &data);
+		calldata_free(&data);
+	}
+	bfree(prev_name);
+
 	s->win = xcomp_find_window(conn, disp, s->windowName);
+	if (!s->window_hooked && xcomp_window_exists(conn, s->win)) {
+		s->window_hooked = true;
+
+		signal_handler_t *sh = obs_source_get_signal_handler(s->source);
+		calldata_t data = {0};
+		calldata_set_ptr(&data, "source", s->source);
+		struct dstr wname = xcomp_window_name(conn, disp, s->win);
+		struct dstr wcls = xcomp_window_class(conn, s->win);
+		calldata_set_string(&data, "name", wname.array);
+		calldata_set_string(&data, "class", wcls.array);
+		signal_handler_signal(sh, "hooked", &data);
+		dstr_free(&wname);
+		dstr_free(&wcls);
+		calldata_free(&data);
+	}
+
 	if (s->win && s->windowName) {
 		struct dstr wname = xcomp_window_name(conn, disp, s->win);
 		struct dstr wcls = xcomp_window_class(conn, s->win);

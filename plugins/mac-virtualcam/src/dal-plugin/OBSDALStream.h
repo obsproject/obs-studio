@@ -28,18 +28,17 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype _Nonnull)init;
 
-- (CMSimpleQueueRef)copyBufferQueueWithAlteredProc:
-			    (CMIODeviceStreamQueueAlteredProc)alteredProc
-				     alteredRefCon:(void *)alteredRefCon;
+- (CMSimpleQueueRef)copyBufferQueueWithAlteredProc:(CMIODeviceStreamQueueAlteredProc)alteredProc
+                                     alteredRefCon:(void *)alteredRefCon;
 
 - (void)startServingDefaultFrames;
 
 - (void)stopServingDefaultFrames;
 
 - (void)queuePixelBuffer:(CVPixelBufferRef)frame
-	       timestamp:(uint64_t)timestamp
-	    fpsNumerator:(uint32_t)fpsNumerator
-	  fpsDenominator:(uint32_t)fpsDenominator;
+               timestamp:(uint64_t)timestamp
+            fpsNumerator:(uint32_t)fpsNumerator
+          fpsDenominator:(uint32_t)fpsDenominator;
 
 @end
 

@@ -58,7 +58,9 @@ static void HandleListProperty(obs_property_t *prop, const char *id,
 
 static void HandleSampleRate(obs_property_t *prop, const char *id)
 {
-	auto ReleaseData = [](obs_data_t *data) { obs_data_release(data); };
+	auto ReleaseData = [](obs_data_t *data) {
+		obs_data_release(data);
+	};
 	std::unique_ptr<obs_data_t, decltype(ReleaseData)> data{
 		obs_encoder_defaults(id), ReleaseData};
 

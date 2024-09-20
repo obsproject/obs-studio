@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2017 by Hugh Bailey <jim@obsproject.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -39,19 +39,18 @@
 #define SO_EXT "so"
 #endif
 
-static const char *startup_script_template =
-	"\
+static const char *startup_script_template = "\
 for val in pairs(package.preload) do\n\
 	package.preload[val] = nil\n\
 end\n\
-package.cpath = package.cpath .. \";\" .. \"%s/?." SO_EXT
-	"\" .. \";\" .. \"%s\" .. \"/?." SO_EXT "\"\n\
+%s\
 require \"obslua\"\n";
 
 static const char *get_script_path_func = "\
 function script_path()\n\
 	 return \"%s\"\n\
 end\n\
+package.cpath = package.cpath .. \";\" .. script_path() .. \"/?." SO_EXT "\"\n\
 package.path = package.path .. \";\" .. script_path() .. \"/?.lua\"\n";
 
 static char *startup_script = NULL;
@@ -153,22 +152,6 @@ static bool load_lua_script(struct obs_lua_script *data)
 		}
 	}
 
-	lua_getglobal(script, "script_tick");
-	if (lua_isfunction(script, -1)) {
-		pthread_mutex_lock(&tick_mutex);
-
-		struct obs_lua_script *next = first_tick_script;
-		data->next_tick = next;
-		data->p_prev_next_tick = &first_tick_script;
-		if (next)
-			next->p_prev_next_tick = &data->next_tick;
-		first_tick_script = data;
-
-		data->tick = luaL_ref(script, LUA_REGISTRYINDEX);
-
-		pthread_mutex_unlock(&tick_mutex);
-	}
-
 	lua_getglobal(script, "script_properties");
 	if (lua_isfunction(script, -1))
 		data->get_properties = luaL_ref(script, LUA_REGISTRYINDEX);
@@ -223,6 +206,23 @@ static bool load_lua_script(struct obs_lua_script *data)
 	}
 
 	data->script = script;
+
+	lua_getglobal(script, "script_tick");
+	if (lua_isfunction(script, -1)) {
+		pthread_mutex_lock(&tick_mutex);
+
+		struct obs_lua_script *next = first_tick_script;
+		data->next_tick = next;
+		data->p_prev_next_tick = &first_tick_script;
+		if (next)
+			next->p_prev_next_tick = &data->next_tick;
+		first_tick_script = data;
+
+		data->tick = luaL_ref(script, LUA_REGISTRYINDEX);
+
+		pthread_mutex_unlock(&tick_mutex);
+	}
+
 	success = true;
 
 fail:
@@ -1343,6 +1343,11 @@ void obs_lua_script_save(obs_script_t *s)
 
 /* -------------------------------------------- */
 
+static inline void add_package_cpath(struct dstr *cpath, const char *path)
+{
+	dstr_catf(cpath, " .. \";\" .. \"%s\" .. \"/?." SO_EXT "\"", path);
+}
+
 void obs_lua_load(void)
 {
 	struct dstr tmp = {0};
@@ -1358,6 +1363,7 @@ void obs_lua_load(void)
 #define PATH_MAX MAX_PATH
 #endif
 
+	struct dstr package_cpath = {0};
 	char import_path[PATH_MAX];
 
 #ifdef __APPLE__
@@ -1375,7 +1381,23 @@ void obs_lua_load(void)
 #else
 	strcpy(import_path, "./");
 #endif
-	dstr_printf(&tmp, startup_script_template, import_path, SCRIPT_DIR);
+	dstr_cat(&package_cpath, "package.cpath = package.cpath");
+
+	add_package_cpath(&package_cpath, import_path);
+
+#if !defined(_WIN32) && !defined(__APPLE__)
+	char *relative_script_path =
+		os_get_executable_path_ptr("../" SCRIPT_DIR);
+	if (relative_script_path)
+		add_package_cpath(&package_cpath, relative_script_path);
+	bfree(relative_script_path);
+#endif
+
+	add_package_cpath(&package_cpath, SCRIPT_DIR);
+	dstr_cat(&package_cpath, "\n");
+
+	dstr_printf(&tmp, startup_script_template, package_cpath.array);
+	dstr_free(&package_cpath);
 	startup_script = tmp.array;
 
 	obs_add_tick_callback(lua_tick, NULL);

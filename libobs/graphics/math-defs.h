@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -28,8 +28,8 @@ extern "C" {
 #define M_PI 3.1415926535897932384626433832795f
 #endif
 
-#define RAD(val) ((val)*0.0174532925199432957692369076848f)
-#define DEG(val) ((val)*57.295779513082320876798154814105f)
+#define RAD(val) ((val) * 0.0174532925199432957692369076848f)
+#define DEG(val) ((val) * 57.295779513082320876798154814105f)
 #define LARGE_EPSILON 1e-2f
 #define EPSILON 1e-4f
 #define TINY_EPSILON 1e-5f

@@ -337,6 +337,23 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		}
 	}
 
+	bool obs_frontend_recording_add_chapter(const char *name) override
+	{
+		if (!os_atomic_load_bool(&recording_active) ||
+		    os_atomic_load_bool(&recording_paused))
+			return false;
+
+		proc_handler_t *ph = obs_output_get_proc_handler(
+			main->outputHandler->fileOutput);
+
+		calldata cd;
+		calldata_init(&cd);
+		calldata_set_string(&cd, "chapter_name", name);
+		bool result = proc_handler_call(ph, "add_chapter", &cd);
+		calldata_free(&cd);
+		return result;
+	}
+
 	void obs_frontend_replay_buffer_start(void) override
 	{
 		QMetaObject::invokeMethod(main, "StartReplayBuffer");
@@ -379,7 +396,70 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	void *obs_frontend_add_dock(void *dock) override
 	{
-		return (void *)main->AddDockWidget((QDockWidget *)dock);
+		QDockWidget *d = reinterpret_cast<QDockWidget *>(dock);
+
+		QString name = d->objectName();
+		if (name.isEmpty() || main->IsDockObjectNameUsed(name)) {
+			blog(LOG_WARNING,
+			     "The object name of the added dock is empty or already used,"
+			     " a temporary one will be set to avoid conflicts");
+
+			char *uuid = os_generate_uuid();
+			name = QT_UTF8(uuid);
+			bfree(uuid);
+			name.append("_oldExtraDock");
+
+			d->setObjectName(name);
+		}
+
+		return (void *)main->AddDockWidget(d);
+	}
+
+	bool obs_frontend_add_dock_by_id(const char *id, const char *title,
+					 void *widget) override
+	{
+		if (main->IsDockObjectNameUsed(QT_UTF8(id))) {
+			blog(LOG_WARNING,
+			     "Dock id '%s' already used!  "
+			     "Duplicate library?",
+			     id);
+			return false;
+		}
+
+		OBSDock *dock = new OBSDock(main);
+		dock->setWidget((QWidget *)widget);
+		dock->setWindowTitle(QT_UTF8(title));
+		dock->setObjectName(QT_UTF8(id));
+
+		main->AddDockWidget(dock, Qt::RightDockWidgetArea);
+
+		dock->setVisible(false);
+		dock->setFloating(true);
+
+		return true;
+	}
+
+	void obs_frontend_remove_dock(const char *id) override
+	{
+		main->RemoveDockWidget(QT_UTF8(id));
+	}
+
+	bool obs_frontend_add_custom_qdock(const char *id, void *dock) override
+	{
+		if (main->IsDockObjectNameUsed(QT_UTF8(id))) {
+			blog(LOG_WARNING,
+			     "Dock id '%s' already used!  "
+			     "Duplicate library?",
+			     id);
+			return false;
+		}
+
+		QDockWidget *d = reinterpret_cast<QDockWidget *>(dock);
+		d->setObjectName(QT_UTF8(id));
+
+		main->AddCustomDockWidget(d);
+
+		return true;
 	}
 
 	void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
@@ -402,6 +482,16 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	obs_output_t *obs_frontend_get_streaming_output(void) override
 	{
+		auto multitrackVideo =
+			main->outputHandler->multitrackVideo.get();
+		auto mtvOutput =
+			multitrackVideo
+				? obs_output_get_ref(
+					  multitrackVideo->StreamingOutput())
+				: nullptr;
+		if (mtvOutput)
+			return mtvOutput;
+
 		OBSOutput output = main->outputHandler->streamOutput.Get();
 		return obs_output_get_ref(output);
 	}

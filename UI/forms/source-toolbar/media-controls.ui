@@ -203,7 +203,7 @@
     </widget>
    </item>
    <item>
-    <widget class="MediaSlider" name="slider">
+    <widget class="AbsoluteSlider" name="slider">
      <property name="minimumSize">
       <size>
        <width>0</width>
@@ -295,14 +295,14 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>MediaSlider</class>
-   <extends>QSlider</extends>
-   <header>media-slider.hpp</header>
-  </customwidget>
-  <customwidget>
    <class>ClickableLabel</class>
    <extends>QLabel</extends>
    <header>clickable-label.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>AbsoluteSlider</class>
+   <extends>QSlider</extends>
+   <header>absolute-slider.hpp</header>
   </customwidget>
  </customwidgets>
  <resources>

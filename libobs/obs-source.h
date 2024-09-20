@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -463,14 +463,6 @@ struct obs_source_info {
 			  bool key_up);
 
 	/**
-	 * Called when the filter is added to a source
-	 *
-	 * @param  data    Filter data
-	 * @param  source  Source that the filter being added to
-	 */
-	void (*filter_add)(void *data, obs_source_t *source);
-
-	/**
 	 * Called when the filter is removed from a source
 	 *
 	 * @param  data    Filter data
@@ -518,7 +510,7 @@ struct obs_source_info {
 
 	/**
 	 * Gets the default settings for this source
-	 * 
+	 *
 	 * If get_defaults is also defined both will be called, and the first
 	 * call will be to get_defaults, then to get_defaults2.
 	 *
@@ -565,6 +557,14 @@ struct obs_source_info {
 	enum gs_color_space (*video_get_color_space)(
 		void *data, size_t count,
 		const enum gs_color_space *preferred_spaces);
+
+	/**
+	 * Called when the filter is added to a source
+	 *
+	 * @param  data    Filter data
+	 * @param  source  Source that the filter is being added to
+	 */
+	void (*filter_add)(void *data, obs_source_t *source);
 };
 
 EXPORT void obs_register_source_s(const struct obs_source_info *info,

@@ -79,6 +79,12 @@ struct AudioChannelLayout {
 };
 typedef struct AudioChannelLayout AudioChannelLayout;
 
+struct AudioConverterPrimeInfo {
+	UInt32 leadingFrames;
+	UInt32 trailingFrames;
+};
+typedef struct AudioConverterPrimeInfo AudioConverterPrimeInfo;
+
 typedef OSStatus (*AudioConverterComplexInputDataProc)(
 	AudioConverterRef inAudioConverter, UInt32 *ioNumberDataPackets,
 	AudioBufferList *ioData,

@@ -1,4 +1,5 @@
 #include <obs-module.h>
+// TODO: Here in below in OBS 30 includes were modified to be like this: vlc/libvlc.h
 #include <libvlc.h>
 
 #ifdef _MSC_VER

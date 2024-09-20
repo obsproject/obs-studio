@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2015 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -28,6 +28,22 @@ static inline bool delay_capturing(const struct obs_output *output)
 	return os_atomic_load_bool(&output->delay_capturing);
 }
 
+static inline bool flag_encoded(const struct obs_output *output)
+{
+	return (output->info.flags & OBS_OUTPUT_ENCODED) != 0;
+}
+
+static inline bool log_flag_encoded(const struct obs_output *output,
+				    const char *func_name, bool inverse_log)
+{
+	const char *prefix = inverse_log ? "n encoded" : " raw";
+	bool ret = flag_encoded(output);
+	if ((!inverse_log && !ret) || (inverse_log && ret))
+		blog(LOG_WARNING, "Output '%s': Tried to use %s on a%s output",
+		     output->context.name, func_name, prefix);
+	return ret;
+}
+
 static inline void push_packet(struct obs_output *output,
 			       struct encoder_packet *packet, uint64_t t)
 {
@@ -38,7 +54,7 @@ static inline void push_packet(struct obs_output *output,
 	obs_encoder_packet_create_instance(&dd.packet, packet);
 
 	pthread_mutex_lock(&output->delay_mutex);
-	circlebuf_push_back(&output->delay_data, &dd, sizeof(dd));
+	deque_push_back(&output->delay_data, &dd, sizeof(dd));
 	pthread_mutex_unlock(&output->delay_mutex);
 }
 
@@ -66,7 +82,7 @@ void obs_output_cleanup_delay(obs_output_t *output)
 	struct delay_data dd;
 
 	while (output->delay_data.size) {
-		circlebuf_pop_front(&output->delay_data, &dd, sizeof(dd));
+		deque_pop_front(&output->delay_data, &dd, sizeof(dd));
 		if (dd.msg == DELAY_MSG_PACKET) {
 			obs_encoder_packet_release(&dd.packet);
 		}
@@ -90,15 +106,14 @@ static inline bool pop_packet(struct obs_output *output, uint64_t t)
 	pthread_mutex_lock(&output->delay_mutex);
 
 	if (output->delay_data.size) {
-		circlebuf_peek_front(&output->delay_data, &dd, sizeof(dd));
+		deque_peek_front(&output->delay_data, &dd, sizeof(dd));
 		elapsed_time = (t - dd.ts);
 
 		if (preserve && output->reconnecting) {
 			output->active_delay_ns = elapsed_time;
 
 		} else if (elapsed_time > output->active_delay_ns) {
-			circlebuf_pop_front(&output->delay_data, NULL,
-					    sizeof(dd));
+			deque_pop_front(&output->delay_data, NULL, sizeof(dd));
 			popped = true;
 		}
 	}
@@ -149,7 +164,7 @@ bool obs_output_delay_start(obs_output_t *output)
 	}
 
 	pthread_mutex_lock(&output->delay_mutex);
-	circlebuf_push_back(&output->delay_data, &dd, sizeof(dd));
+	deque_push_back(&output->delay_data, &dd, sizeof(dd));
 	pthread_mutex_unlock(&output->delay_mutex);
 
 	os_atomic_inc_long(&output->delay_restart_refs);
@@ -175,7 +190,7 @@ void obs_output_delay_stop(obs_output_t *output)
 	};
 
 	pthread_mutex_lock(&output->delay_mutex);
-	circlebuf_push_back(&output->delay_data, &dd, sizeof(dd));
+	deque_push_back(&output->delay_data, &dd, sizeof(dd));
 	pthread_mutex_unlock(&output->delay_mutex);
 
 	do_output_signal(output, "stopping");
@@ -186,14 +201,8 @@ void obs_output_set_delay(obs_output_t *output, uint32_t delay_sec,
 {
 	if (!obs_output_valid(output, "obs_output_set_delay"))
 		return;
-
-	if ((output->info.flags & OBS_OUTPUT_ENCODED) == 0) {
-		blog(LOG_WARNING,
-		     "Output '%s': Tried to set a delay "
-		     "value on a non-encoded output",
-		     output->context.name);
+	if (!log_flag_encoded(output, __FUNCTION__, false))
 		return;
-	}
 
 	output->delay_sec = delay_sec;
 	output->delay_flags = flags;

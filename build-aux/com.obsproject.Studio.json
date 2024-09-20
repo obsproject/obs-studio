@@ -1,0 +1,113 @@
+{
+    "id": "com.obsproject.Studio",
+    "runtime": "org.kde.Platform",
+    "runtime-version": "6.6",
+    "sdk": "org.kde.Sdk",
+    "command": "obs",
+    "finish-args": [
+        "--socket=wayland",
+        "--socket=x11",
+        "--socket=pulseaudio",
+        "--device=all",
+        "--share=network",
+        "--share=ipc",
+        "--filesystem=xdg-run/pipewire-0",
+        "--filesystem=host",
+        "--talk-name=org.kde.StatusNotifierWatcher",
+        "--talk-name=org.freedesktop.Flatpak",
+        "--talk-name=org.freedesktop.Notifications",
+        "--talk-name=org.a11y.Bus",
+        "--system-talk-name=org.freedesktop.Avahi",
+        "--env=VST_PATH=/app/extensions/Plugins/vst"
+    ],
+    "add-extensions": {
+        "com.obsproject.Studio.Plugin": {
+            "directory": "plugins",
+            "subdirectories": true,
+            "add-ld-path": "lib",
+            "merge-dirs": "lib/obs-plugins;share/obs/obs-plugins",
+            "no-autodownload": true,
+            "autodelete": true
+        },
+        "org.freedesktop.LinuxAudio.Plugins": {
+            "directory": "extensions/Plugins",
+            "version": "23.08",
+            "add-ld-path": "lib",
+            "merge-dirs": "vst",
+            "subdirectories": true,
+            "no-autodownload": true
+        }
+    },
+    "cleanup": [
+        "/share/man",
+        "*.la"
+    ],
+    "modules": [
+        "modules/10-mbedtls.json",
+        "modules/20-librist.json",
+        "modules/20-nv-codec.json",
+        "modules/20-srt.json",
+        "modules/20-svt-av1.json",
+        "modules/20-x264.json",
+        "modules/30-ffmpeg.json",
+        "modules/40-luajit.json",
+        "modules/40-plog.json",
+        "modules/40-usrsctp.json",
+        "modules/50-intel-media-sdk.json",
+        "modules/50-jansson.json",
+        "modules/50-libdatachannel.json",
+        "modules/50-libqrcodegencpp.json",
+        "modules/50-libvpl.json",
+        "modules/50-ntv2.json",
+        "modules/50-rnnoise.json",
+        "modules/50-swig.json",
+        "modules/50-v4l-utils.json",
+        "modules/50-vpl-gpu-rt.json",
+        "modules/90-asio.json",
+        "modules/90-nlohmann-json.json",
+        "modules/90-uthash.json",
+        "modules/90-websocketpp.json",
+        "modules/99-cef.json",
+        {
+            "name": "obs",
+            "buildsystem": "cmake-ninja",
+            "builddir": true,
+            "config-opts": [
+                "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
+                "-DOBS_CMAKE_VERSION=3",
+                "-DENABLE_WAYLAND=ON",
+                "-DENABLE_BROWSER=ON",
+                "-DCEF_ROOT_DIR=/app/cef",
+                "-DUSE_XDG=ON",
+                "-DENABLE_ALSA=OFF",
+                "-DENABLE_PULSEAUDIO=ON",
+                "-DENABLE_JACK=ON",
+                "-DENABLE_VLC=OFF",
+                "-DENABLE_AJA=ON",
+                "-DENABLE_LIBFDK=ON",
+                "-DENABLE_QSV11=ON",
+                "-DENABLE_DECKLINK=OFF"
+            ],
+            "secret-opts": [
+                "-DRESTREAM_CLIENTID=$RESTREAM_CLIENTID",
+                "-DRESTREAM_HASH=$RESTREAM_HASH",
+                "-DTWITCH_CLIENTID=$TWITCH_CLIENTID",
+                "-DTWITCH_HASH=$TWITCH_HASH",
+                "-DYOUTUBE_CLIENTID=$YOUTUBE_CLIENTID",
+                "-DYOUTUBE_CLIENTID_HASH=$YOUTUBE_CLIENTID_HASH",
+                "-DYOUTUBE_SECRET=$YOUTUBE_SECRET",
+                "-DYOUTUBE_SECRET_HASH=$YOUTUBE_SECRET_HASH"
+            ],
+            "post-install": [
+                "install -d /app/plugins",
+                "install -d /app/extensions/Plugins"
+            ],
+            "sources": [
+                {
+                    "type": "dir",
+                    "path": "../"
+                }
+            ]
+        }
+    ]
+}

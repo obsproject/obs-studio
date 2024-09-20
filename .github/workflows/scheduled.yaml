@@ -1,0 +1,175 @@
+name: Scheduled
+run-name: Scheduled Repository Actions ⏰
+on:
+  schedule:
+    - cron: 17 0 * * *
+permissions:
+  contents: write
+concurrency:
+  group: '${{ github.workflow }} @ ${{ github.head_ref || github.ref }}'
+  cancel-in-progress: true
+jobs:
+  services-availability:
+    name: Check Service Availability 🛜
+    if: github.repository_owner == 'obsproject'
+    runs-on: macos-14
+    permissions:
+      checks: write
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set Up Homebrew 🍺
+        uses: Homebrew/actions/setup-homebrew@master
+      - name: Check for Defunct Services 📉
+        uses: ./.github/actions/services-validator
+        with:
+          repositorySecret: ${{ secrets.GITHUB_TOKEN }}
+          checkApiSecret: ${{ secrets.CHECK_SERVERS_API_KEY }}
+          checkApiServers: ${{ secrets.CHECK_SERVERS_LIST }}
+          runSchemaChecks: false
+          runServiceChecks: true
+          createPullRequest: true
+
+  cache-cleanup:
+    name: Cache Cleanup 🧹
+    runs-on: ubuntu-22.04
+    permissions:
+      actions: write
+    steps:
+      - name: Remove Stale Ccache Caches
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          : Remove Stale Ccache Caches
+
+          echo '::group::Processing master branch cache entries'
+          while IFS=";" read -r cache_id cache_name; do
+            if [[ "${cache_name}" ]]; then
+              result=true
+              gh api -X DELETE repos/${GITHUB_REPOSITORY}/actions/caches?key=${cache_name} --jq '.total_count' &> /dev/null || result=false
+
+              if ${result}; then
+                echo "Deleted cache entry ${cache_name}"
+              else
+                echo "::warning::Unable to delete cache entry ${cache_name}"
+              fi
+            fi
+          done <<< \
+          "$(gh api repos/${GITHUB_REPOSITORY}/actions/caches \
+            --jq '.actions_caches.[] | select(.ref|test("refs/heads/master")) | select(.key|test(".*-ccache-*")) | {id, key} | join(";")')"
+          echo '::endgroup::'
+
+
+          echo '::group::Processing pull request cache entries'
+          while IFS=";" read -r cache_id cache_name cache_ref; do
+            if [[ "${cache_name}" ]]; then
+              result=true
+              gh api -X DELETE repos/${GITHUB_REPOSITORY}/actions/caches?key=${cache_name} --jq '.total_count' &> /dev/null || result=false
+
+              pr_number=$(echo ${cache_ref} | cut -d '/' -f 3)
+
+              if ${result}; then
+                echo "Deleted PR #${pr_number} cache entry ${cache_name}"
+              else
+                echo "::warning::Unable to delete PR #${pr_number} cache entry ${cache_name}"
+              fi
+            fi
+          done <<< \
+            "$(gh api repos/${GITHUB_REPOSITORY}/actions/caches \
+              --jq '.actions_caches.[] | select(.ref|test("refs/heads/master")|not) | select(.key|test(".*-ccache-*")) | {id, key, ref} | join(";")')"
+          echo '::endgroup::'
+
+  build-project:
+    name: Build 🧱
+    uses: ./.github/workflows/build-project.yaml
+    needs: cache-cleanup
+    secrets: inherit
+
+  analyze-project:
+    name: Analyze 🔬
+    uses: ./.github/workflows/analyze-project.yaml
+    needs: cache-cleanup
+    secrets: inherit
+    permissions:
+      security-events: write
+
+  upload-language-files:
+    name: Upload Language Files 🌐
+    if: github.repository_owner == 'obsproject' && github.ref_name == 'master'
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Check Nightly Runs ☑️
+        id: nightly-checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          : Check Nightly Runs ☑️
+          if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
+
+          last_nightly=$(gh run list --workflow scheduled.yaml --limit 2 --json headSha --jq '.[1].headSha')
+
+          if [[ "${GITHUB_SHA}" == "${last_nightly}" ]]; then
+            echo "passed=false" >> $GITHUB_OUTPUT
+          else
+            echo "passed=true" >> $GITHUB_OUTPUT
+            echo "lastNightly=${last_nightly}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check for Changed Files ✅
+        if: fromJSON(steps.nightly-checks.outputs.passed)
+        uses: ./.github/actions/check-changes
+        id: checks
+        with:
+          baseRef: ${{ steps.nightly-checks.outputs.lastNightly }}
+          checkGlob: '**/en-US.ini'
+
+      - name: Upload US English Language Files 🇺🇸
+        if: fromJSON(steps.nightly-checks.outputs.passed) && steps.checks.outputs.passed == 'true'
+        uses: obsproject/obs-crowdin-sync/upload@30b5446e3b5eb19595aa68a81ddf896a857302cf
+        env:
+          CROWDIN_PAT: ${{ secrets.CROWDIN_SYNC_CROWDIN_PAT }}
+          GITHUB_EVENT_BEFORE: ${{ steps.nightly-checks.outputs.lastNightly }}
+
+  steam-upload:
+    name: Upload Steam Builds 🚂
+    needs: [build-project]
+    if: github.repository_owner == 'obsproject'
+    runs-on: macos-14
+    defaults:
+      run:
+        shell: zsh --no-rcs --errexit --pipefail {0}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Nightly Runs ☑️
+        id: checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          : Check Nightly Runs ☑️
+          if (( ${+RUNNER_DEBUG} )) setopt XTRACE
+
+          local last_nightly=$(gh run list --workflow scheduled.yaml --limit 2 --json headSha --jq '.[1].headSha')
+
+          if [[ "${GITHUB_SHA}" == "${last_nightly}" ]] {
+            print "passed=false" >> $GITHUB_OUTPUT
+          } else {
+            print "passed=true" >> $GITHUB_OUTPUT
+          }
+
+      - uses: ./.github/actions/steam-upload
+        if: fromJSON(steps.checks.outputs.passed)
+        with:
+          steamSecret: ${{ secrets.STEAM_SHARED_SECRET }}
+          steamUser: ${{ secrets.STEAM_USER }}
+          steamPassword: ${{ secrets.STEAM_PASSWORD }}
+          workflowSecret: ${{ secrets.GITHUB_TOKEN }}
+          preview: ${{ github.repository_owner != 'obsproject' }}

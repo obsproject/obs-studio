@@ -1836,4 +1836,4 @@ bool RoutingConfigurator::FindFirstPreset(ConnectionKind kind, NTV2DeviceID id,
 	return false;
 }
 
-} // aja
+} // namespace aja

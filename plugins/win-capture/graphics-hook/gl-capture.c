@@ -96,10 +96,10 @@ static void gl_free(void)
 
 	if (data.using_shtex) {
 		if (data.gl_dxobj)
-			jimglDXUnregisterObjectNV(data.gl_device,
+			obsglDXUnregisterObjectNV(data.gl_device,
 						  data.gl_dxobj);
 		if (data.gl_device)
-			jimglDXCloseDeviceNV(data.gl_device);
+			obsglDXCloseDeviceNV(data.gl_device);
 		if (data.texture)
 			glDeleteTextures(1, &data.texture);
 		if (data.d3d11_tex)
@@ -147,7 +147,7 @@ static inline void *base_get_proc(const char *name)
 
 static inline void *wgl_get_proc(const char *name)
 {
-	return (void *)jimglGetProcAddress(name);
+	return (void *)obsglGetProcAddress(name);
 }
 
 static inline void *get_proc(const char *name)
@@ -161,21 +161,21 @@ static inline void *get_proc(const char *name)
 
 static void init_nv_functions(void)
 {
-	jimglDXSetResourceShareHandleNV =
+	obsglDXSetResourceShareHandleNV =
 		get_proc("wglDXSetResourceShareHandleNV");
-	jimglDXOpenDeviceNV = get_proc("wglDXOpenDeviceNV");
-	jimglDXCloseDeviceNV = get_proc("wglDXCloseDeviceNV");
-	jimglDXRegisterObjectNV = get_proc("wglDXRegisterObjectNV");
-	jimglDXUnregisterObjectNV = get_proc("wglDXUnregisterObjectNV");
-	jimglDXObjectAccessNV = get_proc("wglDXObjectAccessNV");
-	jimglDXLockObjectsNV = get_proc("wglDXLockObjectsNV");
-	jimglDXUnlockObjectsNV = get_proc("wglDXUnlockObjectsNV");
+	obsglDXOpenDeviceNV = get_proc("wglDXOpenDeviceNV");
+	obsglDXCloseDeviceNV = get_proc("wglDXCloseDeviceNV");
+	obsglDXRegisterObjectNV = get_proc("wglDXRegisterObjectNV");
+	obsglDXUnregisterObjectNV = get_proc("wglDXUnregisterObjectNV");
+	obsglDXObjectAccessNV = get_proc("wglDXObjectAccessNV");
+	obsglDXLockObjectsNV = get_proc("wglDXLockObjectsNV");
+	obsglDXUnlockObjectsNV = get_proc("wglDXUnlockObjectsNV");
 
 	nv_capture_available =
-		!!jimglDXSetResourceShareHandleNV && !!jimglDXOpenDeviceNV &&
-		!!jimglDXCloseDeviceNV && !!jimglDXRegisterObjectNV &&
-		!!jimglDXUnregisterObjectNV && !!jimglDXObjectAccessNV &&
-		!!jimglDXLockObjectsNV && !!jimglDXUnlockObjectsNV;
+		!!obsglDXSetResourceShareHandleNV && !!obsglDXOpenDeviceNV &&
+		!!obsglDXCloseDeviceNV && !!obsglDXRegisterObjectNV &&
+		!!obsglDXUnregisterObjectNV && !!obsglDXObjectAccessNV &&
+		!!obsglDXLockObjectsNV && !!obsglDXUnlockObjectsNV;
 
 	if (nv_capture_available)
 		hlog("Shared-texture OpenGL capture available");
@@ -195,15 +195,15 @@ static bool init_gl_functions(void)
 {
 	bool success = true;
 
-	jimglGetProcAddress = base_get_proc("wglGetProcAddress");
-	if (!jimglGetProcAddress) {
+	obsglGetProcAddress = base_get_proc("wglGetProcAddress");
+	if (!obsglGetProcAddress) {
 		hlog("init_gl_functions: failed to get wglGetProcAddress");
 		return false;
 	}
 
-	GET_PROC(init_gl_functions, jimglMakeCurrent, wglMakeCurrent);
-	GET_PROC(init_gl_functions, jimglGetCurrentDC, wglGetCurrentDC);
-	GET_PROC(init_gl_functions, jimglGetCurrentContext,
+	GET_PROC(init_gl_functions, obsglMakeCurrent, wglMakeCurrent);
+	GET_PROC(init_gl_functions, obsglGetCurrentDC, wglGetCurrentDC);
+	GET_PROC(init_gl_functions, obsglGetCurrentContext,
 		 wglGetCurrentContext);
 	GET_PROC(init_gl_functions, glTexImage2D, glTexImage2D);
 	GET_PROC(init_gl_functions, glReadBuffer, glReadBuffer);
@@ -393,7 +393,7 @@ static inline bool gl_shtex_init_d3d11_tex(void)
 
 static inline bool gl_shtex_init_gl_tex(void)
 {
-	data.gl_device = jimglDXOpenDeviceNV(data.d3d11_device);
+	data.gl_device = obsglDXOpenDeviceNV(data.d3d11_device);
 	if (!data.gl_device) {
 		hlog("gl_shtex_init_gl_tex: failed to open device");
 		return false;
@@ -404,7 +404,7 @@ static inline bool gl_shtex_init_gl_tex(void)
 		return false;
 	}
 
-	data.gl_dxobj = jimglDXRegisterObjectNV(data.gl_device, data.d3d11_tex,
+	data.gl_dxobj = obsglDXRegisterObjectNV(data.gl_device, data.d3d11_tex,
 						data.texture, GL_TEXTURE_2D,
 						WGL_ACCESS_WRITE_DISCARD_NV);
 	if (!data.gl_dxobj) {
@@ -609,7 +609,7 @@ static void gl_shtex_capture(void)
 	GLint last_fbo;
 	GLint last_tex;
 
-	jimglDXLockObjectsNV(data.gl_device, 1, &data.gl_dxobj);
+	obsglDXLockObjectsNV(data.gl_device, 1, &data.gl_dxobj);
 
 	glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &last_fbo);
 	if (gl_error("gl_shtex_capture", "failed to get last fbo")) {
@@ -626,7 +626,7 @@ static void gl_shtex_capture(void)
 	glBindTexture(GL_TEXTURE_2D, last_tex);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, last_fbo);
 
-	jimglDXUnlockObjectsNV(data.gl_device, 1, &data.gl_dxobj);
+	obsglDXUnlockObjectsNV(data.gl_device, 1, &data.gl_dxobj);
 
 	IDXGISwapChain_Present(data.dxgi_swap, 0, 0);
 }
@@ -820,12 +820,12 @@ static BOOL WINAPI hook_wgl_swap_layer_buffers(HDC hdc, UINT planes)
 static BOOL WINAPI hook_wgl_delete_context(HGLRC hrc)
 {
 	if (capture_active() && functions_initialized) {
-		HDC last_hdc = jimglGetCurrentDC();
-		HGLRC last_hrc = jimglGetCurrentContext();
+		HDC last_hdc = obsglGetCurrentDC();
+		HGLRC last_hrc = obsglGetCurrentContext();
 
-		jimglMakeCurrent(data.hdc, hrc);
+		obsglMakeCurrent(data.hdc, hrc);
 		gl_free();
-		jimglMakeCurrent(last_hdc, last_hrc);
+		obsglMakeCurrent(last_hdc, last_hrc);
 	}
 
 	return RealWglDeleteContext(hrc);

@@ -1,0 +1,12 @@
+autoload -Uz log_info
+
+if (( ! ${+_log_group} )) typeset -g _log_group=0
+
+if (( _log_group )) {
+  print "::endgroup::"
+  typeset -g _log_group=0
+}
+if (( # )) {
+  print "::group::${@}"
+  typeset -g _log_group=1
+}
