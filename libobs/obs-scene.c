@@ -619,6 +619,9 @@ static inline void log_matrix(const struct matrix4 *mat, const char *name)
 static inline void update_nested_scene_crop(struct obs_scene_item *item,
 					    uint32_t width, uint32_t height)
 {
+	if (!item->last_height || !item->last_width)
+		return;
+
 	/* Use last size and new size to calculate factor to adjust crop by. */
 	float scale_x = (float)width / (float)item->last_width;
 	float scale_y = (float)height / (float)item->last_height;
