@@ -601,7 +601,7 @@ static inline uint32_t calc_cy(const struct obs_scene_item *item,
 	return (crop_cy > height) ? 2 : (height - crop_cy);
 }
 
-#ifdef _DEBUG
+#ifdef DEBUG_TRANSFORM
 static inline void log_matrix(const struct matrix4 *mat, const char *name)
 {
 	blog(LOG_DEBUG,
@@ -698,7 +698,7 @@ static void update_item_transform(struct obs_scene_item *item, bool update_tex)
 	matrix4_translate3f(&item->draw_transform, &item->draw_transform,
 			    position.x, position.y, 0.0f);
 
-#ifdef _DEBUG
+#ifdef DEBUG_TRANSFORM
 	blog(LOG_DEBUG, "Transform updated for \"%s\":",
 	     obs_source_get_name(item->source));
 	log_matrix(&item->draw_transform, "draw_transform");
@@ -732,7 +732,7 @@ static void update_item_transform(struct obs_scene_item *item, bool update_tex)
 	matrix4_translate3f(&item->box_transform, &item->box_transform,
 			    position.x, position.y, 0.0f);
 
-#ifdef _DEBUG
+#ifdef DEBUG_TRANSFORM
 	log_matrix(&item->draw_transform, "box_transform");
 #endif
 
