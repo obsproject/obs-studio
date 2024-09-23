@@ -292,6 +292,9 @@ void MultitrackVideoOutput::PrepareStreaming(QWidget *parent, const char *servic
 			return;
 		}
 	}
+
+	restart_on_error = false;
+
 	std::optional<GoLiveApi::Config> go_live_config;
 	std::optional<GoLiveApi::Config> custom;
 	bool is_custom_config = custom_config.has_value();
@@ -456,6 +459,8 @@ void MultitrackVideoOutput::StartedStreaming()
 
 void MultitrackVideoOutput::StopStreaming()
 {
+	restart_on_error = false;
+
 	OBSOutputAutoRelease current_output;
 	{
 		const std::lock_guard current_lock{current_mutex};
@@ -765,8 +770,7 @@ void SetupSignalHandlers(bool recording, MultitrackVideoOutput *self, obs_output
 {
 	auto handler = obs_output_get_signal_handler(output);
 
-	if (recording)
-		start.Connect(handler, "start", RecordingStartHandler, self);
+	start.Connect(handler, "start", !recording ? StreamStartHandler : RecordingStartHandler, self);
 
 	stop.Connect(handler, "stop", !recording ? StreamStopHandler : RecordingStopHandler, self);
 }
@@ -795,6 +799,12 @@ void MultitrackVideoOutput::ReleaseOnMainThread(std::optional<OBSOutputObjects> 
 
 	QMetaObject::invokeMethod(
 		QApplication::instance()->thread(), [objects = std::move(objects)] {}, Qt::QueuedConnection);
+}
+
+void StreamStartHandler(void *arg, calldata_t *)
+{
+	auto self = static_cast<MultitrackVideoOutput *>(arg);
+	self->restart_on_error = true;
 }
 
 void StreamStopHandler(void *arg, calldata_t *data)
