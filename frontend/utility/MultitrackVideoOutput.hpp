@@ -14,6 +14,7 @@
 class QString;
 class QWidget;
 
+void StreamStartHandler(void *arg, calldata_t *);
 void StreamStopHandler(void *arg, calldata_t *data);
 
 void RecordingStartHandler(void *arg, calldata_t *data);
@@ -41,6 +42,8 @@ public:
 		return current ? obs_output_get_ref(current->output_) : nullptr;
 	}
 
+	bool RestartOnError() { return restart_on_error; }
+
 private:
 	struct OBSOutputObjects {
 		OBSOutputAutoRelease output_;
@@ -61,6 +64,9 @@ private:
 	std::mutex current_stream_dump_mutex;
 	std::optional<OBSOutputObjects> current_stream_dump;
 
+	bool restart_on_error = false;
+
+	friend void StreamStartHandler(void *arg, calldata_t *data);
 	friend void StreamStopHandler(void *arg, calldata_t *data);
 	friend void RecordingStartHandler(void *arg, calldata_t *data);
 	friend void RecordingStopHandler(void *arg, calldata_t *);
