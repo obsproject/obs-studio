@@ -1,4 +1,4 @@
-echo on 
+echo on
 
 set GPUPriority=1
 set MAIN_DIR=%CD%
@@ -70,8 +70,8 @@ cmake -H. ^
          -DCURL_INCLUDE_DIR=%DEPS_DIR%/ ^
          -DENABLE_VLC=true ^
          -DVIRTUALCAM_GUID="27B05C2D-93DC-474A-A5DA-9BBA34CB2A9C" ^
-         -DOBS_VERSION="29.1.3" ^
-         -DOBS_VERSION_OVERRIDE="29.1.3"
+         -DOBS_VERSION="30.2.3" ^
+         -DOBS_VERSION_OVERRIDE="30.2.3"
 
 del /q /s %CD%\%InstallPath%
 cmake --build %CD%\%BUILD_DIRECTORY% --config %BuildConfig% -v
@@ -81,4 +81,3 @@ cmake --build "%CD%\%BUILD_DIRECTORY_X86%\plugins\win-dshow" --target install --
 
 cmake --build %CD%\%BUILD_DIRECTORY% --target check_dependencies --config %BuildConfig% -v
 if %errorlevel% neq 0 exit /b %errorlevel%
-
