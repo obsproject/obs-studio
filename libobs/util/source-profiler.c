@@ -341,6 +341,9 @@ void source_profiler_frame_collect(void)
 					smp->render_cpu.array[0]);
 			ucirclebuf_push(&ent->render_cpu_sum, sum);
 			da_clear(smp->render_cpu);
+		} else {
+			ucirclebuf_push(&ent->render_cpu, 0);
+			ucirclebuf_push(&ent->render_cpu_sum, 0);
 		}
 
 		/* Note that we still check this even if GPU profiling has been
@@ -368,6 +371,9 @@ void source_profiler_frame_collect(void)
 				ucirclebuf_push(&ent->render_gpu_sum, sum);
 			}
 			da_clear(smp->render_timers);
+		} else {
+			ucirclebuf_push(&ent->render_gpu, 0);
+			ucirclebuf_push(&ent->render_gpu_sum, 0);
 		}
 
 		const obs_source_t *src = *(const obs_source_t **)smps->hh.key;
@@ -604,9 +610,6 @@ bool source_profiler_fill_result(obs_source_t *source,
 		return false;
 
 	memset(result, 0, sizeof(struct profiler_result));
-	/* No or only stale data available */
-	if (!obs_source_enabled(source))
-		return true;
 
 	pthread_rwlock_rdlock(&hm_rwlock);
 
