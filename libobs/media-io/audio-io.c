@@ -312,9 +312,10 @@ bool audio_output_connect(audio_t *audio, size_t mi,
 
 	if (audio_get_input_idx(audio, mi, callback, param) == DARRAY_INVALID) {
 		struct audio_mix *mix = &audio->mixes[mi];
-		struct audio_input input;
-		input.callback = callback;
-		input.param = param;
+		struct audio_input input = {
+			.callback = callback,
+			.param = param,
+		};
 
 		if (conversion) {
 			input.conversion = *conversion;
