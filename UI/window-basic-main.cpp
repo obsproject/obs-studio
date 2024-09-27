@@ -8529,7 +8529,7 @@ void OBSBasic::on_actionShowWhatsNew_triggered()
 	if (!cef)
 		return;
 
-	config_set_int(App()->GetUserConfig(), "General", "InfoIncrement", -1);
+	config_set_int(App()->GetAppConfig(), "General", "InfoIncrement", -1);
 
 	WhatsNewInfoThread *wnit = new WhatsNewInfoThread();
 	connect(wnit, &WhatsNewInfoThread::Result, this,
