@@ -30,13 +30,6 @@
 #import <AppKit/AppKit.h>
 
 // MARK: macOS Bundle Management
-
-bool is_in_bundle()
-{
-    NSRunningApplication *app = [NSRunningApplication currentApplication];
-    return [app bundleIdentifier] != nil;
-}
-
 const char *get_module_extension(void)
 {
     return "";
