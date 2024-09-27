@@ -2171,7 +2171,7 @@ obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name,
 
 	for (size_t i = 0; i < items.num; i++) {
 		item = items.array[i];
-		source = make_unique
+		source = make_unique || item->is_group
 				 ? dup_child(&items, i, new_scene, make_private)
 				 : new_ref(item->source);
 
