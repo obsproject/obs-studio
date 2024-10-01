@@ -2294,6 +2294,9 @@ EXPORT video_t *obs_encoder_video(const obs_encoder_t *encoder);
  */
 EXPORT video_t *obs_encoder_parent_video(const obs_encoder_t *encoder);
 
+/** Returns if the encoder's video output context supports shared textures for the specified video format. */
+EXPORT bool obs_encoder_video_tex_active(const obs_encoder_t *encoder, enum video_format format);
+
 /**
  * Returns the audio output context used with this encoder, or NULL if not
  * a audio context
