@@ -209,7 +209,8 @@ static inline NV_ENC_MULTI_PASS get_nv_multipass(const char *multipass)
 
 static bool is_10_bit(const struct nvenc_data *enc)
 {
-	return enc->non_texture ? enc->in_format == VIDEO_FORMAT_P010 : obs_p010_tex_active();
+	return enc->non_texture ? enc->in_format == VIDEO_FORMAT_P010
+				: obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_P010);
 }
 
 static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings)
@@ -886,7 +887,8 @@ static void *nvenc_create_base(enum codec_type codec, obs_data_t *settings, obs_
 		}
 	}
 
-	if (texture && !obs_p010_tex_active() && !obs_nv12_tex_active()) {
+	if (texture && !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_NV12) &&
+	    !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_P010)) {
 		blog(LOG_INFO, "[obs-nvenc] nv12/p010 not active, falling back to "
 			       "non-texture encoder");
 		goto reroute;
@@ -1196,8 +1198,9 @@ bool nvenc_encode_base(struct nvenc_data *enc, struct nv_bitstream *bs, void *pi
 	if (enc->non_texture) {
 		params.bufferFmt = enc->surface_format;
 	} else {
-		params.bufferFmt = obs_p010_tex_active() ? NV_ENC_BUFFER_FORMAT_YUV420_10BIT
-							 : NV_ENC_BUFFER_FORMAT_NV12;
+		params.bufferFmt = obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_P010)
+					   ? NV_ENC_BUFFER_FORMAT_YUV420_10BIT
+					   : NV_ENC_BUFFER_FORMAT_NV12;
 	}
 
 	/* Add ROI map if enabled */
