@@ -2252,9 +2252,28 @@ EXPORT size_t obs_encoder_get_mixer_index(const obs_encoder_t *encoder);
  *
  * If the format is set to VIDEO_FORMAT_NONE, will revert to the default
  * functionality of converting only when absolutely necessary.
+ *
+ * If GPU scaling is enabled, conversion will happen on the GPU.
  */
 EXPORT void obs_encoder_set_preferred_video_format(obs_encoder_t *encoder, enum video_format format);
 EXPORT enum video_format obs_encoder_get_preferred_video_format(const obs_encoder_t *encoder);
+
+/**
+ * Sets the preferred colorspace for an encoder, e.g., to simultaneous SDR and
+ * HDR output.
+ * 
+ * Only supported when GPU scaling is enabled.
+ */
+EXPORT void obs_encoder_set_preferred_color_space(obs_encoder_t *encoder, enum video_colorspace colorspace);
+EXPORT enum video_colorspace obs_encoder_get_preferred_color_space(const obs_encoder_t *encoder);
+
+/**
+ * Sets the preferred range for an encoder.
+ * 
+ * Only supported when GPU scaling is enabled.
+ */
+EXPORT void obs_encoder_set_preferred_range(obs_encoder_t *encoder, enum video_range_type range);
+EXPORT enum video_range_type obs_encoder_get_preferred_range(const obs_encoder_t *encoder);
 
 /** Gets the default settings for an encoder type */
 EXPORT obs_data_t *obs_encoder_defaults(const char *id);
