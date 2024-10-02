@@ -1246,10 +1246,6 @@ void OBSBasic::Load(const char *file, bool remigrate)
 			}
 		}
 
-		config_set_string(App()->GetUserConfig(), "Basic",
-				  "SceneCollection", name.c_str());
-		config_set_string(App()->GetUserConfig(), "Basic",
-				  "SceneCollectionFile", name.c_str());
 		blog(LOG_INFO, "No scene file found, creating default scene");
 
 		bool hasFirstRun = config_get_bool(App()->GetUserConfig(),
