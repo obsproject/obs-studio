@@ -423,15 +423,15 @@ bool nvenc_checks(codec_caps_map &caps, vector<device_info> &device_infos)
 		return false;
 	}
 
-	if (nvenc_ver < NVENC_CONFIGURED_VERSION) {
-		printf("reason=outdated_driver\n");
-		return false;
-	}
-
 	device_infos.resize(cuda_devices);
 	for (int idx = 0; idx < cuda_devices; idx++) {
 		if (get_adapter_caps(idx, caps, device_infos[idx], nvml))
 			nvenc_devices++;
+	}
+
+	if (nvenc_ver < NVENC_CONFIGURED_VERSION) {
+		printf("reason=outdated_driver\n");
+		return false;
 	}
 
 	printf("nvenc_devices=%d\n", nvenc_devices);
