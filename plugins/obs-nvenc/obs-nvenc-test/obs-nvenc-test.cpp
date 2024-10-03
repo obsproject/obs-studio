@@ -250,7 +250,7 @@ struct NVSession {
 
 	~NVSession() { nv.nvEncDestroyEncoder(ptr); }
 
-	bool OpenSession(const CUDACtx &ctx)
+	NVENCSTATUS OpenSession(const CUDACtx &ctx)
 	{
 		NV_ENC_OPEN_ENCODE_SESSION_EX_PARAMS params = {};
 		params.version = NV_ENC_OPEN_ENCODE_SESSION_EX_PARAMS_VER;
@@ -258,7 +258,7 @@ struct NVSession {
 		params.device = ctx.ctx;
 		params.deviceType = NV_ENC_DEVICE_TYPE_CUDA;
 
-		return nv.nvEncOpenEncodeSessionEx(&params, &ptr) == NV_ENC_SUCCESS;
+		return nv.nvEncOpenEncodeSessionEx(&params, &ptr);
 	}
 };
 
@@ -294,7 +294,8 @@ static bool init_cuda()
 	return true;
 }
 
-static bool get_adapter_caps(int adapter_idx, codec_caps_map &caps, device_info &device_info, NVML &nvml)
+static bool get_adapter_caps(int adapter_idx, codec_caps_map &caps, device_info &device_info, NVML &nvml,
+			     bool &session_limit)
 {
 	CUDACtx cudaCtx;
 	NVSession nvSession;
@@ -325,7 +326,9 @@ static bool get_adapter_caps(int adapter_idx, codec_caps_map &caps, device_info 
 		nvml.getEncoderCapacity(dev, NVML_ENCODER_QUERY_AV1, &device_info.capacity_av1);
 	}
 
-	if (!nvSession.OpenSession(cudaCtx))
+	auto res = nvSession.OpenSession(cudaCtx);
+	session_limit = session_limit || res == NV_ENC_ERR_INCOMPATIBLE_CLIENT_KEY;
+	if (res != NV_ENC_SUCCESS)
 		return false;
 
 	uint32_t guid_count = 0;
@@ -391,6 +394,7 @@ bool nvenc_checks(codec_caps_map &caps, vector<device_info> &device_infos)
 	int cuda_devices = 0;
 	int nvenc_devices = 0;
 	char driver_ver[NVML_SYSTEM_DRIVER_VERSION_BUFFER_SIZE];
+	bool session_limit = false;
 
 	/* NVIDIA driver version */
 	if (nvml.getDriverVersion(driver_ver, sizeof(driver_ver)) == NVML_SUCCESS) {
@@ -425,8 +429,13 @@ bool nvenc_checks(codec_caps_map &caps, vector<device_info> &device_infos)
 
 	device_infos.resize(cuda_devices);
 	for (int idx = 0; idx < cuda_devices; idx++) {
-		if (get_adapter_caps(idx, caps, device_infos[idx], nvml))
+		if (get_adapter_caps(idx, caps, device_infos[idx], nvml, session_limit))
 			nvenc_devices++;
+	}
+
+	if (session_limit) {
+		printf("reason=session_limit\n");
+		return false;
 	}
 
 	if (nvenc_ver < NVENC_CONFIGURED_VERSION) {
