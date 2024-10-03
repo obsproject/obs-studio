@@ -1326,6 +1326,8 @@ extern void log_system_info(void);
 static bool obs_init(const char *locale, const char *module_config_path,
 		     profiler_name_store_t *store)
 {
+	blog(LOG_INFO, "OBS API version %d.%d.%d", LIBOBS_API_MAJOR_VER, LIBOBS_API_MINOR_VER, LIBOBS_API_PATCH_VER);
+
 	obs = bzalloc(sizeof(struct obs_core));
 
 	pthread_mutex_init_value(&obs->audio.monitoring_mutex);
