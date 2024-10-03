@@ -47,9 +47,26 @@ typedef nvmlReturn_t (*NVML_GET_DEVICE_NAME)(nvmlDevice_t, char *, unsigned);
 typedef nvmlReturn_t (*NVML_GET_DEVICE_PCIE_GEN)(nvmlDevice_t, unsigned *);
 typedef nvmlReturn_t (*NVML_GET_DEVICE_PCIE_WIDTH)(nvmlDevice_t, unsigned *);
 typedef nvmlReturn_t (*NVML_GET_DEVICE_NAME)(nvmlDevice_t, char *, unsigned);
+typedef nvmlReturn_t (*NVML_GET_DEVICE_ARCHITECTURE)(nvmlDevice_t, unsigned *);
 typedef nvmlReturn_t (*NVML_GET_ENCODER_SESSIONS)(nvmlDevice_t, unsigned *, void *);
 typedef nvmlReturn_t (*NVML_GET_ENCODER_CAPACITY)(nvmlDevice_t, nvmlEncoderType, unsigned *);
 typedef nvmlReturn_t (*NVML_GET_ENCODER_UTILISATION)(nvmlDevice_t, unsigned *, unsigned *);
+
+/* Only Kepler is defined in NVIDIA's documentation,
+ * but it's also the main one we care about. */
+constexpr uint32_t NVML_DEVICE_ARCH_KEPLER = 2;
+
+const unordered_map<uint32_t, const string_view> arch_to_name = {
+	{NVML_DEVICE_ARCH_KEPLER, "Kepler"},
+	{3, "Kepler"},
+	{4, "Maxwell"},
+	{5, "Volta"},
+	{6, "Turing"},
+	{7, "Ampere"},
+	{8, "Ada"},
+	{9, "Hopper"},
+};
+
 /* List of capabilities to be queried per codec */
 static const vector<pair<NV_ENC_CAPS, string>> capabilities = {
 	{NV_ENC_CAPS_NUM_MAX_BFRAMES, "bframes"},
@@ -82,6 +99,7 @@ struct device_info {
 	string cuda_uuid;
 	string name;
 
+	uint32_t architecture;
 	uint32_t pcie_gen;
 	uint32_t pcie_width;
 
@@ -105,6 +123,7 @@ struct NVML {
 	NVML_GET_DEVICE_NAME getDeviceName;
 	NVML_GET_DEVICE_PCIE_GEN getDevicePCIeGen;
 	NVML_GET_DEVICE_PCIE_WIDTH getDevicePCIeWidth;
+	NVML_GET_DEVICE_ARCHITECTURE getDeviceArchitecture;
 	NVML_GET_ENCODER_SESSIONS getEncoderSessions;
 	NVML_GET_ENCODER_CAPACITY getEncoderCapacity;
 	NVML_GET_ENCODER_UTILISATION getEncoderUtilisation;
@@ -133,13 +152,14 @@ struct NVML {
 		getDeviceName = (NVML_GET_DEVICE_NAME)load_nvml_func("nvmlDeviceGetName");
 		getDevicePCIeGen = (NVML_GET_DEVICE_PCIE_GEN)load_nvml_func("nvmlDeviceGetCurrPcieLinkGeneration");
 		getDevicePCIeWidth = (NVML_GET_DEVICE_PCIE_WIDTH)load_nvml_func("nvmlDeviceGetCurrPcieLinkWidth");
+		getDeviceArchitecture = (NVML_GET_DEVICE_ARCHITECTURE)load_nvml_func("nvmlDeviceGetArchitecture");
 		getEncoderSessions = (NVML_GET_ENCODER_SESSIONS)load_nvml_func("nvmlDeviceGetEncoderSessions");
 		getEncoderCapacity = (NVML_GET_ENCODER_CAPACITY)load_nvml_func("nvmlDeviceGetEncoderCapacity");
 		getEncoderUtilisation = (NVML_GET_ENCODER_UTILISATION)load_nvml_func("nvmlDeviceGetEncoderUtilization");
 
 		if (!init || !shutdown || !getDriverVersion || !getDeviceHandleByPCIBusId || !getDeviceUUID ||
 		    !getDeviceName || !getDevicePCIeGen || !getDevicePCIeWidth || !getEncoderSessions ||
-		    !getEncoderCapacity || !getEncoderUtilisation) {
+		    !getEncoderCapacity || !getEncoderUtilisation || !getDeviceArchitecture) {
 			return false;
 		}
 
@@ -298,6 +318,7 @@ static bool get_adapter_caps(int adapter_idx, codec_caps_map &caps, device_info 
 		nvml.getDevicePCIeGen(dev, &device_info.pcie_gen);
 		nvml.getDevicePCIeWidth(dev, &device_info.pcie_width);
 		nvml.getEncoderSessions(dev, &device_info.encoder_sessions, nullptr);
+		nvml.getDeviceArchitecture(dev, &device_info.architecture);
 		nvml.getEncoderUtilisation(dev, &device_info.utilisation, &device_info.sample_period);
 		nvml.getEncoderCapacity(dev, NVML_ENCODER_QUERY_H264, &device_info.capacity_h264);
 		nvml.getEncoderCapacity(dev, NVML_ENCODER_QUERY_HEVC, &device_info.capacity_hevc);
@@ -453,12 +474,17 @@ int check_thread()
 	/* Per-device info (mostly for debugging) */
 	for (size_t idx = 0; idx < device_infos.size(); idx++) {
 		const auto &info = device_infos[idx];
+		string_view architecture = "Unknown";
+		if (arch_to_name.count(info.architecture))
+			architecture = arch_to_name.at(info.architecture);
 
 		printf("\n[device.%zu]\n"
 		       "pci_id=%s\n"
 		       "nvml_uuid=%s\n"
 		       "cuda_uuid=%s\n"
 		       "name=%s\n"
+		       "architecture=%u\n"
+		       "architecture_name=%s\n"
 		       "pcie_link_width=%d\n"
 		       "pcie_link_gen=%d\n"
 		       "encoder_sessions=%u\n"
@@ -468,8 +494,8 @@ int check_thread()
 		       "capacity_hevc=%u\n"
 		       "capacity_av1=%u\n",
 		       idx, info.pci_id.c_str(), info.nvml_uuid.c_str(), info.cuda_uuid.c_str(), info.name.c_str(),
-		       info.pcie_width, info.pcie_gen, info.encoder_sessions, info.utilisation, info.sample_period,
-		       info.capacity_h264, info.capacity_hevc, info.capacity_av1);
+		       info.architecture, architecture.data(), info.pcie_width, info.pcie_gen, info.encoder_sessions,
+		       info.utilisation, info.sample_period, info.capacity_h264, info.capacity_hevc, info.capacity_av1);
 
 		for (const auto &[codec, codec_caps] : info.caps) {
 			printf("\n[device.%zu.%s]\n", idx, codec.c_str());
