@@ -61,9 +61,7 @@ static inline void shader_var_init(struct shader_var *sv)
 	memset(sv, 0, sizeof(struct shader_var));
 }
 
-static inline void shader_var_init_param(struct shader_var *sv, char *type,
-					 char *name, bool is_uniform,
-					 bool is_const)
+static inline void shader_var_init_param(struct shader_var *sv, char *type, char *name, bool is_uniform, bool is_const)
 {
 	if (is_uniform)
 		sv->var_type = SHADER_VAR_UNIFORM;
@@ -114,8 +112,7 @@ static inline void shader_sampler_free(struct shader_sampler *ss)
 	da_free(ss->values);
 }
 
-EXPORT void shader_sampler_convert(struct shader_sampler *ss,
-				   struct gs_sampler_info *info);
+EXPORT void shader_sampler_convert(struct shader_sampler *ss, struct gs_sampler_info *info);
 
 /* ------------------------------------------------------------------------- */
 
@@ -151,8 +148,7 @@ struct shader_func {
 	struct cf_token *start, *end;
 };
 
-static inline void shader_func_init(struct shader_func *sf, char *return_type,
-				    char *name)
+static inline void shader_func_init(struct shader_func *sf, char *return_type, char *name)
 {
 	da_init(sf->params);
 
@@ -217,16 +213,14 @@ static inline void shader_parser_free(struct shader_parser *sp)
 	da_free(sp->funcs);
 }
 
-EXPORT bool shader_parse(struct shader_parser *sp, const char *shader,
-			 const char *file);
+EXPORT bool shader_parse(struct shader_parser *sp, const char *shader, const char *file);
 
 static inline char *shader_parser_geterrors(struct shader_parser *sp)
 {
 	return error_data_buildstring(&sp->cfp.error_list);
 }
 
-static inline struct shader_var *
-shader_parser_getparam(struct shader_parser *sp, const char *param_name)
+static inline struct shader_var *shader_parser_getparam(struct shader_parser *sp, const char *param_name)
 {
 	size_t i;
 	for (i = 0; i < sp->params.num; i++) {
@@ -238,8 +232,7 @@ shader_parser_getparam(struct shader_parser *sp, const char *param_name)
 	return NULL;
 }
 
-static inline struct shader_struct *
-shader_parser_getstruct(struct shader_parser *sp, const char *struct_name)
+static inline struct shader_struct *shader_parser_getstruct(struct shader_parser *sp, const char *struct_name)
 {
 	size_t i;
 	for (i = 0; i < sp->structs.num; i++) {
@@ -251,8 +244,7 @@ shader_parser_getstruct(struct shader_parser *sp, const char *struct_name)
 	return NULL;
 }
 
-static inline struct shader_sampler *
-shader_parser_getsampler(struct shader_parser *sp, const char *sampler_name)
+static inline struct shader_sampler *shader_parser_getsampler(struct shader_parser *sp, const char *sampler_name)
 {
 	size_t i;
 	for (i = 0; i < sp->samplers.num; i++) {
@@ -264,8 +256,7 @@ shader_parser_getsampler(struct shader_parser *sp, const char *sampler_name)
 	return NULL;
 }
 
-static inline struct shader_func *
-shader_parser_getfunc(struct shader_parser *sp, const char *func_name)
+static inline struct shader_func *shader_parser_getfunc(struct shader_parser *sp, const char *func_name)
 {
 	size_t i;
 	for (i = 0; i < sp->funcs.num; i++) {

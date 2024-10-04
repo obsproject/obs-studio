@@ -36,10 +36,8 @@ public:
 	void AddPreset(const std::string &name, const RoutingPreset &preset);
 	bool PresetByName(const std::string &name, RoutingPreset &preset) const;
 	RoutingPresetMap GetPresetTable() const;
-	bool FindFirstPreset(ConnectionKind kind, NTV2DeviceID id,
-			     NTV2Mode mode, NTV2VideoFormat vf,
-			     NTV2PixelFormat pf, VPIDStandard standard,
-			     HDMIWireFormat hwf, RoutingPreset &preset);
+	bool FindFirstPreset(ConnectionKind kind, NTV2DeviceID id, NTV2Mode mode, NTV2VideoFormat vf,
+			     NTV2PixelFormat pf, VPIDStandard standard, HDMIWireFormat hwf, RoutingPreset &preset);
 
 private:
 	void build_preset_table();

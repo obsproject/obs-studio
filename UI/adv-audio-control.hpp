@@ -53,8 +53,7 @@ private:
 	static void OBSSourceFlagsChanged(void *param, calldata_t *calldata);
 	static void OBSSourceVolumeChanged(void *param, calldata_t *calldata);
 	static void OBSSourceSyncChanged(void *param, calldata_t *calldata);
-	static void OBSSourceMonitoringTypeChanged(void *param,
-						   calldata_t *calldata);
+	static void OBSSourceMonitoringTypeChanged(void *param, calldata_t *calldata);
 	static void OBSSourceMixersChanged(void *param, calldata_t *calldata);
 	static void OBSSourceBalanceChanged(void *param, calldata_t *calldata);
 	static void OBSSourceRenamed(void *param, calldata_t *calldata);

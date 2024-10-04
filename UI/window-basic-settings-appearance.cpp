@@ -20,13 +20,10 @@ using namespace std;
 void OBSBasicSettings::InitAppearancePage()
 {
 	savedTheme = App()->GetTheme();
-	const QString currentBaseTheme =
-		savedTheme->isBaseTheme ? savedTheme->id : savedTheme->parent;
+	const QString currentBaseTheme = savedTheme->isBaseTheme ? savedTheme->id : savedTheme->parent;
 
 	for (const OBSTheme &theme : App()->GetThemes()) {
-		if (theme.isBaseTheme &&
-		    (HighContrastEnabled() || theme.isVisible ||
-		     theme.id == currentBaseTheme)) {
+		if (theme.isBaseTheme && (HighContrastEnabled() || theme.isVisible || theme.id == currentBaseTheme)) {
 			ui->theme->addItem(theme.name, theme.id);
 		}
 	}
@@ -35,8 +32,7 @@ void OBSBasicSettings::InitAppearancePage()
 	if (idx != -1)
 		ui->theme->setCurrentIndex(idx);
 
-	ui->themeVariant->setPlaceholderText(
-		QTStr("Basic.Settings.Appearance.General.NoVariant"));
+	ui->themeVariant->setPlaceholderText(QTStr("Basic.Settings.Appearance.General.NoVariant"));
 }
 
 void OBSBasicSettings::LoadThemeList(bool reload)
@@ -44,9 +40,7 @@ void OBSBasicSettings::LoadThemeList(bool reload)
 	ProfileScope("OBSBasicSettings::LoadThemeList");
 
 	const OBSTheme *currentTheme = App()->GetTheme();
-	const QString currentBaseTheme = currentTheme->isBaseTheme
-						 ? currentTheme->id
-						 : currentTheme->parent;
+	const QString currentBaseTheme = currentTheme->isBaseTheme ? currentTheme->id : currentTheme->parent;
 
 	/* Nothing to do if current and last base theme were the same */
 	const QString baseThemeId = ui->theme->currentData().toString();
@@ -57,11 +51,9 @@ void OBSBasicSettings::LoadThemeList(bool reload)
 	ui->themeVariant->clear();
 
 	auto themes = App()->GetThemes();
-	std::sort(themes.begin(), themes.end(),
-		  [](const OBSTheme &a, const OBSTheme &b) -> bool {
-			  return QString::compare(a.name, b.name,
-						  Qt::CaseInsensitive) < 0;
-		  });
+	std::sort(themes.begin(), themes.end(), [](const OBSTheme &a, const OBSTheme &b) -> bool {
+		return QString::compare(a.name, b.name, Qt::CaseInsensitive) < 0;
+	});
 
 	QString defaultVariant;
 	const OBSTheme *baseTheme = App()->GetTheme(baseThemeId);
@@ -111,8 +103,7 @@ void OBSBasicSettings::SaveAppearanceSettings()
 
 	OBSTheme *currentTheme = App()->GetTheme();
 	if (savedTheme != currentTheme) {
-		config_set_string(config, "Appearance", "Theme",
-				  QT_TO_UTF8(currentTheme->id));
+		config_set_string(config, "Appearance", "Theme", QT_TO_UTF8(currentTheme->id));
 	}
 }
 

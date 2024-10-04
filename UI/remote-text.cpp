@@ -58,8 +58,7 @@ void RemoteTextThread::run()
 		header = curl_slist_append(header, versionString.c_str());
 
 		if (!contentTypeString.empty()) {
-			header = curl_slist_append(header,
-						   contentTypeString.c_str());
+			header = curl_slist_append(header, contentTypeString.c_str());
 		}
 
 		for (std::string &h : extraHeaders)
@@ -70,24 +69,20 @@ void RemoteTextThread::run()
 		curl_easy_setopt(curl.get(), CURLOPT_HTTPHEADER, header);
 		curl_easy_setopt(curl.get(), CURLOPT_ERRORBUFFER, error);
 		curl_easy_setopt(curl.get(), CURLOPT_FAILONERROR, 1L);
-		curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION,
-				 string_write);
+		curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION, string_write);
 		curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &str);
 		curl_obs_set_revoke_setting(curl.get());
 
 		if (timeoutSec)
-			curl_easy_setopt(curl.get(), CURLOPT_TIMEOUT,
-					 timeoutSec);
+			curl_easy_setopt(curl.get(), CURLOPT_TIMEOUT, timeoutSec);
 
 		if (!postData.empty()) {
-			curl_easy_setopt(curl.get(), CURLOPT_POSTFIELDS,
-					 postData.c_str());
+			curl_easy_setopt(curl.get(), CURLOPT_POSTFIELDS, postData.c_str());
 		}
 
 		code = curl_easy_perform(curl.get());
 		if (code != CURLE_OK) {
-			blog(LOG_WARNING,
-			     "RemoteTextThread: HTTP request failed. %s",
+			blog(LOG_WARNING, "RemoteTextThread: HTTP request failed. %s",
 			     strlen(error) ? error : curl_easy_strerror(code));
 			emit Result(QString(), QT_UTF8(error));
 		} else {
@@ -98,8 +93,7 @@ void RemoteTextThread::run()
 	}
 }
 
-static size_t header_write(char *ptr, size_t size, size_t nmemb,
-			   vector<string> &list)
+static size_t header_write(char *ptr, size_t size, size_t nmemb, vector<string> &list)
 {
 	string str;
 
@@ -116,12 +110,9 @@ static size_t header_write(char *ptr, size_t size, size_t nmemb,
 	return total;
 }
 
-bool GetRemoteFile(const char *url, std::string &str, std::string &error,
-		   long *responseCode, const char *contentType,
-		   std::string request_type, const char *postData,
-		   std::vector<std::string> extraHeaders,
-		   std::string *signature, int timeoutSec, bool fail_on_error,
-		   int postDataSize)
+bool GetRemoteFile(const char *url, std::string &str, std::string &error, long *responseCode, const char *contentType,
+		   std::string request_type, const char *postData, std::vector<std::string> extraHeaders,
+		   std::string *signature, int timeoutSec, bool fail_on_error, int postDataSize)
 {
 	vector<string> header_in_list;
 	char error_in[CURL_ERROR_SIZE];
@@ -145,8 +136,7 @@ bool GetRemoteFile(const char *url, std::string &str, std::string &error,
 		header = curl_slist_append(header, versionString.c_str());
 
 		if (!contentTypeString.empty()) {
-			header = curl_slist_append(header,
-						   contentTypeString.c_str());
+			header = curl_slist_append(header, contentTypeString.c_str());
 		}
 
 		for (std::string &h : extraHeaders)
@@ -158,61 +148,47 @@ bool GetRemoteFile(const char *url, std::string &str, std::string &error,
 		curl_easy_setopt(curl.get(), CURLOPT_ERRORBUFFER, error_in);
 		if (fail_on_error)
 			curl_easy_setopt(curl.get(), CURLOPT_FAILONERROR, 1L);
-		curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION,
-				 string_write);
+		curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION, string_write);
 		curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &str);
 		curl_obs_set_revoke_setting(curl.get());
 
 		if (signature) {
-			curl_easy_setopt(curl.get(), CURLOPT_HEADERFUNCTION,
-					 header_write);
-			curl_easy_setopt(curl.get(), CURLOPT_HEADERDATA,
-					 &header_in_list);
+			curl_easy_setopt(curl.get(), CURLOPT_HEADERFUNCTION, header_write);
+			curl_easy_setopt(curl.get(), CURLOPT_HEADERDATA, &header_in_list);
 		}
 
 		if (timeoutSec)
-			curl_easy_setopt(curl.get(), CURLOPT_TIMEOUT,
-					 timeoutSec);
+			curl_easy_setopt(curl.get(), CURLOPT_TIMEOUT, timeoutSec);
 
 		if (!request_type.empty()) {
 			if (request_type != "GET")
-				curl_easy_setopt(curl.get(),
-						 CURLOPT_CUSTOMREQUEST,
-						 request_type.c_str());
+				curl_easy_setopt(curl.get(), CURLOPT_CUSTOMREQUEST, request_type.c_str());
 
 			// Special case of "POST"
 			if (request_type == "POST") {
 				curl_easy_setopt(curl.get(), CURLOPT_POST, 1);
 				if (!postData)
-					curl_easy_setopt(curl.get(),
-							 CURLOPT_POSTFIELDS,
-							 "{}");
+					curl_easy_setopt(curl.get(), CURLOPT_POSTFIELDS, "{}");
 			}
 		}
 		if (postData) {
 			if (postDataSize > 0) {
-				curl_easy_setopt(curl.get(),
-						 CURLOPT_POSTFIELDSIZE,
-						 (long)postDataSize);
+				curl_easy_setopt(curl.get(), CURLOPT_POSTFIELDSIZE, (long)postDataSize);
 			}
-			curl_easy_setopt(curl.get(), CURLOPT_POSTFIELDS,
-					 postData);
+			curl_easy_setopt(curl.get(), CURLOPT_POSTFIELDS, postData);
 		}
 
 		code = curl_easy_perform(curl.get());
 		if (responseCode)
-			curl_easy_getinfo(curl.get(), CURLINFO_RESPONSE_CODE,
-					  responseCode);
+			curl_easy_getinfo(curl.get(), CURLINFO_RESPONSE_CODE, responseCode);
 
 		if (code != CURLE_OK) {
-			error = strlen(error_in) ? error_in
-						 : curl_easy_strerror(code);
+			error = strlen(error_in) ? error_in : curl_easy_strerror(code);
 		} else if (signature) {
 			for (string &h : header_in_list) {
 				string name = h.substr(0, 13);
 				// HTTP headers are technically case-insensitive
-				if (name == "X-Signature: " ||
-				    name == "x-signature: ") {
+				if (name == "X-Signature: " || name == "x-signature: ") {
 					*signature = h.substr(13);
 					break;
 				}

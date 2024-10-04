@@ -17,8 +17,7 @@
 
 #include "gl-subsystem.h"
 
-static inline bool upload_texture_cube(struct gs_texture_cube *tex,
-				       const uint8_t **data)
+static inline bool upload_texture_cube(struct gs_texture_cube *tex, const uint8_t **data)
 {
 	uint32_t row_size = tex->size * gs_get_format_bpp(tex->base.format);
 	uint32_t tex_size = tex->size * row_size / 8;
@@ -37,10 +36,8 @@ static inline bool upload_texture_cube(struct gs_texture_cube *tex,
 		if (!gl_bind_texture(target, tex->base.texture))
 			success = false;
 
-		if (!gl_init_face(target, gl_type, num_levels,
-				  tex->base.gl_format,
-				  tex->base.gl_internal_format, compressed,
-				  tex->size, tex->size, tex_size, &data))
+		if (!gl_init_face(target, gl_type, num_levels, tex->base.gl_format, tex->base.gl_internal_format,
+				  compressed, tex->size, tex->size, tex_size, &data))
 			success = false;
 
 		if (!gl_bind_texture(target, 0))
@@ -57,10 +54,8 @@ static inline bool upload_texture_cube(struct gs_texture_cube *tex,
 	return success;
 }
 
-gs_texture_t *device_cubetexture_create(gs_device_t *device, uint32_t size,
-					enum gs_color_format color_format,
-					uint32_t levels, const uint8_t **data,
-					uint32_t flags)
+gs_texture_t *device_cubetexture_create(gs_device_t *device, uint32_t size, enum gs_color_format color_format,
+					uint32_t levels, const uint8_t **data, uint32_t flags)
 {
 	struct gs_texture_cube *tex = bzalloc(sizeof(struct gs_texture_cube));
 	tex->base.device = device;
@@ -111,8 +106,7 @@ static inline bool is_texture_cube(const gs_texture_t *tex, const char *func)
 
 uint32_t gs_cubetexture_get_size(const gs_texture_t *cubetex)
 {
-	const struct gs_texture_cube *cube =
-		(const struct gs_texture_cube *)cubetex;
+	const struct gs_texture_cube *cube = (const struct gs_texture_cube *)cubetex;
 
 	if (!is_texture_cube(cubetex, "gs_cubetexture_get_size"))
 		return 0;
@@ -120,8 +114,7 @@ uint32_t gs_cubetexture_get_size(const gs_texture_t *cubetex)
 	return cube->size;
 }
 
-enum gs_color_format
-gs_cubetexture_get_color_format(const gs_texture_t *cubetex)
+enum gs_color_format gs_cubetexture_get_color_format(const gs_texture_t *cubetex)
 {
 	return cubetex->format;
 }

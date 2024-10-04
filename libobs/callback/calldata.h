@@ -59,8 +59,7 @@ static inline void calldata_init(struct calldata *data)
 
 static inline void calldata_clear(struct calldata *data);
 
-static inline void calldata_init_fixed(struct calldata *data, uint8_t *stack,
-				       size_t size)
+static inline void calldata_init_fixed(struct calldata *data, uint8_t *stack, size_t size)
 {
 	data->stack = stack;
 	data->capacity = size;
@@ -75,10 +74,8 @@ static inline void calldata_free(struct calldata *data)
 		bfree(data->stack);
 }
 
-EXPORT bool calldata_get_data(const calldata_t *data, const char *name,
-			      void *out, size_t size);
-EXPORT void calldata_set_data(calldata_t *data, const char *name,
-			      const void *in, size_t new_size);
+EXPORT bool calldata_get_data(const calldata_t *data, const char *name, void *out, size_t size);
+EXPORT void calldata_set_data(calldata_t *data, const char *name, const void *in, size_t new_size);
 
 static inline void calldata_clear(struct calldata *data)
 {
@@ -103,32 +100,27 @@ static inline void calldata_destroy(calldata_t *cd)
 /* NOTE: 'get' functions return true only if parameter exists, and is the
  *       same type.  They return false otherwise. */
 
-static inline bool calldata_get_int(const calldata_t *data, const char *name,
-				    long long *val)
+static inline bool calldata_get_int(const calldata_t *data, const char *name, long long *val)
 {
 	return calldata_get_data(data, name, val, sizeof(*val));
 }
 
-static inline bool calldata_get_float(const calldata_t *data, const char *name,
-				      double *val)
+static inline bool calldata_get_float(const calldata_t *data, const char *name, double *val)
 {
 	return calldata_get_data(data, name, val, sizeof(*val));
 }
 
-static inline bool calldata_get_bool(const calldata_t *data, const char *name,
-				     bool *val)
+static inline bool calldata_get_bool(const calldata_t *data, const char *name, bool *val)
 {
 	return calldata_get_data(data, name, val, sizeof(*val));
 }
 
-static inline bool calldata_get_ptr(const calldata_t *data, const char *name,
-				    void *p_ptr)
+static inline bool calldata_get_ptr(const calldata_t *data, const char *name, void *p_ptr)
 {
 	return calldata_get_data(data, name, p_ptr, sizeof(p_ptr));
 }
 
-EXPORT bool calldata_get_string(const calldata_t *data, const char *name,
-				const char **str);
+EXPORT bool calldata_get_string(const calldata_t *data, const char *name, const char **str);
 
 /* ------------------------------------------------------------------------- */
 /* call if you know your data is valid */
@@ -161,8 +153,7 @@ static inline void *calldata_ptr(const calldata_t *data, const char *name)
 	return val;
 }
 
-static inline const char *calldata_string(const calldata_t *data,
-					  const char *name)
+static inline const char *calldata_string(const calldata_t *data, const char *name)
 {
 	const char *val = NULL;
 	calldata_get_string(data, name, &val);
@@ -171,32 +162,27 @@ static inline const char *calldata_string(const calldata_t *data,
 
 /* ------------------------------------------------------------------------- */
 
-static inline void calldata_set_int(calldata_t *data, const char *name,
-				    long long val)
+static inline void calldata_set_int(calldata_t *data, const char *name, long long val)
 {
 	calldata_set_data(data, name, &val, sizeof(val));
 }
 
-static inline void calldata_set_float(calldata_t *data, const char *name,
-				      double val)
+static inline void calldata_set_float(calldata_t *data, const char *name, double val)
 {
 	calldata_set_data(data, name, &val, sizeof(val));
 }
 
-static inline void calldata_set_bool(calldata_t *data, const char *name,
-				     bool val)
+static inline void calldata_set_bool(calldata_t *data, const char *name, bool val)
 {
 	calldata_set_data(data, name, &val, sizeof(val));
 }
 
-static inline void calldata_set_ptr(calldata_t *data, const char *name,
-				    void *ptr)
+static inline void calldata_set_ptr(calldata_t *data, const char *name, void *ptr)
 {
 	calldata_set_data(data, name, &ptr, sizeof(ptr));
 }
 
-static inline void calldata_set_string(calldata_t *data, const char *name,
-				       const char *str)
+static inline void calldata_set_string(calldata_t *data, const char *name, const char *str)
 {
 	if (str)
 		calldata_set_data(data, name, str, strlen(str) + 1);

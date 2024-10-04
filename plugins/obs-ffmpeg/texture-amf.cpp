@@ -35,9 +35,8 @@ using namespace amf;
 /* ========================================================================= */
 /* Junk                                                                      */
 
-#define do_log(level, format, ...)                          \
-	blog(level, "[%s: '%s'] " format, enc->encoder_str, \
-	     obs_encoder_get_name(enc->encoder), ##__VA_ARGS__)
+#define do_log(level, format, ...) \
+	blog(level, "[%s: '%s'] " format, enc->encoder_str, obs_encoder_get_name(enc->encoder), ##__VA_ARGS__)
 
 #define error(format, ...) do_log(LOG_ERROR, format, ##__VA_ARGS__)
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
@@ -48,9 +47,7 @@ struct amf_error {
 	const char *str;
 	AMF_RESULT res;
 
-	inline amf_error(const char *str, AMF_RESULT res) : str(str), res(res)
-	{
-	}
+	inline amf_error(const char *str, AMF_RESULT res) : str(str), res(res) {}
 };
 
 struct handle_tex {
@@ -199,54 +196,40 @@ struct amf_fallback : amf_base, public AMFSurfaceObserver {
 /* ------------------------------------------------------------------------- */
 /* More garbage                                                              */
 
-template<typename T>
-static bool get_amf_property(amf_base *enc, const wchar_t *name, T *value)
+template<typename T> static bool get_amf_property(amf_base *enc, const wchar_t *name, T *value)
 {
 	AMF_RESULT res = enc->amf_encoder->GetProperty(name, value);
 	return res == AMF_OK;
 }
 
-template<typename T>
-static void set_amf_property(amf_base *enc, const wchar_t *name, const T &value)
+template<typename T> static void set_amf_property(amf_base *enc, const wchar_t *name, const T &value)
 {
 	AMF_RESULT res = enc->amf_encoder->SetProperty(name, value);
 	if (res != AMF_OK)
-		error("Failed to set property '%ls': %ls", name,
-		      amf_trace->GetResultText(res));
+		error("Failed to set property '%ls': %ls", name, amf_trace->GetResultText(res));
 }
 
-#define set_avc_property(enc, name, value) \
-	set_amf_property(enc, AMF_VIDEO_ENCODER_##name, value)
-#define set_hevc_property(enc, name, value) \
-	set_amf_property(enc, AMF_VIDEO_ENCODER_HEVC_##name, value)
-#define set_av1_property(enc, name, value) \
-	set_amf_property(enc, AMF_VIDEO_ENCODER_AV1_##name, value)
+#define set_avc_property(enc, name, value) set_amf_property(enc, AMF_VIDEO_ENCODER_##name, value)
+#define set_hevc_property(enc, name, value) set_amf_property(enc, AMF_VIDEO_ENCODER_HEVC_##name, value)
+#define set_av1_property(enc, name, value) set_amf_property(enc, AMF_VIDEO_ENCODER_AV1_##name, value)
 
-#define get_avc_property(enc, name, value) \
-	get_amf_property(enc, AMF_VIDEO_ENCODER_##name, value)
-#define get_hevc_property(enc, name, value) \
-	get_amf_property(enc, AMF_VIDEO_ENCODER_HEVC_##name, value)
-#define get_av1_property(enc, name, value) \
-	get_amf_property(enc, AMF_VIDEO_ENCODER_AV1_##name, value)
+#define get_avc_property(enc, name, value) get_amf_property(enc, AMF_VIDEO_ENCODER_##name, value)
+#define get_hevc_property(enc, name, value) get_amf_property(enc, AMF_VIDEO_ENCODER_HEVC_##name, value)
+#define get_av1_property(enc, name, value) get_amf_property(enc, AMF_VIDEO_ENCODER_AV1_##name, value)
 
-#define get_opt_name(name)                                              \
-	((enc->codec == amf_codec_type::AVC) ? AMF_VIDEO_ENCODER_##name \
-	 : (enc->codec == amf_codec_type::HEVC)                         \
-		 ? AMF_VIDEO_ENCODER_HEVC_##name                        \
-		 : AMF_VIDEO_ENCODER_AV1_##name)
+#define get_opt_name(name)                                                      \
+	((enc->codec == amf_codec_type::AVC)    ? AMF_VIDEO_ENCODER_##name      \
+	 : (enc->codec == amf_codec_type::HEVC) ? AMF_VIDEO_ENCODER_HEVC_##name \
+						: AMF_VIDEO_ENCODER_AV1_##name)
 #define set_opt(name, value) set_amf_property(enc, get_opt_name(name), value)
 #define get_opt(name, value) get_amf_property(enc, get_opt_name(name), value)
 #define set_avc_opt(name, value) set_avc_property(enc, name, value)
 #define set_hevc_opt(name, value) set_hevc_property(enc, name, value)
 #define set_av1_opt(name, value) set_av1_property(enc, name, value)
-#define set_enum_opt(name, value) \
-	set_amf_property(enc, get_opt_name(name), get_opt_name(name##_##value))
-#define set_avc_enum(name, value) \
-	set_avc_property(enc, name, AMF_VIDEO_ENCODER_##name##_##value)
-#define set_hevc_enum(name, value) \
-	set_hevc_property(enc, name, AMF_VIDEO_ENCODER_HEVC_##name##_##value)
-#define set_av1_enum(name, value) \
-	set_av1_property(enc, name, AMF_VIDEO_ENCODER_AV1_##name##_##value)
+#define set_enum_opt(name, value) set_amf_property(enc, get_opt_name(name), get_opt_name(name##_##value))
+#define set_avc_enum(name, value) set_avc_property(enc, name, AMF_VIDEO_ENCODER_##name##_##value)
+#define set_hevc_enum(name, value) set_hevc_property(enc, name, AMF_VIDEO_ENCODER_HEVC_##name##_##value)
+#define set_av1_enum(name, value) set_av1_property(enc, name, AMF_VIDEO_ENCODER_AV1_##name##_##value)
 
 /* ------------------------------------------------------------------------- */
 /* Implementation                                                            */
@@ -281,10 +264,8 @@ try {
 		throw "Couldn't get D3D11/DXGI libraries? "
 		      "That definitely shouldn't be possible.";
 
-	create_dxgi = (CREATEDXGIFACTORY1PROC)GetProcAddress(
-		dxgi, "CreateDXGIFactory1");
-	create_device = (PFN_D3D11_CREATE_DEVICE)GetProcAddress(
-		d3d11, "D3D11CreateDevice");
+	create_dxgi = (CREATEDXGIFACTORY1PROC)GetProcAddress(dxgi, "CreateDXGIFactory1");
+	create_device = (PFN_D3D11_CREATE_DEVICE)GetProcAddress(d3d11, "D3D11CreateDevice");
 
 	if (!create_dxgi || !create_device)
 		throw "Failed to load D3D11/DXGI procedures";
@@ -305,9 +286,8 @@ try {
 		throw "Seems somehow AMF is trying to initialize "
 		      "on a non-AMD adapter";
 
-	hr = create_device(adapter, D3D_DRIVER_TYPE_UNKNOWN, nullptr, 0,
-			   nullptr, 0, D3D11_SDK_VERSION, &device, nullptr,
-			   &context);
+	hr = create_device(adapter, D3D_DRIVER_TYPE_UNKNOWN, nullptr, 0, nullptr, 0, D3D11_SDK_VERSION, &device,
+			   nullptr, &context);
 	if (FAILED(hr))
 		throw HRError("D3D11CreateDevice failed", hr);
 
@@ -324,9 +304,7 @@ try {
 	return false;
 }
 
-static void add_output_tex(amf_texencode *enc,
-			   ComPtr<ID3D11Texture2D> &output_tex,
-			   ID3D11Texture2D *from)
+static void add_output_tex(amf_texencode *enc, ComPtr<ID3D11Texture2D> &output_tex, ID3D11Texture2D *from)
 {
 	ID3D11Device *device = enc->device;
 	HRESULT hr;
@@ -341,8 +319,7 @@ static void add_output_tex(amf_texencode *enc,
 		throw HRError("Failed to create texture", hr);
 }
 
-static inline bool get_available_tex(amf_texencode *enc,
-				     ComPtr<ID3D11Texture2D> &output_tex)
+static inline bool get_available_tex(amf_texencode *enc, ComPtr<ID3D11Texture2D> &output_tex)
 {
 	std::scoped_lock lock(enc->textures_mutex);
 	if (enc->available_textures.size()) {
@@ -354,16 +331,13 @@ static inline bool get_available_tex(amf_texencode *enc,
 	return false;
 }
 
-static inline void get_output_tex(amf_texencode *enc,
-				  ComPtr<ID3D11Texture2D> &output_tex,
-				  ID3D11Texture2D *from)
+static inline void get_output_tex(amf_texencode *enc, ComPtr<ID3D11Texture2D> &output_tex, ID3D11Texture2D *from)
 {
 	if (!get_available_tex(enc, output_tex))
 		add_output_tex(enc, output_tex, from);
 }
 
-static void get_tex_from_handle(amf_texencode *enc, uint32_t handle,
-				IDXGIKeyedMutex **km_out,
+static void get_tex_from_handle(amf_texencode *enc, uint32_t handle, IDXGIKeyedMutex **km_out,
 				ID3D11Texture2D **tex_out)
 {
 	ID3D11Device *device = enc->device;
@@ -379,9 +353,7 @@ static void get_tex_from_handle(amf_texencode *enc, uint32_t handle,
 		}
 	}
 
-	hr = device->OpenSharedResource((HANDLE)(uintptr_t)handle,
-					__uuidof(ID3D11Resource),
-					(void **)&tex);
+	hr = device->OpenSharedResource((HANDLE)(uintptr_t)handle, __uuidof(ID3D11Resource), (void **)&tex);
 	if (FAILED(hr))
 		throw HRError("OpenSharedResource failed", hr);
 
@@ -402,14 +374,11 @@ static constexpr amf_int64 macroblock_size = 16;
 
 static inline void calc_throughput(amf_base *enc)
 {
-	amf_int64 mb_cx =
-		((amf_int64)enc->cx + (macroblock_size - 1)) / macroblock_size;
-	amf_int64 mb_cy =
-		((amf_int64)enc->cy + (macroblock_size - 1)) / macroblock_size;
+	amf_int64 mb_cx = ((amf_int64)enc->cx + (macroblock_size - 1)) / macroblock_size;
+	amf_int64 mb_cy = ((amf_int64)enc->cy + (macroblock_size - 1)) / macroblock_size;
 	amf_int64 mb_frame = mb_cx * mb_cy;
 
-	enc->throughput =
-		mb_frame * (amf_int64)enc->fps_num / (amf_int64)enc->fps_den;
+	enc->throughput = mb_frame * (amf_int64)enc->fps_num / (amf_int64)enc->fps_den;
 }
 
 static inline int get_avc_preset(amf_base *enc, const char *preset);
@@ -442,15 +411,12 @@ static inline void refresh_throughput_caps(amf_base *enc, const char *&preset)
 	set_opt(QUALITY_PRESET, get_preset(enc, preset));
 	res = enc->amf_encoder->GetCaps(&caps);
 	if (res == AMF_OK) {
-		caps->GetProperty(get_opt_name(CAP_MAX_THROUGHPUT),
-				  &enc->max_throughput);
-		caps->GetProperty(get_opt_name(CAP_REQUESTED_THROUGHPUT),
-				  &enc->requested_throughput);
+		caps->GetProperty(get_opt_name(CAP_MAX_THROUGHPUT), &enc->max_throughput);
+		caps->GetProperty(get_opt_name(CAP_REQUESTED_THROUGHPUT), &enc->requested_throughput);
 	}
 }
 
-static inline void check_preset_compatibility(amf_base *enc,
-					      const char *&preset)
+static inline void check_preset_compatibility(amf_base *enc, const char *&preset)
 {
 	/* The throughput depends on the current preset and the other static
 	 * encoder properties. If the throughput is lower than the max
@@ -461,8 +427,7 @@ static inline void check_preset_compatibility(amf_base *enc,
 			preset = "quality";
 			set_opt(QUALITY_PRESET, get_preset(enc, preset));
 		} else {
-			if (enc->max_throughput - enc->requested_throughput <
-			    enc->throughput) {
+			if (enc->max_throughput - enc->requested_throughput < enc->throughput) {
 				preset = "quality";
 				refresh_throughput_caps(enc, preset);
 			}
@@ -474,8 +439,7 @@ static inline void check_preset_compatibility(amf_base *enc,
 			preset = "balanced";
 			set_opt(QUALITY_PRESET, get_preset(enc, preset));
 		} else {
-			if (enc->max_throughput - enc->requested_throughput <
-			    enc->throughput) {
+			if (enc->max_throughput - enc->requested_throughput < enc->throughput) {
 				preset = "balanced";
 				refresh_throughput_caps(enc, preset);
 			}
@@ -483,9 +447,7 @@ static inline void check_preset_compatibility(amf_base *enc,
 	}
 
 	if (astrcmpi(preset, "balanced") == 0) {
-		if (enc->max_throughput &&
-		    enc->max_throughput - enc->requested_throughput <
-			    enc->throughput) {
+		if (enc->max_throughput && enc->max_throughput - enc->requested_throughput < enc->throughput) {
 			preset = "speed";
 			refresh_throughput_caps(enc, preset);
 		}
@@ -504,8 +466,7 @@ static inline int64_t convert_to_obs_ts(amf_base *enc, int64_t ts)
 	return ts * (int64_t)enc->fps_den / amf_timebase;
 }
 
-static void convert_to_encoder_packet(amf_base *enc, AMFDataPtr &data,
-				      encoder_packet *packet)
+static void convert_to_encoder_packet(amf_base *enc, AMFDataPtr &data, encoder_packet *packet)
 {
 	if (!data)
 		return;
@@ -533,8 +494,7 @@ static void convert_to_encoder_packet(amf_base *enc, AMFDataPtr &data,
 				"data type",
 				res);
 
-	if (enc->codec == amf_codec_type::AVC ||
-	    enc->codec == amf_codec_type::HEVC) {
+	if (enc->codec == amf_codec_type::AVC || enc->codec == amf_codec_type::HEVC) {
 		switch (type) {
 		case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR:
 			packet->priority = OBS_NAL_PRIORITY_HIGHEST;
@@ -615,8 +575,7 @@ static void roi_cb(void *param, obs_encoder_roi *roi)
 			if (mb_x < roi_left || mb_x > roi_right)
 				continue;
 
-			rp->buf[mb_y * rp->pitch / sizeof(amf_uint32) + mb_x] =
-				priority;
+			rp->buf[mb_y * rp->pitch / sizeof(amf_uint32) + mb_x] = priority;
 		}
 	}
 }
@@ -624,8 +583,7 @@ static void roi_cb(void *param, obs_encoder_roi *roi)
 static void create_roi(amf_base *enc, AMFSurface *amf_surf)
 {
 	uint32_t mb_size = 16; /* H.264 is always 16x16 */
-	if (enc->codec == amf_codec_type::HEVC ||
-	    enc->codec == amf_codec_type::AV1)
+	if (enc->codec == amf_codec_type::HEVC || enc->codec == amf_codec_type::AV1)
 		mb_size = 64; /* AMF HEVC & AV1 use 64x64 blocks */
 
 	const uint32_t mb_width = (enc->cx + mb_size - 1) / mb_size;
@@ -633,11 +591,9 @@ static void create_roi(amf_base *enc, AMFSurface *amf_surf)
 
 	if (!enc->roi_map) {
 		AMFContext1Ptr context1(enc->amf_context);
-		AMF_RESULT res = context1->AllocSurfaceEx(
-			AMF_MEMORY_HOST, AMF_SURFACE_GRAY32, mb_width,
-			mb_height,
-			AMF_SURFACE_USAGE_DEFAULT | AMF_SURFACE_USAGE_LINEAR,
-			AMF_MEMORY_CPU_DEFAULT, &enc->roi_map);
+		AMF_RESULT res = context1->AllocSurfaceEx(AMF_MEMORY_HOST, AMF_SURFACE_GRAY32, mb_width, mb_height,
+							  AMF_SURFACE_USAGE_DEFAULT | AMF_SURFACE_USAGE_LINEAR,
+							  AMF_MEMORY_CPU_DEFAULT, &enc->roi_map);
 
 		if (res != AMF_OK) {
 			warn("Failed allocating surface for ROI map!");
@@ -648,13 +604,11 @@ static void create_roi(amf_base *enc, AMFSurface *amf_surf)
 	}
 
 	/* This is just following the SimpleROI example. */
-	amf_uint32 *pBuf =
-		(amf_uint32 *)enc->roi_map->GetPlaneAt(0)->GetNative();
+	amf_uint32 *pBuf = (amf_uint32 *)enc->roi_map->GetPlaneAt(0)->GetNative();
 	amf_int32 pitch = enc->roi_map->GetPlaneAt(0)->GetHPitch();
 	memset(pBuf, 0, pitch * mb_height);
 
-	roi_params par{mb_width, mb_height, pitch,
-		       enc->codec == amf_codec_type::AVC, pBuf};
+	roi_params par{mb_width, mb_height, pitch, enc->codec == amf_codec_type::AVC, pBuf};
 	obs_encoder_enum_roi(enc->encoder, roi_cb, &par);
 
 	enc->roi_increment = obs_encoder_get_roi_increment(enc->encoder);
@@ -670,15 +624,12 @@ static void add_roi(amf_base *enc, AMFSurface *amf_surf)
 	if (enc->codec == amf_codec_type::AVC)
 		amf_surf->SetProperty(AMF_VIDEO_ENCODER_ROI_DATA, enc->roi_map);
 	else if (enc->codec == amf_codec_type::HEVC)
-		amf_surf->SetProperty(AMF_VIDEO_ENCODER_HEVC_ROI_DATA,
-				      enc->roi_map);
+		amf_surf->SetProperty(AMF_VIDEO_ENCODER_HEVC_ROI_DATA, enc->roi_map);
 	else if (enc->codec == amf_codec_type::AV1)
-		amf_surf->SetProperty(AMF_VIDEO_ENCODER_AV1_ROI_DATA,
-				      enc->roi_map);
+		amf_surf->SetProperty(AMF_VIDEO_ENCODER_AV1_ROI_DATA, enc->roi_map);
 }
 
-static void amf_encode_base(amf_base *enc, AMFSurface *amf_surf,
-			    encoder_packet *packet, bool *received_packet)
+static void amf_encode_base(amf_base *enc, AMFSurface *amf_surf, encoder_packet *packet, bool *received_packet)
 {
 	auto &queued_packets = enc->queued_packets;
 	uint64_t ts_start = os_gettime_ns();
@@ -743,8 +694,7 @@ static void amf_encode_base(amf_base *enc, AMFSurface *amf_surf,
 	}
 }
 
-static bool amf_encode_tex(void *data, uint32_t handle, int64_t pts,
-			   uint64_t lock_key, uint64_t *next_key,
+static bool amf_encode_tex(void *data, uint32_t handle, int64_t pts, uint64_t lock_key, uint64_t *next_key,
 			   encoder_packet *packet, bool *received_packet)
 try {
 	amf_texencode *enc = (amf_texencode *)data;
@@ -774,16 +724,14 @@ try {
 	/* copy to output tex                   */
 
 	km->AcquireSync(lock_key, INFINITE);
-	context->CopyResource((ID3D11Resource *)output_tex.Get(),
-			      (ID3D11Resource *)input_tex.Get());
+	context->CopyResource((ID3D11Resource *)output_tex.Get(), (ID3D11Resource *)input_tex.Get());
 	context->Flush();
 	km->ReleaseSync(*next_key);
 
 	/* ------------------------------------ */
 	/* map output tex to amf surface        */
 
-	res = enc->amf_context->CreateSurfaceFromDX11Native(output_tex,
-							    &amf_surf, enc);
+	res = enc->amf_context->CreateSurfaceFromDX11Native(output_tex, &amf_surf, enc);
 	if (res != AMF_OK)
 		throw amf_error("CreateSurfaceFromDX11Native failed", res);
 
@@ -811,8 +759,7 @@ try {
 
 } catch (const amf_error &err) {
 	amf_texencode *enc = (amf_texencode *)data;
-	error("%s: %s: %ls", __FUNCTION__, err.str,
-	      amf_trace->GetResultText(err.res));
+	error("%s: %s: %ls", __FUNCTION__, err.str, amf_trace->GetResultText(err.res));
 	*received_packet = false;
 	return false;
 
@@ -857,13 +804,11 @@ static buf_t get_buf(amf_fallback *enc)
 	return buf;
 }
 
-static inline void copy_frame_data(amf_fallback *enc, buf_t &buf,
-				   struct encoder_frame *frame)
+static inline void copy_frame_data(amf_fallback *enc, buf_t &buf, struct encoder_frame *frame)
 {
 	uint8_t *dst = &buf[0];
 
-	if (enc->amf_format == AMF_SURFACE_NV12 ||
-	    enc->amf_format == AMF_SURFACE_P010) {
+	if (enc->amf_format == AMF_SURFACE_NV12 || enc->amf_format == AMF_SURFACE_P010) {
 		size_t size = enc->linesize * enc->cy;
 		memcpy(&buf[0], frame->data[0], size);
 		memcpy(&buf[size], frame->data[1], size / 2);
@@ -873,8 +818,7 @@ static inline void copy_frame_data(amf_fallback *enc, buf_t &buf,
 	}
 }
 
-static bool amf_encode_fallback(void *data, struct encoder_frame *frame,
-				struct encoder_packet *packet,
+static bool amf_encode_fallback(void *data, struct encoder_frame *frame, struct encoder_packet *packet,
 				bool *received_packet)
 try {
 	amf_fallback *enc = (amf_fallback *)data;
@@ -889,9 +833,8 @@ try {
 
 	copy_frame_data(enc, buf, frame);
 
-	res = enc->amf_context->CreateSurfaceFromHostNative(
-		enc->amf_format, enc->cx, enc->cy, enc->linesize, 0, &buf[0],
-		&amf_surf, enc);
+	res = enc->amf_context->CreateSurfaceFromHostNative(enc->amf_format, enc->cx, enc->cy, enc->linesize, 0,
+							    &buf[0], &amf_surf, enc);
 	if (res != AMF_OK)
 		throw amf_error("CreateSurfaceFromHostNative failed", res);
 
@@ -914,8 +857,7 @@ try {
 
 } catch (const amf_error &err) {
 	amf_fallback *enc = (amf_fallback *)data;
-	error("%s: %s: %ls", __FUNCTION__, err.str,
-	      amf_trace->GetResultText(err.res));
+	error("%s: %s: %ls", __FUNCTION__, err.str, amf_trace->GetResultText(err.res));
 	*received_packet = false;
 	return false;
 } catch (const char *err) {
@@ -1016,50 +958,35 @@ try {
 
 	switch (info.colorspace) {
 	case VIDEO_CS_601:
-		enc->amf_color_profile =
-			enc->full_range
-				? AMF_VIDEO_CONVERTER_COLOR_PROFILE_FULL_601
-				: AMF_VIDEO_CONVERTER_COLOR_PROFILE_601;
+		enc->amf_color_profile = enc->full_range ? AMF_VIDEO_CONVERTER_COLOR_PROFILE_FULL_601
+							 : AMF_VIDEO_CONVERTER_COLOR_PROFILE_601;
 		enc->amf_primaries = AMF_COLOR_PRIMARIES_SMPTE170M;
-		enc->amf_characteristic =
-			AMF_COLOR_TRANSFER_CHARACTERISTIC_SMPTE170M;
+		enc->amf_characteristic = AMF_COLOR_TRANSFER_CHARACTERISTIC_SMPTE170M;
 		break;
 	case VIDEO_CS_DEFAULT:
 	case VIDEO_CS_709:
-		enc->amf_color_profile =
-			enc->full_range
-				? AMF_VIDEO_CONVERTER_COLOR_PROFILE_FULL_709
-				: AMF_VIDEO_CONVERTER_COLOR_PROFILE_709;
+		enc->amf_color_profile = enc->full_range ? AMF_VIDEO_CONVERTER_COLOR_PROFILE_FULL_709
+							 : AMF_VIDEO_CONVERTER_COLOR_PROFILE_709;
 		enc->amf_primaries = AMF_COLOR_PRIMARIES_BT709;
-		enc->amf_characteristic =
-			AMF_COLOR_TRANSFER_CHARACTERISTIC_BT709;
+		enc->amf_characteristic = AMF_COLOR_TRANSFER_CHARACTERISTIC_BT709;
 		break;
 	case VIDEO_CS_SRGB:
-		enc->amf_color_profile =
-			enc->full_range
-				? AMF_VIDEO_CONVERTER_COLOR_PROFILE_FULL_709
-				: AMF_VIDEO_CONVERTER_COLOR_PROFILE_709;
+		enc->amf_color_profile = enc->full_range ? AMF_VIDEO_CONVERTER_COLOR_PROFILE_FULL_709
+							 : AMF_VIDEO_CONVERTER_COLOR_PROFILE_709;
 		enc->amf_primaries = AMF_COLOR_PRIMARIES_BT709;
-		enc->amf_characteristic =
-			AMF_COLOR_TRANSFER_CHARACTERISTIC_IEC61966_2_1;
+		enc->amf_characteristic = AMF_COLOR_TRANSFER_CHARACTERISTIC_IEC61966_2_1;
 		break;
 	case VIDEO_CS_2100_HLG:
-		enc->amf_color_profile =
-			enc->full_range
-				? AMF_VIDEO_CONVERTER_COLOR_PROFILE_FULL_2020
-				: AMF_VIDEO_CONVERTER_COLOR_PROFILE_2020;
+		enc->amf_color_profile = enc->full_range ? AMF_VIDEO_CONVERTER_COLOR_PROFILE_FULL_2020
+							 : AMF_VIDEO_CONVERTER_COLOR_PROFILE_2020;
 		enc->amf_primaries = AMF_COLOR_PRIMARIES_BT2020;
-		enc->amf_characteristic =
-			AMF_COLOR_TRANSFER_CHARACTERISTIC_ARIB_STD_B67;
+		enc->amf_characteristic = AMF_COLOR_TRANSFER_CHARACTERISTIC_ARIB_STD_B67;
 		break;
 	case VIDEO_CS_2100_PQ:
-		enc->amf_color_profile =
-			enc->full_range
-				? AMF_VIDEO_CONVERTER_COLOR_PROFILE_FULL_2020
-				: AMF_VIDEO_CONVERTER_COLOR_PROFILE_2020;
+		enc->amf_color_profile = enc->full_range ? AMF_VIDEO_CONVERTER_COLOR_PROFILE_FULL_2020
+							 : AMF_VIDEO_CONVERTER_COLOR_PROFILE_2020;
 		enc->amf_primaries = AMF_COLOR_PRIMARIES_BT2020;
-		enc->amf_characteristic =
-			AMF_COLOR_TRANSFER_CHARACTERISTIC_SMPTE2084;
+		enc->amf_characteristic = AMF_COLOR_TRANSFER_CHARACTERISTIC_SMPTE2084;
 		break;
 	}
 
@@ -1098,8 +1025,7 @@ try {
 	default:
 		codec = AMFVideoEncoder_HEVC;
 	}
-	res = amf_factory->CreateComponent(enc->amf_context, codec,
-					   &enc->amf_encoder);
+	res = amf_factory->CreateComponent(enc->amf_context, codec, &enc->amf_encoder);
 	if (res != AMF_OK)
 		throw amf_error("CreateComponent failed", res);
 
@@ -1107,8 +1033,7 @@ try {
 	return true;
 
 } catch (const amf_error &err) {
-	error("%s: %s: %ls", __FUNCTION__, err.str,
-	      amf_trace->GetResultText(err.res));
+	error("%s: %s: %ls", __FUNCTION__, err.str, amf_trace->GetResultText(err.res));
 	return false;
 }
 
@@ -1118,8 +1043,7 @@ static void amf_destroy(void *data)
 	delete enc;
 }
 
-static void check_texture_encode_capability(obs_encoder_t *encoder,
-					    amf_codec_type codec)
+static void check_texture_encode_capability(obs_encoder_t *encoder, amf_codec_type codec)
 {
 	obs_video_info ovi;
 	obs_get_video_info(&ovi);
@@ -1127,8 +1051,7 @@ static void check_texture_encode_capability(obs_encoder_t *encoder,
 	bool hevc = amf_codec_type::HEVC == codec;
 	bool av1 = amf_codec_type::AV1 == codec;
 
-	if (obs_encoder_scaling_enabled(encoder) &&
-	    !obs_encoder_gpu_scaling_enabled(encoder))
+	if (obs_encoder_scaling_enabled(encoder) && !obs_encoder_gpu_scaling_enabled(encoder))
 		throw "Encoder scaling is active";
 
 	if (hevc || av1) {
@@ -1152,8 +1075,7 @@ static void check_texture_encode_capability(obs_encoder_t *encoder,
 		}
 	}
 
-	if ((avc && !caps[ovi.adapter].supports_avc) ||
-	    (hevc && !caps[ovi.adapter].supports_hevc) ||
+	if ((avc && !caps[ovi.adapter].supports_avc) || (hevc && !caps[ovi.adapter].supports_hevc) ||
 	    (av1 && !caps[ovi.adapter].supports_av1))
 		throw "Wrong adapter";
 }
@@ -1170,8 +1092,7 @@ static void amf_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "bf", 3);
 }
 
-static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
-				  obs_data_t *settings)
+static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p, obs_data_t *settings)
 {
 	const char *rc = obs_data_get_string(settings, "rate_control");
 	bool cqp = astrcmpi(rc, "CQP") == 0;
@@ -1189,9 +1110,7 @@ static obs_properties_t *amf_properties_internal(amf_codec_type codec)
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *p;
 
-	p = obs_properties_add_list(props, "rate_control",
-				    obs_module_text("RateControl"),
-				    OBS_COMBO_TYPE_LIST,
+	p = obs_properties_add_list(props, "rate_control", obs_module_text("RateControl"), OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
 	obs_property_list_add_string(p, "CBR", "CBR");
 	obs_property_list_add_string(p, "CQP", "CQP");
@@ -1203,24 +1122,19 @@ static obs_properties_t *amf_properties_internal(amf_codec_type codec)
 
 	obs_property_set_modified_callback(p, rate_control_modified);
 
-	p = obs_properties_add_int(props, "bitrate", obs_module_text("Bitrate"),
-				   50, 100000, 50);
+	p = obs_properties_add_int(props, "bitrate", obs_module_text("Bitrate"), 50, 100000, 50);
 	obs_property_int_set_suffix(p, " Kbps");
 
-	obs_properties_add_int(props, "cqp", obs_module_text("NVENC.CQLevel"),
-			       0, codec == amf_codec_type::AV1 ? 63 : 51, 1);
+	obs_properties_add_int(props, "cqp", obs_module_text("NVENC.CQLevel"), 0,
+			       codec == amf_codec_type::AV1 ? 63 : 51, 1);
 
-	p = obs_properties_add_int(props, "keyint_sec",
-				   obs_module_text("KeyframeIntervalSec"), 0,
-				   10, 1);
+	p = obs_properties_add_int(props, "keyint_sec", obs_module_text("KeyframeIntervalSec"), 0, 10, 1);
 	obs_property_int_set_suffix(p, " s");
 
-	p = obs_properties_add_list(props, "preset", obs_module_text("Preset"),
-				    OBS_COMBO_TYPE_LIST,
+	p = obs_properties_add_list(props, "preset", obs_module_text("Preset"), OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
 
-#define add_preset(val) \
-	obs_property_list_add_string(p, obs_module_text("AMF.Preset." val), val)
+#define add_preset(val) obs_property_list_add_string(p, obs_module_text("AMF.Preset." val), val)
 	if (amf_codec_type::AV1 == codec) {
 		add_preset("highQuality");
 	}
@@ -1230,9 +1144,7 @@ static obs_properties_t *amf_properties_internal(amf_codec_type codec)
 #undef add_preset
 
 	if (amf_codec_type::AVC == codec || amf_codec_type::AV1 == codec) {
-		p = obs_properties_add_list(props, "profile",
-					    obs_module_text("Profile"),
-					    OBS_COMBO_TYPE_LIST,
+		p = obs_properties_add_list(props, "profile", obs_module_text("Profile"), OBS_COMBO_TYPE_LIST,
 					    OBS_COMBO_FORMAT_STRING);
 
 #define add_profile(val) obs_property_list_add_string(p, val, val)
@@ -1245,15 +1157,11 @@ static obs_properties_t *amf_properties_internal(amf_codec_type codec)
 	}
 
 	if (amf_codec_type::AVC == codec) {
-		obs_properties_add_int(props, "bf", obs_module_text("BFrames"),
-				       0, 5, 1);
+		obs_properties_add_int(props, "bf", obs_module_text("BFrames"), 0, 5, 1);
 	}
 
-	p = obs_properties_add_text(props, "ffmpeg_opts",
-				    obs_module_text("AMFOpts"),
-				    OBS_TEXT_DEFAULT);
-	obs_property_set_long_description(p,
-					  obs_module_text("AMFOpts.ToolTip"));
+	p = obs_properties_add_text(props, "ffmpeg_opts", obs_module_text("AMFOpts"), OBS_TEXT_DEFAULT);
+	obs_property_set_long_description(p, obs_module_text("AMFOpts.ToolTip"));
 
 	return props;
 }
@@ -1330,8 +1238,7 @@ static inline int get_avc_profile(obs_data_t *settings)
 	return AMF_VIDEO_ENCODER_PROFILE_HIGH;
 }
 
-static void amf_avc_update_data(amf_base *enc, int rc, int64_t bitrate,
-				int64_t qp)
+static void amf_avc_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t qp)
 {
 	if (rc != AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTANT_QP &&
 	    rc != AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_QUALITY_VBR) {
@@ -1379,8 +1286,7 @@ try {
 
 } catch (const amf_error &err) {
 	amf_base *enc = (amf_base *)data;
-	error("%s: %s: %ls", __FUNCTION__, err.str,
-	      amf_trace->GetResultText(err.res));
+	error("%s: %s: %ls", __FUNCTION__, err.str, amf_trace->GetResultText(err.res));
 	return false;
 }
 
@@ -1426,8 +1332,7 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 	set_avc_property(enc, HIGH_MOTION_QUALITY_BOOST_ENABLE, false);
 
 	int keyint_sec = (int)obs_data_get_int(settings, "keyint_sec");
-	int gop_size = (keyint_sec) ? keyint_sec * enc->fps_num / enc->fps_den
-				    : 250;
+	int gop_size = (keyint_sec) ? keyint_sec * enc->fps_num / enc->fps_den : 250;
 
 	set_avc_property(enc, IDR_PERIOD, gop_size);
 
@@ -1462,8 +1367,7 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 	     "\twidth:        %d\n"
 	     "\theight:       %d\n"
 	     "\tparams:       %s",
-	     rc_str, bitrate, qp, gop_size, preset, profile, bf, enc->cx,
-	     enc->cy, ffmpeg_opts);
+	     rc_str, bitrate, qp, gop_size, preset, profile, bf, enc->cx, enc->cy, ffmpeg_opts);
 
 	return true;
 }
@@ -1481,14 +1385,10 @@ static void amf_avc_create_internal(amf_base *enc, obs_data_t *settings)
 	AMFCapsPtr caps;
 	res = enc->amf_encoder->GetCaps(&caps);
 	if (res == AMF_OK) {
-		caps->GetProperty(AMF_VIDEO_ENCODER_CAP_BFRAMES,
-				  &enc->bframes_supported);
-		caps->GetProperty(AMF_VIDEO_ENCODER_CAP_MAX_THROUGHPUT,
-				  &enc->max_throughput);
-		caps->GetProperty(AMF_VIDEO_ENCODER_CAP_REQUESTED_THROUGHPUT,
-				  &enc->requested_throughput);
-		caps->GetProperty(AMF_VIDEO_ENCODER_CAP_ROI,
-				  &enc->roi_supported);
+		caps->GetProperty(AMF_VIDEO_ENCODER_CAP_BFRAMES, &enc->bframes_supported);
+		caps->GetProperty(AMF_VIDEO_ENCODER_CAP_MAX_THROUGHPUT, &enc->max_throughput);
+		caps->GetProperty(AMF_VIDEO_ENCODER_CAP_REQUESTED_THROUGHPUT, &enc->requested_throughput);
+		caps->GetProperty(AMF_VIDEO_ENCODER_CAP_ROI, &enc->roi_supported);
 	}
 
 	const char *preset = obs_data_get_string(settings, "preset");
@@ -1501,8 +1401,7 @@ static void amf_avc_create_internal(amf_base *enc, obs_data_t *settings)
 	set_avc_property(enc, CABAC_ENABLE, AMF_VIDEO_ENCODER_UNDEFINED);
 	set_avc_property(enc, PREENCODE_ENABLE, true);
 	set_avc_property(enc, OUTPUT_COLOR_PROFILE, enc->amf_color_profile);
-	set_avc_property(enc, OUTPUT_TRANSFER_CHARACTERISTIC,
-			 enc->amf_characteristic);
+	set_avc_property(enc, OUTPUT_TRANSFER_CHARACTERISTIC, enc->amf_characteristic);
 	set_avc_property(enc, OUTPUT_COLOR_PRIMARIES, enc->amf_primaries);
 	set_avc_property(enc, FULL_RANGE_COLOR, enc->full_range);
 	set_avc_property(enc, FRAMERATE, enc->amf_frame_rate);
@@ -1529,8 +1428,7 @@ static void amf_avc_create_internal(amf_base *enc, obs_data_t *settings)
 	}
 }
 
-static void *amf_avc_create_texencode(obs_data_t *settings,
-				      obs_encoder_t *encoder)
+static void *amf_avc_create_texencode(obs_data_t *settings, obs_encoder_t *encoder)
 try {
 	check_texture_encode_capability(encoder, amf_codec_type::AVC);
 
@@ -1545,8 +1443,7 @@ try {
 	return enc.release();
 
 } catch (const amf_error &err) {
-	blog(LOG_ERROR, "[texture-amf-h264] %s: %s: %ls", __FUNCTION__, err.str,
-	     amf_trace->GetResultText(err.res));
+	blog(LOG_ERROR, "[texture-amf-h264] %s: %s: %ls", __FUNCTION__, err.str, amf_trace->GetResultText(err.res));
 	return obs_encoder_create_rerouted(encoder, "h264_fallback_amf");
 
 } catch (const char *err) {
@@ -1554,8 +1451,7 @@ try {
 	return obs_encoder_create_rerouted(encoder, "h264_fallback_amf");
 }
 
-static void *amf_avc_create_fallback(obs_data_t *settings,
-				     obs_encoder_t *encoder)
+static void *amf_avc_create_fallback(obs_data_t *settings, obs_encoder_t *encoder)
 try {
 	std::unique_ptr<amf_fallback> enc = std::make_unique<amf_fallback>();
 	enc->encoder = encoder;
@@ -1566,15 +1462,13 @@ try {
 	switch (voi->format) {
 	case VIDEO_FORMAT_I010:
 	case VIDEO_FORMAT_P010: {
-		const char *const text =
-			obs_module_text("AMF.10bitUnsupportedAvc");
+		const char *const text = obs_module_text("AMF.10bitUnsupportedAvc");
 		obs_encoder_set_last_error(encoder, text);
 		throw text;
 	}
 	case VIDEO_FORMAT_P216:
 	case VIDEO_FORMAT_P416: {
-		const char *const text =
-			obs_module_text("AMF.16bitUnsupported");
+		const char *const text = obs_module_text("AMF.16bitUnsupported");
 		obs_encoder_set_last_error(encoder, text);
 		throw text;
 	}
@@ -1582,8 +1476,7 @@ try {
 		switch (voi->colorspace) {
 		case VIDEO_CS_2100_PQ:
 		case VIDEO_CS_2100_HLG: {
-			const char *const text =
-				obs_module_text("AMF.8bitUnsupportedHdr");
+			const char *const text = obs_module_text("AMF.8bitUnsupportedHdr");
 			obs_encoder_set_last_error(encoder, text);
 			throw text;
 		}
@@ -1594,8 +1487,7 @@ try {
 	return enc.release();
 
 } catch (const amf_error &err) {
-	blog(LOG_ERROR, "[fallback-amf-h264] %s: %s: %ls", __FUNCTION__,
-	     err.str, amf_trace->GetResultText(err.res));
+	blog(LOG_ERROR, "[fallback-amf-h264] %s: %s: %ls", __FUNCTION__, err.str, amf_trace->GetResultText(err.res));
 	return nullptr;
 
 } catch (const char *err) {
@@ -1617,16 +1509,12 @@ static void register_avc()
 	amf_encoder_info.get_defaults = amf_defaults;
 	amf_encoder_info.get_properties = amf_avc_properties;
 	amf_encoder_info.get_extra_data = amf_extra_data;
-	amf_encoder_info.caps = OBS_ENCODER_CAP_PASS_TEXTURE |
-				OBS_ENCODER_CAP_DYN_BITRATE |
-				OBS_ENCODER_CAP_ROI;
+	amf_encoder_info.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI;
 
 	obs_register_encoder(&amf_encoder_info);
 
 	amf_encoder_info.id = "h264_fallback_amf";
-	amf_encoder_info.caps = OBS_ENCODER_CAP_INTERNAL |
-				OBS_ENCODER_CAP_DYN_BITRATE |
-				OBS_ENCODER_CAP_ROI;
+	amf_encoder_info.caps = OBS_ENCODER_CAP_INTERNAL | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI;
 	amf_encoder_info.encode_texture = nullptr;
 	amf_encoder_info.create = amf_avc_create_fallback;
 	amf_encoder_info.encode = amf_encode_fallback;
@@ -1675,8 +1563,7 @@ static inline int get_hevc_rate_control(const char *rc_str)
 	return AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CBR;
 }
 
-static void amf_hevc_update_data(amf_base *enc, int rc, int64_t bitrate,
-				 int64_t qp)
+static void amf_hevc_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t qp)
 {
 	if (rc != AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CONSTANT_QP &&
 	    rc != AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_QUALITY_VBR) {
@@ -1723,8 +1610,7 @@ try {
 
 } catch (const amf_error &err) {
 	amf_base *enc = (amf_base *)data;
-	error("%s: %s: %ls", __FUNCTION__, err.str,
-	      amf_trace->GetResultText(err.res));
+	error("%s: %s: %ls", __FUNCTION__, err.str, amf_trace->GetResultText(err.res));
 	return false;
 }
 
@@ -1749,8 +1635,7 @@ static bool amf_hevc_init(void *data, obs_data_t *settings)
 	set_hevc_property(enc, HIGH_MOTION_QUALITY_BOOST_ENABLE, false);
 
 	int keyint_sec = (int)obs_data_get_int(settings, "keyint_sec");
-	int gop_size = (keyint_sec) ? keyint_sec * enc->fps_num / enc->fps_den
-				    : 250;
+	int gop_size = (keyint_sec) ? keyint_sec * enc->fps_num / enc->fps_den : 250;
 
 	set_hevc_property(enc, GOP_SIZE, gop_size);
 
@@ -1778,22 +1663,19 @@ static bool amf_hevc_init(void *data, obs_data_t *settings)
 	     "\twidth:        %d\n"
 	     "\theight:       %d\n"
 	     "\tparams:       %s",
-	     rc_str, bitrate, qp, gop_size, preset, profile, enc->cx, enc->cy,
-	     ffmpeg_opts);
+	     rc_str, bitrate, qp, gop_size, preset, profile, enc->cx, enc->cy, ffmpeg_opts);
 
 	return true;
 }
 
 static inline bool is_hlg(amf_base *enc)
 {
-	return enc->amf_characteristic ==
-	       AMF_COLOR_TRANSFER_CHARACTERISTIC_ARIB_STD_B67;
+	return enc->amf_characteristic == AMF_COLOR_TRANSFER_CHARACTERISTIC_ARIB_STD_B67;
 }
 
 static inline bool is_pq(amf_base *enc)
 {
-	return enc->amf_characteristic ==
-	       AMF_COLOR_TRANSFER_CHARACTERISTIC_SMPTE2084;
+	return enc->amf_characteristic == AMF_COLOR_TRANSFER_CHARACTERISTIC_SMPTE2084;
 }
 
 constexpr amf_uint16 amf_hdr_primary(uint32_t num, uint32_t den)
@@ -1821,13 +1703,9 @@ static void amf_hevc_create_internal(amf_base *enc, obs_data_t *settings)
 	AMFCapsPtr caps;
 	res = enc->amf_encoder->GetCaps(&caps);
 	if (res == AMF_OK) {
-		caps->GetProperty(AMF_VIDEO_ENCODER_HEVC_CAP_MAX_THROUGHPUT,
-				  &enc->max_throughput);
-		caps->GetProperty(
-			AMF_VIDEO_ENCODER_HEVC_CAP_REQUESTED_THROUGHPUT,
-			&enc->requested_throughput);
-		caps->GetProperty(AMF_VIDEO_ENCODER_HEVC_CAP_ROI,
-				  &enc->roi_supported);
+		caps->GetProperty(AMF_VIDEO_ENCODER_HEVC_CAP_MAX_THROUGHPUT, &enc->max_throughput);
+		caps->GetProperty(AMF_VIDEO_ENCODER_HEVC_CAP_REQUESTED_THROUGHPUT, &enc->requested_throughput);
+		caps->GetProperty(AMF_VIDEO_ENCODER_HEVC_CAP_ROI, &enc->roi_supported);
 	}
 
 	const bool is10bit = enc->amf_format == AMF_SURFACE_P010;
@@ -1839,28 +1717,21 @@ static void amf_hevc_create_internal(amf_base *enc, obs_data_t *settings)
 	set_hevc_property(enc, FRAMESIZE, AMFConstructSize(enc->cx, enc->cy));
 	set_hevc_property(enc, USAGE, AMF_VIDEO_ENCODER_USAGE_TRANSCODING);
 	set_hevc_property(enc, QUALITY_PRESET, get_hevc_preset(enc, preset));
-	set_hevc_property(enc, COLOR_BIT_DEPTH,
-			  is10bit ? AMF_COLOR_BIT_DEPTH_10
-				  : AMF_COLOR_BIT_DEPTH_8);
+	set_hevc_property(enc, COLOR_BIT_DEPTH, is10bit ? AMF_COLOR_BIT_DEPTH_10 : AMF_COLOR_BIT_DEPTH_8);
 	set_hevc_property(enc, PROFILE,
-			  is10bit ? AMF_VIDEO_ENCODER_HEVC_PROFILE_MAIN_10
-				  : AMF_VIDEO_ENCODER_HEVC_PROFILE_MAIN);
+			  is10bit ? AMF_VIDEO_ENCODER_HEVC_PROFILE_MAIN_10 : AMF_VIDEO_ENCODER_HEVC_PROFILE_MAIN);
 	set_hevc_property(enc, LOWLATENCY_MODE, false);
 	set_hevc_property(enc, OUTPUT_COLOR_PROFILE, enc->amf_color_profile);
-	set_hevc_property(enc, OUTPUT_TRANSFER_CHARACTERISTIC,
-			  enc->amf_characteristic);
+	set_hevc_property(enc, OUTPUT_TRANSFER_CHARACTERISTIC, enc->amf_characteristic);
 	set_hevc_property(enc, OUTPUT_COLOR_PRIMARIES, enc->amf_primaries);
 	set_hevc_property(enc, NOMINAL_RANGE, enc->full_range);
 	set_hevc_property(enc, FRAMERATE, enc->amf_frame_rate);
 
 	if (is_hdr) {
-		const int hdr_nominal_peak_level =
-			pq ? (int)obs_get_video_hdr_nominal_peak_level()
-			   : (hlg ? 1000 : 0);
+		const int hdr_nominal_peak_level = pq ? (int)obs_get_video_hdr_nominal_peak_level() : (hlg ? 1000 : 0);
 
 		AMFBufferPtr buf;
-		enc->amf_context->AllocBuffer(AMF_MEMORY_HOST,
-					      sizeof(AMFHDRMetadata), &buf);
+		enc->amf_context->AllocBuffer(AMF_MEMORY_HOST, sizeof(AMFHDRMetadata), &buf);
 		AMFHDRMetadata *md = (AMFHDRMetadata *)buf->GetNative();
 		md->redPrimary[0] = amf_hdr_primary(17, 25);
 		md->redPrimary[1] = amf_hdr_primary(8, 25);
@@ -1871,8 +1742,7 @@ static void amf_hevc_create_internal(amf_base *enc, obs_data_t *settings)
 		md->whitePoint[0] = amf_hdr_primary(3127, 10000);
 		md->whitePoint[1] = amf_hdr_primary(329, 1000);
 		md->minMasteringLuminance = 0;
-		md->maxMasteringLuminance =
-			amf_make_lum(hdr_nominal_peak_level);
+		md->maxMasteringLuminance = amf_make_lum(hdr_nominal_peak_level);
 		md->maxContentLightLevel = hdr_nominal_peak_level;
 		md->maxFrameAverageLightLevel = hdr_nominal_peak_level;
 		set_hevc_property(enc, INPUT_HDR_METADATA, buf);
@@ -1884,14 +1754,12 @@ static void amf_hevc_create_internal(amf_base *enc, obs_data_t *settings)
 	if (res != AMF_OK)
 		throw amf_error("AMFComponent::Init failed", res);
 
-	res = enc->amf_encoder->GetProperty(AMF_VIDEO_ENCODER_HEVC_EXTRADATA,
-					    &p);
+	res = enc->amf_encoder->GetProperty(AMF_VIDEO_ENCODER_HEVC_EXTRADATA, &p);
 	if (res == AMF_OK && p.type == AMF_VARIANT_INTERFACE)
 		enc->header = AMFBufferPtr(p.pInterface);
 }
 
-static void *amf_hevc_create_texencode(obs_data_t *settings,
-				       obs_encoder_t *encoder)
+static void *amf_hevc_create_texencode(obs_data_t *settings, obs_encoder_t *encoder)
 try {
 	check_texture_encode_capability(encoder, amf_codec_type::HEVC);
 
@@ -1906,8 +1774,7 @@ try {
 	return enc.release();
 
 } catch (const amf_error &err) {
-	blog(LOG_ERROR, "[texture-amf-h265] %s: %s: %ls", __FUNCTION__, err.str,
-	     amf_trace->GetResultText(err.res));
+	blog(LOG_ERROR, "[texture-amf-h265] %s: %s: %ls", __FUNCTION__, err.str, amf_trace->GetResultText(err.res));
 	return obs_encoder_create_rerouted(encoder, "h265_fallback_amf");
 
 } catch (const char *err) {
@@ -1915,8 +1782,7 @@ try {
 	return obs_encoder_create_rerouted(encoder, "h265_fallback_amf");
 }
 
-static void *amf_hevc_create_fallback(obs_data_t *settings,
-				      obs_encoder_t *encoder)
+static void *amf_hevc_create_fallback(obs_data_t *settings, obs_encoder_t *encoder)
 try {
 	std::unique_ptr<amf_fallback> enc = std::make_unique<amf_fallback>();
 	enc->encoder = encoder;
@@ -1930,8 +1796,7 @@ try {
 		break;
 	case VIDEO_FORMAT_P216:
 	case VIDEO_FORMAT_P416: {
-		const char *const text =
-			obs_module_text("AMF.16bitUnsupported");
+		const char *const text = obs_module_text("AMF.16bitUnsupported");
 		obs_encoder_set_last_error(encoder, text);
 		throw text;
 	}
@@ -1939,8 +1804,7 @@ try {
 		switch (voi->colorspace) {
 		case VIDEO_CS_2100_PQ:
 		case VIDEO_CS_2100_HLG: {
-			const char *const text =
-				obs_module_text("AMF.8bitUnsupportedHdr");
+			const char *const text = obs_module_text("AMF.8bitUnsupportedHdr");
 			obs_encoder_set_last_error(encoder, text);
 			throw text;
 		}
@@ -1951,8 +1815,7 @@ try {
 	return enc.release();
 
 } catch (const amf_error &err) {
-	blog(LOG_ERROR, "[fallback-amf-h265] %s: %s: %ls", __FUNCTION__,
-	     err.str, amf_trace->GetResultText(err.res));
+	blog(LOG_ERROR, "[fallback-amf-h265] %s: %s: %ls", __FUNCTION__, err.str, amf_trace->GetResultText(err.res));
 	return nullptr;
 
 } catch (const char *err) {
@@ -1974,16 +1837,12 @@ static void register_hevc()
 	amf_encoder_info.get_defaults = amf_defaults;
 	amf_encoder_info.get_properties = amf_hevc_properties;
 	amf_encoder_info.get_extra_data = amf_extra_data;
-	amf_encoder_info.caps = OBS_ENCODER_CAP_PASS_TEXTURE |
-				OBS_ENCODER_CAP_DYN_BITRATE |
-				OBS_ENCODER_CAP_ROI;
+	amf_encoder_info.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI;
 
 	obs_register_encoder(&amf_encoder_info);
 
 	amf_encoder_info.id = "h265_fallback_amf";
-	amf_encoder_info.caps = OBS_ENCODER_CAP_INTERNAL |
-				OBS_ENCODER_CAP_DYN_BITRATE |
-				OBS_ENCODER_CAP_ROI;
+	amf_encoder_info.caps = OBS_ENCODER_CAP_INTERNAL | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI;
 	amf_encoder_info.encode_texture = nullptr;
 	amf_encoder_info.create = amf_hevc_create_fallback;
 	amf_encoder_info.encode = amf_encode_fallback;
@@ -2046,8 +1905,7 @@ static inline int get_av1_profile(obs_data_t *settings)
 	return AMF_VIDEO_ENCODER_AV1_PROFILE_MAIN;
 }
 
-static void amf_av1_update_data(amf_base *enc, int rc, int64_t bitrate,
-				int64_t cq_value)
+static void amf_av1_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t cq_value)
 {
 	if (rc != AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_CONSTANT_QP &&
 	    rc != AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_QUALITY_VBR) {
@@ -2057,9 +1915,8 @@ static void amf_av1_update_data(amf_base *enc, int rc, int64_t bitrate,
 
 		if (rc == AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR) {
 			set_av1_property(enc, FILLER_DATA, true);
-		} else if (
-			rc == AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR ||
-			rc == AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_HIGH_QUALITY_VBR) {
+		} else if (rc == AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR ||
+			   rc == AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_HIGH_QUALITY_VBR) {
 			set_av1_property(enc, PEAK_BITRATE, bitrate * 1.5);
 		}
 	} else {
@@ -2099,8 +1956,7 @@ try {
 
 } catch (const amf_error &err) {
 	amf_base *enc = (amf_base *)data;
-	error("%s: %s: %ls", __FUNCTION__, err.str,
-	      amf_trace->GetResultText(err.res));
+	error("%s: %s: %ls", __FUNCTION__, err.str, amf_trace->GetResultText(err.res));
 	return false;
 }
 
@@ -2122,8 +1978,7 @@ static bool amf_av1_init(void *data, obs_data_t *settings)
 	set_av1_property(enc, ENFORCE_HRD, true);
 
 	int keyint_sec = (int)obs_data_get_int(settings, "keyint_sec");
-	int gop_size = (keyint_sec) ? keyint_sec * enc->fps_num / enc->fps_den
-				    : 250;
+	int gop_size = (keyint_sec) ? keyint_sec * enc->fps_num / enc->fps_den : 250;
 	set_av1_property(enc, GOP_SIZE, gop_size);
 
 	const char *ffmpeg_opts = obs_data_get_string(settings, "ffmpeg_opts");
@@ -2150,8 +2005,7 @@ static bool amf_av1_init(void *data, obs_data_t *settings)
 	     "\twidth:        %d\n"
 	     "\theight:       %d\n"
 	     "\tparams:       %s",
-	     rc_str, bitrate, qp, gop_size, preset, profile, enc->cx, enc->cy,
-	     ffmpeg_opts);
+	     rc_str, bitrate, qp, gop_size, preset, profile, enc->cx, enc->cy, ffmpeg_opts);
 
 	return true;
 }
@@ -2166,11 +2020,8 @@ static void amf_av1_create_internal(amf_base *enc, obs_data_t *settings)
 	AMFCapsPtr caps;
 	AMF_RESULT res = enc->amf_encoder->GetCaps(&caps);
 	if (res == AMF_OK) {
-		caps->GetProperty(AMF_VIDEO_ENCODER_AV1_CAP_MAX_THROUGHPUT,
-				  &enc->max_throughput);
-		caps->GetProperty(
-			AMF_VIDEO_ENCODER_AV1_CAP_REQUESTED_THROUGHPUT,
-			&enc->requested_throughput);
+		caps->GetProperty(AMF_VIDEO_ENCODER_AV1_CAP_MAX_THROUGHPUT, &enc->max_throughput);
+		caps->GetProperty(AMF_VIDEO_ENCODER_AV1_CAP_REQUESTED_THROUGHPUT, &enc->requested_throughput);
 		/* For some reason there's no specific CAP for AV1, but should always be supported */
 		enc->roi_supported = true;
 	}
@@ -2180,19 +2031,14 @@ static void amf_av1_create_internal(amf_base *enc, obs_data_t *settings)
 
 	set_av1_property(enc, FRAMESIZE, AMFConstructSize(enc->cx, enc->cy));
 	set_av1_property(enc, USAGE, AMF_VIDEO_ENCODER_USAGE_TRANSCODING);
-	set_av1_property(enc, ALIGNMENT_MODE,
-			 AMF_VIDEO_ENCODER_AV1_ALIGNMENT_MODE_NO_RESTRICTIONS);
+	set_av1_property(enc, ALIGNMENT_MODE, AMF_VIDEO_ENCODER_AV1_ALIGNMENT_MODE_NO_RESTRICTIONS);
 	set_av1_property(enc, QUALITY_PRESET, get_av1_preset(enc, preset));
-	set_av1_property(enc, COLOR_BIT_DEPTH,
-			 is10bit ? AMF_COLOR_BIT_DEPTH_10
-				 : AMF_COLOR_BIT_DEPTH_8);
+	set_av1_property(enc, COLOR_BIT_DEPTH, is10bit ? AMF_COLOR_BIT_DEPTH_10 : AMF_COLOR_BIT_DEPTH_8);
 	set_av1_property(enc, PROFILE, get_av1_profile(settings));
-	set_av1_property(enc, ENCODING_LATENCY_MODE,
-			 AMF_VIDEO_ENCODER_AV1_ENCODING_LATENCY_MODE_NONE);
+	set_av1_property(enc, ENCODING_LATENCY_MODE, AMF_VIDEO_ENCODER_AV1_ENCODING_LATENCY_MODE_NONE);
 	// set_av1_property(enc, RATE_CONTROL_PREENCODE, true);
 	set_av1_property(enc, OUTPUT_COLOR_PROFILE, enc->amf_color_profile);
-	set_av1_property(enc, OUTPUT_TRANSFER_CHARACTERISTIC,
-			 enc->amf_characteristic);
+	set_av1_property(enc, OUTPUT_TRANSFER_CHARACTERISTIC, enc->amf_characteristic);
 	set_av1_property(enc, OUTPUT_COLOR_PRIMARIES, enc->amf_primaries);
 	set_av1_property(enc, FRAMERATE, enc->amf_frame_rate);
 
@@ -2203,14 +2049,12 @@ static void amf_av1_create_internal(amf_base *enc, obs_data_t *settings)
 		throw amf_error("AMFComponent::Init failed", res);
 
 	AMFVariant p;
-	res = enc->amf_encoder->GetProperty(AMF_VIDEO_ENCODER_AV1_EXTRA_DATA,
-					    &p);
+	res = enc->amf_encoder->GetProperty(AMF_VIDEO_ENCODER_AV1_EXTRA_DATA, &p);
 	if (res == AMF_OK && p.type == AMF_VARIANT_INTERFACE)
 		enc->header = AMFBufferPtr(p.pInterface);
 }
 
-static void *amf_av1_create_texencode(obs_data_t *settings,
-				      obs_encoder_t *encoder)
+static void *amf_av1_create_texencode(obs_data_t *settings, obs_encoder_t *encoder)
 try {
 	check_texture_encode_capability(encoder, amf_codec_type::AV1);
 
@@ -2225,8 +2069,7 @@ try {
 	return enc.release();
 
 } catch (const amf_error &err) {
-	blog(LOG_ERROR, "[texture-amf-av1] %s: %s: %ls", __FUNCTION__, err.str,
-	     amf_trace->GetResultText(err.res));
+	blog(LOG_ERROR, "[texture-amf-av1] %s: %s: %ls", __FUNCTION__, err.str, amf_trace->GetResultText(err.res));
 	return obs_encoder_create_rerouted(encoder, "av1_fallback_amf");
 
 } catch (const char *err) {
@@ -2234,8 +2077,7 @@ try {
 	return obs_encoder_create_rerouted(encoder, "av1_fallback_amf");
 }
 
-static void *amf_av1_create_fallback(obs_data_t *settings,
-				     obs_encoder_t *encoder)
+static void *amf_av1_create_fallback(obs_data_t *settings, obs_encoder_t *encoder)
 try {
 	std::unique_ptr<amf_fallback> enc = std::make_unique<amf_fallback>();
 	enc->encoder = encoder;
@@ -2250,8 +2092,7 @@ try {
 	}
 	case VIDEO_FORMAT_P216:
 	case VIDEO_FORMAT_P416: {
-		const char *const text =
-			obs_module_text("AMF.16bitUnsupported");
+		const char *const text = obs_module_text("AMF.16bitUnsupported");
 		obs_encoder_set_last_error(encoder, text);
 		throw text;
 	}
@@ -2259,8 +2100,7 @@ try {
 		switch (voi->colorspace) {
 		case VIDEO_CS_2100_PQ:
 		case VIDEO_CS_2100_HLG: {
-			const char *const text =
-				obs_module_text("AMF.8bitUnsupportedHdr");
+			const char *const text = obs_module_text("AMF.8bitUnsupportedHdr");
 			obs_encoder_set_last_error(encoder, text);
 			throw text;
 		}
@@ -2271,8 +2111,7 @@ try {
 	return enc.release();
 
 } catch (const amf_error &err) {
-	blog(LOG_ERROR, "[fallback-amf-av1] %s: %s: %ls", __FUNCTION__, err.str,
-	     amf_trace->GetResultText(err.res));
+	blog(LOG_ERROR, "[fallback-amf-av1] %s: %s: %ls", __FUNCTION__, err.str, amf_trace->GetResultText(err.res));
 	return nullptr;
 
 } catch (const char *err) {
@@ -2303,16 +2142,12 @@ static void register_av1()
 	amf_encoder_info.get_defaults = amf_av1_defaults;
 	amf_encoder_info.get_properties = amf_av1_properties;
 	amf_encoder_info.get_extra_data = amf_extra_data;
-	amf_encoder_info.caps = OBS_ENCODER_CAP_PASS_TEXTURE |
-				OBS_ENCODER_CAP_DYN_BITRATE |
-				OBS_ENCODER_CAP_ROI;
+	amf_encoder_info.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI;
 
 	obs_register_encoder(&amf_encoder_info);
 
 	amf_encoder_info.id = "av1_fallback_amf";
-	amf_encoder_info.caps = OBS_ENCODER_CAP_INTERNAL |
-				OBS_ENCODER_CAP_DYN_BITRATE |
-				OBS_ENCODER_CAP_ROI;
+	amf_encoder_info.caps = OBS_ENCODER_CAP_INTERNAL | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI;
 	amf_encoder_info.encode_texture = nullptr;
 	amf_encoder_info.create = amf_av1_create_fallback;
 	amf_encoder_info.encode = amf_encode_fallback;
@@ -2339,8 +2174,7 @@ try {
 
 	/* Check if the DLL is present before running the more expensive */
 	/* obs-amf-test.exe, but load it as data so it can't crash us    */
-	amf_module_test =
-		LoadLibraryExW(AMF_DLL_NAME, nullptr, LOAD_LIBRARY_AS_DATAFILE);
+	amf_module_test = LoadLibraryExW(AMF_DLL_NAME, nullptr, LOAD_LIBRARY_AS_DATAFILE);
 	if (!amf_module_test)
 		throw "No AMF library";
 	FreeLibrary(amf_module_test);
@@ -2363,8 +2197,7 @@ try {
 
 	for (;;) {
 		char data[2048];
-		size_t len =
-			os_process_pipe_read(pp, (uint8_t *)data, sizeof(data));
+		size_t len = os_process_pipe_read(pp, (uint8_t *)data, sizeof(data));
 		if (!len)
 			break;
 
@@ -2395,14 +2228,10 @@ try {
 		std::string section = std::to_string(i);
 		adapter_caps &info = caps[i];
 
-		info.is_amd =
-			config_get_bool(config, section.c_str(), "is_amd");
-		info.supports_avc = config_get_bool(config, section.c_str(),
-						    "supports_avc");
-		info.supports_hevc = config_get_bool(config, section.c_str(),
-						     "supports_hevc");
-		info.supports_av1 = config_get_bool(config, section.c_str(),
-						    "supports_av1");
+		info.is_amd = config_get_bool(config, section.c_str(), "is_amd");
+		info.supports_avc = config_get_bool(config, section.c_str(), "supports_avc");
+		info.supports_hevc = config_get_bool(config, section.c_str(), "supports_hevc");
+		info.supports_av1 = config_get_bool(config, section.c_str(), "supports_av1");
 
 		avc_supported |= info.supports_avc;
 		hevc_supported |= info.supports_hevc;
@@ -2419,8 +2248,7 @@ try {
 	if (!amf_module)
 		throw "AMF library failed to load";
 
-	AMFInit_Fn init =
-		(AMFInit_Fn)GetProcAddress(amf_module, AMF_INIT_FUNCTION_NAME);
+	AMFInit_Fn init = (AMFInit_Fn)GetProcAddress(amf_module, AMF_INIT_FUNCTION_NAME);
 	if (!init)
 		throw "Failed to get AMFInit address";
 
@@ -2432,8 +2260,7 @@ try {
 	if (res != AMF_OK)
 		throw amf_error("GetTrace failed", res);
 
-	AMFQueryVersion_Fn get_ver = (AMFQueryVersion_Fn)GetProcAddress(
-		amf_module, AMF_QUERY_VERSION_FUNCTION_NAME);
+	AMFQueryVersion_Fn get_ver = (AMFQueryVersion_Fn)GetProcAddress(amf_module, AMF_QUERY_VERSION_FUNCTION_NAME);
 	if (!get_ver)
 		throw "Failed to get AMFQueryVersion address";
 
@@ -2471,8 +2298,7 @@ try {
 } catch (const amf_error &err) {
 	/* doing an error here because it means at least the library has loaded
 	 * successfully, so they probably have AMD at this point */
-	blog(LOG_ERROR, "%s: %s: 0x%lX", __FUNCTION__, err.str,
-	     (uint32_t)err.res);
+	blog(LOG_ERROR, "%s: %s: 0x%lX", __FUNCTION__, err.str, (uint32_t)err.res);
 }
 
 extern "C" void amf_unload(void)

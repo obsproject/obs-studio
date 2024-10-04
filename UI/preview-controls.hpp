@@ -38,9 +38,7 @@ class OBSPreviewScalingComboBox : public QComboBox {
 	Q_OBJECT
 
 public:
-	OBSPreviewScalingComboBox(QWidget *parent = nullptr) : QComboBox(parent)
-	{
-	}
+	OBSPreviewScalingComboBox(QWidget *parent = nullptr) : QComboBox(parent) {}
 
 	inline void SetCanvasSize(uint32_t width, uint32_t height)
 	{

@@ -3,15 +3,12 @@
 #include <libavcodec/avcodec.h>
 #include <libavutil/pixdesc.h>
 
-static inline int64_t rescale_ts(int64_t val, AVCodecContext *context,
-				 AVRational new_base)
+static inline int64_t rescale_ts(int64_t val, AVCodecContext *context, AVRational new_base)
 {
-	return av_rescale_q_rnd(val, context->time_base, new_base,
-				AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
+	return av_rescale_q_rnd(val, context->time_base, new_base, AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
 }
 
-static inline enum AVPixelFormat
-obs_to_ffmpeg_video_format(enum video_format format)
+static inline enum AVPixelFormat obs_to_ffmpeg_video_format(enum video_format format)
 {
 	switch (format) {
 	case VIDEO_FORMAT_I444:
@@ -65,9 +62,7 @@ obs_to_ffmpeg_video_format(enum video_format format)
 	}
 }
 
-static inline enum AVChromaLocation
-determine_chroma_location(enum AVPixelFormat pix_fmt,
-			  enum AVColorSpace colorspace)
+static inline enum AVChromaLocation determine_chroma_location(enum AVPixelFormat pix_fmt, enum AVColorSpace colorspace)
 {
 	const AVPixFmtDescriptor *const desc = av_pix_fmt_desc_get(pix_fmt);
 	if (desc) {
@@ -87,9 +82,7 @@ determine_chroma_location(enum AVPixelFormat pix_fmt,
 		case 1:
 			if (log_chroma_w == 1) {
 				/* 4:2:0 */
-				return (colorspace == AVCOL_SPC_BT2020_NCL)
-					       ? AVCHROMA_LOC_TOPLEFT
-					       : AVCHROMA_LOC_LEFT;
+				return (colorspace == AVCOL_SPC_BT2020_NCL) ? AVCHROMA_LOC_TOPLEFT : AVCHROMA_LOC_LEFT;
 			}
 		}
 	}
@@ -97,8 +90,7 @@ determine_chroma_location(enum AVPixelFormat pix_fmt,
 	return AVCHROMA_LOC_UNSPECIFIED;
 }
 
-static inline enum audio_format
-convert_ffmpeg_sample_format(enum AVSampleFormat format)
+static inline enum audio_format convert_ffmpeg_sample_format(enum AVSampleFormat format)
 {
 	switch (format) {
 	case AV_SAMPLE_FMT_U8:

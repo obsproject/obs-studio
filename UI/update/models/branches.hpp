@@ -34,10 +34,8 @@ struct JsonBranch {
 	bool windows = false;
 	bool macos = false;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(JsonBranch, name,
-						    display_name, description,
-						    enabled, visible, windows,
-						    macos)
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(JsonBranch, name, display_name, description, enabled, visible,
+						    windows, macos)
 };
 
 using JsonBranches = std::vector<JsonBranch>;

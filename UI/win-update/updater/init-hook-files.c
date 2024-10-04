@@ -15,9 +15,8 @@ static bool add_aap_perms(const wchar_t *dir)
 	bool success = false;
 
 	PACL dacl;
-	if (GetNamedSecurityInfoW(dir, SE_FILE_OBJECT,
-				  DACL_SECURITY_INFORMATION, NULL, NULL, &dacl,
-				  NULL, &sd) != ERROR_SUCCESS) {
+	if (GetNamedSecurityInfoW(dir, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION, NULL, NULL, &dacl, NULL, &sd) !=
+	    ERROR_SUCCESS) {
 		goto fail;
 	}
 
@@ -35,8 +34,7 @@ static bool add_aap_perms(const wchar_t *dir)
 		goto fail;
 	}
 
-	ea.grfAccessPermissions = GENERIC_READ | GENERIC_WRITE |
-				  GENERIC_EXECUTE;
+	ea.grfAccessPermissions = GENERIC_READ | GENERIC_WRITE | GENERIC_EXECUTE;
 
 	/* BUILTIN_USERS */
 	ConvertStringSidToSidW(L"S-1-5-32-545", &bu_sid);
@@ -47,9 +45,8 @@ static bool add_aap_perms(const wchar_t *dir)
 		goto fail;
 	}
 
-	if (SetNamedSecurityInfoW((wchar_t *)dir, SE_FILE_OBJECT,
-				  DACL_SECURITY_INFORMATION, NULL, NULL,
-				  new_dacl2, NULL) != ERROR_SUCCESS) {
+	if (SetNamedSecurityInfoW((wchar_t *)dir, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION, NULL, NULL, new_dacl2,
+				  NULL) != ERROR_SUCCESS) {
 		goto fail;
 	}
 
@@ -88,19 +85,17 @@ static LSTATUS get_reg(HKEY hkey, LPCWSTR sub_key, LPCWSTR value_name, bool b64)
 
 	status = RegOpenKeyEx(hkey, sub_key, 0, KEY_READ | flags, &key);
 	if (status == ERROR_SUCCESS) {
-		status = RegQueryValueExW(key, value_name, NULL, NULL,
-					  (LPBYTE)&val, &size);
+		status = RegQueryValueExW(key, value_name, NULL, NULL, (LPBYTE)&val, &size);
 		RegCloseKey(key);
 	}
 	return status;
 }
 
-#define get_programdata_path(path, subpath)                        \
-	do {                                                       \
-		SHGetFolderPathW(NULL, CSIDL_COMMON_APPDATA, NULL, \
-				 SHGFP_TYPE_CURRENT, path);        \
-		StringCbCatW(path, sizeof(path), L"\\");           \
-		StringCbCatW(path, sizeof(path), subpath);         \
+#define get_programdata_path(path, subpath)                                                   \
+	do {                                                                                  \
+		SHGetFolderPathW(NULL, CSIDL_COMMON_APPDATA, NULL, SHGFP_TYPE_CURRENT, path); \
+		StringCbCatW(path, sizeof(path), L"\\");                                      \
+		StringCbCatW(path, sizeof(path), subpath);                                    \
 	} while (false)
 
 #define make_filename(str, name, ext)                                \
@@ -159,8 +154,7 @@ static void update_vulkan_registry(bool b64)
 
 	s = get_reg(HKEY_CURRENT_USER, IMPLICIT_LAYERS, path, b64);
 	if (s == ERROR_SUCCESS) {
-		s = RegOpenKeyEx(HKEY_CURRENT_USER, IMPLICIT_LAYERS, 0,
-				 KEY_WRITE | flags, &key);
+		s = RegOpenKeyEx(HKEY_CURRENT_USER, IMPLICIT_LAYERS, 0, KEY_WRITE | flags, &key);
 		if (s == ERROR_SUCCESS) {
 			RegDeleteValueW(key, path);
 			RegCloseKey(key);
@@ -174,15 +168,13 @@ static void update_vulkan_registry(bool b64)
 
 	/* ------------------- */
 
-	s = RegCreateKeyExW(HKEY_LOCAL_MACHINE, IMPLICIT_LAYERS, 0, NULL, 0,
-			    KEY_WRITE | flags, NULL, &key, &temp);
+	s = RegCreateKeyExW(HKEY_LOCAL_MACHINE, IMPLICIT_LAYERS, 0, NULL, 0, KEY_WRITE | flags, NULL, &key, &temp);
 	if (s != ERROR_SUCCESS) {
 		goto finish;
 	}
 
 	DWORD zero = 0;
-	s = RegSetValueExW(key, path, 0, REG_DWORD, (const BYTE *)&zero,
-			   sizeof(zero));
+	s = RegSetValueExW(key, path, 0, REG_DWORD, (const BYTE *)&zero, sizeof(zero));
 	if (s != ERROR_SUCCESS) {
 		goto finish;
 	}

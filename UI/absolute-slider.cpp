@@ -6,8 +6,7 @@ AbsoluteSlider::AbsoluteSlider(QWidget *parent) : SliderIgnoreScroll(parent)
 	setMouseTracking(true);
 }
 
-AbsoluteSlider::AbsoluteSlider(Qt::Orientation orientation, QWidget *parent)
-	: SliderIgnoreScroll(orientation, parent)
+AbsoluteSlider::AbsoluteSlider(Qt::Orientation orientation, QWidget *parent) : SliderIgnoreScroll(orientation, parent)
 {
 	installEventFilter(this);
 	setMouseTracking(true);
@@ -15,8 +14,7 @@ AbsoluteSlider::AbsoluteSlider(Qt::Orientation orientation, QWidget *parent)
 
 void AbsoluteSlider::mousePressEvent(QMouseEvent *event)
 {
-	dragging = (event->buttons() & Qt::LeftButton ||
-		    event->buttons() & Qt::MiddleButton);
+	dragging = (event->buttons() & Qt::LeftButton || event->buttons() & Qt::MiddleButton);
 
 	if (dragging) {
 		setSliderDown(true);
@@ -59,8 +57,7 @@ bool AbsoluteSlider::eventFilter(QObject *obj, QEvent *event)
 	if (event->type() == QEvent::KeyPress) {
 		QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
 
-		if (keyEvent->key() == Qt::Key_Up ||
-		    keyEvent->key() == Qt::Key_Down) {
+		if (keyEvent->key() == Qt::Key_Up || keyEvent->key() == Qt::Key_Down) {
 			return true;
 		}
 	}
@@ -78,10 +75,8 @@ int AbsoluteSlider::posToRangeValue(QMouseEvent *event)
 	int sliderMax;
 	int handleLength;
 
-	const QRect groove = style()->subControlRect(
-		QStyle::CC_Slider, &opt, QStyle::SC_SliderGroove, this);
-	const QRect handle = style()->subControlRect(
-		QStyle::CC_Slider, &opt, QStyle::SC_SliderHandle, this);
+	const QRect groove = style()->subControlRect(QStyle::CC_Slider, &opt, QStyle::SC_SliderGroove, this);
+	const QRect handle = style()->subControlRect(QStyle::CC_Slider, &opt, QStyle::SC_SliderHandle, this);
 
 	if (orientation() == Qt::Horizontal) {
 		pos = event->pos().x();
@@ -95,9 +90,8 @@ int AbsoluteSlider::posToRangeValue(QMouseEvent *event)
 		sliderMax = groove.bottom() - (handleLength / 2) + 1;
 	}
 
-	int sliderValue = style()->sliderValueFromPosition(
-		minimum(), maximum(), pos - sliderMin, sliderMax - sliderMin,
-		opt.upsideDown);
+	int sliderValue = style()->sliderValueFromPosition(minimum(), maximum(), pos - sliderMin, sliderMax - sliderMin,
+							   opt.upsideDown);
 
 	return sliderValue;
 }

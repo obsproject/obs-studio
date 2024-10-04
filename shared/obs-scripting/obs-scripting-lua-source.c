@@ -22,8 +22,7 @@
 
 /* ========================================================================= */
 
-static inline const char *get_table_string_(lua_State *script, int idx,
-					    const char *name, const char *func)
+static inline const char *get_table_string_(lua_State *script, int idx, const char *name, const char *func)
 {
 	const char *str = "";
 
@@ -38,8 +37,7 @@ static inline const char *get_table_string_(lua_State *script, int idx,
 	return str;
 }
 
-static inline int get_table_int_(lua_State *script, int idx, const char *name,
-				 const char *func)
+static inline int get_table_int_(lua_State *script, int idx, const char *name, const char *func)
 {
 	int val = 0;
 
@@ -53,8 +51,7 @@ static inline int get_table_int_(lua_State *script, int idx, const char *name,
 	return val;
 }
 
-static inline void get_callback_from_table_(lua_State *script, int idx,
-					    const char *name, int *p_reg_idx,
+static inline void get_callback_from_table_(lua_State *script, int idx, const char *name, int *p_reg_idx,
 					    const char *func)
 {
 	*p_reg_idx = LUA_REFNIL;
@@ -71,21 +68,17 @@ static inline void get_callback_from_table_(lua_State *script, int idx,
 	}
 }
 
-#define get_table_string(script, idx, name) \
-	get_table_string_(script, idx, name, __FUNCTION__)
-#define get_table_int(script, idx, name) \
-	get_table_int_(script, idx, name, __FUNCTION__)
+#define get_table_string(script, idx, name) get_table_string_(script, idx, name, __FUNCTION__)
+#define get_table_int(script, idx, name) get_table_int_(script, idx, name, __FUNCTION__)
 #define get_callback_from_table(script, idx, name, p_reg_idx) \
 	get_callback_from_table_(script, idx, name, p_reg_idx, __FUNCTION__)
 
-bool ls_get_libobs_obj_(lua_State *script, const char *type, int lua_idx,
-			void *libobs_out, const char *id, const char *func,
-			int line)
+bool ls_get_libobs_obj_(lua_State *script, const char *type, int lua_idx, void *libobs_out, const char *id,
+			const char *func, int line)
 {
 	swig_type_info *info = SWIG_TypeQuery(script, type);
 	if (info == NULL) {
-		warn("%s:%d: SWIG could not find type: %s%s%s", func, line,
-		     id ? id : "", id ? "::" : "", type);
+		warn("%s:%d: SWIG could not find type: %s%s%s", func, line, id ? id : "", id ? "::" : "", type);
 		return false;
 	}
 
@@ -100,18 +93,15 @@ bool ls_get_libobs_obj_(lua_State *script, const char *type, int lua_idx,
 	return true;
 }
 
-#define ls_get_libobs_obj(type, lua_index, obs_obj)                            \
-	ls_get_libobs_obj_(ls->script, #type " *", lua_index, obs_obj, ls->id, \
-			   __FUNCTION__, __LINE__)
+#define ls_get_libobs_obj(type, lua_index, obs_obj) \
+	ls_get_libobs_obj_(ls->script, #type " *", lua_index, obs_obj, ls->id, __FUNCTION__, __LINE__)
 
-bool ls_push_libobs_obj_(lua_State *script, const char *type, void *libobs_in,
-			 bool ownership, const char *id, const char *func,
-			 int line)
+bool ls_push_libobs_obj_(lua_State *script, const char *type, void *libobs_in, bool ownership, const char *id,
+			 const char *func, int line)
 {
 	swig_type_info *info = SWIG_TypeQuery(script, type);
 	if (info == NULL) {
-		warn("%s:%d: SWIG could not find type: %s%s%s", func, line,
-		     id ? id : "", id ? "::" : "", type);
+		warn("%s:%d: SWIG could not find type: %s%s%s", func, line, id ? id : "", id ? "::" : "", type);
 		return false;
 	}
 
@@ -119,9 +109,8 @@ bool ls_push_libobs_obj_(lua_State *script, const char *type, void *libobs_in,
 	return true;
 }
 
-#define ls_push_libobs_obj(type, obs_obj, ownership)                    \
-	ls_push_libobs_obj_(ls->script, #type " *", obs_obj, ownership, \
-			    ls->id, __FUNCTION__, __LINE__)
+#define ls_push_libobs_obj(type, obs_obj, ownership) \
+	ls_push_libobs_obj_(ls->script, #type " *", obs_obj, ownership, ls->id, __FUNCTION__, __LINE__)
 
 /* ========================================================================= */
 
@@ -168,12 +157,9 @@ struct obs_lua_data {
 	struct obs_lua_data **p_prev_next;
 };
 
-#define call_func(name, args, rets)                                \
-	call_func_(ls->script, ls->func_##name, args, rets, #name, \
-		   ls->display_name)
+#define call_func(name, args, rets) call_func_(ls->script, ls->func_##name, args, rets, #name, ls->display_name)
 #define have_func(name) (ls->func_##name != LUA_REFNIL)
-#define ls_push_data() \
-	lua_rawgeti(ls->script, LUA_REGISTRYINDEX, ld->lua_data_ref)
+#define ls_push_data() lua_rawgeti(ls->script, LUA_REGISTRYINDEX, ld->lua_data_ref)
 #define ls_pop(count) lua_pop(ls->script, count)
 #define lock_script()                                              \
 	struct obs_lua_script *__data = ls->data;                  \
@@ -609,8 +595,7 @@ static int obs_lua_register_source(lua_State *script)
 		lua_pop(script, 1);
 	}
 
-	if (!v->display_name || !*v->display_name || !*info.id ||
-	    !info.output_flags)
+	if (!v->display_name || !*v->display_name || !*info.id || !info.output_flags)
 		goto fail;
 
 #define get_callback(val)                                                  \
@@ -635,8 +620,7 @@ static int obs_lua_register_source(lua_State *script)
 	get_callback(load);
 #undef get_callback
 
-	get_callback_from_table(script, -1, "get_defaults",
-				&v->func_get_defaults);
+	get_callback_from_table(script, -1, "get_defaults", &v->func_get_defaults);
 
 	if (!existing) {
 		ls.data = current_lua_script;
@@ -671,15 +655,13 @@ static int obs_lua_register_source(lua_State *script)
 
 			if (have_func(create)) {
 				obs_source_t *source = ld->source;
-				obs_data_t *settings =
-					obs_source_get_settings(source);
+				obs_data_t *settings = obs_source_get_settings(source);
 
 				ls_push_libobs_obj(obs_data_t, settings, false);
 				ls_push_libobs_obj(obs_source_t, source, false);
 				call_func(create, 2, 1);
 
-				ld->lua_data_ref =
-					luaL_ref(ls->script, LUA_REGISTRYINDEX);
+				ld->lua_data_ref = luaL_ref(ls->script, LUA_REGISTRYINDEX);
 				obs_data_release(settings);
 			}
 
@@ -707,8 +689,7 @@ void add_lua_source_functions(lua_State *script)
 	lua_pop(script, 1);
 }
 
-static inline void undef_source_type(struct obs_lua_script *data,
-				     struct obs_lua_source *ls)
+static inline void undef_source_type(struct obs_lua_script *data, struct obs_lua_source *ls)
 {
 	pthread_mutex_lock(&ls->definition_mutex);
 	pthread_mutex_lock(&data->mutex);

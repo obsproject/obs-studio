@@ -25,6 +25,5 @@ public:
 	 * basics is missing in stream, explain missing fields and offer to
 	 * open settings, cancel, or continue.  Returns Continue if all
 	 * settings are valid. */
-	static StreamSettingsAction
-	StreamSettingsConfirmation(QWidget *parent, OBSService service);
+	static StreamSettingsAction StreamSettingsConfirmation(QWidget *parent, OBSService service);
 };

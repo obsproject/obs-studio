@@ -108,8 +108,7 @@ static const int blacklisted_adapters[] = {
 	0x137a, // GM108GLM [Quadro K620M / Quadro M500M]
 };
 
-static const size_t num_blacklisted =
-	sizeof(blacklisted_adapters) / sizeof(blacklisted_adapters[0]);
+static const size_t num_blacklisted = sizeof(blacklisted_adapters) / sizeof(blacklisted_adapters[0]);
 
 static bool is_blacklisted(const int device_id)
 {
@@ -147,8 +146,7 @@ static bool nvenc_device_available(void)
 	}
 
 	if (!create) {
-		create = (create_dxgi_proc)GetProcAddress(dxgi,
-							  "CreateDXGIFactory1");
+		create = (create_dxgi_proc)GetProcAddress(dxgi, "CreateDXGIFactory1");
 		if (!create) {
 			return true;
 		}
@@ -189,8 +187,7 @@ static int get_id_from_sys(char *d_name, char *type)
 	char *c;
 	int id;
 
-	snprintf(file_name, sizeof(file_name), "/sys/bus/pci/devices/%s/%s",
-		 d_name, type);
+	snprintf(file_name, sizeof(file_name), "/sys/bus/pci/devices/%s/%s", d_name, type);
 	if ((c = os_quick_read_utf8_file(file_name)) == NULL) {
 		return -1;
 	}
@@ -214,19 +211,16 @@ static bool nvenc_device_available(void)
 		int id;
 
 		if (get_id_from_sys(dirent->d_name, "class") != 0x030000 &&
-		    get_id_from_sys(dirent->d_name, "class") !=
-			    0x030200) { // 0x030000 = VGA compatible controller
-					// 0x030200 = 3D controller
+		    get_id_from_sys(dirent->d_name, "class") != 0x030200) { // 0x030000 = VGA compatible controller
+									    // 0x030200 = 3D controller
 			continue;
 		}
 
-		if (get_id_from_sys(dirent->d_name, "vendor") !=
-		    0x10de) { // 0x10de = NVIDIA Corporation
+		if (get_id_from_sys(dirent->d_name, "vendor") != 0x10de) { // 0x10de = NVIDIA Corporation
 			continue;
 		}
 
-		if ((id = get_id_from_sys(dirent->d_name, "device")) > 0 &&
-		    !is_blacklisted(id)) {
+		if ((id = get_id_from_sys(dirent->d_name, "device")) > 0 && !is_blacklisted(id)) {
 			available = true;
 			break;
 		}
@@ -338,8 +332,7 @@ extern void obs_ffmpeg_load_logging(void);
 extern void obs_ffmpeg_unload_logging(void);
 #endif
 
-static void register_encoder_if_available(struct obs_encoder_info *info,
-					  const char *id)
+static void register_encoder_if_available(struct obs_encoder_info *info, const char *id)
 {
 	const AVCodec *c = avcodec_find_encoder_by_name(id);
 	if (c) {
@@ -386,9 +379,8 @@ bool obs_module_load(void)
 #ifdef LIBAVUTIL_VAAPI_AVAILABLE
 	const char *libva_env = getenv("LIBVA_DRIVER_NAME");
 	if (!!libva_env)
-		blog(LOG_WARNING,
-		     "LIBVA_DRIVER_NAME variable is set,"
-		     " this could prevent FFmpeg VAAPI from working correctly");
+		blog(LOG_WARNING, "LIBVA_DRIVER_NAME variable is set,"
+				  " this could prevent FFmpeg VAAPI from working correctly");
 
 	if (h264_vaapi_supported()) {
 		blog(LOG_INFO, "FFmpeg VAAPI H264 encoding supported");

@@ -14,8 +14,7 @@ extern "C" {
  * obs_output_add_packet_callback() and obs_output_remove_packet_callback(),
  * respectively.
  */
-void bpm_inject(obs_output_t *output, struct encoder_packet *pkt,
-		struct encoder_packet_time *pkt_time, void *param);
+void bpm_inject(obs_output_t *output, struct encoder_packet *pkt, struct encoder_packet_time *pkt_time, void *param);
 
 /* BPM function to destroy all allocations for a given output. */
 void bpm_destroy(obs_output_t *output);

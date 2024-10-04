@@ -106,8 +106,7 @@ void pulseaudio_accept();
  *
  * @warning call without active locks
  */
-int_fast32_t pulseaudio_get_source_info_list(pa_source_info_cb_t cb,
-					     void *userdata);
+int_fast32_t pulseaudio_get_source_info_list(pa_source_info_cb_t cb, void *userdata);
 
 /**
  * Request source information from a specific source
@@ -125,8 +124,7 @@ int_fast32_t pulseaudio_get_source_info_list(pa_source_info_cb_t cb,
  *
  * @warning call without active locks
  */
-int_fast32_t pulseaudio_get_source_info(pa_source_info_cb_t cb,
-					const char *name, void *userdata);
+int_fast32_t pulseaudio_get_source_info(pa_source_info_cb_t cb, const char *name, void *userdata);
 
 /**
  * Request sink information
@@ -140,8 +138,7 @@ int_fast32_t pulseaudio_get_source_info(pa_source_info_cb_t cb,
  *
  * @warning call without active locks
  */
-int_fast32_t pulseaudio_get_sink_info_list(pa_sink_info_cb_t cb,
-					   void *userdata);
+int_fast32_t pulseaudio_get_sink_info_list(pa_sink_info_cb_t cb, void *userdata);
 
 /**
  * Request sink information from a specific sink
@@ -159,8 +156,7 @@ int_fast32_t pulseaudio_get_sink_info_list(pa_sink_info_cb_t cb,
  *
  * @warning call without active locks
  */
-int_fast32_t pulseaudio_get_sink_info(pa_sink_info_cb_t cb, const char *name,
-				      void *userdata);
+int_fast32_t pulseaudio_get_sink_info(pa_sink_info_cb_t cb, const char *name, void *userdata);
 
 /**
  * Request server information
@@ -183,8 +179,7 @@ int_fast32_t pulseaudio_get_server_info(pa_server_info_cb_t cb, void *userdata);
  *
  * @warning call without active locks
  */
-pa_stream *pulseaudio_stream_new(const char *name, const pa_sample_spec *ss,
-				 const pa_channel_map *map);
+pa_stream *pulseaudio_stream_new(const char *name, const pa_sample_spec *ss, const pa_channel_map *map);
 
 /**
  * Connect to a pulseaudio playback stream
@@ -195,8 +190,7 @@ pa_stream *pulseaudio_stream_new(const char *name, const pa_sample_spec *ss,
  * @param flags pa_stream_flags_t
  * @return negative on error
  */
-int_fast32_t pulseaudio_connect_playback(pa_stream *s, const char *name,
-					 const pa_buffer_attr *attr,
+int_fast32_t pulseaudio_connect_playback(pa_stream *s, const char *name, const pa_buffer_attr *attr,
 					 pa_stream_flags_t flags);
 
 /**
@@ -206,8 +200,7 @@ int_fast32_t pulseaudio_connect_playback(pa_stream *s, const char *name,
  * @param cb pa_stream_request_cb_t
  * @param userdata pointer to userdata the callback will be called with
  */
-void pulseaudio_write_callback(pa_stream *p, pa_stream_request_cb_t cb,
-			       void *userdata);
+void pulseaudio_write_callback(pa_stream *p, pa_stream_request_cb_t cb, void *userdata);
 
 /**
  * Sets a callback function for when an underflow happen
@@ -216,5 +209,4 @@ void pulseaudio_write_callback(pa_stream *p, pa_stream_request_cb_t cb,
  * @param cb pa_stream_notify_cb_t
  * @param userdata pointer to userdata the callback will be called with
  */
-void pulseaudio_set_underflow_callback(pa_stream *p, pa_stream_notify_cb_t cb,
-				       void *userdata);
+void pulseaudio_set_underflow_callback(pa_stream *p, pa_stream_notify_cb_t cb, void *userdata);

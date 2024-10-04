@@ -2,8 +2,7 @@
 
 #include <util/threading.h>
 
-DeckLinkOutput::DeckLinkOutput(obs_output_t *output,
-			       DeckLinkDeviceDiscovery *discovery_)
+DeckLinkOutput::DeckLinkOutput(obs_output_t *output, DeckLinkDeviceDiscovery *discovery_)
 	: DecklinkBase(discovery_),
 	  output(output)
 {
@@ -35,10 +34,8 @@ bool DeckLinkOutput::Activate(DeckLinkDevice *device, long long modeId)
 		if (!isActive)
 			return false;
 
-		if (instance->GetActiveModeId() == modeId &&
-		    instance->GetActivePixelFormat() == pixelFormat &&
-		    instance->GetActiveColorSpace() == colorSpace &&
-		    instance->GetActiveColorRange() == colorRange &&
+		if (instance->GetActiveModeId() == modeId && instance->GetActivePixelFormat() == pixelFormat &&
+		    instance->GetActiveColorSpace() == colorSpace && instance->GetActiveColorRange() == colorRange &&
 		    instance->GetActiveChannelFormat() == channelFormat)
 			return false;
 	}

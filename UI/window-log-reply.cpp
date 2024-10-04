@@ -31,8 +31,7 @@ OBSLogReply::OBSLogReply(QWidget *parent, const QString &url, const bool crash)
 	ui->urlEdit->setText(url);
 	if (crash) {
 		ui->analyzeURL->hide();
-		ui->description->setText(
-			Str("LogReturnDialog.Description.Crash"));
+		ui->description->setText(Str("LogReturnDialog.Description.Crash"));
 	}
 
 	installEventFilter(CreateShortcutFilter());
@@ -47,8 +46,7 @@ void OBSLogReply::on_copyURL_clicked()
 void OBSLogReply::on_analyzeURL_clicked()
 {
 	QUrlQuery param;
-	param.addQueryItem("log_url",
-			   QUrl::toPercentEncoding(ui->urlEdit->text()));
+	param.addQueryItem("log_url", QUrl::toPercentEncoding(ui->urlEdit->text()));
 	QUrl url("https://obsproject.com/tools/analyzer", QUrl::TolerantMode);
 	url.setQuery(param);
 	QDesktopServices::openUrl(url);

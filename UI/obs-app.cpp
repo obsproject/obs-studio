@@ -132,8 +132,7 @@ QObject *CreateShortcutFilter()
 {
 	return new OBSEventFilter([](QObject *obj, QEvent *event) {
 		auto mouse_event = [](QMouseEvent &event) {
-			if (!App()->HotkeysEnabledInFocus() &&
-			    event.button() != Qt::LeftButton)
+			if (!App()->HotkeysEnabledInFocus() && event.button() != Qt::LeftButton)
 				return true;
 
 			obs_key_combination_t hotkey = {0, OBS_KEY_NONE};
@@ -182,8 +181,7 @@ QObject *CreateShortcutFilter()
 #undef MAP_BUTTON
 			}
 
-			hotkey.modifiers = TranslateQtKeyboardEventModifiers(
-				event.modifiers());
+			hotkey.modifiers = TranslateQtKeyboardEventModifiers(event.modifiers());
 
 			obs_hotkey_inject_event(hotkey, pressed);
 			return true;
@@ -193,8 +191,7 @@ QObject *CreateShortcutFilter()
 			int key = event->key();
 			bool enabledInFocus = App()->HotkeysEnabledInFocus();
 
-			if (key != Qt::Key_Enter && key != Qt::Key_Escape &&
-			    key != Qt::Key_Return && !enabledInFocus)
+			if (key != Qt::Key_Enter && key != Qt::Key_Escape && key != Qt::Key_Return && !enabledInFocus)
 				return true;
 
 			QDialog *dialog = qobject_cast<QDialog *>(obj);
@@ -226,15 +223,13 @@ QObject *CreateShortcutFilter()
 					return true;
 				/* Falls through. */
 			default:
-				hotkey.key = obs_key_from_virtual_key(
-					event->nativeVirtualKey());
+				hotkey.key = obs_key_from_virtual_key(event->nativeVirtualKey());
 			}
 
 			if (event->isAutoRepeat())
 				return true;
 
-			hotkey.modifiers = TranslateQtKeyboardEventModifiers(
-				event->modifiers());
+			hotkey.modifiers = TranslateQtKeyboardEventModifiers(event->modifiers());
 
 			obs_hotkey_inject_event(hotkey, pressed);
 			return true;
@@ -269,13 +264,11 @@ string CurrentTimeString()
 	tstruct = *localtime(&now);
 
 	size_t written = strftime(buf, sizeof(buf), "%T", &tstruct);
-	if (ratio_less<system_clock::period, seconds::period>::value &&
-	    written && (sizeof(buf) - written) > 5) {
+	if (ratio_less<system_clock::period, seconds::period>::value && written && (sizeof(buf) - written) > 5) {
 		auto tp_secs = time_point_cast<seconds>(tp);
 		auto millis = duration_cast<milliseconds>(tp - tp_secs).count();
 
-		snprintf(buf + written, sizeof(buf) - written, ".%03u",
-			 static_cast<unsigned>(millis));
+		snprintf(buf + written, sizeof(buf) - written, ".%03u", static_cast<unsigned>(millis));
 	}
 
 	return buf;
@@ -291,8 +284,7 @@ string CurrentDateTimeString()
 	return buf;
 }
 
-static void LogString(fstream &logFile, const char *timeString, char *str,
-		      int log_level)
+static void LogString(fstream &logFile, const char *timeString, char *str, int log_level)
 {
 	static mutex logfile_mutex;
 	string msg;
@@ -304,9 +296,7 @@ static void LogString(fstream &logFile, const char *timeString, char *str,
 	logfile_mutex.unlock();
 
 	if (!!obsLogViewer)
-		QMetaObject::invokeMethod(obsLogViewer.data(), "AddLine",
-					  Qt::QueuedConnection,
-					  Q_ARG(int, log_level),
+		QMetaObject::invokeMethod(obsLogViewer.data(), "AddLine", Qt::QueuedConnection, Q_ARG(int, log_level),
 					  Q_ARG(QString, QString(msg.c_str())));
 }
 
@@ -347,8 +337,7 @@ static inline int sum_chars(const char *str)
 	return val;
 }
 
-static inline bool too_many_repeated_entries(fstream &logFile, const char *msg,
-					     const char *output_str)
+static inline bool too_many_repeated_entries(fstream &logFile, const char *msg, const char *output_str)
 {
 	static mutex log_mutex;
 	static const char *last_msg_ptr = nullptr;
@@ -371,10 +360,8 @@ static inline bool too_many_repeated_entries(fstream &logFile, const char *msg,
 	}
 
 	if (rep_count > MAX_REPEATED_LINES) {
-		logFile << CurrentTimeString()
-			<< ": Last log entry repeated for "
-			<< to_string(rep_count - MAX_REPEATED_LINES)
-			<< " more lines" << endl;
+		logFile << CurrentTimeString() << ": Last log entry repeated for "
+			<< to_string(rep_count - MAX_REPEATED_LINES) << " more lines" << endl;
 	}
 
 	last_msg_ptr = msg;
@@ -406,8 +393,7 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 			lock_guard<mutex> lock(wide_mutex);
 			wide_buf.reserve(wNum + 1);
 			wide_buf.resize(wNum - 1);
-			MultiByteToWideChar(CP_UTF8, 0, str, -1, &wide_buf[0],
-					    wNum);
+			MultiByteToWideChar(CP_UTF8, 0, str, -1, &wide_buf[0], wNum);
 			wide_buf.push_back('\n');
 
 			OutputDebugStringW(wide_buf.c_str());
@@ -443,29 +429,24 @@ bool OBSApp::InitGlobalConfigDefaults()
 {
 	config_set_default_uint(appConfig, "General", "MaxLogs", 10);
 	config_set_default_int(appConfig, "General", "InfoIncrement", -1);
-	config_set_default_string(appConfig, "General", "ProcessPriority",
-				  "Normal");
-	config_set_default_bool(appConfig, "General", "EnableAutoUpdates",
-				true);
+	config_set_default_string(appConfig, "General", "ProcessPriority", "Normal");
+	config_set_default_bool(appConfig, "General", "EnableAutoUpdates", true);
 
 #if _WIN32
-	config_set_default_string(appConfig, "Video", "Renderer",
-				  "Direct3D 11");
+	config_set_default_string(appConfig, "Video", "Renderer", "Direct3D 11");
 #else
 	config_set_default_string(appConfig, "Video", "Renderer", "OpenGL");
 #endif
 
 #ifdef _WIN32
-	config_set_default_bool(appConfig, "Audio", "DisableAudioDucking",
-				true);
+	config_set_default_bool(appConfig, "Audio", "DisableAudioDucking", true);
 	config_set_default_bool(appConfig, "General", "BrowserHWAccel", true);
 #endif
 
 #ifdef __APPLE__
 	config_set_default_bool(appConfig, "General", "BrowserHWAccel", true);
 	config_set_default_bool(appConfig, "Video", "DisableOSXVSync", true);
-	config_set_default_bool(appConfig, "Video", "ResetOSXVSyncOnExit",
-				true);
+	config_set_default_bool(appConfig, "Video", "ResetOSXVSyncOnExit", true);
 #endif
 
 	return true;
@@ -481,10 +462,8 @@ bool OBSApp::InitGlobalLocationDefaults()
 		return false;
 	}
 
-	config_set_default_string(appConfig, "Locations", "Configuration",
-				  path);
-	config_set_default_string(appConfig, "Locations", "SceneCollections",
-				  path);
+	config_set_default_string(appConfig, "Locations", "Configuration", path);
+	config_set_default_string(appConfig, "Locations", "SceneCollections", path);
 	config_set_default_string(appConfig, "Locations", "Profiles", path);
 
 	return true;
@@ -494,66 +473,39 @@ void OBSApp::InitUserConfigDefaults()
 {
 	config_set_default_bool(userConfig, "General", "ConfirmOnExit", true);
 
-	config_set_default_string(userConfig, "General", "HotkeyFocusType",
-				  "NeverDisableHotkeys");
+	config_set_default_string(userConfig, "General", "HotkeyFocusType", "NeverDisableHotkeys");
 
-	config_set_default_bool(userConfig, "BasicWindow", "PreviewEnabled",
-				true);
-	config_set_default_bool(userConfig, "BasicWindow", "PreviewProgramMode",
-				false);
-	config_set_default_bool(userConfig, "BasicWindow",
-				"SceneDuplicationMode", true);
-	config_set_default_bool(userConfig, "BasicWindow", "SwapScenesMode",
-				true);
-	config_set_default_bool(userConfig, "BasicWindow", "SnappingEnabled",
-				true);
-	config_set_default_bool(userConfig, "BasicWindow", "ScreenSnapping",
-				true);
-	config_set_default_bool(userConfig, "BasicWindow", "SourceSnapping",
-				true);
-	config_set_default_bool(userConfig, "BasicWindow", "CenterSnapping",
-				false);
-	config_set_default_double(userConfig, "BasicWindow", "SnapDistance",
-				  10.0);
-	config_set_default_bool(userConfig, "BasicWindow",
-				"SpacingHelpersEnabled", true);
-	config_set_default_bool(userConfig, "BasicWindow",
-				"RecordWhenStreaming", false);
-	config_set_default_bool(userConfig, "BasicWindow",
-				"KeepRecordingWhenStreamStops", false);
-	config_set_default_bool(userConfig, "BasicWindow", "SysTrayEnabled",
-				true);
-	config_set_default_bool(userConfig, "BasicWindow", "SysTrayWhenStarted",
-				false);
-	config_set_default_bool(userConfig, "BasicWindow", "SaveProjectors",
-				false);
-	config_set_default_bool(userConfig, "BasicWindow", "ShowTransitions",
-				true);
-	config_set_default_bool(userConfig, "BasicWindow",
-				"ShowListboxToolbars", true);
-	config_set_default_bool(userConfig, "BasicWindow", "ShowStatusBar",
-				true);
-	config_set_default_bool(userConfig, "BasicWindow", "ShowSourceIcons",
-				true);
-	config_set_default_bool(userConfig, "BasicWindow",
-				"ShowContextToolbars", true);
-	config_set_default_bool(userConfig, "BasicWindow", "StudioModeLabels",
-				true);
+	config_set_default_bool(userConfig, "BasicWindow", "PreviewEnabled", true);
+	config_set_default_bool(userConfig, "BasicWindow", "PreviewProgramMode", false);
+	config_set_default_bool(userConfig, "BasicWindow", "SceneDuplicationMode", true);
+	config_set_default_bool(userConfig, "BasicWindow", "SwapScenesMode", true);
+	config_set_default_bool(userConfig, "BasicWindow", "SnappingEnabled", true);
+	config_set_default_bool(userConfig, "BasicWindow", "ScreenSnapping", true);
+	config_set_default_bool(userConfig, "BasicWindow", "SourceSnapping", true);
+	config_set_default_bool(userConfig, "BasicWindow", "CenterSnapping", false);
+	config_set_default_double(userConfig, "BasicWindow", "SnapDistance", 10.0);
+	config_set_default_bool(userConfig, "BasicWindow", "SpacingHelpersEnabled", true);
+	config_set_default_bool(userConfig, "BasicWindow", "RecordWhenStreaming", false);
+	config_set_default_bool(userConfig, "BasicWindow", "KeepRecordingWhenStreamStops", false);
+	config_set_default_bool(userConfig, "BasicWindow", "SysTrayEnabled", true);
+	config_set_default_bool(userConfig, "BasicWindow", "SysTrayWhenStarted", false);
+	config_set_default_bool(userConfig, "BasicWindow", "SaveProjectors", false);
+	config_set_default_bool(userConfig, "BasicWindow", "ShowTransitions", true);
+	config_set_default_bool(userConfig, "BasicWindow", "ShowListboxToolbars", true);
+	config_set_default_bool(userConfig, "BasicWindow", "ShowStatusBar", true);
+	config_set_default_bool(userConfig, "BasicWindow", "ShowSourceIcons", true);
+	config_set_default_bool(userConfig, "BasicWindow", "ShowContextToolbars", true);
+	config_set_default_bool(userConfig, "BasicWindow", "StudioModeLabels", true);
 
-	config_set_default_bool(userConfig, "BasicWindow", "VerticalVolControl",
-				false);
+	config_set_default_bool(userConfig, "BasicWindow", "VerticalVolControl", false);
 
-	config_set_default_bool(userConfig, "BasicWindow",
-				"MultiviewMouseSwitch", true);
+	config_set_default_bool(userConfig, "BasicWindow", "MultiviewMouseSwitch", true);
 
-	config_set_default_bool(userConfig, "BasicWindow", "MultiviewDrawNames",
-				true);
+	config_set_default_bool(userConfig, "BasicWindow", "MultiviewDrawNames", true);
 
-	config_set_default_bool(userConfig, "BasicWindow", "MultiviewDrawAreas",
-				true);
+	config_set_default_bool(userConfig, "BasicWindow", "MultiviewDrawAreas", true);
 
-	config_set_default_bool(userConfig, "BasicWindow",
-				"MediaControlsCountdownTimer", true);
+	config_set_default_bool(userConfig, "BasicWindow", "MediaControlsCountdownTimer", true);
 }
 
 static bool do_mkdir(const char *path)
@@ -580,8 +532,7 @@ static bool MakeUserDirs()
 	if (!do_mkdir(path))
 		return false;
 
-	if (GetAppConfigPath(path, sizeof(path), "obs-studio/profiler_data") <=
-	    0)
+	if (GetAppConfigPath(path, sizeof(path), "obs-studio/profiler_data") <= 0)
 		return false;
 	if (!do_mkdir(path))
 		return false;
@@ -600,8 +551,7 @@ static bool MakeUserDirs()
 		return false;
 #endif
 
-	if (GetAppConfigPath(path, sizeof(path), "obs-studio/plugin_config") <=
-	    0)
+	if (GetAppConfigPath(path, sizeof(path), "obs-studio/plugin_config") <= 0)
 		return false;
 	if (!do_mkdir(path))
 		return false;
@@ -615,18 +565,15 @@ constexpr std::string_view OBSScenesSubDirectory = "obs-studio/basic/scenes";
 static bool MakeUserProfileDirs()
 {
 	const std::filesystem::path userProfilePath =
-		App()->userProfilesLocation /
-		std::filesystem::u8path(OBSProfileSubDirectory);
+		App()->userProfilesLocation / std::filesystem::u8path(OBSProfileSubDirectory);
 	const std::filesystem::path userScenesPath =
-		App()->userScenesLocation /
-		std::filesystem::u8path(OBSScenesSubDirectory);
+		App()->userScenesLocation / std::filesystem::u8path(OBSScenesSubDirectory);
 
 	if (!std::filesystem::exists(userProfilePath)) {
 		try {
 			std::filesystem::create_directories(userProfilePath);
 		} catch (const std::filesystem::filesystem_error &error) {
-			blog(LOG_ERROR,
-			     "Failed to create user profile directory '%s'\n%s",
+			blog(LOG_ERROR, "Failed to create user profile directory '%s'\n%s",
 			     userProfilePath.u8string().c_str(), error.what());
 			return false;
 		}
@@ -636,8 +583,7 @@ static bool MakeUserProfileDirs()
 		try {
 			std::filesystem::create_directories(userScenesPath);
 		} catch (const std::filesystem::filesystem_error &error) {
-			blog(LOG_ERROR,
-			     "Failed to create user scene collection directory '%s'\n%s",
+			blog(LOG_ERROR, "Failed to create user scene collection directory '%s'\n%s",
 			     userScenesPath.u8string().c_str(), error.what());
 			return false;
 		}
@@ -652,34 +598,26 @@ bool OBSApp::UpdatePre22MultiviewLayout(const char *layout)
 		return false;
 
 	if (astrcmpi(layout, "horizontaltop") == 0) {
-		config_set_int(
-			userConfig, "BasicWindow", "MultiviewLayout",
-			static_cast<int>(
-				MultiviewLayout::HORIZONTAL_TOP_8_SCENES));
+		config_set_int(userConfig, "BasicWindow", "MultiviewLayout",
+			       static_cast<int>(MultiviewLayout::HORIZONTAL_TOP_8_SCENES));
 		return true;
 	}
 
 	if (astrcmpi(layout, "horizontalbottom") == 0) {
-		config_set_int(
-			userConfig, "BasicWindow", "MultiviewLayout",
-			static_cast<int>(
-				MultiviewLayout::HORIZONTAL_BOTTOM_8_SCENES));
+		config_set_int(userConfig, "BasicWindow", "MultiviewLayout",
+			       static_cast<int>(MultiviewLayout::HORIZONTAL_BOTTOM_8_SCENES));
 		return true;
 	}
 
 	if (astrcmpi(layout, "verticalleft") == 0) {
-		config_set_int(
-			userConfig, "BasicWindow", "MultiviewLayout",
-			static_cast<int>(
-				MultiviewLayout::VERTICAL_LEFT_8_SCENES));
+		config_set_int(userConfig, "BasicWindow", "MultiviewLayout",
+			       static_cast<int>(MultiviewLayout::VERTICAL_LEFT_8_SCENES));
 		return true;
 	}
 
 	if (astrcmpi(layout, "verticalright") == 0) {
-		config_set_int(
-			userConfig, "BasicWindow", "MultiviewLayout",
-			static_cast<int>(
-				MultiviewLayout::VERTICAL_RIGHT_8_SCENES));
+		config_set_int(userConfig, "BasicWindow", "MultiviewLayout",
+			       static_cast<int>(MultiviewLayout::VERTICAL_RIGHT_8_SCENES));
 		return true;
 	}
 
@@ -701,18 +639,15 @@ bool OBSApp::InitGlobalConfig()
 		return false;
 	}
 
-	uint32_t lastVersion =
-		config_get_int(appConfig, "General", "LastVersion");
+	uint32_t lastVersion = config_get_int(appConfig, "General", "LastVersion");
 
 	if (lastVersion < MAKE_SEMANTIC_VERSION(31, 0, 0)) {
-		bool migratedUserSettings =
-			config_get_bool(appConfig, "General", "Pre31Migrated");
+		bool migratedUserSettings = config_get_bool(appConfig, "General", "Pre31Migrated");
 
 		if (!migratedUserSettings) {
 			bool migrated = MigrateGlobalSettings();
 
-			config_set_bool(appConfig, "General", "Pre31Migrated",
-					migrated);
+			config_set_bool(appConfig, "General", "Pre31Migrated", migrated);
 			config_save_safe(appConfig, "tmp", nullptr);
 		}
 	}
@@ -721,22 +656,18 @@ bool OBSApp::InitGlobalConfig()
 	InitGlobalLocationDefaults();
 
 	if (IsPortableMode()) {
-		userConfigLocation = std::filesystem::u8path(
-			config_get_default_string(appConfig, "Locations",
-						  "Configuration"));
-		userScenesLocation = std::filesystem::u8path(
-			config_get_default_string(appConfig, "Locations",
-						  "SceneCollections"));
-		userProfilesLocation = std::filesystem::u8path(
-			config_get_default_string(appConfig, "Locations",
-						  "Profiles"));
+		userConfigLocation =
+			std::filesystem::u8path(config_get_default_string(appConfig, "Locations", "Configuration"));
+		userScenesLocation =
+			std::filesystem::u8path(config_get_default_string(appConfig, "Locations", "SceneCollections"));
+		userProfilesLocation =
+			std::filesystem::u8path(config_get_default_string(appConfig, "Locations", "Profiles"));
 	} else {
-		userConfigLocation = std::filesystem::u8path(config_get_string(
-			appConfig, "Locations", "Configuration"));
-		userScenesLocation = std::filesystem::u8path(config_get_string(
-			appConfig, "Locations", "SceneCollections"));
-		userProfilesLocation = std::filesystem::u8path(
-			config_get_string(appConfig, "Locations", "Profiles"));
+		userConfigLocation =
+			std::filesystem::u8path(config_get_string(appConfig, "Locations", "Configuration"));
+		userScenesLocation =
+			std::filesystem::u8path(config_get_string(appConfig, "Locations", "SceneCollections"));
+		userProfilesLocation = std::filesystem::u8path(config_get_string(appConfig, "Locations", "Profiles"));
 	}
 
 	bool userConfigResult = InitUserConfig(userConfigLocation, lastVersion);
@@ -744,16 +675,13 @@ bool OBSApp::InitGlobalConfig()
 	return userConfigResult;
 }
 
-bool OBSApp::InitUserConfig(std::filesystem::path &userConfigLocation,
-			    uint32_t lastVersion)
+bool OBSApp::InitUserConfig(std::filesystem::path &userConfigLocation, uint32_t lastVersion)
 {
 	bool hasChanges = false;
 
-	const std::string userConfigFile =
-		userConfigLocation.u8string() + "/obs-studio/user.ini";
+	const std::string userConfigFile = userConfigLocation.u8string() + "/obs-studio/user.ini";
 
-	int errorCode =
-		userConfig.Open(userConfigFile.c_str(), CONFIG_OPEN_ALWAYS);
+	int errorCode = userConfig.Open(userConfigFile.c_str(), CONFIG_OPEN_ALWAYS);
 
 	if (errorCode != CONFIG_SUCCESS) {
 		OBSErrorBox(nullptr, "Failed to open user.ini: %d", errorCode);
@@ -763,36 +691,27 @@ bool OBSApp::InitUserConfig(std::filesystem::path &userConfigLocation,
 	hasChanges = MigrateLegacySettings(lastVersion);
 
 	if (!opt_starting_collection.empty()) {
-		const OBSBasic *basic =
-			reinterpret_cast<OBSBasic *>(GetMainWindow());
+		const OBSBasic *basic = reinterpret_cast<OBSBasic *>(GetMainWindow());
 		const std::optional<OBSSceneCollection> foundCollection =
-			basic->GetSceneCollectionByName(
-				opt_starting_collection);
+			basic->GetSceneCollectionByName(opt_starting_collection);
 
 		if (foundCollection) {
-			config_set_string(userConfig, "Basic",
-					  "SceneCollection",
-					  foundCollection.value().name.c_str());
-			config_set_string(
-				userConfig, "Basic", "SceneCollectionFile",
-				foundCollection.value().fileName.c_str());
+			config_set_string(userConfig, "Basic", "SceneCollection", foundCollection.value().name.c_str());
+			config_set_string(userConfig, "Basic", "SceneCollectionFile",
+					  foundCollection.value().fileName.c_str());
 			hasChanges = true;
 		}
 	}
 
 	if (!opt_starting_profile.empty()) {
-		const OBSBasic *basic =
-			reinterpret_cast<OBSBasic *>(GetMainWindow());
+		const OBSBasic *basic = reinterpret_cast<OBSBasic *>(GetMainWindow());
 
-		const std::optional<OBSProfile> foundProfile =
-			basic->GetProfileByName(opt_starting_profile);
+		const std::optional<OBSProfile> foundProfile = basic->GetProfileByName(opt_starting_profile);
 
 		if (foundProfile) {
-			config_set_string(userConfig, "Basic", "Profile",
-					  foundProfile.value().name.c_str());
-			config_set_string(
-				userConfig, "Basic", "ProfileDir",
-				foundProfile.value().directoryName.c_str());
+			config_set_string(userConfig, "Basic", "Profile", foundProfile.value().name.c_str());
+			config_set_string(userConfig, "Basic", "ProfileDir",
+					  foundProfile.value().directoryName.c_str());
 
 			hasChanges = true;
 		}
@@ -817,27 +736,20 @@ bool OBSApp::MigrateLegacySettings(const uint32_t lastVersion)
 	const uint32_t v24 = MAKE_SEMANTIC_VERSION(24, 0, 0);
 	const uint32_t v24_1 = MAKE_SEMANTIC_VERSION(24, 1, 0);
 
-	const map<uint32_t, string> defaultsMap{{{v19, "Pre19Defaults"},
-						 {v21, "Pre21Defaults"},
-						 {v23, "Pre23Defaults"},
-						 {v24_1, "Pre24.1Defaults"}}};
+	const map<uint32_t, string> defaultsMap{
+		{{v19, "Pre19Defaults"}, {v21, "Pre21Defaults"}, {v23, "Pre23Defaults"}, {v24_1, "Pre24.1Defaults"}}};
 
 	for (auto &[version, configKey] : defaultsMap) {
-		if (!config_has_user_value(userConfig, "General",
-					   configKey.c_str())) {
-			bool useOldDefaults = lastVersion &&
-					      lastVersion < version;
-			config_set_bool(userConfig, "General",
-					configKey.c_str(), useOldDefaults);
+		if (!config_has_user_value(userConfig, "General", configKey.c_str())) {
+			bool useOldDefaults = lastVersion && lastVersion < version;
+			config_set_bool(userConfig, "General", configKey.c_str(), useOldDefaults);
 
 			hasChanges = true;
 		}
 	}
 
-	if (config_has_user_value(userConfig, "BasicWindow",
-				  "MultiviewLayout")) {
-		const char *layout = config_get_string(
-			userConfig, "BasicWindow", "MultiviewLayout");
+	if (config_has_user_value(userConfig, "BasicWindow", "MultiviewLayout")) {
+		const char *layout = config_get_string(userConfig, "BasicWindow", "MultiviewLayout");
 
 		bool layoutUpdated = UpdatePre22MultiviewLayout(layout);
 
@@ -845,13 +757,10 @@ bool OBSApp::MigrateLegacySettings(const uint32_t lastVersion)
 	}
 
 	if (lastVersion && lastVersion < v24) {
-		bool disableHotkeysInFocus = config_get_bool(
-			userConfig, "General", "DisableHotkeysInFocus");
+		bool disableHotkeysInFocus = config_get_bool(userConfig, "General", "DisableHotkeysInFocus");
 
 		if (disableHotkeysInFocus) {
-			config_set_string(userConfig, "General",
-					  "HotkeyFocusType",
-					  "DisableHotkeysInFocus");
+			config_set_string(userConfig, "General", "HotkeyFocusType", "DisableHotkeysInFocus");
 		}
 
 		hasChanges = true;
@@ -869,8 +778,7 @@ bool OBSApp::MigrateGlobalSettings()
 
 	int len = GetAppConfigPath(path, sizeof(path), nullptr);
 	if (len <= 0) {
-		OBSErrorBox(nullptr,
-			    "Unable to get global configuration path.");
+		OBSErrorBox(nullptr, "Unable to get global configuration path.");
 		return false;
 	}
 
@@ -878,20 +786,17 @@ bool OBSApp::MigrateGlobalSettings()
 	legacyConfigFileString.reserve(strlen(path) + OBSGlobalIniPath.size());
 	legacyConfigFileString.append(path).append(OBSGlobalIniPath);
 
-	const std::filesystem::path legacyGlobalConfigFile =
-		std::filesystem::u8path(legacyConfigFileString);
+	const std::filesystem::path legacyGlobalConfigFile = std::filesystem::u8path(legacyConfigFileString);
 
 	std::string configFileString;
 	configFileString.reserve(strlen(path) + OBSUserIniPath.size());
 	configFileString.append(path).append(OBSUserIniPath);
 
-	const std::filesystem::path userConfigFile =
-		std::filesystem::u8path(configFileString);
+	const std::filesystem::path userConfigFile = std::filesystem::u8path(configFileString);
 
 	if (std::filesystem::exists(userConfigFile)) {
-		OBSErrorBox(
-			nullptr,
-			"Unable to migrate global configuration - user configuration file already exists.");
+		OBSErrorBox(nullptr,
+			    "Unable to migrate global configuration - user configuration file already exists.");
 		return false;
 	}
 
@@ -905,8 +810,7 @@ bool OBSApp::InitLocale()
 	ProfileScope("OBSApp::InitLocale");
 
 	const char *lang = config_get_string(userConfig, "General", "Language");
-	bool userLocale =
-		config_has_user_value(userConfig, "General", "Language");
+	bool userLocale = config_has_user_value(userConfig, "General", "Language");
 	if (!userLocale || !lang || lang[0] == '\0')
 		lang = DEFAULT_LANG;
 
@@ -914,8 +818,7 @@ bool OBSApp::InitLocale()
 
 	// set basic default application locale
 	if (!locale.empty())
-		QLocale::setDefault(QLocale(
-			QString::fromStdString(locale).replace('-', '_')));
+		QLocale::setDefault(QLocale(QString::fromStdString(locale).replace('-', '_')));
 
 	string englishPath;
 	if (!GetDataFilePath("locale/" DEFAULT_LANG ".ini", englishPath)) {
@@ -925,8 +828,7 @@ bool OBSApp::InitLocale()
 
 	textLookup = text_lookup_create(englishPath.c_str());
 	if (!textLookup) {
-		OBSErrorBox(NULL, "Failed to create locale from file '%s'",
-			    englishPath.c_str());
+		OBSErrorBox(NULL, "Failed to create locale from file '%s'", englishPath.c_str());
 		return false;
 	}
 
@@ -950,15 +852,12 @@ bool OBSApp::InitLocale()
 			if (!text_lookup_add(textLookup, path.c_str()))
 				continue;
 
-			blog(LOG_INFO, "Using preferred locale '%s'",
-			     locale_.c_str());
+			blog(LOG_INFO, "Using preferred locale '%s'", locale_.c_str());
 			locale = locale_;
 
 			// set application default locale to the new choosen one
 			if (!locale.empty())
-				QLocale::setDefault(QLocale(
-					QString::fromStdString(locale).replace(
-						'-', '_')));
+				QLocale::setDefault(QLocale(QString::fromStdString(locale).replace('-', '_')));
 
 			return true;
 		}
@@ -972,19 +871,16 @@ bool OBSApp::InitLocale()
 	string path;
 	if (GetDataFilePath(file.str().c_str(), path)) {
 		if (!text_lookup_add(textLookup, path.c_str()))
-			blog(LOG_ERROR, "Failed to add locale file '%s'",
-			     path.c_str());
+			blog(LOG_ERROR, "Failed to add locale file '%s'", path.c_str());
 	} else {
-		blog(LOG_ERROR, "Could not find locale file '%s'",
-		     file.str().c_str());
+		blog(LOG_ERROR, "Could not find locale file '%s'", file.str().c_str());
 	}
 
 	return true;
 }
 
 #if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
-void ParseBranchesJson(const std::string &jsonString, vector<UpdateBranch> &out,
-		       std::string &error)
+void ParseBranchesJson(const std::string &jsonString, vector<UpdateBranch> &out, std::string &error)
 {
 	JsonBranches branches;
 
@@ -1021,8 +917,7 @@ bool LoadBranchesFile(vector<UpdateBranch> &out)
 	string error;
 	string branchesText;
 
-	BPtr<char> branchesFilePath =
-		GetAppConfigPathPtr("obs-studio/updates/branches.json");
+	BPtr<char> branchesFilePath = GetAppConfigPathPtr("obs-studio/updates/branches.json");
 
 	QFile branchesFile(branchesFilePath.Get());
 	if (!branchesFile.open(QIODevice::ReadOnly)) {
@@ -1041,8 +936,7 @@ bool LoadBranchesFile(vector<UpdateBranch> &out)
 		return !out.empty();
 
 fail:
-	blog(LOG_WARNING, "Loading branches from file failed: %s",
-	     error.c_str());
+	blog(LOG_WARNING, "Loading branches from file failed: %s", error.c_str());
 	return false;
 }
 #endif
@@ -1056,8 +950,7 @@ void OBSApp::SetBranchData(const string &data)
 	ParseBranchesJson(data, result, error);
 
 	if (!error.empty()) {
-		blog(LOG_WARNING, "Reading branches JSON response failed: %s",
-		     error.c_str());
+		blog(LOG_WARNING, "Reading branches JSON response failed: %s", error.c_str());
 		return;
 	}
 
@@ -1088,8 +981,7 @@ std::vector<UpdateBranch> OBSApp::GetBranches()
 
 	/* Copy additional branches to result (if any) */
 	if (!updateBranches.empty())
-		out.insert(out.end(), updateBranches.begin(),
-			   updateBranches.end());
+		out.insert(out.end(), updateBranches.begin(), updateBranches.end());
 
 	return out;
 }
@@ -1108,11 +1000,9 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 	/* Handle SIGINT properly */
 	socketpair(AF_UNIX, SOCK_STREAM, 0, sigintFd);
 	snInt = new QSocketNotifier(sigintFd[1], QSocketNotifier::Read, this);
-	connect(snInt, &QSocketNotifier::activated, this,
-		&OBSApp::ProcessSigInt);
+	connect(snInt, &QSocketNotifier::activated, this, &OBSApp::ProcessSigInt);
 #else
-	connect(qApp, &QGuiApplication::commitDataRequest, this,
-		&OBSApp::commitData);
+	connect(qApp, &QGuiApplication::commitDataRequest, this, &OBSApp::commitData);
 #endif
 
 	sleepInhibitor = os_inhibit_sleep_create("OBS Video/audio");
@@ -1127,8 +1017,7 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 OBSApp::~OBSApp()
 {
 #ifdef _WIN32
-	bool disableAudioDucking =
-		config_get_bool(appConfig, "Audio", "DisableAudioDucking");
+	bool disableAudioDucking = config_get_bool(appConfig, "Audio", "DisableAudioDucking");
 	if (disableAudioDucking)
 		DisableAudioDucking(false);
 #else
@@ -1138,10 +1027,8 @@ OBSApp::~OBSApp()
 #endif
 
 #ifdef __APPLE__
-	bool vsyncDisabled =
-		config_get_bool(appConfig, "Video", "DisableOSXVSync");
-	bool resetVSync =
-		config_get_bool(appConfig, "Video", "ResetOSXVSyncOnExit");
+	bool vsyncDisabled = config_get_bool(appConfig, "Video", "DisableOSXVSync");
+	bool resetVSync = config_get_bool(appConfig, "Video", "ResetOSXVSyncOnExit");
 	if (vsyncDisabled && resetVSync)
 		EnableOSXVSync(true);
 #endif
@@ -1168,8 +1055,7 @@ static void move_basic_to_profiles(void)
 	}
 
 	const std::filesystem::path profilesPath =
-		App()->userProfilesLocation /
-		std::filesystem::u8path("obs-studio/basic/profiles");
+		App()->userProfilesLocation / std::filesystem::u8path("obs-studio/basic/profiles");
 
 	if (std::filesystem::exists(profilesPath)) {
 		return;
@@ -1178,14 +1064,12 @@ static void move_basic_to_profiles(void)
 	try {
 		std::filesystem::create_directories(profilesPath);
 	} catch (const std::filesystem::filesystem_error &error) {
-		blog(LOG_ERROR,
-		     "Failed to create profiles directory for migration from basic profile\n%s",
+		blog(LOG_ERROR, "Failed to create profiles directory for migration from basic profile\n%s",
 		     error.what());
 		return;
 	}
 
-	const std::filesystem::path newProfilePath =
-		profilesPath / std::filesystem::u8path(Str("Untitled"));
+	const std::filesystem::path newProfilePath = profilesPath / std::filesystem::u8path(Str("Untitled"));
 
 	for (auto &entry : std::filesystem::directory_iterator(basicPath)) {
 		if (entry.is_directory()) {
@@ -1198,31 +1082,22 @@ static void move_basic_to_profiles(void)
 
 		if (!std::filesystem::exists(newProfilePath)) {
 			try {
-				std::filesystem::create_directory(
-					newProfilePath);
-			} catch (
-				const std::filesystem::filesystem_error &error) {
-				blog(LOG_ERROR,
-				     "Failed to create profile directory for 'Untitled'\n%s",
-				     error.what());
+				std::filesystem::create_directory(newProfilePath);
+			} catch (const std::filesystem::filesystem_error &error) {
+				blog(LOG_ERROR, "Failed to create profile directory for 'Untitled'\n%s", error.what());
 				return;
 			}
 		}
 
-		const filesystem::path destinationFile =
-			newProfilePath / entry.path().filename();
+		const filesystem::path destinationFile = newProfilePath / entry.path().filename();
 
-		const auto copyOptions =
-			std::filesystem::copy_options::overwrite_existing;
+		const auto copyOptions = std::filesystem::copy_options::overwrite_existing;
 
 		try {
-			std::filesystem::copy(entry.path(), destinationFile,
-					      copyOptions);
+			std::filesystem::copy(entry.path(), destinationFile, copyOptions);
 		} catch (const std::filesystem::filesystem_error &error) {
-			blog(LOG_ERROR,
-			     "Failed to copy basic profile file '%s' to new profile 'Untitled'\n%s",
-			     entry.path().filename().u8string().c_str(),
-			     error.what());
+			blog(LOG_ERROR, "Failed to copy basic profile file '%s' to new profile 'Untitled'\n%s",
+			     entry.path().filename().u8string().c_str(), error.what());
 
 			return;
 		}
@@ -1244,8 +1119,7 @@ static void move_basic_to_scene_collections(void)
 	}
 
 	const std::filesystem::path sceneCollectionPath =
-		App()->userScenesLocation /
-		std::filesystem::u8path("obs-studio/basic/scenes");
+		App()->userScenesLocation / std::filesystem::u8path("obs-studio/basic/scenes");
 
 	if (std::filesystem::exists(sceneCollectionPath)) {
 		return;
@@ -1260,18 +1134,14 @@ static void move_basic_to_scene_collections(void)
 		return;
 	}
 
-	const std::filesystem::path sourceFile =
-		basicPath / std::filesystem::u8path("scenes.json");
+	const std::filesystem::path sourceFile = basicPath / std::filesystem::u8path("scenes.json");
 	const std::filesystem::path destinationFile =
-		(sceneCollectionPath / std::filesystem::u8path(Str("Untitled")))
-			.replace_extension(".json");
+		(sceneCollectionPath / std::filesystem::u8path(Str("Untitled"))).replace_extension(".json");
 
 	try {
 		std::filesystem::rename(sourceFile, destinationFile);
 	} catch (const std::filesystem::filesystem_error &error) {
-		blog(LOG_ERROR,
-		     "Failed to rename basic scene collection file:\n%s",
-		     error.what());
+		blog(LOG_ERROR, "Failed to rename basic scene collection file:\n%s", error.what());
 		return;
 	}
 }
@@ -1289,34 +1159,24 @@ void OBSApp::AppInit()
 	if (!InitTheme())
 		throw "Failed to load theme";
 
-	config_set_default_string(userConfig, "Basic", "Profile",
-				  Str("Untitled"));
-	config_set_default_string(userConfig, "Basic", "ProfileDir",
-				  Str("Untitled"));
-	config_set_default_string(userConfig, "Basic", "SceneCollection",
-				  Str("Untitled"));
-	config_set_default_string(userConfig, "Basic", "SceneCollectionFile",
-				  Str("Untitled"));
-	config_set_default_bool(userConfig, "Basic", "ConfigOnNewProfile",
-				true);
+	config_set_default_string(userConfig, "Basic", "Profile", Str("Untitled"));
+	config_set_default_string(userConfig, "Basic", "ProfileDir", Str("Untitled"));
+	config_set_default_string(userConfig, "Basic", "SceneCollection", Str("Untitled"));
+	config_set_default_string(userConfig, "Basic", "SceneCollectionFile", Str("Untitled"));
+	config_set_default_bool(userConfig, "Basic", "ConfigOnNewProfile", true);
 
 	if (!config_has_user_value(userConfig, "Basic", "Profile")) {
-		config_set_string(userConfig, "Basic", "Profile",
-				  Str("Untitled"));
-		config_set_string(userConfig, "Basic", "ProfileDir",
-				  Str("Untitled"));
+		config_set_string(userConfig, "Basic", "Profile", Str("Untitled"));
+		config_set_string(userConfig, "Basic", "ProfileDir", Str("Untitled"));
 	}
 
 	if (!config_has_user_value(userConfig, "Basic", "SceneCollection")) {
-		config_set_string(userConfig, "Basic", "SceneCollection",
-				  Str("Untitled"));
-		config_set_string(userConfig, "Basic", "SceneCollectionFile",
-				  Str("Untitled"));
+		config_set_string(userConfig, "Basic", "SceneCollection", Str("Untitled"));
+		config_set_string(userConfig, "Basic", "SceneCollectionFile", Str("Untitled"));
 	}
 
 #ifdef _WIN32
-	bool disableAudioDucking =
-		config_get_bool(appConfig, "Audio", "DisableAudioDucking");
+	bool disableAudioDucking = config_get_bool(appConfig, "Audio", "DisableAudioDucking");
 	if (disableAudioDucking)
 		DisableAudioDucking(true);
 #endif
@@ -1337,8 +1197,7 @@ void OBSApp::AppInit()
 
 const char *OBSApp::GetRenderModule() const
 {
-	const char *renderer =
-		config_get_string(appConfig, "Video", "Renderer");
+	const char *renderer = config_get_string(appConfig, "Video", "Renderer");
 
 	return (astrcmpi(renderer, "Direct3D 11") == 0) ? DL_D3D11 : DL_OPENGL;
 }
@@ -1347,8 +1206,7 @@ static bool StartupOBS(const char *locale, profiler_name_store_t *store)
 {
 	char path[512];
 
-	if (GetAppConfigPath(path, sizeof(path), "obs-studio/plugin_config") <=
-	    0)
+	if (GetAppConfigPath(path, sizeof(path), "obs-studio/plugin_config") <= 0)
 		return false;
 
 	return obs_startup(locale, path, store);
@@ -1356,9 +1214,7 @@ static bool StartupOBS(const char *locale, profiler_name_store_t *store)
 
 inline void OBSApp::ResetHotkeyState(bool inFocus)
 {
-	obs_hotkey_enable_background_press(
-		(inFocus && enableHotkeysInFocus) ||
-		(!inFocus && enableHotkeysOutOfFocus));
+	obs_hotkey_enable_background_press((inFocus && enableHotkeysInFocus) || (!inFocus && enableHotkeysOutOfFocus));
 }
 
 void OBSApp::UpdateHotkeyFocusSetting(bool resetState)
@@ -1366,8 +1222,7 @@ void OBSApp::UpdateHotkeyFocusSetting(bool resetState)
 	enableHotkeysInFocus = true;
 	enableHotkeysOutOfFocus = true;
 
-	const char *hotkeyFocusType =
-		config_get_string(userConfig, "General", "HotkeyFocusType");
+	const char *hotkeyFocusType = config_get_string(userConfig, "General", "HotkeyFocusType");
 
 	if (astrcmpi(hotkeyFocusType, "DisableHotkeysInFocus") == 0) {
 		enableHotkeysInFocus = false;
@@ -1399,9 +1254,7 @@ static void ui_task_handler(obs_task_t task, void *param, bool wait)
 		/* to get clang-format to behave */
 		task(param);
 	};
-	QMetaObject::invokeMethod(App(), "Exec",
-				  wait ? WaitConnection() : Qt::AutoConnection,
-				  Q_ARG(VoidFunc, doTask));
+	QMetaObject::invokeMethod(App(), "Exec", wait ? WaitConnection() : Qt::AutoConnection, Q_ARG(VoidFunc, doTask));
 }
 
 bool OBSApp::OBSInit()
@@ -1424,10 +1277,8 @@ bool OBSApp::OBSInit()
 	}
 #endif
 
-	QPlatformNativeInterface *native =
-		QGuiApplication::platformNativeInterface();
-	obs_set_nix_platform_display(
-		native->nativeResourceForIntegration("display"));
+	QPlatformNativeInterface *native = QGuiApplication::platformNativeInterface();
+	obs_set_nix_platform_display(native->nativeResourceForIntegration("display"));
 #endif
 
 #ifdef __APPLE__
@@ -1442,28 +1293,22 @@ bool OBSApp::OBSInit()
 	obs_set_ui_task_handler(ui_task_handler);
 
 #if defined(_WIN32) || defined(__APPLE__)
-	bool browserHWAccel =
-		config_get_bool(userConfig, "General", "BrowserHWAccel");
+	bool browserHWAccel = config_get_bool(userConfig, "General", "BrowserHWAccel");
 
 	OBSDataAutoRelease settings = obs_data_create();
 	obs_data_set_bool(settings, "BrowserHWAccel", browserHWAccel);
 	obs_apply_private_data(settings);
 
-	blog(LOG_INFO, "Current Date/Time: %s",
-	     CurrentDateTimeString().c_str());
+	blog(LOG_INFO, "Current Date/Time: %s", CurrentDateTimeString().c_str());
 
-	blog(LOG_INFO, "Browser Hardware Acceleration: %s",
-	     browserHWAccel ? "true" : "false");
+	blog(LOG_INFO, "Browser Hardware Acceleration: %s", browserHWAccel ? "true" : "false");
 #endif
 #ifdef _WIN32
-	bool hideFromCapture = config_get_bool(userConfig, "BasicWindow",
-					       "HideOBSWindowsFromCapture");
-	blog(LOG_INFO, "Hide OBS windows from screen capture: %s",
-	     hideFromCapture ? "true" : "false");
+	bool hideFromCapture = config_get_bool(userConfig, "BasicWindow", "HideOBSWindowsFromCapture");
+	blog(LOG_INFO, "Hide OBS windows from screen capture: %s", hideFromCapture ? "true" : "false");
 #endif
 
-	blog(LOG_INFO, "Qt Version: %s (runtime), %s (compiled)", qVersion(),
-	     QT_VERSION_STR);
+	blog(LOG_INFO, "Qt Version: %s (runtime), %s (compiled)", qVersion(), QT_VERSION_STR);
 	blog(LOG_INFO, "Portable mode: %s", portable_mode ? "true" : "false");
 
 	if (safe_mode) {
@@ -1482,9 +1327,7 @@ bool OBSApp::OBSInit()
 	mainWindow->OBSInit();
 
 	connect(this, &QGuiApplication::applicationStateChanged,
-		[this](Qt::ApplicationState state) {
-			ResetHotkeyState(state == Qt::ApplicationActive);
-		});
+		[this](Qt::ApplicationState state) { ResetHotkeyState(state == Qt::ApplicationActive); });
 	ResetHotkeyState(applicationState() == Qt::ApplicationActive);
 	return true;
 }
@@ -1496,8 +1339,7 @@ string OBSApp::GetVersionString(bool platform) const
 #ifdef HAVE_OBSCONFIG_H
 	ver << obs_get_version_string();
 #else
-	ver << LIBOBS_API_MAJOR_VER << "." << LIBOBS_API_MINOR_VER << "."
-	    << LIBOBS_API_PATCH_VER;
+	ver << LIBOBS_API_MAJOR_VER << "." << LIBOBS_API_MINOR_VER << "." << LIBOBS_API_PATCH_VER;
 
 #endif
 
@@ -1611,8 +1453,7 @@ bool OBSApp::notify(QObject *receiver, QEvent *e)
 
 	windowType = window->flags() & Qt::WindowType::WindowType_Mask;
 
-	if (windowType == Qt::WindowType::Dialog ||
-	    windowType == Qt::WindowType::Window ||
+	if (windowType == Qt::WindowType::Dialog || windowType == Qt::WindowType::Window ||
 	    windowType == Qt::WindowType::Tool) {
 		OBSBasic *main = reinterpret_cast<OBSBasic *>(GetMainWindow());
 		if (main)
@@ -1623,8 +1464,7 @@ skip:
 	return QApplication::notify(receiver, e);
 }
 
-QString OBSTranslator::translate(const char *, const char *sourceText,
-				 const char *, int) const
+QString OBSTranslator::translate(const char *, const char *sourceText, const char *, int) const
 {
 	const char *out = nullptr;
 	QString str(sourceText);
@@ -1704,8 +1544,7 @@ static void delete_oldest_file(bool has_prefix, const char *location)
 	uint64_t oldest_ts = (uint64_t)-1;
 	struct os_dirent *entry;
 
-	unsigned int maxLogs = (unsigned int)config_get_uint(
-		App()->GetUserConfig(), "General", "MaxLogs");
+	unsigned int maxLogs = (unsigned int)config_get_uint(App()->GetUserConfig(), "General", "MaxLogs");
 
 	os_dir_t *dir = os_opendir(logDir);
 	if (dir) {
@@ -1715,8 +1554,7 @@ static void delete_oldest_file(bool has_prefix, const char *location)
 			if (entry->directory || *entry->d_name == '.')
 				continue;
 
-			uint64_t ts =
-				convert_log_name(has_prefix, entry->d_name);
+			uint64_t ts = convert_log_name(has_prefix, entry->d_name);
 
 			if (ts) {
 				if (ts < oldest_ts) {
@@ -1739,8 +1577,7 @@ static void delete_oldest_file(bool has_prefix, const char *location)
 	}
 }
 
-static void get_last_log(bool has_prefix, const char *subdir_to_use,
-			 std::string &last)
+static void get_last_log(bool has_prefix, const char *subdir_to_use, std::string &last)
 {
 	BPtr<char> logDir(GetAppConfigPathPtr(subdir_to_use));
 	struct os_dirent *entry;
@@ -1752,8 +1589,7 @@ static void get_last_log(bool has_prefix, const char *subdir_to_use,
 			if (entry->directory || *entry->d_name == '.')
 				continue;
 
-			uint64_t ts =
-				convert_log_name(has_prefix, entry->d_name);
+			uint64_t ts = convert_log_name(has_prefix, entry->d_name);
 
 			if (ts > highest_ts) {
 				last = entry->d_name;
@@ -1772,19 +1608,16 @@ string GenerateTimeDateFilename(const char *extension, bool noSpace)
 	struct tm *cur_time;
 
 	cur_time = localtime(&now);
-	snprintf(file, sizeof(file), "%d-%02d-%02d%c%02d-%02d-%02d.%s",
-		 cur_time->tm_year + 1900, cur_time->tm_mon + 1,
-		 cur_time->tm_mday, noSpace ? '_' : ' ', cur_time->tm_hour,
-		 cur_time->tm_min, cur_time->tm_sec, extension);
+	snprintf(file, sizeof(file), "%d-%02d-%02d%c%02d-%02d-%02d.%s", cur_time->tm_year + 1900, cur_time->tm_mon + 1,
+		 cur_time->tm_mday, noSpace ? '_' : ' ', cur_time->tm_hour, cur_time->tm_min, cur_time->tm_sec,
+		 extension);
 
 	return string(file);
 }
 
-string GenerateSpecifiedFilename(const char *extension, bool noSpace,
-				 const char *format)
+string GenerateSpecifiedFilename(const char *extension, bool noSpace, const char *format)
 {
-	BPtr<char> filename =
-		os_generate_formatted_filename(extension, !noSpace, format);
+	BPtr<char> filename = os_generate_formatted_filename(extension, !noSpace, format);
 	return string(filename);
 }
 
@@ -1842,8 +1675,7 @@ static void remove_reserved_file_characters(string &s)
 	replace(s.begin(), s.end(), '<', '_');
 }
 
-string GetFormatString(const char *format, const char *prefix,
-		       const char *suffix)
+string GetFormatString(const char *format, const char *prefix, const char *suffix)
 {
 	string f;
 
@@ -1897,8 +1729,7 @@ string GetFormatExt(const char *container)
 	return ext;
 }
 
-string GetOutputFilename(const char *path, const char *container, bool noSpace,
-			 bool overwrite, const char *format)
+string GetOutputFilename(const char *path, const char *container, bool noSpace, bool overwrite, const char *format)
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 
@@ -1906,12 +1737,9 @@ string GetOutputFilename(const char *path, const char *container, bool noSpace,
 
 	if (!dir) {
 		if (main->isVisible())
-			OBSMessageBox::warning(main,
-					       QTStr("Output.BadPath.Title"),
-					       QTStr("Output.BadPath.Text"));
+			OBSMessageBox::warning(main, QTStr("Output.BadPath.Title"), QTStr("Output.BadPath.Text"));
 		else
-			main->SysTrayNotify(QTStr("Output.BadPath.Text"),
-					    QSystemTrayIcon::Warning);
+			main->SysTrayNotify(QTStr("Output.BadPath.Text"), QSystemTrayIcon::Warning);
 		return "";
 	}
 
@@ -1990,21 +1818,18 @@ static auto ProfilerNameStoreRelease = [](profiler_name_store_t *store) {
 	profiler_name_store_free(store);
 };
 
-using ProfilerNameStore = std::unique_ptr<profiler_name_store_t,
-					  decltype(ProfilerNameStoreRelease)>;
+using ProfilerNameStore = std::unique_ptr<profiler_name_store_t, decltype(ProfilerNameStoreRelease)>;
 
 ProfilerNameStore CreateNameStore()
 {
-	return ProfilerNameStore{profiler_name_store_create(),
-				 ProfilerNameStoreRelease};
+	return ProfilerNameStore{profiler_name_store_create(), ProfilerNameStoreRelease};
 }
 
 static auto SnapshotRelease = [](profiler_snapshot_t *snap) {
 	profile_snapshot_free(snap);
 };
 
-using ProfilerSnapshot =
-	std::unique_ptr<profiler_snapshot_t, decltype(SnapshotRelease)>;
+using ProfilerSnapshot = std::unique_ptr<profiler_snapshot_t, decltype(SnapshotRelease)>;
 
 ProfilerSnapshot GetSnapshot()
 {
@@ -2029,8 +1854,7 @@ static void SaveProfilerData(const ProfilerSnapshot &snap)
 
 	BPtr<char> path = GetAppConfigPathPtr(dst.str().c_str());
 	if (!profiler_snapshot_dump_csv_gz(snap.get(), path))
-		blog(LOG_WARNING, "Could not save profiler data to '%s'",
-		     static_cast<const char *>(path));
+		blog(LOG_WARNING, "Could not save profiler data to '%s'", static_cast<const char *>(path));
 }
 
 static auto ProfilerFree = [](void *) {
@@ -2046,13 +1870,10 @@ static auto ProfilerFree = [](void *) {
 	profiler_free();
 };
 
-QAccessibleInterface *accessibleFactory(const QString &classname,
-					QObject *object)
+QAccessibleInterface *accessibleFactory(const QString &classname, QObject *object)
 {
-	if (classname == QLatin1String("VolumeSlider") && object &&
-	    object->isWidgetType())
-		return new VolumeAccessibleInterface(
-			static_cast<QWidget *>(object));
+	if (classname == QLatin1String("VolumeSlider") && object && object->isWidgetType())
+		return new VolumeAccessibleInterface(static_cast<QWidget *>(object));
 
 	return nullptr;
 }
@@ -2064,8 +1885,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 	auto profilerNameStore = CreateNameStore();
 
-	std::unique_ptr<void, decltype(ProfilerFree)> prof_release(
-		static_cast<void *>(&ProfilerFree), ProfilerFree);
+	std::unique_ptr<void, decltype(ProfilerFree)> prof_release(static_cast<void *>(&ProfilerFree), ProfilerFree);
 
 	profiler_start();
 	profile_register_root(run_program_init, 0);
@@ -2073,8 +1893,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	ScopeProfiler prof{run_program_init};
 
 #ifdef _WIN32
-	QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
-		Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
+	QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
 #endif
 
 	QCoreApplication::addLibraryPath(".");
@@ -2109,11 +1928,9 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	OBSApp program(argc, argv, profilerNameStore.get());
 	try {
 		QAccessible::installFactory(accessibleFactory);
-		QFontDatabase::addApplicationFont(
-			":/fonts/OpenSans-Regular.ttf");
+		QFontDatabase::addApplicationFont(":/fonts/OpenSans-Regular.ttf");
 		QFontDatabase::addApplicationFont(":/fonts/OpenSans-Bold.ttf");
-		QFontDatabase::addApplicationFont(
-			":/fonts/OpenSans-Italic.ttf");
+		QFontDatabase::addApplicationFont(":/fonts/OpenSans-Italic.ttf");
 
 		bool created_log = false;
 
@@ -2139,13 +1956,10 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		}
 
 		if (!multi) {
-			QMessageBox mb(QMessageBox::Question,
-				       QTStr("AlreadyRunning.Title"),
+			QMessageBox mb(QMessageBox::Question, QTStr("AlreadyRunning.Title"),
 				       QTStr("AlreadyRunning.Text"));
-			mb.addButton(QTStr("AlreadyRunning.LaunchAnyway"),
-				     QMessageBox::YesRole);
-			QPushButton *cancelButton = mb.addButton(
-				QTStr("Cancel"), QMessageBox::NoRole);
+			mb.addButton(QTStr("AlreadyRunning.LaunchAnyway"), QMessageBox::YesRole);
+			QPushButton *cancelButton = mb.addButton(QTStr("Cancel"), QMessageBox::NoRole);
 			mb.setDefaultButton(cancelButton);
 
 			mb.exec();
@@ -2184,9 +1998,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		os_dir_t *crosDir = os_opendir("/opt/google/cros-containers");
 		if (crosDir) {
 			QMessageBox::StandardButtons buttons(QMessageBox::Ok);
-			QMessageBox mb(QMessageBox::Critical,
-				       QTStr("ChromeOS.Title"),
-				       QTStr("ChromeOS.Text"), buttons,
+			QMessageBox mb(QMessageBox::Critical, QTStr("ChromeOS.Title"), QTStr("ChromeOS.Text"), buttons,
 				       nullptr);
 
 			mb.exec();
@@ -2198,36 +2010,27 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 			create_log_file(logFile);
 
 		if (unclean_shutdown) {
-			blog(LOG_WARNING,
-			     "[Safe Mode] Unclean shutdown detected!");
+			blog(LOG_WARNING, "[Safe Mode] Unclean shutdown detected!");
 		}
 
 		if (unclean_shutdown && !safe_mode) {
-			QMessageBox mb(QMessageBox::Warning,
-				       QTStr("AutoSafeMode.Title"),
-				       QTStr("AutoSafeMode.Text"));
+			QMessageBox mb(QMessageBox::Warning, QTStr("AutoSafeMode.Title"), QTStr("AutoSafeMode.Text"));
 			QPushButton *launchSafeButton =
-				mb.addButton(QTStr("AutoSafeMode.LaunchSafe"),
-					     QMessageBox::AcceptRole);
+				mb.addButton(QTStr("AutoSafeMode.LaunchSafe"), QMessageBox::AcceptRole);
 			QPushButton *launchNormalButton =
-				mb.addButton(QTStr("AutoSafeMode.LaunchNormal"),
-					     QMessageBox::RejectRole);
+				mb.addButton(QTStr("AutoSafeMode.LaunchNormal"), QMessageBox::RejectRole);
 			mb.setDefaultButton(launchNormalButton);
 			mb.exec();
 
 			safe_mode = mb.clickedButton() == launchSafeButton;
 			if (safe_mode) {
-				blog(LOG_INFO,
-				     "[Safe Mode] User has launched in Safe Mode.");
+				blog(LOG_INFO, "[Safe Mode] User has launched in Safe Mode.");
 			} else {
-				blog(LOG_WARNING,
-				     "[Safe Mode] User elected to launch normally.");
+				blog(LOG_WARNING, "[Safe Mode] User elected to launch normally.");
 			}
 		}
 
-		qInstallMessageHandler([](QtMsgType type,
-					  const QMessageLogContext &,
-					  const QString &message) {
+		qInstallMessageHandler([](QtMsgType type, const QMessageLogContext &, const QString &message) {
 			switch (type) {
 #ifdef _DEBUG
 			case QtDebugMsg:
@@ -2252,22 +2055,15 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		});
 
 #ifdef __APPLE__
-		MacPermissionStatus audio_permission =
-			CheckPermission(kAudioDeviceAccess);
-		MacPermissionStatus video_permission =
-			CheckPermission(kVideoDeviceAccess);
-		MacPermissionStatus accessibility_permission =
-			CheckPermission(kAccessibility);
-		MacPermissionStatus screen_permission =
-			CheckPermission(kScreenCapture);
+		MacPermissionStatus audio_permission = CheckPermission(kAudioDeviceAccess);
+		MacPermissionStatus video_permission = CheckPermission(kVideoDeviceAccess);
+		MacPermissionStatus accessibility_permission = CheckPermission(kAccessibility);
+		MacPermissionStatus screen_permission = CheckPermission(kScreenCapture);
 
 		int permissionsDialogLastShown =
-			config_get_int(App()->GetAppConfig(), "General",
-				       "MacOSPermissionsDialogLastShown");
-		if (permissionsDialogLastShown <
-		    MACOS_PERMISSIONS_DIALOG_VERSION) {
-			OBSPermissions check(nullptr, screen_permission,
-					     video_permission, audio_permission,
+			config_get_int(App()->GetAppConfig(), "General", "MacOSPermissionsDialogLastShown");
+		if (permissionsDialogLastShown < MACOS_PERMISSIONS_DIALOG_VERSION) {
+			OBSPermissions check(nullptr, screen_permission, video_permission, audio_permission,
 					     accessibility_permission);
 			check.exec();
 		}
@@ -2275,13 +2071,10 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 #ifdef _WIN32
 		if (IsRunningOnWine()) {
-			QMessageBox mb(QMessageBox::Question,
-				       QTStr("Wine.Title"), QTStr("Wine.Text"));
+			QMessageBox mb(QMessageBox::Question, QTStr("Wine.Title"), QTStr("Wine.Text"));
 			mb.setTextFormat(Qt::RichText);
-			mb.addButton(QTStr("AlreadyRunning.LaunchAnyway"),
-				     QMessageBox::AcceptRole);
-			QPushButton *closeButton =
-				mb.addButton(QMessageBox::Close);
+			mb.addButton(QTStr("AlreadyRunning.LaunchAnyway"), QMessageBox::AcceptRole);
+			QPushButton *closeButton = mb.addButton(QMessageBox::Close);
 			mb.setDefaultButton(closeButton);
 
 			mb.exec();
@@ -2296,8 +2089,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 			for (int i = 2; i < argc; ++i) {
 				stor << " " << argv[i];
 			}
-			blog(LOG_INFO, "Command Line Arguments: %s",
-			     stor.str().c_str());
+			blog(LOG_INFO, "Command Line Arguments: %s", stor.str().c_str());
 		}
 
 		if (!program.OBSInit())
@@ -2333,8 +2125,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	"Woops, OBS has crashed!\n\nWould you like to copy the crash log " \
 	"to the clipboard? The crash log will still be saved to:\n\n%s"
 
-static void main_crash_handler(const char *format, va_list args,
-			       void * /* param */)
+static void main_crash_handler(const char *format, va_list args, void * /* param */)
 {
 	char *text = new char[MAX_CRASH_REPORT_SIZE];
 
@@ -2355,11 +2146,9 @@ static void main_crash_handler(const char *format, va_list args,
 #ifdef _WIN32
 	BPtr<wchar_t> wpath;
 	os_utf8_to_wcs_ptr(path, 0, &wpath);
-	file.open(wpath, ios_base::in | ios_base::out | ios_base::trunc |
-				 ios_base::binary);
+	file.open(wpath, ios_base::in | ios_base::out | ios_base::trunc | ios_base::binary);
 #else
-	file.open(path, ios_base::in | ios_base::out | ios_base::trunc |
-				ios_base::binary);
+	file.open(path, ios_base::in | ios_base::out | ios_base::trunc | ios_base::binary);
 #endif
 	file << text;
 	file.close();
@@ -2370,21 +2159,17 @@ static void main_crash_handler(const char *format, va_list args,
 	std::replace(pathString.begin(), pathString.end(), '/', '\\');
 #endif
 
-	string absolutePath =
-		canonical(filesystem::path(pathString)).u8string();
+	string absolutePath = canonical(filesystem::path(pathString)).u8string();
 
 	size_t size = snprintf(nullptr, 0, CRASH_MESSAGE, absolutePath.c_str());
 
 	unique_ptr<char[]> message_buffer(new char[size + 1]);
 
-	snprintf(message_buffer.get(), size + 1, CRASH_MESSAGE,
-		 absolutePath.c_str());
+	snprintf(message_buffer.get(), size + 1, CRASH_MESSAGE, absolutePath.c_str());
 
-	string finalMessage =
-		string(message_buffer.get(), message_buffer.get() + size);
+	string finalMessage = string(message_buffer.get(), message_buffer.get() + size);
 
-	int ret = MessageBoxA(NULL, finalMessage.c_str(), "OBS has crashed!",
-			      MB_YESNO | MB_ICONERROR | MB_TASKMODAL);
+	int ret = MessageBoxA(NULL, finalMessage.c_str(), "OBS has crashed!", MB_YESNO | MB_ICONERROR | MB_TASKMODAL);
 
 	if (ret == IDYES) {
 		size_t len = strlen(text);
@@ -2418,8 +2203,7 @@ static void load_debug_privilege(void)
 		tp.Privileges[0].Luid = val;
 		tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
 
-		AdjustTokenPrivileges(token, false, &tp, sizeof(tp), NULL,
-				      NULL);
+		AdjustTokenPrivileges(token, false, &tp, sizeof(tp), NULL, NULL);
 	}
 
 	if (!!LookupPrivilegeValue(NULL, SE_INC_BASE_PRIORITY_NAME, &val)) {
@@ -2427,8 +2211,7 @@ static void load_debug_privilege(void)
 		tp.Privileges[0].Luid = val;
 		tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
 
-		if (!AdjustTokenPrivileges(token, false, &tp, sizeof(tp), NULL,
-					   NULL)) {
+		if (!AdjustTokenPrivileges(token, false, &tp, sizeof(tp), NULL, NULL)) {
 			blog(LOG_INFO, "Could not set privilege to "
 				       "increase GPU priority");
 		}
@@ -2566,11 +2349,9 @@ bool WindowPositionValid(QRect rect)
 	return false;
 }
 
-static inline bool arg_is(const char *arg, const char *long_form,
-			  const char *short_form)
+static inline bool arg_is(const char *arg, const char *long_form, const char *short_form)
 {
-	return (long_form && strcmp(arg, long_form) == 0) ||
-	       (short_form && strcmp(arg, short_form) == 0);
+	return (long_form && strcmp(arg, long_form) == 0) || (short_form && strcmp(arg, short_form) == 0);
 }
 
 static void check_safe_mode_sentinel(void)
@@ -2643,11 +2424,9 @@ void OBSApp::commitData(QSessionManager &manager)
 
 #ifdef _WIN32
 static constexpr char vcRunErrorTitle[] = "Outdated Visual C++ Runtime";
-static constexpr char vcRunErrorMsg[] =
-	"OBS Studio requires a newer version of the Microsoft Visual C++ "
-	"Redistributables.\n\nYou will now be directed to the download page.";
-static constexpr char vcRunInstallerUrl[] =
-	"https://obsproject.com/visual-studio-2022-runtimes";
+static constexpr char vcRunErrorMsg[] = "OBS Studio requires a newer version of the Microsoft Visual C++ "
+					"Redistributables.\n\nYou will now be directed to the download page.";
+static constexpr char vcRunInstallerUrl[] = "https://obsproject.com/visual-studio-2022-runtimes";
 
 static bool vc_runtime_outdated()
 {
@@ -2658,12 +2437,10 @@ static bool vc_runtime_outdated()
 	if (ver.minor >= 40)
 		return false;
 
-	int choice = MessageBoxA(NULL, vcRunErrorMsg, vcRunErrorTitle,
-				 MB_OKCANCEL | MB_ICONERROR | MB_TASKMODAL);
+	int choice = MessageBoxA(NULL, vcRunErrorMsg, vcRunErrorTitle, MB_OKCANCEL | MB_ICONERROR | MB_TASKMODAL);
 	if (choice == IDOK) {
 		/* Open the URL in the default browser. */
-		ShellExecuteA(NULL, "open", vcRunInstallerUrl, NULL, NULL,
-			      SW_SHOWNORMAL);
+		ShellExecuteA(NULL, "open", vcRunInstallerUrl, NULL, NULL, SW_SHOWNORMAL);
 	}
 
 	return true;
@@ -2710,8 +2487,7 @@ int main(int argc, char *argv[])
 	const HMODULE hRtwq = LoadLibrary(L"RTWorkQ.dll");
 	if (hRtwq) {
 		typedef HRESULT(STDAPICALLTYPE * PFN_RtwqStartup)();
-		PFN_RtwqStartup func =
-			(PFN_RtwqStartup)GetProcAddress(hRtwq, "RtwqStartup");
+		PFN_RtwqStartup func = (PFN_RtwqStartup)GetProcAddress(hRtwq, "RtwqStartup");
 		func();
 	}
 #endif
@@ -2739,8 +2515,7 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--only-bundled-plugins", nullptr)) {
 			disable_3p_plugins = true;
 
-		} else if (arg_is(argv[i], "--disable-shutdown-check",
-				  nullptr)) {
+		} else if (arg_is(argv[i], "--disable-shutdown-check", nullptr)) {
 			/* This exists mostly to bypass the dialog during development. */
 			disable_shutdown_check = true;
 
@@ -2786,8 +2561,7 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--disable-updater", nullptr)) {
 			opt_disable_updater = true;
 
-		} else if (arg_is(argv[i], "--disable-missing-files-check",
-				  nullptr)) {
+		} else if (arg_is(argv[i], "--disable-missing-files-check", nullptr)) {
 			opt_disable_missing_files_check = true;
 
 		} else if (arg_is(argv[i], "--steam", nullptr)) {
@@ -2820,42 +2594,34 @@ int main(int argc, char *argv[])
 				"--disable-missing-files-check: Disable the missing files dialog which can appear on startup.\n\n";
 
 #ifdef _WIN32
-			MessageBoxA(NULL, help.c_str(), "Help",
-				    MB_OK | MB_ICONASTERISK);
+			MessageBoxA(NULL, help.c_str(), "Help", MB_OK | MB_ICONASTERISK);
 #else
-			std::cout << help
-				  << "--version, -V: Get current version.\n";
+			std::cout << help << "--version, -V: Get current version.\n";
 #endif
 			exit(0);
 
 		} else if (arg_is(argv[i], "--version", "-V")) {
-			std::cout << "OBS Studio - "
-				  << App()->GetVersionString(false) << "\n";
+			std::cout << "OBS Studio - " << App()->GetVersionString(false) << "\n";
 			exit(0);
 		}
 	}
 
 #if ALLOW_PORTABLE_MODE
 	if (!portable_mode) {
-		portable_mode =
-			os_file_exists(BASE_PATH "/portable_mode") ||
-			os_file_exists(BASE_PATH "/obs_portable_mode") ||
-			os_file_exists(BASE_PATH "/portable_mode.txt") ||
-			os_file_exists(BASE_PATH "/obs_portable_mode.txt");
+		portable_mode = os_file_exists(BASE_PATH "/portable_mode") ||
+				os_file_exists(BASE_PATH "/obs_portable_mode") ||
+				os_file_exists(BASE_PATH "/portable_mode.txt") ||
+				os_file_exists(BASE_PATH "/obs_portable_mode.txt");
 	}
 
 	if (!opt_disable_updater) {
-		opt_disable_updater =
-			os_file_exists(BASE_PATH "/disable_updater") ||
-			os_file_exists(BASE_PATH "/disable_updater.txt");
+		opt_disable_updater = os_file_exists(BASE_PATH "/disable_updater") ||
+				      os_file_exists(BASE_PATH "/disable_updater.txt");
 	}
 
 	if (!opt_disable_missing_files_check) {
-		opt_disable_missing_files_check =
-			os_file_exists(BASE_PATH
-				       "/disable_missing_files_check") ||
-			os_file_exists(BASE_PATH
-				       "/disable_missing_files_check.txt");
+		opt_disable_missing_files_check = os_file_exists(BASE_PATH "/disable_missing_files_check") ||
+						  os_file_exists(BASE_PATH "/disable_missing_files_check.txt");
 	}
 #endif
 
@@ -2869,8 +2635,7 @@ int main(int argc, char *argv[])
 #ifdef _WIN32
 	if (hRtwq) {
 		typedef HRESULT(STDAPICALLTYPE * PFN_RtwqShutdown)();
-		PFN_RtwqShutdown func =
-			(PFN_RtwqShutdown)GetProcAddress(hRtwq, "RtwqShutdown");
+		PFN_RtwqShutdown func = (PFN_RtwqShutdown)GetProcAddress(hRtwq, "RtwqShutdown");
 		func();
 		FreeLibrary(hRtwq);
 	}

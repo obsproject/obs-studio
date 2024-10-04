@@ -32,12 +32,7 @@ class IconLabel : public QLabel {
 	Q_PROPERTY(int iconSize READ iconSize WRITE setIconSize)
 
 public:
-	inline IconLabel(QWidget *parent = nullptr)
-		: QLabel(parent),
-		  m_icon(),
-		  m_iconSize(16)
-	{
-	}
+	inline IconLabel(QWidget *parent = nullptr) : QLabel(parent), m_icon(), m_iconSize(16) {}
 
 	inline QIcon icon() const { return m_icon; }
 	void setIcon(const QIcon &icon)

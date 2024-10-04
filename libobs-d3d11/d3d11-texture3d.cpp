@@ -113,8 +113,7 @@ void gs_texture_3d::InitTexture(const uint8_t *const *data)
 		InitSRD(srd);
 	}
 
-	hr = device->device->CreateTexture3D(&td, data ? srd.data() : NULL,
-					     texture.Assign());
+	hr = device->device->CreateTexture3D(&td, data ? srd.data() : NULL, texture.Assign());
 	if (FAILED(hr))
 		throw HRError("Failed to create 3D texture", hr);
 
@@ -123,8 +122,7 @@ void gs_texture_3d::InitTexture(const uint8_t *const *data)
 
 		texture->SetEvictionPriority(DXGI_RESOURCE_PRIORITY_MAXIMUM);
 
-		hr = texture->QueryInterface(__uuidof(IDXGIResource),
-					     (void **)&dxgi_res);
+		hr = texture->QueryInterface(__uuidof(IDXGIResource), (void **)&dxgi_res);
 		if (FAILED(hr)) {
 			blog(LOG_WARNING,
 			     "InitTexture: Failed to query "
@@ -135,9 +133,7 @@ void gs_texture_3d::InitTexture(const uint8_t *const *data)
 
 			if (flags & GS_SHARED_KM_TEX) {
 				ComPtr<IDXGIKeyedMutex> km;
-				hr = texture->QueryInterface(
-					__uuidof(IDXGIKeyedMutex),
-					(void **)&km);
+				hr = texture->QueryInterface(__uuidof(IDXGIKeyedMutex), (void **)&km);
 				if (FAILED(hr)) {
 					throw HRError("Failed to query "
 						      "IDXGIKeyedMutex",
@@ -162,8 +158,7 @@ void gs_texture_3d::InitResourceView()
 	viewDesc.Texture3D.MostDetailedMip = 0;
 	viewDesc.Texture3D.MipLevels = genMipmaps || !levels ? -1 : levels;
 
-	hr = device->device->CreateShaderResourceView(texture, &viewDesc,
-						      shaderRes.Assign());
+	hr = device->device->CreateShaderResourceView(texture, &viewDesc, shaderRes.Assign());
 	if (FAILED(hr))
 		throw HRError("Failed to create 3D SRV", hr);
 
@@ -173,8 +168,7 @@ void gs_texture_3d::InitResourceView()
 	if (dxgiFormatView == dxgiFormatViewLinear) {
 		shaderResLinear = shaderRes;
 	} else {
-		hr = device->device->CreateShaderResourceView(
-			texture, &viewDescLinear, shaderResLinear.Assign());
+		hr = device->device->CreateShaderResourceView(texture, &viewDescLinear, shaderResLinear.Assign());
 		if (FAILED(hr))
 			throw HRError("Failed to create linear 3D SRV", hr);
 	}
@@ -182,12 +176,9 @@ void gs_texture_3d::InitResourceView()
 
 #define SHARED_FLAGS (GS_SHARED_TEX | GS_SHARED_KM_TEX)
 
-gs_texture_3d::gs_texture_3d(gs_device_t *device, uint32_t width,
-			     uint32_t height, uint32_t depth,
-			     gs_color_format colorFormat, uint32_t levels,
-			     const uint8_t *const *data, uint32_t flags_)
-	: gs_texture(device, gs_type::gs_texture_3d, GS_TEXTURE_3D, levels,
-		     colorFormat),
+gs_texture_3d::gs_texture_3d(gs_device_t *device, uint32_t width, uint32_t height, uint32_t depth,
+			     gs_color_format colorFormat, uint32_t levels, const uint8_t *const *data, uint32_t flags_)
+	: gs_texture(device, gs_type::gs_texture_3d, GS_TEXTURE_3D, levels, colorFormat),
 	  width(width),
 	  height(height),
 	  depth(depth),
@@ -210,8 +201,7 @@ gs_texture_3d::gs_texture_3d(gs_device_t *device, uint32_t handle)
 	  sharedHandle(handle)
 {
 	HRESULT hr;
-	hr = device->device->OpenSharedResource((HANDLE)(uintptr_t)handle,
-						IID_PPV_ARGS(texture.Assign()));
+	hr = device->device->OpenSharedResource((HANDLE)(uintptr_t)handle, IID_PPV_ARGS(texture.Assign()));
 	if (FAILED(hr))
 		throw HRError("Failed to open shared 3D texture", hr);
 

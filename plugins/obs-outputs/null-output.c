@@ -76,9 +76,7 @@ static void null_output_stop(void *data, uint64_t ts)
 	struct null_output *context = data;
 	UNUSED_PARAMETER(ts);
 
-	context->stop_thread_active = pthread_create(&context->stop_thread,
-						     NULL, stop_thread,
-						     data) == 0;
+	context->stop_thread_active = pthread_create(&context->stop_thread, NULL, stop_thread, data) == 0;
 }
 
 static void null_output_data(void *data, struct encoder_packet *packet)

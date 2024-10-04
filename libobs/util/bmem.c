@@ -101,10 +101,9 @@ static long num_allocs = 0;
 void *bmalloc(size_t size)
 {
 	if (!size) {
-		blog(LOG_ERROR,
-		     "bmalloc: Allocating 0 bytes is broken behavior, please "
-		     "fix your code! This will crash in future versions of "
-		     "OBS.");
+		blog(LOG_ERROR, "bmalloc: Allocating 0 bytes is broken behavior, please "
+				"fix your code! This will crash in future versions of "
+				"OBS.");
 		size = 1;
 	}
 
@@ -112,8 +111,7 @@ void *bmalloc(size_t size)
 
 	if (!ptr) {
 		os_breakpoint();
-		bcrash("Out of memory while trying to allocate %lu bytes",
-		       (unsigned long)size);
+		bcrash("Out of memory while trying to allocate %lu bytes", (unsigned long)size);
 	}
 
 	os_atomic_inc_long(&num_allocs);
@@ -126,10 +124,9 @@ void *brealloc(void *ptr, size_t size)
 		os_atomic_inc_long(&num_allocs);
 
 	if (!size) {
-		blog(LOG_ERROR,
-		     "brealloc: Allocating 0 bytes is broken behavior, please "
-		     "fix your code! This will crash in future versions of "
-		     "OBS.");
+		blog(LOG_ERROR, "brealloc: Allocating 0 bytes is broken behavior, please "
+				"fix your code! This will crash in future versions of "
+				"OBS.");
 		size = 1;
 	}
 
@@ -137,8 +134,7 @@ void *brealloc(void *ptr, size_t size)
 
 	if (!ptr) {
 		os_breakpoint();
-		bcrash("Out of memory while trying to allocate %lu bytes",
-		       (unsigned long)size);
+		bcrash("Out of memory while trying to allocate %lu bytes", (unsigned long)size);
 	}
 
 	return ptr;

@@ -31,8 +31,7 @@ extern "C" {
 #define OBS_OUTPUT_CAN_PAUSE (1 << 5)
 #define OBS_OUTPUT_MULTI_TRACK_AUDIO OBS_OUTPUT_MULTI_TRACK
 #define OBS_OUTPUT_MULTI_TRACK_VIDEO (1 << 6)
-#define OBS_OUTPUT_MULTI_TRACK_AV \
-	(OBS_OUTPUT_MULTI_TRACK_AUDIO | OBS_OUTPUT_MULTI_TRACK_VIDEO)
+#define OBS_OUTPUT_MULTI_TRACK_AV (OBS_OUTPUT_MULTI_TRACK_AUDIO | OBS_OUTPUT_MULTI_TRACK_VIDEO)
 
 #define MAX_OUTPUT_AUDIO_ENCODERS 6
 #define MAX_OUTPUT_VIDEO_ENCODERS 6
@@ -88,11 +87,9 @@ struct obs_output_info {
 	const char *protocols;
 };
 
-EXPORT void obs_register_output_s(const struct obs_output_info *info,
-				  size_t size);
+EXPORT void obs_register_output_s(const struct obs_output_info *info, size_t size);
 
-#define obs_register_output(info) \
-	obs_register_output_s(info, sizeof(struct obs_output_info))
+#define obs_register_output(info) obs_register_output_s(info, sizeof(struct obs_output_info))
 
 #ifdef __cplusplus
 }

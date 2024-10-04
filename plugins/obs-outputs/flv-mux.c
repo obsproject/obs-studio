@@ -187,8 +187,7 @@ void write_file_info(FILE *file, int64_t duration_ms, int64_t size)
 	fwrite(buf, 1, enc - buf, file);
 }
 
-static void build_flv_meta_data(obs_output_t *context, uint8_t **output,
-				size_t *size)
+static void build_flv_meta_data(obs_output_t *context, uint8_t **output, size_t *size)
 {
 	obs_encoder_t *vencoder = obs_output_get_video_encoder(context);
 	obs_encoder_t *aencoder = obs_output_get_audio_encoder(context, 0);
@@ -208,10 +207,8 @@ static void build_flv_meta_data(obs_output_t *context, uint8_t **output,
 	enc_num_val(&enc, end, "duration", 0.0);
 	enc_num_val(&enc, end, "fileSize", 0.0);
 
-	enc_num_val(&enc, end, "width",
-		    (double)obs_encoder_get_width(vencoder));
-	enc_num_val(&enc, end, "height",
-		    (double)obs_encoder_get_height(vencoder));
+	enc_num_val(&enc, end, "width", (double)obs_encoder_get_width(vencoder));
+	enc_num_val(&enc, end, "height", (double)obs_encoder_get_height(vencoder));
 
 	enc_num_val(&enc, end, "videocodecid", encoder_video_codec(vencoder));
 	enc_num_val(&enc, end, "videodatarate", encoder_bitrate(vencoder));
@@ -219,14 +216,11 @@ static void build_flv_meta_data(obs_output_t *context, uint8_t **output,
 
 	enc_num_val(&enc, end, "audiocodecid", AUDIODATA_AAC);
 	enc_num_val(&enc, end, "audiodatarate", encoder_bitrate(aencoder));
-	enc_num_val(&enc, end, "audiosamplerate",
-		    (double)obs_encoder_get_sample_rate(aencoder));
+	enc_num_val(&enc, end, "audiosamplerate", (double)obs_encoder_get_sample_rate(aencoder));
 	enc_num_val(&enc, end, "audiosamplesize", 16.0);
-	enc_num_val(&enc, end, "audiochannels",
-		    (double)audio_output_get_channels(audio));
+	enc_num_val(&enc, end, "audiochannels", (double)audio_output_get_channels(audio));
 
-	enc_bool_val(&enc, end, "stereo",
-		     audio_output_get_channels(audio) == 2);
+	enc_bool_val(&enc, end, "stereo", audio_output_get_channels(audio) == 2);
 	enc_bool_val(&enc, end, "2.1", audio_output_get_channels(audio) == 3);
 	enc_bool_val(&enc, end, "3.1", audio_output_get_channels(audio) == 4);
 	enc_bool_val(&enc, end, "4.0", audio_output_get_channels(audio) == 4);
@@ -239,8 +233,7 @@ static void build_flv_meta_data(obs_output_t *context, uint8_t **output,
 #ifdef HAVE_OBSCONFIG_H
 	dstr_cat(&encoder_name, obs_get_version_string());
 #else
-	dstr_catf(&encoder_name, "%d.%d.%d", LIBOBS_API_MAJOR_VER,
-		  LIBOBS_API_MINOR_VER, LIBOBS_API_PATCH_VER);
+	dstr_catf(&encoder_name, "%d.%d.%d", LIBOBS_API_MAJOR_VER, LIBOBS_API_MINOR_VER, LIBOBS_API_PATCH_VER);
 #endif
 
 	dstr_cat(&encoder_name, ")");
@@ -256,8 +249,7 @@ static void build_flv_meta_data(obs_output_t *context, uint8_t **output,
 	*output = bmemdup(buf, *size);
 }
 
-static inline void write_previous_tag_size_without_header(struct serializer *s,
-							  uint32_t header_size)
+static inline void write_previous_tag_size_without_header(struct serializer *s, uint32_t header_size)
 {
 	assert(serializer_get_pos(s) >= header_size);
 	assert(serializer_get_pos(s) >= 11);
@@ -276,8 +268,7 @@ static inline void write_previous_tag_size(struct serializer *s)
 	write_previous_tag_size_without_header(s, 0);
 }
 
-void flv_meta_data(obs_output_t *context, uint8_t **output, size_t *size,
-		   bool write_header)
+void flv_meta_data(obs_output_t *context, uint8_t **output, size_t *size, bool write_header)
 {
 	struct array_output_data data;
 	struct serializer s;
@@ -318,8 +309,7 @@ void flv_meta_data(obs_output_t *context, uint8_t **output, size_t *size,
 static int32_t last_time = 0;
 #endif
 
-static void flv_video(struct serializer *s, int32_t dts_offset,
-		      struct encoder_packet *packet, bool is_header)
+static void flv_video(struct serializer *s, int32_t dts_offset, struct encoder_packet *packet, bool is_header)
 {
 	int64_t offset = packet->pts - packet->dts;
 	int32_t time_ms = get_ms_time(packet, packet->dts) - dts_offset;
@@ -352,8 +342,7 @@ static void flv_video(struct serializer *s, int32_t dts_offset,
 	write_previous_tag_size(s);
 }
 
-static void flv_audio(struct serializer *s, int32_t dts_offset,
-		      struct encoder_packet *packet, bool is_header)
+static void flv_audio(struct serializer *s, int32_t dts_offset, struct encoder_packet *packet, bool is_header)
 {
 	int32_t time_ms = get_ms_time(packet, packet->dts) - dts_offset;
 
@@ -384,8 +373,7 @@ static void flv_audio(struct serializer *s, int32_t dts_offset,
 	write_previous_tag_size(s);
 }
 
-void flv_packet_mux(struct encoder_packet *packet, int32_t dts_offset,
-		    uint8_t **output, size_t *size, bool is_header)
+void flv_packet_mux(struct encoder_packet *packet, int32_t dts_offset, uint8_t **output, size_t *size, bool is_header)
 {
 	struct array_output_data data;
 	struct serializer s;
@@ -401,9 +389,8 @@ void flv_packet_mux(struct encoder_packet *packet, int32_t dts_offset,
 	*size = data.bytes.num;
 }
 
-void flv_packet_audio_ex(struct encoder_packet *packet,
-			 enum audio_id_t codec_id, int32_t dts_offset,
-			 uint8_t **output, size_t *size, int type, size_t idx)
+void flv_packet_audio_ex(struct encoder_packet *packet, enum audio_id_t codec_id, int32_t dts_offset, uint8_t **output,
+			 size_t *size, int type, size_t idx)
 {
 	struct array_output_data data;
 	struct serializer s;
@@ -439,8 +426,7 @@ void flv_packet_audio_ex(struct encoder_packet *packet,
 	s_w8(&s, (time_ms >> 24) & 0x7F);
 	s_wb24(&s, 0);
 
-	s_w8(&s, AUDIO_HEADER_EX |
-			 (is_multitrack ? AUDIO_PACKETTYPE_MULTITRACK : type));
+	s_w8(&s, AUDIO_HEADER_EX | (is_multitrack ? AUDIO_PACKETTYPE_MULTITRACK : type));
 	if (is_multitrack) {
 		s_w8(&s, MULTITRACKTYPE_ONE_TRACK | type);
 		s_wa4cc(&s, codec_id);
@@ -458,9 +444,8 @@ void flv_packet_audio_ex(struct encoder_packet *packet,
 }
 
 // Y2023 spec
-void flv_packet_ex(struct encoder_packet *packet, enum video_id_t codec_id,
-		   int32_t dts_offset, uint8_t **output, size_t *size, int type,
-		   size_t idx)
+void flv_packet_ex(struct encoder_packet *packet, enum video_id_t codec_id, int32_t dts_offset, uint8_t **output,
+		   size_t *size, int type, size_t idx)
 {
 	struct array_output_data data;
 	struct serializer s;
@@ -475,8 +460,7 @@ void flv_packet_ex(struct encoder_packet *packet, enum video_id_t codec_id,
 	// packet head
 	int header_metadata_size = 5; // w8+w4cc
 	// 3 extra bytes for composition time offset
-	if ((codec_id == CODEC_H264 || codec_id == CODEC_HEVC) &&
-	    type == PACKETTYPE_FRAMES) {
+	if ((codec_id == CODEC_H264 || codec_id == CODEC_HEVC) && type == PACKETTYPE_FRAMES) {
 		header_metadata_size += 3; // w24
 	}
 	if (is_multitrack)
@@ -505,8 +489,7 @@ void flv_packet_ex(struct encoder_packet *packet, enum video_id_t codec_id,
 	}
 
 	// H.264/HEVC composition time offset
-	if ((codec_id == CODEC_H264 || codec_id == CODEC_HEVC) &&
-	    type == PACKETTYPE_FRAMES) {
+	if ((codec_id == CODEC_H264 || codec_id == CODEC_HEVC) && type == PACKETTYPE_FRAMES) {
 		s_wb24(&s, get_ms_time(packet, packet->pts - packet->dts));
 	}
 
@@ -520,53 +503,41 @@ void flv_packet_ex(struct encoder_packet *packet, enum video_id_t codec_id,
 	*size = data.bytes.num;
 }
 
-void flv_packet_start(struct encoder_packet *packet, enum video_id_t codec,
-		      uint8_t **output, size_t *size, size_t idx)
+void flv_packet_start(struct encoder_packet *packet, enum video_id_t codec, uint8_t **output, size_t *size, size_t idx)
 {
-	flv_packet_ex(packet, codec, 0, output, size, PACKETTYPE_SEQ_START,
-		      idx);
+	flv_packet_ex(packet, codec, 0, output, size, PACKETTYPE_SEQ_START, idx);
 }
 
-void flv_packet_frames(struct encoder_packet *packet, enum video_id_t codec,
-		       int32_t dts_offset, uint8_t **output, size_t *size,
-		       size_t idx)
+void flv_packet_frames(struct encoder_packet *packet, enum video_id_t codec, int32_t dts_offset, uint8_t **output,
+		       size_t *size, size_t idx)
 {
 	int packet_type = PACKETTYPE_FRAMES;
 	// PACKETTYPE_FRAMESX is an optimization to avoid sending composition
 	// time offsets of 0. See Enhanced RTMP spec.
-	if ((codec == CODEC_H264 || codec == CODEC_HEVC) &&
-	    packet->dts == packet->pts)
+	if ((codec == CODEC_H264 || codec == CODEC_HEVC) && packet->dts == packet->pts)
 		packet_type = PACKETTYPE_FRAMESX;
-	flv_packet_ex(packet, codec, dts_offset, output, size, packet_type,
-		      idx);
+	flv_packet_ex(packet, codec, dts_offset, output, size, packet_type, idx);
 }
 
-void flv_packet_end(struct encoder_packet *packet, enum video_id_t codec,
-		    uint8_t **output, size_t *size, size_t idx)
+void flv_packet_end(struct encoder_packet *packet, enum video_id_t codec, uint8_t **output, size_t *size, size_t idx)
 {
 	flv_packet_ex(packet, codec, 0, output, size, PACKETTYPE_SEQ_END, idx);
 }
 
-void flv_packet_audio_start(struct encoder_packet *packet,
-			    enum audio_id_t codec, uint8_t **output,
-			    size_t *size, size_t idx)
+void flv_packet_audio_start(struct encoder_packet *packet, enum audio_id_t codec, uint8_t **output, size_t *size,
+			    size_t idx)
 {
-	flv_packet_audio_ex(packet, codec, 0, output, size,
-			    AUDIO_PACKETTYPE_SEQ_START, idx);
+	flv_packet_audio_ex(packet, codec, 0, output, size, AUDIO_PACKETTYPE_SEQ_START, idx);
 }
 
-void flv_packet_audio_frames(struct encoder_packet *packet,
-			     enum audio_id_t codec, int32_t dts_offset,
-			     uint8_t **output, size_t *size, size_t idx)
+void flv_packet_audio_frames(struct encoder_packet *packet, enum audio_id_t codec, int32_t dts_offset, uint8_t **output,
+			     size_t *size, size_t idx)
 {
-	flv_packet_audio_ex(packet, codec, dts_offset, output, size,
-			    AUDIO_PACKETTYPE_FRAMES, idx);
+	flv_packet_audio_ex(packet, codec, dts_offset, output, size, AUDIO_PACKETTYPE_FRAMES, idx);
 }
 
-void flv_packet_metadata(enum video_id_t codec_id, uint8_t **output,
-			 size_t *size, int bits_per_raw_sample,
-			 uint8_t color_primaries, int color_trc,
-			 int color_space, int min_luminance, int max_luminance,
+void flv_packet_metadata(enum video_id_t codec_id, uint8_t **output, size_t *size, int bits_per_raw_sample,
+			 uint8_t color_primaries, int color_trc, int color_space, int min_luminance, int max_luminance,
 			 size_t idx)
 {
 	// metadata array
@@ -648,8 +619,7 @@ void flv_packet_metadata(enum video_id_t codec_id, uint8_t **output,
 
 	// packet ext header
 	// these are the 5 extra bytes mentioned above
-	s_w8(&s, FRAME_HEADER_EX | (is_multitrack ? PACKETTYPE_MULTITRACK
-						  : PACKETTYPE_METADATA));
+	s_w8(&s, FRAME_HEADER_EX | (is_multitrack ? PACKETTYPE_MULTITRACK : PACKETTYPE_METADATA));
 
 	/*
 	 * We only add explicitly emit trackIds iff idx > 0.

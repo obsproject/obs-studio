@@ -31,19 +31,16 @@ class ExtraBrowsersModel : public QAbstractTableModel {
 	Q_OBJECT
 
 public:
-	inline ExtraBrowsersModel(QObject *parent = nullptr)
-		: QAbstractTableModel(parent)
+	inline ExtraBrowsersModel(QObject *parent = nullptr) : QAbstractTableModel(parent)
 	{
 		Reset();
 		QMetaObject::invokeMethod(this, "Init", Qt::QueuedConnection);
 	}
 
 	int rowCount(const QModelIndex &parent = QModelIndex()) const override;
-	int
-	columnCount(const QModelIndex &parent = QModelIndex()) const override;
+	int columnCount(const QModelIndex &parent = QModelIndex()) const override;
 	QVariant data(const QModelIndex &index, int role) const override;
-	QVariant headerData(int section, Qt::Orientation orientation,
-			    int role = Qt::DisplayRole) const override;
+	QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
 	Qt::ItemFlags flags(const QModelIndex &index) const override;
 
 	struct Item {
@@ -75,18 +72,12 @@ class ExtraBrowsersDelegate : public QStyledItemDelegate {
 	Q_OBJECT
 
 public:
-	inline ExtraBrowsersDelegate(ExtraBrowsersModel *model_)
-		: QStyledItemDelegate(nullptr),
-		  model(model_)
-	{
-	}
+	inline ExtraBrowsersDelegate(ExtraBrowsersModel *model_) : QStyledItemDelegate(nullptr), model(model_) {}
 
-	QWidget *createEditor(QWidget *parent,
-			      const QStyleOptionViewItem &option,
+	QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option,
 			      const QModelIndex &index) const override;
 
-	void setEditorData(QWidget *editor,
-			   const QModelIndex &index) const override;
+	void setEditorData(QWidget *editor, const QModelIndex &index) const override;
 
 	bool eventFilter(QObject *object, QEvent *event) override;
 	void RevertText(QLineEdit *edit);

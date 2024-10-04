@@ -79,8 +79,7 @@ void proc_handler_destroy(proc_handler_t *handler)
 	bfree(handler);
 }
 
-void proc_handler_add(proc_handler_t *handler, const char *decl_string,
-		      proc_handler_proc_t proc, void *data)
+void proc_handler_add(proc_handler_t *handler, const char *decl_string, proc_handler_proc_t proc, void *data)
 {
 	if (!handler)
 		return;
@@ -89,8 +88,7 @@ void proc_handler_add(proc_handler_t *handler, const char *decl_string,
 	memset(&pi, 0, sizeof(struct proc_info));
 
 	if (!parse_decl_string(&pi.func, decl_string)) {
-		blog(LOG_ERROR, "Function declaration invalid: %s",
-		     decl_string);
+		blog(LOG_ERROR, "Function declaration invalid: %s", decl_string);
 		return;
 	}
 
@@ -101,8 +99,7 @@ void proc_handler_add(proc_handler_t *handler, const char *decl_string,
 
 	struct proc_info *existing = getproc(handler, pi.func.name);
 	if (existing) {
-		blog(LOG_WARNING, "Procedure '%s' already exists",
-		     pi.func.name);
+		blog(LOG_WARNING, "Procedure '%s' already exists", pi.func.name);
 		proc_info_free(&pi);
 	} else {
 		da_push_back(handler->procs, &pi);
@@ -111,8 +108,7 @@ void proc_handler_add(proc_handler_t *handler, const char *decl_string,
 	pthread_mutex_unlock(&handler->mutex);
 }
 
-bool proc_handler_call(proc_handler_t *handler, const char *name,
-		       calldata_t *params)
+bool proc_handler_call(proc_handler_t *handler, const char *name, calldata_t *params)
 {
 	if (!handler)
 		return false;

@@ -342,12 +342,10 @@ static WidgetOutputSocket kWidgetOutputSockets[] = {
 };
 // clang-format on
 
-bool WidgetInputSocket::Find(const std::string &name, NTV2Channel channel,
-			     int32_t datastream, WidgetInputSocket &inp)
+bool WidgetInputSocket::Find(const std::string &name, NTV2Channel channel, int32_t datastream, WidgetInputSocket &inp)
 {
 	for (const auto &in : kWidgetInputSockets) {
-		if (name == in.name &&
-		    channel == aja::WidgetIDToChannel(in.widget_id) &&
+		if (name == in.name && channel == aja::WidgetIDToChannel(in.widget_id) &&
 		    datastream == in.datastream_index) {
 			inp = in;
 			return true;
@@ -357,8 +355,7 @@ bool WidgetInputSocket::Find(const std::string &name, NTV2Channel channel,
 	return false;
 }
 
-bool WidgetInputSocket::GetWidgetInputSocketByXpt(InputXpt id,
-						  WidgetInputSocket &inp)
+bool WidgetInputSocket::GetWidgetInputSocketByXpt(InputXpt id, WidgetInputSocket &inp)
 {
 	for (const auto &in : kWidgetInputSockets) {
 		if (in.id == id) {
@@ -406,15 +403,13 @@ const char *WidgetInputSocket::InputXptName(InputXpt xpt)
 	return name;
 }
 
-bool WidgetOutputSocket::Find(const std::string &name, NTV2Channel channel,
-			      int32_t datastream, WidgetOutputSocket &out)
+bool WidgetOutputSocket::Find(const std::string &name, NTV2Channel channel, int32_t datastream, WidgetOutputSocket &out)
 {
 	// std::cout << "DEBUG -- WidgetOutputSocket::Find: name = " << name
 	// 	  << ", chan = " << NTV2ChannelToString(channel)
 	// 	  << ", datastream = " << datastream << std::endl;
 	for (const auto &wo : kWidgetOutputSockets) {
-		if (name == wo.name &&
-		    channel == aja::WidgetIDToChannel(wo.widget_id) &&
+		if (name == wo.name && channel == aja::WidgetIDToChannel(wo.widget_id) &&
 		    datastream == wo.datastream_index) {
 			out = wo;
 			return true;
@@ -424,8 +419,7 @@ bool WidgetOutputSocket::Find(const std::string &name, NTV2Channel channel,
 	return false;
 }
 
-bool WidgetOutputSocket::GetWidgetOutputSocketByXpt(OutputXpt id,
-						    WidgetOutputSocket &out)
+bool WidgetOutputSocket::GetWidgetOutputSocketByXpt(OutputXpt id, WidgetOutputSocket &out)
 {
 	for (const auto &wo : kWidgetOutputSockets) {
 		if (wo.id == id) {

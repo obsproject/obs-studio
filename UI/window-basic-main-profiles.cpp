@@ -49,13 +49,11 @@ void OBSBasic::SetupNewProfile(const std::string &profileName, bool useWizard)
 {
 	const OBSProfile &newProfile = CreateProfile(profileName);
 
-	config_set_bool(App()->GetUserConfig(), "Basic", "ConfigOnNewProfile",
-			useWizard);
+	config_set_bool(App()->GetUserConfig(), "Basic", "ConfigOnNewProfile", useWizard);
 
 	ActivateProfile(newProfile, true);
 
-	blog(LOG_INFO, "Created profile '%s' (clean, %s)",
-	     newProfile.name.c_str(), newProfile.directoryName.c_str());
+	blog(LOG_INFO, "Created profile '%s' (clean, %s)", newProfile.name.c_str(), newProfile.directoryName.c_str());
 	blog(LOG_INFO, "------------------------------------------------");
 
 	if (useWizard) {
@@ -71,24 +69,20 @@ void OBSBasic::SetupDuplicateProfile(const std::string &profileName)
 	const OBSProfile &newProfile = CreateProfile(profileName);
 	const OBSProfile &currentProfile = GetCurrentProfile();
 
-	const auto copyOptions =
-		std::filesystem::copy_options::recursive |
-		std::filesystem::copy_options::overwrite_existing;
+	const auto copyOptions = std::filesystem::copy_options::recursive |
+				 std::filesystem::copy_options::overwrite_existing;
 
 	try {
-		std::filesystem::copy(currentProfile.path, newProfile.path,
-				      copyOptions);
+		std::filesystem::copy(currentProfile.path, newProfile.path, copyOptions);
 	} catch (const std::filesystem::filesystem_error &error) {
 		blog(LOG_DEBUG, "%s", error.what());
-		throw std::logic_error(
-			"Failed to copy files for cloned profile: " +
-			newProfile.name);
+		throw std::logic_error("Failed to copy files for cloned profile: " + newProfile.name);
 	}
 
 	ActivateProfile(newProfile);
 
-	blog(LOG_INFO, "Created profile '%s' (duplicate, %s)",
-	     newProfile.name.c_str(), newProfile.directoryName.c_str());
+	blog(LOG_INFO, "Created profile '%s' (duplicate, %s)", newProfile.name.c_str(),
+	     newProfile.directoryName.c_str());
 	blog(LOG_INFO, "------------------------------------------------");
 }
 
@@ -97,17 +91,14 @@ void OBSBasic::SetupRenameProfile(const std::string &profileName)
 	const OBSProfile &newProfile = CreateProfile(profileName);
 	const OBSProfile currentProfile = GetCurrentProfile();
 
-	const auto copyOptions =
-		std::filesystem::copy_options::recursive |
-		std::filesystem::copy_options::overwrite_existing;
+	const auto copyOptions = std::filesystem::copy_options::recursive |
+				 std::filesystem::copy_options::overwrite_existing;
 
 	try {
-		std::filesystem::copy(currentProfile.path, newProfile.path,
-				      copyOptions);
+		std::filesystem::copy(currentProfile.path, newProfile.path, copyOptions);
 	} catch (const std::filesystem::filesystem_error &error) {
 		blog(LOG_DEBUG, "%s", error.what());
-		throw std::logic_error("Failed to copy files for profile: " +
-				       currentProfile.name);
+		throw std::logic_error("Failed to copy files for profile: " + currentProfile.name);
 	}
 
 	profiles.erase(currentProfile.name);
@@ -115,8 +106,7 @@ void OBSBasic::SetupRenameProfile(const std::string &profileName)
 	ActivateProfile(newProfile);
 	RemoveProfile(currentProfile);
 
-	blog(LOG_INFO, "Renamed profile '%s' to '%s' (%s)",
-	     currentProfile.name.c_str(), newProfile.name.c_str(),
+	blog(LOG_INFO, "Renamed profile '%s' to '%s' (%s)", currentProfile.name.c_str(), newProfile.name.c_str(),
 	     newProfile.directoryName.c_str());
 	blog(LOG_INFO, "------------------------------------------------");
 
@@ -128,50 +118,37 @@ void OBSBasic::SetupRenameProfile(const std::string &profileName)
 const OBSProfile &OBSBasic::CreateProfile(const std::string &profileName)
 {
 	if (const auto &foundProfile = GetProfileByName(profileName)) {
-		throw std::invalid_argument("Profile already exists: " +
-					    profileName);
+		throw std::invalid_argument("Profile already exists: " + profileName);
 	}
 
 	std::string directoryName;
 	if (!GetFileSafeName(profileName.c_str(), directoryName)) {
-		throw std::invalid_argument(
-			"Failed to create safe directory for new profile: " +
-			profileName);
+		throw std::invalid_argument("Failed to create safe directory for new profile: " + profileName);
 	}
 
 	std::string profileDirectory;
-	profileDirectory.reserve(App()->userProfilesLocation.u8string().size() +
-				 OBSProfilePath.size() + directoryName.size());
-	profileDirectory.append(App()->userProfilesLocation.u8string())
-		.append(OBSProfilePath)
-		.append(directoryName);
+	profileDirectory.reserve(App()->userProfilesLocation.u8string().size() + OBSProfilePath.size() +
+				 directoryName.size());
+	profileDirectory.append(App()->userProfilesLocation.u8string()).append(OBSProfilePath).append(directoryName);
 
 	if (!GetClosestUnusedFileName(profileDirectory, nullptr)) {
-		throw std::invalid_argument(
-			"Failed to get closest directory name for new profile: " +
-			profileName);
+		throw std::invalid_argument("Failed to get closest directory name for new profile: " + profileName);
 	}
 
-	const std::filesystem::path profileDirectoryPath =
-		std::filesystem::u8path(profileDirectory);
+	const std::filesystem::path profileDirectoryPath = std::filesystem::u8path(profileDirectory);
 
 	try {
 		std::filesystem::create_directory(profileDirectoryPath);
 	} catch (const std::filesystem::filesystem_error error) {
-		throw std::logic_error(
-			"Failed to create directory for new profile: " +
-			profileDirectory);
+		throw std::logic_error("Failed to create directory for new profile: " + profileDirectory);
 	}
 
 	const std::filesystem::path profileFile =
-		profileDirectoryPath /
-		std::filesystem::u8path(OBSProfileSettingsFile);
+		profileDirectoryPath / std::filesystem::u8path(OBSProfileSettingsFile);
 
-	auto [iterator, success] = profiles.try_emplace(
-		profileName,
-		OBSProfile{profileName,
-			   profileDirectoryPath.filename().u8string(),
-			   profileDirectoryPath, profileFile});
+	auto [iterator, success] =
+		profiles.try_emplace(profileName, OBSProfile{profileName, profileDirectoryPath.filename().u8string(),
+							     profileDirectoryPath, profileFile});
 
 	OnEvent(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
 
@@ -184,13 +161,11 @@ void OBSBasic::RemoveProfile(OBSProfile profile)
 		std::filesystem::remove_all(profile.path);
 	} catch (const std::filesystem::filesystem_error &error) {
 		blog(LOG_DEBUG, "%s", error.what());
-		throw std::logic_error("Failed to remove profile directory: " +
-				       profile.directoryName);
+		throw std::logic_error("Failed to remove profile directory: " + profile.directoryName);
 	}
 
 	blog(LOG_INFO, "------------------------------------------------");
-	blog(LOG_INFO, "Removed profile '%s' (%s)", profile.name.c_str(),
-	     profile.directoryName.c_str());
+	blog(LOG_INFO, "Removed profile '%s' (%s)", profile.name.c_str(), profile.directoryName.c_str());
 	blog(LOG_INFO, "------------------------------------------------");
 }
 
@@ -226,8 +201,7 @@ bool OBSBasic::CreateDuplicateProfile(const QString &name)
 
 void OBSBasic::DeleteProfile(const QString &name)
 {
-	const std::string_view currentProfileName{
-		config_get_string(App()->GetUserConfig(), "Basic", "Profile")};
+	const std::string_view currentProfileName{config_get_string(App()->GetUserConfig(), "Basic", "Profile")};
 
 	if (currentProfileName == name.toStdString()) {
 		on_actionRemoveProfile_triggered();
@@ -259,8 +233,7 @@ void OBSBasic::ChangeProfile()
 		return;
 	}
 
-	const std::string_view currentProfileName{
-		config_get_string(App()->GetUserConfig(), "Basic", "Profile")};
+	const std::string_view currentProfileName{config_get_string(App()->GetUserConfig(), "Basic", "Profile")};
 	const std::string selectedProfileName{action->text().toStdString()};
 
 	if (currentProfileName == selectedProfileName) {
@@ -268,14 +241,12 @@ void OBSBasic::ChangeProfile()
 		return;
 	}
 
-	const std::optional<OBSProfile> foundProfile =
-		GetProfileByName(selectedProfileName);
+	const std::optional<OBSProfile> foundProfile = GetProfileByName(selectedProfileName);
 
 	if (!foundProfile) {
 		const std::string errorMessage{"Selected profile not found: "};
 
-		throw std::invalid_argument(errorMessage +
-					    currentProfileName.data());
+		throw std::invalid_argument(errorMessage + currentProfileName.data());
 	}
 
 	const OBSProfile &selectedProfile = foundProfile.value();
@@ -284,16 +255,14 @@ void OBSBasic::ChangeProfile()
 
 	ActivateProfile(selectedProfile, true);
 
-	blog(LOG_INFO, "Switched to profile '%s' (%s)",
-	     selectedProfile.name.c_str(),
+	blog(LOG_INFO, "Switched to profile '%s' (%s)", selectedProfile.name.c_str(),
 	     selectedProfile.directoryName.c_str());
 	blog(LOG_INFO, "------------------------------------------------");
 }
 
 void OBSBasic::RefreshProfiles(bool refreshCache)
 {
-	std::string_view currentProfileName{
-		config_get_string(App()->GetUserConfig(), "Basic", "Profile")};
+	std::string_view currentProfileName{config_get_string(App()->GetUserConfig(), "Basic", "Profile")};
 
 	QList<QAction *> menuActions = ui->profileMenu->actions();
 
@@ -311,13 +280,9 @@ void OBSBasic::RefreshProfiles(bool refreshCache)
 
 	size_t numAddedProfiles = 0;
 	for (auto &[profileName, profile] : profiles) {
-		QAction *action =
-			new QAction(QString().fromStdString(profileName), this);
-		action->setProperty(
-			"file_name",
-			QString().fromStdString(profile.directoryName));
-		connect(action, &QAction::triggered, this,
-			&OBSBasic::ChangeProfile);
+		QAction *action = new QAction(QString().fromStdString(profileName), this);
+		action->setProperty("file_name", QString().fromStdString(profile.directoryName));
+		connect(action, &QAction::triggered, this, &OBSBasic::ChangeProfile);
 		action->setCheckable(true);
 		action->setChecked(profileName == currentProfileName);
 
@@ -337,37 +302,30 @@ void OBSBasic::RefreshProfileCache()
 	std::map<std::string, OBSProfile> foundProfiles{};
 
 	const std::filesystem::path profilesPath =
-		App()->userProfilesLocation /
-		std::filesystem::u8path(OBSProfilePath.substr(1));
+		App()->userProfilesLocation / std::filesystem::u8path(OBSProfilePath.substr(1));
 
 	if (!std::filesystem::exists(profilesPath)) {
 		blog(LOG_WARNING, "Failed to get profiles config path");
 		return;
 	}
 
-	for (const auto &entry :
-	     std::filesystem::directory_iterator(profilesPath)) {
+	for (const auto &entry : std::filesystem::directory_iterator(profilesPath)) {
 		if (!entry.is_directory()) {
 			continue;
 		}
 
 		std::string profileCandidate;
-		profileCandidate.reserve(entry.path().u8string().size() +
-					 OBSProfileSettingsFile.size() + 1);
-		profileCandidate.append(entry.path().u8string())
-			.append("/")
-			.append(OBSProfileSettingsFile);
+		profileCandidate.reserve(entry.path().u8string().size() + OBSProfileSettingsFile.size() + 1);
+		profileCandidate.append(entry.path().u8string()).append("/").append(OBSProfileSettingsFile);
 
 		ConfigFile config;
 
-		if (config.Open(profileCandidate.c_str(),
-				CONFIG_OPEN_EXISTING) != CONFIG_SUCCESS) {
+		if (config.Open(profileCandidate.c_str(), CONFIG_OPEN_EXISTING) != CONFIG_SUCCESS) {
 			continue;
 		}
 
 		std::string candidateName;
-		const char *configName =
-			config_get_string(config, "General", "Name");
+		const char *configName = config_get_string(config, "General", "Name");
 
 		if (configName) {
 			candidateName = configName;
@@ -375,11 +333,8 @@ void OBSBasic::RefreshProfileCache()
 			candidateName = entry.path().filename().u8string();
 		}
 
-		foundProfiles.try_emplace(
-			candidateName,
-			OBSProfile{candidateName,
-				   entry.path().filename().u8string(),
-				   entry.path(), profileCandidate});
+		foundProfiles.try_emplace(candidateName, OBSProfile{candidateName, entry.path().filename().u8string(),
+								    entry.path(), profileCandidate});
 	}
 
 	profiles.swap(foundProfiles);
@@ -387,12 +342,10 @@ void OBSBasic::RefreshProfileCache()
 
 const OBSProfile &OBSBasic::GetCurrentProfile() const
 {
-	std::string currentProfileName{
-		config_get_string(App()->GetUserConfig(), "Basic", "Profile")};
+	std::string currentProfileName{config_get_string(App()->GetUserConfig(), "Basic", "Profile")};
 
 	if (currentProfileName.empty()) {
-		throw std::invalid_argument(
-			"No valid profile name in configuration Basic->Profile");
+		throw std::invalid_argument("No valid profile name in configuration Basic->Profile");
 	}
 
 	const auto &foundProfile = profiles.find(currentProfileName);
@@ -400,14 +353,11 @@ const OBSProfile &OBSBasic::GetCurrentProfile() const
 	if (foundProfile != profiles.end()) {
 		return foundProfile->second;
 	} else {
-		throw std::invalid_argument(
-			"Profile not found in profile list: " +
-			currentProfileName);
+		throw std::invalid_argument("Profile not found in profile list: " + currentProfileName);
 	}
 }
 
-std::optional<OBSProfile>
-OBSBasic::GetProfileByName(const std::string &profileName) const
+std::optional<OBSProfile> OBSBasic::GetProfileByName(const std::string &profileName) const
 {
 	auto foundProfile = profiles.find(profileName);
 
@@ -418,8 +368,7 @@ OBSBasic::GetProfileByName(const std::string &profileName) const
 	}
 }
 
-std::optional<OBSProfile>
-OBSBasic::GetProfileByDirectoryName(const std::string &directoryName) const
+std::optional<OBSProfile> OBSBasic::GetProfileByDirectoryName(const std::string &directoryName) const
 {
 	for (auto &[iterator, profile] : profiles) {
 		if (profile.directoryName == directoryName) {
@@ -434,24 +383,18 @@ OBSBasic::GetProfileByDirectoryName(const std::string &directoryName) const
 
 void OBSBasic::on_actionNewProfile_triggered()
 {
-	bool useProfileWizard = config_get_bool(App()->GetUserConfig(), "Basic",
-						"ConfigOnNewProfile");
+	bool useProfileWizard = config_get_bool(App()->GetUserConfig(), "Basic", "ConfigOnNewProfile");
 
-	const OBSPromptCallback profilePromptCallback =
-		[this](const OBSPromptResult &result) {
-			if (GetProfileByName(result.promptValue)) {
-				return false;
-			}
+	const OBSPromptCallback profilePromptCallback = [this](const OBSPromptResult &result) {
+		if (GetProfileByName(result.promptValue)) {
+			return false;
+		}
 
-			return true;
-		};
+		return true;
+	};
 
-	const OBSPromptRequest request{Str("AddProfile.Title"),
-				       Str("AddProfile.Text"),
-				       "",
-				       true,
-				       Str("AddProfile.WizardCheckbox"),
-				       useProfileWizard};
+	const OBSPromptRequest request{Str("AddProfile.Title"),          Str("AddProfile.Text"), "", true,
+				       Str("AddProfile.WizardCheckbox"), useProfileWizard};
 
 	OBSPromptResult result = PromptForName(request, profilePromptCallback);
 
@@ -470,17 +413,15 @@ void OBSBasic::on_actionNewProfile_triggered()
 
 void OBSBasic::on_actionDupProfile_triggered()
 {
-	const OBSPromptCallback profilePromptCallback =
-		[this](const OBSPromptResult &result) {
-			if (GetProfileByName(result.promptValue)) {
-				return false;
-			}
+	const OBSPromptCallback profilePromptCallback = [this](const OBSPromptResult &result) {
+		if (GetProfileByName(result.promptValue)) {
+			return false;
+		}
 
-			return true;
-		};
+		return true;
+	};
 
-	const OBSPromptRequest request{Str("AddProfile.Title"),
-				       Str("AddProfile.Text")};
+	const OBSPromptRequest request{Str("AddProfile.Title"), Str("AddProfile.Text")};
 
 	OBSPromptResult result = PromptForName(request, profilePromptCallback);
 
@@ -499,21 +440,17 @@ void OBSBasic::on_actionDupProfile_triggered()
 
 void OBSBasic::on_actionRenameProfile_triggered()
 {
-	const std::string currentProfileName =
-		config_get_string(App()->GetUserConfig(), "Basic", "Profile");
+	const std::string currentProfileName = config_get_string(App()->GetUserConfig(), "Basic", "Profile");
 
-	const OBSPromptCallback profilePromptCallback =
-		[this](const OBSPromptResult &result) {
-			if (GetProfileByName(result.promptValue)) {
-				return false;
-			}
+	const OBSPromptCallback profilePromptCallback = [this](const OBSPromptResult &result) {
+		if (GetProfileByName(result.promptValue)) {
+			return false;
+		}
 
-			return true;
-		};
+		return true;
+	};
 
-	const OBSPromptRequest request{Str("RenameProfile.Title"),
-				       Str("RenameProfile.Text"),
-				       currentProfileName};
+	const OBSPromptRequest request{Str("RenameProfile.Title"), Str("RenameProfile.Text"), currentProfileName};
 
 	OBSPromptResult result = PromptForName(request, profilePromptCallback);
 
@@ -543,14 +480,10 @@ void OBSBasic::on_actionRemoveProfile_triggered(bool skipConfirmation)
 
 		if (!skipConfirmation) {
 			const QString confirmationText =
-				QTStr("ConfirmRemove.Text")
-					.arg(QString::fromStdString(
-						currentProfile.name));
+				QTStr("ConfirmRemove.Text").arg(QString::fromStdString(currentProfile.name));
 
 			const QMessageBox::StandardButton button =
-				OBSMessageBox::question(
-					this, QTStr("ConfirmRemove.Title"),
-					confirmationText);
+				OBSMessageBox::question(this, QTStr("ConfirmRemove.Title"), confirmationText);
 
 			if (button == QMessageBox::No) {
 				return;
@@ -576,8 +509,7 @@ void OBSBasic::on_actionRemoveProfile_triggered(bool skipConfirmation)
 		NewYouTubeAppDock();
 #endif
 
-	blog(LOG_INFO, "Switched to profile '%s' (%s)", newProfile.name.c_str(),
-	     newProfile.directoryName.c_str());
+	blog(LOG_INFO, "Switched to profile '%s' (%s)", newProfile.name.c_str(), newProfile.directoryName.c_str());
 	blog(LOG_INFO, "------------------------------------------------");
 }
 
@@ -585,40 +517,32 @@ void OBSBasic::on_actionImportProfile_triggered()
 {
 	const QString home = QDir::homePath();
 
-	const QString sourceDirectory = SelectDirectory(
-		this, QTStr("Basic.MainMenu.Profile.Import"), home);
+	const QString sourceDirectory = SelectDirectory(this, QTStr("Basic.MainMenu.Profile.Import"), home);
 
 	if (!sourceDirectory.isEmpty() && !sourceDirectory.isNull()) {
-		const std::filesystem::path sourcePath =
-			std::filesystem::u8path(sourceDirectory.toStdString());
-		const std::string directoryName =
-			sourcePath.filename().string();
+		const std::filesystem::path sourcePath = std::filesystem::u8path(sourceDirectory.toStdString());
+		const std::string directoryName = sourcePath.filename().string();
 
 		if (auto profile = GetProfileByDirectoryName(directoryName)) {
-			OBSMessageBox::warning(
-				this, QTStr("Basic.MainMenu.Profile.Import"),
-				QTStr("Basic.MainMenu.Profile.Exists"));
+			OBSMessageBox::warning(this, QTStr("Basic.MainMenu.Profile.Import"),
+					       QTStr("Basic.MainMenu.Profile.Exists"));
 			return;
 		}
 
 		std::string destinationPathString;
-		destinationPathString.reserve(
-			App()->userProfilesLocation.u8string().size() +
-			OBSProfilePath.size() + directoryName.size());
-		destinationPathString
-			.append(App()->userProfilesLocation.u8string())
+		destinationPathString.reserve(App()->userProfilesLocation.u8string().size() + OBSProfilePath.size() +
+					      directoryName.size());
+		destinationPathString.append(App()->userProfilesLocation.u8string())
 			.append(OBSProfilePath)
 			.append(directoryName);
 
-		const std::filesystem::path destinationPath =
-			std::filesystem::u8path(destinationPathString);
+		const std::filesystem::path destinationPath = std::filesystem::u8path(destinationPathString);
 
 		try {
 			std::filesystem::create_directory(destinationPath);
 		} catch (const std::filesystem::filesystem_error &error) {
-			blog(LOG_WARNING,
-			     "Failed to create profile directory '%s':\n%s",
-			     directoryName.c_str(), error.what());
+			blog(LOG_WARNING, "Failed to create profile directory '%s':\n%s", directoryName.c_str(),
+			     error.what());
 			return;
 		}
 
@@ -630,32 +554,25 @@ void OBSBasic::on_actionImportProfile_triggered()
 		}};
 
 		for (auto &[file, isMandatory] : profileFiles) {
-			const std::filesystem::path sourceFile =
-				sourcePath / std::filesystem::u8path(file);
+			const std::filesystem::path sourceFile = sourcePath / std::filesystem::u8path(file);
 
 			if (!std::filesystem::exists(sourceFile)) {
 				if (isMandatory) {
 					blog(LOG_ERROR,
 					     "Failed to import profile from directory '%s' - necessary file '%s' not found",
-					     directoryName.c_str(),
-					     file.c_str());
+					     directoryName.c_str(), file.c_str());
 					return;
 				}
 				continue;
 			}
 
-			const std::filesystem::path destinationFile =
-				destinationPath / std::filesystem::u8path(file);
+			const std::filesystem::path destinationFile = destinationPath / std::filesystem::u8path(file);
 
 			try {
-				std::filesystem::copy(sourceFile,
-						      destinationFile);
-			} catch (
-				const std::filesystem::filesystem_error &error) {
-				blog(LOG_WARNING,
-				     "Failed to copy import file '%s' for profile '%s':\n%s",
-				     file.c_str(), directoryName.c_str(),
-				     error.what());
+				std::filesystem::copy(sourceFile, destinationFile);
+			} catch (const std::filesystem::filesystem_error &error) {
+				blog(LOG_WARNING, "Failed to copy import file '%s' for profile '%s':\n%s", file.c_str(),
+				     directoryName.c_str(), error.what());
 				return;
 			}
 		}
@@ -670,49 +587,37 @@ void OBSBasic::on_actionExportProfile_triggered()
 
 	const QString home = QDir::homePath();
 
-	const QString destinationDirectory = SelectDirectory(
-		this, QTStr("Basic.MainMenu.Profile.Export"), home);
+	const QString destinationDirectory = SelectDirectory(this, QTStr("Basic.MainMenu.Profile.Export"), home);
 
-	const std::array<std::string, 4> profileFiles{"basic.ini",
-						      "service.json",
-						      "streamEncoder.json",
+	const std::array<std::string, 4> profileFiles{"basic.ini", "service.json", "streamEncoder.json",
 						      "recordEncoder.json"};
 
 	if (!destinationDirectory.isEmpty() && !destinationDirectory.isNull()) {
 		const std::filesystem::path sourcePath = currentProfile.path;
 		const std::filesystem::path destinationPath =
-			std::filesystem::u8path(
-				destinationDirectory.toStdString()) /
+			std::filesystem::u8path(destinationDirectory.toStdString()) /
 			std::filesystem::u8path(currentProfile.directoryName);
 
 		if (!std::filesystem::exists(destinationPath)) {
 			std::filesystem::create_directory(destinationPath);
 		}
 
-		std::filesystem::copy_options copyOptions =
-			std::filesystem::copy_options::overwrite_existing;
+		std::filesystem::copy_options copyOptions = std::filesystem::copy_options::overwrite_existing;
 
 		for (auto &file : profileFiles) {
-			const std::filesystem::path sourceFile =
-				sourcePath / std::filesystem::u8path(file);
+			const std::filesystem::path sourceFile = sourcePath / std::filesystem::u8path(file);
 
 			if (!std::filesystem::exists(sourceFile)) {
 				continue;
 			}
 
-			const std::filesystem::path destinationFile =
-				destinationPath / std::filesystem::u8path(file);
+			const std::filesystem::path destinationFile = destinationPath / std::filesystem::u8path(file);
 
 			try {
-				std::filesystem::copy(sourceFile,
-						      destinationFile,
-						      copyOptions);
-			} catch (
-				const std::filesystem::filesystem_error &error) {
-				blog(LOG_WARNING,
-				     "Failed to copy export file '%s' for profile '%s'\n%s",
-				     file.c_str(), currentProfile.name.c_str(),
-				     error.what());
+				std::filesystem::copy(sourceFile, destinationFile, copyOptions);
+			} catch (const std::filesystem::filesystem_error &error) {
+				blog(LOG_WARNING, "Failed to copy export file '%s' for profile '%s'\n%s", file.c_str(),
+				     currentProfile.name.c_str(), error.what());
 				return;
 			}
 		}
@@ -724,11 +629,9 @@ void OBSBasic::on_actionExportProfile_triggered()
 void OBSBasic::ActivateProfile(const OBSProfile &profile, bool reset)
 {
 	ConfigFile config;
-	if (config.Open(profile.profileFile.u8string().c_str(),
-			CONFIG_OPEN_ALWAYS) != CONFIG_SUCCESS) {
-		throw std::logic_error(
-			"failed to open configuration file of new profile: " +
-			profile.profileFile.string());
+	if (config.Open(profile.profileFile.u8string().c_str(), CONFIG_OPEN_ALWAYS) != CONFIG_SUCCESS) {
+		throw std::logic_error("failed to open configuration file of new profile: " +
+				       profile.profileFile.string());
 	}
 
 	config_set_string(config, "General", "Name", profile.name.c_str());
@@ -755,10 +658,8 @@ void OBSBasic::ActivateProfile(const OBSProfile &profile, bool reset)
 
 	activeConfiguration.Swap(config);
 
-	config_set_string(App()->GetUserConfig(), "Basic", "Profile",
-			  profile.name.c_str());
-	config_set_string(App()->GetUserConfig(), "Basic", "ProfileDir",
-			  profile.directoryName.c_str());
+	config_set_string(App()->GetUserConfig(), "Basic", "Profile", profile.name.c_str());
+	config_set_string(App()->GetUserConfig(), "Basic", "ProfileDir", profile.directoryName.c_str());
 
 	config_save_safe(App()->GetUserConfig(), "tmp", nullptr);
 
@@ -782,16 +683,11 @@ void OBSBasic::ActivateProfile(const OBSProfile &profile, bool reset)
 
 	if (!restartRequirements.empty()) {
 		std::string requirements = std::accumulate(
-			std::next(restartRequirements.begin()),
-			restartRequirements.end(), restartRequirements[0],
-			[](std::string a, std::string b) {
-				return std::move(a) + "\n" + b;
-			});
+			std::next(restartRequirements.begin()), restartRequirements.end(), restartRequirements[0],
+			[](std::string a, std::string b) { return std::move(a) + "\n" + b; });
 
 		QMessageBox::StandardButton button = OBSMessageBox::question(
-			this, QTStr("Restart"),
-			QTStr("LoadProfileNeedsRestart")
-				.arg(requirements.c_str()));
+			this, QTStr("Restart"), QTStr("LoadProfileNeedsRestart").arg(requirements.c_str()));
 
 		if (button == QMessageBox::Yes) {
 			restart = true;
@@ -811,44 +707,34 @@ void OBSBasic::ResetProfileData()
 
 	/* load audio monitoring */
 	if (obs_audio_monitoring_available()) {
-		const char *device_name = config_get_string(
-			activeConfiguration, "Audio", "MonitoringDeviceName");
-		const char *device_id = config_get_string(
-			activeConfiguration, "Audio", "MonitoringDeviceId");
+		const char *device_name = config_get_string(activeConfiguration, "Audio", "MonitoringDeviceName");
+		const char *device_id = config_get_string(activeConfiguration, "Audio", "MonitoringDeviceId");
 
 		obs_set_audio_monitoring_device(device_name, device_id);
 
-		blog(LOG_INFO, "Audio monitoring device:\n\tname: %s\n\tid: %s",
-		     device_name, device_id);
+		blog(LOG_INFO, "Audio monitoring device:\n\tname: %s\n\tid: %s", device_name, device_id);
 	}
 }
 
-std::vector<std::string>
-OBSBasic::GetRestartRequirements(const ConfigFile &config) const
+std::vector<std::string> OBSBasic::GetRestartRequirements(const ConfigFile &config) const
 {
 	std::vector<std::string> result;
 
-	const char *oldSpeakers =
-		config_get_string(activeConfiguration, "Audio", "ChannelSetup");
-	const char *newSpeakers =
-		config_get_string(config, "Audio", "ChannelSetup");
+	const char *oldSpeakers = config_get_string(activeConfiguration, "Audio", "ChannelSetup");
+	const char *newSpeakers = config_get_string(config, "Audio", "ChannelSetup");
 
-	uint64_t oldSampleRate =
-		config_get_uint(activeConfiguration, "Audio", "SampleRate");
+	uint64_t oldSampleRate = config_get_uint(activeConfiguration, "Audio", "SampleRate");
 	uint64_t newSampleRate = config_get_uint(config, "Audio", "SampleRate");
 
 	if (oldSpeakers != NULL && newSpeakers != NULL) {
-		if (std::string_view{oldSpeakers} !=
-		    std::string_view{newSpeakers}) {
-			result.emplace_back(
-				Str("Basic.Settings.Audio.Channels"));
+		if (std::string_view{oldSpeakers} != std::string_view{newSpeakers}) {
+			result.emplace_back(Str("Basic.Settings.Audio.Channels"));
 		}
 	}
 
 	if (oldSampleRate != 0 && newSampleRate != 0) {
 		if (oldSampleRate != newSampleRate) {
-			result.emplace_back(
-				Str("Basic.Settings.Audio.SampleRate"));
+			result.emplace_back(Str("Basic.Settings.Audio.SampleRate"));
 		}
 	}
 
@@ -857,10 +743,8 @@ OBSBasic::GetRestartRequirements(const ConfigFile &config) const
 
 void OBSBasic::CheckForSimpleModeX264Fallback()
 {
-	const char *curStreamEncoder = config_get_string(
-		activeConfiguration, "SimpleOutput", "StreamEncoder");
-	const char *curRecEncoder = config_get_string(
-		activeConfiguration, "SimpleOutput", "RecEncoder");
+	const char *curStreamEncoder = config_get_string(activeConfiguration, "SimpleOutput", "StreamEncoder");
+	const char *curRecEncoder = config_get_string(activeConfiguration, "SimpleOutput", "RecEncoder");
 	bool qsv_supported = false;
 	bool qsv_av1_supported = false;
 	bool amd_supported = false;
@@ -893,14 +777,10 @@ void OBSBasic::CheckForSimpleModeX264Fallback()
 #endif
 		else if (strcmp(id, "av1_texture_amf") == 0)
 			amd_av1_supported = true;
-		else if (strcmp(id,
-				"com.apple.videotoolbox.videoencoder.ave.avc") ==
-			 0)
+		else if (strcmp(id, "com.apple.videotoolbox.videoencoder.ave.avc") == 0)
 			apple_supported = true;
 #ifdef ENABLE_HEVC
-		else if (strcmp(id,
-				"com.apple.videotoolbox.videoencoder.ave.hevc") ==
-			 0)
+		else if (strcmp(id, "com.apple.videotoolbox.videoencoder.ave.hevc") == 0)
 			apple_hevc_supported = true;
 #endif
 	}
@@ -976,11 +856,9 @@ void OBSBasic::CheckForSimpleModeX264Fallback()
 	};
 
 	if (!CheckEncoder(curStreamEncoder))
-		config_set_string(activeConfiguration, "SimpleOutput",
-				  "StreamEncoder", curStreamEncoder);
+		config_set_string(activeConfiguration, "SimpleOutput", "StreamEncoder", curStreamEncoder);
 	if (!CheckEncoder(curRecEncoder))
-		config_set_string(activeConfiguration, "SimpleOutput",
-				  "RecEncoder", curRecEncoder);
+		config_set_string(activeConfiguration, "SimpleOutput", "RecEncoder", curRecEncoder);
 	if (changed) {
 		activeConfiguration.SaveSafe("tmp");
 	}

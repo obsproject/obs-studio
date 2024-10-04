@@ -7,8 +7,7 @@
 
 #include <QStandardItem>
 
-OBSBasicVCamConfig::OBSBasicVCamConfig(const VCamConfig &_config,
-				       bool _vcamActive, QWidget *parent)
+OBSBasicVCamConfig::OBSBasicVCamConfig(const VCamConfig &_config, bool _vcamActive, QWidget *parent)
 	: config(_config),
 	  vcamActive(_vcamActive),
 	  activeType(_config.type),
@@ -19,29 +18,21 @@ OBSBasicVCamConfig::OBSBasicVCamConfig(const VCamConfig &_config,
 
 	ui->setupUi(this);
 
-	ui->outputType->addItem(QTStr("Basic.VCam.OutputType.Program"),
-				(int)VCamOutputType::ProgramView);
-	ui->outputType->addItem(QTStr("StudioMode.Preview"),
-				(int)VCamOutputType::PreviewOutput);
-	ui->outputType->addItem(QTStr("Basic.Scene"),
-				(int)VCamOutputType::SceneOutput);
-	ui->outputType->addItem(QTStr("Basic.Main.Source"),
-				(int)VCamOutputType::SourceOutput);
+	ui->outputType->addItem(QTStr("Basic.VCam.OutputType.Program"), (int)VCamOutputType::ProgramView);
+	ui->outputType->addItem(QTStr("StudioMode.Preview"), (int)VCamOutputType::PreviewOutput);
+	ui->outputType->addItem(QTStr("Basic.Scene"), (int)VCamOutputType::SceneOutput);
+	ui->outputType->addItem(QTStr("Basic.Main.Source"), (int)VCamOutputType::SourceOutput);
 
-	ui->outputType->setCurrentIndex(
-		ui->outputType->findData((int)config.type));
+	ui->outputType->setCurrentIndex(ui->outputType->findData((int)config.type));
 	OutputTypeChanged();
-	connect(ui->outputType, &QComboBox::currentIndexChanged, this,
-		&OBSBasicVCamConfig::OutputTypeChanged);
+	connect(ui->outputType, &QComboBox::currentIndexChanged, this, &OBSBasicVCamConfig::OutputTypeChanged);
 
-	connect(ui->buttonBox, &QDialogButtonBox::accepted, this,
-		&OBSBasicVCamConfig::UpdateConfig);
+	connect(ui->buttonBox, &QDialogButtonBox::accepted, this, &OBSBasicVCamConfig::UpdateConfig);
 }
 
 void OBSBasicVCamConfig::OutputTypeChanged()
 {
-	VCamOutputType type =
-		(VCamOutputType)ui->outputType->currentData().toInt();
+	VCamOutputType type = (VCamOutputType)ui->outputType->currentData().toInt();
 	ui->outputSelection->setDisabled(false);
 
 	auto list = ui->outputSelection;
@@ -71,8 +62,7 @@ void OBSBasicVCamConfig::OutputTypeChanged()
 		auto AddSource = [&](obs_source_t *source) {
 			auto name = obs_source_get_name(source);
 
-			if (!(obs_source_get_output_flags(source) &
-			      OBS_SOURCE_VIDEO))
+			if (!(obs_source_get_output_flags(source) & OBS_SOURCE_VIDEO))
 				return;
 
 			sources.push_back(name);
@@ -81,8 +71,7 @@ void OBSBasicVCamConfig::OutputTypeChanged()
 
 		obs_enum_sources(
 			[](void *data, obs_source_t *source) {
-				auto &AddSource =
-					*static_cast<AddSource_t *>(data);
+				auto &AddSource = *static_cast<AddSource_t *>(data);
 				if (!obs_source_removed(source))
 					AddSource(source);
 				return true;
@@ -104,18 +93,15 @@ void OBSBasicVCamConfig::OutputTypeChanged()
 	if (!vcamActive)
 		return;
 
-	requireRestart = (activeType == VCamOutputType::ProgramView &&
-			  type != VCamOutputType::ProgramView) ||
-			 (activeType != VCamOutputType::ProgramView &&
-			  type == VCamOutputType::ProgramView);
+	requireRestart = (activeType == VCamOutputType::ProgramView && type != VCamOutputType::ProgramView) ||
+			 (activeType != VCamOutputType::ProgramView && type == VCamOutputType::ProgramView);
 
 	ui->warningLabel->setVisible(requireRestart);
 }
 
 void OBSBasicVCamConfig::UpdateConfig()
 {
-	VCamOutputType type =
-		(VCamOutputType)ui->outputType->currentData().toInt();
+	VCamOutputType type = (VCamOutputType)ui->outputType->currentData().toInt();
 	switch (type) {
 	case VCamOutputType::ProgramView:
 	case VCamOutputType::PreviewOutput:
@@ -124,8 +110,7 @@ void OBSBasicVCamConfig::UpdateConfig()
 		config.scene = ui->outputSelection->currentText().toStdString();
 		break;
 	case VCamOutputType::SourceOutput:
-		config.source =
-			ui->outputSelection->currentText().toStdString();
+		config.source = ui->outputSelection->currentText().toStdString();
 		break;
 	default:
 		// unknown value, don't save type

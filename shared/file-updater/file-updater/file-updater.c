@@ -6,8 +6,7 @@
 #include <obs-data.h>
 #include "file-updater.h"
 
-#define warn(msg, ...) \
-	blog(LOG_WARNING, "%s" msg, info->log_prefix, ##__VA_ARGS__)
+#define warn(msg, ...) blog(LOG_WARNING, "%s" msg, info->log_prefix, ##__VA_ARGS__)
 #define info(msg, ...) blog(LOG_INFO, "%s" msg, info->log_prefix, ##__VA_ARGS__)
 
 struct update_info {
@@ -68,8 +67,7 @@ void update_info_destroy(struct update_info *info)
 	bfree(info);
 }
 
-static size_t http_write(uint8_t *ptr, size_t size, size_t nmemb,
-			 struct update_info *info)
+static size_t http_write(uint8_t *ptr, size_t size, size_t nmemb, struct update_info *info)
 {
 	size_t total = size * nmemb;
 	if (total)
@@ -78,8 +76,7 @@ static size_t http_write(uint8_t *ptr, size_t size, size_t nmemb,
 	return total;
 }
 
-static size_t http_header(char *buffer, size_t size, size_t nitems,
-			  struct update_info *info)
+static size_t http_header(char *buffer, size_t size, size_t nitems, struct update_info *info)
 {
 	if (!strncmp(buffer, "ETag: ", 6)) {
 		char *etag = buffer + 6;
@@ -102,8 +99,7 @@ static size_t http_header(char *buffer, size_t size, size_t nitems,
 	return nitems * size;
 }
 
-static bool do_http_request(struct update_info *info, const char *url,
-			    long *response_code)
+static bool do_http_request(struct update_info *info, const char *url, long *response_code)
 {
 	CURLcode code;
 	uint8_t null_terminator = 0;
@@ -121,25 +117,21 @@ static bool do_http_request(struct update_info *info, const char *url,
 
 	if (!info->remote_url) {
 		// We only care about headers from the main package file
-		curl_easy_setopt(info->curl, CURLOPT_HEADERFUNCTION,
-				 http_header);
+		curl_easy_setopt(info->curl, CURLOPT_HEADERFUNCTION, http_header);
 		curl_easy_setopt(info->curl, CURLOPT_HEADERDATA, info);
 	}
 
 	code = curl_easy_perform(info->curl);
 	if (code != CURLE_OK) {
-		warn("Remote update of URL \"%s\" failed: %s", url,
-		     info->error);
+		warn("Remote update of URL \"%s\" failed: %s", url, info->error);
 		return false;
 	}
 
-	if (curl_easy_getinfo(info->curl, CURLINFO_RESPONSE_CODE,
-			      response_code) != CURLE_OK)
+	if (curl_easy_getinfo(info->curl, CURLINFO_RESPONSE_CODE, response_code) != CURLE_OK)
 		return false;
 
 	if (*response_code >= 400) {
-		warn("Remote update of URL \"%s\" failed: HTTP/%ld", url,
-		     *response_code);
+		warn("Remote update of URL \"%s\" failed: HTTP/%ld", url, *response_code);
 		return false;
 	}
 
@@ -192,8 +184,7 @@ static bool init_update(struct update_info *info)
 
 			info->etag_local = bstrdup(etag);
 
-			info->header = curl_slist_append(info->header,
-							 if_none_match.array);
+			info->header = curl_slist_append(info->header, if_none_match.array);
 
 			dstr_free(&if_none_match);
 		}
@@ -225,9 +216,7 @@ static void copy_local_to_cache(struct update_info *info, const char *file)
 	bfree(temp_file_path);
 }
 
-static void enum_files(obs_data_t *package,
-		       bool (*enum_func)(void *param, obs_data_t *file),
-		       void *param)
+static void enum_files(obs_data_t *package, bool (*enum_func)(void *param, obs_data_t *file), void *param)
 {
 	obs_data_array_t *array = obs_data_get_array(package, "files");
 	size_t num;
@@ -274,9 +263,8 @@ static bool newer_than_cache(void *param, obs_data_t *cache_file)
 static bool update_files_to_local(void *param, obs_data_t *local_file)
 {
 	struct update_info *info = param;
-	struct file_update_data data = {
-		.name = obs_data_get_string(local_file, "name"),
-		.version = (int)obs_data_get_int(local_file, "version")};
+	struct file_update_data data = {.name = obs_data_get_string(local_file, "name"),
+					.version = (int)obs_data_get_int(local_file, "version")};
 
 	enum_files(info->cache_package, newer_than_cache, &data);
 	if (data.newer || !data.found)
@@ -308,8 +296,7 @@ static int update_local_version(struct update_info *info)
 	return cache_version;
 }
 
-static inline bool do_relative_http_request(struct update_info *info,
-					    const char *url, const char *file)
+static inline bool do_relative_http_request(struct update_info *info, const char *url, const char *file)
 {
 	long response_code;
 	char *full_url = get_path(url, file);
@@ -318,17 +305,14 @@ static inline bool do_relative_http_request(struct update_info *info,
 	return success && response_code == 200;
 }
 
-static inline void write_file_data(struct update_info *info,
-				   const char *base_path, const char *file)
+static inline void write_file_data(struct update_info *info, const char *base_path, const char *file)
 {
 	char *full_path = get_path(base_path, file);
-	os_quick_write_utf8_file(full_path, (char *)info->file_data.array,
-				 info->file_data.num - 1, false);
+	os_quick_write_utf8_file(full_path, (char *)info->file_data.array, info->file_data.num - 1, false);
 	bfree(full_path);
 }
 
-static inline void replace_file(const char *src_base_path,
-				const char *dst_base_path, const char *file)
+static inline void replace_file(const char *src_base_path, const char *dst_base_path, const char *file)
 {
 	char *src_path = get_path(src_base_path, file);
 	char *dst_path = get_path(dst_base_path, file);
@@ -346,9 +330,8 @@ static bool update_remote_files(void *param, obs_data_t *remote_file)
 {
 	struct update_info *info = param;
 
-	struct file_update_data data = {
-		.name = obs_data_get_string(remote_file, "name"),
-		.version = (int)obs_data_get_int(remote_file, "version")};
+	struct file_update_data data = {.name = obs_data_get_string(remote_file, "name"),
+					.version = (int)obs_data_get_int(remote_file, "version")};
 
 	enum_files(info->cache_package, newer_than_cache, &data);
 	if (!data.newer && data.found)
@@ -370,8 +353,7 @@ static bool update_remote_files(void *param, obs_data_t *remote_file)
 		info->file_data.da = download_data.buffer.da;
 
 		if (!confirm) {
-			info("Update file '%s' (version %d) rejected",
-			     data.name, data.version);
+			info("Update file '%s' (version %d) rejected", data.name, data.version);
 			return true;
 		}
 	}
@@ -379,8 +361,7 @@ static bool update_remote_files(void *param, obs_data_t *remote_file)
 	write_file_data(info, info->temp, data.name);
 	replace_file(info->temp, info->cache, data.name);
 
-	info("Successfully updated file '%s' (version %d)", data.name,
-	     data.version);
+	info("Successfully updated file '%s' (version %d)", data.name, data.version);
 	return true;
 }
 
@@ -421,8 +402,7 @@ static void update_remote_version(struct update_info *info, int cur_version)
 
 	update_save_metadata(info);
 
-	info->remote_package =
-		obs_data_create_from_json((char *)info->file_data.array);
+	info->remote_package = obs_data_create_from_json((char *)info->file_data.array);
 	if (!info->remote_package) {
 		warn("Failed to initialize remote package json");
 		return;
@@ -469,12 +449,9 @@ static void *update_thread(void *data)
 	return NULL;
 }
 
-update_info_t *update_info_create(const char *log_prefix,
-				  const char *user_agent,
-				  const char *update_url, const char *local_dir,
-				  const char *cache_dir,
-				  confirm_file_callback_t confirm_callback,
-				  void *param)
+update_info_t *update_info_create(const char *log_prefix, const char *user_agent, const char *update_url,
+				  const char *local_dir, const char *cache_dir,
+				  confirm_file_callback_t confirm_callback, void *param)
 {
 	struct update_info *info;
 	struct dstr dir = {0};
@@ -483,8 +460,7 @@ update_info_t *update_info_create(const char *log_prefix,
 		log_prefix = "";
 
 	if (os_mkdir(cache_dir) < 0) {
-		blog(LOG_WARNING, "%sCould not create cache directory %s",
-		     log_prefix, cache_dir);
+		blog(LOG_WARNING, "%sCould not create cache directory %s", log_prefix, cache_dir);
 		return NULL;
 	}
 
@@ -494,8 +470,7 @@ update_info_t *update_info_create(const char *log_prefix,
 	dstr_cat(&dir, ".temp");
 
 	if (os_mkdir(dir.array) < 0) {
-		blog(LOG_WARNING, "%sCould not create temp directory %s",
-		     log_prefix, cache_dir);
+		blog(LOG_WARNING, "%sCould not create temp directory %s", log_prefix, cache_dir);
 		dstr_free(&dir);
 		return NULL;
 	}
@@ -541,10 +516,8 @@ static void *single_file_thread(void *data)
 	return NULL;
 }
 
-update_info_t *
-update_info_create_single(const char *log_prefix, const char *user_agent,
-			  const char *file_url,
-			  confirm_file_callback_t confirm_callback, void *param)
+update_info_t *update_info_create_single(const char *log_prefix, const char *user_agent, const char *file_url,
+					 confirm_file_callback_t confirm_callback, void *param)
 {
 	struct update_info *info;
 

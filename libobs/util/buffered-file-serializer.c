@@ -90,8 +90,7 @@ static void *io_thread(void *opaque)
 		for (;;) {
 			pthread_mutex_lock(&out->io.data_mutex);
 
-			shutting_down = os_atomic_load_bool(
-				&out->io.shutdown_requested);
+			shutting_down = os_atomic_load_bool(&out->io.shutdown_requested);
 
 			// Fetch as many writes as possible from the deque
 			// and fill up our local chunk. This may involve
@@ -106,12 +105,10 @@ static void *io_thread(void *opaque)
 
 				// Get seek offset and data size
 				struct io_header header;
-				deque_peek_front(&out->io.data, &header,
-						 sizeof(header));
+				deque_peek_front(&out->io.data, &header, sizeof(header));
 
 				// Do we need to seek?
-				if (header.seek_offset !=
-				    current_seek_position) {
+				if (header.seek_offset != current_seek_position) {
 
 					// If there's already part of a chunk pending,
 					// flush it at the current offset. Similarly,
@@ -126,26 +123,21 @@ static void *io_thread(void *opaque)
 					next_seek_position = header.seek_offset;
 
 					// Update our virtual position
-					current_seek_position =
-						header.seek_offset;
+					current_seek_position = header.seek_offset;
 				}
 
 				// Make sure there's enough room for the data, if
 				// not then force a flush
-				if (header.data_length + chunk_used >
-				    chunk_size) {
+				if (header.data_length + chunk_used > chunk_size) {
 					force_flush_chunk = true;
 					break;
 				}
 
 				// Remove header that we already read
-				deque_pop_front(&out->io.data, NULL,
-						sizeof(header));
+				deque_pop_front(&out->io.data, NULL, sizeof(header));
 
 				// Copy from the buffer to our local chunk
-				deque_pop_front(&out->io.data,
-						chunk + chunk_used,
-						header.data_length);
+				deque_pop_front(&out->io.data, chunk + chunk_used, header.data_length);
 
 				// Update offsets
 				chunk_used += header.data_length;
@@ -158,11 +150,8 @@ static void *io_thread(void *opaque)
 			// Try to avoid lots of small writes unless this was the final
 			// data left in the buffer. The buffer might be entirely empty
 			// if we were woken up to exit.
-			if (!force_flush_chunk &&
-			    (!chunk_used ||
-			     (chunk_used < 65536 && !shutting_down))) {
-				os_event_reset(
-					out->io.new_data_available_event);
+			if (!force_flush_chunk && (!chunk_used || (chunk_used < 65536 && !shutting_down))) {
+				os_event_reset(out->io.new_data_available_event);
 				pthread_mutex_unlock(&out->io.data_mutex);
 				break;
 			}
@@ -171,13 +160,11 @@ static void *io_thread(void *opaque)
 
 			// Seek if we need to
 			if (want_seek) {
-				os_fseeki64(out->io.output_file,
-					    next_seek_position, SEEK_SET);
+				os_fseeki64(out->io.output_file, next_seek_position, SEEK_SET);
 
 				// Update the next virtual position, making sure to take
 				// into account the size of the chunk we're about to write.
-				current_seek_position =
-					next_seek_position + chunk_used;
+				current_seek_position = next_seek_position + chunk_used;
 
 				want_seek = false;
 
@@ -190,13 +177,10 @@ static void *io_thread(void *opaque)
 			}
 
 			// Write the current chunk to the output file
-			size_t bytes_written = fwrite(chunk, 1, chunk_used,
-						      out->io.output_file);
+			size_t bytes_written = fwrite(chunk, 1, chunk_used, out->io.output_file);
 			if (bytes_written != chunk_used) {
-				blog(LOG_ERROR,
-				     "Error writing to '%s': %s (%zu != %zu)\n",
-				     out->filename.array, strerror(errno),
-				     bytes_written, chunk_used);
+				blog(LOG_ERROR, "Error writing to '%s': %s (%zu != %zu)\n", out->filename.array,
+				     strerror(errno), bytes_written, chunk_used);
 				os_atomic_set_bool(&out->io.output_error, true);
 
 				goto error;
@@ -222,8 +206,7 @@ error:
 /* ========================================================================== */
 /* Serializer Implementation                                                  */
 
-static int64_t file_output_seek(void *opaque, int64_t offset,
-				enum serialize_seek_type seek_type)
+static int64_t file_output_seek(void *opaque, int64_t offset, enum serialize_seek_type seek_type)
 {
 	struct file_output_data *out = opaque;
 
@@ -296,8 +279,7 @@ static size_t file_output_write(void *opaque, const void *buf, size_t buf_size)
 		}
 
 		// Calculate how many chunks we can fit into the buffer
-		size_t num_chunks = free_space / (next_chunk_size +
-						  sizeof(struct io_header));
+		size_t num_chunks = free_space / (next_chunk_size + sizeof(struct io_header));
 
 		while (remaining && num_chunks--) {
 			struct io_header header = {
@@ -307,8 +289,7 @@ static size_t file_output_write(void *opaque, const void *buf, size_t buf_size)
 
 			// Copy the data into the buffer
 			deque_push_back(&out->io.data, &header, sizeof(header));
-			deque_push_back(&out->io.data, (const void *)ptr,
-					next_chunk_size);
+			deque_push_back(&out->io.data, (const void *)ptr, next_chunk_size);
 
 			// Advance the next write position
 			out->io.next_pos += next_chunk_size;
@@ -338,14 +319,12 @@ static int64_t file_output_get_pos(void *opaque)
 	return (int64_t)out->io.next_pos;
 }
 
-bool buffered_file_serializer_init_defaults(struct serializer *s,
-					    const char *path)
+bool buffered_file_serializer_init_defaults(struct serializer *s, const char *path)
 {
 	return buffered_file_serializer_init(s, path, 0, 0);
 }
 
-bool buffered_file_serializer_init(struct serializer *s, const char *path,
-				   size_t max_bufsize, size_t chunk_size)
+bool buffered_file_serializer_init(struct serializer *s, const char *path, size_t max_bufsize, size_t chunk_size)
 {
 	struct file_output_data *out;
 
@@ -366,8 +345,7 @@ bool buffered_file_serializer_init(struct serializer *s, const char *path,
 
 	pthread_mutex_init(&out->io.data_mutex, NULL);
 
-	os_event_init(&out->io.buffer_space_available_event,
-		      OS_EVENT_TYPE_AUTO);
+	os_event_init(&out->io.buffer_space_available_event, OS_EVENT_TYPE_AUTO);
 	os_event_init(&out->io.new_data_available_event, OS_EVENT_TYPE_AUTO);
 
 	pthread_create(&out->io.io_thread, NULL, io_thread, out);
@@ -403,8 +381,7 @@ void buffered_file_serializer_free(struct serializer *s)
 
 		pthread_mutex_destroy(&out->io.data_mutex);
 
-		blog(LOG_DEBUG, "Final buffer capacity: %zu KiB",
-		     out->io.data.capacity / 1024);
+		blog(LOG_DEBUG, "Final buffer capacity: %zu KiB", out->io.data.capacity / 1024);
 
 		deque_free(&out->io.data);
 	}

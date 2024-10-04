@@ -25,9 +25,8 @@ bool nvafx_loaded = false;
 
 /* -------------------------------------------------------- */
 
-#define do_log(level, format, ...)                    \
-	blog(level, "[noise suppress: '%s'] " format, \
-	     obs_source_get_name(ng->context), ##__VA_ARGS__)
+#define do_log(level, format, ...) \
+	blog(level, "[noise suppress: '%s'] " format, obs_source_get_name(ng->context), ##__VA_ARGS__)
 
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
@@ -57,12 +56,9 @@ bool nvafx_loaded = false;
 #define TEXT_METHOD_RNN MT_("NoiseSuppress.Method.RNNoise")
 #define TEXT_METHOD_NVAFX_DENOISER MT_("NoiseSuppress.Method.Nvafx.Denoiser")
 #define TEXT_METHOD_NVAFX_DEREVERB MT_("NoiseSuppress.Method.Nvafx.Dereverb")
-#define TEXT_METHOD_NVAFX_DEREVERB_DENOISER \
-	MT_("NoiseSuppress.Method.Nvafx.DenoiserPlusDereverb")
-#define TEXT_METHOD_NVAFX_DEPRECATION \
-	MT_("NoiseSuppress.Method.Nvafx.Deprecation")
-#define TEXT_METHOD_NVAFX_DEPRECATION2 \
-	MT_("NoiseSuppress.Method.Nvafx.Deprecation2")
+#define TEXT_METHOD_NVAFX_DEREVERB_DENOISER MT_("NoiseSuppress.Method.Nvafx.DenoiserPlusDereverb")
+#define TEXT_METHOD_NVAFX_DEPRECATION MT_("NoiseSuppress.Method.Nvafx.Deprecation")
+#define TEXT_METHOD_NVAFX_DEPRECATION2 MT_("NoiseSuppress.Method.Nvafx.Deprecation2")
 
 #define MAX_PREPROC_CHANNELS 8
 
@@ -72,8 +68,7 @@ bool nvafx_loaded = false;
 
 /* nvafx constants, these can't be changed */
 #define NVAFX_SAMPLE_RATE 48000
-#define NVAFX_FRAME_SIZE \
-	480 /* the sdk does not explicitly set this as a constant though it relies on it*/
+#define NVAFX_FRAME_SIZE 480 /* the sdk does not explicitly set this as a constant though it relies on it*/
 
 /* If the following constant changes, RNNoise breaks */
 #define BUFFER_SIZE_MSEC 10
@@ -178,13 +173,10 @@ static void noise_suppress_destroy(void *data)
 	bfree(ng);
 }
 
-static inline void alloc_channel(struct noise_suppress_data *ng,
-				 uint32_t sample_rate, size_t channel,
-				 size_t frames)
+static inline void alloc_channel(struct noise_suppress_data *ng, uint32_t sample_rate, size_t channel, size_t frames)
 {
 #ifdef LIBSPEEXDSP_ENABLED
-	ng->spx_states[channel] =
-		speex_preprocess_state_init((int)frames, sample_rate);
+	ng->spx_states[channel] = speex_preprocess_state_init((int)frames, sample_rate);
 #else
 	UNUSED_PARAMETER(sample_rate);
 #endif
@@ -249,22 +241,18 @@ static void noise_suppress_update(void *data, obs_data_t *s)
 	/* One speex/rnnoise state for each channel (limit 2) */
 	ng->copy_buffers[0] = bmalloc(frames * channels * sizeof(float));
 #ifdef LIBSPEEXDSP_ENABLED
-	ng->spx_segment_buffers[0] =
-		bmalloc(frames * channels * sizeof(spx_int16_t));
+	ng->spx_segment_buffers[0] = bmalloc(frames * channels * sizeof(spx_int16_t));
 #endif
 #ifdef LIBRNNOISE_ENABLED
-	ng->rnn_segment_buffers[0] =
-		bmalloc(RNNOISE_FRAME_SIZE * channels * sizeof(float));
+	ng->rnn_segment_buffers[0] = bmalloc(RNNOISE_FRAME_SIZE * channels * sizeof(float));
 #endif
 	for (size_t c = 1; c < channels; ++c) {
 		ng->copy_buffers[c] = ng->copy_buffers[c - 1] + frames;
 #ifdef LIBSPEEXDSP_ENABLED
-		ng->spx_segment_buffers[c] =
-			ng->spx_segment_buffers[c - 1] + frames;
+		ng->spx_segment_buffers[c] = ng->spx_segment_buffers[c - 1] + frames;
 #endif
 #ifdef LIBRNNOISE_ENABLED
-		ng->rnn_segment_buffers[c] =
-			ng->rnn_segment_buffers[c - 1] + RNNOISE_FRAME_SIZE;
+		ng->rnn_segment_buffers[c] = ng->rnn_segment_buffers[c - 1] + RNNOISE_FRAME_SIZE;
 #endif
 	}
 	for (size_t i = 0; i < channels; i++)
@@ -292,8 +280,7 @@ static void noise_suppress_update(void *data, obs_data_t *s)
 
 static void *noise_suppress_create(obs_data_t *settings, obs_source_t *filter)
 {
-	struct noise_suppress_data *ng =
-		bzalloc(sizeof(struct noise_suppress_data));
+	struct noise_suppress_data *ng = bzalloc(sizeof(struct noise_suppress_data));
 
 	ng->context = filter;
 	ng->nvafx_enabled = false;
@@ -304,22 +291,18 @@ static void *noise_suppress_create(obs_data_t *settings, obs_source_t *filter)
 	const char *method = obs_data_get_string(settings, S_METHOD);
 	ng->nvafx_enabled = strcmp(method, S_METHOD_NVAFX_DENOISER) == 0 ||
 			    strcmp(method, S_METHOD_NVAFX_DEREVERB) == 0 ||
-			    strcmp(method, S_METHOD_NVAFX_DEREVERB_DENOISER) ==
-				    0;
+			    strcmp(method, S_METHOD_NVAFX_DEREVERB_DENOISER) == 0;
 	if (ng->nvafx_enabled) {
 		const char *str1 = obs_source_get_name(filter);
 		char *str2 = "_ported";
-		char *new_name =
-			(char *)malloc(1 + strlen(str1) + strlen(str2));
+		char *new_name = (char *)malloc(1 + strlen(str1) + strlen(str2));
 		strcpy(new_name, str1);
 		strcat(new_name, str2);
 		obs_data_t *new_settings = obs_data_create();
 		obs_data_set_string(new_settings, S_METHOD, method);
-		double intensity =
-			obs_data_get_double(settings, S_NVAFX_INTENSITY);
+		double intensity = obs_data_get_double(settings, S_NVAFX_INTENSITY);
 		obs_data_set_double(new_settings, S_NVAFX_INTENSITY, intensity);
-		ng->migrated_filter = obs_source_create(
-			"nvidia_audiofx_filter", new_name, new_settings, NULL);
+		ng->migrated_filter = obs_source_create("nvidia_audiofx_filter", new_name, new_settings, NULL);
 		obs_data_release(new_settings);
 	}
 #endif
@@ -332,9 +315,7 @@ static inline void process_speexdsp(struct noise_suppress_data *ng)
 #ifdef LIBSPEEXDSP_ENABLED
 	/* Set args */
 	for (size_t i = 0; i < ng->channels; i++)
-		speex_preprocess_ctl(ng->spx_states[i],
-				     SPEEX_PREPROCESS_SET_NOISE_SUPPRESS,
-				     &ng->suppress_level);
+		speex_preprocess_ctl(ng->spx_states[i], SPEEX_PREPROCESS_SET_NOISE_SUPPRESS, &ng->suppress_level);
 
 	/* Convert to 16bit */
 	for (size_t i = 0; i < ng->channels; i++)
@@ -344,21 +325,17 @@ static inline void process_speexdsp(struct noise_suppress_data *ng)
 				s = 1.0f;
 			else if (s < -1.0f)
 				s = -1.0f;
-			ng->spx_segment_buffers[i][j] =
-				(spx_int16_t)(s * c_32_to_16);
+			ng->spx_segment_buffers[i][j] = (spx_int16_t)(s * c_32_to_16);
 		}
 
 	/* Execute */
 	for (size_t i = 0; i < ng->channels; i++)
-		speex_preprocess_run(ng->spx_states[i],
-				     ng->spx_segment_buffers[i]);
+		speex_preprocess_run(ng->spx_states[i], ng->spx_segment_buffers[i]);
 
 	/* Convert back to 32bit */
 	for (size_t i = 0; i < ng->channels; i++)
 		for (size_t j = 0; j < ng->frames; j++)
-			ng->copy_buffers[i][j] =
-				(float)ng->spx_segment_buffers[i][j] /
-				c_16_to_32;
+			ng->copy_buffers[i][j] = (float)ng->spx_segment_buffers[i][j] / c_16_to_32;
 #else
 	UNUSED_PARAMETER(ng);
 #endif
@@ -372,18 +349,14 @@ static inline void process_rnnoise(struct noise_suppress_data *ng)
 		float *output[MAX_PREPROC_CHANNELS];
 		uint32_t out_frames;
 		uint64_t ts_offset;
-		audio_resampler_resample(ng->rnn_resampler, (uint8_t **)output,
-					 &out_frames, &ts_offset,
-					 (const uint8_t **)ng->copy_buffers,
-					 (uint32_t)ng->frames);
+		audio_resampler_resample(ng->rnn_resampler, (uint8_t **)output, &out_frames, &ts_offset,
+					 (const uint8_t **)ng->copy_buffers, (uint32_t)ng->frames);
 
 		for (size_t i = 0; i < ng->channels; i++) {
-			for (ssize_t j = 0, k = (ssize_t)out_frames -
-						RNNOISE_FRAME_SIZE;
-			     j < RNNOISE_FRAME_SIZE; ++j, ++k) {
+			for (ssize_t j = 0, k = (ssize_t)out_frames - RNNOISE_FRAME_SIZE; j < RNNOISE_FRAME_SIZE;
+			     ++j, ++k) {
 				if (k >= 0) {
-					ng->rnn_segment_buffers[i][j] =
-						output[i][k] * 32768.0f;
+					ng->rnn_segment_buffers[i][j] = output[i][k] * 32768.0f;
 				} else {
 					ng->rnn_segment_buffers[i][j] = 0;
 				}
@@ -392,17 +365,14 @@ static inline void process_rnnoise(struct noise_suppress_data *ng)
 	} else {
 		for (size_t i = 0; i < ng->channels; i++) {
 			for (size_t j = 0; j < RNNOISE_FRAME_SIZE; ++j) {
-				ng->rnn_segment_buffers[i][j] =
-					ng->copy_buffers[i][j] * 32768.0f;
+				ng->rnn_segment_buffers[i][j] = ng->copy_buffers[i][j] * 32768.0f;
 			}
 		}
 	}
 
 	/* Execute */
 	for (size_t i = 0; i < ng->channels; i++) {
-		rnnoise_process_frame(ng->rnn_states[i],
-				      ng->rnn_segment_buffers[i],
-				      ng->rnn_segment_buffers[i]);
+		rnnoise_process_frame(ng->rnn_states[i], ng->rnn_segment_buffers[i], ng->rnn_segment_buffers[i]);
 	}
 
 	/* Revert signal level adjustment, resample back if necessary */
@@ -410,18 +380,13 @@ static inline void process_rnnoise(struct noise_suppress_data *ng)
 		float *output[MAX_PREPROC_CHANNELS];
 		uint32_t out_frames;
 		uint64_t ts_offset;
-		audio_resampler_resample(
-			ng->rnn_resampler_back, (uint8_t **)output, &out_frames,
-			&ts_offset, (const uint8_t **)ng->rnn_segment_buffers,
-			RNNOISE_FRAME_SIZE);
+		audio_resampler_resample(ng->rnn_resampler_back, (uint8_t **)output, &out_frames, &ts_offset,
+					 (const uint8_t **)ng->rnn_segment_buffers, RNNOISE_FRAME_SIZE);
 
 		for (size_t i = 0; i < ng->channels; i++) {
-			for (ssize_t j = 0,
-				     k = (ssize_t)out_frames - ng->frames;
-			     j < (ssize_t)ng->frames; ++j, ++k) {
+			for (ssize_t j = 0, k = (ssize_t)out_frames - ng->frames; j < (ssize_t)ng->frames; ++j, ++k) {
 				if (k >= 0) {
-					ng->copy_buffers[i][j] =
-						output[i][k] / 32768.0f;
+					ng->copy_buffers[i][j] = output[i][k] / 32768.0f;
 				} else {
 					ng->copy_buffers[i][j] = 0;
 				}
@@ -430,9 +395,7 @@ static inline void process_rnnoise(struct noise_suppress_data *ng)
 	} else {
 		for (size_t i = 0; i < ng->channels; i++) {
 			for (size_t j = 0; j < RNNOISE_FRAME_SIZE; ++j) {
-				ng->copy_buffers[i][j] =
-					ng->rnn_segment_buffers[i][j] /
-					32768.0f;
+				ng->copy_buffers[i][j] = ng->rnn_segment_buffers[i][j] / 32768.0f;
 			}
 		}
 	}
@@ -447,8 +410,7 @@ static inline void process(struct noise_suppress_data *ng)
 		return;
 	/* Pop from input deque */
 	for (size_t i = 0; i < ng->channels; i++)
-		deque_pop_front(&ng->input_buffers[i], ng->copy_buffers[i],
-				ng->frames * sizeof(float));
+		deque_pop_front(&ng->input_buffers[i], ng->copy_buffers[i], ng->frames * sizeof(float));
 
 	if (ng->use_rnnoise) {
 		process_rnnoise(ng);
@@ -458,8 +420,7 @@ static inline void process(struct noise_suppress_data *ng)
 
 	/* Push to output deque */
 	for (size_t i = 0; i < ng->channels; i++)
-		deque_push_back(&ng->output_buffers[i], ng->copy_buffers[i],
-				ng->frames * sizeof(float));
+		deque_push_back(&ng->output_buffers[i], ng->copy_buffers[i], ng->frames * sizeof(float));
 }
 
 struct ng_audio_info {
@@ -482,8 +443,7 @@ static void reset_data(struct noise_suppress_data *ng)
 	clear_deque(&ng->info_buffer);
 }
 
-static struct obs_audio_data *
-noise_suppress_filter_audio(void *data, struct obs_audio_data *audio)
+static struct obs_audio_data *noise_suppress_filter_audio(void *data, struct obs_audio_data *audio)
 {
 	struct noise_suppress_data *ng = data;
 	struct ng_audio_info info;
@@ -518,8 +478,7 @@ noise_suppress_filter_audio(void *data, struct obs_audio_data *audio)
 	 * audio data.  clear all circular buffers to prevent old audio data
 	 * from being processed as part of the new data. */
 	if (ng->last_timestamp) {
-		int64_t diff = llabs((int64_t)ng->last_timestamp -
-				     (int64_t)audio->timestamp);
+		int64_t diff = llabs((int64_t)ng->last_timestamp - (int64_t)audio->timestamp);
 
 		if (diff > 1000000000LL)
 			reset_data(ng);
@@ -536,8 +495,7 @@ noise_suppress_filter_audio(void *data, struct obs_audio_data *audio)
 	/* -----------------------------------------------
 	 * push back current audio data to input deque */
 	for (size_t i = 0; i < ng->channels; i++)
-		deque_push_back(&ng->input_buffers[i], audio->data[i],
-				audio->frames * sizeof(float));
+		deque_push_back(&ng->input_buffers[i], audio->data[i], audio->frames * sizeof(float));
 
 	/* -----------------------------------------------
 	 * pop/process each 10ms segments, push back to output deque */
@@ -561,11 +519,9 @@ noise_suppress_filter_audio(void *data, struct obs_audio_data *audio)
 	da_resize(ng->output_data, out_size * ng->channels);
 
 	for (size_t i = 0; i < ng->channels; i++) {
-		ng->output_audio.data[i] =
-			(uint8_t *)&ng->output_data.array[i * out_size];
+		ng->output_audio.data[i] = (uint8_t *)&ng->output_data.array[i * out_size];
 
-		deque_pop_front(&ng->output_buffers[i],
-				ng->output_audio.data[i], out_size);
+		deque_pop_front(&ng->output_buffers[i], ng->output_audio.data[i], out_size);
 	}
 
 	ng->output_audio.frames = info.frames;
@@ -573,21 +529,16 @@ noise_suppress_filter_audio(void *data, struct obs_audio_data *audio)
 	return &ng->output_audio;
 }
 
-static bool noise_suppress_method_modified(obs_properties_t *props,
-					   obs_property_t *property,
-					   obs_data_t *settings)
+static bool noise_suppress_method_modified(obs_properties_t *props, obs_property_t *property, obs_data_t *settings)
 {
-	obs_property_t *p_suppress_level =
-		obs_properties_get(props, S_SUPPRESS_LEVEL);
-	obs_property_t *p_navfx_intensity =
-		obs_properties_get(props, S_NVAFX_INTENSITY);
+	obs_property_t *p_suppress_level = obs_properties_get(props, S_SUPPRESS_LEVEL);
+	obs_property_t *p_navfx_intensity = obs_properties_get(props, S_NVAFX_INTENSITY);
 
 	const char *method = obs_data_get_string(settings, S_METHOD);
 	bool enable_level = strcmp(method, S_METHOD_SPEEX) == 0;
-	bool enable_intensity =
-		strcmp(method, S_METHOD_NVAFX_DENOISER) == 0 ||
-		strcmp(method, S_METHOD_NVAFX_DEREVERB) == 0 ||
-		strcmp(method, S_METHOD_NVAFX_DEREVERB_DENOISER) == 0;
+	bool enable_intensity = strcmp(method, S_METHOD_NVAFX_DENOISER) == 0 ||
+				strcmp(method, S_METHOD_NVAFX_DEREVERB) == 0 ||
+				strcmp(method, S_METHOD_NVAFX_DEREVERB_DENOISER) == 0;
 	obs_property_set_visible(p_suppress_level, enable_level);
 	obs_property_set_visible(p_navfx_intensity, enable_intensity);
 
@@ -631,48 +582,37 @@ static obs_properties_t *noise_suppress_properties(void *data)
 #endif
 
 #if defined(LIBRNNOISE_ENABLED) && defined(LIBSPEEXDSP_ENABLED)
-	obs_property_t *method = obs_properties_add_list(
-		ppts, S_METHOD, TEXT_METHOD, OBS_COMBO_TYPE_LIST,
-		OBS_COMBO_FORMAT_STRING);
+	obs_property_t *method =
+		obs_properties_add_list(ppts, S_METHOD, TEXT_METHOD, OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 	obs_property_list_add_string(method, TEXT_METHOD_SPEEX, S_METHOD_SPEEX);
 	obs_property_list_add_string(method, TEXT_METHOD_RNN, S_METHOD_RNN);
 #ifdef LIBNVAFX_ENABLED
 	if (ng->nvafx_enabled) {
-		obs_property_list_add_string(method, TEXT_METHOD_NVAFX_DENOISER,
-					     S_METHOD_NVAFX_DENOISER);
-		obs_property_list_add_string(method, TEXT_METHOD_NVAFX_DEREVERB,
-					     S_METHOD_NVAFX_DEREVERB);
-		obs_property_list_add_string(
-			method, TEXT_METHOD_NVAFX_DEREVERB_DENOISER,
-			S_METHOD_NVAFX_DEREVERB_DENOISER);
+		obs_property_list_add_string(method, TEXT_METHOD_NVAFX_DENOISER, S_METHOD_NVAFX_DENOISER);
+		obs_property_list_add_string(method, TEXT_METHOD_NVAFX_DEREVERB, S_METHOD_NVAFX_DEREVERB);
+		obs_property_list_add_string(method, TEXT_METHOD_NVAFX_DEREVERB_DENOISER,
+					     S_METHOD_NVAFX_DEREVERB_DENOISER);
 		obs_property_list_item_disable(method, 2, true);
 		obs_property_list_item_disable(method, 3, true);
 		obs_property_list_item_disable(method, 4, true);
 	}
 
 #endif
-	obs_property_set_modified_callback(method,
-					   noise_suppress_method_modified);
+	obs_property_set_modified_callback(method, noise_suppress_method_modified);
 #endif
 
 #ifdef LIBSPEEXDSP_ENABLED
-	obs_property_t *speex_slider = obs_properties_add_int_slider(
-		ppts, S_SUPPRESS_LEVEL, TEXT_SUPPRESS_LEVEL, SUP_MIN, SUP_MAX,
-		1);
+	obs_property_t *speex_slider =
+		obs_properties_add_int_slider(ppts, S_SUPPRESS_LEVEL, TEXT_SUPPRESS_LEVEL, SUP_MIN, SUP_MAX, 1);
 	obs_property_int_set_suffix(speex_slider, " dB");
 #endif
 
 #ifdef LIBNVAFX_ENABLED
 	if (ng->nvafx_enabled) {
-		obs_properties_add_float_slider(ppts, S_NVAFX_INTENSITY,
-						TEXT_NVAFX_INTENSITY, 0.0f,
-						1.0f, 0.01f);
-		obs_property_t *warning2 = obs_properties_add_text(
-			ppts, "deprecation2", NULL, OBS_TEXT_INFO);
-		obs_property_text_set_info_type(warning2,
-						OBS_TEXT_INFO_WARNING);
-		obs_property_set_long_description(
-			warning2, TEXT_METHOD_NVAFX_DEPRECATION2);
+		obs_properties_add_float_slider(ppts, S_NVAFX_INTENSITY, TEXT_NVAFX_INTENSITY, 0.0f, 1.0f, 0.01f);
+		obs_property_t *warning2 = obs_properties_add_text(ppts, "deprecation2", NULL, OBS_TEXT_INFO);
+		obs_property_text_set_info_type(warning2, OBS_TEXT_INFO_WARNING);
+		obs_property_set_long_description(warning2, TEXT_METHOD_NVAFX_DEPRECATION2);
 	}
 
 #if defined(LIBRNNOISE_ENABLED) && defined(LIBSPEEXDSP_ENABLED)

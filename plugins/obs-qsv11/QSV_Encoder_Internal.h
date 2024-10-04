@@ -68,21 +68,17 @@ public:
 	~QSV_Encoder_Internal();
 
 	mfxStatus Open(qsv_param_t *pParams, enum qsv_codec codec);
-	void GetSPSPPS(mfxU8 **pSPSBuf, mfxU8 **pPPSBuf, mfxU16 *pnSPSBuf,
-		       mfxU16 *pnPPSBuf);
-	void GetVpsSpsPps(mfxU8 **pVPSBuf, mfxU8 **pSPSBuf, mfxU8 **pPPSBuf,
-			  mfxU16 *pnVPSBuf, mfxU16 *pnSPSBuf, mfxU16 *pnPPSBuf);
-	mfxStatus Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pDataUV,
-			 uint32_t strideY, uint32_t strideUV,
+	void GetSPSPPS(mfxU8 **pSPSBuf, mfxU8 **pPPSBuf, mfxU16 *pnSPSBuf, mfxU16 *pnPPSBuf);
+	void GetVpsSpsPps(mfxU8 **pVPSBuf, mfxU8 **pSPSBuf, mfxU8 **pPPSBuf, mfxU16 *pnVPSBuf, mfxU16 *pnSPSBuf,
+			  mfxU16 *pnPPSBuf);
+	mfxStatus Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pDataUV, uint32_t strideY, uint32_t strideUV,
 			 mfxBitstream **pBS);
-	mfxStatus Encode_tex(uint64_t ts, void *tex, uint64_t lock_key,
-			     uint64_t *next_key, mfxBitstream **pBS);
+	mfxStatus Encode_tex(uint64_t ts, void *tex, uint64_t lock_key, uint64_t *next_key, mfxBitstream **pBS);
 	mfxStatus ClearData();
 	mfxStatus Reset(qsv_param_t *pParams, enum qsv_codec codec);
 	mfxStatus ReconfigureEncoder();
 	bool UpdateParams(qsv_param_t *pParams);
-	void AddROI(mfxU32 left, mfxU32 top, mfxU32 right, mfxU32 bottom,
-		    mfxI16 delta);
+	void AddROI(mfxU32 left, mfxU32 top, mfxU32 right, mfxU32 bottom, mfxI16 delta);
 	void ClearROI();
 
 protected:
@@ -90,11 +86,9 @@ protected:
 	mfxStatus AllocateSurfaces();
 	mfxStatus GetVideoParam(enum qsv_codec codec);
 	mfxStatus InitBitstream();
-	mfxStatus LoadNV12(mfxFrameSurface1 *pSurface, uint8_t *pDataY,
-			   uint8_t *pDataUV, uint32_t strideY,
+	mfxStatus LoadNV12(mfxFrameSurface1 *pSurface, uint8_t *pDataY, uint8_t *pDataUV, uint32_t strideY,
 			   uint32_t strideUV);
-	mfxStatus LoadP010(mfxFrameSurface1 *pSurface, uint8_t *pDataY,
-			   uint8_t *pDataUV, uint32_t strideY,
+	mfxStatus LoadP010(mfxFrameSurface1 *pSurface, uint8_t *pDataY, uint8_t *pDataUV, uint32_t strideY,
 			   uint32_t strideUV);
 	mfxStatus Drain();
 	int GetFreeTaskIndex(Task *pTaskPool, mfxU16 nPoolSize);
@@ -137,8 +131,7 @@ private:
 	bool m_bUseD3D11;
 	bool m_bUseTexAlloc;
 	static mfxU16 g_numEncodersOpen;
-	static mfxHDL
-		g_GFX_Handle; // we only want one handle for all instances to use;
+	static mfxHDL g_GFX_Handle; // we only want one handle for all instances to use;
 
 	mfxEncodeCtrl m_ctrl;
 	mfxExtEncoderROI m_roi;

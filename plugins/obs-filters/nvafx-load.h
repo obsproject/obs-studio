@@ -23,21 +23,14 @@ static HMODULE nv_cuda = NULL;
 /** Model paths */
 #define NVAFX_EFFECT_DENOISER_MODEL "\\models\\denoiser_48k.trtpkg"
 #define NVAFX_EFFECT_DEREVERB_MODEL "\\models\\dereverb_48k.trtpkg"
-#define NVAFX_EFFECT_DEREVERB_DENOISER_MODEL \
-	"\\models\\dereverb_denoiser_48k.trtpkg"
+#define NVAFX_EFFECT_DEREVERB_DENOISER_MODEL "\\models\\dereverb_denoiser_48k.trtpkg"
 
-#define NVAFX_CHAINED_EFFECT_DENOISER_16k_SUPERRES_16k_TO_48k \
-	"denoiser16k_superres16kto48k"
-#define NVAFX_CHAINED_EFFECT_DEREVERB_16k_SUPERRES_16k_TO_48k \
-	"dereverb16k_superres16kto48k"
-#define NVAFX_CHAINED_EFFECT_DEREVERB_DENOISER_16k_SUPERRES_16k_TO_48k \
-	"dereverb_denoiser16k_superres16kto48k"
-#define NVAFX_CHAINED_EFFECT_SUPERRES_8k_TO_16k_DENOISER_16k \
-	"superres8kto16k_denoiser16k"
-#define NVAFX_CHAINED_EFFECT_SUPERRES_8k_TO_16k_DEREVERB_16k \
-	"superres8kto16k_dereverb16k"
-#define NVAFX_CHAINED_EFFECT_SUPERRES_8k_TO_16k_DEREVERB_DENOISER_16k \
-	"superres8kto16k_dereverb_denoiser16k"
+#define NVAFX_CHAINED_EFFECT_DENOISER_16k_SUPERRES_16k_TO_48k "denoiser16k_superres16kto48k"
+#define NVAFX_CHAINED_EFFECT_DEREVERB_16k_SUPERRES_16k_TO_48k "dereverb16k_superres16kto48k"
+#define NVAFX_CHAINED_EFFECT_DEREVERB_DENOISER_16k_SUPERRES_16k_TO_48k "dereverb_denoiser16k_superres16kto48k"
+#define NVAFX_CHAINED_EFFECT_SUPERRES_8k_TO_16k_DENOISER_16k "superres8kto16k_denoiser16k"
+#define NVAFX_CHAINED_EFFECT_SUPERRES_8k_TO_16k_DEREVERB_16k "superres8kto16k_dereverb16k"
+#define NVAFX_CHAINED_EFFECT_SUPERRES_8k_TO_16k_DEREVERB_DENOISER_16k "superres8kto16k_dereverb_denoiser16k"
 
 /** Parameter selectors */
 
@@ -61,8 +54,7 @@ static HMODULE nv_cuda = NULL;
 #pragma deprecated(NVAFX_PARAM_DENOISER_SAMPLE_RATE)
 #define NVAFX_PARAM_DENOISER_SAMPLE_RATE NVAFX_PARAM_SAMPLE_RATE
 #pragma deprecated(NVAFX_PARAM_DENOISER_NUM_SAMPLES_PER_FRAME)
-#define NVAFX_PARAM_DENOISER_NUM_SAMPLES_PER_FRAME \
-	NVAFX_PARAM_NUM_SAMPLES_PER_FRAME
+#define NVAFX_PARAM_DENOISER_NUM_SAMPLES_PER_FRAME NVAFX_PARAM_NUM_SAMPLES_PER_FRAME
 #pragma deprecated(NVAFX_PARAM_DENOISER_NUM_CHANNELS)
 #define NVAFX_PARAM_DENOISER_NUM_CHANNELS NVAFX_PARAM_NUM_CHANNELS
 #pragma deprecated(NVAFX_PARAM_DENOISER_INTENSITY_RATIO)
@@ -113,64 +105,34 @@ typedef const char *NvAFX_EffectSelector;
 typedef const char *NvAFX_ParameterSelector;
 typedef void *NvAFX_Handle;
 
-typedef NvAFX_Status
-	NVAFX_API (*NvAFX_GetEffectList_t)(int *num_effects,
-					   NvAFX_EffectSelector *effects[]);
-typedef NvAFX_Status
-	NVAFX_API (*NvAFX_CreateEffect_t)(NvAFX_EffectSelector code,
-					  NvAFX_Handle *effect);
-typedef NvAFX_Status
-	NVAFX_API (*NvAFX_CreateChainedEffect_t)(NvAFX_EffectSelector code,
-						 NvAFX_Handle *effect);
+typedef NvAFX_Status NVAFX_API (*NvAFX_GetEffectList_t)(int *num_effects, NvAFX_EffectSelector *effects[]);
+typedef NvAFX_Status NVAFX_API (*NvAFX_CreateEffect_t)(NvAFX_EffectSelector code, NvAFX_Handle *effect);
+typedef NvAFX_Status NVAFX_API (*NvAFX_CreateChainedEffect_t)(NvAFX_EffectSelector code, NvAFX_Handle *effect);
 typedef NvAFX_Status NVAFX_API (*NvAFX_DestroyEffect_t)(NvAFX_Handle effect);
-typedef NvAFX_Status
-	NVAFX_API (*NvAFX_SetU32_t)(NvAFX_Handle effect,
-				    NvAFX_ParameterSelector param_name,
-				    unsigned int val);
-typedef NvAFX_Status
-	NVAFX_API (*NvAFX_SetU32List_t)(NvAFX_Handle effect,
-					NvAFX_ParameterSelector param_name,
-					unsigned int *val, unsigned int size);
-typedef NvAFX_Status
-	NVAFX_API (*NvAFX_SetString_t)(NvAFX_Handle effect,
-				       NvAFX_ParameterSelector param_name,
-				       const char *val);
-typedef NvAFX_Status
-	NVAFX_API (*NvAFX_SetStringList_t)(NvAFX_Handle effect,
-					   NvAFX_ParameterSelector param_name,
-					   const char **val, unsigned int size);
-typedef NvAFX_Status NVAFX_API (*NvAFX_SetFloat_t)(
-	NvAFX_Handle effect, NvAFX_ParameterSelector param_name, float val);
-typedef NvAFX_Status
-	NVAFX_API (*NvAFX_SetFloatList_t)(NvAFX_Handle effect,
-					  NvAFX_ParameterSelector param_name,
-					  float *val, unsigned int size);
-typedef NvAFX_Status
-	NVAFX_API (*NvAFX_GetU32_t)(NvAFX_Handle effect,
-				    NvAFX_ParameterSelector param_name,
-				    unsigned int *val);
-typedef NvAFX_Status
-	NVAFX_API (*NvAFX_GetString_t)(NvAFX_Handle effect,
-				       NvAFX_ParameterSelector param_name,
-				       char *val, int max_length);
-typedef NvAFX_Status NVAFX_API (*NvAFX_GetStringList_t)(
-	NvAFX_Handle effect, NvAFX_ParameterSelector param_name, char **val,
-	int *max_length, unsigned int size);
-typedef NvAFX_Status NVAFX_API (*NvAFX_GetFloat_t)(
-	NvAFX_Handle effect, NvAFX_ParameterSelector param_name, float *val);
-typedef NvAFX_Status
-	NVAFX_API (*NvAFX_GetFloatList_t)(NvAFX_Handle effect,
-					  NvAFX_ParameterSelector param_name,
-					  float *val, unsigned int size);
+typedef NvAFX_Status NVAFX_API (*NvAFX_SetU32_t)(NvAFX_Handle effect, NvAFX_ParameterSelector param_name,
+						 unsigned int val);
+typedef NvAFX_Status NVAFX_API (*NvAFX_SetU32List_t)(NvAFX_Handle effect, NvAFX_ParameterSelector param_name,
+						     unsigned int *val, unsigned int size);
+typedef NvAFX_Status NVAFX_API (*NvAFX_SetString_t)(NvAFX_Handle effect, NvAFX_ParameterSelector param_name,
+						    const char *val);
+typedef NvAFX_Status NVAFX_API (*NvAFX_SetStringList_t)(NvAFX_Handle effect, NvAFX_ParameterSelector param_name,
+							const char **val, unsigned int size);
+typedef NvAFX_Status NVAFX_API (*NvAFX_SetFloat_t)(NvAFX_Handle effect, NvAFX_ParameterSelector param_name, float val);
+typedef NvAFX_Status NVAFX_API (*NvAFX_SetFloatList_t)(NvAFX_Handle effect, NvAFX_ParameterSelector param_name,
+						       float *val, unsigned int size);
+typedef NvAFX_Status NVAFX_API (*NvAFX_GetU32_t)(NvAFX_Handle effect, NvAFX_ParameterSelector param_name,
+						 unsigned int *val);
+typedef NvAFX_Status NVAFX_API (*NvAFX_GetString_t)(NvAFX_Handle effect, NvAFX_ParameterSelector param_name, char *val,
+						    int max_length);
+typedef NvAFX_Status NVAFX_API (*NvAFX_GetStringList_t)(NvAFX_Handle effect, NvAFX_ParameterSelector param_name,
+							char **val, int *max_length, unsigned int size);
+typedef NvAFX_Status NVAFX_API (*NvAFX_GetFloat_t)(NvAFX_Handle effect, NvAFX_ParameterSelector param_name, float *val);
+typedef NvAFX_Status NVAFX_API (*NvAFX_GetFloatList_t)(NvAFX_Handle effect, NvAFX_ParameterSelector param_name,
+						       float *val, unsigned int size);
 typedef NvAFX_Status NVAFX_API (*NvAFX_Load_t)(NvAFX_Handle effect);
-typedef NvAFX_Status
-	NVAFX_API (*NvAFX_GetSupportedDevices_t)(NvAFX_Handle effect, int *num,
-						 int *devices);
-typedef NvAFX_Status NVAFX_API (*NvAFX_Run_t)(NvAFX_Handle effect,
-					      const float **input,
-					      float **output,
-					      unsigned num_samples,
-					      unsigned num_channels);
+typedef NvAFX_Status NVAFX_API (*NvAFX_GetSupportedDevices_t)(NvAFX_Handle effect, int *num, int *devices);
+typedef NvAFX_Status NVAFX_API (*NvAFX_Run_t)(NvAFX_Handle effect, const float **input, float **output,
+					      unsigned num_samples, unsigned num_channels);
 typedef NvAFX_Status NVAFX_API (*NvAFX_Reset_t)(NvAFX_Handle effect);
 
 /* cuda */
@@ -288,8 +250,7 @@ void release_lib(void)
 
 static bool nvafx_get_sdk_path(char *buffer, const size_t len)
 {
-	DWORD ret =
-		GetEnvironmentVariableA("NVAFX_SDK_DIR", buffer, (DWORD)len);
+	DWORD ret = GetEnvironmentVariableA("NVAFX_SDK_DIR", buffer, (DWORD)len);
 
 	if (!ret || ret >= len - 1)
 		return false;
@@ -328,8 +289,7 @@ static unsigned int get_lib_version(void)
 
 	struct win_version_info nto_ver = {0};
 	if (get_dll_ver(L"NVAudioEffects.dll", &nto_ver))
-		version = nto_ver.major << 24 | nto_ver.minor << 16 |
-			  nto_ver.build << 8 | nto_ver.revis << 0;
+		version = nto_ver.major << 24 | nto_ver.minor << 16 | nto_ver.build << 8 | nto_ver.revis << 0;
 
 	SetDllDirectoryA(NULL);
 	return version;

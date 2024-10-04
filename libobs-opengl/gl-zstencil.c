@@ -17,8 +17,7 @@
 
 #include "gl-subsystem.h"
 
-static bool gl_init_zsbuffer(struct gs_zstencil_buffer *zs, uint32_t width,
-			     uint32_t height)
+static bool gl_init_zsbuffer(struct gs_zstencil_buffer *zs, uint32_t width, uint32_t height)
 {
 	glGenRenderbuffers(1, &zs->buffer);
 	if (!gl_success("glGenRenderbuffers"))
@@ -53,8 +52,7 @@ static inline GLenum get_attachment(enum gs_zstencil_format format)
 	return 0;
 }
 
-gs_zstencil_t *device_zstencil_create(gs_device_t *device, uint32_t width,
-				      uint32_t height,
+gs_zstencil_t *device_zstencil_create(gs_device_t *device, uint32_t width, uint32_t height,
 				      enum gs_zstencil_format format)
 {
 	struct gs_zstencil_buffer *zs;

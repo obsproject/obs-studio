@@ -41,13 +41,7 @@ typedef DARRAY(struct ep_var) ep_var_array_t;
 /* ------------------------------------------------------------------------- */
 /* effect parser var data */
 
-enum ep_var_type {
-	EP_VAR_NONE,
-	EP_VAR_IN = EP_VAR_NONE,
-	EP_VAR_INOUT,
-	EP_VAR_OUT,
-	EP_VAR_UNIFORM
-};
+enum ep_var_type { EP_VAR_NONE, EP_VAR_IN = EP_VAR_NONE, EP_VAR_INOUT, EP_VAR_OUT, EP_VAR_UNIFORM };
 
 struct ep_var {
 	char *type, *name, *mapping;
@@ -79,8 +73,7 @@ struct ep_param {
 	ep_param_array_t annotations;
 };
 
-static inline void ep_param_init(struct ep_param *epp, char *type, char *name,
-				 bool is_property, bool is_const,
+static inline void ep_param_init(struct ep_param *epp, char *type, char *name, bool is_property, bool is_const,
 				 bool is_uniform)
 {
 	epp->type = type;
@@ -290,8 +283,7 @@ static inline void ep_init(struct effect_parser *ep)
 
 extern void ep_free(struct effect_parser *ep);
 
-extern bool ep_parse(struct effect_parser *ep, gs_effect_t *effect,
-		     const char *effect_string, const char *file);
+extern bool ep_parse(struct effect_parser *ep, gs_effect_t *effect, const char *effect_string, const char *file);
 
 #ifdef __cplusplus
 }

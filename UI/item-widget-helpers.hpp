@@ -29,8 +29,7 @@ QListWidgetItem *TakeListItem(QListWidget *widget, int row);
 void DeleteListItem(QListWidget *widget, QListWidgetItem *item);
 void ClearListItems(QListWidget *widget);
 
-template<typename QObjectPtr>
-void InsertQObjectByName(std::vector<QObjectPtr> &controls, QObjectPtr control)
+template<typename QObjectPtr> void InsertQObjectByName(std::vector<QObjectPtr> &controls, QObjectPtr control)
 {
 	QString name = control->objectName();
 	auto finder = [name](QObjectPtr elem) {

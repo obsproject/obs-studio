@@ -23,28 +23,24 @@ static bool create_buffers(struct gs_vertex_buffer *vb)
 	GLenum usage = vb->dynamic ? GL_STREAM_DRAW : GL_STATIC_DRAW;
 	size_t i;
 
-	if (!gl_create_buffer(GL_ARRAY_BUFFER, &vb->vertex_buffer,
-			      vb->data->num * sizeof(struct vec3),
+	if (!gl_create_buffer(GL_ARRAY_BUFFER, &vb->vertex_buffer, vb->data->num * sizeof(struct vec3),
 			      vb->data->points, usage))
 		return false;
 
 	if (vb->data->normals) {
-		if (!gl_create_buffer(GL_ARRAY_BUFFER, &vb->normal_buffer,
-				      vb->data->num * sizeof(struct vec3),
+		if (!gl_create_buffer(GL_ARRAY_BUFFER, &vb->normal_buffer, vb->data->num * sizeof(struct vec3),
 				      vb->data->normals, usage))
 			return false;
 	}
 
 	if (vb->data->tangents) {
-		if (!gl_create_buffer(GL_ARRAY_BUFFER, &vb->tangent_buffer,
-				      vb->data->num * sizeof(struct vec3),
+		if (!gl_create_buffer(GL_ARRAY_BUFFER, &vb->tangent_buffer, vb->data->num * sizeof(struct vec3),
 				      vb->data->tangents, usage))
 			return false;
 	}
 
 	if (vb->data->colors) {
-		if (!gl_create_buffer(GL_ARRAY_BUFFER, &vb->color_buffer,
-				      vb->data->num * sizeof(uint32_t),
+		if (!gl_create_buffer(GL_ARRAY_BUFFER, &vb->color_buffer, vb->data->num * sizeof(uint32_t),
 				      vb->data->colors, usage))
 			return false;
 	}
@@ -57,8 +53,7 @@ static bool create_buffers(struct gs_vertex_buffer *vb)
 		struct gs_tvertarray *tv = vb->data->tvarray + i;
 		size_t size = vb->data->num * sizeof(float) * tv->width;
 
-		if (!gl_create_buffer(GL_ARRAY_BUFFER, &tex_buffer, size,
-				      tv->array, usage))
+		if (!gl_create_buffer(GL_ARRAY_BUFFER, &tex_buffer, size, tv->array, usage))
 			return false;
 
 		da_push_back(vb->uv_buffers, &tex_buffer);
@@ -76,9 +71,7 @@ static bool create_buffers(struct gs_vertex_buffer *vb)
 	return true;
 }
 
-gs_vertbuffer_t *device_vertexbuffer_create(gs_device_t *device,
-					    struct gs_vb_data *data,
-					    uint32_t flags)
+gs_vertbuffer_t *device_vertexbuffer_create(gs_device_t *device, struct gs_vb_data *data, uint32_t flags)
 {
 	struct gs_vertex_buffer *vb = bzalloc(sizeof(struct gs_vertex_buffer));
 	vb->device = device;
@@ -107,8 +100,7 @@ void gs_vertexbuffer_destroy(gs_vertbuffer_t *vb)
 		if (vb->color_buffer)
 			gl_delete_buffers(1, &vb->color_buffer);
 		if (vb->uv_buffers.num)
-			gl_delete_buffers((GLsizei)vb->uv_buffers.num,
-					  vb->uv_buffers.array);
+			gl_delete_buffers((GLsizei)vb->uv_buffers.num, vb->uv_buffers.array);
 
 		if (vb->vao)
 			gl_delete_vertex_arrays(1, &vb->vao);
@@ -121,12 +113,10 @@ void gs_vertexbuffer_destroy(gs_vertbuffer_t *vb)
 	}
 }
 
-static inline void gs_vertexbuffer_flush_internal(gs_vertbuffer_t *vb,
-						  const struct gs_vb_data *data)
+static inline void gs_vertexbuffer_flush_internal(gs_vertbuffer_t *vb, const struct gs_vb_data *data)
 {
 	size_t i;
-	size_t num_tex = data->num_tex < vb->data->num_tex ? data->num_tex
-							   : vb->data->num_tex;
+	size_t num_tex = data->num_tex < vb->data->num_tex ? data->num_tex : vb->data->num_tex;
 
 	if (!vb->dynamic) {
 		blog(LOG_ERROR, "vertex buffer is not dynamic");
@@ -134,29 +124,23 @@ static inline void gs_vertexbuffer_flush_internal(gs_vertbuffer_t *vb,
 	}
 
 	if (data->points) {
-		if (!update_buffer(GL_ARRAY_BUFFER, vb->vertex_buffer,
-				   data->points,
-				   data->num * sizeof(struct vec3)))
+		if (!update_buffer(GL_ARRAY_BUFFER, vb->vertex_buffer, data->points, data->num * sizeof(struct vec3)))
 			goto failed;
 	}
 
 	if (vb->normal_buffer && data->normals) {
-		if (!update_buffer(GL_ARRAY_BUFFER, vb->normal_buffer,
-				   data->normals,
-				   data->num * sizeof(struct vec3)))
+		if (!update_buffer(GL_ARRAY_BUFFER, vb->normal_buffer, data->normals, data->num * sizeof(struct vec3)))
 			goto failed;
 	}
 
 	if (vb->tangent_buffer && data->tangents) {
-		if (!update_buffer(GL_ARRAY_BUFFER, vb->tangent_buffer,
-				   data->tangents,
+		if (!update_buffer(GL_ARRAY_BUFFER, vb->tangent_buffer, data->tangents,
 				   data->num * sizeof(struct vec3)))
 			goto failed;
 	}
 
 	if (vb->color_buffer && data->colors) {
-		if (!update_buffer(GL_ARRAY_BUFFER, vb->color_buffer,
-				   data->colors, data->num * sizeof(uint32_t)))
+		if (!update_buffer(GL_ARRAY_BUFFER, vb->color_buffer, data->colors, data->num * sizeof(uint32_t)))
 			goto failed;
 	}
 
@@ -180,8 +164,7 @@ void gs_vertexbuffer_flush(gs_vertbuffer_t *vb)
 	gs_vertexbuffer_flush_internal(vb, vb->data);
 }
 
-void gs_vertexbuffer_flush_direct(gs_vertbuffer_t *vb,
-				  const struct gs_vb_data *data)
+void gs_vertexbuffer_flush_direct(gs_vertbuffer_t *vb, const struct gs_vb_data *data)
 {
 	gs_vertexbuffer_flush_internal(vb, data);
 }
@@ -191,9 +174,8 @@ struct gs_vb_data *gs_vertexbuffer_get_data(const gs_vertbuffer_t *vb)
 	return vb->data;
 }
 
-static inline GLuint get_vb_buffer(struct gs_vertex_buffer *vb,
-				   enum attrib_type type, size_t index,
-				   GLint *width, GLenum *gl_type)
+static inline GLuint get_vb_buffer(struct gs_vertex_buffer *vb, enum attrib_type type, size_t index, GLint *width,
+				   GLenum *gl_type)
 {
 	*gl_type = GL_FLOAT;
 	*width = 4;
@@ -218,8 +200,7 @@ static inline GLuint get_vb_buffer(struct gs_vertex_buffer *vb,
 	return 0;
 }
 
-static bool load_vb_buffer(struct shader_attrib *attrib,
-			   struct gs_vertex_buffer *vb, GLint id)
+static bool load_vb_buffer(struct shader_attrib *attrib, struct gs_vertex_buffer *vb, GLint id)
 {
 	GLenum type;
 	GLint width;
@@ -250,8 +231,7 @@ static bool load_vb_buffer(struct shader_attrib *attrib,
 	return success;
 }
 
-bool load_vb_buffers(struct gs_program *program, struct gs_vertex_buffer *vb,
-		     struct gs_index_buffer *ib)
+bool load_vb_buffers(struct gs_program *program, struct gs_vertex_buffer *vb, struct gs_index_buffer *ib)
 {
 	struct gs_shader *shader = program->vertex_shader;
 	size_t i;

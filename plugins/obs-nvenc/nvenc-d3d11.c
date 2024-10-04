@@ -38,10 +38,8 @@ bool d3d11_init(struct nvenc_data *enc, obs_data_t *settings)
 		return false;
 	}
 
-	create_dxgi = (CREATEDXGIFACTORY1PROC)GetProcAddress(
-		dxgi, "CreateDXGIFactory1");
-	create_device = (PFN_D3D11_CREATE_DEVICE)GetProcAddress(
-		d3d11, "D3D11CreateDevice");
+	create_dxgi = (CREATEDXGIFACTORY1PROC)GetProcAddress(dxgi, "CreateDXGIFactory1");
+	create_device = (PFN_D3D11_CREATE_DEVICE)GetProcAddress(d3d11, "D3D11CreateDevice");
 
 	if (!create_dxgi || !create_device) {
 		error("Failed to load D3D11/DXGI procedures");
@@ -61,8 +59,8 @@ bool d3d11_init(struct nvenc_data *enc, obs_data_t *settings)
 		return false;
 	}
 
-	hr = create_device(adapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, 0, NULL, 0,
-			   D3D11_SDK_VERSION, &device, NULL, &context);
+	hr = create_device(adapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, 0, NULL, 0, D3D11_SDK_VERSION, &device, NULL,
+			   &context);
 	adapter->lpVtbl->Release(adapter);
 	if (FAILED(hr)) {
 		error_hr("D3D11CreateDevice failed");
@@ -121,8 +119,7 @@ static bool d3d11_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex)
 	res.resourceToRegister = tex;
 	res.width = enc->cx;
 	res.height = enc->cy;
-	res.bufferFormat = p010 ? NV_ENC_BUFFER_FORMAT_YUV420_10BIT
-				: NV_ENC_BUFFER_FORMAT_NV12;
+	res.bufferFormat = p010 ? NV_ENC_BUFFER_FORMAT_YUV420_10BIT : NV_ENC_BUFFER_FORMAT_NV12;
 
 	if (NV_FAILED(nv.nvEncRegisterResource(enc->session, &res))) {
 		tex->lpVtbl->Release(tex);
@@ -156,8 +153,7 @@ static void d3d11_texture_free(struct nvenc_data *enc, struct nv_texture *nvtex)
 
 	if (nvtex->res) {
 		if (nvtex->mapped_res) {
-			nv.nvEncUnmapInputResource(enc->session,
-						   nvtex->mapped_res);
+			nv.nvEncUnmapInputResource(enc->session, nvtex->mapped_res);
 		}
 		nv.nvEncUnregisterResource(enc->session, nvtex->res);
 		nvtex->tex->lpVtbl->Release(nvtex->tex);
@@ -174,9 +170,7 @@ void d3d11_free_textures(struct nvenc_data *enc)
 /* ------------------------------------------------------------------------- */
 /* Actual encoding stuff                                                     */
 
-static ID3D11Texture2D *get_tex_from_handle(struct nvenc_data *enc,
-					    uint32_t handle,
-					    IDXGIKeyedMutex **km_out)
+static ID3D11Texture2D *get_tex_from_handle(struct nvenc_data *enc, uint32_t handle, IDXGIKeyedMutex **km_out)
 {
 	ID3D11Device *device = enc->device;
 	IDXGIKeyedMutex *km;
@@ -191,25 +185,20 @@ static ID3D11Texture2D *get_tex_from_handle(struct nvenc_data *enc,
 		}
 	}
 
-	hr = device->lpVtbl->OpenSharedResource(device,
-						(HANDLE)(uintptr_t)handle,
-						&IID_ID3D11Texture2D,
-						&input_tex);
+	hr = device->lpVtbl->OpenSharedResource(device, (HANDLE)(uintptr_t)handle, &IID_ID3D11Texture2D, &input_tex);
 	if (FAILED(hr)) {
 		error_hr("OpenSharedResource failed");
 		return NULL;
 	}
 
-	hr = input_tex->lpVtbl->QueryInterface(input_tex, &IID_IDXGIKeyedMutex,
-					       &km);
+	hr = input_tex->lpVtbl->QueryInterface(input_tex, &IID_IDXGIKeyedMutex, &km);
 	if (FAILED(hr)) {
 		error_hr("QueryInterface(IDXGIKeyedMutex) failed");
 		input_tex->lpVtbl->Release(input_tex);
 		return NULL;
 	}
 
-	input_tex->lpVtbl->SetEvictionPriority(input_tex,
-					       DXGI_RESOURCE_PRIORITY_MAXIMUM);
+	input_tex->lpVtbl->SetEvictionPriority(input_tex, DXGI_RESOURCE_PRIORITY_MAXIMUM);
 
 	*km_out = km;
 
@@ -218,8 +207,7 @@ static ID3D11Texture2D *get_tex_from_handle(struct nvenc_data *enc,
 	return input_tex;
 }
 
-bool d3d11_encode(void *data, struct encoder_texture *texture, int64_t pts,
-		  uint64_t lock_key, uint64_t *next_key,
+bool d3d11_encode(void *data, struct encoder_texture *texture, int64_t pts, uint64_t lock_key, uint64_t *next_key,
 		  struct encoder_packet *packet, bool *received_packet)
 {
 	struct nvenc_data *enc = data;
@@ -254,8 +242,7 @@ bool d3d11_encode(void *data, struct encoder_texture *texture, int64_t pts,
 
 	km->lpVtbl->AcquireSync(km, lock_key, INFINITE);
 
-	context->lpVtbl->CopyResource(context, (ID3D11Resource *)output_tex,
-				      (ID3D11Resource *)input_tex);
+	context->lpVtbl->CopyResource(context, (ID3D11Resource *)output_tex, (ID3D11Resource *)input_tex);
 
 	km->lpVtbl->ReleaseSync(km, *next_key);
 
@@ -273,6 +260,5 @@ bool d3d11_encode(void *data, struct encoder_texture *texture, int64_t pts,
 	/* ------------------------------------ */
 	/* do actual encode call                */
 
-	return nvenc_encode_base(enc, bs, nvtex->mapped_res, pts, packet,
-				 received_packet);
+	return nvenc_encode_base(enc, bs, nvtex->mapped_res, pts, packet, received_packet);
 }

@@ -71,8 +71,7 @@ typedef struct Av1GetBitContext {
 	int size_in_bits_plus8;
 } Av1GetBitContext;
 
-static inline int init_get_bits_xe(Av1GetBitContext *s, const uint8_t *buffer,
-				   int bit_size)
+static inline int init_get_bits_xe(Av1GetBitContext *s, const uint8_t *buffer, int bit_size)
 {
 	int buffer_size;
 	int ret = 0;
@@ -94,14 +93,12 @@ static inline int init_get_bits_xe(Av1GetBitContext *s, const uint8_t *buffer,
 	return ret;
 }
 
-static inline int init_get_bits(Av1GetBitContext *s, const uint8_t *buffer,
-				int bit_size)
+static inline int init_get_bits(Av1GetBitContext *s, const uint8_t *buffer, int bit_size)
 {
 	return init_get_bits_xe(s, buffer, bit_size);
 }
 
-static inline int init_get_bits8(Av1GetBitContext *s, const uint8_t *buffer,
-				 int byte_size)
+static inline int init_get_bits8(Av1GetBitContext *s, const uint8_t *buffer, int byte_size)
 {
 	if (byte_size > INT_MAX / 8 || byte_size < 0)
 		byte_size = -1;
@@ -176,8 +173,7 @@ static inline void uvlc(Av1GetBitContext *gb)
 	skip_bits_long(gb, leading_zeros);
 }
 
-static inline int parse_obu_header(const uint8_t *buf, int buf_size,
-				   int64_t *obu_size, int *start_pos, int *type,
+static inline int parse_obu_header(const uint8_t *buf, int buf_size, int64_t *obu_size, int *start_pos, int *type,
 				   int *temporal_id, int *spatial_id)
 {
 	Av1GetBitContext gb;
@@ -225,8 +221,7 @@ static inline int get_obu_bit_length(const uint8_t *buf, int size, int type)
 	int v;
 
 	/* There are no trailing bits on these */
-	if (type == AV1_OBU_TILE_GROUP || type == AV1_OBU_TILE_LIST ||
-	    type == AV1_OBU_FRAME) {
+	if (type == AV1_OBU_TILE_GROUP || type == AV1_OBU_TILE_LIST || type == AV1_OBU_FRAME) {
 		if (size > INT_MAX / 8)
 			return -1;
 		else
@@ -252,8 +247,7 @@ static inline int get_obu_bit_length(const uint8_t *buf, int size, int type)
 	return size;
 }
 
-static int parse_color_config(AV1SequenceParameters *seq_params,
-			      Av1GetBitContext *gb)
+static int parse_color_config(AV1SequenceParameters *seq_params, Av1GetBitContext *gb)
 {
 	int twelve_bit = 0;
 	int high_bitdepth = get_bits(gb, 1);
@@ -284,8 +278,7 @@ static int parse_color_config(AV1SequenceParameters *seq_params,
 		seq_params->chroma_subsampling_y = 1;
 		seq_params->chroma_sample_position = 0;
 		return 0;
-	} else if (seq_params->color_primaries == 1 &&
-		   seq_params->transfer_characteristics == 13 &&
+	} else if (seq_params->color_primaries == 1 && seq_params->transfer_characteristics == 13 &&
 		   seq_params->matrix_coefficients == 0) {
 		seq_params->chroma_subsampling_x = 0;
 		seq_params->chroma_subsampling_y = 0;
@@ -300,11 +293,9 @@ static int parse_color_config(AV1SequenceParameters *seq_params,
 			seq_params->chroma_subsampling_y = 0;
 		} else {
 			if (twelve_bit) {
-				seq_params->chroma_subsampling_x =
-					get_bits(gb, 1);
+				seq_params->chroma_subsampling_x = get_bits(gb, 1);
 				if (seq_params->chroma_subsampling_x)
-					seq_params->chroma_subsampling_y =
-						get_bits(gb, 1);
+					seq_params->chroma_subsampling_y = get_bits(gb, 1);
 				else
 					seq_params->chroma_subsampling_y = 0;
 			} else {
@@ -312,8 +303,7 @@ static int parse_color_config(AV1SequenceParameters *seq_params,
 				seq_params->chroma_subsampling_y = 0;
 			}
 		}
-		if (seq_params->chroma_subsampling_x &&
-		    seq_params->chroma_subsampling_y)
+		if (seq_params->chroma_subsampling_x && seq_params->chroma_subsampling_y)
 			seq_params->chroma_sample_position = get_bits(gb, 2);
 	}
 
@@ -322,8 +312,7 @@ static int parse_color_config(AV1SequenceParameters *seq_params,
 	return 0;
 }
 
-static int parse_sequence_header(AV1SequenceParameters *seq_params,
-				 const uint8_t *buf, int size)
+static int parse_sequence_header(AV1SequenceParameters *seq_params, const uint8_t *buf, int size)
 {
 	Av1GetBitContext gb;
 	int reduced_still_picture_header;
@@ -349,10 +338,8 @@ static int parse_sequence_header(AV1SequenceParameters *seq_params,
 		seq_params->level = get_bits(&gb, 5);
 		seq_params->tier = 0;
 	} else {
-		int initial_display_delay_present_flag,
-			operating_points_cnt_minus_1;
-		int decoder_model_info_present_flag,
-			buffer_delay_length_minus_1;
+		int initial_display_delay_present_flag, operating_points_cnt_minus_1;
+		int decoder_model_info_present_flag, buffer_delay_length_minus_1;
 
 		if (get_bits(&gb, 1)) {          // timing_info_present_flag
 			skip_bits_long(&gb, 32); // num_units_in_display_tick
@@ -386,14 +373,8 @@ static int parse_sequence_header(AV1SequenceParameters *seq_params,
 
 			if (decoder_model_info_present_flag) {
 				if (get_bits(&gb, 1)) {
-					skip_bits_long(
-						&gb,
-						buffer_delay_length_minus_1 +
-							1);
-					skip_bits_long(
-						&gb,
-						buffer_delay_length_minus_1 +
-							1);
+					skip_bits_long(&gb, buffer_delay_length_minus_1 + 1);
+					skip_bits_long(&gb, buffer_delay_length_minus_1 + 1);
 					skip_bits(&gb, 1);
 				}
 			}
@@ -422,9 +403,8 @@ static int parse_sequence_header(AV1SequenceParameters *seq_params,
 			skip_bits(&gb, 7);
 	}
 
-	skip_bits(
-		&gb,
-		3); // use_128x128_superblock (1), enable_filter_intra (1), enable_intra_edge_filter (1)
+	skip_bits(&gb,
+		  3); // use_128x128_superblock (1), enable_filter_intra (1), enable_intra_edge_filter (1)
 
 	if (!reduced_still_picture_header) {
 		int enable_order_hint, seq_force_screen_content_tools;
@@ -482,9 +462,7 @@ size_t obs_parse_av1_header(uint8_t **header, const uint8_t *data, size_t size)
 		int64_t obu_size;
 		int start_pos, type, temporal_id, spatial_id;
 		assert(size <= INT_MAX);
-		int len = parse_obu_header(buf, (int)size, &obu_size,
-					   &start_pos, &type, &temporal_id,
-					   &spatial_id);
+		int len = parse_obu_header(buf, (int)size, &obu_size, &start_pos, &type, &temporal_id, &spatial_id);
 		if (len < 0)
 			return 0;
 
@@ -495,8 +473,7 @@ size_t obs_parse_av1_header(uint8_t **header, const uint8_t *data, size_t size)
 				return 0;
 			}
 			assert(obu_size <= INT_MAX);
-			if (parse_sequence_header(&seq_params, buf + start_pos,
-						  (int)obu_size) < 0)
+			if (parse_sequence_header(&seq_params, buf + start_pos, (int)obu_size) < 0)
 				return 0;
 
 			seq = buf;
@@ -521,12 +498,9 @@ size_t obs_parse_av1_header(uint8_t **header, const uint8_t *data, size_t size)
 	uint8_t av1header[4];
 	av1header[0] = (1 << 7) | 1; // marker and version
 	av1header[1] = (seq_params.profile << 5) | (seq_params.level);
-	av1header[2] = (seq_params.tier << 7) | (seq_params.bitdepth > 8) << 6 |
-		       (seq_params.bitdepth == 12) << 5 |
-		       (seq_params.monochrome) << 4 |
-		       (seq_params.chroma_subsampling_x) << 3 |
-		       (seq_params.chroma_subsampling_y) << 2 |
-		       (seq_params.chroma_sample_position);
+	av1header[2] = (seq_params.tier << 7) | (seq_params.bitdepth > 8) << 6 | (seq_params.bitdepth == 12) << 5 |
+		       (seq_params.monochrome) << 4 | (seq_params.chroma_subsampling_x) << 3 |
+		       (seq_params.chroma_subsampling_y) << 2 | (seq_params.chroma_sample_position);
 	av1header[3] = 0;
 
 	struct array_output_data output;
@@ -544,8 +518,7 @@ size_t obs_parse_av1_header(uint8_t **header, const uint8_t *data, size_t size)
 	return output.bytes.num;
 }
 
-static void compute_av1_keyframe_priority(const uint8_t *buf, bool *is_keyframe,
-					  int *priority)
+static void compute_av1_keyframe_priority(const uint8_t *buf, bool *is_keyframe, int *priority)
 {
 	/* Skip if the packet already has a priority, e.g., assigned by the
 	 * encoder implementation (currently QSV/AMF). */
@@ -580,8 +553,7 @@ static void compute_av1_keyframe_priority(const uint8_t *buf, bool *is_keyframe,
 	}
 }
 
-static void serialize_av1_data(struct serializer *s, const uint8_t *data,
-			       size_t size, bool *is_keyframe, int *priority)
+static void serialize_av1_data(struct serializer *s, const uint8_t *data, size_t size, bool *is_keyframe, int *priority)
 {
 	uint8_t *buf = (uint8_t *)data;
 	uint8_t *end = (uint8_t *)data + size;
@@ -590,8 +562,7 @@ static void serialize_av1_data(struct serializer *s, const uint8_t *data,
 		int64_t obu_size;
 		int start_pos, type, temporal_id, spatial_id;
 		assert(end - buf <= INT_MAX);
-		int len = parse_obu_header(buf, (int)(end - buf), &obu_size,
-					   &start_pos, &type, &temporal_id,
+		int len = parse_obu_header(buf, (int)(end - buf), &obu_size, &start_pos, &type, &temporal_id,
 					   &spatial_id);
 		if (len < 0)
 			return;
@@ -603,8 +574,7 @@ static void serialize_av1_data(struct serializer *s, const uint8_t *data,
 			break;
 		case AV1_OBU_FRAME:
 		case AV1_OBU_FRAME_HEADER:
-			compute_av1_keyframe_priority(buf + start_pos,
-						      is_keyframe, priority);
+			compute_av1_keyframe_priority(buf + start_pos, is_keyframe, priority);
 			/* Falls through. */
 		default:
 			s_write(s, buf, len);
@@ -615,8 +585,7 @@ static void serialize_av1_data(struct serializer *s, const uint8_t *data,
 	}
 }
 
-void obs_parse_av1_packet(struct encoder_packet *av1_packet,
-			  const struct encoder_packet *src)
+void obs_parse_av1_packet(struct encoder_packet *av1_packet, const struct encoder_packet *src)
 {
 	struct array_output_data output;
 	struct serializer s;
@@ -626,8 +595,7 @@ void obs_parse_av1_packet(struct encoder_packet *av1_packet,
 	serialize(&s, &ref, sizeof(ref));
 
 	*av1_packet = *src;
-	serialize_av1_data(&s, src->data, src->size, &av1_packet->keyframe,
-			   &av1_packet->priority);
+	serialize_av1_data(&s, src->data, src->size, &av1_packet->keyframe, &av1_packet->priority);
 
 	av1_packet->data = output.bytes.array + sizeof(ref);
 	av1_packet->size = output.bytes.num - sizeof(ref);

@@ -92,11 +92,9 @@ struct gl_platform {
 	EGLContext context;
 };
 
-struct gl_windowinfo *
-gl_wayland_egl_windowinfo_create(const struct gs_init_data *info)
+struct gl_windowinfo *gl_wayland_egl_windowinfo_create(const struct gs_init_data *info)
 {
-	struct wl_egl_window *window =
-		wl_egl_window_create(info->window.display, info->cx, info->cy);
+	struct wl_egl_window *window = wl_egl_window_create(info->window.display, info->cx, info->cy);
 	if (window == NULL) {
 		blog(LOG_ERROR, "wl_egl_window_create failed");
 		return NULL;
@@ -113,8 +111,7 @@ static void gl_wayland_egl_windowinfo_destroy(struct gl_windowinfo *info)
 	bfree(info);
 }
 
-static bool egl_make_current(EGLDisplay display, EGLSurface surface,
-			     EGLContext context)
+static bool egl_make_current(EGLDisplay display, EGLSurface surface, EGLContext context)
 {
 	if (eglBindAPI(EGL_OPENGL_API) == EGL_FALSE) {
 		blog(LOG_ERROR, "eglBindAPI failed");
@@ -140,27 +137,22 @@ static bool egl_context_create(struct gl_platform *plat, const EGLint *attribs)
 		blog(LOG_ERROR, "eglBindAPI failed");
 	}
 
-	EGLBoolean result = eglChooseConfig(plat->display,
-					    config_attribs_native,
-					    &plat->config, 1, &num_config);
+	EGLBoolean result = eglChooseConfig(plat->display, config_attribs_native, &plat->config, 1, &num_config);
 	if (result != EGL_TRUE || num_config == 0) {
-		result = eglChooseConfig(plat->display, config_attribs,
-					 &plat->config, 1, &num_config);
+		result = eglChooseConfig(plat->display, config_attribs, &plat->config, 1, &num_config);
 		if (result != EGL_TRUE || num_config == 0) {
 			blog(LOG_ERROR, "eglChooseConfig failed");
 			goto error;
 		}
 	}
 
-	plat->context = eglCreateContext(plat->display, plat->config,
-					 EGL_NO_CONTEXT, attribs);
+	plat->context = eglCreateContext(plat->display, plat->config, EGL_NO_CONTEXT, attribs);
 	if (plat->context == EGL_NO_CONTEXT) {
 		blog(LOG_ERROR, "eglCreateContext failed");
 		goto error;
 	}
 
-	success =
-		egl_make_current(plat->display, EGL_NO_SURFACE, plat->context);
+	success = egl_make_current(plat->display, EGL_NO_SURFACE, plat->context);
 
 error:
 	return success;
@@ -176,13 +168,11 @@ static bool extension_supported(const char *extensions, const char *search)
 {
 	const char *result = strstr(extensions, search);
 	unsigned long len = strlen(search);
-	return result != NULL &&
-	       (result == extensions || *(result - 1) == ' ') &&
+	return result != NULL && (result == extensions || *(result - 1) == ' ') &&
 	       (result[len] == ' ' || result[len] == '\0');
 }
 
-static struct gl_platform *gl_wayland_egl_platform_create(gs_device_t *device,
-							  uint32_t adapter)
+static struct gl_platform *gl_wayland_egl_platform_create(gs_device_t *device, uint32_t adapter)
 {
 	struct gl_platform *plat = bmalloc(sizeof(struct gl_platform));
 
@@ -191,8 +181,7 @@ static struct gl_platform *gl_wayland_egl_platform_create(gs_device_t *device,
 	device->plat = plat;
 
 	const EGLAttrib plat_attribs[] = {EGL_NONE};
-	plat->display = eglGetPlatformDisplay(EGL_PLATFORM_WAYLAND_EXT,
-					      plat->wl_display, plat_attribs);
+	plat->display = eglGetPlatformDisplay(EGL_PLATFORM_WAYLAND_EXT, plat->wl_display, plat_attribs);
 	if (plat->display == EGL_NO_DISPLAY) {
 		blog(LOG_ERROR, "eglGetDisplay failed");
 		goto fail_display_init;
@@ -216,8 +205,7 @@ static struct gl_platform *gl_wayland_egl_platform_create(gs_device_t *device,
 		if (extension_supported(extensions, "EGL_KHR_create_context")) {
 			attribs = khr_ctx_attribs;
 		} else {
-			blog(LOG_ERROR,
-			     "EGL_KHR_create_context extension is required to use EGL 1.4.");
+			blog(LOG_ERROR, "EGL_KHR_create_context extension is required to use EGL 1.4.");
 			goto fail_context_create;
 		}
 	} else if (major < 1 || (major == 1 && minor < 4)) {
@@ -266,8 +254,7 @@ static void gl_wayland_egl_platform_destroy(struct gl_platform *plat)
 static bool gl_wayland_egl_platform_init_swapchain(struct gs_swap_chain *swap)
 {
 	struct gl_platform *plat = swap->device->plat;
-	EGLSurface egl_surface = eglCreateWindowSurface(
-		plat->display, plat->config, swap->wi->window, NULL);
+	EGLSurface egl_surface = eglCreateWindowSurface(plat->display, plat->config, swap->wi->window, NULL);
 	if (egl_surface == EGL_NO_SURFACE) {
 		blog(LOG_ERROR, "eglCreateWindowSurface failed");
 		return false;
@@ -276,8 +263,7 @@ static bool gl_wayland_egl_platform_init_swapchain(struct gs_swap_chain *swap)
 	return true;
 }
 
-static void
-gl_wayland_egl_platform_cleanup_swapchain(struct gs_swap_chain *swap)
+static void gl_wayland_egl_platform_cleanup_swapchain(struct gs_swap_chain *swap)
 {
 	struct gl_platform *plat = swap->device->plat;
 	eglDestroySurface(plat->display, swap->wi->egl_surface);
@@ -303,11 +289,9 @@ static void *gl_wayland_egl_device_get_device_obj(gs_device_t *device)
 	return device->plat->context;
 }
 
-static void gl_wayland_egl_getclientsize(const struct gs_swap_chain *swap,
-					 uint32_t *width, uint32_t *height)
+static void gl_wayland_egl_getclientsize(const struct gs_swap_chain *swap, uint32_t *width, uint32_t *height)
 {
-	wl_egl_window_get_attached_size(swap->wi->window, (void *)width,
-					(void *)height);
+	wl_egl_window_get_attached_size(swap->wi->window, (void *)width, (void *)height);
 }
 
 static void gl_wayland_egl_clear_context(gs_device_t *device)
@@ -318,13 +302,10 @@ static void gl_wayland_egl_clear_context(gs_device_t *device)
 
 static void gl_wayland_egl_update(gs_device_t *device)
 {
-	wl_egl_window_resize(device->cur_swap->wi->window,
-			     device->cur_swap->info.cx,
-			     device->cur_swap->info.cy, 0, 0);
+	wl_egl_window_resize(device->cur_swap->wi->window, device->cur_swap->info.cx, device->cur_swap->info.cy, 0, 0);
 }
 
-static void gl_wayland_egl_device_load_swapchain(gs_device_t *device,
-						 gs_swapchain_t *swap)
+static void gl_wayland_egl_device_load_swapchain(gs_device_t *device, gs_swapchain_t *swap)
 {
 	if (device->cur_swap == swap)
 		return;
@@ -335,8 +316,7 @@ static void gl_wayland_egl_device_load_swapchain(gs_device_t *device,
 	if (swap == NULL) {
 		egl_make_current(plat->display, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 	} else {
-		egl_make_current(plat->display, swap->wi->egl_surface,
-				 plat->context);
+		egl_make_current(plat->display, swap->wi->egl_surface, plat->context);
 	}
 }
 
@@ -352,42 +332,38 @@ static void gl_wayland_egl_device_present(gs_device_t *device)
 	}
 }
 
-static struct gs_texture *gl_wayland_egl_device_texture_create_from_dmabuf(
-	gs_device_t *device, unsigned int width, unsigned int height,
-	uint32_t drm_format, enum gs_color_format color_format,
-	uint32_t n_planes, const int *fds, const uint32_t *strides,
-	const uint32_t *offsets, const uint64_t *modifiers)
+static struct gs_texture *
+gl_wayland_egl_device_texture_create_from_dmabuf(gs_device_t *device, unsigned int width, unsigned int height,
+						 uint32_t drm_format, enum gs_color_format color_format,
+						 uint32_t n_planes, const int *fds, const uint32_t *strides,
+						 const uint32_t *offsets, const uint64_t *modifiers)
 {
 	struct gl_platform *plat = device->plat;
 
-	return gl_egl_create_dmabuf_image(plat->display, width, height,
-					  drm_format, color_format, n_planes,
-					  fds, strides, offsets, modifiers);
+	return gl_egl_create_dmabuf_image(plat->display, width, height, drm_format, color_format, n_planes, fds,
+					  strides, offsets, modifiers);
 }
 
-static bool gl_wayland_egl_device_query_dmabuf_capabilities(
-	gs_device_t *device, enum gs_dmabuf_flags *dmabuf_flags,
-	uint32_t **drm_formats, size_t *n_formats)
+static bool gl_wayland_egl_device_query_dmabuf_capabilities(gs_device_t *device, enum gs_dmabuf_flags *dmabuf_flags,
+							    uint32_t **drm_formats, size_t *n_formats)
 {
 	struct gl_platform *plat = device->plat;
 
-	return gl_egl_query_dmabuf_capabilities(plat->display, dmabuf_flags,
-						drm_formats, n_formats);
+	return gl_egl_query_dmabuf_capabilities(plat->display, dmabuf_flags, drm_formats, n_formats);
 }
 
-static bool gl_wayland_egl_device_query_dmabuf_modifiers_for_format(
-	gs_device_t *device, uint32_t drm_format, uint64_t **modifiers,
-	size_t *n_modifiers)
+static bool gl_wayland_egl_device_query_dmabuf_modifiers_for_format(gs_device_t *device, uint32_t drm_format,
+								    uint64_t **modifiers, size_t *n_modifiers)
 {
 	struct gl_platform *plat = device->plat;
 
-	return gl_egl_query_dmabuf_modifiers_for_format(
-		plat->display, drm_format, modifiers, n_modifiers);
+	return gl_egl_query_dmabuf_modifiers_for_format(plat->display, drm_format, modifiers, n_modifiers);
 }
 
-static struct gs_texture *gl_wayland_egl_device_texture_create_from_pixmap(
-	gs_device_t *device, uint32_t width, uint32_t height,
-	enum gs_color_format color_format, uint32_t target, void *pixmap)
+static struct gs_texture *gl_wayland_egl_device_texture_create_from_pixmap(gs_device_t *device, uint32_t width,
+									   uint32_t height,
+									   enum gs_color_format color_format,
+									   uint32_t target, void *pixmap)
 {
 	UNUSED_PARAMETER(device);
 	UNUSED_PARAMETER(width);
@@ -400,10 +376,7 @@ static struct gs_texture *gl_wayland_egl_device_texture_create_from_pixmap(
 }
 
 static bool gl_wayland_egl_enum_adapters(gs_device_t *device,
-					 bool (*callback)(void *param,
-							  const char *name,
-							  uint32_t id),
-					 void *param)
+					 bool (*callback)(void *param, const char *name, uint32_t id), void *param)
 {
 	return gl_egl_enum_adapters(device->plat->display, callback, param);
 }
@@ -423,14 +396,10 @@ static const struct gl_winsys_vtable egl_wayland_winsys_vtable = {
 	.update = gl_wayland_egl_update,
 	.device_load_swapchain = gl_wayland_egl_device_load_swapchain,
 	.device_present = gl_wayland_egl_device_present,
-	.device_texture_create_from_dmabuf =
-		gl_wayland_egl_device_texture_create_from_dmabuf,
-	.device_query_dmabuf_capabilities =
-		gl_wayland_egl_device_query_dmabuf_capabilities,
-	.device_query_dmabuf_modifiers_for_format =
-		gl_wayland_egl_device_query_dmabuf_modifiers_for_format,
-	.device_texture_create_from_pixmap =
-		gl_wayland_egl_device_texture_create_from_pixmap,
+	.device_texture_create_from_dmabuf = gl_wayland_egl_device_texture_create_from_dmabuf,
+	.device_query_dmabuf_capabilities = gl_wayland_egl_device_query_dmabuf_capabilities,
+	.device_query_dmabuf_modifiers_for_format = gl_wayland_egl_device_query_dmabuf_modifiers_for_format,
+	.device_texture_create_from_pixmap = gl_wayland_egl_device_texture_create_from_pixmap,
 	.device_enum_adapters = gl_wayland_egl_enum_adapters,
 };
 

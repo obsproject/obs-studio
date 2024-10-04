@@ -45,15 +45,12 @@
 
 std::string CurrentTimeString();
 std::string CurrentDateTimeString();
-std::string GenerateTimeDateFilename(const char *extension,
-				     bool noSpace = false);
-std::string GenerateSpecifiedFilename(const char *extension, bool noSpace,
-				      const char *format);
-std::string GetFormatString(const char *format, const char *prefix,
-			    const char *suffix);
+std::string GenerateTimeDateFilename(const char *extension, bool noSpace = false);
+std::string GenerateSpecifiedFilename(const char *extension, bool noSpace, const char *format);
+std::string GetFormatString(const char *format, const char *prefix, const char *suffix);
 std::string GetFormatExt(const char *container);
-std::string GetOutputFilename(const char *path, const char *container,
-			      bool noSpace, bool overwrite, const char *format);
+std::string GetOutputFilename(const char *path, const char *container, bool noSpace, bool overwrite,
+			      const char *format);
 QObject *CreateShortcutFilter();
 
 struct BaseLexer {
@@ -71,8 +68,7 @@ class OBSTranslator : public QTranslator {
 public:
 	virtual bool isEmpty() const override { return false; }
 
-	virtual QString translate(const char *context, const char *sourceText,
-				  const char *disambiguation,
+	virtual QString translate(const char *context, const char *sourceText, const char *disambiguation,
 				  int n) const override;
 };
 
@@ -119,8 +115,7 @@ private:
 	bool MigrateGlobalSettings();
 	bool MigrateLegacySettings(uint32_t lastVersion);
 
-	bool InitUserConfig(std::filesystem::path &userConfigLocation,
-			    uint32_t lastVersion);
+	bool InitUserConfig(std::filesystem::path &userConfigLocation, uint32_t lastVersion);
 	void InitUserConfigDefaults();
 
 	bool InitLocale();
@@ -158,10 +153,7 @@ public:
 	void UpdateHotkeyFocusSetting(bool reset = true);
 	void DisableHotkeys();
 
-	inline bool HotkeysEnabledInFocus() const
-	{
-		return enableHotkeysInFocus;
-	}
+	inline bool HotkeysEnabledInFocus() const { return enableHotkeysInFocus; }
 
 	inline QMainWindow *GetMainWindow() const { return mainWindow.data(); }
 
@@ -177,27 +169,18 @@ public:
 	QList<OBSTheme> GetThemes() const { return themes.values(); }
 	OBSTheme *GetTheme(const QString &name);
 	bool SetTheme(const QString &name);
-	bool IsThemeDark() const
-	{
-		return currentTheme ? currentTheme->isDark : false;
-	}
+	bool IsThemeDark() const { return currentTheme ? currentTheme->isDark : false; }
 
 	void SetBranchData(const std::string &data);
 	std::vector<UpdateBranch> GetBranches();
 
 	inline lookup_t *GetTextLookup() const { return textLookup; }
 
-	inline const char *GetString(const char *lookupVal) const
-	{
-		return textLookup.GetString(lookupVal);
-	}
+	inline const char *GetString(const char *lookupVal) const { return textLookup.GetString(lookupVal); }
 
 	bool TranslateString(const char *lookupVal, const char **out) const;
 
-	profiler_name_store_t *GetProfilerNameStore() const
-	{
-		return profilerNameStore;
-	}
+	profiler_name_store_t *GetProfilerNameStore() const { return profilerNameStore; }
 
 	const char *GetLastLog() const;
 	const char *GetCurrentLog() const;
@@ -232,10 +215,7 @@ public:
 			os_inhibit_sleep_set_active(sleepInhibitor, false);
 	}
 
-	inline void PushUITranslation(obs_frontend_translate_ui_cb cb)
-	{
-		translatorHooks.emplace_front(cb);
-	}
+	inline void PushUITranslation(obs_frontend_translate_ui_cb cb) { translatorHooks.emplace_front(cb); }
 
 	inline void PopUITranslation() { translatorHooks.pop_front(); }
 #ifndef _WIN32

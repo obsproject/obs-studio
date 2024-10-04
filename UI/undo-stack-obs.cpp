@@ -6,8 +6,7 @@
 
 undo_stack::undo_stack(ui_ptr ui) : ui(ui)
 {
-	QObject::connect(&repeat_reset_timer, &QTimer::timeout, this,
-			 &undo_stack::reset_repeatable_state);
+	QObject::connect(&repeat_reset_timer, &QTimer::timeout, this, &undo_stack::reset_repeatable_state);
 	repeat_reset_timer.setSingleShot(true);
 	repeat_reset_timer.setInterval(3000);
 }
@@ -30,10 +29,8 @@ void undo_stack::clear()
 	ui->actionMainRedo->setDisabled(true);
 }
 
-void undo_stack::add_action(const QString &name, const undo_redo_cb &undo,
-			    const undo_redo_cb &redo,
-			    const std::string &undo_data,
-			    const std::string &redo_data, bool repeatable)
+void undo_stack::add_action(const QString &name, const undo_redo_cb &undo, const undo_redo_cb &redo,
+			    const std::string &undo_data, const std::string &redo_data, bool repeatable)
 {
 	if (!is_enabled())
 		return;
@@ -85,8 +82,7 @@ void undo_stack::undo()
 		ui->actionMainUndo->setDisabled(true);
 		ui->actionMainUndo->setText(QTStr("Undo.Undo"));
 	} else {
-		ui->actionMainUndo->setText(
-			QTStr("Undo.Item.Undo").arg(undo_items.front().name));
+		ui->actionMainUndo->setText(QTStr("Undo.Item.Undo").arg(undo_items.front().name));
 	}
 }
 
@@ -109,8 +105,7 @@ void undo_stack::redo()
 		ui->actionMainRedo->setDisabled(true);
 		ui->actionMainRedo->setText(QTStr("Undo.Redo"));
 	} else {
-		ui->actionMainRedo->setText(
-			QTStr("Undo.Item.Redo").arg(redo_items.front().name));
+		ui->actionMainRedo->setText(QTStr("Undo.Item.Redo").arg(redo_items.front().name));
 	}
 }
 

@@ -82,14 +82,12 @@ video_queue_t *video_queue_create(uint32_t cx, uint32_t cy, uint64_t interval)
 		return NULL;
 	}
 
-	vq.handle = CreateFileMappingW(INVALID_HANDLE_VALUE, NULL,
-				       PAGE_READWRITE, 0, size, VIDEO_NAME);
+	vq.handle = CreateFileMappingW(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, size, VIDEO_NAME);
 	if (!vq.handle) {
 		return NULL;
 	}
 
-	vq.header = (struct queue_header *)MapViewOfFile(
-		vq.handle, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+	vq.header = (struct queue_header *)MapViewOfFile(vq.handle, FILE_MAP_ALL_ACCESS, 0, 0, 0);
 	if (!vq.header) {
 		CloseHandle(vq.handle);
 		return NULL;
@@ -119,8 +117,7 @@ video_queue_t *video_queue_open()
 		return NULL;
 	}
 
-	vq.header = (struct queue_header *)MapViewOfFile(
-		vq.handle, FILE_MAP_READ, 0, 0, 0);
+	vq.header = (struct queue_header *)MapViewOfFile(vq.handle, FILE_MAP_READ, 0, 0, 0);
 	if (!vq.header) {
 		CloseHandle(vq.handle);
 		return NULL;
@@ -149,8 +146,7 @@ void video_queue_close(video_queue_t *vq)
 	free(vq);
 }
 
-void video_queue_get_info(video_queue_t *vq, uint32_t *cx, uint32_t *cy,
-			  uint64_t *interval)
+void video_queue_get_info(video_queue_t *vq, uint32_t *cx, uint32_t *cy, uint64_t *interval)
 {
 	struct queue_header *qh = vq->header;
 	*cx = qh->cx;
@@ -160,8 +156,7 @@ void video_queue_get_info(video_queue_t *vq, uint32_t *cx, uint32_t *cy,
 
 #define get_idx(inc) ((unsigned long)inc % 3)
 
-void video_queue_write(video_queue_t *vq, uint8_t **data, uint32_t *linesize,
-		       uint64_t timestamp)
+void video_queue_write(video_queue_t *vq, uint8_t **data, uint32_t *linesize, uint64_t timestamp)
 {
 	struct queue_header *qh = vq->header;
 	long inc = ++qh->write_idx;
@@ -188,8 +183,7 @@ enum queue_state video_queue_state(video_queue_t *vq)
 		for (size_t i = 0; i < 3; i++) {
 			size_t off = vq->header->offsets[i];
 			vq->ts[i] = (uint64_t *)(((uint8_t *)vq->header) + off);
-			vq->frame[i] = ((uint8_t *)vq->header) + off +
-				       FRAME_HEADER_SIZE;
+			vq->frame[i] = ((uint8_t *)vq->header) + off + FRAME_HEADER_SIZE;
 		}
 		vq->ready_to_read = true;
 	}
@@ -197,8 +191,7 @@ enum queue_state video_queue_state(video_queue_t *vq)
 	return state;
 }
 
-bool video_queue_read(video_queue_t *vq, nv12_scale_t *scale, void *dst,
-		      uint64_t *ts)
+bool video_queue_read(video_queue_t *vq, nv12_scale_t *scale, void *dst, uint64_t *ts)
 {
 	struct queue_header *qh = vq->header;
 	long inc = qh->read_idx;

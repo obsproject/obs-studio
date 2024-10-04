@@ -22,7 +22,5 @@
 
 struct encoder_packet;
 
-extern void obs_parse_av1_packet(struct encoder_packet *avc_packet,
-				 const struct encoder_packet *src);
-extern size_t obs_parse_av1_header(uint8_t **header, const uint8_t *data,
-				   size_t size);
+extern void obs_parse_av1_packet(struct encoder_packet *avc_packet, const struct encoder_packet *src);
+extern size_t obs_parse_av1_header(uint8_t **header, const uint8_t *data, size_t size);

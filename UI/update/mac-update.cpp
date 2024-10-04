@@ -10,16 +10,14 @@
 
 /* ------------------------------------------------------------------------ */
 
-static const char *MAC_BRANCHES_URL =
-	"https://obsproject.com/update_studio/branches.json";
+static const char *MAC_BRANCHES_URL = "https://obsproject.com/update_studio/branches.json";
 static const char *MAC_DEFAULT_BRANCH = "stable";
 
 /* ------------------------------------------------------------------------ */
 
 bool GetBranch(std::string &selectedBranch)
 {
-	const char *config_branch = config_get_string(
-		App()->GetAppConfig(), "General", "UpdateBranch");
+	const char *config_branch = config_get_string(App()->GetAppConfig(), "General", "UpdateBranch");
 	if (!config_branch)
 		return true;
 
@@ -50,8 +48,8 @@ void MacUpdateThread::infoMsg(const QString &title, const QString &text)
 
 void MacUpdateThread::info(const QString &title, const QString &text)
 {
-	QMetaObject::invokeMethod(this, "infoMsg", Qt::BlockingQueuedConnection,
-				  Q_ARG(QString, title), Q_ARG(QString, text));
+	QMetaObject::invokeMethod(this, "infoMsg", Qt::BlockingQueuedConnection, Q_ARG(QString, title),
+				  Q_ARG(QString, text));
 }
 
 void MacUpdateThread::run()
@@ -62,18 +60,15 @@ try {
 	/* ----------------------------------- *
 	 * get branches from server            */
 
-	if (FetchAndVerifyFile("branches", "obs-studio/updates/branches.json",
-			       MAC_BRANCHES_URL, &text))
+	if (FetchAndVerifyFile("branches", "obs-studio/updates/branches.json", MAC_BRANCHES_URL, &text))
 		App()->SetBranchData(text);
 
 	/* ----------------------------------- *
 	 * Validate branch selection           */
 
 	if (!GetBranch(branch)) {
-		config_set_string(App()->GetAppConfig(), "General",
-				  "UpdateBranch", MAC_DEFAULT_BRANCH);
-		info(QTStr("Updater.BranchNotFound.Title"),
-		     QTStr("Updater.BranchNotFound.Text"));
+		config_set_string(App()->GetAppConfig(), "General", "UpdateBranch", MAC_DEFAULT_BRANCH);
+		info(QTStr("Updater.BranchNotFound.Title"), QTStr("Updater.BranchNotFound.Text"));
 	}
 
 	emit Result(QString::fromStdString(branch), manualUpdate);

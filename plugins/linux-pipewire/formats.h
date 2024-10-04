@@ -35,5 +35,4 @@ struct obs_pw_video_format {
 	const char *pretty_name;
 };
 
-bool obs_pw_video_format_from_spa_format(
-	uint32_t spa_format, struct obs_pw_video_format *out_format_info);
+bool obs_pw_video_format_from_spa_format(uint32_t spa_format, struct obs_pw_video_format *out_format_info);

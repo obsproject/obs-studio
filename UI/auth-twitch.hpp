@@ -32,8 +32,7 @@ public:
 	TwitchAuth(const Def &d);
 	~TwitchAuth();
 
-	static std::shared_ptr<Auth> Login(QWidget *parent,
-					   const std::string &service_name);
+	static std::shared_ptr<Auth> Login(QWidget *parent, const std::string &service_name);
 
 	QTimer uiLoadTimer;
 

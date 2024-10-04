@@ -26,8 +26,7 @@ void EditorWidget::buildEffectContainer(AEffect *effect)
 	effect->dispatcher(effect, effEditGetRect, 0, 0, &vstRect, 0);
 
 	if (vstRect) {
-		setFixedSize(vstRect->right - vstRect->left,
-			     vstRect->bottom - vstRect->top);
+		setFixedSize(vstRect->right - vstRect->left, vstRect->bottom - vstRect->top);
 	}
 }
 

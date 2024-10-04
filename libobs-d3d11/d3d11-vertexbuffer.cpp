@@ -19,8 +19,7 @@
 #include <graphics/vec3.h>
 #include "d3d11-subsystem.hpp"
 
-static inline void PushBuffer(UINT *refNumBuffers, ID3D11Buffer **buffers,
-			      uint32_t *strides, ID3D11Buffer *buffer,
+static inline void PushBuffer(UINT *refNumBuffers, ID3D11Buffer **buffers, uint32_t *strides, ID3D11Buffer *buffer,
 			      size_t elementSize, const char *name)
 {
 	const UINT numBuffers = *refNumBuffers;
@@ -29,41 +28,33 @@ static inline void PushBuffer(UINT *refNumBuffers, ID3D11Buffer **buffers,
 		strides[numBuffers] = (uint32_t)elementSize;
 		*refNumBuffers = numBuffers + 1;
 	} else {
-		blog(LOG_ERROR, "This vertex shader requires a %s buffer",
-		     name);
+		blog(LOG_ERROR, "This vertex shader requires a %s buffer", name);
 	}
 }
 
-void gs_vertex_buffer::FlushBuffer(ID3D11Buffer *buffer, void *array,
-				   size_t elementSize)
+void gs_vertex_buffer::FlushBuffer(ID3D11Buffer *buffer, void *array, size_t elementSize)
 {
 	D3D11_MAPPED_SUBRESOURCE msr;
 	HRESULT hr;
 
-	if (FAILED(hr = device->context->Map(buffer, 0, D3D11_MAP_WRITE_DISCARD,
-					     0, &msr)))
+	if (FAILED(hr = device->context->Map(buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &msr)))
 		throw HRError("Failed to map buffer", hr);
 
 	memcpy(msr.pData, array, elementSize * vbd.data->num);
 	device->context->Unmap(buffer, 0);
 }
 
-UINT gs_vertex_buffer::MakeBufferList(gs_vertex_shader *shader,
-				      ID3D11Buffer **buffers, uint32_t *strides)
+UINT gs_vertex_buffer::MakeBufferList(gs_vertex_shader *shader, ID3D11Buffer **buffers, uint32_t *strides)
 {
 	UINT numBuffers = 0;
-	PushBuffer(&numBuffers, buffers, strides, vertexBuffer, sizeof(vec3),
-		   "point");
+	PushBuffer(&numBuffers, buffers, strides, vertexBuffer, sizeof(vec3), "point");
 
 	if (shader->hasNormals)
-		PushBuffer(&numBuffers, buffers, strides, normalBuffer,
-			   sizeof(vec3), "normal");
+		PushBuffer(&numBuffers, buffers, strides, normalBuffer, sizeof(vec3), "normal");
 	if (shader->hasColors)
-		PushBuffer(&numBuffers, buffers, strides, colorBuffer,
-			   sizeof(uint32_t), "color");
+		PushBuffer(&numBuffers, buffers, strides, colorBuffer, sizeof(uint32_t), "color");
 	if (shader->hasTangents)
-		PushBuffer(&numBuffers, buffers, strides, tangentBuffer,
-			   sizeof(vec3), "tangent");
+		PushBuffer(&numBuffers, buffers, strides, tangentBuffer, sizeof(vec3), "tangent");
 	if (shader->nTexUnits <= uvBuffers.size()) {
 		for (size_t i = 0; i < shader->nTexUnits; i++) {
 			buffers[numBuffers] = uvBuffers[i];
@@ -80,9 +71,7 @@ UINT gs_vertex_buffer::MakeBufferList(gs_vertex_shader *shader,
 	return numBuffers;
 }
 
-void gs_vertex_buffer::InitBuffer(const size_t elementSize,
-				  const size_t numVerts, void *array,
-				  ID3D11Buffer **buffer)
+void gs_vertex_buffer::InitBuffer(const size_t elementSize, const size_t numVerts, void *array, ID3D11Buffer **buffer)
 {
 	D3D11_BUFFER_DESC bd;
 	D3D11_SUBRESOURCE_DATA srd;
@@ -104,20 +93,16 @@ void gs_vertex_buffer::InitBuffer(const size_t elementSize,
 
 void gs_vertex_buffer::BuildBuffers()
 {
-	InitBuffer(sizeof(vec3), vbd.data->num, vbd.data->points,
-		   &vertexBuffer);
+	InitBuffer(sizeof(vec3), vbd.data->num, vbd.data->points, &vertexBuffer);
 
 	if (vbd.data->normals)
-		InitBuffer(sizeof(vec3), vbd.data->num, vbd.data->normals,
-			   &normalBuffer);
+		InitBuffer(sizeof(vec3), vbd.data->num, vbd.data->normals, &normalBuffer);
 
 	if (vbd.data->tangents)
-		InitBuffer(sizeof(vec3), vbd.data->num, vbd.data->tangents,
-			   &tangentBuffer);
+		InitBuffer(sizeof(vec3), vbd.data->num, vbd.data->tangents, &tangentBuffer);
 
 	if (vbd.data->colors)
-		InitBuffer(sizeof(uint32_t), vbd.data->num, vbd.data->colors,
-			   &colorBuffer);
+		InitBuffer(sizeof(uint32_t), vbd.data->num, vbd.data->colors, &colorBuffer);
 
 	for (size_t i = 0; i < vbd.data->num_tex; i++) {
 		struct gs_tvertarray *tverts = vbd.data->tvarray + i;
@@ -128,16 +113,14 @@ void gs_vertex_buffer::BuildBuffers()
 			throw "No texture vertices specified";
 
 		ComPtr<ID3D11Buffer> buffer;
-		InitBuffer(tverts->width * sizeof(float), vbd.data->num,
-			   tverts->array, &buffer);
+		InitBuffer(tverts->width * sizeof(float), vbd.data->num, tverts->array, &buffer);
 
 		uvBuffers.push_back(buffer);
 		uvSizes.push_back(tverts->width * sizeof(float));
 	}
 }
 
-gs_vertex_buffer::gs_vertex_buffer(gs_device_t *device, struct gs_vb_data *data,
-				   uint32_t flags)
+gs_vertex_buffer::gs_vertex_buffer(gs_device_t *device, struct gs_vb_data *data, uint32_t flags)
 	: gs_obj(device, gs_type::gs_vertex_buffer),
 	  dynamic((flags & GS_DYNAMIC) != 0),
 	  vbd(data),

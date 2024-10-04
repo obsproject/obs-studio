@@ -24,9 +24,7 @@ struct service_ingests {
 };
 
 void init_service_data(struct service_ingests *si);
-void service_ingests_refresh(struct service_ingests *si, int seconds,
-			     const char *log_prefix, const char *file_url);
-void load_service_data(struct service_ingests *si, const char *cache_filename,
-		       struct ingest *def);
+void service_ingests_refresh(struct service_ingests *si, int seconds, const char *log_prefix, const char *file_url);
+void load_service_data(struct service_ingests *si, const char *cache_filename, struct ingest *def);
 void unload_service_data(struct service_ingests *si);
 struct ingest get_ingest(struct service_ingests *si, size_t idx);
