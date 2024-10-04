@@ -783,7 +783,7 @@ os_inhibit_t *os_inhibit_sleep_create(const char *reason)
 
 extern char **environ;
 
-static void reset_screensaver(os_inhibit_t *info)
+static int reset_screensaver(os_inhibit_t *info)
 {
 	char *argv[3] = {(char *)"xdg-screensaver", (char *)"reset", NULL};
 	pid_t pid;
@@ -795,8 +795,10 @@ static void reset_screensaver(os_inhibit_t *info)
 		while (waitpid(pid, &status, 0) == -1)
 			;
 	} else {
-		blog(LOG_WARNING, "Failed to create xdg-screensaver: %d", err);
+		blog(LOG_WARNING, "Failed to reset xdg-screensaver: %s",
+		     strerror(err));
 	}
+	return err;
 }
 
 static void *screensaver_thread(void *param)
@@ -833,6 +835,10 @@ bool os_inhibit_sleep_set_active(os_inhibit_t *info, bool active)
 		return true;
 
 	if (active) {
+		ret = reset_screensaver(info);
+		if (ret)
+			return false;
+
 		ret = pthread_create(&info->screensaver_thread, NULL,
 				     &screensaver_thread, info);
 		if (ret < 0) {
