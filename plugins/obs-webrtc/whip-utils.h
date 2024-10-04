@@ -88,3 +88,109 @@ static inline std::string generate_user_agent()
 
 	return ua.str();
 }
+
+static const int avpriv_mpeg4audio_sample_rates[16] = {
+	96000, 88200, 64000, 48000, 44100, 32000, 24000,
+	22050, 16000, 12000, 11025, 8000,  7350};
+
+static const uint8_t ff_mpeg4audio_channels[8] = {0, 1, 2, 3, 4, 5, 6, 8};
+
+#define MKBETAG(a, b, c, d) \
+	((d) | ((c) << 8) | ((b) << 16) | ((unsigned)(a) << 24))
+
+struct GetBitContext {
+	uint8_t *data;
+	int bit_length;
+	int bit_index;
+};
+struct PutBitContext {
+	uint8_t *buf;
+	int size;
+	int index;
+	uint32_t bit_buf;
+	uint32_t bit_left;
+};
+
+static inline int show_bits(GetBitContext *gb, int bits)
+{
+	uint8_t *buf = gb->data + (gb->bit_index >> 3);
+	unsigned int val = (((uint32_t)((const uint8_t *)(buf))[0] << 24) |
+			    ((uint32_t)((const uint8_t *)(buf))[1] << 16) |
+			    ((uint32_t)((const uint8_t *)(buf))[2] << 8) |
+			    (uint32_t)((const uint8_t *)(buf))[3]);
+	val <<= (gb->bit_index & 7);
+
+	val = (((uint32_t)(val)) >> (32 - (bits)));
+
+	return val;
+}
+
+static inline int get_bits(GetBitContext *gb, int bits)
+{
+	uint8_t *buf = gb->data + (gb->bit_index >> 3);
+	unsigned int val = (((uint32_t)((const uint8_t *)(buf))[0] << 24) |
+			    ((uint32_t)((const uint8_t *)(buf))[1] << 16) |
+			    ((uint32_t)((const uint8_t *)(buf))[2] << 8) |
+			    (uint32_t)((const uint8_t *)(buf))[3]);
+	val <<= (gb->bit_index & 7);
+
+	val = (((uint32_t)(val)) >> (32 - (bits)));
+
+	gb->bit_index += bits;
+	return val;
+}
+
+static inline int get_object_type(GetBitContext *gb)
+{
+	int object_type = get_bits(gb, 5);
+	if (object_type == 31 /*AOT_ESCAPE*/)
+		object_type = 32 + get_bits(gb, 6);
+	return object_type;
+}
+
+static inline int get_sample_rate(GetBitContext *gb, int *index)
+{
+	*index = get_bits(gb, 4);
+	return *index == 0x0f ? get_bits(gb, 24)
+			      : avpriv_mpeg4audio_sample_rates[*index];
+}
+
+#ifndef AV_WB32
+#define AV_WB32(p, val)                          \
+	do {                                     \
+		uint32_t d = (val);              \
+		((uint8_t *)(p))[3] = (d);       \
+		((uint8_t *)(p))[2] = (d) >> 8;  \
+		((uint8_t *)(p))[1] = (d) >> 16; \
+		((uint8_t *)(p))[0] = (d) >> 24; \
+	} while (0)
+#endif
+
+#define AV_RB16(x) \
+	((((const uint8_t *)(x))[0] << 8) | ((const uint8_t *)(x))[1])
+
+static void put_bits(PutBitContext *pb, uint32_t n, uint64_t value)
+{
+	if (n <= 32) {
+		uint32_t va = (uint32_t)value;
+		if (n < pb->bit_left) {
+			pb->bit_buf = (pb->bit_buf << n) | va;
+			pb->bit_left -= n;
+		} else {
+			pb->bit_buf <<= pb->bit_left;
+			pb->bit_buf |= va >> (n - pb->bit_left);
+
+			AV_WB32(pb->buf + pb->index, pb->bit_buf);
+			pb->index += 4;
+
+			pb->bit_left += 32 - n;
+			pb->bit_buf = va;
+		}
+	} else if (n > 32) {
+		uint32_t lo = value & 0xffffffff;
+		uint32_t hi = value >> 32;
+
+		put_bits(pb, n - 32, hi);
+		put_bits(pb, 32, lo);
+	}
+}

@@ -13,6 +13,8 @@
 
 #include <rtc/rtc.hpp>
 
+#include "whip-utils.h"
+
 class WHIPOutput {
 public:
 	WHIPOutput(obs_data_t *settings, obs_output_t *output);
@@ -44,7 +46,12 @@ private:
 		  std::shared_ptr<rtc::Track> track,
 		  std::shared_ptr<rtc::RtcpSrReporter> rtcp_sr_reporter);
 
+	int GetAudioSpecificConfigOffset(uint8_t *extradata, size_t size);
+	void LatmWriteStreamMuxConfig(PutBitContext *pb, uint8_t *extradata,
+				      size_t size);
+
 	obs_output_t *output;
+	bool is_aac;
 
 	std::string endpoint_url;
 	std::string bearer_token;
