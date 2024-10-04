@@ -29,9 +29,8 @@
 #include <inttypes.h>
 #include "flv-mux.h"
 
-#define do_log(level, format, ...)                \
-	blog(level, "[flv output: '%s'] " format, \
-	     obs_output_get_name(stream->output), ##__VA_ARGS__)
+#define do_log(level, format, ...) \
+	blog(level, "[flv output: '%s'] " format, obs_output_get_name(stream->output), ##__VA_ARGS__)
 
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
@@ -179,8 +178,7 @@ static void *flv_output_create(obs_data_t *settings, obs_output_t *output)
 	return stream;
 }
 
-static int write_packet(struct flv_output *stream,
-			struct encoder_packet *packet, bool is_header)
+static int write_packet(struct flv_output *stream, struct encoder_packet *packet, bool is_header)
 {
 	uint8_t *data;
 	size_t size;
@@ -188,31 +186,26 @@ static int write_packet(struct flv_output *stream,
 
 	stream->last_packet_ts = get_ms_time(packet, packet->dts);
 
-	flv_packet_mux(packet, is_header ? 0 : stream->start_dts_offset, &data,
-		       &size, is_header);
+	flv_packet_mux(packet, is_header ? 0 : stream->start_dts_offset, &data, &size, is_header);
 	fwrite(data, 1, size, stream->file);
 	bfree(data);
 
 	return ret;
 }
 
-static int write_packet_ex(struct flv_output *stream,
-			   struct encoder_packet *packet, bool is_header,
-			   bool is_footer, size_t idx)
+static int write_packet_ex(struct flv_output *stream, struct encoder_packet *packet, bool is_header, bool is_footer,
+			   size_t idx)
 {
 	uint8_t *data;
 	size_t size = 0;
 	int ret = 0;
 
 	if (is_header) {
-		flv_packet_start(packet, stream->video_codec[idx], &data, &size,
-				 idx);
+		flv_packet_start(packet, stream->video_codec[idx], &data, &size, idx);
 	} else if (is_footer) {
-		flv_packet_end(packet, stream->video_codec[idx], &data, &size,
-			       idx);
+		flv_packet_end(packet, stream->video_codec[idx], &data, &size, idx);
 	} else {
-		flv_packet_frames(packet, stream->video_codec[idx],
-				  stream->start_dts_offset, &data, &size, idx);
+		flv_packet_frames(packet, stream->video_codec[idx], stream->start_dts_offset, &data, &size, idx);
 	}
 
 	fwrite(data, 1, size, stream->file);
@@ -227,21 +220,16 @@ static int write_packet_ex(struct flv_output *stream,
 	return ret;
 }
 
-static int write_audio_packet_ex(struct flv_output *stream,
-				 struct encoder_packet *packet, bool is_header,
-				 size_t idx)
+static int write_audio_packet_ex(struct flv_output *stream, struct encoder_packet *packet, bool is_header, size_t idx)
 {
 	uint8_t *data;
 	size_t size = 0;
 	int ret = 0;
 
 	if (is_header) {
-		flv_packet_audio_start(packet, stream->audio_codec[idx], &data,
-				       &size, idx);
+		flv_packet_audio_start(packet, stream->audio_codec[idx], &data, &size, idx);
 	} else {
-		flv_packet_audio_frames(packet, stream->audio_codec[idx],
-					stream->start_dts_offset, &data, &size,
-					idx);
+		flv_packet_audio_frames(packet, stream->audio_codec[idx], stream->start_dts_offset, &data, &size, idx);
 	}
 
 	fwrite(data, 1, size, stream->file);
@@ -265,8 +253,7 @@ static bool write_audio_header(struct flv_output *stream, size_t idx)
 	obs_output_t *context = stream->output;
 	obs_encoder_t *aencoder = obs_output_get_audio_encoder(context, idx);
 
-	struct encoder_packet packet = {.type = OBS_ENCODER_AUDIO,
-					.timebase_den = 1};
+	struct encoder_packet packet = {.type = OBS_ENCODER_AUDIO, .timebase_den = 1};
 
 	if (!aencoder)
 		return false;
@@ -289,9 +276,7 @@ static bool write_video_header(struct flv_output *stream, size_t idx)
 	uint8_t *header;
 	size_t size;
 
-	struct encoder_packet packet = {.type = OBS_ENCODER_VIDEO,
-					.timebase_den = 1,
-					.keyframe = true};
+	struct encoder_packet packet = {.type = OBS_ENCODER_VIDEO, .timebase_den = 1, .keyframe = true};
 
 	if (!vencoder)
 		return false;
@@ -301,9 +286,7 @@ static bool write_video_header(struct flv_output *stream, size_t idx)
 
 	switch (stream->video_codec[idx]) {
 	case CODEC_NONE:
-		do_log(LOG_ERROR,
-		       "Codec not initialized for track %zu while sending header",
-		       idx);
+		do_log(LOG_ERROR, "Codec not initialized for track %zu while sending header", idx);
 		return false;
 
 	case CODEC_H264:
@@ -335,8 +318,7 @@ static bool write_video_header(struct flv_output *stream, size_t idx)
 static bool write_video_metadata(struct flv_output *stream, size_t idx)
 {
 	// send metadata only if HDR
-	obs_encoder_t *encoder =
-		obs_output_get_video_encoder2(stream->output, idx);
+	obs_encoder_t *encoder = obs_output_get_video_encoder2(stream->output, idx);
 	if (!encoder)
 		return false;
 
@@ -346,8 +328,7 @@ static bool write_video_metadata(struct flv_output *stream, size_t idx)
 
 	const struct video_output_info *info = video_output_get_info(video);
 	enum video_colorspace colorspace = info->colorspace;
-	if (!(colorspace == VIDEO_CS_2100_PQ ||
-	      colorspace == VIDEO_CS_2100_HLG))
+	if (!(colorspace == VIDEO_CS_2100_PQ || colorspace == VIDEO_CS_2100_HLG))
 		return true;
 
 	// Y2023 spec
@@ -411,8 +392,7 @@ static bool write_video_metadata(struct flv_output *stream, size_t idx)
 	else if (trc == OBSCOL_TRC_SMPTE2084)
 		max_luminance = (int)obs_get_video_hdr_nominal_peak_level();
 
-	flv_packet_metadata(stream->video_codec[idx], &data, &size,
-			    bits_per_raw_sample, pri, trc, spc, 0,
+	flv_packet_metadata(stream->video_codec[idx], &data, &size, bits_per_raw_sample, pri, trc, spc, 0,
 			    max_luminance, idx);
 
 	fwrite(data, 1, size, stream->file);
@@ -424,8 +404,7 @@ static bool write_video_metadata(struct flv_output *stream, size_t idx)
 static void write_headers(struct flv_output *stream)
 {
 	for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
-		obs_encoder_t *enc =
-			obs_output_get_audio_encoder(stream->output, i);
+		obs_encoder_t *enc = obs_output_get_audio_encoder(stream->output, i);
 		if (!enc)
 			break;
 
@@ -434,8 +413,7 @@ static void write_headers(struct flv_output *stream)
 	}
 
 	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
-		obs_encoder_t *enc =
-			obs_output_get_video_encoder2(stream->output, i);
+		obs_encoder_t *enc = obs_output_get_video_encoder2(stream->output, i);
 		if (!enc)
 			break;
 
@@ -447,13 +425,11 @@ static void write_headers(struct flv_output *stream)
 	write_audio_header(stream, 0);
 
 	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
-		obs_encoder_t *enc =
-			obs_output_get_video_encoder2(stream->output, i);
+		obs_encoder_t *enc = obs_output_get_video_encoder2(stream->output, i);
 		if (!enc)
 			continue;
 
-		if (!write_video_header(stream, i) ||
-		    !write_video_metadata(stream, i))
+		if (!write_video_header(stream, i) || !write_video_metadata(stream, i))
 			return;
 	}
 
@@ -463,9 +439,7 @@ static void write_headers(struct flv_output *stream)
 
 static bool write_video_footer(struct flv_output *stream, size_t idx)
 {
-	struct encoder_packet packet = {.type = OBS_ENCODER_VIDEO,
-					.timebase_den = 1,
-					.keyframe = false};
+	struct encoder_packet packet = {.type = OBS_ENCODER_VIDEO, .timebase_den = 1, .keyframe = false};
 	packet.size = 0;
 
 	return write_packet_ex(stream, &packet, false, true, idx) >= 0;
@@ -474,8 +448,7 @@ static bool write_video_footer(struct flv_output *stream, size_t idx)
 static inline bool write_footers(struct flv_output *stream)
 {
 	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
-		obs_encoder_t *encoder =
-			obs_output_get_video_encoder2(stream->output, i);
+		obs_encoder_t *encoder = obs_output_get_video_encoder2(stream->output, i);
 		if (!encoder)
 			continue;
 
@@ -537,8 +510,7 @@ static void flv_output_actual_stop(struct flv_output *stream, int code)
 
 	if (stream->file) {
 		write_footers(stream);
-		write_file_info(stream->file, stream->last_packet_ts,
-				os_ftelli64(stream->file));
+		write_file_info(stream->file, stream->last_packet_ts, os_ftelli64(stream->file));
 
 		fclose(stream->file);
 	}
@@ -580,15 +552,13 @@ static void flv_output_data(void *data, struct encoder_packet *packet)
 
 	if (packet->type == OBS_ENCODER_VIDEO) {
 		if (!stream->got_first_packet) {
-			stream->start_dts_offset =
-				get_ms_time(packet, packet->dts);
+			stream->start_dts_offset = get_ms_time(packet, packet->dts);
 			stream->got_first_packet = true;
 		}
 
 		switch (stream->video_codec[packet->track_idx]) {
 		case CODEC_NONE:
-			do_log(LOG_ERROR, "Codec not initialized for track %zu",
-			       packet->track_idx);
+			do_log(LOG_ERROR, "Codec not initialized for track %zu", packet->track_idx);
 			goto unlock;
 
 		case CODEC_H264:
@@ -607,24 +577,20 @@ static void flv_output_data(void *data, struct encoder_packet *packet)
 		}
 
 		if (stream->video_codec[packet->track_idx] != CODEC_H264 ||
-		    (stream->video_codec[packet->track_idx] == CODEC_H264 &&
-		     packet->track_idx != 0)) {
-			write_packet_ex(stream, &parsed_packet, false, false,
-					packet->track_idx);
+		    (stream->video_codec[packet->track_idx] == CODEC_H264 && packet->track_idx != 0)) {
+			write_packet_ex(stream, &parsed_packet, false, false, packet->track_idx);
 		} else {
 			write_packet(stream, &parsed_packet, false);
 		}
 		obs_encoder_packet_release(&parsed_packet);
 	} else {
 		if (!stream->got_first_packet) {
-			stream->start_dts_offset =
-				get_ms_time(packet, packet->dts);
+			stream->start_dts_offset = get_ms_time(packet, packet->dts);
 			stream->got_first_packet = true;
 		}
 
 		if (packet->track_idx != 0) {
-			write_audio_packet_ex(stream, packet, false,
-					      packet->track_idx);
+			write_audio_packet_ex(stream, packet, false, packet->track_idx);
 		} else {
 			write_packet(stream, packet, false);
 		}
@@ -640,9 +606,7 @@ static obs_properties_t *flv_output_properties(void *unused)
 
 	obs_properties_t *props = obs_properties_create();
 
-	obs_properties_add_text(props, "path",
-				obs_module_text("FLVOutput.FilePath"),
-				OBS_TEXT_DEFAULT);
+	obs_properties_add_text(props, "path", obs_module_text("FLVOutput.FilePath"), OBS_TEXT_DEFAULT);
 	return props;
 }
 

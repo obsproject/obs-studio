@@ -12,20 +12,16 @@ using namespace std;
 
 OutputTimer *ot;
 
-OutputTimer::OutputTimer(QWidget *parent)
-	: QDialog(parent),
-	  ui(new Ui_OutputTimer)
+OutputTimer::OutputTimer(QWidget *parent) : QDialog(parent), ui(new Ui_OutputTimer)
 {
 	ui->setupUi(this);
 
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
-	QObject::connect(ui->outputTimerStream, &QPushButton::clicked, this,
-			 &OutputTimer::StreamingTimerButton);
-	QObject::connect(ui->outputTimerRecord, &QPushButton::clicked, this,
-			 &OutputTimer::RecordingTimerButton);
-	QObject::connect(ui->buttonBox->button(QDialogButtonBox::Close),
-			 &QPushButton::clicked, this, &OutputTimer::hide);
+	QObject::connect(ui->outputTimerStream, &QPushButton::clicked, this, &OutputTimer::StreamingTimerButton);
+	QObject::connect(ui->outputTimerRecord, &QPushButton::clicked, this, &OutputTimer::RecordingTimerButton);
+	QObject::connect(ui->buttonBox->button(QDialogButtonBox::Close), &QPushButton::clicked, this,
+			 &OutputTimer::hide);
 
 	streamingTimer = new QTimer(this);
 	streamingTimerDisplay = new QTimer(this);
@@ -33,14 +29,10 @@ OutputTimer::OutputTimer(QWidget *parent)
 	recordingTimer = new QTimer(this);
 	recordingTimerDisplay = new QTimer(this);
 
-	QObject::connect(streamingTimer, &QTimer::timeout, this,
-			 &OutputTimer::EventStopStreaming);
-	QObject::connect(streamingTimerDisplay, &QTimer::timeout, this,
-			 &OutputTimer::UpdateStreamTimerDisplay);
-	QObject::connect(recordingTimer, &QTimer::timeout, this,
-			 &OutputTimer::EventStopRecording);
-	QObject::connect(recordingTimerDisplay, &QTimer::timeout, this,
-			 &OutputTimer::UpdateRecordTimerDisplay);
+	QObject::connect(streamingTimer, &QTimer::timeout, this, &OutputTimer::EventStopStreaming);
+	QObject::connect(streamingTimerDisplay, &QTimer::timeout, this, &OutputTimer::UpdateStreamTimerDisplay);
+	QObject::connect(recordingTimer, &QTimer::timeout, this, &OutputTimer::EventStopRecording);
+	QObject::connect(recordingTimerDisplay, &QTimer::timeout, this, &OutputTimer::UpdateRecordTimerDisplay);
 }
 
 void OutputTimer::closeEvent(QCloseEvent *)
@@ -178,8 +170,7 @@ void OutputTimer::UpdateStreamTimerDisplay()
 	int minutes = (remainingTime % 3600) / 60;
 	int hours = remainingTime / 3600;
 
-	QString text =
-		QString::asprintf("%02d:%02d:%02d", hours, minutes, seconds);
+	QString text = QString::asprintf("%02d:%02d:%02d", hours, minutes, seconds);
 	ui->streamTime->setText(text);
 }
 
@@ -187,8 +178,7 @@ void OutputTimer::UpdateRecordTimerDisplay()
 {
 	int remainingTime = 0;
 
-	if (obs_frontend_recording_paused() &&
-	    ui->pauseRecordTimer->isChecked())
+	if (obs_frontend_recording_paused() && ui->pauseRecordTimer->isChecked())
 		remainingTime = recordingTimeLeft / 1000;
 	else
 		remainingTime = recordingTimer->remainingTime() / 1000;
@@ -197,8 +187,7 @@ void OutputTimer::UpdateRecordTimerDisplay()
 	int minutes = (remainingTime % 3600) / 60;
 	int hours = remainingTime / 3600;
 
-	QString text =
-		QString::asprintf("%02d:%02d:%02d", hours, minutes, seconds);
+	QString text = QString::asprintf("%02d:%02d:%02d", hours, minutes, seconds);
 	ui->recordTime->setText(text);
 }
 
@@ -250,57 +239,38 @@ static void SaveOutputTimer(obs_data_t *save_data, bool saving, void *)
 	if (saving) {
 		OBSDataAutoRelease obj = obs_data_create();
 
-		obs_data_set_int(obj, "streamTimerHours",
-				 ot->ui->streamingTimerHours->value());
-		obs_data_set_int(obj, "streamTimerMinutes",
-				 ot->ui->streamingTimerMinutes->value());
-		obs_data_set_int(obj, "streamTimerSeconds",
-				 ot->ui->streamingTimerSeconds->value());
+		obs_data_set_int(obj, "streamTimerHours", ot->ui->streamingTimerHours->value());
+		obs_data_set_int(obj, "streamTimerMinutes", ot->ui->streamingTimerMinutes->value());
+		obs_data_set_int(obj, "streamTimerSeconds", ot->ui->streamingTimerSeconds->value());
 
-		obs_data_set_int(obj, "recordTimerHours",
-				 ot->ui->recordingTimerHours->value());
-		obs_data_set_int(obj, "recordTimerMinutes",
-				 ot->ui->recordingTimerMinutes->value());
-		obs_data_set_int(obj, "recordTimerSeconds",
-				 ot->ui->recordingTimerSeconds->value());
+		obs_data_set_int(obj, "recordTimerHours", ot->ui->recordingTimerHours->value());
+		obs_data_set_int(obj, "recordTimerMinutes", ot->ui->recordingTimerMinutes->value());
+		obs_data_set_int(obj, "recordTimerSeconds", ot->ui->recordingTimerSeconds->value());
 
-		obs_data_set_bool(obj, "autoStartStreamTimer",
-				  ot->ui->autoStartStreamTimer->isChecked());
-		obs_data_set_bool(obj, "autoStartRecordTimer",
-				  ot->ui->autoStartRecordTimer->isChecked());
+		obs_data_set_bool(obj, "autoStartStreamTimer", ot->ui->autoStartStreamTimer->isChecked());
+		obs_data_set_bool(obj, "autoStartRecordTimer", ot->ui->autoStartRecordTimer->isChecked());
 
-		obs_data_set_bool(obj, "pauseRecordTimer",
-				  ot->ui->pauseRecordTimer->isChecked());
+		obs_data_set_bool(obj, "pauseRecordTimer", ot->ui->pauseRecordTimer->isChecked());
 
 		obs_data_set_obj(save_data, "output-timer", obj);
 	} else {
-		OBSDataAutoRelease obj =
-			obs_data_get_obj(save_data, "output-timer");
+		OBSDataAutoRelease obj = obs_data_get_obj(save_data, "output-timer");
 
 		if (!obj)
 			obj = obs_data_create();
 
-		ot->ui->streamingTimerHours->setValue(
-			obs_data_get_int(obj, "streamTimerHours"));
-		ot->ui->streamingTimerMinutes->setValue(
-			obs_data_get_int(obj, "streamTimerMinutes"));
-		ot->ui->streamingTimerSeconds->setValue(
-			obs_data_get_int(obj, "streamTimerSeconds"));
+		ot->ui->streamingTimerHours->setValue(obs_data_get_int(obj, "streamTimerHours"));
+		ot->ui->streamingTimerMinutes->setValue(obs_data_get_int(obj, "streamTimerMinutes"));
+		ot->ui->streamingTimerSeconds->setValue(obs_data_get_int(obj, "streamTimerSeconds"));
 
-		ot->ui->recordingTimerHours->setValue(
-			obs_data_get_int(obj, "recordTimerHours"));
-		ot->ui->recordingTimerMinutes->setValue(
-			obs_data_get_int(obj, "recordTimerMinutes"));
-		ot->ui->recordingTimerSeconds->setValue(
-			obs_data_get_int(obj, "recordTimerSeconds"));
+		ot->ui->recordingTimerHours->setValue(obs_data_get_int(obj, "recordTimerHours"));
+		ot->ui->recordingTimerMinutes->setValue(obs_data_get_int(obj, "recordTimerMinutes"));
+		ot->ui->recordingTimerSeconds->setValue(obs_data_get_int(obj, "recordTimerSeconds"));
 
-		ot->ui->autoStartStreamTimer->setChecked(
-			obs_data_get_bool(obj, "autoStartStreamTimer"));
-		ot->ui->autoStartRecordTimer->setChecked(
-			obs_data_get_bool(obj, "autoStartRecordTimer"));
+		ot->ui->autoStartStreamTimer->setChecked(obs_data_get_bool(obj, "autoStartStreamTimer"));
+		ot->ui->autoStartRecordTimer->setChecked(obs_data_get_bool(obj, "autoStartRecordTimer"));
 
-		ot->ui->pauseRecordTimer->setChecked(
-			obs_data_get_bool(obj, "pauseRecordTimer"));
+		ot->ui->pauseRecordTimer->setChecked(obs_data_get_bool(obj, "pauseRecordTimer"));
 	}
 }
 
@@ -328,8 +298,7 @@ static void OBSEvent(enum obs_frontend_event event, void *)
 
 extern "C" void InitOutputTimer()
 {
-	QAction *action = (QAction *)obs_frontend_add_tools_menu_qaction(
-		obs_module_text("OutputTimer"));
+	QAction *action = (QAction *)obs_frontend_add_tools_menu_qaction(obs_module_text("OutputTimer"));
 
 	obs_frontend_push_ui_translation(obs_module_get_string);
 

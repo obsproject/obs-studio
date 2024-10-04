@@ -41,8 +41,7 @@ class Importer {
 public:
 	virtual ~Importer() {}
 	virtual std::string Prog() { return "Null"; };
-	virtual int ImportScenes(const std::string &path, std::string &name,
-				 json11::Json &res) = 0;
+	virtual int ImportScenes(const std::string &path, std::string &name, json11::Json &res) = 0;
 	virtual bool Check(const std::string &path) = 0;
 	virtual std::string Name(const std::string &path) = 0;
 	virtual OBSImporterFiles FindFiles()
@@ -55,8 +54,7 @@ public:
 class ClassicImporter : public Importer {
 public:
 	std::string Prog() { return "OBSClassic"; };
-	int ImportScenes(const std::string &path, std::string &name,
-			 json11::Json &res);
+	int ImportScenes(const std::string &path, std::string &name, json11::Json &res);
 	bool Check(const std::string &path);
 	std::string Name(const std::string &path);
 	OBSImporterFiles FindFiles();
@@ -65,8 +63,7 @@ public:
 class StudioImporter : public Importer {
 public:
 	std::string Prog() { return "OBSStudio"; };
-	int ImportScenes(const std::string &path, std::string &name,
-			 json11::Json &res);
+	int ImportScenes(const std::string &path, std::string &name, json11::Json &res);
 	bool Check(const std::string &path);
 	std::string Name(const std::string &path);
 };
@@ -74,8 +71,7 @@ public:
 class SLImporter : public Importer {
 public:
 	std::string Prog() { return "Streamlabs"; };
-	int ImportScenes(const std::string &path, std::string &name,
-			 json11::Json &res);
+	int ImportScenes(const std::string &path, std::string &name, json11::Json &res);
 	bool Check(const std::string &path);
 	std::string Name(const std::string &path);
 	OBSImporterFiles FindFiles();
@@ -84,8 +80,7 @@ public:
 class XSplitImporter : public Importer {
 public:
 	std::string Prog() { return "XSplitBroadcaster"; };
-	int ImportScenes(const std::string &path, std::string &name,
-			 json11::Json &res);
+	int ImportScenes(const std::string &path, std::string &name, json11::Json &res);
 	bool Check(const std::string &path);
 	std::string Name(const std::string &) { return "XSplit Import"; };
 	OBSImporterFiles FindFiles();
@@ -96,8 +91,7 @@ void ImportersInit();
 std::string DetectProgram(const std::string &path);
 std::string GetSCName(const std::string &path, const std::string &prog);
 
-int ImportSCFromProg(const std::string &path, std::string &name,
-		     const std::string &program, json11::Json &res);
+int ImportSCFromProg(const std::string &path, std::string &name, const std::string &program, json11::Json &res);
 int ImportSC(const std::string &path, std::string &name, json11::Json &res);
 
 OBSImporterFiles ImportersFindFiles();
@@ -135,9 +129,7 @@ static inline std::string GetFolderFromPath(const std::string &path)
 	return path.substr(0, pos + 1);
 }
 
-static inline std::string StringReplace(const std::string &in,
-					const std::string &search,
-					const std::string &rep)
+static inline std::string StringReplace(const std::string &in, const std::string &search, const std::string &rep)
 {
 	std::string res = in;
 	size_t pos;

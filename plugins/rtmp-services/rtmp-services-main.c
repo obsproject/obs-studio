@@ -101,23 +101,18 @@ bool obs_module_load(void)
 	dstr_cat(&module_name, ")");
 
 	proc_handler_t *ph = obs_get_proc_handler();
-	proc_handler_add(ph, "void twitch_ingests_refresh(int seconds)",
-			 refresh_callback, NULL);
-	proc_handler_add(ph, "void amazon_ivs_ingests_refresh(int seconds)",
-			 amazon_ivs_refresh_callback, NULL);
+	proc_handler_add(ph, "void twitch_ingests_refresh(int seconds)", refresh_callback, NULL);
+	proc_handler_add(ph, "void amazon_ivs_ingests_refresh(int seconds)", amazon_ivs_refresh_callback, NULL);
 
 #if defined(ENABLE_SERVICE_UPDATES)
 	char *local_dir = obs_module_file("");
 	char *cache_dir = obs_module_config_path("");
 	char update_url[128];
-	snprintf(update_url, sizeof(update_url), "%s/v%d", RTMP_SERVICES_URL,
-		 RTMP_SERVICES_FORMAT_VERSION);
+	snprintf(update_url, sizeof(update_url), "%s/v%d", RTMP_SERVICES_URL, RTMP_SERVICES_FORMAT_VERSION);
 
 	if (cache_dir) {
-		update_info = update_info_create(RTMP_SERVICES_LOG_STR,
-						 module_name.array, update_url,
-						 local_dir, cache_dir,
-						 confirm_service_file, NULL);
+		update_info = update_info_create(RTMP_SERVICES_LOG_STR, module_name.array, update_url, local_dir,
+						 cache_dir, confirm_service_file, NULL);
 	}
 
 	load_twitch_data();

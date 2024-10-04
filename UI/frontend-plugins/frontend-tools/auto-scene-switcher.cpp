@@ -25,12 +25,7 @@ struct SceneSwitch {
 	string window;
 	regex re;
 
-	inline SceneSwitch(OBSWeakSource scene_, const char *window_)
-		: scene(scene_),
-		  window(window_),
-		  re(window_)
-	{
-	}
+	inline SceneSwitch(OBSWeakSource scene_, const char *window_) : scene(scene_), window(window_), re(window_) {}
 };
 
 static inline bool WeakSourceValid(obs_weak_source_t *ws)
@@ -73,15 +68,12 @@ struct SwitcherData {
 
 static SwitcherData *switcher = nullptr;
 
-static inline QString MakeSwitchName(const QString &scene,
-				     const QString &window)
+static inline QString MakeSwitchName(const QString &scene, const QString &window)
 {
 	return QStringLiteral("[") + scene + QStringLiteral("]: ") + window;
 }
 
-SceneSwitcher::SceneSwitcher(QWidget *parent)
-	: QDialog(parent),
-	  ui(new Ui_SceneSwitcher)
+SceneSwitcher::SceneSwitcher(QWidget *parent) : QDialog(parent), ui(new Ui_SceneSwitcher)
 {
 	ui->setupUi(this);
 
@@ -105,8 +97,7 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 	else
 		ui->noMatchDontSwitch->setChecked(true);
 
-	ui->noMatchSwitchScene->setCurrentText(
-		GetWeakSourceName(switcher->nonMatchingScene).c_str());
+	ui->noMatchSwitchScene->setCurrentText(GetWeakSourceName(switcher->nonMatchingScene).c_str());
 	ui->checkInterval->setValue(switcher->interval);
 
 	vector<string> windows;
@@ -117,8 +108,7 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 
 	for (auto &s : switcher->switches) {
 		string sceneName = GetWeakSourceName(s.scene);
-		QString text =
-			MakeSwitchName(sceneName.c_str(), s.window.c_str());
+		QString text = MakeSwitchName(sceneName.c_str(), s.window.c_str());
 
 		QListWidgetItem *item = new QListWidgetItem(text, ui->switches);
 		item->setData(Qt::UserRole, s.window.c_str());
@@ -201,16 +191,13 @@ void SceneSwitcher::on_add_clicked()
 	if (idx == -1) {
 		try {
 			lock_guard<mutex> lock(switcher->m);
-			switcher->switches.emplace_back(
-				source, windowName.toUtf8().constData());
+			switcher->switches.emplace_back(source, windowName.toUtf8().constData());
 
-			QListWidgetItem *item =
-				new QListWidgetItem(text, ui->switches);
+			QListWidgetItem *item = new QListWidgetItem(text, ui->switches);
 			item->setData(Qt::UserRole, v);
 		} catch (const regex_error &) {
-			QMessageBox::warning(
-				this, obs_module_text("InvalidRegex.Title"),
-				obs_module_text("InvalidRegex.Text"));
+			QMessageBox::warning(this, obs_module_text("InvalidRegex.Title"),
+					     obs_module_text("InvalidRegex.Text"));
 		}
 	} else {
 		QListWidgetItem *item = ui->switches->item(idx);
@@ -238,8 +225,7 @@ void SceneSwitcher::on_remove_clicked()
 	if (!item)
 		return;
 
-	string window =
-		item->data(Qt::UserRole).toString().toUtf8().constData();
+	string window = item->data(Qt::UserRole).toString().toUtf8().constData();
 
 	{
 		lock_guard<mutex> lock(switcher->m);
@@ -260,8 +246,7 @@ void SceneSwitcher::on_remove_clicked()
 
 void SceneSwitcher::UpdateNonMatchingScene(const QString &name)
 {
-	OBSSourceAutoRelease scene =
-		obs_get_source_by_name(name.toUtf8().constData());
+	OBSSourceAutoRelease scene = obs_get_source_by_name(name.toUtf8().constData());
 	OBSWeakSourceAutoRelease ws = obs_source_get_weak_source(scene);
 
 	switcher->nonMatchingScene = ws.Get();
@@ -339,25 +324,20 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		for (SceneSwitch &s : switcher->switches) {
 			OBSDataAutoRelease array_obj = obs_data_create();
 
-			OBSSourceAutoRelease source =
-				obs_weak_source_get_source(s.scene);
+			OBSSourceAutoRelease source = obs_weak_source_get_source(s.scene);
 			if (source) {
 				const char *n = obs_source_get_name(source);
 				obs_data_set_string(array_obj, "scene", n);
-				obs_data_set_string(array_obj, "window_title",
-						    s.window.c_str());
+				obs_data_set_string(array_obj, "window_title", s.window.c_str());
 				obs_data_array_push_back(array, array_obj);
 			}
 		}
 
-		string nonMatchingSceneName =
-			GetWeakSourceName(switcher->nonMatchingScene);
+		string nonMatchingSceneName = GetWeakSourceName(switcher->nonMatchingScene);
 
 		obs_data_set_int(obj, "interval", switcher->interval);
-		obs_data_set_string(obj, "non_matching_scene",
-				    nonMatchingSceneName.c_str());
-		obs_data_set_bool(obj, "switch_if_not_matching",
-				  switcher->switchIfNotMatching);
+		obs_data_set_string(obj, "non_matching_scene", nonMatchingSceneName.c_str());
+		obs_data_set_bool(obj, "switch_if_not_matching", switcher->switchIfNotMatching);
 		obs_data_set_bool(obj, "active", switcher->th.joinable());
 		obs_data_set_array(obj, "switches", array);
 
@@ -365,10 +345,8 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 	} else {
 		switcher->m.lock();
 
-		OBSDataAutoRelease obj =
-			obs_data_get_obj(save_data, "auto-scene-switcher");
-		OBSDataArrayAutoRelease array =
-			obs_data_get_array(obj, "switches");
+		OBSDataAutoRelease obj = obs_data_get_obj(save_data, "auto-scene-switcher");
+		OBSDataArrayAutoRelease array = obs_data_get_array(obj, "switches");
 		size_t count = obs_data_array_count(array);
 
 		if (!obj)
@@ -377,28 +355,21 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		obs_data_set_default_int(obj, "interval", DEFAULT_INTERVAL);
 
 		switcher->interval = obs_data_get_int(obj, "interval");
-		switcher->switchIfNotMatching =
-			obs_data_get_bool(obj, "switch_if_not_matching");
-		string nonMatchingScene =
-			obs_data_get_string(obj, "non_matching_scene");
+		switcher->switchIfNotMatching = obs_data_get_bool(obj, "switch_if_not_matching");
+		string nonMatchingScene = obs_data_get_string(obj, "non_matching_scene");
 		bool active = obs_data_get_bool(obj, "active");
 
-		switcher->nonMatchingScene =
-			GetWeakSourceByName(nonMatchingScene.c_str());
+		switcher->nonMatchingScene = GetWeakSourceByName(nonMatchingScene.c_str());
 
 		switcher->switches.clear();
 
 		for (size_t i = 0; i < count; i++) {
-			OBSDataAutoRelease array_obj =
-				obs_data_array_item(array, i);
+			OBSDataAutoRelease array_obj = obs_data_array_item(array, i);
 
-			const char *scene =
-				obs_data_get_string(array_obj, "scene");
-			const char *window =
-				obs_data_get_string(array_obj, "window_title");
+			const char *scene = obs_data_get_string(array_obj, "scene");
+			const char *window = obs_data_get_string(array_obj, "window_title");
 
-			switcher->switches.emplace_back(
-				GetWeakSourceByName(scene), window);
+			switcher->switches.emplace_back(GetWeakSourceByName(scene), window);
 		}
 
 		switcher->m.unlock();
@@ -412,8 +383,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 
 void SwitcherData::Thread()
 {
-	chrono::duration<long long, milli> duration =
-		chrono::milliseconds(interval);
+	chrono::duration<long long, milli> duration = chrono::milliseconds(interval);
 	string lastTitle;
 	string title;
 
@@ -447,8 +417,7 @@ void SwitcherData::Thread()
 			if (!match) {
 				for (SceneSwitch &s : switches) {
 					try {
-						bool matches = regex_match(
-							title, s.re);
+						bool matches = regex_match(title, s.re);
 						if (matches) {
 							match = true;
 							scene = s.scene;
@@ -465,10 +434,8 @@ void SwitcherData::Thread()
 			}
 
 			if (match) {
-				OBSSourceAutoRelease source =
-					obs_weak_source_get_source(scene);
-				OBSSourceAutoRelease currentSource =
-					obs_frontend_get_current_scene();
+				OBSSourceAutoRelease source = obs_weak_source_get_source(scene);
+				OBSSourceAutoRelease currentSource = obs_frontend_get_current_scene();
 
 				if (source && source != currentSource)
 					obs_frontend_set_current_scene(source);
@@ -518,16 +485,14 @@ extern "C" void InitSceneSwitcher()
 		return;
 #endif
 
-	QAction *action = (QAction *)obs_frontend_add_tools_menu_qaction(
-		obs_module_text("SceneSwitcher"));
+	QAction *action = (QAction *)obs_frontend_add_tools_menu_qaction(obs_module_text("SceneSwitcher"));
 
 	switcher = new SwitcherData;
 
 	auto cb = []() {
 		obs_frontend_push_ui_translation(obs_module_get_string);
 
-		QMainWindow *window =
-			(QMainWindow *)obs_frontend_get_main_window();
+		QMainWindow *window = (QMainWindow *)obs_frontend_get_main_window();
 
 		SceneSwitcher ss(window);
 		ss.exec();

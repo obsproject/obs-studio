@@ -25,8 +25,7 @@ struct nv12_scale {
 
 typedef struct nv12_scale nv12_scale_t;
 
-extern void nv12_scale_init(nv12_scale_t *s, enum target_format format,
-			    int dst_cx, int dst_cy, int src_cx, int src_cy);
+extern void nv12_scale_init(nv12_scale_t *s, enum target_format format, int dst_cx, int dst_cy, int src_cx, int src_cy);
 extern void nv12_do_scale(nv12_scale_t *s, uint8_t *dst, const uint8_t *src);
 
 #ifdef __cplusplus

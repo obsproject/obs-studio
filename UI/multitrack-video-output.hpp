@@ -25,24 +25,17 @@ bool MultitrackVideoDeveloperModeEnabled();
 
 struct MultitrackVideoOutput {
 public:
-	void PrepareStreaming(QWidget *parent, const char *service_name,
-			      obs_service_t *service,
-			      const std::optional<std::string> &rtmp_url,
-			      const QString &stream_key,
-			      const char *audio_encoder_id,
-			      std::optional<uint32_t> maximum_aggregate_bitrate,
-			      std::optional<uint32_t> maximum_video_tracks,
-			      std::optional<std::string> custom_config,
-			      obs_data_t *dump_stream_to_file_config,
-			      size_t main_audio_mixer,
+	void PrepareStreaming(QWidget *parent, const char *service_name, obs_service_t *service,
+			      const std::optional<std::string> &rtmp_url, const QString &stream_key,
+			      const char *audio_encoder_id, std::optional<uint32_t> maximum_aggregate_bitrate,
+			      std::optional<uint32_t> maximum_video_tracks, std::optional<std::string> custom_config,
+			      obs_data_t *dump_stream_to_file_config, size_t main_audio_mixer,
 			      std::optional<size_t> vod_track_mixer);
 	signal_handler_t *StreamingSignalHandler();
 	void StartedStreaming();
 	void StopStreaming();
-	bool HandleIncompatibleSettings(QWidget *parent, config_t *config,
-					obs_service_t *service, bool &useDelay,
-					bool &enableNewSocketLoop,
-					bool &enableDynBitrate);
+	bool HandleIncompatibleSettings(QWidget *parent, config_t *config, obs_service_t *service, bool &useDelay,
+					bool &enableNewSocketLoop, bool &enableDynBitrate);
 
 	OBSOutputAutoRelease StreamingOutput()
 	{
@@ -62,8 +55,7 @@ private:
 	std::optional<OBSOutputObjects> take_current();
 	std::optional<OBSOutputObjects> take_current_stream_dump();
 
-	static void
-	ReleaseOnMainThread(std::optional<OBSOutputObjects> objects);
+	static void ReleaseOnMainThread(std::optional<OBSOutputObjects> objects);
 
 	std::mutex current_mutex;
 	std::optional<OBSOutputObjects> current;

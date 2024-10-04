@@ -8,8 +8,7 @@
 /* ------------------------------------------------------------------------- */
 /* CUDA Context management                                                   */
 
-bool cuda_ctx_init(struct nvenc_data *enc, obs_data_t *settings,
-		   const bool texture)
+bool cuda_ctx_init(struct nvenc_data *enc, obs_data_t *settings, const bool texture)
 {
 #ifdef _WIN32
 	if (texture)
@@ -45,8 +44,7 @@ bool cuda_ctx_init(struct nvenc_data *enc, obs_data_t *settings,
 		CUdevice devices[2];
 
 		obs_enter_graphics();
-		CUresult res = cu->cuGLGetDevices(&ctx_count, devices, 2,
-						  CU_GL_DEVICE_LIST_ALL);
+		CUresult res = cu->cuGLGetDevices(&ctx_count, devices, 2, CU_GL_DEVICE_LIST_ALL);
 		obs_leave_graphics();
 
 		if (res != CUDA_SUCCESS || !ctx_count) {
@@ -99,8 +97,7 @@ void cuda_ctx_free(struct nvenc_data *enc)
 /* ------------------------------------------------------------------------- */
 /* CUDA Surface management                                                   */
 
-static bool cuda_surface_init(struct nvenc_data *enc,
-			      struct nv_cuda_surface *nvsurf)
+static bool cuda_surface_init(struct nvenc_data *enc, struct nv_cuda_surface *nvsurf)
 {
 	const bool p010 = obs_p010_tex_active();
 	CUDA_ARRAY3D_DESCRIPTOR desc;
@@ -111,8 +108,7 @@ static bool cuda_surface_init(struct nvenc_data *enc,
 	desc.NumChannels = 1;
 
 	if (!enc->non_texture) {
-		desc.Format = p010 ? CU_AD_FORMAT_UNSIGNED_INT16
-				   : CU_AD_FORMAT_UNSIGNED_INT8;
+		desc.Format = p010 ? CU_AD_FORMAT_UNSIGNED_INT16 : CU_AD_FORMAT_UNSIGNED_INT8;
 		desc.Height = enc->cy + enc->cy / 2;
 	} else {
 		switch (enc->surface_format) {
@@ -146,8 +142,7 @@ static bool cuda_surface_init(struct nvenc_data *enc,
 	res.height = enc->cy;
 	res.pitch = (uint32_t)(desc.Width * desc.NumChannels);
 	if (!enc->non_texture) {
-		res.bufferFormat = p010 ? NV_ENC_BUFFER_FORMAT_YUV420_10BIT
-					: NV_ENC_BUFFER_FORMAT_NV12;
+		res.bufferFormat = p010 ? NV_ENC_BUFFER_FORMAT_YUV420_10BIT : NV_ENC_BUFFER_FORMAT_NV12;
 	} else {
 		res.bufferFormat = enc->surface_format;
 	}
@@ -190,13 +185,11 @@ bool cuda_init_surfaces(struct nvenc_data *enc)
 	return true;
 }
 
-static void cuda_surface_free(struct nvenc_data *enc,
-			      struct nv_cuda_surface *nvsurf)
+static void cuda_surface_free(struct nvenc_data *enc, struct nv_cuda_surface *nvsurf)
 {
 	if (nvsurf->res) {
 		if (nvsurf->mapped_res) {
-			nv.nvEncUnmapInputResource(enc->session,
-						   nvsurf->mapped_res);
+			nv.nvEncUnmapInputResource(enc->session, nvsurf->mapped_res);
 		}
 		nv.nvEncUnregisterResource(enc->session, nvsurf->res);
 		cu->cuArrayDestroy(nvsurf->tex);
@@ -218,9 +211,7 @@ void cuda_free_surfaces(struct nvenc_data *enc)
 /* ------------------------------------------------------------------------- */
 /* Actual encoding stuff                                                     */
 
-static inline bool copy_frame(struct nvenc_data *enc,
-			      struct encoder_frame *frame,
-			      struct nv_cuda_surface *surf)
+static inline bool copy_frame(struct nvenc_data *enc, struct encoder_frame *frame, struct nv_cuda_surface *surf)
 {
 	bool success = true;
 	size_t height = enc->cy;
@@ -239,10 +230,8 @@ static inline bool copy_frame(struct nvenc_data *enc,
 		/* Page-locks the host memory so that it can be DMAd directly
 		 * rather than CUDA doing an internal copy to page-locked
 		 * memory before actually DMA-ing to the GPU. */
-		CU_CHECK(cu->cuMemHostRegister(frame->data[0],
-					       frame->linesize[0] * height, 0))
-		CU_CHECK(cu->cuMemHostRegister(
-			frame->data[1], frame->linesize[1] * height / 2, 0))
+		CU_CHECK(cu->cuMemHostRegister(frame->data[0], frame->linesize[0] * height, 0))
+		CU_CHECK(cu->cuMemHostRegister(frame->data[1], frame->linesize[1] * height / 2, 0))
 
 		m.srcPitch = frame->linesize[0];
 		m.srcHost = frame->data[0];
@@ -254,10 +243,8 @@ static inline bool copy_frame(struct nvenc_data *enc,
 		m.Height /= 2;
 		CU_FAILED(cu->cuMemcpy2D(&m))
 	} else if (enc->surface_format == NV_ENC_BUFFER_FORMAT_YUV420_10BIT) {
-		CU_CHECK(cu->cuMemHostRegister(frame->data[0],
-					       frame->linesize[0] * height, 0))
-		CU_CHECK(cu->cuMemHostRegister(
-			frame->data[1], frame->linesize[1] * height / 2, 0))
+		CU_CHECK(cu->cuMemHostRegister(frame->data[0], frame->linesize[0] * height, 0))
+		CU_CHECK(cu->cuMemHostRegister(frame->data[1], frame->linesize[1] * height / 2, 0))
 
 		// P010 lines are double the size (16 bit per pixel)
 		m.WidthInBytes *= 2;
@@ -272,12 +259,9 @@ static inline bool copy_frame(struct nvenc_data *enc,
 		m.Height /= 2;
 		CU_FAILED(cu->cuMemcpy2D(&m))
 	} else { // I444
-		CU_CHECK(cu->cuMemHostRegister(frame->data[0],
-					       frame->linesize[0] * height, 0))
-		CU_CHECK(cu->cuMemHostRegister(frame->data[1],
-					       frame->linesize[1] * height, 0))
-		CU_CHECK(cu->cuMemHostRegister(frame->data[2],
-					       frame->linesize[2] * height, 0))
+		CU_CHECK(cu->cuMemHostRegister(frame->data[0], frame->linesize[0] * height, 0))
+		CU_CHECK(cu->cuMemHostRegister(frame->data[1], frame->linesize[1] * height, 0))
+		CU_CHECK(cu->cuMemHostRegister(frame->data[2], frame->linesize[2] * height, 0))
 
 		m.srcPitch = frame->linesize[0];
 		m.srcHost = frame->data[0];
@@ -307,8 +291,7 @@ unmap:
 	return success;
 }
 
-bool cuda_encode(void *data, struct encoder_frame *frame,
-		 struct encoder_packet *packet, bool *received_packet)
+bool cuda_encode(void *data, struct encoder_frame *frame, struct encoder_packet *packet, bool *received_packet)
 {
 	struct nvenc_data *enc = data;
 	struct nv_cuda_surface *surf;
@@ -340,6 +323,5 @@ bool cuda_encode(void *data, struct encoder_frame *frame,
 	/* ------------------------------------ */
 	/* do actual encode call                */
 
-	return nvenc_encode_base(enc, bs, surf->mapped_res, frame->pts, packet,
-				 received_packet);
+	return nvenc_encode_base(enc, bs, surf->mapped_res, frame->pts, packet, received_packet);
 }

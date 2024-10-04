@@ -17,11 +17,7 @@ protected:
 		std::string message;
 		std::string error;
 
-		ErrorInfo(std::string message_, std::string error_)
-			: message(message_),
-			  error(error_)
-		{
-		}
+		ErrorInfo(std::string message_, std::string error_) : message(message_), error(error_) {}
 	};
 
 public:

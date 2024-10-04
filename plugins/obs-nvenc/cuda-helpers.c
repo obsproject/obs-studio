@@ -27,8 +27,7 @@ static void *load_cuda_func(const char *func)
 {
 	void *func_ptr = os_dlsym(cuda_lib, func);
 	if (!func_ptr) {
-		blog(LOG_ERROR, "[obs-nvenc] Could not load function: %s",
-		     func);
+		blog(LOG_ERROR, "[obs-nvenc] Could not load function: %s", func);
 	}
 	return func_ptr;
 }
@@ -62,21 +61,15 @@ static const cuda_function cuda_functions[] = {
 
 #ifndef _WIN32
 	{offsetof(CudaFunctions, cuGLGetDevices), "cuGLGetDevices_v2"},
-	{offsetof(CudaFunctions, cuGraphicsGLRegisterImage),
-	 "cuGraphicsGLRegisterImage"},
-	{offsetof(CudaFunctions, cuGraphicsUnregisterResource),
-	 "cuGraphicsUnregisterResource"},
-	{offsetof(CudaFunctions, cuGraphicsMapResources),
-	 "cuGraphicsMapResources"},
-	{offsetof(CudaFunctions, cuGraphicsUnmapResources),
-	 "cuGraphicsUnmapResources"},
-	{offsetof(CudaFunctions, cuGraphicsSubResourceGetMappedArray),
-	 "cuGraphicsSubResourceGetMappedArray"},
+	{offsetof(CudaFunctions, cuGraphicsGLRegisterImage), "cuGraphicsGLRegisterImage"},
+	{offsetof(CudaFunctions, cuGraphicsUnregisterResource), "cuGraphicsUnregisterResource"},
+	{offsetof(CudaFunctions, cuGraphicsMapResources), "cuGraphicsMapResources"},
+	{offsetof(CudaFunctions, cuGraphicsUnmapResources), "cuGraphicsUnmapResources"},
+	{offsetof(CudaFunctions, cuGraphicsSubResourceGetMappedArray), "cuGraphicsSubResourceGetMappedArray"},
 #endif
 };
 
-static const size_t num_cuda_funcs =
-	sizeof(cuda_functions) / sizeof(cuda_function);
+static const size_t num_cuda_funcs = sizeof(cuda_functions) / sizeof(cuda_function);
 
 static bool init_cuda_internal(obs_encoder_t *encoder)
 {
@@ -88,8 +81,7 @@ static bool init_cuda_internal(obs_encoder_t *encoder)
 	initialized = true;
 
 	if (!load_cuda_lib()) {
-		obs_encoder_set_last_error(encoder,
-					   "Loading CUDA library failed.");
+		obs_encoder_set_last_error(encoder, "Loading CUDA library failed.");
 		return false;
 	}
 
@@ -100,11 +92,8 @@ static bool init_cuda_internal(obs_encoder_t *encoder)
 		void *fptr = load_cuda_func(func.name);
 
 		if (!fptr) {
-			blog(LOG_ERROR,
-			     "[obs-nvenc] Failed to find CUDA function: %s",
-			     func.name);
-			obs_encoder_set_last_error(
-				encoder, "Loading CUDA functions failed.");
+			blog(LOG_ERROR, "[obs-nvenc] Failed to find CUDA function: %s", func.name);
+			obs_encoder_set_last_error(encoder, "Loading CUDA functions failed.");
 			return false;
 		}
 
@@ -117,15 +106,13 @@ static bool init_cuda_internal(obs_encoder_t *encoder)
 
 bool cuda_get_error_desc(CUresult res, const char **name, const char **desc)
 {
-	if (cu->cuGetErrorName(res, name) != CUDA_SUCCESS ||
-	    cu->cuGetErrorString(res, desc) != CUDA_SUCCESS)
+	if (cu->cuGetErrorName(res, name) != CUDA_SUCCESS || cu->cuGetErrorString(res, desc) != CUDA_SUCCESS)
 		return false;
 
 	return true;
 }
 
-bool cuda_error_check(struct nvenc_data *enc, CUresult res, const char *func,
-		      const char *call)
+bool cuda_error_check(struct nvenc_data *enc, CUresult res, const char *func, const char *call)
 {
 	if (res == CUDA_SUCCESS)
 		return true;
@@ -134,12 +121,9 @@ bool cuda_error_check(struct nvenc_data *enc, CUresult res, const char *func,
 
 	const char *name, *desc;
 	if (cuda_get_error_desc(res, &name, &desc)) {
-		dstr_printf(&message,
-			    "%s: CUDA call \"%s\" failed with %s (%d): %s",
-			    func, call, name, res, desc);
+		dstr_printf(&message, "%s: CUDA call \"%s\" failed with %s (%d): %s", func, call, name, res, desc);
 	} else {
-		dstr_printf(&message, "%s: CUDA call \"%s\" failed with %d",
-			    func, call, res);
+		dstr_printf(&message, "%s: CUDA call \"%s\" failed with %d", func, call, res);
 	}
 
 	error("%s", message.array);

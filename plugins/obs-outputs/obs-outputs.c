@@ -56,8 +56,7 @@ bool obs_module_load(void)
 #endif
 
 #if defined(_WIN32) && defined(MBEDTLS_THREADING_ALT)
-	mbedtls_threading_set_alt(mbed_mutex_init, mbed_mutex_free,
-				  mbed_mutex_lock, mbed_mutex_unlock);
+	mbedtls_threading_set_alt(mbed_mutex_init, mbed_mutex_free, mbed_mutex_lock, mbed_mutex_unlock);
 #endif
 
 	obs_register_output(&rtmp_output_info);

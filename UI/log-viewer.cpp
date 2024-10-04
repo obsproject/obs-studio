@@ -12,23 +12,18 @@
 
 #include "moc_log-viewer.cpp"
 
-OBSLogViewer::OBSLogViewer(QWidget *parent)
-	: QDialog(parent),
-	  ui(new Ui::OBSLogViewer)
+OBSLogViewer::OBSLogViewer(QWidget *parent) : QDialog(parent), ui(new Ui::OBSLogViewer)
 {
-	setWindowFlags(windowFlags() & Qt::WindowMaximizeButtonHint &
-		       ~Qt::WindowContextHelpButtonHint);
+	setWindowFlags(windowFlags() & Qt::WindowMaximizeButtonHint & ~Qt::WindowContextHelpButtonHint);
 	setAttribute(Qt::WA_DeleteOnClose);
 
 	ui->setupUi(this);
 
-	bool showLogViewerOnStartup = config_get_bool(
-		App()->GetUserConfig(), "LogViewer", "ShowLogStartup");
+	bool showLogViewerOnStartup = config_get_bool(App()->GetUserConfig(), "LogViewer", "ShowLogStartup");
 
 	ui->showStartup->setChecked(showLogViewerOnStartup);
 
-	const char *geom = config_get_string(App()->GetUserConfig(),
-					     "LogViewer", "geometry");
+	const char *geom = config_get_string(App()->GetUserConfig(), "LogViewer", "geometry");
 
 	if (geom != nullptr) {
 		QByteArray ba = QByteArray::fromBase64(QByteArray(geom));
@@ -40,14 +35,12 @@ OBSLogViewer::OBSLogViewer(QWidget *parent)
 
 OBSLogViewer::~OBSLogViewer()
 {
-	config_set_string(App()->GetUserConfig(), "LogViewer", "geometry",
-			  saveGeometry().toBase64().constData());
+	config_set_string(App()->GetUserConfig(), "LogViewer", "geometry", saveGeometry().toBase64().constData());
 }
 
 void OBSLogViewer::on_showStartup_clicked(bool checked)
 {
-	config_set_bool(App()->GetUserConfig(), "LogViewer", "ShowLogStartup",
-			checked);
+	config_set_bool(App()->GetUserConfig(), "LogViewer", "ShowLogStartup", checked);
 }
 
 extern QPointer<OBSLogViewer> obsLogViewer;

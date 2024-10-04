@@ -50,16 +50,13 @@ extern QCef *cef;
 
 static bool QuickWriteFile(const char *file, const std::string &data)
 try {
-	std::ofstream fileStream(std::filesystem::u8path(file),
-				 std::ios::binary);
+	std::ofstream fileStream(std::filesystem::u8path(file), std::ios::binary);
 	if (fileStream.fail())
-		throw strprintf("Failed to open file '%s': %s", file,
-				strerror(errno));
+		throw strprintf("Failed to open file '%s': %s", file, strerror(errno));
 
 	fileStream.write(data.data(), data.size());
 	if (fileStream.fail())
-		throw strprintf("Failed to write file '%s': %s", file,
-				strerror(errno));
+		throw strprintf("Failed to write file '%s': %s", file, strerror(errno));
 
 	return true;
 
@@ -70,11 +67,9 @@ try {
 
 static bool QuickReadFile(const char *file, std::string &data)
 try {
-	std::ifstream fileStream(std::filesystem::u8path(file),
-				 std::ios::binary);
+	std::ifstream fileStream(std::filesystem::u8path(file), std::ios::binary);
 	if (!fileStream.is_open() || fileStream.fail())
-		throw strprintf("Failed to open file '%s': %s", file,
-				strerror(errno));
+		throw strprintf("Failed to open file '%s': %s", file, strerror(errno));
 
 	fileStream.seekg(0, fileStream.end);
 	size_t size = fileStream.tellg();
@@ -84,8 +79,7 @@ try {
 	fileStream.read(&data[0], size);
 
 	if (fileStream.fail())
-		throw strprintf("Failed to write file '%s': %s", file,
-				strerror(errno));
+		throw strprintf("Failed to write file '%s': %s", file, strerror(errno));
 
 	return true;
 
@@ -147,8 +141,7 @@ std::string GetProgramGUID()
 	/* NOTE: this is an arbitrary random number that we use to count the
 	 * number of unique OBS installations and is not associated with any
 	 * kind of identifiable information */
-	const char *pguid = config_get_string(App()->GetAppConfig(), "General",
-					      "InstallGUID");
+	const char *pguid = config_get_string(App()->GetAppConfig(), "General", "InstallGUID");
 	std::string guid;
 	if (pguid)
 		guid = pguid;
@@ -157,8 +150,7 @@ std::string GetProgramGUID()
 		GenerateGUID(guid);
 
 		if (!guid.empty())
-			config_set_string(App()->GetAppConfig(), "General",
-					  "InstallGUID", guid.c_str());
+			config_set_string(App()->GetAppConfig(), "General", "InstallGUID", guid.c_str());
 	}
 
 	return guid;
@@ -176,16 +168,13 @@ static void LoadPublicKey(std::string &pubkey)
 		throw std::string("Could not read OBS public key file!");
 }
 
-static bool CheckDataSignature(const char *name, const std::string &data,
-			       const std::string &hexSig)
+static bool CheckDataSignature(const char *name, const std::string &data, const std::string &hexSig)
 try {
 	static std::mutex pubkey_mutex;
 	static std::string obsPubKey;
 
-	if (hexSig.empty() || hexSig.length() > 0xFFFF ||
-	    (hexSig.length() & 1) != 0)
-		throw strprintf("Missing or invalid signature for %s: %s", name,
-				hexSig.c_str());
+	if (hexSig.empty() || hexSig.length() > 0xFFFF || (hexSig.length() & 1) != 0)
+		throw strprintf("Missing or invalid signature for %s: %s", name, hexSig.c_str());
 
 	std::scoped_lock lock(pubkey_mutex);
 	if (obsPubKey.empty())
@@ -194,8 +183,7 @@ try {
 	// Convert hex string to bytes
 	auto signature = QByteArray::fromHex(hexSig.data());
 
-	if (!VerifySignature((uint8_t *)obsPubKey.data(), obsPubKey.size(),
-			     (uint8_t *)data.data(), data.size(),
+	if (!VerifySignature((uint8_t *)obsPubKey.data(), obsPubKey.size(), (uint8_t *)data.data(), data.size(),
 			     (uint8_t *)signature.data(), signature.size()))
 		throw strprintf("Signature check failed for %s", name);
 
@@ -208,8 +196,7 @@ try {
 
 /* ------------------------------------------------------------------------ */
 
-bool FetchAndVerifyFile(const char *name, const char *file, const char *url,
-			std::string *out,
+bool FetchAndVerifyFile(const char *name, const char *file, const char *url, std::string *out,
 			const std::vector<std::string> &extraHeaders)
 {
 	long responseCode;
@@ -223,16 +210,14 @@ bool FetchAndVerifyFile(const char *name, const char *file, const char *url,
 	BPtr<char> filePath = GetAppConfigPathPtr(file);
 
 	if (!extraHeaders.empty()) {
-		headers.insert(headers.end(), extraHeaders.begin(),
-			       extraHeaders.end());
+		headers.insert(headers.end(), extraHeaders.begin(), extraHeaders.end());
 	}
 
 	/* ----------------------------------- *
 	 * avoid downloading file again        */
 
 	if (CalculateFileHash(filePath, fileHash)) {
-		auto hash = QByteArray::fromRawData((const char *)fileHash,
-						    BLAKE2_HASH_LENGTH);
+		auto hash = QByteArray::fromRawData((const char *)fileHash, BLAKE2_HASH_LENGTH);
 
 		QString header = "If-None-Match: " + hash.toHex();
 		headers.push_back(header.toStdString());
@@ -251,15 +236,13 @@ bool FetchAndVerifyFile(const char *name, const char *file, const char *url,
 	/* ----------------------------------- *
 	 * get file from server                */
 
-	success = GetRemoteFile(url, data, error, &responseCode, nullptr, "",
-				nullptr, headers, &signature);
+	success = GetRemoteFile(url, data, error, &responseCode, nullptr, "", nullptr, headers, &signature);
 
 	if (!success || (responseCode != 200 && responseCode != 304)) {
 		if (responseCode == 404)
 			return false;
 
-		throw strprintf("Failed to fetch %s file: %s", name,
-				error.c_str());
+		throw strprintf("Failed to fetch %s file: %s", name, error.c_str());
 	}
 
 	/* ----------------------------------- *
@@ -276,12 +259,10 @@ bool FetchAndVerifyFile(const char *name, const char *file, const char *url,
 
 	if (responseCode == 200) {
 		if (!QuickWriteFile(filePath, data))
-			throw strprintf("Could not write file '%s'",
-					filePath.Get());
+			throw strprintf("Could not write file '%s'", filePath.Get());
 	} else if (out) { /* Only read file if caller wants data */
 		if (!QuickReadFile(filePath, data))
-			throw strprintf("Could not read file '%s'",
-					filePath.Get());
+			throw strprintf("Could not read file '%s'", filePath.Get());
 	}
 
 	if (out)
@@ -296,8 +277,7 @@ void WhatsNewInfoThread::run()
 try {
 	std::string text;
 
-	if (FetchAndVerifyFile("whatsnew", "obs-studio/updates/whatsnew.json",
-			       WHATSNEW_URL, &text)) {
+	if (FetchAndVerifyFile("whatsnew", "obs-studio/updates/whatsnew.json", WHATSNEW_URL, &text)) {
 		emit Result(QString::fromStdString(text));
 	}
 } catch (std::string &text) {

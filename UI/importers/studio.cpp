@@ -49,19 +49,13 @@ void TranslateOSStudio(Json &res)
 
 		ClearTranslation("game_capture", "syphon-input");
 
-		ClearTranslation("wasapi_input_capture",
-				 "coreaudio_input_capture");
-		ClearTranslation("wasapi_output_capture",
-				 "coreaudio_output_capture");
-		ClearTranslation("pulse_input_capture",
-				 "coreaudio_input_capture");
-		ClearTranslation("pulse_output_capture",
-				 "coreaudio_output_capture");
+		ClearTranslation("wasapi_input_capture", "coreaudio_input_capture");
+		ClearTranslation("wasapi_output_capture", "coreaudio_output_capture");
+		ClearTranslation("pulse_input_capture", "coreaudio_input_capture");
+		ClearTranslation("pulse_output_capture", "coreaudio_output_capture");
 
-		ClearTranslation("jack_output_capture",
-				 "coreaudio_output_capture");
-		ClearTranslation("alsa_input_capture",
-				 "coreaudio_input_capture");
+		ClearTranslation("jack_output_capture", "coreaudio_output_capture");
+		ClearTranslation("alsa_input_capture", "coreaudio_input_capture");
 
 		ClearTranslation("dshow_input", "av_capture_input");
 		ClearTranslation("v4l2_input", "av_capture_input");
@@ -69,10 +63,8 @@ void TranslateOSStudio(Json &res)
 		ClearTranslation("xcomposite_input", "window_capture");
 
 		if (id == "monitor_capture") {
-			if (settings["show_cursor"].is_null() &&
-			    !settings["capture_cursor"].is_null()) {
-				bool cursor =
-					settings["capture_cursor"].bool_value();
+			if (settings["show_cursor"].is_null() && !settings["capture_cursor"].is_null()) {
+				bool cursor = settings["capture_cursor"].bool_value();
 
 				settings["show_cursor"] = cursor;
 			}
@@ -84,16 +76,12 @@ void TranslateOSStudio(Json &res)
 
 		ClearTranslation("syphon-input", "game_capture");
 
-		ClearTranslation("coreaudio_input_capture",
-				 "wasapi_input_capture");
-		ClearTranslation("coreaudio_output_capture",
-				 "wasapi_output_capture");
+		ClearTranslation("coreaudio_input_capture", "wasapi_input_capture");
+		ClearTranslation("coreaudio_output_capture", "wasapi_output_capture");
 		ClearTranslation("pulse_input_capture", "wasapi_input_capture");
-		ClearTranslation("pulse_output_capture",
-				 "wasapi_output_capture");
+		ClearTranslation("pulse_output_capture", "wasapi_output_capture");
 
-		ClearTranslation("jack_output_capture",
-				 "wasapi_output_capture");
+		ClearTranslation("jack_output_capture", "wasapi_output_capture");
 		ClearTranslation("alsa_input_capture", "wasapi_input_capture");
 
 		ClearTranslation("av_capture_input", "dshow_input");
@@ -103,8 +91,7 @@ void TranslateOSStudio(Json &res)
 
 		if (id == "monitor_capture" || id == "xshm_input") {
 			if (!settings["show_cursor"].is_null()) {
-				bool cursor =
-					settings["show_cursor"].bool_value();
+				bool cursor = settings["show_cursor"].bool_value();
 
 				settings["capture_cursor"] = cursor;
 			}
@@ -114,13 +101,10 @@ void TranslateOSStudio(Json &res)
 #else
 		DirectTranslation("text_gdiplus", "text_ft2_source");
 
-		ClearTranslation("coreaudio_input_capture",
-				 "pulse_input_capture");
-		ClearTranslation("coreaudio_output_capture",
-				 "pulse_output_capture");
+		ClearTranslation("coreaudio_input_capture", "pulse_input_capture");
+		ClearTranslation("coreaudio_output_capture", "pulse_output_capture");
 		ClearTranslation("wasapi_input_capture", "pulse_input_capture");
-		ClearTranslation("wasapi_output_capture",
-				 "pulse_output_capture");
+		ClearTranslation("wasapi_output_capture", "pulse_output_capture");
 
 		ClearTranslation("av_capture_input", "v4l2_input");
 		ClearTranslation("dshow_input", "v4l2_input");
@@ -130,10 +114,8 @@ void TranslateOSStudio(Json &res)
 		if (id == "monitor_capture") {
 			source["id"] = "xshm_input";
 
-			if (settings["show_cursor"].is_null() &&
-			    !settings["capture_cursor"].is_null()) {
-				bool cursor =
-					settings["capture_cursor"].bool_value();
+			if (settings["show_cursor"].is_null() && !settings["capture_cursor"].is_null()) {
+				bool cursor = settings["capture_cursor"].bool_value();
 
 				settings["show_cursor"] = cursor;
 			}
@@ -158,8 +140,7 @@ static string CheckPath(const string &path, const string &rootDir)
 
 	char absPath[512];
 	*absPath = 0;
-	size_t len = os_get_abs_path((rootDir + path).c_str(), absPath,
-				     sizeof(absPath));
+	size_t len = os_get_abs_path((rootDir + path).c_str(), absPath, sizeof(absPath));
 
 	if (len == 0)
 		return path;
@@ -185,8 +166,7 @@ void TranslatePaths(Json &res, const string &rootDir)
 				if (val.string_value().rfind("./", 0) != 0)
 					continue;
 
-				out[it->first] =
-					CheckPath(val.string_value(), rootDir);
+				out[it->first] = CheckPath(val.string_value(), rootDir);
 			} else if (val.is_array() || val.is_object()) {
 				TranslatePaths(val, rootDir);
 				out[it->first] = val;

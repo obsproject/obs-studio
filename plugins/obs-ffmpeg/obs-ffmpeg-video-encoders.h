@@ -38,20 +38,13 @@ struct ffmpeg_video_encoder {
 	first_packet_cb on_first_packet;
 };
 
-extern bool ffmpeg_video_encoder_init(struct ffmpeg_video_encoder *enc,
-				      void *parent, obs_encoder_t *encoder,
-				      const char *enc_lib, const char *enc_lib2,
-				      const char *enc_name,
-				      init_error_cb on_init_error,
-				      first_packet_cb on_first_packet);
+extern bool ffmpeg_video_encoder_init(struct ffmpeg_video_encoder *enc, void *parent, obs_encoder_t *encoder,
+				      const char *enc_lib, const char *enc_lib2, const char *enc_name,
+				      init_error_cb on_init_error, first_packet_cb on_first_packet);
 extern void ffmpeg_video_encoder_free(struct ffmpeg_video_encoder *enc);
 extern bool ffmpeg_video_encoder_init_codec(struct ffmpeg_video_encoder *enc);
-extern void ffmpeg_video_encoder_update(struct ffmpeg_video_encoder *enc,
-					int bitrate, int keyint_sec,
-					const struct video_output_info *voi,
-					const struct video_scale_info *info,
+extern void ffmpeg_video_encoder_update(struct ffmpeg_video_encoder *enc, int bitrate, int keyint_sec,
+					const struct video_output_info *voi, const struct video_scale_info *info,
 					const char *ffmpeg_opts);
-extern bool ffmpeg_video_encode(struct ffmpeg_video_encoder *enc,
-				struct encoder_frame *frame,
-				struct encoder_packet *packet,
-				bool *received_packet);
+extern bool ffmpeg_video_encode(struct ffmpeg_video_encoder *enc, struct encoder_frame *frame,
+				struct encoder_packet *packet, bool *received_packet);

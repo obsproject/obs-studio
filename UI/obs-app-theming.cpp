@@ -81,13 +81,11 @@ static optional<OBSTheme> ParseThemeMeta(const QString &path)
 			if (!cf_next_token(cfp))
 				return nullopt;
 
-			ret = cf_token_is_type(cfp, CFTOKEN_NAME, "name",
-					       nullptr);
+			ret = cf_token_is_type(cfp, CFTOKEN_NAME, "name", nullptr);
 			if (ret != PARSE_SUCCESS)
 				break;
 
-			string name(cfp->cur_token->str.array,
-				    cfp->cur_token->str.len);
+			string name(cfp->cur_token->str.array, cfp->cur_token->str.len);
 
 			ret = cf_next_token_should_be(cfp, ":", ";", nullptr);
 			if (ret != PARSE_SUCCESS)
@@ -96,14 +94,12 @@ static optional<OBSTheme> ParseThemeMeta(const QString &path)
 			if (!cf_next_token(cfp))
 				return nullopt;
 
-			ret = cf_token_is_type(cfp, CFTOKEN_STRING, "value",
-					       ";");
+			ret = cf_token_is_type(cfp, CFTOKEN_STRING, "value", ";");
 
 			if (ret != PARSE_SUCCESS)
 				continue;
 
-			BPtr str = cf_literal_to_str(cfp->cur_token->str.array,
-						     cfp->cur_token->str.len);
+			BPtr str = cf_literal_to_str(cfp->cur_token->str.array, cfp->cur_token->str.len);
 
 			if (str) {
 				if (name == "dark")
@@ -127,8 +123,7 @@ static optional<OBSTheme> ParseThemeMeta(const QString &path)
 	meta.isBaseTheme = filepath.extension() == ".obt";
 	meta.filename = filepath.stem();
 
-	if (meta.id.isEmpty() || meta.name.isEmpty() ||
-	    (!meta.isBaseTheme && meta.extends.isEmpty())) {
+	if (meta.id.isEmpty() || meta.name.isEmpty() || (!meta.isBaseTheme && meta.extends.isEmpty())) {
 		/* Theme is invalid */
 		return nullopt;
 	} else {
@@ -156,8 +151,7 @@ static bool ParseVarName(CFParser &cfp, QString &value)
 	if (!cf_next_token(cfp))
 		return false;
 
-	value = QString::fromUtf8(cfp->cur_token->str.array,
-				  cfp->cur_token->str.len);
+	value = QString::fromUtf8(cfp->cur_token->str.array, cfp->cur_token->str.len);
 
 	ret = cf_next_token_should_be(cfp, ")", ";", nullptr);
 	if (ret != PARSE_SUCCESS)
@@ -212,8 +206,7 @@ static QColor ParseColor(CFParser &cfp)
 	return res;
 }
 
-static bool ParseCalc(CFParser &cfp, QStringList &calc,
-		      vector<OBSThemeVariable> &vars)
+static bool ParseCalc(CFParser &cfp, QStringList &calc, vector<OBSThemeVariable> &vars)
 {
 	int ret = cf_next_token_should_be(cfp, "(", ";", nullptr);
 	if (ret != PARSE_SUCCESS)
@@ -231,9 +224,7 @@ static bool ParseCalc(CFParser &cfp, QStringList &calc,
 			OBSThemeVariable var;
 			QStringList subcalc;
 
-			var.name = QString("__unnamed_%1")
-					   .arg(QRandomGenerator::global()
-							->generate64());
+			var.name = QString("__unnamed_%1").arg(QRandomGenerator::global()->generate64());
 
 			if (!ParseCalc(cfp, subcalc, vars))
 				return false;
@@ -249,8 +240,7 @@ static bool ParseCalc(CFParser &cfp, QStringList &calc,
 
 			calc << value;
 		} else {
-			calc << QString::fromUtf8(cfp->cur_token->str.array,
-						  cfp->cur_token->str.len);
+			calc << QString::fromUtf8(cfp->cur_token->str.array, cfp->cur_token->str.len);
 		}
 
 		if (!cf_next_token(cfp))
@@ -305,8 +295,7 @@ static vector<OBSThemeVariable> ParseThemeVariables(const char *themeData)
 		if (ret != PARSE_SUCCESS)
 			break;
 
-		QString key = QString::fromUtf8(cfp->cur_token->str.array,
-						cfp->cur_token->str.len);
+		QString key = QString::fromUtf8(cfp->cur_token->str.array, cfp->cur_token->str.len);
 		OBSThemeVariable var;
 		var.name = key;
 
@@ -318,8 +307,7 @@ static vector<OBSThemeVariable> ParseThemeVariables(const char *themeData)
 		const QString osPrefix = "os_lin_";
 #endif
 
-		if (key.startsWith(osPrefix) &&
-		    key.length() > osPrefix.length()) {
+		if (key.startsWith(osPrefix) && key.length() > osPrefix.length()) {
 			var.name = key.sliced(osPrefix.length());
 		}
 
@@ -340,17 +328,14 @@ static vector<OBSThemeVariable> ParseThemeVariables(const char *themeData)
 
 			/* Look for a suffix and mark variable as size if it exists */
 			while (ch < end) {
-				if (!isdigit(*ch) && !isspace(*ch) &&
-				    *ch != '.') {
-					var.suffix =
-						QString::fromUtf8(ch, end - ch);
+				if (!isdigit(*ch) && !isspace(*ch) && *ch != '.') {
+					var.suffix = QString::fromUtf8(ch, end - ch);
 					var.type = OBSThemeVariable::Size;
 					break;
 				}
 				ch++;
 			}
-		} else if (cf_token_is(cfp, "rgb") || cf_token_is(cfp, "#") ||
-			   cf_token_is(cfp, "bikeshed")) {
+		} else if (cf_token_is(cfp, "rgb") || cf_token_is(cfp, "#") || cf_token_is(cfp, "bikeshed")) {
 			QColor color = ParseColor(cfp);
 			if (!color.isValid())
 				continue;
@@ -375,9 +360,7 @@ static vector<OBSThemeVariable> ParseThemeVariables(const char *themeData)
 			var.value = calc;
 		} else {
 			var.type = OBSThemeVariable::String;
-			BPtr strVal =
-				cf_literal_to_str(cfp->cur_token->str.array,
-						  cfp->cur_token->str.len);
+			BPtr strVal = cf_literal_to_str(cfp->cur_token->str.array, cfp->cur_token->str.len);
 			var.value = QString::fromUtf8(strVal.Get());
 		}
 
@@ -385,12 +368,9 @@ static vector<OBSThemeVariable> ParseThemeVariables(const char *themeData)
 			return vars;
 
 		if (cf_token_is(cfp, "!") &&
-		    cf_next_token_should_be(cfp, "editable", nullptr,
-					    nullptr) == PARSE_SUCCESS) {
-			if (var.type == OBSThemeVariable::Calc ||
-			    var.type == OBSThemeVariable::Alias) {
-				blog(LOG_WARNING,
-				     "Variable of calc/alias type cannot be editable: %s",
+		    cf_next_token_should_be(cfp, "editable", nullptr, nullptr) == PARSE_SUCCESS) {
+			if (var.type == OBSThemeVariable::Calc || var.type == OBSThemeVariable::Alias) {
+				blog(LOG_WARNING, "Variable of calc/alias type cannot be editable: %s",
 				     QT_TO_UTF8(var.name));
 			} else {
 				var.editable = true;
@@ -399,8 +379,7 @@ static vector<OBSThemeVariable> ParseThemeVariables(const char *themeData)
 
 		vars.push_back(std::move(var));
 
-		if (!cf_token_is(cfp, ";") &&
-		    !cf_go_to_token(cfp, ";", nullptr))
+		if (!cf_token_is(cfp, ";") && !cf_go_to_token(cfp, ";", nullptr))
 			return vars;
 	}
 
@@ -419,8 +398,7 @@ void OBSApp::FindThemes()
 	{
 		string themeDir;
 		GetDataFilePath("themes/", themeDir);
-		QDirIterator it(QString::fromStdString(themeDir), filters,
-				QDir::Files);
+		QDirIterator it(QString::fromStdString(themeDir), filters, QDir::Files);
 		while (it.hasNext()) {
 			auto theme = ParseThemeMeta(it.next());
 			if (theme && !themes.contains(theme->id))
@@ -429,12 +407,9 @@ void OBSApp::FindThemes()
 	}
 
 	{
-		const std::string themeDir =
-			App()->userConfigLocation.u8string() +
-			"/obs-studio/themes";
+		const std::string themeDir = App()->userConfigLocation.u8string() + "/obs-studio/themes";
 
-		QDirIterator it(QString::fromStdString(themeDir), filters,
-				QDir::Files);
+		QDirIterator it(QString::fromStdString(themeDir), filters, QDir::Files);
 
 		while (it.hasNext()) {
 			auto theme = ParseThemeMeta(it.next());
@@ -449,8 +424,7 @@ void OBSApp::FindThemes()
 	for (OBSTheme &theme : themes) {
 		if (theme.extends.isEmpty()) {
 			if (!theme.isBaseTheme) {
-				blog(LOG_ERROR,
-				     R"(Theme "%s" is not base, but does not specify parent!)",
+				blog(LOG_ERROR, R"(Theme "%s" is not base, but does not specify parent!)",
 				     QT_TO_UTF8(theme.id));
 				invalid.insert(theme.id);
 			}
@@ -462,46 +436,36 @@ void OBSApp::FindThemes()
 		while (!parentId.isEmpty()) {
 			OBSTheme *parent = GetTheme(parentId);
 			if (!parent) {
-				blog(LOG_ERROR,
-				     R"(Theme "%s" is missing ancestor "%s"!)",
-				     QT_TO_UTF8(theme.id),
+				blog(LOG_ERROR, R"(Theme "%s" is missing ancestor "%s"!)", QT_TO_UTF8(theme.id),
 				     QT_TO_UTF8(parentId));
 				invalid.insert(theme.id);
 				break;
 			}
 
 			if (theme.isBaseTheme && !parent->isBaseTheme) {
-				blog(LOG_ERROR,
-				     R"(Ancestor "%s" of base theme "%s" is not a base theme!)",
-				     QT_TO_UTF8(parent->id),
-				     QT_TO_UTF8(theme.id));
+				blog(LOG_ERROR, R"(Ancestor "%s" of base theme "%s" is not a base theme!)",
+				     QT_TO_UTF8(parent->id), QT_TO_UTF8(theme.id));
 				invalid.insert(theme.id);
 				break;
 			}
 
-			if (parent->id == theme.id ||
-			    theme.dependencies.contains(parent->id)) {
-				blog(LOG_ERROR,
-				     R"(Dependency chain of "%s" ("%s") contains recursion!)",
-				     QT_TO_UTF8(theme.id),
-				     QT_TO_UTF8(parent->id));
+			if (parent->id == theme.id || theme.dependencies.contains(parent->id)) {
+				blog(LOG_ERROR, R"(Dependency chain of "%s" ("%s") contains recursion!)",
+				     QT_TO_UTF8(theme.id), QT_TO_UTF8(parent->id));
 				invalid.insert(theme.id);
 				break;
 			}
 
 			/* Mark this theme as a variant of first parent that is a base theme. */
-			if (!theme.isBaseTheme && parent->isBaseTheme &&
-			    theme.parent.isEmpty())
+			if (!theme.isBaseTheme && parent->isBaseTheme && theme.parent.isEmpty())
 				theme.parent = parent->id;
 
 			theme.dependencies.push_front(parent->id);
 			parentId = parent->extends;
 
 			if (parentId.isEmpty() && !parent->isBaseTheme) {
-				blog(LOG_ERROR,
-				     R"(Final ancestor of "%s" ("%s") is not a base theme!)",
-				     QT_TO_UTF8(theme.id),
-				     QT_TO_UTF8(parent->id));
+				blog(LOG_ERROR, R"(Final ancestor of "%s" ("%s") is not a base theme!)",
+				     QT_TO_UTF8(theme.id), QT_TO_UTF8(parent->id));
 				invalid.insert(theme.id);
 				break;
 			}
@@ -513,8 +477,7 @@ void OBSApp::FindThemes()
 	}
 }
 
-static bool ResolveVariable(const QHash<QString, OBSThemeVariable> &vars,
-			    OBSThemeVariable &var)
+static bool ResolveVariable(const QHash<QString, OBSThemeVariable> &vars, OBSThemeVariable &var)
 {
 	if (var.type != OBSThemeVariable::Alias)
 		return true;
@@ -524,9 +487,8 @@ static bool ResolveVariable(const QHash<QString, OBSThemeVariable> &vars,
 		key = vars[key].value.toString();
 
 		if (!vars.contains(key)) {
-			blog(LOG_ERROR,
-			     R"(Variable "%s" (aliased by "%s") does not exist!)",
-			     QT_TO_UTF8(key), QT_TO_UTF8(var.name));
+			blog(LOG_ERROR, R"(Variable "%s" (aliased by "%s") does not exist!)", QT_TO_UTF8(key),
+			     QT_TO_UTF8(var.name));
 			return false;
 		}
 	}
@@ -536,12 +498,11 @@ static bool ResolveVariable(const QHash<QString, OBSThemeVariable> &vars,
 	return true;
 }
 
-static QString EvalCalc(const QHash<QString, OBSThemeVariable> &vars,
-			const OBSThemeVariable &var, const int recursion = 0);
+static QString EvalCalc(const QHash<QString, OBSThemeVariable> &vars, const OBSThemeVariable &var,
+			const int recursion = 0);
 
-static OBSThemeVariable
-ParseCalcVariable(const QHash<QString, OBSThemeVariable> &vars,
-		  const QString &value, const int recursion = 0)
+static OBSThemeVariable ParseCalcVariable(const QHash<QString, OBSThemeVariable> &vars, const QString &value,
+					  const int recursion = 0)
 {
 	OBSThemeVariable var;
 	const QByteArray utf8 = value.toUtf8();
@@ -555,8 +516,7 @@ ParseCalcVariable(const QHash<QString, OBSThemeVariable> &vars,
 		const char *dataEnd = data + utf8.size();
 		while (data < dataEnd) {
 			if (*data && !isdigit(*data) && *data != '.') {
-				var.suffix =
-					QString::fromUtf8(data, dataEnd - data);
+				var.suffix = QString::fromUtf8(data, dataEnd - data);
 				var.type = OBSThemeVariable::Size;
 				break;
 			}
@@ -576,11 +536,8 @@ ParseCalcVariable(const QHash<QString, OBSThemeVariable> &vars,
 		}
 
 		/* Only number or size would be valid here */
-		if (var.type != OBSThemeVariable::Number &&
-		    var.type != OBSThemeVariable::Size) {
-			blog(LOG_ERROR,
-			     "calc() operand is not a size or number: %s",
-			     QT_TO_UTF8(var.value.toString()));
+		if (var.type != OBSThemeVariable::Number && var.type != OBSThemeVariable::Size) {
+			blog(LOG_ERROR, "calc() operand is not a size or number: %s", QT_TO_UTF8(var.value.toString()));
 			throw invalid_argument("Operand not of numeric type");
 		}
 	}
@@ -588,8 +545,7 @@ ParseCalcVariable(const QHash<QString, OBSThemeVariable> &vars,
 	return var;
 }
 
-static QString EvalCalc(const QHash<QString, OBSThemeVariable> &vars,
-			const OBSThemeVariable &var, const int recursion)
+static QString EvalCalc(const QHash<QString, OBSThemeVariable> &vars, const OBSThemeVariable &var, const int recursion)
 {
 	if (recursion >= 10) {
 		/* Abort after 10 levels of recursion */
@@ -599,16 +555,14 @@ static QString EvalCalc(const QHash<QString, OBSThemeVariable> &vars,
 
 	QStringList args = var.value.toStringList();
 	if (args.length() != 3) {
-		blog(LOG_ERROR,
-		     "calc() had invalid number of arguments: %lld (%s)",
-		     args.length(), QT_TO_UTF8(args.join(", ")));
+		blog(LOG_ERROR, "calc() had invalid number of arguments: %lld (%s)", args.length(),
+		     QT_TO_UTF8(args.join(", ")));
 		return "'Invalid expression'";
 	}
 
 	QString &opt = args[1];
 	if (opt != '*' && opt != '+' && opt != '-' && opt != '/') {
-		blog(LOG_ERROR, "Unknown/invalid calc() operator: %s",
-		     QT_TO_UTF8(opt));
+		blog(LOG_ERROR, "Unknown/invalid calc() operator: %s", QT_TO_UTF8(opt));
 		return "'Invalid expression'";
 	}
 
@@ -621,19 +575,15 @@ static QString EvalCalc(const QHash<QString, OBSThemeVariable> &vars,
 	}
 
 	/* Ensure that suffixes match (if any) */
-	if (!val1.suffix.isEmpty() && !val2.suffix.isEmpty() &&
-	    val1.suffix != val2.suffix) {
-		blog(LOG_ERROR,
-		     "calc() requires suffixes to match or only one to be present! %s != %s",
+	if (!val1.suffix.isEmpty() && !val2.suffix.isEmpty() && val1.suffix != val2.suffix) {
+		blog(LOG_ERROR, "calc() requires suffixes to match or only one to be present! %s != %s",
 		     QT_TO_UTF8(val1.suffix), QT_TO_UTF8(val2.suffix));
 		return "'Invalid expression'";
 	}
 
 	double val = numeric_limits<double>::quiet_NaN();
-	double d1 = val1.userValue.isValid() ? val1.userValue.toDouble()
-					     : val1.value.toDouble();
-	double d2 = val2.userValue.isValid() ? val2.userValue.toDouble()
-					     : val2.value.toDouble();
+	double d1 = val1.userValue.isValid() ? val1.userValue.toDouble() : val1.value.toDouble();
+	double d2 = val2.userValue.isValid() ? val2.userValue.toDouble() : val2.value.toDouble();
 
 	if (!isfinite(d1) || !isfinite(d2)) {
 		blog(LOG_ERROR,
@@ -687,8 +637,7 @@ static qsizetype FindEndOfOBSMetadata(const QString &content)
 	return end;
 }
 
-static QString PrepareQSS(const QHash<QString, OBSThemeVariable> &vars,
-			  const QStringList &contents)
+static QString PrepareQSS(const QHash<QString, OBSThemeVariable> &vars, const QStringList &contents)
 {
 	QString stylesheet;
 	QString needleTemplate("var(--%1)");
@@ -710,15 +659,13 @@ static QString PrepareQSS(const QHash<QString, OBSThemeVariable> &vars,
 		QString needle = needleTemplate.arg(var_.name);
 		QString replace;
 
-		QVariant value = var.userValue.isValid() ? var.userValue
-							 : var.value;
+		QVariant value = var.userValue.isValid() ? var.userValue : var.value;
 
 		if (var.type == OBSThemeVariable::Color) {
 			replace = value.value<QColor>().name(QColor::HexRgb);
 		} else if (var.type == OBSThemeVariable::Calc) {
 			replace = EvalCalc(vars, var);
-		} else if (var.type == OBSThemeVariable::Size ||
-			   var.type == OBSThemeVariable::Number) {
+		} else if (var.type == OBSThemeVariable::Size || var.type == OBSThemeVariable::Number) {
 			double val = value.toDouble();
 			bool isInteger = ceill(val) == val;
 			replace = QString::number(val, 'f', isInteger ? 0 : -1);
@@ -747,8 +694,7 @@ template<typename T> static void FillEnumMap(QHash<QString, T> &map)
 	}
 }
 
-static QPalette PreparePalette(const QHash<QString, OBSThemeVariable> &vars,
-			       const QPalette &defaultPalette)
+static QPalette PreparePalette(const QHash<QString, OBSThemeVariable> &vars, const QPalette &defaultPalette)
 {
 	static QHash<QString, QPalette::ColorRole> roleMap;
 	static QHash<QString, QPalette::ColorGroup> groupMap;
@@ -767,8 +713,7 @@ static QPalette PreparePalette(const QHash<QString, OBSThemeVariable> &vars,
 			continue;
 
 		OBSThemeVariable var(var_);
-		if (!ResolveVariable(vars, var) ||
-		    var.type != OBSThemeVariable::Color)
+		if (!ResolveVariable(vars, var) || var.type != OBSThemeVariable::Color)
 			continue;
 
 		/* Determine role and optionally group based on name.
@@ -780,9 +725,7 @@ static QPalette PreparePalette(const QHash<QString, OBSThemeVariable> &vars,
 		if (parts.length() >= 2) {
 			QString key = parts[1].toLower();
 			if (!roleMap.contains(key)) {
-				blog(LOG_WARNING,
-				     "Palette role \"%s\" is not valid!",
-				     QT_TO_UTF8(parts[1]));
+				blog(LOG_WARNING, "Palette role \"%s\" is not valid!", QT_TO_UTF8(parts[1]));
 				continue;
 			}
 			role = roleMap[key];
@@ -791,16 +734,13 @@ static QPalette PreparePalette(const QHash<QString, OBSThemeVariable> &vars,
 		if (parts.length() == 3) {
 			QString key = parts[2].toLower();
 			if (!groupMap.contains(key)) {
-				blog(LOG_WARNING,
-				     "Palette group \"%s\" is not valid!",
-				     QT_TO_UTF8(parts[2]));
+				blog(LOG_WARNING, "Palette group \"%s\" is not valid!", QT_TO_UTF8(parts[2]));
 				continue;
 			}
 			group = groupMap[key];
 		}
 
-		QVariant value = var.userValue.isValid() ? var.userValue
-							 : var.value;
+		QVariant value = var.userValue.isValid() ? var.userValue : var.value;
 
 		QColor color = value.value<QColor>().name(QColor::HexRgb);
 		pal.setColor(group, role, color);
@@ -860,8 +800,7 @@ bool OBSApp::SetTheme(const QString &name)
 			return false;
 		const QByteArray content = file.readAll();
 
-		for (OBSThemeVariable &var :
-		     ParseThemeVariables(content.constData())) {
+		for (OBSThemeVariable &var : ParseThemeVariables(content.constData())) {
 			vars[var.name] = std::move(var);
 		}
 
@@ -881,8 +820,7 @@ bool OBSApp::SetTheme(const QString &name)
 
 	filesystem::path debugOut;
 	char configPath[512];
-	if (GetAppConfigPath(configPath, sizeof(configPath),
-			     filename.c_str())) {
+	if (GetAppConfigPath(configPath, sizeof(configPath), filename.c_str())) {
 		debugOut = absolute(filesystem::u8path(configPath));
 		filesystem::create_directories(debugOut.parent_path());
 	}
@@ -904,8 +842,7 @@ bool OBSApp::SetTheme(const QString &name)
 		themeWatcher->addPaths(filenames);
 		/* Give it 250 ms before re-enabling the watcher to prevent too
 		 * many reloads when edited with an auto-saving IDE. */
-		QTimer::singleShot(250, this,
-				   [&] { themeWatcher->blockSignals(false); });
+		QTimer::singleShot(250, this, [&] { themeWatcher->blockSignals(false); });
 	}
 
 	return true;
@@ -914,8 +851,7 @@ bool OBSApp::SetTheme(const QString &name)
 void OBSApp::themeFileChanged(const QString &path)
 {
 	themeWatcher->blockSignals(true);
-	blog(LOG_INFO, "Theme file \"%s\" changed, reloading...",
-	     QT_TO_UTF8(path));
+	blog(LOG_INFO, "Theme file \"%s\" changed, reloading...", QT_TO_UTF8(path));
 	SetTheme(currentTheme->id);
 }
 
@@ -957,24 +893,20 @@ bool OBSApp::InitTheme()
 	if (config_get_bool(userConfig, "Appearance", "AutoReload")) {
 		/* Set up Qt file watcher to automatically reload themes */
 		themeWatcher = new QFileSystemWatcher(this);
-		connect(themeWatcher.get(), &QFileSystemWatcher::fileChanged,
-			this, &OBSApp::themeFileChanged);
+		connect(themeWatcher.get(), &QFileSystemWatcher::fileChanged, this, &OBSApp::themeFileChanged);
 	}
 
 	/* Migrate old theme config key */
 	if (config_has_user_value(userConfig, "General", "CurrentTheme3") &&
 	    !config_has_user_value(userConfig, "Appearance", "Theme")) {
-		const char *old = config_get_string(userConfig, "General",
-						    "CurrentTheme3");
+		const char *old = config_get_string(userConfig, "General", "CurrentTheme3");
 
 		if (themeMigrations.count(old)) {
-			config_set_string(userConfig, "Appearance", "Theme",
-					  themeMigrations[old].c_str());
+			config_set_string(userConfig, "Appearance", "Theme", themeMigrations[old].c_str());
 		}
 	}
 
-	QString themeName =
-		config_get_string(userConfig, "Appearance", "Theme");
+	QString themeName = config_get_string(userConfig, "Appearance", "Theme");
 
 	if (themeName.isEmpty() || !GetTheme(themeName)) {
 		if (!themeName.isEmpty()) {
@@ -984,8 +916,7 @@ bool OBSApp::InitTheme()
 			     QT_TO_UTF8(themeName), DEFAULT_THEME);
 		}
 #ifdef _WIN32
-		themeName = HighContrastEnabled() ? "com.obsproject.System"
-						  : DEFAULT_THEME;
+		themeName = HighContrastEnabled() ? "com.obsproject.System" : DEFAULT_THEME;
 #else
 		themeName = DEFAULT_THEME;
 #endif

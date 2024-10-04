@@ -61,8 +61,7 @@ void CheckIfAlreadyRunning(bool &already_running)
 	int uniq = socket(AF_LOCAL, SOCK_DGRAM | SOCK_CLOEXEC, 0);
 
 	if (uniq == -1) {
-		blog(LOG_ERROR,
-		     "Failed to check for running instance, socket: %d", errno);
+		blog(LOG_ERROR, "Failed to check for running instance, socket: %d", errno);
 		already_running = 0;
 		return;
 	}
@@ -70,13 +69,10 @@ void CheckIfAlreadyRunning(bool &already_running)
 	struct sockaddr_un bindInfo;
 	memset(&bindInfo, 0, sizeof(sockaddr_un));
 	bindInfo.sun_family = AF_LOCAL;
-	auto bindInfoStrlen = snprintf(bindInfo.sun_path + 1,
-				       sizeof(bindInfo.sun_path) - 1,
-				       "%s %d %s", "/com/obsproject", getpid(),
-				       App()->GetVersionString().c_str());
+	auto bindInfoStrlen = snprintf(bindInfo.sun_path + 1, sizeof(bindInfo.sun_path) - 1, "%s %d %s",
+				       "/com/obsproject", getpid(), App()->GetVersionString().c_str());
 
-	int bindErr = bind(uniq, (struct sockaddr *)&bindInfo,
-			   sizeof(sa_family_t) + 1 + bindInfoStrlen);
+	int bindErr = bind(uniq, (struct sockaddr *)&bindInfo, sizeof(sa_family_t) + 1 + bindInfoStrlen);
 	already_running = bindErr == 0 ? 0 : 1;
 
 	if (already_running) {
@@ -139,8 +135,7 @@ const char *RunOnce::thr_name = "OBS runonce";
 
 void CheckIfAlreadyRunning(bool &already_running)
 {
-	std::string tmpfile_name =
-		"/tmp/obs-studio.lock." + std::to_string(geteuid());
+	std::string tmpfile_name = "/tmp/obs-studio.lock." + std::to_string(geteuid());
 	int fd = open(tmpfile_name.c_str(), O_RDWR | O_CREAT | O_EXLOCK, 0600);
 	if (fd == -1) {
 		already_running = true;
@@ -151,11 +146,9 @@ void CheckIfAlreadyRunning(bool &already_running)
 
 	procstat *ps = procstat_open_sysctl();
 	unsigned int count;
-	auto procs = procstat_getprocs(ps, KERN_PROC_UID | KERN_PROC_INC_THREAD,
-				       geteuid(), &count);
+	auto procs = procstat_getprocs(ps, KERN_PROC_UID | KERN_PROC_INC_THREAD, geteuid(), &count);
 	for (unsigned int i = 0; i < count; i++) {
-		if (!strncmp(procs[i].ki_tdname, RunOnce::thr_name,
-			     sizeof(procs[i].ki_tdname))) {
+		if (!strncmp(procs[i].ki_tdname, RunOnce::thr_name, sizeof(procs[i].ki_tdname))) {
 			already_running = true;
 			break;
 		}
@@ -175,8 +168,7 @@ void CheckIfAlreadyRunning(bool &already_running)
 }
 #endif
 
-static inline bool check_path(const char *data, const char *path,
-			      string &output)
+static inline bool check_path(const char *data, const char *path, string &output)
 {
 	ostringstream str;
 	str << path << data;
@@ -197,8 +189,7 @@ bool GetDataFilePath(const char *data, string &output)
 			return true;
 	}
 
-	char *relative_data_path =
-		os_get_executable_path_ptr("../" OBS_DATA_PATH "/obs-studio/");
+	char *relative_data_path = os_get_executable_path_ptr("../" OBS_DATA_PATH "/obs-studio/");
 
 	if (relative_data_path) {
 		bool result = check_path(data, relative_data_path, output);
@@ -276,18 +267,16 @@ void TaskbarOverlaySetStatus(TaskbarOverlayStatus) {}
 bool HighContrastEnabled()
 {
 	QDBusReply<QVariant> reply;
-	QDBusMessage msgXdpSettingsVersion = QDBusMessage::createMethodCall(
-		"org.freedesktop.portal.Desktop",
-		"/org/freedesktop/portal/desktop",
-		"org.freedesktop.DBus.Properties", "Get");
+	QDBusMessage msgXdpSettingsVersion = QDBusMessage::createMethodCall("org.freedesktop.portal.Desktop",
+									    "/org/freedesktop/portal/desktop",
+									    "org.freedesktop.DBus.Properties", "Get");
 	msgXdpSettingsVersion << "org.freedesktop.portal.Settings"
 			      << "version";
 
 	reply = QDBusConnection::sessionBus().call(msgXdpSettingsVersion);
 
 	if (!reply.isValid()) {
-		blog(LOG_WARNING,
-		     "Get on org.freedesktop.portal.Settings returned an invalid reply");
+		blog(LOG_WARNING, "Get on org.freedesktop.portal.Settings returned an invalid reply");
 		return false;
 	}
 
@@ -295,17 +284,14 @@ bool HighContrastEnabled()
 	 * the ReadOne method. So assumes that if ReadOne is not available, contrast
 	 * isn't available either. */
 	if (uint32_t version = reply.value().toUInt() < 2) {
-		blog(LOG_WARNING,
-		     "org.freedesktop.portal.Settings version %u does not support ReadOne",
-		     version);
+		blog(LOG_WARNING, "org.freedesktop.portal.Settings version %u does not support ReadOne", version);
 		return false;
 	}
 
 	/* NOTE: If contrast is not available if will return 0 (false). */
-	QDBusMessage msgXdpSettingsContrast = QDBusMessage::createMethodCall(
-		"org.freedesktop.portal.Desktop",
-		"/org/freedesktop/portal/desktop",
-		"org.freedesktop.portal.Settings", "ReadOne");
+	QDBusMessage msgXdpSettingsContrast =
+		QDBusMessage::createMethodCall("org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop",
+					       "org.freedesktop.portal.Settings", "ReadOne");
 
 	msgXdpSettingsContrast << "org.freedesktop.appearance"
 			       << "contrast";
@@ -313,8 +299,7 @@ bool HighContrastEnabled()
 	reply = QDBusConnection::sessionBus().call(msgXdpSettingsContrast);
 
 	if (!reply.isValid()) {
-		blog(LOG_WARNING,
-		     "ReadOne on org.freedesktop.portal.Settings returned an invalid reply");
+		blog(LOG_WARNING, "ReadOne on org.freedesktop.portal.Settings returned an invalid reply");
 		return false;
 	}
 

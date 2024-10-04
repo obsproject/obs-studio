@@ -24,8 +24,7 @@ static void free_ingests(struct service_ingests *si)
 	da_free(si->cur_ingests);
 }
 
-static bool load_ingests(struct service_ingests *si, const char *json,
-			 bool write_file)
+static bool load_ingests(struct service_ingests *si, const char *json, bool write_file)
 {
 	json_t *root;
 	json_t *ingests;
@@ -52,8 +51,7 @@ static bool load_ingests(struct service_ingests *si, const char *json,
 		json_t *item = json_array_get(ingests, i);
 		json_t *item_name = json_object_get(item, "name");
 		json_t *item_url = json_object_get(item, "url_template");
-		json_t *item_rtmps_url =
-			json_object_get(item, "url_template_secure");
+		json_t *item_rtmps_url = json_object_get(item, "url_template_secure");
 		struct ingest ingest = {0};
 		struct dstr url = {0};
 		struct dstr rtmps_url = {0};
@@ -67,8 +65,7 @@ static bool load_ingests(struct service_ingests *si, const char *json,
 
 		/* At the moment they currently mis-spell "deprecated",
 		 * but that may change in the future, so blacklist both */
-		if (strstr(name_str, "deprecated") != NULL ||
-		    strstr(name_str, "depracated") != NULL)
+		if (strstr(name_str, "deprecated") != NULL || strstr(name_str, "depracated") != NULL)
 			continue;
 
 		dstr_copy(&url, url_str);
@@ -124,8 +121,7 @@ static bool ingest_update(void *param, struct file_download_data *data)
 	return true;
 }
 
-void service_ingests_refresh(struct service_ingests *si, int seconds,
-			     const char *log_prefix, const char *file_url)
+void service_ingests_refresh(struct service_ingests *si, int seconds, const char *log_prefix, const char *file_url)
 {
 	if (os_atomic_load_bool(&si->ingests_refreshed))
 		return;
@@ -133,9 +129,7 @@ void service_ingests_refresh(struct service_ingests *si, int seconds,
 	if (!os_atomic_load_bool(&si->ingests_refreshing)) {
 		os_atomic_set_bool(&si->ingests_refreshing, true);
 
-		si->update_info =
-			update_info_create_single(log_prefix, get_module_name(),
-						  file_url, ingest_update, si);
+		si->update_info = update_info_create_single(log_prefix, get_module_name(), file_url, ingest_update, si);
 	}
 
 	/* wait five seconds max when loading ingests for the first time */
@@ -149,8 +143,7 @@ void service_ingests_refresh(struct service_ingests *si, int seconds,
 	}
 }
 
-void load_service_data(struct service_ingests *si, const char *cache_filename,
-		       struct ingest *def)
+void load_service_data(struct service_ingests *si, const char *cache_filename, struct ingest *def)
 {
 	char *service_cache = obs_module_config_path(cache_filename);
 

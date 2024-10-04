@@ -41,45 +41,33 @@ enum ImporterColumn {
 	Count
 };
 
-enum ImporterEntryRole {
-	EntryStateRole = Qt::UserRole,
-	NewPath,
-	AutoPath,
-	CheckEmpty
-};
+enum ImporterEntryRole { EntryStateRole = Qt::UserRole, NewPath, AutoPath, CheckEmpty };
 
 /**********************************************************
   Delegate - Presents cells in the grid.
 **********************************************************/
 
-ImporterEntryPathItemDelegate::ImporterEntryPathItemDelegate()
-	: QStyledItemDelegate()
-{
-}
+ImporterEntryPathItemDelegate::ImporterEntryPathItemDelegate() : QStyledItemDelegate() {}
 
-QWidget *ImporterEntryPathItemDelegate::createEditor(
-	QWidget *parent, const QStyleOptionViewItem & /* option */,
-	const QModelIndex &index) const
+QWidget *ImporterEntryPathItemDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem & /* option */,
+						     const QModelIndex &index) const
 {
 	bool empty = index.model()
 			     ->index(index.row(), ImporterColumn::Path)
 			     .data(ImporterEntryRole::CheckEmpty)
 			     .value<bool>();
 
-	QSizePolicy buttonSizePolicy(QSizePolicy::Policy::Minimum,
-				     QSizePolicy::Policy::Expanding,
+	QSizePolicy buttonSizePolicy(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Expanding,
 				     QSizePolicy::ControlType::PushButton);
 
 	QWidget *container = new QWidget(parent);
 
 	auto browseCallback = [this, container]() {
-		const_cast<ImporterEntryPathItemDelegate *>(this)->handleBrowse(
-			container);
+		const_cast<ImporterEntryPathItemDelegate *>(this)->handleBrowse(container);
 	};
 
 	auto clearCallback = [this, container]() {
-		const_cast<ImporterEntryPathItemDelegate *>(this)->handleClear(
-			container);
+		const_cast<ImporterEntryPathItemDelegate *>(this)->handleClear(container);
 	};
 
 	QHBoxLayout *layout = new QHBoxLayout();
@@ -88,13 +76,11 @@ QWidget *ImporterEntryPathItemDelegate::createEditor(
 
 	QLineEdit *text = new QLineEdit();
 	text->setObjectName(QStringLiteral("text"));
-	text->setSizePolicy(QSizePolicy(QSizePolicy::Policy::Expanding,
-					QSizePolicy::Policy::Expanding,
+	text->setSizePolicy(QSizePolicy(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Expanding,
 					QSizePolicy::ControlType::LineEdit));
 	layout->addWidget(text);
 
-	QObject::connect(text, &QLineEdit::editingFinished, this,
-			 &ImporterEntryPathItemDelegate::updateText);
+	QObject::connect(text, &QLineEdit::editingFinished, this, &ImporterEntryPathItemDelegate::updateText);
 
 	QToolButton *browseButton = new QToolButton();
 	browseButton->setText("...");
@@ -111,8 +97,7 @@ QWidget *ImporterEntryPathItemDelegate::createEditor(
 		clearButton->setSizePolicy(buttonSizePolicy);
 		layout->addWidget(clearButton);
 
-		container->connect(clearButton, &QToolButton::clicked,
-				   clearCallback);
+		container->connect(clearButton, &QToolButton::clicked, clearCallback);
 	}
 
 	container->setLayout(layout);
@@ -120,16 +105,14 @@ QWidget *ImporterEntryPathItemDelegate::createEditor(
 	return container;
 }
 
-void ImporterEntryPathItemDelegate::setEditorData(
-	QWidget *editor, const QModelIndex &index) const
+void ImporterEntryPathItemDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
 {
 	QLineEdit *text = editor->findChild<QLineEdit *>();
 	text->setText(index.data().toString());
 	editor->setProperty(PATH_LIST_PROP, QVariant());
 }
 
-void ImporterEntryPathItemDelegate::setModelData(QWidget *editor,
-						 QAbstractItemModel *model,
+void ImporterEntryPathItemDelegate::setModelData(QWidget *editor, QAbstractItemModel *model,
 						 const QModelIndex &index) const
 {
 	// We use the PATH_LIST_PROP property to pass a list of
@@ -141,8 +124,7 @@ void ImporterEntryPathItemDelegate::setModelData(QWidget *editor,
 	// as normal text data in the default role.
 	QVariant pathListProp = editor->property(PATH_LIST_PROP);
 	if (pathListProp.isValid()) {
-		QStringList list =
-			editor->property(PATH_LIST_PROP).toStringList();
+		QStringList list = editor->property(PATH_LIST_PROP).toStringList();
 		model->setData(index, list, ImporterEntryRole::NewPath);
 	} else {
 		QLineEdit *lineEdit = editor->findChild<QLineEdit *>();
@@ -150,15 +132,13 @@ void ImporterEntryPathItemDelegate::setModelData(QWidget *editor,
 	}
 }
 
-void ImporterEntryPathItemDelegate::paint(QPainter *painter,
-					  const QStyleOptionViewItem &option,
+void ImporterEntryPathItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
 					  const QModelIndex &index) const
 {
 	QStyleOptionViewItem localOption = option;
 	initStyleOption(&localOption, index);
 
-	QApplication::style()->drawControl(QStyle::CE_ItemViewItem,
-					   &localOption, painter);
+	QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &localOption, painter);
 }
 
 void ImporterEntryPathItemDelegate::handleBrowse(QWidget *container)
@@ -170,9 +150,8 @@ void ImporterEntryPathItemDelegate::handleBrowse(QWidget *container)
 	QString currentPath = text->text();
 
 	bool isSet = false;
-	QStringList paths = OpenFiles(
-		container, QTStr("Importer.SelectCollection"), currentPath,
-		QTStr("Importer.Collection") + QString(" ") + Pattern);
+	QStringList paths = OpenFiles(container, QTStr("Importer.SelectCollection"), currentPath,
+				      QTStr("Importer.Collection") + QString(" ") + Pattern);
 
 	if (!paths.empty()) {
 		container->setProperty(PATH_LIST_PROP, paths);
@@ -241,9 +220,7 @@ QVariant ImporterModel::data(const QModelIndex &index, int role) const
 		switch (index.column()) {
 		case ImporterColumn::Selected:
 			if (options[index.row()].program != "")
-				result = options[index.row()].selected
-						 ? Qt::Checked
-						 : Qt::Unchecked;
+				result = options[index.row()].selected ? Qt::Checked : Qt::Unchecked;
 			else
 				result = Qt::Unchecked;
 		}
@@ -258,12 +235,10 @@ Qt::ItemFlags ImporterModel::flags(const QModelIndex &index) const
 {
 	Qt::ItemFlags flags = QAbstractTableModel::flags(index);
 
-	if (index.column() == ImporterColumn::Selected &&
-	    index.row() != options.length()) {
+	if (index.column() == ImporterColumn::Selected && index.row() != options.length()) {
 		flags |= Qt::ItemIsUserCheckable;
 	} else if (index.column() == ImporterColumn::Path ||
-		   (index.column() == ImporterColumn::Name &&
-		    index.row() != options.length())) {
+		   (index.column() == ImporterColumn::Name && index.row() != options.length())) {
 		flags |= Qt::ItemIsEditable;
 	}
 
@@ -288,8 +263,7 @@ void ImporterModel::checkInputPath(int row)
 		if (program.empty()) {
 			entry.selected = false;
 		} else {
-			std::string name =
-				GetSCName(entry.path.toStdString(), program);
+			std::string name = GetSCName(entry.path.toStdString(), program);
 			entry.name = name.c_str();
 		}
 	}
@@ -297,16 +271,14 @@ void ImporterModel::checkInputPath(int row)
 	emit dataChanged(index(row, 0), index(row, ImporterColumn::Count));
 }
 
-bool ImporterModel::setData(const QModelIndex &index, const QVariant &value,
-			    int role)
+bool ImporterModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
 	if (role == ImporterEntryRole::NewPath) {
 		QStringList list = value.toStringList();
 
 		if (list.size() == 0) {
 			if (index.row() < options.size()) {
-				beginRemoveRows(QModelIndex(), index.row(),
-						index.row());
+				beginRemoveRows(QModelIndex(), index.row(), index.row());
 				options.removeAt(index.row());
 				endRemoveRows();
 			}
@@ -348,8 +320,7 @@ bool ImporterModel::setData(const QModelIndex &index, const QVariant &value,
 			entry.selected = role != ImporterEntryRole::AutoPath;
 			entry.empty = false;
 
-			beginInsertRows(QModelIndex(), options.length() + 1,
-					options.length() + 1);
+			beginInsertRows(QModelIndex(), options.length() + 1, options.length() + 1);
 			options.append(entry);
 			endInsertRows();
 
@@ -374,13 +345,11 @@ bool ImporterModel::setData(const QModelIndex &index, const QVariant &value,
 	return true;
 }
 
-QVariant ImporterModel::headerData(int section, Qt::Orientation orientation,
-				   int role) const
+QVariant ImporterModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
 	QVariant result = QVariant();
 
-	if (role == Qt::DisplayRole &&
-	    orientation == Qt::Orientation::Horizontal) {
+	if (role == Qt::DisplayRole && orientation == Qt::Orientation::Horizontal) {
 		switch (section) {
 		case ImporterColumn::Path:
 			result = QTStr("Importer.Path");
@@ -400,10 +369,7 @@ QVariant ImporterModel::headerData(int section, Qt::Orientation orientation,
 	Window
 **/
 
-OBSImporter::OBSImporter(QWidget *parent)
-	: QDialog(parent),
-	  optionsModel(new ImporterModel),
-	  ui(new Ui::OBSImporter)
+OBSImporter::OBSImporter(QWidget *parent) : QDialog(parent), optionsModel(new ImporterModel), ui(new Ui::OBSImporter)
 {
 	setAcceptDrops(true);
 
@@ -412,53 +378,40 @@ OBSImporter::OBSImporter(QWidget *parent)
 	ui->setupUi(this);
 
 	ui->tableView->setModel(optionsModel);
-	ui->tableView->setItemDelegateForColumn(
-		ImporterColumn::Path, new ImporterEntryPathItemDelegate());
-	ui->tableView->horizontalHeader()->setSectionResizeMode(
-		QHeaderView::ResizeMode::ResizeToContents);
-	ui->tableView->horizontalHeader()->setSectionResizeMode(
-		ImporterColumn::Path, QHeaderView::ResizeMode::Stretch);
+	ui->tableView->setItemDelegateForColumn(ImporterColumn::Path, new ImporterEntryPathItemDelegate());
+	ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeMode::ResizeToContents);
+	ui->tableView->horizontalHeader()->setSectionResizeMode(ImporterColumn::Path, QHeaderView::ResizeMode::Stretch);
 
-	connect(optionsModel, &ImporterModel::dataChanged, this,
-		&OBSImporter::dataChanged);
+	connect(optionsModel, &ImporterModel::dataChanged, this, &OBSImporter::dataChanged);
 
-	ui->tableView->setEditTriggers(
-		QAbstractItemView::EditTrigger::CurrentChanged);
+	ui->tableView->setEditTriggers(QAbstractItemView::EditTrigger::CurrentChanged);
 
 	ui->buttonBox->button(QDialogButtonBox::Ok)->setText(QTStr("Import"));
 	ui->buttonBox->button(QDialogButtonBox::Open)->setText(QTStr("Add"));
 
-	connect(ui->buttonBox->button(QDialogButtonBox::Ok),
-		&QPushButton::clicked, this, &OBSImporter::importCollections);
-	connect(ui->buttonBox->button(QDialogButtonBox::Open),
-		&QPushButton::clicked, this, &OBSImporter::browseImport);
-	connect(ui->buttonBox->button(QDialogButtonBox::Close),
-		&QPushButton::clicked, this, &OBSImporter::close);
+	connect(ui->buttonBox->button(QDialogButtonBox::Ok), &QPushButton::clicked, this,
+		&OBSImporter::importCollections);
+	connect(ui->buttonBox->button(QDialogButtonBox::Open), &QPushButton::clicked, this, &OBSImporter::browseImport);
+	connect(ui->buttonBox->button(QDialogButtonBox::Close), &QPushButton::clicked, this, &OBSImporter::close);
 
 	ImportersInit();
 
-	bool autoSearchPrompt = config_get_bool(App()->GetUserConfig(),
-						"General", "AutoSearchPrompt");
+	bool autoSearchPrompt = config_get_bool(App()->GetUserConfig(), "General", "AutoSearchPrompt");
 
 	if (!autoSearchPrompt) {
 		QMessageBox::StandardButton button = OBSMessageBox::question(
-			parent, QTStr("Importer.AutomaticCollectionPrompt"),
-			QTStr("Importer.AutomaticCollectionText"));
+			parent, QTStr("Importer.AutomaticCollectionPrompt"), QTStr("Importer.AutomaticCollectionText"));
 
 		if (button == QMessageBox::Yes) {
-			config_set_bool(App()->GetUserConfig(), "General",
-					"AutomaticCollectionSearch", true);
+			config_set_bool(App()->GetUserConfig(), "General", "AutomaticCollectionSearch", true);
 		} else {
-			config_set_bool(App()->GetUserConfig(), "General",
-					"AutomaticCollectionSearch", false);
+			config_set_bool(App()->GetUserConfig(), "General", "AutomaticCollectionSearch", false);
 		}
 
-		config_set_bool(App()->GetUserConfig(), "General",
-				"AutoSearchPrompt", true);
+		config_set_bool(App()->GetUserConfig(), "General", "AutoSearchPrompt", true);
 	}
 
-	bool autoSearch = config_get_bool(App()->GetUserConfig(), "General",
-					  "AutomaticCollectionSearch");
+	bool autoSearch = config_get_bool(App()->GetUserConfig(), "General", "AutomaticCollectionSearch");
 
 	OBSImporterFiles f;
 	if (autoSearch)
@@ -474,10 +427,8 @@ OBSImporter::OBSImporter(QWidget *parent)
 
 	ui->tableView->resizeColumnsToContents();
 
-	QModelIndex index =
-		optionsModel->createIndex(optionsModel->rowCount() - 1, 2);
-	QMetaObject::invokeMethod(ui->tableView, "setCurrentIndex",
-				  Qt::QueuedConnection,
+	QModelIndex index = optionsModel->createIndex(optionsModel->rowCount() - 1, 2);
+	QMetaObject::invokeMethod(ui->tableView, "setCurrentIndex", Qt::QueuedConnection,
 				  Q_ARG(const QModelIndex &, index));
 }
 
@@ -487,12 +438,9 @@ void OBSImporter::addImportOption(QString path, bool automatic)
 
 	list.append(path);
 
-	QModelIndex insertIndex = optionsModel->index(
-		optionsModel->rowCount() - 1, ImporterColumn::Path);
+	QModelIndex insertIndex = optionsModel->index(optionsModel->rowCount() - 1, ImporterColumn::Path);
 
-	optionsModel->setData(insertIndex, list,
-			      automatic ? ImporterEntryRole::AutoPath
-					: ImporterEntryRole::NewPath);
+	optionsModel->setData(insertIndex, list, automatic ? ImporterEntryRole::AutoPath : ImporterEntryRole::NewPath);
 }
 
 void OBSImporter::dropEvent(QDropEvent *ev)
@@ -501,8 +449,7 @@ void OBSImporter::dropEvent(QDropEvent *ev)
 		QFileInfo fileInfo(url.toLocalFile());
 		if (fileInfo.isDir()) {
 
-			QDirIterator dirIter(fileInfo.absoluteFilePath(),
-					     QDir::Files);
+			QDirIterator dirIter(fileInfo.absoluteFilePath(), QDir::Files);
 
 			while (dirIter.hasNext()) {
 				addImportOption(dirIter.next(), false);
@@ -523,9 +470,8 @@ void OBSImporter::browseImport()
 {
 	QString Pattern = "(*.json *.bpres *.xml *.xconfig)";
 
-	QStringList paths = OpenFiles(
-		this, QTStr("Importer.SelectCollection"), "",
-		QTStr("Importer.Collection") + QString(" ") + Pattern);
+	QStringList paths = OpenFiles(this, QTStr("Importer.SelectCollection"), "",
+				      QTStr("Importer.Collection") + QString(" ") + Pattern);
 
 	if (!paths.empty()) {
 		for (int i = 0; i < paths.count(); i++) {
@@ -561,27 +507,22 @@ void OBSImporter::importCollections()
 	setEnabled(false);
 
 	const std::filesystem::path sceneCollectionLocation =
-		App()->userScenesLocation /
-		std::filesystem::u8path(OBSSceneCollectionPath);
+		App()->userScenesLocation / std::filesystem::u8path(OBSSceneCollectionPath);
 
 	for (int i = 0; i < optionsModel->rowCount() - 1; i++) {
-		int selected = optionsModel->index(i, ImporterColumn::Selected)
-				       .data(Qt::CheckStateRole)
-				       .value<int>();
+		int selected = optionsModel->index(i, ImporterColumn::Selected).data(Qt::CheckStateRole).value<int>();
 
 		if (selected == Qt::Unchecked)
 			continue;
 
-		std::string pathStr =
-			optionsModel->index(i, ImporterColumn::Path)
-				.data(Qt::DisplayRole)
-				.value<QString>()
-				.toStdString();
-		std::string nameStr =
-			optionsModel->index(i, ImporterColumn::Name)
-				.data(Qt::DisplayRole)
-				.value<QString>()
-				.toStdString();
+		std::string pathStr = optionsModel->index(i, ImporterColumn::Path)
+					      .data(Qt::DisplayRole)
+					      .value<QString>()
+					      .toStdString();
+		std::string nameStr = optionsModel->index(i, ImporterColumn::Name)
+					      .data(Qt::DisplayRole)
+					      .value<QString>()
+					      .toStdString();
 
 		json11::Json res;
 		ImportSC(pathStr, nameStr, res);
@@ -599,33 +540,23 @@ void OBSImporter::importCollections()
 
 			std::string fileName;
 			if (!GetFileSafeName(name.c_str(), fileName)) {
-				blog(LOG_WARNING,
-				     "Failed to create safe file name for '%s'",
-				     fileName.c_str());
+				blog(LOG_WARNING, "Failed to create safe file name for '%s'", fileName.c_str());
 			}
 
 			std::string collectionFile;
-			collectionFile.reserve(
-				sceneCollectionLocation.u8string().size() +
-				fileName.size());
-			collectionFile
-				.append(sceneCollectionLocation.u8string())
-				.append(fileName);
+			collectionFile.reserve(sceneCollectionLocation.u8string().size() + fileName.size());
+			collectionFile.append(sceneCollectionLocation.u8string()).append(fileName);
 
 			if (!GetClosestUnusedFileName(collectionFile, "json")) {
-				blog(LOG_WARNING,
-				     "Failed to get closest file name for %s",
-				     fileName.c_str());
+				blog(LOG_WARNING, "Failed to get closest file name for %s", fileName.c_str());
 			}
 
 			std::string out_str = json11::Json(out).dump();
 
-			bool success = os_quick_write_utf8_file(
-				collectionFile.c_str(), out_str.c_str(),
-				out_str.size(), false);
+			bool success = os_quick_write_utf8_file(collectionFile.c_str(), out_str.c_str(), out_str.size(),
+								false);
 
-			blog(LOG_INFO, "Import Scene Collection: %s (%s) - %s",
-			     name.c_str(), fileName.c_str(),
+			blog(LOG_INFO, "Import Scene Collection: %s (%s) - %s", name.c_str(), fileName.c_str(),
 			     success ? "SUCCESS" : "FAILURE");
 		}
 	}

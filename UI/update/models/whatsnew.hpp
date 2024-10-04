@@ -28,8 +28,7 @@
 template<typename T> struct nlohmann::adl_serializer<std::optional<T>> {
 	static std::optional<T> from_json(const json &json)
 	{
-		return json.is_null() ? std::nullopt
-				      : std::optional{json.get<T>()};
+		return json.is_null() ? std::nullopt : std::optional{json.get<T>()};
 	}
 
 	static void to_json(json &json, std::optional<T> t)
@@ -46,8 +45,7 @@ struct WhatsNewPlatforms {
 	bool macos = false;
 	bool linux = false;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(WhatsNewPlatforms, windows,
-						    macos, linux)
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(WhatsNewPlatforms, windows, macos, linux)
 };
 
 struct WhatsNewItem {
@@ -63,8 +61,7 @@ struct WhatsNewItem {
 	/* Optional OS filter */
 	std::optional<WhatsNewPlatforms> os = std::nullopt;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(WhatsNewItem, version, Beta,
-						    RC, url, increment, os)
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(WhatsNewItem, version, Beta, RC, url, increment, os)
 };
 
 using WhatsNewList = std::vector<WhatsNewItem>;

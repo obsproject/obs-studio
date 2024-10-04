@@ -25,40 +25,35 @@ namespace aja {
  */
 
 struct RoutingConfig {
-	NTV2Mode mode;            // capture or playout?
-	uint32_t num_wires;       // number of physical connections
-	uint32_t num_framestores; // number of framestores used
-	bool enable_3g_out;       // enable register for 3G SDI Output?
-	bool enable_6g_out;       // enable register for 6G SDI Output?
-	bool enable_12g_out;      // enable register for 12G SDI Output?
-	bool convert_3g_in; // enable register for 3G level-B -> level-A SDI input conversion?
-	bool convert_3g_out; // enable register for 3G level-A -> level-B SDI output conversion?
+	NTV2Mode mode;               // capture or playout?
+	uint32_t num_wires;          // number of physical connections
+	uint32_t num_framestores;    // number of framestores used
+	bool enable_3g_out;          // enable register for 3G SDI Output?
+	bool enable_6g_out;          // enable register for 6G SDI Output?
+	bool enable_12g_out;         // enable register for 12G SDI Output?
+	bool convert_3g_in;          // enable register for 3G level-B -> level-A SDI input conversion?
+	bool convert_3g_out;         // enable register for 3G level-A -> level-B SDI output conversion?
 	bool enable_rgb_3ga_convert; // enable register for RGB 3G level-B -> level-A SDI output conversion?
-	bool enable_3gb_out;    // enable register for 3G level-B SDI output?
-	bool enable_4k_squares; // enable register for 4K square division?
-	bool enable_8k_squares; // enable register for 8K square division?
-	bool enable_tsi; // enable register for two-sample interleave (UHD/4K/8K)
-	std::string
-		route_string; // signal routing shorthand string to parse into crosspoint connections
+	bool enable_3gb_out;         // enable register for 3G level-B SDI output?
+	bool enable_4k_squares;      // enable register for 4K square division?
+	bool enable_8k_squares;      // enable register for 8K square division?
+	bool enable_tsi;             // enable register for two-sample interleave (UHD/4K/8K)
+	std::string route_string;    // signal routing shorthand string to parse into crosspoint connections
 };
 
 // Applies RoutingConfig settings to the card to configure a specific SDI/HDMI capture/output mode.
 class Routing {
 public:
-	static bool ParseRouteString(const std::string &route,
-				     NTV2XptConnections &cnx);
+	static bool ParseRouteString(const std::string &route, NTV2XptConnections &cnx);
 
 	static void StartSourceAudio(const SourceProps &props, CNTV2Card *card);
 	static void StopSourceAudio(const SourceProps &props, CNTV2Card *card);
 
-	static bool ConfigureSourceRoute(const SourceProps &props,
-					 NTV2Mode mode, CNTV2Card *card,
+	static bool ConfigureSourceRoute(const SourceProps &props, NTV2Mode mode, CNTV2Card *card,
 					 NTV2XptConnections &cnx);
-	static bool ConfigureOutputRoute(const OutputProps &props,
-					 NTV2Mode mode, CNTV2Card *card,
+	static bool ConfigureOutputRoute(const OutputProps &props, NTV2Mode mode, CNTV2Card *card,
 					 NTV2XptConnections &cnx);
-	static void ConfigureOutputAudio(const OutputProps &props,
-					 CNTV2Card *card);
+	static void ConfigureOutputAudio(const OutputProps &props, CNTV2Card *card);
 	static void LogRoutingPreset(const RoutingPreset &rp);
 };
 

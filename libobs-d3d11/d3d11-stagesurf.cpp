@@ -17,8 +17,7 @@
 
 #include "d3d11-subsystem.hpp"
 
-gs_stage_surface::gs_stage_surface(gs_device_t *device, uint32_t width,
-				   uint32_t height, gs_color_format colorFormat)
+gs_stage_surface::gs_stage_surface(gs_device_t *device, uint32_t width, uint32_t height, gs_color_format colorFormat)
 	: gs_obj(device, gs_type::gs_stage_surface),
 	  width(width),
 	  height(height),
@@ -42,8 +41,7 @@ gs_stage_surface::gs_stage_surface(gs_device_t *device, uint32_t width,
 		throw HRError("Failed to create staging surface", hr);
 }
 
-gs_stage_surface::gs_stage_surface(gs_device_t *device, uint32_t width,
-				   uint32_t height, bool p010)
+gs_stage_surface::gs_stage_surface(gs_device_t *device, uint32_t width, uint32_t height, bool p010)
 	: gs_obj(device, gs_type::gs_stage_surface),
 	  width(width),
 	  height(height),

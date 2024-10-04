@@ -20,8 +20,7 @@ struct dacast_ingest_info {
 	struct dacast_ingest ingest;
 };
 
-struct dacast_ingest dacast_invalid_ingest = {"rtmp://dacast", "", "",
-					      "fake_key"};
+struct dacast_ingest dacast_invalid_ingest = {"rtmp://dacast", "", "", "fake_key"};
 
 static DARRAY(struct dacast_ingest_info) cur_ingests;
 
@@ -110,8 +109,7 @@ static bool dacast_ingest_update(void *param, struct file_download_data *data)
 	bool success;
 
 	pthread_mutex_lock(&mutex);
-	success = load_ingests((const char *)data->buffer.array,
-			       (const char *)param);
+	success = load_ingests((const char *)data->buffer.array, (const char *)param);
 	pthread_mutex_unlock(&mutex);
 
 	if (success) {
@@ -153,9 +151,8 @@ void dacast_ingests_load_data(const char *server, const char *key)
 		dacast_update_info = NULL;
 	}
 
-	dacast_update_info = update_info_create_single(
-		"[dacast ingest load data] ", get_module_name(), uri.array,
-		dacast_ingest_update, (void *)key);
+	dacast_update_info = update_info_create_single("[dacast ingest load data] ", get_module_name(), uri.array,
+						       dacast_ingest_update, (void *)key);
 
 	if (!os_atomic_load_bool(&ingests_loaded)) {
 		for (int i = 0; i < TIMEOUT_SEC * 100; i++) {

@@ -12,20 +12,16 @@ static inline uint qt_intensity(uint r, uint g, uint b)
  *
  * https://code.woboq.org/qt5/qtbase/src/widgets/styles/qcommonstyle.cpp.html#6429
  */
-QPixmap
-OBSContextBarProxyStyle::generatedIconPixmap(QIcon::Mode iconMode,
-					     const QPixmap &pixmap,
-					     const QStyleOption *option) const
+QPixmap OBSContextBarProxyStyle::generatedIconPixmap(QIcon::Mode iconMode, const QPixmap &pixmap,
+						     const QStyleOption *option) const
 {
 	if (iconMode == QIcon::Disabled) {
-		QImage im =
-			pixmap.toImage().convertToFormat(QImage::Format_ARGB32);
+		QImage im = pixmap.toImage().convertToFormat(QImage::Format_ARGB32);
 
 		/* Create a colortable based on the background
 		 * (black -> bg -> white) */
 
-		QColor bg = option->palette.color(QPalette::Disabled,
-						  QPalette::Window);
+		QColor bg = option->palette.color(QPalette::Disabled, QPalette::Window);
 		int red = bg.red();
 		int green = bg.green();
 		int blue = bg.blue();
@@ -49,8 +45,7 @@ OBSContextBarProxyStyle::generatedIconPixmap(QIcon::Mode iconMode,
 		int intensity = qt_intensity(red, green, blue);
 		const int factor = 191;
 
-		if ((red - factor > green && red - factor > blue) ||
-		    (green - factor > red && green - factor > blue) ||
+		if ((red - factor > green && red - factor > blue) || (green - factor > red && green - factor > blue) ||
 		    (blue - factor > red && blue - factor > green))
 			qMin(255, intensity + 20);
 		else if (intensity <= 128)
@@ -63,10 +58,8 @@ OBSContextBarProxyStyle::generatedIconPixmap(QIcon::Mode iconMode,
 				/* Calculate color table index, taking
 				 * intensity adjustment and a magic offset into
 				 * account. */
-				uint ci = uint(qGray(pixel) / 3 +
-					       (130 - intensity / 3));
-				*scanLine = qRgba(reds[ci], greens[ci],
-						  blues[ci], qAlpha(pixel));
+				uint ci = uint(qGray(pixel) / 3 + (130 - intensity / 3));
+				*scanLine = qRgba(reds[ci], greens[ci], blues[ci], qAlpha(pixel));
 				++scanLine;
 			}
 		}
@@ -77,8 +70,7 @@ OBSContextBarProxyStyle::generatedIconPixmap(QIcon::Mode iconMode,
 	return QProxyStyle::generatedIconPixmap(iconMode, pixmap, option);
 }
 
-int OBSProxyStyle::styleHint(StyleHint hint, const QStyleOption *option,
-			     const QWidget *widget,
+int OBSProxyStyle::styleHint(StyleHint hint, const QStyleOption *option, const QWidget *widget,
 			     QStyleHintReturn *returnData) const
 {
 	if (hint == SH_ComboBox_AllowWheelScrolling)

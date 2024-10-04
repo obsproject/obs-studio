@@ -51,8 +51,7 @@ static void destroy_log_context(struct log_context *log_context)
 	pthread_mutex_unlock(&log_contexts_mutex);
 }
 
-static void ffmpeg_log_callback(void *context, int level, const char *format,
-				va_list args)
+static void ffmpeg_log_callback(void *context, int level, const char *format, va_list args)
 {
 	if (format == NULL)
 		return;
@@ -62,8 +61,7 @@ static void ffmpeg_log_callback(void *context, int level, const char *format,
 	char *str = log_context->str;
 
 	av_log_format_line(context, level, format, args, str + strlen(str),
-			   (int)(sizeof(log_context->str) - strlen(str)),
-			   &log_context->print_prefix);
+			   (int)(sizeof(log_context->str) - strlen(str)), &log_context->print_prefix);
 
 	int obs_level;
 	switch (level) {

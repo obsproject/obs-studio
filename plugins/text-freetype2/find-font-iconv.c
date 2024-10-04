@@ -34,18 +34,14 @@ static const struct mac_font_mapping mac_codes[] = {
 	{TT_MAC_ID_DEVANAGARI, TT_MAC_LANGID_ANY, "x-mac-devanagari"},
 	{TT_MAC_ID_GURMUKHI, TT_MAC_LANGID_ANY, "x-mac-gurmukhi"},
 	{TT_MAC_ID_GUJARATI, TT_MAC_LANGID_ANY, "x-mac-gujarati"},
-	{TT_MAC_ID_TRADITIONAL_CHINESE, TT_MAC_LANGID_CHINESE_SIMPLIFIED,
-	 "Big5"},
+	{TT_MAC_ID_TRADITIONAL_CHINESE, TT_MAC_LANGID_CHINESE_SIMPLIFIED, "Big5"},
 	{TT_MAC_ID_TRADITIONAL_CHINESE, TT_MAC_LANGID_ANY, "Big5"},
-	{TT_MAC_ID_SIMPLIFIED_CHINESE, TT_MAC_LANGID_CHINESE_SIMPLIFIED,
-	 "GB2312"},
+	{TT_MAC_ID_SIMPLIFIED_CHINESE, TT_MAC_LANGID_CHINESE_SIMPLIFIED, "GB2312"},
 	{TT_MAC_ID_SIMPLIFIED_CHINESE, TT_MAC_LANGID_ANY, "GB2312"}};
 
 const char *iso_codes[] = {"us-ascii", NULL, "iso-8859-1"};
 
-const char *ms_codes[] = {"UTF-16BE", "UTF-16BE", "Shift_JIS", NULL,
-			  "Big5",     NULL,       NULL,        NULL,
-			  NULL,       NULL,       "UTF-16BE"};
+const char *ms_codes[] = {"UTF-16BE", "UTF-16BE", "Shift_JIS", NULL, "Big5", NULL, NULL, NULL, NULL, NULL, "UTF-16BE"};
 
 static const size_t mac_code_count = sizeof(mac_codes) / sizeof(mac_codes[0]);
 static const size_t iso_code_count = sizeof(iso_codes) / sizeof(iso_codes[0]);
@@ -56,17 +52,14 @@ static const char *get_mac_code(uint16_t encoding_id, uint16_t language_id)
 	for (size_t i = 0; i < mac_code_count; i++) {
 		const struct mac_font_mapping *mac_code = &mac_codes[i];
 
-		if (mac_code->encoding_id == encoding_id &&
-		    mac_code->language_id == language_id)
+		if (mac_code->encoding_id == encoding_id && mac_code->language_id == language_id)
 			return mac_code->code_page;
 	}
 
 	return NULL;
 }
 
-static const char *get_code_page_for_font(uint16_t platform_id,
-					  uint16_t encoding_id,
-					  uint16_t language_id)
+static const char *get_code_page_for_font(uint16_t platform_id, uint16_t encoding_id, uint16_t language_id)
 {
 	const char *ret;
 
@@ -93,9 +86,8 @@ static const char *get_code_page_for_font(uint16_t platform_id,
 
 char *sfnt_name_to_utf8(FT_SfntName *sfnt_name)
 {
-	const char *charset = get_code_page_for_font(sfnt_name->platform_id,
-						     sfnt_name->encoding_id,
-						     sfnt_name->language_id);
+	const char *charset =
+		get_code_page_for_font(sfnt_name->platform_id, sfnt_name->encoding_id, sfnt_name->language_id);
 	char utf8[256];
 	char *conv_in, *conv_out;
 	size_t in_len, out_len;
@@ -105,8 +97,7 @@ char *sfnt_name_to_utf8(FT_SfntName *sfnt_name)
 		     "invalid character set found, "
 		     "platform_id: %d, encoding_id: %d, "
 		     "language_id: %d",
-		     sfnt_name->platform_id, sfnt_name->encoding_id,
-		     sfnt_name->language_id);
+		     sfnt_name->platform_id, sfnt_name->encoding_id, sfnt_name->language_id);
 		return NULL;
 	}
 
@@ -126,8 +117,7 @@ char *sfnt_name_to_utf8(FT_SfntName *sfnt_name)
 
 	size_t n = iconv(ic, &conv_in, &in_len, &conv_out, &out_len);
 	if (n == (size_t)-1) {
-		blog(LOG_WARNING, "couldn't convert font name text: errno = %d",
-		     (int)errno);
+		blog(LOG_WARNING, "couldn't convert font name text: errno = %d", (int)errno);
 		iconv_close(ic);
 		return NULL;
 	}

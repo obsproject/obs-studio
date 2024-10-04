@@ -109,8 +109,7 @@ typedef struct URLContext {
 #define SRT_LOGF_DISABLE_EOL 8
 
 // Handler type
-typedef void SRT_LOG_HANDLER_FN(void *opaque, int level, const char *file,
-				int line, const char *area,
+typedef void SRT_LOG_HANDLER_FN(void *opaque, int level, const char *file, int line, const char *area,
 				const char *message);
 
 #ifdef __cplusplus

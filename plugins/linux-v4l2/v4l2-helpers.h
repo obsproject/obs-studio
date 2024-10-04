@@ -96,22 +96,19 @@ static inline enum video_format v4l2_to_obs_video_format(uint_fast32_t format)
  */
 static const int64_t v4l2_framesizes[] = {
 	/* 4:3 */
-	PACK64(160, 120), PACK64(320, 240), PACK64(480, 320), PACK64(640, 480),
-	PACK64(800, 600), PACK64(1024, 768), PACK64(1280, 960),
-	PACK64(1440, 1050), PACK64(1440, 1080), PACK64(1600, 1200),
+	PACK64(160, 120), PACK64(320, 240), PACK64(480, 320), PACK64(640, 480), PACK64(800, 600), PACK64(1024, 768),
+	PACK64(1280, 960), PACK64(1440, 1050), PACK64(1440, 1080), PACK64(1600, 1200),
 
 	/* 16:9 */
-	PACK64(640, 360), PACK64(960, 540), PACK64(1280, 720),
-	PACK64(1600, 900), PACK64(1920, 1080), PACK64(1920, 1200),
-	PACK64(2560, 1440), PACK64(3840, 2160),
+	PACK64(640, 360), PACK64(960, 540), PACK64(1280, 720), PACK64(1600, 900), PACK64(1920, 1080),
+	PACK64(1920, 1200), PACK64(2560, 1440), PACK64(3840, 2160),
 
 	/* 21:9 */
 	PACK64(2560, 1080), PACK64(3440, 1440), PACK64(5120, 2160),
 
 	/* tv */
-	PACK64(432, 520), PACK64(480, 320), PACK64(480, 530), PACK64(486, 440),
-	PACK64(576, 310), PACK64(576, 520), PACK64(576, 570), PACK64(720, 576),
-	PACK64(1024, 576),
+	PACK64(432, 520), PACK64(480, 320), PACK64(480, 530), PACK64(486, 440), PACK64(576, 310), PACK64(576, 520),
+	PACK64(576, 570), PACK64(720, 576), PACK64(1024, 576),
 
 	0};
 
@@ -217,8 +214,7 @@ int_fast32_t v4l2_reset_capture(int_fast32_t dev, struct v4l2_buffer_data *buf);
  *
  * @return negative on failure
  */
-int_fast32_t v4l2_query_all_buffers(int_fast32_t dev,
-				    struct v4l2_buffer_data *buf_data);
+int_fast32_t v4l2_query_all_buffers(int_fast32_t dev, struct v4l2_buffer_data *buf_data);
 #endif
 
 /**
@@ -278,8 +274,7 @@ int_fast32_t v4l2_get_input_caps(int_fast32_t dev, int input, uint32_t *caps);
  *
  * @return negative on failure
  */
-int_fast32_t v4l2_set_format(int_fast32_t dev, int64_t *resolution,
-			     int *pixelformat, int *bytesperline);
+int_fast32_t v4l2_set_format(int_fast32_t dev, int64_t *resolution, int *pixelformat, int *bytesperline);
 
 /**
  * Set the framerate on the device.
@@ -314,8 +309,7 @@ int_fast32_t v4l2_set_standard(int_fast32_t dev, int *standard);
  *
  * @return negative on failure
  */
-int_fast32_t v4l2_enum_dv_timing(int_fast32_t dev, struct v4l2_dv_timings *dvt,
-				 int index);
+int_fast32_t v4l2_enum_dv_timing(int_fast32_t dev, struct v4l2_dv_timings *dvt, int index);
 /**
  * Set a dv timing on the device
  *

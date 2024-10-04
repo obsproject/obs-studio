@@ -72,8 +72,7 @@ struct obs_frontend_source_list {
 	DARRAY(obs_source_t *) sources;
 };
 
-static inline void
-obs_frontend_source_list_free(struct obs_frontend_source_list *source_list)
+static inline void obs_frontend_source_list_free(struct obs_frontend_source_list *source_list)
 {
 	size_t num = source_list->sources.num;
 	for (size_t i = 0; i < num; i++)
@@ -107,8 +106,7 @@ EXPORT void obs_frontend_get_scenes(struct obs_frontend_source_list *sources);
 EXPORT obs_source_t *obs_frontend_get_current_scene(void);
 EXPORT void obs_frontend_set_current_scene(obs_source_t *scene);
 
-EXPORT void
-obs_frontend_get_transitions(struct obs_frontend_source_list *sources);
+EXPORT void obs_frontend_get_transitions(struct obs_frontend_source_list *sources);
 EXPORT obs_source_t *obs_frontend_get_current_transition(void);
 EXPORT void obs_frontend_set_current_transition(obs_source_t *transition);
 EXPORT int obs_frontend_get_transition_duration(void);
@@ -133,49 +131,36 @@ EXPORT void obs_frontend_delete_profile(const char *profile);
 typedef void (*obs_frontend_cb)(void *private_data);
 
 EXPORT void *obs_frontend_add_tools_menu_qaction(const char *name);
-EXPORT void obs_frontend_add_tools_menu_item(const char *name,
-					     obs_frontend_cb callback,
-					     void *private_data);
+EXPORT void obs_frontend_add_tools_menu_item(const char *name, obs_frontend_cb callback, void *private_data);
 
 /* takes QDockWidget and returns QAction */
 OBS_DEPRECATED
 EXPORT void *obs_frontend_add_dock(void *dock);
 
 /* takes QWidget for widget */
-EXPORT bool obs_frontend_add_dock_by_id(const char *id, const char *title,
-					void *widget);
+EXPORT bool obs_frontend_add_dock_by_id(const char *id, const char *title, void *widget);
 
 EXPORT void obs_frontend_remove_dock(const char *id);
 
 /* takes QDockWidget for dock */
 EXPORT bool obs_frontend_add_custom_qdock(const char *id, void *dock);
 
-typedef void (*obs_frontend_event_cb)(enum obs_frontend_event event,
-				      void *private_data);
+typedef void (*obs_frontend_event_cb)(enum obs_frontend_event event, void *private_data);
 
-EXPORT void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
-					    void *private_data);
-EXPORT void obs_frontend_remove_event_callback(obs_frontend_event_cb callback,
-					       void *private_data);
+EXPORT void obs_frontend_add_event_callback(obs_frontend_event_cb callback, void *private_data);
+EXPORT void obs_frontend_remove_event_callback(obs_frontend_event_cb callback, void *private_data);
 
-typedef void (*obs_frontend_save_cb)(obs_data_t *save_data, bool saving,
-				     void *private_data);
+typedef void (*obs_frontend_save_cb)(obs_data_t *save_data, bool saving, void *private_data);
 
-EXPORT void obs_frontend_add_save_callback(obs_frontend_save_cb callback,
-					   void *private_data);
-EXPORT void obs_frontend_remove_save_callback(obs_frontend_save_cb callback,
-					      void *private_data);
+EXPORT void obs_frontend_add_save_callback(obs_frontend_save_cb callback, void *private_data);
+EXPORT void obs_frontend_remove_save_callback(obs_frontend_save_cb callback, void *private_data);
 
-EXPORT void obs_frontend_add_preload_callback(obs_frontend_save_cb callback,
-					      void *private_data);
-EXPORT void obs_frontend_remove_preload_callback(obs_frontend_save_cb callback,
-						 void *private_data);
+EXPORT void obs_frontend_add_preload_callback(obs_frontend_save_cb callback, void *private_data);
+EXPORT void obs_frontend_remove_preload_callback(obs_frontend_save_cb callback, void *private_data);
 
-typedef bool (*obs_frontend_translate_ui_cb)(const char *text,
-					     const char **out);
+typedef bool (*obs_frontend_translate_ui_cb)(const char *text, const char **out);
 
-EXPORT void
-obs_frontend_push_ui_translation(obs_frontend_translate_ui_cb translate);
+EXPORT void obs_frontend_push_ui_translation(obs_frontend_translate_ui_cb translate);
 EXPORT void obs_frontend_pop_ui_translation(void);
 
 #endif //!SWIG
@@ -197,8 +182,7 @@ EXPORT void obs_frontend_replay_buffer_save(void);
 EXPORT void obs_frontend_replay_buffer_stop(void);
 EXPORT bool obs_frontend_replay_buffer_active(void);
 
-EXPORT void obs_frontend_open_projector(const char *type, int monitor,
-					const char *geometry, const char *name);
+EXPORT void obs_frontend_open_projector(const char *type, int monitor, const char *geometry, const char *name);
 EXPORT void obs_frontend_save(void);
 EXPORT void obs_frontend_defer_save_begin(void);
 EXPORT void obs_frontend_defer_save_end(void);
@@ -251,9 +235,8 @@ EXPORT char *obs_frontend_get_last_screenshot(void);
 EXPORT char *obs_frontend_get_last_replay(void);
 
 typedef void (*undo_redo_cb)(const char *data);
-EXPORT void obs_frontend_add_undo_redo_action(
-	const char *name, const undo_redo_cb undo, const undo_redo_cb redo,
-	const char *undo_data, const char *redo_data, bool repeatable);
+EXPORT void obs_frontend_add_undo_redo_action(const char *name, const undo_redo_cb undo, const undo_redo_cb redo,
+					      const char *undo_data, const char *redo_data, bool repeatable);
 
 /* ------------------------------------------------------------------------- */
 

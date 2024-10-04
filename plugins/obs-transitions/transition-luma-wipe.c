@@ -131,9 +131,7 @@ static obs_properties_t *luma_wipe_properties(void *data)
 
 	obs_property_t *p;
 
-	p = obs_properties_add_list(props, S_LUMA_IMG, T_LUMA_IMG,
-				    OBS_COMBO_TYPE_LIST,
-				    OBS_COMBO_FORMAT_STRING);
+	p = obs_properties_add_list(props, S_LUMA_IMG, T_LUMA_IMG, OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 
 	if (data) {
 		struct luma_wipe_info *lwipe = data;
@@ -143,13 +141,11 @@ static obs_properties_t *luma_wipe_properties(void *data)
 		for (; item != NULL; obs_data_item_next(&item)) {
 			const char *name = obs_data_item_get_name(item);
 			const char *path = obs_data_item_get_string(item);
-			obs_property_list_add_string(p, obs_module_text(name),
-						     path);
+			obs_property_list_add_string(p, obs_module_text(name), path);
 		}
 	}
 
-	obs_properties_add_float(props, S_LUMA_SOFT, T_LUMA_SOFT, 0.0, 1.0,
-				 0.05);
+	obs_properties_add_float(props, S_LUMA_SOFT, T_LUMA_SOFT, 0.0, 1.0, 0.05);
 	obs_properties_add_bool(props, S_LUMA_INV, T_LUMA_INV);
 
 	return props;
@@ -162,8 +158,7 @@ static void luma_wipe_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, S_LUMA_INV, false);
 }
 
-static void luma_wipe_callback(void *data, gs_texture_t *a, gs_texture_t *b,
-			       float t, uint32_t cx, uint32_t cy)
+static void luma_wipe_callback(void *data, gs_texture_t *a, gs_texture_t *b, float t, uint32_t cx, uint32_t cy)
 {
 	struct luma_wipe_info *lwipe = data;
 
@@ -203,18 +198,15 @@ static float mix_b(void *data, float t)
 	return t;
 }
 
-bool luma_wipe_audio_render(void *data, uint64_t *ts_out,
-			    struct obs_source_audio_mix *audio, uint32_t mixers,
+bool luma_wipe_audio_render(void *data, uint64_t *ts_out, struct obs_source_audio_mix *audio, uint32_t mixers,
 			    size_t channels, size_t sample_rate)
 {
 	struct luma_wipe_info *lwipe = data;
-	return obs_transition_audio_render(lwipe->source, ts_out, audio, mixers,
-					   channels, sample_rate, mix_a, mix_b);
+	return obs_transition_audio_render(lwipe->source, ts_out, audio, mixers, channels, sample_rate, mix_a, mix_b);
 }
 
-static enum gs_color_space
-luma_wipe_video_get_color_space(void *data, size_t count,
-				const enum gs_color_space *preferred_spaces)
+static enum gs_color_space luma_wipe_video_get_color_space(void *data, size_t count,
+							   const enum gs_color_space *preferred_spaces)
 {
 	UNUSED_PARAMETER(count);
 	UNUSED_PARAMETER(preferred_spaces);

@@ -23,10 +23,8 @@ void cuda_opengl_free(struct nvenc_data *enc)
 /* ------------------------------------------------------------------------- */
 /* Actual encoding stuff                                                     */
 
-static inline bool get_res_for_tex_ids(struct nvenc_data *enc, GLuint tex_id_y,
-				       GLuint tex_id_uv,
-				       CUgraphicsResource *tex_y,
-				       CUgraphicsResource *tex_uv)
+static inline bool get_res_for_tex_ids(struct nvenc_data *enc, GLuint tex_id_y, GLuint tex_id_uv,
+				       CUgraphicsResource *tex_y, CUgraphicsResource *tex_uv)
 {
 	bool success = true;
 
@@ -40,12 +38,8 @@ static inline bool get_res_for_tex_ids(struct nvenc_data *enc, GLuint tex_id_y,
 		return success;
 	}
 
-	CU_CHECK(cu->cuGraphicsGLRegisterImage(
-		tex_y, tex_id_y, GL_TEXTURE_2D,
-		CU_GRAPHICS_REGISTER_FLAGS_READ_ONLY))
-	CU_CHECK(cu->cuGraphicsGLRegisterImage(
-		tex_uv, tex_id_uv, GL_TEXTURE_2D,
-		CU_GRAPHICS_REGISTER_FLAGS_READ_ONLY))
+	CU_CHECK(cu->cuGraphicsGLRegisterImage(tex_y, tex_id_y, GL_TEXTURE_2D, CU_GRAPHICS_REGISTER_FLAGS_READ_ONLY))
+	CU_CHECK(cu->cuGraphicsGLRegisterImage(tex_uv, tex_id_uv, GL_TEXTURE_2D, CU_GRAPHICS_REGISTER_FLAGS_READ_ONLY))
 
 	struct handle_tex ht = {tex_id_y, *tex_y, *tex_uv};
 	da_push_back(enc->input_textures, &ht);
@@ -59,15 +53,13 @@ unmap:
 	return success;
 }
 
-static inline bool copy_tex_data(struct nvenc_data *enc, const bool p010,
-				 GLuint tex[2], struct nv_cuda_surface *surf)
+static inline bool copy_tex_data(struct nvenc_data *enc, const bool p010, GLuint tex[2], struct nv_cuda_surface *surf)
 {
 	bool success = true;
 	CUgraphicsResource mapped_tex[2] = {0};
 	CUarray mapped_cuda;
 
-	if (!get_res_for_tex_ids(enc, tex[0], tex[1], &mapped_tex[0],
-				 &mapped_tex[1]))
+	if (!get_res_for_tex_ids(enc, tex[0], tex[1], &mapped_tex[0], &mapped_tex[1]))
 		return false;
 
 	CU_CHECK(cu->cuGraphicsMapResources(2, mapped_tex, 0))
@@ -80,14 +72,12 @@ static inline bool copy_tex_data(struct nvenc_data *enc, const bool p010,
 	m.Height = enc->cy;
 
 	// Map and copy Y texture
-	CU_CHECK(cu->cuGraphicsSubResourceGetMappedArray(&mapped_cuda,
-							 mapped_tex[0], 0, 0));
+	CU_CHECK(cu->cuGraphicsSubResourceGetMappedArray(&mapped_cuda, mapped_tex[0], 0, 0));
 	m.srcArray = mapped_cuda;
 	CU_CHECK(cu->cuMemcpy2D(&m))
 
 	// Map and copy UV texture
-	CU_CHECK(cu->cuGraphicsSubResourceGetMappedArray(&mapped_cuda,
-							 mapped_tex[1], 0, 0))
+	CU_CHECK(cu->cuGraphicsSubResourceGetMappedArray(&mapped_cuda, mapped_tex[1], 0, 0))
 	m.srcArray = mapped_cuda;
 	m.dstY += enc->cy;
 	m.Height = enc->cy / 2;
@@ -100,8 +90,7 @@ unmap:
 	return success;
 }
 
-bool cuda_opengl_encode(void *data, struct encoder_texture *tex, int64_t pts,
-			uint64_t lock_key, uint64_t *next_key,
+bool cuda_opengl_encode(void *data, struct encoder_texture *tex, int64_t pts, uint64_t lock_key, uint64_t *next_key,
 			struct encoder_packet *packet, bool *received_packet)
 {
 	struct nvenc_data *enc = data;
@@ -142,8 +131,7 @@ bool cuda_opengl_encode(void *data, struct encoder_texture *tex, int64_t pts,
 
 	NV_ENC_MAP_INPUT_RESOURCE map = {NV_ENC_MAP_INPUT_RESOURCE_VER};
 	map.registeredResource = surf->res;
-	map.mappedBufferFmt = p010 ? NV_ENC_BUFFER_FORMAT_YUV420_10BIT
-				   : NV_ENC_BUFFER_FORMAT_NV12;
+	map.mappedBufferFmt = p010 ? NV_ENC_BUFFER_FORMAT_YUV420_10BIT : NV_ENC_BUFFER_FORMAT_NV12;
 
 	if (NV_FAILED(nv.nvEncMapInputResource(enc->session, &map)))
 		return false;
@@ -153,6 +141,5 @@ bool cuda_opengl_encode(void *data, struct encoder_texture *tex, int64_t pts,
 	/* ------------------------------------ */
 	/* do actual encode call                */
 
-	return nvenc_encode_base(enc, bs, surf->mapped_res, pts, packet,
-				 received_packet);
+	return nvenc_encode_base(enc, bs, surf->mapped_res, pts, packet, received_packet);
 }

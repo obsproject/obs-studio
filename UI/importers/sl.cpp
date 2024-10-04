@@ -90,10 +90,8 @@ static string translate_hotkey(const Json &hotkey, const string &source)
 		return out + source;          \
 	}
 
-	add_translation(name, "TOGGLE_SOURCE_VISIBILITY_SHOW",
-			"libobs.show_scene_item.", source);
-	add_translation(name, "TOGGLE_SOURCE_VISIBILITY_HIDE",
-			"libobs.hide_scene_item.", source);
+	add_translation(name, "TOGGLE_SOURCE_VISIBILITY_SHOW", "libobs.show_scene_item.", source);
+	add_translation(name, "TOGGLE_SOURCE_VISIBILITY_HIDE", "libobs.hide_scene_item.", source);
 
 	string empty = "";
 
@@ -103,8 +101,7 @@ static string translate_hotkey(const Json &hotkey, const string &source)
 	add_translation(name, "TOGGLE_UNMUTE", "libobs.unmute", empty);
 	add_translation(name, "PUSH_TO_MUTE", "libobs.push-to-mute", empty);
 	add_translation(name, "PUSH_TO_TALK", "libobs.push-to-talk", empty);
-	add_translation(name, "GAME_CAPTURE_HOTKEY_START", "hotkey_start",
-			empty);
+	add_translation(name, "GAME_CAPTURE_HOTKEY_START", "hotkey_start", empty);
 	add_translation(name, "GAME_CAPTURE_HOTKEY_STOP", "hotkey_stop", empty);
 
 	return "";
@@ -124,9 +121,7 @@ static bool source_name_exists(const Json::array &sources, const string &name)
 	return false;
 }
 
-static string get_source_name_from_id(const Json &root,
-				      const Json::array &sources,
-				      const string &id)
+static string get_source_name_from_id(const Json &root, const Json::array &sources, const string &id)
 {
 	for (size_t i = 0; i < sources.size(); i++) {
 		Json item = sources[i];
@@ -158,8 +153,7 @@ static string get_source_name_from_id(const Json &root,
 	return "";
 }
 
-static void get_hotkey_bindings(Json::object &out_hotkeys,
-				const Json &in_hotkeys, const string &name)
+static void get_hotkey_bindings(Json::object &out_hotkeys, const Json &in_hotkeys, const string &name)
 {
 	Json::array hot_arr = in_hotkeys.array_items();
 	for (size_t i = 0; i < hot_arr.size(); i++) {
@@ -173,26 +167,24 @@ static void get_hotkey_bindings(Json::object &out_hotkeys,
 			Json binding = bindings[x];
 			Json modifiers = binding["modifiers"];
 
-			string key =
-				translate_key(binding["key"].string_value());
+			string key = translate_key(binding["key"].string_value());
 
 			if (key == "IGNORE")
 				continue;
 
-			out_hotkey.push_back(
-				Json::object{{"control", modifiers["ctrl"]},
-					     {"shift", modifiers["shift"]},
-					     {"command", modifiers["meta"]},
-					     {"alt", modifiers["alt"]},
-					     {"key", key}});
+			out_hotkey.push_back(Json::object{{"control", modifiers["ctrl"]},
+							  {"shift", modifiers["shift"]},
+							  {"command", modifiers["meta"]},
+							  {"alt", modifiers["alt"]},
+							  {"key", key}});
 		}
 
 		out_hotkeys[hotkey_name] = out_hotkey;
 	}
 }
 
-static void get_scene_items(const Json &root, const Json::array &out_sources,
-			    Json::object &scene, const Json::array &in)
+static void get_scene_items(const Json &root, const Json::array &out_sources, Json::object &scene,
+			    const Json::array &in)
 {
 	int length = 0;
 
@@ -206,35 +198,29 @@ static void get_scene_items(const Json &root, const Json::array &out_sources,
 		string id = item["sourceId"].string_value();
 		string name = get_source_name_from_id(root, out_sources, id);
 
-		Json::array hotkey_items =
-			item["hotkeys"]["items"].array_items();
+		Json::array hotkey_items = item["hotkeys"]["items"].array_items();
 
 		get_hotkey_bindings(hotkeys, hotkey_items, name);
 
-		out_items.push_back(Json::object{
-			{"name", name},
-			{"id", length++},
-			{"pos",
-			 Json::object{{"x", item["x"]}, {"y", item["y"]}}},
-			{"scale", Json::object{{"x", item["scaleX"]},
-					       {"y", item["scaleY"]}}},
-			{"rot", item["rotation"]},
-			{"visible", item["visible"]},
-			{"crop_top", in_crop["top"]},
-			{"crop_bottom", in_crop["bottom"]},
-			{"crop_left", in_crop["left"]},
-			{"crop_right", in_crop["right"]}});
+		out_items.push_back(Json::object{{"name", name},
+						 {"id", length++},
+						 {"pos", Json::object{{"x", item["x"]}, {"y", item["y"]}}},
+						 {"scale", Json::object{{"x", item["scaleX"]}, {"y", item["scaleY"]}}},
+						 {"rot", item["rotation"]},
+						 {"visible", item["visible"]},
+						 {"crop_top", in_crop["top"]},
+						 {"crop_bottom", in_crop["bottom"]},
+						 {"crop_left", in_crop["left"]},
+						 {"crop_right", in_crop["right"]}});
 	}
 
 	scene["hotkeys"] = hotkeys;
-	scene["settings"] =
-		Json::object{{"items", out_items}, {"id_counter", length}};
+	scene["settings"] = Json::object{{"items", out_items}, {"id_counter", length}};
 }
 
 static void translate_screen_capture(Json::object &out_settings, string &type)
 {
-	string subtype_info =
-		out_settings["capture_source_list"].string_value();
+	string subtype_info = out_settings["capture_source_list"].string_value();
 	size_t pos = subtype_info.find(':');
 	string subtype = subtype_info.substr(0, pos);
 
@@ -246,8 +232,7 @@ static void translate_screen_capture(Json::object &out_settings, string &type)
 	} else if (subtype == "window") {
 		type = "window_capture";
 		out_settings["cursor"] = out_settings["capture_cursor"];
-		out_settings["window"] =
-			out_settings["capture_window_line"].string_value();
+		out_settings["window"] = out_settings["capture_window_line"].string_value();
 		out_settings["capture_cursor"] = nullptr;
 	}
 	out_settings["auto_capture_rules_path"] = nullptr;
@@ -272,16 +257,14 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 		Json source = source_arr[i];
 
 		Json in_hotkeys = source["hotkeys"];
-		Json::array hotkey_items =
-			source["hotkeys"]["items"].array_items();
+		Json::array hotkey_items = source["hotkeys"]["items"].array_items();
 		Json in_filters = source["filters"];
 		Json::array filter_items = in_filters["items"].array_items();
 
 		Json in_settings = source["settings"];
 		Json in_sync = source["syncOffset"];
 
-		int sync = (int)(in_sync["sec"].number_value() * 1000000000 +
-				 in_sync["nsec"].number_value());
+		int sync = (int)(in_sync["sec"].number_value() * 1000000000 + in_sync["nsec"].number_value());
 
 		double vol = source["volume"].number_value();
 		bool muted = source["muted"].bool_value();
@@ -313,17 +296,16 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 			translate_screen_capture(out_settings, type);
 		}
 
-		out_sources.push_back(
-			Json::object{{"filters", out_filters},
-				     {"hotkeys", out_hotkeys},
-				     {"id", type},
-				     {"sl_id", sl_id},
-				     {"settings", out_settings},
-				     {"sync", sync},
-				     {"volume", vol},
-				     {"muted", muted},
-				     {"name", out_name},
-				     {"monitoring_type", monitoring}});
+		out_sources.push_back(Json::object{{"filters", out_filters},
+						   {"hotkeys", out_hotkeys},
+						   {"id", type},
+						   {"sl_id", sl_id},
+						   {"settings", out_settings},
+						   {"sync", sync},
+						   {"volume", vol},
+						   {"muted", muted},
+						   {"name", out_name},
+						   {"monitoring_type", monitoring}});
 	}
 
 	string scene_name = "";
@@ -362,15 +344,10 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 
 		string sl_id = scene["id"].string_value();
 
-		Json::object out =
-			Json::object{{"filters", out_filters},
-				     {"hotkeys", out_hotkeys},
-				     {"id", "scene"},
-				     {"sl_id", sl_id},
-				     {"settings", in_settings},
-				     {"volume", 1.0},
-				     {"name", out_name},
-				     {"private_settings", Json::object{}}};
+		Json::object out = Json::object{{"filters", out_filters},  {"hotkeys", out_hotkeys},
+						{"id", "scene"},           {"sl_id", sl_id},
+						{"settings", in_settings}, {"volume", 1.0},
+						{"name", out_name},        {"private_settings", Json::object{}}};
 
 		Json in_items = scene["sceneItems"];
 		Json::array items_arr = in_items["items"].array_items();
@@ -394,11 +371,10 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 		if (id == t_id)
 			transition_name = name;
 
-		out_transitions.push_back(
-			Json::object{{"id", transition["type"]},
-				     {"settings", in_settings},
-				     {"name", name},
-				     {"duration", duration}});
+		out_transitions.push_back(Json::object{{"id", transition["type"]},
+						       {"settings", in_settings},
+						       {"name", name},
+						       {"duration", duration}});
 	}
 
 	res = Json::object{{"sources", out_sources},
@@ -420,15 +396,13 @@ string SLImporter::Name(const string &path)
 	string manifest_path = folder + "manifest.json";
 
 	if (os_file_exists(manifest_path.c_str())) {
-		BPtr<char> file_data =
-			os_quick_read_utf8_file(manifest_path.c_str());
+		BPtr<char> file_data = os_quick_read_utf8_file(manifest_path.c_str());
 
 		string err;
 		Json data = Json::parse(file_data, err);
 
 		if (err == "") {
-			Json::array collections =
-				data["collections"].array_items();
+			Json::array collections = data["collections"].array_items();
 
 			bool name_set = false;
 
@@ -513,8 +487,7 @@ OBSImporterFiles SLImporter::FindFiles()
 #if defined(_WIN32) || defined(__APPLE__)
 	char dst[512];
 
-	int found =
-		os_get_config_path(dst, 512, "slobs-client/SceneCollections/");
+	int found = os_get_config_path(dst, 512, "slobs-client/SceneCollections/");
 
 	if (found == -1)
 		return res;

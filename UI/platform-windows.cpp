@@ -39,8 +39,7 @@
 
 using namespace std;
 
-static inline bool check_path(const char *data, const char *path,
-			      string &output)
+static inline bool check_path(const char *data, const char *path, string &output)
 {
 	ostringstream str;
 	str << path << data;
@@ -64,8 +63,7 @@ string GetDefaultVideoSavePath()
 	wchar_t path_utf16[MAX_PATH];
 	char path_utf8[MAX_PATH] = {};
 
-	SHGetFolderPathW(NULL, CSIDL_MYVIDEO, NULL, SHGFP_TYPE_CURRENT,
-			 path_utf16);
+	SHGetFolderPathW(NULL, CSIDL_MYVIDEO, NULL, SHGFP_TYPE_CURRENT, path_utf16);
 
 	os_wcs_to_utf8(path_utf16, wcslen(path_utf16), path_utf8, MAX_PATH);
 	return string(path_utf8);
@@ -76,13 +74,11 @@ static vector<string> GetUserPreferredLocales()
 	vector<string> result;
 
 	ULONG num, length = 0;
-	if (!GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &num, nullptr,
-					 &length))
+	if (!GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &num, nullptr, &length))
 		return result;
 
 	vector<wchar_t> buffer(length);
-	if (!GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &num,
-					 &buffer.front(), &length))
+	if (!GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &num, &buffer.front(), &length))
 		return result;
 
 	result.reserve(num);
@@ -192,13 +188,11 @@ void SetProcessPriority(const char *priority)
 	if (strcmp(priority, "High") == 0)
 		SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
 	else if (strcmp(priority, "AboveNormal") == 0)
-		SetPriorityClass(GetCurrentProcess(),
-				 ABOVE_NORMAL_PRIORITY_CLASS);
+		SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS);
 	else if (strcmp(priority, "Normal") == 0)
 		SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS);
 	else if (strcmp(priority, "BelowNormal") == 0)
-		SetPriorityClass(GetCurrentProcess(),
-				 BELOW_NORMAL_PRIORITY_CLASS);
+		SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 	else if (strcmp(priority, "Idle") == 0)
 		SetPriorityClass(GetCurrentProcess(), IDLE_PRIORITY_CLASS);
 }
@@ -220,8 +214,7 @@ bool SetDisplayAffinitySupported(void)
 	   older Windows builds behaves like WDA_MONITOR (black box) */
 
 	if (!checked) {
-		if (GetWindowsVersion() > 0x0A00 ||
-		    GetWindowsVersion() == 0x0A00 && GetWindowsBuild() >= 19041)
+		if (GetWindowsVersion() > 0x0A00 || GetWindowsVersion() == 0x0A00 && GetWindowsBuild() >= 19041)
 			supported = true;
 		else
 			supported = false;
@@ -240,10 +233,8 @@ bool DisableAudioDucking(bool disable)
 	ComPtr<IAudioSessionControl> sessionControl;
 	ComPtr<IAudioSessionControl2> sessionControl2;
 
-	HRESULT result = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr,
-					  CLSCTX_INPROC_SERVER,
-					  __uuidof(IMMDeviceEnumerator),
-					  (void **)&devEmum);
+	HRESULT result = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_INPROC_SERVER,
+					  __uuidof(IMMDeviceEnumerator), (void **)&devEmum);
 	if (FAILED(result))
 		return false;
 
@@ -251,14 +242,12 @@ bool DisableAudioDucking(bool disable)
 	if (FAILED(result))
 		return false;
 
-	result = device->Activate(__uuidof(IAudioSessionManager2),
-				  CLSCTX_INPROC_SERVER, nullptr,
+	result = device->Activate(__uuidof(IAudioSessionManager2), CLSCTX_INPROC_SERVER, nullptr,
 				  (void **)&sessionManager2);
 	if (FAILED(result))
 		return false;
 
-	result = sessionManager2->GetAudioSessionControl(nullptr, 0,
-							 &sessionControl);
+	result = sessionManager2->GetAudioSessionControl(nullptr, 0, &sessionControl);
 	if (FAILED(result))
 		return false;
 
@@ -341,8 +330,7 @@ struct MonitorData {
 	bool found;
 };
 
-static BOOL CALLBACK GetMonitorCallback(HMONITOR monitor, HDC, LPRECT,
-					LPARAM param)
+static BOOL CALLBACK GetMonitorCallback(HMONITOR monitor, HDC, LPRECT, LPARAM param)
 {
 	MonitorData *data = (MonitorData *)param;
 
@@ -385,9 +373,7 @@ void TaskbarOverlayInit()
 void TaskbarOverlaySetStatus(TaskbarOverlayStatus status)
 {
 	ITaskbarList4 *taskbarIcon;
-	auto hr = CoCreateInstance(CLSID_TaskbarList, NULL,
-				   CLSCTX_INPROC_SERVER,
-				   IID_PPV_ARGS(&taskbarIcon));
+	auto hr = CoCreateInstance(CLSID_TaskbarList, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&taskbarIcon));
 
 	if (FAILED(hr)) {
 		taskbarIcon->Release();
@@ -404,12 +390,10 @@ void TaskbarOverlaySetStatus(TaskbarOverlayStatus status)
 	QIcon qicon;
 	switch (status) {
 	case TaskbarOverlayStatusActive:
-		qicon = QIcon::fromTheme("obs-active",
-					 QIcon(":/res/images/active.png"));
+		qicon = QIcon::fromTheme("obs-active", QIcon(":/res/images/active.png"));
 		break;
 	case TaskbarOverlayStatusPaused:
-		qicon = QIcon::fromTheme("obs-paused",
-					 QIcon(":/res/images/paused.png"));
+		qicon = QIcon::fromTheme("obs-paused", QIcon(":/res/images/paused.png"));
 		break;
 	case TaskbarOverlayStatusInactive:
 		taskbarIcon->SetOverlayIcon(hwnd, nullptr, nullptr);
@@ -420,8 +404,7 @@ void TaskbarOverlaySetStatus(TaskbarOverlayStatus status)
 	HICON hicon = nullptr;
 	if (!qicon.isNull()) {
 		Q_GUI_EXPORT HICON qt_pixmapToWinHICON(const QPixmap &p);
-		hicon = qt_pixmapToWinHICON(
-			qicon.pixmap(GetSystemMetrics(SM_CXSMICON)));
+		hicon = qt_pixmapToWinHICON(qicon.pixmap(GetSystemMetrics(SM_CXSMICON)));
 		if (!hicon)
 			return;
 	}

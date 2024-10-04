@@ -64,10 +64,8 @@ void *slide_create(obs_data_t *settings, obs_source_t *source)
 	slide->a_param = gs_effect_get_param_by_name(effect, "tex_a");
 	slide->b_param = gs_effect_get_param_by_name(effect, "tex_b");
 
-	slide->tex_a_dir_param =
-		gs_effect_get_param_by_name(effect, "tex_a_dir");
-	slide->tex_b_dir_param =
-		gs_effect_get_param_by_name(effect, "tex_b_dir");
+	slide->tex_a_dir_param = gs_effect_get_param_by_name(effect, "tex_a_dir");
+	slide->tex_b_dir_param = gs_effect_get_param_by_name(effect, "tex_b_dir");
 
 	obs_source_update(source, settings);
 
@@ -80,8 +78,7 @@ void slide_destroy(void *data)
 	bfree(slide);
 }
 
-static void slide_callback(void *data, gs_texture_t *a, gs_texture_t *b,
-			   float t, uint32_t cx, uint32_t cy)
+static void slide_callback(void *data, gs_texture_t *a, gs_texture_t *b, float t, uint32_t cx, uint32_t cy)
 {
 	struct slide_info *slide = data;
 
@@ -127,13 +124,11 @@ static float mix_b(void *data, float t)
 	return cubic_ease_in_out(t);
 }
 
-bool slide_audio_render(void *data, uint64_t *ts_out,
-			struct obs_source_audio_mix *audio, uint32_t mixers,
+bool slide_audio_render(void *data, uint64_t *ts_out, struct obs_source_audio_mix *audio, uint32_t mixers,
 			size_t channels, size_t sample_rate)
 {
 	struct slide_info *slide = data;
-	return obs_transition_audio_render(slide->source, ts_out, audio, mixers,
-					   channels, sample_rate, mix_a, mix_b);
+	return obs_transition_audio_render(slide->source, ts_out, audio, mixers, channels, sample_rate, mix_a, mix_b);
 }
 
 static obs_properties_t *slide_properties(void *data)
@@ -141,25 +136,19 @@ static obs_properties_t *slide_properties(void *data)
 	obs_properties_t *ppts = obs_properties_create();
 	obs_property_t *p;
 
-	p = obs_properties_add_list(ppts, S_DIRECTION,
-				    obs_module_text("Direction"),
-				    OBS_COMBO_TYPE_LIST,
+	p = obs_properties_add_list(ppts, S_DIRECTION, obs_module_text("Direction"), OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
-	obs_property_list_add_string(p, obs_module_text("Direction.Left"),
-				     "left");
-	obs_property_list_add_string(p, obs_module_text("Direction.Right"),
-				     "right");
+	obs_property_list_add_string(p, obs_module_text("Direction.Left"), "left");
+	obs_property_list_add_string(p, obs_module_text("Direction.Right"), "right");
 	obs_property_list_add_string(p, obs_module_text("Direction.Up"), "up");
-	obs_property_list_add_string(p, obs_module_text("Direction.Down"),
-				     "down");
+	obs_property_list_add_string(p, obs_module_text("Direction.Down"), "down");
 
 	UNUSED_PARAMETER(data);
 	return ppts;
 }
 
-static enum gs_color_space
-slide_video_get_color_space(void *data, size_t count,
-			    const enum gs_color_space *preferred_spaces)
+static enum gs_color_space slide_video_get_color_space(void *data, size_t count,
+						       const enum gs_color_space *preferred_spaces)
 {
 	UNUSED_PARAMETER(count);
 	UNUSED_PARAMETER(preferred_spaces);

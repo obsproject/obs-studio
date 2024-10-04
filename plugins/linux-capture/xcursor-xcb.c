@@ -26,24 +26,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * Create the cursor texture, either by updating if the new cursor has the same
  * size or by creating a new texture if the size is different
  */
-static void xcb_xcursor_create(xcb_xcursor_t *data,
-			       xcb_xfixes_get_cursor_image_reply_t *xc)
+static void xcb_xcursor_create(xcb_xcursor_t *data, xcb_xfixes_get_cursor_image_reply_t *xc)
 {
 	uint32_t *pixels = xcb_xfixes_get_cursor_image_cursor_image(xc);
 	if (!pixels)
 		return;
 
-	if (data->tex && data->last_height == xc->width &&
-	    data->last_width == xc->height) {
-		gs_texture_set_image(data->tex, (const uint8_t *)pixels,
-				     xc->width * sizeof(uint32_t), false);
+	if (data->tex && data->last_height == xc->width && data->last_width == xc->height) {
+		gs_texture_set_image(data->tex, (const uint8_t *)pixels, xc->width * sizeof(uint32_t), false);
 	} else {
 		if (data->tex)
 			gs_texture_destroy(data->tex);
 
-		data->tex = gs_texture_create(xc->width, xc->height, GS_BGRA, 1,
-					      (const uint8_t **)&pixels,
-					      GS_DYNAMIC);
+		data->tex = gs_texture_create(xc->width, xc->height, GS_BGRA, 1, (const uint8_t **)&pixels, GS_DYNAMIC);
 	}
 
 	data->last_serial = xc->cursor_serial;
@@ -60,8 +55,7 @@ xcb_xcursor_t *xcb_xcursor_init(xcb_connection_t *xcb)
 
 	xcb_xfixes_query_version_cookie_t xfix_c;
 
-	xfix_c = xcb_xfixes_query_version_unchecked(
-		xcb, XCB_XFIXES_MAJOR_VERSION, XCB_XFIXES_MINOR_VERSION);
+	xfix_c = xcb_xfixes_query_version_unchecked(xcb, XCB_XFIXES_MAJOR_VERSION, XCB_XFIXES_MINOR_VERSION);
 	free(xcb_xfixes_query_version_reply(xcb, xfix_c, NULL));
 
 	return data;
@@ -76,10 +70,8 @@ void xcb_xcursor_destroy(xcb_xcursor_t *data)
 
 void xcb_xcursor_update(xcb_connection_t *xcb, xcb_xcursor_t *data)
 {
-	xcb_xfixes_get_cursor_image_cookie_t xc_c =
-		xcb_xfixes_get_cursor_image_unchecked(xcb);
-	xcb_xfixes_get_cursor_image_reply_t *xc =
-		xcb_xfixes_get_cursor_image_reply(xcb, xc_c, NULL);
+	xcb_xfixes_get_cursor_image_cookie_t xc_c = xcb_xfixes_get_cursor_image_unchecked(xcb);
+	xcb_xfixes_get_cursor_image_reply_t *xc = xcb_xfixes_get_cursor_image_reply(xcb, xc_c, NULL);
 	if (!data || !xc)
 		return;
 
@@ -132,25 +124,21 @@ void xcb_xcursor_offset(xcb_xcursor_t *data, const int x_org, const int y_org)
 	data->y_org = y_org;
 }
 
-void xcb_xcursor_offset_win(xcb_connection_t *xcb, xcb_xcursor_t *data,
-			    xcb_window_t win)
+void xcb_xcursor_offset_win(xcb_connection_t *xcb, xcb_xcursor_t *data, xcb_window_t win)
 {
 	if (!win)
 		return;
 
 	xcb_generic_error_t *err = NULL;
 	xcb_get_geometry_cookie_t geom_cookie = xcb_get_geometry(xcb, win);
-	xcb_get_geometry_reply_t *geom =
-		xcb_get_geometry_reply(xcb, geom_cookie, &err);
+	xcb_get_geometry_reply_t *geom = xcb_get_geometry_reply(xcb, geom_cookie, &err);
 	if (err) {
 		free(geom);
 		return;
 	}
 
-	xcb_translate_coordinates_cookie_t coords_cookie =
-		xcb_translate_coordinates(xcb, win, geom->root, 0, 0);
-	xcb_translate_coordinates_reply_t *coords =
-		xcb_translate_coordinates_reply(xcb, coords_cookie, &err);
+	xcb_translate_coordinates_cookie_t coords_cookie = xcb_translate_coordinates(xcb, win, geom->root, 0, 0);
+	xcb_translate_coordinates_reply_t *coords = xcb_translate_coordinates_reply(xcb, coords_cookie, &err);
 	if (!err)
 		xcb_xcursor_offset(data, coords->dst_x, coords->dst_y);
 

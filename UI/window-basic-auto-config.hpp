@@ -266,11 +266,7 @@ class AutoConfigTestPage : public QWizardPage {
 
 		inline ServerInfo() {}
 
-		inline ServerInfo(const char *name_, const char *address_)
-			: name(name_),
-			  address(address_)
-		{
-		}
+		inline ServerInfo(const char *name_, const char *address_) : name(name_), address(address_) {}
 	};
 
 	void GetServers(std::vector<ServerInfo> &servers);

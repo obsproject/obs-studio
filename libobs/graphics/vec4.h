@@ -44,8 +44,7 @@ static inline void vec4_zero(struct vec4 *v)
 	v->m = _mm_setzero_ps();
 }
 
-static inline void vec4_set(struct vec4 *dst, float x, float y, float z,
-			    float w)
+static inline void vec4_set(struct vec4 *dst, float x, float y, float z, float w)
 {
 	dst->m = _mm_set_ps(w, z, y, x);
 }
@@ -57,26 +56,22 @@ static inline void vec4_copy(struct vec4 *dst, const struct vec4 *v)
 
 EXPORT void vec4_from_vec3(struct vec4 *dst, const struct vec3 *v);
 
-static inline void vec4_add(struct vec4 *dst, const struct vec4 *v1,
-			    const struct vec4 *v2)
+static inline void vec4_add(struct vec4 *dst, const struct vec4 *v1, const struct vec4 *v2)
 {
 	dst->m = _mm_add_ps(v1->m, v2->m);
 }
 
-static inline void vec4_sub(struct vec4 *dst, const struct vec4 *v1,
-			    const struct vec4 *v2)
+static inline void vec4_sub(struct vec4 *dst, const struct vec4 *v1, const struct vec4 *v2)
 {
 	dst->m = _mm_sub_ps(v1->m, v2->m);
 }
 
-static inline void vec4_mul(struct vec4 *dst, const struct vec4 *v1,
-			    const struct vec4 *v2)
+static inline void vec4_mul(struct vec4 *dst, const struct vec4 *v1, const struct vec4 *v2)
 {
 	dst->m = _mm_mul_ps(v1->m, v2->m);
 }
 
-static inline void vec4_div(struct vec4 *dst, const struct vec4 *v1,
-			    const struct vec4 *v2)
+static inline void vec4_div(struct vec4 *dst, const struct vec4 *v1, const struct vec4 *v2)
 {
 	dst->m = _mm_div_ps(v1->m, v2->m);
 }
@@ -137,22 +132,17 @@ static inline float vec4_dist(const struct vec4 *v1, const struct vec4 *v2)
 static inline void vec4_norm(struct vec4 *dst, const struct vec4 *v)
 {
 	float dot_val = vec4_dot(v, v);
-	dst->m = (dot_val > 0.0f)
-			 ? _mm_mul_ps(v->m, _mm_set1_ps(1.0f / sqrtf(dot_val)))
-			 : _mm_setzero_ps();
+	dst->m = (dot_val > 0.0f) ? _mm_mul_ps(v->m, _mm_set1_ps(1.0f / sqrtf(dot_val))) : _mm_setzero_ps();
 }
 
-static inline int vec4_close(const struct vec4 *v1, const struct vec4 *v2,
-			     float epsilon)
+static inline int vec4_close(const struct vec4 *v1, const struct vec4 *v2, float epsilon)
 {
 	struct vec4 test;
 	vec4_sub(&test, v1, v2);
-	return test.x < epsilon && test.y < epsilon && test.z < epsilon &&
-	       test.w < epsilon;
+	return test.x < epsilon && test.y < epsilon && test.z < epsilon && test.w < epsilon;
 }
 
-static inline void vec4_min(struct vec4 *dst, const struct vec4 *v1,
-			    const struct vec4 *v2)
+static inline void vec4_min(struct vec4 *dst, const struct vec4 *v1, const struct vec4 *v2)
 {
 	dst->m = _mm_min_ps(v1->m, v2->m);
 }
@@ -162,8 +152,7 @@ static inline void vec4_minf(struct vec4 *dst, const struct vec4 *v, float f)
 	dst->m = _mm_min_ps(v->m, _mm_set1_ps(f));
 }
 
-static inline void vec4_max(struct vec4 *dst, const struct vec4 *v1,
-			    const struct vec4 *v2)
+static inline void vec4_max(struct vec4 *dst, const struct vec4 *v1, const struct vec4 *v2)
 {
 	dst->m = _mm_max_ps(v1->m, v2->m);
 }
@@ -245,8 +234,7 @@ static inline void vec4_from_rgba_srgb(struct vec4 *dst, uint32_t rgba)
 	gs_float3_srgb_nonlinear_to_linear(dst->ptr);
 }
 
-EXPORT void vec4_transform(struct vec4 *dst, const struct vec4 *v,
-			   const struct matrix4 *m);
+EXPORT void vec4_transform(struct vec4 *dst, const struct vec4 *v, const struct matrix4 *m);
 
 #ifdef __cplusplus
 }

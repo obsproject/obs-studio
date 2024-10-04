@@ -5,8 +5,7 @@
 #include <ffnvcodec/dynlink_cuda.h>
 
 /* Missing from FFmpeg headers */
-typedef CUresult CUDAAPI tcuMemHostRegister(void *p, size_t bytesize,
-					    unsigned int Flags);
+typedef CUresult CUDAAPI tcuMemHostRegister(void *p, size_t bytesize, unsigned int Flags);
 typedef CUresult CUDAAPI tcuMemHostUnregister(void *p);
 
 #define CUDA_ERROR_INVALID_GRAPHICS_CONTEXT 219
@@ -40,8 +39,7 @@ typedef struct CudaFunctions {
 	tcuGraphicsUnregisterResource *cuGraphicsUnregisterResource;
 	tcuGraphicsMapResources *cuGraphicsMapResources;
 	tcuGraphicsUnmapResources *cuGraphicsUnmapResources;
-	tcuGraphicsSubResourceGetMappedArray
-		*cuGraphicsSubResourceGetMappedArray;
+	tcuGraphicsSubResourceGetMappedArray *cuGraphicsSubResourceGetMappedArray;
 #endif
 } CudaFunctions;
 
@@ -51,8 +49,7 @@ bool init_cuda(obs_encoder_t *encoder);
 bool cuda_get_error_desc(CUresult res, const char **name, const char **desc);
 
 struct nvenc_data;
-bool cuda_error_check(struct nvenc_data *enc, CUresult res, const char *func,
-		      const char *call);
+bool cuda_error_check(struct nvenc_data *enc, CUresult res, const char *func, const char *call);
 
 /* CUDA error handling */
 #define CU_FAILED(call)                                        \

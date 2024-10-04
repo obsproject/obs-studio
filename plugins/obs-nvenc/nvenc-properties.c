@@ -18,11 +18,9 @@ void nvenc_properties_read(struct nvenc_properties *props, obs_data_t *settings)
 	props->tune = obs_data_get_string(settings, "tune");
 	props->multipass = obs_data_get_string(settings, "multipass");
 
-	props->adaptive_quantization =
-		obs_data_get_bool(settings, "adaptive_quantization");
+	props->adaptive_quantization = obs_data_get_bool(settings, "adaptive_quantization");
 	props->lookahead = obs_data_get_bool(settings, "lookahead");
-	props->disable_scenecut =
-		obs_data_get_bool(settings, "disable_scenecut");
+	props->disable_scenecut = obs_data_get_bool(settings, "disable_scenecut");
 	props->repeat_headers = obs_data_get_bool(settings, "repeat_headers");
 	props->force_cuda_tex = obs_data_get_bool(settings, "force_cuda_tex");
 
@@ -52,8 +50,7 @@ static void nvenc_defaults_base(enum codec_type codec, obs_data_t *settings)
 	obs_data_set_default_string(settings, "preset", "p5");
 	obs_data_set_default_string(settings, "multipass", "qres");
 	obs_data_set_default_string(settings, "tune", "hq");
-	obs_data_set_default_string(settings, "profile",
-				    codec != CODEC_H264 ? "main" : "high");
+	obs_data_set_default_string(settings, "profile", codec != CODEC_H264 ? "main" : "high");
 
 	obs_data_set_default_bool(settings, "adaptive_quantization", true);
 	obs_data_set_default_bool(settings, "lookahead", caps->lookahead);
@@ -81,8 +78,7 @@ void av1_nvenc_defaults(obs_data_t *settings)
 	nvenc_defaults_base(CODEC_AV1, settings);
 }
 
-static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
-				  obs_data_t *settings)
+static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p, obs_data_t *settings)
 {
 	const char *rc = obs_data_get_string(settings, "rate_control");
 	bool cqp = strcmp(rc, "CQP") == 0;
@@ -115,49 +111,37 @@ obs_properties_t *nvenc_properties_internal(enum codec_type codec)
 
 	struct encoder_caps *caps = get_encoder_caps(codec);
 
-	p = obs_properties_add_list(props, "rate_control",
-				    obs_module_text("RateControl"),
-				    OBS_COMBO_TYPE_LIST,
+	p = obs_properties_add_list(props, "rate_control", obs_module_text("RateControl"), OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
 	obs_property_list_add_string(p, obs_module_text("CBR"), "CBR");
 	obs_property_list_add_string(p, obs_module_text("CQP"), "CQP");
 	obs_property_list_add_string(p, obs_module_text("VBR"), "VBR");
 	obs_property_list_add_string(p, obs_module_text("CQVBR"), "CQVBR");
 	if (caps->lossless) {
-		obs_property_list_add_string(p, obs_module_text("Lossless"),
-					     "lossless");
+		obs_property_list_add_string(p, obs_module_text("Lossless"), "lossless");
 	}
 
 	obs_property_set_modified_callback(p, rate_control_modified);
 
-	p = obs_properties_add_int(props, "bitrate", obs_module_text("Bitrate"),
-				   50, UINT32_MAX / 1000, 50);
+	p = obs_properties_add_int(props, "bitrate", obs_module_text("Bitrate"), 50, UINT32_MAX / 1000, 50);
 	obs_property_int_set_suffix(p, " Kbps");
 
-	obs_properties_add_int(props, "target_quality",
-			       obs_module_text("TargetQuality"), 1, 51, 1);
+	obs_properties_add_int(props, "target_quality", obs_module_text("TargetQuality"), 1, 51, 1);
 
-	p = obs_properties_add_int(props, "max_bitrate",
-				   obs_module_text("MaxBitrate"), 0,
-				   UINT32_MAX / 1000, 50);
+	p = obs_properties_add_int(props, "max_bitrate", obs_module_text("MaxBitrate"), 0, UINT32_MAX / 1000, 50);
 	obs_property_int_set_suffix(p, " Kbps");
 
 	/* AV1 uses 0-255 instead of 0-51 for QP, and most implementations just
 	 * multiply the value by 4 to keep the range smaller. */
-	obs_properties_add_int(props, "cqp", obs_module_text("CQP"), 1,
-			       codec == CODEC_AV1 ? 63 : 51, 1);
+	obs_properties_add_int(props, "cqp", obs_module_text("CQP"), 1, codec == CODEC_AV1 ? 63 : 51, 1);
 
-	p = obs_properties_add_int(props, "keyint_sec",
-				   obs_module_text("KeyframeIntervalSec"), 0,
-				   10, 1);
+	p = obs_properties_add_int(props, "keyint_sec", obs_module_text("KeyframeIntervalSec"), 0, 10, 1);
 	obs_property_int_set_suffix(p, " s");
 
-	p = obs_properties_add_list(props, "preset", obs_module_text("Preset"),
-				    OBS_COMBO_TYPE_LIST,
+	p = obs_properties_add_list(props, "preset", obs_module_text("Preset"), OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
 
-#define add_preset(val) \
-	obs_property_list_add_string(p, obs_module_text("Preset." val), val)
+#define add_preset(val) obs_property_list_add_string(p, obs_module_text("Preset." val), val)
 
 	add_preset("p1");
 	add_preset("p2");
@@ -168,12 +152,10 @@ obs_properties_t *nvenc_properties_internal(enum codec_type codec)
 	add_preset("p7");
 #undef add_preset
 
-	p = obs_properties_add_list(props, "tune", obs_module_text("Tuning"),
-				    OBS_COMBO_TYPE_LIST,
+	p = obs_properties_add_list(props, "tune", obs_module_text("Tuning"), OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
 
-#define add_tune(val) \
-	obs_property_list_add_string(p, obs_module_text("Tuning." val), val)
+#define add_tune(val) obs_property_list_add_string(p, obs_module_text("Tuning." val), val)
 #ifdef NVENC_12_2_OR_LATER
 	/* The UHQ tune is only supported on Turing or later.
 	 * It uses the temporal filtering feature, so we can use its
@@ -186,21 +168,16 @@ obs_properties_t *nvenc_properties_internal(enum codec_type codec)
 	add_tune("ull");
 #undef add_tune
 
-	p = obs_properties_add_list(props, "multipass",
-				    obs_module_text("Multipass"),
-				    OBS_COMBO_TYPE_LIST,
+	p = obs_properties_add_list(props, "multipass", obs_module_text("Multipass"), OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
 
-#define add_multipass(val) \
-	obs_property_list_add_string(p, obs_module_text("Multipass." val), val)
+#define add_multipass(val) obs_property_list_add_string(p, obs_module_text("Multipass." val), val)
 	add_multipass("disabled");
 	add_multipass("qres");
 	add_multipass("fullres");
 #undef add_multipass
 
-	p = obs_properties_add_list(props, "profile",
-				    obs_module_text("Profile"),
-				    OBS_COMBO_TYPE_LIST,
+	p = obs_properties_add_list(props, "profile", obs_module_text("Profile"), OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
 
 #define add_profile(val) obs_property_list_add_string(p, val, val)
@@ -217,47 +194,36 @@ obs_properties_t *nvenc_properties_internal(enum codec_type codec)
 	}
 #undef add_profile
 
-	p = obs_properties_add_bool(props, "lookahead",
-				    obs_module_text("LookAhead"));
-	obs_property_set_long_description(p,
-					  obs_module_text("LookAhead.ToolTip"));
+	p = obs_properties_add_bool(props, "lookahead", obs_module_text("LookAhead"));
+	obs_property_set_long_description(p, obs_module_text("LookAhead.ToolTip"));
 
-	p = obs_properties_add_bool(props, "adaptive_quantization",
-				    obs_module_text("AdaptiveQuantization"));
-	obs_property_set_long_description(
-		p, obs_module_text("AdaptiveQuantization.ToolTip"));
+	p = obs_properties_add_bool(props, "adaptive_quantization", obs_module_text("AdaptiveQuantization"));
+	obs_property_set_long_description(p, obs_module_text("AdaptiveQuantization.ToolTip"));
 
 	if (num_encoder_devices() > 1) {
-		obs_properties_add_int(props, "device", obs_module_text("GPU"),
-				       -1, num_encoder_devices(), 1);
+		obs_properties_add_int(props, "device", obs_module_text("GPU"), -1, num_encoder_devices(), 1);
 	}
 
 	if (caps->bframes > 0) {
-		obs_properties_add_int(props, "bf", obs_module_text("BFrames"),
-				       0, caps->bframes, 1);
+		obs_properties_add_int(props, "bf", obs_module_text("BFrames"), 0, caps->bframes, 1);
 	}
 
 	/* H.264 supports this, but seems to cause issues with some decoders,
 	 * so restrict it to the custom options field for now. */
 	if (caps->bref_modes && codec != CODEC_H264) {
-		p = obs_properties_add_list(props, "bframe_ref_mode",
-					    obs_module_text("BFrameRefMode"),
-					    OBS_COMBO_TYPE_LIST,
-					    OBS_COMBO_FORMAT_INT);
+		p = obs_properties_add_list(props, "bframe_ref_mode", obs_module_text("BFrameRefMode"),
+					    OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
-		obs_property_list_add_int(
-			p, obs_module_text("BframeRefMode.Disabled"),
-			NV_ENC_BFRAME_REF_MODE_DISABLED);
+		obs_property_list_add_int(p, obs_module_text("BframeRefMode.Disabled"),
+					  NV_ENC_BFRAME_REF_MODE_DISABLED);
 
 		if (caps->bref_modes & 1) {
-			obs_property_list_add_int(
-				p, obs_module_text("BframeRefMode.Each"),
-				NV_ENC_BFRAME_REF_MODE_EACH);
+			obs_property_list_add_int(p, obs_module_text("BframeRefMode.Each"),
+						  NV_ENC_BFRAME_REF_MODE_EACH);
 		}
 		if (caps->bref_modes & 2) {
-			obs_property_list_add_int(
-				p, obs_module_text("BframeRefMode.Middle"),
-				NV_ENC_BFRAME_REF_MODE_MIDDLE);
+			obs_property_list_add_int(p, obs_module_text("BframeRefMode.Middle"),
+						  NV_ENC_BFRAME_REF_MODE_MIDDLE);
 		}
 	}
 
@@ -265,33 +231,22 @@ obs_properties_t *nvenc_properties_internal(enum codec_type codec)
 	/* Some older GPUs such as the 1080 Ti have 2 NVENC chips, but do not
 	 * support split encoding. Therefore, we check for AV1 support here to
 	 * make sure this option is only presented on 40-series and later. */
-	if (is_codec_supported(CODEC_AV1) && caps->engines > 1 &&
-	    !has_broken_split_encoding() &&
+	if (is_codec_supported(CODEC_AV1) && caps->engines > 1 && !has_broken_split_encoding() &&
 	    (codec == CODEC_HEVC || codec == CODEC_AV1)) {
-		p = obs_properties_add_list(props, "split_encode",
-					    obs_module_text("SplitEncode"),
-					    OBS_COMBO_TYPE_LIST,
+		p = obs_properties_add_list(props, "split_encode", obs_module_text("SplitEncode"), OBS_COMBO_TYPE_LIST,
 					    OBS_COMBO_FORMAT_INT);
 
-		obs_property_list_add_int(p,
-					  obs_module_text("SplitEncode.Auto"),
-					  NV_ENC_SPLIT_AUTO_MODE);
-		obs_property_list_add_int(
-			p, obs_module_text("SplitEncode.Disabled"),
-			NV_ENC_SPLIT_DISABLE_MODE);
-		obs_property_list_add_int(
-			p, obs_module_text("SplitEncode.Enabled"),
-			NV_ENC_SPLIT_TWO_FORCED_MODE);
+		obs_property_list_add_int(p, obs_module_text("SplitEncode.Auto"), NV_ENC_SPLIT_AUTO_MODE);
+		obs_property_list_add_int(p, obs_module_text("SplitEncode.Disabled"), NV_ENC_SPLIT_DISABLE_MODE);
+		obs_property_list_add_int(p, obs_module_text("SplitEncode.Enabled"), NV_ENC_SPLIT_TWO_FORCED_MODE);
 		if (caps->engines > 2) {
-			obs_property_list_add_int(
-				p, obs_module_text("SplitEncode.ThreeWay"),
-				NV_ENC_SPLIT_THREE_FORCED_MODE);
+			obs_property_list_add_int(p, obs_module_text("SplitEncode.ThreeWay"),
+						  NV_ENC_SPLIT_THREE_FORCED_MODE);
 		}
 	}
 #endif
 
-	p = obs_properties_add_text(props, "opts", obs_module_text("Opts"),
-				    OBS_TEXT_DEFAULT);
+	p = obs_properties_add_text(props, "opts", obs_module_text("Opts"), OBS_TEXT_DEFAULT);
 	obs_property_set_long_description(p, obs_module_text("Opts.TT"));
 
 	/* Invisible properties */
@@ -299,8 +254,7 @@ obs_properties_t *nvenc_properties_internal(enum codec_type codec)
 	obs_property_set_visible(p, false);
 	p = obs_properties_add_bool(props, "force_cuda_tex", "force_cuda_tex");
 	obs_property_set_visible(p, false);
-	p = obs_properties_add_bool(props, "disable_scenecut",
-				    "disable_scenecut");
+	p = obs_properties_add_bool(props, "disable_scenecut", "disable_scenecut");
 	obs_property_set_visible(p, false);
 
 	return props;

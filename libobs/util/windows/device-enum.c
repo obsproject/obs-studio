@@ -13,9 +13,7 @@ void enum_graphics_device_luids(device_luid_cb device_luid, void *param)
 	if (FAILED(hr))
 		return;
 
-	for (UINT i = 0;
-	     factory->lpVtbl->EnumAdapters1(factory, i, &adapter) == S_OK;
-	     i++) {
+	for (UINT i = 0; factory->lpVtbl->EnumAdapters1(factory, i, &adapter) == S_OK; i++) {
 		DXGI_ADAPTER_DESC desc;
 
 		hr = adapter->lpVtbl->GetDesc(adapter, &desc);

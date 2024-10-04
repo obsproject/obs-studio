@@ -21,14 +21,11 @@
 #include <libavutil/mastering_display_metadata.h>
 
 enum AVHWDeviceType hw_priority[] = {
-	AV_HWDEVICE_TYPE_CUDA,         AV_HWDEVICE_TYPE_D3D11VA,
-	AV_HWDEVICE_TYPE_DXVA2,        AV_HWDEVICE_TYPE_VAAPI,
-	AV_HWDEVICE_TYPE_VDPAU,        AV_HWDEVICE_TYPE_QSV,
-	AV_HWDEVICE_TYPE_VIDEOTOOLBOX, AV_HWDEVICE_TYPE_NONE,
+	AV_HWDEVICE_TYPE_CUDA,  AV_HWDEVICE_TYPE_D3D11VA, AV_HWDEVICE_TYPE_DXVA2,        AV_HWDEVICE_TYPE_VAAPI,
+	AV_HWDEVICE_TYPE_VDPAU, AV_HWDEVICE_TYPE_QSV,     AV_HWDEVICE_TYPE_VIDEOTOOLBOX, AV_HWDEVICE_TYPE_NONE,
 };
 
-static bool has_hw_type(const AVCodec *c, enum AVHWDeviceType type,
-			enum AVPixelFormat *hw_format)
+static bool has_hw_type(const AVCodec *c, enum AVHWDeviceType type, enum AVPixelFormat *hw_format)
 {
 	for (int i = 0;; i++) {
 		const AVCodecHWConfig *config = avcodec_get_hw_config(c, i);
@@ -36,8 +33,7 @@ static bool has_hw_type(const AVCodec *c, enum AVHWDeviceType type,
 			break;
 		}
 
-		if (config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX &&
-		    config->device_type == type) {
+		if (config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX && config->device_type == type) {
 			*hw_format = config->pix_fmt;
 			return true;
 		}
@@ -53,8 +49,7 @@ static void init_hw_decoder(struct mp_decode *d, AVCodecContext *c)
 
 	while (*priority != AV_HWDEVICE_TYPE_NONE) {
 		if (has_hw_type(d->codec, *priority, &d->hw_format)) {
-			int ret = av_hwdevice_ctx_create(&hw_ctx, *priority,
-							 NULL, NULL, 0);
+			int ret = av_hwdevice_ctx_create(&hw_ctx, *priority, NULL, NULL, 0);
 			if (ret == 0)
 				break;
 		}
@@ -90,10 +85,8 @@ static int mp_open_codec(struct mp_decode *d, bool hw)
 	if (hw)
 		init_hw_decoder(d, c);
 
-	if (c->thread_count == 1 && c->codec_id != AV_CODEC_ID_PNG &&
-	    c->codec_id != AV_CODEC_ID_TIFF &&
-	    c->codec_id != AV_CODEC_ID_JPEG2000 &&
-	    c->codec_id != AV_CODEC_ID_MPEG4 && c->codec_id != AV_CODEC_ID_WEBP)
+	if (c->thread_count == 1 && c->codec_id != AV_CODEC_ID_PNG && c->codec_id != AV_CODEC_ID_TIFF &&
+	    c->codec_id != AV_CODEC_ID_JPEG2000 && c->codec_id != AV_CODEC_ID_MPEG4 && c->codec_id != AV_CODEC_ID_WEBP)
 		c->thread_count = 0;
 
 	ret = avcodec_open2(c, d->codec, NULL);
@@ -115,24 +108,18 @@ static uint16_t get_max_luminance(const AVStream *stream)
 	uint32_t max_luminance = 0;
 
 	for (int i = 0; i < stream->codecpar->nb_coded_side_data; i++) {
-		const AVPacketSideData *const sd =
-			&stream->codecpar->coded_side_data[i];
+		const AVPacketSideData *const sd = &stream->codecpar->coded_side_data[i];
 		switch (sd->type) {
 		case AV_PKT_DATA_MASTERING_DISPLAY_METADATA: {
-			const AVMasteringDisplayMetadata *mastering =
-				(AVMasteringDisplayMetadata *)sd->data;
+			const AVMasteringDisplayMetadata *mastering = (AVMasteringDisplayMetadata *)sd->data;
 			if (mastering->has_luminance) {
-				max_luminance =
-					(uint32_t)(av_q2d(mastering
-								  ->max_luminance) +
-						   0.5);
+				max_luminance = (uint32_t)(av_q2d(mastering->max_luminance) + 0.5);
 			}
 
 			break;
 		}
 		case AV_PKT_DATA_CONTENT_LIGHT_LEVEL: {
-			const AVContentLightMetadata *const md =
-				(AVContentLightMetadata *)&sd->data;
+			const AVContentLightMetadata *const md = (AVContentLightMetadata *)&sd->data;
 			max_luminance = md->MaxCLL;
 			break;
 		}
@@ -166,12 +153,10 @@ bool mp_decode_init(mp_media_t *m, enum AVMediaType type, bool hw)
 
 	if (id == AV_CODEC_ID_VP8 || id == AV_CODEC_ID_VP9) {
 		AVDictionaryEntry *tag = NULL;
-		tag = av_dict_get(stream->metadata, "alpha_mode", tag,
-				  AV_DICT_IGNORE_SUFFIX);
+		tag = av_dict_get(stream->metadata, "alpha_mode", tag, AV_DICT_IGNORE_SUFFIX);
 
 		if (tag && strcmp(tag->value, "1") == 0) {
-			char *codec = (id == AV_CODEC_ID_VP8) ? "libvpx"
-							      : "libvpx-vp9";
+			char *codec = (id == AV_CODEC_ID_VP8) ? "libvpx" : "libvpx-vp9";
 			d->codec = avcodec_find_decoder_by_name(codec);
 		}
 	}
@@ -180,30 +165,26 @@ bool mp_decode_init(mp_media_t *m, enum AVMediaType type, bool hw)
 		d->codec = avcodec_find_decoder(id);
 
 	if (!d->codec) {
-		blog(LOG_WARNING, "MP: Failed to find %s codec",
-		     av_get_media_type_string(type));
+		blog(LOG_WARNING, "MP: Failed to find %s codec", av_get_media_type_string(type));
 		return false;
 	}
 
 	ret = mp_open_codec(d, hw);
 	if (ret < 0) {
-		blog(LOG_WARNING, "MP: Failed to open %s decoder: %s",
-		     av_get_media_type_string(type), av_err2str(ret));
+		blog(LOG_WARNING, "MP: Failed to open %s decoder: %s", av_get_media_type_string(type), av_err2str(ret));
 		return false;
 	}
 
 	d->sw_frame = av_frame_alloc();
 	if (!d->sw_frame) {
-		blog(LOG_WARNING, "MP: Failed to allocate %s frame",
-		     av_get_media_type_string(type));
+		blog(LOG_WARNING, "MP: Failed to allocate %s frame", av_get_media_type_string(type));
 		return false;
 	}
 
 	if (d->hw) {
 		d->hw_frame = av_frame_alloc();
 		if (!d->hw_frame) {
-			blog(LOG_WARNING, "MP: Failed to allocate %s hw frame",
-			     av_get_media_type_string(type));
+			blog(LOG_WARNING, "MP: Failed to allocate %s hw frame", av_get_media_type_string(type));
 			return false;
 		}
 
@@ -267,12 +248,10 @@ void mp_decode_push_packet(struct mp_decode *decode, AVPacket *packet)
 	deque_push_back(&decode->packets, &packet, sizeof(packet));
 }
 
-static inline int64_t get_estimated_duration(struct mp_decode *d,
-					     int64_t last_pts)
+static inline int64_t get_estimated_duration(struct mp_decode *d, int64_t last_pts)
 {
 	if (d->audio) {
-		return av_rescale_q(d->in_frame->nb_samples,
-				    (AVRational){1, d->in_frame->sample_rate},
+		return av_rescale_q(d->in_frame->nb_samples, (AVRational){1, d->in_frame->sample_rate},
 				    (AVRational){1, 1000000000});
 	} else {
 		if (last_pts)
@@ -281,9 +260,7 @@ static inline int64_t get_estimated_duration(struct mp_decode *d,
 		if (d->last_duration)
 			return d->last_duration;
 
-		return av_rescale_q(d->decoder->time_base.num,
-				    d->decoder->time_base,
-				    (AVRational){1, 1000000000});
+		return av_rescale_q(d->decoder->time_base.num, d->decoder->time_base, (AVRational){1, 1000000000});
 	}
 }
 
@@ -365,8 +342,7 @@ bool mp_decode_next(struct mp_decode *d)
 				}
 			} else {
 				mp_media_free_packet(d->m, d->orig_pkt);
-				deque_pop_front(&d->packets, &d->orig_pkt,
-						sizeof(d->orig_pkt));
+				deque_pop_front(&d->packets, &d->orig_pkt, sizeof(d->orig_pkt));
 				av_packet_ref(d->pkt, d->orig_pkt);
 				d->packet_pending = true;
 			}
@@ -380,8 +356,7 @@ bool mp_decode_next(struct mp_decode *d)
 		}
 		if (ret < 0) {
 #ifdef DETAILED_DEBUG_INFO
-			blog(LOG_DEBUG, "MP: decode failed: %s",
-			     av_err2str(ret));
+			blog(LOG_DEBUG, "MP: decode failed: %s", av_err2str(ret));
 #endif
 
 			if (d->packet_pending) {
@@ -414,25 +389,18 @@ bool mp_decode_next(struct mp_decode *d)
 		if (d->in_frame->best_effort_timestamp == AV_NOPTS_VALUE)
 			d->frame_pts = d->next_pts;
 		else
-			d->frame_pts =
-				av_rescale_q(d->in_frame->best_effort_timestamp,
-					     d->stream->time_base,
-					     (AVRational){1, 1000000000});
+			d->frame_pts = av_rescale_q(d->in_frame->best_effort_timestamp, d->stream->time_base,
+						    (AVRational){1, 1000000000});
 
 		int64_t duration = d->in_frame->duration;
 		if (!duration)
 			duration = get_estimated_duration(d, last_pts);
 		else
-			duration = av_rescale_q(duration, d->stream->time_base,
-						(AVRational){1, 1000000000});
+			duration = av_rescale_q(duration, d->stream->time_base, (AVRational){1, 1000000000});
 
 		if (d->m->speed != 100) {
-			d->frame_pts = av_rescale_q(
-				d->frame_pts, (AVRational){1, d->m->speed},
-				(AVRational){1, 100});
-			duration = av_rescale_q(duration,
-						(AVRational){1, d->m->speed},
-						(AVRational){1, 100});
+			d->frame_pts = av_rescale_q(d->frame_pts, (AVRational){1, d->m->speed}, (AVRational){1, 100});
+			duration = av_rescale_q(duration, (AVRational){1, d->m->speed}, (AVRational){1, 100});
 		}
 
 		d->last_duration = duration;

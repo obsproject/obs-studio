@@ -38,8 +38,7 @@ static const char *module_bin[] = {"../../obs-plugins/64bit"};
 
 static const char *module_data[] = {"../../data/obs-plugins/%module%"};
 
-static const int module_patterns_size =
-	sizeof(module_bin) / sizeof(module_bin[0]);
+static const int module_patterns_size = sizeof(module_bin) / sizeof(module_bin[0]);
 
 void add_default_module_paths(void)
 {
@@ -70,15 +69,12 @@ static void log_processor_info(void)
 
 	memset(data, 0, sizeof(data));
 
-	status = RegOpenKeyW(
-		HKEY_LOCAL_MACHINE,
-		L"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", &key);
+	status = RegOpenKeyW(HKEY_LOCAL_MACHINE, L"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", &key);
 	if (status != ERROR_SUCCESS)
 		return;
 
 	size = sizeof(data);
-	status = RegQueryValueExW(key, L"ProcessorNameString", NULL, NULL,
-				  (LPBYTE)data, &size);
+	status = RegQueryValueExW(key, L"ProcessorNameString", NULL, NULL, (LPBYTE)data, &size);
 	if (status == ERROR_SUCCESS) {
 		os_wcs_to_utf8_ptr(data, 0, &str);
 		blog(LOG_INFO, "CPU Name: %s", str);
@@ -86,8 +82,7 @@ static void log_processor_info(void)
 	}
 
 	size = sizeof(speed);
-	status = RegQueryValueExW(key, L"~MHz", NULL, NULL, (LPBYTE)&speed,
-				  &size);
+	status = RegQueryValueExW(key, L"~MHz", NULL, NULL, (LPBYTE)&speed, &size);
 	if (status == ERROR_SUCCESS)
 		blog(LOG_INFO, "CPU Speed: %ldMHz", speed);
 
@@ -96,8 +91,7 @@ static void log_processor_info(void)
 
 static void log_processor_cores(void)
 {
-	blog(LOG_INFO, "Physical Cores: %d, Logical Cores: %d",
-	     os_get_physical_cores(), os_get_logical_cores());
+	blog(LOG_INFO, "Physical Cores: %d, Logical Cores: %d", os_get_physical_cores(), os_get_logical_cores());
 }
 
 static void log_emulation_status(void)
@@ -120,8 +114,7 @@ static void log_available_memory(void)
 	const char *note = " (NOTE: 32bit programs cannot use more than 3gb)";
 #endif
 
-	blog(LOG_INFO, "Physical Memory: %luMB Total, %luMB Free%s",
-	     (DWORD)(ms.ullTotalPhys / 1048576),
+	blog(LOG_INFO, "Physical Memory: %luMB Total, %luMB Free%s", (DWORD)(ms.ullTotalPhys / 1048576),
 	     (DWORD)(ms.ullAvailPhys / 1048576), note);
 }
 
@@ -132,13 +125,11 @@ static void log_lenovo_vantage(void)
 	if (!manager)
 		return;
 
-	SC_HANDLE service =
-		OpenService(manager, L"FBNetFilter", SERVICE_QUERY_STATUS);
+	SC_HANDLE service = OpenService(manager, L"FBNetFilter", SERVICE_QUERY_STATUS);
 
 	if (service) {
-		blog(LOG_WARNING,
-		     "Lenovo Vantage / Legion Edge is installed. The \"Network Boost\" "
-		     "feature must be disabled when streaming with OBS.");
+		blog(LOG_WARNING, "Lenovo Vantage / Legion Edge is installed. The \"Network Boost\" "
+				  "feature must be disabled when streaming with OBS.");
 		CloseServiceHandle(service);
 	}
 
@@ -165,10 +156,8 @@ static void log_windows_version(void)
 	bool arm64 = is_arm64_windows();
 	const char *arm64_windows = arm64 ? "ARM " : "";
 
-	blog(LOG_INFO,
-	     "Windows Version: %d.%d Build %d (release: %s; revision: %d; %s%s-bit)",
-	     ver.major, ver.minor, ver.build, release_id, ver.revis,
-	     arm64_windows, windows_bitness);
+	blog(LOG_INFO, "Windows Version: %d.%d Build %d (release: %s; revision: %d; %s%s-bit)", ver.major, ver.minor,
+	     ver.build, release_id, ver.revis, arm64_windows, windows_bitness);
 }
 
 static void log_admin_status(void)
@@ -177,9 +166,7 @@ static void log_admin_status(void)
 	PSID admin_group;
 	BOOL success;
 
-	success = AllocateAndInitializeSid(&auth, 2,
-					   SECURITY_BUILTIN_DOMAIN_RID,
-					   DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0,
+	success = AllocateAndInitializeSid(&auth, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0,
 					   0, 0, &admin_group);
 	if (success) {
 		if (!CheckTokenMembership(NULL, admin_group, &success))
@@ -187,14 +174,11 @@ static void log_admin_status(void)
 		FreeSid(admin_group);
 	}
 
-	blog(LOG_INFO, "Running as administrator: %s",
-	     success ? "true" : "false");
+	blog(LOG_INFO, "Running as administrator: %s", success ? "true" : "false");
 }
 
-#define WIN10_GAME_BAR_REG_KEY \
-	L"Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR"
-#define WIN10_GAME_DVR_POLICY_REG_KEY \
-	L"SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR"
+#define WIN10_GAME_BAR_REG_KEY L"Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR"
+#define WIN10_GAME_DVR_POLICY_REG_KEY L"SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR"
 #define WIN10_GAME_DVR_REG_KEY L"System\\GameConfigStore"
 #define WIN10_GAME_MODE_REG_KEY L"Software\\Microsoft\\GameBar"
 
@@ -209,36 +193,27 @@ static void log_gaming_features(void)
 	struct reg_dword game_dvr_bg_recording;
 	struct reg_dword game_mode_enabled;
 
-	get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_BAR_REG_KEY,
-		      L"AppCaptureEnabled", &game_bar_enabled);
-	get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_DVR_POLICY_REG_KEY,
-		      L"AllowGameDVR", &game_dvr_allowed);
-	get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_DVR_REG_KEY,
-		      L"GameDVR_Enabled", &game_dvr_enabled);
-	get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_BAR_REG_KEY,
-		      L"HistoricalCaptureEnabled", &game_dvr_bg_recording);
-	get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_MODE_REG_KEY,
-		      L"AutoGameModeEnabled", &game_mode_enabled);
+	get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_BAR_REG_KEY, L"AppCaptureEnabled", &game_bar_enabled);
+	get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_DVR_POLICY_REG_KEY, L"AllowGameDVR", &game_dvr_allowed);
+	get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_DVR_REG_KEY, L"GameDVR_Enabled", &game_dvr_enabled);
+	get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_BAR_REG_KEY, L"HistoricalCaptureEnabled", &game_dvr_bg_recording);
+	get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_MODE_REG_KEY, L"AutoGameModeEnabled", &game_mode_enabled);
 
 	if (game_mode_enabled.status != ERROR_SUCCESS) {
-		get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_MODE_REG_KEY,
-			      L"AllowAutoGameMode", &game_mode_enabled);
+		get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_MODE_REG_KEY, L"AllowAutoGameMode", &game_mode_enabled);
 	}
 
 	blog(LOG_INFO, "Windows 10/11 Gaming Features:");
 	if (game_bar_enabled.status == ERROR_SUCCESS) {
-		blog(LOG_INFO, "\tGame Bar: %s",
-		     (bool)game_bar_enabled.return_value ? "On" : "Off");
+		blog(LOG_INFO, "\tGame Bar: %s", (bool)game_bar_enabled.return_value ? "On" : "Off");
 	}
 
 	if (game_dvr_allowed.status == ERROR_SUCCESS) {
-		blog(LOG_INFO, "\tGame DVR Allowed: %s",
-		     (bool)game_dvr_allowed.return_value ? "Yes" : "No");
+		blog(LOG_INFO, "\tGame DVR Allowed: %s", (bool)game_dvr_allowed.return_value ? "Yes" : "No");
 	}
 
 	if (game_dvr_enabled.status == ERROR_SUCCESS) {
-		blog(LOG_INFO, "\tGame DVR: %s",
-		     (bool)game_dvr_enabled.return_value ? "On" : "Off");
+		blog(LOG_INFO, "\tGame DVR: %s", (bool)game_dvr_enabled.return_value ? "On" : "Off");
 	}
 
 	if (game_dvr_bg_recording.status == ERROR_SUCCESS) {
@@ -247,8 +222,7 @@ static void log_gaming_features(void)
 	}
 
 	if (game_mode_enabled.status == ERROR_SUCCESS) {
-		blog(LOG_INFO, "\tGame Mode: %s",
-		     (bool)game_mode_enabled.return_value ? "On" : "Off");
+		blog(LOG_INFO, "\tGame Mode: %s", (bool)game_mode_enabled.return_value ? "On" : "Off");
 	} else if (win_build >= 19042) {
 		// On by default in newer Windows 10 builds (no registry key set)
 		blog(LOG_INFO, "\tGame Mode: Probably On (no reg key set)");
@@ -322,8 +296,7 @@ static void log_security_products_by_type(IWSCProductList *prod_list, int type)
 		char *product_name;
 		os_wcs_to_utf8_ptr(name, 0, &product_name);
 
-		blog(LOG_INFO, "\t%s: %s (%s)", product_name,
-		     get_str_for_state(prod_state), get_str_for_type(type));
+		blog(LOG_INFO, "\t%s: %s (%s)", product_name, get_str_for_state(prod_state), get_str_for_type(type));
 
 		bfree(product_name);
 
@@ -347,36 +320,25 @@ static void log_security_products(void)
 	if (!h_wsc)
 		return;
 
-	const CLSID *prod_list_clsid =
-		(const CLSID *)GetProcAddress(h_wsc, "CLSID_WSCProductList");
-	const IID *prod_list_iid =
-		(const IID *)GetProcAddress(h_wsc, "IID_IWSCProductList");
+	const CLSID *prod_list_clsid = (const CLSID *)GetProcAddress(h_wsc, "CLSID_WSCProductList");
+	const IID *prod_list_iid = (const IID *)GetProcAddress(h_wsc, "IID_IWSCProductList");
 
 	if (prod_list_clsid && prod_list_iid) {
 		blog(LOG_INFO, "Sec. Software Status:");
 
-		hr = CoCreateInstance(prod_list_clsid, NULL,
-				      CLSCTX_INPROC_SERVER, prod_list_iid,
-				      &prod_list);
+		hr = CoCreateInstance(prod_list_clsid, NULL, CLSCTX_INPROC_SERVER, prod_list_iid, &prod_list);
 		if (!FAILED(hr)) {
-			log_security_products_by_type(
-				prod_list, WSC_SECURITY_PROVIDER_ANTIVIRUS);
+			log_security_products_by_type(prod_list, WSC_SECURITY_PROVIDER_ANTIVIRUS);
 		}
 
-		hr = CoCreateInstance(prod_list_clsid, NULL,
-				      CLSCTX_INPROC_SERVER, prod_list_iid,
-				      &prod_list);
+		hr = CoCreateInstance(prod_list_clsid, NULL, CLSCTX_INPROC_SERVER, prod_list_iid, &prod_list);
 		if (!FAILED(hr)) {
-			log_security_products_by_type(
-				prod_list, WSC_SECURITY_PROVIDER_FIREWALL);
+			log_security_products_by_type(prod_list, WSC_SECURITY_PROVIDER_FIREWALL);
 		}
 
-		hr = CoCreateInstance(prod_list_clsid, NULL,
-				      CLSCTX_INPROC_SERVER, prod_list_iid,
-				      &prod_list);
+		hr = CoCreateInstance(prod_list_clsid, NULL, CLSCTX_INPROC_SERVER, prod_list_iid, &prod_list);
 		if (!FAILED(hr)) {
-			log_security_products_by_type(
-				prod_list, WSC_SECURITY_PROVIDER_ANTISPYWARE);
+			log_security_products_by_type(prod_list, WSC_SECURITY_PROVIDER_ANTISPYWARE);
 		}
 	}
 
@@ -1029,8 +991,7 @@ static bool vk_down(DWORD vk)
 	return down;
 }
 
-bool obs_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *context,
-				     obs_key_t key)
+bool obs_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *context, obs_key_t key)
 {
 	if (key == OBS_KEY_META) {
 		return vk_down(VK_LWIN) || vk_down(VK_RWIN);
@@ -1056,8 +1017,7 @@ void obs_key_to_str(obs_key_t key, struct dstr *str)
 		if (obs->hotkeys.translations[key]) {
 			dstr_copy(str, obs->hotkeys.translations[key]);
 		} else {
-			dstr_printf(str, "Mouse %d",
-				    (int)(key - OBS_KEY_MOUSE1 + 1));
+			dstr_printf(str, "Mouse %d", (int)(key - OBS_KEY_MOUSE1 + 1));
 		}
 		return;
 	}
@@ -1088,8 +1048,8 @@ void obs_key_to_str(obs_key_t key, struct dstr *str)
 		scan_code |= 0x01000000;
 	}
 
-	if ((key < OBS_KEY_VK_CANCEL || key > OBS_KEY_VK_OEM_CLEAR) &&
-	    scan_code != 0 && GetKeyNameTextW(scan_code, name, 128) != 0) {
+	if ((key < OBS_KEY_VK_CANCEL || key > OBS_KEY_VK_OEM_CLEAR) && scan_code != 0 &&
+	    GetKeyNameTextW(scan_code, name, 128) != 0) {
 		dstr_from_wcs(str, name);
 	} else if (key != OBS_KEY_NONE) {
 		dstr_copy(str, obs_key_to_name(key));
@@ -1133,8 +1093,7 @@ static inline void add_combo_key(obs_key_t key, struct dstr *str)
 	dstr_free(&key_str);
 }
 
-void obs_key_combination_to_str(obs_key_combination_t combination,
-				struct dstr *str)
+void obs_key_combination_to_str(obs_key_combination_t combination, struct dstr *str)
 {
 	if ((combination.modifiers & INTERACT_CONTROL_KEY) != 0) {
 		add_combo_key(OBS_KEY_CONTROL, str);
@@ -1178,10 +1137,8 @@ void reset_win32_symbol_paths(void)
 		if (!mod)
 			return;
 
-		sym_initialize_w =
-			(void *)GetProcAddress(mod, "SymInitializeW");
-		sym_set_search_path_w =
-			(void *)GetProcAddress(mod, "SymSetSearchPathW");
+		sym_initialize_w = (void *)GetProcAddress(mod, "SymInitializeW");
+		sym_set_search_path_w = (void *)GetProcAddress(mod, "SymSetSearchPathW");
 		if (!sym_initialize_w || !sym_set_search_path_w) {
 			FreeLibrary(mod);
 			return;
@@ -1250,12 +1207,10 @@ void reset_win32_symbol_paths(void)
 		os_utf8_to_wcs_ptr(path_str.array, path_str.len, &path_str_w);
 		if (path_str_w) {
 			if (!sym_initialize_called) {
-				sym_initialize_w(GetCurrentProcess(),
-						 path_str_w, false);
+				sym_initialize_w(GetCurrentProcess(), path_str_w, false);
 				sym_initialize_called = true;
 			} else {
-				sym_set_search_path_w(GetCurrentProcess(),
-						      path_str_w);
+				sym_set_search_path_w(GetCurrentProcess(), path_str_w);
 			}
 
 			bfree(path_str_w);
