@@ -5833,6 +5833,13 @@ void obs_source_get_audio_mix(const obs_source_t *source,
 	}
 }
 
+uint64_t obs_source_get_next_audio_timestamp(const obs_source_t *source)
+{
+	return obs_source_valid(source, "obs_source_get_next_audio_timestamp")
+		       ? source->next_audio_ts_min
+		       : 0;
+}
+
 void obs_source_add_audio_pause_callback(obs_source_t *source,
 					 signal_callback_t callback,
 					 void *param)
