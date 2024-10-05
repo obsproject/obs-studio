@@ -42,8 +42,8 @@ OBSBasicInteraction::OBSBasicInteraction(QWidget *parent, OBSSource source_)
 	  renamedSignal(obs_source_get_signal_handler(source), "rename", OBSBasicInteraction::SourceRenamed, this),
 	  eventFilter(BuildEventFilter())
 {
-	int cx = (int)config_get_int(App()->GetUserConfig(), "InteractionWindow", "cx");
-	int cy = (int)config_get_int(App()->GetUserConfig(), "InteractionWindow", "cy");
+	int cx = (int)config_get_int(App()->GetAppConfig(), "InteractionWindow", "cx");
+	int cy = (int)config_get_int(App()->GetAppConfig(), "InteractionWindow", "cy");
 
 	Qt::WindowFlags flags = windowFlags();
 	Qt::WindowFlags helpFlag = Qt::WindowContextHelpButtonHint;

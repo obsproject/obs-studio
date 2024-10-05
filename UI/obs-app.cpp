@@ -1293,7 +1293,7 @@ bool OBSApp::OBSInit()
 	obs_set_ui_task_handler(ui_task_handler);
 
 #if defined(_WIN32) || defined(__APPLE__)
-	bool browserHWAccel = config_get_bool(userConfig, "General", "BrowserHWAccel");
+	bool browserHWAccel = config_get_bool(appConfig, "General", "BrowserHWAccel");
 
 	OBSDataAutoRelease settings = obs_data_create();
 	obs_data_set_bool(settings, "BrowserHWAccel", browserHWAccel);
@@ -1544,7 +1544,7 @@ static void delete_oldest_file(bool has_prefix, const char *location)
 	uint64_t oldest_ts = (uint64_t)-1;
 	struct os_dirent *entry;
 
-	unsigned int maxLogs = (unsigned int)config_get_uint(App()->GetUserConfig(), "General", "MaxLogs");
+	unsigned int maxLogs = (unsigned int)config_get_uint(App()->GetAppConfig(), "General", "MaxLogs");
 
 	os_dir_t *dir = os_opendir(logDir);
 	if (dir) {

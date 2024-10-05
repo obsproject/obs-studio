@@ -2313,7 +2313,7 @@ void OBSBasic::OBSInit()
 	disableColorSpaceConversion(this);
 #endif
 
-	bool has_last_version = config_has_user_value(App()->GetUserConfig(), "General", "LastVersion");
+	bool has_last_version = config_has_user_value(App()->GetAppConfig(), "General", "LastVersion");
 	bool first_run = config_get_bool(App()->GetUserConfig(), "General", "FirstRun");
 
 	if (!first_run) {
@@ -2326,10 +2326,10 @@ void OBSBasic::OBSInit()
 
 #if (defined(_WIN32) || defined(__APPLE__)) && (OBS_RELEASE_CANDIDATE > 0 || OBS_BETA > 0)
 	/* Automatically set branch to "beta" the first time a pre-release build is run. */
-	if (!config_get_bool(App()->GetUserConfig(), "General", "AutoBetaOptIn")) {
-		config_set_string(App()->GetUserConfig(), "General", "UpdateBranch", "beta");
-		config_set_bool(App()->GetUserConfig(), "General", "AutoBetaOptIn", true);
-		config_save_safe(App()->GetUserConfig(), "tmp", nullptr);
+	if (!config_get_bool(App()->GetAppConfig(), "General", "AutoBetaOptIn")) {
+		config_set_string(App()->GetAppConfig(), "General", "UpdateBranch", "beta");
+		config_set_bool(App()->GetAppConfig(), "General", "AutoBetaOptIn", true);
+		config_save_safe(App()->GetAppConfig(), "tmp", nullptr);
 	}
 #endif
 	TimedCheckForUpdates();
@@ -3825,7 +3825,7 @@ void OBSBasic::TimedCheckForUpdates()
 {
 	if (App()->IsUpdaterDisabled())
 		return;
-	if (!config_get_bool(App()->GetUserConfig(), "General", "EnableAutoUpdates"))
+	if (!config_get_bool(App()->GetAppConfig(), "General", "EnableAutoUpdates"))
 		return;
 
 #if defined(ENABLE_SPARKLE_UPDATER)
