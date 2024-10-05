@@ -287,7 +287,9 @@ static inline const char *dstr_find(const struct dstr *str, const char *find)
 
 static inline int dstr_cmp(const struct dstr *str1, const char *str2)
 {
-	return strcmp(str1->array, str2);
+	const char *s1 = str1->array ? str1->array : "";
+	const char *s2 = str2 ? str2 : "";
+	return strcmp(s1, s2);
 }
 
 static inline int dstr_cmpi(const struct dstr *str1, const char *str2)
