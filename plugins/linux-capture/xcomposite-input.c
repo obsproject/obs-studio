@@ -310,7 +310,7 @@ xcb_window_t xcomp_find_window(xcb_connection_t *conn, Display *disp, const char
 
 		struct dstr cwname = xcomp_window_name(conn, disp, cwin);
 		struct dstr cwcls = xcomp_window_class(conn, cwin);
-		bool found = strcmp(wname, cwname.array) == 0 && strcmp(wcls, cwcls.array) == 0;
+		bool found = dstr_cmp(&cwname, wname) == 0 && dstr_cmp(&cwcls, wcls) == 0;
 
 		dstr_free(&cwname);
 		dstr_free(&cwcls);
