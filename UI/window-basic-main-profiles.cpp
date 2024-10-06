@@ -450,7 +450,7 @@ void OBSBasic::on_actionRenameProfile_triggered()
 		return true;
 	};
 
-	const OBSPromptRequest request{Str("RenameProfile.Title"), Str("RenameProfile.Text"), currentProfileName};
+	const OBSPromptRequest request{Str("RenameProfile.Title"), Str("AddProfile.Text"), currentProfileName};
 
 	OBSPromptResult result = PromptForName(request, profilePromptCallback);
 
